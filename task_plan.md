@@ -101,32 +101,32 @@
     strong门=`>=28/80`、breadth`>=5`、相对soft15 paired净增`>=10`；`22--27`且breadth`>=5`只扩到
     160-row消歧；`<=21`或breadth`<=4`则停止expert-mixture内调参，转向v6先验的可迁移Writer。
 
-## Hard-routed online smoke launch合同（2026-08-09）
+## Hard-routed strict correct80 screen launch合同（2026-08-09）
 
-- scientific code/evidence seal=`14495d9`，已clean push。实际run只允许来自包含本段launch record、以
-  `origin/codex/bci-continuation`为upstream的冻结分支`codex/hard-route-smoke-20260809`，worktree=
-  `/data1/user/ymdai/worktrees/EMBER-hard-route-smoke-20260809`。fresh root/log/tmux固定为
-  `runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`、
-  `runs/logs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809.log`和
-  `ember_hard_route_smoke_14495d9`；登记时branch/worktree/root/log/tmux均不存在。
-- 07:38 CST live比较：`gpu01:3`为nlge的41,649MiB VLLM，`gpu02:6/7`分别为yfwang/yqzhang的
-  4,593/16,193MiB任务，全部不触碰。只选`gpu02`物理0（UUID=`GPU-2f8ac922-...`）这一张0MiB、0%、
-  P8 A40，固定physical0→local0、NUMA0；gpu02 host available memory=`480GiB`。真正启动前必须再确认
-  物理0仍为0MiB、0%且无compute process，否则不启动。
-- `/data1`个人quota blocks=`563,764,660/1,073,741,824 KiB`，limit=`1,084,227,584 KiB`；CPU artifact=
-  32KiB，expert bank/cache=`939/113MiB`。8套FP32 LoRA加queue/results/log保守峰值低于1GiB，远低于
-  剩余预算。只跑validation8 tasks×1 state、correct/without-replacement工程smoke；结果不是性能证据。
+- scientific code/evidence seal=`1d58781`，已clean push。实际run只允许来自包含本段launch record、以
+  `origin/codex/bci-continuation`为upstream的冻结分支`codex/hard-route-screen80-20260809`，worktree=
+  `/data1/user/ymdai/worktrees/EMBER-hard-route-screen80-20260809`。fresh root/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`、
+  `runs/logs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809.log`和
+  `ember_hard_route_screen80_1d58781`；登记时branch/worktree/root/log/tmux均不存在。
+- 07:56 CST live比较：`gpu01:3`的nlge VLLM占41,649MiB，`gpu02:6/7`的yfwang/yqzhang任务占
+  4,593/16,193MiB，全部不触碰。只选`gpu02:0,1,2`三张0MiB、0%、P8 A40，严格physical0/1/2→
+  local0/1/2且同属NUMA0；host available memory=`480GiB`。真正启动前再次检查三卡，任一卡非空闲即
+  不启动。
+- `/data1`个人quota blocks=`563,806,376/1,073,741,824 KiB`，limit=`1,084,227,584 KiB`。80套FP32
+  LoRA约412MB，连同queue/results/log保守峰值低于1GiB，远低于剩余预算。panel固定validation8 tasks×
+  states0--9、correct one-shot、seed7、每task 10条video无放回；与soft policy-effective逐row严格同
+  state/video/env/policy RNG，禁止根据smoke的`0/8`或任何中间结果改变panel。
 - exact command（在上述frozen worktree、`gpu02`执行）：
 
 ```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809 --role validation --mode screen --state-count 10 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0,1,2 --expert-manifold-config configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
 ```
 
-- 工程验收：8 unique rows/generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/nonfinite，
-  teacher action/state/reward/terminal reads全0，v4/hard1 evidence逐行成立，Writer/encoder释放后同一source
-  policy原进程复用于rollout且不reload。**已全部通过**；generation=`10.497s`、peak allocated=
-  `10,576,896,000` bytes，总wall=`315.902s`，GPU已释放。posthoc route audit确认8/8 LoRA hard one-hot；
-  7/8与旧soft argmax一致，Long-2 state0因旧margin`.000664`发生12→13翻转。evidence已写回并seal。
+- 工程验收：80 unique rows/LoRAs/cache entries、36 jobs与9 workers自然exit0、attempt1、0 retry/failure/
+  OOM/nonfinite/forbidden reads，v4/hard1、Writer release/source reuse成立，三卡自然释放。科研门固定：
+  `>=28`、breadth`>=5`且相对soft15 paired净增`>=10`为strong；`22--27`且breadth`>=5`只扩160；
+  `<=21`或breadth`<=4`拒绝expert support。不得按中间task分数提前停、换专家或改变阈值。
 
 ## 退役边界
 

@@ -1,5 +1,28 @@
 # EMBER Findings
 
+## 2026-08-08 Task-expert 2000终态与晚期target平台
+
+- clean`81101fe`原root exact-resume1000→2000已自然完成：24/24 tasks、6/6 summaries、
+  step1500/2000各24 checkpoints、0 error/OOM/nonfinite。最后50步24-task等权action loss从
+  step1000 `.105372`降到1500 `.103881`和2000 `.103526`；这仍只是surrogate拟合。
+- effective-LoRA norm中位=`4.170/4.212/4.212`，stable rank均约`1.129`，top singular energy均约
+  `.909`，跨task cosine均约`.100`。1000→1500 update sample energy只剩`.05294`，1500→2000为
+  `.000312`；expert参数流形在1500后实际上已收敛，没有出现更健康的rank或task分离。
+- target raw centered effective rank=`19.45/19.54/19.54`、B cross-task cosine=
+  `.10245/.10348/.10347`，同样稳定。causal-prefix one-shot B proxy correct=
+  `.38820/.38685/.38678`，reversed=`.06042/.06399/.06425`，phase-shuffled=
+  `.19110/.19195/.19199`；晚期训练没有提高视频可预测性，order margin反而微降。
+- 因此2000不能靠更低loss、更大step或更大norm自动胜出。唯一剩余选择证据是与既有三点完全paired的
+  1500/2000 development-train closed loop；若行为也平台，较早near-max target对meta学习更合理。
+
+## 2026-08-08 Task-expert 1500/2000 live launch边界
+
+- 22:41 CST双节点live preflight：gpu02物理0--5均0MiB/0%且host available memory约524GB；物理6有
+  `yfwang`进程，物理7虽空闲但不使用。gpu01物理3有`nlge` VLLM且不触碰。选择gpu02:0,1,2与3,4,5
+  两组并发，每卡3 replicas，总18 workers，和已验证有效主机内存规模相同。
+- `/data1` quota=`552,236,168/1,073,741,824 KiB`，bank约938MiB，两个新root/log均不存在；从
+  clean pushed`1362d15`运行，除统一expert step外保持source、50-state panel和RNG完全相同。
+
 ## 2026-08-08 Expert-Manifold cached-rollout schema接口根因
 
 - 静态纵向追踪`evaluation_runtime → expected_writer_episode`发现，Expert-Manifold接入统一adapter

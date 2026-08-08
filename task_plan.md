@@ -43,9 +43,11 @@
 - [x] 完成profile前cached rollout纵向审计：修复统一adapter dispatch漏传`evidence_schema`、导致
   generation后scale-out首row前`TypeError`的问题；old/Expert-Manifold两类schema均保持或fail-close，
   聚焦62/62、全仓220/220与`py_compile`通过。无模型、输入、LoRA或实验数值变化。
-- [ ] 等待clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成；当前6 workers使用
-  `gpu01:0,1,2,4,5,7`并保存统一1500/2000。完成后复算geometry并做两个1200-row closed-loop，
-  只选一个全task共享target step。
+- [x] clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成：24/24 completion、
+  6/6 summaries、24个1500与24个2000 checkpoints、0 error/OOM/nonfinite；五点geometry和
+  1000/1500/2000 causal target分析均已完成。
+- [ ] 用clean pushed`1362d15`和已验证r3拓扑完成1500/2000两个1200-row strict closed loop，
+  与250/500/1000同panel比较后只选一个全task共享target step。
 - [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同；随后用
   profile macro3做不进入性能证据的online encoder/Writer generation smoke，验证每卡generator与
   rollout replicas并存、cache和显存释放后才seal formal。profile/formal checkpoint集合严格隔离。
@@ -56,6 +58,28 @@
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct
   严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、breadth与低checkpoint
   漂移。只有实质性阻塞才回报owner，GPU工作仍逐次执行live空闲卡与BCI多卡合同。
+
+### Task-expert 1500/2000正式评测launch合同（2026-08-08）
+
+- evaluation代码固定为独立clean pushed worktree
+  `/data1/user/ymdai/worktrees/EMBER-task-expert-eval-1362d15`，config仍为6668 bytes；source、tokenizer、
+  bank、role、50 states、seed/noise、每卡3 replicas均与已封存250/500/1000有效roots完全相同。
+- 22:41 CST live snapshot选择`gpu02:0,1,2`给step1500、`gpu02:3,4,5`给step2000；六卡显存均0MiB、
+  utilization0，host available memory约524GB。GPU6上`yfwang`进程与空闲GPU7不使用；gpu01:3上
+  `nlge` VLLM不触碰。评测无collective但仍显式`NCCL_P2P_DISABLE=1`。
+- `/data1` quota=`552,236,168/1,073,741,824 KiB`，bank=`983,275,343` bytes；两个output/log root
+  均已确认不存在，保守新增低于0.5GiB。tmux固定为`ember_task_expert_eval_step1500_1362d15`与
+  `ember_task_expert_eval_step2000_1362d15`，对应log同output basename。
+- exact commands在上述worktree执行：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_devtrain24x50_step1500_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 0,1,2 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 1500
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808 --role development_train --mode formal --state-count 50 --replicas-per-gpu 3 --gpu-indices 3,4,5 --task-expert-config configs/pi05_video_expert_manifold_v1.json --task-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --task-expert-step 2000
+```
+
+- 只在每点1200 unique rows、108/108 shards、所有workers exit0且跨五点pairing闭合后选择target；
+  direct closed-loop为主证据。若晚期aggregate/breadth没有material改善而target causal proxy与geometry
+  已平台，则优先较早的near-max统一step；不得按task混点。
 
 ### Task-expert development-train三点正式评测合同（2026-08-08）
 

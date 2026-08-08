@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Task-expert 2000完成、CPU分析与1500/2000 launch seal
+
+- 22:39 CST，clean`81101fe`原root的6个workers全部自然完成：24/24 completion、6/6 summaries、
+  24个step1500、24个step2000、0 error/OOM/nonfinite；六张gpu01卡自然释放。canonical checkout
+  随后从临时frozen状态恢复并fast-forward/push到`codex/bci-continuation@b19409f`。
+- 后台CPU watcher完成五点full-bank geometry及1000/1500/2000 feature-target dynamics，随后自然退出；
+  临时watcher脚本已删除。norm/stable-rank/task cosine从1000后平台，1500→2000 update近零；causal
+  B proxy由`.38820`微降到`.38685/.38678`，没有晚期可预测性收益。
+- `gpu-preflight` live比较选择空闲且host memory更充足的gpu02:0--5；GPU6他人进程、空闲GPU7和
+  gpu01:3他人进程均不使用。独立clean pushed`1362d15` worktree已确认两个formal roots/log不存在，
+  `/data1` quota充足；launch合同已登记，下一步并发评1500/2000各1200 rows。
+
 ## 2026-08-08 Expert-Manifold cached-rollout schema根修
 
 - profile前只读追踪完整`online generation → release Writer → cached rollout`路径，定位统一adapter

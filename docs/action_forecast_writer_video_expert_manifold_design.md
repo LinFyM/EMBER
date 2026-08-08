@@ -404,3 +404,18 @@ canonical wrapper现在对旧Writer继续原样转发该schema，对Expert-Manif
 62/62、全仓220/220及changed-file `py_compile`通过。这个修复不改变视频读取、Writer forward、LoRA
 cache内容、source policy或任何训练/rollout随机数，只清除profile前的工程阻塞；仍须真实A40 online
 generation和cached rollout共同通过后才能seal formal。
+
+## 21. Expert2000终态与统一target闭环选择
+
+clean`81101fe`的原root已严格exact-resume完成全部24 experts到2000，step1500/2000各24个checkpoint、
+6/6 summaries与24/24 completion齐全。最后50步等权action loss在1000/1500/2000为
+`.105372/.103881/.103526`，但parameter manifold已明显平台：effective norm中位=
+`4.170/4.212/4.212`、stable rank约`1.129`、跨task cosine约`.100`；1500→2000 effective update
+energy接近零。
+
+视频到target的CPU proxy也没有随晚期训练改善。causal-prefix one-shot B correct=
+`.38820/.38685/.38678`，reversed=`.06042/.06399/.06425`，phase-shuffled=
+`.19110/.19195/.19199`；raw centered effective rank与B跨taskcosine基本不变。因此不能因2000的loss
+更低就选2000，也不能只因1000更易预测就跳过真实行为。最终统一step仍由同一1200-state panel上的
+1500/2000 direct closed loop与既有250/500/1000严格配对裁决；不按task混点。若晚期行为没有material
+absolute/breadth收益且能力换手明显，选择较早near-max target，随后只对该统一target做meta profile。

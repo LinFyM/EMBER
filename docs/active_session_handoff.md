@@ -13,14 +13,13 @@
   第一次meta profile前已进一步封住静态与unordered-set捷径：full projected innovation只生成phase
   keys，attention value固定为phase-centered dynamics的sqrt-normalized causal-prefix integral；
   zero/phase-constant输入精确identity，即使learned phase key被忽略也没有原始frame-set value路径。
-- 24套train-task rank-16 policy experts已从同一source/identity完成统一step1000正式训练。唯一root为
+- 24套train-task rank-16 policy experts已从同一source/identity完成统一step2000。唯一root仍为
   `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6个独立workers各4 tasks，
-  24/24 completion、72个统一step250/500/1000 checkpoints、总量约562MiB。正式运行基线是
-  clean`81101fe`；若以后统一续到step2000，必须从该commit创建独立frozen worktree并沿同一root
-  exact-resume，不能用当前新代码路径伪装原合同。
-- 三个统一checkpoint最后50步的24-task等权mean action loss依次为
-  step250/500/1000=`.115355/.107207/.105372`。它只说明task-local AS仍在拟合，不能替代
-  development-train closed-loop统一checkpoint裁决，也不能据此声称step1000最优。
+  24/24 completion、step250/500/1000/1500/2000共120个checkpoints、约938MiB。1000→2000严格从
+  clean`81101fe` frozen contract沿原root exact-resume，未使用当前Writer代码伪装原训练合同。
+- 五个统一checkpoint最后50步的24-task等权mean action loss依次为
+  step250/500/1000/1500/2000=`.115355/.107207/.105372/.103881/.103526`。晚期loss仍小幅下降，
+  但它只说明task-local AS拟合，不能替代development-train closed-loop统一选点。
 - Expert-Manifold完整实现现已并入`codex/bci-continuation`：train24 bank evaluator、全bank LoRA
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
@@ -44,12 +43,13 @@
   `TypeError`，所以任何由此产生的profile都不能成立。隔离分支已让old/Expert-Manifold两类adapter都
   保留该参数，并对Expert-Manifold schema显式fail-close；聚焦62/62、全仓220/220与`py_compile`
   通过。该修复不改变模型、输入、LoRA、训练或rollout数值，尚无GPU或科研结论。
-- full24统一step250/500/1000正式geometry已完成，artifact为
-  `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
-  effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，
-  top singular energy=`.903/.907/.909`，跨task effective cosine中位=`.108/.095/.100`。
+- full24统一五点正式geometry已完成，artifact为
+  `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_1500_2000_1362d15_20260808/analysis.json`。
+  effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，stable rank中位均约`1.129`，
+  top singular energy均约`.909`，跨task effective cosine中位=`.108/.095/.100/.100/.100`。
   16个rank coordinates全部active、top4 coordinate energy约`.262/.260/.258`，但q/v B-column
-  cosine仍高且随训练不降；这说明完整bank具备task差异，却不能据几何选择closed-loop checkpoint。
+  cosine仍高且随训练不降。1000→1500 effective update energy已很小，1500→2000几乎收敛；geometry
+  说明bank稳定但仍不能替代closed-loop checkpoint选择。
 - development-train direct-expert三点正式闭环已在clean`1362d15`完成。有效roots统一使用
   `...step0250/0500/1000_formal_r3_1362d15_20260808`，每点1200 rows、108/108 shards、6 workers
   exit0、0 retry/failure且task/state/RNG严格配对；结果=`432/557/624`，四suite依次为
@@ -74,13 +74,16 @@
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
-  expert geometry、development-train closed-loop统一评250/500/1000和train24×50 feature cache已经通过；
-  现从frozen`81101fe`沿原root统一resume2000、评1500/2000，随后做
+  expert geometry、development-train closed-loop统一评250/500/1000、train24×50 feature cache和
+  全24 experts统一resume2000已经通过；现评1500/2000并选唯一target，随后做
   meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
-- 统一expert continuation已于2026-08-08 17:38 CST从frozen`81101fe`沿原root启动，6个独立workers
-  映射`gpu01:0,1,2,4,5,7`和对应NUMA，显式`NCCL_P2P_DISABLE=1`。每worker沿原4-task顺序
-  exact-resume1000→2000并保存1500/2000；GPU3他人进程和GPU6均未触碰。完成前只认partial runtime，
-  完成后先做full24 geometry及development-train 1500/2000 closed loop。
+- 统一expert continuation已于2026-08-08 22:39 CST自然完成：24/24 completion、6/6 summaries、
+  24个1500和24个2000 checkpoints、0 error/OOM/nonfinite；GPU3他人进程和GPU6全程未触碰。
+  causal B-transfer proxy在1000/1500/2000为`.38820/.38685/.38678`，reversed=
+  `.06042/.06399/.06425`、phase-shuffled=`.19110/.19195/.19199`，晚期target可预测性没有改善。
+- 2026-08-08 22:41 CST live比较两节点后，正式1500/2000闭环固定在host memory更空闲的
+  `gpu02:0,1,2`与`3,4,5`并发，每卡3 replicas；GPU6的`yfwang`进程和空闲GPU7均不使用，gpu01:3
+  的`nlge`进程也不触碰。两个run仍由clean pushed`1362d15` evaluator产生，各1200严格paired rows。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
 

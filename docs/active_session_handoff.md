@@ -23,8 +23,8 @@
 - Expert-Manifold完整实现现已并入`codex/bci-continuation`：train24 bank evaluator、全bank LoRA
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
-  feature cache profile与formal已完成；meta formal仍由config阻塞，尚未完成meta A40
-  profile，也没有生成新Writer checkpoint。
+  feature cache profile与formal已完成；六卡meta A40 exact-resume core profile也已通过。meta formal
+  仍由config阻塞，尚待macro3 online-generation/cached-rollout smoke，且没有formal Writer checkpoint。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
   ordered/reversed/phase-shuffled temporal-template cosine中位=`.88284/-.32402/-.02194`；时序
   task geometry与expert B target geometry Spearman=`.45087`。固定causal-prefix uniform-pool的
@@ -35,9 +35,8 @@
   生成identity。meta六卡入口也已补齐GPU-local NUMA fail-fast及逐rank physical/local/NUMA/affinity
   run-contract记录；profile的step wall与peak allocated/reserved显存均跨全部rank取`MAX`；
   evaluator已修正为smoke只接受声明的profile macro、formal只接受声明且sealed的formal macro，
-  因而可在正式训练前实测online generation拓扑。architecture gate无hard violation，聚焦28/28与
-  全仓220/220 CPU测试通过；
-  尚无GPU profile或性能结果。
+  因而可在正式训练前实测online generation拓扑。architecture gate无hard violation；随后累计到
+  聚焦49/49与全仓223/223 CPU测试通过。六卡core profile已有GPU工程结论，但尚无meta训练或性能结果。
 - profile前的cached-rollout纵向审计发现统一adapter wrapper新增Expert-Manifold dispatch时漏传了既有
   `evidence_schema`参数：LoRA cache可正常生成，但释放Writer后进入scale-out episode evidence构造会
   `TypeError`，所以任何由此产生的profile都不能成立。隔离分支已让old/Expert-Manifold两类adapter都
@@ -74,14 +73,16 @@
   `0--23`，50 demo ordinals恰好覆盖`0--49`，cache约113MiB。peak allocated/reserved=
   `10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal reads合计0；
   canonical `cache_manifest.json`已由仓库seal入口生成，无worker error。
-- 当前没有新Expert-Manifold Writer checkpoint或held strict rollout。已验证single-checkpoint最好仍是
-  v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
+- 当前只有永久禁止warm-start的profile macro1/3 checkpoints，没有formal Expert-Manifold Writer
+  checkpoint或held strict rollout。已验证single-checkpoint最好仍是v6-fast`143/400`，长期严格门
+  仍是`>150/400`，尚未完成。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
   expert geometry、development-train closed-loop统一评250/500/1000、train24×50 feature cache和
-  全24 experts统一resume2000、1500/2000闭环和唯一step2000 target选择已经通过；现做
-  meta-Writer A40 profile与online-generation smoke，随后才seal formal和strict validation五臂。
+  全24 experts统一resume2000、1500/2000闭环和唯一step2000 target选择、meta-Writer六卡core
+  profile已经通过；现只做macro3 online-generation/cached-rollout smoke，随后才seal formal和strict
+  validation五臂。
   不得按单task挑不同expert step。
 - 统一expert continuation已于2026-08-08 22:39 CST自然完成：24/24 completion、6/6 summaries、
   24个1500和24个2000 checkpoints、0 error/OOM/nonfinite；GPU3他人进程和GPU6全程未触碰。
@@ -113,9 +114,18 @@
   Ring/Simple NCCL all-reduce mean；数学上仍是train24等权梯度。它尚须新commit/new roots byte parity，
   formal继续blocked。
 - stateless flat-reduction实现/config已由clean pushed`c33a16b`封存，聚焦49/49、全仓223/223且
-  architecture无hard/parallel family。新roots与exact commands在`task_plan.md`顶部；GPU尚未通过。
+  architecture无hard/parallel family。新roots与exact commands在`task_plan.md`顶部。
+- clean pushed launch-record`b00024b`的flat-reduction六卡profile已通过预注册core门：resume路径与
+  独立contiguous路径三步科学metrics逐值一致，macro1/macro3 Writer及六份macro3 RNG逐字节一致；
+  macro3 `trainer.pt`原始序列化字节不同，但反序列化后的optimizer/scheduler逐项0差异，未把它误写成
+  byte-exact。两root峰值allocated/reserved分别约`.736/.877GB`与`.736/.816GB`，0 OOM/nonfinite，
+  逐rank physical/local/NUMA、P2P disable、Ring/Simple及无DDP wrapper合同均正确。profile权重永久弃用。
+- 2026-08-09 00:48 CST live比较后，online smoke选择`gpu02:0`单张空闲A40；`gpu02:6/7`与
+  `gpu01:3`他人进程均不触碰。smoke固定validation 8 tasks×1 state、1 generator、batch4、3 rollout
+  replicas、correct/without-replacement；只验在线视频编码、完整LoRA cache、释放Writer/encoder后复用
+  source policy及episode evidence，不把8-row success当科研成绩。exact command和验收门取`task_plan.md`。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
-  新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。
+  新meta-Writer通过A40 profile和online smoke后才删除，避免在其替代路径尚未纵向实证前制造不可运行仓库。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

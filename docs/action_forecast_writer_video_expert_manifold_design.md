@@ -482,3 +482,18 @@ retained CPU合同现为聚焦49/49、全仓223/223；architecture guard无hard 
 
 implementation/config seal为clean pushed`c33a16b`；新flat-reduction roots、带Ring/Simple的三条exact
 command及byte门取`task_plan.md`顶部。实际run commit必须clean/pushed并由run contract登记。
+
+clean pushed launch-record`b00024b`的真实六卡flat-reduction profile通过预注册core门。resume路径与
+独立contiguous路径三步`loss/raw/direction/log_scale/gradient/LR`逐值相同，macro1和macro3 Writer及
+六rank macro3 RNG逐字节一致。macro3 `trainer.pt`原始序列化bytes不同，但load到CPU后的optimizer和
+scheduler逐项0差异；因此结论只宣告训练语义与Writer byte-exact，不宣告trainer容器byte-exact。
+resume/contiguous峰值allocated/reserved=`736,117,760/876,609,536`与
+`735,831,552/815,792,128` bytes，0 OOM/nonfinite；run contract封存正确3+3 NUMA、physical/local
+映射、`distributed_model_wrapper=none`、single-flat reduction、P2P disable与Ring/Simple。这个结果确认
+DDP reducer生命周期就是先前不可续训的隐藏状态；profile权重仍永久不得进入formal。
+
+core profile通过后只剩一个工程门：用macro3 checkpoint在单张A40执行online frozen video encoder→
+batch4 Writer generation→8套完整LoRA cache→释放Writer/encoder→保留source policy并以3 replicas完成
+validation 8 tasks×1 state smoke。它只验证部署纵向路径、显存和evidence，不用8-row success判断方法。
+2026-08-09 00:48 CST live选择`gpu02:0`，忙碌的`gpu02:6/7`和`gpu01:3`不触碰；exact command与验收
+门写入`task_plan.md`。通过前formal仍blocked，旧K4 executable也暂不删除。

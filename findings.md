@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## 2026-08-09 Flat-reduction exact-resume core profile通过
+
+- clean pushed launch-record`b00024b`的fresh0→1/resume1→3与独立contiguous0→3三步科学metrics逐值
+  相同；macro1和macro3 Writer、六份macro3 RNG逐字节一致。它消除了首轮DDP profile的系统性A/B轨。
+- macro3 `trainer.pt`原始序列化bytes不一致，但load到CPU后的optimizer/scheduler逐项0差异。这是容器
+  序列化差异，不是训练状态差异；证据边界只写Writer byte-exact和trainer semantic-exact。
+- resume/contiguous峰值allocated/reserved分别为`.736/.877GB`与`.736/.816GB`，0 OOM/nonfinite；
+  run contract逐rank 3+3 NUMA/physical-local mapping正确，并封存无DDP wrapper、单flat ordered mean、
+  P2P disable与Ring/Simple。由此确认旧DDP reducer生命周期是未checkpoint的隐藏状态。
+- 这些仍只是core工程证据。profile权重不得warm-start；正式训练还必须先通过macro3 online video→LoRA→
+  cache→release→rollout smoke。
+
 ## 2026-08-09 Meta exact-resume DDP reducer working root cause
 
 - 首轮六卡fresh0→1/resume1→3与独立contiguous0→3都finite且资源健康；两个macro1 Writer、trainer、
@@ -23,7 +35,7 @@
   拼一个flat gradient，以固定Ring/Simple NCCL做一次all-reduce mean，再共同clip/AdamW。它与原24-task
   等权梯度数学等价，但去除reducer历史；新profile仍须证明byte parity，尚无GPU通过结论。
 - retained seal为clean pushed`c33a16b`；新flat-reduction roots、Ring/Simple exact commands及byte门
-  已预注册。CPU为49/49聚焦、223/223全仓，仍不构成GPU或性能结论。
+  已预注册。CPU为49/49聚焦、223/223全仓；其后GPU core profile已通过，但仍不构成性能结论。
 
 ## 2026-08-09 Task-expert五点闭环终态与统一step2000选择
 

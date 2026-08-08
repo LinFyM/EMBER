@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Flat-reduction core profile通过并封存online smoke
+
+- clean pushed`b00024b`的flat-reduction fresh0→1/resume1→3与独立contiguous0→3自然完成；三步科学
+  metrics逐值一致，macro1/macro3 Writer及六份macro3 RNG逐字节一致，0 OOM/nonfinite。macro3
+  trainer仅raw serialization不同，反序列化optimizer/scheduler逐项0差异。
+- 两root峰值allocated/reserved分别为`736,117,760/876,609,536`和
+  `735,831,552/815,792,128` bytes；run contract的3+3 NUMA、physical/local rank、无DDP wrapper、
+  single-flat reduction、P2P disable、Ring/Simple全部通过。旧DDP hidden-state问题闭合，profile权重弃用。
+- 00:48 CST重新比较两节点，选择空闲`gpu02:0`做唯一online smoke；忙碌`gpu02:6/7`与`gpu01:3`
+  不触碰。固定8-task×1-state、1 generator、batch4、3 replicas和macro3 profile checkpoint；只验证
+  generation/cache/release/rollout纵向合同，不把success当科研分数。exact command与验收门已登记。
+
 ## 2026-08-09 Meta profile exact-resume失败与DDP static-graph候选修复
 
 - clean`ac56ab8`首轮六卡fresh/resume/contiguous均自然完成、NUMA与资源合同健康，但macro3 Writer

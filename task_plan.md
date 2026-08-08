@@ -49,15 +49,18 @@
 - [x] 用clean pushed`1362d15`完成1500/2000两个1200-row strict closed loop：`638/658`；
   本轮每点126 jobs、9 workers、attempt1/exit0/0 failure，跨五点pairing闭合。统一选择step2000，
   不按task混点；658/1200只属于privileged development-train expert target，不是Writer成绩。
-- [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同；随后用
-  profile macro3做不进入性能证据的online encoder/Writer generation smoke，验证每卡generator与
-  rollout replicas并存、cache和显存释放后才seal formal。profile/formal checkpoint集合严格隔离。
+- [x] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同。随后用
+  profile macro3做不进入性能证据的online encoder/Writer generation smoke；profile/formal checkpoint
+  集合严格隔离。
   首轮clean`ac56ab8`虽finite但macro3 byte parity失败；deterministic/cuBLAS/math-SDPA probes均未修复，
   working root cause收敛到DDP首次迭代reducer生命周期未封存。canonical现对齐既有trainer使用
   static graph的候选在0 step触发PyTorch reducer内部断言，单独关闭buffer broadcast也仍分叉。
   canonical因此删除hidden DDP reducer，改为local task mean后单一flat ordered Ring/Simple all-reduce
-  mean；须从新commit和新roots重做byte parity，旧profile/probe权重弃用。
-- [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、
+  mean；clean`b00024b`新roots的三步metrics、macro1/macro3 Writer和六份macro3 RNG已精确一致，0
+  OOM/nonfinite。trainer容器仅序列化bytes不同，反序列化optimizer/scheduler 0差异；旧profile/probe
+  权重全部弃用。
+- [ ] 完成macro3 online-generation/cached-rollout A40 smoke，通过后seal formal；再做identity-fresh
+  meta训练、strict paired correct400曲线、五臂视频因果、
   task drift和expert→generated LoRA→action机制分析；根据最早失效接口迭代。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
@@ -89,6 +92,32 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,
   run contract要求`distributed_model_wrapper=none`、single-flat reduction、Ring/Simple、P2P disable及
   正确physical/local/NUMA；0 OOM/nonfinite。通过后才允许macro3 online-generation/cached-rollout
   smoke；失败则不放宽byte门。
+
+- 验收结果：clean pushed launch-record`b00024b`通过。三步scientific metrics逐值相同；macro1/macro3
+  Writer与六份macro3 RNG逐字节一致。macro3 trainer raw bytes不同但反序列化optimizer/scheduler逐项
+  0差异；不宣称trainer容器byte-exact。resume/contiguous峰值allocated/reserved分别为
+  `736,117,760/876,609,536`和`735,831,552/815,792,128` bytes，0 OOM/nonfinite；全部拓扑与
+  collective合同正确。profile权重永久弃用。
+
+### Expert-Manifold macro3 online-generation/cached-rollout smoke合同（2026-08-09）
+
+- 00:48 CST live比较：选择`gpu02:0`单张空闲A40；`gpu02:6/7`和`gpu01:3`他人进程不触碰。gpu02
+  available host memory约516.3GB；`/data1` quota用量约530.3GiB/1TiB，root峰值新增保守低于1GiB。
+  启动前再复查物理0，若变忙则不启动。
+- 输入固定为flat profile macro3、validation 8 tasks×1 state、correct video、without-replacement；一个
+  generator以batch4生成8套LoRA，释放Writer/encoder后保留source policy，再以每卡总3 replicas跑完
+  cached rollout。root固定为
+  `runs/outputs/pi05_expert_manifold_writer_macro0003_online_smoke_gpu02_c33a16b_20260809`，启动前不存在。
+- exact command（从clean pushed safety worktree执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_macro0003_online_smoke_gpu02_c33a16b_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_flatreduce_profile_r6_step2000_c33a16b_20260809/checkpoints/macro_00000003 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 门：8/8 unique rows与全部jobs一次完成，3 workers exit0、0 retry/failure/OOM/nonfinite；generator必须
+  记录8 assigned/generated entries、2个batch4、`writer_modules_released=true`、source policy复用与
+  `rollout_ready_with_retained_policy`；cache manifest/evidence schema有效且teacher frame used、forbidden
+  reads为0。success只记作smoke，不作performance证据。通过后才seal formal并删除旧K4 executable。
 
 ### Expert-Manifold meta-Writer static-graph reprofile launch合同（已否决，2026-08-09）
 

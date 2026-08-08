@@ -20,7 +20,8 @@ mean action loss为`.115355/.107207/.105372/.103881/.103526`；这仍不是close
 Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuation`：完整expert-bank evaluator/
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
 checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
-尚未完成A40 meta profile、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
+六卡A40 meta core profile已通过，尚待macro3 online-generation/cached-rollout smoke；仍未开始meta训练或
+任何新strict rollout，因此不能报告新模型成绩。历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
 full24统一五点geometry已完成：effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，
@@ -57,7 +58,7 @@ correct仅`.39379/.39558`，故当前保持one-shot并同时封住静态DC与uno
 step wall与peak allocated/reserved显存均跨全部rank取`MAX`，不以rank0局部值封存容量；
 smoke evaluator按profile checkpoint集合验收macro1/3，formal仍只认sealed formal集合，故meta profile后
 必须先实测online encoder/Writer generation并释放到rollout cache。architecture gate无hard violation，
-聚焦28/28与全仓220/220 CPU测试通过；尚未profile或训练。
+最终聚焦49/49与全仓223/223 CPU测试通过；core profile已通过但尚未训练。
 
 profile前的cached-rollout纵向审计又发现统一adapter wrapper在Expert-Manifold分派中漏传现有
 `evidence_schema`：generation可完成，但Writer释放后的episode evidence构造会在任何scientific row前
@@ -96,15 +97,28 @@ static-graph合同，
 broadcast的dynamic probe也仍复现原A/B分叉，故两个候选均否决且roots不得resume。current canonical
 删除DDP hidden reducer：每rank保持microbatch1顺序累积4-task local mean，随后用一个固定parameter
 order的flat gradient做Ring/Simple NCCL all-reduce mean，再共同clip/AdamW；24-task等权数学合同不变。
-新实现尚未clean profile，formal仍blocked。
+新实现随后完成clean profile；formal仍blocked直至online smoke。
 retained seal为clean pushed`c33a16b`，聚焦49/49、全仓223/223；新flat-reduction roots与exact
-Ring/Simple commands取`task_plan.md`顶部。GPU reprofile尚未执行。
+Ring/Simple commands取`task_plan.md`顶部。实际clean pushed launch-record为`b00024b`。
+
+flat-reduction core profile已通过：fresh0→1/resume1→3与独立contiguous0→3三步科学metrics逐值
+相同，macro1和macro3 Writer及六份macro3 RNG逐字节一致；macro3 trainer原始序列化字节不同，
+但反序列化后的optimizer/scheduler逐项0差异。resume/contiguous峰值allocated/reserved分别为
+`736,117,760/876,609,536`与`735,831,552/815,792,128` bytes，0 OOM/nonfinite；逐rank
+physical/local/NUMA、无DDP wrapper、single-flat reduction、P2P disable和Ring/Simple均符合合同。
+profile checkpoint只作工程证据，不得warm-start formal。
+
+00:48 CST live比较后，macro3 online smoke固定使用空闲`gpu02:0`；`gpu02:6/7`和`gpu01:3`他人进程
+不触碰。panel为validation 8 tasks×1 state、correct/without-replacement，1个online generator按batch4
+生成8套LoRA并释放Writer/encoder，然后与总3 replicas复用cached LoRA闭环。`/data1`用量约530.3GiB/
+1TiB，新增低于1GiB。只验纵向执行、显存、cache/evidence和worker完整性，success不作科研结论；exact
+command与验收门取`task_plan.md`。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
 closed-loop统一评250/500/1000、formal cache、expert2000和统一step2000选择已经完成；当前顺序为
-meta profile与纵向smoke→seal后fresh训练→strict五臂。旧K4 executable只保留到新
-meta-Writer A40 profile通过，届时按design removal trigger原位退役。当前长期门是同一single
+纵向online smoke→seal后identity-fresh训练→strict五臂。旧K4 executable只保留到新
+meta-Writer A40 profile与online smoke均通过，届时按design removal trigger原位退役。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。
 

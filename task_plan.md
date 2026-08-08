@@ -172,6 +172,37 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   `.7007/1.983/.512`、16/16 coordinates active。success=`1/8`不作性能证据；profile权重弃用，
   formal config现已seal。
 
+### Address-binding identity-fresh formal0→50 launch合同（2026-08-09）
+
+- scientific seal为clean pushed`448f760`；实际run必须来自含本段launch record、clean且与upstream一致的
+  frozen branch`codex/expert-manifold-addressbind-formal-20260809`，worktree固定为
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-addressbind-formal-20260809`。本段不传`--resume`，
+  禁止加载profile macro1/3、旧decoder macro50或任意历史Writer权重，从zero-output identity fresh开始。
+- 03:19 CST同时live检查两节点：选择`gpu01:0,1,2|4,5,7`六张14MiB、0%空闲A40，保持3+3 NUMA；
+  物理3的41.6GiB他人VLLM不触碰，物理6也不使用。`gpu02:0--5`虽空闲但为4+2 NUMA，6/7有他人
+  进程，本轮不用。gpu01 host available memory约480GiB。正式启动前再次复核六张目标卡，任一卡变忙
+  即不启动或重新选择满足合同的空闲组合。
+- `/data1`个人quota现场为533.2GiB/1TiB，共享filesystem available约85TiB。profile两root各367MiB、
+  smoke root40MiB；formal只到macro50并保存一个约184MiB checkpoint，预计新增低于300MiB。fresh
+  output/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_formal_fresh0_800_r6_step2000_448f760_20260809`、
+  `runs/logs/pi05_expert_manifold_writer_addressbind_formal_fresh0_800_r6_step2000_448f760_20260809.log`和
+  `ember_expert_manifold_addressbind_formal_448f760`；登记时root/log/worktree/branch/tmux均不存在。
+- exact command（从上述frozen worktree执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1,2,4,5,7 NCCL_P2P_DISABLE=1 NCCL_ALGO=Ring NCCL_PROTO=Simple OMP_NUM_THREADS=8 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/torchrun --standalone --nproc-per-node=6 scripts/train_expert_manifold_writer.py --config configs/pi05_video_expert_manifold_v1.json --mode formal --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-step 2000 --feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_addressbind_formal_fresh0_800_r6_step2000_448f760_20260809 --stop-after-macro 50
+```
+
+- 科学规模仍为world6、每rank4 tasks、microbatch1；每macro覆盖train24各一条one-shot视频，0→50共
+  1,200个video→完整LoRA reconstruction pairs。scheduler总长800、warmup25，target仍为统一
+  step2000 experts；loss、optimizer、feature cache和sampler均不变。
+- 验收要求50/50连续finite metrics、macro50完整Writer/trainer/六rank RNG checkpoint、0 OOM/
+  nonfinite；run contract中的branch/commit/upstream、address-binding config、physical/local/NUMA、
+  deferred NCCL、P2P-disable、Ring/Simple、无DDP wrapper与single-flat mean全部吻合。完成后先做
+  macro50 train24 target/LoRA/address-retention内部诊断和strict paired correct400；不因loss或漂亮几何
+  直接resume。只有absolute、breadth和内部传递共同支持才续到100并进入完整视频时序五臂。
+
 ### Expert-Manifold identity-fresh formal0→50 launch合同（2026-08-09）
 
 - 科学/退役seal为clean pushed`fcaf733`；实际run必须来自包含本段launch record、已push且有

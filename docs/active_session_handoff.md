@@ -22,6 +22,10 @@
 - profile与smoke设备均已自然释放，profile权重永久弃用。下一正式动作必须从含新seal与launch record的
   clean pushed frozen worktree做identity-fresh 0→50；不加载旧macro50或任何profile checkpoint。启动前
   仍实时比较`gpu01/gpu02`、最多使用6张空闲A40，并重新核验quota、3+3 NUMA与输出root不存在。
+- 03:19 CST最新live比较选择`gpu01:0,1,2|4,5,7`六张空闲A40的3+3 NUMA；物理3他人VLLM、物理6及
+  `gpu02:6/7`他人进程均不触碰。个人quota为533.2GiB/1TiB，fresh formal root/log/worktree/branch/tmux
+  全部不存在，预计新增低于300MiB。scientific seal=`448f760`，唯一exact command与验收门已登记在
+  `task_plan.md`的“Address-binding identity-fresh formal0→50”段；真正启动前仍须再live复核。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，

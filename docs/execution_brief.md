@@ -25,6 +25,11 @@ source policy原位复用且没有reload。`1/8` success只表示纵向链路可
 权重或旧macro50 checkpoint。正式启动前重新live比较`gpu01/gpu02`，只选最多6张空闲A40，保持
 `NCCL_P2P_DISABLE=1`、3+3 NUMA/physical-local映射和deferred NCCL，并复核quota与fresh root。
 
+03:19 CST preflight选择`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40，物理3他人VLLM和物理6不触碰；
+`gpu02:0--5`虽空闲但为4+2 NUMA，6/7有他人进程，故不用。个人quota为533.2GiB/1TiB，formal
+fresh root/log与frozen worktree/branch/tmux均不存在，预计新增低于300MiB。scientific seal=
+`448f760`，唯一root、命令和验收门取`task_plan.md`的address-binding formal段；启动前再复核设备。
+
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA

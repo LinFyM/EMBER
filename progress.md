@@ -1,5 +1,15 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding formal0→50预注册
+
+- 新图profile/smoke evidence seal已由clean`448f760`通过193项全仓CPU回归并push；config正式状态为
+  sealed，profile权重永久弃用。formal branch/worktree/root/log/tmux均使用全新名字且现场不存在。
+- 03:19 CST live比较选择`gpu01:0,1,2|4,5,7`六张空闲A40的3+3 NUMA；物理3他人VLLM、物理6和
+  `gpu02:6/7`他人进程均不触碰。个人quota533.2GiB/1TiB，首段预计新增低于300MiB。
+- exact identity-fresh 0→50命令、world6/24-task/scheduler800合同、checkpoint完整性门与macro50后
+  strict correct400/internal-first裁决顺序已写入`task_plan.md`。真正启动前仍需再次live复核，不传
+  resume，不加载任何profile或旧decoder权重。
+
 ## 2026-08-09 Address-binding online smoke通过并重新seal formal
 
 - clean pushed`eb32f3f`在live空闲`gpu02:0`完成8-task×1-state correct/without-replacement smoke；

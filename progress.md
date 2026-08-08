@@ -1,5 +1,14 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Causal Barycentric strict correct400预注册
+
+- 05:10 CST live比较两节点后预选`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40，保持NUMA0/1各三张；
+  物理3他人VLLM、物理6和`gpu02:6/7`他人进程均不触碰。gpu01 host available memory=`479GiB`，
+  `/data1`个人quota=`561,350,572/1,073,741,824 KiB`。
+- 400套FP32完整LoRA加结果/log/queue保守新增低于3GiB；frozen branch/worktree、fresh root/log/tmux、
+  exact correct/without-replacement 400-row命令和72-job/18-worker信息墙门已登记在`task_plan.md`。相关
+  目标登记时全部不存在；先clean commit/push launch record，真正启动前再次live检查六张目标卡。
+
 ## 2026-08-09 Causal Barycentric online smoke通过并seal formal
 
 - 在live比较`gpu01/gpu02`后只使用空闲`gpu02:0`完成validation8×1-state correct/

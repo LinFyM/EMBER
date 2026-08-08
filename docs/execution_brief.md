@@ -39,6 +39,12 @@ norm/stable-rank/top-energy=`3.9802/1.1555/.89243`且16/16 coordinates active。
 quota/root不存在，只使用最多6张空闲A40；当前无GPU工作在运行。`task_plan.md`已删除旧架构的可误执行
 命令副本，后续历史段若引用旧plan命令只能从Git provenance读取。
 
+05:10 CST本轮launch preflight预选`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40，NUMA0/1各三张；
+物理3他人VLLM、物理6和`gpu02:6/7`均不触碰。host available memory=`479GiB`，个人quota=
+`561,350,572/1,073,741,824 KiB`，400套FP32 LoRA加全部结果预算低于3GiB。frozen branch/worktree、fresh
+root/log/tmux、exact command与400-row门已登记在`task_plan.md`；含launch record的commit push后建立
+worktree，真正启动前重新检查六卡。
+
 **当前操作覆盖（2026-08-09）**：clean pushed`cd95281`的
 `RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`新图已经通过fresh/resume/contiguous
 六卡profile与单卡online generation/cache/release/rollout smoke。profile三步科学指标精确一致，

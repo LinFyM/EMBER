@@ -790,4 +790,5 @@ expert manifold上的held LoRA；但8 rows不能证明absolute、breadth或视�
 24-basis、train24×50 cache、canonical video data和validation8 panel的`require_formal=True`检查通过。
 下一门严格保持29.5：从clean pushed frozen worktree做fresh correct400；若absolute、breadth或400-LoRA
 task separation不成立，不运行其余五臂，而先定位representation、coordinate solve、expert support或
-topological reconstruction的最早断点。
+topological reconstruction的最早断点。正式branch/worktree/root、设备与exact command已预注册在
+`task_plan.md`的Causal Barycentric strict correct400 launch合同。

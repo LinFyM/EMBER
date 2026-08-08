@@ -60,7 +60,10 @@ top4 coordinate energy=`.27103`；cross-task effective cosine中位=`.69277`，n
 cosine中位=`.65624`。这相对learned address-binding Writer的`.94197/.12734`同时改善task separation与
 expert-manifold落点，但样本仅8，不能替代closed-loop。精确evidence已写回新config并将formal状态设为
 `sealed`；真实24-basis、validation8 panel的`require_formal=True` inspector也已通过。下一唯一科研
-裁决是从clean pushed frozen worktree启动全新strict correct400并同步审计400套LoRA；当前没有GPU进程。
+裁决是从clean pushed frozen worktree启动全新strict correct400并同步审计400套LoRA。05:10 CST live
+preflight已预选`gpu01:0,1,2|4,5,7`六张空闲A40并确认3+3 NUMA、479GiB host available memory及
+`561,350,572/1,073,741,824 KiB`个人quota；精确branch/worktree/root/命令和验收门取`task_plan.md`顶部
+launch合同。启动前仍须再live复核，当前没有GPU进程。
 
 - **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现并完成
   两道新图专属A40工程门。六卡fresh0→1/resume1→3与独立contiguous0→3科学指标、Writer/RNG及

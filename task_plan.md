@@ -84,11 +84,15 @@
 
 ## Policy-Effective online smoke launch合同（2026-08-09）
 
-- scientific code seal=`fb5b367`；实际启动只允许来自包含本段launch record、clean pushed且detached的
-  frozen worktree=`/data1/user/ymdai/worktrees/EMBER-policy-effective-smoke-20260809`。fresh root/log/tmux固定为
-  `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809`、
-  `runs/logs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809.log`和
-  `ember_policy_effective_smoke_fb5b367`；登记时三者及worktree均不存在。
+- scientific code seal=`fb5b367`；有效retry只允许来自包含本段launch record、clean pushed、以
+  `origin/codex/bci-continuation`为upstream的冻结分支`codex/policy-effective-smoke-20260809`，worktree=
+  `/data1/user/ymdai/worktrees/EMBER-policy-effective-smoke-20260809`。fresh retry1 root/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`、
+  `runs/logs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809.log`和
+  `ember_policy_effective_smoke_r1_fb5b367`；登记时三者均不存在。
+- 06:36 CST attempt0在GPU加载前被`git_state()`拒绝：detached worktree没有`@{upstream}`。物理0始终
+  0 MiB、0%，未创建run contract/cache/worker或scientific row；只留下含`libero_config`的35-byte
+  partial root和2,006-byte错误日志，二者保留为工程失败证据，不复用、不计重试或性能结果。
 - 06:33 CST live比较：只选`gpu02`物理0（UUID `GPU-2f8ac922-...`）这一张0 MiB、0% A40，固定
   physical0→local0、NUMA0；`gpu02:6/7`及`gpu01:3`的他人进程明确不触碰。gpu02 available host memory=
   `480GiB`。启动前必须再检查物理0仍为空闲，否则不启动。
@@ -98,7 +102,7 @@
 - exact command（在上述frozen worktree、`gpu02`执行）：
 
 ```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
 ```
 
 - 验收门：8 unique rows、8 unique generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/

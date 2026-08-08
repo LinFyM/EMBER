@@ -17,7 +17,7 @@
   "method": {
     "name": "video_conditioned_expert_manifold_topological_writer",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
-    "dynamic_value": "frozen_pi05_task_span_plus_action_expert_video_innovation_minus_matched_text_no_image_baseline",
+    "dynamic_value": "full_video_innovation_routes_phases_but_only_phase_centered_projected_dynamics_supply_lora_values",
     "language_only_lora_path": false,
     "deployment_output": "one complete rank16 public LoRA",
     "future_credit": [
@@ -215,6 +215,8 @@
     "memory_width": 512,
     "attention_heads": 8,
     "axial_blocks": 4,
+    "video_value_path": "phase_centered_projected_video_innovation_only",
+    "routing_key_path": "full_projected_video_innovation_plus_phase_keys",
     "output": "zero_initialized_direct_chunk_values_plus_per_chunk_scale",
     "identity": "template-A plus zero-B"
   },

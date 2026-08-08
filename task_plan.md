@@ -32,6 +32,15 @@
 - [x] 完成train24×50正式feature cache：clean pushed`222d3ac`、6 workers、24×50覆盖、
   `[50,16,3072]` BF16/task、约113MiB、peak reserved`19.23GB`、forbidden reads合计0，
   canonical manifest已seal。
+- [x] 完成full24×50 feature dynamics与expert-target只读CPU审计：发现`.98057`中位phase-DC静态
+  捷径，但temporal residual保留强ordered/reversed信息且与expert B geometry相关；3/5-shot proxy
+  相对one-shot只小幅增加，首轮继续one-shot。
+- [x] 在第一次meta GPU工作前将唯一decoder收紧为full-video phase routing加phase-centered dynamic
+  value，并增加不读frames、精确identity的paired no-video反事实。architecture gate无hard violation，
+  聚焦25项、全仓217项CPU测试通过；尚无GPU或性能结论。
+- [ ] 等待clean`81101fe`原root的全24 experts exact-resume1000→2000自然完成；当前6 workers使用
+  `gpu01:0,1,2,4,5,7`并保存统一1500/2000。完成后复算geometry并做两个1200-row closed-loop，
+  只选一个全task共享target step。
 - [ ] 完成meta-Writer六卡fresh0→1、exact-resume1→3、finite/OOM/梯度与任务等权合同
   后才seal formal。
 - [ ] 完成A40 profile、identity-fresh meta训练、strict paired correct400曲线、五臂视频因果、

@@ -18,6 +18,7 @@ VIDEO_CONDITIONS = {
     "shuffled",
     "shuffled_keep_first",
     "reversed",
+    "no_video",
 }
 SAMPLING_MODES = {"with_replacement", "without_replacement"}
 

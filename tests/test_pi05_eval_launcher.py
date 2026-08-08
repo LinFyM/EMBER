@@ -56,6 +56,16 @@ def test_launcher_uses_the_contract_replica_profiles() -> None:
     assert 6 in action.choices
 
 
+def test_no_video_control_is_scoped_to_expert_manifold() -> None:
+    module = _launcher_module()
+    parser = argparse.ArgumentParser()
+    module._add_prepare_arguments(parser)
+    choices = {action.dest: action.choices for action in parser._actions}
+    assert "no_video" not in choices["writer_video_condition"]
+    assert "no_video" not in choices["rl_writer_video_condition"]
+    assert "no_video" in choices["expert_manifold_video_condition"]
+
+
 def test_gpu_preflight_queries_only_explicit_devices(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

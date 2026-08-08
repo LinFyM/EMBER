@@ -254,15 +254,18 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if video_innovation.shape[1:] != (self.phase_slots, self.feature_width):
             raise ExpertManifoldError("video innovation changed phase/feature shape")
-        memory = self.input_projection(video_innovation)
-        normalized = self.memory_norm(memory)
+        routing_memory = self.input_projection(video_innovation)
+        dynamic_memory = routing_memory - routing_memory.mean(dim=1, keepdim=True)
+        normalized = self.memory_norm(routing_memory)
         keys = normalized + self.phase_keys[None]
-        batch = memory.shape[0]
+        batch = routing_memory.shape[0]
         query = (
             self.chunk_queries[:, None, :] + self.rank_queries[None, :, :]
         ).reshape(1, self.layout.chunk_count * self.layout.rank, self.memory_width)
         query = query.expand(batch, -1, -1)
-        value, _ = self.cross_attention(query, keys, memory, need_weights=False)
+        value, _ = self.cross_attention(
+            query, keys, dynamic_memory, need_weights=False
+        )
         value = value.reshape(
             batch, self.layout.chunk_count, self.layout.rank, self.memory_width
         )

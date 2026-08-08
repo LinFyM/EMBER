@@ -1,5 +1,23 @@
 # EMBER Findings
 
+## 2026-08-08 Expert-Manifold feature dynamics与phase-centered value裁决
+
+- full24×50 sealed cache的phase-DC能量占比中位`.98057`，temporal residual仅`.01943`；原decoder
+  将完整projected memory同时作为key/value，会让同task恒定expert target通过约50倍更强的静态
+  task摘要完成重建，reconstruction loss无法迫使它学习顺序。
+- encoder并没有丢失时序：leave-one-video-out ordered temporal-template cosine中位`.88284`，
+  reversed=`-.32402`、phase-shuffled proxy=`-.02194`、reversal relative-L2=`.21884`。temporal
+  task geometry与raw/B target geometry Spearman=`.46046/.45087`，时序残差具有可预测expert方向。
+- leave-one-task linear B proxy的phase-centered one-shot correct/reversed/shuffled中位=
+  `.38607/.20667/.26386`，而DC-only correct=`.39500`且对反转/乱序完全不变。3/5-shot correct=
+  `.39051/.39290`，边际很小；当前主要瓶颈是静态value捷径而非shot数量。
+- 因此canonical decoder改为`K=RMSNorm(Wx)+phase_key`、`V=Wx-mean_phase(Wx)`。joint与Action-
+  Expert完整特征仍控制phase routing，但只有有序动态能写LoRA content；zero或任意phase-constant输入
+  精确identity。no-video反事实保留严格paired元数据但不读frame，以zero innovation完整运行Writer。
+- CPU retained证据覆盖constant/zero identity、ordered≠reversed、zero-output第一步打开output head且
+  第二步梯度到达input projection/cross-attention/phase keys；architecture gate无hard violation，
+  聚焦25/25及全仓217/217通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
+
 ## 2026-08-08 Expert-Manifold train24×50 formal feature cache
 
 - clean pushed`222d3ac`上的正式cache已用6个独立workers自然完成并由canonical入口seal：

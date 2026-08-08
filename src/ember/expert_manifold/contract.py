@@ -40,6 +40,30 @@ class ExpertTask:
     authority: WriterTaskAuthority
 
 
+def _information_wall_matches(information: Mapping[str, Any]) -> bool:
+    return (
+        information.get("expert_action_split_roles") == ["train"]
+        and information.get("writer_video_split_roles")
+        == ["train", "validation", "test"]
+        and int(information.get("validation_experts_trained", -1)) == 0
+        and int(information.get("test_experts_trained", -1)) == 0
+        and int(information.get("validation_actions_read", -1)) == 0
+        and int(information.get("test_actions_read", -1)) == 0
+    )
+
+
+def _topological_writer_matches(writer: Mapping[str, Any]) -> bool:
+    return (
+        int(writer.get("chunk_count", -1)) == 168
+        and int(writer.get("public_rank", -1)) == 16
+        and int(writer.get("valid_values", -1)) == 1_287_168
+        and writer.get("video_value_path")
+        == "phase_centered_projected_video_innovation_only"
+        and writer.get("routing_key_path")
+        == "full_projected_video_innovation_plus_phase_keys"
+    )
+
+
 def load_expert_manifold_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != CONFIG_SCHEMA:
@@ -54,13 +78,7 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         method.get("name")
         != "video_conditioned_expert_manifold_topological_writer"
         or method.get("language_only_lora_path") is not False
-        or information.get("expert_action_split_roles") != ["train"]
-        or information.get("writer_video_split_roles")
-        != ["train", "validation", "test"]
-        or int(information.get("validation_experts_trained", -1)) != 0
-        or int(information.get("test_experts_trained", -1)) != 0
-        or int(information.get("validation_actions_read", -1)) != 0
-        or int(information.get("test_actions_read", -1)) != 0
+        or not _information_wall_matches(information)
         or int(experts.get("task_count", -1)) != 24
         or int(experts.get("episodes_per_task", -1)) != 50
         or experts.get("task_parameter_sharing") != "none"
@@ -70,9 +88,7 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
         or int(video.get("expert_hidden_width", -1)) != 1024
         or int(video.get("feature_width", -1)) != 3072
         or video.get("cache_contains_actions_or_state") is not False
-        or int(writer.get("chunk_count", -1)) != 168
-        or int(writer.get("public_rank", -1)) != 16
-        or int(writer.get("valid_values", -1)) != 1_287_168
+        or not _topological_writer_matches(writer)
         or int(meta.get("task_count", -1)) != 24
         or int(meta.get("videos_per_task_per_macro", -1)) != 1
         or meta.get("task_aggregation")

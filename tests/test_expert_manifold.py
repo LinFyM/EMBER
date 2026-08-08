@@ -60,6 +60,9 @@ def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
     assert config["video_features"]["shots"] == 1
     assert config["topological_writer"]["chunk_count"] == 168
     assert config["topological_writer"]["valid_values"] == 1_287_168
+    assert config["topological_writer"]["video_value_path"] == (
+        "phase_centered_projected_video_innovation_only"
+    )
     assert config["video_features"]["feature_width"] == 3072
     assert config["video_features"]["expert_hidden_width"] == 1024
     assert config["information_wall"]["validation_actions_read"] == 0
@@ -407,6 +410,59 @@ def test_topological_writer_zero_video_is_identity_after_parameter_changes() -> 
     assert all(torch.equal(generated[name][0], value) for name, value in template.items())
 
 
+def test_topological_writer_only_phase_dynamics_supply_values() -> None:
+    contract, template, _ = _synthetic_lora_states()
+    writer = VideoConditionedTopologicalWriter(
+        contract=contract,
+        template_state=template,
+        phase_slots=4,
+        feature_width=8,
+        memory_width=16,
+        attention_heads=4,
+        axial_blocks=1,
+        chunk_width=512,
+    )
+    with torch.no_grad():
+        for parameter in writer.parameters():
+            parameter.uniform_(-0.02, 0.02)
+    constant = torch.randn(1, 1, 8).expand(1, 4, 8).clone()
+    generated = writer(constant)
+    assert all(torch.equal(generated[name][0], value) for name, value in template.items())
+    ordered = torch.randn(1, 4, 8)
+    forward = writer.forward_values(ordered)
+    reversed_value = writer.forward_values(ordered.flip(1))
+    assert not torch.equal(forward, reversed_value)
+
+
+def test_phase_centered_writer_opens_upstream_after_zero_output_step() -> None:
+    torch.manual_seed(20260808)
+    contract, template, _ = _synthetic_lora_states()
+    writer = VideoConditionedTopologicalWriter(
+        contract=contract,
+        template_state=template,
+        phase_slots=4,
+        feature_width=8,
+        memory_width=16,
+        attention_heads=4,
+        axial_blocks=1,
+        chunk_width=512,
+    )
+    video = torch.randn(1, 4, 8)
+    target = torch.randn_like(writer.forward_values(video))
+    optimizer = torch.optim.SGD(writer.parameters(), lr=1e-2)
+    for step in range(2):
+        optimizer.zero_grad(set_to_none=True)
+        predicted, log_scale = writer.forward_values_with_scale(video)
+        loss = (predicted - target).square().mean() + log_scale.square().mean()
+        loss.backward()
+        if step == 0:
+            assert bool(torch.count_nonzero(writer.output_projection.weight.grad))
+        optimizer.step()
+    assert bool(torch.count_nonzero(writer.input_projection.weight.grad))
+    assert bool(torch.count_nonzero(writer.cross_attention.in_proj_weight.grad))
+    assert bool(torch.count_nonzero(writer.phase_keys.grad))
+
+
 def test_topological_writer_exposes_chunk_scale_without_collapsing_direction() -> None:
     contract, template, _ = _synthetic_lora_states()
     writer = VideoConditionedTopologicalWriter(
@@ -530,6 +586,15 @@ def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> No
         demo_count=50,
         sampling_mode="without_replacement",
     ) == (values[0] + 17) % 50
+    assert condition_demo_index(
+        7,
+        "libero_goal",
+        3,
+        0,
+        condition="no_video",
+        demo_count=50,
+        sampling_mode="without_replacement",
+    ) == values[0]
 
 
 def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
@@ -576,6 +641,18 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
         task_id=3,
         init_state_id=4,
     )
+    no_video_adapter = {**adapter, "video_condition": "no_video"}
+    no_video = expected_expert_manifold_episode_evidence(
+        no_video_adapter,
+        suite="libero_goal",
+        task_id=3,
+        init_state_id=4,
+        lora_reference="identity",
+    )
+    assert no_video["teacher_demo_indices"] == no_video[
+        "teacher_reference_demo_indices"
+    ]
+    assert no_video["teacher_video_frames_used"] is False
 
 
 def test_video_feature_profile_seal_keeps_formal_input_semantics() -> None:

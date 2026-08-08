@@ -169,7 +169,11 @@ def inspect_expert_manifold_writer_evaluation(
     ):
         raise ExpertManifoldError("Expert-Manifold evaluation task panel changed")
     roles = {key: str(by_key[key]["split_role"]) for key in normalized}
-    mapping = task_video_mapping(normalized, roles, video_condition)
+    mapping = task_video_mapping(
+        normalized,
+        roles,
+        "correct" if video_condition == "no_video" else video_condition,
+    )
     needed = {
         int(row["language_global_task_id"]) for row in mapping
     } | {int(row["video_global_task_id"]) for row in mapping}
@@ -236,6 +240,7 @@ def inspect_expert_manifold_writer_evaluation(
         },
         "information_wall": {
             "writer_input": "exact task language plus one action-hidden teacher video",
+            "no_video_counterfactual": video_condition == "no_video",
             "teacher_action_reads": 0,
             "teacher_state_reads": 0,
             "reward_reads": 0,
@@ -301,6 +306,7 @@ def expected_expert_manifold_episode_evidence(
         "lora_reference": lora_reference,
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_video_kind": adapter["video_condition"],
+        "teacher_video_frames_used": adapter["video_condition"] != "no_video",
         "teacher_video_seed_root": seed,
         "teacher_video_selection_seed": video_selection_seed(
             seed,

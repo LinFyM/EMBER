@@ -134,7 +134,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
 
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> tuple[dict[str, Any], torch.Tensor, str]:
+    ) -> tuple[dict[str, Any], torch.Tensor | None, str]:
         reference = (
             f"{self.evaluation_adapter['checkpoint']['reference']}:"
             f"{suite}:{task_id}:{init_state_id}"
@@ -146,11 +146,14 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             init_state_id=init_state_id,
             lora_reference=reference,
         )
+        condition = str(self.evaluation_adapter["video_condition"])
+        language = self.language_by_id[int(row["language_global_task_id"])]
+        if condition == "no_video":
+            return row, None, language
         teacher = self.store.load(
             int(row["video_global_task_id"]), int(row["teacher_demo_indices"][0])
         )
         frames = torch.from_numpy(teacher.frames).to(self.device, non_blocking=True)
-        condition = str(self.evaluation_adapter["video_condition"])
         if condition == "reversed":
             frames = frames.flip(0)
         elif condition in {"shuffled", "shuffled_keep_first"}:
@@ -160,7 +163,6 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
                 keep_first=condition == "shuffled_keep_first",
             ).to(self.device)
             frames = frames.index_select(0, permutation)
-        language = self.language_by_id[int(row["language_global_task_id"])]
         return row, frames, language
 
     @torch.inference_mode()
@@ -178,41 +180,57 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             for identity in identities
         ]
         rows, frame_batches, languages = zip(*inputs, strict=True)
-        frames = torch.cat(frame_batches)
-        lengths = torch.tensor(
-            [batch.shape[0] for batch in frame_batches],
-            dtype=torch.long,
-            device=self.device,
-        )
-        frame_video_ids = torch.repeat_interleave(
-            torch.arange(len(frame_batches), device=self.device), lengths
-        )
-        video_offsets = torch.cat(
-            (
-                torch.zeros(1, dtype=torch.long, device=self.device),
-                lengths.cumsum(dim=0),
-            )
-        )
         tokens, masks, spans = self.tokenizer(list(languages))
+        batch_size = len(identities)
         started = time.monotonic()
         copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
         self._physical_lora_is_identity = True
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            features = self.encoder(
-                self.policy,
-                frames,
-                frame_video_ids,
-                video_offsets,
-                tokens,
-                masks,
-                spans,
-            )
+            if self.evaluation_adapter["video_condition"] == "no_video":
+                if any(batch is not None for batch in frame_batches):
+                    raise ExpertManifoldError("no-video counterfactual read frames")
+                features = torch.zeros(
+                    batch_size,
+                    self.encoder.phase_slots,
+                    self.encoder.feature_width,
+                    dtype=torch.float32,
+                    device=self.device,
+                )
+            else:
+                if any(batch is None for batch in frame_batches):
+                    raise ExpertManifoldError("video-conditioned episode lost frames")
+                concrete_batches = tuple(
+                    batch for batch in frame_batches if batch is not None
+                )
+                frames = torch.cat(concrete_batches)
+                lengths = torch.tensor(
+                    [batch.shape[0] for batch in concrete_batches],
+                    dtype=torch.long,
+                    device=self.device,
+                )
+                frame_video_ids = torch.repeat_interleave(
+                    torch.arange(batch_size, device=self.device), lengths
+                )
+                video_offsets = torch.cat(
+                    (
+                        torch.zeros(1, dtype=torch.long, device=self.device),
+                        lengths.cumsum(dim=0),
+                    )
+                )
+                features = self.encoder(
+                    self.policy,
+                    frames,
+                    frame_video_ids,
+                    video_offsets,
+                    tokens,
+                    masks,
+                    spans,
+                )
             generated = self.writer(features)
         elapsed = time.monotonic() - started
         if not math.isfinite(elapsed) or elapsed < 0:
             raise ExpertManifoldError("Expert-Manifold generation timing changed")
         result = []
-        batch_size = len(identities)
         for index, row in enumerate(rows):
             state = {
                 name: value[index].detach() for name, value in generated.items()

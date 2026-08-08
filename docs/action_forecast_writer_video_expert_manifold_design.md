@@ -330,3 +330,45 @@ allocated/reserved=`10,504,039,936/19,232,980,992` bytes，teacher action/state/
 reads合计0，worker logs无error。仓库seal入口已生成canonical `cache_manifest.json`，其
 training commit为`222d3ac72591bf44fa46ff436ace22d8cd5afa35`，information-wall计数全0。该cache
 只是冻结的action-hidden Writer输入，不是新Writer性能或视频因果证据。
+
+## 19. Phase-centered dynamic value与no-video裁决
+
+正式cache完成后，对全部24 tasks×50 videos=`1,200`条`[16,3072]`innovation做了只读CPU
+分析。每条视频的phase-DC能量占比中位`.98057`，真正temporal residual只有`.01943`；然而
+同task leave-one-video-out的ordered temporal-template cosine中位仍为`.88284`，reversed为
+`-.32402`，16-phase shuffle proxy为`-.02194`。因此frozen encoder既保留了稳定、有方向的
+顺序证据，也同时提供了一个能量大约50倍、足以让constant-target重建绕过时序的静态task捷径。
+
+expert targets本身没有坍缩：step1000 raw target的task-centered effective rank为`19.45`，raw
+mean只占平均target能量`.41465`，B-factor跨task cosine中位`.10245`。temporal task geometry与
+raw/B target geometry的Spearman为`.46046/.45087`。在leave-one-task linear transfer proxy中，
+phase-centered one-shot对B target的cosine中位`.38607`，与DC-only的`.39500`同档；但reversed/
+phase-shuffled分别降到`.20667/.26386`。同一proxy改为3-shot/5-shot只升到`.39051/.39290`，所以
+当前首要限制不是shot数量，而是允许静态DC直接成为LoRA value。shuffle数字只属于sealed phase
+cache上的诊断proxy；正式评测仍须先重排raw sampled frames再完整encoder forward。
+
+据此，在第一次meta GPU profile前原位收紧唯一canonical decoder，不保留旧可执行分支：
+
+```text
+routing_memory_t = W(video_innovation_t)
+K_t = RMSNorm(routing_memory_t) + phase_key_t
+V_t = routing_memory_t - Mean_phase(routing_memory)
+LoRA = topological_axial_decode(Q_chunk,rank, K, V)
+```
+
+完整joint+Action-Expert特征仍参与phase key/routing，但只有phase-centered video dynamics能提供
+content value。任意zero innovation或所有phase完全相同的非零输入都必须精确输出template-A/
+zero-B identity；正常ordered输入仍能通过phase keys改变完整LoRA。CPU原型和retained tests验证了
+constant/zero identity、ordered-vs-reversed差异，以及fresh第一步打开output/scale、第二步梯度到达
+input projection、cross-attention和phase keys。这个变化不增加language-only route、scalar gate、
+第二套LoRA或额外输入，也不改变已封存feature cache。
+
+严格评测同时新增第六个`no_video`反事实：保留correct arm的task/state/policy RNG、teacher demo
+ordinal和exact task language，但不读取teacher frames，直接把数学上matched baseline-minus-baseline
+的video innovation置零，再完整运行Writer。它必须逐episode生成identity LoRA，并应与同panel frozen
+source policy逐row一致。正式方法输入仍是恰好一条action-hidden video；`no_video`只作因果control，
+不成为部署或训练分支。
+
+可复现CPU入口为`scripts/analyze_expert_manifold_feature_dynamics.py`。在full24 step1500/2000完成后，
+同一脚本将复算target evolution；统一expert step仍以development-train closed-loop为主证据，若晚期
+增益进入平台而B-target可迁移性继续下降，则优先较早的near-max统一step，不按task混合checkpoint。

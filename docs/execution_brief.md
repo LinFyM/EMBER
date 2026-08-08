@@ -8,6 +8,8 @@
 
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
+第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、只有
+phase-centered projected dynamics提供LoRA value；zero/phase-constant输入精确回到identity。
 
 24套train-task rank-16 policy experts已在clean`81101fe`完成统一step1000：
 `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`包含6份worker summary、
@@ -17,7 +19,7 @@ action loss为`.115355/.107207/.105372`；这不是closed-loop选点证据。若
 
 Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuation`：完整expert-bank evaluator/
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
-checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合，正式feature cache也已完成并seal。
+checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
 尚未完成A40 meta profile、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
@@ -39,6 +41,16 @@ config已seal。正式cache已在clean pushed`222d3ac`用六个独立workers完�
 `[50,16,3072]` BF16/task、约113MiB、peak reserved=`19.23GB`且forbidden reads合计0，
 canonical manifest已seal。r6高并发因主机内存、r4因A40 inference activation OOM而在有效结果前终止，均不得resume；
 唯一有效评测是每卡3 replicas的r3 roots。
+
+full24×50 cache只读CPU审计显示phase-DC/temporal能量中位=`.98057/.01943`，但ordered temporal
+template cosine中位`.88284`，reversed/phase-shuffled=`-.32402/-.02194`；temporal geometry与
+expert B geometry Spearman=`.45087`。phase-centered one-shot B proxy correct/reversed/shuffled=
+`.38607/.20667/.26386`，3/5-shot correct仅`.39051/.39290`，故当前保持one-shot并先封静态value捷径。
+对应实现已通过architecture hard gate、聚焦25项和全仓217项CPU测试，尚未profile或训练。
+
+全24 experts的exact-resume1000→2000已于2026-08-08 17:38 CST从clean`81101fe`沿原root启动。
+6 workers固定`gpu01:0,1,2,4,5,7`与NUMA，显式`NCCL_P2P_DISABLE=1`；每worker依次续原4 tasks，
+保存1500/2000。GPU3他人进程与GPU6未触碰。partial checkpoint不作结论；全部完成后评1500/2000。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train

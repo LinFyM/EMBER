@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
 from ember.pi05_eval.launcher import (
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
@@ -184,14 +185,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--expert-manifold-video-data-root", type=Path)
     parser.add_argument(
         "--expert-manifold-video-condition",
-        choices=(
-            "correct",
-            "same_task_other",
-            "cross_suite_wrong",
-            "shuffled",
-            "shuffled_keep_first",
-            "reversed",
-        ),
+        choices=tuple(sorted(VIDEO_CONDITIONS)),
     )
     parser.add_argument(
         "--expert-manifold-video-sampling",

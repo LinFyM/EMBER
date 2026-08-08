@@ -9,6 +9,8 @@
   topology、meta、source、checkpoint manifest等既有门全部保留。
 - 同worktree、跨worktree、错relative path、错bytes回归闭合；聚焦36/36、真实macro50 formal inspector、
   全仓189/189与compileall/diff check通过。下一步clean push后使用全新replacement root。
+- 修复已clean push为`d59841e`；r2 frozen branch/worktree、fresh output/log/tmux和exact command已登记，
+  保持原400-row科学合同与6卡r3/batch4资源合同，等待重新live preflight。
 
 ## 2026-08-09 Expert-Manifold formal0→50完成并预注册correct400
 

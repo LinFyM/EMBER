@@ -10,6 +10,8 @@
   修复只替换这一条路径表示，并额外补上此前未检查的config bytes；没有放宽科学配置或模型身份。
 - 真实macro50 artifact在修复后通过，错relative path和错bytes均fail-close。首次评测没有GPU或结果，
   不能计为模型失败，也不能复用其root。
+- 修复seal为clean pushed`d59841e`；replacement只更换evaluator commit/root，不改变checkpoint、panel、
+  视频schedule、policy RNG或任何模型数值，因此后续r2结果仍是预注册macro50 correct arm。
 
 ## 2026-08-09 Macro50 formal训练观察
 

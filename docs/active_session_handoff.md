@@ -155,6 +155,9 @@
   scoped修复改为同一仓库相对路径+bytes/schema，并继续逐项比较完整method/meta/source/checkpoint；
   错路径/bytes回归仍拒绝。聚焦36/36、真实macro50 inspector与全仓189/189通过，等待clean push后
   用replacement fresh root重新live启动。
+- 根修已clean push为`d59841e`；replacement frozen branch/worktree、r2 root/log/tmux和完整exact command
+  已登记在`task_plan.md`顶部。它只替换失败root和evaluator commit，correct/without-replacement、
+  macro50 checkpoint、400 states、6卡×r3、每卡3 generators、batch4与paired合同全部不变。
 
 ## 0.0 已完成并负裁决：K4 Phase-Aligned Language-Axial Semantic-Procedure Writer
 

@@ -152,6 +152,10 @@ evaluation使用两个合法frozen worktree，旧inspector却比较config绝对�
 现要求同一仓库相对路径和相同bytes/schema，并继续比较完整科学合同。错path/bytes回归、真实macro50
 inspector、聚焦36/36和全仓189/189均通过；修复clean push前不创建replacement root。
 
+根修已clean push为`d59841e`。replacement使用新的frozen eval branch/worktree与r2 output/log/tmux；
+科学panel、macro50 checkpoint、6卡×r3、每卡3 generators和batch4不变，exact command取`task_plan.md`
+顶部。启动前必须重新live比较两节点且旧失败root永久不得resume。
+
 未来任何GPU工作仍须live比较`gpu01/gpu02`，只用实时空闲卡、跨节点最多6张；不干扰他人进程。
 BCI多卡launcher显式`NCCL_P2P_DISABLE=1`，不运行SHA-256/MD5内容校验或大量防御扫描。
 

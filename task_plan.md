@@ -147,6 +147,17 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
   工程缺陷，不是科研负结果。canonical现只把路径比较改为同一仓库相对路径，同时新增bytes门并保留
   所有既有语义逐项相等；错relative path或错bytes仍拒绝。聚焦36/36、真实macro50 inspector和全仓
   189/189通过。旧root不得resume，replacement必须等该修复clean push后另起新root。
+- 修复已由clean pushed`d59841e`封存。replacement evaluator固定frozen branch/worktree=
+  `codex/expert-manifold-m050-eval-r2-20260809`和
+  `/data1/user/ymdai/worktrees/EMBER-expert-manifold-m050-eval-r2-20260809`；新output/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_r2_d59841e_20260809`、
+  `runs/logs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_r2_d59841e_20260809.log`
+  和`ember_expert_manifold_m050_correct_r2_d59841e`。科学panel、checkpoint、6卡×r3、每卡3
+  generators、batch4和全部验收门不变；exact replacement command：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_bci_correct400_noreplacement_seed7_macro0050_r2_d59841e_20260809 --role validation --mode formal --state-count 50 --replicas-per-gpu 3 --writer-generators-per-gpu 3 --writer-generation-batch-size 4 --gpu-indices 0,1,2,4,5,7 --expert-manifold-config configs/pi05_video_expert_manifold_v1.json --expert-manifold-checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_writer_formal_fresh0_800_r6_step2000_fcaf733_20260809/checkpoints/macro_00000050 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
 
 ### Expert-Manifold meta-Writer flat-reduction reprofile launch合同（2026-08-09）
 

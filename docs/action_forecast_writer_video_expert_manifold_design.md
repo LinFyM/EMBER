@@ -548,3 +548,5 @@ formal checkpoint的config身份必须允许training和evaluation处于不同cle
 仓库相对authority路径、schema和bytes，并继续逐项比较method、information wall、topological writer、
 meta training、source与checkpoint manifest；不得把机器上的worktree绝对前缀当作科学身份，也不得只按
 basename放宽。首次macro50评测暴露并根修了该工程冲突，失败发生在0 CUDA worker/0 row，不构成科研结果。
+根修已由clean pushed`d59841e`封存；replacement只能使用全新root，并保持原macro50 correct400的全部
+scientific pairing和资源边界。

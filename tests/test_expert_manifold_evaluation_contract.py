@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import asdict
 from pathlib import Path
 
@@ -40,7 +41,8 @@ CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
 def _formal_training_checkpoint(
     tmp_path: Path, *, config_path: Path, config_bytes: int
 ) -> tuple[Path, dict, dict]:
-    config = load_expert_manifold_config(CONFIG)
+    config = copy.deepcopy(load_expert_manifold_config(CONFIG))
+    config["meta_training"]["formal_run"]["status"] = "sealed"
     source = {
         "source_run": "source",
         "checkpoint": "checkpoint",

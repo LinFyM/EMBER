@@ -148,11 +148,11 @@ def build_writer_lora_cache_descriptor(
         "episode_evidence_schema": writer_episode_schema(adapter),
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
-        "precision": "bfloat16",
+        "precision": "bfloat16_compute_float32_lora_state",
     }
     identity = _cache_identity_payload(contract, recipe)
     entry_count = len(writer_cache_requests(contract))
-    tensor_bytes = entry_count * lora_parameter_count * torch.bfloat16.itemsize
+    tensor_bytes = entry_count * lora_parameter_count * torch.float32.itemsize
     return {
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
         "root": str(root.resolve()),

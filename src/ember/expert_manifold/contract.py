@@ -23,6 +23,9 @@ from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = "ember_pi05_video_expert_manifold_v1"
 WORKER_CONTRACT_SCHEMA = "ember_pi05_task_expert_worker_launch_v1"
+TOPOLOGY_ADDRESS_BINDING = (
+    "normalized_dynamic_times_normalized_chunk_plus_rank_address"
+)
 
 
 class ExpertManifoldError(RuntimeError):
@@ -61,6 +64,87 @@ def _topological_writer_matches(writer: Mapping[str, Any]) -> bool:
         == "phase_centered_projected_video_sqrt_normalized_causal_prefix_integral_only"
         and writer.get("routing_key_path")
         == "full_projected_video_innovation_plus_phase_keys"
+        and writer.get("topology_address_binding") == TOPOLOGY_ADDRESS_BINDING
+        and writer.get("output")
+        == "zero_initialized_address_bound_chunk_values_plus_per_chunk_scale"
+    )
+
+
+def _exact_fields_match(
+    observed: Mapping[str, Any], expected: Mapping[str, Any]
+) -> bool:
+    return all(
+        type(observed.get(name)) is type(value) and observed.get(name) == value
+        for name, value in expected.items()
+    )
+
+
+def _integer_fields_match(
+    observed: Mapping[str, Any], expected: Mapping[str, int]
+) -> bool:
+    try:
+        return all(int(observed.get(name, -1)) == value for name, value in expected.items())
+    except (TypeError, ValueError):
+        return False
+
+
+def _meta_profile_evidence_matches(profile: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        profile,
+        {
+            "device": "NVIDIA A40",
+            "distributed_model_wrapper": "none",
+            "gradient_reduction": (
+                "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
+            ),
+            "nccl_p2p_disable": "1",
+            "nccl_algo": "Ring",
+            "nccl_proto": "Simple",
+            "topology_address_binding": TOPOLOGY_ADDRESS_BINDING,
+            "exact_resume_scientific_metrics_equal": True,
+            "exact_resume_writer_bytes_equal": True,
+            "exact_resume_rng_bytes_equal": True,
+            "exact_resume_optimizer_scheduler_semantic_equal": True,
+        },
+    ) and _integer_fields_match(
+        profile,
+        {"world_size": 6, "oom_count": 0, "nonfinite_count": 0},
+    )
+
+
+def _meta_online_smoke_evidence_matches(smoke: Mapping[str, Any]) -> bool:
+    return _exact_fields_match(
+        smoke,
+        {
+            "device": "NVIDIA A40",
+            "checkpoint_mode": "profile",
+            "video_condition": "correct",
+            "video_sampling": "without_replacement",
+            "topology_address_binding": TOPOLOGY_ADDRESS_BINDING,
+            "writer_modules_released": True,
+            "source_policy_reused_for_rollout": True,
+            "worker_return_codes": [0, 0, 0],
+            "success_interpretation": "execution_smoke_only_not_performance_evidence",
+        },
+    ) and _integer_fields_match(
+        smoke,
+        {
+            "checkpoint_macro": 3,
+            "validation_task_count": 8,
+            "scientific_rows": 8,
+            "generated_entries": 8,
+            "generated_batches": 2,
+            "generation_batch_size": 4,
+            "cache_entries": 8,
+            "retry_count": 0,
+            "failure_count": 0,
+            "teacher_action_reads": 0,
+            "teacher_state_reads": 0,
+            "reward_reads": 0,
+            "terminal_reads": 0,
+            "oom_count": 0,
+            "nonfinite_count": 0,
+        },
     )
 
 
@@ -79,44 +163,8 @@ def _meta_formal_seal_matches(meta: Mapping[str, Any]) -> bool:
         and int(formal.get("expected_world_size", -1)) == 6
         and int(formal.get("tasks_per_rank", -1)) == 4
         and formal.get("checkpoint_macros") == [50, 100, 200, 400, 600, 800]
-        and profile.get("device") == "NVIDIA A40"
-        and int(profile.get("world_size", -1)) == 6
-        and profile.get("distributed_model_wrapper") == "none"
-        and profile.get("gradient_reduction")
-        == "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
-        and profile.get("nccl_p2p_disable") == "1"
-        and profile.get("nccl_algo") == "Ring"
-        and profile.get("nccl_proto") == "Simple"
-        and profile.get("exact_resume_scientific_metrics_equal") is True
-        and profile.get("exact_resume_writer_bytes_equal") is True
-        and profile.get("exact_resume_rng_bytes_equal") is True
-        and profile.get("exact_resume_optimizer_scheduler_semantic_equal") is True
-        and int(profile.get("oom_count", -1)) == 0
-        and int(profile.get("nonfinite_count", -1)) == 0
-        and smoke.get("device") == "NVIDIA A40"
-        and smoke.get("checkpoint_mode") == "profile"
-        and int(smoke.get("checkpoint_macro", -1)) == 3
-        and int(smoke.get("validation_task_count", -1)) == 8
-        and int(smoke.get("scientific_rows", -1)) == 8
-        and smoke.get("video_condition") == "correct"
-        and smoke.get("video_sampling") == "without_replacement"
-        and int(smoke.get("generated_entries", -1)) == 8
-        and int(smoke.get("generated_batches", -1)) == 2
-        and int(smoke.get("generation_batch_size", -1)) == 4
-        and int(smoke.get("cache_entries", -1)) == 8
-        and smoke.get("writer_modules_released") is True
-        and smoke.get("source_policy_reused_for_rollout") is True
-        and smoke.get("worker_return_codes") == [0, 0, 0]
-        and int(smoke.get("retry_count", -1)) == 0
-        and int(smoke.get("failure_count", -1)) == 0
-        and int(smoke.get("teacher_action_reads", -1)) == 0
-        and int(smoke.get("teacher_state_reads", -1)) == 0
-        and int(smoke.get("reward_reads", -1)) == 0
-        and int(smoke.get("terminal_reads", -1)) == 0
-        and smoke.get("success_interpretation")
-        == "execution_smoke_only_not_performance_evidence"
-        and int(smoke.get("oom_count", -1)) == 0
-        and int(smoke.get("nonfinite_count", -1)) == 0
+        and _meta_profile_evidence_matches(profile)
+        and _meta_online_smoke_evidence_matches(smoke)
     )
 
 

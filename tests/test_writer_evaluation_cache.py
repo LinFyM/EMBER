@@ -160,6 +160,12 @@ def test_expert_manifold_cache_declares_one_shot_episode_evidence(tmp_path: Path
     assert descriptor["generation_recipe"]["cache_key_algorithm"] == (
         "one_entry_per_episode_one_shot_video_v1"
     )
+    assert descriptor["generation_recipe"]["precision"] == (
+        "bfloat16_compute_float32_lora_state"
+    )
+    assert descriptor["estimated_tensor_bytes"] == (
+        descriptor["entry_count"] * lora.parameter_count * torch.float32.itemsize
+    )
 
 
 def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(tmp_path: Path) -> None:

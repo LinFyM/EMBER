@@ -252,6 +252,7 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
             for _ in range(axial_blocks)
         )
         self.output_norm = RMSNorm(memory_width)
+        self.address_norm = RMSNorm(memory_width)
         self.output_projection = torch.nn.Linear(memory_width, chunk_width, bias=False)
         self.chunk_log_scale = torch.nn.Linear(memory_width, 1, bias=False)
         self.chunk_log_scale_offset = torch.nn.Parameter(
@@ -289,10 +290,12 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
         normalized = self.memory_norm(routing_memory)
         keys = normalized + self.phase_keys[None]
         batch = routing_memory.shape[0]
-        query = (
+        topology_address = (
             self.chunk_queries[:, None, :] + self.rank_queries[None, :, :]
-        ).reshape(1, self.layout.chunk_count * self.layout.rank, self.memory_width)
-        query = query.expand(batch, -1, -1)
+        )
+        query = topology_address.reshape(
+            1, self.layout.chunk_count * self.layout.rank, self.memory_width
+        ).expand(batch, -1, -1)
         value, _ = self.cross_attention(
             query, keys, dynamic_memory, need_weights=False
         )
@@ -301,8 +304,8 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
         )
         for block in self.blocks:
             value = block(value)
-        normalized_output = self.output_norm(value)
-        raw_direction = self.output_projection(normalized_output)
+        addressed_value = self.bind_topology_address(value, topology_address)
+        raw_direction = self.output_projection(addressed_value)
         chunk_state = value.mean(dim=2)
         log_scale = (
             self.chunk_log_scale(chunk_state).squeeze(-1)
@@ -317,6 +320,23 @@ class VideoConditionedTopologicalWriter(torch.nn.Module):
         output = direction * log_scale.exp()[:, :, None, None]
         output = output.masked_fill(~self.valid_value_mask[None, :, None, :], 0.0)
         return output, log_scale
+
+    def bind_topology_address(
+        self, dynamic_value: torch.Tensor, topology_address: torch.Tensor
+    ) -> torch.Tensor:
+        """Bind static LoRA coordinates to video values without a static output path."""
+
+        expected_dynamic = (
+            self.layout.chunk_count,
+            self.layout.rank,
+            self.memory_width,
+        )
+        if dynamic_value.shape[-3:] != expected_dynamic or topology_address.shape != (
+            *expected_dynamic[:2],
+            self.memory_width,
+        ):
+            raise ExpertManifoldError("topological address binding changed shape")
+        return self.output_norm(dynamic_value) * self.address_norm(topology_address)[None]
 
     def forward_values(self, video_innovation: torch.Tensor) -> torch.Tensor:
         values, _ = self.forward_values_with_scale(video_innovation)

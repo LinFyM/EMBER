@@ -6,6 +6,40 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节后续历史条目）**：address-binding learned Writer的
+macro50 strict correct400已完整结束并正式负裁决。唯一有效root为
+`runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`，
+结果=`75/400`、nonzero breadth=`4/8`，逐task按Long/Goal/Object/Spatial为
+`[2,0]/[1,47]/[25,0]/[0,0]`。72/72 jobs、400 unique rows/LoRA、18 workers均首次完成，
+0 retry/error/OOM/nonfinite；teacher frames和四类forbidden-read证据闭合。相对旧addressless
+macro50，它在exact task/state/video/env/policy-noise公共前缀panel上gained/lost=`31/4`、exact
+`p=3.47e-6`；相对source base也是`31/4`。该结构修复有真实净增，但远低于v6-fast `143`和长期
+`>150`门，且能力仍集中于Goal-6与Object-1，所以原root不得resume到100，也不做该checkpoint五臂。
+
+完整400-LoRA精确effective-BA审计位于同root的
+`generated_lora_geometry_full400_v1.json`。norm/stable-rank/top-energy中位=
+`3.201/1.318/.778`，16/16 coordinates active，说明失败不是能量不足或近rank1；但same-task不同
+video cosine中位=`.99791`、cross-task=`.94197`、八个task均值之间=`.94270`，nearest train-expert
+cosine仅`.12734`。对比真实step2000 experts跨task中位约`.100`，最早剩余断点是learned decoder
+把不同task压成公共LoRA方向。macro3八taskcosine曾为`.54184`而macro50升至约`.94`，训练正在向
+共同均值收缩，不支持“再训一段自然分离”。严格panel与配对审计为同root
+`strict_panel_and_paired_audit_v1.json`。
+
+下一唯一canonical候选已由CPU leave-one-task-out证据选定为
+**Causal Barycentric Topological Writer**，仍属于同一Video-Conditioned Expert-Manifold方法，
+保持one-shot、exact language+一条action-hidden video和video-only dynamic value。它不再训练
+68M decoder直接回归1.29M坐标，而用phase-centered causal video representation在24个train-video
+centroid上求ridge=`.3`的affine barycentric coefficients，再分别混合168个expert chunk的方向与
+log-scale并重构完整rank-16 LoRA；zero/phase-constant representation令全部coefficients为0并精确
+返回source identity，language没有独立value路径。LOO artifact为
+`runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json`：每折只用
+其余23 experts，topological correct/reversed/phase-shuffled effective target cosine中位=
+`.38302/.09900/.18539`，correct margins=`.28403/.19763`；correct LoRA
+norm/stable-rank/top-energy=`3.84385/1.15056/.89540`、16 coordinates active，已同时进入expert方向与
+能量形态。它只是train-task LOO机制证据，phase shuffle也是16-slot proxy，不是validation closed-loop
+成绩；Goal/Long若干task margin仍弱。下一步先更新authority并实现唯一canonical路径和CPU合同，之后
+只做一次live A40 online generation smoke；通过才启动新strict correct400。当前没有GPU进程或实验在跑。
+
 - **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现并完成
   两道新图专属A40工程门。六卡fresh0→1/resume1→3与独立contiguous0→3科学指标、Writer/RNG及
   optimizer/scheduler语义一致；单卡online smoke又完成8/8唯一task/state rows、8套唯一FP32 LoRA、

@@ -1,5 +1,38 @@
 # EMBER Findings
 
+## 2026-08-09 Address-binding 75/400与Causal Barycentric设计裁决
+
+- address-binding macro50的正式strict correct400=`75/400`、breadth=`4/8`，逐task为Long
+  `[2,0]`、Goal `[1,47]`、Object `[25,0]`、Spatial `[0,0]`。400-row/LoRA、72 jobs、18 workers和
+  信息墙全部有效。相对exact同video schedule的旧addressless macro50，gained/lost=`31/4`、exact
+  `p=3.47e-6`，说明乘性地址修复确实进入了closed loop；但净增几乎只形成Goal-6和Object-1两种能力，
+  远低于v6-fast `143`与长期门，不能续训或做昂贵五臂。
+- full400 LoRA不是旧式能量/秩坍缩：norm中位`3.20095`、stable rank`1.31757`、top singular
+  energy`.77753`、16 coordinates active。真正病灶是方向同质化：same-task不同video cosine中位
+  `.99791`，cross-task `.94197`，task-mean cross-task `.94270`；最近train expert仅`.12734`。
+  每task video-centered variance只约`.00118--.01801`。macro3八task pairwise中位`.54184`到macro50
+  反而升高，证明训练先吸收了24 targets的公共raw-factor均值，而没有成熟为task residual。
+- 这与expert target统计吻合：raw expert mean占约`.414`能量，而centered target仍有约19.54 effective
+  dimensions；原loss在129万坐标上优先降低公共均值误差，direction项到macro50仍约`.819`，所以“更大
+  decoder/更多步”没有证据会自动学到centered manifold。最早剩余接口是
+  `causal video representation → task-discriminative expert coordinates`。
+- 闭式LOO把每个train task及其expert整折拿掉，只用其余23个video centroids与experts预测held task。
+  causal ridge `.3`的直接raw-factor affine得到effective target cosine中位`.38838`，但近正交expert
+  相消使norm仅`1.740`，不符合健康能量。改为168 chunks逐项混合normalized expert direction、affine
+  插值chunk log-scale并限制在train-expert envelope后，cosine仍为`.38302`，norm恢复到`3.84385`，
+  stable rank/top energy=`1.15056/.89540`、top4 coordinate energy`.27048`，接近真实expert
+  `4.21249/1.12877/.90846/~.26`。
+- 同一LOO中reversed/phase-shuffled cosine降为`.098995/.185395`，correct margin=
+  `.284026/.197626`。因此因果phase representation不仅区分task，还能把正确顺序映到更接近held expert
+  的完整LoRA；这比事后向loss加一个漂亮margin更接近用户要求的“正确视频提供有效动作知识”。但这仍是
+  train-task机制代理：16-slot shuffle不等同formal raw-frame shuffle，Goal/Long部分task margin很弱，
+  最终只认validation five-arm closed loop。
+- 由此选择Causal Barycentric Topological Writer作为下一唯一canonical候选。它固定step2000 experts和
+  50-video train centroids；部署时一条视频的phase-centered causal value求24个affine coefficients，
+  再直接重构完整rank16 LoRA。zero/phase-constant value令coefficients全零，language没有独立value，
+  所以没有language-only LoRA bypass。learned coefficient reader、few-shot和显式negative training均
+  延后，只有闭式候选的strict结果证明哪一接口仍不足后再单变量引入。
+
 ## 2026-08-09 Address-binding macro50内部裁决
 
 - fresh formal0→50本身工程健康，但最重要的结论来自同一train24 demo0纵向对照。cross-attention和

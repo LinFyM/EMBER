@@ -668,3 +668,92 @@ top4 coordinate energy也为`.8694`。因此新图可能学到一个较健康但
 24个task。唯一下一裁决是macro50 strict correct400：不过absolute/breadth门就不resume；若通过才继续
 训练，并用same/wrong/shuffled/reversed/no-video区分task公共方向与真实视频时序知识。本阶段不因内部
 几何漂亮而改变one-shot、target或loss。
+
+## 29. Address-binding负裁决与Causal Barycentric Topological Writer（2026-08-09）
+
+### 29.1 闭环与最早剩余断点
+
+macro50 strict correct400自然完成为`75/400`、breadth=`4/8`，逐task按Long/Goal/Object/Spatial为
+`[2,0]/[1,47]/[25,0]/[0,0]`。相对exact同teacher-video schedule的旧图gained/lost=`31/4`，说明
+address binding不是形式修复；但它仍明显低于v6-fast`143`和长期`>150`门，而且新增能力集中于两个task。
+该checkpoint永久停止，不resume100、不做五臂。
+
+400套LoRA的norm/stable-rank/top-energy中位=`3.20095/1.31757/.77753`且16 coordinates active，
+所以旧能量与近rank1故障已消失。新的决定性失败是same-task不同video、cross-task和task-mean
+effective cosine中位分别为`.99791/.94197/.94270`；最近train expert仅`.12734`。真实experts跨task
+中位约`.100`。结合macro3八task pairwise `.54184`，训练到50反而向公共方向收缩。raw expert mean
+本来占约`.414` target energy，而centered target仍有19.54 effective dimensions；让高容量decoder在
+1.29M raw factor坐标上做普通重建，最容易先学公共均值，不能靠继续训练证明会自然恢复task residual。
+
+### 29.2 选择的闭式流形坐标
+
+下一canonical不再训练完整权重decoder。固定train24 step2000 experts及其50条action-hidden视频的
+causal centroids。对一条部署视频，仍先由frozen π0.5计算exact-language-conditioned
+`video_innovation[16,3072]`，再定义唯一dynamic query：
+
+```text
+x = mean_phase(phase_centered_causal_memory(video_innovation))
+```
+
+将24个train centroids单位化；以它们在当前fold/部署basis中的均值为原点，求ridge `.3`的kernel
+barycentric coordinates。对basis matrix `C`和query `x`：
+
+```text
+w = (C C^T + 0.3 I)^-1 C (x - mean(C))
+alpha = w + (1 - sum(w)) / K
+```
+
+其中正式部署`K=24`，LOO证据每折`K=23`。正常非零video下`sum(alpha)=1`；若causal representation
+精确为零（no-video或phase-constant），直接令`alpha=0`，完整输出必须是template-A/zero-B identity。
+exact language只通过frozen joint video innovation决定从画面读什么，不作为独立coefficient或LoRA
+value，因此没有language-only bypass。
+
+### 29.3 完整topological LoRA重构
+
+每个expert仍按既有layout tokenized为`T[k,168,16,512]`。对每个chunk分别保存其有效值RMS
+`s[k,c]`和unit-RMS方向`U[k,c,:,:]`。视频坐标只进行：
+
+```text
+D[c] = sum_k alpha[k] * U[k,c]
+direction[c] = unit_rms(D[c])
+log_scale[c] = clamp(sum_k alpha[k] * log(s[k,c]), expert_min[c], expert_max[c])
+token[c] = direction[c] * exp(log_scale[c])
+```
+
+padding继续mask，随后用同一layout detokenize为完整38-target rank-16 public LoRA。静态experts提供的是
+训练形成的policy-effective basis，不是第二套部署LoRA；每个episode只产生和挂载一套最终LoRA。
+chunk-wise scale envelope是expert manifold坐标的一部分，不是失败checkpoint后的global scale、B-only
+residual或confidence gate。one-hot coefficient必须精确重建对应expert；zero coefficient必须精确identity。
+
+### 29.4 CPU LOO证据与边界
+
+artifact=
+`runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json`。每个fold完全
+拿掉一个task及其expert，仅用其余23个basis预测held task的50条视频。直接raw-factor affine的
+effective target cosine为`.38838`，但norm仅`1.740`，证实近正交experts线性相消，故不采用。
+topological direction/log-scale重构给出：
+
+| arm | target cosine median | LoRA norm median | stable rank | top singular energy |
+| --- | ---: | ---: | ---: | ---: |
+| correct | `.38302` | `3.84385` | `1.15056` | `.89540` |
+| phase-shuffled proxy | `.18539` | `3.82694` | `1.18181` | `.87672` |
+| reversed | `.09900` | `3.82310` | `1.21235` | `.86204` |
+
+correct相对reversed/shuffled margin=`.28403/.19763`；16 coordinates始终active，correct top4 coordinate
+energy=`.27048`，与expert约`.26`同档。该证据同时解决当前首要的task direction与energy形态，而且
+顺序破坏明确远离held expert。它仍不是closed-loop：LOO只模拟unseen task，16-slot shuffle不是formal
+raw-frame shuffle，Goal/Long若干task margin弱，不能据此宣称达标。
+
+### 29.5 实现、证据门与后备路线
+
+1. 唯一canonical runtime原位替换learned address-binding decoder；旧model/trainer/checkpoint只由Git和
+   artifacts保留，不并行执行。首版没有meta optimizer或Writer checkpoint，identity由固定basis资产定义。
+2. CPU必须覆盖basis/task identity、one-hot exact expert、zero/phase-constant identity、deterministic
+   solve、coefficient sum、scale envelope、完整LoRA shape/finite及ordered/reversed不同。
+3. clean/push后只做单张live空闲A40的8-task online feature→LoRA cache→release→rollout smoke；不需要
+   六卡训练profile。通过后才允许全新strict correct400。
+4. correct400必须同时提高absolute、breadth和held LoRA task separation才继续。达到可信候选后，用
+   same/wrong/shuffled/reversed/no-video的严格raw-frame paired five-arm裁决视频因果性。
+5. 若闭式坐标方向正确但held interpolation不足，下一单变量才是在同一24-dimensional coordinate target上
+   训练小型video coefficient reader；不恢复129万坐标hyperdecoder。few-shot只在one-shot same-task
+   方差成为最早限制时加入，现有1/3/5-shot proxy几乎持平，首版继续one-shot。

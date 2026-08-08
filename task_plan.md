@@ -97,8 +97,21 @@
   1,200 one-shot conditions；地址绑定把axial后的chunk/rank centered energy从约`5.64e-6/6.14e-6`
   恢复到addressed `.493/.477`和output `.467/.616`。own-expert effective cosine中位由旧图约`.0108`
   提高到`.1342`，但跨task generated LoRA cosine仍高达`.8686`，不能据此resume。
-- [ ] 完成macro50 strict correct400；有可信absolute/breadth趋势才继续，并对候选single checkpoint做
-  完整时序五臂。本轮不同时混入few-shot或新的loss recipe。
+- [x] 完成address-binding macro50 strict correct400与full400几何：`75/400`、breadth=`4/8`，
+  相对exact-same-video旧图gained/lost=`31/4`，但cross-task/task-mean LoRA cosine=
+  `.94197/.94270`且nearest expert仅`.12734`。结构修复有净增但能力集中，拒绝resume100和五臂。
+- [x] 完成Causal Barycentric Topological Writer的CPU leave-one-task-out设计门：每折只用23个
+  experts，ridge `.3`；topological correct/reversed/phase-shuffled target cosine=
+  `.38302/.09900/.18539`，norm/stable/top=`3.84385/1.15056/.89540`。直接raw-factor affine虽
+  cosine `.38838`但norm仅`1.740`，因此不采用；选择按168 chunks分别重构direction/log-scale。
+- [ ] 把barycentric候选写成唯一canonical runtime/config：zero/phase-constant逐tensor identity、
+  one-hot coefficient精确重建expert、24-basis deterministic coefficient solve、chunk scale envelope、
+  ordered/reversed差异、信息墙和完整LoRA shape均需CPU回归；退役address-binding learned decoder的
+  executable，仅由Git和formal artifacts保留历史。
+- [ ] CPU合同与clean/push通过后，live比较`gpu01/gpu02`并只用一张空闲A40完成8-task online
+  feature→coefficients→full LoRA cache→release→source-policy rollout smoke；success不作性能证据。
+  smoke通过后再预注册全新strict correct400；只有absolute、breadth和生成LoRA task分离共同改善才
+  进入五臂或后续learned coefficient reader。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct

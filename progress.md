@@ -1,5 +1,24 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Address-binding strict负裁决与barycentric CPU设计门
+
+- clean eval commit`033db91`的address-binding macro50 correct400自然完成并释放六卡：正式root=
+  `runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`，
+  72/72 jobs、400 rows、400 unique LoRAs、18 workers全exit0，0 retry/error/OOM/nonfinite；score=
+  `75/400`、breadth=`4/8`。严格审计artifact为`strict_panel_and_paired_audit_v1.json`。
+- 相对旧addressless macro50，task/state/env/policy-noise公共前缀和400条teacher video schedule全相同，
+  gained/lost=`31/4`；相对source base也是`31/4`。相对v6-fast为`18/86`，但v6历史teacher schedule
+  不同，已明确标成same-state reference而非same-video严格配对。
+- full400 exact effective-BA artifact=`generated_lora_geometry_full400_v1.json`：norm/stable/top=
+  `3.201/1.318/.778`，same-video/cross-task/task-mean cosine=`.99791/.94197/.94270`，nearest expert=
+  `.12734`。据此正式拒绝同root resume100和五臂。
+- 新CPU-only root=
+  `runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809`完成24 folds×50 videos×
+  correct/reversed/phase-shuffled×两种重构，共7,200套完整LoRA精确审计。选择ridge `.3`和topological
+  direction/log-scale重构；correct/reversed/shuffled effective target cosine=
+  `.38302/.09900/.18539`，correct norm/stable/top=`3.84385/1.15056/.89540`。全过程CPU只读，未启动
+  GPU、未改实验状态；下一步是authority后实现canonical runtime与CPU合同。
+
 ## 2026-08-09 Address-binding formal0→50与strict correct400预注册
 
 - clean pushed launch-record`925e7b1`从identity fresh完成50/50 finite macros、1,200 train24 one-shot

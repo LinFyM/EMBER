@@ -6,6 +6,25 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节后续旧“当前/下一步”）**：address-binding macro50的
+strict correct400已经完成为`75/400`，breadth=`4/8`，不是待启动状态。正式root=
+`runs/outputs/pi05_expert_manifold_writer_addressbind_correct400_noreplacement_seed7_macro0050_925e7b1_20260809`；
+72/72 jobs、400 rows/unique LoRAs、18 workers exit0、0 retry/error/OOM/nonfinite，GPU已释放。相对
+exact-same-video addressless macro50 gained/lost=`31/4`，但逐task高度集中为
+Long `[2,0]`、Goal `[1,47]`、Object `[25,0]`、Spatial `[0,0]`，不达absolute/breadth门；该training
+root和checkpoint永久停止，不resume100、不做五臂。
+
+full400精确几何证明输出形态已有健康能量和矩阵秩（norm/stable/top中位=
+`3.201/1.318/.778`），但cross-task effective cosine中位=`.94197`、task-mean=`.94270`，最近
+train expert cosine仅`.12734`。这比macro3跨task`.54184`更同质，故继续原训练会强化公共方向。
+下一动作不是扩训练步数、few-shot或RL，而是实现design第29节的Causal Barycentric Topological
+Writer：固定step2000 expert basis与train24 action-hidden feature centroids，video causal value只生成
+ridge `.3` barycentric coefficients；168 chunks按expert direction/log-scale分别重构并限制在expert
+scale envelope。LOO23 exact effective cosine correct/reversed/shuffled=`.38302/.09900/.18539`，correct
+norm=`3.84385`，已通过CPU设计门。先完成authority、canonical实现和CPU合同；随后重新live检查
+`gpu01/gpu02`，只用一张空闲A40做online generation/cache/release smoke。smoke通过前禁止新rollout、
+训练或长期实验；当前无GPU工作在运行。
+
 **当前操作覆盖（2026-08-09）**：clean pushed`cd95281`的
 `RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`新图已经通过fresh/resume/contiguous
 六卡profile与单卡online generation/cache/release/rollout smoke。profile三步科学指标精确一致，

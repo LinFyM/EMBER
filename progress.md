@@ -12,6 +12,9 @@
   516.5GB，`/data1` quota=`552,249,764/1,073,741,824 KiB`，profile预计新增低于2GiB。
 - clean pushed`d96f0fb`已封存统一target/config；两个profile roots、fresh/resume/contiguous三条
   exact command及逐rank NUMA、科学metric、step3 writer byte-equality验收门已写入`task_plan.md`。
+- launch前发现frozen safety worktree按预期没有相对`.venv`，故三条命令在任何CUDA初始化前被审计
+  出不可执行；root/log仍不存在。已将launcher原位修正为共享项目venv的绝对`torchrun`路径，不改
+  科学config、设备、输入、输出或随机数。
 
 ## 2026-08-08 Task-expert 2000完成、CPU分析与1500/2000 launch seal
 

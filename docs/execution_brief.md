@@ -17,13 +17,15 @@ absolute门；不运行same/wrong/shuffled/reversed/no-video。
 `generated_lora_geometry_and_coefficients_full400_v1.json`。当前LoRA能量、stable rank、top singular
 energy、active coordinates和q/v/action列几何均已进入expert-like区间；失败不是工程故障或低能量。
 400个坐标平均混合约13个experts，raw factor重构又在`B(c)A(c)`中产生`k!=j`交叉项，导致健康factor
-并不等价于合法的expert effective update。下一操作严格限定为CPU-only：度量共享joint rank-16
-effective-BA basis对24 experts的captured energy/cosine，以及任意coefficient mixture的policy-update
-fidelity。当前不启动GPU、不改正式run状态。
+并不等价于合法的expert effective update。CPU-only门现已完成：pure affine有效组合把norm压到expert
+中位的`.527`，已拒绝；per-target effective direction + expert-envelope log norm保持到`.986`。shared
+rank96再截public rank16后，400 targets的global cosine中位/最小=`.99682/.99532`，24 experts
+captured-energy中位/最小=`.99677/.99331`，通过实现门。当前仍未启动GPU或新正式run。
 
-CPU门若成立，才在唯一canonical runtime中原位把compiler替换为Policy-Effective Barycentric；视频
+现在在唯一canonical runtime中原位把compiler替换为Policy-Effective Barycentric；视频
 representation、ridge coefficients、one-shot输入、expert2000、feature cache、public 38-target rank-16
-topology和zero/no-video identity全部不变。先完成设计authority、实现、CPU合同与clean commit/push；
+topology和zero/no-video identity全部不变。内部effective subspace固定rank96；factor gauge只固定A/B
+表示而不改变`BA`。先完成实现、CPU合同与clean commit/push；
 之后才重新做live GPU/quota preflight和单卡online smoke。contrastive/rectified coefficient reader、
 few-shot、RL、恢复v6或新增order loss均不是本轮变量。
 

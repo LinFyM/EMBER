@@ -18,6 +18,19 @@
 - 当前只做Policy-Effective Barycentric CPU feasibility：比较shared joint rank-16 projection和
   per-query exact mixture compression。没有启动GPU、训练或新长期实验。
 
+## 2026-08-09 Policy-Effective compiler CPU门通过
+
+- CPU只读分析覆盖400组真实recovered coefficients、24个step2000 experts和全部38 targets；输出=
+  `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809/`
+  `policy_effective_compiler_feasibility_full400_rank128_v2.json`。没有启动GPU或修改实验状态。
+- pure affine effective combination的norm中位`2.220`、expert ratio`.527`，因幅度稀释被拒绝。
+  per-target unit-effective-direction + expert-envelope log norm的norm=`4.155`、ratio=`.986`。
+- shared rank96 + public best-rank16对400 queries的captured-energy/cosine中位=
+  `.99365/.99682`、最小=`.99065/.99532`；24 experts captured-energy中位/最小=`.99677/.99331`。
+  full-span rank16的8-task样本中位`.99523`，表明public rank16和rank96 basis均不是首要瓶颈。
+- 已更新design authority，下一步在唯一canonical runtime原位替换raw-factor compiler并重做CPU合同；
+  video representation、ridge coefficients、one-shot与信息墙不变。
+
 ## 2026-08-09 Causal Barycentric strict correct400预注册
 
 - 05:10 CST live比较两节点后预选`gpu01:0,1,2|4,5,7`六张14MiB/0%空闲A40，保持NUMA0/1各三张；

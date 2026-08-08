@@ -24,6 +24,13 @@
 - 下一单变量是只修compiler：在有效`BA`空间先做`sum_k c_k B_kA_k`，再投回同一public rank-16；
   保持视频representation和coefficients不变。先用CPU比较shared joint subspace与per-query exact low-rank
   compression的投影保真，避免用另一个GPU实验猜测。
+- CPU门否定了最朴素的pure affine版本：其effective norm中位`2.220`、相对expert仅`.527`，即使方向
+  语义正确也会因13-expert平均而幅度不足。per-target normalized effective direction + affine log norm
+  则为`4.155/.986`，既避开cross-factor项又保持真实expert target-energy profile，因此被选中。
+- public rank16不是限制：8个task的full-span exact样本captured-energy中位`.99523`。shared rank96
+  对真实400 queries的global captured-energy/cosine中位=`.99365/.99682`、最小=`.99065/.99532`；
+  对24 one-hot experts captured-energy中位/最小=`.99677/.99331`。rank128只把query cosine中位从
+  `.99682`提高到`.99712`，不值得额外basis/runtime成本。rank96是当前证据支持的最小充分内部容量。
 
 ## 2026-08-09 Causal Barycentric online smoke与LoRA几何
 

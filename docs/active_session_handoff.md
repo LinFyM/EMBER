@@ -27,10 +27,14 @@ task-local expert质量并不保证跨物体、跨场景或组合迁移。
 最早结构断点现定位为**raw A/B factor barycentric compiler**。对coefficients `c`分别混合factor会
 形成`B(c)A(c)=sum_{k,j} c_k c_j B_k A_j`，引入大量没有任何task expert监督的cross-expert项；
 想表达的policy update却是`sum_k c_k B_k A_k`。因此“系数语义合理 + raw LoRA谱健康”仍可产生错误的
-策略更新。下一唯一候选为**Policy-Effective Barycentric Topological Writer**：先保持完全相同的
-one-shot causal representation与coefficient rule，只在有效`BA`空间组合，再用共享joint rank-16
-subspace或exact mixture compression编译回同一public LoRA。先做CPU投影能量/cosine与mixture fidelity
-门；未通过不实现，当前没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
+策略更新。下一唯一候选为**Policy-Effective Barycentric Topological Writer**：保持完全相同的
+one-shot causal representation与coefficient rule，在每个policy target的有效`BA`空间混合unit direction
+及expert-envelope log norm，再由shared rank96 subspace作best-rank16编译。
+CPU门已经通过：24 experts的rank96 captured-energy中位/最小=`.99677/.99331`；真实400 queries经
+public rank16后的target cosine中位/最小=`.99682/.99532`，effective norm相对expert中位=`.986`。
+pure affine `sum c_k B_kA_k`虽语义正确，但norm ratio只有`.527`，已拒绝。artifact为同root
+`policy_effective_compiler_feasibility_full400_rank128_v2.json`。现在进入唯一canonical原位实现与CPU
+合同，当前仍没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
 contrastive reader可使correct/reversed/shuffled方向约`.394/-.392/-.008`，但held norm ratio仅`.106`；
 rectified prototype可令reversed近identity并保留correct cosine约`.381`，但仍不能解决跨task expert
 transfer。故本轮不同时更换reader，不用时序margin掩盖compiler因果。

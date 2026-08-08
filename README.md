@@ -35,8 +35,9 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   breadth=`5/8`，相对source/addressless同video panel为gained/lost=`46/31`，但改善不显著且远低于
   v6-fast `143/400`。其400套LoRA已有expert-like能量、秩和rank-coordinate形态；失败不再是
   “LoRA能量不足”，而是每条视频平均混合约13个experts，same-task/cross-task effective cosine中位
-  `.988/.685`。当前先做CPU-only的Policy-Effective Barycentric门：保持同一视频表示与coefficients，
-  只把重构从raw A/B factor混合改为在有效更新`BA`空间线性组合后投回public rank-16；尚未启动GPU。
+  `.988/.685`。Policy-Effective CPU门已通过：选定per-target effective direction+log-norm、shared
+  rank96再截public rank16；400-query目标cosine中位`.9968`且幅度为expert中位的`.986`。当前在唯一
+  runtime原位实现，尚未启动GPU。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看

@@ -66,10 +66,11 @@
    commit/push完成后只从其clean frozen worktree继续。
 4. [x] strict paired correct400与400-LoRA审计完成；absolute失败，已停止五臂并定位到raw-factor
    reconstruction的policy-effective语义不守恒。
-5. [ ] CPU-only验证shared joint rank-16 effective-BA basis：逐target报告24 experts的captured energy、
-   exact cosine与worst task；并对真实400组coefficients比较`sum c_k B_kA_k`和编译后rank-16 update的
-   relative error/cosine。shared basis不够保真时，比较QR+small-core的per-query exact rank-16 compression。
-6. [ ] 只有CPU门明确通过，才写设计authority并在唯一runtime原位替换compiler；保持video reader、
+5. [x] CPU-only effective-BA门通过：pure affine norm ratio仅`.527`而拒绝；per-target effective
+   direction+log-norm为`.986`。shared rank96 + public rank16对400 queries的cosine中位/最小=
+   `.99682/.99532`，24 experts captured-energy中位/最小=`.99677/.99331`；8个full-span样本的
+   captured-energy中位`.99523`。artifact=`policy_effective_compiler_feasibility_full400_rank128_v2.json`。
+6. [ ] 按已通过CPU门在唯一runtime原位替换compiler；保持video reader、
    coefficients、expert/cache、38 targets、rank16、one-shot与zero identity不变，完成CPU合同后再申请
    A40 online smoke证据。
 7. [ ] 新compiler闭环先做预注册小panel筛选；只有absolute/breadth明确支持才做formal correct400，

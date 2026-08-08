@@ -841,15 +841,26 @@ bank、train24×50 cache、one-shot输入、38 targets和public rank-16。唯一
 DeltaW(c) = sum_k c_k B_k A_k
 ```
 
-再把该effective matrix压回一套rank-16 factors。首选CPU门是为每个target从24 experts的left/right
-covariance求共享`U[out,16]`与`V[in,16]`，保存`C_k = U^T B_k A_k V`；online只混合16×16 core并
-分解为A/B。zero coefficient必须显式返回既有template-A/zero-B identity；非零输出只改变factor gauge，
-policy接口和rank不变。若shared subspace不能保留每个expert与真实400 mixtures，则比较由24个rank-16
-factors组成的QR+small-core SVD，对每个query做exact rank-16 compression，不物化巨大dense矩阵。
+直接线性组合虽然语义正确，但真实400 queries的effective norm中位只有`2.220`，是expert中位的
+`.527`；这会重新引入已知的幅度稀释，故CPU门拒绝pure affine版本。选定重构改为每个policy target
+分别混合unit-Frobenius effective direction，并对该target的expert log-Frobenius norm作affine插值与
+train24 envelope限制。它不是事后global scale：38个target各自的direction与量纲都由同一24维video
+coordinates决定，one-hot退化为该expert effective update，zero仍显式返回template-A/zero-B identity。
 
-CPU门必须报告逐target/逐expertcaptured Frobenius energy、effective cosine、relative error及worst cases，
-并对真实400组coefficients比较目标mixture与编译结果。只有证据证明编译误差显著小于当前task/
-video差异后才实现canonical runtime。实现仍原位替换29节compiler，不保留并行可执行family。
+随后把每个target的effective matrix压回一套rank-16 factors。CPU门从24 experts的left/right covariance
+求共享子空间并比较内部rank `16/32/64/96/128`；选定`96`，保存
+`C_k = U^T B_k A_k V`，online只混合最多`96×96` core并作best-rank16 SVD。factor gauge用template-A在
+动态row space中的orthogonal Procrustes orientation及train-expert A-RMS静态尺度固定；它不改变`BA`、
+不提供静态policy update，也避免SVD任意gauge产生不健康factor幅度。
+
+CPU artifact为原correct400 root下
+`policy_effective_compiler_feasibility_full400_rank128_v2.json`。rank96对24 experts的global captured-energy
+中位/最小=`.99677/.99331`；对400个选定direction+log-norm targets经public rank16后的captured-energy
+中位/最小=`.99365/.99065`，对应cosine中位/最小=`.99682/.99532`、relative-L2中位`.07969`。8个task各
+一个full-span exact compression样本的captured-energy中位=`.99523`，说明rank96相对不可压缩上界只损失
+约`.16%`能量。生成effective norm中位=`4.155`、expert ratio中位=`.986`；pure affine版本只有`.527`。
+最差单target是低总能量的`action_in_proj`，rank64时captured-energy中位`.9578`，但global rank96门仍
+满足。该证据通过实现门；实现仍原位替换29节compiler，不保留并行可执行family。
 
 ### 30.4 与时序reader、few-shot和v6的顺序关系
 

@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-08 Expert-Manifold formal feature cache完成
+
+- clean pushed`222d3ac`的6个独立workers在`gpu02:0,1,2,3,4,7`自然完成train24×50
+  action-hidden feature extraction；GPU6上他人进程未被触碰，全部会话已自然退出。root=
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
+- 24 records、6 summaries和24个`[50,16,3072]` BF16 feature tensors齐全，task/demo ordinal
+  分别完整覆盖`0--23`/`0--49`，cache约113MiB。peak allocated/reserved=
+  `10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal reads合计0。
+- canonical CPU seal自然完成并生成`cache_manifest.json`。当前不再阻塞于feature cache；
+  下一步按原训练合同从clean`81101fe`沿同一root统一resume全24 experts到2000，再评
+  1500/2000并选唯一meta target。
+
 ## 2026-08-08 Task-expert闭环完成并触发统一2000 continuation
 
 - clean pushed`1362d15`的三组有效r3 evaluation自然完成：step250/500/1000=

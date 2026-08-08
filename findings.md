@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## 2026-08-08 Expert-Manifold train24×50 formal feature cache
+
+- clean pushed`222d3ac`上的正式cache已用6个独立workers自然完成并由canonical入口seal：
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。它覆盖
+  24 tasks×50 teacher videos，每task一个`[50,16,3072]` BF16 tensor，总量约113MiB。
+- 24/24 records、6/6 summaries和24 feature files齐全；task ordinals恰好为`0--23`，每task
+  demo indices恰好为`0--49`，文件尺寸与record宣告一致。peak allocated/reserved=
+  `10,504,039,936/19,232,980,992` bytes，worker logs均正常完成。
+- `cache_manifest.json`记录training commit、source/tokenizer/config和information wall；teacher action/
+  state/reward/terminal reads合计0，validation/test video reads也为0。这证明frozen feature
+  extraction完整且没有越墙，但不证明meta-Writer能重建expert、利用时序或提高闭环成绩。
+
 ## 2026-08-08 Task-expert三点闭环、漂移根因与feature profile
 
 - 唯一有效development-train roots为

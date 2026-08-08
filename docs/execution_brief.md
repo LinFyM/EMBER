@@ -17,8 +17,8 @@ action loss为`.115355/.107207/.105372`；这不是closed-loop选点证据。若
 
 Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuation`：完整expert-bank evaluator/
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
-checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合。尚未完成A40 meta profile、正式
-feature cache、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
+checkpoint exact-resume和one-shot strict five-arm evaluator均已闭合，正式feature cache也已完成并seal。
+尚未完成A40 meta profile、meta训练或任何新strict rollout，因此不能报告新模型成绩；历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
 full24统一step250/500/1000正式geometry已完成：effective-LoRA norm中位=
@@ -34,14 +34,16 @@ experts从`81101fe`沿同一root统一exact-resume到2000，并评1500/2000后�
 
 feature cache profile已在`gpu02:4`通过：clean`1362d15`、task0×4 videos、wall=`4.372s`、peak
 allocated/reserved=`10.47/19.23GB`、输出`[4,16,3072]` BF16且forbidden reads全0；formal cache
-config已seal。先用六个独立workers完成train24×50 cache，再切换canonical路径执行旧expert exact
-resume。r6高并发因主机内存、r4因A40 inference activation OOM而在有效结果前终止，均不得resume；
+config已seal。正式cache已在clean pushed`222d3ac`用六个独立workers完成，root=
+`runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`；24×50覆盖、
+`[50,16,3072]` BF16/task、约113MiB、peak reserved=`19.23GB`且forbidden reads合计0，
+canonical manifest已seal。r6高并发因主机内存、r4因A40 inference activation OOM而在有效结果前终止，均不得resume；
 唯一有效评测是每卡3 replicas的r3 roots。
 
 owner已在本session完成讨论后明确恢复持续自主执行，并授权围绕长期Goal自行设计、实现、训练、
 评测和迭代；只有实质性阻塞才回报。执行顺序为：full24 expert geometry与development-train
-closed-loop统一评250/500/1000已经完成并触发resume；当前顺序为formal cache→frozen`81101fe`
-沿原root统一resume2000与1500/2000闭环→meta训练/strict五臂。旧K4 executable只保留到新
+closed-loop统一评250/500/1000与formal cache已经完成并触发resume；当前顺序为
+frozen`81101fe`沿原root统一resume2000与1500/2000闭环→meta训练/strict五臂。旧K4 executable只保留到新
 meta-Writer A40 profile通过，届时按design removal trigger原位退役。当前长期门是同一single
 checkpoint strict correct严格超过`150/400`，同时保持视频时序因果性、same-task鲁棒性、breadth
 与低checkpoint漂移。

@@ -21,7 +21,8 @@
 - Expert-Manifold完整实现现已并入`codex/bci-continuation`：train24 bank evaluator、全bank LoRA
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
-  cache与meta formal仍由config阻塞，尚未完成A40 profile，也没有生成新Writer checkpoint。
+  feature cache profile与formal已完成；meta formal仍由config阻塞，尚未完成meta A40
+  profile，也没有生成新Writer checkpoint。
 - full24统一step250/500/1000正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。
   effective-LoRA norm中位=`2.792/3.652/4.170`，stable rank中位=`1.126/1.129/1.129`，
@@ -41,13 +42,19 @@
   `runs/outputs/pi05_expert_manifold_feature_profile_task00_1362d15_20260808`，4条视频的task wall=
   `4.372s`，peak allocated/reserved=`10,468,548,096/19,232,980,992` bytes，输出
   `[4,16,3072]` BF16且action/state/reward/terminal reads全0；formal cache config已seal。
+- train24×50正式feature cache已在clean pushed`222d3ac`用6个独立workers完成并seal：
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。24/24 task
+  records与6/6 summaries齐全，每task feature=`[50,16,3072]` BF16，task ordinal恰好覆盖
+  `0--23`，50 demo ordinals恰好覆盖`0--49`，cache约113MiB。peak allocated/reserved=
+  `10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal reads合计0；
+  canonical `cache_manifest.json`已由仓库seal入口生成，无worker error。
 - 当前没有新Expert-Manifold Writer checkpoint或held strict rollout。已验证single-checkpoint最好仍是
   v6-fast`143/400`，长期严格门仍是`>150/400`，尚未完成。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
-  expert geometry与development-train closed-loop统一评250/500/1000已经通过；先完成已seal的
-  train24×50 feature cache，再从frozen`81101fe`沿原root统一resume2000、评1500/2000，随后做
+  expert geometry、development-train closed-loop统一评250/500/1000和train24×50 feature cache已经通过；
+  现从frozen`81101fe`沿原root统一resume2000、评1500/2000，随后做
   meta-Writer A40 profile/formal和strict validation五臂。不得按单task挑不同expert step。
 - 旧K4 executable只作为临时兼容路径保留，owner是当前Expert-Manifold迁移；按设计第12节，只有
   新meta-Writer通过A40 profile后才删除，避免在其替代路径尚未实证前制造不可运行仓库。

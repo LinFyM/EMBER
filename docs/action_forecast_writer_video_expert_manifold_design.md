@@ -319,3 +319,14 @@ task extraction wall=`4.372s`，raw/sampled frame count=`84--98/18--21`，输出
 `[4,16,3072]` BF16；peak allocated/reserved=`10,468,548,096/19,232,980,992` bytes，
 teacher action/state/reward/terminal reads、OOM与nonfinite均为0。由此正式seal六worker×4 tasks×
 50 videos cache，不降低`videos_per_batch=4`、frame stride5、phase16或feature width3072。
+
+## 18. Formal feature-cache封存
+
+clean pushed`222d3ac`上的train24×50正式cache已由6个独立workers自然完成，root为
+`runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。它包含
+24/24 task records、6/6 worker summaries和24个`[50,16,3072]` BF16 feature tensors，task ordinals
+恰好覆盖`0--23`、每task demo ordinals恰好覆盖`0--49`，总量约113MiB。peak
+allocated/reserved=`10,504,039,936/19,232,980,992` bytes，teacher action/state/reward/terminal
+reads合计0，worker logs无error。仓库seal入口已生成canonical `cache_manifest.json`，其
+training commit为`222d3ac72591bf44fa46ff436ace22d8cd5afa35`，information-wall计数全0。该cache
+只是冻结的action-hidden Writer输入，不是新Writer性能或视频因果证据。

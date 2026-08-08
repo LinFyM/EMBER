@@ -27,8 +27,10 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
 - 24套train-task rank-16 task experts已在clean`81101fe`完成统一step1000。正式
   development-train闭环step250/500/1000=`432/557/624` of 1200；step1000在四suite均不低于
   step500且24/24 tasks非零，因此下一阶段是沿原root统一exact-resume到2000并评1500/2000。
-- full24 expert几何与phase16×3072 action-hidden feature profile均已完成；feature formal cache已
-  seal。当前还没有Expert-Manifold Writer checkpoint或新held strict成绩。
+- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已
+  完成；canonical cache root为
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。当前还没有
+  Expert-Manifold Writer checkpoint或新held strict成绩。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看

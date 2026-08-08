@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Zero-preserving topology-address binding实现与CPU封存
+
+- clean pushed`cd95281`已在唯一`VideoConditionedTopologicalWriter`内完成单变量修订：
+  `topology_address=chunk_query+rank_query`，cross-attention与四个axial blocks产生的动态video latent
+  先经RMSNorm，再与独立RMSNorm后的静态address逐元素相乘，随后才进入共享output projection。
+  address没有独立输出支路；scale head仍只读动态latent。
+- zero/phase-constant video的动态值为零，乘积与完整LoRA增量精确为零；ordered/reversed仍产生不同
+  动态值。合成回归同时证明即使cross-attention输出对所有坐标相同，绑定后chunk/rank centered
+  energy均大于`.1`，且zero-output首步打开head后address norm获得非零梯度。
+- 新结构不兼容旧macro50 checkpoint，旧A40 profile/online-smoke证据已从meta formal seal移除；
+  config现为`blocked_until_live_a40_profile_and_online_generation_smoke`，且重新seal时两份evidence都
+  必须显式记录本address-binding identity，防止复用旧decoder证据。
+- 同步修正Writer rollout cache资源估算：生成compute为BF16，但落盘LoRA state实际为FP32；400 entries
+  tensor预算应为`2,064,364,800` bytes。聚焦47/47、正式assets环境全仓192/192、compileall和
+  diff check通过；architecture guard无hard violation或parallel family。尚未启动任何新GPU工作。
+
 ## 2026-08-09 Macro50 correct400完成、负裁决与地址塌缩定位
 
 - clean pushed`9406802`的r2评测自然完成并释放GPU：72/72 jobs、400 rows、18 workers全exit0且

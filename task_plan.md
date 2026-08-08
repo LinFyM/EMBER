@@ -19,8 +19,9 @@
 - [x] 实现task-expert bank canonical evaluator与统一step几何分析；实现只含action-hidden
   phase16×3072 task-span+Action-Expert video innovation的hashless feature cache、168-chunk axial decoder、direction/scale
   reconstruction、六rank task-complete exact-resume meta trainer和one-shot strict paired evaluator。
-  retained实现已并入`codex/bci-continuation`；feature profile/cache、meta A40 exact-resume profile与
-  online generation/cached-rollout smoke均已完成，formal config现已seal。
+  retained实现已并入`codex/bci-continuation`；feature profile/cache已完成。旧decoder的meta A40
+  exact-resume profile与online smoke曾完成，但已随48/400负裁决失效；当前address-binding formal
+  状态以下方最新条目为准。
 - [x] 完成expert bank统一step250/500/1000 full24 geometry：norm中位
   `2.792/3.652/4.170`，stable rank中位`1.126/1.129/1.129`，跨task cosine中位
   `.108/.095/.100`；16 coordinates均active但q/v B-column仍高度同向，几何不能单独选点。
@@ -77,9 +78,16 @@
   train24自身demo0也只有raw/effective target cosine中位`.02326/.01081`。地址在cross-attention后
   rank/chunk centered energy由约`.48/.49`降到`1.04e-6/1.08e-6`，axial输出进一步降到
   `2.51e-8/4.67e-10`，而target为`.936/.994`；因此拒绝原样resume50→100。
-- [ ] 在唯一Expert-Manifold路径原位加入zero-preserving video×topology address binding，先恢复
-  chunk/rank可区分写出，再做CPU合同、六卡profile、identity-fresh训练、strict correct与时序五臂；
-  不同时混入few-shot或新的loss recipe。
+- [x] clean pushed`cd95281`在唯一Expert-Manifold路径原位加入zero-preserving
+  video×topology address binding：`RMSNorm(dynamic) ⊙ RMSNorm(chunk+rank address)`后再写出，
+  无独立静态value路。zero/phase-constant identity、ordered/reversed差异、两轴address retention与
+  新参数梯度合同均通过；聚焦47/47、全仓192/192、compileall/diff和architecture guard无hard
+  violation。旧profile/smoke evidence已撤销，formal重新blocked。
+- [ ] 从`cd95281`后的clean/pushed launch-record和全新roots完成六卡fresh0→1、exact-resume1→3、
+  独立contiguous0→3及macro3 online-generation/cached-rollout smoke；通过前不启动formal。
+- [ ] 工程门通过后从identity fresh分段训练，先做macro50 strict correct与内部expert proximity/
+  rank-chunk retention；有可信absolute/breadth趋势才继续，并对候选single checkpoint做完整时序五臂。
+  本轮不同时混入few-shot或新的loss recipe。
 - [ ] 同一single checkpoint strict correct必须`>150/400`且继续提高absolute、breadth、
   稳定积累与视频特异性。
 - [x] owner已完成讨论并恢复持续自主执行；长期Goal为同一single checkpoint strict correct

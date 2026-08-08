@@ -6,6 +6,13 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**当前操作覆盖（2026-08-09）**：clean pushed`cd95281`已原位实现
+`RMSNorm(dynamic video latent) × RMSNorm(chunk+rank address)`后再共享写出；address不能独立生成
+LoRA，zero/phase-constant输入仍精确identity。旧decoder的六卡profile/online-smoke evidence已撤销，
+meta formal现在重新blocked。CPU聚焦47/47、全仓192/192和compileall通过，architecture guard无hard
+violation；尚未启动新GPU。下一步只允许从clean/pushed launch-record与全新roots重做六卡
+fresh/resume/contiguous exact-resume profile，再做macro3 online smoke，两门通过前不得formal。
+
 当前唯一authority为`docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot，
 视频是唯一dynamic value；Writer部署输入仍只有exact task language和恰好一条action-hidden video。
 第一次meta profile前的canonical decoder已收紧为full projected video只参与phase key/routing、LoRA
@@ -21,7 +28,7 @@ Expert-Manifold retained实现已并入唯一主工作分支`codex/bci-continuat
 geometry、phase16×3072 action-hidden cache、168-chunk axial decoder、六rank task-complete meta trainer、
 checkpoint exact-resume和one-shot strict five-arm加no-video反事实evaluator均已闭合，正式feature cache也已完成并seal。
 六卡A40 meta core profile和单卡macro3 online-generation/cached-rollout smoke均已通过，meta formal
-config现已seal；identity-fresh formal0→50和macro50 strict correct400均已完成。新成绩仅`48/400`，
+当时曾seal；identity-fresh formal0→50和macro50 strict correct400均已完成。新成绩仅`48/400`，
 与strict paired source base同分、gained/lost=`5/5`，故该checkpoint正式负裁决且不resume100。历史single-checkpoint最好
 仍为v6-fast`143/400`，严格目标`>150/400`未完成。
 
@@ -29,8 +36,8 @@ macro50 evaluator完整通过72/72 jobs、400 unique rows、18 workers attempt1/
 生成LoRA norm中位`4.549`虽健康，但stable rank=`1.0000014`、nearest expert cosine=`.00797`；
 train24自身effective target cosine也只有`.01081`。纵向probe显示rank/chunk centered energy在
 cross-attention后已由query约`.48/.49`塌到`~1e-6`，axial输出再到`~1e-8/~1e-10`，而target约
-`.936/.994`。当前执行方向不是追加原训练步数或先跑五臂，而是在唯一model中加入zero-preserving
-video×topology address binding，保持one-shot、expert2000、cache、loss与optimizer不变后重新profile。
+`.936/.994`。当前执行方向不是追加原训练步数或先跑五臂；zero-preserving video×topology address
+binding已按顶部覆盖实现，保持one-shot、expert2000、cache、loss与optimizer不变，现等待fresh profile。
 
 full24统一五点geometry已完成：effective-LoRA norm中位=`2.792/3.652/4.170/4.212/4.212`，
 stable rank与跨task cosine从1000后均基本不变；1500→2000 effective update energy已接近零。
@@ -131,7 +138,7 @@ replacement已由clean pushed`31d41d8`自然完成：8/8 unique rows、8个唯�
 generator生成8 entries/2个batch4，三个workers均attempt1/exit0、0 retry/failure/OOM/nonfinite。
 generation wall=`12.634s`，peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；释放
 Writer/encoder后原source policy直接复用且没有reload，forbidden reads全0。`1/8` success只作execution
-smoke，不作performance证据。config已封存profile与online evidence并把meta formal置为sealed。随后
+smoke，不作performance证据。旧decoder config当时封存profile与online evidence并把meta formal置为sealed。随后
 已按design第12节原位退役旧K4/AS/RL executable、入口、配置和专属测试；CPU-only全仓`186/186`通过，
 architecture guard无hard violation或parallel family。
 

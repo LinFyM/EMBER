@@ -6,6 +6,12 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+- **最新覆盖（2026-08-09）**：macro50地址塌缩的单变量根修已由clean pushed`cd95281`实现。
+  动态video latent在共享output projection前与`chunk_query+rank_query`的normalized静态地址逐元素相乘；
+  address没有独立value路，zero/phase-constant video仍精确identity。旧flat-reduction profile与online
+  smoke只属于已负裁决decoder，现已从config移除；meta formal重新blocked，必须用全新roots重做六卡
+  exact-resume profile和macro3 online smoke后才能fresh formal。聚焦47/47、全仓192/192与compileall
+  通过，architecture guard无hard violation；本修订尚未启动GPU。
 - 当前唯一方法authority仍是
   `docs/action_forecast_writer_video_expert_manifold_design.md`。它保持one-shot，视频是唯一dynamic
   value：frozen π0.5逐帧提取2048维joint multimodal hidden与1024维Action-Expert suffix hidden，
@@ -24,7 +30,8 @@
   geometry、action-hidden phase16×3072 feature cache、168个`[16,512]`chunk/rank axial decoder、
   六rank task-complete exact-resume meta trainer，以及one-shot五臂严格配对evaluator均已存在。
   feature cache profile与formal已完成；六卡meta A40 exact-resume core profile和单卡macro3 online-
-  generation/cached-rollout smoke也已通过，meta formal config现已seal。旧K4/AS/RL executable、入口、
+  generation/cached-rollout smoke曾对旧decoder通过，但已按顶部覆盖失效，当前meta formal为blocked。
+  旧K4/AS/RL executable、入口、
   配置和专属测试已按design第12节原位退役，当前dynamic Writer只有Expert-Manifold；identity-fresh
   formal0→50与macro50 strict correct400均已完成；该checkpoint正式负裁决，不得resume100。
 - full24×50 cache的CPU审计表明phase-DC能量中位`.98057`、temporal residual中位`.01943`，但
@@ -83,7 +90,8 @@
   nearest train-expert cosine中位仅`.00797`。train24 demo0 effective target cosine也只有`.01081`；
   rank/chunk地址在cross-attention后centered energy约`1e-6`，axial输出进一步到`1e-8/1e-10`，
   对比expert target约`.936/.994`。最早失效是video dynamics没有保留topological address，而非
-  validation泛化或LoRA能量；原轨迹不续训，下一版只加入zero-preserving video×address乘性绑定。
+  validation泛化或LoRA能量；原轨迹不续训。zero-preserving video×address乘性绑定现已按顶部覆盖实现，
+  但尚无新profile、训练或strict成绩。
 - owner已在本session完成讨论后明确恢复持续自主执行，并设定长期Goal：同一single checkpoint的
   strict paired correct必须严格超过`150/400`，同时保持真实视频时序因果性、same-task鲁棒性、
   task breadth和低checkpoint漂移；只有实质性阻塞才回报owner。当前证据顺序固定为：先做full24
@@ -142,7 +150,8 @@
   一个generator生成8 entries/2个batch4、wall=`12.634s`，3 workers均attempt1/exit0、0
   retry/failure/OOM/nonfinite。peak allocated/reserved=`10,576,054,272/11,182,014,464` bytes；
   Writer/encoder释放后source policy原位复用且没有reload，forbidden reads全0。`1/8` success只作
-  execution smoke，不作性能证据。profile与online evidence已封入config，meta formal现已seal。
+  execution smoke，不作性能证据。profile与online evidence当时封入旧decoder config并seal；当前状态
+  已由顶部address-binding覆盖为blocked。
 - 旧K4/AS/RL executable已完成原位退役，通用data/topology/functional/evaluation owner保留并收敛到
   Expert-Manifold唯一canonical Writer。CPU-only全仓`186/186`、compileall与diff check通过；architecture
   guard无hard violation或parallel family。下一步从clean pushed identity fresh启动分段formal。

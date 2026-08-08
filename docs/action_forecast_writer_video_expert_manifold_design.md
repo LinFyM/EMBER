@@ -584,3 +584,34 @@ permutation-equivariant算子没有信息可重建topology identity；这比clos
 本轮不同时加入few-shot、reversed/shuffled negative loss、RL、scale gate或新的expert target。这样若
 target cosine、SFT-like几何和closed-loop改善，可以归因于最早地址接口；视频时序五臂若随后仍不通过，
 再单独裁决是否增加显式order-negative训练。
+
+## 26. Zero-preserving topology-address binding implementation seal（2026-08-09）
+
+上述单变量修订已由clean pushed`cd95281`在唯一canonical model中原位实现，没有增加Writer family、
+runner、训练objective或部署输入。当前forward的地址接口为：
+
+```text
+D[b,c,r,:] = AxialBlocks(CrossAttention(video causal values))[b,c,r,:]
+A[c,r,:]   = chunk_query[c,:] + rank_query[r,:]
+Z[b,c,r,:] = RMSNorm(D[b,c,r,:]) * RMSNorm(A[c,r,:])
+LoRA value = SharedOutputProjection(Z)
+```
+
+`D`仍是唯一dynamic value；`A`只是public LoRA topology的静态坐标，不能单独到达output。
+chunk scale owner仍读取未绑定的动态`D`，静态per-chunk offset也只能缩放已经非零的direction；因此
+zero或phase-constant video令`D=Z=direction=0`，完整输出仍是template-A/zero-B identity。
+
+新回归覆盖四个关键谓词：共同dynamic值经绑定后chunk/rank centered energy均`>.1`；zero dynamic
+精确保持零；ordered与reversed video仍不同；zero-output bootstrap打开projection后address norm获得
+非零梯度。聚焦合同47/47、正式LIBERO assets环境全仓192/192、compileall与diff check通过；
+architecture guard为REVIEW但无hard violation、无parallel family。
+
+该forward图新增`address_norm`参数，旧macro50 checkpoint必须strict-load失败；旧flat-reduction profile
+和online smoke也只属于已拒绝decoder。config已移除两组旧证据并重新设为
+`blocked_until_live_a40_profile_and_online_generation_smoke`。未来seal时profile与smoke evidence都必须
+显式记录`normalized_dynamic_times_normalized_chunk_plus_rank_address`，以防旧证据被机械复制。
+
+下一执行顺序固定为：从clean/pushed launch-record和全新roots重做六卡fresh/resume/contiguous
+exact-resume profile；再用profile macro3做单卡online generation/cache/release/rollout smoke；两门均过后
+才允许identity-fresh formal。feature cache、step2000 expert target、one-shot schedule、reconstruction
+loss、optimizer、world6 task mean与strict evaluator保持不变。当前尚未启动新GPU工作。

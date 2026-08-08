@@ -1,5 +1,21 @@
 # EMBER Findings
 
+## 2026-08-09 Topology-address修订的结构结论
+
+- 根修不是增加LoRA全局能量，而是恢复“动态视频值写到哪个LoRA坐标”的可辨识性。canonical公式为
+  `Z[b,c,r]=RMSNorm(D[b,c,r]) ⊙ RMSNorm(Qchunk[c]+Qrank[r])`，其中`D`仍完全来自
+  phase-centered causal video value；`Z`才进入共享output projection。静态address只能调制动态值，
+  不能在无视频动态时产生adapter，因此没有language-only或static-LoRA bypass。
+- 乘法而非加法是identity合同的关键：zero/phase-constant输入令`D=0`，无论address学成什么，
+  `Z=0`且template-A/zero-B逐tensor不变。它也避免把address当成另一套可独立记忆24 tasks的LoRA。
+- CPU回归证实该修订直接消除了已定位的表示论断点：给所有chunk/rank完全相同的`D`，绑定后两轴
+  centered energy都`>.1`；zero动态仍精确零，ordered/reversed不同，上游与新address norm在
+  zero-head打开后均有梯度。这里证明的是机制可达性，不是已经学到expert manifold或闭环提升。
+- 旧profile/smoke只验证没有address-value绑定的失败decoder，不能外推到新增参数和forward图。
+  `cd95281`因此主动撤销meta formal seal并要求fresh六卡exact-resume profile与macro3 online smoke；
+  只有这些工程门通过后才允许identity-fresh训练。one-shot、expert2000、feature cache、target、loss、
+  optimizer、24-task等权与strict evaluator均未改变，便于把下一结果归因到地址接口。
+
 ## 2026-08-09 Expert-Manifold macro50 strict负裁决与topology-address根因
 
 - replacement correct400完整自然结束：`48/400`，8-task依次为Spatial=`0/0`、Object=`4/0`、

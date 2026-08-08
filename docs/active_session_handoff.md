@@ -34,7 +34,8 @@
 - phase-centered causal-prefix canonical实现与第六个`no_video`反事实已在隔离分支闭合：no-video保留paired
   task/state/RNG/demo ordinal与exact language但不读frames，以zero innovation完整运行Writer并必须
   生成identity。meta六卡入口也已补齐GPU-local NUMA fail-fast及逐rank physical/local/NUMA/affinity
-  run-contract记录；architecture gate无hard violation，聚焦27/27与全仓219/219 CPU测试通过；
+  run-contract记录；profile的step wall与peak allocated/reserved显存均跨全部rank取`MAX`；
+  architecture gate无hard violation，聚焦27/27与全仓219/219 CPU测试通过；
   尚无GPU profile或性能结果。
 - full24统一step250/500/1000正式geometry已完成，artifact为
   `runs/outputs/pi05_task_expert_bank_geometry_full24_steps0250_0500_1000_05d4868_20260808/analysis.json`。

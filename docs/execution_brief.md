@@ -49,6 +49,7 @@ expert B geometry Spearman=`.45087`。固定causal-prefix uniform-pool的templat
 correct/reversed/shuffled=`.96263/-.94287/-.04463`，B proxy=`.38820/.06042/.19110`；3/5-shot
 correct仅`.39379/.39558`，故当前保持one-shot并同时封住静态DC与unordered-set value捷径。
 对应六卡入口fail-fast要求GPU-local NUMA，并逐rank记录physical/local GPU、NUMA与CPU affinity；
+step wall与peak allocated/reserved显存均跨全部rank取`MAX`，不以rank0局部值封存容量；
 architecture gate无hard violation，聚焦27/27与全仓219/219 CPU测试通过；尚未profile或训练。
 
 全24 experts的exact-resume1000→2000已于2026-08-08 17:38 CST从clean`81101fe`沿原root启动。

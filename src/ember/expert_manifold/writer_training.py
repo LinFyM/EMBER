@@ -338,6 +338,7 @@ def _contract(
                 for rank in range(context.world_size)
             ],
             "rank_topology": rank_topology,
+            "runtime_metrics_reduction": "max_across_all_ranks",
             "scheduler_total_macros": scheduler_total,
             "physical_microbatch_per_rank": microbatch,
             "checkpoint_macros": list(checkpoints),
@@ -380,6 +381,24 @@ def _metric_rows(path: Path) -> int:
     if not path.is_file():
         return 0
     return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line)
+
+
+def _runtime_maximums(
+    context: DistributedContext, step_started: float
+) -> tuple[float, int, int]:
+    torch.cuda.synchronize(context.device)
+    values = torch.tensor(
+        (
+            time.monotonic() - step_started,
+            torch.cuda.max_memory_allocated(context.device),
+            torch.cuda.max_memory_reserved(context.device),
+        ),
+        dtype=torch.float64,
+        device=context.device,
+    )
+    if context.world_size > 1:
+        dist.all_reduce(values, op=dist.ReduceOp.MAX)
+    return float(values[0]), int(values[1]), int(values[2])
 
 
 def train(args: argparse.Namespace) -> None:
@@ -437,6 +456,8 @@ def train(args: argparse.Namespace) -> None:
     local_count = len(local.ordinals)
     started = time.monotonic()
     torch.cuda.reset_peak_memory_stats(context.device)
+    max_allocated_bytes = 0
+    max_reserved_bytes = 0
     for macro_index in range(start_macro, stop_macro):
         optimizer.zero_grad(set_to_none=True)
         demo_indices = [
@@ -491,7 +512,9 @@ def train(args: argparse.Namespace) -> None:
         if context.world_size > 1:
             dist.all_reduce(metric_sum, op=dist.ReduceOp.SUM)
         metric_sum.div_(24)
-        torch.cuda.synchronize(context.device)
+        step_seconds, max_allocated_bytes, max_reserved_bytes = _runtime_maximums(
+            context, step_started
+        )
         row = {
             "macro": cursor,
             "loss": float(metric_sum[0]),
@@ -501,10 +524,10 @@ def train(args: argparse.Namespace) -> None:
             "gradient_norm_before_clip": float(grad_norm),
             "applied_lr": applied_lr,
             "next_lr": float(optimizer.param_groups[0]["lr"]),
-            "step_seconds": time.monotonic() - step_started,
+            "step_seconds": step_seconds,
             "elapsed_seconds": time.monotonic() - started,
-            "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated(context.device)),
-            "max_cuda_reserved_bytes": int(torch.cuda.max_memory_reserved(context.device)),
+            "max_cuda_allocated_bytes": max_allocated_bytes,
+            "max_cuda_reserved_bytes": max_reserved_bytes,
             "logical_tasks": 24,
             "videos": 24,
         }
@@ -542,12 +565,8 @@ def train(args: argparse.Namespace) -> None:
                 "metrics_rows": metrics_rows,
                 "expert_step": args.expert_step,
                 "world_size": context.world_size,
-                "max_cuda_allocated_bytes": int(
-                    torch.cuda.max_memory_allocated(context.device)
-                ),
-                "max_cuda_reserved_bytes": int(
-                    torch.cuda.max_memory_reserved(context.device)
-                ),
+                "max_cuda_allocated_bytes": max_allocated_bytes,
+                "max_cuda_reserved_bytes": max_reserved_bytes,
                 "content_hash_policy": "disabled_by_owner",
             },
         )

@@ -137,6 +137,9 @@ def test_topological_writer_contract_seals_physical_numa_mapping(
             "cpu_affinity": [48, 49],
         }
     ]
+    assert contract["runtime"]["runtime_metrics_reduction"] == (
+        "max_across_all_ranks"
+    )
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

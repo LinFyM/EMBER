@@ -24,8 +24,9 @@
   zero或任意phase-constant输入精确identity。no-video保留严格paired元数据但不读frame，以zero
   innovation完整运行Writer。3/5-shot causal proxy只到`.39379/.39558`，仍不足以先切few-shot。
 - CPU retained证据覆盖constant/zero identity、ordered≠reversed、zero-output第一步打开output head且
-  第二步梯度到达input projection/cross-attention/phase keys；architecture gate无hard violation，
-  相关聚焦36/36和全仓218/218通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
+  第二步梯度到达input projection/cross-attention/phase keys；六卡入口逐rank封存NUMA/topology，
+  profile step wall与累计显存峰值跨全部rank取`MAX`。architecture gate无hard violation，聚焦
+  27/27和全仓219/219通过。这只证明机制可运行，不是GPU profile、重建或closed-loop成绩。
 
 ## 2026-08-08 Expert-Manifold train24×50 formal feature cache
 

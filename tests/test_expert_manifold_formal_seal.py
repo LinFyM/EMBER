@@ -46,10 +46,12 @@ def _smoke_evidence() -> dict:
     }
 
 
-def test_policy_effective_evaluation_is_blocked_until_its_own_live_smoke() -> None:
+def test_policy_effective_evaluation_is_sealed_by_its_own_live_smoke() -> None:
     evaluation = load_barycentric_writer_config(CONFIG)["evaluation"]
-    assert evaluation["formal_status"] == "blocked_until_live_a40_online_smoke"
-    assert "online_smoke_evidence" not in evaluation
+    assert evaluation["formal_status"] == "sealed"
+    assert evaluation["online_smoke_evidence"]["device"] == "NVIDIA A40"
+    assert evaluation["online_smoke_evidence"]["scientific_rows"] == 8
+    assert evaluation["online_smoke_evidence"]["source_policy_reloaded"] is False
     assert (
         evaluation["cpu_policy_effective_compiler"]["selected_effective_basis_rank"]
         == 96

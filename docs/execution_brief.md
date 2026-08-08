@@ -20,14 +20,17 @@ energy、active coordinates和q/v/action列几何均已进入expert-like区间�
 并不等价于合法的expert effective update。CPU-only门现已完成：pure affine有效组合把norm压到expert
 中位的`.527`，已拒绝；per-target effective direction + expert-envelope log norm保持到`.986`。shared
 rank96再截public rank16后，400 targets的global cosine中位/最小=`.99682/.99532`，24 experts
-captured-energy中位/最小=`.99677/.99331`，通过实现门。当前仍未启动GPU或新正式run。
+captured-energy中位/最小=`.99677/.99331`，通过实现门。
 
 唯一canonical runtime已原位替换为Policy-Effective Barycentric；视频
 representation、ridge coefficients、one-shot输入、expert2000、feature cache、public 38-target rank-16
 topology和zero/no-video identity全部不变。内部effective subspace固定rank96；factor gauge只固定A/B
 表示而不改变`BA`。`182/182` tests与真实asset CPU inspector通过：0 parameters、zero exact、
-one-hot/demo0 target cosine=`.99838/.99836`，LoRA谱与A/B gauge均为expert-like。formal现为blocked；
-先clean commit/push，之后才重新做live GPU/quota preflight和单卡online smoke。contrastive/rectified coefficient reader、
+one-hot/demo0 target cosine=`.99838/.99836`，LoRA谱与A/B gauge均为expert-like。专属online smoke已从
+clean pushed`321bded`在live空闲`gpu02:0`完成：8 rows/unique LoRAs/cache entries、3 workers exit0、
+0 retry/failure/OOM/nonfinite/forbidden reads，Writer release/source-policy reuse闭合，GPU已释放。root=
+`runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`；`1/8` success
+不是性能证据。formal现为`sealed`，下一步只做预注册小规模strict correct panel。contrastive/rectified coefficient reader、
 few-shot、RL、恢复v6或新增order loss均不是本轮变量。
 
 **最新操作覆盖（2026-08-09，覆盖本节后续旧“当前/下一步”）**：address-binding macro50的

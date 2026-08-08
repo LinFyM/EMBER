@@ -39,8 +39,13 @@ config和compiler均删除；实现提交=`469e033`且已push。全仓`182/182` 
 68,863,192 buffer bytes，zero identity exact，one-hot expert/demo0 intended-target cosine中位=
 `.99838/.99836`；demo0 norm/stable/top=`4.179/1.125/.910`、A/B RMS=`.01891/.00846`、q/v/action列余弦=
 `.815/.813/.455`且16 coordinates active。train24 demo0 cross-task cosine中位`.203`，说明新compiler没有
-把expert方向压回公共LoRA。formal故意blocked，下一步只能从clean pushed commit做专属A40 online smoke，
-当前仍没有GPU工作。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
+把expert方向压回公共LoRA。专属A40 online smoke现已在clean pushed`321bded`、live空闲`gpu02:0`
+自然完成，root=
+`runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`：8/8 unique
+rows/LoRAs/cache entries、3 workers exit0、0 retry/failure/OOM/nonfinite/forbidden reads；Writer释放后原
+source policy复用于rollout且未reload，generation wall=`11.070s`、peak allocated=`10,576,896,000`
+bytes。GPU已回到0 MiB。`1/8` success只作execution smoke，config formal现已`sealed`；下一科研动作是
+预注册小规模strict correct panel，不直接把smoke当性能证据。系数reader的CPU反事实已表明时序识别与有效更新幅度是两个接口：
 contrastive reader可使correct/reversed/shuffled方向约`.394/-.392/-.008`，但held norm ratio仅`.106`；
 rectified prototype可令reversed近identity并保留correct cosine约`.381`，但仍不能解决跨task expert
 transfer。故本轮不同时更换reader，不用时序margin掩盖compiler因果。

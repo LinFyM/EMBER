@@ -891,6 +891,9 @@ intended target为`.99836/.99657`，ordered/reversed coefficient L2最小`1.268`
 因子健康度也闭合：demo0 norm/stable-rank/top-energy中位=`4.179/1.125/.910`，A/B RMS=
 `.01891/.00846`，q/v/action B-column cosine=`.815/.813/.455`，16/16 coordinates active。train24 demo0
 不同task effective cosine中位`.203`，不再是旧learned/raw-factor Writer的公共方向。这里仍只是CPU机制
-证据，不是validation closed loop；formal状态故意为`blocked_until_live_a40_online_smoke`。下一步必须从
-clean pushed commit只用一张live空闲A40完成validation8×1-state feature→LoRA cache→release→rollout
-smoke，写回专属evidence后才可做预注册小panel。
+证据，不是validation closed loop。专属工程门随后由clean pushed`321bded`在live空闲`gpu02:0`通过：
+validation8×1-state的feature→LoRA cache→release→rollout得到8 unique rows/LoRAs/cache entries，3 workers
+全exit0、0 retry/failure/OOM/nonfinite/forbidden reads；generation wall=`11.070s`、peak allocated=
+`10,576,896,000` bytes，Writer释放后source policy原位复用，GPU自然释放。root=
+`runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`。`1/8` success
+只作execution smoke；精确evidence写回后formal=`sealed`，下一步才是预注册小规模strict correct panel。

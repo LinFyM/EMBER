@@ -41,9 +41,9 @@
 ## 当前唯一canonical实现
 
 - [x] 唯一config现为
-  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；formal状态故意保持
-  `blocked_until_live_a40_online_smoke`，旧raw-factor config已删除且只由Git/artifact保留；实现提交=
-  `469e033`且已push。
+  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；formal状态现为
+  `sealed`，旧raw-factor config已删除且只由Git/artifact保留；实现提交=`469e033`且已push，专属A40
+  smoke commit/root=`321bded`/`pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
   centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个coefficients。
 - [x] 每个38 policy targets分别在effective`BA`空间混合24个expert的unit-Frobenius direction与
@@ -76,9 +76,9 @@
    captured-energy中位`.99523`。artifact=`policy_effective_compiler_feasibility_full400_rank128_v2.json`。
 6. [x] 已在唯一runtime原位替换compiler；保持video reader、coefficients、expert/cache、38 targets、
    rank16、one-shot与zero identity不变，CPU合同与真实资产检查全部通过。
-7. [ ] 新compiler闭环先做预注册小panel筛选；只有absolute/breadth明确支持才做formal correct400，
-   过门后再做same/wrong/shuffled/reversed/no-video严格配对。此前先从clean pushed commit做单卡A40
-   online generation/cache/release/rollout smoke并重新seal formal。
+7. [ ] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环只做预注册
+   小panel筛选。只有absolute/breadth明确支持才做formal correct400，过门后再做same/wrong/shuffled/
+   reversed/no-video严格配对。
 8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
 
@@ -107,7 +107,8 @@ env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZE
 
 - 验收门：8 unique rows、8 unique generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/
   nonfinite；teacher action/state/reward/terminal reads全0；Writer modules在cache后释放且source policy原进程
-  复用于rollout。GPU自然释放后才把专属evidence写回config并将formal从blocked改为sealed。
+  复用于rollout。**已全部通过**：8/8 rows/LoRAs/cache、3/3 exit0、0异常/forbidden reads，generation=
+  `11.070s`、peak allocated=`10,576,896,000` bytes；GPU已释放，专属evidence已写回并seal。
 
 ## 退役边界
 

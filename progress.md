@@ -1,11 +1,24 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Policy-Effective online smoke通过并seal formal
+
+- attempt0因detached worktree缺少`@{upstream}`在GPU加载前被合同拒绝，物理0始终0 MiB；partial root与
+  2,006-byte日志保留为工程失败证据。retry改用clean pushed`321bded`、有upstream的冻结run branch。
+- live只使用空闲`gpu02:0`完成validation8×1-state correct/without-replacement纵向链路；有效root=
+  `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_retry1_gpu02_fb5b367_20260809`。8 rows、
+  8 unique LoRAs/cache entries、2个batch4、3 workers exit0，0 retry/failure/OOM/nonfinite，四类forbidden
+  reads均0；Writer释放后source policy原位复用且未reload。
+- generation wall=`11.070s`、peak allocated/reserved=`10,576,896,000/11,238,637,568` bytes；整panel
+  wall=`310.715s`。`1/8` success只登记为execution smoke，不作性能推断。GPU已自然回到0 MiB且无进程。
+- 专属evidence已写回policy-effective config并将formal切为`sealed`。下一步是clean push该seal后，
+  预注册小规模strict correct panel；只有absolute/breadth支持才扩到400和五臂。
+
 ## 2026-08-09 Policy-Effective canonical实现与CPU真实资产封存
 
 - raw-factor Writer/config已原位替换为唯一Policy-Effective Barycentric runtime；旧实现只由Git与formal
   artifacts保留。新config=
-  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`，formal故意blocked等待专属
-  A40 online smoke；adapter/episode schema升为v3，旧cache不能冒充。实现提交=`469e033`且已push。
+  `configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json`；adapter/episode schema升为v3，
+  旧cache不能冒充。实现提交=`469e033`且已push；其后专属A40 smoke已在上节通过并seal。
 - 全仓`182/182` tests、compile和真实fixed-asset inspector通过。CPU artifact=
   `runs/outputs/pi05_expert_manifold_policy_effective_cpu_real_assets_20260809/analysis.json`：0 parameters、
   68,863,192 buffer bytes、build`2.33s`、batch24 compile`.85s`、zero identity exact。
@@ -13,8 +26,7 @@
   `1.268`。demo0 generated cross-task cosine中位`.203`，norm/stable/top=`4.179/1.125/.910`，A/B RMS=
   `.01891/.00846`，q/v/action B-column cosine=`.815/.813/.455`，16 rank coordinates全active。
 - architecture gate无parallel Writer family：保留的`TopologicalLoRAChunkLayout`仅供现有expert/cache
-  分析脚本做exact layout inspection，不参与deployment；active source/config总行数没有扩张。下一步先
-  clean commit/push，再live选一张空闲A40做8-row纵向smoke。
+  分析脚本做exact layout inspection，不参与deployment；active source/config总行数没有扩张。
 
 ## 2026-08-09 Causal Barycentric correct400完成、负裁决与compiler诊断
 

@@ -36,6 +36,10 @@
   `4.179/1.125/.910`、A/B RMS=`.01891/.00846`、q/v/action B-column cosine=`.815/.813/.455`、16 active，
   与正常experts同量级；不是另一种低能量、单rank或99%列共线LoRA。train24 demo0跨task cosine中位
   `.203`，显著接近expert bank`.100`而非旧Writer公共方向。
+- 专属A40 smoke进一步排除online工程错位：8/8不同validation task各生成一套唯一完整LoRA，v3 evidence
+  显示每行确实读取correct action-hidden frames；0 forbidden reads、0 retry/failure/OOM/nonfinite，Writer
+  release和source-policy原位复用均闭合。`1/8`只说明环境链路可执行，样本太小，不能支持或否定absolute
+  性能；因此下一门仍是预注册strict correct小panel，而不是据此改reader或进入few-shot。
 
 ## 2026-08-09 Causal Barycentric online smoke与LoRA几何
 

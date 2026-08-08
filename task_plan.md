@@ -82,6 +82,29 @@
 8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
    aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
 
+## Policy-Effective online smoke launch合同（2026-08-09）
+
+- scientific code seal=`fb5b367`；实际启动只允许来自包含本段launch record、clean pushed且detached的
+  frozen worktree=`/data1/user/ymdai/worktrees/EMBER-policy-effective-smoke-20260809`。fresh root/log/tmux固定为
+  `runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809`、
+  `runs/logs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809.log`和
+  `ember_policy_effective_smoke_fb5b367`；登记时三者及worktree均不存在。
+- 06:33 CST live比较：只选`gpu02`物理0（UUID `GPU-2f8ac922-...`）这一张0 MiB、0% A40，固定
+  physical0→local0、NUMA0；`gpu02:6/7`及`gpu01:3`的他人进程明确不触碰。gpu02 available host memory=
+  `480GiB`。启动前必须再检查物理0仍为空闲，否则不启动。
+- `/data1`个人quota现场blocks=`563,383,492/1,073,741,824 KiB`；8套FP32 rank16 LoRA约41.3MB，连同
+  queue/results/log保守峰值低于1GiB，远低于剩余预算。只跑validation8 tasks×1 state的correct/
+  without-replacement工程smoke；成功或失败都不是性能证据，不扩展到训练或长期run。
+- exact command（在上述frozen worktree、`gpu02`执行）：
+
+```bash
+env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_policy_effective_online_smoke_gpu02_fb5b367_20260809 --role validation --mode smoke --state-count 1 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0 --expert-manifold-config configs/pi05_video_expert_manifold_policy_effective_barycentric_v1.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
+```
+
+- 验收门：8 unique rows、8 unique generated/cache entries、3 workers自然exit0、0 retry/failure/OOM/
+  nonfinite；teacher action/state/reward/terminal reads全0；Writer modules在cache后释放且source policy原进程
+  复用于rollout。GPU自然释放后才把专属evidence写回config并将formal从blocked改为sealed。
+
 ## 退役边界
 
 `scripts/train_expert_manifold_writer.py`、learned Writer training/checkpoint模块及旧

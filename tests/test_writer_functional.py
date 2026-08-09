@@ -17,6 +17,7 @@ from ember.writer.functional import (
     INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     LATIN_BETA_TIME_SAMPLING_SCHEME,
     functional_lora_loss_gradient,
+    pi05_mean_flow_loss,
     prepare_frozen_writer_policy,
     scoped_policy_flow_noise_sampling,
     scoped_policy_flow_time_sampling,
@@ -187,6 +188,86 @@ class _RandomLossPolicy(_LossPolicy):
         }
 
 
+class _TinyPi05Core(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.projection = torch.nn.Linear(3, 4, bias=False)
+
+    def sample_noise(
+        self,
+        shape: tuple[int, ...],
+        device: torch.device | str,
+    ) -> torch.Tensor:
+        return torch.zeros(shape, dtype=torch.float32, device=device)
+
+    def sample_time(
+        self,
+        batch_size: int,
+        device: torch.device | str,
+    ) -> torch.Tensor:
+        return torch.full((batch_size,), 0.5, dtype=torch.float32, device=device)
+
+    def forward(
+        self,
+        images: list[torch.Tensor],
+        image_masks: list[torch.Tensor],
+        tokens: torch.Tensor,
+        token_masks: torch.Tensor,
+        actions: torch.Tensor,
+        noise: torch.Tensor,
+        time: torch.Tensor,
+    ) -> torch.Tensor:
+        del images, image_masks, tokens, token_masks
+        value = self.projection(actions)
+        offset = noise.mean(dim=-1, keepdim=True) * time[:, None, None]
+        return (value + offset).square()
+
+
+class _TinyPi05Policy(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        from lerobot.utils.constants import ACTION
+
+        self.model = _TinyPi05Core()
+        self.config = SimpleNamespace(
+            output_features={ACTION: SimpleNamespace(shape=(3,))}
+        )
+        self.detail_calls = 0
+
+    def _preprocess_images(
+        self,
+        batch: dict[str, torch.Tensor],
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        image = batch["image"]
+        return [image], [torch.ones(image.shape[0], dtype=torch.bool)]
+
+    def prepare_action(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
+        from lerobot.utils.constants import ACTION
+
+        return batch[ACTION]
+
+    def forward(
+        self,
+        batch: dict[str, torch.Tensor],
+        reduction: str = "mean",
+    ) -> tuple[torch.Tensor, dict[str, object]]:
+        if reduction != "mean":
+            raise AssertionError("tiny PI05 test policy only supports mean")
+        self.detail_calls += 1
+        loss = pi05_mean_flow_loss(self, batch)
+        return loss, {"loss": float(loss.detach()), "loss_per_dim": [1.0]}
+
+
+def _tiny_pi05_contract() -> SmolVLALoRAContract:
+    return SmolVLALoRAContract(
+        targets=(LoRATarget("model.projection", 3, 4),),
+        rank=2,
+        alpha=1,
+        dropout=0.0,
+        identity_seed=31,
+    )
+
+
 def _contract() -> SmolVLALoRAContract:
     return SmolVLALoRAContract(
         targets=(LoRATarget("projection", 3, 4),),
@@ -284,6 +365,53 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     assert torch.allclose(
         bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6
     )
+
+
+def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> None:
+    from lerobot.utils.constants import (
+        ACTION,
+        OBS_LANGUAGE_ATTENTION_MASK,
+        OBS_LANGUAGE_TOKENS,
+    )
+
+    policy = _TinyPi05Policy()
+    contract = _tiny_pi05_contract()
+    template = prepare_frozen_writer_policy(policy, contract)
+    state = {
+        name: value.detach().clone()
+        for name, value in template.items()
+    }
+    state[next(name for name in state if ".lora_B." in name)].fill_(0.02)
+    batch_size = 5
+    batch = {
+        "image": torch.randn(batch_size, 3, 4, 4),
+        ACTION: torch.randn(batch_size, 2, 3),
+        OBS_LANGUAGE_TOKENS: torch.ones(batch_size, 4, dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(
+            batch_size, 4, dtype=torch.bool
+        ),
+    }
+    default_loss, default_details, default_gradients = (
+        functional_lora_loss_gradient(
+            policy,
+            state,
+            contract,
+            batch=batch,
+        )
+    )
+    loss_only, no_details, loss_only_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        contract,
+        batch=batch,
+        collect_policy_details=False,
+    )
+    assert policy.detail_calls == 1
+    assert default_details == {"loss": float(default_loss), "loss_per_dim": [1.0]}
+    assert no_details == {}
+    assert torch.equal(loss_only, default_loss)
+    for name in default_gradients:
+        assert torch.equal(loss_only_gradients[name], default_gradients[name])
 
 
 @pytest.mark.parametrize(

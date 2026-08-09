@@ -78,8 +78,8 @@ def test_gpu_preflight_queries_only_explicit_devices(
         if "--query-gpu" in " ".join(command):
             return SimpleNamespace(
                 stdout=(
-                    "4, GPU-four, 0, 81920, 0, 30, 550\n"
-                    "7, GPU-seven, 0, 81920, 0, 30, 550\n"
+                    "4, GPU-four, NVIDIA A40, 0, 46068, 0, 30, 550\n"
+                    "7, GPU-seven, NVIDIA A40, 0, 46068, 0, 30, 550\n"
                 )
             )
         return SimpleNamespace(stdout="")
@@ -92,6 +92,7 @@ def test_gpu_preflight_queries_only_explicit_devices(
         "filesystem_capacity_only_no_recursive_personal_scan"
     )
     assert observed["physical_gpu_ids"] == [4, 7]
+    assert observed["device_names"] == ["NVIDIA A40", "NVIDIA A40"]
     assert len(gpu_calls) == 2
     assert all(call[1:3] == ["-i", "4,7"] for call in gpu_calls)
     assert not any(call[0] == "du" for call in calls)
@@ -106,11 +107,60 @@ def test_storage_root_requires_explicit_host_configuration(
         runtime_launcher._storage_root()
 
 
+def test_gpu_preflight_rejects_more_than_the_owner_six_gpu_limit() -> None:
+    with pytest.raises(Pi05EvaluationError, match="six-GPU limit"):
+        runtime_launcher.gpu_preflight(tuple(range(7)))
+
+
 def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:
     module = _launcher_module()
     assert module._positive_int("100") == 100
     with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
         module._positive_int("0")
+
+
+def test_writer_profile_requires_the_canonical_batch_floor() -> None:
+    module = _launcher_module()
+    assert module._profile_batch_sizes("8,16,32") == (8, 16, 32)
+    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
+        module._profile_batch_sizes("1,8,16")
+    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
+        module._profile_batch_sizes("8,16,24")
+
+
+def test_writer_profile_launch_isolated_to_one_physical_gpu(tmp_path: Path) -> None:
+    module = _launcher_module()
+    command, environment = module._profile_worker_launch(
+        output_dir=tmp_path,
+        contract={
+            "parallel": {
+                "replicas_per_gpu": 1,
+                "omp_threads_per_worker": {"1": 12},
+            }
+        },
+        physical_gpu=5,
+        batch_sizes=(8, 16, 32),
+        warmup_runs=1,
+        measured_runs=2,
+    )
+    assert environment["CUDA_DEVICE_ORDER"] == "PCI_BUS_ID"
+    assert environment["CUDA_VISIBLE_DEVICES"] == "5"
+    assert environment["OMP_NUM_THREADS"] == "12"
+    assert command[2:7] == [
+        "profile-writer-worker",
+        "--output-dir",
+        str(tmp_path.resolve()),
+        "--worker-id",
+        "5-r0",
+    ]
+    assert command[-6:] == [
+        "--profile-batch-sizes",
+        "8,16,32",
+        "--profile-warmup-runs",
+        "1",
+        "--profile-measured-runs",
+        "2",
+    ]
 
 
 def test_partial_launch_cleanup_stops_only_owned_processes() -> None:

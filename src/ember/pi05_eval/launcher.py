@@ -13,6 +13,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.eval_adapters import WRITER_ADAPTER_KINDS
+from ember.pi05_eval_contract import MAX_OWNER_GPU_COUNT
 
 
 def _storage_root() -> Path:
@@ -33,9 +34,13 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     if (
         not selected_indices
         or len(set(selected_indices)) != len(selected_indices)
+        or len(selected_indices) > MAX_OWNER_GPU_COUNT
         or any(value < 0 for value in selected_indices)
     ):
-        raise Pi05EvaluationError("PI05 evaluation preflight GPU selection is invalid")
+        raise Pi05EvaluationError(
+            "PI05 evaluation preflight GPU selection is invalid or exceeds the "
+            "owner six-GPU limit"
+        )
     nvidia_selection = ",".join(str(value) for value in selected_indices)
     storage_root = _storage_root()
     data_capacity = subprocess.run(
@@ -54,7 +59,7 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
             "nvidia-smi",
             "-i",
             nvidia_selection,
-            "--query-gpu=index,uuid,memory.used,memory.total,utilization.gpu,"
+            "--query-gpu=index,uuid,name,memory.used,memory.total,utilization.gpu,"
             "temperature.gpu,driver_version",
             "--format=csv,noheader,nounits",
         ],
@@ -64,12 +69,14 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     ).stdout.splitlines()
     gpu_by_index: dict[int, str] = {}
     uuid_by_index: dict[int, str] = {}
+    name_by_index: dict[int, str] = {}
     for row in gpu_query:
         fields = [value.strip() for value in row.split(",")]
-        if len(fields) < 2 or not fields[0].isdigit():
+        if len(fields) < 3 or not fields[0].isdigit():
             raise Pi05EvaluationError(f"invalid nvidia-smi GPU row: {row}")
         gpu_by_index[int(fields[0])] = row
         uuid_by_index[int(fields[0])] = fields[1]
+        name_by_index[int(fields[0])] = fields[2]
     missing = sorted(set(physical_gpu_ids) - set(gpu_by_index))
     if missing:
         raise Pi05EvaluationError(
@@ -111,8 +118,9 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         "unix": time.time(),
         "physical_gpu_ids": list(physical_gpu_ids),
         "gpus": [gpu_by_index[index] for index in physical_gpu_ids],
+        "device_names": [name_by_index[index] for index in physical_gpu_ids],
         "compute_applications": owned_applications,
-        "co_scheduling_authorized_without_process_interference": True,
+        "idle_device_required": True,
         "python": sys.version,
         "torch": torch.__version__,
         "cuda_runtime": torch.version.cuda,

@@ -130,7 +130,22 @@ def _evaluation_video_contract(
     return mapping, video_data, schedule, pairing
 
 
-def _writer_state_record(path: Path) -> dict[str, Any]:
+def _template_lora_names(config: Mapping[str, Any]) -> tuple[str, ...]:
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    result = []
+    for target in sorted(lora.targets, key=lambda value: value.name):
+        result.extend(
+            (
+                f"{target.name}.lora_A.default.weight",
+                f"{target.name}.lora_B.default.weight",
+            )
+        )
+    return tuple(result)
+
+
+def _writer_state_record(
+    path: Path, *, template_lora_names: Sequence[str]
+) -> dict[str, Any]:
     if not path.is_file():
         raise ExpertManifoldError("v6-prior Writer state is missing")
     with safe_open(str(path), framework="pt", device="cpu") as handle:
@@ -138,6 +153,28 @@ def _writer_state_record(path: Path) -> dict[str, Any]:
         value_count = sum(
             math.prod(handle.get_slice(name).get_shape()) for name in names
         )
+        template_names = tuple(name for name in names if name.startswith("template_"))
+        if len(template_names) != len(template_lora_names):
+            raise ExpertManifoldError("v6-prior LoRA template topology changed")
+        dtype_itemsize = {"BF16": 2, "F16": 2, "F32": 4, "F64": 8}
+        template_dtype_tensor_counts: dict[str, int] = {}
+        template_dtype_parameter_counts: dict[str, int] = {}
+        template_dtype_by_name: dict[str, str] = {}
+        for buffer_name, lora_name in zip(
+            template_names, template_lora_names, strict=True
+        ):
+            value = handle.get_slice(buffer_name)
+            dtype = str(value.get_dtype())
+            if dtype not in dtype_itemsize:
+                raise ExpertManifoldError("v6-prior LoRA template dtype changed")
+            count = math.prod(value.get_shape())
+            template_dtype_tensor_counts[dtype] = (
+                template_dtype_tensor_counts.get(dtype, 0) + 1
+            )
+            template_dtype_parameter_counts[dtype] = (
+                template_dtype_parameter_counts.get(dtype, 0) + count
+            )
+            template_dtype_by_name[lora_name] = dtype
     if len(names) != V6_WRITER_STATE_TENSOR_COUNT:
         raise ExpertManifoldError("v6-prior Writer state tensor count changed")
     return {
@@ -145,6 +182,19 @@ def _writer_state_record(path: Path) -> dict[str, Any]:
         "bytes": path.stat().st_size,
         "state_tensor_count": len(names),
         "state_value_count": value_count,
+        "template_lora_storage": {
+            "tensor_count": len(template_names),
+            "parameter_count": sum(template_dtype_parameter_counts.values()),
+            "tensor_bytes": sum(
+                dtype_itemsize[dtype] * count
+                for dtype, count in template_dtype_parameter_counts.items()
+            ),
+            "dtype_tensor_counts": dict(sorted(template_dtype_tensor_counts.items())),
+            "dtype_parameter_counts": dict(
+                sorted(template_dtype_parameter_counts.items())
+            ),
+            "dtype_by_name": dict(sorted(template_dtype_by_name.items())),
+        },
     }
 
 
@@ -209,7 +259,9 @@ def _historical_writer_asset(
             "bytes": manifest_path.stat().st_size,
             "schema": manifest["schema_version"],
         },
-        "writer_state": _writer_state_record(writer_path),
+        "writer_state": _writer_state_record(
+            writer_path, template_lora_names=_template_lora_names(config)
+        ),
     }
 
 
@@ -285,7 +337,9 @@ def _trained_writer_asset(
             "bytes": manifest_path.stat().st_size,
             "schema": manifest["schema_version"],
         },
-        "writer_state": _writer_state_record(writer_path),
+        "writer_state": _writer_state_record(
+            writer_path, template_lora_names=_template_lora_names(config)
+        ),
     }
 
 
@@ -373,6 +427,10 @@ def inspect_expert_manifold_writer_evaluation(
         },
         "evaluation_authority": {
             "formal_status": status,
+            "throughput_policy": config["evaluation"]["throughput_policy"],
+            "minimum_smoke_writer_model_batch_size": config["evaluation"][
+                "minimum_smoke_writer_model_batch_size"
+            ],
             "online_smoke_evidence": config["evaluation"].get(
                 "online_smoke_evidence"
             ),

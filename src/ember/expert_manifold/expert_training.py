@@ -48,6 +48,7 @@ from ember.pi05_eval_contract import (
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.writer.functional import pi05_mean_flow_loss
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import load_policy, load_stats
 
@@ -134,6 +135,55 @@ def _task_summary(
     )
 
 
+def _task_expert_metric_values(
+    loss: torch.Tensor,
+    grad_norm: torch.Tensor,
+    *,
+    task: ExpertTask,
+    step: int,
+) -> tuple[float, float]:
+    values = torch.stack(
+        (loss.detach().to(torch.float32), grad_norm.detach().to(torch.float32))
+    ).to(device="cpu").tolist()
+    if not math.isfinite(values[0]):
+        raise ExpertManifoldError(
+            f"non-finite task-expert loss for task {task.ordinal} at step {step}"
+        )
+    if not math.isfinite(values[1]):
+        raise ExpertManifoldError("task-expert gradient is non-finite")
+    return values[0], values[1]
+
+
+def _task_expert_metric_row(
+    *,
+    task: ExpertTask,
+    completed: int,
+    batch_size: int,
+    loss: float,
+    grad_norm: float,
+    applied_lr: float,
+    next_lr: float,
+    data_seconds: float,
+    tick: float,
+    started: float,
+) -> dict[str, Any]:
+    return {
+        "optimizer_step": completed,
+        "task_ordinal": task.ordinal,
+        "global_task_id": task.global_task_id,
+        "mean_action_loss": loss,
+        "gradient_norm_before_clip": grad_norm,
+        "applied_lr": applied_lr,
+        "next_lr": next_lr,
+        "action_queries": completed * batch_size,
+        "data_seconds": data_seconds,
+        "step_seconds": time.monotonic() - tick,
+        "elapsed_seconds": time.monotonic() - started,
+        "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
+        "max_cuda_reserved_bytes": int(torch.cuda.max_memory_reserved()),
+    }
+
+
 def _train_one_task(
     *,
     args: argparse.Namespace,
@@ -203,11 +253,7 @@ def _train_one_task(
         policy_batch = processor.training_batch(batch)
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            loss, _ = policy(policy_batch)
-        if not bool(torch.isfinite(loss).detach()):
-            raise ExpertManifoldError(
-                f"non-finite task-expert loss for task {task.ordinal} at step {step}"
-            )
+            loss = pi05_mean_flow_loss(policy, policy_batch)
         loss.backward()
         if any(
             parameter.grad is not None
@@ -217,27 +263,28 @@ def _train_one_task(
             raise ExpertManifoldError("frozen source policy accumulated expert gradients")
         trainable = tuple(task_lora_state_dict(policy).values())
         grad_norm = torch.nn.utils.clip_grad_norm_(trainable, clip)
-        if not bool(torch.isfinite(grad_norm).detach()):
-            raise ExpertManifoldError("task-expert gradient is non-finite")
+        loss_value, grad_norm_value = _task_expert_metric_values(
+            loss,
+            grad_norm,
+            task=task,
+            step=step,
+        )
         applied_lr = float(optimizer.param_groups[0]["lr"])
         optimizer.step()
         scheduler.step()
         completed = step + 1
-        row = {
-            "optimizer_step": completed,
-            "task_ordinal": task.ordinal,
-            "global_task_id": task.global_task_id,
-            "mean_action_loss": float(loss.detach()),
-            "gradient_norm_before_clip": float(grad_norm),
-            "applied_lr": applied_lr,
-            "next_lr": float(optimizer.param_groups[0]["lr"]),
-            "action_queries": completed * batch_size,
-            "data_seconds": data_seconds,
-            "step_seconds": time.monotonic() - tick,
-            "elapsed_seconds": time.monotonic() - started,
-            "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
-            "max_cuda_reserved_bytes": int(torch.cuda.max_memory_reserved()),
-        }
+        row = _task_expert_metric_row(
+            task=task,
+            completed=completed,
+            batch_size=batch_size,
+            loss=loss_value,
+            grad_norm=grad_norm_value,
+            applied_lr=applied_lr,
+            next_lr=float(optimizer.param_groups[0]["lr"]),
+            data_seconds=data_seconds,
+            tick=tick,
+            started=started,
+        )
         append_jsonl(metrics_path, row)
         metrics_rows += 1
         if completed == 1 or completed % args.log_every == 0:

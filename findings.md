@@ -1,15 +1,41 @@
 # EMBER Findings
 
-## 2026-08-09 v6-prior batch复现失败的根因
+## 2026-08-09 吞吐优先纠偏与连续科研裁决框架
+
+- Owner明确覆盖此前batch1决定：不得为了底层微小BF16/kernel差异降低效率。`30b2ccf`的
+  direct-repeat=`0`、batch8 max-abs=`.001953125`、mean约`4.70e-5`证明没有随机性、padding或串样，
+  但不构成把single-forward低位语义提升为科研变量的理由。逐episode direct重跑、`1e-5`逐tensor门和
+  canonical batch1现已撤回；该失败root只保留诊断，不作为性能证据。
+- 吞吐修正保持科学图不变：one-shot、video-only dynamic value、历史v6 macro400 load-only、冻结
+  encoder/Core/transition/Procedure、只训练compiler+factor、train24/B20、positive functional +
+  effective-expert + bounded ranking和strict paired evaluator均未改变。
+- evaluator改为在同一32-request longest-first panel/同一总帧数上，从稳定且有显存余量的候选中选择
+  实测吞吐最高batch，且不重复Writer forward；这避免大batch因同时加入更多短视频而获得混杂优势。LoRA cache保持template原生72 BF16 +
+  4 F32，单entry tensor bytes=`2,641,920`而非强制FP32的`5,148,672`；batch D2H只同步一次。
+  functional单physical batch绕过76个FP32 accumulation buffers；correct effective alignment只算一次；
+  task metrics/gradient norms批量host transfer；action loader使用2个spawn persistent workers/prefetch2。
+- Writer/video hot path还合并了offset、frame ordinal/order、task-span/condition ownership等重复host barrier，
+  PI05 formal functional loss绕过只供日志使用的两次host sync。单卡profile和vertical evaluator均在模型
+  load/worker spawn前拒绝忙卡和非A40，普通evaluator同时强制owner六卡上限；profile单卡worker再次live
+  preflight并核对checkout，profile seal只能从真实artifact重建。
+- 真实validation8×4-state CPU prepare得到32 requests、historical 600 tensors/12,064,064 values、
+  deployment expert-bank reads=0和72 BF16 + 4 F32 cache descriptor；仍只证明合同，没有新GPU profile、
+  训练或closed-loop成绩。最新测试计数见本次封存对应的`progress.md`顶部。
+- 后续任何实验按`docs/active_session_handoff.md`的统一谱系解释：与最邻近旧架构、历史143、逐task
+  gained/lost、checkpoint churn、五臂和内部传递共同比较；只修改最早失效接口。负结果只淘汰实际检验
+  的假设，未充分证明无效的结构不随单点结果丢弃。最终目标只有EMBER closed-loop性能，LoRA健康度和
+  视频特异性只是机制参照。
+
+## 2026-08-09 v6-prior batch复现失败的根因（batch1裁决已被上节撤回）
 
 - `30b2ccf`首次A40 warm-start smoke在cache前被预注册`1e-5`门拦截；失败root保留0 cache、0 rollout，
   GPU自然释放，因此没有污染任何性能结论。
 - 1,287,168个LoRA参数上，single-direct连续两次逐元素完全相同；同一样本复制batch8与8个异构样本
   batch8相对single-direct的max-abs都为`.001953125`，mean分别`4.703e-5/4.700e-5`。两种batch的量级
   几乎相同，排除跨样本串扰、可变长度padding和随机性，定位为BF16 batch-shape kernel数值路径。
-- 不能用把阈值放宽到`.002`来“通过”复现门，因为那会让cache LoRA不再是历史v6的single-forward
-  语义，且闭环轨迹可能放大微小数值差异。canonical Writer model batch因此固定为1；吞吐只从独立
-  generator并行扩展。该决策牺牲生成速度但去除了后续strict比较中的隐藏实现变量。
+- 当时曾据此拒绝把阈值放宽到`.002`并把Writer固定为batch1；owner随后明确裁决该做法把普通BF16
+  low-bit差异误升格为科研变量且无谓牺牲吞吐。该决定已经撤回，不能作为当前实现或下一步依据；本节只
+  保留失败定位的历史过程。
 
 ## 2026-08-09 v6-prior部署替换后的工程与科学边界
 
@@ -23,9 +49,9 @@
 - shuffled/reversed的因果操纵语义已落实为“按错误展示顺序送入frame content，同时使用新的顺序位置”，
   而不是把content和原始时间戳一起置换后让模型恢复正确顺序。这与用户对人类教学视频的直观相同：
   倒放与乱序必须真正破坏动作先后关系。
-- CPU门只能证明资产、shape、信息墙和cache handoff成立；上述A40证据已经否定batch8数值等价并导向
-  model batch1。下一单卡门仍须让每个staged output与direct forward的76 tensors max-abs`<=1e-5`，并
-  完成cache/release/rollout；通过前不能进入六卡训练。
+- CPU门只能证明资产、shape、信息墙和cache handoff成立。当时A40结果曾错误导向batch1和`1e-5`
+  direct门；该执行结论已由本文件顶部的throughput-first裁决撤回。当前单卡门只认真实batch吞吐、显存、
+  finite/cache/release/reuse和vertical rollout合同，通过前仍不能进入六卡训练。
 - v6-prior的科学假设因此保持单变量：上游video semantics/Procedure继续使用143起点，只修compiler+
   factor heads如何把它写入task-expert定义的policy-effective方向。若后续absolute没有共同提高，不能再
   把首因归给expert LoRA能量、hard/soft路由或evaluator部署错图。
@@ -134,7 +160,7 @@
   `B(c)A(c)=sum_{k,j}c_kc_jB_kA_j`，除期望的同expert项外还有大量`k!=j`交叉项；chunk-wise方向/
   log-scale归一化又使这一关系更非线性。因而one-hot exact、健康谱和语义合理coefficients都不能保证
   affine组合对应任何expert策略。
-- task expert bank本身已用development-train random-reset闭环证明step2000=`658/1200`且24/24 breadth；
+- task expert bank本身已用development-train random-reset闭环证明step2000=`658/1200`且23/24 tasks非零；
   它解决“监督目标是否是policy-effective更新”，不解决held task是否可由train experts组合、对象/
   场景变化是否可迁移，也不解决视频时序因果。Object-1与最邻近train Object-8语义对应且得`38/50`，
   Object-3与最邻近train Object-5同样语义对应却得`0/50`，正说明语义近邻不是闭环可组合性的充分条件。

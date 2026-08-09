@@ -23,13 +23,41 @@ def test_v6_prior_config_blocks_all_gpu_modes_before_the_online_smoke() -> None:
         runtime_for_mode(config, "gradient-profile")
     ready = deepcopy(config)
     ready["gradient_profile"]["status"] = (
-        "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke"
+        "ready_after_cpu_and_single_a40_throughput_smoke"
     )
+    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
+        runtime_for_mode(ready, "gradient-profile")
+    ready["evaluation"]["formal_status"] = "sealed"
     assert runtime_for_mode(ready, "gradient-profile") == (1, ())
     with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
         runtime_for_mode(config, "profile")
     with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
         runtime_for_mode(config, "formal")
+
+    profiled = deepcopy(ready)
+    profiled["gradient_profile"]["status"] = (
+        "sealed_from_live_train24_gradient_profile"
+    )
+    profiled["objective"]["auxiliary_weights"].update(
+        {
+            "status": "sealed_from_live_train24_gradient_profile",
+            "expert": 0.1,
+            "ranking": 0.1,
+        }
+    )
+    profiled["profile_run"]["status"] = "ready_after_live_gradient_profile"
+    assert runtime_for_mode(profiled, "profile") == (3, (1, 3))
+    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
+        runtime_for_mode(profiled, "formal")
+
+    resumed = deepcopy(profiled)
+    resumed["profile_run"]["status"] = (
+        "sealed_from_live_gradient_profile_and_a40_resume_smoke"
+    )
+    resumed["formal_run"]["status"] = (
+        "sealed_from_live_a40_profile_and_macro3_online_smoke"
+    )
+    assert runtime_for_mode(resumed, "formal") == (50, (10, 25, 50))
 
 
 def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(
@@ -50,9 +78,9 @@ def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(weights_path)
 
-    batched = deepcopy(baseline)
-    batched["evaluation"]["writer_model_batch_size"] = 8
-    batched_path = tmp_path / "batched.json"
-    batched_path.write_text(json.dumps(batched), encoding="utf-8")
+    serial = deepcopy(baseline)
+    serial["evaluation"]["minimum_smoke_writer_model_batch_size"] = 1
+    batched_path = tmp_path / "serial.json"
+    batched_path.write_text(json.dumps(serial), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(batched_path)

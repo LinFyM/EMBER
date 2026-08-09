@@ -1106,7 +1106,7 @@ L = L_positive_functional + lambda_expert * L_correct_expert
 封存一次常数；formal不得在线自适应或按closed-loop改权。若某auxiliary在初始化已满足、梯度为零，则不
 人为放大。optimizer使用全新AdamW和低LR短continuation；不加载macro400 Adam moments。
 
-### 33.4 CPU、online与正式裁决门
+### 33.4 历史CPU、online与正式裁决门（由33.7覆盖）
 
 实现前CPU必须通过：
 
@@ -1132,7 +1132,7 @@ without-replacement seed7 strict80 panel上全部评测，避免用different-vid
 但顺序/错误margin仍弱，下一单变量才调整counterfactual credit；若margin提高而absolute下降，则降低的
 是该目标本身而不是“训练不够”。最终仍只认同一single checkpoint的strict paired闭环结果。
 
-### 33.5 当前实现封存（2026-08-09）
+### 33.5 历史实现封存（2026-08-09，runtime事实保留）
 
 训练侧实现已由clean pushed`dd57edc`封存。历史v6 macro400仍按600 tensors strict load；前四block
 冻结为483 tensors、`7,060,992` parameters，compiler+factor heads为41 tensors、`3,714,304`
@@ -1145,7 +1145,7 @@ B20、全局480 unique rows，并包含最长105 sampled-frame视频。config当
 hard-route evaluator/runtime将在下一提交原位替换，完成唯一部署路径和单卡复现smoke后才允许改变该
 状态。
 
-### 33.6 Canonical evaluator替换与复现边界（2026-08-09）
+### 33.6 历史evaluator复现边界（2026-08-09，batch1裁决已撤回）
 
 部署替换已由clean pushed`bca3f6d`完成。旧hard-route config、online expert-bank/feature-cache资产入口、
 HardRouted Writer类和拓扑专属测试已从canonical runtime删除；旧参数即使由历史命令传入也会fail closed。
@@ -1161,7 +1161,7 @@ online路径用当前frozen source policy构造同一`CompleteLoRAWriter`，逐�
 每个episode只从raw HDF5读取一条固定stride视频；current task language始终不变。reversed/shuffled只改变
 frame content的展示顺序，position indices保持新的顺序坐标，因此不是把原始时间戳一起打乱后泄漏原
 顺序。batch内可含不同长度视频，offsets显式切分；batch1的无batch输出和batchN的leading batch维均按
-合同转成76-tensor FP32 LoRA。no-video提前返回template-A/zero-B，不tokenize language、不读frames、
+合同转成76-tensor LoRA。no-video提前返回template-A/zero-B，不tokenize language、不读frames、
 不调用Writer。episode LoRA写入通用cache后删除Writer/store/tokenizer并保留同一source policy做rollout。
 
 全仓`211 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
@@ -1172,8 +1172,71 @@ direct forward数值等价；不能仅因checkpoint能load或8个rollout能结�
 该比较已接入historical-correct smoke runtime：每个batch写cache前逐episode重跑direct forward，state
 names/shapes、finite与max-abs门任一失败都会中止，不允许事后人工补判。
 
-首次`30b2ccf` A40 smoke确实在cache前触发该门。独立诊断中single-direct repeat逐元素差为零，而把同一
-样本复制成batch8与8个异构样本batch8相对single-direct的max-abs都为`.001953125`、mean约`4.70e-5`；
-故不是跨样本污染或padding语义错误，而是BF16算子随batch shape改变的数值路径。为保持历史v6真实
-single-forward语义，不把阈值放宽到一个会悄悄改变LoRA的范围。canonical评测固定model batch=1，吞吐
-只能通过独立generator进程/设备扩展；失败root保留0 cache/0 rollout证据，修复后必须fresh重跑。
+首次`30b2ccf` A40 smoke确实在cache前触发该历史门。独立诊断中single-direct repeat逐元素差为零，而
+同一样本复制batch8与8个异构样本batch8相对single-direct的max-abs均为`.001953125`、mean约`4.70e-5`，
+定位为BF16 batch-shape数值路径。随后把model固定batch1的结论已经由33.7明确撤回；本段只保留故障定位，
+不得恢复其执行决定。失败root仍保留0 cache/0 rollout证据且不resume。
+
+### 33.7 Throughput-first修正与当前正式门（2026-08-09）
+
+33.6最后一段把`.001953125`级BF16 batch-shape低位差异提升为scientific reproduction变量，并据此固定
+model batch1、每个staged LoRA额外重跑single direct forward。Owner随后明确裁决：所有为了这种底层
+微小误差降低效率的行为都不可取，EMBER必须吞吐优先、尽可能利用A40显存并尽快获得真实闭环证据。
+因此33.4--33.6中的batch1、`1e-5` direct comparison、重复forward和相关blocked status自本节起撤回。
+失败root与`batch_equivalence.json`只保留“不是串样/padding/randomness”的诊断价值。
+
+该修正不改变33.1--33.3的科学假设、information wall、one-shot、v6 macro400 initialization、冻结边界、
+train24/B20/full24 objective或strict evaluator。改变的只是等价实现与执行效率：
+
+1. Writer generation batch从8起在真实A40上扫`8/16/32/...`。所有候选处理同一个由最大候选确定的
+   32-request longest-first panel和同一总sampled frames，只改变实际forward分批；选择LoRAs/s最高、
+   最长异长video连续运行稳定且有显存余量的点。接受正常BF16 kernel/batch/reduction low-bit roundoff。
+2. 不再逐episode重复direct Writer forward，也不逐tensor比对。只门禁shape、finite、信息墙、明显
+   cross-sample污染、cache identity/dtype、OOM和runtime合同。
+3. 生成LoRA保持历史template原生storage：72个BF16 tensors、4个F32 tensors、总`2,641,920` bytes/
+   entry；不统一`.float()`到`5,148,672` bytes。一个batch集中nonblocking D2H并按device只同步一次。
+4. B20在单physical batch可容纳时直接求functional output gradient，不创建76个FP32 accumulation
+   buffers；只有真实microbatch才保留FP32 gradient accumulation，避免小而policy-effective的梯度丢失。
+5. correct effective alignment只计算一次并由expert/ranking共享；task scalars、profile norms和step
+   metrics批量host transfer，删除热路径逐tensor finite scan与显式重复CUDA sync。宏步clip norm、loss/
+   metric finite及真实rollout继续提供必要故障证据。
+6. action DataLoader默认2个spawn persistent workers、prefetch2。sampler由global step/rank确定且dataset
+   `__getitem__`无随机性；serial、prefetched和prefix+resume row序列必须一致。profile若GPU仍等待data，
+   再实测更高worker/prefetch。
+
+当前实现进一步把Writer offsets置于CPU合同边界，合并frame ordinal/order、task span和condition
+ownership的重复host barrier，并对token packing做固定shape向量化；PI05 formal functional路径使用与原
+forward同loss/LoRA leaf gradients的loss-only调用，删除纯日志型host sync。这些只改变执行路径，不改变
+objective或允许的信息。
+
+新的CPU门是：historical 600 tensors strict-load、frozen/trainable ownership、effective-BA数学与gradient、
+one-shot/negative/no-video信息墙、native cache schema、DataLoader resume rows、真实validation8 inspect/CLI
+prepare和聚焦/全仓测试。CPU门不要求batched与single逐元素同一。
+
+单卡A40门分两段：先通过canonical `profile-writer-generation`子命令在同一loaded model上完成真实异长
+video batch/VRAM/end-to-end wall sweep；再用选定batch从
+fresh root完成validation8×state0 correct的8 video→8 LoRA→cache→Writer release→source-policy reuse→
+8 rollout vertical smoke。要求0 retry/failure/OOM/nonfinite/forbidden reads、native cache dtype/bytes正确、
+GPU自然释放；success count只作execution信息。config seal必须记录选定batch、候选吞吐比较、peak
+allocated/reserved、redundant Writer forwards=`0`和release/reuse证据，不再记录direct max-abs门。
+profile与vertical public入口都在任何模型load/worker spawn前要求目标卡无compute applications且为
+`NVIDIA A40`；普通evaluator合计最多6卡。profile还要求clean pushed、validation/correct/
+without-replacement、单卡单replica/generator及至少`8/16/32`真实候选，并在独立单卡worker里再次live
+preflight和核对checkout。evaluation seal只能由两个retained roots的artifact assembler生成，要求各候选
+完整fixed panel一致，不能手填。
+
+六卡profile仍使用预注册macro49和train24×B20=480 queries，封存两个auxiliary weights并完成fresh0→1、
+exact-resume1→3、contiguous0→3；同时profile physical microbatch、loader/prefetch、GPU utilization、input
+wait和step phase wall。scientific metrics/cursor/RNG/optimizer语义必须一致，正常parallel roundoff不作
+逐bit门。
+
+config合法状态固定为：初始全部blocked；单卡vertical artifact seal后仅evaluation sealed并令gradient
+ready；六卡gradient artifact seal后同时固定auxiliary weights并令profile ready；fresh/resume/contiguous
+artifact比较通过后才令formal ready。后两次状态转换也必须由结构化verifier完成，不能靠人工改status跳门。
+
+formal从同一historical macro400 load-only状态建立当前schedule macro0，训练0→50并保存10/25/50；
+macro0/10/25/50先跑固定correct80 screen，但四点都必须跑paired correct400，不能由screen或loss选点。
+如果多个task共同上升且50仍有可信趋势，可按同合同续到100/200并及时correct400。single winner严格
+`>150/400`或形成可信共同提升时跑correct/same/wrong/shuffled/reversed/no-video。每次与macro0、历史
+143、v5.2 old和v6 recipe交叉结果比较per-task gained/lost、breadth、churn与Core→Procedure→BA→action
+传递；只改最早失效接口，不因单次结果整体换架构。

@@ -18,6 +18,7 @@ from ember.expert_manifold.contract import (
 from ember.writer.data import WriterTaskAuthority
 from ember.expert_manifold.expert_training import _scheduler
 from ember.expert_manifold.evaluation import (
+    FrozenTaskExpertAdapter,
     TASK_EXPERT_ADAPTER_KIND,
     TASK_EXPERT_EPISODE_SCHEMA,
     inspect_task_expert_bank,
@@ -231,6 +232,54 @@ def test_task_expert_episode_evidence_is_task_and_state_exact() -> None:
         task_id=2,
         init_state_id=5,
     )
+
+
+def test_task_expert_runtime_uses_the_narrow_task_expert_loader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observed = {
+        "config": {"path": str(tmp_path / "task-experts.json")},
+        "bank_root": str(tmp_path / "bank"),
+        "step": 1000,
+        "tasks": [],
+    }
+    loaded: list[Path] = []
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.inspect_task_expert_bank",
+        lambda **_kwargs: observed,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.load_task_expert_config",
+        lambda path: loaded.append(path) or {"authorities": {}},
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.authority_path",
+        lambda _config, _name: tmp_path / "lora.json",
+    )
+    lora = object()
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.load_pi05_lora_contract",
+        lambda _path: lora,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.inject_task_lora",
+        lambda _policy, observed_lora: observed_lora is lora,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.task_lora_state_dict",
+        lambda _policy: {},
+    )
+    policy = torch.nn.Linear(1, 1)
+    adapter = FrozenTaskExpertAdapter(
+        policy=policy,
+        source={},
+        evaluation_adapter=observed,
+        task_keys=(),
+        device=torch.device("cpu"),
+        require_formal=False,
+    )
+    assert loaded == [Path(observed["config"]["path"])]
+    assert adapter.lora is lora
 
 
 def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> None:

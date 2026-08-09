@@ -139,6 +139,7 @@ def _task_objective(
             pair.correct,
             runtime.lora_contract,
             batch=policy_batch,
+            collect_policy_details=False,
         )
     objective = runtime.config["objective"]
     expert_config = objective["expert"]
@@ -168,6 +169,39 @@ def _task_objective(
 
 
 def _task_record(value: TaskObjective) -> dict[str, Any]:
+    metric_names = (
+        "functional_loss",
+        "expert_loss",
+        "expert_direction",
+        "expert_log_norm",
+        "ranking_loss",
+        "ranking_margin",
+        "correct_expert_cosine",
+        "counterfactual_expert_cosine",
+        "correct_effective_norm",
+        "counterfactual_effective_norm",
+        "expert_effective_norm",
+    )
+    metric_tensors = (
+        value.functional_loss,
+        value.auxiliary.expert.total,
+        value.auxiliary.expert.direction,
+        value.auxiliary.expert.log_norm,
+        value.auxiliary.ranking.loss,
+        value.auxiliary.ranking.margin.mean(),
+        value.auxiliary.ranking.correct.cosine.mean(),
+        value.auxiliary.ranking.counterfactual.cosine.mean(),
+        value.auxiliary.ranking.correct.generated_norm.mean(),
+        value.auxiliary.ranking.counterfactual.generated_norm.mean(),
+        value.auxiliary.ranking.correct.target_norm.mean(),
+    )
+    metric_values = torch.stack(
+        tuple(item.detach().to(dtype=torch.float32) for item in metric_tensors)
+    ).to(device="cpu").tolist()
+    if not all(math.isfinite(item) for item in metric_values):
+        raise ExpertManifoldError("v6-prior task objective metric is non-finite")
+    if metric_values[-1] <= 1e-12:
+        raise ExpertManifoldError("expert target has zero policy-effective energy")
     return {
         "task_ordinal": value.task.ordinal,
         "global_task_id": value.task.global_task_id,
@@ -182,27 +216,7 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
             else None
         ),
         "counterfactual_demo": value.counterfactual_demo,
-        "functional_loss": float(value.functional_loss),
-        "expert_loss": float(value.auxiliary.expert.total.detach()),
-        "expert_direction": float(value.auxiliary.expert.direction.detach()),
-        "expert_log_norm": float(value.auxiliary.expert.log_norm.detach()),
-        "ranking_loss": float(value.auxiliary.ranking.loss.detach()),
-        "ranking_margin": float(value.auxiliary.ranking.margin.detach().mean()),
-        "correct_expert_cosine": float(
-            value.auxiliary.ranking.correct.cosine.detach().mean()
-        ),
-        "counterfactual_expert_cosine": float(
-            value.auxiliary.ranking.counterfactual.cosine.detach().mean()
-        ),
-        "correct_effective_norm": float(
-            value.auxiliary.ranking.correct.generated_norm.detach().mean()
-        ),
-        "counterfactual_effective_norm": float(
-            value.auxiliary.ranking.counterfactual.generated_norm.detach().mean()
-        ),
-        "expert_effective_norm": float(
-            value.auxiliary.ranking.correct.target_norm.detach().mean()
-        ),
+        **dict(zip(metric_names, metric_values, strict=True)),
         "correct_raw_frames": value.pair.correct_raw_frames,
         "correct_sampled_frames": value.pair.correct_sampled_frames,
         "counterfactual_raw_frames": value.pair.counterfactual_raw_frames,
@@ -249,6 +263,8 @@ def _runtime_maximums(
     context: DistributedContext,
     started: float,
 ) -> tuple[float, int, int]:
+    # One macro-boundary synchronization makes throughput evidence include all
+    # queued optimizer work. Per-task and per-tensor synchronization stays absent.
     torch.cuda.synchronize(context.device)
     values = torch.tensor(
         (
@@ -284,14 +300,20 @@ def _component_norms(
     value: torch.Tensor,
     layout: Sequence[tuple[str, int, int]],
 ) -> dict[str, float]:
-    result = {"compiler": 0.0, "factor_heads": 0.0}
+    parts: dict[str, list[torch.Tensor]] = {"compiler": [], "factor_heads": []}
     for name, start, stop in layout:
         root = name.split(".", 1)[0]
-        result[root] += float(value[start:stop].double().square().sum())
-    return {
-        **{name: math.sqrt(total) for name, total in result.items()},
-        "global": float(torch.linalg.vector_norm(value.double())),
-    }
+        parts[root].append(value[start:stop].square().sum())
+    packed = torch.stack(
+        (
+            torch.stack(parts["compiler"]).sum().sqrt(),
+            torch.stack(parts["factor_heads"]).sum().sqrt(),
+            torch.linalg.vector_norm(value),
+        )
+    ).detach().to(device="cpu", dtype=torch.float32).tolist()
+    if not all(math.isfinite(item) for item in packed):
+        raise ExpertManifoldError("v6-prior gradient-profile norm is non-finite")
+    return dict(zip(("compiler", "factor_heads", "global"), packed, strict=True))
 
 
 def suggest_auxiliary_weight(
@@ -448,7 +470,8 @@ def _run_training(runtime: V6PriorRuntime) -> None:
                 runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
             ),
         )
-        if not bool(torch.isfinite(gradient_norm)):
+        gradient_norm_value = float(gradient_norm)
+        if not math.isfinite(gradient_norm_value):
             raise ExpertManifoldError("v6-prior gradient norm is non-finite")
         applied_lr = float(runtime.optimizer.param_groups[0]["lr"])
         runtime.optimizer.step()
@@ -480,7 +503,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
             **metrics,
             "expert_weight": expert_weight,
             "ranking_weight": ranking_weight,
-            "gradient_norm_before_clip": float(gradient_norm),
+            "gradient_norm_before_clip": gradient_norm_value,
             "applied_lr": applied_lr,
             "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
             "counterfactual_counts": {
@@ -582,7 +605,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--num-workers", type=int, default=2)
     return parser
 
 
@@ -608,10 +631,10 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     ).resolve()
     if args.warm_start != configured_warm_start:
         raise ExpertManifoldError("v6-prior warm-start path changed")
-    if args.num_workers != 0 or (
+    if args.num_workers < 0 or (
         args.stop_after_macro is not None and args.stop_after_macro <= 0
     ):
         raise ExpertManifoldError(
-            "v6-prior exact resume requires zero DataLoader workers"
+            "v6-prior worker count or stop boundary is invalid"
         )
     return args

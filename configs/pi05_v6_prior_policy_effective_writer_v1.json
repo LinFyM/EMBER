@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_pi05_v6_prior_policy_effective_writer_v1",
   "authorities": {
-    "asset_config": {
+    "task_expert_config": {
       "path": "configs/pi05_video_expert_manifold_v1.json"
     },
     "target_data_manifest": {
@@ -170,7 +170,7 @@
     }
   },
   "gradient_profile": {
-    "status": "blocked_until_single_a40_warmstart_reproduction_smoke",
+    "status": "blocked_until_single_a40_throughput_smoke",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "macros": 1,
@@ -208,8 +208,9 @@
     ]
   },
   "evaluation": {
-    "writer_model_batch_size": 1,
-    "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
+    "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
+    "minimum_smoke_writer_model_batch_size": 8,
+    "formal_status": "blocked_until_live_a40_throughput_smoke",
     "online_smoke_evidence": null
   },
   "content_hash_policy": "disabled_by_owner"

@@ -227,6 +227,57 @@ def load_expert_manifold_config(path: Path) -> dict[str, Any]:
     return config
 
 
+def load_task_expert_config(path: Path) -> dict[str, Any]:
+    """Load only the retained train24 task-expert authority from a legacy file."""
+
+    config = read_json(path)
+    experts = config.get("task_experts", {})
+    formal = experts.get("formal_run", {})
+    selection = formal.get("checkpoint_selection_evidence", {})
+    profile = formal.get("profile_evidence", {})
+    authorities = config.get("authorities", {})
+    valid = (
+        config.get("schema_version") == CONFIG_SCHEMA
+        and set(authorities)
+        == {
+            "target_data_manifest",
+            "evaluation_config",
+            "lora_contract",
+            "source_base_config",
+        }
+        and all(authority_path(config, name).is_file() for name in authorities)
+        and _information_wall_matches(config.get("information_wall", {}))
+        and int(experts.get("task_count", -1)) == 24
+        and int(experts.get("episodes_per_task", -1)) == 50
+        and experts.get("demo_indices") == [0, 49]
+        and int(experts.get("action_chunk_size", -1)) == 50
+        and experts.get("lora_topology")
+        == "configs/pi05_lora_v1.json:38targets:rank16"
+        and experts.get("task_parameter_sharing") == "none"
+        and formal.get("status") == "sealed"
+        and int(formal.get("total_steps", -1)) == 2000
+        and int(formal.get("per_task_batch_size", -1)) == 16
+        and formal.get("checkpoint_steps") == [250, 500, 1000, 1500, 2000]
+        and int(formal.get("allowed_worker_count", -1)) == 6
+        and int(formal.get("tasks_per_worker", -1)) == 4
+        and int(formal.get("selected_stop_step", -1)) == 2000
+        and formal.get("stage_stop_steps") == [1000, 2000]
+        and int(selection.get("selected_step", -1)) == 2000
+        and selection.get("selection")
+        == "one_uniform_step_for_all_24_tasks_no_task_specific_mixing"
+        and profile.get("device") == "NVIDIA A40"
+        and int(profile.get("per_task_batch_size", -1)) == 16
+        and profile.get("exact_resume_scientific_metrics_equal") is True
+        and profile.get("exact_resume_adapter_bytes_equal") is True
+        and int(profile.get("oom_count", -1)) == 0
+        and int(profile.get("nonfinite_count", -1)) == 0
+        and config.get("content_hash_policy") == "disabled_by_owner"
+    )
+    if not valid:
+        raise ExpertManifoldError("task-expert scientific boundary changed")
+    return config
+
+
 def _barycentric_writer_matches(writer: Mapping[str, Any]) -> bool:
     return (
         _exact_fields_match(

@@ -23,20 +23,26 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.errors import WriterModelError
 
 
-WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v2"
+WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v3"
 WRITER_LORA_CACHE_ENTRY_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_entry_v2"
+    "ember_pi05_expert_manifold_writer_lora_cache_entry_v3"
 )
 WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v2"
+    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v3"
 )
 WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_generator_marker_v2"
+    "ember_pi05_expert_manifold_writer_lora_generator_marker_v3"
 )
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
 WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = "request ordinal modulo generator worker count"
+_TORCH_DTYPE_NAMES = {
+    torch.bfloat16: "BF16",
+    torch.float16: "F16",
+    torch.float32: "F32",
+    torch.float64: "F64",
+}
 
 
 @dataclass(frozen=True)
@@ -130,6 +136,7 @@ def build_writer_lora_cache_descriptor(
     generation_batch_size: int,
     lora_parameter_count: int,
     lora_tensor_count: int,
+    lora_storage_per_entry: Mapping[str, Any],
 ) -> dict[str, Any]:
     worker_count = int(contract["parallel"]["physical_gpu_count"]) * generators_per_gpu
     if (
@@ -139,6 +146,41 @@ def build_writer_lora_cache_descriptor(
         or min(lora_parameter_count, lora_tensor_count) <= 0
     ):
         raise WriterModelError("Writer cache generation topology is invalid")
+    try:
+        storage = {
+            "tensor_count": int(lora_storage_per_entry["tensor_count"]),
+            "parameter_count": int(lora_storage_per_entry["parameter_count"]),
+            "tensor_bytes": int(lora_storage_per_entry["tensor_bytes"]),
+            "dtype_tensor_counts": {
+                str(name): int(value)
+                for name, value in lora_storage_per_entry[
+                    "dtype_tensor_counts"
+                ].items()
+            },
+            "dtype_parameter_counts": {
+                str(name): int(value)
+                for name, value in lora_storage_per_entry[
+                    "dtype_parameter_counts"
+                ].items()
+            },
+            "dtype_by_name": {
+                str(name): str(value)
+                for name, value in lora_storage_per_entry["dtype_by_name"].items()
+            },
+        }
+    except (AttributeError, KeyError, TypeError, ValueError) as error:
+        raise WriterModelError("Writer cache LoRA storage contract is invalid") from error
+    if (
+        storage["tensor_count"] != lora_tensor_count
+        or storage["parameter_count"] != lora_parameter_count
+        or storage["tensor_bytes"] <= 0
+        or sum(storage["dtype_tensor_counts"].values()) != lora_tensor_count
+        or sum(storage["dtype_parameter_counts"].values()) != lora_parameter_count
+        or len(storage["dtype_by_name"]) != lora_tensor_count
+        or set(storage["dtype_by_name"].values())
+        - set(storage["dtype_tensor_counts"])
+    ):
+        raise WriterModelError("Writer cache LoRA storage contract changed")
     adapter = contract["adapter"]
     recipe = {
         "generators_per_gpu": generators_per_gpu,
@@ -148,29 +190,84 @@ def build_writer_lora_cache_descriptor(
         "episode_evidence_schema": writer_episode_schema(adapter),
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
-        "precision": "bfloat16_compute_float32_lora_state",
+        "precision": "bfloat16_compute_template_native_mixed_lora_state",
+        "storage_per_entry": storage,
     }
     identity = _cache_identity_payload(contract, recipe)
     entry_count = len(writer_cache_requests(contract))
-    tensor_bytes = entry_count * lora_parameter_count * torch.float32.itemsize
+    tensor_bytes = entry_count * storage["tensor_bytes"]
     return {
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
         "root": str(root.resolve()),
         "reference": (
             f"{contract['adapter']['writer_asset']['reference']}:"
-            f"{entry_count}episodes:{contract['rng']['inference_seed']}"
+            f"{entry_count}episodes:seed{contract['rng']['inference_seed']}:"
+            f"batch{generation_batch_size}:native{storage['tensor_bytes']}bytes"
         ),
         "identity": identity,
         "entry_count": entry_count,
         "lora_contract": dict(contract["adapter"]["lora_contract"]),
         "lora_parameter_count": lora_parameter_count,
         "lora_tensor_count": lora_tensor_count,
+        "lora_storage_per_entry": storage,
         "estimated_tensor_bytes": tensor_bytes,
         "estimated_peak_new_bytes": tensor_bytes + entry_count * 16_384 + 1_048_576,
         "generation_recipe": recipe,
         "persistent_source_policy_handoff": True,
         "writer_modules_released_before_rollout_scale_out": True,
     }
+
+
+def stage_writer_lora_states_to_cpu(
+    states: Sequence[Mapping[str, torch.Tensor]],
+) -> tuple[dict[str, torch.Tensor], ...]:
+    """Submit one batch of GPU-to-host copies and synchronize only once."""
+
+    if not states:
+        raise WriterModelError("Writer cache staging batch is empty")
+    result: list[dict[str, torch.Tensor]] = [dict() for _ in states]
+    pending_devices: dict[torch.device, torch.cuda.Stream] = {}
+    staged_buffers: list[torch.Tensor] = []
+    cpu_values: list[torch.Tensor] = []
+    pending_values: dict[
+        tuple[torch.device, torch.dtype],
+        list[tuple[int, str, torch.Tensor]],
+    ] = {}
+    for state_index, state in enumerate(states):
+        for name, value in state.items():
+            detached = value.detach()
+            if detached.device.type == "cuda":
+                pending_values.setdefault(
+                    (detached.device, detached.dtype), []
+                ).append((state_index, name, detached))
+            else:
+                cpu_value = detached.to(device="cpu").contiguous()
+                result[state_index][name] = cpu_value
+                cpu_values.append(cpu_value)
+    for (device, dtype), values in pending_values.items():
+        flat = torch.empty(
+            sum(value.numel() for _, _, value in values),
+            dtype=dtype,
+            device="cpu",
+            pin_memory=True,
+        )
+        offset = 0
+        for state_index, name, value in values:
+            stop = offset + value.numel()
+            destination = flat[offset:stop].view(value.shape)
+            destination.copy_(value, non_blocking=True)
+            result[state_index][name] = destination
+            offset = stop
+        pending_devices[device] = torch.cuda.current_stream(device)
+        staged_buffers.append(flat)
+    for stream in pending_devices.values():
+        stream.synchronize()
+    if any(
+        not bool(torch.isfinite(value).all().item())
+        for value in (*staged_buffers, *cpu_values)
+    ):
+        raise WriterModelError("Writer cache staging produced a non-finite LoRA")
+    return tuple(result)
 
 
 def _descriptor(contract: Mapping[str, Any]) -> dict[str, Any]:
@@ -222,7 +319,9 @@ def validate_writer_cache_entry_record(
         or record.get("cache_reference") != descriptor["reference"]
         or record.get("request") != request.record()
         or record.get("entry_id") != request.entry_id
+        or record.get("cache_identity") != descriptor["identity"]
         or record.get("lora_contract") != descriptor["lora_contract"]
+        or record.get("lora_storage") != descriptor["lora_storage_per_entry"]
         or lora_path.stat().st_size != int(record.get("lora_file", {}).get("bytes", -1))
     ):
         raise WriterModelError(f"Writer cache entry changed: {request.entry_id}")
@@ -247,6 +346,31 @@ def _validate_lora_contract(descriptor: Mapping[str, Any], contract: LoRAContrac
         raise WriterModelError("Writer cache LoRA topology changed")
 
 
+def _state_storage(state: Mapping[str, torch.Tensor]) -> dict[str, Any]:
+    dtype_tensor_counts: dict[str, int] = {}
+    dtype_parameter_counts: dict[str, int] = {}
+    tensor_bytes = 0
+    dtype_by_name: dict[str, str] = {}
+    for name, value in state.items():
+        dtype = _TORCH_DTYPE_NAMES.get(value.dtype)
+        if dtype is None:
+            raise WriterModelError("Writer cache LoRA dtype changed")
+        dtype_tensor_counts[dtype] = dtype_tensor_counts.get(dtype, 0) + 1
+        dtype_parameter_counts[dtype] = (
+            dtype_parameter_counts.get(dtype, 0) + value.numel()
+        )
+        tensor_bytes += value.numel() * value.element_size()
+        dtype_by_name[name] = dtype
+    return {
+        "tensor_count": len(state),
+        "parameter_count": sum(value.numel() for value in state.values()),
+        "tensor_bytes": tensor_bytes,
+        "dtype_tensor_counts": dict(sorted(dtype_tensor_counts.items())),
+        "dtype_parameter_counts": dict(sorted(dtype_parameter_counts.items())),
+        "dtype_by_name": dict(sorted(dtype_by_name.items())),
+    }
+
+
 def write_writer_cache_entry(
     contract: Mapping[str, Any],
     request: WriterCacheRequest,
@@ -259,6 +383,8 @@ def write_writer_cache_entry(
     descriptor = _descriptor(contract)
     _validate_lora_contract(descriptor, lora_contract)
     validate_lora_state(state, lora_contract)
+    if _state_storage(state) != descriptor["lora_storage_per_entry"]:
+        raise WriterModelError("Writer cache LoRA native storage changed")
     if not validate_writer_episode(
         contract["adapter"], evidence,
         suite=request.suite, task_id=request.task_id, init_state_id=request.init_state_id,
@@ -281,9 +407,11 @@ def write_writer_cache_entry(
             {
                 "schema_version": WRITER_LORA_CACHE_ENTRY_SCHEMA,
                 "cache_reference": descriptor["reference"],
+                "cache_identity": descriptor["identity"],
                 "entry_id": request.entry_id,
                 "request": request.record(),
                 "lora_contract": descriptor["lora_contract"],
+                "lora_storage": descriptor["lora_storage_per_entry"],
                 "lora_file": {"bytes": lora_path.stat().st_size},
                 "evidence": dict(evidence),
                 "generation": dict(generation),
@@ -311,6 +439,8 @@ def load_writer_cache_entry(
         device=str(device),
     )
     validate_lora_state(state, lora_contract)
+    if _state_storage(state) != descriptor["lora_storage_per_entry"]:
+        raise WriterModelError("Writer cache loaded LoRA storage changed")
     return state, dict(record["evidence"])
 
 

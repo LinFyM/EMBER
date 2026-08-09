@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pytest
+from torch.utils.data import DataLoader
 
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.errors import WriterModelError
@@ -12,6 +13,12 @@ from ember.writer.errors import WriterModelError
 class _DatasetStub:
     task_episode_rows: dict[int, dict[int, tuple[int, ...]]]
     frame_index: tuple[tuple[int, int, int], ...]
+
+    def __len__(self) -> int:
+        return len(self.frame_index)
+
+    def __getitem__(self, item: int) -> dict[str, int]:
+        return {"row": item}
 
 
 def _dataset(
@@ -107,6 +114,32 @@ def test_sampler_resume_and_seed_are_sample_exact() -> None:
     )
     assert prefix + resumed == full
     assert changed != full
+
+
+def test_dataloader_prefetch_preserves_exact_sampler_and_resume_rows() -> None:
+    dataset, _ = _dataset()
+
+    def rows(start: int, stop: int, workers: int) -> list[list[int]]:
+        loader = DataLoader(
+            dataset,
+            batch_sampler=_sampler(
+                dataset,
+                rank=1,
+                start_step=start,
+                stop_step=stop,
+            ),
+            num_workers=workers,
+            persistent_workers=workers > 0,
+            prefetch_factor=2 if workers else None,
+            multiprocessing_context="spawn" if workers else None,
+        )
+        return [batch["row"].tolist() for batch in loader]
+
+    serial = rows(0, 9, 0)
+    prefetched = rows(0, 9, 2)
+    resumed = rows(0, 3, 2) + rows(3, 9, 2)
+    assert prefetched == serial
+    assert resumed == serial
 
 
 def test_k4_teacher_schedule_is_unique_exclusion_safe_and_resumable() -> None:

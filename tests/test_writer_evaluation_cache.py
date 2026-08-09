@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import torch
+from safetensors.torch import save_file
 
 from ember.lora import LoRATarget, SmolVLALoRAContract
 from ember.writer.evaluation_cache import (
@@ -12,10 +13,12 @@ from ember.writer.evaluation_cache import (
     build_writer_lora_cache_descriptor,
     finalize_writer_cache,
     load_writer_cache_entry,
+    stage_writer_lora_states_to_cpu,
     validate_writer_cache_manifest,
     write_generator_marker,
     write_writer_cache_entry,
     writer_cache_episode_request_map,
+    writer_cache_entry_is_complete,
     writer_cache_manifest_is_ready,
     writer_cache_requests,
 )
@@ -26,6 +29,7 @@ from ember.expert_manifold.inference import (
     expected_expert_manifold_episode_evidence,
 )
 from ember.writer.errors import WriterModelError
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
 def _lora_contract() -> SmolVLALoRAContract:
@@ -36,6 +40,20 @@ def _lora_contract() -> SmolVLALoRAContract:
         dropout=0.0,
         identity_seed=7,
     )
+
+
+def _lora_storage() -> dict:
+    return {
+        "tensor_count": 2,
+        "parameter_count": 14,
+        "tensor_bytes": 28,
+        "dtype_tensor_counts": {"BF16": 2},
+        "dtype_parameter_counts": {"BF16": 14},
+        "dtype_by_name": {
+            "layer.lora_A.default.weight": "BF16",
+            "layer.lora_B.default.weight": "BF16",
+        },
+    }
 
 
 def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
@@ -96,6 +114,7 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
         generation_batch_size=2,
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
+        lora_storage_per_entry=_lora_storage(),
     )
     return contract
 
@@ -157,6 +176,22 @@ def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
     assert len({request.entry_id for request in writer_cache_requests(contract)}) == 50
 
 
+def test_cache_staging_preserves_native_tensor_dtypes() -> None:
+    staged = stage_writer_lora_states_to_cpu((_state(1.0), _state(2.0)))
+    assert len(staged) == 2
+    assert all(value.device.type == "cpu" for state in staged for value in state.values())
+    assert all(
+        value.dtype == torch.bfloat16 for state in staged for value in state.values()
+    )
+
+
+def test_cache_staging_rejects_nonfinite_batch_without_per_tensor_cuda_sync() -> None:
+    state = _state(1.0)
+    state["layer.lora_A.default.weight"][0, 0] = torch.nan
+    with pytest.raises(WriterModelError, match="non-finite LoRA"):
+        stage_writer_lora_states_to_cpu((state,))
+
+
 def test_expert_manifold_cache_declares_one_shot_episode_evidence(
     tmp_path: Path,
 ) -> None:
@@ -169,6 +204,7 @@ def test_expert_manifold_cache_declares_one_shot_episode_evidence(
         generation_batch_size=2,
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
+        lora_storage_per_entry=_lora_storage(),
     )
     assert descriptor["generation_recipe"]["episode_evidence_schema"] == (
         EXPERT_MANIFOLD_EPISODE_SCHEMA
@@ -177,10 +213,10 @@ def test_expert_manifold_cache_declares_one_shot_episode_evidence(
         "one_entry_per_episode_one_shot_video_v1"
     )
     assert descriptor["generation_recipe"]["precision"] == (
-        "bfloat16_compute_float32_lora_state"
+        "bfloat16_compute_template_native_mixed_lora_state"
     )
     assert descriptor["estimated_tensor_bytes"] == (
-        descriptor["entry_count"] * lora.parameter_count * torch.float32.itemsize
+        descriptor["entry_count"] * _lora_storage()["tensor_bytes"]
     )
 
 
@@ -199,8 +235,52 @@ def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(
         contract, requests[1], lora_contract=lora, device=torch.device("cpu")
     )
     assert state["layer.lora_A.default.weight"].shape == (2, 3)
+    assert state["layer.lora_A.default.weight"].dtype == torch.bfloat16
     assert evidence["lora_reference"].endswith(requests[1].entry_id)
     assert "sha256" not in str(manifest).lower()
+
+
+def test_writer_cache_rejects_precision_widening(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "cache")
+    lora = _lora_contract()
+    request = writer_cache_requests(contract)[0]
+    evidence = expected_expert_manifold_episode_evidence(
+        contract["adapter"],
+        suite=request.suite,
+        task_id=request.task_id,
+        init_state_id=request.init_state_id,
+        lora_reference="run:native-dtype",
+    )
+    evidence["writer_generation_seconds"] = 0.1
+    with pytest.raises(WriterModelError, match="native storage changed"):
+        write_writer_cache_entry(
+            contract,
+            request,
+            state={name: value.float() for name, value in _state(1.0).items()},
+            evidence=evidence,
+            generation={"generator_worker_id": "0-r0"},
+            lora_contract=lora,
+        )
+
+
+def test_writer_cache_load_rejects_storage_drift(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "cache", state_count=1)
+    lora = _lora_contract()
+    _populate(contract, lora)
+    request = writer_cache_requests(contract)[0]
+    root = tmp_path / "cache" / "entries" / request.entry_id
+    lora_path = root / "lora.safetensors"
+    save_file(
+        {name: value.float() for name, value in _state(1.0).items()},
+        str(lora_path),
+    )
+    record = read_json(root / "entry.json")
+    record["lora_file"]["bytes"] = lora_path.stat().st_size
+    write_json_atomic(root / "entry.json", record)
+    with pytest.raises(WriterModelError, match="loaded LoRA storage changed"):
+        load_writer_cache_entry(
+            contract, request, lora_contract=lora, device=torch.device("cpu")
+        )
 
 
 def test_writer_cache_rejects_descriptor_drift(tmp_path: Path) -> None:
@@ -209,3 +289,40 @@ def test_writer_cache_rejects_descriptor_drift(tmp_path: Path) -> None:
     changed["tasks"][0]["init_state_ids"] = [0, 2]
     with pytest.raises(WriterModelError, match="descriptor changed"):
         assigned_writer_cache_requests(changed, generator_index=0)
+
+
+def test_partial_cache_entry_cannot_cross_video_conditions(tmp_path: Path) -> None:
+    root = tmp_path / "cache"
+    correct = _contract(root, state_count=1)
+    lora = _lora_contract()
+    request = writer_cache_requests(correct)[0]
+    evidence = expected_expert_manifold_episode_evidence(
+        correct["adapter"],
+        suite=request.suite,
+        task_id=request.task_id,
+        init_state_id=request.init_state_id,
+        lora_reference="run:correct-partial",
+    )
+    evidence["writer_generation_seconds"] = 0.1
+    write_writer_cache_entry(
+        correct,
+        request,
+        state=_state(1.0),
+        evidence=evidence,
+        generation={"generator_worker_id": "0-r0"},
+        lora_contract=lora,
+    )
+
+    wrong = copy.deepcopy(correct)
+    wrong["adapter"]["video_condition"] = "wrong"
+    wrong["writer_lora_cache"] = build_writer_lora_cache_descriptor(
+        wrong,
+        root=root,
+        generators_per_gpu=1,
+        generation_batch_size=2,
+        lora_parameter_count=lora.parameter_count,
+        lora_tensor_count=lora.state_tensor_count,
+        lora_storage_per_entry=_lora_storage(),
+    )
+    with pytest.raises(WriterModelError, match="cache entry changed"):
+        writer_cache_entry_is_complete(wrong, writer_cache_requests(wrong)[0])

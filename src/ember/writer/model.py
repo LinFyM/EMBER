@@ -292,12 +292,14 @@ class CompleteLoRAWriter(torch.nn.Module):
         offsets: torch.Tensor,
         total: int,
     ) -> tuple[int, ...]:
-        if offsets.ndim != 1 or offsets.numel() < 2:
+        if (
+            offsets.ndim != 1
+            or offsets.numel() < 2
+            or offsets.dtype != torch.long
+            or offsets.device.type != "cpu"
+        ):
             raise WriterModelError("Writer video offsets are invalid")
-        values = tuple(
-            int(value)
-            for value in offsets.detach().to(device="cpu", dtype=torch.long).tolist()
-        )
+        values = tuple(int(value) for value in offsets.tolist())
         if (
             values[0] != 0
             or values[-1] != total
@@ -384,16 +386,39 @@ class CompleteLoRAWriter(torch.nn.Module):
             dtype=torch.bool,
             device=interactions.device,
         )
+        starts = torch.tensor(
+            offsets[:-1],
+            dtype=torch.long,
+            device=frame_indices.device,
+        )
+        internal_pairs = torch.ones(
+            frame_indices.shape[0] - 1,
+            dtype=torch.bool,
+            device=frame_indices.device,
+        )
+        if len(offsets) > 2:
+            internal_pairs[
+                torch.tensor(
+                    offsets[1:-1],
+                    dtype=torch.long,
+                    device=frame_indices.device,
+                )
+                - 1
+            ] = False
+        invalid_ordinals = (
+            (frame_indices.index_select(0, starts) != 0).any()
+            | (
+                (frame_indices[1:] <= frame_indices[:-1])
+                & internal_pairs
+            ).any()
+        )
+        if bool(invalid_ordinals):
+            raise WriterModelError(
+                "sampled frame ordinals must start at zero and increase"
+            )
         for row, (left, right) in enumerate(zip(offsets, offsets[1:])):
             length = right - left
             active_positions = frame_indices[left:right]
-            if (
-                int(active_positions[0]) != 0
-                or bool((active_positions[1:] <= active_positions[:-1]).any())
-            ):
-                raise WriterModelError(
-                    "sampled frame ordinals must start at zero and increase"
-                )
             packed_evidence[row, :length] = frame_evidence[left:right]
             packed_grounded[row, :length] = grounded_evidence[left:right]
             packed_interactions[row, :length] = interactions[left:right]
@@ -512,11 +537,13 @@ class CompleteLoRAWriter(torch.nn.Module):
             or frame_order.device != device
         ):
             raise WriterModelError("Writer frame order changed shape or device")
+        invalid = torch.zeros((), dtype=torch.bool, device=device)
         for left, right in zip(offsets, offsets[1:]):
             observed = frame_order[left:right].sort().values
             expected = torch.arange(left, right, device=device)
-            if not torch.equal(observed, expected):
-                raise WriterModelError("Writer frame order crossed video conditions")
+            invalid |= (observed != expected).any()
+        if bool(invalid):
+            raise WriterModelError("Writer frame order crossed video conditions")
         return frame_order
 
     def build_memories(

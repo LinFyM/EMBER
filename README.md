@@ -1,117 +1,87 @@
 # EMBER
 
-EMBER研究能否把没有目标机器人action标注的教学视频，一次性编译成能让
-frozen VLA完成对应任务的完整task-specific LoRA。当前唯一活动方法是one-shot
-Video-Conditioned Expert-Manifold Topological Writer：
+EMBER研究能否把目标机器人的无action教学视频一次性编译为完整task-specific LoRA，使同一个frozen
+VLA在该任务不同初始化上闭环工作：
 
 ```text
 exact task language + exactly one action-hidden teaching video
                     -> shared Writer
-                    -> sealed rank-16 task LoRA
+                    -> one complete rank-16 task LoRA
                     -> frozen π0.5-LIBERO source policy
+                    -> closed-loop execution
 ```
 
-Writer只在rollout前运行一次；policy随后依据实时observation/state闭环执行。
-Writer不读取teacher action、proprio、reward、terminal、task ID、filename或隐藏
-normalization。
+Writer只在rollout前运行一次。它不读取teacher action、proprio、reward、terminal、task ID、filename、
+object pose或hidden normalization；video是唯一dynamic value，不能存在language-only LoRA bypass。
 
-## 当前状态
+## Current status
 
-EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA与deferred-NCCL入口均已完成
-迁移验收；当前A40边界是每次live核对`gpu01/gpu02`、只用空闲卡、合计最多6张并显式设置
-`NCCL_P2P_DISABLE=1`。正式研究必须从本项目目录、clean pushed commit和fresh identity启动，
-并遵守`AGENTS.md`和当前owner授权。
+- canonical workspace：`/data1/user/ymdai/projects/EMBER`；主写分支：`codex/bci-continuation`。
+- 长期Goal未完成：同一shared method/single checkpoint strict paired correct必须严格`>150/400`并继续
+  提高，同时保持视频时序因果、same-task鲁棒、breadth和低checkpoint漂移。
+- 历史最好single checkpoint是v6-fast macro400：五臂
+  `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+- 当前唯一活动候选是v6-Prior Policy-Effective Temporal-Ranking Writer：历史macro400只作load-only
+  initialization，冻结encoder/Core/transition/Procedure，只训练compiler+factor heads；step2000 task
+  experts只在train24提供gauge-invariant policy-effective`BA`监督，部署不读取expert bank或feature cache。
+- 当前尚无该候选的新GPU profile、训练或strict rollout成绩，也没有运行中的EMBER GPU进程。
+- 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
+  repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
+  余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
+  host sync。
+- 真实validation8×4-state CPU prepare已通过：32个one-shot requests、historical Writer 600 tensors、
+  deployment expert-bank reads=0、cache 72 BF16 + 4 F32；吞吐候选使用同一固定32-request/同一总帧数
+  panel公平比较。相关定向/全仓CPU回归为`68/227 passed`。
+  下一门是clean push后用一张空闲A40做batch/VRAM/端到端smoke，再进入最多六卡formal profile。
 
-- `main`保留迁移封存历史；当前BCI写分支为`codex/bci-continuation`。
-- 旧Target-Bound、Semantic Factor-Basis及K4路线均已封存并负裁决；不得从历史“下一步”恢复。
-- 24套train-task rank-16 task experts已沿clean`81101fe`原合同统一完成step2000；五个统一
-  checkpoint的development-train闭环为`432/557/624/638/658` of 1200，正式选择step2000，
-  不按task混点。它们是privileged train-task目标，不是held Writer成绩。
-- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已完成；它们
-  现在只作训练监督和历史分析，不再进入Writer部署。
-- learned address-binding、Causal Barycentric、Policy-Effective soft与hard部署路线的strict结果分别为
-  `75/400`、`63/400`、`15/80`与`3/80`，均已负裁决。task experts能定义train-task policy-effective
-  LoRA，却不能作为held-task hard/soft/sparse部署字典。
-- 当前唯一候选是v6-Prior Policy-Effective Temporal-Ranking Writer：从历史v6-fast macro400
-  load-only初始化，保护已达到`143/400`的video representation，只训练compiler+factor heads；expert2000
-  通过gauge-invariant effective`BA`监督correct输出，reversed/shuffled/wrong只作bounded ranking。
-  canonical evaluator已由`bca3f6d`恢复同一raw-video v6完整LoRA生成器，部署不读expert bank/cache。
-  首次A40 smoke发现BF16 batch8与历史single-forward最大差`.001953125`，而single-repeat精确为零；因此
-  不放宽复现阈值，canonical model batch固定为1。下一门是在fresh root重跑单卡warm-start
-  cache/release/rollout reproduction smoke；当前仍无新closed-loop成绩。
-- 当前科研结论、下一实验边界看
-  [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
-- A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
-  [`docs/a100_to_bci_migration_handoff.md`](docs/a100_to_bci_migration_handoff.md)。
+当前科研结论、完整历史实验谱系和关键不确定性见
+[`docs/active_session_handoff.md`](docs/active_session_handoff.md)；精确执行协议见
+[`docs/execution_brief.md`](docs/execution_brief.md)；当前计划见[`task_plan.md`](task_plan.md)。
 
-## 研究基线与最新结论
+## Cumulative evidence in one view
 
-- 共同起点是generic `lerobot/pi05_base`，不是读过目标LIBERO-40 actions的
-  `pi05_libero`。LIBERO-90 specification-only audit排除了19个与目标40 exact
-  semantic/composition重合的source tasks；71 tasks×50成功episodes用于共享
-  source-base action-SFT。
-- 目标benchmark为LIBERO-Spatial/Object/Goal/Long共40 tasks。固定development
-  split是24 train / 8 validation / 8 test；不得按结果改变task IDs。
-- frozen π0.5-LIBERO source base约`48/400`；corrected mixed-task rank-128
-  Source-SFT observed-best为`109/400`。
-- v5.2旧recipe的single winner五臂为`132/138/74/82/83`，是当前最好的视频
-  特异性形态；v6 fast task-complete winner为`143/135/125/128/129`，absolute最高
-  但视频margin弱。
-- recipe互换后两者并不呈同向变化：v5.2 task-complete为
-  `120/109/107/111/124`，v6 old recipe为`121/122/111/84/47`。task-complete在两
-  架构上都压弱动态写出，但correct absolute分别下降和上升，故架构与训练方式必须
-  联合分析，不能把post-v5设计一棒子判死，也不能简单退回旧recipe。
-- 最新CV-ADR RAW完整correct400曲线为
-  `76/111/99/117/77/69/80/82`，normalized GROUP4为`82/77/73/110`。两者均未解决
-  task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
-  surrogate继续改善时closed-loop会退化。
-- 当前Expert-Manifold不再在线选择或混合24个experts，而是恢复历史v6的可迁移video-to-LoRA图并只
-  修正其Procedure之后的写出接口。correct臂同时接受真实action functional credit和task-expert
-  effective-direction/norm监督；乱序、倒序与错误视频只约束correct-over-negative margin。task experts
-  解决“train task上什么更新有效”，不解决held-task support、same-task video specificity或时间顺序；
-  最终仍只认同一single checkpoint的correct/same/wrong/shuffled/reversed/no-video严格配对闭环。
+- frozen source base为`48/400`；privileged mixed-task Source-SFT best为`109/400`。
+- v5.2 old的`132/138/74/82/83`仍是最强视频特异性形态；v6-fast task-complete的
+  `143/135/125/128/129`是最高absolute。两者recipe交叉结果证明架构与训练方式耦合，不能整体判死某一
+  architecture，也不能简单退回old recipe。
+- CV-ADR、Target-Bound、Semantic Factor-Basis、variance reduction、Direction Store、Target-Owned、
+  Policy-Lane/Atom、Condition-Kernel、K4/few-shot、trace/expert routing和多条reward路线逐步证明：视频
+  sensitivity、LoRA健康几何、较低functional loss、独立parameter ownership或few-shot任一项都不是
+  closed-loop成功的充分条件。
+- 24个task experts统一step2000的development-train direct-expert成绩为`658/1200`、23/24 tasks非零，
+  证明它们是有用但不完美的privileged train targets；soft/hard bank在held panel只有`15/80`和`3/80`，明确否定把train experts
+  直接当deployment字典。
+- 当前最小假设不是重做全部架构，而是保护v6的143 representation，只修Procedure之后的compiler/factor
+  写出，使正确视频产生的完整LoRA更接近policy-effective task流形，同时以bounded ranking保留真正的
+  顺序和错误视频差异。
 
-## 不变合同
+## Data and evaluation
 
-- one teacher video生成一套完整rank-16 LoRA；不平均多video、多LoRA或checkpoint。
-- frame stride固定为5；正式LIBERO preprocessing、horizon、dummy settling、成功
-  终止和frozen normalization不变。
-- validation/test actions不产生Writer梯度；test数据边界由`AGENTS.md`管理。
-- 不使用teacher action/state/reward作为Writer输入，不增加额外shared adapter、
-  bank、checkpoint fusion或静态旁路。
-- GPU设备范围必须以owner迁移后重新给出的BCI authority为准；A100时期的GPU4–7
-  约束不能自动复制到另一台机器。
-- sealed历史config和artifact contract中的旧绝对路径是provenance，不应原位改写；
-  新运行通过CLI显式传入source/checkpoint/tokenizer/data/output路径。
+- 起点是generic`lerobot/pi05_base`，不是读过目标LIBERO-40 actions的`pi05_libero`。
+- LIBERO-90 specification-only audit排除19个与目标40 exact semantic/composition重合的source tasks；
+  71 tasks×50成功episodes训练frozen source base。
+- 目标40固定development split为24 train / 8 validation / 8 test，不按outcome改task IDs。
+- Writer训练只读train24 actions；validation/test actions不产生梯度。
+- official evaluation严格配对correct/same-task-other/cross-suite-wrong/shuffled/reversed/no-video的state、
+  env/policy RNG、video ordinal和输入处理；shuffled/reversed真实重排frames后完整forward。
+- checkpoint只由真实closed-loop选择。loss、smoke、LoRA norm/rank/cosine和内部路径只能作机制证据。
 
-## BCI目录、环境与路径
+## Runtime and paths
 
-BCI上的canonical入口是`/data1/user/ymdai/projects/EMBER`。代码和项目资产按项目
-归并，不再从个人目录顶层按资源类型拆分：
+BCI项目资产按canonical roots归并：
 
 ```text
 EMBER/
-├── data/       # datasets与LIBERO simulation assets
-├── models/     # tokenizer及独立模型资产
-├── runs/       # 训练、评测、checkpoint、日志与运行验收
-├── evidence/   # 迁移清单与验收证据
-├── .venv/      # 本项目Python环境
-└── .cache/     # 本项目可重建缓存
+├── data/       # datasets and LIBERO assets
+├── models/     # tokenizer/model assets
+├── runs/       # training/evaluation/checkpoints/logs
+├── evidence/   # migration and retained evidence
+├── .venv/
+└── .cache/
 ```
 
-进入仓库后执行`source .venv/bin/activate`即可自动加载`.env.local`中的BCI本地路径，
-不需要逐项手工设置。环境仍由`pyproject.toml`和`uv.lock`约束，必要时可运行
-`scripts/bootstrap_env.sh`原位校验或修复。
-
-评测preflight的项目容量根也可显式覆盖：
-
-```bash
-export EMBER_STORAGE_ROOT=/path/to/bci/EMBER
-export EMBER_STORAGE_CAP_BYTES=REPLACE_WITH_OWNER_CAP
-export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
-```
-
-训练与评测入口继续要求显式资产路径：
+进入仓库后使用项目`.venv`；`.env.local`提供BCI本地默认路径，训练与评测仍通过CLI显式传入关键资产。
+主要入口：
 
 ```text
 scripts/train_task_experts.py
@@ -119,25 +89,21 @@ scripts/train_v6_prior_writer.py
 scripts/evaluate_pi05.py
 ```
 
-当前v6-prior训练入口显式接收historical macro400 load-only checkpoint、统一step2000 expert bank及
-train24 action-hidden videos；评测入口只接收v6-prior config、一个Writer checkpoint和一条在线teacher
-video，不接收expert bank或feature cache。旧hard/soft Expert-Manifold部署及AS/RL/K4 Writer入口只作
-provenance，不能恢复为并行实现。
+GPU工作必须实时检查`gpu01/gpu02`，只用空闲A40、合计最多6张，不干扰他人；多卡显式
+`NCCL_P2P_DISABLE=1`并遵守NUMA physical/local rank和deferred-NCCL合同。不得为验证身份生成或比较
+SHA-256/MD5；吞吐、有效显存利用和尽快获得真实严格评测优先。
 
-完整BCI映射和恢复校验在迁移handoff中。
+## Required reading
 
-## 阅读顺序
-
-在只读了解或迁移时先读：
+修改或运行项目前必须完整遵守[`AGENTS.md`](AGENTS.md)中的阅读清单。最小当前入口是：
 
 1. `AGENTS.md`
-2. `docs/a100_to_bci_migration_handoff.md`
+2. `README.md`
 3. `docs/active_session_handoff.md`
 4. `docs/execution_brief.md`
-5. `docs/action_forecast_writer_contextual_value_dual_read_design.md`
-6. 远端Target-Bound分支的
-   `docs/action_forecast_writer_target_bound_role_program_design.md`
-7. `findings.md`与`progress.md`
+5. `docs/action_forecast_writer_video_expert_manifold_design.md`
+6. `task_plan.md`
+7. `findings.md`
+8. `progress.md`
 
-改变实验状态前仍必须完整阅读`AGENTS.md`列出的全部authority文件；这里的短顺序
-不能替代该要求。
+历史设计保留为证据而非活动实现；改变其拥有的接口前，按handoff实验谱系读对应design到EOF。

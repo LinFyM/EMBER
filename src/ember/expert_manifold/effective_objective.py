@@ -97,14 +97,13 @@ def _target_for_leading(
     return value.reshape(*(1 for _ in leading), *value.shape)
 
 
-def effective_alignment(
+def _effective_alignment(
     generated: Mapping[str, torch.Tensor],
     target: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     *,
     epsilon: float = 1e-12,
 ) -> EffectiveAlignment:
-    """Compare all 38 effective ``BA`` updates without materializing them."""
 
     if epsilon <= 0:
         raise ExpertManifoldError("effective-alignment epsilon must be positive")
@@ -154,20 +153,76 @@ def effective_alignment(
         )
     if generated_norm_sq is None or target_norm_sq is None or inner_product is None:
         raise ExpertManifoldError("effective alignment received no LoRA targets")
-    if bool((target_norm_sq <= epsilon).any()):
-        raise ExpertManifoldError("expert target has zero policy-effective energy")
     generated_norm = generated_norm_sq.clamp_min(0).sqrt()
     target_norm = target_norm_sq.clamp_min(0).sqrt()
     denominator = (generated_norm * target_norm).clamp_min(epsilon)
     cosine = (inner_product / denominator).clamp(-1.0, 1.0)
-    values = (generated_norm, target_norm, inner_product, cosine)
-    if not all(bool(torch.isfinite(value).all()) for value in values):
-        raise ExpertManifoldError("policy-effective alignment is non-finite")
     return EffectiveAlignment(
         generated_norm=generated_norm,
         target_norm=target_norm,
         inner_product=inner_product,
         cosine=cosine,
+    )
+
+
+def _validate_alignment(value: EffectiveAlignment, *, epsilon: float) -> None:
+    checks = torch.stack(
+        (
+            (value.target_norm > epsilon).all(),
+            torch.isfinite(value.generated_norm).all(),
+            torch.isfinite(value.target_norm).all(),
+            torch.isfinite(value.inner_product).all(),
+            torch.isfinite(value.cosine).all(),
+        )
+    ).detach().to(device="cpu").tolist()
+    if not checks[0]:
+        raise ExpertManifoldError("expert target has zero policy-effective energy")
+    if not all(checks[1:]):
+        raise ExpertManifoldError("policy-effective alignment is non-finite")
+
+
+def effective_alignment(
+    generated: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    *,
+    epsilon: float = 1e-12,
+) -> EffectiveAlignment:
+    """Compare all 38 effective ``BA`` updates without materializing them."""
+
+    value = _effective_alignment(
+        generated,
+        target,
+        contract,
+        epsilon=epsilon,
+    )
+    _validate_alignment(value, epsilon=epsilon)
+    return value
+
+
+def _expert_loss_from_alignment(
+    alignment: EffectiveAlignment,
+    *,
+    norm_weight: float,
+    smooth_l1_beta: float,
+    epsilon: float,
+) -> EffectiveExpertLoss:
+    direction = (1.0 - alignment.cosine).mean()
+    log_ratio = torch.log(
+        alignment.generated_norm.clamp_min(epsilon)
+        / alignment.target_norm.clamp_min(epsilon)
+    )
+    log_norm = F.smooth_l1_loss(
+        log_ratio,
+        torch.zeros_like(log_ratio),
+        beta=smooth_l1_beta,
+        reduction="mean",
+    )
+    return EffectiveExpertLoss(
+        total=direction + norm_weight * log_norm,
+        direction=direction,
+        log_norm=log_norm,
+        alignment=alignment,
     )
 
 
@@ -184,26 +239,32 @@ def effective_expert_loss(
 
     if norm_weight < 0 or smooth_l1_beta <= 0:
         raise ExpertManifoldError("invalid effective expert-loss weights")
-    alignment = effective_alignment(generated, target, contract, epsilon=epsilon)
-    direction = (1.0 - alignment.cosine).mean()
-    log_ratio = torch.log(
-        alignment.generated_norm.clamp_min(epsilon)
-        / alignment.target_norm.clamp_min(epsilon)
+    return _expert_loss_from_alignment(
+        effective_alignment(generated, target, contract, epsilon=epsilon),
+        norm_weight=norm_weight,
+        smooth_l1_beta=smooth_l1_beta,
+        epsilon=epsilon,
     )
-    log_norm = F.smooth_l1_loss(
-        log_ratio,
-        torch.zeros_like(log_ratio),
-        beta=smooth_l1_beta,
-        reduction="mean",
-    )
-    total = direction + norm_weight * log_norm
-    if not bool(torch.isfinite(total)):
-        raise ExpertManifoldError("effective expert loss is non-finite")
-    return EffectiveExpertLoss(
-        total=total,
-        direction=direction,
-        log_norm=log_norm,
-        alignment=alignment,
+
+
+def _ranking_loss_from_alignments(
+    correct: EffectiveAlignment,
+    counterfactual: EffectiveAlignment,
+    *,
+    required_margin: float,
+    temperature: float,
+) -> EffectiveRankingLoss:
+    if correct.cosine.shape != counterfactual.cosine.shape:
+        raise ExpertManifoldError("counterfactual alignment batch changed")
+    margin = correct.cosine - counterfactual.cosine
+    loss = (
+        F.softplus((required_margin - margin) / temperature) * temperature
+    ).mean()
+    return EffectiveRankingLoss(
+        loss=loss,
+        margin=margin,
+        correct=correct,
+        counterfactual=counterfactual,
     )
 
 
@@ -225,19 +286,11 @@ def effective_counterfactual_ranking_loss(
     counterfactual_alignment = effective_alignment(
         counterfactual, target, contract, epsilon=epsilon
     )
-    if correct_alignment.cosine.shape != counterfactual_alignment.cosine.shape:
-        raise ExpertManifoldError("counterfactual alignment batch changed")
-    margin = correct_alignment.cosine - counterfactual_alignment.cosine
-    loss = (
-        F.softplus((required_margin - margin) / temperature) * temperature
-    ).mean()
-    if not bool(torch.isfinite(loss)):
-        raise ExpertManifoldError("policy-effective ranking loss is non-finite")
-    return EffectiveRankingLoss(
-        loss=loss,
-        margin=margin,
-        correct=correct_alignment,
-        counterfactual=counterfactual_alignment,
+    return _ranking_loss_from_alignments(
+        correct_alignment,
+        counterfactual_alignment,
+        required_margin=required_margin,
+        temperature=temperature,
     )
 
 
@@ -255,37 +308,47 @@ def effective_auxiliary_output_gradients(
 ) -> EffectiveAuxiliaryGradients:
     """Differentiate both auxiliaries only to generated LoRA output tensors."""
 
+    if (
+        norm_weight < 0
+        or smooth_l1_beta <= 0
+        or not 0 <= required_margin <= 2
+        or temperature <= 0
+        or epsilon <= 0
+    ):
+        raise ExpertManifoldError("invalid policy-effective auxiliary objective")
     names = tuple(correct)
     if set(counterfactual) != set(names):
         raise ExpertManifoldError("counterfactual LoRA tensor names changed")
-    expert = effective_expert_loss(
-        correct,
-        target,
-        contract,
+    correct_alignment = _effective_alignment(
+        correct, target, contract, epsilon=epsilon
+    )
+    counterfactual_alignment = _effective_alignment(
+        counterfactual, target, contract, epsilon=epsilon
+    )
+    expert = _expert_loss_from_alignment(
+        correct_alignment,
         norm_weight=norm_weight,
         smooth_l1_beta=smooth_l1_beta,
         epsilon=epsilon,
     )
-    ranking = effective_counterfactual_ranking_loss(
-        correct,
-        counterfactual,
-        target,
-        contract,
+    ranking = _ranking_loss_from_alignments(
+        correct_alignment,
+        counterfactual_alignment,
         required_margin=required_margin,
         temperature=temperature,
-        epsilon=epsilon,
     )
     correct_values = tuple(correct[name] for name in names)
     counterfactual_values = tuple(counterfactual[name] for name in names)
-    expert_gradients = torch.autograd.grad(expert.total, correct_values)
+    expert_gradients = torch.autograd.grad(
+        expert.total,
+        correct_values,
+        retain_graph=True,
+    )
     ranking_gradients = torch.autograd.grad(
         ranking.loss,
         (*correct_values, *counterfactual_values),
     )
     split = len(names)
-    values = (*expert_gradients, *ranking_gradients)
-    if any(not bool(torch.isfinite(value).all()) for value in values):
-        raise ExpertManifoldError("policy-effective auxiliary gradient is non-finite")
     return EffectiveAuxiliaryGradients(
         expert=expert,
         ranking=ranking,

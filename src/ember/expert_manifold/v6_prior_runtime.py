@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 from ember.expert_manifold.contract import (
     ExpertManifoldError,
     ExpertTask,
-    load_expert_manifold_config,
+    load_task_expert_config,
     load_train_tasks,
 )
 from ember.expert_manifold.evaluation import inspect_task_expert_bank
@@ -261,8 +261,10 @@ def _build_data(
     TeacherVideoSchedule,
     DataLoader[Any],
 ]:
-    asset_config = load_expert_manifold_config(authority_path(config, "asset_config"))
-    tasks = load_train_tasks(asset_config, args.data_root)
+    expert_config = load_task_expert_config(
+        authority_path(config, "task_expert_config")
+    )
+    tasks = load_train_tasks(expert_config, args.data_root)
     data = config["data"]
     first, last = map(int, data["demo_indices"])
     demos = tuple(range(first, last + 1))
@@ -327,6 +329,7 @@ def _build_data(
         pin_memory=True,
         persistent_workers=args.num_workers > 0,
         prefetch_factor=2 if args.num_workers else None,
+        multiprocessing_context="spawn" if args.num_workers else None,
         generator=torch.Generator().manual_seed(
             int(config["optimization"]["seed"]) + context.rank + 0xA55A
         ),
@@ -394,7 +397,7 @@ def _load_expert_targets(
     device: torch.device,
 ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
     expert = inspect_task_expert_bank(
-        config_path=authority_path(config, "asset_config"),
+        config_path=authority_path(config, "task_expert_config"),
         bank_root=args.expert_bank_root,
         step=int(config["expert_basis"]["expert_step"]),
         source=source,
@@ -791,4 +794,3 @@ def _prepare_runtime(
         checkpoint_contract=checkpoint_contract,
         metrics_path=metrics_path,
     )
-

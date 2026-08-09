@@ -3,54 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-import torch
-
-from ember.pi05_eval_results import _worker_lifecycle
-from ember.writer.errors import WriterModelError
-from ember.writer.evaluation_runtime import (
-    _state_max_abs_difference,
-    _warmstart_reproduction_required,
-)
-
-
-def test_v6_prior_reproduction_comparison_is_exact_and_fail_closed() -> None:
-    staged = {
-        "a": torch.tensor([1.0, 2.0]),
-        "b": torch.tensor([[3.0]], dtype=torch.bfloat16),
-    }
-    direct = {
-        "a": torch.tensor([1.0, 2.000004]),
-        "b": torch.tensor([[3.0]], dtype=torch.bfloat16),
-    }
-    assert _state_max_abs_difference(staged, direct) == pytest.approx(
-        4.0531158447265625e-6
-    )
-    with pytest.raises(WriterModelError, match="state names changed"):
-        _state_max_abs_difference(staged, {"a": direct["a"]})
-    with pytest.raises(WriterModelError, match="nonfinite"):
-        _state_max_abs_difference(
-            staged,
-            {**direct, "a": torch.tensor([1.0, float("nan")])},
-        )
-
-
-def test_only_historical_correct_smoke_requires_direct_v6_comparison() -> None:
-    contract = {
-        "mode": "smoke",
-        "adapter": {
-            "kind": "expert_manifold_writer",
-            "video_condition": "correct",
-            "writer_asset": {"kind": "historical_v6_macro400_load_only"},
-        },
-    }
-    assert _warmstart_reproduction_required(contract)
-    contract["mode"] = "screen"
-    assert not _warmstart_reproduction_required(contract)
-    contract["mode"] = "smoke"
-    contract["adapter"]["video_condition"] = "reversed"
-    assert not _warmstart_reproduction_required(contract)
-    assert not _warmstart_reproduction_required({"mode": "smoke", "adapter": []})
+from ember.pi05_eval_results import _worker_lifecycle, _writer_generation_summary
 
 
 def test_writer_generator_lifecycle_proves_resident_policy_handoff(
@@ -75,6 +28,7 @@ def test_writer_generator_lifecycle_proves_resident_policy_handoff(
             "unix": 3.0,
             "physical_gpu": 0,
             "gpu_uuid": "GPU-0",
+            "gpu_name": "NVIDIA A40",
             "replica": 0,
             "numa_node": 0,
             "cpu_affinity": [0],
@@ -97,6 +51,18 @@ def test_writer_generator_lifecycle_proves_resident_policy_handoff(
             "post_release_reserved_bytes": 50,
             "source_policy_reused_for_rollout": True,
             "writer_modules_released": True,
+            "redundant_writer_forwards": 0,
+            "batch_shape_bf16_roundoff_accepted": True,
+            "batches": [
+                {
+                    "batch_ordinal": 0,
+                    "entry_ids": ["entry-0", "entry-1"],
+                    "batch_size": 2,
+                    "raw_frame_counts": [101, 120],
+                    "sampled_frame_counts": [21, 25],
+                    "wall_seconds": 4.0,
+                }
+            ],
             **common,
         },
         {
@@ -126,5 +92,47 @@ def test_writer_generator_lifecycle_proves_resident_policy_handoff(
         worker_id=worker_id,
     )
     assert observed["writer_generator"] is True
+    assert observed["gpu_name"] == "NVIDIA A40"
+    assert observed["source_policy_reloaded"] is False
     assert observed["rollout_ready_unix"] == 8.0
     assert observed["writer_generation"]["generated_entries"] == 2
+    assert observed["writer_generation"]["redundant_writer_forwards"] == 0
+    summary = _writer_generation_summary((observed,))
+    assert summary is not None
+    assert summary["gpu_names"] == ["NVIDIA A40"]
+    assert summary["all_source_policies_not_reloaded"] is True
+    assert summary["batch_shape_bf16_roundoff_accepted"] is True
+    assert summary["max_observed_forward_batch_size"] == 2
+    assert summary["max_sampled_video_frames"] == 25
+
+
+def test_writer_generation_summary_allows_full_cache_reuse() -> None:
+    summary = _writer_generation_summary(
+        (
+            {
+                "gpu_name": "NVIDIA A40",
+                "source_policy_reloaded": False,
+                "writer_generation": {
+                    "assigned_entries": 8,
+                    "generated_entries": 0,
+                    "reused_entries": 8,
+                    "generated_batches": 0,
+                    "generation_batch_size": 32,
+                    "generation_wall_seconds": 0.1,
+                    "peak_allocated_bytes": 100,
+                    "peak_reserved_bytes": 120,
+                    "post_release_allocated_bytes": 40,
+                    "post_release_reserved_bytes": 50,
+                    "source_policy_reused_for_rollout": True,
+                    "writer_modules_released": True,
+                    "redundant_writer_forwards": 0,
+                    "batch_shape_bf16_roundoff_accepted": True,
+                    "batches": [],
+                },
+            },
+        )
+    )
+    assert summary is not None
+    assert summary["reused_entries"] == 8
+    assert summary["max_observed_forward_batch_size"] == 0
+    assert summary["max_sampled_video_frames"] == 0

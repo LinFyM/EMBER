@@ -18,6 +18,7 @@ from ember.eval_adapters import (
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
+    MAX_OWNER_GPU_COUNT,
     RUNTIME_OMP_THREADS,
     RUNTIME_REPLICA_PROFILES,
     RUN_CONTRACT_SCHEMA,
@@ -42,9 +43,12 @@ def _resolve_gpu_ids(
     if (
         not values
         or len(set(values)) != len(values)
+        or len(values) > MAX_OWNER_GPU_COUNT
         or any(index < 0 or index >= configured for index in values)
     ):
-        raise Pi05EvaluationError("physical GPU subset is invalid for this host contract")
+        raise Pi05EvaluationError(
+            "physical GPU subset is invalid or exceeds the owner six-GPU limit"
+        )
     return values
 
 
@@ -145,6 +149,9 @@ def _attach_writer_cache(
         generation_batch_size=writer_generation_batch_size,
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
+        lora_storage_per_entry=adapter["writer_asset"]["writer_state"][
+            "template_lora_storage"
+        ],
     )
 
 
@@ -174,10 +181,33 @@ def _validate_build_request(
     )
     if writer_adapter and not valid_writer_topology:
         raise Pi05EvaluationError("Writer generation and rollout topology are incompatible")
-    if writer_adapter and writer_generation_batch_size != 1:
-        raise Pi05EvaluationError(
-            "v6-prior Writer generation requires model batch size one"
-        )
+    if writer_adapter:
+        evaluation = adapter.get("evaluation_authority", {})
+        try:
+            minimum_batch_size = int(
+                evaluation["minimum_smoke_writer_model_batch_size"]
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise Pi05EvaluationError(
+                "Writer generation lacks its throughput authority"
+            ) from error
+        if (
+            evaluation.get("throughput_policy")
+            != "highest_measured_throughput_with_device_memory_headroom"
+            or writer_generation_batch_size < minimum_batch_size
+        ):
+            raise Pi05EvaluationError(
+                "v6-prior Writer generation batch violates its throughput authority"
+            )
+        smoke = evaluation.get("online_smoke_evidence")
+        if evaluation.get("formal_status") == "sealed" and (
+            not isinstance(smoke, Mapping)
+            or writer_generation_batch_size
+            != int(smoke.get("writer_model_batch_size", -1))
+        ):
+            raise Pi05EvaluationError(
+                "sealed v6-prior evaluation requires its selected Writer batch"
+            )
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
     return git, writer_adapter
@@ -222,7 +252,7 @@ def build_run_contract(
     adapter: Mapping[str, Any] | None = None,
     physical_gpu_ids: Sequence[int] | None = None,
     writer_generators_per_gpu: int = 1,
-    writer_generation_batch_size: int = 1,
+    writer_generation_batch_size: int = 8,
     writer_cache_root: Path | None = None,
 ) -> dict[str, Any]:
     git, writer_adapter = _validate_build_request(

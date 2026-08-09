@@ -77,6 +77,7 @@ def _worker_lifecycle(
         int(ready.get("physical_gpu", -1)) != physical_gpu
         or int(ready.get("replica", -1)) != int(replica_text)
         or not ready.get("gpu_uuid")
+        or not ready.get("gpu_name")
         or ready.get("numa_node") != expected_numa
         or not ready.get("cpu_affinity")
         or not float(process["unix"]) <= float(ready["unix"]) <= float(finished["unix"])
@@ -89,6 +90,10 @@ def _worker_lifecycle(
             <= float(generation["unix"])
             <= float(rollout_ready["unix"])
         )
+        or (
+            writer_generator
+            and rollout_ready.get("source_policy_reloaded") is not False
+        )
     ):
         raise Pi05EvaluationError(f"worker topology evidence changed: {worker_id}")
     return {
@@ -96,6 +101,7 @@ def _worker_lifecycle(
         "pid": int(process["pid"]),
         "physical_gpu": physical_gpu,
         "gpu_uuid": ready["gpu_uuid"],
+        "gpu_name": ready["gpu_name"],
         "replica": int(ready["replica"]),
         "numa_node": int(ready["numa_node"]),
         "cpu_affinity": ready["cpu_affinity"],
@@ -105,6 +111,9 @@ def _worker_lifecycle(
         "finished_unix": float(finished["unix"]),
         "model_load_seconds": float(ready["model_load_seconds"]),
         "writer_generator": writer_generator,
+        "source_policy_reloaded": bool(
+            rollout_ready.get("source_policy_reloaded", False)
+        ),
         "writer_generation": (
             {
                 key: generation[key]
@@ -121,6 +130,9 @@ def _worker_lifecycle(
                     "post_release_reserved_bytes",
                     "source_policy_reused_for_rollout",
                     "writer_modules_released",
+                    "redundant_writer_forwards",
+                    "batch_shape_bf16_roundoff_accepted",
+                    "batches",
                 )
             }
             if generation is not None
@@ -180,6 +192,35 @@ def _writer_generation_summary(workers: Sequence[Mapping[str, Any]]) -> dict[str
     ]
     if not generated:
         return None
+    batches = [
+        dict(batch)
+        for row in generated
+        for batch in row["batches"]
+    ]
+    if not batches and not all(
+        int(row["generated_entries"]) == 0
+        and int(row["generated_batches"]) == 0
+        and int(row["reused_entries"]) == int(row["assigned_entries"])
+        for row in generated
+    ):
+        raise Pi05EvaluationError("Writer generation omitted actual batch evidence")
+    actual_batches = (
+        {
+            "max_observed_forward_batch_size": max(
+                int(row["batch_size"]) for row in batches
+            ),
+            "max_sampled_video_frames": max(
+                int(value)
+                for row in batches
+                for value in row["sampled_frame_counts"]
+            ),
+        }
+        if batches
+        else {
+            "max_observed_forward_batch_size": 0,
+            "max_sampled_video_frames": 0,
+        }
+    )
     return {
         "generator_workers": len(generated),
         "assigned_entries": sum(int(row["assigned_entries"]) for row in generated),
@@ -189,6 +230,8 @@ def _writer_generation_summary(workers: Sequence[Mapping[str, Any]]) -> dict[str
         "generation_batch_size": sorted(
             {int(row["generation_batch_size"]) for row in generated}
         ),
+        **actual_batches,
+        "batches": batches,
         "max_worker_generation_wall_seconds": max(
             float(row["generation_wall_seconds"]) for row in generated
         ),
@@ -198,11 +241,36 @@ def _writer_generation_summary(workers: Sequence[Mapping[str, Any]]) -> dict[str
         "max_peak_reserved_bytes": max(
             int(row["peak_reserved_bytes"]) for row in generated
         ),
+        "max_post_release_allocated_bytes": max(
+            int(row["post_release_allocated_bytes"]) for row in generated
+        ),
+        "max_post_release_reserved_bytes": max(
+            int(row["post_release_reserved_bytes"]) for row in generated
+        ),
+        "redundant_writer_forwards": sum(
+            int(row["redundant_writer_forwards"]) for row in generated
+        ),
+        "batch_shape_bf16_roundoff_accepted": all(
+            row["batch_shape_bf16_roundoff_accepted"] is True
+            for row in generated
+        ),
         "all_source_policy_processes_reused_for_rollout": all(
             row["source_policy_reused_for_rollout"] is True for row in generated
         ),
         "all_writer_modules_released": all(
             row["writer_modules_released"] is True for row in generated
+        ),
+        "all_source_policies_not_reloaded": all(
+            row["source_policy_reloaded"] is False
+            for row in workers
+            if row.get("writer_generation") is not None
+        ),
+        "gpu_names": sorted(
+            {
+                str(row["gpu_name"])
+                for row in workers
+                if row.get("writer_generation") is not None
+            }
         ),
     }
 

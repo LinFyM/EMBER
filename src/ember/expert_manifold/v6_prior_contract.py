@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -218,8 +219,8 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
     return (
         gradient.get("status")
         in {
-            "blocked_until_single_a40_warmstart_reproduction_smoke",
-            "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke",
+            "blocked_until_single_a40_throughput_smoke",
+            "ready_after_cpu_and_single_a40_throughput_smoke",
             "sealed_from_live_train24_gradient_profile",
         }
         and int(gradient.get("expected_world_size", -1)) == 6
@@ -236,6 +237,7 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         and profile.get("status")
         in {
             "blocked_until_live_gradient_weights",
+            "ready_after_live_gradient_profile",
             "sealed_from_live_gradient_profile_and_a40_resume_smoke",
         }
         and int(profile.get("expected_world_size", -1)) == 6
@@ -257,16 +259,139 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
     )
 
 
+def _throughput_profile_matches(
+    evidence: Mapping[str, Any], *, minimum_batch_size: int
+) -> bool:
+    try:
+        sizes = [
+            int(value)
+            for value in evidence["profiled_writer_model_batch_sizes"]
+        ]
+        selected = int(evidence["writer_model_batch_size"])
+        measurements = [
+            dict(value) for value in evidence["writer_generation_measurements"]
+        ]
+        rows = {int(value["batch_size"]): value for value in measurements}
+    except (KeyError, TypeError, ValueError):
+        return False
+    if (
+        len(sizes) < 3
+        or sizes != sorted(set(sizes))
+        or not {8, 16, 32}.issubset(sizes)
+        or sizes[0] < minimum_batch_size
+        or selected not in sizes
+        or set(rows) != set(sizes)
+        or len(rows) != len(measurements)
+        or evidence.get("throughput_comparison_panel")
+        != "same_fixed_longest_first_request_panel_all_candidates"
+    ):
+        return False
+    try:
+        stable_rows = []
+        reference_entry_ids: list[str] | None = None
+        reference_sampled: list[int] | None = None
+        panel_size = max(sizes)
+        for batch_size, row in rows.items():
+            repeats = [float(value) for value in row["repeat_wall_seconds"]]
+            sampled = [int(value) for value in row["sampled_frame_counts"]]
+            entry_ids = [str(value) for value in row["entry_ids"]]
+            forward_batches = [
+                int(value) for value in row["forward_batch_sizes_per_repeat"]
+            ]
+            expected_forward_batches = [
+                min(batch_size, panel_size - offset)
+                for offset in range(0, panel_size, batch_size)
+            ]
+            wall = float(row["wall_seconds"])
+            throughput = float(row["loras_per_second"])
+            allocated = int(row["peak_allocated_bytes"])
+            reserved = int(row["peak_reserved_bytes"])
+            total = int(row["device_total_bytes"])
+            headroom = int(row["memory_headroom_bytes"])
+            required_headroom = int(row["required_memory_headroom_bytes"])
+            structural = (
+                bool(row.get("longest_video_included"))
+                and isinstance(row.get("repeat_wall_seconds"), list)
+                and len(repeats) >= 2
+                and all(value > 0 and math.isfinite(value) for value in repeats)
+                and int(row.get("generated_entries", -1))
+                == panel_size * len(repeats)
+                and int(row.get("max_observed_forward_batch_size", -1))
+                == max(expected_forward_batches)
+                and forward_batches == expected_forward_batches
+                and row.get("comparison_panel_shared_across_candidates") is True
+                and int(row.get("panel_entry_count", -1)) == panel_size
+                and len(entry_ids) == panel_size
+                and len(set(entry_ids)) == panel_size
+                and len(sampled) == panel_size
+                and all(value > 0 for value in sampled)
+                and int(row.get("panel_total_sampled_frames", -1)) == sum(sampled)
+                and int(row.get("max_sampled_video_frames", -1)) == max(sampled)
+                and wall > 0
+                and math.isfinite(wall)
+                and math.isclose(
+                    wall,
+                    sum(repeats),
+                    rel_tol=1e-9,
+                    abs_tol=1e-6,
+                )
+                and throughput > 0
+                and math.isfinite(throughput)
+                and math.isclose(
+                    throughput,
+                    int(row["generated_entries"]) / wall,
+                    rel_tol=1e-9,
+                    abs_tol=1e-9,
+                )
+                and allocated > 0
+                and reserved >= allocated
+                and total > reserved
+                and headroom == total - reserved
+                and required_headroom > 0
+            )
+            expected_stable = (
+                max(repeats) / min(repeats) <= 1.25
+                and headroom >= required_headroom
+            )
+            if not structural or bool(row.get("stable")) != expected_stable:
+                return False
+            if reference_entry_ids is None:
+                reference_entry_ids = entry_ids
+                reference_sampled = sampled
+            elif entry_ids != reference_entry_ids or sampled != reference_sampled:
+                return False
+            if expected_stable:
+                stable_rows.append(row)
+        if not stable_rows or rows[selected] not in stable_rows:
+            return False
+        best = max(
+            stable_rows,
+            key=lambda row: (
+                float(row["loras_per_second"]),
+                int(row["batch_size"]),
+            ),
+        )
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return False
+    return selected == int(best["batch_size"])
+
+
 def _evaluation_matches(value: Mapping[str, Any]) -> bool:
     try:
-        model_batch_size = int(value.get("writer_model_batch_size", -1))
+        minimum_batch_size = int(
+            value.get("minimum_smoke_writer_model_batch_size", -1)
+        )
     except (TypeError, ValueError):
         return False
-    if model_batch_size != 1:
+    if (
+        value.get("throughput_policy")
+        != "highest_measured_throughput_with_device_memory_headroom"
+        or minimum_batch_size != 8
+    ):
         return False
     status = value.get("formal_status")
     evidence = value.get("online_smoke_evidence")
-    if status == "blocked_until_live_a40_warmstart_reproduction_smoke":
+    if status == "blocked_until_live_a40_throughput_smoke":
         return evidence is None
     if status != "sealed" or not isinstance(evidence, Mapping):
         return False
@@ -278,7 +403,15 @@ def _evaluation_matches(value: Mapping[str, Any]) -> bool:
         "writer_modules_released": True,
         "source_policy_reused_for_rollout": True,
         "source_policy_reloaded": False,
-        "staged_path_matches_direct_v6_forward": True,
+        "batch_shape_bf16_roundoff_accepted": True,
+        "writer_lora_storage": "template_native_mixed_bfloat16_float32",
+        "throughput_selection_rule": (
+            "highest_measured_fixed_panel_loras_per_second_with_stable_"
+            "longest_video_batch"
+        ),
+        "throughput_comparison_panel": (
+            "same_fixed_longest_first_request_panel_all_candidates"
+        ),
         "success_interpretation": "execution_smoke_only_not_performance_evidence",
     }
     integers = {
@@ -288,7 +421,11 @@ def _evaluation_matches(value: Mapping[str, Any]) -> bool:
         "generated_entries": 8,
         "cache_entries": 8,
         "writer_state_tensor_count": 600,
-        "writer_model_batch_size": 1,
+        "redundant_writer_forwards": 0,
+        "writer_lora_tensor_bytes_per_entry": 2641920,
+        "writer_lora_bfloat16_tensor_count": 72,
+        "writer_lora_float32_tensor_count": 4,
+        "generator_workers": 1,
         "retry_count": 0,
         "failure_count": 0,
         "teacher_action_reads": 0,
@@ -309,12 +446,328 @@ def _evaluation_matches(value: Mapping[str, Any]) -> bool:
             and bool(evidence["commit"])
             and isinstance(evidence.get("root"), str)
             and bool(evidence["root"])
-            and float(evidence.get("staged_path_max_abs_difference", -1))
-            <= 1e-5
-            and float(evidence.get("staged_path_max_abs_difference", -1)) >= 0
+            and int(evidence.get("writer_model_batch_size", -1))
+            >= minimum_batch_size
+            and int(evidence.get("max_peak_allocated_bytes", -1)) > 0
+            and int(evidence.get("max_peak_reserved_bytes", -1))
+            >= int(evidence.get("max_peak_allocated_bytes", -1))
+            and int(evidence.get("max_post_release_allocated_bytes", -1)) >= 0
+            and int(evidence.get("max_post_release_reserved_bytes", -1)) >= 0
+            and _throughput_profile_matches(
+                evidence, minimum_batch_size=minimum_batch_size
+            )
         )
     except (TypeError, ValueError):
         return False
+
+
+def assemble_v6_prior_evaluation_smoke_evidence(
+    *,
+    profile_root: Path,
+    vertical_root: Path,
+) -> dict[str, Any]:
+    """Derive the evaluation seal only from retained live artifacts."""
+
+    from ember.writer.evaluation_cache import (
+        validate_writer_cache_manifest,
+        writer_cache_requests,
+    )
+    from ember.writer.evaluation_runtime import WRITER_GENERATION_PROFILE_SCHEMA
+
+    profile_root = profile_root.resolve()
+    vertical_root = vertical_root.resolve()
+    profile_contract = read_json(profile_root / "run_contract.json")
+    profile = read_json(profile_root / "writer_generation_profile.json")
+    vertical_contract = read_json(vertical_root / "run_contract.json")
+    results = read_json(vertical_root / "results.json")
+    manifest = validate_writer_cache_manifest(
+        vertical_contract,
+        verify_entry_files=False,
+    )
+    profile_adapter = profile_contract.get("adapter", {})
+    vertical_adapter = vertical_contract.get("adapter", {})
+    profile_git = profile_contract.get("git", {})
+    vertical_git = vertical_contract.get("git", {})
+    measurements = [
+        dict(row) for row in profile.get("writer_generation_measurements", ())
+    ]
+    sizes = [
+        int(value)
+        for value in profile.get("profiled_writer_model_batch_sizes", ())
+    ]
+    if not sizes:
+        raise ExpertManifoldError("v6-prior Writer profile has no batch candidates")
+    selected = int(profile.get("selected_writer_model_batch_size", -1))
+    throughput_evidence = {
+        "profiled_writer_model_batch_sizes": sizes,
+        "writer_model_batch_size": selected,
+        "writer_generation_measurements": measurements,
+        "throughput_comparison_panel": profile.get(
+            "throughput_comparison_panel"
+        ),
+    }
+    profile_tasks = profile_contract.get("tasks", ())
+    vertical_tasks = vertical_contract.get("tasks", ())
+    writer_generation = results.get("writer_generation", {})
+    attempts = results.get("launcher_attempts", {}).get("attempts", ())
+    workers = results.get("workers", ())
+    storage = vertical_contract.get("writer_lora_cache", {}).get(
+        "lora_storage_per_entry", {}
+    )
+    vertical_preflight = results.get("launcher", {}).get("preflight", {})
+    profile_preflight = profile.get("preflight", {})
+    profile_request_ids = {
+        request.entry_id for request in writer_cache_requests(profile_contract)
+    }
+    try:
+        ordered_measurements = sorted(
+            measurements, key=lambda row: int(row["batch_size"])
+        )
+        warmup_runs = int(profile.get("warmup_runs_per_batch", -1))
+        measured_runs = int(profile.get("measured_runs_per_batch", -1))
+        longest_frames = int(profile.get("longest_sampled_video_frames", -1))
+        panel_entry_ids = list(ordered_measurements[0].get("entry_ids", ()))
+        panel_sampled = list(
+            ordered_measurements[0].get("sampled_frame_counts", ())
+        )
+        profile_shape_evidence = (
+            warmup_runs >= 1
+            and measured_runs >= 2
+            and longest_frames > 0
+            and len(panel_entry_ids) == max(sizes)
+            and len(panel_sampled) == max(sizes)
+            and all(
+                len(row.get("repeat_wall_seconds", ())) == measured_runs
+                and int(row.get("max_sampled_video_frames", -1))
+                == longest_frames
+                and set(row.get("entry_ids", ())).issubset(profile_request_ids)
+                and list(row.get("entry_ids", ())) == panel_entry_ids
+                and list(row.get("sampled_frame_counts", ())) == panel_sampled
+                for row in ordered_measurements
+            )
+        )
+    except (IndexError, KeyError, TypeError, ValueError):
+        profile_shape_evidence = False
+    valid = (
+        profile.get("schema_version") == WRITER_GENERATION_PROFILE_SCHEMA
+        and profile.get("contract_reference")
+        == profile_contract.get("contract_reference")
+        and profile.get("root") == str(profile_root)
+        and profile.get("device") == "NVIDIA A40"
+        and profile.get("git") == profile_git
+        and not profile_git.get("dirty_paths")
+        and profile_git.get("commit") == profile_git.get("upstream_commit")
+        and profile_git == vertical_git
+        and profile_adapter == vertical_adapter
+        and profile_adapter.get("kind") == "expert_manifold_writer"
+        and profile_adapter.get("video_condition") == "correct"
+        and profile_adapter.get("video_schedule", {}).get("sampling_mode")
+        == "without_replacement"
+        and profile_contract.get("mode") == "smoke"
+        and profile_contract.get("role") == "validation"
+        and len(profile_tasks) == 8
+        and sum(len(row.get("init_state_ids", ())) for row in profile_tasks)
+        >= max(sizes)
+        and int(profile_contract.get("parallel", {}).get("physical_gpu_count", -1))
+        == 1
+        and int(profile_contract.get("parallel", {}).get("replicas_per_gpu", -1))
+        == 1
+        and int(
+            profile_contract.get("parallel", {}).get(
+                "writer_generators_per_gpu", -1
+            )
+        )
+        == 1
+        and int(
+            profile_contract.get("parallel", {}).get(
+                "writer_generation_batch_size", -1
+            )
+        )
+        == max(sizes)
+        and profile.get("selection_rule")
+        == (
+            "highest_measured_fixed_panel_loras_per_second_with_stable_"
+            "longest_video_batch"
+        )
+        and profile.get("throughput_comparison_panel")
+        == "same_fixed_longest_first_request_panel_all_candidates"
+        and profile.get("writer_modules_released") is True
+        and profile.get("source_policy_reused") is True
+        and int(profile.get("oom_count", -1)) == 0
+        and int(profile.get("nonfinite_count", -1)) == 0
+        and profile_preflight.get("compute_applications") == []
+        and profile_preflight.get("device_names") == ["NVIDIA A40"]
+        and profile_preflight.get("physical_gpu_ids")
+        == profile_contract.get("parallel", {}).get("physical_gpu_ids")
+        and profile_shape_evidence
+        and _throughput_profile_matches(
+            throughput_evidence,
+            minimum_batch_size=8,
+        )
+        and vertical_contract.get("contract_reference")
+        == results.get("contract_reference")
+        and vertical_contract.get("mode") == "smoke"
+        and vertical_contract.get("role") == "validation"
+        and len(vertical_tasks) == 8
+        and all(len(row.get("init_state_ids", ())) == 1 for row in vertical_tasks)
+        and int(
+            vertical_contract.get("parallel", {}).get(
+                "writer_generation_batch_size", -1
+            )
+        )
+        == selected
+        and results.get("overall", {}).get("episodes") == 8
+        and len(results.get("rows", ())) == 8
+        and len(workers) == 1
+        and workers[0].get("gpu_name") == "NVIDIA A40"
+        and workers[0].get("source_policy_reloaded") is False
+        and len(attempts) == 1
+        and attempts[0].get("event") == "completed"
+        and results.get("launcher", {}).get("return_codes")
+        == {str(workers[0]["worker_id"]): 0}
+        and vertical_preflight.get("compute_applications") == []
+        and vertical_preflight.get("device_names") == ["NVIDIA A40"]
+        and vertical_preflight.get("physical_gpu_ids")
+        == vertical_contract.get("parallel", {}).get("physical_gpu_ids")
+        and int(writer_generation.get("generator_workers", -1)) == 1
+        and int(writer_generation.get("assigned_entries", -1)) == 8
+        and int(writer_generation.get("generated_entries", -1)) == 8
+        and int(writer_generation.get("reused_entries", -1)) == 0
+        and int(writer_generation.get("max_observed_forward_batch_size", -1)) == 8
+        and writer_generation.get("generation_batch_size") == [selected]
+        and int(writer_generation.get("redundant_writer_forwards", -1)) == 0
+        and writer_generation.get("batch_shape_bf16_roundoff_accepted") is True
+        and writer_generation.get("all_source_policy_processes_reused_for_rollout")
+        is True
+        and writer_generation.get("all_writer_modules_released") is True
+        and writer_generation.get("all_source_policies_not_reloaded") is True
+        and writer_generation.get("gpu_names") == ["NVIDIA A40"]
+        and len(manifest.get("entry_ids", ())) == 8
+        and manifest.get("descriptor") == vertical_contract.get("writer_lora_cache")
+        and int(storage.get("tensor_count", -1)) == 76
+        and int(storage.get("tensor_bytes", -1)) == 2_641_920
+        and storage.get("dtype_tensor_counts") == {"BF16": 72, "F32": 4}
+        and len(storage.get("dtype_by_name", {})) == 76
+    )
+    if not valid:
+        raise ExpertManifoldError("v6-prior live evaluation evidence is incomplete")
+    evidence = {
+        "commit": str(profile_git["commit"]),
+        "root": str(vertical_root),
+        "device": "NVIDIA A40",
+        "checkpoint_kind": str(vertical_adapter["writer_asset"]["kind"]),
+        "video_condition": "correct",
+        "video_sampling": "without_replacement",
+        "validation_task_count": 8,
+        "state_count": 1,
+        "scientific_rows": 8,
+        "generated_entries": 8,
+        "cache_entries": 8,
+        "writer_state_tensor_count": int(
+            vertical_adapter["writer_asset"]["writer_state"]["state_tensor_count"]
+        ),
+        "writer_model_batch_size": selected,
+        "profiled_writer_model_batch_sizes": sizes,
+        "writer_generation_measurements": measurements,
+        "writer_modules_released": True,
+        "source_policy_reused_for_rollout": True,
+        "source_policy_reloaded": False,
+        "batch_shape_bf16_roundoff_accepted": True,
+        "redundant_writer_forwards": 0,
+        "writer_lora_storage": "template_native_mixed_bfloat16_float32",
+        "writer_lora_tensor_bytes_per_entry": int(storage["tensor_bytes"]),
+        "writer_lora_bfloat16_tensor_count": int(
+            storage["dtype_tensor_counts"]["BF16"]
+        ),
+        "writer_lora_float32_tensor_count": int(
+            storage["dtype_tensor_counts"]["F32"]
+        ),
+        "generator_workers": 1,
+        "max_peak_allocated_bytes": max(
+            int(writer_generation["max_peak_allocated_bytes"]),
+            max(int(row["peak_allocated_bytes"]) for row in measurements),
+        ),
+        "max_peak_reserved_bytes": max(
+            int(writer_generation["max_peak_reserved_bytes"]),
+            max(int(row["peak_reserved_bytes"]) for row in measurements),
+        ),
+        "max_post_release_allocated_bytes": int(
+            writer_generation["max_post_release_allocated_bytes"]
+        ),
+        "max_post_release_reserved_bytes": int(
+            writer_generation["max_post_release_reserved_bytes"]
+        ),
+        "throughput_selection_rule": (
+            "highest_measured_fixed_panel_loras_per_second_with_stable_"
+            "longest_video_batch"
+        ),
+        "throughput_comparison_panel": (
+            "same_fixed_longest_first_request_panel_all_candidates"
+        ),
+        "retry_count": 0,
+        "failure_count": 0,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "success_interpretation": "execution_smoke_only_not_performance_evidence",
+    }
+    if not _evaluation_matches(
+        {
+            "throughput_policy": (
+                "highest_measured_throughput_with_device_memory_headroom"
+            ),
+            "minimum_smoke_writer_model_batch_size": 8,
+            "formal_status": "sealed",
+            "online_smoke_evidence": evidence,
+        }
+    ):
+        raise ExpertManifoldError("assembled v6-prior evaluation seal is invalid")
+    return evidence
+
+
+def _state_machine_matches(config: Mapping[str, Any]) -> bool:
+    state = (
+        config.get("evaluation", {}).get("formal_status"),
+        config.get("gradient_profile", {}).get("status"),
+        config.get("objective", {})
+        .get("auxiliary_weights", {})
+        .get("status"),
+        config.get("profile_run", {}).get("status"),
+        config.get("formal_run", {}).get("status"),
+    )
+    return state in {
+        (
+            "blocked_until_live_a40_throughput_smoke",
+            "blocked_until_single_a40_throughput_smoke",
+            "blocked_until_live_train24_gradient_profile",
+            "blocked_until_live_gradient_weights",
+            "blocked_until_live_a40_profile_and_macro3_online_smoke",
+        ),
+        (
+            "sealed",
+            "ready_after_cpu_and_single_a40_throughput_smoke",
+            "blocked_until_live_train24_gradient_profile",
+            "blocked_until_live_gradient_weights",
+            "blocked_until_live_a40_profile_and_macro3_online_smoke",
+        ),
+        (
+            "sealed",
+            "sealed_from_live_train24_gradient_profile",
+            "sealed_from_live_train24_gradient_profile",
+            "ready_after_live_gradient_profile",
+            "blocked_until_live_a40_profile_and_macro3_online_smoke",
+        ),
+        (
+            "sealed",
+            "sealed_from_live_train24_gradient_profile",
+            "sealed_from_live_train24_gradient_profile",
+            "sealed_from_live_gradient_profile_and_a40_resume_smoke",
+            "sealed_from_live_a40_profile_and_macro3_online_smoke",
+        ),
+    }
 
 
 def load_v6_prior_config(path: Path) -> dict[str, Any]:
@@ -326,7 +779,7 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         config.get("schema_version") == V6_PRIOR_CONFIG_SCHEMA
         and set(authorities)
         == {
-            "asset_config",
+            "task_expert_config",
             "target_data_manifest",
             "evaluation_config",
             "lora_contract",
@@ -358,6 +811,7 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         and _optimization_matches(config.get("optimization", {}))
         and _runtime_declarations_match(config)
         and _evaluation_matches(config.get("evaluation", {}))
+        and _state_machine_matches(config)
         and config.get("content_hash_policy") == "disabled_by_owner"
     )
     if not valid:
@@ -374,23 +828,34 @@ def runtime_for_mode(
         profile = config["gradient_profile"]
         if (
             profile.get("status")
-            != "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke"
+            != "ready_after_cpu_and_single_a40_throughput_smoke"
+            or config["evaluation"].get("formal_status") != "sealed"
             or config["objective"]["auxiliary_weights"]["status"]
             != "blocked_until_live_train24_gradient_profile"
         ):
             raise ExpertManifoldError("v6-prior gradient profile is not ready")
         return int(profile["macros"]), ()
     selected = config["profile_run" if mode == "profile" else "formal_run"]
-    required_status = (
-        "sealed_from_live_gradient_profile_and_a40_resume_smoke"
-        if mode == "profile"
-        else "sealed_from_live_a40_profile_and_macro3_online_smoke"
-    )
-    if (
-        selected.get("status") != required_status
-        or config["objective"]["auxiliary_weights"]["status"]
-        != "sealed_from_live_train24_gradient_profile"
-    ):
+    if mode == "profile":
+        ready = (
+            selected.get("status") == "ready_after_live_gradient_profile"
+            and config["gradient_profile"].get("status")
+            == "sealed_from_live_train24_gradient_profile"
+            and config["objective"]["auxiliary_weights"]["status"]
+            == "sealed_from_live_train24_gradient_profile"
+        )
+    else:
+        ready = (
+            selected.get("status")
+            == "sealed_from_live_a40_profile_and_macro3_online_smoke"
+            and config["profile_run"].get("status")
+            == "sealed_from_live_gradient_profile_and_a40_resume_smoke"
+            and config["gradient_profile"].get("status")
+            == "sealed_from_live_train24_gradient_profile"
+            and config["objective"]["auxiliary_weights"]["status"]
+            == "sealed_from_live_train24_gradient_profile"
+        )
+    if not ready:
         raise ExpertManifoldError(f"v6-prior {mode} runtime is not sealed")
     total = int(selected["total_macros"])
     checkpoints = tuple(int(value) for value in selected["checkpoint_macros"])

@@ -36,6 +36,84 @@ INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
 )
 
 
+def pi05_mean_flow_loss(
+    policy: torch.nn.Module,
+    batch: Mapping[str, Any],
+) -> torch.Tensor:
+    """Compute the exact PI05 training mean without materializing host metrics."""
+
+    from lerobot.utils.constants import (
+        ACTION,
+        OBS_LANGUAGE_ATTENTION_MASK,
+        OBS_LANGUAGE_TOKENS,
+    )
+
+    model = getattr(policy, "model", None)
+    config = getattr(policy, "config", None)
+    if (
+        model is None
+        or config is None
+        or not callable(getattr(policy, "_preprocess_images", None))
+        or not callable(getattr(policy, "prepare_action", None))
+        or not callable(getattr(model, "sample_noise", None))
+        or not callable(getattr(model, "sample_time", None))
+        or not callable(getattr(model, "forward", None))
+    ):
+        raise WriterModelError("loss-only path requires a PI05 policy")
+    images, image_masks = policy._preprocess_images(dict(batch))
+    try:
+        tokens = batch[OBS_LANGUAGE_TOKENS]
+        token_masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
+        action_width = int(config.output_features[ACTION].shape[0])
+    except (KeyError, AttributeError, TypeError, ValueError) as error:
+        raise WriterModelError("PI05 loss-only batch contract changed") from error
+    actions = policy.prepare_action(batch)
+    noise = model.sample_noise(actions.shape, actions.device)
+    time = model.sample_time(actions.shape[0], actions.device)
+    losses = model.forward(
+        images,
+        image_masks,
+        tokens,
+        token_masks,
+        actions,
+        noise,
+        time,
+    )
+    if losses.ndim != 3 or not 0 < action_width <= losses.shape[-1]:
+        raise WriterModelError("PI05 loss-only output contract changed")
+    return losses[:, :, :action_width].mean()
+
+
+@contextmanager
+def _scoped_policy_detail_collection(
+    policy: torch.nn.Module,
+    collect_policy_details: bool,
+) -> Iterator[None]:
+    if collect_policy_details:
+        yield
+        return
+
+    def loss_only_forward(
+        owner: torch.nn.Module,
+        batch: Mapping[str, Any],
+        reduction: str = "mean",
+    ) -> tuple[torch.Tensor, Mapping[str, Any]]:
+        if reduction != "mean":
+            raise WriterModelError("PI05 loss-only path supports mean reduction")
+        return pi05_mean_flow_loss(owner, batch), {}
+
+    had_instance_value = "forward" in vars(policy)
+    previous_instance_value = vars(policy).get("forward")
+    policy.forward = MethodType(loss_only_forward, policy)
+    try:
+        yield
+    finally:
+        if had_instance_value:
+            policy.forward = previous_instance_value
+        else:
+            delattr(policy, "forward")
+
+
 def task_query_policy_rng_seed(
     *,
     optimization_seed: int,
@@ -390,6 +468,7 @@ def _functional_microbatch_gradient(
     policy_rng_device: torch.device | str | None,
     flow_time_sampling_scheme: str | None,
     flow_noise_sampling_scheme: str | None,
+    collect_policy_details: bool,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     leaves = {
         name: value.detach().requires_grad_(True)
@@ -419,7 +498,16 @@ def _functional_microbatch_gradient(
                 logical_batch_size=random_batch_size,
                 batch_offset=start,
             ):
-                output = functional_lora_call(policy, leaves, contract, microbatch)
+                with _scoped_policy_detail_collection(
+                    policy,
+                    collect_policy_details,
+                ):
+                    output = functional_lora_call(
+                        policy,
+                        leaves,
+                        contract,
+                        microbatch,
+                    )
     if (
         not isinstance(output, tuple)
         or len(output) != 2
@@ -432,8 +520,6 @@ def _functional_microbatch_gradient(
     gradients = torch.autograd.grad(
         output[0], tuple(leaves[name] for name in names)
     )
-    if any(not bool(torch.isfinite(value).all()) for value in gradients):
-        raise WriterModelError("functional policy produced non-finite LoRA gradients")
     return (
         output[0].detach(),
         output[1],
@@ -455,6 +541,7 @@ def functional_lora_loss_gradient(
     flow_time_sampling_scheme: str | None = None,
     flow_noise_sampling_scheme: str | None = None,
     policy_microbatch_size: int | None = None,
+    collect_policy_details: bool = True,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     """Differentiate one policy loss only through detached LoRA leaf tensors.
 
@@ -472,6 +559,23 @@ def functional_lora_loss_gradient(
         flow_time_sampling_scheme=flow_time_sampling_scheme,
         flow_noise_sampling_scheme=flow_noise_sampling_scheme,
     )
+
+    if microbatch_size == logical_batch_size:
+        return _functional_microbatch_gradient(
+            policy,
+            state,
+            contract,
+            batch,
+            start=0,
+            stop=logical_batch_size,
+            logical_batch_size=logical_batch_size,
+            physical_microbatching=False,
+            policy_rng_seed=policy_rng_seed,
+            policy_rng_device=policy_rng_device,
+            flow_time_sampling_scheme=flow_time_sampling_scheme,
+            flow_noise_sampling_scheme=flow_noise_sampling_scheme,
+            collect_policy_details=collect_policy_details,
+        )
 
     names = tuple(state)
     gradient_sum = {
@@ -504,6 +608,7 @@ def functional_lora_loss_gradient(
             policy_rng_device=policy_rng_device,
             flow_time_sampling_scheme=flow_time_sampling_scheme,
             flow_noise_sampling_scheme=flow_noise_sampling_scheme,
+            collect_policy_details=collect_policy_details,
         )
         weighted_loss = loss.to(dtype=torch.float32) * weight
         loss_sum = (

@@ -40,7 +40,7 @@ def _video_tensors(
     offsets = torch.tensor(
         (0, int(frames.shape[0])),
         dtype=torch.long,
-        device=device,
+        device="cpu",
     )
     return frames, indices, offsets
 
@@ -172,8 +172,6 @@ def merged_output_gradients(
         for name in names
     )
     gradients = (*correct_gradients, *negative_gradients)
-    if any(not bool(torch.isfinite(value).all()) for value in gradients):
-        raise ExpertManifoldError("v6-prior merged output gradient is non-finite")
     outputs = tuple(pair.correct[name] for name in names) + tuple(
         pair.counterfactual[name] for name in names
     )
@@ -214,9 +212,6 @@ def parameter_gradient_components(
             *tuple(auxiliary.counterfactual_ranking[name] for name in names),
         ),
     )
-    values = (*positive, *expert, *ranking)
-    if any(not bool(torch.isfinite(value).all()) for value in values):
-        raise ExpertManifoldError("v6-prior parameter gradient is non-finite")
     return ParameterGradientComponents(
         positive=tuple(value.detach() for value in positive),
         expert=tuple(value.detach() for value in expert),

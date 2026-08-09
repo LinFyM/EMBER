@@ -1,110 +1,95 @@
 # EMBER Task Plan
 
-更新时间：2026-08-09。本文只保留当前可执行计划；旧架构的命令、分支和逐次流水由Git、
-`progress.md`及formal artifacts保存，不在活动计划中保留可误执行副本。
+更新时间：2026-08-09。本文只保留当前可执行计划；完整历史结论见
+`docs/active_session_handoff.md`实验谱系，旧命令和流水由design、Git、`findings.md`、`progress.md`及
+formal artifacts保存。
 
-## Goal与不可变边界
+## Goal and fixed boundaries
 
-- [ ] 同一shared method/single checkpoint的strict paired correct严格超过`150/400`，并继续提高
-  absolute、8-task breadth、稳定性与可重复性。
-- [ ] correct在严格配对下实质优于wrong、shuffled、reversed与no-video；same-task-other保持鲁棒。
-- [x] 保持one-shot：部署输入只有exact task language和恰好一条action-hidden teacher video；视频是
-  唯一dynamic value，不增加language-only LoRA bypass、多video/LoRA平均或checkpoint融合。
-- [x] validation/test actions不进入训练或选择梯度；task experts只使用train24 actions。
-- [x] GPU工作前实时比较`gpu01/gpu02`，只使用空闲A40、合计最多6张，不干扰他人；多卡保持
-  `NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL合同。
+- [ ] 同一shared method/single checkpoint strict paired correct严格`>150/400`并继续提高。
+- [ ] correct实质优于wrong/shuffled/reversed/no-video，same-task-other鲁棒，breadth高、checkpoint换手低。
+- [x] one-shot：exact language + exactly one action-hidden video；video-only dynamic value；一套完整
+  38-target rank16 LoRA；无language bypass、多video/LoRA/checkpoint融合。
+- [x] fixed 24/8/8 split、frozen source/normalization、validation/test action隔离和official paired evaluator。
+- [x] task experts只作train24 policy-effective监督，不进入deployment。
+- [x] GPU launch前live比较`gpu01/gpu02`，只用最多6张空闲A40；多卡遵守
+  `NCCL_P2P_DISABLE=1`、NUMA映射和deferred-NCCL。
+- [x] 吞吐优先：接受普通BF16低位差异，不为逐元素复现固定batch1、重复forward或扩宽LoRA cache。
 
-## 当前科学证据
+## Phase 0 — authority and throughput correction
 
-- [x] 历史single-checkpoint最好仍是v6-fast macro400：strict correct=`143/400`、breadth=`6/8`，
-  五臂correct/same/wrong/shuffled/reversed=`143/135/125/128/129`；目标仍未达到。
-- [x] 统一step2000 task-expert bank完成：
-  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`。24/24 tasks、五个统一
-  checkpoints；development-train direct-expert closed loop=`432/557/624/638/658` of 1200，故选择
-  step2000且不按task混点。
-- [x] learned address-binding、Causal Barycentric、Policy-Effective soft与hard部署路线分别在strict
-  closed loop得到`75/400`、`63/400`、`15/80`和`3/80`，均已负裁决。hard/soft/sparse expert
-  deployment dictionary关闭，不再调top-k、temperature、scale、confidence、rank或few-shot平均。
-- [x] task experts能定义train-task policy-effective parameter targets，但不能保证held-task support、
-  same-task video specificity或视频时间顺序因果性；这些仍必须由Writer和严格五臂闭环裁决。
+- [x] 撤回batch1/`1e-5` direct reproduction gate；Writer generation默认至少batch8，最终取profile最优值。
+- [x] LoRA cache保持72 BF16 + 4 F32原生dtype，batched D2H单次同步。
+- [x] functional单物理batch直接求梯度；保留真实multi-microbatch的FP32 accumulation。
+- [x] 合并correct effective alignment、task metric和gradient norm host transfer，移除重复finite scans/sync。
+- [x] action DataLoader改为2 spawn persistent workers + prefetch2，并验证serial/prefetch/resume rows一致。
+- [x] 最终相关定向`68 passed`、全仓`227 passed`、compileall和`git diff --check`全部通过。
+- [x] 完成当前authority、README、design、findings/progress一致性，吸收并行只读审计结果。
+- [x] 真实validation8×4-state asset inspector和CLI prepare：32 requests、600 Writer tensors、native
+  72 BF16 + 4 F32 cache、deployment expert-bank reads=0；临时root已清理且未初始化CUDA。
+- [ ] clean commit/push；清理已被新提交覆盖且无唯一改动的旧smoke worktree/local branch。
 
-## 当前唯一canonical方法与实现
+## Phase 1 — single A40 throughput and vertical smoke
 
-- [x] 唯一方法是design第33节的v6-Prior Policy-Effective Temporal-Ranking Writer。部署恢复历史v6
-  one-shot完整动态生成器：language+一条raw action-hidden video经Semantic Core、Causal Procedure、
-  compiler和factor heads直接生成38-target rank16 LoRA；expert bank不进入部署。
-- [x] 历史v6 macro400只作load-only初始化，不冒充exact resume。冻结encoder/Core/transition/Procedure
-  共483 tensors、`7,060,992` parameters；只训练compiler+factor heads共41 tensors、`3,714,304`
-  parameters，新建optimizer/scheduler/RNG。
-- [x] 训练目标为correct positive functional loss + gauge-invariant effective`BA` expert direction/norm +
-  bounded correct-over-reversed/shuffled/wrong ranking。same-task不同视频仍是共同positive分布。
-- [x] 训练runtime由`dd57edc`及后续合同提交封存：6 ranks×4 tasks、train24等权、每task B20、一次flat
-  all-reduce、50-video无放回cycle、完整six-rank RNG与exact-resume checkpoint。
-- [x] canonical evaluator/runtime由clean pushed`bca3f6d`完成原位替换。它只接受v6-prior config、一个
-  historical或本方法Writer checkpoint、raw video root和video condition；旧expert-bank/feature-cache
-  deployment参数fail closed，hard-route config/model被删除。
-- [x] evaluator的no-video臂不读取frames且精确返回source identity；correct/same/wrong/shuffled/reversed
-  每episode恰好一条raw video。乱序与倒序只重排真实frame content并保留新的展示位置，随后做完整
-  v6 forward；Writer生成FP32 LoRA cache后释放，原source policy原位复用。
-- [x] CPU门：全仓`211 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
-  600 tensors、12,064,064 values；8 tasks映射到8个one-shot cache requests，部署expert-bank reads=`0`。
+- [ ] 使用`gpu-preflight`实时检查两节点和`/data1` quota，选择一张完全空闲A40。
+- [ ] 在同一loaded historical macro400 Writer上，用同一个32-request/同一总帧数的longest-first panel
+  profile真实异长video batches `8/16/32/...`；只改变forward分批，记录LoRAs/s、repeat wall、actual
+  forward batches、peak allocated/reserved和headroom。
+- [ ] 只有候选吞吐接近、波动大或显存/利用率解释不清时，才补阶段wall、GPU utilization、allocator
+  retry和CPU wait，避免instrumentation本身降低吞吐。
+- [ ] 若显存/吞吐仍有空间继续增batch或取中间点；选择吞吐最高且最长真实batch稳定的配置，不以
+  single-forward数值相似度选择。
+- [ ] 用选定batch从fresh root完成validation8×state0 correct smoke：8 videos/LoRAs/cache/rows，Writer
+  release、source reuse、0 forbidden reads/retry/failure/OOM/nonfinite，GPU自然释放。
+- [ ] 把精确device/root/commit/batch/wall/peak/cache dtype/release evidence写回config，将六卡profile解锁。
+- [ ] 只允许artifact-backed assembler从profile与vertical roots生成evaluation seal，不人工拼evidence/status。
 
-## 下一证据门
+## Phase 2 — six A40 gradient/resume/throughput profile
 
-### 1. 单卡historical warm-start reproduction smoke
+- [ ] 重新live选最多6张空闲A40，按实际NUMA建立physical/local rank映射。
+- [ ] 固定macro49覆盖train24×B20=480 unique queries和最长105-frame video；记录positive/expert/ranking
+  对compiler/factor的未加权gradient norms。
+- [ ] 一次性封存`lambda_expert/lambda_rank`，两个blocks上各auxiliary均不超过positive的`.25`；不按held
+  outcome sweep或在线自适应。
+- [ ] 用结构化artifact verifier从gradient profile重算推荐weights并核对24 tasks/macro49/六卡拓扑，
+  再把gradient+aux状态置为sealed/profile-ready。
+- [ ] profile physical microbatch、DataLoader workers/prefetch和必要checkpointing，优先samples/s与高有效
+  显存利用，不改变B20/full24 scientific batch。
+- [ ] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、
+  optimizer/scheduler和scientific metrics语义，接受正常parallel roundoff。
+- [ ] 用artifact verifier核对三条roots的同一config bytes/commit/topology、completion、cursor/RNG与
+  optimizer/scheduler语义，再封存profile/formal-ready；禁止人工status跳转。
+- [ ] clean seal config与formal launch contract；profile权重永久禁止进入formal。
 
-- [x] 首次`30b2ccf` frozen run在cache前按门失败，root=
-  `runs/outputs/pi05_v6_prior_warmstart_reproduction_smoke_validation8_correct_gpu02g0_30b2ccf_20260809`。
-  direct-repeat max-abs=`0`；duplicated-batch8与heterogeneous-batch8对direct均为`.001953125`，mean约
-  `4.70e-5`，证明是BF16 batch-shape数值路径，不是跨样本串扰、padding或随机性。0 cache/rollout，GPU释放。
-- [x] 不放宽`1e-5`门；config与run-contract将canonical Writer model batch固定为1，吞吐只能由独立
-  generator进程/设备扩展。全仓对应回归`211 passed`。
-- [ ] 从包含该batch1修复与当前authority的clean pushed frozen worktree在fresh root执行；不resume失败root。
-- [ ] 启动前重新检查两节点GPU ownership/telemetry/process与`/data1`个人quota，只选一张完全空闲A40。
-- [ ] 固定validation8×state0、correct、seed7、without-replacement；历史macro400为method macro0。
-- [ ] 生成8套完整LoRA并完成cache→Writer release→同一source policy rollout，要求8 rows/entries、
-  0 retry/failure/OOM/nonfinite/forbidden reads，结束后GPU自然释放。
-- [ ] 对每个batch1 staged输出与逐episode direct v6 forward比较；全部76 tensors逐值比较，
-  max abs difference必须`<=1e-5`。canonical smoke runtime会在写cache前自动执行并记录该比较；不用
-  SHA/MD5，也不能事后凭观察补写通过。
-- [ ] 通过后把精确device/root/commit/counts/release/reuse/direct-match evidence写回config并clean push；
-  同一证据同时把gradient-profile从blocked改为ready。任一项失败先修工程合同，不启动六卡训练。
+## Phase 3 — formal v6-prior continuation
 
-### 2. 六卡gradient与exact-resume profile
+- [ ] clean pushed frozen worktree、fresh formal root，从historical macro400 load-only创建全新optimizer等状态。
+- [ ] 用当前paired schedule跑method macro0 baseline；旧`143`只作历史参照，不能替代同schedule baseline。
+- [ ] 训练0→50，保存10/25/50；持续记录per-task三项loss/gradient、effective BA、margins、full24 retention、
+  data/GPU wait、step wall、clip/nonfinite和完整resume state。
+- [ ] macro0/10/25/50跑固定correct80 screen；macro0/10/25/50全部跑paired correct400，防止functional loss
+  与真实性能错位。
+- [ ] 每点和macro0、历史143、v5.2 old、v6 old/task-complete做per-task/per-suite/breadth/gained-lost/
+  churn和内部transfer对比。
+- [ ] 若多个task共同上升且趋势持续，exact-resume到100（必要时200），每25/50保存并及时correct400；
+  不因单点低分转向，也不因loss下降无限训练。
+- [ ] single winner严格`>150/400`或形成可信共同提升时，跑完整paired correct/same/wrong/shuffled/
+  reversed/no-video并分析same-task跨video方差。
 
-- [ ] 重新live比较两节点，最多选择6张空闲A40；按所选节点的NUMA建立physical/local rank映射，设置
-  `NCCL_P2P_DISABLE=1`、Ring/Simple和deferred process group。
-- [ ] gradient profile只运行预注册macro49，覆盖train24×B20=480 unique queries及最长105 sampled-frame
-  video。分别测positive/expert/ranking在compiler与factor heads的未加权gradient norm。
-- [ ] 一次性封存`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks中都不超过positive
-  gradient的`.25`；不按validation outcome sweep或在线自适应。
-- [ ] 用丢弃型profile权重完成fresh0→1、exact-resume1→3及独立contiguous0→3；科学metrics一致，Writer/
-  RNG exact，optimizer/scheduler/cursor语义一致。profile权重不得warm-start formal。
+## Phase 4 — targeted iteration loop
 
-### 3. Formal 0→50与严格选择
+- [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
+- [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
+- [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。
+- [ ] 若Procedure信息存在但BA传递弱，只改compiler ownership/topology。
+- [ ] 若BA/action传递健康但task换手，只改task aggregation/credit coexistence，不靠scale/rank。
+- [ ] 若same-task跨video方差被定位为最早瓶颈，才设计固定K few-shot invariant aggregation。
+- [ ] 只有下游目标、梯度和传递均成立而上游没有正确时序语义，才解冻或重构Procedure/encoder。
+- [ ] 每轮先写最小可证伪design，profile、充分训练、及时strict测试、和历史谱系逐项对比，再决定下一轮。
 
-- [ ] 另建clean pushed frozen worktree、fresh root和formal run contract，从historical macro400 load-only
-  初始化全新optimizer，训练50 macros并保存10/25/50。
-- [ ] method macro0/10/25/50先跑相同validation8×states0--9 strict correct80；不得因中间task结果改变
-  panel、video schedule、loss或checkpoint。
-- [ ] 三个训练checkpoint全部跑paired correct400；method macro0也在同一当前schedule评测，历史143只作
-  different-schedule reference。
-- [ ] 只有single checkpoint correct严格`>150/400`，或至少不低于同schedule macro0且breadth不降、
-  多task净增并有可信上升趋势，才运行correct/same/wrong/shuffled/reversed/no-video完整配对裁决。
-- [ ] 若三点均低于macro0或只发生单task换手，停止该训练干预；不得用更长训练、loss sweep、scale/gate、
-  checkpoint融合或立即解冻上游救点。
+## Completion
 
-## 后续单变量顺序
-
-- 若absolute提高而顺序/错误视频margin仍弱，下一变量才调整counterfactual credit；不得同时改encoder。
-- 若margin提高但absolute下降，判该目标伤害policy performance，不把它解释成训练不足。
-- 只有one-shot同task不同video方差被严格证据定位为最早限制，才设计固定K few-shot聚合；动态shot数后置。
-- AS continuation仍不足时，再在同一输入墙和single-Writer图上设计短、task-balanced RL阶段；不能恢复
-  flat Writer-RL、task-local RL或使用validation/test actions。
-
-## 退役边界
-
-旧hard-route config、online expert-bank/feature-cache部署、HardRouted Writer类及其CLI均已从canonical
-runtime删除；历史只由Git和formal artifacts保存。task-expert trainer/evaluator、expert geometry和旧
-feature artifacts仍可作为训练监督与历史分析工具，但不得重新成为Writer部署输入。当前没有运行中的
-v6-prior GPU任务或长期实验。
+- [ ] 至少一个single checkpoint strict paired correct`>150/400`。
+- [ ] 完整paired五臂/六臂证明真实video/task/temporal causality，不是text bypass或低层伪特征。
+- [ ] breadth、checkpoint churn、repeatability和per-task得失达到可接受水平；达标后继续探索更高absolute。
+- [ ] formal artifacts、机制分析、当前authority和Git clean pushed；仅在Goal真实完成时标记complete。

@@ -96,8 +96,6 @@ class TaskSelectedSemanticSetFusion(torch.nn.Module):
             or valid_frames.dtype != torch.bool
             or valid_task_tokens.shape != text_queries.shape[:2]
             or valid_task_tokens.dtype != torch.bool
-            or not bool(valid_frames.any(dim=1).all())
-            or not bool(valid_task_tokens.any(dim=1).all())
         ):
             raise VariableEpisodeInputError("invalid token-aligned frame evidence")
         batch, frames, tokens, width = frame_evidence.shape
@@ -289,8 +287,6 @@ class TaskGroundedVisualTransitionFusion(torch.nn.Module):
             or valid_task_tokens.shape
             != (action_probe.shape[0], grounded_evidence.shape[2])
             or valid_task_tokens.dtype != torch.bool
-            or not bool(valid_frames[:, 0].all())
-            or not bool(valid_task_tokens.any(dim=1).all())
         ):
             raise VariableEpisodeInputError("invalid visual-transition batch")
 
@@ -365,8 +361,6 @@ class CausalProcedureEncoder(torch.nn.Module):
         positions: torch.Tensor,
         valid_mask: torch.Tensor,
     ) -> torch.Tensor:
-        if not bool(valid_mask[:, 0].all()):
-            raise VariableEpisodeInputError("Procedure must begin at frame zero")
         value = content.masked_fill(~valid_mask[..., None], 0.0)
         for block in self.blocks:
             value = block(value, positions, valid_mask)
@@ -605,7 +599,7 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
     ) -> None:
-        if (
+        shape_changed = (
             core.ndim != 3
             or valid_core.shape != core.shape[:2]
             or valid_core.dtype != torch.bool
@@ -614,8 +608,14 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
             or valid_procedure.shape != procedure.shape[:2]
             or valid_procedure.dtype != torch.bool
             or core.shape[0] != procedure.shape[0]
-            or not bool(valid_core.any(dim=1).all())
-            or not bool(valid_procedure.any(dim=1).all())
+        )
+        if shape_changed or not bool(
+            torch.stack(
+                (
+                    valid_core.any(dim=1).all(),
+                    valid_procedure.any(dim=1).all(),
+                )
+            ).all()
         ):
             raise VariableEpisodeInputError("invalid Core/Procedure compiler memory")
 

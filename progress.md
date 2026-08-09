@@ -1,6 +1,29 @@
 # EMBER Progress Ledger
 
-## 2026-08-09 v6-prior batch8复现失败、根因定位与batch1修复
+## 2026-08-09 throughput-first correction与authority收敛
+
+- owner撤回为`.001953125`级BF16 batch-shape roundoff固定batch1的决定，要求吞吐和有效显存利用优先。
+  canonical worktree现移除8次冗余direct Writer forward、`1e-5`逐tensor复现门、forced-FP32 LoRA cache、
+  单physical batch梯度accumulation和多处热路径host sync；Writer batch改为A40 profile后选择。
+- native LoRA storage经checkpoint metadata→run contract→cache descriptor/write/load接线：72 BF16 + 4 F32，
+  `2,641,920` tensor bytes/entry。action DataLoader改为2 workers/spawn/persistent/prefetch2，serial、prefetch
+  和prefix+resume rows测试一致。
+- PI05 loss-only fast path删除formal每个policy forward的日志型host sync；Writer offsets、frame ordinal/order、
+  language span/condition ownership和token packing也已清理重复barrier。新增单卡真实batch profile、artifact-
+  backed evaluation seal、无循环状态图和task-expert窄authority loader。
+- GPU preflight现记录device name并在任何模型load/worker spawn前拒绝忙卡、非A40或超过owner六卡上限；
+  profile入口还要求clean pushed、validation/correct/without-replacement、单卡单replica/generator及真实
+  `8/16/32`候选，并在独立单卡worker中再次live preflight与核对checkout。
+- batch吞吐使用同一个32-request longest-first panel和同一总sampled frames；8/16/32只改变物理forward
+  分批，避免大batch因额外加入短视频而获得混杂优势。每个候选记录实际forward分组、native D2H wall、
+  peak显存和headroom，artifact assembler要求三行完整panel严格一致。
+- 真实validation8×4-state CPU prepare已通过：32 requests、historical Writer 600 tensors/12,064,064
+  values、deployment expert-bank reads=0、cache 72 BF16 + 4 F32；临时root已清理，未初始化CUDA。
+- authority、README、design、findings和task plan已收敛；相关定向回归`68 passed`、全仓`227 passed`，
+  compileall与`git diff --check`通过。下一执行门是clean commit/push，随后live GPU/quota preflight、单卡batch/VRAM/vertical smoke、
+  六卡gradient/resume/throughput profile和formal strict评测。
+
+## 2026-08-09 v6-prior batch8复现失败、根因定位与batch1修复（batch1已撤回）
 
 - clean frozen`30b2ccf`在live空闲`gpu02:0`完成首次historical warm-start启动；model load=`117.190s`、
   NUMA0绑定正确，但batch8输出在cache前超过`1e-5`复现门，launcher按合同退出。失败root=
@@ -9,9 +32,8 @@
 - 同卡最小诊断得到direct-repeat max-abs=`0`；duplicate batch8与heterogeneous batch8对direct均为
   `.001953125`，mean约`4.70e-5`，peak allocated=`11,700,880,384` bytes。结果定位为BF16 batch-shape
   数值路径，不是串样、padding或随机性；诊断artifact保存在失败root的`diagnostics/batch_equivalence.json`。
-- 没有放宽复现阈值。config和run-contract把canonical v6-prior Writer model batch固定为1，CLI说明同步，
-  非1 prepare会fail closed；全仓`211 passed`。下一步clean push后从新frozen worktree/fresh root重跑
-  8-task cache/release/rollout smoke，失败root不resume；六卡gradient profile仍blocked。
+- 当时没有放宽复现阈值，并把canonical Writer错误固定为batch1；全仓`211 passed`只证明了该历史合同。
+  此决定已由上节throughput-first裁决撤回，失败root仍不resume且不作为当前下一步依据。
 
 ## 2026-08-09 v6-prior canonical evaluator封存
 

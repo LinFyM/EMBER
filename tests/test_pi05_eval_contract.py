@@ -28,6 +28,7 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
 )
+from ember.pi05_lora import pi05_target_names
 from ember.expert_manifold.video_schedule import (
     task_video_mapping,
     video_schedule_contract,
@@ -35,6 +36,16 @@ from ember.expert_manifold.video_schedule import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _pi05_template_dtype_by_name() -> dict[str, str]:
+    return {
+        f"{target}.lora_{factor}.default.weight": (
+            "F32" if target in {"model.action_in_proj", "model.action_out_proj"} else "BF16"
+        )
+        for target in pi05_target_names()
+        for factor in ("A", "B")
+    }
 CONFIG = ROOT / "configs/pi05_target_evaluation_v1.json"
 
 
@@ -206,6 +217,7 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
         role="test",
         mode="smoke",
         replicas_per_gpu=1,
+        physical_gpu_ids=tuple(range(6)),
         command=("evaluate_pi05.py", "prepare"),
     )
     path = tmp_path / "run_contract.json"
@@ -233,6 +245,20 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
     assert subset["parallel"]["worker_count"] == 10
     assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
     assert subset["parallel"]["omp_threads_per_worker"]["6"] == 1
+    with pytest.raises(Pi05EvaluationError, match="six-GPU limit"):
+        build_run_contract(
+            authorities=authorities,
+            tasks=tasks,
+            libero_paths=paths,
+            model=model,
+            tokenizer={"path": "/tokenizer.model"},
+            output_dir=tmp_path / "too-many",
+            role="test",
+            mode="smoke",
+            replicas_per_gpu=1,
+            physical_gpu_ids=tuple(range(7)),
+            command=("evaluate_pi05.py", "prepare"),
+        )
     contract["output_dir"] = str(tmp_path / "elsewhere")
     path.write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -278,9 +304,24 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
             "writer_parameter_count": 10_775_296,
             "generated_lora_tensor_count": 76,
             "checkpoint": "/writer/checkpoints/step_00000400",
+            "writer_state": {
+                "template_lora_storage": {
+                    "tensor_count": 76,
+                    "parameter_count": 1_287_168,
+                    "tensor_bytes": 2_641_920,
+                    "dtype_tensor_counts": {"BF16": 72, "F32": 4},
+                    "dtype_parameter_counts": {
+                        "BF16": 1_253_376,
+                        "F32": 33_792,
+                    },
+                    "dtype_by_name": _pi05_template_dtype_by_name(),
+                }
+            },
         },
         "evaluation_authority": {
-            "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
+            "formal_status": "blocked_until_live_a40_throughput_smoke",
+            "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
+            "minimum_smoke_writer_model_batch_size": 8,
             "online_smoke_evidence": None,
         },
         "video_data": {"root": "/videos"},
@@ -307,7 +348,7 @@ def _build_writer_contract(
     arm: str,
     condition: str,
     mapping: list,
-    writer_generation_batch_size: int = 1,
+    writer_generation_batch_size: int = 8,
 ) -> dict:
     authorities, tasks, paths, model, shared_writer, _ = inputs
     return build_run_contract(
@@ -320,6 +361,7 @@ def _build_writer_contract(
         role="test",
         mode="smoke",
         replicas_per_gpu=1,
+        physical_gpu_ids=tuple(range(6)),
         command=("evaluate_pi05.py", "prepare"),
         writer_generation_batch_size=writer_generation_batch_size,
         adapter={
@@ -357,20 +399,29 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     assert "writer_lora_execution" not in correct
 
 
-def test_v6_prior_writer_rejects_batch_dependent_bf16_generation(
+def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     tmp_path: Path,
 ) -> None:
     inputs = _writer_contract_inputs(tmp_path)
     _, _, _, _, _, correct_mapping = inputs
-    with pytest.raises(Pi05EvaluationError, match="model batch size one"):
+    with pytest.raises(Pi05EvaluationError, match="throughput authority"):
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
             arm="expert_manifold_v6_prior_correct",
             condition="correct",
             mapping=correct_mapping,
-            writer_generation_batch_size=8,
+            writer_generation_batch_size=1,
         )
+    batched = _build_writer_contract(
+        inputs=inputs,
+        output_dir=tmp_path / "batched",
+        arm="expert_manifold_v6_prior_correct",
+        condition="correct",
+        mapping=correct_mapping,
+        writer_generation_batch_size=16,
+    )
+    assert batched["parallel"]["writer_generation_batch_size"] == 16
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 import pytest
 from safetensors.torch import save_file
@@ -29,7 +31,7 @@ from ember.writer.temporal import (
     TaskGroundedVisualTransitionFusion,
     TaskSelectedSemanticSetFusion,
 )
-from ember.writer.video_program import TaskQueriedPatchGrounding
+from ember.writer.video_program import TaskQueriedPatchGrounding, VideoProgramError
 
 
 class _Projection(torch.nn.Module):
@@ -411,6 +413,82 @@ def test_staged_frame_order_cannot_cross_video_conditions() -> None:
             indices,
             frame_order=torch.tensor([0, 2, 1, 3, 4], dtype=torch.long),
         )
+
+
+def test_writer_offsets_and_frame_ordinals_fail_closed_at_batch_boundary() -> None:
+    assert CompleteLoRAWriter._validated_offsets(
+        torch.tensor([0, 2, 5], dtype=torch.long),
+        5,
+    ) == (0, 2, 5)
+    for invalid in (
+        torch.tensor([0, 2, 5], dtype=torch.float32),
+        torch.tensor([0, 0, 5], dtype=torch.long),
+        torch.tensor([0, 2, 4], dtype=torch.long),
+    ):
+        with pytest.raises(WriterModelError, match="offsets are invalid"):
+            CompleteLoRAWriter._validated_offsets(invalid, 5)
+
+    model, _ = _model()
+    model.semantic_encoder = _FakeSemanticEncoder()
+    frames, indices, offsets, tokens, masks, spans = _inputs()
+    evidence = model.encode_video_evidence(
+        torch.nn.Identity(), frames, offsets, tokens, masks, spans
+    )
+    for invalid in (
+        torch.tensor([0, 5, 1, 5, 10], dtype=torch.long),
+        torch.tensor([0, 5, 0, 5, 5], dtype=torch.long),
+    ):
+        with pytest.raises(WriterModelError, match="start at zero and increase"):
+            model.build_memories(evidence, invalid)
+
+
+def test_semantic_batch_validates_all_value_ownership_in_one_outer_gate() -> None:
+    model, _ = _model()
+    encoder = model.semantic_encoder
+    frames, _, _, tokens, masks, spans = _inputs()
+    condition_ids = torch.tensor([0, 0, 1, 1, 1], dtype=torch.long)
+    policy = SimpleNamespace(
+        model=SimpleNamespace(
+            config=SimpleNamespace(chunk_size=50, max_action_dim=32)
+        )
+    )
+    _, valid, counts = encoder._validate_forward_batch(
+        policy,
+        frames,
+        condition_ids,
+        tokens,
+        masks,
+        spans,
+    )
+    assert valid.shape == (2, 4)
+    assert counts.tolist() == [2, 4]
+
+    invalid_spans = spans.clone()
+    invalid_spans[0, 5] = True
+    empty_spans = spans.clone()
+    empty_spans[1] = False
+    bos_spans = spans.clone()
+    bos_spans[0, 0] = True
+    cases = (
+        (condition_ids, invalid_spans),
+        (condition_ids, empty_spans),
+        (condition_ids, bos_spans),
+        (torch.tensor([0, 1, 0, 1, 1]), spans),
+        (torch.zeros(5, dtype=torch.long), spans),
+    )
+    for invalid_conditions, invalid_task_spans in cases:
+        with pytest.raises(
+            VideoProgramError,
+            match="invalid frame-language semantic batch",
+        ):
+            encoder._validate_forward_batch(
+                policy,
+                frames,
+                invalid_conditions,
+                tokens,
+                masks,
+                invalid_task_spans,
+            )
 
 
 def test_v6_gradient_staging_opens_only_intended_paths() -> None:

@@ -120,7 +120,6 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
             or patch_content.shape[1] != self.NATIVE_IMAGE_TOKENS
             or valid_task_tokens.shape != task_queries.shape[:2]
             or valid_task_tokens.dtype != torch.bool
-            or not bool(valid_task_tokens.any(dim=1).all())
         ):
             raise VideoProgramError("invalid task-query patch batch")
         batch, task_tokens, width = task_queries.shape
@@ -272,7 +271,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             or task_span_mask.shape != hidden.shape[:2]
             or task_span_mask.dtype != torch.bool
             or maximum_task_tokens <= 0
-            or int(task_span_mask.sum(dim=1).max()) > maximum_task_tokens
         ):
             raise VideoProgramError("task-token hidden packing changed")
         ordinal = (task_span_mask.to(torch.long).cumsum(dim=1) - 1).clamp_min(0)
@@ -308,10 +306,26 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_padding = torch.zeros_like(text_tokens, dtype=torch.bool)
         text_tokens[:, 0] = language_tokens[:, 0]
         text_padding[:, 0] = True
-        for row in range(batch):
-            selected = language_tokens[row, task_span_mask[row]]
-            text_tokens[row, 1 : selected.numel() + 1] = selected
-            text_padding[row, 1 : selected.numel() + 1] = True
+        ordinals = (
+            task_span_mask.to(torch.long).cumsum(dim=1) - 1
+        ).clamp_min(0)
+        text_tokens[:, 1:].scatter_add_(
+            1,
+            ordinals,
+            language_tokens.masked_fill(~task_span_mask, 0),
+        )
+        packed_padding = torch.zeros(
+            batch,
+            maximum_task_tokens,
+            dtype=torch.long,
+            device=language_tokens.device,
+        )
+        packed_padding.scatter_add_(
+            1,
+            ordinals,
+            task_span_mask.to(torch.long),
+        )
+        text_padding[:, 1:] = packed_padding.to(torch.bool)
         with torch.no_grad():
             text_embeds = bridge.embed_language_tokens(text_tokens)
         text_attention = torch.zeros_like(text_padding)
@@ -459,6 +473,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         if (
             frames.ndim != 4
             or frames.shape[0] <= 0
+            or conditions <= 0
             or frame_condition_ids.ndim != 1
             or frame_condition_ids.shape[0] != frames.shape[0]
             or frame_condition_ids.dtype != torch.long
@@ -467,33 +482,48 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             or language_mask.dtype != torch.bool
             or task_span_mask.shape != language_tokens.shape
             or task_span_mask.dtype != torch.bool
-            or bool((task_span_mask & ~language_mask).any())
-            or not bool(task_span_mask.any(dim=1).all())
-            or bool(task_span_mask[:, 0].any())
-            or int(frame_condition_ids.min()) < 0
-            or int(frame_condition_ids.max()) >= conditions
+            or frame_condition_ids.device != frames.device
+            or language_tokens.device != frames.device
+            or language_mask.device != frames.device
+            or task_span_mask.device != frames.device
         ):
             raise VideoProgramError("invalid frame-language semantic batch")
-        counts = torch.bincount(frame_condition_ids, minlength=conditions)
-        expected = torch.repeat_interleave(
-            torch.arange(conditions, device=frames.device),
-            counts,
-        )
-        if bool((counts <= 0).any()) or not torch.equal(
-            frame_condition_ids,
-            expected,
-        ):
-            raise VideoProgramError(
-                "semantic frames must be contiguous by video condition"
+        task_counts = task_span_mask.sum(dim=1)
+        condition_counts = (
+            frame_condition_ids[:, None]
+            == torch.arange(conditions, device=frames.device)[None]
+        ).sum(dim=0)
+        invalid_checks = torch.stack(
+            (
+                (task_span_mask & ~language_mask).any(),
+                ~task_span_mask.any(dim=1).all(),
+                task_span_mask[:, 0].any(),
+                (
+                    (frame_condition_ids < 0)
+                    | (frame_condition_ids >= conditions)
+                ).any(),
+                (condition_counts <= 0).any(),
+                (
+                    frame_condition_ids[1:]
+                    < frame_condition_ids[:-1]
+                ).any(),
             )
+        )
+        validation = torch.cat(
+            (
+                invalid_checks.to(torch.long),
+                task_counts.max().reshape(1),
+            )
+        ).to(device="cpu").tolist()
+        if any(validation[:-1]):
+            raise VideoProgramError("invalid frame-language semantic batch")
         core = policy.model
         if (
             int(core.config.chunk_size) != self.action_horizon
             or int(core.config.max_action_dim) != self.padded_action_dim
         ):
             raise VideoProgramError("PI05 Action Expert topology changed")
-        task_counts = task_span_mask.sum(dim=1)
-        maximum_task_tokens = int(task_counts.max())
+        maximum_task_tokens = int(validation[-1])
         valid_task_tokens = (
             torch.arange(
                 maximum_task_tokens,

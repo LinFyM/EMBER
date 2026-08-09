@@ -159,6 +159,28 @@ class RawTeacherVideoStore:
             raw_frame_count=raw_count,
         )
 
+    def frame_counts(self, task_id: int, demo_index: int) -> tuple[int, int]:
+        """Read only allowed video length metadata for throughput scheduling."""
+
+        if demo_index < 0:
+            raise WriterModelError("teaching video demo index must be non-negative")
+        pixels = self._handle(task_id).get(
+            f"data/demo_{demo_index}/obs/agentview_rgb"
+        )
+        if (
+            not isinstance(pixels, h5py.Dataset)
+            or pixels.ndim != 4
+            or pixels.shape[0] <= 0
+            or pixels.shape[-1] != 3
+            or pixels.dtype != np.uint8
+        ):
+            raise WriterModelError("invalid action-hidden teaching video")
+        raw_count = int(pixels.shape[0])
+        sampled_count = (raw_count - 1) // self.frame_stride + 1
+        if (raw_count - 1) % self.frame_stride:
+            sampled_count += 1
+        return raw_count, sampled_count
+
     def close(self) -> None:
         for handle in self._handles.values():
             handle.close()

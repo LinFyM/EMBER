@@ -400,6 +400,7 @@ class WorkerRuntime:
     replica: int
     numa_node: int
     gpu_uuid: str
+    gpu_name: str
     cpu_affinity: tuple[int, ...]
     contract: dict[str, Any]
     tasks: dict[tuple[str, int], dict[str, Any]]
@@ -497,6 +498,7 @@ def _initialize_worker(
         replica=replica,
         numa_node=numa_node,
         gpu_uuid=str(torch.cuda.get_device_properties(0).uuid),
+        gpu_name=str(torch.cuda.get_device_name(0)),
         cpu_affinity=affinity,
         contract=contract,
         tasks=task_lookup(contract),
@@ -634,6 +636,7 @@ def run_worker(
                 "invocation_id": invocation_id,
                 "physical_gpu": runtime.gpu_index,
                 "gpu_uuid": runtime.gpu_uuid,
+                "gpu_name": runtime.gpu_name,
                 "replica": runtime.replica,
                 "numa_node": runtime.numa_node,
                 "cpu_affinity": list(runtime.cpu_affinity),

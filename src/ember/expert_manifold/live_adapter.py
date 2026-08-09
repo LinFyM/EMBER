@@ -193,6 +193,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             evaluation_adapter=observed,
             device=device,
         )
+        self._last_generation_batch_profile: tuple[dict[str, Any], ...] = ()
 
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
@@ -225,7 +226,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         return tuple(
             PreparedWriterLoRA(
                 state={
-                    name: value.detach().to(device=self.device, dtype=torch.float32)
+                    name: value.detach().to(device=self.device)
                     for name, value in self.identity_state.items()
                 },
                 evidence={
@@ -235,6 +236,51 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             )
             for row in rows
         )
+
+    def generation_request_profiles(
+        self,
+        identities: Sequence[Mapping[str, Any]],
+    ) -> tuple[dict[str, Any], ...]:
+        """Return action-hidden video lengths for exact profile requests."""
+
+        rows = []
+        for identity in identities:
+            suite = str(identity["suite"])
+            task_id = int(identity["task_id"])
+            init_state_id = int(identity["init_state_id"])
+            reference = (
+                f"{self.evaluation_adapter['writer_asset']['reference']}:"
+                f"{suite}:{task_id}:{init_state_id}"
+            )
+            evidence = expected_expert_manifold_episode_evidence(
+                self.evaluation_adapter,
+                suite=suite,
+                task_id=task_id,
+                init_state_id=init_state_id,
+                lora_reference=reference,
+            )
+            if self.evaluation_adapter["video_condition"] == "no_video":
+                raw_frames, sampled_frames = 0, 0
+            else:
+                raw_frames, sampled_frames = self.store.frame_counts(
+                    int(evidence["video_global_task_id"]),
+                    int(evidence["teacher_demo_indices"][0]),
+                )
+            rows.append(
+                {
+                    "suite": suite,
+                    "task_id": task_id,
+                    "init_state_id": init_state_id,
+                    "raw_frames": raw_frames,
+                    "sampled_frames": sampled_frames,
+                }
+            )
+        return tuple(rows)
+
+    def last_generation_batch_profile(self) -> tuple[dict[str, Any], ...]:
+        if not self._last_generation_batch_profile:
+            raise ExpertManifoldError("v6-prior generation profile is unavailable")
+        return self._last_generation_batch_profile
 
     @torch.inference_mode()
     def prepare_episodes(
@@ -251,6 +297,16 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             for identity in identities
         ]
         rows, videos, languages = zip(*inputs, strict=True)
+        self._last_generation_batch_profile = tuple(
+            {
+                "suite": str(identity["suite"]),
+                "task_id": int(identity["task_id"]),
+                "init_state_id": int(identity["init_state_id"]),
+                "raw_frames": 0 if video is None else int(video.raw_frame_count),
+                "sampled_frames": 0 if video is None else int(video.frames.shape[0]),
+            }
+            for identity, video in zip(identities, videos, strict=True)
+        )
         started = time.monotonic()
         copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
         self._physical_lora_is_identity = True
@@ -275,17 +331,10 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             )
             frame_batches.append(frames)
             index_batches.append(indices)
-        lengths = torch.tensor(
-            [batch.shape[0] for batch in frame_batches],
-            dtype=torch.long,
-            device=self.device,
-        )
-        offsets = torch.cat(
-            (
-                torch.zeros(1, dtype=torch.long, device=self.device),
-                lengths.cumsum(dim=0),
-            )
-        )
+        offsets_list = [0]
+        for batch in frame_batches:
+            offsets_list.append(offsets_list[-1] + int(batch.shape[0]))
+        offsets = torch.tensor(offsets_list, dtype=torch.long, device="cpu")
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             generated = self.writer(
                 torch.cat(frame_batches),
@@ -307,7 +356,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
                     value.detach()
                     if batch_size == 1
                     else value[index].detach()
-                ).float()
+                )
                 for name, value in generated.items()
             }
             validate_lora_state(state, self.lora_contract)
@@ -337,9 +386,14 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             self,
             cache_contract=cache_contract,
         )
+        self.release_generation_assets()
+        return cached
+
+    def release_generation_assets(self) -> None:
+        """Release video/Writer modules while retaining the source policy."""
+
         self.store.close()
         del self.store
         del self.language_by_id
         del self.tokenizer
         del self.writer
-        return cached

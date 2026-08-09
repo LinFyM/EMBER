@@ -14,7 +14,7 @@ from ember.expert_manifold.contract import (
     CONFIG_SCHEMA,
     ExpertManifoldError,
     authority_path,
-    load_expert_manifold_config,
+    load_task_expert_config,
 )
 from ember.lora import (
     copy_task_lora_state_,
@@ -67,7 +67,7 @@ def inspect_task_expert_bank(
 
     config_path = config_path.resolve()
     bank_root = bank_root.resolve()
-    config = load_expert_manifold_config(config_path)
+    config = load_task_expert_config(config_path)
     formal = config["task_experts"]["formal_run"]
     if evaluation_role != "development_train":
         raise ExpertManifoldError("task experts may only evaluate development_train")
@@ -257,7 +257,7 @@ class FrozenTaskExpertAdapter:
         )
         if observed != evaluation_adapter:
             raise ExpertManifoldError("task-expert evaluation adapter changed at runtime")
-        config = load_expert_manifold_config(Path(str(observed["config"]["path"])))
+        config = load_task_expert_config(Path(str(observed["config"]["path"])))
         self.lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         inject_task_lora(policy, self.lora)
         for parameter in task_lora_state_dict(policy).values():

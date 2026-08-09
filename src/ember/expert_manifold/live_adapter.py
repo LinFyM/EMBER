@@ -1,4 +1,4 @@
-"""Online one-shot video-to-LoRA generation for Expert-Manifold evaluation."""
+"""Online one-shot v6 video-to-LoRA generation for canonical evaluation."""
 
 from __future__ import annotations
 
@@ -10,92 +10,75 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file
 
-from ember.expert_manifold.contract import (
-    ExpertManifoldError,
-    authority_path,
-    load_barycentric_writer_config,
-)
+from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.inference import (
     expected_expert_manifold_episode_evidence,
     inspect_expert_manifold_writer_evaluation,
 )
-from ember.expert_manifold.model import (
-    HardRoutedPolicyEffectiveWriter,
-    phase_centered_causal_memory,
+from ember.expert_manifold.v6_prior import V6_WRITER_STATE_TENSOR_COUNT
+from ember.expert_manifold.v6_prior_contract import (
+    authority_path,
+    load_v6_prior_config,
 )
 from ember.expert_manifold.video_schedule import shuffled_frame_permutation
-from ember.expert_manifold.video_features import FrozenPi05VideoInnovationEncoder
 from ember.lora import copy_task_lora_state_, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
+from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.writer.data import RawTeacherVideo, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
+from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
 
-def _build_hard_routed_writer(
+def _build_v6_writer(
     *,
     config: Mapping[str, Any],
     observed: Mapping[str, Any],
-    lora: Any,
+    policy: torch.nn.Module,
     template: Mapping[str, torch.Tensor],
     device: torch.device,
-) -> HardRoutedPolicyEffectiveWriter:
-    template_cpu = {
-        name: value.detach().to(device="cpu", dtype=torch.float32)
-        for name, value in template.items()
+) -> CompleteLoRAWriter:
+    bridge = policy.model.paligemma_with_expert
+    writer_config = {
+        name: value
+        for name, value in config["writer"].items()
+        if name in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
     }
-    expert_rows = sorted(
-        observed["expert_basis"]["tasks"], key=lambda row: int(row["ordinal"])
+    writer = CompleteLoRAWriter(
+        build_lora_tensor_specs(template),
+        template_state=template,
+        paligemma_model=bridge.paligemma.model.language_model,
+        expert_model=bridge.gemma_expert.model,
+        **writer_config,
     )
-    cache_rows = sorted(
-        observed["feature_cache"]["tasks"],
-        key=lambda row: int(row["task_ordinal"]),
+    state = load_file(
+        str(observed["writer_asset"]["writer_state"]["path"]),
+        device="cpu",
     )
-    expert_states = []
-    task_centroids = []
-    expected_shape = (
-        int(config["expert_basis"]["centroid_videos_per_task"]),
-        int(config["video_features"]["phase_slots"]),
-        int(config["video_features"]["feature_width"]),
-    )
-    for ordinal, (expert_row, cache_row) in enumerate(
-        zip(expert_rows, cache_rows, strict=True)
+    if len(state) != V6_WRITER_STATE_TENSOR_COUNT:
+        raise ExpertManifoldError("v6-prior evaluation state changed")
+    try:
+        incompatible = writer.load_state_dict(state, strict=True)
+    except RuntimeError as error:
+        raise ExpertManifoldError(
+            "v6-prior evaluation checkpoint is incompatible"
+        ) from error
+    if incompatible.missing_keys or incompatible.unexpected_keys:
+        raise ExpertManifoldError("v6-prior evaluation strict load was incomplete")
+    if any(
+        not torch.equal(
+            value.detach().cpu(),
+            template[name].detach().cpu().to(value.dtype),
+        )
+        for name, value in writer.template_state().items()
     ):
-        if (
-            int(expert_row["ordinal"]) != ordinal
-            or int(cache_row["task_ordinal"]) != ordinal
-        ):
-            raise ExpertManifoldError("barycentric basis ordering changed")
-        state = load_file(
-            str(Path(expert_row["checkpoint"]) / "adapter.safetensors"), device="cpu"
-        )
-        validate_lora_state(state, lora)
-        expert_states.append(state)
-        features = load_file(str(cache_row["features"]["path"]), device="cpu")[
-            "video_innovation"
-        ].float()
-        if tuple(features.shape) != expected_shape:
-            raise ExpertManifoldError("barycentric centroid feature shape changed")
-        task_centroids.append(
-            phase_centered_causal_memory(features).mean(dim=1).mean(dim=0)
-        )
-    topology = config["barycentric_writer"]
-    writer = HardRoutedPolicyEffectiveWriter(
-        contract=lora,
-        template_state=template_cpu,
-        expert_states=expert_states,
-        task_centroids=torch.stack(task_centroids),
-        phase_slots=int(config["video_features"]["phase_slots"]),
-        feature_width=int(config["video_features"]["feature_width"]),
-        ridge=float(topology["ridge"]),
-        effective_basis_rank=int(topology["effective_basis_rank"]),
-        identity_epsilon=float(topology["identity_epsilon"]),
-    ).to(device)
-    writer.eval()
-    if tuple(writer.parameters()):
-        raise ExpertManifoldError("closed-form hard-routed Writer became trainable")
+        raise ExpertManifoldError("v6-prior evaluation template identity changed")
+    writer.requires_grad_(False)
+    writer.to(device).eval()
+    if any(parameter.requires_grad for parameter in writer.parameters()):
+        raise ExpertManifoldError("v6-prior evaluation Writer became trainable")
     return writer
 
 
@@ -106,27 +89,10 @@ def _build_video_runtime(
     tokenizer_path: Path,
     device: torch.device,
 ) -> tuple[
-    FrozenPi05VideoInnovationEncoder,
     RawTeacherVideoStore,
     dict[int, str],
     Pi05TeacherPrefixTokenizer,
 ]:
-    video = config["video_features"]
-    extraction = video["extraction"]
-    encoder = (
-        FrozenPi05VideoInnovationEncoder(
-            image_width=int(video["image_hidden_width"]),
-            expert_width=int(video["expert_hidden_width"]),
-            feature_width=int(video["feature_width"]),
-            phase_slots=int(video["phase_slots"]),
-            max_frames_per_encoder_call=int(extraction["max_frames_per_encoder_call"]),
-            action_horizon=int(extraction["action_horizon"]),
-            padded_action_dim=int(extraction["padded_action_dim"]),
-            initialization_seed=int(extraction["initialization_seed"]),
-        )
-        .to(device)
-        .eval()
-    )
     root = Path(observed["video_data"]["root"])
     authorities = [
         WriterTaskAuthority(
@@ -138,7 +104,9 @@ def _build_video_runtime(
         for row in observed["video_data"]["tasks"]
     ]
     store = RawTeacherVideoStore(
-        authorities, frame_stride=int(video["frame_stride"]), max_open_files=2
+        authorities,
+        frame_stride=int(config["writer"]["frame_stride"]),
+        max_open_files=2,
     )
     languages = {authority.task_id: authority.language for authority in authorities}
     source_config = read_json(authority_path(config, "source_base_config"))
@@ -147,7 +115,28 @@ def _build_video_runtime(
         int(source_config["features"]["tokenizer_max_length"]),
         str(device),
     )
-    return encoder, store, languages, tokenizer
+    return store, languages, tokenizer
+
+
+def _ordered_video_tensors(
+    video: RawTeacherVideo,
+    *,
+    condition: str,
+    order_seed: int,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    frames = torch.from_numpy(video.frames).to(device, non_blocking=True)
+    indices = torch.from_numpy(video.frame_indices).to(device, non_blocking=True)
+    if condition == "reversed":
+        frames = frames.flip(0)
+    elif condition in {"shuffled", "shuffled_keep_first"}:
+        permutation = shuffled_frame_permutation(
+            frames.shape[0],
+            order_seed,
+            keep_first=condition == "shuffled_keep_first",
+        ).to(device)
+        frames = frames.index_select(0, permutation)
+    return frames, indices
 
 
 class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
@@ -166,8 +155,9 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
     ) -> None:
         observed = inspect_expert_manifold_writer_evaluation(
             config_path=Path(str(evaluation_adapter["config"]["path"])),
-            expert_bank_root=Path(str(evaluation_adapter["expert_basis"]["root"])),
-            feature_cache_root=Path(str(evaluation_adapter["feature_cache"]["root"])),
+            checkpoint=Path(
+                str(evaluation_adapter["writer_asset"]["checkpoint"])
+            ),
             video_data_root=Path(str(evaluation_adapter["video_data"]["root"])),
             source=source,
             task_keys=task_keys,
@@ -179,23 +169,18 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             require_formal=require_formal,
         )
         if observed != dict(evaluation_adapter):
-            raise ExpertManifoldError("Expert-Manifold evaluation assets changed")
-        config = load_barycentric_writer_config(Path(observed["config"]["path"]))
+            raise ExpertManifoldError("v6-prior evaluation assets changed")
+        config = load_v6_prior_config(Path(observed["config"]["path"]))
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
-        self.writer = _build_hard_routed_writer(
+        self.writer = _build_v6_writer(
             config=config,
             observed=observed,
-            lora=lora,
+            policy=policy,
             template=template,
             device=device,
         )
-        (
-            self.encoder,
-            self.store,
-            self.language_by_id,
-            self.tokenizer,
-        ) = _build_video_runtime(
+        self.store, self.language_by_id, self.tokenizer = _build_video_runtime(
             config=config,
             observed=observed,
             tokenizer_path=tokenizer_path,
@@ -211,7 +196,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
 
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> tuple[dict[str, Any], torch.Tensor | None, str]:
+    ) -> tuple[dict[str, Any], RawTeacherVideo | None, str]:
         reference = (
             f"{self.evaluation_adapter['writer_asset']['reference']}:"
             f"{suite}:{task_id}:{init_state_id}"
@@ -223,31 +208,40 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             init_state_id=init_state_id,
             lora_reference=reference,
         )
-        condition = str(self.evaluation_adapter["video_condition"])
         language = self.language_by_id[int(row["language_global_task_id"])]
-        if condition == "no_video":
+        if self.evaluation_adapter["video_condition"] == "no_video":
             return row, None, language
         teacher = self.store.load(
-            int(row["video_global_task_id"]), int(row["teacher_demo_indices"][0])
+            int(row["video_global_task_id"]),
+            int(row["teacher_demo_indices"][0]),
         )
-        frames = torch.from_numpy(teacher.frames).to(self.device, non_blocking=True)
-        if condition == "reversed":
-            frames = frames.flip(0)
-        elif condition in {"shuffled", "shuffled_keep_first"}:
-            permutation = shuffled_frame_permutation(
-                frames.shape[0],
-                int(row["teacher_video_order_seeds"][0]),
-                keep_first=condition == "shuffled_keep_first",
-            ).to(self.device)
-            frames = frames.index_select(0, permutation)
-        return row, frames, language
+        return row, teacher, language
+
+    def _identity_results(
+        self,
+        rows: Sequence[Mapping[str, Any]],
+        elapsed: float,
+    ) -> tuple[PreparedWriterLoRA, ...]:
+        return tuple(
+            PreparedWriterLoRA(
+                state={
+                    name: value.detach().to(device=self.device, dtype=torch.float32)
+                    for name, value in self.identity_state.items()
+                },
+                evidence={
+                    **dict(row),
+                    "writer_generation_seconds": elapsed / len(rows),
+                },
+            )
+            for row in rows
+        )
 
     @torch.inference_mode()
     def prepare_episodes(
         self, identities: Sequence[Mapping[str, Any]]
     ) -> tuple[PreparedWriterLoRA, ...]:
         if not identities:
-            raise ExpertManifoldError("Expert-Manifold generation batch is empty")
+            raise ExpertManifoldError("v6-prior generation batch is empty")
         inputs = [
             self._episode_input(
                 suite=str(identity["suite"]),
@@ -256,66 +250,72 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             )
             for identity in identities
         ]
-        rows, frame_batches, languages = zip(*inputs, strict=True)
-        tokens, masks, spans = self.tokenizer(list(languages))
-        batch_size = len(identities)
+        rows, videos, languages = zip(*inputs, strict=True)
         started = time.monotonic()
         copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
         self._physical_lora_is_identity = True
+        if self.evaluation_adapter["video_condition"] == "no_video":
+            if any(video is not None for video in videos):
+                raise ExpertManifoldError("no-video counterfactual read frames")
+            return self._identity_results(rows, time.monotonic() - started)
+        if any(video is None for video in videos):
+            raise ExpertManifoldError("video-conditioned episode lost frames")
+        tokens, masks, spans = self.tokenizer(list(languages))
+        frame_batches = []
+        index_batches = []
+        condition = str(self.evaluation_adapter["video_condition"])
+        for row, video in zip(rows, videos, strict=True):
+            if video is None:
+                raise ExpertManifoldError("v6-prior video batch changed")
+            frames, indices = _ordered_video_tensors(
+                video,
+                condition=condition,
+                order_seed=int(row["teacher_video_order_seeds"][0]),
+                device=self.device,
+            )
+            frame_batches.append(frames)
+            index_batches.append(indices)
+        lengths = torch.tensor(
+            [batch.shape[0] for batch in frame_batches],
+            dtype=torch.long,
+            device=self.device,
+        )
+        offsets = torch.cat(
+            (
+                torch.zeros(1, dtype=torch.long, device=self.device),
+                lengths.cumsum(dim=0),
+            )
+        )
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            if self.evaluation_adapter["video_condition"] == "no_video":
-                if any(batch is not None for batch in frame_batches):
-                    raise ExpertManifoldError("no-video counterfactual read frames")
-                features = torch.zeros(
-                    batch_size,
-                    self.encoder.phase_slots,
-                    self.encoder.feature_width,
-                    dtype=torch.float32,
-                    device=self.device,
-                )
-            else:
-                if any(batch is None for batch in frame_batches):
-                    raise ExpertManifoldError("video-conditioned episode lost frames")
-                concrete_batches = tuple(
-                    batch for batch in frame_batches if batch is not None
-                )
-                frames = torch.cat(concrete_batches)
-                lengths = torch.tensor(
-                    [batch.shape[0] for batch in concrete_batches],
-                    dtype=torch.long,
-                    device=self.device,
-                )
-                frame_video_ids = torch.repeat_interleave(
-                    torch.arange(batch_size, device=self.device), lengths
-                )
-                video_offsets = torch.cat(
-                    (
-                        torch.zeros(1, dtype=torch.long, device=self.device),
-                        lengths.cumsum(dim=0),
-                    )
-                )
-                features = self.encoder(
-                    self.policy,
-                    frames,
-                    frame_video_ids,
-                    video_offsets,
-                    tokens,
-                    masks,
-                    spans,
-                )
-            generated = self.writer(features)
+            generated = self.writer(
+                torch.cat(frame_batches),
+                torch.cat(index_batches),
+                offsets,
+                tokens,
+                masks,
+                spans,
+                policy=self.policy,
+            )
         elapsed = time.monotonic() - started
         if not math.isfinite(elapsed) or elapsed < 0:
-            raise ExpertManifoldError("Expert-Manifold generation timing changed")
+            raise ExpertManifoldError("v6-prior generation timing changed")
+        batch_size = len(rows)
         result = []
         for index, row in enumerate(rows):
-            state = {name: value[index].detach() for name, value in generated.items()}
+            state = {
+                name: (
+                    value.detach()
+                    if batch_size == 1
+                    else value[index].detach()
+                ).float()
+                for name, value in generated.items()
+            }
             validate_lora_state(state, self.lora_contract)
             result.append(
                 PreparedWriterLoRA(
                     state=state,
                     evidence={
-                        **row,
+                        **dict(row),
                         "writer_generation_seconds": elapsed / batch_size,
                     },
                 )
@@ -342,5 +342,4 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         del self.language_by_id
         del self.tokenizer
         del self.writer
-        del self.encoder
         return cached

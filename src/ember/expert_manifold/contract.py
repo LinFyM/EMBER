@@ -569,41 +569,10 @@ def _barycentric_evaluation_matches(evaluation: Mapping[str, Any]) -> bool:
 
 
 def load_barycentric_writer_config(path: Path) -> dict[str, Any]:
-    """Load the one active hard-routed Writer contract; old configs are assets only."""
+    """Fail closed for the rejected hard-routed deployment family."""
 
-    config = read_json(path)
-    authorities = config.get("authorities", {})
-    required_authorities = {
-        "asset_config",
-        "target_data_manifest",
-        "evaluation_config",
-        "lora_contract",
-        "source_base_config",
-    }
-    evaluation = config.get("evaluation", {})
-    valid = all(
-        (
-            config.get("schema_version") == BARYCENTRIC_CONFIG_SCHEMA,
-            set(authorities) == required_authorities,
-            _barycentric_method_matches(config.get("method", {})),
-            _information_wall_matches(config.get("information_wall", {})),
-            _barycentric_video_matches(config.get("video_features", {})),
-            _barycentric_basis_matches(config.get("expert_basis", {})),
-            _barycentric_writer_matches(config.get("barycentric_writer", {})),
-            _barycentric_evaluation_matches(evaluation),
-            _barycentric_loo_matches(evaluation.get("cpu_coefficient_evidence", {})),
-            _policy_effective_cpu_matches(
-                evaluation.get("cpu_policy_effective_compiler", {})
-            ),
-            _policy_effective_runtime_cpu_matches(
-                evaluation.get("cpu_runtime_evidence", {})
-            ),
-            config.get("content_hash_policy") == "disabled_by_owner",
-        )
-    )
-    if not valid:
-        raise ExpertManifoldError("hard-routed Writer scientific boundary changed")
-    return config
+    del path
+    raise ExpertManifoldError("hard-routed Writer runtime is retired")
 
 
 def authority_path(config: Mapping[str, Any], name: str) -> Path:

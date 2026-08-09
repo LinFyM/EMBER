@@ -3,13 +3,16 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import pytest
+import torch
 
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
 )
+from ember.expert_manifold.live_adapter import _ordered_video_tensors
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
@@ -23,6 +26,7 @@ from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, policy_noise_seed
 from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import _per_task_rows
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, validate_shard_result
+from ember.writer.data import RawTeacherVideo
 
 
 def _rows() -> list[dict]:
@@ -61,14 +65,14 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_hard_routed_{condition}",
+        "arm": f"expert_manifold_v6_prior_{condition}",
         "video_condition": condition,
         "writer_asset": {
-            "reference": "test:policy-effective:step2000:subspace96:hard1",
-            "learned_parameter_count": 0,
-            "expert_step": 2000,
-            "expert_count": 24,
-            "deployed_coefficient_support": 1,
+            "reference": "test:v6-prior:historical-macro400",
+            "kind": "historical_v6_macro400_load_only",
+            "method_macro": 0,
+            "writer_parameter_count": 10_775_296,
+            "generated_lora_tensor_count": 76,
         },
         "lora_contract": {"reference": "rank16:76tensors"},
         "video_schedule": schedule,
@@ -161,6 +165,47 @@ def test_shuffled_keep_first_changes_only_the_anchor_position() -> None:
     assert sorted(keep_first.tolist()) == list(range(20))
 
 
+def test_temporal_controls_reorder_frames_but_keep_display_positions() -> None:
+    frames = np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2)
+    indices = np.asarray([0, 5, 10, 15], dtype=np.int64)
+    video = RawTeacherVideo(
+        frames=frames.copy(),
+        frame_indices=indices.copy(),
+        raw_frame_count=16,
+    )
+    correct_frames, correct_indices = _ordered_video_tensors(
+        video,
+        condition="correct",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    reversed_frames, reversed_indices = _ordered_video_tensors(
+        video,
+        condition="reversed",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    shuffled_frames, shuffled_indices = _ordered_video_tensors(
+        video,
+        condition="shuffled",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    permutation = shuffled_frame_permutation(4, 7, keep_first=False)
+
+    assert torch.equal(correct_frames, torch.from_numpy(frames))
+    assert torch.equal(reversed_frames, torch.from_numpy(frames).flip(0))
+    assert torch.equal(
+        shuffled_frames,
+        torch.from_numpy(frames).index_select(0, permutation),
+    )
+    assert torch.equal(correct_indices, torch.from_numpy(indices))
+    assert torch.equal(reversed_indices, correct_indices)
+    assert torch.equal(shuffled_indices, correct_indices)
+    assert np.array_equal(video.frames, frames)
+    assert np.array_equal(video.frame_indices, indices)
+
+
 def test_same_task_other_changes_only_the_teacher_demo() -> None:
     correct = expected_expert_manifold_episode_evidence(
         _writer_adapter("correct"),
@@ -191,7 +236,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_hard_routed_correct",
+        "arm": "expert_manifold_v6_prior_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

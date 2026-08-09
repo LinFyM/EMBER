@@ -97,15 +97,15 @@ def _writer_lora_contract(
     authorities: EvaluationAuthorities,
     adapter: Mapping[str, Any],
 ) -> Any:
-    from ember.expert_manifold.contract import (
+    from ember.expert_manifold.v6_prior_contract import (
         authority_path as expert_authority_path,
-        load_barycentric_writer_config,
+        load_v6_prior_config,
     )
     from ember.pi05_lora import load_pi05_lora_contract
 
     if adapter["kind"] != EXPERT_MANIFOLD_WRITER_KIND:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
-    config = load_barycentric_writer_config(Path(adapter["config"]["path"]))
+    config = load_v6_prior_config(Path(adapter["config"]["path"]))
     path = expert_authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
     expected_reference = (

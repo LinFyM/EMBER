@@ -40,15 +40,20 @@ def task_expert_requested(args: Any) -> bool:
 
 
 def expert_manifold_writer_requested(args: Any) -> bool:
-    if getattr(args, "expert_manifold_checkpoint", None) is not None:
+    if any(
+        getattr(args, name, None) is not None
+        for name in (
+            "expert_manifold_expert_bank_root",
+            "expert_manifold_feature_cache_root",
+        )
+    ):
         raise Pi05EvaluationError(
-            "learned Expert-Manifold checkpoints are retired by the canonical Writer"
+            "deployment expert-bank and feature-cache assets are retired"
         )
     return _all_or_none(
         (
             getattr(args, "expert_manifold_config", None),
-            getattr(args, "expert_manifold_expert_bank_root", None),
-            getattr(args, "expert_manifold_feature_cache_root", None),
+            getattr(args, "expert_manifold_checkpoint", None),
             getattr(args, "expert_manifold_video_data_root", None),
             getattr(args, "expert_manifold_video_condition", None),
         ),
@@ -86,8 +91,6 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
         "execution_backend",
         "config",
         "writer_asset",
-        "expert_basis",
-        "feature_cache",
         "evaluation_authority",
         "video_data",
         "lora_contract",
@@ -148,8 +151,7 @@ def inspect_task_expert_adapter(
 def inspect_expert_manifold_writer_adapter(
     *,
     config_path: Path,
-    expert_bank_root: Path,
-    feature_cache_root: Path,
+    checkpoint: Path,
     video_data_root: Path,
     source: Mapping[str, Any],
     tasks: Sequence[Any],
@@ -166,8 +168,7 @@ def inspect_expert_manifold_writer_adapter(
     try:
         return inspect_expert_manifold_writer_evaluation(
             config_path=config_path,
-            expert_bank_root=expert_bank_root,
-            feature_cache_root=feature_cache_root,
+            checkpoint=checkpoint,
             video_data_root=video_data_root,
             source=source,
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),

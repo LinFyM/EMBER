@@ -207,5 +207,9 @@
       50
     ]
   },
+  "evaluation": {
+    "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
+    "online_smoke_evidence": null
+  },
   "content_hash_policy": "disabled_by_owner"
 }

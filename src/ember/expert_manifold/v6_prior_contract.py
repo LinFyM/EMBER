@@ -257,6 +257,59 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
     )
 
 
+def _evaluation_matches(value: Mapping[str, Any]) -> bool:
+    status = value.get("formal_status")
+    evidence = value.get("online_smoke_evidence")
+    if status == "blocked_until_live_a40_warmstart_reproduction_smoke":
+        return evidence is None
+    if status != "sealed" or not isinstance(evidence, Mapping):
+        return False
+    exact = {
+        "device": "NVIDIA A40",
+        "checkpoint_kind": "historical_v6_macro400_load_only",
+        "video_condition": "correct",
+        "video_sampling": "without_replacement",
+        "writer_modules_released": True,
+        "source_policy_reused_for_rollout": True,
+        "source_policy_reloaded": False,
+        "staged_path_matches_direct_v6_forward": True,
+        "success_interpretation": "execution_smoke_only_not_performance_evidence",
+    }
+    integers = {
+        "validation_task_count": 8,
+        "state_count": 1,
+        "scientific_rows": 8,
+        "generated_entries": 8,
+        "cache_entries": 8,
+        "writer_state_tensor_count": 600,
+        "retry_count": 0,
+        "failure_count": 0,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+    }
+    try:
+        return (
+            all(evidence.get(name) == expected for name, expected in exact.items())
+            and all(
+                int(evidence.get(name, -1)) == expected
+                for name, expected in integers.items()
+            )
+            and isinstance(evidence.get("commit"), str)
+            and bool(evidence["commit"])
+            and isinstance(evidence.get("root"), str)
+            and bool(evidence["root"])
+            and float(evidence.get("staged_path_max_abs_difference", -1))
+            <= 1e-5
+            and float(evidence.get("staged_path_max_abs_difference", -1)) >= 0
+        )
+    except (TypeError, ValueError):
+        return False
+
+
 def load_v6_prior_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     authorities = config.get("authorities", {})
@@ -297,6 +350,7 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         and _objective_matches(config.get("objective", {}))
         and _optimization_matches(config.get("optimization", {}))
         and _runtime_declarations_match(config)
+        and _evaluation_matches(config.get("evaluation", {}))
         and config.get("content_hash_policy") == "disabled_by_owner"
     )
     if not valid:

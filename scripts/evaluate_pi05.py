@@ -126,8 +126,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
     parser.add_argument("--expert-manifold-config", type=Path)
-    parser.add_argument("--expert-manifold-expert-bank-root", type=Path)
-    parser.add_argument("--expert-manifold-feature-cache-root", type=Path)
+    parser.add_argument("--expert-manifold-checkpoint", type=Path)
     parser.add_argument("--expert-manifold-video-data-root", type=Path)
     parser.add_argument(
         "--expert-manifold-video-condition",
@@ -252,8 +251,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     elif writer_kind == "expert_manifold_writer":
         adapter = _inspect_expert_manifold_writer_adapter(
             config_path=args.expert_manifold_config.resolve(),
-            expert_bank_root=args.expert_manifold_expert_bank_root.resolve(),
-            feature_cache_root=args.expert_manifold_feature_cache_root.resolve(),
+            checkpoint=args.expert_manifold_checkpoint.resolve(),
             video_data_root=args.expert_manifold_video_data_root.resolve(),
             source=model,
             tasks=tasks,
@@ -382,8 +380,7 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
         elif adapter.get("kind") == "expert_manifold_writer":
             observed = _inspect_expert_manifold_writer_adapter(
                 config_path=Path(adapter["config"]["path"]),
-                expert_bank_root=Path(adapter["expert_basis"]["root"]),
-                feature_cache_root=Path(adapter["feature_cache"]["root"]),
+                checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
                 video_data_root=Path(adapter["video_data"]["root"]),
                 source=model,
                 tasks=tasks,

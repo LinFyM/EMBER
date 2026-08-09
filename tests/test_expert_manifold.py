@@ -467,14 +467,14 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
     adapter = {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": "hard-routed-policy-effective-correct",
+        "arm": "expert_manifold_v6_prior_correct",
         "video_condition": "correct",
         "writer_asset": {
-            "reference": "policy-effective:step2000:subspace96:hard1",
-            "learned_parameter_count": 0,
-            "expert_step": 2000,
-            "expert_count": 24,
-            "deployed_coefficient_support": 1,
+            "reference": "v6-prior:historical-macro400",
+            "kind": "historical_v6_macro400_load_only",
+            "method_macro": 0,
+            "writer_parameter_count": 10_775_296,
+            "generated_lora_tensor_count": 76,
         },
         "lora_contract": {"reference": "lora:rank16"},
         "video_schedule": {

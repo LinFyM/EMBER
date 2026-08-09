@@ -262,24 +262,28 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
         "execution_backend": (
-            "online_frozen_pi05_video_innovation_then_hard_routed_"
-            "policy_effective_lora_cache"
+            "online_v6_complete_lora_writer_then_episode_lora_cache"
         ),
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json"
+                / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
             ),
+            "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
         },
         "writer_asset": {
-            "reference": "policy-effective:step2000:subspace96:hard1:rank16",
-            "learned_parameter_count": 0,
-            "deployed_coefficient_support": 1,
+            "reference": "v6-prior:historical-macro400",
+            "kind": "historical_v6_macro400_load_only",
+            "method_macro": 0,
+            "writer_parameter_count": 10_775_296,
+            "generated_lora_tensor_count": 76,
+            "checkpoint": "/writer/checkpoints/step_00000400",
         },
-        "expert_basis": {"root": "/experts", "step": 2000},
-        "feature_cache": {"root": "/features", "demo_count": 50},
-        "evaluation_authority": {"formal_status": "sealed"},
-        "video_data": {"schema_version": "raw-video-v1"},
+        "evaluation_authority": {
+            "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
+            "online_smoke_evidence": None,
+        },
+        "video_data": {"root": "/videos"},
         "lora_contract": {
             "reference": "configs/pi05_lora_v1.json:76tensors:1287168parameters"
         },
@@ -335,14 +339,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_hard_routed_correct",
+        arm="expert_manifold_v6_prior_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_hard_routed_cross_suite_wrong",
+        arm="expert_manifold_v6_prior_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )

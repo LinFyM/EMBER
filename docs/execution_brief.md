@@ -17,15 +17,19 @@ component增量`.228`。所以ECP的实现和机制生效，但held closed-loop�
 
 当前唯一活动方法是第35节**v6 Condition-Local Dynamic Expert Tangent Tube**：同一
 exact language+同一actual condition video/order同时产生frozen v6 anchor和当前Writer输出，correct与
-当前negative都只允许沿task-expert方向移动，从而把缺失的expert分量与
+当前negative都以soft quadratic tube惩罚expert-orthogonal增量，从而把缺失的expert分量与
 expert-orthogonal drift隔离。这一轮不改encoder/Core/Procedure/compiler topology、functional query、
 negative schedule或deployment input，也不允许static/language bypass、B-only residual、第二套部署LoRA、
 expert-bank deployment或global scale。CPU oracle、合同、clean push和frozen worktree完成前不启动GPU。
 其中canonical实现、exact-D/gauge/gradient oracle、same-memory anchor、trainable-only resume/deployment
-边界和三family分析已通过全仓`276 passed`、compileall与diff-check。clean frozen`2616773`的六卡
+边界、三family分析和seal后formal-lineage guard已通过全仓`277 passed`、compileall与diff-check。clean
+frozen`2616773`的六卡
 gradient/whole-macro profile已exit0并由assembler封存，projection/ranking唯一权重=
-`.00686480847114155/.010514453175708578`；当前只差严格后继的fresh/resume/contiguous工程门，formal仍
-blocked。
+`.00686480847114155/.010514453175708578`。strict后继`c1bdcae`的fresh0→1、same-root
+exact-resume1→3和independent contiguous0→3也已全部完成；两轨step wall=`62.341/61.959s`，0
+OOM/nonfinite，checkpoint与scientific metrics通过artifact assembler。resume evidence已原样写入v3
+config并解锁formal。macro3尚未通过tube机制门且发生gradient clip，因此下一步仍只允许已注册的
+fresh0→10和立即strict correct400，不能把工程seal写成方法有效。
 
 当前操作顺序：
 
@@ -34,10 +38,13 @@ blocked。
 3. 与历史SFT-Anchored Tangent-Basis、短LR/weight decay、decoder freeze和behavior distillation去重；
 4. 在唯一canonical ECP vertical path上原位替换objective/schema，先用CPU dense oracle验证
    dynamic anchor、gauge-invariant residual、gradient、information wall和exact-resume；
-5. clean pushed/frozen`2616773`已完成一次A40 gradient/throughput profile；同memories的小decoder
-   forward只使whole-macro wall相对ECP增加约`5.4%`，不启用cache、不降batch/并行度；
-6. formal仍从historical v6 macro400 fresh开始，及时跑同schedule strict correct400；若限制正交漂移后
-   仍不超macro0，干净证伪expert-component completion并转policy-output behavior distillation。
+5. clean pushed/frozen`2616773`已完成一次A40 gradient/throughput profile；strict后继`c1bdcae`已完成
+   fresh/resume/contiguous artifact seal，同memories的小decoder forward只使whole-macro wall相对ECP增加
+   约`5.4%`，不启用cache、不降batch/并行度；
+6. clean push当前seal后，formal仍从historical v6 macro400 fresh开始，先到10并立即跑同schedule
+   strict correct400；只有裁决checkpoint同时达到task median `|a_correct-1|≤.05`和两臂tube门、却仍不超
+   macro0，才干净证伪expert-component completion并转policy-output behavior distillation；否则只证伪
+   当前recipe/训练窗口。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
@@ -95,8 +102,8 @@ GPU前一次性要求：
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
 - config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux weights和resume
-  profile已全部重置，必须从新v3 clean frozen lineage重新实证后才能解锁formal。任何status-only、旧family
-  evidence或stale config仍fail-closed。
+  profile没有被复用；新v3 gradient与resume evidence已从各自clean frozen lineage重新实证并原样封存，
+  formal现已解锁。任何status-only、旧family evidence或stale config仍fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -188,7 +195,7 @@ reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐�
 这些证据只说明B10/deferred-NCCL/checkpoint比较器曾按合同工作；不能解锁v3 formal，也不构成
 closed-loop性能结论。
 
-### 5.2 Current tangent-tube gradient seal and pending resume profile
+### 5.2 Current tangent-tube gradient and resume seal
 
 clean pushed/frozen`2616773`已完成一次macro49 gradient/whole-macro profile：root=
 `runs/outputs/pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_2616773_20260809`，24 tasks、
@@ -197,10 +204,24 @@ allocated/reserved=`43,353,948,672/47,112,519,680` bytes，0 OOM/nonfinite。mac
 24/24 exact zero；唯一projection/ranking weights=`.00686480847114155/.010514453175708578`已由
 assembler原样写回v3 config。相对ECP whole-macro raw wall仅增约`5.4%`、显存约`36/18MiB`，不启用cache。
 
-现在只从clean pushed strict后继frozen worktree完成fresh0→1、same-root exact-resume1→3和independent
-contiguous0→3。resume assembler必须核对dynamic anchor为41 tensors/`3,714,304` parameters且optimizer/
-checkpoint/deployment ownership全false；每次在加载student checkpoint前由historical warm-start重建
-anchor。只有resume evidence原样写回v3 config后，Section 6才解锁。
+clean pushed strict后继`c1bdcae`已在`gpu01:0,1,2|4,5,7`完成fresh0→1、same-root
+exact-resume1→3和independent contiguous0→3。原自动chain在fresh结束后的inter-phase selected-GPU
+preflight发现设备不再满足expected-idle合同并由live gate fail-close；重新live检查通过后分别启动剩余
+两段。三段科学invocation均exit0，不能把原chain的exit1误写成训练失败，也不能写成整条chain自然exit0。
+
+resumed/contiguous总step wall=`62.34061/61.95860s`，input wait=`.09366/.13220s`，peak
+allocated/reserved=`43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite。assembler核对dynamic
+anchor为41 tensors/`3,714,304` parameters且optimizer/checkpoint/deployment ownership全false；macro1/3
+cursor、6-rank RNG、scheduler/AMP、559 frozen tensors和checkpoint contract语义相等。macro3 trainable
+Writer maxabs/relative-L2=`8.5067e-6/1.14428e-6`，82个Adam moments的最低direction/norm门通过；scientific
+metrics最大tolerance ratio=`.67790`。evidence已原样写回v3 config，Section 6现已解锁，profile runtime
+按状态机关闭且checkpoint永久弃用。
+
+三步只作工程与早期机制证据：macro2有21/24 tasks把`a_correct`推向1，macro3却变为0/24；macro3
+`a_correct=.71744`，task median `|a-1|≈.2799`，correct/negative orthogonal-relative-anchor median=
+`.03158/.03173`且仅`10/24`、`6/24`低于`.03`，orthogonal-to-direction median约`60.98/61.2`，
+`gradient_norm_before_clip≈1.45294>1`。quadratic tube在anchor处一阶梯度为零，首步正交漂移后才产生
+回锚力，这是formal0→10必须直接证伪的结构风险；当前不改权重、LR、B10或架构。
 
 ## 6. Formal training and truthful evaluation
 
@@ -217,8 +238,9 @@ video schedule下的historical macro400 load-only状态；不能仅引用旧143�
 - full24 gradient norm、clip/nonfinite、input wait、step wall和peak VRAM；
 - video schedule、counterfactual counts、sampler cursor和每rank RNG。
 
-loss下降不能延迟或替代rollout。若出现非finite、明显全task退化或合同破坏，立即停；普通loss波动不作
-科学淘汰。
+loss下降不能延迟或替代rollout。只有OOM/nonfinite、信息墙、拓扑、数据或run/checkpoint合同失效才在
+macro10前立即abort；普通loss波动、三步机制恶化或全task同相振荡不能替代已注册的macro10 strict400，
+除非产物已失去科学有效性。
 
 ### 6.2 Checkpoint cadence
 

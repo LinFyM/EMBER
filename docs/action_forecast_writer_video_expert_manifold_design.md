@@ -1607,9 +1607,10 @@ distillation去重，并用新schema在CPU dense oracle中证明只约束所声�
 
 ## 35. v6 Condition-Local Dynamic Expert Tangent Tube Writer
 
-状态：**2026-08-09 ECP负裁决后的唯一活动design authority；canonical实现与CPU oracle已通过
-全仓276项回归，clean frozen`2616773`的六卡gradient/throughput seal已通过；formal仍须等待严格后继
-fresh/resume/contiguous工程门。**
+状态：**2026-08-09 ECP负裁决后的唯一活动design authority；canonical实现、CPU oracle与
+formal-lineage guard已通过全仓277项回归，clean frozen`2616773`的六卡gradient/throughput seal及
+strict后继`c1bdcae`的fresh/resume/contiguous seal均已通过；formal仍须等待当前evidence/config
+authority的clean pushed严格后继。**
 
 ### 35.1 根因链与单变量假设
 
@@ -1799,3 +1800,41 @@ whole-macro wall/input wait=`21.53076/.60603s`，ECP同图为`20.42496/.17998s`�
 吞吐最优的简单路径：没有OOM、显存增长可忽略、cache构建成本没有摊销证据；不降B10+10、不降六卡、
 不启用cache。该seal只解锁严格后继的fresh0→1/exact-resume1→3/contiguous0→3工程门，尚无训练或
 closed-loop性能结论。
+
+### 35.8 exact-resume seal与一阶滞后风险（2026-08-10）
+
+strict后继clean pushed/frozen`c1bdcae`在live空闲`gpu01:0,1,2|4,5,7`完成resumed root的fresh0→1与
+same-root exact-resume1→3，以及独立contiguous0→3。原自动chain在fresh进程结束后立即进入下一launcher，
+inter-phase selected-GPU preflight发现设备不再满足expected-idle合同并fail-close；该阶段没有创建第二次
+scientific invocation。重新live检查通过后，resume与contiguous分别在新tmux中完成并exit0。因而三个
+科学invocation均有效，但原
+chain exit1只作安全门证据，不得改写为训练失败或“整链exit0”。
+
+两个root各有3 metrics、macro1/3完整checkpoints和completion。resumed/contiguous三步step wall=
+`62.34061/61.95860s`、input wait=`.09366/.13220s`、macros/s=`.048123/.048419`；peak
+allocated/reserved=`43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite。在线双decoder没有形成新的
+显存或data bottleneck，不建立cache、不改workers、不降低logical/physical batch或六卡并行。
+
+artifact assembler重新读取gradient root和两条profile lineage，验证run contracts完全相同、profile
+commit是gradient commit的严格后继、dynamic anchor的41 tensors/`3,714,304` parameters不进optimizer、
+checkpoint或deployment。macro1/3的cursor、checkpoint contract、6-rank RNG、scheduler/AMP语义相等；
+559 frozen Writer tensors exact，41 trainable tensors在macro3的maxabs/relative-L2=
+`8.5067e-6/1.14428e-6`。82个Adam moments在macro3的最低cosine与symmetric norm ratio远高于
+`.999/.99`；scientific metrics最大tolerance ratio=`.67790`。evidence已原样写入v3 config，profile与
+formal同步置为`sealed_from_live_a40_resume_profile_evidence`，formal runtime为`(50,(10,25,50))`；
+profile runtime关闭且所有profile checkpoints永久不得作为formal warm-start。
+
+resume seal同时暴露了必须保留的科学预警。macro1是exact anchor；一次更新后macro2有21/24 tasks的
+`a_correct`向1移动且expert component上升，但第二次更新后的macro3相对macro1变为0/24，aggregate
+`a_correct=.71744`、task median `|a-1|≈.2799`。macro3 correct/negative的
+`||Δ⊥||/||G0||` task median=`.03158/.03173`，只有`10/24`与`6/24`低于`.03`；active
+`||Δ⊥||/(|d| ||E||+epsilon)`中位约`60.98/61.2`，24/24两臂均未过`≤1`。同一row
+`gradient_norm_before_clip≈1.45294`超过clip norm1，不能写成0 clip。
+
+其第一性原理解释是：当前quadratic tube在`G=G0`处loss和一阶gradient均为0，因此第一步的positive、
+completion与ranking梯度可以先把共享decoder带入expert-orthogonal方向；偏离后tube才产生随距离增大的
+回锚gradient，并可能在warmup末端触发clip。这并不由三步直接证明recipe最终失败，因为video/task panel
+每macro轮换且惩罚可能在后续数步回锚；也不能把engineering profile当成mechanism pass。保持原预注册
+单变量，clean seal后只fresh到macro10并立即跑strict correct400，同时检查最近三步tube、projection、
+clip和task-level pass counts。macro10若仍不满足第35.5节tube门，就算correct落在`130--134`也不得续25；
+不在看到该证据前扫tube weight、改LR/WD、换硬retraction或转新架构。

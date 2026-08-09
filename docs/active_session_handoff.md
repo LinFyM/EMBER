@@ -80,13 +80,43 @@ McNemar `p=.038477`，suite net=`-4/-12/-2/+4`。macro10→25也是`18/31`、net
 原位实现Condition-Local Dynamic Expert Tangent Tube：historical v6对correct和当前negative的同一
 language/video/order输出分别作局部baseline，只惩罚student增量的expert-orthogonal分量。新v3 config、
 training-only decoder anchor、trainable-only resume/deployment load、双臂metrics及独立评测family已通过
-exact-D/gauge/gradient oracle、全仓`276 passed`、compileall与diff-check。clean pushed/frozen
+exact-D/gauge/gradient oracle、seal后formal-lineage guard和全仓`277 passed`、compileall与diff-check。
+clean pushed/frozen
 `2616773`随后在live空闲`gpu01:0,1,2|4,5,7`完成唯一六卡gradient/whole-macro profile：24 tasks、
 480/480 unique queries、8/8/8 negatives、最长105帧，wall/input wait=`21.53076/.60603s`，peak
 allocated/reserved=`43,353,948,672/47,112,519,680` bytes，0 OOM/nonfinite，六卡自然回到14MiB。
 correct/negative的student与same-input anchor在24/24 tasks上完全一致，全部tube/delta指标exact zero；
 projection/ranking唯一权重=`.00686480847114155/.010514453175708578`，assembler完整通过并写回config，
-只解锁严格后继的resume profile，formal仍blocked。当前没有EMBER GPU进程。
+只解锁严格后继的resume profile。
+
+strict后继clean pushed/frozen`c1bdcae`随后在live空闲`gpu01:0,1,2|4,5,7`完成resumed root的
+fresh0→1与same-root exact-resume1→3，以及独立contiguous0→3。首段后的inter-phase selected-GPU
+preflight发现设备不再满足expected-idle合同并安全停止；重新live检查六卡满足合同后分别启动剩余两段，
+3个scientific invocations均exit0，没有重跑fresh或混用root。两轨各3 metrics、macro1/3 checkpoints和completion；
+step wall=
+`62.34061/61.95860s`、input wait=`.09366/.13220s`、macros/s=`.048123/.048419`，peak
+allocated/reserved=`43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite，结束后六卡自然释放。
+
+retained roots为：
+
+```text
+runs/outputs/pi05_v6_tangent_tube_profile_resume_r6_lb20_mb10_c1bdcae_20260809
+runs/outputs/pi05_v6_tangent_tube_profile_contiguous_r6_lb20_mb10_c1bdcae_20260809
+```
+
+artifact assembler证明两份run contract完全相等，scientific metrics最大tolerance ratio=`.67790`；
+macro1/3的cursor、checkpoint contract、6-rank RNG、scheduler/AMP语义相等，559个frozen tensors exact，
+41个trainable Writer tensors的macro3 maxabs/relative-L2=`8.5067e-6/1.14428e-6`。82个Adam moments的
+最低cosine与symmetric norm ratio均远高于`.999/.99`门。evidence已原样写入v3 config，profile和formal
+同时置为`sealed_from_live_a40_resume_profile_evidence`，`runtime_for_mode(..., formal)`返回
+`(50,(10,25,50))`；profile checkpoint永久不得进入formal。
+
+这仍不是性能或tube机制通过。三步pre-update轨迹中，macro1→2有21/24 tasks把`a_correct`推向1，
+但macro1→3为0/24；macro3 correct/negative的orthogonal-relative-anchor task median约
+`.03158/.03173`，仅`10/24`和`6/24`低于`.03`，orthogonal-to-direction中位约`60.98/61.2`。
+这符合“quadratic tube在anchor处一阶梯度为0、首步可能先发生正交漂移”的结构风险，也说明不能把
+resume seal写成mechanism pass。当前没有EMBER GPU进程；下一步保持已注册recipe只fresh到macro10并
+立即跑paired correct400，观察tube是否在有限步内回锚，再按门停止或续到25。
 
 ## 2. EMBER problem and information wall
 
@@ -224,7 +254,7 @@ Experts不解决：
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
 | v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
 | v6 Expert-Component Projection | `134→133→120` | `a_correct`与component按构造上升，修复旧径向收缩 | 正交漂移继续增大，macro25 paired net`-14`、`p=.038477` | 退役；不续、不扫权重 |
-| current Condition-Local Tangent Tube | CPU`276 passed`；gradient profile exit0，无closed-loop成绩 | live macro0双臂tube exact zero，B10+10仅约`5.4%` wall开销 | 尚未证明训练后tube能限制漂移或保住143起点 | 当前唯一活动候选；先resume门再短训strict裁决 |
+| current Condition-Local Tangent Tube | CPU`277 passed`；gradient与resume profile均sealed，无closed-loop成绩 | macro0双臂tube exact zero；resume语义等价；B10+10在线anchor仅约`5.4%` wall开销 | macro3 tube median约`.0316/.0317`、direction ratio约`61×`并clip，尚未证明后续回锚或保住143起点 | 当前唯一活动候选；clean formal seal后只训0→10并立即strict400 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -351,13 +381,12 @@ Experts不解决：
 6. single winner首次超过历史143即跑完整correct/same/wrong/shuffled/reversed/no-video；若之后不同
    checkpoint严格超过150，再对实际goal winner重跑六臂。未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：将已通过第35节CPU dense/low-rank/gauge/gradient oracle、same-memory anchor、
-checkpoint/deployment ownership和全仓合同门的唯一canonical v3 config与实现clean commit/push，再从
-该commit创建frozen worktree。随后重新live比较`gpu01/gpu02`和quota，只用最多6张空闲A40，先做一次train24
-gradient profile以及fresh0→1、same-root exact-resume1→3、independent contiguous0→3；不为BF16低位
-一致降低B10+10、六卡并行或吞吐。profile checkpoint永久不进formal。
+当前具体下一步：gradient与fresh/resume/contiguous工程seal均已完成并原样写回唯一canonical v3 config。
+先把当前config/authority/tests clean commit/push，从该严格后继commit创建formal frozen worktree；随后重新
+live比较`gpu01/gpu02`和quota，只用最多6张空闲A40，formal从historical v6 macro400 fresh训练，先到
+macro10并立即跑paired correct400。不得载入profile checkpoint，不为BF16低位一致降低B10+10、六卡
+并行或吞吐，也不因三步tube预警提前扫权重或换架构。
 
-profile seal后formal仍从historical v6 macro400 fresh训练，先到macro10并立即跑paired correct400；
 correct80只能从这400 rows派生。historical immutable macro0=`134`由generic historical-baseline analyzer
 按各自native family验证并逐row核对共同state/RNG/language/video后比较，绝不重标family或混入同family
 checkpoint curve。macro10 `≤129`且广泛净损失即停；`130--134`仅在tube、breadth`≥6`、churn`≤35`和

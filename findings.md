@@ -1,5 +1,31 @@
 # EMBER Findings
 
+## Condition-Local Tangent Tube resume profile与一阶滞后风险（2026-08-10）
+
+- clean pushed/frozen`c1bdcae`在`gpu01:0,1,2|4,5,7`完成fresh0→1、same-root
+  exact-resume1→3和independent contiguous0→3。inter-phase selected-GPU preflight曾发现设备不再满足
+  expected-idle合同并fail-close；重新live检查通过后余下两段分别exit0。三个科学invocation均有效，原
+  chain exit1不是训练失败。
+- resumed/contiguous三步step wall=`62.34061/61.95860s`、input wait=`.09366/.13220s`、peak
+  allocated/reserved=`43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite。在线双decoder继续只增加
+  很小显存与约3--5% compute/wall，没有证据支持用12.68GB anchor cache换复杂度，也没有降低B10+10、
+  logical B20、六卡并行或BF16吞吐。
+- 两轨run contract完全相等，scientific metrics最大tolerance ratio=`.67790`。macro1/3 cursor、
+  checkpoint contract、6-rank RNG、scheduler/AMP语义相等，559 frozen Writer tensors exact；macro3
+  trainable Writer maxabs/relative-L2=`8.5067e-6/1.14428e-6`。82个Adam moments的最低cosine/
+  symmetric norm ratio均远高于`.999/.99`。这证明exact-resume与并行数值连续，不证明方法性能。
+- 早期动态揭示soft quadratic penalty的关键时序：macro1在anchor处tube loss和gradient均为0；一次更新后
+  macro2有21/24 tasks的`a_correct`向1移动且component上升，但macro3相对macro1为0/24，aggregate
+  `a_correct=.71744`、task median `|a-1|≈.2799`。macro3 correct/negative的
+  orthogonal-relative-anchor median=`.03158/.03173`，仅`10/24`与`6/24`通过`.03`，active
+  orthogonal-to-direction median约`60.98/61.2`；gradient norm`1.45294`超过clip norm1。
+- 第一性原理上，二次tube在原点没有一阶恢复力，首步functional/completion/ranking可以先造成正交位移，
+  偏离后才出现随距离增大的回锚梯度。这是当前recipe的真实结构风险，但三步、轮换video/task panel和
+  pre-update rows不足以判断macro10能否回锚或closed-loop怎样变化。连贯下一证伪仍是原recipe fresh0→10
+  后立即strict correct400；若macro10仍不满足两臂tube门，即使correct为`130--134`也停止，不扫权重。
+  只有裁决checkpoint同时满足median `|a_correct-1|≤.05`和tube门却仍不超macro0，才可干净证伪
+  expert-component completion；否则只淘汰当前recipe/训练窗口。
+
 ## 2026-08-09 Tangent Tube六卡gradient/throughput seal
 
 - clean pushed/frozen`2616773`在live比较双节点、核对`/data1` quota后只使用空闲

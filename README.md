@@ -33,10 +33,16 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   分量。anchor仅训练期存在，部署仍只生成一套LoRA且不读取expert bank或feature cache。
 - 当前没有运行中的EMBER GPU进程。新canonical v3 config、双臂low-rank objective、training-only anchor、
   trainable-only resume/deployment load、新评测family和CPU oracle已在同一vertical path通过全仓
-  `276 passed`、compileall和diff-check。clean frozen`2616773`的六卡gradient/whole-macro profile也已
-  exit0：wall=`21.531s`、peak allocated/reserved=`43.354/47.113GB`、0 OOM/nonfinite；macro0两臂
-  tube exact zero，唯一projection/ranking weights=`.00686480847114155/.010514453175708578`已写回config。
-  下一步是严格后继的fresh0→1/exact-resume1→3/contiguous0→3，再按macro10/25/50门及时跑strict400。
+  `277 passed`、compileall和diff-check。clean frozen`2616773`的六卡gradient/whole-macro profile给出唯一
+  projection/ranking weights=`.00686480847114155/.010514453175708578`；strict后继`c1bdcae`随后完成
+  fresh0→1、exact-resume1→3和independent contiguous0→3。两轨3-step wall=`62.341/61.959s`，peak
+  allocated/reserved=`43.316/47.138GB`，0 OOM/nonfinite；600-state Writer、82个Adam moments、cursor和
+  6-rank RNG全部通过assembler，macro3 Writer relative L2仅`1.1443e-6`。v3 config现已封存resume
+  evidence并解锁formal；profile checkpoint永久不用作formal warm-start。
+- 三步profile只证明工程连续性，并给出一个需要macro10裁决的风险：macro2的21/24 tasks曾把
+  `a_correct`推向1，但macro3变为0/24；macro3 correct/negative的orthogonal-relative-anchor task median
+  约`.0316/.0317`、orthogonal-to-direction约`61×`，尚未通过预注册tube门。下一步保持原recipe fresh
+  0→10并立即跑strict correct400，不能用这三步内部数值提前宣告有效或无效，也不因此扫权重或降吞吐。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少

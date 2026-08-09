@@ -28,12 +28,16 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   `a_correct`和expert component按目标上升，closed-loop反而显著下降且expert-orthogonal drift主导，
   所以不续50/100、不补六臂。当前第35节在同一canonical path原位加入same-input frozen-v6 dynamic
   decoder、correct/negative双臂effective tangent tube、新v3/v4/v7 family与trainable-only resume边界；
-  CPU oracle、全仓`276 passed`、compileall与diff-check已通过。clean frozen`2616773`的六卡gradient/
-  whole-macro profile已自然exit0：B10+10 wall=`21.531s`、peak allocated/reserved=`43.354/47.113GB`、
-  0 OOM/nonfinite，macro0双臂tube为exact zero；唯一projection/ranking weights=
-  `.00686480847114155/.010514453175708578`已由assembler写回config。下一步只允许先clean push严格
-  后继并完成fresh0→1/exact-resume1→3/contiguous0→3，再决定formal短训练和及时strict评测；精确顺序
-  只取`task_plan.md`。
+  CPU oracle与seal后formal-lineage guard当前为全仓`277 passed`，compileall与diff-check已通过。
+  clean frozen`2616773`的六卡gradient/whole-macro profile自然exit0并给出唯一projection/ranking weights=
+  `.00686480847114155/.010514453175708578`。strict后继`c1bdcae`已在
+  `gpu01:0,1,2|4,5,7`完成fresh0→1、same-root exact-resume1→3和independent contiguous0→3；assembler
+  证明run contract、cursor、6-rank RNG、scheduler/AMP、600个Writer states和82个Adam moments语义等价，
+  Writer relative L2仅`1.1443e-6`，0 OOM/nonfinite，config已原样封存evidence并合法解锁formal。
+  三步同时暴露预注册科学风险：macro3 correct/negative orthogonal-relative-anchor中位约`.0316/.0317`，
+  directional ratio中位约`61`，尚未通过tube机制门；这不把工程profile冒充性能结论，也不提前放弃未到
+  macro10的recipe。下一步只允许clean push当前seal、创建formal frozen worktree，fresh0→10后立即跑
+  strict correct400并按`task_plan.md`的既定门裁决。
 
 ## Mandatory reading
 

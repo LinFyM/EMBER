@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-更新时间：2026-08-09。本文只保留当前可执行计划；完整历史结论见
+更新时间：2026-08-10。本文只保留当前可执行计划；完整历史结论见
 `docs/active_session_handoff.md`实验谱系，旧命令和流水由design、Git、`findings.md`、`progress.md`及
 formal artifacts保存。
 
@@ -135,8 +135,17 @@ formal artifacts保存。
 - [x] clean pushed/frozen`2616773`在live空闲`gpu01:0,1,2|4,5,7`完成唯一六卡gradient/whole-macro
   profile；B10+10 wall=`21.531s`、0 OOM/nonfinite，assembler写回唯一权重/evidence，未因BF16低位
   一致降低batch或并行度，也未启用无收益cache。
-- [ ] 从严格后继clean pushed/frozen worktree完成fresh0→1、same-root exact-resume1→3和independent
-  contiguous0→3；只有assembler复核cursor/RNG/checkpoint和普通reduction误差后才解锁formal。
+- [x] strict后继clean pushed/frozen`c1bdcae`已完成fresh0→1、same-root exact-resume1→3和independent
+  contiguous0→3；assembler复核cursor/RNG/checkpoint/Writer/Adam和普通reduction误差后已原样写回evidence，
+  formal解锁且profile checkpoints永久弃用。两轨step wall=`62.341/61.959s`，0 OOM/nonfinite。
+- [x] 保留profile科学预警而不提前换路线：macro3 correct/negative tube median约`.0316/.0317`、directional
+  ratio约`61×`且发生clip，尚未过mechanism门；这使macro10的tube recovery成为硬续训条件，不是工程
+  resume blocker，也不授权weight/LR sweep。
+- [ ] 对当前config、tests和8份authority完成focused/full CPU验证、compileall与diff-check；clean
+  commit/push为`c1bdcae`的严格后继，创建新的tangent formal frozen worktree。当前focused=`25 passed`、
+  full=`277 passed`，compileall/diff-check通过；剩余是commit/push与worktree。随后live比较双节点GPU和
+  `/data1` quota，确认fresh root为空并封存formal0→10 launch contract；旧v6-prior formal worktree不能
+  代替当前lineage。
 - [ ] formal fresh0→10后立即跑strict correct400；按`≤129`停止、`130--134`条件续25、macro25
   `≥135`且3 tasks/2 suites净正增门推进。首次`≥144`补六臂，若不同winner首次`≥151`再补六臂。
 - [ ] 若dynamic anchor能限制正交漂移、task median `|a_correct-1|≤.05`而strict仍不超macro0，才干净

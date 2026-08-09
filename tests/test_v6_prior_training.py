@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from contextlib import nullcontext
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -11,12 +12,14 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_COMPLETION_SCHEMA,
     V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
+    load_v6_prior_config,
     suggest_auxiliary_weight,
 )
 from ember.expert_manifold.v6_prior_runtime import (
     RuntimeSegment,
     _cursor_contract,
     _rank_topology,
+    _resolve_segment,
     _run_contract,
     _sampled_video_cost,
     _scheduler,
@@ -33,6 +36,66 @@ from ember.expert_manifold.v6_prior_training import (
 )
 from ember.expert_manifold.v6_prior_step import GeneratedCounterfactualPair
 from ember.pi05_source_checkpoint import DistributedContext
+
+
+CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs/pi05_v6_condition_local_tangent_tube_writer_v3.json"
+)
+
+
+def test_formal_segment_requires_a_clean_pushed_strict_profile_descendant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = load_v6_prior_config(CONFIG)
+    resume = config["profile_run"]["artifact_evidence"]
+    gradient_commit = resume["gradient_commit"]
+    profile_commit = resume["profile_git"]["commit"]
+    formal_commit = "formal-seal-descendant"
+    state = {
+        "branch": "codex/formal-seal",
+        "commit": formal_commit,
+        "origin_main": "main",
+        "upstream": "origin/codex/formal-seal",
+        "upstream_commit": formal_commit,
+        "dirty_paths": [],
+    }
+    expected_lineage = {
+        (gradient_commit, profile_commit),
+        (profile_commit, formal_commit),
+    }
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.git_state",
+        lambda _root: state,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.git_commit_is_strict_ancestor",
+        lambda ancestor, descendant: (ancestor, descendant) in expected_lineage,
+    )
+    args = SimpleNamespace(
+        mode="formal",
+        resume=None,
+        stop_after_macro=10,
+        num_workers=2,
+    )
+    segment = _resolve_segment(
+        args,
+        config,
+        DistributedContext(0, 0, 6, torch.device("cuda:0")),
+    )
+    assert (segment.start_macro, segment.stop_macro) == (0, 10)
+
+    state["commit"] = profile_commit
+    state["upstream_commit"] = profile_commit
+    with pytest.raises(
+        ExpertManifoldError,
+        match="runtime differs from its sealed segment",
+    ):
+        _resolve_segment(
+            args,
+            config,
+            DistributedContext(0, 0, 6, torch.device("cuda:0")),
+        )
 
 
 def test_v6_prior_video_cost_includes_true_final_frame() -> None:

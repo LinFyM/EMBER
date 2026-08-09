@@ -1,5 +1,30 @@
 # EMBER Progress Ledger
 
+## Condition-Local Tangent Tube exact-resume seal（2026-08-10）
+
+- clean pushed/frozen`c1bdcae`、新v3 config在live比较`gpu01/gpu02`与`/data1` quota后，只使用空闲
+  `gpu01:0,1,2|4,5,7`。fresh0→1、同root exact-resume1→3和independent contiguous0→3均按
+  B10+10、logical B20、workers2、3+3 NUMA、Ring/Simple、`NCCL_P2P_DISABLE=1`和deferred-NCCL运行。
+- fresh后原自动chain的inter-phase selected-GPU preflight发现设备不再满足expected-idle合同，安全
+  fail-close且没有创建第二次scientific invocation。重新live检查通过后，resume与contiguous分别由新
+  tmux完成；三份phase exit均为0，原chain exit1只保留为安全门证据。六卡最终自然回到14MiB。
+- 两个retained roots各3 metrics、macro1/3 checkpoints和completion；step wall=
+  `62.34061/61.95860s`、input wait=`.09366/.13220s`、peak allocated/reserved=
+  `43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite。没有改batch、workers、allocator、kernel或
+  objective，也没有建立anchor cache。
+- roots=`runs/outputs/pi05_v6_tangent_tube_profile_resume_r6_lb20_mb10_c1bdcae_20260809`与
+  `runs/outputs/pi05_v6_tangent_tube_profile_contiguous_r6_lb20_mb10_c1bdcae_20260809`；canonical v4
+  evidence已嵌入tracked config，`.codex/tmp`输出只作本次assembler的临时副本。
+- 恢复原gradient worktree路径后，canonical assembler从三个distinct roots完整通过：run contracts、
+  cursor、6-rank RNG、scheduler/AMP和checkpoint semantics等价；macro3 Writer relative L2=
+  `1.14428e-6`，scientific metrics最大tolerance ratio=`.67790`。evidence已原样嵌入v3 config，profile与
+  formal同步sealed，formal runtime=`(50,(10,25,50))`，profile runtime按预期关闭。
+- profile早期机制尚未过门：macro3两臂tube median约`.0316/.0317`，directional ratio约`61×`，并发生
+  gradient clip。该证据已写入design/findings，不冒充性能或机制通过，也不据三步提前转向。旧状态单测
+  已更新并新增formal strict-descendant guard；focused=`25 passed`、全仓=`277 passed in 27.80s`，
+  compileall与diff-check通过。下一操作是clean commit/push与formal frozen worktree；随后fresh0→10并
+  立即跑strict correct400。
+
 ## 2026-08-09 Tangent Tube六卡gradient profile完成并封存权重
 
 - canonical CPU seal commit`2616773`已push，独立frozen worktree/branch绑定同一upstream commit。live

@@ -410,7 +410,7 @@ def prepare_frozen_writer_policy(
     return template
 
 
-def _functional_microbatch_contract(
+def functional_microbatch_contract(
     batch: Mapping[str, Any],
     policy_microbatch_size: int | None,
     *,
@@ -547,7 +547,7 @@ def functional_lora_loss_gradient(
 
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise WriterModelError("functional LoRA gradient received a trainable policy")
-    logical_batch_size, microbatch_size = _functional_microbatch_contract(
+    logical_batch_size, microbatch_size = functional_microbatch_contract(
         batch,
         policy_microbatch_size,
         policy_rng_seed=policy_rng_seed,

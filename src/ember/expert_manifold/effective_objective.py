@@ -94,6 +94,7 @@ class EffectiveAuxiliaryGradients:
 
     projection: EffectiveTangentTubeLoss
     ranking: EffectiveRankingLoss
+    correct_completion: Mapping[str, torch.Tensor]
     correct_projection: Mapping[str, torch.Tensor]
     counterfactual_projection: Mapping[str, torch.Tensor]
     correct_ranking: Mapping[str, torch.Tensor]
@@ -576,6 +577,11 @@ def effective_auxiliary_output_gradients(
     )
     correct_values = tuple(correct[name] for name in names)
     counterfactual_values = tuple(counterfactual[name] for name in names)
+    completion_gradients = torch.autograd.grad(
+        projection.completion.total,
+        correct_values,
+        retain_graph=True,
+    )
     projection_gradients = torch.autograd.grad(
         projection.total,
         (*correct_values, *counterfactual_values),
@@ -589,6 +595,7 @@ def effective_auxiliary_output_gradients(
     return EffectiveAuxiliaryGradients(
         projection=projection,
         ranking=ranking,
+        correct_completion=dict(zip(names, completion_gradients, strict=True)),
         correct_projection=dict(
             zip(names, projection_gradients[:split], strict=True)
         ),

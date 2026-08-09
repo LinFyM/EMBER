@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## Expert-Flow Teacher Audit CPU implementation seal（2026-08-10）
+
+- Tangent负裁决把最早失效接口收窄到`LoRA cotangent -> shared decoder/update kernel -> condition-specific
+  output motion`，但在增加CEFD前仍需知道task expert是否真是更好的policy-flow teacher、其监督是否超出
+  existing functional/completion/ranking span。因此当前实现的是一次零更新诊断，不是新训练架构。
+- canonical CLI新增唯一`teacher-audit` mode；`writer/flow_teacher.py`只拥有matched real-action PI05
+  velocity/cotangent，`v6_prior_teacher_audit.py`只拥有full24聚合与两门裁决，`v6_prior_run_contract.py`是
+  唯一launch-contract owner。training通过显式frozen callbacks调用audit，无反向import环、第二runner或
+  部署路径；失败/通过后的退役触发已写入第36节。
+- 每task logical B20按A40容量切为B10+10；每slice依次运行expert和tangent10 `no_grad`、macro0 student
+  differentiable，三臂重放完全相同noise/time/offset，正式共6次PI05 forward/task。actual action width必须
+  为7，四类loss只在`B10×50×7` real-action slice上转FP32，不扩宽BF16主干或牺牲吞吐。
+- 四类gradient先rank内4-task等权mean，再一次stacked all-reduce/world6。existing span用FP32 Gram、CPU64
+  pinv `rtol=1e-5`，记录eigenvalues/effective rank/coefficients/residual并拒绝超阈值负特征值；near-collinear
+  oracle证明不会把`1e-4` FP32扰动误算成新方向。
+- CPU oracle分别覆盖physical B20的3次forward与B10+10的6次forward，测试轨迹合计9次；正式runtime仍固定
+  6次/task。三臂逐tensor matched randomness、真实7维FP32 loss、same-memory comparison、8/8/8 negatives、
+  480/480 queries和0 optimizer/scheduler/update/rollout均已封存；最新全仓`284 passed in 33.47s`。尚未运行
+  GPU audit，所以没有teacher-quality、gradient-nonredundancy或CEFD科学结论。
+
 ## Tangent Tube formal non-pass与下一证据门（2026-08-10）
 
 - clean pushed/frozen`b308941`完成formal fresh0→10；10 macros总step wall=`207.4436s`、input wait=

@@ -29,18 +29,19 @@ paired gained/lost=`16/19`、churn35、net`-3`、McNemar `p=.735879`。所以不
 tangent recipe/window，不能把未达到completion的实验扩大解释为expert-component假设整体无效。
 
 当前没有运行中的EMBER GPU任务，也没有已授权继续训练的Writer。第36节matched Expert-Flow Teacher
-Viability Audit是唯一下一动作：不更新参数，在完全相同的train24 B20/noise/time上比较step2000 task
-expert、historical macro0和tangent macro10的PI05 flow velocity相对真实`u_t`的误差，并比较候选
-distillation gradient与positive/completion/ranking的norm/cosine。只有task expert在大多数tasks上是更好
-teacher且gradient非冗余，才允许实现CEFD；否则转向直接约束shared update geometry的结构候选。
+Viability Audit已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，所以没有
+teacher-quality、gradient-nonredundancy或CEFD科学结论。它不更新参数，在完全相同的train24 B20/noise/
+time上比较step2000 task expert、historical macro0和tangent macro10的PI05 flow velocity相对真实`u_t`的
+误差，并比较候选distillation gradient与positive/completion/ranking span的关系。
 
 当前操作顺序：
 
 1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
 2. Tangent只解决了局部半径，没有解决共享decoder Jacobian把更新旋进expert方向的问题；strict同时降到
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
-3. 先完成matched flow-teacher audit；该诊断不得更新参数、不得读取validation/test action、不得改变
-   deployment graph，也不得因task9 expert closed-loop为0而删除或降权；
+3. 先把已CPU封存的matched flow-teacher audit clean commit/push，从frozen worktree经live preflight只运行
+   一次；该诊断不得更新参数、不得读取validation/test action、不得改变deployment graph，也不得因task9
+   expert closed-loop为0而删除或降权；
 4. audit若通过，首版CEFD只增加correct arm的一次stop-gradient expert PI05 flow forward，复用student
    positive forward和同一B20/noise/time，只比较真实7维action；negative仍保持现有bounded ranking；
 5. audit若失败，不实现CEFD，转向能在输出层直接保证condition-specific structured update的单变量设计；
@@ -108,6 +109,10 @@ GPU前一次性要求：
   weights和resume profile没有被复用；v3 gradient与resume evidence曾从各自clean frozen lineage重新
   实证并原样封存，formal0→10完成后已切为non-pass并关闭runtime。任何status-only、旧family evidence或
   stale config仍fail-closed。
+- teacher-audit CPU oracle分别覆盖physical B20的3次forward与B10+10的6次forward；正式runtime固定后者，
+  即每task 6次。三臂noise/time和logical offset逐tensor相同，实际action width严格为7，四类loss在real7
+  slice后转FP32；full24 gradient、8/8/8 negatives、Gram pinv `rtol=1e-5`和0 optimizer/scheduler/update/
+  rollout均有回归覆盖。加载`.env.local`的全仓seal为`284 passed`，但这不构成GPU或方法结果。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -124,59 +129,20 @@ vertical smoke。
   nonfinite/forbidden reads，Writer释放、source policy复用且GPU自然释放；
 - 当时用于从两个retained roots重建seal的旧assembler与其runtime状态已退役，由Git和artifact保留；
   它不是当前可执行入口；
-- 若以后实际改变部署图或LoRA生成批处理，再以新design/schema重新授权single-A40 profile；否则
-  Section 5的六卡v3 gradient/whole-macro profile是唯一当前GPU入口。
+- 若以后实际改变部署图或LoRA生成批处理，再以新design/schema重新授权single-A40 profile；当前唯一GPU
+  入口是Section 7规定的一次六卡`teacher-audit`，不是重新profile旧v3。
 
 
-## 5. Six-A40 gradient, resume, and throughput profile
+## 5. Historical six-A40 profile provenance（已完成，不恢复）
 
-重新live比较两节点，最多选择6张空闲A40；按实际设备建立3+3或合同允许的NUMA physical/local rank
-拓扑，显式`NCCL_P2P_DISABLE=1`并使用repository deferred-NCCL launcher。
+旧whole-LoRA、ECP与Tangent依次完成了physical B20、B16+4容量裁决和balanced B10+10 gradient/resume/
+throughput seal。B20与B16+4都在真实A40容量上失败；B10+10保持logical B20、480/480 unique queries和
+task mean不变，并达到约21秒/full24 macro、43.3/47.1GB allocated/reserved。对应gradient assembler、
+resume assembler、600/41-tensor ownership、6-rank RNG及NUMA/NCCL证据均已封存。
 
-profile固定train24 macro49，覆盖24×B20=480 unique跨episodequeries并包含最长105 sampled-frame video：
-
-已完成的容量诊断：clean frozen`a17805c`在当时空闲`gpu01:0,1,2,4,5,7`运行physical B20。默认allocator
-OOM时allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`；`expandable_segments:True`把后者降到约
-`157MiB`，但active allocated升至`43.43GiB`且仍无法再分配`606MiB`。所以不得再做allocator盲重试；两个
-root不resume、不合并。新方法仍以B10+10/default allocator为首个高吞吐候选；失败retry只作诊断，
-不固化为科学或runtime门。
-
-随后clean frozen`eddba96`的B16+4在同一`gpu01:0,1,2,4,5,7` 3+3 NUMA拓扑完整进入start，六rank第一条
-functional eager-attention均在申请`254MiB`时OOM：allocated=`42.49GiB`、reserved-unallocated=
-`1.25GiB`、free=`235.31MiB`。因此B16没有whole-step吞吐点；当前直接运行balanced B10+10，不再做
-allocator retry、A-B-A或宽batch sweep。
-
-旧whole-LoRA clean frozen`9c814ff`的balanced B10+10已在同一拓扑完成：wall=`21.0951s`、input wait=`.0763s`
-（`.36%`）、peak allocated/reserved=`43,305,942,016/47,093,645,312` bytes、0 OOM/nonfinite；assembler
-复验24 tasks、480/480 queries、最长105帧和完整provenance。当时推荐expert/ranking weights=
-`.008355172068998324/.28570466890490887`；它们只属于已退役whole-LoRA objective。ECP随后在同一B10图上
-封存`.006883349605446485/.010514451404229894`，也只作新方法macro0 gradient identity的预期参照，
-不得直接写入v3 config。dynamic anchor每臂只增加一个小decoder forward，不重跑video encoder或B20 policy；
-仍须一次真实v3 gradient/whole-macro profile确认权重、wall和VRAM，不扫workers4或更小microbatch。
-
-1. 分别测positive、projection、ranking在compiler和factor heads的未加权gradient norm；
-2. 一次性选择`lambda_projection/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
-   `.25`；若初始化已满足而梯度近零，不人为放大；
-3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
-   在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
-4. 运行同logical B20、同panel-keyed randomness和同六卡拓扑的balanced B10+10；记录完整macro wall、
-   input wait、peak allocated/reserved和异常计数。B16已容量失败，因此不为新方法重复宽batch sweep；
-   若B10+10因新增decoder不可行，先定位同时存活tensor而不是降低scientific batch；只有不可避免OOM或
-   含构建成本的end-to-end实测更快才启用full-condition anchor cache；
-5. 用丢弃型profile权重完成fresh0→1、same-root exact-resume1→3、独立contiguous0→3。要求scientific
-   metrics、cursor、Writer/RNG和optimizer/scheduler语义一致；允许正常并行低位roundoff，不要求不同
-   reduction schedule逐bit相同；
-6. profile checkpoint永久禁止warm-start formal。
-
-两个verifier现已实现并通过全仓CPU回归。gradient assembler从`gradient_profile.json`、completion、
-invocation和run contract重算推荐权重，精确重建24-task deterministic video/negative panel、canonical
-config、clean pushed Git及六卡拓扑；resume assembler还调用只读checkpoint inspector，核对600 Writer
-tensors、41 trainable tensors、6-rank RNG、Adam moments、scheduler/AMP、cursor、Git phase ancestry和
-scientific tolerance。task/frame provenance还会回查frozen target manifest、HDF5 path/bytes和对应demo的
-真实frame metadata。二者不做hash，也不能被人工status、stale tracked config或复制到外部的config替代。
-
-工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少logical B20
-或盲重试掩盖问题；physical microbatch是保持科学batch的容量实现，不属于减少B20。
+这些profile只解释为何当前audit继承B10+10、workers2、六rank与default allocator；它们不授权重跑v3
+gradient profile、恢复profile checkpoint、复用旧auxiliary weights或启动训练。详细ECP和Tangent证据保留在
+下列5.1/5.2；任何活动GPU命令只取Section 7。
 
 ### 5.1 Historical ECP resume evidence
 
@@ -218,7 +184,7 @@ allocated/reserved=`43,316,387,840/47,137,685,504` bytes，0 OOM/nonfinite。ass
 anchor为41 tensors/`3,714,304` parameters且optimizer/checkpoint/deployment ownership全false；macro1/3
 cursor、6-rank RNG、scheduler/AMP、559 frozen tensors和checkpoint contract语义相等。macro3 trainable
 Writer maxabs/relative-L2=`8.5067e-6/1.14428e-6`，82个Adam moments的最低direction/norm门通过；scientific
-metrics最大tolerance ratio=`.67790`。evidence已原样写回v3 config，Section 6现已解锁，profile runtime
+metrics最大tolerance ratio=`.67790`。evidence已原样写回v3 config，当时的Section 6由此解锁，profile runtime
 按状态机关闭且checkpoint永久弃用。
 
 三步只作工程与早期机制证据：macro2有21/24 tasks把`a_correct`推向1，macro3却变为0/24；macro3
@@ -228,41 +194,21 @@ metrics最大tolerance ratio=`.67790`。evidence已原样写回v3 config，Secti
 回锚力，这是当时formal0→10必须直接证伪的结构风险。该formal和strict已完成，最新裁决见第0节与
 第6.4节；不能从本段恢复训练。
 
-## 6. Formal training and truthful evaluation
+## 6. Historical Tangent formal and truthful evaluation（已完成）
 
-### 6.1 Baseline and training
+### 6.1 Completed baseline and training
 
-另建clean pushed frozen worktree、fresh output root和formal launch contract。method macro0是同一当前
-video schedule下的historical macro400 load-only状态；不能仅引用旧143替代当前paired baseline。
+Tangent已从clean pushed frozen`b308941`按预注册完成fresh0→10并自然停止；historical macro0=`134`来自同一
+video schedule，未用历史143替代paired baseline。训练root、完整机制metrics、cursor/RNG和资源证据见6.4。
+本段只作provenance，禁止从macro10续训。
 
-第一段只fresh训练0→10并自然停止，保存10；不在未看到真实macro10行为前自动跑到25/50。训练期间持续记录：
+### 6.2 Completed checkpoint decision
 
-- positive/projection+tube/ranking loss和unweighted component gradient；
-- per-task student/anchor coefficient与norm、signed parallel delta、orthogonal delta、relative tube和
-  correct-negative margins；
-- full24 gradient norm、clip/nonfinite、input wait、step wall和peak VRAM；
-- video schedule、counterfactual counts、sampler cursor和每rank RNG。
+macro10已完成完整paired correct400，correct80仅由相同rows派生；native-family验证和cross-family historical
+transition均通过。结果`131`虽处旧条件区间，但breadth5、directional/completion门失败，因此预注册决策是
+不续25、不补六臂。旧checkpoint cadence全部关闭，不能恢复成活动命令。
 
-loss下降不能延迟或替代rollout。只有OOM/nonfinite、信息墙、拓扑、数据或run/checkpoint合同失效才在
-macro10前立即abort；普通loss波动、三步机制恶化或全task同相振荡不能替代已注册的macro10 strict400，
-除非产物已失去科学有效性。
-
-### 6.2 Checkpoint cadence
-
-- macro10直接跑完整paired correct400；correct80只从相同400 rows的`state<10`子集派生，不另启动rollout，
-  也不能选winner或代表真实水平。
-- 历史current-schedule macro0=`134`与tangent candidate分别按native family验证，再由显式标注cross-family
-  的historical-baseline transition逐row核对共同state/RNG/language/video。不得复制或重标旧rows，也不得
-  把两点伪装成同-family checkpoint curve。
-- 每点与macro0、历史143、v5.2-old和v6交叉recipe逐task比较：per-suite、breadth、gained/lost、
-  union/intersection、capability churn和视频ordinal依赖。
-- macro10 `≤129`且多task净损失即停；`130--134`只有tube门成立、breadth`≥6`、churn`≤35`且最近3个
-  macro projection方向斜率`≥0`才从同一root exact-resume到25。macro25必须`≥135`且至少3 tasks、
-  2 suites净正增才继续50；任何100扩展需先更新sealed config。
-- single checkpoint首次`≥144/400`即运行完整paired correct/same/wrong/shuffled/reversed/no-video；若之后
-  不同winner首次`≥151`，再对实际goal winner重跑六臂。达标后仍继续验证更高性能、breadth和稳定性。
-
-### 6.3 What counts as real improvement
+### 6.3 Reusable rule for what counts as real improvement
 
 方法改善至少需要absolute和任务分布证据，而不是一个suite换手。完整报告：
 
@@ -293,10 +239,11 @@ fail-closed；所有Section 6 launch语句现为已执行provenance，不是活�
 ## 7. Post-result diagnosis and next single variable
 
 当前最早接口已定位到`LoRA cotangent -> shared decoder/Adam -> next-condition output motion`；但在改结构
-前必须先判定expert policy flow是否提供现有positive functional之外的新监督。第36节matched audit是当前
-唯一动作：零update、零rollout，train24同B20/noise/time比较expert/macro0/tangent10 flow error，并计算
-CEFD gradient相对positive/completion/ranking span的残差。teacher质量至少18/24 tasks、3 suites更优，且
-compiler/factor残差比例都`≥.25`才授权CEFD。
+前必须先判定expert policy flow是否提供现有positive functional之外的新监督。第36节matched audit实现已
+CPU封存、尚未运行GPU；当前唯一动作是从clean pushed frozen commit运行一次零update、零rollout诊断。
+train24同B20/noise/time比较expert/macro0/tangent10 flow error，并计算CEFD gradient相对positive/
+completion/ranking span的残差。teacher质量须在至少18/24 tasks及每suite六task等权mean中的至少3 suites
+同时优于两种baseline，且compiler/factor残差比例都`≥.25`才授权CEFD。
 
 按以下顺序定位最早接口：
 
@@ -324,9 +271,11 @@ compiler/factor残差比例都`≥.25`才授权CEFD。
 ## 8. Evidence, Git, and retention
 
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
-- retired result config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`，formal runtime已关闭。
+- canonical config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；其中Tangent formal block已
+  退役，`teacher_audit` block为ready diagnostic。
 - current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第36节。
-- current training/eval entry：`scripts/train_v6_prior_writer.py`、`scripts/evaluate_pi05.py`。
+- current diagnostic/evaluation entry：`scripts/train_v6_prior_writer.py --mode teacher-audit`、
+  `scripts/evaluate_pi05.py`；当前没有active training mode。
 - formal保留config、command/env、GPU topology、checkpoint schema、raw rows、aggregate、completion和必要
   mechanism analysis；不提交checkpoints/cache/data/binaries。
 - failed `30b2ccf` smoke及其`batch_equivalence.json`保留为BF16诊断；不resume、不作为性能证据。

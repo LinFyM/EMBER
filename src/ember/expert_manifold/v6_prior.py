@@ -177,6 +177,52 @@ def build_v6_prior_dynamic_anchor(
     )
 
 
+def load_v6_prior_comparison_decoder(
+    writer: CompleteLoRAWriter,
+    checkpoint: Path,
+) -> V6PriorDynamicAnchor:
+    """Load only a frozen compiler/head decoder for a no-update comparison."""
+
+    selected = checkpoint / "writer.safetensors"
+    if not selected.is_file():
+        raise ExpertManifoldError("v6 comparison Writer checkpoint is missing")
+    state = load_file(str(selected), device="cpu")
+    if len(state) != V6_WRITER_STATE_TENSOR_COUNT:
+        raise ExpertManifoldError("v6 comparison Writer state tensor count changed")
+    decoder = build_v6_prior_dynamic_anchor(writer)
+    groups = {
+        "compiler": decoder.compiler,
+        "factor_heads": decoder.factor_heads,
+    }
+    selected_names = []
+    for root, module in groups.items():
+        prefix = f"{root}."
+        values = {
+            name[len(prefix) :]: value
+            for name, value in state.items()
+            if name.startswith(prefix)
+        }
+        try:
+            incompatible = module.load_state_dict(values, strict=True)
+        except RuntimeError as error:
+            raise ExpertManifoldError(
+                "v6 comparison decoder is structurally incompatible"
+            ) from error
+        if incompatible.missing_keys or incompatible.unexpected_keys:
+            raise ExpertManifoldError("v6 comparison decoder strict load was incomplete")
+        selected_names.extend(f"{root}.{name}" for name in values)
+    if (
+        len(selected_names) != decoder.tensor_count
+        or any(
+            parameter.requires_grad
+            for module in groups.values()
+            for parameter in module.parameters()
+        )
+    ):
+        raise ExpertManifoldError("v6 comparison decoder ownership changed")
+    return decoder
+
+
 def v6_prior_trainable_parameters(
     writer: CompleteLoRAWriter,
 ) -> tuple[torch.nn.Parameter, ...]:

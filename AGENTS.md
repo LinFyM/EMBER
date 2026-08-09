@@ -19,6 +19,11 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   扫权重或恢复并行活动实现。当前唯一focused科学动作是第36节的matched Expert-Flow Teacher Viability
   Audit：它是不更新参数的train24诊断，不是新部署方法；只有该门证明task expert在相同B20/noise/time上
   是更好的policy-flow teacher且提供非冗余梯度，才授权Cross-Episode Expert Flow Distillation（CEFD）。
+- 第36节audit已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，所以当前
+  没有teacher-quality、gradient-nonredundancy或CEFD科学结论。固定合同为world6、4 tasks/rank、logical
+  B20/physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32 loss、full24
+  等权gradient、Gram pinv `rtol=1e-5`、0 optimizer/scheduler/update/rollout。下一步只允许从clean pushed
+  frozen commit经live GPU/quota preflight运行这一次audit。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -31,9 +36,9 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   `108.93/126.88`、两臂均`0/24` tasks通过`≤1`，task median `|a_correct-1|=.25229`且`0/24`
   tasks通过completion门。随后同一one-shot correct400严格评测为`131/400`、breadth5、per-task=
   `0/3/46/31/0/40/11/0`；相对同schedule macro0=`134`为gained/lost=`16/19`、churn35、net`-3`。
-  因而不续25、不补六臂、不扫tube weight/LR/WD；该结果淘汰当前tangent recipe/window，但由于completion
+  因而不续25、不补六臂、不扫tube weight/LR/WD；该结果淘汰当时的tangent recipe/window，但由于completion
   从未成立，不能写成对expert-component假设的干净证伪。代码/config已切为formal non-pass后fail-closed，
-  当前先封存证据，再执行matched flow-teacher audit决定是否值得实现CEFD。
+  Tangent证据已由`9f8f638`封存；当前待封存audit实现并执行一次matched诊断，决定是否值得实现CEFD。
 
 ## Mandatory reading
 

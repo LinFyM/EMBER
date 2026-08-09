@@ -36,14 +36,17 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - macro10 one-shot strict correct400=`131/400`、correct80=`27/80`、breadth5，per-task=
   `0/3/46/31/0/40/11/0`、per-suite=`3/77/40/11`。相对同schedule macro0=`134`的精确
   gained/lost=`16/19`、churn35、net`-3`；相对ECP10=`133`为`19/21`、net`-2`。因此不续25、
-  不补六臂、不扫tube weight/LR/WD。该结果只淘汰当前tangent recipe/window；completion从未成立，
+  不补六臂、不扫tube weight/LR/WD。该结果只淘汰当时的tangent recipe/window；completion从未成立，
   不能扩大成“expert component本身无效”。
-- 当前没有运行中的EMBER GPU进程，也没有已授权继续训练的Writer。下一步是第36节matched
-  Expert-Flow Teacher Viability Audit：在不更新参数的前提下，用完全相同的train24 B20/noise/time比较
+- 当前没有运行中的EMBER GPU进程，也没有已授权继续训练的Writer。第36节matched Expert-Flow Teacher
+  Viability Audit已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，所以
+  没有teacher-quality、gradient-nonredundancy或CEFD科学结论。它以完全相同的train24 B20/noise/time比较
   step2000 task expert、historical macro0和tangent macro10的PI05 flow velocity，并检查expert teacher
-  是否更接近真实flow target、其梯度是否不同于现有positive/completion/ranking。只有teacher质量与梯度
-  非冗余两门都成立，才实现Cross-Episode Expert Flow Distillation（CEFD）；否则转向更直接的结构化
-  update parameterization，而不是再堆一个昂贵loss。
+  是否更接近真实flow target、其梯度是否不同于现有positive/completion/ranking。
+- audit固定world6、physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32
+  loss、full24等权gradient和Gram pinv `rtol=1e-5`，且不创建optimizer/scheduler、不更新参数、不rollout。
+  下一执行动作只是clean commit/push、frozen worktree、live GPU/quota preflight后运行一次audit。只有teacher
+  质量与梯度非冗余两门都成立，才实现CEFD；否则转向更直接的结构化update parameterization。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -53,7 +56,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
   `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为
-  `.006883349605446485/.010514451404229894`。当前Tangent Tube从自己的live gradient seal得到
+  `.006883349605446485/.010514451404229894`。已退役Tangent Tube当时从自己的live gradient seal得到
   `.00686480847114155/.010514453175708578`，没有直接继承任一旧seal。
 - formal训练root为
   `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在

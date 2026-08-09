@@ -21,12 +21,16 @@
 - strict correct400=`131`、correct80=`27`、breadth5、per-task=`0/3/46/31/0/40/11/0`、per-suite=
   `3/77/40/11`。相对同schedule macro0=`134`严格paired gained/lost=`16/19`、churn35、net`-3`、
   `p=.735879`；所以不续25、不补六臂、不扫weight/LR/WD。当前config/runtime已封为formal non-pass并
-  fail-closed。该证据淘汰当前tangent recipe/window，但completion从未成立，不能宣称expert-component
+  fail-closed。该证据淘汰当时的tangent recipe/window，但completion从未成立，不能宣称expert-component
   假设已被干净证伪。
 - 当前没有已授权继续训练的Writer。唯一下一科学动作是第36节matched Expert-Flow Teacher Viability
   Audit：不更新参数，在相同train24 B20/noise/time上比较step2000 task expert、historical macro0与
   tangent macro10的PI05 flow velocity和梯度关系。只有expert在大多数tasks上更接近真实flow target，且
   expert-distillation gradient不是现有positive/completion/ranking的常数缩放或同向重复，才授权CEFD。
+- 该audit现已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，因此没有
+  teacher-quality、gradient-nonredundancy或CEFD科学结论。固定runtime为world6、4 tasks/rank、logical
+  B20/physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32 loss、full24
+  等权gradient、Gram pinv `rtol=1e-5`及0 optimizer/scheduler/update/rollout。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -163,7 +167,7 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 因此只有当当前one-shot的同任务跨video方差被closed-loop证据定位为最早瓶颈后，才恢复固定K聚合；不能
 通过平均多个无效LoRA或expert route伪造提升。
 
-## 3. Current architecture
+## 3. Current deployment architecture and active diagnostic
 
 部署图恢复历史v6-fast完整video-to-LoRA生成器：
 
@@ -174,34 +178,28 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 4. 8个factor heads直接生成38个policy targets的完整rank-16 A/B；
 5. LoRA只生成一次，Writer释放，原source policy原位加载该LoRA做闭环rollout。
 
-初始化是历史v6-fast macro400 checkpoint：
+唯一部署图仍由历史v6-fast macro400 checkpoint初始化：
 
 `runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400`
 
 其600个Writer tensors只作load-only初始化。encoder/Core/transition/Procedure共483 tensors、
-`7,060,992` parameters冻结；仅训练compiler+factor heads的41 tensors、`3,714,304` parameters，使用全新
-optimizer/scheduler/sampler/RNG。这样第一次干预只针对历史证据定位的Procedure→effective LoRA写出
-接口，同时保护143起点已经具有的video representation；这不是永久宣称上游最优。
+`7,060,992` parameters冻结；compiler+factor heads的41 tensors、`3,714,304` parameters在audit中仅用于
+求梯度，不创建optimizer/scheduler、不更新，也没有active训练方法。
 
-每个train task的统一step2000 expert `E_t`只作监督；当前第35节目标为：
+第36节diagnostic在不改变部署图的前提下增加三条严格匹配的比较臂：
 
-- correct臂接受真实logical B20 action functional loss；physical slicing只允许改变执行显存，不改变20条
-  query与task mean；
-- 用全部38 targets的gauge-invariant effective`BA`内积计算原ECP系数
-  `a_t^x=<G_t^x,E_t>/(||E_t||²+epsilon)`；correct仍只要求`a_t^correct→1`，不把global norm或整套LoRA
-  拉向expert；
-- runtime在historical macro400同步完成、任何resume load之前，冻结复制恰好compiler+factor heads作为
-  macro0 decoder。对每个correct/negative condition复用同一份Core/Procedure memories，得到
-  `G0_t^x`；令`Delta=G-G0`，用exact nonzero `D=||E||²`只惩罚
-  `||Delta||²-<Delta,E>²/D`。两臂取算术均值，因此不会因增加negative anchor机械翻倍；
-- reversed、shuffled和cross-suite wrong只进入bounded
-  `a_t^correct-a_t^negative` ranking，达到margin后停止推动；negative tube同时阻止共享参数更新连带破坏
-  其非expert方向来伪造margin；
-- same-task不同视频都是共同positive，不互相排斥。
-
-dynamic anchor不进optimizer/checkpoint/deployment；exact resume从immutable warm-start重建它，只恢复
-student的41个trainable tensors。部署仍是单一600-tensor student，不读expert bank或phase cache，不选、
-混合或近邻复制train expert。
+- macro0 Writer读取exact language和一条correct action-hidden video，生成完整LoRA；统一step2000 task
+  expert是task-local privileged teacher，sealed tangent macro10只加载41个compiler/factor tensors作为
+  历史比较decoder，二者都`no_grad`；
+- train24每task仍读取20条同task跨episode action queries。logical B20只因A40容量切为B10+10；每个slice
+  依次执行expert、tangent10和唯一一次可微macro0 policy forward，三臂复用同一flow time/noise及offset，
+  因而正式runtime固定每task 6次PI05 policy forward；
+- action projection实际width必须为7；三臂velocity裁到真实7维后仅在小tensor上转FP32计算expert、macro0、
+  tangent10 target loss和CEFD distillation loss，不改变BF16主干吞吐；
+- positive、completion、ranking和候选distillation四类gradient先rank内4-task等权mean，再一次stacked
+  all-reduce/world6形成full24 mean；CEFD向量只与现有三向量的归一化Gram span比较，不做parameter update；
+- reversed、shuffled、wrong保持8/8/8 schedule；audit不读held action、不rollout、不创建checkpoint或长期
+  cache。部署仍是单一600-tensor Writer，不读expert bank、tangent decoder或任何诊断artifact。
 
 ## 4. What task experts solve and do not solve
 
@@ -292,7 +290,12 @@ Experts不解决：
 
 ## 7. Current engineering state
 
-当前实现与单卡live seal已完成：
+当前audit CPU实现与继承的historical live seals如下：
+
+- matched flow-teacher primitive、一次性full24 audit聚合和canonical run-contract owner已经分离封存；唯一
+  CLI仍是`scripts/train_v6_prior_writer.py --mode teacher-audit`，没有第二runner或部署路径。CPU oracle分别
+  覆盖physical B20的3次forward与B10+10的6次forward、三臂逐tensor相同noise/time、真实7维FP32 loss、
+  near-collinear Gram `rtol=1e-5`、8/8/8 negatives和0 update；全仓`284 passed`，尚无GPU audit结果；
 
 - evaluator取消historical smoke中的8次冗余direct Writer forward和`1e-5`逐tensor门；batch默认8并要求
   profile至少实测`8/16/32`。三者处理同一32-request longest-first panel和同一总帧数，只改变实际
@@ -395,24 +398,16 @@ Experts不解决：
 6. single winner首次超过历史143即跑完整correct/same/wrong/shuffled/reversed/no-video；若之后不同
    checkpoint严格超过150，再对实际goal winner重跑六臂。未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：gradient与fresh/resume/contiguous工程seal均已完成并原样写回唯一canonical v3 config。
-先把当前config/authority/tests clean commit/push，从该严格后继commit创建formal frozen worktree；随后重新
-live比较`gpu01/gpu02`和quota，只用最多6张空闲A40，formal从historical v6 macro400 fresh训练，先到
-macro10并立即跑paired correct400。不得载入profile checkpoint，不为BF16低位一致降低B10+10、六卡
-并行或吞吐，也不因三步tube预警提前扫权重或换架构。
+当前具体下一步只有一项：把已CPU封存的audit实现与authority clean commit/push，从该严格后继commit建立
+frozen worktree；随后live比较`gpu01/gpu02`、GPU ownership/telemetry/process和`/data1` quota，只用最多6张
+空闲A40运行一次`teacher-audit`。保持B10+10、workers2、3+3 NUMA、Ring/Simple、
+`NCCL_P2P_DISABLE=1`和deferred-NCCL；不得启动训练、rollout、profile sweep或第二次诊断。
 
-correct80只能从这400 rows派生。historical immutable macro0=`134`由generic historical-baseline analyzer
-按各自native family验证并逐row核对共同state/RNG/language/video后比较，绝不重标family或混入同family
-checkpoint curve。macro10 `≤129`且广泛净损失即停；`130--134`仅在tube、breadth`≥6`、churn`≤35`和
-右端斜率共同成立时到25；macro25需`≥135`且至少3 tasks/2 suites净正增。首次single checkpoint
-`≥144`即跑六臂，若不同goal winner首次`≥151`再跑一次。不能用profile loss、expert norm、correct80或
-历史143替代full400裁决。
-
-对应CPU-only入口已原位加入canonical evaluator：
-`scripts/evaluate_pi05.py historical-baseline-transition --legacy-root ... --current-root ... --output ...`。
-它不放宽四点checkpoint-curve；legacy只读immutable `results.json`，candidate从raw root重新aggregate，
-两个native family分别验证后才比较。实现保留legacy+ECP历史入口并新增tangent v3 candidate family；
-checkpoint curve仍严格single-family。
+正式结果先按预注册两门裁决：step2000 expert须同时优于macro0和tangent10，至少18/24 tasks且每suite六task
+等权mean中至少3 suites通过；候选distillation gradient在compiler与factor heads相对
+positive/completion/ranking span的residual ratio都须`≥.25`。两门都通过才设计CEFD；任一门失败就删除
+一次性audit路径并转向structured update parameterization。Tangent formal与historical-baseline analyzer只作
+已封存provenance，不能从旧段落恢复训练或评测。
 
 ## 10. Canonical assets
 
@@ -420,8 +415,10 @@ checkpoint curve仍严格single-family。
   `pi05_libero`，也不支持source-SFT exact resume。
 - task experts：上述formal root的统一step2000 checkpoints。
 - historical Writer prior：上述v6-fast macro400 checkpoint。
-- current config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`。
-- training entry：`scripts/train_v6_prior_writer.py`。
+- canonical config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent formal已退役，只有
+  其中`teacher_audit` block处于ready diagnostic状态。
+- tangent comparison：sealed`b308941` formal root的`checkpoints/macro_00000010`，只读41个comparison tensors。
+- diagnostic entry：`scripts/train_v6_prior_writer.py --mode teacher-audit`；当前没有active训练入口。
 - evaluation entry：`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

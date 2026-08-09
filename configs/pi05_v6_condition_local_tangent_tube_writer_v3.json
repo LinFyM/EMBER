@@ -1451,6 +1451,30 @@
       "content_hash_policy": "disabled_by_owner"
     }
   },
+  "teacher_audit": {
+    "status": "ready_after_tangent_strict_nonpass",
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
+    "num_workers_per_rank": 2,
+    "diagnostic_macros": 1,
+    "schedule_macro": 49,
+    "logical_policy_batch_size": 20,
+    "functional_policy_microbatch_size": 10,
+    "physical_policy_forwards_per_task": 6,
+    "real_action_dimensions": 7,
+    "comparison_checkpoint": "runs/outputs/pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810/checkpoints/macro_00000010",
+    "comparison_commit": "b3089417b6b3df6f22cf3dc296015a80ff228b7a",
+    "comparison_macro": 10,
+    "parameter_updates": 0,
+    "rollouts": 0,
+    "gradient_span_components": ["positive", "completion", "ranking"],
+    "gradient_span_pinv_rtol": 1e-05,
+    "gradient_residual_ratio_min": 0.25,
+    "teacher_quality_min_tasks": 18,
+    "teacher_quality_min_suites": 3,
+    "result": null,
+    "content_hash_policy": "disabled_by_owner"
+  },
   "evaluation": {
     "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
     "minimum_smoke_writer_model_batch_size": 8,

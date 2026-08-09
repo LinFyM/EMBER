@@ -1,5 +1,23 @@
 # EMBER Progress Ledger
 
+## Expert-Flow Teacher Audit实现与CPU门完成（尚未启动GPU，2026-08-10）
+
+- 唯一canonical `scripts/train_v6_prior_writer.py`已接入fresh-only `--mode teacher-audit`：world6、4 tasks/rank、
+  schedule macro49、logical B20/physical B10+10、workers2、0 optimizer/scheduler/update/checkpoint/rollout。
+  Tangent formal runtime继续fail-closed，comparison只读sealed`b308941` macro10的41个compiler/factor tensors。
+- matched flow primitive严格捕获action projection的真实7维velocity。每个B10 slice复用同一keyed noise/time/
+  offset运行expert、tangent10和macro0三臂；只有student可微，四个小型real-action loss统一FP32。full24四类
+  gradient由rank内4-task mean后一次stacked all-reduce生成，不增加热路径逐tensor同步或长期cache。
+- run-contract构造已从runtime抽成唯一公开owner；删除旧runtime wrappers/re-export。audit通过显式frozen
+  bindings复用canonical task objective、gather、layout/norm和runtime metrics，消除training↔audit import环；
+  architecture guard无hard violation或第二CLI/runner/deployment family。
+- CPU oracle覆盖B20/B10+10 matched randomness、正式6 forwards/task、real7 width/FP32 loss、same-memory、
+  8/8/8 negatives、480 unique queries、Gram pinv `rtol=1e-5`、近共线effective rank与0 update。加载
+  `.env.local`的最新全仓seal为`284 passed in 33.47s`，compileall/JSON/diff-check通过；尚未创建formal root，
+  也没有GPU或CEFD结果。
+- 下一操作只允许clean commit/push、严格后继frozen worktree和live双节点GPU/quota preflight后运行一次
+  audit。两门都过才设计CEFD；任一门失败就退役一次性audit路径并转structured update parameterization。
+
 ## Condition-Local Tangent Tube formal与strict裁决完成（2026-08-10）
 
 - current seal的clean pushed commit=`b308941`；独立formal branch/worktree绑定该commit。launch前live比较

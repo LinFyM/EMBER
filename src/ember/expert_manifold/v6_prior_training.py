@@ -35,20 +35,22 @@ from ember.expert_manifold.v6_prior_contract import (
 from ember.expert_manifold.v6_prior_policy_batch import (
     policy_rng_seed_for_logical_batch,
 )
-from ember.expert_manifold.v6_prior_runtime import (
-    V6PriorRuntime,
-    _cursor_contract,
-    _prepare_runtime,
-)
+from ember.expert_manifold.v6_prior_runtime import V6PriorRuntime, _prepare_runtime
+from ember.expert_manifold.v6_prior_run_contract import cursor_contract
 from ember.expert_manifold.v6_prior_step import (
     GeneratedCounterfactualPair,
     generate_counterfactual_pair,
     merged_output_gradients,
     parameter_gradient_components,
 )
+from ember.expert_manifold.v6_prior_teacher_audit import TeacherAuditBindings, run_teacher_audit
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_distributed
+from ember.writer.flow_teacher import (
+    FunctionalFlowTeacherAudit,
+    functional_lora_flow_teacher_audit,
+)
 from ember.writer.functional import functional_lora_loss_gradient
 
 
@@ -64,6 +66,7 @@ class TaskObjective:
     functional_loss: torch.Tensor
     functional_gradients: Mapping[str, torch.Tensor]
     auxiliary: EffectiveAuxiliaryGradients
+    flow_audit: FunctionalFlowTeacherAudit | None
 
 
 def _batch_task_id(batch: Mapping[str, Any]) -> int:
@@ -81,6 +84,64 @@ def _target_state(
     task_ordinal: int,
 ) -> dict[str, torch.Tensor]:
     return {name: value[task_ordinal] for name, value in runtime.expert_targets.items()}
+
+
+def _functional_evidence(
+    runtime: V6PriorRuntime,
+    pair: GeneratedCounterfactualPair,
+    *,
+    task_ordinal: int,
+    policy_batch: Mapping[str, Any],
+    policy_rng_seed: int,
+) -> tuple[
+    torch.Tensor,
+    Mapping[str, torch.Tensor],
+    FunctionalFlowTeacherAudit | None,
+]:
+    randomness = runtime.config["objective"]["positive_policy_randomness"]
+    common = {
+        "batch": policy_batch,
+        "policy_rng_seed": policy_rng_seed,
+        "policy_rng_device": runtime.context.device,
+        "flow_time_sampling_scheme": str(randomness["flow_time_sampling_scheme"]),
+        "flow_noise_sampling_scheme": str(randomness["flow_noise_sampling_scheme"]),
+    }
+    with torch.autocast(
+        device_type=runtime.context.device.type,
+        dtype=torch.bfloat16,
+        enabled=runtime.context.device.type == "cuda",
+    ):
+        if runtime.args.mode == "teacher-audit":
+            if pair.correct_comparison is None:
+                raise ExpertManifoldError("flow-teacher comparison LoRA is missing")
+            audit = functional_lora_flow_teacher_audit(
+                runtime.policy,
+                pair.correct,
+                _target_state(runtime, task_ordinal),
+                pair.correct_comparison,
+                runtime.lora_contract,
+                policy_microbatch_size=int(
+                    runtime.config["teacher_audit"][
+                        "functional_policy_microbatch_size"
+                    ]
+                ),
+                expected_action_width=int(
+                    runtime.config["teacher_audit"]["real_action_dimensions"]
+                ),
+                **common,
+            )
+            return audit.student_target_loss, audit.positive_gradients, audit
+        loss, _, gradients = functional_lora_loss_gradient(
+            runtime.policy,
+            pair.correct,
+            runtime.lora_contract,
+            policy_microbatch_size=int(
+                runtime.config["optimization"]["functional_policy_microbatch_size"]
+            ),
+            collect_policy_details=False,
+            **common,
+        )
+    return loss, gradients, None
 
 
 def _task_objective(
@@ -122,6 +183,7 @@ def _task_objective(
     pair = generate_counterfactual_pair(
         writer=runtime.writer,
         dynamic_anchor=runtime.dynamic_anchor,
+        comparison_decoder=runtime.comparison_decoder,
         policy=runtime.policy,
         correct_video=correct_video,
         counterfactual_video=negative_video,
@@ -140,22 +202,13 @@ def _task_objective(
         task_visit=task_visit,
     )
     policy_batch = runtime.processor.training_batch(dict(batch))
-    randomness = runtime.config["objective"]["positive_policy_randomness"]
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        functional_loss, _, functional_gradients = functional_lora_loss_gradient(
-            runtime.policy,
-            pair.correct,
-            runtime.lora_contract,
-            batch=policy_batch,
-            policy_rng_seed=policy_rng_seed,
-            policy_rng_device=runtime.context.device,
-            flow_time_sampling_scheme=str(randomness["flow_time_sampling_scheme"]),
-            flow_noise_sampling_scheme=str(randomness["flow_noise_sampling_scheme"]),
-            policy_microbatch_size=int(
-                runtime.config["optimization"]["functional_policy_microbatch_size"]
-            ),
-            collect_policy_details=False,
-        )
+    functional_loss, functional_gradients, flow_audit = _functional_evidence(
+        runtime,
+        pair,
+        task_ordinal=task.ordinal,
+        policy_batch=policy_batch,
+        policy_rng_seed=policy_rng_seed,
+    )
     objective = runtime.config["objective"]
     projection_config = objective["projection"]
     rank_config = objective["ranking"]
@@ -181,6 +234,7 @@ def _task_objective(
         functional_loss=functional_loss,
         functional_gradients=functional_gradients,
         auxiliary=auxiliary,
+        flow_audit=flow_audit,
     )
 
 
@@ -532,6 +586,8 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
 
 
 def _run_training(runtime: V6PriorRuntime) -> None:
+    if runtime.optimizer is None or runtime.scheduler is None:
+        raise ExpertManifoldError("v6-prior training optimizer is missing")
     weights = runtime.config["objective"]["auxiliary_weights"]
     projection_weight = float(weights["projection"])
     ranking_weight = float(weights["ranking"])
@@ -625,7 +681,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
                 scheduler=runtime.scheduler,
                 context=runtime.context,
                 metrics_rows=cursor,
-                cursor_contract=_cursor_contract(runtime.config, cursor),
+                cursor_contract=cursor_contract(runtime.config, cursor),
                 checkpoint_contract=runtime.checkpoint_contract,
             )
     if runtime.context.is_main:
@@ -663,6 +719,17 @@ def train(args: argparse.Namespace) -> None:
             )
         if args.mode == "gradient-profile":
             _run_gradient_profile(runtime)
+        elif args.mode == "teacher-audit":
+            run_teacher_audit(
+                runtime,
+                TeacherAuditBindings(
+                    task_objective=_task_objective,
+                    gather_task_records=_gather_task_records,
+                    runtime_maximums=_runtime_maximums,
+                    component_layout=_component_layout,
+                    component_norms=_component_norms,
+                ),
+            )
         else:
             _run_training(runtime)
     finally:
@@ -682,7 +749,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--mode",
-        choices=("gradient-profile", "profile", "formal"),
+        choices=("gradient-profile", "profile", "formal", "teacher-audit"),
         required=True,
     )
     parser.add_argument("--source-run", type=Path, required=True)

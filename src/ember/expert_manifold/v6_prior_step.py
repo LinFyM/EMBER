@@ -27,6 +27,7 @@ class GeneratedCounterfactualPair:
     correct_sampled_frames: int
     counterfactual_raw_frames: int
     counterfactual_sampled_frames: int
+    correct_comparison: Mapping[str, torch.Tensor] | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,7 @@ class ParameterGradientComponents:
     positive: tuple[torch.Tensor, ...]
     projection: tuple[torch.Tensor, ...]
     ranking: tuple[torch.Tensor, ...]
+    distillation: tuple[torch.Tensor, ...] | None = None
 
 
 def _video_tensors(
@@ -50,10 +52,42 @@ def _video_tensors(
     return frames, indices, offsets
 
 
+def _decode_frozen_references(
+    writer: CompleteLoRAWriter,
+    correct_memories: torch.Tensor,
+    negative_memories: torch.Tensor,
+    dynamic_anchor: V6PriorDynamicAnchor,
+    comparison_decoder: V6PriorDynamicAnchor | None,
+) -> tuple[
+    Mapping[str, torch.Tensor],
+    Mapping[str, torch.Tensor],
+    Mapping[str, torch.Tensor] | None,
+]:
+    correct_anchor = writer.decode_memories(
+        correct_memories,
+        compiler=dynamic_anchor.compiler,
+        factor_heads=dynamic_anchor.factor_heads,
+    )
+    counterfactual_anchor = writer.decode_memories(
+        negative_memories,
+        compiler=dynamic_anchor.compiler,
+        factor_heads=dynamic_anchor.factor_heads,
+    )
+    comparison = None
+    if comparison_decoder is not None:
+        comparison = writer.decode_memories(
+            correct_memories,
+            compiler=comparison_decoder.compiler,
+            factor_heads=comparison_decoder.factor_heads,
+        )
+    return correct_anchor, counterfactual_anchor, comparison
+
+
 def generate_counterfactual_pair(
     *,
     writer: CompleteLoRAWriter,
     dynamic_anchor: V6PriorDynamicAnchor,
+    comparison_decoder: V6PriorDynamicAnchor | None = None,
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,
@@ -123,15 +157,14 @@ def generate_counterfactual_pair(
                 frame_order=frame_order,
             )
             negative_indices = correct_indices
-        correct_anchor = writer.decode_memories(
-            correct_memories,
-            compiler=dynamic_anchor.compiler,
-            factor_heads=dynamic_anchor.factor_heads,
-        )
-        counterfactual_anchor = writer.decode_memories(
-            negative_memories,
-            compiler=dynamic_anchor.compiler,
-            factor_heads=dynamic_anchor.factor_heads,
+        correct_anchor, counterfactual_anchor, correct_comparison = (
+            _decode_frozen_references(
+                writer,
+                correct_memories,
+                negative_memories,
+                dynamic_anchor,
+                comparison_decoder,
+            )
         )
     with torch.autocast(
         device_type=device.type,
@@ -140,16 +173,14 @@ def generate_counterfactual_pair(
     ):
         correct = writer.decode_memories(correct_memories)
         counterfactual = writer.decode_memories(negative_memories)
-    if not (
-        set(correct)
-        == set(counterfactual)
-        == set(correct_anchor)
-        == set(counterfactual_anchor)
-    ):
+    states = (correct, counterfactual, correct_anchor, counterfactual_anchor)
+    if correct_comparison is not None:
+        states = (*states, correct_comparison)
+    if any(set(state) != set(correct) for state in states):
         raise ExpertManifoldError("counterfactual LoRA topology changed")
     if any(
         value.requires_grad
-        for state in (correct_anchor, counterfactual_anchor)
+        for state in (correct_anchor, counterfactual_anchor, correct_comparison or {})
         for value in state.values()
     ):
         raise ExpertManifoldError("condition-local v6 anchor gained gradients")
@@ -159,6 +190,7 @@ def generate_counterfactual_pair(
         counterfactual=counterfactual,
         correct_anchor=correct_anchor,
         counterfactual_anchor=counterfactual_anchor,
+        correct_comparison=correct_comparison,
         correct_raw_frames=int(correct_video.raw_frame_count),
         correct_sampled_frames=int(correct_indices.numel()),
         counterfactual_raw_frames=int(negative_video_value.raw_frame_count),
@@ -214,10 +246,12 @@ def parameter_gradient_components(
     *,
     pair: GeneratedCounterfactualPair,
     functional: Mapping[str, torch.Tensor],
+    distillation: Mapping[str, torch.Tensor] | None = None,
     auxiliary: EffectiveAuxiliaryGradients,
     parameters: tuple[torch.nn.Parameter, ...],
+    completion_only: bool = False,
 ) -> ParameterGradientComponents:
-    """Measure three unweighted compiler/head gradient vectors on one graph."""
+    """Measure unweighted compiler/head gradient vectors on one graph."""
 
     names = tuple(pair.correct)
     if not parameters or set(functional) != set(names):
@@ -230,15 +264,33 @@ def parameter_gradient_components(
         grad_outputs=tuple(functional[name] for name in names),
         retain_graph=True,
     )
-    projection = torch.autograd.grad(
-        (*correct, *negative),
-        parameters,
-        grad_outputs=(
-            *tuple(auxiliary.correct_projection[name] for name in names),
-            *tuple(auxiliary.counterfactual_projection[name] for name in names),
-        ),
-        retain_graph=True,
+    distillation_gradient = (
+        torch.autograd.grad(
+            correct,
+            parameters,
+            grad_outputs=tuple(distillation[name] for name in names),
+            retain_graph=True,
+        )
+        if distillation is not None
+        else None
     )
+    if completion_only:
+        projection = torch.autograd.grad(
+            correct,
+            parameters,
+            grad_outputs=tuple(auxiliary.correct_completion[name] for name in names),
+            retain_graph=True,
+        )
+    else:
+        projection = torch.autograd.grad(
+            (*correct, *negative),
+            parameters,
+            grad_outputs=(
+                *tuple(auxiliary.correct_projection[name] for name in names),
+                *tuple(auxiliary.counterfactual_projection[name] for name in names),
+            ),
+            retain_graph=True,
+        )
     ranking = torch.autograd.grad(
         (*correct, *negative),
         parameters,
@@ -251,4 +303,9 @@ def parameter_gradient_components(
         positive=tuple(value.detach() for value in positive),
         projection=tuple(value.detach() for value in projection),
         ranking=tuple(value.detach() for value in ranking),
+        distillation=(
+            tuple(value.detach() for value in distillation_gradient)
+            if distillation_gradient is not None
+            else None
+        ),
     )

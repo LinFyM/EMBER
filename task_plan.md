@@ -147,15 +147,17 @@ formal artifacts保存。
 - [x] formal fresh0→10与strict correct400完成：训练exit0、0 OOM/nonfinite；macro10 tube半径两臂
   `24/24`过`.03`，但directional两臂`0/24`且completion`0/24`；strict=`131/400`、breadth5，
   相对macro0 gained/lost=`16/19`。按门不续25、不补六臂、不扫weight/LR/WD。
-- [x] 退役当前Tangent recipe且保持解释边界：它控制了总半径但没有完成expert方向写入；由于
+- [x] 退役当时的Tangent recipe且保持解释边界：它控制了总半径但没有完成expert方向写入；由于
   `|a_correct-1|≤.05`门未到，不把负结果扩大成expert-component假设整体无效。config/runtime已formal
   non-pass后fail-closed。
-- [ ] 实现第36节matched no-update Expert-Flow Teacher Viability Audit：train24、同一logical B20/
-  action query/noise/time，比较step2000 expert、macro0、tangent10相对真实flow target的真实7维误差；
-  在macro0测CEFD/positive/completion/ranking对compiler/factor的gradient Gram与span residual。
+- [x] 实现并CPU封存第36节matched no-update Expert-Flow Teacher Viability Audit：唯一CLI mode保持train24、
+  logical B20/physical B10+10和相同action query/noise/time；每task 6次PI05 forward，真实7维四类loss转FP32，
+  full24等权gradient与Gram pinv固定`rtol=1e-5`。0 optimizer/scheduler/update/rollout、8/8/8 negatives和
+  near-collinear span均有oracle；全仓`284 passed`。尚未运行GPU，不能写成teacher或CEFD有效。
 - [ ] audit用clean pushed/frozen commit、live双节点/quota preflight和最多6张空闲A40运行一次；保持B10+10、
-  0 update、0 rollout、0 held action、0长期cache。teacher须相对macro0和tangent在至少18/24 tasks及3 suites
-  更优，且CEFD gradient在两个block的existing-span residual ratio均`≥.25`，否则不实现CEFD。
+  0 update、0 rollout、0 held action、0长期cache。teacher须相对macro0和tangent10在至少18/24 tasks更优，
+  且在每suite六task等权mean中至少3 suites同时优于两baseline；CEFD gradient在两个block的existing-span
+  residual ratio均`≥.25`，否则不实现CEFD。
 - [ ] audit两门都过才以CEFD替换completion+tube并保留positive functional+bounded video ranking；任一门
   不过则转structured update parameterization，不做loss weight profile或正式CEFD训练。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。

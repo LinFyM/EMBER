@@ -65,6 +65,7 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks(
 ) -> None:
     writer = _writer_and_encoder()
     dynamic_anchor = build_v6_prior_dynamic_anchor(writer)
+    comparison_decoder = build_v6_prior_dynamic_anchor(writer)
     decode_calls = []
     decode_memories = writer.decode_memories
 
@@ -76,6 +77,7 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks(
     pair = generate_counterfactual_pair(
         writer=writer,
         dynamic_anchor=dynamic_anchor,
+        comparison_decoder=comparison_decoder,
         policy=torch.nn.Identity(),
         correct_video=_video(0),
         counterfactual_video=None,
@@ -87,14 +89,17 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks(
         teacher_demo=7,
         device=torch.device("cpu"),
     )
-    assert len(decode_calls) == 4
-    assert decode_calls[0][0] is decode_calls[2][0]
-    assert decode_calls[1][0] is decode_calls[3][0]
-    assert set(decode_calls[0][1]) == set(decode_calls[1][1]) == {
+    assert len(decode_calls) == 5
+    assert decode_calls[0][0] is decode_calls[2][0] is decode_calls[3][0]
+    assert decode_calls[1][0] is decode_calls[4][0]
+    assert set(decode_calls[0][1]) == set(decode_calls[1][1]) == set(
+        decode_calls[2][1]
+    ) == {
         "compiler",
         "factor_heads",
     }
-    assert decode_calls[2][1] == decode_calls[3][1] == {}
+    assert decode_calls[3][1] == decode_calls[4][1] == {}
+    assert pair.correct_comparison is not None
     contract = load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json")
     target = {
         name: value.detach().clone().add_(0.01)
@@ -180,17 +185,25 @@ def test_v6_prior_gradient_profile_returns_three_complete_parameter_vectors() ->
     components = parameter_gradient_components(
         pair=pair,
         functional=functional,
+        distillation={
+            name: torch.full_like(value, -2e-4)
+            for name, value in pair.correct.items()
+        },
         auxiliary=auxiliary,
         parameters=parameters,
+        completion_only=True,
     )
     assert len(components.positive) == len(parameters) == 41
     assert len(components.projection) == len(parameters)
     assert len(components.ranking) == len(parameters)
+    assert components.distillation is not None
+    assert len(components.distillation) == len(parameters)
     assert all(
         sum(int(torch.count_nonzero(value)) for value in component) > 0
         for component in (
             components.positive,
             components.projection,
             components.ranking,
+            components.distillation,
         )
     )

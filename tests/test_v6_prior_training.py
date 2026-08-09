@@ -18,13 +18,15 @@ from ember.expert_manifold.v6_prior_contract import (
 )
 from ember.expert_manifold.v6_prior_runtime import (
     RuntimeSegment,
-    _cursor_contract,
-    _rank_topology,
     _resolve_segment,
-    _run_contract,
     _sampled_video_cost,
     _scheduler,
     _validate_collective_environment,
+)
+from ember.expert_manifold.v6_prior_run_contract import (
+    build_run_contract,
+    cursor_contract,
+    rank_topology,
 )
 from ember.expert_manifold.v6_prior_policy_batch import (
     policy_rng_seed_for_logical_batch,
@@ -156,16 +158,12 @@ def test_v6_prior_rank_topology_records_per_rank_runtime_identity(
 ) -> None:
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "5")
     monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.socket.gethostname",
+        "ember.expert_manifold.v6_prior_run_contract.socket.gethostname",
         lambda: "gpu02",
     )
     monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        "ember.expert_manifold.v6_prior_run_contract.torch.cuda.get_device_name",
         lambda _device: "NVIDIA A40",
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.visible_physical_cuda_index",
-        lambda _local_rank: 5,
     )
     context = DistributedContext(
         0,
@@ -175,7 +173,7 @@ def test_v6_prior_rank_topology_records_per_rank_runtime_identity(
         numa_node=1,
         cpu_affinity=(16, 17),
     )
-    assert _rank_topology(context) == [
+    assert rank_topology(context, physical_index=lambda _local_rank: 5) == [
         {
             "rank": 0,
             "local_rank": 0,
@@ -220,15 +218,7 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         "dirty_paths": [],
     }
     monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.git_state",
-        lambda _root: state,
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime._rank_topology",
-        lambda _context: [{"rank": 0}],
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        "ember.expert_manifold.v6_prior_run_contract.torch.cuda.get_device_name",
         lambda _device: "NVIDIA A40",
     )
     task = SimpleNamespace(
@@ -280,7 +270,7 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         frozen_tensor_count=482,
         trainable_tensor_count=41,
     )
-    contract = _run_contract(
+    contract = build_run_contract(
         args=args,
         config=config,
         context=DistributedContext(0, 0, 1, torch.device("cuda:0")),
@@ -295,6 +285,8 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         ownership=ownership,
         dynamic_anchor=SimpleNamespace(parameter_count=3_714_304, tensor_count=41),
         trainable_names=("compiler.weight",),
+        git_state_fn=lambda _root: state,
+        rank_topology_fn=lambda _context: [{"rank": 0}],
     )
     assert contract["git"] == state
     assert contract["ownership"]["dynamic_anchor"] == {
@@ -596,12 +588,14 @@ def test_v6_prior_task_objective_wires_logical_b20_into_physical_b16(
         task_by_global_id={4: task},
         writer=object(),
         dynamic_anchor=object(),
+        comparison_decoder=None,
         policy=object(),
         language_tokens={4: object()},
         context=SimpleNamespace(device=torch.device("cpu")),
         lora_contract=object(),
         processor=SimpleNamespace(training_batch=lambda _batch: {"policy": True}),
         expert_targets={"adapter": torch.zeros(1, 1)},
+        args=SimpleNamespace(mode="gradient-profile"),
     )
 
     result = _task_objective(runtime, macro=0, microtask=0, batch=batch)
@@ -635,7 +629,7 @@ def test_v6_prior_cursor_records_all_stateless_schedules() -> None:
             "action_queries_per_task": 20,
         }
     }
-    assert _cursor_contract(config, 25) == {
+    assert cursor_contract(config, 25) == {
         "next_macro": 25,
         "task_visits_per_task": 25,
         "sampler_seed": 11,

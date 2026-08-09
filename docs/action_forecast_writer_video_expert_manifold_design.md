@@ -3,8 +3,8 @@
 状态：本文件是Video-Conditioned Expert-Manifold总路线的当前设计authority。第1--32节记录从
 identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
 Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。2026-08-10唯一活动设计是第36节
-matched Expert-Flow Teacher Viability Audit；它是零更新诊断，尚未授权CEFD正式训练。K4、online expert
-bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
+matched Expert-Flow Teacher Viability Audit；它已完成CPU实现和封存但尚未运行GPU，是零更新诊断，尚未
+授权CEFD正式训练。K4、online expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -1950,8 +1950,8 @@ cosine和`||g_CEFD - Projection_span(g_CEFD)|| / ||g_CEFD||`；不保存逐参�
 
 只有同时满足以下条件，才授权Cross-Episode Expert Flow Distillation（CEFD）：
 
-1. step2000 expert相对macro0和tangent10都在至少`18/24` tasks、至少3个suite降低matched真实flow
-   error；同时报告aggregate/per-task/per-suite，不按outcome删task；
+1. step2000 expert相对macro0和tangent10都在至少`18/24` tasks降低matched真实flow error；同时在每suite
+   六task等权mean上至少3个suite优于两种baseline。报告aggregate/per-task/per-suite，不按outcome删task；
 2. CEFD gradient在compiler与factor均finite、nonzero；相对`{positive, completion, ranking}` span的残差
    norm比例两block均`≥.25`，且不能只是cosine近1的常数重标度；
 3. audit完整覆盖train24×B20=`480` queries、0 forbidden reads、0 parameter update、0 OOM/nonfinite，
@@ -1965,14 +1965,54 @@ train24训练；部署仍是exact language加恰好一条action-hidden video、�
 
 ### 36.4 engineering和执行边界
 
-实现必须复用现有`writer/functional.py`的PI05 loss-only、keyed noise/time和microbatch owner，并在
-`v6_prior_training.py`/`v6_prior_step.py`现有vertical path增加audit mode；不新增runner、module、第二套
-functional framework或修改site-packages。若需要捕获`action_out_proj`输出，hook必须严格scoped并有CPU
-oracle证明只捕获当前functional call。Tangent正式runtime保持fail-closed；audit使用独立schema/root，
-不能resume Tangent optimizer或把macro10当新方法warm-start。
+实现必须复用现有PI05 loss-only、keyed noise/time和logical-microbatch owner，并在唯一
+`v6_prior_training.py`/`v6_prior_step.py` vertical path增加`teacher-audit` mode；不新增runner、第二套CLI、
+并行functional framework或修改site-packages。初版把全部逻辑继续塞入历史owner后，architecture guard
+实证会把`writer/functional.py`从655行推到1008行、`v6_prior_training.py`从731行推到1113行，并产生多个
+大于120行的新函数，因此原“不新增module”约束由结构证据修正为以下单一owner map：
+
+- `writer/flow_teacher.py`只拥有matched real-action PI05 velocity捕获和两类LoRA cotangent；复用
+  `writer/functional.py`公开的keyed RNG/microbatch primitive，不复制sampler或policy forward；
+- `v6_prior_teacher_audit.py`只拥有一次性full24聚合、Gram/span统计和pass/fail evidence，不是训练入口；
+- `v6_prior_run_contract.py`从原巨型runtime提取所有v6 launch-contract构造，并唯一拥有audit schema、
+  eligibility和tangent10 comparison asset检查；`v6_prior_runtime.py`仍是唯一资产装配/runtime入口；
+- canonical CLI仍只有`scripts/train_v6_prior_writer.py -> v6_prior_training.py`，没有第二套可执行方法。
+
+若audit失败，删除`teacher-audit` mode、`v6_prior_teacher_audit.py`、`writer/flow_teacher.py`及其feature tests，
+只保留Git、文档和正式evidence；若通过，删除audit gate/orchestration与tangent comparison，只保留并重命名
+matched-flow primitive供CEFD使用。`v6_prior_run_contract.py`作为已从853行runtime抽出的canonical contract
+owner继续保留。这样新增组件有明确owner和退役触发，不形成历史实现的并行活动版本。
+
+捕获`action_out_proj`的hook必须严格scoped并有CPU oracle证明每次functional call只捕获一次。Tangent
+正式runtime保持fail-closed；audit使用独立schema/root，不能resume Tangent optimizer或把macro10当新方法
+warm-start。
 
 在代码合同通过后，使用clean pushed commit的frozen worktree；launch前重新live检查双节点GPU、owner、
 UUID、telemetry、进程与`/data1` quota。最多6张空闲A40，保持
 `NCCL_P2P_DISABLE=1`、NUMA physical/local rank、Ring/Simple和deferred-NCCL。该root是retained scientific
 diagnostic，必须保留run contract、逐task误差、gradient Gram/残差、completion和明确pass/fail；但不跑
 rollout、不生成SHA/MD5、不做与授权门无关的大量复核。
+
+### 36.5 CPU implementation seal（2026-08-10）
+
+当前实现已经完成但尚未运行GPU audit：
+
+- 每个B10 slice依次执行step2000 expert和tangent10 `no_grad` forward，再执行唯一一次macro0 student
+  differentiable forward；两slice共6次PI05 policy forward/task，三臂重放同一seed/logical size/offset；
+- 实际`ACTION` width必须等于预注册7，三臂velocity在裁剪到real7后转FP32计算四个loss。这里仅转换
+  `B10×50×7`小tensor，消除CEFD与positive的不对称BF16量化而不降低主干吞吐；
+- tangent10只从sealed`b308941` macro10 checkpoint加载41个compiler/factor tensors，复用macro0 correct
+  memories；不加载optimizer/RNG、不覆盖historical macro0 student；task experts仍由formal inspector按
+  step2000和task ordinal加载；
+- 四类gradient先rank内4-task等权mean，再一次stacked all-reduce/world6，得到严格full24 global mean。
+  completion使用独立correct completion cotangent，negative schedule固定reversed/shuffled/wrong=`8/8/8`；
+- span Gram来自FP32 gradients，CPU64 pinv固定`rtol=1e-5`，同时记录Gram eigenvalues、effective rank、
+  projection coefficients和显式residual；coefficients/residual必须finite，避免把FP32近奇异噪声误当新方向；
+- runtime不实例化optimizer/scheduler，不允许resume/checkpoint/rollout，结束时policy与Writer `.grad`仍为空。
+
+CPU oracle分别覆盖physical B20的3次forward和B10+10的6次forward，测试轨迹合计9次；formal runtime仍固定
+6次/task。两种路径都验证三臂noise/time逐tensor相等、same-memory comparison、real-action width、近共线
+span、full24 gate和0 update。加载`.env.local`的最新全仓回归为`284 passed in 33.47s`；compileall、
+JSON、diff-check通过，architecture guard为`review`且无hard violation/parallel family。`review`仅来自约
+1.6k行有退役触发的support/test净增长，不能解释为GPU或方法结果。下一步仍只能clean commit/push、frozen
+worktree与live GPU/quota preflight后运行这一次audit。

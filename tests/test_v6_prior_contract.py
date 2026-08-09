@@ -32,7 +32,8 @@ from ember.expert_manifold.v6_prior_contract import (
     load_v6_prior_config,
     runtime_for_mode,
 )
-from ember.expert_manifold.v6_prior_runtime import RuntimeSegment, _run_contract
+from ember.expert_manifold.v6_prior_runtime import RuntimeSegment
+from ember.expert_manifold.v6_prior_run_contract import build_run_contract
 from ember.pi05_source_checkpoint import DistributedContext
 from ember.writer.as_sampling import TeacherVideoSchedule
 
@@ -443,15 +444,7 @@ def _synthetic_run_contract(
         for ordinal in range(24)
     )
     monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.git_state",
-        lambda _root: _git_evidence(frozen_commit),
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime._rank_topology",
-        lambda _context: _topology_evidence(),
-    )
-    monkeypatch.setattr(
-        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        "ember.expert_manifold.v6_prior_run_contract.torch.cuda.get_device_name",
         lambda _device: "NVIDIA A40",
     )
     monkeypatch.setattr(
@@ -475,7 +468,7 @@ def _synthetic_run_contract(
         "min_unique_videos_per_task": 1,
         "max_unique_videos_per_task": 1,
     }
-    return _run_contract(
+    return build_run_contract(
         args=SimpleNamespace(
             mode="gradient-profile",
             config=config_path,
@@ -513,6 +506,8 @@ def _synthetic_run_contract(
             tensor_count=41,
         ),
         trainable_names=tuple(f"compiler.parameter_{index}" for index in range(41)),
+        git_state_fn=lambda _root: _git_evidence(frozen_commit),
+        rank_topology_fn=lambda _context: _topology_evidence(),
     )
 
 

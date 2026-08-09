@@ -74,7 +74,7 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
         "adapter": {
             "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "arm": "expert_manifold_v6_ecp_correct",
+            "arm": "expert_manifold_v6_tangent_tube_correct",
             "video_condition": "correct",
             "writer_asset": {
                 "reference": "v6-prior:historical-macro400",

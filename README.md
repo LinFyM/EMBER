@@ -24,14 +24,17 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - v6-Prior whole-LoRA objective已完成formal 0→50和同一schedule四点strict correct400：
   macro0/10/25/50=`134/127/105/123`。macro0仍最佳，四点逐task envelope=`147`；该objective已停止，
   不续训、不扫权重、不为loser补五臂。
-- 当前唯一活动候选是v6-Initialized Policy-Effective Expert-Component Projection Writer：保持同一
-  historical v6初始化、冻结上游、compiler/factor、one-shot输入、B20 functional和negative schedule，
-  只把task expert从“整套LoRA终点”改成“应补足的有效BA分量”。部署仍不读取expert bank或feature cache。
-- 当前没有运行中的EMBER GPU进程；objective-only ECP、v2 scientific/checkpoint/evaluator schema、
-  projection metrics和legacy只读分析边界已原位实现；全仓CPU数学/合同回归`259 passed`且
-  `git diff --check`通过。clean frozen`de28157`的六卡gradient profile已完成，唯一projection/ranking
-  weights=`.006883349605446485/.010514451404229894`；下一步封存三步resume profile，再以macro10/25
-  strict门快速证伪，避免为内部指标继续长训。
+- 第34节ECP已完成formal0→10→25并退役：strict correct=`133/120`，macro25相对同schedule
+  macro0=`134`的paired gained/lost=`13/27`、`p=.038477`。它成功把`a_correct`和expert component推高，
+  却伴随更大的expert-orthogonal drift和显著closed-loop退化，因此不续50/100、不扫权重、不补六臂。
+- 当前唯一活动候选是第35节v6 Condition-Local Dynamic Expert Tangent Tube Writer：保持historical v6
+  初始化、冻结上游、one-shot输入、B20 functional和negative schedule；对correct及当前negative分别用
+  同一language/video/order的frozen-v6输出作dynamic baseline，只限制student增量的expert-orthogonal
+  分量。anchor仅训练期存在，部署仍只生成一套LoRA且不读取expert bank或feature cache。
+- 当前没有运行中的EMBER GPU进程。新canonical v3 config、双臂low-rank objective、training-only anchor、
+  trainable-only resume/deployment load、新评测family和CPU oracle已在同一vertical path通过全仓
+  `276 passed`、compileall和diff-check；clean push与frozen worktree前不启动GPU。之后只做一次六卡
+  gradient/throughput/exact-resume profile，再按macro10/25/50预注册门及时跑strict400。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -63,9 +66,10 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 24个task experts统一step2000的development-train direct-expert成绩为`658/1200`、23/24 tasks非零，
   证明它们是有用但不完美的privileged train targets；soft/hard bank在held panel只有`15/80`和`3/80`，明确否定把train experts
   直接当deployment字典。
-- 当前最小假设不是重做全部架构，也不是继续追LoRA健康度。whole-LoRA监督使held输出主要径向收缩，
-  却让train expert绝对投影下降；新目标只要求correct输出沿expert方向的最小二乘系数到1，并保持其余
-  已有v6动态分量自由，同时以bounded projection ranking保护正确顺序相对negative的优势。
+- 当前最小假设不是重做全部架构，也不是继续追LoRA健康度。whole-LoRA监督主要造成径向收缩；ECP虽
+  补足expert分量，却通过共享compiler/heads连带改写大量其他effective方向。新目标以每个实际condition
+  自己的historical-v6输出为局部原点，保留expert方向上的必要修正，只抑制增量的正交漂移，同时维持
+  原positive functional和bounded时序/wrong ranking。
 
 ## Data and evaluation
 

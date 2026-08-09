@@ -11,6 +11,7 @@ from ember.expert_manifold.v6_prior import (
     COUNTERFACTUAL_KINDS,
     V6_PRIOR_FROZEN_PARAMETER_COUNT,
     V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+    build_v6_prior_dynamic_anchor,
     configure_v6_prior_trainability,
     counterfactual_frame_order,
     counterfactual_kind,
@@ -261,6 +262,45 @@ def test_v6_prior_strict_warm_start_and_trainability_contract(tmp_path) -> None:
         "visual_transition",
         "procedure",
     ))
+
+
+def test_v6_dynamic_anchor_is_an_independent_same_memory_macro0_decoder() -> None:
+    model, _ = _model()
+    configure_v6_prior_trainability(model)
+    model.semantic_encoder = _FakeSemanticEncoder()
+    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    anchor = build_v6_prior_dynamic_anchor(model)
+    frames, indices, offsets, tokens, masks, spans = _inputs()
+    evidence = model.encode_video_evidence(
+        torch.nn.Identity(), frames, offsets, tokens, masks, spans
+    )
+    memories = model.build_memories(evidence, indices)
+    expected = model.decode_memories(memories)
+    anchored = model.decode_memories(
+        memories,
+        compiler=anchor.compiler,
+        factor_heads=anchor.factor_heads,
+    )
+    assert anchor.tensor_count == 41
+    assert anchor.parameter_count == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
+    assert all(
+        torch.allclose(expected[name], anchored[name], atol=1e-6, rtol=1e-5)
+        for name in expected
+    )
+    assert all(not value.requires_grad for value in anchored.values())
+
+    with torch.no_grad():
+        model.compiler.modulation.weight.add_(0.25)
+    changed = model.decode_memories(memories)
+    anchored_again = model.decode_memories(
+        memories,
+        compiler=anchor.compiler,
+        factor_heads=anchor.factor_heads,
+    )
+    assert any(not torch.equal(changed[name], anchored_again[name]) for name in changed)
+    assert all(torch.equal(anchored[name], anchored_again[name]) for name in anchored)
 
 
 def test_v6_prior_counterfactual_schedule_is_balanced_and_temporal() -> None:

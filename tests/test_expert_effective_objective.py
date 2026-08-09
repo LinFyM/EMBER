@@ -5,6 +5,7 @@ import torch
 from ember.expert_manifold.effective_objective import (
     effective_alignment,
     effective_auxiliary_output_gradients,
+    effective_condition_local_tangent_tube_loss,
     effective_counterfactual_ranking_loss,
     effective_projection_loss,
 )
@@ -70,9 +71,26 @@ def _matrix_state(matrix: torch.Tensor) -> dict[str, torch.Tensor]:
     return {
         "only" + LORA_A_SUFFIX: matrix,
         "only" + LORA_B_SUFFIX: torch.eye(
-            2, dtype=matrix.dtype, device=matrix.device
+            2,
+            dtype=matrix.dtype,
+            device=matrix.device,
+            requires_grad=matrix.requires_grad,
         ),
     }
+
+
+def _gauge_state(
+    state: dict[str, torch.Tensor],
+    contract: SmolVLALoRAContract,
+    gauges: tuple[torch.Tensor, ...],
+) -> dict[str, torch.Tensor]:
+    changed = {}
+    for target, gauge in zip(contract.targets, gauges, strict=True):
+        a_name = target.name + LORA_A_SUFFIX
+        b_name = target.name + LORA_B_SUFFIX
+        changed[a_name] = torch.linalg.solve(gauge, state[a_name])
+        changed[b_name] = state[b_name] @ gauge
+    return changed
 
 
 def test_effective_alignment_and_projection_match_explicit_ba_matrices() -> None:
@@ -268,9 +286,13 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
     correct = {name: value * 1.1 for name, value in correct_parameters.items()}
     negative = {name: value * 0.9 for name, value in negative_parameters.items()}
     target = _state(contract, 67)
+    correct_anchor = _state(contract, 71)
+    negative_anchor = _state(contract, 73)
     output = effective_auxiliary_output_gradients(
         correct,
         negative,
+        correct_anchor,
+        negative_anchor,
         target,
         contract,
         smooth_l1_beta=0.5,
@@ -285,7 +307,11 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
             output.correct_projection[name] + output.correct_ranking[name]
             for name in names
         )
-        + tuple(output.counterfactual_ranking[name] for name in names),
+        + tuple(
+            output.counterfactual_projection[name]
+            + output.counterfactual_ranking[name]
+            for name in names
+        ),
     )
     observed = tuple(
         value.grad.detach().clone()
@@ -306,8 +332,11 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
     direct_negative = {
         name: value * 0.9 for name, value in direct_negative_parameters.items()
     }
-    projection = effective_projection_loss(
+    projection = effective_condition_local_tangent_tube_loss(
         direct_correct,
+        direct_negative,
+        correct_anchor,
+        negative_anchor,
         target,
         contract,
         smooth_l1_beta=0.5,
@@ -328,3 +357,249 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
         torch.allclose(left, right, atol=1e-6, rtol=1e-5)
         for left, right in zip(observed, expected, strict=True)
     )
+
+
+def test_tangent_three_state_low_rank_matches_dense_global_oracle() -> None:
+    contract = _contract()
+    correct = _state(contract, 79)
+    negative = _state(contract, 83)
+    correct_anchor = _state(contract, 89)
+    negative_anchor = _state(contract, 97)
+    expert = _state(contract, 101)
+    observed = effective_condition_local_tangent_tube_loss(
+        correct,
+        negative,
+        correct_anchor,
+        negative_anchor,
+        expert,
+        contract,
+        smooth_l1_beta=0.5,
+    )
+
+    expert_dense = _flat_effective(expert, contract)
+    denominator = expert_dense.square().sum()
+    for state, anchor, tangent in (
+        (correct, correct_anchor, observed.correct),
+        (negative, negative_anchor, observed.counterfactual),
+    ):
+        delta = _flat_effective(state, contract) - _flat_effective(anchor, contract)
+        projection = torch.dot(delta, expert_dense)
+        expected_d = projection / denominator
+        expected_orthogonal_sq = (
+            delta.square().sum() - projection.square() / denominator
+        ).clamp_min(0)
+        assert torch.allclose(tangent.delta_norm, delta.norm(), atol=2e-5, rtol=2e-5)
+        assert torch.allclose(
+            tangent.directional_coefficient,
+            expected_d,
+            atol=2e-5,
+            rtol=2e-5,
+        )
+        assert torch.allclose(
+            tangent.orthogonal_delta_norm.square(),
+            expected_orthogonal_sq,
+            atol=5e-5,
+            rtol=2e-5,
+        )
+        assert torch.allclose(
+            tangent.loss,
+            expected_orthogonal_sq / denominator,
+            atol=5e-5,
+            rtol=2e-5,
+        )
+
+
+def test_tangent_tube_is_independently_gauge_invariant() -> None:
+    contract = _contract()
+    states = (
+        _state(contract, 103),
+        _state(contract, 107),
+        _state(contract, 109),
+        _state(contract, 113),
+        _state(contract, 127),
+    )
+    original = effective_condition_local_tangent_tube_loss(
+        *states,
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    gauges = tuple(
+        (
+            torch.tensor([[1.1 + 0.03 * index, 0.2], [-0.1, 0.9]]),
+            torch.tensor([[0.8, -0.15], [0.05, 1.2 + 0.02 * index]]),
+        )
+        for index in range(len(states))
+    )
+    changed_states = tuple(
+        _gauge_state(state, contract, state_gauges)
+        for state, state_gauges in zip(states, gauges, strict=True)
+    )
+    changed = effective_condition_local_tangent_tube_loss(
+        *changed_states,
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    for left, right in (
+        (original.total, changed.total),
+        (original.tube, changed.tube),
+        (
+            original.correct.directional_coefficient,
+            changed.correct.directional_coefficient,
+        ),
+        (
+            original.correct.orthogonal_delta_norm,
+            changed.correct.orthogonal_delta_norm,
+        ),
+        (
+            original.counterfactual.directional_coefficient,
+            changed.counterfactual.directional_coefficient,
+        ),
+        (
+            original.counterfactual.orthogonal_delta_norm,
+            changed.counterfactual.orthogonal_delta_norm,
+        ),
+    ):
+        assert torch.allclose(left, right, atol=2e-4, rtol=2e-5)
+
+
+def test_tangent_macro0_anchor_is_zero_and_preserves_ecp_projection_gradient() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor([[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]])
+    correct_matrix = torch.tensor(
+        [[0.4, 0.2, -0.1], [0.3, -0.5, 0.7]], requires_grad=True
+    )
+    negative_matrix = torch.tensor(
+        [[-0.2, 0.5, 0.1], [0.6, 0.3, -0.4]], requires_grad=True
+    )
+    correct = _matrix_state(correct_matrix)
+    negative = _matrix_state(negative_matrix)
+    correct_anchor = _matrix_state(correct_matrix.detach().clone())
+    negative_anchor = _matrix_state(negative_matrix.detach().clone())
+    target = _matrix_state(expert)
+    auxiliary = effective_auxiliary_output_gradients(
+        correct,
+        negative,
+        correct_anchor,
+        negative_anchor,
+        target,
+        contract,
+        smooth_l1_beta=0.5,
+        required_margin=0.2,
+        temperature=0.1,
+    )
+    legacy = effective_projection_loss(
+        correct,
+        target,
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    (legacy_gradient,) = torch.autograd.grad(legacy.total, correct_matrix)
+    assert torch.equal(auxiliary.projection.tube, torch.zeros_like(auxiliary.projection.tube))
+    assert torch.equal(
+        auxiliary.projection.correct.orthogonal_delta_norm,
+        torch.zeros_like(auxiliary.projection.correct.orthogonal_delta_norm),
+    )
+    assert torch.equal(
+        auxiliary.projection.counterfactual.orthogonal_delta_norm,
+        torch.zeros_like(auxiliary.projection.counterfactual.orthogonal_delta_norm),
+    )
+    assert torch.allclose(
+        auxiliary.correct_projection["only" + LORA_A_SUFFIX],
+        legacy_gradient,
+        atol=2e-6,
+        rtol=2e-6,
+    )
+    assert torch.count_nonzero(
+        auxiliary.counterfactual_projection["only" + LORA_A_SUFFIX]
+    ) == 0
+
+
+def test_parallel_and_orthogonal_tangent_geometry_have_exact_roles() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor(
+        [[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]], dtype=torch.float64
+    )
+    candidate = torch.tensor(
+        [[0.2, 1.0, -0.5], [0.6, -0.4, 0.3]], dtype=torch.float64
+    )
+    orthogonal = candidate - (
+        (candidate * expert).sum() / expert.square().sum()
+    ) * expert
+    anchor_matrix = 0.3 * expert
+    parallel_matrix = (anchor_matrix + 0.4 * expert).requires_grad_()
+    parallel = effective_condition_local_tangent_tube_loss(
+        _matrix_state(parallel_matrix),
+        _matrix_state(parallel_matrix.detach()),
+        _matrix_state(anchor_matrix),
+        _matrix_state(parallel_matrix.detach()),
+        _matrix_state(expert),
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    (parallel_gradient,) = torch.autograd.grad(
+        parallel.correct.loss,
+        parallel_matrix,
+    )
+    assert parallel.correct.orthogonal_delta_norm < 2e-7
+    assert torch.linalg.vector_norm(parallel_gradient) < 2e-7
+
+    orthogonal_matrix = (
+        anchor_matrix + 0.4 * expert + 0.25 * orthogonal
+    ).requires_grad_()
+    changed = effective_condition_local_tangent_tube_loss(
+        _matrix_state(orthogonal_matrix),
+        _matrix_state(parallel_matrix.detach()),
+        _matrix_state(anchor_matrix),
+        _matrix_state(parallel_matrix.detach()),
+        _matrix_state(expert),
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    (orthogonal_gradient,) = torch.autograd.grad(
+        changed.correct.loss,
+        orthogonal_matrix,
+    )
+    assert torch.allclose(
+        changed.correct.orthogonal_delta_norm.square(),
+        (0.25 * orthogonal).square().sum().float(),
+        atol=2e-6,
+        rtol=2e-6,
+    )
+    assert abs(float((orthogonal_gradient * expert).sum())) < 2e-6
+    assert float((orthogonal_gradient * orthogonal).sum()) > 0
+
+
+def test_two_arm_tube_is_mean_and_halves_each_arm_gradient() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor([[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]])
+    correct_matrix = torch.tensor(
+        [[0.4, 0.2, -0.1], [0.3, -0.5, 0.7]], requires_grad=True
+    )
+    negative_matrix = torch.tensor(
+        [[-0.2, 0.5, 0.1], [0.6, 0.3, -0.4]], requires_grad=True
+    )
+    value = effective_condition_local_tangent_tube_loss(
+        _matrix_state(correct_matrix),
+        _matrix_state(negative_matrix),
+        _matrix_state(torch.zeros_like(correct_matrix)),
+        _matrix_state(torch.zeros_like(negative_matrix)),
+        _matrix_state(expert),
+        contract,
+        smooth_l1_beta=0.5,
+    )
+    correct_direct, negative_direct = torch.autograd.grad(
+        (value.correct.loss, value.counterfactual.loss),
+        (correct_matrix, negative_matrix),
+        grad_outputs=(torch.ones(()), torch.ones(())),
+        retain_graph=True,
+    )
+    correct_mean, negative_mean = torch.autograd.grad(
+        value.tube,
+        (correct_matrix, negative_matrix),
+    )
+    assert torch.allclose(
+        value.tube,
+        0.5 * (value.correct.loss + value.counterfactual.loss),
+    )
+    assert torch.allclose(correct_mean, 0.5 * correct_direct)
+    assert torch.allclose(negative_mean, 0.5 * negative_direct)

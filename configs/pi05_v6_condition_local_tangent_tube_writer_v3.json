@@ -1,0 +1,287 @@
+{
+  "schema_version": "ember_pi05_v6_condition_local_tangent_tube_writer_v3",
+  "authorities": {
+    "task_expert_config": {
+      "path": "configs/pi05_video_expert_manifold_v1.json"
+    },
+    "target_data_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json"
+    },
+    "evaluation_config": {
+      "path": "configs/pi05_target_evaluation_v1.json"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_base_v1.json"
+    }
+  },
+  "method": {
+    "name": "v6_condition_local_dynamic_expert_tangent_tube_writer",
+    "writer_input": "exact task language plus exactly one action-hidden teacher video",
+    "dynamic_value": "one_raw_teacher_video_only",
+    "language_only_lora_path": false,
+    "training_dynamic_anchor": "same_language_same_actual_video_and_frame_order_historical_v6_macro400_decoder",
+    "deployment_dynamic_anchor_read": false,
+    "deployment_expert_bank_read": false,
+    "deployment_output": "one complete rank16 public LoRA"
+  },
+  "information_wall": {
+    "expert_action_split_roles": [
+      "train"
+    ],
+    "writer_video_split_roles": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "writer_forbidden_inputs": [
+      "action",
+      "proprio",
+      "state",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "object_pose",
+      "hidden_normalization",
+      "policy_outcome"
+    ],
+    "validation_experts_trained": 0,
+    "test_experts_trained": 0,
+    "validation_actions_read": 0,
+    "test_actions_read": 0
+  },
+  "initialization": {
+    "kind": "load_only_historical_v6_fast_macro400",
+    "checkpoint": "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400",
+    "writer_state_tensor_count": 600,
+    "dynamic_anchor": "training_only_frozen_macro0_compiler_and_factor_heads",
+    "resume_writer_load_scope": "trainable_compiler_and_factor_heads_only",
+    "optimizer": "fresh",
+    "scheduler": "fresh",
+    "rng": "fresh_seed"
+  },
+  "writer": {
+    "architecture": "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6",
+    "frame_stride": 5,
+    "max_frames_per_encoder_call": 32,
+    "image_width": 2048,
+    "expert_width": 1024,
+    "program_width": 256,
+    "text_meta_lora_rank": 4,
+    "vl_meta_lora_rank": 4,
+    "action_meta_lora_rank": 4,
+    "patch_grounding_heads": 8,
+    "action_horizon": 50,
+    "padded_action_dim": 32,
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
+    "procedure_heads": 8,
+    "procedure_blocks": 2,
+    "visual_transition_heads": 8,
+    "fusion_heads": 8,
+    "factor_hidden_width": 256,
+    "initialization_seed": 7,
+    "activation_checkpointing": true,
+    "frozen_blocks": [
+      "semantic_encoder",
+      "semantic_core",
+      "visual_transition",
+      "procedure"
+    ],
+    "trainable_blocks": [
+      "compiler",
+      "factor_heads"
+    ],
+    "frozen_parameter_count": 7060992,
+    "trainable_parameter_count": 3714304
+  },
+  "expert_basis": {
+    "task_count": 24,
+    "expert_step": 2000,
+    "checkpoint_selection": "one_uniform_step_for_all_24_tasks_no_task_specific_mixing",
+    "training_only": true,
+    "comparison_space": "global_gauge_invariant_policy_effective_ba"
+  },
+  "data": {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "action_chunk_size": 50,
+    "action_queries_per_task": 20,
+    "videos_per_task_per_macro": 1,
+    "teacher_video_schedule": "deterministic_no_replacement_cycles",
+    "teacher_action_episode_overlap": false,
+    "task_aggregation": "mean_within_task_then_train24_equal_mean",
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "counterfactual_seed": 20260809,
+    "negative_schedule": "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong",
+    "wrong_video_schedule": "deterministic_cross_suite_cycle_with_current_task_language"
+  },
+  "objective": {
+    "positive_functional_weight": 1,
+    "positive_policy_randomness": {
+      "scope": "one_independent_flow_noise_and_time_per_action_query",
+      "seed_scheme": "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3",
+      "flow_time_sampling_scheme": "task_logical_batch_keyed_independent_beta15_time_v2",
+      "flow_noise_sampling_scheme": "task_logical_batch_keyed_independent_gaussian_v2"
+    },
+    "projection": {
+      "coefficient": "global_effective_ba_least_squares_on_task_expert",
+      "target": 1,
+      "loss": "smooth_l1",
+      "smooth_l1_beta": 0.5
+    },
+    "tangent_tube": {
+      "conditions": [
+        "correct",
+        "current_rotating_negative"
+      ],
+      "condition_reduction": "arithmetic_mean",
+      "baseline": "same_language_same_actual_video_and_frame_order_historical_v6_macro400",
+      "delta_space": "global_gauge_invariant_policy_effective_ba",
+      "projection_denominator": "exact_nonzero_global_task_expert_effective_energy",
+      "loss": "expert_orthogonal_delta_norm_sq_over_2_beta_expert_energy",
+      "directional_active_relative_anchor_min": 0.0001,
+      "orthogonal_relative_anchor_task_median_max": 0.02,
+      "orthogonal_relative_anchor_task_max": 0.03,
+      "orthogonal_relative_anchor_min_passing_tasks_per_arm": 20,
+      "orthogonal_to_parallel_active_task_median_max": 1
+    },
+    "ranking": {
+      "score": "global_effective_ba_projection_coefficient",
+      "form": "temperature_scaled_softplus_required_minus_observed_margin",
+      "required_margin": 0.1,
+      "temperature": 0.05
+    },
+    "auxiliary_weights": {
+      "status": "blocked_until_live_train24_gradient_profile",
+      "maximum_fraction_of_positive_gradient_per_auxiliary": 0.25,
+      "projection": null,
+      "ranking": null
+    }
+  },
+  "optimization": {
+    "precision": "bfloat16",
+    "seed": 7,
+    "functional_policy_microbatch_size": 10,
+    "optimizer": {
+      "name": "AdamW",
+      "peak_lr": 0.00003,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1
+    },
+    "scheduler": {
+      "kind": "cosine_decay_with_warmup",
+      "warmup_macros": 2,
+      "total_macros": 50,
+      "decay_lr": 0.000003
+    },
+    "distributed_gradient_reduction": {
+      "kind": "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean",
+      "nccl_p2p_disable": "1",
+      "nccl_algo": "Ring",
+      "nccl_proto": "Simple",
+      "deferred_process_group": true
+    }
+  },
+  "gradient_profile": {
+    "status": "ready_after_cpu_oracle",
+    "artifact_evidence": null,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
+    "num_workers_per_rank": 2,
+    "macros": 1,
+    "schedule_macro": 49,
+    "logical_policy_batch_size": 20,
+    "functional_policy_microbatch_size": 10,
+    "physical_policy_forwards_per_task": 2,
+    "longest_video_sampled_frames": 105,
+    "seal_rule": "each_auxiliary_at_most_one_quarter_positive_gradient_in_both_compiler_and_factor_heads"
+  },
+  "profile_run": {
+    "status": "blocked_until_live_gradient_weights",
+    "artifact_evidence": null,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
+    "allowed_num_workers_per_rank": [
+      0,
+      2,
+      4
+    ],
+    "total_macros": 3,
+    "checkpoint_macros": [
+      1,
+      3
+    ],
+    "required_resume_comparison": "fresh0_to1_plus_exact_resume1_to3_equals_contiguous0_to3"
+  },
+  "formal_run": {
+    "status": "blocked_until_live_a40_resume_profile_evidence",
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
+    "total_macros": 50,
+    "checkpoint_macros": [
+      10,
+      25,
+      50
+    ],
+    "strict400_checkpoints": [
+      0,
+      10,
+      25,
+      50
+    ],
+    "decision_gates": {
+      "correct_projection_toward_one_min_tasks": 18,
+      "clean_component_test_projection_absolute_error_task_median_max": 0.05,
+      "macro10_broad_loss_stop_correct_max": 129,
+      "macro10_conditional_continue_correct_range": [
+        130,
+        134
+      ],
+      "macro10_conditional_continue_breadth_min": 6,
+      "macro10_conditional_continue_churn_max": 35,
+      "macro10_right_edge_projection_slope_last3_min": 0,
+      "macro25_continue_correct_min": 135,
+      "macro25_positive_task_net_min_count": 3,
+      "macro25_positive_suite_net_min_count": 2,
+      "first_full_six_arm_correct_min": 144,
+      "goal_full_six_arm_correct_min": 151
+    }
+  },
+  "evaluation": {
+    "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
+    "minimum_smoke_writer_model_batch_size": 8,
+    "formal_status": "sealed_from_unchanged_v6_deployment_graph",
+    "inherited_online_smoke_evidence": {
+      "source_family": "legacy_v6_prior_v1",
+      "root": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_v6_prior_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_ded0c80_20260809",
+      "commit": "ded0c8008f7c741d7b175b7a36d1e10a81f59b78",
+      "device": "NVIDIA A40",
+      "writer_state_tensor_count": 600,
+      "writer_model_batch_size": 8,
+      "selected_loras_per_second": 0.9114272078670168,
+      "max_peak_allocated_bytes": 11750507520,
+      "max_peak_reserved_bytes": 12847153152,
+      "scientific_rows": 8,
+      "failure_count": 0,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "dynamic_anchor_deployment_owned": false,
+      "deployment_graph_change": "family_identity_and_trainable_state_restore_scope_only"
+    }
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

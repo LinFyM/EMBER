@@ -28,6 +28,7 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_CANONICAL_CONFIG,
     V6_PRIOR_COMPLETION_SCHEMA,
     V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
+    V6_PRIOR_TASK_METRIC_NAMES,
     load_v6_prior_config,
     suggest_auxiliary_weight,
 )
@@ -120,6 +121,7 @@ def _task_objective(
         )
     pair = generate_counterfactual_pair(
         writer=runtime.writer,
+        dynamic_anchor=runtime.dynamic_anchor,
         policy=runtime.policy,
         correct_video=correct_video,
         counterfactual_video=negative_video,
@@ -160,6 +162,8 @@ def _task_objective(
     auxiliary = effective_auxiliary_output_gradients(
         pair.correct,
         pair.counterfactual,
+        pair.correct_anchor,
+        pair.counterfactual_anchor,
         _target_state(runtime, task.ordinal),
         runtime.lora_contract,
         smooth_l1_beta=float(projection_config["smooth_l1_beta"]),
@@ -181,33 +185,47 @@ def _task_objective(
 
 
 def _task_record(value: TaskObjective) -> dict[str, Any]:
-    metric_names = (
-        "functional_loss",
-        "projection_loss",
-        "ranking_loss",
-        "projection_margin",
-        "correct_projection_coefficient",
-        "counterfactual_projection_coefficient",
-        "correct_expert_component",
-        "counterfactual_expert_component",
-        "correct_effective_norm",
-        "counterfactual_effective_norm",
-        "expert_effective_norm",
-    )
+    metric_names = V6_PRIOR_TASK_METRIC_NAMES
     correct = value.auxiliary.ranking.correct
     counterfactual = value.auxiliary.ranking.counterfactual
+    correct_tangent = value.auxiliary.projection.correct
+    counterfactual_tangent = value.auxiliary.projection.counterfactual
     metric_tensors = (
         value.functional_loss,
         value.auxiliary.projection.total,
+        value.auxiliary.projection.completion.total,
+        value.auxiliary.projection.tube,
+        correct_tangent.loss,
+        counterfactual_tangent.loss,
         value.auxiliary.ranking.loss,
         value.auxiliary.ranking.margin.mean(),
         correct.projection_coefficient.mean(),
         counterfactual.projection_coefficient.mean(),
+        correct_tangent.anchor_alignment.projection_coefficient.mean(),
+        counterfactual_tangent.anchor_alignment.projection_coefficient.mean(),
         (correct.projection_coefficient * correct.target_norm).mean(),
         (counterfactual.projection_coefficient * counterfactual.target_norm).mean(),
         correct.generated_norm.mean(),
         counterfactual.generated_norm.mean(),
+        correct_tangent.anchor_alignment.generated_norm.mean(),
+        counterfactual_tangent.anchor_alignment.generated_norm.mean(),
         correct.target_norm.mean(),
+        correct_tangent.directional_coefficient.mean(),
+        counterfactual_tangent.directional_coefficient.mean(),
+        correct_tangent.directional_component_norm.mean(),
+        counterfactual_tangent.directional_component_norm.mean(),
+        correct_tangent.delta_norm.mean(),
+        counterfactual_tangent.delta_norm.mean(),
+        correct_tangent.orthogonal_delta_norm.mean(),
+        counterfactual_tangent.orthogonal_delta_norm.mean(),
+        correct_tangent.directional_to_anchor_ratio.mean(),
+        counterfactual_tangent.directional_to_anchor_ratio.mean(),
+        correct_tangent.orthogonal_to_anchor_ratio.mean(),
+        counterfactual_tangent.orthogonal_to_anchor_ratio.mean(),
+        correct_tangent.orthogonal_to_direction_ratio.mean(),
+        counterfactual_tangent.orthogonal_to_direction_ratio.mean(),
+        correct_tangent.orthogonal_clamp_correction.mean(),
+        counterfactual_tangent.orthogonal_clamp_correction.mean(),
     )
     target_denominator = correct.per_target_target_norm_sq.sum(dim=-1) + 1e-12
     per_target_components = (
@@ -248,7 +266,7 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         for item in (*per_target_component_values, *per_target_fraction_values)
     ):
         raise ExpertManifoldError("v6-prior per-target projection is non-finite")
-    if metric_values[-1] <= 1e-12:
+    if metric_values[metric_names.index("expert_effective_norm")] <= 1e-12:
         raise ExpertManifoldError("expert target has zero policy-effective energy")
     if not math.isclose(
         sum(per_target_component_values),
@@ -559,19 +577,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         runtime.scheduler.step()
         cursor = macro + 1
         task_records = _gather_task_records(local_records, runtime.context)
-        metric_names = (
-            "functional_loss",
-            "projection_loss",
-            "ranking_loss",
-            "projection_margin",
-            "correct_projection_coefficient",
-            "counterfactual_projection_coefficient",
-            "correct_expert_component",
-            "counterfactual_expert_component",
-            "correct_effective_norm",
-            "counterfactual_effective_norm",
-            "expert_effective_norm",
-        )
+        metric_names = V6_PRIOR_TASK_METRIC_NAMES
         metrics = {
             name: sum(float(row[name]) for row in task_records) / 24
             for name in metric_names

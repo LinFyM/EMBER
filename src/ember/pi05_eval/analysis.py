@@ -22,9 +22,17 @@ from ember.pi05_target_data import SUITE_ORDER
 CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
 SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
 HISTORICAL_BASELINE_TRANSITION_SCHEMA = (
-    "ember_pi05_v6_ecp_historical_baseline_transition_analysis_v1"
+    "ember_pi05_v6_historical_baseline_transition_analysis_v2"
 )
 CHECKPOINT_MACROS = (0, 10, 25, 50)
+HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
+    "v6_ecp_v2": (10, 25, 50),
+    "v6_tangent_tube_v3": (10, 25, 50),
+}
+SEALED_EVALUATION_STATUSES = {
+    "sealed",
+    "sealed_from_unchanged_v6_deployment_graph",
+}
 SIX_ARM_CONDITIONS = (
     "correct",
     "same_task_other",
@@ -54,6 +62,13 @@ WRITER_FAMILIES = {
         "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "arm_prefix": "expert_manifold_v6_ecp_",
         "trained_checkpoint_kind": "v6_ecp_trained_checkpoint",
+    },
+    "v6_tangent_tube_v3": {
+        "adapter_schema": "ember_pi05_v6_tangent_tube_eval_adapter_v7",
+        "episode_schema": "ember_pi05_v6_tangent_tube_episode_v7",
+        "config_schema": "ember_pi05_v6_condition_local_tangent_tube_writer_v3",
+        "arm_prefix": "expert_manifold_v6_tangent_tube_",
+        "trained_checkpoint_kind": "v6_tangent_tube_trained_checkpoint",
     },
 }
 
@@ -206,7 +221,7 @@ def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, str]]:
             == family["config_schema"]
         ):
             return name, family
-    _fail("Writer result is not a sealed legacy or current method family")
+    _fail("Writer result is not a sealed supported method family")
 
 
 def _formal_adapter(
@@ -247,6 +262,9 @@ def _formal_adapter(
         or any(wall.get(key) != value for key, value in expected_wall.items())
         or adapter.get("lora_contract", {}).get("rank") != 16
         or adapter.get("lora_contract", {}).get("target_count") != 38
+        or adapter.get("evaluation_authority", {}).get("formal_status")
+        not in SEALED_EVALUATION_STATUSES
+        or paired.get("git", {}).get("dirty_paths") != []
     ):
         _fail("analysis requires a sealed formal validation Expert-Manifold panel")
     return adapter, paired, condition
@@ -428,7 +446,12 @@ def _assert_row_pairing(
             _fail("paired roots changed state, RNG, language, or teacher-video identity")
 
 
-def _method_macro(result: Mapping[str, Any]) -> int:
+def _method_macro(
+    result: Mapping[str, Any],
+    *,
+    allowed_macros: Sequence[int] = CHECKPOINT_MACROS,
+    context: str = "checkpoint curve",
+) -> int:
     adapter = result["adapter"]
     _, family = _writer_family(adapter)
     asset = adapter["writer_asset"]
@@ -438,8 +461,8 @@ def _method_macro(result: Mapping[str, Any]) -> int:
         if macro == 0
         else family["trained_checkpoint_kind"]
     )
-    if macro not in CHECKPOINT_MACROS or asset.get("kind") != expected_kind:
-        _fail("checkpoint curve contains an unexpected method macro or checkpoint kind")
+    if macro not in allowed_macros or asset.get("kind") != expected_kind:
+        _fail(f"{context} contains an unexpected method macro or checkpoint kind")
     return macro
 
 
@@ -584,7 +607,7 @@ def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, An
 def historical_baseline_transition_analysis(
     results_by_root: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Compare immutable legacy macro0 with one sealed ECP checkpoint."""
+    """Compare immutable legacy macro0 with one sealed current-family checkpoint."""
 
     if len(results_by_root) != 2:
         _fail("historical baseline transition requires exactly two roots")
@@ -600,29 +623,31 @@ def historical_baseline_transition_analysis(
         if family in by_family:
             _fail("historical baseline transition contains a duplicate method family")
         by_family[family] = (root, result, indexed)
-    expected_families = {"legacy_v6_prior_v1", "v6_ecp_v2"}
-    if set(by_family) != expected_families:
-        _fail("historical baseline transition requires legacy v1 and ECP v2 families")
-
-    baseline = by_family["legacy_v6_prior_v1"]
-    candidate = by_family["v6_ecp_v2"]
-    if _method_macro(baseline[1]) != 0 or _method_macro(candidate[1]) not in (
-        10,
-        25,
-        50,
+    candidate_families = set(by_family) - {"legacy_v6_prior_v1"}
+    if (
+        "legacy_v6_prior_v1" not in by_family
+        or len(candidate_families) != 1
+        or not candidate_families.issubset(HISTORICAL_TRANSITION_CANDIDATE_MACROS)
     ):
         _fail(
-            "historical baseline transition requires legacy macro0 and "
-            "ECP macro10, macro25, or macro50"
+            "historical baseline transition requires legacy v1 and exactly one "
+            "supported current candidate family"
         )
-    for _, result, _ in (baseline, candidate):
-        if (
-            result["adapter"].get("evaluation_authority", {}).get("formal_status")
-            != "sealed"
-            or result.get("paired_control", {}).get("git", {}).get("dirty_paths")
-            != []
-        ):
-            _fail("historical baseline transition requires sealed clean native roots")
+
+    baseline = by_family["legacy_v6_prior_v1"]
+    candidate_family = next(iter(candidate_families))
+    candidate = by_family[candidate_family]
+    _method_macro(
+        baseline[1],
+        allowed_macros=(0,),
+        context="historical baseline transition baseline",
+    )
+    candidate_macros = HISTORICAL_TRANSITION_CANDIDATE_MACROS[candidate_family]
+    _method_macro(
+        candidate[1],
+        allowed_macros=candidate_macros,
+        context="historical baseline transition candidate",
+    )
     if _historical_transition_projection(baseline[1]) != _historical_transition_projection(
         candidate[1]
     ):
@@ -676,7 +701,7 @@ def historical_baseline_transition_analysis(
         ),
         "method_families": {
             "historical_baseline": "legacy_v6_prior_v1",
-            "current_candidate": "v6_ecp_v2",
+            "current_candidate": candidate_family,
         },
         "contract_audit": {
             "native_family_validation_each_root": True,
@@ -714,7 +739,7 @@ def historical_baseline_transition_analysis(
             "churn": "gained plus lost",
             "nonzero_task_breadth": "tasks with at least one success in this exact panel",
             "cross_family_warning": (
-                "native family labels are retained; this artifact is not an ECP checkpoint curve"
+                "native family labels are retained; this artifact is not a within-family checkpoint curve"
             ),
         },
     }

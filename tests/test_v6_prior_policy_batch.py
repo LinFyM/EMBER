@@ -12,17 +12,14 @@ from ember.expert_manifold.v6_prior_contract import load_v6_prior_config
 
 CONFIG = (
     Path(__file__).resolve().parents[1]
-    / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
+    / "configs/pi05_v6_condition_local_tangent_tube_writer_v3.json"
 )
 
 
 def _pre_gradient_config() -> dict:
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     config["gradient_profile"].update(
-        {
-            "status": "ready_after_cpu_and_single_a40_throughput_smoke",
-            "artifact_evidence": None,
-        }
+        {"status": "ready_after_cpu_oracle", "artifact_evidence": None}
     )
     config["objective"]["auxiliary_weights"].update(
         {

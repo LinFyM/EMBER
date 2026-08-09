@@ -21,19 +21,59 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
+    REPO_ROOT / "configs/pi05_v6_condition_local_tangent_tube_writer_v3.json"
 ).resolve()
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_ecp_policy_effective_writer_v2"
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_condition_local_tangent_tube_writer_v3"
 V6_PRIOR_MODES = ("gradient-profile", "profile", "formal")
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_ecp_writer_launch_v2"
-V6_PRIOR_GRADIENT_PROFILE_SCHEMA = "ember_pi05_v6_ecp_gradient_profile_seal_v2"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_tangent_tube_writer_launch_v3"
+V6_PRIOR_GRADIENT_PROFILE_SCHEMA = (
+    "ember_pi05_v6_tangent_tube_gradient_profile_seal_v3"
+)
 V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA = (
-    "ember_pi05_v6_ecp_gradient_profile_artifact_evidence_v2"
+    "ember_pi05_v6_tangent_tube_gradient_profile_artifact_evidence_v3"
 )
 V6_PRIOR_RESUME_EVIDENCE_SCHEMA = (
-    "ember_pi05_v6_ecp_resume_profile_artifact_evidence_v3"
+    "ember_pi05_v6_tangent_tube_resume_profile_artifact_evidence_v4"
 )
-V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_ecp_writer_completion_v2"
+V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_tangent_tube_writer_completion_v3"
+
+V6_PRIOR_TASK_METRIC_NAMES = (
+    "functional_loss",
+    "projection_loss",
+    "completion_loss",
+    "condition_mean_tube_loss",
+    "correct_tube_loss",
+    "counterfactual_tube_loss",
+    "ranking_loss",
+    "projection_margin",
+    "correct_projection_coefficient",
+    "counterfactual_projection_coefficient",
+    "correct_anchor_projection_coefficient",
+    "counterfactual_anchor_projection_coefficient",
+    "correct_expert_component",
+    "counterfactual_expert_component",
+    "correct_effective_norm",
+    "counterfactual_effective_norm",
+    "correct_anchor_effective_norm",
+    "counterfactual_anchor_effective_norm",
+    "expert_effective_norm",
+    "correct_delta_projection_coefficient",
+    "counterfactual_delta_projection_coefficient",
+    "correct_delta_expert_component_norm",
+    "counterfactual_delta_expert_component_norm",
+    "correct_delta_effective_norm",
+    "counterfactual_delta_effective_norm",
+    "correct_delta_orthogonal_norm",
+    "counterfactual_delta_orthogonal_norm",
+    "correct_delta_parallel_relative_anchor",
+    "counterfactual_delta_parallel_relative_anchor",
+    "correct_delta_orthogonal_relative_anchor",
+    "counterfactual_delta_orthogonal_relative_anchor",
+    "correct_delta_orthogonal_to_parallel",
+    "counterfactual_delta_orthogonal_to_parallel",
+    "correct_orthogonal_clamp_correction",
+    "counterfactual_orthogonal_clamp_correction",
+)
 
 
 def suggest_auxiliary_weight(
@@ -93,14 +133,29 @@ def _information_wall_matches(value: Mapping[str, Any]) -> bool:
 
 def _method_matches(value: Mapping[str, Any]) -> bool:
     return value == {
-        "name": "v6_initialized_policy_effective_expert_component_projection_writer",
+        "name": "v6_condition_local_dynamic_expert_tangent_tube_writer",
         "writer_input": (
             "exact task language plus exactly one action-hidden teacher video"
         ),
         "dynamic_value": "one_raw_teacher_video_only",
         "language_only_lora_path": False,
+        "training_dynamic_anchor": (
+            "same_language_same_actual_video_and_frame_order_historical_v6_"
+            "macro400_decoder"
+        ),
+        "deployment_dynamic_anchor_read": False,
         "deployment_expert_bank_read": False,
         "deployment_output": "one complete rank16 public LoRA",
+    }
+
+
+def _dynamic_anchor_ownership_matches(value: object) -> bool:
+    return value == {
+        "parameter_count": 3_714_304,
+        "tensor_count": 41,
+        "optimizer_owned": False,
+        "checkpoint_owned": False,
+        "deployment_owned": False,
     }
 
 
@@ -185,6 +240,7 @@ def _objective_matches(
     gradient_evidence: Mapping[str, Any] | None,
 ) -> bool:
     projection = value.get("projection", {})
+    tangent = value.get("tangent_tube", {})
     ranking = value.get("ranking", {})
     weights = value.get("auxiliary_weights", {})
     status = weights.get("status")
@@ -209,6 +265,7 @@ def _objective_matches(
             "positive_functional_weight",
             "positive_policy_randomness",
             "projection",
+            "tangent_tube",
             "ranking",
             "auxiliary_weights",
         }
@@ -218,7 +275,20 @@ def _objective_matches(
             "target",
             "loss",
             "smooth_l1_beta",
-            "orthogonal_component",
+        }
+        and set(tangent)
+        == {
+            "conditions",
+            "condition_reduction",
+            "baseline",
+            "delta_space",
+            "projection_denominator",
+            "loss",
+            "directional_active_relative_anchor_min",
+            "orthogonal_relative_anchor_task_median_max",
+            "orthogonal_relative_anchor_task_max",
+            "orthogonal_relative_anchor_min_passing_tasks_per_arm",
+            "orthogonal_to_parallel_active_task_median_max",
         }
         and set(ranking) == {"score", "form", "required_margin", "temperature"}
         and set(weights)
@@ -237,7 +307,33 @@ def _objective_matches(
         and float(projection.get("target", -1)) == 1.0
         and projection.get("loss") == "smooth_l1"
         and float(projection.get("smooth_l1_beta", -1)) == 0.5
-        and projection.get("orthogonal_component") == "unconstrained"
+        and tangent.get("conditions")
+        == ["correct", "current_rotating_negative"]
+        and tangent.get("condition_reduction") == "arithmetic_mean"
+        and tangent.get("baseline")
+        == (
+            "same_language_same_actual_video_and_frame_order_historical_v6_"
+            "macro400"
+        )
+        and tangent.get("delta_space")
+        == "global_gauge_invariant_policy_effective_ba"
+        and tangent.get("projection_denominator")
+        == "exact_nonzero_global_task_expert_effective_energy"
+        and tangent.get("loss")
+        == "expert_orthogonal_delta_norm_sq_over_2_beta_expert_energy"
+        and float(tangent.get("directional_active_relative_anchor_min", -1))
+        == 0.0001
+        and float(tangent.get("orthogonal_relative_anchor_task_median_max", -1))
+        == 0.02
+        and float(tangent.get("orthogonal_relative_anchor_task_max", -1)) == 0.03
+        and int(
+            tangent.get("orthogonal_relative_anchor_min_passing_tasks_per_arm", -1)
+        )
+        == 20
+        and float(
+            tangent.get("orthogonal_to_parallel_active_task_median_max", -1)
+        )
+        == 1.0
         and ranking.get("form")
         == "temperature_scaled_softplus_required_minus_observed_margin"
         and ranking.get("score")
@@ -296,8 +392,7 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
     return (
         gradient.get("status")
         in {
-            "blocked_until_single_a40_throughput_smoke",
-            "ready_after_cpu_and_single_a40_throughput_smoke",
+            "ready_after_cpu_oracle",
             "sealed_from_live_train24_gradient_profile",
         }
         and (
@@ -344,455 +439,59 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         and int(formal.get("tasks_per_rank", -1)) == 4
         and int(formal.get("total_macros", -1)) == 50
         and formal.get("checkpoint_macros") == [10, 25, 50]
-        and formal.get("strict80_checkpoints") == [0, 10, 25, 50]
+        and formal.get("strict400_checkpoints") == [0, 10, 25, 50]
+        and formal.get("decision_gates")
+        == {
+            "correct_projection_toward_one_min_tasks": 18,
+            "clean_component_test_projection_absolute_error_task_median_max": 0.05,
+            "macro10_broad_loss_stop_correct_max": 129,
+            "macro10_conditional_continue_correct_range": [130, 134],
+            "macro10_conditional_continue_breadth_min": 6,
+            "macro10_conditional_continue_churn_max": 35,
+            "macro10_right_edge_projection_slope_last3_min": 0,
+            "macro25_continue_correct_min": 135,
+            "macro25_positive_task_net_min_count": 3,
+            "macro25_positive_suite_net_min_count": 2,
+            "first_full_six_arm_correct_min": 144,
+            "goal_full_six_arm_correct_min": 151,
+        }
     )
-
-
-def _throughput_profile_matches(
-    evidence: Mapping[str, Any], *, minimum_batch_size: int
-) -> bool:
-    try:
-        sizes = [int(value) for value in evidence["profiled_writer_model_batch_sizes"]]
-        selected = int(evidence["writer_model_batch_size"])
-        measurements = [
-            dict(value) for value in evidence["writer_generation_measurements"]
-        ]
-        rows = {int(value["batch_size"]): value for value in measurements}
-    except (KeyError, TypeError, ValueError):
-        return False
-    if (
-        len(sizes) < 3
-        or sizes != sorted(set(sizes))
-        or not {8, 16, 32}.issubset(sizes)
-        or sizes[0] < minimum_batch_size
-        or selected not in sizes
-        or set(rows) != set(sizes)
-        or len(rows) != len(measurements)
-        or evidence.get("throughput_comparison_panel")
-        != "same_fixed_longest_first_request_panel_all_candidates"
-    ):
-        return False
-    try:
-        stable_rows = []
-        reference_entry_ids: list[str] | None = None
-        reference_sampled: list[int] | None = None
-        panel_size = max(sizes)
-        for batch_size, row in rows.items():
-            repeats = [float(value) for value in row["repeat_wall_seconds"]]
-            sampled = [int(value) for value in row["sampled_frame_counts"]]
-            entry_ids = [str(value) for value in row["entry_ids"]]
-            forward_batches = [
-                int(value) for value in row["forward_batch_sizes_per_repeat"]
-            ]
-            expected_forward_batches = [
-                min(batch_size, panel_size - offset)
-                for offset in range(0, panel_size, batch_size)
-            ]
-            wall = float(row["wall_seconds"])
-            throughput = float(row["loras_per_second"])
-            allocated = int(row["peak_allocated_bytes"])
-            reserved = int(row["peak_reserved_bytes"])
-            total = int(row["device_total_bytes"])
-            headroom = int(row["memory_headroom_bytes"])
-            required_headroom = int(row["required_memory_headroom_bytes"])
-            structural = (
-                bool(row.get("longest_video_included"))
-                and isinstance(row.get("repeat_wall_seconds"), list)
-                and len(repeats) >= 2
-                and all(value > 0 and math.isfinite(value) for value in repeats)
-                and int(row.get("generated_entries", -1)) == panel_size * len(repeats)
-                and int(row.get("max_observed_forward_batch_size", -1))
-                == max(expected_forward_batches)
-                and forward_batches == expected_forward_batches
-                and row.get("comparison_panel_shared_across_candidates") is True
-                and int(row.get("panel_entry_count", -1)) == panel_size
-                and len(entry_ids) == panel_size
-                and len(set(entry_ids)) == panel_size
-                and len(sampled) == panel_size
-                and all(value > 0 for value in sampled)
-                and int(row.get("panel_total_sampled_frames", -1)) == sum(sampled)
-                and int(row.get("max_sampled_video_frames", -1)) == max(sampled)
-                and wall > 0
-                and math.isfinite(wall)
-                and math.isclose(
-                    wall,
-                    sum(repeats),
-                    rel_tol=1e-9,
-                    abs_tol=1e-6,
-                )
-                and throughput > 0
-                and math.isfinite(throughput)
-                and math.isclose(
-                    throughput,
-                    int(row["generated_entries"]) / wall,
-                    rel_tol=1e-9,
-                    abs_tol=1e-9,
-                )
-                and allocated > 0
-                and reserved >= allocated
-                and total > reserved
-                and headroom == total - reserved
-                and required_headroom > 0
-            )
-            expected_stable = (
-                max(repeats) / min(repeats) <= 1.25 and headroom >= required_headroom
-            )
-            if not structural or bool(row.get("stable")) != expected_stable:
-                return False
-            if reference_entry_ids is None:
-                reference_entry_ids = entry_ids
-                reference_sampled = sampled
-            elif entry_ids != reference_entry_ids or sampled != reference_sampled:
-                return False
-            if expected_stable:
-                stable_rows.append(row)
-        if not stable_rows or rows[selected] not in stable_rows:
-            return False
-        best = max(
-            stable_rows,
-            key=lambda row: (
-                float(row["loras_per_second"]),
-                int(row["batch_size"]),
-            ),
-        )
-    except (KeyError, TypeError, ValueError, ZeroDivisionError):
-        return False
-    return selected == int(best["batch_size"])
-
 
 def _evaluation_matches(value: Mapping[str, Any]) -> bool:
-    try:
-        minimum_batch_size = int(value.get("minimum_smoke_writer_model_batch_size", -1))
-    except (TypeError, ValueError):
+    evidence = value.get("inherited_online_smoke_evidence")
+    if not isinstance(evidence, Mapping):
         return False
-    if (
-        value.get("throughput_policy")
-        != "highest_measured_throughput_with_device_memory_headroom"
-        or minimum_batch_size != 8
-    ):
-        return False
-    status = value.get("formal_status")
-    evidence = value.get("online_smoke_evidence")
-    if status == "blocked_until_live_a40_throughput_smoke":
-        return evidence is None
-    if status != "sealed" or not isinstance(evidence, Mapping):
-        return False
-    exact = {
+    expected = {
+        "source_family": "legacy_v6_prior_v1",
+        "root": (
+            "/data1/user/ymdai/projects/EMBER/runs/outputs/"
+            "pi05_v6_prior_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_"
+            "ded0c80_20260809"
+        ),
+        "commit": "ded0c8008f7c741d7b175b7a36d1e10a81f59b78",
         "device": "NVIDIA A40",
-        "checkpoint_kind": "historical_v6_macro400_load_only",
-        "video_condition": "correct",
-        "video_sampling": "without_replacement",
-        "writer_modules_released": True,
-        "source_policy_reused_for_rollout": True,
-        "source_policy_reloaded": False,
-        "batch_shape_bf16_roundoff_accepted": True,
-        "writer_lora_storage": "template_native_mixed_bfloat16_float32",
-        "throughput_selection_rule": (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        ),
-        "throughput_comparison_panel": (
-            "same_fixed_longest_first_request_panel_all_candidates"
-        ),
-        "success_interpretation": "execution_smoke_only_not_performance_evidence",
-    }
-    integers = {
-        "validation_task_count": 8,
-        "state_count": 1,
-        "scientific_rows": 8,
-        "generated_entries": 8,
-        "cache_entries": 8,
         "writer_state_tensor_count": 600,
-        "redundant_writer_forwards": 0,
-        "writer_lora_tensor_bytes_per_entry": 2641920,
-        "writer_lora_bfloat16_tensor_count": 72,
-        "writer_lora_float32_tensor_count": 4,
-        "generator_workers": 1,
-        "retry_count": 0,
-        "failure_count": 0,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
-        "oom_count": 0,
-        "nonfinite_count": 0,
-    }
-    try:
-        return (
-            all(evidence.get(name) == expected for name, expected in exact.items())
-            and all(
-                int(evidence.get(name, -1)) == expected
-                for name, expected in integers.items()
-            )
-            and isinstance(evidence.get("commit"), str)
-            and bool(evidence["commit"])
-            and isinstance(evidence.get("root"), str)
-            and bool(evidence["root"])
-            and int(evidence.get("writer_model_batch_size", -1)) >= minimum_batch_size
-            and int(evidence.get("max_peak_allocated_bytes", -1)) > 0
-            and int(evidence.get("max_peak_reserved_bytes", -1))
-            >= int(evidence.get("max_peak_allocated_bytes", -1))
-            and int(evidence.get("max_post_release_allocated_bytes", -1)) >= 0
-            and int(evidence.get("max_post_release_reserved_bytes", -1)) >= 0
-            and _throughput_profile_matches(
-                evidence, minimum_batch_size=minimum_batch_size
-            )
-        )
-    except (TypeError, ValueError):
-        return False
-
-
-def assemble_v6_prior_evaluation_smoke_evidence(
-    *,
-    profile_root: Path,
-    vertical_root: Path,
-) -> dict[str, Any]:
-    """Derive the evaluation seal only from retained live artifacts."""
-
-    from ember.writer.evaluation_cache import (
-        validate_writer_cache_manifest,
-        writer_cache_requests,
-    )
-    from ember.writer.evaluation_runtime import WRITER_GENERATION_PROFILE_SCHEMA
-
-    profile_root = profile_root.resolve()
-    vertical_root = vertical_root.resolve()
-    profile_contract = read_json(profile_root / "run_contract.json")
-    profile = read_json(profile_root / "writer_generation_profile.json")
-    vertical_contract = read_json(vertical_root / "run_contract.json")
-    results = read_json(vertical_root / "results.json")
-    manifest = validate_writer_cache_manifest(
-        vertical_contract,
-        verify_entry_files=False,
-    )
-    profile_adapter = profile_contract.get("adapter", {})
-    vertical_adapter = vertical_contract.get("adapter", {})
-    profile_git = profile_contract.get("git", {})
-    vertical_git = vertical_contract.get("git", {})
-    measurements = [
-        dict(row) for row in profile.get("writer_generation_measurements", ())
-    ]
-    sizes = [
-        int(value) for value in profile.get("profiled_writer_model_batch_sizes", ())
-    ]
-    if not sizes:
-        raise ExpertManifoldError("v6-prior Writer profile has no batch candidates")
-    selected = int(profile.get("selected_writer_model_batch_size", -1))
-    throughput_evidence = {
-        "profiled_writer_model_batch_sizes": sizes,
-        "writer_model_batch_size": selected,
-        "writer_generation_measurements": measurements,
-        "throughput_comparison_panel": profile.get("throughput_comparison_panel"),
-    }
-    profile_tasks = profile_contract.get("tasks", ())
-    vertical_tasks = vertical_contract.get("tasks", ())
-    writer_generation = results.get("writer_generation", {})
-    attempts = results.get("launcher_attempts", {}).get("attempts", ())
-    workers = results.get("workers", ())
-    storage = vertical_contract.get("writer_lora_cache", {}).get(
-        "lora_storage_per_entry", {}
-    )
-    vertical_preflight = results.get("launcher", {}).get("preflight", {})
-    profile_preflight = profile.get("preflight", {})
-    profile_request_ids = {
-        request.entry_id for request in writer_cache_requests(profile_contract)
-    }
-    try:
-        ordered_measurements = sorted(
-            measurements, key=lambda row: int(row["batch_size"])
-        )
-        warmup_runs = int(profile.get("warmup_runs_per_batch", -1))
-        measured_runs = int(profile.get("measured_runs_per_batch", -1))
-        longest_frames = int(profile.get("longest_sampled_video_frames", -1))
-        panel_entry_ids = list(ordered_measurements[0].get("entry_ids", ()))
-        panel_sampled = list(ordered_measurements[0].get("sampled_frame_counts", ()))
-        profile_shape_evidence = (
-            warmup_runs >= 1
-            and measured_runs >= 2
-            and longest_frames > 0
-            and len(panel_entry_ids) == max(sizes)
-            and len(panel_sampled) == max(sizes)
-            and all(
-                len(row.get("repeat_wall_seconds", ())) == measured_runs
-                and int(row.get("max_sampled_video_frames", -1)) == longest_frames
-                and set(row.get("entry_ids", ())).issubset(profile_request_ids)
-                and list(row.get("entry_ids", ())) == panel_entry_ids
-                and list(row.get("sampled_frame_counts", ())) == panel_sampled
-                for row in ordered_measurements
-            )
-        )
-    except (IndexError, KeyError, TypeError, ValueError):
-        profile_shape_evidence = False
-    valid = (
-        profile.get("schema_version") == WRITER_GENERATION_PROFILE_SCHEMA
-        and profile.get("contract_reference")
-        == profile_contract.get("contract_reference")
-        and profile.get("root") == str(profile_root)
-        and profile.get("device") == "NVIDIA A40"
-        and profile.get("git") == profile_git
-        and not profile_git.get("dirty_paths")
-        and profile_git.get("commit") == profile_git.get("upstream_commit")
-        and profile_git == vertical_git
-        and profile_adapter == vertical_adapter
-        and profile_adapter.get("kind") == "expert_manifold_writer"
-        and profile_adapter.get("video_condition") == "correct"
-        and profile_adapter.get("video_schedule", {}).get("sampling_mode")
-        == "without_replacement"
-        and profile_contract.get("mode") == "smoke"
-        and profile_contract.get("role") == "validation"
-        and len(profile_tasks) == 8
-        and sum(len(row.get("init_state_ids", ())) for row in profile_tasks)
-        >= max(sizes)
-        and int(profile_contract.get("parallel", {}).get("physical_gpu_count", -1)) == 1
-        and int(profile_contract.get("parallel", {}).get("replicas_per_gpu", -1)) == 1
-        and int(
-            profile_contract.get("parallel", {}).get("writer_generators_per_gpu", -1)
-        )
-        == 1
-        and int(
-            profile_contract.get("parallel", {}).get("writer_generation_batch_size", -1)
-        )
-        == max(sizes)
-        and profile.get("selection_rule")
-        == (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        )
-        and profile.get("throughput_comparison_panel")
-        == "same_fixed_longest_first_request_panel_all_candidates"
-        and profile.get("writer_modules_released") is True
-        and profile.get("source_policy_reused") is True
-        and int(profile.get("oom_count", -1)) == 0
-        and int(profile.get("nonfinite_count", -1)) == 0
-        and profile_preflight.get("compute_applications") == []
-        and profile_preflight.get("device_names") == ["NVIDIA A40"]
-        and profile_preflight.get("physical_gpu_ids")
-        == profile_contract.get("parallel", {}).get("physical_gpu_ids")
-        and profile_shape_evidence
-        and _throughput_profile_matches(
-            throughput_evidence,
-            minimum_batch_size=8,
-        )
-        and vertical_contract.get("contract_reference")
-        == results.get("contract_reference")
-        and vertical_contract.get("mode") == "smoke"
-        and vertical_contract.get("role") == "validation"
-        and len(vertical_tasks) == 8
-        and all(len(row.get("init_state_ids", ())) == 1 for row in vertical_tasks)
-        and int(
-            vertical_contract.get("parallel", {}).get(
-                "writer_generation_batch_size", -1
-            )
-        )
-        == selected
-        and results.get("overall", {}).get("episodes") == 8
-        and len(results.get("rows", ())) == 8
-        and len(workers) == 1
-        and workers[0].get("gpu_name") == "NVIDIA A40"
-        and workers[0].get("source_policy_reloaded") is False
-        and len(attempts) == 1
-        and attempts[0].get("event") == "completed"
-        and results.get("launcher", {}).get("return_codes")
-        == {str(workers[0]["worker_id"]): 0}
-        and vertical_preflight.get("compute_applications") == []
-        and vertical_preflight.get("device_names") == ["NVIDIA A40"]
-        and vertical_preflight.get("physical_gpu_ids")
-        == vertical_contract.get("parallel", {}).get("physical_gpu_ids")
-        and int(writer_generation.get("generator_workers", -1)) == 1
-        and int(writer_generation.get("assigned_entries", -1)) == 8
-        and int(writer_generation.get("generated_entries", -1)) == 8
-        and int(writer_generation.get("reused_entries", -1)) == 0
-        and int(writer_generation.get("max_observed_forward_batch_size", -1)) == 8
-        and writer_generation.get("generation_batch_size") == [selected]
-        and int(writer_generation.get("redundant_writer_forwards", -1)) == 0
-        and writer_generation.get("batch_shape_bf16_roundoff_accepted") is True
-        and writer_generation.get("all_source_policy_processes_reused_for_rollout")
-        is True
-        and writer_generation.get("all_writer_modules_released") is True
-        and writer_generation.get("all_source_policies_not_reloaded") is True
-        and writer_generation.get("gpu_names") == ["NVIDIA A40"]
-        and len(manifest.get("entry_ids", ())) == 8
-        and manifest.get("descriptor") == vertical_contract.get("writer_lora_cache")
-        and int(storage.get("tensor_count", -1)) == 76
-        and int(storage.get("tensor_bytes", -1)) == 2_641_920
-        and storage.get("dtype_tensor_counts") == {"BF16": 72, "F32": 4}
-        and len(storage.get("dtype_by_name", {})) == 76
-    )
-    if not valid:
-        raise ExpertManifoldError("v6-prior live evaluation evidence is incomplete")
-    evidence = {
-        "commit": str(profile_git["commit"]),
-        "root": str(vertical_root),
-        "device": "NVIDIA A40",
-        "checkpoint_kind": str(vertical_adapter["writer_asset"]["kind"]),
-        "video_condition": "correct",
-        "video_sampling": "without_replacement",
-        "validation_task_count": 8,
-        "state_count": 1,
+        "writer_model_batch_size": 8,
+        "selected_loras_per_second": 0.9114272078670168,
+        "max_peak_allocated_bytes": 11750507520,
+        "max_peak_reserved_bytes": 12847153152,
         "scientific_rows": 8,
-        "generated_entries": 8,
-        "cache_entries": 8,
-        "writer_state_tensor_count": int(
-            vertical_adapter["writer_asset"]["writer_state"]["state_tensor_count"]
-        ),
-        "writer_model_batch_size": selected,
-        "profiled_writer_model_batch_sizes": sizes,
-        "writer_generation_measurements": measurements,
-        "writer_modules_released": True,
-        "source_policy_reused_for_rollout": True,
-        "source_policy_reloaded": False,
-        "batch_shape_bf16_roundoff_accepted": True,
-        "redundant_writer_forwards": 0,
-        "writer_lora_storage": "template_native_mixed_bfloat16_float32",
-        "writer_lora_tensor_bytes_per_entry": int(storage["tensor_bytes"]),
-        "writer_lora_bfloat16_tensor_count": int(
-            storage["dtype_tensor_counts"]["BF16"]
-        ),
-        "writer_lora_float32_tensor_count": int(storage["dtype_tensor_counts"]["F32"]),
-        "generator_workers": 1,
-        "max_peak_allocated_bytes": max(
-            int(writer_generation["max_peak_allocated_bytes"]),
-            max(int(row["peak_allocated_bytes"]) for row in measurements),
-        ),
-        "max_peak_reserved_bytes": max(
-            int(writer_generation["max_peak_reserved_bytes"]),
-            max(int(row["peak_reserved_bytes"]) for row in measurements),
-        ),
-        "max_post_release_allocated_bytes": int(
-            writer_generation["max_post_release_allocated_bytes"]
-        ),
-        "max_post_release_reserved_bytes": int(
-            writer_generation["max_post_release_reserved_bytes"]
-        ),
-        "throughput_selection_rule": (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        ),
-        "throughput_comparison_panel": (
-            "same_fixed_longest_first_request_panel_all_candidates"
-        ),
-        "retry_count": 0,
         "failure_count": 0,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
         "oom_count": 0,
         "nonfinite_count": 0,
-        "success_interpretation": "execution_smoke_only_not_performance_evidence",
+        "dynamic_anchor_deployment_owned": False,
+        "deployment_graph_change": (
+            "family_identity_and_trainable_state_restore_scope_only"
+        ),
     }
-    if not _evaluation_matches(
-        {
-            "throughput_policy": (
-                "highest_measured_throughput_with_device_memory_headroom"
-            ),
-            "minimum_smoke_writer_model_batch_size": 8,
-            "formal_status": "sealed",
-            "online_smoke_evidence": evidence,
-        }
-    ):
-        raise ExpertManifoldError("assembled v6-prior evaluation seal is invalid")
-    return evidence
+    return value == {
+        "throughput_policy": (
+            "highest_measured_throughput_with_device_memory_headroom"
+        ),
+        "minimum_smoke_writer_model_batch_size": 8,
+        "formal_status": "sealed_from_unchanged_v6_deployment_graph",
+        "inherited_online_smoke_evidence": expected,
+    }
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -1310,19 +1009,7 @@ def _task_records_match_contract(
         seed=int(data["teacher_video_seed"]),
         videos_per_visit=1,
     )
-    task_metric_names = {
-        "functional_loss",
-        "projection_loss",
-        "ranking_loss",
-        "projection_margin",
-        "correct_projection_coefficient",
-        "counterfactual_projection_coefficient",
-        "correct_expert_component",
-        "counterfactual_expert_component",
-        "correct_effective_norm",
-        "counterfactual_effective_norm",
-        "expert_effective_norm",
-    }
+    task_metric_names = set(V6_PRIOR_TASK_METRIC_NAMES)
     try:
         for ordinal, row in enumerate(
             sorted(records, key=lambda item: int(item["task_ordinal"]))
@@ -1355,6 +1042,32 @@ def _task_records_match_contract(
                 or sampled_counterfactual != _sampled_frame_count(raw_counterfactual)
                 or not all(
                     math.isfinite(float(row[name])) for name in task_metric_names
+                )
+                or not math.isclose(
+                    float(row["condition_mean_tube_loss"]),
+                    0.5
+                    * (
+                        float(row["correct_tube_loss"])
+                        + float(row["counterfactual_tube_loss"])
+                    ),
+                    rel_tol=1e-5,
+                    abs_tol=1e-7,
+                )
+                or not math.isclose(
+                    float(row["projection_loss"]),
+                    float(row["completion_loss"])
+                    + float(row["condition_mean_tube_loss"]),
+                    rel_tol=1e-5,
+                    abs_tol=1e-7,
+                )
+                or any(
+                    float(row[name]) < 0
+                    for name in task_metric_names
+                    if name.endswith("_norm")
+                    or name.endswith("_loss")
+                    or "_relative_" in name
+                    or name.endswith("_to_parallel")
+                    or name.endswith("_clamp_correction")
                 )
                 or not isinstance(components, list)
                 or not isinstance(fractions, list)
@@ -1479,6 +1192,10 @@ def assemble_v6_prior_gradient_profile_evidence(
             and contract.get("initialization", {}).get("optimizer") == "fresh"
             and contract.get("initialization", {}).get("scheduler") == "fresh"
             and contract.get("initialization", {}).get("rng") == "fresh_seed"
+            and contract.get("initialization", {}).get("dynamic_anchor")
+            == "training_only_frozen_macro0_compiler_and_factor_heads"
+            and contract.get("initialization", {}).get("resume_writer_load_scope")
+            == "trainable_compiler_and_factor_heads_only"
             and int(
                 contract.get("initialization", {}).get("writer_state_tensor_count", -1)
             )
@@ -1495,6 +1212,9 @@ def assemble_v6_prior_gradient_profile_evidence(
                 "source_policy_trainable_parameter_count"
             )
             == 0
+            and _dynamic_anchor_ownership_matches(
+                contract.get("ownership", {}).get("dynamic_anchor")
+            )
             and int(runtime.get("world_size", -1)) == 6
             and int(runtime.get("tasks_per_rank", -1)) == 4
             and _runtime_selection_matches(
@@ -1654,19 +1374,7 @@ def _metric_rows_match_contract(
 ) -> bool:
     if len(rows) != 3:
         return False
-    task_metric_names = {
-        "functional_loss",
-        "projection_loss",
-        "ranking_loss",
-        "projection_margin",
-        "correct_projection_coefficient",
-        "counterfactual_projection_coefficient",
-        "correct_expert_component",
-        "counterfactual_expert_component",
-        "correct_effective_norm",
-        "counterfactual_effective_norm",
-        "expert_effective_norm",
-    }
+    task_metric_names = set(V6_PRIOR_TASK_METRIC_NAMES)
     runtime_metric_names = {
         "gradient_norm_before_clip",
         "applied_lr",
@@ -1993,6 +1701,10 @@ def _profile_run_contract_matches(
             and contract.get("initialization", {}).get("optimizer") == "fresh"
             and contract.get("initialization", {}).get("scheduler") == "fresh"
             and contract.get("initialization", {}).get("rng") == "fresh_seed"
+            and contract.get("initialization", {}).get("dynamic_anchor")
+            == "training_only_frozen_macro0_compiler_and_factor_heads"
+            and contract.get("initialization", {}).get("resume_writer_load_scope")
+            == "trainable_compiler_and_factor_heads_only"
             and int(
                 contract.get("initialization", {}).get("writer_state_tensor_count", -1)
             )
@@ -2009,6 +1721,9 @@ def _profile_run_contract_matches(
                 "source_policy_trainable_parameter_count"
             )
             == 0
+            and _dynamic_anchor_ownership_matches(
+                contract.get("ownership", {}).get("dynamic_anchor")
+            )
             and int(runtime.get("world_size", -1)) == 6
             and int(runtime.get("tasks_per_rank", -1)) == 4
             and _runtime_selection_matches(
@@ -2534,28 +2249,21 @@ def _state_machine_matches(config: Mapping[str, Any]) -> bool:
     )
     return state in {
         (
-            "blocked_until_live_a40_throughput_smoke",
-            "blocked_until_single_a40_throughput_smoke",
+            "sealed_from_unchanged_v6_deployment_graph",
+            "ready_after_cpu_oracle",
             "blocked_until_live_train24_gradient_profile",
             "blocked_until_live_gradient_weights",
             "blocked_until_live_a40_resume_profile_evidence",
         ),
         (
-            "sealed",
-            "ready_after_cpu_and_single_a40_throughput_smoke",
-            "blocked_until_live_train24_gradient_profile",
-            "blocked_until_live_gradient_weights",
-            "blocked_until_live_a40_resume_profile_evidence",
-        ),
-        (
-            "sealed",
+            "sealed_from_unchanged_v6_deployment_graph",
             "sealed_from_live_train24_gradient_profile",
             "sealed_from_live_train24_gradient_profile",
             "ready_after_live_gradient_profile",
             "blocked_until_live_a40_resume_profile_evidence",
         ),
         (
-            "sealed",
+            "sealed_from_unchanged_v6_deployment_graph",
             "sealed_from_live_train24_gradient_profile",
             "sealed_from_live_train24_gradient_profile",
             "sealed_from_live_a40_resume_profile_evidence",
@@ -2598,6 +2306,10 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         and initialization.get("optimizer") == "fresh"
         and initialization.get("scheduler") == "fresh"
         and initialization.get("rng") == "fresh_seed"
+        and initialization.get("dynamic_anchor")
+        == "training_only_frozen_macro0_compiler_and_factor_heads"
+        and initialization.get("resume_writer_load_scope")
+        == "trainable_compiler_and_factor_heads_only"
         and (REPO_ROOT / str(initialization.get("checkpoint", ""))).is_dir()
         and _writer_matches(config.get("writer", {}))
         and basis
@@ -2635,8 +2347,9 @@ def runtime_for_mode(
     if mode == "gradient-profile":
         profile = config["gradient_profile"]
         if (
-            profile.get("status") != "ready_after_cpu_and_single_a40_throughput_smoke"
-            or config["evaluation"].get("formal_status") != "sealed"
+            profile.get("status") != "ready_after_cpu_oracle"
+            or config["evaluation"].get("formal_status")
+            != "sealed_from_unchanged_v6_deployment_graph"
             or config["objective"]["auxiliary_weights"]["status"]
             != "blocked_until_live_train24_gradient_profile"
             or profile.get("artifact_evidence") is not None

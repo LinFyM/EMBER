@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -12,7 +14,8 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
 )
-from ember.expert_manifold.live_adapter import _ordered_video_tensors
+from ember.expert_manifold.live_adapter import _build_v6_writer, _ordered_video_tensors
+from ember.expert_manifold.v6_prior import V6_PRIOR_TRAINABLE_ROOTS
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
@@ -65,7 +68,7 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_ecp_{condition}",
+        "arm": f"expert_manifold_v6_tangent_tube_{condition}",
         "video_condition": condition,
         "writer_asset": {
             "reference": "test:v6-prior:historical-macro400",
@@ -80,6 +83,128 @@ def _writer_adapter(condition: str = "correct") -> dict:
         "task_video_mapping": list(task_video_mapping(keys, roles, condition)),
         "pairing_reference": pairing,
     }
+
+
+def _complete_writer():
+    path = Path(__file__).with_name("test_writer_model.py")
+    spec = importlib.util.spec_from_file_location("live_adapter_writer_helper", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module._model()[0]
+
+
+def test_live_adapter_warm_starts_then_loads_only_trainable_checkpoint_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    writer = _complete_writer()
+    warm_state = {
+        name: value.detach().cpu().clone()
+        for name, value in writer.state_dict().items()
+    }
+    template = {
+        name: value.detach().cpu().clone()
+        for name, value in writer.template_state().items()
+    }
+    trainable_names = {
+        name
+        for name in warm_state
+        if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
+    }
+    checkpoint_state = {
+        name: value.clone() for name, value in warm_state.items()
+    }
+    for name in trainable_names:
+        checkpoint_state[name] = torch.full_like(checkpoint_state[name], 0.25)
+    poisoned_upstream = next(
+        name for name in checkpoint_state if name.startswith("procedure.")
+    )
+    poisoned_template = next(
+        name for name in checkpoint_state if name.startswith("template_")
+    )
+    checkpoint_state[poisoned_upstream] = torch.full_like(
+        checkpoint_state[poisoned_upstream], 37
+    )
+    checkpoint_state[poisoned_template] = torch.full_like(
+        checkpoint_state[poisoned_template], 41
+    )
+    writer.load_state_dict(
+        {name: torch.zeros_like(value) for name, value in warm_state.items()},
+        strict=True,
+    )
+
+    events: list[str] = []
+
+    def load_warm_start(target, _path):
+        events.append("historical_warm_start")
+        target.load_state_dict(warm_state, strict=True)
+
+    def load_trained(_path: str, *, device: str):
+        assert device == "cpu"
+        assert events == ["historical_warm_start"]
+        events.append("trainable_checkpoint")
+        return checkpoint_state
+
+    monkeypatch.setattr(
+        "ember.expert_manifold.live_adapter.CompleteLoRAWriter",
+        lambda *_args, **_kwargs: writer,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.live_adapter.build_lora_tensor_specs",
+        lambda _template: (),
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.live_adapter.load_v6_prior_warm_start_",
+        load_warm_start,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.live_adapter.load_file",
+        load_trained,
+    )
+    bridge = SimpleNamespace(
+        paligemma=SimpleNamespace(
+            model=SimpleNamespace(language_model=object()),
+        ),
+        gemma_expert=SimpleNamespace(model=object()),
+    )
+    policy = SimpleNamespace(
+        model=SimpleNamespace(paligemma_with_expert=bridge),
+    )
+    result = _build_v6_writer(
+        config={
+            "writer": {},
+            "initialization": {"checkpoint": "/synthetic/historical-v6"},
+        },
+        observed={
+            "writer_asset": {
+                "kind": "v6_tangent_tube_trained_checkpoint",
+                "writer_state": {"path": "/synthetic/trained/writer.safetensors"},
+            }
+        },
+        policy=policy,
+        template=template,
+        device=torch.device("cpu"),
+    )
+
+    assert events == ["historical_warm_start", "trainable_checkpoint"]
+    observed_state = result.state_dict()
+    assert all(
+        torch.equal(observed_state[name], checkpoint_state[name])
+        for name in trainable_names
+    )
+    assert all(
+        torch.equal(observed_state[name], warm_state[name])
+        for name in warm_state
+        if name not in trainable_names
+    )
+    assert not torch.equal(
+        observed_state[poisoned_upstream], checkpoint_state[poisoned_upstream]
+    )
+    assert not torch.equal(
+        observed_state[poisoned_template], checkpoint_state[poisoned_template]
+    )
+    assert not hasattr(result, "dynamic_anchor")
+    assert all(not parameter.requires_grad for parameter in result.parameters())
 
 
 def test_per_task_rows_summarizes_one_shot_teacher_videos() -> None:
@@ -236,7 +361,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_v6_ecp_correct",
+        "arm": "expert_manifold_v6_tangent_tube_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

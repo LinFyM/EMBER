@@ -9,7 +9,10 @@ import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.effective_objective import EffectiveAuxiliaryGradients
-from ember.expert_manifold.v6_prior import counterfactual_frame_order
+from ember.expert_manifold.v6_prior import (
+    V6PriorDynamicAnchor,
+    counterfactual_frame_order,
+)
 from ember.writer.data import RawTeacherVideo
 from ember.writer.model import CompleteLoRAWriter
 
@@ -18,6 +21,8 @@ from ember.writer.model import CompleteLoRAWriter
 class GeneratedCounterfactualPair:
     correct: Mapping[str, torch.Tensor]
     counterfactual: Mapping[str, torch.Tensor]
+    correct_anchor: Mapping[str, torch.Tensor]
+    counterfactual_anchor: Mapping[str, torch.Tensor]
     correct_raw_frames: int
     correct_sampled_frames: int
     counterfactual_raw_frames: int
@@ -48,6 +53,7 @@ def _video_tensors(
 def generate_counterfactual_pair(
     *,
     writer: CompleteLoRAWriter,
+    dynamic_anchor: V6PriorDynamicAnchor,
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,
@@ -117,6 +123,16 @@ def generate_counterfactual_pair(
                 frame_order=frame_order,
             )
             negative_indices = correct_indices
+        correct_anchor = writer.decode_memories(
+            correct_memories,
+            compiler=dynamic_anchor.compiler,
+            factor_heads=dynamic_anchor.factor_heads,
+        )
+        counterfactual_anchor = writer.decode_memories(
+            negative_memories,
+            compiler=dynamic_anchor.compiler,
+            factor_heads=dynamic_anchor.factor_heads,
+        )
     with torch.autocast(
         device_type=device.type,
         dtype=torch.bfloat16,
@@ -124,12 +140,25 @@ def generate_counterfactual_pair(
     ):
         correct = writer.decode_memories(correct_memories)
         counterfactual = writer.decode_memories(negative_memories)
-    if set(correct) != set(counterfactual):
+    if not (
+        set(correct)
+        == set(counterfactual)
+        == set(correct_anchor)
+        == set(counterfactual_anchor)
+    ):
         raise ExpertManifoldError("counterfactual LoRA topology changed")
+    if any(
+        value.requires_grad
+        for state in (correct_anchor, counterfactual_anchor)
+        for value in state.values()
+    ):
+        raise ExpertManifoldError("condition-local v6 anchor gained gradients")
     negative_video_value = counterfactual_video or correct_video
     return GeneratedCounterfactualPair(
         correct=correct,
         counterfactual=counterfactual,
+        correct_anchor=correct_anchor,
+        counterfactual_anchor=counterfactual_anchor,
         correct_raw_frames=int(correct_video.raw_frame_count),
         correct_sampled_frames=int(correct_indices.numel()),
         counterfactual_raw_frames=int(negative_video_value.raw_frame_count),
@@ -167,8 +196,11 @@ def merged_output_gradients(
         for name in names
     )
     negative_gradients = tuple(
-        auxiliary.counterfactual_ranking[name]
-        * (ranking_weight * task_scale)
+        (
+            projection_weight * auxiliary.counterfactual_projection[name]
+            + ranking_weight * auxiliary.counterfactual_ranking[name]
+        )
+        * task_scale
         for name in names
     )
     gradients = (*correct_gradients, *negative_gradients)
@@ -199,9 +231,12 @@ def parameter_gradient_components(
         retain_graph=True,
     )
     projection = torch.autograd.grad(
-        correct,
+        (*correct, *negative),
         parameters,
-        grad_outputs=tuple(auxiliary.correct_projection[name] for name in names),
+        grad_outputs=(
+            *tuple(auxiliary.correct_projection[name] for name in names),
+            *tuple(auxiliary.counterfactual_projection[name] for name in names),
+        ),
         retain_graph=True,
     )
     ranking = torch.autograd.grad(

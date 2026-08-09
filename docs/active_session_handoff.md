@@ -76,9 +76,12 @@ McNemar `p=.038477`，suite net=`-4/-12/-2/+4`。macro10→25也是`18/31`、net
 四个suite全部净下降。
 
 裁决：ECP不续50/100、不扫权重、不为loser补六臂。直接增大expert component权重已被
-证据禁止；下一轮只能用同一correct video的frozen v6输出作dynamic baseline，隔离“补足
-expert分量”与“共享参数引入大量正交漂移”；具体design必须先与历史anchor/tangent/
-distillation路线去重并seal，再进入CPU实现、profile和formal。当前没有EMBER GPU进程。
+证据禁止。第35节已完成与历史anchor/tangent/distillation去重，并在同一canonical vertical path
+原位实现Condition-Local Dynamic Expert Tangent Tube：historical v6对correct和当前negative的同一
+language/video/order输出分别作局部baseline，只惩罚student增量的expert-orthogonal分量。新v3 config、
+training-only decoder anchor、trainable-only resume/deployment load、双臂metrics及独立评测family已通过
+exact-D/gauge/gradient oracle、全仓`276 passed`、compileall与diff-check；clean push/frozen前禁止GPU。
+当前没有EMBER GPU进程。
 
 ## 2. EMBER problem and information wall
 
@@ -131,17 +134,25 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 optimizer/scheduler/sampler/RNG。这样第一次干预只针对历史证据定位的Procedure→effective LoRA写出
 接口，同时保护143起点已经具有的video representation；这不是永久宣称上游最优。
 
-每个train task的统一step2000 expert `E_t`只作监督；当前第34节目标改为：
+每个train task的统一step2000 expert `E_t`只作监督；当前第35节目标为：
 
 - correct臂接受真实logical B20 action functional loss；physical slicing只允许改变执行显存，不改变20条
   query与task mean；
-- 用全部38 targets的gauge-invariant effective`BA`内积计算
-  `a_t^x=<G_t^x,E_t>/||E_t||²`；correct只要求`a_t^correct→1`，不约束expert-orthogonal分量或global norm；
+- 用全部38 targets的gauge-invariant effective`BA`内积计算原ECP系数
+  `a_t^x=<G_t^x,E_t>/(||E_t||²+epsilon)`；correct仍只要求`a_t^correct→1`，不把global norm或整套LoRA
+  拉向expert；
+- runtime在historical macro400同步完成、任何resume load之前，冻结复制恰好compiler+factor heads作为
+  macro0 decoder。对每个correct/negative condition复用同一份Core/Procedure memories，得到
+  `G0_t^x`；令`Delta=G-G0`，用exact nonzero `D=||E||²`只惩罚
+  `||Delta||²-<Delta,E>²/D`。两臂取算术均值，因此不会因增加negative anchor机械翻倍；
 - reversed、shuffled和cross-suite wrong只进入bounded
-  `a_t^correct-a_t^negative` ranking，达到margin后停止推动；
+  `a_t^correct-a_t^negative` ranking，达到margin后停止推动；negative tube同时阻止共享参数更新连带破坏
+  其非expert方向来伪造margin；
 - same-task不同视频都是共同positive，不互相排斥。
 
-部署不读expert bank或phase cache，不选、混合或近邻复制train expert。
+dynamic anchor不进optimizer/checkpoint/deployment；exact resume从immutable warm-start重建它，只恢复
+student的41个trainable tensors。部署仍是单一600-tensor student，不读expert bank或phase cache，不选、
+混合或近邻复制train expert。
 
 ## 4. What task experts solve and do not solve
 
@@ -207,7 +218,8 @@ Experts不解决：
 | Causal Barycentric | `63/400` | temporal coefficients和raw-factor组合可运行 | `k≠j` cross terms使raw A/B组合不保持effective update；未单独隔离held support | policy-effective compiler必须先于组合几何 |
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
 | v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
-| current v6 Expert-Component Projection | 尚未训练 | objective-only因果修改已由径向/投影证据指向 | 尚未证明projection增加会改善held闭环 | 当前唯一活动候选 |
+| v6 Expert-Component Projection | `134→133→120` | `a_correct`与component按构造上升，修复旧径向收缩 | 正交漂移继续增大，macro25 paired net`-14`、`p=.038477` | 退役；不续、不扫权重 |
+| current Condition-Local Tangent Tube | CPU oracle/合同`276 passed`；无GPU成绩 | same-input dynamic baseline可在effective space精确隔离expert平行/正交增量 | 尚未证明tube能保住143起点或改善held闭环 | 当前唯一活动候选；先profile再短训strict裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -331,21 +343,28 @@ Experts不解决：
 4. 六卡gradient profile只选择一次`lambda_projection/lambda_rank`并验证resume；它不证明方法有效。
 5. formal关键checkpoints必须及时跑paired correct400并和同schedule macro0、历史143以及最邻近旧架构
    逐task比较。
-6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
-   no-video；未过门则按最早失败接口做单变量修正并继续循环。
+6. single winner首次超过历史143即跑完整correct/same/wrong/shuffled/reversed/no-video；若之后不同
+   checkpoint严格超过150，再对实际goal winner重跑六臂。未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：从本profile evidence seal的clean pushed严格后继创建formal frozen worktree；重新live
-比较`gpu01/gpu02`和quota，只用同一节点最多6张空闲A40，fresh训练0→10后自然停止。立即对macro10跑
-current-schedule paired correct400；correct80只能从这400 rows派生，不能另作选择依据。吞吐优先下不先
-重复运行行为相同的ECP-v2 macro0 400条rollout；历史immutable macro0=`134`由显式cross-family
-historical-baseline analyzer分别按native family验证并逐row核对共同state/RNG/language/video后比较，绝不
-重标family或混入ECP checkpoint curve。只有满足第34节门才resume到25/50/100；不能用profile loss、
-expert norm、correct80或历史143替代full400裁决。
+当前具体下一步：将已通过第35节CPU dense/low-rank/gauge/gradient oracle、same-memory anchor、
+checkpoint/deployment ownership和全仓合同门的唯一canonical v3 config与实现clean commit/push，再从
+该commit创建frozen worktree。随后重新live比较`gpu01/gpu02`和quota，只用最多6张空闲A40，先做一次train24
+gradient profile以及fresh0→1、same-root exact-resume1→3、independent contiguous0→3；不为BF16低位
+一致降低B10+10、六卡并行或吞吐。profile checkpoint永久不进formal。
+
+profile seal后formal仍从historical v6 macro400 fresh训练，先到macro10并立即跑paired correct400；
+correct80只能从这400 rows派生。historical immutable macro0=`134`由generic historical-baseline analyzer
+按各自native family验证并逐row核对共同state/RNG/language/video后比较，绝不重标family或混入同family
+checkpoint curve。macro10 `≤129`且广泛净损失即停；`130--134`仅在tube、breadth`≥6`、churn`≤35`和
+右端斜率共同成立时到25；macro25需`≥135`且至少3 tasks/2 suites净正增。首次single checkpoint
+`≥144`即跑六臂，若不同goal winner首次`≥151`再跑一次。不能用profile loss、expert norm、correct80或
+历史143替代full400裁决。
 
 对应CPU-only入口已原位加入canonical evaluator：
 `scripts/evaluate_pi05.py historical-baseline-transition --legacy-root ... --current-root ... --output ...`。
-它不放宽四点checkpoint-curve；legacy只读immutable `results.json`，current从raw root重新aggregate，两个
-native family分别验证后才比较。实现及failure gates已纳入上述`262 passed`。
+它不放宽四点checkpoint-curve；legacy只读immutable `results.json`，candidate从raw root重新aggregate，
+两个native family分别验证后才比较。实现保留legacy+ECP历史入口并新增tangent v3 candidate family；
+checkpoint curve仍严格single-family。
 
 ## 10. Canonical assets
 
@@ -353,7 +372,7 @@ native family分别验证后才比较。实现及failure gates已纳入上述`26
   `pi05_libero`，也不支持source-SFT exact resume。
 - task experts：上述formal root的统一step2000 checkpoints。
 - historical Writer prior：上述v6-fast macro400 checkpoint。
-- current config：`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。
+- current config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`。
 - training entry：`scripts/train_v6_prior_writer.py`。
 - evaluation entry：`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。

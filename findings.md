@@ -1,5 +1,29 @@
 # EMBER Findings
 
+## 2026-08-09 Condition-Local Dynamic Expert Tangent Tube CPU封存
+
+- ECP的正确臂expert component确实上升，但大量非expert effective方向同时漂移；因此第35节只改变
+  一个变量：以historical v6对**同一language、同一实际video和同一frame order**产生的完整LoRA为
+  condition-local原点，保留沿step2000 task expert的增量，只惩罚正交增量。correct和当前轮换negative
+  各有自己的baseline，避免共享ranking更新通过破坏negative其他方向制造虚假margin。
+- 三状态low-rank objective先跨全部38 targets求和，tube内使用expert合同保证非零的exact
+  `D=sum||E||²`：`d=<G-G0,E>/D`，`R_perp=max(0,||G-G0||²-<G-G0,E>²/D)`；原ECP
+  coefficient仍保留`D+epsilon`以维持初始gradient identity。两臂tube取算术均值，因此每臂梯度各为
+  standalone的一半；不再声称等价于到某个单一dense target的平方距离。
+- runtime只在六rank Writer同步后、任何resume load前冻结复制compiler+factor heads：41 tensors、
+  `3,714,304` parameters。student与anchor对每个condition消费同一个memories对象；anchor不进optimizer、
+  checkpoint或deployment。checkpoint仍保存完整600-tensor student以保留证据，但resume/evaluator均先加载
+  immutable historical warm-start，再只恢复compiler/factor heads，伪造的frozen/template checkpoint值
+  无法覆盖部署图。
+- CPU oracle覆盖dense/low-rank、跨target全局投影、三状态独立gauge、macro0零tube、parallel/orthogonal
+  perturbation、双臂mean、output-gradient chain rule、same-memory与所有权。冻结eval decoder与train-mode
+  student在CPU同输入的最大普通kernel差约`4.77e-7`，只按`allclose`验证，没有为逐bit一致改变模式或
+  增加重复forward。退役旧smoke执行路径后全仓`276 passed in 28.74s`，compileall和
+  `git diff --check`通过；本阶段未启动GPU。
+- 新方法使用独立`tangent_tube_v3` family；within-family curve仍只接收0/10/25/50，generic historical
+  transition保留legacy+ECP并新增legacy+tangent 10/25/50/100，拒绝ECP+tangent混合。首次strict
+  correct`≥144`即跑六臂，若不同checkpoint达到`≥151`再对goal winner重跑，不能只看tube或LoRA几何。
+
 ## 2026-08-09 ECP formal闭环负裁决
 
 - clean pushed/frozen`450e688`的formal root=
@@ -21,6 +45,10 @@
   component=`3.06189→3.67225`且24/24 tasks上升。但macro10→25的expert-orthogonal norm=
   `151.303→159.774`（`+8.471`），而component只`+0.228`。因而这不是“训练没动”或
   “权重不够”；它证伪了无约束共享参数下expert component是held共同改善的充分条件。
+- negative同样漂移：macro1→10的counterfactual component只`+0.25062`，expert-orthogonal norm却
+  `+8.26660`。因此第35节对correct和当前轮换negative各使用same-input frozen-v6 baseline；
+  否则ranking可能靠破坏wrong/order LoRA其他方向伪造video margin。两臂tube使用condition mean而不
+  翻倍权重，仍只是一个“condition-local orthogonal drift”变量。
 - 按预注册门，ECP不续50/100、不扫aux weight、不补六臂。下一个有证据的单变量是
   以同一language+correct-video的frozen v6输出为dynamic baseline，把所需expert分量与有害正交漂移
   分开。这不能退化成parameter weight decay、static/language bypass、B-only residual或部署专家库。

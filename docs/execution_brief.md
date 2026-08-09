@@ -15,11 +15,15 @@ expert component也在24/24 tasks上升；但macro10→25的expert-orthogonal no
 component增量`.228`。所以ECP的实现和机制生效，但held closed-loop明显退化；按预注册
 不续50/100、不扫权重、不补六臂。
 
-当前活动阶段是设计**same-video dynamic-baseline tangent completion**：同一exact language +
-correct video同时产生frozen v6 anchor和当前Writer输出，只把增量中缺失的expert分量与
+当前唯一活动方法是第35节**v6 Condition-Local Dynamic Expert Tangent Tube**：同一
+exact language+同一actual condition video/order同时产生frozen v6 anchor和当前Writer输出，correct与
+当前negative都只允许沿task-expert方向移动，从而把缺失的expert分量与
 expert-orthogonal drift隔离。这一轮不改encoder/Core/Procedure/compiler topology、functional query、
 negative schedule或deployment input，也不允许static/language bypass、B-only residual、第二套部署LoRA、
-expert-bank deployment或global scale。新design封印前不启动GPU。
+expert-bank deployment或global scale。CPU oracle、合同、clean push和frozen worktree完成前不启动GPU。
+其中canonical实现、exact-D/gauge/gradient oracle、same-memory anchor、trainable-only resume/deployment
+边界和三family分析已通过全仓`276 passed`、compileall与diff-check；当前只差clean commit/push与frozen
+worktree，尚未启动本方法GPU实证。
 
 当前操作顺序：
 
@@ -37,8 +41,7 @@ expert-bank deployment或global scale。新design封印前不启动GPU。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot v6-Initialized same-video dynamic-baseline tangent completion Writer（设计中，
-  ECP已退役）。
+- 方法：one-shot v6 Condition-Local Dynamic Expert Tangent Tube Writer（ECP已退役）。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -90,60 +93,27 @@ GPU前一次性要求：
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
 - config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux weights和resume
-  profile已全部重置，必须从v2 clean frozen lineage重新实证后才能解锁formal。任何status-only、旧v1
+  profile已全部重置，必须从新v3 clean frozen lineage重新实证后才能解锁formal。任何status-only、旧family
   evidence或stale config仍fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
-## 4. Single-A40 throughput and vertical smoke
+## 4. Historical single-A40 deployment seal（仅继承，不重跑）
 
-### 4.1 Live preflight
+v3只改变训练objective、trainable-state恢复范围和训练期dynamic anchor；部署仍是同一historical v6
+Writer图、一次读取exact language+一条action-hidden video并生成一套完整LoRA。因而当前config只读继承
+clean frozen `ded0c80`的legacy v6-prior v1部署seal，不把它重标为ECP，也不再启动single-A40 sweep或
+vertical smoke。
 
-同时查询`gpu01/gpu02`，记录每张卡index/UUID、memory、utilization、process和owner；只选一张完全空闲
-A40。检查`/data1`个人quota、当前项目用量和本次cache/log峰值。不得查询后长时间等待再沿用旧快照；
-真正launch前再做一次短确认。
+- retained 32-request/1093-frame panel的batch8/16/32吞吐为
+  `.911427/.905107/.906432 LoRA/s`，batch8峰值reserved约`12.8GB`且稳定；
+- retained validation8×state0 vertical smoke为8 requests/8 LoRAs/8 rows，0 retry/failure/OOM/
+  nonfinite/forbidden reads，Writer释放、source policy复用且GPU自然释放；
+- 当时用于从两个retained roots重建seal的旧assembler与其runtime状态已退役，由Git和artifact保留；
+  它不是当前可执行入口；
+- 若以后实际改变部署图或LoRA生成批处理，再以新design/schema重新授权single-A40 profile；否则
+  Section 5的六卡v3 gradient/whole-macro profile是唯一当前GPU入口。
 
-### 4.2 Writer batch sweep
-
-使用historical macro400、真实validation视频和包含最长/异长样本的固定请求集。canonical入口是现有
-`scripts/evaluate_pi05.py profile-writer-generation`子命令，不另建平行evaluator。batch候选至少覆盖
-`8,16,32`，若32仍有明显显存和吞吐空间再在新profile加入更高点。所有候选必须处理同一个由最大候选
-确定的longest-first request panel、相同entry IDs和相同总sampled frames；较小候选把该panel切成多个
-forward，不能各自只测不同长度的prefix。每点最低必须记录：
-
-- 一次warmup、至少两次真实完整video→Writer→LoRA→native D2H的repeat wall与LoRAs/s；
-- actual forward batch分组、完整固定entry IDs、sampled-frame counts/total和panel最长视频覆盖；
-- peak allocated/reserved、device total、显存余量与稳定性；
-- 76 tensor shape/dtype/finite、0 forbidden reads和模型释放证据。
-
-同一模型一次load后完成候选点，profile输出保留为evaluation-seal evidence root，任何OOM候选不重复盲试。选择吞吐最高且
-最长真实batch连续运行稳定、保留必要headroom的batch；不是选择数值最接近single的batch。如果候选吞吐
-接近、重复波动大或GPU未吃满而原因不清，再补encoder/compiler/D2H分段计时、allocator retry、data wait和
-连续GPU utilization trace；第一轮不为尚未出现的瓶颈增加同步和instrumentation。
-
-### 4.3 End-to-end smoke
-
-在选定batch上从fresh root运行validation8×state0、correct、seed7、without-replacement：8个唯一video
-→8套完整LoRA→cache→释放Writer/encoder/tokenizer→原位复用同一source policy→8个rollouts。要求：
-
-- 8 requests/generated/cache/rows，0 retry/failure/OOM/nonfinite；
-- teacher action/proprio/reward/task-ID等forbidden reads均0；
-- Writer modules释放，source policy不reload；
-- cache native dtype/bytes正确；进程退出后GPU自然释放。
-
-smoke的success count只作执行信息，不是性能证据。通过后把device、commit、root、batch、wall、peak、
-release/reuse和错误计数写回config，状态改为gradient-profile ready。不得人工手填evidence：必须用
-`assemble_v6_prior_evaluation_smoke_evidence(profile_root=..., vertical_root=...)`从两个retained roots重建
-并复验seal。
-
-### 4.4 Completed evidence
-
-clean frozen `ded0c80`在`gpu02:0`完成同一32-request/1093-frame panel：
-batch8/16/32=`.911427/.905107/.906432 LoRA/s`，三者峰值reserved约`12.8GB`且稳定，故按真实吞吐
-选择batch8。fresh vertical smoke生成8套native LoRA并完成8 rows，single attempt、0 retry/failure/
-OOM/nonfinite/forbidden reads；Writer释放、source policy复用/no-reload，GPU自然回到0MiB。总wall
-`325.540s`，其中rollout window `196.816s`；`4/8` success仅作execution信息。两个retained roots已
-经assembler写入config，Section 5是当前唯一GPU入口。
 
 ## 5. Six-A40 gradient, resume, and throughput profile
 
@@ -155,7 +125,8 @@ profile固定train24 macro49，覆盖24×B20=480 unique跨episodequeries并包�
 已完成的容量诊断：clean frozen`a17805c`在当时空闲`gpu01:0,1,2,4,5,7`运行physical B20。默认allocator
 OOM时allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`；`expandable_segments:True`把后者降到约
 `157MiB`，但active allocated升至`43.43GiB`且仍无法再分配`606MiB`。所以不得再做allocator盲重试；两个
-root不resume、不合并。当前B10继续使用default allocator；失败retry只作诊断，不固化为科学或runtime门。
+root不resume、不合并。新方法仍以B10+10/default allocator为首个高吞吐候选；失败retry只作诊断，
+不固化为科学或runtime门。
 
 随后clean frozen`eddba96`的B16+4在同一`gpu01:0,1,2,4,5,7` 3+3 NUMA拓扑完整进入start，六rank第一条
 functional eager-attention均在申请`254MiB`时OOM：allocated=`42.49GiB`、reserved-unallocated=
@@ -165,8 +136,10 @@ allocator retry、A-B-A或宽batch sweep。
 旧whole-LoRA clean frozen`9c814ff`的balanced B10+10已在同一拓扑完成：wall=`21.0951s`、input wait=`.0763s`
 （`.36%`）、peak allocated/reserved=`43,305,942,016/47,093,645,312` bytes、0 OOM/nonfinite；assembler
 复验24 tasks、480/480 queries、最长105帧和完整provenance。当时推荐expert/ranking weights=
-`.008355172068998324/.28570466890490887`；它们只属于已退役objective，ECP不得继承。B10吞吐图可以复用，
-但projection/ranking gradient和weights必须从v2重新profile；不扫workers4或更小microbatch。
+`.008355172068998324/.28570466890490887`；它们只属于已退役whole-LoRA objective。ECP随后在同一B10图上
+封存`.006883349605446485/.010514451404229894`，也只作新方法macro0 gradient identity的预期参照，
+不得直接写入v3 config。dynamic anchor每臂只增加一个小decoder forward，不重跑video encoder或B20 policy；
+仍须一次真实v3 gradient/whole-macro profile确认权重、wall和VRAM，不扫workers4或更小microbatch。
 
 1. 分别测positive、projection、ranking在compiler和factor heads的未加权gradient norm；
 2. 一次性选择`lambda_projection/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
@@ -174,7 +147,9 @@ allocator retry、A-B-A或宽batch sweep。
 3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
    在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
 4. 运行同logical B20、同panel-keyed randomness和同六卡拓扑的balanced B10+10；记录完整macro wall、
-   input wait、peak allocated/reserved和异常计数。B16已容量失败，因此B10成功即成为当前A40可行点；
+   input wait、peak allocated/reserved和异常计数。B16已容量失败，因此不为新方法重复宽batch sweep；
+   若B10+10因新增decoder不可行，先定位同时存活tensor而不是降低scientific batch；只有不可避免OOM或
+   含构建成本的end-to-end实测更快才启用full-condition anchor cache；
 5. 用丢弃型profile权重完成fresh0→1、same-root exact-resume1→3、独立contiguous0→3。要求scientific
    metrics、cursor、Writer/RNG和optimizer/scheduler语义一致；允许正常并行低位roundoff，不要求不同
    reduction schedule逐bit相同；
@@ -190,7 +165,7 @@ scientific tolerance。task/frame provenance还会回查frozen target manifest�
 工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少logical B20
 或盲重试掩盖问题；physical microbatch是保持科学batch的容量实现，不属于减少B20。
 
-### 5.1 Completed resume evidence
+### 5.1 Historical ECP resume evidence
 
 clean pushed/frozen`5fbcb27`在live空闲`gpu02:0--5`完成retry1：resumed链fresh0→1再exact-resume1→3，
 contiguous链独立fresh0→3。两run contracts逐字相同，所有invocation exit0；各3 metrics、macro1/3
@@ -207,8 +182,17 @@ tolerance ratio=`.233773`。macro3 Writer maxabs/relative-L2=`4.6033e-5/1.06393e
 global relative L2`≤.002`，并对Adam各moment要求symmetric norm ratio`≥.99`、cosine`≥.999`；raw
 maxabs/relative-L2只作诊断，同时保留上述逐tensor科学门和所有exact语义门。训练kernel、dtype、
 reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐逐元素一致。原roots重新assemble
-通过并原样写入config，profile/formal均为`sealed_from_live_a40_resume_profile_evidence`。这些证据只
-授权Section 6，不构成closed-loop性能结论。
+通过并原样写入当时ECP config，profile/formal均为`sealed_from_live_a40_resume_profile_evidence`。
+这些证据只说明B10/deferred-NCCL/checkpoint比较器曾按合同工作；不能解锁v3 formal，也不构成
+closed-loop性能结论。
+
+### 5.2 Current tangent-tube pending profile
+
+v3必须从clean pushed strict后继frozen worktree重新完成：一次macro49 gradient profile、fresh0→1、
+same-root exact-resume1→3和independent contiguous0→3。profile assembler还必须核对dynamic anchor为
+41 tensors/`3,714,304` parameters且optimizer/checkpoint/deployment ownership全false；resume每次在加载
+student checkpoint前由historical warm-start重建anchor。只有artifact evidence原样写回v3 config后，
+Section 6才解锁。
 
 ## 6. Formal training and truthful evaluation
 
@@ -219,9 +203,10 @@ video schedule下的historical macro400 load-only状态；不能仅引用旧143�
 
 第一段只fresh训练0→10并自然停止，保存10；不在未看到真实macro10行为前自动跑到25/50。训练期间持续记录：
 
-- positive/expert/ranking loss和unweighted component gradient；
-- per-task loss、effective cosine/norm、correct-negative margins；
-- compiler/factor task-gradient cosine、full24 retention、clip/nonfinite和step wall；
+- positive/projection+tube/ranking loss和unweighted component gradient；
+- per-task student/anchor coefficient与norm、signed parallel delta、orthogonal delta、relative tube和
+  correct-negative margins；
+- full24 gradient norm、clip/nonfinite、input wait、step wall和peak VRAM；
 - video schedule、counterfactual counts、sampler cursor和每rank RNG。
 
 loss下降不能延迟或替代rollout。若出现非finite、明显全task退化或合同破坏，立即停；普通loss波动不作
@@ -231,15 +216,16 @@ loss下降不能延迟或替代rollout。若出现非finite、明显全task退�
 
 - macro10直接跑完整paired correct400；correct80只从相同400 rows的`state<10`子集派生，不另启动rollout，
   也不能选winner或代表真实水平。
-- 历史current-schedule macro0=`134`与ECP macro10分别按native family验证，再由显式标注cross-family的
-  historical-baseline transition逐row核对共同state/RNG/language/video。不得复制或重标旧rows，也不得
-  把两点伪装成ECP checkpoint curve；只有后续确需同-family完整曲线时才补跑ECP-v2 macro0。
+- 历史current-schedule macro0=`134`与tangent candidate分别按native family验证，再由显式标注cross-family
+  的historical-baseline transition逐row核对共同state/RNG/language/video。不得复制或重标旧rows，也不得
+  把两点伪装成同-family checkpoint curve。
 - 每点与macro0、历史143、v5.2-old和v6交叉recipe逐task比较：per-suite、breadth、gained/lost、
   union/intersection、capability churn和视频ordinal依赖。
-- macro10过门后才从同一root exact-resume到25；只有多个task共同上升并超过134才继续50/100（必要时
-  200），每个决策点及时correct400；不因单点低分180度转向，也不因loss好看无限续训。
-- 任何single checkpoint correct严格`>150/400`，或成为有可信共同提升的当前winner时，运行完整paired
-  correct/same/wrong/shuffled/reversed/no-video。达标后仍继续验证更高性能、breadth和稳定性。
+- macro10 `≤129`且多task净损失即停；`130--134`只有tube门成立、breadth`≥6`、churn`≤35`且最近3个
+  macro projection方向斜率`≥0`才从同一root exact-resume到25。macro25必须`≥135`且至少3 tasks、
+  2 suites净正增才继续50；任何100扩展需先更新sealed config。
+- single checkpoint首次`≥144/400`即运行完整paired correct/same/wrong/shuffled/reversed/no-video；若之后
+  不同winner首次`≥151`，再对实际goal winner重跑六臂。达标后仍继续验证更高性能、breadth和稳定性。
 
 ### 6.3 What counts as real improvement
 
@@ -283,8 +269,8 @@ LoRA健康但分数低仍是失败；LoRA近rank1但分数提高不能仅因“�
 ## 8. Evidence, Git, and retention
 
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
-- current config：`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。
-- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第34节。
+- current config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`。
+- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第35节。
 - current training/eval entry：`scripts/train_v6_prior_writer.py`、`scripts/evaluate_pi05.py`。
 - formal保留config、command/env、GPU topology、checkpoint schema、raw rows、aggregate、completion和必要
   mechanism analysis；不提交checkpoints/cache/data/binaries。

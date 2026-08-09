@@ -14,6 +14,13 @@ import h5py
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_contract import (
+    V6_PRIOR_CANONICAL_CONFIG,
+    V6_PRIOR_COMPLETION_SCHEMA,
+    V6_PRIOR_CONFIG_SCHEMA,
+    V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA,
+    V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
+    V6_PRIOR_RESUME_EVIDENCE_SCHEMA,
+    V6_PRIOR_TASK_METRIC_NAMES,
     _expected_checkpoint_contract,
     _expected_cursor_contract,
     _artifact_task_records_match,
@@ -30,7 +37,7 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
+CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
 def _commit_frozen_config(root: Path, config: Mapping[str, Any]) -> tuple[Path, str]:
@@ -136,11 +143,11 @@ def _gradient_evidence() -> dict:
         },
     }
     return {
-        "schema_version": ("ember_pi05_v6_ecp_gradient_profile_artifact_evidence_v2"),
+        "schema_version": V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA,
         "root": "/retained/gradient",
         "git": _git_evidence("gradient-commit"),
-        "config_path": "/frozen/EMBER/configs/pi05_v6_ecp_policy_effective_writer_v2.json",
-        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "config_path": f"/frozen/EMBER/configs/{CONFIG.name}",
+        "config_schema": V6_PRIOR_CONFIG_SCHEMA,
         "config_bytes": 1234,
         "world_size": 6,
         "tasks_per_rank": 4,
@@ -264,15 +271,15 @@ def _zero_metric_witness(path: str) -> dict:
 def _resume_evidence(gradient: dict) -> dict:
     comparisons = [_checkpoint_comparison(1), _checkpoint_comparison(3)]
     return {
-        "schema_version": ("ember_pi05_v6_ecp_resume_profile_artifact_evidence_v3"),
+        "schema_version": V6_PRIOR_RESUME_EVIDENCE_SCHEMA,
         "gradient_root": gradient["root"],
         "resumed_root": "/retained/resumed",
         "contiguous_root": "/retained/contiguous",
         "gradient_commit": gradient["git"]["commit"],
         "gradient_is_strict_ancestor": True,
         "profile_git": _git_evidence("profile-commit"),
-        "config_path": "/frozen/EMBER/configs/pi05_v6_ecp_policy_effective_writer_v2.json",
-        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "config_path": f"/frozen/EMBER/configs/{CONFIG.name}",
+        "config_schema": V6_PRIOR_CONFIG_SCHEMA,
         "config_bytes": 2345,
         "auxiliary_weights": dict(gradient["recommended_weights"]),
         "world_size": 6,
@@ -346,15 +353,39 @@ def _task_record(ordinal: int, *, task_visit: int) -> dict:
         ),
         "functional_loss": 0.5,
         "projection_loss": 0.25,
+        "completion_loss": 0.2,
+        "condition_mean_tube_loss": 0.05,
+        "correct_tube_loss": 0.04,
+        "counterfactual_tube_loss": 0.06,
         "ranking_loss": 0.3,
         "projection_margin": 0.05,
         "correct_projection_coefficient": 0.6,
         "counterfactual_projection_coefficient": 0.55,
+        "correct_anchor_projection_coefficient": 0.5,
+        "counterfactual_anchor_projection_coefficient": 0.5,
         "correct_expert_component": 1.5,
         "counterfactual_expert_component": 1.375,
         "correct_effective_norm": 2.0,
         "counterfactual_effective_norm": 1.5,
+        "correct_anchor_effective_norm": 1.8,
+        "counterfactual_anchor_effective_norm": 1.4,
         "expert_effective_norm": 2.5,
+        "correct_delta_projection_coefficient": 0.1,
+        "counterfactual_delta_projection_coefficient": 0.05,
+        "correct_delta_expert_component_norm": 0.25,
+        "counterfactual_delta_expert_component_norm": 0.125,
+        "correct_delta_effective_norm": 0.3,
+        "counterfactual_delta_effective_norm": 0.15,
+        "correct_delta_orthogonal_norm": 0.1,
+        "counterfactual_delta_orthogonal_norm": 0.05,
+        "correct_delta_parallel_relative_anchor": 0.1388888888888889,
+        "counterfactual_delta_parallel_relative_anchor": 0.08928571428571429,
+        "correct_delta_orthogonal_relative_anchor": 0.05555555555555556,
+        "counterfactual_delta_orthogonal_relative_anchor": 0.03571428571428571,
+        "correct_delta_orthogonal_to_parallel": 0.4,
+        "counterfactual_delta_orthogonal_to_parallel": 0.4,
+        "correct_orthogonal_clamp_correction": 0.0,
+        "counterfactual_orthogonal_clamp_correction": 0.0,
         "correct_per_target_projection_components": [0.6] + [0.0] * 37,
         "correct_per_target_absolute_numerator_fractions": [1.0] + [0.0] * 37,
         "correct_raw_frames": correct_raw,
@@ -371,7 +402,7 @@ def _synthetic_run_contract(
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     config["gradient_profile"].update(
         {
-            "status": "ready_after_cpu_and_single_a40_throughput_smoke",
+            "status": "ready_after_cpu_oracle",
             "artifact_evidence": None,
         }
     )
@@ -472,8 +503,12 @@ def _synthetic_run_contract(
         ownership=SimpleNamespace(
             frozen_parameter_count=7_060_992,
             trainable_parameter_count=3_714_304,
-            frozen_tensor_count=483,
+            frozen_tensor_count=482,
             trainable_tensor_count=41,
+        ),
+        dynamic_anchor=SimpleNamespace(
+            parameter_count=3_714_304,
+            tensor_count=41,
         ),
         trainable_names=tuple(f"compiler.parameter_{index}" for index in range(41)),
     )
@@ -483,7 +518,7 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     root.mkdir()
     gradient = _gradient_evidence()
     profile = {
-        "schema_version": "ember_pi05_v6_ecp_gradient_profile_seal_v2",
+        "schema_version": V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
         "schedule_macro": 49,
         "task_count": 24,
         "action_queries_per_task": 20,
@@ -508,7 +543,7 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
         "content_hash_policy": "disabled_by_owner",
     }
     completion = {
-        "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
+        "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
         "mode": "gradient-profile",
         "completed_diagnostic_macros": 1,
         "schedule_start_macro": 49,
@@ -536,16 +571,19 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     return profile
 
 
-def test_v6_prior_config_unlocks_formal_after_resume_seal() -> None:
+def test_v6_prior_config_starts_at_the_cpu_oracle_gradient_gate() -> None:
     config = load_v6_prior_config(CONFIG)
-    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
-        runtime_for_mode(config, "gradient-profile")
+    assert runtime_for_mode(config, "gradient-profile") == (1, ())
     with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
         runtime_for_mode(config, "profile")
-    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50))
-
-    gradient = config["gradient_profile"]["artifact_evidence"]
-    assert _resume_profile_evidence_matches(_resume_evidence(gradient))
+    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
+        runtime_for_mode(config, "formal")
+    assert config["initialization"]["dynamic_anchor"] == (
+        "training_only_frozen_macro0_compiler_and_factor_heads"
+    )
+    assert config["initialization"]["resume_writer_load_scope"] == (
+        "trainable_compiler_and_factor_heads_only"
+    )
 
 
 def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
@@ -677,7 +715,7 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     external_contract = deepcopy(contract)
     external_contract["config"][
         "path"
-    ] = "/attacker/alternate/configs/pi05_v6_ecp_policy_effective_writer_v2.json"
+    ] = f"/attacker/alternate/configs/{CONFIG.name}"
     external_root = tmp_path / "gradient-root-external-config"
     _write_synthetic_gradient_artifacts(external_root, external_contract)
     with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
@@ -694,7 +732,7 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     stale_contract["git"] = _git_evidence(stale_commit)
     stale_contract["config"] = {
         "path": str(stale_path),
-        "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "schema": V6_PRIOR_CONFIG_SCHEMA,
         "bytes": stale_path.stat().st_size,
     }
     stale_root = tmp_path / "gradient-root-stale-config"
@@ -890,7 +928,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
     contract["git"] = _git_evidence(profile_commit)
     contract["config"] = {
         "path": str(profile_config_path),
-        "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "schema": V6_PRIOR_CONFIG_SCHEMA,
         "bytes": profile_config_path.stat().st_size,
     }
     contract["data"]["consumed_schedule"] = {
@@ -925,20 +963,18 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
         root.mkdir()
         rows = []
         for macro in (1, 2, 3):
+            task_records = [
+                _task_record(ordinal, task_visit=macro - 1)
+                for ordinal in range(24)
+            ]
             rows.append(
                 {
                     "macro": macro,
-                    "functional_loss": 0.5,
-                    "projection_loss": 0.25,
-                    "ranking_loss": 0.3,
-                    "projection_margin": 0.05,
-                    "correct_projection_coefficient": 0.6,
-                    "counterfactual_projection_coefficient": 0.55,
-                    "correct_expert_component": 1.5,
-                    "counterfactual_expert_component": 1.375,
-                    "correct_effective_norm": 2.0,
-                    "counterfactual_effective_norm": 1.5,
-                    "expert_effective_norm": 2.5,
+                    **{
+                        name: sum(float(record[name]) for record in task_records)
+                        / len(task_records)
+                        for name in V6_PRIOR_TASK_METRIC_NAMES
+                    },
                     "projection_weight": gradient["recommended_weights"][
                         "projection"
                     ],
@@ -951,10 +987,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
                         "shuffled": 8,
                         "wrong": 8,
                     },
-                    "task_records": [
-                        _task_record(ordinal, task_visit=macro - 1)
-                        for ordinal in range(24)
-                    ],
+                    "task_records": task_records,
                     "step_seconds": 10.0,
                     "input_wait_seconds": 0.1,
                     "elapsed_seconds": 10.0 * macro,
@@ -999,7 +1032,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
         (root / "completion.json").write_text(
             json.dumps(
                 {
-                    "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
+                    "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
                     "mode": "profile",
                     "completed_macro": 3,
                     "metrics_rows": 3,

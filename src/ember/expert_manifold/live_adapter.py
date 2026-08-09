@@ -15,8 +15,13 @@ from ember.expert_manifold.inference import (
     expected_expert_manifold_episode_evidence,
     inspect_expert_manifold_writer_evaluation,
 )
-from ember.expert_manifold.v6_prior import V6_WRITER_STATE_TENSOR_COUNT
+from ember.expert_manifold.v6_prior import (
+    V6_PRIOR_TRAINABLE_ROOTS,
+    V6_WRITER_STATE_TENSOR_COUNT,
+    load_v6_prior_warm_start_,
+)
 from ember.expert_manifold.v6_prior_contract import (
+    REPO_ROOT,
     authority_path,
     load_v6_prior_config,
 )
@@ -53,20 +58,43 @@ def _build_v6_writer(
         expert_model=bridge.gemma_expert.model,
         **writer_config,
     )
-    state = load_file(
-        str(observed["writer_asset"]["writer_state"]["path"]),
-        device="cpu",
+    load_v6_prior_warm_start_(
+        writer,
+        (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve(),
     )
-    if len(state) != V6_WRITER_STATE_TENSOR_COUNT:
-        raise ExpertManifoldError("v6-prior evaluation state changed")
-    try:
-        incompatible = writer.load_state_dict(state, strict=True)
-    except RuntimeError as error:
-        raise ExpertManifoldError(
-            "v6-prior evaluation checkpoint is incompatible"
-        ) from error
-    if incompatible.missing_keys or incompatible.unexpected_keys:
-        raise ExpertManifoldError("v6-prior evaluation strict load was incomplete")
+    if observed["writer_asset"]["kind"] != "historical_v6_macro400_load_only":
+        state = load_file(
+            str(observed["writer_asset"]["writer_state"]["path"]),
+            device="cpu",
+        )
+        live_names = set(writer.state_dict())
+        trainable_names = {
+            name
+            for name, _ in writer.named_parameters()
+            if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
+        }
+        if (
+            len(state) != V6_WRITER_STATE_TENSOR_COUNT
+            or set(state) != live_names
+            or len(trainable_names) != 41
+        ):
+            raise ExpertManifoldError("v6-prior evaluation state changed")
+        try:
+            incompatible = writer.load_state_dict(
+                {name: state[name] for name in trainable_names},
+                strict=False,
+            )
+        except RuntimeError as error:
+            raise ExpertManifoldError(
+                "v6-prior evaluation checkpoint is incompatible"
+            ) from error
+        if (
+            incompatible.unexpected_keys
+            or set(incompatible.missing_keys) != live_names - trainable_names
+        ):
+            raise ExpertManifoldError(
+                "v6-prior evaluation touched immutable Writer state"
+            )
     if any(
         not torch.equal(
             value.detach().cpu(),

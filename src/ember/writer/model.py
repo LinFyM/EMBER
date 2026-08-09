@@ -613,10 +613,19 @@ class CompleteLoRAWriter(torch.nn.Module):
     def decode_memories(
         self,
         memories: WriterMemories,
+        *,
+        compiler: torch.nn.Module | None = None,
+        factor_heads: Mapping[str, torch.nn.Module] | None = None,
     ) -> dict[str, torch.Tensor]:
-        """Compile frozen v6 memories into one complete public LoRA."""
+        """Compile frozen v6 memories through one explicitly selected decoder."""
 
-        expert, action_in, action_out = self.compiler(
+        if (compiler is None) != (factor_heads is None):
+            raise WriterModelError("Writer decoder override is incomplete")
+        selected_compiler = self.compiler if compiler is None else compiler
+        selected_heads = self.factor_heads if factor_heads is None else factor_heads
+        if set(selected_heads) != set(self.factor_heads):
+            raise WriterModelError("Writer decoder head topology changed")
+        expert, action_in, action_out = selected_compiler(
             memories.core,
             memories.valid_core,
             memories.procedure,
@@ -634,7 +643,7 @@ class CompleteLoRAWriter(torch.nn.Module):
                 if layer is None:
                     raise WriterModelError("expert LoRA output lost its layer")
                 source = expert[:, layer]
-            rows = self.factor_heads[key](source)
+            rows = selected_heads[key](source)
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]

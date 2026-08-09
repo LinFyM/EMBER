@@ -1,5 +1,23 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Tangent Tube canonical实现与CPU门完成（尚未启动GPU）
+
+- 旧ECP v2 executable config已由唯一
+  `configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`原位替换；历史ECP代码身份只在generic
+  read-only analysis family中保留。新run/checkpoint/trainer/RNG/adapter/episode使用独立v3/v4/v7 schema，
+  ECP checkpoint不得resume成新方法。
+- canonical effective objective已加入correct/negative condition-local frozen-v6 tangent tube；Writer
+  decoder支持显式成对compiler/factor-head override，runtime在deferred NCCL同步后、resume前构造
+  training-only anchor。metrics以每task一次packed D2H记录35个机制量，不增加逐tensor host sync。
+- checkpoint与deployment回归证明只恢复41个trainable tensors；即使checkpoint内frozen upstream或
+  template被篡改，也保留historical warm-start值。dynamic anchor的optimizer/checkpoint/deployment
+  ownership均为false，formal evaluator继承未变部署图的A40 batch8 throughput seal并继续fail-close。
+- CPU exact-D/gauge/gradient/same-memory oracle、contract/checkpoint/adapter和三family strict分析全部通过；
+  旧smoke assembler/runtime状态退役后，`source .env.local && .venv/bin/python -m pytest -q`为
+  `276 passed in 28.74s`，compileall与diff-check通过。
+  未启动训练、rollout、GPU profile或长期实验。下一步是clean commit/push、frozen worktree、实时双节点/
+  quota预检后的一次六卡gradient/throughput/exact-resume profile。
+
 ## 2026-08-09 ECP formal0→25与strict负裁决完成
 
 - clean pushed/frozen`450e688`的formal fresh0→10与exact-resume10→25均由tmux自然exit0；root=
@@ -13,9 +31,12 @@
   net`-1`；macro25为`13/27`、net`-14`、McNemar `p=.038477`。内部`a_correct`与expert
   component持续上升，但闭环下降且正交norm漂移主导，按门退役ECP；不继50/100、
   不扫权重、不补六臂。
-- canonical historical transition入口已窄扩展为只接受ECP macro10/25/50，不接受macro0或
-  任意mixed family。下一阶段先完成dynamic baseline tangent与历史anchor/distillation的去重设计，
-  未封印新design前不启动GPU。
+- 当时canonical historical transition入口只接受ECP macro10/25/50；现已由上节generic v2入口覆盖，
+  继续保留旧ECP只读结果并加入tangent family，不允许任意mixed family。
+- 第35节已封印v6 Condition-Local Dynamic Expert Tangent Tube：对correct和当前negative分别复用
+  same-input frozen-v6 baseline，只惩罚增量的expert-orthogonal分量，两臂取mean、ranking不变、
+  无新权重。它与历史global basis freeze、低LR/WD、Recenter/Prior-Innovation和尚未实施的
+  behavior distillation均已去重；其CPU实现与合同已由上节完成。
 
 ## 2026-08-09 ECP resume profile完成并解锁formal
 

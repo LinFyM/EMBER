@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -40,6 +41,16 @@ class V6PriorWarmStart:
     checkpoint: Path
     state_tensor_count: int
     state_value_count: int
+
+
+@dataclass(frozen=True)
+class V6PriorDynamicAnchor:
+    """Training-only frozen historical decoder, outside student ownership."""
+
+    compiler: torch.nn.Module
+    factor_heads: torch.nn.ModuleDict
+    parameter_count: int
+    tensor_count: int
 
 
 def load_v6_prior_warm_start_(
@@ -114,6 +125,56 @@ def configure_v6_prior_trainability(
     ):
         raise ExpertManifoldError("v6-prior Writer trainability seal changed")
     return observed
+
+
+def build_v6_prior_dynamic_anchor(
+    writer: CompleteLoRAWriter,
+) -> V6PriorDynamicAnchor:
+    """Clone only the synchronized macro0 decoder before any resume load."""
+
+    compiler = copy.deepcopy(writer.compiler)
+    factor_heads = copy.deepcopy(writer.factor_heads)
+    compiler.requires_grad_(False).eval()
+    factor_heads.requires_grad_(False).eval()
+    anchor_rows = tuple(
+        (f"compiler.{name}", parameter)
+        for name, parameter in compiler.named_parameters()
+    ) + tuple(
+        (f"factor_heads.{name}", parameter)
+        for name, parameter in factor_heads.named_parameters()
+    )
+    student_rows = tuple(
+        (name, parameter)
+        for name, parameter in writer.named_parameters()
+        if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
+    )
+    valid = (
+        len(anchor_rows) == len(student_rows) == 41
+        and tuple(name for name, _ in anchor_rows)
+        == tuple(name for name, _ in student_rows)
+        and sum(parameter.numel() for _, parameter in anchor_rows)
+        == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
+        and all(not parameter.requires_grad for _, parameter in anchor_rows)
+        and all(
+            anchor.shape == student.shape
+            and anchor.dtype == student.dtype
+            and anchor.device == student.device
+            and anchor.data_ptr() != student.data_ptr()
+            for (_, anchor), (_, student) in zip(
+                anchor_rows,
+                student_rows,
+                strict=True,
+            )
+        )
+    )
+    if not valid:
+        raise ExpertManifoldError("v6 dynamic anchor ownership changed")
+    return V6PriorDynamicAnchor(
+        compiler=compiler,
+        factor_heads=factor_heads,
+        parameter_count=V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+        tensor_count=len(anchor_rows),
+    )
 
 
 def v6_prior_trainable_parameters(

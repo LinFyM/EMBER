@@ -126,12 +126,20 @@ formal artifacts保存。
 
 ## Phase 5 — targeted iteration loop
 
-- [ ] 完成同video frozen-v6 dynamic baseline的anchor/tangent历史去重与数学design；首轮只隔离
+- [x] 完成condition-local frozen-v6 dynamic baseline的anchor/tangent历史去重与数学design；首轮只隔离
   expert completion和expert-orthogonal drift，不同时改encoder、topology、functional estimator或video schedule。
-- [ ] 选择不物化dense BA、不在部署时增加第二LoRA/专家库、且尽可能只增加小型decoder
-  forward的实现；先CPU oracle/gradient/contract，再用一次live A40 profile实测吞吐与显存。
-- [ ] 若dynamic anchor能限制正交漂移却strict仍不超macro0，干净证伪expert-component
-  completion，下一个候选才是policy-output behavior distillation，不继续修LoRA几何。
+- [x] 在唯一canonical path原位实现两臂condition mean：不物化dense BA、不在部署时增加第二LoRA/
+  专家库、只复用已有memories增加correct/negative各一次小型frozen decoder
+  forward。exact-D三状态oracle、独立gauge、macro0/parallel/orthogonal、双臂mean、chain rule、same-memory、
+  trainable-only resume/deployment和三family分析均已封存；全仓`276 passed`、compileall与diff-check通过。
+- [ ] clean commit/push并创建严格绑定该commit的frozen worktree；live双节点/quota复核后只做一次六卡
+  gradient/throughput profile及fresh0→1、same-root exact-resume1→3、independent contiguous0→3，不为
+  BF16低位一致降低B10+10或并行度。assembler写回唯一权重/evidence后才解锁formal。
+- [ ] formal fresh0→10后立即跑strict correct400；按`≤129`停止、`130--134`条件续25、macro25
+  `≥135`且3 tasks/2 suites净正增门推进。首次`≥144`补六臂，若不同winner首次`≥151`再补六臂。
+- [ ] 若dynamic anchor能限制正交漂移、task median `|a_correct-1|≤.05`而strict仍不超macro0，才干净
+  证伪expert-component completion并转policy-output behavior distillation；若completion门未到，只退役
+  当前recipe并先区分component deficit与action-space错位，不把假设本身写死。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

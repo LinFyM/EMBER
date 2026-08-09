@@ -26,8 +26,10 @@ from ember.expert_manifold.contract import (
 )
 from ember.expert_manifold.evaluation import inspect_task_expert_bank
 from ember.expert_manifold.v6_prior import (
+    V6PriorDynamicAnchor,
     V6PriorOwnership,
     V6PriorWarmStart,
+    build_v6_prior_dynamic_anchor,
     configure_v6_prior_trainability,
     load_v6_prior_warm_start_,
 )
@@ -103,6 +105,7 @@ class V6PriorRuntime:
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     writer: CompleteLoRAWriter
+    dynamic_anchor: V6PriorDynamicAnchor
     lora_contract: LoRAContract
     expert_targets: dict[str, torch.Tensor]
     expert_bank: dict[str, Any]
@@ -540,6 +543,7 @@ def _run_contract(
     expert: Mapping[str, Any],
     warm_start: V6PriorWarmStart,
     ownership: V6PriorOwnership,
+    dynamic_anchor: V6PriorDynamicAnchor,
     trainable_names: Sequence[str],
 ) -> dict[str, Any]:
     state = git_state(REPO_ROOT)
@@ -563,6 +567,10 @@ def _run_contract(
             "checkpoint": str(warm_start.checkpoint),
             "writer_state_tensor_count": warm_start.state_tensor_count,
             "writer_state_value_count": warm_start.state_value_count,
+            "dynamic_anchor": str(config["initialization"]["dynamic_anchor"]),
+            "resume_writer_load_scope": str(
+                config["initialization"]["resume_writer_load_scope"]
+            ),
             "optimizer": "fresh",
             "scheduler": "fresh",
             "rng": "fresh_seed",
@@ -608,6 +616,13 @@ def _run_contract(
             "trainable_tensor_count": ownership.trainable_tensor_count,
             "trainable_tensor_names": list(trainable_names),
             "source_policy_trainable_parameter_count": 0,
+            "dynamic_anchor": {
+                "parameter_count": dynamic_anchor.parameter_count,
+                "tensor_count": dynamic_anchor.tensor_count,
+                "optimizer_owned": False,
+                "checkpoint_owned": False,
+                "deployment_owned": False,
+            },
         },
         "runtime": {
             "host": socket.gethostname(),
@@ -766,6 +781,7 @@ def _prepare_runtime(
         rendezvous_root=args.output_dir.parent,
     )
     _synchronize_writer(writer, context)
+    dynamic_anchor = build_v6_prior_dynamic_anchor(writer)
     contract = _run_contract(
         args=args,
         config=config,
@@ -779,6 +795,7 @@ def _prepare_runtime(
         expert=expert,
         warm_start=warm_start,
         ownership=ownership,
+        dynamic_anchor=dynamic_anchor,
         trainable_names=trainable_names,
     )
     checkpoint_contract = _checkpoint_contract(contract)
@@ -820,6 +837,7 @@ def _prepare_runtime(
         processor=processor,
         policy=policy,
         writer=writer,
+        dynamic_anchor=dynamic_anchor,
         lora_contract=lora,
         expert_targets=expert_targets,
         expert_bank=expert,

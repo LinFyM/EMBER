@@ -1257,8 +1257,8 @@ single attempt、0 retry/failure/OOM/nonfinite/forbidden reads，总wall=`325.54
 `196.816s`，进程退出后GPU回到0MiB。cache仍为72 BF16+4 F32、每entry `2,641,920` bytes。
 `4/8` success只作execution smoke，不是新strict性能。
 
-`assemble_v6_prior_evaluation_smoke_evidence`已从profile与vertical retained roots重建seal，config状态
-自然转为evaluation sealed、gradient-profile ready。该实证只关闭“当前实现是否能高效完成完整闭环”
+当时的evaluation-smoke assembler已从profile与vertical retained roots重建seal；该退役入口现由Git和
+artifact保留，不再属于canonical runtime。该实证只关闭“当时实现是否能高效完成完整闭环”
 的不确定性；冻结上游、expert辅助和temporal ranking能否共同超过143/150仍完全待六卡训练与paired
 closed-loop裁决。下一门是结构化gradient/resume verifier和macro49六卡profile，不能直接跳到formal。
 
@@ -1604,3 +1604,168 @@ v6输出作dynamic baseline，直接限制增量的expert-orthogonal drift。这
 parameter weight decay、static/language-only bypass、B-only residual、第二套部署LoRA、expert-bank deployment
 或rank/checkpoint融合。它必须先与历史SFT-Anchored Tangent-Basis、短LR/weight decay及behavior
 distillation去重，并用新schema在CPU dense oracle中证明只约束所声称的effective增量。
+
+## 35. v6 Condition-Local Dynamic Expert Tangent Tube Writer
+
+状态：**2026-08-09 ECP负裁决后的唯一活动design authority；canonical实现与CPU oracle已通过
+全仓276项回归，clean push/frozen前禁止GPU。**
+
+### 35.1 根因链与单变量假设
+
+ECP的correct expert component从macro1到25增加`.61036`，但correct expert-orthogonal norm
+增加`18.83485`，约为前者`30.9×`。negative的macro1→10汇总也显示component只增
+`.25062`、expert-orthogonal norm却增`8.26660`；这两点使用轮换schedule中的不同输入，不能当作
+same-input checkpoint drift的精确量，只能作为共享更新伴随大幅非expert位移的风险信号。结合
+correct臂的持续增量与closed-loop净退化，当前最早未被隔离的因果变量是：
+共享compiler/factor为改变一个expert coefficient，同时重排了大量与expert无关的原v6
+effective LoRA。
+
+新假设是：对每个已有训练condition，保留historical v6对同一exact language和同一
+actual video/frame order生成的完整dynamic LoRA，只允许当前task expert方向上的局部修正。若
+这个修正被干净隔离后仍不能超过macro0，才能证伪expert-component completion本身，
+而不是再次把失败归因于未约束漂移。
+
+### 35.2 condition-local gauge-invariant tangent tube
+
+对task`t`和当前condition`x in {correct, negative}`：
+
+```text
+G_t,l^x   = B_t,l^x A_t,l^x                 current student effective LoRA
+G0_t,l^x  = B0_t,l^x A0_t,l^x               frozen v6, same language/input/order
+E_t,l     = B_t,l^E A_t,l^E                 step2000 task expert
+D_t       = sum_l ||E_t,l||_F^2 > 0
+Δ_t,l^x   = G_t,l^x - G0_t,l^x
+d_t^x     = sum_l <Δ_t,l^x,E_t,l>_F / D_t
+Δ⊥_t,l^x  = Δ_t,l^x - d_t^x E_t,l
+```
+
+correct的原ECP projection coefficient为保持初始gradient identity，仍使用
+`a_t^correct=<G_t^correct,E_t>/(D_t+epsilon)`；tube geometry则使用expert-bank合同已保证
+非零的exact `D_t`（实现仅以`clamp_min(epsilon)` fail-close）。唯一替换项：
+
+```text
+L_tube = SmoothL1(a_t^correct - 1; beta)
+       + mean_x [ sum_l ||Δ⊥_t,l^x||_F^2 / (2 * beta * D_t) ]
+
+L_total = L_positive_functional
+        + lambda_projection * L_tube
+        + lambda_ranking * L_existing_projection_ranking
+```
+
+condition mean固定为`correct`+当前轮换的一条`reversed/shuffled/wrong`，不因多一个臂把
+anchor权重机械翻倍。ranking的score、margin、temperature和正负号完全不变；纯E-orthogonal
+输出变化本身不会改变ranking scalar，但ranking沿`E_t`的共享参数更新可能连带破坏negative的
+其他LoRA方向，negative tube正是隔离这种collateral drift，防止它在后续行为层伪造video margin。
+
+低秩实现不materialize dense`BA`：
+
+```text
+||Δ||^2  = ||G||^2 + ||G0||^2 - 2<G,G0>
+||Δ⊥||^2 = max(0, ||Δ||^2 - <Δ,E>^2 / D)
+```
+
+全部norm/inner product仍由rank16 Gram contraction得到。`G/G0/E`各自任意LoRA gauge变换不改变
+loss。method macro0时`G=G0`，新anchor loss与gradient为0；因而新projection的未加权初始
+gradient应与ECP一致，ranking/positive也完全不变。CPU oracle先证明这一点，随后一次live train24
+gradient profile既验证真实BF16路径，也应复现ECP权重；不做weight sweep。由于correct与negative
+tube取算术均值，该目标是condition-local anisotropic tube，**不**声称等价于到某个单一dense target
+的平方距离。student始终由原A/B heads直接生成唯一rank16 LoRA，部署不做两LoRA相加或SVD融合。
+
+### 35.3 训练时dynamic anchor与部署边界
+
+runtime在historical macro400 warm-start刚加载、任何resume checkpoint覆写student之前，复制并冻结
+恰好`compiler+factor_heads`。encoder/Core/transition/Procedure本来冻结且始终与macro0相同，因此
+correct和negative均复用已经构造的condition-local memories，只各增加一次小型frozen decoder
+forward；不重跑PI05/video encoder、Core/Procedure或B20 policy functional forward。anchor参数不进
+optimizer/checkpoint，exact resume每次从immutable historical warm-start重建，并与其provenance合同联锁。
+
+anchor仅是train24 auxiliary teacher：
+
+- 只读与student arm完全相同的exact language + action-hidden video/frame order；
+- task expert仍只在train loss中出现，不进Writer input、held routing或deployment；
+- evaluator与checkpoint中仍只有一个student Writer，一次生成一套76-tensor/38-target rank16
+  LoRA；no-video仍是template-A/zero-B identity；
+- 无language-only/static bypass、scalar/global scale、gate/confidence、B-only residual、expert route、
+  新parameter-space L2/anchor、rank diversity、multi-video或checkpoint融合；optimizer仍保留既有
+  AdamW decoupled weight decay，不把它冒充本方法的function-space约束。
+
+首版在唯一canonical vertical path上原位升级config/run/checkpoint/metrics/adapter family，旧ECP v2由
+Git和frozen artifacts保存，不保留live双objective或兼容resume。historical-baseline transition可以只读验证
+旧ECP结果，但新family只接受自己的fresh checkpoint。
+
+### 35.4 与历史路线去重
+
+- SFT-Anchored Tangent-Basis冻结全局8个factor-output matrices并用RL改coefficients，结果
+  `143→142`、gained/lost=`20/21`；它没有保留每个language/video的完整`G0(x)`。
+- Program-Credit与Condition-Kernel证伪了冻结共享decoder足以阻止upstream/common drift的假设，但没有
+  condition-local effective-output anchor。
+- v5.1低LR、v6 slow schedule及weight decay只改变步幅；ECP前25步decoupled WD上界远小于
+  实测漂移，不能代替function-space tube。
+- Recenter/Prior-Innovation是fresh hard decomposition，分别移除DC或建新prior/innovation分支，没有从
+  强v6 same-video output出发。
+- policy-output behavior distillation仍未做过，但它需要额外PI05 policy forward，且只约束
+  sampled B20 states。只有dynamic tube机械成立而strict仍失败，才转向这个更贵的policy-space
+  单变量。
+
+### 35.5 CPU、A40与closed-loop证伪门
+
+CPU必须先证明：
+
+1. 三状态low-rank contraction与dense BA oracle一致，对`G/G0/E`独立gauge invariant；
+2. `G=G0`时tube loss/gradient为0，完整初始projection/ranking gradient与ECP一致；
+3. `Δ=cE`时tube为0，加入任意E-orthogonal perturbation时只产生回锚gradient；
+4. correct/negative anchor与student的language、video/frame order逐项相同，anchor无grad/
+   optimizer/checkpoint/deployment ownership；
+5. source policy、frozen upstream、functional B20、information wall、no-video和evaluator输出均不变。
+
+clean push/frozen后不重扫B10/workers或aux weights。只做一条fresh0→1、same-root exact-resume1→3与
+独立contiguous0→3 A40 profile，实测两次小decoder的wall/VRAM；不得为低位数值一致降低
+physical B10、六卡并行或BF16吞吐。只有在B10+10不可避免OOM，或把cache构建成本摊入预期训练
+宏步后end-to-end实测更快，才启用training anchor cache；不能仅因某个局部overhead百分比就牺牲
+简单直接的在线路径。cache key必须覆盖language、actual video identity、frame order/seed、condition和
+macro schedule；100 macros的correct+negative upper-bound约`12.68GB`，创建前按独立`/data1` quota
+与峰值预算复核，不改科学目标。
+
+机制门：
+
+- `a_correct`至少18/24 tasks向1移动，expert component上升；
+- 只有在要把闭环负结果解释为“干净证伪expert-component completion”时，还必须满足裁决checkpoint上
+  task median `|a_correct-1|≤.05`；未达到时只能证伪当前权重/训练窗内的完整recipe，不能把
+  component假设本身写死；
+- correct和negative的`||Δ⊥||/||G0||` task median均`≤.02`，至少20/24 tasks各自`≤.03`；
+- 对方向增量非近零的tasks，`||Δ⊥||/(|d| ||E||+epsilon)`中位`≤1`；不得重演ECP
+  的数十倍正交漂移。
+
+closed-loop仍只认single checkpoint strict correct400：
+
+- fresh只到macro10就评测；`≤129`且多task净损失立即停止；
+- `130--134`只有在tube机械成立、breadth`≥6`、对macro0的churn显著低于ECP macro10的`45`
+  且数值`≤35`、最近3个macro的projection方向斜率`≥0`时才允许到25；
+- macro25必须strict`≥135`、至少3个task和2个suite净正增，否则停止当前recipe，不扫anchor
+  weight/LR/WD。只有同时满足上一段`.05` completion门和tube门，才能把负结果升级为对component
+  假设本身的干净证伪并直接转policy-output behavior distillation；否则先按component deficit与
+  action-space错位的实证差异选择下一单变量；
+- 超过134才到当前sealed macro50；若50仍形成共同上升趋势，再以显式config更新决定是否exact-resume
+  到100。任何single checkpoint首次达到`≥144`即补
+  correct/same/wrong/shuffled/reversed/no-video六臂；若另一个checkpoint首次达到`≥151`，再对实际
+  goal winner补一次六臂。若correct与wrong/order/no-video同幅上升，仍不构成EMBER达标。
+
+### 35.6 canonical ownership与architecture completion gate
+
+本轮没有新增module、runner、entrypoint、部署分支或并行objective config；旧ECP executable config、旧
+single-A40 smoke assembler及其旧runtime状态机已经删除，历史只由Git、retained artifacts和generic
+read-only analysis family保留。相对本轮基线，活动`src`在退役清理后净增约204行：
+
+- `effective_objective.py`继续唯一拥有38-target low-rank effective geometry；新增三状态contraction、
+  tangent dataclass和双臂output-gradient链都共享既有alignment/ranking primitive，拆到第二owner会让同一
+  denominator、gauge和autograd合同跨模块耦合；若该方法被裁决退役，tangent-only surface随退役提交删除；
+- `v6_prior_contract.py`仍是唯一config/run/artifact state-machine owner，且本轮净删约284行；删除旧smoke
+  assembler后没有兼容执行路径。若出现第二个真实runtime消费者，再提取schema-neutral artifact primitive；
+- checkpoint、runtime、step、training和Writer decoder只做各自现有owner内的窄接线；checkpoint仍只由
+  checkpoint owner解释，decoder override必须成对传入且保持同一head topology；
+- 新增测试直接覆盖dense oracle、same-memory、ownership、trainable-only resume/deployment和family隔离，
+  不是第二套实现。
+
+据此接受本轮cohesive exception：当前最小可证伪变量必须同时触及geometry、训练时anchor ownership、
+resume和分析identity；人为拆成versioned modules会增加并行活动路径而不减少责任。首次live profile前仍以
+全仓回归、`compileall`和`git diff --check`为completion evidence，GPU结果不反向豁免结构门。

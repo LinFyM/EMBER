@@ -28,6 +28,10 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
 )
+from ember.expert_manifold.v6_prior_contract import (
+    V6_PRIOR_CANONICAL_CONFIG,
+    V6_PRIOR_CONFIG_SCHEMA,
+)
 from ember.pi05_lora import pi05_target_names
 from ember.expert_manifold.video_schedule import (
     task_video_mapping,
@@ -291,11 +295,8 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
             "online_v6_complete_lora_writer_then_episode_lora_cache"
         ),
         "config": {
-            "path": str(
-                ROOT
-                / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
-            ),
-            "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+            "path": str(V6_PRIOR_CANONICAL_CONFIG),
+            "schema": V6_PRIOR_CONFIG_SCHEMA,
         },
         "writer_asset": {
             "reference": "v6-prior:historical-macro400",
@@ -383,14 +384,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_v6_ecp_correct",
+        arm="expert_manifold_v6_tangent_tube_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_v6_ecp_cross_suite_wrong",
+        arm="expert_manifold_v6_tangent_tube_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -408,7 +409,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
-            arm="expert_manifold_v6_ecp_correct",
+            arm="expert_manifold_v6_tangent_tube_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=1,
@@ -416,7 +417,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     batched = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "batched",
-        arm="expert_manifold_v6_ecp_correct",
+        arm="expert_manifold_v6_tangent_tube_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=16,

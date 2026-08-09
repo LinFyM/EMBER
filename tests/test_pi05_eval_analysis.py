@@ -50,6 +50,30 @@ TASK_LANGUAGES = {
     ("libero_10", 2): "turn on the stove and put the moka pot on it",
 }
 
+FAMILY_CONTRACTS = {
+    "legacy": {
+        "adapter_schema": "ember_pi05_v6_prior_eval_adapter_v5",
+        "episode_schema": "ember_pi05_v6_prior_episode_v5",
+        "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "arm_prefix": "expert_manifold_v6_prior_",
+        "trained_checkpoint_kind": "v6_prior_trained_checkpoint",
+    },
+    "ecp": {
+        "adapter_schema": "ember_pi05_v6_ecp_eval_adapter_v6",
+        "episode_schema": "ember_pi05_v6_ecp_episode_v6",
+        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "arm_prefix": "expert_manifold_v6_ecp_",
+        "trained_checkpoint_kind": "v6_ecp_trained_checkpoint",
+    },
+    "tangent": {
+        "adapter_schema": "ember_pi05_v6_tangent_tube_eval_adapter_v7",
+        "episode_schema": "ember_pi05_v6_tangent_tube_episode_v7",
+        "config_schema": "ember_pi05_v6_condition_local_tangent_tube_writer_v3",
+        "arm_prefix": "expert_manifold_v6_tangent_tube_",
+        "trained_checkpoint_kind": "v6_tangent_tube_trained_checkpoint",
+    },
+}
+
 
 def _success_keys(predicate: Callable[[str, int, int], bool]) -> set[tuple[str, int, int]]:
     return {
@@ -73,15 +97,14 @@ def _tasks() -> list[dict]:
     ]
 
 
-def _adapter(macro: int, condition: str, *, family: str = "current") -> dict:
-    current = family == "current"
-    assert current or family == "legacy"
+def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
+    contract = FAMILY_CONTRACTS[family]
     roles = {key: "validation" for key in TASKS}
     mapping = list(task_video_mapping(TASKS, roles, condition))
     checkpoint_kind = (
         "historical_v6_macro400_load_only"
         if macro == 0
-        else ("v6_ecp_trained_checkpoint" if current else "v6_prior_trained_checkpoint")
+        else contract["trained_checkpoint_kind"]
     )
     writer_asset = {
         "reference": f"writer:m{macro}",
@@ -103,25 +126,11 @@ def _adapter(macro: int, condition: str, *, family: str = "current") -> dict:
         },
     }
     return {
-        "schema_version": (
-            "ember_pi05_v6_ecp_eval_adapter_v6"
-            if current
-            else "ember_pi05_v6_prior_eval_adapter_v5"
-        ),
+        "schema_version": contract["adapter_schema"],
         "kind": "expert_manifold_writer",
-        "arm": (
-            f"expert_manifold_v6_ecp_{condition}"
-            if current
-            else f"expert_manifold_v6_prior_{condition}"
-        ),
+        "arm": f"{contract['arm_prefix']}{condition}",
         "execution_backend": "online_writer_then_episode_cache",
-        "config": {
-            "schema": (
-                "ember_pi05_v6_ecp_policy_effective_writer_v2"
-                if current
-                else "ember_pi05_v6_prior_policy_effective_writer_v1"
-            )
-        },
+        "config": {"schema": contract["config_schema"]},
         "writer_asset": writer_asset,
         "evaluation_authority": {"formal_status": "sealed"},
         "video_data": {"root": "/videos", "tasks": "sealed-validation-8"},
@@ -163,6 +172,11 @@ def _rows(
     mapping_by_task = {
         (row["suite"], int(row["task_id"])): row for row in mapping
     }
+    episode_schema = next(
+        contract["episode_schema"]
+        for contract in FAMILY_CONTRACTS.values()
+        if adapter["config"]["schema"] == contract["config_schema"]
+    )
     rows = []
     for suite, task_id in TASKS:
         task_mapping = mapping_by_task[(suite, task_id)]
@@ -174,11 +188,7 @@ def _rows(
                 else reference
             )
             writer = {
-                "schema_version": (
-                    "ember_pi05_v6_ecp_episode_v6"
-                    if adapter["config"]["schema"].endswith("writer_v2")
-                    else "ember_pi05_v6_prior_episode_v5"
-                ),
+                "schema_version": episode_schema,
                 "condition": condition,
                 "teacher_video_kind": condition,
                 "method_arm": adapter["arm"],
@@ -228,7 +238,7 @@ def _result(
     successes: set[tuple[str, int, int]],
     *,
     physical_gpu_ids: tuple[int, ...] = (0, 1),
-    family: str = "current",
+    family: str = "ecp",
 ) -> dict:
     tasks = _tasks()
     adapter = _adapter(macro, condition, family=family)
@@ -360,14 +370,45 @@ def test_checkpoint_curve_keeps_legacy_read_only_and_rejects_mixed_families() ->
     assert checkpoint_curve_analysis(legacy)["method_family"] == "legacy_v6_prior_v1"
 
     mixed = dict(legacy)
-    mixed["legacy-10"] = _result(10, "correct", set(), family="current")
+    mixed["legacy-10"] = _result(10, "correct", set(), family="ecp")
     with pytest.raises(Pi05EvaluationError, match="cannot mix"):
         checkpoint_curve_analysis(mixed)
 
 
-@pytest.mark.parametrize("candidate_macro", (10, 25, 50))
+def test_checkpoint_curve_accepts_tangent_family_but_not_macro100() -> None:
+    tangent = {
+        f"tangent-{macro}": _result(
+            macro, "correct", set(), family="tangent"
+        )
+        for macro in (0, 10, 25, 50)
+    }
+    assert (
+        checkpoint_curve_analysis(tangent)["method_family"]
+        == "v6_tangent_tube_v3"
+    )
+
+    tangent["tangent-50"] = _result(
+        100, "correct", set(), family="tangent"
+    )
+    with pytest.raises(Pi05EvaluationError, match="checkpoint curve"):
+        checkpoint_curve_analysis(tangent)
+
+
+@pytest.mark.parametrize(
+    ("candidate_family", "candidate_macro", "expected_family"),
+    (
+        ("ecp", 10, "v6_ecp_v2"),
+        ("ecp", 25, "v6_ecp_v2"),
+        ("ecp", 50, "v6_ecp_v2"),
+        ("tangent", 10, "v6_tangent_tube_v3"),
+        ("tangent", 25, "v6_tangent_tube_v3"),
+        ("tangent", 50, "v6_tangent_tube_v3"),
+    ),
+)
 def test_historical_transition_preserves_families_and_pairs_true_rows(
+    candidate_family: str,
     candidate_macro: int,
+    expected_family: str,
 ) -> None:
     baseline_success = _success_keys(
         lambda _suite, _task, state: state == 0
@@ -378,8 +419,12 @@ def test_historical_transition_preserves_families_and_pairs_true_rows(
     )
     baseline = _result(0, "correct", baseline_success, family="legacy")
     candidate = _result(
-        candidate_macro, "correct", candidate_success, family="current"
+        candidate_macro, "correct", candidate_success, family=candidate_family
     )
+    if candidate_family == "tangent":
+        candidate["adapter"]["evaluation_authority"]["formal_status"] = (
+            "sealed_from_unchanged_v6_deployment_graph"
+        )
     baseline["paired_control"]["git"]["commit"] = "legacy-commit"
     candidate["paired_control"]["git"]["commit"] = "current-commit"
     baseline["paired_control"]["tokenizer"]["manifest_path"] = "/legacy/tokenizer.json"
@@ -393,7 +438,7 @@ def test_historical_transition_preserves_families_and_pairs_true_rows(
     assert analysis["schema_version"] == HISTORICAL_BASELINE_TRANSITION_SCHEMA
     assert analysis["method_families"] == {
         "historical_baseline": "legacy_v6_prior_v1",
-        "current_candidate": "v6_ecp_v2",
+        "current_candidate": expected_family,
     }
     assert analysis["contract_audit"]["checkpoint_curve_membership_claimed"] is False
     assert analysis["panels"]["correct400"]["historical_baseline"]["overall"]["successes"] == 8
@@ -405,18 +450,31 @@ def test_historical_transition_preserves_families_and_pairs_true_rows(
 
 def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> None:
     baseline = _result(0, "correct", set(), family="legacy")
-    candidate = _result(10, "correct", set(), family="current")
+    candidate = _result(10, "correct", set(), family="ecp")
     duplicate_family = {
-        "left": _result(0, "correct", set(), family="current"),
+        "left": _result(0, "correct", set(), family="ecp"),
         "right": candidate,
     }
     with pytest.raises(Pi05EvaluationError, match="duplicate method family"):
         historical_baseline_transition_analysis(duplicate_family)
 
-    wrong_macro = _result(0, "correct", set(), family="current")
-    with pytest.raises(Pi05EvaluationError, match="ECP macro10"):
+    ecp_and_tangent = {
+        "ecp": candidate,
+        "tangent": _result(10, "correct", set(), family="tangent"),
+    }
+    with pytest.raises(Pi05EvaluationError, match="legacy v1"):
+        historical_baseline_transition_analysis(ecp_and_tangent)
+
+    wrong_macro = _result(100, "correct", set(), family="ecp")
+    with pytest.raises(Pi05EvaluationError, match="candidate"):
         historical_baseline_transition_analysis(
             {"legacy": baseline, "current": wrong_macro}
+        )
+
+    wrong_tangent_macro = _result(100, "correct", set(), family="tangent")
+    with pytest.raises(Pi05EvaluationError, match="candidate"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": wrong_tangent_macro}
         )
 
     drifted = copy.deepcopy(candidate)
@@ -434,6 +492,27 @@ def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> N
         )
 
 
+def test_all_formal_analysis_rejects_unsealed_or_dirty_native_roots() -> None:
+    baseline = _result(0, "correct", set(), family="legacy")
+    candidate = _result(10, "correct", set(), family="tangent")
+    candidate["adapter"]["evaluation_authority"]["formal_status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
+    with pytest.raises(Pi05EvaluationError, match="sealed formal validation"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": candidate}
+        )
+
+    candidate["adapter"]["evaluation_authority"]["formal_status"] = (
+        "sealed_from_unchanged_v6_deployment_graph"
+    )
+    candidate["paired_control"]["git"]["dirty_paths"] = ["local-change"]
+    with pytest.raises(Pi05EvaluationError, match="sealed formal validation"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": candidate}
+        )
+
+
 def test_historical_transition_reads_legacy_immutable_and_reaggregates_current(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -442,7 +521,7 @@ def test_historical_transition_reads_legacy_immutable_and_reaggregates_current(
     legacy_root.mkdir()
     current_root.mkdir()
     legacy = _result(0, "correct", set(), family="legacy")
-    current = _result(10, "correct", set(), family="current")
+    current = _result(10, "correct", set(), family="ecp")
     (legacy_root / "results.json").write_text(
         json.dumps(legacy), encoding="utf-8"
     )

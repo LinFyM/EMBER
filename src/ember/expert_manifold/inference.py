@@ -40,8 +40,8 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_v6_ecp_eval_adapter_v6"
-EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_ecp_episode_v6"
+EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_v6_tangent_tube_eval_adapter_v7"
+EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_tangent_tube_episode_v7"
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -295,6 +295,13 @@ def _trained_writer_asset(
     configured_warm_start = (
         REPO_ROOT / str(config["initialization"]["checkpoint"])
     ).resolve() / "writer.safetensors"
+    expected_dynamic_anchor = {
+        "parameter_count": V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+        "tensor_count": 41,
+        "optimizer_owned": False,
+        "checkpoint_owned": False,
+        "deployment_owned": False,
+    }
     try:
         macro = int(manifest.get("next_macro", -1))
         mode = str(contract.get("mode", ""))
@@ -316,10 +323,15 @@ def _trained_writer_asset(
             and contract_config.get("schema") == V6_PRIOR_CONFIG_SCHEMA
             and Path(str(initialization.get("checkpoint", ""))).resolve()
             == configured_warm_start
+            and initialization.get("dynamic_anchor")
+            == "training_only_frozen_macro0_compiler_and_factor_heads"
+            and initialization.get("resume_writer_load_scope")
+            == "trainable_compiler_and_factor_heads_only"
             and int(ownership.get("frozen_parameter_count", -1))
             == V6_PRIOR_FROZEN_PARAMETER_COUNT
             and int(ownership.get("trainable_parameter_count", -1))
             == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
+            and ownership.get("dynamic_anchor") == expected_dynamic_anchor
         )
     except (TypeError, ValueError):
         valid = False
@@ -328,7 +340,7 @@ def _trained_writer_asset(
     if not valid:
         raise ExpertManifoldError("v6-prior trained Writer checkpoint changed")
     return {
-        "kind": "v6_ecp_trained_checkpoint",
+        "kind": "v6_tangent_tube_trained_checkpoint",
         "training_mode": mode,
         "source_macro": 400,
         "method_macro": macro,
@@ -382,7 +394,10 @@ def inspect_expert_manifold_writer_evaluation(
     if video_condition not in VIDEO_CONDITIONS:
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
-    if require_formal and status != "sealed":
+    if require_formal and status not in {
+        "sealed",
+        "sealed_from_unchanged_v6_deployment_graph",
+    }:
         raise ExpertManifoldError(
             "formal v6-prior evaluation requires live A40 smoke evidence"
         )
@@ -409,7 +424,7 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_ecp_{video_condition}",
+        "arm": f"expert_manifold_v6_tangent_tube_{video_condition}",
         "execution_backend": (
             "online_v6_complete_lora_writer_then_episode_lora_cache"
         ),
@@ -433,7 +448,8 @@ def inspect_expert_manifold_writer_evaluation(
                 "minimum_smoke_writer_model_batch_size"
             ],
             "online_smoke_evidence": config["evaluation"].get(
-                "online_smoke_evidence"
+                "online_smoke_evidence",
+                config["evaluation"].get("inherited_online_smoke_evidence"),
             ),
         },
         "video_data": video_data,

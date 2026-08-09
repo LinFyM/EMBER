@@ -10,6 +10,7 @@ from ember.expert_manifold.effective_objective import (
     effective_auxiliary_output_gradients,
 )
 from ember.expert_manifold.v6_prior import (
+    build_v6_prior_dynamic_anchor,
     configure_v6_prior_trainability,
     v6_prior_trainable_parameters,
 )
@@ -59,10 +60,22 @@ def _language() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     return tokens, mask, span
 
 
-def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> None:
+def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks(
+    monkeypatch,
+) -> None:
     writer = _writer_and_encoder()
+    dynamic_anchor = build_v6_prior_dynamic_anchor(writer)
+    decode_calls = []
+    decode_memories = writer.decode_memories
+
+    def capture_decode(memories, **kwargs):
+        decode_calls.append((memories, dict(kwargs)))
+        return decode_memories(memories, **kwargs)
+
+    monkeypatch.setattr(writer, "decode_memories", capture_decode)
     pair = generate_counterfactual_pair(
         writer=writer,
+        dynamic_anchor=dynamic_anchor,
         policy=torch.nn.Identity(),
         correct_video=_video(0),
         counterfactual_video=None,
@@ -74,6 +87,14 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> No
         teacher_demo=7,
         device=torch.device("cpu"),
     )
+    assert len(decode_calls) == 4
+    assert decode_calls[0][0] is decode_calls[2][0]
+    assert decode_calls[1][0] is decode_calls[3][0]
+    assert set(decode_calls[0][1]) == set(decode_calls[1][1]) == {
+        "compiler",
+        "factor_heads",
+    }
+    assert decode_calls[2][1] == decode_calls[3][1] == {}
     contract = load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json")
     target = {
         name: value.detach().clone().add_(0.01)
@@ -82,6 +103,8 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> No
     auxiliary = effective_auxiliary_output_gradients(
         pair.correct,
         pair.counterfactual,
+        pair.correct_anchor,
+        pair.counterfactual_anchor,
         target,
         contract,
         smooth_l1_beta=0.5,
@@ -119,8 +142,10 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> No
 
 def test_v6_prior_gradient_profile_returns_three_complete_parameter_vectors() -> None:
     writer = _writer_and_encoder()
+    dynamic_anchor = build_v6_prior_dynamic_anchor(writer)
     pair = generate_counterfactual_pair(
         writer=writer,
+        dynamic_anchor=dynamic_anchor,
         policy=torch.nn.Identity(),
         correct_video=_video(0),
         counterfactual_video=_video(13),
@@ -140,6 +165,8 @@ def test_v6_prior_gradient_profile_returns_three_complete_parameter_vectors() ->
     auxiliary = effective_auxiliary_output_gradients(
         pair.correct,
         pair.counterfactual,
+        pair.correct_anchor,
+        pair.counterfactual_anchor,
         target,
         contract,
         smooth_l1_beta=0.5,

@@ -200,7 +200,10 @@ def _validate_build_request(
                 "v6-prior Writer generation batch violates its throughput authority"
             )
         smoke = evaluation.get("online_smoke_evidence")
-        if evaluation.get("formal_status") == "sealed" and (
+        if evaluation.get("formal_status") in {
+            "sealed",
+            "sealed_from_unchanged_v6_deployment_graph",
+        } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size
             != int(smoke.get("writer_model_batch_size", -1))

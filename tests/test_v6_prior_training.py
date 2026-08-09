@@ -8,7 +8,11 @@ import pytest
 import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_prior_contract import suggest_auxiliary_weight
+from ember.expert_manifold.v6_prior_contract import (
+    V6_PRIOR_COMPLETION_SCHEMA,
+    V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
+    suggest_auxiliary_weight,
+)
 from ember.expert_manifold.v6_prior_runtime import (
     RuntimeSegment,
     _cursor_contract,
@@ -178,6 +182,12 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         "data": {"action_queries_per_task": 20},
         "method": {},
         "information_wall": {},
+        "initialization": {
+            "dynamic_anchor": (
+                "training_only_frozen_macro0_compiler_and_factor_heads"
+            ),
+            "resume_writer_load_scope": "trainable_compiler_and_factor_heads_only",
+        },
         "writer": {"activation_checkpointing": True},
         "expert_basis": {"expert_step": 2000},
         "objective": {},
@@ -201,7 +211,7 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
     ownership = SimpleNamespace(
         frozen_parameter_count=7_060_992,
         trainable_parameter_count=3_714_304,
-        frozen_tensor_count=483,
+        frozen_tensor_count=482,
         trainable_tensor_count=41,
     )
     contract = _run_contract(
@@ -217,9 +227,17 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         expert={"training_commit": "expert", "tasks": []},
         warm_start=warm_start,
         ownership=ownership,
+        dynamic_anchor=SimpleNamespace(parameter_count=3_714_304, tensor_count=41),
         trainable_names=("compiler.weight",),
     )
     assert contract["git"] == state
+    assert contract["ownership"]["dynamic_anchor"] == {
+        "parameter_count": 3_714_304,
+        "tensor_count": 41,
+        "optimizer_owned": False,
+        "checkpoint_owned": False,
+        "deployment_owned": False,
+    }
 
 
 def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
@@ -300,7 +318,7 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
         (tmp_path / "gradient_profile.json").read_text(encoding="utf-8")
     )
     completion = json.loads((tmp_path / "completion.json").read_text(encoding="utf-8"))
-    assert profile["schema_version"] == ("ember_pi05_v6_ecp_gradient_profile_seal_v2")
+    assert profile["schema_version"] == V6_PRIOR_GRADIENT_PROFILE_SCHEMA
     assert profile["schedule_macro"] == 49
     assert profile["task_count"] == 24
     assert profile["action_queries_per_task"] == 20
@@ -313,7 +331,7 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
     }
     assert len(profile["task_records"]) == 24
     assert completion == {
-        "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
+        "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
         "mode": "gradient-profile",
         "completed_diagnostic_macros": 1,
         "schedule_start_macro": 49,
@@ -447,6 +465,8 @@ def test_v6_prior_task_objective_wires_logical_b20_into_physical_b16(
     pair = GeneratedCounterfactualPair(
         correct={"adapter": torch.tensor([1.0])},
         counterfactual={"adapter": torch.tensor([0.0])},
+        correct_anchor={"adapter": torch.tensor([1.0])},
+        counterfactual_anchor={"adapter": torch.tensor([0.0])},
         correct_raw_frames=10,
         correct_sampled_frames=3,
         counterfactual_raw_frames=10,
@@ -509,6 +529,7 @@ def test_v6_prior_task_objective_wires_logical_b20_into_physical_b16(
         video_store=SimpleNamespace(load=lambda _task, _demo: object()),
         task_by_global_id={4: task},
         writer=object(),
+        dynamic_anchor=object(),
         policy=object(),
         language_tokens={4: object()},
         context=SimpleNamespace(device=torch.device("cpu")),
@@ -573,7 +594,7 @@ def test_v6_prior_runtime_rejects_external_config_copy(tmp_path) -> None:
         path = tmp_path / name
         path.mkdir()
         paths[name] = path
-    external = tmp_path / "pi05_v6_ecp_policy_effective_writer_v2.json"
+    external = tmp_path / "pi05_v6_condition_local_tangent_tube_writer_v3.json"
     external.write_text("{}", encoding="utf-8")
     args = SimpleNamespace(
         config=external,

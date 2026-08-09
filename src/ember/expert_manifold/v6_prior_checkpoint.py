@@ -35,11 +35,15 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.model import CompleteLoRAWriter
 
 
-V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_ecp_writer_checkpoint_v2"
-V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_ecp_writer_trainer_v2"
-V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_ecp_writer_rank_rng_v2"
-V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = "ember_pi05_v6_ecp_checkpoint_inspection_v2"
-V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_ecp_checkpoint_comparison_v3"
+V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_tangent_tube_writer_checkpoint_v3"
+V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_tangent_tube_writer_trainer_v3"
+V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_tangent_tube_writer_rank_rng_v3"
+V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
+    "ember_pi05_v6_tangent_tube_checkpoint_inspection_v3"
+)
+V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = (
+    "ember_pi05_v6_tangent_tube_checkpoint_comparison_v4"
+)
 V6_PRIOR_WORLD_SIZE = 6
 V6_PRIOR_FROZEN_PARAMETER_TENSOR_COUNT = 482
 V6_PRIOR_FROZEN_STATE_TENSOR_COUNT = 483
@@ -251,7 +255,30 @@ def load_v6_prior_checkpoint(
     state = load_file(str(checkpoint / "writer.safetensors"), device="cpu")
     if len(state) != V6_WRITER_STATE_TENSOR_COUNT:
         raise ExpertManifoldError("v6-prior resume Writer state changed")
-    writer.load_state_dict(state, strict=True)
+    live_names = set(writer.state_dict())
+    trainable_names = {
+        name
+        for name, parameter in writer.named_parameters()
+        if parameter.requires_grad
+    }
+    if (
+        set(state) != live_names
+        or len(trainable_names) != V6_PRIOR_TRAINABLE_TENSOR_COUNT
+        or any(
+            name.split(".", 1)[0] not in V6_PRIOR_TRAINABLE_ROOTS
+            for name in trainable_names
+        )
+    ):
+        raise ExpertManifoldError("v6-prior resume ownership changed")
+    incompatible = writer.load_state_dict(
+        {name: state[name] for name in trainable_names},
+        strict=False,
+    )
+    if (
+        incompatible.unexpected_keys
+        or set(incompatible.missing_keys) != live_names - trainable_names
+    ):
+        raise ExpertManifoldError("v6-prior resume touched immutable Writer state")
     configure_v6_prior_trainability(writer)
     trainer = torch.load(
         checkpoint / "trainer.pt",
@@ -358,6 +385,7 @@ def _validate_checkpoint_contract(
         for value in (config, source, initialization, objective, ownership)
     ):
         raise _inspection_error("checkpoint contract")
+    dynamic_anchor = ownership.get("dynamic_anchor")
     names = ownership.get("trainable_tensor_names")
     if not isinstance(names, list) or any(not isinstance(name, str) for name in names):
         raise _inspection_error("checkpoint ownership")
@@ -386,6 +414,10 @@ def _validate_checkpoint_contract(
         or initialization.get("optimizer") != "fresh"
         or initialization.get("scheduler") != "fresh"
         or initialization.get("rng") != "fresh_seed"
+        or initialization.get("dynamic_anchor")
+        != "training_only_frozen_macro0_compiler_and_factor_heads"
+        or initialization.get("resume_writer_load_scope")
+        != "trainable_compiler_and_factor_heads_only"
         or not isinstance(contract.get("expert_bank_root"), str)
         or not str(contract.get("expert_bank_root"))
         or _strict_int(contract.get("expert_step")) != 2000
@@ -400,6 +432,14 @@ def _validate_checkpoint_contract(
         or _strict_int(ownership.get("trainable_tensor_count"))
         != V6_PRIOR_TRAINABLE_TENSOR_COUNT
         or _strict_int(ownership.get("source_policy_trainable_parameter_count")) != 0
+        or dynamic_anchor
+        != {
+            "parameter_count": V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+            "tensor_count": V6_PRIOR_TRAINABLE_TENSOR_COUNT,
+            "optimizer_owned": False,
+            "checkpoint_owned": False,
+            "deployment_owned": False,
+        }
     ):
         raise _inspection_error("checkpoint contract")
     return dict(contract), names_tuple

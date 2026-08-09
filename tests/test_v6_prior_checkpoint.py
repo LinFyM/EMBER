@@ -13,6 +13,7 @@ from safetensors.torch import load_file, save_file
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior import (
+    build_v6_prior_dynamic_anchor,
     configure_v6_prior_trainability,
     v6_prior_trainable_parameters,
 )
@@ -26,6 +27,8 @@ from ember.expert_manifold.v6_prior_checkpoint import (
     save_v6_prior_checkpoint,
 )
 from ember.expert_manifold.v6_prior_contract import (
+    V6_PRIOR_CONFIG_SCHEMA,
+    V6_PRIOR_RUN_SCHEMA,
     _checkpoint_comparison_evidence_matches,
 )
 from ember.pi05_source_checkpoint import (
@@ -100,12 +103,12 @@ def _synthetic_formal_checkpoint(
         "action_queries_per_task": 20,
     }
     contract = {
-        "run_schema": "ember_pi05_v6_ecp_writer_launch_v2",
+        "run_schema": V6_PRIOR_RUN_SCHEMA,
         "mode": "profile",
         "git_commit": "7778985",
         "config": {
-            "path": "configs/pi05_v6_ecp_policy_effective_writer_v2.json",
-            "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+            "path": "configs/pi05_v6_condition_local_tangent_tube_writer_v3.json",
+            "schema": V6_PRIOR_CONFIG_SCHEMA,
             "bytes": 1,
         },
         "source": {"model_path": "/synthetic/source"},
@@ -119,6 +122,12 @@ def _synthetic_formal_checkpoint(
             "optimizer": "fresh",
             "scheduler": "fresh",
             "rng": "fresh_seed",
+            "dynamic_anchor": (
+                "training_only_frozen_macro0_compiler_and_factor_heads"
+            ),
+            "resume_writer_load_scope": (
+                "trainable_compiler_and_factor_heads_only"
+            ),
         },
         "expert_bank_root": "/synthetic/experts",
         "expert_step": 2000,
@@ -130,6 +139,13 @@ def _synthetic_formal_checkpoint(
             "trainable_tensor_count": 41,
             "trainable_tensor_names": trainable_names,
             "source_policy_trainable_parameter_count": 0,
+            "dynamic_anchor": {
+                "parameter_count": 3_714_304,
+                "tensor_count": 41,
+                "optimizer_owned": False,
+                "checkpoint_owned": False,
+                "deployment_owned": False,
+            },
         },
         "world_size": 6,
     }
@@ -206,18 +222,30 @@ def _refresh_declared_size(checkpoint: Path, name: str) -> None:
     write_json_atomic(checkpoint / "manifest.json", manifest)
 
 
-def test_v6_prior_checkpoint_restores_writer_optimizer_scheduler_and_cursor(
+def test_v6_prior_checkpoint_restores_only_trainable_writer_state_and_cursor(
     tmp_path: Path,
 ) -> None:
     writer = _writer()
     configure_v6_prior_trainability(writer)
+    dynamic_anchor = build_v6_prior_dynamic_anchor(writer)
     optimizer, scheduler = _optimizer(writer)
+    optimizer_parameter_ids = {
+        id(parameter)
+        for group in optimizer.param_groups
+        for parameter in group["params"]
+    }
+    anchor_parameter_ids = {
+        id(parameter)
+        for module in (dynamic_anchor.compiler, dynamic_anchor.factor_heads)
+        for parameter in module.parameters()
+    }
+    assert optimizer_parameter_ids.isdisjoint(anchor_parameter_ids)
     for parameter in v6_prior_trainable_parameters(writer):
         parameter.grad = torch.full_like(parameter, 0.01)
     optimizer.step()
     scheduler.step()
     optimizer.zero_grad(set_to_none=True)
-    expected = {
+    saved = {
         name: value.detach().clone() for name, value in writer.state_dict().items()
     }
     cursor = {
@@ -228,10 +256,18 @@ def test_v6_prior_checkpoint_restores_writer_optimizer_scheduler_and_cursor(
         "task_visits_per_task": 1,
     }
     contract = {
-        "schema": "v1",
-        "warm_start": "historical_v6_macro400_load_only",
-        "frozen_blocks": 4,
-        "trainable_blocks": 2,
+        "schema": V6_PRIOR_CONFIG_SCHEMA,
+        "initialization": {
+            "warm_start": "historical_v6_macro400_load_only",
+            "resume_writer_load_scope": "trainable_compiler_and_factor_heads_only",
+        },
+        "ownership": {
+            "dynamic_anchor": {
+                "optimizer_owned": False,
+                "checkpoint_owned": False,
+                "deployment_owned": False,
+            }
+        },
     }
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     checkpoint = save_v6_prior_checkpoint(
@@ -245,8 +281,42 @@ def test_v6_prior_checkpoint_restores_writer_optimizer_scheduler_and_cursor(
         cursor_contract=cursor,
         checkpoint_contract=contract,
     )
-    for parameter in writer.parameters():
-        parameter.data.zero_()
+    checkpoint_state = load_file(
+        str(checkpoint / "writer.safetensors"), device="cpu"
+    )
+    assert all("dynamic_anchor" not in name for name in checkpoint_state)
+    poisoned_upstream = next(
+        name for name in checkpoint_state if name.startswith("procedure.")
+    )
+    poisoned_template = next(
+        name for name in checkpoint_state if name.startswith("template_")
+    )
+    checkpoint_state[poisoned_upstream] = torch.full_like(
+        checkpoint_state[poisoned_upstream], 37
+    )
+    checkpoint_state[poisoned_template] = torch.full_like(
+        checkpoint_state[poisoned_template], 41
+    )
+    save_file(
+        {
+            name: value.detach().cpu().contiguous()
+            for name, value in checkpoint_state.items()
+        },
+        str(checkpoint / "writer.safetensors"),
+    )
+    _refresh_declared_size(checkpoint, "writer.safetensors")
+
+    trainable_names = {
+        name for name, parameter in writer.named_parameters() if parameter.requires_grad
+    }
+    immutable_before = {
+        name: value.detach().clone()
+        for name, value in writer.state_dict().items()
+        if name not in trainable_names
+    }
+    for name, parameter in writer.named_parameters():
+        if name in trainable_names:
+            parameter.data.zero_()
     loaded_macro, rows = load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         writer=writer,
@@ -258,9 +328,28 @@ def test_v6_prior_checkpoint_restores_writer_optimizer_scheduler_and_cursor(
     )
     assert (loaded_macro, rows) == (1, 1)
     assert all(
-        torch.equal(expected[name], value)
-        for name, value in writer.state_dict().items()
+        torch.equal(saved[name], writer.state_dict()[name])
+        for name in trainable_names
     )
+    assert all(
+        torch.equal(value, writer.state_dict()[name])
+        for name, value in immutable_before.items()
+    )
+    assert not torch.equal(
+        checkpoint_state[poisoned_upstream], writer.state_dict()[poisoned_upstream]
+    )
+    assert not torch.equal(
+        checkpoint_state[poisoned_template], writer.state_dict()[poisoned_template]
+    )
+    manifest = read_json(checkpoint / "manifest.json")
+    assert manifest["checkpoint_contract"]["initialization"][
+        "resume_writer_load_scope"
+    ] == "trainable_compiler_and_factor_heads_only"
+    assert manifest["checkpoint_contract"]["ownership"]["dynamic_anchor"] == {
+        "optimizer_owned": False,
+        "checkpoint_owned": False,
+        "deployment_owned": False,
+    }
     assert scheduler.last_epoch == 1
 
     changed = {**cursor, "teacher_video_seed": 19}

@@ -27,17 +27,16 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
 - 24套train-task rank-16 task experts已沿clean`81101fe`原合同统一完成step2000；五个统一
   checkpoint的development-train闭环为`432/557/624/638/658` of 1200，正式选择step2000，
   不按task混点。它们是privileged train-task目标，不是held Writer成绩。
-- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已完成；
-  canonical cache root为
-  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
-- learned address-binding Writer的strict correct仅`75/400`且输出跨task cosine约`.942`，已负裁决。
-  后继Causal Barycentric Topological Writer的正式strict correct400也已完成并负裁决：`63/400`、
-  breadth=`5/8`，相对source/addressless同video panel为gained/lost=`46/31`，但改善不显著且远低于
-  v6-fast `143/400`。其400套LoRA已有expert-like能量、秩和rank-coordinate形态；失败不再是
-  “LoRA能量不足”，而是每条视频平均混合约13个experts，same-task/cross-task effective cosine中位
-  `.988/.685`。Policy-Effective CPU门已通过：选定per-target effective direction+log-norm、shared
-  rank96再截public rank16；400-query目标cosine中位`.9968`且幅度为expert中位的`.986`。当前在唯一
-  runtime原位实现，尚未启动GPU。
+- full24 expert几何、phase16×3072 action-hidden feature profile与train24×50正式cache均已完成；它们
+  现在只作训练监督和历史分析，不再进入Writer部署。
+- learned address-binding、Causal Barycentric、Policy-Effective soft与hard部署路线的strict结果分别为
+  `75/400`、`63/400`、`15/80`与`3/80`，均已负裁决。task experts能定义train-task policy-effective
+  LoRA，却不能作为held-task hard/soft/sparse部署字典。
+- 当前唯一候选是v6-Prior Policy-Effective Temporal-Ranking Writer：从历史v6-fast macro400
+  load-only初始化，保护已达到`143/400`的video representation，只训练compiler+factor heads；expert2000
+  通过gauge-invariant effective`BA`监督correct输出，reversed/shuffled/wrong只作bounded ranking。
+  canonical evaluator已由`bca3f6d`恢复同一raw-video v6完整LoRA生成器，部署不读expert bank/cache。
+  当前仍无新GPU实证；下一门是单张空闲A40的warm-start batch-vs-direct reproduction smoke。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看
@@ -64,14 +63,11 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   `76/111/99/117/77/69/80/82`，normalized GROUP4为`82/77/73/110`。两者均未解决
   task漂移；matched梯度分析显示video主效应约`.1%`，query/flow噪声主导，functional
   surrogate继续改善时closed-loop会退化。
-- 当前Expert-Manifold先用真实task-local SFT LoRA定义policy-effective参数流形，再把一条视频的
-  phase-centered、sqrt-normalized causal-prefix表示投影为24个expert coefficients。已拒绝的首版按
-  168 chunks分别混合expert raw-factor direction与log-scale；由于`(sum B_k)(sum A_k)`会产生
-  `k!=j`的交叉项，它并不等价于想要的`sum c_k B_k A_k`策略更新。下一单变量候选保持视频表示、
-  coefficients、38-target topology和rank-16部署合同不变，只修正这一编译接口。zero/no-video仍须严格
-  返回source identity，language没有独立LoRA value路径。task experts只定义train-task参数基，不是
-  部署输入或held oracle，也不能自行证明时序因果性；最终仍由correct/same/wrong/shuffled/reversed及
-  no-video反事实严格配对裁决。
+- 当前Expert-Manifold不再在线选择或混合24个experts，而是恢复历史v6的可迁移video-to-LoRA图并只
+  修正其Procedure之后的写出接口。correct臂同时接受真实action functional credit和task-expert
+  effective-direction/norm监督；乱序、倒序与错误视频只约束correct-over-negative margin。task experts
+  解决“train task上什么更新有效”，不解决held-task support、same-task video specificity或时间顺序；
+  最终仍只认同一single checkpoint的correct/same/wrong/shuffled/reversed/no-video严格配对闭环。
 
 ## 不变合同
 
@@ -117,12 +113,14 @@ export EMBER_LIBERO_ASSETS_ROOT=/path/to/libero-assets/revision
 
 ```text
 scripts/train_task_experts.py
+scripts/train_v6_prior_writer.py
 scripts/evaluate_pi05.py
 ```
 
-当前Policy-Effective Barycentric Writer没有训练入口或learned Writer checkpoint；评测入口显式接收统一
-step2000 expert bank、train24×50 feature cache和一条在线teacher video。旧learned
-Expert-Manifold、AS/RL/K4 Writer入口与实现均已原位退役；历史命令只作provenance，不能执行。
+当前v6-prior训练入口显式接收historical macro400 load-only checkpoint、统一step2000 expert bank及
+train24 action-hidden videos；评测入口只接收v6-prior config、一个Writer checkpoint和一条在线teacher
+video，不接收expert bank或feature cache。旧hard/soft Expert-Manifold部署及AS/RL/K4 Writer入口只作
+provenance，不能恢复为并行实现。
 
 完整BCI映射和恢复校验在迁移handoff中。
 

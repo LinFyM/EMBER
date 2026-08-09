@@ -5,156 +5,99 @@
 
 ## Goal与不可变边界
 
-- [ ] 同一shared method/single asset bundle在strict paired correct上严格超过`150/400`，并继续提高
-  absolute、8-task breadth、稳定性和可重复性。
-- [ ] correct必须在严格配对下实质优于wrong、shuffled、reversed与no-video；same-task-other保持鲁棒。
+- [ ] 同一shared method/single checkpoint的strict paired correct严格超过`150/400`，并继续提高
+  absolute、8-task breadth、稳定性与可重复性。
+- [ ] correct在严格配对下实质优于wrong、shuffled、reversed与no-video；same-task-other保持鲁棒。
 - [x] 保持one-shot：部署输入只有exact task language和恰好一条action-hidden teacher video；视频是
   唯一dynamic value，不增加language-only LoRA bypass、多video/LoRA平均或checkpoint融合。
-- [x] validation/test actions不进入任何训练或选择梯度；task experts只使用train24 actions。
+- [x] validation/test actions不进入训练或选择梯度；task experts只使用train24 actions。
 - [x] GPU工作前实时比较`gpu01/gpu02`，只使用空闲A40、合计最多6张，不干扰他人；多卡保持
-  `NCCL_P2P_DISABLE=1`、NUMA、physical/local rank和deferred-NCCL合同。
+  `NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL合同。
 
-## 已封存的关键证据
+## 当前科学证据
 
+- [x] 历史single-checkpoint最好仍是v6-fast macro400：strict correct=`143/400`、breadth=`6/8`，
+  五臂correct/same/wrong/shuffled/reversed=`143/135/125/128/129`；目标仍未达到。
 - [x] 统一step2000 task-expert bank完成：
-  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`。24/24 tasks、
-  step250/500/1000/1500/2000共120个checkpoints；development-train direct-expert闭环=
-  `432/557/624/638/658` of 1200，正式统一选择step2000，不按task混点。
-- [x] train24×50 action-hidden phase16×3072 feature cache完成：
-  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`。
-- [x] learned address-binding Writer macro50 strict correct=`75/400`、breadth=`4/8`；完整400-LoRA
-  cross-task/task-mean cosine=`.94197/.94270`、nearest expert=`.12734`。正式拒绝resume100和五臂。
-- [x] Causal Barycentric CPU leave-one-task-out门完成：24 folds、每折23 experts、7,200套完整LoRA，
-  ridge `.3`的topological correct/reversed/phase-shuffled effective-target cosine=
-  `.38302/.09900/.18539`；correct norm/stable-rank/top-energy=`3.84385/1.15056/.89540`。
-  artifact：
-  `runs/outputs/pi05_expert_manifold_causal_barycentric_loo_step2000_cpu_20260809/analysis.json`。
-- [x] Causal Barycentric strict correct400完成并负裁决：`63/400`、breadth=`5/8`，72/72 jobs、
-  400 unique rows/LoRAs、18 workers attempt1/exit0、0 retry/error/OOM/nonfinite/forbidden reads。
-  strict same-video source/addressless对照gained/lost=`46/31`、exact `p=.1100`；未达到可信absolute门，
-  不做其余五臂。root=
-  `runs/outputs/pi05_expert_manifold_causal_barycentric_correct400_noreplacement_seed7_0397be6_20260809`。
-- [x] full400几何排除低能量/低秩：norm/stable/top=`3.958/1.155/.894`、16 coordinates active；
-  同时定位raw factor compiler风险：coefficients abs support中位`13.75`，same/cross/task-mean cosine=
-  `.988/.685/.697`。分别混合A/B会引入`k!=j` cross-expert effective-update项。
-- [x] Policy-Effective strict correct80完成并负裁决：`15/80`、breadth=`5/8`，36/36 jobs、80 unique
-  LoRAs、9 workers attempt1/exit0、0 retry/error/OOM/nonfinite/forbidden reads。相对same-video raw
-  gained/lost=`6/3`，未过`22`分消歧门；禁止扩跑160/400和五臂。root同本文件下方launch合同。
-- [x] exact effective`BA`分析覆盖3,160 generated pairs、1,920 generated-expert pairs和80 matched raw
-  pairs：norm/stable/top=`4.148/1.234/.847`，current/raw cosine=`.958`、norm ratio=`1.055`；
-  same/cross/task-mean=`.989/.703/.712`、nearest expert=`.641`。compiler修复真实但不是主导瓶颈。
-- [x] Hard-route strict correct80完成并淘汰：`3/80`、breadth=`2/8`；相对exact-same-video soft15为
-  retained/gained/lost=`1/2/14`、exact `p=.0041809`。80个online LoRA最近raw expert effective cosine
-  中位/最小=`.998544/.997096`，覆盖11 experts，证明hard path真实生效。24-expert hard/soft/sparse
-  部署字典均停止，不扩评、不调mixture超参。root=
-  `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`。
+  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`。24/24 tasks、五个统一
+  checkpoints；development-train direct-expert closed loop=`432/557/624/638/658` of 1200，故选择
+  step2000且不按task混点。
+- [x] learned address-binding、Causal Barycentric、Policy-Effective soft与hard部署路线分别在strict
+  closed loop得到`75/400`、`63/400`、`15/80`和`3/80`，均已负裁决。hard/soft/sparse expert
+  deployment dictionary关闭，不再调top-k、temperature、scale、confidence、rank或few-shot平均。
+- [x] task experts能定义train-task policy-effective parameter targets，但不能保证held-task support、
+  same-task video specificity或视频时间顺序因果性；这些仍必须由Writer和严格五臂闭环裁决。
 
-## 当前唯一canonical实现
+## 当前唯一canonical方法与实现
 
-- [x] 唯一config现为
-  `configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；formal状态现为
-  `sealed`但科研状态为`rejected_after_strict_screen`，只在下一canonical替换完成前保留为当前可复现实
-  现，不得继续launch。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`已push，专属
-  online smoke root=`pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`。
-- [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
-  centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个scores；部署固定取signed argmax
-  one-hot，support1，soft scores只作审计。
-- [x] 每个38 policy targets分别在effective`BA`空间混合24个expert的unit-Frobenius direction与
-  envelope内log norm；shared rank96 left/right basis内做best-rank16 SVD。template-A Procrustes gauge
-  只固定因子表示，不改变policy update。
-- [x] zero/phase-constant表示逐tensor精确返回template-A/zero-B identity；Writer无Parameter，language
-  没有独立value通路。真实24-expert one-hot effective cosine中位/最小=`.99838/.99665`。
-- [x] evaluator只接受新config + 统一expert bank + feature cache + video data，不再接受learned Writer
-  checkpoint。adapter/episode schema已升为hard-routed v4，旧trainer/checkpoint/model/compiler
-  executable均不保留。
-- [x] hard-route全仓`182/182` CPU tests、compile及真实fixed-asset门通过。24/24 centroids与1,200/1,200
-  videos self-route；ordered/reversed与fixed-shuffle选择改变=`1200/1200`、`699/1200`；24 experts全覆盖。
-  zero exact，912个one-hot target effective cosine中位/最小=`.998982/.961962`。
-
-以上hard-route实现只作为已封存rejected结果保留到替换提交；不得再launch。当前实现任务已切换为
-design第33节的v6-Prior Policy-Effective Temporal-Ranking Writer：恢复v6-fast macro400的可迁移完整
-LoRA生成器，冻结encoder/Core/transition/Procedure，只训练compiler+factor heads；task experts仅进入
-gauge-invariant effective-BA correct监督和有界counterfactual ranking，不参与部署路由。
+- [x] 唯一方法是design第33节的v6-Prior Policy-Effective Temporal-Ranking Writer。部署恢复历史v6
+  one-shot完整动态生成器：language+一条raw action-hidden video经Semantic Core、Causal Procedure、
+  compiler和factor heads直接生成38-target rank16 LoRA；expert bank不进入部署。
+- [x] 历史v6 macro400只作load-only初始化，不冒充exact resume。冻结encoder/Core/transition/Procedure
+  共483 tensors、`7,060,992` parameters；只训练compiler+factor heads共41 tensors、`3,714,304`
+  parameters，新建optimizer/scheduler/RNG。
+- [x] 训练目标为correct positive functional loss + gauge-invariant effective`BA` expert direction/norm +
+  bounded correct-over-reversed/shuffled/wrong ranking。same-task不同视频仍是共同positive分布。
+- [x] 训练runtime由`dd57edc`及后续合同提交封存：6 ranks×4 tasks、train24等权、每task B20、一次flat
+  all-reduce、50-video无放回cycle、完整six-rank RNG与exact-resume checkpoint。
+- [x] canonical evaluator/runtime由clean pushed`bca3f6d`完成原位替换。它只接受v6-prior config、一个
+  historical或本方法Writer checkpoint、raw video root和video condition；旧expert-bank/feature-cache
+  deployment参数fail closed，hard-route config/model被删除。
+- [x] evaluator的no-video臂不读取frames且精确返回source identity；correct/same/wrong/shuffled/reversed
+  每episode恰好一条raw video。乱序与倒序只重排真实frame content并保留新的展示位置，随后做完整
+  v6 forward；Writer生成FP32 LoRA cache后释放，原source policy原位复用。
+- [x] CPU门：全仓`208 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
+  600 tensors、12,064,064 values；8 tasks映射到8个one-shot cache requests，部署expert-bank reads=`0`。
 
 ## 下一证据门
 
-- [x] 训练侧v6-prior实现已由clean pushed`dd57edc`封存；CPU验证macro400严格load、`3,714,304`
-   参数ownership、effective几何/梯度、correct-vs-order counterfactual、one-shot schedule和完整checkpoint。
-   全仓`215 passed`，真实profile schedule覆盖24 tasks×B20并包含最长105 sampled-frame视频。
-- [ ] 原位退休hard-route evaluator/config/runtime，把v6-prior接为唯一canonical one-shot部署路径；完成
-   cache/evidence CPU合同并clean push。
-- [ ] 单卡online macro400 warm-start reproduction smoke通过后解封六卡longest105
-   gradient/fresh/resume/contiguous profile，按预注册gradient比例封存一次
-   `lambda_expert/lambda_rank`；profile权重丢弃。
-- [ ] formal macro400 warm-start 0→50，保存10/25/50；step0/10/25/50跑同schedule strict80，三个训练点
-   全部跑paired correct400。只有absolute/breadth/趋势门通过才做五臂或续训。
+### 1. 单卡historical warm-start reproduction smoke
 
-1. [x] 当前实现已clean commit/push为`1d9d030`；后续工作从该提交或其纯authority后继提交执行。
-2. [x] 按live GPU与quota preflight选择空闲`gpu02:0`完成validation8×1-state online smoke：
-   feature→coefficients→full LoRA cache→release Writer/encoder→复用同一source policy rollout。
-   实得8 rows/8 generated/8 cache entries、3 workers exit0、0 retry/failure/OOM/nonfinite/forbidden
-   reads；`1/8` success只作execution smoke。root=
-   `runs/outputs/pi05_expert_manifold_causal_barycentric_online_smoke_gpu02_3c8ce25_20260809`。
-3. [x] 精确smoke evidence已写回config并seal；真实formal inspector与全仓180 tests通过。authority
-   commit/push完成后只从其clean frozen worktree继续。
-4. [x] strict paired correct400与400-LoRA审计完成；absolute失败，已停止五臂并定位到raw-factor
-   reconstruction的policy-effective语义不守恒。
-5. [x] CPU-only effective-BA门通过：pure affine norm ratio仅`.527`而拒绝；per-target effective
-   direction+log-norm为`.986`。shared rank96 + public rank16对400 queries的cosine中位/最小=
-   `.99682/.99532`，24 experts captured-energy中位/最小=`.99677/.99331`；8个full-span样本的
-   captured-energy中位`.99523`。artifact=`policy_effective_compiler_feasibility_full400_rank128_v2.json`。
-6. [x] 已在唯一runtime原位替换compiler；保持video reader、coefficients、expert/cache、38 targets、
-   rank16、one-shot与zero identity不变，CPU合同与真实资产检查全部通过。
-7. [x] 专属单卡A40 online generation/cache/release/rollout smoke已通过并seal；下一步闭环固定为
-   validation8×前10 states=`80`条correct screen。历史相同前缀为source/addressless/address-binding/
-   raw-barycentric/v6-fast=`9/10/13/12/28`，breadth=`2/3/2/3/5`。强通过门为score`>=28/80`、
-   breadth`>=5`且相对raw-barycentric paired `gained-lost>=10`；随后才做formal correct400。score
-   `22--27`且breadth`>=4`只扩到预注册160-row消歧；更低或breadth`<=3`则拒绝当前compiler并回到
-   最早失效接口。实际=`15/80`、breadth5、raw paired净`+3`，低于ambiguity门；本candidate停止。
-8. [ ] 若one-shot的same-task视频方差成为经证据定位的最早限制，再评估固定K的few-shot set/sequence
-   aggregation；不能把few-shot当作掩盖task identity或视频时序失败的捷径。
-9. [x] video-routed hard-one-hot expert已在唯一runtime实现并通过真实资产CPU门；artifact=
-   `runs/outputs/pi05_expert_manifold_hard_routed_cpu_real_assets_20260809/analysis.json`。不把train self-route
-   或旧correct80 implied routes当成validation闭环结果。
-10. [x] live GPU/quota preflight后只用空闲`gpu02:0`完成validation8×1 state online smoke：8 unique
-    rows/generated/cache、3 workers exit0、0异常/forbidden reads，release/reuse闭合；8/8 online LoRA精确
-    匹配one-hot expert，formal evidence已写回并seal。`0/8`只作工程结果。
-11. [x] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
-    strong门=`>=28/80`、breadth`>=5`、相对soft15 paired净增`>=10`；`22--27`且breadth`>=5`只扩到
-    160-row消歧；实际`3/80`、breadth2、相对soft净`-12`，已停止expert-mixture内调参。
-12. [x] 已核对v6-fast checkpoint、当前expert target与canonical owner，并完成v6-prior训练侧CPU实现；
-    task experts只作监督/先验，不作online字典。唯一部署evaluator替换、单卡复现门和formal seal仍未完成，
-    此前不启动六卡profile、训练或rollout。
+- [ ] 从包含`bca3f6d`及当前authority文档的clean pushed frozen worktree执行；不从活动checkout运行。
+- [ ] 启动前重新检查两节点GPU ownership/telemetry/process与`/data1`个人quota，只选一张完全空闲A40。
+- [ ] 固定validation8×state0、correct、seed7、without-replacement；历史macro400为method macro0。
+- [ ] 生成8套完整LoRA并完成cache→Writer release→同一source policy rollout，要求8 rows/entries、
+  0 retry/failure/OOM/nonfinite/forbidden reads，结束后GPU自然释放。
+- [ ] 对同一批输入比较batched staged evaluator与逐episode direct v6 forward；全部76 tensors逐值比较，
+  max abs difference必须`<=1e-5`。该比较只验证路径等价，不用SHA/MD5。
+- [ ] 通过后把精确device/root/commit/counts/release/reuse/direct-match evidence写回config并clean push；
+  同一证据同时把gradient-profile从blocked改为ready。任一项失败先修工程合同，不启动六卡训练。
 
-## Hard-routed strict correct80 screen launch合同（2026-08-09）
+### 2. 六卡gradient与exact-resume profile
 
-- scientific code/evidence seal=`1d58781`，已clean push。实际run只允许来自包含本段launch record、以
-  `origin/codex/bci-continuation`为upstream的冻结分支`codex/hard-route-screen80-20260809`，worktree=
-  `/data1/user/ymdai/worktrees/EMBER-hard-route-screen80-20260809`。fresh root/log/tmux固定为
-  `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`、
-  `runs/logs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809.log`和
-  `ember_hard_route_screen80_1d58781`；登记时branch/worktree/root/log/tmux均不存在。
-- 07:56 CST live比较：`gpu01:3`的nlge VLLM占41,649MiB，`gpu02:6/7`的yfwang/yqzhang任务占
-  4,593/16,193MiB，全部不触碰。只选`gpu02:0,1,2`三张0MiB、0%、P8 A40，严格physical0/1/2→
-  local0/1/2且同属NUMA0；host available memory=`480GiB`。真正启动前再次检查三卡，任一卡非空闲即
-  不启动。
-- `/data1`个人quota blocks=`563,806,376/1,073,741,824 KiB`，limit=`1,084,227,584 KiB`。80套FP32
-  LoRA约412MB，连同queue/results/log保守峰值低于1GiB，远低于剩余预算。panel固定validation8 tasks×
-  states0--9、correct one-shot、seed7、每task 10条video无放回；与soft policy-effective逐row严格同
-  state/video/env/policy RNG，禁止根据smoke的`0/8`或任何中间结果改变panel。
-- exact command（在上述frozen worktree、`gpu02`执行）：
+- [ ] 重新live比较两节点，最多选择6张空闲A40；按所选节点的NUMA建立physical/local rank映射，设置
+  `NCCL_P2P_DISABLE=1`、Ring/Simple和deferred process group。
+- [ ] gradient profile只运行预注册macro49，覆盖train24×B20=480 unique queries及最长105 sampled-frame
+  video。分别测positive/expert/ranking在compiler与factor heads的未加权gradient norm。
+- [ ] 一次性封存`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks中都不超过positive
+  gradient的`.25`；不按validation outcome sweep或在线自适应。
+- [ ] 用丢弃型profile权重完成fresh0→1、exact-resume1→3及独立contiguous0→3；科学metrics一致，Writer/
+  RNG exact，optimizer/scheduler/cursor语义一致。profile权重不得warm-start formal。
 
-```bash
-env PYTHONPATH=$PWD/src CUDA_DEVICE_ORDER=PCI_BUS_ID NCCL_P2P_DISABLE=1 TOKENIZERS_PARALLELISM=false EMBER_STORAGE_ROOT=/data1/user/ymdai EMBER_STORAGE_CAP_BYTES=1099511627776 EMBER_LIBERO_ASSETS_ROOT=/data1/user/ymdai/projects/EMBER/data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6 numactl --cpunodebind=0 --membind=0 /data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/evaluate_pi05.py run --config configs/pi05_target_evaluation_v1.json --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809 --role validation --mode screen --state-count 10 --replicas-per-gpu 3 --writer-generators-per-gpu 1 --writer-generation-batch-size 4 --gpu-indices 0,1,2 --expert-manifold-config configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json --expert-manifold-expert-bank-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807 --expert-manifold-feature-cache-root /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808 --expert-manifold-video-data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --expert-manifold-video-condition correct --expert-manifold-video-sampling without_replacement
-```
+### 3. Formal 0→50与严格选择
 
-- 工程验收：80 unique rows/LoRAs/cache entries、36 jobs与9 workers自然exit0、attempt1、0 retry/failure/
-  OOM/nonfinite/forbidden reads，v4/hard1、Writer release/source reuse成立，三卡自然释放。科研门固定：
-  `>=28`、breadth`>=5`且相对soft15 paired净增`>=10`为strong；`22--27`且breadth`>=5`只扩160；
-  `<=21`或breadth`<=4`拒绝expert support。不得按中间task分数提前停、换专家或改变阈值。
+- [ ] 另建clean pushed frozen worktree、fresh root和formal run contract，从historical macro400 load-only
+  初始化全新optimizer，训练50 macros并保存10/25/50。
+- [ ] method macro0/10/25/50先跑相同validation8×states0--9 strict correct80；不得因中间task结果改变
+  panel、video schedule、loss或checkpoint。
+- [ ] 三个训练checkpoint全部跑paired correct400；method macro0也在同一当前schedule评测，历史143只作
+  different-schedule reference。
+- [ ] 只有single checkpoint correct严格`>150/400`，或至少不低于同schedule macro0且breadth不降、
+  多task净增并有可信上升趋势，才运行correct/same/wrong/shuffled/reversed/no-video完整配对裁决。
+- [ ] 若三点均低于macro0或只发生单task换手，停止该训练干预；不得用更长训练、loss sweep、scale/gate、
+  checkpoint融合或立即解冻上游救点。
+
+## 后续单变量顺序
+
+- 若absolute提高而顺序/错误视频margin仍弱，下一变量才调整counterfactual credit；不得同时改encoder。
+- 若margin提高但absolute下降，判该目标伤害policy performance，不把它解释成训练不足。
+- 只有one-shot同task不同video方差被严格证据定位为最早限制，才设计固定K few-shot聚合；动态shot数后置。
+- AS continuation仍不足时，再在同一输入墙和single-Writer图上设计短、task-balanced RL阶段；不能恢复
+  flat Writer-RL、task-local RL或使用validation/test actions。
 
 ## 退役边界
 
-`scripts/train_expert_manifold_writer.py`、learned Writer training/checkpoint模块及旧
-`--expert-manifold-checkpoint`参数均已退役。当前动态Writer只有Hard-Routed Policy-Effective路径；任何历史
-learned-Writer命令都只作provenance，不得从本文或旧记录复制恢复为并行实现。
+旧hard-route config、online expert-bank/feature-cache部署、HardRouted Writer类及其CLI均已从canonical
+runtime删除；历史只由Git和formal artifacts保存。task-expert trainer/evaluator、expert geometry和旧
+feature artifacts仍可作为训练监督与历史分析工具，但不得重新成为Writer部署输入。当前没有运行中的
+v6-prior GPU任务或长期实验。

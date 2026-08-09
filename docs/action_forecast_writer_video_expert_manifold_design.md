@@ -1144,3 +1144,28 @@ B20、全局480 unique rows，并包含最长105 sampled-frame视频。config当
 `blocked_until_single_a40_warmstart_reproduction_smoke`，因此尚不能运行六卡gradient profile。rejected
 hard-route evaluator/runtime将在下一提交原位替换，完成唯一部署路径和单卡复现smoke后才允许改变该
 状态。
+
+### 33.6 Canonical evaluator替换与复现边界（2026-08-09）
+
+部署替换已由clean pushed`bca3f6d`完成。旧hard-route config、online expert-bank/feature-cache资产入口、
+HardRouted Writer类和拓扑专属测试已从canonical runtime删除；旧参数即使由历史命令传入也会fail closed。
+task-expert evaluator和feature几何工具只保留其仍然有效的训练监督/历史分析职责，不再参与Writer部署。
+
+新adapter schema=`ember_pi05_v6_prior_eval_adapter_v5`，episode schema=
+`ember_pi05_v6_prior_episode_v5`。Writer asset允许两类且显式区分：configured historical v6 macro400是
+`historical_v6_macro400_load_only`、method macro0；本方法后续`macro_XXXXXXXX` checkpoint是
+`v6_prior_trained_checkpoint`并携带真实method macro。两类都严格检查600-tensor state、source contract、
+config/objective/ownership和checkpoint schema；不做文件内容hash。
+
+online路径用当前frozen source policy构造同一`CompleteLoRAWriter`，逐名strict-load历史或本方法state。
+每个episode只从raw HDF5读取一条固定stride视频；current task language始终不变。reversed/shuffled只改变
+frame content的展示顺序，position indices保持新的顺序坐标，因此不是把原始时间戳一起打乱后泄漏原
+顺序。batch内可含不同长度视频，offsets显式切分；batch1的无batch输出和batchN的leading batch维均按
+合同转成76-tensor FP32 LoRA。no-video提前返回template-A/zero-B，不tokenize language、不读frames、
+不调用Writer。episode LoRA写入通用cache后删除Writer/store/tokenizer并保留同一source policy做rollout。
+
+全仓`208 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
+映射为8个one-shot requests且deployment expert-bank reads为0。真实CLI prepare也已通过，但这些仍只是
+CPU/合同证据。单卡A40 reproduction smoke必须同时验证完整cache/release/rollout链路和batch-vs-single
+direct forward数值等价；不能仅因checkpoint能load或8个rollout能结束就seal。该证据写回前
+`evaluation.formal_status`与`gradient_profile.status`继续blocked，六卡profile和训练不得启动。

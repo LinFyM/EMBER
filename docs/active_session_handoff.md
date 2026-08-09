@@ -6,6 +6,25 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：v6-prior的唯一部署路径已经由clean
+pushed`bca3f6d`完成原位替换。canonical evaluator现在只接受v6-prior config、一个historical或本方法
+Writer checkpoint、raw video root与video condition；旧hard-route config、HardRouted runtime和
+expert-bank/feature-cache部署CLI均已删除或fail closed。task-expert bank与旧feature cache仍可作训练监督/
+历史分析，但不再是部署输入。
+
+部署重新执行历史v6的完整raw-video graph：exact current-task language加恰好一条action-hidden video，
+生成76 tensors的完整rank16 LoRA。correct/same/wrong/shuffled/reversed都读取恰好一条视频；wrong只换
+cross-suite视频而保持当前语言，shuffled/reversed重排真实frame content后做完整forward；no-video不读
+frames、不走language-only Writer forward并精确返回source identity。生成的FP32 LoRA先写episode cache，
+随后释放Writer并原位复用同一source policy。
+
+CPU与真实资产门现为全仓`208 passed`，历史macro400 state为600 tensors、12,064,064 values；validation8
+真实asset inspector和CLI prepare均通过，得到8 tasks/8 one-shot requests且deployment expert-bank reads=
+`0`。这仍不是GPU或性能证据。当前没有新的GPU工作、profile、训练或rollout；下一步必须从包含
+`bca3f6d`与本authority更新的clean pushed frozen worktree，在live比较`gpu01/gpu02`和quota后，只用一张
+空闲A40做historical warm-start reproduction smoke，并数值比较batched staged path与逐episode direct v6
+forward（76 tensors max-abs`<=1e-5`）。通过并写回evidence前六卡gradient profile继续fail closed。
+
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard/soft/sparse 24-expert部署字典已由
 strict结果关闭；下一唯一候选 **v6-Prior Policy-Effective Temporal-Ranking Writer** 的训练侧实现已由
 clean pushed `dd57edc`完成，authority为

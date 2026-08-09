@@ -46,6 +46,13 @@ generation/cache/release/rollout smoke均已通过，formal config已seal；旧K
 入口、配置和专属测试已按design第12节原位退役。当前唯一dynamic Writer是one-shot
 Expert-Manifold，正式训练必须从identity fresh开始，profile权重不得warm-start。历史K4/AS/RL
 命令只作provenance，不得据此恢复并行实现或旧adapter分派。
+2026-08-09后续strict证据已覆盖上一段的identity-fresh具体实现：hard/soft/sparse expert部署字典
+正式关闭，当前唯一候选是design第33节的v6-Prior Policy-Effective Temporal-Ranking Writer。
+它唯一允许的初始化是已封存历史v6-fast macro400 Writer的load-only权重；必须使用全新optimizer、
+scheduler、sampler与RNG，不能冒充旧run exact-resume。部署恢复同一raw-video v6完整LoRA生成器，
+expert bank只在train24监督中使用、不得进入部署。canonical evaluator替换已由clean pushed
+`bca3f6d`完成；当前尚无该候选的新GPU实证，下一门是clean frozen worktree上的单卡warm-start
+batch-vs-direct reproduction smoke，通过并写回精确evidence前不得启动六卡gradient profile。
 
 ## Efficiency and validation boundary
 
@@ -183,46 +190,28 @@ Expert-Manifold，正式训练必须从identity fresh开始，profile权重不�
 
 ## Current focused task
 
-- 当前唯一活动方法是Video-Conditioned Expert-Manifold Topological Writer，authority为
-  `docs/action_forecast_writer_video_expert_manifold_design.md`。保持one-shot；Writer部署输入仍为
-  exact task language + exactly one action-hidden teacher video，视频是唯一dynamic value，
-  language不能单独输出LoRA。full projected video innovation只参与phase key/routing，LoRA value固定为
-  phase-centered projected dynamics的sqrt-normalized causal-prefix integral；zero或phase-constant
-  innovation必须精确回到source identity，即使learned phase key被忽略也不得恢复frame-set旁路。
-- 24套train-task rank-16 experts已在clean`81101fe`完成统一step1000。唯一正式root为
-  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`：6 workers、24/24 tasks、
-  72个step250/500/1000 checkpoints、约562MiB。最后50步24-task等权mean action loss=
-  `.115355/.107207/.105372`；它不是closed-loop checkpoint选择依据。若证据决定统一resume2000，
-  必须从`81101fe`建frozen worktree并沿同一root exact-resume，不得按task挑不同step。
-- retained Expert-Manifold实现已并入`codex/bci-continuation`：完整bank evaluator与geometry、
-  phase16×3072 action-hidden feature cache、168个`[16,512]`chunk/rank axial decoder、六rank
-  task-complete exact-resume meta trainer和one-shot strict five-arm加no-video反事实evaluator均已实现。full24
-  geometry与development-train direct-expert闭环三点均已完成：step250/500/1000=
-  `432/557/624` of 1200（400-scale=`144/185.7/208`），500→1000为`143/76` paired
-  gains/losses、24/24 tasks非零，四suite均不回退。因此必须从clean`81101fe`沿原root把全部
-  24 experts统一exact-resume到2000，并正式比较1500/2000；不得直接把loss或step1000写成最终选择。
-- action-hidden phase16×3072 feature cache已在clean pushed`222d3ac`完成正式提取并seal：
-  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`由6个独立
-  workers覆盖24 tasks×50 videos，每task形状`[50,16,3072]` BF16，cache约113MiB；
-  peak allocated/reserved=`10.50/19.23GB`，teacher action/state/reward/terminal reads全0。canonical
-  `cache_manifest.json`已生成，下一操作是从clean`81101fe`沿原root统一expert continuation，
-  再进入meta profile/formal和strict rollout。
-- full24×50 frozen feature的CPU审计显示phase-DC能量中位`.98057`，temporal residual仅`.01943`，
-  但ordered temporal template cosine中位`.88284`、reversed=`-.32402`、phase-shuffled=`-.02194`；
-  temporal geometry与expert B geometry的Spearman=`.45087`。因此第一次meta profile前已决定收紧
-  canonical decoder的dynamic value，不允许约50倍的静态DC或忽略phase key的unordered-frame set成为
-  LoRA content。固定causal-prefix uniform-pool proxy的correct/reversed/shuffled=
-  `.38820/.06042/.19110`，3/5-shot只升到`.39379/.39558`，当前不切换shot数。
-- 全24 experts的原合同exact-resume1000→2000已于2026-08-08从clean`81101fe`沿同一root启动：
-  6个独立workers只使用`gpu01:0,1,2,4,5,7`，每worker依次处理原有4 tasks并保存统一1500/2000。
-  GPU3上的他人进程与空闲GPU6均未触碰。运行完成前的partial checkpoint不得写成正式结果；之后必须
-  先评统一1500/2000，再选一个全task共享的expert target step。
-- 尚无新的Expert-Manifold Writer checkpoint或held strict rollout；历史single-checkpoint最好仍是
-  v6-fast`143/400`，严格目标`>150/400`尚未完成。当前执行顺序取
-  `docs/active_session_handoff.md`，不得从下方历史ledger恢复旧“当前”“下一步”。
-- 旧K4 executable是有明确owner和removal trigger的临时兼容路径：只有Expert-Manifold meta-Writer
-  A40 profile通过后才原位删除；在此之前不得将其误写成活动科研方法，也不得提前删掉唯一已验证的
-  live fallback。
+- 当前唯一活动方法是Video-Conditioned Expert-Manifold总体方法中的v6-Prior Policy-Effective
+  Temporal-Ranking Writer，authority为
+  `docs/action_forecast_writer_video_expert_manifold_design.md`第33节。保持one-shot、exact language加
+  一条action-hidden raw video、video-only dynamic value和完整38-target rank16 LoRA。
+- 历史v6-fast macro400是唯一load-only初始化，strict correct=`143/400`。前四个representation blocks
+  冻结为483 tensors、`7,060,992` parameters；只训练compiler+factor heads的41 tensors、
+  `3,714,304` parameters。旧optimizer/scheduler/RNG一律不加载。
+- 统一step2000 task-expert bank已完成24/24 tasks和120个checkpoints；development-train direct-expert
+  五点=`432/557/624/638/658` of 1200。experts只定义train-task policy-effective监督，不是deployment
+  input、held oracle或视频时序证据。
+- correct使用positive functional loss及exact gauge-invariant effective`BA` direction/norm；reversed、
+  shuffled、cross-suite-wrong按确定性schedule只进入bounded correct-over-negative ranking；same-task
+  不同视频保持共同positive分布。
+- training runtime已clean push，保持6 ranks×4 tasks、train24 task-complete、B20跨episode queries、
+  一次flat all-reduce、50-video无放回cycle和完整exact-resume checkpoint。profile/formal均由config
+  fail-close。
+- evaluator/runtime已由`bca3f6d`原位替换：部署只接受v6-prior config、一个Writer checkpoint、raw
+  video root和condition；旧expert-bank/feature-cache部署参数fail closed，hard-route config/class已删除。
+  no-video不读取frames且返回identity；Writer生成episode LoRA cache后释放并复用同一source policy。
+- 当前没有新的v6-prior GPU profile、训练或strict rollout。下一执行顺序只取`task_plan.md`顶部：单卡
+  historical batch-vs-direct reproduction smoke→六卡gradient与resume profile→formal0→50→strict80/
+  correct400→达到门后五臂；不得从下方历史ledger恢复旧“当前”“下一步”。
 
 ## Historical focused-task ledger (superseded by the section above)
 
@@ -620,6 +609,11 @@ task-complete在v5.2与v6上都压弱Procedure→BA/action和顺序margin，但a
 下降和上升；旧recipe增强动态写出也增强task旋转。post-v5各架构与recipe混杂，不能
 因低分整体判死，也不能退回旧recipe。
 
+Expert-Manifold后续strict证据又关闭了learned address-binding、Causal Barycentric、Policy-Effective
+soft/hard部署路线，其correct分别为`75/400`、`63/400`、`15/80`、`3/80`。这证明正常expert-like
+能量/秩、policy-effective factorization或正确路由都不足以让24个train experts成为held部署字典。
+当前v6-prior候选只干预历史143之后的compiler写出接口；尚无新strict成绩。
+
 最新CV-ADR RAW correct400完整曲线为
 `76/111/99/117/77/69/80/82`；GROUP4为`82/77/73/110`。两者都未解决漂移，
 GROUP4使写入更大、更coherent但更static。matched gradient分析中video主效应约
@@ -673,8 +667,9 @@ launch。
   SERIAL/GROUP4等不能互相冒充。无冲突时的projected更新必须严格退化为raw mean。
 - 不读取validation/test actions产生梯度；video与action query不得用same-episode
   pairing制造低层捷径。
-- 一小时门：fresh约0→200、每25保存，paired correct400评测50/100/150/200；只有
-  absolute/breadth/趋势/内部路径有充分理由才exact-resume第二小时。
+- 每个当前架构必须使用其sealed config中的训练与评测门。v6-prior固定load-only macro400→method
+  macro50、保存10/25/50，先做同schedule macro0/10/25/50 strict80并对三个训练点做correct400；不得
+  套用历史fresh0→200的一小时门或按functional loss改选。
 - checkpoint选择只认single-checkpoint paired closed-loop结果；functional loss和
   内部几何只作机制证据。
 

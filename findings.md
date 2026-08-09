@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## 2026-08-09 v6-prior部署替换后的工程与科学边界
+
+- clean pushed`bca3f6d`已把rejected hard-route从canonical evaluator原位替换为历史v6同构的raw-video
+  `CompleteLoRAWriter`。部署不再读取expert bank或phase feature cache；这两类资产只能留在train24
+  supervision与历史分析侧。该改变防止“用一个nearest train expert冒充video-to-LoRA学习器”继续污染
+  held-task裁决。
+- historical macro400的600-tensor state可由当前v6构造器逐名strict-load，真实state values=
+  12,064,064。validation8真实asset inspector和CLI prepare均得到8个one-shot video/LoRA requests；旧
+  deployment参数fail closed，no-video返回source identity且不读frames。
+- shuffled/reversed的因果操纵语义已落实为“按错误展示顺序送入frame content，同时使用新的顺序位置”，
+  而不是把content和原始时间戳一起置换后让模型恢复正确顺序。这与用户对人类教学视频的直观相同：
+  倒放与乱序必须真正破坏动作先后关系。
+- 当前CPU门只能证明资产、shape、信息墙和cache handoff成立，不能证明BCI kernel下batching与历史v6
+  数值路径一致，也不能提供closed-loop性能。下一单卡门必须比较同一8条输入的batched staged输出与
+  逐episode direct forward，全部76 tensors max-abs`<=1e-5`；否则先定位batch offsets、frame order、
+  tokenizer或dtype接口，不能进入六卡训练。
+- v6-prior的科学假设因此保持单变量：上游video semantics/Procedure继续使用143起点，只修compiler+
+  factor heads如何把它写入task-expert定义的policy-effective方向。若后续absolute没有共同提高，不能再
+  把首因归给expert LoRA能量、hard/soft路由或evaluator部署错图。
+
 ## 2026-08-09 v6-prior transferable Writer的根因定位与设计决策
 
 - 训练侧实现已由clean pushed`dd57edc`落地并通过全仓`215 passed`。真实data gate确认24 tasks、

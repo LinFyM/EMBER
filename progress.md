@@ -1,5 +1,19 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior canonical evaluator封存
+
+- clean pushed`bca3f6d`把Expert-Manifold部署从rejected hard-route原位替换为v6-prior raw-video完整
+  Writer。删除hard-route config/class/topology专属测试；CLI改为config+Writer checkpoint+raw video+
+  condition，旧expert-bank/feature-cache部署参数fail closed。
+- adapter/episode升为v5；historical macro400显式登记为method macro0，本方法checkpoint登记真实method
+  macro。correct/same/wrong/shuffled/reversed各读恰好一条video，no-video不读frames并返回identity；
+  LoRA cache后释放Writer并复用同一source policy。
+- 全仓`208 passed`、compile/diff check通过。真实只读asset gate确认600 state tensors、12,064,064 values、
+  validation8映射8条视频；真实CLI prepare生成8-entry cache合同，deployment expert-bank reads为0。
+- 本阶段没有启动CUDA、训练、rollout或长期实验。下一步从包含本提交及authority更新的clean pushed
+  frozen worktree，在live双节点GPU/quota preflight后用一张空闲A40完成batch-vs-direct warm-start
+  reproduction和8-task cache/release/rollout smoke；通过前六卡gradient profile保持blocked。
+
 ## 2026-08-09 v6-Prior训练runtime封存
 
 - clean pushed`dd57edc`完成六卡train24 runtime、policy-effective三项output-gradient组合、one-shot

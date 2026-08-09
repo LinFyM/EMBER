@@ -66,7 +66,17 @@ absolute contribution。config、run、gradient/resume、checkpoint/trainer/RNG�
 身份并重置旧gradient/resume/formal seals；live evaluator只接受v2，旧v1仅能由CPU analysis的显式
 legacy family读取已封存`results.json`，不能加载模型或恢复训练。小矩阵dense oracle、gauge/orthogonal
 invariance、chain-rule、合同、checkpoint、evaluation和analysis均纳入全仓`259 passed`封印，且
-`git diff --check`通过；尚无ECP GPU profile、训练或strict成绩。
+`git diff --check`通过。
+
+clean pushed/frozen`de28157`已在live空闲`gpu01:0,1,2|4,5,7`完成唯一一次ECP macro49 gradient
+profile；启动前同时比较`gpu01/gpu02`并核对`/data1`quota，未触碰忙碌GPU3和另一节点他人进程。root=
+`runs/outputs/pi05_v6_ecp_gradient_profile_macro49_r6_lb20_mb10_de28157_20260809`，24 tasks、480/480
+unique queries、8/8/8 reversed/shuffled/wrong、最长105帧、wall/input wait=`20.425/.180s`、peak
+allocated/reserved=`43.316/47.094GB`、0 OOM/nonfinite，六卡已释放。assembler原样给出projection/ranking
+weights=`.006883349605446485/.010514451404229894`；两者在compiler各为positive gradient的`.25`，在
+factor为`.10873/.02688`。历史v6生成态的`a_correct`均值`.73453`且24/24低于1；correct-negative
+margin均值`.10324`、23/24为正，shuffled最弱且有1个反向。top1/top4 absolute numerator fraction中位
+`.18084/.52988`，没有单target垄断。config已原样嵌入证据并只解锁三步profile；尚无ECP训练或strict成绩。
 
 ## 2. EMBER problem and information wall
 

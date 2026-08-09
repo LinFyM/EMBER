@@ -538,35 +538,13 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
 
 def test_v6_prior_config_unlocks_profile_after_gradient_seal() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert runtime_for_mode(config, "gradient-profile") == (1, ())
-    with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
-        runtime_for_mode(config, "profile")
+    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
+        runtime_for_mode(config, "gradient-profile")
+    assert runtime_for_mode(config, "profile") == (3, (1, 3))
     with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
         runtime_for_mode(config, "formal")
 
-    gradient = _gradient_evidence()
-    profile_ready = deepcopy(config)
-    profile_ready["gradient_profile"].update(
-        {
-            "status": "sealed_from_live_train24_gradient_profile",
-            "artifact_evidence": gradient,
-        }
-    )
-    profile_ready["objective"]["auxiliary_weights"].update(
-        {
-            "status": "sealed_from_live_train24_gradient_profile",
-            **gradient["recommended_weights"],
-        }
-    )
-    profile_ready["profile_run"].update(
-        {"status": "ready_after_live_gradient_profile", "artifact_evidence": None}
-    )
-    profile_ready["formal_run"]["status"] = (
-        "blocked_until_live_a40_resume_profile_evidence"
-    )
-    assert runtime_for_mode(profile_ready, "profile") == (3, (1, 3))
-    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
-        runtime_for_mode(profile_ready, "formal")
+    gradient = config["gradient_profile"]["artifact_evidence"]
     assert _resume_profile_evidence_matches(_resume_evidence(gradient))
 
 
@@ -579,7 +557,7 @@ def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
     status_only["objective"]["auxiliary_weights"].update(
         {
             "status": "sealed_from_live_train24_gradient_profile",
-                "projection": 0.1,
+            "projection": 0.1,
             "ranking": 0.1,
         }
     )

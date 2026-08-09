@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 ECP六卡gradient profile完成并封存权重
+
+- CPU seal commit`de28157`已push，独立frozen worktree及分支均绑定同一commit/upstream；historical
+  `runs/outputs`只通过ignored symlink提供load-only资产。live双节点preflight选择空闲
+  `gpu01:0,1,2|4,5,7`，GPU3的`nlge`进程和`gpu02`他人进程均未触碰；`/data1`quota余量约481GiB，
+  本阶段预计峰值不足`.5GiB`。
+- tmux单次run自然exit0，root=
+  `runs/outputs/pi05_v6_ecp_gradient_profile_macro49_r6_lb20_mb10_de28157_20260809`。24 tasks、480/480
+  unique queries、8/8/8 negatives、最长105帧，wall/input wait=`20.42496/.17998s`，peak
+  allocated/reserved=`43,316,129,280/47,093,645,312` bytes，0 OOM/nonfinite；结束后六卡均14MiB。
+- artifact assembler完整复核Git/config/HDF5、3+3 NUMA、physical/local rank、deferred-NCCL、ownership和
+  panel，给出projection/ranking weights=`.006883349605446485/.010514451404229894`；compiler应用比例
+  均`.25`，factor=`.10873/.02688`。证据已原样写入v2 config，只把profile解锁为`(3,(1,3))`，formal
+  仍fail-closed。状态更新后全仓`259 passed in 30.88s`、compileall和`git diff --check`通过；下一步
+  clean commit/push并从严格后继frozen worktree完成resume门。
+
 ## 2026-08-09 ECP objective与v2执行合同完成（尚未启动GPU）
 
 - 唯一canonical objective已从whole-LoRA cosine+log-norm原位替换为Expert-Component Projection：

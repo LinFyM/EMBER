@@ -13,6 +13,18 @@
   只读比较。
 - 首轮真正裁决仍是closed-loop。若profile后`a_correct`大多数task向1、norm不塌缩，但macro10/25仍不超过
   134或只是任务换手，说明task-expert component本身不是held成功的共同方向，不能靠加权或长训挽救。
+- clean frozen`de28157`的profile保持旧positive gradient近乎不变：compiler只差`1.86e-9`、factor完全
+  相同，证明这次实证只换aux objective而没有暗改functional图。ECP projection/ranking未加权gradient在
+  compiler/factor为`.40153/1.66738`和`.26287/.26981`，远大于旧cosine ranking的`.00967/.01475`；
+  `.25`预算因此自动给出小得多的weights=`.00688335/.01051445`。这是coefficient对小expert norm更高的
+  解析灵敏度，不是训练不稳定，也不能用旧`.28570` ranking weight。
+- 初始化`a_correct` mean/median/min/max=`.73453/.73979/.48660/.96277`，24/24都低于1，所以projection
+  对所有task的直接目标方向一致；margin mean=`.10324`且23/24为正。reversed/shuffled/wrong mean margin=
+  `.09505/.05050/.16417`，唯一反向是object task2的shuffled `-.00968`，首轮应重点观察顺序辨识是否共同
+  改善而不是只看wrong-video分离。
+- 38 targets的absolute numerator fraction top1/top4 median=`.18084/.52988`，未出现单target垄断；
+  generated/expert norm mean仍为`140.52/4.182`，这是ECP有意保留的expert-orthogonal历史v6能力，不应在
+  profile阶段再加norm约束。上述均是机制起点，不是性能成绩。
 
 ## 2026-08-09 v6-prior formal四点裁决与Expert-Component Projection根因
 

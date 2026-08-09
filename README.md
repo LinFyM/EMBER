@@ -29,8 +29,9 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   只把task expert从“整套LoRA终点”改成“应补足的有效BA分量”。部署仍不读取expert bank或feature cache。
 - 当前没有运行中的EMBER GPU进程；objective-only ECP、v2 scientific/checkpoint/evaluator schema、
   projection metrics和legacy只读分析边界已原位实现；全仓CPU数学/合同回归`259 passed`且
-  `git diff --check`通过。下一步只做一次新gradient profile，再以macro10/25 strict门快速证伪，
-  避免为内部指标继续长训。
+  `git diff --check`通过。clean frozen`de28157`的六卡gradient profile已完成，唯一projection/ranking
+  weights=`.006883349605446485/.010514451404229894`；下一步封存三步resume profile，再以macro10/25
+  strict门快速证伪，避免为内部指标继续长训。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -39,7 +40,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   `.911427/.905107/.906432 LoRA/s`，选择实测最快batch8；8-row vertical smoke完整闭环且0异常。
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
-  `.008355172068998324/.28570466890490887`；ECP的projection/ranking weights必须重新profile，不能继承。
+  `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为
+  `.006883349605446485/.010514451404229894`，没有继承旧seal。
 - formal训练root为
   `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在
   `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809/analysis.json`。

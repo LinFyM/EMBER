@@ -10,7 +10,9 @@ macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此�
 当前唯一活动候选是objective-only的v6-Initialized Expert-Component Projection。保留原架构、初始化、
 冻结边界、logical B20/physical B10+10、data和negative schedule；只把expert direction+norm和cosine
 ranking替换成`a_correct→1`与bounded-gradient `a_correct-a_negative`。该objective、v2 schema、metrics和
-legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --check`通过；尚未启动任何ECP GPU工作。
+legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --check`通过。clean frozen`de28157`的
+唯一六卡gradient profile已自然完成并释放设备，projection/ranking weights封存为
+`.006883349605446485/.010514451404229894`；尚无ECP训练或strict结果。
 
 当前操作顺序：
 
@@ -18,7 +20,7 @@ legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --ch
 2. ECP objective、metrics和合同已原位实现，保持一个canonical Writer path；
 3. 已完成全仓CPU验证，锁定projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/
    信息墙不变；
-4. clean push/frozen worktree后live比较两节点，复用B10高吞吐图只做一次新aux gradient profile与短resume门；
+4. 已完成一次新aux gradient profile；clean push该seal后只做fresh/resume/contiguous短profile门；
 5. fresh短训并优先评测macro10；若`≤129`且多task净损失立即停止，只有健康才到25；
 6. 只有strict超过134且多task净获益才继续到50/100与六臂，循环到达标。
 

@@ -110,7 +110,7 @@ formal artifacts保存。
   同时保持macro0 load、no-video identity、信息墙和functional path。
 - [x] 新config/schema/metrics明确记录`a_correct/a_negative/a_margin`、generated norm和per-target贡献；旧v1
   由Git/formal artifact保存，不保留并行可执行objective。
-- [ ] clean push/frozen worktree，live双节点/存储preflight后只做一次B10六卡gradient profile，按同`.25`
+- [x] clean push/frozen worktree，live双节点/存储preflight后只做一次B10六卡gradient profile，按同`.25`
   compiler/factor budget封存两个aux weights；不扫权重。
 - [ ] fresh短训保存10/25。macro10 strict若`≤129`且多task净损失则停止；130--133只有内部方向和右斜率
   健康才允许到25；macro25若仍不超过134或只是换手则停止。

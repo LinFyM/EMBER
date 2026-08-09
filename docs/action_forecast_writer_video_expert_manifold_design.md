@@ -1513,7 +1513,8 @@ Writer推理图，不含训练objective状态。
 
 CPU定向门已覆盖dense BA oracle、独立generated/expert gauge、expert-orthogonal energy invariance、
 SmoothL1解析gradient、ranking符号、batch/shared-target broadcast、output-gradient chain rule、v1 checkpoint
-拒绝和v1/v2 analysis混合拒绝。ECP尚无GPU profile、训练或strict结果；任何性能表述仍以34.4后续实证为准。
+拒绝和v1/v2 analysis混合拒绝。本节实现封存时尚无GPU证据；后续gradient实证取34.6，性能表述仍只认
+34.4的closed-loop门。
 
 Architecture gate对两个既有超大协议owner报告legacy-ratchet escalation，按cohesive exception处理而不
 机械拆分：`v6_prior_checkpoint.py`只增加4行schema常量接线；`v6_prior_contract.py`净增56行用于ECP v2
@@ -1521,3 +1522,21 @@ objective/metric/artifact fail-closed验证；对应大测试文件净增26行�
 formal artifact协议，没有新增runner、执行分支、versioned objective或parallel function family。把同一
 原子协议拆到第二模块会增加跨文件状态耦合，却不减少活动责任；待该协议出现第二个真实消费者或下一轮
 替换缩小schema时再提取共享声明。本轮真正的objective owner `effective_objective.py`反而净减5行。
+
+### 34.6 gradient profile seal（2026-08-09）
+
+clean frozen`de28157`在`gpu01:0,1,2|4,5,7`完成唯一一次B10六卡profile：train24×B20=
+`480/480` unique queries，8/8/8 counterfactual，最长105帧，wall/input wait=`20.42496/.17998s`，peak
+allocated/reserved=`43,316,129,280/47,093,645,312` bytes，0 OOM/nonfinite。结束后六卡释放；启动前
+双节点、UUID/process、NUMA和`/data1`quota均live闭合。
+
+unweighted compiler/factor gradients为positive=`.0110556/.105556`、projection=`.401533/1.667382`、
+ranking=`.262866/.269814`。预注册逐aux逐block`.25`规则唯一给出
+`lambda_projection=.006883349605446485`、`lambda_ranking=.010514451404229894`；加权后compiler各`.25`，
+factor仅`.10873/.02688`。旧whole-LoRA ranking weight不可继承。artifact assembler证据已原样嵌入config，
+只解锁fresh0→1/exact-resume1→3/contiguous0→3；profile checkpoint仍禁止进入formal。
+
+初始化24/24 tasks的`a_correct<1`，mean `.73453`；correct-negative margin mean `.10324`且23/24为正，
+shuffled均值`.05050`最弱并有一个`-.00968`反向。top1/top4 absolute numerator fraction median=
+`.18084/.52988`，不存在单target垄断。generated norm仍远大于expert是本设计保留正交v6能力的预期，
+不能据此重加norm loss。这里仍只有gradient机制证据，没有ECP训练或closed-loop成绩。

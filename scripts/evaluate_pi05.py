@@ -192,6 +192,12 @@ def parse_args() -> argparse.Namespace:
     worker.add_argument("--writer-generator", action="store_true")
     aggregate = commands.add_parser("aggregate")
     aggregate.add_argument("--output-dir", type=Path, required=True)
+    checkpoint_curve = commands.add_parser("checkpoint-curve")
+    checkpoint_curve.add_argument("--root", type=Path, action="append", required=True)
+    checkpoint_curve.add_argument("--output", type=Path, required=True)
+    six_arm_audit = commands.add_parser("six-arm-audit")
+    six_arm_audit.add_argument("--root", type=Path, action="append", required=True)
+    six_arm_audit.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -985,6 +991,14 @@ def main() -> int:
                 )
             )
         )
+    elif args.command == "checkpoint-curve":
+        from ember.pi05_eval.analysis import analyze_checkpoint_curve
+
+        print(json.dumps(analyze_checkpoint_curve(args.root, args.output), sort_keys=True))
+    elif args.command == "six-arm-audit":
+        from ember.pi05_eval.analysis import audit_six_arms
+
+        print(json.dumps(audit_six_arms(args.root, args.output), sort_keys=True))
     else:
         _finalize_aggregate(args.output_dir)
     return 0

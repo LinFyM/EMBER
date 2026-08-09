@@ -121,6 +121,39 @@ def test_k4_teacher_schedule_is_unique_exclusion_safe_and_resumable() -> None:
     assert identity["unique_demo_indices"] == tuple(range(8))
 
 
+def test_one_shot_schedule_covers_all_videos_and_excludes_action_queries() -> None:
+    dataset, _ = _dataset(task_ids=(10,), demos=50, rows_per_demo=20)
+    schedule = TeacherVideoSchedule(
+        task_ids=(10,), demo_indices=range(50), seed=19, videos_per_visit=1
+    )
+    sampler = MixedTaskBatchSampler(
+        dataset,  # type: ignore[arg-type]
+        task_ids=(10,),
+        per_rank_batch_size=20,
+        start_step=0,
+        stop_step=50,
+        rank=0,
+        world_size=1,
+        seed=20260720,
+        tasks_per_rank_per_update=1,
+        video_schedule=schedule,
+        task_video_costs={10: {demo: 1 for demo in range(50)}},
+    )
+    full = []
+    for visit in range(50):
+        actions = sampler.action_demo_indices_for_task_visit(10, visit)
+        teacher = schedule.demos_for_task_visit(10, visit, excluded=actions)
+        assert len(actions) == 20
+        assert len(teacher) == 1
+        assert teacher[0] not in actions
+        full.append(teacher[0])
+    assert set(full) == set(range(50))
+    assert full[17:] == [
+        schedule.demos_for_task_visit(10, visit)[0]
+        for visit in range(17, 50)
+    ]
+
+
 def test_joint_consumed_summary_covers_k4_and_action_schedules() -> None:
     dataset, _ = _dataset()
     sampler = _sampler(dataset, rank=0, start_step=0, stop_step=8)

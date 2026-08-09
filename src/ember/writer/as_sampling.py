@@ -409,6 +409,22 @@ class MixedTaskBatchSampler:
     def _episode_for_task_visit(
         self, task_id: int, task_visit: int, batch_offset: int
     ) -> tuple[int, int]:
+        if self.video_schedule.videos_per_visit == 1:
+            teacher_demo = self.video_schedule.demos_for_task_visit(
+                task_id,
+                task_visit,
+            )[0]
+            selected: list[tuple[int, int]] = []
+            cursor = task_visit * self.per_rank_batch_size
+            while len(selected) <= batch_offset:
+                episode_cycle, episode_offset = divmod(
+                    cursor, self.episodes_per_task
+                )
+                demo_index = self.episode_orders[task_id][episode_offset]
+                if demo_index != teacher_demo:
+                    selected.append((demo_index, episode_cycle))
+                cursor += 1
+            return selected[batch_offset]
         position = task_visit * self.per_rank_batch_size + batch_offset
         episode_cycle, episode_offset = divmod(position, self.episodes_per_task)
         demo_index = self.episode_orders[task_id][episode_offset]
@@ -604,7 +620,7 @@ class TeacherVideoSchedule:
             or not demo_indices
             or len(set(demo_indices)) != len(demo_indices)
             or seed < 0
-            or not 1 < videos_per_visit <= len(demo_indices)
+            or not 1 <= videos_per_visit <= len(demo_indices)
         ):
             raise WriterModelError("invalid teacher-video schedule")
         self.task_ids = tuple(sorted(int(value) for value in task_ids))
@@ -622,6 +638,19 @@ class TeacherVideoSchedule:
         if task_id not in self.task_ids or task_visit < 0:
             raise WriterModelError("teacher-video request is outside the schedule")
         excluded_set = {int(value) for value in excluded}
+        if self.videos_per_visit == 1:
+            cycle, offset = divmod(task_visit, len(self.demo_indices))
+            order = np.random.default_rng(
+                np.random.SeedSequence(
+                    [self.seed, task_id, cycle, self._SEED_TAG]
+                )
+            ).permutation(self.demo_indices)
+            selected = int(order[offset])
+            if selected in excluded_set:
+                raise WriterModelError(
+                    "one-shot teacher video overlapped an action query"
+                )
+            return (selected,)
         candidates = [
             int(value) for value in self.demo_indices if int(value) not in excluded_set
         ]

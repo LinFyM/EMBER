@@ -11,7 +11,7 @@
 
 1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
 2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
-3. 当前实现gradient与fresh/resume/contiguous的结构化artifact verifier；
+3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
 4. 最多六张空闲A40做gradient weight、exact-resume和训练吞吐profile；
 5. formal continuation和关键checkpoint strict rollout；
 6. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
@@ -133,19 +133,21 @@ profile固定train24 macro49，覆盖24×B20=480 unique跨episodequeries并包�
 1. 分别测positive、expert、ranking在compiler和factor heads的未加权gradient norm；
 2. 一次性选择`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
    `.25`；若初始化已满足而梯度近零，不人为放大；
-3. 同时记录每rank video encode、policy functional、auxiliary、backward、flat all-reduce、optimizer、
-   input wait、GPU utilization和peak memory；
-4. 在不改变B20/full24 objective的前提下实测physical microbatch、query loader workers/prefetch和必要的
-   activation checkpoint；取吞吐最高配置；
+3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
+   在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
+4. 先看上述证据；仅在data wait、显存或计算瓶颈真实出现时，在不改变B20/full24 objective的前提下
+   实测physical microbatch、query loader workers/prefetch或activation checkpoint候选，取吞吐最高配置；
 5. 用丢弃型profile权重完成fresh0→1、same-root exact-resume1→3、独立contiguous0→3。要求scientific
    metrics、cursor、Writer/RNG和optimizer/scheduler语义一致；允许正常并行低位roundoff，不要求不同
    reduction schedule逐bit相同；
 6. profile checkpoint永久禁止warm-start formal。
 
-gradient结果封存前需由结构化verifier从`gradient_profile.json`、completion和run contract重算推荐权重并
-核对24 tasks、macro49和六卡拓扑；fresh/resume/contiguous完成后也需由artifact verifier核对同一config
-bytes/commit/topology、completion、cursor/RNG和optimizer/scheduler语义。二者都是低成本CPU封存，不做
-hash，也不能被人工status替代。
+两个verifier现已实现并通过全仓CPU回归。gradient assembler从`gradient_profile.json`、completion、
+invocation和run contract重算推荐权重，精确重建24-task deterministic video/negative panel、canonical
+config、clean pushed Git及六卡拓扑；resume assembler还调用只读checkpoint inspector，核对600 Writer
+tensors、41 trainable tensors、6-rank RNG、Adam moments、scheduler/AMP、cursor、Git phase ancestry和
+scientific tolerance。task/frame provenance还会回查frozen target manifest、HDF5 path/bytes和对应demo的
+真实frame metadata。二者不做hash，也不能被人工status、stale tracked config或复制到外部的config替代。
 
 工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少B20或盲重试
 掩盖问题。

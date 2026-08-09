@@ -174,6 +174,7 @@
     "artifact_evidence": null,
     "expected_world_size": 6,
     "tasks_per_rank": 4,
+    "num_workers_per_rank": 2,
     "macros": 1,
     "schedule_macro": 49,
     "physical_policy_batch": 20,
@@ -185,6 +186,11 @@
     "artifact_evidence": null,
     "expected_world_size": 6,
     "tasks_per_rank": 4,
+    "allowed_num_workers_per_rank": [
+      0,
+      2,
+      4
+    ],
     "total_macros": 3,
     "checkpoint_macros": [
       1,

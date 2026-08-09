@@ -44,19 +44,26 @@ formal artifacts保存。
 
 ## Phase 2 — six A40 gradient/resume/throughput profile
 
+- [x] 实现并CPU验证gradient artifact assembler：从retained contract/profile/completion/invocation重算
+  weights，精确核对canonical config、clean pushed Git、六卡NUMA拓扑、480 unique queries、24-task
+  deterministic correct/negative/video schedule、frozen manifest/HDF5 frame metadata、显存/等待时间和
+  零OOM/nonfinite；status本身不能解锁下一阶段。
+- [x] 实现并CPU验证fresh/resume/contiguous assembler与只读checkpoint inspector：核对Git phase ancestry、
+  contract/cursor、600 Writer tensors、41 trainable tensors、6-rank RNG、Adam moments、scheduler/AMP和
+  三宏步scientific metrics；接受预注册parallel roundoff而非逐bit一致。
 - [ ] 重新live选最多6张空闲A40，按实际NUMA建立physical/local rank映射。
 - [ ] 固定macro49覆盖train24×B20=480 unique queries和最长105-frame video；记录positive/expert/ranking
   对compiler/factor的未加权gradient norms。
 - [ ] 一次性封存`lambda_expert/lambda_rank`，两个blocks上各auxiliary均不超过positive的`.25`；不按held
   outcome sweep或在线自适应。
-- [ ] 用结构化artifact verifier从gradient profile重算推荐weights并核对24 tasks/macro49/六卡拓扑，
-  再把gradient+aux状态置为sealed/profile-ready。
-- [ ] profile physical microbatch、DataLoader workers/prefetch和必要checkpointing，优先samples/s与高有效
-  显存利用，不改变B20/full24 scientific batch。
+- [ ] 对正式gradient artifact运行assembler，再把其原样证据写回gradient+aux并置为profile-ready；
+  不人工拼weight/evidence，不从外部复制config绕过canonical tracked config。
+- [ ] 先依据retained `input_wait/step wall/peak VRAM`判断真实瓶颈；只有data wait或显存/计算证据要求时才
+  实测workers/prefetch、physical microbatch或activation checkpointing候选，按吞吐取胜且不改变
+  B20/full24 scientific batch。不得为了“多记录阶段”在热路径增加CUDA同步。
 - [ ] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、
   optimizer/scheduler和scientific metrics语义，接受正常parallel roundoff。
-- [ ] 用artifact verifier核对三条roots的同一config bytes/commit/topology、completion、cursor/RNG与
-  optimizer/scheduler语义，再封存profile/formal-ready；禁止人工status跳转。
+- [ ] 对三条正式roots运行assembler并原样写回证据，封存profile/formal-ready；禁止人工status跳转。
 - [ ] clean seal config与formal launch contract；profile权重永久禁止进入formal。
 
 ## Phase 3 — formal v6-prior continuation

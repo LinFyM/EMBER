@@ -25,6 +25,7 @@ from ember.expert_manifold.v6_prior import (
 from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
+    V6_PRIOR_CANONICAL_CONFIG,
     load_v6_prior_config,
     suggest_auxiliary_weight,
 )
@@ -62,7 +63,6 @@ class TaskObjective:
     auxiliary: EffectiveAuxiliaryGradients
 
 
-
 def _batch_task_id(batch: Mapping[str, Any]) -> int:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
@@ -77,9 +77,7 @@ def _target_state(
     runtime: V6PriorRuntime,
     task_ordinal: int,
 ) -> dict[str, torch.Tensor]:
-    return {
-        name: value[task_ordinal] for name, value in runtime.expert_targets.items()
-    }
+    return {name: value[task_ordinal] for name, value in runtime.expert_targets.items()}
 
 
 def _task_objective(
@@ -93,9 +91,7 @@ def _task_objective(
     if _batch_task_id(batch) != task_id:
         raise ExpertManifoldError("v6-prior sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
-    excluded = runtime.sampler.action_demo_indices_for_task_visit(
-        task_id, task_visit
-    )
+    excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     teacher_demo = runtime.video_schedule.demos_for_task_visit(
         task_id,
         task_visit,
@@ -196,9 +192,13 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         value.auxiliary.ranking.counterfactual.generated_norm.mean(),
         value.auxiliary.ranking.correct.target_norm.mean(),
     )
-    metric_values = torch.stack(
-        tuple(item.detach().to(dtype=torch.float32) for item in metric_tensors)
-    ).to(device="cpu").tolist()
+    metric_values = (
+        torch.stack(
+            tuple(item.detach().to(dtype=torch.float32) for item in metric_tensors)
+        )
+        .to(device="cpu")
+        .tolist()
+    )
     if not all(math.isfinite(item) for item in metric_values):
         raise ExpertManifoldError("v6-prior task objective metric is non-finite")
     if metric_values[-1] <= 1e-12:
@@ -263,7 +263,8 @@ def _mean_trainable_gradients(runtime: V6PriorRuntime) -> torch.Tensor:
 def _runtime_maximums(
     context: DistributedContext,
     started: float,
-) -> tuple[float, int, int]:
+    input_wait_seconds: float,
+) -> tuple[float, int, int, float]:
     # One macro-boundary synchronization makes throughput evidence include all
     # queued optimizer work. Per-task and per-tensor synchronization stays absent.
     torch.cuda.synchronize(context.device)
@@ -272,13 +273,14 @@ def _runtime_maximums(
             time.monotonic() - started,
             torch.cuda.max_memory_allocated(context.device),
             torch.cuda.max_memory_reserved(context.device),
+            input_wait_seconds,
         ),
         dtype=torch.float64,
         device=context.device,
     )
     if context.world_size > 1:
         dist.all_reduce(values, op=dist.ReduceOp.MAX)
-    return float(values[0]), int(values[1]), int(values[2])
+    return float(values[0]), int(values[1]), int(values[2]), float(values[3])
 
 
 def _component_layout(
@@ -305,13 +307,18 @@ def _component_norms(
     for name, start, stop in layout:
         root = name.split(".", 1)[0]
         parts[root].append(value[start:stop].square().sum())
-    packed = torch.stack(
-        (
-            torch.stack(parts["compiler"]).sum().sqrt(),
-            torch.stack(parts["factor_heads"]).sum().sqrt(),
-            torch.linalg.vector_norm(value),
+    packed = (
+        torch.stack(
+            (
+                torch.stack(parts["compiler"]).sum().sqrt(),
+                torch.stack(parts["factor_heads"]).sum().sqrt(),
+                torch.linalg.vector_norm(value),
+            )
         )
-    ).detach().to(device="cpu", dtype=torch.float32).tolist()
+        .detach()
+        .to(device="cpu", dtype=torch.float32)
+        .tolist()
+    )
     if not all(math.isfinite(item) for item in packed):
         raise ExpertManifoldError("v6-prior gradient-profile norm is non-finite")
     return dict(zip(("compiler", "factor_heads", "global"), packed, strict=True))
@@ -329,9 +336,12 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         for name in ("positive", "expert", "ranking")
     }
     local_records = []
+    input_wait_seconds = 0.0
     started = time.monotonic()
     for microtask in range(local_tasks):
+        input_started = time.monotonic()
         batch = next(runtime.iterator)
+        input_wait_seconds += time.monotonic() - input_started
         objective = _task_objective(
             runtime,
             macro=runtime.segment.schedule_start_macro,
@@ -368,12 +378,12 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
             value.div_(runtime.context.world_size)
     layout = _component_layout(runtime)
     norms = {
-        name: _component_norms(value, layout)
-        for name, value in accumulators.items()
+        name: _component_norms(value, layout) for name, value in accumulators.items()
     }
     fraction = float(
-        runtime.config["objective"]["auxiliary_weights"]
-        ["maximum_fraction_of_positive_gradient_per_auxiliary"]
+        runtime.config["objective"]["auxiliary_weights"][
+            "maximum_fraction_of_positive_gradient_per_auxiliary"
+        ]
     )
     recommended = {
         name: suggest_auxiliary_weight(
@@ -381,18 +391,18 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         )
         for name in ("expert", "ranking")
     }
-    seconds, allocated, reserved = _runtime_maximums(runtime.context, started)
-    task_records = _gather_task_records(local_records, runtime.context)
-    action_queries_per_task = int(
-        runtime.config["data"]["action_queries_per_task"]
+    seconds, allocated, reserved, input_wait_seconds = _runtime_maximums(
+        runtime.context,
+        started,
+        input_wait_seconds,
     )
+    task_records = _gather_task_records(local_records, runtime.context)
+    action_queries_per_task = int(runtime.config["data"]["action_queries_per_task"])
     query_summary = runtime.run_contract["data"]["consumed_schedule"]["query"]
     total_action_queries = int(query_summary["global_examples"])
     unique_action_queries = int(query_summary["unique_query_rows"])
     counterfactual_counts = {
-        name: sum(
-            record["counterfactual_kind"] == name for record in task_records
-        )
+        name: sum(record["counterfactual_kind"] == name for record in task_records)
         for name in ("reversed", "shuffled", "wrong")
     }
     if (
@@ -400,10 +410,8 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         or action_queries_per_task != 20
         or total_action_queries != 480
         or unique_action_queries != 480
-        or total_action_queries
-        != len(task_records) * action_queries_per_task
-        or counterfactual_counts
-        != {"reversed": 8, "shuffled": 8, "wrong": 8}
+        or total_action_queries != len(task_records) * action_queries_per_task
+        or counterfactual_counts != {"reversed": 8, "shuffled": 8, "wrong": 8}
     ):
         raise ExpertManifoldError("v6-prior gradient-profile panel changed")
     if runtime.context.is_main:
@@ -423,6 +431,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
                 "seal_rule": runtime.config["gradient_profile"]["seal_rule"],
                 "task_records": task_records,
                 "step_seconds": seconds,
+                "input_wait_seconds": input_wait_seconds,
                 "max_cuda_allocated_bytes": allocated,
                 "max_cuda_reserved_bytes": reserved,
                 "oom_count": 0,
@@ -456,8 +465,11 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         step_started = time.monotonic()
         runtime.optimizer.zero_grad(set_to_none=True)
         local_records = []
+        input_wait_seconds = 0.0
         for microtask in range(local_tasks):
+            input_started = time.monotonic()
             batch = next(runtime.iterator)
+            input_wait_seconds += time.monotonic() - input_started
             objective = _task_objective(
                 runtime,
                 macro=macro,
@@ -479,9 +491,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         _mean_trainable_gradients(runtime)
         gradient_norm = torch.nn.utils.clip_grad_norm_(
             runtime.trainable_parameters,
-            float(
-                runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]
-            ),
+            float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
         )
         gradient_norm_value = float(gradient_norm)
         if not math.isfinite(gradient_norm_value):
@@ -508,8 +518,10 @@ def _run_training(runtime: V6PriorRuntime) -> None:
             name: sum(float(row[name]) for row in task_records) / 24
             for name in metric_names
         }
-        seconds, allocated, reserved = _runtime_maximums(
-            runtime.context, step_started
+        seconds, allocated, reserved, input_wait_seconds = _runtime_maximums(
+            runtime.context,
+            step_started,
+            input_wait_seconds,
         )
         row = {
             "macro": cursor,
@@ -527,6 +539,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
             },
             "task_records": task_records,
             "step_seconds": seconds,
+            "input_wait_seconds": input_wait_seconds,
             "elapsed_seconds": time.monotonic() - started,
             "max_cuda_allocated_bytes": allocated,
             "max_cuda_reserved_bytes": reserved,
@@ -562,7 +575,6 @@ def _run_training(runtime: V6PriorRuntime) -> None:
                 "content_hash_policy": "disabled_by_owner",
             },
         )
-
 
 
 def train(args: argparse.Namespace) -> None:
@@ -638,6 +650,10 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         setattr(args, name, path)
     args.output_dir = args.output_dir.resolve()
     args.resume = args.resume.resolve() if args.resume else None
+    if args.config != V6_PRIOR_CANONICAL_CONFIG:
+        raise ExpertManifoldError(
+            "v6-prior runtime requires the tracked canonical config"
+        )
     configured_warm_start = (
         REPO_ROOT
         / str(load_v6_prior_config(args.config)["initialization"]["checkpoint"])
@@ -647,7 +663,5 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     if args.num_workers < 0 or (
         args.stop_after_macro is not None and args.stop_after_macro <= 0
     ):
-        raise ExpertManifoldError(
-            "v6-prior worker count or stop boundary is invalid"
-        )
+        raise ExpertManifoldError("v6-prior worker count or stop boundary is invalid")
     return args

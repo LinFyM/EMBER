@@ -1,5 +1,21 @@
 # EMBER Findings
 
+## 2026-08-09 六卡profile证据门的第一性原理结论（CPU实现）
+
+- gradient norm只有在它确实来自同一clean pushed canonical config、train24全覆盖、精确video/negative
+  schedule和六卡拓扑时才能选择auxiliary weight；否则“两个block均不超过positive的`.25`”只是可伪造
+  数字。新assembler因此从raw retained artifacts重算panel、norm、weight和applied fraction，并回查
+  frozen manifest、HDF5 path/bytes与demo frame metadata；不相信status、stale config或人工摘要。
+- exact resume的科学要求不是逐bit相同，而是同一cursor/contract、完整6-rank RNG、scheduler/AMP、
+  Writer trainable state和Adam moments在预注册容差内等价。只比loss会遗漏optimizer二阶矩损坏，只比
+  Writer会遗漏下一步更新轨迹；当前只读comparator同时封住两层，并接受正常parallel reduction roundoff。
+- 吞吐证据应回答“GPU在等数据还是在算、显存是否逼近有效边界”，不需要在每个video/policy/backward
+  阶段插入同步。retained path只记录已有宏步同步下的step wall、input wait和peak VRAM；若首个六卡
+  gradient显示data wait显著才实测更高workers，若显存/计算证据指向checkpointing才做单变量候选。
+  这保持了owner要求的吞吐优先，也避免为profile精度拖慢真正训练。
+- 这些是工程/谱系门，不是方法有效性证据。当前仍无v6-prior新strict分数；`143/400`历史最好和
+  `>150/400`目标均未改变，最终仍由及时paired correct400与五/六臂闭环裁决。
+
 ## 2026-08-09 v6-prior单卡吞吐与纵向链路的真实结论
 
 - clean pushed/frozen `ded0c80`在live比较两节点并核对quota后只使用空闲`gpu02:0`。fixed panel为

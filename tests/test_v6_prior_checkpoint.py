@@ -25,6 +25,9 @@ from ember.expert_manifold.v6_prior_checkpoint import (
     load_v6_prior_checkpoint,
     save_v6_prior_checkpoint,
 )
+from ember.expert_manifold.v6_prior_contract import (
+    _checkpoint_comparison_evidence_matches,
+)
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -65,7 +68,10 @@ def _synthetic_formal_checkpoint(
     checkpoint = root / "checkpoints" / f"macro_{macro:08d}"
     checkpoint.mkdir(parents=True)
     save_file(
-        {name: value.detach().cpu().contiguous() for name, value in writer_state.items()},
+        {
+            name: value.detach().cpu().contiguous()
+            for name, value in writer_state.items()
+        },
         str(checkpoint / "writer.safetensors"),
     )
     torch.save(trainer, checkpoint / "trainer.pt")
@@ -141,9 +147,7 @@ def _synthetic_formal_checkpoint(
             "world_size": 6,
             "cursor_contract": cursor,
             "checkpoint_contract": contract,
-            "files": {
-                name: (checkpoint / name).stat().st_size for name in names
-            },
+            "files": {name: (checkpoint / name).stat().st_size for name in names},
             "content_hash_policy": "disabled_by_owner",
         },
     )
@@ -186,9 +190,7 @@ def _synthetic_checkpoint_pair(tmp_path: Path) -> tuple[Path, Path]:
     right_state[trainable_names[0]].view(-1)[0].add_(1e-7)
     right_trainer = copy.deepcopy(trainer)
     first_id = right_trainer["optimizer"]["param_groups"][0]["params"][0]
-    right_trainer["optimizer"]["state"][first_id]["exp_avg"].view(-1)[0].add_(
-        1e-8
-    )
+    right_trainer["optimizer"]["state"][first_id]["exp_avg"].view(-1)[0].add_(1e-8)
     right = _synthetic_formal_checkpoint(
         tmp_path / "right",
         writer_state=right_state,
@@ -296,9 +298,24 @@ def test_v6_prior_checkpoint_inspection_and_tolerant_semantic_comparison(
     assert compared["cursor"]["semantic_equal"] is True
     assert compared["rng"]["semantic_equal"] is True
     assert compared["writer"]["frozen_exact"] is True
+    assert compared["writer"]["state_tensor_count"] == 600
+    assert compared["writer"]["tensor_count"] == 41
     assert 0.0 < compared["writer"]["max_abs"] <= 7.5e-6
-    assert compared["trainer"]["optimizer"]["max_abs"] == pytest.approx(
-        1e-8, abs=1e-10
+    assert compared["trainer"]["optimizer"]["max_abs"] == pytest.approx(1e-8, abs=1e-10)
+    assert _checkpoint_comparison_evidence_matches(
+        {
+            "macro": 3,
+            "cursor_semantic_equal": compared["cursor"]["semantic_equal"],
+            "checkpoint_contract_semantic_equal": compared["checkpoint_contract"][
+                "semantic_equal"
+            ],
+            "rng_rank_count": compared["rng"]["rank_count"],
+            "rng_semantic_equal": compared["rng"]["semantic_equal"],
+            "scheduler_semantic_equal": compared["trainer"]["scheduler_semantic_equal"],
+            "amp_semantic_equal": compared["trainer"]["amp_semantic_equal"],
+            "optimizer": compared["trainer"]["optimizer"],
+            "writer": compared["writer"],
+        }
     )
     json.dumps(compared)
     assert random.getstate() == python_before

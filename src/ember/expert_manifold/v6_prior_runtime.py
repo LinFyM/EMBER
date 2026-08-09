@@ -36,6 +36,7 @@ from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     V6_PRIOR_CONFIG_SCHEMA,
     authority_path,
+    git_commit_is_strict_ancestor,
     load_v6_prior_config,
     runtime_for_mode,
 )
@@ -48,7 +49,11 @@ from ember.pi05_eval_contract import (
 )
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
-from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    read_json,
+    write_json_atomic,
+)
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import (
     initialize_deferred_process_group,
@@ -111,7 +116,6 @@ class V6PriorRuntime:
     metrics_path: Path
 
 
-
 def _resume_macro(path: Path | None) -> int:
     if path is None:
         return 0
@@ -141,14 +145,46 @@ def _resolve_segment(
         and 0 <= start < stop <= total
     )
     if args.mode == "gradient-profile":
+        valid = valid and args.num_workers == int(selected["num_workers_per_rank"])
+    elif args.mode == "profile":
+        valid = valid and args.num_workers in tuple(
+            int(value) for value in selected["allowed_num_workers_per_rank"]
+        )
+    else:
+        valid = valid and args.num_workers == int(
+            config["profile_run"]["artifact_evidence"]["runtime_selection"][
+                "num_workers_per_rank"
+            ]
+        )
+    if args.mode == "gradient-profile":
         valid = valid and args.resume is None and stop == total == 1
     else:
         valid = valid and stop in checkpoints and (start == 0 or start in checkpoints)
     state = git_state(REPO_ROOT)
+    phase_lineage: tuple[tuple[str, str], ...] = ()
+    if args.mode == "profile":
+        phase_lineage = (
+            (
+                str(config["gradient_profile"]["artifact_evidence"]["git"]["commit"]),
+                str(state["commit"]),
+            ),
+        )
+    elif args.mode == "formal":
+        resume_evidence = config["profile_run"]["artifact_evidence"]
+        gradient_commit = str(resume_evidence["gradient_commit"])
+        profile_commit = str(resume_evidence["profile_git"]["commit"])
+        phase_lineage = (
+            (gradient_commit, profile_commit),
+            (profile_commit, str(state["commit"])),
+        )
     valid = (
         valid
         and not state["dirty_paths"]
         and state["commit"] == state["upstream_commit"]
+        and all(
+            git_commit_is_strict_ancestor(ancestor, descendant)
+            for ancestor, descendant in phase_lineage
+        )
     )
     if not valid:
         raise ExpertManifoldError("v6-prior runtime differs from its sealed segment")
@@ -286,9 +322,7 @@ def _build_data(
         demo_indices=demos,
         frame_stride=int(config["writer"]["frame_stride"]),
     )
-    declared_maximum = int(
-        config["gradient_profile"]["longest_video_sampled_frames"]
-    )
+    declared_maximum = int(config["gradient_profile"]["longest_video_sampled_frames"])
     if max(max(rows.values()) for rows in video_costs.values()) != declared_maximum:
         raise ExpertManifoldError("v6-prior longest sampled video changed")
     sampler = MixedTaskBatchSampler(
@@ -451,9 +485,7 @@ def _build_language_inputs(
         max_length,
         str(context.device),
     )
-    language = {
-        task.global_task_id: tokenizer((task.language,)) for task in tasks
-    }
+    language = {task.global_task_id: tokenizer((task.language,)) for task in tasks}
     store = RawTeacherVideoStore(
         [task.authority for task in tasks],
         frame_stride=int(config["writer"]["frame_stride"]),
@@ -591,6 +623,12 @@ def _run_contract(
             ),
             "checkpoint_macros": list(segment.checkpoint_macros),
             "num_workers_per_rank": args.num_workers,
+            "action_loader_prefetch_factor": 2 if args.num_workers else None,
+            "action_loader_persistent_workers": args.num_workers > 0,
+            "physical_policy_batch": int(config["data"]["action_queries_per_task"]),
+            "writer_activation_checkpointing": bool(
+                config["writer"]["activation_checkpointing"]
+            ),
             "distributed_model_wrapper": "none",
             "gradient_reduction": (
                 "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
@@ -669,7 +707,6 @@ def _metrics_rows(path: Path) -> int:
     if not path.is_file():
         return 0
     return sum(bool(line) for line in path.read_text(encoding="utf-8").splitlines())
-
 
 
 def _prepare_runtime(

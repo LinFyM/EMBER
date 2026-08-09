@@ -23,19 +23,19 @@ from ember.expert_manifold.v6_prior import (
     V6_WRITER_STATE_TENSOR_COUNT,
     configure_v6_prior_trainability,
 )
-from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
+from ember.pi05_source_checkpoint import (
+    DistributedContext,
+    read_json,
+    write_json_atomic,
+)
 from ember.writer.model import CompleteLoRAWriter
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_prior_writer_checkpoint_v1"
 V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_prior_writer_trainer_v1"
 V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_prior_writer_rank_rng_v1"
-V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_prior_checkpoint_inspection_v1"
-)
-V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = (
-    "ember_pi05_v6_prior_checkpoint_comparison_v1"
-)
+V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = "ember_pi05_v6_prior_checkpoint_inspection_v1"
+V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_prior_checkpoint_comparison_v1"
 V6_PRIOR_WORLD_SIZE = 6
 V6_PRIOR_FROZEN_PARAMETER_TENSOR_COUNT = 482
 V6_PRIOR_FROZEN_STATE_TENSOR_COUNT = 483
@@ -182,9 +182,9 @@ def save_v6_prior_checkpoint(
             "writer.safetensors": writer_path.stat().st_size,
             "trainer.pt": trainer_path.stat().st_size,
             **{
-                f"rng_rank_{rank:03d}.pt": (
-                    temporary / f"rng_rank_{rank:03d}.pt"
-                ).stat().st_size
+                f"rng_rank_{rank:03d}.pt": (temporary / f"rng_rank_{rank:03d}.pt")
+                .stat()
+                .st_size
                 for rank in range(context.world_size)
             },
         }
@@ -235,8 +235,7 @@ def load_v6_prior_checkpoint(
         or int(manifest.get("world_size", -1)) != context.world_size
         or int(manifest.get("metrics_rows", -1)) != macro
         or manifest.get("cursor_contract") != dict(expected_cursor_contract)
-        or manifest.get("checkpoint_contract")
-        != dict(expected_checkpoint_contract)
+        or manifest.get("checkpoint_contract") != dict(expected_checkpoint_contract)
         or set(files) != expected_files
         or manifest.get("content_hash_policy") != "disabled_by_owner"
     ):
@@ -366,14 +365,12 @@ def _validate_checkpoint_contract(
             name.split(".", 1)[0] not in V6_PRIOR_TRAINABLE_ROOTS
             for name in names_tuple
         )
-        or contract.get("run_schema")
-        != "ember_pi05_v6_prior_writer_launch_v1"
+        or contract.get("run_schema") != "ember_pi05_v6_prior_writer_launch_v1"
         or contract.get("mode") not in {"profile", "formal"}
         or not isinstance(contract.get("git_commit"), str)
         or len(str(contract.get("git_commit"))) < 7
         or not isinstance(config.get("path"), str)
-        or config.get("schema")
-        != "ember_pi05_v6_prior_policy_effective_writer_v1"
+        or config.get("schema") != "ember_pi05_v6_prior_policy_effective_writer_v1"
         or (_strict_int(config.get("bytes")) or -1) <= 0
         or not source
         or initialization.get("mode") != "historical_v6_macro400_load_only"
@@ -398,8 +395,7 @@ def _validate_checkpoint_contract(
         != V6_PRIOR_FROZEN_PARAMETER_TENSOR_COUNT
         or _strict_int(ownership.get("trainable_tensor_count"))
         != V6_PRIOR_TRAINABLE_TENSOR_COUNT
-        or _strict_int(ownership.get("source_policy_trainable_parameter_count"))
-        != 0
+        or _strict_int(ownership.get("source_policy_trainable_parameter_count")) != 0
     ):
         raise _inspection_error("checkpoint contract")
     return dict(contract), names_tuple
@@ -419,14 +415,10 @@ def _validate_writer(
     }
     observed_templates = {name for name in state if name.startswith("template_")}
     observed_trainable = {
-        name
-        for name in state
-        if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
+        name for name in state if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
     }
     frozen_state = {
-        name
-        for name in state
-        if name.split(".", 1)[0] in V6_PRIOR_FROZEN_ROOTS
+        name for name in state if name.split(".", 1)[0] in V6_PRIOR_FROZEN_ROOTS
     }
     frozen_buffers = {"semantic_encoder.fixed_suffix_noise"}
     frozen_parameters = frozen_state - frozen_buffers
@@ -550,11 +542,18 @@ def _validate_optimizer(
     trainable_names: Sequence[str],
     writer: Mapping[str, torch.Tensor],
 ) -> dict[str, Any]:
-    if not isinstance(optimizer, Mapping) or set(optimizer) != {"state", "param_groups"}:
+    if not isinstance(optimizer, Mapping) or set(optimizer) != {
+        "state",
+        "param_groups",
+    }:
         raise _inspection_error("optimizer state")
     state = optimizer.get("state")
     groups = optimizer.get("param_groups")
-    if not isinstance(state, Mapping) or not isinstance(groups, list) or len(groups) != 1:
+    if (
+        not isinstance(state, Mapping)
+        or not isinstance(groups, list)
+        or len(groups) != 1
+    ):
         raise _inspection_error("optimizer state")
     group = groups[0]
     if not isinstance(group, Mapping) or not _finite_scalar_tree(group):
@@ -724,9 +723,10 @@ def _inspect_v6_prior_checkpoint(checkpoint: Path) -> _CheckpointInspection:
     writer, writer_summary = _validate_writer(
         checkpoint / "writer.safetensors", trainable_names
     )
-    if writer_summary["state_value_count"] != contract["initialization"][
-        "writer_state_value_count"
-    ]:
+    if (
+        writer_summary["state_value_count"]
+        != contract["initialization"]["writer_state_value_count"]
+    ):
         raise _inspection_error("Writer tensor shapes")
     trainer, trainer_summary = _validate_trainer(
         checkpoint / "trainer.pt",
@@ -867,9 +867,8 @@ def _compare_writer_states(
     for name in sorted(left.writer):
         left_value = left.writer[name]
         right_value = right.writer[name]
-        if (
-            left_value.dtype != right_value.dtype
-            or tuple(left_value.shape) != tuple(right_value.shape)
+        if left_value.dtype != right_value.dtype or tuple(left_value.shape) != tuple(
+            right_value.shape
         ):
             raise _inspection_error(f"compared Writer schema for {name}")
         if name not in trainable:
@@ -893,6 +892,7 @@ def _compare_writer_states(
         raise _inspection_error("compared trainable Writer tolerance")
     return {
         "tensor_schema_equal": True,
+        "state_tensor_count": len(left.writer),
         "frozen_exact": True,
         "frozen_tensor_count": frozen_count,
         "trainable_tensor_count": len(trainable),

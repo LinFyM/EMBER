@@ -22,7 +22,8 @@
   最高的batch，使用原生BF16/F32
   LoRA cache、零重复Writer forward、更少host sync和2-worker action prefetch。clean pushed
   `ded0c80`的A40 fixed-panel profile选择batch8；随后8-task纵向smoke完整通过并由retained artifacts
-  组装evaluation seal。当前只解锁六卡gradient profile，尚未产生新方法性能结论。
+  组装evaluation seal。gradient/resume结构化artifact verifier与只读checkpoint comparator也已完成
+  CPU验证；当前只解锁六卡gradient profile，尚未产生新方法性能结论。
 
 当前唯一活动候选是
 **v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
@@ -213,7 +214,12 @@ Experts不解决：
   `325.540s`、rollout window=`196.816s`，进程结束后GPU回到0MiB；
 - artifact assembler已从两个retained roots重建完整evidence，config现为evaluation `sealed`、
   gradient profile `ready_after_cpu_and_single_a40_throughput_smoke`。相关定向测试随状态更新通过；
-  六卡gradient与resume artifact verifier仍是下一门。
+  gradient assembler现会精确重建macro49的24-task teacher-demo/counterfactual schedule、480 unique
+  queries、canonical config、clean pushed Git、frozen target manifest/HDF5 frame metadata与六卡拓扑；
+  resume assembler会比较fresh/resume/
+  contiguous的contract、cursor、6-rank RNG、600 Writer tensors、41 trainable tensors、Adam moments、
+  scheduler/AMP和scientific tolerance，并要求gradient→profile的strict Git ancestry。全仓CPU回归
+  `238 passed`；它们尚未接收真实六卡artifact，因此profile/formal仍保持blocked。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -250,9 +256,8 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：完成并测试gradient/fresh-resume-contiguous artifact verifier，封存本次单卡evidence
-的clean commit/push并创建新frozen worktree；随后重新live比较两节点，在最多6张空闲A40上运行
-macro49 gradient profile。只由artifact重算`lambda_expert/lambda_rank`并解锁丢弃型
+当前具体下一步：封存当前verifier的clean commit/push并创建新frozen worktree；随后重新live比较两节点，
+在最多6张空闲A40上运行macro49 gradient profile。只由artifact重算`lambda_expert/lambda_rank`并解锁丢弃型
 fresh0→1、same-root resume1→3、contiguous0→3；第二个verifier通过前不得手填status进入formal。
 
 ## 10. Canonical assets

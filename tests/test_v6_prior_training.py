@@ -19,6 +19,7 @@ from ember.expert_manifold.v6_prior_runtime import (
 from ember.expert_manifold.v6_prior_training import (
     _mean_trainable_gradients,
     _run_gradient_profile,
+    finalize_args,
 )
 from ember.pi05_source_checkpoint import DistributedContext
 
@@ -38,21 +39,30 @@ def test_v6_prior_auxiliary_weight_obeys_both_trainable_groups() -> None:
         auxiliary,
         maximum_fraction=0.25,
     ) == pytest.approx(0.0625)
-    assert suggest_auxiliary_weight(
-        positive,
-        {"compiler": 0.0, "factor_heads": 0.0},
-        maximum_fraction=0.25,
-    ) == 0.0
-    assert suggest_auxiliary_weight(
-        positive,
-        {"compiler": 0.25, "factor_heads": 0.0},
-        maximum_fraction=0.25,
-    ) == 1.0
-    assert suggest_auxiliary_weight(
-        positive,
-        {"compiler": -1.0, "factor_heads": 1.0},
-        maximum_fraction=0.25,
-    ) == 0.0
+    assert (
+        suggest_auxiliary_weight(
+            positive,
+            {"compiler": 0.0, "factor_heads": 0.0},
+            maximum_fraction=0.25,
+        )
+        == 0.0
+    )
+    assert (
+        suggest_auxiliary_weight(
+            positive,
+            {"compiler": 0.25, "factor_heads": 0.0},
+            maximum_fraction=0.25,
+        )
+        == 1.0
+    )
+    assert (
+        suggest_auxiliary_weight(
+            positive,
+            {"compiler": -1.0, "factor_heads": 1.0},
+            maximum_fraction=0.25,
+        )
+        == 0.0
+    )
     with pytest.raises(
         ExpertManifoldError,
         match="invalid v6-prior gradient fraction",
@@ -146,7 +156,7 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         "data": {"action_queries_per_task": 20},
         "method": {},
         "information_wall": {},
-        "writer": {},
+        "writer": {"activation_checkpointing": True},
         "expert_basis": {"expert_step": 2000},
         "objective": {},
         "optimization": {},
@@ -228,14 +238,12 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
         lambda value: {
             "task_ordinal": value.ordinal,
             "task_visit": 49,
-            "counterfactual_kind": (
-                "reversed", "shuffled", "wrong"
-            )[value.ordinal % 3],
+            "counterfactual_kind": ("reversed", "shuffled", "wrong")[value.ordinal % 3],
         },
     )
     monkeypatch.setattr(
         "ember.expert_manifold.v6_prior_training._runtime_maximums",
-        lambda _context, _started: (12.5, 1_000, 2_000),
+        lambda _context, _started, input_wait: (12.5, 1_000, 2_000, input_wait),
     )
     runtime = SimpleNamespace(
         context=DistributedContext(0, 0, 1, torch.device("cpu")),
@@ -269,12 +277,8 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
     profile = json.loads(
         (tmp_path / "gradient_profile.json").read_text(encoding="utf-8")
     )
-    completion = json.loads(
-        (tmp_path / "completion.json").read_text(encoding="utf-8")
-    )
-    assert profile["schema_version"] == (
-        "ember_pi05_v6_prior_gradient_profile_seal_v1"
-    )
+    completion = json.loads((tmp_path / "completion.json").read_text(encoding="utf-8"))
+    assert profile["schema_version"] == ("ember_pi05_v6_prior_gradient_profile_seal_v1")
     assert profile["schedule_macro"] == 49
     assert profile["task_count"] == 24
     assert profile["action_queries_per_task"] == 20
@@ -370,3 +374,33 @@ def test_v6_prior_cursor_records_all_stateless_schedules() -> None:
         "videos_per_task_visit": 1,
         "action_queries_per_task": 20,
     }
+
+
+def test_v6_prior_runtime_rejects_external_config_copy(tmp_path) -> None:
+    paths = {}
+    for name in (
+        "source_run",
+        "checkpoint",
+        "tokenizer_path",
+        "data_root",
+        "expert_bank_root",
+        "warm_start",
+    ):
+        path = tmp_path / name
+        path.mkdir()
+        paths[name] = path
+    external = tmp_path / "pi05_v6_prior_policy_effective_writer_v1.json"
+    external.write_text("{}", encoding="utf-8")
+    args = SimpleNamespace(
+        config=external,
+        output_dir=tmp_path / "output",
+        resume=None,
+        stop_after_macro=1,
+        num_workers=2,
+        **paths,
+    )
+    with pytest.raises(
+        ExpertManifoldError,
+        match="tracked canonical config",
+    ):
+        finalize_args(args)

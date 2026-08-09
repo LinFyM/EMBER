@@ -1,5 +1,24 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior六卡artifact seal实现完成（尚未启动GPU）
+
+- gradient artifact assembler现从retained run contract、invocation、gradient profile与completion重建
+  evidence；它精确核对canonical tracked config、clean pushed Git、6-rank A40/NUMA/affinity拓扑、
+  macro49、train24×B20=`480/480` unique queries、24-task deterministic teacher demo与
+  reversed/shuffled/cross-suite-wrong schedule，并回查frozen target manifest、HDF5 path/bytes及对应demo的
+  真实frame metadata；compiler/factor gradient norm、推荐weights、input wait、peak VRAM及0 OOM/nonfinite
+  同时封存。status字符串、stale tracked config或外部复制config均不能单独跳门。
+- fresh/resume/contiguous assembler接入只读checkpoint inspector，验证manifest/file sizes、contract/
+  cursor、600 Writer tensors、41 trainable tensors、6-rank RNG、AdamW两个moment fields、scheduler/AMP，
+  并以预注册tolerance比较三宏步scientific metrics及macro1/3 checkpoint；gradient→profile还要求strict
+  Git ancestry。
+- retained训练metrics只在已有宏步边界同步中附带whole-step wall、input wait和peak allocated/reserved，
+  没有为阶段计时增加热路径CUDA同步。先用真实证据决定是否需要workers/checkpointing候选，避免profile
+  本身降低正式吞吐。
+- 聚焦合同测试`27 passed`，全仓带LIBERO assets回归`238 passed`，compileall、Black check和
+  `git diff --check`通过。本阶段没有启动CUDA、训练、rollout或长期实验；下一步clean push后从frozen
+  worktree做live双节点/存储preflight和正式macro49六卡gradient profile。
+
 ## 2026-08-09 v6-prior单卡profile、vertical smoke与evaluation seal完成
 
 - canonical纠偏在clean pushed `ded0c80`封存，并创建

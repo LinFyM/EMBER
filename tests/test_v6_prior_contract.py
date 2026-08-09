@@ -2,27 +2,74 @@ from __future__ import annotations
 
 import json
 import math
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, Mapping
 
 import pytest
 import torch
+import h5py
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_contract import (
+    _expected_checkpoint_contract,
+    _expected_cursor_contract,
+    _artifact_task_records_match,
     _gradient_profile_evidence_matches,
     _resume_profile_evidence_matches,
     assemble_v6_prior_gradient_profile_evidence,
+    assemble_v6_prior_resume_profile_evidence,
     load_v6_prior_config,
     runtime_for_mode,
 )
 from ember.expert_manifold.v6_prior_runtime import RuntimeSegment, _run_contract
 from ember.pi05_source_checkpoint import DistributedContext
+from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+
+
+def _commit_frozen_config(root: Path, config: Mapping[str, Any]) -> tuple[Path, str]:
+    config_path = root / "configs" / CONFIG.name
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    if not (root / ".git").exists():
+        subprocess.run(
+            ["git", "init", "-q", str(root)],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(root), "config", "user.email", "test@example.com"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(root), "config", "user.name", "EMBER Test"],
+            check=True,
+            capture_output=True,
+        )
+    subprocess.run(
+        ["git", "-C", str(root), "add", str(config_path.relative_to(root))],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "commit", "-q", "-m", "freeze config"],
+        check=True,
+        capture_output=True,
+    )
+    commit = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return config_path, commit
 
 
 def _git_evidence(commit: str) -> dict:
@@ -80,10 +127,18 @@ def _gradient_evidence() -> dict:
         "schema_version": ("ember_pi05_v6_prior_gradient_profile_artifact_evidence_v1"),
         "root": "/retained/gradient",
         "git": _git_evidence("gradient-commit"),
+        "config_path": "/frozen/EMBER/configs/pi05_v6_prior_policy_effective_writer_v1.json",
         "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
         "config_bytes": 1234,
         "world_size": 6,
         "tasks_per_rank": 4,
+        "runtime_selection": {
+            "num_workers_per_rank": 2,
+            "action_loader_prefetch_factor": 2,
+            "action_loader_persistent_workers": True,
+            "physical_policy_batch": 20,
+            "writer_activation_checkpointing": True,
+        },
         "rank_topology": _topology_evidence(),
         "schedule_start_macro": 49,
         "schedule_stop_macro": 50,
@@ -126,6 +181,7 @@ def _gradient_evidence() -> dict:
         "information_wall_verified": True,
         "invocation_count": 1,
         "step_seconds": 120.0,
+        "input_wait_seconds": 1.0,
         "max_cuda_allocated_bytes": 10_000,
         "max_cuda_reserved_bytes": 12_000,
         "oom_count": 0,
@@ -165,6 +221,7 @@ def _checkpoint_comparison(macro: int) -> dict:
         },
         "writer": {
             "tensor_schema_equal": True,
+            "state_tensor_count": 600,
             "frozen_exact": True,
             "frozen_tensor_count": 559,
             "trainable_tensor_count": 41,
@@ -172,11 +229,24 @@ def _checkpoint_comparison(macro: int) -> dict:
             "scientific_rtol": 0.002,
             "max_abs_tolerance": 0.0000075,
             "global_relative_l2_tolerance": 0.00001,
-            "tensor_count": 600,
+            "tensor_count": 41,
             "max_abs": 0.0,
             "global_relative_l2": 0.0,
             "worst_tensor": None,
         },
+    }
+
+
+def _zero_metric_witness(path: str) -> dict:
+    return {
+        "path": path,
+        "left": 0.0,
+        "right": 0.0,
+        "difference": 0.0,
+        "scale": 1e-12,
+        "relative": 0.0,
+        "allowance": 0.0002 + 0.002 * 1e-12,
+        "tolerance_ratio": 0.0,
     }
 
 
@@ -188,12 +258,21 @@ def _resume_evidence(gradient: dict) -> dict:
         "resumed_root": "/retained/resumed",
         "contiguous_root": "/retained/contiguous",
         "gradient_commit": gradient["git"]["commit"],
+        "gradient_is_strict_ancestor": True,
         "profile_git": _git_evidence("profile-commit"),
+        "config_path": "/frozen/EMBER/configs/pi05_v6_prior_policy_effective_writer_v1.json",
         "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
         "config_bytes": 2345,
         "auxiliary_weights": dict(gradient["recommended_weights"]),
         "world_size": 6,
         "tasks_per_rank": 4,
+        "runtime_selection": {
+            "num_workers_per_rank": 2,
+            "action_loader_prefetch_factor": 2,
+            "action_loader_persistent_workers": True,
+            "physical_policy_batch": 20,
+            "writer_activation_checkpointing": True,
+        },
         "rank_topology": _topology_evidence(),
         "invocation_counts": {"resumed": 2, "contiguous": 1},
         "metrics_rows": {"resumed": 3, "contiguous": 3},
@@ -210,9 +289,15 @@ def _resume_evidence(gradient: dict) -> dict:
         "checkpoint_comparisons": comparisons,
         "metric_max_abs_difference": 0.0,
         "metric_max_relative_difference": 0.0,
+        "metric_max_tolerance_ratio": 0.0,
+        "metric_difference_witnesses": {
+            name: _zero_metric_witness("metrics[0].functional_loss")
+            for name in ("max_abs", "max_relative", "max_tolerance_ratio")
+        },
         "writer_max_abs_difference": 0.0,
         "writer_relative_l2_difference": 0.0,
         "step_seconds": {"resumed": 30.0, "contiguous": 30.0},
+        "input_wait_seconds": {"resumed": 0.3, "contiguous": 0.3},
         "macros_per_second": {"resumed": 0.1, "contiguous": 0.1},
         "max_cuda_allocated_bytes": 10_000,
         "max_cuda_reserved_bytes": 12_000,
@@ -223,17 +308,36 @@ def _resume_evidence(gradient: dict) -> dict:
 
 
 def _task_record(ordinal: int, *, task_visit: int) -> dict:
-    kind = ("reversed", "shuffled", "wrong")[ordinal % 3]
+    kind = ("reversed", "shuffled", "wrong")[(ordinal + task_visit) % 3]
+    source_suite_index = ordinal % 2
+    target_candidates = tuple(
+        candidate for candidate in range(24) if candidate % 2 != source_suite_index
+    )
+    wrong_ordinal = target_candidates[(ordinal + task_visit) % len(target_candidates)]
+    schedule = TeacherVideoSchedule(
+        task_ids=tuple(range(24)),
+        demo_indices=tuple(range(50)),
+        seed=20260722,
+        videos_per_visit=1,
+    )
+    correct_raw = 521 if ordinal == 0 else 101
+    correct_sampled = 105 if ordinal == 0 else 21
+    counterfactual_raw = 101 if kind == "wrong" else correct_raw
+    counterfactual_sampled = 21 if kind == "wrong" else correct_sampled
     return {
         "task_ordinal": ordinal,
         "global_task_id": ordinal,
         "suite": ("libero_spatial", "libero_object")[ordinal % 2],
         "task_id": ordinal,
         "task_visit": task_visit,
-        "teacher_demo": (ordinal + task_visit) % 50,
+        "teacher_demo": schedule.demos_for_task_visit(ordinal, task_visit)[0],
         "counterfactual_kind": kind,
-        "counterfactual_global_task_id": 100 + ordinal if kind == "wrong" else None,
-        "counterfactual_demo": ordinal % 50 if kind == "wrong" else None,
+        "counterfactual_global_task_id": wrong_ordinal if kind == "wrong" else None,
+        "counterfactual_demo": (
+            schedule.demos_for_task_visit(wrong_ordinal, task_visit)[0]
+            if kind == "wrong"
+            else None
+        ),
         "functional_loss": 0.5,
         "expert_loss": 0.25,
         "expert_direction": 0.1,
@@ -245,10 +349,10 @@ def _task_record(ordinal: int, *, task_visit: int) -> dict:
         "correct_effective_norm": 2.0,
         "counterfactual_effective_norm": 1.5,
         "expert_effective_norm": 2.5,
-        "correct_raw_frames": 521 if ordinal == 0 else 101,
-        "correct_sampled_frames": 105 if ordinal == 0 else 21,
-        "counterfactual_raw_frames": 101,
-        "counterfactual_sampled_frames": 21,
+        "correct_raw_frames": correct_raw,
+        "correct_sampled_frames": correct_sampled,
+        "counterfactual_raw_frames": counterfactual_raw,
+        "counterfactual_sampled_frames": counterfactual_sampled,
     }
 
 
@@ -257,6 +361,10 @@ def _synthetic_run_contract(
     tmp_path: Path,
 ) -> dict:
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    config_path, frozen_commit = _commit_frozen_config(
+        tmp_path / "gradient-frozen",
+        config,
+    )
     monkeypatch.setenv("NCCL_P2P_DISABLE", "1")
     monkeypatch.setenv("NCCL_ALGO", "Ring")
     monkeypatch.setenv("NCCL_PROTO", "Simple")
@@ -276,7 +384,7 @@ def _synthetic_run_contract(
     )
     monkeypatch.setattr(
         "ember.expert_manifold.v6_prior_runtime.git_state",
-        lambda _root: _git_evidence("gradient-commit"),
+        lambda _root: _git_evidence(frozen_commit),
     )
     monkeypatch.setattr(
         "ember.expert_manifold.v6_prior_runtime._rank_topology",
@@ -285,6 +393,10 @@ def _synthetic_run_contract(
     monkeypatch.setattr(
         "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
         lambda _device: "NVIDIA A40",
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_contract._artifact_task_records_match",
+        lambda _contract, _records: True,
     )
     consumed = {
         "query": {
@@ -306,7 +418,7 @@ def _synthetic_run_contract(
     return _run_contract(
         args=SimpleNamespace(
             mode="gradient-profile",
-            config=CONFIG,
+            config=config_path,
             expert_bank_root=tmp_path / "experts",
             data_root=tmp_path / "data",
             num_workers=2,
@@ -338,6 +450,63 @@ def _synthetic_run_contract(
         ),
         trainable_names=tuple(f"compiler.parameter_{index}" for index in range(41)),
     )
+
+
+def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
+    root.mkdir()
+    gradient = _gradient_evidence()
+    profile = {
+        "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
+        "schedule_macro": 49,
+        "task_count": 24,
+        "action_queries_per_task": 20,
+        "total_action_queries": 480,
+        "unique_action_queries": 480,
+        "counterfactual_counts": {
+            "reversed": 8,
+            "shuffled": 8,
+            "wrong": 8,
+        },
+        "unweighted_gradient_norms": gradient["unweighted_gradient_norms"],
+        "maximum_auxiliary_fraction": 0.25,
+        "recommended_weights": gradient["recommended_weights"],
+        "seal_rule": gradient["seal_rule"],
+        "task_records": [_task_record(ordinal, task_visit=49) for ordinal in range(24)],
+        "step_seconds": 120.0,
+        "input_wait_seconds": 1.0,
+        "max_cuda_allocated_bytes": 10_000,
+        "max_cuda_reserved_bytes": 12_000,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "content_hash_policy": "disabled_by_owner",
+    }
+    completion = {
+        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+        "mode": "gradient-profile",
+        "completed_diagnostic_macros": 1,
+        "schedule_start_macro": 49,
+        "schedule_stop_macro": 50,
+        "gradient_profile_complete": True,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "content_hash_policy": "disabled_by_owner",
+    }
+    (root / "run_contract.json").write_text(json.dumps(contract), encoding="utf-8")
+    (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
+    (root / "completion.json").write_text(json.dumps(completion), encoding="utf-8")
+    (root / "invocations.jsonl").write_text(
+        json.dumps(
+            {
+                "argv": ["train_v6_prior_writer.py", "--mode", "gradient-profile"],
+                "started_unix": 1.0,
+                "resume": None,
+                "requested_stop_after_macro": 1,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return profile
 
 
 def test_v6_prior_config_unlocks_only_gradient_profile_after_online_smoke() -> None:
@@ -395,6 +564,18 @@ def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
 
     resume = _resume_evidence(gradient)
     assert _resume_profile_evidence_matches(resume)
+    wrong_metric_tolerance = deepcopy(resume)
+    wrong_metric_tolerance["metric_max_tolerance_ratio"] = 1.0001
+    assert not _resume_profile_evidence_matches(wrong_metric_tolerance)
+    wrong_metric_abs = deepcopy(resume)
+    wrong_metric_abs["metric_max_abs_difference"] = 1e9
+    assert not _resume_profile_evidence_matches(wrong_metric_abs)
+    wrong_metric_relative = deepcopy(resume)
+    wrong_metric_relative["metric_max_relative_difference"] = 1e9
+    assert not _resume_profile_evidence_matches(wrong_metric_relative)
+    malformed_writer = deepcopy(resume)
+    malformed_writer["checkpoint_comparisons"][0]["writer"] = []
+    assert not _resume_profile_evidence_matches(malformed_writer)
     wrong_topology = deepcopy(resume)
     wrong_topology["rank_topology"][1]["physical_gpu"] = 0
     assert not _resume_profile_evidence_matches(wrong_topology)
@@ -455,60 +636,8 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root = tmp_path / "gradient-root"
-    root.mkdir()
     contract = _synthetic_run_contract(monkeypatch, tmp_path)
-    records = [_task_record(ordinal, task_visit=49) for ordinal in range(24)]
-    gradient = _gradient_evidence()
-    profile = {
-        "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
-        "schedule_macro": 49,
-        "task_count": 24,
-        "action_queries_per_task": 20,
-        "total_action_queries": 480,
-        "unique_action_queries": 480,
-        "counterfactual_counts": {
-            "reversed": 8,
-            "shuffled": 8,
-            "wrong": 8,
-        },
-        "unweighted_gradient_norms": gradient["unweighted_gradient_norms"],
-        "maximum_auxiliary_fraction": 0.25,
-        "recommended_weights": gradient["recommended_weights"],
-        "seal_rule": gradient["seal_rule"],
-        "task_records": records,
-        "step_seconds": 120.0,
-        "max_cuda_allocated_bytes": 10_000,
-        "max_cuda_reserved_bytes": 12_000,
-        "oom_count": 0,
-        "nonfinite_count": 0,
-        "content_hash_policy": "disabled_by_owner",
-    }
-    completion = {
-        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
-        "mode": "gradient-profile",
-        "completed_diagnostic_macros": 1,
-        "schedule_start_macro": 49,
-        "schedule_stop_macro": 50,
-        "gradient_profile_complete": True,
-        "oom_count": 0,
-        "nonfinite_count": 0,
-        "content_hash_policy": "disabled_by_owner",
-    }
-    (root / "run_contract.json").write_text(json.dumps(contract), encoding="utf-8")
-    (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
-    (root / "completion.json").write_text(json.dumps(completion), encoding="utf-8")
-    (root / "invocations.jsonl").write_text(
-        json.dumps(
-            {
-                "argv": ["train_v6_prior_writer.py", "--mode", "gradient-profile"],
-                "started_unix": 1.0,
-                "resume": None,
-                "requested_stop_after_macro": 1,
-            }
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+    profile = _write_synthetic_gradient_artifacts(root, contract)
     assembled = assemble_v6_prior_gradient_profile_evidence(root)
     assert assembled["recommended_weights"] == {
         "expert": 0.0625,
@@ -516,10 +645,386 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     }
     assert _gradient_profile_evidence_matches(assembled)
 
+    external_contract = deepcopy(contract)
+    external_contract["config"][
+        "path"
+    ] = "/attacker/alternate/configs/pi05_v6_prior_policy_effective_writer_v1.json"
+    external_root = tmp_path / "gradient-root-external-config"
+    _write_synthetic_gradient_artifacts(external_root, external_contract)
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(external_root)
+
+    stale_config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    stale_config["gradient_profile"].pop("num_workers_per_rank")
+    stale_config["profile_run"].pop("allowed_num_workers_per_rank")
+    stale_path, stale_commit = _commit_frozen_config(
+        tmp_path / "stale-frozen",
+        stale_config,
+    )
+    stale_contract = deepcopy(contract)
+    stale_contract["git"] = _git_evidence(stale_commit)
+    stale_contract["config"] = {
+        "path": str(stale_path),
+        "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "bytes": stale_path.stat().st_size,
+    }
+    stale_root = tmp_path / "gradient-root-stale-config"
+    _write_synthetic_gradient_artifacts(stale_root, stale_contract)
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(stale_root)
+
+    invalid_fraction_root = tmp_path / "gradient-root-invalid-fraction"
+    invalid_fraction = _write_synthetic_gradient_artifacts(
+        invalid_fraction_root,
+        contract,
+    )
+    invalid_fraction["maximum_auxiliary_fraction"] = "not-a-number"
+    (invalid_fraction_root / "gradient_profile.json").write_text(
+        json.dumps(invalid_fraction), encoding="utf-8"
+    )
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(invalid_fraction_root)
+
+    for section in ("runtime", "data"):
+        malformed_contract = deepcopy(contract)
+        malformed_contract[section] = []
+        malformed_root = tmp_path / f"gradient-root-malformed-{section}"
+        _write_synthetic_gradient_artifacts(malformed_root, malformed_contract)
+        with pytest.raises(ExpertManifoldError, match="artifact is malformed"):
+            assemble_v6_prior_gradient_profile_evidence(malformed_root)
+
     profile["counterfactual_counts"]["wrong"] = 7
     (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
         assemble_v6_prior_gradient_profile_evidence(root)
+
+    profile["counterfactual_counts"]["wrong"] = 8
+    profile["task_records"][1]["counterfactual_global_task_id"] = 999
+    (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(root)
+
+    profile = _write_synthetic_gradient_artifacts(
+        tmp_path / "gradient-root-valid-again",
+        contract,
+    )
+    profile["task_records"][0]["teacher_demo"] = (
+        int(profile["task_records"][0]["teacher_demo"]) + 1
+    ) % 50
+    invalid_demo_root = tmp_path / "gradient-root-valid-again"
+    (invalid_demo_root / "gradient_profile.json").write_text(
+        json.dumps(profile), encoding="utf-8"
+    )
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(invalid_demo_root)
+
+
+def test_artifact_task_frames_are_bound_to_manifest_and_hdf5_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "frozen"
+    config_path = root / "configs" / CONFIG.name
+    manifest_path = root / "configs" / "synthetic_manifest.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "authorities": {
+                    "target_data_manifest": {"path": "configs/synthetic_manifest.json"}
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    data_root = tmp_path / "data"
+    records = [_task_record(ordinal, task_visit=49) for ordinal in range(24)]
+    raw_by_task = {ordinal: 521 if ordinal == 0 else 101 for ordinal in range(24)}
+    required: dict[int, set[int]] = {ordinal: set() for ordinal in range(24)}
+    for record in records:
+        task_id = int(record["global_task_id"])
+        required[task_id].add(int(record["teacher_demo"]))
+        record["correct_raw_frames"] = raw_by_task[task_id]
+        record["correct_sampled_frames"] = 105 if task_id == 0 else 21
+        if record["counterfactual_kind"] == "wrong":
+            negative_task = int(record["counterfactual_global_task_id"])
+            required[negative_task].add(int(record["counterfactual_demo"]))
+            record["counterfactual_raw_frames"] = raw_by_task[negative_task]
+            record["counterfactual_sampled_frames"] = 105 if negative_task == 0 else 21
+        else:
+            record["counterfactual_raw_frames"] = record["correct_raw_frames"]
+            record["counterfactual_sampled_frames"] = record["correct_sampled_frames"]
+
+    manifest_rows = []
+    declared_tasks = []
+    for ordinal in range(24):
+        suite = ("libero_spatial", "libero_object")[ordinal % 2]
+        relative = f"{suite}/task_{ordinal}.hdf5"
+        path = data_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(path, "w") as handle:
+            for demo in required[ordinal]:
+                handle.create_dataset(
+                    f"data/demo_{demo}/obs/agentview_rgb",
+                    shape=(raw_by_task[ordinal], 1, 1, 3),
+                    dtype="uint8",
+                )
+        expected_bytes = path.stat().st_size
+        canonical = {
+            "global_task_id": ordinal,
+            "suite": suite,
+            "task_id": ordinal,
+            "split_role": "train",
+            "language": f"task {ordinal}",
+            "hdf5": {"relative_path": relative, "bytes": expected_bytes},
+        }
+        manifest_rows.append(canonical)
+        declared_tasks.append(
+            {
+                "ordinal": ordinal,
+                "global_task_id": ordinal,
+                "suite": suite,
+                "task_id": ordinal,
+                "language": f"task {ordinal}",
+                "path": str(path),
+                "bytes": expected_bytes,
+            }
+        )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "ember_pi05_target_data_manifest_v1",
+                "tasks": manifest_rows,
+            }
+        ),
+        encoding="utf-8",
+    )
+    contract = {
+        "config": {"path": str(config_path)},
+        "git": {"commit": "synthetic"},
+        "data": {"root": str(data_root), "tasks": declared_tasks},
+    }
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_contract._git_worktree_root",
+        lambda _path: root,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_contract._canonical_config_record_matches",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_contract._tracked_file_matches_commit",
+        lambda *_args, **_kwargs: True,
+    )
+    assert _artifact_task_records_match(contract, records)
+
+    records[0]["correct_raw_frames"] += 5
+    assert not _artifact_task_records_match(contract, records)
+
+
+def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gradient_root = tmp_path / "gradient-root"
+    gradient_contract = _synthetic_run_contract(monkeypatch, tmp_path)
+    _write_synthetic_gradient_artifacts(gradient_root, gradient_contract)
+    gradient = assemble_v6_prior_gradient_profile_evidence(gradient_root)
+
+    contract = deepcopy(gradient_contract)
+    contract["mode"] = "profile"
+    contract["objective"]["auxiliary_weights"] = {
+        "status": "sealed_from_live_train24_gradient_profile",
+        "maximum_fraction_of_positive_gradient_per_auxiliary": 0.25,
+        **gradient["recommended_weights"],
+    }
+    profile_config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    profile_config["gradient_profile"].update(
+        {
+            "status": "sealed_from_live_train24_gradient_profile",
+            "artifact_evidence": gradient,
+        }
+    )
+    profile_config["objective"]["auxiliary_weights"] = deepcopy(
+        contract["objective"]["auxiliary_weights"]
+    )
+    profile_config["profile_run"]["status"] = "ready_after_live_gradient_profile"
+    profile_config_path, profile_commit = _commit_frozen_config(
+        tmp_path / "profile-frozen",
+        profile_config,
+    )
+    contract["git"] = _git_evidence(profile_commit)
+    contract["config"] = {
+        "path": str(profile_config_path),
+        "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "bytes": profile_config_path.stat().st_size,
+    }
+    contract["data"]["consumed_schedule"] = {
+        "query": {
+            "start_step": 0,
+            "stop_step": 3,
+            "global_examples": 1440,
+            "unique_query_rows": 1440,
+            "min_examples_per_task": 60,
+            "max_examples_per_task": 60,
+            "identity_evidence": "cursor_counts_and_dataset_row_coverage",
+        },
+        "teacher_video_seed": contract["data"]["teacher_video_seed"],
+        "videos_per_task_visit": 1,
+        "min_video_visits_per_task": 3,
+        "max_video_visits_per_task": 3,
+        "min_unique_videos_per_task": 3,
+        "max_unique_videos_per_task": 3,
+    }
+    contract["runtime"].update(
+        {
+            "total_macros": 3,
+            "gradient_profile_schedule_macro": None,
+            "checkpoint_macros": [1, 3],
+        }
+    )
+    resumed_root = tmp_path / "resumed-root"
+    contiguous_root = tmp_path / "contiguous-root"
+    expected_checkpoint = _expected_checkpoint_contract(contract)
+
+    def write_profile_root(root: Path, *, resumed: bool) -> None:
+        root.mkdir()
+        rows = []
+        for macro in (1, 2, 3):
+            rows.append(
+                {
+                    "macro": macro,
+                    "functional_loss": 0.5,
+                    "expert_loss": 0.25,
+                    "expert_direction": 0.1,
+                    "expert_log_norm": 0.2,
+                    "ranking_loss": 0.3,
+                    "ranking_margin": 0.05,
+                    "correct_expert_cosine": 0.6,
+                    "counterfactual_expert_cosine": 0.4,
+                    "correct_effective_norm": 2.0,
+                    "counterfactual_effective_norm": 1.5,
+                    "expert_effective_norm": 2.5,
+                    "expert_weight": gradient["recommended_weights"]["expert"],
+                    "ranking_weight": gradient["recommended_weights"]["ranking"],
+                    "gradient_norm_before_clip": 1.0,
+                    "applied_lr": 0.000015,
+                    "next_lr": 0.00003,
+                    "counterfactual_counts": {
+                        "reversed": 8,
+                        "shuffled": 8,
+                        "wrong": 8,
+                    },
+                    "task_records": [
+                        _task_record(ordinal, task_visit=macro - 1)
+                        for ordinal in range(24)
+                    ],
+                    "step_seconds": 10.0,
+                    "input_wait_seconds": 0.1,
+                    "elapsed_seconds": 10.0 * macro,
+                    "max_cuda_allocated_bytes": 10_000,
+                    "max_cuda_reserved_bytes": 12_000,
+                }
+            )
+        invocations = (
+            [
+                {
+                    "argv": ["train", "--stop-after-macro", "1"],
+                    "started_unix": 1.0,
+                    "resume": None,
+                    "requested_stop_after_macro": 1,
+                },
+                {
+                    "argv": ["train", "--resume", "macro_00000001"],
+                    "started_unix": 2.0,
+                    "resume": str(root / "checkpoints/macro_00000001"),
+                    "requested_stop_after_macro": 3,
+                },
+            ]
+            if resumed
+            else [
+                {
+                    "argv": ["train", "--stop-after-macro", "3"],
+                    "started_unix": 1.0,
+                    "resume": None,
+                    "requested_stop_after_macro": 3,
+                }
+            ]
+        )
+        (root / "run_contract.json").write_text(json.dumps(contract), encoding="utf-8")
+        (root / "metrics.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in rows),
+            encoding="utf-8",
+        )
+        (root / "invocations.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in invocations),
+            encoding="utf-8",
+        )
+        (root / "completion.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+                    "mode": "profile",
+                    "completed_macro": 3,
+                    "metrics_rows": 3,
+                    "content_hash_policy": "disabled_by_owner",
+                }
+            ),
+            encoding="utf-8",
+        )
+        for macro in (1, 3):
+            checkpoint = root / "checkpoints" / f"macro_{macro:08d}"
+            checkpoint.mkdir(parents=True)
+            (checkpoint / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "cursor_contract": _expected_cursor_contract(contract, macro),
+                        "checkpoint_contract": expected_checkpoint,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+    write_profile_root(resumed_root, resumed=True)
+    write_profile_root(contiguous_root, resumed=False)
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_checkpoint.inspect_v6_prior_checkpoint",
+        lambda path: {"next_macro": int(path.name.removeprefix("macro_"))},
+    )
+
+    def compare(left: Path, _right: Path, **_kwargs) -> dict:
+        macro = int(left.name.removeprefix("macro_"))
+        row = _checkpoint_comparison(macro)
+        return {
+            "cursor": {"semantic_equal": True},
+            "checkpoint_contract": {"semantic_equal": True},
+            "rng": {"semantic_equal": True, "rank_count": 6},
+            "trainer": {
+                "scheduler_semantic_equal": True,
+                "amp_semantic_equal": True,
+                "optimizer": row["optimizer"],
+            },
+            "writer": row["writer"],
+        }
+
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_checkpoint.compare_v6_prior_checkpoints",
+        compare,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_contract.git_commit_is_strict_ancestor",
+        lambda _ancestor, _descendant: True,
+    )
+    evidence = assemble_v6_prior_resume_profile_evidence(
+        gradient_root=gradient_root,
+        resumed_root=resumed_root,
+        contiguous_root=contiguous_root,
+    )
+    assert evidence["metric_max_tolerance_ratio"] == 0.0
+    assert _resume_profile_evidence_matches(evidence)
+
+    evidence["metric_max_tolerance_ratio"] = 1.1
+    assert not _resume_profile_evidence_matches(evidence)
 
 
 def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(

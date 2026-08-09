@@ -4,15 +4,27 @@ from __future__ import annotations
 
 import json
 import math
+import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
 
+import h5py
+
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.expert_manifold.v6_prior import (
+    counterfactual_kind,
+    cross_suite_wrong_task,
+)
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.architecture import validate_writer_dimensions
+from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+V6_PRIOR_CANONICAL_CONFIG = (
+    REPO_ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+).resolve()
 V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_prior_policy_effective_writer_v1"
 V6_PRIOR_MODES = ("gradient-profile", "profile", "formal")
 V6_PRIOR_GRADIENT_PROFILE_SCHEMA = "ember_pi05_v6_prior_gradient_profile_seal_v1"
@@ -266,6 +278,7 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         )
         and int(gradient.get("expected_world_size", -1)) == 6
         and int(gradient.get("tasks_per_rank", -1)) == 4
+        and int(gradient.get("num_workers_per_rank", -1)) == 2
         and int(gradient.get("macros", -1)) == 1
         and int(gradient.get("schedule_macro", -1)) == 49
         and int(gradient.get("physical_policy_batch", -1)) == 20
@@ -283,6 +296,7 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         }
         and int(profile.get("expected_world_size", -1)) == 6
         and int(profile.get("tasks_per_rank", -1)) == 4
+        and profile.get("allowed_num_workers_per_rank") == [0, 2, 4]
         and int(profile.get("total_macros", -1)) == 3
         and profile.get("checkpoint_macros") == [1, 3]
         and profile.get("required_resume_comparison")
@@ -788,6 +802,139 @@ def _clean_pushed_git(value: Mapping[str, Any]) -> bool:
     )
 
 
+def _git_worktree_root(path: Path) -> Path | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, ValueError):
+        return None
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return Path(result.stdout.strip()).resolve()
+
+
+def _tracked_file_matches_commit(root: Path, path: Path, commit: str) -> bool:
+    try:
+        relative = path.resolve().relative_to(root.resolve())
+        head = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        blob = subprocess.run(
+            ["git", "-C", str(root), "show", f"{commit}:{relative.as_posix()}"],
+            check=False,
+            capture_output=True,
+        )
+        return (
+            path.is_file()
+            and head.returncode == 0
+            and head.stdout.strip() == commit
+            and blob.returncode == 0
+            and path.read_bytes() == blob.stdout
+        )
+    except (OSError, ValueError):
+        return False
+
+
+def _canonical_config_record_matches(
+    value: Mapping[str, Any],
+    *,
+    git_record: Mapping[str, Any],
+    scientific_contract: Mapping[str, Any],
+) -> bool:
+    try:
+        path = Path(str(value["path"])).resolve()
+        commit = str(git_record["commit"])
+        root = _git_worktree_root(path)
+        frozen = read_json(path) if path.is_file() else {}
+        executable = load_v6_prior_config(path) if path.is_file() else {}
+        runtime_for_mode(executable, str(scientific_contract["mode"]))
+        boundary_names = (
+            "method",
+            "information_wall",
+            "writer",
+            "expert_basis",
+            "objective",
+            "optimization",
+        )
+        return (
+            root is not None
+            and path.is_absolute()
+            and path.name == V6_PRIOR_CANONICAL_CONFIG.name
+            and path.parent.name == "configs"
+            and path == root / "configs" / V6_PRIOR_CANONICAL_CONFIG.name
+            and _tracked_file_matches_commit(root, path, commit)
+            and value.get("schema") == V6_PRIOR_CONFIG_SCHEMA
+            and int(value.get("bytes", -1)) == path.stat().st_size
+            and isinstance(frozen, Mapping)
+            and frozen.get("schema_version") == V6_PRIOR_CONFIG_SCHEMA
+            and all(
+                scientific_contract.get(name) == frozen.get(name)
+                for name in boundary_names
+            )
+            and isinstance(frozen.get("data"), Mapping)
+            and all(
+                scientific_contract.get("data", {}).get(name) == observed
+                for name, observed in frozen["data"].items()
+            )
+        )
+    except (ExpertManifoldError, KeyError, OSError, TypeError, ValueError):
+        return False
+
+
+def git_commit_is_strict_ancestor(ancestor: str, descendant: str) -> bool:
+    """Check retained phase ordering through Git IDs, without content hashing."""
+
+    if not ancestor or not descendant or ancestor == descendant:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, ValueError):
+        return False
+    return result.returncode == 0
+
+
+def _runtime_selection_matches(
+    value: Mapping[str, Any], *, allowed_workers: set[int]
+) -> bool:
+    try:
+        workers = int(value["num_workers_per_rank"])
+        return (
+            workers in allowed_workers
+            and value.get("action_loader_prefetch_factor") == (2 if workers else None)
+            and value.get("action_loader_persistent_workers") is bool(workers)
+            and int(value.get("physical_policy_batch", -1)) == 20
+            and value.get("writer_activation_checkpointing") is True
+        )
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def _runtime_selection(value: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        name: value.get(name)
+        for name in (
+            "num_workers_per_rank",
+            "action_loader_prefetch_factor",
+            "action_loader_persistent_workers",
+            "physical_policy_batch",
+            "writer_activation_checkpointing",
+        )
+    }
+
+
 def _rank_topology_matches(
     rows: Sequence[Mapping[str, Any]], *, world_size: int
 ) -> bool:
@@ -796,6 +943,8 @@ def _rank_topology_matches(
     seen_devices: set[tuple[str, int]] = set()
     seen_local_ranks: set[tuple[str, int]] = set()
     affinities: dict[tuple[str, int], tuple[int, ...]] = {}
+    host_local_ranks: dict[str, set[int]] = {}
+    host_visible_devices: dict[str, set[tuple[int, ...]]] = {}
     try:
         for expected_rank, row in enumerate(
             sorted(rows, key=lambda item: int(item["rank"]))
@@ -829,6 +978,8 @@ def _rank_topology_matches(
                 return False
             seen_devices.add((host, physical))
             seen_local_ranks.add((host, local_rank))
+            host_local_ranks.setdefault(host, set()).add(local_rank)
+            host_visible_devices.setdefault(host, set()).add(visible)
             key = (host, numa)
             if key in affinities and affinities[key] != affinity:
                 return False
@@ -841,6 +992,14 @@ def _rank_topology_matches(
                     and set(left).intersection(right)
                 ):
                     return False
+        for host, local_ranks in host_local_ranks.items():
+            visible_rows = host_visible_devices[host]
+            if (
+                local_ranks != set(range(len(local_ranks)))
+                or len(visible_rows) != 1
+                or len(next(iter(visible_rows))) != len(local_ranks)
+            ):
+                return False
     except (KeyError, TypeError, ValueError):
         return False
     return len(seen_devices) == world_size
@@ -913,6 +1072,7 @@ def _gradient_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
         applied = _applied_gradient_fractions(norms, weights)
         numeric = (
             float(value["step_seconds"]),
+            float(value["input_wait_seconds"]),
             int(value["max_cuda_allocated_bytes"]),
             int(value["max_cuda_reserved_bytes"]),
         )
@@ -921,10 +1081,16 @@ def _gradient_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             and isinstance(value.get("root"), str)
             and bool(value["root"])
             and _clean_pushed_git(value["git"])
+            and Path(str(value.get("config_path", ""))).name
+            == V6_PRIOR_CANONICAL_CONFIG.name
+            and Path(str(value.get("config_path", ""))).parent.name == "configs"
             and value.get("config_schema") == V6_PRIOR_CONFIG_SCHEMA
             and int(value.get("config_bytes", -1)) > 0
             and int(value.get("world_size", -1)) == 6
             and int(value.get("tasks_per_rank", -1)) == 4
+            and _runtime_selection_matches(
+                value.get("runtime_selection", {}), allowed_workers={2}
+            )
             and _rank_topology_matches(value["rank_topology"], world_size=6)
             and int(value.get("schedule_start_macro", -1)) == 49
             and int(value.get("schedule_stop_macro", -1)) == 50
@@ -975,8 +1141,11 @@ def _gradient_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             and int(value.get("invocation_count", -1)) == 1
             and numeric[0] > 0
             and math.isfinite(numeric[0])
-            and numeric[1] > 0
-            and numeric[2] >= numeric[1]
+            and numeric[1] >= 0
+            and numeric[1] <= numeric[0]
+            and math.isfinite(numeric[1])
+            and numeric[2] > 0
+            and numeric[3] >= numeric[2]
             and int(value.get("oom_count", -1)) == 0
             and int(value.get("nonfinite_count", -1)) == 0
             and value.get("content_hash_policy") == "disabled_by_owner"
@@ -986,16 +1155,135 @@ def _gradient_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
     return valid
 
 
+def _sampled_frame_count(raw_frames: int, stride: int = 5) -> int:
+    if raw_frames <= 0 or stride <= 0:
+        raise ValueError("invalid raw frame count")
+    count = (raw_frames - 1) // stride + 1
+    return count + int((raw_frames - 1) % stride != 0)
+
+
+def _artifact_task_records_match(
+    contract: Mapping[str, Any],
+    records: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Bind retained task/frame claims to the frozen manifest and HDF5 metadata."""
+
+    try:
+        config_record = contract["config"]
+        git_record = contract["git"]
+        config_path = Path(str(config_record["path"])).resolve()
+        root = _git_worktree_root(config_path)
+        commit = str(git_record["commit"])
+        if root is None or not _canonical_config_record_matches(
+            config_record,
+            git_record=git_record,
+            scientific_contract=contract,
+        ):
+            return False
+        frozen_config = read_json(config_path)
+        manifest_path = (
+            root / str(frozen_config["authorities"]["target_data_manifest"]["path"])
+        ).resolve()
+        if not _tracked_file_matches_commit(root, manifest_path, commit):
+            return False
+        manifest = read_json(manifest_path)
+        if manifest.get("schema_version") != "ember_pi05_target_data_manifest_v1":
+            return False
+        canonical = sorted(
+            (row for row in manifest["tasks"] if row.get("split_role") == "train"),
+            key=lambda row: int(row["global_task_id"]),
+        )
+        data = contract["data"]
+        declared = sorted(data["tasks"], key=lambda row: int(row["ordinal"]))
+        data_root = Path(str(data["root"])).resolve()
+        if len(canonical) != 24 or len(declared) != 24 or not data_root.is_dir():
+            return False
+        by_global: dict[int, dict[str, Any]] = {}
+        for ordinal, (expected, observed) in enumerate(
+            zip(canonical, declared, strict=True)
+        ):
+            hdf5 = expected["hdf5"]
+            path = (data_root / str(hdf5["relative_path"])).resolve()
+            expected_bytes = int(hdf5["bytes"])
+            if (
+                int(observed["ordinal"]) != ordinal
+                or int(observed["global_task_id"]) != int(expected["global_task_id"])
+                or str(observed["suite"]) != str(expected["suite"])
+                or int(observed["task_id"]) != int(expected["task_id"])
+                or str(observed["language"]) != str(expected["language"])
+                or Path(str(observed["path"])).resolve() != path
+                or int(observed["bytes"]) != expected_bytes
+                or not path.is_file()
+                or path.stat().st_size != expected_bytes
+            ):
+                return False
+            by_global[int(expected["global_task_id"])] = {
+                "path": path,
+                "bytes": expected_bytes,
+            }
+
+        frame_counts: dict[tuple[int, int], int] = {}
+
+        def raw_frames(global_task_id: int, demo: int) -> int:
+            key = (global_task_id, demo)
+            if key not in frame_counts:
+                task = by_global[global_task_id]
+                with h5py.File(task["path"], "r") as handle:
+                    pixels = handle.get(f"data/demo_{demo}/obs/agentview_rgb")
+                    if not isinstance(pixels, h5py.Dataset) or pixels.ndim != 4:
+                        raise ValueError("invalid teacher video metadata")
+                    frame_counts[key] = int(pixels.shape[0])
+            return frame_counts[key]
+
+        for row in records:
+            task_id = int(row["global_task_id"])
+            demo = int(row["teacher_demo"])
+            correct_raw = raw_frames(task_id, demo)
+            if int(row["correct_raw_frames"]) != correct_raw or int(
+                row["correct_sampled_frames"]
+            ) != _sampled_frame_count(correct_raw):
+                return False
+            if row["counterfactual_kind"] == "wrong":
+                negative_task = int(row["counterfactual_global_task_id"])
+                negative_demo = int(row["counterfactual_demo"])
+                counterfactual_raw = raw_frames(negative_task, negative_demo)
+            else:
+                counterfactual_raw = correct_raw
+            if int(row["counterfactual_raw_frames"]) != counterfactual_raw or int(
+                row["counterfactual_sampled_frames"]
+            ) != _sampled_frame_count(counterfactual_raw):
+                return False
+    except (KeyError, OSError, TypeError, ValueError):
+        return False
+    return True
+
+
 def _task_records_match_contract(
     records: Sequence[Mapping[str, Any]],
-    tasks: Sequence[Mapping[str, Any]],
+    data: Mapping[str, Any],
     *,
     task_visit: int,
 ) -> bool:
+    tasks = data.get("tasks", ())
     if len(records) != 24 or len(tasks) != 24:
         return False
     expected = {int(row["ordinal"]): row for row in tasks}
-    metric_names = {
+    task_objects = tuple(
+        SimpleNamespace(
+            ordinal=int(row["ordinal"]),
+            global_task_id=int(row["global_task_id"]),
+            suite=str(row["suite"]),
+        )
+        for row in tasks
+    )
+    first_demo, last_demo = (int(value) for value in data.get("demo_indices", ()))
+    schedule = TeacherVideoSchedule(
+        task_ids=tuple(item.global_task_id for item in task_objects),
+        demo_indices=tuple(range(first_demo, last_demo + 1)),
+        seed=int(data["teacher_video_seed"]),
+        videos_per_visit=1,
+    )
+    task_metric_names = {
         "functional_loss",
         "expert_loss",
         "expert_direction",
@@ -1013,25 +1301,54 @@ def _task_records_match_contract(
             sorted(records, key=lambda item: int(item["task_ordinal"]))
         ):
             task = expected[ordinal]
+            expected_kind = counterfactual_kind(ordinal, task_visit)
+            raw_correct = int(row["correct_raw_frames"])
+            sampled_correct = int(row["correct_sampled_frames"])
+            raw_counterfactual = int(row["counterfactual_raw_frames"])
+            sampled_counterfactual = int(row["counterfactual_sampled_frames"])
+
             if (
                 int(row["task_ordinal"]) != ordinal
                 or int(row["global_task_id"]) != int(task["global_task_id"])
                 or row["suite"] != task["suite"]
                 or int(row["task_id"]) != int(task["task_id"])
                 or int(row["task_visit"]) != task_visit
-                or int(row["teacher_demo"]) not in range(50)
-                or row["counterfactual_kind"] not in {"reversed", "shuffled", "wrong"}
-                or int(row["correct_raw_frames"]) <= 0
-                or int(row["correct_sampled_frames"]) <= 0
-                or int(row["counterfactual_raw_frames"]) <= 0
-                or int(row["counterfactual_sampled_frames"]) <= 0
-                or not all(math.isfinite(float(row[name])) for name in metric_names)
+                or int(row["teacher_demo"])
+                != schedule.demos_for_task_visit(
+                    int(task["global_task_id"]), task_visit
+                )[0]
+                or row["counterfactual_kind"] != expected_kind
+                or raw_correct <= 0
+                or sampled_correct != _sampled_frame_count(raw_correct)
+                or raw_counterfactual <= 0
+                or sampled_counterfactual != _sampled_frame_count(raw_counterfactual)
+                or not all(
+                    math.isfinite(float(row[name])) for name in task_metric_names
+                )
             ):
                 return False
-            is_wrong = row["counterfactual_kind"] == "wrong"
-            if is_wrong != (row["counterfactual_global_task_id"] is not None):
-                return False
-            if is_wrong != (row["counterfactual_demo"] is not None):
+            if expected_kind == "wrong":
+                wrong = cross_suite_wrong_task(
+                    task_objects,
+                    task_ordinal=ordinal,
+                    task_visit=task_visit,
+                )
+                if (
+                    int(row["counterfactual_global_task_id"])
+                    != int(wrong.global_task_id)
+                    or wrong.suite == task["suite"]
+                    or int(row["counterfactual_demo"])
+                    != schedule.demos_for_task_visit(
+                        int(wrong.global_task_id), task_visit
+                    )[0]
+                ):
+                    return False
+            elif (
+                row["counterfactual_global_task_id"] is not None
+                or row["counterfactual_demo"] is not None
+                or raw_counterfactual != raw_correct
+                or sampled_counterfactual != sampled_correct
+            ):
                 return False
     except (KeyError, TypeError, ValueError):
         return False
@@ -1056,14 +1373,33 @@ def assemble_v6_prior_gradient_profile_evidence(
     profile = read_json(profile_root / "gradient_profile.json")
     completion = read_json(profile_root / "completion.json")
     invocations = _read_jsonl(profile_root / "invocations.jsonl")
+    if not all(isinstance(value, Mapping) for value in (contract, profile, completion)):
+        raise ExpertManifoldError("v6-prior gradient-profile artifact is malformed")
     runtime = contract.get("runtime", {})
     data = contract.get("data", {})
+    if not isinstance(runtime, Mapping) or not isinstance(data, Mapping):
+        raise ExpertManifoldError("v6-prior gradient-profile artifact is malformed")
     consumed = data.get("consumed_schedule", {})
+    if not isinstance(consumed, Mapping):
+        raise ExpertManifoldError("v6-prior gradient-profile artifact is malformed")
     query = consumed.get("query", {})
     records = profile.get("task_records", ())
     norms = profile.get("unweighted_gradient_norms", {})
-    fraction = float(profile.get("maximum_auxiliary_fraction", -1))
     weights = profile.get("recommended_weights", {})
+    if (
+        not isinstance(query, Mapping)
+        or not isinstance(norms, Mapping)
+        or not isinstance(weights, Mapping)
+        or not isinstance(records, Sequence)
+        or isinstance(records, (str, bytes))
+    ):
+        raise ExpertManifoldError("v6-prior gradient-profile artifact is malformed")
+    try:
+        fraction = float(profile.get("maximum_auxiliary_fraction", -1))
+    except (TypeError, ValueError) as error:
+        raise ExpertManifoldError(
+            "v6-prior gradient-profile evidence is incomplete"
+        ) from error
     expected_weights = (
         _recommended_gradient_weights(norms, fraction=fraction)
         if _gradient_norms_match(norms) and 0 < fraction <= 1
@@ -1074,8 +1410,11 @@ def assemble_v6_prior_gradient_profile_evidence(
             contract.get("schema_version") == "ember_pi05_v6_prior_writer_launch_v1"
             and contract.get("mode") == "gradient-profile"
             and _clean_pushed_git(contract.get("git", {}))
-            and contract.get("config", {}).get("schema") == V6_PRIOR_CONFIG_SCHEMA
-            and int(contract.get("config", {}).get("bytes", -1)) > 0
+            and _canonical_config_record_matches(
+                contract.get("config", {}),
+                git_record=contract.get("git", {}),
+                scientific_contract=contract,
+            )
             and _method_matches(contract.get("method", {}))
             and _information_wall_matches(contract.get("information_wall", {}))
             and _writer_matches(contract.get("writer", {}))
@@ -1107,6 +1446,9 @@ def assemble_v6_prior_gradient_profile_evidence(
             == 0
             and int(runtime.get("world_size", -1)) == 6
             and int(runtime.get("tasks_per_rank", -1)) == 4
+            and _runtime_selection_matches(
+                _runtime_selection(runtime), allowed_workers={2}
+            )
             and int(runtime.get("total_macros", -1)) == 1
             and int(runtime.get("gradient_profile_schedule_macro", -1)) == 49
             and runtime.get("checkpoint_macros") == []
@@ -1141,9 +1483,8 @@ def assemble_v6_prior_gradient_profile_evidence(
             and int(profile.get("unique_action_queries", -1)) == 480
             and profile.get("counterfactual_counts")
             == {"reversed": 8, "shuffled": 8, "wrong": 8}
-            and _task_records_match_contract(
-                records, data.get("tasks", ()), task_visit=49
-            )
+            and _task_records_match_contract(records, data, task_visit=49)
+            and _artifact_task_records_match(contract, records)
             and max(int(row["correct_sampled_frames"]) for row in records) == 105
             and _gradient_norms_match(norms)
             and math.isclose(fraction, 0.25, rel_tol=0.0, abs_tol=0.0)
@@ -1164,6 +1505,10 @@ def assemble_v6_prior_gradient_profile_evidence(
             )
             and float(profile.get("step_seconds", -1)) > 0
             and math.isfinite(float(profile.get("step_seconds", -1)))
+            and float(profile.get("input_wait_seconds", -1)) >= 0
+            and float(profile.get("input_wait_seconds", -1))
+            <= float(profile.get("step_seconds", -1))
+            and math.isfinite(float(profile.get("input_wait_seconds", -1)))
             and int(profile.get("max_cuda_allocated_bytes", -1)) > 0
             and int(profile.get("max_cuda_reserved_bytes", -1))
             >= int(profile.get("max_cuda_allocated_bytes", -1))
@@ -1196,10 +1541,12 @@ def assemble_v6_prior_gradient_profile_evidence(
         "schema_version": V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA,
         "root": str(profile_root),
         "git": dict(contract["git"]),
+        "config_path": str(contract["config"]["path"]),
         "config_schema": str(contract["config"]["schema"]),
         "config_bytes": int(contract["config"]["bytes"]),
         "world_size": 6,
         "tasks_per_rank": 4,
+        "runtime_selection": _runtime_selection(runtime),
         "rank_topology": [dict(row) for row in runtime["rank_topology"]],
         "schedule_start_macro": 49,
         "schedule_stop_macro": 50,
@@ -1235,6 +1582,7 @@ def assemble_v6_prior_gradient_profile_evidence(
         "information_wall_verified": True,
         "invocation_count": 1,
         "step_seconds": float(profile["step_seconds"]),
+        "input_wait_seconds": float(profile["input_wait_seconds"]),
         "max_cuda_allocated_bytes": int(profile["max_cuda_allocated_bytes"]),
         "max_cuda_reserved_bytes": int(profile["max_cuda_reserved_bytes"]),
         "oom_count": 0,
@@ -1255,7 +1603,7 @@ def _metric_rows_match_contract(
 ) -> bool:
     if len(rows) != 3:
         return False
-    metric_names = {
+    task_metric_names = {
         "functional_loss",
         "expert_loss",
         "expert_direction",
@@ -1267,12 +1615,19 @@ def _metric_rows_match_contract(
         "correct_effective_norm",
         "counterfactual_effective_norm",
         "expert_effective_norm",
+    }
+    runtime_metric_names = {
         "gradient_norm_before_clip",
         "applied_lr",
         "next_lr",
     }
     try:
         for macro, row in enumerate(rows, start=1):
+            records = row["task_records"]
+            observed_counts = {
+                name: sum(record["counterfactual_kind"] == name for record in records)
+                for name in ("reversed", "shuffled", "wrong")
+            }
             if (
                 int(row["macro"]) != macro
                 or not math.isclose(
@@ -1284,16 +1639,29 @@ def _metric_rows_match_contract(
                     rel_tol=0.0,
                     abs_tol=0.0,
                 )
-                or row["counterfactual_counts"]
-                != {"reversed": 8, "shuffled": 8, "wrong": 8}
+                or row["counterfactual_counts"] != observed_counts
+                or observed_counts != {"reversed": 8, "shuffled": 8, "wrong": 8}
                 or not _task_records_match_contract(
-                    row["task_records"],
-                    contract["data"]["tasks"],
+                    records,
+                    contract["data"],
                     task_visit=macro - 1,
                 )
-                or not all(math.isfinite(float(row[name])) for name in metric_names)
+                or not all(
+                    math.isclose(
+                        float(row[name]),
+                        sum(float(record[name]) for record in records) / 24,
+                        rel_tol=1e-9,
+                        abs_tol=1e-9,
+                    )
+                    for name in task_metric_names
+                )
+                or not all(
+                    math.isfinite(float(row[name])) for name in runtime_metric_names
+                )
                 or float(row["step_seconds"]) <= 0
                 or not math.isfinite(float(row["step_seconds"]))
+                or float(row["input_wait_seconds"]) < 0
+                or not math.isfinite(float(row["input_wait_seconds"]))
                 or float(row["elapsed_seconds"]) <= 0
                 or not math.isfinite(float(row["elapsed_seconds"]))
                 or int(row["max_cuda_allocated_bytes"]) <= 0
@@ -1312,53 +1680,172 @@ def _compare_scientific_values(
     *,
     atol: float,
     rtol: float,
-) -> tuple[float, float]:
-    """Compare nested scientific values and return maximum absolute/relative drift."""
+) -> dict[str, Any]:
+    """Compare nested metrics and retain witnesses for every reported maximum."""
 
-    if isinstance(left, bool) or isinstance(right, bool):
-        if left is not right:
-            raise ExpertManifoldError("v6-prior profile boolean evidence differs")
-        return 0.0, 0.0
-    if isinstance(left, Mapping) and isinstance(right, Mapping):
-        if set(left) != set(right):
-            raise ExpertManifoldError("v6-prior profile mapping evidence differs")
-        maxima = [
-            _compare_scientific_values(left[name], right[name], atol=atol, rtol=rtol)
-            for name in left
-        ]
-        return (
-            max((item[0] for item in maxima), default=0.0),
-            max((item[1] for item in maxima), default=0.0),
+    records: list[dict[str, Any]] = []
+
+    def visit(a: Any, b: Any, path: str) -> None:
+        if isinstance(a, bool) or isinstance(b, bool):
+            if a is not b:
+                raise ExpertManifoldError("v6-prior profile boolean evidence differs")
+            return
+        if isinstance(a, Mapping) and isinstance(b, Mapping):
+            if set(a) != set(b):
+                raise ExpertManifoldError("v6-prior profile mapping evidence differs")
+            for name in sorted(a, key=str):
+                visit(a[name], b[name], f"{path}.{name}")
+            return
+        if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+            if len(a) != len(b):
+                raise ExpertManifoldError("v6-prior profile sequence evidence differs")
+            for index, (left_item, right_item) in enumerate(zip(a, b, strict=True)):
+                visit(left_item, right_item, f"{path}[{index}]")
+            return
+        if isinstance(a, int) and isinstance(b, int):
+            if a != b:
+                raise ExpertManifoldError("v6-prior profile integer evidence differs")
+            return
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            left_value = float(a)
+            right_value = float(b)
+            if not math.isfinite(left_value) or not math.isfinite(right_value):
+                raise ExpertManifoldError("v6-prior profile metric is non-finite")
+            difference = abs(left_value - right_value)
+            scale = max(abs(left_value), abs(right_value), 1e-12)
+            allowance = atol + rtol * scale
+            record = {
+                "path": path,
+                "left": left_value,
+                "right": right_value,
+                "difference": difference,
+                "scale": scale,
+                "relative": difference / scale,
+                "allowance": allowance,
+                "tolerance_ratio": difference / allowance,
+            }
+            if record["tolerance_ratio"] > 1.0:
+                raise ExpertManifoldError("v6-prior profile scientific metrics differ")
+            records.append(record)
+            return
+        if type(a) is not type(b) or a != b:
+            raise ExpertManifoldError("v6-prior profile identity evidence differs")
+
+    visit(left, right, "metrics")
+    if not records:
+        records.append(
+            {
+                "path": "metrics",
+                "left": 0.0,
+                "right": 0.0,
+                "difference": 0.0,
+                "scale": 1e-12,
+                "relative": 0.0,
+                "allowance": atol + rtol * 1e-12,
+                "tolerance_ratio": 0.0,
+            }
         )
-    if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
-        if len(left) != len(right):
-            raise ExpertManifoldError("v6-prior profile sequence evidence differs")
-        maxima = [
-            _compare_scientific_values(a, b, atol=atol, rtol=rtol)
-            for a, b in zip(left, right, strict=True)
-        ]
+    maxima = {
+        "max_abs": max(records, key=lambda row: float(row["difference"])),
+        "max_relative": max(records, key=lambda row: float(row["relative"])),
+        "max_tolerance_ratio": max(
+            records, key=lambda row: float(row["tolerance_ratio"])
+        ),
+    }
+    return {
+        "max_abs": float(maxima["max_abs"]["difference"]),
+        "max_relative": float(maxima["max_relative"]["relative"]),
+        "max_tolerance_ratio": float(maxima["max_tolerance_ratio"]["tolerance_ratio"]),
+        "witnesses": {name: dict(row) for name, row in maxima.items()},
+    }
+
+
+def _metric_difference_witnesses_match(
+    value: Mapping[str, Any],
+    *,
+    max_abs: float,
+    max_relative: float,
+    max_tolerance_ratio: float,
+    atol: float,
+    rtol: float,
+) -> bool:
+    if set(value) != {"max_abs", "max_relative", "max_tolerance_ratio"}:
+        return False
+    try:
+        for name, row in value.items():
+            if set(row) != {
+                "path",
+                "left",
+                "right",
+                "difference",
+                "scale",
+                "relative",
+                "allowance",
+                "tolerance_ratio",
+            }:
+                return False
+            left = float(row["left"])
+            right = float(row["right"])
+            difference = abs(left - right)
+            scale = max(abs(left), abs(right), 1e-12)
+            relative = difference / scale
+            allowance = atol + rtol * scale
+            ratio = difference / allowance
+            if (
+                not isinstance(row["path"], str)
+                or not row["path"].startswith("metrics")
+                or not all(
+                    math.isfinite(item)
+                    for item in (
+                        left,
+                        right,
+                        difference,
+                        scale,
+                        relative,
+                        allowance,
+                        ratio,
+                    )
+                )
+                or not math.isclose(
+                    float(row["difference"]), difference, rel_tol=1e-12, abs_tol=1e-15
+                )
+                or not math.isclose(
+                    float(row["scale"]), scale, rel_tol=1e-12, abs_tol=1e-15
+                )
+                or not math.isclose(
+                    float(row["relative"]), relative, rel_tol=1e-12, abs_tol=1e-15
+                )
+                or not math.isclose(
+                    float(row["allowance"]), allowance, rel_tol=1e-12, abs_tol=1e-15
+                )
+                or not math.isclose(
+                    float(row["tolerance_ratio"]), ratio, rel_tol=1e-12, abs_tol=1e-15
+                )
+                or ratio > 1.0
+            ):
+                return False
         return (
-            max((item[0] for item in maxima), default=0.0),
-            max((item[1] for item in maxima), default=0.0),
+            math.isclose(
+                max_abs,
+                float(value["max_abs"]["difference"]),
+                rel_tol=0.0,
+                abs_tol=0.0,
+            )
+            and math.isclose(
+                max_relative,
+                float(value["max_relative"]["relative"]),
+                rel_tol=0.0,
+                abs_tol=0.0,
+            )
+            and math.isclose(
+                max_tolerance_ratio,
+                float(value["max_tolerance_ratio"]["tolerance_ratio"]),
+                rel_tol=0.0,
+                abs_tol=0.0,
+            )
         )
-    if isinstance(left, int) and isinstance(right, int):
-        if left != right:
-            raise ExpertManifoldError("v6-prior profile integer evidence differs")
-        return 0.0, 0.0
-    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        a = float(left)
-        b = float(right)
-        if not math.isfinite(a) or not math.isfinite(b):
-            raise ExpertManifoldError("v6-prior profile metric is non-finite")
-        difference = abs(a - b)
-        scale = max(abs(a), abs(b), 1e-12)
-        relative = difference / scale
-        if difference > atol + rtol * scale:
-            raise ExpertManifoldError("v6-prior profile scientific metrics differ")
-        return difference, relative
-    if type(left) is not type(right) or left != right:
-        raise ExpertManifoldError("v6-prior profile identity evidence differs")
-    return 0.0, 0.0
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return False
 
 
 def _scientific_metric_rows(
@@ -1366,6 +1853,7 @@ def _scientific_metric_rows(
 ) -> list[dict[str, Any]]:
     ignored = {
         "step_seconds",
+        "input_wait_seconds",
         "elapsed_seconds",
         "max_cuda_allocated_bytes",
         "max_cuda_reserved_bytes",
@@ -1415,17 +1903,28 @@ def _profile_run_contract_matches(
     *,
     gradient_evidence: Mapping[str, Any],
 ) -> bool:
+    if not isinstance(contract, Mapping):
+        return False
     runtime = contract.get("runtime", {})
     data = contract.get("data", {})
+    if not isinstance(runtime, Mapping) or not isinstance(data, Mapping):
+        return False
     consumed = data.get("consumed_schedule", {})
+    if not isinstance(consumed, Mapping):
+        return False
     query = consumed.get("query", {})
+    if not isinstance(query, Mapping):
+        return False
     try:
         return (
             contract.get("schema_version") == "ember_pi05_v6_prior_writer_launch_v1"
             and contract.get("mode") == "profile"
             and _clean_pushed_git(contract.get("git", {}))
-            and contract.get("config", {}).get("schema") == V6_PRIOR_CONFIG_SCHEMA
-            and int(contract.get("config", {}).get("bytes", -1)) > 0
+            and _canonical_config_record_matches(
+                contract.get("config", {}),
+                git_record=contract.get("git", {}),
+                scientific_contract=contract,
+            )
             and _method_matches(contract.get("method", {}))
             and _information_wall_matches(contract.get("information_wall", {}))
             and _writer_matches(contract.get("writer", {}))
@@ -1458,6 +1957,9 @@ def _profile_run_contract_matches(
             == 0
             and int(runtime.get("world_size", -1)) == 6
             and int(runtime.get("tasks_per_rank", -1)) == 4
+            and _runtime_selection_matches(
+                _runtime_selection(runtime), allowed_workers={0, 2, 4}
+            )
             and int(runtime.get("total_macros", -1)) == 3
             and runtime.get("gradient_profile_schedule_macro") is None
             and runtime.get("checkpoint_macros") == [1, 3]
@@ -1472,7 +1974,7 @@ def _profile_run_contract_matches(
             and int(query.get("start_step", -1)) == 0
             and int(query.get("stop_step", -1)) == 3
             and int(query.get("global_examples", -1)) == 1440
-            and 0 < int(query.get("unique_query_rows", -1)) <= 1440
+            and int(query.get("unique_query_rows", -1)) == 1440
             and int(query.get("min_examples_per_task", -1)) == 60
             and int(query.get("max_examples_per_task", -1)) == 60
             and query.get("identity_evidence")
@@ -1525,10 +2027,13 @@ def _completion_matches_profile(value: Mapping[str, Any]) -> bool:
 
 
 def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
+    if not isinstance(value, Mapping):
+        return False
     try:
         weights = value["auxiliary_weights"]
         tolerances = value["scientific_tolerances"]
         wall = value["step_seconds"]
+        input_wait = value["input_wait_seconds"]
         throughput = value["macros_per_second"]
         valid = (
             value.get("schema_version") == V6_PRIOR_RESUME_EVIDENCE_SCHEMA
@@ -1540,6 +2045,11 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             and _clean_pushed_git(value["profile_git"])
             and isinstance(value.get("gradient_commit"), str)
             and bool(value["gradient_commit"])
+            and value["gradient_commit"] != value["profile_git"].get("commit")
+            and value.get("gradient_is_strict_ancestor") is True
+            and Path(str(value.get("config_path", ""))).name
+            == V6_PRIOR_CANONICAL_CONFIG.name
+            and Path(str(value.get("config_path", ""))).parent.name == "configs"
             and value.get("config_schema") == V6_PRIOR_CONFIG_SCHEMA
             and int(value.get("config_bytes", -1)) > 0
             and set(weights) == {"expert", "ranking"}
@@ -1550,6 +2060,9 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             )
             and int(value.get("world_size", -1)) == 6
             and int(value.get("tasks_per_rank", -1)) == 4
+            and _runtime_selection_matches(
+                value.get("runtime_selection", {}), allowed_workers={0, 2, 4}
+            )
             and _rank_topology_matches(value["rank_topology"], world_size=6)
             and value.get("invocation_counts") == {"resumed": 2, "contiguous": 1}
             and value.get("metrics_rows") == {"resumed": 3, "contiguous": 3}
@@ -1574,6 +2087,16 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             and float(value["metric_max_abs_difference"]) >= 0
             and math.isfinite(float(value["metric_max_relative_difference"]))
             and float(value["metric_max_relative_difference"]) >= 0
+            and math.isfinite(float(value["metric_max_tolerance_ratio"]))
+            and 0 <= float(value["metric_max_tolerance_ratio"]) <= 1.0
+            and _metric_difference_witnesses_match(
+                value.get("metric_difference_witnesses", {}),
+                max_abs=float(value["metric_max_abs_difference"]),
+                max_relative=float(value["metric_max_relative_difference"]),
+                max_tolerance_ratio=float(value["metric_max_tolerance_ratio"]),
+                atol=float(tolerances["scientific_atol"]),
+                rtol=float(tolerances["scientific_rtol"]),
+            )
             and math.isfinite(float(value["writer_max_abs_difference"]))
             and 0
             <= float(value["writer_max_abs_difference"])
@@ -1601,10 +2124,16 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
                 abs_tol=0.0,
             )
             and set(wall) == {"resumed", "contiguous"}
+            and set(input_wait) == {"resumed", "contiguous"}
             and set(throughput) == {"resumed", "contiguous"}
             and all(
                 math.isfinite(float(wall[name])) and float(wall[name]) > 0
                 for name in wall
+            )
+            and all(
+                math.isfinite(float(input_wait[name]))
+                and 0 <= float(input_wait[name]) <= float(wall[name])
+                for name in input_wait
             )
             and all(
                 math.isclose(
@@ -1628,9 +2157,18 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
 
 
 def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
+    if not isinstance(value, Mapping):
+        return False
     try:
         writer = value["writer"]
         optimizer = value["optimizer"]
+        if not isinstance(writer, Mapping) or not isinstance(optimizer, Mapping):
+            return False
+        moment_fields = optimizer.get("moment_fields", {})
+        if not isinstance(moment_fields, Mapping) or not all(
+            isinstance(summary, Mapping) for summary in moment_fields.values()
+        ):
+            return False
         return (
             int(value.get("macro", -1)) in {1, 3}
             and value.get("cursor_semantic_equal") is True
@@ -1641,7 +2179,8 @@ def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
             and value.get("amp_semantic_equal") is True
             and writer.get("tensor_schema_equal") is True
             and writer.get("frozen_exact") is True
-            and int(writer.get("tensor_count", -1)) == 600
+            and int(writer.get("state_tensor_count", -1)) == 600
+            and int(writer.get("tensor_count", -1)) == 41
             and int(writer.get("frozen_tensor_count", -1)) == 559
             and int(writer.get("trainable_tensor_count", -1)) == 41
             and math.isclose(
@@ -1702,14 +2241,14 @@ def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
             and 0 <= float(optimizer["max_abs"]) <= 0.0000075
             and math.isfinite(float(optimizer.get("global_relative_l2", -1)))
             and 0 <= float(optimizer["global_relative_l2"]) <= 0.00001
-            and set(optimizer.get("moment_fields", {})) == {"exp_avg", "exp_avg_sq"}
+            and set(moment_fields) == {"exp_avg", "exp_avg_sq"}
             and all(
                 int(summary.get("tensor_count", -1)) == 41
                 and math.isfinite(float(summary.get("max_abs", -1)))
                 and 0 <= float(summary["max_abs"]) <= 0.0000075
                 and math.isfinite(float(summary.get("global_relative_l2", -1)))
                 and 0 <= float(summary["global_relative_l2"]) <= 0.00001
-                for summary in optimizer["moment_fields"].values()
+                for summary in moment_fields.values()
             )
         )
     except (KeyError, TypeError, ValueError):
@@ -1761,6 +2300,10 @@ def assemble_v6_prior_resume_profile_evidence(
     try:
         contracts_valid = (
             contract == contiguous["contract"]
+            and git_commit_is_strict_ancestor(
+                str(gradient["git"]["commit"]),
+                str(contract["git"]["commit"]),
+            )
             and _profile_run_contract_matches(contract, gradient_evidence=gradient)
             and _profile_invocations_match(
                 resumed["invocations"], root=resumed_root, resumed=True
@@ -1782,12 +2325,21 @@ def assemble_v6_prior_resume_profile_evidence(
                 expert_weight=float(weights["expert"]),
                 ranking_weight=float(weights["ranking"]),
             )
+            and _artifact_task_records_match(
+                contract,
+                tuple(
+                    record
+                    for artifact in (resumed, contiguous)
+                    for metric in artifact["metrics"]
+                    for record in metric["task_records"]
+                ),
+            )
         )
     except (KeyError, TypeError, ValueError):
         contracts_valid = False
     if not contracts_valid:
         raise ExpertManifoldError("v6-prior resume-profile contract is incomplete")
-    metric_max_abs, metric_max_relative = _compare_scientific_values(
+    metric_comparison = _compare_scientific_values(
         _scientific_metric_rows(resumed["metrics"]),
         _scientific_metric_rows(contiguous["metrics"]),
         atol=0.0002,
@@ -1840,6 +2392,10 @@ def assemble_v6_prior_resume_profile_evidence(
         name: sum(float(row["step_seconds"]) for row in value["metrics"])
         for name, value in artifacts.items()
     }
+    input_wait_seconds = {
+        name: sum(float(row["input_wait_seconds"]) for row in value["metrics"])
+        for name, value in artifacts.items()
+    }
     peak_allocated = max(
         int(row["max_cuda_allocated_bytes"])
         for value in artifacts.values()
@@ -1856,7 +2412,9 @@ def assemble_v6_prior_resume_profile_evidence(
         "resumed_root": str(resumed_root),
         "contiguous_root": str(contiguous_root),
         "gradient_commit": str(gradient["git"]["commit"]),
+        "gradient_is_strict_ancestor": True,
         "profile_git": dict(contract["git"]),
+        "config_path": str(contract["config"]["path"]),
         "config_schema": str(contract["config"]["schema"]),
         "config_bytes": int(contract["config"]["bytes"]),
         "auxiliary_weights": {
@@ -1864,6 +2422,7 @@ def assemble_v6_prior_resume_profile_evidence(
         },
         "world_size": 6,
         "tasks_per_rank": 4,
+        "runtime_selection": _runtime_selection(contract["runtime"]),
         "rank_topology": [dict(row) for row in contract["runtime"]["rank_topology"]],
         "invocation_counts": {"resumed": 2, "contiguous": 1},
         "metrics_rows": {"resumed": 3, "contiguous": 3},
@@ -1878,8 +2437,10 @@ def assemble_v6_prior_resume_profile_evidence(
         "scientific_metrics_equivalent": True,
         "checkpoint_semantics_equivalent": True,
         "checkpoint_comparisons": checkpoint_rows,
-        "metric_max_abs_difference": metric_max_abs,
-        "metric_max_relative_difference": metric_max_relative,
+        "metric_max_abs_difference": metric_comparison["max_abs"],
+        "metric_max_relative_difference": metric_comparison["max_relative"],
+        "metric_max_tolerance_ratio": metric_comparison["max_tolerance_ratio"],
+        "metric_difference_witnesses": metric_comparison["witnesses"],
         "writer_max_abs_difference": max(
             float(row["writer"]["max_abs"]) for row in checkpoint_rows
         ),
@@ -1887,6 +2448,7 @@ def assemble_v6_prior_resume_profile_evidence(
             float(row["writer"]["global_relative_l2"]) for row in checkpoint_rows
         ),
         "step_seconds": step_seconds,
+        "input_wait_seconds": input_wait_seconds,
         "macros_per_second": {
             name: 3.0 / seconds for name, seconds in step_seconds.items()
         },

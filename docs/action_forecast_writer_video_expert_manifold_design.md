@@ -1261,3 +1261,24 @@ single attempt、0 retry/failure/OOM/nonfinite/forbidden reads，总wall=`325.54
 自然转为evaluation sealed、gradient-profile ready。该实证只关闭“当前实现是否能高效完成完整闭环”
 的不确定性；冻结上游、expert辅助和temporal ranking能否共同超过143/150仍完全待六卡训练与paired
 closed-loop裁决。下一门是结构化gradient/resume verifier和macro49六卡profile，不能直接跳到formal。
+
+### 33.9 六卡artifact seal与无扰动吞吐观测（2026-08-09）
+
+六卡gradient与fresh/resume/contiguous的结构化verifier已经实现并通过CPU回归，但尚未运行真实六卡
+artifact。gradient evidence只能从一个完整retained root重建：canonical tracked config、clean pushed
+Git、6-rank A40/NUMA/affinity映射、macro49、train24×B20=`480/480` unique queries、24条deterministic
+teacher demo/counterfactual records、8/8/8 negative counts、未加权block norms、推荐weights、显存和
+零OOM/nonfinite必须同时成立；task/path/bytes/demo frame count还要回查同frozen commit的target manifest和
+真实HDF5 metadata。只改status、使用stale tracked config、复制外部config或手写summary均不能解锁profile。
+
+resume evidence要求gradient commit是profile commit的strict ancestor；fresh0→1+same-root resume1→3
+与independent contiguous0→3必须共享科学contract和拓扑。只读checkpoint inspector核对manifest size、
+cursor/contract、600 Writer tensors、41 trainable tensors、6-rank RNG、AdamW `exp_avg/exp_avg_sq`、
+scheduler/AMP；Writer与optimizer moments以及三宏步scientific metrics只要求预注册容差内等价，普通BF16/
+parallel reduction low-bit差异不是失败。
+
+吞吐观测不在每个video encode、policy forward、backward或all-reduce后增加CUDA同步。retained artifact只
+借用原本宏步末端的一次同步，记录whole-step wall、`next(DataLoader)`累计input wait与peak allocated/
+reserved。若这些证据显示data wait显著，才实测2/4 workers等候选；若显存或计算证据指向activation
+checkpointing或physical microbatch，才做对应单变量profile。否则保持B20单物理batch、2 persistent
+workers/prefetch2，避免为了更细的profile数字降低正式训练效率。

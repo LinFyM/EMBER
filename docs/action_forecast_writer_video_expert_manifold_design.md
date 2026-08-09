@@ -1164,8 +1164,10 @@ frame content的展示顺序，position indices保持新的顺序坐标，因此
 合同转成76-tensor FP32 LoRA。no-video提前返回template-A/zero-B，不tokenize language、不读frames、
 不调用Writer。episode LoRA写入通用cache后删除Writer/store/tokenizer并保留同一source policy做rollout。
 
-全仓`208 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
+全仓`210 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
 映射为8个one-shot requests且deployment expert-bank reads为0。真实CLI prepare也已通过，但这些仍只是
 CPU/合同证据。单卡A40 reproduction smoke必须同时验证完整cache/release/rollout链路和batch-vs-single
 direct forward数值等价；不能仅因checkpoint能load或8个rollout能结束就seal。该证据写回前
 `evaluation.formal_status`与`gradient_profile.status`继续blocked，六卡profile和训练不得启动。
+该比较已接入historical-correct smoke runtime：每个batch写cache前逐episode重跑direct forward，state
+names/shapes、finite与max-abs门任一失败都会中止，不允许事后人工补判。

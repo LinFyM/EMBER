@@ -11,7 +11,7 @@ runtime已由clean pushed`bca3f6d`完成，rejected hard-route不得再launch。
 Writer checkpoint、raw video root和condition；expert bank与feature cache部署参数会fail closed。hard-route
 config/class/专属测试已删除，历史由Git与formal artifacts保存。
 
-CPU合同为全仓`208 passed`，真实historical macro400/validation8 inspector与`evaluate_pi05.py prepare`
+CPU合同为全仓`210 passed`，真实historical macro400/validation8 inspector与`evaluate_pi05.py prepare`
 通过：600 Writer tensors、12,064,064 state values、8 one-shot episode LoRA requests、0 deployment expert-bank
 reads。CLI prepare只建立`.codex/tmp`合同，没有启动CUDA或环境rollout。当前没有v6-prior GPU进程、长期
 run root或frozen launch worktree。
@@ -22,6 +22,7 @@ correct、seed7、without-replacement，完成8 LoRA cache→release→source-po
 batched staged输出与逐episode direct v6 forward，76 tensors max-abs必须`<=1e-5`。只有8 rows/cache、
 0 retry/failure/OOM/nonfinite/forbidden reads、GPU自然释放和数值等价全部成立，才写回smoke evidence并
 解封六卡gradient profile。精确后续顺序与裁决门只取`task_plan.md`，旧launch命令不得复制。
+该数值比较已在smoke generation runtime内fail-close接线，结果会随generator marker保留，不靠手工推断。
 
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：禁止继续launch rejected
 hard-route。新唯一design为

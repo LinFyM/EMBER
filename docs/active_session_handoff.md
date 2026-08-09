@@ -18,12 +18,13 @@ cross-suite视频而保持当前语言，shuffled/reversed重排真实frame cont
 frames、不走language-only Writer forward并精确返回source identity。生成的FP32 LoRA先写episode cache，
 随后释放Writer并原位复用同一source policy。
 
-CPU与真实资产门现为全仓`208 passed`，历史macro400 state为600 tensors、12,064,064 values；validation8
+CPU与真实资产门现为全仓`210 passed`，历史macro400 state为600 tensors、12,064,064 values；validation8
 真实asset inspector和CLI prepare均通过，得到8 tasks/8 one-shot requests且deployment expert-bank reads=
 `0`。这仍不是GPU或性能证据。当前没有新的GPU工作、profile、训练或rollout；下一步必须从包含
 `bca3f6d`与本authority更新的clean pushed frozen worktree，在live比较`gpu01/gpu02`和quota后，只用一张
 空闲A40做historical warm-start reproduction smoke，并数值比较batched staged path与逐episode direct v6
 forward（76 tensors max-abs`<=1e-5`）。通过并写回evidence前六卡gradient profile继续fail closed。
+该batch-vs-direct比较已由runtime在cache写入前自动执行并记录，差异超门会直接中止smoke。
 
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard/soft/sparse 24-expert部署字典已由
 strict结果关闭；下一唯一候选 **v6-Prior Policy-Effective Temporal-Ranking Writer** 的训练侧实现已由

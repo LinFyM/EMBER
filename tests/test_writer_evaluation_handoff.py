@@ -3,7 +3,56 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+import torch
+
 from ember.pi05_eval_results import _worker_lifecycle
+from ember.writer.errors import WriterModelError
+from ember.writer.evaluation_runtime import (
+    _state_max_abs_difference,
+    _warmstart_reproduction_required,
+)
+
+
+def test_v6_prior_reproduction_comparison_is_exact_and_fail_closed() -> None:
+    staged = {
+        "a": torch.tensor([1.0, 2.0]),
+        "b": torch.tensor([[3.0]], dtype=torch.bfloat16),
+    }
+    direct = {
+        "a": torch.tensor([1.0, 2.000004]),
+        "b": torch.tensor([[3.0]], dtype=torch.bfloat16),
+    }
+    assert _state_max_abs_difference(staged, direct) == pytest.approx(
+        4.0531158447265625e-6
+    )
+    with pytest.raises(WriterModelError, match="state names changed"):
+        _state_max_abs_difference(staged, {"a": direct["a"]})
+    with pytest.raises(WriterModelError, match="nonfinite"):
+        _state_max_abs_difference(
+            staged,
+            {**direct, "a": torch.tensor([1.0, float("nan")])},
+        )
+
+
+def test_only_historical_correct_smoke_requires_direct_v6_comparison() -> None:
+    contract = {
+        "mode": "smoke",
+        "adapter": {
+            "kind": "expert_manifold_writer",
+            "video_condition": "correct",
+            "writer_asset": {"kind": "historical_v6_macro400_load_only"},
+        },
+    }
+    assert _warmstart_reproduction_required(contract)
+    contract["mode"] = "screen"
+    assert not _warmstart_reproduction_required(contract)
+    contract["mode"] = "smoke"
+    contract["adapter"]["video_condition"] = "reversed"
+    assert not _warmstart_reproduction_required(contract)
+    assert not _warmstart_reproduction_required({"mode": "smoke", "adapter": []})
+
+
 def test_writer_generator_lifecycle_proves_resident_policy_handoff(
     tmp_path: Path,
 ) -> None:

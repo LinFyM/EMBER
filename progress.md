@@ -8,8 +8,11 @@
 - adapter/episode升为v5；historical macro400显式登记为method macro0，本方法checkpoint登记真实method
   macro。correct/same/wrong/shuffled/reversed各读恰好一条video，no-video不读frames并返回identity；
   LoRA cache后释放Writer并复用同一source policy。
-- 全仓`208 passed`、compile/diff check通过。真实只读asset gate确认600 state tensors、12,064,064 values、
+- 全仓`210 passed`、compile/diff check通过。真实只读asset gate确认600 state tensors、12,064,064 values、
   validation8映射8条视频；真实CLI prepare生成8-entry cache合同，deployment expert-bank reads为0。
+- historical correct smoke runtime会在cache写入前把每个batched output与同输入逐episode direct forward
+  比较；state names/shapes/nonfinite或max-abs`>1e-5`立即fail closed，并把entry/tensor counts、wall和最大
+  差异写入generator evidence。
 - 本阶段没有启动CUDA、训练、rollout或长期实验。下一步从包含本提交及authority更新的clean pushed
   frozen worktree，在live双节点GPU/quota preflight后用一张空闲A40完成batch-vs-direct warm-start
   reproduction和8-task cache/release/rollout smoke；通过前六卡gradient profile保持blocked。

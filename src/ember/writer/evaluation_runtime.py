@@ -37,6 +37,47 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
 
 
+V6_PRIOR_REPRODUCTION_MAX_ABS = 1e-5
+
+
+def _state_max_abs_difference(
+    staged: Mapping[str, torch.Tensor],
+    direct: Mapping[str, torch.Tensor],
+) -> float:
+    if set(staged) != set(direct):
+        raise WriterModelError("v6-prior reproduction state names changed")
+    maxima = []
+    finite = []
+    for name in sorted(staged):
+        left = staged[name]
+        right = direct[name]
+        if left.shape != right.shape:
+            raise WriterModelError("v6-prior reproduction state shape changed")
+        difference = (left.float() - right.float()).abs()
+        finite.append(torch.isfinite(difference).all())
+        maxima.append(difference.amax())
+    if not maxima:
+        raise WriterModelError("v6-prior reproduction state is empty")
+    if not bool(torch.stack(finite).all().item()):
+        raise WriterModelError("v6-prior reproduction comparison is nonfinite")
+    return float(torch.stack(maxima).amax().item())
+
+
+def _warmstart_reproduction_required(contract: Mapping[str, Any]) -> bool:
+    adapter = contract.get("adapter")
+    if not isinstance(adapter, Mapping):
+        return False
+    writer_asset = adapter.get("writer_asset")
+    if not isinstance(writer_asset, Mapping):
+        return False
+    return (
+        contract.get("mode") == "smoke"
+        and adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND
+        and adapter.get("video_condition") == "correct"
+        and writer_asset.get("kind") == "historical_v6_macro400_load_only"
+    )
+
+
 class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
     """Load sealed episode LoRAs without loading any Writer or teacher video."""
 
@@ -250,6 +291,10 @@ def run_writer_generation_phase(
         raise WriterModelError("Writer generator lacks batched LoRA generation")
     phase_started = time.monotonic()
     generated_entries = reused_entries = generated_batches = 0
+    reproduction_required = _warmstart_reproduction_required(runtime.contract)
+    reproduction_entries = reproduction_tensor_comparisons = 0
+    reproduction_wall_seconds = 0.0
+    reproduction_max_abs = 0.0
     batch_rows = []
     torch.cuda.reset_peak_memory_stats()
     for batch_ordinal, offset in enumerate(range(0, len(requests), batch_size)):
@@ -275,6 +320,23 @@ def run_writer_generation_phase(
         batch_seconds = time.monotonic() - batch_started
         if len(prepared) != len(request_batch):
             raise WriterModelError("Writer generation batch coverage changed")
+        if reproduction_required:
+            direct_started = time.monotonic()
+            for request, staged in zip(request_batch, prepared, strict=True):
+                direct = runtime.task_adapter.prepare_episode(
+                    suite=request.suite,
+                    task_id=request.task_id,
+                    init_state_id=request.init_state_id,
+                )
+                difference = _state_max_abs_difference(staged.state, direct.state)
+                if difference > V6_PRIOR_REPRODUCTION_MAX_ABS:
+                    raise WriterModelError(
+                        "v6-prior batched evaluator differs from direct forward"
+                    )
+                reproduction_max_abs = max(reproduction_max_abs, difference)
+                reproduction_entries += 1
+                reproduction_tensor_comparisons += len(staged.state)
+            reproduction_wall_seconds += time.monotonic() - direct_started
         generated_batches += 1
         for position, (request, item, was_complete) in enumerate(
             zip(request_batch, prepared, complete, strict=True)
@@ -316,6 +378,16 @@ def run_writer_generation_phase(
             "generated_batches": generated_batches,
             "generation_batch_size": batch_size,
             "generation_wall_seconds": time.monotonic() - phase_started,
+            "direct_v6_comparison_entries": reproduction_entries,
+            "direct_v6_tensor_comparisons": reproduction_tensor_comparisons,
+            "direct_v6_comparison_wall_seconds": reproduction_wall_seconds,
+            "staged_path_matches_direct_v6_forward": (
+                reproduction_required
+                and reproduction_entries == len(requests)
+            ),
+            "staged_path_max_abs_difference": (
+                reproduction_max_abs if reproduction_required else None
+            ),
             "batches": batch_rows,
         },
     )

@@ -46,7 +46,7 @@
 - [x] evaluator的no-video臂不读取frames且精确返回source identity；correct/same/wrong/shuffled/reversed
   每episode恰好一条raw video。乱序与倒序只重排真实frame content并保留新的展示位置，随后做完整
   v6 forward；Writer生成FP32 LoRA cache后释放，原source policy原位复用。
-- [x] CPU门：全仓`208 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
+- [x] CPU门：全仓`210 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
   600 tensors、12,064,064 values；8 tasks映射到8个one-shot cache requests，部署expert-bank reads=`0`。
 
 ## 下一证据门
@@ -59,7 +59,8 @@
 - [ ] 生成8套完整LoRA并完成cache→Writer release→同一source policy rollout，要求8 rows/entries、
   0 retry/failure/OOM/nonfinite/forbidden reads，结束后GPU自然释放。
 - [ ] 对同一批输入比较batched staged evaluator与逐episode direct v6 forward；全部76 tensors逐值比较，
-  max abs difference必须`<=1e-5`。该比较只验证路径等价，不用SHA/MD5。
+  max abs difference必须`<=1e-5`。canonical smoke runtime会在写cache前自动执行并记录该比较；不用
+  SHA/MD5，也不能事后凭观察补写通过。
 - [ ] 通过后把精确device/root/commit/counts/release/reuse/direct-match evidence写回config并clean push；
   同一证据同时把gradient-profile从blocked改为ready。任一项失败先修工程合同，不启动六卡训练。
 

@@ -477,6 +477,9 @@ def _rank_topology(context: DistributedContext) -> list[dict[str, Any]]:
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
+        "host": socket.gethostname(),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
+        "device_name": torch.cuda.get_device_name(context.device),
         "physical_gpu": visible_physical_cuda_index(context.local_rank),
         "device": str(context.device),
         "numa_node": context.numa_node,
@@ -514,7 +517,7 @@ def _run_contract(
     return {
         "schema_version": V6_PRIOR_RUN_SCHEMA,
         "mode": args.mode,
-        "git": {key: state[key] for key in ("branch", "commit")},
+        "git": dict(state),
         "config": {
             "path": str(args.config),
             "schema": V6_PRIOR_CONFIG_SCHEMA,

@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pytest
 import torch
 
+from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_runtime import (
+    RuntimeSegment,
     _cursor_contract,
+    _rank_topology,
+    _run_contract,
     _sampled_video_cost,
     _scheduler,
 )
 from ember.expert_manifold.v6_prior_training import (
     _mean_trainable_gradients,
+    _run_gradient_profile,
     suggest_auxiliary_weight,
 )
 from ember.pi05_source_checkpoint import DistributedContext
@@ -37,6 +43,260 @@ def test_v6_prior_auxiliary_weight_obeys_both_trainable_groups() -> None:
         {"compiler": 0.0, "factor_heads": 0.0},
         maximum_fraction=0.25,
     ) == 0.0
+    assert suggest_auxiliary_weight(
+        positive,
+        {"compiler": 0.25, "factor_heads": 0.0},
+        maximum_fraction=0.25,
+    ) == 1.0
+    assert suggest_auxiliary_weight(
+        positive,
+        {"compiler": -1.0, "factor_heads": 1.0},
+        maximum_fraction=0.25,
+    ) == 0.0
+    with pytest.raises(
+        ExpertManifoldError,
+        match="invalid v6-prior gradient fraction",
+    ):
+        suggest_auxiliary_weight(
+            positive,
+            {"compiler": 1.0, "factor_heads": 1.0},
+            maximum_fraction=0.0,
+        )
+
+
+def test_v6_prior_rank_topology_records_per_rank_runtime_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "5")
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.socket.gethostname",
+        lambda: "gpu02",
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        lambda _device: "NVIDIA A40",
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.visible_physical_cuda_index",
+        lambda _local_rank: 5,
+    )
+    context = DistributedContext(
+        0,
+        0,
+        1,
+        torch.device("cuda:0"),
+        numa_node=1,
+        cpu_affinity=(16, 17),
+    )
+    assert _rank_topology(context) == [
+        {
+            "rank": 0,
+            "local_rank": 0,
+            "host": "gpu02",
+            "cuda_visible_devices": "5",
+            "device_name": "NVIDIA A40",
+            "physical_gpu": 5,
+            "device": "cuda:0",
+            "numa_node": 1,
+            "cpu_affinity": [16, 17],
+        }
+    ]
+
+
+def test_v6_prior_run_contract_retains_full_git_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text("{}\n", encoding="utf-8")
+    state = {
+        "branch": "codex/frozen",
+        "commit": "abc123",
+        "origin_main": "main123",
+        "upstream": "origin/codex/frozen",
+        "upstream_commit": "abc123",
+        "dirty_paths": [],
+    }
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.git_state",
+        lambda _root: state,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime._rank_topology",
+        lambda _context: [{"rank": 0}],
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        lambda _device: "NVIDIA A40",
+    )
+    task = SimpleNamespace(
+        ordinal=0,
+        global_task_id=0,
+        suite="libero_spatial",
+        task_id=0,
+        language="do the task",
+        authority=SimpleNamespace(
+            path=tmp_path / "task.hdf5",
+            expected_bytes=123,
+        ),
+    )
+    segment = RuntimeSegment(1, (), 0, 1, 49, 50)
+    config = {
+        "gradient_profile": {"schedule_macro": 49},
+        "data": {"action_queries_per_task": 20},
+        "method": {},
+        "information_wall": {},
+        "writer": {},
+        "expert_basis": {"expert_step": 2000},
+        "objective": {},
+        "optimization": {},
+    }
+    args = SimpleNamespace(
+        mode="gradient-profile",
+        config=config_path,
+        expert_bank_root=tmp_path / "experts",
+        data_root=tmp_path / "data",
+        num_workers=2,
+    )
+    schedule = SimpleNamespace(
+        consumed_identity_summary=lambda *_args: {"task_visits": 1}
+    )
+    warm_start = SimpleNamespace(
+        checkpoint=tmp_path / "warm",
+        state_tensor_count=600,
+        state_value_count=1,
+    )
+    ownership = SimpleNamespace(
+        frozen_parameter_count=7_060_992,
+        trainable_parameter_count=3_714_304,
+        frozen_tensor_count=483,
+        trainable_tensor_count=41,
+    )
+    contract = _run_contract(
+        args=args,
+        config=config,
+        context=DistributedContext(0, 0, 1, torch.device("cuda:0")),
+        segment=segment,
+        source={},
+        tokenizer={},
+        tasks=(task,),
+        sampler=object(),
+        video_schedule=schedule,
+        expert={"training_commit": "expert", "tasks": []},
+        warm_start=warm_start,
+        ownership=ownership,
+        trainable_names=("compiler.weight",),
+    )
+    assert contract["git"] == state
+
+
+def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    compiler = torch.nn.Parameter(torch.zeros(2))
+    factor = torch.nn.Parameter(torch.zeros(1))
+    batches = iter({"ordinal": ordinal} for ordinal in range(24))
+
+    def task_objective(_runtime, *, macro, microtask, batch):
+        assert macro == 49
+        assert microtask == batch["ordinal"]
+        return SimpleNamespace(
+            ordinal=batch["ordinal"],
+            pair=None,
+            functional_gradients=None,
+            auxiliary=None,
+        )
+
+    def components(**_kwargs):
+        return SimpleNamespace(
+            positive=(torch.tensor([2.0, 0.0]), torch.tensor([4.0])),
+            expert=(torch.tensor([8.0, 0.0]), torch.tensor([1.0])),
+            ranking=(torch.tensor([1.0, 0.0]), torch.tensor([8.0])),
+        )
+
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training._task_objective",
+        task_objective,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training.parameter_gradient_components",
+        components,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training._task_record",
+        lambda value: {
+            "task_ordinal": value.ordinal,
+            "task_visit": 49,
+            "counterfactual_kind": (
+                "reversed", "shuffled", "wrong"
+            )[value.ordinal % 3],
+        },
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training._runtime_maximums",
+        lambda _context, _started: (12.5, 1_000, 2_000),
+    )
+    runtime = SimpleNamespace(
+        context=DistributedContext(0, 0, 1, torch.device("cpu")),
+        trainable_names=("compiler.weight", "factor_heads.weight"),
+        trainable_parameters=(compiler, factor),
+        iterator=batches,
+        segment=RuntimeSegment(1, (), 0, 1, 49, 50),
+        config={
+            "data": {"action_queries_per_task": 20},
+            "objective": {
+                "auxiliary_weights": {
+                    "maximum_fraction_of_positive_gradient_per_auxiliary": 0.25
+                }
+            },
+            "gradient_profile": {"seal_rule": "bounded"},
+        },
+        policy=torch.nn.Identity(),
+        args=SimpleNamespace(output_dir=tmp_path),
+        run_contract={
+            "data": {
+                "consumed_schedule": {
+                    "query": {
+                        "global_examples": 480,
+                        "unique_query_rows": 480,
+                    }
+                }
+            }
+        },
+    )
+    _run_gradient_profile(runtime)
+    profile = json.loads(
+        (tmp_path / "gradient_profile.json").read_text(encoding="utf-8")
+    )
+    completion = json.loads(
+        (tmp_path / "completion.json").read_text(encoding="utf-8")
+    )
+    assert profile["schema_version"] == (
+        "ember_pi05_v6_prior_gradient_profile_seal_v1"
+    )
+    assert profile["schedule_macro"] == 49
+    assert profile["task_count"] == 24
+    assert profile["action_queries_per_task"] == 20
+    assert profile["total_action_queries"] == 480
+    assert profile["unique_action_queries"] == 480
+    assert profile["counterfactual_counts"] == {
+        "reversed": 8,
+        "shuffled": 8,
+        "wrong": 8,
+    }
+    assert len(profile["task_records"]) == 24
+    assert completion == {
+        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+        "mode": "gradient-profile",
+        "completed_diagnostic_macros": 1,
+        "schedule_start_macro": 49,
+        "schedule_stop_macro": 50,
+        "gradient_profile_complete": True,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "content_hash_policy": "disabled_by_owner",
+    }
 
 
 def test_v6_prior_scheduler_is_low_lr_warmup_then_fifty_macro_decay() -> None:

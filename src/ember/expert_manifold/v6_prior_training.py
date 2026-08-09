@@ -404,12 +404,40 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
     }
     seconds, allocated, reserved = _runtime_maximums(runtime.context, started)
     task_records = _gather_task_records(local_records, runtime.context)
+    action_queries_per_task = int(
+        runtime.config["data"]["action_queries_per_task"]
+    )
+    query_summary = runtime.run_contract["data"]["consumed_schedule"]["query"]
+    total_action_queries = int(query_summary["global_examples"])
+    unique_action_queries = int(query_summary["unique_query_rows"])
+    counterfactual_counts = {
+        name: sum(
+            record["counterfactual_kind"] == name for record in task_records
+        )
+        for name in ("reversed", "shuffled", "wrong")
+    }
+    if (
+        len(task_records) != 24
+        or action_queries_per_task != 20
+        or total_action_queries != 480
+        or unique_action_queries != 480
+        or total_action_queries
+        != len(task_records) * action_queries_per_task
+        or counterfactual_counts
+        != {"reversed": 8, "shuffled": 8, "wrong": 8}
+    ):
+        raise ExpertManifoldError("v6-prior gradient-profile panel changed")
     if runtime.context.is_main:
         write_json_atomic(
             runtime.args.output_dir / "gradient_profile.json",
             {
-                "schema_version": "ember_pi05_v6_prior_gradient_profile_v1",
-                "task_count": 24,
+                "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
+                "schedule_macro": runtime.segment.schedule_start_macro,
+                "task_count": len(task_records),
+                "action_queries_per_task": action_queries_per_task,
+                "total_action_queries": total_action_queries,
+                "unique_action_queries": unique_action_queries,
+                "counterfactual_counts": counterfactual_counts,
                 "unweighted_gradient_norms": norms,
                 "maximum_auxiliary_fraction": fraction,
                 "recommended_weights": recommended,
@@ -418,6 +446,8 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
                 "step_seconds": seconds,
                 "max_cuda_allocated_bytes": allocated,
                 "max_cuda_reserved_bytes": reserved,
+                "oom_count": 0,
+                "nonfinite_count": 0,
                 "content_hash_policy": "disabled_by_owner",
             },
         )
@@ -426,8 +456,12 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
             {
                 "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
                 "mode": "gradient-profile",
-                "completed_macro": 0,
+                "completed_diagnostic_macros": 1,
+                "schedule_start_macro": runtime.segment.schedule_start_macro,
+                "schedule_stop_macro": runtime.segment.schedule_stop_macro,
                 "gradient_profile_complete": True,
+                "oom_count": 0,
+                "nonfinite_count": 0,
                 "content_hash_policy": "disabled_by_owner",
             },
         )

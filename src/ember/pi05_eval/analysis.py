@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import math
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -32,6 +33,9 @@ SIX_ARM_CONDITIONS = (
 
 EpisodeKey = tuple[str, int, int]
 TaskKey = tuple[str, int]
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+TARGET_DATA_MANIFEST = REPO_ROOT / "configs/pi05_target_data_v1/manifest.json"
 
 
 def _fail(message: str) -> None:
@@ -214,21 +218,58 @@ def _formal_adapter(result: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mappi
     return adapter, paired, condition
 
 
+def _sealed_validation_tasks() -> list[dict[str, Any]]:
+    try:
+        manifest = json.loads(TARGET_DATA_MANIFEST.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        _fail(f"cannot read the sealed target-data manifest: {exc}")
+    tasks = [
+        {
+            "suite": str(task["suite"]),
+            "task_id": int(task["task_id"]),
+            "global_task_id": int(task["global_task_id"]),
+            "split_role": str(task["split_role"]),
+            "language": str(task["language"]),
+        }
+        for task in manifest.get("tasks", [])
+        if task.get("split_role") == "validation"
+    ]
+    summary_ids = list(map(int, manifest.get("summary", {}).get("roles", {}).get("validation", [])))
+    if (
+        manifest.get("schema_version") != "ember_pi05_target_data_manifest_v1"
+        or len(tasks) != 8
+        or len({(task["suite"], task["task_id"]) for task in tasks}) != 8
+        or [task["global_task_id"] for task in tasks] != summary_ids
+    ):
+        _fail("sealed target-data manifest does not define the canonical 8 validation tasks")
+    return tasks
+
+
 def _formal_tasks(paired: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], list[TaskKey]]:
     tasks = paired.get("tasks", [])
-    task_keys = [(str(task["suite"]), int(task["task_id"])) for task in tasks]
-    suite_counts = {suite: sum(key[0] == suite for key in task_keys) for suite in SUITE_ORDER}
+    authority = _sealed_validation_tasks()
+    expected = [
+        {key: task[key] for key in ("suite", "task_id", "split_role", "language")}
+        for task in authority
+    ]
+    observed = [
+        {
+            "suite": str(task.get("suite", "")),
+            "task_id": int(task.get("task_id", -1)),
+            "split_role": task.get("split_role"),
+            "language": task.get("language"),
+        }
+        for task in tasks
+    ]
     if (
-        len(tasks) != 8
-        or len(set(task_keys)) != 8
-        or suite_counts != {suite: 2 for suite in SUITE_ORDER}
+        observed != expected
         or any(
             list(map(int, task.get("init_state_ids", []))) != list(range(50))
-            or task.get("split_role") != "validation"
             for task in tasks
         )
     ):
-        _fail("formal validation panel must contain the sealed 8 tasks and states 0..49")
+        _fail("formal validation panel must exactly match the sealed 8 tasks, languages, and states 0..49")
+    task_keys = [(str(task["suite"]), int(task["task_id"])) for task in tasks]
     return list(tasks), task_keys
 
 
@@ -294,7 +335,7 @@ def _scientific_projection(
     result: Mapping[str, Any], *, allow_checkpoint_change: bool
 ) -> dict[str, Any]:
     projection = copy.deepcopy(result["paired_control"])
-    projection["parallel"].pop("physical_gpu_ids", None)
+    projection.pop("parallel", None)
     if allow_checkpoint_change:
         asset = projection["writer"]["writer_asset"]
         for key in ("reference", "kind", "method_macro", "checkpoint", "manifest", "training_mode"):
@@ -422,7 +463,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
     reference_rows = by_macro[0][2]
     for macro in CHECKPOINT_MACROS[1:]:
         if _scientific_projection(by_macro[macro][1], allow_checkpoint_change=True) != reference_projection:
-            _fail("checkpoint curve changed its scientific or execution contract")
+            _fail("checkpoint curve changed its scientific contract")
         _assert_row_pairing(reference_rows, by_macro[macro][2], require_same_actual_video=True)
     panels: dict[str, dict[int, list[Mapping[str, Any]]]] = {
         "correct80": {macro: _prefix_rows(by_macro[macro][2], 10) for macro in CHECKPOINT_MACROS},
@@ -435,7 +476,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
             "formal_validation_8x50": True,
             "same_scientific_contract_except_checkpoint_identity": True,
             "same_state_rng_language_and_correct_video_identity": True,
-            "physical_gpu_indices_excluded_from_projection": True,
+            "execution_parallel_topology_excluded_from_scientific_projection": True,
         },
         "row_selection": {
             "correct80": "same validated correct400 root rows with init_state_id < 10",
@@ -447,6 +488,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
                 "contract_reference": by_macro[macro][1]["contract_reference"],
                 "method_macro": macro,
                 "writer_asset_reference": by_macro[macro][1]["adapter"]["writer_asset"]["reference"],
+                "parallel_provenance": copy.deepcopy(by_macro[macro][1]["paired_control"].get("parallel", {})),
             }
             for macro in CHECKPOINT_MACROS
         ],
@@ -532,13 +574,14 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
             "same_single_checkpoint_and_scientific_contract": True,
             "same_state_rng_language_and_reference_video_identity": True,
             "condition_specific_video_mapping_and_order_validated": True,
-            "physical_gpu_indices_excluded_from_projection": True,
+            "execution_parallel_topology_excluded_from_scientific_projection": True,
         },
         "roots": [
             {
                 "condition": condition,
                 "root": by_condition[condition][0],
                 "contract_reference": by_condition[condition][1]["contract_reference"],
+                "parallel_provenance": copy.deepcopy(by_condition[condition][1]["paired_control"].get("parallel", {})),
             }
             for condition in SIX_ARM_CONDITIONS
         ],

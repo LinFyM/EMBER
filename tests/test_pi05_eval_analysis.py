@@ -13,6 +13,7 @@ from ember.pi05_eval.analysis import (
     CHECKPOINT_CURVE_SCHEMA,
     SIX_ARM_AUDIT_SCHEMA,
     SIX_ARM_CONDITIONS,
+    _formal_tasks,
     analyze_checkpoint_curve,
     checkpoint_curve_analysis,
     exact_mcnemar_two_sided_p,
@@ -34,6 +35,17 @@ TASKS = (
     ("libero_10", 2),
 )
 
+TASK_LANGUAGES = {
+    ("libero_spatial", 1): "pick up the black bowl next to the ramekin and place it on the plate",
+    ("libero_spatial", 3): "pick up the black bowl on the cookie box and place it on the plate",
+    ("libero_object", 1): "pick up the cream cheese and place it in the basket",
+    ("libero_object", 3): "pick up the bbq sauce and place it in the basket",
+    ("libero_goal", 3): "open the top drawer and put the bowl inside",
+    ("libero_goal", 6): "put the cream cheese in the bowl",
+    ("libero_10", 1): "put both the cream cheese box and the butter in the basket",
+    ("libero_10", 2): "turn on the stove and put the moka pot on it",
+}
+
 
 def _success_keys(predicate: Callable[[str, int, int], bool]) -> set[tuple[str, int, int]]:
     return {
@@ -50,7 +62,7 @@ def _tasks() -> list[dict]:
             "suite": suite,
             "task_id": task_id,
             "split_role": "validation",
-            "language": f"language {suite} {task_id}",
+            "language": TASK_LANGUAGES[(suite, task_id)],
             "init_state_ids": list(range(50)),
         }
         for suite, task_id in TASKS
@@ -173,7 +185,7 @@ def _rows(
                     "task_id": task_id,
                     "init_state_id": state,
                     "split_role": "validation",
-                    "language": f"language {suite} {task_id}",
+                    "language": TASK_LANGUAGES[(suite, task_id)],
                     "env_seed": 7,
                     "policy_seed_root": 7,
                     "policy_noise_seeds": [state + 1, state + 1001],
@@ -313,6 +325,17 @@ def test_checkpoint_curve_rejects_missing_state_or_pairing_drift() -> None:
         checkpoint_curve_analysis(results)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (("task_id", 0), ("language", "a plausible but unsealed task language")),
+)
+def test_formal_tasks_reject_unsealed_task_identity(field: str, value: object) -> None:
+    tasks = _tasks()
+    tasks[0][field] = value
+    with pytest.raises(Pi05EvaluationError, match="exactly match the sealed 8 tasks"):
+        _formal_tasks({"tasks": tasks})
+
+
 def test_checkpoint_curve_reaggregates_roots_and_publishes_immutably(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -371,8 +394,17 @@ def test_six_arm_audit_rejects_contract_or_episode_drift() -> None:
         for condition in SIX_ARM_CONDITIONS
     }
     drifted = copy.deepcopy(results)
-    drifted["root-wrong"] = drifted.pop("root-cross_suite_wrong")
-    drifted["root-wrong"]["paired_control"]["parallel"]["writer_generation_batch_size"] = 8
+    drifted["root-cross_suite_wrong"]["paired_control"]["parallel"] = {
+        "physical_gpu_ids": [7],
+        "physical_gpu_count": 1,
+        "worker_count": 9,
+        "replicas_per_gpu": 9,
+        "envs_per_replica": 3,
+        "writer_generation_batch_size": 64,
+    }
+    six_arm_paired_analysis(drifted)
+    drifted = copy.deepcopy(results)
+    drifted["root-cross_suite_wrong"]["paired_control"]["policy"]["replan_steps"] = 4
     with pytest.raises(Pi05EvaluationError, match="scientific contract"):
         six_arm_paired_analysis(drifted)
     drifted = copy.deepcopy(results)

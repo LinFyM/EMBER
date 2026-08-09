@@ -989,3 +989,35 @@ schedule、state/env/policy RNG与32.1一致。判据预注册为：score`>=28`�
 net gain至少10为strong，通过后进入correct400；score`22--27`且breadth`>=5`只扩到states0--19的160-row
 消歧；score`<=21`或breadth`<=4`则判24-expert support不足，停止top-k/temperature/scale/rank修补并转向
 v6先验的可迁移Writer。任何route flip都作为稳定性证据报告，不新增confidence/abstention gate。
+
+### 32.6 Strict correct80结果与24-expert部署字典淘汰（2026-08-09）
+
+固定panel自然完成为`3/80`、breadth=`2/8`，逐task Long/Goal/Object/Spatial=
+`[0,2]/[0,1]/[0,0]/[0,0]`。36 jobs、80 unique rows/LoRAs/cache、9 workers和信息墙全部闭合；三张A40
+自然释放。该结果同时满足`score<=21`和`breadth<=4`，所以预注册裁决为reject，不扩到160/400，
+不运行same/wrong/shuffled/reversed/no-video。
+
+hard与32.1 soft screen严格共享80个state、env seed、policy RNG、teacher demo和frame-order seed。
+paired retained/gained/lost/both-fail=`1/2/14/63`，净`-12`，双侧exact McNemar `p=.0041809`。该退化
+已经足够明确，不可解释为80-row方差。artifact=
+`hard_route_strict_screen_and_policy_effective_route_audit_v1.json`。
+
+为排除hard实现错位，审计在全部38 targets的exact effective`BA`空间将每个cache LoRA与24个raw
+step2000 experts比较。最近expert cosine中位/最小=`.998544/.997096`，nearest-second gap最小
+`.35133`；共选择11个experts。79/80与32.2保存的soft coefficient argmax一致，唯一flip仍是Long-2
+state0的ordinal12→13，旧margin`.000664`。因此hard path真实生效，且失败不能归给路由全塌缩或边界
+不稳定主导。
+
+更强的机制反事实来自Object-1：十条held videos全部选择ordinal10
+Chocolate-pudding-to-basket expert，结果`0/10`；soft组合在相同十条却为`8/10`。Object-3十条全部选择
+ordinal8 Tomato-sauce-to-basket同样`0/10`。单个task expert虽在自己的task random reset上有效，却不
+提供held对象、布局或组合任务的可直接复用策略；soft mixture偶尔能合成有用的新方向，但整体15分也
+远不足。因此24 experts仍可作为policy-effective监督目标，却不能继续作为部署时的hard、soft或稀疏
+选择字典。
+
+本节关闭Expert-Manifold内部的mixture-support分支：禁止继续尝试top-k、temperature、global scale、
+confidence、rank或few-shot平均来修复它。下一方法仍属于Video-Conditioned Expert-Manifold总体目标，
+但部署生成器必须是**v6-prior transferable policy-effective Writer**：从历史v6-fast已验证的动态视频
+表示与生成轨迹出发，直接学习held可迁移的完整LoRA；task experts只提供稳定的policy-effective目标/
+先验，不再被在线选择。具体结构、初始化映射和损失必须先由CPU与历史checkpoint合同确定，再开新的
+GPU profile或训练门。

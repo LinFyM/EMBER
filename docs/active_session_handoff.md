@@ -6,6 +6,31 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard-one-hot的预注册strict
+correct80已经自然完成并明确负裁决。唯一root=
+`runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`；
+结果=`3/80`、breadth=`2/8`，逐task按Long/Goal/Object/Spatial为`[0,2]/[0,1]/[0,0]/[0,0]`。
+36/36 jobs、80 unique rows/LoRAs/cache entries、9 workers均attempt1/exit0，0 retry/error/OOM/
+nonfinite/forbidden reads；Writer释放、source-policy原位复用且未reload，`gpu02:0,1,2`均已回到
+0MiB/P8。它同时触发预注册`score<=21`和`breadth<=4`淘汰门，不扩到160/400，不做五臂，也不在
+expert mixture内继续调top-k、temperature、scale或rank。
+
+同root的`hard_route_strict_screen_and_policy_effective_route_audit_v1.json`证明hard与soft15的80条
+state/env/policy RNG和exact teacher demo/order逐项一致。hard相对soft为retained/gained/lost/both-fail=
+`1/2/14/63`，净`-12`，双侧exact McNemar `p=.0041809`；退化明确而非抽样小波动。80个cache LoRA在
+完整38-target exact effective`BA`空间最近raw step2000 expert cosine中位/最小=`.998544/.997096`，
+nearest-second gap最小`.35133`，证明线上确实部署单expert update；共选择11个experts，79/80与soft
+系数argmax一致，唯一flip仍是已预见的Long-2 state0 ordinal12→13、旧margin`.000664`。因此性能失败
+不能归给soft残留、路由塌缩或这一条边界翻转。
+
+关键反事实是Object-1：10条hard视频全部选择同一个Chocolate-pudding-to-basket expert却为`0/10`，
+而soft组合在相同panel为`8/10`；Object-3全部选择Tomato-sauce-to-basket也为`0/10`。soft组合有时能
+产生局部迁移，但其整体仅15；hard task-local policy也不构成held task support。故24-expert bank仍可
+提供policy-effective训练监督和几何先验，却不能继续作为部署时的离散/稀疏字典。下一唯一方向转为
+**v6-prior transferable policy-effective Writer**：保留one-shot、video-only dynamic value和完整LoRA，
+用历史v6中已验证的可迁移动态表示作初始化/教师，而不是继续直接选择或平均task experts。先完成
+CPU设计、历史checkpoint/代码合同核对与单变量预注册；当前没有GPU工作。
+
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：video-routed hard-one-hot
 policy-effective Writer已经完成唯一canonical实现和真实固定资产CPU门。实现提交=`1619631`且已push；
 新authority为`configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`，旧soft配置只由Git/

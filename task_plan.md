@@ -43,13 +43,19 @@
 - [x] exact effective`BA`分析覆盖3,160 generated pairs、1,920 generated-expert pairs和80 matched raw
   pairs：norm/stable/top=`4.148/1.234/.847`，current/raw cosine=`.958`、norm ratio=`1.055`；
   same/cross/task-mean=`.989/.703/.712`、nearest expert=`.641`。compiler修复真实但不是主导瓶颈。
+- [x] Hard-route strict correct80完成并淘汰：`3/80`、breadth=`2/8`；相对exact-same-video soft15为
+  retained/gained/lost=`1/2/14`、exact `p=.0041809`。80个online LoRA最近raw expert effective cosine
+  中位/最小=`.998544/.997096`，覆盖11 experts，证明hard path真实生效。24-expert hard/soft/sparse
+  部署字典均停止，不扩评、不调mixture超参。root=
+  `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`。
 
 ## 当前唯一canonical实现
 
 - [x] 唯一config现为
   `configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；formal状态现为
-  `sealed`。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`已push，专属online smoke
-  root=`pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`；尚无hard-route strict成绩。
+  `sealed`但科研状态为`rejected_after_strict_screen`，只在下一canonical替换完成前保留为当前可复现实
+  现，不得继续launch。旧soft config已删除且只由Git/artifact保留；实现提交=`1619631`已push，专属
+  online smoke root=`pi05_expert_manifold_hard_routed_online_smoke_gpu02_14495d9_20260809`。
 - [x] 一条视频先形成`mean_phase(phase_centered_causal_memory(video_innovation))`；train24×50
   centroids单位化后，用ridge `.3` centered-kernel affine solve产生24个scores；部署固定取signed argmax
   one-hot，support1，soft scores只作审计。
@@ -97,9 +103,12 @@
 10. [x] live GPU/quota preflight后只用空闲`gpu02:0`完成validation8×1 state online smoke：8 unique
     rows/generated/cache、3 workers exit0、0异常/forbidden reads，release/reuse闭合；8/8 online LoRA精确
     匹配one-hot expert，formal evidence已写回并seal。`0/8`只作工程结果。
-11. [ ] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
+11. [x] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
     strong门=`>=28/80`、breadth`>=5`、相对soft15 paired净增`>=10`；`22--27`且breadth`>=5`只扩到
-    160-row消歧；`<=21`或breadth`<=4`则停止expert-mixture内调参，转向v6先验的可迁移Writer。
+    160-row消歧；实际`3/80`、breadth2、相对soft净`-12`，已停止expert-mixture内调参。
+12. [ ] 只读核对v6-fast checkpoint、当前expert target与canonical owner，设计并CPU验证
+    v6-prior transferable policy-effective Writer；task experts只作监督/先验，不作online字典。完成唯一
+    canonical实现、真实资产CPU门、clean push和新formal seal前，不启动GPU profile、训练或rollout。
 
 ## Hard-routed strict correct80 screen launch合同（2026-08-09）
 

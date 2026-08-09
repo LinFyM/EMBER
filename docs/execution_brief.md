@@ -6,6 +6,22 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：hard-one-hot strict correct80
+已完成并按预注册门淘汰。正式root=
+`runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`，
+score=`3/80`、breadth=`2/8`；36/36 jobs、80 rows/LoRAs/cache entries、9 workers全部attempt1/exit0，
+0 retry/error/OOM/nonfinite/forbidden reads，Writer release/source-policy reuse/no-reload闭合，三张A40已
+自然释放。禁止扩跑160/400、五臂或任何top-k/temperature/scale/rank mixture修补。
+
+同root审计artifact=
+`hard_route_strict_screen_and_policy_effective_route_audit_v1.json`。hard与soft15严格same state/env/
+policy RNG/teacher demo/order；paired retained/gained/lost/both-fail=`1/2/14/63`，exact `p=.0041809`。
+80套online LoRA的nearest raw expert exact effective cosine中位/最小=`.998544/.997096`，nearest-second
+gap最小`.35133`；覆盖11 experts，79/80与旧soft argmax一致。故这是有效scientific non-pass，不是
+工程故障或hard path未生效。下一执行单元仅为CPU/只读设计与实现准备：从历史v6可迁移动态Writer
+抽取可复用先验，设计直接学习policy-effective完整LoRA的唯一canonical替代；任何新GPU profile、训练
+或rollout前仍需新的formal seal、clean frozen worktree以及live双机GPU/quota preflight。当前无GPU任务。
+
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：hard-one-hot
 policy-effective Writer的canonical替换和真实资产CPU门已完成。clean pushed implementation=`1619631`，
 唯一config=`configs/pi05_video_expert_manifold_hard_routed_policy_effective_v2.json`；v4 adapter/episode和

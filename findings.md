@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## 2026-08-09 Hard-route strict负裁决：task expert不是held-task部署字典
+
+- 预注册correct80为`3/80`、breadth=`2/8`；逐task Long/Goal/Object/Spatial=
+  `[0,2]/[0,1]/[0,0]/[0,0]`。运行合同完整且三卡已释放，因此是有效科研负结果。
+- hard与soft15的80条state、env seed、policy RNG、teacher demo和真实frame order完全一致；hard只保留
+  1条soft成功，新增2条、丢失14条，净`-12`，exact McNemar `p=.0041809`。这直接反驳“soft mixture
+  稀释是当前主要瓶颈”。
+- 80个cache LoRA的nearest step2000 raw expert effective cosine中位/最小=`.998544/.997096`，与第二名
+  gap最小`.35133`；共覆盖11 experts。79/80与soft affine argmax一致，唯一数值flip就是预先发现的
+  Long-2 state0 `.000664`边界。退化不是实现仍在soft混合、全局单expert塌缩或大量路由翻转。
+- Object-1十条视频全部选ordinal10 Chocolate-pudding-to-basket expert，hard为`0/10`，而soft组合在同一
+  panel为`8/10`；Object-3全部选ordinal8 Tomato-sauce-to-basket仍`0/10`。这说明soft affine组合偶尔
+  产生训练expert之外的有用迁移方向，而单个语义近邻expert的task-local policy不能直接跨对象/场景执行。
+- 结论不是丢弃task experts：它们已证明可定义健康、闭环有效的train-task policy update target；应继续
+  作为policy-effective监督/先验。被否定的是把24个experts直接作为held部署时的hard/soft/sparse字典。
+  因此停止top-k、temperature、global scale、rank和confidence修补，也不把few-shot用于平均错误字典。
+- 下一方向必须恢复“可迁移生成器”而非“expert选择器”：以历史v6动态Writer中已经达到`143/400`的表示
+  和优化轨迹为先验，直接学习video-conditioned policy-effective完整LoRA；同时保留视频为唯一dynamic
+  value，并把expert target用于稳定task accumulation。先做CPU/历史合同核对和结构设计，再决定GPU门。
+
 ## 2026-08-09 Hard-route真实资产CPU判别
 
 - 唯一部署路径已把soft affine composition替换为video-conditioned signed-argmax one-hot；soft scores只

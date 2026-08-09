@@ -1,5 +1,20 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Hard-routed correct80完成、严格淘汰并释放GPU
+
+- clean frozen launch=`99c4506`、scientific seal=`1d58781`在live空闲`gpu02:0,1,2`完成固定
+  validation8×states0--9 correct/without-replacement screen。root=
+  `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`；
+  36/36 jobs、80 unique rows/LoRAs/cache、9 workers attempt1/exit0，0异常/forbidden reads，三卡已回到
+  0MiB/P8。score=`3/80`、breadth2，触发预注册淘汰门；没有启动160/400或五臂。
+- CPU posthoc写入同root的
+  `hard_route_strict_screen_and_policy_effective_route_audit_v1.json`。相对strict same-video soft15为
+  retained/gained/lost/both-fail=`1/2/14/63`，exact `p=.0041809`；identity、RNG和video/order全配对。
+- 80 online LoRA对24 raw experts的exact effective route审计得到nearest cosine中位/最小=
+  `.998544/.997096`、second gap最小`.35133`、11 experts被选择；79/80匹配旧soft argmax。结果否定
+  24-expert hard/soft部署字典，不做mixture内部调参；下一阶段转向v6-prior transferable
+  policy-effective Writer的CPU设计与唯一canonical替换。
+
 ## 2026-08-09 Hard-routed online smoke通过并seal
 
 - clean pushed launch=`12c8d1e`在live空闲`gpu02:0`完成validation8×1-state correct smoke；root=

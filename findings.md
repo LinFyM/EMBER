@@ -1,5 +1,22 @@
 # EMBER Findings
 
+## 2026-08-09 v6-prior单卡吞吐与纵向链路的真实结论
+
+- clean pushed/frozen `ded0c80`在live比较两节点并核对quota后只使用空闲`gpu02:0`。fixed panel为
+  完全相同的32 requests、1093 sampled frames、最长67 frames；batch8/16/32的forward分组分别为
+  `8×4/16×2/32×1`，吞吐`.911427/.905107/.906432 LoRA/s`，repeat变动低于1%且三者都有约
+  34.85GB headroom。实测说明当前视频编码/固定panel工作量主导，增大LoRA forward分组没有吞吐收益；
+  因此选8是吞吐结论，不是精度或显存保守结论。
+- fresh validation8×state0 correct smoke用batch8一次生成8套LoRA，generation wall=`10.597s`、
+  peak allocated/reserved=`11,651,564,544/12,811,501,568` bytes。Writer释放后allocated/reserved降为
+  `9,370,872,832/9,628,024,832`，同一source policy未reload并完成8 rollouts。
+- vertical总wall=`325.540s`，model load=`111.469s`、rollout execution window=`196.816s`；8 rows、
+  single attempt、0 retry/failure/OOM/nonfinite/forbidden reads，cache每entry为72 BF16+4 F32、
+  `2,641,920` bytes。退出后物理卡0MiB/0%，他人GPU未受影响。
+- `4/8` success只是小样本execution信息，绝不能写成新性能或与历史`143/400`比较。真正科研信息是
+  canonical video→LoRA→cache→release→policy闭环链路成立，六卡gradient profile现可开始；方法优劣仍
+  必须由后续paired correct400与五/六臂裁决。
+
 ## 2026-08-09 吞吐优先纠偏与连续科研裁决框架
 
 - Owner明确覆盖此前batch1决定：不得为了底层微小BF16/kernel差异降低效率。`30b2ccf`的
@@ -19,8 +36,8 @@
   load/worker spawn前拒绝忙卡和非A40，普通evaluator同时强制owner六卡上限；profile单卡worker再次live
   preflight并核对checkout，profile seal只能从真实artifact重建。
 - 真实validation8×4-state CPU prepare得到32 requests、historical 600 tensors/12,064,064 values、
-  deployment expert-bank reads=0和72 BF16 + 4 F32 cache descriptor；仍只证明合同，没有新GPU profile、
-  训练或closed-loop成绩。最新测试计数见本次封存对应的`progress.md`顶部。
+  deployment expert-bank reads=0和72 BF16 + 4 F32 cache descriptor；其后的live结论由本文件顶部取代。
+  目前仍没有新训练或formal strict成绩。
 - 后续任何实验按`docs/active_session_handoff.md`的统一谱系解释：与最邻近旧架构、历史143、逐task
   gained/lost、checkpoint churn、五臂和内部传递共同比较；只修改最早失效接口。负结果只淘汰实际检验
   的假设，未充分证明无效的结构不随单点结果丢弃。最终目标只有EMBER closed-loop性能，LoRA健康度和

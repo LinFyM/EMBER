@@ -1240,3 +1240,24 @@ macro0/10/25/50先跑固定correct80 screen，但四点都必须跑paired correc
 `>150/400`或形成可信共同提升时跑correct/same/wrong/shuffled/reversed/no-video。每次与macro0、历史
 143、v5.2 old和v6 recipe交叉结果比较per-task gained/lost、breadth、churn与Core→Procedure→BA→action
 传递；只改最早失效接口，不因单次结果整体换架构。
+
+### 33.8 单卡吞吐与纵向链路实证（2026-08-09）
+
+clean pushed/frozen `ded0c80`在live空闲`gpu02:0`完成canonical fixed-panel profile。三个候选严格共享
+32 requests、1093 sampled frames和最长67-frame样本；batch8/16/32的实际forward分组为
+`8×4/16×2/32×1`，两次measured repeat合计wall=`70.220/70.710/70.606s`，吞吐=
+`.911427/.905107/.906432 LoRA/s`。peak reserved分别为
+`12,824,084,480/12,847,153,152/12,847,153,152` bytes，全部稳定且余量大。batch8按预注册规则最快；
+大batch没有吞吐上升，因此未把“占更多显存”误作性能优化，也没有为低位数值选择batch。
+
+同提交fresh vertical smoke以batch8完成validation8×state0 correct：model load=`111.469s`，8套LoRA
+一次forward生成，generation=`10.597s`、peak allocated/reserved=
+`11,651,564,544/12,811,501,568` bytes；Writer随后释放，source policy原位复用且未reload。8 rows、
+single attempt、0 retry/failure/OOM/nonfinite/forbidden reads，总wall=`325.540s`、rollout window=
+`196.816s`，进程退出后GPU回到0MiB。cache仍为72 BF16+4 F32、每entry `2,641,920` bytes。
+`4/8` success只作execution smoke，不是新strict性能。
+
+`assemble_v6_prior_evaluation_smoke_evidence`已从profile与vertical retained roots重建seal，config状态
+自然转为evaluation sealed、gradient-profile ready。该实证只关闭“当前实现是否能高效完成完整闭环”
+的不确定性；冻结上游、expert辅助和temporal ranking能否共同超过143/150仍完全待六卡训练与paired
+closed-loop裁决。下一门是结构化gradient/resume verifier和macro49六卡profile，不能直接跳到formal。

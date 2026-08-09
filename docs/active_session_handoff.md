@@ -13,14 +13,16 @@
   retained formal GPU工作必须来自clean pushed commit的frozen worktree。
 - 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，只用空闲A40、合计最多6张，
   不干扰他人；多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
-- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；尚无v6-prior新profile、训练或strict
-  rollout成绩。
+- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；v6-prior已完成单卡吞吐profile与
+  8-row纵向执行smoke，但尚无新训练或strict rollout成绩。smoke的`4/8`只证明完整闭环能运行，
+  不能与`400`-row formal结果比较。
 - 当前代码已完成对`0894856`后batch1/逐元素复现策略的撤回。A40已证明batch8只产生普通BF16
   batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct-repeat为零）；owner明确要求不为这种
   微差牺牲吞吐。新路径在同一个固定request/总帧panel上从稳定且有显存余量的候选中选择实测LoRAs/s
   最高的batch，使用原生BF16/F32
-  LoRA cache、零重复Writer forward、更少host sync和2-worker action prefetch。最新完整CPU回归和真实资产
-  prepare均已通过；尚无修正后的GPU profile或性能结果。
+  LoRA cache、零重复Writer forward、更少host sync和2-worker action prefetch。clean pushed
+  `ded0c80`的A40 fixed-panel profile选择batch8；随后8-task纵向smoke完整通过并由retained artifacts
+  组装evaluation seal。当前只解锁六卡gradient profile，尚未产生新方法性能结论。
 
 当前唯一活动候选是
 **v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
@@ -175,7 +177,7 @@ Experts不解决：
 
 ## 7. Current engineering state
 
-当前未提交修正已完成：
+当前实现与单卡live seal已完成：
 
 - evaluator取消historical smoke中的8次冗余direct Writer forward和`1e-5`逐tensor门；batch默认8并要求
   profile至少实测`8/16/32`。三者处理同一32-request longest-first panel和同一总帧数，只改变实际
@@ -202,10 +204,16 @@ Experts不解决：
 - config状态图已修为`blocked → evaluation sealed/gradient ready → gradient+aux sealed/profile ready →
   profile sealed/formal ready`，不再自我依赖；task-expert authority使用窄loader，不会因已退役topological
   Writer/meta字段变化阻断当前训练监督；
-- 最新真实validation prepare得到8 tasks×4 states=`32` requests、historical state=`600` tensors/
-  `12,064,064` values、deployment expert-bank reads=`0`、native cache=`72 BF16 + 4 F32`；临时root已清理，
-  全程未初始化CUDA。最新相关定向回归`68 passed`、全仓`227 passed`，compileall与`git diff --check`通过；
-  尚无任何修正后GPU验证。
+- clean frozen `ded0c80`在live空闲`gpu02:0`完成32-request、1093 sampled-frame fixed panel。
+  batch8/16/32吞吐分别为`.911427/.905107/.906432 LoRA/s`，三者均稳定且峰值reserved约
+  `12.82--12.85GB`；batch8按封存规则实测最快。大batch没有吞吐收益，剩余显存本身不是选慢配置的理由；
+- 同提交fresh vertical root完成8 videos→8 LoRAs/cache→8 rollouts，单次attempt、`0` retry/failure/
+  OOM/nonfinite/forbidden reads。Writer生成`10.597s`，peak allocated/reserved=
+  `11,651,564,544/12,811,501,568` bytes；release后source policy原位复用且未reload。总wall=
+  `325.540s`、rollout window=`196.816s`，进程结束后GPU回到0MiB；
+- artifact assembler已从两个retained roots重建完整evidence，config现为evaluation `sealed`、
+  gradient profile `ready_after_cpu_and_single_a40_throughput_smoke`。相关定向测试随状态更新通过；
+  六卡gradient与resume artifact verifier仍是下一门。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -235,18 +243,17 @@ Experts不解决：
 1. full-bank geometry和expert closed-loop已经完成，证明step2000是统一且policy-effective的train目标；
    它们不能选择held Writer，也不能证明视频因果性。
 2. 统一续训到2000已完成且只改善train expert target，不再是当前决策分支。
-3. 因此直接进入当前meta-Writer是有证据的下一步，但必须先做吞吐/显存profile和vertical smoke，避免用
-   低效实现浪费formal窗口。
+3. 单卡吞吐/显存profile和vertical smoke已通过，只证明高效端到端实现成立，不证明当前方法有效。
 4. 六卡gradient profile只选择一次`lambda_expert/lambda_rank`并验证resume；它不证明方法有效。
 5. formal关键checkpoints必须及时跑paired correct400并和同schedule macro0、历史143以及最邻近旧架构
    逐task比较。
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：clean commit/push；创建新frozen worktree；实时GPU preflight后单卡扫
-Writer batch与显存，选择吞吐最优点并完成validation8×state0 cache→release→rollout smoke。没有理由
-再运行batch1复现。evaluation seal后才运行六卡gradient profile；gradient和fresh/resume/contiguous证据
-也必须由结构化artifact verifier封存，不能手填status进入formal。
+当前具体下一步：完成并测试gradient/fresh-resume-contiguous artifact verifier，封存本次单卡evidence
+的clean commit/push并创建新frozen worktree；随后重新live比较两节点，在最多6张空闲A40上运行
+macro49 gradient profile。只由artifact重算`lambda_expert/lambda_rank`并解锁丢弃型
+fresh0→1、same-root resume1→3、contiguous0→3；第二个verifier通过前不得手填status进入formal。
 
 ## 10. Canonical assets
 

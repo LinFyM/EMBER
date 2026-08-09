@@ -97,14 +97,19 @@ def _smoke_evidence() -> dict:
     }
 
 
-def test_v6_prior_evaluation_stays_blocked_before_live_smoke() -> None:
+def test_v6_prior_evaluation_is_sealed_from_live_smoke_artifacts() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
-    assert evaluation == {
-        "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
-        "minimum_smoke_writer_model_batch_size": 8,
-        "formal_status": "blocked_until_live_a40_throughput_smoke",
-        "online_smoke_evidence": None,
-    }
+    assert evaluation["throughput_policy"] == (
+        "highest_measured_throughput_with_device_memory_headroom"
+    )
+    assert evaluation["minimum_smoke_writer_model_batch_size"] == 8
+    assert evaluation["formal_status"] == "sealed"
+    evidence = evaluation["online_smoke_evidence"]
+    assert evidence["writer_model_batch_size"] == 8
+    assert evidence["profiled_writer_model_batch_sizes"] == [8, 16, 32]
+    assert evidence["scientific_rows"] == 8
+    assert evidence["generated_entries"] == 8
+    assert evidence["retry_count"] == evidence["failure_count"] == 0
 
 
 def test_formal_seal_accepts_only_complete_live_smoke_evidence(

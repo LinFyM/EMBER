@@ -4,17 +4,17 @@
 
 目标是把同一shared method、同一single checkpoint的strict paired correct从历史最好`143/400`推进到
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
-运行中的EMBER GPU任务，也没有v6-prior新性能结果。
+运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过，
+只作为执行/吞吐证据。
 
 当前操作顺序：
 
-1. 封存吞吐纠偏代码和统一authority；
-2. 真实资产CPU prepare/inspect；
-3. clean pushed frozen worktree；
-4. live检查`gpu01/gpu02`后，一张空闲A40做Writer batch/VRAM/端到端smoke；
-5. 最多六张空闲A40做gradient weight、fresh/resume/contiguous和训练吞吐profile；
-6. formal continuation和关键checkpoint strict rollout；
-7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
+1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
+2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
+3. 当前实现gradient与fresh/resume/contiguous的结构化artifact verifier；
+4. 最多六张空闲A40做gradient weight、exact-resume和训练吞吐profile；
+5. formal continuation和关键checkpoint strict rollout；
+6. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
@@ -68,7 +68,8 @@ GPU前一次性要求：
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
-- config状态仍blocked，直到单卡vertical smoke真实通过。
+- config的evaluation已由单卡retained artifacts封存；当前只解锁gradient-profile，profile/formal仍
+  fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -112,6 +113,15 @@ smoke的success count只作执行信息，不是性能证据。通过后把devic
 release/reuse和错误计数写回config，状态改为gradient-profile ready。不得人工手填evidence：必须用
 `assemble_v6_prior_evaluation_smoke_evidence(profile_root=..., vertical_root=...)`从两个retained roots重建
 并复验seal。
+
+### 4.4 Completed evidence
+
+clean frozen `ded0c80`在`gpu02:0`完成同一32-request/1093-frame panel：
+batch8/16/32=`.911427/.905107/.906432 LoRA/s`，三者峰值reserved约`12.8GB`且稳定，故按真实吞吐
+选择batch8。fresh vertical smoke生成8套native LoRA并完成8 rows，single attempt、0 retry/failure/
+OOM/nonfinite/forbidden reads；Writer释放、source policy复用/no-reload，GPU自然回到0MiB。总wall
+`325.540s`，其中rollout window `196.816s`；`4/8` success仅作execution信息。两个retained roots已
+经assembler写入config，Section 5是当前唯一GPU入口。
 
 ## 5. Six-A40 gradient, resume, and throughput profile
 

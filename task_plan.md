@@ -27,22 +27,20 @@ formal artifacts保存。
 - [x] 完成当前authority、README、design、findings/progress一致性，吸收并行只读审计结果。
 - [x] 真实validation8×4-state asset inspector和CLI prepare：32 requests、600 Writer tensors、native
   72 BF16 + 4 F32 cache、deployment expert-bank reads=0；临时root已清理且未初始化CUDA。
-- [ ] clean commit/push；清理已被新提交覆盖且无唯一改动的旧smoke worktree/local branch。
+- [x] clean commit/push；清理已被新提交覆盖且无唯一改动的旧smoke worktree/local branch。
 
 ## Phase 1 — single A40 throughput and vertical smoke
 
-- [ ] 使用`gpu-preflight`实时检查两节点和`/data1` quota，选择一张完全空闲A40。
-- [ ] 在同一loaded historical macro400 Writer上，用同一个32-request/同一总帧数的longest-first panel
+- [x] 使用`gpu-preflight`实时检查两节点和`/data1` quota，选择一张完全空闲A40。
+- [x] 在同一loaded historical macro400 Writer上，用同一个32-request/同一总帧数的longest-first panel
   profile真实异长video batches `8/16/32/...`；只改变forward分批，记录LoRAs/s、repeat wall、actual
   forward batches、peak allocated/reserved和headroom。
-- [ ] 只有候选吞吐接近、波动大或显存/利用率解释不清时，才补阶段wall、GPU utilization、allocator
-  retry和CPU wait，避免instrumentation本身降低吞吐。
-- [ ] 若显存/吞吐仍有空间继续增batch或取中间点；选择吞吐最高且最长真实batch稳定的配置，不以
-  single-forward数值相似度选择。
-- [ ] 用选定batch从fresh root完成validation8×state0 correct smoke：8 videos/LoRAs/cache/rows，Writer
+- [x] 三候选repeat稳定且同panel wall近似；没有为了未出现的瓶颈增加同步型instrumentation。
+- [x] batch8实测吞吐最高；batch16/32没有上升趋势，未因显存空余选择更慢配置，也未按低位数值选择。
+- [x] 用选定batch从fresh root完成validation8×state0 correct smoke：8 videos/LoRAs/cache/rows，Writer
   release、source reuse、0 forbidden reads/retry/failure/OOM/nonfinite，GPU自然释放。
-- [ ] 把精确device/root/commit/batch/wall/peak/cache dtype/release evidence写回config，将六卡profile解锁。
-- [ ] 只允许artifact-backed assembler从profile与vertical roots生成evaluation seal，不人工拼evidence/status。
+- [x] 把精确device/root/commit/batch/wall/peak/cache dtype/release evidence写回config，将六卡profile解锁。
+- [x] artifact-backed assembler从profile与vertical roots生成evaluation seal，没有人工拼evidence/status。
 
 ## Phase 2 — six A40 gradient/resume/throughput profile
 

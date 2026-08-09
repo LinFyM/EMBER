@@ -1,5 +1,25 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior单卡profile、vertical smoke与evaluation seal完成
+
+- canonical纠偏在clean pushed `ded0c80`封存，并创建
+  `/data1/user/ymdai/worktrees/EMBER-v6-prior-throughput-profile-ded0c80-20260809`。旧失败smoke
+  worktree/local branch已在确认clean、远端与artifact保留后删除。
+- live双节点preflight选择`gpu02:0`（UUID `GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8`），
+  `/data1`个人quota约538GiB/1TiB；忙碌`gpu01:3`、`gpu02:6/7`均未触碰。
+- profile root=
+  `runs/outputs/pi05_v6_prior_writer_throughput_profile_val8x4_correct_gpu02g0_ded0c80_20260809`。
+  同一32-request/1093-frame panel上batch8/16/32吞吐为`.911427/.905107/.906432 LoRA/s`，
+  peak reserved=`12,824,084,480/12,847,153,152/12,847,153,152` bytes；按sealed rule选择batch8。
+- vertical root=
+  `runs/outputs/pi05_v6_prior_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_ded0c80_20260809`。
+  model load=`111.469s`，8-LoRA generation=`10.597s`，8 rows/4 successes、single attempt、
+  0 retry/failure/OOM/nonfinite/forbidden reads；总wall=`325.540s`、rollout window=`196.816s`。
+  Writer release、source reuse/no-reload和native cache全部成立；success只作execution evidence。
+- artifact assembler从两个roots自然通过，config evaluation=`sealed`且gradient-profile=`ready`。
+  定向seal tests随当前状态更新；当前无EMBER GPU进程，`gpu02:0`已回到0MiB。下一步是实现/验证
+  Phase2 artifact verifier，clean push后做六卡macro49 gradient profile。
+
 ## 2026-08-09 throughput-first correction与authority收敛
 
 - owner撤回为`.001953125`级BF16 batch-shape roundoff固定batch1的决定，要求吞吐和有效显存利用优先。
@@ -20,8 +40,8 @@
 - 真实validation8×4-state CPU prepare已通过：32 requests、historical Writer 600 tensors/12,064,064
   values、deployment expert-bank reads=0、cache 72 BF16 + 4 F32；临时root已清理，未初始化CUDA。
 - authority、README、design、findings和task plan已收敛；相关定向回归`68 passed`、全仓`227 passed`，
-  compileall与`git diff --check`通过。下一执行门是clean commit/push，随后live GPU/quota preflight、单卡batch/VRAM/vertical smoke、
-  六卡gradient/resume/throughput profile和formal strict评测。
+  compileall与`git diff --check`通过。当时的下一执行门是clean commit/push与单卡profile/vertical smoke；
+  该门现已由本文件顶部的新证据完成。
 
 ## 2026-08-09 v6-prior batch8复现失败、根因定位与batch1修复（batch1已撤回）
 

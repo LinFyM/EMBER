@@ -1,5 +1,17 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-Prior Policy-Effective Temporal-Ranking设计封存
+
+- hard/soft/sparse 24-expert部署字典已由strict结果关闭。新design authority写入
+  `docs/action_forecast_writer_video_expert_manifold_design.md`第33节：部署恢复历史v6-fast完整动态Writer，
+  experts只作train24 policy-effective监督，不进入在线路由。
+- CPU只读核对macro400 checkpoint为600 tensors；encoder/Core/transition/Procedure与compiler/heads的
+  ownership分别为483/41 tensors和`7,062,592/3,714,304` parameters。新候选只训练后41 tensors。
+- 目标固定为correct positive functional + exact effective-BA expert direction/norm + bounded correct-over-
+  reversed/shuffled/wrong ranking；不最大化negative action loss，不加scale/gate/bypass/few-shot。
+- 当前仍未启动新GPU工作。下一步先原位实现、退休rejected runtime并完成CPU合同；只有clean push和
+  CPU门通过后才做单卡identity smoke及六卡formal profile。
+
 ## 2026-08-09 Hard-routed correct80完成、严格淘汰并释放GPU
 
 - clean frozen launch=`99c4506`、scientific seal=`1d58781`在live空闲`gpu02:0,1,2`完成固定

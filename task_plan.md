@@ -71,7 +71,19 @@
   videos self-route；ordered/reversed与fixed-shuffle选择改变=`1200/1200`、`699/1200`；24 experts全覆盖。
   zero exact，912个one-hot target effective cosine中位/最小=`.998982/.961962`。
 
+以上hard-route实现只作为已封存rejected结果保留到替换提交；不得再launch。当前实现任务已切换为
+design第33节的v6-Prior Policy-Effective Temporal-Ranking Writer：恢复v6-fast macro400的可迁移完整
+LoRA生成器，冻结encoder/Core/transition/Procedure，只训练compiler+factor heads；task experts仅进入
+gauge-invariant effective-BA correct监督和有界counterfactual ranking，不参与部署路由。
+
 ## 下一证据门
+
+- [ ] 原位退休hard-route config/runtime，恢复一个canonical one-shot v6生成路径；CPU验证macro400严格
+   load、`3,714,304`参数ownership、effective几何/梯度、correct-vs-order counterfactual和完整checkpoint。
+- [ ] clean push后做单卡online macro400 identity smoke与六卡longest105 fresh/resume/contiguous profile，
+   按预注册gradient比例封存一次`lambda_expert/lambda_rank`；profile权重丢弃。
+- [ ] formal macro400 warm-start 0→50，保存10/25/50；step0/10/25/50跑同schedule strict80，三个训练点
+   全部跑paired correct400。只有absolute/breadth/趋势门通过才做五臂或续训。
 
 1. [x] 当前实现已clean commit/push为`1d9d030`；后续工作从该提交或其纯authority后继提交执行。
 2. [x] 按live GPU与quota preflight选择空闲`gpu02:0`完成validation8×1-state online smoke：

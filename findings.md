@@ -1,5 +1,23 @@
 # EMBER Findings
 
+## 2026-08-09 v6-prior transferable Writer的根因定位与设计决策
+
+- 历史v6-fast macro400是当前唯一已验证的高绝对起点：correct=`143/400`、breadth6、五臂=
+  `143/135/125/128/129`。其上游对wrong/reversed/shuffled的Procedure相对变化仍大；task-complete相对
+  old recipe的主要收缩发生在Procedure之后，effective-LoRA传递只剩约`.42--.61`、action传递约
+  `.34--.56`。因此下一最小接口是compiler，不是再换video encoder或rank形态。
+- macro400 checkpoint含600 tensors；前四block encoder/Core/transition/Procedure共483 tensors、
+  `7,062,592` parameters，compiler+factor heads共41 tensors、`3,714,304` parameters。下一轮冻结前者、
+  只训练后者，既保护143已有语义/时序表示，也直接作用于已定位的输出增益接口。
+- task experts解决train task上“什么LoRA是policy-effective”的监督问题，不解决held部署支撑和视频时序。
+  所以它们不再在线选择/混合，而只通过exact effective`BA` cosine+norm监督correct输出；reversed/
+  shuffled/wrong只做有界相对ranking，不能靠最大化错误动作loss或无限能量满足目标。
+- step2000 experts的global effective norm范围`3.02--5.82`；q/v/action I/O能量占比范围分别约
+  `78.2--87.9%/11.7--21.2%/.29--.57%`。几何监督保持真实energy weighting，positive functional action
+  loss继续提供policy敏感度；不以手工等权放大小action targets，也不回到factor MSE。
+- 本候选是从143 warm-start的单接口continuation，不是把旧v6冒充fresh新方法。正式必须用当前同一
+  video schedule先评step0，再与10/25/50严格配对；若只提高margin而牺牲absolute，按有效负结果停止。
+
 ## 2026-08-09 Hard-route strict负裁决：task expert不是held-task部署字典
 
 - 预注册correct80为`3/80`、breadth=`2/8`；逐task Long/Goal/Object/Spatial=

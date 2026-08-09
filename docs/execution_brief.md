@@ -6,6 +6,27 @@
 
 ## 0.0 最新执行覆盖：Expert-Manifold证据优先持续推进
 
+**最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：当前只执行CPU实现准备，禁止
+继续launch rejected hard-route。新唯一design为
+`docs/action_forecast_writer_video_expert_manifold_design.md`第33节的v6-Prior Policy-Effective
+Temporal-Ranking Writer：从历史v6-fast macro400做load-only初始化，冻结encoder/Core/transition/
+Procedure，只训练compiler+factor heads；expert2000只作effective`BA` correct监督，reversed/shuffled/
+wrong只作bounded ranking，部署不读取expert bank。
+
+当前没有GPU工作，尚未建立新run root、frozen worktree或launch record。执行顺序固定为：
+
+1. 原位退休hard-route config/runtime并恢复一个canonical one-shot v6生成路径；
+2. CPU通过600-tensor macro400 strict load、`3,714,304` trainable ownership、exact/gauge-invariant effective
+   loss、counterfactual、same-task video schedule和完整fresh/resume checkpoint；
+3. commit/push clean implementation；
+4. 重新live比较`gpu01/gpu02`和quota，只用空闲A40，先做单卡macro400 identity generation smoke；
+5. clean frozen worktree用最多6张A40完成longest105 fresh0→1、exact-resume1→3、contiguous0→3 profile，
+   据预注册gradient比例一次封存loss weights；profile权重丢弃；
+6. 另行封存formal合同后才可warm-start 0→50及strict评测。
+
+任何GPU启动仍必须保持`NCCL_P2P_DISABLE=1`、NUMA physical/local映射、deferred NCCL，不查询/占用忙卡，
+不干扰他人进程。当前文档设计不是formal launch authority。
+
 **最新操作覆盖（2026-08-09，覆盖本节全部后续旧“当前/下一步”）**：hard-one-hot strict correct80
 已完成并按预注册门淘汰。正式root=
 `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`，

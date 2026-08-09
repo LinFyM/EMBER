@@ -1021,3 +1021,113 @@ confidence、rank或few-shot平均来修复它。下一方法仍属于Video-Cond
 表示与生成轨迹出发，直接学习held可迁移的完整LoRA；task experts只提供稳定的policy-effective目标/
 先验，不再被在线选择。具体结构、初始化映射和损失必须先由CPU与历史checkpoint合同确定，再开新的
 GPU profile或训练门。
+
+## 33. v6-Prior Policy-Effective Temporal-Ranking Writer（2026-08-09）
+
+### 33.1 最早失效接口与最小结构修改
+
+当前候选不再发明新的video encoder、latent topology或expert mixture。历史v6-fast macro400已经达到
+strict correct=`143/400`，并在同一checkpoint内把ordered/reversed/shuffled差异从Procedure传到完整
+LoRA；但task-complete相对old recipe把Procedure→effective-LoRA与Procedure→action传递压到约
+`.42--.61`与`.34--.56`。hard-route又证明24个task experts不能作为held部署字典。因此最小可证伪假设
+是：**v6上游已经含有可迁移语义与时序证据，失效发生在共享compiler把这些证据写入policy-effective
+LoRA时；task experts适合监督这个接口，但不适合替代生成器。**
+
+唯一部署路径恢复历史one-shot v6拓扑：exact task language加恰好一条action-hidden raw video，经过
+task-grounded per-frame evidence、permutation-invariant Semantic Core、adjacent-transition Causal
+Procedure、320-slot compiler和8个factor heads，直接生成完整38-target rank16 LoRA。部署不读取expert
+bank，不做expert选择/混合、language-only residual、scale/confidence gate或第二套LoRA。
+
+初始化固定为历史v6-fast macro400：
+
+`runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400`
+
+其600个Writer tensors和旧v6 schema只允许经本方法的load-only初始化入口进入全新optimizer、scheduler、
+sampler与checkpoint合同，不能冒充历史exact-resume。CPU已只读确认参数ownership：semantic encoder/
+Core/visual transition/Procedure/compiler/factor heads分别为`440/22/5/16/25/16` tensors、
+`3,455,040/1,836,544/197,120/1,573,888/1,535,232/2,179,072` parameters。
+
+本轮冻结前四个上游block，只训练compiler与全部factor heads，共41 tensors、`3,714,304` parameters。
+这不是永久宣称上游最优，而是把第一次干预严格放在证据定位到的最早接口；若输出端目标和梯度均成立
+却闭环不升，才允许重新打开更早接口。
+
+### 33.2 Policy-effective expert监督
+
+每个train task使用统一step2000 expert作为常量目标`E_t`。对任意generated LoRA `G`，比较对象不是
+raw A/B factor，而是全部38 targets上的effective update `BA`。每个target的norm与inner product均用
+rank16 factors精确计算，不物化大矩阵：
+
+```text
+||BA||_F^2        = sum((B^T B) * (A A^T))
+<BA, Be Ae>       = sum((B^T Be) * (A Ae^T))
+cos(G,E)          = sum_j <G_j,E_j> /
+                    sqrt(sum_j ||G_j||^2 sum_j ||E_j||^2)
+```
+
+correct expert loss由`1-cos(G_correct,E_t)`和对global effective norm ratio的bounded Smooth-L1组成。
+它同时约束方向与能量、对LoRA gauge不敏感；不得替换成factor MSE、rank/正交loss或只看q/v的漂亮谱。
+step2000 experts的global effective norm为`3.02--5.82`，能量中约`78.2--87.9%`在q、
+`11.7--21.2%`在v、`.29--.57%`在action I/O；positive functional action loss继续负责真实policy敏感度，
+避免小energy action targets被几何统计误当成不重要或被手工等权放大。
+
+### 33.3 正确、乱序、倒序和错误视频的训练语义
+
+每个macro仍覆盖train24，每task一条correct video和同task跨episode B20 action queries；先task内mean，
+再24-task等权。correct臂保留完整positive functional PI05 loss，video/action episode继续错开。
+
+同一correct视频的真实frames另构造reversed或seeded shuffled顺序；第三种negative按封存的cross-suite
+对称映射提供wrong-task video，但Writer language与policy language始终保持当前action task的exact
+language。三种negative按确定性macro/task schedule轮换；same-task-other不作为negative，50条同task
+videos继续通过无放回correct schedule共同逼近同一个task expert，因而其预期是鲁棒而不是被排斥。
+
+negative不运行“最大化action error”，也不被强制到任意恶意LoRA或无限norm。它只进入bounded
+policy-effective ranking：
+
+```text
+margin = cos(G_correct,E_t) - cos(G_negative,E_t)
+L_rank = softplus((m - margin) / tau) * tau
+```
+
+当正确臂已比negative更接近有效expert方向达到margin后，梯度自然饱和。这样不能只靠language令所有
+视频得到同一task LoRA，也不能只把negative能量放大；correct同时必须通过absolute action loss、expert
+direction和expert norm三门。reversed/shuffled复用同一批per-frame frozen evidence，只重算adjacent
+transition、causal Procedure和下游compiler；wrong video需要独立action-hidden frame evidence，但不读取
+其language、action、state、reward或task ID作为Writer value。
+
+第一轮总目标固定为：
+
+```text
+L = L_positive_functional + lambda_expert * L_correct_expert
+                          + lambda_rank   * L_counterfactual_rank
+```
+
+`lambda_expert/lambda_rank`不按validation outcome sweep。独立profile先在预注册真实train24 macro上记录
+三项未加权的compiler+factor gradient norm，再按固定目标比例各不超过positive gradient norm的`.25`
+封存一次常数；formal不得在线自适应或按closed-loop改权。若某auxiliary在初始化已满足、梯度为零，则不
+人为放大。optimizer使用全新AdamW和低LR短continuation；不加载macro400 Adam moments。
+
+### 33.4 CPU、online与正式裁决门
+
+实现前CPU必须通过：
+
+1. macro400 600 tensors逐名/shape严格加载，除明确记录的历史compiler命名映射外不允许missing/extra；
+2. frozen/trainable ownership精确为前四block/后两block，source policy全冻结；
+3. effective norm/inner/cosine与显式小矩阵`BA`数值一致，gauge变换前后loss不变且梯度finite；
+4. identical correct/negative state给零ranking advantage，ordered/reversed/shuffled真实输入能产生不同
+   Procedure和LoRA；same-task correct schedule仍覆盖50 videos；
+5. step0生成与历史portable macro400 LoRA manifest中的至少一条同task/demo state identity一致；若只因
+   BCI浮点kernel不能逐byte一致，必须达到逐tensor数值门并说明，不能直接进入训练；
+6. checkpoint包含Writer、optimizer、scheduler、sampler/video/counterfactual cursor、六rank RNG和完整
+   frozen-block/initialization schema，fresh与exact-resume不可混用。
+
+随后只在clean pushed frozen worktree做一张空闲A40的online generation smoke和六卡最长105-frame
+train macro profile；profile依次完成fresh0→1、exact-resume1→3和独立contiguous0→3，并封存上述两个
+loss weight。正式从macro400 warm-start fresh训练50 macros，保存10/25/50；step0/10/25/50在同一当前
+without-replacement seed7 strict80 panel上全部评测，避免用different-video历史143选择点。三个训练点
+随后全部跑paired correct400，不以functional loss挑winner。
+
+只有single checkpoint满足以下任一条件才做完整same/wrong/shuffled/reversed/no-video：correct严格超过
+`150/400`；或correct至少不低于当前同schedule step0且breadth不降、同时多个task净增并有可信上升趋势。
+若三点均低于step0或只发生单task换手，则停止，不用更长训练、loss sweep或解冻上游挽救。若correct提高
+但顺序/错误margin仍弱，下一单变量才调整counterfactual credit；若margin提高而absolute下降，则降低的
+是该目标本身而不是“训练不够”。最终仍只认同一single checkpoint的strict paired闭环结果。

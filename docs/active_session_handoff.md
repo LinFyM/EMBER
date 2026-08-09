@@ -6,6 +6,31 @@
 
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
+**最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard/soft/sparse 24-expert部署字典已由
+strict结果关闭，下一唯一候选已经完成设计封存，但尚未修改实现或启动GPU。新authority为
+`docs/action_forecast_writer_video_expert_manifold_design.md`第33节的
+**v6-Prior Policy-Effective Temporal-Ranking Writer**。
+
+该候选从历史v6-fast macro400（strict correct=`143/400`、breadth6、五臂=
+`143/135/125/128/129`）做load-only warm-start，不把旧run冒充exact-resume。部署恢复同一one-shot v6
+完整动态生成器：exact task language加一条action-hidden raw video，经Semantic Core、Causal Procedure、
+320-slot compiler与8个factor heads直接生成38-target rank16 LoRA；expert bank不进入部署，也没有
+language-only value、expert mixture、scale/confidence gate或第二套LoRA。
+
+历史matched机制证据把task-complete的主要收缩定位在Procedure之后：相对old recipe，v6的
+Procedure→effective-LoRA与Procedure→action传递约只剩`.42--.61`和`.34--.56`。因此第一轮冻结
+semantic encoder/Core/visual transition/Procedure共483 tensors、`7,062,592` parameters，只训练compiler+
+factor heads共41 tensors、`3,714,304` parameters。train24每task保留correct video+B20跨episode positive
+functional loss；统一step2000 expert只通过gauge-invariant effective`BA` cosine+norm监督correct输出。
+reversed/shuffled/cross-suite-wrong按确定性schedule轮换，只进入bounded correct-over-negative ranking，
+不最大化negative action error；same-task不同视频仍作为共同positive分布。
+
+当前工作树仅有上述design/plan文档更新，尚未commit；没有GPU进程或新长期实验。下一步依次为：原位
+退休rejected hard runtime并恢复一个canonical v6路径；完成macro400 strict-load、effective几何/梯度、
+freeze ownership、counterfactual和checkpoint CPU合同；clean push后才允许单卡identity smoke及六卡
+fresh/resume/contiguous profile。formal若解封，从macro400新optimizer训练50 macros，保存10/25/50，
+step0/10/25/50先跑同schedule strict80，三个训练点全部跑paired correct400，不以loss选点。
+
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard-one-hot的预注册strict
 correct80已经自然完成并明确负裁决。唯一root=
 `runs/outputs/pi05_expert_manifold_hard_routed_correct80_screen_noreplacement_seed7_1d58781_20260809`；

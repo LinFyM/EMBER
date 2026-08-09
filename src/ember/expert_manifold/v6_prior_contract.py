@@ -11,11 +11,9 @@ from typing import Any, Mapping, Sequence
 
 import h5py
 
+from ember.expert_manifold import v6_prior_policy_batch as pb
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_prior import (
-    counterfactual_kind,
-    cross_suite_wrong_task,
-)
+from ember.expert_manifold.v6_prior import counterfactual_kind, cross_suite_wrong_task
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.architecture import validate_writer_dimensions
 from ember.writer.as_sampling import TeacherVideoSchedule
@@ -206,8 +204,9 @@ def _objective_matches(
         valid_weights = False
     return (
         float(value.get("positive_functional_weight", -1)) == 1.0
-        and value.get("positive_policy_randomness")
-        == "one_independent_flow_noise_and_time_per_action_query"
+        and pb.positive_policy_randomness_matches(
+            value.get("positive_policy_randomness")
+        )
         and expert.get("direction") == "one_minus_global_effective_ba_cosine"
         and expert.get("norm") == "smooth_l1_global_effective_log_norm_ratio"
         and float(expert.get("norm_weight", -1)) == 0.25
@@ -231,6 +230,7 @@ def _optimization_matches(value: Mapping[str, Any]) -> bool:
     return (
         value.get("precision") == "bfloat16"
         and int(value.get("seed", -1)) == 7
+        and pb.optimization_policy_microbatch_matches(value)
         and optimizer
         == {
             "name": "AdamW",
@@ -281,7 +281,7 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         and int(gradient.get("num_workers_per_rank", -1)) == 2
         and int(gradient.get("macros", -1)) == 1
         and int(gradient.get("schedule_macro", -1)) == 49
-        and int(gradient.get("physical_policy_batch", -1)) == 20
+        and pb.policy_batch_config_matches(config)
         and int(gradient.get("longest_video_sampled_frames", -1)) == 105
         and gradient.get("seal_rule")
         == (
@@ -915,8 +915,7 @@ def _runtime_selection_matches(
             workers in allowed_workers
             and value.get("action_loader_prefetch_factor") == (2 if workers else None)
             and value.get("action_loader_persistent_workers") is bool(workers)
-            and int(value.get("physical_policy_batch", -1)) == 20
-            and value.get("writer_activation_checkpointing") is True
+            and pb.policy_runtime_selection_matches(value)
         )
     except (KeyError, TypeError, ValueError):
         return False
@@ -929,8 +928,7 @@ def _runtime_selection(value: Mapping[str, Any]) -> dict[str, Any]:
             "num_workers_per_rank",
             "action_loader_prefetch_factor",
             "action_loader_persistent_workers",
-            "physical_policy_batch",
-            "writer_activation_checkpointing",
+            *pb.POLICY_RUNTIME_SELECTION_KEYS,
         )
     }
 

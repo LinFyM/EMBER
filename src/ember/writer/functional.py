@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import struct
 from contextlib import contextmanager
 from types import MethodType
 from typing import Any, Iterator, Mapping, Sequence
@@ -19,21 +17,28 @@ from ember.lora import (
 from ember.writer.errors import WriterModelError
 
 
-TASK_QUERY_POLICY_RNG_SCHEME = (
-    "task_query_keyed_stateless_policy_cpu_cuda_v2"
+TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME = (
+    "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3"
 )
-LATIN_BETA_TIME_SAMPLING_SCHEME = (
-    "task_query_keyed_randomized_latin_beta15_time_v1"
-)
+LATIN_BETA_TIME_SAMPLING_SCHEME = "task_query_keyed_randomized_latin_beta15_time_v1"
 ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
     "task_query_keyed_randomized_antithetic_gaussian_v1"
 )
 INDEPENDENT_BETA_TIME_SAMPLING_SCHEME = (
-    "task_query_keyed_independent_beta15_time_v1"
+    "task_logical_batch_keyed_independent_beta15_time_v2"
 )
 INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME = (
-    "task_query_keyed_independent_gaussian_v1"
+    "task_logical_batch_keyed_independent_gaussian_v2"
 )
+
+_UINT64_MASK = (1 << 64) - 1
+
+
+def _splitmix64(value: int) -> int:
+    value = (int(value) + 0x9E3779B97F4A7C15) & _UINT64_MASK
+    value = ((value ^ (value >> 30)) * 0xBF58476D1CE4E5B9) & _UINT64_MASK
+    value = ((value ^ (value >> 27)) * 0x94D049BB133111EB) & _UINT64_MASK
+    return value ^ (value >> 31)
 
 
 def pi05_mean_flow_loss(
@@ -114,7 +119,7 @@ def _scoped_policy_detail_collection(
             delattr(policy, "forward")
 
 
-def task_query_policy_rng_seed(
+def task_logical_batch_policy_rng_seed(
     *,
     optimization_seed: int,
     task_id: int,
@@ -122,7 +127,7 @@ def task_query_policy_rng_seed(
     demo_indices: Sequence[int],
     frame_indices: Sequence[int],
 ) -> int:
-    """Derive one rank/phase-independent policy-noise seed from query identity."""
+    """Derive one rank/phase-independent seed from one ordered logical panel."""
 
     demos = tuple(int(value) for value in demo_indices)
     frames = tuple(int(value) for value in frame_indices)
@@ -135,20 +140,17 @@ def task_query_policy_rng_seed(
         or any(value < 0 for value in (*demos, *frames))
     ):
         raise WriterModelError("invalid task-query policy randomness identity")
-    digest = hashlib.sha256()
-    digest.update(TASK_QUERY_POLICY_RNG_SCHEME.encode("ascii"))
-    digest.update(
-        struct.pack(
-            ">4Q",
-            int(optimization_seed),
-            int(task_id),
-            int(task_visit),
-            len(demos),
-        )
-    )
-    for demo_index, frame_index in zip(demos, frames, strict=True):
-        digest.update(struct.pack(">2Q", demo_index, frame_index))
-    return int.from_bytes(digest.digest()[:8], "big") & ((1 << 63) - 1)
+    state = 0x6A09E667F3BCC909
+    values = (optimization_seed, task_id, task_visit, len(demos))
+    for ordinal, value in enumerate(values):
+        state = _splitmix64(state ^ _splitmix64(value + ordinal))
+    for ordinal, (demo_index, frame_index) in enumerate(
+        zip(demos, frames, strict=True),
+        start=len(values),
+    ):
+        state = _splitmix64(state ^ _splitmix64(demo_index + ordinal))
+        state = _splitmix64(state ^ _splitmix64(frame_index + ordinal + 1))
+    return state & ((1 << 63) - 1)
 
 
 @contextmanager
@@ -204,9 +206,9 @@ def _latin_beta15_time(
     ):
         raise WriterModelError("Latin flow-time sampler lost PI05 Beta contract")
     jitter = torch.rand(batch_size, dtype=torch.float32, device="cpu")
-    uniform = (
-        torch.arange(batch_size, dtype=torch.float32) + jitter
-    ) / float(batch_size)
+    uniform = (torch.arange(batch_size, dtype=torch.float32) + jitter) / float(
+        batch_size
+    )
     permutation = torch.randperm(batch_size)
     beta = uniform.index_select(0, permutation).pow(2.0 / 3.0)
     time = beta * float(config.time_sampling_scale)
@@ -277,9 +279,7 @@ def scoped_policy_flow_time_sampling(
             stop = batch_offset + batch_size
             if batch_size <= 0 or stop > logical_batch_size:
                 raise WriterModelError("flow-time microbatch exceeds logical batch")
-            return full_sampler(
-                owner, logical_batch_size, device
-            )[batch_offset:stop]
+            return full_sampler(owner, logical_batch_size, device)[batch_offset:stop]
 
     model.sample_time = MethodType(sampler, model)
     try:
@@ -427,9 +427,7 @@ def _functional_microbatch_contract(
         raise WriterModelError("functional policy batch has inconsistent leading axes")
     logical_batch_size = batch_sizes.pop()
     microbatch_size = (
-        logical_batch_size
-        if policy_microbatch_size is None
-        else policy_microbatch_size
+        logical_batch_size if policy_microbatch_size is None else policy_microbatch_size
     )
     if not 0 < microbatch_size <= logical_batch_size:
         raise WriterModelError("invalid functional policy microbatch size")
@@ -471,8 +469,7 @@ def _functional_microbatch_gradient(
     collect_policy_details: bool,
 ) -> tuple[torch.Tensor, Mapping[str, Any], dict[str, torch.Tensor]]:
     leaves = {
-        name: value.detach().requires_grad_(True)
-        for name, value in state.items()
+        name: value.detach().requires_grad_(True) for name, value in state.items()
     }
     microbatch = {
         name: (
@@ -517,9 +514,7 @@ def _functional_microbatch_gradient(
     ):
         raise WriterModelError("functional policy did not return a scalar loss")
     names = tuple(leaves)
-    gradients = torch.autograd.grad(
-        output[0], tuple(leaves[name] for name in names)
-    )
+    gradients = torch.autograd.grad(output[0], tuple(leaves[name] for name in names))
     return (
         output[0].detach(),
         output[1],
@@ -611,11 +606,7 @@ def functional_lora_loss_gradient(
             collect_policy_details=collect_policy_details,
         )
         weighted_loss = loss.to(dtype=torch.float32) * weight
-        loss_sum = (
-            weighted_loss
-            if loss_sum is None
-            else loss_sum + weighted_loss
-        )
+        loss_sum = weighted_loss if loss_sum is None else loss_sum + weighted_loss
         for name in names:
             gradient_sum[name].add_(
                 gradients[name].to(dtype=gradient_sum[name].dtype),
@@ -643,7 +634,9 @@ def _accumulate_policy_details(
 
     for name, value in source.items():
         if isinstance(value, (int, float)) and not isinstance(value, bool):
-            destination[name] = float(destination.get(name, 0.0)) + float(value) * weight
+            destination[name] = (
+                float(destination.get(name, 0.0)) + float(value) * weight
+            )
             continue
         if isinstance(value, list) and all(
             isinstance(item, (int, float)) and not isinstance(item, bool)

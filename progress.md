@@ -1,5 +1,30 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior六卡physical B20容量失败与B16修复
+
+- clean frozen/pushed`a17805c`的首次macro49 root=
+  `runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_b20_a17805c_20260809`；当时live比较两节点后只用
+  空闲`gpu01:0,1,2,4,5,7`，保持3+3 NUMA、physical/local rank、`NCCL_P2P_DISABLE=1`和deferred-NCCL。
+  第一条PI05 policy functional B20在Gemma MLP OOM：申请`606MiB`，allocated=`42.29GiB`、
+  reserved-unallocated=`1.29GiB`、free=`395.31MiB`。root只有`run_contract.json`和`invocations.jsonl`。
+- 唯一allocator retry root=
+  `runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_b20_a17805c_allocseg_retry1_20260809`，只增加
+  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`。reserved-unallocated降到约`157MiB`，但allocated=
+  `43.43GiB`且仍在申请`606MiB`时OOM，排除fragmentation主因。该root同样没有`gradient_profile.json`或
+  `completion.json`；两次均exit1、禁止resume/合并，所选GPU随后自然释放且未干扰当时忙碌GPU3/6。
+- canonical worktree已实现logical B20/physical B16+4：配置显式记录logical batch、microbatch和每task
+  两次forward；完整有序logical-panel keyed independent Beta/Gaussian sampling让slices复现同一20个draw，
+  functional leaf gradients以FP32按`16/20`和`4/20`累积。logical query count、full24 task mean和objective
+  分布不变；seed使用固定SplitMix64整数mix而非SHA/MD5，policy checkpointing保持关闭。失败allocator
+  retry不固化为runtime合同，B16/B10都从默认allocator开始。
+- 第二轮审阅后聚焦合同/functional tests为`34 passed`，全仓带LIBERO assets回归`246 passed`，Black、
+  compileall和`git diff --check`通过。config loader得到`20/16/2`，且只允许microbatch`{16,10}`。clean
+  commit/push和新frozen worktree尚待完成；完成后先跑B16，成功才与B10+10做最小真实吞吐比较。
+- 新`v6_prior_policy_batch.py`是logical/physical batch、RNG和runtime selection的唯一窄owner，被training、
+  runtime和artifact contract共同使用；不是第二套训练路径。它使既有超大contract/runtime文件相对HEAD分别
+  净减`2/1`行。architecture guard无hard violation、无parallel family；review只来自既有大文件与本次新增
+  单owner/测试的规模，owner与退出条件已由本节和design 33.10明确。
+
 ## 2026-08-09 v6-prior六卡artifact seal实现完成（尚未启动GPU）
 
 - gradient artifact assembler现从retained run contract、invocation、gradient profile与completion重建

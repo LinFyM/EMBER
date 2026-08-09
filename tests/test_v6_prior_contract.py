@@ -105,6 +105,18 @@ def _topology_evidence() -> list[dict]:
     return rows
 
 
+_RUNTIME_SELECTION_EVIDENCE = {
+    "num_workers_per_rank": 2,
+    "action_loader_prefetch_factor": 2,
+    "action_loader_persistent_workers": True,
+    "logical_policy_batch_size": 20,
+    "functional_policy_microbatch_size": 16,
+    "physical_policy_forwards_per_task": 2,
+    "policy_gradient_checkpointing": False,
+    "writer_activation_checkpointing": True,
+}
+
+
 def _gradient_evidence() -> dict:
     norms = {
         "positive": {
@@ -132,13 +144,7 @@ def _gradient_evidence() -> dict:
         "config_bytes": 1234,
         "world_size": 6,
         "tasks_per_rank": 4,
-        "runtime_selection": {
-            "num_workers_per_rank": 2,
-            "action_loader_prefetch_factor": 2,
-            "action_loader_persistent_workers": True,
-            "physical_policy_batch": 20,
-            "writer_activation_checkpointing": True,
-        },
+        "runtime_selection": dict(_RUNTIME_SELECTION_EVIDENCE),
         "rank_topology": _topology_evidence(),
         "schedule_start_macro": 49,
         "schedule_stop_macro": 50,
@@ -266,13 +272,7 @@ def _resume_evidence(gradient: dict) -> dict:
         "auxiliary_weights": dict(gradient["recommended_weights"]),
         "world_size": 6,
         "tasks_per_rank": 4,
-        "runtime_selection": {
-            "num_workers_per_rank": 2,
-            "action_loader_prefetch_factor": 2,
-            "action_loader_persistent_workers": True,
-            "physical_policy_batch": 20,
-            "writer_activation_checkpointing": True,
-        },
+        "runtime_selection": dict(_RUNTIME_SELECTION_EVIDENCE),
         "rank_topology": _topology_evidence(),
         "invocation_counts": {"resumed": 2, "contiguous": 1},
         "metrics_rows": {"resumed": 3, "contiguous": 3},

@@ -23,7 +23,16 @@
   LoRA cache、零重复Writer forward、更少host sync和2-worker action prefetch。clean pushed
   `ded0c80`的A40 fixed-panel profile选择batch8；随后8-task纵向smoke完整通过并由retained artifacts
   组装evaluation seal。gradient/resume结构化artifact verifier与只读checkpoint comparator也已完成
-  CPU验证；当前只解锁六卡gradient profile，尚未产生新方法性能结论。
+  CPU验证。clean frozen`a17805c`随后两次启动六卡macro49 gradient profile：默认allocator和唯一一次
+  `expandable_segments:True`重试都在第一个PI05 policy functional B20的Gemma MLP前向发生容量OOM；后者把
+  reserved-unallocated从约`1.29GiB`降到约`157MiB`仍无法分配`606MiB`，因此碎片不是主因。两个root均只有
+  run contract/invocation、没有gradient/completion，不能seal或resume，也没有产生方法性能结论。
+- 当前修复保持logical B20、每task mean、train24×20=`480/480` unique queries和objective分布不变；把
+  policy functional forward改为完整有序logical-B20 panel keyed的physical B16+4，并用FP32 leaf-gradient
+  加权累积。seed使用轻量固定64-bit整数mix，不调用SHA/MD5。
+  这是A40容量/吞吐实现变量，不是减小scientific batch。先实测B16完整macro；若通过，只与balanced
+  B10+10比较真实whole-step wall/peak，再封存吞吐胜者。policy activation checkpointing目前不启用，因为
+  OOM在frozen PI05 policy而现有checkpoint flag只覆盖Writer，启用policy重算会是更侵入且可能更慢的变量。
 
 当前唯一活动候选是
 **v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
@@ -83,7 +92,8 @@ optimizer/scheduler/sampler/RNG。这样第一次干预只针对历史证据定�
 
 每个train task的统一step2000 expert `E_t`只作监督：
 
-- correct臂接受真实B20 action functional loss；
+- correct臂接受真实logical B20 action functional loss；physical slicing只允许改变执行显存，不改变20条
+  query与task mean；
 - generated correct LoRA与`E_t`在全部38 targets的gauge-invariant effective`BA`空间匹配方向和global
   norm；
 - reversed、shuffled和cross-suite wrong只进入bounded correct-over-negative ranking；
@@ -185,8 +195,9 @@ Experts不解决：
   forward分批，最终从稳定且有显存余量的候选中取LoRAs/s最高值；
 - 76-tensor LoRA保持template原生dtype：72个BF16、4个F32，单entry tensor bytes从强制FP32的
   `5,148,672`降到`2,641,920`；batch GPU→CPU staging只同步一次；
-- functional B20单物理batch走直接梯度路径，不再分配76个FP32 accumulation buffers；真实
-  multi-microbatch仍保留FP32 accumulation；
+- functional objective仍是logical B20；live A40已证明单physical B20不能容纳，当前使用physical B16+4，
+  通过完整有序logical panel identity重放同一20个独立Beta/Gaussian draws，并用76个FP32 leaf-gradient buffers按
+  `16/20`和`4/20`加权累积；
 - PI05 formal functional路径不再调用只供日志使用的`.cpu().numpy().tolist()`/`.item()`；loss-only实现与
   原forward的loss及LoRA leaf gradients由固定noise/time测试验证一致，通用details接口保持不变；
 - correct effective alignment只计算一次，task metrics和gradient norms合并成少量host transfer；
@@ -219,7 +230,12 @@ Experts不解决：
   resume assembler会比较fresh/resume/
   contiguous的contract、cursor、6-rank RNG、600 Writer tensors、41 trainable tensors、Adam moments、
   scheduler/AMP和scientific tolerance，并要求gradient→profile的strict Git ancestry。全仓CPU回归
-  `238 passed`；它们尚未接收真实六卡artifact，因此profile/formal仍保持blocked。
+  `238 passed`；它们尚未接收成功的真实六卡artifact，因此profile/formal仍保持blocked；
+- frozen`a17805c`在当时live空闲`gpu01:0,1,2,4,5,7`的3+3 NUMA拓扑完成了两次有效工程诊断。默认allocator
+  OOM时PyTorch allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`、free=`395.31MiB`；唯一allocator
+  retry为allocated=`43.43GiB`、reserved-unallocated约`157MiB`、free=`389.31MiB`，仍请求`606MiB`失败。
+  这关闭“只调allocator即可保留physical B20”，但不关闭logical B20、当前Writer或任何科研假设。两次
+  launcher退出后所选六卡均释放，未触碰当时由他人占用的GPU3/6。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -256,9 +272,13 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：封存当前verifier的clean commit/push并创建新frozen worktree；随后重新live比较两节点，
-在最多6张空闲A40上运行macro49 gradient profile。只由artifact重算`lambda_expert/lambda_rank`并解锁丢弃型
-fresh0→1、same-root resume1→3、contiguous0→3；第二个verifier通过前不得手填status进入formal。
+当前具体下一步：封存已通过CPU回归的keyed logical-B20/physical-B16实现，clean commit/push并创建新
+frozen worktree；随后重新live比较两节点，在最多6张空闲A40上运行macro49 gradient profile。B16成功后只在同一
+科学panel上补一个B10+10候选，以whole-step wall、input wait、peak VRAM和0 OOM/nonfinite选择吞吐胜者。
+两点wall/qps优势达到5%且input-wait share均低于5%才直接裁决；否则仅补一次A16确认，最终3%内视为
+吞吐tie并以显存余量/长跑OOM风险优先B10；
+只有胜者的完整artifact可重算`lambda_expert/lambda_rank`并解锁丢弃型fresh0→1、same-root resume1→3、
+contiguous0→3。第二个verifier通过前不得手填status进入formal。
 
 ## 10. Canonical assets
 

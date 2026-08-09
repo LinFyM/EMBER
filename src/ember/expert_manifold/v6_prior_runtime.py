@@ -40,6 +40,7 @@ from ember.expert_manifold.v6_prior_contract import (
     load_v6_prior_config,
     runtime_for_mode,
 )
+from ember.expert_manifold.v6_prior_policy_batch import policy_runtime_fields
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_eval_contract import (
     git_state,
@@ -625,10 +626,7 @@ def _run_contract(
             "num_workers_per_rank": args.num_workers,
             "action_loader_prefetch_factor": 2 if args.num_workers else None,
             "action_loader_persistent_workers": args.num_workers > 0,
-            "physical_policy_batch": int(config["data"]["action_queries_per_task"]),
-            "writer_activation_checkpointing": bool(
-                config["writer"]["activation_checkpointing"]
-            ),
+            **policy_runtime_fields(config),
             "distributed_model_wrapper": "none",
             "gradient_reduction": (
                 "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean"
@@ -637,6 +635,7 @@ def _run_contract(
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
             "nccl_algo": os.environ.get("NCCL_ALGO"),
             "nccl_proto": os.environ.get("NCCL_PROTO"),
+            "cuda_allocator_conf_observed": os.environ.get("PYTORCH_CUDA_ALLOC_CONF"),
         },
         "content_hash_policy": "disabled_by_owner",
     }

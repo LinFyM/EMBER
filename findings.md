@@ -1,5 +1,27 @@
 # EMBER Findings
 
+## 2026-08-09 physical B20 A40 OOM与logical-B20微批裁决
+
+- clean frozen`a17805c`在当时live空闲`gpu01:0,1,2,4,5,7`完成两次六卡工程尝试。默认allocator在第一条
+  PI05 functional B20的Gemma MLP申请`606MiB`时OOM：PyTorch allocated=`42.29GiB`、reserved-unallocated=
+  `1.29GiB`、free=`395.31MiB`。一次有证据的`expandable_segments:True`重试把碎片降到约`157MiB`，但
+  allocated=`43.43GiB`、free=`389.31MiB`，仍在同一MLP申请`606MiB`失败。故根因是active capacity，
+  不是碎片；继续allocator/env重试无科学价值。
+- OOM发生在frozen PI05 policy MLP，不在Writer。当前`writer.activation_checkpointing=true`只覆盖视频/
+  文本Writer encoder；policy checkpointing被明确关闭。启用后者需要对整段Transformer重算，可能降低
+  吞吐，且不是解决logical batch的必要条件，因此不作为首选。
+- scientific estimator必须保持每task 20条跨episode query及等权mean。现有functional helper已经支持
+  physical slices与FP32 LoRA leaf-gradient accumulation；缺口只是确保每个slice看到同一logical B20的
+  随机draw集合。当前以optimization seed、task、visit以及完整有序20条demo/frame identity生成局部seed，
+  通过固定SplitMix64整数mix而非SHA/MD5；每个
+  physical slice重新生成完整20个独立Beta(1.5,1) time和Gaussian noise后取对应slice。因而B16+4只改变
+  峰值显存与前向次数，不改变query集合、随机分布、loss权重或train24×20=`480/480`合同。
+- 吞吐判断不能只看“forward越大越快”或“越小越安全”。B16+4与B10+10都只有两次policy forward：前者
+  第一段算术强度更高，后者shape平衡且峰值更低。先以B16获得安全容量证据，再在它通过后只比较B10的
+  完整macro wall/input wait/peak，避免广泛batch sweep。直接胜出门为至少5% wall/qps优势且两者input-wait
+  share均低于5%；否则只补一次A16，稳定后的最终差异小于3%则视为吞吐tie并用显存余量优先B10。两个
+  失败root均无gradient/completion，不是方法负结果，也不能用于选择auxiliary weight。
+
 ## 2026-08-09 六卡profile证据门的第一性原理结论（CPU实现）
 
 - gradient norm只有在它确实来自同一clean pushed canonical config、train24全覆盖、精确video/negative

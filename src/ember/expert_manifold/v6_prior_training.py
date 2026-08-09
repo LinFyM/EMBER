@@ -29,6 +29,9 @@ from ember.expert_manifold.v6_prior_contract import (
     load_v6_prior_config,
     suggest_auxiliary_weight,
 )
+from ember.expert_manifold.v6_prior_policy_batch import (
+    policy_rng_seed_for_logical_batch,
+)
 from ember.expert_manifold.v6_prior_runtime import (
     V6PriorRuntime,
     _cursor_contract,
@@ -129,13 +132,27 @@ def _task_objective(
         teacher_demo=teacher_demo,
         device=runtime.context.device,
     )
+    policy_rng_seed = policy_rng_seed_for_logical_batch(
+        runtime.config,
+        batch,
+        task_id=task_id,
+        task_visit=task_visit,
+    )
     policy_batch = runtime.processor.training_batch(dict(batch))
+    randomness = runtime.config["objective"]["positive_policy_randomness"]
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         functional_loss, _, functional_gradients = functional_lora_loss_gradient(
             runtime.policy,
             pair.correct,
             runtime.lora_contract,
             batch=policy_batch,
+            policy_rng_seed=policy_rng_seed,
+            policy_rng_device=runtime.context.device,
+            flow_time_sampling_scheme=str(randomness["flow_time_sampling_scheme"]),
+            flow_noise_sampling_scheme=str(randomness["flow_noise_sampling_scheme"]),
+            policy_microbatch_size=int(
+                runtime.config["optimization"]["functional_policy_microbatch_size"]
+            ),
             collect_policy_details=False,
         )
     objective = runtime.config["objective"]

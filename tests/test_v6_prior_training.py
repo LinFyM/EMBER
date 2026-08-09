@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -15,12 +16,18 @@ from ember.expert_manifold.v6_prior_runtime import (
     _run_contract,
     _sampled_video_cost,
     _scheduler,
+    _validate_collective_environment,
+)
+from ember.expert_manifold.v6_prior_policy_batch import (
+    policy_rng_seed_for_logical_batch,
 )
 from ember.expert_manifold.v6_prior_training import (
     _mean_trainable_gradients,
     _run_gradient_profile,
+    _task_objective,
     finalize_args,
 )
+from ember.expert_manifold.v6_prior_step import GeneratedCounterfactualPair
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -113,6 +120,21 @@ def test_v6_prior_rank_topology_records_per_rank_runtime_identity(
     ]
 
 
+def test_v6_prior_collective_environment_does_not_mandate_an_allocator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name, value in {
+        "NCCL_P2P_DISABLE": "1",
+        "NCCL_ALGO": "Ring",
+        "NCCL_PROTO": "Simple",
+    }.items():
+        monkeypatch.setenv(name, value)
+    context = DistributedContext(0, 0, 6, torch.device("cuda:0"))
+    _validate_collective_environment(context)
+    monkeypatch.setenv("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    _validate_collective_environment(context)
+
+
 def test_v6_prior_run_contract_retains_full_git_provenance(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -159,7 +181,7 @@ def test_v6_prior_run_contract_retains_full_git_provenance(
         "writer": {"activation_checkpointing": True},
         "expert_basis": {"expert_step": 2000},
         "objective": {},
-        "optimization": {},
+        "optimization": {"functional_policy_microbatch_size": 16},
     }
     args = SimpleNamespace(
         mode="gradient-profile",
@@ -353,6 +375,168 @@ def test_v6_prior_flat_gradient_reduction_is_one_global_task_mean(
     _mean_trainable_gradients(runtime)
     assert torch.equal(first.grad, torch.tensor([2.0, 4.0]))
     assert torch.equal(second.grad, torch.tensor([6.0]))
+
+
+def test_v6_prior_policy_randomness_is_keyed_by_the_complete_logical_batch() -> None:
+    runtime = SimpleNamespace(
+        config={
+            "data": {"action_queries_per_task": 20},
+            "optimization": {"seed": 7},
+            "objective": {
+                "positive_policy_randomness": {
+                    "scope": "one_independent_flow_noise_and_time_per_action_query",
+                    "seed_scheme": (
+                        "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3"
+                    ),
+                    "flow_time_sampling_scheme": (
+                        "task_logical_batch_keyed_independent_beta15_time_v2"
+                    ),
+                    "flow_noise_sampling_scheme": (
+                        "task_logical_batch_keyed_independent_gaussian_v2"
+                    ),
+                }
+            },
+        }
+    )
+    batch = {
+        "demo_index": torch.arange(20) % 5,
+        "frame_index": torch.arange(20) * 3,
+    }
+    seed = policy_rng_seed_for_logical_batch(
+        runtime.config, batch, task_id=4, task_visit=9
+    )
+    assert seed == 3_295_656_931_063_255_022
+    assert seed == policy_rng_seed_for_logical_batch(
+        runtime.config,
+        batch,
+        task_id=4,
+        task_visit=9,
+    )
+    changed = dict(batch)
+    changed["frame_index"] = batch["frame_index"].clone()
+    changed["frame_index"][0] += 1
+    assert seed != policy_rng_seed_for_logical_batch(
+        runtime.config,
+        changed,
+        task_id=4,
+        task_visit=9,
+    )
+
+
+def test_v6_prior_task_objective_wires_logical_b20_into_physical_b16(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    randomness = {
+        "scope": "one_independent_flow_noise_and_time_per_action_query",
+        "seed_scheme": (
+            "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3"
+        ),
+        "flow_time_sampling_scheme": (
+            "task_logical_batch_keyed_independent_beta15_time_v2"
+        ),
+        "flow_noise_sampling_scheme": (
+            "task_logical_batch_keyed_independent_gaussian_v2"
+        ),
+    }
+    task = SimpleNamespace(ordinal=0, global_task_id=4)
+    batch = {
+        "task_id": torch.full((20,), 4),
+        "demo_index": torch.arange(20) % 5,
+        "frame_index": torch.arange(20) * 3,
+    }
+    pair = GeneratedCounterfactualPair(
+        correct={"adapter": torch.tensor([1.0])},
+        counterfactual={"adapter": torch.tensor([0.0])},
+        correct_raw_frames=10,
+        correct_sampled_frames=3,
+        counterfactual_raw_frames=10,
+        counterfactual_sampled_frames=3,
+    )
+    captured: dict[str, object] = {}
+
+    def functional_stub(
+        policy: object,
+        state: object,
+        contract: object,
+        **kwargs: object,
+    ) -> tuple[torch.Tensor, dict, dict[str, torch.Tensor]]:
+        captured.update(kwargs)
+        assert policy is runtime.policy
+        assert state is pair.correct
+        assert contract is runtime.lora_contract
+        return torch.tensor(0.5), {}, {"adapter": torch.tensor([0.25])}
+
+    auxiliary = object()
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training.torch.autocast",
+        lambda **_kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training.generate_counterfactual_pair",
+        lambda **_kwargs: pair,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training.functional_lora_loss_gradient",
+        functional_stub,
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_training.effective_auxiliary_output_gradients",
+        lambda *_args, **_kwargs: auxiliary,
+    )
+    runtime = SimpleNamespace(
+        config={
+            "data": {
+                "action_queries_per_task": 20,
+                "counterfactual_seed": 23,
+            },
+            "optimization": {
+                "seed": 7,
+                "functional_policy_microbatch_size": 16,
+            },
+            "objective": {
+                "positive_policy_randomness": randomness,
+                "expert": {"norm_weight": 0.25, "smooth_l1_beta": 0.1},
+                "ranking": {"required_margin": 0.1, "temperature": 0.1},
+            },
+        },
+        sampler=SimpleNamespace(
+            task_visit_for_step=lambda _macro, _microtask: (4, 0),
+            action_demo_indices_for_task_visit=lambda _task, _visit: (1, 2),
+        ),
+        video_schedule=SimpleNamespace(
+            demos_for_task_visit=lambda _task, _visit, **_kwargs: (3,)
+        ),
+        video_store=SimpleNamespace(load=lambda _task, _demo: object()),
+        task_by_global_id={4: task},
+        writer=object(),
+        policy=object(),
+        language_tokens={4: object()},
+        context=SimpleNamespace(device=torch.device("cpu")),
+        lora_contract=object(),
+        processor=SimpleNamespace(training_batch=lambda _batch: {"policy": True}),
+        expert_targets={"adapter": torch.zeros(1, 1)},
+    )
+
+    result = _task_objective(runtime, macro=0, microtask=0, batch=batch)
+    assert result.functional_loss == torch.tensor(0.5)
+    assert result.functional_gradients == {"adapter": torch.tensor([0.25])}
+    assert result.auxiliary is auxiliary
+    assert captured["batch"] == {"policy": True}
+    assert captured["policy_microbatch_size"] == 16
+    assert captured["collect_policy_details"] is False
+    assert (
+        captured["flow_time_sampling_scheme"] == randomness["flow_time_sampling_scheme"]
+    )
+    assert (
+        captured["flow_noise_sampling_scheme"]
+        == randomness["flow_noise_sampling_scheme"]
+    )
+    assert captured["policy_rng_seed"] == policy_rng_seed_for_logical_batch(
+        runtime.config,
+        batch,
+        task_id=4,
+        task_visit=0,
+    )
 
 
 def test_v6_prior_cursor_records_all_stateless_schedules() -> None:

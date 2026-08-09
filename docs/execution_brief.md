@@ -4,17 +4,19 @@
 
 目标是把同一shared method、同一single checkpoint的strict paired correct从历史最好`143/400`推进到
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
-运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过，
-只作为执行/吞吐证据。
+运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。首个六卡
+macro49的physical B20在默认allocator和一次`expandable_segments`重试中都发生PI05 policy MLP容量OOM；
+这只是工程证据，两个失败root都没有gradient/completion，不能seal或解释方法性能。
 
 当前操作顺序：
 
 1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
 2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
 3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
-4. 最多六张空闲A40做gradient weight、exact-resume和训练吞吐profile；
-5. formal continuation和关键checkpoint strict rollout；
-6. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
+4. 保持logical B20不变，先在最多六张空闲A40实测physical B16+4，再只与B10+10比较吞吐；
+5. 用胜者做gradient weight、exact-resume和训练吞吐profile；
+6. formal continuation和关键checkpoint strict rollout；
+7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
@@ -28,7 +30,7 @@
 - source policy、normalization、split、frame stride5、LIBERO preprocessing与paired evaluator固定。
 - historical v6-fast macro400只作load-only Writer初始化；冻结encoder/Core/transition/Procedure，只训练
   compiler+factor heads；全新optimizer/scheduler/sampler/RNG。
-- train24 task-complete、每task B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
+- train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
   all-reduce。
 - objective固定为positive functional + effective-BA expert direction/norm + bounded temporal/wrong
   ranking；auxiliary weight只由预注册train24 gradient profile选择一次。
@@ -48,9 +50,12 @@
   扩宽FP32。每batch集中nonblocking D2H，只同步一次。
 - action query DataLoader默认2 spawn workers、persistent workers、prefetch2；profile若显示GPU仍等待
   data，再实测4 workers/prefetch而不是猜测。
-- functional B20能单物理batch时走直接gradient path；只有显存要求真实microbatch时才使用FP32 gradient
-  accumulation。microbatch、activation checkpoint和worker数按samples/s、step wall和peak memory联合
-  选择，不以数值逐位相同为门。
+- functional scientific batch固定logical B20。live A40已证明physical B20容量不足，当前以完整有序
+  logical-B20 panel identity为key生成同一20个独立flow time/noise，并用physical B16+4与FP32
+  leaf-gradient加权累积；不减少
+  queries、不改变task mean或objective分布。先验证B16，再只比较balanced B10+10的真实whole-step吞吐。
+- policy activation checkpointing当前保持关闭；现有Writer checkpointing不覆盖OOM所在的frozen PI05
+  Gemma MLP。只有B16/B10都无法形成高吞吐有效配置时，才把policy重算作为独立正式候选。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
 
 保留FP32 RMSNorm/softmax/ROPE/image normalization和policy-effective reduction，除非profile证明它们是
@@ -130,13 +135,20 @@ OOM/nonfinite/forbidden reads；Writer释放、source policy复用/no-reload，G
 
 profile固定train24 macro49，覆盖24×B20=480 unique跨episodequeries并包含最长105 sampled-frame video：
 
+已完成的容量诊断：clean frozen`a17805c`在当时空闲`gpu01:0,1,2,4,5,7`运行physical B20。默认allocator
+OOM时allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`；`expandable_segments:True`把后者降到约
+`157MiB`，但active allocated升至`43.43GiB`且仍无法再分配`606MiB`。所以不得再做allocator盲重试；两个
+root不resume、不合并。当前B16/B10比较都使用默认allocator；失败retry只作诊断，不固化为科学或runtime门。
+
 1. 分别测positive、expert、ranking在compiler和factor heads的未加权gradient norm；
 2. 一次性选择`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
    `.25`；若初始化已满足而梯度近零，不人为放大；
 3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
    在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
-4. 先看上述证据；仅在data wait、显存或计算瓶颈真实出现时，在不改变B20/full24 objective的前提下
-   实测physical microbatch、query loader workers/prefetch或activation checkpoint候选，取吞吐最高配置；
+4. B16完整macro通过后，只补同logical B20、同panel-keyed randomness、同六卡拓扑的B10+10；比较完整
+   macro wall、input wait、peak allocated/reserved和异常计数，取真实吞吐胜者。若B16仍OOM则直接B10，
+   不做广泛batch sweep。两点优势至少5%且input-wait share均低于5%才直接裁决；否则仅补A16形成A-B-A，
+   最终3%内视为吞吐tie并优先显存余量更大的B10；
 5. 用丢弃型profile权重完成fresh0→1、same-root exact-resume1→3、独立contiguous0→3。要求scientific
    metrics、cursor、Writer/RNG和optimizer/scheduler语义一致；允许正常并行低位roundoff，不要求不同
    reduction schedule逐bit相同；
@@ -149,8 +161,8 @@ tensors、41 trainable tensors、6-rank RNG、Adam moments、scheduler/AMP、cur
 scientific tolerance。task/frame provenance还会回查frozen target manifest、HDF5 path/bytes和对应demo的
 真实frame metadata。二者不做hash，也不能被人工status、stale tracked config或复制到外部的config替代。
 
-工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少B20或盲重试
-掩盖问题。
+工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少logical B20
+或盲重试掩盖问题；physical microbatch是保持科学batch的容量实现，不属于减少B20。
 
 ## 6. Formal training and truthful evaluation
 

@@ -1282,3 +1282,38 @@ parallel reduction low-bit差异不是失败。
 reserved。若这些证据显示data wait显著，才实测2/4 workers等候选；若显存或计算证据指向activation
 checkpointing或physical microbatch，才做对应单变量profile。否则保持B20单物理batch、2 persistent
 workers/prefetch2，避免为了更细的profile数字降低正式训练效率。
+
+### 33.10 physical B20容量实证与logical-B20微批合同（2026-08-09）
+
+33.9最后一句关于“否则保持B20单物理batch”的条件已被真实A40证据触发并覆盖。clean frozen
+`a17805c`在当时空闲`gpu01:0,1,2,4,5,7`的3+3 NUMA拓扑运行macro49。默认allocator在第一条PI05
+functional B20的Gemma MLP请求`606MiB`时OOM，PyTorch allocated=`42.29GiB`、reserved-unallocated=
+`1.29GiB`、free=`395.31MiB`。一次预先有依据的`expandable_segments:True`重试把reserved-unallocated降到
+约`157MiB`，但active allocated升至`43.43GiB`且仍无法取得`606MiB`。因此physical B20超过该A40所报
+`44.42GiB`总容量的有效可用边界，碎片已经排除；不得继续allocator盲重试。两个root均在首条task
+objective失败，只含contract/
+invocation而无gradient/completion，不能seal、resume、合并或解释方法。
+
+这不允许减少33.1--33.3的scientific batch。每task仍固定20条跨episode action queries，先task内mean再
+train24等权，全局仍是`480/480` unique rows；positive/expert/ranking objective、video schedule、optimizer
+和信息墙不变。physical implementation改为：
+
+1. 从optimization seed、global task、task visit及完整20条`(demo_index, frame_index)`有序identity导出一
+   个rank/phase-independent局部policy seed；不依赖全局CUDA RNG前序消费。它准确地是logical-panel
+   keyed而非“单query重排后仍保持draw”的承诺，使用固定SplitMix64整数mix，不调用SHA/MD5。
+2. 对logical B20一次定义20个独立exact Beta(1.5,1) flow times和20个独立Gaussian noises。每个physical
+   slice重放同一个logical draw tensor并只取自己的offset，保证B16+4与B10+10使用同一query/draw集合。
+3. 每slice得到对76个detached LoRA leaves的梯度；BF16/F16 leaves在FP32 buffer中按slice size/20加权累积，
+   最终再转回leaf dtype并通过原chain-rule bridge传给Writer。loss也按相同权重合成。
+4. 首选physical B16，因为仍只有两次policy forward且给MLP留出实质容量余量；B16完整macro成功后只补
+   balanced B10+10，在同logical panel、同六卡拓扑和同keyed draws上比较whole-step wall、input wait、
+   peak allocated/reserved及0 OOM/nonfinite。两点wall/qps优势达到5%、均无外来负载且input-wait share都
+   低于5%才直接裁决；否则只补一个fresh A16形成A-B-A。两次A16相差不超过3%时用其wall均值比较B10，
+   最终差异仍小于3%视为吞吐tie并以显存余量/长跑OOM风险优先B10；A16自身波动超过3%则换稳定窗口只补
+   必要点。只把winner gradient evidence/weights写入config，loser保留诊断且不跑resume suite。
+
+policy gradient checkpointing不是首选：现有`writer.activation_checkpointing`不覆盖OOM所在的frozen
+PI05 Gemma，打开policy checkpointing需要改变当前eval/frozen执行路径并重算Transformer，可能比两个
+physical forwards更慢。只有B16/B10均无法形成稳定高吞吐配置时，才把它作为独立、显式设计变量；不得
+暗中与microbatch混合。`expandable_segments:True`失败retry只证明碎片减少仍不足，不固化为当前
+scientific/runtime合同；B16与B10公平比较都从默认allocator开始并在run contract记录实际观察值。

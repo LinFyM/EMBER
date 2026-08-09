@@ -122,7 +122,12 @@
   },
   "objective": {
     "positive_functional_weight": 1.0,
-    "positive_policy_randomness": "one_independent_flow_noise_and_time_per_action_query",
+    "positive_policy_randomness": {
+      "scope": "one_independent_flow_noise_and_time_per_action_query",
+      "seed_scheme": "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3",
+      "flow_time_sampling_scheme": "task_logical_batch_keyed_independent_beta15_time_v2",
+      "flow_noise_sampling_scheme": "task_logical_batch_keyed_independent_gaussian_v2"
+    },
     "expert": {
       "direction": "one_minus_global_effective_ba_cosine",
       "norm": "smooth_l1_global_effective_log_norm_ratio",
@@ -144,6 +149,7 @@
   "optimization": {
     "precision": "bfloat16",
     "seed": 7,
+    "functional_policy_microbatch_size": 16,
     "optimizer": {
       "name": "AdamW",
       "peak_lr": 0.00003,
@@ -177,7 +183,9 @@
     "num_workers_per_rank": 2,
     "macros": 1,
     "schedule_macro": 49,
-    "physical_policy_batch": 20,
+    "logical_policy_batch_size": 20,
+    "functional_policy_microbatch_size": 16,
+    "physical_policy_forwards_per_task": 2,
     "longest_video_sampled_frames": 105,
     "seal_rule": "each_auxiliary_at_most_one_quarter_positive_gradient_in_both_compiler_and_factor_heads"
   },

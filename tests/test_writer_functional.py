@@ -55,18 +55,14 @@ def test_latin_beta_time_is_exactly_stratified_replayed_and_scoped() -> None:
     policy = _FlowPolicy()
     torch.manual_seed(101)
     with scoped_policy_randomness(303, torch.device("cpu")):
-        with scoped_policy_flow_time_sampling(
-            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
-        ):
+        with scoped_policy_flow_time_sampling(policy, LATIN_BETA_TIME_SAMPLING_SCHEME):
             first = policy.model.sample_time(20, torch.device("cpu"))
     after = torch.rand(4)
 
     torch.manual_seed(101)
     expected_after = torch.rand(4)
     with scoped_policy_randomness(303, torch.device("cpu")):
-        with scoped_policy_flow_time_sampling(
-            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
-        ):
+        with scoped_policy_flow_time_sampling(policy, LATIN_BETA_TIME_SAMPLING_SCHEME):
             second = policy.model.sample_time(20, torch.device("cpu"))
     beta = (first - 0.001) / 0.999
     uniform = beta.pow(1.5)
@@ -113,9 +109,7 @@ def test_antithetic_gaussian_noise_is_zero_mean_replayed_and_scoped() -> None:
 def test_variance_reduced_microbatch_slices_reconstruct_full_draws() -> None:
     policy = _FlowPolicy()
     with scoped_policy_randomness(303, torch.device("cpu")):
-        with scoped_policy_flow_time_sampling(
-            policy, LATIN_BETA_TIME_SAMPLING_SCHEME
-        ):
+        with scoped_policy_flow_time_sampling(policy, LATIN_BETA_TIME_SAMPLING_SCHEME):
             full_time = policy.model.sample_time(20, torch.device("cpu"))
         with scoped_policy_flow_noise_sampling(
             policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME
@@ -132,9 +126,7 @@ def test_variance_reduced_microbatch_slices_reconstruct_full_draws() -> None:
                 logical_batch_size=20,
                 batch_offset=offset,
             ):
-                time_chunks.append(
-                    policy.model.sample_time(2, torch.device("cpu"))
-                )
+                time_chunks.append(policy.model.sample_time(2, torch.device("cpu")))
             with scoped_policy_flow_noise_sampling(
                 policy,
                 ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
@@ -191,6 +183,12 @@ class _RandomLossPolicy(_LossPolicy):
 class _TinyPi05Core(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
+        self.config = SimpleNamespace(
+            time_sampling_beta_alpha=1.5,
+            time_sampling_beta_beta=1.0,
+            time_sampling_scale=0.999,
+            time_sampling_offset=0.001,
+        )
         self.projection = torch.nn.Linear(3, 4, bias=False)
 
     def sample_noise(
@@ -305,9 +303,7 @@ def test_functional_action_loss_only_backpropagates_into_writer() -> None:
     template = prepare_frozen_writer_policy(policy, _contract())
     writer = _writer(template)
 
-    state = writer(
-        torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9])
-    )
+    state = writer(torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9]))
     loss, details = functional_lora_call(
         policy, state, _contract(), {"value": torch.ones(6, 3)}
     )
@@ -344,9 +340,7 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     offsets = torch.tensor([0, 9])
     batch = {"value": torch.ones(6, 3)}
     direct_state = writer(language, video, offsets)
-    direct_loss, _ = functional_lora_call(
-        policy, direct_state, _contract(), batch
-    )
+    direct_loss, _ = functional_lora_call(policy, direct_state, _contract(), batch)
     direct_gradient = torch.autograd.grad(direct_loss, writer.scale)[0]
     state = writer(language, video, offsets)
     loss, details, gradients = functional_lora_loss_gradient(
@@ -362,9 +356,7 @@ def test_detached_lora_gradient_bridge_backpropagates_exact_writer_gradient() ->
     )
     assert details["loss"] == float(loss)
     assert all(parameter.grad is None for parameter in policy.parameters())
-    assert torch.allclose(
-        bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6
-    )
+    assert torch.allclose(bridged_gradient[0], direct_gradient, atol=1e-7, rtol=1e-6)
 
 
 def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> None:
@@ -377,27 +369,20 @@ def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> N
     policy = _TinyPi05Policy()
     contract = _tiny_pi05_contract()
     template = prepare_frozen_writer_policy(policy, contract)
-    state = {
-        name: value.detach().clone()
-        for name, value in template.items()
-    }
+    state = {name: value.detach().clone() for name, value in template.items()}
     state[next(name for name in state if ".lora_B." in name)].fill_(0.02)
     batch_size = 5
     batch = {
         "image": torch.randn(batch_size, 3, 4, 4),
         ACTION: torch.randn(batch_size, 2, 3),
         OBS_LANGUAGE_TOKENS: torch.ones(batch_size, 4, dtype=torch.long),
-        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(
-            batch_size, 4, dtype=torch.bool
-        ),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(batch_size, 4, dtype=torch.bool),
     }
-    default_loss, default_details, default_gradients = (
-        functional_lora_loss_gradient(
-            policy,
-            state,
-            contract,
-            batch=batch,
-        )
+    default_loss, default_details, default_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        contract,
+        batch=batch,
     )
     loss_only, no_details, loss_only_gradients = functional_lora_loss_gradient(
         policy,
@@ -414,6 +399,61 @@ def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> N
         assert torch.equal(loss_only_gradients[name], default_gradients[name])
 
 
+@pytest.mark.parametrize("policy_microbatch_size", (16, 10))
+def test_pi05_loss_only_independent_logical_b20_matches_physical_slices(
+    policy_microbatch_size: int,
+) -> None:
+    from lerobot.utils.constants import (
+        ACTION,
+        OBS_LANGUAGE_ATTENTION_MASK,
+        OBS_LANGUAGE_TOKENS,
+    )
+
+    policy = _TinyPi05Policy()
+    contract = _tiny_pi05_contract()
+    template = prepare_frozen_writer_policy(policy, contract)
+    state = {name: value.detach().clone() for name, value in template.items()}
+    state[next(name for name in state if ".lora_B." in name)].fill_(0.02)
+    batch = {
+        "image": torch.randn(20, 3, 4, 4),
+        ACTION: torch.randn(20, 2, 3),
+        OBS_LANGUAGE_TOKENS: torch.ones(20, 4, dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(20, 4, dtype=torch.bool),
+    }
+    common = {
+        "policy_rng_seed": 303,
+        "policy_rng_device": torch.device("cpu"),
+        "flow_time_sampling_scheme": INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+        "flow_noise_sampling_scheme": INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        "collect_policy_details": False,
+    }
+    full_loss, full_details, full_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        contract,
+        batch=batch,
+        **common,
+    )
+    micro_loss, micro_details, micro_gradients = functional_lora_loss_gradient(
+        policy,
+        state,
+        contract,
+        batch=batch,
+        policy_microbatch_size=policy_microbatch_size,
+        **common,
+    )
+    assert policy.detail_calls == 0
+    assert full_details == micro_details == {}
+    assert torch.allclose(micro_loss, full_loss, atol=1e-7, rtol=1e-6)
+    for name in full_gradients:
+        assert torch.allclose(
+            micro_gradients[name],
+            full_gradients[name],
+            atol=1e-7,
+            rtol=1e-6,
+        )
+
+
 @pytest.mark.parametrize(
     ("time_scheme", "noise_scheme"),
     (
@@ -427,9 +467,11 @@ def test_pi05_loss_only_functional_path_preserves_loss_and_lora_gradients() -> N
         ),
     ),
 )
+@pytest.mark.parametrize("policy_microbatch_size", (10, 16))
 def test_microbatched_functional_gradient_preserves_logical_b20_estimator(
     time_scheme: str,
     noise_scheme: str,
+    policy_microbatch_size: int,
 ) -> None:
     policy = _RandomLossPolicy()
     template = prepare_frozen_writer_policy(policy, _contract())
@@ -456,14 +498,12 @@ def test_microbatched_functional_gradient_preserves_logical_b20_estimator(
         state,
         _contract(),
         batch=batch,
-        policy_microbatch_size=2,
+        policy_microbatch_size=policy_microbatch_size,
         **common,
     )
     assert torch.allclose(micro_loss, full_loss, atol=1e-7, rtol=1e-6)
     assert micro_details["loss"] == pytest.approx(full_details["loss"])
-    assert micro_details["loss_per_dim"] == pytest.approx(
-        full_details["loss_per_dim"]
-    )
+    assert micro_details["loss_per_dim"] == pytest.approx(full_details["loss_per_dim"])
     assert set(micro_gradients) == set(full_gradients)
     for name in full_gradients:
         assert torch.allclose(

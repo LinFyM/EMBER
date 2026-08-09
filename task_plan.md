@@ -20,7 +20,8 @@ formal artifacts保存。
 
 - [x] 撤回batch1/`1e-5` direct reproduction gate；Writer generation默认至少batch8，最终取profile最优值。
 - [x] LoRA cache保持72 BF16 + 4 F32原生dtype，batched D2H单次同步。
-- [x] functional单物理batch直接求梯度；保留真实multi-microbatch的FP32 accumulation。
+- [x] functional单物理batch直接梯度与真实multi-microbatch FP32 accumulation均有唯一实现；A40当前图已
+  证伪physical B20，active执行使用logical B20/physical B16+4。
 - [x] 合并correct effective alignment、task metric和gradient norm host transfer，移除重复finite scans/sync。
 - [x] action DataLoader改为2 spawn persistent workers + prefetch2，并验证serial/prefetch/resume rows一致。
 - [x] 最终相关定向`68 passed`、全仓`227 passed`、compileall和`git diff --check`全部通过。
@@ -51,16 +52,26 @@ formal artifacts保存。
 - [x] 实现并CPU验证fresh/resume/contiguous assembler与只读checkpoint inspector：核对Git phase ancestry、
   contract/cursor、600 Writer tensors、41 trainable tensors、6-rank RNG、Adam moments、scheduler/AMP和
   三宏步scientific metrics；接受预注册parallel roundoff而非逐bit一致。
-- [ ] 重新live选最多6张空闲A40，按实际NUMA建立physical/local rank映射。
+- [x] 首次live比较两节点并选择当时空闲`gpu01:0,1,2,4,5,7`的3+3 NUMA拓扑；两次physical B20均在
+  PI05 policy MLP容量OOM后自然释放，未触碰他人GPU3/6。后续每次launch仍必须重新live选择。
+- [x] 用默认allocator和唯一一次`expandable_segments:True`重试排除碎片主因；失败roots仅有contract/
+  invocation，无gradient/completion，禁止resume、合并或冒充科学结果。
+- [x] 实现完整有序logical-panel keyed的logical-B20/physical-B16+4：20条独立time/noise、每task mean、
+  480 unique queries和objective分布不变，FP32 leaf-gradient按真实slice权重累积；轻量整数seed mix不使用
+  SHA/MD5，policy checkpointing保持关闭。
+- [ ] clean seal B16实现并从新frozen worktree重新live选最多6张空闲A40，按实际NUMA建立映射。
+- [ ] 运行B16完整macro49；若通过，只补B10+10同panel候选并按whole-step wall/input wait/peak VRAM选择
+  吞吐胜者。优势至少5%且input-wait share均低于5%才直接裁决；否则仅补一次A16，最终3%内视为tie并
+  优先B10显存余量。若B16 OOM直接转B10，不做广泛batch sweep或allocator盲重试。
 - [ ] 固定macro49覆盖train24×B20=480 unique queries和最长105-frame video；记录positive/expert/ranking
   对compiler/factor的未加权gradient norms。
 - [ ] 一次性封存`lambda_expert/lambda_rank`，两个blocks上各auxiliary均不超过positive的`.25`；不按held
   outcome sweep或在线自适应。
 - [ ] 对正式gradient artifact运行assembler，再把其原样证据写回gradient+aux并置为profile-ready；
   不人工拼weight/evidence，不从外部复制config绕过canonical tracked config。
-- [ ] 先依据retained `input_wait/step wall/peak VRAM`判断真实瓶颈；只有data wait或显存/计算证据要求时才
-  实测workers/prefetch、physical microbatch或activation checkpointing候选，按吞吐取胜且不改变
-  B20/full24 scientific batch。不得为了“多记录阶段”在热路径增加CUDA同步。
+- [ ] 先依据B16/B10 retained `input_wait/step wall/peak VRAM`判断后续瓶颈；只有data wait证据要求时才
+  实测workers/prefetch，只有两个微批候选都不足时才单独profile policy activation checkpointing。所有
+  候选保持logical B20/full24 scientific batch，不为“多记录阶段”在热路径增加CUDA同步。
 - [ ] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、
   optimizer/scheduler和scientific metrics语义，接受正常parallel roundoff。
 - [ ] 对三条正式roots运行assembler并原样写回证据，封存profile/formal-ready；禁止人工status跳转。

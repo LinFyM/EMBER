@@ -303,8 +303,8 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
         },
         "fixed_projection": {
             "shape": [
-                int(config["condition_feature"]["feature_width"]),
-                int(config["condition_feature"]["descriptor_width"]),
+                int(value)
+                for value in config["condition_feature"]["projection_shape"]
             ],
             "dtype": "torch.float32",
             "trainable": False,

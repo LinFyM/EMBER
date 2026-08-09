@@ -19,27 +19,22 @@ from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authori
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
     REPO_ROOT
-    / "configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v1.json"
+    / "configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = (
-    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1"
+_V6_PRIOR_SCHEMA_PREFIX = (
+    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual"
 )
-V6_PRIOR_RUN_SCHEMA = (
-    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_launch_v1"
-)
-V6_PRIOR_PROFILE_SCHEMA = (
-    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_profile_v1"
-)
-V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_completion_v1"
-)
+V6_PRIOR_CONFIG_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_v2"
+V6_PRIOR_RUN_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_launch_v2"
+V6_PRIOR_PROFILE_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_profile_v2"
+V6_PRIOR_COMPLETION_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_completion_v2"
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _WRITER_GENERATION_PROFILE_SCHEMA = "ember_pi05_writer_generation_profile_v1"
 _EVALUATION_RUN_SCHEMA = "ember_pi05_target_eval_launch_v2"
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
 
 _EXPECTED_WRITER = {
-    "architecture": "frozen_pi05_v6_plus_video_keyed_program_residual_v1",
+    "architecture": "frozen_pi05_v6_plus_video_keyed_program_residual_v2",
     "base_architecture": (
         "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_"
         "slot_fusion_v6"
@@ -69,16 +64,21 @@ _EXPECTED_WRITER = {
 }
 
 _EXPECTED_CONDITION_FEATURE = {
-    "kind": "zero_preserving_temporal_visual_innovation_jl_v1",
+    "kind": "zero_preserving_balanced_static_causal_visual_innovation_jl_v2",
     "input": "mean_valid_task_tokens_frame_evidence_minus_text_queries",
-    "temporal_basis": ["one", "tau", "cos_pi_tau", "sin_pi_tau"],
-    "tau_range": [-1.0, 1.0],
-    "descriptor_width": 1024,
+    "static_block": "video_dc_mean_visual_innovation",
+    "dynamic_block": (
+        "uniform_pool_sqrt_normalized_causal_prefix_of_video_centered_innovation"
+    ),
+    "descriptor_width": 512,
+    "descriptor_block_width": 256,
     "feature_width": 256,
     "projection_seed": 20260810,
-    "projection": "fixed_no_bias_row_normalized_fp32_nonpersistent",
-    "normalization": "zero_preserving_l2",
-    "frame_content_reordered_but_display_ordinals_fixed": True,
+    "projection_shape": [2, 128, 256],
+    "projection": "two_fixed_no_bias_row_normalized_fp32_nonpersistent_blocks",
+    "block_normalization": "independent_zero_preserving_l2",
+    "fusion": "concatenate_then_zero_preserving_l2",
+    "frame_content_reordered_before_dynamic_block": True,
 }
 
 _EXPECTED_PROGRAM_RESIDUAL = {
@@ -309,7 +309,7 @@ _EXPECTED_OWNERSHIP = {
         "deployment_owned": True,
     },
     "fixed_projection": {
-        "shape": [256, 1024],
+        "shape": [2, 128, 256],
         "dtype": "torch.float32",
         "trainable": False,
         "persistent": False,
@@ -834,7 +834,7 @@ def _evaluation_artifact_matches(config: Mapping[str, Any]) -> bool:
 
 _COHERENT_STATES = {
     (
-        "active_implementation_awaiting_cpu_and_live_a40_profile",
+        "active_implementation_cpu_sealed_awaiting_live_a40_profile",
         "awaiting_live_a40_macro49_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
         "blocked_until_new_residual_deployment_graph_live_profile",

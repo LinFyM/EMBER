@@ -45,25 +45,28 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   更差teacher变成有效监督，因此`authorize_cefd=false`，不实现CEFD、不做weight profile。
 - audit完整覆盖480/480 queries、144次policy forward、0 update/rollout/OOM/nonfinite，wall=`39.698s`；
   一次性mode/flow-teacher/effective-objective执行路径和tests现已删除，历史只留Git/formal artifact。
-- 当前唯一active implementation是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：
-  strict freeze v6 macro400全部600 tensors，在fused Program后加入fixed temporal video key和zero-init
-  `[256,320,256]` FP32 memory；24 correct functional cotangents与24 counterfactual zero-motion rows经
-  48×48 FP64 Gram形成FP32 manual write。无optimizer、expert target、negative policy forward或第二LoRA。
-- CPU seal完成：全仓`276 passed`、compileall、JSON/diff-check通过，architecture guard无hard violation；
-  当前config仍只允许等待中的macro49 mechanism profile，formal/evaluation均被live artifact硬阻塞。尚无该
-  方法A40、训练或strict成绩。
+- 第37节Frozen-v6 Counterfactual-Null Program Residual v1已完成唯一macro49 profile并退役：13项门中
+  10项通过，correct retention=`.807966`且24/24，但DC-dominated key使condition=`1315.33`、negative/
+  correct=`.264351`、null仅15/24；production ratio=`1.115458`。不训练v1、不降lambda、不扫seed/P/阈值。
+- 当前唯一active implementation是第38节Balanced DC--Causal v2：strict freeze v6 macro400全部600
+  tensors，在fused Program后保留同一zero-init `[256,320,256]` FP32 memory和full48 update，只把video-DC
+  static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。无optimizer、
+  expert target、negative policy forward或第二LoRA。
+- v2 CPU seal完成：聚焦`52 passed`、加载LIBERO assets后全仓`281 passed in 21.34s`、compileall、26份
+  JSON和diff-check通过；architecture guard为0 hard violation。当前config只允许等待中的macro49 mechanism
+  profile，formal/evaluation均被live artifact硬阻塞；尚无v2 A40、训练、rollout或strict成绩。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
   host sync。
 - 历史v6 fixed-panel profile在同一32 requests/1093 sampled frames上得到batch8/16/32吞吐
-  `.911427/.905107/.906432 LoRA/s`并选择batch8；第37节改变了deployment graph，不能继承该seal，必须在
+  `.911427/.905107/.906432 LoRA/s`并选择batch8；当前residual graph不能继承该seal，必须在
   mechanism通过后重新实测新v8 residual graph的batch8/16/32和correct smoke。
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
   `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为
   `.006883349605446485/.010514451404229894`。已退役Tangent Tube当时从自己的live gradient seal得到
-  `.00686480847114155/.010514453175708578`。第37节没有auxiliary weight或optimizer，不继承任一旧seal。
+  `.00686480847114155/.010514453175708578`。第38节没有auxiliary weight或optimizer，不继承任一旧seal。
 - formal训练root为
   `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在
   `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809/analysis.json`。

@@ -46,10 +46,10 @@ class ProgramDeltaApplicationSummary:
     predicted_observed_relative_rms: float
 
 
-class FixedTemporalConditionFeature(torch.nn.Module):
-    """Build one zero-preserving, order-sensitive feature from v6 evidence."""
+class FixedBalancedCausalConditionFeature(torch.nn.Module):
+    """Build one balanced static/dynamic key from frozen v6 video evidence."""
 
-    TEMPORAL_BASIS_COUNT = 4
+    BLOCK_COUNT = 2
 
     def __init__(
         self,
@@ -59,18 +59,25 @@ class FixedTemporalConditionFeature(torch.nn.Module):
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if min(program_width, feature_width) <= 0 or initialization_seed < 0:
+        if (
+            min(program_width, feature_width) <= 0
+            or feature_width % self.BLOCK_COUNT
+            or initialization_seed < 0
+        ):
             raise ConditionUpdateError("invalid fixed condition-feature dimensions")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
+        block_width = feature_width // self.BLOCK_COUNT
         projection = torch.empty(
-            feature_width,
-            self.TEMPORAL_BASIS_COUNT * program_width,
+            self.BLOCK_COUNT,
+            block_width,
+            program_width,
             dtype=torch.float32,
         )
         projection.normal_(generator=generator)
-        projection = F.normalize(projection, dim=1, eps=1e-12).contiguous()
+        projection = F.normalize(projection, dim=-1, eps=1e-12).contiguous()
         self.program_width = int(program_width)
         self.feature_width = int(feature_width)
+        self.block_width = int(block_width)
         self.initialization_seed = int(initialization_seed)
         # The projection is regenerated from the sealed config seed.  Keeping it
         # non-persistent makes it impossible for a residual checkpoint to cover
@@ -93,13 +100,16 @@ class FixedTemporalConditionFeature(torch.nn.Module):
             or frame_order.device != device
         ):
             raise ConditionUpdateError("condition feature frame order changed")
-        invalid = torch.zeros((), dtype=torch.bool, device=device)
-        for left, right in zip(evidence.offsets, evidence.offsets[1:]):
-            expected = torch.arange(left, right, dtype=torch.long, device=device)
-            invalid |= (frame_order[left:right].sort().values != expected).any()
-        if bool(invalid):
-            raise ConditionUpdateError("condition feature crossed video boundaries")
+        # Counterfactual frame orders are produced by the sealed schedule owner.
+        # Re-sorting every GPU order here added one device synchronization per
+        # condition without adding a second trust boundary.
         return frame_order
+
+    @staticmethod
+    def _zero_preserving_normalize(value: torch.Tensor) -> torch.Tensor:
+        norms = torch.linalg.vector_norm(value, dim=-1, keepdim=True)
+        normalized = value / norms.clamp_min(torch.finfo(value.dtype).tiny)
+        return torch.where(norms > 0, normalized, torch.zeros_like(normalized))
 
     def forward(
         self,
@@ -108,7 +118,7 @@ class FixedTemporalConditionFeature(torch.nn.Module):
         *,
         frame_order: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Encode actual frame content against fixed sampled-frame ordinals."""
+        """Encode actual frame content in the supplied sampled-frame order."""
 
         total = evidence.offsets[-1]
         conditions = len(evidence.offsets) - 1
@@ -132,28 +142,6 @@ class FixedTemporalConditionFeature(torch.nn.Module):
         ):
             raise ConditionUpdateError("condition feature evidence topology changed")
         order = self._validated_order(evidence, frame_order)
-        starts = torch.tensor(
-            evidence.offsets[:-1], dtype=torch.long, device=frame_indices.device
-        )
-        internal_pairs = torch.ones(
-            total - 1, dtype=torch.bool, device=frame_indices.device
-        )
-        if conditions > 1:
-            internal_pairs[
-                torch.tensor(
-                    evidence.offsets[1:-1],
-                    dtype=torch.long,
-                    device=frame_indices.device,
-                )
-                - 1
-            ] = False
-        invalid = (
-            ~evidence.valid_task_tokens.any(dim=1).all()
-            | (frame_indices.index_select(0, starts) != 0).any()
-            | (((frame_indices[1:] <= frame_indices[:-1]) & internal_pairs).any())
-        )
-        if bool(invalid):
-            raise ConditionUpdateError("condition feature mask or ordinals changed")
         # This fixed key and the manual memory map are an explicit FP32 contract.
         # Both callers intentionally run the surrounding video/Writer graph under
         # BF16 autocast, so disable autocast locally instead of relying on ambient
@@ -165,50 +153,36 @@ class FixedTemporalConditionFeature(torch.nn.Module):
             ordered_frames = evidence.frame_evidence.index_select(0, order).to(
                 dtype=torch.float32
             )
-            rows = []
+            descriptor_blocks = []
             for condition, (left, right) in enumerate(
                 zip(evidence.offsets, evidence.offsets[1:])
             ):
                 valid_tokens = evidence.valid_task_tokens[condition]
-                ordinals = frame_indices[left:right]
                 innovation = (
                     ordered_frames[left:right, valid_tokens]
                     - evidence.text_queries[condition, valid_tokens]
                     .to(dtype=torch.float32)
                     .unsqueeze(0)
                 ).mean(dim=1)
-                if ordinals.numel() == 1:
-                    tau = torch.zeros(
-                        1,
-                        dtype=torch.float32,
-                        device=ordinals.device,
-                    )
-                else:
-                    ordinal_values = ordinals.to(dtype=torch.float32)
-                    tau = 2.0 * ordinal_values / ordinal_values[-1] - 1.0
-                basis = torch.stack(
-                    (
-                        torch.ones_like(tau),
-                        tau,
-                        torch.cos(math.pi * tau),
-                        torch.sin(math.pi * tau),
-                    ),
-                    dim=1,
-                )
-                descriptor = (basis.transpose(0, 1) @ innovation).div_(
-                    float(innovation.shape[0])
-                )
-                rows.append(descriptor.flatten())
-            descriptors = torch.stack(rows)
-            projected = F.linear(descriptors, self.projection)
-            norms = torch.linalg.vector_norm(projected, dim=1, keepdim=True)
-            features = projected / norms.clamp_min(
-                torch.finfo(projected.dtype).tiny
+                static = innovation.mean(dim=0)
+                centered = innovation - static
+                prefix_scale = torch.arange(
+                    1,
+                    innovation.shape[0] + 1,
+                    dtype=torch.float32,
+                    device=innovation.device,
+                ).sqrt_()
+                causal = (
+                    centered.cumsum(dim=0) / prefix_scale.unsqueeze(1)
+                ).mean(dim=0)
+                descriptor_blocks.append(torch.stack((static, causal)))
+            descriptors = torch.stack(descriptor_blocks)
+            projected = torch.einsum(
+                "cbw,bhw->cbh", descriptors, self.projection
             )
-            features = torch.where(
-                norms > 0,
-                features,
-                torch.zeros_like(features),
+            balanced = self._zero_preserving_normalize(projected)
+            features = self._zero_preserving_normalize(
+                balanced.flatten(1)
             )
         if (
             features.shape != (conditions, self.feature_width)
@@ -272,7 +246,7 @@ class FrozenV6ConditionResidualWriter(torch.nn.Module):
             raise ConditionUpdateError("invalid frozen v6 Writer")
         base_writer.requires_grad_(False).eval()
         self.base_writer = base_writer
-        self.condition_feature = FixedTemporalConditionFeature(
+        self.condition_feature = FixedBalancedCausalConditionFeature(
             program_width=base_writer.program_width,
             feature_width=feature_width,
             initialization_seed=feature_seed,

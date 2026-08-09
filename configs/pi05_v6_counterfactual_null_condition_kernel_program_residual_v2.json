@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1",
-  "status": "active_implementation_awaiting_cpu_and_live_a40_profile",
+  "schema_version": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2",
+  "status": "active_implementation_cpu_sealed_awaiting_live_a40_profile",
   "method": {
     "name": "frozen_v6_counterfactual_null_condition_kernel_program_residual",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -60,7 +60,7 @@
     "test_actions_read": 0
   },
   "writer": {
-    "architecture": "frozen_pi05_v6_plus_video_keyed_program_residual_v1",
+    "architecture": "frozen_pi05_v6_plus_video_keyed_program_residual_v2",
     "base_architecture": "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6",
     "frame_stride": 5,
     "max_frames_per_encoder_call": 32,
@@ -86,21 +86,23 @@
     "all_600_state_tensors_frozen": true
   },
   "condition_feature": {
-    "kind": "zero_preserving_temporal_visual_innovation_jl_v1",
+    "kind": "zero_preserving_balanced_static_causal_visual_innovation_jl_v2",
     "input": "mean_valid_task_tokens_frame_evidence_minus_text_queries",
-    "temporal_basis": [
-      "one",
-      "tau",
-      "cos_pi_tau",
-      "sin_pi_tau"
-    ],
-    "tau_range": [-1.0, 1.0],
-    "descriptor_width": 1024,
+    "static_block": "video_dc_mean_visual_innovation",
+    "dynamic_block": "uniform_pool_sqrt_normalized_causal_prefix_of_video_centered_innovation",
+    "descriptor_width": 512,
+    "descriptor_block_width": 256,
     "feature_width": 256,
     "projection_seed": 20260810,
-    "projection": "fixed_no_bias_row_normalized_fp32_nonpersistent",
-    "normalization": "zero_preserving_l2",
-    "frame_content_reordered_but_display_ordinals_fixed": true
+    "projection_shape": [
+      2,
+      128,
+      256
+    ],
+    "projection": "two_fixed_no_bias_row_normalized_fp32_nonpersistent_blocks",
+    "block_normalization": "independent_zero_preserving_l2",
+    "fusion": "concatenate_then_zero_preserving_l2",
+    "frame_content_reordered_before_dynamic_block": true
   },
   "program_residual": {
     "program_slots": 320,

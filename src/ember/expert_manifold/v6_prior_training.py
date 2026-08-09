@@ -400,13 +400,6 @@ def _apply_macro_update(
         relative_damping=float(runtime.config["update"]["relative_damping"]),
     )
     full_features = torch.cat((correct, negative), dim=0)
-    before = (
-        cotangents.new_zeros(
-            full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
-        )
-        if profile
-        else None
-    )
     apply_program_residual_delta_(runtime.writer.program_memory, delta)
     if not profile:
         return update, None, None, None, None, None, None
@@ -416,8 +409,11 @@ def _apply_macro_update(
     )
     torch.cuda.synchronize(runtime.context.device)
     verification_started = time.monotonic()
-    if before is None:
-        raise ExpertManifoldError("mechanism profile lost its memory before-read")
+    # The mechanism profile is fresh-only, so its pre-write residual is exact
+    # zero.  Allocate this verification-only tensor outside production timing.
+    before = cotangents.new_zeros(
+        full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
+    )
     full_motion = torch.matmul(
         full_features.to(dtype=torch.float32), delta.flatten(1)
     ).reshape_as(before)
@@ -511,8 +507,8 @@ def _run_one_macro(
 ) -> dict[str, Any]:
     profile = runtime.args.mode == "mechanism-profile"
     schedule_macro = runtime.segment.schedule_origin + macro
-    step_started = time.monotonic()
     versions_before = _base_versions(runtime) if profile else ()
+    step_started = time.monotonic()
     local, input_wait = _collect_local_objectives(runtime, schedule_macro)
     update_evidence = _apply_macro_update(
         runtime, local, profile=profile, step_started=step_started

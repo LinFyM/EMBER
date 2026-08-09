@@ -403,7 +403,9 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
     ownership = V6PriorOwnership(10_775_296, 523, 600)
     writer = SimpleNamespace(
         condition_feature=SimpleNamespace(
-            projection=torch.empty((256, 1024), dtype=torch.float32, device="meta")
+            projection=torch.empty(
+                (2, 128, 256), dtype=torch.float32, device="meta"
+            )
         ),
         program_memory=SimpleNamespace(
             value=torch.empty((256, 320, 256), dtype=torch.float32, device="meta")

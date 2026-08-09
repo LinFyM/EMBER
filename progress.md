@@ -1,5 +1,38 @@
 # EMBER Progress Ledger
 
+## v1机制profile裁决与Balanced DC--Causal v2 CPU seal（2026-08-10）
+
+- clean pushed/frozen`6903ee6`只在live空闲`gpu02:0--5`完成一次第37节v1 macro49 mechanism profile；
+  root=`runs/outputs/pi05_v6_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_6903ee6_20260810`，
+  launcher自然exit0且按设计不保存checkpoint。0 OOM/nonfinite/negative policy forward，六卡退出后均回到
+  0MiB，GPU6/7上的他人进程未触碰。
+- 13项门中10项通过：feature rank48、correct motion/cotangent=`.807966`、24/24 correct retention、
+  application closure relative RMS=`0`、A/B response RMS=`1.27385e-5/1.26956e-5`、四suite fixed-action
+  response=`4/4`。这证明显式kernel、frozen-v6 decoder和Program→完整LoRA→action路径工作，未发现
+  full48 gather/order/sign/solve的工程错误。
+- 正式non-pass来自旧key几何：regularized Gram condition=`1315.33`、negative/correct=`.264351>.25`、
+  task-local null=`15/24<18/24`；shuffled/reversed/wrong feature cosine mean=`.98552/.95645/.90627`，
+  各自null过门=`2/8,6/8,7/8`。paired ridge解析leakage与实测相关`.99021`，最难shuffled距离`.07777`
+  要求至少约`12.86x`差分放大，因此不训练v1、不扫lambda/seed/P/threshold。
+- production=`23.530704s`、相对sealed baseline ratio=`1.115458>1.10`按预注册保留non-pass；但超门仅
+  `.326083s`，小于跨host input-wait差`.633711s`，不能扩大成稳定结构慢化，也不为它单独重跑或降低
+  batch/dtype/并行度。
+- 历史phase16证据显示DC能量占`.98057`，而centered sqrt-causal-prefix对correct/reversed/shuffled
+  template cosine=`.96263/-.94287/-.04463`。据此只把canonical key原位升级为第38节v2：video-DC
+  static与centered causal dynamic分别fixed-JL到128、各自zero-L2后拼成P256；historical v6的600 tensors、
+  `[256,320,256]` memory、full48、`.01` damping、step1、B20/B10+10和0 negative forward均不变。
+- v2同时移除per-condition GPU sort/mask scalar同步，并把profile-only bookkeeping和约15MiB zero allocation
+  移出production timer；没有牺牲科学batch、dtype或底层精度。v1 executable config/code从active tree退役，
+  Git和无checkpoint profile artifact保留；v2 schema/checkpoint fresh-incompatible。
+- CPU回归新增同static、反dynamic两帧反例，natural/reversed unit keys内积为0；聚焦`52 passed`，加载
+  `.env.local`和LIBERO assets后的最终全仓为`281 passed in 21.34s`。compileall、26份JSON和diff-check通过；
+  architecture guard相对`6903ee6`为`+144/-126`、净增18行且0 hard violation，1243行legacy contract未增长。当前仍
+  没有v2 GPU、训练、rollout或strict成绩；下一步是clean commit/push并从新frozen worktree做一次
+  live-preflight后的v2 mechanism profile。
+- 提交前独立只读审查未发现数学、shape、zero-preserving或hot-path阻断；补充锁定了训练时`frame_order`
+  重排与部署时物理重排evidence的key等价，并把正式analysis family从已退役的`v1`标签改成`v2`。AGENTS、
+  README、design顶部和三份长期概念文档的旧“当前”表述同步纠正，历史正文仍保留为证据而不能恢复执行。
+
 ## 第37节canonical实现与CPU seal完成（2026-08-10，尚未启动GPU）
 
 - 已在唯一active path完成Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：frozen v6

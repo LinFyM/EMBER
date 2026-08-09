@@ -21,10 +21,15 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   两baseline，远未过`18/24+3/4` teacher门。gradient residual在compiler/factor为`.6864/.8387`虽非冗余，
   但方向来自整体更差teacher，因此`authorize_cefd=false`，不得实现CEFD或做weight profile。
 - audit完整覆盖480/480 queries、144次policy forwards、0 update/rollout/OOM/nonfinite，wall=`39.698s`；
-  一次性mode已由config切为formal non-pass并fail-closed，代码在结果封存后按第36节触发退役。当前唯一下一
-  设计方向是保留historical v6高增益video→Program→LoRA图，在frozen fused Program输出上增加zero-init、
-  video-keyed structured residual，以显式condition kernel约束正确/反事实条件的函数空间更新；正式design、
-  CPU门和profile尚未完成，当前没有可启动的训练候选。
+  一次性mode/config/code已formal non-pass后退役。第37节Frozen-v6 Counterfactual-Null Program Residual v1
+  随后从clean frozen`6903ee6`完成唯一macro49 profile：13项门中10项通过，correct retention=`.807966`
+  且24/24，但旧DC-dominated key使condition=`1315.33`、negative/correct=`.264351`、null仅15/24；
+  production ratio=`1.115458`。因此v1不训练、不降lambda、不扫seed/P/阈值。
+- 当前唯一active implementation是第38节Balanced DC--Causal v2：historical v6的600 tensors、
+  `[256,320,256]` Program memory、full48、`.01` damping、B20/B10+10和0 negative policy forward不变；
+  只把video-DC static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。
+  v2已完成CPU seal但尚无A40、训练、rollout或strict结果；formal与deployment evaluation继续被live
+  mechanism/profile artifact硬阻塞。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -107,13 +112,14 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前没有可继续训练的active Writer。historical v6-fast macro400仍是下一候选唯一允许的load-only
-初始化；audit已经否决CEFD，step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入新
-residual update。拟议structured candidate必须冻结historical v6整套600 tensors，在其condition-local
-fused Program后加zero-init residual；跨condition共享只由固定action-hidden video key的显式Gram控制。
-旧Tangent/ECP optimizer、scheduler、sampler、RNG和checkpoint不得加载或冒充exact resume。
+当前唯一active Writer是第38节Balanced DC--Causal frozen-v6 Program Residual，但在live macro49 mechanism
+profile封印前**不可训练**。historical v6-fast macro400是唯一允许的load-only初始化；audit已经否决CEFD，
+step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入residual update。活动实现严格冻结
+historical v6整套600 tensors，在condition-local fused Program后加zero-init residual；跨condition共享只由
+固定action-hidden video key的显式Gram控制。旧v1/Tangent/ECP optimizer、scheduler、sampler、RNG和
+checkpoint不得加载或冒充exact resume。
 
-下一候选设计继续保持：
+当前v2继续保持：
 
 - train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
   跨episode独立action queries；先task内mean，再24-task等权并一次flat all-reduce。

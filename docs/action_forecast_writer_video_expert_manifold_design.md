@@ -3,10 +3,11 @@
 状态：本文件是Video-Conditioned Expert-Manifold总路线的当前设计authority。第1--32节记录从
 identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
 Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。第36节matched Expert-Flow Teacher
-Audit已正式证明expert flow teacher在`2/24` tasks、`0/4` suites过门并否决CEFD；2026-08-10唯一活动设计
-是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual。其canonical实现、旧audit路径
-退役、checkpoint/deployment/evaluator联锁和CPU seal已经完成；当前尚未启动该方法的A40 profile、训练或
-rollout。K4、online expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
+Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门并否决CEFD；第37节v1又由唯一
+macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动设计是第38节Balanced
+DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
+当前尚无v2 A40 profile、训练或rollout。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
+负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -17,7 +18,7 @@ matched text/no-image baseline的视频innovation。该innovation保留时序轴
 
 第1--32节的历史根本变化，是先训练24套task experts再让Writer从language+action-hidden video重建
 policy-effective LoRA；该路线建立了expert evidence，但其whole-LoRA/ECP/Tangent/flow-teacher用法现均已
-由正式结果退役。**当前第37节不重建或读取task expert**：它冻结historical v6，以correct train24 action
+由正式结果退役。**当前第38节不重建或读取task expert**：它冻结historical v6，以correct train24 action
 functional cotangent和action-free counterfactual-null rows直接更新video-keyed Program memory。Writer仍不
 读取teacher action，validation/test actions始终不得读取；task experts只保留为历史policy-effective参照。
 
@@ -2237,3 +2238,97 @@ profile通过后从zero memory fresh到macro10并立即跑完整strict correct40
 若Program motion、LoRA/action传递和counterfactual-null均成立而closed-loop不升，则“ground-truth pointwise
 functional cotangent即使被正确输运也不足”获得直接证据；下一步才转同一Program memory上的真实reward
 credit，而不是再换rank、能量、expert几何或condition router。
+
+### 37.7 v1 mechanism profile正式non-pass（2026-08-10）
+
+clean pushed/frozen `6903ee6`在`gpu02:0--5`完成唯一一次macro49 profile；root=
+`runs/outputs/pi05_v6_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_6903ee6_20260810`。
+六卡均为A40且按physical/local rank绑定GPU-local NUMA，`NCCL_P2P_DISABLE=1`、Ring/Simple和deferred
+process group均由run contract实证。运行自然exit，0 OOM/nonfinite、0 negative policy forward，退出后六卡
+均回到0MiB；root只有contract、invocation、profile和completion，没有checkpoint或retained weight。
+
+13项门中10项通过。强正机制证据为：full48 feature rank=`48`，correct motion/cotangent aggregate=
+`.807966`且`24/24` task过retention；predicted/observed application relative RMS=`0`；A/B response RMS=
+`1.27385e-5/1.26956e-5`；四suite fixed-action probe=`4/4`且response RMS=`.00121293`。因此frozen-v6
+Program→完整LoRA→action路径、显式update符号、full48 gather/order和FP32 memory write都成立，未发现工程bug。
+
+non-pass集中在condition key几何。regularized Gram condition=`1315.33`；aggregate negative/correct motion=
+`.264351>.25`，task-local null仅`15/24<18/24`。按negative类型的feature cosine mean、motion leakage mean和
+过门数分别为：shuffled=`.98552/.38347/2-of-8`、reversed=`.95645/.20054/6-of-8`、wrong=
+`.90627/.12898/7-of-8`。全部9个失败row的paired cosine均`>=.97099`，所有`<.97`的row均通过。单位
+pair在ridge `.01`下的解析leakage为`rho*.01/(1.01-rho^2)`；它对24条实测leakage的相关为`.99021`，
+所以失败不是finite-rank、Cholesky、sign或分布式误差，而是四时间矩里的DC块让correct与尤其shuffle几乎
+重合。最难pair距离仅`.07777`，任何线性memory要分出`[g,0]`都必须放大至少约`12.86x`。
+
+生产wall=`22.493528+1.037176=23.530704s`，相对sealed baseline ratio=`1.115458>1.10`，按原门
+保留为non-pass，不事后扣除I/O。它只超允许上限`.326083s`，而本次input wait比跨host baseline高
+`.633711s`；去wait诊断约`1.086`，所以不能写成确定的结构性慢化，也不为此单独重跑。verification
+`.770155s`已正确排除。v2只清除每condition重复GPU sort/mask同步，并把profile-only version bookkeeping与
+15MiB zero tensor移出生产计时；不降B20/B10、不开BF16大memory、不改FP64小矩阵合同。
+
+降低lambda虽可让当前48 rows机械插值，但最难pair要到约`.002`才可能过门，并把差分方向放大从约`3x`
+推到约`7.8x`，增加held视频噪声与漂移风险。hard nullspace、SVD或negative reweight同样不能创造缺失的
+顺序区分信息。故v1正式退役：不训、不扫lambda/seed/P/threshold；Git和上述artifact保留完整证据。
+
+## 38. Balanced DC–Causal Condition Key v2
+
+### 38.1 单变量与历史依据
+
+显式condition kernel与frozen-v6高增益decoder尚未被否定；被否定的是“未平衡四时间矩JL足以区分正确与
+顺序反事实”。v2只替换fixed condition feature，继续冻结historical v6全部600 tensors，保持P256
+zero-init Program memory、full48 update、`lambda=.01`、step size1、B20/B10+10、8/8/8 negative schedule、
+0 negative policy forward和全部closed-loop门不变。
+
+这个修正直接复用第19节已有证据，不是新猜测：phase16 cache的DC能量中位`.98057`，而phase-centered
+sqrt-normalized causal-prefix虽然能量小，same-task template correct/reversed/shuffled cosine为
+`.96263/-.94287/-.04463`。纯causal key仍不适合线性memory：若reverse接近`-correct`，同一个线性M也
+无法稳健实现`correct→g, reverse→0`。因此必须同时保留一个video-only affine anchor，并把static/dynamic
+能量显式平衡。
+
+### 38.2 唯一部署key
+
+对每条视频已经得到的逐帧visual innovation：
+
+```text
+x_t = mean_valid_task_tokens(frame_evidence_t - text_queries)
+s   = mean_t x_t
+z_t = x_t - s
+p_t = sum_{u<=t} z_u / sqrt(t+1)
+d   = mean_t p_t
+
+u_s = ZeroL2(W_s s)       W_s in R^[128,256]
+u_d = ZeroL2(W_d d)       W_d in R^[128,256]
+phi = ZeroL2(concat(u_s, u_d)) in R^256
+```
+
+`W_s/W_d`由同一fixed seed一次生成，组成一个nonpersistent FP32 buffer`[2,128,256]`，逐row归一、无bias、
+不训练、不进checkpoint。两个非零block各自单位化后在最终key中等能；不再让真实DC约50倍能量支配角度，
+也不做会把单一高频放大约140倍的逐频归一。causal-prefix固定绑定真实sampled-frame顺序；reverse/shuffle先
+重排frame content再重算`z,p,d`，wrong video仍在目标exact language下完整重算evidence。
+
+zero/no-video innovation使`s=d=phi=0`，所以memory read精确零，不能形成language-only LoRA。static block
+也不是可独立拟合target的旁路：same-frame-set reverse/shuffle与correct共享完全相同`s`，但full48 RHS分别
+为`g/0`，任何只读`s`的memory都无法满足约束，必须利用causal block分解；frozen base `S0(c)`仍保留原v6
+完整Core/Procedure与高层task语义。same-task其它正确视频则预期同时共享稳定`s`与相近`d`，不会用纯随机
+正交化牺牲鲁棒性。
+
+按历史proxy的等能组合只作预注册机制预测：correct-vs-reverse cosine约
+`(1-.94287)/2=.0286`，correct-vs-shuffle约`(1-.04463)/2=.4777`；对应孤立pair在`.01`下的leakage约
+`.0003/.0061`，远低于v1 shuffled `.2544`的解析值。真实v6 evidence的判据仍只认一次新的macro49 raw
+profile：原13项门全部不变；诊断上预期condition显著低于`1315`、aggregate negative/correct`<=.15`、
+null至少`21/24`且每类至少`6/8`，但这些更强预测不替代既有pass门，也不按结果调seed或归一化。
+
+### 38.3 生命周期与下一裁决
+
+canonical config/schema/checkpoint family升级到v2；v1 config和旧feature实现从active tree删除，历史run由
+frozen commit读取。`writer/condition_update.py`仍是唯一feature/kernel/memory owner，不增加module、runner、
+mode或并行Writer；projection从约1MiB减到约256KiB，PI05 forward数不变。
+
+CPU需新增一个严格反例：两帧具有相同static、相反centered dynamics时，natural/reversed key均unit且内积
+为0，证明等能anchor打破`+/-`共线；原zero/order/kernel/application/A/B/checkpoint tests继续通过。之后只在
+clean pushed frozen commit、live空闲卡和quota通过时做一次v2 macro49 profile，优先使用sealed baseline同一
+`gpu01:0,1,2,4,5,7` panel以减少跨host噪声；若任一卡不空闲则等待或重新选合法空闲panel，不干扰他人。
+
+v2 profile不过则按最早失败接口裁决，不调lambda/seed/P或阈值；全部13门通过后才做新deployment graph的
+batch8/16/32吞吐seal、macro0 strict400和fresh0→10。后续strict门与37.6完全相同，最终仍只以同一single
+checkpoint的absolute、breadth、低漂移及correct/same/wrong/shuffled/reversed/no-video六臂裁决EMBER性能。

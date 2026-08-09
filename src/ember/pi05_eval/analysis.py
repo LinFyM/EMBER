@@ -39,7 +39,7 @@ CHECKPOINT_MACROS = (0, 10, 25, 50)
 HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_ecp_v2": (10, 25, 50),
     "v6_tangent_tube_v3": (10, 25, 50),
-    "v6_condition_residual_v1": (10, 25, 50),
+    "v6_condition_residual_v2": (10, 25, 50),
 }
 SIX_ARM_CONDITIONS = (
     "correct",
@@ -81,11 +81,11 @@ WRITER_FAMILIES = {
             "sealed_from_unchanged_v6_deployment_graph",
         ),
     },
-    "v6_condition_residual_v1": {
+    "v6_condition_residual_v2": {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
         "config_schema": (
-            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1"
+            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2"
         ),
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
@@ -256,7 +256,7 @@ def _validate_episode_evidence(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_demo_offset": SAME_TASK_OTHER_OFFSET if same else None,
     }
-    if family_name == "v6_condition_residual_v1":
+    if family_name == "v6_condition_residual_v2":
         expected.update(
             {
                 "writer_parameter_count": int(asset["writer_parameter_count"]),

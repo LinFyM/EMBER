@@ -1,5 +1,42 @@
 # EMBER Findings
 
+## v1 mechanism non-pass与Balanced DC--Causal key裁决（2026-08-10）
+
+- clean pushed/frozen`6903ee6`的唯一macro49 root=
+  `runs/outputs/pi05_v6_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_6903ee6_20260810`自然
+  exit，0 OOM/nonfinite/negative policy forward且没有checkpoint。13门中10门通过：full48 rank48、
+  correct motion/cotangent=`.807966`、24/24 correct retention、application closure relative RMS=`0`、
+  A/B response RMS=`1.27385e-5/1.26956e-5`及4/4 suite fixed-action response=`.00121293`。所以显式
+  kernel、frozen-v6 decoder与Program→完整LoRA→action路径已经真实工作。
+- 唯一科学non-pass是feature geometry：regularized Gram condition=`1315.33`、aggregate negative/correct=
+  `.264351>.25`、task-local null=`15/24<18/24`。shuffled/reversed/wrong的feature cosine mean=
+  `.98552/.95645/.90627`，leakage mean=`.38347/.20054/.12898`，过门=`2/8,6/8,7/8`。全部9个失败
+  rows cosine均`>=.97099`；pairwise ridge解析leakage对实测Pearson=`.99021`、MAE=`.06044`。这排除
+  gather/order/sign/FP64 solve bug，定位到旧`[1,tau,cos,sin]` descriptor的DC块压倒时序块。
+- 最难shuffled pair距离`.07777`，任何线性memory要区分`[g,0]`至少放大约`12.86x`。把lambda从`.01`
+  降到约`.002`虽可能机械过门，却把差分方向放大从约`3.0x`推到`7.8x`并增加held视频噪声与task漂移；
+  hard-null/SVD/reweight也不能创造顺序信息。因此不训练v1、不扫lambda/seed/P/threshold。
+- production=`23.530704s`、ratio=`1.115458>1.10`按预注册保留non-pass；但只超允许上限`.326083s`，
+  跨host input-wait差却为`.633711s`，去wait诊断ratio约`1.086`。所以吞吐证据不支持“稳定慢化”，也不
+  允许事后改门或单独重跑。v2移除每condition GPU sort/mask同步并把profile-only bookkeeping/zero allocation
+  移出production timer，不降B20/B10、dtype或并行度。
+- 历史phase16 cache已给出直接修正依据：DC能量占`.98057`，而phase-centered sqrt-causal-prefix的
+  correct/reversed/shuffled template cosine=`.96263/-.94287/-.04463`。纯causal在reverse时又可能接近
+  `-correct`，同一线性M仍难拟合`[g,0]`；当前v2因此把video-DC static与causal dynamic分别fixed-JL到128、
+  各自zero-L2后拼成P256。按历史proxy组合，reverse/shuffle cosine预计约`.0286/.4777`，孤立leakage约
+  `.0003/.0061`；真实结论仍只取新macro49 profile。
+- static block不是language bypass：它来自`frame_evidence-text_queries`，zero/no-video时为0；同frame-set
+  reverse/shuffle又与correct共享static但RHS为`g/0`，纯static memory无法满足full48。frozen `S0(c)`继续
+  提供原v6完整Core/Procedure。v2保持memory、full48、`.01` damping、step1、B20/B10+10和0 negative
+  policy forward完全不变，只替换最早失败key。
+- v1 config/code从active tree退役、Git/artifact保留；v2 schema/checkpoint fresh-incompatible。CPU同static/
+  反dynamic两帧反例得到natural/reversed unit keys内积0；聚焦`52 passed`、带LIBERO assets全仓
+  `281 passed in 21.34s`。这些不构成v2 GPU或closed-loop成绩。
+- 独立只读接线审查未发现v2数学或热路径阻断；上游schedule owner已保证frame permutation不跨video，
+  所以删除重复GPU sort/mask同步成立。新增单测进一步证明feature-level `frame_order`与物理重排evidence
+  生成完全相同key；正式evaluation family同步升级为`v6_condition_residual_v2`，避免未来artifact自报为
+  已退役v1。独立block L2可能把很小但非零的dynamic提高到半数key能量，仍是same-video稳定性的待实证风险。
+
 ## 第37节Counterfactual-Null Program Residual实现与CPU裁决（2026-08-10）
 
 - 当前实现不是又一套fresh Writer：它strict load historical v6-fast macro400的600 tensors/

@@ -1,5 +1,11 @@
 # EMBER Concept
 
+状态说明（2026-08-10）：本文保留长期问题定义和信息面；正文中把v5/v5.1写作“当前”的段落是历史设计
+快照，不是执行authority。当前唯一active implementation是
+`docs/action_forecast_writer_video_expert_manifold_design.md`第38节Balanced DC--Causal frozen-v6
+Program Residual v2；实时状态和下一动作只取`AGENTS.md`、`docs/active_session_handoff.md`与
+`docs/execution_brief.md`顶部。
+
 ## 一句话定义
 
 ```text
@@ -39,7 +45,7 @@ wrong-video语义效应也能成立，但若下游用additive refiner把两者�
 Procedure的顺序差可能被压到行为无效。step1400五臂
 `115/108/74/113/114`封存了这个失败。
 
-当前v5.1仍把视频理解分成Semantic Core与Causal Procedure，但重新定义上游
+历史v5.1把视频理解分成Semantic Core与Causal Procedure，但重新定义上游
 语义轴和融合：
 
 - text-only Gemma对纯任务token产生video-independent contextual queries；

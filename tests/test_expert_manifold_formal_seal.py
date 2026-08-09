@@ -109,7 +109,7 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "deployment_owned": True,
         },
         "fixed_projection": {
-            "shape": [256, 1024],
+            "shape": [2, 128, 256],
             "dtype": "torch.float32",
             "trainable": False,
             "persistent": False,

@@ -1,8 +1,13 @@
 # Novelty and Baseline Landscape
 
-## 2026-08-06 当前layer-aligned hypernetwork定位
+状态说明（2026-08-10）：下方2026-08-06 layer-aligned hypernetwork、K4和v5.1文字是历史定位，
+不是活动方法。当前唯一active implementation是Expert-Manifold总设计第38节Balanced DC--Causal
+frozen-v6 Program Residual v2；其机制与性能尚待live A40 profile/strict closed-loop裁决。实时状态只取
+`AGENTS.md`、`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。
 
-当前活动Writer保持exact task language + K4 action-hidden videos联合生成一套LoRA。它借鉴
+## 2026-08-06 历史layer-aligned hypernetwork定位
+
+当时活动Writer保持exact task language + K4 action-hidden videos联合生成一套LoRA。它借鉴
 SHINE从冻结backbone全部layer memory进行layer/token交替M2P，以及Doc-to-LoRA显式组织
 layer/module/rank输出的原则，但不复制document reconstruction、文本任务或监督专用loss。
 EMBER的差异在于：输入仍是机器人teacher videos，video trace来自冻结PI05 action expert的
@@ -30,7 +35,7 @@ cotangent，未来可原样替换为rollout reward credit。
 v5已证明wrong-video语义效应可以成立，但其additive fusion把Procedure顺序差
 压到行为无效；step1400五臂`115/108/74/113/114`因此封存为负结果。
 
-当前唯一活动Writer是v5.1 Language-Axial Semantic Core + Causal Action
+当时唯一活动Writer是v5.1 Language-Axial Semantic Core + Causal Action
 Procedure + Slot-Normalized Fusion。它不把action-hidden teacher video强行
 解释成与独立机器人episode逐时刻对齐的7D future-action trajectory，而是把
 单条视频分解为两种互补证据：

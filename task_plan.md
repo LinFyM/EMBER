@@ -167,13 +167,24 @@ formal artifacts保存。
   artifact gate现从raw macro重算profile并绑定完整科学run，formal result必须绑定completion/50-row metrics/
   macro10/25/50 manifests，deployment checkpoint必须位于active authority lineage；compileall、diff-check与
   全仓`280 passed`完成，architecture guard无hard violation。
-- [ ] live双节点/quota preflight后用最多6张空闲A40做一次macro49 profile：不增加PI05 forward、不降低
+- [x] clean pushed/frozen`6903ee6`完成第37节v1唯一macro49 profile：10/13门通过，correct retention=
+  `.807966`且24/24、A/B/action/closure均成立；但condition=`1315.33`、negative/correct=`.264351`、
+  null仅15/24，shuffled feature cosine mean `.98552`且只2/8过门。production ratio=`1.115458`也未过
+  1.10。按门不训练、不降lambda、不扫seed/P/threshold，v1由Git和无checkpoint artifact封存。
+- [x] 依据同profile和历史phase16 causal-prefix证据，只把canonical key原位升级为第38节v2：video-DC
+  static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256；frozen v6、memory、
+  full48、`.01` damping、B20/B10+10和0 negative forward全部不变。v1 config/code不留活动并行路径。
+- [x] v2 CPU门新增同static/反dynamic两帧反例，natural/reversed unit key内积0；聚焦`52 passed`、带
+  LIBERO assets最终全仓`281 passed in 21.34s`。projection降到`[2,128,256]`，并移除per-condition GPU
+  sort/mask同步、把profile-only bookkeeping/zero allocation移出production timer，不降精度或batch。
+- [ ] clean commit/push并从新frozen worktree、live双节点/quota preflight后，用最多6张空闲A40做一次v2
+  macro49 profile：不增加PI05 forward、不降低
   B10+10；production wall对sealed `21.095109596s` ratio`≤1.10`，至少18/24 task-local correct retention、
   18/24 negative null、4/4 suite-stratified fixed-action response、application closure和0 OOM/nonfinite。
   8次fixed-action verification forward不计入production wall且不读取target action；profile权重永久弃用。
 - [ ] mechanism profile过门并写回seal后，在一张实时空闲A40上对新residual deployment graph实测Writer
   batch8/16/32并完成correct smoke；只接受同目录run contract、v8 residual adapter和actual clean commit。
-- [ ] 两类profile均seal后先评测zero-memory macro0，再fresh0→10并立即strict correct400；按第37.6门决定
+- [ ] 两类profile均seal后先评测zero-memory macro0，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
   停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。

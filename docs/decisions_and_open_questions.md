@@ -1,5 +1,10 @@
 # Decisions and Open Questions
 
+状态说明（2026-08-10）：本文主体是早期v4/v5/v5.1决策账本；其中“当前唯一活动v5.1”、A100物理GPU4--7
+和旧profile/分段训练表述均已退役，不得恢复执行。当前唯一active implementation是Expert-Manifold总设计
+第38节Balanced DC--Causal v2；实时设备边界、方法状态和下一动作只取`AGENTS.md`、
+`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。未被新证据覆盖的数据/split/信息墙决定仍有效。
+
 ## 已拍板
 
 - 目标benchmark为LIBERO-Spatial/Object/Goal/Long；活动split为每suite 6 train / 2 validation / 2 test，总计24/8/8，final合并为32 source / 8 test。
@@ -27,7 +32,7 @@
   fixed400五臂为`115/108/74/113/114`；wrong-video通过，shuffle/reverse
   与correct等价。内部Procedure有强顺序差但下游融合衰减，故v5顺序硬门失败，
   不继续训练也不进入RL。
-- 当前唯一活动v5.1完整定义见
+- 当时活动v5.1完整定义见
   [`docs/action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)：
   text-only task queries、multimodal task-token evidence、token-aligned
   frame-set attention与language-axis Core；Action Expert causal Procedure；
@@ -37,8 +42,8 @@
   普通均值；后续task visit轮换video，推理严格one-shot。v5的F32/B20和
   900-step segment不继承；v5.1先重新profile，再按实测吞吐换算约一小时首段。
   第二/第三段必须由前一段特异性、absolute和曲线共同支持，不能自动续训。
-- frame stride固定为5，不再把stride 5/10作为待选变量；后续任何GPU工作只使用
-  物理GPU 4–7，0–3不进入visible set也不被干扰。
+- frame stride固定为5，不再把stride 5/10作为待选变量；A100 v5.1时期的GPU工作当时只使用
+  物理GPU 4–7。该旧设备边界已退役，BCI launch必须按当前authority实时比较`gpu01/gpu02`空闲A40。
 - 当前工程推进以效率优先：最短垂直切片通过必要的shape/gradient/
   identity/freeze/resume检查后立即真实profile/训练，不用广泛全仓校验、
   重复流程门槛或文档整理延迟GPU启动。

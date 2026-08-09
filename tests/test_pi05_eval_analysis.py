@@ -76,7 +76,7 @@ FAMILY_CONTRACTS = {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
         "config_schema": (
-            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1"
+            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2"
         ),
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
@@ -449,7 +449,7 @@ def test_checkpoint_curve_accepts_residual_memory_identity_changes_only() -> Non
     }
     assert (
         checkpoint_curve_analysis(residual)["method_family"]
-        == "v6_condition_residual_v1"
+        == "v6_condition_residual_v2"
     )
     residual["residual-25"]["adapter"]["writer_asset"]["residual_state"][
         "shape"
@@ -498,9 +498,9 @@ def test_residual_family_rejects_legacy_deployment_seal_and_missing_v8_state() -
         ("tangent", 10, "v6_tangent_tube_v3"),
         ("tangent", 25, "v6_tangent_tube_v3"),
         ("tangent", 50, "v6_tangent_tube_v3"),
-        ("residual", 10, "v6_condition_residual_v1"),
-        ("residual", 25, "v6_condition_residual_v1"),
-        ("residual", 50, "v6_condition_residual_v1"),
+        ("residual", 10, "v6_condition_residual_v2"),
+        ("residual", 25, "v6_condition_residual_v2"),
+        ("residual", 50, "v6_condition_residual_v2"),
     ),
 )
 def test_historical_transition_preserves_families_and_pairs_true_rows(

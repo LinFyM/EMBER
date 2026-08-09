@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 
 from ember.writer.condition_update import (
-    FixedTemporalConditionFeature,
+    FixedBalancedCausalConditionFeature,
     FrozenV6ConditionResidualWriter,
     ProgramResidualMemory,
     apply_program_residual_delta_with_evidence_,
@@ -44,9 +44,9 @@ def _evidence(frame_values: torch.Tensor, text: torch.Tensor) -> WriterVideoEvid
 
 
 def test_fixed_temporal_feature_is_zero_preserving_and_reads_real_order() -> None:
-    encoder = FixedTemporalConditionFeature(
+    encoder = FixedBalancedCausalConditionFeature(
         program_width=3,
-        feature_width=5,
+        feature_width=6,
         initialization_seed=17,
     )
     text = torch.tensor([[2.0, -1.0, 0.5], [1.0, 3.0, -2.0]])
@@ -75,23 +75,67 @@ def test_fixed_temporal_feature_is_zero_preserving_and_reads_real_order() -> Non
         indices,
         frame_order=torch.tensor([0, 2, 1, 3], dtype=torch.long),
     )
-    assert natural.shape == (1, 5)
+    physically_reversed = encoder(
+        _evidence(evidence.frame_evidence.flip(0), text), indices
+    )
+    physically_shuffled = encoder(
+        _evidence(evidence.frame_evidence[[0, 2, 1, 3]], text), indices
+    )
+    assert natural.shape == (1, 6)
     torch.testing.assert_close(
         natural.square().sum(dim=1), torch.ones(1), rtol=1e-6, atol=1e-6
     )
     assert not torch.equal(natural, reversed_feature)
     assert not torch.equal(natural, shuffled)
+    torch.testing.assert_close(reversed_feature, physically_reversed)
+    torch.testing.assert_close(shuffled, physically_shuffled)
     assert not tuple(encoder.parameters())
     with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
         autocast_feature = encoder(evidence, indices)
         memory = ProgramResidualMemory(
-            feature_width=5,
+            feature_width=6,
             program_slots=3,
             program_width=4,
         )
         autocast_read = memory(autocast_feature)
     assert autocast_feature.dtype == torch.float32
     assert autocast_read.dtype == torch.float32
+
+
+def test_balanced_causal_feature_breaks_static_reverse_collinearity() -> None:
+    encoder = FixedBalancedCausalConditionFeature(
+        program_width=3,
+        feature_width=6,
+        initialization_seed=17,
+    )
+    text = torch.zeros(1, 3)
+    static = torch.tensor([2.0, -1.0, 0.5])
+    dynamic = torch.tensor([0.25, 1.5, -0.75])
+    evidence = _evidence(
+        torch.stack((static + dynamic, static - dynamic))[:, None], text
+    )
+    indices = torch.tensor([0, 5], dtype=torch.long)
+    natural = encoder(evidence, indices)
+    reversed_feature = encoder(
+        evidence,
+        indices,
+        frame_order=torch.tensor([1, 0], dtype=torch.long),
+    )
+    torch.testing.assert_close(
+        natural.square().sum(dim=1), torch.ones(1), rtol=1e-6, atol=1e-6
+    )
+    torch.testing.assert_close(
+        reversed_feature.square().sum(dim=1),
+        torch.ones(1),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    torch.testing.assert_close(
+        (natural * reversed_feature).sum(),
+        torch.zeros(()),
+        rtol=0,
+        atol=2e-6,
+    )
 
 
 def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() -> None:
@@ -157,11 +201,13 @@ def test_zero_residual_is_exact_and_one_decoder_moves_both_lora_factors() -> Non
         base.projection.weight.copy_(torch.tensor([[1.0, 0.5], [-0.25, 2.0]]))
     writer = FrozenV6ConditionResidualWriter(
         base,  # type: ignore[arg-type]
-        feature_width=3,
+        feature_width=4,
         feature_seed=23,
     )
     slots = torch.randn(2, 320, 2)
-    features = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    features = torch.tensor(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]
+    )
     baseline = base.decode_slots(slots)
     step0 = base.decode_slots(writer.condition_slots(slots, features))
     assert all(torch.equal(baseline[name], step0[name]) for name in baseline)

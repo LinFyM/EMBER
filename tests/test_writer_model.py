@@ -414,7 +414,10 @@ def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory(
     )
     normal_memory = model.build_memories(evidence, indices)
     staged = model.decode_memories(normal_memory)
+    slots = model.compile_slots(normal_memory)
+    split = model.decode_slots(slots)
     assert all(torch.equal(direct[name], staged[name]) for name in direct)
+    assert all(torch.equal(staged[name], split[name]) for name in staged)
 
     reversed_order = torch.tensor([1, 0, 4, 3, 2], dtype=torch.long)
     reversed_memory = model.build_memories(
@@ -433,8 +436,6 @@ def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory(
     assert any(
         not torch.allclose(staged[name], reversed_state[name]) for name in staged
     )
-
-
 def test_staged_frame_order_cannot_cross_video_conditions() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()

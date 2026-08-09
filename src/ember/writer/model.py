@@ -621,17 +621,65 @@ class CompleteLoRAWriter(torch.nn.Module):
 
         if (compiler is None) != (factor_heads is None):
             raise WriterModelError("Writer decoder override is incomplete")
+        slots = self.compile_slots(memories, compiler=compiler)
+        return self.decode_slots(slots, factor_heads=factor_heads)
+
+    def compile_slots(
+        self,
+        memories: WriterMemories,
+        *,
+        compiler: torch.nn.Module | None = None,
+    ) -> torch.Tensor:
+        """Compile one condition into the complete fused policy-slot program."""
+
         selected_compiler = self.compiler if compiler is None else compiler
-        selected_heads = self.factor_heads if factor_heads is None else factor_heads
-        if set(selected_heads) != set(self.factor_heads):
-            raise WriterModelError("Writer decoder head topology changed")
-        expert, action_in, action_out = selected_compiler(
+        if not hasattr(selected_compiler, "fused_slots"):
+            raise WriterModelError("Writer compiler does not expose fused slots")
+        slots, _ = selected_compiler.fused_slots(
             memories.core,
             memories.valid_core,
             memories.procedure,
             memories.positions,
             memories.valid_procedure,
         )
+        expected = (
+            memories.core.shape[0],
+            SlotNormalizedCoreProcedureCompiler.QUERY_COUNT,
+            self.program_width,
+        )
+        if slots.shape != expected:
+            raise WriterModelError("Writer fused policy-slot topology changed")
+        return slots
+
+    def decode_slots(
+        self,
+        slots: torch.Tensor,
+        *,
+        factor_heads: Mapping[str, torch.nn.Module] | None = None,
+    ) -> dict[str, torch.Tensor]:
+        """Decode one fused policy-slot program into the single public LoRA."""
+
+        expected = (
+            slots.shape[0] if slots.ndim == 3 else -1,
+            SlotNormalizedCoreProcedureCompiler.QUERY_COUNT,
+            self.program_width,
+        )
+        if slots.ndim != 3 or slots.shape != expected:
+            raise WriterModelError("Writer fused policy-slot topology changed")
+        selected_heads = self.factor_heads if factor_heads is None else factor_heads
+        if set(selected_heads) != set(self.factor_heads):
+            raise WriterModelError("Writer decoder head topology changed")
+        expert_stop = self.EXPERT_LAYERS * self.PUBLIC_LORA_RANK
+        expert = slots[:, :expert_stop].reshape(
+            slots.shape[0],
+            self.EXPERT_LAYERS,
+            self.PUBLIC_LORA_RANK,
+            self.program_width,
+        )
+        action_in = slots[
+            :, expert_stop : expert_stop + self.PUBLIC_LORA_RANK
+        ]
+        action_out = slots[:, -self.PUBLIC_LORA_RANK :]
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, layer = self._decoding[item.name]
@@ -647,7 +695,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if memories.core.shape[0] == 1 else value
+            result[item.name] = value[0] if slots.shape[0] == 1 else value
         return result
 
     def forward(

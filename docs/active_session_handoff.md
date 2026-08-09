@@ -34,6 +34,10 @@
   physical microbatch改成balanced B10+10；这仍是A40容量实现变量，不是减小scientific batch。
   policy activation checkpointing目前不启用，因为
   OOM在frozen PI05 policy而现有checkpoint flag只覆盖Writer，启用policy重算会是更侵入且可能更慢的变量。
+- clean frozen `9c814ff`的balanced B10+10已完整通过macro49：wall=`21.095s`、input wait=`.076s`
+  （`.36%`）、peak allocated/reserved=`40.332/43.859GiB`、0 OOM/nonfinite；完整assembler通过。唯一权重为
+  expert=`.008355172068998324`、ranking=`.28570466890490887`，两者在compiler各等于positive梯度的`.25`，
+  在factor仅`.05254/.03993`。config已原样写入evidence并解锁三宏步profile，formal仍blocked。
 
 当前唯一活动候选是
 **v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
@@ -242,6 +246,11 @@ Experts不解决：
   改用tmux的fresh retry完整进入start，六rank均在第一条functional eager-attention申请`254MiB`时OOM，
   allocated=`42.49GiB`、reserved-unallocated=`1.25GiB`、free=`235.31MiB`。因此B16不存在可比较的吞吐点，
   当前canonical config已转为B10+10；上述root都不能seal、resume或选择auxiliary weight。
+- clean frozen`9c814ff`随后用同一拓扑完成B10+10。24-task/480-query/105-frame panel、Git/config/
+  HDF5、NUMA/NCCL、default allocator和single invocation全部经assembler闭合；input wait仅`.36%`，
+  不再测试workers4。macro0 generated/expert effective norm mean=`140.52/4.182`、cosine=`.02196`，而
+  reversed/shuffled margin仅`.000832/.000634`；这是当前要由受控expert/ranking更新纠正并由closed-loop
+  证伪的核心机制矛盾，不是新增性能成绩。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -278,11 +287,11 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：把只改两处microbatch `16→10`的balanced B10+10 config完成CPU验证、clean commit/push
-并创建新frozen worktree；重新live比较两节点后，在最多6张空闲A40上运行macro49 gradient profile。
-B16已经容量失败，故不再做A-B-A或allocator retry；只有B10完整artifact可重算
-`lambda_expert/lambda_rank`并解锁丢弃型fresh0→1、same-root resume1→3、
-contiguous0→3。第二个verifier通过前不得手填status进入formal。
+当前具体下一步：clean commit/push已写入的B10 gradient seal并创建严格后继frozen worktree；再次live比较
+两节点后，在同一worktree/commit/config/六卡拓扑上依次完成resumed root fresh0→1、same-root
+exact-resume1→3和独立contiguous0→3。B10 gradient frozen worktree保持不动直至第二个assembler完成；
+任何失败invocation污染root后都必须保留失败root并从新root重建该链。第二个verifier通过前不得手填
+formal status。
 
 ## 10. Canonical assets
 

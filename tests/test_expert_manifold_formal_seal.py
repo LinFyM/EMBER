@@ -97,6 +97,25 @@ def _smoke_evidence() -> dict:
     }
 
 
+def _reset_to_gradient_ready(config: dict) -> None:
+    config["gradient_profile"].update(
+        {
+            "status": "ready_after_cpu_and_single_a40_throughput_smoke",
+            "artifact_evidence": None,
+        }
+    )
+    config["objective"]["auxiliary_weights"].update(
+        {
+            "status": "blocked_until_live_train24_gradient_profile",
+            "expert": None,
+            "ranking": None,
+        }
+    )
+    config["profile_run"].update(
+        {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
+    )
+
+
 def test_v6_prior_evaluation_is_sealed_from_live_smoke_artifacts() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
     assert evaluation["throughput_policy"] == (
@@ -122,9 +141,7 @@ def test_formal_seal_accepts_only_complete_live_smoke_evidence(
         "formal_status": "sealed",
         "online_smoke_evidence": _smoke_evidence(),
     }
-    config["gradient_profile"]["status"] = (
-        "ready_after_cpu_and_single_a40_throughput_smoke"
-    )
+    _reset_to_gradient_ready(config)
     path = tmp_path / "sealed.json"
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_v6_prior_config(path)["evaluation"]["formal_status"] == "sealed"
@@ -150,9 +167,7 @@ def test_throughput_seal_selects_fastest_stable_candidate(
         "formal_status": "sealed",
         "online_smoke_evidence": smoke,
     }
-    config["gradient_profile"]["status"] = (
-        "ready_after_cpu_and_single_a40_throughput_smoke"
-    )
+    _reset_to_gradient_ready(config)
     path = tmp_path / "stable-selection.json"
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_v6_prior_config(path)["evaluation"]["formal_status"] == "sealed"
@@ -178,9 +193,7 @@ def test_throughput_seal_breaks_equal_throughput_ties_toward_larger_batch(
         "formal_status": "sealed",
         "online_smoke_evidence": smoke,
     }
-    config["gradient_profile"]["status"] = (
-        "ready_after_cpu_and_single_a40_throughput_smoke"
-    )
+    _reset_to_gradient_ready(config)
     path = tmp_path / "stable-tie.json"
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_v6_prior_config(path)["evaluation"]["formal_status"] == "sealed"
@@ -285,9 +298,7 @@ def test_live_smoke_evidence_is_assembled_from_profile_and_vertical_artifacts(
             "device_names": ["NVIDIA A40"],
             "physical_gpu_ids": [0],
         },
-        "profiled_writer_model_batch_sizes": smoke[
-            "profiled_writer_model_batch_sizes"
-        ],
+        "profiled_writer_model_batch_sizes": smoke["profiled_writer_model_batch_sizes"],
         "selected_writer_model_batch_size": smoke["writer_model_batch_size"],
         "selection_rule": (
             "highest_measured_fixed_panel_loras_per_second_with_stable_"
@@ -299,9 +310,7 @@ def test_live_smoke_evidence_is_assembled_from_profile_and_vertical_artifacts(
         "warmup_runs_per_batch": 1,
         "measured_runs_per_batch": 2,
         "longest_sampled_video_frames": 105,
-        "writer_generation_measurements": smoke[
-            "writer_generation_measurements"
-        ],
+        "writer_generation_measurements": smoke["writer_generation_measurements"],
         "writer_modules_released": True,
         "source_policy_reused": True,
         "oom_count": 0,
@@ -312,8 +321,7 @@ def test_live_smoke_evidence_is_assembled_from_profile_and_vertical_artifacts(
         "tensor_bytes": 2_641_920,
         "dtype_tensor_counts": {"BF16": 72, "F32": 4},
         "dtype_by_name": {
-            f"tensor_{index}": "BF16" if index < 72 else "F32"
-            for index in range(76)
+            f"tensor_{index}": "BF16" if index < 72 else "F32" for index in range(76)
         },
     }
     vertical_descriptor = {"lora_storage_per_entry": storage}
@@ -379,9 +387,7 @@ def test_live_smoke_evidence_is_assembled_from_profile_and_vertical_artifacts(
     (vertical_root / "run_contract.json").write_text(
         json.dumps(vertical_contract), encoding="utf-8"
     )
-    (vertical_root / "results.json").write_text(
-        json.dumps(results), encoding="utf-8"
-    )
+    (vertical_root / "results.json").write_text(json.dumps(results), encoding="utf-8")
     manifest = {
         "entry_ids": [f"entry-{index}" for index in range(8)],
         "descriptor": vertical_descriptor,
@@ -438,4 +444,6 @@ def test_historical_v6_warm_start_is_a_real_load_only_evaluation_asset() -> None
         "F32": 33_792,
     }
     assert len(storage["dtype_by_name"]) == 76
-    assert storage["dtype_by_name"]["model.action_in_proj.lora_A.default.weight"] == "F32"
+    assert (
+        storage["dtype_by_name"]["model.action_in_proj.lora_A.default.weight"] == "F32"
+    )

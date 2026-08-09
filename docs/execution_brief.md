@@ -6,15 +6,16 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。physical
 B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean frozen `eddba96`的B16+4也在
-六rank第一条functional attention一致OOM。所有失败root都没有gradient/completion，不能seal或解释方法性能。
+六rank第一条functional attention一致OOM。clean frozen`9c814ff`的balanced B10+10已完整通过macro49并
+由assembler封存gradient/auxiliary evidence；当前解锁三宏步resume profile，仍没有新strict性能结果。
 
 当前操作顺序：
 
 1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
 2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
 3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
-4. 保持logical B20不变；B16已被A40容量证伪，当前在最多六张空闲A40运行balanced B10+10；
-5. 用胜者做gradient weight、exact-resume和训练吞吐profile；
+4. 保持logical B20不变；B16被A40容量证伪，B10 gradient/weights已sealed；
+5. 用B10完成fresh/resume/contiguous和训练吞吐profile；
 6. formal continuation和关键checkpoint strict rollout；
 7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
 
@@ -143,6 +144,11 @@ root不resume、不合并。当前B10继续使用default allocator；失败retry
 functional eager-attention均在申请`254MiB`时OOM：allocated=`42.49GiB`、reserved-unallocated=
 `1.25GiB`、free=`235.31MiB`。因此B16没有whole-step吞吐点；当前直接运行balanced B10+10，不再做
 allocator retry、A-B-A或宽batch sweep。
+
+clean frozen`9c814ff`的balanced B10+10已在同一拓扑完成：wall=`21.0951s`、input wait=`.0763s`
+（`.36%`）、peak allocated/reserved=`43,305,942,016/47,093,645,312` bytes、0 OOM/nonfinite；assembler
+复验24 tasks、480/480 queries、最长105帧和完整provenance。推荐expert/ranking weights=
+`.008355172068998324/.28570466890490887`并已原样写回；不扫workers4或更小microbatch。
 
 1. 分别测positive、expert、ranking在compiler和factor heads的未加权gradient norm；
 2. 一次性选择`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的

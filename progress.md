@@ -1,5 +1,22 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior B10 gradient artifact完成并写回seal
+
+- clean pushed/frozen `9c814ff6c880b77f109bf02445ff6364bb1c024d`在live空闲
+  `gpu01:0,1,2,4,5,7`完成root=
+  `runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_lb20_mb10_9c814ff_20260809`；tmux自然exit0，六卡
+  回到14MiB，忙碌GPU3/6未触碰。
+- root恰含run contract、单次fresh invocation、gradient profile和completion；24 tasks、480/480 unique
+  queries、20/task、最长105帧、8/8/8 negatives、0 OOM/nonfinite。wall=`21.095109596s`、input wait=
+  `.076318255s`、peak allocated/reserved=`43,305,942,016/47,093,645,312` bytes。
+- assembler在frozen与canonical实现均通过，推荐expert/ranking weights=
+  `.008355172068998324/.28570466890490887`；原样evidence已写入config，gradient/aux状态sealed、profile
+  状态ready，formal仍blocked。全24 task records finite，唯一明显outlier是global39 reversed的高norm/
+  负margin，属于后续逐task科学跟踪而非artifact异常。
+- 下一步先commit/push该seal，从严格后继clean frozen worktree依次运行同一resumed root的fresh0→1和
+  exact-resume1→3，再运行独立contiguous0→3；两条profile必须保持同commit/config绝对路径、同卡/
+  NUMA、workers2和default allocator。
+
 ## 2026-08-09 v6-prior physical B16容量裁决与B10切换
 
 - logical-B20 microbatch实现以clean pushed `eddba96d38d71fd89d80f9a23cc91881171bae84`封存；frozen

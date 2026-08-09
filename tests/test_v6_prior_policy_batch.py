@@ -16,10 +16,31 @@ CONFIG = (
 )
 
 
+def _pre_gradient_config() -> dict:
+    config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    config["gradient_profile"].update(
+        {
+            "status": "ready_after_cpu_and_single_a40_throughput_smoke",
+            "artifact_evidence": None,
+        }
+    )
+    config["objective"]["auxiliary_weights"].update(
+        {
+            "status": "blocked_until_live_train24_gradient_profile",
+            "expert": None,
+            "ranking": None,
+        }
+    )
+    config["profile_run"].update(
+        {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
+    )
+    return config
+
+
 def test_v6_prior_config_allows_only_predeclared_policy_microbatches(
     tmp_path: Path,
 ) -> None:
-    base = json.loads(CONFIG.read_text(encoding="utf-8"))
+    base = _pre_gradient_config()
     for microbatch in (16, 10):
         candidate = deepcopy(base)
         candidate["optimization"]["functional_policy_microbatch_size"] = microbatch

@@ -361,6 +361,22 @@ def _synthetic_run_contract(
     tmp_path: Path,
 ) -> dict:
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    config["gradient_profile"].update(
+        {
+            "status": "ready_after_cpu_and_single_a40_throughput_smoke",
+            "artifact_evidence": None,
+        }
+    )
+    config["objective"]["auxiliary_weights"].update(
+        {
+            "status": "blocked_until_live_train24_gradient_profile",
+            "expert": None,
+            "ranking": None,
+        }
+    )
+    config["profile_run"].update(
+        {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
+    )
     config_path, frozen_commit = _commit_frozen_config(
         tmp_path / "gradient-frozen",
         config,
@@ -509,30 +525,16 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     return profile
 
 
-def test_v6_prior_config_unlocks_only_gradient_profile_after_online_smoke() -> None:
+def test_v6_prior_config_unlocks_profile_after_gradient_seal() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert runtime_for_mode(config, "gradient-profile") == (1, ())
-    with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
-        runtime_for_mode(config, "profile")
+    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
+        runtime_for_mode(config, "gradient-profile")
+    assert runtime_for_mode(config, "profile") == (3, (1, 3))
     with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
         runtime_for_mode(config, "formal")
 
-    profiled = deepcopy(config)
-    gradient = _gradient_evidence()
-    profiled["gradient_profile"]["status"] = "sealed_from_live_train24_gradient_profile"
-    profiled["gradient_profile"]["artifact_evidence"] = gradient
-    profiled["objective"]["auxiliary_weights"].update(
-        {
-            "status": "sealed_from_live_train24_gradient_profile",
-            **gradient["recommended_weights"],
-        }
-    )
-    profiled["profile_run"]["status"] = "ready_after_live_gradient_profile"
-    assert runtime_for_mode(profiled, "profile") == (3, (1, 3))
-    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
-        runtime_for_mode(profiled, "formal")
-
-    resumed = deepcopy(profiled)
+    gradient = config["gradient_profile"]["artifact_evidence"]
+    resumed = deepcopy(config)
     resumed["profile_run"]["status"] = "sealed_from_live_a40_resume_profile_evidence"
     resumed["profile_run"]["artifact_evidence"] = _resume_evidence(gradient)
     resumed["formal_run"]["status"] = "sealed_from_live_a40_resume_profile_evidence"

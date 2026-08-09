@@ -1314,6 +1314,23 @@ train24等权，全局仍是`480/480` unique rows；positive/expert/ranking obje
 
 policy gradient checkpointing不是首选：现有`writer.activation_checkpointing`不覆盖OOM所在的frozen
 PI05 Gemma，打开policy checkpointing需要改变当前eval/frozen执行路径并重算Transformer，可能比两个
-physical forwards更慢。只有B16/B10均无法形成稳定高吞吐配置时，才把它作为独立、显式设计变量；不得
-暗中与microbatch混合。`expandable_segments:True`失败retry只证明碎片减少仍不足，不固化为当前
-scientific/runtime合同；B16与B10公平比较都从默认allocator开始并在run contract记录实际观察值。
+physical forwards更慢。只有B10也无法形成稳定配置时，才把它作为独立、显式设计变量；不得暗中与
+microbatch混合。`expandable_segments:True`失败retry只证明碎片减少仍不足，不固化为当前scientific/
+runtime合同；B16与B10都从default allocator开始并在run contract记录实际观察值。
+
+### 33.11 balanced B10 gradient seal（2026-08-09）
+
+clean pushed/frozen `9c814ff`在live空闲`gpu01:0,1,2,4,5,7`完成logical B20/physical B10+10 macro49。
+whole-step wall=`21.095109596s`、input wait=`.076318255s`（`.36%`），peak allocated/reserved=
+`43,305,942,016/47,093,645,312` bytes；24 tasks、480/480 unique queries、最长105帧、8/8/8 counterfactual
+和0 OOM/nonfinite完整。assembler从tracked frozen config、clean pushed Git、真实HDF5和六rank topology
+独立重建通过，因此B10成为当前A40唯一可行physical implementation；不再扫workers4、microbatch或
+allocator。
+
+positive/expert/ranking在compiler的unweighted norm=`.0110556/.330800/.00967394`，factor=
+`.105556/.663721/.0147533`。逐aux逐block`.25`门给出expert/ranking=
+`.008355172068998324/.28570466890490887`；applied compiler fractions均`.25`，factor=
+`.052536/.039932`。macro0 generated/expert effective norm mean=`140.52/4.182`且cosine=`.02196`；wrong
+margin=`.00225`，reversed/shuffled仅`.000832/.000634`。这说明能量/方向和时序分离仍是实质缺口，但
+不允许据内部指标宣告方法有效。下一证据严格是同一seal commit的fresh0→1、same-root resume1→3与
+independent contiguous0→3，之后才启动formal并用closed-loop裁决。

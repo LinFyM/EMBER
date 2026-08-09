@@ -1,5 +1,23 @@
 # EMBER Findings
 
+## 2026-08-09 balanced B10 gradient seal与macro0几何诊断
+
+- clean frozen `9c814ff`在同一空闲`gpu01:0,1,2,4,5,7` 3+3 NUMA拓扑完成macro49。artifact assembler
+  独立复验24 tasks、480/480 unique queries、最长105帧、8/8/8 counterfactual、default allocator和完整
+  Git/config/HDF5 provenance。wall=`21.0951s`，input wait=`.0763s`（`.36%`），peak allocated/reserved=
+  `40.3318/43.8594GiB`，0 OOM/nonfinite；因此不扫workers4，也不为预防性余量降到更小microbatch。
+- positive compiler/factor梯度=`.0110556/.105556`，expert=`.330800/.663721`，ranking=
+  `.00967394/.0147533`。逐aux逐block `.25`规则唯一给出expert/ranking weight=
+  `.008355172068998324/.28570466890490887`；加权后compiler各`.25`，factor仅`.05254/.03993`。auxiliary
+  修正不会在初始化时压过真实functional signal。
+- macro0的系统性矛盾很明确：generated correct effective norm mean=`140.52`，expert mean=`4.182`，
+  比值mean约`33.72x`；correct→expert cosine mean仅`.02196`。wrong margin mean=`.00225`，而reversed/
+  shuffled仅`.000832/.000634`，各仍有一个负margin。也就是说历史143 prior保留闭环能力，但LoRA能量/
+  方向离task-local SFT流形很远，真实时序辨识尤其弱；当前实验正以受控小梯度修正这两个接口。
+- 这些内部数值不等于性能结论。下一步先验证三宏步训练、optimizer state、resume和显存平台，再及时跑
+  同schedule macro0/10/25/50 closed-loop；若energy/cosine改善但性能不升，必须判为expert surrogate错位，
+  不能继续为“健康度”无限优化。
+
 ## 2026-08-09 physical B16仍超过A40容量，当前转为balanced B10+10
 
 - clean pushed/frozen `eddba96`保持logical B20、完整20-query keyed randomness和两次policy forward，

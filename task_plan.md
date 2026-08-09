@@ -64,15 +64,20 @@ formal artifacts保存。
 - [x] physical B16+4完整启动后在第一条functional attention统一OOM：allocated=`42.49GiB`、
   reserved-unallocated=`1.25GiB`、free=`235.31MiB`，尚需`254MiB`；因此没有B16吞吐点，也不再做
   allocator retry/A-B-A。
-- [ ] 从只改两处microbatch `16→10`的新clean pushed frozen commit运行balanced B10+10完整macro49；
-  若成功，它就是当前A40可行吞吐点，记录whole-step wall/input wait/peak VRAM并进入gradient seal。
-- [ ] 固定macro49覆盖train24×B20=480 unique queries和最长105-frame video；记录positive/expert/ranking
+- [x] 从只改两处microbatch `16→10`的clean pushed `9c814ff` frozen worktree运行balanced B10+10完整
+  macro49；wall=`21.095s`、input wait=`.076s`、peak allocated/reserved=`40.332/43.859GiB`、0异常。
+- [x] 固定macro49覆盖train24×B20=480 unique queries和最长105-frame video；记录positive/expert/ranking
   对compiler/factor的未加权gradient norms。
-- [ ] 一次性封存`lambda_expert/lambda_rank`，两个blocks上各auxiliary均不超过positive的`.25`；不按held
+- [x] 一次性封存`lambda_expert/lambda_rank=.0083551721/.2857046689`，两个blocks上各auxiliary均不超过
+  positive的`.25`；不按held
   outcome sweep或在线自适应。
-- [ ] 对正式gradient artifact运行assembler，再把其原样证据写回gradient+aux并置为profile-ready；
+- [x] 对正式gradient artifact运行assembler，再把其原样证据写回gradient+aux并置为profile-ready；
   不人工拼weight/evidence，不从外部复制config绕过canonical tracked config。
-- [ ] 先依据B10 retained `input_wait/step wall/peak VRAM`判断后续瓶颈；只有data wait证据要求时才
+- [x] B10 input-wait share仅`.36%`，不测试workers4；最长panel完整通过且active余量约`4.09GiB`，保持B10，
+  不预防性降低microbatch或开启policy checkpointing。
+- [ ] clean commit/push gradient seal并创建严格后继frozen worktree；同一worktree、同一六卡拓扑依次完成
+  resumed root fresh0→1 + exact-resume1→3，以及独立contiguous0→3。
+- [ ] 依据profile retained `input_wait/step wall/peak VRAM`判断后续瓶颈；只有data wait证据要求时才
   实测workers/prefetch，只有两个微批候选都不足时才单独profile policy activation checkpointing。所有
   候选保持logical B20/full24 scientific batch，不为“多记录阶段”在热路径增加CUDA同步。
 - [ ] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、

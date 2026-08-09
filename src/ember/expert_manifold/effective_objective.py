@@ -48,6 +48,17 @@ class EffectiveRankingLoss:
     counterfactual: EffectiveAlignment
 
 
+@dataclass(frozen=True)
+class EffectiveAuxiliaryGradients:
+    """Unweighted output-space gradients for expert and ranking supervision."""
+
+    expert: EffectiveExpertLoss
+    ranking: EffectiveRankingLoss
+    correct_expert: Mapping[str, torch.Tensor]
+    correct_ranking: Mapping[str, torch.Tensor]
+    counterfactual_ranking: Mapping[str, torch.Tensor]
+
+
 def _validate_state(
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
@@ -227,4 +238,60 @@ def effective_counterfactual_ranking_loss(
         margin=margin,
         correct=correct_alignment,
         counterfactual=counterfactual_alignment,
+    )
+
+
+def effective_auxiliary_output_gradients(
+    correct: Mapping[str, torch.Tensor],
+    counterfactual: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    *,
+    norm_weight: float,
+    smooth_l1_beta: float,
+    required_margin: float,
+    temperature: float,
+    epsilon: float = 1e-12,
+) -> EffectiveAuxiliaryGradients:
+    """Differentiate both auxiliaries only to generated LoRA output tensors."""
+
+    names = tuple(correct)
+    if set(counterfactual) != set(names):
+        raise ExpertManifoldError("counterfactual LoRA tensor names changed")
+    expert = effective_expert_loss(
+        correct,
+        target,
+        contract,
+        norm_weight=norm_weight,
+        smooth_l1_beta=smooth_l1_beta,
+        epsilon=epsilon,
+    )
+    ranking = effective_counterfactual_ranking_loss(
+        correct,
+        counterfactual,
+        target,
+        contract,
+        required_margin=required_margin,
+        temperature=temperature,
+        epsilon=epsilon,
+    )
+    correct_values = tuple(correct[name] for name in names)
+    counterfactual_values = tuple(counterfactual[name] for name in names)
+    expert_gradients = torch.autograd.grad(expert.total, correct_values)
+    ranking_gradients = torch.autograd.grad(
+        ranking.loss,
+        (*correct_values, *counterfactual_values),
+    )
+    split = len(names)
+    values = (*expert_gradients, *ranking_gradients)
+    if any(not bool(torch.isfinite(value).all()) for value in values):
+        raise ExpertManifoldError("policy-effective auxiliary gradient is non-finite")
+    return EffectiveAuxiliaryGradients(
+        expert=expert,
+        ranking=ranking,
+        correct_expert=dict(zip(names, expert_gradients, strict=True)),
+        correct_ranking=dict(zip(names, ranking_gradients[:split], strict=True)),
+        counterfactual_ranking=dict(
+            zip(names, ranking_gradients[split:], strict=True)
+        ),
     )

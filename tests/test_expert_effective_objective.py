@@ -4,6 +4,7 @@ import torch
 
 from ember.expert_manifold.effective_objective import (
     effective_alignment,
+    effective_auxiliary_output_gradients,
     effective_counterfactual_ranking_loss,
     effective_expert_loss,
 )
@@ -155,3 +156,78 @@ def test_effective_alignment_supports_generated_batches_and_shared_target() -> N
     )
     assert observed.cosine.shape == (2,)
     assert torch.allclose(observed.cosine, expected)
+
+
+def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> None:
+    contract = _contract()
+    correct_parameters = {
+        name: value.requires_grad_() for name, value in _state(contract, 59).items()
+    }
+    negative_parameters = {
+        name: value.requires_grad_() for name, value in _state(contract, 61).items()
+    }
+    correct = {name: value * 1.1 for name, value in correct_parameters.items()}
+    negative = {name: value * 0.9 for name, value in negative_parameters.items()}
+    target = _state(contract, 67)
+    output = effective_auxiliary_output_gradients(
+        correct,
+        negative,
+        target,
+        contract,
+        norm_weight=0.25,
+        smooth_l1_beta=0.5,
+        required_margin=0.2,
+        temperature=0.1,
+    )
+    names = tuple(correct)
+    torch.autograd.backward(
+        tuple(correct[name] for name in names)
+        + tuple(negative[name] for name in names),
+        tuple(
+            output.correct_expert[name] + output.correct_ranking[name]
+            for name in names
+        )
+        + tuple(output.counterfactual_ranking[name] for name in names),
+    )
+    observed = tuple(
+        value.grad.detach().clone()
+        for value in (*correct_parameters.values(), *negative_parameters.values())
+    )
+
+    direct_correct_parameters = {
+        name: value.detach().clone().requires_grad_()
+        for name, value in correct_parameters.items()
+    }
+    direct_negative_parameters = {
+        name: value.detach().clone().requires_grad_()
+        for name, value in negative_parameters.items()
+    }
+    direct_correct = {
+        name: value * 1.1 for name, value in direct_correct_parameters.items()
+    }
+    direct_negative = {
+        name: value * 0.9 for name, value in direct_negative_parameters.items()
+    }
+    expert = effective_expert_loss(
+        direct_correct,
+        target,
+        contract,
+        norm_weight=0.25,
+        smooth_l1_beta=0.5,
+    )
+    ranking = effective_counterfactual_ranking_loss(
+        direct_correct,
+        direct_negative,
+        target,
+        contract,
+        required_margin=0.2,
+        temperature=0.1,
+    )
+    expected = torch.autograd.grad(
+        expert.total + ranking.loss,
+        (*direct_correct_parameters.values(), *direct_negative_parameters.values()),
+    )
+    assert all(
+        torch.allclose(left, right, atol=1e-6, rtol=1e-5)
+        for left, right in zip(observed, expected, strict=True)
+    )

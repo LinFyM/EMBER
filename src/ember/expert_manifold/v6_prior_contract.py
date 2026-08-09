@@ -1685,11 +1685,32 @@ def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
                 rel_tol=0.0,
                 abs_tol=0.0,
             )
-            and int(optimizer.get("tensor_count", -1)) > 0
+            and math.isclose(
+                float(optimizer.get("max_abs_tolerance", -1)),
+                0.0000075,
+                rel_tol=0.0,
+                abs_tol=0.0,
+            )
+            and math.isclose(
+                float(optimizer.get("global_relative_l2_tolerance", -1)),
+                0.00001,
+                rel_tol=0.0,
+                abs_tol=0.0,
+            )
+            and int(optimizer.get("tensor_count", -1)) == 82
             and math.isfinite(float(optimizer.get("max_abs", -1)))
-            and float(optimizer["max_abs"]) >= 0
+            and 0 <= float(optimizer["max_abs"]) <= 0.0000075
             and math.isfinite(float(optimizer.get("global_relative_l2", -1)))
-            and float(optimizer["global_relative_l2"]) >= 0
+            and 0 <= float(optimizer["global_relative_l2"]) <= 0.00001
+            and set(optimizer.get("moment_fields", {})) == {"exp_avg", "exp_avg_sq"}
+            and all(
+                int(summary.get("tensor_count", -1)) == 41
+                and math.isfinite(float(summary.get("max_abs", -1)))
+                and 0 <= float(summary["max_abs"]) <= 0.0000075
+                and math.isfinite(float(summary.get("global_relative_l2", -1)))
+                and 0 <= float(summary["global_relative_l2"]) <= 0.00001
+                for summary in optimizer["moment_fields"].values()
+            )
         )
     except (KeyError, TypeError, ValueError):
         return False

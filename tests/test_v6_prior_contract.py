@@ -147,10 +147,21 @@ def _checkpoint_comparison(macro: int) -> dict:
             "param_groups_equal": True,
             "scientific_atol": 0.0002,
             "scientific_rtol": 0.002,
+            "max_abs_tolerance": 0.0000075,
+            "global_relative_l2_tolerance": 0.00001,
             "tensor_count": 82,
             "max_abs": 0.0,
             "global_relative_l2": 0.0,
             "worst_tensor": None,
+            "moment_fields": {
+                name: {
+                    "tensor_count": 41,
+                    "max_abs": 0.0,
+                    "global_relative_l2": 0.0,
+                    "worst_tensor": None,
+                }
+                for name in ("exp_avg", "exp_avg_sq")
+            },
         },
         "writer": {
             "tensor_schema_equal": True,

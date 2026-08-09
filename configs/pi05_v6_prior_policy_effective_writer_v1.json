@@ -171,6 +171,7 @@
   },
   "gradient_profile": {
     "status": "ready_after_cpu_and_single_a40_throughput_smoke",
+    "artifact_evidence": null,
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "macros": 1,
@@ -181,6 +182,7 @@
   },
   "profile_run": {
     "status": "blocked_until_live_gradient_weights",
+    "artifact_evidence": null,
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "total_macros": 3,
@@ -191,7 +193,7 @@
     "required_resume_comparison": "fresh0_to1_plus_exact_resume1_to3_equals_contiguous0_to3"
   },
   "formal_run": {
-    "status": "blocked_until_live_a40_profile_and_macro3_online_smoke",
+    "status": "blocked_until_live_a40_resume_profile_evidence",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "total_macros": 50,

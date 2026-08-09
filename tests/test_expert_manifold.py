@@ -516,7 +516,7 @@ def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
     adapter = {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": "expert_manifold_v6_prior_correct",
+        "arm": "expert_manifold_v6_ecp_correct",
         "video_condition": "correct",
         "writer_asset": {
             "reference": "v6-prior:historical-macro400",

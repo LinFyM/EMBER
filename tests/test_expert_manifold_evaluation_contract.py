@@ -65,7 +65,7 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_prior_{condition}",
+        "arm": f"expert_manifold_v6_ecp_{condition}",
         "video_condition": condition,
         "writer_asset": {
             "reference": "test:v6-prior:historical-macro400",
@@ -236,7 +236,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_v6_prior_correct",
+        "arm": "expert_manifold_v6_ecp_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

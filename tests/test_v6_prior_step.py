@@ -84,7 +84,6 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> No
         pair.counterfactual,
         target,
         contract,
-        norm_weight=0.25,
         smooth_l1_beta=0.5,
         required_margin=0.1,
         temperature=0.05,
@@ -96,7 +95,7 @@ def test_v6_prior_step_merges_all_output_gradients_into_trainable_blocks() -> No
         pair=pair,
         functional=functional,
         auxiliary=auxiliary,
-        expert_weight=0.2,
+        projection_weight=0.2,
         ranking_weight=0.1,
         task_scale=0.25,
     )
@@ -143,7 +142,6 @@ def test_v6_prior_gradient_profile_returns_three_complete_parameter_vectors() ->
         pair.counterfactual,
         target,
         contract,
-        norm_weight=0.25,
         smooth_l1_beta=0.5,
         required_margin=0.1,
         temperature=0.05,
@@ -159,13 +157,13 @@ def test_v6_prior_gradient_profile_returns_three_complete_parameter_vectors() ->
         parameters=parameters,
     )
     assert len(components.positive) == len(parameters) == 41
-    assert len(components.expert) == len(parameters)
+    assert len(components.projection) == len(parameters)
     assert len(components.ranking) == len(parameters)
     assert all(
         sum(int(torch.count_nonzero(value)) for value in component) > 0
         for component in (
             components.positive,
-            components.expert,
+            components.projection,
             components.ranking,
         )
     )

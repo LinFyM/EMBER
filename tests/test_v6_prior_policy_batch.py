@@ -12,7 +12,7 @@ from ember.expert_manifold.v6_prior_contract import load_v6_prior_config
 
 CONFIG = (
     Path(__file__).resolve().parents[1]
-    / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+    / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
 )
 
 
@@ -27,7 +27,7 @@ def _pre_gradient_config() -> dict:
     config["objective"]["auxiliary_weights"].update(
         {
             "status": "blocked_until_live_train24_gradient_profile",
-            "expert": None,
+            "projection": None,
             "ranking": None,
         }
     )

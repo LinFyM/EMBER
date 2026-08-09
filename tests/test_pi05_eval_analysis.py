@@ -69,13 +69,15 @@ def _tasks() -> list[dict]:
     ]
 
 
-def _adapter(macro: int, condition: str) -> dict:
+def _adapter(macro: int, condition: str, *, family: str = "current") -> dict:
+    current = family == "current"
+    assert current or family == "legacy"
     roles = {key: "validation" for key in TASKS}
     mapping = list(task_video_mapping(TASKS, roles, condition))
     checkpoint_kind = (
         "historical_v6_macro400_load_only"
         if macro == 0
-        else "v6_prior_trained_checkpoint"
+        else ("v6_ecp_trained_checkpoint" if current else "v6_prior_trained_checkpoint")
     )
     writer_asset = {
         "reference": f"writer:m{macro}",
@@ -97,10 +99,25 @@ def _adapter(macro: int, condition: str) -> dict:
         },
     }
     return {
+        "schema_version": (
+            "ember_pi05_v6_ecp_eval_adapter_v6"
+            if current
+            else "ember_pi05_v6_prior_eval_adapter_v5"
+        ),
         "kind": "expert_manifold_writer",
-        "arm": f"expert_manifold_v6_prior_{condition}",
+        "arm": (
+            f"expert_manifold_v6_ecp_{condition}"
+            if current
+            else f"expert_manifold_v6_prior_{condition}"
+        ),
         "execution_backend": "online_writer_then_episode_cache",
-        "config": {"schema": "ember_pi05_v6_prior_policy_effective_writer_v1"},
+        "config": {
+            "schema": (
+                "ember_pi05_v6_ecp_policy_effective_writer_v2"
+                if current
+                else "ember_pi05_v6_prior_policy_effective_writer_v1"
+            )
+        },
         "writer_asset": writer_asset,
         "evaluation_authority": {"formal_status": "sealed"},
         "video_data": {"root": "/videos", "tasks": "sealed-validation-8"},
@@ -153,6 +170,11 @@ def _rows(
                 else reference
             )
             writer = {
+                "schema_version": (
+                    "ember_pi05_v6_ecp_episode_v6"
+                    if adapter["config"]["schema"].endswith("writer_v2")
+                    else "ember_pi05_v6_prior_episode_v5"
+                ),
                 "condition": condition,
                 "teacher_video_kind": condition,
                 "method_arm": adapter["arm"],
@@ -202,9 +224,10 @@ def _result(
     successes: set[tuple[str, int, int]],
     *,
     physical_gpu_ids: tuple[int, ...] = (0, 1),
+    family: str = "current",
 ) -> dict:
     tasks = _tasks()
-    adapter = _adapter(macro, condition)
+    adapter = _adapter(macro, condition, family=family)
     parallel = {
         "physical_gpu_ids": list(physical_gpu_ids),
         "physical_gpu_count": len(physical_gpu_ids),
@@ -323,6 +346,19 @@ def test_checkpoint_curve_rejects_missing_state_or_pairing_drift() -> None:
     results["root-10"]["rows"][0]["policy_noise_seeds"][0] += 1
     with pytest.raises(Pi05EvaluationError, match="RNG"):
         checkpoint_curve_analysis(results)
+
+
+def test_checkpoint_curve_keeps_legacy_read_only_and_rejects_mixed_families() -> None:
+    legacy = {
+        f"legacy-{macro}": _result(macro, "correct", set(), family="legacy")
+        for macro in (0, 10, 25, 50)
+    }
+    assert checkpoint_curve_analysis(legacy)["method_family"] == "legacy_v6_prior_v1"
+
+    mixed = dict(legacy)
+    mixed["legacy-10"] = _result(10, "correct", set(), family="current")
+    with pytest.raises(Pi05EvaluationError, match="cannot mix"):
+        checkpoint_curve_analysis(mixed)
 
 
 @pytest.mark.parametrize(

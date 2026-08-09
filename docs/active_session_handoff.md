@@ -59,6 +59,15 @@
 hard anchor；“v6-initialized”只表示从macro0初始化并冻结同一上游。下一步严格按`task_plan.md`执行，
 不从下方历史谱系恢复旧命令。
 
+ECP当前工程状态：旧cosine+log-norm objective已从唯一执行路径删除，替换为全38-target
+`a=<G,E>/(||E||²+epsilon)` SmoothL1-to-1和coefficient softplus ranking；task/macro records一次bulk
+同步记录`a_correct/a_negative/a_margin`、expert component、generated/expert norm和38-target signed/
+absolute contribution。config、run、gradient/resume、checkpoint/trainer/RNG、adapter/episode均升为ECP v2
+身份并重置旧gradient/resume/formal seals；live evaluator只接受v2，旧v1仅能由CPU analysis的显式
+legacy family读取已封存`results.json`，不能加载模型或恢复训练。小矩阵dense oracle、gauge/orthogonal
+invariance、chain-rule、合同、checkpoint、evaluation和analysis均纳入全仓`259 passed`封印，且
+`git diff --check`通过；尚无ECP GPU profile、训练或strict成绩。
+
 ## 2. EMBER problem and information wall
 
 EMBER不是video imitation replay。它要求：
@@ -307,17 +316,17 @@ Experts不解决：
    它们不能选择held Writer，也不能证明视频因果性。
 2. 统一续训到2000已完成且只改善train expert target，不再是当前决策分支。
 3. 单卡吞吐/显存profile和vertical smoke已通过，只证明高效端到端实现成立，不证明当前方法有效。
-4. 六卡gradient profile只选择一次`lambda_expert/lambda_rank`并验证resume；它不证明方法有效。
+4. 六卡gradient profile只选择一次`lambda_projection/lambda_rank`并验证resume；它不证明方法有效。
 5. formal关键checkpoints必须及时跑paired correct400并和同schedule macro0、历史143以及最邻近旧架构
    逐task比较。
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：profile seal的全仓CPU回归已完成；现在clean commit/push并创建严格后继formal frozen
-worktree，随后重新live比较`gpu01/gpu02`和quota，只用最多6张空闲A40。先从同一current schedule生成
-method macro0并启动fresh0→50，保存10/25/50；0/10/25/50及时跑固定correct80和paired correct400，不能
-用三步profile loss、expert norm或旧143替代当前schedule baseline。训练与评测结果按per-task、breadth、
-gained/lost、churn、视频条件传递和历史架构逐项分析，再决定续到100/200或只改最早失效接口。
+当前具体下一步：clean commit/push并创建严格后继frozen worktree；随后重新live
+比较`gpu01/gpu02`和quota，只用最多6张空闲A40。先做一次B10六卡projection/ranking gradient profile，
+再完成fresh0→1、exact-resume1→3和contiguous0→3的v2谱系门。封存后fresh短训到10并立即跑同一current
+schedule paired correct400；只有满足第34节门才到25/50/100。不能继承旧expert/ranking weights，也不能
+用profile loss、expert norm、correct80或历史143替代当前schedule full400裁决。
 
 ## 10. Canonical assets
 
@@ -325,7 +334,7 @@ gained/lost、churn、视频条件传递和历史架构逐项分析，再决定�
   `pi05_libero`，也不支持source-SFT exact resume。
 - task experts：上述formal root的统一step2000 checkpoints。
 - historical Writer prior：上述v6-fast macro400 checkpoint。
-- current config：`configs/pi05_v6_prior_policy_effective_writer_v1.json`。
+- current config：`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。
 - training entry：`scripts/train_v6_prior_writer.py`。
 - evaluation entry：`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。

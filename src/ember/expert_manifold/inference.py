@@ -20,6 +20,7 @@ from ember.expert_manifold.v6_prior_checkpoint import (
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     V6_PRIOR_CONFIG_SCHEMA,
+    V6_PRIOR_RUN_SCHEMA,
     authority_path,
     load_v6_prior_config,
 )
@@ -39,8 +40,8 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_v6_prior_eval_adapter_v5"
-EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_prior_episode_v5"
+EXPERT_MANIFOLD_ADAPTER_SCHEMA = "ember_pi05_v6_ecp_eval_adapter_v6"
+EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_ecp_episode_v6"
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -308,7 +309,7 @@ def _trained_writer_asset(
             and writer_path.stat().st_size
             == int(files.get("writer.safetensors", -1))
             and contract.get("run_schema")
-            == "ember_pi05_v6_prior_writer_launch_v1"
+            == V6_PRIOR_RUN_SCHEMA
             and mode in {"profile", "formal"}
             and contract.get("source") == dict(source)
             and contract.get("objective") == config["objective"]
@@ -327,7 +328,7 @@ def _trained_writer_asset(
     if not valid:
         raise ExpertManifoldError("v6-prior trained Writer checkpoint changed")
     return {
-        "kind": "v6_prior_trained_checkpoint",
+        "kind": "v6_ecp_trained_checkpoint",
         "training_mode": mode,
         "source_macro": 400,
         "method_macro": macro,
@@ -408,7 +409,7 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_prior_{video_condition}",
+        "arm": f"expert_manifold_v6_ecp_{video_condition}",
         "execution_backend": (
             "online_v6_complete_lora_writer_then_episode_lora_cache"
         ),

@@ -243,7 +243,7 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
     def components(**_kwargs):
         return SimpleNamespace(
             positive=(torch.tensor([2.0, 0.0]), torch.tensor([4.0])),
-            expert=(torch.tensor([8.0, 0.0]), torch.tensor([1.0])),
+            projection=(torch.tensor([8.0, 0.0]), torch.tensor([1.0])),
             ranking=(torch.tensor([1.0, 0.0]), torch.tensor([8.0])),
         )
 
@@ -300,7 +300,7 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
         (tmp_path / "gradient_profile.json").read_text(encoding="utf-8")
     )
     completion = json.loads((tmp_path / "completion.json").read_text(encoding="utf-8"))
-    assert profile["schema_version"] == ("ember_pi05_v6_prior_gradient_profile_seal_v1")
+    assert profile["schema_version"] == ("ember_pi05_v6_ecp_gradient_profile_seal_v2")
     assert profile["schedule_macro"] == 49
     assert profile["task_count"] == 24
     assert profile["action_queries_per_task"] == 20
@@ -313,7 +313,7 @@ def test_v6_prior_gradient_profile_writes_sealed_panel_evidence(
     }
     assert len(profile["task_records"]) == 24
     assert completion == {
-        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+        "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
         "mode": "gradient-profile",
         "completed_diagnostic_macros": 1,
         "schedule_start_macro": 49,
@@ -495,7 +495,7 @@ def test_v6_prior_task_objective_wires_logical_b20_into_physical_b16(
             },
             "objective": {
                 "positive_policy_randomness": randomness,
-                "expert": {"norm_weight": 0.25, "smooth_l1_beta": 0.1},
+                "projection": {"smooth_l1_beta": 0.1},
                 "ranking": {"required_margin": 0.1, "temperature": 0.1},
             },
         },
@@ -573,7 +573,7 @@ def test_v6_prior_runtime_rejects_external_config_copy(tmp_path) -> None:
         path = tmp_path / name
         path.mkdir()
         paths[name] = path
-    external = tmp_path / "pi05_v6_prior_policy_effective_writer_v1.json"
+    external = tmp_path / "pi05_v6_ecp_policy_effective_writer_v2.json"
     external.write_text("{}", encoding="utf-8")
     args = SimpleNamespace(
         config=external,

@@ -23,6 +23,10 @@ from ember.expert_manifold.v6_prior import (
     V6_WRITER_STATE_TENSOR_COUNT,
     configure_v6_prior_trainability,
 )
+from ember.expert_manifold.v6_prior_contract import (
+    V6_PRIOR_CONFIG_SCHEMA,
+    V6_PRIOR_RUN_SCHEMA,
+)
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -31,11 +35,11 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.model import CompleteLoRAWriter
 
 
-V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_prior_writer_checkpoint_v1"
-V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_prior_writer_trainer_v1"
-V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_prior_writer_rank_rng_v1"
-V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = "ember_pi05_v6_prior_checkpoint_inspection_v1"
-V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_prior_checkpoint_comparison_v2"
+V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_ecp_writer_checkpoint_v2"
+V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_ecp_writer_trainer_v2"
+V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_ecp_writer_rank_rng_v2"
+V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = "ember_pi05_v6_ecp_checkpoint_inspection_v2"
+V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_ecp_checkpoint_comparison_v3"
 V6_PRIOR_WORLD_SIZE = 6
 V6_PRIOR_FROZEN_PARAMETER_TENSOR_COUNT = 482
 V6_PRIOR_FROZEN_STATE_TENSOR_COUNT = 483
@@ -365,12 +369,12 @@ def _validate_checkpoint_contract(
             name.split(".", 1)[0] not in V6_PRIOR_TRAINABLE_ROOTS
             for name in names_tuple
         )
-        or contract.get("run_schema") != "ember_pi05_v6_prior_writer_launch_v1"
+        or contract.get("run_schema") != V6_PRIOR_RUN_SCHEMA
         or contract.get("mode") not in {"profile", "formal"}
         or not isinstance(contract.get("git_commit"), str)
         or len(str(contract.get("git_commit"))) < 7
         or not isinstance(config.get("path"), str)
-        or config.get("schema") != "ember_pi05_v6_prior_policy_effective_writer_v1"
+        or config.get("schema") != V6_PRIOR_CONFIG_SCHEMA
         or (_strict_int(config.get("bytes")) or -1) <= 0
         or not source
         or initialization.get("mode") != "historical_v6_macro400_load_only"

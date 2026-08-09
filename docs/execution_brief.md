@@ -9,13 +9,15 @@ macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此�
 
 当前唯一活动候选是objective-only的v6-Initialized Expert-Component Projection。保留原架构、初始化、
 冻结边界、logical B20/physical B10+10、data和negative schedule；只把expert direction+norm和cosine
-ranking替换成`a_correct→1`与bounded `a_correct-a_negative`。当前尚未实现或启动GPU。
+ranking替换成`a_correct→1`与bounded-gradient `a_correct-a_negative`。该objective、v2 schema、metrics和
+legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --check`通过；尚未启动任何ECP GPU工作。
 
 当前操作顺序：
 
 1. v6-prior 0/10/25/50 formal、严格四点分析、机制诊断和GPU释放已封存；
-2. 实现ECP objective、metrics和合同，保持一个canonical Writer path；
-3. CPU验证projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/信息墙不变；
+2. ECP objective、metrics和合同已原位实现，保持一个canonical Writer path；
+3. 已完成全仓CPU验证，锁定projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/
+   信息墙不变；
 4. clean push/frozen worktree后live比较两节点，复用B10高吞吐图只做一次新aux gradient profile与短resume门；
 5. fresh短训并优先评测macro10；若`≤129`且多task净损失立即停止，只有健康才到25；
 6. 只有strict超过134且多task净获益才继续到50/100与六臂，循环到达标。
@@ -75,8 +77,9 @@ GPU前一次性要求：
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
-- config的evaluation、gradient和resume profile均已由retained artifacts封存；formal只在当前完整
-  artifact lineage下解锁，任何status-only或stale config仍fail-closed。
+- config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux weights和resume
+  profile已全部重置，必须从v2 clean frozen lineage重新实证后才能解锁formal。任何status-only、旧v1
+  evidence或stale config仍fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -147,13 +150,14 @@ functional eager-attention均在申请`254MiB`时OOM：allocated=`42.49GiB`、re
 `1.25GiB`、free=`235.31MiB`。因此B16没有whole-step吞吐点；当前直接运行balanced B10+10，不再做
 allocator retry、A-B-A或宽batch sweep。
 
-clean frozen`9c814ff`的balanced B10+10已在同一拓扑完成：wall=`21.0951s`、input wait=`.0763s`
+旧whole-LoRA clean frozen`9c814ff`的balanced B10+10已在同一拓扑完成：wall=`21.0951s`、input wait=`.0763s`
 （`.36%`）、peak allocated/reserved=`43,305,942,016/47,093,645,312` bytes、0 OOM/nonfinite；assembler
-复验24 tasks、480/480 queries、最长105帧和完整provenance。推荐expert/ranking weights=
-`.008355172068998324/.28570466890490887`并已原样写回；不扫workers4或更小microbatch。
+复验24 tasks、480/480 queries、最长105帧和完整provenance。当时推荐expert/ranking weights=
+`.008355172068998324/.28570466890490887`；它们只属于已退役objective，ECP不得继承。B10吞吐图可以复用，
+但projection/ranking gradient和weights必须从v2重新profile；不扫workers4或更小microbatch。
 
-1. 分别测positive、expert、ranking在compiler和factor heads的未加权gradient norm；
-2. 一次性选择`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
+1. 分别测positive、projection、ranking在compiler和factor heads的未加权gradient norm；
+2. 一次性选择`lambda_projection/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
    `.25`；若初始化已满足而梯度近零，不人为放大；
 3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
    在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
@@ -265,8 +269,8 @@ LoRA健康但分数低仍是失败；LoRA近rank1但分数提高不能仅因“�
 ## 8. Evidence, Git, and retention
 
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
-- current config：`configs/pi05_v6_prior_policy_effective_writer_v1.json`。
-- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第33节。
+- current config：`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。
+- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第34节。
 - current training/eval entry：`scripts/train_v6_prior_writer.py`、`scripts/evaluate_pi05.py`。
 - formal保留config、command/env、GPU topology、checkpoint schema、raw rows、aggregate、completion和必要
   mechanism analysis；不提交checkpoints/cache/data/binaries。

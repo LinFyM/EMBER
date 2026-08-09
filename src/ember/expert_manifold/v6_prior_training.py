@@ -26,6 +26,8 @@ from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     V6_PRIOR_CANONICAL_CONFIG,
+    V6_PRIOR_COMPLETION_SCHEMA,
+    V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
     load_v6_prior_config,
     suggest_auxiliary_weight,
 )
@@ -47,9 +49,6 @@ from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_distributed
 from ember.writer.functional import functional_lora_loss_gradient
-
-
-V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_prior_writer_completion_v1"
 
 
 @dataclass(frozen=True)
@@ -156,15 +155,14 @@ def _task_objective(
             collect_policy_details=False,
         )
     objective = runtime.config["objective"]
-    expert_config = objective["expert"]
+    projection_config = objective["projection"]
     rank_config = objective["ranking"]
     auxiliary = effective_auxiliary_output_gradients(
         pair.correct,
         pair.counterfactual,
         _target_state(runtime, task.ordinal),
         runtime.lora_contract,
-        norm_weight=float(expert_config["norm_weight"]),
-        smooth_l1_beta=float(expert_config["smooth_l1_beta"]),
+        smooth_l1_beta=float(projection_config["smooth_l1_beta"]),
         required_margin=float(rank_config["required_margin"]),
         temperature=float(rank_config["temperature"]),
     )
@@ -185,41 +183,80 @@ def _task_objective(
 def _task_record(value: TaskObjective) -> dict[str, Any]:
     metric_names = (
         "functional_loss",
-        "expert_loss",
-        "expert_direction",
-        "expert_log_norm",
+        "projection_loss",
         "ranking_loss",
-        "ranking_margin",
-        "correct_expert_cosine",
-        "counterfactual_expert_cosine",
+        "projection_margin",
+        "correct_projection_coefficient",
+        "counterfactual_projection_coefficient",
+        "correct_expert_component",
+        "counterfactual_expert_component",
         "correct_effective_norm",
         "counterfactual_effective_norm",
         "expert_effective_norm",
     )
+    correct = value.auxiliary.ranking.correct
+    counterfactual = value.auxiliary.ranking.counterfactual
     metric_tensors = (
         value.functional_loss,
-        value.auxiliary.expert.total,
-        value.auxiliary.expert.direction,
-        value.auxiliary.expert.log_norm,
+        value.auxiliary.projection.total,
         value.auxiliary.ranking.loss,
         value.auxiliary.ranking.margin.mean(),
-        value.auxiliary.ranking.correct.cosine.mean(),
-        value.auxiliary.ranking.counterfactual.cosine.mean(),
-        value.auxiliary.ranking.correct.generated_norm.mean(),
-        value.auxiliary.ranking.counterfactual.generated_norm.mean(),
-        value.auxiliary.ranking.correct.target_norm.mean(),
+        correct.projection_coefficient.mean(),
+        counterfactual.projection_coefficient.mean(),
+        (correct.projection_coefficient * correct.target_norm).mean(),
+        (counterfactual.projection_coefficient * counterfactual.target_norm).mean(),
+        correct.generated_norm.mean(),
+        counterfactual.generated_norm.mean(),
+        correct.target_norm.mean(),
     )
-    metric_values = (
-        torch.stack(
-            tuple(item.detach().to(dtype=torch.float32) for item in metric_tensors)
+    target_denominator = correct.per_target_target_norm_sq.sum(dim=-1) + 1e-12
+    per_target_components = (
+        correct.per_target_inner_product / target_denominator.unsqueeze(-1)
+    )
+    absolute_inner = correct.per_target_inner_product.abs()
+    per_target_absolute_fractions = absolute_inner / absolute_inner.sum(
+        dim=-1, keepdim=True
+    ).clamp_min(1e-12)
+    packed_values = (
+        torch.cat(
+            (
+                torch.stack(
+                    tuple(
+                        item.detach().to(dtype=torch.float32)
+                        for item in metric_tensors
+                    )
+                ),
+                per_target_components.detach().to(dtype=torch.float32).reshape(-1),
+                per_target_absolute_fractions.detach()
+                .to(dtype=torch.float32)
+                .reshape(-1),
+            )
         )
         .to(device="cpu")
         .tolist()
     )
+    target_count = int(correct.per_target_inner_product.numel())
+    metric_values = packed_values[: len(metric_names)]
+    per_target_component_values = packed_values[
+        len(metric_names) : len(metric_names) + target_count
+    ]
+    per_target_fraction_values = packed_values[len(metric_names) + target_count :]
     if not all(math.isfinite(item) for item in metric_values):
         raise ExpertManifoldError("v6-prior task objective metric is non-finite")
+    if not all(
+        math.isfinite(item)
+        for item in (*per_target_component_values, *per_target_fraction_values)
+    ):
+        raise ExpertManifoldError("v6-prior per-target projection is non-finite")
     if metric_values[-1] <= 1e-12:
         raise ExpertManifoldError("expert target has zero policy-effective energy")
+    if not math.isclose(
+        sum(per_target_component_values),
+        metric_values[metric_names.index("correct_projection_coefficient")],
+        rel_tol=1e-5,
+        abs_tol=1e-6,
+    ):
+        raise ExpertManifoldError("per-target projection components changed")
     return {
         "task_ordinal": value.task.ordinal,
         "global_task_id": value.task.global_task_id,
@@ -235,6 +272,10 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         ),
         "counterfactual_demo": value.counterfactual_demo,
         **dict(zip(metric_names, metric_values, strict=True)),
+        "correct_per_target_projection_components": per_target_component_values,
+        "correct_per_target_absolute_numerator_fractions": (
+            per_target_fraction_values
+        ),
         "correct_raw_frames": value.pair.correct_raw_frames,
         "correct_sampled_frames": value.pair.correct_sampled_frames,
         "counterfactual_raw_frames": value.pair.counterfactual_raw_frames,
@@ -350,7 +391,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
             dtype=torch.float32,
             device=runtime.context.device,
         )
-        for name in ("positive", "expert", "ranking")
+        for name in ("positive", "projection", "ranking")
     }
     local_records = []
     input_wait_seconds = 0.0
@@ -373,7 +414,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         )
         for name, values in (
             ("positive", components.positive),
-            ("expert", components.expert),
+            ("projection", components.projection),
             ("ranking", components.ranking),
         ):
             offset = 0
@@ -406,7 +447,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         name: suggest_auxiliary_weight(
             norms["positive"], norms[name], maximum_fraction=fraction
         )
-        for name in ("expert", "ranking")
+        for name in ("projection", "ranking")
     }
     seconds, allocated, reserved, input_wait_seconds = _runtime_maximums(
         runtime.context,
@@ -435,7 +476,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
         write_json_atomic(
             runtime.args.output_dir / "gradient_profile.json",
             {
-                "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
+                "schema_version": V6_PRIOR_GRADIENT_PROFILE_SCHEMA,
                 "schedule_macro": runtime.segment.schedule_start_macro,
                 "task_count": len(task_records),
                 "action_queries_per_task": action_queries_per_task,
@@ -474,7 +515,7 @@ def _run_gradient_profile(runtime: V6PriorRuntime) -> None:
 
 def _run_training(runtime: V6PriorRuntime) -> None:
     weights = runtime.config["objective"]["auxiliary_weights"]
-    expert_weight = float(weights["expert"])
+    projection_weight = float(weights["projection"])
     ranking_weight = float(weights["ranking"])
     local_tasks = 24 // runtime.context.world_size
     started = time.monotonic()
@@ -497,7 +538,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
                 pair=objective.pair,
                 functional=objective.functional_gradients,
                 auxiliary=objective.auxiliary,
-                expert_weight=expert_weight,
+                projection_weight=projection_weight,
                 ranking_weight=ranking_weight,
                 task_scale=1.0 / local_tasks,
             )
@@ -520,13 +561,13 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         task_records = _gather_task_records(local_records, runtime.context)
         metric_names = (
             "functional_loss",
-            "expert_loss",
-            "expert_direction",
-            "expert_log_norm",
+            "projection_loss",
             "ranking_loss",
-            "ranking_margin",
-            "correct_expert_cosine",
-            "counterfactual_expert_cosine",
+            "projection_margin",
+            "correct_projection_coefficient",
+            "counterfactual_projection_coefficient",
+            "correct_expert_component",
+            "counterfactual_expert_component",
             "correct_effective_norm",
             "counterfactual_effective_norm",
             "expert_effective_norm",
@@ -543,7 +584,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         row = {
             "macro": cursor,
             **metrics,
-            "expert_weight": expert_weight,
+            "projection_weight": projection_weight,
             "ranking_weight": ranking_weight,
             "gradient_norm_before_clip": gradient_norm_value,
             "applied_lr": applied_lr,
@@ -631,7 +672,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json",
+        default=V6_PRIOR_CANONICAL_CONFIG,
     )
     parser.add_argument(
         "--mode",

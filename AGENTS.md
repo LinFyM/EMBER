@@ -23,9 +23,10 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
-- 当前没有运行中的EMBER GPU任务。旧v6-prior formal与四点strict分析已完整封存；下一顺序只取
-  `task_plan.md`：实现objective-only Expert-Component Projection、CPU代数/gradient门、clean
-  push/frozen worktree、一次六卡gradient/profile seal，再做短训练和及时strict评测。
+- 当前没有运行中的EMBER GPU任务。旧v6-prior formal与四点strict分析已完整封存；ECP objective、
+  v2 config/checkpoint/evaluator identity、metrics和只读legacy分析隔离已原位实现，旧v1不再是可执行
+  训练合同。全仓CPU门已以`259 passed`和`git diff --check`完成；下一顺序只取`task_plan.md`：
+  clean push/frozen worktree、一次六卡gradient/profile seal，再做短训练和及时strict评测。
 
 ## Mandatory reading
 

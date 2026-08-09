@@ -1,5 +1,19 @@
 # EMBER Findings
 
+## 2026-08-09 ECP实现边界与首轮可证伪信号
+
+- ECP不是“让整套LoRA更像SFT LoRA”：它只约束generated effective BA在task expert方向上的最小二乘
+  coefficient。给generated update增加任意expert-orthogonal能量不会改变projection loss；因此旧路线
+  94% loss降幅来自径向收缩的机制已被结构性移除。
+- correct与reversed/shuffled/wrong都投影到exact-language task的同一个expert；wrong video来源task的
+  expert从不进入objective。ranking只比较`a_correct-a_negative`并用temperature-scaled softplus平滑退火，
+  same-task-other仍属于positive分布。
+- v2 schema隔离是科学边界而非命名整理：旧whole-LoRA aux weights、optimizer/resume和trained checkpoint
+  无法被ECP live loader接受，避免把`134→127→105→123`路线的状态伪装成新方法证据；历史strict结果仍可
+  只读比较。
+- 首轮真正裁决仍是closed-loop。若profile后`a_correct`大多数task向1、norm不塌缩，但macro10/25仍不超过
+  134或只是任务换手，说明task-expert component本身不是held成功的共同方向，不能靠加权或长训挽救。
+
 ## 2026-08-09 v6-prior formal四点裁决与Expert-Component Projection根因
 
 - current-schedule strict correct400在macro0/10/25/50为`134/127/105/123`，correct80却为

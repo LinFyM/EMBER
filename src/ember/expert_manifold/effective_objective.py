@@ -26,21 +26,23 @@ class EffectiveAlignment:
     target_norm: torch.Tensor
     inner_product: torch.Tensor
     cosine: torch.Tensor
+    projection_coefficient: torch.Tensor
+    per_target_inner_product: torch.Tensor
+    per_target_target_norm_sq: torch.Tensor
 
 
 @dataclass(frozen=True)
-class EffectiveExpertLoss:
-    """Direction and robust log-energy losses for one correct Writer output."""
+class EffectiveProjectionLoss:
+    """Robust expert-component completion loss for one correct Writer output."""
 
     total: torch.Tensor
-    direction: torch.Tensor
-    log_norm: torch.Tensor
+    coefficient: torch.Tensor
     alignment: EffectiveAlignment
 
 
 @dataclass(frozen=True)
 class EffectiveRankingLoss:
-    """Bounded-gradient correct-over-counterfactual expert ranking."""
+    """Smooth correct-over-counterfactual expert-component ranking."""
 
     loss: torch.Tensor
     margin: torch.Tensor
@@ -50,11 +52,11 @@ class EffectiveRankingLoss:
 
 @dataclass(frozen=True)
 class EffectiveAuxiliaryGradients:
-    """Unweighted output-space gradients for expert and ranking supervision."""
+    """Unweighted output-space gradients for projection and ranking."""
 
-    expert: EffectiveExpertLoss
+    projection: EffectiveProjectionLoss
     ranking: EffectiveRankingLoss
-    correct_expert: Mapping[str, torch.Tensor]
+    correct_projection: Mapping[str, torch.Tensor]
     correct_ranking: Mapping[str, torch.Tensor]
     counterfactual_ranking: Mapping[str, torch.Tensor]
 
@@ -112,9 +114,9 @@ def _effective_alignment(
     if target_leading not in ((), leading):
         raise ExpertManifoldError("expert target LoRA leading axes changed")
 
-    generated_norm_sq: torch.Tensor | None = None
-    target_norm_sq: torch.Tensor | None = None
-    inner_product: torch.Tensor | None = None
+    generated_parts: list[torch.Tensor] = []
+    target_parts: list[torch.Tensor] = []
+    cross_parts: list[torch.Tensor] = []
     for item in contract.targets:
         a_name = item.name + LORA_A_SUFFIX
         b_name = item.name + LORA_B_SUFFIX
@@ -140,28 +142,30 @@ def _effective_alignment(
             (b.transpose(-2, -1) @ expert_b)
             * (a @ expert_a.transpose(-2, -1))
         ).sum(dim=(-2, -1))
-        generated_norm_sq = (
-            generated_part
-            if generated_norm_sq is None
-            else generated_norm_sq + generated_part
-        )
-        target_norm_sq = (
-            target_part if target_norm_sq is None else target_norm_sq + target_part
-        )
-        inner_product = (
-            cross_part if inner_product is None else inner_product + cross_part
-        )
-    if generated_norm_sq is None or target_norm_sq is None or inner_product is None:
+        generated_parts.append(generated_part)
+        target_parts.append(target_part)
+        cross_parts.append(cross_part)
+    if not generated_parts:
         raise ExpertManifoldError("effective alignment received no LoRA targets")
+    per_target_generated_norm_sq = torch.stack(generated_parts, dim=-1)
+    per_target_target_norm_sq = torch.stack(target_parts, dim=-1)
+    per_target_inner_product = torch.stack(cross_parts, dim=-1)
+    generated_norm_sq = per_target_generated_norm_sq.sum(dim=-1)
+    target_norm_sq = per_target_target_norm_sq.sum(dim=-1)
+    inner_product = per_target_inner_product.sum(dim=-1)
     generated_norm = generated_norm_sq.clamp_min(0).sqrt()
     target_norm = target_norm_sq.clamp_min(0).sqrt()
     denominator = (generated_norm * target_norm).clamp_min(epsilon)
     cosine = (inner_product / denominator).clamp(-1.0, 1.0)
+    projection_coefficient = inner_product / (target_norm_sq + epsilon)
     return EffectiveAlignment(
         generated_norm=generated_norm,
         target_norm=target_norm,
         inner_product=inner_product,
         cosine=cosine,
+        projection_coefficient=projection_coefficient,
+        per_target_inner_product=per_target_inner_product,
+        per_target_target_norm_sq=per_target_target_norm_sq,
     )
 
 
@@ -173,6 +177,9 @@ def _validate_alignment(value: EffectiveAlignment, *, epsilon: float) -> None:
             torch.isfinite(value.target_norm).all(),
             torch.isfinite(value.inner_product).all(),
             torch.isfinite(value.cosine).all(),
+            torch.isfinite(value.projection_coefficient).all(),
+            torch.isfinite(value.per_target_inner_product).all(),
+            torch.isfinite(value.per_target_target_norm_sq).all(),
         )
     ).detach().to(device="cpu").tolist()
     if not checks[0]:
@@ -200,50 +207,39 @@ def effective_alignment(
     return value
 
 
-def _expert_loss_from_alignment(
+def _projection_loss_from_alignment(
     alignment: EffectiveAlignment,
     *,
-    norm_weight: float,
     smooth_l1_beta: float,
-    epsilon: float,
-) -> EffectiveExpertLoss:
-    direction = (1.0 - alignment.cosine).mean()
-    log_ratio = torch.log(
-        alignment.generated_norm.clamp_min(epsilon)
-        / alignment.target_norm.clamp_min(epsilon)
-    )
-    log_norm = F.smooth_l1_loss(
-        log_ratio,
-        torch.zeros_like(log_ratio),
+) -> EffectiveProjectionLoss:
+    total = F.smooth_l1_loss(
+        alignment.projection_coefficient,
+        torch.ones_like(alignment.projection_coefficient),
         beta=smooth_l1_beta,
         reduction="mean",
     )
-    return EffectiveExpertLoss(
-        total=direction + norm_weight * log_norm,
-        direction=direction,
-        log_norm=log_norm,
+    return EffectiveProjectionLoss(
+        total=total,
+        coefficient=alignment.projection_coefficient,
         alignment=alignment,
     )
 
 
-def effective_expert_loss(
+def effective_projection_loss(
     generated: Mapping[str, torch.Tensor],
     target: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     *,
-    norm_weight: float,
     smooth_l1_beta: float,
     epsilon: float = 1e-12,
-) -> EffectiveExpertLoss:
-    """Attract a correct generated update to one task expert in effective space."""
+) -> EffectiveProjectionLoss:
+    """Complete only the task-expert component of one generated update."""
 
-    if norm_weight < 0 or smooth_l1_beta <= 0:
-        raise ExpertManifoldError("invalid effective expert-loss weights")
-    return _expert_loss_from_alignment(
+    if smooth_l1_beta <= 0:
+        raise ExpertManifoldError("invalid effective projection-loss beta")
+    return _projection_loss_from_alignment(
         effective_alignment(generated, target, contract, epsilon=epsilon),
-        norm_weight=norm_weight,
         smooth_l1_beta=smooth_l1_beta,
-        epsilon=epsilon,
     )
 
 
@@ -254,9 +250,12 @@ def _ranking_loss_from_alignments(
     required_margin: float,
     temperature: float,
 ) -> EffectiveRankingLoss:
-    if correct.cosine.shape != counterfactual.cosine.shape:
+    if correct.projection_coefficient.shape != counterfactual.projection_coefficient.shape:
         raise ExpertManifoldError("counterfactual alignment batch changed")
-    margin = correct.cosine - counterfactual.cosine
+    margin = (
+        correct.projection_coefficient
+        - counterfactual.projection_coefficient
+    )
     loss = (
         F.softplus((required_margin - margin) / temperature) * temperature
     ).mean()
@@ -300,7 +299,6 @@ def effective_auxiliary_output_gradients(
     target: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     *,
-    norm_weight: float,
     smooth_l1_beta: float,
     required_margin: float,
     temperature: float,
@@ -309,8 +307,7 @@ def effective_auxiliary_output_gradients(
     """Differentiate both auxiliaries only to generated LoRA output tensors."""
 
     if (
-        norm_weight < 0
-        or smooth_l1_beta <= 0
+        smooth_l1_beta <= 0
         or not 0 <= required_margin <= 2
         or temperature <= 0
         or epsilon <= 0
@@ -325,11 +322,9 @@ def effective_auxiliary_output_gradients(
     counterfactual_alignment = _effective_alignment(
         counterfactual, target, contract, epsilon=epsilon
     )
-    expert = _expert_loss_from_alignment(
+    projection = _projection_loss_from_alignment(
         correct_alignment,
-        norm_weight=norm_weight,
         smooth_l1_beta=smooth_l1_beta,
-        epsilon=epsilon,
     )
     ranking = _ranking_loss_from_alignments(
         correct_alignment,
@@ -339,8 +334,8 @@ def effective_auxiliary_output_gradients(
     )
     correct_values = tuple(correct[name] for name in names)
     counterfactual_values = tuple(counterfactual[name] for name in names)
-    expert_gradients = torch.autograd.grad(
-        expert.total,
+    projection_gradients = torch.autograd.grad(
+        projection.total,
         correct_values,
         retain_graph=True,
     )
@@ -350,9 +345,9 @@ def effective_auxiliary_output_gradients(
     )
     split = len(names)
     return EffectiveAuxiliaryGradients(
-        expert=expert,
+        projection=projection,
         ranking=ranking,
-        correct_expert=dict(zip(names, expert_gradients, strict=True)),
+        correct_projection=dict(zip(names, projection_gradients, strict=True)),
         correct_ranking=dict(zip(names, ranking_gradients[:split], strict=True)),
         counterfactual_ranking=dict(
             zip(names, ranking_gradients[split:], strict=True)

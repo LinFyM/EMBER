@@ -27,7 +27,7 @@ class GeneratedCounterfactualPair:
 @dataclass(frozen=True)
 class ParameterGradientComponents:
     positive: tuple[torch.Tensor, ...]
-    expert: tuple[torch.Tensor, ...]
+    projection: tuple[torch.Tensor, ...]
     ranking: tuple[torch.Tensor, ...]
 
 
@@ -142,7 +142,7 @@ def merged_output_gradients(
     pair: GeneratedCounterfactualPair,
     functional: Mapping[str, torch.Tensor],
     auxiliary: EffectiveAuxiliaryGradients,
-    expert_weight: float,
+    projection_weight: float,
     ranking_weight: float,
     task_scale: float,
 ) -> tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]:
@@ -152,7 +152,7 @@ def merged_output_gradients(
     if (
         set(pair.counterfactual) != set(names)
         or set(functional) != set(names)
-        or not 0 <= expert_weight <= 1
+        or not 0 <= projection_weight <= 1
         or not 0 <= ranking_weight <= 1
         or not 0 < task_scale <= 1
     ):
@@ -160,7 +160,7 @@ def merged_output_gradients(
     correct_gradients = tuple(
         (
             functional[name]
-            + expert_weight * auxiliary.correct_expert[name]
+            + projection_weight * auxiliary.correct_projection[name]
             + ranking_weight * auxiliary.correct_ranking[name]
         )
         * task_scale
@@ -198,10 +198,10 @@ def parameter_gradient_components(
         grad_outputs=tuple(functional[name] for name in names),
         retain_graph=True,
     )
-    expert = torch.autograd.grad(
+    projection = torch.autograd.grad(
         correct,
         parameters,
-        grad_outputs=tuple(auxiliary.correct_expert[name] for name in names),
+        grad_outputs=tuple(auxiliary.correct_projection[name] for name in names),
         retain_graph=True,
     )
     ranking = torch.autograd.grad(
@@ -214,6 +214,6 @@ def parameter_gradient_components(
     )
     return ParameterGradientComponents(
         positive=tuple(value.detach() for value in positive),
-        expert=tuple(value.detach() for value in expert),
+        projection=tuple(value.detach() for value in projection),
         ranking=tuple(value.detach() for value in ranking),
     )

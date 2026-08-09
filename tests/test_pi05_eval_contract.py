@@ -293,9 +293,9 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+                / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
             ),
-            "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+            "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         },
         "writer_asset": {
             "reference": "v6-prior:historical-macro400",
@@ -383,14 +383,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_v6_prior_correct",
+        arm="expert_manifold_v6_ecp_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_v6_prior_cross_suite_wrong",
+        arm="expert_manifold_v6_ecp_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -408,7 +408,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
-            arm="expert_manifold_v6_prior_correct",
+            arm="expert_manifold_v6_ecp_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=1,
@@ -416,7 +416,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     batched = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "batched",
-        arm="expert_manifold_v6_prior_correct",
+        arm="expert_manifold_v6_ecp_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=16,

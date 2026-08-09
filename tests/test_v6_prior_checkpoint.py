@@ -100,12 +100,12 @@ def _synthetic_formal_checkpoint(
         "action_queries_per_task": 20,
     }
     contract = {
-        "run_schema": "ember_pi05_v6_prior_writer_launch_v1",
+        "run_schema": "ember_pi05_v6_ecp_writer_launch_v2",
         "mode": "profile",
         "git_commit": "7778985",
         "config": {
-            "path": "configs/pi05_v6_prior_policy_effective_writer_v1.json",
-            "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+            "path": "configs/pi05_v6_ecp_policy_effective_writer_v2.json",
+            "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
             "bytes": 1,
         },
         "source": {"model_path": "/synthetic/source"},
@@ -399,6 +399,14 @@ def test_v6_prior_checkpoint_inspection_and_comparison_fail_closed(
     tmp_path: Path,
 ) -> None:
     left, right = _synthetic_checkpoint_pair(tmp_path)
+
+    legacy = read_json(right / "manifest.json")
+    legacy["schema_version"] = "ember_pi05_v6_prior_writer_checkpoint_v1"
+    write_json_atomic(right / "manifest.json", legacy)
+    with pytest.raises(ExpertManifoldError, match="inspection failed: manifest"):
+        inspect_v6_prior_checkpoint(right)
+    legacy["schema_version"] = V6_PRIOR_CHECKPOINT_SCHEMA
+    write_json_atomic(right / "manifest.json", legacy)
 
     manifest = read_json(left / "manifest.json")
     original_phase = manifest["cursor_contract"]["counterfactual_phase"]

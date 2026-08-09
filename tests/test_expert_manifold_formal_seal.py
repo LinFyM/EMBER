@@ -18,7 +18,7 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG = REPO_ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+CONFIG = REPO_ROOT / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
 
 
 def _smoke_evidence() -> dict:
@@ -107,7 +107,7 @@ def _reset_to_gradient_ready(config: dict) -> None:
     config["objective"]["auxiliary_weights"].update(
         {
             "status": "blocked_until_live_train24_gradient_profile",
-            "expert": None,
+            "projection": None,
             "ranking": None,
         }
     )

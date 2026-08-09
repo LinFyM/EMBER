@@ -1,5 +1,25 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 ECP objective与v2执行合同完成（尚未启动GPU）
+
+- 唯一canonical objective已从whole-LoRA cosine+log-norm原位替换为Expert-Component Projection：
+  correct用全38-target gauge-invariant coefficient SmoothL1到1，negative沿同一language-task expert做
+  softplus margin；没有新增Writer/policy forward、dense BA、shadow/residual或部署scale gate。
+- 新config=`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。run、gradient/resume、checkpoint/trainer/
+  RNG、adapter/episode均使用独立ECP v2 identity；旧v1 gradient weights、optimizer和resume evidence全部
+  失效，live路径拒绝旧checkpoint。历史results只由analysis显式legacy family只读解析，不能恢复模型。
+- metrics一次bulk CPU transfer记录projection loss、`a_correct/a_negative/a_margin`、expert component、
+  generated/expert norm及38-target signed component/absolute numerator fraction；训练热路径仍是FP32低秩
+  contraction，不materialize BA，不增加逐target同步。
+- 小矩阵dense oracle、gauge invariance、orthogonal-energy invariance、SmoothL1解析gradient、ranking符号、
+  batch broadcast、output→factor chain rule及v2 config/checkpoint/evaluator/analysis均纳入全仓CPU封印：
+  `259 passed in 30.82s`，`git diff --check`通过。当前没有ECP GPU profile、训练或strict结果；
+  下一步是clean push/frozen worktree后的一次六卡profile。
+- architecture guard没有新文件、parallel version或parallel function family；其hard项来自既有超大
+  checkpoint/contract/test owner被schema替换触碰。按design第34.5节记录cohesive exception：checkpoint
+  仅+4行schema接线、contract +56行fail-closed协议、测试+26行，拆分不会减少责任；canonical
+  `effective_objective.py`净减5行。
+
 ## 2026-08-09 v6-prior formal 0→50与四点strict分析完成
 
 - formal root=

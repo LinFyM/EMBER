@@ -6,7 +6,7 @@ from ember.expert_manifold.effective_objective import (
     effective_alignment,
     effective_auxiliary_output_gradients,
     effective_counterfactual_ranking_loss,
-    effective_expert_loss,
+    effective_projection_loss,
 )
 from ember.lora import (
     LORA_A_SUFFIX,
@@ -26,6 +26,16 @@ def _contract() -> SmolVLALoRAContract:
         alpha=2,
         dropout=0.0,
         identity_seed=7,
+    )
+
+
+def _dense_contract() -> SmolVLALoRAContract:
+    return SmolVLALoRAContract(
+        targets=(LoRATarget("only", in_features=3, out_features=2),),
+        rank=2,
+        alpha=2,
+        dropout=0.0,
+        identity_seed=11,
     )
 
 
@@ -56,13 +66,23 @@ def _flat_effective(
     )
 
 
-def test_effective_alignment_matches_explicit_ba_matrices() -> None:
+def _matrix_state(matrix: torch.Tensor) -> dict[str, torch.Tensor]:
+    return {
+        "only" + LORA_A_SUFFIX: matrix,
+        "only" + LORA_B_SUFFIX: torch.eye(
+            2, dtype=matrix.dtype, device=matrix.device
+        ),
+    }
+
+
+def test_effective_alignment_and_projection_match_explicit_ba_matrices() -> None:
     contract = _contract()
     generated = _state(contract, 11)
     target = _state(contract, 13)
     observed = effective_alignment(generated, target, contract)
     left = _flat_effective(generated, contract)
     right = _flat_effective(target, contract)
+    expected_coefficient = torch.dot(left, right) / right.square().sum()
     assert torch.allclose(observed.generated_norm, torch.linalg.vector_norm(left))
     assert torch.allclose(observed.target_norm, torch.linalg.vector_norm(right))
     assert torch.allclose(observed.inner_product, torch.dot(left, right))
@@ -70,60 +90,135 @@ def test_effective_alignment_matches_explicit_ba_matrices() -> None:
         observed.cosine,
         torch.nn.functional.cosine_similarity(left[None], right[None])[0],
     )
+    assert torch.allclose(
+        observed.projection_coefficient,
+        expected_coefficient,
+        atol=1e-6,
+        rtol=1e-6,
+    )
+    assert torch.allclose(
+        observed.per_target_inner_product.sum(),
+        observed.inner_product,
+    )
+    assert torch.allclose(
+        observed.per_target_target_norm_sq.sum(),
+        observed.target_norm.square(),
+    )
 
 
-def test_effective_objective_is_invariant_to_invertible_lora_gauge() -> None:
+def test_projection_is_invariant_to_independent_generated_and_expert_gauges() -> None:
     contract = _contract()
     generated = _state(contract, 17)
     target = _state(contract, 19)
-    transformed = {}
-    gauge = torch.tensor([[1.4, 0.2], [-0.3, 0.9]])
-    inverse = torch.linalg.inv(gauge)
+    generated_changed = {}
+    target_changed = {}
+    generated_gauge = torch.tensor([[1.4, 0.2], [-0.3, 0.9]])
+    target_gauge = torch.tensor([[0.8, -0.4], [0.1, 1.3]])
     for item in contract.targets:
         a_name = item.name + LORA_A_SUFFIX
         b_name = item.name + LORA_B_SUFFIX
-        transformed[a_name] = gauge @ generated[a_name]
-        transformed[b_name] = generated[b_name] @ inverse
-    original = effective_expert_loss(
-        generated, target, contract, norm_weight=0.25, smooth_l1_beta=0.5
+        generated_changed[a_name] = torch.linalg.solve(
+            generated_gauge, generated[a_name]
+        )
+        generated_changed[b_name] = generated[b_name] @ generated_gauge
+        target_changed[a_name] = torch.linalg.solve(target_gauge, target[a_name])
+        target_changed[b_name] = target[b_name] @ target_gauge
+    original = effective_projection_loss(
+        generated, target, contract, smooth_l1_beta=0.5
     )
-    changed = effective_expert_loss(
-        transformed, target, contract, norm_weight=0.25, smooth_l1_beta=0.5
+    changed = effective_projection_loss(
+        generated_changed, target_changed, contract, smooth_l1_beta=0.5
     )
     assert torch.allclose(original.total, changed.total, atol=2e-6, rtol=2e-6)
     assert torch.allclose(
-        original.alignment.cosine,
-        changed.alignment.cosine,
+        original.coefficient,
+        changed.coefficient,
         atol=2e-6,
         rtol=2e-6,
     )
 
 
-def test_effective_losses_have_finite_generated_lora_gradients() -> None:
-    contract = _contract()
-    correct = {
-        name: value.requires_grad_() for name, value in _state(contract, 23).items()
-    }
-    negative = {
-        name: value.requires_grad_() for name, value in _state(contract, 29).items()
-    }
-    target = _state(contract, 31)
-    expert = effective_expert_loss(
-        correct, target, contract, norm_weight=0.25, smooth_l1_beta=0.5
+def test_projection_only_completes_expert_component() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor([[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]])
+    candidate = torch.tensor([[0.2, 1.0, -0.5], [0.6, -0.4, 0.3]])
+    orthogonal = candidate - (
+        (candidate * expert).sum() / expert.square().sum()
+    ) * expert
+    target = _matrix_state(expert)
+    losses = []
+    for orthogonal_scale in (0.0, 2.0, 20.0):
+        generated = _matrix_state(0.8 * expert + orthogonal_scale * orthogonal)
+        projection = effective_projection_loss(
+            generated, target, contract, smooth_l1_beta=0.5
+        )
+        assert torch.allclose(
+            projection.coefficient,
+            torch.tensor(0.8),
+            atol=2e-6,
+            rtol=2e-6,
+        )
+        losses.append(projection.total)
+    assert all(torch.allclose(losses[0], item, atol=2e-6, rtol=2e-6) for item in losses)
+
+
+def test_projection_direct_effective_gradient_is_parallel_to_expert() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor([[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]])
+    generated_matrix = (0.8 * expert).requires_grad_()
+    generated = _matrix_state(generated_matrix)
+    target = _matrix_state(expert)
+    loss = effective_projection_loss(
+        generated, target, contract, smooth_l1_beta=0.5
     )
+    (gradient,) = torch.autograd.grad(loss.total, generated_matrix)
+    expected = ((0.8 - 1.0) / 0.5) * expert / expert.square().sum()
+    assert torch.allclose(gradient, expected, atol=2e-6, rtol=2e-6)
+    residual = gradient - (gradient * expert).sum() / expert.square().sum() * expert
+    assert torch.linalg.vector_norm(residual) < 2e-6
+
+
+def test_coefficient_ranking_uses_language_task_expert_and_correct_signs() -> None:
+    contract = _dense_contract()
+    expert = torch.tensor([[1.2, -0.7, 0.4], [-0.3, 0.8, 1.1]])
+    correct_matrix = (0.8 * expert).requires_grad_()
+    negative_matrix = (0.7 * expert).requires_grad_()
     ranking = effective_counterfactual_ranking_loss(
-        correct,
-        negative,
-        target,
+        _matrix_state(correct_matrix),
+        _matrix_state(negative_matrix),
+        _matrix_state(expert),
         contract,
         required_margin=0.2,
         temperature=0.1,
     )
-    (expert.total + ranking.loss).backward()
-    gradients = [value.grad for value in (*correct.values(), *negative.values())]
-    assert all(value is not None for value in gradients)
-    assert all(torch.isfinite(value).all() for value in gradients if value is not None)
-    assert sum(int(torch.count_nonzero(value)) for value in gradients if value is not None) > 0
+    expected = torch.nn.functional.softplus(torch.tensor(1.0)) * 0.1
+    assert torch.allclose(ranking.margin, torch.tensor(0.1), atol=2e-6)
+    assert torch.allclose(ranking.loss, expected, atol=2e-6)
+    correct_gradient, negative_gradient = torch.autograd.grad(
+        ranking.loss, (correct_matrix, negative_matrix)
+    )
+    assert (correct_gradient * expert).sum() < 0
+    assert (negative_gradient * expert).sum() > 0
+
+    unrelated = -2.0 * expert
+    unchanged = effective_counterfactual_ranking_loss(
+        _matrix_state(correct_matrix.detach()),
+        _matrix_state(negative_matrix.detach()),
+        _matrix_state(expert),
+        contract,
+        required_margin=0.2,
+        temperature=0.1,
+    )
+    wrong_task_target = effective_counterfactual_ranking_loss(
+        _matrix_state(correct_matrix.detach()),
+        _matrix_state(negative_matrix.detach()),
+        _matrix_state(unrelated),
+        contract,
+        required_margin=0.2,
+        temperature=0.1,
+    )
+    assert torch.allclose(unchanged.margin, ranking.margin)
+    assert not torch.allclose(wrong_task_target.margin, ranking.margin)
 
 
 def test_identical_correct_and_negative_have_zero_ranking_advantage() -> None:
@@ -152,10 +247,14 @@ def test_effective_alignment_supports_generated_batches_and_shared_target() -> N
     target = _state(contract, 53)
     observed = effective_alignment(batched, target, contract)
     expected = torch.stack(
-        [effective_alignment(value, target, contract).cosine for value in (first, second)]
+        [
+            effective_alignment(value, target, contract).projection_coefficient
+            for value in (first, second)
+        ]
     )
-    assert observed.cosine.shape == (2,)
-    assert torch.allclose(observed.cosine, expected)
+    assert observed.projection_coefficient.shape == (2,)
+    assert observed.per_target_inner_product.shape == (2, 2)
+    assert torch.allclose(observed.projection_coefficient, expected)
 
 
 def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> None:
@@ -174,7 +273,6 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
         negative,
         target,
         contract,
-        norm_weight=0.25,
         smooth_l1_beta=0.5,
         required_margin=0.2,
         temperature=0.1,
@@ -184,7 +282,7 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
         tuple(correct[name] for name in names)
         + tuple(negative[name] for name in names),
         tuple(
-            output.correct_expert[name] + output.correct_ranking[name]
+            output.correct_projection[name] + output.correct_ranking[name]
             for name in names
         )
         + tuple(output.counterfactual_ranking[name] for name in names),
@@ -208,11 +306,10 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
     direct_negative = {
         name: value * 0.9 for name, value in direct_negative_parameters.items()
     }
-    expert = effective_expert_loss(
+    projection = effective_projection_loss(
         direct_correct,
         target,
         contract,
-        norm_weight=0.25,
         smooth_l1_beta=0.5,
     )
     ranking = effective_counterfactual_ranking_loss(
@@ -224,7 +321,7 @@ def test_auxiliary_output_gradients_preserve_exact_parameter_chain_rule() -> Non
         temperature=0.1,
     )
     expected = torch.autograd.grad(
-        expert.total + ranking.loss,
+        projection.total + ranking.loss,
         (*direct_correct_parameters.values(), *direct_negative_parameters.values()),
     )
     assert all(

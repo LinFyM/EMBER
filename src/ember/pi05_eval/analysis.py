@@ -19,8 +19,8 @@ from ember.pi05_eval_results import AGGREGATE_SCHEMA
 from ember.pi05_target_data import SUITE_ORDER
 
 
-CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_prior_checkpoint_curve_analysis_v1"
-SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_prior_six_arm_paired_analysis_v1"
+CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
+SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
 CHECKPOINT_MACROS = (0, 10, 25, 50)
 SIX_ARM_CONDITIONS = (
     "correct",
@@ -36,6 +36,23 @@ TaskKey = tuple[str, int]
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TARGET_DATA_MANIFEST = REPO_ROOT / "configs/pi05_target_data_v1/manifest.json"
+
+WRITER_FAMILIES = {
+    "legacy_v6_prior_v1": {
+        "adapter_schema": "ember_pi05_v6_prior_eval_adapter_v5",
+        "episode_schema": "ember_pi05_v6_prior_episode_v5",
+        "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "arm_prefix": "expert_manifold_v6_prior_",
+        "trained_checkpoint_kind": "v6_prior_trained_checkpoint",
+    },
+    "v6_ecp_v2": {
+        "adapter_schema": "ember_pi05_v6_ecp_eval_adapter_v6",
+        "episode_schema": "ember_pi05_v6_ecp_episode_v6",
+        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
+        "arm_prefix": "expert_manifold_v6_ecp_",
+        "trained_checkpoint_kind": "v6_ecp_trained_checkpoint",
+    },
+}
 
 
 def _fail(message: str) -> None:
@@ -178,10 +195,24 @@ def paired_transition_summary(
     return {"overall": _outcome_counts(pairs), "per_task": per_task, "per_suite": per_suite}
 
 
-def _formal_adapter(result: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mapping[str, Any], str]:
+def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, str]]:
+    for name, family in WRITER_FAMILIES.items():
+        if (
+            adapter.get("schema_version") == family["adapter_schema"]
+            and adapter.get("config", {}).get("schema")
+            == family["config_schema"]
+        ):
+            return name, family
+    _fail("Writer result is not a sealed legacy or current method family")
+
+
+def _formal_adapter(
+    result: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], Mapping[str, Any], str]:
     adapter = result.get("adapter", {})
     paired = result.get("paired_control", {})
     condition = str(adapter.get("video_condition", ""))
+    _, family = _writer_family(adapter)
     schedule = adapter.get("video_schedule", {})
     wall = adapter.get("information_wall", {})
     expected_wall = {
@@ -200,7 +231,7 @@ def _formal_adapter(result: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mappi
         or result.get("role") != "validation"
         or adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND
         or condition not in SIX_ARM_CONDITIONS
-        or result.get("arm") != f"expert_manifold_v6_prior_{condition}"
+        or result.get("arm") != f"{family['arm_prefix']}{condition}"
         or paired.get("mode") != "formal"
         or paired.get("role") != "validation"
         or paired.get("writer") != paired_writer_identity(adapter)
@@ -214,7 +245,7 @@ def _formal_adapter(result: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mappi
         or adapter.get("lora_contract", {}).get("rank") != 16
         or adapter.get("lora_contract", {}).get("target_count") != 38
     ):
-        _fail("analysis requires a formal validation v2 Expert-Manifold panel")
+        _fail("analysis requires a sealed formal validation Expert-Manifold panel")
     return adapter, paired, condition
 
 
@@ -296,12 +327,14 @@ def _validate_episode_evidence(
 ) -> None:
     writer = row.get("writer", {})
     condition = str(adapter["video_condition"])
+    _, family = _writer_family(adapter)
     references = list(writer.get("teacher_reference_demo_indices", []))
     selected = list(writer.get("teacher_demo_indices", []))
     same = condition == "same_task_other"
     frames_used = condition != "no_video"
     asset = adapter["writer_asset"]
     expected = {
+        "schema_version": family["episode_schema"],
         "condition": condition,
         "teacher_video_kind": condition,
         "method_arm": adapter["arm"],
@@ -393,9 +426,15 @@ def _assert_row_pairing(
 
 
 def _method_macro(result: Mapping[str, Any]) -> int:
-    asset = result["adapter"]["writer_asset"]
+    adapter = result["adapter"]
+    _, family = _writer_family(adapter)
+    asset = adapter["writer_asset"]
     macro = int(asset.get("method_macro", -1))
-    expected_kind = "historical_v6_macro400_load_only" if macro == 0 else "v6_prior_trained_checkpoint"
+    expected_kind = (
+        "historical_v6_macro400_load_only"
+        if macro == 0
+        else family["trained_checkpoint_kind"]
+    )
     if macro not in CHECKPOINT_MACROS or asset.get("kind") != expected_kind:
         _fail("checkpoint curve contains an unexpected method macro or checkpoint kind")
     return macro
@@ -459,6 +498,13 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
         by_macro[macro] = (root, result, indexed)
     if tuple(sorted(by_macro)) != CHECKPOINT_MACROS:
         _fail("checkpoint curve requires exactly method macros 0, 10, 25, and 50")
+    families = {
+        _writer_family(result["adapter"])[0]
+        for _, result, _ in by_macro.values()
+    }
+    if len(families) != 1:
+        _fail("checkpoint curve cannot mix legacy and current method families")
+    method_family = next(iter(families))
     reference_projection = _scientific_projection(by_macro[0][1], allow_checkpoint_change=True)
     reference_rows = by_macro[0][2]
     for macro in CHECKPOINT_MACROS[1:]:
@@ -472,6 +518,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
     comparisons = ((0, 10), (10, 25), (25, 50), (0, 25), (0, 50))
     return {
         "schema_version": CHECKPOINT_CURVE_SCHEMA,
+        "method_family": method_family,
         "contract_audit": {
             "formal_validation_8x50": True,
             "same_scientific_contract_except_checkpoint_identity": True,
@@ -552,6 +599,13 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
         by_condition[condition] = (root, result, indexed)
     if set(by_condition) != set(SIX_ARM_CONDITIONS):
         _fail("six-arm audit requires exactly the canonical six video conditions")
+    families = {
+        _writer_family(result["adapter"])[0]
+        for _, result, _ in by_condition.values()
+    }
+    if len(families) != 1:
+        _fail("six-arm audit cannot mix legacy and current method families")
+    method_family = next(iter(families))
     correct_result = by_condition["correct"][1]
     projection = _scientific_projection(correct_result, allow_checkpoint_change=False)
     correct_rows = by_condition["correct"][2]
@@ -564,6 +618,7 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
     arm_rows = {condition: list(by_condition[condition][2].values()) for condition in SIX_ARM_CONDITIONS}
     return {
         "schema_version": SIX_ARM_AUDIT_SCHEMA,
+        "method_family": method_family,
         "winner": {
             "method_macro": int(asset["method_macro"]),
             "writer_asset_reference": asset["reference"],
@@ -611,9 +666,25 @@ def _validated_roots(roots: Sequence[Path]) -> dict[str, Mapping[str, Any]]:
     for root in normalized:
         if not (root / "results.json").is_file():
             _fail(f"analysis root has no immutable results.json: {root}")
-        from ember.pi05_eval_results import aggregate_run
+        try:
+            stored = json.loads((root / "results.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            _fail(f"analysis root has an invalid results.json: {root}: {exc}")
+        legacy = False
+        if isinstance(stored, Mapping):
+            try:
+                legacy = _writer_family(stored.get("adapter", {}))[0].startswith(
+                    "legacy_"
+                )
+            except Pi05EvaluationError:
+                legacy = False
+        if legacy:
+            _formal_panel_index(stored)
+            results[str(root)] = stored
+        else:
+            from ember.pi05_eval_results import aggregate_run
 
-        results[str(root)] = aggregate_run(root)
+            results[str(root)] = aggregate_run(root)
     return results
 
 

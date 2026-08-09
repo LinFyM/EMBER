@@ -21,18 +21,19 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+    REPO_ROOT / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
 ).resolve()
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_prior_policy_effective_writer_v1"
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_ecp_policy_effective_writer_v2"
 V6_PRIOR_MODES = ("gradient-profile", "profile", "formal")
-V6_PRIOR_GRADIENT_PROFILE_SCHEMA = "ember_pi05_v6_prior_gradient_profile_seal_v1"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_ecp_writer_launch_v2"
+V6_PRIOR_GRADIENT_PROFILE_SCHEMA = "ember_pi05_v6_ecp_gradient_profile_seal_v2"
 V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA = (
-    "ember_pi05_v6_prior_gradient_profile_artifact_evidence_v1"
+    "ember_pi05_v6_ecp_gradient_profile_artifact_evidence_v2"
 )
 V6_PRIOR_RESUME_EVIDENCE_SCHEMA = (
-    "ember_pi05_v6_prior_resume_profile_artifact_evidence_v2"
+    "ember_pi05_v6_ecp_resume_profile_artifact_evidence_v3"
 )
-V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_prior_writer_completion_v1"
+V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_ecp_writer_completion_v2"
 
 
 def suggest_auxiliary_weight(
@@ -92,7 +93,7 @@ def _information_wall_matches(value: Mapping[str, Any]) -> bool:
 
 def _method_matches(value: Mapping[str, Any]) -> bool:
     return value == {
-        "name": "v6_prior_policy_effective_temporal_ranking_writer",
+        "name": "v6_initialized_policy_effective_expert_component_projection_writer",
         "writer_input": (
             "exact task language plus exactly one action-hidden teacher video"
         ),
@@ -183,11 +184,11 @@ def _objective_matches(
     *,
     gradient_evidence: Mapping[str, Any] | None,
 ) -> bool:
-    expert = value.get("expert", {})
+    projection = value.get("projection", {})
     ranking = value.get("ranking", {})
     weights = value.get("auxiliary_weights", {})
     status = weights.get("status")
-    coefficients = (weights.get("expert"), weights.get("ranking"))
+    coefficients = (weights.get("projection"), weights.get("ranking"))
     if status == "blocked_until_live_train24_gradient_profile":
         valid_weights = coefficients == (None, None) and gradient_evidence is None
     elif status == "sealed_from_live_train24_gradient_profile":
@@ -196,23 +197,51 @@ def _objective_matches(
             and _gradient_profile_evidence_matches(gradient_evidence)
             and coefficients
             == (
-                gradient_evidence["recommended_weights"]["expert"],
+                gradient_evidence["recommended_weights"]["projection"],
                 gradient_evidence["recommended_weights"]["ranking"],
             )
         )
     else:
         valid_weights = False
     return (
-        float(value.get("positive_functional_weight", -1)) == 1.0
+        set(value)
+        == {
+            "positive_functional_weight",
+            "positive_policy_randomness",
+            "projection",
+            "ranking",
+            "auxiliary_weights",
+        }
+        and set(projection)
+        == {
+            "coefficient",
+            "target",
+            "loss",
+            "smooth_l1_beta",
+            "orthogonal_component",
+        }
+        and set(ranking) == {"score", "form", "required_margin", "temperature"}
+        and set(weights)
+        == {
+            "status",
+            "maximum_fraction_of_positive_gradient_per_auxiliary",
+            "projection",
+            "ranking",
+        }
+        and float(value.get("positive_functional_weight", -1)) == 1.0
         and pb.positive_policy_randomness_matches(
             value.get("positive_policy_randomness")
         )
-        and expert.get("direction") == "one_minus_global_effective_ba_cosine"
-        and expert.get("norm") == "smooth_l1_global_effective_log_norm_ratio"
-        and float(expert.get("norm_weight", -1)) == 0.25
-        and float(expert.get("smooth_l1_beta", -1)) == 0.5
+        and projection.get("coefficient")
+        == "global_effective_ba_least_squares_on_task_expert"
+        and float(projection.get("target", -1)) == 1.0
+        and projection.get("loss") == "smooth_l1"
+        and float(projection.get("smooth_l1_beta", -1)) == 0.5
+        and projection.get("orthogonal_component") == "unconstrained"
         and ranking.get("form")
         == "temperature_scaled_softplus_required_minus_observed_margin"
+        and ranking.get("score")
+        == "global_effective_ba_projection_coefficient"
         and float(ranking.get("required_margin", -1)) == 0.1
         and float(ranking.get("temperature", -1)) == 0.05
         and float(
@@ -1004,7 +1033,7 @@ def _rank_topology_matches(
 
 
 def _gradient_norms_match(value: Mapping[str, Any]) -> bool:
-    if set(value) != {"positive", "expert", "ranking"}:
+    if set(value) != {"positive", "projection", "ranking"}:
         return False
     try:
         for name, row in value.items():
@@ -1037,7 +1066,7 @@ def _recommended_gradient_weights(
         name: suggest_auxiliary_weight(
             norms["positive"], norms[name], maximum_fraction=fraction
         )
-        for name in ("expert", "ranking")
+        for name in ("projection", "ranking")
     }
 
 
@@ -1054,7 +1083,7 @@ def _applied_gradient_fractions(
             )
             for group in ("compiler", "factor_heads")
         }
-        for name in ("expert", "ranking")
+        for name in ("projection", "ranking")
     }
 
 
@@ -1064,7 +1093,7 @@ def _gradient_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
         fraction = float(value["maximum_auxiliary_fraction"])
         weights = {
             name: float(value["recommended_weights"][name])
-            for name in ("expert", "ranking")
+            for name in ("projection", "ranking")
         }
         recomputed = _recommended_gradient_weights(norms, fraction=fraction)
         applied = _applied_gradient_fractions(norms, weights)
@@ -1283,13 +1312,13 @@ def _task_records_match_contract(
     )
     task_metric_names = {
         "functional_loss",
-        "expert_loss",
-        "expert_direction",
-        "expert_log_norm",
+        "projection_loss",
         "ranking_loss",
-        "ranking_margin",
-        "correct_expert_cosine",
-        "counterfactual_expert_cosine",
+        "projection_margin",
+        "correct_projection_coefficient",
+        "counterfactual_projection_coefficient",
+        "correct_expert_component",
+        "counterfactual_expert_component",
         "correct_effective_norm",
         "counterfactual_effective_norm",
         "expert_effective_norm",
@@ -1304,6 +1333,10 @@ def _task_records_match_contract(
             sampled_correct = int(row["correct_sampled_frames"])
             raw_counterfactual = int(row["counterfactual_raw_frames"])
             sampled_counterfactual = int(row["counterfactual_sampled_frames"])
+            components = row.get("correct_per_target_projection_components", ())
+            fractions = row.get(
+                "correct_per_target_absolute_numerator_fractions", ()
+            )
 
             if (
                 int(row["task_ordinal"]) != ordinal
@@ -1322,6 +1355,26 @@ def _task_records_match_contract(
                 or sampled_counterfactual != _sampled_frame_count(raw_counterfactual)
                 or not all(
                     math.isfinite(float(row[name])) for name in task_metric_names
+                )
+                or not isinstance(components, list)
+                or not isinstance(fractions, list)
+                or len(components) != 38
+                or len(fractions) != 38
+                or not all(
+                    math.isfinite(float(item))
+                    for item in (*components, *fractions)
+                )
+                or not math.isclose(
+                    sum(float(item) for item in components),
+                    float(row["correct_projection_coefficient"]),
+                    rel_tol=1e-5,
+                    abs_tol=1e-6,
+                )
+                or not math.isclose(
+                    sum(float(item) for item in fractions),
+                    1.0,
+                    rel_tol=1e-5,
+                    abs_tol=1e-6,
                 )
             ):
                 return False
@@ -1405,7 +1458,7 @@ def assemble_v6_prior_gradient_profile_evidence(
     )
     try:
         valid = (
-            contract.get("schema_version") == "ember_pi05_v6_prior_writer_launch_v1"
+            contract.get("schema_version") == V6_PRIOR_RUN_SCHEMA
             and contract.get("mode") == "gradient-profile"
             and _clean_pushed_git(contract.get("git", {}))
             and _canonical_config_record_matches(
@@ -1486,7 +1539,7 @@ def assemble_v6_prior_gradient_profile_evidence(
             and max(int(row["correct_sampled_frames"]) for row in records) == 105
             and _gradient_norms_match(norms)
             and math.isclose(fraction, 0.25, rel_tol=0.0, abs_tol=0.0)
-            and set(weights) == {"expert", "ranking"}
+            and set(weights) == {"projection", "ranking"}
             and all(
                 math.isclose(
                     float(weights[name]),
@@ -1558,7 +1611,7 @@ def assemble_v6_prior_gradient_profile_evidence(
         "unweighted_gradient_norms": norms,
         "maximum_auxiliary_fraction": fraction,
         "recommended_weights": {
-            name: float(weights[name]) for name in ("expert", "ranking")
+            name: float(weights[name]) for name in ("projection", "ranking")
         },
         "applied_gradient_fractions": applied,
         "seal_rule": str(profile["seal_rule"]),
@@ -1596,20 +1649,20 @@ def _metric_rows_match_contract(
     rows: Sequence[Mapping[str, Any]],
     contract: Mapping[str, Any],
     *,
-    expert_weight: float,
+    projection_weight: float,
     ranking_weight: float,
 ) -> bool:
     if len(rows) != 3:
         return False
     task_metric_names = {
         "functional_loss",
-        "expert_loss",
-        "expert_direction",
-        "expert_log_norm",
+        "projection_loss",
         "ranking_loss",
-        "ranking_margin",
-        "correct_expert_cosine",
-        "counterfactual_expert_cosine",
+        "projection_margin",
+        "correct_projection_coefficient",
+        "counterfactual_projection_coefficient",
+        "correct_expert_component",
+        "counterfactual_expert_component",
         "correct_effective_norm",
         "counterfactual_effective_norm",
         "expert_effective_norm",
@@ -1629,7 +1682,10 @@ def _metric_rows_match_contract(
             if (
                 int(row["macro"]) != macro
                 or not math.isclose(
-                    float(row["expert_weight"]), expert_weight, rel_tol=0.0, abs_tol=0.0
+                    float(row["projection_weight"]),
+                    projection_weight,
+                    rel_tol=0.0,
+                    abs_tol=0.0,
                 )
                 or not math.isclose(
                     float(row["ranking_weight"]),
@@ -1915,7 +1971,7 @@ def _profile_run_contract_matches(
         return False
     try:
         return (
-            contract.get("schema_version") == "ember_pi05_v6_prior_writer_launch_v1"
+            contract.get("schema_version") == V6_PRIOR_RUN_SCHEMA
             and contract.get("mode") == "profile"
             and _clean_pushed_git(contract.get("git", {}))
             and _canonical_config_record_matches(
@@ -2050,7 +2106,7 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             and Path(str(value.get("config_path", ""))).parent.name == "configs"
             and value.get("config_schema") == V6_PRIOR_CONFIG_SCHEMA
             and int(value.get("config_bytes", -1)) > 0
-            and set(weights) == {"expert", "ranking"}
+            and set(weights) == {"projection", "ranking"}
             and all(
                 isinstance(weights[name], (int, float))
                 and 0 <= float(weights[name]) <= 1
@@ -2319,13 +2375,13 @@ def assemble_v6_prior_resume_profile_evidence(
             and _metric_rows_match_contract(
                 resumed["metrics"],
                 contract,
-                expert_weight=float(weights["expert"]),
+                projection_weight=float(weights["projection"]),
                 ranking_weight=float(weights["ranking"]),
             )
             and _metric_rows_match_contract(
                 contiguous["metrics"],
                 contract,
-                expert_weight=float(weights["expert"]),
+                projection_weight=float(weights["projection"]),
                 ranking_weight=float(weights["ranking"]),
             )
             and _artifact_task_records_match(
@@ -2422,7 +2478,7 @@ def assemble_v6_prior_resume_profile_evidence(
         "config_schema": str(contract["config"]["schema"]),
         "config_bytes": int(contract["config"]["bytes"]),
         "auxiliary_weights": {
-            name: float(weights[name]) for name in ("expert", "ranking")
+            name: float(weights[name]) for name in ("projection", "ranking")
         },
         "world_size": 6,
         "tasks_per_rank": 4,
@@ -2598,9 +2654,9 @@ def runtime_for_mode(
             and _gradient_profile_evidence_matches(
                 config["gradient_profile"].get("artifact_evidence", {})
             )
-            and config["objective"]["auxiliary_weights"].get("expert")
+            and config["objective"]["auxiliary_weights"].get("projection")
             == config["gradient_profile"]["artifact_evidence"]["recommended_weights"][
-                "expert"
+                "projection"
             ]
             and config["objective"]["auxiliary_weights"].get("ranking")
             == config["gradient_profile"]["artifact_evidence"]["recommended_weights"][

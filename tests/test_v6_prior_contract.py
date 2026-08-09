@@ -30,7 +30,7 @@ from ember.writer.as_sampling import TeacherVideoSchedule
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
+CONFIG = ROOT / "configs/pi05_v6_ecp_policy_effective_writer_v2.json"
 
 
 def _commit_frozen_config(root: Path, config: Mapping[str, Any]) -> tuple[Path, str]:
@@ -124,7 +124,7 @@ def _gradient_evidence() -> dict:
             "factor_heads": 4.0,
             "global": math.sqrt(20.0),
         },
-        "expert": {
+        "projection": {
             "compiler": 8.0,
             "factor_heads": 1.0,
             "global": math.sqrt(65.0),
@@ -136,11 +136,11 @@ def _gradient_evidence() -> dict:
         },
     }
     return {
-        "schema_version": ("ember_pi05_v6_prior_gradient_profile_artifact_evidence_v1"),
+        "schema_version": ("ember_pi05_v6_ecp_gradient_profile_artifact_evidence_v2"),
         "root": "/retained/gradient",
         "git": _git_evidence("gradient-commit"),
-        "config_path": "/frozen/EMBER/configs/pi05_v6_prior_policy_effective_writer_v1.json",
-        "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "config_path": "/frozen/EMBER/configs/pi05_v6_ecp_policy_effective_writer_v2.json",
+        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "config_bytes": 1234,
         "world_size": 6,
         "tasks_per_rank": 4,
@@ -161,9 +161,9 @@ def _gradient_evidence() -> dict:
         "longest_correct_sampled_frames": 105,
         "unweighted_gradient_norms": norms,
         "maximum_auxiliary_fraction": 0.25,
-        "recommended_weights": {"expert": 0.0625, "ranking": 0.125},
+        "recommended_weights": {"projection": 0.0625, "ranking": 0.125},
         "applied_gradient_fractions": {
-            "expert": {"compiler": 0.25, "factor_heads": 0.015625},
+            "projection": {"compiler": 0.25, "factor_heads": 0.015625},
             "ranking": {"compiler": 0.0625, "factor_heads": 0.25},
         },
         "seal_rule": (
@@ -264,15 +264,15 @@ def _zero_metric_witness(path: str) -> dict:
 def _resume_evidence(gradient: dict) -> dict:
     comparisons = [_checkpoint_comparison(1), _checkpoint_comparison(3)]
     return {
-        "schema_version": ("ember_pi05_v6_prior_resume_profile_artifact_evidence_v2"),
+        "schema_version": ("ember_pi05_v6_ecp_resume_profile_artifact_evidence_v3"),
         "gradient_root": gradient["root"],
         "resumed_root": "/retained/resumed",
         "contiguous_root": "/retained/contiguous",
         "gradient_commit": gradient["git"]["commit"],
         "gradient_is_strict_ancestor": True,
         "profile_git": _git_evidence("profile-commit"),
-        "config_path": "/frozen/EMBER/configs/pi05_v6_prior_policy_effective_writer_v1.json",
-        "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "config_path": "/frozen/EMBER/configs/pi05_v6_ecp_policy_effective_writer_v2.json",
+        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "config_bytes": 2345,
         "auxiliary_weights": dict(gradient["recommended_weights"]),
         "world_size": 6,
@@ -345,16 +345,18 @@ def _task_record(ordinal: int, *, task_visit: int) -> dict:
             else None
         ),
         "functional_loss": 0.5,
-        "expert_loss": 0.25,
-        "expert_direction": 0.1,
-        "expert_log_norm": 0.2,
+        "projection_loss": 0.25,
         "ranking_loss": 0.3,
-        "ranking_margin": 0.05,
-        "correct_expert_cosine": 0.6,
-        "counterfactual_expert_cosine": 0.4,
+        "projection_margin": 0.05,
+        "correct_projection_coefficient": 0.6,
+        "counterfactual_projection_coefficient": 0.55,
+        "correct_expert_component": 1.5,
+        "counterfactual_expert_component": 1.375,
         "correct_effective_norm": 2.0,
         "counterfactual_effective_norm": 1.5,
         "expert_effective_norm": 2.5,
+        "correct_per_target_projection_components": [0.6] + [0.0] * 37,
+        "correct_per_target_absolute_numerator_fractions": [1.0] + [0.0] * 37,
         "correct_raw_frames": correct_raw,
         "correct_sampled_frames": correct_sampled,
         "counterfactual_raw_frames": counterfactual_raw,
@@ -376,7 +378,7 @@ def _synthetic_run_contract(
     config["objective"]["auxiliary_weights"].update(
         {
             "status": "blocked_until_live_train24_gradient_profile",
-            "expert": None,
+            "projection": None,
             "ranking": None,
         }
     )
@@ -481,7 +483,7 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     root.mkdir()
     gradient = _gradient_evidence()
     profile = {
-        "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
+        "schema_version": "ember_pi05_v6_ecp_gradient_profile_seal_v2",
         "schedule_macro": 49,
         "task_count": 24,
         "action_queries_per_task": 20,
@@ -506,7 +508,7 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
         "content_hash_policy": "disabled_by_owner",
     }
     completion = {
-        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+        "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
         "mode": "gradient-profile",
         "completed_diagnostic_macros": 1,
         "schedule_start_macro": 49,
@@ -536,14 +538,26 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
 
 def test_v6_prior_config_unlocks_profile_after_gradient_seal() -> None:
     config = load_v6_prior_config(CONFIG)
-    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
-        runtime_for_mode(config, "gradient-profile")
+    assert runtime_for_mode(config, "gradient-profile") == (1, ())
     with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
         runtime_for_mode(config, "profile")
-    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50))
+    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
+        runtime_for_mode(config, "formal")
 
-    gradient = config["gradient_profile"]["artifact_evidence"]
+    gradient = _gradient_evidence()
     profile_ready = deepcopy(config)
+    profile_ready["gradient_profile"].update(
+        {
+            "status": "sealed_from_live_train24_gradient_profile",
+            "artifact_evidence": gradient,
+        }
+    )
+    profile_ready["objective"]["auxiliary_weights"].update(
+        {
+            "status": "sealed_from_live_train24_gradient_profile",
+            **gradient["recommended_weights"],
+        }
+    )
     profile_ready["profile_run"].update(
         {"status": "ready_after_live_gradient_profile", "artifact_evidence": None}
     )
@@ -565,7 +579,7 @@ def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
     status_only["objective"]["auxiliary_weights"].update(
         {
             "status": "sealed_from_live_train24_gradient_profile",
-            "expert": 0.1,
+                "projection": 0.1,
             "ranking": 0.1,
         }
     )
@@ -576,7 +590,7 @@ def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
     gradient = _gradient_evidence()
     assert _gradient_profile_evidence_matches(gradient)
     wrong_weight = deepcopy(gradient)
-    wrong_weight["recommended_weights"]["expert"] = 0.1
+    wrong_weight["recommended_weights"]["projection"] = 0.1
     assert not _gradient_profile_evidence_matches(wrong_weight)
 
     resume = _resume_evidence(gradient)
@@ -642,14 +656,14 @@ def test_v6_prior_config_requires_artifact_lineage_for_each_unlock(
         "ready_after_live_gradient_profile"
     )
 
-    config["objective"]["auxiliary_weights"]["expert"] = 0.1
+    config["objective"]["auxiliary_weights"]["projection"] = 0.1
     path.write_text(json.dumps(config), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(path)
 
-    config["objective"]["auxiliary_weights"]["expert"] = gradient[
+    config["objective"]["auxiliary_weights"]["projection"] = gradient[
         "recommended_weights"
-    ]["expert"]
+    ]["projection"]
     config["profile_run"].update(
         {
             "status": "sealed_from_live_a40_resume_profile_evidence",
@@ -677,7 +691,7 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     profile = _write_synthetic_gradient_artifacts(root, contract)
     assembled = assemble_v6_prior_gradient_profile_evidence(root)
     assert assembled["recommended_weights"] == {
-        "expert": 0.0625,
+        "projection": 0.0625,
         "ranking": 0.125,
     }
     assert _gradient_profile_evidence_matches(assembled)
@@ -685,7 +699,7 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     external_contract = deepcopy(contract)
     external_contract["config"][
         "path"
-    ] = "/attacker/alternate/configs/pi05_v6_prior_policy_effective_writer_v1.json"
+    ] = "/attacker/alternate/configs/pi05_v6_ecp_policy_effective_writer_v2.json"
     external_root = tmp_path / "gradient-root-external-config"
     _write_synthetic_gradient_artifacts(external_root, external_contract)
     with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
@@ -702,7 +716,7 @@ def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
     stale_contract["git"] = _git_evidence(stale_commit)
     stale_contract["config"] = {
         "path": str(stale_path),
-        "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "bytes": stale_path.stat().st_size,
     }
     stale_root = tmp_path / "gradient-root-stale-config"
@@ -898,7 +912,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
     contract["git"] = _git_evidence(profile_commit)
     contract["config"] = {
         "path": str(profile_config_path),
-        "schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
+        "schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "bytes": profile_config_path.stat().st_size,
     }
     contract["data"]["consumed_schedule"] = {
@@ -937,17 +951,19 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
                 {
                     "macro": macro,
                     "functional_loss": 0.5,
-                    "expert_loss": 0.25,
-                    "expert_direction": 0.1,
-                    "expert_log_norm": 0.2,
+                    "projection_loss": 0.25,
                     "ranking_loss": 0.3,
-                    "ranking_margin": 0.05,
-                    "correct_expert_cosine": 0.6,
-                    "counterfactual_expert_cosine": 0.4,
+                    "projection_margin": 0.05,
+                    "correct_projection_coefficient": 0.6,
+                    "counterfactual_projection_coefficient": 0.55,
+                    "correct_expert_component": 1.5,
+                    "counterfactual_expert_component": 1.375,
                     "correct_effective_norm": 2.0,
                     "counterfactual_effective_norm": 1.5,
                     "expert_effective_norm": 2.5,
-                    "expert_weight": gradient["recommended_weights"]["expert"],
+                    "projection_weight": gradient["recommended_weights"][
+                        "projection"
+                    ],
                     "ranking_weight": gradient["recommended_weights"]["ranking"],
                     "gradient_norm_before_clip": 1.0,
                     "applied_lr": 0.000015,
@@ -1005,7 +1021,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
         (root / "completion.json").write_text(
             json.dumps(
                 {
-                    "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+                    "schema_version": "ember_pi05_v6_ecp_writer_completion_v2",
                     "mode": "profile",
                     "completed_macro": 3,
                     "metrics_rows": 3,
@@ -1081,11 +1097,21 @@ def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(
         load_v6_prior_config(bypass_path)
 
     weights = deepcopy(baseline)
-    weights["objective"]["auxiliary_weights"]["expert"] = 0.1
+    weights["objective"]["auxiliary_weights"]["projection"] = 0.1
     weights_path = tmp_path / "weights.json"
     weights_path.write_text(json.dumps(weights), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(weights_path)
+
+    stale_objective = deepcopy(baseline)
+    stale_objective["objective"]["expert"] = {
+        "direction": "one_minus_global_effective_ba_cosine",
+        "norm": "smooth_l1_global_effective_log_norm_ratio",
+    }
+    stale_path = tmp_path / "stale-objective.json"
+    stale_path.write_text(json.dumps(stale_objective), encoding="utf-8")
+    with pytest.raises(ExpertManifoldError, match="scientific boundary"):
+        load_v6_prior_config(stale_path)
 
     serial = deepcopy(baseline)
     serial["evaluation"]["minimum_smoke_writer_model_batch_size"] = 1

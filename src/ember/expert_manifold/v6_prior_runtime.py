@@ -35,6 +35,7 @@ from ember.expert_manifold.v6_prior_checkpoint import load_v6_prior_checkpoint
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     V6_PRIOR_CONFIG_SCHEMA,
+    V6_PRIOR_RUN_SCHEMA,
     authority_path,
     git_commit_is_strict_ancestor,
     load_v6_prior_config,
@@ -70,7 +71,6 @@ from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 from ember.writer.topology import visible_physical_cuda_index
 
 
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_prior_writer_launch_v1"
 _RESUME_NAME = re.compile(r"macro_([0-9]{8})")
 
 

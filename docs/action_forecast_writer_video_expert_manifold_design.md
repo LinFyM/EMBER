@@ -1497,3 +1497,27 @@ closed-loop门使用同一current schedule macro0=`134`：
 若`a≈1`、projection ranking和fixed-action transfer均成立而closed-loop仍不升，必须干净证伪
 expert-component假设，下一候选才是单独的v6动态hard-anchor/tangent retraction或policy-output behavior
 distillation；不得继续加大projection weight或回到whole-LoRA健康度优化。
+
+### 34.5 canonical v2实现边界（2026-08-09）
+
+ECP已在原v6 vertical path内原位替换旧objective，canonical config为
+`configs/pi05_v6_ecp_policy_effective_writer_v2.json`。实现保留同一Writer、functional forward和
+counterfactual生成；FP32 low-rank contraction同时产出global coefficient及38-target contribution，
+task record只做一次bulk device-to-host copy，不新增dense BA、Writer/policy forward或逐target同步。
+
+config/run、raw gradient/evidence、resume、checkpoint/trainer/RNG、eval adapter/episode均使用独立v2
+schema。旧v1 optimizer、aux weights、resume evidence和trained checkpoint不能进入live path；历史v1
+aggregate只由analysis的显式legacy family读取已有`results.json`，不能加载Writer、恢复checkpoint或生成
+新cache。未改变的historical macro400初始化和evaluation throughput smoke仍可继承，因为它们只约束同一
+Writer推理图，不含训练objective状态。
+
+CPU定向门已覆盖dense BA oracle、独立generated/expert gauge、expert-orthogonal energy invariance、
+SmoothL1解析gradient、ranking符号、batch/shared-target broadcast、output-gradient chain rule、v1 checkpoint
+拒绝和v1/v2 analysis混合拒绝。ECP尚无GPU profile、训练或strict结果；任何性能表述仍以34.4后续实证为准。
+
+Architecture gate对两个既有超大协议owner报告legacy-ratchet escalation，按cohesive exception处理而不
+机械拆分：`v6_prior_checkpoint.py`只增加4行schema常量接线；`v6_prior_contract.py`净增56行用于ECP v2
+objective/metric/artifact fail-closed验证；对应大测试文件净增26行。它们分别继续唯一拥有checkpoint和
+formal artifact协议，没有新增runner、执行分支、versioned objective或parallel function family。把同一
+原子协议拆到第二模块会增加跨文件状态耦合，却不减少活动责任；待该协议出现第二个真实消费者或下一轮
+替换缩小schema时再提取共享声明。本轮真正的objective owner `effective_objective.py`反而净减5行。

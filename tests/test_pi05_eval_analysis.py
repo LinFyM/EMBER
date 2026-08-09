@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 from typing import Callable
 
@@ -11,12 +12,15 @@ from ember.expert_manifold.video_schedule import SAME_TASK_OTHER_OFFSET, task_vi
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.analysis import (
     CHECKPOINT_CURVE_SCHEMA,
+    HISTORICAL_BASELINE_TRANSITION_SCHEMA,
     SIX_ARM_AUDIT_SCHEMA,
     SIX_ARM_CONDITIONS,
     _formal_tasks,
     analyze_checkpoint_curve,
+    analyze_historical_baseline_transition,
     checkpoint_curve_analysis,
     exact_mcnemar_two_sided_p,
+    historical_baseline_transition_analysis,
     paired_transition_summary,
     six_arm_paired_analysis,
     summarize_panel,
@@ -359,6 +363,95 @@ def test_checkpoint_curve_keeps_legacy_read_only_and_rejects_mixed_families() ->
     mixed["legacy-10"] = _result(10, "correct", set(), family="current")
     with pytest.raises(Pi05EvaluationError, match="cannot mix"):
         checkpoint_curve_analysis(mixed)
+
+
+def test_historical_transition_preserves_families_and_pairs_true_rows() -> None:
+    baseline_success = _success_keys(
+        lambda _suite, _task, state: state == 0
+    )
+    candidate_success = _success_keys(
+        lambda suite, task, state: state == 0
+        or (suite == "libero_spatial" and task == 1 and state == 1)
+    )
+    baseline = _result(0, "correct", baseline_success, family="legacy")
+    candidate = _result(10, "correct", candidate_success, family="current")
+    baseline["paired_control"]["git"]["commit"] = "legacy-commit"
+    candidate["paired_control"]["git"]["commit"] = "current-commit"
+    baseline["paired_control"]["tokenizer"]["manifest_path"] = "/legacy/tokenizer.json"
+    candidate["paired_control"]["tokenizer"]["manifest_path"] = "/current/tokenizer.json"
+    baseline["paired_control"]["normalization"]["path"] = "/legacy/normalization.json"
+    candidate["paired_control"]["normalization"]["path"] = "/current/normalization.json"
+
+    analysis = historical_baseline_transition_analysis(
+        {"legacy-root": baseline, "current-root": candidate}
+    )
+    assert analysis["schema_version"] == HISTORICAL_BASELINE_TRANSITION_SCHEMA
+    assert analysis["method_families"] == {
+        "historical_baseline": "legacy_v6_prior_v1",
+        "current_candidate": "v6_ecp_v2",
+    }
+    assert analysis["contract_audit"]["checkpoint_curve_membership_claimed"] is False
+    assert analysis["panels"]["correct400"]["historical_baseline"]["overall"]["successes"] == 8
+    transition = analysis["baseline_to_candidate"]["correct400"]["overall"]
+    assert transition["retained_success"] == 8
+    assert transition["gained"] == 1
+    assert transition["lost"] == 0
+
+
+def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> None:
+    baseline = _result(0, "correct", set(), family="legacy")
+    candidate = _result(10, "correct", set(), family="current")
+    duplicate_family = {
+        "left": _result(0, "correct", set(), family="current"),
+        "right": candidate,
+    }
+    with pytest.raises(Pi05EvaluationError, match="duplicate method family"):
+        historical_baseline_transition_analysis(duplicate_family)
+
+    drifted = copy.deepcopy(candidate)
+    drifted["paired_control"]["policy"]["replan_steps"] = 4
+    with pytest.raises(Pi05EvaluationError, match="shared scientific contract"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": drifted}
+        )
+
+    drifted = copy.deepcopy(candidate)
+    drifted["rows"][0]["policy_noise_seeds"][0] += 1
+    with pytest.raises(Pi05EvaluationError, match="RNG"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": drifted}
+        )
+
+
+def test_historical_transition_reads_legacy_immutable_and_reaggregates_current(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    legacy_root = tmp_path / "legacy"
+    current_root = tmp_path / "current"
+    legacy_root.mkdir()
+    current_root.mkdir()
+    legacy = _result(0, "correct", set(), family="legacy")
+    current = _result(10, "correct", set(), family="current")
+    (legacy_root / "results.json").write_text(
+        json.dumps(legacy), encoding="utf-8"
+    )
+    (current_root / "results.json").write_text("{}\n", encoding="utf-8")
+    calls = []
+
+    def aggregate(root: Path) -> dict:
+        calls.append(root)
+        return current
+
+    monkeypatch.setattr("ember.pi05_eval_results.aggregate_run", aggregate)
+    output = tmp_path / "transition.json"
+    result = analyze_historical_baseline_transition(
+        legacy_root, current_root, output
+    )
+    assert result["schema_version"] == HISTORICAL_BASELINE_TRANSITION_SCHEMA
+    assert calls == [current_root.resolve()]
+    assert output.is_file()
+    with pytest.raises(Pi05EvaluationError, match="already exists"):
+        analyze_historical_baseline_transition(legacy_root, current_root, output)
 
 
 @pytest.mark.parametrize(

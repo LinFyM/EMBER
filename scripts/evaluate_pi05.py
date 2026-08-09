@@ -195,6 +195,10 @@ def parse_args() -> argparse.Namespace:
     checkpoint_curve = commands.add_parser("checkpoint-curve")
     checkpoint_curve.add_argument("--root", type=Path, action="append", required=True)
     checkpoint_curve.add_argument("--output", type=Path, required=True)
+    historical_transition = commands.add_parser("historical-baseline-transition")
+    historical_transition.add_argument("--legacy-root", type=Path, required=True)
+    historical_transition.add_argument("--current-root", type=Path, required=True)
+    historical_transition.add_argument("--output", type=Path, required=True)
     six_arm_audit = commands.add_parser("six-arm-audit")
     six_arm_audit.add_argument("--root", type=Path, action="append", required=True)
     six_arm_audit.add_argument("--output", type=Path, required=True)
@@ -995,6 +999,19 @@ def main() -> int:
         from ember.pi05_eval.analysis import analyze_checkpoint_curve
 
         print(json.dumps(analyze_checkpoint_curve(args.root, args.output), sort_keys=True))
+    elif args.command == "historical-baseline-transition":
+        from ember.pi05_eval.analysis import analyze_historical_baseline_transition
+
+        print(
+            json.dumps(
+                analyze_historical_baseline_transition(
+                    args.legacy_root,
+                    args.current_root,
+                    args.output,
+                ),
+                sort_keys=True,
+            )
+        )
     elif args.command == "six-arm-audit":
         from ember.pi05_eval.analysis import audit_six_arms
 

@@ -1540,3 +1540,29 @@ factor仅`.10873/.02688`。旧whole-LoRA ranking weight不可继承。artifact a
 shuffled均值`.05050`最弱并有一个`-.00968`反向。top1/top4 absolute numerator fraction median=
 `.18084/.52988`，不存在单target垄断。generated norm仍远大于expert是本设计保留正交v6能力的预期，
 不能据此重加norm loss。这里仍只有gradient机制证据，没有ECP训练或closed-loop成绩。
+
+### 34.7 resume/throughput profile seal（2026-08-09）
+
+gradient seal的strict后继clean frozen`fea3f40`在live空闲`gpu01:0,1,2|4,5,7`完成两条ECP v2轨迹：
+resumed root fresh0→1后从macro1 exact-resume到3；contiguous root独立fresh0→3。三次tmux launcher均
+自然exit0，两root各3 metrics、macro1/3 checkpoints和completion；三步step wall分别=
+`62.36865/61.01677s`，input wait=`.17581/.23105s`，peak allocated/reserved=
+`43,275,957,248/47,118,811,136` bytes，0 OOM/nonfinite。
+
+artifact assembler确认run contracts逐字相同，gradient commit是profile commit的strict ancestor；cursor、
+checkpoint contract、六rank RNG、scheduler、AMP和559 frozen tensors语义闭合。scientific metrics最大
+tolerance ratio=`.429003`；macro3 Writer maxabs/global relative L2=`1.30399e-5/4.84507e-6`，Adam
+`exp_avg/exp_avg_sq` symmetric norm ratio=`.999977/.999743`、cosine=`.999976/.999990`，均有充足门限
+余量。这里接受并行reduction的普通低位误差，不追逐逐bit一致，也没有为此改变kernel、batch或并行度。
+
+三步pre-update row给出早期方向证据：macro1→3的mean `a_correct=.736184→.754337`，absolute expert
+component=`3.06189→3.13618`，generated norm=`140.973→142.359`；23/24 tasks的`a_correct`向1移动、
+23/24 component上升、17/24 norm上升，gradient norm约`.0956→.1058`且远低于clip1。negative每步轮换，
+因此aggregate margin不作三点单调门。上述只满足fresh formal 0→10的工程/早期机制授权，不构成held
+性能证据；profile checkpoint永久禁止warm-start formal。
+
+吞吐优先的首个行为裁决只跑ECP macro10 correct400。历史current-schedule macro0=`134`保留immutable
+native-family rows；用显式cross-family historical-baseline transition逐row验证后比较，避免无科学增量地
+重跑400条macro0。该CPU-only入口已在canonical evaluator原位实现，分别native验证legacy immutable
+results与current raw reaggregation，且不放宽checkpoint-curve；全仓`262 passed`。只有确需正式
+same-family ECP curve时才补跑v2 macro0，旧rows不得重标或混入curve。

@@ -1,5 +1,23 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 ECP resume profile完成并解锁formal
+
+- gradient seal strict后继`fea3f40`已clean/pushed并有独立frozen worktree；live重查后只使用空闲
+  `gpu01:0,1,2|4,5,7`。resumed root fresh0→1后exact-resume1→3，独立contiguous root fresh0→3；三个
+  tmux launcher自然exit0，六卡结束后均释放。
+- roots=`runs/outputs/pi05_v6_ecp_profile_resume_r6_lb20_mb10_fea3f40_20260809`与
+  `runs/outputs/pi05_v6_ecp_profile_contiguous_r6_lb20_mb10_fea3f40_20260809`。两者各3 metrics、macro1/3
+  checkpoints和completion；0 OOM/nonfinite，step wall resumed/contiguous=`62.369/61.017s`，peak
+  allocated/reserved=`43,275,957,248/47,118,811,136` bytes。
+- artifact assembler完整通过：contracts、cursor、rank RNG、scheduler/AMP和checkpoint语义一致，Writer
+  relative L2=`4.845e-6`，metric tolerance ratio=`.4290`。evidence已原样写入v2 config，profile/formal
+  statuses均为`sealed_from_live_a40_resume_profile_evidence`；profile checkpoint永久不进入formal。
+- 三步`a_correct`在23/24 tasks向1移动、expert component在23/24上升且norm不系统塌缩，只授权fresh
+  formal0→10。canonical evaluator已增加具名`historical-baseline-transition`，保留native family隔离并
+  省去无增量的v2 macro0重跑；定向`28 passed`、全仓`262 passed in 24.92s`、compileall和diff check通过。
+  下一步是clean commit/push、formal frozen worktree、live preflight、fresh0→10和macro10 correct400；
+  不自动训练到50。
+
 ## 2026-08-09 ECP六卡gradient profile完成并封存权重
 
 - CPU seal commit`de28157`已push，独立frozen worktree及分支均绑定同一commit/upstream；historical

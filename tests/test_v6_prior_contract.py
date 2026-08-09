@@ -536,13 +536,13 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     return profile
 
 
-def test_v6_prior_config_unlocks_profile_after_gradient_seal() -> None:
+def test_v6_prior_config_unlocks_formal_after_resume_seal() -> None:
     config = load_v6_prior_config(CONFIG)
     with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
         runtime_for_mode(config, "gradient-profile")
-    assert runtime_for_mode(config, "profile") == (3, (1, 3))
-    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
-        runtime_for_mode(config, "formal")
+    with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
+        runtime_for_mode(config, "profile")
+    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50))
 
     gradient = config["gradient_profile"]["artifact_evidence"]
     assert _resume_profile_evidence_matches(_resume_evidence(gradient))

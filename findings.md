@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## 2026-08-09 ECP resume门与早期方向证据
+
+- clean frozen`fea3f40`在同一空闲`gpu01:0,1,2|4,5,7`完成resumed fresh0→1+exact-resume1→3和独立
+  contiguous0→3。三次tmux launcher均exit0；两root各3 metrics、macro1/3 checkpoints和completion，
+  0 OOM/nonfinite。三步step wall=`62.369/61.017s`，input wait=`.176/.231s`，peak reserved=
+  `47,118,811,136` bytes；B10+10仍接近填满A40且没有I/O等待瓶颈，不扫workers或更小microbatch。
+- 官方assembler确认run contracts、cursor、六rank RNG、scheduler/AMP和checkpoint语义一致。macro3 Writer
+  maxabs/relative-L2=`1.304e-5/4.845e-6`，scientific metric最大tolerance ratio=`.4290`，Adam moment的
+  scale/direction门均通过。这是正常parallel reduction低位差异；没有降低并行度或重跑GPU追逐逐元素一致。
+- macro1→3的mean `a_correct=.736184→.754337`、absolute expert component=`3.06189→3.13618`、generated
+  norm=`140.973→142.359`；23/24 tasks向1移动、23/24 component上升，未重演旧whole-LoRA objective的
+  系统径向塌缩。它只证明ECP update短程方向符合构造，不证明held closed-loop会提高。
+- 下一裁决只fresh训练到macro10并跑correct400。为吞吐不先重复运行行为相同的v2 macro0；历史macro0
+  immutable rows按legacy native family验证，再与ECP v2 macro10做显式cross-family逐row transition。若
+  `a`继续改善但macro10仍低于门，证伪的是expert-component共同迁移假设，不能靠加权或长训挽救。
+- 新transition入口不接受任意mixed curve：只允许legacy macro0与ECP macro10 correct400；分别验证native
+  adapter/episode family、clean sealed root和8×50 panel，再核对共同source/tokenizer/normalization、policy/
+  RNG/video schedule及实际400行。只排除不同clean Git、family config identity和worktree-local manifest
+  路径，artifact明确声明`not_checkpoint_curve`。全仓`262 passed`。
+
 ## 2026-08-09 ECP实现边界与首轮可证伪信号
 
 - ECP不是“让整套LoRA更像SFT LoRA”：它只约束generated effective BA在task expert方向上的最小二乘

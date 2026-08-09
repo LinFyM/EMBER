@@ -10,9 +10,11 @@ macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此�
 当前唯一活动候选是objective-only的v6-Initialized Expert-Component Projection。保留原架构、初始化、
 冻结边界、logical B20/physical B10+10、data和negative schedule；只把expert direction+norm和cosine
 ranking替换成`a_correct→1`与bounded-gradient `a_correct-a_negative`。该objective、v2 schema、metrics和
-legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --check`通过。clean frozen`de28157`的
+legacy只读分析隔离已实现；显式cross-family historical-baseline transition也已加入canonical evaluator，
+不放宽同family checkpoint curve。全仓CPU回归`262 passed`且`git diff --check`通过。clean frozen`de28157`的
 唯一六卡gradient profile已自然完成并释放设备，projection/ranking weights封存为
-`.006883349605446485/.010514451404229894`；尚无ECP训练或strict结果。
+`.006883349605446485/.010514451404229894`。strict后继`fea3f40`的fresh/resume/contiguous三步profile也已
+完成并由artifact assembler封存，profile/formal现已解锁；尚无ECP formal训练或strict结果。
 
 当前操作顺序：
 
@@ -20,8 +22,9 @@ legacy只读分析隔离已实现，全仓CPU回归`259 passed`且`git diff --ch
 2. ECP objective、metrics和合同已原位实现，保持一个canonical Writer path；
 3. 已完成全仓CPU验证，锁定projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/
    信息墙不变；
-4. 已完成一次新aux gradient profile；clean push该seal后只做fresh/resume/contiguous短profile门；
-5. fresh短训并优先评测macro10；若`≤129`且多task净损失立即停止，只有健康才到25；
+4. 已完成唯一aux gradient profile和fresh/resume/contiguous短profile门，profile checkpoint永久弃用；
+5. 从新clean frozen formal worktree fresh短训0→10并优先评测macro10 correct400；若`≤129`且多task净损失
+   立即停止，只有健康才到25；
 6. 只有strict超过134且多task净获益才继续到50/100与六臂，循环到达标。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
@@ -207,7 +210,7 @@ reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐�
 另建clean pushed frozen worktree、fresh output root和formal launch contract。method macro0是同一当前
 video schedule下的historical macro400 load-only状态；不能仅引用旧143替代当前paired baseline。
 
-第一段训练0→50 macros，保存10/25/50。训练期间持续记录：
+第一段只fresh训练0→10并自然停止，保存10；不在未看到真实macro10行为前自动跑到25/50。训练期间持续记录：
 
 - positive/expert/ranking loss和unweighted component gradient；
 - per-task loss、effective cosine/norm、correct-negative margins；
@@ -219,13 +222,15 @@ loss下降不能延迟或替代rollout。若出现非finite、明显全task退�
 
 ### 6.2 Checkpoint cadence
 
-- macro0/10/25/50先在固定validation8×states0--9跑strict paired correct80作灾难/趋势screen；panel、
-  state、video和RNG不因结果改变。
-- 训练checkpoint 10/25/50和同schedule macro0都跑correct400。小screen不能选winner或代表真实水平。
+- macro10直接跑完整paired correct400；correct80只从相同400 rows的`state<10`子集派生，不另启动rollout，
+  也不能选winner或代表真实水平。
+- 历史current-schedule macro0=`134`与ECP macro10分别按native family验证，再由显式标注cross-family的
+  historical-baseline transition逐row核对共同state/RNG/language/video。不得复制或重标旧rows，也不得
+  把两点伪装成ECP checkpoint curve；只有后续确需同-family完整曲线时才补跑ECP-v2 macro0。
 - 每点与macro0、历史143、v5.2-old和v6交叉recipe逐task比较：per-suite、breadth、gained/lost、
   union/intersection、capability churn和视频ordinal依赖。
-- 若多个task共同上升且50仍有可信趋势，按同合同exact-resume到100（必要时200），每25或50保存并及时
-  correct400；不因单点低分180度转向，也不因loss好看无限续训。
+- macro10过门后才从同一root exact-resume到25；只有多个task共同上升并超过134才继续50/100（必要时
+  200），每个决策点及时correct400；不因单点低分180度转向，也不因loss好看无限续训。
 - 任何single checkpoint correct严格`>150/400`，或成为有可信共同提升的当前winner时，运行完整paired
   correct/same/wrong/shuffled/reversed/no-video。达标后仍继续验证更高性能、breadth和稳定性。
 

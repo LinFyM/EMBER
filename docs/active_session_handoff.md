@@ -65,7 +65,7 @@ ECP当前工程状态：旧cosine+log-norm objective已从唯一执行路径删�
 absolute contribution。config、run、gradient/resume、checkpoint/trainer/RNG、adapter/episode均升为ECP v2
 身份并重置旧gradient/resume/formal seals；live evaluator只接受v2，旧v1仅能由CPU analysis的显式
 legacy family读取已封存`results.json`，不能加载模型或恢复训练。小矩阵dense oracle、gauge/orthogonal
-invariance、chain-rule、合同、checkpoint、evaluation和analysis均纳入全仓`259 passed`封印，且
+invariance、chain-rule、合同、checkpoint、evaluation和analysis均纳入全仓`262 passed`封印，且
 `git diff --check`通过。
 
 clean pushed/frozen`de28157`已在live空闲`gpu01:0,1,2|4,5,7`完成唯一一次ECP macro49 gradient
@@ -76,7 +76,22 @@ allocated/reserved=`43.316/47.094GB`、0 OOM/nonfinite，六卡已释放。assem
 weights=`.006883349605446485/.010514451404229894`；两者在compiler各为positive gradient的`.25`，在
 factor为`.10873/.02688`。历史v6生成态的`a_correct`均值`.73453`且24/24低于1；correct-negative
 margin均值`.10324`、23/24为正，shuffled最弱且有1个反向。top1/top4 absolute numerator fraction中位
-`.18084/.52988`，没有单target垄断。config已原样嵌入证据并只解锁三步profile；尚无ECP训练或strict成绩。
+`.18084/.52988`，没有单target垄断。config已原样嵌入证据并只解锁三步profile。
+
+strict后继clean frozen`fea3f40`随后在同一live空闲`gpu01:0,1,2|4,5,7`拓扑完成ECP v2
+resume门：resumed root先fresh0→1、再same-root exact-resume1→3；独立contiguous root fresh0→3。
+三次launcher均由tmux托管并自然exit0，两条root各3 metrics、macro1/3 checkpoints和completion，0
+OOM/nonfinite。resumed/contiguous三步step wall=`62.369/61.017s`、input wait=`.176/.231s`，peak
+allocated/reserved=`43,275,957,248/47,118,811,136` bytes。官方assembler确认contracts、cursor、六rank
+RNG、scheduler/AMP和checkpoint语义一致；scientific metric最大tolerance ratio=`.4290`，macro3 Writer
+maxabs/relative-L2=`1.304e-5/4.845e-6`，Adam各moment的norm ratio/cosine门均通过。artifact evidence已
+原样写入v2 config，profile/formal均置为`sealed_from_live_a40_resume_profile_evidence`；profile权重永久
+禁止进入formal。
+
+三步pre-update机制方向满足启动门但不是性能结论：macro1→3的`a_correct=.736184→.754337`、absolute
+expert component=`3.06189→3.13618`、generated norm=`140.973→142.359`；分别23/24、23/24、17/24
+tasks上升，`a_correct`有23/24 tasks向1移动，没有重演旧objective的系统径向塌缩。当前仍无ECP formal
+训练或strict rollout成绩。
 
 ## 2. EMBER problem and information wall
 
@@ -332,11 +347,18 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：clean commit/push并创建严格后继frozen worktree；随后重新live
-比较`gpu01/gpu02`和quota，只用最多6张空闲A40。先做一次B10六卡projection/ranking gradient profile，
-再完成fresh0→1、exact-resume1→3和contiguous0→3的v2谱系门。封存后fresh短训到10并立即跑同一current
-schedule paired correct400；只有满足第34节门才到25/50/100。不能继承旧expert/ranking weights，也不能
-用profile loss、expert norm、correct80或历史143替代当前schedule full400裁决。
+当前具体下一步：从本profile evidence seal的clean pushed严格后继创建formal frozen worktree；重新live
+比较`gpu01/gpu02`和quota，只用同一节点最多6张空闲A40，fresh训练0→10后自然停止。立即对macro10跑
+current-schedule paired correct400；correct80只能从这400 rows派生，不能另作选择依据。吞吐优先下不先
+重复运行行为相同的ECP-v2 macro0 400条rollout；历史immutable macro0=`134`由显式cross-family
+historical-baseline analyzer分别按native family验证并逐row核对共同state/RNG/language/video后比较，绝不
+重标family或混入ECP checkpoint curve。只有满足第34节门才resume到25/50/100；不能用profile loss、
+expert norm、correct80或历史143替代full400裁决。
+
+对应CPU-only入口已原位加入canonical evaluator：
+`scripts/evaluate_pi05.py historical-baseline-transition --legacy-root ... --current-root ... --output ...`。
+它不放宽四点checkpoint-curve；legacy只读immutable `results.json`，current从raw root重新aggregate，两个
+native family分别验证后才比较。实现及failure gates已纳入上述`262 passed`。
 
 ## 10. Canonical assets
 

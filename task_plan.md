@@ -112,6 +112,13 @@ formal artifacts保存。
   由Git/formal artifact保存，不保留并行可执行objective。
 - [x] clean push/frozen worktree，live双节点/存储preflight后只做一次B10六卡gradient profile，按同`.25`
   compiler/factor budget封存两个aux weights；不扫权重。
+- [x] strict后继clean frozen worktree完成fresh0→1、same-root exact-resume1→3和独立contiguous0→3；
+  assembler封存contract/cursor/RNG/optimizer/scheduler/Writer语义、吞吐和显存证据，正式训练已解锁且profile
+  checkpoint永久弃用。
+- [x] 在canonical analysis owner新增严格cross-family historical-baseline transition：legacy/current分别
+  native验证、400 rows精确配对、family标签不变、不能冒充checkpoint curve；全仓`262 passed`。
+- [ ] fresh formal只训练0→10并停止，直接跑macro10 correct400；历史macro0=`134`用native-family严格
+  cross-family transition比较，先不为schema身份重复400条rollout。
 - [ ] fresh短训保存10/25。macro10 strict若`≤129`且多task净损失则停止；130--133只有内部方向和右斜率
   健康才允许到25；macro25若仍不超过134或只是换手则停止。
 - [ ] 只有strict超过134且多task共同获益，才继续50/100并在single winner上做六臂视频因果评测。

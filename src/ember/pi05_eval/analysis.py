@@ -21,6 +21,9 @@ from ember.pi05_target_data import SUITE_ORDER
 
 CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
 SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
+HISTORICAL_BASELINE_TRANSITION_SCHEMA = (
+    "ember_pi05_v6_ecp_historical_baseline_transition_analysis_v1"
+)
 CHECKPOINT_MACROS = (0, 10, 25, 50)
 SIX_ARM_CONDITIONS = (
     "correct",
@@ -561,6 +564,155 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
     }
 
 
+def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize provenance and explicit family identity for a cross-family audit."""
+
+    projection = _scientific_projection(result, allow_checkpoint_change=True)
+    projection.pop("git", None)
+    writer = projection.get("writer")
+    tokenizer = projection.get("tokenizer")
+    normalization = projection.get("normalization")
+    if not all(isinstance(value, dict) for value in (writer, tokenizer, normalization)):
+        _fail("historical transition is missing its shared scientific contract")
+    writer.pop("config", None)
+    writer.pop("evaluation_authority", None)
+    tokenizer.pop("manifest_path", None)
+    normalization.pop("path", None)
+    return projection
+
+
+def historical_baseline_transition_analysis(
+    results_by_root: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Compare immutable legacy macro0 with ECP macro10 without claiming a curve."""
+
+    if len(results_by_root) != 2:
+        _fail("historical baseline transition requires exactly two roots")
+    by_family: dict[
+        str,
+        tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]],
+    ] = {}
+    for root, result in results_by_root.items():
+        indexed = _formal_panel_index(result)
+        if result["adapter"]["video_condition"] != "correct":
+            _fail("historical baseline transition accepts only correct-video roots")
+        family = _writer_family(result["adapter"])[0]
+        if family in by_family:
+            _fail("historical baseline transition contains a duplicate method family")
+        by_family[family] = (root, result, indexed)
+    expected_families = {"legacy_v6_prior_v1", "v6_ecp_v2"}
+    if set(by_family) != expected_families:
+        _fail("historical baseline transition requires legacy v1 and ECP v2 families")
+
+    baseline = by_family["legacy_v6_prior_v1"]
+    candidate = by_family["v6_ecp_v2"]
+    if _method_macro(baseline[1]) != 0 or _method_macro(candidate[1]) != 10:
+        _fail("historical baseline transition requires legacy macro0 and ECP macro10")
+    for _, result, _ in (baseline, candidate):
+        if (
+            result["adapter"].get("evaluation_authority", {}).get("formal_status")
+            != "sealed"
+            or result.get("paired_control", {}).get("git", {}).get("dirty_paths")
+            != []
+        ):
+            _fail("historical baseline transition requires sealed clean native roots")
+    if _historical_transition_projection(baseline[1]) != _historical_transition_projection(
+        candidate[1]
+    ):
+        _fail("historical baseline transition changed its shared scientific contract")
+    _assert_row_pairing(
+        baseline[2], candidate[2], require_same_actual_video=True
+    )
+
+    baseline_rows = list(baseline[2].values())
+    candidate_rows = list(candidate[2].values())
+    panels = {
+        "correct80": {
+            "historical_baseline": _prefix_rows(baseline[2], 10),
+            "current_candidate": _prefix_rows(candidate[2], 10),
+        },
+        "correct400": {
+            "historical_baseline": baseline_rows,
+            "current_candidate": candidate_rows,
+        },
+    }
+
+    def root_evidence(
+        value: tuple[
+            str,
+            Mapping[str, Any],
+            dict[EpisodeKey, Mapping[str, Any]],
+        ]
+    ) -> dict[str, Any]:
+        root, result, _ = value
+        adapter = result["adapter"]
+        family, family_contract = _writer_family(adapter)
+        asset = adapter["writer_asset"]
+        return {
+            "root": root,
+            "method_family": family,
+            "method_macro": int(asset["method_macro"]),
+            "checkpoint_kind": asset["kind"],
+            "adapter_schema": family_contract["adapter_schema"],
+            "config_schema": family_contract["config_schema"],
+            "contract_reference": result["contract_reference"],
+            "git": copy.deepcopy(result["paired_control"]["git"]),
+            "parallel_provenance": copy.deepcopy(
+                result["paired_control"].get("parallel", {})
+            ),
+        }
+
+    return {
+        "schema_version": HISTORICAL_BASELINE_TRANSITION_SCHEMA,
+        "analysis_scope": (
+            "cross_family_historical_baseline_transition_not_checkpoint_curve"
+        ),
+        "method_families": {
+            "historical_baseline": "legacy_v6_prior_v1",
+            "current_candidate": "v6_ecp_v2",
+        },
+        "contract_audit": {
+            "native_family_validation_each_root": True,
+            "formal_validation_8x50_each": True,
+            "same_shared_scientific_contract": True,
+            "same_state_rng_language_and_correct_video_identity": True,
+            "family_labels_preserved": True,
+            "checkpoint_curve_membership_claimed": False,
+        },
+        "row_selection": {
+            "correct80": "same validated correct400 root rows with init_state_id < 10",
+            "correct400": "all formal validation rows",
+        },
+        "roots": {
+            "historical_baseline": root_evidence(baseline),
+            "current_candidate": root_evidence(candidate),
+        },
+        "panels": {
+            panel: {
+                role: summarize_panel(rows)
+                for role, rows in role_rows.items()
+            }
+            for panel, role_rows in panels.items()
+        },
+        "baseline_to_candidate": {
+            panel: paired_transition_summary(
+                role_rows["historical_baseline"],
+                role_rows["current_candidate"],
+            )
+            for panel, role_rows in panels.items()
+        },
+        "metric_definitions": {
+            "gained": "historical failure and current success on the identical episode key",
+            "lost": "historical success and current failure on the identical episode key",
+            "churn": "gained plus lost",
+            "nonzero_task_breadth": "tasks with at least one success in this exact panel",
+            "cross_family_warning": (
+                "native family labels are retained; this artifact is not an ECP checkpoint curve"
+            ),
+        },
+    }
+
+
 def _control_outcome_summary(
     correct: Sequence[Mapping[str, Any]], control: Sequence[Mapping[str, Any]]
 ) -> dict[str, Any]:
@@ -692,6 +844,18 @@ def analyze_checkpoint_curve(
     roots: Sequence[Path], output_path: Path
 ) -> dict[str, Any]:
     result = checkpoint_curve_analysis(_validated_roots(roots))
+    publish_json_exclusive(output_path.resolve(), result)
+    return result
+
+
+def analyze_historical_baseline_transition(
+    legacy_root: Path,
+    current_root: Path,
+    output_path: Path,
+) -> dict[str, Any]:
+    result = historical_baseline_transition_analysis(
+        _validated_roots((legacy_root, current_root))
+    )
     publish_json_exclusive(output_path.resolve(), result)
     return result
 

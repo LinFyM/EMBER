@@ -1,5 +1,20 @@
 # EMBER Findings
 
+## 2026-08-09 physical B16仍超过A40容量，当前转为balanced B10+10
+
+- clean pushed/frozen `eddba96`保持logical B20、完整20-query keyed randomness和两次policy forward，
+  只把physical execution改为B16+4。live比较两节点后选择空闲`gpu01:0,1,2,4,5,7`；run contract实证
+  local→physical=`0,1,2,4,5,7`、NUMA=`0,0,0,1,1,1`、deferred NCCL和default allocator均正确，
+  他人占用的`gpu01:3`及`gpu02:6/7`没有触碰。
+- 首个非持久SSH后台launcher只产生contract/invocation便exit0，没有start/gradient/completion；该root是
+  无效进程托管证据，不能复用或解释容量。改用项目长期合同的tmux和全新root后完整进入start，并在六个
+  ranks的第一条functional eager-attention一致OOM：请求`254MiB`，allocated=`42.49GiB`、
+  reserved-unallocated=`1.25GiB`、free=`235.31MiB`。这证明B16没有稳定A40容量余量，不存在可比较的
+  B16 whole-step吞吐。
+- 先前`expandable_segments`在physical B20已证明减少碎片仍不能容纳active graph，因此不为B16再做
+  allocator retry。按预声明决策直接进入balanced B10+10；logical B20、20条query及draw、task mean、
+  train24和objective全部不变。policy activation checkpointing仍是只有B10也失败时才打开的较慢候选。
+
 ## 2026-08-09 physical B20 A40 OOM与logical-B20微批裁决
 
 - clean frozen`a17805c`在当时live空闲`gpu01:0,1,2,4,5,7`完成两次六卡工程尝试。默认allocator在第一条
@@ -16,11 +31,10 @@
   通过固定SplitMix64整数mix而非SHA/MD5；每个
   physical slice重新生成完整20个独立Beta(1.5,1) time和Gaussian noise后取对应slice。因而B16+4只改变
   峰值显存与前向次数，不改变query集合、随机分布、loss权重或train24×20=`480/480`合同。
-- 吞吐判断不能只看“forward越大越快”或“越小越安全”。B16+4与B10+10都只有两次policy forward：前者
-  第一段算术强度更高，后者shape平衡且峰值更低。先以B16获得安全容量证据，再在它通过后只比较B10的
-  完整macro wall/input wait/peak，避免广泛batch sweep。直接胜出门为至少5% wall/qps优势且两者input-wait
-  share均低于5%；否则只补一次A16，稳定后的最终差异小于3%则视为吞吐tie并用显存余量优先B10。两个
-  失败root均无gradient/completion，不是方法负结果，也不能用于选择auxiliary weight。
+- 吞吐判断不能只看“forward越大越快”或“越小越安全”。B16+4与B10+10都只有两次policy forward；随后
+  live证据已证明B16本身无法完成第一条functional forward，所以不存在B16/B10吞吐A/B。当前只运行
+  balanced B10+10；若它成功，直接以其完整macro wall/input wait/peak作为A40可行点。所有容量失败root
+  均无gradient/completion，不是方法负结果，也不能用于选择auxiliary weight。
 
 ## 2026-08-09 六卡profile证据门的第一性原理结论（CPU实现）
 

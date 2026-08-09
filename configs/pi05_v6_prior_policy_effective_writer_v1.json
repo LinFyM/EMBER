@@ -149,7 +149,7 @@
   "optimization": {
     "precision": "bfloat16",
     "seed": 7,
-    "functional_policy_microbatch_size": 16,
+    "functional_policy_microbatch_size": 10,
     "optimizer": {
       "name": "AdamW",
       "peak_lr": 0.00003,
@@ -184,7 +184,7 @@
     "macros": 1,
     "schedule_macro": 49,
     "logical_policy_batch_size": 20,
-    "functional_policy_microbatch_size": 16,
+    "functional_policy_microbatch_size": 10,
     "physical_policy_forwards_per_task": 2,
     "longest_video_sampled_frames": 105,
     "seal_rule": "each_auxiliary_at_most_one_quarter_positive_gradient_in_both_compiler_and_factor_heads"

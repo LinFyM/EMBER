@@ -27,11 +27,12 @@
   `expandable_segments:True`重试都在第一个PI05 policy functional B20的Gemma MLP前向发生容量OOM；后者把
   reserved-unallocated从约`1.29GiB`降到约`157MiB`仍无法分配`606MiB`，因此碎片不是主因。两个root均只有
   run contract/invocation、没有gradient/completion，不能seal或resume，也没有产生方法性能结论。
-- 当前修复保持logical B20、每task mean、train24×20=`480/480` unique queries和objective分布不变；把
-  policy functional forward改为完整有序logical-B20 panel keyed的physical B16+4，并用FP32 leaf-gradient
-  加权累积。seed使用轻量固定64-bit整数mix，不调用SHA/MD5。
-  这是A40容量/吞吐实现变量，不是减小scientific batch。先实测B16完整macro；若通过，只与balanced
-  B10+10比较真实whole-step wall/peak，再封存吞吐胜者。policy activation checkpointing目前不启用，因为
+- 当前修复保持logical B20、每task mean、train24×20=`480/480` unique queries和objective分布不变；
+  完整有序logical-B20 panel keyed的physical slicing使用FP32 leaf-gradient加权累积，seed为轻量固定64-bit
+  整数mix，不调用SHA/MD5。clean frozen `eddba96`的B16+4在六rank第一条functional attention一致OOM：
+  allocated=`42.49GiB`、reserved-unallocated=`1.25GiB`、free=`235.31MiB`，尚需`254MiB`。所以当前只把
+  physical microbatch改成balanced B10+10；这仍是A40容量实现变量，不是减小scientific batch。
+  policy activation checkpointing目前不启用，因为
   OOM在frozen PI05 policy而现有checkpoint flag只覆盖Writer，启用policy重算会是更侵入且可能更慢的变量。
 
 当前唯一活动候选是
@@ -195,9 +196,9 @@ Experts不解决：
   forward分批，最终从稳定且有显存余量的候选中取LoRAs/s最高值；
 - 76-tensor LoRA保持template原生dtype：72个BF16、4个F32，单entry tensor bytes从强制FP32的
   `5,148,672`降到`2,641,920`；batch GPU→CPU staging只同步一次；
-- functional objective仍是logical B20；live A40已证明单physical B20不能容纳，当前使用physical B16+4，
-  通过完整有序logical panel identity重放同一20个独立Beta/Gaussian draws，并用76个FP32 leaf-gradient buffers按
-  `16/20`和`4/20`加权累积；
+- functional objective仍是logical B20；live A40已依次证明single physical B20和B16+4不能容纳，当前使用
+  balanced physical B10+10，通过完整有序logical panel identity重放同一20个独立Beta/Gaussian draws，
+  并用76个FP32 leaf-gradient buffers按`10/20`和`10/20`加权累积；
 - PI05 formal functional路径不再调用只供日志使用的`.cpu().numpy().tolist()`/`.item()`；loss-only实现与
   原forward的loss及LoRA leaf gradients由固定noise/time测试验证一致，通用details接口保持不变；
 - correct effective alignment只计算一次，task metrics和gradient norms合并成少量host transfer；
@@ -236,6 +237,11 @@ Experts不解决：
   retry为allocated=`43.43GiB`、reserved-unallocated约`157MiB`、free=`389.31MiB`，仍请求`606MiB`失败。
   这关闭“只调allocator即可保留physical B20”，但不关闭logical B20、当前Writer或任何科研假设。两次
   launcher退出后所选六卡均释放，未触碰当时由他人占用的GPU3/6。
+- clean frozen`eddba96`在新一次live preflight后复用当时仍为空闲的同一3+3拓扑。首个非持久SSH后台
+  launcher只写contract/invocation便exit0，没有start/gradient/completion，作为无效进程托管证据保留；
+  改用tmux的fresh retry完整进入start，六rank均在第一条functional eager-attention申请`254MiB`时OOM，
+  allocated=`42.49GiB`、reserved-unallocated=`1.25GiB`、free=`235.31MiB`。因此B16不存在可比较的吞吐点，
+  当前canonical config已转为B10+10；上述root都不能seal、resume或选择auxiliary weight。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -272,12 +278,10 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：封存已通过CPU回归的keyed logical-B20/physical-B16实现，clean commit/push并创建新
-frozen worktree；随后重新live比较两节点，在最多6张空闲A40上运行macro49 gradient profile。B16成功后只在同一
-科学panel上补一个B10+10候选，以whole-step wall、input wait、peak VRAM和0 OOM/nonfinite选择吞吐胜者。
-两点wall/qps优势达到5%且input-wait share均低于5%才直接裁决；否则仅补一次A16确认，最终3%内视为
-吞吐tie并以显存余量/长跑OOM风险优先B10；
-只有胜者的完整artifact可重算`lambda_expert/lambda_rank`并解锁丢弃型fresh0→1、same-root resume1→3、
+当前具体下一步：把只改两处microbatch `16→10`的balanced B10+10 config完成CPU验证、clean commit/push
+并创建新frozen worktree；重新live比较两节点后，在最多6张空闲A40上运行macro49 gradient profile。
+B16已经容量失败，故不再做A-B-A或allocator retry；只有B10完整artifact可重算
+`lambda_expert/lambda_rank`并解锁丢弃型fresh0→1、same-root resume1→3、
 contiguous0→3。第二个verifier通过前不得手填status进入formal。
 
 ## 10. Canonical assets

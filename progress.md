@@ -1,6 +1,23 @@
 # EMBER Progress Ledger
 
-## 2026-08-09 v6-prior六卡physical B20容量失败与B16修复
+## 2026-08-09 v6-prior physical B16容量裁决与B10切换
+
+- logical-B20 microbatch实现以clean pushed `eddba96d38d71fd89d80f9a23cc91881171bae84`封存；frozen
+  worktree=`/data1/user/ymdai/worktrees/EMBER-v6-prior-gradient-b16-eddba96-20260809`。启动前live双节点
+  preflight选择`gpu01:0,1,2,4,5,7`，六卡均14MiB且无compute进程，精确形成3+3 NUMA；`/data1`
+  quota=`564,273,448/1,073,741,824 KiB`。忙碌`gpu01:3`、`gpu02:6/7`均未触碰。
+- 首个root=`runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_lb20_mb16_eddba96_20260809`使用非持久SSH
+  后台launcher，只写contract/invocation后exit0，缺少start/gradient/completion，判为无效托管尝试并
+  原样保留。后续长期GPU任务统一使用tmux或仓库launcher，不再依赖该nohup方式。
+- tmux retry root=`runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_lb20_mb16_eddba96_retry1_20260809`
+  完整打印start，并在六rank第一条functional eager-attention一致OOM：申请`254MiB`，allocated=
+  `42.49GiB`、reserved-unallocated=`1.25GiB`、free=`235.31MiB`。exit1、无gradient/completion；tmux
+  自然结束，六卡释放。
+- 按预声明规则不再做allocator retry或宽batch sweep。canonical config只把optimization/profile两处
+  microbatch从16改为10；下一步clean commit/push、frozen worktree后用同logical B20和同六卡panel运行
+  balanced B10+10。
+
+## 2026-08-09 v6-prior六卡physical B20容量失败与logical-B20修复
 
 - clean frozen/pushed`a17805c`的首次macro49 root=
   `runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_b20_a17805c_20260809`；当时live比较两节点后只用
@@ -18,8 +35,8 @@
   分布不变；seed使用固定SplitMix64整数mix而非SHA/MD5，policy checkpointing保持关闭。失败allocator
   retry不固化为runtime合同，B16/B10都从默认allocator开始。
 - 第二轮审阅后聚焦合同/functional tests为`34 passed`，全仓带LIBERO assets回归`246 passed`，Black、
-  compileall和`git diff --check`通过。config loader得到`20/16/2`，且只允许microbatch`{16,10}`。clean
-  commit/push和新frozen worktree尚待完成；完成后先跑B16，成功才与B10+10做最小真实吞吐比较。
+  compileall和`git diff --check`通过。config loader当时得到`20/16/2`，且只允许microbatch`{16,10}`；
+  clean commit/push/frozen worktree随后完成，B16 live容量结果由上一节覆盖。
 - 新`v6_prior_policy_batch.py`是logical/physical batch、RNG和runtime selection的唯一窄owner，被training、
   runtime和artifact contract共同使用；不是第二套训练路径。它使既有超大contract/runtime文件相对HEAD分别
   净减`2/1`行。architecture guard无hard violation、无parallel family；review只来自既有大文件与本次新增

@@ -4,16 +4,16 @@
 
 目标是把同一shared method、同一single checkpoint的strict paired correct从历史最好`143/400`推进到
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
-运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。首个六卡
-macro49的physical B20在默认allocator和一次`expandable_segments`重试中都发生PI05 policy MLP容量OOM；
-这只是工程证据，两个失败root都没有gradient/completion，不能seal或解释方法性能。
+运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。physical
+B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean frozen `eddba96`的B16+4也在
+六rank第一条functional attention一致OOM。所有失败root都没有gradient/completion，不能seal或解释方法性能。
 
 当前操作顺序：
 
 1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
 2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
 3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
-4. 保持logical B20不变，先在最多六张空闲A40实测physical B16+4，再只与B10+10比较吞吐；
+4. 保持logical B20不变；B16已被A40容量证伪，当前在最多六张空闲A40运行balanced B10+10；
 5. 用胜者做gradient weight、exact-resume和训练吞吐profile；
 6. formal continuation和关键checkpoint strict rollout；
 7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
@@ -50,10 +50,9 @@ macro49的physical B20在默认allocator和一次`expandable_segments`重试中�
   扩宽FP32。每batch集中nonblocking D2H，只同步一次。
 - action query DataLoader默认2 spawn workers、persistent workers、prefetch2；profile若显示GPU仍等待
   data，再实测4 workers/prefetch而不是猜测。
-- functional scientific batch固定logical B20。live A40已证明physical B20容量不足，当前以完整有序
-  logical-B20 panel identity为key生成同一20个独立flow time/noise，并用physical B16+4与FP32
-  leaf-gradient加权累积；不减少
-  queries、不改变task mean或objective分布。先验证B16，再只比较balanced B10+10的真实whole-step吞吐。
+- functional scientific batch固定logical B20。live A40已证明physical B20和B16+4容量不足，当前以完整
+  有序logical-B20 panel identity为key生成同一20个独立flow time/noise，并用balanced physical B10+10
+  与FP32 leaf-gradient加权累积；不减少queries、不改变task mean或objective分布。
 - policy activation checkpointing当前保持关闭；现有Writer checkpointing不覆盖OOM所在的frozen PI05
   Gemma MLP。只有B16/B10都无法形成高吞吐有效配置时，才把policy重算作为独立正式候选。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
@@ -138,17 +137,20 @@ profile固定train24 macro49，覆盖24×B20=480 unique跨episodequeries并包�
 已完成的容量诊断：clean frozen`a17805c`在当时空闲`gpu01:0,1,2,4,5,7`运行physical B20。默认allocator
 OOM时allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`；`expandable_segments:True`把后者降到约
 `157MiB`，但active allocated升至`43.43GiB`且仍无法再分配`606MiB`。所以不得再做allocator盲重试；两个
-root不resume、不合并。当前B16/B10比较都使用默认allocator；失败retry只作诊断，不固化为科学或runtime门。
+root不resume、不合并。当前B10继续使用default allocator；失败retry只作诊断，不固化为科学或runtime门。
+
+随后clean frozen`eddba96`的B16+4在同一`gpu01:0,1,2,4,5,7` 3+3 NUMA拓扑完整进入start，六rank第一条
+functional eager-attention均在申请`254MiB`时OOM：allocated=`42.49GiB`、reserved-unallocated=
+`1.25GiB`、free=`235.31MiB`。因此B16没有whole-step吞吐点；当前直接运行balanced B10+10，不再做
+allocator retry、A-B-A或宽batch sweep。
 
 1. 分别测positive、expert、ranking在compiler和factor heads的未加权gradient norm；
 2. 一次性选择`lambda_expert/lambda_rank`，使每个auxiliary在两个trainable blocks都不超过positive的
    `.25`；若初始化已满足而梯度近零，不人为放大；
 3. retained artifact记录完整宏步wall、DataLoader input wait和peak allocated/reserved；不为细分阶段
    在热路径插入额外CUDA同步。只有这些证据定位不出真实瓶颈时，才用一次性disposable profiler细分；
-4. B16完整macro通过后，只补同logical B20、同panel-keyed randomness、同六卡拓扑的B10+10；比较完整
-   macro wall、input wait、peak allocated/reserved和异常计数，取真实吞吐胜者。若B16仍OOM则直接B10，
-   不做广泛batch sweep。两点优势至少5%且input-wait share均低于5%才直接裁决；否则仅补A16形成A-B-A，
-   最终3%内视为吞吐tie并优先显存余量更大的B10；
+4. 运行同logical B20、同panel-keyed randomness和同六卡拓扑的balanced B10+10；记录完整macro wall、
+   input wait、peak allocated/reserved和异常计数。B16已容量失败，因此B10成功即成为当前A40可行点；
 5. 用丢弃型profile权重完成fresh0→1、same-root exact-resume1→3、独立contiguous0→3。要求scientific
    metrics、cursor、Writer/RNG和optimizer/scheduler语义一致；允许正常并行低位roundoff，不要求不同
    reduction schedule逐bit相同；

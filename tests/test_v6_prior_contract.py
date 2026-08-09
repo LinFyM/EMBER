@@ -110,7 +110,7 @@ _RUNTIME_SELECTION_EVIDENCE = {
     "action_loader_prefetch_factor": 2,
     "action_loader_persistent_workers": True,
     "logical_policy_batch_size": 20,
-    "functional_policy_microbatch_size": 16,
+    "functional_policy_microbatch_size": 10,
     "physical_policy_forwards_per_task": 2,
     "policy_gradient_checkpointing": False,
     "writer_activation_checkpointing": True,

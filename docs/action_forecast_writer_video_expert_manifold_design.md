@@ -1305,12 +1305,12 @@ train24等权，全局仍是`480/480` unique rows；positive/expert/ranking obje
    slice重放同一个logical draw tensor并只取自己的offset，保证B16+4与B10+10使用同一query/draw集合。
 3. 每slice得到对76个detached LoRA leaves的梯度；BF16/F16 leaves在FP32 buffer中按slice size/20加权累积，
    最终再转回leaf dtype并通过原chain-rule bridge传给Writer。loss也按相同权重合成。
-4. 首选physical B16，因为仍只有两次policy forward且给MLP留出实质容量余量；B16完整macro成功后只补
-   balanced B10+10，在同logical panel、同六卡拓扑和同keyed draws上比较whole-step wall、input wait、
-   peak allocated/reserved及0 OOM/nonfinite。两点wall/qps优势达到5%、均无外来负载且input-wait share都
-   低于5%才直接裁决；否则只补一个fresh A16形成A-B-A。两次A16相差不超过3%时用其wall均值比较B10，
-   最终差异仍小于3%视为吞吐tie并以显存余量/长跑OOM风险优先B10；A16自身波动超过3%则换稳定窗口只补
-   必要点。只把winner gradient evidence/weights写入config，loser保留诊断且不跑resume suite。
+4. 首选physical B16，因为仍只有两次policy forward；但clean frozen`eddba96`的真实六卡macro在第一条
+   functional eager-attention统一OOM，请求`254MiB`时allocated=`42.49GiB`、reserved-unallocated=
+   `1.25GiB`、free=`235.31MiB`。因此B16并未留下whole-step吞吐点，预声明的A-B-A分支不再适用。当前
+   直接运行balanced B10+10；同logical panel、同keyed draws、同两次policy forward和同objective不变。
+   B10成功即作为A40可行gradient point封存wall/input wait/peak及0 OOM/nonfinite，失败才重新打开
+   policy activation checkpointing，不做allocator retry或宽batch sweep。
 
 policy gradient checkpointing不是首选：现有`writer.activation_checkpointing`不覆盖OOM所在的frozen
 PI05 Gemma，打开policy checkpointing需要改变当前eval/frozen执行路径并重算Transformer，可能比两个

@@ -679,7 +679,7 @@ def _prepare_runtime(
         git_state_fn=git_state,
         rank_topology_fn=rank_topology,
     )
-    checkpoint_contract = checkpoint_contract(contract)
+    checkpoint_contract_value = checkpoint_contract(contract)
     publish_contract(args, contract, context)
     iterator = iter(loader)
     _restore_resume(
@@ -690,7 +690,7 @@ def _prepare_runtime(
         writer,
         optimizer,
         scheduler,
-        checkpoint_contract,
+        checkpoint_contract_value,
     )
     metrics_path = args.output_dir / "metrics.jsonl"
     if _metrics_rows(metrics_path) != segment.start_macro:
@@ -728,6 +728,6 @@ def _prepare_runtime(
         trainable_names=trainable_names,
         trainable_parameters=trainable_parameters,
         run_contract=contract,
-        checkpoint_contract=checkpoint_contract,
+        checkpoint_contract=checkpoint_contract_value,
         metrics_path=metrics_path,
     )

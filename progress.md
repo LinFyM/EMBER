@@ -1,7 +1,13 @@
 # EMBER Progress Ledger
 
-## Expert-Flow Teacher Audit实现与CPU门完成（尚未启动GPU，2026-08-10）
+## Expert-Flow Teacher Audit实现与CPU门完成（GPU audit尚无结果，2026-08-10）
 
+- clean pushed/frozen`7be51b1`的首次正式启动通过live双节点GPU/quota、24个step2000 experts、comparison
+  macro10和CUDA前二次UUID/serial/NUMA门；只使用空闲`gpu01:0,1,2|4,5,7`。六rank完成大部分资产装载后，
+  在写run contract前一致触发`UnboundLocalError`：公开`checkpoint_contract()` builder被同名局部变量遮蔽。
+  这是确定性Python wiring错误，不是OOM/NCCL、audit或科学non-pass；output root未创建，0 forward/update/
+  rollout/checkpoint，六卡自然回到14MiB。失败launch contract/log/exit保留，修复只把局部结果重命名为
+  `checkpoint_contract_value`；任何retry必须来自新clean pushed commit和全新root。
 - 唯一canonical `scripts/train_v6_prior_writer.py`已接入fresh-only `--mode teacher-audit`：world6、4 tasks/rank、
   schedule macro49、logical B20/physical B10+10、workers2、0 optimizer/scheduler/update/checkpoint/rollout。
   Tangent formal runtime继续fail-closed，comparison只读sealed`b308941` macro10的41个compiler/factor tensors。
@@ -13,7 +19,7 @@
   architecture guard无hard violation或第二CLI/runner/deployment family。
 - CPU oracle覆盖B20/B10+10 matched randomness、正式6 forwards/task、real7 width/FP32 loss、same-memory、
   8/8/8 negatives、480 unique queries、Gram pinv `rtol=1e-5`、近共线effective rank与0 update。加载
-  `.env.local`的最新全仓seal为`284 passed in 33.47s`，compileall/JSON/diff-check通过；尚未创建formal root，
+  `.env.local`的修复后全仓seal为`284 passed in 32.66s`，compileall/JSON/diff-check通过；尚未产生有效audit root，
   也没有GPU或CEFD结果。
 - 下一操作只允许clean commit/push、严格后继frozen worktree和live双节点GPU/quota preflight后运行一次
   audit。两门都过才设计CEFD；任一门失败就退役一次性audit路径并转structured update parameterization。

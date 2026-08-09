@@ -132,9 +132,11 @@ formal artifacts保存。
   专家库、只复用已有memories增加correct/negative各一次小型frozen decoder
   forward。exact-D三状态oracle、独立gauge、macro0/parallel/orthogonal、双臂mean、chain rule、same-memory、
   trainable-only resume/deployment和三family分析均已封存；全仓`276 passed`、compileall与diff-check通过。
-- [ ] clean commit/push并创建严格绑定该commit的frozen worktree；live双节点/quota复核后只做一次六卡
-  gradient/throughput profile及fresh0→1、same-root exact-resume1→3、independent contiguous0→3，不为
-  BF16低位一致降低B10+10或并行度。assembler写回唯一权重/evidence后才解锁formal。
+- [x] clean pushed/frozen`2616773`在live空闲`gpu01:0,1,2|4,5,7`完成唯一六卡gradient/whole-macro
+  profile；B10+10 wall=`21.531s`、0 OOM/nonfinite，assembler写回唯一权重/evidence，未因BF16低位
+  一致降低batch或并行度，也未启用无收益cache。
+- [ ] 从严格后继clean pushed/frozen worktree完成fresh0→1、same-root exact-resume1→3和independent
+  contiguous0→3；只有assembler复核cursor/RNG/checkpoint和普通reduction误差后才解锁formal。
 - [ ] formal fresh0→10后立即跑strict correct400；按`≤129`停止、`130--134`条件续25、macro25
   `≥135`且3 tasks/2 suites净正增门推进。首次`≥144`补六臂，若不同winner首次`≥151`再补六臂。
 - [ ] 若dynamic anchor能限制正交漂移、task median `|a_correct-1|≤.05`而strict仍不超macro0，才干净

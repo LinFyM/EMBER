@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 Tangent Tube六卡gradient profile完成并封存权重
+
+- canonical CPU seal commit`2616773`已push，独立frozen worktree/branch绑定同一upstream commit。live
+  双节点preflight选择空闲`gpu01:0,1,2|4,5,7`，GPU3与gpu02他人进程未触碰；`/data1` quota=
+  `571,993,132/1,073,741,824KiB`，root最终仅160KiB。
+- tmux launcher自然exit0；root=
+  `runs/outputs/pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_2616773_20260809`。24 tasks、
+  480/480 unique queries、8/8/8 negatives、最长105帧，wall/input wait=`21.53076/.60603s`，peak
+  allocated/reserved=`43,353,948,672/47,112,519,680` bytes，0 OOM/nonfinite，六卡回到14MiB。
+- 24/24 correct/negative student-anchor delta与tube均exact zero；assembler给出projection/ranking=
+  `.00686480847114155/.010514453175708578`，compiler应用比例均`.25`、factor=
+  `.108659/.026876`。证据已原样写回v3 config，gradient/aux sealed、profile ready、formal仍blocked。
+- 下一步先CPU回归并clean commit/push严格后继，再从新frozen worktree运行fresh0→1、same-root
+  exact-resume1→3及independent contiguous0→3；gradient checkpoint不进入后续训练。evidence写回后的
+  config/runtime状态回归为全仓`276 passed in 25.49s`。
+
 ## 2026-08-09 Tangent Tube canonical实现与CPU门完成（尚未启动GPU）
 
 - 旧ECP v2 executable config已由唯一

@@ -571,13 +571,17 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     return profile
 
 
-def test_v6_prior_config_starts_at_the_cpu_oracle_gradient_gate() -> None:
+def test_v6_prior_config_starts_at_the_live_resume_profile_gate() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert runtime_for_mode(config, "gradient-profile") == (1, ())
-    with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
-        runtime_for_mode(config, "profile")
+    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
+        runtime_for_mode(config, "gradient-profile")
+    assert runtime_for_mode(config, "profile") == (3, (1, 3))
     with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
         runtime_for_mode(config, "formal")
+    assert config["gradient_profile"]["artifact_evidence"]["root"].endswith(
+        "pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_"
+        "2616773_20260809"
+    )
     assert config["initialization"]["dynamic_anchor"] == (
         "training_only_frozen_macro0_compiler_and_factor_heads"
     )

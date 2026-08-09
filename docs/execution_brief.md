@@ -22,8 +22,10 @@ expert-orthogonal drift隔离。这一轮不改encoder/Core/Procedure/compiler t
 negative schedule或deployment input，也不允许static/language bypass、B-only residual、第二套部署LoRA、
 expert-bank deployment或global scale。CPU oracle、合同、clean push和frozen worktree完成前不启动GPU。
 其中canonical实现、exact-D/gauge/gradient oracle、same-memory anchor、trainable-only resume/deployment
-边界和三family分析已通过全仓`276 passed`、compileall与diff-check；当前只差clean commit/push与frozen
-worktree，尚未启动本方法GPU实证。
+边界和三family分析已通过全仓`276 passed`、compileall与diff-check。clean frozen`2616773`的六卡
+gradient/whole-macro profile已exit0并由assembler封存，projection/ranking唯一权重=
+`.00686480847114155/.010514453175708578`；当前只差严格后继的fresh/resume/contiguous工程门，formal仍
+blocked。
 
 当前操作顺序：
 
@@ -32,8 +34,8 @@ worktree，尚未启动本方法GPU实证。
 3. 与历史SFT-Anchored Tangent-Basis、短LR/weight decay、decoder freeze和behavior distillation去重；
 4. 在唯一canonical ECP vertical path上原位替换objective/schema，先用CPU dense oracle验证
    dynamic anchor、gauge-invariant residual、gradient、information wall和exact-resume；
-5. clean push/frozen后只做一次A40 gradient/throughput profile；优先复用同memories的小decoder forward，不为低位
-   数值一致降batch/并行度；
+5. clean pushed/frozen`2616773`已完成一次A40 gradient/throughput profile；同memories的小decoder
+   forward只使whole-macro wall相对ECP增加约`5.4%`，不启用cache、不降batch/并行度；
 6. formal仍从historical v6 macro400 fresh开始，及时跑同schedule strict correct400；若限制正交漂移后
    仍不超macro0，干净证伪expert-component completion并转policy-output behavior distillation。
 
@@ -186,13 +188,19 @@ reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐�
 这些证据只说明B10/deferred-NCCL/checkpoint比较器曾按合同工作；不能解锁v3 formal，也不构成
 closed-loop性能结论。
 
-### 5.2 Current tangent-tube pending profile
+### 5.2 Current tangent-tube gradient seal and pending resume profile
 
-v3必须从clean pushed strict后继frozen worktree重新完成：一次macro49 gradient profile、fresh0→1、
-same-root exact-resume1→3和independent contiguous0→3。profile assembler还必须核对dynamic anchor为
-41 tensors/`3,714,304` parameters且optimizer/checkpoint/deployment ownership全false；resume每次在加载
-student checkpoint前由historical warm-start重建anchor。只有artifact evidence原样写回v3 config后，
-Section 6才解锁。
+clean pushed/frozen`2616773`已完成一次macro49 gradient/whole-macro profile：root=
+`runs/outputs/pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_2616773_20260809`，24 tasks、
+480/480 queries、8/8/8 negatives、最长105帧，wall/input wait=`21.53076/.60603s`，peak
+allocated/reserved=`43,353,948,672/47,112,519,680` bytes，0 OOM/nonfinite。macro0双臂tube与delta
+24/24 exact zero；唯一projection/ranking weights=`.00686480847114155/.010514453175708578`已由
+assembler原样写回v3 config。相对ECP whole-macro raw wall仅增约`5.4%`、显存约`36/18MiB`，不启用cache。
+
+现在只从clean pushed strict后继frozen worktree完成fresh0→1、same-root exact-resume1→3和independent
+contiguous0→3。resume assembler必须核对dynamic anchor为41 tensors/`3,714,304` parameters且optimizer/
+checkpoint/deployment ownership全false；每次在加载student checkpoint前由historical warm-start重建
+anchor。只有resume evidence原样写回v3 config后，Section 6才解锁。
 
 ## 6. Formal training and truthful evaluation
 

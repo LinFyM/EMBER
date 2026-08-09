@@ -1608,7 +1608,8 @@ distillation去重，并用新schema在CPU dense oracle中证明只约束所声�
 ## 35. v6 Condition-Local Dynamic Expert Tangent Tube Writer
 
 状态：**2026-08-09 ECP负裁决后的唯一活动design authority；canonical实现与CPU oracle已通过
-全仓276项回归，clean push/frozen前禁止GPU。**
+全仓276项回归，clean frozen`2616773`的六卡gradient/throughput seal已通过；formal仍须等待严格后继
+fresh/resume/contiguous工程门。**
 
 ### 35.1 根因链与单变量假设
 
@@ -1769,3 +1770,32 @@ read-only analysis family保留。相对本轮基线，活动`src`在退役清�
 据此接受本轮cohesive exception：当前最小可证伪变量必须同时触及geometry、训练时anchor ownership、
 resume和分析identity；人为拆成versioned modules会增加并行活动路径而不减少责任。首次live profile前仍以
 全仓回归、`compileall`和`git diff --check`为completion evidence，GPU结果不反向豁免结构门。
+
+### 35.7 六卡gradient/throughput seal（2026-08-09）
+
+clean pushed/frozen`2616773`在live空闲`gpu01:0,1,2|4,5,7`完成唯一一次v3 B10+10 profile；启动前
+双节点GPU/UUID/process、3+3 NUMA、CUDA12.8、`/data1` quota和输出非覆盖均闭合，launcher再次实时
+fail-close。artifact为train24×B20=`480/480` unique queries、8/8/8 counterfactual、最长105 sampled
+frames、0 OOM/nonfinite；结束后六卡自然回到14MiB。
+
+macro0的correct与negative在24/24 tasks上均有`G=G0`：student/anchor norm和projection coefficient逐项
+相等，delta norm、directional component、orthogonal norm、tube loss与clamp correction全部exact zero。
+unweighted compiler/factor gradients为positive=`.0110556/.105556`、projection=`.402617/1.670787`、
+ranking=`.262866/.269814`；projection相对ECP同panel只差约`.27%/.20%`，ranking实质相同，符合CPU
+预言而不需要追逐bitwise identity。预注册逐aux逐block`.25`规则唯一给出：
+
+```text
+lambda_projection = 0.00686480847114155
+lambda_ranking    = 0.010514453175708578
+```
+
+加权后compiler两项均`.25`，factor分别`.108659/.026876`。evidence由retained root
+`runs/outputs/pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_2616773_20260809`
+重新assemble并原样写回config；旧ECP近似权重只作identity参照，没有被复制或扫描。
+
+whole-macro wall/input wait=`21.53076/.60603s`，ECP同图为`20.42496/.17998s`；raw wall增幅约`5.4%`，
+扣除input wait后约`3.4%`。peak allocated/reserved=
+`43,353,948,672/47,112,519,680` bytes，只比ECP增加约`36/18MiB`。因此同memories在线双decoder是当前
+吞吐最优的简单路径：没有OOM、显存增长可忽略、cache构建成本没有摊销证据；不降B10+10、不降六卡、
+不启用cache。该seal只解锁严格后继的fresh0→1/exact-resume1→3/contiguous0→3工程门，尚无训练或
+closed-loop性能结论。

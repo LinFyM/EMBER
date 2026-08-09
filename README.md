@@ -33,8 +33,10 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   分量。anchor仅训练期存在，部署仍只生成一套LoRA且不读取expert bank或feature cache。
 - 当前没有运行中的EMBER GPU进程。新canonical v3 config、双臂low-rank objective、training-only anchor、
   trainable-only resume/deployment load、新评测family和CPU oracle已在同一vertical path通过全仓
-  `276 passed`、compileall和diff-check；clean push与frozen worktree前不启动GPU。之后只做一次六卡
-  gradient/throughput/exact-resume profile，再按macro10/25/50预注册门及时跑strict400。
+  `276 passed`、compileall和diff-check。clean frozen`2616773`的六卡gradient/whole-macro profile也已
+  exit0：wall=`21.531s`、peak allocated/reserved=`43.354/47.113GB`、0 OOM/nonfinite；macro0两臂
+  tube exact zero，唯一projection/ranking weights=`.00686480847114155/.010514453175708578`已写回config。
+  下一步是严格后继的fresh0→1/exact-resume1→3/contiguous0→3，再按macro10/25/50门及时跑strict400。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -44,7 +46,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
   `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为
-  `.006883349605446485/.010514451404229894`，没有继承旧seal。
+  `.006883349605446485/.010514451404229894`。当前Tangent Tube从自己的live gradient seal得到
+  `.00686480847114155/.010514453175708578`，没有直接继承任一旧seal。
 - formal训练root为
   `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在
   `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809/analysis.json`。

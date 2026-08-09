@@ -28,8 +28,12 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   `a_correct`和expert component按目标上升，closed-loop反而显著下降且expert-orthogonal drift主导，
   所以不续50/100、不补六臂。当前第35节在同一canonical path原位加入same-input frozen-v6 dynamic
   decoder、correct/negative双臂effective tangent tube、新v3/v4/v7 family与trainable-only resume边界；
-  CPU oracle、全仓`276 passed`、compileall与diff-check已通过。只允许先完成clean push和frozen worktree，再做一次live A40
-  gradient/throughput/exact-resume profile及短训练/及时strict评测。精确顺序只取`task_plan.md`。
+  CPU oracle、全仓`276 passed`、compileall与diff-check已通过。clean frozen`2616773`的六卡gradient/
+  whole-macro profile已自然exit0：B10+10 wall=`21.531s`、peak allocated/reserved=`43.354/47.113GB`、
+  0 OOM/nonfinite，macro0双臂tube为exact zero；唯一projection/ranking weights=
+  `.00686480847114155/.010514453175708578`已由assembler写回config。下一步只允许先clean push严格
+  后继并完成fresh0→1/exact-resume1→3/contiguous0→3，再决定formal短训练和及时strict评测；精确顺序
+  只取`task_plan.md`。
 
 ## Mandatory reading
 

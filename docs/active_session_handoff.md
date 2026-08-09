@@ -80,8 +80,13 @@ McNemar `p=.038477`，suite net=`-4/-12/-2/+4`。macro10→25也是`18/31`、net
 原位实现Condition-Local Dynamic Expert Tangent Tube：historical v6对correct和当前negative的同一
 language/video/order输出分别作局部baseline，只惩罚student增量的expert-orthogonal分量。新v3 config、
 training-only decoder anchor、trainable-only resume/deployment load、双臂metrics及独立评测family已通过
-exact-D/gauge/gradient oracle、全仓`276 passed`、compileall与diff-check；clean push/frozen前禁止GPU。
-当前没有EMBER GPU进程。
+exact-D/gauge/gradient oracle、全仓`276 passed`、compileall与diff-check。clean pushed/frozen
+`2616773`随后在live空闲`gpu01:0,1,2|4,5,7`完成唯一六卡gradient/whole-macro profile：24 tasks、
+480/480 unique queries、8/8/8 negatives、最长105帧，wall/input wait=`21.53076/.60603s`，peak
+allocated/reserved=`43,353,948,672/47,112,519,680` bytes，0 OOM/nonfinite，六卡自然回到14MiB。
+correct/negative的student与same-input anchor在24/24 tasks上完全一致，全部tube/delta指标exact zero；
+projection/ranking唯一权重=`.00686480847114155/.010514453175708578`，assembler完整通过并写回config，
+只解锁严格后继的resume profile，formal仍blocked。当前没有EMBER GPU进程。
 
 ## 2. EMBER problem and information wall
 
@@ -219,7 +224,7 @@ Experts不解决：
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
 | v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
 | v6 Expert-Component Projection | `134→133→120` | `a_correct`与component按构造上升，修复旧径向收缩 | 正交漂移继续增大，macro25 paired net`-14`、`p=.038477` | 退役；不续、不扫权重 |
-| current Condition-Local Tangent Tube | CPU oracle/合同`276 passed`；无GPU成绩 | same-input dynamic baseline可在effective space精确隔离expert平行/正交增量 | 尚未证明tube能保住143起点或改善held闭环 | 当前唯一活动候选；先profile再短训strict裁决 |
+| current Condition-Local Tangent Tube | CPU`276 passed`；gradient profile exit0，无closed-loop成绩 | live macro0双臂tube exact zero，B10+10仅约`5.4%` wall开销 | 尚未证明训练后tube能限制漂移或保住143起点 | 当前唯一活动候选；先resume门再短训strict裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 

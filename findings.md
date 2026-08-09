@@ -1,5 +1,23 @@
 # EMBER Findings
 
+## 2026-08-09 Tangent Tube六卡gradient/throughput seal
+
+- clean pushed/frozen`2616773`在live比较双节点、核对`/data1` quota后只使用空闲
+  `gpu01:0,1,2|4,5,7`；3+3 NUMA、physical/local rank、deferred NCCL与
+  `NCCL_P2P_DISABLE=1`均由artifact复验。24 tasks、480/480 unique B20 queries、8/8/8 negatives、
+  最长105帧，0 OOM/nonfinite，结束后六卡回到14MiB。
+- live macro0上correct/negative的student与same-input frozen anchor在24/24 tasks完全一致，全部
+  delta/tube/orthogonal指标exact zero。unweighted projection compiler/factor gradient=
+  `.402617/1.670787`，与ECP的`.401533/1.667382`只差约`.27%/.20%`；ranking保持
+  `.262866/.269814`。这关闭了“真实BF16路径破坏macro0 gradient identity”的风险。
+- 预注册`.25`规则唯一给出projection/ranking weights=
+  `.00686480847114155/.010514453175708578`；应用后compiler均`.25`，factor仅
+  `.108659/.026876`。不继承旧权重，也不做weight sweep。
+- whole-macro wall/input wait=`21.53076/.60603s`，相对ECP同图`20.42496/.17998s`的raw wall只增加
+  `5.4%`，扣除input wait后约`3.4%`；peak allocated/reserved只增加约`36/18MiB`到
+  `43,353,948,672/47,112,519,680` bytes。因此在线双decoder满足吞吐边界，cache没有end-to-end收益证据。
+
+
 ## 2026-08-09 Condition-Local Dynamic Expert Tangent Tube CPU封存
 
 - ECP的正确臂expert component确实上升，但大量非expert effective方向同时漂移；因此第35节只改变
@@ -21,7 +39,8 @@
   增加重复forward。退役旧smoke执行路径后全仓`276 passed in 28.74s`，compileall和
   `git diff --check`通过；本阶段未启动GPU。
 - 新方法使用独立`tangent_tube_v3` family；within-family curve仍只接收0/10/25/50，generic historical
-  transition保留legacy+ECP并新增legacy+tangent 10/25/50/100，拒绝ECP+tangent混合。首次strict
+  transition保留legacy+ECP并新增legacy+tangent 10/25/50，拒绝ECP+tangent混合；macro100必须等显式
+  config续训授权后再开放。首次strict
   correct`≥144`即跑六臂，若不同checkpoint达到`≥151`再对goal winner重跑，不能只看tube或LoRA几何。
 
 ## 2026-08-09 ECP formal闭环负裁决

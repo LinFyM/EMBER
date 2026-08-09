@@ -82,6 +82,16 @@ def test_fixed_temporal_feature_is_zero_preserving_and_reads_real_order() -> Non
     assert not torch.equal(natural, reversed_feature)
     assert not torch.equal(natural, shuffled)
     assert not tuple(encoder.parameters())
+    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
+        autocast_feature = encoder(evidence, indices)
+        memory = ProgramResidualMemory(
+            feature_width=5,
+            program_slots=3,
+            program_width=4,
+        )
+        autocast_read = memory(autocast_feature)
+    assert autocast_feature.dtype == torch.float32
+    assert autocast_read.dtype == torch.float32
 
 
 def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() -> None:
@@ -124,6 +134,21 @@ def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() 
     torch.testing.assert_close(memory(full_features), predicted)
     assert application.predicted_observed_max_abs == 0
     assert application.predicted_observed_relative_rms == 0
+
+
+def test_zero_correct_motion_uses_finite_gate_failure_value() -> None:
+    features = torch.eye(4, dtype=torch.float32)
+    _, summary = counterfactual_null_program_delta(
+        features[:2],
+        features[2:],
+        torch.zeros(2, 3, 4),
+        step_size=1.0,
+        relative_damping=0.01,
+    )
+    assert torch.isfinite(
+        torch.tensor(summary.predicted_negative_to_correct_ratio)
+    )
+    assert summary.predicted_negative_to_correct_ratio > 1e30
 
 
 def test_zero_residual_is_exact_and_one_decoder_moves_both_lora_factors() -> None:

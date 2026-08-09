@@ -38,26 +38,32 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   gained/lost=`16/19`、churn35、net`-3`；相对ECP10=`133`为`19/21`、net`-2`。因此不续25、
   不补六臂、不扫tube weight/LR/WD。该结果只淘汰当时的tangent recipe/window；completion从未成立，
   不能扩大成“expert component本身无效”。
-- 当前没有运行中的EMBER GPU进程，也没有可启动的正式训练候选。第36节matched Expert-Flow Teacher
+- 当前没有运行中的EMBER GPU进程。第36节matched Expert-Flow Teacher
   Viability Audit已从clean frozen`e8e4728`完成：step2000 expert/macro0/tangent10的matched真实7维flow
   loss=`.098631/.091802/.091843`，expert只在`2/24` tasks、`0/4` suite means同时优于两baseline，明确未过
   `18/24+3/4` teacher-quality门。compiler/factor gradient residual=`.6864/.8387`虽非冗余，但不能把整体
   更差teacher变成有效监督，因此`authorize_cefd=false`，不实现CEFD、不做weight profile。
-- audit完整覆盖480/480 queries、144次policy forward、0 update/rollout/OOM/nonfinite，wall=`39.698s`。
-  一次性mode已在config中formal non-pass并fail-closed。下一候选延续而非推翻已有证据：保留v6高增益
-  video→Program→LoRA decoder，在frozen fused Program上增加zero-init、video-keyed显式kernel residual，
-  以函数空间结构消除shared Adam/Jacobian旋转；正式design和CPU/profile门完成前不会启动训练。
+- audit完整覆盖480/480 queries、144次policy forward、0 update/rollout/OOM/nonfinite，wall=`39.698s`；
+  一次性mode/flow-teacher/effective-objective执行路径和tests现已删除，历史只留Git/formal artifact。
+- 当前唯一active implementation是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：
+  strict freeze v6 macro400全部600 tensors，在fused Program后加入fixed temporal video key和zero-init
+  `[256,320,256]` FP32 memory；24 correct functional cotangents与24 counterfactual zero-motion rows经
+  48×48 FP64 Gram形成FP32 manual write。无optimizer、expert target、negative policy forward或第二LoRA。
+- CPU seal完成：全仓`276 passed`、compileall、JSON/diff-check通过，architecture guard无hard violation；
+  当前config仍只允许等待中的macro49 mechanism profile，formal/evaluation均被live artifact硬阻塞。尚无该
+  方法A40、训练或strict成绩。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
   host sync。
-- 真实fixed-panel profile在同一32 requests/1093 sampled frames上得到batch8/16/32吞吐
-  `.911427/.905107/.906432 LoRA/s`，选择实测最快batch8；8-row vertical smoke完整闭环且0异常。
+- 历史v6 fixed-panel profile在同一32 requests/1093 sampled frames上得到batch8/16/32吞吐
+  `.911427/.905107/.906432 LoRA/s`并选择batch8；第37节改变了deployment graph，不能继承该seal，必须在
+  mechanism通过后重新实测新v8 residual graph的batch8/16/32和correct smoke。
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
   `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为
   `.006883349605446485/.010514451404229894`。已退役Tangent Tube当时从自己的live gradient seal得到
-  `.00686480847114155/.010514453175708578`，没有直接继承任一旧seal。
+  `.00686480847114155/.010514453175708578`。第37节没有auxiliary weight或optimizer，不继承任一旧seal。
 - formal训练root为
   `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在
   `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809/analysis.json`。
@@ -81,8 +87,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   直接当deployment字典。
 - 连续因果链已经收窄：whole-LoRA主要径向收缩；ECP补足expert分量却让大量正交方向漂移；Tangent
   控制相对半径却没有把shared update旋进expert方向；matched audit又证明expert flow在22/24 tasks上
-  比macro0更差。故下一步不再叠expert loss，而把历史Condition-Kernel已证明的condition credit隔离与
-  v6已证明的高增益decoder结合，直接检验shared update geometry是否是当前最早可修复断点。
+  比macro0更差。当前把历史Condition-Kernel已证明的condition credit隔离与v6高增益decoder结合，直接
+  检验shared update geometry是否是最早可修复断点；先过真实机制/吞吐门，再以strict closed-loop裁决。
 
 ## Data and evaluation
 

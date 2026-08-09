@@ -1,26 +1,25 @@
-import copy
+from __future__ import annotations
+
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
-from ember.expert_manifold.contract import (
-    ExpertManifoldError,
-    load_task_expert_config,
-)
-from ember.expert_manifold.inference import inspect_v6_prior_writer_asset
-from ember.expert_manifold.v6_prior import (
-    V6_PRIOR_FROZEN_PARAMETER_COUNT,
-    V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+from ember.expert_manifold.contract import ExpertManifoldError, load_task_expert_config
+from ember.expert_manifold.inference import (
+    _trained_writer_asset,
+    inspect_expert_manifold_writer_evaluation,
+    inspect_v6_prior_writer_asset,
 )
 from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
 from ember.expert_manifold.v6_prior_contract import (
-    REPO_ROOT,
     V6_PRIOR_CANONICAL_CONFIG,
     V6_PRIOR_CONFIG_SCHEMA,
     V6_PRIOR_RUN_SCHEMA,
     load_v6_prior_config,
 )
+from ember.expert_manifold.v6_prior_run_contract import cursor_contract
 from ember.pi05_source_checkpoint import read_json
 
 
@@ -28,68 +27,37 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_tangent_tube_inherits_only_the_unchanged_v6_deployment_smoke() -> None:
+def test_residual_deployment_requires_its_own_live_profile() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
     assert evaluation["throughput_policy"] == (
-        "highest_measured_throughput_with_device_memory_headroom"
+        "highest_measured_batch_throughput_with_device_memory_headroom"
     )
-    assert evaluation["minimum_smoke_writer_model_batch_size"] == 8
-    assert evaluation["formal_status"] == "sealed_from_unchanged_v6_deployment_graph"
-    evidence = evaluation["inherited_online_smoke_evidence"]
-    assert evidence["writer_model_batch_size"] == 8
-    assert evidence["source_family"] == "legacy_v6_prior_v1"
-    assert evidence["scientific_rows"] == 8
-    assert evidence["failure_count"] == 0
-    assert evidence["dynamic_anchor_deployment_owned"] is False
-    assert evidence["deployment_graph_change"] == (
-        "family_identity_and_trainable_state_restore_scope_only"
+    assert evaluation["required_writer_model_batch_sizes"] == [8, 16, 32]
+    assert evaluation["formal_status"] == (
+        "blocked_until_new_residual_deployment_graph_live_profile"
     )
+    assert evaluation["online_smoke_evidence"] is None
+    with pytest.raises(ExpertManifoldError, match="live deployment profile"):
+        inspect_expert_manifold_writer_evaluation(
+            config_path=CONFIG,
+            checkpoint=Path("/missing"),
+            video_data_root=Path("/missing"),
+            source={},
+            task_keys=(("libero_spatial", 1),),
+            video_condition="correct",
+            video_seed=7,
+            video_sampling_mode="without_replacement",
+            require_formal=True,
+        )
 
 
-def test_inherited_deployment_seal_rejects_dynamic_anchor_ownership(
-    tmp_path: Path,
-) -> None:
-    config = copy.deepcopy(json.loads(CONFIG.read_text(encoding="utf-8")))
-    config["evaluation"]["inherited_online_smoke_evidence"][
-        "dynamic_anchor_deployment_owned"
-    ] = True
-    path = tmp_path / "sealed.json"
-    path.write_text(json.dumps(config), encoding="utf-8")
-    with pytest.raises(ExpertManifoldError, match="scientific boundary changed"):
-        load_v6_prior_config(path)
-
-
-def test_inherited_deployment_seal_rejects_changed_runtime_graph(
-    tmp_path: Path,
-) -> None:
-    config = copy.deepcopy(json.loads(CONFIG.read_text(encoding="utf-8")))
-    config["evaluation"]["inherited_online_smoke_evidence"][
-        "deployment_graph_change"
-    ] = "training_dynamic_anchor_added_to_deployment"
-    path = tmp_path / "stable-selection.json"
-    path.write_text(json.dumps(config), encoding="utf-8")
-    with pytest.raises(ExpertManifoldError, match="scientific boundary changed"):
-        load_v6_prior_config(path)
-
-
-def test_tangent_tube_config_rejects_broad_resume_writer_scope(
-    tmp_path: Path,
-) -> None:
-    config = copy.deepcopy(json.loads(CONFIG.read_text(encoding="utf-8")))
-    config["initialization"]["resume_writer_load_scope"] = "all_writer_tensors"
-    path = tmp_path / "stable-tie.json"
-    path.write_text(json.dumps(config), encoding="utf-8")
-    with pytest.raises(ExpertManifoldError, match="scientific boundary changed"):
-        load_v6_prior_config(path)
-
-
-def test_old_expert_asset_config_cannot_enter_canonical_runtime() -> None:
+def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
     old = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
-    with pytest.raises(ExpertManifoldError, match="scientific boundary changed"):
+    with pytest.raises(ExpertManifoldError, match="non-canonical"):
         load_v6_prior_config(old)
 
 
-def test_v6_task_expert_authority_ignores_retired_writer_seals(
+def test_task_expert_authority_remains_independent_of_retired_writer_paths(
     tmp_path: Path,
 ) -> None:
     old = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
@@ -100,136 +68,172 @@ def test_v6_task_expert_authority_ignores_retired_writer_seals(
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_task_expert_config(path)["task_experts"]["task_count"] == 24
 
-    config["task_experts"]["formal_run"]["selected_stop_step"] = 1000
-    path.write_text(json.dumps(config), encoding="utf-8")
-    with pytest.raises(ExpertManifoldError, match="task-expert scientific boundary"):
-        load_task_expert_config(path)
 
-
-def test_historical_v6_warm_start_is_a_real_load_only_evaluation_asset() -> None:
+def test_historical_v6_is_real_load_only_asset_with_exact_zero_residual() -> None:
     config = load_v6_prior_config(CONFIG)
     checkpoint = (REPO_ROOT / config["initialization"]["checkpoint"]).resolve()
-    historical_source = read_json(checkpoint.parent.parent / "run_contract.json")[
-        "source"
-    ]
-
+    source = read_json(checkpoint.parent.parent / "run_contract.json")["source"]
     asset = inspect_v6_prior_writer_asset(
         config,
         checkpoint,
-        historical_source,
+        source,
         require_formal=False,
     )
-
     assert asset["kind"] == "historical_v6_macro400_load_only"
     assert asset["source_macro"] == 400
     assert asset["method_macro"] == 0
     assert asset["writer_state"]["state_tensor_count"] == 600
     assert asset["writer_state"]["state_value_count"] == 12_064_064
-    storage = asset["writer_state"]["template_lora_storage"]
-    assert storage["tensor_count"] == 76
-    assert storage["parameter_count"] == 1_287_168
-    assert storage["tensor_bytes"] == 2_641_920
-    assert storage["dtype_tensor_counts"] == {"BF16": 72, "F32": 4}
-    assert storage["dtype_parameter_counts"] == {
-        "BF16": 1_253_376,
-        "F32": 33_792,
+    assert asset["residual_state"] == {
+        "kind": "fresh_elementwise_zero",
+        "path": None,
+        "bytes": 0,
+        "tensor_count": 0,
+        "dtype": "torch.float32",
+        "shape": [256, 320, 256],
+        "value_count": 20_971_520,
     }
-    assert len(storage["dtype_by_name"]) == 76
-    assert (
-        storage["dtype_by_name"]["model.action_in_proj.lora_A.default.weight"] == "F32"
-    )
 
 
-def test_trained_writer_asset_fails_closed_on_dynamic_anchor_ownership(
+def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
+    configured = (
+        REPO_ROOT / str(config["initialization"]["checkpoint"])
+    ).resolve() / "writer.safetensors"
+    ownership = {
+        "historical_v6_base": {
+            "state_tensor_count": 600,
+            "parameter_tensor_count": 523,
+            "parameter_count": 10_775_296,
+            "trainable_parameter_count": 0,
+            "checkpoint_owned": False,
+            "deployment_owned": True,
+        },
+        "fixed_projection": {
+            "shape": [256, 1024],
+            "dtype": "torch.float32",
+            "trainable": False,
+            "persistent": False,
+            "checkpoint_owned": False,
+        },
+        "program_residual_memory": {
+            "shape": [256, 320, 256],
+            "dtype": "torch.float32",
+            "value_count": 20_971_520,
+            "trainable": False,
+            "manual_update": True,
+            "checkpoint_owned": True,
+            "deployment_owned": True,
+        },
+        "source_policy_trainable_parameter_count": 0,
+        "optimizer": "not_instantiated",
+        "scheduler": "not_instantiated",
+        "scaler": "not_instantiated",
+    }
+    contract = {
+        "run_schema": V6_PRIOR_RUN_SCHEMA,
+        "mode": "formal",
+        "git_commit": "a" * 40,
+        "config": {
+            "path": f"/frozen/{CONFIG.name}",
+            "schema": V6_PRIOR_CONFIG_SCHEMA,
+            "bytes": 1,
+        },
+        "source": source,
+        "initialization": {
+            "mode": "strict_historical_v6_macro400_all_frozen",
+            "checkpoint": str(configured),
+            "writer_state_tensor_count": 600,
+            "writer_state_value_count": 12_064_064,
+            "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+        },
+        "condition_feature": config["condition_feature"],
+        "program_residual": config["program_residual"],
+        "update": config["update"],
+        "ownership": ownership,
+        "world_size": 6,
+        "rank_topology": [{"rank": rank} for rank in range(6)],
+        "content_hash_policy": "disabled_by_owner",
+    }
+    return {
+        "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
+        "next_macro": 10,
+        "metrics_rows": 10,
+        "world_size": 6,
+        "cursor_contract": cursor_contract(config, 10),
+        "checkpoint_contract": contract,
+        "program_memory": {
+            "file": "program_memory.safetensors",
+            "key": "program_memory.value",
+            "tensor_count": 1,
+            "dtype": "torch.float32",
+            "shape": [256, 320, 256],
+            "value_count": 20_971_520,
+            "finite": None,
+        },
+        "payload_value_validation": "deployment_metadata_only",
+        "content_hash_policy": "disabled_by_owner",
+    }
+
+
+def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_v6_prior_config(CONFIG)
-    checkpoint = tmp_path / "checkpoints" / "macro_00000001"
-    checkpoint.mkdir(parents=True)
-    writer_path = checkpoint / "writer.safetensors"
-    writer_path.write_bytes(b"synthetic-writer")
     source = {"checkpoint": "/synthetic/source"}
-    manifest = {
-        "schema_version": V6_PRIOR_CHECKPOINT_SCHEMA,
-        "next_macro": 1,
-        "metrics_rows": 1,
-        "world_size": 6,
-        "content_hash_policy": "disabled_by_owner",
-        "files": {"writer.safetensors": writer_path.stat().st_size},
-        "checkpoint_contract": {
-            "run_schema": V6_PRIOR_RUN_SCHEMA,
-            "mode": "formal",
-            "source": source,
-            "objective": config["objective"],
-            "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
-            "initialization": {
-                "checkpoint": str(
-                    (
-                        REPO_ROOT
-                        / str(config["initialization"]["checkpoint"])
-                        / "writer.safetensors"
-                    ).resolve()
-                ),
-                "dynamic_anchor": (
-                    "training_only_frozen_macro0_compiler_and_factor_heads"
-                ),
-                "resume_writer_load_scope": (
-                    "trainable_compiler_and_factor_heads_only"
-                ),
-            },
-            "ownership": {
-                "frozen_parameter_count": V6_PRIOR_FROZEN_PARAMETER_COUNT,
-                "trainable_parameter_count": V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
-                "dynamic_anchor": {
-                    "parameter_count": V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
-                    "tensor_count": 41,
-                    "optimizer_owned": False,
-                    "checkpoint_owned": False,
-                    "deployment_owned": False,
-                },
-            },
-        },
-    }
+    checkpoint = tmp_path / "checkpoints/macro_00000010"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "manifest.json").write_text("{}", encoding="utf-8")
+    (checkpoint / "program_memory.safetensors").write_bytes(b"formal-memory")
+    inspection = _synthetic_inspection(config, source, checkpoint)
     monkeypatch.setattr(
-        "ember.expert_manifold.inference._writer_state_record",
-        lambda *_args, **_kwargs: {"state_tensor_count": 600},
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: inspection,
     )
-
-    def publish(value: dict) -> None:
-        (checkpoint / "manifest.json").write_text(
-            json.dumps(value), encoding="utf-8"
-        )
-
-    publish(manifest)
-    asset = inspect_v6_prior_writer_asset(
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference._historical_writer_asset",
+        lambda *_args, **_kwargs: {
+            "writer_state": {
+                "path": "/historical/writer.safetensors",
+                "bytes": 1,
+                "state_tensor_count": 600,
+                "state_value_count": 12_064_064,
+            }
+        },
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.git_commit_in_active_authority_lineage",
+        lambda commit: commit == "a" * 40,
+    )
+    asset = _trained_writer_asset(
         config,
         checkpoint,
         source,
         require_formal=True,
     )
-    assert asset["kind"] == "v6_tangent_tube_trained_checkpoint"
+    assert asset["kind"] == "v6_condition_program_residual_checkpoint"
+    assert asset["residual_state"]["tensor_count"] == 1
 
-    for path, changed in (
-        (("initialization", "dynamic_anchor"), "deployment_anchor"),
-        (("initialization", "resume_writer_load_scope"), "all_writer_tensors"),
-        (("ownership", "dynamic_anchor", "optimizer_owned"), True),
-        (("ownership", "dynamic_anchor", "checkpoint_owned"), True),
-        (("ownership", "dynamic_anchor", "deployment_owned"), True),
-    ):
-        invalid = copy.deepcopy(manifest)
-        cursor = invalid["checkpoint_contract"]
-        for name in path[:-1]:
-            cursor = cursor[name]
-        cursor[path[-1]] = changed
-        publish(invalid)
-        with pytest.raises(
-            ExpertManifoldError,
-            match="trained Writer checkpoint changed",
-        ):
-            inspect_v6_prior_writer_asset(
-                config,
-                checkpoint,
-                source,
-                require_formal=True,
-            )
+    invalid = deepcopy(inspection)
+    invalid["checkpoint_contract"] = deepcopy(inspection["checkpoint_contract"])
+    invalid["checkpoint_contract"]["ownership"] = deepcopy(
+        inspection["checkpoint_contract"]["ownership"]
+    )
+    invalid["checkpoint_contract"]["ownership"]["dynamic_anchor"] = {
+        "checkpoint_owned": True
+    }
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: invalid,
+    )
+    with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)
+
+    invalid_cursor = deepcopy(inspection)
+    invalid_cursor["cursor_contract"]["teacher_video_seed"] += 1
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: invalid_cursor,
+    )
+    with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)

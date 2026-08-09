@@ -35,33 +35,54 @@ expert/macro0/tangent10 matched真实7维flow loss=`.098631330/.091801740/.09184
 tasks和`0/4` suite means同时优于两baseline，明确未过`18/24+3/4`teacher门。compiler/factor gradient
 residual=`.6864/.8387`虽通过非冗余门，但来自整体更差teacher，因此`authorize_cefd=false`。
 
+第37节**Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual**现已完成canonical实现和CPU
+seal，但尚无A40或closed-loop结果。实现严格冻结historical v6 macro400的600 tensors，以固定
+zero-preserving时序video feature读取一个`[256,320,256]` FP32 Program memory；24个correct B20
+functional cotangents与24个wrong/shuffled/reversed zero-motion rows通过48×48 FP64 Gram直接形成FP32
+manual write，没有optimizer/scheduler/scaler、expert target或negative policy forward。step0精确保留v6
+LoRA；deployment仍只输出一套38-target rank16 LoRA。
+
+一次性teacher-audit/effective-objective/flow-teacher执行路径已删除；checkpoint只保存Program memory、
+cursor和六rank RNG，historical v6 base与fixed projection不归checkpoint所有。训练、checkpoint、deployment
+v8 adapter、one-shot六臂证据和cross-family analysis已经联锁；错误family不能继承本候选的profile seal。
+profile artifact会从raw macro重算全部门并匹配完整scientific run，formal result必须绑定completion、50-row
+metrics与macro10/25/50 manifests，trained deployment checkpoint必须位于active authority lineage；clean
+detached frozen authority ancestor可直接运行v8 evaluator。CPU最终证据为全仓`280 passed in 21.02s`、
+compileall、JSON/diff-check通过，architecture guard无hard violation。
+这些只证明实现合同，不构成机制或性能结果。
+
 当前操作顺序：
 
 1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
 2. Tangent只解决了局部半径，没有解决共享decoder Jacobian把更新旋进expert方向的问题；strict同时降到
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
-4. 封存结果后退役一次性audit mode/flow teacher support，只保留canonical run-contract owner和Git/artifact；
-5. 下一候选冻结v6 macro0高增益condition representation/decoder，从zero residual开始直接保证
-   condition-specific structured update；先完成历史去重、CPU algebra和真实A40 throughput/profile门；
-6. 任一新候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
+4. 一次性audit路径已退役；第37节实现和CPU门已完成，不能再从旧Tangent/audit owner恢复执行；
+5. 下一次GPU只做clean pushed/frozen commit上的macro49 mechanism profile：保持B10+10和0 negative policy
+   forward；production wall对sealed v6 `21.095109596s` ratio`≤1.10`，至少18/24 correct retention、
+   18/24 negative null、4/4 fixed-action breadth；8次fixed-action verification forward排除在production wall外；
+6. mechanism seal后单卡profile新residual deployment graph的batch8/16/32并做correct smoke；两类seal齐全才
+   评测zero-memory macro0、formal fresh0→10和strict correct400；
+7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
    不从Tangent checkpoint resume。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD均已退役或否决，当前正在
-  设计structured condition update，尚无active正式训练方法。
+- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD均已退役或否决。当前唯一
+  active implementation是第37节frozen-v6 counterfactual-null Program residual；尚未获得live profile seal，
+  因而formal训练仍被配置硬阻塞。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
 - 输出：一套完整38-target public rank-16 LoRA；Writer在rollout前运行一次后释放。
 - source policy、normalization、split、frame stride5、LIBERO preprocessing与paired evaluator固定。
-- historical v6-fast macro400仍是下一候选唯一允许的load-only Writer初始化；新候选不得加载任何退役
+- historical v6-fast macro400是当前active candidate唯一允许的load-only Writer初始化；不得加载任何退役
   optimizer/scheduler/sampler/RNG，也不得用task expert输出作为cotangent。
-- train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
-  all-reduce。
+- train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权；六rank
+  各gather本地4个correct cotangents和4+4 condition features后独立形成同一manual write，不all-reduce
+  80MiB memory。
 - 不恢复global norm attraction、whole-LoRA cosine、ECP completion、Tangent dynamic anchor、CEFD或
   parameter-distance代理。structured candidate只读correct真实functional cotangent；当前counterfactual
   可作为zero-motion condition constraint，但不得读取wrong-task expert或最大化negative action error。
@@ -87,6 +108,10 @@ residual=`.6864/.8387`虽通过非冗余门，但来自整体更差teacher，因
 - policy activation checkpointing当前保持关闭；现有Writer checkpointing不覆盖OOM所在的frozen PI05
   Gemma MLP。只有B16/B10都无法形成高吞吐有效配置时，才把policy重算作为独立正式候选。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
+- mechanism profile的production wall只计correct functional work与full48 gather/solve/write；task-local
+  evidence、application closure、LoRA A/B和4-task fixed-action probe是一次性verification，单独计时且不进入
+  formal热路径。fixed-action使用同observation/同noise的before/after推理，不读取target action；不能把它
+  误算成negative functional forward，也不能让它掩盖生产吞吐。
 
 保留FP32 RMSNorm/softmax/ROPE/image normalization和policy-effective reduction，除非profile证明它们是
 显著瓶颈且降低精度不伤真实闭环；吞吐优先不是盲目改变模型数学。
@@ -96,8 +121,8 @@ residual=`.6864/.8387`虽通过非冗余门，但来自整体更差teacher，因
 GPU前一次性要求：
 
 - `git diff --check`和聚焦/全仓CPU tests通过；
-- historical 600-tensor Writer strict-load，frozen/trainable ownership为
-  `7,060,992/3,714,304` parameters；
+- historical 600-tensor Writer strict-load并全部冻结：`10,775,296` base parameters、0 trainable
+  parameters；新增`20,971,520`个FP32 memory values由manual update拥有，但仍不注册为optimizer parameter；
 - validation8 real-asset inspect和CLI prepare产生正确one-shot requests，部署expert-bank reads=`0`；
 - no-video不读frames并返回template-A/zero-B identity；wrong/shuffle/reverse只改变允许的视频输入；
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
@@ -110,15 +135,18 @@ GPU前一次性要求：
 - retired teacher-audit CPU oracle曾覆盖physical B20的3次forward与B10+10的6次forward；正式artifact已
   证明480/480 queries、144 forwards、real7、8/8/8 negatives和0 update/rollout。其一次性feature tests随
   runtime退役；canonical contract owner继续保留。该证据不能解锁CEFD或新候选训练。
+- residual CPU oracle覆盖zero memory identity、真实frame order、wrong-video exact-language、full48
+  solve/application、negative-null、A/B response、memory-only exact-resume、六rank RNG、v8 deployment
+  asset和strict paired row evidence；全仓`276 passed`。profile仍必须live验证真实A40 feature rank、
+  task-local motion、fixed-action传递、wall和显存，CPU结果不能代替。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
-## 4. Historical single-A40 deployment seal（仅继承，不重跑）
+## 4. Historical single-A40 deployment seal（只作吞吐参照）
 
-v3只改变训练objective、trainable-state恢复范围和训练期dynamic anchor；部署仍是同一historical v6
-Writer图、一次读取exact language+一条action-hidden video并生成一套完整LoRA。因而当前config只读继承
-clean frozen `ded0c80`的legacy v6-prior v1部署seal，不把它重标为ECP，也不再启动single-A40 sweep或
-vertical smoke。
+旧v3只改变训练objective而未改变部署图，所以当时可以继承legacy v6-prior seal；第37节在frozen fused
+Program后新增video-keyed residual memory，**部署图已经改变**，不能再继承或重标旧seal。下列数据只用于
+预估batch与吞吐，不解锁当前v8 residual evaluator：
 
 - retained 32-request/1093-frame panel的batch8/16/32吞吐为
   `.911427/.905107/.906432 LoRA/s`，batch8峰值reserved约`12.8GB`且稳定；
@@ -126,8 +154,8 @@ vertical smoke。
   nonfinite/forbidden reads，Writer释放、source policy复用且GPU自然释放；
 - 当时用于从两个retained roots重建seal的旧assembler与其runtime状态已退役，由Git和artifact保留；
   它不是当前可执行入口；
-- 若以后实际改变部署图或LoRA生成批处理，再以新design/schema重新授权single-A40 profile；当前唯一GPU
-  旧`teacher-audit`已完成并关闭；下一GPU入口必须来自新structured design的独立profile seal。
+- 当前必须在mechanism profile通过后以新v8 residual adapter重新实测batch8/16/32和correct smoke；artifact
+  必须绑定同目录run contract、actual clean commit、A40和正确family，不能因旧batch8曾最快而跳过实测。
 
 
 ## 5. Historical six-A40 profile provenance（已完成，不恢复）
@@ -241,6 +269,8 @@ audit已证明expert flow不是更好的监督，因此下一变量不改target�
 linear residual memory。full48显式Gram把24个correct真实functional cotangent与24个轮换counterfactual的
 zero-motion约束写入同一memory；不增加PI05 forward、不使用expert/ranking cotangent。该design必须先证明
 fixed feature对真实order敏感、Gram健康、correct motion保留、negative motion近零和macro0 exact identity。
+CPU已证明algebra、topology、identity和fail-closed合同；尚待live mechanism profile证明真实A40 feature/
+motion/action/吞吐，再由strict closed-loop裁决价值。
 
 按以下顺序定位最早接口：
 
@@ -270,9 +300,14 @@ fixed feature对真实order敏感、Gram健康、correct motion保留、negative
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent与teacher-audit均已
   formal non-pass/fail-closed，不能作为活动入口。
-- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第36节正式audit结果
-  及其后的structured residual设计；实现封存前仍无active training mode。
-- evaluation entry仍为`scripts/evaluate_pi05.py`；retired `--mode teacher-audit`在代码清理后删除。
+- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v1.json`；当前状态只允许
+  `mechanism-profile`，formal和v8 deployment evaluation均等待各自live artifact seal。
+- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第37节；实现和CPU seal
+  已完成，但没有新A40或strict结果。
+- training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
+  `--mode teacher-audit`及其owners/tests已经删除。
+- fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为
+  当前authority ancestor。不得把remote后续文档提交写入旧run contract或冒充原训练commit。
 - formal保留config、command/env、GPU topology、checkpoint schema、raw rows、aggregate、completion和必要
   mechanism analysis；不提交checkpoints/cache/data/binaries。
 - failed `30b2ccf` smoke及其`batch_equivalence.json`保留为BF16诊断；不resume、不作为性能证据。

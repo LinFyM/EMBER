@@ -4,8 +4,9 @@
 identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
 Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。第36节matched Expert-Flow Teacher
 Audit已正式证明expert flow teacher在`2/24` tasks、`0/4` suites过门并否决CEFD；2026-08-10唯一活动设计
-是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual，尚未实现或启动GPU。K4、online
-expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
+是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual。其canonical实现、旧audit路径
+退役、checkpoint/deployment/evaluator联锁和CPU seal已经完成；当前尚未启动该方法的A40 profile、训练或
+rollout。K4、online expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -14,11 +15,11 @@ frozen π0.5对“exact task language + action-hidden teacher video”的联合�
 matched text/no-image baseline的视频innovation。该innovation保留时序轴，被直接编译为
 一套rank-16 public LoRA；把视频值置零必须精确回到source identity。
 
-根本训练变化是不再让fresh hypernetwork只从高方差的action functional loss猜测哪些
-1.29M公开A/B坐标是closed-loop有效方向。先在24 train tasks上用同一source policy、
-同一rank-16 topology和各自teacher actions训练24套task experts；再让Writer仅从
-language+action-hidden video重建这些已经policy-effective的LoRA。Writer本身不读取
-teacher action，validation/test actions在两个阶段都不得读取。
+第1--32节的历史根本变化，是先训练24套task experts再让Writer从language+action-hidden video重建
+policy-effective LoRA；该路线建立了expert evidence，但其whole-LoRA/ECP/Tangent/flow-teacher用法现均已
+由正式结果退役。**当前第37节不重建或读取task expert**：它冻结historical v6，以correct train24 action
+functional cotangent和action-free counterfactual-null rows直接更新video-keyed Program memory。Writer仍不
+读取teacher action，validation/test actions始终不得读取；task experts只保留为历史policy-effective参照。
 
 ## 2. 直接证据与最早故障
 
@@ -2161,7 +2162,7 @@ cotangent和约21M-value memory write均用FP32，禁止为底层微差把巨大
 
 ### 37.5 实现owner、吞吐和retirement
 
-一个新cohesive `writer/condition_update.py`唯一拥有zero-preserving temporal feature、20,971,520-value
+cohesive `writer/condition_update.py`唯一拥有zero-preserving temporal feature、20,971,520-value
 FP32 residual memory、48×48 Gram solve和manual apply。`writer/model.py`只暴露frozen fused slots、单一
 Program融合和原FactorHeads decode；不复制encoder/compiler/head。`v6_prior_step.py`只构造correct leaf与
 negative feature；training只负责full48 gather/order/apply。checkpoint family fresh-incompatible，只保存
@@ -2176,6 +2177,22 @@ teacher-audit mode、`v6_prior_teacher_audit.py`、`writer/flow_teacher.py`及�
 `v6_prior_run_contract.py`作为canonical owner保留并升级新family。旧Tangent/ECP/formal config保持fail-
 closed，不能与新memory checkpoint互载。
 
+当前实现已按上述owner落地，并把一次性teacher-audit/effective-objective/flow-teacher执行路径及对应tests
+删除；历史只留Git和formal artifact。fresh/profile只允许当前clean HEAD精确等于
+`origin/codex/bci-continuation`；formal exact-resume则继续绑定原run contract中的frozen commit，并要求该
+commit仍是当前authority的ancestor。移动中的remote authority不写入immutable run contract，因此后续文档
+提交不会伪造或阻断同root resume。checkpoint只含单个FP32 Program memory、cursor和六rank RNG；controller
+部署检查只读metadata，实际worker load时再做一次finite value scan，避免重复80MiB读取。
+
+artifact状态本身不是证据。mechanism seal必须从`mechanism_profile.json`保存的raw macro重算全部13项门，
+并核对同目录run contract中的historical initialization、source identity、train24 task/language/data schedule、
+Writer/objective/ownership、A40 rank topology和NCCL runtime；不能只信`passed=true`或预填checks。
+`formal_result_sealed`只在同目录completion=`50`、连续50行metrics以及macro10/25/50三个memory-only
+checkpoint manifests全部通过metadata/cursor/contract复核时成立；训练中间段保持同一个immutable ready
+config，不用可伪造的running字符串改变resume身份。deployment checkpoint的training commit还必须同时位于
+当前checkout与`origin/codex/bci-continuation`的共同lineage。评测可在clean detached frozen authority
+ancestor上运行，不要求额外创建第二主分支。
+
 ### 37.6 CPU、A40和closed-loop证伪门
 
 CPU必须覆盖：zero descriptor/feature/memory、natural/reversed/shuffled真实order、wrong-video target-language、
@@ -2183,14 +2200,30 @@ full48小矩阵predicted/observed equality、negative-null motion、base600 froz
 A/B双方响应、checkpoint/resume和0 forbidden reads。代码结构变化后只跑一次聚焦与全仓回归、compileall、
 JSON和diff-check。
 
-首次六卡只做macro49 gradient/throughput profile，不保留权重：
+首次六卡只做macro49 mechanism/throughput profile，不保留权重：
 
 1. 24 correct + 24 negative unique rows、feature rank/regularized Gram finite；记录condition number但不按漂亮
    数值选seed/P；
-2. correct retained-motion RMS非零，negative induced-motion相对correct足够小；若两者同时近零，说明
-   correct/negative feature不可分，候选直接失败；
-3. predicted/observed Program delta闭合，historical 600 tensors无grad/无变化，A/B与fixed-action传递非零；
-4. 0 extra PI05 forward、0 OOM/nonfinite，保持B10+10；wall overhead目标≤10%。
+2. aggregate correct-motion/cotangent RMS ratio必须`≥.25`，negative/correct motion RMS ratio必须`≤.25`；
+   同时保留全部24条task-local证据，至少`18/24` correct rows过retention门且至少`18/24` paired negative
+   rows过null门，不能靠少数大任务掩盖task-local失败；
+3. actual `feature @ applied_delta`必须与Program memory写入后的observed motion在relative RMS`.005`内闭合。
+   这是**application closure**，证明生产delta被完整写入；solver本身仍由CPU algebra oracle验证，不能把这项
+   写成两个独立求解器的交叉证明；
+4. historical 600 tensors的parameter/buffer version不变，A、B两侧LoRA response都非零；另在每个suite
+   固定一个task（ordinal `0/6/12/18`）做before/after同observation、同noise的fixed-action probe，要求
+   `4/4` task非零。这里共8次PI05 inference forward只属于profile verification，使用observation而不读取
+   target action，不进入formal训练热路径，也不计作negative functional policy forward；
+5. 生产wall只计算24-task correct functional工作加full48 gather/Gram/manual write，明确排除上述
+   task-local/application/LoRA/fixed-action verification。它与sealed A40 v6 macro49 B20/B10+10基线
+   `21.095109596s`比较，ratio必须`≤1.10`；不以kernel fraction或底层低位误差决定吞吐门；
+6. 生产路径仍是每task两次B10 correct PI05 forward、0 negative policy forward、0 OOM/nonfinite；不得为
+   profile过门降低batch、扩宽大RHS到FP64或加入同步型热路径instrumentation。
+
+mechanism profile通过并写回artifact后，还要对**新residual deployment graph**在一张实时空闲A40上用同一
+fixed panel实测Writer batch `8/16/32`，选择稳定LoRAs/s最高且有显存余量的点，并完成correct one-GPU smoke；
+旧v6/Tangent未改变推理图时的throughput seal不能冒充本family。两类seal均只接受同目录run contract、正确
+v8 residual adapter/family、actual clean commit和A40 evidence；其它Writer family必须fail closed。
 
 profile通过后从zero memory fresh到macro10并立即跑完整strict correct400，不用80-row screen替代：
 

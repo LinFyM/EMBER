@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -12,6 +14,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 import torch.distributed as dist
+from safetensors import safe_open
 from safetensors.torch import load_file, save_file
 
 from ember.expert_manifold.contract import ExpertManifoldError
@@ -76,9 +79,27 @@ def _error(component: str) -> ExpertManifoldError:
     )
 
 
-def _barrier(context: DistributedContext) -> None:
+def _raise_distributed(
+    context: DistributedContext, phase: str, error: Exception | None
+) -> None:
+    """Make every rank observe a checkpoint I/O failure before continuing."""
+
+    local = None if error is None else repr(error)
+    failures: list[str | None] = [None] * context.world_size
     if context.world_size > 1:
-        dist.barrier(device_ids=[context.local_rank])
+        dist.all_gather_object(failures, local)
+    else:
+        failures[0] = local
+    observed = [
+        f"rank {rank}: {value}"
+        for rank, value in enumerate(failures)
+        if value is not None
+    ]
+    if observed:
+        raise ExpertManifoldError(
+            f"v6 Program-residual checkpoint {phase} failed; "
+            + "; ".join(observed)
+        )
 
 
 def _shape(value: Sequence[int]) -> tuple[int, int, int]:
@@ -226,6 +247,28 @@ def _load_program_memory(
     if not bool(torch.isfinite(value).all()):
         raise _error("non-finite Program memory")
     return value
+
+
+def _inspect_program_memory_metadata(
+    path: Path,
+    expected_shape: tuple[int, int, int],
+) -> dict[str, Any]:
+    try:
+        with safe_open(str(path), framework="pt", device="cpu") as handle:
+            if set(handle.keys()) != {PROGRAM_MEMORY_KEY}:
+                raise _error("Program memory key")
+            value = handle.get_slice(PROGRAM_MEMORY_KEY)
+            if value.get_dtype() != "F32" or tuple(value.get_shape()) != expected_shape:
+                raise _error("Program memory tensor schema")
+    except ExpertManifoldError:
+        raise
+    except Exception as error:
+        raise _error("Program memory file") from error
+    return {
+        "dtype": "torch.float32",
+        "shape": list(expected_shape),
+        "value_count": math.prod(expected_shape),
+    }
 
 
 def _read_manifest(checkpoint: Path) -> tuple[Path, dict[str, Any]]:
@@ -381,54 +424,84 @@ def save_v6_prior_checkpoint(
     contract = _json_object(checkpoint_contract, "checkpoint contract")
     if cursor.get("next_macro") != macro:
         raise _error("cursor contract")
-    value = _validate_live_memory(
-        memory, shape, require_finite=context.is_main
-    )
+    value = _validate_live_memory(memory, shape, require_finite=False)
     checkpoints = output_dir / "checkpoints"
     final = checkpoints / f"macro_{macro:08d}"
     temporary = checkpoints / f".macro_{macro:08d}.tmp"
-    if context.is_main:
-        checkpoints.mkdir(parents=True, exist_ok=True)
-    _barrier(context)
-    if final.exists() or temporary.exists():
-        raise _error("checkpoint already exists")
-    _barrier(context)
-    if context.is_main:
-        temporary.mkdir()
-    _barrier(context)
-    saved_rng = _rng_state(context)
+    error: Exception | None = None
+    try:
+        if context.is_main:
+            _validate_live_memory(memory, shape, require_finite=True)
+            checkpoints.mkdir(parents=True, exist_ok=True)
+            if temporary.exists() and not final.exists():
+                failure_packets = output_dir / "failure_packets"
+                failure_packets.mkdir(parents=True, exist_ok=True)
+                os.replace(
+                    temporary,
+                    failure_packets
+                    / (
+                        f"incomplete_checkpoint_macro_{macro:08d}_"
+                        f"{time.time_ns()}"
+                    ),
+                )
+            if final.exists() or temporary.exists():
+                raise _error("checkpoint already exists")
+            temporary.mkdir()
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "initialization", error)
+
+    saved_rng: Mapping[str, Any] | None = None
+    error = None
     rng_name = f"rng_rank_{context.rank:03d}.pt"
-    torch.save(saved_rng, temporary / rng_name)
-    _barrier(context)
-    if context.is_main:
-        save_file(
-            {PROGRAM_MEMORY_KEY: value.detach().cpu().contiguous()},
-            str(temporary / PROGRAM_MEMORY_FILE),
-        )
-        payload_names = {
-            PROGRAM_MEMORY_FILE,
-            *(f"rng_rank_{rank:03d}.pt" for rank in range(context.world_size)),
-        }
-        files = {
-            name: (temporary / name).stat().st_size for name in payload_names
-        }
-        write_json_atomic(
-            temporary / "manifest.json",
-            {
-                "schema_version": V6_PRIOR_CHECKPOINT_SCHEMA,
-                "next_macro": macro,
-                "metrics_rows": metrics_rows,
-                "world_size": context.world_size,
-                "program_memory_shape": list(shape),
-                "cursor_contract": cursor,
-                "checkpoint_contract": contract,
-                "files": files,
-                "content_hash_policy": _CONTENT_HASH_POLICY,
-            },
-        )
-        os.replace(temporary, final)
-    _barrier(context)
-    _restore_rng(saved_rng, context)
+    try:
+        saved_rng = _rng_state(context)
+        torch.save(saved_rng, temporary / rng_name)
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "rank RNG write", error)
+
+    error = None
+    try:
+        if context.is_main:
+            save_file(
+                {PROGRAM_MEMORY_KEY: value.detach().cpu().contiguous()},
+                str(temporary / PROGRAM_MEMORY_FILE),
+            )
+            payload_names = {
+                PROGRAM_MEMORY_FILE,
+                *(f"rng_rank_{rank:03d}.pt" for rank in range(context.world_size)),
+            }
+            files = {
+                name: (temporary / name).stat().st_size for name in payload_names
+            }
+            write_json_atomic(
+                temporary / "manifest.json",
+                {
+                    "schema_version": V6_PRIOR_CHECKPOINT_SCHEMA,
+                    "next_macro": macro,
+                    "metrics_rows": metrics_rows,
+                    "world_size": context.world_size,
+                    "program_memory_shape": list(shape),
+                    "cursor_contract": cursor,
+                    "checkpoint_contract": contract,
+                    "files": files,
+                    "content_hash_policy": _CONTENT_HASH_POLICY,
+                },
+            )
+            os.replace(temporary, final)
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "publication", error)
+
+    error = None
+    try:
+        if saved_rng is None:
+            raise _error("rank RNG capture")
+        _restore_rng(saved_rng, context)
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "rank RNG restoration", error)
     return final
 
 
@@ -444,29 +517,48 @@ def load_v6_prior_checkpoint(
 ) -> tuple[int, int]:
     """Restore Program memory and this rank's RNG without accepting base state."""
 
-    shape = _shape(expected_memory_shape)
-    destination = _validate_live_memory(
-        memory, shape, require_finite=False
-    )
-    layout = _validate_layout(
-        checkpoint,
-        expected_memory_shape=shape,
-        expected_world_size=context.world_size,
-        expected_cursor_contract=expected_cursor_contract,
-        expected_checkpoint_contract=expected_checkpoint_contract,
-    )
-    restored = _load_program_memory(
-        layout.checkpoint / PROGRAM_MEMORY_FILE, shape
-    )
-    rng = _load_rng(
-        layout.checkpoint / f"rng_rank_{context.rank:03d}.pt",
-        rank=context.rank,
-        world_size=context.world_size,
-    )
-    if rng["device_type"] != context.device.type:
-        raise _error(f"rank {context.rank} RNG device")
-    destination.copy_(restored.to(device=destination.device))
-    _restore_rng(rng, context)
+    destination: torch.Tensor | None = None
+    layout: _CheckpointLayout | None = None
+    restored: torch.Tensor | None = None
+    rng: Mapping[str, Any] | None = None
+    error: Exception | None = None
+    try:
+        shape = _shape(expected_memory_shape)
+        destination = _validate_live_memory(
+            memory, shape, require_finite=False
+        )
+        layout = _validate_layout(
+            checkpoint,
+            expected_memory_shape=shape,
+            expected_world_size=context.world_size,
+            expected_cursor_contract=expected_cursor_contract,
+            expected_checkpoint_contract=expected_checkpoint_contract,
+        )
+        restored = _load_program_memory(
+            layout.checkpoint / PROGRAM_MEMORY_FILE, shape
+        )
+        rng = _load_rng(
+            layout.checkpoint / f"rng_rank_{context.rank:03d}.pt",
+            rank=context.rank,
+            world_size=context.world_size,
+        )
+        if rng["device_type"] != context.device.type:
+            raise _error(f"rank {context.rank} RNG device")
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "resume payload load", error)
+
+    error = None
+    try:
+        if destination is None or layout is None or restored is None or rng is None:
+            raise _error("resume payload agreement")
+        destination.copy_(restored.to(device=destination.device))
+        _restore_rng(rng, context)
+    except Exception as caught:
+        error = caught
+    _raise_distributed(context, "resume state restoration", error)
+    if layout is None:
+        raise _error("resume payload agreement")
     return layout.macro, layout.metrics_rows
 
 
@@ -477,6 +569,7 @@ def inspect_v6_prior_checkpoint(
     expected_world_size: int = V6_PRIOR_WORLD_SIZE,
     expected_cursor_contract: Mapping[str, Any] | None = None,
     expected_checkpoint_contract: Mapping[str, Any] | None = None,
+    validate_payload_values: bool = True,
 ) -> dict[str, Any]:
     """Validate one checkpoint without mutating live memory or global RNG."""
 
@@ -490,17 +583,34 @@ def inspect_v6_prior_checkpoint(
         expected_cursor_contract=expected_cursor_contract,
         expected_checkpoint_contract=expected_checkpoint_contract,
     )
-    memory = _load_program_memory(
-        layout.checkpoint / PROGRAM_MEMORY_FILE, shape
-    )
-    rng = tuple(
-        _load_rng(
-            layout.checkpoint / f"rng_rank_{rank:03d}.pt",
-            rank=rank,
-            world_size=layout.world_size,
+    if validate_payload_values:
+        memory = _load_program_memory(
+            layout.checkpoint / PROGRAM_MEMORY_FILE, shape
         )
-        for rank in range(layout.world_size)
-    )
+        memory_metadata = {
+            "dtype": str(memory.dtype),
+            "shape": list(memory.shape),
+            "value_count": memory.numel(),
+        }
+        rng = tuple(
+            _load_rng(
+                layout.checkpoint / f"rng_rank_{rank:03d}.pt",
+                rank=rank,
+                world_size=layout.world_size,
+            )
+            for rank in range(layout.world_size)
+        )
+        finite: bool | None = True
+        device_types = [value["device_type"] for value in rng]
+        payload_validation = "full_values"
+    else:
+        memory_metadata = _inspect_program_memory_metadata(
+            layout.checkpoint / PROGRAM_MEMORY_FILE,
+            shape,
+        )
+        finite = None
+        device_types = []
+        payload_validation = "deployment_metadata_only"
     return {
         "schema_version": V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA,
         "checkpoint": str(layout.checkpoint),
@@ -518,16 +628,15 @@ def inspect_v6_prior_checkpoint(
             "file": PROGRAM_MEMORY_FILE,
             "key": PROGRAM_MEMORY_KEY,
             "tensor_count": 1,
-            "dtype": str(memory.dtype),
-            "shape": list(memory.shape),
-            "value_count": memory.numel(),
-            "finite": True,
+            **memory_metadata,
+            "finite": finite,
         },
         "rng": {
             "schema_version": V6_PRIOR_RNG_SCHEMA,
-            "rank_count": len(rng),
+            "rank_count": layout.world_size,
             "ranks": list(range(layout.world_size)),
-            "device_types": [value["device_type"] for value in rng],
+            "device_types": device_types,
         },
+        "payload_value_validation": payload_validation,
         "content_hash_policy": _CONTENT_HASH_POLICY,
     }

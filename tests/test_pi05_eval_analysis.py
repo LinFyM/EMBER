@@ -72,6 +72,15 @@ FAMILY_CONTRACTS = {
         "arm_prefix": "expert_manifold_v6_tangent_tube_",
         "trained_checkpoint_kind": "v6_tangent_tube_trained_checkpoint",
     },
+    "residual": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+        "config_schema": (
+            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1"
+        ),
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+    },
 }
 
 
@@ -125,6 +134,25 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
             "template_lora_storage": {"tensor_count": 76, "rank": 16},
         },
     }
+    if family == "residual":
+        writer_asset.update(
+            {
+                "program_residual_value_count": 20_971_520,
+                "residual_state": {
+                    "kind": (
+                        "fresh_elementwise_zero"
+                        if macro == 0
+                        else "memory_only_checkpoint"
+                    ),
+                    "path": None if macro == 0 else f"/writer/macro_{macro}/program_memory.safetensors",
+                    "bytes": 0 if macro == 0 else 83_886_200,
+                    "tensor_count": 0 if macro == 0 else 1,
+                    "dtype": "torch.float32",
+                    "shape": [256, 320, 256],
+                    "value_count": 20_971_520,
+                },
+            }
+        )
     return {
         "schema_version": contract["adapter_schema"],
         "kind": "expert_manifold_writer",
@@ -132,7 +160,13 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         "execution_backend": "online_writer_then_episode_cache",
         "config": {"schema": contract["config_schema"]},
         "writer_asset": writer_asset,
-        "evaluation_authority": {"formal_status": "sealed"},
+        "evaluation_authority": {
+            "formal_status": (
+                "sealed_from_live_residual_deployment_profile"
+                if family == "residual"
+                else "sealed"
+            )
+        },
         "video_data": {"root": "/videos", "tasks": "sealed-validation-8"},
         "lora_contract": {"reference": "lora-v1", "rank": 16, "target_count": 38},
         "video_schedule": {
@@ -214,6 +248,15 @@ def _rows(
             }
             if condition == "same_task_other":
                 writer["teacher_demo_offset"] = SAME_TASK_OTHER_OFFSET
+            if adapter["config"]["schema"] == FAMILY_CONTRACTS["residual"]["config_schema"]:
+                writer.update(
+                    {
+                        "writer_parameter_count": 10_775_296,
+                        "writer_deployment_trainable_parameter_count": 0,
+                        "writer_program_residual_value_count": 20_971_520,
+                        "generated_lora_tensor_count": 76,
+                    }
+                )
             key = (suite, task_id, state)
             rows.append(
                 {
@@ -394,6 +437,58 @@ def test_checkpoint_curve_accepts_tangent_family_but_not_macro100() -> None:
         checkpoint_curve_analysis(tangent)
 
 
+def test_checkpoint_curve_accepts_residual_memory_identity_changes_only() -> None:
+    residual = {
+        f"residual-{macro}": _result(
+            macro,
+            "correct",
+            set(),
+            family="residual",
+        )
+        for macro in (0, 10, 25, 50)
+    }
+    assert (
+        checkpoint_curve_analysis(residual)["method_family"]
+        == "v6_condition_residual_v1"
+    )
+    residual["residual-25"]["adapter"]["writer_asset"]["residual_state"][
+        "shape"
+    ] = [128, 320, 256]
+    residual["residual-25"]["paired_control"]["writer"] = paired_writer_identity(
+        residual["residual-25"]["adapter"]
+    )
+    with pytest.raises(Pi05EvaluationError, match="scientific contract"):
+        checkpoint_curve_analysis(residual)
+
+
+def test_residual_family_rejects_legacy_deployment_seal_and_missing_v8_state() -> None:
+    result = _result(10, "correct", set(), family="residual")
+    result["adapter"]["evaluation_authority"]["formal_status"] = (
+        "sealed_from_unchanged_v6_deployment_graph"
+    )
+    result["paired_control"]["writer"] = paired_writer_identity(result["adapter"])
+    with pytest.raises(Pi05EvaluationError, match="sealed formal"):
+        checkpoint_curve_analysis(
+            {
+                "m0": _result(0, "correct", set(), family="residual"),
+                "m10": result,
+                "m25": _result(25, "correct", set(), family="residual"),
+                "m50": _result(50, "correct", set(), family="residual"),
+            }
+        )
+    result = _result(10, "correct", set(), family="residual")
+    result["rows"][0]["writer"].pop("writer_program_residual_value_count")
+    with pytest.raises(Pi05EvaluationError, match="episode evidence"):
+        checkpoint_curve_analysis(
+            {
+                "m0": _result(0, "correct", set(), family="residual"),
+                "m10": result,
+                "m25": _result(25, "correct", set(), family="residual"),
+                "m50": _result(50, "correct", set(), family="residual"),
+            }
+        )
+
+
 @pytest.mark.parametrize(
     ("candidate_family", "candidate_macro", "expected_family"),
     (
@@ -403,6 +498,9 @@ def test_checkpoint_curve_accepts_tangent_family_but_not_macro100() -> None:
         ("tangent", 10, "v6_tangent_tube_v3"),
         ("tangent", 25, "v6_tangent_tube_v3"),
         ("tangent", 50, "v6_tangent_tube_v3"),
+        ("residual", 10, "v6_condition_residual_v1"),
+        ("residual", 25, "v6_condition_residual_v1"),
+        ("residual", 50, "v6_condition_residual_v1"),
     ),
 )
 def test_historical_transition_preserves_families_and_pairs_true_rows(

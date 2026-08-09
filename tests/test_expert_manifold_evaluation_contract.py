@@ -9,13 +9,14 @@ import numpy as np
 import pytest
 import torch
 
+from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
 )
 from ember.expert_manifold.live_adapter import _build_v6_writer, _ordered_video_tensors
-from ember.expert_manifold.v6_prior import V6_PRIOR_TRAINABLE_ROOTS
+from ember.expert_manifold.v6_prior_checkpoint import PROGRAM_MEMORY_KEY
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
@@ -68,13 +69,14 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_tangent_tube_{condition}",
+        "arm": f"expert_manifold_v6_condition_residual_{condition}",
         "video_condition": condition,
         "writer_asset": {
             "reference": "test:v6-prior:historical-macro400",
             "kind": "historical_v6_macro400_load_only",
             "method_macro": 0,
             "writer_parameter_count": 10_775_296,
+            "program_residual_value_count": 20_971_520,
             "generated_lora_tensor_count": 76,
         },
         "lora_contract": {"reference": "rank16:76tensors"},
@@ -94,8 +96,10 @@ def _complete_writer():
     return module._model()[0]
 
 
-def test_live_adapter_warm_starts_then_loads_only_trainable_checkpoint_state(
+@pytest.mark.parametrize("residual_value", (0.25, float("nan")))
+def test_live_adapter_strict_loads_frozen_base_then_only_finite_residual_memory(
     monkeypatch: pytest.MonkeyPatch,
+    residual_value: float,
 ) -> None:
     writer = _complete_writer()
     warm_state = {
@@ -106,28 +110,7 @@ def test_live_adapter_warm_starts_then_loads_only_trainable_checkpoint_state(
         name: value.detach().cpu().clone()
         for name, value in writer.template_state().items()
     }
-    trainable_names = {
-        name
-        for name in warm_state
-        if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
-    }
-    checkpoint_state = {
-        name: value.clone() for name, value in warm_state.items()
-    }
-    for name in trainable_names:
-        checkpoint_state[name] = torch.full_like(checkpoint_state[name], 0.25)
-    poisoned_upstream = next(
-        name for name in checkpoint_state if name.startswith("procedure.")
-    )
-    poisoned_template = next(
-        name for name in checkpoint_state if name.startswith("template_")
-    )
-    checkpoint_state[poisoned_upstream] = torch.full_like(
-        checkpoint_state[poisoned_upstream], 37
-    )
-    checkpoint_state[poisoned_template] = torch.full_like(
-        checkpoint_state[poisoned_template], 41
-    )
+    residual = torch.full((2, 320, 256), residual_value, dtype=torch.float32)
     writer.load_state_dict(
         {name: torch.zeros_like(value) for name, value in warm_state.items()},
         strict=True,
@@ -142,8 +125,8 @@ def test_live_adapter_warm_starts_then_loads_only_trainable_checkpoint_state(
     def load_trained(_path: str, *, device: str):
         assert device == "cpu"
         assert events == ["historical_warm_start"]
-        events.append("trainable_checkpoint")
-        return checkpoint_state
+        events.append("residual_checkpoint")
+        return {PROGRAM_MEMORY_KEY: residual}
 
     monkeypatch.setattr(
         "ember.expert_manifold.live_adapter.CompleteLoRAWriter",
@@ -170,40 +153,38 @@ def test_live_adapter_warm_starts_then_loads_only_trainable_checkpoint_state(
     policy = SimpleNamespace(
         model=SimpleNamespace(paligemma_with_expert=bridge),
     )
-    result = _build_v6_writer(
-        config={
+    arguments = {
+        "config": {
             "writer": {},
             "initialization": {"checkpoint": "/synthetic/historical-v6"},
+            "condition_feature": {"feature_width": 2, "projection_seed": 17},
         },
-        observed={
+        "observed": {
             "writer_asset": {
-                "kind": "v6_tangent_tube_trained_checkpoint",
-                "writer_state": {"path": "/synthetic/trained/writer.safetensors"},
-            }
+                "kind": "v6_condition_program_residual_checkpoint",
+                "residual_state": {
+                    "path": "/synthetic/trained/program_memory.safetensors",
+                    "shape": [2, 320, 256],
+                },
+            },
         },
-        policy=policy,
-        template=template,
-        device=torch.device("cpu"),
-    )
+        "policy": policy,
+        "template": template,
+        "device": torch.device("cpu"),
+    }
+    if not np.isfinite(residual_value):
+        with pytest.raises(ExpertManifoldError, match="evaluation state changed"):
+            _build_v6_writer(**arguments)
+        return
+    result = _build_v6_writer(**arguments)
 
-    assert events == ["historical_warm_start", "trainable_checkpoint"]
-    observed_state = result.state_dict()
+    assert events == ["historical_warm_start", "residual_checkpoint"]
     assert all(
-        torch.equal(observed_state[name], checkpoint_state[name])
-        for name in trainable_names
+        torch.equal(result.base_writer.state_dict()[name], value)
+        for name, value in warm_state.items()
     )
-    assert all(
-        torch.equal(observed_state[name], warm_state[name])
-        for name in warm_state
-        if name not in trainable_names
-    )
-    assert not torch.equal(
-        observed_state[poisoned_upstream], checkpoint_state[poisoned_upstream]
-    )
-    assert not torch.equal(
-        observed_state[poisoned_template], checkpoint_state[poisoned_template]
-    )
-    assert not hasattr(result, "dynamic_anchor")
+    assert torch.equal(result.program_memory.value, residual)
+    assert "projection" not in result.state_dict()
     assert all(not parameter.requires_grad for parameter in result.parameters())
 
 
@@ -361,7 +342,7 @@ def test_writer_row_contract_recomputes_video_schedule_and_mapping(
     contract = {
         "schema_version": RUN_CONTRACT_SCHEMA,
         "mode": "smoke",
-        "arm": "expert_manifold_v6_tangent_tube_correct",
+        "arm": "expert_manifold_v6_condition_residual_correct",
         "role": "test",
         "output_dir": str(tmp_path),
         "content_hash_policy": "disabled_by_owner",

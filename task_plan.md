@@ -157,18 +157,24 @@ formal artifacts保存。
 - [x] audit从clean frozen`e8e4728`完成：480/480 queries、144 forwards、0 update/rollout/OOM/nonfinite；
   expert/macro0/tangent loss=`.098631/.091802/.091843`，teacher仅`2/24` tasks、`0/4` suites过门。gradient
   residual=`.6864/.8387`虽非冗余，但teacher更差，因此CEFD正式否决，不做weight profile/训练/换step。
-- [ ] 按第36节触发删除一次性teacher-audit mode、flow-teacher/audit owners及feature tests；保留canonical
+- [x] 按第36节触发删除一次性teacher-audit mode、flow-teacher/audit owners及feature tests；保留canonical
   run-contract owner、Git和formal artifacts，旧config formal non-pass/fail-closed。
-- [ ] 实现第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：冻结historical v6全部
+- [x] 实现第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：冻结historical v6全部
   600 tensors，P256×320×256 FP32 memory从零开始；fixed zero-preserving temporal feature、24 correct
   functional cotangent+24 counterfactual zero-motion rows、FP64小Gram/FP32大write，无Adam/expert/ranking。
-- [ ] CPU门覆盖step0 macro0 identity、base frozen、真实order feature、full48 predicted/observed、negative-null、
-  A/B与checkpoint/resume；结构变化后一次全仓回归。
+- [x] CPU门覆盖step0 macro0 identity、base frozen、真实order feature、full48 predicted/observed、negative-null、
+  A/B、checkpoint/resume、moving-authority exact-resume、deployment family seal和0 forbidden reads；聚焦回归、
+  artifact gate现从raw macro重算profile并绑定完整科学run，formal result必须绑定completion/50-row metrics/
+  macro10/25/50 manifests，deployment checkpoint必须位于active authority lineage；compileall、diff-check与
+  全仓`280 passed`完成，architecture guard无hard violation。
 - [ ] live双节点/quota preflight后用最多6张空闲A40做一次macro49 profile：不增加PI05 forward、不降低
-  B10+10，验证Gram、correct retained motion、negative near-zero motion、fixed-action传递、≤约10% overhead和
-  0 OOM/nonfinite。profile权重永久弃用。
-- [ ] profile过门后zero memory fresh0→10并立即strict correct400；按第37.6门决定停止、续25或补六臂，
-  不用correct80 screen、不扫P/lambda/eta、不解冻base。
+  B10+10；production wall对sealed `21.095109596s` ratio`≤1.10`，至少18/24 task-local correct retention、
+  18/24 negative null、4/4 suite-stratified fixed-action response、application closure和0 OOM/nonfinite。
+  8次fixed-action verification forward不计入production wall且不读取target action；profile权重永久弃用。
+- [ ] mechanism profile过门并写回seal后，在一张实时空闲A40上对新residual deployment graph实测Writer
+  batch8/16/32并完成correct smoke；只接受同目录run contract、v8 residual adapter和actual clean commit。
+- [ ] 两类profile均seal后先评测zero-memory macro0，再fresh0→10并立即strict correct400；按第37.6门决定
+  停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

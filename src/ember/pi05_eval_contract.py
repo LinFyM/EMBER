@@ -369,15 +369,64 @@ def git_state(repo_root: Path) -> dict[str, Any]:
             capture_output=True,
         ).stdout.strip()
 
-    upstream = run("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+    branch = run("branch", "--show-current")
+    upstream = subprocess.run(
+        [
+            "git",
+            "rev-parse",
+            "--abbrev-ref",
+            "--symbolic-full-name",
+            "@{upstream}",
+        ],
+        cwd=repo_root,
+        check=False,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    commit = run("rev-parse", "HEAD")
+    authority_ref = "origin/codex/bci-continuation"
+    authority_commit = run("rev-parse", authority_ref)
+    authority_contains_commit = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit, authority_commit],
+        cwd=repo_root,
+        check=False,
+        text=True,
+        capture_output=True,
+    ).returncode == 0
     return {
-        "branch": run("branch", "--show-current"),
-        "commit": run("rev-parse", "HEAD"),
+        "branch": branch,
+        "commit": commit,
         "origin_main": run("rev-parse", "origin/main"),
-        "upstream": upstream,
-        "upstream_commit": run("rev-parse", upstream),
+        "upstream": upstream or None,
+        "upstream_commit": run("rev-parse", upstream) if upstream else None,
+        "authority_ref": authority_ref,
+        "authority_commit": authority_commit,
+        "authority_contains_commit": authority_contains_commit,
         "dirty_paths": run("status", "--porcelain").splitlines(),
     }
+
+
+def git_state_is_clean_pushed_or_frozen_authority(
+    state: Mapping[str, Any],
+) -> bool:
+    """Accept a pushed tracking checkout or a clean detached authority ancestor."""
+
+    if state.get("dirty_paths") != [] or not state.get("commit"):
+        return False
+    tracked = (
+        bool(state.get("branch"))
+        and bool(state.get("upstream"))
+        and state.get("commit") == state.get("upstream_commit")
+    )
+    authority = (
+        state.get("authority_ref") == "origin/codex/bci-continuation"
+        and state.get("authority_contains_commit") is True
+    )
+    detached = (
+        state.get("branch") == ""
+        and state.get("upstream") is None
+    )
+    return authority and (tracked or detached)
 
 
 def _validate_source_checkpoint_provenance(

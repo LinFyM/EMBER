@@ -16,10 +16,10 @@ from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
 from ember.expert_manifold.v6_prior import (
-    V6_PRIOR_TRAINABLE_ROOTS,
-    V6_WRITER_STATE_TENSOR_COUNT,
+    freeze_v6_prior_writer,
     load_v6_prior_warm_start_,
 )
+from ember.expert_manifold.v6_prior_checkpoint import PROGRAM_MEMORY_KEY
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     authority_path,
@@ -34,6 +34,10 @@ from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.data import RawTeacherVideo, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
+from ember.writer.condition_update import (
+    FrozenV6ConditionResidualWriter,
+    validate_frozen_v6_residual_writer,
+)
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
 
@@ -44,14 +48,14 @@ def _build_v6_writer(
     policy: torch.nn.Module,
     template: Mapping[str, torch.Tensor],
     device: torch.device,
-) -> CompleteLoRAWriter:
+) -> FrozenV6ConditionResidualWriter:
     bridge = policy.model.paligemma_with_expert
     writer_config = {
         name: value
         for name, value in config["writer"].items()
         if name in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
     }
-    writer = CompleteLoRAWriter(
+    base_writer = CompleteLoRAWriter(
         build_lora_tensor_specs(template),
         template_state=template,
         paligemma_model=bridge.paligemma.model.language_model,
@@ -59,51 +63,40 @@ def _build_v6_writer(
         **writer_config,
     )
     load_v6_prior_warm_start_(
-        writer,
+        base_writer,
         (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve(),
     )
-    if observed["writer_asset"]["kind"] != "historical_v6_macro400_load_only":
+    freeze_v6_prior_writer(base_writer)
+    writer = FrozenV6ConditionResidualWriter(
+        base_writer,
+        feature_width=int(config["condition_feature"]["feature_width"]),
+        feature_seed=int(config["condition_feature"]["projection_seed"]),
+    )
+    trained = observed["writer_asset"]["kind"] != "historical_v6_macro400_load_only"
+    if trained:
         state = load_file(
-            str(observed["writer_asset"]["writer_state"]["path"]),
+            str(observed["writer_asset"]["residual_state"]["path"]),
             device="cpu",
         )
-        live_names = set(writer.state_dict())
-        trainable_names = {
-            name
-            for name, _ in writer.named_parameters()
-            if name.split(".", 1)[0] in V6_PRIOR_TRAINABLE_ROOTS
-        }
         if (
-            len(state) != V6_WRITER_STATE_TENSOR_COUNT
-            or set(state) != live_names
-            or len(trainable_names) != 41
+            set(state) != {PROGRAM_MEMORY_KEY}
+            or state[PROGRAM_MEMORY_KEY].dtype != torch.float32
+            or list(state[PROGRAM_MEMORY_KEY].shape)
+            != list(observed["writer_asset"]["residual_state"]["shape"])
+            or not bool(torch.isfinite(state[PROGRAM_MEMORY_KEY]).all())
         ):
-            raise ExpertManifoldError("v6-prior evaluation state changed")
-        try:
-            incompatible = writer.load_state_dict(
-                {name: state[name] for name in trainable_names},
-                strict=False,
-            )
-        except RuntimeError as error:
-            raise ExpertManifoldError(
-                "v6-prior evaluation checkpoint is incompatible"
-            ) from error
-        if (
-            incompatible.unexpected_keys
-            or set(incompatible.missing_keys) != live_names - trainable_names
-        ):
-            raise ExpertManifoldError(
-                "v6-prior evaluation touched immutable Writer state"
-            )
+            raise ExpertManifoldError("v6-prior residual evaluation state changed")
+        writer.program_memory.value.copy_(state[PROGRAM_MEMORY_KEY])
     if any(
         not torch.equal(
             value.detach().cpu(),
             template[name].detach().cpu().to(value.dtype),
         )
-        for name, value in writer.template_state().items()
+        for name, value in base_writer.template_state().items()
     ):
         raise ExpertManifoldError("v6-prior evaluation template identity changed")
     writer.requires_grad_(False)
+    validate_frozen_v6_residual_writer(writer, require_zero_memory=not trained)
     writer.to(device).eval()
     if any(parameter.requires_grad for parameter in writer.parameters()):
         raise ExpertManifoldError("v6-prior evaluation Writer became trainable")

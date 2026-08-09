@@ -23,6 +23,7 @@ from ember.expert_manifold.inference import (
     inspect_expert_manifold_writer_evaluation,
 )
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.evaluation_cache import (
     assigned_writer_cache_requests,
@@ -213,7 +214,7 @@ def profile_writer_generation(
     ):
         raise WriterModelError("Writer generation profile contract changed")
     git = contract.get("git", {})
-    if git.get("dirty_paths") or git.get("commit") != git.get("upstream_commit"):
+    if not git_state_is_clean_pushed_or_frozen_authority(git):
         raise WriterModelError("Writer generation profile requires a clean pushed commit")
     device_name = torch.cuda.get_device_name(0)
     if device_name != "NVIDIA A40":

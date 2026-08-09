@@ -23,7 +23,6 @@ from ember.writer.functional import (
     scoped_policy_flow_time_sampling,
     scoped_policy_randomness,
 )
-from ember.writer.flow_teacher import functional_lora_flow_teacher_audit
 from ember.writer.errors import WriterModelError
 
 
@@ -458,91 +457,6 @@ def test_pi05_loss_only_independent_logical_b20_matches_physical_slices(
             atol=1e-7,
             rtol=1e-6,
         )
-
-
-def test_flow_teacher_audit_reuses_matched_draws_and_one_student_forward() -> None:
-    from lerobot.utils.constants import (
-        ACTION,
-        OBS_LANGUAGE_ATTENTION_MASK,
-        OBS_LANGUAGE_TOKENS,
-    )
-
-    policy = _TinyPi05Policy()
-    contract = _tiny_pi05_contract()
-    template = prepare_frozen_writer_policy(policy, contract)
-
-    def state_with_b(value: float) -> dict[str, torch.Tensor]:
-        state = {name: tensor.detach().clone() for name, tensor in template.items()}
-        state[next(name for name in state if ".lora_B." in name)].fill_(value)
-        return state
-
-    student = state_with_b(0.02)
-    expert = state_with_b(0.05)
-    comparison = state_with_b(-0.03)
-    batch = {
-        "image": torch.randn(20, 3, 4, 4),
-        ACTION: torch.randn(20, 2, 3),
-        OBS_LANGUAGE_TOKENS: torch.ones(20, 4, dtype=torch.long),
-        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(20, 4, dtype=torch.bool),
-    }
-    common = {
-        "batch": batch,
-        "policy_rng_seed": 303,
-        "policy_rng_device": torch.device("cpu"),
-        "flow_time_sampling_scheme": INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
-        "flow_noise_sampling_scheme": INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
-    }
-    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
-        full = functional_lora_flow_teacher_audit(
-            policy,
-            student,
-            expert,
-            comparison,
-            contract,
-            policy_microbatch_size=20,
-            expected_action_width=3,
-            **common,
-        )
-        micro = functional_lora_flow_teacher_audit(
-            policy,
-            student,
-            expert,
-            comparison,
-            contract,
-            policy_microbatch_size=10,
-            expected_action_width=3,
-            **common,
-        )
-    for name in (
-        "expert_target_loss",
-        "student_target_loss",
-        "comparison_target_loss",
-        "distillation_loss",
-    ):
-        assert getattr(full, name).dtype == torch.float32
-        assert getattr(micro, name).dtype == torch.float32
-        assert torch.allclose(
-            getattr(micro, name), getattr(full, name), atol=1e-5, rtol=1e-5
-        )
-    for component in ("positive_gradients", "distillation_gradients"):
-        full_gradients = getattr(full, component)
-        micro_gradients = getattr(micro, component)
-        assert set(full_gradients) == set(micro_gradients)
-        for name in full_gradients:
-            assert torch.allclose(
-                micro_gradients[name],
-                full_gradients[name],
-                atol=2e-4,
-                rtol=2e-3,
-            )
-    assert len(policy.model.flow_draws) == 9
-    for start in (0, 3, 6):
-        reference = policy.model.flow_draws[start]
-        for observed in policy.model.flow_draws[start + 1 : start + 3]:
-            assert torch.equal(observed[0], reference[0])
-            assert torch.equal(observed[1], reference[1])
-    assert policy.detail_calls == 0
-    assert all(parameter.grad is None for parameter in policy.parameters())
 
 
 @pytest.mark.parametrize(

@@ -150,6 +150,36 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     }
     assert "writer" not in inspected
     assert "trainer" not in inspected
+    metadata_only = inspect_v6_prior_checkpoint(
+        checkpoint,
+        expected_memory_shape=_SHAPE,
+        expected_world_size=1,
+        expected_cursor_contract=_cursor(),
+        expected_checkpoint_contract=_contract(),
+        validate_payload_values=False,
+    )
+    assert metadata_only["payload_value_validation"] == (
+        "deployment_metadata_only"
+    )
+    assert metadata_only["program_memory"]["finite"] is None
+    assert metadata_only["rng"]["device_types"] == []
+
+
+def test_incomplete_atomic_checkpoint_is_preserved_then_recomputed(
+    tmp_path: Path,
+) -> None:
+    temporary = tmp_path / "checkpoints/.macro_00000001.tmp"
+    temporary.mkdir(parents=True)
+    (temporary / "partial").write_text("interrupted", encoding="utf-8")
+    checkpoint = _save(tmp_path, _memory())
+    assert checkpoint.is_dir()
+    packets = list(
+        (tmp_path / "failure_packets").glob(
+            "incomplete_checkpoint_macro_00000001_*"
+        )
+    )
+    assert len(packets) == 1
+    assert (packets[0] / "partial").read_text(encoding="utf-8") == "interrupted"
 
 
 def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -> None:

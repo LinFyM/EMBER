@@ -1,5 +1,26 @@
 # EMBER Progress Ledger
 
+## 第37节canonical实现与CPU seal完成（2026-08-10，尚未启动GPU）
+
+- 已在唯一active path完成Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：frozen v6
+  macro400 base + fixed temporal JL feature + single FP32 Program memory + full48 explicit update。旧
+  teacher-audit/effective-objective/flow-teacher执行路径及一次性tests删除，没有保留并行旧trainer。
+- run/config/checkpoint/evaluator全部换成fresh-incompatible residual schema。checkpoint只含约80MiB memory、
+  cursor和6-rank RNG；resume保持原commit且要求authority ancestry。deployment worker只安装一次finite
+  residual memory，base600/projection/template继续冻结；v8 adapter和strict row evidence已接通。
+- mechanism profile增加真实task-local 24+24 motion证据、4-task/4-suite fixed-action传递和production wall
+  gate。8次fixed-action inference属于verification、与生产计时分离且不读target action；production ratio
+  对历史sealed `21.095109596s`必须`≤1.10`，不为底层低位精度降低B10+10或六卡并行。
+- config仍是`awaiting_live_a40_macro49_profile`，formal与新deployment evaluation都fail closed。下一步必须
+  clean commit/push、frozen worktree、live双节点/quota preflight后才运行一次macro49 profile；profile weight
+  不保存。通过后另做单卡batch8/16/32新图profile/correct smoke，再评测macro0和formal0→10。
+- 启动前最后合同复核又封住三条证据漏洞：mechanism seal从raw macro重算全部门并匹配完整科学run；
+  `formal_result_sealed`必须有completion、50-row metrics和macro10/25/50 checkpoint manifests；trained
+  deployment checkpoint的training commit必须属于当前authority lineage。通用evaluator同时允许clean
+  detached frozen authority ancestor，避免用额外branch/worktree换取`@{upstream}`。
+- CPU final：全仓`280 passed in 21.02s`、compileall、JSON、`git diff --check`通过；architecture guard
+  `hard_violations=[]`。当前没有EMBER GPU进程，也没有新strict rollout成绩。
+
 ## Expert-Flow正式audit完成、CEFD否决与第37节选择（2026-08-10）
 
 - 修复后clean pushed/frozen`e8e4728`在live双节点GPU/quota preflight后，只使用空闲
@@ -21,7 +42,8 @@
 - 三条独立只读审计共同选择第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：冻结
   v6全部600 tensors，在320×256 fused Program后加P256 zero memory；correct只写真实functional cotangent，
   24个轮换counterfactual作zero-motion rows。它复用历史Condition-Kernel已证明的显式update隔离并替换其
-  唯一cold-decoder失败，保留v6高增益起点；正式design已写入authority，尚未实现或启动新GPU工作。
+  唯一cold-decoder失败，保留v6高增益起点；本句记录当时的pre-implementation状态，现已由本文件顶部
+  “canonical实现与CPU seal完成”覆盖，仍未启动新GPU工作。
 
 ## Expert-Flow Teacher Audit实现、首启wiring失败与修复（历史，2026-08-10）
 

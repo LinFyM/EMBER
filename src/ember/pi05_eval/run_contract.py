@@ -191,9 +191,14 @@ def _validate_build_request(
             raise Pi05EvaluationError(
                 "Writer generation lacks its throughput authority"
             ) from error
+        expected_throughput_policy = (
+            "highest_measured_batch_throughput_with_device_memory_headroom"
+            if adapter.get("schema_version")
+            == "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
+            else "highest_measured_throughput_with_device_memory_headroom"
+        )
         if (
-            evaluation.get("throughput_policy")
-            != "highest_measured_throughput_with_device_memory_headroom"
+            evaluation.get("throughput_policy") != expected_throughput_policy
             or writer_generation_batch_size < minimum_batch_size
         ):
             raise Pi05EvaluationError(
@@ -203,6 +208,7 @@ def _validate_build_request(
         if evaluation.get("formal_status") in {
             "sealed",
             "sealed_from_unchanged_v6_deployment_graph",
+            "sealed_from_live_residual_deployment_profile",
         } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size

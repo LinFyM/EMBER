@@ -32,6 +32,7 @@ from ember.pi05_eval_contract import (
     RUNTIME_REPLICA_PROFILES,
     build_run_contract,
     git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
     inspect_installed_target_tasks,
     inspect_source_checkpoint,
     inspect_tokenizer,
@@ -435,11 +436,9 @@ def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
     sizes = _profile_batch_sizes(args.profile_batch_sizes)
     if (
         len(physical) != 1
-        or live_git.get("dirty_paths")
-        or live_git.get("commit") != live_git.get("upstream_commit")
+        or not git_state_is_clean_pushed_or_frozen_authority(live_git)
         or live_git.get("commit") != contract_git.get("commit")
-        or contract_git.get("commit") != contract_git.get("upstream_commit")
-        or contract_git.get("dirty_paths")
+        or not git_state_is_clean_pushed_or_frozen_authority(contract_git)
         or args.worker_id != f"{physical[0]}-r0"
         or launcher_preflight.get("physical_gpu_ids") != list(physical)
         or launcher_preflight.get("compute_applications") != []
@@ -505,8 +504,7 @@ def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
         or len(physical_args) != 1
         or int(args.profile_warmup_runs) < 1
         or int(args.profile_measured_runs) < 2
-        or state["dirty_paths"]
-        or state["commit"] != state["upstream_commit"]
+        or not git_state_is_clean_pushed_or_frozen_authority(state)
     ):
         raise Pi05EvaluationError(
             "Writer generation profile requires the clean pushed validation/correct "

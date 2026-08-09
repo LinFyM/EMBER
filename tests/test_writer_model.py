@@ -9,15 +9,11 @@ from safetensors.torch import save_file
 from ember.expert_manifold.contract import ExpertTask
 from ember.expert_manifold.v6_prior import (
     COUNTERFACTUAL_KINDS,
-    V6_PRIOR_FROZEN_PARAMETER_COUNT,
-    V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
-    build_v6_prior_dynamic_anchor,
-    configure_v6_prior_trainability,
     counterfactual_frame_order,
     counterfactual_kind,
     cross_suite_wrong_task,
+    freeze_v6_prior_writer,
     load_v6_prior_warm_start_,
-    v6_prior_trainable_parameters,
 )
 from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 from ember.writer.model import (
@@ -234,7 +230,7 @@ def test_v6_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
-def test_v6_prior_strict_warm_start_and_trainability_contract(tmp_path) -> None:
+def test_v6_prior_strict_warm_start_and_all_frozen_contract(tmp_path) -> None:
     source, _ = _model()
     checkpoint = tmp_path / "writer.safetensors"
     state = {
@@ -250,57 +246,12 @@ def test_v6_prior_strict_warm_start_and_trainability_contract(tmp_path) -> None:
     assert all(
         torch.equal(value, target.state_dict()[name]) for name, value in state.items()
     )
-    ownership = configure_v6_prior_trainability(target)
-    assert ownership.frozen_parameter_count == V6_PRIOR_FROZEN_PARAMETER_COUNT
-    assert ownership.trainable_parameter_count == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
-    assert sum(value.numel() for value in v6_prior_trainable_parameters(target)) == (
-        V6_PRIOR_TRAINABLE_PARAMETER_COUNT
-    )
-    assert all(not getattr(target, name).training for name in (
-        "semantic_encoder",
-        "semantic_core",
-        "visual_transition",
-        "procedure",
-    ))
-
-
-def test_v6_dynamic_anchor_is_an_independent_same_memory_macro0_decoder() -> None:
-    model, _ = _model()
-    configure_v6_prior_trainability(model)
-    model.semantic_encoder = _FakeSemanticEncoder()
-    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
-    for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    anchor = build_v6_prior_dynamic_anchor(model)
-    frames, indices, offsets, tokens, masks, spans = _inputs()
-    evidence = model.encode_video_evidence(
-        torch.nn.Identity(), frames, offsets, tokens, masks, spans
-    )
-    memories = model.build_memories(evidence, indices)
-    expected = model.decode_memories(memories)
-    anchored = model.decode_memories(
-        memories,
-        compiler=anchor.compiler,
-        factor_heads=anchor.factor_heads,
-    )
-    assert anchor.tensor_count == 41
-    assert anchor.parameter_count == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
-    assert all(
-        torch.allclose(expected[name], anchored[name], atol=1e-6, rtol=1e-5)
-        for name in expected
-    )
-    assert all(not value.requires_grad for value in anchored.values())
-
-    with torch.no_grad():
-        model.compiler.modulation.weight.add_(0.25)
-    changed = model.decode_memories(memories)
-    anchored_again = model.decode_memories(
-        memories,
-        compiler=anchor.compiler,
-        factor_heads=anchor.factor_heads,
-    )
-    assert any(not torch.equal(changed[name], anchored_again[name]) for name in changed)
-    assert all(torch.equal(anchored[name], anchored_again[name]) for name in anchored)
+    ownership = freeze_v6_prior_writer(target)
+    assert ownership.frozen_parameter_count == V6_WRITER_PARAMETER_COUNT
+    assert ownership.trainable_parameter_count == 0
+    assert ownership.state_tensor_count == 600
+    assert all(not parameter.requires_grad for parameter in target.parameters())
+    assert not target.training
 
 
 def test_v6_prior_counterfactual_schedule_is_balanced_and_temporal() -> None:

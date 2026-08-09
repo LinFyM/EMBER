@@ -16,6 +16,7 @@ from ember.pi05_assets import (
 )
 from ember.pi05_eval_contract import (
     build_run_contract,
+    git_state_is_clean_pushed_or_frozen_authority,
     inspect_installed_target_tasks,
     inspect_source_checkpoint,
     load_evaluation_authorities,
@@ -40,6 +41,22 @@ from ember.expert_manifold.video_schedule import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_clean_detached_frozen_authority_checkout_is_launchable() -> None:
+    commit = "a" * 40
+    detached = {
+        "branch": "",
+        "commit": commit,
+        "upstream": None,
+        "upstream_commit": None,
+        "authority_ref": "origin/codex/bci-continuation",
+        "authority_contains_commit": True,
+        "dirty_paths": [],
+    }
+    assert git_state_is_clean_pushed_or_frozen_authority(detached)
+    detached["authority_contains_commit"] = False
+    assert not git_state_is_clean_pushed_or_frozen_authority(detached)
 
 
 def _pi05_template_dtype_by_name() -> dict[str, str]:
@@ -292,7 +309,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
         "execution_backend": (
-            "online_v6_complete_lora_writer_then_episode_lora_cache"
+            "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
         ),
         "config": {
             "path": str(V6_PRIOR_CANONICAL_CONFIG),
@@ -303,6 +320,7 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
             "kind": "historical_v6_macro400_load_only",
             "method_macro": 0,
             "writer_parameter_count": 10_775_296,
+            "program_residual_value_count": 20_971_520,
             "generated_lora_tensor_count": 76,
             "checkpoint": "/writer/checkpoints/step_00000400",
             "writer_state": {
@@ -320,8 +338,8 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
             },
         },
         "evaluation_authority": {
-            "formal_status": "blocked_until_live_a40_throughput_smoke",
-            "throughput_policy": "highest_measured_throughput_with_device_memory_headroom",
+            "formal_status": "blocked_until_new_residual_deployment_graph_live_profile",
+            "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
             "minimum_smoke_writer_model_batch_size": 8,
             "online_smoke_evidence": None,
         },
@@ -384,14 +402,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_v6_tangent_tube_correct",
+        arm="expert_manifold_v6_condition_residual_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_v6_tangent_tube_cross_suite_wrong",
+        arm="expert_manifold_v6_condition_residual_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -409,7 +427,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
-            arm="expert_manifold_v6_tangent_tube_correct",
+            arm="expert_manifold_v6_condition_residual_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=1,
@@ -417,7 +435,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     batched = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "batched",
-        arm="expert_manifold_v6_tangent_tube_correct",
+        arm="expert_manifold_v6_condition_residual_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=16,

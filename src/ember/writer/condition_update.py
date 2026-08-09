@@ -154,44 +154,62 @@ class FixedTemporalConditionFeature(torch.nn.Module):
         )
         if bool(invalid):
             raise ConditionUpdateError("condition feature mask or ordinals changed")
-        ordered_frames = evidence.frame_evidence.index_select(0, order).to(
-            dtype=torch.float32
-        )
-        rows = []
-        for condition, (left, right) in enumerate(
-            zip(evidence.offsets, evidence.offsets[1:])
+        # This fixed key and the manual memory map are an explicit FP32 contract.
+        # Both callers intentionally run the surrounding video/Writer graph under
+        # BF16 autocast, so disable autocast locally instead of relying on ambient
+        # dtype state.
+        with torch.autocast(
+            device_type=evidence.frame_evidence.device.type,
+            enabled=False,
         ):
-            valid_tokens = evidence.valid_task_tokens[condition]
-            ordinals = frame_indices[left:right]
-            innovation = (
-                ordered_frames[left:right, valid_tokens]
-                - evidence.text_queries[condition, valid_tokens]
-                .to(dtype=torch.float32)
-                .unsqueeze(0)
-            ).mean(dim=1)
-            if ordinals.numel() == 1:
-                tau = torch.zeros(1, dtype=torch.float32, device=ordinals.device)
-            else:
-                ordinal_values = ordinals.to(dtype=torch.float32)
-                tau = 2.0 * ordinal_values / ordinal_values[-1] - 1.0
-            basis = torch.stack(
-                (
-                    torch.ones_like(tau),
-                    tau,
-                    torch.cos(math.pi * tau),
-                    torch.sin(math.pi * tau),
-                ),
-                dim=1,
+            ordered_frames = evidence.frame_evidence.index_select(0, order).to(
+                dtype=torch.float32
             )
-            descriptor = (basis.transpose(0, 1) @ innovation).div_(
-                float(innovation.shape[0])
+            rows = []
+            for condition, (left, right) in enumerate(
+                zip(evidence.offsets, evidence.offsets[1:])
+            ):
+                valid_tokens = evidence.valid_task_tokens[condition]
+                ordinals = frame_indices[left:right]
+                innovation = (
+                    ordered_frames[left:right, valid_tokens]
+                    - evidence.text_queries[condition, valid_tokens]
+                    .to(dtype=torch.float32)
+                    .unsqueeze(0)
+                ).mean(dim=1)
+                if ordinals.numel() == 1:
+                    tau = torch.zeros(
+                        1,
+                        dtype=torch.float32,
+                        device=ordinals.device,
+                    )
+                else:
+                    ordinal_values = ordinals.to(dtype=torch.float32)
+                    tau = 2.0 * ordinal_values / ordinal_values[-1] - 1.0
+                basis = torch.stack(
+                    (
+                        torch.ones_like(tau),
+                        tau,
+                        torch.cos(math.pi * tau),
+                        torch.sin(math.pi * tau),
+                    ),
+                    dim=1,
+                )
+                descriptor = (basis.transpose(0, 1) @ innovation).div_(
+                    float(innovation.shape[0])
+                )
+                rows.append(descriptor.flatten())
+            descriptors = torch.stack(rows)
+            projected = F.linear(descriptors, self.projection)
+            norms = torch.linalg.vector_norm(projected, dim=1, keepdim=True)
+            features = projected / norms.clamp_min(
+                torch.finfo(projected.dtype).tiny
             )
-            rows.append(descriptor.flatten())
-        descriptors = torch.stack(rows)
-        projected = F.linear(descriptors, self.projection)
-        norms = torch.linalg.vector_norm(projected, dim=1, keepdim=True)
-        features = projected / norms.clamp_min(torch.finfo(projected.dtype).tiny)
-        features = torch.where(norms > 0, features, torch.zeros_like(features))
+            features = torch.where(
+                norms > 0,
+                features,
+                torch.zeros_like(features),
+            )
         if (
             features.shape != (conditions, self.feature_width)
             or features.dtype != torch.float32
@@ -231,10 +249,11 @@ class ProgramResidualMemory(torch.nn.Module):
             or features.device != self.value.device
         ):
             raise ConditionUpdateError("Program residual feature topology changed")
-        result = torch.matmul(
-            features.to(dtype=torch.float32),
-            self.value.flatten(1),
-        ).reshape(features.shape[0], *self.value.shape[1:])
+        with torch.autocast(device_type=features.device.type, enabled=False):
+            result = torch.matmul(
+                features.to(dtype=torch.float32),
+                self.value.flatten(1),
+            ).reshape(features.shape[0], *self.value.shape[1:])
         return result
 
 
@@ -404,7 +423,7 @@ def counterfactual_null_program_delta(
         predicted_negative_to_correct_ratio=(
             negative_motion_rms / correct_motion_rms
             if correct_motion_rms > 0
-            else math.inf
+            else torch.finfo(torch.float32).max
         ),
         value_delta_rms=_root_mean_square(delta),
     )
@@ -426,19 +445,25 @@ def apply_program_residual_delta_(
 
 
 @torch.no_grad()
-def apply_program_residual_delta_with_evidence_(
+def program_residual_delta_application_evidence(
     memory: ProgramResidualMemory,
     delta: torch.Tensor,
     features: torch.Tensor,
+    before: torch.Tensor,
+    *,
+    predicted: torch.Tensor | None = None,
 ) -> ProgramDeltaApplicationSummary:
-    """Apply one write and verify predicted/observed motion when explicitly gated."""
+    """Verify a completed write outside the production update timing region."""
 
-    before = memory(features).clone()
-    predicted = torch.matmul(
-        features.to(dtype=torch.float32),
-        delta.flatten(1).to(dtype=torch.float32),
-    ).reshape(features.shape[0], *memory.value.shape[1:])
-    apply_program_residual_delta_(memory, delta)
+    if before.shape != (features.shape[0], *memory.value.shape[1:]):
+        raise ConditionUpdateError("Program residual before-read changed topology")
+    if predicted is None:
+        predicted = torch.matmul(
+            features.to(dtype=torch.float32),
+            delta.flatten(1).to(dtype=torch.float32),
+        ).reshape(features.shape[0], *memory.value.shape[1:])
+    elif predicted.shape != before.shape or predicted.dtype != torch.float32:
+        raise ConditionUpdateError("Program residual prediction changed topology")
     observed = memory(features) - before
     error = observed - predicted
     predicted_rms = torch.linalg.vector_norm(predicted) / math.sqrt(
@@ -454,6 +479,24 @@ def apply_program_residual_delta_with_evidence_(
         observed_motion_rms=_root_mean_square(observed),
         predicted_observed_max_abs=float(error.abs().max()),
         predicted_observed_relative_rms=float(relative),
+    )
+
+
+@torch.no_grad()
+def apply_program_residual_delta_with_evidence_(
+    memory: ProgramResidualMemory,
+    delta: torch.Tensor,
+    features: torch.Tensor,
+) -> ProgramDeltaApplicationSummary:
+    """Apply one write and verify it in CPU or one-shot profile oracles."""
+
+    before = memory(features).clone()
+    apply_program_residual_delta_(memory, delta)
+    return program_residual_delta_application_evidence(
+        memory,
+        delta,
+        features,
+        before,
     )
 
 

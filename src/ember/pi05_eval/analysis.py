@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 import json
-import math
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -16,6 +15,18 @@ from ember.expert_manifold.video_schedule import (
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_queue import publish_json_exclusive
 from ember.pi05_eval_results import AGGREGATE_SCHEMA
+from ember.pi05_eval.paired_metrics import (
+    EpisodeKey,
+    TaskKey,
+    control_outcome_summary as _control_outcome_summary,
+    episode_key as _episode_key,
+    exact_mcnemar_two_sided_p,
+    index_rows as _index_rows,
+    paired_transition_summary,
+    suite_sort_key as _suite_sort_key,
+    summarize_panel,
+    task_key as _task_key,
+)
 from ember.pi05_target_data import SUITE_ORDER
 
 
@@ -28,10 +39,7 @@ CHECKPOINT_MACROS = (0, 10, 25, 50)
 HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_ecp_v2": (10, 25, 50),
     "v6_tangent_tube_v3": (10, 25, 50),
-}
-SEALED_EVALUATION_STATUSES = {
-    "sealed",
-    "sealed_from_unchanged_v6_deployment_graph",
+    "v6_condition_residual_v1": (10, 25, 50),
 }
 SIX_ARM_CONDITIONS = (
     "correct",
@@ -41,9 +49,6 @@ SIX_ARM_CONDITIONS = (
     "reversed",
     "no_video",
 )
-
-EpisodeKey = tuple[str, int, int]
-TaskKey = tuple[str, int]
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TARGET_DATA_MANIFEST = REPO_ROOT / "configs/pi05_target_data_v1/manifest.json"
@@ -55,6 +60,7 @@ WRITER_FAMILIES = {
         "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
         "arm_prefix": "expert_manifold_v6_prior_",
         "trained_checkpoint_kind": "v6_prior_trained_checkpoint",
+        "formal_statuses": ("sealed",),
     },
     "v6_ecp_v2": {
         "adapter_schema": "ember_pi05_v6_ecp_eval_adapter_v6",
@@ -62,6 +68,7 @@ WRITER_FAMILIES = {
         "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
         "arm_prefix": "expert_manifold_v6_ecp_",
         "trained_checkpoint_kind": "v6_ecp_trained_checkpoint",
+        "formal_statuses": ("sealed",),
     },
     "v6_tangent_tube_v3": {
         "adapter_schema": "ember_pi05_v6_tangent_tube_eval_adapter_v7",
@@ -69,148 +76,26 @@ WRITER_FAMILIES = {
         "config_schema": "ember_pi05_v6_condition_local_tangent_tube_writer_v3",
         "arm_prefix": "expert_manifold_v6_tangent_tube_",
         "trained_checkpoint_kind": "v6_tangent_tube_trained_checkpoint",
+        "formal_statuses": (
+            "sealed",
+            "sealed_from_unchanged_v6_deployment_graph",
+        ),
+    },
+    "v6_condition_residual_v1": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+        "config_schema": (
+            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v1"
+        ),
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+        "formal_statuses": ("sealed_from_live_residual_deployment_profile",),
     },
 }
 
 
 def _fail(message: str) -> None:
     raise Pi05EvaluationError(message)
-
-
-def _suite_sort_key(suite: str) -> tuple[int, str]:
-    try:
-        return SUITE_ORDER.index(suite), suite
-    except ValueError:
-        return len(SUITE_ORDER), suite
-
-
-def _episode_key(row: Mapping[str, Any]) -> EpisodeKey:
-    return str(row["suite"]), int(row["task_id"]), int(row["init_state_id"])
-
-
-def _task_key(row: Mapping[str, Any]) -> TaskKey:
-    return str(row["suite"]), int(row["task_id"])
-
-
-def _index_rows(rows: Sequence[Mapping[str, Any]]) -> dict[EpisodeKey, Mapping[str, Any]]:
-    indexed: dict[EpisodeKey, Mapping[str, Any]] = {}
-    for row in rows:
-        key = _episode_key(row)
-        if key in indexed or type(row.get("success")) is not bool:
-            _fail("paired analysis rows are duplicated or have an invalid outcome")
-        indexed[key] = row
-    return indexed
-
-
-def _task_sort_key(row: Mapping[str, Any]) -> tuple[int, str, int]:
-    suite = str(row["suite"])
-    return (*_suite_sort_key(suite), int(row["task_id"]))
-
-
-def _summary_row(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    successes = sum(bool(row["success"]) for row in rows)
-    episodes = len(rows)
-    return {
-        "successes": successes,
-        "episodes": episodes,
-        "success_rate": successes / episodes if episodes else None,
-    }
-
-
-def summarize_panel(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    """Summarize one already validated, uniquely keyed rollout panel."""
-
-    indexed = _index_rows(rows)
-    task_keys = sorted({_task_key(row) for row in indexed.values()}, key=lambda key: (*_suite_sort_key(key[0]), key[1]))
-    per_task: list[dict[str, Any]] = []
-    for suite, task_id in task_keys:
-        selected = [row for row in indexed.values() if _task_key(row) == (suite, task_id)]
-        first = selected[0]
-        per_task.append(
-            {
-                "suite": suite,
-                "task_id": task_id,
-                "split_role": first.get("split_role"),
-                "language": first.get("language"),
-                **_summary_row(selected),
-            }
-        )
-    per_suite = []
-    for suite in sorted({key[0] for key in task_keys}, key=_suite_sort_key):
-        selected = [row for row in indexed.values() if str(row["suite"]) == suite]
-        per_suite.append({"suite": suite, **_summary_row(selected)})
-    top3 = sorted(
-        per_task,
-        key=lambda row: (-int(row["successes"]), *_task_sort_key(row)),
-    )[:3]
-    total_successes = sum(int(row["successes"]) for row in per_task)
-    top3_successes = sum(int(row["successes"]) for row in top3)
-    return {
-        "overall": _summary_row(list(indexed.values())),
-        "per_task": per_task,
-        "per_suite": per_suite,
-        "nonzero_task_breadth": sum(int(row["successes"]) > 0 for row in per_task),
-        "top3_tasks": top3,
-        "top3_successes": top3_successes,
-        "top3_success_share": (
-            top3_successes / total_successes if total_successes else None
-        ),
-    }
-
-
-def exact_mcnemar_two_sided_p(gained: int, lost: int) -> float:
-    """Exact two-sided binomial McNemar p-value for discordant pairs."""
-
-    if gained < 0 or lost < 0:
-        _fail("McNemar discordant counts must be non-negative")
-    discordant = gained + lost
-    if discordant == 0:
-        return 1.0
-    tail = sum(math.comb(discordant, index) for index in range(min(gained, lost) + 1))
-    return min(1.0, 2.0 * tail / (2**discordant))
-
-
-def _outcome_counts(pairs: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]]) -> dict[str, Any]:
-    retained_success = sum(bool(left["success"]) and bool(right["success"]) for left, right in pairs)
-    gained = sum(not bool(left["success"]) and bool(right["success"]) for left, right in pairs)
-    lost = sum(bool(left["success"]) and not bool(right["success"]) for left, right in pairs)
-    retained_failure = len(pairs) - retained_success - gained - lost
-    union = retained_success + gained + lost
-    return {
-        "episodes": len(pairs),
-        "retained_success": retained_success,
-        "gained": gained,
-        "lost": lost,
-        "retained_failure": retained_failure,
-        "net": gained - lost,
-        "churn": gained + lost,
-        "churn_rate": (gained + lost) / len(pairs) if pairs else None,
-        "success_set_jaccard": retained_success / union if union else 1.0,
-        "mcnemar_exact_two_sided_p": exact_mcnemar_two_sided_p(gained, lost),
-    }
-
-
-def paired_transition_summary(
-    left_rows: Sequence[Mapping[str, Any]],
-    right_rows: Sequence[Mapping[str, Any]],
-) -> dict[str, Any]:
-    """Compare two panels; gained means left failure became right success."""
-
-    left, right = _index_rows(left_rows), _index_rows(right_rows)
-    if set(left) != set(right):
-        _fail("paired panels do not have identical episode keys")
-    keys = sorted(left, key=lambda key: (*_suite_sort_key(key[0]), key[1], key[2]))
-    pairs = [(left[key], right[key]) for key in keys]
-    task_keys = sorted({key[:2] for key in keys}, key=lambda key: (*_suite_sort_key(key[0]), key[1]))
-    per_task = []
-    for suite, task_id in task_keys:
-        selected = [pair for key, pair in zip(keys, pairs) if key[:2] == (suite, task_id)]
-        per_task.append({"suite": suite, "task_id": task_id, **_outcome_counts(selected)})
-    per_suite = []
-    for suite in sorted({key[0] for key in task_keys}, key=_suite_sort_key):
-        selected = [pair for key, pair in zip(keys, pairs) if key[0] == suite]
-        per_suite.append({"suite": suite, **_outcome_counts(selected)})
-    return {"overall": _outcome_counts(pairs), "per_task": per_task, "per_suite": per_suite}
 
 
 def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, str]]:
@@ -263,7 +148,7 @@ def _formal_adapter(
         or adapter.get("lora_contract", {}).get("rank") != 16
         or adapter.get("lora_contract", {}).get("target_count") != 38
         or adapter.get("evaluation_authority", {}).get("formal_status")
-        not in SEALED_EVALUATION_STATUSES
+        not in family["formal_statuses"]
         or paired.get("git", {}).get("dirty_paths") != []
     ):
         _fail("analysis requires a sealed formal validation Expert-Manifold panel")
@@ -348,7 +233,7 @@ def _validate_episode_evidence(
 ) -> None:
     writer = row.get("writer", {})
     condition = str(adapter["video_condition"])
-    _, family = _writer_family(adapter)
+    family_name, family = _writer_family(adapter)
     references = list(writer.get("teacher_reference_demo_indices", []))
     selected = list(writer.get("teacher_demo_indices", []))
     same = condition == "same_task_other"
@@ -371,6 +256,19 @@ def _validate_episode_evidence(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_demo_offset": SAME_TASK_OTHER_OFFSET if same else None,
     }
+    if family_name == "v6_condition_residual_v1":
+        expected.update(
+            {
+                "writer_parameter_count": int(asset["writer_parameter_count"]),
+                "writer_deployment_trainable_parameter_count": 0,
+                "writer_program_residual_value_count": int(
+                    asset["program_residual_value_count"]
+                ),
+                "generated_lora_tensor_count": int(
+                    asset["generated_lora_tensor_count"]
+                ),
+            }
+        )
     valid = (
         len(references) == len(selected) == 1
         and 0 <= int(references[0]) < 50
@@ -397,6 +295,10 @@ def _scientific_projection(
         state = asset.get("writer_state")
         if isinstance(state, dict):
             state.pop("path", None)
+        residual = asset.get("residual_state")
+        if isinstance(residual, dict):
+            for key in ("kind", "path", "bytes", "tensor_count", "key"):
+                residual.pop(key, None)
     return projection
 
 
@@ -597,8 +499,13 @@ def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, An
     normalization = projection.get("normalization")
     if not all(isinstance(value, dict) for value in (writer, tokenizer, normalization)):
         _fail("historical transition is missing its shared scientific contract")
-    writer.pop("config", None)
-    writer.pop("evaluation_authority", None)
+    for key in (
+        "execution_backend",
+        "config",
+        "writer_asset",
+        "evaluation_authority",
+    ):
+        writer.pop(key, None)
     tokenizer.pop("manifest_path", None)
     normalization.pop("path", None)
     return projection
@@ -742,32 +649,6 @@ def historical_baseline_transition_analysis(
                 "native family labels are retained; this artifact is not a within-family checkpoint curve"
             ),
         },
-    }
-
-
-def _control_outcome_summary(
-    correct: Sequence[Mapping[str, Any]], control: Sequence[Mapping[str, Any]]
-) -> dict[str, Any]:
-    transition = paired_transition_summary(control, correct)
-
-    def rename(value: Mapping[str, Any]) -> dict[str, Any]:
-        return {
-            **{key: value[key] for key in ("episodes", "churn", "churn_rate", "success_set_jaccard", "mcnemar_exact_two_sided_p")},
-            "both_success": value["retained_success"],
-            "correct_only": value["gained"],
-            "control_only": value["lost"],
-            "both_failure": value["retained_failure"],
-            "correct_minus_control": value["net"],
-        }
-
-    per_task = [{"suite": row["suite"], "task_id": row["task_id"], **rename(row)} for row in transition["per_task"]]
-    positive = [int(row["correct_minus_control"]) for row in per_task if int(row["correct_minus_control"]) > 0]
-    return {
-        "overall": rename(transition["overall"]),
-        "per_task": per_task,
-        "per_suite": [{"suite": row["suite"], **rename(row)} for row in transition["per_suite"]],
-        "positive_contributing_task_count": len(positive),
-        "largest_positive_task_contribution_share": max(positive) / sum(positive) if positive else None,
     }
 
 

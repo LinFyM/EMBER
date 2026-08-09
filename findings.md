@@ -1,5 +1,40 @@
 # EMBER Findings
 
+## 第37节Counterfactual-Null Program Residual实现与CPU裁决（2026-08-10）
+
+- 当前实现不是又一套fresh Writer：它strict load historical v6-fast macro400的600 tensors/
+  `10,775,296` parameters并全部冻结，只新增fixed-seed、zero-preserving时序condition feature和一个
+  `[256,320,256]` FP32 Program memory。memory从零开始，因此完整76 LoRA tensors在step0保持historical
+  v6 identity；A/B都继续由原八个FactorHeads生成，没有B-only/static/language bypass。
+- 每个macro仍是train24×logical B20、每task一条correct video。correct只读真实functional cotangent；
+  wrong/shuffled/reversed按8/8/8轮换只产生feature和exact-zero RHS，0 negative policy forward。full48
+  小Gram/Cholesky与condition operator用FP64，大cotangent/coefficient/memory write保持FP32；六rank只
+  gather local4 correct cotangents与8 features，各自形成同一约80MiB write，不all-reduce memory。
+- 当前profile门同时防止aggregate掩盖task drift：aggregate correct-motion/cotangent`≥.25`、negative/
+  correct`≤.25`之外，还要求至少18/24 task-local correct retained、18/24 paired negative null。四个suite
+  各取一个task做before/after同observation与同noise的fixed-action probe，要求4/4非零；8次inference只作
+  verification、不读target action、排除在production wall外，也不冒充negative functional forward。
+- throughput门直接比较正式生产部分（24-task functional work + full48 gather/solve/write）与sealed v6
+  macro49 B20/B10+10 `21.095109596s`，ratio`≤1.10`；task-local/application/LoRA/action verification另计时。
+  这是吞吐门，不要求BF16逐元素同一，也不靠kernel fraction或空余显存判断。
+- application evidence复算actual `feature @ delta`并与memory write后observed motion比较，证明生产delta完整
+  应用；它不是独立solver的第二份数学证明。solver/sign/order/scaling由CPU algebra oracle独立覆盖，避免
+  把相关量误写成更强证据。
+- checkpoint family只拥有单个Program memory、cursor和六rank RNG；base600与fixed projection不持久化，
+  没有optimizer/scheduler/scaler。fresh/profile必须HEAD等于当前remote authority；exact-resume仍绑定原
+  frozen commit且只要求它是当前authority ancestor，从而后续文档提交不会破坏合法同root resume。
+- 新v8 residual deployment graph不能继承旧v6/Tangent吞吐seal。artifact gate要求同目录run contract、
+  actual clean commit、A40、正确adapter/family和batch8/16/32 fixed panel；其它family的synthetic负向测试
+  明确fail closed。
+- mechanism artifact不能靠写入`passed=true`过门：seal会从保存的raw macro重算全部13项机制门，并核对
+  initialization、source identity、train24 task/language/data schedule、Writer、objective、ownership、A40
+  topology和NCCL runtime。formal结果状态也不能靠字符串宣告，必须绑定completion、50-row metrics及
+  macro10/25/50三个memory-only manifests；部署只接受active authority lineage内的training commit。
+- 一次性teacher-audit/effective-objective/flow-teacher owner和tests已删除，历史由Git/formal artifact保留。
+  纯paired statistics从artifact/family analysis拆为单向依赖owner；architecture guard无hard violation。
+  聚焦测试、compileall、JSON/diff-check与全仓`280 passed in 21.02s`通过。当前仍是**0新GPU、0训练、
+  0 rollout、0 strict成绩**；这些数值不授权宣称方法有效。
+
 ## Matched Expert-Flow正式non-pass与structured residual选择（2026-08-10）
 
 - clean frozen`e8e4728`的formal root=

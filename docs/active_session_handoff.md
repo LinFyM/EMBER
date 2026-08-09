@@ -36,9 +36,26 @@
   “不同方向”不能把整体更差teacher变成有用teacher，且distillation loss最大的位置反而偏向direct expert
   较弱tasks。因此`authorize_cefd=false`：不做CEFD weight profile、训练或事后扫描其它expert steps。
   一次性audit config已formal non-pass并fail-closed，runtime按第36节触发退役。
-- 当前没有可启动的Writer训练。下一结构候选只保留historical v6高增益condition representation和decoder，
-  直接改变condition-specific update parameterization；不得恢复expert cotangent、completion、tube或旧
-  whole-LoRA attraction。正式design/CPU门/profile完成前不启动GPU。
+- **2026-08-10当前实现状态**：第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual
+  已在唯一canonical path完成。historical v6的600 tensors/`10,775,296` parameters全部冻结；一个
+  zero-init `[256,320,256]` FP32 memory由固定时序video feature读取，24 correct Program cotangents与
+  24 counterfactual zero-motion rows经48×48 FP64 Gram直接形成FP32 manual write。没有optimizer/
+  scheduler/scaler、expert target、negative policy forward或第二LoRA。step0严格回到historical v6输出。
+- 一次性teacher-audit/effective-objective/flow-teacher owners及tests已删除；checkpoint只拥有单个Program
+  memory、cursor和六rank RNG，base600和fixed projection不被保存或覆盖。v8 residual deployment adapter、
+  strict paired evaluator和analysis family已经联锁，错误Writer family不能借用本候选profile seal。
+- 最后合同复核已封住artifact自报通过、formal状态空壳和任意checkpoint lineage三条缺口：profile从raw
+  macro重算13项门并匹配完整scientific run；formal result必须绑定completion、50-row metrics和10/25/50
+  manifests；deployment training commit必须属于active remote authority lineage。clean detached frozen
+  authority ancestor现可直接用于v8 evaluator，不需制造第二主分支。
+- CPU seal完成：全仓`280 passed in 21.02s`、compileall、JSON/diff-check通过，architecture guard无hard violation。
+  这只证明shape/algebra/freeze/identity/resume/evaluation合同；**当前仍无新A40 profile、训练或rollout结果**。
+  active config状态只允许macro49 `mechanism-profile`，formal和v8 deployment evaluation均被artifact门阻塞。
+- 下一GPU动作是clean push/frozen之后实时比较双节点与quota，只做一次六卡macro49 profile：保持B10+10、
+  0 negative policy forward；production wall相对sealed `21.095109596s` ratio`≤1.10`，至少18/24 task-local
+  correct retention、18/24 negative null、4/4 suite-stratified fixed-action response。8次fixed-action inference
+  只作verification、排除在production wall外且不读取target action。通过后再单卡profile新部署图batch
+  `8/16/32`并做correct smoke；两类seal齐全后才评测zero-memory macro0、formal0→10和strict correct400。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -77,7 +94,8 @@
   resumed总step wall=`61.368/64.450s`，峰值allocated/reserved=`43.266/47.119GB`，steady-state input wait
   约`.0006s`。所有cursor/RNG/scheduler/AMP/frozen tensors精确相等，trainable Writer与Adam逐tensor科学
   门通过。原比较器误把近零Adam moments套入Writer aggregate relative门，已只修离线state-specific
-  tolerance而未改训练或重跑GPU；retained artifacts重新assemble通过，profile/formal现已正式sealed。
+  tolerance而未改训练或重跑GPU；retained artifacts重新assemble通过，当时的v2 profile/formal已正式sealed。
+  该历史状态不解锁当前第37节config。
 
 第33节whole-LoRA direction/norm与第34节Expert-Component Projection（ECP）均已由formal
 closed-loop证据退役。ECP保留原v6架构和上游冻结边界，只把auxiliary换为
@@ -274,7 +292,9 @@ Experts不解决：
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
 | v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
 | v6 Expert-Component Projection | `134→133→120` | `a_correct`与component按构造上升，修复旧径向收缩 | 正交漂移继续增大，macro25 paired net`-14`、`p=.038477` | 退役；不续、不扫权重 |
-| Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂；当前做matched flow-teacher audit |
+| Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂 |
+| Expert-Flow Teacher Audit | 无rollout | gradient residual`.6864/.8387`，teacher方向非冗余 | expert flow loss只在`2/24` tasks、`0/4` suites优于两baseline | CEFD否决；一次性runtime已删除 |
+| Frozen-v6 Counterfactual-Null Program Residual | 尚无新成绩 | CPU algebra/identity/freeze/resume/deployment联锁完成 | 真实A40 feature/motion/action/吞吐与closed-loop均未知 | 当前唯一active implementation；先profile再短训strict裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -293,17 +313,29 @@ Experts不解决：
 6. **架构与recipe耦合。** v5.2/v6交叉结果证明不能按某一architecture aggregate整体判死，也不能直接
    恢复old recipe；需要对比最早传递接口和任务换手。
 7. **当前假设是局部且可证伪的。** v6 checkpoint已达143且上游仍保留material Procedure response；
-   冻结部分是否足以迁移仍是假设。目前只修compiler/factor如何把它写到expert定义的policy-effective流形。若目标/梯度成立而closed-loop仍无共同提高，才重新打开
-   Procedure或更早表示，不因一次低分立即换整条路线。
+   冻结部分是否足以迁移仍是假设。目前只把shared parameter/Adam输运替换成显式condition kernel，不改
+   video encoder、Procedure、FactorHeads、functional target或scientific batch。若Program/action传递成立而
+   closed-loop仍无共同提高，才重新打开reward credit或更早表示，不因一次低分立即换整条路线。
 
 ## 7. Current engineering state
 
-当前audit CPU实现与继承的historical live seals如下：
+当前第37节实现状态如下：
 
-- matched flow-teacher primitive、一次性full24 audit聚合和canonical run-contract owner已经分离封存；唯一
-  CLI仍是`scripts/train_v6_prior_writer.py --mode teacher-audit`，没有第二runner或部署路径。CPU oracle分别
-  覆盖physical B20的3次forward与B10+10的6次forward、三臂逐tensor相同noise/time、真实7维FP32 loss、
-  near-collinear Gram `rtol=1e-5`、8/8/8 negatives和0 update；全仓`284 passed`，尚无GPU audit结果；
+- 唯一CLI仍是`scripts/train_v6_prior_writer.py`，活动mode仅`mechanism-profile/formal`；一次性
+  `teacher-audit`、flow teacher和旧effective objective owner/tests已经删除，没有第二runner或部署路径；
+- `writer/condition_update.py`拥有fixed temporal feature、single FP32 Program memory和full48 solve/apply；
+  `v6_prior_step.py`拥有correct graph/counterfactual feature，training只做local objectives、两次all-gather和
+  identical manual write；`v6_prior_profile.py`只拥有一次性verification和gates；
+- 600-tensor historical v6 strict-load后全部冻结，fixed projection nonpersistent，Program memory是唯一
+  checkpoint/deployment mutable state；fresh incompatible checkpoint只保存memory/cursor/六rank RNG，
+  不存在optimizer/scheduler/scaler或memory all-reduce；
+- config/runtime/contract/checkpoint/adapter/evaluator/analysis状态机已经联锁；fresh必须等于当前remote
+  authority，exact-resume保持原frozen commit且要求它仍为authority ancestor；错误family和stale artifact
+  fail closed；
+- CPU seal为全仓`276 passed`、compileall、JSON/diff-check通过，architecture guard无hard violation。当前
+  config仍为`awaiting_live_a40_macro49_profile`，没有该family的GPU或strict结果。
+
+以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance，不是当前seal：
 
 - evaluator取消historical smoke中的8次冗余direct Writer forward和`1e-5`逐tensor门；batch默认8并要求
   profile至少实测`8/16/32`。三者处理同一32-request longest-first panel和同一总帧数，只改变实际
@@ -379,38 +411,51 @@ Experts不解决：
 
 ## 8. Key uncertainties and structural risks
 
-- 冻结上游可能保护143，也可能冻结了task-complete造成的弱video margin；当前实验必须先判断写出修正
-  能否提高absolute，再决定是否开放Procedure。
-- 一个task恒定expert target可能诱导Writer忽略same-task视频细节；ranking提供顺序/错误约束，但仍可能
-  被language+粗task identity满足。五臂/六臂和same-task跨video是唯一裁决。
-- exact effective-BA expert监督来自train24，可能把held输出拉向训练任务流形而减少组合泛化；soft/hard
-  bank负结果使这一风险很真实。auxiliary必须被positive functional gradient限制，不能主导。
-- compiler与factor heads只有约3.7M可训练参数；若gradient可达但不同task更新继续正交抵消，单纯延长训练
-  会重现checkpoint换手。必须看per-task acquisition/forgetting和block gradient retention。
-- 训练negative schedule只采一种counterfactual/visit；margin改善可能来自识别低层反常而非理解任务
-  程序。需要跨video、cross-suite wrong和真实closed-loop同时验证。
-- 吞吐优化改变BF16低位和cache dtype，但不改变计算图/信息墙；profile必须验证无串样、finite、显存、
-  release/reuse和端到端rollout，不再要求无意义的逐元素同一。
+- **frozen prior风险**：v6-fast提供143高增益起点，也可能把task-complete造成的弱时序margin一起冻结。当前
+  residual只能在fused Program后修正，若真实order feature健康而正确时序知识根本没进入Program，显式kernel
+  也无法创造上游语义。
+- **feature sufficiency风险**：固定256维JL key只保留四个时序矩和frame-evidence/text-query innovation。
+  它原理上区分content/order且无language-only value，但可能对细粒度阶段、接触事件或same-task视频变化
+  不充分。首先看真实full48 rank、task-local retained/null及五臂，不能按漂亮Gram宣告成功。
+- **functional-to-closed-loop错位**：Program cotangent是真实source-action pointwise functional descent，
+  但历史已反复证明functional loss可与closed-loop错位。即使application、LoRA和fixed-action传递都通过，
+  strict correct仍可能不升；这时应把证据指向credit objective，而非继续调rank/能量或延长训练。
+- **累积与漂移风险**：manual memory没有Adam、momentum、global scale或cap，避免shared optimizer旋转，
+  也意味着不同macro的kernel writes可能在未见condition上叠加、抵消或放大。只在10/25/50边界评测完整
+  paired correct400，并以per-task gained/lost、breadth和相邻checkpoint churn判断共同积累。
+- **counterfactual覆盖风险**：每个task/visit只取wrong/shuffled/reversed之一，full48只把当前24个negative
+  motion压近零；它可能学习局部异常特征而非可迁移程序。必须由same-task-other、cross-suite wrong、
+  shuffled、reversed和no-video同checkpoint六臂裁决。
+- **验证指标边界**：4-task fixed-action probe只证明Program motion穿过frozen decoder和policy，不是性能、
+  breadth或视频因果结果；8次verification forward不计入production throughput。最终目标仍只有strict
+  closed-loop及其真实配对控制。
+- 吞吐优化允许BF16低位、batch shape和parallel reduction普通差异，但不能改变logical B20、信息墙、完整
+  LoRA topology或paired evaluation；不得为逐元素复现牺牲batch/显存利用。
 
 ## 9. Evidence order and next action
 
 证据关系固定为：
 
-1. full-bank geometry和expert closed-loop已经完成，证明step2000是统一且policy-effective的train目标；
-   它们不能选择held Writer，也不能证明视频因果性。
-2. 统一续训到2000已完成且只改善train expert target，不再是当前决策分支。
-3. 单卡吞吐/显存profile和vertical smoke已通过，只证明高效端到端实现成立，不证明当前方法有效。
-4. 六卡gradient profile只选择一次`lambda_projection/lambda_rank`并验证resume；它不证明方法有效。
-5. formal关键checkpoints必须及时跑paired correct400并和同schedule macro0、历史143以及最邻近旧架构
-   逐task比较。
-6. single winner首次超过历史143即跑完整correct/same/wrong/shuffled/reversed/no-video；若之后不同
-   checkpoint严格超过150，再对实际goal winner重跑六臂。未过门则按最早失败接口做单变量修正并继续循环。
+1. full-bank geometry、expert closed-loop和统一step2000续训已经完成；它们只证明train expert target的
+   policy effectiveness，不进入当前cotangent/deployment，也不能证明held video causality。
+2. whole-LoRA/ECP/Tangent/audit连续证据把首个失效接口定位到shared condition update transport，并否决
+   expert-flow teacher；这是选择显式condition kernel的依据，不是新方法成绩。
+3. 当前CPU seal只证明fixed feature、full48 algebra、zero identity、freeze、memory-only resume、信息墙和
+   evaluator family联锁；不能跳过live A40机制门。
+4. 六卡macro49 profile先验证真实feature rank、至少18/24 task-local correct retention和negative null、
+   4/4 fixed-action breadth、application closure、0 negative forward/OOM/nonfinite及production ratio`≤1.10`。
+   profile memory永久弃用，不进入formal。
+5. mechanism seal后单卡实测新residual deployment graph的batch8/16/32和correct smoke；旧v6吞吐seal只作
+   参照。两类profile都不证明方法有效。
+6. 两类seal齐全后，先得到同schedule zero-memory macro0，再formal0→10并立即跑paired correct400；与
+   macro0=`134`、历史143、ECP10=`133`、Tangent10=`131`逐task/per-suite/breadth/gained-lost比较。
+7. macro10`≤129`且广泛净损失即退役；`130--134`仅在breadth/churn/mechanics同时改善时续25；`≥135`
+   续25；首次`≥144`补完整六臂。single winner严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
+   再继续提高；未过门按最早失败接口做单变量修正，不扫P/lambda/eta或180度转向。
 
-当前具体顺序是：先封存audit non-pass并删除一次性mode/support；再按第37节实现Frozen-v6
-Counterfactual-Null Condition-Kernel Program Residual的fixed feature、P256 zero memory和full48显式更新，
-完成CPU algebra/identity/checkpoint门。只有clean pushed/frozen implementation通过后，才live比较
-`gpu01/gpu02`和`/data1` quota，用最多6张空闲A40做一次macro49 gradient/throughput profile。profile不得
-增加PI05 forward或降低B10+10；通过后zero memory fresh0→10并立即跑完整strict correct400。
+当前具体顺序：完成本次代码/authority clean commit并push；移除已被合并提交覆盖的旧隔离worktree；读取
+formal launch与GPU preflight合同，实时比较`gpu01/gpu02`和`/data1` quota；从新frozen worktree只运行上述
+macro49 mechanism profile。任何设备不空闲、拓扑不符或storage不足都fail close，不触碰他人进程。
 
 ## 10. Canonical assets
 
@@ -421,8 +466,9 @@ Counterfactual-Null Condition-Kernel Program Residual的fixed feature、P256 zer
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent和teacher audit均
   formal non-pass/fail-closed。
 - audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
-- 当前没有active训练入口；第37节实现seal后才登记新canonical config/CLI mode。
-- evaluation entry：`scripts/evaluate_pi05.py`。
+- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v1.json`；只允许等待中的
+  mechanism profile，formal/evaluation仍由artifact gate阻塞。
+- training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`
   提供；历史A100路径只作provenance，不原位改写。

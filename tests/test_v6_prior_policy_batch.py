@@ -34,6 +34,7 @@ def _pre_gradient_config() -> dict:
     config["formal_run"]["status"] = (
         "blocked_until_live_a40_resume_profile_evidence"
     )
+    config["formal_run"]["formal_result"] = None
     return config
 
 

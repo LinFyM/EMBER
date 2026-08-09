@@ -1,5 +1,28 @@
 # EMBER Findings
 
+## Tangent Tube formal non-pass与下一证据门（2026-08-10）
+
+- clean pushed/frozen`b308941`完成formal fresh0→10；10 macros总step wall=`207.4436s`、input wait=
+  `.2655s`、peak allocated/reserved=`43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite，只有
+  macro3一次clip。B10+10、logical B20、六卡并行和吞吐合同均不需要降级。
+- macro10 correct/negative relative-anchor tube中位=`.013900/.014079`且两臂`24/24` tasks过`.03`；
+  但directional ratio中位=`108.926/126.883`、两臂`0/24`过`≤1`，completion error task median=
+  `.252295`且`0/24`过`.05`。Tangent确实压住总半径，却没有让共享decoder实际运动沿expert方向；
+  学到的是小而几乎全正交的更新。
+- one-shot strict correct400=`131`、correct80=`27`、breadth5、per-task=`0/3/46/31/0/40/11/0`、
+  per-suite=`3/77/40/11`。相对同schedule macro0=`134`严格paired gained/lost=`16/19`、churn35、
+  net`-3`、`p=.735879`；相对ECP10=`133`也是net`-2`。prefix略升但full400下降，再次证明及时真实
+  closed-loop不可由小panel或内部几何替代。
+- 裁决是不续25、不补六臂、不扫tube/projection weight、LR或WD，config/runtime formal non-pass后
+  fail-closed。这个实验淘汰当前soft-tube recipe/window，但completion从未成立，所以不能写成
+  expert-component已经完整写入后仍无效。
+- 第一失效接口是`q -> J^T q -> Adam P -> J' P J^T q`。提高tube权重只能缩放cotangent，不能修复
+  shared update kernel的方向旋转；hard tangent又会引入部署expert/scalar route并重复已负裁决路线。
+- 下一步先做matched no-update Expert-Flow Teacher Viability Audit，而不是直接加CEFD。它用同一train24
+  B20/noise/time检查step2000 expert flow是否在至少18/24 tasks、3 suites优于macro0和tangent10，并检查
+  CEFD gradient在compiler/factor相对existing gradient span的残差比例是否都`≥.25`。任一门失败就以低成本
+  否决CEFD，避免为冗余监督增加一次昂贵PI05 forward。
+
 ## Condition-Local Tangent Tube resume profile与一阶滞后风险（2026-08-10）
 
 - clean pushed/frozen`c1bdcae`在`gpu01:0,1,2|4,5,7`完成fresh0→1、same-root

@@ -141,16 +141,23 @@ formal artifacts保存。
 - [x] 保留profile科学预警而不提前换路线：macro3 correct/negative tube median约`.0316/.0317`、directional
   ratio约`61×`且发生clip，尚未过mechanism门；这使macro10的tube recovery成为硬续训条件，不是工程
   resume blocker，也不授权weight/LR sweep。
-- [ ] 对当前config、tests和8份authority完成focused/full CPU验证、compileall与diff-check；clean
-  commit/push为`c1bdcae`的严格后继，创建新的tangent formal frozen worktree。当前focused=`25 passed`、
-  full=`277 passed`，compileall/diff-check通过；剩余是commit/push与worktree。随后live比较双节点GPU和
-  `/data1` quota，确认fresh root为空并封存formal0→10 launch contract；旧v6-prior formal worktree不能
-  代替当前lineage。
-- [ ] formal fresh0→10后立即跑strict correct400；按`≤129`停止、`130--134`条件续25、macro25
-  `≥135`且3 tasks/2 suites净正增门推进。首次`≥144`补六臂，若不同winner首次`≥151`再补六臂。
-- [ ] 若dynamic anchor能限制正交漂移、task median `|a_correct-1|≤.05`而strict仍不超macro0，才干净
-  证伪expert-component completion并转policy-output behavior distillation；若completion门未到，只退役
-  当前recipe并先区分component deficit与action-space错位，不把假设本身写死。
+- [x] 对config、tests和8份authority完成CPU seal；clean pushed`b308941`严格后继于`c1bdcae`，并建立
+  独立tangent formal frozen worktree。live比较双节点GPU和`/data1` quota后，fresh root与launch contract
+  通过正式门；旧v6-prior worktree未被复用。
+- [x] formal fresh0→10与strict correct400完成：训练exit0、0 OOM/nonfinite；macro10 tube半径两臂
+  `24/24`过`.03`，但directional两臂`0/24`且completion`0/24`；strict=`131/400`、breadth5，
+  相对macro0 gained/lost=`16/19`。按门不续25、不补六臂、不扫weight/LR/WD。
+- [x] 退役当前Tangent recipe且保持解释边界：它控制了总半径但没有完成expert方向写入；由于
+  `|a_correct-1|≤.05`门未到，不把负结果扩大成expert-component假设整体无效。config/runtime已formal
+  non-pass后fail-closed。
+- [ ] 实现第36节matched no-update Expert-Flow Teacher Viability Audit：train24、同一logical B20/
+  action query/noise/time，比较step2000 expert、macro0、tangent10相对真实flow target的真实7维误差；
+  在macro0测CEFD/positive/completion/ranking对compiler/factor的gradient Gram与span residual。
+- [ ] audit用clean pushed/frozen commit、live双节点/quota preflight和最多6张空闲A40运行一次；保持B10+10、
+  0 update、0 rollout、0 held action、0长期cache。teacher须相对macro0和tangent在至少18/24 tasks及3 suites
+  更优，且CEFD gradient在两个block的existing-span residual ratio均`≥.25`，否则不实现CEFD。
+- [ ] audit两门都过才以CEFD替换completion+tube并保留positive functional+bounded video ranking；任一门
+  不过则转structured update parameterization，不做loss weight profile或正式CEFD训练。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

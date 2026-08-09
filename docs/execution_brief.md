@@ -15,54 +15,57 @@ expert component也在24/24 tasks上升；但macro10→25的expert-orthogonal no
 component增量`.228`。所以ECP的实现和机制生效，但held closed-loop明显退化；按预注册
 不续50/100、不扫权重、不补六臂。
 
-当前唯一活动方法是第35节**v6 Condition-Local Dynamic Expert Tangent Tube**：同一
-exact language+同一actual condition video/order同时产生frozen v6 anchor和当前Writer输出，correct与
-当前negative都以soft quadratic tube惩罚expert-orthogonal增量，从而把缺失的expert分量与
-expert-orthogonal drift隔离。这一轮不改encoder/Core/Procedure/compiler topology、functional query、
-negative schedule或deployment input，也不允许static/language bypass、B-only residual、第二套部署LoRA、
-expert-bank deployment或global scale。CPU oracle、合同、clean push和frozen worktree完成前不启动GPU。
-其中canonical实现、exact-D/gauge/gradient oracle、same-memory anchor、trainable-only resume/deployment
-边界、三family分析和seal后formal-lineage guard已通过全仓`277 passed`、compileall与diff-check。clean
-frozen`2616773`的六卡
-gradient/whole-macro profile已exit0并由assembler封存，projection/ranking唯一权重=
-`.00686480847114155/.010514453175708578`。strict后继`c1bdcae`的fresh0→1、same-root
-exact-resume1→3和independent contiguous0→3也已全部完成；两轨step wall=`62.341/61.959s`，0
-OOM/nonfinite，checkpoint与scientific metrics通过artifact assembler。resume evidence已原样写入v3
-config并解锁formal。macro3尚未通过tube机制门且发生gradient clip，因此下一步仍只允许已注册的
-fresh0→10和立即strict correct400，不能把工程seal写成方法有效。
+第35节**v6 Condition-Local Dynamic Expert Tangent Tube**也已正式完成并退役。clean frozen
+`b308941`的fresh0→10自然exit0；10 macros总step wall=`207.444s`、input wait=`.265s`、peak
+allocated/reserved=`43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite。macro10的correct/
+negative relative-anchor tube中位=`.01390/.01408`，但directional ratio中位=`108.93/126.88`、
+两臂均`0/24` tasks通过`≤1`；task median `|a_correct-1|=.25229`且completion为`0/24`。
+共享Writer因此学到的是“小而几乎全正交的更新”，不是所设计的expert方向修正。
+
+紧接着同一frozen checkpoint的one-shot correct400自然完成：`131/400`、correct80=`27/80`、breadth5、
+per-task=`0/3/46/31/0/40/11/0`、per-suite=`3/77/40/11`。相对同schedule macro0=`134`严格
+paired gained/lost=`16/19`、churn35、net`-3`、McNemar `p=.735879`。所以不续25、不补六臂、
+不扫tube weight/LR/WD；current config/runtime已封为formal non-pass并fail-closed。该结果只淘汰当前
+tangent recipe/window，不能把未达到completion的实验扩大解释为expert-component假设整体无效。
+
+当前没有运行中的EMBER GPU任务，也没有已授权继续训练的Writer。第36节matched Expert-Flow Teacher
+Viability Audit是唯一下一动作：不更新参数，在完全相同的train24 B20/noise/time上比较step2000 task
+expert、historical macro0和tangent macro10的PI05 flow velocity相对真实`u_t`的误差，并比较候选
+distillation gradient与positive/completion/ranking的norm/cosine。只有task expert在大多数tasks上是更好
+teacher且gradient非冗余，才允许实现CEFD；否则转向直接约束shared update geometry的结构候选。
 
 当前操作顺序：
 
-1. v6-prior 0/10/25/50与ECP 0→10→25的formal、strict、机制诊断和GPU释放已封存；
-2. 用ECP的“直接方向正确、闭环反向、正交漂移主导”证据完成dynamic baseline tangent数学设计；
-3. 与历史SFT-Anchored Tangent-Basis、短LR/weight decay、decoder freeze和behavior distillation去重；
-4. 在唯一canonical ECP vertical path上原位替换objective/schema，先用CPU dense oracle验证
-   dynamic anchor、gauge-invariant residual、gradient、information wall和exact-resume；
-5. clean pushed/frozen`2616773`已完成一次A40 gradient/throughput profile；strict后继`c1bdcae`已完成
-   fresh/resume/contiguous artifact seal，同memories的小decoder forward只使whole-macro wall相对ECP增加
-   约`5.4%`，不启用cache、不降batch/并行度；
-6. clean push当前seal后，formal仍从historical v6 macro400 fresh开始，先到10并立即跑同schedule
-   strict correct400；只有裁决checkpoint同时达到task median `|a_correct-1|≤.05`和两臂tube门、却仍不超
-   macro0，才干净证伪expert-component completion并转policy-output behavior distillation；否则只证伪
-   当前recipe/训练窗口。
+1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
+2. Tangent只解决了局部半径，没有解决共享decoder Jacobian把更新旋进expert方向的问题；strict同时降到
+   `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
+3. 先完成matched flow-teacher audit；该诊断不得更新参数、不得读取validation/test action、不得改变
+   deployment graph，也不得因task9 expert closed-loop为0而删除或降权；
+4. audit若通过，首版CEFD只增加correct arm的一次stop-gradient expert PI05 flow forward，复用student
+   positive forward和同一B20/noise/time，只比较真实7维action；negative仍保持现有bounded ranking；
+5. audit若失败，不实现CEFD，转向能在输出层直接保证condition-specific structured update的单变量设计；
+6. 任一新候选仍须clean push/frozen、live preflight、吞吐profile、短正式训练和及时strict correct400，
+   不从Tangent checkpoint resume。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot v6 Condition-Local Dynamic Expert Tangent Tube Writer（ECP已退役）。
+- 方法：one-shot Video-Conditioned Expert-Manifold总路线；whole-LoRA/ECP/Tangent均已退役，当前只执行
+  matched Expert-Flow Teacher Viability Audit，尚无active正式训练方法。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
 - 输出：一套完整38-target public rank-16 LoRA；Writer在rollout前运行一次后释放。
 - source policy、normalization、split、frame stride5、LIBERO preprocessing与paired evaluator固定。
-- historical v6-fast macro400只作load-only Writer初始化；冻结encoder/Core/transition/Procedure，只训练
-  compiler+factor heads；全新optimizer/scheduler/sampler/RNG。
+- historical v6-fast macro400仍是下一候选唯一允许的load-only Writer初始化；若audit授权CEFD，冻结
+  encoder/Core/transition/Procedure，只训练compiler+factor heads，并创建全新optimizer/scheduler/sampler/RNG。
 - train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
   all-reduce。
-- 新objective只能在同video frozen-v6 effective BA baseline上限制增量，同时保留positive
-  functional和bounded temporal/wrong ranking；不含global norm attraction、whole-LoRA cosine、static anchor
-  或parameter-distance代理。auxiliary weight只由预注册train24 gradient profile选择一次，不做held sweep。
+- 不恢复global norm attraction、whole-LoRA cosine、ECP completion、Tangent dynamic anchor或parameter-
+  distance代理。CEFD若获授权，只能蒸馏同B20/noise/time上的task-expert PI05 flow velocity，同时保留
+  positive functional和bounded video ranking；auxiliary weight只由一次train24 gradient profile选择，
+  不做held sweep。
 - step2000 task experts仅作train supervision，不进入deployment或held选择。
 
 ## 2. Throughput-first runtime contract
@@ -101,9 +104,10 @@ GPU前一次性要求：
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
-- config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux weights和resume
-  profile没有被复用；新v3 gradient与resume evidence已从各自clean frozen lineage重新实证并原样封存，
-  formal现已解锁。任何status-only、旧family evidence或stale config仍fail-closed。
+- retired Tangent config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux
+  weights和resume profile没有被复用；v3 gradient与resume evidence曾从各自clean frozen lineage重新
+  实证并原样封存，formal0→10完成后已切为non-pass并关闭runtime。任何status-only、旧family evidence或
+  stale config仍fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -195,7 +199,7 @@ reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐�
 这些证据只说明B10/deferred-NCCL/checkpoint比较器曾按合同工作；不能解锁v3 formal，也不构成
 closed-loop性能结论。
 
-### 5.2 Current tangent-tube gradient and resume seal
+### 5.2 Historical tangent-tube gradient and resume seal
 
 clean pushed/frozen`2616773`已完成一次macro49 gradient/whole-macro profile：root=
 `runs/outputs/pi05_v6_tangent_tube_gradient_profile_macro49_r6_lb20_mb10_2616773_20260809`，24 tasks、
@@ -221,7 +225,8 @@ metrics最大tolerance ratio=`.67790`。evidence已原样写回v3 config，Secti
 `a_correct=.71744`，task median `|a-1|≈.2799`，correct/negative orthogonal-relative-anchor median=
 `.03158/.03173`且仅`10/24`、`6/24`低于`.03`，orthogonal-to-direction median约`60.98/61.2`，
 `gradient_norm_before_clip≈1.45294>1`。quadratic tube在anchor处一阶梯度为零，首步正交漂移后才产生
-回锚力，这是formal0→10必须直接证伪的结构风险；当前不改权重、LR、B10或架构。
+回锚力，这是当时formal0→10必须直接证伪的结构风险。该formal和strict已完成，最新裁决见第0节与
+第6.4节；不能从本段恢复训练。
 
 ## 6. Formal training and truthful evaluation
 
@@ -271,7 +276,27 @@ macro10前立即abort；普通loss波动、三步机制恶化或全task同相振
 
 LoRA健康但分数低仍是失败；LoRA近rank1但分数提高不能仅因“不像SFT”淘汰。
 
+### 6.4 Tangent formal结果与关闭状态
+
+第6.1--6.3的预注册流程已完整执行。formal root、strict root和historical transition分别为：
+
+```text
+runs/outputs/pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810
+runs/outputs/pi05_v6_tangent_tube_correct400_noreplacement_seed7_method_macro0010_b308941_20260810
+runs/outputs/pi05_v6_tangent_tube_macro0010_historical_baseline_transition_b308941_20260810
+```
+
+macro10 correct=`131`落在条件续训区间，但breadth仅5、directional两臂`0/24`且completion`0/24`，
+所以明确不满足续25门。完整六臂只在`≥144`触发，本点不运行。current config只保留formal result并
+fail-closed；所有Section 6 launch语句现为已执行provenance，不是活动命令。
+
 ## 7. Post-result diagnosis and next single variable
+
+当前最早接口已定位到`LoRA cotangent -> shared decoder/Adam -> next-condition output motion`；但在改结构
+前必须先判定expert policy flow是否提供现有positive functional之外的新监督。第36节matched audit是当前
+唯一动作：零update、零rollout，train24同B20/noise/time比较expert/macro0/tangent10 flow error，并计算
+CEFD gradient相对positive/completion/ranking span的残差。teacher质量至少18/24 tasks、3 suites更优，且
+compiler/factor残差比例都`≥.25`才授权CEFD。
 
 按以下顺序定位最早接口：
 
@@ -299,8 +324,8 @@ LoRA健康但分数低仍是失败；LoRA近rank1但分数提高不能仅因“�
 ## 8. Evidence, Git, and retention
 
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
-- current config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`。
-- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第35节。
+- retired result config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`，formal runtime已关闭。
+- current design：`docs/action_forecast_writer_video_expert_manifold_design.md`第36节。
 - current training/eval entry：`scripts/train_v6_prior_writer.py`、`scripts/evaluate_pi05.py`。
 - formal保留config、command/env、GPU topology、checkpoint schema、raw rows、aggregate、completion和必要
   mechanism analysis；不提交checkpoints/cache/data/binaries。

@@ -24,6 +24,7 @@ from ember.expert_manifold.v6_prior_contract import (
     _expected_checkpoint_contract,
     _expected_cursor_contract,
     _artifact_task_records_match,
+    _formal_result_matches,
     _gradient_profile_evidence_matches,
     _resume_profile_evidence_matches,
     assemble_v6_prior_gradient_profile_evidence,
@@ -419,6 +420,7 @@ def _synthetic_run_contract(
     config["formal_run"]["status"] = (
         "blocked_until_live_a40_resume_profile_evidence"
     )
+    config["formal_run"]["formal_result"] = None
     config_path, frozen_commit = _commit_frozen_config(
         tmp_path / "gradient-frozen",
         config,
@@ -571,13 +573,14 @@ def _write_synthetic_gradient_artifacts(root: Path, contract: dict) -> dict:
     return profile
 
 
-def test_v6_prior_config_seals_resume_evidence_and_opens_only_formal() -> None:
+def test_v6_prior_config_seals_formal_nonpass_and_blocks_all_runtime() -> None:
     config = load_v6_prior_config(CONFIG)
     with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
         runtime_for_mode(config, "gradient-profile")
     with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
         runtime_for_mode(config, "profile")
-    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50))
+    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
+        runtime_for_mode(config, "formal")
     assert _resume_profile_evidence_matches(
         config["profile_run"]["artifact_evidence"]
     )
@@ -591,6 +594,10 @@ def test_v6_prior_config_seals_resume_evidence_and_opens_only_formal() -> None:
     assert config["initialization"]["resume_writer_load_scope"] == (
         "trainable_compiler_and_factor_heads_only"
     )
+    assert _formal_result_matches(config["formal_run"]["formal_result"])
+    assert not config["formal_run"]["formal_result"]["decision"][
+        "continue_to_macro25"
+    ]
 
 
 def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
@@ -673,6 +680,7 @@ def test_v6_prior_config_requires_artifact_lineage_for_each_unlock(
     config["formal_run"]["status"] = (
         "blocked_until_live_a40_resume_profile_evidence"
     )
+    config["formal_run"]["formal_result"] = None
     path = tmp_path / "gradient-sealed.json"
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_v6_prior_config(path)["profile_run"]["status"] == (
@@ -928,6 +936,7 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
     profile_config["formal_run"]["status"] = (
         "blocked_until_live_a40_resume_profile_evidence"
     )
+    profile_config["formal_run"]["formal_result"] = None
     profile_config_path, profile_commit = _commit_frozen_config(
         tmp_path / "profile-frozen",
         profile_config,

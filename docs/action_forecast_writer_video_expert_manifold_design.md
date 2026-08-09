@@ -1,8 +1,10 @@
 # Video-Conditioned Expert-Manifold Topological Writer
 
-状态：2026-08-07建立的当前唯一活动设计authority。它从同一frozen source policy和
-functional identity fresh构建，不加载K4 Phase-Aligned、v6或任一历史Writer checkpoint。
-K4 Phase-Aligned只由Git、正式artifact和其负裁决文档保留。
+状态：本文件是Video-Conditioned Expert-Manifold总路线的当前设计authority。第1--32节记录从
+identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
+Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。2026-08-10唯一活动设计是第36节
+matched Expert-Flow Teacher Viability Audit；它是零更新诊断，尚未授权CEFD正式训练。K4、online expert
+bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -1838,3 +1840,139 @@ completion与ranking梯度可以先把共享decoder带入expert-orthogonal方向
 单变量，clean seal后只fresh到macro10并立即跑strict correct400，同时检查最近三步tube、projection、
 clip和task-level pass counts。macro10若仍不满足第35.5节tube门，就算correct落在`130--134`也不得续25；
 不在看到该证据前扫tube weight、改LR/WD、换硬retraction或转新架构。
+
+### 35.9 formal0→10、strict non-pass与退役裁决（2026-08-10）
+
+clean pushed/frozen`b308941`在live比较`gpu01/gpu02`与`/data1` quota后，只使用当时空闲的
+`gpu01:0,1,2|4,5,7`，按B10+10、logical B20、workers2、3+3 NUMA、Ring/Simple、
+`NCCL_P2P_DISABLE=1`和deferred-NCCL完成fresh0→10。formal root为：
+
+```text
+runs/outputs/pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810
+```
+
+10 metrics、macro10 checkpoint和completion完整；总step wall=`207.443583s`、input wait=
+`.265486s`、peak allocated/reserved=`43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite，
+只有macro3一次gradient clip。macro10的机制证据是：
+
+- correct projection coefficient aggregate=`.7372456`，task median `|a_correct-1|=.2522947`，
+  `0/24` tasks通过completion `.05`门；
+- correct/negative `||Delta_perp||/||G0||` task median=`.0139001/.0140787`，两臂均`24/24`
+  tasks通过`.03`门；
+- correct/negative `||Delta_perp||/(|d| ||E||+epsilon)` task median=
+  `108.926/126.883`，两臂均`0/24` tasks通过`≤1`门；
+- student/anchor task coefficient correlation约`.999`。因此soft tube把总运动压小，却没有把实际运动
+  旋进expert方向；绝大多数增量能量仍在目标正交空间。
+
+同一macro10 checkpoint随后完成one-shot correct400：
+
+```text
+runs/outputs/pi05_v6_tangent_tube_correct400_noreplacement_seed7_method_macro0010_b308941_20260810
+```
+
+72/72 shards、400/400 rows自然exit0，得分`131/400`、correct80=`27/80`、breadth5、per-task=
+`0/3/46/31/0/40/11/0`、per-suite=`3/77/40/11`，wall=`858.578s`、吞吐=
+`.465887 rollout/s`。与同schedule macro0=`134`的exact state/RNG/language/video pairing保存在：
+
+```text
+runs/outputs/pi05_v6_tangent_tube_macro0010_historical_baseline_transition_b308941_20260810/analysis.json
+```
+
+gained/lost=`16/19`、churn35、net`-3`、McNemar exact two-sided `p=.735879`，breadth从6降到5。
+与native-sealed ECP10=`133`的same-video aggregate比较也是gained/lost=`19/21`、net`-2`。correct80
+相对macro0反而`26→27`，再次证明prefix不能替代full400。
+
+按第35.5节预注册门，当前recipe停止：不续macro25、不扫tube/projection weight、LR或WD，不补六臂，
+也不把hard retraction作为同方法补丁。该结果淘汰的是“当前soft tangent recipe在0→10窗口内能完成
+expert方向写入”这一复合假设；由于completion始终`0/24`，不能扩大成“expert component已完整写入但
+policy behavior无效”，更不能否定全部Expert-Manifold。formal config/runtime置为
+`retired_after_macro10_strict_closed_loop_nonpass`并fail-closed；历史实现只由Git与retained artifacts保存。
+
+第一失效接口应写为：
+
+```text
+LoRA-output cotangent q
+  -> shared decoder J^T q
+  -> Adam preconditioner P
+  -> next-condition output motion J' P J^T q
+```
+
+提高soft tube权重只能改变cotangent幅度，并不能保证`J' P J^T`保持expert方向；本次半径成功、方向失败
+正是这一结构错位的实证。`G=G0+s(x)E_t`式hard tangent/retraction又会在部署时需要train expert或scalar
+route，违反video-only dynamic value，并重复SFT-Anchored Tangent-Basis与online expert-bank的负边界，
+因此不进入候选。
+
+## 36. Matched Expert-Flow Teacher Viability Audit
+
+### 36.1 为什么先audit而不直接实现CEFD
+
+task expert参数是从真实task actions得到的privileged train24监督，但“其参数更像SFT LoRA”不等于“它在
+当前跨episode B20 states上给出更好的policy flow teacher”。现有positive functional本来就让generated
+LoRA预测真实PI05 flow target；若expert velocity没有更低误差，或CEFD gradient只是positive gradient的
+近共线重标度，增加一次完整expert PI05 forward只会降低吞吐并重复已有监督。
+
+因此当前唯一动作是零参数更新、零rollout的matched audit。它不授权新Writer、不改变部署图，不读取
+validation/test actions，不按task-expert closed-loop outcome筛task；step2000 task9即使direct rollout为0
+也必须等权保留。
+
+### 36.2 固定panel与量
+
+使用train24 task-complete panel、每task logical B20跨episodeaction queries、现有B10+10 physical slices。
+对每条query复用完全相同的processed observation/action、keyed Gaussian noise和Beta time，计算真实7维：
+
+```text
+u_t  = epsilon - action
+v_E  = frozen step2000 task-expert policy velocity
+v_0  = historical v6 macro0 generated-LoRA policy velocity
+v_10 = retired tangent macro10 generated-LoRA policy velocity
+
+L_E  = mean ||v_E  - u_t||^2
+L_0  = mean ||v_0  - u_t||^2
+L_10 = mean ||v_10 - u_t||^2
+```
+
+只比较真实7维action，padding维不得稀释或主导误差。expert forward用`no_grad`且在每个slice后立即释放
+activation；macro0 student positive forward同时暴露`v_0`，不得为捕获同一tensor重复student forward。
+不做10-step differentiable action distillation、不建长期cache、不扫batch或权重。
+
+在macro0 student处再定义只用于诊断的：
+
+```text
+L_CEFD = mean ||v_0 - stopgrad(v_E)||^2
+```
+
+分别得到CEFD、positive functional、旧completion和ranking在compiler与factor trainables上的task-complete
+global-mean gradient。用小型Gram系统把CEFD gradient投影到现有三项gradient span，记录norm、pairwise
+cosine和`||g_CEFD - Projection_span(g_CEFD)|| / ||g_CEFD||`；不保存逐参数gradient dump，不在热路径逐tensor
+同步。旧completion/ranking只作历史冗余诊断，不因此恢复为新训练objective。
+
+### 36.3 预注册授权门
+
+只有同时满足以下条件，才授权Cross-Episode Expert Flow Distillation（CEFD）：
+
+1. step2000 expert相对macro0和tangent10都在至少`18/24` tasks、至少3个suite降低matched真实flow
+   error；同时报告aggregate/per-task/per-suite，不按outcome删task；
+2. CEFD gradient在compiler与factor均finite、nonzero；相对`{positive, completion, ranking}` span的残差
+   norm比例两block均`≥.25`，且不能只是cosine近1的常数重标度；
+3. audit完整覆盖train24×B20=`480` queries、0 forbidden reads、0 parameter update、0 OOM/nonfinite，
+   保持logical B20和六卡吞吐合同。
+
+任一门不通过就以低成本否决CEFD，不做loss weight profile或正式训练；下一候选转向直接改变shared
+update parameterization，使condition-specific output motion受结构保证，而不是继续叠加parameter-space
+auxiliary。两门都通过时，首版CEFD只做一个科学变量：以stop-gradient expert velocity distillation替换
+ECP completion与Tangent tube，保留positive functional和既有bounded video ranking。teacher只存在于
+train24训练；部署仍是exact language加恰好一条action-hidden video、一次生成一套完整LoRA。
+
+### 36.4 engineering和执行边界
+
+实现必须复用现有`writer/functional.py`的PI05 loss-only、keyed noise/time和microbatch owner，并在
+`v6_prior_training.py`/`v6_prior_step.py`现有vertical path增加audit mode；不新增runner、module、第二套
+functional framework或修改site-packages。若需要捕获`action_out_proj`输出，hook必须严格scoped并有CPU
+oracle证明只捕获当前functional call。Tangent正式runtime保持fail-closed；audit使用独立schema/root，
+不能resume Tangent optimizer或把macro10当新方法warm-start。
+
+在代码合同通过后，使用clean pushed commit的frozen worktree；launch前重新live检查双节点GPU、owner、
+UUID、telemetry、进程与`/data1` quota。最多6张空闲A40，保持
+`NCCL_P2P_DISABLE=1`、NUMA physical/local rank、Ring/Simple和deferred-NCCL。该root是retained scientific
+diagnostic，必须保留run contract、逐task误差、gradient Gram/残差、completion和明确pass/fail；但不跑
+rollout、不生成SHA/MD5、不做与授权门无关的大量复核。

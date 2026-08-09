@@ -385,6 +385,71 @@ def _optimization_matches(value: Mapping[str, Any]) -> bool:
     )
 
 
+def _formal_result_matches(value: Mapping[str, Any]) -> bool:
+    return value == {
+        "schema_version": "ember_pi05_v6_tangent_tube_formal_result_v1",
+        "git_commit": "b3089417b6b3df6f22cf3dc296015a80ff228b7a",
+        "training_root": (
+            "/data1/user/ymdai/projects/EMBER/runs/outputs/"
+            "pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810"
+        ),
+        "completed_macro": 10,
+        "training_exit": 0,
+        "training_metrics_rows": 10,
+        "training_step_seconds": 207.44358306587674,
+        "training_input_wait_seconds": 0.26548600691603497,
+        "mechanism": {
+            "correct_projection_coefficient": 0.7372455721100172,
+            "correct_projection_absolute_error_task_median": 0.25229471921920776,
+            "correct_projection_toward_one_tasks": 22,
+            "correct_relative_tube_task_median": 0.013900110963732004,
+            "negative_relative_tube_task_median": 0.014078664593398571,
+            "correct_directional_ratio_task_median": 108.92596435546875,
+            "negative_directional_ratio_task_median": 126.88290405273438,
+            "correct_directional_gate_pass_tasks": 0,
+            "negative_directional_gate_pass_tasks": 0,
+        },
+        "strict_correct400": {
+            "root": (
+                "/data1/user/ymdai/projects/EMBER/runs/outputs/"
+                "pi05_v6_tangent_tube_correct400_noreplacement_seed7_"
+                "method_macro0010_b308941_20260810"
+            ),
+            "exit": 0,
+            "episodes": 400,
+            "successes": 131,
+            "correct80_successes": 27,
+            "nonzero_task_breadth": 5,
+            "per_task_successes": [0, 3, 46, 31, 0, 40, 11, 0],
+            "per_suite_successes": [3, 77, 40, 11],
+            "panel_active_wall_seconds": 858.5777900218964,
+            "effective_rollouts_per_second": 0.4658867311135532,
+        },
+        "historical_baseline_transition": {
+            "analysis": (
+                "/data1/user/ymdai/projects/EMBER/runs/outputs/"
+                "pi05_v6_tangent_tube_macro0010_historical_baseline_"
+                "transition_b308941_20260810/analysis.json"
+            ),
+            "baseline_successes": 134,
+            "gained": 16,
+            "lost": 19,
+            "churn": 35,
+            "net": -3,
+            "mcnemar_exact_two_sided_p": 0.7358788008568808,
+        },
+        "decision": {
+            "continue_to_macro25": False,
+            "full_six_arm": False,
+            "reason": (
+                "strict_correct_below_macro0_breadth_down_and_directional_"
+                "tangent_gate_failed"
+            ),
+        },
+        "content_hash_policy": "disabled_by_owner",
+    }
+
+
 def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
     gradient = config.get("gradient_profile", {})
     profile = config.get("profile_run", {})
@@ -434,7 +499,14 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
         in {
             "blocked_until_live_a40_resume_profile_evidence",
             "sealed_from_live_a40_resume_profile_evidence",
+            "retired_after_macro10_strict_closed_loop_nonpass",
         }
+        and (
+            _formal_result_matches(formal.get("formal_result", {}))
+            if formal.get("status")
+            == "retired_after_macro10_strict_closed_loop_nonpass"
+            else formal.get("formal_result") is None
+        )
         and int(formal.get("expected_world_size", -1)) == 6
         and int(formal.get("tasks_per_rank", -1)) == 4
         and int(formal.get("total_macros", -1)) == 50
@@ -2268,6 +2340,13 @@ def _state_machine_matches(config: Mapping[str, Any]) -> bool:
             "sealed_from_live_train24_gradient_profile",
             "sealed_from_live_a40_resume_profile_evidence",
             "sealed_from_live_a40_resume_profile_evidence",
+        ),
+        (
+            "sealed_from_unchanged_v6_deployment_graph",
+            "sealed_from_live_train24_gradient_profile",
+            "sealed_from_live_train24_gradient_profile",
+            "sealed_from_live_a40_resume_profile_evidence",
+            "retired_after_macro10_strict_closed_loop_nonpass",
         ),
     }
 

@@ -1,5 +1,27 @@
 # EMBER Progress Ledger
 
+## Condition-Local Tangent Tube formal与strict裁决完成（2026-08-10）
+
+- current seal的clean pushed commit=`b308941`；独立formal branch/worktree绑定该commit。launch前live比较
+  `gpu01/gpu02`和`/data1` quota，只选择当时空闲`gpu01:0,1,2|4,5,7`，未触碰GPU3及gpu02他人进程。
+- formal root=`runs/outputs/pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810`完成fresh0→10，
+  10 metrics、macro10 checkpoint、completion齐全。总step wall/input wait=`207.4436/.2655s`，peak
+  allocated/reserved=`43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite；结束后六卡自然释放。
+- macro10机制：correct/negative tube中位=`.013900/.014079`、两臂`24/24`过`.03`；direction ratio=
+  `108.926/126.883`、两臂`0/24`过`≤1`；completion error中位`.252295`、`0/24`过`.05`。半径约束
+  生效，但expert方向写入失败。
+- strict root=`runs/outputs/pi05_v6_tangent_tube_correct400_noreplacement_seed7_method_macro0010_b308941_20260810`
+  自然exit0，72/72 shards、400 rows，得分`131`、correct80=`27`、breadth5、per-task=
+  `0/3/46/31/0/40/11/0`。wall=`858.578s`、吞吐`.465887 rollout/s`，六卡再次自然释放。
+- exact historical transition root=
+  `runs/outputs/pi05_v6_tangent_tube_macro0010_historical_baseline_transition_b308941_20260810`：相对macro0
+  `134`为gained/lost=`16/19`、churn35、net`-3`、`p=.735879`。按预注册门不续25、不补六臂、不扫
+  weight/LR/WD；Tangent runtime现formal non-pass后fail-closed。
+- 并行历史/结构审计共同收敛到第36节matched no-update Expert-Flow Teacher Viability Audit。下一步先在
+  同一train24 B20/noise/time上验证step2000 expert是否真是更好且非冗余的policy-flow teacher；两门同时
+  通过才实现CEFD，否则转structured update parameterization。formal non-pass config/runtime的focused=
+  `25 passed`、全仓=`277 passed in 25.36s`，compileall与diff-check通过；当前无EMBER GPU进程。
+
 ## Condition-Local Tangent Tube exact-resume seal（2026-08-10）
 
 - clean pushed/frozen`c1bdcae`、新v3 config在live比较`gpu01/gpu02`与`/data1` quota后，只使用空闲

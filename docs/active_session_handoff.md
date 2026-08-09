@@ -13,6 +13,20 @@
   retained formal GPU工作必须来自clean pushed commit的frozen worktree。
 - 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，只用空闲A40、合计最多6张，
   不干扰他人；多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
+- **2026-08-10最新裁决**：第35节Tangent Tube已从clean frozen`b308941`完成formal fresh0→10和
+  同一one-shot correct400。训练10 macros总step wall=`207.444s`、input wait=`.265s`、peak
+  allocated/reserved=`43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite。macro10两臂
+  relative-anchor tube中位=`.01390/.01408`，但directional ratio中位=`108.93/126.88`、两臂
+  `0/24` tasks过`≤1`，completion error task median=`.25229`且`0/24` tasks过`.05`。
+- strict correct400=`131`、correct80=`27`、breadth5、per-task=`0/3/46/31/0/40/11/0`、per-suite=
+  `3/77/40/11`。相对同schedule macro0=`134`严格paired gained/lost=`16/19`、churn35、net`-3`、
+  `p=.735879`；所以不续25、不补六臂、不扫weight/LR/WD。当前config/runtime已封为formal non-pass并
+  fail-closed。该证据淘汰当前tangent recipe/window，但completion从未成立，不能宣称expert-component
+  假设已被干净证伪。
+- 当前没有已授权继续训练的Writer。唯一下一科学动作是第36节matched Expert-Flow Teacher Viability
+  Audit：不更新参数，在相同train24 B20/noise/time上比较step2000 task expert、historical macro0与
+  tangent macro10的PI05 flow velocity和梯度关系。只有expert在大多数tasks上更接近真实flow target，且
+  expert-distillation gradient不是现有positive/completion/ranking的常数缩放或同向重复，才授权CEFD。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -111,12 +125,12 @@ macro1/3的cursor、checkpoint contract、6-rank RNG、scheduler/AMP语义相等
 同时置为`sealed_from_live_a40_resume_profile_evidence`，`runtime_for_mode(..., formal)`返回
 `(50,(10,25,50))`；profile checkpoint永久不得进入formal。
 
-这仍不是性能或tube机制通过。三步pre-update轨迹中，macro1→2有21/24 tasks把`a_correct`推向1，
+以下是formal前profile阶段的历史判断，不再覆盖上面的最新裁决。三步pre-update轨迹中，macro1→2有21/24 tasks把`a_correct`推向1，
 但macro1→3为0/24；macro3 correct/negative的orthogonal-relative-anchor task median约
 `.03158/.03173`，仅`10/24`和`6/24`低于`.03`，orthogonal-to-direction中位约`60.98/61.2`。
 这符合“quadratic tube在anchor处一阶梯度为0、首步可能先发生正交漂移”的结构风险，也说明不能把
-resume seal写成mechanism pass。当前没有EMBER GPU进程；下一步保持已注册recipe只fresh到macro10并
-立即跑paired correct400，观察tube是否在有限步内回锚，再按门停止或续到25。
+resume seal写成mechanism pass。随后formal0→10与paired correct400已经按该门完成，结果如本节顶部；
+当前recipe已停止，不能从这段历史表述恢复macro25。
 
 ## 2. EMBER problem and information wall
 
@@ -254,7 +268,7 @@ Experts不解决：
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
 | v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
 | v6 Expert-Component Projection | `134→133→120` | `a_correct`与component按构造上升，修复旧径向收缩 | 正交漂移继续增大，macro25 paired net`-14`、`p=.038477` | 退役；不续、不扫权重 |
-| current Condition-Local Tangent Tube | CPU`277 passed`；gradient与resume profile均sealed，无closed-loop成绩 | macro0双臂tube exact zero；resume语义等价；B10+10在线anchor仅约`5.4%` wall开销 | macro3 tube median约`.0316/.0317`、direction ratio约`61×`并clip，尚未证明后续回锚或保住143起点 | 当前唯一活动候选；clean formal seal后只训0→10并立即strict400 |
+| Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂；当前做matched flow-teacher audit |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 

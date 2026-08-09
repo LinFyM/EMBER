@@ -14,30 +14,26 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   不允许多个write-capable agents重叠写同一worktree。
 - 当前唯一主写分支是`codex/bci-continuation`；正式训练或评测使用该分支clean pushed commit的
   frozen worktree。历史分支和Git只作provenance，不恢复并行活动实现。
-- 当前唯一研究方法是one-shot v6 Condition-Local Dynamic Expert Tangent Tube Writer，属于
-  Video-Conditioned Expert-Manifold总体路线；完整authority是
-  `docs/action_forecast_writer_video_expert_manifold_design.md`第35节。第33节whole-LoRA与第34节
-  Expert-Component Projection（ECP）均已由正式closed-loop曲线负裁决并退役，不能继续训练或扫权重。
+- 当前没有已授权继续训练的Writer候选。第33节whole-LoRA、第34节Expert-Component Projection（ECP）
+  和第35节Condition-Local Dynamic Expert Tangent Tube均已由正式closed-loop证据裁决并退役，不能续训、
+  扫权重或恢复并行活动实现。当前唯一focused科学动作是第36节的matched Expert-Flow Teacher Viability
+  Audit：它是不更新参数的train24诊断，不是新部署方法；只有该门证明task expert在相同B20/noise/time上
+  是更好的policy-flow teacher且提供非冗余梯度，才授权Cross-Episode Expert Flow Distillation（CEFD）。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
-- 当前没有运行中的EMBER GPU任务。ECP clean frozen`450e688`已完成formal0→10→25：strict
-  correct=`133/120`，macro25相对同schedule macro0=`134`的gained/lost=`13/27`、`p=.038477`；虽然
-  `a_correct`和expert component按目标上升，closed-loop反而显著下降且expert-orthogonal drift主导，
-  所以不续50/100、不补六臂。当前第35节在同一canonical path原位加入same-input frozen-v6 dynamic
-  decoder、correct/negative双臂effective tangent tube、新v3/v4/v7 family与trainable-only resume边界；
-  CPU oracle与seal后formal-lineage guard当前为全仓`277 passed`，compileall与diff-check已通过。
-  clean frozen`2616773`的六卡gradient/whole-macro profile自然exit0并给出唯一projection/ranking weights=
-  `.00686480847114155/.010514453175708578`。strict后继`c1bdcae`已在
-  `gpu01:0,1,2|4,5,7`完成fresh0→1、same-root exact-resume1→3和independent contiguous0→3；assembler
-  证明run contract、cursor、6-rank RNG、scheduler/AMP、600个Writer states和82个Adam moments语义等价，
-  Writer relative L2仅`1.1443e-6`，0 OOM/nonfinite，config已原样封存evidence并合法解锁formal。
-  三步同时暴露预注册科学风险：macro3 correct/negative orthogonal-relative-anchor中位约`.0316/.0317`，
-  directional ratio中位约`61`，尚未通过tube机制门；这不把工程profile冒充性能结论，也不提前放弃未到
-  macro10的recipe。下一步只允许clean push当前seal、创建formal frozen worktree，fresh0→10后立即跑
-  strict correct400并按`task_plan.md`的既定门裁决。
+- 当前没有运行中的EMBER GPU任务。clean frozen`b308941`的Tangent formal fresh0→10已自然exit0：
+  10 macros总step wall=`207.444s`、input wait=`.265s`、peak allocated/reserved=
+  `43,316,440,064/47,112,519,680` bytes，0 OOM/nonfinite，只有macro3一次clip。macro10的
+  correct/negative相对anchor正交半径中位=`.01390/.01408`，说明局部半径约束工作；但方向比中位=
+  `108.93/126.88`、两臂均`0/24` tasks通过`≤1`，task median `|a_correct-1|=.25229`且`0/24`
+  tasks通过completion门。随后同一one-shot correct400严格评测为`131/400`、breadth5、per-task=
+  `0/3/46/31/0/40/11/0`；相对同schedule macro0=`134`为gained/lost=`16/19`、churn35、net`-3`。
+  因而不续25、不补六臂、不扫tube weight/LR/WD；该结果淘汰当前tangent recipe/window，但由于completion
+  从未成立，不能写成对expert-component假设的干净证伪。代码/config已切为formal non-pass后fail-closed，
+  当前先封存证据，再执行matched flow-teacher audit决定是否值得实现CEFD。
 
 ## Mandatory reading
 
@@ -103,31 +99,28 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 - task experts及phase feature cache只可进入train24监督或历史分析，不能成为部署输入、held oracle、
   nearest-expert route或第二套LoRA。
 
-## Current method and training contract
+## Current scientific boundary and reusable training contract
 
-当前Writer从历史v6-fast macro400的600 tensors作load-only初始化。encoder、Semantic Core、visual
-transition和Causal Procedure共483 tensors、`7,060,992` parameters冻结；只训练compiler与factor
-heads共41 tensors、`3,714,304` parameters。旧optimizer、scheduler、sampler和RNG不得加载或冒充
-exact resume。
+当前没有可继续训练的active Writer。historical v6-fast macro400仍是下一候选的唯一允许load-only
+初始化；encoder、Semantic Core、visual transition和Causal Procedure共483 tensors、`7,060,992`
+parameters冻结，若audit授权CEFD，首版仍只训练compiler与factor heads共41 tensors、`3,714,304`
+parameters。旧Tangent/ECP optimizer、scheduler、sampler、RNG和checkpoint不得加载或冒充exact resume。
 
-训练保持：
+下一候选若获audit授权，继续保持：
 
 - train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
   跨episode独立action queries；先task内mean，再24-task等权并一次flat all-reduce。
-- correct positive functional loss + gauge-invariant effective`BA` expert projection coefficient
-  `a_correct→1` + bounded `a_correct-a_negative` ranking；另以historical v6对同一language、同一实际
-  video/frame order的输出为训练期dynamic baseline，只惩罚correct和当前negative增量中与task expert
-  正交的分量。不得再把generated global norm拉到expert norm，也不得把完整generated LoRA方向拉成
-  task expert。
+- correct positive functional loss与bounded video ranking；不得恢复whole-LoRA attraction、ECP completion
+  或Tangent Tube。CEFD若通过audit，只能把同一B20/noise/time上的step2000 task-expert PI05 flow velocity
+  作为stop-gradient train24 teacher，不匹配A/B、dense BA、norm、cosine、rank或部署时expert输出。
 - correct video与action queries错开episode；same-task不同video是共同positive分布，不作negative。
 - negative只重排真实输入frames或使用预封存cross-suite wrong mapping；不得最大化negative action
   error、无限放大LoRA或读取negative任务隐藏信息。
 - task experts统一使用step2000，不按task混合checkpoint；它们定义train-task policy-effective目标，
   不保证held泛化、视频顺序或same-task specificity。
-- dynamic anchor只复制冻结的macro0 compiler/factor heads，不进optimizer/checkpoint/deployment；resume
-  每次先从immutable historical warm-start重建anchor，再只把checkpoint中的student compiler/factor heads
-  载回。validation/test actions不产生梯度。formal checkpoint必须含Writer、optimizer、scheduler/scaler、
-  sampler/cursor、每rank RNG、counterfactual schedule和完整schema；fresh/exact-resume不可混用。
+- validation/test actions不产生梯度。formal checkpoint必须含Writer、optimizer、scheduler/scaler、
+  sampler/cursor、每rank RNG、counterfactual schedule和完整schema；fresh/exact-resume不可混用。Tangent
+  dynamic anchor及其auxiliary只由Git与retained artifacts保存，不进入下一活动runtime。
 
 禁止用scalar/global scale、confidence gate、B-only residual、static/language bypass、强制正交或rank
 diversity、multi-video、checkpoint fusion去救一个失败点。few-shot只有在one-shot跨video方差被严格定位为

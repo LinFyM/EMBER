@@ -27,22 +27,23 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 第34节ECP已完成formal0→10→25并退役：strict correct=`133/120`，macro25相对同schedule
   macro0=`134`的paired gained/lost=`13/27`、`p=.038477`。它成功把`a_correct`和expert component推高，
   却伴随更大的expert-orthogonal drift和显著closed-loop退化，因此不续50/100、不扫权重、不补六臂。
-- 当前唯一活动候选是第35节v6 Condition-Local Dynamic Expert Tangent Tube Writer：保持historical v6
-  初始化、冻结上游、one-shot输入、B20 functional和negative schedule；对correct及当前negative分别用
-  同一language/video/order的frozen-v6输出作dynamic baseline，只限制student增量的expert-orthogonal
-  分量。anchor仅训练期存在，部署仍只生成一套LoRA且不读取expert bank或feature cache。
-- 当前没有运行中的EMBER GPU进程。新canonical v3 config、双臂low-rank objective、training-only anchor、
-  trainable-only resume/deployment load、新评测family和CPU oracle已在同一vertical path通过全仓
-  `277 passed`、compileall和diff-check。clean frozen`2616773`的六卡gradient/whole-macro profile给出唯一
-  projection/ranking weights=`.00686480847114155/.010514453175708578`；strict后继`c1bdcae`随后完成
-  fresh0→1、exact-resume1→3和independent contiguous0→3。两轨3-step wall=`62.341/61.959s`，peak
-  allocated/reserved=`43.316/47.138GB`，0 OOM/nonfinite；600-state Writer、82个Adam moments、cursor和
-  6-rank RNG全部通过assembler，macro3 Writer relative L2仅`1.1443e-6`。v3 config现已封存resume
-  evidence并解锁formal；profile checkpoint永久不用作formal warm-start。
-- 三步profile只证明工程连续性，并给出一个需要macro10裁决的风险：macro2的21/24 tasks曾把
-  `a_correct`推向1，但macro3变为0/24；macro3 correct/negative的orthogonal-relative-anchor task median
-  约`.0316/.0317`、orthogonal-to-direction约`61×`，尚未通过预注册tube门。下一步保持原recipe fresh
-  0→10并立即跑strict correct400，不能用这三步内部数值提前宣告有效或无效，也不因此扫权重或降吞吐。
+- 第35节v6 Condition-Local Dynamic Expert Tangent Tube也已完成正式裁决并退役。clean frozen
+  `b308941`的fresh0→10自然exit0，10 macros总step wall=`207.444s`、input wait=`.265s`、peak
+  allocated/reserved=`43.316/47.113GB`，0 OOM/nonfinite。macro10 correct/negative的
+  `||Delta_perp||/||G0||`中位=`.01390/.01408`，说明半径受控；但方向比中位=
+  `108.93/126.88`且两臂`0/24` tasks过门，task median `|a_correct-1|=.25229`，completion同样
+  `0/24`。它主要压小更新，没有把更新转进expert方向。
+- macro10 one-shot strict correct400=`131/400`、correct80=`27/80`、breadth5，per-task=
+  `0/3/46/31/0/40/11/0`、per-suite=`3/77/40/11`。相对同schedule macro0=`134`的精确
+  gained/lost=`16/19`、churn35、net`-3`；相对ECP10=`133`为`19/21`、net`-2`。因此不续25、
+  不补六臂、不扫tube weight/LR/WD。该结果只淘汰当前tangent recipe/window；completion从未成立，
+  不能扩大成“expert component本身无效”。
+- 当前没有运行中的EMBER GPU进程，也没有已授权继续训练的Writer。下一步是第36节matched
+  Expert-Flow Teacher Viability Audit：在不更新参数的前提下，用完全相同的train24 B20/noise/time比较
+  step2000 task expert、historical macro0和tangent macro10的PI05 flow velocity，并检查expert teacher
+  是否更接近真实flow target、其梯度是否不同于现有positive/completion/ranking。只有teacher质量与梯度
+  非冗余两门都成立，才实现Cross-Episode Expert Flow Distillation（CEFD）；否则转向更直接的结构化
+  update parameterization，而不是再堆一个昂贵loss。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -75,10 +76,10 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 24个task experts统一step2000的development-train direct-expert成绩为`658/1200`、23/24 tasks非零，
   证明它们是有用但不完美的privileged train targets；soft/hard bank在held panel只有`15/80`和`3/80`，明确否定把train experts
   直接当deployment字典。
-- 当前最小假设不是重做全部架构，也不是继续追LoRA健康度。whole-LoRA监督主要造成径向收缩；ECP虽
-  补足expert分量，却通过共享compiler/heads连带改写大量其他effective方向。新目标以每个实际condition
-  自己的historical-v6输出为局部原点，保留expert方向上的必要修正，只抑制增量的正交漂移，同时维持
-  原positive functional和bounded时序/wrong ranking。
+- 连续因果链已经收窄：whole-LoRA主要径向收缩；ECP补足expert分量却让大量正交方向漂移；Tangent
+  控制相对半径却没有把共享Writer更新旋进expert方向，而且strict继续下降。当前先判定task expert的
+  policy flow输出是否真是比ground-truth functional更有用、且不冗余的监督信号。这个matched audit能在
+  增加正式训练变量前区分“parameter target错位”与“shared decoder update geometry仍错位”。
 
 ## Data and evaluation
 

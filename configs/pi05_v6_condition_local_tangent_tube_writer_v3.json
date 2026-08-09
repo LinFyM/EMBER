@@ -1370,7 +1370,7 @@
     "required_resume_comparison": "fresh0_to1_plus_exact_resume1_to3_equals_contiguous0_to3"
   },
   "formal_run": {
-    "status": "sealed_from_live_a40_resume_profile_evidence",
+    "status": "retired_after_macro10_strict_closed_loop_nonpass",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "total_macros": 50,
@@ -1401,6 +1401,54 @@
       "macro25_positive_suite_net_min_count": 2,
       "first_full_six_arm_correct_min": 144,
       "goal_full_six_arm_correct_min": 151
+    },
+    "formal_result": {
+      "schema_version": "ember_pi05_v6_tangent_tube_formal_result_v1",
+      "git_commit": "b3089417b6b3df6f22cf3dc296015a80ff228b7a",
+      "training_root": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_v6_tangent_tube_formal_r6_lb20_mb10_b308941_20260810",
+      "completed_macro": 10,
+      "training_exit": 0,
+      "training_metrics_rows": 10,
+      "training_step_seconds": 207.44358306587674,
+      "training_input_wait_seconds": 0.26548600691603497,
+      "mechanism": {
+        "correct_projection_coefficient": 0.7372455721100172,
+        "correct_projection_absolute_error_task_median": 0.25229471921920776,
+        "correct_projection_toward_one_tasks": 22,
+        "correct_relative_tube_task_median": 0.013900110963732004,
+        "negative_relative_tube_task_median": 0.014078664593398571,
+        "correct_directional_ratio_task_median": 108.92596435546875,
+        "negative_directional_ratio_task_median": 126.88290405273438,
+        "correct_directional_gate_pass_tasks": 0,
+        "negative_directional_gate_pass_tasks": 0
+      },
+      "strict_correct400": {
+        "root": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_v6_tangent_tube_correct400_noreplacement_seed7_method_macro0010_b308941_20260810",
+        "exit": 0,
+        "episodes": 400,
+        "successes": 131,
+        "correct80_successes": 27,
+        "nonzero_task_breadth": 5,
+        "per_task_successes": [0, 3, 46, 31, 0, 40, 11, 0],
+        "per_suite_successes": [3, 77, 40, 11],
+        "panel_active_wall_seconds": 858.5777900218964,
+        "effective_rollouts_per_second": 0.4658867311135532
+      },
+      "historical_baseline_transition": {
+        "analysis": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_v6_tangent_tube_macro0010_historical_baseline_transition_b308941_20260810/analysis.json",
+        "baseline_successes": 134,
+        "gained": 16,
+        "lost": 19,
+        "churn": 35,
+        "net": -3,
+        "mcnemar_exact_two_sided_p": 0.7358788008568808
+      },
+      "decision": {
+        "continue_to_macro25": false,
+        "full_six_arm": false,
+        "reason": "strict_correct_below_macro0_breadth_down_and_directional_tangent_gate_failed"
+      },
+      "content_hash_policy": "disabled_by_owner"
     }
   },
   "evaluation": {

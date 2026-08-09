@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
@@ -47,7 +48,9 @@ CONFIG = (
 def test_formal_segment_requires_a_clean_pushed_strict_profile_descendant(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config = load_v6_prior_config(CONFIG)
+    config = deepcopy(load_v6_prior_config(CONFIG))
+    config["formal_run"]["status"] = "sealed_from_live_a40_resume_profile_evidence"
+    config["formal_run"]["formal_result"] = None
     resume = config["profile_run"]["artifact_evidence"]
     gradient_commit = resume["gradient_commit"]
     profile_commit = resume["profile_git"]["commit"]

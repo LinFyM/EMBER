@@ -1,5 +1,22 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 ECP formal0→25与strict负裁决完成
+
+- clean pushed/frozen`450e688`的formal fresh0→10与exact-resume10→25均由tmux自然exit0；root=
+  `runs/outputs/pi05_v6_ecp_formal_r6_lb20_mb10_450e688_20260809`。25 metrics、macro10/25
+  checkpoints、completion和完整resume state齐全，0 OOM/nonfinite/clip。
+- macro10/macro25的strict correct400均以`gpu01:0,1,2|4,5,7`、18 workers、batch8完成，分别
+  `133/400`与`120/400`；两root都是exit0、72/72 shards、400 rows、400 LoRAs、54 batches、
+  0 retry/reuse/redundant forward。macro25 wall=`859.138s`，overall/rollout-only吞吐=
+  `.4656/.6516 rollout/s`，随后六卡回到14MiB且无compute进程。
+- cross-family native validation和400-row exact pairing通过。macro10对macro0=`134`为`22/23`、
+  net`-1`；macro25为`13/27`、net`-14`、McNemar `p=.038477`。内部`a_correct`与expert
+  component持续上升，但闭环下降且正交norm漂移主导，按门退役ECP；不继50/100、
+  不扫权重、不补六臂。
+- canonical historical transition入口已窄扩展为只接受ECP macro10/25/50，不接受macro0或
+  任意mixed family。下一阶段先完成dynamic baseline tangent与历史anchor/distillation的去重设计，
+  未封印新design前不启动GPU。
+
 ## 2026-08-09 ECP resume profile完成并解锁formal
 
 - gradient seal strict后继`fea3f40`已clean/pushed并有独立frozen worktree；live重查后只使用空闲

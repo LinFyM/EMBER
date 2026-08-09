@@ -7,31 +7,38 @@
 运行中的EMBER GPU任务。v6-prior whole-LoRA objective已完成formal 0→50，同一schedule
 macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此该objective已退役。
 
-当前唯一活动候选是objective-only的v6-Initialized Expert-Component Projection。保留原架构、初始化、
-冻结边界、logical B20/physical B10+10、data和negative schedule；只把expert direction+norm和cosine
-ranking替换成`a_correct→1`与bounded-gradient `a_correct-a_negative`。该objective、v2 schema、metrics和
-legacy只读分析隔离已实现；显式cross-family historical-baseline transition也已加入canonical evaluator，
-不放宽同family checkpoint curve。全仓CPU回归`262 passed`且`git diff --check`通过。clean frozen`de28157`的
-唯一六卡gradient profile已自然完成并释放设备，projection/ranking weights封存为
-`.006883349605446485/.010514451404229894`。strict后继`fea3f40`的fresh/resume/contiguous三步profile也已
-完成并由artifact assembler封存，profile/formal现已解锁；尚无ECP formal训练或strict结果。
+第34节v6-Initialized Expert-Component Projection（ECP）已完成formal0→25并负裁决。
+macro10/25 strict correct400=`133/120`；同schedule macro0=`134`。macro25对macro0的精确
+paired gained/lost=`13/27`、net=`-14`、McNemar `p=.038477`，per-task=
+`0/1/43/27/0/33/15/1`。内部`a_correct`已从`.736`增到`.884`且23/24 tasks向1移动，
+expert component也在24/24 tasks上升；但macro10→25的expert-orthogonal norm增量`8.471`远大于
+component增量`.228`。所以ECP的实现和机制生效，但held closed-loop明显退化；按预注册
+不续50/100、不扫权重、不补六臂。
+
+当前活动阶段是设计**same-video dynamic-baseline tangent completion**：同一exact language +
+correct video同时产生frozen v6 anchor和当前Writer输出，只把增量中缺失的expert分量与
+expert-orthogonal drift隔离。这一轮不改encoder/Core/Procedure/compiler topology、functional query、
+negative schedule或deployment input，也不允许static/language bypass、B-only residual、第二套部署LoRA、
+expert-bank deployment或global scale。新design封印前不启动GPU。
 
 当前操作顺序：
 
-1. v6-prior 0/10/25/50 formal、严格四点分析、机制诊断和GPU释放已封存；
-2. ECP objective、metrics和合同已原位实现，保持一个canonical Writer path；
-3. 已完成全仓CPU验证，锁定projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/
-   信息墙不变；
-4. 已完成唯一aux gradient profile和fresh/resume/contiguous短profile门，profile checkpoint永久弃用；
-5. 从新clean frozen formal worktree fresh短训0→10并优先评测macro10 correct400；若`≤129`且多task净损失
-   立即停止，只有健康才到25；
-6. 只有strict超过134且多task净获益才继续到50/100与六臂，循环到达标。
+1. v6-prior 0/10/25/50与ECP 0→10→25的formal、strict、机制诊断和GPU释放已封存；
+2. 用ECP的“直接方向正确、闭环反向、正交漂移主导”证据完成dynamic baseline tangent数学设计；
+3. 与历史SFT-Anchored Tangent-Basis、短LR/weight decay、decoder freeze和behavior distillation去重；
+4. 在唯一canonical ECP vertical path上原位替换objective/schema，先用CPU dense oracle验证
+   dynamic anchor、gauge-invariant residual、gradient、information wall和exact-resume；
+5. clean push/frozen后只做一次A40 gradient/throughput profile；优先复用同memories的小decoder forward，不为低位
+   数值一致降batch/并行度；
+6. formal仍从historical v6 macro400 fresh开始，及时跑同schedule strict correct400；若限制正交漂移后
+   仍不超macro0，干净证伪expert-component completion并转policy-output behavior distillation。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot v6-Initialized Policy-Effective Expert-Component Projection Writer。
+- 方法：one-shot v6-Initialized same-video dynamic-baseline tangent completion Writer（设计中，
+  ECP已退役）。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -41,9 +48,9 @@ legacy只读分析隔离已实现；显式cross-family historical-baseline trans
   compiler+factor heads；全新optimizer/scheduler/sampler/RNG。
 - train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
   all-reduce。
-- objective固定为positive functional + effective-BA projection coefficient `a_correct→1` + bounded
-  temporal/wrong projection ranking；不含global norm attraction或whole-LoRA cosine attraction。
-  auxiliary weight只由预注册train24 gradient profile选择一次，不做held sweep。
+- 新objective只能在同video frozen-v6 effective BA baseline上限制增量，同时保留positive
+  functional和bounded temporal/wrong ranking；不含global norm attraction、whole-LoRA cosine、static anchor
+  或parameter-distance代理。auxiliary weight只由预注册train24 gradient profile选择一次，不做held sweep。
 - step2000 task experts仅作train supervision，不进入deployment或held选择。
 
 ## 2. Throughput-first runtime contract

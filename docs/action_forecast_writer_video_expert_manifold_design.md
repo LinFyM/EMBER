@@ -1566,3 +1566,41 @@ native-family rows；用显式cross-family historical-baseline transition逐row�
 重跑400条macro0。该CPU-only入口已在canonical evaluator原位实现，分别native验证legacy immutable
 results与current raw reaggregation，且不放宽checkpoint-curve；全仓`262 passed`。只有确需正式
 same-family ECP curve时才补跑v2 macro0，旧rows不得重标或混入curve。
+
+### 34.8 formal0→25与strict closed-loop（2026-08-09）
+
+clean pushed/frozen`450e688`的formal root=
+`runs/outputs/pi05_v6_ecp_formal_r6_lb20_mb10_450e688_20260809`。fresh0→10后根据34.4的
+grey-zone门进行同root exact-resume10→25；25条metrics、macro10/25 checkpoints、completion、
+optimizer/scheduler/sampler和六rank RNG完整，0 OOM/nonfinite/clip。两段step wall均值=
+`20.447/20.631s`，peak reserved约`47.1GB`，保持logical B20/physical B10+10。
+
+macro10内部`a_correct=.828442`、component=`3.443939`、generated norm=`151.342566`；24/24 tasks
+的`a`较macro1向1移动、component上升。strict correct400=`133`、breadth6、per-task=
+`1/2/45/28/0/38/19/0`；对同schedule macro0=`134`严格paired gained/lost=`22/23`、net=`-1`。
+因机制健康、top3 share从`.87313`降至`.83459`且exact对旧whole-LoRA macro10=`127`
+有`+6`，按34.4只允许一次短resume到25，未声称改善。
+
+macro25内部`a_correct=.884127`、component=`3.672251`、generated norm=`159.816612`；23/24 tasks
+的`a`向1移动、24/24 component与norm上升。但macro10→25的expert-orthogonal norm约
+`151.303375→159.774416`（`+8.471041`），component仅`+0.228312`。strict correct400 root=
+`runs/outputs/pi05_v6_ecp_correct400_noreplacement_seed7_method_macro0025_450e688_20260809`，exit0、
+72/72 shards、400 rows、18 workers return0、400 LoRAs、54 batches、batch上限8、0 retry/reuse/
+redundant forward。结果=`120/400`、breadth6、per-task=`0/1/43/27/0/33/15/1`，suite=
+`1/70/33/16`。对macro0严格paired gained/lost=`13/27`、net=`-14`、McNemar
+`p=.0384773083`，suite net=`-4/-12/-2/+4`。macro10→25亦是`18/31`、net=`-13`且四suite
+全部净下降。
+
+### 34.9 退役裁决与最早后继接口
+
+ECP的数学目标、gradient、resume和formal训练均按构造工作，held closed-loop却从
+`134→133→120`。因而不能将失败解释为“expert loss没动”、“权重太小”或“训练不够”。
+该实验证伪的是：在当前共享compiler/factor参数化下，只规定expert component而对其余
+effective BA放任自由，不足以产生held-task共同改善。
+
+按34.4停止ECP：不续50/100、不扫projection/ranking weight、不为loser补六臂。后继若继续
+检验expert component，唯一有证据的新变量是以同一exact language + correct video的frozen
+v6输出作dynamic baseline，直接限制增量的expert-orthogonal drift。这个dynamic anchor不得变成
+parameter weight decay、static/language-only bypass、B-only residual、第二套部署LoRA、expert-bank deployment
+或rank/checkpoint融合。它必须先与历史SFT-Anchored Tangent-Basis、短LR/weight decay及behavior
+distillation去重，并用新schema在CPU dense oracle中证明只约束所声称的effective增量。

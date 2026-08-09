@@ -365,7 +365,10 @@ def test_checkpoint_curve_keeps_legacy_read_only_and_rejects_mixed_families() ->
         checkpoint_curve_analysis(mixed)
 
 
-def test_historical_transition_preserves_families_and_pairs_true_rows() -> None:
+@pytest.mark.parametrize("candidate_macro", (10, 25, 50))
+def test_historical_transition_preserves_families_and_pairs_true_rows(
+    candidate_macro: int,
+) -> None:
     baseline_success = _success_keys(
         lambda _suite, _task, state: state == 0
     )
@@ -374,7 +377,9 @@ def test_historical_transition_preserves_families_and_pairs_true_rows() -> None:
         or (suite == "libero_spatial" and task == 1 and state == 1)
     )
     baseline = _result(0, "correct", baseline_success, family="legacy")
-    candidate = _result(10, "correct", candidate_success, family="current")
+    candidate = _result(
+        candidate_macro, "correct", candidate_success, family="current"
+    )
     baseline["paired_control"]["git"]["commit"] = "legacy-commit"
     candidate["paired_control"]["git"]["commit"] = "current-commit"
     baseline["paired_control"]["tokenizer"]["manifest_path"] = "/legacy/tokenizer.json"
@@ -407,6 +412,12 @@ def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> N
     }
     with pytest.raises(Pi05EvaluationError, match="duplicate method family"):
         historical_baseline_transition_analysis(duplicate_family)
+
+    wrong_macro = _result(0, "correct", set(), family="current")
+    with pytest.raises(Pi05EvaluationError, match="ECP macro10"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": wrong_macro}
+        )
 
     drifted = copy.deepcopy(candidate)
     drifted["paired_control"]["policy"]["replan_steps"] = 4

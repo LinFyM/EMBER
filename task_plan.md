@@ -117,14 +117,21 @@ formal artifacts保存。
   checkpoint永久弃用。
 - [x] 在canonical analysis owner新增严格cross-family historical-baseline transition：legacy/current分别
   native验证、400 rows精确配对、family标签不变、不能冒充checkpoint curve；全仓`262 passed`。
-- [ ] fresh formal只训练0→10并停止，直接跑macro10 correct400；历史macro0=`134`用native-family严格
+- [x] fresh formal只训练0→10并停止，直接跑macro10 correct400；历史macro0=`134`用native-family严格
   cross-family transition比较，先不为schema身份重复400条rollout。
-- [ ] fresh短训保存10/25。macro10 strict若`≤129`且多task净损失则停止；130--133只有内部方向和右斜率
+- [x] fresh短训保存10/25。macro10 strict若`≤129`且多task净损失则停止；130--133只有内部方向和右斜率
   健康才允许到25；macro25若仍不超过134或只是换手则停止。
-- [ ] 只有strict超过134且多task共同获益，才继续50/100并在single winner上做六臂视频因果评测。
+- [x] macro10/25=`133/120`；macro25对macro0严格paired gained/lost=`13/27`、net=`-14`、
+  `p=.038477`，按门退役ECP，不继50/100、不扫权重、不补六臂。
 
 ## Phase 5 — targeted iteration loop
 
+- [ ] 完成同video frozen-v6 dynamic baseline的anchor/tangent历史去重与数学design；首轮只隔离
+  expert completion和expert-orthogonal drift，不同时改encoder、topology、functional estimator或video schedule。
+- [ ] 选择不物化dense BA、不在部署时增加第二LoRA/专家库、且尽可能只增加小型decoder
+  forward的实现；先CPU oracle/gradient/contract，再用一次live A40 profile实测吞吐与显存。
+- [ ] 若dynamic anchor能限制正交漂移却strict仍不超macro0，干净证伪expert-component
+  completion，下一个候选才是policy-output behavior distillation，不继续修LoRA几何。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

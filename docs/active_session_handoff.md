@@ -53,45 +53,32 @@
   门通过。原比较器误把近零Adam moments套入Writer aggregate relative门，已只修离线state-specific
   tolerance而未改训练或重跑GPU；retained artifacts重新assemble通过，profile/formal现已正式sealed。
 
-第33节v6-Prior whole-LoRA direction/norm objective已由上述闭环和机制证据退役。当前唯一活动候选是
-**v6-Initialized Policy-Effective Expert-Component Projection Writer**，authority为
-`docs/action_forecast_writer_video_expert_manifold_design.md`第34节。它不加frozen shadow branch或
-hard anchor；“v6-initialized”只表示从macro0初始化并冻结同一上游。下一步严格按`task_plan.md`执行，
-不从下方历史谱系恢复旧命令。
+第33节whole-LoRA direction/norm与第34节Expert-Component Projection（ECP）均已由formal
+closed-loop证据退役。ECP保留原v6架构和上游冻结边界，只把auxiliary换为
+`a=<G,E>/(||E||²+epsilon)→1`与bounded negative ranking；因此这是对expert component假设的
+干净单变量检验，不是新video encoder或LoRA topology实验。
 
-ECP当前工程状态：旧cosine+log-norm objective已从唯一执行路径删除，替换为全38-target
-`a=<G,E>/(||E||²+epsilon)` SmoothL1-to-1和coefficient softplus ranking；task/macro records一次bulk
-同步记录`a_correct/a_negative/a_margin`、expert component、generated/expert norm和38-target signed/
-absolute contribution。config、run、gradient/resume、checkpoint/trainer/RNG、adapter/episode均升为ECP v2
-身份并重置旧gradient/resume/formal seals；live evaluator只接受v2，旧v1仅能由CPU analysis的显式
-legacy family读取已封存`results.json`，不能加载模型或恢复训练。小矩阵dense oracle、gauge/orthogonal
-invariance、chain-rule、合同、checkpoint、evaluation和analysis均纳入全仓`262 passed`封印，且
-`git diff --check`通过。
+clean pushed/frozen`450e688`的formal root=
+`runs/outputs/pi05_v6_ecp_formal_r6_lb20_mb10_450e688_20260809`，fresh0→10后又按预注册门
+exact-resume10→25；25 metrics、macro10/25 checkpoints、optimizer/scheduler/sampler/六rank RNG与
+completion完整，0 OOM/nonfinite/clip。macro1→10的`a_correct=.736184→.828442`、expert
+component=`3.06189→3.44394`、generated norm=`140.973→151.343`，24/24 tasks的`a`向1移动且
+component上升。macro10 strict correct=`133/400`、breadth6，对同schedule macro0=`134`的精确
+gained/lost=`22/23`、net=`-1`。这证明ECP修复了部分旧objective的径向伤害，但没有建立
+held共同改善。
 
-clean pushed/frozen`de28157`已在live空闲`gpu01:0,1,2|4,5,7`完成唯一一次ECP macro49 gradient
-profile；启动前同时比较`gpu01/gpu02`并核对`/data1`quota，未触碰忙碌GPU3和另一节点他人进程。root=
-`runs/outputs/pi05_v6_ecp_gradient_profile_macro49_r6_lb20_mb10_de28157_20260809`，24 tasks、480/480
-unique queries、8/8/8 reversed/shuffled/wrong、最长105帧、wall/input wait=`20.425/.180s`、peak
-allocated/reserved=`43.316/47.094GB`、0 OOM/nonfinite，六卡已释放。assembler原样给出projection/ranking
-weights=`.006883349605446485/.010514451404229894`；两者在compiler各为positive gradient的`.25`，在
-factor为`.10873/.02688`。历史v6生成态的`a_correct`均值`.73453`且24/24低于1；correct-negative
-margin均值`.10324`、23/24为正，shuffled最弱且有1个反向。top1/top4 absolute numerator fraction中位
-`.18084/.52988`，没有单target垄断。config已原样嵌入证据并只解锁三步profile。
+10→25的内部机制继续按目标运作：`a_correct=.828442→.884127`、component=
+`3.44394→3.67225`、generated norm=`151.343→159.817`；23/24 tasks的`a`向1移动，24/24
+component和norm上升。但expert-orthogonal norm约`151.303→159.774`，增量`8.471`远大于
+component增量`.228`。macro25 strict correct反而降到`120/400`、breadth6、per-task=
+`0/1/43/27/0/33/15/1`；相对macro0的严格配对gained/lost=`13/27`、net=`-14`、
+McNemar `p=.038477`，suite net=`-4/-12/-2/+4`。macro10→25也是`18/31`、net=`-13`，
+四个suite全部净下降。
 
-strict后继clean frozen`fea3f40`随后在同一live空闲`gpu01:0,1,2|4,5,7`拓扑完成ECP v2
-resume门：resumed root先fresh0→1、再same-root exact-resume1→3；独立contiguous root fresh0→3。
-三次launcher均由tmux托管并自然exit0，两条root各3 metrics、macro1/3 checkpoints和completion，0
-OOM/nonfinite。resumed/contiguous三步step wall=`62.369/61.017s`、input wait=`.176/.231s`，peak
-allocated/reserved=`43,275,957,248/47,118,811,136` bytes。官方assembler确认contracts、cursor、六rank
-RNG、scheduler/AMP和checkpoint语义一致；scientific metric最大tolerance ratio=`.4290`，macro3 Writer
-maxabs/relative-L2=`1.304e-5/4.845e-6`，Adam各moment的norm ratio/cosine门均通过。artifact evidence已
-原样写入v2 config，profile/formal均置为`sealed_from_live_a40_resume_profile_evidence`；profile权重永久
-禁止进入formal。
-
-三步pre-update机制方向满足启动门但不是性能结论：macro1→3的`a_correct=.736184→.754337`、absolute
-expert component=`3.06189→3.13618`、generated norm=`140.973→142.359`；分别23/24、23/24、17/24
-tasks上升，`a_correct`有23/24 tasks向1移动，没有重演旧objective的系统径向塌缩。当前仍无ECP formal
-训练或strict rollout成绩。
+裁决：ECP不续50/100、不扫权重、不为loser补六臂。直接增大expert component权重已被
+证据禁止；下一轮只能用同一correct video的frozen v6输出作dynamic baseline，隔离“补足
+expert分量”与“共享参数引入大量正交漂移”；具体design必须先与历史anchor/tangent/
+distillation路线去重并seal，再进入CPU实现、profile和formal。当前没有EMBER GPU进程。
 
 ## 2. EMBER problem and information wall
 

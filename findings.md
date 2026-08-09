@@ -1,5 +1,30 @@
 # EMBER Findings
 
+## 2026-08-09 ECP formal闭环负裁决
+
+- clean pushed/frozen`450e688`的formal root=
+  `runs/outputs/pi05_v6_ecp_formal_r6_lb20_mb10_450e688_20260809`完成fresh0→10与同root
+  exact-resume10→25；25 metrics、macro10/25 checkpoints、完整六rank RNG/optimizer/scheduler/
+  sampler和completion均在，0 OOM/nonfinite/clip。两段mean step wall=`20.447/20.631s`，
+  B10+10保持吞吐优先的A40高显存利用。
+- macro10 strict root=`runs/outputs/pi05_v6_ecp_correct400_noreplacement_seed7_method_macro0010_450e688_20260809`；
+  72/72 shards、400 rows、18 workers和400 LoRAs全部成功，得分`133/400`、breadth6、per-task=
+  `1/2/45/28/0/38/19/0`。对同video/state/RNG macro0=`134`的gained/lost=`22/23`、
+  net=`-1`；Object净`-9`而Long净`+7`，是能力换手而非共同累积。
+- macro25 strict root=`runs/outputs/pi05_v6_ecp_correct400_noreplacement_seed7_method_macro0025_450e688_20260809`；
+  exit0、72/72、400 rows、18/18 return0、400 generated LoRAs、54 batches、batch上限8、0 retry/reuse/
+  redundant forward。得分`120/400`、breadth6、per-task=`0/1/43/27/0/33/15/1`；suite=
+  `1/70/33/16`，top3 share=`.85833`。对macro0精确paired gained/lost=`13/27`、net=`-14`、
+  `p=.038477`；suite net=`-4/-12/-2/+4`。macro10→25也是`18/31`、net=`-13`，四suite
+  全净下降；correct80恰好仍为`28`，再次证明80-row prefix会隐藏full400退化。
+- 实现与优化确实生效：macro1→25的`a_correct=.736184→.884127`，23/24 tasks向1移动；
+  component=`3.06189→3.67225`且24/24 tasks上升。但macro10→25的expert-orthogonal norm=
+  `151.303→159.774`（`+8.471`），而component只`+0.228`。因而这不是“训练没动”或
+  “权重不够”；它证伪了无约束共享参数下expert component是held共同改善的充分条件。
+- 按预注册门，ECP不续50/100、不扫aux weight、不补六臂。下一个有证据的单变量是
+  以同一language+correct-video的frozen v6输出为dynamic baseline，把所需expert分量与有害正交漂移
+  分开。这不能退化成parameter weight decay、static/language bypass、B-only residual或部署专家库。
+
 ## 2026-08-09 ECP resume门与早期方向证据
 
 - clean frozen`fea3f40`在同一空闲`gpu01:0,1,2|4,5,7`完成resumed fresh0→1+exact-resume1→3和独立

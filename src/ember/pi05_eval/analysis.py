@@ -584,7 +584,7 @@ def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, An
 def historical_baseline_transition_analysis(
     results_by_root: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Compare immutable legacy macro0 with ECP macro10 without claiming a curve."""
+    """Compare immutable legacy macro0 with one sealed ECP checkpoint."""
 
     if len(results_by_root) != 2:
         _fail("historical baseline transition requires exactly two roots")
@@ -606,8 +606,15 @@ def historical_baseline_transition_analysis(
 
     baseline = by_family["legacy_v6_prior_v1"]
     candidate = by_family["v6_ecp_v2"]
-    if _method_macro(baseline[1]) != 0 or _method_macro(candidate[1]) != 10:
-        _fail("historical baseline transition requires legacy macro0 and ECP macro10")
+    if _method_macro(baseline[1]) != 0 or _method_macro(candidate[1]) not in (
+        10,
+        25,
+        50,
+    ):
+        _fail(
+            "historical baseline transition requires legacy macro0 and "
+            "ECP macro10, macro25, or macro50"
+        )
     for _, result, _ in (baseline, candidate):
         if (
             result["adapter"].get("evaluation_authority", {}).get("formal_status")

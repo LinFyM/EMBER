@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.expert_manifold.v6_prior_contract import suggest_auxiliary_weight
 from ember.expert_manifold.v6_prior_runtime import (
     RuntimeSegment,
     _cursor_contract,
@@ -18,7 +19,6 @@ from ember.expert_manifold.v6_prior_runtime import (
 from ember.expert_manifold.v6_prior_training import (
     _mean_trainable_gradients,
     _run_gradient_profile,
-    suggest_auxiliary_weight,
 )
 from ember.pi05_source_checkpoint import DistributedContext
 

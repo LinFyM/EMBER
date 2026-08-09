@@ -26,6 +26,7 @@ from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     load_v6_prior_config,
+    suggest_auxiliary_weight,
 )
 from ember.expert_manifold.v6_prior_runtime import (
     V6PriorRuntime,
@@ -314,28 +315,6 @@ def _component_norms(
     if not all(math.isfinite(item) for item in packed):
         raise ExpertManifoldError("v6-prior gradient-profile norm is non-finite")
     return dict(zip(("compiler", "factor_heads", "global"), packed, strict=True))
-
-
-def suggest_auxiliary_weight(
-    positive: Mapping[str, float],
-    auxiliary: Mapping[str, float],
-    *,
-    maximum_fraction: float,
-) -> float:
-    """Seal one weight against both compiler and factor-head positive norms."""
-
-    if not 0 < maximum_fraction <= 1:
-        raise ExpertManifoldError("invalid v6-prior gradient fraction")
-    constraints = []
-    for group in ("compiler", "factor_heads"):
-        left = float(positive[group])
-        right = float(auxiliary[group])
-        if right == 0:
-            continue
-        if left <= 0 or right < 0:
-            return 0.0
-        constraints.append(maximum_fraction * left / right)
-    return 0.0 if not constraints else min(1.0, *constraints)
 
 
 def _run_gradient_profile(runtime: V6PriorRuntime) -> None:

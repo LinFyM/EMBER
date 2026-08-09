@@ -4,16 +4,21 @@ import json
 import math
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_contract import (
     _gradient_profile_evidence_matches,
     _resume_profile_evidence_matches,
+    assemble_v6_prior_gradient_profile_evidence,
     load_v6_prior_config,
     runtime_for_mode,
 )
+from ember.expert_manifold.v6_prior_runtime import RuntimeSegment, _run_contract
+from ember.pi05_source_checkpoint import DistributedContext
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -206,6 +211,124 @@ def _resume_evidence(gradient: dict) -> dict:
     }
 
 
+def _task_record(ordinal: int, *, task_visit: int) -> dict:
+    kind = ("reversed", "shuffled", "wrong")[ordinal % 3]
+    return {
+        "task_ordinal": ordinal,
+        "global_task_id": ordinal,
+        "suite": ("libero_spatial", "libero_object")[ordinal % 2],
+        "task_id": ordinal,
+        "task_visit": task_visit,
+        "teacher_demo": (ordinal + task_visit) % 50,
+        "counterfactual_kind": kind,
+        "counterfactual_global_task_id": 100 + ordinal if kind == "wrong" else None,
+        "counterfactual_demo": ordinal % 50 if kind == "wrong" else None,
+        "functional_loss": 0.5,
+        "expert_loss": 0.25,
+        "expert_direction": 0.1,
+        "expert_log_norm": 0.2,
+        "ranking_loss": 0.3,
+        "ranking_margin": 0.05,
+        "correct_expert_cosine": 0.6,
+        "counterfactual_expert_cosine": 0.4,
+        "correct_effective_norm": 2.0,
+        "counterfactual_effective_norm": 1.5,
+        "expert_effective_norm": 2.5,
+        "correct_raw_frames": 521 if ordinal == 0 else 101,
+        "correct_sampled_frames": 105 if ordinal == 0 else 21,
+        "counterfactual_raw_frames": 101,
+        "counterfactual_sampled_frames": 21,
+    }
+
+
+def _synthetic_run_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> dict:
+    config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    monkeypatch.setenv("NCCL_P2P_DISABLE", "1")
+    monkeypatch.setenv("NCCL_ALGO", "Ring")
+    monkeypatch.setenv("NCCL_PROTO", "Simple")
+    tasks = tuple(
+        SimpleNamespace(
+            ordinal=ordinal,
+            global_task_id=ordinal,
+            suite=("libero_spatial", "libero_object")[ordinal % 2],
+            task_id=ordinal,
+            language=f"task {ordinal}",
+            authority=SimpleNamespace(
+                path=tmp_path / f"task-{ordinal}.hdf5",
+                expected_bytes=1000 + ordinal,
+            ),
+        )
+        for ordinal in range(24)
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.git_state",
+        lambda _root: _git_evidence("gradient-commit"),
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime._rank_topology",
+        lambda _context: _topology_evidence(),
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.v6_prior_runtime.torch.cuda.get_device_name",
+        lambda _device: "NVIDIA A40",
+    )
+    consumed = {
+        "query": {
+            "start_step": 49,
+            "stop_step": 50,
+            "global_examples": 480,
+            "unique_query_rows": 480,
+            "min_examples_per_task": 20,
+            "max_examples_per_task": 20,
+            "identity_evidence": "cursor_counts_and_dataset_row_coverage",
+        },
+        "teacher_video_seed": config["data"]["teacher_video_seed"],
+        "videos_per_task_visit": 1,
+        "min_video_visits_per_task": 1,
+        "max_video_visits_per_task": 1,
+        "min_unique_videos_per_task": 1,
+        "max_unique_videos_per_task": 1,
+    }
+    return _run_contract(
+        args=SimpleNamespace(
+            mode="gradient-profile",
+            config=CONFIG,
+            expert_bank_root=tmp_path / "experts",
+            data_root=tmp_path / "data",
+            num_workers=2,
+        ),
+        config=config,
+        context=DistributedContext(0, 0, 6, torch.device("cuda:0")),
+        segment=RuntimeSegment(1, (), 0, 1, 49, 50),
+        source={"checkpoint": "source"},
+        tokenizer={"path": "tokenizer"},
+        tasks=tasks,
+        sampler=object(),
+        video_schedule=SimpleNamespace(
+            consumed_identity_summary=lambda *_args: consumed
+        ),
+        expert={
+            "training_commit": "81101fe",
+            "tasks": [{"task_ordinal": ordinal} for ordinal in range(24)],
+        },
+        warm_start=SimpleNamespace(
+            checkpoint=tmp_path / "warm-start",
+            state_tensor_count=600,
+            state_value_count=12_064_064,
+        ),
+        ownership=SimpleNamespace(
+            frozen_parameter_count=7_060_992,
+            trainable_parameter_count=3_714_304,
+            frozen_tensor_count=483,
+            trainable_tensor_count=41,
+        ),
+        trainable_names=tuple(f"compiler.parameter_{index}" for index in range(41)),
+    )
+
+
 def test_v6_prior_config_unlocks_only_gradient_profile_after_online_smoke() -> None:
     config = load_v6_prior_config(CONFIG)
     assert runtime_for_mode(config, "gradient-profile") == (1, ())
@@ -314,6 +437,78 @@ def test_v6_prior_config_requires_artifact_lineage_for_each_unlock(
     path.write_text(json.dumps(config), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(path)
+
+
+def test_gradient_seal_is_assembled_from_complete_retained_artifacts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "gradient-root"
+    root.mkdir()
+    contract = _synthetic_run_contract(monkeypatch, tmp_path)
+    records = [_task_record(ordinal, task_visit=49) for ordinal in range(24)]
+    gradient = _gradient_evidence()
+    profile = {
+        "schema_version": "ember_pi05_v6_prior_gradient_profile_seal_v1",
+        "schedule_macro": 49,
+        "task_count": 24,
+        "action_queries_per_task": 20,
+        "total_action_queries": 480,
+        "unique_action_queries": 480,
+        "counterfactual_counts": {
+            "reversed": 8,
+            "shuffled": 8,
+            "wrong": 8,
+        },
+        "unweighted_gradient_norms": gradient["unweighted_gradient_norms"],
+        "maximum_auxiliary_fraction": 0.25,
+        "recommended_weights": gradient["recommended_weights"],
+        "seal_rule": gradient["seal_rule"],
+        "task_records": records,
+        "step_seconds": 120.0,
+        "max_cuda_allocated_bytes": 10_000,
+        "max_cuda_reserved_bytes": 12_000,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "content_hash_policy": "disabled_by_owner",
+    }
+    completion = {
+        "schema_version": "ember_pi05_v6_prior_writer_completion_v1",
+        "mode": "gradient-profile",
+        "completed_diagnostic_macros": 1,
+        "schedule_start_macro": 49,
+        "schedule_stop_macro": 50,
+        "gradient_profile_complete": True,
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "content_hash_policy": "disabled_by_owner",
+    }
+    (root / "run_contract.json").write_text(json.dumps(contract), encoding="utf-8")
+    (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
+    (root / "completion.json").write_text(json.dumps(completion), encoding="utf-8")
+    (root / "invocations.jsonl").write_text(
+        json.dumps(
+            {
+                "argv": ["train_v6_prior_writer.py", "--mode", "gradient-profile"],
+                "started_unix": 1.0,
+                "resume": None,
+                "requested_stop_after_macro": 1,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assembled = assemble_v6_prior_gradient_profile_evidence(root)
+    assert assembled["recommended_weights"] == {
+        "expert": 0.0625,
+        "ranking": 0.125,
+    }
+    assert _gradient_profile_evidence_matches(assembled)
+
+    profile["counterfactual_counts"]["wrong"] = 7
+    (root / "gradient_profile.json").write_text(json.dumps(profile), encoding="utf-8")
+    with pytest.raises(ExpertManifoldError, match="evidence is incomplete"):
+        assemble_v6_prior_gradient_profile_evidence(root)
 
 
 def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(

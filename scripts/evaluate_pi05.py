@@ -78,8 +78,8 @@ def _add_writer_runtime_arguments(parser: argparse.ArgumentParser) -> None:
         type=_positive_int,
         default=1,
         help=(
-            "Positive number of episode LoRAs generated together by each Writer "
-            "process; select from measured GPU memory rather than a fixed whitelist."
+            "Episode LoRAs dispatched together to each Writer process; the current "
+            "v6-prior runtime requires one model sample per forward."
         ),
     )
     parser.add_argument(

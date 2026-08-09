@@ -208,6 +208,7 @@
     ]
   },
   "evaluation": {
+    "writer_model_batch_size": 1,
     "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
     "online_smoke_evidence": null
   },

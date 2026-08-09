@@ -18,13 +18,14 @@ cross-suite视频而保持当前语言，shuffled/reversed重排真实frame cont
 frames、不走language-only Writer forward并精确返回source identity。生成的FP32 LoRA先写episode cache，
 随后释放Writer并原位复用同一source policy。
 
-CPU与真实资产门现为全仓`210 passed`，历史macro400 state为600 tensors、12,064,064 values；validation8
+CPU与真实资产门现为全仓`211 passed`，历史macro400 state为600 tensors、12,064,064 values；validation8
 真实asset inspector和CLI prepare均通过，得到8 tasks/8 one-shot requests且deployment expert-bank reads=
-`0`。这仍不是GPU或性能证据。当前没有新的GPU工作、profile、训练或rollout；下一步必须从包含
-`bca3f6d`与本authority更新的clean pushed frozen worktree，在live比较`gpu01/gpu02`和quota后，只用一张
-空闲A40做historical warm-start reproduction smoke，并数值比较batched staged path与逐episode direct v6
-forward（76 tensors max-abs`<=1e-5`）。通过并写回evidence前六卡gradient profile继续fail closed。
-该batch-vs-direct比较已由runtime在cache写入前自动执行并记录，差异超门会直接中止smoke。
+`0`。首次GPU smoke已在`gpu02:0`从clean frozen`30b2ccf`执行，但在cache写入前按复现门失败；root=
+`runs/outputs/pi05_v6_prior_warmstart_reproduction_smoke_validation8_correct_gpu02g0_30b2ccf_20260809`。
+direct-repeat逐元素max-abs=`0`，duplicated batch8与heterogeneous batch8对direct均为`.001953125`、mean约
+`4.70e-5`，因此根因是BF16 batch-shape kernel数值而非串样、padding或随机性。该root为0 cache、0 rollout，
+GPU已自然释放。项目不放宽`1e-5`门，canonical v6-prior model batch固定为1；下一步从新clean pushed
+frozen worktree在fresh root重跑完整cache/release/rollout smoke。通过前六卡gradient profile继续fail closed。
 
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard/soft/sparse 24-expert部署字典已由
 strict结果关闭；下一唯一候选 **v6-Prior Policy-Effective Temporal-Ranking Writer** 的训练侧实现已由

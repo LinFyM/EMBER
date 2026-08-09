@@ -174,6 +174,10 @@ def _validate_build_request(
     )
     if writer_adapter and not valid_writer_topology:
         raise Pi05EvaluationError("Writer generation and rollout topology are incompatible")
+    if writer_adapter and writer_generation_batch_size != 1:
+        raise Pi05EvaluationError(
+            "v6-prior Writer generation requires model batch size one"
+        )
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
     return git, writer_adapter

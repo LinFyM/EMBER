@@ -307,6 +307,7 @@ def _build_writer_contract(
     arm: str,
     condition: str,
     mapping: list,
+    writer_generation_batch_size: int = 1,
 ) -> dict:
     authorities, tasks, paths, model, shared_writer, _ = inputs
     return build_run_contract(
@@ -320,6 +321,7 @@ def _build_writer_contract(
         mode="smoke",
         replicas_per_gpu=1,
         command=("evaluate_pi05.py", "prepare"),
+        writer_generation_batch_size=writer_generation_batch_size,
         adapter={
             **shared_writer,
             "arm": arm,
@@ -353,6 +355,22 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     assert correct["paired_control"] == wrong["paired_control"]
     assert correct["contract_reference"] != wrong["contract_reference"]
     assert "writer_lora_execution" not in correct
+
+
+def test_v6_prior_writer_rejects_batch_dependent_bf16_generation(
+    tmp_path: Path,
+) -> None:
+    inputs = _writer_contract_inputs(tmp_path)
+    _, _, _, _, _, correct_mapping = inputs
+    with pytest.raises(Pi05EvaluationError, match="model batch size one"):
+        _build_writer_contract(
+            inputs=inputs,
+            output_dir=tmp_path / "batched",
+            arm="expert_manifold_v6_prior_correct",
+            condition="correct",
+            mapping=correct_mapping,
+            writer_generation_batch_size=8,
+        )
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

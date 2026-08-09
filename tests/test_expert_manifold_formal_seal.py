@@ -31,6 +31,7 @@ def _smoke_evidence() -> dict:
         "generated_entries": 8,
         "cache_entries": 8,
         "writer_state_tensor_count": 600,
+        "writer_model_batch_size": 1,
         "writer_modules_released": True,
         "source_policy_reused_for_rollout": True,
         "source_policy_reloaded": False,
@@ -51,6 +52,7 @@ def _smoke_evidence() -> dict:
 def test_v6_prior_evaluation_stays_blocked_before_live_smoke() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
     assert evaluation == {
+        "writer_model_batch_size": 1,
         "formal_status": "blocked_until_live_a40_warmstart_reproduction_smoke",
         "online_smoke_evidence": None,
     }
@@ -61,6 +63,7 @@ def test_formal_seal_accepts_only_complete_live_smoke_evidence(
 ) -> None:
     config = copy.deepcopy(json.loads(CONFIG.read_text(encoding="utf-8")))
     config["evaluation"] = {
+        "writer_model_batch_size": 1,
         "formal_status": "sealed",
         "online_smoke_evidence": _smoke_evidence(),
     }

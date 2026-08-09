@@ -1,5 +1,16 @@
 # EMBER Findings
 
+## 2026-08-09 v6-prior batch复现失败的根因
+
+- `30b2ccf`首次A40 warm-start smoke在cache前被预注册`1e-5`门拦截；失败root保留0 cache、0 rollout，
+  GPU自然释放，因此没有污染任何性能结论。
+- 1,287,168个LoRA参数上，single-direct连续两次逐元素完全相同；同一样本复制batch8与8个异构样本
+  batch8相对single-direct的max-abs都为`.001953125`，mean分别`4.703e-5/4.700e-5`。两种batch的量级
+  几乎相同，排除跨样本串扰、可变长度padding和随机性，定位为BF16 batch-shape kernel数值路径。
+- 不能用把阈值放宽到`.002`来“通过”复现门，因为那会让cache LoRA不再是历史v6的single-forward
+  语义，且闭环轨迹可能放大微小数值差异。canonical Writer model batch因此固定为1；吞吐只从独立
+  generator并行扩展。该决策牺牲生成速度但去除了后续strict比较中的隐藏实现变量。
+
 ## 2026-08-09 v6-prior部署替换后的工程与科学边界
 
 - clean pushed`bca3f6d`已把rejected hard-route从canonical evaluator原位替换为历史v6同构的raw-video
@@ -12,10 +23,9 @@
 - shuffled/reversed的因果操纵语义已落实为“按错误展示顺序送入frame content，同时使用新的顺序位置”，
   而不是把content和原始时间戳一起置换后让模型恢复正确顺序。这与用户对人类教学视频的直观相同：
   倒放与乱序必须真正破坏动作先后关系。
-- 当前CPU门只能证明资产、shape、信息墙和cache handoff成立，不能证明BCI kernel下batching与历史v6
-  数值路径一致，也不能提供closed-loop性能。下一单卡门必须比较同一8条输入的batched staged输出与
-  逐episode direct forward，全部76 tensors max-abs`<=1e-5`；否则先定位batch offsets、frame order、
-  tokenizer或dtype接口，不能进入六卡训练。
+- CPU门只能证明资产、shape、信息墙和cache handoff成立；上述A40证据已经否定batch8数值等价并导向
+  model batch1。下一单卡门仍须让每个staged output与direct forward的76 tensors max-abs`<=1e-5`，并
+  完成cache/release/rollout；通过前不能进入六卡训练。
 - v6-prior的科学假设因此保持单变量：上游video semantics/Procedure继续使用143起点，只修compiler+
   factor heads如何把它写入task-expert定义的policy-effective方向。若后续absolute没有共同提高，不能再
   把首因归给expert LoRA能量、hard/soft路由或evaluator部署错图。

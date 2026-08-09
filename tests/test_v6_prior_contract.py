@@ -49,3 +49,10 @@ def test_v6_prior_config_rejects_language_bypass_and_unprofiled_weights(
     weights_path.write_text(json.dumps(weights), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="scientific boundary"):
         load_v6_prior_config(weights_path)
+
+    batched = deepcopy(baseline)
+    batched["evaluation"]["writer_model_batch_size"] = 8
+    batched_path = tmp_path / "batched.json"
+    batched_path.write_text(json.dumps(batched), encoding="utf-8")
+    with pytest.raises(ExpertManifoldError, match="scientific boundary"):
+        load_v6_prior_config(batched_path)

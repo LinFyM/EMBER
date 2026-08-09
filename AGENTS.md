@@ -52,7 +52,10 @@ Expert-Manifold，正式训练必须从identity fresh开始，profile权重不�
 scheduler、sampler与RNG，不能冒充旧run exact-resume。部署恢复同一raw-video v6完整LoRA生成器，
 expert bank只在train24监督中使用、不得进入部署。canonical evaluator替换已由clean pushed
 `bca3f6d`完成；当前尚无该候选的新GPU实证，下一门是clean frozen worktree上的单卡warm-start
-batch-vs-direct reproduction smoke，通过并写回精确evidence前不得启动六卡gradient profile。
+reproduction smoke。`30b2ccf`上的首次batch8尝试在cache前被`1e-5`门拦截；A40诊断证明direct-repeat
+逐元素为零，而duplicate/heterogeneous batch8相对direct的max-abs均为`.001953125`，根因是BF16
+batch-shape数值路径而非串样或随机性。canonical v6-prior Writer model batch现固定为1，不得放宽阈值；
+必须从新clean pushed frozen worktree在fresh root重跑并写回精确evidence，之前不得启动六卡gradient profile。
 
 ## Efficiency and validation boundary
 

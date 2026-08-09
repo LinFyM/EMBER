@@ -1,5 +1,18 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior batch8复现失败、根因定位与batch1修复
+
+- clean frozen`30b2ccf`在live空闲`gpu02:0`完成首次historical warm-start启动；model load=`117.190s`、
+  NUMA0绑定正确，但batch8输出在cache前超过`1e-5`复现门，launcher按合同退出。失败root=
+  `runs/outputs/pi05_v6_prior_warmstart_reproduction_smoke_validation8_correct_gpu02g0_30b2ccf_20260809`；
+  0 cache/rollout，GPU释放。
+- 同卡最小诊断得到direct-repeat max-abs=`0`；duplicate batch8与heterogeneous batch8对direct均为
+  `.001953125`，mean约`4.70e-5`，peak allocated=`11,700,880,384` bytes。结果定位为BF16 batch-shape
+  数值路径，不是串样、padding或随机性；诊断artifact保存在失败root的`diagnostics/batch_equivalence.json`。
+- 没有放宽复现阈值。config和run-contract把canonical v6-prior Writer model batch固定为1，CLI说明同步，
+  非1 prepare会fail closed；全仓`211 passed`。下一步clean push后从新frozen worktree/fresh root重跑
+  8-task cache/release/rollout smoke，失败root不resume；六卡gradient profile仍blocked。
+
 ## 2026-08-09 v6-prior canonical evaluator封存
 
 - clean pushed`bca3f6d`把Expert-Manifold部署从rejected hard-route原位替换为v6-prior raw-video完整

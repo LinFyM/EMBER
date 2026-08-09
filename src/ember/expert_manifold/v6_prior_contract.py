@@ -258,6 +258,12 @@ def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
 
 
 def _evaluation_matches(value: Mapping[str, Any]) -> bool:
+    try:
+        model_batch_size = int(value.get("writer_model_batch_size", -1))
+    except (TypeError, ValueError):
+        return False
+    if model_batch_size != 1:
+        return False
     status = value.get("formal_status")
     evidence = value.get("online_smoke_evidence")
     if status == "blocked_until_live_a40_warmstart_reproduction_smoke":
@@ -282,6 +288,7 @@ def _evaluation_matches(value: Mapping[str, Any]) -> bool:
         "generated_entries": 8,
         "cache_entries": 8,
         "writer_state_tensor_count": 600,
+        "writer_model_batch_size": 1,
         "retry_count": 0,
         "failure_count": 0,
         "teacher_action_reads": 0,

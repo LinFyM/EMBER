@@ -36,7 +36,9 @@ EMBER已经迁回BCI。多卡训练、exact resume、动态队列评测、NUMA�
   load-only初始化，保护已达到`143/400`的video representation，只训练compiler+factor heads；expert2000
   通过gauge-invariant effective`BA`监督correct输出，reversed/shuffled/wrong只作bounded ranking。
   canonical evaluator已由`bca3f6d`恢复同一raw-video v6完整LoRA生成器，部署不读expert bank/cache。
-  当前仍无新GPU实证；下一门是单张空闲A40的warm-start batch-vs-direct reproduction smoke。
+  首次A40 smoke发现BF16 batch8与历史single-forward最大差`.001953125`，而single-repeat精确为零；因此
+  不放宽复现阈值，canonical model batch固定为1。下一门是在fresh root重跑单卡warm-start
+  cache/release/rollout reproduction smoke；当前仍无新closed-loop成绩。
 - 当前科研结论、下一实验边界看
   [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 - A100清理、Git/SSH/重下载分流、BCI路径映射和新Codex接手步骤看

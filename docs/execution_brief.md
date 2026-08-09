@@ -11,15 +11,19 @@ runtime已由clean pushed`bca3f6d`完成，rejected hard-route不得再launch。
 Writer checkpoint、raw video root和condition；expert bank与feature cache部署参数会fail closed。hard-route
 config/class/专属测试已删除，历史由Git与formal artifacts保存。
 
-CPU合同为全仓`210 passed`，真实historical macro400/validation8 inspector与`evaluate_pi05.py prepare`
+CPU合同为全仓`211 passed`，真实historical macro400/validation8 inspector与`evaluate_pi05.py prepare`
 通过：600 Writer tensors、12,064,064 state values、8 one-shot episode LoRA requests、0 deployment expert-bank
-reads。CLI prepare只建立`.codex/tmp`合同，没有启动CUDA或环境rollout。当前没有v6-prior GPU进程、长期
-run root或frozen launch worktree。
+reads。
 
-当前唯一下一执行单元是单卡historical warm-start reproduction smoke：先把本次文档authority clean push，
-从其frozen worktree实时比较`gpu01/gpu02`与`/data1`quota，只用一张完全空闲A40；固定validation8×state0、
-correct、seed7、without-replacement，完成8 LoRA cache→release→source-policy reuse rollout，并额外比较
-batched staged输出与逐episode direct v6 forward，76 tensors max-abs必须`<=1e-5`。只有8 rows/cache、
+`30b2ccf`首次单卡smoke在`gpu02:0`、NUMA0运行，并于cache前被复现门正确拦截。失败root=
+`runs/outputs/pi05_v6_prior_warmstart_reproduction_smoke_validation8_correct_gpu02g0_30b2ccf_20260809`；
+direct-repeat max-abs=`0`，同样本复制batch8与异构batch8对direct均为`.001953125`，mean约`4.70e-5`。
+这定位为BF16 batch-shape数值路径；不是跨视频串样、padding、随机性或checkpoint load问题。0 cache/rollout，
+GPU已释放。不得resume该root或放宽`1e-5`阈值；canonical Writer model batch固定为1。
+
+当前唯一下一执行单元是在新clean pushed frozen worktree的fresh root重跑historical warm-start reproduction
+smoke：live比较`gpu01/gpu02`与`/data1`quota，只用一张完全空闲A40；固定validation8×state0、correct、
+seed7、without-replacement，完成8个batch1 LoRA cache→release→source-policy reuse rollout。只有8 rows/cache、
 0 retry/failure/OOM/nonfinite/forbidden reads、GPU自然释放和数值等价全部成立，才写回smoke evidence并
 解封六卡gradient profile。精确后续顺序与裁决门只取`task_plan.md`，旧launch命令不得复制。
 该数值比较已在smoke generation runtime内fail-close接线，结果会随generator marker保留，不靠手工推断。

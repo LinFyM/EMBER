@@ -1164,10 +1164,16 @@ frame content的展示顺序，position indices保持新的顺序坐标，因此
 合同转成76-tensor FP32 LoRA。no-video提前返回template-A/zero-B，不tokenize language、不读frames、
 不调用Writer。episode LoRA写入通用cache后删除Writer/store/tokenizer并保留同一source policy做rollout。
 
-全仓`210 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
+全仓`211 passed`；真实asset只读解析确认historical state为600 tensors、12,064,064 values，validation8
 映射为8个one-shot requests且deployment expert-bank reads为0。真实CLI prepare也已通过，但这些仍只是
 CPU/合同证据。单卡A40 reproduction smoke必须同时验证完整cache/release/rollout链路和batch-vs-single
 direct forward数值等价；不能仅因checkpoint能load或8个rollout能结束就seal。该证据写回前
 `evaluation.formal_status`与`gradient_profile.status`继续blocked，六卡profile和训练不得启动。
 该比较已接入historical-correct smoke runtime：每个batch写cache前逐episode重跑direct forward，state
 names/shapes、finite与max-abs门任一失败都会中止，不允许事后人工补判。
+
+首次`30b2ccf` A40 smoke确实在cache前触发该门。独立诊断中single-direct repeat逐元素差为零，而把同一
+样本复制成batch8与8个异构样本batch8相对single-direct的max-abs都为`.001953125`、mean约`4.70e-5`；
+故不是跨样本污染或padding语义错误，而是BF16算子随batch shape改变的数值路径。为保持历史v6真实
+single-forward语义，不把阈值放宽到一个会悄悄改变LoRA的范围。canonical评测固定model batch=1，吞吐
+只能通过独立generator进程/设备扩展；失败root保留0 cache/0 rollout证据，修复后必须fresh重跑。

@@ -46,19 +46,25 @@
 - [x] evaluator的no-video臂不读取frames且精确返回source identity；correct/same/wrong/shuffled/reversed
   每episode恰好一条raw video。乱序与倒序只重排真实frame content并保留新的展示位置，随后做完整
   v6 forward；Writer生成FP32 LoRA cache后释放，原source policy原位复用。
-- [x] CPU门：全仓`210 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
+- [x] CPU门：全仓`211 passed`；真实validation8资产inspect与CLI prepare通过。历史macro400 state=
   600 tensors、12,064,064 values；8 tasks映射到8个one-shot cache requests，部署expert-bank reads=`0`。
 
 ## 下一证据门
 
 ### 1. 单卡historical warm-start reproduction smoke
 
-- [ ] 从包含`bca3f6d`及当前authority文档的clean pushed frozen worktree执行；不从活动checkout运行。
+- [x] 首次`30b2ccf` frozen run在cache前按门失败，root=
+  `runs/outputs/pi05_v6_prior_warmstart_reproduction_smoke_validation8_correct_gpu02g0_30b2ccf_20260809`。
+  direct-repeat max-abs=`0`；duplicated-batch8与heterogeneous-batch8对direct均为`.001953125`，mean约
+  `4.70e-5`，证明是BF16 batch-shape数值路径，不是跨样本串扰、padding或随机性。0 cache/rollout，GPU释放。
+- [x] 不放宽`1e-5`门；config与run-contract将canonical Writer model batch固定为1，吞吐只能由独立
+  generator进程/设备扩展。全仓对应回归`211 passed`。
+- [ ] 从包含该batch1修复与当前authority的clean pushed frozen worktree在fresh root执行；不resume失败root。
 - [ ] 启动前重新检查两节点GPU ownership/telemetry/process与`/data1`个人quota，只选一张完全空闲A40。
 - [ ] 固定validation8×state0、correct、seed7、without-replacement；历史macro400为method macro0。
 - [ ] 生成8套完整LoRA并完成cache→Writer release→同一source policy rollout，要求8 rows/entries、
   0 retry/failure/OOM/nonfinite/forbidden reads，结束后GPU自然释放。
-- [ ] 对同一批输入比较batched staged evaluator与逐episode direct v6 forward；全部76 tensors逐值比较，
+- [ ] 对每个batch1 staged输出与逐episode direct v6 forward比较；全部76 tensors逐值比较，
   max abs difference必须`<=1e-5`。canonical smoke runtime会在写cache前自动执行并记录该比较；不用
   SHA/MD5，也不能事后凭观察补写通过。
 - [ ] 通过后把精确device/root/commit/counts/release/reuse/direct-match evidence写回config并clean push；

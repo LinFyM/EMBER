@@ -23,14 +23,22 @@
   `p=.735879`；所以不续25、不补六臂、不扫weight/LR/WD。当前config/runtime已封为formal non-pass并
   fail-closed。该证据淘汰当时的tangent recipe/window，但completion从未成立，不能宣称expert-component
   假设已被干净证伪。
-- 当前没有已授权继续训练的Writer。唯一下一科学动作是第36节matched Expert-Flow Teacher Viability
-  Audit：不更新参数，在相同train24 B20/noise/time上比较step2000 task expert、historical macro0与
-  tangent macro10的PI05 flow velocity和梯度关系。只有expert在大多数tasks上更接近真实flow target，且
-  expert-distillation gradient不是现有positive/completion/ranking的常数缩放或同向重复，才授权CEFD。
-- 该audit现已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，因此没有
-  teacher-quality、gradient-nonredundancy或CEFD科学结论。固定runtime为world6、4 tasks/rank、logical
-  B20/physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32 loss、full24
-  等权gradient、Gram pinv `rtol=1e-5`及0 optimizer/scheduler/update/rollout。
+- **2026-08-10最新audit裁决**：第36节matched Expert-Flow Teacher Viability Audit已从clean frozen
+  `e8e4728`自然exit0。formal root=`runs/outputs/pi05_v6_expert_flow_teacher_audit_r6_lb20_mb10_e8e4728_20260810`；
+  480/480 queries、24 tasks、suite 6×4、reversed/shuffled/wrong 8/8/8、144 policy forwards、0 update/
+  rollout/OOM/nonfinite。wall/input wait=`39.698/.684s`，peak allocated/reserved=
+  `43,418,974,720/47,133,491,200` bytes，所选六张A40结束后自然释放。
+- expert/macro0/tangent10 matched真实7维flow loss=`.098631330/.091801740/.091843160`。expert只在
+  `2/24` tasks且`0/4` suite means同时优于两baseline，远未达到预注册`18/24+3/4`；四suite相对macro0
+  都差约`4.89%--11.90%`，剔除最差task后仍差约`6.07%`。teacher-quality是方向性non-pass，不是边缘
+  fail或单一outlier。
+- CEFD gradient在compiler/factor相对existing span的residual=`.6864/.8387`，finite且非冗余；但
+  “不同方向”不能把整体更差teacher变成有用teacher，且distillation loss最大的位置反而偏向direct expert
+  较弱tasks。因此`authorize_cefd=false`：不做CEFD weight profile、训练或事后扫描其它expert steps。
+  一次性audit config已formal non-pass并fail-closed，runtime按第36节触发退役。
+- 当前没有可启动的Writer训练。下一结构候选只保留historical v6高增益condition representation和decoder，
+  直接改变condition-specific update parameterization；不得恢复expert cotangent、completion、tube或旧
+  whole-LoRA attraction。正式design/CPU门/profile完成前不启动GPU。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -398,16 +406,11 @@ Experts不解决：
 6. single winner首次超过历史143即跑完整correct/same/wrong/shuffled/reversed/no-video；若之后不同
    checkpoint严格超过150，再对实际goal winner重跑六臂。未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步只有一项：把已CPU封存的audit实现与authority clean commit/push，从该严格后继commit建立
-frozen worktree；随后live比较`gpu01/gpu02`、GPU ownership/telemetry/process和`/data1` quota，只用最多6张
-空闲A40运行一次`teacher-audit`。保持B10+10、workers2、3+3 NUMA、Ring/Simple、
-`NCCL_P2P_DISABLE=1`和deferred-NCCL；不得启动训练、rollout、profile sweep或第二次诊断。
-
-正式结果先按预注册两门裁决：step2000 expert须同时优于macro0和tangent10，至少18/24 tasks且每suite六task
-等权mean中至少3 suites通过；候选distillation gradient在compiler与factor heads相对
-positive/completion/ranking span的residual ratio都须`≥.25`。两门都通过才设计CEFD；任一门失败就删除
-一次性audit路径并转向structured update parameterization。Tangent formal与historical-baseline analyzer只作
-已封存provenance，不能从旧段落恢复训练或评测。
+当前具体顺序是：先封存audit non-pass并删除一次性mode/support；再按第37节实现Frozen-v6
+Counterfactual-Null Condition-Kernel Program Residual的fixed feature、P256 zero memory和full48显式更新，
+完成CPU algebra/identity/checkpoint门。只有clean pushed/frozen implementation通过后，才live比较
+`gpu01/gpu02`和`/data1` quota，用最多6张空闲A40做一次macro49 gradient/throughput profile。profile不得
+增加PI05 forward或降低B10+10；通过后zero memory fresh0→10并立即跑完整strict correct400。
 
 ## 10. Canonical assets
 
@@ -415,10 +418,10 @@ positive/completion/ranking span的residual ratio都须`≥.25`。两门都通�
   `pi05_libero`，也不支持source-SFT exact resume。
 - task experts：上述formal root的统一step2000 checkpoints。
 - historical Writer prior：上述v6-fast macro400 checkpoint。
-- canonical config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent formal已退役，只有
-  其中`teacher_audit` block处于ready diagnostic状态。
-- tangent comparison：sealed`b308941` formal root的`checkpoints/macro_00000010`，只读41个comparison tensors。
-- diagnostic entry：`scripts/train_v6_prior_writer.py --mode teacher-audit`；当前没有active训练入口。
+- retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent和teacher audit均
+  formal non-pass/fail-closed。
+- audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
+- 当前没有active训练入口；第37节实现seal后才登记新canonical config/CLI mode。
 - evaluation entry：`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

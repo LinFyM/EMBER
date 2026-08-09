@@ -2,9 +2,10 @@
 
 状态：本文件是Video-Conditioned Expert-Manifold总路线的当前设计authority。第1--32节记录从
 identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
-Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。2026-08-10唯一活动设计是第36节
-matched Expert-Flow Teacher Viability Audit；它已完成CPU实现和封存但尚未运行GPU，是零更新诊断，尚未
-授权CEFD正式训练。K4、online expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
+Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。第36节matched Expert-Flow Teacher
+Audit已正式证明expert flow teacher在`2/24` tasks、`0/4` suites过门并否决CEFD；2026-08-10唯一活动设计
+是第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual，尚未实现或启动GPU。K4、online
+expert bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -2016,3 +2017,190 @@ span、full24 gate和0 update。加载`.env.local`的最新全仓回归为`284 p
 JSON、diff-check通过，architecture guard为`review`且无hard violation/parallel family。`review`仅来自约
 1.6k行有退役触发的support/test净增长，不能解释为GPU或方法结果。下一步仍只能clean commit/push、frozen
 worktree与live GPU/quota preflight后运行这一次audit。
+
+### 36.6 Formal audit结果与CEFD关闭（2026-08-10）
+
+clean frozen`e8e4728`的正式root=
+`runs/outputs/pi05_v6_expert_flow_teacher_audit_r6_lb20_mb10_e8e4728_20260810`自然exit0。完整覆盖
+train24×B20=`480/480` unique queries、suite 6×4、reversed/shuffled/wrong=`8/8/8`、每task 6次且总计
+144次PI05 policy forward；0 optimizer/scheduler/update/rollout/checkpoint，0 OOM/nonfinite。whole audit
+wall/input wait=`39.698123/.684060s`，peak allocated/reserved=
+`43,418,974,720/47,133,491,200` bytes，六张A40结束后自然释放。
+
+matched真实7维flow loss为：
+
+```text
+step2000 expert  = .09863133045534293
+historical macro0 = .09180174038435022
+tangent macro10   = .09184316049019496
+```
+
+expert相对macro0和tangent分别差`+.006829590`与`+.006788170`，即ratio-of-means约`+7.44%/+7.39%`；
+仅global task15、35共`2/24`同时优于两baseline，四个suite mean均失败。即使删去最差global39，expert仍比
+macro0差约`6.07%`，所以teacher-quality不是边缘失败、单task outlier或长视频单调效应。
+
+CEFD gradient本身finite且非冗余：compiler/factor相对`{positive,completion,ranking}` span residual=
+`.686410/.838727`，existing span rank均为3；但novel gradient来自同一监督度量下整体更差的teacher。
+distillation loss最大的tasks又偏向direct expert较弱tasks，继续加weight会优先纠正最不可信teacher。
+因此按36.3预注册`authorize_cefd=false`：不做weight profile、训练、换expert step或事后删task。task experts
+仍是policy-effective闭环参考，但不再是当前cross-episode pointwise flow teacher。
+
+一次性`teacher-audit` config已切为formal non-pass并fail-closed；按36.4退役mode、
+`v6_prior_teacher_audit.py`、`writer/flow_teacher.py`及其feature tests，保留Git、正式root和已抽出的canonical
+`v6_prior_run_contract.py`。run contract里`runtime.physical_policy_forwards_per_task=2`实际表示单臂的两个
+B10 microbatches，而audit/result的6才是三臂真实forward数；正式总数144无歧义，文档明确该旧字段语义后
+不为退役schema重跑GPU。
+
+## 37. Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual
+
+### 37.1 统一根因链与单变量
+
+连续证据不是互相独立的架构失败，而是收敛到同一接口：
+
+1. Program-Credit曾测得24-task原始Program cotangent pair cosine约0，但shared parameter update后的
+   condition motion变成mean/median约`.580/.613`的公共方向；隐式condition kernel确实旋转credit。
+2. 历史Factorized Condition-Kernel用显式Gram把这种旋转消除，200步Gram全rank、condition约`5--8`，
+   predicted/observed Program update relative RMS约`.001--.002`；其strict仅`46/46/45/49`的最早原因不是
+   kernel，而是fresh zero-B FactorHeads在macro50冻结时LoRA norm仅`.176`，形成低增益decoder。
+3. v6-fast恰好提供已验证的高policy-leverage video→Program→LoRA decoder和`143/400`历史起点。
+4. whole-LoRA/ECP/Tangent依次改变parameter target、expert component和local tube，却仍经shared
+   `J' P J^T`/Adam更新；strict=`127/105/123`、`133/120`和`131`没有共同改善。
+5. matched audit又关闭“换成expert flow cotangent”这一分支：teacher在22/24 tasks比macro0更差。
+
+因此第37节只改变**condition update parameterization**：保留并冻结historical v6的全部600 tensors，复用
+其强fused Program和八个FactorHeads；新增一个zero-init、fixed-video-keyed线性Program residual memory，
+用显式condition Gram直接写入函数空间。它不是把两个失败架构拼接，而是用一个已验证机制替换旧
+Condition-Kernel唯一已定位的cold-decoder失败，同时保持v6 baseline exact identity。
+
+只训factor final layer再做post-Adam 24-task QP作为后备而非首选：它仍修改historical decoder、只保证当前
+correct parameter loss的一阶非增，不隔离counterfactual condition，并与SPG/PCGrad/GROUP4的parameter-
+conflict路线更接近。第37节则冻结decoder、明确控制induced cross-condition Program motion，证据指向更直接。
+
+### 37.2 部署图和信息墙
+
+对一个合法condition`c=(exact language, one action-hidden video)`：
+
+```text
+frozen v6 evidence/memories
+  -> frozen compiler -> S0(c) [320,256]
+
+same action-hidden frame evidence
+  -> fixed zero-preserving temporal feature phi(c) [256]
+  -> mutable Program memory M [256,320,256]
+  -> R(c) = phi(c) M
+
+S(c) = S0(c) + cast(R(c), dtype(S0))
+  -> frozen historical v6 FactorHeads
+  -> one complete 38-target public rank16 LoRA
+```
+
+`M`从逐元素零开始，step0的`R=0`，所以同batch/dtype下完整LoRA必须等于historical v6 macro0；没有第二套
+LoRA、B-only residual、scalar gate、global scale、expert-bank route或checkpoint融合。residual在唯一factor
+decoder之前与base Program融合，A/B两侧均按原v6完整生成。no-video仍走现有template-A/zero-B identity，
+不得用`S0`或memory形成language-only fallback。
+
+固定feature只从已经计算的`WriterVideoEvidence`构造，不增加PI05 forward。对每个实际输入帧，把
+`frame_evidence`减去同condition的`text_queries`，只在`valid_task_tokens`上取mean得到256维逐帧visual
+innovation。以真实sampled frame ordinal归一化`tau∈[-1,1]`，形成四个时间矩：
+
+```text
+d(c) = concat_t_basis mean_t [1, tau, cos(pi*tau), sin(pi*tau)] * innovation_t
+     in R^1024
+phi(c) = zero-preserving L2Norm(W_fixed d(c)) in R^256
+```
+
+`W_fixed`是无bias、fixed-seed、row-normalized JL buffer，不训练、不按outcome/held选择。descriptor为零时
+`phi`必须精确为零，所以language不能单独写memory value。reversed/shuffled在真实frame content重排后仍用
+原位置`tau`重新算feature；wrong video必须在目标exact language下完整重算evidence。same-task其它正确视频
+不作negative，也不平均feature或LoRA。
+
+### 37.3 Full48 counterfactual-null显式更新
+
+每个macro仍覆盖24 tasks、每task一条correct video和B20跨episodeaction queries。correct Program leaf只读
+真实source-action functional loss，得到：
+
+```text
+g_i = d L_functional_i / d S_i,  i=1..24
+```
+
+每task同时按固定8/8/8 schedule构造一个wrong/shuffled/reversed feature，但不执行negative PI05 policy
+functional forward，也不计算expert completion/ranking/tube/CEFD。将48个condition按
+`correct task ordinal 0..23, counterfactual task ordinal 0..23`固定排序：
+
+```text
+Phi = [Phi_correct; Phi_negative]          [48,256]
+G   = [G_correct; 0]                      [48,320,256]
+K   = Phi Phi^T
+lambda = .01 * mean(diag(K))
+A   = (K + lambda I)^-1 G
+Delta M = -1.0 * Phi^T A
+Delta R = K (K + lambda I)^-1 [-G_correct; 0]
+```
+
+因此当前correct近似沿各自真实functional descent移动，当前counterfactual residual motion近零；方法不主动
+让negative policy变差，也不读wrong-task action/expert。若task cotangent本来同向，不强制正交；若不同，
+它们不再由shared trainable decoder/Adam state压成公共方向。held condition只经固定video-feature kernel
+连续泛化，base v6路径始终保留。
+
+沿用历史已实证的`step_size=1.0`与relative damping`.01`，不做held sweep、global cap、momentum、Adam、
+weight decay或逐coordinate preconditioner。只有48×48 Gram/Cholesky使用FP64；inverse operator乘Program
+cotangent和约21M-value memory write均用FP32，禁止为底层微差把巨大RHS扩成FP64。每rank只all-gather本地
+8个features和4个correct cotangents；六rank按相同排序独立形成同一delta，不all-reduce 80MiB memory。
+
+### 37.4 与历史路线去重
+
+- 不恢复旧Condition-Kernel runtime、RFF authority、fresh FactorHeads或86M随机Program；只移植小矩阵
+  kernel数学，并改为zero residual + frozen v6高增益decoder。
+- 不恢复SPG/CP-24/PCGrad/SERIAL/GROUP4：这些改变parameter gradient/grouping，没有固定induced
+  cross-condition function kernel，也没有counterfactual-null rows。
+- 不恢复SFT-Anchored Tangent Basis：后者冻结factor output basis但condition coefficients仍经shared Adam，
+  且没有显式video feature Gram。
+- 不恢复soft/hard expert bank、Barycentric、Grounded Route或CEFD；训练和部署均不读expert output。
+- 不恢复few-shot/K4；本候选继续exactly one video。只有one-shot结构已把真实functional motion正确输运后
+  仍被same-task video variance明确限制，才重新讨论固定K。
+
+### 37.5 实现owner、吞吐和retirement
+
+一个新cohesive `writer/condition_update.py`唯一拥有zero-preserving temporal feature、20,971,520-value
+FP32 residual memory、48×48 Gram solve和manual apply。`writer/model.py`只暴露frozen fused slots、单一
+Program融合和原FactorHeads decode；不复制encoder/compiler/head。`v6_prior_step.py`只构造correct leaf与
+negative feature；training只负责full48 gather/order/apply。checkpoint family fresh-incompatible，只保存
+zero-residual lineage、memory、cursor、六rank RNG和fixed update contract；没有optimizer/scheduler/scaler
+moments。历史600 tensors必须strict load后全冻结且checkpoint不能覆盖。
+
+P256 memory约80MiB，projection约1MiB，full24 correct cotangent约7.5MiB，transient coefficient/delta约
+15/80MiB；不增加PI05 forward，不降低logical B20、physical B10+10或六卡并行。profile若relative wall
+overhead超过约10%，先融合gather/matmul并去除重复predicted-motion计算，不减batch、不扩FP64、不增加cache。
+
+teacher-audit mode、`v6_prior_teacher_audit.py`、`writer/flow_teacher.py`及其一次性tests在本design实现前删除；
+`v6_prior_run_contract.py`作为canonical owner保留并升级新family。旧Tangent/ECP/formal config保持fail-
+closed，不能与新memory checkpoint互载。
+
+### 37.6 CPU、A40和closed-loop证伪门
+
+CPU必须覆盖：zero descriptor/feature/memory、natural/reversed/shuffled真实order、wrong-video target-language、
+full48小矩阵predicted/observed equality、negative-null motion、base600 frozen、step0 complete-LoRA identity、
+A/B双方响应、checkpoint/resume和0 forbidden reads。代码结构变化后只跑一次聚焦与全仓回归、compileall、
+JSON和diff-check。
+
+首次六卡只做macro49 gradient/throughput profile，不保留权重：
+
+1. 24 correct + 24 negative unique rows、feature rank/regularized Gram finite；记录condition number但不按漂亮
+   数值选seed/P；
+2. correct retained-motion RMS非零，negative induced-motion相对correct足够小；若两者同时近零，说明
+   correct/negative feature不可分，候选直接失败；
+3. predicted/observed Program delta闭合，historical 600 tensors无grad/无变化，A/B与fixed-action传递非零；
+4. 0 extra PI05 forward、0 OOM/nonfinite，保持B10+10；wall overhead目标≤10%。
+
+profile通过后从zero memory fresh到macro10并立即跑完整strict correct400，不用80-row screen替代：
+
+- `≤129`且多task净损失：立即退役；
+- `130--134`只有breadth/churn和mechanical evidence同时改善才允许到25；
+- `≥135`允许到25；首次`≥144`立即补完整correct/same/wrong/shuffled/reversed/no-video；
+- macro25/50仍不超过macro0=`134`或只做suite/task换手：退役，不扫P/lambda/eta、不解冻base、不加expert/
+  route/gate；
+- 任一点strict`>150`必须由同一checkpoint六臂确认真实视频与时序因果，再继续提高absolute、breadth和稳定性。
+
+若Program motion、LoRA/action传递和counterfactual-null均成立而closed-loop不升，则“ground-truth pointwise
+functional cotangent即使被正确输运也不足”获得直接证据；下一步才转同一Program memory上的真实reward
+credit，而不是再换rank、能量、expert几何或condition router。

@@ -1,6 +1,28 @@
 # EMBER Findings
 
-## Expert-Flow Teacher Audit CPU implementation seal（2026-08-10）
+## Matched Expert-Flow正式non-pass与structured residual选择（2026-08-10）
+
+- clean frozen`e8e4728`的formal root=
+  `runs/outputs/pi05_v6_expert_flow_teacher_audit_r6_lb20_mb10_e8e4728_20260810`自然exit0：24 tasks、
+  suite 6×4、480/480 queries、8/8/8 negatives、144 PI05 forwards、0 update/rollout/OOM/nonfinite；
+  wall/input wait=`39.698/.684s`，peak allocated/reserved=`43.419/47.133GB`，六卡自然释放。
+- expert/macro0/tangent10 matched真实7维flow loss=`.098631330/.091801740/.091843160`。expert比macro0/
+  tangent平均差约`7.44%/7.39%`，仅`2/24` tasks同时胜两臂、`0/4` suite means过门；删最差global39仍比
+  macro0差约`6.07%`。这是方向性teacher failure，不是边缘门、单outlier或视频长度单调效应。
+- CEFD gradient相对existing span的compiler/factor residual=`.686410/.838727`且finite；novelty成立，但
+  teacher在同一监督度量整体更差。distillation loss又与direct expert success负相关，意味着CEFD会在更弱
+  experts上施加更大修正。按预注册`authorize_cefd=false`，不profile weight、不训练、不事后换expert step。
+- task-expert最后50步loss与audit expert loss的Pearson约`.897`，证明audit没有量错；direct expert success
+  与expert/macro0共同task difficulty均相关。`658/1200`衡量自身闭环状态分布上的序列成功，而audit衡量
+  固定示范state/action/noise/time的pointwise velocity MSE，两者不矛盾，也不能互相替代。
+- 下一单变量选择Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual。历史Condition-Kernel已
+  证明显式Gram能消除condition credit公共旋转，但fresh decoder LoRA norm仅`.176`导致`46--49/400`；v6
+  提供`134/143`高增益起点。新设计冻结v6 600 tensors，以zero memory在fused Program后加入video-keyed
+  residual，correct写真实functional cotangent、当前counterfactual写zero-motion，不再经过shared Adam或
+  expert auxiliary。相比只训factor final layer的post-Adam QP，它直接控制cross-condition function motion、
+  保留counterfactual且不修改historical decoder，因此作为首选；QP只保留为本候选失败后的窄后备证据。
+
+## Expert-Flow Teacher Audit CPU implementation seal（正式结果前历史状态，2026-08-10）
 
 - Tangent负裁决把最早失效接口收窄到`LoRA cotangent -> shared decoder/update kernel -> condition-specific
   output motion`，但在增加CEFD前仍需知道task expert是否真是更好的policy-flow teacher、其监督是否超出
@@ -17,8 +39,8 @@
   oracle证明不会把`1e-4` FP32扰动误算成新方向。
 - CPU oracle分别覆盖physical B20的3次forward与B10+10的6次forward，测试轨迹合计9次；正式runtime仍固定
   6次/task。三臂逐tensor matched randomness、真实7维FP32 loss、same-memory comparison、8/8/8 negatives、
-  480/480 queries和0 optimizer/scheduler/update/rollout均已封存；最新全仓`284 passed in 33.47s`。尚未运行
-  GPU audit，所以没有teacher-quality、gradient-nonredundancy或CEFD科学结论。
+  480/480 queries和0 optimizer/scheduler/update/rollout均已封存；当时全仓`284 passed in 33.47s`。本段
+  是正式运行前的实现事实；teacher-quality与CEFD最终裁决只取上节。
 
 ## Tangent Tube formal non-pass与下一证据门（2026-08-10）
 

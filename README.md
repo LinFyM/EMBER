@@ -38,15 +38,15 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   gained/lost=`16/19`、churn35、net`-3`；相对ECP10=`133`为`19/21`、net`-2`。因此不续25、
   不补六臂、不扫tube weight/LR/WD。该结果只淘汰当时的tangent recipe/window；completion从未成立，
   不能扩大成“expert component本身无效”。
-- 当前没有运行中的EMBER GPU进程，也没有已授权继续训练的Writer。第36节matched Expert-Flow Teacher
-  Viability Audit已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，所以
-  没有teacher-quality、gradient-nonredundancy或CEFD科学结论。它以完全相同的train24 B20/noise/time比较
-  step2000 task expert、historical macro0和tangent macro10的PI05 flow velocity，并检查expert teacher
-  是否更接近真实flow target、其梯度是否不同于现有positive/completion/ranking。
-- audit固定world6、physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32
-  loss、full24等权gradient和Gram pinv `rtol=1e-5`，且不创建optimizer/scheduler、不更新参数、不rollout。
-  下一执行动作只是clean commit/push、frozen worktree、live GPU/quota preflight后运行一次audit。只有teacher
-  质量与梯度非冗余两门都成立，才实现CEFD；否则转向更直接的结构化update parameterization。
+- 当前没有运行中的EMBER GPU进程，也没有可启动的正式训练候选。第36节matched Expert-Flow Teacher
+  Viability Audit已从clean frozen`e8e4728`完成：step2000 expert/macro0/tangent10的matched真实7维flow
+  loss=`.098631/.091802/.091843`，expert只在`2/24` tasks、`0/4` suite means同时优于两baseline，明确未过
+  `18/24+3/4` teacher-quality门。compiler/factor gradient residual=`.6864/.8387`虽非冗余，但不能把整体
+  更差teacher变成有效监督，因此`authorize_cefd=false`，不实现CEFD、不做weight profile。
+- audit完整覆盖480/480 queries、144次policy forward、0 update/rollout/OOM/nonfinite，wall=`39.698s`。
+  一次性mode已在config中formal non-pass并fail-closed。下一候选延续而非推翻已有证据：保留v6高增益
+  video→Program→LoRA decoder，在frozen fused Program上增加zero-init、video-keyed显式kernel residual，
+  以函数空间结构消除shared Adam/Jacobian旋转；正式design和CPU/profile门完成前不会启动训练。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -80,9 +80,9 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   证明它们是有用但不完美的privileged train targets；soft/hard bank在held panel只有`15/80`和`3/80`，明确否定把train experts
   直接当deployment字典。
 - 连续因果链已经收窄：whole-LoRA主要径向收缩；ECP补足expert分量却让大量正交方向漂移；Tangent
-  控制相对半径却没有把共享Writer更新旋进expert方向，而且strict继续下降。当前先判定task expert的
-  policy flow输出是否真是比ground-truth functional更有用、且不冗余的监督信号。这个matched audit能在
-  增加正式训练变量前区分“parameter target错位”与“shared decoder update geometry仍错位”。
+  控制相对半径却没有把shared update旋进expert方向；matched audit又证明expert flow在22/24 tasks上
+  比macro0更差。故下一步不再叠expert loss，而把历史Condition-Kernel已证明的condition credit隔离与
+  v6已证明的高增益decoder结合，直接检验shared update geometry是否是当前最早可修复断点。
 
 ## Data and evaluation
 

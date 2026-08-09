@@ -14,16 +14,17 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   不允许多个write-capable agents重叠写同一worktree。
 - 当前唯一主写分支是`codex/bci-continuation`；正式训练或评测使用该分支clean pushed commit的
   frozen worktree。历史分支和Git只作provenance，不恢复并行活动实现。
-- 当前没有已授权继续训练的Writer候选。第33节whole-LoRA、第34节Expert-Component Projection（ECP）
-  和第35节Condition-Local Dynamic Expert Tangent Tube均已由正式closed-loop证据裁决并退役，不能续训、
-  扫权重或恢复并行活动实现。当前唯一focused科学动作是第36节的matched Expert-Flow Teacher Viability
-  Audit：它是不更新参数的train24诊断，不是新部署方法；只有该门证明task expert在相同B20/noise/time上
-  是更好的policy-flow teacher且提供非冗余梯度，才授权Cross-Episode Expert Flow Distillation（CEFD）。
-- 第36节audit已在唯一canonical CLI的`teacher-audit` mode完成实现和CPU封存，但尚未运行GPU，所以当前
-  没有teacher-quality、gradient-nonredundancy或CEFD科学结论。固定合同为world6、4 tasks/rank、logical
-  B20/physical B10+10、每task 6次PI05 policy forward、三臂共享noise/time、真实7维FP32 loss、full24
-  等权gradient、Gram pinv `rtol=1e-5`、0 optimizer/scheduler/update/rollout。下一步只允许从clean pushed
-  frozen commit经live GPU/quota preflight运行这一次audit。
+- 第33节whole-LoRA、第34节Expert-Component Projection（ECP）和第35节Condition-Local Dynamic Expert
+  Tangent Tube均已由正式closed-loop证据裁决并退役，不能续训、扫权重或恢复并行活动实现。第36节matched
+  Expert-Flow Teacher Viability Audit也已从clean frozen`e8e4728`正式完成：expert/macro0/tangent10的
+  matched真实7维flow loss=`.098631/.091802/.091843`；expert仅`2/24` tasks且`0/4` suite means同时优于
+  两baseline，远未过`18/24+3/4` teacher门。gradient residual在compiler/factor为`.6864/.8387`虽非冗余，
+  但方向来自整体更差teacher，因此`authorize_cefd=false`，不得实现CEFD或做weight profile。
+- audit完整覆盖480/480 queries、144次policy forwards、0 update/rollout/OOM/nonfinite，wall=`39.698s`；
+  一次性mode已由config切为formal non-pass并fail-closed，代码在结果封存后按第36节触发退役。当前唯一下一
+  设计方向是保留historical v6高增益video→Program→LoRA图，在frozen fused Program输出上增加zero-init、
+  video-keyed structured residual，以显式condition kernel约束正确/反事实条件的函数空间更新；正式design、
+  CPU门和profile尚未完成，当前没有可启动的训练候选。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -38,7 +39,7 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   `0/3/46/31/0/40/11/0`；相对同schedule macro0=`134`为gained/lost=`16/19`、churn35、net`-3`。
   因而不续25、不补六臂、不扫tube weight/LR/WD；该结果淘汰当时的tangent recipe/window，但由于completion
   从未成立，不能写成对expert-component假设的干净证伪。代码/config已切为formal non-pass后fail-closed，
-  Tangent证据已由`9f8f638`封存；当前待封存audit实现并执行一次matched诊断，决定是否值得实现CEFD。
+  Tangent证据已由`9f8f638`封存；audit实现/修复和正式结果分别由`7be51b1`/`e8e4728`及retained artifact保存。
 
 ## Mandatory reading
 
@@ -106,18 +107,19 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前没有可继续训练的active Writer。historical v6-fast macro400仍是下一候选的唯一允许load-only
-初始化；encoder、Semantic Core、visual transition和Causal Procedure共483 tensors、`7,060,992`
-parameters冻结，若audit授权CEFD，首版仍只训练compiler与factor heads共41 tensors、`3,714,304`
-parameters。旧Tangent/ECP optimizer、scheduler、sampler、RNG和checkpoint不得加载或冒充exact resume。
+当前没有可继续训练的active Writer。historical v6-fast macro400仍是下一候选唯一允许的load-only
+初始化；audit已经否决CEFD，step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入新
+residual update。拟议structured candidate必须冻结historical v6整套600 tensors，在其condition-local
+fused Program后加zero-init residual；跨condition共享只由固定action-hidden video key的显式Gram控制。
+旧Tangent/ECP optimizer、scheduler、sampler、RNG和checkpoint不得加载或冒充exact resume。
 
-下一候选若获audit授权，继续保持：
+下一候选设计继续保持：
 
 - train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
   跨episode独立action queries；先task内mean，再24-task等权并一次flat all-reduce。
-- correct positive functional loss与bounded video ranking；不得恢复whole-LoRA attraction、ECP completion
-  或Tangent Tube。CEFD若通过audit，只能把同一B20/noise/time上的step2000 task-expert PI05 flow velocity
-  作为stop-gradient train24 teacher，不匹配A/B、dense BA、norm、cosine、rank或部署时expert输出。
+- correct只使用真实source-action functional cotangent；不得恢复whole-LoRA attraction、ECP completion、
+  Tangent Tube或CEFD。反事实条件只可约束structured residual不被当前correct更新带动，不得最大化negative
+  action error、加载wrong-task expert或形成第二套policy/LoRA。
 - correct video与action queries错开episode；same-task不同video是共同positive分布，不作negative。
 - negative只重排真实输入frames或使用预封存cross-suite wrong mapping；不得最大化negative action
   error、无限放大LoRA或读取negative任务隐藏信息。

@@ -33,9 +33,13 @@ CONFIG = (
 
 def test_teacher_audit_readiness_is_exact_and_fail_closed() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert teacher_audit_runtime(config) == (1, ())
+    assert config["teacher_audit"]["result"]["authorize_cefd"] is False
+    with pytest.raises(ExpertManifoldError, match="teacher audit is not ready"):
+        teacher_audit_runtime(config)
 
     wrong_gate = deepcopy(config)
+    wrong_gate["teacher_audit"]["status"] = "ready_after_tangent_strict_nonpass"
+    wrong_gate["teacher_audit"]["result"] = None
     wrong_gate["teacher_audit"]["gradient_residual_ratio_min"] = 0.2
     with pytest.raises(ExpertManifoldError, match="teacher audit is not ready"):
         teacher_audit_runtime(wrong_gate)
@@ -45,6 +49,8 @@ def test_teacher_audit_segment_is_fresh_one_macro_and_strict_descendant(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = load_v6_prior_config(CONFIG)
+    config["teacher_audit"]["status"] = "ready_after_tangent_strict_nonpass"
+    config["teacher_audit"]["result"] = None
     comparison_commit = config["teacher_audit"]["comparison_commit"]
     audit_commit = "teacher-audit-descendant"
     state = {

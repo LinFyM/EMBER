@@ -1452,7 +1452,7 @@
     }
   },
   "teacher_audit": {
-    "status": "ready_after_tangent_strict_nonpass",
+    "status": "formal_nonpass_retired_after_matched_flow_teacher_audit",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
@@ -1472,7 +1472,41 @@
     "gradient_residual_ratio_min": 0.25,
     "teacher_quality_min_tasks": 18,
     "teacher_quality_min_suites": 3,
-    "result": null,
+    "result": {
+      "commit": "e8e4728c0c417afd0b965a031f25c99b79e63eef",
+      "root": "runs/outputs/pi05_v6_expert_flow_teacher_audit_r6_lb20_mb10_e8e4728_20260810",
+      "step_seconds": 39.698123,
+      "input_wait_seconds": 0.68406,
+      "max_cuda_allocated_bytes": 43418974720,
+      "max_cuda_reserved_bytes": 47133491200,
+      "task_count": 24,
+      "suite_task_counts": {
+        "libero_spatial": 6,
+        "libero_object": 6,
+        "libero_goal": 6,
+        "libero_10": 6
+      },
+      "total_action_queries": 480,
+      "unique_action_queries": 480,
+      "total_physical_policy_forwards": 144,
+      "expert_target_loss": 0.09863133045534293,
+      "macro0_target_loss": 0.09180174038435022,
+      "tangent10_target_loss": 0.09184316049019496,
+      "distillation_loss": 0.0076349809727010625,
+      "teacher_passing_tasks": 2,
+      "teacher_required_tasks": 18,
+      "teacher_passing_suites": 0,
+      "teacher_required_suites": 3,
+      "compiler_gradient_residual_ratio": 0.686410129070282,
+      "factor_heads_gradient_residual_ratio": 0.8387272357940674,
+      "gradient_required_residual_ratio": 0.25,
+      "parameter_updates": 0,
+      "rollouts": 0,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "authorize_cefd": false,
+      "decision": "teacher_quality_failed_despite_nonredundant_gradient"
+    },
     "content_hash_policy": "disabled_by_owner"
   },
   "evaluation": {

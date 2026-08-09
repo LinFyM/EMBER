@@ -1,6 +1,29 @@
 # EMBER Progress Ledger
 
-## Expert-Flow Teacher Audit实现与CPU门完成（GPU audit尚无结果，2026-08-10）
+## Expert-Flow正式audit完成、CEFD否决与第37节选择（2026-08-10）
+
+- 修复后clean pushed/frozen`e8e4728`在live双节点GPU/quota preflight后，只使用空闲
+  `gpu01:0,1,2|4,5,7`；GPU3他人VLLM和gpu02忙卡均未触碰。formal root=
+  `runs/outputs/pi05_v6_expert_flow_teacher_audit_r6_lb20_mb10_e8e4728_20260810`自然exit0，结束后六卡回到
+  14MiB。
+- 结果完整覆盖24 tasks、suite 6×4、480/480 queries、8/8/8 negatives和144 policy forwards；0 update/
+  rollout/checkpoint/OOM/nonfinite。wall/input wait=`39.698123/.684060s`，peak allocated/reserved=
+  `43,418,974,720/47,133,491,200` bytes；retained output只有run contract、invocations、teacher audit和
+  completion四个预期文件。
+- expert/macro0/tangent10 flow loss=`.098631330/.091801740/.091843160`；teacher gate仅`2/24` tasks、
+  `0/4` suites通过而要求`18/24+3/4`。gradient nonredundancy以compiler/factor residual=
+  `.686410/.838727`通过，但来自整体更差teacher；正式decision=`authorize_cefd=false`，不做CEFD weight
+  profile、训练或其它expert step搜索。
+- config已记录formal non-pass并fail-closed。按第36节，下一代码阶段删除一次性audit/flow-teacher路径，
+  保留从runtime抽出的canonical run-contract owner、Git和formal evidence。旧run-contract runtime字段的
+  `2 forwards/task`实际指单臂两个B10 microbatches；科学合同/result的6和总数144才是真实三臂forward，
+  结果不受影响且不重跑GPU追逐退役schema。
+- 三条独立只读审计共同选择第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：冻结
+  v6全部600 tensors，在320×256 fused Program后加P256 zero memory；correct只写真实functional cotangent，
+  24个轮换counterfactual作zero-motion rows。它复用历史Condition-Kernel已证明的显式update隔离并替换其
+  唯一cold-decoder失败，保留v6高增益起点；正式design已写入authority，尚未实现或启动新GPU工作。
+
+## Expert-Flow Teacher Audit实现、首启wiring失败与修复（历史，2026-08-10）
 
 - clean pushed/frozen`7be51b1`的首次正式启动通过live双节点GPU/quota、24个step2000 experts、comparison
   macro10和CUDA前二次UUID/serial/NUMA门；只使用空闲`gpu01:0,1,2|4,5,7`。六rank完成大部分资产装载后，
@@ -21,8 +44,7 @@
   8/8/8 negatives、480 unique queries、Gram pinv `rtol=1e-5`、近共线effective rank与0 update。加载
   `.env.local`的修复后全仓seal为`284 passed in 32.66s`，compileall/JSON/diff-check通过；尚未产生有效audit root，
   也没有GPU或CEFD结果。
-- 下一操作只允许clean commit/push、严格后继frozen worktree和live双节点GPU/quota preflight后运行一次
-  audit。两门都过才设计CEFD；任一门失败就退役一次性audit路径并转structured update parameterization。
+- 该段记录的是正式结果前的实现/首启状态；修复后audit已完成且teacher门失败，最新裁决只取上一节。
 
 ## Condition-Local Tangent Tube formal与strict裁决完成（2026-08-10）
 

@@ -153,13 +153,22 @@ formal artifacts保存。
 - [x] 实现并CPU封存第36节matched no-update Expert-Flow Teacher Viability Audit：唯一CLI mode保持train24、
   logical B20/physical B10+10和相同action query/noise/time；每task 6次PI05 forward，真实7维四类loss转FP32，
   full24等权gradient与Gram pinv固定`rtol=1e-5`。0 optimizer/scheduler/update/rollout、8/8/8 negatives和
-  near-collinear span均有oracle；全仓`284 passed`。尚未运行GPU，不能写成teacher或CEFD有效。
-- [ ] audit用clean pushed/frozen commit、live双节点/quota preflight和最多6张空闲A40运行一次；保持B10+10、
-  0 update、0 rollout、0 held action、0长期cache。teacher须相对macro0和tangent10在至少18/24 tasks更优，
-  且在每suite六task等权mean中至少3 suites同时优于两baseline；CEFD gradient在两个block的existing-span
-  residual ratio均`≥.25`，否则不实现CEFD。
-- [ ] audit两门都过才以CEFD替换completion+tube并保留positive functional+bounded video ranking；任一门
-  不过则转structured update parameterization，不做loss weight profile或正式CEFD训练。
+  near-collinear span均有oracle；当时全仓`284 passed`。
+- [x] audit从clean frozen`e8e4728`完成：480/480 queries、144 forwards、0 update/rollout/OOM/nonfinite；
+  expert/macro0/tangent loss=`.098631/.091802/.091843`，teacher仅`2/24` tasks、`0/4` suites过门。gradient
+  residual=`.6864/.8387`虽非冗余，但teacher更差，因此CEFD正式否决，不做weight profile/训练/换step。
+- [ ] 按第36节触发删除一次性teacher-audit mode、flow-teacher/audit owners及feature tests；保留canonical
+  run-contract owner、Git和formal artifacts，旧config formal non-pass/fail-closed。
+- [ ] 实现第37节Frozen-v6 Counterfactual-Null Condition-Kernel Program Residual：冻结historical v6全部
+  600 tensors，P256×320×256 FP32 memory从零开始；fixed zero-preserving temporal feature、24 correct
+  functional cotangent+24 counterfactual zero-motion rows、FP64小Gram/FP32大write，无Adam/expert/ranking。
+- [ ] CPU门覆盖step0 macro0 identity、base frozen、真实order feature、full48 predicted/observed、negative-null、
+  A/B与checkpoint/resume；结构变化后一次全仓回归。
+- [ ] live双节点/quota preflight后用最多6张空闲A40做一次macro49 profile：不增加PI05 forward、不降低
+  B10+10，验证Gram、correct retained motion、negative near-zero motion、fixed-action传递、≤约10% overhead和
+  0 OOM/nonfinite。profile权重永久弃用。
+- [ ] profile过门后zero memory fresh0→10并立即strict correct400；按第37.6门决定停止、续25或补六臂，
+  不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

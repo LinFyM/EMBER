@@ -1,16 +1,27 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-Prior训练runtime封存
+
+- clean pushed`dd57edc`完成六卡train24 runtime、policy-effective三项output-gradient组合、one-shot
+  counterfactual schedule、single-flat-allreduce和hashless exact-resume checkpoint；profile/formal均由sealed
+  config fail-close。
+- 全仓`215 passed`、compile与diff check通过。真实CPU gate为24 tasks、206,346 rows；profile macro49
+  为480 unique B20 queries并包含最长105 sampled-frame视频。冻结/训练参数精确为
+  `7,060,992/3,714,304`。
+- 当前没有GPU工作。下一步原位替换rejected hard-route evaluator/runtime，clean push后才做单卡历史
+  warm-start输出复现smoke；该门通过前六卡gradient profile无法启动。
+
 ## 2026-08-09 v6-Prior Policy-Effective Temporal-Ranking设计封存
 
 - hard/soft/sparse 24-expert部署字典已由strict结果关闭。新design authority写入
   `docs/action_forecast_writer_video_expert_manifold_design.md`第33节：部署恢复历史v6-fast完整动态Writer，
   experts只作train24 policy-effective监督，不进入在线路由。
 - CPU只读核对macro400 checkpoint为600 tensors；encoder/Core/transition/Procedure与compiler/heads的
-  ownership分别为483/41 tensors和`7,062,592/3,714,304` parameters。新候选只训练后41 tensors。
+  ownership分别为483/41 tensors和`7,060,992/3,714,304` parameters。新候选只训练后41 tensors。
 - 目标固定为correct positive functional + exact effective-BA expert direction/norm + bounded correct-over-
   reversed/shuffled/wrong ranking；不最大化negative action loss，不加scale/gate/bypass/few-shot。
-- 当前仍未启动新GPU工作。下一步先原位实现、退休rejected runtime并完成CPU合同；只有clean push和
-  CPU门通过后才做单卡identity smoke及六卡formal profile。
+- 当前仍未启动新GPU工作。下一步原位替换rejected evaluator/runtime；只有replacement clean push和
+  CPU门通过后才做单卡warm-start reproduction smoke及六卡formal profile。
 
 ## 2026-08-09 Hard-routed correct80完成、严格淘汰并释放GPU
 

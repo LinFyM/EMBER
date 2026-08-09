@@ -7,9 +7,9 @@
 ## 0. 当前交接边界：Video-Conditioned Expert-Manifold Topological Writer
 
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard/soft/sparse 24-expert部署字典已由
-strict结果关闭，下一唯一候选已经完成设计封存，但尚未修改实现或启动GPU。新authority为
-`docs/action_forecast_writer_video_expert_manifold_design.md`第33节的
-**v6-Prior Policy-Effective Temporal-Ranking Writer**。
+strict结果关闭；下一唯一候选 **v6-Prior Policy-Effective Temporal-Ranking Writer** 的训练侧实现已由
+clean pushed `dd57edc`完成，authority为
+`docs/action_forecast_writer_video_expert_manifold_design.md`第33节。当前仍未启动GPU。
 
 该候选从历史v6-fast macro400（strict correct=`143/400`、breadth6、五臂=
 `143/135/125/128/129`）做load-only warm-start，不把旧run冒充exact-resume。部署恢复同一one-shot v6
@@ -19,17 +19,19 @@ language-only value、expert mixture、scale/confidence gate或第二套LoRA。
 
 历史matched机制证据把task-complete的主要收缩定位在Procedure之后：相对old recipe，v6的
 Procedure→effective-LoRA与Procedure→action传递约只剩`.42--.61`和`.34--.56`。因此第一轮冻结
-semantic encoder/Core/visual transition/Procedure共483 tensors、`7,062,592` parameters，只训练compiler+
+semantic encoder/Core/visual transition/Procedure共483 tensors、`7,060,992` parameters，只训练compiler+
 factor heads共41 tensors、`3,714,304` parameters。train24每task保留correct video+B20跨episode positive
 functional loss；统一step2000 expert只通过gauge-invariant effective`BA` cosine+norm监督correct输出。
 reversed/shuffled/cross-suite-wrong按确定性schedule轮换，只进入bounded correct-over-negative ranking，
 不最大化negative action error；same-task不同视频仍作为共同positive分布。
 
-当前工作树仅有上述design/plan文档更新，尚未commit；没有GPU进程或新长期实验。下一步依次为：原位
-退休rejected hard runtime并恢复一个canonical v6路径；完成macro400 strict-load、effective几何/梯度、
-freeze ownership、counterfactual和checkpoint CPU合同；clean push后才允许单卡identity smoke及六卡
-fresh/resume/contiguous profile。formal若解封，从macro400新optimizer训练50 macros，保存10/25/50，
-step0/10/25/50先跑同schedule strict80，三个训练点全部跑paired correct400，不以loss选点。
+CPU合同已经覆盖macro400 600-tensor strict-load、effective几何/梯度、freeze ownership、真实顺序
+counterfactual、one-shot 50-video cycle和完整hashless exact-resume checkpoint；全仓为`215 passed`。
+真实data gate为24 tasks、206,346 query rows；预注册profile macro49覆盖480 unique queries并确实包含最长
+105 sampled-frame视频。六卡gradient profile现为fail-closed，单卡历史warm-start输出复现smoke完成前
+不能启动。下一步是原位替换rejected hard-route evaluator/runtime，随后从新的clean pushed frozen
+worktree做单卡warm-start reproduction smoke；通过后才封存六卡fresh/resume/contiguous profile。
+rejected hard-route可执行路径只在该替换完成前暂存，owner是本次canonical replacement，禁止launch。
 
 **最新覆盖（2026-08-09，优先于本节全部后续历史条目）**：hard-one-hot的预注册strict
 correct80已经自然完成并明确负裁决。唯一root=

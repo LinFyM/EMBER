@@ -1115,12 +1115,12 @@ L = L_positive_functional + lambda_expert * L_correct_expert
 3. effective norm/inner/cosine与显式小矩阵`BA`数值一致，gauge变换前后loss不变且梯度finite；
 4. identical correct/negative state给零ranking advantage，ordered/reversed/shuffled真实输入能产生不同
    Procedure和LoRA；same-task correct schedule仍覆盖50 videos；
-5. step0生成与历史portable macro400 LoRA manifest中的至少一条同task/demo state identity一致；若只因
+5. warm-start生成与历史portable macro400 LoRA manifest中的至少一条同task/demo输出一致；若只因
    BCI浮点kernel不能逐byte一致，必须达到逐tensor数值门并说明，不能直接进入训练；
 6. checkpoint包含Writer、optimizer、scheduler、sampler/video/counterfactual cursor、六rank RNG和完整
    frozen-block/initialization schema，fresh与exact-resume不可混用。
 
-随后只在clean pushed frozen worktree做一张空闲A40的online generation smoke和六卡最长105-frame
+随后只在clean pushed frozen worktree做一张空闲A40的warm-start reproduction generation smoke和六卡最长105-frame
 train macro profile；profile依次完成fresh0→1、exact-resume1→3和独立contiguous0→3，并封存上述两个
 loss weight。正式从macro400 warm-start fresh训练50 macros，保存10/25/50；step0/10/25/50在同一当前
 without-replacement seed7 strict80 panel上全部评测，避免用different-video历史143选择点。三个训练点
@@ -1131,3 +1131,16 @@ without-replacement seed7 strict80 panel上全部评测，避免用different-vid
 若三点均低于step0或只发生单task换手，则停止，不用更长训练、loss sweep或解冻上游挽救。若correct提高
 但顺序/错误margin仍弱，下一单变量才调整counterfactual credit；若margin提高而absolute下降，则降低的
 是该目标本身而不是“训练不够”。最终仍只认同一single checkpoint的strict paired闭环结果。
+
+### 33.5 当前实现封存（2026-08-09）
+
+训练侧实现已由clean pushed`dd57edc`封存。历史v6 macro400仍按600 tensors strict load；前四block
+冻结为483 tensors、`7,060,992` parameters，compiler+factor heads为41 tensors、`3,714,304`
+trainable parameters。runtime按6 ranks×4 tasks完成train24等权宏步，只允许DataLoader workers=`0`，
+一次flat all-reduce后更新；checkpoint保存完整Writer、optimizer、scheduler、cursor与六rank RNG。
+
+CPU与真实数据门为全仓`215 passed`、24 tasks、206,346 query rows；profile macro49恰好覆盖每task
+B20、全局480 unique rows，并包含最长105 sampled-frame视频。config当前状态为
+`blocked_until_single_a40_warmstart_reproduction_smoke`，因此尚不能运行六卡gradient profile。rejected
+hard-route evaluator/runtime将在下一提交原位替换，完成唯一部署路径和单卡复现smoke后才允许改变该
+状态。

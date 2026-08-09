@@ -78,10 +78,14 @@ gauge-invariant effective-BA correct监督和有界counterfactual ranking，不�
 
 ## 下一证据门
 
-- [ ] 原位退休hard-route config/runtime，恢复一个canonical one-shot v6生成路径；CPU验证macro400严格
-   load、`3,714,304`参数ownership、effective几何/梯度、correct-vs-order counterfactual和完整checkpoint。
-- [ ] clean push后做单卡online macro400 identity smoke与六卡longest105 fresh/resume/contiguous profile，
-   按预注册gradient比例封存一次`lambda_expert/lambda_rank`；profile权重丢弃。
+- [x] 训练侧v6-prior实现已由clean pushed`dd57edc`封存；CPU验证macro400严格load、`3,714,304`
+   参数ownership、effective几何/梯度、correct-vs-order counterfactual、one-shot schedule和完整checkpoint。
+   全仓`215 passed`，真实profile schedule覆盖24 tasks×B20并包含最长105 sampled-frame视频。
+- [ ] 原位退休hard-route evaluator/config/runtime，把v6-prior接为唯一canonical one-shot部署路径；完成
+   cache/evidence CPU合同并clean push。
+- [ ] 单卡online macro400 warm-start reproduction smoke通过后解封六卡longest105
+   gradient/fresh/resume/contiguous profile，按预注册gradient比例封存一次
+   `lambda_expert/lambda_rank`；profile权重丢弃。
 - [ ] formal macro400 warm-start 0→50，保存10/25/50；step0/10/25/50跑同schedule strict80，三个训练点
    全部跑paired correct400。只有absolute/breadth/趋势门通过才做五臂或续训。
 
@@ -118,9 +122,9 @@ gauge-invariant effective-BA correct监督和有界counterfactual ranking，不�
 11. [x] seal后从新frozen worktree只跑与旧candidate完全相同的validation8×states0--9 correct80 panel。
     strong门=`>=28/80`、breadth`>=5`、相对soft15 paired净增`>=10`；`22--27`且breadth`>=5`只扩到
     160-row消歧；实际`3/80`、breadth2、相对soft净`-12`，已停止expert-mixture内调参。
-12. [ ] 只读核对v6-fast checkpoint、当前expert target与canonical owner，设计并CPU验证
-    v6-prior transferable policy-effective Writer；task experts只作监督/先验，不作online字典。完成唯一
-    canonical实现、真实资产CPU门、clean push和新formal seal前，不启动GPU profile、训练或rollout。
+12. [x] 已核对v6-fast checkpoint、当前expert target与canonical owner，并完成v6-prior训练侧CPU实现；
+    task experts只作监督/先验，不作online字典。唯一部署evaluator替换、单卡复现门和formal seal仍未完成，
+    此前不启动六卡profile、训练或rollout。
 
 ## Hard-routed strict correct80 screen launch合同（2026-08-09）
 

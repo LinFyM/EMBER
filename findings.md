@@ -2,12 +2,18 @@
 
 ## 2026-08-09 v6-prior transferable Writer的根因定位与设计决策
 
+- 训练侧实现已由clean pushed`dd57edc`落地并通过全仓`215 passed`。真实data gate确认24 tasks、
+  206,346 query rows；profile macro49覆盖480 unique跨episode action queries且包含最长105 sampled-frame
+  视频。六卡profile在单卡warm-start输出复现前由config fail-close，当前这些仍是工程合同而非新性能证据。
+- 历史v6 ownership的精确冻结数为`7,060,992` parameters；此前文档中的`7,062,592`是记录误差，
+  trainable compiler+factor heads仍为`3,714,304`。
+
 - 历史v6-fast macro400是当前唯一已验证的高绝对起点：correct=`143/400`、breadth6、五臂=
   `143/135/125/128/129`。其上游对wrong/reversed/shuffled的Procedure相对变化仍大；task-complete相对
   old recipe的主要收缩发生在Procedure之后，effective-LoRA传递只剩约`.42--.61`、action传递约
   `.34--.56`。因此下一最小接口是compiler，不是再换video encoder或rank形态。
 - macro400 checkpoint含600 tensors；前四block encoder/Core/transition/Procedure共483 tensors、
-  `7,062,592` parameters，compiler+factor heads共41 tensors、`3,714,304` parameters。下一轮冻结前者、
+  `7,060,992` parameters，compiler+factor heads共41 tensors、`3,714,304` parameters。下一轮冻结前者、
   只训练后者，既保护143已有语义/时序表示，也直接作用于已定位的输出增益接口。
 - task experts解决train task上“什么LoRA是policy-effective”的监督问题，不解决held部署支撑和视频时序。
   所以它们不再在线选择/混合，而只通过exact effective`BA` cosine+norm监督correct输出；reversed/

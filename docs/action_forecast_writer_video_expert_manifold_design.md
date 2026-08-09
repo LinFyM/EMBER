@@ -6,7 +6,8 @@ Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢�
 Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门并否决CEFD；第37节v1又由唯一
 macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动设计是第38节Balanced
 DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
-当前尚无v2 A40 profile、训练或rollout。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
+macro49 mechanism profile已13/13通过并seal；当前尚无v2训练、rollout或strict成绩，下一动作是单卡
+deployment graph profile/correct smoke。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
 负裁决文档保留。
 
 ## 1. 结论先行
@@ -2332,3 +2333,66 @@ clean pushed frozen commit、live空闲卡和quota通过时做一次v2 macro49 p
 v2 profile不过则按最早失败接口裁决，不调lambda/seed/P或阈值；全部13门通过后才做新deployment graph的
 batch8/16/32吞吐seal、macro0 strict400和fresh0→10。后续strict门与37.6完全相同，最终仍只以同一single
 checkpoint的absolute、breadth、低漂移及correct/same/wrong/shuffled/reversed/no-video六臂裁决EMBER性能。
+
+### 38.4 正式mechanism profile结果（2026-08-10）
+
+clean pushed/frozen`5d93434`在live空闲且与sealed baseline相同的`gpu01:0,1,2|4,5,7`完成唯一macro49
+profile：root=`runs/outputs/pi05_v6_balanced_causal_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_5d93434_20260810`。
+24 tasks、B20、8/8/8 negatives、0 negative policy forward、0 checkpoint/OOM/nonfinite；六卡结束后释放。
+functional loss和cotangent RMS仍与v1完全相同，为`.091801740/2.1920664e-6`，因此这是隔离key与热路径
+同步的matched比较。
+
+原13项门13/13通过：
+
+- full48 feature rank=`48`，regularized condition=`106.114017`；
+- aggregate correct motion/cotangent=`.968254`，negative/correct=`.0218514`；
+- task-local correct retention=`24/24`、最小`.942261`；negative null=`24/24`、最大leakage`.048462`；
+- predicted/observed application relative RMS=`0`；A/B response RMS=`1.37744e-5/1.38187e-5`；
+- 四suite fixed-action=`4/4`、response RMS=`.001210888`；
+- production task/kernel=`19.585536/.436306s`，合计`20.021842s`，对sealed `21.095110s` ratio=
+  `.949122`；input wait=`.069295s`与baseline`.076318s`匹配，verification另计`.735397s`；
+- peak allocated/reserved=`43,261,166,592/46,917,484,544` bytes。
+
+三负臂的feature cosine mean/max与negative leakage mean/max分别为：
+
+| arm | cosine mean/max | leakage mean/max | pass |
+| --- | ---: | ---: | ---: |
+| shuffled | `.479565/.851083` | `.024184/.048462` | `8/8` |
+| reversed | `.013732/.023307` | `.018664/.032562` | `8/8` |
+| wrong | `.507178/.762135` | `.025999/.033571` | `8/8` |
+
+这同时满足预注册的更强诊断预测：aggregate leakage`<=.15`、null至少21/24且每臂至少6/8；condition虽为
+`106.1`而不是只读审计曾建议的约100诊断值，但它不是正式门，且相对v1降低约12.4倍、全部逐task结果留有
+大幅余量，不事后修改阈值或重跑。value-delta RMS从v1`2.12559e-6`降到`1.16318e-6`，correct retention
+反而上升，进一步说明移除的是病态差分放大而非有效写出能量。
+
+裁决：v2 mechanism正式seal，v1 key继续退役；不调lambda/seed/P/归一化。该结果尚未测same-task-other、
+多步累积或closed-loop absolute，独立block L2放大微小dynamic的示范噪声仍是明确风险。下一步先在新clean
+pushed seal上做single-A40 residual deployment graph batch8/16/32 profile与correct vertical smoke；只有该
+seal也通过，才运行zero-memory macro0、formal fresh0→10和即时strict400。
+
+### 38.5 Deployment双root seal与formal fail-close修正（2026-08-10）
+
+mechanism artifact写回后复核发现两个执行合同缺口：config/runtime仅凭mechanism seal已经允许formal，且
+current v8 evaluation verifier只重读throughput profile root，未引用另行要求的vertical smoke root。这样
+虽然权威文档规定“profile+correct smoke后才训练”，机器状态本身仍可能跳过第二个条件。
+
+修正不改变Writer、LoRA、video feature、policy、batch或任何GPU热路径：formal状态改为
+`blocked_until_live_deployment_profile_and_smoke_seal`，`runtime_for_mode(formal)`同时要求mechanism seal、
+evaluation `sealed_from_live_residual_deployment_profile`和结构化evidence。deployment seal由唯一
+`v6_prior_deployment_seal` owner从raw artifacts重建，必须共同验证：
+
+- 同一clean authority commit和同一v8 residual adapter；
+- profile为validation8×4-state固定32-request panel，batch8/16/32处理完全相同的entry/frame序列，并按
+  stable LoRAs/s选择batch；
+- vertical为validation8×state0 correct真实闭环，单A40、单次成功launcher、8 rows、8套新cache LoRA；
+- selected batch贯穿vertical run，Writer释放、source policy复用且未reload；
+- cache为76 tensors、每entry`2,641,920` bytes、72 BF16+4 F32，0语言旁路、expert-bank与禁止读取。
+
+config evidence只保存三个raw artifact的repo-relative path+bytes、run commit和selected batch，不做SHA/MD5或
+逐tensor重校验。任一root/result/cache缺失或改变都fail closed；通过后状态才转换为
+`active_deployment_sealed_formal_ready`/`ready_after_live_mechanism_and_deployment_seals`。
+
+最终无GPU合同回归为`283 passed in 26.10s`、compileall/Black/26 JSON/diff-check；architecture guard相对
+`5d93434`无hard violation，原1243行contract缩为1101行，新增逻辑集中在一个不进入热路径的deployment-seal
+owner，未出现parallel implementation family。

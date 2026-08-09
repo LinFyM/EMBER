@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2",
-  "status": "active_implementation_cpu_sealed_awaiting_live_a40_profile",
+  "status": "active_mechanism_sealed_awaiting_deployment_seal",
   "method": {
     "name": "frozen_v6_counterfactual_null_condition_kernel_program_residual",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -178,7 +178,7 @@
     }
   },
   "profile_run": {
-    "status": "awaiting_live_a40_macro49_profile",
+    "status": "sealed_from_live_a40_macro49_profile",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "schedule_macro": 49,
@@ -208,10 +208,17 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_5d93434_20260810/mechanism_profile.json",
+      "bytes": 32219,
+      "schema": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_profile_v2",
+      "passed": true,
+      "schedule_macro": 49,
+      "run_commit": "5d93434520d19a83334a9a39309dfd310b765d70"
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "blocked_until_live_deployment_profile_and_smoke_seal",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,

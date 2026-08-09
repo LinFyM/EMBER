@@ -1,5 +1,34 @@
 # EMBER Findings
 
+## Balanced DC--Causal v2机制通过与剩余科学边界（2026-08-10）
+
+- profile结果本身过门后又发现一处与科学结论无关、但会污染执行顺序的证据链缺口：formal runtime曾只
+  检查mechanism seal，v8 evaluation verifier也只读throughput profile而未读required vertical smoke。
+  这会让“文档禁止提前训练”和“机器实际允许训练”分裂。当前已把formal硬阻塞到mechanism+deployment
+  双seal，并恢复唯一双root verifier共同重读profile、validation8×state0 results和native cache manifest；
+  修复不进入GPU热路径，也不把8-row smoke success当性能证据。
+- clean frozen`5d93434`在与sealed baseline相同的`gpu01:0,1,2|4,5,7` panel完成唯一macro49 profile；
+  functional loss与cotangent RMS仍精确为`.091801740/2.1920664e-6`，所以v1→v2差异没有混入action panel、
+  source target或training recipe。13项原门全部通过，0 checkpoint/OOM/nonfinite/negative policy forward。
+- feature rank保持48，regularized condition从v1`1315.329`降到`106.114`；correct retention从`.807966`
+  升到`.968254`，negative/correct从`.264351`降到`.0218514`。task-local由24/24 correct、15/24 null变成
+  24/24 correct+24/24 null；最差correct retention仍`.942261`，最差negative leakage仅`.048462`。
+  这直接验证“DC与causal动态分块等能”修复了首个失效接口，而不是靠降低lambda或更激进逆矩阵补门。
+- shuffled/reversed/wrong的paired feature cosine mean从`.985525/.956451/.906269`变成
+  `.479565/.013732/.507178`；各臂最大为`.851083/.023307/.762135`，leakage最大仅
+  `.048462/.032562/.033571`。reverse近零而非接近`-correct`，说明static anchor确实打破纯causal的
+  正负共线；shuffle/wrong保留content相似但已有足够动态/语义分离，三类都8/8过`.25` null门。
+- value-delta RMS减小约45%到`1.16318e-6`，但A/B response略升到`1.37744e-5/1.38187e-5`且4/4
+  fixed-action=`.001210888`；更小memory write实现更高correct motion，符合v1病态条件数曾浪费能量在
+  pair差分方向。Program→A/B→action传递没有因“健康几何”而变弱。
+- production=`20.021842s`、ratio=`.949122`；同host/panel input wait=`.069295s`与baseline`.076318s`
+  匹配，kernel仅`.436306s`。所以v1的`.326s`边缘吞吐non-pass既没有被事后改门，也通过v2的少同步、小
+  projection和健康solve在公平panel上真实消失。
+- 当前结论只到“condition key、显式kernel与单步policy-effective传递可用”。profile每task仍只看一条correct
+  video，没有测same-task-other或多步memory累积；独立block L2会让任何非零dynamic占最终key一半能量，
+  可能放大same-task示范噪声。它是后续task drift/video鲁棒性的明确风险，必须由deployment smoke、macro0、
+  fresh0→10和严格correct/same/wrong/shuffled/reversed/no-video裁决，不能因13/13机制门宣称EMBER已改进。
+
 ## v1 mechanism non-pass与Balanced DC--Causal key裁决（2026-08-10）
 
 - clean pushed/frozen`6903ee6`的唯一macro49 root=

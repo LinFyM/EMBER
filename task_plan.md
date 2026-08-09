@@ -177,13 +177,14 @@ formal artifacts保存。
 - [x] v2 CPU门新增同static/反dynamic两帧反例，natural/reversed unit key内积0；聚焦`52 passed`、带
   LIBERO assets最终全仓`281 passed in 21.34s`。projection降到`[2,128,256]`，并移除per-condition GPU
   sort/mask同步、把profile-only bookkeeping/zero allocation移出production timer，不降精度或batch。
-- [ ] clean commit/push并从新frozen worktree、live双节点/quota preflight后，用最多6张空闲A40做一次v2
-  macro49 profile：不增加PI05 forward、不降低
-  B10+10；production wall对sealed `21.095109596s` ratio`≤1.10`，至少18/24 task-local correct retention、
-  18/24 negative null、4/4 suite-stratified fixed-action response、application closure和0 OOM/nonfinite。
-  8次fixed-action verification forward不计入production wall且不读取target action；profile权重永久弃用。
+- [x] clean pushed/frozen`5d93434`经live双节点/quota preflight后，在空闲`gpu01:0,1,2|4,5,7`完成唯一v2
+  macro49 profile：13/13门通过，rank48、condition=`106.114`、correct/cotangent=`.968254`、negative/
+  correct=`.0218514`、24/24 correct与24/24 null、4/4 fixed-action、closure=0。production=
+  `20.021842s`、ratio=`.949122`，峰值allocated/reserved=`43.261/46.917GB`；0 OOM/nonfinite/negative
+  forward，profile权重未保存且六卡释放。artifact由raw结果重算并写回config seal。
 - [ ] mechanism profile过门并写回seal后，在一张实时空闲A40上对新residual deployment graph实测Writer
-  batch8/16/32并完成correct smoke；只接受同目录run contract、v8 residual adapter和actual clean commit。
+  batch8/16/32并完成correct smoke；只接受同一clean commit的profile+vertical双root、v8 residual adapter、
+  validation8×state0 results与native cache manifest，profile-only evidence不能解锁formal。
 - [ ] 两类profile均seal后先评测zero-memory macro0，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
   停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。

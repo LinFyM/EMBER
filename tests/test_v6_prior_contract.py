@@ -47,6 +47,12 @@ def _load_mutation(
 def test_only_canonical_residual_config_is_active_and_tangent_fails_closed() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
+    assert config["profile_run"]["status"] == "sealed_from_live_a40_macro49_profile"
+    assert config["formal_run"]["status"] == (
+        "blocked_until_live_deployment_profile_and_smoke_seal"
+    )
+    with pytest.raises(ExpertManifoldError, match="deployment state"):
+        runtime_for_mode(config, "formal")
     assert config["method"]["language_only_lora_path"] is False
     assert config["method"]["dynamic_value"] == "one_raw_teacher_video_only"
     assert config["program_residual"]["value_count"] == 20_971_520
@@ -142,113 +148,17 @@ def test_deployment_checkpoint_requires_active_authority_lineage(
     )
 
 
-def test_evaluation_profile_seal_rejects_another_writer_family(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_evaluation_profile_only_cannot_seal_deployment() -> None:
     config = _raw_config()
     evaluation = config["evaluation"]
     evaluation["formal_status"] = "sealed_from_live_residual_deployment_profile"
-    commit = "e" * 40
-    contract_reference = {"path": "run_contract.json", "bytes": 1}
-    profile_root = tmp_path / "profile"
-    profile_root.mkdir()
-    profile_path = profile_root / "writer_generation_profile.json"
-    run_path = profile_root / "run_contract.json"
-    run = {
-        "schema_version": "ember_pi05_target_eval_launch_v2",
-        "mode": "smoke",
-        "role": "validation",
-        "content_hash_policy": "disabled_by_owner",
-        "git": {
-            "branch": "codex/bci-continuation",
-            "commit": commit,
-            "upstream": "origin/codex/bci-continuation",
-            "upstream_commit": commit,
-            "authority_ref": "origin/codex/bci-continuation",
-            "authority_contains_commit": True,
-            "dirty_paths": [],
-        },
-        "contract_reference": contract_reference,
-        "adapter": {
-            "schema_version": (
-                "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
-            ),
-            "kind": "expert_manifold_writer",
-            "arm": "expert_manifold_v6_condition_residual_correct",
-            "video_condition": "correct",
-            "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
-            "writer_asset": {
-                "architecture": config["writer"]["architecture"],
-                "program_residual_value_count": 20_971_520,
-                "deployment_trainable_parameter_count": 0,
-                "generated_lora_tensor_count": 76,
-            },
-            "evaluation_authority": {
-                "throughput_policy": evaluation["throughput_policy"]
-            },
-            "information_wall": {"video_is_only_dynamic_value": True},
-        },
-        "parallel": {
-            "physical_gpu_count": 1,
-            "replicas_per_gpu": 1,
-            "writer_generators_per_gpu": 1,
-            "writer_generation_batch_size": 32,
-        },
-    }
-    result = {
-        "schema_version": "ember_pi05_writer_generation_profile_v1",
-        "git": {
-            "branch": "codex/bci-continuation",
-            "commit": commit,
-            "upstream": "origin/codex/bci-continuation",
-            "upstream_commit": commit,
-            "authority_ref": "origin/codex/bci-continuation",
-            "authority_contains_commit": True,
-            "dirty_paths": [],
-        },
-        "contract_reference": contract_reference,
-        "device": "NVIDIA A40",
-        "profiled_writer_model_batch_sizes": [8, 16, 32],
-        "selected_writer_model_batch_size": 32,
-        "writer_generation_measurements": [
-            {"batch_size": 8, "stable": True, "loras_per_second": 1.0},
-            {"batch_size": 16, "stable": True, "loras_per_second": 2.0},
-            {"batch_size": 32, "stable": True, "loras_per_second": 3.0},
-        ],
-        "selection_rule": (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        ),
-        "writer_modules_released": True,
-        "source_policy_reused": True,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
-        "oom_count": 0,
-        "nonfinite_count": 0,
-        "content_hash_policy": "disabled_by_owner",
-    }
-    profile_path.write_text(json.dumps(result), encoding="utf-8")
-    run_path.write_text(json.dumps(run), encoding="utf-8")
     evaluation["online_smoke_evidence"] = {
-        "path": str(profile_path.relative_to(tmp_path)),
-        "bytes": profile_path.stat().st_size,
+        "path": "runs/outputs/profile/writer_generation_profile.json",
+        "bytes": 1,
         "schema": "ember_pi05_writer_generation_profile_v1",
-        "run_commit": commit,
+        "run_commit": "e" * 40,
         "writer_model_batch_size": 32,
     }
-    monkeypatch.setattr(contract_module, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(
-        contract_module,
-        "git_commit_in_active_authority_lineage",
-        lambda _commit: True,
-    )
-    assert contract_module._evaluation_artifact_matches(config)
-
-    run["adapter"]["schema_version"] = "another_writer_family_adapter"
-    run_path.write_text(json.dumps(run), encoding="utf-8")
     assert not contract_module._evaluation_artifact_matches(config)
 
 
@@ -280,11 +190,18 @@ def _formal_ready_config() -> dict:
     config = _raw_config()
     config["profile_run"]["status"] = "sealed_from_live_a40_macro49_profile"
     config["profile_run"]["artifact_evidence"] = {"unit": "sealed"}
-    config["formal_run"]["status"] = "ready_after_live_profile_seal"
+    config["status"] = "active_deployment_sealed_formal_ready"
+    config["formal_run"]["status"] = "ready_after_live_mechanism_and_deployment_seals"
+    config["evaluation"][
+        "formal_status"
+    ] = "sealed_from_live_residual_deployment_profile"
+    config["evaluation"]["online_smoke_evidence"] = {"unit": "sealed"}
     return config
 
 
-def _args(*, resume: int | None, stop: int | None, mode: str = "formal") -> argparse.Namespace:
+def _args(
+    *, resume: int | None, stop: int | None, mode: str = "formal"
+) -> argparse.Namespace:
     return argparse.Namespace(
         mode=mode,
         resume=(
@@ -350,15 +267,30 @@ def test_profile_is_one_fresh_macro49_and_cannot_retain_or_resume(
             "dirty_paths": [],
         },
     )
-    config = _raw_config()
-    segment = _resolve_segment(_args(resume=None, stop=1, mode="mechanism-profile"), config, _context())
-    assert (segment.total_macros, segment.schedule_origin, segment.checkpoint_macros) == (
+    sealed = _raw_config()
+    with pytest.raises(ExpertManifoldError, match="not in its launch state"):
+        runtime_for_mode(sealed, "mechanism-profile")
+    config = deepcopy(sealed)
+    config["status"] = "active_implementation_cpu_sealed_awaiting_live_a40_profile"
+    config["profile_run"]["status"] = "awaiting_live_a40_macro49_profile"
+    config["profile_run"]["artifact_evidence"] = None
+    config["formal_run"]["status"] = "blocked_until_live_profile_passes_and_is_sealed"
+    segment = _resolve_segment(
+        _args(resume=None, stop=1, mode="mechanism-profile"), config, _context()
+    )
+    assert (
+        segment.total_macros,
+        segment.schedule_origin,
+        segment.checkpoint_macros,
+    ) == (
         1,
         49,
         (),
     )
     with pytest.raises(ExpertManifoldError, match="sealed segment"):
-        _resolve_segment(_args(resume=None, stop=2, mode="mechanism-profile"), config, _context())
+        _resolve_segment(
+            _args(resume=None, stop=2, mode="mechanism-profile"), config, _context()
+        )
 
 
 def test_exact_resume_keeps_original_frozen_commit_after_authority_advances(
@@ -403,9 +335,7 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
     ownership = V6PriorOwnership(10_775_296, 523, 600)
     writer = SimpleNamespace(
         condition_feature=SimpleNamespace(
-            projection=torch.empty(
-                (2, 128, 256), dtype=torch.float32, device="meta"
-            )
+            projection=torch.empty((2, 128, 256), dtype=torch.float32, device="meta")
         ),
         program_memory=SimpleNamespace(
             value=torch.empty((256, 320, 256), dtype=torch.float32, device="meta")

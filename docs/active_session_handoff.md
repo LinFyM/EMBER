@@ -52,6 +52,15 @@
   `[256,320,256]` memory/full48/`.01` damping/step1/B20/B10+10全部不变，只把fixed key改为video-DC
   static与phase-centered sqrt-causal-prefix dynamic两个独立JL128 blocks，各自zero-L2后拼成P256。
   no-video仍精确zero；same-frame-set reverse/shuffle共享static但RHS为`g/0`，所以static不能单独拟合。
+- **第38节v2 mechanism profile已正式13/13通过**：clean frozen`5d93434`在与sealed baseline相同的
+  `gpu01:0,1,2|4,5,7`完成root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_5d93434_20260810`。
+  rank48、condition=`106.114`、correct/cotangent=`.968254`、negative/correct=`.0218514`；24/24 correct
+  retention且最小`.942261`，24/24 null且最大leakage`.048462`，A/B、4/4 fixed-action和closure全通过。
+- shuffled/reversed/wrong cosine mean=`.479565/.013732/.507178`，各臂最大`.851083/.023307/.762135`；
+  leakage mean=`.024184/.018664/.025999`且三类均8/8过门。production=`20.021842s`、对sealed baseline
+  ratio=`.949122`，input wait=`.069295s`与baseline`.076318s`匹配；0 checkpoint/OOM/nonfinite/negative
+  forward，selected GPUs结束后回到14MiB。
 - 一次性teacher-audit/effective-objective/flow-teacher owners及tests已删除；checkpoint只拥有单个Program
   memory、cursor和六rank RNG，base600和fixed projection不被保存或覆盖。v8 residual deployment adapter、
   strict paired evaluator和analysis family已经联锁，错误Writer family不能借用本候选profile seal。
@@ -59,16 +68,20 @@
   macro重算13项门并匹配完整scientific run；formal result必须绑定completion、50-row metrics和10/25/50
   manifests；deployment training commit必须属于active remote authority lineage。clean detached frozen
   authority ancestor现可直接用于v8 evaluator，不需制造第二主分支。
-- v2聚焦`52 passed`、带LIBERO assets最终全仓`281 passed in 21.34s`；balanced两帧反例证明同static、相反
-  dynamics的natural/reversed unit keys内积为0。compileall、26份JSON、`git diff --check`通过；architecture
-  guard相对`6903ee6`为`+144/-126`、净增18行且0 hard violation，唯一1243行legacy contract没有增长。这些仍只证明
-  CPU合同，**当前没有v2 A40 profile、训练或rollout结果**；formal和v8
-  deployment evaluation被artifact门阻塞。
-- 下一GPU动作是clean push/frozen之后实时比较双节点与quota，只做一次v2六卡macro49 profile：保持B10+10、
-  0 negative policy forward；production wall相对sealed `21.095109596s` ratio`≤1.10`，至少18/24 task-local
-  correct retention、18/24 negative null、4/4 suite-stratified fixed-action response。8次fixed-action inference
-  只作verification、排除在production wall外且不读取target action。通过后再单卡profile新部署图batch
-  `8/16/32`并做correct smoke；两类seal齐全后才评测zero-memory macro0、formal0→10和strict correct400。
+- v2聚焦`52 passed`、带LIBERO assets最终全仓`281 passed in 21.34s`；compileall、26份JSON、diff-check与
+  architecture guard通过。profile artifact已从raw macro/run/completion重算并写入config；mechanism状态
+  sealed，但formal现硬阻塞到deployment seal。**当前仍没有v2训练、rollout或strict成绩**，v8 deployment
+  evaluation仍被自己的live profile+vertical artifact阻塞。
+- 当前deployment verifier已恢复并收敛为一个双root owner：必须同时重读同commit的32-request batch8/16/32
+  profile、validation8×state0 correct results和native LoRA cache manifest，核对单卡A40、selected batch、
+  8 rows/entries、单次launcher、0 retry/failure/forbidden reads及Writer release/source reuse。旧的profile-only
+  evidence不能seal，formal runtime也同时要求该evaluation artifact，不再靠文档顺序防止误启动。
+- 该GPU前修复的最终CPU门为全仓`283 passed in 26.10s`、compileall、Black、26份JSON、真实config load与
+  diff-check；architecture guard相对`5d93434`为`+968/-318`且0 hard violation，原contract缩到1101行，
+  没有parallel family或训练/推理热路径变化。
+- 下一GPU动作是新clean push/frozen之后用一张实时空闲A40 profile residual deployment graph的batch
+  `8/16/32`并做correct vertical smoke；只按LoRAs/s选最快稳定batch，不按BF16低位差异或空余显存选型。
+  deployment seal后才评测zero-memory macro0、formal0→10和strict correct400。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -308,7 +321,7 @@ Experts不解决：
 | Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂 |
 | Expert-Flow Teacher Audit | 无rollout | gradient residual`.6864/.8387`，teacher方向非冗余 | expert flow loss只在`2/24` tasks、`0/4` suites优于两baseline | CEFD否决；一次性runtime已删除 |
 | Frozen-v6 Counterfactual-Null Program Residual v1 | 无rollout | correct retention `.807966`、A/B/action/closure成立 | DC key导致condition`1315.33`、null仅15/24，吞吐门亦non-pass | v1退役；不训练、不调lambda/seed/P |
-| Balanced DC--Causal Program Residual v2 | 尚无新成绩 | static/dynamic等能key及CPU algebra/identity/freeze/resume/deployment联锁完成 | 真实A40 feature/motion/action/吞吐与closed-loop均未知 | 当前唯一active implementation；先profile再短训strict裁决 |
+| Balanced DC--Causal Program Residual v2 | 尚无rollout成绩 | 13/13机制门、24/24 null、A/B/action/吞吐全通过 | same-task噪声、多步累积与closed-loop仍未知 | 当前唯一active implementation；先deployment profile再macro0/短训strict裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -347,8 +360,9 @@ Experts不解决：
   authority，exact-resume保持原frozen commit且要求它仍为authority ancestor；错误family和stale artifact
   fail closed；
 - CPU seal为聚焦`52 passed`、带LIBERO assets全仓`281 passed in 21.34s`、compileall、26份JSON和
-  diff-check通过，architecture guard无hard violation。当前config仍为`awaiting_live_a40_macro49_profile`，
-  没有v2 family的GPU或strict结果。
+  diff-check通过，architecture guard无hard violation。v2 mechanism artifact已seal，config为
+  `active_mechanism_sealed_awaiting_deployment_seal`；没有v2 rollout或strict结果，deployment graph仍待
+  独立live seal，formal runtime实际fail closed。
 
 以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance，不是当前seal：
 

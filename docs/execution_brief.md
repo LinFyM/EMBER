@@ -60,10 +60,26 @@ v8 adapter、one-shot六臂证据和cross-family analysis已经联锁；错误fa
 profile artifact会从raw macro重算全部门并匹配完整scientific run，formal result必须绑定completion、50-row
 metrics与macro10/25/50 manifests，trained deployment checkpoint必须位于active authority lineage；clean
 detached frozen authority ancestor可直接运行v8 evaluator。v2聚焦`52 passed`、带LIBERO assets全仓
-`281 passed in 21.34s`；同static/反dynamic两帧反例的natural/reversed unit keys内积为0。最终compileall、
-26份JSON、diff-check通过；architecture guard相对`6903ee6`为`+144/-126`、净增18行且0 hard violation，1243行legacy
-contract未增长。这些只证明实现合同，不构成v2机制
-或性能结果。
+`281 passed in 21.34s`；同static/反dynamic两帧反例的natural/reversed unit keys内积为0。这是clean
+implementation commit`5d93434`的CPU seal：compileall、26份JSON、diff-check通过；architecture guard相对
+`6903ee6`为`+144/-126`、净增18行且0 hard violation，1243行legacy contract未增长。
+
+clean frozen`5d93434`的v2 macro49 mechanism profile现已正式**13/13通过**。root=
+`runs/outputs/pi05_v6_balanced_causal_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_5d93434_20260810`；
+rank48、condition=`106.114`、correct/cotangent=`.968254`、negative/correct=`.0218514`，24/24 correct与
+24/24 null。24个tasks全部相对v1同时提高retention并降低leakage；shuffled/reversed/wrong cosine mean=
+`.479565/.013732/.507178`，三臂leakage max=`.048462/.032562/.033571`。A/B、4/4 fixed-action、closure、
+0 negative forward均通过。
+
+production=`20.021842s`、对sealed baseline ratio=`.949122`；本次与baseline同为
+`gpu01:0,1,2|4,5,7`，input wait=`.069295s`对`.076318s`，吞吐pass不是跨host wait假象。profile不保留
+checkpoint，结束后六卡释放。artifact已由config verifier从raw result/run/completion重算并seal；formal
+初始写回曾被标为ready，但v8 deployment graph仍无自己的live吞吐/smoke seal，且当前没有v2训练或
+closed-loop成绩；这个状态缺口已由下一段的fail-close修正，不能按旧ready恢复执行。
+
+GPU前复核又修正了formal提前ready与profile-only evidence两个执行缺口：当前formal硬阻塞到双root seal，
+新增唯一deployment-seal owner重读profile/results/cache。全仓`283 passed in 26.10s`，architecture guard相对
+`5d93434`为`+968/-318`、0 hard violation；旧contract缩到1101行，无parallel family或热路径变化。
 
 当前操作顺序：
 
@@ -71,12 +87,10 @@ contract未增长。这些只证明实现合同，不构成v2机制
 2. Tangent只解决了局部半径，没有解决共享decoder Jacobian把更新旋进expert方向的问题；strict同时降到
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
-4. 一次性audit与v1 key均已退役；第38节v2实现和CPU门已完成，不能从旧Tangent/audit/v1恢复执行；
-5. 下一次GPU只做clean pushed/frozen commit上的v2 macro49 mechanism profile：保持B10+10和0 negative policy
-   forward；production wall对sealed v6 `21.095109596s` ratio`≤1.10`，至少18/24 correct retention、
-   18/24 negative null、4/4 fixed-action breadth；8次fixed-action verification forward排除在production wall外；
-6. mechanism seal后单卡profile新residual deployment graph的batch8/16/32并做correct smoke；两类seal齐全才
-   评测zero-memory macro0、formal fresh0→10和strict correct400；
+4. 一次性audit与v1 key均已退役；第38节v2 mechanism 13/13通过并seal，不能从旧Tangent/audit/v1恢复执行；
+5. 下一次GPU只在新clean pushed/frozen seal上用一张实时空闲A40 profile residual deployment graph的
+   batch8/16/32并做correct smoke，按最高稳定LoRAs/s选batch；
+6. mechanism与deployment两类seal齐全后才评测zero-memory macro0、formal fresh0→10和strict correct400；
 7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
    不从Tangent checkpoint resume。
 
@@ -86,8 +100,8 @@ contract未增长。这些只证明实现合同，不构成v2机制
 
 - 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD及第37节v1 key均已退役或
   否决。当前唯一active implementation是第38节balanced-key frozen-v6 counterfactual-null Program residual；
-  尚未获得live profile seal，
-  因而formal训练仍被配置硬阻塞。
+  mechanism profile已seal，但deployment graph尚未获得live throughput/smoke seal；按当前执行边界先完成
+  deployment seal，再运行macro0或formal训练。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -152,8 +166,9 @@ GPU前一次性要求：
   runtime退役；canonical contract owner继续保留。该证据不能解锁CEFD或新候选训练。
 - current v2 residual CPU oracle覆盖zero memory identity、真实frame order、wrong-video exact-language、full48
   solve/application、negative-null、A/B response、memory-only exact-resume、六rank RNG、v8 deployment
-  asset和strict paired row evidence；带LIBERO assets全仓`281 passed`。profile仍必须live验证真实A40 feature rank、
-  task-local motion、fixed-action传递、wall和显存，CPU结果不能代替。
+  asset和strict paired row evidence；带LIBERO assets全仓`281 passed`。随后live mechanism profile已验证真实
+  A40 feature rank、task-local motion、fixed-action传递、wall和显存；CPU与该单步机制证据都不能代替
+  deployment graph吞吐、真实closed-loop或多macro累积裁决。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -284,8 +299,8 @@ audit已证明expert flow不是更好的监督，因此下一变量不改target�
 linear residual memory。full48显式Gram把24个correct真实functional cotangent与24个轮换counterfactual的
 zero-motion约束写入同一memory；不增加PI05 forward、不使用expert/ranking cotangent。该design必须先证明
 fixed feature对真实order敏感、Gram健康、correct motion保留、negative motion近零和macro0 exact identity。
-CPU已证明algebra、topology、identity和fail-closed合同；尚待live mechanism profile证明真实A40 feature/
-motion/action/吞吐，再由strict closed-loop裁决价值。
+CPU已证明algebra、topology、identity和fail-closed合同，live mechanism profile已证明真实A40 feature/
+motion/action/吞吐。当前仍须独立seal deployment graph，再由macro0、短训和strict closed-loop裁决价值。
 
 按以下顺序定位最早接口：
 
@@ -315,10 +330,10 @@ motion/action/吞吐，再由strict closed-loop裁决价值。
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent与teacher-audit均已
   formal non-pass/fail-closed，不能作为活动入口。
-- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；当前状态只允许
-  `mechanism-profile`，formal和v8 deployment evaluation均等待各自live artifact seal。
+- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism
+  artifact已seal；formal状态和runtime均阻塞到v8 deployment live profile+vertical smoke双root seal。
 - current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第38节；v1 A40 non-pass
-  已封存，v2实现和CPU seal完成，但没有v2 A40或strict结果。
+  已封存，v2 mechanism 13/13通过；仍没有v2 strict或closed-loop结果。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。
 - fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为

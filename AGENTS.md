@@ -28,8 +28,15 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
 - 当前唯一active implementation是第38节Balanced DC--Causal v2：historical v6的600 tensors、
   `[256,320,256]` Program memory、full48、`.01` damping、B20/B10+10和0 negative policy forward不变；
   只把video-DC static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。
-  v2已完成CPU seal但尚无A40、训练、rollout或strict结果；formal与deployment evaluation继续被live
-  mechanism/profile artifact硬阻塞。
+  clean frozen`5d93434`的macro49 mechanism profile已13/13通过：condition=`106.114`、correct/cotangent=
+  `.968254`、negative/correct=`.0218514`、24/24 correct与24/24 null，A/B、4/4 fixed-action、closure和
+  production ratio=`.949122`全部通过。artifact已seal；尚无v2训练、rollout或strict结果。
+- 下一GPU动作只允许在新clean pushed/frozen seal上用一张实时空闲A40完成v8 residual deployment graph的
+  batch8/16/32吞吐profile与correct smoke。该deployment seal完成前不得直接启动formal训练；通过后先跑
+  zero-memory macro0，再fresh0→10并立即strict correct400。
+- formal runtime现同时要求mechanism artifact与deployment双root seal；当前config状态是
+  `active_mechanism_sealed_awaiting_deployment_seal`，不会因mechanism已过门而提前开放训练。deployment
+  evidence必须同时重读throughput profile、validation8×state0 results和native LoRA cache manifest。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -112,8 +119,9 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前唯一active Writer是第38节Balanced DC--Causal frozen-v6 Program Residual，但在live macro49 mechanism
-profile封印前**不可训练**。historical v6-fast macro400是唯一允许的load-only初始化；audit已经否决CEFD，
+当前唯一active Writer是第38节Balanced DC--Causal frozen-v6 Program Residual；mechanism profile已seal，
+但在新v8 deployment graph的live throughput/correct smoke封印前**不可训练**。historical v6-fast macro400
+是唯一允许的load-only初始化；audit已经否决CEFD，
 step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入residual update。活动实现严格冻结
 historical v6整套600 tensors，在condition-local fused Program后加zero-init residual；跨condition共享只由
 固定action-hidden video key的显式Gram控制。旧v1/Tangent/ECP optimizer、scheduler、sampler、RNG和

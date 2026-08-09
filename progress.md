@@ -1,5 +1,43 @@
 # EMBER Progress Ledger
 
+## Balanced DC--Causal v2 mechanism profile全门通过（2026-08-10）
+
+- CPU seal clean pushed commit=`5d93434`；旧v1 frozen worktree在确认无进程、无未跟踪改动后移除，新建
+  detached frozen worktree=`/data1/user/ymdai/worktrees/EMBER-balanced-key-profile-5d93434-20260810`。
+  launch前实时比较`gpu01/gpu02`并重查`/data1` quota=`573,432,200/1,073,741,824KiB`，选择与sealed
+  baseline相同且当时空闲的`gpu01:0,1,2|4,5,7` 3+3 NUMA panel；GPU3他人VLLM、GPU6和gpu02均未触碰。
+- retained root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_mechanism_profile_macro49_r6_lb20_mb10_5d93434_20260810`；
+  24 tasks×B20、8/8/8 shuffled/reversed/wrong、0 negative policy forward、无checkpoint，tmux launcher自然
+  exit0。root只有contract/invocation/profile/completion四个预期文件、总计60,502 bytes；六张卡结束后回到
+  14MiB，0 OOM/nonfinite。
+- 原13项机制/吞吐门**13/13全部通过**：full48 rank48、regularized condition=`106.114`、aggregate correct
+  motion/cotangent=`.968254`、negative/correct=`.0218514`；24/24 correct retention且最小`.942261`，24/24
+  paired negative null且最大leakage`.048462`。application predicted/observed relative RMS=`0`。
+- 分臂cosine mean/max与leakage mean/max：shuffled=`.479565/.851083`、`.024184/.048462`；reversed=
+  `.013732/.023307`、`.018664/.032562`；wrong=`.507178/.762135`、`.025999/.033571`。这与v1 shuffled/
+  reversed/wrong cosine mean `.985525/.956451/.906269`形成直接、同schedule修复；没有aggregate掩盖某类负臂。
+- A/B response RMS=`1.37744e-5/1.38187e-5`，4/4 suite fixed-action response RMS=`.001210888`；Program
+  memory→完整LoRA→policy action路径未因key修复减弱。value-delta RMS从v1`2.12559e-6`降到
+  `1.16318e-6`，但correct motion retention反而从`.807966`升到`.968254`，符合病态逆放大被移除而非能量塌缩。
+- production task/kernel=`19.585536/.436306s`，合计`20.021842s`，相对同host/panel sealed baseline
+  `21.095110s` ratio=`.949122`；input wait=`.069295s`与baseline`.076318s`接近，故吞吐pass不是跨host
+  wait假象。verification另计`.735397s`，step总wall=`20.760785s`；峰值allocated/reserved=
+  `43,261,166,592/46,917,484,544` bytes。
+- artifact evidence已写入v2 config并由contract从raw profile/run/completion完整重算通过；profile状态切为
+  sealed；复核发现当时formal状态仅凭mechanism已提前ready，与文档顺序冲突，现已改为硬阻塞到deployment
+  双root seal。当前仍没有v2 rollout、训练或strict成绩，且独立block L2可能放大很小但
+  非零dynamic的same-task视频噪声仍待closed-loop实证。下一动作只做新clean pushed seal上的单卡
+  residual deployment batch8/16/32 profile与correct smoke，不直接启动formal训练。
+- deployment evidence也从旧的profile-only verifier修正为唯一双root owner：同commit的profile
+  `writer_generation_profile.json`、vertical `results.json`和cache manifest缺一不可，并重算固定panel选型、
+  validation8×state0、单次launcher、8 rows/entries、native76-tensor LoRA、release/reuse与零禁止读取。
+  该修复只在一次性seal路径执行，不进入Writer生成、policy推理或训练热路径。
+- 双root/fail-close修复后的无GPU最终回归为全仓`283 passed in 26.10s`、compileall、Black、26份JSON、
+  真实config artifact重载与diff-check通过。architecture guard相对`5d93434`为`+968/-318`、净增650行、
+  0 hard violation；原1243行contract缩到1101行，新增624行deployment-seal单owner和其238行聚焦测试，
+  无parallel family。review项是明确的一次性artifact owner、既有长contract/tests和目录密度，不进入热路径。
+
 ## v1机制profile裁决与Balanced DC--Causal v2 CPU seal（2026-08-10）
 
 - clean pushed/frozen`6903ee6`只在live空闲`gpu02:0--5`完成一次第37节v1 macro49 mechanism profile；

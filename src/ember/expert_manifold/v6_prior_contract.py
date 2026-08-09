@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import json
-import math
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.expert_manifold.v6_prior_deployment_seal import (
+    evaluation_artifact_matches,
+)
 from ember.expert_manifold.v6_prior_policy_batch import (
     LOGICAL_POLICY_BATCH_SIZE,
     POSITIVE_POLICY_RANDOMNESS,
 )
-from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authority
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -29,8 +30,6 @@ V6_PRIOR_RUN_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_launch_v2"
 V6_PRIOR_PROFILE_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_profile_v2"
 V6_PRIOR_COMPLETION_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_completion_v2"
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
-_WRITER_GENERATION_PROFILE_SCHEMA = "ember_pi05_writer_generation_profile_v1"
-_EVALUATION_RUN_SCHEMA = "ember_pi05_target_eval_launch_v2"
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
 
 _EXPECTED_WRITER = {
@@ -163,7 +162,9 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
         row = config["authorities"][name]
         path = (REPO_ROOT / str(row["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing residual Writer authority: {name}") from error
+        raise ExpertManifoldError(
+            f"missing residual Writer authority: {name}"
+        ) from error
     if not path.is_file():
         raise ExpertManifoldError(f"residual Writer authority is missing: {name}")
     return path
@@ -207,20 +208,22 @@ _PROFILE_CHECKS = {
 
 
 def _is_ancestor(left: str, right: str) -> bool:
-    return subprocess.run(
-        ["git", "merge-base", "--is-ancestor", left, right],
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-    ).returncode == 0
+    return (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", left, right],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+        ).returncode
+        == 0
+    )
 
 
 def git_commit_in_active_authority_lineage(commit: str) -> bool:
     """Accept only commits shared by this checkout and the active remote authority."""
 
-    if (
-        len(commit) != 40
-        or any(character not in "0123456789abcdef" for character in commit)
+    if len(commit) != 40 or any(
+        character not in "0123456789abcdef" for character in commit
     ):
         return False
     try:
@@ -272,8 +275,7 @@ def _profile_result_matches(
         passed is True
         and all(result.get(name) == value for name, value in expected.items())
         and result.get("gate_evidence") == gate_evidence
-        and gate_evidence.get("checks")
-        == {name: True for name in _PROFILE_CHECKS}
+        and gate_evidence.get("checks") == {name: True for name in _PROFILE_CHECKS}
     )
 
 
@@ -352,9 +354,7 @@ def _source_and_tokenizer_match(
 ) -> bool:
     if not isinstance(source, Mapping) or not isinstance(tokenizer, Mapping):
         return False
-    initialization = (
-        REPO_ROOT / str(config["initialization"]["checkpoint"])
-    ).resolve()
+    initialization = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     try:
         historical = json.loads(
             (initialization.parent.parent / "run_contract.json").read_text(
@@ -437,7 +437,9 @@ def _run_data_matches(
         data["tasks"] == expected_tasks
         and isinstance(consumed, Mapping)
         and set(consumed) == set(expected_consumed) | {"query"}
-        and all(consumed.get(name) == value for name, value in expected_consumed.items())
+        and all(
+            consumed.get(name) == value for name, value in expected_consumed.items()
+        )
         and isinstance(query, Mapping)
         and set(query) == set(expected_query) | {"unique_query_rows"}
         and all(query.get(name) == value for name, value in expected_query.items())
@@ -495,14 +497,11 @@ def _run_science_matches(
         and git.get("dirty_paths") == []
         and isinstance(record, Mapping)
         and set(record) == {"path", "schema", "bytes"}
-        and Path(str(record.get("path", ""))).name
-        == V6_PRIOR_CANONICAL_CONFIG.name
+        and Path(str(record.get("path", ""))).name == V6_PRIOR_CANONICAL_CONFIG.name
         and record.get("schema") == V6_PRIOR_CONFIG_SCHEMA
         and config_bytes > 0
         and initialization == expected_initialization
-        and _source_and_tokenizer_match(
-            config, run.get("source"), run.get("tokenizer")
-        )
+        and _source_and_tokenizer_match(config, run.get("source"), run.get("tokenizer"))
         and _run_data_matches(
             config,
             run.get("data"),
@@ -544,7 +543,13 @@ def _runtime_matches(
         "nccl_algo": "Ring",
         "nccl_proto": "Simple",
     }
-    dynamic = {"host", "device", "cuda_visible_devices", "rank_topology", "cuda_allocator_conf_observed"}
+    dynamic = {
+        "host",
+        "device",
+        "cuda_visible_devices",
+        "rank_topology",
+        "cuda_allocator_conf_observed",
+    }
     return (
         set(runtime) == set(expected) | dynamic
         and all(runtime.get(name) == value for name, value in expected.items())
@@ -555,10 +560,7 @@ def _runtime_matches(
         and len(topology) == 6
         and sorted(row.get("rank") for row in topology) == list(range(6))
         and all(row.get("device_name") == "NVIDIA A40" for row in topology)
-        and len(
-            {(row.get("host"), row.get("physical_gpu")) for row in topology}
-        )
-        == 6
+        and len({(row.get("host"), row.get("physical_gpu")) for row in topology}) == 6
         and all(isinstance(row.get("numa_node"), int) for row in topology)
         and all(bool(row.get("cpu_affinity")) for row in topology)
     )
@@ -637,6 +639,7 @@ def _profile_artifact_matches(config: Mapping[str, Any]) -> bool:
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
         return False
 
+
 def _throughput_baseline_matches(config: Mapping[str, Any]) -> bool:
     baseline = config.get("profile_run", {}).get("throughput_baseline", {})
     expected = {
@@ -656,145 +659,17 @@ def _throughput_baseline_matches(config: Mapping[str, Any]) -> bool:
         observed = json.loads(
             (REPO_ROOT / expected["path"]).read_text(encoding="utf-8")
         )
-        return (
-            observed.get("schema_version") == expected["schema"]
-            and all(
-                observed.get(name) == expected[name]
-                for name in (
-                    "schedule_macro",
-                    "task_count",
-                    "action_queries_per_task",
-                    "step_seconds",
-                )
+        return observed.get("schema_version") == expected["schema"] and all(
+            observed.get(name) == expected[name]
+            for name in (
+                "schedule_macro",
+                "task_count",
+                "action_queries_per_task",
+                "step_seconds",
             )
         )
     except (OSError, json.JSONDecodeError):
         return False
-
-
-def _stable_generation_rows(
-    rows: object,
-) -> list[Mapping[str, Any]]:
-    if not isinstance(rows, list):
-        return []
-    return [
-        row
-        for row in rows
-        if isinstance(row, Mapping)
-        and row.get("stable") is True
-        and math.isfinite(float(row.get("loras_per_second", math.nan)))
-        and float(row["loras_per_second"]) > 0
-    ]
-
-
-def _evaluation_run_matches(
-    config: Mapping[str, Any],
-    evaluation: Mapping[str, Any],
-    run: Mapping[str, Any],
-    commit: str,
-) -> bool:
-    adapter = run.get("adapter", {})
-    git = run.get("git", {})
-    parallel = run.get("parallel", {})
-    writer_asset = adapter.get("writer_asset", {})
-    required_sizes = evaluation.get("required_writer_model_batch_sizes", [])
-    expected_adapter = {
-        "schema_version": (
-            "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
-        ),
-        "kind": "expert_manifold_writer",
-        "arm": "expert_manifold_v6_condition_residual_correct",
-        "video_condition": "correct",
-    }
-    expected_parallel = {
-        "physical_gpu_count": 1,
-        "replicas_per_gpu": 1,
-        "writer_generators_per_gpu": 1,
-        "writer_generation_batch_size": max(required_sizes),
-    }
-    return (
-        run.get("schema_version") == _EVALUATION_RUN_SCHEMA
-        and run.get("mode") == "smoke"
-        and run.get("role") == "validation"
-        and run.get("content_hash_policy") == "disabled_by_owner"
-        and git.get("commit") == commit
-        and git_state_is_clean_pushed_or_frozen_authority(git)
-        and all(
-            adapter.get(name) == value
-            for name, value in expected_adapter.items()
-        )
-        and adapter.get("config", {}).get("schema") == V6_PRIOR_CONFIG_SCHEMA
-        and writer_asset.get("architecture")
-        == config.get("writer", {}).get("architecture")
-        and writer_asset.get("program_residual_value_count")
-        == config.get("program_residual", {}).get("value_count")
-        and writer_asset.get("deployment_trainable_parameter_count") == 0
-        and writer_asset.get("generated_lora_tensor_count") == 76
-        and adapter.get("evaluation_authority", {}).get("throughput_policy")
-        == evaluation.get("throughput_policy")
-        and adapter.get("information_wall", {}).get(
-            "video_is_only_dynamic_value"
-        )
-        is True
-        and all(
-            parallel.get(name) == value
-            for name, value in expected_parallel.items()
-        )
-    )
-
-
-def _generation_profile_matches(
-    evaluation: Mapping[str, Any],
-    evidence: Mapping[str, Any],
-    result: Mapping[str, Any],
-    run: Mapping[str, Any],
-) -> bool:
-    rows = result.get("writer_generation_measurements")
-    git = result.get("git", {})
-    stable = _stable_generation_rows(rows)
-    if not stable or not isinstance(rows, list):
-        return False
-    selected = max(
-        stable,
-        key=lambda row: (
-            float(row["loras_per_second"]),
-            int(row["batch_size"]),
-        ),
-    )
-    required_sizes = evaluation.get("required_writer_model_batch_sizes")
-    selected_batch = int(evidence["writer_model_batch_size"])
-    expected = {
-        "schema_version": _WRITER_GENERATION_PROFILE_SCHEMA,
-        "contract_reference": run.get("contract_reference"),
-        "device": "NVIDIA A40",
-        "profiled_writer_model_batch_sizes": required_sizes,
-        "selected_writer_model_batch_size": selected_batch,
-        "selection_rule": (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        ),
-        "writer_modules_released": True,
-        "source_policy_reused": True,
-        "content_hash_policy": "disabled_by_owner",
-    }
-    zero_fields = (
-        "teacher_action_reads",
-        "teacher_state_reads",
-        "reward_reads",
-        "terminal_reads",
-        "oom_count",
-        "nonfinite_count",
-    )
-    return (
-        all(result.get(name) == value for name, value in expected.items())
-        and git.get("commit") == evidence["run_commit"]
-        and git_state_is_clean_pushed_or_frozen_authority(git)
-        and sorted(row.get("batch_size") for row in rows) == required_sizes
-        and selected.get("batch_size") == selected_batch
-        and selected_batch
-        >= int(evaluation.get("minimum_smoke_writer_model_batch_size", -1))
-        and all(result.get(name) == 0 for name in zero_fields)
-    )
 
 
 def _evaluation_artifact_matches(config: Mapping[str, Any]) -> bool:
@@ -803,34 +678,15 @@ def _evaluation_artifact_matches(config: Mapping[str, Any]) -> bool:
     evidence = evaluation.get("online_smoke_evidence")
     if status == "blocked_until_new_residual_deployment_graph_live_profile":
         return evidence is None
-    if status != "sealed_from_live_residual_deployment_profile":
-        return False
-    required_fields = {
-        "path",
-        "bytes",
-        "schema",
-        "run_commit",
-        "writer_model_batch_size",
-    }
-    if not isinstance(evidence, Mapping) or set(evidence) != required_fields:
-        return False
-    try:
-        path = (REPO_ROOT / str(evidence["path"])).resolve()
-        result = json.loads(path.read_text(encoding="utf-8"))
-        run = json.loads(
-            (path.parent / "run_contract.json").read_text(encoding="utf-8")
+    return status == "sealed_from_live_residual_deployment_profile" and (
+        evaluation_artifact_matches(
+            config=config,
+            evidence=evidence,
+            repo_root=REPO_ROOT,
+            commit_in_active_lineage=git_commit_in_active_authority_lineage,
         )
-        commit = str(evidence["run_commit"])
-        return (
-            path.stat().st_size == int(evidence["bytes"])
-            and evidence["schema"] == _WRITER_GENERATION_PROFILE_SCHEMA
-            and bool(commit)
-            and _evaluation_run_matches(config, evaluation, run, commit)
-            and _generation_profile_matches(evaluation, evidence, result, run)
-            and git_commit_in_active_authority_lineage(commit)
-        )
-    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
-        return False
+    )
+
 
 _COHERENT_STATES = {
     (
@@ -840,22 +696,16 @@ _COHERENT_STATES = {
         "blocked_until_new_residual_deployment_graph_live_profile",
     ),
     (
-        "active_profile_sealed_formal_ready",
+        "active_mechanism_sealed_awaiting_deployment_seal",
         "sealed_from_live_a40_macro49_profile",
-        "ready_after_live_profile_seal",
+        "blocked_until_live_deployment_profile_and_smoke_seal",
         "blocked_until_new_residual_deployment_graph_live_profile",
     ),
     (
-        "active_profile_sealed_formal_ready",
+        "active_deployment_sealed_formal_ready",
         "sealed_from_live_a40_macro49_profile",
-        "ready_after_live_profile_seal",
+        "ready_after_live_mechanism_and_deployment_seals",
         "sealed_from_live_residual_deployment_profile",
-    ),
-    (
-        "formal_result_sealed",
-        "sealed_from_live_a40_macro49_profile",
-        "formal_result_sealed",
-        "blocked_until_new_residual_deployment_graph_live_profile",
     ),
     (
         "formal_result_sealed",
@@ -962,7 +812,8 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
     evidence = formal.get("artifact_evidence")
     if status in {
         "blocked_until_live_profile_passes_and_is_sealed",
-        "ready_after_live_profile_seal",
+        "blocked_until_live_deployment_profile_and_smoke_seal",
+        "ready_after_live_mechanism_and_deployment_seals",
     }:
         return evidence is None
     if status != "formal_result_sealed" or not isinstance(evidence, Mapping):
@@ -1049,6 +900,7 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
         and git_commit_in_active_authority_lineage(commit)
     )
 
+
 _EXPECTED_EVALUATION_STATIC = {
     "throughput_policy": (
         "highest_measured_batch_throughput_with_device_memory_headroom"
@@ -1086,7 +938,8 @@ def _formal_state_matches(config: Mapping[str, Any]) -> bool:
         formal.get("status")
         in {
             "blocked_until_live_profile_passes_and_is_sealed",
-            "ready_after_live_profile_seal",
+            "blocked_until_live_deployment_profile_and_smoke_seal",
+            "ready_after_live_mechanism_and_deployment_seals",
             "formal_result_sealed",
         }
         and _projection_matches(formal, _EXPECTED_FORMAL_STATIC)
@@ -1138,9 +991,7 @@ _EXPECTED_METHOD = {
 
 _EXPECTED_AUTHORITIES = {
     "task_expert_config": {"path": "configs/pi05_video_expert_manifold_v1.json"},
-    "target_data_manifest": {
-        "path": "configs/pi05_target_data_v1/manifest.json"
-    },
+    "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
     "evaluation_config": {"path": "configs/pi05_target_evaluation_v1.json"},
     "lora_contract": {"path": "configs/pi05_lora_v1.json"},
     "source_base_config": {"path": "configs/pi05_source_base_v1.json"},
@@ -1215,6 +1066,7 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         raise ExpertManifoldError("historical v6 initialization asset is missing")
     return config
 
+
 def runtime_for_mode(
     config: Mapping[str, Any],
     mode: str,
@@ -1229,12 +1081,18 @@ def runtime_for_mode(
     if mode == "formal":
         profile = config["profile_run"]
         formal = config["formal_run"]
+        evaluation = config["evaluation"]
         if (
             profile["status"] != "sealed_from_live_a40_macro49_profile"
             or not isinstance(profile["artifact_evidence"], Mapping)
-            or formal["status"] != "ready_after_live_profile_seal"
+            or formal["status"] != "ready_after_live_mechanism_and_deployment_seals"
+            or evaluation["formal_status"]
+            != "sealed_from_live_residual_deployment_profile"
+            or not isinstance(evaluation["online_smoke_evidence"], Mapping)
         ):
-            raise ExpertManifoldError("formal residual training is blocked by profile state")
+            raise ExpertManifoldError(
+                "formal residual training is blocked by mechanism or deployment state"
+            )
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),

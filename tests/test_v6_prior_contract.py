@@ -209,17 +209,21 @@ def _checkpoint_comparison(macro: int) -> dict:
             "param_groups_equal": True,
             "scientific_atol": 0.0002,
             "scientific_rtol": 0.002,
-            "max_abs_tolerance": 0.0000075,
-            "global_relative_l2_tolerance": 0.00001,
+            "minimum_symmetric_norm_ratio": 0.99,
+            "minimum_cosine": 0.999,
             "tensor_count": 82,
             "max_abs": 0.0,
             "global_relative_l2": 0.0,
+            "symmetric_norm_ratio": 1.0,
+            "cosine": 1.0,
             "worst_tensor": None,
             "moment_fields": {
                 name: {
                     "tensor_count": 41,
                     "max_abs": 0.0,
                     "global_relative_l2": 0.0,
+                    "symmetric_norm_ratio": 1.0,
+                    "cosine": 1.0,
                     "worst_tensor": None,
                 }
                 for name in ("exp_avg", "exp_avg_sq")
@@ -233,11 +237,12 @@ def _checkpoint_comparison(macro: int) -> dict:
             "trainable_tensor_count": 41,
             "scientific_atol": 0.0002,
             "scientific_rtol": 0.002,
-            "max_abs_tolerance": 0.0000075,
-            "global_relative_l2_tolerance": 0.00001,
+            "global_relative_l2_tolerance": 0.002,
             "tensor_count": 41,
             "max_abs": 0.0,
             "global_relative_l2": 0.0,
+            "symmetric_norm_ratio": 1.0,
+            "cosine": 1.0,
             "worst_tensor": None,
         },
     }
@@ -259,7 +264,7 @@ def _zero_metric_witness(path: str) -> dict:
 def _resume_evidence(gradient: dict) -> dict:
     comparisons = [_checkpoint_comparison(1), _checkpoint_comparison(3)]
     return {
-        "schema_version": ("ember_pi05_v6_prior_resume_profile_artifact_evidence_v1"),
+        "schema_version": ("ember_pi05_v6_prior_resume_profile_artifact_evidence_v2"),
         "gradient_root": gradient["root"],
         "resumed_root": "/retained/resumed",
         "contiguous_root": "/retained/contiguous",
@@ -280,8 +285,9 @@ def _resume_evidence(gradient: dict) -> dict:
         "scientific_tolerances": {
             "scientific_atol": 0.0002,
             "scientific_rtol": 0.002,
-            "writer_max_abs": 0.0000075,
-            "writer_relative_l2": 0.00001,
+            "writer_relative_l2": 0.002,
+            "optimizer_minimum_symmetric_norm_ratio": 0.99,
+            "optimizer_minimum_cosine": 0.999,
         },
         "run_contracts_equal": True,
         "scientific_metrics_equivalent": True,
@@ -376,6 +382,9 @@ def _synthetic_run_contract(
     )
     config["profile_run"].update(
         {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
+    )
+    config["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
     )
     config_path, frozen_commit = _commit_frozen_config(
         tmp_path / "gradient-frozen",
@@ -529,16 +538,22 @@ def test_v6_prior_config_unlocks_profile_after_gradient_seal() -> None:
     config = load_v6_prior_config(CONFIG)
     with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
         runtime_for_mode(config, "gradient-profile")
-    assert runtime_for_mode(config, "profile") == (3, (1, 3))
-    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
-        runtime_for_mode(config, "formal")
+    with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
+        runtime_for_mode(config, "profile")
+    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50))
 
     gradient = config["gradient_profile"]["artifact_evidence"]
-    resumed = deepcopy(config)
-    resumed["profile_run"]["status"] = "sealed_from_live_a40_resume_profile_evidence"
-    resumed["profile_run"]["artifact_evidence"] = _resume_evidence(gradient)
-    resumed["formal_run"]["status"] = "sealed_from_live_a40_resume_profile_evidence"
-    assert runtime_for_mode(resumed, "formal") == (50, (10, 25, 50))
+    profile_ready = deepcopy(config)
+    profile_ready["profile_run"].update(
+        {"status": "ready_after_live_gradient_profile", "artifact_evidence": None}
+    )
+    profile_ready["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
+    assert runtime_for_mode(profile_ready, "profile") == (3, (1, 3))
+    with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):
+        runtime_for_mode(profile_ready, "formal")
+    assert _resume_profile_evidence_matches(_resume_evidence(gradient))
 
 
 def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
@@ -578,6 +593,21 @@ def test_v6_prior_profile_seals_fail_closed_on_status_or_weight_only() -> None:
     malformed_writer = deepcopy(resume)
     malformed_writer["checkpoint_comparisons"][0]["writer"] = []
     assert not _resume_profile_evidence_matches(malformed_writer)
+    wrong_writer_relative = deepcopy(resume)
+    wrong_writer_relative["checkpoint_comparisons"][1]["writer"][
+        "global_relative_l2"
+    ] = 0.0021
+    assert not _resume_profile_evidence_matches(wrong_writer_relative)
+    wrong_moment_norm = deepcopy(resume)
+    wrong_moment_norm["checkpoint_comparisons"][1]["optimizer"]["moment_fields"][
+        "exp_avg"
+    ]["symmetric_norm_ratio"] = 0.98
+    assert not _resume_profile_evidence_matches(wrong_moment_norm)
+    wrong_moment_direction = deepcopy(resume)
+    wrong_moment_direction["checkpoint_comparisons"][1]["optimizer"][
+        "moment_fields"
+    ]["exp_avg_sq"]["cosine"] = 0.998
+    assert not _resume_profile_evidence_matches(wrong_moment_direction)
     wrong_topology = deepcopy(resume)
     wrong_topology["rank_topology"][1]["physical_gpu"] = 0
     assert not _resume_profile_evidence_matches(wrong_topology)
@@ -600,7 +630,12 @@ def test_v6_prior_config_requires_artifact_lineage_for_each_unlock(
             **gradient["recommended_weights"],
         }
     )
-    config["profile_run"]["status"] = "ready_after_live_gradient_profile"
+    config["profile_run"].update(
+        {"status": "ready_after_live_gradient_profile", "artifact_evidence": None}
+    )
+    config["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
     path = tmp_path / "gradient-sealed.json"
     path.write_text(json.dumps(config), encoding="utf-8")
     assert load_v6_prior_config(path)["profile_run"]["status"] == (
@@ -850,7 +885,12 @@ def test_resume_seal_is_assembled_from_semantically_equal_profile_roots(
     profile_config["objective"]["auxiliary_weights"] = deepcopy(
         contract["objective"]["auxiliary_weights"]
     )
-    profile_config["profile_run"]["status"] = "ready_after_live_gradient_profile"
+    profile_config["profile_run"].update(
+        {"status": "ready_after_live_gradient_profile", "artifact_evidence": None}
+    )
+    profile_config["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
     profile_config_path, profile_commit = _commit_frozen_config(
         tmp_path / "profile-frozen",
         profile_config,

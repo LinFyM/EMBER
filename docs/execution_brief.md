@@ -7,7 +7,8 @@
 运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。physical
 B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean frozen `eddba96`的B16+4也在
 六rank第一条functional attention一致OOM。clean frozen`9c814ff`的balanced B10+10已完整通过macro49并
-由assembler封存gradient/auxiliary evidence；当前解锁三宏步resume profile，仍没有新strict性能结果。
+由assembler封存gradient/auxiliary evidence。clean frozen`5fbcb27`的fresh/resume/contiguous三宏步链也已
+完成并artifact-seal；当前formal 0→50已合法解锁，仍没有新strict性能结果。
 
 当前操作顺序：
 
@@ -15,8 +16,8 @@ B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean
 2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
 3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
 4. 保持logical B20不变；B16被A40容量证伪，B10 gradient/weights已sealed；
-5. 用B10完成fresh/resume/contiguous和训练吞吐profile；
-6. formal continuation和关键checkpoint strict rollout；
+5. 已用B10完成fresh/resume/contiguous和训练吞吐profile，不为低位复现改变高吞吐训练路径；
+6. 当前进入formal continuation和关键checkpoint strict rollout；
 7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
@@ -73,8 +74,8 @@ GPU前一次性要求：
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
   destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
 - 2-worker prefetched sampler与serial、prefix+resume逐row一致；
-- config的evaluation已由单卡retained artifacts封存；当前只解锁gradient-profile，profile/formal仍
-  fail-closed。
+- config的evaluation、gradient和resume profile均已由retained artifacts封存；formal只在当前完整
+  artifact lineage下解锁，任何status-only或stale config仍fail-closed。
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
@@ -171,6 +172,26 @@ scientific tolerance。task/frame provenance还会回查frozen target manifest�
 
 工程故障按rank/device/process-group/CUDA/I/O/NUMA层定位。不得用加timeout、关watchdog、减少logical B20
 或盲重试掩盖问题；physical microbatch是保持科学batch的容量实现，不属于减少B20。
+
+### 5.1 Completed resume evidence
+
+clean pushed/frozen`5fbcb27`在live空闲`gpu02:0--5`完成retry1：resumed链fresh0→1再exact-resume1→3，
+contiguous链独立fresh0→3。两run contracts逐字相同，所有invocation exit0；各3 metrics、macro1/3
+checkpoints和completion，0 OOM/nonfinite/clip。contiguous/resumed合计step wall=`61.368/64.450s`，
+input wait=`.203/1.153s`；steady-state macro3约`20.018/19.698s`且input wait约`.0006s`，故不测试workers4。
+峰值allocated/reserved=`43,265,769,984/47,118,811,136` bytes。
+
+cursor、checkpoint contract、6-rank RNG、scheduler、AMP、559 frozen Writer tensors精确相等；41个
+trainable Writer与82个Adam moment tensors通过逐tensor`atol=2e-4, rtol=2e-3`，scientific metrics最大
+tolerance ratio=`.233773`。macro3 Writer maxabs/relative-L2=`4.6033e-5/1.06393e-5`，差异L2仅为两步
+真实update的`1.023%`；Adam maxabs=`2.6865e-6`，其`.007719` relative L2由近零moment分母放大。
+
+原aggregate gate把Writer的同一阈值误用于Adam，造成工程false negative。只读v2比较器现要求Writer
+global relative L2`≤.002`，并对Adam各moment要求symmetric norm ratio`≥.99`、cosine`≥.999`；raw
+maxabs/relative-L2只作诊断，同时保留上述逐tensor科学门和所有exact语义门。训练kernel、dtype、
+reduction、B10、objective及artifacts均未改变，也没有重跑GPU追逐逐元素一致。原roots重新assemble
+通过并原样写入config，profile/formal均为`sealed_from_live_a40_resume_profile_evidence`。这些证据只
+授权Section 6，不构成closed-loop性能结论。
 
 ## 6. Formal training and truthful evaluation
 

@@ -13,8 +13,8 @@
   retained formal GPU工作必须来自clean pushed commit的frozen worktree。
 - 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，只用空闲A40、合计最多6张，
   不干扰他人；多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
-- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；v6-prior已完成单卡吞吐profile与
-  8-row纵向执行smoke，但尚无新训练或strict rollout成绩。smoke的`4/8`只证明完整闭环能运行，
+- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；v6-prior已完成单卡吞吐、8-row纵向
+  smoke和六卡三宏步resume profile，但尚无formal训练或strict rollout成绩。smoke的`4/8`只证明完整闭环能运行，
   不能与`400`-row formal结果比较。
 - 当前代码已完成对`0894856`后batch1/逐元素复现策略的撤回。A40已证明batch8只产生普通BF16
   batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct-repeat为零）；owner明确要求不为这种
@@ -37,7 +37,13 @@
 - clean frozen `9c814ff`的balanced B10+10已完整通过macro49：wall=`21.095s`、input wait=`.076s`
   （`.36%`）、peak allocated/reserved=`40.332/43.859GiB`、0 OOM/nonfinite；完整assembler通过。唯一权重为
   expert=`.008355172068998324`、ranking=`.28570466890490887`，两者在compiler各等于positive梯度的`.25`，
-  在factor仅`.05254/.03993`。config已原样写入evidence并解锁三宏步profile，formal仍blocked。
+  在factor仅`.05254/.03993`。config已原样写入gradient evidence。
+- strict后继`5fbcb27`已在`gpu02:0--5`完成fresh0→1+same-root exact-resume1→3和独立contiguous0→3；
+  两root合同相同、各3 metrics、macro1/3 checkpoints和completion，0 OOM/nonfinite/clip。contiguous/
+  resumed总step wall=`61.368/64.450s`，峰值allocated/reserved=`43.266/47.119GB`，steady-state input wait
+  约`.0006s`。所有cursor/RNG/scheduler/AMP/frozen tensors精确相等，trainable Writer与Adam逐tensor科学
+  门通过。原比较器误把近零Adam moments套入Writer aggregate relative门，已只修离线state-specific
+  tolerance而未改训练或重跑GPU；retained artifacts重新assemble通过，profile/formal现已正式sealed。
 
 当前唯一活动候选是
 **v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
@@ -228,14 +234,13 @@ Experts不解决：
   OOM/nonfinite/forbidden reads。Writer生成`10.597s`，peak allocated/reserved=
   `11,651,564,544/12,811,501,568` bytes；release后source policy原位复用且未reload。总wall=
   `325.540s`、rollout window=`196.816s`，进程结束后GPU回到0MiB；
-- artifact assembler已从两个retained roots重建完整evidence，config现为evaluation `sealed`、
-  gradient profile `ready_after_cpu_and_single_a40_throughput_smoke`。相关定向测试随状态更新通过；
+- artifact assembler已从两个单卡retained roots重建evaluation evidence；gradient assembler又从macro49
+  retained root重建权重和完整provenance；
   gradient assembler现会精确重建macro49的24-task teacher-demo/counterfactual schedule、480 unique
   queries、canonical config、clean pushed Git、frozen target manifest/HDF5 frame metadata与六卡拓扑；
   resume assembler会比较fresh/resume/
   contiguous的contract、cursor、6-rank RNG、600 Writer tensors、41 trainable tensors、Adam moments、
-  scheduler/AMP和scientific tolerance，并要求gradient→profile的strict Git ancestry。全仓CPU回归
-  `238 passed`；它们尚未接收成功的真实六卡artifact，因此profile/formal仍保持blocked；
+  scheduler/AMP和scientific tolerance，并要求gradient→profile的strict Git ancestry；
 - frozen`a17805c`在当时live空闲`gpu01:0,1,2,4,5,7`的3+3 NUMA拓扑完成了两次有效工程诊断。默认allocator
   OOM时PyTorch allocated=`42.29GiB`、reserved-unallocated=`1.29GiB`、free=`395.31MiB`；唯一allocator
   retry为allocated=`43.43GiB`、reserved-unallocated约`157MiB`、free=`389.31MiB`，仍请求`606MiB`失败。
@@ -251,6 +256,16 @@ Experts不解决：
   不再测试workers4。macro0 generated/expert effective norm mean=`140.52/4.182`、cosine=`.02196`，而
   reversed/shuffled margin仅`.000832/.000634`；这是当前要由受控expert/ranking更新纠正并由closed-loop
   证伪的核心机制矛盾，不是新增性能成绩。
+- clean frozen`5fbcb27`的正式retry1比较root位于
+  `runs/outputs/pi05_v6_prior_profile_resume_r6_lb20_mb10_5fbcb27_retry1_20260809`和
+  `runs/outputs/pi05_v6_prior_profile_contiguous_r6_lb20_mb10_5fbcb27_retry1_20260809`。macro3 Writer
+  maxabs/relative-L2=`4.6033e-5/1.06393e-5`，只占两步update L2的`1.023%`；Adam maxabs=`2.6865e-6`，
+  `.007719` relative值来自近零moment分母。离线v2门改为Writer global relative L2`≤.002`，Adam每个
+  moment的symmetric norm ratio`≥.99`且cosine`≥.999`；raw maxabs/relative-L2只诊断，并保留逐tensor
+  `2e-4/2e-3`、全部语义exact和frozen exact门。config现为profile/formal
+  `sealed_from_live_a40_resume_profile_evidence`；该seal只证明工程连续性，不是性能成绩。
+- v2 retained assembler、config load和状态机均重新通过；聚焦checkpoint/contract为`11 passed`，加载
+  `.env.local`后的全仓CPU回归为`247 passed`。未为本次seal启动任何额外GPU工作。
 
 被撤回的失败root仍保留科学诊断：
 
@@ -287,11 +302,11 @@ Experts不解决：
 6. correct超过150或出现可信共同上升的single winner后跑完整correct/same/wrong/shuffled/reversed/
    no-video；未过门则按最早失败接口做单变量修正并继续循环。
 
-当前具体下一步：clean commit/push已写入的B10 gradient seal并创建严格后继frozen worktree；再次live比较
-两节点后，在同一worktree/commit/config/六卡拓扑上依次完成resumed root fresh0→1、same-root
-exact-resume1→3和独立contiguous0→3。B10 gradient frozen worktree保持不动直至第二个assembler完成；
-任何失败invocation污染root后都必须保留失败root并从新root重建该链。第二个verifier通过前不得手填
-formal status。
+当前具体下一步：profile seal的全仓CPU回归已完成；现在clean commit/push并创建严格后继formal frozen
+worktree，随后重新live比较`gpu01/gpu02`和quota，只用最多6张空闲A40。先从同一current schedule生成
+method macro0并启动fresh0→50，保存10/25/50；0/10/25/50及时跑固定correct80和paired correct400，不能
+用三步profile loss、expert norm或旧143替代当前schedule baseline。训练与评测结果按per-task、breadth、
+gained/lost、churn、视频条件传递和历史架构逐项分析，再决定续到100/200或只改最早失效接口。
 
 ## 10. Canonical assets
 

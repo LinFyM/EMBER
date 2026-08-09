@@ -114,6 +114,9 @@ def _reset_to_gradient_ready(config: dict) -> None:
     config["profile_run"].update(
         {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
     )
+    config["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
 
 
 def test_v6_prior_evaluation_is_sealed_from_live_smoke_artifacts() -> None:

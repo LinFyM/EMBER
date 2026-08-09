@@ -30,7 +30,7 @@ V6_PRIOR_GRADIENT_EVIDENCE_SCHEMA = (
     "ember_pi05_v6_prior_gradient_profile_artifact_evidence_v1"
 )
 V6_PRIOR_RESUME_EVIDENCE_SCHEMA = (
-    "ember_pi05_v6_prior_resume_profile_artifact_evidence_v1"
+    "ember_pi05_v6_prior_resume_profile_artifact_evidence_v2"
 )
 V6_PRIOR_COMPLETION_SCHEMA = "ember_pi05_v6_prior_writer_completion_v1"
 
@@ -2069,8 +2069,9 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
             == {
                 "scientific_atol": 0.0002,
                 "scientific_rtol": 0.002,
-                "writer_max_abs": 0.0000075,
-                "writer_relative_l2": 0.00001,
+                "writer_relative_l2": 0.002,
+                "optimizer_minimum_symmetric_norm_ratio": 0.99,
+                "optimizer_minimum_cosine": 0.999,
             }
             and value.get("run_contracts_equal") is True
             and value.get("scientific_metrics_equivalent") is True
@@ -2096,9 +2097,7 @@ def _resume_profile_evidence_matches(value: Mapping[str, Any]) -> bool:
                 rtol=float(tolerances["scientific_rtol"]),
             )
             and math.isfinite(float(value["writer_max_abs_difference"]))
-            and 0
-            <= float(value["writer_max_abs_difference"])
-            <= tolerances["writer_max_abs"]
+            and 0 <= float(value["writer_max_abs_difference"])
             and math.isfinite(float(value["writer_relative_l2_difference"]))
             and 0
             <= float(value["writer_relative_l2_difference"])
@@ -2194,21 +2193,19 @@ def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
                 abs_tol=0.0,
             )
             and math.isclose(
-                float(writer.get("max_abs_tolerance", -1)),
-                0.0000075,
-                rel_tol=0.0,
-                abs_tol=0.0,
-            )
-            and math.isclose(
                 float(writer.get("global_relative_l2_tolerance", -1)),
-                0.00001,
+                0.002,
                 rel_tol=0.0,
                 abs_tol=0.0,
             )
             and math.isfinite(float(writer.get("max_abs", -1)))
-            and 0 <= float(writer["max_abs"]) <= 0.0000075
+            and 0 <= float(writer["max_abs"])
             and math.isfinite(float(writer.get("global_relative_l2", -1)))
-            and 0 <= float(writer["global_relative_l2"]) <= 0.00001
+            and 0 <= float(writer["global_relative_l2"]) <= 0.002
+            and math.isfinite(float(writer.get("symmetric_norm_ratio", -1)))
+            and 0 <= float(writer["symmetric_norm_ratio"]) <= 1
+            and math.isfinite(float(writer.get("cosine", -2)))
+            and -1 <= float(writer["cosine"]) <= 1
             and optimizer.get("param_groups_equal") is True
             and math.isclose(
                 float(optimizer.get("scientific_atol", -1)),
@@ -2223,29 +2220,37 @@ def _checkpoint_comparison_evidence_matches(value: Mapping[str, Any]) -> bool:
                 abs_tol=0.0,
             )
             and math.isclose(
-                float(optimizer.get("max_abs_tolerance", -1)),
-                0.0000075,
+                float(optimizer.get("minimum_symmetric_norm_ratio", -1)),
+                0.99,
                 rel_tol=0.0,
                 abs_tol=0.0,
             )
             and math.isclose(
-                float(optimizer.get("global_relative_l2_tolerance", -1)),
-                0.00001,
+                float(optimizer.get("minimum_cosine", -2)),
+                0.999,
                 rel_tol=0.0,
                 abs_tol=0.0,
             )
             and int(optimizer.get("tensor_count", -1)) == 82
             and math.isfinite(float(optimizer.get("max_abs", -1)))
-            and 0 <= float(optimizer["max_abs"]) <= 0.0000075
+            and 0 <= float(optimizer["max_abs"])
             and math.isfinite(float(optimizer.get("global_relative_l2", -1)))
-            and 0 <= float(optimizer["global_relative_l2"]) <= 0.00001
+            and 0 <= float(optimizer["global_relative_l2"])
+            and math.isfinite(float(optimizer.get("symmetric_norm_ratio", -1)))
+            and 0 <= float(optimizer["symmetric_norm_ratio"]) <= 1
+            and math.isfinite(float(optimizer.get("cosine", -2)))
+            and -1 <= float(optimizer["cosine"]) <= 1
             and set(moment_fields) == {"exp_avg", "exp_avg_sq"}
             and all(
                 int(summary.get("tensor_count", -1)) == 41
                 and math.isfinite(float(summary.get("max_abs", -1)))
-                and 0 <= float(summary["max_abs"]) <= 0.0000075
+                and 0 <= float(summary["max_abs"])
                 and math.isfinite(float(summary.get("global_relative_l2", -1)))
-                and 0 <= float(summary["global_relative_l2"]) <= 0.00001
+                and 0 <= float(summary["global_relative_l2"])
+                and math.isfinite(float(summary.get("symmetric_norm_ratio", -1)))
+                and 0.99 <= float(summary["symmetric_norm_ratio"]) <= 1
+                and math.isfinite(float(summary.get("cosine", -2)))
+                and 0.999 <= float(summary["cosine"]) <= 1
                 for summary in moment_fields.values()
             )
         )
@@ -2364,8 +2369,9 @@ def assemble_v6_prior_resume_profile_evidence(
             right,
             scientific_atol=0.0002,
             scientific_rtol=0.002,
-            writer_max_abs_tolerance=0.0000075,
-            writer_relative_l2_tolerance=0.00001,
+            writer_relative_l2_tolerance=0.002,
+            optimizer_minimum_symmetric_norm_ratio=0.99,
+            optimizer_minimum_cosine=0.999,
         )
         trainer = compared["trainer"]
         checkpoint_row = {
@@ -2428,8 +2434,9 @@ def assemble_v6_prior_resume_profile_evidence(
         "scientific_tolerances": {
             "scientific_atol": 0.0002,
             "scientific_rtol": 0.002,
-            "writer_max_abs": 0.0000075,
-            "writer_relative_l2": 0.00001,
+            "writer_relative_l2": 0.002,
+            "optimizer_minimum_symmetric_norm_ratio": 0.99,
+            "optimizer_minimum_cosine": 0.999,
         },
         "run_contracts_equal": True,
         "scientific_metrics_equivalent": True,

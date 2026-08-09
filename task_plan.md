@@ -75,15 +75,19 @@ formal artifacts保存。
   不人工拼weight/evidence，不从外部复制config绕过canonical tracked config。
 - [x] B10 input-wait share仅`.36%`，不测试workers4；最长panel完整通过且active余量约`4.09GiB`，保持B10，
   不预防性降低microbatch或开启policy checkpointing。
-- [ ] clean commit/push gradient seal并创建严格后继frozen worktree；同一worktree、同一六卡拓扑依次完成
-  resumed root fresh0→1 + exact-resume1→3，以及独立contiguous0→3。
-- [ ] 依据profile retained `input_wait/step wall/peak VRAM`判断后续瓶颈；只有data wait证据要求时才
-  实测workers/prefetch，只有两个微批候选都不足时才单独profile policy activation checkpointing。所有
+- [x] clean commit/push gradient seal并创建严格后继frozen worktree；同一worktree、同一六卡拓扑已完成
+  resumed root fresh0→1 + exact-resume1→3，以及独立contiguous0→3。gpu01首段后设备ownership变化，
+  因此正式retry1在重新live确认的`gpu02:0--5`以同一4+2 NUMA拓扑重建完整两链，未混用partial root。
+- [x] 依据profile retained `input_wait/step wall/peak VRAM`判断后续瓶颈；data wait在steady state约`.0006s`，
+  B10峰值allocated/reserved=`43.266/47.119GB`，当前不再实测workers/prefetch或policy checkpointing。
+  只有未来新证据要求时才重新profile这些变量。所有
   候选保持logical B20/full24 scientific batch，不为“多记录阶段”在热路径增加CUDA同步。
-- [ ] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、
+- [x] 丢弃型权重完成fresh0→1、same-root exact-resume1→3、independent contiguous0→3；验证cursor、RNG、
   optimizer/scheduler和scientific metrics语义，接受正常parallel roundoff。
-- [ ] 对三条正式roots运行assembler并原样写回证据，封存profile/formal-ready；禁止人工status跳转。
-- [ ] clean seal config与formal launch contract；profile权重永久禁止进入formal。
+- [x] 对三条正式roots运行assembler并原样写回证据，封存profile/formal-ready；原aggregate tolerance把
+  近零Adam moments误用Writer门，离线v2比较现按Writer relative state与Adam moment norm/direction
+  分层判断，没有改训练路径或重跑GPU。
+- [ ] clean commit/push当前profile seal并创建formal frozen worktree；profile checkpoint永久禁止进入formal。
 
 ## Phase 3 — formal v6-prior continuation
 

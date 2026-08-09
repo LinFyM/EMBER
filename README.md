@@ -24,15 +24,21 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 当前唯一活动候选是v6-Prior Policy-Effective Temporal-Ranking Writer：历史macro400只作load-only
   initialization，冻结encoder/Core/transition/Procedure，只训练compiler+factor heads；step2000 task
   experts只在train24提供gauge-invariant policy-effective`BA`监督，部署不读取expert bank或feature cache。
-- 当前尚无该候选的新GPU profile、训练或strict rollout成绩，也没有运行中的EMBER GPU进程。
+- 当前已完成该候选的单卡Writer吞吐/纵向smoke、六卡gradient和fresh/resume/contiguous训练profile；尚无
+  formal训练或新strict rollout成绩，也没有运行中的EMBER GPU进程。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
   host sync。
-- 真实validation8×4-state CPU prepare已通过：32个one-shot requests、historical Writer 600 tensors、
-  deployment expert-bank reads=0、cache 72 BF16 + 4 F32；吞吐候选使用同一固定32-request/同一总帧数
-  panel公平比较。相关定向/全仓CPU回归为`68/227 passed`。
-  下一门是clean push后用一张空闲A40做batch/VRAM/端到端smoke，再进入最多六卡formal profile。
+- 真实fixed-panel profile在同一32 requests/1093 sampled frames上得到batch8/16/32吞吐
+  `.911427/.905107/.906432 LoRA/s`，选择实测最快batch8；8-row vertical smoke完整闭环且0异常。
+- logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
+  加权累积完成train24×20=`480/480` queries。gradient seal固定expert/ranking weights为
+  `.008355172068998324/.28570466890490887`。
+- clean frozen`5fbcb27`的fresh0→1+exact-resume1→3和independent contiguous0→3已artifact-seal；
+  cursor/RNG/scheduler/AMP/frozen state exact，trainable Writer/Adam通过科学容差，峰值reserved约`47.12GB`。
+  config现已解锁formal 0→50。下一门是clean push/frozen worktree后跑current-schedule macro0和
+  0/10/25/50 paired strict评测，不用profile loss代替真实性能。
 
 当前科研结论、完整历史实验谱系和关键不确定性见
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；精确执行协议见

@@ -301,7 +301,13 @@ def test_v6_prior_checkpoint_inspection_and_tolerant_semantic_comparison(
     assert compared["writer"]["state_tensor_count"] == 600
     assert compared["writer"]["tensor_count"] == 41
     assert 0.0 < compared["writer"]["max_abs"] <= 7.5e-6
+    assert compared["writer"]["global_relative_l2_tolerance"] == 0.002
     assert compared["trainer"]["optimizer"]["max_abs"] == pytest.approx(1e-8, abs=1e-10)
+    assert (
+        compared["trainer"]["optimizer"]["minimum_symmetric_norm_ratio"]
+        == 0.99
+    )
+    assert compared["trainer"]["optimizer"]["minimum_cosine"] == 0.999
     assert _checkpoint_comparison_evidence_matches(
         {
             "macro": 3,
@@ -324,6 +330,69 @@ def test_v6_prior_checkpoint_inspection_and_tolerant_semantic_comparison(
     assert np.array_equal(numpy_after[1], numpy_before[1])
     assert numpy_after[2:] == numpy_before[2:]
     assert torch.equal(torch.get_rng_state(), torch_before)
+
+
+def test_v6_prior_checkpoint_comparison_uses_semantic_aggregate_gates(
+    tmp_path: Path,
+) -> None:
+    left, right = _synthetic_checkpoint_pair(tmp_path)
+    left_trainer = torch.load(
+        left / "trainer.pt", map_location="cpu", weights_only=False
+    )
+    right_trainer_path = right / "trainer.pt"
+
+    def write_scaled_second_moment(scale: float) -> None:
+        trainer = copy.deepcopy(left_trainer)
+        for values in trainer["optimizer"]["state"].values():
+            values["exp_avg_sq"].mul_(scale)
+        torch.save(trainer, right_trainer_path)
+        _refresh_declared_size(right, "trainer.pt")
+
+    write_scaled_second_moment(0.995)
+    compared = compare_v6_prior_checkpoints(left, right)
+    second_moment = compared["trainer"]["optimizer"]["moment_fields"][
+        "exp_avg_sq"
+    ]
+    assert second_moment["symmetric_norm_ratio"] == pytest.approx(0.995)
+    assert second_moment["cosine"] == pytest.approx(1.0)
+
+    write_scaled_second_moment(0.9)
+    with pytest.raises(
+        ExpertManifoldError, match="compared optimizer exp_avg_sq tolerance"
+    ):
+        compare_v6_prior_checkpoints(left, right)
+
+    trainer = copy.deepcopy(left_trainer)
+    for values in trainer["optimizer"]["state"].values():
+        values["exp_avg_sq"].neg_()
+    torch.save(trainer, right_trainer_path)
+    _refresh_declared_size(right, "trainer.pt")
+    with pytest.raises(
+        ExpertManifoldError, match="compared optimizer exp_avg_sq tolerance"
+    ):
+        compare_v6_prior_checkpoints(left, right)
+
+    torch.save(left_trainer, right_trainer_path)
+    _refresh_declared_size(right, "trainer.pt")
+    left_state = load_file(str(left / "writer.safetensors"), device="cpu")
+    manifest = read_json(left / "manifest.json")
+    trainable_names = set(
+        manifest["checkpoint_contract"]["ownership"]["trainable_tensor_names"]
+    )
+    diffuse = {
+        name: (
+            value + torch.full_like(value, 1e-4)
+            if name in trainable_names
+            else value
+        ).contiguous()
+        for name, value in left_state.items()
+    }
+    save_file(diffuse, str(right / "writer.safetensors"))
+    _refresh_declared_size(right, "writer.safetensors")
+    with pytest.raises(
+        ExpertManifoldError, match="compared trainable Writer tolerance"
+    ):
+        compare_v6_prior_checkpoints(left, right)
 
 
 def test_v6_prior_checkpoint_inspection_and_comparison_fail_closed(

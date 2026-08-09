@@ -22,8 +22,9 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
-- 当前没有运行中的EMBER GPU任务。下一顺序只取`task_plan.md`：完成吞吐实现与CPU门，单卡A40
-  batch/显存/端到端profile，六卡gradient与resume profile，formal训练和及时strict评测。
+- 当前没有运行中的EMBER GPU任务。单卡A40 batch/显存/端到端smoke、六卡gradient与B10
+  fresh/resume/contiguous profile均已artifact-seal；下一顺序只取`task_plan.md`：clean push/frozen
+  formal worktree、current-schedule macro0、fresh0→50及0/10/25/50及时strict评测。
 
 ## Mandatory reading
 

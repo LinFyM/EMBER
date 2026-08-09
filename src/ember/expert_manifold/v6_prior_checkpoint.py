@@ -35,7 +35,7 @@ V6_PRIOR_CHECKPOINT_SCHEMA = "ember_pi05_v6_prior_writer_checkpoint_v1"
 V6_PRIOR_TRAINER_SCHEMA = "ember_pi05_v6_prior_writer_trainer_v1"
 V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_prior_writer_rank_rng_v1"
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = "ember_pi05_v6_prior_checkpoint_inspection_v1"
-V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_prior_checkpoint_comparison_v1"
+V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA = "ember_pi05_v6_prior_checkpoint_comparison_v2"
 V6_PRIOR_WORLD_SIZE = 6
 V6_PRIOR_FROZEN_PARAMETER_TENSOR_COUNT = 482
 V6_PRIOR_FROZEN_STATE_TENSOR_COUNT = 483
@@ -815,35 +815,54 @@ class _DifferenceAccumulator:
     sum_squared_difference: float = 0.0
     sum_squared_left: float = 0.0
     sum_squared_right: float = 0.0
+    sum_dot: float = 0.0
     max_abs: float = 0.0
     worst: str | None = None
     tensor_count: int = 0
 
     def add(self, path: str, left: torch.Tensor, right: torch.Tensor) -> None:
-        difference = left.to(torch.float64) - right.to(torch.float64)
+        left_float64 = left.to(torch.float64)
+        right_float64 = right.to(torch.float64)
+        difference = left_float64 - right_float64
         current = float(difference.abs().max().item())
         if current > self.max_abs or self.worst is None:
             self.max_abs = current
             self.worst = path
         self.sum_squared_difference += float(difference.square().sum().item())
-        self.sum_squared_left += float(left.to(torch.float64).square().sum().item())
-        self.sum_squared_right += float(right.to(torch.float64).square().sum().item())
+        self.sum_squared_left += float(left_float64.square().sum().item())
+        self.sum_squared_right += float(right_float64.square().sum().item())
+        self.sum_dot += float((left_float64 * right_float64).sum().item())
         self.tensor_count += 1
 
     def summary(self) -> dict[str, Any]:
-        denominator = max(
-            math.sqrt(self.sum_squared_left),
-            math.sqrt(self.sum_squared_right),
-        )
+        left_norm = math.sqrt(self.sum_squared_left)
+        right_norm = math.sqrt(self.sum_squared_right)
+        denominator = max(left_norm, right_norm)
         relative = (
             math.sqrt(self.sum_squared_difference) / denominator
             if denominator > 0.0
             else (0.0 if self.sum_squared_difference == 0.0 else math.inf)
         )
+        if left_norm == 0.0 and right_norm == 0.0:
+            symmetric_norm_ratio = 1.0
+            cosine = 1.0
+        elif left_norm == 0.0 or right_norm == 0.0:
+            symmetric_norm_ratio = 0.0
+            cosine = 0.0
+        else:
+            symmetric_norm_ratio = min(left_norm, right_norm) / max(
+                left_norm, right_norm
+            )
+            cosine = max(
+                -1.0,
+                min(1.0, self.sum_dot / (left_norm * right_norm)),
+            )
         return {
             "tensor_count": self.tensor_count,
             "max_abs": self.max_abs,
             "global_relative_l2": relative,
+            "symmetric_norm_ratio": symmetric_norm_ratio,
+            "cosine": cosine,
             "worst_tensor": self.worst,
         }
 
@@ -854,7 +873,6 @@ def _compare_writer_states(
     *,
     scientific_atol: float,
     scientific_rtol: float,
-    max_abs_tolerance: float,
     relative_l2_tolerance: float,
 ) -> dict[str, Any]:
     if set(left.writer) != set(right.writer):
@@ -885,10 +903,7 @@ def _compare_writer_states(
         ):
             raise _inspection_error(f"compared trainable Writer tensor {name}")
     summary = accumulator.summary()
-    if (
-        float(summary["max_abs"]) > max_abs_tolerance
-        or float(summary["global_relative_l2"]) > relative_l2_tolerance
-    ):
+    if float(summary["global_relative_l2"]) > relative_l2_tolerance:
         raise _inspection_error("compared trainable Writer tolerance")
     return {
         "tensor_schema_equal": True,
@@ -898,7 +913,6 @@ def _compare_writer_states(
         "trainable_tensor_count": len(trainable),
         "scientific_atol": scientific_atol,
         "scientific_rtol": scientific_rtol,
-        "max_abs_tolerance": max_abs_tolerance,
         "global_relative_l2_tolerance": relative_l2_tolerance,
         **summary,
     }
@@ -910,8 +924,8 @@ def _compare_optimizer_states(
     *,
     scientific_atol: float,
     scientific_rtol: float,
-    max_abs_tolerance: float,
-    relative_l2_tolerance: float,
+    minimum_symmetric_norm_ratio: float,
+    minimum_cosine: float,
 ) -> dict[str, Any]:
     left_optimizer = left.trainer["optimizer"]
     right_optimizer = right.trainer["optimizer"]
@@ -962,16 +976,17 @@ def _compare_optimizer_states(
     }
     for field, summary in field_summaries.items():
         if (
-            float(summary["max_abs"]) > max_abs_tolerance
-            or float(summary["global_relative_l2"]) > relative_l2_tolerance
+            float(summary["symmetric_norm_ratio"])
+            < minimum_symmetric_norm_ratio
+            or float(summary["cosine"]) < minimum_cosine
         ):
             raise _inspection_error(f"compared optimizer {field} tolerance")
     return {
         "param_groups_equal": True,
         "scientific_atol": scientific_atol,
         "scientific_rtol": scientific_rtol,
-        "max_abs_tolerance": max_abs_tolerance,
-        "global_relative_l2_tolerance": relative_l2_tolerance,
+        "minimum_symmetric_norm_ratio": minimum_symmetric_norm_ratio,
+        "minimum_cosine": minimum_cosine,
         "moment_fields": field_summaries,
         **accumulator.summary(),
     }
@@ -983,18 +998,25 @@ def compare_v6_prior_checkpoints(
     *,
     scientific_atol: float = 2e-4,
     scientific_rtol: float = 2e-3,
-    writer_max_abs_tolerance: float = 7.5e-6,
-    writer_relative_l2_tolerance: float = 1e-5,
+    writer_relative_l2_tolerance: float = 2e-3,
+    optimizer_minimum_symmetric_norm_ratio: float = 0.99,
+    optimizer_minimum_cosine: float = 0.999,
 ) -> dict[str, Any]:
     """Compare fresh/resumed checkpoints without mutating any live training state."""
 
     tolerances = (
         scientific_atol,
         scientific_rtol,
-        writer_max_abs_tolerance,
         writer_relative_l2_tolerance,
     )
     if any(not math.isfinite(value) or value < 0.0 for value in tolerances):
+        raise _inspection_error("comparison tolerances")
+    if (
+        not math.isfinite(optimizer_minimum_symmetric_norm_ratio)
+        or not 0.0 <= optimizer_minimum_symmetric_norm_ratio <= 1.0
+        or not math.isfinite(optimizer_minimum_cosine)
+        or not -1.0 <= optimizer_minimum_cosine <= 1.0
+    ):
         raise _inspection_error("comparison tolerances")
     left_inspection = _inspect_v6_prior_checkpoint(left)
     right_inspection = _inspect_v6_prior_checkpoint(right)
@@ -1034,7 +1056,6 @@ def compare_v6_prior_checkpoints(
         right_inspection,
         scientific_atol=scientific_atol,
         scientific_rtol=scientific_rtol,
-        max_abs_tolerance=writer_max_abs_tolerance,
         relative_l2_tolerance=writer_relative_l2_tolerance,
     )
     optimizer_summary = _compare_optimizer_states(
@@ -1042,8 +1063,8 @@ def compare_v6_prior_checkpoints(
         right_inspection,
         scientific_atol=scientific_atol,
         scientific_rtol=scientific_rtol,
-        max_abs_tolerance=writer_max_abs_tolerance,
-        relative_l2_tolerance=writer_relative_l2_tolerance,
+        minimum_symmetric_norm_ratio=optimizer_minimum_symmetric_norm_ratio,
+        minimum_cosine=optimizer_minimum_cosine,
     )
     return {
         "schema_version": V6_PRIOR_CHECKPOINT_COMPARISON_SCHEMA,

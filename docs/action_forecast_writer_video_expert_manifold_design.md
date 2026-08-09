@@ -1334,3 +1334,50 @@ positive/expert/ranking在compiler的unweighted norm=`.0110556/.330800/.00967394
 margin=`.00225`，reversed/shuffled仅`.000832/.000634`。这说明能量/方向和时序分离仍是实质缺口，但
 不允许据内部指标宣告方法有效。下一证据严格是同一seal commit的fresh0→1、same-root resume1→3与
 independent contiguous0→3，之后才启动formal并用closed-loop裁决。
+
+### 33.12 B10 exact-resume profile seal与数值门修正（2026-08-09）
+
+gradient seal的严格后继clean pushed commit为`5fbcb27`。第一次在
+`gpu01:0,1,2,4,5,7`完成fresh0→1后，GPU0在释放后被其他用户取得；该root保留为完整macro1工程证据，
+但没有混入比较。随后重新live比较两节点，只使用当时空闲的`gpu02:0--5`，按每张physical GPU所属
+NUMA绑定形成合同允许的4+2拓扑，在两个全新root完成：
+
+```text
+runs/outputs/pi05_v6_prior_profile_resume_r6_lb20_mb10_5fbcb27_retry1_20260809
+runs/outputs/pi05_v6_prior_profile_contiguous_r6_lb20_mb10_5fbcb27_retry1_20260809
+```
+
+resumed root为fresh0→1再same-root exact-resume1→3，contiguous root为独立fresh0→3；两者run contract
+逐字相同，均为B10+10、workers2/prefetch2/default allocator、Ring/Simple、
+`NCCL_P2P_DISABLE=1`和deferred-NCCL。三次invocation均exit0，两个root各3条metrics、macro1/3完整
+checkpoint和macro3 completion；0 OOM/nonfinite/clip。contiguous三宏步总step wall=`61.367943s`、
+input wait=`.203131s`；resumed合计=`64.449543/1.152898s`，额外时间主要来自新进程首个macro的loader/
+kernel冷启动。steady-state macro3分别=`20.0175/19.6982s`且input wait均约`.0006s`，因此不扫workers4。
+全体profile峰值allocated/reserved=`43,265,769,984/47,118,811,136` bytes，restart后reserved只一次增加
+约24MiB后平台，不存在容量漂移。
+
+metrics row在optimizer step前计算，所以macro1 row是warm-start基线，macro2/3分别反映一、两次既往
+更新。generated correct norm mean从`140.973→138.738→136.066`，expert loss从
+`1.79433→1.79036→1.78536`，说明小权重expert norm纠偏方向已生效；cosine始终约`.022`，ranking margin
+随预注册negative panel轮换而波动，三步不能解释为方向对齐或性能改善。
+
+resume与contiguous的cursor、checkpoint contract、6-rank RNG、scheduler、AMP以及559个frozen Writer
+tensors均精确相等；全部41个trainable Writer tensors和82个Adam moment tensors通过逐tensor
+`atol=2e-4, rtol=2e-3`。scientific metrics最大tolerance ratio=`.233773`。macro3 Writer最大绝对差=
+`4.6033e-5`、global relative L2=`1.06393e-5`，其总差异只占macro1→3两步Writer更新L2的`1.023%`；Adam
+一阶/二阶moment最大绝对差仅`2.6865e-6/1.1353e-8`，但因moment本身接近零，其relative L2为
+`.007719/.005237`。
+
+最初verifier错误地把Writer的`7.5e-6/1e-5` aggregate门同时套给Adam；这在所有语义状态和逐tensor
+科学门均通过后产生false negative。按owner的吞吐优先数值政策，修正只发生在离线比较器，并改成与
+状态语义一致的尺度无关门：Writer只硬门global relative L2`≤.002`，max-abs只记录；Adam对
+`exp_avg/exp_avg_sq`分别要求symmetric norm ratio`≥.99`和cosine`≥.999`，raw max-abs/relative-L2只
+诊断。macro3两moment的ratio/cosine为`.999632/.999970`和`.999820/.999986`，有明确余量；清零、明显
+缩放或方向破坏仍会fail。schema、frozen exact、RNG/cursor/scheduler/AMP exact及逐tensor scientific
+allclose继续fail-closed。该修正没有改变训练kernel、dtype、reduction、batch、objective或artifact，也
+没有重跑GPU追逐低位一致。evidence schema升到v2，原三root重新组装通过并原样写入config，profile与formal状态现已
+`sealed_from_live_a40_resume_profile_evidence`。
+
+本profile只证明B10训练容量、吞吐和resume语义成立，不是新strict性能证据。下一步从新的clean pushed
+seal commit创建formal frozen worktree，先跑同schedule macro0，然后fresh0→50并及时评测0/10/25/50；
+不得用上述三步loss或energy趋势替代paired closed-loop裁决。

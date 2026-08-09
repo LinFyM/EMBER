@@ -5757,3 +5757,25 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - 拒绝发生在output root创建、模型构造和GPU工作前，没有可解释的训练或科研结果。修复只把
   pushed判断绑定到当前分支upstream，保留clean worktree与exact commit约束，不能作为跳过formal
   provenance检查的先例。
+
+## v6-Prior B10 resume profile与verifier根因（2026-08-09）
+
+- clean pushed`5fbcb27`在`gpu02:0--5`以4+2 NUMA完成fresh0→1+exact-resume1→3和独立
+  contiguous0→3；两个正式root各3 metrics、macro1/3 checkpoints和completion，0 OOM/nonfinite/clip。
+  contiguous/resumed三步step wall=`61.368/64.450s`，input wait=`.203/1.153s`；restart冷启动解释主要
+  差值，steady-state input wait约`.0006s`。峰值allocated/reserved=`43.266/47.119GB`，B10容量稳定。
+- macro1 row是更新前warm-start panel。到macro3 row，generated norm mean
+  `140.973→138.738→136.066`、expert loss`1.79433→1.79036→1.78536`，说明norm纠偏方向正确；cosine仍
+  约`.022`，三步没有解决方向对齐，ranking margin因negative schedule轮换不能作单调趋势解释。
+- 两轨cursor/contract/6-rank RNG/scheduler/AMP、559 frozen Writer tensors精确相等，全部trainable Writer
+  与Adam tensors通过`2e-4/2e-3`逐tensor科学门，metrics最大tolerance ratio仅`.2338`。macro3 Writer
+  maxabs/relL2=`4.6033e-5/1.06393e-5`，轨迹差异是两步更新L2的`1.023%`；Adam最大绝对差仅
+  `2.6865e-6`，其`.007719` relative L2由近零moment分母放大。
+- 原比较器把同一`7.5e-6/1e-5` aggregate门同时用于Writer和Adam，是维度/尺度不匹配的工程
+  false negative，不是resume语义或科学方法失败。离线v2门改为Writer global relative L2`≤.002`；
+  Adam每个moment要求symmetric norm ratio`≥.99`、cosine`≥.999`，raw maxabs/relative-L2只诊断。
+  macro3两moment的ratio/cosine=`.999632/.999970`和`.999820/.999986`；其余exact/逐tensor fail-closed
+  门不变。没有为逐元素复现降低并行度、改变kernel或重跑GPU。
+- retained roots经修正后的assembler完整通过并写回canonical config，formal现在合法解锁。该结果只
+  证明吞吐、容量和断点语义，不证明closed-loop；最早科学未知仍是expert/ranking纠偏能否在held任务上
+  把正确视频推向policy-effective方向并超过143/150。

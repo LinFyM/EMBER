@@ -34,6 +34,9 @@ def _pre_gradient_config() -> dict:
     config["profile_run"].update(
         {"status": "blocked_until_live_gradient_weights", "artifact_evidence": None}
     )
+    config["formal_run"]["status"] = (
+        "blocked_until_live_a40_resume_profile_evidence"
+    )
     return config
 
 

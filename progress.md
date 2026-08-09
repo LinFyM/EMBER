@@ -4646,3 +4646,18 @@ GPU范围和训练步长是当时快照；活动状态只取
 - canonical `git_state`现在显式记录configured upstream及其commit，fresh formal继续要求clean
   worktree且HEAD必须等于该upstream commit。聚焦contract回归18项通过；该修复只校正launch
   provenance，不改变K4视频输入、Writer图、优化器、数据或checkpoint语义。
+
+## v6-Prior B10 profile完成并解锁formal（2026-08-09）
+
+- gradient seal后继commit`5fbcb27`已clean/pushed并有独立frozen worktree。gpu01 fresh0→1完成后原卡被
+  他人取得，保留该partial chain且未混入比较；重新live检查后仅使用空闲`gpu02:0--5`，未触碰6/7。
+- retry1 resumed链fresh0→1+exact-resume1→3与contiguous0→3均在tmux自然完成，所有invocation exit0，
+  两root各3 metrics、macro1/3 checkpoints、completion，结束后六卡释放。
+- 只读assembler先在原门下精确定位macro3 aggregate tolerance false negative；量化Writer、Adam、实际
+  更新量及metrics后，只修离线比较器的state-specific aggregate tolerance，没有修改或重跑训练。
+- v2 checkpoint/contract定向回归`11 passed`、正确加载`.env.local`后的全仓回归`247 passed`；同一
+  retained roots随后完整assemble通过。canonical config已
+  原样嵌入v2 artifact evidence，并把profile/formal同时置为
+  `sealed_from_live_a40_resume_profile_evidence`；`runtime_for_mode(..., formal)`返回`(50,(10,25,50))`。
+- 当前没有EMBER GPU进程，也没有v6-prior新strict成绩。authority同步和全仓回归已完成；下一操作是
+  clean commit/push和formal frozen worktree，然后live选卡运行macro0及fresh0→50。

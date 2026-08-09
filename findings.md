@@ -1,5 +1,21 @@
 # EMBER Findings
 
+## 2026-08-09 v6-prior formal四点裁决与Expert-Component Projection根因
+
+- current-schedule strict correct400在macro0/10/25/50为`134/127/105/123`，correct80却为
+  `26/26/24/27`；小panel会把macro50误示为提升，formal选择必须继续使用完整400。
+- 0→10 gained/lost=`19/26`，0→25=`19/48`（McNemar `p=.000522`），0→50=`20/31`。四点
+  union/intersection/per-task envelope=`172/77/147`；envelope仍低于150且不能作checkpoint融合。
+- expert loss从约`1.7943→1.7191`，但约`94.2%`降幅来自log-norm径向项；generated norm
+  `140.97→107.00`，correct expert cosine只`.02194→.02630`。更关键的绝对投影系数
+  `a=<G,E>/||E||²`均值`.736→.662`且23/24 tasks下降，说明优化没有补足expert有效分量。
+- paired held state0的macro50相对macro0 norm ratio/cosine/radial coefficient/orth residual/base/delta/base
+  均值=`.7180/.9755/.7007/.1551/.3373`。训练主要沿原LoRA径向收缩，object任务损失明显；goal6虽增加
+  6 states，但不足以形成共同提升。
+- 结论只淘汰whole-LoRA direction+norm objective，不淘汰v6 representation或task expert作为局部方向。
+  下一单变量是objective-only Expert-Component Projection：correct只把`a`推向1，negative做bounded
+  `a_correct-a_negative` ranking，不约束global norm或expert-orthogonal v6动态分量。
+
 ## 2026-08-09 balanced B10 gradient seal与macro0几何诊断
 
 - clean frozen `9c814ff`在同一空闲`gpu01:0,1,2,4,5,7` 3+3 NUMA拓扑完成macro49。artifact assembler

@@ -4,27 +4,27 @@
 
 目标是把同一shared method、同一single checkpoint的strict paired correct从历史最好`143/400`推进到
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
-运行中的EMBER GPU任务，也没有v6-prior新性能结果；单卡profile与8-row vertical smoke已通过。physical
-B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean frozen `eddba96`的B16+4也在
-六rank第一条functional attention一致OOM。clean frozen`9c814ff`的balanced B10+10已完整通过macro49并
-由assembler封存gradient/auxiliary evidence。clean frozen`5fbcb27`的fresh/resume/contiguous三宏步链也已
-完成并artifact-seal；当前formal 0→50已合法解锁，仍没有新strict性能结果。
+运行中的EMBER GPU任务。v6-prior whole-LoRA objective已完成formal 0→50，同一schedule
+macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此该objective已退役。
+
+当前唯一活动候选是objective-only的v6-Initialized Expert-Component Projection。保留原架构、初始化、
+冻结边界、logical B20/physical B10+10、data和negative schedule；只把expert direction+norm和cosine
+ranking替换成`a_correct→1`与bounded `a_correct-a_negative`。当前尚未实现或启动GPU。
 
 当前操作顺序：
 
-1. 已封存吞吐纠偏、CPU seal和clean pushed frozen worktree；
-2. 已在live空闲A40完成Writer batch/VRAM profile与纵向smoke并artifact-seal evaluation；
-3. gradient与fresh/resume/contiguous结构化artifact verifier、只读checkpoint语义比较和CPU回归已完成；
-4. 保持logical B20不变；B16被A40容量证伪，B10 gradient/weights已sealed；
-5. 已用B10完成fresh/resume/contiguous和训练吞吐profile，不为低位复现改变高吞吐训练路径；
-6. 当前进入formal continuation和关键checkpoint strict rollout；
-7. 将结果与完整历史谱系作逐task/机制对比，只改最早失效接口，循环到达标。
+1. v6-prior 0/10/25/50 formal、严格四点分析、机制诊断和GPU释放已封存；
+2. 实现ECP objective、metrics和合同，保持一个canonical Writer path；
+3. CPU验证projection代数、gradient只沿expert有效分量、旧macro0 exact-load/no-video/信息墙不变；
+4. clean push/frozen worktree后live比较两节点，复用B10高吞吐图只做一次新aux gradient profile与短resume门；
+5. fresh短训并优先评测macro10；若`≤129`且多task净损失立即停止，只有健康才到25；
+6. 只有strict超过134且多task净获益才继续到50/100与六臂，循环到达标。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot v6-Prior Policy-Effective Temporal-Ranking Writer。
+- 方法：one-shot v6-Initialized Policy-Effective Expert-Component Projection Writer。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -34,8 +34,9 @@ B20在默认allocator和一次`expandable_segments`重试中均容量OOM；clean
   compiler+factor heads；全新optimizer/scheduler/sampler/RNG。
 - train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权、一次flat
   all-reduce。
-- objective固定为positive functional + effective-BA expert direction/norm + bounded temporal/wrong
-  ranking；auxiliary weight只由预注册train24 gradient profile选择一次。
+- objective固定为positive functional + effective-BA projection coefficient `a_correct→1` + bounded
+  temporal/wrong projection ranking；不含global norm attraction或whole-LoRA cosine attraction。
+  auxiliary weight只由预注册train24 gradient profile选择一次，不做held sweep。
 - step2000 task experts仅作train supervision，不进入deployment或held选择。
 
 ## 2. Throughput-first runtime contract

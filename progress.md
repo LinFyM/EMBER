@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## 2026-08-09 v6-prior formal 0→50与四点strict分析完成
+
+- formal root=
+  `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`完整训练0→50，checkpoint10/25/50、
+  optimizer/scheduler/sampler/6-rank RNG和completion齐全；50 macros约`1080.75s`，peak allocated/reserved
+  约`43.266/47.094GB`，0 OOM/nonfinite/clip。
+- 6卡18-worker correct400 roots的macro0/10/25/50均exit0、72/72 shards、400 rows，结果=
+  `134/127/105/123`。macro50 wall=`871.42s`、overall/rollout-only吞吐=`.459/.632 rollout/s`；退出后
+  gpu01:0/1/2/4/5/7回到14MiB，GPU3他人进程未触碰。
+- strict分析root=
+  `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809`；逐项锁定sealed validation
+  tasks/languages、state/RNG/video identity，执行GPU/worker/batch拓扑只保留provenance。分析器定向
+  `9 passed`、全仓带LIBERO assets`256 passed`，提交`24e7aae`已push。
+- mechanism诊断确认whole-LoRA objective主要做径向收缩且绝对expert投影下降；按预注册门停止该路线，
+  不续100/200、不扫权重、不为loser补六臂。下一步按design第34节实现objective-only ECP。
+
 ## 2026-08-09 v6-prior B10 gradient artifact完成并写回seal
 
 - clean pushed/frozen `9c814ff6c880b77f109bf02445ff6364bb1c024d`在live空闲

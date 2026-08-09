@@ -87,24 +87,36 @@ formal artifacts保存。
 - [x] 对三条正式roots运行assembler并原样写回证据，封存profile/formal-ready；原aggregate tolerance把
   近零Adam moments误用Writer门，离线v2比较现按Writer relative state与Adam moment norm/direction
   分层判断，没有改训练路径或重跑GPU。
-- [ ] clean commit/push当前profile seal并创建formal frozen worktree；profile checkpoint永久禁止进入formal。
+- [x] clean commit/push当前profile seal并创建formal frozen worktree；profile checkpoint永久禁止进入formal。
 
-## Phase 3 — formal v6-prior continuation
+## Phase 3 — formal v6-prior continuation（已裁决）
 
-- [ ] clean pushed frozen worktree、fresh formal root，从historical macro400 load-only创建全新optimizer等状态。
-- [ ] 用当前paired schedule跑method macro0 baseline；旧`143`只作历史参照，不能替代同schedule baseline。
-- [ ] 训练0→50，保存10/25/50；持续记录per-task三项loss/gradient、effective BA、margins、full24 retention、
+- [x] clean pushed frozen worktree、fresh formal root，从historical macro400 load-only创建全新optimizer等状态。
+- [x] 用当前paired schedule跑method macro0 baseline；旧`143`只作历史参照，不能替代同schedule baseline。
+- [x] 训练0→50，保存10/25/50；持续记录per-task三项loss/gradient、effective BA、margins、full24 retention、
   data/GPU wait、step wall、clip/nonfinite和完整resume state。
-- [ ] macro0/10/25/50跑固定correct80 screen；macro0/10/25/50全部跑paired correct400，防止functional loss
+- [x] 从同一correct400 root派生correct80；macro0/10/25/50全部完成paired correct400，防止functional loss
   与真实性能错位。
-- [ ] 每点和macro0、历史143、v5.2 old、v6 old/task-complete做per-task/per-suite/breadth/gained-lost/
+- [x] 每点和macro0、历史143、v5.2 old、v6 old/task-complete做per-task/per-suite/breadth/gained-lost/
   churn和内部transfer对比。
-- [ ] 若多个task共同上升且趋势持续，exact-resume到100（必要时200），每25/50保存并及时correct400；
-  不因单点低分转向，也不因loss下降无限训练。
-- [ ] single winner严格`>150/400`或形成可信共同提升时，跑完整paired correct/same/wrong/shuffled/
-  reversed/no-video并分析same-task跨video方差。
+- [x] 曲线`134/127/105/123`未形成共同上升，按门停止，不续100/200、不扫aux权重。
+- [x] single winner未超过macro0，故不为loser补完整六臂；保留macro0历史五臂参照。
 
-## Phase 4 — targeted iteration loop
+## Phase 4 — v6 Expert-Component Projection
+
+- [ ] 在唯一canonical objective中用`a=<G,E>/||E||²`替换whole-LoRA direction/norm；correct Huber到1，
+  negative只做bounded projection margin；不加shadow macro0 branch、residual retraction或新forward。
+- [ ] CPU锁定低秩有效BA恒等式、finite/broadcast、projection gradient不直接压缩expert-orthogonal分量，
+  同时保持macro0 load、no-video identity、信息墙和functional path。
+- [ ] 新config/schema/metrics明确记录`a_correct/a_negative/a_margin`、generated norm和per-target贡献；旧v1
+  由Git/formal artifact保存，不保留并行可执行objective。
+- [ ] clean push/frozen worktree，live双节点/存储preflight后只做一次B10六卡gradient profile，按同`.25`
+  compiler/factor budget封存两个aux weights；不扫权重。
+- [ ] fresh短训保存10/25。macro10 strict若`≤129`且多task净损失则停止；130--133只有内部方向和右斜率
+  健康才允许到25；macro25若仍不超过134或只是换手则停止。
+- [ ] 只有strict超过134且多task共同获益，才继续50/100并在single winner上做六臂视频因果评测。
+
+## Phase 5 — targeted iteration loop
 
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。

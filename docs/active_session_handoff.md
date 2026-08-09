@@ -13,9 +13,17 @@
   retained formal GPU工作必须来自clean pushed commit的frozen worktree。
 - 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，只用空闲A40、合计最多6张，
   不干扰他人；多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
-- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；v6-prior已完成单卡吞吐、8-row纵向
-  smoke和六卡三宏步resume profile，但尚无formal训练或strict rollout成绩。smoke的`4/8`只证明完整闭环能运行，
-  不能与`400`-row formal结果比较。
+- 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
+  schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
+  macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
+- 四点严格逐row配对分析：0→10 gained/lost=`19/26`；0→25=`19/48`、McNemar
+  `p=.000522`；0→50=`20/31`。四点success union=`172`、intersection=`77`、逐task envelope=`147`，
+  但union/envelope均不能作checkpoint融合。macro0仍是当前schedule单点winner。
+- 内部根因不是“expert loss没动”：generated norm约`140.97→107.00`，cosine仅
+  `.02194→.02630`，expert loss下降的约`94.2%`来自log-norm径向项；绝对expert投影系数
+  `a=<G,E>/||E||²`反而`.736→.662`且23/24 tasks下降。held state0 macro50相对macro0的norm ratio/
+  cosine/radial coefficient/orthogonal residual/base/delta/base均值=`.7180/.9755/.7007/.1551/.3373`。
+  因而当前训练主要缩小已有v6 LoRA，而不是补足有用expert方向。
 - 当前代码已完成对`0894856`后batch1/逐元素复现策略的撤回。A40已证明batch8只产生普通BF16
   batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct-repeat为零）；owner明确要求不为这种
   微差牺牲吞吐。新路径在同一个固定request/总帧panel上从稳定且有显存余量的候选中选择实测LoRAs/s
@@ -45,10 +53,11 @@
   门通过。原比较器误把近零Adam moments套入Writer aggregate relative门，已只修离线state-specific
   tolerance而未改训练或重跑GPU；retained artifacts重新assemble通过，profile/formal现已正式sealed。
 
-当前唯一活动候选是
-**v6-Prior Policy-Effective Temporal-Ranking Writer**，authority为
-`docs/action_forecast_writer_video_expert_manifold_design.md`第33节及其最新吞吐修正。下一步严格按
-`task_plan.md`执行，不从下方历史谱系恢复旧命令。
+第33节v6-Prior whole-LoRA direction/norm objective已由上述闭环和机制证据退役。当前唯一活动候选是
+**v6-Initialized Policy-Effective Expert-Component Projection Writer**，authority为
+`docs/action_forecast_writer_video_expert_manifold_design.md`第34节。它不加frozen shadow branch或
+hard anchor；“v6-initialized”只表示从macro0初始化并冻结同一上游。下一步严格按`task_plan.md`执行，
+不从下方历史谱系恢复旧命令。
 
 ## 2. EMBER problem and information wall
 
@@ -101,13 +110,14 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 optimizer/scheduler/sampler/RNG。这样第一次干预只针对历史证据定位的Procedure→effective LoRA写出
 接口，同时保护143起点已经具有的video representation；这不是永久宣称上游最优。
 
-每个train task的统一step2000 expert `E_t`只作监督：
+每个train task的统一step2000 expert `E_t`只作监督；当前第34节目标改为：
 
 - correct臂接受真实logical B20 action functional loss；physical slicing只允许改变执行显存，不改变20条
   query与task mean；
-- generated correct LoRA与`E_t`在全部38 targets的gauge-invariant effective`BA`空间匹配方向和global
-  norm；
-- reversed、shuffled和cross-suite wrong只进入bounded correct-over-negative ranking；
+- 用全部38 targets的gauge-invariant effective`BA`内积计算
+  `a_t^x=<G_t^x,E_t>/||E_t||²`；correct只要求`a_t^correct→1`，不约束expert-orthogonal分量或global norm；
+- reversed、shuffled和cross-suite wrong只进入bounded
+  `a_t^correct-a_t^negative` ranking，达到margin后停止推动；
 - same-task不同视频都是共同positive，不互相排斥。
 
 部署不读expert bank或phase cache，不选、混合或近邻复制train expert。
@@ -175,7 +185,8 @@ Experts不解决：
 | topology-address binding | `75/400` | 静态chunk/rank坐标可乘性调制video dynamic value并进入闭环 | 输出仍高度task-common，held绝对性能低 | 地址辨识修复有效；不能单独调address解决迁移 |
 | Causal Barycentric | `63/400` | temporal coefficients和raw-factor组合可运行 | `k≠j` cross terms使raw A/B组合不保持effective update；未单独隔离held support | policy-effective compiler必须先于组合几何 |
 | policy-effective soft / hard bank | `15/80` / `3/80` | hard compiler近精确复现所选expert | 当前causal reader + 24个step2000 experts的soft/hard held support均失败 | 关闭当前24-expert online部署字典，不外推所有未来流形方法 |
-| current v6-prior | 尚无新strict | CPU/合同和单变量干预图成立，尚无性能证明 | “冻结143 checkpoint上游、只训写出端”仍待GPU/closed-loop证伪 | 当前唯一活动候选 |
+| v6-prior whole-LoRA objective | `134→127→105→123` | 冻结上游、只训写出端可高吞吐稳定运行；晚段可部分回升/breadth7 | 整体方向+norm吸引主要径向收缩，macro0仍最佳，绝对expert投影下降 | 退役该objective，不外推v6表示无效 |
+| current v6 Expert-Component Projection | 尚未训练 | objective-only因果修改已由径向/投影证据指向 | 尚未证明projection增加会改善held闭环 | 当前唯一活动候选 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 

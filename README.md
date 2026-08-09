@@ -21,11 +21,14 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   提高，同时保持视频时序因果、same-task鲁棒、breadth和低checkpoint漂移。
 - 历史最好single checkpoint是v6-fast macro400：五臂
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- 当前唯一活动候选是v6-Prior Policy-Effective Temporal-Ranking Writer：历史macro400只作load-only
-  initialization，冻结encoder/Core/transition/Procedure，只训练compiler+factor heads；step2000 task
-  experts只在train24提供gauge-invariant policy-effective`BA`监督，部署不读取expert bank或feature cache。
-- 当前已完成该候选的单卡Writer吞吐/纵向smoke、六卡gradient和fresh/resume/contiguous训练profile；尚无
-  formal训练或新strict rollout成绩，也没有运行中的EMBER GPU进程。
+- v6-Prior whole-LoRA objective已完成formal 0→50和同一schedule四点strict correct400：
+  macro0/10/25/50=`134/127/105/123`。macro0仍最佳，四点逐task envelope=`147`；该objective已停止，
+  不续训、不扫权重、不为loser补五臂。
+- 当前唯一活动候选是v6-Initialized Policy-Effective Expert-Component Projection Writer：保持同一
+  historical v6初始化、冻结上游、compiler/factor、one-shot输入、B20 functional和negative schedule，
+  只把task expert从“整套LoRA终点”改成“应补足的有效BA分量”。部署仍不读取expert bank或feature cache。
+- 当前没有运行中的EMBER GPU进程；下一步先完成objective-only实现、CPU代数/gradient验证和一次新
+  gradient profile，再以macro10/25 strict门快速证伪，避免为内部指标继续长训。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -35,10 +38,9 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。gradient seal固定expert/ranking weights为
   `.008355172068998324/.28570466890490887`。
-- clean frozen`5fbcb27`的fresh0→1+exact-resume1→3和independent contiguous0→3已artifact-seal；
-  cursor/RNG/scheduler/AMP/frozen state exact，trainable Writer/Adam通过科学容差，峰值reserved约`47.12GB`。
-  config现已解锁formal 0→50。下一门是clean push/frozen worktree后跑current-schedule macro0和
-  0/10/25/50 paired strict评测，不用profile loss代替真实性能。
+- formal训练root为
+  `runs/outputs/pi05_v6_prior_formal_r6_lb20_mb10_eff15db_20260809`；四点paired分析保存在
+  `runs/outputs/pi05_v6_prior_checkpoint_curve_strict_paired_eff15db_20260809/analysis.json`。
 
 当前科研结论、完整历史实验谱系和关键不确定性见
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)；精确执行协议见
@@ -57,9 +59,9 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 24个task experts统一step2000的development-train direct-expert成绩为`658/1200`、23/24 tasks非零，
   证明它们是有用但不完美的privileged train targets；soft/hard bank在held panel只有`15/80`和`3/80`，明确否定把train experts
   直接当deployment字典。
-- 当前最小假设不是重做全部架构，而是保护v6的143 representation，只修Procedure之后的compiler/factor
-  写出，使正确视频产生的完整LoRA更接近policy-effective task流形，同时以bounded ranking保留真正的
-  顺序和错误视频差异。
+- 当前最小假设不是重做全部架构，也不是继续追LoRA健康度。whole-LoRA监督使held输出主要径向收缩，
+  却让train expert绝对投影下降；新目标只要求correct输出沿expert方向的最小二乘系数到1，并保持其余
+  已有v6动态分量自由，同时以bounded projection ranking保护正确顺序相对negative的优势。
 
 ## Data and evaluation
 

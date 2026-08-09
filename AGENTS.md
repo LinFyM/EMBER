@@ -14,17 +14,18 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   不允许多个write-capable agents重叠写同一worktree。
 - 当前唯一主写分支是`codex/bci-continuation`；正式训练或评测使用该分支clean pushed commit的
   frozen worktree。历史分支和Git只作provenance，不恢复并行活动实现。
-- 当前唯一研究方法是one-shot v6-Prior Policy-Effective Temporal-Ranking Writer，属于
-  Video-Conditioned Expert-Manifold总体路线；完整authority是
-  `docs/action_forecast_writer_video_expert_manifold_design.md`第33节及其最新吞吐修正。
-- 历史最好single checkpoint仍是v6-fast macro400的`143/400`；当前候选尚无新训练或strict
-  rollout成绩。
+- 当前唯一研究方法是one-shot v6-Initialized Policy-Effective Expert-Component Projection Writer，
+  属于Video-Conditioned Expert-Manifold总体路线；完整authority是
+  `docs/action_forecast_writer_video_expert_manifold_design.md`第34节。第33节whole-LoRA
+  direction/norm objective已由正式曲线证伪并退役，不能继续训练或扫权重。
+- 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
+  macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
-- 当前没有运行中的EMBER GPU任务。单卡A40 batch/显存/端到端smoke、六卡gradient与B10
-  fresh/resume/contiguous profile均已artifact-seal；下一顺序只取`task_plan.md`：clean push/frozen
-  formal worktree、current-schedule macro0、fresh0→50及0/10/25/50及时strict评测。
+- 当前没有运行中的EMBER GPU任务。旧v6-prior formal与四点strict分析已完整封存；下一顺序只取
+  `task_plan.md`：实现objective-only Expert-Component Projection、CPU代数/gradient门、clean
+  push/frozen worktree、一次六卡gradient/profile seal，再做短训练和及时strict评测。
 
 ## Mandatory reading
 
@@ -101,8 +102,9 @@ exact resume。
 
 - train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
   跨episode独立action queries；先task内mean，再24-task等权并一次flat all-reduce。
-- correct positive functional loss + gauge-invariant effective`BA` expert direction/norm + bounded
-  correct-over-reversed/shuffled/wrong ranking。
+- correct positive functional loss + gauge-invariant effective`BA` expert projection coefficient
+  `a_correct→1` + bounded `a_correct-a_negative` ranking；不得再把generated global norm拉到expert norm，
+  也不得把完整generated LoRA方向拉成task expert。
 - correct video与action queries错开episode；same-task不同video是共同positive分布，不作negative。
 - negative只重排真实输入frames或使用预封存cross-suite wrong mapping；不得最大化negative action
   error、无限放大LoRA或读取negative任务隐藏信息。

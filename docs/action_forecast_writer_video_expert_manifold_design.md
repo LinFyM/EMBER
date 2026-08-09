@@ -1381,3 +1381,119 @@ allclose继续fail-closed。该修正没有改变训练kernel、dtype、reductio
 本profile只证明B10训练容量、吞吐和resume语义成立，不是新strict性能证据。下一步从新的clean pushed
 seal commit创建formal frozen worktree，先跑同schedule macro0，然后fresh0→50并及时评测0/10/25/50；
 不得用上述三步loss或energy趋势替代paired closed-loop裁决。
+
+### 33.13 formal 0→50与whole-LoRA objective裁决（2026-08-09）
+
+clean frozen `eff15db`的formal root完整完成0→50；50 macros wall约`1080.75s`，peak allocated/reserved
+约`43.266/47.094GB`，0 OOM/nonfinite/clip。current-schedule macro0/10/25/50的strict correct400为：
+
+```text
+macro       0    10    25    50
+correct   134   127   105   123
+correct80  26    26    24    27
+```
+
+macro50的小panel看似最好，但full400仍比macro0低11，故screen不能选checkpoint。完整paired 0→10、
+0→25、0→50 gained/lost=`19/26`、`19/48`、`20/31`；0→25的exact McNemar
+`p=.000522`。四点success union=`172`、intersection=`77`、逐task envelope=`147`，后者仍低于150；
+这些只作漂移诊断，不能融合checkpoint。macro50 breadth从6到7主要来自Spatial-1的2个新state，同时
+Object-1/Object-3相对macro0净失`5/9`，Goal-6净得6，仍是任务换手而非共同积累。
+
+内部机制与闭环方向一致。metrics是pre-update row：从warm-start到state49，generated norm约
+`140.97→107.00`，expert norm约`4.18`，cosine仅`.02194→.02630`；expert loss下降约`.0752`，其中
+direction只贡献约`.00436`，即约`5.8%`，其余约`94.2%`来自log-norm径向收缩。绝对投影系数
+
+```text
+a_t^x = <G_t^x, E_t> / ||E_t||^2
+```
+
+的correct mean却从`.7362`降到`.6623`，23/24 tasks下降；negative从`.6284`降到`.5332`，margin的
+上升主要因为negative缩得更多，不是correct补足expert分量。严格同video/state0 cache比较中，macro50
+相对macro0的norm ratio/cosine/radial coefficient/orthogonal residual over base/delta over base均值为
+`.7180/.9755/.7007/.1551/.3373`。因此这轮训练首先破坏的是已有v6 LoRA的幅度，而非学到更有效的
+expert方向。
+
+裁决：停止第33节whole-LoRA direction+global-norm objective；不续100/200、不扫auxiliary weight、
+不为loser补六臂。这不证伪v6上游表示，也不证伪task expert可提供局部policy-effective方向；它只证伪
+“整套generated LoRA应收敛到task-local expert的方向和能量”这一假设。
+
+## 34. v6-Initialized Policy-Effective Expert-Component Projection Writer
+
+### 34.1 单变量假设与边界
+
+保持第33节的完整Writer架构、historical v6 macro400初始化、冻结encoder/Core/transition/Procedure、
+只训练compiler+factor、train24 logical B20/physical B10+10、positive functional、video/negative schedule
+和one-shot部署合同。唯一科学修改是expert辅助几何：expert不再是整套LoRA终点，只定义一个应补足的
+policy-effective分量。
+
+“v6-initialized”不等于hard anchor。首轮不加入frozen macro0 shadow branch、zero-init residual、
+orthogonal drift penalty、`G0+ΔG`重参数化或rank16 retraction；这些都会成为第二个结构变量并增加显存/
+计算。若objective-only版本能增加projection却仍发生有害正交漂移，才有证据单独打开hard anchor。
+
+### 34.2 gauge-invariant目标
+
+对task`t`、condition`x`和全部38个public LoRA targets `l`：
+
+```text
+G_t,l^x = B_t,l^x A_t,l^x
+E_t,l   = B_t,l^E A_t,l^E
+a_t^x   = sum_l <G_t,l^x,E_t,l>_F / (sum_l ||E_t,l||_F^2 + epsilon)
+```
+
+`a=1`表示generated update在expert方向的最小二乘分量等于一个完整expert；它不要求`G=E`，也不约束
+expert-orthogonal分量或global norm。训练目标为：
+
+```text
+L_projection = mean_t SmoothL1(a_t^correct - 1; beta)
+L_ranking    = mean_t softplus((m - (a_t^correct-a_t^negative))/tau) * tau
+L_total      = L_positive_functional + lambda_p L_projection + lambda_r L_ranking
+```
+
+negative仍按task visit轮换reversed/shuffled/cross-suite wrong；same-task-other始终是positive分布，不作
+negative。ranking达到margin后梯度平滑趋零，不最大化negative action error。`a`只在训练时作为
+gauge-invariant测量和loss，不是部署scalar gate或global scale，因此不违反禁止的scale救火。
+
+低秩恒等式直接复用现有effective alignment contraction，不materialize dense`BA`、不增加Writer或policy
+forward：
+
+```text
+<BA, B_E A_E> = tr[(B^T B_E)(A_E A^T)]
+||B_E A_E||^2 = tr[(B_E^T B_E)(A_E A_E^T)]
+```
+
+expert denominator可在当前task objective中复用；FP32只用于最终rank-level reductions。每macro记录
+`a_correct/a_negative/a_margin`、generated/expert norm和per-target contribution聚合，禁止逐target
+`.item()`热路径同步。
+
+### 34.3 与旧路线去重
+
+- 不同于Recenter/Prior-Innovation：不删除DC、不规定Core/Procedure latent分工，也不引入新的prior+
+  innovation双分支；实际逐视频v6输出仍由同一个Writer自由生成。
+- 不同于Target-Spectral/健康度路线：没有stable-rank、奇异值、正交或rank diversity目标。
+- 不同于Barycentric/Policy-Effective bank：expert不参与部署routing、mixing、字典或rank16重压缩；Writer
+  仍直接输出完整A/B。
+- 不同于第33节：删除`||G||→||E||`和`cos(G,E)→1`，只补expert component，明确允许大规模有用的
+  non-expert v6分量继续存在。
+
+### 34.4 证伪门与执行顺序
+
+CPU代数门：macro0 exact-load/no-video identity/信息墙/functional path不变；projection gradient在
+effective空间只沿`E`，不能直接压缩`E`正交分量；24 task denominator、coefficient、gradients finite；
+记录per-target numerator占比，若少数target垄断只作为后续证据，不在首轮改target平衡。
+
+clean push/frozen后只做一次六卡B10 gradient profile，沿用第33节吞吐图和`.25` compiler/factor
+auxiliary预算，分别封存`lambda_p/lambda_r`，不做weight sweep。最早训练内部门：`a_correct`至少18/24
+tasks向1移动，绝对expert component上升，generated norm不再系统塌缩，negative不爆炸，positive
+functional和fixed-action transfer不出现广泛退化。
+
+closed-loop门使用同一current schedule macro0=`134`：
+
+- macro10若`≤129`且净损失分散于多个tasks，立即停止；
+- macro10为`130--133`时，仅当projection、norm、breadth和右端斜率共同健康才允许到25；
+- macro25若仍不超过134或只是task换手，停止，不跑50/100、不扫权重；
+- 只有strict超过134且多个tasks净获益，才继续50/100；single winner超过134并有可信趋势后做完整
+  correct/same/wrong/shuffled/reversed/no-video，最终目标仍是同一checkpoint严格`>150/400`。
+
+若`a≈1`、projection ranking和fixed-action transfer均成立而closed-loop仍不升，必须干净证伪
+expert-component假设，下一候选才是单独的v6动态hard-anchor/tangent retraction或policy-output behavior
+distillation；不得继续加大projection weight或回到whole-LoRA健康度优化。

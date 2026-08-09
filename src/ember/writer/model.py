@@ -38,6 +38,30 @@ class LoraTensorSpec:
     transpose_output: bool
 
 
+@dataclass(frozen=True)
+class WriterVideoEvidence:
+    """Per-frame v6 evidence before any temporal ordering is applied."""
+
+    text_queries: torch.Tensor
+    frame_evidence: torch.Tensor
+    grounded_evidence: torch.Tensor
+    interactions: torch.Tensor
+    valid_task_tokens: torch.Tensor
+    offsets: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class WriterMemories:
+    """Frozen Core and ordered Procedure memories consumed by the compiler."""
+
+    core: torch.Tensor
+    valid_core: torch.Tensor
+    procedure: torch.Tensor
+    positions: torch.Tensor
+    valid_procedure: torch.Tensor
+    frame_attention: torch.Tensor
+
+
 def build_lora_tensor_specs(
     state: Mapping[str, torch.Tensor],
 ) -> tuple[LoraTensorSpec, ...]:
@@ -392,13 +416,39 @@ class CompleteLoRAWriter(torch.nn.Module):
         torch.Tensor,
         torch.Tensor,
     ]:
+        evidence = self.encode_video_evidence(
+            policy,
+            frames,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        memories = self.build_memories(evidence, frame_indices)
+        return (
+            memories.core,
+            memories.valid_core,
+            memories.procedure,
+            memories.positions,
+            memories.valid_procedure,
+            memories.frame_attention,
+        )
+
+    def encode_video_evidence(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> WriterVideoEvidence:
+        """Encode frame-local evidence once, before an arm chooses frame order."""
+
         offsets = self._validated_offsets(video_offsets, frames.shape[0])
         conditions = len(offsets) - 1
         if (
             frames.ndim != 4
-            or frame_indices.ndim != 1
-            or frame_indices.shape[0] != frames.shape[0]
-            or frame_indices.dtype != torch.long
             or language_tokens.ndim != 2
             or language_tokens.shape[0] != conditions
             or language_mask.shape != language_tokens.shape
@@ -430,6 +480,62 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
+        return WriterVideoEvidence(
+            text_queries=text_queries,
+            frame_evidence=frame_evidence,
+            grounded_evidence=grounded_evidence,
+            interactions=interactions,
+            valid_task_tokens=valid_task_tokens,
+            offsets=offsets,
+        )
+
+    @staticmethod
+    def _validate_frame_order(
+        frame_order: torch.Tensor,
+        offsets: tuple[int, ...],
+        *,
+        device: torch.device,
+    ) -> torch.Tensor:
+        total = offsets[-1]
+        if (
+            frame_order.ndim != 1
+            or frame_order.shape[0] != total
+            or frame_order.dtype != torch.long
+            or frame_order.device != device
+        ):
+            raise WriterModelError("Writer frame order changed shape or device")
+        for left, right in zip(offsets, offsets[1:]):
+            observed = frame_order[left:right].sort().values
+            expected = torch.arange(left, right, device=device)
+            if not torch.equal(observed, expected):
+                raise WriterModelError("Writer frame order crossed video conditions")
+        return frame_order
+
+    def build_memories(
+        self,
+        evidence: WriterVideoEvidence,
+        frame_indices: torch.Tensor,
+        *,
+        frame_order: torch.Tensor | None = None,
+    ) -> WriterMemories:
+        """Build invariant Core and order-sensitive Procedure for one arm."""
+
+        total = evidence.offsets[-1]
+        if (
+            frame_indices.ndim != 1
+            or frame_indices.shape[0] != total
+            or frame_indices.dtype != torch.long
+            or frame_indices.device != evidence.frame_evidence.device
+        ):
+            raise WriterModelError("Writer sampled frame ordinals changed")
+        if frame_order is None:
+            order = torch.arange(total, device=frame_indices.device)
+        else:
+            order = self._validate_frame_order(
+                frame_order,
+                evidence.offsets,
+                device=frame_indices.device,
+            )
         (
             packed_evidence,
             packed_grounded,
@@ -437,71 +543,50 @@ class CompleteLoRAWriter(torch.nn.Module):
             positions,
             valid_frames,
         ) = self._pack_video_program(
-            frame_evidence,
-            grounded_evidence,
-            interactions,
+            evidence.frame_evidence.index_select(0, order),
+            evidence.grounded_evidence.index_select(0, order),
+            evidence.interactions.index_select(0, order),
             frame_indices,
-            offsets,
+            evidence.offsets,
         )
         core_memory, frame_attention = self.semantic_core(
-            text_queries,
+            evidence.text_queries,
             packed_evidence,
             valid_frames,
-            valid_task_tokens,
+            evidence.valid_task_tokens,
         )
         procedure_input, _ = self.visual_transition(
             packed_interactions,
             packed_grounded,
             valid_frames,
-            valid_task_tokens,
+            evidence.valid_task_tokens,
         )
         procedure_memory = self.procedure(
             procedure_input,
             positions,
             valid_frames,
         )
-        return (
-            core_memory,
-            valid_task_tokens,
-            procedure_memory,
-            positions,
-            valid_frames,
-            frame_attention,
+        return WriterMemories(
+            core=core_memory,
+            valid_core=evidence.valid_task_tokens,
+            procedure=procedure_memory,
+            positions=positions,
+            valid_procedure=valid_frames,
+            frame_attention=frame_attention,
         )
 
-    def forward(
+    def decode_memories(
         self,
-        frames: torch.Tensor,
-        frame_indices: torch.Tensor,
-        video_offsets: torch.Tensor,
-        language_tokens: torch.Tensor,
-        language_mask: torch.Tensor,
-        task_span_mask: torch.Tensor,
-        *,
-        policy: torch.nn.Module,
+        memories: WriterMemories,
     ) -> dict[str, torch.Tensor]:
-        (
-            core_memory,
-            valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
-            _,
-        ) = self.encode_task(
-            policy,
-            frames,
-            frame_indices,
-            video_offsets,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-        )
+        """Compile frozen v6 memories into one complete public LoRA."""
+
         expert, action_in, action_out = self.compiler(
-            core_memory,
-            valid_core,
-            procedure_memory,
-            positions,
-            valid_frames,
+            memories.core,
+            memories.valid_core,
+            memories.procedure,
+            memories.positions,
+            memories.valid_procedure,
         )
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
@@ -518,5 +603,27 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
+            result[item.name] = value[0] if memories.core.shape[0] == 1 else value
         return result
+
+    def forward(
+        self,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        *,
+        policy: torch.nn.Module,
+    ) -> dict[str, torch.Tensor]:
+        evidence = self.encode_video_evidence(
+            policy,
+            frames,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        memories = self.build_memories(evidence, frame_indices)
+        return self.decode_memories(memories)

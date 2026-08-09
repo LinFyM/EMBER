@@ -1,9 +1,27 @@
 from __future__ import annotations
 
 import torch
+import pytest
+from safetensors.torch import save_file
 
+from ember.expert_manifold.contract import ExpertTask
+from ember.expert_manifold.v6_prior import (
+    COUNTERFACTUAL_KINDS,
+    V6_PRIOR_FROZEN_PARAMETER_COUNT,
+    V6_PRIOR_TRAINABLE_PARAMETER_COUNT,
+    configure_v6_prior_trainability,
+    counterfactual_frame_order,
+    counterfactual_kind,
+    cross_suite_wrong_task,
+    load_v6_prior_warm_start_,
+    v6_prior_trainable_parameters,
+)
 from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.model import (
+    CompleteLoRAWriter,
+    WriterModelError,
+    build_lora_tensor_specs,
+)
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
@@ -213,6 +231,100 @@ def test_v6_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
     assert not model.semantic_encoder.fixed_suffix_noise.requires_grad
 
 
+def test_v6_prior_strict_warm_start_and_trainability_contract(tmp_path) -> None:
+    source, _ = _model()
+    checkpoint = tmp_path / "writer.safetensors"
+    state = {
+        name: value.detach().contiguous()
+        for name, value in source.state_dict().items()
+    }
+    save_file(state, str(checkpoint))
+    target, _ = _model()
+    for parameter in target.parameters():
+        torch.nn.init.zeros_(parameter)
+    warm_start = load_v6_prior_warm_start_(target, checkpoint)
+    assert warm_start.state_tensor_count == 600
+    assert all(
+        torch.equal(value, target.state_dict()[name]) for name, value in state.items()
+    )
+    ownership = configure_v6_prior_trainability(target)
+    assert ownership.frozen_parameter_count == V6_PRIOR_FROZEN_PARAMETER_COUNT
+    assert ownership.trainable_parameter_count == V6_PRIOR_TRAINABLE_PARAMETER_COUNT
+    assert sum(value.numel() for value in v6_prior_trainable_parameters(target)) == (
+        V6_PRIOR_TRAINABLE_PARAMETER_COUNT
+    )
+    assert all(not getattr(target, name).training for name in (
+        "semantic_encoder",
+        "semantic_core",
+        "visual_transition",
+        "procedure",
+    ))
+
+
+def test_v6_prior_counterfactual_schedule_is_balanced_and_temporal() -> None:
+    for visit in range(5):
+        kinds = [counterfactual_kind(task, visit) for task in range(24)]
+        assert {kind: kinds.count(kind) for kind in COUNTERFACTUAL_KINDS} == {
+            kind: 8 for kind in COUNTERFACTUAL_KINDS
+        }
+    offsets = (0, 5, 9)
+    reverse = counterfactual_frame_order(
+        "reversed",
+        offsets,
+        seed=7,
+        task_ordinal=2,
+        task_visit=3,
+        teacher_demo=11,
+        device="cpu",
+    )
+    assert torch.equal(reverse, torch.tensor([4, 3, 2, 1, 0, 8, 7, 6, 5]))
+    shuffled = counterfactual_frame_order(
+        "shuffled",
+        offsets,
+        seed=7,
+        task_ordinal=2,
+        task_visit=3,
+        teacher_demo=11,
+        device="cpu",
+    )
+    assert shuffled is not None
+    assert torch.equal(shuffled[:5].sort().values, torch.arange(5))
+    assert torch.equal(shuffled[5:].sort().values, torch.arange(5, 9))
+    assert not torch.equal(shuffled, torch.arange(9))
+    assert counterfactual_frame_order(
+        "wrong",
+        offsets,
+        seed=7,
+        task_ordinal=2,
+        task_visit=3,
+        teacher_demo=11,
+        device="cpu",
+    ) is None
+
+
+def test_v6_prior_wrong_video_cycles_across_suites() -> None:
+    suites = ("spatial", "object", "goal", "libero10")
+    tasks = tuple(
+        ExpertTask(
+            ordinal=ordinal,
+            global_task_id=ordinal,
+            suite=suites[ordinal // 6],
+            task_id=ordinal % 6,
+            split_role="train",
+            language=f"task {ordinal}",
+            authority=object(),
+        )
+        for ordinal in range(24)
+    )
+    source = tasks[7]
+    selected = [
+        cross_suite_wrong_task(tasks, task_ordinal=source.ordinal, task_visit=visit)
+        for visit in range(9)
+    ]
+    assert all(task.suite != source.suite for task in selected)
+    assert {task.suite for task in selected} == set(suites) - {source.suite}
+
+
 def test_v6_writer_starts_at_exact_identity_template() -> None:
     model, template = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
@@ -232,6 +344,73 @@ def test_v6_writer_becomes_video_conditioned_after_heads_open() -> None:
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert any(not torch.equal(value[0], value[1]) for value in output.values())
     assert not hasattr(model, "shared_lora")
+
+
+def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory() -> None:
+    model, _ = _model()
+    model.semantic_encoder = _FakeSemanticEncoder()
+    torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    frames, indices, offsets, tokens, masks, spans = _inputs()
+    direct = model(
+        frames,
+        indices,
+        offsets,
+        tokens,
+        masks,
+        spans,
+        policy=torch.nn.Identity(),
+    )
+    evidence = model.encode_video_evidence(
+        torch.nn.Identity(),
+        frames,
+        offsets,
+        tokens,
+        masks,
+        spans,
+    )
+    normal_memory = model.build_memories(evidence, indices)
+    staged = model.decode_memories(normal_memory)
+    assert all(torch.equal(direct[name], staged[name]) for name in direct)
+
+    reversed_order = torch.tensor([1, 0, 4, 3, 2], dtype=torch.long)
+    reversed_memory = model.build_memories(
+        evidence,
+        indices,
+        frame_order=reversed_order,
+    )
+    reversed_state = model.decode_memories(reversed_memory)
+    assert torch.allclose(
+        normal_memory.core,
+        reversed_memory.core,
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    assert not torch.allclose(normal_memory.procedure, reversed_memory.procedure)
+    assert any(
+        not torch.allclose(staged[name], reversed_state[name]) for name in staged
+    )
+
+
+def test_staged_frame_order_cannot_cross_video_conditions() -> None:
+    model, _ = _model()
+    model.semantic_encoder = _FakeSemanticEncoder()
+    frames, indices, offsets, tokens, masks, spans = _inputs()
+    evidence = model.encode_video_evidence(
+        torch.nn.Identity(),
+        frames,
+        offsets,
+        tokens,
+        masks,
+        spans,
+    )
+    with pytest.raises(WriterModelError, match="crossed video conditions"):
+        model.build_memories(
+            evidence,
+            indices,
+            frame_order=torch.tensor([0, 2, 1, 3, 4], dtype=torch.long),
+        )
 
 
 def test_v6_gradient_staging_opens_only_intended_paths() -> None:

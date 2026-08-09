@@ -17,9 +17,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_v6_prior_policy_effective_writer_v1.json"
 
 
-def test_v6_prior_config_opens_only_the_preregistered_gradient_profile() -> None:
+def test_v6_prior_config_blocks_all_gpu_modes_before_the_online_smoke() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert runtime_for_mode(config, "gradient-profile") == (1, ())
+    with pytest.raises(ExpertManifoldError, match="gradient profile is not ready"):
+        runtime_for_mode(config, "gradient-profile")
+    ready = deepcopy(config)
+    ready["gradient_profile"]["status"] = (
+        "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke"
+    )
+    assert runtime_for_mode(ready, "gradient-profile") == (1, ())
     with pytest.raises(ExpertManifoldError, match="profile runtime is not sealed"):
         runtime_for_mode(config, "profile")
     with pytest.raises(ExpertManifoldError, match="formal runtime is not sealed"):

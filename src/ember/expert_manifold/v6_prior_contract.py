@@ -211,6 +211,52 @@ def _optimization_matches(value: Mapping[str, Any]) -> bool:
     )
 
 
+def _runtime_declarations_match(config: Mapping[str, Any]) -> bool:
+    gradient = config.get("gradient_profile", {})
+    profile = config.get("profile_run", {})
+    formal = config.get("formal_run", {})
+    return (
+        gradient.get("status")
+        in {
+            "blocked_until_single_a40_warmstart_reproduction_smoke",
+            "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke",
+            "sealed_from_live_train24_gradient_profile",
+        }
+        and int(gradient.get("expected_world_size", -1)) == 6
+        and int(gradient.get("tasks_per_rank", -1)) == 4
+        and int(gradient.get("macros", -1)) == 1
+        and int(gradient.get("schedule_macro", -1)) == 49
+        and int(gradient.get("physical_policy_batch", -1)) == 20
+        and int(gradient.get("longest_video_sampled_frames", -1)) == 105
+        and gradient.get("seal_rule")
+        == (
+            "each_auxiliary_at_most_one_quarter_positive_gradient_in_both_"
+            "compiler_and_factor_heads"
+        )
+        and profile.get("status")
+        in {
+            "blocked_until_live_gradient_weights",
+            "sealed_from_live_gradient_profile_and_a40_resume_smoke",
+        }
+        and int(profile.get("expected_world_size", -1)) == 6
+        and int(profile.get("tasks_per_rank", -1)) == 4
+        and int(profile.get("total_macros", -1)) == 3
+        and profile.get("checkpoint_macros") == [1, 3]
+        and profile.get("required_resume_comparison")
+        == "fresh0_to1_plus_exact_resume1_to3_equals_contiguous0_to3"
+        and formal.get("status")
+        in {
+            "blocked_until_live_a40_profile_and_macro3_online_smoke",
+            "sealed_from_live_a40_profile_and_macro3_online_smoke",
+        }
+        and int(formal.get("expected_world_size", -1)) == 6
+        and int(formal.get("tasks_per_rank", -1)) == 4
+        and int(formal.get("total_macros", -1)) == 50
+        and formal.get("checkpoint_macros") == [10, 25, 50]
+        and formal.get("strict80_checkpoints") == [0, 10, 25, 50]
+    )
+
+
 def load_v6_prior_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     authorities = config.get("authorities", {})
@@ -250,6 +296,7 @@ def load_v6_prior_config(path: Path) -> dict[str, Any]:
         and _data_matches(config.get("data", {}))
         and _objective_matches(config.get("objective", {}))
         and _optimization_matches(config.get("optimization", {}))
+        and _runtime_declarations_match(config)
         and config.get("content_hash_policy") == "disabled_by_owner"
     )
     if not valid:
@@ -266,7 +313,7 @@ def runtime_for_mode(
         profile = config["gradient_profile"]
         if (
             profile.get("status")
-            != "ready_after_cpu_and_single_a40_identity_gates"
+            != "ready_after_cpu_and_single_a40_warmstart_reproduction_smoke"
             or config["objective"]["auxiliary_weights"]["status"]
             != "blocked_until_live_train24_gradient_profile"
         ):
@@ -276,7 +323,7 @@ def runtime_for_mode(
     required_status = (
         "sealed_from_live_gradient_profile_and_a40_resume_smoke"
         if mode == "profile"
-        else "sealed_from_live_a40_profile_and_online_step0_identity_smoke"
+        else "sealed_from_live_a40_profile_and_macro3_online_smoke"
     )
     if (
         selected.get("status") != required_status

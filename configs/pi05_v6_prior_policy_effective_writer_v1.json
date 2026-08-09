@@ -170,12 +170,13 @@
     }
   },
   "gradient_profile": {
-    "status": "ready_after_cpu_and_single_a40_identity_gates",
+    "status": "blocked_until_single_a40_warmstart_reproduction_smoke",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "macros": 1,
+    "schedule_macro": 49,
     "physical_policy_batch": 20,
-    "longest_video_raw_frames": 105,
+    "longest_video_sampled_frames": 105,
     "seal_rule": "each_auxiliary_at_most_one_quarter_positive_gradient_in_both_compiler_and_factor_heads"
   },
   "profile_run": {
@@ -190,7 +191,7 @@
     "required_resume_comparison": "fresh0_to1_plus_exact_resume1_to3_equals_contiguous0_to3"
   },
   "formal_run": {
-    "status": "blocked_until_live_a40_profile_and_online_step0_identity_smoke",
+    "status": "blocked_until_live_a40_profile_and_macro3_online_smoke",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "total_macros": 50,

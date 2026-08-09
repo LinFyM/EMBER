@@ -322,6 +322,14 @@ class CompleteLoRAWriter(torch.nn.Module):
             raise WriterModelError("PI05 task-LoRA layer is outside Action Expert")
         return f"{match.group(2)[0]}_{factor}", layer
 
+    def template_state(self) -> dict[str, torch.Tensor]:
+        """Return the persistent physical identity used by every generated LoRA."""
+
+        return {
+            name: getattr(self, buffer)
+            for name, buffer in self._template_buffers.items()
+        }
+
     def _pack_video_program(
         self,
         frame_evidence: torch.Tensor,

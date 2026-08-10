@@ -123,6 +123,14 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
+        "reconciliation_precision": {
+            "shape": [256, 256],
+            "dtype": "torch.float64",
+            "value_count": 65_536,
+            "trainable": False,
+            "checkpoint_owned": True,
+            "deployment_owned": False,
+        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -143,10 +151,13 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "checkpoint": str(configured),
             "writer_state_tensor_count": 600,
             "writer_state_value_count": 12_064_064,
-            "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "residual_memory": (
+                "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
+            ),
         },
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
+        "reconciliation": config["reconciliation"],
         "update": config["update"],
         "ownership": ownership,
         "world_size": 6,
@@ -168,6 +179,17 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "shape": [256, 320, 256],
             "value_count": 20_971_520,
             "finite": None,
+        },
+        "reconciliation": {
+            "file": "reconciliation.safetensors",
+            "key": "reconciliation.precision",
+            "tensor_count": 1,
+            "dtype": "torch.float64",
+            "shape": [256, 256],
+            "value_count": 65_536,
+            "finite": None,
+            "assimilated_rows": 480,
+            "deployment_owned": False,
         },
         "payload_value_validation": "deployment_metadata_only",
         "content_hash_policy": "disabled_by_owner",
@@ -212,6 +234,19 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     )
     assert asset["kind"] == "v6_condition_program_residual_checkpoint"
     assert asset["residual_state"]["tensor_count"] == 1
+
+    undeclared = deepcopy(inspection)
+    undeclared["next_macro"] = 7
+    undeclared["metrics_rows"] = 7
+    undeclared["cursor_contract"] = cursor_contract(config, 7)
+    undeclared["reconciliation"] = deepcopy(inspection["reconciliation"])
+    undeclared["reconciliation"]["assimilated_rows"] = 336
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: undeclared,
+    )
+    with pytest.raises(ExpertManifoldError, match="predeclared checkpoint macro"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)
 
     invalid = deepcopy(inspection)
     invalid["checkpoint_contract"] = deepcopy(inspection["checkpoint_contract"])

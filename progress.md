@@ -1,5 +1,53 @@
 # EMBER Progress Ledger
 
+## Exact Anchored Reconciliation实现与正式状态机封口（2026-08-10，尚未启动GPU）
+
+- canonical v2 executable config已由Git历史保存，active config改为
+  `configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；部署计算图不变，fresh checkpoint
+  schema升级为Program+FP64 precision联合状态，禁止从v2 macro10/25伪resume。
+- `condition_update`已实现anchored RLS、old/current/blind diagnostics和joint apply；首步非正交blind ridge、
+  streaming/direct累计解、zero-cotangent assimilation、reference/current/blind motion均有CPU oracle。
+  checkpoint codec分离Program与precision，并新增wrong key/dtype/shape/nonfinite/non-PD回归；save只在主rank、
+  预声明checkpoint边界做256×256 Cholesky，不进入macro热路径。
+- 只读审计发现并已修复三个fail-open缺口：formal evaluator曾接受任意macro；runtime曾无条件允许10→25；
+  paired analysis曾不认识RLS v3。fresh0→10现在必须预注册macro0/macro10 strict roots到原run contract，resume
+  会重聚合400-row结果并自动执行`correct>=140/lost<=6/breadth>=6`支持门，摘要只追加invocation而不污染
+  checkpoint/deployment state。
+- architecture guard经拆分checkpoint payload、contract spec与paired decision gate后为0 hard violation；
+  focused=`75 passed`，加载`.env.local`/LIBERO assets后的全仓=`300 passed in 61.72s`，compileall、JSON与
+  diff-check通过。尚需完成authority终检、commit/push与frozen worktree，之后才进行live GPU/quota
+  preflight和唯一fresh0→3 profile。当前0 RLS GPU、0 training、0 rollout、0 strict分数。
+
+## Balanced DC--Causal v2 formal与strict终局（2026-08-10）
+
+- clean frozen commit=`abd8e0826e52758eda53b1963f8b12db92bf3748`；formal root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`完成0→25、
+  25 metrics与macro10/25 checkpoints。累计step wall/input wait=`535.464796/2.208183s`，mean step=
+  `21.418592s`，peak allocated/reserved=`43,247,029,760/46,917,484,544B`，0 OOM/nonfinite/negative forward。
+- macro10 strict root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0010_abd8e08_20260810`：
+  72/72 jobs、400 rows、18/18 workers return0，`140/400`、breadth6、per-task=`1/2/48/31/0/38/20/0`、
+  per-suite=`3/79/38/20`。相对macro0 gained/lost=`19/13`、union/intersection=`153/121`。
+- macro25 strict root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0025_abd8e08_20260810`：
+  `139/400`、breadth6、per-task=`2/4/48/30/0/38/17/0`、per-suite=`6/78/38/17`；相对macro10
+  gained/lost=`12/13`。内部72/72 jobs、400 rows、18/18 workers return0完整；外层wrapper exit没有记录，
+  后验audit明确保留unobserved/missing而没有伪造exit0。
+- v2曲线最终为`134/140/139`，没有超过历史`143`；按预注册门退役，不续50、不补多臂、不扫超参。所有
+  GPU已在运行结束后自然释放，本实现阶段没有重新启动GPU。
+
+## v2 LoRA与same-task视频诊断完成（2026-08-10）
+
+- macro0→10 effective delta/base median=`1.69498e-4`、stable rank=`1.000022`、top1 energy=`.999978`；
+  Program residual L2/RMS/max=`.0174616/3.818e-6/4.997e-5`。这些是机制参考，不单独选择checkpoint。
+- 50视频/task raw correction consistency=`.141539--.142175`，接近`1/sqrt(50)=.141421`；fixed macro10
+  all-target pair cosine=`-.001371--.003280`、action target=`-.009579--.014302`。结论是视频condition确实
+  产生非零变化，但同task demo correction几乎不共享方向；不能写成顺序因果已学会，也不能直接用few-shot
+  平均掩盖根因。
+- 与macro10→25 success换手一起，证据把下一单变量定位为跨macro retention/reconciliation。第39节RLS因此
+  保留全部部署和吞吐路径，只替换training-time update kernel；few-shot、reward-credit与Procedure重构均
+  继续作为RLS被实证否决后的有序后备，而不是180度切换。
+
 ## Balanced DC--Causal v2 zero-memory macro0 strict400完成（2026-08-10）
 
 - clean pushed/frozen commit=`6b5f7a6ad6ef1a778205071f38faec9f936cf54e`；启动前live比较两节点并选择

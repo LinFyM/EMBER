@@ -14,6 +14,8 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_checkpoint import (
     PROGRAM_MEMORY_FILE,
     PROGRAM_MEMORY_KEY,
+    RECONCILIATION_FILE,
+    RECONCILIATION_KEY,
     V6_PRIOR_CHECKPOINT_SCHEMA,
     inspect_v6_prior_checkpoint,
     load_v6_prior_checkpoint,
@@ -24,7 +26,10 @@ from ember.pi05_source_checkpoint import (
     read_json,
     write_json_atomic,
 )
-from ember.writer.condition_update import ProgramResidualMemory
+from ember.writer.condition_update import (
+    ProgramReconciliationState,
+    ProgramResidualMemory,
+)
 
 
 _SHAPE = (2, 3, 4)
@@ -36,6 +41,14 @@ def _memory() -> ProgramResidualMemory:
         program_slots=_SHAPE[1],
         program_width=_SHAPE[2],
     )
+
+
+def _reconciliation(macro: int = 0) -> ProgramReconciliationState:
+    state = ProgramReconciliationState(feature_width=_SHAPE[0])
+    state.assimilated_rows = macro * 48
+    if macro:
+        state.precision.mul_(macro + 1)
+    return state
 
 
 def _cursor(macro: int = 1) -> dict[str, int]:
@@ -66,11 +79,16 @@ def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
 
 
-def _save(root: Path, memory: ProgramResidualMemory) -> Path:
+def _save(
+    root: Path,
+    memory: ProgramResidualMemory,
+    reconciliation: ProgramReconciliationState | None = None,
+) -> Path:
     return save_v6_prior_checkpoint(
         output_dir=root,
         macro=1,
         memory=memory,
+        reconciliation=reconciliation or _reconciliation(1),
         context=_context(),
         metrics_rows=1,
         cursor_contract=_cursor(),
@@ -98,7 +116,7 @@ def _draw_rng() -> tuple[float, float, torch.Tensor]:
     return random.random(), float(np.random.random()), torch.rand(5)
 
 
-def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
+def test_checkpoint_atomically_separates_deployment_memory_and_training_state(
     tmp_path: Path,
 ) -> None:
     memory = _memory()
@@ -109,6 +127,7 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     assert {path.name for path in checkpoint.iterdir()} == {
         "manifest.json",
         PROGRAM_MEMORY_FILE,
+        RECONCILIATION_FILE,
         "rng_rank_000.pt",
     }
     assert not list(checkpoint.parent.glob(".*.tmp"))
@@ -117,6 +136,15 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     assert state[PROGRAM_MEMORY_KEY].dtype == torch.float32
     assert tuple(state[PROGRAM_MEMORY_KEY].shape) == _SHAPE
     assert torch.equal(state[PROGRAM_MEMORY_KEY], memory.value)
+    reconciliation_state = load_file(
+        str(checkpoint / RECONCILIATION_FILE), device="cpu"
+    )
+    assert set(reconciliation_state) == {RECONCILIATION_KEY}
+    assert reconciliation_state[RECONCILIATION_KEY].dtype == torch.float64
+    assert torch.equal(
+        reconciliation_state[RECONCILIATION_KEY],
+        _reconciliation(1).precision,
+    )
 
     manifest = read_json(checkpoint / "manifest.json")
     assert manifest["schema_version"] == V6_PRIOR_CHECKPOINT_SCHEMA
@@ -147,6 +175,17 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
         "shape": list(_SHAPE),
         "value_count": 24,
         "finite": True,
+    }
+    assert inspected["reconciliation"] == {
+        "file": RECONCILIATION_FILE,
+        "key": RECONCILIATION_KEY,
+        "tensor_count": 1,
+        "dtype": "torch.float64",
+        "shape": [2, 2],
+        "value_count": 4,
+        "finite": True,
+        "assimilated_rows": 48,
+        "deployment_owned": False,
     }
     assert "writer" not in inspected
     assert "trainer" not in inspected
@@ -197,11 +236,13 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
     np.random.seed(1003)
     torch.manual_seed(1007)
     destination = _memory()
+    destination_reconciliation = _reconciliation()
     with torch.no_grad():
         destination.value.fill_(91.0)
     macro, rows = load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         memory=destination,
+        reconciliation=destination_reconciliation,
         context=_context(),
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
@@ -209,6 +250,8 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
     )
     assert (macro, rows) == (1, 1)
     assert torch.equal(destination.value, saved_value)
+    assert destination_reconciliation.assimilated_rows == 48
+    assert torch.equal(destination_reconciliation.precision, _reconciliation(1).precision)
     _assert_rng_equal(_draw_rng(), expected_rng)
 
     untouched = destination.value.clone()
@@ -216,6 +259,7 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
         load_v6_prior_checkpoint(
             checkpoint=checkpoint,
             memory=destination,
+            reconciliation=destination_reconciliation,
             context=_context(),
             expected_cursor_contract={**_cursor(), "teacher_video_seed": 19},
             expected_checkpoint_contract=_contract(),
@@ -232,36 +276,54 @@ def test_fresh_one_step_then_resume_has_identical_memory_and_rng_trajectory(
         np.random.seed(223)
         torch.manual_seed(227)
 
-    def update(memory: ProgramResidualMemory) -> None:
+    def update(
+        memory: ProgramResidualMemory,
+        reconciliation: ProgramReconciliationState,
+    ) -> None:
         scale = random.random() + float(np.random.random())
         with torch.no_grad():
             memory.value.add_(scale * torch.randn_like(memory.value))
+            reconciliation.precision.add_(torch.eye(2, dtype=torch.float64))
+            reconciliation.assimilated_rows += 48
 
     seed()
     uninterrupted = _memory()
-    update(uninterrupted)
-    update(uninterrupted)
+    uninterrupted_reconciliation = _reconciliation()
+    update(uninterrupted, uninterrupted_reconciliation)
+    update(uninterrupted, uninterrupted_reconciliation)
     uninterrupted_rng = _draw_rng()
 
     seed()
     interrupted = _memory()
-    update(interrupted)
-    checkpoint = _save(tmp_path, interrupted)
+    interrupted_reconciliation = _reconciliation()
+    update(interrupted, interrupted_reconciliation)
+    checkpoint = _save(tmp_path, interrupted, interrupted_reconciliation)
     random.seed(1)
     np.random.seed(2)
     torch.manual_seed(3)
     resumed = _memory()
+    resumed_reconciliation = _reconciliation()
     load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         memory=resumed,
+        reconciliation=resumed_reconciliation,
         context=_context(),
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
         expected_memory_shape=_SHAPE,
     )
-    update(resumed)
+    update(resumed, resumed_reconciliation)
     resumed_rng = _draw_rng()
     assert torch.equal(resumed.value, uninterrupted.value)
+    assert torch.equal(
+        resumed_reconciliation.precision,
+        uninterrupted_reconciliation.precision,
+    )
+    assert (
+        resumed_reconciliation.assimilated_rows
+        == uninterrupted_reconciliation.assimilated_rows
+        == 96
+    )
     _assert_rng_equal(resumed_rng, uninterrupted_rng)
 
 
@@ -296,6 +358,52 @@ def test_inspection_rejects_wrong_key_dtype_shape_and_nonfinite(
         )
 
 
+@pytest.mark.parametrize(
+    "replacement, match",
+    [
+        ({"wrong.key": torch.eye(2, dtype=torch.float64)}, "reconciliation key"),
+        (
+            {RECONCILIATION_KEY: torch.eye(2, dtype=torch.float32)},
+            "tensor schema",
+        ),
+        (
+            {RECONCILIATION_KEY: torch.eye(3, dtype=torch.float64)},
+            "tensor schema",
+        ),
+        (
+            {
+                RECONCILIATION_KEY: torch.full(
+                    (2, 2), torch.nan, dtype=torch.float64
+                )
+            },
+            "non-finite reconciliation precision",
+        ),
+        (
+            {
+                RECONCILIATION_KEY: torch.diag(
+                    torch.tensor([1.0, -1.0], dtype=torch.float64)
+                )
+            },
+            "positive definiteness",
+        ),
+    ],
+)
+def test_inspection_rejects_invalid_reconciliation_precision(
+    tmp_path: Path,
+    replacement: dict[str, torch.Tensor],
+    match: str,
+) -> None:
+    checkpoint = _save(tmp_path, _memory())
+    save_file(replacement, str(checkpoint / RECONCILIATION_FILE))
+    _refresh_size(checkpoint, RECONCILIATION_FILE)
+    with pytest.raises(ExpertManifoldError, match=match):
+        inspect_v6_prior_checkpoint(
+            checkpoint,
+            expected_memory_shape=_SHAPE,
+            expected_world_size=1,
+        )
+
+
 def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
     tmp_path: Path,
 ) -> None:
@@ -321,6 +429,7 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
             output_dir=tmp_path / "wrong_dtype",
             macro=1,
             memory=wrong_dtype,
+            reconciliation=_reconciliation(1),
             context=_context(),
             metrics_rows=1,
             cursor_contract=_cursor(),
@@ -333,6 +442,22 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
             output_dir=tmp_path / "nonfinite",
             macro=1,
             memory=nonfinite,
+            reconciliation=_reconciliation(1),
+            context=_context(),
+            metrics_rows=1,
+            cursor_contract=_cursor(),
+            checkpoint_contract=_contract(),
+            expected_memory_shape=_SHAPE,
+        )
+
+    non_positive = _reconciliation(1)
+    non_positive.precision.copy_(torch.diag(torch.tensor([1.0, -1.0])))
+    with pytest.raises(ExpertManifoldError, match="positive definiteness"):
+        save_v6_prior_checkpoint(
+            output_dir=tmp_path / "non_positive_reconciliation",
+            macro=1,
+            memory=_memory(),
+            reconciliation=non_positive,
             context=_context(),
             metrics_rows=1,
             cursor_contract=_cursor(),

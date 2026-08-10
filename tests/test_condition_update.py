@@ -5,9 +5,11 @@ import torch
 from ember.writer.condition_update import (
     FixedBalancedCausalConditionFeature,
     FrozenV6ConditionResidualWriter,
+    ProgramReconciliationState,
     ProgramResidualMemory,
-    apply_program_residual_delta_with_evidence_,
-    counterfactual_null_program_delta,
+    anchored_reconciliation_program_delta,
+    apply_anchored_reconciliation_update_,
+    program_residual_delta_application_evidence,
 )
 from ember.writer.model import WriterVideoEvidence
 
@@ -138,14 +140,16 @@ def test_balanced_causal_feature_breaks_static_reverse_collinearity() -> None:
     )
 
 
-def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() -> None:
+def test_first_anchored_update_matches_blind_and_preserves_negative_rows() -> None:
     correct_features = torch.eye(4, dtype=torch.float32)[:2]
     negative_features = torch.eye(4, dtype=torch.float32)[2:]
     cotangents = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4) / 10
-    delta, summary = counterfactual_null_program_delta(
+    reconciliation = ProgramReconciliationState(feature_width=4)
+    delta, next_precision, summary = anchored_reconciliation_program_delta(
         correct_features,
         negative_features,
         cotangents,
+        reconciliation,
         step_size=1.0,
         relative_damping=0.01,
     )
@@ -162,6 +166,9 @@ def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() 
     assert summary.predicted_correct_motion_rms > 0
     assert summary.predicted_negative_motion_rms == 0
     assert summary.predicted_negative_to_correct_ratio == 0
+    assert summary.current_motion_to_blind_ratio == 1
+    assert summary.assimilated_rows_before == 0
+    assert summary.assimilated_rows_after == 4
     assert delta.dtype == torch.float32
 
     memory = ProgramResidualMemory(
@@ -170,22 +177,36 @@ def test_counterfactual_null_update_moves_correct_and_preserves_negative_rows() 
         program_width=4,
     )
     assert torch.equal(memory(full_features), torch.zeros(4, 3, 4))
-    application = apply_program_residual_delta_with_evidence_(
+    before = memory(full_features).clone()
+    apply_anchored_reconciliation_update_(
+        memory,
+        reconciliation,
+        delta,
+        next_precision,
+        assimilated_rows_after=summary.assimilated_rows_after,
+    )
+    application = program_residual_delta_application_evidence(
         memory,
         delta,
         full_features,
+        before,
+        predicted=predicted,
     )
     torch.testing.assert_close(memory(full_features), predicted)
     assert application.predicted_observed_max_abs == 0
     assert application.predicted_observed_relative_rms == 0
+    assert reconciliation.assimilated_rows == 4
+    assert not torch.equal(reconciliation.precision, torch.eye(4, dtype=torch.float64))
 
 
 def test_zero_correct_motion_uses_finite_gate_failure_value() -> None:
     features = torch.eye(4, dtype=torch.float32)
-    _, summary = counterfactual_null_program_delta(
+    reconciliation = ProgramReconciliationState(feature_width=4)
+    delta, next_precision, summary = anchored_reconciliation_program_delta(
         features[:2],
         features[2:],
         torch.zeros(2, 3, 4),
+        reconciliation,
         step_size=1.0,
         relative_damping=0.01,
     )
@@ -193,6 +214,174 @@ def test_zero_correct_motion_uses_finite_gate_failure_value() -> None:
         torch.tensor(summary.predicted_negative_to_correct_ratio)
     )
     assert summary.predicted_negative_to_correct_ratio > 1e30
+    assert torch.count_nonzero(delta) == 0
+    assert not torch.equal(next_precision, reconciliation.precision)
+    memory = ProgramResidualMemory(feature_width=4, program_slots=3, program_width=4)
+    before = memory.value.clone()
+    apply_anchored_reconciliation_update_(
+        memory,
+        reconciliation,
+        delta,
+        next_precision,
+        assimilated_rows_after=summary.assimilated_rows_after,
+    )
+    assert torch.equal(memory.value, before)
+    assert torch.equal(reconciliation.precision, next_precision)
+    assert reconciliation.assimilated_rows == 4
+
+
+def test_first_anchored_update_matches_nonorthogonal_blind_ridge() -> None:
+    generator = torch.Generator().manual_seed(29)
+    correct = torch.randn(3, 7, generator=generator)
+    negative = torch.randn(3, 7, generator=generator)
+    cotangent = torch.randn(3, 2, 4, generator=generator)
+    reconciliation = ProgramReconciliationState(feature_width=7)
+    delta, _, summary = anchored_reconciliation_program_delta(
+        correct,
+        negative,
+        cotangent,
+        reconciliation,
+        step_size=0.7,
+        relative_damping=0.01,
+    )
+    features = torch.cat((correct, negative)).to(torch.float64)
+    gram = features @ features.T
+    damping = 0.01 * gram.diagonal().mean()
+    right = torch.cat(
+        (-0.7 * cotangent.flatten(1), torch.zeros_like(cotangent).flatten(1))
+    ).to(torch.float64)
+    expected = features.T @ torch.linalg.solve(
+        gram + damping * torch.eye(6, dtype=torch.float64), right
+    )
+    torch.testing.assert_close(
+        delta.flatten(1).to(torch.float64), expected, rtol=2e-5, atol=2e-6
+    )
+    assert abs(summary.current_motion_to_blind_ratio - 1.0) <= 1e-6
+
+
+def test_reference_diagnostics_match_explicit_current_and_blind_motion() -> None:
+    generator = torch.Generator().manual_seed(31)
+    reconciliation = ProgramReconciliationState(feature_width=6)
+    memory = ProgramResidualMemory(feature_width=6, program_slots=2, program_width=3)
+    prior_correct = torch.randn(3, 6, generator=generator)
+    prior_negative = torch.randn(3, 6, generator=generator)
+    prior_cotangent = torch.randn(3, 2, 3, generator=generator)
+    prior_delta, prior_precision, prior_summary = anchored_reconciliation_program_delta(
+        prior_correct,
+        prior_negative,
+        prior_cotangent,
+        reconciliation,
+        step_size=1.0,
+        relative_damping=0.01,
+    )
+    apply_anchored_reconciliation_update_(
+        memory,
+        reconciliation,
+        prior_delta,
+        prior_precision,
+        assimilated_rows_after=prior_summary.assimilated_rows_after,
+    )
+
+    correct = torch.randn(3, 6, generator=generator)
+    negative = torch.randn(3, 6, generator=generator)
+    cotangent = torch.randn(3, 2, 3, generator=generator)
+    delta, _, summary = anchored_reconciliation_program_delta(
+        correct,
+        negative,
+        cotangent,
+        reconciliation,
+        step_size=1.0,
+        relative_damping=0.01,
+        reference_correct_features=prior_correct,
+    )
+    reference_motion = prior_correct @ delta.flatten(1)
+    features = torch.cat((correct, negative)).to(torch.float64)
+    gram = features @ features.T
+    damping = 0.01 * gram.diagonal().mean()
+    right = torch.cat(
+        (-cotangent.flatten(1), torch.zeros_like(cotangent).flatten(1))
+    ).to(torch.float64)
+    blind_delta = features.T @ torch.linalg.solve(
+        gram + damping * torch.eye(6, dtype=torch.float64), right
+    )
+    blind_reference_motion = prior_correct.to(torch.float64) @ blind_delta
+    reference_rows = reference_motion.square().mean(dim=1).sqrt()
+    blind_rows = blind_reference_motion.square().mean(dim=1).sqrt()
+    expected_fraction = float((reference_rows < blind_rows).float().mean())
+    expected_rms = float(reference_motion.square().mean().sqrt())
+    expected_blind_rms = float(blind_reference_motion.square().mean().sqrt())
+    assert abs(summary.reference_motion_rms - expected_rms) <= 1e-6
+    assert abs(summary.blind_reference_motion_rms - expected_blind_rms) <= 1e-6
+    assert summary.reference_rows_improved_fraction == expected_fraction
+
+
+def test_streaming_anchored_reconciliation_matches_direct_cumulative_ridge() -> None:
+    generator = torch.Generator().manual_seed(41)
+    reconciliation = ProgramReconciliationState(feature_width=5)
+    memory = ProgramResidualMemory(feature_width=5, program_slots=2, program_width=3)
+    batches: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]] = []
+    targets: list[tuple[torch.Tensor, torch.Tensor, float]] = []
+    for _ in range(4):
+        correct = torch.randn(2, 5, generator=generator)
+        negative = torch.randn(2, 5, generator=generator)
+        cotangent = torch.randn(2, 2, 3, generator=generator)
+        full = torch.cat((correct, negative))
+        gram = full.to(torch.float64) @ full.to(torch.float64).T
+        damping = 0.01 * float(gram.diagonal().mean())
+        before = full.to(torch.float64) @ memory.value.flatten(1).to(torch.float64)
+        increment = torch.cat(
+            (-cotangent.flatten(1), torch.zeros_like(cotangent).flatten(1))
+        ).to(torch.float64)
+        targets.append((full.to(torch.float64), before + increment, damping))
+        batches.append((correct, negative, cotangent, damping))
+        delta, next_precision, summary = anchored_reconciliation_program_delta(
+            correct,
+            negative,
+            cotangent,
+            reconciliation,
+            step_size=1.0,
+            relative_damping=0.01,
+        )
+        apply_anchored_reconciliation_update_(
+            memory,
+            reconciliation,
+            delta,
+            next_precision,
+            assimilated_rows_after=summary.assimilated_rows_after,
+        )
+
+    precision = torch.eye(5, dtype=torch.float64)
+    right = torch.zeros(5, 6, dtype=torch.float64)
+    for features, target, damping in targets:
+        precision.add_(features.T @ features / damping)
+        right.add_(features.T @ target / damping)
+    direct = torch.linalg.solve(precision, right)
+    torch.testing.assert_close(
+        memory.value.flatten(1).to(torch.float64),
+        direct,
+        rtol=2e-5,
+        atol=2e-6,
+    )
+    torch.testing.assert_close(reconciliation.precision, precision, rtol=1e-13, atol=1e-13)
+    assert reconciliation.assimilated_rows == 16
+
+
+def test_rank_deficient_repeated_features_remain_finite() -> None:
+    correct = torch.ones(2, 3)
+    negative = torch.ones(2, 3)
+    cotangent = torch.arange(8, dtype=torch.float32).reshape(2, 2, 2)
+    reconciliation = ProgramReconciliationState(feature_width=3)
+    delta, precision, summary = anchored_reconciliation_program_delta(
+        correct,
+        negative,
+        cotangent,
+        reconciliation,
+        step_size=1.0,
+        relative_damping=0.01,
+    )
+    assert torch.isfinite(delta).all()
+    assert torch.isfinite(precision).all()
+    assert summary.feature_rank == 1
 
 
 def test_zero_residual_is_exact_and_one_decoder_moves_both_lora_factors() -> None:

@@ -47,6 +47,10 @@ from ember.pi05_eval_contract import (
     load_evaluation_authorities,
 )
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.anchored_reconciliation_gate import (
+    load_anchored_reconciliation_decision_evidence,
+)
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import DistributedContext, read_json
 from ember.pi05_source_contract import reconcile_metrics
@@ -60,6 +64,7 @@ from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.condition_update import (
     FrozenV6ConditionResidualWriter,
+    ProgramReconciliationState,
     validate_frozen_v6_residual_writer,
 )
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
@@ -77,6 +82,7 @@ class RuntimeSegment:
     start_macro: int
     stop_macro: int
     schedule_origin: int
+    continuation_gate_evidence: Mapping[str, Any] | None
 
     @property
     def schedule_start_macro(self) -> int:
@@ -106,6 +112,8 @@ class V6PriorRuntime:
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     writer: FrozenV6ConditionResidualWriter
+    reconciliation: ProgramReconciliationState
+    profile_correct_feature_history: list[torch.Tensor]
     lora_contract: LoRAContract
     warm_start: V6PriorWarmStart
     ownership: V6PriorOwnership
@@ -123,6 +131,80 @@ def _resume_macro(path: Path | None) -> int:
     return int(match.group(1))
 
 
+def _formal_decision_evidence(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    state: Mapping[str, Any],
+    *,
+    start_macro: int,
+) -> Mapping[str, Any] | None:
+    macro0_root = getattr(args, "macro0_evaluation_root", None)
+    macro10_root = getattr(args, "macro10_evaluation_root", None)
+    if args.mode != "formal":
+        if macro0_root is not None or macro10_root is not None:
+            raise ExpertManifoldError(
+                "mechanism profile cannot register formal decision roots"
+            )
+        return None
+    if not isinstance(macro0_root, Path) or not isinstance(macro10_root, Path):
+        raise ExpertManifoldError(
+            "formal residual training requires pre-registered decision roots"
+        )
+
+    formal = config["formal_run"]
+    reference = formal["decision_evaluation"]
+    expected_macro0 = (
+        REPO_ROOT / str(reference["macro0_reference_root"])
+    ).resolve()
+    outputs = (REPO_ROOT / "runs/outputs").resolve()
+    macro0_root = macro0_root.resolve()
+    macro10_root = macro10_root.resolve()
+    try:
+        macro10_root.relative_to(outputs)
+    except ValueError:
+        raise ExpertManifoldError(
+            "formal macro10 evaluation root left canonical runs/outputs"
+        ) from None
+    if (
+        macro0_root != expected_macro0
+        or not macro0_root.is_dir()
+        or macro10_root == macro0_root
+    ):
+        raise ExpertManifoldError(
+            "formal residual decision root identity changed"
+        )
+    if start_macro == 0 and macro10_root.exists():
+        raise ExpertManifoldError(
+            "fresh formal run requires an unused macro10 evaluation root"
+        )
+    if start_macro == 10 and not macro10_root.is_dir():
+        raise ExpertManifoldError(
+            "formal continuation requires its pre-registered macro10 result"
+        )
+    try:
+        evidence = load_anchored_reconciliation_decision_evidence(
+            macro0_root=macro0_root,
+            macro10_root=macro10_root if start_macro == 10 else None,
+            resume_checkpoint=args.resume if start_macro == 10 else None,
+            expected_macro0_commit=str(reference["macro0_reference_commit"]),
+            expected_macro0_correct=int(reference["macro0_reference_correct"]),
+            expected_macro0_breadth=int(reference["macro0_reference_breadth"]),
+            expected_current_commit=(
+                str(state["commit"]) if start_macro == 10 else None
+            ),
+            decision_gates=formal["decision_gates"],
+        )
+    except (Pi05EvaluationError, KeyError, OSError, TypeError, ValueError) as error:
+        raise ExpertManifoldError(
+            f"formal residual decision evidence is invalid: {error}"
+        ) from error
+    if start_macro == 10 and evidence.get("passed") is not True:
+        raise ExpertManifoldError(
+            "macro10 strict result did not pass the continuation gate"
+        )
+    return evidence
+
+
 def _resolve_segment(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -136,13 +218,17 @@ def _resolve_segment(
     )
     profile_valid = (
         args.mode != "mechanism-profile"
-        or (args.resume is None and args.stop_after_macro in {None, 1} and stop == 1)
+        or (
+            args.resume is None
+            and args.stop_after_macro in {None, total}
+            and stop == total
+        )
     )
     formal_valid = (
         args.mode != "formal"
         or (
             args.stop_after_macro is not None
-            and (start, stop) in {(0, 10), (10, 25), (25, 50)}
+            and (start, stop) in {(0, 10), (10, 25)}
         )
     )
     state = residual_git_state(REPO_ROOT)
@@ -175,12 +261,19 @@ def _resolve_segment(
     )
     if not valid:
         raise ExpertManifoldError("residual Writer runtime differs from its sealed segment")
+    decision_evidence = _formal_decision_evidence(
+        args,
+        config,
+        state,
+        start_macro=start,
+    )
     return RuntimeSegment(
         total_macros=total,
         checkpoint_macros=checkpoints,
         start_macro=start,
         stop_macro=stop,
         schedule_origin=schedule_origin,
+        continuation_gate_evidence=decision_evidence,
     )
 
 
@@ -436,6 +529,7 @@ def _restore_resume(
     segment: RuntimeSegment,
     context: DistributedContext,
     writer: FrozenV6ConditionResidualWriter,
+    reconciliation: ProgramReconciliationState,
     checkpoint_contract_value: Mapping[str, Any],
 ) -> None:
     if runtime_args.resume is None:
@@ -443,6 +537,7 @@ def _restore_resume(
     loaded, rows = load_v6_prior_checkpoint(
         checkpoint=runtime_args.resume,
         memory=writer.program_memory,
+        reconciliation=reconciliation,
         context=context,
         expected_cursor_contract=cursor_contract(config, segment.start_macro),
         expected_checkpoint_contract=checkpoint_contract_value,
@@ -472,6 +567,9 @@ def _prepare_runtime(
         source=source,
         source_config=authorities.source_base_config,
     )
+    reconciliation = ProgramReconciliationState(
+        feature_width=int(config["condition_feature"]["feature_width"])
+    ).to(context.device)
     video_store, processor, language = _build_language_inputs(
         args=args,
         config=config,
@@ -497,16 +595,23 @@ def _prepare_runtime(
         warm_start=warm_start,
         ownership=ownership,
         writer=writer,
+        reconciliation=reconciliation,
         repo_root=REPO_ROOT,
     )
     checkpoint_contract_value = checkpoint_contract(contract)
-    publish_contract(args, contract, context)
+    publish_contract(
+        args,
+        contract,
+        context,
+        continuation_gate_evidence=segment.continuation_gate_evidence,
+    )
     _restore_resume(
         args,
         config,
         segment,
         context,
         writer,
+        reconciliation,
         checkpoint_contract_value,
     )
     metrics_path = args.output_dir / "metrics.jsonl"
@@ -539,6 +644,8 @@ def _prepare_runtime(
         processor=processor,
         policy=policy,
         writer=writer,
+        reconciliation=reconciliation,
+        profile_correct_feature_history=[],
         lora_contract=lora,
         warm_start=warm_start,
         ownership=ownership,

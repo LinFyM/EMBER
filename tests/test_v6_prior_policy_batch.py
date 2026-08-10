@@ -16,7 +16,7 @@ from ember.expert_manifold.v6_prior_policy_batch import (
 
 CONFIG = (
     Path(__file__).resolve().parents[1]
-    / "configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json"
+    / "configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json"
 )
 
 

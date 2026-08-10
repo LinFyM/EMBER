@@ -15,6 +15,7 @@ from ember.pi05_eval.analysis import (
     HISTORICAL_BASELINE_TRANSITION_SCHEMA,
     SIX_ARM_AUDIT_SCHEMA,
     SIX_ARM_CONDITIONS,
+    _formal_panel_index,
     _formal_tasks,
     analyze_checkpoint_curve,
     analyze_historical_baseline_transition,
@@ -81,6 +82,15 @@ FAMILY_CONTRACTS = {
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
     },
+    "reconciliation": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+        "config_schema": (
+            "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3"
+        ),
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+    },
 }
 
 
@@ -122,7 +132,19 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         "source_macro": 400,
         "method_macro": macro,
         "checkpoint": f"/writer/macro_{macro}",
-        "manifest": {"path": f"/writer/macro_{macro}/manifest.json"},
+        "manifest": {
+            "path": f"/writer/macro_{macro}/manifest.json",
+            **(
+                {
+                    "schema": (
+                        "ember_pi05_v6_anchored_reconciliation_program_"
+                        "residual_checkpoint_v3"
+                    )
+                }
+                if family == "reconciliation" and macro > 0
+                else {}
+            ),
+        },
         "architecture": "v6-prior",
         "writer_parameter_count": 10_775_296,
         "deployment_trainable_parameter_count": 0,
@@ -134,7 +156,7 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
             "template_lora_storage": {"tensor_count": 76, "rank": 16},
         },
     }
-    if family == "residual":
+    if family in {"residual", "reconciliation"}:
         writer_asset.update(
             {
                 "program_residual_value_count": 20_971_520,
@@ -163,7 +185,7 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         "evaluation_authority": {
             "formal_status": (
                 "sealed_from_live_residual_deployment_profile"
-                if family == "residual"
+                if family in {"residual", "reconciliation"}
                 else "sealed"
             )
         },
@@ -248,7 +270,10 @@ def _rows(
             }
             if condition == "same_task_other":
                 writer["teacher_demo_offset"] = SAME_TASK_OTHER_OFFSET
-            if adapter["config"]["schema"] == FAMILY_CONTRACTS["residual"]["config_schema"]:
+            if adapter["config"]["schema"] in {
+                FAMILY_CONTRACTS["residual"]["config_schema"],
+                FAMILY_CONTRACTS["reconciliation"]["config_schema"],
+            }:
                 writer.update(
                     {
                         "writer_parameter_count": 10_775_296,
@@ -487,6 +512,16 @@ def test_residual_family_rejects_legacy_deployment_seal_and_missing_v8_state() -
                 "m50": _result(50, "correct", set(), family="residual"),
             }
         )
+
+
+def test_formal_panel_accepts_anchored_reconciliation_v3_evidence() -> None:
+    result = _result(
+        10,
+        "correct",
+        set(),
+        family="reconciliation",
+    )
+    assert len(_formal_panel_index(result)) == 400
 
 
 @pytest.mark.parametrize(

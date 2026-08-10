@@ -11,7 +11,7 @@ formal artifacts保存。
 - [x] one-shot：exact language + exactly one action-hidden video；video-only dynamic value；一套完整
   38-target rank16 LoRA；无language bypass、多video/LoRA/checkpoint融合。
 - [x] fixed 24/8/8 split、frozen source/normalization、validation/test action隔离和official paired evaluator。
-- [x] task experts只作train24 policy-effective监督，不进入deployment。
+- [x] task experts只作历史privileged policy-effective参考；当前RLS训练和deployment均不读取其输出。
 - [x] GPU launch前live比较`gpu01/gpu02`，只用最多6张空闲A40；多卡遵守
   `NCCL_P2P_DISABLE=1`、NUMA映射和deferred-NCCL。
 - [x] 吞吐优先：接受普通BF16低位差异，不为逐元素复现固定batch1、重复forward或扩宽LoRA cache。
@@ -194,8 +194,39 @@ formal artifacts保存。
   `0/5/48/34/0/35/11/1`；72/72 shards、400 fresh LoRAs、18 rollout workers + 18 Writer generators、
   0 retry/error。与历史native
   macro0 400-row identity和success逐行完全相同，gained/lost=`0/0`；CPU重聚合通过且GPU释放。
-- [ ] 从新clean pushed/frozen authority formal fresh0→10并立即strict correct400；按第37.6/38.3门决定停止、
-  续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
+- [x] clean frozen`abd8e08`完成v2 formal fresh0→25与macro10/25 strict correct400：曲线
+  `134/140/139`、breadth均6；macro0→10 gained/lost=`19/13`，macro10→25=`12/13`。没有超过历史
+  `143`或目标`>150`，按门退役v2，不续50、不补多臂、不扫P/lambda/eta、不解冻base。macro25内部
+  72/72 jobs、400 rows、18/18 worker return0完整，但外层wrapper exit只能记为unobserved/missing。
+- [x] LoRA/Program与same-task 50-video诊断完成：effective delta/base median=`1.69498e-4`、stable rank
+  `1.000022`、top1 energy=`.999978`；不同正确视频raw correction consistency=`.141539--.142175`，
+  effective pair cosine近0。视频路径非零，但最早瓶颈更符合跨macro retention/reconciliation；不把该结果
+  写成视频因果性证明，也不据此直接切few-shot。
+
+## Phase 6 — Exact Anchored Reconciliation（当前唯一active方法）
+
+- [x] 完成第39节最小设计：部署图、one-shot信息墙、balanced v2 `phi256`、frozen v6 decoder、
+  `M[256,320,256]`和完整rank16 LoRA均不变；只在训练/checkpoint加入FP64 `Lambda[256,256]`与
+  `assimilated_rows`，用anchored RLS累计旧约束，fresh与v2 checkpoint不兼容。
+- [x] canonical v3实现、checkpoint Program/precision隔离、首步blind ridge与累计direct-solve CPU oracle、
+  zero-cotangent assimilation、old/current/blind diagnostics和focused regression已通过；纯FP64 oracle误差
+  `6.1e-16/3.5e-14`不冒充runtime逐bit误差，也不扩dtype或降低batch。
+- [x] 封死正式状态机：fresh0→10必须预注册唯一macro0/macro10 strict roots；formal evaluator只接受
+  predeclared macro10/25；10→25会从immutable shards重聚合两份400-row paired panel并核对commit、checkpoint、
+  state/RNG/language/video identity，只有`correct>=140`、`lost<=6`、breadth`>=6`才允许exact-resume。
+- [x] focused=`75 passed`、加载`.env.local`后全仓=`300 passed`、compileall/JSON/diff-check通过；
+  architecture guard为review且0 hard violation，authority已同步v2终局、RLS合同与条件macro25。
+- [ ] clean commit/push并创建唯一formal frozen worktree。
+- [ ] live比较`gpu01/gpu02`与`/data1` quota，只在最多6张空闲A40上做唯一fresh0→3 disposable profile；
+  保持logical B20/physical B10+10，不为低位误差降低吞吐。
+- [ ] profile全部机制/吞吐门通过后，formal fresh0→10并立即跑预注册macro10 strict400；不过支持门即停止。
+- [ ] 只有macro10 `correct>=140`、lost`<=6`、breadth`>=6`才在同一frozen commit/root exact-resume10→25；
+  `>140`视为更强支持，macro25仍是条件动作而非预授权结果。
+- [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
+  same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
+
+## Ongoing evidence-driven iteration rules
+
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

@@ -11,151 +11,35 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_deployment_seal import (
     evaluation_artifact_matches,
 )
+from ember.expert_manifold.v6_prior_contract_spec import (
+    EXPECTED_CONDITION_FEATURE as _EXPECTED_CONDITION_FEATURE,
+    EXPECTED_DATA as _EXPECTED_DATA,
+    EXPECTED_OBJECTIVE as _EXPECTED_OBJECTIVE,
+    EXPECTED_OPTIMIZATION as _EXPECTED_OPTIMIZATION,
+    EXPECTED_PROGRAM_RESIDUAL as _EXPECTED_PROGRAM_RESIDUAL,
+    EXPECTED_RECONCILIATION as _EXPECTED_RECONCILIATION,
+    EXPECTED_UPDATE as _EXPECTED_UPDATE,
+    EXPECTED_WRITER as _EXPECTED_WRITER,
+)
 from ember.expert_manifold.v6_prior_policy_batch import (
     LOGICAL_POLICY_BATCH_SIZE,
-    POSITIVE_POLICY_RANDOMNESS,
 )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
     REPO_ROOT
-    / "configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json"
+    / "configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json"
 )
 _V6_PRIOR_SCHEMA_PREFIX = (
-    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual"
+    "ember_pi05_v6_exact_anchored_reconciliation_program_residual"
 )
-V6_PRIOR_CONFIG_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_v2"
-V6_PRIOR_RUN_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_launch_v2"
-V6_PRIOR_PROFILE_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_profile_v2"
-V6_PRIOR_COMPLETION_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_completion_v2"
+V6_PRIOR_CONFIG_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_v3"
+V6_PRIOR_RUN_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_launch_v3"
+V6_PRIOR_PROFILE_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_profile_v3"
+V6_PRIOR_COMPLETION_SCHEMA = f"{_V6_PRIOR_SCHEMA_PREFIX}_completion_v3"
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
-
-_EXPECTED_WRITER = {
-    "architecture": "frozen_pi05_v6_plus_video_keyed_program_residual_v2",
-    "base_architecture": (
-        "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_"
-        "slot_fusion_v6"
-    ),
-    "frame_stride": 5,
-    "max_frames_per_encoder_call": 32,
-    "image_width": 2048,
-    "expert_width": 1024,
-    "program_width": 256,
-    "text_meta_lora_rank": 4,
-    "vl_meta_lora_rank": 4,
-    "action_meta_lora_rank": 4,
-    "patch_grounding_heads": 8,
-    "action_horizon": 50,
-    "padded_action_dim": 32,
-    "semantic_core_heads": 8,
-    "semantic_core_blocks": 2,
-    "procedure_heads": 8,
-    "procedure_blocks": 2,
-    "visual_transition_heads": 8,
-    "fusion_heads": 8,
-    "factor_hidden_width": 256,
-    "initialization_seed": 7,
-    "activation_checkpointing": True,
-    "effective_runtime_activation_checkpointing": False,
-    "all_600_state_tensors_frozen": True,
-}
-
-_EXPECTED_CONDITION_FEATURE = {
-    "kind": "zero_preserving_balanced_static_causal_visual_innovation_jl_v2",
-    "input": "mean_valid_task_tokens_frame_evidence_minus_text_queries",
-    "static_block": "video_dc_mean_visual_innovation",
-    "dynamic_block": (
-        "uniform_pool_sqrt_normalized_causal_prefix_of_video_centered_innovation"
-    ),
-    "descriptor_width": 512,
-    "descriptor_block_width": 256,
-    "feature_width": 256,
-    "projection_seed": 20260810,
-    "projection_shape": [2, 128, 256],
-    "projection": "two_fixed_no_bias_row_normalized_fp32_nonpersistent_blocks",
-    "block_normalization": "independent_zero_preserving_l2",
-    "fusion": "concatenate_then_zero_preserving_l2",
-    "frame_content_reordered_before_dynamic_block": True,
-}
-
-_EXPECTED_PROGRAM_RESIDUAL = {
-    "program_slots": 320,
-    "program_width": 256,
-    "feature_width": 256,
-    "value_count": 20_971_520,
-    "dtype": "float32",
-    "initialization": "elementwise_zero",
-    "fusion": "single_add_before_frozen_historical_factor_heads",
-    "checkpoint_tensor_count": 1,
-}
-
-_EXPECTED_UPDATE = {
-    "kind": "full48_counterfactual_null_explicit_condition_kernel",
-    "correct_conditions": 24,
-    "negative_conditions": 24,
-    "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
-    "negative_schedule": (
-        "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong"
-    ),
-    "negative_counts_per_macro": {"reversed": 8, "shuffled": 8, "wrong": 8},
-    "negative_rhs": "exact_zero_program_motion",
-    "step_size": 1.0,
-    "relative_damping": 0.01,
-    "small_solve_dtype": "float64",
-    "large_rhs_and_memory_write_dtype": "float32",
-    "optimizer": "none_manual_add",
-    "momentum": False,
-    "weight_decay": False,
-    "gradient_clip": False,
-    "global_scale_or_cap": False,
-}
-
-_EXPECTED_DATA = {
-    "task_count": 24,
-    "episodes_per_task": 50,
-    "demo_indices": [0, 49],
-    "action_chunk_size": 50,
-    "action_queries_per_task": LOGICAL_POLICY_BATCH_SIZE,
-    "videos_per_task_per_macro": 1,
-    "teacher_video_schedule": "deterministic_no_replacement_cycles",
-    "teacher_action_episode_overlap": False,
-    "task_aggregation": "task_local_B20_mean_with_no_cross_task_rescale",
-    "sampler_seed": 20260721,
-    "teacher_video_seed": 20260722,
-    "counterfactual_seed": 20260809,
-    "wrong_video_schedule": (
-        "deterministic_cross_suite_cycle_with_current_task_language"
-    ),
-}
-
-_EXPECTED_OBJECTIVE = {
-    "name": "correct_condition_policy_functional_flow_loss_only",
-    "positive_policy_randomness": POSITIVE_POLICY_RANDOMNESS,
-}
-
-_EXPECTED_OPTIMIZATION = {
-    "precision": "bfloat16",
-    "seed": 7,
-    "functional_policy_microbatch_size": 10,
-    "physical_policy_forwards_per_task": 2,
-    "extra_negative_policy_forwards_per_task": 0,
-    "distributed_update": {
-        "kind": (
-            "all_gather_local4_features_and_cotangents_then_identical_local_"
-            "manual_write"
-        ),
-        "world_size": 6,
-        "tasks_per_rank": 4,
-        "memory_allreduce": False,
-        "nccl_p2p_disable": "1",
-        "nccl_algo": "Ring",
-        "nccl_proto": "Simple",
-        "deferred_process_group": True,
-    },
-}
-
 
 def authority_path(config: Mapping[str, Any], name: str) -> Path:
     try:
@@ -178,6 +62,7 @@ def _feature_and_update_match(config: Mapping[str, Any]) -> bool:
     return (
         config.get("condition_feature") == _EXPECTED_CONDITION_FEATURE
         and config.get("program_residual") == _EXPECTED_PROGRAM_RESIDUAL
+        and config.get("reconciliation") == _EXPECTED_RECONCILIATION
         and config.get("update") == _EXPECTED_UPDATE
     )
 
@@ -204,6 +89,11 @@ _PROFILE_CHECKS = {
     "functional_policy_program_credit",
     "negative_policy_forwards",
     "oom_and_nonfinite",
+    "first_step_blind_equivalence",
+    "old_panel_drift_reduction",
+    "old_correct_row_breadth",
+    "current_motion_preserved",
+    "reconciliation_state",
 }
 
 
@@ -254,19 +144,21 @@ def _profile_result_matches(
     config: Mapping[str, Any],
     result: Mapping[str, Any],
 ) -> bool:
-    macro = result.get("macro")
-    if not isinstance(macro, Mapping):
+    macros = result.get("macros")
+    if not isinstance(macros, list) or not all(
+        isinstance(macro, Mapping) for macro in macros
+    ):
         return False
     try:
         from ember.expert_manifold.v6_prior_profile import profile_passes
 
-        passed, gate_evidence = profile_passes(config, macro)
+        passed, gate_evidence = profile_passes(config, macros)
     except (ExpertManifoldError, KeyError, TypeError, ValueError, OverflowError):
         return False
     expected = {
         "schema_version": V6_PRIOR_PROFILE_SCHEMA,
         "passed": True,
-        "schedule_macro": 49,
+        "schedule_macro": 0,
         "retain_weight": False,
         "gates": config.get("profile_run", {}).get("gates"),
         "content_hash_policy": "disabled_by_owner",
@@ -293,10 +185,12 @@ _RUN_KEYS = {
     "writer",
     "condition_feature",
     "program_residual",
+    "reconciliation",
     "update",
     "objective",
     "optimization",
     "ownership",
+    "decision_evaluation",
     "runtime",
     "content_hash_policy",
 }
@@ -325,6 +219,14 @@ _EXPECTED_OWNERSHIP = {
         "manual_update": True,
         "checkpoint_owned": True,
         "deployment_owned": True,
+    },
+    "reconciliation_precision": {
+        "shape": [256, 256],
+        "dtype": "torch.float64",
+        "value_count": 65_536,
+        "trainable": False,
+        "checkpoint_owned": True,
+        "deployment_owned": False,
     },
     "source_policy_trainable_parameter_count": 0,
     "optimizer": "not_instantiated",
@@ -447,6 +349,58 @@ def _run_data_matches(
     )
 
 
+def _decision_evaluation_matches(
+    config: Mapping[str, Any],
+    value: object,
+    *,
+    mode: str,
+) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    expected_keys = {
+        "macro0_reference_root",
+        "macro0_reference_commit",
+        "macro10_registered_root",
+        "support_gate",
+    }
+    if set(value) != expected_keys:
+        return False
+    if mode != "formal":
+        return all(value.get(name) is None for name in expected_keys)
+    formal = config["formal_run"]
+    reference = formal["decision_evaluation"]
+    gates = formal["decision_gates"]
+    expected_support = {
+        name: gates[name]
+        for name in (
+            "macro10_support_correct_min",
+            "macro10_support_lost_to_macro0_max",
+            "macro10_support_breadth_min",
+        )
+    }
+    try:
+        macro0 = Path(str(value["macro0_reference_root"]))
+        macro10 = Path(str(value["macro10_registered_root"]))
+        expected_macro0 = (
+            REPO_ROOT / str(reference["macro0_reference_root"])
+        ).resolve()
+        outputs = (REPO_ROOT / "runs/outputs").resolve()
+        macro0_resolved = macro0.resolve()
+        macro10_resolved = macro10.resolve()
+        macro10_resolved.relative_to(outputs)
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return False
+    return (
+        macro0.is_absolute()
+        and macro10.is_absolute()
+        and macro0_resolved == expected_macro0
+        and macro10_resolved != macro0_resolved
+        and value.get("macro0_reference_commit")
+        == reference["macro0_reference_commit"]
+        and value.get("support_gate") == expected_support
+    )
+
+
 def _run_science_matches(
     config: Mapping[str, Any],
     run: Mapping[str, Any],
@@ -467,7 +421,7 @@ def _run_science_matches(
         "checkpoint": str(configured_writer),
         "writer_state_tensor_count": 600,
         "writer_state_value_count": 12_064_064,
-        "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+        "residual_memory": "fresh_zero_and_identity_reconciliation_then_joint_exact_resume",
     }
     fixed = {
         "schema_version": V6_PRIOR_RUN_SCHEMA,
@@ -477,6 +431,7 @@ def _run_science_matches(
         "writer": config.get("writer"),
         "condition_feature": config.get("condition_feature"),
         "program_residual": config.get("program_residual"),
+        "reconciliation": config.get("reconciliation"),
         "update": config.get("update"),
         "objective": config.get("objective"),
         "optimization": config.get("optimization"),
@@ -501,6 +456,11 @@ def _run_science_matches(
         and record.get("schema") == V6_PRIOR_CONFIG_SCHEMA
         and config_bytes > 0
         and initialization == expected_initialization
+        and _decision_evaluation_matches(
+            config,
+            run.get("decision_evaluation"),
+            mode=mode,
+        )
         and _source_and_tokenizer_match(config, run.get("source"), run.get("tokenizer"))
         and _run_data_matches(
             config,
@@ -576,12 +536,12 @@ def _profile_run_matches(
         run,
         commit,
         mode="mechanism-profile",
-        schedule_start=49,
-        schedule_stop=50,
+        schedule_start=0,
+        schedule_stop=3,
     ) and _runtime_matches(
         run.get("runtime"),
-        total_macros=1,
-        schedule_origin=49,
+        total_macros=3,
+        schedule_origin=0,
         checkpoint_macros=[],
     )
 
@@ -590,16 +550,25 @@ def _profile_completion_matches(completion: Mapping[str, Any]) -> bool:
     return completion == {
         "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
         "mode": "mechanism-profile",
-        "completed_diagnostic_macros": 1,
+        "completed_diagnostic_macros": 3,
         "passed": True,
         "retained_checkpoint": False,
         "content_hash_policy": "disabled_by_owner",
     }
 
 
+def _runtime_artifact_path(value: object) -> Path:
+    relative = Path(str(value))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError("runtime artifact path is not canonical")
+    resolved = (REPO_ROOT / relative).resolve()
+    resolved.relative_to((REPO_ROOT / "runs/outputs").resolve())
+    return resolved
+
+
 def _profile_artifact_matches(config: Mapping[str, Any]) -> bool:
     profile = config.get("profile_run", {})
-    if profile.get("status") == "awaiting_live_a40_macro49_profile":
+    if profile.get("status") == "awaiting_live_a40_fresh0_to3_profile":
         return profile.get("artifact_evidence") is None
     artifact = profile.get("artifact_evidence")
     required_fields = {
@@ -613,7 +582,7 @@ def _profile_artifact_matches(config: Mapping[str, Any]) -> bool:
     if not isinstance(artifact, Mapping) or set(artifact) != required_fields:
         return False
     try:
-        path = (REPO_ROOT / str(artifact["path"])).resolve()
+        path = _runtime_artifact_path(artifact["path"])
         result = json.loads(path.read_text(encoding="utf-8"))
         run = json.loads(
             (path.parent / "run_contract.json").read_text(encoding="utf-8")
@@ -625,7 +594,7 @@ def _profile_artifact_matches(config: Mapping[str, Any]) -> bool:
         evidence = {
             "schema": V6_PRIOR_PROFILE_SCHEMA,
             "passed": True,
-            "schedule_macro": 49,
+            "schedule_macro": 0,
         }
         return (
             path.stat().st_size == int(artifact["bytes"])
@@ -676,8 +645,6 @@ def _evaluation_artifact_matches(config: Mapping[str, Any]) -> bool:
     evaluation = config.get("evaluation", {})
     status = evaluation.get("formal_status")
     evidence = evaluation.get("online_smoke_evidence")
-    if status == "blocked_until_new_residual_deployment_graph_live_profile":
-        return evidence is None
     return status == "sealed_from_live_residual_deployment_profile" and (
         evaluation_artifact_matches(
             config=config,
@@ -691,25 +658,19 @@ def _evaluation_artifact_matches(config: Mapping[str, Any]) -> bool:
 _COHERENT_STATES = {
     (
         "active_implementation_cpu_sealed_awaiting_live_a40_profile",
-        "awaiting_live_a40_macro49_profile",
+        "awaiting_live_a40_fresh0_to3_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "blocked_until_new_residual_deployment_graph_live_profile",
-    ),
-    (
-        "active_mechanism_sealed_awaiting_deployment_seal",
-        "sealed_from_live_a40_macro49_profile",
-        "blocked_until_live_deployment_profile_and_smoke_seal",
-        "blocked_until_new_residual_deployment_graph_live_profile",
+        "sealed_from_live_residual_deployment_profile",
     ),
     (
         "active_deployment_sealed_formal_ready",
-        "sealed_from_live_a40_macro49_profile",
+        "sealed_from_live_a40_fresh0_to3_profile",
         "ready_after_live_mechanism_and_deployment_seals",
         "sealed_from_live_residual_deployment_profile",
     ),
     (
         "formal_result_sealed",
-        "sealed_from_live_a40_macro49_profile",
+        "sealed_from_live_a40_fresh0_to3_profile",
         "formal_result_sealed",
         "sealed_from_live_residual_deployment_profile",
     ),
@@ -718,8 +679,8 @@ _COHERENT_STATES = {
 _EXPECTED_PROFILE_STATIC = {
     "expected_world_size": 6,
     "tasks_per_rank": 4,
-    "schedule_macro": 49,
-    "diagnostic_macros": 1,
+    "schedule_macro": 0,
+    "diagnostic_macros": 3,
     "num_workers_per_rank": 2,
     "retain_weight": False,
 }
@@ -738,23 +699,39 @@ _EXPECTED_PROFILE_GATES = {
     "extra_negative_policy_forwards": 0,
     "oom_count": 0,
     "nonfinite_count": 0,
+    "first_step_blind_ratio_abs_tolerance": 1e-5,
+    "old_panel_drift_rms_vs_blind_max": 0.5,
+    "old_correct_rows_improved_fraction_min": 0.75,
+    "current_correct_motion_vs_blind_min": 0.5,
 }
 
 _EXPECTED_FORMAL_STATIC = {
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
-    "total_macros": 50,
-    "checkpoint_macros": [10, 25, 50],
-    "strict400_checkpoints": [0, 10, 25, 50],
+    "total_macros": 25,
+    "checkpoint_macros": [10, 25],
+    "strict400_checkpoints": [0, 10, 25],
+    "decision_evaluation": {
+        "macro0_reference_root": (
+            "runs/outputs/"
+            "pi05_v6_balanced_causal_condition_residual_correct400_"
+            "noreplacement_seed7_method_macro0000_6b5f7a6_20260810"
+        ),
+        "macro0_reference_commit": (
+            "6b5f7a6ad6ef1a778205071f38faec9f936cf54e"
+        ),
+        "macro0_reference_correct": 134,
+        "macro0_reference_breadth": 6,
+    },
     "decision_gates": {
-        "macro10_broad_loss_stop_correct_max": 129,
-        "macro10_conditional_continue_correct_range": [130, 134],
-        "macro10_conditional_continue_requires_breadth_churn_and_mechanics": True,
-        "macro10_continue_correct_min": 135,
+        "macro10_support_correct_min": 140,
+        "macro10_support_lost_to_macro0_max": 6,
+        "macro10_support_breadth_min": 6,
+        "macro10_strong_absolute_correct_min": 141,
         "first_full_six_arm_correct_min": 144,
         "goal_full_six_arm_correct_min": 151,
-        "macro25_or_50_retire_if_not_above_baseline_correct": 134,
+        "macro25_requires_macro10_support_gate": True,
     },
 }
 
@@ -763,8 +740,8 @@ def _formal_completion_matches(completion: Mapping[str, Any]) -> bool:
     return completion == {
         "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
         "mode": "formal",
-        "completed_macro": 50,
-        "metrics_rows": 50,
+        "completed_macro": 25,
+        "metrics_rows": 25,
         "content_hash_policy": "disabled_by_owner",
     }
 
@@ -779,10 +756,10 @@ def _formal_metrics_match(path: Path) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
     return (
-        len(rows) == 50
+        len(rows) == 25
         and all(isinstance(row, Mapping) for row in rows)
-        and [row.get("macro") for row in rows] == list(range(50))
-        and [row.get("schedule_macro") for row in rows] == list(range(50))
+        and [row.get("macro") for row in rows] == list(range(1, 26))
+        and [row.get("schedule_macro") for row in rows] == list(range(25))
     )
 
 
@@ -797,12 +774,12 @@ def _formal_run_matches(
         commit,
         mode="formal",
         schedule_start=0,
-        schedule_stop=50,
+        schedule_stop=25,
     ) and _runtime_matches(
         run.get("runtime"),
-        total_macros=50,
+        total_macros=25,
         schedule_origin=0,
-        checkpoint_macros=[10, 25, 50],
+        checkpoint_macros=[10, 25],
     )
 
 
@@ -830,9 +807,7 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
         return False
     try:
         completion_relative = Path(str(evidence["path"]))
-        if completion_relative.is_absolute():
-            return False
-        completion_path = (REPO_ROOT / completion_relative).resolve()
+        completion_path = _runtime_artifact_path(completion_relative)
         root = completion_path.parent
         if completion_path.name != "completion.json":
             return False
@@ -854,7 +829,7 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
 
         expected_checkpoint_contract = checkpoint_contract(run)
         checkpoint_rows = []
-        for macro, row in zip((10, 25, 50), manifests, strict=True):
+        for macro, row in zip((10, 25), manifests, strict=True):
             if not isinstance(row, Mapping):
                 return False
             relative = Path(str(row.get("path", "")))
@@ -893,7 +868,7 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
         completion_bytes == int(evidence["bytes"])
         and evidence["schema"] == V6_PRIOR_COMPLETION_SCHEMA
         and metrics_bytes == int(evidence["metrics_bytes"])
-        and checkpoint_rows == [10, 25, 50]
+        and checkpoint_rows == [10, 25]
         and _formal_completion_matches(completion)
         and _formal_metrics_match(metrics_path)
         and _formal_run_matches(config, run, commit)
@@ -922,8 +897,8 @@ def _profile_state_matches(config: Mapping[str, Any]) -> bool:
     return (
         profile.get("status")
         in {
-            "awaiting_live_a40_macro49_profile",
-            "sealed_from_live_a40_macro49_profile",
+            "awaiting_live_a40_fresh0_to3_profile",
+            "sealed_from_live_a40_fresh0_to3_profile",
         }
         and _projection_matches(profile, _EXPECTED_PROFILE_STATIC)
         and profile.get("gates") == _EXPECTED_PROFILE_GATES
@@ -938,7 +913,6 @@ def _formal_state_matches(config: Mapping[str, Any]) -> bool:
         formal.get("status")
         in {
             "blocked_until_live_profile_passes_and_is_sealed",
-            "blocked_until_live_deployment_profile_and_smoke_seal",
             "ready_after_live_mechanism_and_deployment_seals",
             "formal_result_sealed",
         }
@@ -950,11 +924,7 @@ def _formal_state_matches(config: Mapping[str, Any]) -> bool:
 def _evaluation_state_matches(config: Mapping[str, Any]) -> bool:
     evaluation = config.get("evaluation", {})
     return (
-        evaluation.get("formal_status")
-        in {
-            "blocked_until_new_residual_deployment_graph_live_profile",
-            "sealed_from_live_residual_deployment_profile",
-        }
+        evaluation.get("formal_status") == "sealed_from_live_residual_deployment_profile"
         and _projection_matches(evaluation, _EXPECTED_EVALUATION_STATIC)
         and _evaluation_artifact_matches(config)
     )
@@ -979,7 +949,7 @@ def _state_machine_matches(config: Mapping[str, Any]) -> bool:
 
 
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_counterfactual_null_condition_kernel_program_residual",
+    "name": "frozen_v6_exact_anchored_reconciliation_program_residual",
     "writer_input": (
         "exact task language plus exactly one action-hidden teacher video"
     ),
@@ -1005,7 +975,9 @@ _EXPECTED_INITIALIZATION = {
     ),
     "writer_state_tensor_count": 600,
     "writer_parameter_count": 10_775_296,
-    "residual_memory": "elementwise_zero_on_fresh_or_memory_only_exact_resume",
+    "residual_memory": (
+        "elementwise_zero_with_identity_reconciliation_on_fresh_or_joint_exact_resume"
+    ),
     "optimizer": "not_instantiated",
     "scheduler": "not_instantiated",
     "scaler": "not_instantiated",
@@ -1075,15 +1047,15 @@ def runtime_for_mode(
 
     if mode == "mechanism-profile":
         profile = config["profile_run"]
-        if profile["status"] != "awaiting_live_a40_macro49_profile":
+        if profile["status"] != "awaiting_live_a40_fresh0_to3_profile":
             raise ExpertManifoldError("mechanism profile is not in its launch state")
-        return 1, (), int(profile["schedule_macro"])
+        return int(profile["diagnostic_macros"]), (), int(profile["schedule_macro"])
     if mode == "formal":
         profile = config["profile_run"]
         formal = config["formal_run"]
         evaluation = config["evaluation"]
         if (
-            profile["status"] != "sealed_from_live_a40_macro49_profile"
+            profile["status"] != "sealed_from_live_a40_fresh0_to3_profile"
             or not isinstance(profile["artifact_evidence"], Mapping)
             or formal["status"] != "ready_after_live_mechanism_and_deployment_seals"
             or evaluation["formal_status"]

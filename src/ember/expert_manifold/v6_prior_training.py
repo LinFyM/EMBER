@@ -47,10 +47,10 @@ from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_distributed
 from ember.writer.condition_update import (
-    CounterfactualNullUpdateSummary,
+    AnchoredReconciliationUpdateSummary,
     ProgramDeltaApplicationSummary,
-    apply_program_residual_delta_,
-    counterfactual_null_program_delta,
+    anchored_reconciliation_program_delta,
+    apply_anchored_reconciliation_update_,
     program_residual_delta_application_evidence,
 )
 from ember.writer.functional import functional_lora_loss_gradient
@@ -165,7 +165,10 @@ def _task_objective(
             collect_policy_details=False,
         )
     cotangent = program_cotangent(graph, lora_gradients)
-    retain_profile = runtime.args.mode == "mechanism-profile"
+    retain_profile = (
+        runtime.args.mode == "mechanism-profile"
+        and schedule_macro == runtime.segment.schedule_stop_macro - 1
+    )
     fixed_policy_query = None
     if retain_profile and task.ordinal in _FIXED_ACTION_PROFILE_TASK_ORDINALS:
         fixed_policy_query = {
@@ -371,9 +374,10 @@ def _apply_macro_update(
     local_objectives: Sequence[TaskObjective],
     *,
     profile: bool,
+    profile_detail: bool,
     step_started: float,
 ) -> tuple[
-    CounterfactualNullUpdateSummary,
+    AnchoredReconciliationUpdateSummary,
     ProgramDeltaApplicationSummary | None,
     dict[str, Any] | None,
     dict[str, float] | None,
@@ -392,28 +396,40 @@ def _apply_macro_update(
     correct, negative, cotangents = _gather_full48(
         local_objectives, runtime.context
     )
-    delta, update = counterfactual_null_program_delta(
+    full_features = torch.cat((correct, negative), dim=0)
+    before = runtime.writer.program_memory(full_features).clone() if profile else None
+    references = (
+        torch.cat(runtime.profile_correct_feature_history, dim=0)
+        if runtime.profile_correct_feature_history
+        else None
+    )
+    delta, next_precision, update = anchored_reconciliation_program_delta(
         correct,
         negative,
         cotangents,
+        runtime.reconciliation,
         step_size=float(runtime.config["update"]["step_size"]),
         relative_damping=float(runtime.config["update"]["relative_damping"]),
+        reference_correct_features=references,
     )
-    full_features = torch.cat((correct, negative), dim=0)
-    apply_program_residual_delta_(runtime.writer.program_memory, delta)
+    apply_anchored_reconciliation_update_(
+        runtime.writer.program_memory,
+        runtime.reconciliation,
+        delta,
+        next_precision,
+        assimilated_rows_after=update.assimilated_rows_after,
+    )
     if not profile:
         return update, None, None, None, None, None, None
+    runtime.profile_correct_feature_history.append(correct.detach())
     torch.cuda.synchronize(runtime.context.device)
     kernel_seconds = _profile_max_seconds(
         runtime.context, time.monotonic() - kernel_started
     )
     torch.cuda.synchronize(runtime.context.device)
     verification_started = time.monotonic()
-    # The mechanism profile is fresh-only, so its pre-write residual is exact
-    # zero.  Allocate this verification-only tensor outside production timing.
-    before = cotangents.new_zeros(
-        full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
-    )
+    if before is None:
+        raise ExpertManifoldError("mechanism profile lost its pre-write memory read")
     full_motion = torch.matmul(
         full_features.to(dtype=torch.float32), delta.flatten(1)
     ).reshape_as(before)
@@ -427,8 +443,10 @@ def _apply_macro_update(
     task_local = _profile_task_local_motion(
         cotangents, full_motion, runtime.config["profile_run"]["gates"]
     )
-    lora_response = _profile_lora_response(
-        runtime, local_objectives, full_motion[:24]
+    lora_response = (
+        _profile_lora_response(runtime, local_objectives, full_motion[:24])
+        if profile_detail
+        else None
     )
     torch.cuda.synchronize(runtime.context.device)
     verification_seconds = _profile_max_seconds(
@@ -450,7 +468,7 @@ def _macro_record(
     macro: int,
     schedule_macro: int,
     records: Sequence[Mapping[str, Any]],
-    update: CounterfactualNullUpdateSummary,
+    update: AnchoredReconciliationUpdateSummary,
     application: ProgramDeltaApplicationSummary | None,
     task_local: Mapping[str, Any] | None,
     lora_response: Mapping[str, float] | None,
@@ -511,7 +529,11 @@ def _run_one_macro(
     step_started = time.monotonic()
     local, input_wait = _collect_local_objectives(runtime, schedule_macro)
     update_evidence = _apply_macro_update(
-        runtime, local, profile=profile, step_started=step_started
+        runtime,
+        local,
+        profile=profile,
+        profile_detail=profile and macro == runtime.segment.stop_macro - 1,
+        step_started=step_started,
     )
     records = _gather_task_records(
         [_task_record(value) for value in local], runtime.context
@@ -537,8 +559,11 @@ def _run_one_macro(
 
 
 def _run_mechanism_profile(runtime: V6PriorRuntime) -> None:
-    row = _run_one_macro(runtime, macro=0)
-    passed, gate_evidence = _profile_passes(runtime.config, row)
+    rows = [
+        _run_one_macro(runtime, macro=macro)
+        for macro in range(runtime.segment.start_macro, runtime.segment.stop_macro)
+    ]
+    passed, gate_evidence = _profile_passes(runtime.config, rows)
     result = {
         "schema_version": V6_PRIOR_PROFILE_SCHEMA,
         "passed": passed,
@@ -546,7 +571,7 @@ def _run_mechanism_profile(runtime: V6PriorRuntime) -> None:
         "retain_weight": False,
         "gates": dict(runtime.config["profile_run"]["gates"]),
         "gate_evidence": gate_evidence,
-        "macro": row,
+        "macros": rows,
         "content_hash_policy": "disabled_by_owner",
     }
     if runtime.context.is_main:
@@ -556,7 +581,7 @@ def _run_mechanism_profile(runtime: V6PriorRuntime) -> None:
             {
                 "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
                 "mode": "mechanism-profile",
-                "completed_diagnostic_macros": 1,
+                "completed_diagnostic_macros": len(rows),
                 "passed": passed,
                 "retained_checkpoint": False,
                 "content_hash_policy": "disabled_by_owner",
@@ -579,6 +604,7 @@ def _run_training(runtime: V6PriorRuntime) -> None:
                 output_dir=runtime.args.output_dir,
                 macro=cursor,
                 memory=runtime.writer.program_memory,
+                reconciliation=runtime.reconciliation,
                 context=runtime.context,
                 metrics_rows=cursor,
                 cursor_contract=cursor_contract(runtime.config, cursor),
@@ -644,6 +670,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-macro", type=int)
+    parser.add_argument("--macro0-evaluation-root", type=Path)
+    parser.add_argument("--macro10-evaluation-root", type=Path)
     parser.add_argument("--num-workers", type=int, default=2)
     return parser
 
@@ -656,6 +684,9 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         setattr(args, name, path)
     args.output_dir = args.output_dir.resolve()
     args.resume = args.resume.resolve() if args.resume else None
+    for name in ("macro0_evaluation_root", "macro10_evaluation_root"):
+        path = getattr(args, name, None)
+        setattr(args, name, path.resolve() if path is not None else None)
     if args.resume is None:
         if args.output_dir.exists() and (
             not args.output_dir.is_dir() or any(args.output_dir.iterdir())

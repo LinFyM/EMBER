@@ -320,6 +320,14 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
+        "reconciliation_precision": {
+            "shape": list(config["reconciliation"]["precision_shape"]),
+            "dtype": "torch.float64",
+            "value_count": math.prod(config["reconciliation"]["precision_shape"]),
+            "trainable": False,
+            "checkpoint_owned": True,
+            "deployment_owned": False,
+        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -360,6 +368,7 @@ def _residual_contract_matches(
         "initialization",
         "condition_feature",
         "program_residual",
+        "reconciliation",
         "update",
         "ownership",
         "world_size",
@@ -373,7 +382,9 @@ def _residual_contract_matches(
         "writer_state_value_count": int(
             historical["writer_state"]["state_value_count"]
         ),
-        "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+        "residual_memory": (
+            "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
+        ),
     }
     fixed = {
         "run_schema": V6_PRIOR_RUN_SCHEMA,
@@ -382,6 +393,7 @@ def _residual_contract_matches(
         "initialization": expected_initialization,
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
+        "reconciliation": config["reconciliation"],
         "update": config["update"],
         "ownership": _expected_residual_ownership(config),
         "world_size": 6,
@@ -402,7 +414,8 @@ def _residual_inspection(
     try:
         macro = int(inspection.get("next_macro", -1))
         memory = inspection.get("program_memory", {})
-        if not isinstance(memory, Mapping):
+        reconciliation = inspection.get("reconciliation", {})
+        if not isinstance(memory, Mapping) or not isinstance(reconciliation, Mapping):
             raise TypeError("memory metadata")
         identity = {
             "checkpoint_schema": inspection.get("checkpoint_schema"),
@@ -430,6 +443,19 @@ def _residual_inspection(
         observed_memory = {
             name: memory.get(name) for name in expected_memory
         }
+        expected_reconciliation = {
+            "tensor_count": 1,
+            "dtype": "torch.float64",
+            "shape": list(config["reconciliation"]["precision_shape"]),
+            "value_count": math.prod(config["reconciliation"]["precision_shape"]),
+            "finite": None,
+            "assimilated_rows": macro
+            * int(config["reconciliation"]["rows_per_macro"]),
+            "deployment_owned": False,
+        }
+        observed_reconciliation = {
+            name: reconciliation.get(name) for name in expected_reconciliation
+        }
     except (TypeError, ValueError):
         raise ExpertManifoldError("v6-prior residual checkpoint changed") from None
     if (
@@ -438,6 +464,7 @@ def _residual_inspection(
         or identity != expected_identity
         or inspection.get("cursor_contract") != cursor_contract(config, macro)
         or observed_memory != expected_memory
+        or observed_reconciliation != expected_reconciliation
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
     return macro, memory
@@ -450,7 +477,6 @@ def _trained_writer_asset(
     *,
     require_formal: bool,
 ) -> dict[str, Any]:
-    del require_formal
     manifest_path = checkpoint / "manifest.json"
     if not manifest_path.is_file():
         raise ExpertManifoldError("v6-prior residual checkpoint is incomplete")
@@ -472,6 +498,12 @@ def _trained_writer_asset(
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
     macro, memory = _residual_inspection(inspection, config)
+    if require_formal and macro not in {
+        int(value) for value in config["formal_run"]["checkpoint_macros"]
+    }:
+        raise ExpertManifoldError(
+            "formal residual evaluation requires a predeclared checkpoint macro"
+        )
     residual_file = checkpoint / str(memory["file"])
     return {
         "kind": "v6_condition_program_residual_checkpoint",

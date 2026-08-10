@@ -4,13 +4,12 @@
 identity-fresh topology Writer到v6 warm-start诊断的历史推导；第33节whole-LoRA、第34节ECP与第35节
 Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢复训练。第36节matched Expert-Flow Teacher
 Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门并否决CEFD；第37节v1又由唯一
-macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动设计是第38节Balanced
-DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
-macro49 mechanism profile已13/13通过并seal，单卡deployment双root也已通过。`d228d0d`写回后第一次
-frozen CPU-only formal prepare暴露合法`runs`软链接被误判越界，`af7b101`已窄修路径owner；同一prepare
-现已exit0、临时root已清理，全仓`285 passed`。zero-memory macro0随后以400-row exact identity得到
-`134/400`；当前仍无v2非零memory成绩，下一动作是新clean pushed/frozen authority上的formal fresh0→10
-及即时strict correct400。K4、online expert bank和所有旧Writer只由Git、
+macro49 profile定位并淘汰DC-dominated temporal key。第38节Balanced DC--Causal v2随后完成机制、部署、
+zero-memory identity、formal0→25与macro10/25 strict400，曲线为`134/140/139`；blind-add没有保留共同能力，
+因此已退役。2026-08-10唯一活动设计是第39节Exact Anchored Reconciliation：部署图完全继承v2，只替换
+training-time reconciliation与checkpoint sufficient state；canonical实现和CPU合同已完成，尚无RLS GPU、
+training或strict结果。下一动作只能是clean pushed/frozen authority上的fresh0→3 A40 profile，通过后才
+formal0→10。K4、online expert bank和所有旧Writer只由Git、
 正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
@@ -22,8 +21,9 @@ matched text/no-image baseline的视频innovation。该innovation保留时序轴
 
 第1--32节的历史根本变化，是先训练24套task experts再让Writer从language+action-hidden video重建
 policy-effective LoRA；该路线建立了expert evidence，但其whole-LoRA/ECP/Tangent/flow-teacher用法现均已
-由正式结果退役。**当前第38节不重建或读取task expert**：它冻结historical v6，以correct train24 action
-functional cotangent和action-free counterfactual-null rows直接更新video-keyed Program memory。Writer仍不
+由正式结果退役。**当前第39节不重建或读取task expert**：它冻结historical v6，以correct train24 action
+functional cotangent和action-free counterfactual-null rows更新video-keyed Program memory，并用anchored
+RLS显式保留此前condition输出。Writer仍不
 读取teacher action，validation/test actions始终不得读取；task experts只保留为历史policy-effective参照。
 
 ## 2. 直接证据与最早故障
@@ -2470,3 +2470,130 @@ seed、video mapping全部0差异；success也逐行完全相同，gained/lost=`
 这把“v2 key/residual adapter即使memory为零仍可能改变部署行为”的工程风险
 关闭，并给后续Program learning提供exact native baseline；它不是v2非零memory性能证据。按第38.3门，下一
 唯一动作是从新clean pushed/frozen authority formal fresh0→10并立即跑strict correct400。
+
+## 39. Exact Anchored Reconciliation / Recursive Least Squares
+
+### 39.1 v2正式结果与最早未闭合接口
+
+Balanced DC--Causal v2从clean frozen `abd8e08`完成了formal fresh0→10、exact-resume10→25和两个
+strict correct400。macro10为`140/400`、breadth6、per-task=`1/2/48/31/0/38/20/0`；相对exact
+macro0=`134`为gained/lost=`19/13`、net`+6`。macro25为`139/400`、breadth6、per-task=
+`2/4/48/30/0/38/17/0`；相对macro10为gained/lost=`12/13`、net`-1`，相对macro0为`18/13`、net`+5`。
+macro0与macro10 success union=`153`，但没有一个single checkpoint保留共同能力。macro25继续产生
+episode/task换手而没有提高single score，因此blind `M += Delta M`路线在macro25正式退役，不续macro50、
+不补因果臂、不扫scale/damping/step size。
+
+训练工程合同健康：0→25共25个full24 macros、0 OOM/nonfinite/negative policy forward，mean step约
+`21.42s`，B20/B10+10、feature rank48和约43.25GB/card peak allocation均稳定。macro10 LoRA健康分析显示
+effective BA相对macro0的变化中位仅`1.695e-4`，stable rank仍约`1.00002`、top singular energy约
+`.999978`、B-column cosine仍约`.998/.998/.996`。所以`+6`不是LoRA rank/energy健康度修复，继续盲目放大
+只会增加阈值翻转与漂移。
+
+更直接的定位来自同task 50条严格配对正确视频：macro0→10 raw LoRA delta方向一致性仅
+`.141539--.142175`，等于随机正交参考`1/sqrt(50)=.141421`；真实effective `Delta BA`的same-task
+pair cosine mean为`-.001371--.003280`，F32 action-target effective cosine为`-.009579--.014302`。
+当前图能看到视频并产生policy-effective变化，但不同正确示范没有形成稳定的same-task修正方向。结合
+macro0∪10=`153`，当前最短因果问题是跨macro能力共存/保留，而不是先换decoder、加expert、改rank或
+进入few-shot。
+
+### 39.2 唯一单变量：anchored cumulative ridge
+
+部署图完全不变：输入仍是exact language加恰好一条action-hidden teacher video；Balanced v2 key
+`phi:[256]`、frozen historical-v6 600 tensors、Program memory `M:[256,320,256]`和完整38-target rank16
+LoRA输出全部不变。新增状态只存在于训练期，不能被deployment adapter读取。
+
+对macro `k`定义：
+
+```text
+F_k = concat(phi_correct, phi_negative)                    [48,256]
+E_k = -step_size * concat(G_correct, exact_zero_negative)  [48,320,256]
+T_k = F_k M_(k-1) + E_k
+```
+
+negative的语义是“本次incremental motion为零”，不是把历史累计residual强拉回绝对零。唯一累计目标是：
+
+```text
+J_k(M) = 1/2 ||M||_F^2
+       + sum_(s<=k) 1/(2 lambda_s) ||F_s M - T_s||_F^2
+```
+
+维护FP64 feature-space precision `Lambda_0=I_256`，每macro精确执行：
+
+```text
+X       = solve(Lambda_(k-1), F_k^T)
+S       = lambda_k I_48 + F_k X
+gain    = X solve(S, I_48)
+Delta M = gain[:, :24] @ (-step_size * G_correct)
+M_k     = M_(k-1) + Delta M
+Lambda_k = Lambda_(k-1) + F_k^T F_k / lambda_k
+```
+
+其中`lambda_k=.01*mean(diag(F_k F_k^T))`，与v2原门相同。首macro严格等价原
+`F^T(FF^T+lambda I)^-1 E`；CPU FP64 oracle最大差`6.1e-16`，四批streaming RLS与显式累计ridge最大差
+`3.5e-14`。这不是optimizer、checkpoint融合或多模型ensemble；single checkpoint部署只读取最终唯一M。
+
+训练checkpoint新增一个`[256,256]` FP64 precision（524,288 bytes）和`assimilated_rows=48*macro`；
+不保存历史feature/cotangent/target。相对约80MiB Program memory新增约`.63%`。大RHS、Delta M和memory
+write仍为FP32；利用negative RHS为零只计算`gain[:,:24] @ G`，不增加policy forward、collective或部署
+开销，也不为了微小数值误差降低B20/B10+10、BF16 policy或六卡并行。
+
+### 39.3 生命周期、实现owner与fail-close
+
+这是fresh-incompatible family：precision必须从identity与zero Program residual同时开始；v2 macro10/25
+缺少历史precision，禁止伪resume或warm-start。旧blind solver不保留runtime fallback，只由Git、正式root和
+第38--39节结论保存。
+
+- `writer/condition_update.py`是唯一RLS/precision数学owner；
+- `v6_prior_training.py`在完整full48 gather后预验证并共同写入M与precision；
+- `v6_prior_runtime.py`创建identity precision并只在exact-resume恢复；
+- `v6_prior_checkpoint.py`原子保存deployment Program memory、training-only precision、cursor和六rank RNG；
+- `v6_prior_run_contract.py`、config和inspection显式区分deployment state与training-only reconciliation；
+- `pi05_eval/analysis.py`登记独立RLS-v3 family并从immutable queue/shards重算formal support gate；
+- `v6_prior_step.py`、Balanced feature、historical v6 decoder、Writer generation和official evaluator不改。
+
+结构增长只对应三个当前owner，不是并行版本：`v6_prior_checkpoint_payload.py`隔离Program/precision tensor
+codec，`v6_prior_contract_spec.py`隔离sealed static science contract，
+`pi05_eval/anchored_reconciliation_gate.py`独占两root strict continuation decision。它们分别避免继续扩张原
+checkpoint、contract和通用analysis大文件；runtime只调用gate而不复制paired逻辑。旧blind checkpoint/config/
+solver没有兼容fallback；若RLS被正式退役，这三个RLS-specific owner与其tests按同一退役提交删除，历史由
+Git/artifact保留。
+
+所有未来launcher文件在启动后不可原位修改。macro25 evaluator的内部completion、72/72 jobs、400 rows、
+18 worker return0和`139`结果完整，但外部wrapper `.exit`记录因launcher运行中被修改而缺失；正式记录必须
+写成`external_wrapper_exit_status=unobserved_missing_record`，禁止事后合成exit code。该程序性缺口不改变
+scientific row，但以后每次launch使用独立immutable script。
+
+### 39.4 最短证据门
+
+CPU必须覆盖首步等价、streaming与显式累计ridge等价、zero cotangent下M不变但precision/rows正常同化、negative zero motion、
+重复/共线/rank-deficient feature finite，以及uninterrupted与fresh→checkpoint→resume的M、precision、cursor
+完全一致。
+
+唯一discarded A40 profile固定fresh0→3，仍为train24、六rank×4 tasks、B20/B10+10和原policy forward数；
+三个macro恰好覆盖每task的reversed/shuffled/wrong。profile只临时保留此前最多48条correct features作解析
+对照，不保存cotangent或历史训练状态。相对同一当次cotangent的blind reference必须同时满足：
+
+- macro2/3旧correct-panel drift RMS均不超过blind的`.5x`；
+- 至少`75%`旧correct rows的motion小于blind；
+- 当前correct motion RMS至少保留blind的`.5x`；
+- 原correct-retention、counterfactual-null、application closure、A/B、4-task fixed-action继续通过；
+- production wall不超过sealed baseline `1.10x`，0 extra policy forward/OOM/nonfinite。
+
+若旧drift不降，直接退役RLS；若旧drift下降但当前motion低于一半，判为P256稳定--获取冲突，不扫forgetting
+factor、window、lambda或step size。profile通过后才允许唯一formal fresh0→10并立即strict correct400。
+closed-loop支持门是correct`>=140`、相对macro0 lost`<=6`（保留至少约95%旧成功）且breadth`>=6`；
+严格`>140`才是absolute共同提高的强证据。若内部保留门通过但closed-loop仍lost`>=13`且不升分，下一最早
+接口转为functional credit/closed-loop alignment；此时才考虑第39.5的reward-credit successor。
+
+fresh0→10启动时必须在结果出现前把唯一macro0与macro10 strict roots写入原run contract。macro0固定复用
+已证明bit-exact的`6b5f7a6` 400-row root；macro10 root当时必须不存在。任何10→25 exact-resume都必须使用
+同一预注册root，从raw queue/shards重聚合400 rows，核对RLS family、training/evaluation commit、macro10
+checkpoint/manifest以及state、RNG、language和actual video identity，再执行上述三门；formal evaluator
+只接受预声明macro10/25。macro25因此是支持门后的条件动作，不是config列出25就自动授权。
+
+### 39.5 唯一后备方向
+
+RLS证据完成前不实现reward路径。若D层保留被证伪，后备只允许在同一Balanced v2部署图和full48
+preservation solve上，把pointwise source-action cotangent替换为K4真实train24 rollout的binary LOO、Nmc4
+executed-prefix on-policy Program cotangent；不恢复旧高维SPSA、shared Adam、第二replay epoch、progress
+reward或多video。它是随后单变量的credit测试，不与RLS同时打开。

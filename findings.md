@@ -1,5 +1,52 @@
 # EMBER Findings
 
+## v2正式终局、最早瓶颈与RLS选择（2026-08-10）
+
+- clean frozen`abd8e0826e52758eda53b1963f8b12db92bf3748`的v2 formal root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`完成25 macros；
+  step wall累计/均值=`535.464796/21.418592s`、input wait累计=`2.208183s`，peak allocated/reserved=
+  `43,247,029,760/46,917,484,544B`，0 OOM/nonfinite/negative policy forward。logical B20/physical B10+10
+  与六卡吞吐合同成立，没有理由为低位数值降低batch、dtype或并行度。
+- 同一paired schedule的macro0/10/25 strict correct=`134/140/139`，breadth均6；per-task分别
+  `0/5/48/34/0/35/11/1`、`1/2/48/31/0/38/20/0`、`2/4/48/30/0/38/17/0`。macro0→10
+  gained/lost=`19/13`、union/intersection=`153/121`；macro10→25=`12/13`、`152/127`。v2只比自身
+  baseline净增6，未超过历史single best`143`，更未达到`>150`；能力集合继续换手，因此不续50、不补多臂、
+  不扫P/lambda/eta。
+- macro25科学结果内部为72/72 jobs、400 rows、18/18 workers attempt1/return0；但外层wrapper exit没有
+  retained record，只能封存`scientific_status=complete`与
+  `external_wrapper_exit_status=unobserved_missing_record`，不得事后合成exit0。
+- macro10的effective delta/base median=`1.69498e-4`、stable rank=`1.000022`、top1 energy=`.999978`，
+  Program residual RMS=`3.818e-6`。这说明“能量太小”仍是真实几何现象，但`+6`已在极小、近rank1写入下发生；
+  单纯增幅或强制rank健康度既没有证据能保留旧能力，也不是当前最早可证伪接口。
+- 同task 50条正确视频的raw correction consistency=`.141539--.142175`，几乎等于独立方向参考
+  `1/sqrt(50)=.141421`；fixed macro10 all-target pair cosine=`-.001371--.003280`，action-target=
+  `-.009579--.014302`。视频路径不是零，但同任务不同正确视频产生的修正近乎正交；这不证明真实时序因果，
+  也不自动授权few-shot平均。结合success union`153`与跨checkpoint换手，当前首因更符合更新只拟合本macro、
+  未显式保留历史functional约束。
+- 因此第39节只改变训练侧reconciliation：部署仍是exact language + exactly one action-hidden video、balanced
+  `phi256`、frozen v6、single `M[256,320,256]`和完整rank16 LoRA；RLS累计FP64 precision并把每批target锚定
+  到`F M_prev + E`。它直接检验retention根因，不引入expert bank、language bypass、scale、few-shot、额外
+  policy forward或新LoRA图。当前没有RLS GPU/profile/strict结果，不能把CPU数学成立写成性能改善。
+
+## Exact Anchored Reconciliation CPU与决策合同（2026-08-10）
+
+- 首步在`Lambda0=I`时严格退化为旧blind ridge；streaming RLS与显式累计最小二乘的纯FP64 oracle误差约
+  `6.1e-16/3.5e-14`。runtime有意保持Program/gain/RHS FP32，随机实际差在普通roundoff量级；不扩FP64大写入、
+  不牺牲吞吐追求bit-level一致。zero cotangent时`M`不变，但precision与`assimilated_rows`正常同化，防止
+  “没有当前梯度就遗忘本批condition”的状态语义漏洞。
+- checkpoint把deployment-owned Program与training-only FP64 precision分文件保存；联合fresh/resume同时恢复
+  Program、precision、rows和六rank RNG。precision在checkpoint边界做finite+positive-definite验证，但部署
+  只安装Program，不读取precision值。该检查只发生在预声明checkpoint，不进入训练热路径。
+- fresh0→10必须在结果出现前预注册唯一macro0与macro10 strict roots；macro0固定为bit-exact `6b5f7a6`
+  400-row root。10→25前会从immutable queue/shards重聚合两份panel，核对family、commit、macro10 checkpoint、
+  manifest、state/RNG/language/actual video identity；只有macro10 `correct>=140`、相对macro0 lost`<=6`且
+  breadth`>=6`才放行。这样既避免结果后择优选root，也避免把文档门当成无执行力的建议。
+- formal evaluator仅接受config预声明的macro10/25 checkpoint；paired analysis新增独立RLS-v3 family，同时
+  保留v2历史family。artifact路径被限制在canonical `runs/outputs`，absolute和`..`逃逸继续fail closed。
+- 下一科学动作仍只有fresh0→3 A40 profile：首步blind误差、旧row drift/improvement、当前motion、现有
+  condition/null/action/closure与wall ratio全部通过后才允许formal0→10。macro25是macro10 strict支持门后的
+  条件动作，不是因config列出25就预授权。
+
 ## v2 zero-memory macro0与历史native行为逐行同一（2026-08-10）
 
 - 正式macro0不是只有aggregate同为`134/400`：新旧400个paired episodes的state、language、env/policy RNG、

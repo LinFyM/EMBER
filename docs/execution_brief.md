@@ -4,8 +4,32 @@
 
 目标是把同一shared method、同一single checkpoint的strict paired correct从历史最好`143/400`推进到
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
-运行中的EMBER GPU任务。v6-prior whole-LoRA objective已完成formal 0→50，同一schedule
-macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此该objective已退役。
+运行中的EMBER GPU任务。
+
+**最新执行状态（2026-08-10）**：第38节v2已从clean frozen`abd8e08`完成formal0→25，root=
+`runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`。25 macros
+step sum/input wait=`535.464796/2.208183s`，peak allocated/reserved=
+`43,247,029,760/46,917,484,544B`，0 OOM/nonfinite/negative policy forward。macro0/10/25 strict
+correct400=`134/140/139`、breadth均6；0→10、0→25、10→25 gained/lost=`19/13,18/13,12/13`，m0∪m10=
+`153`但不能融合。macro25内部72/72 shards、400 rows、18 return0均完整，外层wrapper exit记录缺失，状态必须
+写为scientific complete / wrapper unobserved，而不是exit0。
+
+v2机制、部署和短期`+6`均真实，但macro10 effective-BA delta/base中位仅`1.69498e-4`、stable rank仍约
+`1.000022`；同task 50-video correction consistency=`.141539--.142175≈1/sqrt(50)`，fixed10 effective-BA
+pair cosine跨8 tasks为`[-.001371,.003280]`。所以blind-add正在写入近正交video-specific小扰动，能产生
+换手却不能保留旧能力；v2不续50、不补多臂、不扫超参。
+
+当前唯一active是第39节**Exact Anchored Reconciliation**：部署仍为Balanced v2 P256 one-shot graph；训练端
+用FP64`Lambda_0=I_256`和RLS把每批target锚到更新前condition输出，再叠加`[-G;0]`。checkpoint增加
+training-only precision/assimilated_rows，部署仍只加载Program memory。family fresh-incompatible，当前仅有
+CPU oracle/合同实现，尚无RLS GPU或strict结果。下一GPU动作只能是clean pushed/frozen fresh0→3 profile；
+通过old-row/current-motion/既有路径/吞吐门后才formal0→10并立即strict400。10→25只在macro10
+correct≥140、lost≤6、breadth≥6且有严格paired证据时允许。fresh formal必须预注册固定macro0=`6b5f7a6`
+root和唯一尚不存在的macro10 root；resume从immutable shards重聚合并核对commit/checkpoint/同video配对，
+formal evaluator拒绝未声明macro。macro25是支持门后的条件动作。
+
+以下为此前按时间发生的完整证据，不能覆盖上面的active边界。v6-prior whole-LoRA objective已完成formal
+0→50，同一schedule macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此已退役。
 
 第34节v6-Initialized Expert-Component Projection（ECP）已完成formal0→25并负裁决。
 macro10/25 strict correct400=`133/120`；同schedule macro0=`134`。macro25对macro0的精确
@@ -48,7 +72,7 @@ v1 key的regularized condition=`1315.33`，aggregate negative/correct=`.264351>.
 解析leakage与实测相关`.99021`。production ratio=`1.115458>1.10`也按原门保留non-pass，但跨host
 input-wait差已大于超门`.326s`，不扩大解释为稳定结构慢化。禁止训练v1、降低lambda或扫seed/P/阈值。
 
-第38节**Balanced DC--Causal Condition Key v2**是当前唯一active实现。它严格冻结historical v6 macro400
+第38节**Balanced DC--Causal Condition Key v2**随后成为当时的active实现。它严格冻结historical v6 macro400
 600 tensors，保留同一个`[256,320,256]` FP32 memory、full48、`.01` damping、step1、B20/B10+10和0
 negative policy forward；只把key改为video-DC static与phase-centered sqrt-causal-prefix dynamic两个
 独立JL128 blocks，各自zero-L2后拼成P256。zero/no-video仍精确identity；reverse/shuffle共享static但
@@ -112,28 +136,30 @@ demos0--49各一次。400 cache entries的30,400 LoRA tensors、514,867,200 valu
 共同成功episode晚1 env step终止，不改变success集合。因此该结果是当前family可信的exact closed-loop
 identity baseline，不是性能提高。
 
-当前操作顺序：
+当前操作顺序（覆盖上面的历史顺序）：
 
 1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
 2. Tangent只解决了局部半径，没有解决共享decoder Jacobian把更新旋进expert方向的问题；strict同时降到
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
-4. 一次性audit与v1 key均已退役；第38节v2 mechanism 13/13通过并seal，不能从旧Tangent/audit/v1恢复执行；
-5. mechanism/deployment/prepare与zero-memory macro0现均已封存；macro0与历史native基线400-row逐行
-   identity成立，不能把它写成v2提升；
-6. 下一次GPU从新clean pushed/frozen authority formal fresh0→10并立即strict correct400，再按absolute/
-   breadth/churn/mechanics裁决；
-7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
-   不从Tangent checkpoint resume。
+4. 一次性audit、v1和v2 blind-add均已退役；v2的mechanism/deployment/identity、formal0→25、macro10/25
+   strict与same-task诊断都已封存，不能从旧Tangent/audit/v1/v2恢复活动执行；
+5. 第39节RLS的CPU实现先形成clean pushed/frozen seal；下一次GPU只运行fresh0→3 disposable profile，
+   不把profile当性能；
+6. profile全门通过才formal fresh0→10并立即strict400；macro10只有满足correct≥140、lost≤6、breadth≥6
+   的严格paired门，才可同一commit exact-resume10→25；两条strict roots必须在fresh启动时预注册，不能
+   outcome后择优；
+7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict400，不从任何retired
+   checkpoint伪resume。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD及第37节v1 key均已退役或
-  否决。当前唯一active implementation是第38节balanced-key frozen-v6 counterfactual-null Program residual；
-  mechanism与deployment双root均已seal，zero-memory macro0 strict400也已以历史native逐行identity完成；
-  按当前执行边界运行formal fresh0→10。
+- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD、第37节v1与第38节v2
+  blind-add均已退役或否决。当前唯一active implementation是第39节Exact Anchored Reconciliation；它保留
+  balanced-key frozen-v6 Program deployment图，只改变training update和resume state。先fresh0→3 profile，
+  过门后才formal fresh0→10。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -141,13 +167,19 @@ identity baseline，不是性能提高。
 - source policy、normalization、split、frame stride5、LIBERO preprocessing与paired evaluator固定。
 - historical v6-fast macro400是当前active candidate唯一允许的load-only Writer初始化；不得加载任何退役
   optimizer/scheduler/sampler/RNG，也不得用task expert输出作为cotangent。
-- train24 task-complete、每task logical B20跨episodequeries、每visit一条correct video、24-task等权；六rank
+- train24 task-complete、每task logical B20跨episode queries、每visit一条correct video、24-task等权；六rank
   各gather本地4个correct cotangents和4+4 condition features后独立形成同一manual write，不all-reduce
   80MiB memory。
 - 不恢复global norm attraction、whole-LoRA cosine、ECP completion、Tangent dynamic anchor、CEFD或
   parameter-distance代理。structured candidate只读correct真实functional cotangent；当前counterfactual
   可作为zero-motion condition constraint，但不得读取wrong-task expert或最大化negative action error。
-- step2000 task experts仅作train supervision，不进入deployment或held选择。
+- step2000 task experts仅作历史分析/privileged参照；当前RLS训练、部署和held选择均不读取其输出。
+- RLS state为FP32 Program `M[256,320,256]`与training-only FP64 precision `Lambda[256,256]`；每macro
+  `Lambda += F^T F/lambda`并同化48 rows。checkpoint二者分文件原子保存，deployment只读M；fresh0与
+  exact-resume严格区分，v2 memory没有precision，不能加载。
+- formal0→10启动时CLI必须给定config固定macro0 strict root与唯一future macro10 root，二者写入原run
+  contract。10→25前只认canonical analysis对raw queue/shards的400-row重聚合、same state/RNG/language/
+  actual-video pairing及checkpoint identity；不信任手填aggregate、passed flag或任意中间macro。
 
 ## 2. Throughput-first runtime contract
 
@@ -363,11 +395,12 @@ motion/action/吞吐；deployment双root也已证明真实生成、cache、relea
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent与teacher-audit均已
   formal non-pass/fail-closed，不能作为活动入口。
-- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism与
-  v8 deployment live profile+vertical smoke双root均已seal，formal runtime ready；按当前顺序先评测
-  zero-memory macro0 strict400。
-- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第38节；v1 A40 non-pass
-  已封存，v2 mechanism 13/13与deployment双root通过；仍没有v2 formal strict结果。
+- retired v2 config及formal root由Git/artifacts保留；其最终strict=`134/140/139`和近正交same-task correction
+  已封存，不再是活动入口。
+- active config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；当前status=
+  `active_implementation_cpu_sealed_awaiting_live_a40_profile`，formal blocked，尚无RLS GPU/strict结果。
+- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第39节；第38节只作RLS
+  的deployment/key/baseline provenance。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。
 - fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为

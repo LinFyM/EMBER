@@ -190,25 +190,54 @@ def base_versions(runtime: V6PriorRuntime) -> tuple[tuple[str, int], ...]:
 
 def profile_passes(
     config: Mapping[str, Any],
-    row: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
 ) -> tuple[bool, dict[str, Any]]:
     gates = config["profile_run"]["gates"]
-    update = row["update"]
-    application = row["application"]
-    response = row["lora_response"]
-    task_local = row["task_local_motion"]
+    expected_macros = int(config["profile_run"]["diagnostic_macros"])
+    if len(rows) != expected_macros:
+        raise ExpertManifoldError("mechanism profile evidence is incomplete")
+    updates = [row.get("update") for row in rows]
+    applications = [row.get("application") for row in rows]
+    task_local = [row.get("task_local_motion") for row in rows]
+    response = rows[-1].get("lora_response")
     if not all(
         isinstance(value, Mapping)
-        for value in (update, application, response, task_local)
+        for value in (*updates, *applications, *task_local, response)
     ):
         raise ExpertManifoldError("mechanism profile evidence is incomplete")
-    values = _profile_values(config, row, update, application, response)
-    checks = _profile_checks(gates, task_local, response, row, values)
+    values = [
+        _profile_values(config, row, update, application)
+        for row, update, application in zip(
+            rows, updates, applications, strict=True
+        )
+    ]
+    checks = _profile_checks(
+        gates,
+        rows,
+        updates,
+        task_local,
+        response,
+        values,
+    )
     return all(checks.values()), {
         "checks": checks,
-        "correct_motion_to_cotangent_rms": values["retained"],
-        "production_kernel_wall_fraction": values["kernel_fraction"],
-        "production_wall_ratio_to_sealed_v6": values["production_ratio"],
+        "correct_motion_to_cotangent_rms": [value["retained"] for value in values],
+        "production_kernel_wall_fraction": [
+            value["kernel_fraction"] for value in values
+        ],
+        "production_wall_ratio_to_sealed_v6": [
+            value["production_ratio"] for value in values
+        ],
+        "reference_to_blind_ratio": [
+            float(update["reference_to_blind_ratio"]) for update in updates[1:]
+        ],
+        "reference_rows_improved_fraction": [
+            float(update["reference_rows_improved_fraction"])
+            for update in updates[1:]
+        ],
+        "current_motion_to_blind_ratio": [
+            float(update["current_motion_to_blind_ratio"]) for update in updates
+        ],
     }
 
 
@@ -217,16 +246,12 @@ def _profile_values(
     row: Mapping[str, Any],
     update: Mapping[str, Any],
     application: Mapping[str, Any],
-    response: Mapping[str, Any],
 ) -> dict[str, float]:
     result = {
         "cotangent": float(update["correct_cotangent_rms"]),
         "predicted_correct": float(update["predicted_correct_motion_rms"]),
         "negative_ratio": float(update["predicted_negative_to_correct_ratio"]),
         "closure": float(application["predicted_observed_relative_rms"]),
-        "lora_a": float(response["lora_a_response_rms"]),
-        "lora_b": float(response["lora_b_response_rms"]),
-        "fixed_action": float(response["fixed_action_response_rms"]),
     }
     result["retained"] = (
         result["predicted_correct"] / result["cotangent"]
@@ -246,48 +271,127 @@ def _profile_values(
     return result
 
 
-def _profile_checks(
+def _task_local_profile_check(
     gates: Mapping[str, Any],
-    task_local: Mapping[str, Any],
-    response: Mapping[str, Any],
-    row: Mapping[str, Any],
-    values: Mapping[str, float],
+    task_local: Sequence[Mapping[str, Any]],
+) -> bool:
+    return all(
+        int(evidence.get("task_count", -1)) == 24
+        and len(evidence.get("rows", ())) == 24
+        and [
+            int(value.get("task_ordinal", -1))
+            for value in evidence.get("rows", ())
+        ]
+        == list(range(24))
+        and int(evidence.get("correct_retained_passing_tasks", -1))
+        >= int(gates["correct_retained_task_count_min"])
+        and int(evidence.get("negative_null_passing_tasks", -1))
+        >= int(gates["negative_null_task_count_min"])
+        for evidence in task_local
+    )
+
+
+def _response_profile_checks(
+    gates: Mapping[str, Any], response: Mapping[str, Any]
 ) -> dict[str, bool]:
-    task_rows = task_local.get("rows", ())
+    lora_a = float(response["lora_a_response_rms"])
+    lora_b = float(response["lora_b_response_rms"])
+    fixed_action = float(response["fixed_action_response_rms"])
+    expected_tasks = int(gates["fixed_action_probe_task_count"])
     return {
-        "feature_rank": int(row["update"]["feature_rank"]
-        ) >= int(gates["feature_rank_min"]),
-        "correct_motion_retained": values["retained"]
-        >= float(gates["correct_motion_to_cotangent_rms_min"]),
-        "counterfactual_null": math.isfinite(values["negative_ratio"])
-        and values["negative_ratio"]
-        <= float(gates["negative_to_correct_motion_rms_max"]),
-        "predicted_observed_closure": math.isfinite(values["closure"])
-        and values["closure"] <= float(gates["predicted_observed_relative_rms_max"]),
-        "production_wall_overhead": values["production_ratio"]
-        <= float(gates["production_wall_ratio_max"]),
-        "lora_a_response": math.isfinite(values["lora_a"]) and values["lora_a"] > 0,
-        "lora_b_response": math.isfinite(values["lora_b"]) and values["lora_b"] > 0,
-        "fixed_action_response": math.isfinite(values["fixed_action"])
-        and values["fixed_action"] > float(gates["fixed_action_response_rms_min"])
-        and int(response["fixed_action_probe_task_count"])
-        == int(gates["fixed_action_probe_task_count"])
-        and int(response["fixed_action_probe_policy_forwards"])
-        == 2 * int(gates["fixed_action_probe_task_count"]),
+        "lora_a_response": math.isfinite(lora_a) and lora_a > 0,
+        "lora_b_response": math.isfinite(lora_b) and lora_b > 0,
+        "fixed_action_response": math.isfinite(fixed_action)
+        and fixed_action > float(gates["fixed_action_response_rms_min"])
+        and int(response["fixed_action_probe_task_count"]) == expected_tasks
+        and int(response["fixed_action_probe_policy_forwards"]) == 2 * expected_tasks,
         "fixed_action_breadth": int(response["fixed_action_passing_task_count"])
         >= int(gates["fixed_action_passing_task_count_min"]),
-        "task_local_motion_evidence": int(task_local.get("task_count", -1)) == 24
-        and len(task_rows) == 24
-        and [int(value.get("task_ordinal", -1)) for value in task_rows]
-        == list(range(24))
-        and int(task_local.get("correct_retained_passing_tasks", -1))
-        >= int(gates["correct_retained_task_count_min"])
-        and int(task_local.get("negative_null_passing_tasks", -1))
-        >= int(gates["negative_null_task_count_min"]),
-        "functional_policy_program_credit": math.isfinite(values["cotangent"])
-        and values["cotangent"] > 0,
-        "negative_policy_forwards": int(row["negative_policy_forwards"]) == 0,
-        "oom_and_nonfinite": int(row["oom_count"]) == int(gates["oom_count"])
-        and int(row["nonfinite_count"]) == int(gates["nonfinite_count"])
-        and bool(values["finite"]),
     }
+
+
+def _reconciliation_profile_checks(
+    gates: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+) -> dict[str, bool]:
+    reference_updates = updates[1:]
+    return {
+        "first_step_blind_equivalence": abs(
+            float(updates[0]["current_motion_to_blind_ratio"]) - 1.0
+        )
+        <= float(gates["first_step_blind_ratio_abs_tolerance"]),
+        "old_panel_drift_reduction": all(
+            float(update["reference_to_blind_ratio"])
+            <= float(gates["old_panel_drift_rms_vs_blind_max"])
+            for update in reference_updates
+        ),
+        "old_correct_row_breadth": all(
+            float(update["reference_rows_improved_fraction"])
+            >= float(gates["old_correct_rows_improved_fraction_min"])
+            for update in reference_updates
+        ),
+        "current_motion_preserved": all(
+            float(update["current_motion_to_blind_ratio"])
+            >= float(gates["current_correct_motion_vs_blind_min"])
+            for update in updates
+        ),
+        "reconciliation_state": all(
+            int(update["assimilated_rows_before"]) == index * 48
+            and int(update["assimilated_rows_after"]) == (index + 1) * 48
+            and int(update["reference_correct_rows"]) == index * 24
+            for index, update in enumerate(updates)
+        ),
+    }
+
+
+def _profile_checks(
+    gates: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    updates: Sequence[Mapping[str, Any]],
+    task_local: Sequence[Mapping[str, Any]],
+    response: Mapping[str, Any],
+    values: Sequence[Mapping[str, float]],
+) -> dict[str, bool]:
+    checks = {
+        "feature_rank": all(
+            int(update["feature_rank"]) >= int(gates["feature_rank_min"])
+            for update in updates
+        ),
+        "correct_motion_retained": all(
+            value["retained"]
+            >= float(gates["correct_motion_to_cotangent_rms_min"])
+            for value in values
+        ),
+        "counterfactual_null": all(
+            math.isfinite(value["negative_ratio"])
+            and value["negative_ratio"]
+            <= float(gates["negative_to_correct_motion_rms_max"])
+            for value in values
+        ),
+        "predicted_observed_closure": all(
+            math.isfinite(value["closure"])
+            and value["closure"]
+            <= float(gates["predicted_observed_relative_rms_max"])
+            for value in values
+        ),
+        "production_wall_overhead": all(
+            value["production_ratio"] <= float(gates["production_wall_ratio_max"])
+            for value in values
+        ),
+        "task_local_motion_evidence": _task_local_profile_check(gates, task_local),
+        "functional_policy_program_credit": all(
+            math.isfinite(value["cotangent"]) and value["cotangent"] > 0
+            for value in values
+        ),
+        "negative_policy_forwards": all(
+            int(row["negative_policy_forwards"]) == 0 for row in rows
+        ),
+        "oom_and_nonfinite": all(
+            int(row["oom_count"]) == int(gates["oom_count"])
+            and int(row["nonfinite_count"]) == int(gates["nonfinite_count"])
+            and bool(value["finite"])
+            for row, value in zip(rows, values, strict=True)
+        ),
+    }
+    checks.update(_response_profile_checks(gates, response))
+    checks.update(_reconciliation_profile_checks(gates, updates))
+    return checks

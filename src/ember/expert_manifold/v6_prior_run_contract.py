@@ -21,7 +21,10 @@ from ember.expert_manifold.v6_prior_contract import (
 from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
-from ember.writer.condition_update import FrozenV6ConditionResidualWriter
+from ember.writer.condition_update import (
+    FrozenV6ConditionResidualWriter,
+    ProgramReconciliationState,
+)
 from ember.writer.topology import visible_physical_cuda_index
 
 
@@ -125,6 +128,7 @@ def _data_contract(
 def _ownership_contract(
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
+    reconciliation: ProgramReconciliationState,
 ) -> dict[str, Any]:
     memory = writer.program_memory.value
     return {
@@ -152,10 +156,54 @@ def _ownership_contract(
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
+        "reconciliation_precision": {
+            "shape": list(reconciliation.precision.shape),
+            "dtype": str(reconciliation.precision.dtype),
+            "value_count": reconciliation.precision.numel(),
+            "trainable": False,
+            "checkpoint_owned": True,
+            "deployment_owned": False,
+        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
         "scaler": "not_instantiated",
+    }
+
+
+def decision_evaluation_contract(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Pin the only strict roots allowed to authorize formal continuation."""
+
+    if args.mode != "formal":
+        return {
+            "macro0_reference_root": None,
+            "macro0_reference_commit": None,
+            "macro10_registered_root": None,
+            "support_gate": None,
+        }
+    reference = config["formal_run"]["decision_evaluation"]
+    gates = config["formal_run"]["decision_gates"]
+    macro0_root = getattr(args, "macro0_evaluation_root", None)
+    macro10_root = getattr(args, "macro10_evaluation_root", None)
+    return {
+        "macro0_reference_root": (
+            str(macro0_root) if macro0_root is not None else None
+        ),
+        "macro0_reference_commit": reference["macro0_reference_commit"],
+        "macro10_registered_root": (
+            str(macro10_root) if macro10_root is not None else None
+        ),
+        "support_gate": {
+            name: gates[name]
+            for name in (
+                "macro10_support_correct_min",
+                "macro10_support_lost_to_macro0_max",
+                "macro10_support_breadth_min",
+            )
+        },
     }
 
 
@@ -173,6 +221,7 @@ def build_run_contract(
     warm_start: V6PriorWarmStart,
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
+    reconciliation: ProgramReconciliationState,
     repo_root: Any,
     git_state_fn: Any = residual_git_state,
     rank_topology_fn: Any = rank_topology,
@@ -201,7 +250,9 @@ def build_run_contract(
             "checkpoint": str(warm_start.checkpoint),
             "writer_state_tensor_count": warm_start.state_tensor_count,
             "writer_state_value_count": warm_start.state_value_count,
-            "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "residual_memory": (
+                "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
+            ),
         },
         "data": _data_contract(
             args,
@@ -217,10 +268,12 @@ def build_run_contract(
         "writer": dict(config["writer"]),
         "condition_feature": dict(config["condition_feature"]),
         "program_residual": dict(config["program_residual"]),
+        "reconciliation": dict(config["reconciliation"]),
         "update": dict(config["update"]),
         "objective": dict(config["objective"]),
         "optimization": dict(config["optimization"]),
-        "ownership": _ownership_contract(ownership, writer),
+        "ownership": _ownership_contract(ownership, writer, reconciliation),
+        "decision_evaluation": decision_evaluation_contract(args, config),
         "runtime": {
             "host": socket.gethostname(),
             "device": torch.cuda.get_device_name(context.device),
@@ -273,6 +326,7 @@ def checkpoint_contract(run_contract: Mapping[str, Any]) -> dict[str, Any]:
         },
         "condition_feature": run_contract["condition_feature"],
         "program_residual": run_contract["program_residual"],
+        "reconciliation": run_contract["reconciliation"],
         "update": run_contract["update"],
         "ownership": run_contract["ownership"],
         "world_size": run_contract["runtime"]["world_size"],
@@ -295,6 +349,7 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         "videos_per_task_visit": 1,
         "action_queries_per_task": int(data["action_queries_per_task"]),
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "assimilated_rows": macro * int(config["reconciliation"]["rows_per_macro"]),
     }
 
 
@@ -302,6 +357,8 @@ def publish_contract(
     args: argparse.Namespace,
     contract: Mapping[str, Any],
     context: DistributedContext,
+    *,
+    continuation_gate_evidence: Mapping[str, Any] | None = None,
 ) -> None:
     path = args.output_dir / "run_contract.json"
     payload: list[Any] = [None]
@@ -329,6 +386,11 @@ def publish_contract(
                     "started_unix": time.time(),
                     "resume": str(args.resume) if args.resume else None,
                     "requested_stop_after_macro": args.stop_after_macro,
+                    "continuation_gate_evidence": (
+                        dict(continuation_gate_evidence)
+                        if continuation_gate_evidence is not None
+                        else None
+                    ),
                 },
             )
             payload[0] = {"ok": True}

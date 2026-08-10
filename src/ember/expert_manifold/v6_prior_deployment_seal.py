@@ -25,6 +25,9 @@ _RUN_SCHEMA = "ember_pi05_target_eval_launch_v2"
 _RESULT_SCHEMA = "ember_pi05_target_eval_results_v2"
 _PROFILE_SCHEMA = "ember_pi05_writer_generation_profile_v1"
 _ADAPTER_SCHEMA = "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
+_SEALED_DEPLOYMENT_CONFIG_SCHEMA = (
+    "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2"
+)
 _ARM = "expert_manifold_v6_condition_residual_correct"
 _PANEL = "same_fixed_longest_first_request_panel_all_candidates"
 _SELECTION = (
@@ -202,7 +205,11 @@ def _adapter_matches(config: Mapping[str, Any], adapter: Mapping[str, Any]) -> b
         and adapter.get("video_condition") == "correct"
         and adapter.get("video_schedule", {}).get("sampling_mode")
         == "without_replacement"
-        and adapter.get("config", {}).get("schema") == config.get("schema_version")
+        # The v3 change is training-only reconciliation state.  The deployed
+        # Balanced-v2 feature, Program memory and frozen decoder are unchanged,
+        # so the existing live deployment seal remains the direct graph proof.
+        and adapter.get("config", {}).get("schema")
+        in {config.get("schema_version"), _SEALED_DEPLOYMENT_CONFIG_SCHEMA}
         and writer.get("architecture") == config.get("writer", {}).get("architecture")
         and int(writer.get("program_residual_value_count", -1))
         == int(config.get("program_residual", {}).get("value_count", -2))

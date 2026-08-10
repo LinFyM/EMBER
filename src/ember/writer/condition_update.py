@@ -1,4 +1,4 @@
-"""Video-keyed Program residuals with explicit counterfactual-null updates."""
+"""Video-keyed Program residuals with exact anchored reconciliation."""
 
 from __future__ import annotations
 
@@ -22,19 +22,72 @@ class ConditionUpdateError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class CounterfactualNullUpdateSummary:
-    """Small-matrix and induced-motion evidence for one full condition update."""
+class AnchoredReconciliationUpdateSummary:
+    """Small-matrix and induced-motion evidence for one anchored update."""
 
     correct_conditions: int
     negative_conditions: int
     damping: float
     feature_rank: int
-    regularized_gram_condition_number: float
+    precision_condition_number: float
+    innovation_condition_number: float
     correct_cotangent_rms: float
     predicted_correct_motion_rms: float
     predicted_negative_motion_rms: float
     predicted_negative_to_correct_ratio: float
+    blind_predicted_correct_motion_rms: float
+    current_motion_to_blind_ratio: float
+    reference_correct_rows: int
+    reference_motion_rms: float
+    blind_reference_motion_rms: float
+    reference_to_blind_ratio: float
+    reference_rows_improved_fraction: float
     value_delta_rms: float
+    assimilated_rows_before: int
+    assimilated_rows_after: int
+
+
+@dataclass(frozen=True)
+class _AnchoredLinearSolve:
+    """Small feature-space factors shared by the write and diagnostics."""
+
+    features: torch.Tensor
+    small_features: torch.Tensor
+    gram: torch.Tensor
+    damping: torch.Tensor
+    gain: torch.Tensor
+    blind_cholesky: torch.Tensor
+    next_precision: torch.Tensor
+    feature_rank: int
+    precision_condition_number: float
+    innovation_condition_number: float
+
+
+@dataclass(frozen=True)
+class _ReferenceMotionEvidence:
+    rows: int
+    motion_rms: float
+    blind_motion_rms: float
+    improved_fraction: float
+
+
+class ProgramReconciliationState(torch.nn.Module):
+    """Training-only sufficient state for exact cumulative anchored ridge."""
+
+    def __init__(self, *, feature_width: int) -> None:
+        super().__init__()
+        if feature_width <= 0:
+            raise ConditionUpdateError("invalid reconciliation feature width")
+        self.register_buffer(
+            "precision",
+            torch.eye(feature_width, dtype=torch.float64),
+            persistent=True,
+        )
+        self.assimilated_rows = 0
+
+    @property
+    def feature_width(self) -> int:
+        return int(self.precision.shape[0])
 
 
 @dataclass(frozen=True)
@@ -305,42 +358,77 @@ def _root_mean_square(value: torch.Tensor) -> float:
     return float(value.to(dtype=torch.float32).square().mean().sqrt())
 
 
-@torch.no_grad()
-def counterfactual_null_program_delta(
+def _row_root_mean_square(value: torch.Tensor) -> torch.Tensor:
+    return value.to(dtype=torch.float32).flatten(1).square().mean(dim=1).sqrt()
+
+
+def _validate_anchored_reconciliation_batch(
     correct_features: torch.Tensor,
     negative_features: torch.Tensor,
     correct_cotangents: torch.Tensor,
+    reconciliation: ProgramReconciliationState,
+    reference_correct_features: torch.Tensor | None,
     *,
     step_size: float,
     relative_damping: float,
-) -> tuple[torch.Tensor, CounterfactualNullUpdateSummary]:
-    """Solve the small full-condition Gram and return one FP32 memory write."""
-
-    conditions = correct_features.shape[0] if correct_features.ndim == 2 else 0
-    if (
-        conditions <= 0
-        or negative_features.shape != correct_features.shape
-        or correct_cotangents.ndim != 3
-        or correct_cotangents.shape[0] != conditions
-        or min(correct_cotangents.shape[1:]) <= 0
-        or correct_features.device != negative_features.device
-        or correct_features.device != correct_cotangents.device
-        or not math.isfinite(step_size)
-        or step_size <= 0
-        or not math.isfinite(relative_damping)
-        or relative_damping <= 0
-    ):
-        raise ConditionUpdateError("invalid counterfactual-null update batch")
-    finite = torch.stack(
-        (
-            torch.isfinite(correct_features).all(),
-            torch.isfinite(negative_features).all(),
-            torch.isfinite(correct_cotangents).all(),
+) -> tuple[int, torch.Tensor]:
+    if correct_features.ndim != 2:
+        raise ConditionUpdateError("invalid anchored-reconciliation update batch")
+    conditions = correct_features.shape[0]
+    valid_batch = (
+        conditions > 0
+        and negative_features.shape == correct_features.shape
+        and correct_cotangents.ndim == 3
+        and correct_cotangents.shape[0] == conditions
+        and min(correct_cotangents.shape[1:]) > 0
+        and correct_features.device == negative_features.device
+        and correct_features.device == correct_cotangents.device
+    )
+    valid_state = (
+        reconciliation.precision.shape
+        == (correct_features.shape[1], correct_features.shape[1])
+        and reconciliation.precision.dtype == torch.float64
+        and reconciliation.precision.device == correct_features.device
+        and type(reconciliation.assimilated_rows) is int
+        and reconciliation.assimilated_rows >= 0
+    )
+    valid_scalars = (
+        math.isfinite(step_size)
+        and step_size > 0
+        and math.isfinite(relative_damping)
+        and relative_damping > 0
+    )
+    if not (valid_batch and valid_state and valid_scalars):
+        raise ConditionUpdateError("invalid anchored-reconciliation update batch")
+    if reference_correct_features is None:
+        reference_correct_features = correct_features.new_empty(
+            (0, correct_features.shape[1])
         )
-    ).all()
-    if not bool(finite):
-        raise ConditionUpdateError("counterfactual-null update contains non-finite values")
+    if (
+        reference_correct_features.ndim != 2
+        or reference_correct_features.shape[1:] != correct_features.shape[1:]
+        or reference_correct_features.device != correct_features.device
+    ):
+        raise ConditionUpdateError("invalid reconciliation reference features")
+    finite_values = (
+        correct_features,
+        negative_features,
+        correct_cotangents,
+        reconciliation.precision,
+        reference_correct_features,
+    )
+    if not all(bool(torch.isfinite(value).all()) for value in finite_values):
+        raise ConditionUpdateError("anchored reconciliation contains non-finite values")
+    return conditions, reference_correct_features
 
+
+def _anchored_linear_solve(
+    correct_features: torch.Tensor,
+    negative_features: torch.Tensor,
+    reconciliation: ProgramReconciliationState,
+    *,
+    relative_damping: float,
+) -> _AnchoredLinearSolve:
     features = torch.cat((correct_features, negative_features), dim=0).to(
         dtype=torch.float32
     )
@@ -349,48 +437,153 @@ def counterfactual_null_program_delta(
     mean_diagonal = gram.diagonal().mean()
     if not bool(torch.isfinite(mean_diagonal)) or float(mean_diagonal) <= 0:
         raise ConditionUpdateError("condition feature Gram has zero energy")
-    damping_tensor = float(relative_damping) * mean_diagonal
-    regularized = gram + torch.eye(
-        gram.shape[0],
-        dtype=torch.float64,
-        device=gram.device,
-    ) * damping_tensor
+    damping = float(relative_damping) * mean_diagonal
+    identity = torch.eye(gram.shape[0], dtype=torch.float64, device=gram.device)
     try:
-        cholesky = torch.linalg.cholesky(regularized)
+        precision_cholesky = torch.linalg.cholesky(reconciliation.precision)
+        precision_solve = torch.cholesky_solve(
+            small_features.transpose(0, 1), precision_cholesky
+        )
+        innovation = damping * identity + small_features @ precision_solve
+        innovation_cholesky = torch.linalg.cholesky(innovation)
+        blind_cholesky = torch.linalg.cholesky(gram + identity * damping)
     except RuntimeError as error:
-        raise ConditionUpdateError("condition feature Gram is not positive definite") from error
+        raise ConditionUpdateError(
+            "anchored reconciliation feature solve is not positive definite"
+        ) from error
+    gain = torch.cholesky_solve(
+        precision_solve.transpose(0, 1), innovation_cholesky
+    ).transpose(0, 1)
+    next_precision = (
+        reconciliation.precision
+        + small_features.transpose(0, 1) @ small_features / damping
+    ).contiguous()
+    eigenvalues = torch.linalg.eigvalsh(gram)
+    tolerance = 1e-5 * float(eigenvalues.abs().max())
+    precision_condition = float(torch.linalg.cond(reconciliation.precision))
+    innovation_condition = float(torch.linalg.cond(innovation))
+    if (
+        not bool(torch.isfinite(next_precision).all())
+        or not math.isfinite(precision_condition)
+        or not math.isfinite(innovation_condition)
+    ):
+        raise ConditionUpdateError("anchored reconciliation solve became invalid")
+    return _AnchoredLinearSolve(
+        features=features,
+        small_features=small_features,
+        gram=gram,
+        damping=damping,
+        gain=gain,
+        blind_cholesky=blind_cholesky,
+        next_precision=next_precision,
+        feature_rank=int((eigenvalues > tolerance).sum()),
+        precision_condition_number=precision_condition,
+        innovation_condition_number=innovation_condition,
+    )
 
-    # Only the 2N x 2N operator is solved in FP64.  Both the full Program RHS
-    # and the roughly 21M-value memory write remain FP32 for throughput.
-    inverse = torch.cholesky_inverse(cholesky)
-    correct_operator = inverse[:, :conditions].to(dtype=torch.float32)
+
+def _reference_motion_evidence(
+    reference_features: torch.Tensor,
+    solve: _AnchoredLinearSolve,
+    correct_gain: torch.Tensor,
+    cotangent_flat: torch.Tensor,
+    *,
+    step_size: float,
+) -> _ReferenceMotionEvidence:
+    rows = int(reference_features.shape[0])
+    if not rows:
+        return _ReferenceMotionEvidence(0, 0.0, 0.0, 1.0)
+    reference_small = reference_features.to(dtype=torch.float64)
+    reference_motion = -float(step_size) * (
+        (reference_small @ correct_gain).to(dtype=torch.float32) @ cotangent_flat
+    )
+    blind_gain = torch.cholesky_solve(
+        solve.small_features, solve.blind_cholesky
+    ).transpose(0, 1)[:, : correct_gain.shape[1]]
+    blind_motion = -float(step_size) * (
+        (reference_small @ blind_gain).to(dtype=torch.float32) @ cotangent_flat
+    )
+    reference_rows = _row_root_mean_square(reference_motion)
+    blind_rows = _row_root_mean_square(blind_motion)
+    return _ReferenceMotionEvidence(
+        rows=rows,
+        motion_rms=_root_mean_square(reference_motion),
+        blind_motion_rms=_root_mean_square(blind_motion),
+        improved_fraction=float(
+            (reference_rows < blind_rows).to(dtype=torch.float32).mean()
+        ),
+    )
+
+
+@torch.no_grad()
+def anchored_reconciliation_program_delta(
+    correct_features: torch.Tensor,
+    negative_features: torch.Tensor,
+    correct_cotangents: torch.Tensor,
+    reconciliation: ProgramReconciliationState,
+    *,
+    step_size: float,
+    relative_damping: float,
+    reference_correct_features: torch.Tensor | None = None,
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    AnchoredReconciliationUpdateSummary,
+]:
+    """Return one exact recursive anchored-ridge write and next precision."""
+    conditions, reference_correct_features = _validate_anchored_reconciliation_batch(
+        correct_features,
+        negative_features,
+        correct_cotangents,
+        reconciliation,
+        reference_correct_features,
+        step_size=step_size,
+        relative_damping=relative_damping,
+    )
+    solve = _anchored_linear_solve(
+        correct_features,
+        negative_features,
+        reconciliation,
+        relative_damping=relative_damping,
+    )
+    # Only feature-space solves use FP64; the 21M-value Program write stays FP32.
+    correct_gain = solve.gain[:, :conditions].to(dtype=torch.float32)
     cotangent_flat = correct_cotangents.to(dtype=torch.float32).flatten(1)
-    coefficients = correct_operator @ cotangent_flat
-    delta_flat = -float(step_size) * (features.transpose(0, 1) @ coefficients)
+    delta_flat = -float(step_size) * (correct_gain @ cotangent_flat)
     delta = delta_flat.reshape(
-        features.shape[1],
+        solve.features.shape[1],
         correct_cotangents.shape[1],
         correct_cotangents.shape[2],
     ).contiguous()
-
-    motion_operator = (gram @ inverse[:, :conditions]).to(dtype=torch.float32)
+    motion_operator = (solve.small_features @ solve.gain[:, :conditions]).to(
+        dtype=torch.float32
+    )
     predicted = -float(step_size) * (motion_operator @ cotangent_flat)
     correct_motion = predicted[:conditions]
     negative_motion = predicted[conditions:]
     correct_motion_rms = _root_mean_square(correct_motion)
     negative_motion_rms = _root_mean_square(negative_motion)
-    eigenvalues = torch.linalg.eigvalsh(gram)
-    tolerance = 1e-5 * float(eigenvalues.abs().max())
-    rank = int((eigenvalues > tolerance).sum())
-    condition = float(torch.linalg.cond(regularized))
-    if not bool(torch.isfinite(delta).all()) or not math.isfinite(condition):
-        raise ConditionUpdateError("counterfactual-null Program write became invalid")
-    return delta, CounterfactualNullUpdateSummary(
+    blind_operator = torch.cholesky_solve(
+        solve.gram[:, :conditions], solve.blind_cholesky
+    ).to(dtype=torch.float32)
+    blind_current = -float(step_size) * (blind_operator @ cotangent_flat)
+    blind_correct_rms = _root_mean_square(blind_current[:conditions])
+    reference = _reference_motion_evidence(
+        reference_correct_features,
+        solve,
+        solve.gain[:, :conditions],
+        cotangent_flat,
+        step_size=step_size,
+    )
+    if not bool(torch.isfinite(delta).all()):
+        raise ConditionUpdateError("anchored Program write became invalid")
+    return delta, solve.next_precision, AnchoredReconciliationUpdateSummary(
         correct_conditions=conditions,
         negative_conditions=conditions,
-        damping=float(damping_tensor),
-        feature_rank=rank,
-        regularized_gram_condition_number=condition,
+        damping=float(solve.damping),
+        feature_rank=solve.feature_rank,
+        precision_condition_number=solve.precision_condition_number,
+        innovation_condition_number=solve.innovation_condition_number,
         correct_cotangent_rms=_root_mean_square(correct_cotangents),
         predicted_correct_motion_rms=correct_motion_rms,
         predicted_negative_motion_rms=negative_motion_rms,
@@ -399,23 +592,53 @@ def counterfactual_null_program_delta(
             if correct_motion_rms > 0
             else torch.finfo(torch.float32).max
         ),
+        blind_predicted_correct_motion_rms=blind_correct_rms,
+        current_motion_to_blind_ratio=(
+            correct_motion_rms / blind_correct_rms
+            if blind_correct_rms > 0
+            else 1.0
+        ),
+        reference_correct_rows=reference.rows,
+        reference_motion_rms=reference.motion_rms,
+        blind_reference_motion_rms=reference.blind_motion_rms,
+        reference_to_blind_ratio=(
+            reference.motion_rms / reference.blind_motion_rms
+            if reference.blind_motion_rms > 0
+            else 0.0
+        ),
+        reference_rows_improved_fraction=reference.improved_fraction,
         value_delta_rms=_root_mean_square(delta),
+        assimilated_rows_before=reconciliation.assimilated_rows,
+        assimilated_rows_after=(
+            reconciliation.assimilated_rows + solve.features.shape[0]
+        ),
     )
 
 
 @torch.no_grad()
-def apply_program_residual_delta_(
+def apply_anchored_reconciliation_update_(
     memory: ProgramResidualMemory,
+    reconciliation: ProgramReconciliationState,
     delta: torch.Tensor,
+    next_precision: torch.Tensor,
+    *,
+    assimilated_rows_after: int,
 ) -> None:
-    """Apply one manual FP32 write without optimizer or hidden state."""
+    """Commit one prevalidated FP32 Program write and FP64 precision update."""
 
     if (
         delta.shape != memory.value.shape
         or delta.device != memory.value.device
+        or next_precision.shape != reconciliation.precision.shape
+        or next_precision.dtype != torch.float64
+        or next_precision.device != reconciliation.precision.device
+        or type(assimilated_rows_after) is not int
+        or assimilated_rows_after <= reconciliation.assimilated_rows
     ):
-        raise ConditionUpdateError("Program residual delta changed topology")
+        raise ConditionUpdateError("anchored Program update changed topology")
     memory.value.add_(delta.to(dtype=torch.float32))
+    reconciliation.precision.copy_(next_precision)
+    reconciliation.assimilated_rows = assimilated_rows_after
 
 
 @torch.no_grad()
@@ -453,24 +676,6 @@ def program_residual_delta_application_evidence(
         observed_motion_rms=_root_mean_square(observed),
         predicted_observed_max_abs=float(error.abs().max()),
         predicted_observed_relative_rms=float(relative),
-    )
-
-
-@torch.no_grad()
-def apply_program_residual_delta_with_evidence_(
-    memory: ProgramResidualMemory,
-    delta: torch.Tensor,
-    features: torch.Tensor,
-) -> ProgramDeltaApplicationSummary:
-    """Apply one write and verify it in CPU or one-shot profile oracles."""
-
-    before = memory(features).clone()
-    apply_program_residual_delta_(memory, delta)
-    return program_residual_delta_application_evidence(
-        memory,
-        delta,
-        features,
-        before,
     )
 
 

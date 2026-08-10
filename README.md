@@ -21,6 +21,33 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   提高，同时保持视频时序因果、same-task鲁棒、breadth和低checkpoint漂移。
 - 历史最好single checkpoint是v6-fast macro400：五臂
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+
+### Latest active boundary（2026-08-10）
+
+- 第38节Balanced DC--Causal v2已完成全部预定短窗证据：clean frozen`abd8e08` formal0→25，随后
+  macro0/10/25 strict correct400=`134/140/139`、breadth均6；per-task=
+  `0/5/48/34/0/35/11/1`、`1/2/48/31/0/38/20/0`、`2/4/48/30/0/38/17/0`。0→10、0→25、
+  10→25 paired gained/lost=`19/13,18/13,12/13`；macro0∪macro10=`153`，但single checkpoint仍未超过143，
+  且10→25已停止共同积累。因此v2 blind-add不续50、不补五臂/六臂、不扫超参。
+- 根因证据不是“LoRA能量不够”这一单轴解释：macro10的effective-BA delta/base中位仅`1.69498e-4`，
+  stable rank中位约`1.000022`、top-1 energy约`.999978`，形态仍近rank1；同时同task 50条视频的raw correction
+  consistency=`.141539--.142175`，几乎精确等于随机正交基准`.141421`，固定10-video effective-BA pair
+  cosine跨8 tasks为`[-.001371,.003280]`。blind-add正在叠加video-specific近正交小扰动，解释了偶然换手和
+  不能保留旧能力。
+- 当前唯一active implementation是第39节**Exact Anchored Reconciliation**。one-shot部署图完全不变，
+  仍是exact language + one action-hidden video→Balanced v2 P256 key→frozen v6 decoder→完整38-target rank16
+  LoRA；只把training update换成累计anchored ridge/RLS。每macro把目标锚在更新前的既有condition输出，
+  再加入当前correct descent与negative零增量；checkpoint增加training-only FP64`[256,256]` precision和
+  `assimilated_rows`，部署仍只读取FP32 Program memory。
+- RLS首步数学上精确退化为v2 blind solve，但后续显式保留旧correct rows；它与v2 checkpoint fresh-
+  incompatible。当前仅完成代码/config/CPU oracle，尚无A40或strict成绩。下一步是clean pushed/frozen
+  fresh0→3 profile；通过old-row drift、当前motion、24-task路径和`≤1.10` wall门后，才formal0→10并立即
+  strict400。fresh formal会预注册固定macro0和唯一macro10 strict root；10→25由immutable 400-row paired
+  evidence自动执行`correct>=140/lost<=6/breadth>=6`门，不能按结果择root或直接续训。当前没有运行中的
+  EMBER GPU任务。
+
+### Earlier completed evidence
+
 - v6-Prior whole-LoRA objective已完成formal 0→50和同一schedule四点strict correct400：
   macro0/10/25/50=`134/127/105/123`。macro0仍最佳，四点逐task envelope=`147`；该objective已停止，
   不续训、不扫权重、不为loser补五臂。
@@ -38,7 +65,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   gained/lost=`16/19`、churn35、net`-3`；相对ECP10=`133`为`19/21`、net`-2`。因此不续25、
   不补六臂、不扫tube weight/LR/WD。该结果只淘汰当时的tangent recipe/window；completion从未成立，
   不能扩大成“expert component本身无效”。
-- 当前没有运行中的EMBER GPU进程。第36节matched Expert-Flow Teacher
+- 第36节matched Expert-Flow Teacher
   Viability Audit已从clean frozen`e8e4728`完成：step2000 expert/macro0/tangent10的matched真实7维flow
   loss=`.098631/.091802/.091843`，expert只在`2/24` tasks、`0/4` suite means同时优于两baseline，明确未过
   `18/24+3/4` teacher-quality门。compiler/factor gradient residual=`.6864/.8387`虽非冗余，但不能把整体
@@ -48,7 +75,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 第37节Frozen-v6 Counterfactual-Null Program Residual v1已完成唯一macro49 profile并退役：13项门中
   10项通过，correct retention=`.807966`且24/24，但DC-dominated key使condition=`1315.33`、negative/
   correct=`.264351`、null仅15/24；production ratio=`1.115458`。不训练v1、不降lambda、不扫seed/P/阈值。
-- 当前唯一active implementation是第38节Balanced DC--Causal v2：strict freeze v6 macro400全部600
+- 第38节Balanced DC--Causal v2在当时是唯一active implementation：strict freeze v6 macro400全部600
   tensors，在fused Program后保留同一zero-init `[256,320,256]` FP32 memory和full48 update，只把video-DC
   static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。无optimizer、
   expert target、negative policy forward或第二LoRA。
@@ -57,7 +84,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   clean frozen`5d93434`的macro49 mechanism profile **13/13通过**：condition=`106.114`、correct/cotangent=
   `.968254`、negative/correct=`.0218514`、24/24 correct和24/24 null；A/B、4/4 fixed-action、closure、
   0 negative forward全部通过。production ratio=`.949122`，无checkpoint/OOM/nonfinite，六卡已释放。
-- mechanism与deployment artifact现均已seal；该阶段仍无v2训练或formal strict成绩。clean frozen`2af82aa`
+- mechanism与deployment artifact随后均seal；该阶段尚无v2训练或formal strict成绩。clean frozen`2af82aa`
   在空闲`gpu02:0`上以同一32-request/1093-frame panel实测batch8/16/32=`.911238/.901898/.906482 LoRA/s`，
   三者稳定且显存余量约32.4GiB，按最高实测吞吐选择batch8。随后validation8×state0 correct vertical smoke
   真实生成8套完整LoRA并完成8条LIBERO闭环，`4/8` success；该小样本只作执行证据，不是性能结论。
@@ -75,8 +102,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   wall=`867.152s`，400套LoRA由18 generators以54 batches、max batch8全部fresh生成，0 retry/OOM/nonfinite/
   forbidden reads，Writer释放/source复用且GPU已释放。与历史native macro0的400个paired rows在state、RNG、
   video和success上逐行完全相同，gained/lost=`0/0`；400套cache的30,400个LoRA tensors、514,867,200
-  values也全部bit-exact，不是只碰巧aggregate相等。因此下一步按门formal
-  fresh0→10并立即strict correct400；当前仍无v2非零memory成绩。
+  values也全部bit-exact，不是只碰巧aggregate相等。当时的下一步是formal fresh0→10；该训练与
+  macro10/25 strict结果现已完成，裁决以上方latest active boundary为准。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
@@ -113,7 +140,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 连续因果链已经收窄：whole-LoRA主要径向收缩；ECP补足expert分量却让大量正交方向漂移；Tangent
   控制相对半径却没有把shared update旋进expert方向；matched audit又证明expert flow在22/24 tasks上
   比macro0更差。当前把历史Condition-Kernel已证明的condition credit隔离与v6高增益decoder结合，直接
-  检验shared update geometry是否是最早可修复断点；先过真实机制/吞吐门，再以strict closed-loop裁决。
+  检验shared update geometry。v2已证明condition隔离有效但blind-add不保留旧能力；当前第39节只修
+  cumulative reconciliation，仍先过真实机制/吞吐门，再以strict closed-loop裁决。
 
 ## Data and evaluation
 

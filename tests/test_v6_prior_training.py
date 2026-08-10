@@ -77,6 +77,7 @@ def test_full48_gather_rejects_duplicate_or_missing_task_ordinals() -> None:
 def _profile_config() -> dict:
     return {
         "profile_run": {
+            "diagnostic_macros": 3,
             "throughput_baseline": {"step_seconds": 20.0},
             "gates": {
                 "feature_rank_min": 24,
@@ -91,21 +92,31 @@ def _profile_config() -> dict:
                 "negative_null_task_count_min": 18,
                 "oom_count": 0,
                 "nonfinite_count": 0,
+                "first_step_blind_ratio_abs_tolerance": 1e-5,
+                "old_panel_drift_rms_vs_blind_max": 0.5,
+                "old_correct_rows_improved_fraction_min": 0.75,
+                "current_correct_motion_vs_blind_min": 0.5,
             }
         }
     }
 
 
-def _profile_row() -> dict:
+def _profile_row(index: int) -> dict:
     return {
         "update": {
             "feature_rank": 24,
             "correct_cotangent_rms": 2.0,
             "predicted_correct_motion_rms": 1.0,
             "predicted_negative_to_correct_ratio": 0.1,
+            "current_motion_to_blind_ratio": 1.0 if index == 0 else 0.75,
+            "reference_to_blind_ratio": 0.0 if index == 0 else 0.4,
+            "reference_rows_improved_fraction": 1.0 if index == 0 else 0.8,
+            "assimilated_rows_before": index * 48,
+            "assimilated_rows_after": (index + 1) * 48,
+            "reference_correct_rows": index * 24,
         },
         "application": {"predicted_observed_relative_rms": 0.001},
-        "lora_response": {
+        "lora_response": None if index < 2 else {
             "lora_a_response_rms": 0.01,
             "lora_b_response_rms": 0.02,
             "fixed_action_response_rms": 0.03,
@@ -127,8 +138,12 @@ def _profile_row() -> dict:
     }
 
 
+def _profile_rows() -> list[dict]:
+    return [_profile_row(index) for index in range(3)]
+
+
 def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate() -> None:
-    passed, evidence = _profile_passes(_profile_config(), _profile_row())
+    passed, evidence = _profile_passes(_profile_config(), _profile_rows())
     assert passed is True
     assert all(evidence["checks"].values())
     mutations = (
@@ -143,15 +158,23 @@ def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate()
         ("lora_response", "lora_b_response_rms", float("inf")),
     )
     for section, key, value in mutations:
-        row = _profile_row()
-        row[section][key] = value
-        assert _profile_passes(_profile_config(), row)[0] is False
-    row = _profile_row()
-    row["production_kernel_seconds"] = 3.1
-    assert _profile_passes(_profile_config(), row)[0] is False
-    row = _profile_row()
-    row["negative_policy_forwards"] = 1
-    assert _profile_passes(_profile_config(), row)[0] is False
+        rows = _profile_rows()
+        rows[-1][section][key] = value
+        assert _profile_passes(_profile_config(), rows)[0] is False
+    rows = _profile_rows()
+    rows[-1]["production_kernel_seconds"] = 3.1
+    assert _profile_passes(_profile_config(), rows)[0] is False
+    rows = _profile_rows()
+    rows[-1]["negative_policy_forwards"] = 1
+    assert _profile_passes(_profile_config(), rows)[0] is False
+    for key, value in (
+        ("reference_to_blind_ratio", 0.51),
+        ("reference_rows_improved_fraction", 0.74),
+        ("current_motion_to_blind_ratio", 0.49),
+    ):
+        rows = _profile_rows()
+        rows[1]["update"][key] = value
+        assert _profile_passes(_profile_config(), rows)[0] is False
 
 
 def test_task_local_profile_keeps_all_24_retained_and_null_rows() -> None:

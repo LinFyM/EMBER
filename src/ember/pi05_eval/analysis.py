@@ -91,6 +91,16 @@ WRITER_FAMILIES = {
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
         "formal_statuses": ("sealed_from_live_residual_deployment_profile",),
     },
+    "v6_anchored_reconciliation_v3": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+        "config_schema": (
+            "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3"
+        ),
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+        "formal_statuses": ("sealed_from_live_residual_deployment_profile",),
+    },
 }
 
 
@@ -256,7 +266,10 @@ def _validate_episode_evidence(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_demo_offset": SAME_TASK_OTHER_OFFSET if same else None,
     }
-    if family_name == "v6_condition_residual_v2":
+    if family_name in {
+        "v6_condition_residual_v2",
+        "v6_anchored_reconciliation_v3",
+    }:
         expected.update(
             {
                 "writer_parameter_count": int(asset["writer_parameter_count"]),

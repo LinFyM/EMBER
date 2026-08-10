@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -24,6 +23,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     _ownership_contract,
     checkpoint_contract,
     cursor_contract,
+    decision_evaluation_contract,
 )
 from ember.expert_manifold.v6_prior_runtime import _resolve_segment
 from ember.pi05_source_checkpoint import DistributedContext
@@ -44,14 +44,16 @@ def _load_mutation(
     load_v6_prior_config(path)
 
 
-def test_canonical_residual_is_formal_ready_and_tangent_fails_closed() -> None:
+def test_canonical_residual_awaits_three_macro_profile_and_old_config_fails_closed() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
-    assert config["profile_run"]["status"] == "sealed_from_live_a40_macro49_profile"
+    assert config["profile_run"]["status"] == "awaiting_live_a40_fresh0_to3_profile"
     assert config["formal_run"]["status"] == (
-        "ready_after_live_mechanism_and_deployment_seals"
+        "blocked_until_live_profile_passes_and_is_sealed"
     )
-    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50), 0)
+    assert runtime_for_mode(config, "mechanism-profile") == (3, (), 0)
+    with pytest.raises(ExpertManifoldError, match="blocked by mechanism"):
+        runtime_for_mode(config, "formal")
     assert config["method"]["language_only_lora_path"] is False
     assert config["method"]["dynamic_value"] == "one_raw_teacher_video_only"
     assert config["program_residual"]["value_count"] == 20_971_520
@@ -95,11 +97,11 @@ def test_profile_seal_recomputes_macro_instead_of_trusting_passed_flags(
     result = {
         "schema_version": contract_module.V6_PRIOR_PROFILE_SCHEMA,
         "passed": True,
-        "schedule_macro": 49,
+        "schedule_macro": 0,
         "retain_weight": False,
         "gates": config["profile_run"]["gates"],
         "gate_evidence": gate_evidence,
-        "macro": {"raw": "recomputed"},
+        "macros": [{"raw": index} for index in range(3)],
         "content_hash_policy": "disabled_by_owner",
     }
     assert contract_module._profile_result_matches(config, result)
@@ -113,6 +115,22 @@ def test_formal_states_cannot_be_asserted_without_retained_artifacts() -> None:
     assert not contract_module._formal_state_matches(config)
     config["formal_run"]["status"] = "formal_running_or_resumable"
     assert not contract_module._formal_state_matches(config)
+
+
+def test_runtime_artifact_paths_are_confined_to_canonical_outputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    outputs = tmp_path / "runs/outputs"
+    outputs.mkdir(parents=True)
+    monkeypatch.setattr(contract_module, "REPO_ROOT", tmp_path)
+    assert contract_module._runtime_artifact_path(
+        "runs/outputs/formal/completion.json"
+    ) == outputs / "formal/completion.json"
+    with pytest.raises(ValueError, match="not canonical"):
+        contract_module._runtime_artifact_path("../escape.json")
+    with pytest.raises(ValueError, match="not canonical"):
+        contract_module._runtime_artifact_path(tmp_path / "absolute.json")
 
 
 def test_deployment_checkpoint_requires_active_authority_lineage(
@@ -140,10 +158,13 @@ def test_deployment_checkpoint_requires_active_authority_lineage(
             "checkpoint": str(configured_writer),
             "writer_state_tensor_count": 600,
             "writer_state_value_count": 12_064_064,
-            "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "residual_memory": (
+                "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
+            ),
         },
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
+        "reconciliation": config["reconciliation"],
         "update": config["update"],
         "ownership": inference_module._expected_residual_ownership(config),
         "world_size": 6,
@@ -204,7 +225,7 @@ def test_scientific_authorities_and_schedules_are_fixed(
 
 def _formal_ready_config() -> dict:
     config = _raw_config()
-    config["profile_run"]["status"] = "sealed_from_live_a40_macro49_profile"
+    config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to3_profile"
     config["profile_run"]["artifact_evidence"] = {"unit": "sealed"}
     config["status"] = "active_deployment_sealed_formal_ready"
     config["formal_run"]["status"] = "ready_after_live_mechanism_and_deployment_seals"
@@ -227,6 +248,12 @@ def _args(
         ),
         stop_after_macro=stop,
         num_workers=2,
+        macro0_evaluation_root=(
+            Path("/registered/macro0") if mode == "formal" else None
+        ),
+        macro10_evaluation_root=(
+            Path("/registered/macro10") if mode == "formal" else None
+        ),
     )
 
 
@@ -252,16 +279,21 @@ def test_formal_segments_must_stop_at_every_predeclared_decision_boundary(
         "read_json",
         lambda _path: {"git": {"commit": "a" * 40}},
     )
+    monkeypatch.setattr(
+        runtime_module,
+        "_formal_decision_evidence",
+        lambda *_args, **_kwargs: {"passed": True},
+    )
     config = _formal_ready_config()
-    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50), 0)
-    for start, stop in ((0, 10), (10, 25), (25, 50)):
+    assert runtime_for_mode(config, "formal") == (25, (10, 25), 0)
+    for start, stop in ((0, 10), (10, 25)):
         segment = _resolve_segment(
             _args(resume=None if start == 0 else start, stop=stop),
             config,
             _context(),
         )
         assert (segment.start_macro, segment.stop_macro) == (start, stop)
-    for start, stop in ((0, 25), (0, 50), (10, 50), (25, 25)):
+    for start, stop in ((0, 25), (0, 24), (10, 24), (25, 25)):
         with pytest.raises(ExpertManifoldError, match="sealed segment"):
             _resolve_segment(
                 _args(resume=None if start == 0 else start, stop=stop),
@@ -270,7 +302,29 @@ def test_formal_segments_must_stop_at_every_predeclared_decision_boundary(
             )
 
 
-def test_profile_is_one_fresh_macro49_and_cannot_retain_or_resume(
+def test_run_contract_pre_registers_decision_roots_without_checkpoint_coupling() -> None:
+    config = _formal_ready_config()
+    formal = decision_evaluation_contract(
+        _args(resume=None, stop=10),
+        config,
+    )
+    assert formal["macro0_reference_root"] == "/registered/macro0"
+    assert formal["macro10_registered_root"] == "/registered/macro10"
+    assert formal["macro0_reference_commit"] == config["formal_run"][
+        "decision_evaluation"
+    ]["macro0_reference_commit"]
+    assert decision_evaluation_contract(
+        _args(resume=None, stop=3, mode="mechanism-profile"),
+        config,
+    ) == {
+        "macro0_reference_root": None,
+        "macro0_reference_commit": None,
+        "macro10_registered_root": None,
+        "support_gate": None,
+    }
+
+
+def test_profile_is_fresh_zero_to_three_and_cannot_retain_or_resume(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -284,23 +338,20 @@ def test_profile_is_one_fresh_macro49_and_cannot_retain_or_resume(
         },
     )
     sealed = _raw_config()
+    sealed["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to3_profile"
     with pytest.raises(ExpertManifoldError, match="not in its launch state"):
         runtime_for_mode(sealed, "mechanism-profile")
-    config = deepcopy(sealed)
-    config["status"] = "active_implementation_cpu_sealed_awaiting_live_a40_profile"
-    config["profile_run"]["status"] = "awaiting_live_a40_macro49_profile"
-    config["profile_run"]["artifact_evidence"] = None
-    config["formal_run"]["status"] = "blocked_until_live_profile_passes_and_is_sealed"
+    config = _raw_config()
     segment = _resolve_segment(
-        _args(resume=None, stop=1, mode="mechanism-profile"), config, _context()
+        _args(resume=None, stop=3, mode="mechanism-profile"), config, _context()
     )
     assert (
         segment.total_macros,
         segment.schedule_origin,
         segment.checkpoint_macros,
     ) == (
-        1,
-        49,
+        3,
+        0,
         (),
     )
     with pytest.raises(ExpertManifoldError, match="sealed segment"):
@@ -326,6 +377,11 @@ def test_exact_resume_keeps_original_frozen_commit_after_authority_advances(
         "read_json",
         lambda _path: {"git": {"commit": original}},
     )
+    monkeypatch.setattr(
+        runtime_module,
+        "_formal_decision_evidence",
+        lambda *_args, **_kwargs: {"passed": True},
+    )
     segment = _resolve_segment(
         _args(resume=10, stop=25),
         _formal_ready_config(),
@@ -347,7 +403,54 @@ def test_exact_resume_keeps_original_frozen_commit_after_authority_advances(
         )
 
 
-def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -> None:
+def test_macro10_resume_requires_pre_registered_strict_support_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _formal_ready_config()
+    config["formal_run"]["decision_evaluation"][
+        "macro0_reference_root"
+    ] = "runs/outputs/macro0"
+    outputs = tmp_path / "runs/outputs"
+    macro0 = outputs / "macro0"
+    macro10 = outputs / "macro10"
+    checkpoint = tmp_path / "formal/checkpoints/macro_00000010"
+    macro0.mkdir(parents=True)
+    macro10.mkdir()
+    checkpoint.mkdir(parents=True)
+    args = argparse.Namespace(
+        mode="formal",
+        macro0_evaluation_root=macro0,
+        macro10_evaluation_root=macro10,
+        resume=checkpoint,
+    )
+    monkeypatch.setattr(runtime_module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(
+        runtime_module,
+        "load_anchored_reconciliation_decision_evidence",
+        lambda **_kwargs: {"passed": False},
+    )
+    with pytest.raises(ExpertManifoldError, match="did not pass"):
+        runtime_module._formal_decision_evidence(
+            args,
+            config,
+            {"commit": "a" * 40},
+            start_macro=10,
+        )
+    monkeypatch.setattr(
+        runtime_module,
+        "load_anchored_reconciliation_decision_evidence",
+        lambda **_kwargs: {"passed": True, "checks": {"unit": True}},
+    )
+    assert runtime_module._formal_decision_evidence(
+        args,
+        config,
+        {"commit": "a" * 40},
+        start_macro=10,
+    )["passed"] is True
+
+
+def test_checkpoint_owns_program_and_training_only_reconciliation_state() -> None:
     ownership = V6PriorOwnership(10_775_296, 523, 600)
     writer = SimpleNamespace(
         condition_feature=SimpleNamespace(
@@ -357,7 +460,10 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
             value=torch.empty((256, 320, 256), dtype=torch.float32, device="meta")
         ),
     )
-    observed = _ownership_contract(ownership, writer)
+    reconciliation = SimpleNamespace(
+        precision=torch.empty((256, 256), dtype=torch.float64, device="meta")
+    )
+    observed = _ownership_contract(ownership, writer, reconciliation)
     assert observed["historical_v6_base"]["checkpoint_owned"] is False
     assert observed["fixed_projection"]["persistent"] is False
     assert observed["program_residual_memory"] == {
@@ -368,6 +474,14 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
         "manual_update": True,
         "checkpoint_owned": True,
         "deployment_owned": True,
+    }
+    assert observed["reconciliation_precision"] == {
+        "shape": [256, 256],
+        "dtype": "torch.float64",
+        "value_count": 65_536,
+        "trainable": False,
+        "checkpoint_owned": True,
+        "deployment_owned": False,
     }
     run = {
         "schema_version": "launch-v1",
@@ -380,17 +494,20 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
             "checkpoint": "/v6/writer.safetensors",
             "writer_state_tensor_count": 600,
             "writer_state_value_count": 10_000,
-            "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "residual_memory": (
+                "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
+            ),
         },
         "condition_feature": {"kind": "fixed"},
         "program_residual": {"value_count": 20_971_520},
+        "reconciliation": {"kind": "exact_rls"},
         "update": {"kind": "full48"},
         "ownership": observed,
         "runtime": {"world_size": 6, "rank_topology": [{"rank": i} for i in range(6)]},
     }
     checkpoint = checkpoint_contract(run)
     assert checkpoint["initialization"]["residual_memory"] == (
-        "fresh_zero_then_memory_only_exact_resume"
+        "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
     )
     assert checkpoint["ownership"] == observed
     assert cursor_contract(_raw_config(), 25) == {
@@ -403,4 +520,5 @@ def test_checkpoint_owns_only_fp32_program_memory_and_preserves_zero_lineage() -
         "videos_per_task_visit": 1,
         "action_queries_per_task": 20,
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "assimilated_rows": 1200,
     }

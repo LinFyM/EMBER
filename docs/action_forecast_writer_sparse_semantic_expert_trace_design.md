@@ -146,9 +146,10 @@ exact resume。不增加大而泛的fallback或防御性hash。
 
 ## 8. A40 profile与formal裁决
 
-实现后live比较`gpu01/gpu02`，只用最多6张空闲A40。先profile longest105、logical B20、policy
-B2、16-frame chunk、fresh0→1及same-root exact-resume1→3；保持3+3 NUMA和显式
-`NCCL_P2P_DISABLE=1`。若OOM，先减descriptor encoder chunk或做optimizer state分片，不改B20、
+本设计当时写入的最多6张/固定3+3设备合同已由2026-08-11当前authority撤回，且本设计不是active入口。
+任何未来fresh重启须live比较`gpu01/gpu02`，在单节点使用所有真正空闲且提高吞吐的A40，并按实际world size
+重封NUMA；exact-resume才锁原拓扑。科学profile仍为longest105、logical B20、policy B2、16-frame chunk、
+fresh0→1及same-root exact-resume1→3；保持显式`NCCL_P2P_DISABLE=1`。若OOM，先减descriptor encoder chunk或做optimizer state分片，不改B20、
 K4或task数。profile权重弃用。
 
 formal从identity fresh0→200、每25保存，严格评50/100/150/200 correct400。只由single

@@ -137,8 +137,10 @@ evidence projection`3,072`，sealed总数应为`60,926,976`。Writer参数量已
 6. Reader/axis shape、source freeze、全部新增参数在identity lifecycle后finite可达；
 7. fresh checkpoint、exact resume、实际6-rank ownership与A40 longest105 B20 profile闭合。
 
-profile仍在live比较`gpu01/gpu02`后只用最多6张空闲A40，固定3+3 NUMA与显式
-`NCCL_P2P_DISABLE=1`。只做fresh0→1、same-root exact-resume1→3；权重弃用。通过后才从
+本设计当时的profile合同曾写为最多6张及固定3+3 NUMA；该设备上限已由2026-08-11当前authority撤回，且
+本设计并非active入口。任何未来fresh重启都须重新live比较`gpu01/gpu02`，在单节点使用所有真正空闲且提高
+吞吐的A40并重新封存world-size/NUMA；exact-resume才锁原拓扑。多卡仍显式
+`NCCL_P2P_DISABLE=1`。当时计划只做fresh0→1、same-root exact-resume1→3；权重弃用。通过后才从
 identity formal0→200并固定评50/100/150/200。
 
 ## 8. 预注册裁决

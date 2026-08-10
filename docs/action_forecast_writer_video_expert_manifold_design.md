@@ -1232,7 +1232,7 @@ fresh root完成validation8×state0 correct的8 video→8 LoRA→cache→Writer 
 GPU自然释放；success count只作execution信息。config seal必须记录选定batch、候选吞吐比较、peak
 allocated/reserved、redundant Writer forwards=`0`和release/reuse证据，不再记录direct max-abs门。
 profile与vertical public入口都在任何模型load/worker spawn前要求目标卡无compute applications且为
-`NVIDIA A40`；普通evaluator合计最多6卡。profile还要求clean pushed、validation/correct/
+`NVIDIA A40`；当时普通evaluator封存为合计最多6卡，该旧owner cap已由第40节和当前authority撤回。profile还要求clean pushed、validation/correct/
 without-replacement、单卡单replica/generator及至少`8/16/32`真实候选，并在独立单卡worker里再次live
 preflight和核对checkout。evaluation seal只能由两个retained roots的artifact assembler生成，要求各候选
 完整fixed panel一致，不能手填。
@@ -2903,3 +2903,21 @@ same-task-other/wrong/shuffled/reversed/no-video；完成后support gate才决�
 目录rename发布canonical root。任何失败或遵守canonical launcher的并发占用都不覆盖既有root，也不留下空
 root；正式Reward family的condition若不属于预注册六臂（包括`shuffled_keep_first`）会在发布前拒绝。该收口
 只增加CPU fail-close检查，不增加训练或rollout forward，不改变GPU拓扑和吞吐。
+
+## 40. Reward-Credit formal终局与native compiler后继（2026-08-11 override）
+
+第39.5--39.9节的formal动作现已完成：clean frozen`e3857f7`的cycle1 correct400仍为`134/400`、
+breadth6，相对zero-Program macro0为`14 gained / 14 lost`，因此Reward cycle2与超参扫描均关闭。
+
+后续逐层证据没有否定video/Program/continuous Reward tangent，而是把首断点定位到q/v tiny factor delta
+无法跨越非零BF16 A/B的native ULP。当前唯一active design已分离到：
+
+`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`
+
+它只改变36个q/v targets的物理slot编译：pivot-preserving rank14 base + condition-local rank2 physical
+zero-B residual；action保持full-rank16 FP32。现有full80证据只是generation geometry，下一裁决必须先做
+新compiler macro0 strict400，再有条件做cycle1 Program load-only strict400；两项行为门前不授权新训练。
+本节覆盖39.8/39.9残留的“formal待启动”“active config formal_ready”等历史当前表述。
+
+设备策略同时覆盖本文历史“最多6卡”：每次live比较`gpu01/gpu02`，使用单节点当时所有真正空闲且提高
+有效吞吐的A40；当前8-card evaluator config不再受额外6-card软件上限，不等待凑卡或dummy占位。

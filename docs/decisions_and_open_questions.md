@@ -1,9 +1,10 @@
 # Decisions and Open Questions
 
-状态说明（2026-08-10）：本文主体是早期v4/v5/v5.1决策账本；其中“当前唯一活动v5.1”、A100物理GPU4--7
-和旧profile/分段训练表述均已退役，不得恢复执行。当前唯一active implementation是Expert-Manifold总设计
-第38节Balanced DC--Causal v2；实时设备边界、方法状态和下一动作只取`AGENTS.md`、
-`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。未被新证据覆盖的数据/split/信息墙决定仍有效。
+状态说明（2026-08-11）：本文主体是早期v4/v5/v5.1决策账本；其中“当前唯一活动v5.1”、A100物理GPU4--7
+和旧profile/分段训练表述均已退役，不得恢复执行。当前唯一active design是
+`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；实时设备边界、方法状态和下一动作只取
+`AGENTS.md`、`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。未被新证据覆盖的数据/split/
+信息墙决定仍有效。
 
 ## 已拍板
 

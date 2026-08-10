@@ -18,7 +18,6 @@ from ember.eval_adapters import (
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
-    MAX_OWNER_GPU_COUNT,
     RUNTIME_OMP_THREADS,
     RUNTIME_REPLICA_PROFILES,
     RUN_CONTRACT_SCHEMA,
@@ -43,11 +42,10 @@ def _resolve_gpu_ids(
     if (
         not values
         or len(set(values)) != len(values)
-        or len(values) > MAX_OWNER_GPU_COUNT
         or any(index < 0 or index >= configured for index in values)
     ):
         raise Pi05EvaluationError(
-            "physical GPU subset is invalid or exceeds the owner six-GPU limit"
+            "physical GPU subset is invalid or exceeds the configured node topology"
         )
     return values
 

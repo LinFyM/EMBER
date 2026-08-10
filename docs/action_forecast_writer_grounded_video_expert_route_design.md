@@ -141,9 +141,11 @@ outcome-selected centers。真实vertical path足以给证据时不扩展大而�
 
 ## 9. A40与正式裁决
 
-route artifact input-only gate通过后，live比较`gpu01/gpu02`并只使用最多6张空闲A40。先以现有
-logical B20、policy B2、K4、16-frame chunk、longest105做fresh0→1与same-root exact-resume1→3；
-保持显式`NCCL_P2P_DISABLE=1`和3+3 NUMA。route address复用现有forward，预期显存不高于上一
+本设计当时写入的最多6张/固定3+3设备合同已由2026-08-11当前authority撤回，且本设计不是active入口。
+任何未来fresh重启须live比较`gpu01/gpu02`，在单节点使用所有真正空闲且提高吞吐的A40，并按实际world size
+重新封存NUMA；exact-resume才锁原拓扑。科学面板仍是logical B20、policy B2、K4、16-frame chunk、
+longest105，先做fresh0→1与same-root exact-resume1→3；保持显式`NCCL_P2P_DISABLE=1`。route address复用
+现有forward，预期显存不高于上一
 sparse profile45.59GB，但必须实测。
 
 formal从identity fresh0→200、every25 checkpoint，严格评50/100/150/200 correct400；只由single

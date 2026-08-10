@@ -1,5 +1,42 @@
 # EMBER Findings
 
+## Reward-Credit formal non-pass后的首断点：native q/v factor lattice（2026-08-11）
+
+- clean frozen`e3857f7`已完成Reward-Credit formal cycle0→1和预注册correct400。训练24 tasks/96 rollouts、
+  B8、0 OOM/nonfinite；strict=`134/400`、breadth6、per-task=`1/4/46/31/0/38/14/0`，相对zero-Program
+  macro0严格`14 gained / 14 lost`。故不续cycle2、不补controls、不扫reward scale/K/Nmc/RLS参数。
+- 对同一cycle1 checkpoint的逐层诊断显示：correct Program的task-common/same-video结构约`.974/.961`，
+  wrong/shuffled/reversed输出量级约correct的`1.15%`；analytic FactorHead tangent与continuous effective BA
+  仍约`.979/.961`和`.982/.959`。所以视频、Program或continuous decoder不是第一个失效接口。
+- 36个q/v target在native BF16 materialization时才断裂：factor delta约`1e-8 RMS`，非零A/B局部ULP约
+  `1e-4`；own-target cosine约`.0368`、error-to-zero约`.9994`，约125万q/v coordinates中每video仅约497
+  改变。action四个FP32 factors继续健康。被否定的是“把tiny cotangent直接加到非零BF16 factors”，不是
+  Reward signal本身。
+- FP16 direct control的all/expert cosine仅`.064/.071`；fixed dither、ULP/local-CD、gauge/global scale以及
+  `G0/G0+T` absolute rank16 refactor都失败。local-CD K4 same-video cosine约`.217`、error-to-zero约`.977`；
+  absolute refactor的delta cosine`.0045--.0213`、norm ratio`8.7--182`。不再扫描这些数值补丁。
+
+## Q/V pivot-preserving rank14+2：generation门通过，行为仍未知（2026-08-11）
+
+- rank1 stable tangent capture不足；rank2 capture约`.9996`且是最小充分点。action rank2 cosine仅
+  `.91--.95`且action原本FP32，所以唯一合理结构是36个q/v targets保留rank14 base + 2个physical zero-B
+  residual slots，两个action targets保持原full-rank16 FP32。
+- q/v residual的数学对象是一阶`T=B0 dA+dB A0`，不含`dB dA`；action实际factor候选保留这个小二阶项。
+  correct-video zero-Program仍是rank14 v6 base；只有no-video fast path返回template-A/zero-B source identity。
+- full80 artifact=
+  `runs/outputs/pi05_reward_qv_pivot_rank14_plus2_transport_v1_e3857f7_20260811/analysis.json`。288个q/v
+  pairs、16个action pairs均finite；kept B bit-exact、residual B exact zero、2880/2880 carrier A rows nonzero。
+  q/v base error约`.0007523`、task max≤`.001302`，rank2 capture`.9997088`，dynamic energy-weighted cosine
+  `.9975247`、error-to-zero`.07218`、task-common`.998448`、video-centered`.950556`，action exact。
+- base reconstruction error相对Reward innovation仍约`1727x`，artifact明确为0 policy forward/0 rollout/0
+  update。generation geometry只解锁真实vertical和strict400，不能宣称性能。
+- 正确证据顺序是：新graph单卡B8/16/32吞吐profile + cycle1四suitefixed-action vertical；先新rank14
+  zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
+  只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性
+  non-pass，不授权新训练。旧两个400 roots不重跑，旧LoRA cache不复用。
+- 评测parallel topology被scientific projection明确排除，故不同空卡数不破坏paired身份。旧软件额外把
+  配置中的8卡截成最多6卡，只会损失吞吐，现已删除；仍坚持单节点dynamic queue，不为跨节点碎片重写launcher。
+
 ## Reward-Credit首次A40 profile：主链成立，固定probe门设计non-pass（2026-08-10）
 
 - clean frozen`c4507e9f4872a88cccca37ca7956371bd8a18bd4`在空闲`gpu02:0--5`完成root=

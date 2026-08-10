@@ -130,8 +130,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--gpu-indices",
         help=(
-            "Comma-separated live-checked physical GPU indices; required when the "
-            "host authority exposes more than the owner limit of six GPUs."
+            "Comma-separated live-checked physical GPU indices to use on one host; "
+            "all listed devices must satisfy the configured topology and live-idle checks."
         ),
     )
     parser.add_argument("--source-sft-config", type=Path)

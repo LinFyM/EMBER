@@ -80,7 +80,9 @@ AS与未来reward credit完全相同，不是监督专用loss或LIBERO outcome t
 CPU合同新增：raw frequency energy ratio在输出中保持、每视频总trace energy与旧scale target匹配、
 zero/order/K4 permutation不变；其余shape/freeze/gradient/checkpoint合同沿用。
 
-clean commit后在live最多6张空闲A40上做longest105、K4/B20/B2、16-frame chunk的
+本设计当时写入的最多6张设备合同已由2026-08-11当前authority撤回，且本设计不是active入口。任何未来
+fresh重启须live比较`gpu01/gpu02`，在单节点使用所有真正空闲且提高吞吐的A40，并按实际world size重封
+NUMA/NCCL合同；exact-resume才锁原拓扑。科学profile仍为longest105、K4/B20/B2、16-frame chunk的
 fresh0→1与exact-resume1→3。通过后才从identity fresh0→200，并严格评50/100/150/200。
 
 预注册机制判断：

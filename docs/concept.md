@@ -1,10 +1,10 @@
 # EMBER Concept
 
-状态说明（2026-08-10）：本文保留长期问题定义和信息面；正文中把v5/v5.1写作“当前”的段落是历史设计
-快照，不是执行authority。当前唯一active implementation是
-`docs/action_forecast_writer_video_expert_manifold_design.md`第38节Balanced DC--Causal frozen-v6
-Program Residual v2；实时状态和下一动作只取`AGENTS.md`、`docs/active_session_handoff.md`与
-`docs/execution_brief.md`顶部。
+状态说明（2026-08-11）：本文保留长期问题定义和信息面；正文中把v5/v5.1写作“当前”的段落是历史设计
+快照，不是执行authority。当前唯一active design是
+`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；它先裁决q/v rank14 base与现有
+Reward cycle1 Program的load-only native rank14+2行为，不授权新训练。实时状态和下一动作只取
+`AGENTS.md`、`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。
 
 ## 一句话定义
 

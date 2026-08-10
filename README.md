@@ -22,60 +22,31 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - 历史最好single checkpoint是v6-fast macro400：五臂
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-### Latest active boundary（2026-08-10）
+### Latest active boundary（2026-08-11）
 
-- 第38节Balanced DC--Causal v2已完成全部预定短窗证据：clean frozen`abd8e08` formal0→25，随后
-  macro0/10/25 strict correct400=`134/140/139`、breadth均6；per-task=
-  `0/5/48/34/0/35/11/1`、`1/2/48/31/0/38/20/0`、`2/4/48/30/0/38/17/0`。0→10、0→25、
-  10→25 paired gained/lost=`19/13,18/13,12/13`；macro0∪macro10=`153`，但single checkpoint仍未超过143，
-  且10→25已停止共同积累。因此v2 blind-add不续50、不补五臂/六臂、不扫超参。
-- 根因证据不是“LoRA能量不够”这一单轴解释：macro10的effective-BA delta/base中位仅`1.69498e-4`，
-  stable rank中位约`1.000022`、top-1 energy约`.999978`，形态仍近rank1；同时同task 50条视频的raw correction
-  consistency=`.141539--.142175`，几乎精确等于随机正交基准`.141421`，固定10-video effective-BA pair
-  cosine跨8 tasks为`[-.001371,.003280]`。blind-add正在叠加video-specific近正交小扰动，解释了偶然换手和
-  不能保留旧能力。
-- 第39节**Exact Anchored Reconciliation**随后已完成formal fresh0→10与预注册macro10 strict correct400：
-  `140/400`、breadth6；相对exact macro0=`134`的paired gained/lost=`21/15`，未过`lost<=6`，相对blind-v2
-  macro10同为140且仍有`17/17`换手。RLS没有把内部历史保留转化为closed-loop retention，因此已退役：
-  不续25、不补六臂、不扫damping/step/window/forgetting，fresh/restart/resume均fail closed。它的profile、
-  formal和strict artifacts继续作为历史证据，不能授权新RLS运行。
-- 当前唯一active implementation是第39.5节**Reward-Credit Program Cotangent**，active config为
-  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，live profile已经从raw artifact封存并置为
-  `formal_ready`；尚无训练checkpoint或strict结果。one-shot部署图完全不变：exact
-  language + exactly one action-hidden video→Balanced P256 key→frozen historical-v6 decoder→single FP32
-  Program→完整38-target rank16 LoRA；没有language bypass、few-shot、expert-bank deployment或第二套LoRA。
-- 训练从fresh`M0=0,Lambda0=I`开始，禁止继承RLS10。每task同一套LoRA做K4 batch4 official random-reset
-  rollouts，成功与失败均保留executed prefix；binary LOO credit在全成/全败task严格为零，mixed task按episode
-  等权、Nmc4 keyed CFM直接形成完整LoRA signed gradient并VJP到Program。六rank×4 tasks、BF16、四persistent
-  env lanes与deferred NCCL保持。
-- clean frozen`c4507e9`的首次full24 discarded profile已在`gpu02:0--5`自然exit0，但按预注册门正式
-  `passed=false`，不能追认通过。它完成24 tasks/96 rollouts，得到11 mixed+13 homogeneous、full48 rank48、
-  negative/correct motion`.017081`、closure error`0`、LoRA A/B response非零，唯一失败是固定action probes
-  `1/4`。根因是固定ordinals`0/7/14/21`中只有0是mixed，另外三个按合同zero credit；因此旧门错误要求
-  homogeneous task必须发生action change。旧root保持immutable且不进入formal。
-- 新profile合同改为穷举**全部mixed tasks**：每task使用K4真实首状态与原始policy-noise，before/after各一次
-  batch4 forward，要求所有mixed task的Program→LoRA→BF16 action均非零并覆盖四suite；homogeneous仍要求
-  cotangent exact zero并单独报告shared drift。live B2仅占`16.34/19.42GB` allocated/reserved，故重跑直接
-  使用physical B8，不为低位差异降速；同时冻结由旧profile wall得到的one-task-per-suite静态均衡rank map，
-  full24样本、task等权、K4、Nmc4、BF16和full48数学均不变。
-- clean frozen`e6024cf`的新B8/all-mixed profile已在`gpu02:0--5`自然完成并正式`passed=true`：24 tasks、
-  96 rollouts、11 mixed/13 homogeneous、full48 rank48、negative/correct=`.017048`、closure=`0`；全部11个
-  mixed task的LoRA A/B/action均finite/nonzero并覆盖四suite，homogeneous均exact-zero direct credit。
-  raw forward counts唯一反推出physical B8，总functional invocations=`928`，0 OOM/nonfinite/watchdog，且
-  不保留checkpoint。wall=`507.305s`，峰值allocated/reserved=`36.576/40.928GB`。
-- 相同科学面板下B8使mixed credit sum降低`15.01%`；冻结balanced map使rank-local critical proxy从旧
-  `547.928s`降至`383.947s`，总profile wall降低`8.47%`，同时承担了更强的11-task action probe。封存校验会
-  从raw `(chunks,Nmc,forwards)`重新证明唯一B8并匹配run/completion/invocation，不依赖启动日志中的旧展示值。
-- formal evaluator已补齐不影响吞吐的launch门：Reward-Credit deployment精确锁B8；validation 8×50、
-  without-replacement、同一clean pushed/frozen training/evaluation commit和预注册root全部绑定；historical
-  checkpoint不能占用cycle root。correct400必须先完成，首次`>=144`的checkpoint才开放五个controls，且
-  control触发不依赖cycle2 support。prepare以NFS同目录原子`mkdir`锁串行化同root准备，只在私有staging
-  通过全部CPU校验后以一次目录rename发布canonical root；正式Reward条件只接受预注册六臂。
-- 当前profile/formal-seal代码加载`.env.local`后的全仓回归为`358 passed in 23.72s`，architecture guard为
-  0 hard violation且无parallel implementation family。
-- 下一动作是完成当前profile-seal commit/push和新的formal frozen worktree，实时双节点/quota preflight后从
-  `M0=0,Lambda0=I`只跑formal cycle0→1；随后立即做预注册strict correct400，不跑80-row screen。当前没有
-  运行中的EMBER GPU任务。
+- Reward-Credit已从clean frozen`e3857f7`完成formal cycle0→1和预注册correct400。训练natural exit0、
+  24 tasks/96 rollouts、B8、0 OOM/nonfinite；strict仍为`134/400`、breadth6、per-task=
+  `1/4/46/31/0/38/14/0`，相对zero-Program macro0为`14 gained / 14 lost`。它没有达到cycle2或controls门，
+  因此不续训、不扫reward scale/K/Nmc/RLS参数。
+- 该non-pass的首断点不是video/Program：correct的task-common和same-video结构从P256 Program保留到analytic
+  FactorHead tangent与continuous effective BA；wrong/shuffled/reversed Program量级约correct的`1.15%`。
+  真正失败发生在q/v原生BF16 factor materialization：约`1e-8 RMS`的factor delta小于非零A/B约`1e-4`
+  的局部ULP，native own-target cosine仅约`.037`；action FP32 factors保持健康。
+- FP16 direct、dither、local-CD、gauge/global scale和absolute rank16 refactor都有直接non-pass。当前唯一active
+  design是`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`：36个q/v targets保留14个
+  pivot-selected原生B columns并重解A，两个physical zero-B slots写condition-local rank2 Reward residual；
+  两个action targets保持原full-rank16 FP32。对外仍是一套38-target public rank16 LoRA。
+- full80 generation-only门已通过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture
+  `.9997088`，dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact。但artifact明确为
+  0 policy forward/0 rollout/0 update，不能作为性能结果。
+- 下一顺序是单一canonical load-only compiler与CPU门；单卡同32-request panel的B8/16/32吞吐profile和
+  cycle1 four-suite fixed-action vertical；先新rank14 zero-Program strict400。若correct<130、breadth<6或
+  相对旧134 lost>10，直接reject并省去第二个400；只有base过门才读取原84MB Program做rank14+2 cycle1
+  strict400。只有correct≥144、breadth≥6、lost≤6且gained>lost才算load-only通过并补同checkpoint controls；
+  140--143是诊断性non-pass，不授权fresh训练。两项行为门前不启动训练。
+- 当前没有EMBER GPU进程。每次同时live检查`gpu01/gpu02`，选择一个节点并使用该节点所有真正空闲、健康且
+  提高有效吞吐的A40；没有固定6卡上限，不等待凑卡、不dummy占位、不为跨节点碎片改launcher，也不触碰
+  他人compute进程。训练多卡继续遵守NCCL/NUMA/deferred-NCCL合同。
 
 ### Earlier completed evidence
 
@@ -119,9 +90,9 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   在空闲`gpu02:0`上以同一32-request/1093-frame panel实测batch8/16/32=`.911238/.901898/.906482 LoRA/s`，
   三者稳定且显存余量约32.4GiB，按最高实测吞吐选择batch8。随后validation8×state0 correct vertical smoke
   真实生成8套完整LoRA并完成8条LIBERO闭环，`4/8` success；该小样本只作执行证据，不是性能结论。
-- 双root verifier已共同通过同一commit的profile root、vertical `results.json`和native LoRA cache manifest，
+- 双root verifier当时已共同通过同一commit的profile root、vertical `results.json`和native LoRA cache manifest，
   并核对单次launcher、8 rows/entries、76 tensors、Writer release/source reuse和零禁止读取。config/runtime
-  现为formal ready。写回后的clean frozen worktree首次CPU-only formal prepare在CUDA初始化前发现一个纯工程
+  当时为formal ready。写回后的clean frozen worktree首次CPU-only formal prepare在CUDA初始化前发现一个纯工程
   问题：`runs`软链接解析到canonical仓库后被旧verifier误判为越界。`af7b101`已把路径owner收窄修复，
   nested symlink逃逸仍拒绝；全仓`285 passed in 21.38s`。同一clean frozen commit的prepare现已exit0并确认
   8×50 correct/no-replacement、historical-v6+exact-zero residual macro0、18 rollout workers + 18 Writer
@@ -208,9 +179,11 @@ scripts/train_v6_prior_writer.py
 scripts/evaluate_pi05.py
 ```
 
-GPU工作必须实时检查`gpu01/gpu02`，只用空闲A40、合计最多6张，不干扰他人；多卡显式
-`NCCL_P2P_DISABLE=1`并遵守NUMA physical/local rank和deferred-NCCL合同。不得为验证身份生成或比较
-SHA-256/MD5；吞吐、有效显存利用和尽快获得真实严格评测优先。
+GPU工作必须实时检查`gpu01/gpu02`，选择一个节点并使用该节点所有真正空闲、健康且提高有效吞吐的A40；
+没有固定6卡上限，不等待凑卡、不dummy占位、不为跨节点碎片改launcher、不干扰他人。训练多卡显式
+`NCCL_P2P_DISABLE=1`并遵守NUMA physical/local
+rank和deferred-NCCL合同。不得为验证身份生成或比较SHA-256/MD5；吞吐、有效显存利用和尽快获得真实
+严格评测优先。
 
 ## Required reading
 
@@ -221,8 +194,9 @@ SHA-256/MD5；吞吐、有效显存利用和尽快获得真实严格评测优先
 3. `docs/active_session_handoff.md`
 4. `docs/execution_brief.md`
 5. `docs/action_forecast_writer_video_expert_manifold_design.md`
-6. `task_plan.md`
-7. `findings.md`
-8. `progress.md`
+6. `docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`
+7. `task_plan.md`
+8. `findings.md`
+9. `progress.md`
 
 历史设计保留为证据而非活动实现；改变其拥有的接口前，按handoff实验谱系读对应design到EOF。

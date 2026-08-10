@@ -1,9 +1,10 @@
 # Novelty and Baseline Landscape
 
-状态说明（2026-08-10）：下方2026-08-06 layer-aligned hypernetwork、K4和v5.1文字是历史定位，
-不是活动方法。当前唯一active implementation是Expert-Manifold总设计第38节Balanced DC--Causal
-frozen-v6 Program Residual v2；其机制与性能尚待live A40 profile/strict closed-loop裁决。实时状态只取
-`AGENTS.md`、`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。
+状态说明（2026-08-11）：下方2026-08-06 layer-aligned hypernetwork、K4和v5.1文字是历史定位，
+不是活动方法。当前唯一active design是`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；
+Reward cycle1已有strict134，当前只裁决tiny video-conditioned Reward tangent能否通过q/v physical zero-B
+slots进入真实closed-loop。实时状态只取`AGENTS.md`、`docs/active_session_handoff.md`与
+`docs/execution_brief.md`顶部。
 
 ## 2026-08-06 历史layer-aligned hypernetwork定位
 

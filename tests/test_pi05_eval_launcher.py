@@ -118,9 +118,11 @@ def test_storage_root_requires_explicit_host_configuration(
         runtime_launcher._storage_root()
 
 
-def test_gpu_preflight_rejects_more_than_the_owner_six_gpu_limit() -> None:
-    with pytest.raises(Pi05EvaluationError, match="six-GPU limit"):
-        runtime_launcher.gpu_preflight(tuple(range(7)))
+def test_gpu_preflight_rejects_duplicate_or_negative_gpu_indices() -> None:
+    with pytest.raises(Pi05EvaluationError, match="selection is invalid"):
+        runtime_launcher.gpu_preflight((0, 0))
+    with pytest.raises(Pi05EvaluationError, match="selection is invalid"):
+        runtime_launcher.gpu_preflight((-1,))
 
 
 def test_writer_generation_batch_size_accepts_measured_positive_values() -> None:

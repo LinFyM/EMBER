@@ -63,17 +63,23 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   finite/nonzero且覆盖四suite，homogeneous direct credit全部exact zero。raw forward计数唯一反推出physical
   B8（928 invocations；同面板B2为3648），0 OOM/nonfinite/watchdog且不保留checkpoint。wall=`507.305s`，
   peak allocated/reserved=`36,575,930,368/40,928,018,432B`；六卡结束后均已释放。
-- active config已经由raw profile/run/completion/invocation重新验证并置为`formal_ready`；seal validator还会
-  核对sealed optimization/runtime、唯一B8 forward公式、A40 topology与无checkpoint，不能靠artifact自报
-  通过。正式evaluator现还会精确锁定B8、validation 8×50、without-replacement、同一clean pushed/frozen
-  training/evaluation commit和预注册root；historical checkpoint不能冒充Reward-Credit cycle。correct arm必须
-  先完成，首次`>=144`的checkpoint才开放五个controls，cycle2 support与control触发相互独立。prepare使用
-  NFS同目录原子`mkdir`跨进程锁，在私有staging完成全部CPU校验后以一次目录rename发布唯一root；正式Reward
-  条件只能取预注册六臂，`shuffled_keep_first`等额外parser条件不能绕过门。加载`.env.local`后的当前全仓回归
-  为`358 passed in 23.72s`。
-  下一GPU动作只允许clean pushed seal commit的frozen worktree从`M0=0,Lambda0=I`做formal cycle0→1。
+- Reward-Credit随后已从clean frozen`e3857f7`完成formal cycle0→1和预注册correct400。训练natural exit0、
+  24 tasks/96 rollouts、B8、0 OOM/nonfinite，checkpoint完整；strict仍为`134/400`、breadth6、per-task=
+  `1/4/46/31/0/38/14/0`，相对zero-Program macro0严格`14 gained / 14 lost`。未达到cycle2或control门，
+  不续cycle2、不扫reward scale/K/Nmc/RLS参数；这是真实closed-loop non-pass。
+- 分层诊断没有把该non-pass误写成“视频或Reward方向无效”：correct Program、analytic FactorHead tangent和
+  continuous effective-BA都保留强task-common与same-video结构；首个失效接口是36个q/v target把约`1e-8`
+  RMS的factor delta加到非零BF16 A/B，远小于约`1e-4`局部ULP。own-target native cosine约`.037`，而action
+  四个FP32 factors不存在同一问题。FP16、dither、local-CD、gauge/global-scale和absolute full-rank refactor
+  都已直接失败，不得重扫。
+- 唯一active设计改为`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`：q/v保留14个
+  pivot-selected原生B columns并重解A，另用两个physical zero-B slots承载condition-local rank2 Reward
+  residual；action保持原full-rank16 FP32。80-row generation-only门已通过：q/v base error约`.000752`、
+  tangent capture`.999709`、dynamic cosine`.997525`、video-centered cosine`.95056`，action exact；但0 policy
+  forward/0 rollout，不能冒充性能。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
-  EMBER GPU任务；不得把RLS的CPU矩阵等价、profile门或reconstruction/几何当作性能结果。
+  EMBER GPU任务。下一顺序是canonical实现与真实vertical closure，然后新rank14 macro0 strict400；只有base
+  保留后才评估现有cycle1 Program的load-only strict400。在两项行为门前不启动新训练。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
@@ -96,12 +102,13 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. `docs/action_forecast_writer_video_expert_manifold_design.md`
-5. `task_plan.md`
-6. `findings.md`
-7. `progress.md`
-8. `docs/concept.md`
-9. `docs/decisions_and_open_questions.md`
-10. `docs/novelty_and_landscape.md`
+5. `docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`
+6. `task_plan.md`
+7. `findings.md`
+8. `progress.md`
+9. `docs/concept.md`
+10. `docs/decisions_and_open_questions.md`
+11. `docs/novelty_and_landscape.md`
 
 涉及迁移、路径或环境恢复时再完整读`docs/a100_to_bci_migration_handoff.md`。改变某个历史架构拥有的
 接口前，必须按handoff实验谱系定位并完整阅读对应design；不得凭架构名或aggregate猜测旧方法。
@@ -154,36 +161,30 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前没有运行中的GPU Writer。第39节RLS已由full400 closed-loop证据退役；其部署图、profile与formal artifact
-继续作历史机制证据，但任何fresh/restart/resume均由状态机拒绝。historical v6-fast macro400仍是下一候选的
-唯一load-only初始化；expert flow、whole-LoRA/ECP/Tangent/CEFD、旧ranking/completion cotangent、task-expert
-输出、RLS10 Program/precision均不得进入新update。
+当前没有运行中的GPU Writer。RLS及Reward-Credit cycle1均已有full400 closed-loop non-pass；历史artifact继续
+作机制证据，但RLS不得恢复，Reward-Credit不得续cycle2或扫训练超参。现有cycle1 checkpoint只允许作为
+rank-reserved compiler的load-only learned Program，不是训练起点。
 
-当前只允许推进第39.5 Reward-Credit Program Cotangent，并保持以下边界：
+当前只允许推进Q/V Rank-Reserved Native Reward Compiler，并保持以下边界：
 
-- 部署端严格不变：exact language + exactly one action-hidden teacher video是唯一输入，P256 Balanced key、
-  frozen historical-v6 600 tensors、single FP32 Program residual、完整38-target rank16 LoRA不变；没有
-  language bypass、expert bank、second LoRA或deployment reward/action读取。
-- 从`M_0=0, Lambda_0=I` fresh开始，不能继承RLS10。train24每task一条video生成一套LoRA，并在同一LoRA下
-  执行K4 official random-reset rollouts；成功和失败都只保留真实executed prefixes，未执行后缀不得进入loss。
-- binary task-relative LOO advantage固定为`A_e=(4R_e-sum_j R_j)/3`；全成/全败task严格零credit。每episode
-  executed chunks等权、Nmc4 keyed flow samples等权、先task内mean再24-task等权，直接对当前Program输出
-  求一次signed cotangent。validation/test reward/actions永不产生梯度。
-- full48仍为`F=[phi_correct;phi_negative]`、`E=[-G_reward;0]`，negative只表示本次incremental motion为零，
-  不增加negative policy forward、不最大化wrong action error。Program与FP64 precision继续用现有RLS同化，
-  checkpoint保存Program、precision、rows及rollout/video/env/policy/flow/cursor/六rank RNG；部署只读Program。
-- old=current时旧ASPO首epoch的一阶梯度等价于advantage-weighted current CFM loss，因此禁止detached-old
-  重复forward、ratio、第二replay epoch、shared Adam/AdamW、SPSA、progress reward、critic、pose shaping和
-  success-only replay。只复用历史Relative-Flow已验证的K4/Nmc4、failure replay、runtime asset/EGL/NCCL修复。
-- CPU门必须覆盖LOO零和、全成/全败零、success/failure符号、executed-prefix mask、与旧ASPO的一阶等价、
-  cotangent shape/finite、frozen对象零grad、full48顺序/negative-zero、RLS closure、fresh/resume全游标和0
-  information-wall读取。通过前不得启动GPU。
-- 首次B2 GPU profile保持immutable non-pass；新B8/all-mixed GPU profile已通过并弃用profile权重。formal从
-  macro0 fresh只跑cycle0→1，保持六卡、每rank4 tasks、BF16、K4/Nmc4/B8、persistent policy/env、balanced
-  rank map和最大安全并行，不为微差降吞吐；直接strict correct400，不跑80-row screen。cycle2门为
-  correct≥140、相对macro0 lost≤6、breadth≥6且gained>lost；首次≥144补同checkpoint六臂，严格>150后完成
-  correct/same/wrong/shuffled/reversed/no-video因果裁决。cycle1未过门则停止，不扫reward scale/K/Nmc/seed/
-  RLS超参；只有credit、closure、BA/action传递全健康而closed-loop仍失败，才上移到P256/Procedure表示。
+- exact language + exactly one action-hidden teacher video仍是唯一部署输入；P256 Balanced key、frozen-v6、
+  single Program、38 targets、public rank16和one-shot不变。没有language bypass、expert bank、second LoRA、
+  multi-video或deployment reward/action读取。
+- 36个q/v target使用pivot-preserving rank14 base + condition-local rank2 physical zero-B residual；两个action
+  target保持原full-rank16 FP32。q/v tangent为`B0 dA+dB A0`且不含二阶cross term；action实际候选保留
+  `(B0+dB)(A0+dA)`。base/residual slots不得gauge mixing，carrier不得固定global化或来自task experts。
+- 先在同一32-request panel实测B8/16/32并取最高稳定吞吐，再做native adapter load与三臂fixed-action vertical
+  closure；随后用official paired validation
+  8×50分别做zero-Program新macro0与现有cycle1 Program load-only correct400。小panel、几何或reconstruction
+  不能选择方法。
+- correct-video zero-Program是rank14 v6 base，不是identity；no-video必须显式跳过compiler并返回
+  template-A/zero-B source identity。
+- 新macro0若correct<130、相对同schedule旧macro0 134 lost>10、breadth<6或多suite广泛退化则reject。
+  只有其保留base后才运行
+  cycle1 load-only；低于新macro0即reject，只有`>=144`、breadth`>=6`、gained>lost且lost`<=6`才算通过并补
+  同checkpoint controls。140--143只作诊断性non-pass，不授权新训练。
+- 这两个行为门完成前不实现新训练。若load-only通过，fresh可导版本必须另写authority，用native forward与
+  明确continuous surrogate/STE；不得对zero tangent做SVD backward或通过扩dtype/缩batch换取精度。
 
 禁止用scalar/global scale、confidence gate、B-only residual、static/language bypass、强制正交或rank
 diversity、multi-video、checkpoint fusion去救一个失败点。few-shot只有在one-shot跨video方差被严格定位为
@@ -224,12 +225,15 @@ diversity、multi-video、checkpoint fusion去救一个失败点。few-shot只�
 
 ## GPU, storage, and multi-GPU
 
-- 每次GPU launch前实时检查`gpu01`和`gpu02`的device index/UUID、显存、利用率、进程和ownership，
-  只用完全空闲且健康的A40，跨两节点合计最多6张；不得reset、kill、pause或干扰他人。
+- 每次GPU launch前实时检查`gpu01`和`gpu02`的device index/UUID、显存、利用率、进程和ownership。
+  比较后选择一个节点，使用该节点当时所有真正空闲、健康且能提高有效吞吐的A40；没有固定6卡上限，不等待
+  凑卡、不dummy占位、不为跨节点碎片改launcher，也不为多用卡启动没有科学价值的重复工作。不得reset、
+  kill、pause、触碰有他人compute process的卡或干扰他人。
 - 同时检查`/data1`个人quota、相关目录用量和本次峰值增长。大数据、模型和run留在
   `/data1/user/ymdai/projects/EMBER`既有canonical roots，避免重复资产。
 - BCI多卡必须显式`NCCL_P2P_DISABLE=1`并遵守仓库launcher的SHM、NUMA、physical/local rank映射、
-  Ring/Simple和deferred-NCCL合同。resume保持原world size、rank/NUMA topology和collective序列。
+  Ring/Simple和deferred-NCCL合同。需要exact-resume的训练保持该run原world size、rank/NUMA topology和
+  collective序列；独立评测按所选单节点的live空卡数动态扩展cost-balanced queue。
 - 故障按transport、rank/device、process-group生命周期、CUDA初始化、I/O/NUMA和workload分层定位；
   不通过盲重试、加timeout、关闭watchdog或缩减科学batch掩盖工程故障。
 - 单卡smoke/profile用最小直接机制；昂贵canonical训练前必须检查clean frozen worktree、commit、命令、

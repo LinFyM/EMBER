@@ -6,30 +6,29 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务。
 
-**最新执行状态（2026-08-10）**：第39.5节Reward-Credit Program Cotangent的B8/all-mixed live A40
-discarded profile已正式通过并从raw evidence封存；尚无Reward-Credit训练checkpoint或strict结果。部署继续是exact
-language + exactly one action-hidden video、Balanced P256 key、frozen historical-v6 decoder、single Program和
-一套完整38-target rank16 LoRA；fresh `M0=0,Lambda0=I`，禁止继承RLS10。
+**最新执行状态（2026-08-11）**：Reward-Credit已从clean frozen`e3857f7`完成formal cycle0→1和预注册
+correct400。训练root=
+`runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810`，
+natural exit0、24 tasks/96 rollouts、B8、0 OOM/nonfinite；strict root=
+`runs/outputs/pi05_v6_reward_credit_program_cotangent_correct400_cycle0001_20260810`，结果仍为`134/400`、
+breadth6、per-task=`1/4/46/31/0/38/14/0`，相对zero-Program macro0为`14 gained / 14 lost`。因此不续
+cycle2、不补controls、不扫Reward超参。
 
-每task同一one-shot LoRA做K4 batch4 official random-reset rollouts，成功/失败都保留executed prefix；binary
-LOO `A_e=(4R_e-sum R)/3`，全成/全败严格零且跳过replay，mixed task按episode等权和Nmc4 keyed CFM直接形成
-Program cotangent。full48仍以24 correct + 24 exact-zero negative rows做single manual write；无old/current第二
-forward、ratio、第二epoch、shared Adam、progress/SPSA或negative policy forward。六rank×4 tasks、BF16、四
-persistent env lanes、deferred NCCL与K4 batch4固定。旧profile root完成24/96、11 mixed、rank48、closure0、
-LoRA/action response与0 runtime fault；唯一失败来自固定probes把三个homogeneous zero-credit tasks错误要求为
-action-nonzero。旧artifact不可追认。clean frozen`e6024cf`的新profile完成24/96、11 mixed/13 homogeneous、
-full48 rank48、negative/correct=`.017048`、closure0；all-mixed 11/11 LoRA A/B/action均非零并覆盖四suite，
-homogeneous保持exact-zero credit。raw forward计数唯一反推出B8，总invocations=`928`；0 OOM/nonfinite/
-watchdog且无checkpoint。wall=`507.305s`，peak allocated/reserved=`36.576/40.928GB`。B8使mixed credit sum
-下降`15.01%`，balanced map使rank-local critical proxy从`547.928s`降到`383.947s`。active config现为
-`formal_ready`。formal evaluator已精确锁B8、validation 8×50、without-replacement、同一clean
-pushed/frozen training/evaluation commit和预注册root；historical checkpoint不能冒充cycle，正式Reward只
-接受预注册六臂。prepare以NFS同目录原子`mkdir`锁和一次目录rename发布，失败不创建canonical root。
-correct400先跑，首次`>=144`才开放同checkpoint五个controls，且这一触发独立于cycle2 support。当前全仓
-回归=`358 passed in 23.72s`、architecture guard 0 hard violation。正式动作只有
-clean pushed seal commit/frozen后的live preflight和formal fresh cycle0→1，随后立即strict correct400。
+最新分层诊断证明Program/video与continuous tangent并未先失败：correct的task-common/same-video结构从
+Program传到analytic FactorHead与effective BA；真正首断点是q/v约`1e-8 RMS`的factor delta小于非零BF16
+A/B约`1e-4`局部ULP，native own-target cosine仅约`.037`。FP16、dither、local-CD、gauge/global scale和
+absolute refactor均直接失败。唯一active design改为Q/V Rank-Reserved Native Reward Compiler：36个q/v
+targets保留14个pivot-selected原生B columns并重解A，两个physical zero-B slots写condition-local rank2
+Reward residual；两个action targets保持full-rank16 FP32。
 
-**最新已完成实验（2026-08-10）**：第39节RLS已从clean frozen`25bbd52`完成formal fresh0→10与预注册
+full80 generation-only门已过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture`.9997088`，
+dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact；但0 action forward/0 rollout，不能
+视为性能。当前只允许先实现单一canonical compiler，做B8/16/32吞吐profile与cycle1 vertical smoke，再先跑
+rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。base过门后才读取原
+84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且gained>lost才算
+load-only通过并补同checkpoint controls。140--143是诊断性non-pass，不授权新训练；两项行为门前不启动训练。
+
+**较早已完成实验（2026-08-10）**：第39节RLS已从clean frozen`25bbd52`完成formal fresh0→10与预注册
 macro10 strict correct400。训练natural exit0、10 rows、step sum/mean=`199.425195/19.942519s`、input wait=
 `.278241s`、peak allocated/reserved=`43,247,554,048/46,919,581,696B`，0 OOM/nonfinite/negative policy
 forward。strict=`140/400`、breadth6、per-task=`2/3/47/35/0/34/19/0`；相对exact balanced macro0=`134`
@@ -42,7 +41,8 @@ correct80会显示`31 vs 26`、gained/lost=`5/0`，与full400的`21/15`相反；
 RLS内部current/blind降至`.230340`、final precision condition约`8325`，而formal没有保存历史reference rows；
 它付出了acquisition抑制却没有对应闭环retention。config/runtime已封为formal non-pass，fresh/restart/resume
 均fail closed。其最早失败接口是source-action functional cotangent与closed-loop occupancy/reward credit错位，
-这正是当前第39.5节只替换training cotangent、保持部署图不变的依据。
+这正是当时第39.5节只替换training cotangent、保持部署图不变的依据；Reward cycle1现也已完成并由strict134
+关闭，不能再写成当前训练路径。
 
 此前第38节v2已从clean frozen`abd8e08`完成formal0→25，root=
 `runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`。25 macros
@@ -148,7 +148,7 @@ clean frozen`2af82aa`现已在实时空闲`gpu02:0`完成该双root seal。固�
 1093-frame panel的batch8/16/32=`.911238/.901898/.906482 LoRA/s`，三点均稳定、reserved约12.9GB（约12.0GiB），
 选择实测最快batch8。validation8×state0 correct vertical smoke随后真实生成8套完整native LoRA并完成8条
 LIBERO闭环：`4/8` success、总wall=`336.056s`、单次launcher、0 retry/runtime failure/forbidden reads，Writer释放且
-source policy复用。三件raw artifact由assembler重算通过，config现为formal ready；该8-row结果只作执行证据。
+source policy复用。三件raw artifact由assembler重算通过，config当时为formal ready；该8-row结果只作执行证据。
 deployment写回后的全仓CPU门为`284 passed in 26.86s`，compileall、Black、JSON、diff-check、raw seal重建和
 formal runtime均通过；pre-deployment formal fail-close仍有独立负回归。
 
@@ -185,41 +185,38 @@ identity baseline，不是性能提高。
    strict与same-task诊断都已封存，不能从旧Tangent/audit/v1/v2恢复活动执行；
 5. 第39节RLS的CPU/profile/formal0→10与strict400均已seal；full400 lost15未过门，config/runtime已退役，
    不得fresh、resume25、补六臂或用correct80重解释；
-6. Reward-Credit首次B2 discarded profile保持旧固定probe门non-pass；新的B8/all-mixed profile已从raw
-   复算全部通过，11/11 mixed的Program→LoRA→action和唯一B8执行均成立，且profile不留权重；
-7. canonical已封存all-mixed K4 raw action gate、B8和静态均衡rank map；唯一下一动作是新clean pushed
-   seal commit上的formal fresh cycle0→1与立即strict400。cycle2只由macro1 support gate授权，不从任何
-   retired或discarded profile checkpoint伪resume。
+6. Reward-Credit B8/all-mixed profile、formal cycle0→1和strict400均已完成；strict仍为134且14/14换手，
+   因而cycle2与训练超参扫描关闭；
+7. 当前只推进q/v pivot-preserving rank14 base + condition-local rank2 physical zero-B residual。先跑新
+   macro0 strict400，再有条件跑现有cycle1 Program load-only strict400；两项行为门前不启动fresh训练。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
 - 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD、第37节v1、第38节v2
-  blind-add和第39节RLS均已退役或否决。唯一active implementation是第39.5节Reward-Credit Program
-  Cotangent；保留balanced-key frozen-v6 Program deployment图，只替换训练cotangent。
+  blind-add、第39节RLS与Reward cycle2均已退役或否决。唯一active design是q/v rank-reserved native
+  compiler；保留balanced-key frozen-v6 Program，只改变q/v physical slot编译。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
 - 输出：一套完整38-target public rank-16 LoRA；Writer在rollout前运行一次后释放。
 - source policy、normalization、split、frame stride5、LIBERO preprocessing与paired evaluator固定。
-- historical v6-fast macro400是当前active candidate唯一允许的load-only Writer初始化；不得加载任何退役
-  optimizer/scheduler/sampler/RNG，也不得用task expert输出作为cotangent。
-- train24 task-complete、每task每cycle一条correct video和同一LoRA、K4 random-reset rollouts、24-task等权；
-  mixed task才从success+failure executed prefixes形成Nmc4 cotangent。六rank各4 tasks，CUDA-complete readiness
-  后固定gather 24 correct cotangents与24+24 condition features，独立形成同一manual write，不all-reduce
-  80MiB Program。
+- historical v6-fast macro400是base decoder；现有Reward cycle1只允许load-only读取原Program tensor，不得
+  resume旧optimizer/scheduler/sampler/RNG，也不得用task expert输出。
+- 当前行为门没有训练collective。若以后授权fresh训练，world size不得硬编码为6：fresh按live空闲、有效
+  吞吐与task-complete合同选择，exact-resume锁定原world size/NUMA/rank topology。
 - 不恢复global norm attraction、whole-LoRA cosine、ECP completion、Tangent dynamic anchor、CEFD、progress
-  reward、critic、SPSA、ratio或parameter-distance代理。correct cotangent只读train24 on-policy reward与真实
-  executed observation/action；negative只作zero incremental condition constraint，不读取wrong-task expert或
-  最大化negative action error。
+  reward、critic、SPSA、ratio或parameter-distance代理。historical Reward cotangent只读过train24 on-policy
+  reward与真实executed observation/action；当前load-only compiler不读取这些训练信号。
 - step2000 task experts仅作历史分析/privileged参照；当前训练、部署和held选择均不读取其输出。
-- state为FP32 Program `M[256,320,256]`与training-only FP64 precision `Lambda[256,256]`；每reward cycle
-  同化full48 rows。checkpoint二者分文件原子保存，deployment只读M；fresh0与exact-resume严格区分，RLS10
-  的Program/precision不能加载。
-- profile必须从fresh0→1且不留权重。formal cycle0→1启动前固定macro0 reference与唯一future cycle1 strict
-  root；cycle1后只认canonical raw400聚合、same state/RNG/language/actual-video pairing及checkpoint identity。
-  只有correct`>=140`、lost`<=6`、breadth`>=6`且gained>lost才允许cycle2。
+- q/v一阶Reward effective tangent固定为`T=B0 dA+dB A0`，不含二阶`dB dA`；action实际候选仍为
+  `(B0+dB)(A0+dA)`并保留该小cross term。q/v base/residual slots不做gauge mixing。
+- correct-video zero-Program输出rank14 v6 base，并非identity；no-video必须显式跳过pivot/lstsq/SVD，返回
+  template-A/zero-B source identity。
+- 当前只允许load-only行为门：新rank14 macro0过门后才跑既有cycle1 Program。只有cycle1 correct`>=144`、
+  lost`<=6`、breadth`>=6`且gained>lost才算通过并补controls；140--143不授权新训练。任何fresh训练的state、
+  optimizer、VJP和resume合同必须由后续独立design重新封存。
 
 ## 2. Throughput-first runtime contract
 
@@ -235,15 +232,14 @@ identity baseline，不是性能提高。
   扩宽FP32。每batch集中nonblocking D2H，只同步一次。
 - action query DataLoader默认2 spawn workers、persistent workers、prefetch2；profile若显示GPU仍等待
   data，再实测4 workers/prefetch而不是猜测。
-- reward rollout固定K4 policy batch4；四条persistent env lanes按active-lane compaction每次只做一个batched
-  replan。mixed replay固定Nmc4；active live B2峰值仅`19.42GB reserved`，修正profile直接使用physical B8，
-  不是为低位一致性降速。B8若OOM则profile自然non-pass，不在同run隐藏fallback；不下调科学K/Nmc。
-- policy activation checkpointing当前保持关闭；现有Writer checkpointing不覆盖OOM所在的frozen PI05
-  Gemma MLP。只有B16/B10都无法形成高吞吐有效配置时，才把policy重算作为独立正式候选。
+- 当前load-only compiler在同一32-request panel实测B8/16/32；若更大batch仍有明确吞吐上升和显存空间可继续
+  增大，选择稳定候选中LoRAs/s最高点。vertical smoke随后用该点比较old rank16、rank14 base、rank14+2，
+  不为追逐native低位差异隐藏降batch或重复forward。
+- historical Reward rollout的K4/Nmc4/B8与activation配置只作已完成训练provenance；当前行为门没有reward
+  rollout、functional replay或训练collective，不得为“利用GPU”重跑它们。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
-- mechanism profile的production wall计K4 rollout、mixed replay/cotangent与full48 gather/solve/write；
-  application closure、LoRA A/B、4-task fixed-action及zero-credit shared-motion是一次性verification，不进入
-  formal热路径。fixed-action使用同observation/同noise的before/after推理，不读取target action。
+- 当前vertical smoke记录真实video→LoRA→native adapter→fixed-action的端到端wall、显存、release/reuse和
+  三臂差异；fixed-action使用同observation/同noise的before/after推理，不读取target action，也不能替代strict400。
 
 保留FP32 RMSNorm/softmax/ROPE/image normalization和policy-effective reduction，除非profile证明它们是
 显著瓶颈且降低精度不伤真实闭环；吞吐优先不是盲目改变模型数学。
@@ -253,25 +249,22 @@ identity baseline，不是性能提高。
 GPU前一次性要求：
 
 - `git diff --check`和聚焦/全仓CPU tests通过；
-- 16种K4 success pattern覆盖LOO零和、mixed符号、全成/全败zero fast path；episode等权、Nmc4 keyed
-  time/noise、physical batch不变性和ASPO old=current首epoch一阶等价通过；
-- BF16 frozen decoder输出到FP32 LoRA leaf gradient再VJP到Program，positive `G`进入内部负梯度solver；
-  full48 order、negative zero RHS、Program/precision/cursor exact-resume与profile→formal fail-close通过；
-- historical 600-tensor Writer strict-load并全部冻结：`10,775,296` base parameters、0 trainable
-  parameters；新增`20,971,520`个FP32 memory values由manual update拥有，但仍不注册为optimizer parameter；
+- deterministic modified Gram-Schmidt pivot固定tie-break，14个kept B columns bit-exact；rank14 solve、
+  compact top2 SVD、finite/native dtype和batched/unbatched shape通过；
+- stable JVP按`T=B0 dA+dB A0`构造q/v一阶tangent且明确排除`dB dA`；action候选按
+  `(B0+dB)(A0+dA)`保留实际小cross term；
+- correct-video zero-Program的两个residual B slots与incremental motion exact zero，但rank14 base保持非identity；
+  no-video不读frames、跳过pivot/lstsq/SVD并返回template-A/zero-B source identity；
+- 38 targets/76 tensors、72 BF16 + 4 F32、public rank16、cache write/load、resident adapter和release/reuse闭合；
+- derived manifest只引用原Reward cycle1 Program tensor及必要identity metadata，不复制84MB payload，也不加载
+  optimizer、RNG、precision或训练cursor；旧family/schema/cache必须fail closed；
 - validation8 real-asset inspect和CLI prepare产生正确one-shot requests，部署expert-bank reads=`0`；
-- no-video不读frames并返回template-A/zero-B identity；wrong/shuffle/reverse只改变允许的视频输入；
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
-  destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描；
-- 2-worker prefetched sampler与serial、prefix+resume逐row一致；
-- retired Tangent config只继承未改变推理图的retained evaluation throughput seal；ECP gradient、aux
-  weights和resume profile没有被复用；v3 gradient与resume evidence曾从各自clean frozen lineage重新
-  实证并原样封存，formal0→10完成后已切为non-pass并关闭runtime。任何status-only、旧family evidence或
-  stale config仍fail-closed。
+  destination dtype由已验证的同一template决定，正常路径不发生额外转换，不在每次replan加dtype扫描。
 - retired teacher-audit CPU oracle曾覆盖physical B20的3次forward与B10+10的6次forward；正式artifact已
   证明480/480 queries、144 forwards、real7、8/8/8 negatives和0 update/rollout。其一次性feature tests随
   runtime退役；canonical contract owner继续保留。该证据不能解锁CEFD或新候选训练。
-- current v2 residual CPU oracle覆盖zero memory identity、真实frame order、wrong-video exact-language、full48
+- historical v2 residual CPU oracle覆盖zero memory identity、真实frame order、wrong-video exact-language、full48
   solve/application、negative-null、A/B response、memory-only exact-resume、六rank RNG、v8 deployment
   asset和strict paired row evidence；带LIBERO assets全仓`281 passed`。随后live mechanism profile已验证真实
   A40 feature rank、task-local motion、fixed-action传递、wall和显存；CPU与该单步机制证据都不能代替
@@ -279,19 +272,18 @@ GPU前一次性要求：
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
-## 4. Inherited single-A40 deployment seal（部署图不变，已绑定）
+## 4. Required single-A40 native-compiler seal（尚未执行）
 
-第38节已经为Balanced-key frozen-v6 residual deployment graph独立完成双root seal；第39.5只替换训练
-cotangent，部署forward、checkpoint Program payload与online generation完全不变，因此active config可重读并
-绑定这份既有证据。它不替代Reward-Credit profile或closed-loop性能：
+rank14+2改变了q/v physical slot compiler，因此不能继承旧v2/Reward deployment seal冒充新图已验证。历史
+32-request/1093-frame B8/16/32结果`.911427/.905107/.906432 LoRA/s`与validation8 vertical只作old-rank16
+基线；新实现必须在clean pushed frozen worktree独立完成：
 
-- retained 32-request/1093-frame panel的batch8/16/32吞吐为
-  `.911427/.905107/.906432 LoRA/s`，batch8峰值reserved约`12.8GB`且稳定；
-- retained validation8×state0 vertical smoke为8 requests/8 LoRAs/8 rows，0 retry/failure/OOM/
-  nonfinite/forbidden reads，Writer释放、source policy复用且GPU自然释放；
-- active contract会重读raw profile/results/cache manifest、commit、family、batch、release/reuse与禁止读取，
-  不能只信status或人工抄录；
-- Reward-Credit profile只实测新增K4/replay/cotangent/full48路径，不重复已封存且未改变的deployment batch sweep。
+- 同一32-request、同一总sampled-frame panel实测B8/16/32，必要时继续更大batch，按真实LoRAs/s选择稳定点；
+- 所选batch比较old rank16、rank14 base、rank14+2三臂，覆盖四suite fixed-action、native cache、adapter load、
+  Writer release/source-policy reuse和0 forbidden reads；
+- no-video identity与correct-video zero-Program rank14 base分开验证，不能用一个zero residual断言两者相同；
+- retained artifact必须封存request/frame panel、wall、actual forward batches、peak allocated/reserved、cache dtype、
+  release/reuse和单次launcher completion。该门仍只证明工程/传递，不替代strict400。
 
 
 ## 5. Historical six-A40 profile provenance（已完成，不恢复）
@@ -399,12 +391,18 @@ fail-closed；所有Section 6 launch语句现为已执行provenance，不是活�
 
 ## 7. Current diagnosis and single active variable
 
-Balanced v2已经证明condition key、full48 solve、frozen decoder、Program→LoRA→action和部署吞吐成立；RLS又
-证明feature-space保留可在内部成立但无法保住held success。当前最早接口因此是offline source-action
-functional cotangent与真实on-policy occupancy/binary success错位。第39.5只把这一项替换为同一one-shot LoRA
-上K4 binary LOO、success+failure executed-prefix Nmc4 Program cotangent；feature、decoder、Program、RLS
-full48 transport、rank、scale和部署输入输出均不变。CPU seal已完成，当前须由一次discarded profile先裁决
-credit/closure/吞吐，再由fresh cycle1 strict400裁决价值；不能从内部loss或几何直接宣告改善。
+Reward-Credit已把offline source-action cotangent替换成真实on-policy binary success credit，但cycle1 strict仍
+为134。沿同一个learned Program逐层检查后，video/P256、Program、analytic FactorHead tangent和continuous
+effective BA均保留正确结构；原生BF16 q/v A/B落格点才是第一个明确失效接口。当前单变量因此是q/v compiler
+的物理slot topology，不是换encoder、换Reward objective、增scale/rank、few-shot或恢复expert bank。
+
+active设计严格保持public rank16/76 tensors：q/v前14槽承载pivot-preserving v6 base，后2槽在macro0的B
+为exact zero、在cycle1写condition-local native rank2 Program residual；action仍用完整FP32 rank16。旧
+macro0/Reward cycle1的400 rows和原Program tensor直接复用为immutable baseline，旧native LoRA cache不能
+复用。先评估base容量，再有条件评估Program价值；不能从generation geometry宣告改善。
+
+Gate B若correct<130、breadth<6或相对旧134 lost>10即reject。Gate C只有correct≥144、breadth≥6、相对
+新macro0 lost≤6且gained>lost才算通过并补controls；140--143保留诊断但不授权训练。
 
 按以下顺序定位最早接口：
 
@@ -438,12 +436,11 @@ credit/closure/吞吐，再由fresh cycle1 strict400裁决价值；不能从内�
   已封存，不再是活动入口。
 - retired RLS config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；formal macro10
   strict=`140`且lost15后已fail closed，`f0c3f51/f28fc8b`只保留历史profile provenance。
-- active config：`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；status=`formal_ready`，profile=
-  `sealed_from_live_a40_fresh0_to1_reward_profile`，formal=`ready_after_live_reward_profile_seal`。首次B2 GPU
-  profile保持immutable non-pass；e6024cf B8/all-mixed profile为immutable pass且无权重。当前0 training/
-  strict结果。
-- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第39.5--39.8节；第38节
-  只作unchanged deployment/key/macro0 provenance，第39节只作retired RLS根因证据。
+- retained Reward config：`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；cycle1 training/strict已
+  完成且不支持cycle2。它只提供immutable Program与历史Reward证据，不再是当前训练入口。
+- current design authority：`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；
+  `docs/action_forecast_writer_video_expert_manifold_design.md`第39.5--39.8节只作Reward objective、Program与
+  诊断provenance。新canonical config尚待单一路径实现，不能用旧Reward config冒充。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。
 - fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-更新时间：2026-08-10。本文只保留当前可执行计划；完整历史结论见
+更新时间：2026-08-11。本文只保留当前可执行计划；完整历史结论见
 `docs/active_session_handoff.md`实验谱系，旧命令和流水由design、Git、`findings.md`、`progress.md`及
 formal artifacts保存。
 
@@ -11,9 +11,13 @@ formal artifacts保存。
 - [x] one-shot：exact language + exactly one action-hidden video；video-only dynamic value；一套完整
   38-target rank16 LoRA；无language bypass、多video/LoRA/checkpoint融合。
 - [x] fixed 24/8/8 split、frozen source/normalization、validation/test action隔离和official paired evaluator。
-- [x] task experts只作历史privileged policy-effective参考；当前Reward-Credit训练和deployment均不读取其输出。
-- [x] GPU launch前live比较`gpu01/gpu02`，只用最多6张空闲A40；多卡遵守
-  `NCCL_P2P_DISABLE=1`、NUMA映射和deferred-NCCL。
+- [x] task experts只作历史privileged policy-effective参考；当前native compiler与deployment均不读取其输出。
+- [x] GPU launch前live比较`gpu01/gpu02`，选择一个节点并使用该节点所有真正空闲、健康且能提高有效吞吐的
+  A40；没有固定6卡上限，不等待凑卡、不dummy占位、不为跨节点碎片改launcher。训练多卡遵守
+  `NCCL_P2P_DISABLE=1`、NUMA映射和deferred-NCCL；独立评测按所选单节点live空卡动态扩展queue。
+- [x] 删除canonical evaluator/preflight的旧owner-six-GPU硬上限；受单节点config（当前8卡）、unique index和
+  live ownership约束，7/8卡均可用。定向环境回归`51 passed`；训练world-size泛化留到fresh训练获行为授权后，
+  exact-resume仍锁原topology。
 - [x] 吞吐优先：接受普通BF16低位差异，不为逐元素复现固定batch1、重复forward或扩宽LoRA cache。
 
 ## Phase 0 — authority and throughput correction
@@ -241,10 +245,10 @@ formal artifacts保存。
   exact-resume10→25、未补六臂。correct80虽为`5/0`，已由full400证明不能用于选点。
 - [x] 和blind-v2 macro10逐row比较：两者同为140，v2→RLS换手`17/17`；RLS相对macro0的lost从v2的13
   增至15。由此正式否定feature-row anchoring足以解决held closed-loop retention，config/runtime fail closed。
-- [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
-  same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
+- [x] Phase6没有超过历史143，按证据回到最早失效接口；当前统一control规则由Phase8定义为首次≥144补
+  同checkpoint controls，严格>150必须完整六臂，不能从本历史phase恢复旧“达到goal才测controls”表述。
 
-## Phase 7 — Reward-Credit Program Cotangent（B8/all-mixed profile通过，formal待启动）
+## Phase 7 — Reward-Credit Program Cotangent（formal cycle1与strict已裁决）
 
 - [x] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
   P256、single Program和完整rank16 LoRA不变；只把offline source-action cotangent替换为train24真实闭环
@@ -270,9 +274,35 @@ formal artifacts保存。
   达到阈值后才开放controls且与support门解耦；prepare使用NFS原子准备锁、私有staging和一次目录rename，
   失败不占用canonical root；正式Reward只接受预注册六臂。全仓`358 passed in 23.72s`，architecture guard
   0 hard violation、无parallel family。
-- [ ] 从新clean pushed seal commit的frozen worktree做formal fresh cycle0→1并直接strict correct400，不跑80-row screen；只有
-  correct`>=140`、lost`<=6`、breadth`>=6`且gained>lost才继续cycle2，达到144后补六臂，严格超过150后
-  完成同checkpoint因果裁决。
+- [x] 从clean pushed`e3857f7` frozen worktree完成formal fresh cycle0→1与strict correct400；训练natural
+  exit0、B8、0 OOM/nonfinite，strict仍为`134/400`、breadth6、相对macro0 gained/lost=`14/14`。支持门失败，
+  不续cycle2、不补controls、不扫reward scale/K/Nmc/RLS参数。
+- [x] 分层诊断定位到最早失效接口：Program/video与continuous FactorHead/effective-BA tangent均健康；q/v
+  factor delta约`1e-8 RMS`，加到非零BF16 A/B后低于约`1e-4` ULP。FP16、dither、local-CD、gauge/scale、
+  absolute refactor均失败，不把closed-loop non-pass误写为Reward方向已被证伪。
+
+## Phase 8 — Q/V Rank-Reserved Native Reward Compiler（active）
+
+- [x] 写入独立design authority；保持exact language + exactly one action-hidden video、P256、frozen v6、single
+  Program、38 targets/public rank16和action full-rank16 FP32，只把36个q/v targets改为pivot-preserving
+  rank14 base + condition-local rank2 physical zero-B residual。
+- [x] full80 generation-only门通过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture
+  `.9997088`，dynamic cosine`.9975247`、video-centered`.950556`，action exact；0 policy forward/rollout，
+  不冒充性能。
+- [ ] 在一个canonical owner中实现load-only native compiler、新family/config/schema与derived Program manifest；
+  旧Reward cycle1 checkpoint只读取原84MB Program，不resume optimizer/RNG/precision，也不复制大tensor。
+- [ ] CPU门覆盖deterministic pivot、kept-B bit exact、rank14 solve、compact top2、stable BF16 tangent、
+  zero-Program后2个B exact zero、action exact、76 tensors/native dtype、old schema/cache fail-close和信息墙。
+- [ ] live单卡做同32-request B8/16/32吞吐profile并选samples/s最高点；同一cycle1 vertical smoke比较old rank16、
+  rank14 base、rank14+2的四suite fixed-action，要求真实adapter/cache、Program action response、Writer release与
+  0 OOM/nonfinite/forbidden read，不以逐元素微差门禁。
+- [ ] 先跑新rank14 zero-Program strict400；若correct<130、breadth<6或相对旧134 lost>10则reject，不浪费
+  第二个400。旧macro0 rows、source policy、split、video和RNG schedule直接复用，不重跑旧baseline。
+- [ ] 只有新macro0过门，才跑现有cycle1 Program的rank14+2 load-only strict400；只有correct≥144、
+  breadth≥6、相对新macro0 lost≤6且gained>lost才算通过并补同checkpoint controls。140--143为诊断性
+  non-pass且不授权新训练；>150完成六臂。
+- [ ] 两个行为门前不实现或启动fresh训练。若load-only通过，再单独设计native-forward + continuous VJP/STE；
+  不对zero tangent做SVD backward，不扩dtype、不降B8。
 
 ## Ongoing evidence-driven iteration rules
 

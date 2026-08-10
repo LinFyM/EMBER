@@ -1,5 +1,30 @@
 # EMBER Progress Ledger
 
+## Reward-Credit cycle1终局与rank-reserved native后继（2026-08-11）
+
+- clean pushed/frozen`e3857f7`完成formal Reward cycle0→1；root=
+  `runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810`，
+  completion macro1、checkpoint/manifest完整、natural exit0。预注册correct root=
+  `runs/outputs/pi05_v6_reward_credit_program_cotangent_correct400_cycle0001_20260810`，400 rows、success134、
+  breadth6、相对macro0 gained/lost=`14/14`。按门终止cycle2。
+- 完成stable analytic tangent、native factor representability、FP16、dither、local-CD、balanced rank reservation
+  和q/v pivot-preserving full80诊断。前两次pivot脚本只在JSON aggregation阶段失败、没有科学artifact，空root/
+  log/exit已删除；成功artifact和日志保留，所有诊断GPU均自然释放。
+- generation-only winner为q/v rank14+2、action exact；artifact=
+  `runs/outputs/pi05_reward_qv_pivot_rank14_plus2_transport_v1_e3857f7_20260811/analysis.json`，`passed=true`但
+  evidence scope明确0 action forward/rollout/update。新design authority已写入
+  `docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`并加入mandatory reading。
+- Owner进一步澄清设备策略：不存在固定6卡要求。authority现统一为每次live比较`gpu01/gpu02`，使用所有
+  真正空闲且提高有效吞吐的A40，不等待凑卡、不dummy占位；独立evaluator选择单节点当时最多空卡，训练
+  exact-resume才锁原world size/NUMA/rank topology。
+- canonical evaluator的可执行owner-six-GPU门已删除：run contract由配置的8-card node topology约束，
+  preflight只拒绝空/重复/负index并继续live检查进程；7/8-card选择不再被软件截断。加载`.env.local`后的
+  `tests/test_pi05_eval_contract.py tests/test_pi05_eval_launcher.py`为`51 passed`。
+- 下一步是canonical load-only compiler与CPU门；随后单卡新graph吞吐/vertical、条件式两个strict400。
+  q/v一阶tangent固定为`B0 dA+dB A0`，action保留实际二阶cross term；no-video source identity与correct-video
+  zero-Program rank14 base分开处理。只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过；
+  140--143为诊断性non-pass。两个行为门前不实现或启动fresh训练。
+
 ## Reward-Credit首次profile non-pass与all-mixed/B8修正（2026-08-10）
 
 - clean frozen`c4507e9`在live preflight后使用`gpu02:0--5`完成首次full24×K4×Nmc4 B2 discarded profile；
@@ -18,7 +43,7 @@
 
 ## Reward-Credit Program Cotangent实现与CPU封口（2026-08-10，profile前状态）
 
-- 第39.5唯一后继已在canonical `v6_prior` path原位实现；active config=
+- 第39.5当时的唯一后继已在canonical `v6_prior` path原位实现；当时active config=
   `configs/pi05_v6_reward_credit_program_cotangent_v1.json`。部署仍为exact language + exactly one action-hidden
   video、Balanced P256、frozen v6-fast、single Program和一套完整rank16 LoRA；fresh state禁止继承RLS10。
 - runtime完成K4四persistent-lane batch4 rollout、success+failure executed-prefix、binary LOO、homogeneous zero
@@ -1351,7 +1376,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   `docs/action_forecast_writer_energy_preserving_layer_trace_design.md`，旧layer-trace不续训、不
   warm-start。
 - 下一步原位实现每视频全局能量匹配、fresh identity/config/checkpoint family；聚焦
-  CPU合同与全仓回归后，live选最多6张空闲A40重新profile与formal。
+  CPU合同与全仓回归后，当时计划live选择单节点可用空闲A40重新profile与formal；后续实际使用了当时空闲的
+  六张，不代表owner设有6卡上限。
 - clean`22234c4`已完成上述原位替换并push branch/main；旧config退休，新schema/family拒载
   旧checkpoint。全仓`191 passed`，compileall、real config load和diff check通过，formal仍blocked。
 - 新profile的root、scale、storage、fresh/resume分段和GPU边界已预注册在`task_plan.md`顶部；
@@ -1375,8 +1401,8 @@ GPU范围和训练步长是当时快照；活动状态只取
   `42/12,28/39,28/22`，union/intersection=`145/37`，全部paired K4/state/RNG字段闭合。
 - macro100固定为single winner=99；150/200回落，layer-aligned新方法只在macro100比旧K4高5，
   没有超过旧K4 winner108或v6-fast143。当前不续训、不warm-start、不按loss另挑checkpoint。
-- `task_plan.md`已预注册macro100其余四个video-control arms与hashless内部分析。下一步live选择
-  最多6张空闲A40分两波运行same-task-other/wrong/shuffled/reversed，再按最早失败接口裁决
+- `task_plan.md`已预注册macro100其余四个video-control arms与hashless内部分析。当时下一步是live选择
+  单节点可用空闲A40分两波运行same-task-other/wrong/shuffled/reversed；后续实际使用六张不代表owner cap。再按最早失败接口裁决
   sparse condition-specific parameter sharing，而不是直接堆参数。
 
 ## 2026-08-06 K4 Policy-Layer Trace M2P设计封存
@@ -1956,10 +1982,11 @@ GPU范围和训练步长是当时快照；活动状态只取
   无EMBER tmux/worker或本方GPU占用，不续训、不做五臂、不启动下一方法，等待owner
   继续指示。长期single-checkpoint `>150` Goal未完成。
 
-## 2026-08-03 BCI接管与六卡VR工程profile
+## 2026-08-03 BCI接管与当时六卡VR工程profile
 
-- owner授权在`gpu01`/`gpu02`实时空闲卡上继续EMBER，跨两节点最多6张；目标是缓解
-  task漂移并让同一single checkpoint correct严格超过150，当前禁止subagent。
+- 旧ledger曾把owner授权误记为“跨两节点最多6张”；owner于2026-08-11明确纠正：从未设6卡硬上限，应比较
+  `gpu01`/`gpu02`后选择一个节点并使用该节点所有真正空闲且提高吞吐的卡。当时目标是缓解task漂移并让
+  同一single checkpoint correct严格超过150，且当时禁止subagent。
 - 完整读取34项authority与Target-Bound/SFB设计，核验项目树、迁移hash、环境、quota、
   source checkpoint、tokenizer、LIBERO assets和历史结果。现场`gpu01`全忙，`gpu02`
   0/1/2/3/4/7空闲；只用这六卡完成NCCL/BF16 smoke。

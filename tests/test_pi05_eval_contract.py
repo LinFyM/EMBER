@@ -270,7 +270,22 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
     assert subset["parallel"]["worker_count"] == 10
     assert subset["parallel"]["omp_threads_per_worker"]["5"] == 1
     assert subset["parallel"]["omp_threads_per_worker"]["6"] == 1
-    with pytest.raises(Pi05EvaluationError, match="six-GPU limit"):
+    all_configured = build_run_contract(
+        authorities=authorities,
+        tasks=tasks,
+        libero_paths=paths,
+        model=model,
+        tokenizer={"path": "/tokenizer.model"},
+        output_dir=tmp_path / "all-configured",
+        role="test",
+        mode="smoke",
+        replicas_per_gpu=1,
+        physical_gpu_ids=tuple(range(8)),
+        command=("evaluate_pi05.py", "prepare"),
+    )
+    assert all_configured["parallel"]["physical_gpu_ids"] == list(range(8))
+    assert all_configured["parallel"]["physical_gpu_count"] == 8
+    with pytest.raises(Pi05EvaluationError, match="configured node topology"):
         build_run_contract(
             authorities=authorities,
             tasks=tasks,
@@ -281,7 +296,7 @@ def test_run_contract_uses_explicit_reference_and_owned_root(tmp_path: Path) -> 
             role="test",
             mode="smoke",
             replicas_per_gpu=1,
-            physical_gpu_ids=tuple(range(7)),
+            physical_gpu_ids=tuple(range(9)),
             command=("evaluate_pi05.py", "prepare"),
         )
     contract["output_dir"] = str(tmp_path / "elsewhere")

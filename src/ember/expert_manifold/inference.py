@@ -9,6 +9,21 @@ from typing import Any, Mapping, Sequence
 from safetensors import safe_open
 
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.expert_manifold.episode_evidence import (
+    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+    EXPERT_MANIFOLD_EPISODE_SCHEMA,
+    EXPERT_MANIFOLD_WRITER_KIND,
+    expected_expert_manifold_episode_evidence,
+    expert_manifold_episode_schema,
+    validate_expert_manifold_episode_evidence,
+)
+from ember.expert_manifold.rank_reserved_contract import (
+    RANK_RESERVED_ADAPTER_SCHEMA,
+    RANK_RESERVED_CONFIG_SCHEMA,
+    RANK_RESERVED_EPISODE_SCHEMA,
+    load_rank_reserved_config,
+    rank_reserved_asset,
+)
 from ember.expert_manifold.v6_prior import (
     V6_WRITER_PARAMETER_TENSOR_COUNT,
     V6_WRITER_STATE_TENSOR_COUNT,
@@ -24,7 +39,6 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_RUN_SCHEMA,
     authority_path,
     git_commit_in_active_authority_lineage,
-    load_v6_prior_config,
 )
 from ember.expert_manifold.v6_prior_run_contract import cursor_contract
 from ember.expert_manifold.video_schedule import (
@@ -42,13 +56,19 @@ from ember.pi05_source_checkpoint import read_json
 from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
-EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
-)
-EXPERT_MANIFOLD_EPISODE_SCHEMA = (
-    "ember_pi05_v6_condition_program_residual_episode_v8"
-)
+def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
+    """Load only the active rank-reserved deployment config."""
+
+    path = path.resolve()
+    try:
+        schema = read_json(path).get("schema_version")
+    except (AttributeError, OSError, ValueError) as error:
+        raise ExpertManifoldError("invalid Expert-Manifold config") from error
+    if schema == RANK_RESERVED_CONFIG_SCHEMA:
+        return load_rank_reserved_config(path)
+    raise ExpertManifoldError(
+        "retired Expert-Manifold configs are read-only result evidence"
+    )
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -258,8 +278,7 @@ def _historical_writer_asset(
             and int(consumed.get("next_step", -1)) == 400
             and isinstance(declared, Mapping)
             and writer_path.stat().st_size == int(declared.get("bytes", -1))
-            and _source_shape(run_contract.get("source", {}))
-            == _source_shape(source)
+            and _source_shape(run_contract.get("source", {})) == _source_shape(source)
         )
     except (TypeError, ValueError):
         valid = False
@@ -303,8 +322,7 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
         },
         "fixed_projection": {
             "shape": [
-                int(value)
-                for value in config["condition_feature"]["projection_shape"]
+                int(value) for value in config["condition_feature"]["projection_shape"]
             ],
             "dtype": "torch.float32",
             "trainable": False,
@@ -428,9 +446,7 @@ def _residual_inspection(
             "world_size": int(inspection.get("world_size", -1)),
             "metrics_rows": int(inspection.get("metrics_rows", -1)),
             "content_hash_policy": inspection.get("content_hash_policy"),
-            "payload_value_validation": inspection.get(
-                "payload_value_validation"
-            ),
+            "payload_value_validation": inspection.get("payload_value_validation"),
         }
         expected_identity = {
             "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
@@ -446,17 +462,14 @@ def _residual_inspection(
             "value_count": int(config["program_residual"]["value_count"]),
             "finite": None,
         }
-        observed_memory = {
-            name: memory.get(name) for name in expected_memory
-        }
+        observed_memory = {name: memory.get(name) for name in expected_memory}
         expected_reconciliation = {
             "tensor_count": 1,
             "dtype": "torch.float64",
             "shape": list(config["reconciliation"]["precision_shape"]),
             "value_count": math.prod(config["reconciliation"]["precision_shape"]),
             "finite": None,
-            "assimilated_rows": macro
-            * int(config["reconciliation"]["rows_per_macro"]),
+            "assimilated_rows": macro * int(config["reconciliation"]["rows_per_macro"]),
             "deployment_owned": False,
         }
         observed_reconciliation = {
@@ -486,17 +499,11 @@ def _trained_writer_asset(
     manifest_path = checkpoint / "manifest.json"
     if not manifest_path.is_file():
         raise ExpertManifoldError("v6-prior residual checkpoint is incomplete")
-    inspection = inspect_v6_prior_checkpoint(
-        checkpoint, validate_payload_values=False
-    )
+    inspection = inspect_v6_prior_checkpoint(checkpoint, validate_payload_values=False)
     contract = inspection.get("checkpoint_contract", {})
     if not isinstance(contract, Mapping):
-        raise ExpertManifoldError(
-            "v6-prior residual checkpoint contract changed"
-        )
-    configured_dir = (
-        REPO_ROOT / str(config["initialization"]["checkpoint"])
-    ).resolve()
+        raise ExpertManifoldError("v6-prior residual checkpoint contract changed")
+    configured_dir = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     configured_writer = configured_dir / "writer.safetensors"
     historical = _historical_writer_asset(config, configured_dir, source)
     if not _residual_contract_matches(
@@ -544,9 +551,7 @@ def inspect_v6_prior_writer_asset(
     require_formal: bool,
 ) -> dict[str, Any]:
     checkpoint = checkpoint.resolve()
-    configured = (
-        REPO_ROOT / str(config["initialization"]["checkpoint"])
-    ).resolve()
+    configured = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     if checkpoint == configured:
         return _historical_writer_asset(config, checkpoint, source)
     return _trained_writer_asset(
@@ -555,6 +560,104 @@ def inspect_v6_prior_writer_asset(
         source,
         require_formal=require_formal,
     )
+
+
+def _rank_reserved_writer_asset(
+    config: Mapping[str, Any],
+    checkpoint: Path,
+    source: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Bind one active compiler asset without reopening the old training state."""
+
+    selected = rank_reserved_asset(config, checkpoint)
+    configured_base = (
+        REPO_ROOT / str(config["initialization"]["checkpoint"])
+    ).resolve()
+    historical = _historical_writer_asset(
+        config,
+        configured_base,
+        source,
+    )
+    common = {
+        "kind": selected["kind"],
+        "training_mode": "sealed_program_load_only",
+        "source_macro": 400,
+        "method_macro": int(selected["method_macro"]),
+        "checkpoint": str(checkpoint.resolve()),
+        "enable_program_residual": bool(selected["enable_program_residual"]),
+        "writer_state": historical["writer_state"],
+        "compiler": dict(config["compiler"]),
+    }
+    if not common["enable_program_residual"]:
+        return {
+            **common,
+            "manifest": historical["manifest"],
+            "residual_state": historical["residual_state"],
+        }
+    reference = selected.get("program_reference")
+    if not isinstance(reference, Mapping):
+        raise ExpertManifoldError("rank-reserved Program reference is missing")
+    memory = reference["program_memory"]
+    reference_path = Path(str(reference["path"])).resolve()
+    return {
+        **common,
+        "manifest": {
+            "path": str(reference_path),
+            "bytes": reference_path.stat().st_size,
+            "schema": reference["schema_version"],
+        },
+        "source_program_checkpoint": dict(reference["source_checkpoint"]),
+        "residual_state": {
+            "kind": "sealed_reward_program_reference",
+            "path": str(memory["path"]),
+            "bytes": int(memory["bytes"]),
+            "tensor_count": int(memory["tensor_count"]),
+            "key": str(memory["key"]),
+            "dtype": "torch.float32",
+            "shape": list(memory["shape"]),
+            "value_count": int(memory["value_count"]),
+            "payload_validation": "source_manifest_and_safetensors_header_only",
+        },
+    }
+
+
+def _evaluation_writer_asset(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    source: Mapping[str, Any],
+    video_condition: str,
+    require_formal: bool,
+) -> tuple[Path, dict[str, Any], bool, str, dict[str, Any]]:
+    config_path = config_path.resolve()
+    config = load_expert_manifold_deployment_config(config_path)
+    rank_reserved = config["schema_version"] == RANK_RESERVED_CONFIG_SCHEMA
+    if video_condition not in VIDEO_CONDITIONS:
+        raise ExpertManifoldError("unsupported Expert-Manifold video condition")
+    status = str(config["evaluation"]["formal_status"])
+    formal_statuses = (
+        {"sealed_from_live_a40_rank_reserved_deployment_profile"}
+        if rank_reserved
+        else {
+            "sealed_from_live_residual_deployment_profile",
+            "sealed_from_unchanged_v6_residual_deployment_graph",
+        }
+    )
+    if require_formal and status not in formal_statuses:
+        raise ExpertManifoldError(
+            "formal residual evaluation requires its live deployment profile"
+        )
+    writer_asset = (
+        _rank_reserved_writer_asset(config, checkpoint, source)
+        if rank_reserved
+        else inspect_v6_prior_writer_asset(
+            config,
+            checkpoint,
+            source,
+            require_formal=require_formal,
+        )
+    )
+    return config_path, config, rank_reserved, status, writer_asset
 
 
 def inspect_expert_manifold_writer_evaluation(
@@ -569,23 +672,14 @@ def inspect_expert_manifold_writer_evaluation(
     video_sampling_mode: str,
     require_formal: bool,
 ) -> dict[str, Any]:
-    config_path = config_path.resolve()
-    config = load_v6_prior_config(config_path)
-    if video_condition not in VIDEO_CONDITIONS:
-        raise ExpertManifoldError("unsupported Expert-Manifold video condition")
-    status = str(config["evaluation"]["formal_status"])
-    if require_formal and status not in {
-        "sealed_from_live_residual_deployment_profile",
-        "sealed_from_unchanged_v6_residual_deployment_graph",
-    }:
-        raise ExpertManifoldError(
-            "formal residual evaluation requires its live deployment profile"
+    config_path, config, rank_reserved, status, writer_asset = (
+        _evaluation_writer_asset(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            source=source,
+            video_condition=video_condition,
+            require_formal=require_formal,
         )
-    writer_asset = inspect_v6_prior_writer_asset(
-        config,
-        checkpoint,
-        source,
-        require_formal=require_formal,
     )
     mapping, video_data, schedule, pairing = _evaluation_video_contract(
         config,
@@ -596,18 +690,33 @@ def inspect_expert_manifold_writer_evaluation(
         video_sampling_mode=video_sampling_mode,
     )
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    config_schema = (
+        RANK_RESERVED_CONFIG_SCHEMA if rank_reserved else V6_PRIOR_CONFIG_SCHEMA
+    )
+    adapter_schema = (
+        RANK_RESERVED_ADAPTER_SCHEMA
+        if rank_reserved
+        else EXPERT_MANIFOLD_ADAPTER_SCHEMA
+    )
+    arm_prefix = (
+        "expert_manifold_v6_qv_rank_reserved_native_reward_"
+        if rank_reserved
+        else "expert_manifold_v6_condition_residual_"
+    )
     reference = (
-        f"{V6_PRIOR_CONFIG_SCHEMA}:{writer_asset['kind']}:"
+        f"{config_schema}:{writer_asset['kind']}:"
         f"m{int(writer_asset['method_macro'])}:"
         f"base{int(writer_asset['writer_state']['bytes'])}bytes:"
         f"residual{int(writer_asset['residual_state']['bytes'])}bytes:rank16"
     )
     return {
-        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+        "schema_version": adapter_schema,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_condition_residual_{video_condition}",
+        "arm": f"{arm_prefix}{video_condition}",
         "execution_backend": (
-            "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
+            "online_frozen_v6_rank_reserved_native_reward_then_episode_lora_cache"
+            if rank_reserved
+            else "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
         ),
         "config": {
             "path": str(config_path),
@@ -671,125 +780,3 @@ def inspect_expert_manifold_writer_evaluation(
         },
         "content_hash_policy": "disabled_by_owner",
     }
-
-
-def expected_expert_manifold_episode_evidence(
-    adapter: Mapping[str, Any],
-    *,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-    lora_reference: str,
-) -> dict[str, Any]:
-    if (
-        adapter.get("schema_version") != EXPERT_MANIFOLD_ADAPTER_SCHEMA
-        or adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND
-        or not lora_reference
-    ):
-        raise ExpertManifoldError("invalid Expert-Manifold episode adapter")
-    matches = [
-        row
-        for row in adapter["task_video_mapping"]
-        if row["suite"] == suite and int(row["task_id"]) == task_id
-    ]
-    if len(matches) != 1:
-        raise ExpertManifoldError("episode task is outside Expert-Manifold mapping")
-    mapping = matches[0]
-    schedule = adapter["video_schedule"]
-    seed = int(schedule["seed"])
-    mode = str(schedule["sampling_mode"])
-    demo_count = int(schedule["demo_count"])
-    reference = reference_demo_index(
-        seed,
-        suite,
-        task_id,
-        init_state_id,
-        demo_count=demo_count,
-        sampling_mode=mode,
-    )
-    selected = condition_demo_index(
-        seed,
-        suite,
-        task_id,
-        init_state_id,
-        condition=str(adapter["video_condition"]),
-        demo_count=demo_count,
-        sampling_mode=mode,
-    )
-    result = {
-        "schema_version": EXPERT_MANIFOLD_EPISODE_SCHEMA,
-        "writer_method": EXPERT_MANIFOLD_WRITER_KIND,
-        "method_arm": adapter["arm"],
-        "condition": adapter["video_condition"],
-        "writer_asset_reference": adapter["writer_asset"]["reference"],
-        "writer_checkpoint_kind": adapter["writer_asset"]["kind"],
-        "writer_method_macro": int(adapter["writer_asset"]["method_macro"]),
-        "writer_parameter_count": int(
-            adapter["writer_asset"]["writer_parameter_count"]
-        ),
-        "writer_deployment_trainable_parameter_count": 0,
-        "writer_program_residual_value_count": int(
-            adapter["writer_asset"]["program_residual_value_count"]
-        ),
-        "generated_lora_tensor_count": int(
-            adapter["writer_asset"]["generated_lora_tensor_count"]
-        ),
-        "lora_contract_reference": adapter["lora_contract"]["reference"],
-        "lora_reference": lora_reference,
-        "language_global_task_id": int(mapping["language_global_task_id"]),
-        "teacher_video_kind": adapter["video_condition"],
-        "teacher_video_frames_used": adapter["video_condition"] != "no_video",
-        "teacher_video_count": int(adapter["video_condition"] != "no_video"),
-        "teacher_video_seed_root": seed,
-        "teacher_video_selection_seed": video_selection_seed(
-            seed,
-            suite,
-            task_id,
-            init_state_id,
-            sampling_mode=mode,
-        ),
-        "teacher_video_sampling_mode": mode,
-        "video_suite": str(mapping["video_suite"]),
-        "video_task_id": int(mapping["video_task_id"]),
-        "video_global_task_id": int(mapping["video_global_task_id"]),
-        "video_split_role": str(mapping["video_split_role"]),
-        "teacher_demo_indices": [selected],
-        "teacher_reference_demo_indices": [reference],
-        "task_video_mapping_reference": adapter["task_video_mapping_reference"],
-        "pairing_reference": adapter["pairing_reference"],
-        "writer_generation_seed_schedule": (
-            "numeric_seedsequence_one_shot_frame_order_v1"
-        ),
-        "teacher_video_order_seeds": [
-            frame_order_seed(seed, suite, task_id, reference)
-        ],
-    }
-    if adapter["video_condition"] == "same_task_other":
-        result["teacher_demo_offset"] = SAME_TASK_OTHER_OFFSET
-    return result
-
-
-def validate_expert_manifold_episode_evidence(
-    adapter: Mapping[str, Any],
-    row: Any,
-    *,
-    suite: str,
-    task_id: int,
-    init_state_id: int,
-) -> bool:
-    if not isinstance(row, Mapping):
-        return False
-    try:
-        seconds = float(row.get("writer_generation_seconds", float("nan")))
-        expected = expected_expert_manifold_episode_evidence(
-            adapter,
-            suite=suite,
-            task_id=task_id,
-            init_state_id=init_state_id,
-            lora_reference=str(row.get("lora_reference", "")),
-        )
-    except (ExpertManifoldError, KeyError, TypeError, ValueError):
-        return False
-    observed = dict(row)
-    observed.pop("writer_generation_seconds", None)
-    return observed == expected and math.isfinite(seconds) and seconds >= 0

@@ -3,33 +3,18 @@ from __future__ import annotations
 import torch
 
 from ember.writer.condition_update import (
+    compact_rank2_effective_tangent,
+    deterministic_mgs_column_pivots,
     FixedBalancedCausalConditionFeature,
-    FrozenV6ConditionResidualWriter,
+    pivot_preserving_base_factors,
     ProgramReconciliationState,
     ProgramResidualMemory,
     anchored_reconciliation_program_delta,
     apply_anchored_reconciliation_update_,
     program_residual_delta_application_evidence,
+    stable_factor_head_linearization,
 )
-from ember.writer.model import WriterVideoEvidence
-
-
-class _FrozenSlotDecoder(torch.nn.Module):
-    program_width = 2
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.projection = torch.nn.Linear(2, 2, bias=False)
-
-    def compile_slots(self, memories: torch.Tensor) -> torch.Tensor:
-        return memories
-
-    def decode_slots(self, slots: torch.Tensor) -> dict[str, torch.Tensor]:
-        decoded = self.projection(slots)
-        return {
-            "target.lora_A.default.weight": decoded[:, :160].clone(),
-            "target.lora_B.default.weight": decoded[:, 160:].clone(),
-        }
+from ember.writer.model import FactorHead, WriterVideoEvidence
 
 
 def _evidence(frame_values: torch.Tensor, text: torch.Tensor) -> WriterVideoEvidence:
@@ -210,9 +195,7 @@ def test_zero_correct_motion_uses_finite_gate_failure_value() -> None:
         step_size=1.0,
         relative_damping=0.01,
     )
-    assert torch.isfinite(
-        torch.tensor(summary.predicted_negative_to_correct_ratio)
-    )
+    assert torch.isfinite(torch.tensor(summary.predicted_negative_to_correct_ratio))
     assert summary.predicted_negative_to_correct_ratio > 1e30
     assert torch.count_nonzero(delta) == 0
     assert not torch.equal(next_precision, reconciliation.precision)
@@ -362,7 +345,9 @@ def test_streaming_anchored_reconciliation_matches_direct_cumulative_ridge() -> 
         rtol=2e-5,
         atol=2e-6,
     )
-    torch.testing.assert_close(reconciliation.precision, precision, rtol=1e-13, atol=1e-13)
+    torch.testing.assert_close(
+        reconciliation.precision, precision, rtol=1e-13, atol=1e-13
+    )
     assert reconciliation.assimilated_rows == 16
 
 
@@ -384,25 +369,98 @@ def test_rank_deficient_repeated_features_remain_finite() -> None:
     assert summary.feature_rank == 1
 
 
-def test_zero_residual_is_exact_and_one_decoder_moves_both_lora_factors() -> None:
-    base = _FrozenSlotDecoder()
+def test_stable_factor_head_linearization_matches_exact_fp32_jvp() -> None:
+    torch.manual_seed(23)
+    head = FactorHead(5, 7, 4)
     with torch.no_grad():
-        base.projection.weight.copy_(torch.tensor([[1.0, 0.5], [-0.25, 2.0]]))
-    writer = FrozenV6ConditionResidualWriter(
-        base,  # type: ignore[arg-type]
-        feature_width=4,
-        feature_seed=23,
+        head.network[-1].weight.normal_(std=0.2)
+    source = torch.randn(2, 3, 5)
+    residual = torch.randn_like(source) * 0.01
+    rows, tangent = stable_factor_head_linearization(head, source, residual)
+    expected_rows, expected_tangent = torch.autograd.functional.jvp(
+        head,
+        source,
+        residual,
+        create_graph=False,
+        strict=True,
     )
-    slots = torch.randn(2, 320, 2)
-    features = torch.tensor(
-        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]
-    )
-    baseline = base.decode_slots(slots)
-    step0 = base.decode_slots(writer.condition_slots(slots, features))
-    assert all(torch.equal(baseline[name], step0[name]) for name in baseline)
-    assert all(not parameter.requires_grad for parameter in writer.parameters())
+    torch.testing.assert_close(rows, expected_rows)
+    assert tangent is not None
+    torch.testing.assert_close(tangent, expected_tangent, rtol=2e-5, atol=2e-6)
 
-    with torch.no_grad():
-        writer.program_memory.value.normal_(std=0.02)
-    changed = base.decode_slots(writer.condition_slots(slots, features))
-    assert all(not torch.equal(step0[name], changed[name]) for name in step0)
+
+def test_pivot_base_keeps_native_columns_and_reconstructs_rank14_pair() -> None:
+    generator = torch.Generator().manual_seed(29)
+    left = torch.randn(3, 41, 14, generator=generator)
+    coordinates = torch.randn(3, 14, 16, generator=generator)
+    base_b = torch.matmul(left, coordinates)
+    base_a = torch.randn(3, 16, 19, generator=generator)
+    reduced_a, reduced_b, pivots = pivot_preserving_base_factors(
+        base_a, base_b, keep=14
+    )
+    assert pivots.shape == (3, 14)
+    assert all(len(set(row.tolist())) == 14 for row in pivots)
+    gathered = torch.gather(
+        base_b,
+        -1,
+        pivots.unsqueeze(-2).expand(3, base_b.shape[-2], 14),
+    )
+    assert torch.equal(reduced_b, gathered)
+    torch.testing.assert_close(
+        torch.matmul(reduced_b, reduced_a),
+        torch.matmul(base_b, base_a),
+        rtol=3e-4,
+        atol=3e-4,
+    )
+    tied = torch.zeros(2, 7, 16)
+    tied_pivots = deterministic_mgs_column_pivots(tied, keep=14)
+    assert torch.equal(tied_pivots, torch.arange(14).expand(2, -1))
+
+    native_a = base_a.to(torch.bfloat16)
+    native_b = base_b.to(torch.bfloat16)
+    native_reduced_a, native_reduced_b, native_pivots = pivot_preserving_base_factors(
+        native_a, native_b, keep=14
+    )
+    native_gathered = torch.gather(
+        native_b,
+        -1,
+        native_pivots.unsqueeze(-2).expand(3, native_b.shape[-2], 14),
+    )
+    assert native_reduced_a.dtype == native_reduced_b.dtype == torch.bfloat16
+    assert torch.equal(native_reduced_b, native_gathered)
+
+
+def test_compact_rank2_matches_effective_tangent_without_second_order_term() -> None:
+    generator = torch.Generator().manual_seed(31)
+    base_a = torch.randn(2, 16, 35, generator=generator)
+    base_b = torch.randn(2, 40, 16, generator=generator)
+    delta_a = torch.randn(2, 16, 35, generator=generator) * 0.01
+    delta_b = torch.randn(2, 40, 16, generator=generator) * 0.01
+    residual_a, residual_b = compact_rank2_effective_tangent(
+        base_a, base_b, delta_a, delta_b
+    )
+    expected = torch.matmul(base_b, delta_a) + torch.matmul(delta_b, base_a)
+    observed = torch.matmul(residual_b, residual_a)
+    u, singular, vh = torch.linalg.svd(expected, full_matrices=False)
+    expected_top2 = torch.matmul(
+        u[..., :, :2] * singular[..., :2].unsqueeze(-2),
+        vh[..., :2, :],
+    )
+    torch.testing.assert_close(observed, expected_top2, rtol=3e-5, atol=3e-5)
+    finite_factor_delta = torch.matmul(
+        base_b + delta_b,
+        base_a + delta_a,
+    ) - torch.matmul(base_b, base_a)
+    assert not torch.allclose(expected, finite_factor_delta)
+    assert residual_a.shape == (2, 2, 35)
+    assert residual_b.shape == (2, 40, 2)
+
+    zero_a, zero_b = compact_rank2_effective_tangent(
+        base_a,
+        base_b,
+        torch.zeros_like(delta_a),
+        torch.zeros_like(delta_b),
+    )
+    assert torch.isfinite(zero_a).all() and torch.isfinite(zero_b).all()
+    assert not torch.count_nonzero(zero_a)
+    assert not torch.count_nonzero(zero_b)

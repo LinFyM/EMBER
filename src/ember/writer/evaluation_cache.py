@@ -24,9 +24,7 @@ from ember.writer.errors import WriterModelError
 
 
 WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v3"
-WRITER_LORA_CACHE_ENTRY_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_entry_v3"
-)
+WRITER_LORA_CACHE_ENTRY_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_entry_v3"
 WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
     "ember_pi05_expert_manifold_writer_lora_cache_manifest_v3"
 )
@@ -73,14 +71,20 @@ def is_writer_adapter(adapter: Mapping[str, Any] | None) -> bool:
 
 def _writer_cache_layout(
     contract: Mapping[str, Any],
-) -> tuple[tuple[WriterCacheRequest, ...], dict[tuple[str, int, int], WriterCacheRequest]]:
+) -> tuple[
+    tuple[WriterCacheRequest, ...], dict[tuple[str, int, int], WriterCacheRequest]
+]:
     requests = []
     by_episode = {}
     for task in contract.get("tasks", []):
         suite = str(task["suite"])
         task_id = int(task["task_id"])
         states = tuple(int(value) for value in task["init_state_ids"])
-        if not states or len(set(states)) != len(states) or tuple(sorted(states)) != states:
+        if (
+            not states
+            or len(set(states)) != len(states)
+            or tuple(sorted(states)) != states
+        ):
             raise WriterModelError("Writer cache task states are invalid")
         for state_id in states:
             key = suite, task_id, state_id
@@ -94,7 +98,9 @@ def _writer_cache_layout(
     return tuple(requests), by_episode
 
 
-def writer_cache_requests(contract: Mapping[str, Any]) -> tuple[WriterCacheRequest, ...]:
+def writer_cache_requests(
+    contract: Mapping[str, Any]
+) -> tuple[WriterCacheRequest, ...]:
     return _writer_cache_layout(contract)[0]
 
 
@@ -110,7 +116,7 @@ def _cache_identity_payload(
     adapter = contract.get("adapter")
     if not is_writer_adapter(adapter):
         raise WriterModelError("Writer cache requires a Writer adapter")
-    return {
+    result = {
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
         "adapter": dict(adapter),
         "model_step": int(contract["model"]["optimizer_step"]),
@@ -126,6 +132,17 @@ def _cache_identity_payload(
         "inference_seed": int(contract["rng"]["inference_seed"]),
         "generation_recipe": dict(generation_recipe),
     }
+    if (
+        adapter.get("schema_version")
+        == "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
+    ):
+        commit = str(contract.get("git", {}).get("commit", ""))
+        if len(commit) != 40:
+            raise WriterModelError(
+                "rank-reserved Writer cache lacks its implementation commit"
+            )
+        result["implementation_commit"] = commit
+    return result
 
 
 def build_writer_lora_cache_descriptor(
@@ -153,9 +170,7 @@ def build_writer_lora_cache_descriptor(
             "tensor_bytes": int(lora_storage_per_entry["tensor_bytes"]),
             "dtype_tensor_counts": {
                 str(name): int(value)
-                for name, value in lora_storage_per_entry[
-                    "dtype_tensor_counts"
-                ].items()
+                for name, value in lora_storage_per_entry["dtype_tensor_counts"].items()
             },
             "dtype_parameter_counts": {
                 str(name): int(value)
@@ -169,7 +184,9 @@ def build_writer_lora_cache_descriptor(
             },
         }
     except (AttributeError, KeyError, TypeError, ValueError) as error:
-        raise WriterModelError("Writer cache LoRA storage contract is invalid") from error
+        raise WriterModelError(
+            "Writer cache LoRA storage contract is invalid"
+        ) from error
     if (
         storage["tensor_count"] != lora_tensor_count
         or storage["parameter_count"] != lora_parameter_count
@@ -177,8 +194,7 @@ def build_writer_lora_cache_descriptor(
         or sum(storage["dtype_tensor_counts"].values()) != lora_tensor_count
         or sum(storage["dtype_parameter_counts"].values()) != lora_parameter_count
         or len(storage["dtype_by_name"]) != lora_tensor_count
-        or set(storage["dtype_by_name"].values())
-        - set(storage["dtype_tensor_counts"])
+        or set(storage["dtype_by_name"].values()) - set(storage["dtype_tensor_counts"])
     ):
         raise WriterModelError("Writer cache LoRA storage contract changed")
     adapter = contract["adapter"]
@@ -237,9 +253,9 @@ def stage_writer_lora_states_to_cpu(
         for name, value in state.items():
             detached = value.detach()
             if detached.device.type == "cuda":
-                pending_values.setdefault(
-                    (detached.device, detached.dtype), []
-                ).append((state_index, name, detached))
+                pending_values.setdefault((detached.device, detached.dtype), []).append(
+                    (state_index, name, detached)
+                )
             else:
                 cpu_value = detached.to(device="cpu").contiguous()
                 result[state_index][name] = cpu_value
@@ -278,7 +294,8 @@ def _descriptor(contract: Mapping[str, Any]) -> dict[str, Any]:
     if (
         descriptor.get("schema_version") != WRITER_LORA_CACHE_SCHEMA
         or descriptor.get("identity") != observed
-        or int(descriptor.get("entry_count", -1)) != len(writer_cache_requests(contract))
+        or int(descriptor.get("entry_count", -1))
+        != len(writer_cache_requests(contract))
     ):
         raise WriterModelError("Writer LoRA cache descriptor changed")
     return dict(descriptor)
@@ -296,7 +313,8 @@ def assigned_writer_cache_requests(
     if not 0 <= generator_index < workers:
         raise WriterModelError("Writer generator index is invalid")
     return tuple(
-        request for request in writer_cache_requests(contract)
+        request
+        for request in writer_cache_requests(contract)
         if request.ordinal % workers == generator_index
     )
 
@@ -338,7 +356,9 @@ def writer_cache_entry_is_complete(
     return True
 
 
-def _validate_lora_contract(descriptor: Mapping[str, Any], contract: LoRAContract) -> None:
+def _validate_lora_contract(
+    descriptor: Mapping[str, Any], contract: LoRAContract
+) -> None:
     if (
         int(descriptor["lora_parameter_count"]) != contract.parameter_count
         or int(descriptor["lora_tensor_count"]) != contract.state_tensor_count
@@ -346,7 +366,9 @@ def _validate_lora_contract(descriptor: Mapping[str, Any], contract: LoRAContrac
         raise WriterModelError("Writer cache LoRA topology changed")
 
 
-def _state_storage(state: Mapping[str, torch.Tensor]) -> dict[str, Any]:
+def lora_state_storage(state: Mapping[str, torch.Tensor]) -> dict[str, Any]:
+    """Describe one native LoRA state without copying or changing its dtype."""
+
     dtype_tensor_counts: dict[str, int] = {}
     dtype_parameter_counts: dict[str, int] = {}
     tensor_bytes = 0
@@ -383,11 +405,14 @@ def write_writer_cache_entry(
     descriptor = _descriptor(contract)
     _validate_lora_contract(descriptor, lora_contract)
     validate_lora_state(state, lora_contract)
-    if _state_storage(state) != descriptor["lora_storage_per_entry"]:
+    if lora_state_storage(state) != descriptor["lora_storage_per_entry"]:
         raise WriterModelError("Writer cache LoRA native storage changed")
     if not validate_writer_episode(
-        contract["adapter"], evidence,
-        suite=request.suite, task_id=request.task_id, init_state_id=request.init_state_id,
+        contract["adapter"],
+        evidence,
+        suite=request.suite,
+        task_id=request.task_id,
+        init_state_id=request.init_state_id,
     ):
         raise WriterModelError("Writer cache episode evidence changed")
     final = _entry_root(Path(descriptor["root"]), request)
@@ -439,7 +464,7 @@ def load_writer_cache_entry(
         device=str(device),
     )
     validate_lora_state(state, lora_contract)
-    if _state_storage(state) != descriptor["lora_storage_per_entry"]:
+    if lora_state_storage(state) != descriptor["lora_storage_per_entry"]:
         raise WriterModelError("Writer cache loaded LoRA storage changed")
     return state, dict(record["evidence"])
 
@@ -447,11 +472,17 @@ def load_writer_cache_entry(
 def generator_marker_path(
     contract: Mapping[str, Any], invocation_id: str, worker_id: str
 ) -> Path:
-    if re.fullmatch(r"[0-9a-f]{32}", invocation_id) is None or re.fullmatch(
-        r"[0-9]+-r[0-9]+", worker_id
-    ) is None:
+    if (
+        re.fullmatch(r"[0-9a-f]{32}", invocation_id) is None
+        or re.fullmatch(r"[0-9]+-r[0-9]+", worker_id) is None
+    ):
         raise WriterModelError("Writer generator invocation identity is invalid")
-    return writer_cache_root(contract) / "generator_invocations" / invocation_id / f"{worker_id}.json"
+    return (
+        writer_cache_root(contract)
+        / "generator_invocations"
+        / invocation_id
+        / f"{worker_id}.json"
+    )
 
 
 def write_generator_marker(
@@ -502,7 +533,8 @@ def validate_generator_markers(
             or marker.get("worker_id") != worker_id
             or int(marker.get("generator_index", -1)) != index
             or marker.get("entry_ids") != [request.entry_id for request in expected]
-            or marker.get("summary", {}).get("source_policy_reused_for_rollout") is not True
+            or marker.get("summary", {}).get("source_policy_reused_for_rollout")
+            is not True
             or marker.get("summary", {}).get("writer_modules_released") is not True
         ):
             raise WriterModelError("Writer generator marker contract changed")
@@ -554,12 +586,16 @@ def finalize_writer_cache(
     path = writer_cache_manifest_path(contract)
     if path.exists():
         return validate_writer_cache_manifest(contract, verify_entry_files=True)
-    validate_generator_markers(contract, invocation_id=invocation_id, worker_ids=worker_ids)
+    validate_generator_markers(
+        contract, invocation_id=invocation_id, worker_ids=worker_ids
+    )
     descriptor = _descriptor(contract)
     entries, tensor_bytes = [], 0
     for request in writer_cache_requests(contract):
         record = validate_writer_cache_entry_record(contract, request)
-        entries.append({"entry_id": request.entry_id, "lora_bytes": record["lora_file"]["bytes"]})
+        entries.append(
+            {"entry_id": request.entry_id, "lora_bytes": record["lora_file"]["bytes"]}
+        )
         tensor_bytes += int(record["lora_file"]["bytes"])
     manifest = {
         "schema_version": WRITER_LORA_CACHE_MANIFEST_SCHEMA,

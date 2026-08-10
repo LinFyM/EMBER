@@ -72,14 +72,19 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   RMS的factor delta加到非零BF16 A/B，远小于约`1e-4`局部ULP。own-target native cosine约`.037`，而action
   四个FP32 factors不存在同一问题。FP16、dither、local-CD、gauge/global-scale和absolute full-rank refactor
   都已直接失败，不得重扫。
-- 唯一active设计改为`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`：q/v保留14个
+- 唯一active设计改为`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`，其canonical
+  load-only实现、family/config和ordered gate已落在当前worktree：q/v保留14个
   pivot-selected原生B columns并重解A，另用两个physical zero-B slots承载condition-local rank2 Reward
   residual；action保持原full-rank16 FP32。80-row generation-only门已通过：q/v base error约`.000752`、
   tangent capture`.999709`、dynamic cosine`.997525`、video-centered cosine`.95056`，action exact；但0 policy
   forward/0 rollout，不能冒充性能。
-- 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
-  EMBER GPU任务。下一顺序是canonical实现与真实vertical closure，然后新rank14 macro0 strict400；只有base
-  保留后才评估现有cycle1 Program的load-only strict400。在两项行为门前不启动新训练。
+- 活动config是`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`；cycle1只经
+  `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`读取原Program tensor，旧Reward训练入口
+  在distributed/runtime初始化前fail closed。历史最好single checkpoint仍是v6-fast macro400的`143/400`，
+  长期`>150/400`目标未达到。当前config仍为`awaiting_live_a40_rank_reserved_deployment_profile`且
+  `online_smoke_evidence=null`，所以尚未formal ready。当前没有运行中的EMBER GPU任务；带真实LIBERO assets
+  的全仓CPU seal已完成（`386 passed`）。下一顺序是clean commit/push/frozen后独立完成真实profile/vertical，
+  再跑新rank14 macro0 strict400；只有base保留后才评估cycle1 load-only。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
   `.001953125`、mean约`4.70e-5`，direct repeat为零。此前据此固定batch1、重复direct forward和
   逐tensor门禁的决定已被owner撤回：这些微差不是科学精度，不得以牺牲吞吐保留。
@@ -173,13 +178,18 @@ rank-reserved compiler的load-only learned Program，不是训练起点。
 - 36个q/v target使用pivot-preserving rank14 base + condition-local rank2 physical zero-B residual；两个action
   target保持原full-rank16 FP32。q/v tangent为`B0 dA+dB A0`且不含二阶cross term；action实际候选保留
   `(B0+dB)(A0+dA)`。base/residual slots不得gauge mixing，carrier不得固定global化或来自task experts。
-- 先在同一32-request panel实测B8/16/32并取最高稳定吞吐，再做native adapter load与三臂fixed-action vertical
-  closure；随后用official paired validation
+- 先在同一32-request panel实测B8/16/32并取最高稳定吞吐；单个更大候选OOM时只记录为ineligible，不抹掉
+  已完成的稳定候选。随后做native cache/adapter load、Writer release与五臂fixed-action vertical closure；
+  full Reward和q/v-only两臂必须使用cache重新加载的q/v state，第五臂用rank14-base action排除健康action
+  residual冒充q/v传递。8-request vertical的实际cache forward自然为`min(selected,8)`，不得冒充selected batch；
+  selected batch本身由32-request profile证明。随后用
+  official paired validation
   8×50分别做zero-Program新macro0与现有cycle1 Program load-only correct400。小panel、几何或reconstruction
   不能选择方法。
 - correct-video zero-Program是rank14 v6 base，不是identity；no-video必须显式跳过compiler并返回
   template-A/zero-B source identity。
-- 新macro0若correct<130、相对同schedule旧macro0 134 lost>10、breadth<6或多suite广泛退化则reject。
+- 新macro0若correct<130、相对同schedule旧macro0 134 lost>10或breadth<6则reject；per-suite退化必须报告，
+  但在没有预注册数值定义时只作诊断，不能事后成为硬门。
   只有其保留base后才运行
   cycle1 load-only；低于新macro0即reject，只有`>=144`、breadth`>=6`、gained>lost且lost`<=6`才算通过并补
   同checkpoint controls。140--143只作诊断性non-pass，不授权新训练。

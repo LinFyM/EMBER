@@ -28,6 +28,10 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
 )
+from ember.expert_manifold.rank_reserved_contract import (
+    RANK_RESERVED_ADAPTER_SCHEMA,
+    RANK_RESERVED_CONFIG_SCHEMA,
+)
 from ember.writer.errors import WriterModelError
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
@@ -56,7 +60,14 @@ def _lora_storage() -> dict:
     }
 
 
-def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
+def _contract(
+    root: Path,
+    *,
+    replicas: int = 2,
+    state_count: int = 3,
+    rank_reserved: bool = False,
+    macro: int = 0,
+) -> dict:
     lora = _lora_contract()
     mapping = [
         {
@@ -70,16 +81,40 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
             "video_split_role": "validation",
         }
     ]
+    adapter_schema = (
+        RANK_RESERVED_ADAPTER_SCHEMA
+        if rank_reserved
+        else EXPERT_MANIFOLD_ADAPTER_SCHEMA
+    )
+    config_schema = (
+        RANK_RESERVED_CONFIG_SCHEMA
+        if rank_reserved
+        else "ember_pi05_v6_reward_credit_program_cotangent_v1"
+    )
     contract = {
         "adapter": {
-            "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
+            "schema_version": adapter_schema,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "arm": "expert_manifold_v6_condition_residual_correct",
+            "config": {"schema": config_schema},
+            "arm": (
+                "expert_manifold_v6_qv_rank_reserved_native_reward_correct"
+                if rank_reserved
+                else "expert_manifold_v6_condition_residual_correct"
+            ),
             "video_condition": "correct",
             "writer_asset": {
                 "reference": "v6-prior:historical-macro400",
-                "kind": "historical_v6_macro400_load_only",
-                "method_macro": 0,
+                "kind": (
+                    "v6_qv_rank14_zero_program_load_only"
+                    if rank_reserved and macro == 0
+                    else (
+                        "v6_qv_rank14_plus2_reward_program_load_only"
+                        if rank_reserved
+                        else "historical_v6_macro400_load_only"
+                    )
+                ),
+                "method_macro": macro if rank_reserved else 0,
+                **({"enable_program_residual": macro == 1} if rank_reserved else {}),
                 "writer_parameter_count": 10_775_296,
                 "program_residual_value_count": 20_971_520,
                 "generated_lora_tensor_count": 2,
@@ -106,6 +141,7 @@ def _contract(root: Path, *, replicas: int = 2, state_count: int = 3) -> dict:
         ],
         "policy": {"num_inference_steps": 10},
         "rng": {"inference_seed": 7},
+        "git": {"commit": "a" * 40},
         "parallel": {"physical_gpu_count": 1, "replicas_per_gpu": replicas},
     }
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
@@ -180,7 +216,9 @@ def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
 def test_cache_staging_preserves_native_tensor_dtypes() -> None:
     staged = stage_writer_lora_states_to_cpu((_state(1.0), _state(2.0)))
     assert len(staged) == 2
-    assert all(value.device.type == "cpu" for state in staged for value in state.values())
+    assert all(
+        value.device.type == "cpu" for state in staged for value in state.values()
+    )
     assert all(
         value.dtype == torch.bfloat16 for state in staged for value in state.values()
     )
@@ -327,3 +365,39 @@ def test_partial_cache_entry_cannot_cross_video_conditions(tmp_path: Path) -> No
     )
     with pytest.raises(WriterModelError, match="cache entry changed"):
         writer_cache_entry_is_complete(wrong, writer_cache_requests(wrong)[0])
+
+
+def test_rank_reserved_cache_identity_rejects_v8_and_cross_macro_reuse(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "cache"
+    old = _contract(root, state_count=1)
+    macro0 = _contract(root, state_count=1, rank_reserved=True, macro=0)
+    cycle1 = _contract(root, state_count=1, rank_reserved=True, macro=1)
+
+    assert (
+        old["writer_lora_cache"]["identity"] != macro0["writer_lora_cache"]["identity"]
+    )
+    assert (
+        macro0["writer_lora_cache"]["identity"]
+        != cycle1["writer_lora_cache"]["identity"]
+    )
+    changed_commit = copy.deepcopy(cycle1)
+    changed_commit["git"]["commit"] = "b" * 40
+    changed_commit["writer_lora_cache"] = build_writer_lora_cache_descriptor(
+        changed_commit,
+        root=root,
+        generators_per_gpu=1,
+        generation_batch_size=2,
+        lora_parameter_count=_lora_contract().parameter_count,
+        lora_tensor_count=_lora_contract().state_tensor_count,
+        lora_storage_per_entry=_lora_storage(),
+    )
+    assert (
+        cycle1["writer_lora_cache"]["identity"]
+        != changed_commit["writer_lora_cache"]["identity"]
+    )
+    assert (
+        macro0["writer_lora_cache"]["generation_recipe"]["episode_evidence_schema"]
+        == "ember_pi05_v6_qv_rank_reserved_native_reward_episode_v9"
+    )

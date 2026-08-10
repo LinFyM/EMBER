@@ -1,7 +1,11 @@
 # Q/V Rank-Reserved Native Reward Compiler
 
-状态：2026-08-11 active design authority。本文只授权先做现有 frozen-v6 macro0 与
-Reward-Credit cycle1 Program 的 load-only 行为裁决；在这两个裁决完成前，不授权新训练。
+状态：2026-08-11 active design authority；canonical load-only实现、v9 family/cache、ordered evaluator gate
+和CPU seal已完成。活动config=`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1唯一Program-only
+reference=`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；当前仍为
+`awaiting_live_a40_rank_reserved_deployment_profile`且`online_smoke_evidence=null`，尚未formal ready。clean seal
+后先做live Gate A，再有序做Gate B/C。本文只授权现有frozen-v6 macro0与Reward-Credit cycle1 Program的
+load-only行为裁决；完成前不授权新训练。
 
 ## 1. Why this is the next single-variable intervention
 
@@ -108,6 +112,8 @@ fast path，完全跳过pivot/lstsq/SVD并直接返回template-A/zero-B source i
 
 `runs/outputs/pi05_reward_qv_pivot_rank14_plus2_transport_v1_e3857f7_20260811/analysis.json`
 
+活动config以path、`2,604,840` bytes、schema和source commit精确绑定该artifact；不接受同名替代文件。
+
 已经给出：
 
 - 288个q/v pair-batches、16个action pairs；kept B bit-exact、zero residual B exact、finite，
@@ -127,18 +133,34 @@ fast path，完全跳过pivot/lstsq/SVD并直接返回template-A/zero-B source i
 ### Gate A: vertical native closure and throughput
 
 在一张live空闲A40上，用同一32-request、同一总sampled-frame panel依次实测真实B8/16/32；从稳定、
-不OOM且有可用显存余量的候选中选择端到端LoRAs/s最高点，不机械固定B8或最大batch。随后以所选batch完成：
+不OOM且有可用显存余量的候选中选择端到端LoRAs/s最高点，不机械固定B8或最大batch。单个更大候选若OOM，
+记录为ineligible并保留已完成的较小候选，不把整个profile root作废。winner成为后续formal generation的
+configured batch。vertical只有validation8×state0八个cache requests，所以实际cache forward自然是
+`min(selected,8)`；artifact必须同时报告configured与actual，不能声称B16/B32在八条short panel中实际发生。
+随后完成：
 
 - 真实Writer生成、原生72 BF16 + 4 FP32 cache、public adapter load均通过；
-- 同一cycle1 condition比较old rank16、rank14 base、rank14+2三臂fixed-action before/after，必须证明q/v
-  residual在实际LoRA matmul与policy accumulation后非零且方向一致，并覆盖四suite；
+- 同一cycle1 condition一次B4生成old rank16 base/reward及诊断rank14五臂；canonical cache另按actual batch
+  生成并重载full Reward state。对每个cache-loaded full state原地保留first14 q/v slots、把last2 A/B清零，
+  构造同forward的paired rank14 base；fixed-action的full Reward直接用cached state，q/v-only用cached q/v加
+  paired-base action。这样q/v effective/action delta只来自last2 residual，不被B4/B8合法BF16 roundoff冒充；
+  36 targets与四suite都必须非零，q/v-only禁止action residual替q/v路径过门；
 - no-video必须返回source identity；correct-video zero-Program只要求两个residual B slots和其incremental motion
   exact zero，不能把rank14 base误写成identity；
 - generation不为了低位精度重复forward、扩dtype或缩batch；
 - 记录LoRAs/s、peak allocated/reserved、host transfer和release。若吞吐下降，先优化batched compact
   pivot/solve/SVD；不得用更低吞吐换逐元素精度。
 
+direction/cosine必须完整报告用于解释，但本工程门只硬门禁真实q/v-only非零传递、target覆盖、identity、
+cache与执行合同；没有预注册数值方向阈值，不能事后把方向观感升级为hard gate。
+
 该门只允许窄smoke，不选择方法。
+
+profile与vertical都通过后，必须回到tracked、clean、pushed的`codex/bci-continuation`主工作树；纯CPU
+`scripts/evaluate_pi05.py rank-reserved-seal`重读两份注册artifact并自动写入path/bytes/run commit/selected
+batch。不得在detached worktree执行seal，不得人工拼`online_smoke_evidence`或跳过raw validator。seal改动随后
+必须commit/push，再从该sealed commit新建frozen worktree；Gate B、Gate C和后续controls保持同一evaluation
+commit，期间不得先写文档形成新的实验commit。
 
 ### Gate B: new macro0 strict correct400
 
@@ -150,8 +172,9 @@ macro400完全相同的official paired validation 8×50 panel、state、policy R
 
 - correct `<130/400`；
 - 相对旧full-rank macro0 `134/400` lost `>10`；
-- breadth `<6`；
-- 多suite出现广泛净退化。
+- breadth `<6`。
+
+per-suite gained/lost必须完整报告，但由于“广泛退化”没有预注册数值定义，它只作诊断，不得事后升级为硬门。
 
 该结果建立新compiler自己的真实base；不能用`.075%` reconstruction error推定identity。
 
@@ -176,6 +199,9 @@ macro400完全相同的official paired validation 8×50 panel、state、policy R
 
 在Gate B/C前不实现或启动新训练。若Gate C通过，下一设计必须解决fresh-zero可导性：
 
+旧Reward的fresh/profile/resume/cycle2入口已经在CLI、training owner和runtime owner三层、CUDA或distributed
+初始化前机械fail closed；只有sealed cycle1 Program tensor可被本load-only evaluator读取。
+
 - forward使用本文原生compiler；
 - backward使用明确的continuous analytic surrogate/STE，使native forward保持真实，而Program在
   `M=0`时仍有非零VJP；
@@ -199,3 +225,19 @@ profile与formal root必须在届时的新design authority中封存；本文不�
 若Gate B失败，退役pivot-preserving rank14 base；若Gate B过而Gate C低于macro0，则退役当前stable Reward
 direction在rank-reserved compiler上的load-only组合。负结果不能扩大成“视频无用”或“Reward-Credit整体
 无效”，但也不得通过扫rank、scale、dtype、seed或小panel重新解释。
+
+## 8. Canonical implementation ownership and retirement
+
+本设计只保留一条活动实现。数学/JVP留在`writer/condition_update.py`，完整LoRA编译由
+`writer/rank_reserved_compiler.py`拥有，吞吐profile与五臂vertical分别由
+`writer/generation_profile.py`和`writer/rank_reserved_vertical.py`拥有，cache生成、释放和rollout handoff仍由
+`writer/evaluation_runtime.py`统一接管。静态authority、live deployment evidence与config facade分别归
+`expert_manifold/rank_reserved_authority.py`、`rank_reserved_deployment.py`和`rank_reserved_contract.py`；正式
+root/gate校验与CLI launch归`pi05_eval/rank_reserved_gate.py`和`rank_reserved_launch.py`。episode evidence和历史
+transition分析只是从原超大owner机械拆出的同一合同，不是第二套算法或evaluator。
+
+旧inline实现已经原位移除，历史只由Git和frozen artifacts保存；没有兼容并行版本、第二compiler或第二CLI
+family。结构守卫相对`513eb43`为`review`但hard violations、parallel version families和parallel function
+families均为空；review来自这次完整deployment/gate合同的净增长，以上owner和Gate B/C退役条件即其生命周期
+说明。带真实LIBERO assets的全仓fresh CPU回归为`386 passed in 28.76s`，compileall与diff-check通过；这些
+只证明工程合同，不构成A40行为或closed-loop性能证据。

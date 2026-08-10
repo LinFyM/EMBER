@@ -27,10 +27,11 @@ from ember.pi05_eval.paired_metrics import (
     summarize_panel,
     task_key as _task_key,
 )
+from ember.pi05_eval.historical_transition import (
+    HISTORICAL_BASELINE_TRANSITION_SCHEMA,
+)
 from ember.pi05_eval.writer_family_registry import (
     CHECKPOINT_MACROS,
-    HISTORICAL_TRANSITION_BASELINE_FAMILIES,
-    HISTORICAL_TRANSITION_CANDIDATE_MACROS,
     PROGRAM_RESIDUAL_WRITER_FAMILIES,
     WRITER_FAMILIES,
 )
@@ -39,7 +40,6 @@ from ember.pi05_target_data import SUITE_ORDER
 
 CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
 SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
-HISTORICAL_BASELINE_TRANSITION_SCHEMA = "ember_pi05_v6_historical_baseline_transition_analysis_v2"
 SIX_ARM_CONDITIONS = (
     "correct",
     "same_task_other",
@@ -105,7 +105,8 @@ def _formal_adapter(
         or any(wall.get(key) != value for key, value in expected_wall.items())
         or adapter.get("lora_contract", {}).get("rank") != 16
         or adapter.get("lora_contract", {}).get("target_count") != 38
-        or adapter.get("evaluation_authority", {}).get("formal_status") not in family["formal_statuses"]
+        or adapter.get("evaluation_authority", {}).get("formal_status")
+        not in family["formal_statuses"]
         or paired.get("git", {}).get("dirty_paths") != []
     ):
         _fail("analysis requires a sealed formal validation Expert-Manifold panel")
@@ -128,21 +129,30 @@ def _sealed_validation_tasks() -> list[dict[str, Any]]:
         for task in manifest.get("tasks", [])
         if task.get("split_role") == "validation"
     ]
-    summary_ids = list(map(int, manifest.get("summary", {}).get("roles", {}).get("validation", [])))
+    summary_ids = list(
+        map(int, manifest.get("summary", {}).get("roles", {}).get("validation", []))
+    )
     if (
         manifest.get("schema_version") != "ember_pi05_target_data_manifest_v1"
         or len(tasks) != 8
         or len({(task["suite"], task["task_id"]) for task in tasks}) != 8
         or [task["global_task_id"] for task in tasks] != summary_ids
     ):
-        _fail("sealed target-data manifest does not define the canonical 8 validation tasks")
+        _fail(
+            "sealed target-data manifest does not define the canonical 8 validation tasks"
+        )
     return tasks
 
 
-def _formal_tasks(paired: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], list[TaskKey]]:
+def _formal_tasks(
+    paired: Mapping[str, Any]
+) -> tuple[list[Mapping[str, Any]], list[TaskKey]]:
     tasks = paired.get("tasks", [])
     authority = _sealed_validation_tasks()
-    expected = [{key: task[key] for key in ("suite", "task_id", "split_role", "language")} for task in authority]
+    expected = [
+        {key: task[key] for key in ("suite", "task_id", "split_role", "language")}
+        for task in authority
+    ]
     observed = [
         {
             "suite": str(task.get("suite", "")),
@@ -152,13 +162,20 @@ def _formal_tasks(paired: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], l
         }
         for task in tasks
     ]
-    if observed != expected or any(list(map(int, task.get("init_state_ids", []))) != list(range(50)) for task in tasks):
-        _fail("formal validation panel must exactly match the sealed 8 tasks, languages, and states 0..49")
+    if observed != expected or any(
+        list(map(int, task.get("init_state_ids", []))) != list(range(50))
+        for task in tasks
+    ):
+        _fail(
+            "formal validation panel must exactly match the sealed 8 tasks, languages, and states 0..49"
+        )
     task_keys = [(str(task["suite"]), int(task["task_id"])) for task in tasks]
     return list(tasks), task_keys
 
 
-def _formal_panel_index(result: Mapping[str, Any]) -> dict[EpisodeKey, Mapping[str, Any]]:
+def _formal_panel_index(
+    result: Mapping[str, Any]
+) -> dict[EpisodeKey, Mapping[str, Any]]:
     adapter, paired, condition = _formal_adapter(result)
     tasks, task_keys = _formal_tasks(paired)
     roles = {key: str(task["split_role"]) for key, task in zip(task_keys, tasks)}
@@ -167,7 +184,9 @@ def _formal_panel_index(result: Mapping[str, Any]) -> dict[EpisodeKey, Mapping[s
         _fail("Writer task/video mapping is not the sealed condition mapping")
     rows = list(result.get("rows", []))
     indexed = _index_rows(rows)
-    expected_keys = {(suite, task_id, state) for suite, task_id in task_keys for state in range(50)}
+    expected_keys = {
+        (suite, task_id, state) for suite, task_id in task_keys for state in range(50)
+    }
     if len(indexed) != 400 or set(indexed) != expected_keys:
         _fail("formal validation result must contain exactly 8x50 paired rows")
     mapping = {(row["suite"], int(row["task_id"])): row for row in expected_mapping}
@@ -176,7 +195,9 @@ def _formal_panel_index(result: Mapping[str, Any]) -> dict[EpisodeKey, Mapping[s
     return indexed
 
 
-def _validate_episode_evidence(row: Mapping[str, Any], adapter: Mapping[str, Any], mapping: Mapping[str, Any]) -> None:
+def _validate_episode_evidence(
+    row: Mapping[str, Any], adapter: Mapping[str, Any], mapping: Mapping[str, Any]
+) -> None:
     writer = row.get("writer", {})
     condition = str(adapter["video_condition"])
     family_name, family = _writer_family(adapter)
@@ -207,24 +228,47 @@ def _validate_episode_evidence(row: Mapping[str, Any], adapter: Mapping[str, Any
             {
                 "writer_parameter_count": int(asset["writer_parameter_count"]),
                 "writer_deployment_trainable_parameter_count": 0,
-                "writer_program_residual_value_count": int(asset["program_residual_value_count"]),
-                "generated_lora_tensor_count": int(asset["generated_lora_tensor_count"]),
+                "writer_program_residual_value_count": int(
+                    asset["program_residual_value_count"]
+                ),
+                "generated_lora_tensor_count": int(
+                    asset["generated_lora_tensor_count"]
+                ),
+            }
+        )
+    if family_name == "v6_qv_rank_reserved_native_reward_v1":
+        expected.update(
+            {
+                "writer_program_residual_enabled": bool(
+                    asset["enable_program_residual"]
+                ),
+                "writer_qv_base_rank": 14,
+                "writer_qv_residual_rank": 2,
+                "writer_action_rank": 16,
             }
         )
     valid = (
         len(references) == len(selected) == 1
         and 0 <= int(references[0]) < 50
         and 0 <= int(selected[0]) < 50
-        and int(selected[0]) == ((int(references[0]) + SAME_TASK_OTHER_OFFSET) % 50 if same else int(references[0]))
+        and int(selected[0])
+        == (
+            (int(references[0]) + SAME_TASK_OTHER_OFFSET) % 50
+            if same
+            else int(references[0])
+        )
         and len(writer.get("teacher_video_order_seeds", [])) == 1
         and all(writer.get(key) == value for key, value in expected.items())
-        and adapter.get("information_wall", {}).get("no_video_counterfactual") is (not frames_used)
+        and adapter.get("information_wall", {}).get("no_video_counterfactual")
+        is (not frames_used)
     )
     if not valid:
         _fail("Writer episode evidence violates its paired video condition")
 
 
-def _scientific_projection(result: Mapping[str, Any], *, allow_checkpoint_change: bool) -> dict[str, Any]:
+def _scientific_projection(
+    result: Mapping[str, Any], *, allow_checkpoint_change: bool
+) -> dict[str, Any]:
     projection = copy.deepcopy(result["paired_control"])
     projection.pop("parallel", None)
     if allow_checkpoint_change:
@@ -288,10 +332,15 @@ def _assert_row_pairing(
         left_writer, right_writer = left["writer"], right["writer"]
         if (
             any(left.get(field) != right.get(field) for field in row_fields)
-            or any(left_writer.get(field) != right_writer.get(field) for field in writer_fields)
+            or any(
+                left_writer.get(field) != right_writer.get(field)
+                for field in writer_fields
+            )
             or not _common_noise_prefix(left, right)
         ):
-            _fail("paired roots changed state, RNG, language, or teacher-video identity")
+            _fail(
+                "paired roots changed state, RNG, language, or teacher-video identity"
+            )
 
 
 def _method_macro(
@@ -304,25 +353,42 @@ def _method_macro(
     _, family = _writer_family(adapter)
     asset = adapter["writer_asset"]
     macro = int(asset.get("method_macro", -1))
-    expected_kind = "historical_v6_macro400_load_only" if macro == 0 else family["trained_checkpoint_kind"]
+    checkpoint_kinds = family.get("checkpoint_kinds_by_macro", {})
+    expected_kind = checkpoint_kinds.get(
+        macro,
+        (
+            "historical_v6_macro400_load_only"
+            if macro == 0
+            else family["trained_checkpoint_kind"]
+        ),
+    )
     if macro not in allowed_macros or asset.get("kind") != expected_kind:
         _fail(f"{context} contains an unexpected method macro or checkpoint kind")
     return macro
 
 
-def _prefix_rows(indexed: Mapping[EpisodeKey, Mapping[str, Any]], stop: int) -> list[Mapping[str, Any]]:
+def _prefix_rows(
+    indexed: Mapping[EpisodeKey, Mapping[str, Any]], stop: int
+) -> list[Mapping[str, Any]]:
     selected = [row for key, row in indexed.items() if key[2] < stop]
     states = {(key[0], key[1]): [] for key in indexed}
     for row in selected:
         states[_task_key(row)].append(int(row["init_state_id"]))
-    if len(selected) != len(states) * stop or any(sorted(values) != list(range(stop)) for values in states.values()):
+    if len(selected) != len(states) * stop or any(
+        sorted(values) != list(range(stop)) for values in states.values()
+    ):
         _fail("same-root state-prefix panel is incomplete")
     return selected
 
 
-def _curve_set_evidence(rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]) -> dict[str, Any]:
+def _curve_set_evidence(
+    rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]
+) -> dict[str, Any]:
     indexes = {macro: _index_rows(rows) for macro, rows in rows_by_macro.items()}
-    success_sets = {macro: {key for key, row in rows.items() if row["success"]} for macro, rows in indexes.items()}
+    success_sets = {
+        macro: {key for key, row in rows.items() if row["success"]}
+        for macro, rows in indexes.items()
+    }
     union = set().union(*success_sets.values())
     intersection = set.intersection(*success_sets.values())
     task_keys = sorted(
@@ -332,7 +398,8 @@ def _curve_set_evidence(rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]
     task_rows = []
     for suite, task_id in task_keys:
         counts = {
-            str(macro): sum(key[:2] == (suite, task_id) for key in values) for macro, values in success_sets.items()
+            str(macro): sum(key[:2] == (suite, task_id) for key in values)
+            for macro, values in success_sets.items()
         }
         task_rows.append(
             {
@@ -340,7 +407,9 @@ def _curve_set_evidence(rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]
                 "task_id": task_id,
                 "successes_by_macro": counts,
                 "union_successes": sum(key[:2] == (suite, task_id) for key in union),
-                "intersection_successes": sum(key[:2] == (suite, task_id) for key in intersection),
+                "intersection_successes": sum(
+                    key[:2] == (suite, task_id) for key in intersection
+                ),
                 "envelope_successes": max(counts.values()),
             }
         )
@@ -359,10 +428,14 @@ def _curve_set_evidence(rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]
     }
 
 
-def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+def checkpoint_curve_analysis(
+    results_by_root: Mapping[str, Mapping[str, Any]]
+) -> dict[str, Any]:
     """Build strict macro0/10/25/50 analysis from validated result payloads."""
 
-    by_macro: dict[int, tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]]] = {}
+    by_macro: dict[
+        int, tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]]
+    ] = {}
     for root, result in results_by_root.items():
         indexed = _formal_panel_index(result)
         if result["adapter"]["video_condition"] != "correct":
@@ -373,19 +446,32 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
         by_macro[macro] = (root, result, indexed)
     if tuple(sorted(by_macro)) != CHECKPOINT_MACROS:
         _fail("checkpoint curve requires exactly method macros 0, 10, 25, and 50")
-    families = {_writer_family(result["adapter"])[0] for _, result, _ in by_macro.values()}
+    families = {
+        _writer_family(result["adapter"])[0] for _, result, _ in by_macro.values()
+    }
     if len(families) != 1:
         _fail("checkpoint curve cannot mix legacy and current method families")
     method_family = next(iter(families))
-    reference_projection = _scientific_projection(by_macro[0][1], allow_checkpoint_change=True)
+    reference_projection = _scientific_projection(
+        by_macro[0][1], allow_checkpoint_change=True
+    )
     reference_rows = by_macro[0][2]
     for macro in CHECKPOINT_MACROS[1:]:
-        if _scientific_projection(by_macro[macro][1], allow_checkpoint_change=True) != reference_projection:
+        if (
+            _scientific_projection(by_macro[macro][1], allow_checkpoint_change=True)
+            != reference_projection
+        ):
             _fail("checkpoint curve changed its scientific contract")
-        _assert_row_pairing(reference_rows, by_macro[macro][2], require_same_actual_video=True)
+        _assert_row_pairing(
+            reference_rows, by_macro[macro][2], require_same_actual_video=True
+        )
     panels: dict[str, dict[int, list[Mapping[str, Any]]]] = {
-        "correct80": {macro: _prefix_rows(by_macro[macro][2], 10) for macro in CHECKPOINT_MACROS},
-        "correct400": {macro: list(by_macro[macro][2].values()) for macro in CHECKPOINT_MACROS},
+        "correct80": {
+            macro: _prefix_rows(by_macro[macro][2], 10) for macro in CHECKPOINT_MACROS
+        },
+        "correct400": {
+            macro: list(by_macro[macro][2].values()) for macro in CHECKPOINT_MACROS
+        },
     }
     comparisons = ((0, 10), (10, 25), (25, 50), (0, 25), (0, 50))
     return {
@@ -406,22 +492,31 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
                 "root": by_macro[macro][0],
                 "contract_reference": by_macro[macro][1]["contract_reference"],
                 "method_macro": macro,
-                "writer_asset_reference": by_macro[macro][1]["adapter"]["writer_asset"]["reference"],
-                "parallel_provenance": copy.deepcopy(by_macro[macro][1]["paired_control"].get("parallel", {})),
+                "writer_asset_reference": by_macro[macro][1]["adapter"]["writer_asset"][
+                    "reference"
+                ],
+                "parallel_provenance": copy.deepcopy(
+                    by_macro[macro][1]["paired_control"].get("parallel", {})
+                ),
             }
             for macro in CHECKPOINT_MACROS
         ],
         "panels": {
-            name: {str(macro): summarize_panel(rows[macro]) for macro in CHECKPOINT_MACROS}
+            name: {
+                str(macro): summarize_panel(rows[macro]) for macro in CHECKPOINT_MACROS
+            }
             for name, rows in panels.items()
         },
         "comparisons": {
             name: {
-                f"{left}_to_{right}": paired_transition_summary(rows[left], rows[right]) for left, right in comparisons
+                f"{left}_to_{right}": paired_transition_summary(rows[left], rows[right])
+                for left, right in comparisons
             }
             for name, rows in panels.items()
         },
-        "curve_evidence": {name: _curve_set_evidence(rows) for name, rows in panels.items()},
+        "curve_evidence": {
+            name: _curve_set_evidence(rows) for name, rows in panels.items()
+        },
         "metric_definitions": {
             "gained": "left failure and right success on the identical episode key",
             "lost": "left success and right failure on the identical episode key",
@@ -432,162 +527,25 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
     }
 
 
-def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, Any]:
-    """Normalize provenance and explicit family identity for a cross-family audit."""
-
-    projection = _scientific_projection(result, allow_checkpoint_change=True)
-    projection.pop("git", None)
-    writer = projection.get("writer")
-    tokenizer = projection.get("tokenizer")
-    normalization = projection.get("normalization")
-    if not all(isinstance(value, dict) for value in (writer, tokenizer, normalization)):
-        _fail("historical transition is missing its shared scientific contract")
-    for key in (
-        "execution_backend",
-        "config",
-        "writer_asset",
-        "evaluation_authority",
-    ):
-        writer.pop(key, None)
-    tokenizer.pop("manifest_path", None)
-    normalization.pop("path", None)
-    return projection
-
-
 def historical_baseline_transition_analysis(
     results_by_root: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Compare one sealed candidate with its explicit immutable macro0 baseline."""
-
-    if len(results_by_root) != 2:
-        _fail("historical baseline transition requires exactly two roots")
-    by_family: dict[
-        str,
-        tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]],
-    ] = {}
-    for root, result in results_by_root.items():
-        indexed = _formal_panel_index(result)
-        if result["adapter"]["video_condition"] != "correct":
-            _fail("historical baseline transition accepts only correct-video roots")
-        family = _writer_family(result["adapter"])[0]
-        if family in by_family:
-            _fail("historical baseline transition contains a duplicate method family")
-        by_family[family] = (root, result, indexed)
-    supported_pairs = [
-        (baseline_family, candidate_family)
-        for candidate_family, baseline_family in (HISTORICAL_TRANSITION_BASELINE_FAMILIES.items())
-        if set(by_family) == {baseline_family, candidate_family}
-    ]
-    if len(supported_pairs) != 1:
-        _fail(
-            "historical baseline transition requires exactly one supported "
-            "baseline and current candidate family pair"
-        )
-
-    baseline_family, candidate_family = supported_pairs[0]
-    baseline = by_family[baseline_family]
-    candidate = by_family[candidate_family]
-    _method_macro(
-        baseline[1],
-        allowed_macros=(0,),
-        context="historical baseline transition baseline",
+    from ember.pi05_eval.historical_transition import (
+        historical_baseline_transition_analysis as analyze,
     )
-    candidate_macros = HISTORICAL_TRANSITION_CANDIDATE_MACROS[candidate_family]
-    _method_macro(
-        candidate[1],
-        allowed_macros=candidate_macros,
-        context="historical baseline transition candidate",
-    )
-    if _historical_transition_projection(baseline[1]) != _historical_transition_projection(candidate[1]):
-        _fail("historical baseline transition changed its shared scientific contract")
-    _assert_row_pairing(baseline[2], candidate[2], require_same_actual_video=True)
 
-    baseline_rows = list(baseline[2].values())
-    candidate_rows = list(candidate[2].values())
-    panels = {
-        "correct80": {
-            "historical_baseline": _prefix_rows(baseline[2], 10),
-            "current_candidate": _prefix_rows(candidate[2], 10),
-        },
-        "correct400": {
-            "historical_baseline": baseline_rows,
-            "current_candidate": candidate_rows,
-        },
-    }
-
-    def root_evidence(
-        value: tuple[
-            str,
-            Mapping[str, Any],
-            dict[EpisodeKey, Mapping[str, Any]],
-        ]
-    ) -> dict[str, Any]:
-        root, result, _ = value
-        adapter = result["adapter"]
-        family, family_contract = _writer_family(adapter)
-        asset = adapter["writer_asset"]
-        return {
-            "root": root,
-            "method_family": family,
-            "method_macro": int(asset["method_macro"]),
-            "checkpoint_kind": asset["kind"],
-            "adapter_schema": family_contract["adapter_schema"],
-            "config_schema": family_contract["config_schema"],
-            "contract_reference": result["contract_reference"],
-            "git": copy.deepcopy(result["paired_control"]["git"]),
-            "parallel_provenance": copy.deepcopy(result["paired_control"].get("parallel", {})),
-        }
-
-    return {
-        "schema_version": HISTORICAL_BASELINE_TRANSITION_SCHEMA,
-        "analysis_scope": ("cross_family_historical_baseline_transition_not_checkpoint_curve"),
-        "method_families": {
-            "historical_baseline": baseline_family,
-            "current_candidate": candidate_family,
-        },
-        "contract_audit": {
-            "native_family_validation_each_root": True,
-            "formal_validation_8x50_each": True,
-            "same_shared_scientific_contract": True,
-            "same_state_rng_language_and_correct_video_identity": True,
-            "family_labels_preserved": True,
-            "checkpoint_curve_membership_claimed": False,
-        },
-        "row_selection": {
-            "correct80": "same validated correct400 root rows with init_state_id < 10",
-            "correct400": "all formal validation rows",
-        },
-        "roots": {
-            "historical_baseline": root_evidence(baseline),
-            "current_candidate": root_evidence(candidate),
-        },
-        "panels": {
-            panel: {role: summarize_panel(rows) for role, rows in role_rows.items()}
-            for panel, role_rows in panels.items()
-        },
-        "baseline_to_candidate": {
-            panel: paired_transition_summary(
-                role_rows["historical_baseline"],
-                role_rows["current_candidate"],
-            )
-            for panel, role_rows in panels.items()
-        },
-        "metric_definitions": {
-            "gained": "historical failure and current success on the identical episode key",
-            "lost": "historical success and current failure on the identical episode key",
-            "churn": "gained plus lost",
-            "nonzero_task_breadth": "tasks with at least one success in this exact panel",
-            "cross_family_warning": (
-                "native family labels are retained; this artifact is not a within-family checkpoint curve"
-            ),
-        },
-    }
+    return analyze(results_by_root)
 
 
-def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+
+def six_arm_paired_analysis(
+    results_by_root: Mapping[str, Mapping[str, Any]]
+) -> dict[str, Any]:
     """Build a strict single-checkpoint six-arm video-causality audit."""
 
-    by_condition: dict[str, tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]]] = {}
+    by_condition: dict[
+        str, tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]]
+    ] = {}
     for root, result in results_by_root.items():
         indexed = _formal_panel_index(result)
         condition = str(result["adapter"]["video_condition"])
@@ -596,7 +554,9 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
         by_condition[condition] = (root, result, indexed)
     if set(by_condition) != set(SIX_ARM_CONDITIONS):
         _fail("six-arm audit requires exactly the canonical six video conditions")
-    families = {_writer_family(result["adapter"])[0] for _, result, _ in by_condition.values()}
+    families = {
+        _writer_family(result["adapter"])[0] for _, result, _ in by_condition.values()
+    }
     if len(families) != 1:
         _fail("six-arm audit cannot mix legacy and current method families")
     method_family = next(iter(families))
@@ -609,7 +569,10 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
             _fail("six-arm audit changed its single checkpoint or scientific contract")
         _assert_row_pairing(correct_rows, rows, require_same_actual_video=False)
     asset = correct_result["adapter"]["writer_asset"]
-    arm_rows = {condition: list(by_condition[condition][2].values()) for condition in SIX_ARM_CONDITIONS}
+    arm_rows = {
+        condition: list(by_condition[condition][2].values())
+        for condition in SIX_ARM_CONDITIONS
+    }
     return {
         "schema_version": SIX_ARM_AUDIT_SCHEMA,
         "method_family": method_family,
@@ -630,11 +593,16 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
                 "condition": condition,
                 "root": by_condition[condition][0],
                 "contract_reference": by_condition[condition][1]["contract_reference"],
-                "parallel_provenance": copy.deepcopy(by_condition[condition][1]["paired_control"].get("parallel", {})),
+                "parallel_provenance": copy.deepcopy(
+                    by_condition[condition][1]["paired_control"].get("parallel", {})
+                ),
             }
             for condition in SIX_ARM_CONDITIONS
         ],
-        "arms": {condition: summarize_panel(arm_rows[condition]) for condition in SIX_ARM_CONDITIONS},
+        "arms": {
+            condition: summarize_panel(arm_rows[condition])
+            for condition in SIX_ARM_CONDITIONS
+        },
         "comparisons_to_correct": {
             condition: {
                 "interpretation": (
@@ -671,7 +639,9 @@ def _validated_roots(roots: Sequence[Path]) -> dict[str, Mapping[str, Any]]:
         legacy = False
         if isinstance(stored, Mapping):
             try:
-                legacy = _writer_family(stored.get("adapter", {}))[0].startswith("legacy_")
+                legacy = _writer_family(stored.get("adapter", {}))[0].startswith(
+                    "legacy_"
+                )
             except Pi05EvaluationError:
                 legacy = False
         if legacy:
@@ -684,7 +654,9 @@ def _validated_roots(roots: Sequence[Path]) -> dict[str, Mapping[str, Any]]:
     return results
 
 
-def analyze_checkpoint_curve(roots: Sequence[Path], output_path: Path) -> dict[str, Any]:
+def analyze_checkpoint_curve(
+    roots: Sequence[Path], output_path: Path
+) -> dict[str, Any]:
     result = checkpoint_curve_analysis(_validated_roots(roots))
     publish_json_exclusive(output_path.resolve(), result)
     return result
@@ -695,7 +667,9 @@ def analyze_historical_baseline_transition(
     current_root: Path,
     output_path: Path,
 ) -> dict[str, Any]:
-    result = historical_baseline_transition_analysis(_validated_roots((legacy_root, current_root)))
+    result = historical_baseline_transition_analysis(
+        _validated_roots((legacy_root, current_root))
+    )
     publish_json_exclusive(output_path.resolve(), result)
     return result
 
@@ -708,7 +682,11 @@ def audit_six_arms(roots: Sequence[Path], output_path: Path) -> dict[str, Any]:
             reward_credit_six_arm_evidence_from_config,
         )
 
-        correct = next(value for value in validated.values() if value["adapter"]["video_condition"] == "correct")
+        correct = next(
+            value
+            for value in validated.values()
+            if value["adapter"]["video_condition"] == "correct"
+        )
         config = correct["adapter"]["config"]
         result["reward_credit_goal"] = reward_credit_six_arm_evidence_from_config(
             result,

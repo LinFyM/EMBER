@@ -27,7 +27,6 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_COMPLETION_SCHEMA,
     V6_PRIOR_MODES,
     V6_PRIOR_PROFILE_SCHEMA,
-    load_v6_prior_config,
 )
 from ember.expert_manifold.v6_prior_profile import (
     FixedActionProfilePanel,
@@ -735,22 +734,10 @@ def _start_event(runtime: V6PriorRuntime) -> dict[str, Any]:
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(require_numa=True, defer_process_group=True)
-    runtime: V6PriorRuntime | None = None
-    try:
-        runtime = _prepare_runtime(args, context)
-        if context.is_main:
-            print(json.dumps(_start_event(runtime), sort_keys=True), flush=True)
-        if args.mode == "mechanism-profile":
-            _run_mechanism_profile(runtime)
-        else:
-            _run_training(runtime)
-    finally:
-        if runtime is not None:
-            runtime.env_pool.close()
-            runtime.video_store.close()
-        if dist.is_available() and dist.is_initialized():
-            dist.destroy_process_group()
+    raise ExpertManifoldError(
+        "Reward-Credit training is retired on the active HEAD; only load-only "
+        "rank-reserved behavior evaluation is authorized"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -769,30 +756,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
-    for name in ("config", "source_run", "checkpoint", "tokenizer_path", "data_root"):
-        path = getattr(args, name).resolve()
-        if not path.exists():
-            raise ExpertManifoldError(f"missing Reward-Credit path: {path}")
-        setattr(args, name, path)
-    args.output_dir = args.output_dir.resolve()
-    args.resume = args.resume.resolve() if args.resume else None
-    if args.resume is None:
-        if args.output_dir.exists() and (
-            not args.output_dir.is_dir() or any(args.output_dir.iterdir())
-        ):
-            raise ExpertManifoldError("fresh Reward-Credit output is not empty")
-    elif (
-        not args.resume.is_dir()
-        or args.resume.parent.name != "checkpoints"
-        or args.resume.parent.parent.resolve() != args.output_dir
-        or not (args.output_dir / "run_contract.json").is_file()
-    ):
-        raise ExpertManifoldError("Reward-Credit resume output ownership changed")
-    if args.config != V6_PRIOR_CANONICAL_CONFIG.resolve():
-        raise ExpertManifoldError("Reward-Credit requires the canonical config")
-    load_v6_prior_config(args.config)
-    if args.num_workers != 0 or (
-        args.stop_after_macro is not None and args.stop_after_macro <= 0
-    ):
-        raise ExpertManifoldError("invalid Reward-Credit worker or stop boundary")
-    return args
+    raise ExpertManifoldError(
+        "Reward-Credit training is retired on the active HEAD; only the sealed "
+        "cycle1 Program may enter the rank-reserved load-only evaluator"
+    )

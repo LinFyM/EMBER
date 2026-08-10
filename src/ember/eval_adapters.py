@@ -70,9 +70,7 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
     kind = (
         "task_expert"
         if expert_requested
-        else EXPERT_MANIFOLD_WRITER_KIND
-        if manifold_requested
-        else None
+        else EXPERT_MANIFOLD_WRITER_KIND if manifold_requested else None
     )
     return kind, sft_requested
 
@@ -234,9 +232,9 @@ def validate_writer_episode(
 def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
     if adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
         raise Pi05EvaluationError("retired Writer adapter kind")
-    from ember.expert_manifold.inference import EXPERT_MANIFOLD_EPISODE_SCHEMA
+    from ember.expert_manifold.inference import expert_manifold_episode_schema
 
-    return EXPERT_MANIFOLD_EPISODE_SCHEMA
+    return expert_manifold_episode_schema(adapter)
 
 
 def load_evaluation_adapter(
@@ -308,10 +306,9 @@ def validate_episode_adapter_fields(
     if adapter is None:
         return row.get("writer") is None and row.get("policy_adapter_sha256") is None
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
-        return (
-            row.get("writer") is None
-            and row.get("policy_adapter_sha256") == adapter.get("lora_state_sha256")
-        )
+        return row.get("writer") is None and row.get(
+            "policy_adapter_sha256"
+        ) == adapter.get("lora_state_sha256")
     if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
         from ember.expert_manifold.evaluation import validate_task_expert_episode
 

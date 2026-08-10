@@ -59,14 +59,14 @@ from ember.reward.protocol import RewardTask, SUITE_HORIZONS
 from ember.reward.rollout import RandomResetEnvironmentPool
 from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.condition_update import (
-    FrozenV6ConditionResidualWriter,
-    ProgramReconciliationState,
-    validate_frozen_v6_residual_writer,
-)
+from ember.writer.condition_update import ProgramReconciliationState
 from ember.writer.data import RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.rank_reserved_compiler import (
+    FrozenV6RankReservedRewardWriter,
+    validate_frozen_v6_rank_reserved_writer,
+)
 from ember.writer.topology import visible_physical_cuda_index
 
 
@@ -108,7 +108,7 @@ class V6PriorRuntime:
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
-    writer: FrozenV6ConditionResidualWriter
+    writer: FrozenV6RankReservedRewardWriter
     identity_state: dict[str, torch.Tensor]
     reconciliation: ProgramReconciliationState
     env_pool: RandomResetEnvironmentPool
@@ -437,7 +437,7 @@ def _build_policy_writer(
     source_config: Mapping[str, Any],
 ) -> tuple[
     torch.nn.Module,
-    FrozenV6ConditionResidualWriter,
+    FrozenV6RankReservedRewardWriter,
     dict[str, torch.Tensor],
     LoRAContract,
     V6PriorWarmStart,
@@ -477,12 +477,13 @@ def _build_policy_writer(
         raise ExpertManifoldError("historical v6 load changed physical identity")
     ownership = freeze_v6_prior_writer(base)
     feature = config["condition_feature"]
-    writer = FrozenV6ConditionResidualWriter(
+    writer = FrozenV6RankReservedRewardWriter(
         base,
         feature_width=int(feature["feature_width"]),
         feature_seed=int(feature["projection_seed"]),
+        enable_program_residual=True,
     ).to(context.device)
-    validate_frozen_v6_residual_writer(writer, require_zero_memory=True)
+    validate_frozen_v6_rank_reserved_writer(writer, require_zero_memory=True)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ExpertManifoldError("Reward-Credit source policy is not frozen")
     return policy, writer, identity, lora, warm_start, ownership
@@ -579,7 +580,7 @@ def _restore_resume(
     config: Mapping[str, Any],
     segment: RuntimeSegment,
     context: DistributedContext,
-    writer: FrozenV6ConditionResidualWriter,
+    writer: FrozenV6RankReservedRewardWriter,
     reconciliation: ProgramReconciliationState,
     checkpoint_contract_value: Mapping[str, Any],
 ) -> dict[str, Any] | None:
@@ -595,7 +596,7 @@ def _restore_resume(
     )
     if loaded != segment.start_macro or rows != segment.start_macro:
         raise ExpertManifoldError("Reward-Credit resume cursor changed")
-    validate_frozen_v6_residual_writer(writer, require_zero_memory=False)
+    validate_frozen_v6_rank_reserved_writer(writer, require_zero_memory=False)
     return interaction_cursor
 
 
@@ -620,104 +621,7 @@ def _rank_counters(
 def _prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> V6PriorRuntime:
-    config = load_v6_prior_config(args.config)
-    segment = _resolve_segment(args, config, context)
-    seed_everything(int(config["optimization"]["seed"]), context)
-    _configure_egl(context)
-    authorities, source, tokenizer = _load_source(args, config)
-    tasks, reward_tasks, local_tasks, schedule = _build_tasks(args, config, context)
-    policy, writer, identity, lora, warm_start, ownership = _build_policy_writer(
-        config=config,
-        context=context,
-        source=source,
-        source_config=authorities.source_base_config,
-    )
-    reconciliation = ProgramReconciliationState(
-        feature_width=int(config["condition_feature"]["feature_width"])
-    ).to(context.device)
-    video_store, processor, language = _build_language_inputs(
-        args=args,
-        config=config,
-        context=context,
-        source_config=authorities.source_base_config,
-        tasks=tasks,
-    )
-    _validate_collective_environment(context)
-    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
-    contract = build_run_contract(
-        args=args,
-        config=config,
-        context=context,
-        segment=segment,
-        source=source,
-        tokenizer=tokenizer,
-        tasks=tasks,
-        video_schedule=schedule,
-        warm_start=warm_start,
-        ownership=ownership,
-        writer=writer,
-        reconciliation=reconciliation,
-        repo_root=REPO_ROOT,
-    )
-    checkpoint_contract_value = checkpoint_contract(contract)
-    publish_contract(
-        args,
-        contract,
-        context,
-        continuation_gate_evidence=segment.continuation_gate_evidence,
-    )
-    paths = _prepare_libero_paths(args, context)
-    env_pool = RandomResetEnvironmentPool(
-        bddl_root=Path(paths["bddl_files"]),
-        assets_root=Path(paths["assets"]),
-        render_resolution=int(config["environment"]["render_resolution"]),
-    )
-    restored_cursor = _restore_resume(
-        args,
-        config,
-        segment,
-        context,
-        writer,
-        reconciliation,
-        checkpoint_contract_value,
-    )
-    metrics_path = args.output_dir / "metrics.jsonl"
-    expected_rows = segment.start_macro if args.mode == "formal" else 0
-    if (
-        _reconcile_metrics_cursor(
-            metrics_path, context=context, expected_rows=expected_rows
-        )
-        != expected_rows
-    ):
-        raise ExpertManifoldError("Reward-Credit metrics differ from resume cursor")
-    torch.cuda.reset_peak_memory_stats(context.device)
-    if context.world_size > 1:
-        dist.barrier(device_ids=[context.local_rank])
-    return V6PriorRuntime(
-        args=args,
-        context=context,
-        config=config,
-        segment=segment,
-        source=dict(source),
-        tokenizer=dict(tokenizer),
-        tasks=tasks,
-        task_by_global_id={task.global_task_id: task for task in tasks},
-        reward_task_by_global_id=reward_tasks,
-        local_tasks=local_tasks,
-        video_schedule=schedule,
-        video_store=video_store,
-        language_tokens=language,
-        processor=processor,
-        policy=policy,
-        writer=writer,
-        identity_state=identity,
-        reconciliation=reconciliation,
-        env_pool=env_pool,
-        lora_contract=lora,
-        warm_start=warm_start,
-        ownership=ownership,
-        run_contract=contract,
-        checkpoint_contract=checkpoint_contract_value,
-        metrics_path=metrics_path,
-        rank_counters=_rank_counters(restored_cursor),
+    raise ExpertManifoldError(
+        "Reward-Credit training is retired on the active HEAD; rank-reserved "
+        "evaluation is load-only"
     )

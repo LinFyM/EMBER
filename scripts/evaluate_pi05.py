@@ -21,6 +21,13 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_RUN_SCHEMA,
 )
 from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
+from ember.expert_manifold.rank_reserved_contract import (
+    RANK_RESERVED_CANONICAL_CONFIG,
+    load_rank_reserved_config,
+    load_rank_reserved_profile_evidence,
+    rank_reserved_output_path,
+    seal_rank_reserved_deployment,
+)
 from ember.pi05_eval.launcher import (
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
@@ -28,6 +35,9 @@ from ember.pi05_eval.launcher import (
 )
 from ember.pi05_eval.reward_credit_gate import (
     validate_registered_reward_credit_output as _validate_registered_reward_credit_output,
+)
+from ember.pi05_eval.rank_reserved_gate import (
+    validate_prepared_rank_reserved_contract,
 )
 from ember.pi05_eval.preparation import (
     parse_gpu_indices as _parse_gpu_indices,
@@ -191,6 +201,14 @@ def parse_args() -> argparse.Namespace:
         type=_positive_int,
         required=True,
     )
+    rank_reserved_vertical = commands.add_parser("rank-reserved-vertical")
+    _add_prepare_arguments(rank_reserved_vertical)
+    rank_reserved_seal = commands.add_parser("rank-reserved-seal")
+    rank_reserved_seal.add_argument(
+        "--expert-manifold-config",
+        type=Path,
+        default=RANK_RESERVED_CANONICAL_CONFIG,
+    )
     start = commands.add_parser("start")
     start.add_argument("--output-dir", type=Path, required=True)
     resume = commands.add_parser("resume")
@@ -238,228 +256,44 @@ def prepare_run(
 
 
 def _profile_batch_sizes(value: str) -> tuple[int, ...]:
-    try:
-        result = tuple(int(item.strip()) for item in value.split(","))
-    except ValueError as error:
-        raise Pi05EvaluationError(
-            "Writer profile batch sizes must be comma-separated integers"
-        ) from error
-    if (
-        result != tuple(sorted(set(result)))
-        or len(result) < 3
-        or result[0] < 8
-        or not {8, 16, 32}.issubset(result)
-        or any(item <= 0 for item in result)
-    ):
-        raise Pi05EvaluationError("Writer profile batch sizes are invalid")
-    return result
+    from ember.pi05_eval.rank_reserved_launch import _profile_batch_sizes as parse
+
+    return parse(value)
 
 
-def _profile_worker_launch(
-    *,
-    output_dir: Path,
-    contract: Mapping[str, Any],
-    physical_gpu: int,
-    batch_sizes: Sequence[int],
-    warmup_runs: int,
-    measured_runs: int,
-) -> tuple[list[str], dict[str, str]]:
-    replicas = int(contract["parallel"]["replicas_per_gpu"])
-    environment = os.environ.copy()
-    environment.update(
-        PYTHONPATH=str(REPO_ROOT / "src"),
-        CUDA_DEVICE_ORDER="PCI_BUS_ID",
-        CUDA_VISIBLE_DEVICES=str(physical_gpu),
-        OMP_NUM_THREADS=str(
-            contract["parallel"]["omp_threads_per_worker"][str(replicas)]
-        ),
-    )
-    command = [
-        sys.executable,
-        str(Path(__file__).resolve()),
-        "profile-writer-worker",
-        "--output-dir",
-        str(output_dir.resolve()),
-        "--worker-id",
-        f"{physical_gpu}-r0",
-        "--profile-batch-sizes",
-        ",".join(str(value) for value in batch_sizes),
-        "--profile-warmup-runs",
-        str(warmup_runs),
-        "--profile-measured-runs",
-        str(measured_runs),
-    ]
-    return command, environment
+def _profile_worker_launch(**kwargs: Any) -> tuple[list[str], dict[str, str]]:
+    from ember.pi05_eval.rank_reserved_launch import _profile_worker_launch as launch
 
-
-def _preflight_gpu_identity(
-    preflight: Mapping[str, Any]
-) -> tuple[tuple[str, ...], ...]:
-    identities = []
-    for row in preflight.get("gpus", ()):
-        fields = tuple(value.strip() for value in str(row).split(",")[:3])
-        if len(fields) != 3:
-            raise Pi05EvaluationError("Writer profile GPU identity is invalid")
-        identities.append(fields)
-    return tuple(identities)
+    return launch(**kwargs)
 
 
 def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
-    output_dir = args.output_dir.resolve()
-    contract = load_run_contract(output_dir / "run_contract.json")
-    contract_git = contract.get("git", {})
-    live_git = git_state(REPO_ROOT)
-    physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    launcher_preflight, _ = read_json_with_size(output_dir / WRITER_PROFILE_PREFLIGHT)
-    live_preflight = _gpu_preflight(physical)
-    sizes = _profile_batch_sizes(args.profile_batch_sizes)
-    if (
-        len(physical) != 1
-        or not git_state_is_clean_pushed_or_frozen_authority(live_git)
-        or live_git.get("commit") != contract_git.get("commit")
-        or not git_state_is_clean_pushed_or_frozen_authority(contract_git)
-        or args.worker_id != f"{physical[0]}-r0"
-        or launcher_preflight.get("physical_gpu_ids") != list(physical)
-        or launcher_preflight.get("compute_applications") != []
-        or launcher_preflight.get("device_names") != ["NVIDIA A40"]
-        or live_preflight.get("physical_gpu_ids") != list(physical)
-        or live_preflight.get("compute_applications") != []
-        or live_preflight.get("device_names") != ["NVIDIA A40"]
-        or _preflight_gpu_identity(live_preflight)
-        != _preflight_gpu_identity(launcher_preflight)
-    ):
-        raise Pi05EvaluationError("Writer profile worker preflight changed")
+    from ember.pi05_eval.rank_reserved_launch import profile_writer_worker_run as run
 
-    from ember.pi05_evaluation import _initialize_worker
-    from ember.writer.evaluation_runtime import profile_writer_generation
-
-    runtime = _initialize_worker(
-        output_dir,
-        args.worker_id,
-        writer_generation=True,
-    )
-    try:
-        result = profile_writer_generation(
-            runtime,
-            batch_sizes=sizes,
-            warmup_runs=int(args.profile_warmup_runs),
-            measured_runs=int(args.profile_measured_runs),
-            preflight=live_preflight,
-        )
-    finally:
-        runtime.pool.close()
-    print(
-        json.dumps(
-            {
-                "event": "writer_generation_profile_worker_complete",
-                "root": result["root"],
-                "physical_gpu": result["physical_gpu"],
-                "selected_writer_model_batch_size": result[
-                    "selected_writer_model_batch_size"
-                ],
-            },
-            sort_keys=True,
-        )
-    )
-    return result
+    return run(args)
 
 
 def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
-    sizes = _profile_batch_sizes(args.profile_batch_sizes)
-    writer_kind, source_sft_requested = _adapter_requests(args)
-    physical_args = _parse_gpu_indices(args.gpu_indices)
-    state = git_state(REPO_ROOT)
-    if (
-        args.mode != "smoke"
-        or args.role != "validation"
-        or args.state_count < (sizes[-1] + 7) // 8
-        or args.replicas_per_gpu != 1
-        or args.writer_generators_per_gpu != 1
-        or writer_kind != "expert_manifold_writer"
-        or source_sft_requested
-        or args.expert_manifold_video_condition != "correct"
-        or args.expert_manifold_video_sampling != "without_replacement"
-        or physical_args is None
-        or len(physical_args) != 1
-        or int(args.profile_warmup_runs) < 1
-        or int(args.profile_measured_runs) < 2
-        or not git_state_is_clean_pushed_or_frozen_authority(state)
-    ):
-        raise Pi05EvaluationError(
-            "Writer generation profile requires the clean pushed validation/correct "
-            "single-A40 smoke contract"
-        )
-    args.writer_generation_batch_size = sizes[-1]
-    prepare_run(args, create_evaluation_queue=False)
-    contract = load_run_contract(args.output_dir.resolve() / "run_contract.json")
-    physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    if len(physical) != 1:
-        raise Pi05EvaluationError("Writer generation profile requires one physical GPU")
-    preflight = _gpu_preflight(physical)
-    if preflight.get("compute_applications") != []:
-        raise Pi05EvaluationError(
-            "Writer generation profile requires an idle physical GPU"
-        )
-    if preflight.get("device_names") != ["NVIDIA A40"]:
-        raise Pi05EvaluationError(
-            "Writer generation profile requires one physical NVIDIA A40"
-        )
-    publish_json_exclusive(
-        args.output_dir.resolve() / WRITER_PROFILE_PREFLIGHT,
-        preflight,
+    from ember.pi05_eval.rank_reserved_launch import profile_writer_run as run
+
+    return run(args, prepare_run_fn=prepare_run)
+
+
+def rank_reserved_vertical_run(args: argparse.Namespace) -> dict[str, Any]:
+    from ember.pi05_eval.rank_reserved_launch import rank_reserved_vertical_run as run
+
+    return run(
+        args,
+        prepare_run_fn=prepare_run,
+        start_workers_fn=start_workers,
     )
-    command, environment = _profile_worker_launch(
-        output_dir=args.output_dir,
-        contract=contract,
-        physical_gpu=physical[0],
-        batch_sizes=sizes,
-        warmup_runs=int(args.profile_warmup_runs),
-        measured_runs=int(args.profile_measured_runs),
-    )
-    worker_log = args.output_dir.resolve() / WRITER_PROFILE_WORKER_LOG
-    with worker_log.open("ab") as log:
-        completed = subprocess.run(
-            command,
-            cwd=REPO_ROOT,
-            env=environment,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-    if completed.returncode != 0:
-        raise Pi05EvaluationError(
-            "Writer generation profile worker failed with return code "
-            f"{completed.returncode}; inspect {worker_log}"
-        )
-    result, _ = read_json_with_size(
-        args.output_dir.resolve() / "writer_generation_profile.json"
-    )
-    if (
-        result.get("root") != str(args.output_dir.resolve())
-        or int(result.get("physical_gpu", -1)) != physical[0]
-        or result.get("preflight", {}).get("physical_gpu_ids") != list(physical)
-        or result.get("preflight", {}).get("compute_applications") != []
-        or result.get("preflight", {}).get("device_names") != ["NVIDIA A40"]
-        or _preflight_gpu_identity(result.get("preflight", {}))
-        != _preflight_gpu_identity(preflight)
-    ):
-        raise Pi05EvaluationError("Writer generation profile worker result changed")
-    print(
-        json.dumps(
-            {
-                "event": "writer_generation_profile_complete",
-                "root": result["root"],
-                "selected_writer_model_batch_size": result[
-                    "selected_writer_model_batch_size"
-                ],
-                "writer_generation_measurements": result[
-                    "writer_generation_measurements"
-                ],
-            },
-            sort_keys=True,
-        )
-    )
-    return result
+
+
+def rank_reserved_seal_run(args: argparse.Namespace) -> dict[str, Any]:
+    from ember.pi05_eval.rank_reserved_launch import rank_reserved_seal_run as run
+
+    return run(args)
+
 
 
 def _active_worker_pids(output_dir: Path) -> list[int]:
@@ -555,6 +389,10 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
         if observed != adapter:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
+    validate_prepared_rank_reserved_contract(
+        Path(contract["output_dir"]),
+        contract,
+    )
 
 
 def _worker_ids(
@@ -870,6 +708,10 @@ def main() -> int:
         profile_writer_run(args)
     elif args.command == "profile-writer-worker":
         profile_writer_worker_run(args)
+    elif args.command == "rank-reserved-vertical":
+        rank_reserved_vertical_run(args)
+    elif args.command == "rank-reserved-seal":
+        rank_reserved_seal_run(args)
     elif args.command in {"prepare", "run"}:
         prepare_run(args)
         if args.command == "run":

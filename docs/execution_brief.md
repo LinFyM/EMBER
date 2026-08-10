@@ -23,10 +23,17 @@ Reward residual；两个action targets保持full-rank16 FP32。
 
 full80 generation-only门已过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture`.9997088`，
 dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact；但0 action forward/0 rollout，不能
-视为性能。当前只允许先实现单一canonical compiler，做B8/16/32吞吐profile与cycle1 vertical smoke，再先跑
-rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。base过门后才读取原
-84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且gained>lost才算
-load-only通过并补同checkpoint controls。140--143是诊断性non-pass，不授权新训练；两项行为门前不启动训练。
+视为性能。单一canonical compiler、v9 commit-bound cache、Program-only reference、五臂vertical和有序Gate B/C
+已经实现；带真实LIBERO assets的全仓CPU回归为`386 passed in 28.76s`。旧Reward训练入口已在distributed/runtime
+初始化前fail closed。下一步先从同一clean pushed implementation commit做B8/16/32吞吐profile与cycle1五臂
+vertical smoke，再跑rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。
+base过门后才读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且
+gained>lost才算load-only通过并补同checkpoint controls。140--143是诊断性non-pass，不授权新训练；两项
+行为门前不启动训练。当前仍无新图A40行为或strict rollout证据。
+
+GPU不是固定6卡合同。每次启动前同时live检查`gpu01/gpu02`，选择一个节点并使用该节点当时所有真正空闲、
+健康且能提高有效吞吐的A40；不等待凑卡、不dummy占位、不为跨节点碎片改launcher。Gate A的profile/vertical
+刻意单卡测量；formal strict evaluator按所选单节点的全部有效空卡走dynamic queue且不使用NCCL。
 
 **较早已完成实验（2026-08-10）**：第39节RLS已从clean frozen`25bbd52`完成formal fresh0→10与预注册
 macro10 strict correct400。训练natural exit0、10 rows、step sum/mean=`199.425195/19.942519s`、input wait=
@@ -233,13 +240,19 @@ identity baseline，不是性能提高。
 - action query DataLoader默认2 spawn workers、persistent workers、prefetch2；profile若显示GPU仍等待
   data，再实测4 workers/prefetch而不是猜测。
 - 当前load-only compiler在同一32-request panel实测B8/16/32；若更大batch仍有明确吞吐上升和显存空间可继续
-  增大，选择稳定候选中LoRAs/s最高点。vertical smoke随后用该点比较old rank16、rank14 base、rank14+2，
-  不为追逐native低位差异隐藏降batch或重复forward。
+  增大，选择稳定候选中LoRAs/s最高点；更大候选OOM时只记ineligible并保留已完成候选。winner是formal
+  configured batch；vertical只有8个cache requests，实际forward为`min(selected,8)`并单独报告，不能把配置值
+  冒充actual。vertical随后比较old rank16、rank14 base、rank14+2，不为追逐native低位差异隐藏降batch或
+  重复forward。
 - historical Reward rollout的K4/Nmc4/B8与activation配置只作已完成训练provenance；当前行为门没有reward
   rollout、functional replay或训练collective，不得为“利用GPU”重跑它们。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
 - 当前vertical smoke记录真实video→LoRA→native adapter→fixed-action的端到端wall、显存、release/reuse和
-  三臂差异；fixed-action使用同observation/同noise的before/after推理，不读取target action，也不能替代strict400。
+  old full-rank base/Reward、rank14 base、rank14+2 q/v-only、rank14+2 full Reward五臂差异；q/v-only臂复用
+  base action以隔离q/v闭合。full与q/v-only q/v必须来自cache重新加载的state；rank14 base从同一cached
+  full state清零last2 q/v slots构造，禁止跨B4/B8 base相减。fixed-action使用同observation/同noise的
+  before/after推理，不读取target action，
+  也不能替代strict400。
 
 保留FP32 RMSNorm/softmax/ROPE/image normalization和policy-effective reduction，除非profile证明它们是
 显著瓶颈且降低精度不伤真实闭环；吞吐优先不是盲目改变模型数学。
@@ -256,7 +269,7 @@ GPU前一次性要求：
 - correct-video zero-Program的两个residual B slots与incremental motion exact zero，但rank14 base保持非identity；
   no-video不读frames、跳过pivot/lstsq/SVD并返回template-A/zero-B source identity；
 - 38 targets/76 tensors、72 BF16 + 4 F32、public rank16、cache write/load、resident adapter和release/reuse闭合；
-- derived manifest只引用原Reward cycle1 Program tensor及必要identity metadata，不复制84MB payload，也不加载
+- Program-only reference只引用原Reward cycle1 Program tensor及必要identity metadata，不复制84MB payload，也不加载
   optimizer、RNG、precision或训练cursor；旧family/schema/cache必须fail closed；
 - validation8 real-asset inspect和CLI prepare产生正确one-shot requests，部署expert-bank reads=`0`；
 - native LoRA storage descriptor从checkpoint metadata贯穿run contract与cache write/load；resident policy的
@@ -272,18 +285,23 @@ GPU前一次性要求：
 
 CPU门不要求batched Writer与single Writer逐元素相同，也不解释性能。
 
-## 4. Required single-A40 native-compiler seal（尚未执行）
+## 4. Required single-A40 native-compiler seal（CPU合同已封，live尚未执行）
 
 rank14+2改变了q/v physical slot compiler，因此不能继承旧v2/Reward deployment seal冒充新图已验证。历史
 32-request/1093-frame B8/16/32结果`.911427/.905107/.906432 LoRA/s`与validation8 vertical只作old-rank16
 基线；新实现必须在clean pushed frozen worktree独立完成：
 
 - 同一32-request、同一总sampled-frame panel实测B8/16/32，必要时继续更大batch，按真实LoRAs/s选择稳定点；
-- 所选batch比较old rank16、rank14 base、rank14+2三臂，覆盖四suite fixed-action、native cache、adapter load、
-  Writer release/source-policy reuse和0 forbidden reads；
+  OOM候选只作ineligible；
+- 一次共享B4视频encode生成诊断五臂，canonical 8-entry cache按`min(selected,8)`实际生成并重载。full Reward
+  action直接用cached state，paired rank14 base由同一state清零last2 q/v slots，q/v-only复用其action；覆盖
+  四suite fixed-action、native cache、adapter load、Writer release/source-policy reuse和0 forbidden reads；
 - no-video identity与correct-video zero-Program rank14 base分开验证，不能用一个zero residual断言两者相同；
 - retained artifact必须封存request/frame panel、wall、actual forward batches、peak allocated/reserved、cache dtype、
   release/reuse和单次launcher completion。该门仍只证明工程/传递，不替代strict400。
+- 两份artifact过门后回到tracked、clean、pushed的`codex/bci-continuation`主工作树，只用
+  `rank-reserved-seal`重读raw evidence并自动写回config；禁止在detached worktree或人工封seal。随后必须把
+  seal commit/push，并从该sealed commit新建frozen worktree再进入Gate B/C。
 
 
 ## 5. Historical six-A40 profile provenance（已完成，不恢复）
@@ -440,7 +458,10 @@ Gate B若correct<130、breadth<6或相对旧134 lost>10即reject。Gate C只有c
   完成且不支持cycle2。它只提供immutable Program与历史Reward证据，不再是当前训练入口。
 - current design authority：`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；
   `docs/action_forecast_writer_video_expert_manifold_design.md`第39.5--39.8节只作Reward objective、Program与
-  诊断provenance。新canonical config尚待单一路径实现，不能用旧Reward config冒充。
+  诊断provenance。active implementation/config/reference分别为canonical `v6_prior` load-only path、
+  `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`和
+  `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；旧Reward config只保留历史证据，不能
+  冒充活动入口。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。
 - fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为

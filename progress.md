@@ -14,13 +14,24 @@
   `runs/outputs/pi05_reward_qv_pivot_rank14_plus2_transport_v1_e3857f7_20260811/analysis.json`，`passed=true`但
   evidence scope明确0 action forward/rollout/update。新design authority已写入
   `docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`并加入mandatory reading。
-- Owner进一步澄清设备策略：不存在固定6卡要求。authority现统一为每次live比较`gpu01/gpu02`，使用所有
-  真正空闲且提高有效吞吐的A40，不等待凑卡、不dummy占位；独立evaluator选择单节点当时最多空卡，训练
+- canonical rank-reserved load-only路径已原位实现：q/v rank14 pivot base + 两个physical residual slots、
+  action full-rank16 FP32、v9 commit-bound native cache、Program-only reference、no-video source identity和
+  old-base/old-reward/rank14-base/q/v-only/full-reward五臂vertical都由同一active owner执行；旧Reward训练入口
+  在distributed/runtime初始化前fail closed。vertical的full/q/v-only action已改为使用cache重新加载的q/v
+  state并绑定相同video identity；profile OOM候选只作ineligible，tracked Program与output-root resolver已分离，
+  且新增纯CPU `rank-reserved-seal` assembler。带真实LIBERO assets的全仓CPU回归为
+  `386 passed in 28.76s`。
+  这只封住实现合同，尚无新图A40行为或strict rollout证据。
+- Owner进一步澄清设备策略：不存在固定6卡要求。authority现统一为每次live比较`gpu01/gpu02`，选择一个
+  节点并使用该节点所有真正空闲、健康且提高有效吞吐的A40，不等待凑卡、不dummy占位；独立evaluator使用
+  所选单节点当时全部有效空卡，训练
   exact-resume才锁原world size/NUMA/rank topology。
 - canonical evaluator的可执行owner-six-GPU门已删除：run contract由配置的8-card node topology约束，
   preflight只拒绝空/重复/负index并继续live检查进程；7/8-card选择不再被软件截断。加载`.env.local`后的
   `tests/test_pi05_eval_contract.py tests/test_pi05_eval_launcher.py`为`51 passed`。
-- 下一步是canonical load-only compiler与CPU门；随后单卡新graph吞吐/vertical、条件式两个strict400。
+- 下一步是将当前实现clean commit/push并冻结worktree；随后单张空闲A40完成新graph吞吐profile与五臂
+  vertical。两份artifact通过后必须回tracked主分支seal、commit/push，再从sealed commit冻结新worktree，
+  然后按有序Gate B/C条件运行两个strict400。
   q/v一阶tangent固定为`B0 dA+dB A0`，action保留实际二阶cross term；no-video source identity与correct-video
   zero-Program rank14 base分开处理。只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过；
   140--143为诊断性non-pass。两个行为门前不实现或启动fresh训练。
@@ -642,7 +653,8 @@
 - PI05 loss-only fast path删除formal每个policy forward的日志型host sync；Writer offsets、frame ordinal/order、
   language span/condition ownership和token packing也已清理重复barrier。新增单卡真实batch profile、artifact-
   backed evaluation seal、无循环状态图和task-expert窄authority loader。
-- GPU preflight现记录device name并在任何模型load/worker spawn前拒绝忙卡、非A40或超过owner六卡上限；
+- GPU preflight现记录device name并在任何模型load/worker spawn前拒绝忙卡、非A40；当时普通evaluator还
+  错误附加了六卡cap（随后经owner澄清并删除）；
   profile入口还要求clean pushed、validation/correct/without-replacement、单卡单replica/generator及真实
   `8/16/32`候选，并在独立单卡worker中再次live preflight与核对checkout。
 - batch吞吐使用同一个32-request longest-first panel和同一总sampled frames；8/16/32只改变物理forward

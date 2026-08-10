@@ -8,13 +8,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn.functional as F
 
-from ember.writer.model import (
-    CompleteLoRAWriter,
-    WriterModelError,
-    WriterMemories,
-    WriterVideoEvidence,
-)
-from ember.writer.temporal import SlotNormalizedCoreProcedureCompiler
+from ember.writer.model import WriterMemories, WriterVideoEvidence
 
 
 class ConditionUpdateError(RuntimeError):
@@ -225,18 +219,14 @@ class FixedBalancedCausalConditionFeature(torch.nn.Module):
                     dtype=torch.float32,
                     device=innovation.device,
                 ).sqrt_()
-                causal = (
-                    centered.cumsum(dim=0) / prefix_scale.unsqueeze(1)
-                ).mean(dim=0)
+                causal = (centered.cumsum(dim=0) / prefix_scale.unsqueeze(1)).mean(
+                    dim=0
+                )
                 descriptor_blocks.append(torch.stack((static, causal)))
             descriptors = torch.stack(descriptor_blocks)
-            projected = torch.einsum(
-                "cbw,bhw->cbh", descriptors, self.projection
-            )
+            projected = torch.einsum("cbw,bhw->cbh", descriptors, self.projection)
             balanced = self._zero_preserving_normalize(projected)
-            features = self._zero_preserving_normalize(
-                balanced.flatten(1)
-            )
+            features = self._zero_preserving_normalize(balanced.flatten(1))
         if (
             features.shape != (conditions, self.feature_width)
             or features.dtype != torch.float32
@@ -284,74 +274,154 @@ class ProgramResidualMemory(torch.nn.Module):
         return result
 
 
-class FrozenV6ConditionResidualWriter(torch.nn.Module):
-    """Add one video-keyed Program residual before the frozen v6 FactorHeads."""
+def _gelu_derivative(value: torch.Tensor) -> torch.Tensor:
+    """Evaluate exact GELU' in FP32, then return the decoder compute dtype."""
 
-    def __init__(
-        self,
-        base_writer: CompleteLoRAWriter,
-        *,
-        feature_width: int,
-        feature_seed: int,
-    ) -> None:
-        super().__init__()
-        if base_writer.program_width <= 0:
-            raise ConditionUpdateError("invalid frozen v6 Writer")
-        base_writer.requires_grad_(False).eval()
-        self.base_writer = base_writer
-        self.condition_feature = FixedBalancedCausalConditionFeature(
-            program_width=base_writer.program_width,
-            feature_width=feature_width,
-            initialization_seed=feature_seed,
-        )
-        self.program_memory = ProgramResidualMemory(
-            feature_width=feature_width,
-            program_slots=SlotNormalizedCoreProcedureCompiler.QUERY_COUNT,
-            program_width=base_writer.program_width,
-        )
+    fp32 = value.to(dtype=torch.float32)
+    derivative = 0.5 * (1.0 + torch.erf(fp32 / math.sqrt(2.0)))
+    derivative = derivative + fp32 * torch.exp(-0.5 * fp32.square()) / math.sqrt(
+        2.0 * math.pi
+    )
+    return derivative.to(dtype=value.dtype)
 
-    def train(self, mode: bool = True) -> FrozenV6ConditionResidualWriter:
-        super().train(mode)
-        self.base_writer.eval()
-        self.condition_feature.eval()
-        self.program_memory.eval()
-        return self
 
-    def condition_slots(
-        self,
-        memories: WriterMemories,
-        features: torch.Tensor,
-    ) -> torch.Tensor:
-        base_slots = self.base_writer.compile_slots(memories)
-        residual = self.program_memory(features)
-        if residual.shape != base_slots.shape:
-            raise ConditionUpdateError("Program residual lost fused-slot topology")
-        return base_slots + residual.to(dtype=base_slots.dtype)
+def stable_factor_head_linearization(
+    head: torch.nn.Module,
+    source: torch.Tensor,
+    residual: torch.Tensor | None,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """Decode the frozen base and, when requested, its stable analytic JVP."""
 
-    def forward(
-        self,
-        frames: torch.Tensor,
-        frame_indices: torch.Tensor,
-        video_offsets: torch.Tensor,
-        language_tokens: torch.Tensor,
-        language_mask: torch.Tensor,
-        task_span_mask: torch.Tensor,
-        *,
-        policy: torch.nn.Module,
-    ) -> dict[str, torch.Tensor]:
-        evidence = self.base_writer.encode_video_evidence(
-            policy,
-            frames,
-            video_offsets,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-        )
-        memories = self.base_writer.build_memories(evidence, frame_indices)
-        features = self.condition_feature(evidence, frame_indices)
-        return self.base_writer.decode_slots(
-            self.condition_slots(memories, features)
-        )
+    network = getattr(head, "network", None)
+    if (
+        not isinstance(network, torch.nn.Sequential)
+        or len(network) != 3
+        or not isinstance(network[0], torch.nn.Linear)
+        or not isinstance(network[1], torch.nn.GELU)
+        or not isinstance(network[2], torch.nn.Linear)
+        or network[0].bias is not None
+        or network[2].bias is not None
+        or network[1].approximate != "none"
+        or source.ndim < 3
+        or (residual is not None and residual.shape != source.shape)
+    ):
+        raise ConditionUpdateError("frozen FactorHead topology changed")
+    hidden = network[0](source)
+    rows = network[2](network[1](hidden))
+    if residual is None:
+        return rows, None
+    delta_hidden = network[0](residual.to(dtype=source.dtype))
+    tangent = network[2](_gelu_derivative(hidden) * delta_hidden)
+    return rows, tangent
+
+
+def deterministic_mgs_column_pivots(
+    matrix: torch.Tensor,
+    *,
+    keep: int,
+) -> torch.Tensor:
+    """Choose native B columns with deterministic batched MGS pivoting."""
+
+    if matrix.ndim < 2 or not 0 < keep <= matrix.shape[-1]:
+        raise ConditionUpdateError("invalid pivot-preserving base matrix")
+    rows, columns = matrix.shape[-2:]
+    flat = matrix.to(dtype=torch.float32).reshape(-1, rows, columns)
+    residual = flat.clone()
+    selected = torch.zeros(flat.shape[0], columns, dtype=torch.bool, device=flat.device)
+    pivots = []
+    for _ in range(keep):
+        norms = residual.square().sum(dim=-2)
+        scores = norms.masked_fill(selected, -torch.inf)
+        pivot = scores.argmax(dim=-1)
+        pivots.append(pivot)
+        selected.scatter_(1, pivot[:, None], True)
+        vector = residual.gather(
+            -1,
+            pivot[:, None, None].expand(-1, rows, 1),
+        ).squeeze(-1)
+        unit = vector / torch.linalg.vector_norm(
+            vector, dim=-1, keepdim=True
+        ).clamp_min(torch.finfo(vector.dtype).tiny)
+        coefficients = torch.matmul(unit[:, None], residual).squeeze(1)
+        residual = residual - unit[:, :, None] * coefficients[:, None]
+    return torch.stack(pivots, dim=-1).reshape(*matrix.shape[:-2], keep)
+
+
+def pivot_preserving_base_factors(
+    base_a: torch.Tensor,
+    base_b: torch.Tensor,
+    *,
+    keep: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Keep selected native B columns and solve their least-squares A rows."""
+
+    if (
+        base_a.ndim < 2
+        or base_b.ndim != base_a.ndim
+        or base_a.shape[:-2] != base_b.shape[:-2]
+        or base_a.shape[-2] != base_b.shape[-1]
+        or not 0 < keep < base_a.shape[-2]
+    ):
+        raise ConditionUpdateError("invalid native LoRA factor pair")
+    pivots = deterministic_mgs_column_pivots(base_b, keep=keep)
+    selected_b = torch.gather(
+        base_b,
+        -1,
+        pivots.unsqueeze(-2).expand(*base_b.shape[:-1], keep),
+    )
+    batch = math.prod(base_a.shape[:-2])
+    selected_flat = selected_b.to(dtype=torch.float32).reshape(
+        batch, base_b.shape[-2], keep
+    )
+    base_b_flat = base_b.to(dtype=torch.float32).reshape(
+        batch, base_b.shape[-2], base_b.shape[-1]
+    )
+    coordinates = torch.linalg.lstsq(selected_flat, base_b_flat).solution
+    solved_a = torch.matmul(
+        coordinates,
+        base_a.to(dtype=torch.float32).reshape(
+            batch, base_a.shape[-2], base_a.shape[-1]
+        ),
+    ).reshape(*base_a.shape[:-2], keep, base_a.shape[-1])
+    return solved_a.to(dtype=base_a.dtype), selected_b, pivots
+
+
+def compact_rank2_effective_tangent(
+    base_a: torch.Tensor,
+    base_b: torch.Tensor,
+    delta_a: torch.Tensor,
+    delta_b: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Factor the top-2 of T=B0 dA+dB A0 without materializing full T."""
+
+    if (
+        base_a.shape != delta_a.shape
+        or base_b.shape != delta_b.shape
+        or base_a.ndim < 2
+        or base_b.ndim != base_a.ndim
+        or base_a.shape[:-2] != base_b.shape[:-2]
+        or base_a.shape[-2] != base_b.shape[-1]
+        or base_a.shape[-2] * 2 > min(base_a.shape[-1], base_b.shape[-2])
+    ):
+        raise ConditionUpdateError("invalid effective tangent factor pair")
+    left = torch.cat(
+        (base_b.to(dtype=torch.float32), delta_b.to(dtype=torch.float32)),
+        dim=-1,
+    )
+    right = torch.cat(
+        (delta_a.to(dtype=torch.float32), base_a.to(dtype=torch.float32)),
+        dim=-2,
+    )
+    left_q, left_r = torch.linalg.qr(left, mode="reduced")
+    right_q, right_r = torch.linalg.qr(right.transpose(-1, -2), mode="reduced")
+    core = torch.matmul(left_r, right_r.transpose(-1, -2))
+    core_u, singular, core_vh = torch.linalg.svd(core, full_matrices=False)
+    scale = singular[..., :2].clamp_min(0).sqrt()
+    residual_b = torch.matmul(left_q, core_u[..., :, :2]) * scale.unsqueeze(-2)
+    residual_a = scale.unsqueeze(-1) * torch.matmul(
+        core_vh[..., :2, :], right_q.transpose(-1, -2)
+    )
+    return residual_a.to(dtype=base_a.dtype), residual_b.to(dtype=base_b.dtype)
 
 
 def _root_mean_square(value: torch.Tensor) -> float:
@@ -577,40 +647,42 @@ def anchored_reconciliation_program_delta(
     )
     if not bool(torch.isfinite(delta).all()):
         raise ConditionUpdateError("anchored Program write became invalid")
-    return delta, solve.next_precision, AnchoredReconciliationUpdateSummary(
-        correct_conditions=conditions,
-        negative_conditions=conditions,
-        damping=float(solve.damping),
-        feature_rank=solve.feature_rank,
-        precision_condition_number=solve.precision_condition_number,
-        innovation_condition_number=solve.innovation_condition_number,
-        correct_cotangent_rms=_root_mean_square(correct_cotangents),
-        predicted_correct_motion_rms=correct_motion_rms,
-        predicted_negative_motion_rms=negative_motion_rms,
-        predicted_negative_to_correct_ratio=(
-            negative_motion_rms / correct_motion_rms
-            if correct_motion_rms > 0
-            else torch.finfo(torch.float32).max
-        ),
-        blind_predicted_correct_motion_rms=blind_correct_rms,
-        current_motion_to_blind_ratio=(
-            correct_motion_rms / blind_correct_rms
-            if blind_correct_rms > 0
-            else 1.0
-        ),
-        reference_correct_rows=reference.rows,
-        reference_motion_rms=reference.motion_rms,
-        blind_reference_motion_rms=reference.blind_motion_rms,
-        reference_to_blind_ratio=(
-            reference.motion_rms / reference.blind_motion_rms
-            if reference.blind_motion_rms > 0
-            else 0.0
-        ),
-        reference_rows_improved_fraction=reference.improved_fraction,
-        value_delta_rms=_root_mean_square(delta),
-        assimilated_rows_before=reconciliation.assimilated_rows,
-        assimilated_rows_after=(
-            reconciliation.assimilated_rows + solve.features.shape[0]
+    return (
+        delta,
+        solve.next_precision,
+        AnchoredReconciliationUpdateSummary(
+            correct_conditions=conditions,
+            negative_conditions=conditions,
+            damping=float(solve.damping),
+            feature_rank=solve.feature_rank,
+            precision_condition_number=solve.precision_condition_number,
+            innovation_condition_number=solve.innovation_condition_number,
+            correct_cotangent_rms=_root_mean_square(correct_cotangents),
+            predicted_correct_motion_rms=correct_motion_rms,
+            predicted_negative_motion_rms=negative_motion_rms,
+            predicted_negative_to_correct_ratio=(
+                negative_motion_rms / correct_motion_rms
+                if correct_motion_rms > 0
+                else torch.finfo(torch.float32).max
+            ),
+            blind_predicted_correct_motion_rms=blind_correct_rms,
+            current_motion_to_blind_ratio=(
+                correct_motion_rms / blind_correct_rms if blind_correct_rms > 0 else 1.0
+            ),
+            reference_correct_rows=reference.rows,
+            reference_motion_rms=reference.motion_rms,
+            blind_reference_motion_rms=reference.blind_motion_rms,
+            reference_to_blind_ratio=(
+                reference.motion_rms / reference.blind_motion_rms
+                if reference.blind_motion_rms > 0
+                else 0.0
+            ),
+            reference_rows_improved_fraction=reference.improved_fraction,
+            value_delta_rms=_root_mean_square(delta),
+            assimilated_rows_before=reconciliation.assimilated_rows,
+            assimilated_rows_after=(
+                reconciliation.assimilated_rows + solve.features.shape[0]
+            ),
         ),
     )
 
@@ -677,26 +749,3 @@ def program_residual_delta_application_evidence(
         predicted_observed_max_abs=float(error.abs().max()),
         predicted_observed_relative_rms=float(relative),
     )
-
-
-def validate_frozen_v6_residual_writer(
-    writer: FrozenV6ConditionResidualWriter,
-    *,
-    require_zero_memory: bool = False,
-) -> None:
-    """Fail closed if the wrapper gains trainable or malformed dynamic state."""
-
-    base_state = writer.base_writer.state_dict()
-    if (
-        len(base_state) != 600
-        or any(parameter.requires_grad for parameter in writer.parameters())
-        or writer.program_memory.value.dtype != torch.float32
-        or writer.program_memory.value.shape
-        != (
-            writer.condition_feature.feature_width,
-            SlotNormalizedCoreProcedureCompiler.QUERY_COUNT,
-            writer.base_writer.program_width,
-        )
-        or (require_zero_memory and bool(torch.count_nonzero(writer.program_memory.value)))
-    ):
-        raise WriterModelError("frozen v6 residual Writer ownership changed")

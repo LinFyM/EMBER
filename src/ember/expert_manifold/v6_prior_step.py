@@ -9,7 +9,7 @@ import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior import counterfactual_frame_order
-from ember.writer.condition_update import FrozenV6ConditionResidualWriter
+from ember.writer.rank_reserved_compiler import FrozenV6RankReservedRewardWriter
 from ember.writer.data import RawTeacherVideo
 
 
@@ -40,7 +40,7 @@ def _video_tensors(
 
 def generate_condition_graph(
     *,
-    writer: FrozenV6ConditionResidualWriter,
+    writer: FrozenV6RankReservedRewardWriter,
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,
@@ -61,10 +61,13 @@ def generate_condition_graph(
         correct_video, device
     )
     base = writer.base_writer
-    with torch.no_grad(), torch.autocast(
-        device_type=device.type,
-        dtype=torch.bfloat16,
-        enabled=device.type == "cuda",
+    with (
+        torch.no_grad(),
+        torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ),
     ):
         correct_evidence = base.encode_video_evidence(
             policy,

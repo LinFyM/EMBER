@@ -11,8 +11,8 @@
   加速工作；主进程仍负责统一科研判断和最终验证。
 - canonical仓库是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。
   retained formal GPU工作必须来自clean pushed commit的frozen worktree。
-- 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`；没有固定6卡上限，使用当时
-  所有真正空闲、健康且能提高有效吞吐的A40，不等待凑卡、不dummy占位、不触碰他人compute进程。
+- 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，选择一个节点并使用该节点当时
+  所有真正空闲、健康且能提高有效吞吐的A40；没有固定6卡上限，不等待凑卡、不dummy占位、不触碰他人进程。
   训练多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL；独立评测按live空卡
   动态扩展cost-balanced queue。
 
@@ -40,9 +40,17 @@
   q/v base error约`.0007523`、每task max≤`.001302`，rank2 capture`.9997088`，dynamic energy-weighted
   cosine`.9975247`、task-common`.998448`、video-centered`.950556`，action exact；但0 policy action forward、
   0 rollout、0 update，不能冒充性能。
-- 当前顺序只允许：canonical单一路径实现；单卡同32-request panel的B8/16/32吞吐profile和cycle1 vertical
-  fixed-action smoke；先跑新rank14 zero-Program strict400。若correct<130、breadth<6或相对旧134 lost>10，
-  立即reject且不跑第二个400。只有base过门，才用小型load-only manifest读取原84MB Program跑rank14+2
+- canonical单一路径已实现：活动config=
+  `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1 Program reference=
+  `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；只读reference绑定旧formal commit/config/
+  world-size/manifest和唯一`[256,320,256]` FP32 tensor，不复制84MB、不读optimizer/RNG。旧Reward训练入口在
+  distributed/runtime初始化前fail closed；v8旧config只保留结果读取，不能再作为部署入口。
+- 当前顺序只允许：已完成CPU seal并从clean pushed/frozen commit启动后，单卡同32-request panel的
+  B8/16/32吞吐profile；单个更大候选OOM仅作
+  ineligible。winner是formal configured batch，而八条vertical cache的actual forward为`min(selected,8)`。
+  随后做五臂四suite fixed-action、q/v-only hybrid、native cache/manifest/load、Writer release/source-policy reuse和
+  validation8×state0 rollout vertical。再跑新rank14 zero-Program strict400。若correct<130、breadth<6或相对旧134 lost>10，
+  立即reject且不跑第二个400。只有base过门，才用Program-only reference读取原84MB Program跑rank14+2
   cycle1 strict400；只有correct≥144、breadth≥6、相对新macro0 lost≤6且gained>lost才算load-only通过并补
   同checkpoint controls。140--143只作诊断性non-pass，不授权新训练；>150仍须完整六臂。两项行为门前不授权
   新训练。
@@ -445,8 +453,10 @@ rank14 v6 base而不是identity；no-video由显式fast path跳过pivot/solve/SV
 - reward/observation/action仅属于train24 credit，Writer输入和deployment checkpoint仍只有language+video；
   validation/test action/reward、teacher action、expert output与negative policy forward均为0。
 
-当前没有active训练路径：只允许先完成新compiler的CPU/vertical/throughput门、rank14 macro0 strict400，再在
-base过门后对既有cycle1 Program做一次load-only strict400。两个行为门裁决前不得fresh或resume任何Writer训练。
+当前没有active训练路径：旧Reward fresh/profile/resume/cycle2入口已在CLI、training owner和runtime owner三层、
+CUDA或distributed初始化前机械fail closed。只允许先完成新compiler的vertical/throughput门、rank14 macro0
+strict400，再在base过门后对既有cycle1 Program做一次load-only strict400。两个行为门裁决前不得fresh或
+resume任何Writer训练。
 
 ## 4. What task experts solve and do not solve
 
@@ -562,9 +572,9 @@ Experts不解决：
   checkpoint与strict134现均已封存，cycle2关闭。旧c4507e9 root是immutable non-pass，e6024cf profile是
   immutable pass且不留state；该config不再是当前训练入口。
 
-当前Q/V Rank-Reserved Native Reward Compiler尚待在canonical owner中实现。它只从历史v6 base与一个小型
-derived manifest读取既有84MB Program tensor，不加载Reward optimizer/RNG/precision，不复制Program，也不
-启动训练。实现后必须先过CPU合同、同panel B8/16/32吞吐和三臂vertical smoke，再进入两个有序strict400门。
+当前Q/V Rank-Reserved Native Reward Compiler已在canonical owner中实现。它只从历史v6 base与一个
+Program-only reference读取既有84MB Program tensor，不加载Reward optimizer/RNG/precision，不复制Program，也不
+启动训练。CPU合同已过；下一步是同panel B8/16/32吞吐和五臂vertical smoke，再进入两个有序strict400门。
 
 以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance：
 
@@ -591,7 +601,10 @@ derived manifest读取既有84MB Program tensor，不加载Reward optimizer/RNG/
   ownership约束，没有额外6卡cap；
 - evaluation seal只能由profile root与vertical smoke root的retained artifacts组装，校验三候选完整request/
   sampled-frame panel严格相同、warmup/repeats、最长视频、selected throughput、native cache、release/reuse
-  和单次成功launcher；
+  和单次成功launcher；当前`rank-reserved-seal`纯CPU入口只允许在tracked canonical branch head自动组装并
+  写回，不允许detached worktree或人工拼evidence；seal后commit/push并新建sealed frozen worktree进入Gate B/C；
+- vertical的full Reward action与q/v-only q/v都必须使用canonical cache重新加载的state；paired rank14 base从
+  同一cached state清零last2 q/v A/B构造，杜绝B4诊断与B8 cache的合法roundoff冒充Reward传递；
 - 当前状态图为`canonical compiler → CPU/throughput/vertical seal → rank14 macro0 strict400 → conditional
   rank14+2 cycle1 load-only strict400 → only-if >=144 controls/future design`；task experts不进入当前部署；
 - clean frozen `ded0c80`在live空闲`gpu02:0`完成32-request、1093 sampled-frame fixed panel。
@@ -682,8 +695,9 @@ derived manifest读取既有84MB Program tensor，不加载Reward optimizer/RNG/
    使q/v tiny tangent落不到非零BF16 factors。故cycle2关闭，Program只保留为load-only causal probe。
 6. full80已经证明pivot-preserving rank14+2可在generation层保存base和Reward结构；但base-drop仍约Reward的
    `1727x`，必须先以新macro0 closed-loop裁决，不能靠几何宣告成功。
-7. 当前先做canonical compiler、单卡吞吐/vertical、新rank14 macro0 strict400；correct<130、breadth<6或
-   相对旧134 lost>10即停止，不跑第二个400。
+7. canonical compiler与CPU seal已经完成；当前先从同一clean pushed frozen implementation commit做单卡吞吐/
+   五臂vertical，再做新rank14 macro0 strict400；correct<130、breadth<6或相对旧134 lost>10即停止，不跑
+   第二个400。
 8. 只有macro0过门才跑cycle1 Program load-only strict400；仅当correct≥144、breadth≥6、lost≤6且
    gained>lost才算通过、补同checkpoint controls并授权后续训练design。140--143为诊断性non-pass，不授权
    新训练；严格>150必须完整六臂，再继续提高。
@@ -705,8 +719,9 @@ derived manifest读取既有84MB Program tensor，不加载Reward optimizer/RNG/
 - retired RLS config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；由f28 profile、
   25bbd52 formal/strict与866cca9 transition共同封为closed-loop non-pass。
 - retained Reward config：`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；B8/all-mixed e6024cf
-  profile、cycle1 checkpoint与strict134均已封存，cycle2关闭。当前native compiler config尚待canonical实现，
-  不得用旧Reward config fresh/resume或冒充当前入口；旧c4507e9 profile保持immutable non-pass。
+  profile、cycle1 checkpoint与strict134均已封存，cycle2关闭。当前native compiler config是
+  `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`；不得用旧Reward config fresh/resume或冒充当前
+  入口，旧c4507e9 profile保持immutable non-pass。
 - training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

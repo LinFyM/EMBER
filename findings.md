@@ -16,7 +16,7 @@
   `G0/G0+T` absolute rank16 refactor都失败。local-CD K4 same-video cosine约`.217`、error-to-zero约`.977`；
   absolute refactor的delta cosine`.0045--.0213`、norm ratio`8.7--182`。不再扫描这些数值补丁。
 
-## Q/V pivot-preserving rank14+2：generation门通过，行为仍未知（2026-08-11）
+## Q/V pivot-preserving rank14+2：canonical实现与CPU门完成，行为仍未知（2026-08-11）
 
 - rank1 stable tangent capture不足；rank2 capture约`.9996`且是最小充分点。action rank2 cosine仅
   `.91--.95`且action原本FP32，所以唯一合理结构是36个q/v targets保留rank14 base + 2个physical zero-B
@@ -30,6 +30,28 @@
   `.9975247`、error-to-zero`.07218`、task-common`.998448`、video-centered`.950556`，action exact。
 - base reconstruction error相对Reward innovation仍约`1727x`，artifact明确为0 policy forward/0 rollout/0
   update。generation geometry只解锁真实vertical和strict400，不能宣称性能。
+- canonical实现使用stable analytic FactorHead JVP、batched deterministic MGS、rank14 least-squares和不构造
+  full T的compact 32×32 QR/SVD；macro0跳过condition feature/JVP/SVD并把q/v后两槽A/B置零，no-video在
+  video/compiler前直接返回source identity。cycle1只经derived reference加载一个Program tensor；旧Reward
+  fresh/resume入口在distributed/runtime前fail closed。v9 cache identity绑定实际Git commit。
+- active config与唯一Program-only reference分别为
+  `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`和
+  `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；前者以path/bytes/schema/source commit绑定
+  generation artifact，当前仍awaiting live seal。旧Reward fresh/profile/resume/cycle2已在CLI/training/runtime
+  三层初始化前机械关闭。
+- Gate A不是三臂形式检查：同一B4视频forward生成old base/reward、rank14 base、q/v-only、full reward五臂，
+  集中D2H后由正式cache/manifest接管、释放Writer；fixed-action中的full Reward直接使用cache重新加载的state，
+  q/v-only使用同一cached q/v加rank14-base action，再以每task一次五臂batch验证response；diagnostic与cache
+  evidence还必须绑定同一teacher video identity。
+  另以同batch-shape identity/source action exact核对no-video owner。部署smoke还真实执行validation8×state0。
+  stable BA metric用`D=(B1-B0)A1+B0(A1-A0)`低秩表示，避免从两个大BA相减微小Reward motion。
+  direction/cosine必须报告但目前没有预注册数值阈值；hard gate只认真实非零传递、完整target覆盖、identity、
+  cache和执行合同，不能事后按方向观感改门。
+- profile schema v2允许单个更大batch OOM后记录为ineligible并继续保留稳定候选；8-request vertical明确记录
+  configured selected batch与实际`min(selected,8)` cache forward，不把配置值冒充真实batch。Gate C的tracked
+  Program reference不再误走output-root resolver；纯CPU `rank-reserved-seal`从两份注册artifact自动组装config。
+- 全仓在正确LIBERO assets环境下为`386 passed in 28.76s`；这是CPU合同，不是行为分数。当前仍没有新
+  rank-reserved policy action或rollout artifact。
 - 正确证据顺序是：新graph单卡B8/16/32吞吐profile + cycle1四suitefixed-action vertical；先新rank14
   zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
   只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性
@@ -668,7 +690,8 @@
   task metrics/gradient norms批量host transfer；action loader使用2个spawn persistent workers/prefetch2。
 - Writer/video hot path还合并了offset、frame ordinal/order、task-span/condition ownership等重复host barrier，
   PI05 formal functional loss绕过只供日志使用的两次host sync。单卡profile和vertical evaluator均在模型
-  load/worker spawn前拒绝忙卡和非A40，普通evaluator同时强制owner六卡上限；profile单卡worker再次live
+  load/worker spawn前拒绝忙卡和非A40；当时普通evaluator的软件还错误附加了六卡cap（随后经owner纠正并
+  删除），profile单卡worker再次live
   preflight并核对checkout，profile seal只能从真实artifact重建。
 - 真实validation8×4-state CPU prepare得到32 requests、historical 600 tensors/12,064,064 values、
   deployment expert-bank reads=0和72 BF16 + 4 F32 cache descriptor；其后的live结论由本文件顶部取代。

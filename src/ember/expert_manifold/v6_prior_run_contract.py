@@ -26,10 +26,8 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.condition_update import (
-    FrozenV6ConditionResidualWriter,
-    ProgramReconciliationState,
-)
+from ember.writer.condition_update import ProgramReconciliationState
+from ember.writer.rank_reserved_compiler import FrozenV6RankReservedRewardWriter
 from ember.writer.topology import visible_physical_cuda_index
 
 
@@ -103,7 +101,7 @@ def rank_topology(
 
 def _ownership_contract(
     ownership: V6PriorOwnership,
-    writer: FrozenV6ConditionResidualWriter,
+    writer: FrozenV6RankReservedRewardWriter,
     reconciliation: ProgramReconciliationState,
 ) -> dict[str, Any]:
     memory = writer.program_memory.value
@@ -228,7 +226,7 @@ def build_run_contract(
     video_schedule: TeacherVideoSchedule,
     warm_start: V6PriorWarmStart,
     ownership: V6PriorOwnership,
-    writer: FrozenV6ConditionResidualWriter,
+    writer: FrozenV6RankReservedRewardWriter,
     reconciliation: ProgramReconciliationState,
     repo_root: Path,
     git_state_fn: Any = residual_git_state,

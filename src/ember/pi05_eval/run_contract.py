@@ -99,6 +99,9 @@ def _writer_lora_contract(
     authorities: EvaluationAuthorities,
     adapter: Mapping[str, Any],
 ) -> Any:
+    from ember.expert_manifold.inference import (
+        load_expert_manifold_deployment_config,
+    )
     from ember.expert_manifold.v6_prior_contract import (
         authority_path as expert_authority_path,
         load_v6_prior_config,
@@ -107,7 +110,13 @@ def _writer_lora_contract(
 
     if adapter["kind"] != EXPERT_MANIFOLD_WRITER_KIND:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
-    config = load_v6_prior_config(Path(adapter["config"]["path"]))
+    config_path = Path(adapter["config"]["path"])
+    config = (
+        load_expert_manifold_deployment_config(config_path)
+        if adapter.get("schema_version")
+        == "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
+        else load_v6_prior_config(config_path)
+    )
     path = expert_authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
     expected_reference = (
@@ -195,14 +204,29 @@ def _validate_build_request(
             raise Pi05EvaluationError(
                 "Writer generation lacks its throughput authority"
             ) from error
-        expected_throughput_policy = (
-            "highest_measured_batch_throughput_with_device_memory_headroom"
-            if adapter.get("schema_version")
-            == "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
-            else "highest_measured_throughput_with_device_memory_headroom"
+        throughput_by_schema = {
+            "ember_pi05_v6_prior_eval_adapter_v5": (
+                "highest_measured_throughput_with_device_memory_headroom"
+            ),
+            "ember_pi05_v6_ecp_eval_adapter_v6": (
+                "highest_measured_throughput_with_device_memory_headroom"
+            ),
+            "ember_pi05_v6_tangent_tube_eval_adapter_v7": (
+                "highest_measured_throughput_with_device_memory_headroom"
+            ),
+            "ember_pi05_v6_condition_program_residual_eval_adapter_v8": (
+                "highest_measured_batch_throughput_with_device_memory_headroom"
+            ),
+            "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9": (
+                "highest_measured_end_to_end_loras_per_second_with_memory_headroom"
+            ),
+        }
+        expected_throughput_policy = throughput_by_schema.get(
+            str(adapter.get("schema_version"))
         )
         if (
-            evaluation.get("throughput_policy") != expected_throughput_policy
+            expected_throughput_policy is None
+            or evaluation.get("throughput_policy") != expected_throughput_policy
             or writer_generation_batch_size < minimum_batch_size
         ):
             raise Pi05EvaluationError(
@@ -214,6 +238,7 @@ def _validate_build_request(
             "sealed_from_unchanged_v6_deployment_graph",
             "sealed_from_live_residual_deployment_profile",
             "sealed_from_unchanged_v6_residual_deployment_graph",
+            "sealed_from_live_a40_rank_reserved_deployment_profile",
         } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size
@@ -224,6 +249,15 @@ def _validate_build_request(
             )
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
+    if (
+        isinstance(adapter, Mapping)
+        and adapter.get("schema_version")
+        == "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
+        and writer_cache_root is not None
+    ):
+        raise Pi05EvaluationError(
+            "rank-reserved Writer caches are owned by the current output and commit"
+        )
     return git, writer_adapter
 
 

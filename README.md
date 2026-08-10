@@ -39,8 +39,15 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
 - full80 generation-only门已通过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture
   `.9997088`，dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact。但artifact明确为
   0 policy forward/0 rollout/0 update，不能作为性能结果。
-- 下一顺序是单一canonical load-only compiler与CPU门；单卡同32-request panel的B8/16/32吞吐profile和
-  cycle1 four-suite fixed-action vertical；先新rank14 zero-Program strict400。若correct<130、breadth<6或
+- canonical load-only compiler、v9 family/config、Program load-only reference、commit-bound native cache和
+  ordered Gate B/C现已实现；旧Reward训练入口在distributed/runtime初始化前fail closed。活动config为
+  `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`。当前CPU回归为`386 passed`。
+- 下一顺序是clean pushed/frozen后的单卡同32-request panel B8/16/32吞吐profile，以及五臂四suite
+  fixed-action + native cache/release + 8-row rollout vertical；更大profile候选OOM只作ineligible，vertical的
+  full/qv-only action必须使用cache重新加载的q/v state，并分别报告configured selected batch与实际8-entry
+  cache batch。profile+vertical通过后，回到tracked主分支由`rank-reserved-seal`自动组装config evidence，
+  commit/push并新建sealed frozen worktree。随后先跑新rank14
+  zero-Program strict400。若correct<130、breadth<6或
   相对旧134 lost>10，直接reject并省去第二个400；只有base过门才读取原84MB Program做rank14+2 cycle1
   strict400。只有correct≥144、breadth≥6、lost≤6且gained>lost才算load-only通过并补同checkpoint controls；
   140--143是诊断性non-pass，不授权fresh训练。两项行为门前不启动训练。

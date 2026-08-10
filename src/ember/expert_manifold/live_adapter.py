@@ -14,6 +14,7 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.inference import (
     expected_expert_manifold_episode_evidence,
     inspect_expert_manifold_writer_evaluation,
+    load_expert_manifold_deployment_config,
 )
 from ember.expert_manifold.v6_prior import (
     freeze_v6_prior_writer,
@@ -23,7 +24,6 @@ from ember.expert_manifold.v6_prior_checkpoint import PROGRAM_MEMORY_KEY
 from ember.expert_manifold.v6_prior_contract import (
     REPO_ROOT,
     authority_path,
-    load_v6_prior_config,
 )
 from ember.expert_manifold.video_schedule import shuffled_frame_permutation
 from ember.lora import copy_task_lora_state_, validate_lora_state
@@ -34,9 +34,9 @@ from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.data import RawTeacherVideo, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
-from ember.writer.condition_update import (
-    FrozenV6ConditionResidualWriter,
-    validate_frozen_v6_residual_writer,
+from ember.writer.rank_reserved_compiler import (
+    FrozenV6RankReservedRewardWriter,
+    validate_frozen_v6_rank_reserved_writer,
 )
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
 
@@ -48,7 +48,7 @@ def _build_v6_writer(
     policy: torch.nn.Module,
     template: Mapping[str, torch.Tensor],
     device: torch.device,
-) -> FrozenV6ConditionResidualWriter:
+) -> FrozenV6RankReservedRewardWriter:
     bridge = policy.model.paligemma_with_expert
     writer_config = {
         name: value
@@ -67,13 +67,29 @@ def _build_v6_writer(
         (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve(),
     )
     freeze_v6_prior_writer(base_writer)
-    writer = FrozenV6ConditionResidualWriter(
+    asset = observed["writer_asset"]
+    if type(asset.get("enable_program_residual")) is not bool:
+        raise ExpertManifoldError(
+            "retired v6 deployment assets cannot enter the rank-reserved compiler"
+        )
+    expected_assets = {
+        "v6_qv_rank14_zero_program_load_only": (0, False),
+        "v6_qv_rank14_plus2_reward_program_load_only": (1, True),
+    }
+    observed_identity = (
+        int(asset.get("method_macro", -1)),
+        asset["enable_program_residual"],
+    )
+    if expected_assets.get(str(asset.get("kind"))) != observed_identity:
+        raise ExpertManifoldError("rank-reserved Writer asset identity changed")
+    enable_program_residual = asset["enable_program_residual"]
+    writer = FrozenV6RankReservedRewardWriter(
         base_writer,
         feature_width=int(config["condition_feature"]["feature_width"]),
         feature_seed=int(config["condition_feature"]["projection_seed"]),
+        enable_program_residual=enable_program_residual,
     )
-    trained = observed["writer_asset"]["kind"] != "historical_v6_macro400_load_only"
-    if trained:
+    if enable_program_residual:
         state = load_file(
             str(observed["writer_asset"]["residual_state"]["path"]),
             device="cpu",
@@ -96,7 +112,9 @@ def _build_v6_writer(
     ):
         raise ExpertManifoldError("v6-prior evaluation template identity changed")
     writer.requires_grad_(False)
-    validate_frozen_v6_residual_writer(writer, require_zero_memory=not trained)
+    validate_frozen_v6_rank_reserved_writer(
+        writer, require_zero_memory=not enable_program_residual
+    )
     writer.to(device).eval()
     if any(parameter.requires_grad for parameter in writer.parameters()):
         raise ExpertManifoldError("v6-prior evaluation Writer became trainable")
@@ -176,9 +194,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
     ) -> None:
         observed = inspect_expert_manifold_writer_evaluation(
             config_path=Path(str(evaluation_adapter["config"]["path"])),
-            checkpoint=Path(
-                str(evaluation_adapter["writer_asset"]["checkpoint"])
-            ),
+            checkpoint=Path(str(evaluation_adapter["writer_asset"]["checkpoint"])),
             video_data_root=Path(str(evaluation_adapter["video_data"]["root"])),
             source=source,
             task_keys=task_keys,
@@ -191,7 +207,9 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         )
         if observed != dict(evaluation_adapter):
             raise ExpertManifoldError("v6-prior evaluation assets changed")
-        config = load_v6_prior_config(Path(observed["config"]["path"]))
+        config = load_expert_manifold_deployment_config(
+            Path(observed["config"]["path"])
+        )
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
         self.writer = _build_v6_writer(
@@ -215,6 +233,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
             device=device,
         )
         self._last_generation_batch_profile: tuple[dict[str, Any], ...] = ()
+        self._last_diagnostic_five_arm_profile: tuple[dict[str, Any], ...] = ()
 
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
@@ -373,11 +392,7 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         result = []
         for index, row in enumerate(rows):
             state = {
-                name: (
-                    value.detach()
-                    if batch_size == 1
-                    else value[index].detach()
-                )
+                name: (value.detach() if batch_size == 1 else value[index].detach())
                 for name, value in generated.items()
             }
             validate_lora_state(state, self.lora_contract)
@@ -399,6 +414,98 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         return self.prepare_episodes(
             ({"suite": suite, "task_id": task_id, "init_state_id": init_state_id},)
         )[0]
+
+    @torch.inference_mode()
+    def prepare_diagnostic_five_arms(
+        self,
+        identities: Sequence[Mapping[str, Any]],
+    ) -> dict[str, tuple[dict[str, torch.Tensor], ...]]:
+        """Generate Gate-A numeric references from one shared cycle1 video batch."""
+
+        asset = self.evaluation_adapter["writer_asset"]
+        if (
+            not identities
+            or self.evaluation_adapter["video_condition"] != "correct"
+            or asset.get("kind") != "v6_qv_rank14_plus2_reward_program_load_only"
+            or int(asset.get("method_macro", -1)) != 1
+            or asset.get("enable_program_residual") is not True
+        ):
+            raise ExpertManifoldError(
+                "rank-reserved vertical requires the correct cycle1 asset"
+            )
+        inputs = [
+            self._episode_input(
+                suite=str(identity["suite"]),
+                task_id=int(identity["task_id"]),
+                init_state_id=int(identity["init_state_id"]),
+            )
+            for identity in identities
+        ]
+        rows, videos, languages = zip(*inputs, strict=True)
+        if any(video is None for video in videos):
+            raise ExpertManifoldError("rank-reserved vertical lost its video")
+        copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
+        self._physical_lora_is_identity = True
+        tokens, masks, spans = self.tokenizer(list(languages))
+        frame_batches = []
+        index_batches = []
+        for row, video in zip(rows, videos, strict=True):
+            if video is None:
+                raise ExpertManifoldError("rank-reserved vertical lost its video")
+            frames, indices = _ordered_video_tensors(
+                video,
+                condition="correct",
+                order_seed=int(row["teacher_video_order_seeds"][0]),
+                device=self.device,
+            )
+            frame_batches.append(frames)
+            index_batches.append(indices)
+        offsets_list = [0]
+        for frames in frame_batches:
+            offsets_list.append(offsets_list[-1] + int(frames.shape[0]))
+        offsets = torch.tensor(offsets_list, dtype=torch.long, device="cpu")
+        with torch.autocast(
+            device_type=self.device.type,
+            dtype=torch.bfloat16,
+            enabled=self.device.type == "cuda",
+        ):
+            generated = self.writer.forward_diagnostic_five_arms(
+                torch.cat(frame_batches),
+                torch.cat(index_batches),
+                offsets,
+                tokens,
+                masks,
+                spans,
+                policy=self.policy,
+            )
+        batch_size = len(rows)
+        self._last_diagnostic_five_arm_profile = tuple(
+            {
+                **dict(row),
+                "raw_frames": int(video.raw_frame_count),
+                "sampled_frames": int(video.frames.shape[0]),
+            }
+            for row, video in zip(rows, videos, strict=True)
+            if video is not None
+        )
+        result: dict[str, tuple[dict[str, torch.Tensor], ...]] = {}
+        for arm, state in generated.items():
+            split = tuple(
+                {
+                    name: (value.detach() if batch_size == 1 else value[index].detach())
+                    for name, value in state.items()
+                }
+                for index in range(batch_size)
+            )
+            for item in split:
+                validate_lora_state(item, self.lora_contract)
+            result[arm] = split
+        return result
+
+    def last_diagnostic_five_arm_profile(self) -> tuple[dict[str, Any], ...]:
+        if not self._last_diagnostic_five_arm_profile:
+            raise ExpertManifoldError("rank-reserved diagnostic profile is unavailable")
+        return self._last_diagnostic_five_arm_profile
 
     def release_to_cache(self, cache_contract: Mapping[str, Any]) -> Any:
         from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter

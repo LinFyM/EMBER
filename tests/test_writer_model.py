@@ -16,11 +16,12 @@ from ember.expert_manifold.v6_prior import (
     load_v6_prior_warm_start_,
 )
 from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
+from ember.writer.condition_update import stable_factor_head_linearization
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
-    build_lora_tensor_specs,
 )
+from ember.writer.rank_reserved_compiler import FrozenV6RankReservedRewardWriter
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
@@ -29,165 +30,7 @@ from ember.writer.temporal import (
     TaskSelectedSemanticSetFusion,
 )
 from ember.writer.video_program import TaskQueriedPatchGrounding, VideoProgramError
-
-
-class _Projection(torch.nn.Module):
-    def __init__(self, input_width: int, output_width: int) -> None:
-        super().__init__()
-        self.in_features = input_width
-        self.out_features = output_width
-
-
-class _Layer(torch.nn.Module):
-    def __init__(self, dimensions: dict[str, tuple[int, int]]) -> None:
-        super().__init__()
-        self.self_attn = torch.nn.Module()
-        for name, (input_width, output_width) in dimensions.items():
-            setattr(self.self_attn, name, _Projection(input_width, output_width))
-
-
-class _Backbone(torch.nn.Module):
-    def __init__(self, dimensions: dict[str, tuple[int, int]]) -> None:
-        super().__init__()
-        self.layers = torch.nn.ModuleList(
-            _Layer(dimensions) for _ in range(18)
-        )
-
-
-def _backbones() -> tuple[_Backbone, _Backbone]:
-    return (
-        _Backbone(
-            {
-                "q_proj": (2048, 2048),
-                "k_proj": (2048, 256),
-                "v_proj": (2048, 256),
-                "o_proj": (2048, 2048),
-            }
-        ),
-        _Backbone(
-            {
-                "q_proj": (1024, 2048),
-                "k_proj": (1024, 256),
-                "v_proj": (1024, 256),
-                "o_proj": (2048, 1024),
-            }
-        ),
-    )
-
-
-def _template() -> dict[str, torch.Tensor]:
-    state: dict[str, torch.Tensor] = {}
-    generator = torch.Generator(device="cpu").manual_seed(13)
-    for layer in range(18):
-        prefix = (
-            "model.paligemma_with_expert.gemma_expert.model.layers."
-            f"{layer}.self_attn."
-        )
-        for projection, output_width in (("q_proj", 2048), ("v_proj", 256)):
-            state[prefix + projection + ".lora_A.default.weight"] = torch.randn(
-                16,
-                1024,
-                generator=generator,
-            )
-            state[prefix + projection + ".lora_B.default.weight"] = torch.zeros(
-                output_width,
-                16,
-            )
-    for module, input_width, output_width in (
-        ("model.action_in_proj", 32, 1024),
-        ("model.action_out_proj", 1024, 32),
-    ):
-        state[module + ".lora_A.default.weight"] = torch.randn(
-            16,
-            input_width,
-            generator=generator,
-        )
-        state[module + ".lora_B.default.weight"] = torch.zeros(output_width, 16)
-    return state
-
-
-class _FakeSemanticEncoder(torch.nn.Module):
-    def forward(
-        self,
-        _policy: torch.nn.Module,
-        frames: torch.Tensor,
-        frame_condition_ids: torch.Tensor,
-        language_tokens: torch.Tensor,
-        _language_mask: torch.Tensor,
-        task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        counts = task_span_mask.sum(dim=1)
-        maximum = int(counts.max())
-        valid = torch.arange(maximum)[None] < counts[:, None]
-        language = language_tokens.to(torch.float32).mean(dim=1)
-        text = language[:, None, None].expand(-1, maximum, 256).clone()
-        image = frames.to(torch.float32).mean(dim=(1, 2, 3))
-        frame_value = image + language.index_select(0, frame_condition_ids)
-        evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
-        grounded = evidence.clone()
-        interaction = frame_value[:, None].expand(-1, 256).clone()
-        return text, evidence, grounded, interaction, valid
-
-
-def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
-    torch.manual_seed(3)
-    template = _template()
-    pali, expert = _backbones()
-    model = CompleteLoRAWriter(
-        build_lora_tensor_specs(template),
-        template_state=template,
-        paligemma_model=pali,
-        expert_model=expert,
-        image_width=2048,
-        expert_width=1024,
-        program_width=256,
-        text_meta_lora_rank=4,
-        vl_meta_lora_rank=4,
-        action_meta_lora_rank=4,
-        patch_grounding_heads=8,
-        max_frames_per_encoder_call=4,
-        action_horizon=50,
-        padded_action_dim=32,
-        semantic_core_heads=8,
-        semantic_core_blocks=2,
-        procedure_heads=8,
-        procedure_blocks=2,
-        visual_transition_heads=8,
-        fusion_heads=8,
-        factor_hidden_width=256,
-        initialization_seed=7,
-        activation_checkpointing=True,
-    )
-    return model, template
-
-
-def _inputs() -> tuple[torch.Tensor, ...]:
-    frames = torch.arange(5 * 3 * 4 * 4, dtype=torch.uint8).reshape(
-        5,
-        3,
-        4,
-        4,
-    )
-    frame_indices = torch.tensor([0, 5, 0, 5, 10], dtype=torch.long)
-    offsets = torch.tensor([0, 2, 5], dtype=torch.long)
-    tokens = torch.tensor(
-        [[1, 10, 11, 12, 13, 0], [1, 20, 21, 22, 23, 24]],
-        dtype=torch.long,
-    )
-    masks = tokens.ne(0)
-    task_spans = torch.tensor(
-        [
-            [False, False, True, True, False, False],
-            [False, True, True, True, True, False],
-        ]
-    )
-    return frames, frame_indices, offsets, tokens, masks, task_spans
+from fixtures.writer_model import _FakeSemanticEncoder, _inputs, _model
 
 
 def test_v6_writer_parameter_budget_and_fixed_probe_noise_are_exact() -> None:
@@ -234,8 +77,7 @@ def test_v6_prior_strict_warm_start_and_all_frozen_contract(tmp_path) -> None:
     source, _ = _model()
     checkpoint = tmp_path / "writer.safetensors"
     state = {
-        name: value.detach().contiguous()
-        for name, value in source.state_dict().items()
+        name: value.detach().contiguous() for name, value in source.state_dict().items()
     }
     save_file(state, str(checkpoint))
     target, _ = _model()
@@ -284,15 +126,18 @@ def test_v6_prior_counterfactual_schedule_is_balanced_and_temporal() -> None:
     assert torch.equal(shuffled[:5].sort().values, torch.arange(5))
     assert torch.equal(shuffled[5:].sort().values, torch.arange(5, 9))
     assert not torch.equal(shuffled, torch.arange(9))
-    assert counterfactual_frame_order(
-        "wrong",
-        offsets,
-        seed=7,
-        task_ordinal=2,
-        task_visit=3,
-        teacher_demo=11,
-        device="cpu",
-    ) is None
+    assert (
+        counterfactual_frame_order(
+            "wrong",
+            offsets,
+            seed=7,
+            task_ordinal=2,
+            task_visit=3,
+            teacher_demo=11,
+            device="cpu",
+        )
+        is None
+    )
 
 
 def test_v6_prior_wrong_video_cycles_across_suites() -> None:
@@ -339,7 +184,145 @@ def test_v6_writer_becomes_video_conditioned_after_heads_open() -> None:
     assert not hasattr(model, "shared_lora")
 
 
-def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory() -> None:
+def test_rank_reserved_macro0_preserves_action_and_public_native_topology() -> None:
+    model, _ = _model()
+    for name, buffer_name in model._template_buffers.items():
+        if ".self_attn." in name:
+            setattr(model, buffer_name, getattr(model, buffer_name).to(torch.bfloat16))
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    writer = FrozenV6RankReservedRewardWriter(
+        model,
+        feature_width=8,
+        feature_seed=29,
+        enable_program_residual=False,
+    )
+    slots = torch.randn(2, 320, 256)
+    baseline = model.decode_slots(slots)
+    generated = writer.decode_rank_reserved_slots(slots, None)
+    assert set(generated) == set(baseline)
+    assert len(generated) == 76
+    for name, value in generated.items():
+        assert value.shape == (2, *model.template_state()[name].shape)
+        if ".self_attn." in name:
+            assert value.dtype == torch.bfloat16
+            if name.endswith(".lora_A.default.weight"):
+                assert torch.count_nonzero(value[..., 14:, :]) == 0
+            else:
+                assert torch.count_nonzero(value[..., :, 14:]) == 0
+        else:
+            assert value.dtype == torch.float32
+            assert torch.equal(value, baseline[name])
+    assert any(
+        not torch.equal(value[0], model.template_state()[name])
+        for name, value in generated.items()
+        if ".self_attn." in name
+    )
+    single = writer.decode_rank_reserved_slots(slots[:1], None)
+    assert all(
+        value.shape == model.template_state()[name].shape
+        for name, value in single.items()
+    )
+    assert all(not parameter.requires_grad for parameter in writer.parameters())
+
+
+def test_rank_reserved_reward_motion_reaches_qv_slots_and_exact_action_factors() -> (
+    None
+):
+    model, _ = _model()
+    for name, buffer_name in model._template_buffers.items():
+        if ".self_attn." in name:
+            setattr(model, buffer_name, getattr(model, buffer_name).to(torch.bfloat16))
+    for head in model.factor_heads.values():
+        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
+    writer = FrozenV6RankReservedRewardWriter(
+        model,
+        feature_width=8,
+        feature_seed=31,
+        enable_program_residual=True,
+    )
+    slots = torch.randn(1, 320, 256)
+    residual = torch.randn_like(slots) * 0.01
+    baseline = model.decode_slots(slots)
+    generated = writer.decode_rank_reserved_slots(slots, residual)
+    diagnostic = writer.diagnostic_five_arm_slots(slots, residual)
+    assert set(diagnostic) == {
+        "old_full_rank_base",
+        "old_full_rank_reward",
+        "rank14_base",
+        "rank14_plus2_qv_only",
+        "rank14_plus2_reward",
+    }
+    assert all(
+        torch.equal(diagnostic["old_full_rank_base"][name], baseline[name])
+        for name in baseline
+    )
+    old_reward = model.decode_slots(slots + residual)
+    assert all(
+        torch.equal(diagnostic["old_full_rank_reward"][name], old_reward[name])
+        for name in old_reward
+    )
+    assert all(
+        torch.equal(diagnostic["rank14_plus2_reward"][name], generated[name])
+        for name in generated
+    )
+    assert all(
+        torch.equal(
+            diagnostic["rank14_plus2_qv_only"][name],
+            diagnostic[
+                "rank14_plus2_reward" if ".self_attn." in name else "rank14_base"
+            ][name],
+        )
+        for name in generated
+    )
+    qv_a = [
+        value
+        for name, value in generated.items()
+        if ".self_attn." in name and name.endswith(".lora_A.default.weight")
+    ]
+    qv_b = [
+        value
+        for name, value in generated.items()
+        if ".self_attn." in name and name.endswith(".lora_B.default.weight")
+    ]
+    assert len(qv_a) == len(qv_b) == 36
+    assert all(torch.count_nonzero(value[14:]) > 0 for value in qv_a)
+    assert all(torch.count_nonzero(value[:, 14:]) > 0 for value in qv_b)
+
+    sources = writer._slot_sources(slots)
+    residual_sources = writer._slot_sources(residual)
+    for module in ("action_in", "action_out"):
+        tangent_factors = {}
+        for factor in ("a", "b"):
+            key = f"{module}_{factor}"
+            _, tangent = stable_factor_head_linearization(
+                model.factor_heads[key], sources[module], residual_sources[module]
+            )
+            assert tangent is not None
+            oriented = tangent[0].transpose(-1, -2) if factor == "b" else tangent[0]
+            tangent_factors[factor] = oriented
+            name = writer._factor_names[key][0]
+            torch.testing.assert_close(
+                generated[name], baseline[name] + oriented.to(baseline[name].dtype)
+            )
+        name_a = writer._factor_names[f"{module}_a"][0]
+        name_b = writer._factor_names[f"{module}_b"][0]
+        expected_product = torch.matmul(
+            baseline[name_b] + tangent_factors["b"],
+            baseline[name_a] + tangent_factors["a"],
+        )
+        torch.testing.assert_close(
+            torch.matmul(generated[name_b], generated[name_a]),
+            expected_product,
+        )
+        assert torch.count_nonzero(
+            torch.matmul(tangent_factors["b"], tangent_factors["a"])
+        )
+
+
+def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory() -> (
+    None
+):
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
     torch.nn.init.normal_(model.compiler.modulation.weight, std=0.01)
@@ -387,6 +370,8 @@ def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory(
     assert any(
         not torch.allclose(staged[name], reversed_state[name]) for name in staged
     )
+
+
 def test_staged_frame_order_cannot_cross_video_conditions() -> None:
     model, _ = _model()
     model.semantic_encoder = _FakeSemanticEncoder()
@@ -440,9 +425,7 @@ def test_semantic_batch_validates_all_value_ownership_in_one_outer_gate() -> Non
     frames, _, _, tokens, masks, spans = _inputs()
     condition_ids = torch.tensor([0, 0, 1, 1, 1], dtype=torch.long)
     policy = SimpleNamespace(
-        model=SimpleNamespace(
-            config=SimpleNamespace(chunk_size=50, max_action_dim=32)
-        )
+        model=SimpleNamespace(config=SimpleNamespace(chunk_size=50, max_action_dim=32))
     )
     _, valid, counts = encoder._validate_forward_batch(
         policy,
@@ -533,7 +516,9 @@ def test_v6_gradient_staging_opens_only_intended_paths() -> None:
     )
 
 
-def test_task_queried_patch_grounding_uses_patch_content_without_order_geometry() -> None:
+def test_task_queried_patch_grounding_uses_patch_content_without_order_geometry() -> (
+    None
+):
     torch.manual_seed(23)
     grounding = TaskQueriedPatchGrounding(width=32, heads=4)
     queries = torch.randn(2, 5, 32)
@@ -602,7 +587,9 @@ def test_semantic_set_fusion_has_mean_backbone_and_raw_centered_values() -> None
     assert sum(parameter.numel() for parameter in full_width.parameters()) == 262_656
 
 
-def test_visual_transition_recomputes_after_order_change_without_static_value_path() -> None:
+def test_visual_transition_recomputes_after_order_change_without_static_value_path() -> (
+    None
+):
     torch.manual_seed(19)
     fusion = TaskGroundedVisualTransitionFusion(width=32, heads=4)
     probe = torch.randn(1, 4, 32)
@@ -689,7 +676,9 @@ def test_routing_and_positions_cannot_create_lora_content_from_zero_values() -> 
     assert all(torch.count_nonzero(value) == 0 for value in output)
 
 
-def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> None:
+def test_procedure_modulation_is_zero_at_init_then_order_sensitive_when_opened() -> (
+    None
+):
     torch.manual_seed(29)
     compiler = SlotNormalizedCoreProcedureCompiler(
         width=32,

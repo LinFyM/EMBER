@@ -135,6 +135,77 @@ def _start_fixed_episode(
     return slot
 
 
+def _plan_action_chunks(
+    slots: Sequence[dict[str, Any] | None],
+    *,
+    task: Mapping[str, Any],
+    contract: Mapping[str, Any],
+    policy: Any,
+    preprocess: Any,
+    postprocess: Any,
+    task_adapter: Any | None,
+    root_seed: int,
+    replan_steps: int,
+) -> None:
+    import torch
+
+    planning = [
+        slot for slot in slots if slot is not None and not slot["action_plan"]
+    ]
+    if not planning:
+        return
+    batched_adapter = task_adapter is not None and callable(
+        getattr(task_adapter, "predict_action_chunk", None)
+    )
+    groups = (
+        [planning]
+        if task_adapter is None or batched_adapter
+        else [[slot] for slot in planning]
+    )
+    for group in groups:
+        if task_adapter is not None and not batched_adapter:
+            task_adapter.install(group[0]["writer_lora"])
+        processed = [
+            preprocess(libero_policy_input(slot["obs"], str(task["language"])))
+            for slot in group
+        ]
+        batch = {
+            key: torch.cat([item[key] for item in processed], dim=0)
+            for key in processed[0]
+            if isinstance(processed[0][key], torch.Tensor)
+        }
+        noise, seeds = make_policy_noise(
+            group,
+            root_seed=root_seed,
+            suite=str(task["suite"]),
+            task_id=int(task["task_id"]),
+            chunk_size=int(policy.config.chunk_size),
+            max_action_dim=int(policy.config.max_action_dim),
+            device=batch[next(iter(batch))].device,
+        )
+        with torch.inference_mode():
+            predict = (
+                policy.predict_action_chunk
+                if task_adapter is None or not batched_adapter
+                else task_adapter.predict_action_chunk
+            )
+            arguments = (
+                (batch,)
+                if task_adapter is None or not batched_adapter
+                else ([slot["writer_lora"] for slot in group], batch)
+            )
+            chunks = predict(
+                *arguments,
+                noise=noise,
+                num_steps=int(contract["policy"]["num_inference_steps"]),
+            )
+            actions = postprocess(chunks).detach().cpu().numpy()
+        for slot, plan, seed in zip(group, actions, seeds, strict=True):
+            slot["action_plan"].extend(plan[:replan_steps])
+            slot["policy_noise_seeds"].append(seed)
+            slot["replan_index"] += 1
+
+
 def rollout_shard(
     *,
     envs: Sequence[Any],
@@ -147,8 +218,6 @@ def rollout_shard(
     postprocess: Any,
     task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
-    import torch
-
     if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
@@ -176,58 +245,17 @@ def rollout_shard(
     ]
     policy.reset()
     while any(slot is not None for slot in slots):
-        planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
-        if planning:
-            batched_adapter = (
-                task_adapter is not None
-                and callable(getattr(task_adapter, "predict_action_chunk", None))
-            )
-            planning_groups = (
-                [planning]
-                if task_adapter is None or batched_adapter
-                else [[slot] for slot in planning]
-            )
-            for group in planning_groups:
-                if task_adapter is not None and not batched_adapter:
-                    task_adapter.install(group[0]["writer_lora"])
-                processed = [
-                    preprocess(libero_policy_input(slot["obs"], str(task["language"])))
-                    for slot in group
-                ]
-                batch = {
-                    key: torch.cat([item[key] for item in processed], dim=0)
-                    for key in processed[0]
-                    if isinstance(processed[0][key], torch.Tensor)
-                }
-                noise, seeds = make_policy_noise(
-                    group,
-                    root_seed=root_seed,
-                    suite=str(task["suite"]), task_id=int(task["task_id"]),
-                    chunk_size=int(policy.config.chunk_size),
-                    max_action_dim=int(policy.config.max_action_dim),
-                    device=batch[next(iter(batch))].device,
-                )
-                with torch.inference_mode():
-                    predict = (
-                        policy.predict_action_chunk
-                        if task_adapter is None or not batched_adapter
-                        else task_adapter.predict_action_chunk
-                    )
-                    predict_args = (
-                        (batch,)
-                        if task_adapter is None or not batched_adapter
-                        else ([slot["writer_lora"] for slot in group], batch)
-                    )
-                    chunks = predict(
-                        *predict_args,
-                        noise=noise,
-                        num_steps=int(contract["policy"]["num_inference_steps"]),
-                    )
-                    actions = postprocess(chunks).detach().cpu().numpy()
-                for slot, plan, seed in zip(group, actions, seeds, strict=True):
-                    slot["action_plan"].extend(plan[:replan_steps])
-                    slot["policy_noise_seeds"].append(seed)
-                    slot["replan_index"] += 1
+        _plan_action_chunks(
+            slots,
+            task=task,
+            contract=contract,
+            policy=policy,
+            preprocess=preprocess,
+            postprocess=postprocess,
+            task_adapter=task_adapter,
+            root_seed=root_seed,
+            replan_steps=replan_steps,
+        )
 
         for slot_index, (env, slot) in enumerate(zip(active_envs, slots, strict=True)):
             if slot is None:
@@ -282,12 +310,16 @@ def validate_shard_result(
     _validate_shard_header(payload, contract=contract, shard=shard)
     task = task_lookup(contract).get(shard.task_key)
     if task is None:
-        raise Pi05EvaluationError(f"raw evaluation shard task is outside contract: {shard.job_id}")
+        raise Pi05EvaluationError(
+            f"raw evaluation shard task is outside contract: {shard.job_id}"
+        )
     rows = [dict(row) for row in payload.get("rows", [])]
     expected_ids = set(int(value) for value in shard.init_state_ids)
     actual_ids = [int(row.get("init_state_id", -1)) for row in rows]
     if len(rows) != len(expected_ids) or set(actual_ids) != expected_ids:
-        raise Pi05EvaluationError(f"raw evaluation shard state coverage changed: {shard.job_id}")
+        raise Pi05EvaluationError(
+            f"raw evaluation shard state coverage changed: {shard.job_id}"
+        )
     for row in rows:
         _validate_episode_row(row, contract=contract, shard=shard, task=task)
     return sorted(rows, key=lambda row: int(row["init_state_id"]))
@@ -308,7 +340,9 @@ def _validate_shard_header(
         or payload.get("job_id") != shard.job_id
         or observed_shard != asdict(shard)
     ):
-        raise Pi05EvaluationError(f"raw evaluation shard contract changed: {shard.job_id}")
+        raise Pi05EvaluationError(
+            f"raw evaluation shard contract changed: {shard.job_id}"
+        )
     producer = payload.get("producer", {})
     started_unix = float(payload.get("started_unix", float("nan")))
     finished_unix = float(payload.get("finished_unix", float("nan")))
@@ -320,7 +354,9 @@ def _validate_shard_header(
         or not math.isfinite(finished_unix)
         or finished_unix < started_unix
     ):
-        raise Pi05EvaluationError(f"raw evaluation shard producer is invalid: {shard.job_id}")
+        raise Pi05EvaluationError(
+            f"raw evaluation shard producer is invalid: {shard.job_id}"
+        )
 
 
 def _validate_episode_row(
@@ -360,7 +396,9 @@ def _validate_episode_row(
         and adapter_valid
     )
     if not valid:
-        raise Pi05EvaluationError(f"raw evaluation row contract changed: {shard.job_id}")
+        raise Pi05EvaluationError(
+            f"raw evaluation row contract changed: {shard.job_id}"
+        )
 
 
 def _complete_published_shard(
@@ -420,7 +458,9 @@ def _parse_worker_assignment(
         gpu_text, replica_text = worker_id.split("-r", 1)
         gpu_index, replica = int(gpu_text), int(replica_text)
     except ValueError as error:
-        raise Pi05EvaluationError(f"invalid PI05 evaluator worker ID: {worker_id}") from error
+        raise Pi05EvaluationError(
+            f"invalid PI05 evaluator worker ID: {worker_id}"
+        ) from error
     physical_gpu_ids = tuple(
         int(value)
         for value in contract["parallel"].get(
@@ -434,7 +474,9 @@ def _parse_worker_assignment(
         and 0 <= replica < int(contract["parallel"]["replicas_per_gpu"])
     )
     if not valid:
-        raise Pi05EvaluationError("worker ID does not match its one physical visible GPU")
+        raise Pi05EvaluationError(
+            "worker ID does not match its one physical visible GPU"
+        )
     return gpu_index, physical_gpu_ids.index(gpu_index), replica
 
 
@@ -466,7 +508,9 @@ def _initialize_worker(
         LIBERO_CONFIG_PATH=str((output_dir / "libero_config").resolve()),
     )
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
-        raise Pi05EvaluationError("each PI05 evaluator worker must see exactly one CUDA GPU")
+        raise Pi05EvaluationError(
+            "each PI05 evaluator worker must see exactly one CUDA GPU"
+        )
     torch.cuda.set_device(0)
     affinity = bind_current_process_to_cuda_numa(0)
     numa_node = cuda_numa_node(0)
@@ -589,6 +633,69 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
     return _publish_claim_result(runtime, claim, rows, started_unix)
 
 
+def _run_writer_bootstrap(runtime: WorkerRuntime, invocation_id: str) -> None:
+    from ember.writer.evaluation_runtime import run_writer_generation_phase
+    from ember.writer.rank_reserved_vertical import (
+        RANK_RESERVED_VERTICAL_PREFLIGHT,
+        complete_rank_reserved_vertical,
+        is_rank_reserved_vertical_contract,
+        prepare_rank_reserved_vertical,
+    )
+
+    vertical_prepared = None
+    vertical_preflight = None
+    if is_rank_reserved_vertical_contract(runtime.contract, runtime.output_dir):
+        vertical_preflight, _ = read_json_with_size(
+            runtime.output_dir / RANK_RESERVED_VERTICAL_PREFLIGHT
+        )
+        vertical_prepared = prepare_rank_reserved_vertical(
+            runtime,
+            preflight=vertical_preflight,
+        )
+    run_writer_generation_phase(
+        runtime,
+        invocation_id=invocation_id,
+        append_event=_append_worker_event,
+    )
+    if vertical_prepared is not None and vertical_preflight is not None:
+        complete_rank_reserved_vertical(
+            runtime,
+            vertical_prepared,
+            preflight=vertical_preflight,
+        )
+
+
+def _drain_claim_queue(
+    runtime: WorkerRuntime,
+    *,
+    worker_id: str,
+) -> tuple[int, int]:
+    completed = adopted = 0
+    preferred_task: tuple[str, int] | None = None
+    while (
+        claim := claim_next(
+            runtime.queue_path,
+            worker_id=worker_id,
+            preferred_task=preferred_task,
+            physical_gpu=runtime.gpu_slot,
+        )
+    ) is not None:
+        preferred_task = claim.task_key
+        try:
+            adopted += int(_execute_claim(runtime, claim))
+            completed += 1
+        except Exception as error:
+            fail_job(
+                runtime.queue_path,
+                job_id=claim.shard.job_id,
+                worker_id=worker_id,
+                claim_token=claim.claim_token,
+                error=repr(error),
+            )
+            raise
+    return completed, adopted
+
+
 def run_worker(
     *,
     output_dir: Path,
@@ -618,7 +725,6 @@ def run_worker(
     runtime: WorkerRuntime | None = None
     completed = 0
     adopted = 0
-    preferred_task: tuple[str, int] | None = None
     try:
         runtime = _initialize_worker(
             output_dir,
@@ -646,32 +752,8 @@ def run_worker(
             },
         )
         if writer_generator:
-            from ember.writer.evaluation_runtime import run_writer_generation_phase
-
-            run_writer_generation_phase(
-                runtime,
-                invocation_id=invocation_id,
-                append_event=_append_worker_event,
-            )
-        while (claim := claim_next(
-            runtime.queue_path,
-            worker_id=worker_id,
-            preferred_task=preferred_task,
-            physical_gpu=runtime.gpu_slot,
-        )) is not None:
-            preferred_task = claim.task_key
-            try:
-                adopted += int(_execute_claim(runtime, claim))
-                completed += 1
-            except Exception as error:
-                fail_job(
-                    runtime.queue_path,
-                    job_id=claim.shard.job_id,
-                    worker_id=worker_id,
-                    claim_token=claim.claim_token,
-                    error=repr(error),
-                )
-                raise
+            _run_writer_bootstrap(runtime, invocation_id)
+        completed, adopted = _drain_claim_queue(runtime, worker_id=worker_id)
     except Exception as error:
         _append_worker_event(
             event_path,

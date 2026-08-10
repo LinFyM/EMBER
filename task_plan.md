@@ -289,13 +289,22 @@ formal artifacts保存。
 - [x] full80 generation-only门通过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture
   `.9997088`，dynamic cosine`.9975247`、video-centered`.950556`，action exact；0 policy forward/rollout，
   不冒充性能。
-- [ ] 在一个canonical owner中实现load-only native compiler、新family/config/schema与derived Program manifest；
+- [x] 在一个canonical owner中实现load-only native compiler、新family/config/schema与derived Program reference；
   旧Reward cycle1 checkpoint只读取原84MB Program，不resume optimizer/RNG/precision，也不复制大tensor。
-- [ ] CPU门覆盖deterministic pivot、kept-B bit exact、rank14 solve、compact top2、stable BF16 tangent、
+- [x] CPU门覆盖deterministic pivot、kept-B bit exact、rank14 solve、compact top2、stable BF16 tangent、
   zero-Program后2个B exact zero、action exact、76 tensors/native dtype、old schema/cache fail-close和信息墙。
-- [ ] live单卡做同32-request B8/16/32吞吐profile并选samples/s最高点；同一cycle1 vertical smoke比较old rank16、
-  rank14 base、rank14+2的四suite fixed-action，要求真实adapter/cache、Program action response、Writer release与
-  0 OOM/nonfinite/forbidden read，不以逐元素微差门禁。
+- [x] 旧Reward fresh/profile/resume/cycle2在CLI/training/runtime三层初始化前机械fail closed；active config仍为
+  `awaiting_live_a40_rank_reserved_deployment_profile`且`online_smoke_evidence=null`，不冒充formal ready。
+- [ ] live单卡做同32-request B8/16/32吞吐profile并选samples/s最高点；同一cycle1 vertical smoke比较五臂
+  （含q/v-only hybrid）的四suite batched fixed-action。profile更大候选OOM只作ineligible；vertical明确区分
+  configured winner与8-entry actual cache batch，full/q/v-only使用cache-loaded q/v，paired base从同一state
+  清零last2 slots。要求真实adapter/cache、Program q/v/action response、Writer release与0 nonfinite/
+  forbidden read，不以逐元素微差门禁。
+  registered roots分别是`runs/outputs/pi05_v6_qv_rank_reserved_native_reward_profile_b8_b16_b32_20260811`和
+  `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_vertical_four_suite_20260811`。
+- [x] 实现纯CPU `rank-reserved-seal` assembler，只从注册profile/vertical raw artifacts写回status/evidence；
+  tracked Program asset resolver与`runs/outputs` evidence resolver分离，Gate C不再机械阻断。seal只允许在
+  tracked canonical branch head执行；Gate A后必须seal commit/push并新建frozen worktree，才进入Gate B/C。
 - [ ] 先跑新rank14 zero-Program strict400；若correct<130、breadth<6或相对旧134 lost>10则reject，不浪费
   第二个400。旧macro0 rows、source policy、split、video和RNG schedule直接复用，不重跑旧baseline。
 - [ ] 只有新macro0过门，才跑现有cycle1 Program的rank14+2 load-only strict400；只有correct≥144、

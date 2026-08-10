@@ -21,9 +21,12 @@ pair cosine跨8 tasks为`[-.001371,.003280]`。所以blind-add正在写入近正
 
 当前唯一active是第39节**Exact Anchored Reconciliation**：部署仍为Balanced v2 P256 one-shot graph；训练端
 用FP64`Lambda_0=I_256`和RLS把每批target锚到更新前condition输出，再叠加`[-G;0]`。checkpoint增加
-training-only precision/assimilated_rows，部署仍只加载Program memory。family fresh-incompatible，当前仅有
-CPU oracle/合同实现，尚无RLS GPU或strict结果。下一GPU动作只能是clean pushed/frozen fresh0→3 profile；
-通过old-row/current-motion/既有路径/吞吐门后才formal0→10并立即strict400。10→25只在macro10
+training-only precision/assimilated_rows，部署仍只加载Program memory。family fresh-incompatible。
+clean pushed/frozen`f0c3f51`首次fresh0→3已exit0：old drift/blind=`.248611/.213872`、old rows改善全1、
+current/blind=`.999980/.784334/.640650`，其余路径门均过；原18门仅首步`1.97e-5`低位比值与fresh首宏
+wall失败，artifact固定为16/18 non-pass。三步mean wall=`1.029799x`、同schedule v2总wall只差`.277%`。
+第39.4.1不改热路径，只把ppm ratio保留为diagnostic并用三步production arithmetic mean对原baseline
+`≤1.10`；必须由新clean commit重新fresh0→3，不能post-hoc seal。新17门通过后才formal0→10并立即strict400。10→25只在macro10
 correct≥140、lost≤6、breadth≥6且有严格paired证据时允许。fresh formal必须预注册固定macro0=`6b5f7a6`
 root和唯一尚不存在的macro10 root；resume从immutable shards重聚合并核对commit/checkpoint/同video配对，
 formal evaluator拒绝未声明macro。macro25是支持门后的条件动作。
@@ -398,7 +401,8 @@ motion/action/吞吐；deployment双root也已证明真实生成、cache、relea
 - retired v2 config及formal root由Git/artifacts保留；其最终strict=`134/140/139`和近正交same-task correction
   已封存，不再是活动入口。
 - active config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；当前status=
-  `active_implementation_cpu_sealed_awaiting_live_a40_profile`，formal blocked，尚无RLS GPU/strict结果。
+  `active_implementation_cpu_sealed_awaiting_live_a40_profile`，formal blocked。已有`f0c3f51` discarded live
+  profile但按其旧合同为16/18 non-pass；新测量合同尚待clean重跑，仍无RLS training checkpoint/strict结果。
 - current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第39节；第38节只作RLS
   的deployment/key/baseline provenance。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired

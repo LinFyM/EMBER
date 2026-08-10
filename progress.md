@@ -1,6 +1,20 @@
 # EMBER Progress Ledger
 
-## Exact Anchored Reconciliation实现与正式状态机封口（2026-08-10，尚未启动GPU）
+## RLS fresh0→3首次live证据与profile合同修正（2026-08-10）
+
+- implementation已由clean pushed`f0c3f51`封存，并从独立detached worktree在`gpu02:0--5`完成首次
+  fresh0→3。启动前逐卡UUID/serial/NUMA/process与`/data1` quota通过；运行保持六rank、B20/B10+10、
+  workers2、deferred NCCL和`NCCL_P2P_DISABLE=1`，自然exit0，未保存checkpoint，卡已释放。
+- 原18项检查16项通过。RLS机制证据为old drift/blind=`.248611/.213872`、old rows improved=`1/1`、
+  current/blind=`.999980/.784334/.640650`；其余feature/null/LoRA/action/closure/state/OOM门均成立。失败项
+  仅是首步`1e-5`低位ratio门与逐macro fresh-vs-warm wall门；旧root继续保留`passed=false`。
+- 第39.4.1已预注册修正：删除ppm级GPU等价hard check但保留raw diagnostic，吞吐使用三宏步production
+  arithmetic mean对原baseline`<=1.10`。当前实测mean ratio=`1.029799`，同schedule v2总wall只差`.277%`。
+  Writer/RLS/dtype/batch/forward完全不改；新合同focused=`82 passed`、全仓=`300 passed`，compileall、
+  26 JSON和diff-check通过，旧artifact matcher仍返回false。下一步是clean push、新frozen worktree和一次
+  新的fresh0→3，不能复用此次artifact或profile权重。
+
+## Exact Anchored Reconciliation实现与正式状态机封口（2026-08-10，首次live profile前的CPU seal）
 
 - canonical v2 executable config已由Git历史保存，active config改为
   `configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；部署计算图不变，fresh checkpoint

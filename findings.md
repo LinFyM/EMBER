@@ -1,5 +1,25 @@
 # EMBER Findings
 
+## RLS首次live profile：机制成立、原测量合同non-pass（2026-08-10）
+
+- clean pushed/frozen`f0c3f51`在实时空闲`gpu02:0--5`完成fresh0→3；root=
+  `runs/outputs/pi05_v6_exact_anchored_reconciliation_profile_fresh0to3_r6_lb20_mb10_f0c3f51_20260810`。
+  72 task visits、1,440 action queries、三轮8/8/8 negatives，exit0且0 checkpoint/OOM/nonfinite/negative
+  policy forward；peak allocated/reserved=`43,261,790,208/46,919,581,696B`。旧artifact按预注册合同为
+  16/18、`passed=false`，不会被后续代码重写或冒充通过。
+- 核心reconciliation门全部成立：macro2/3 old-row drift/blind=`.248611/.213872`，旧correct rows改善=
+  `1.0/1.0`；三个macro current/blind=`.999980/.784334/.640650`，correct/cotangent=
+  `.969147/.738140/.621680`，negative/correct=`.020028/.126612/.130233`。task-local correct均24/24，null=
+  `24/24,22/24,22/24`；A/B、4/4 fixed-action、closure和state `0→48→96→144`均通过。RLS确实解决了
+  短历史feature保留接口，但该证据不等于episode success、same-video鲁棒或视频时序因果。
+- 首步hard gate只因RLS/blind RMS相差`3.80e-11`、ratio偏离1=`1.97e-5`而失败；condition=`106.0`下它与
+  FP32低位误差同阶。为这点差扩大FP64大RHS、重复forward或降低batch会直接违反吞吐优先；CPU FP64 oracle
+  已负责代数等价，GPU保留ratio诊断、finite和`current>=.5x`硬门即可。
+- wall三步ratio=`1.175588/.984891/.928918`，均值=`1.029799`；production总计`65.17118s`，同host/同卡/
+  同schedule的v2前三步`64.99104s`，差`.277%`。原`all(each fresh macro <= warm macro49*1.10)`把cold
+  jitter当结构退化；新合同改为三步production算术均值，baseline和`1.10`阈值均不变。旧root仍non-pass，
+  必须从新clean commit再做一次fresh profile，不能post-hoc seal。
+
 ## v2正式终局、最早瓶颈与RLS选择（2026-08-10）
 
 - clean frozen`abd8e0826e52758eda53b1963f8b12db92bf3748`的v2 formal root=

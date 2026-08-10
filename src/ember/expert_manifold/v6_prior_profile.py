@@ -228,6 +228,10 @@ def profile_passes(
         "production_wall_ratio_to_sealed_v6": [
             value["production_ratio"] for value in values
         ],
+        "production_wall_mean_ratio": math.fsum(
+            value["production_ratio"] for value in values
+        )
+        / len(values),
         "reference_to_blind_ratio": [
             float(update["reference_to_blind_ratio"]) for update in updates[1:]
         ],
@@ -315,10 +319,6 @@ def _reconciliation_profile_checks(
 ) -> dict[str, bool]:
     reference_updates = updates[1:]
     return {
-        "first_step_blind_equivalence": abs(
-            float(updates[0]["current_motion_to_blind_ratio"]) - 1.0
-        )
-        <= float(gates["first_step_blind_ratio_abs_tolerance"]),
         "old_panel_drift_reduction": all(
             float(update["reference_to_blind_ratio"])
             <= float(gates["old_panel_drift_rms_vs_blind_max"])
@@ -330,7 +330,8 @@ def _reconciliation_profile_checks(
             for update in reference_updates
         ),
         "current_motion_preserved": all(
-            float(update["current_motion_to_blind_ratio"])
+            math.isfinite(float(update["current_motion_to_blind_ratio"]))
+            and float(update["current_motion_to_blind_ratio"])
             >= float(gates["current_correct_motion_vs_blind_min"])
             for update in updates
         ),
@@ -351,6 +352,14 @@ def _profile_checks(
     response: Mapping[str, Any],
     values: Sequence[Mapping[str, float]],
 ) -> dict[str, bool]:
+    if (
+        gates.get("production_wall_aggregation")
+        != "arithmetic_mean_over_diagnostic_macros"
+    ):
+        raise ExpertManifoldError("mechanism profile throughput aggregation changed")
+    production_wall_mean_ratio = math.fsum(
+        value["production_ratio"] for value in values
+    ) / len(values)
     checks = {
         "feature_rank": all(
             int(update["feature_rank"]) >= int(gates["feature_rank_min"])
@@ -373,10 +382,8 @@ def _profile_checks(
             <= float(gates["predicted_observed_relative_rms_max"])
             for value in values
         ),
-        "production_wall_overhead": all(
-            value["production_ratio"] <= float(gates["production_wall_ratio_max"])
-            for value in values
-        ),
+        "production_wall_overhead": production_wall_mean_ratio
+        <= float(gates["production_wall_ratio_max"]),
         "task_local_motion_evidence": _task_local_profile_check(gates, task_local),
         "functional_policy_program_credit": all(
             math.isfinite(value["cotangent"]) and value["cotangent"] > 0

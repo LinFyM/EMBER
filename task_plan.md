@@ -216,9 +216,18 @@ formal artifacts保存。
   state/RNG/language/video identity，只有`correct>=140`、`lost<=6`、breadth`>=6`才允许exact-resume。
 - [x] focused=`75 passed`、加载`.env.local`后全仓=`300 passed`、compileall/JSON/diff-check通过；
   architecture guard为review且0 hard violation，authority已同步v2终局、RLS合同与条件macro25。
-- [ ] clean commit/push并创建唯一formal frozen worktree。
-- [ ] live比较`gpu01/gpu02`与`/data1` quota，只在最多6张空闲A40上做唯一fresh0→3 disposable profile；
-  保持logical B20/physical B10+10，不为低位误差降低吞吐。
+- [x] implementation/contract已clean commit并push为`f0c3f51`，从该提交创建独立detached profile frozen
+  worktree；主分支、远端和frozen checkout均精确一致。
+- [x] live比较`gpu01/gpu02`与`/data1` quota后，在空闲`gpu02:0--5`完成首次fresh0→3 disposable profile；
+  exit0、0 checkpoint/OOM/nonfinite/negative forward。原18门16/18通过，RLS old-row/current-motion核心门
+  全过；首步`1.97e-5`低位差和单步fresh-vs-warm wall门失败，旧artifact诚实保留non-pass。
+- [x] 按第39.4.1节只修正证据合同：首步ppm ratio改为diagnostic，精确数学由CPU oracle负责；吞吐改为
+  三宏步production arithmetic mean对原baseline仍`<=1.10`。架构、数学、batch、dtype、worker和forward
+  数均不变，旧artifact不得重解释。
+- [x] 新合同focused=`82 passed`、全仓=`300 passed`，compileall/26 JSON/diff-check通过；旧artifact在新
+  config下仍明确拒绝，证明不能被post-hoc重解释。
+- [ ] clean commit/push，创建新的profile frozen worktree，并在live空闲A40上重新fresh0→3；这是合同
+  修复后的新实验，不复用`f0c3f51`权重或artifact。
 - [ ] profile全部机制/吞吐门通过后，formal fresh0→10并立即跑预注册macro10 strict400；不过支持门即停止。
 - [ ] 只有macro10 `correct>=140`、lost`<=6`、breadth`>=6`才在同一frozen commit/root exact-resume10→25；
   `>140`视为更强支持，macro25仍是条件动作而非预授权结果。

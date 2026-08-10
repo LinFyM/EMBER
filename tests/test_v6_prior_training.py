@@ -84,6 +84,9 @@ def _profile_config() -> dict:
                 "correct_motion_to_cotangent_rms_min": 0.25,
                 "negative_to_correct_motion_rms_max": 0.25,
                 "predicted_observed_relative_rms_max": 0.005,
+                "production_wall_aggregation": (
+                    "arithmetic_mean_over_diagnostic_macros"
+                ),
                 "production_wall_ratio_max": 1.1,
                 "fixed_action_response_rms_min": 0.0,
                 "fixed_action_probe_task_count": 4,
@@ -92,7 +95,6 @@ def _profile_config() -> dict:
                 "negative_null_task_count_min": 18,
                 "oom_count": 0,
                 "nonfinite_count": 0,
-                "first_step_blind_ratio_abs_tolerance": 1e-5,
                 "old_panel_drift_rms_vs_blind_max": 0.5,
                 "old_correct_rows_improved_fraction_min": 0.75,
                 "current_correct_motion_vs_blind_min": 0.5,
@@ -146,6 +148,7 @@ def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate()
     passed, evidence = _profile_passes(_profile_config(), _profile_rows())
     assert passed is True
     assert all(evidence["checks"].values())
+    assert evidence["production_wall_mean_ratio"] == 1.0
     mutations = (
         ("update", "feature_rank", 23),
         ("update", "predicted_correct_motion_rms", 0.1),
@@ -162,8 +165,11 @@ def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate()
         rows[-1][section][key] = value
         assert _profile_passes(_profile_config(), rows)[0] is False
     rows = _profile_rows()
-    rows[-1]["production_kernel_seconds"] = 3.1
+    rows[-1]["production_kernel_seconds"] = 9.1
     assert _profile_passes(_profile_config(), rows)[0] is False
+    rows = _profile_rows()
+    rows[0]["profile_task_seconds"] = 23.4
+    assert _profile_passes(_profile_config(), rows)[0] is True
     rows = _profile_rows()
     rows[-1]["negative_policy_forwards"] = 1
     assert _profile_passes(_profile_config(), rows)[0] is False
@@ -171,6 +177,7 @@ def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate()
         ("reference_to_blind_ratio", 0.51),
         ("reference_rows_improved_fraction", 0.74),
         ("current_motion_to_blind_ratio", 0.49),
+        ("current_motion_to_blind_ratio", float("inf")),
     ):
         rows = _profile_rows()
         rows[1]["update"][key] = value

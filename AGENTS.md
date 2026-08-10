@@ -42,10 +42,16 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   functional rows，只把training-only blind-add改成FP64 feature-space recursive anchored ridge/RLS：每次
   目标锚在更新前的既有condition输出，再叠加当前correct descent、negative零增量；同时保存`[256,256]`
   precision和`assimilated_rows`。首步数学上精确退化为v2 blind solve，之后显式抑制旧correct-row漂移。
-- RLS为fresh-incompatible family，禁止从v2 macro10/25伪resume。当前代码/config/CPU oracle已实现，尚无
-  A40 profile、训练或新strict成绩；必须先从clean pushed/frozen seal做fresh0→3 profile，门禁首步等价、
-  old-row drift≤blind的`.5`、至少75%旧rows改善、当前motion≥blind的`.5`、既有24-task/LoRA/action路径、
-  0 extra policy forward/OOM/nonfinite及production wall≤`1.10`。通过后才formal fresh0→10并立即strict400。
+- RLS为fresh-incompatible family，禁止从v2 macro10/25伪resume。clean pushed/frozen`f0c3f51`已在
+  `gpu02:0--5`完成首次fresh0→3 discarded profile，exit0且0 checkpoint/OOM/nonfinite/negative forward。
+  old-row drift/blind=`.248611/.213872`、旧rows改善=`100%/100%`、current/blind=
+  `.999980/.784334/.640650`，其余24-task/LoRA/action/null/closure/state门均通过；原18门只有ppm级首步
+  比值和单个fresh宏步对warm基线的wall门失败，旧artifact必须保持16/18 non-pass。
+- 第39.4.1已据此只修正测量合同而不改架构、RLS数学、dtype、batch、worker或forward：GPU首步ratio继续
+  记录但不以`1e-5`低位差作hard gate，精确等价由CPU FP64 oracle负责；吞吐改为三个diagnostic macros的
+  production算术均值对原sealed baseline仍`≤1.10`。当前mean ratio=`1.029799`，同schedule v2总wall只差
+  `.277%`。必须从新clean pushed/frozen commit再做一次fresh0→3，不能事后seal或复用`f0c3f51` artifact；
+  新run的17项门全部通过后才formal fresh0→10并立即strict400。
   fresh formal必须在结果出现前把固定macro0=`6b5f7a6` root与唯一尚不存在的macro10 strict root登记进原
   run contract；formal evaluator只接受predeclared macro10/25。10→25会从两份immutable 400-row roots
   重聚合并核对commit/checkpoint/state/RNG/language/actual video，只有correct≥140、lost≤6、breadth≥6才

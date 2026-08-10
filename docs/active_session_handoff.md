@@ -38,10 +38,12 @@
   维护FP64`Lambda_0=I_256`，对`F=[correct;negative]`和`E=[-G;0]`使用RLS，把每批目标锚在
   `F M_before+E`。checkpoint新增training-only precision与`assimilated_rows`，deployment仍只加载FP32 Program。
 - RLS首macro在数学上精确退化为v2 blind solve，之后才产生保留效应；family fresh-incompatible，禁止加载
-  v2 macro10/25。当前代码/config/CPU oracle已完成，尚无A40 profile、训练或strict结果。下一动作必须从
-  clean pushed/frozen seal做fresh0→3 profile；通过old-row drift≤`.5` blind、≥75%旧rows改善、current
-  motion≥`.5` blind、24-task/LoRA/action路径、0 extra policy forward/OOM/nonfinite和wall≤`1.10`后，才
-  formal0→10并立即strict400。fresh启动前固定macro0与唯一macro10 strict roots写入run contract；任何
+  v2 macro10/25。clean pushed/frozen`f0c3f51`首次fresh0→3已自然exit0、无checkpoint：old drift/blind=
+  `.248611/.213872`、old rows improved=`1/1`、current/blind=`.999980/.784334/.640650`，其余机制门均过。
+  原18门因首步`1.97e-5`低位ratio和fresh macro0 wall=`1.1756x`成为16/18 non-pass；三步production mean=
+  `1.029799x`且同schedule v2总wall只差`.277%`。旧artifact不可重算。第39.4.1保持全部训练数学和吞吐参数，
+  只让首步ppm差成为diagnostic并以三步production mean对原baseline`≤1.10`；新clean commit必须再做一次
+  fresh0→3。新17门通过后才formal0→10并立即strict400。fresh启动前固定macro0与唯一macro10 strict roots写入run contract；任何
   10→25续训都从immutable shards重聚合并核对checkpoint与paired identity，且必须由macro10 correct≥140、
   lost≤6、breadth≥6的严格结果授权。formal evaluator只接受predeclared macro10/25。
 
@@ -537,9 +539,10 @@ Experts不解决：
 3. v1/v2已经依次证明full48 algebra、zero identity、freeze、balanced key、LoRA/action传递、mechanism与
    deployment吞吐；v2 strict=`134/140/139`又证明blind-add短期换入能力但不能共同保留。它们现均为RLS
    继承的正证据和对照，不再是待执行动作。
-4. RLS先以fresh0→3 disposable profile直接比较anchored与blind：首步等价、old-row drift/improvement、
-   current motion、既有24-task correct/null/closure/A-B/action和production ratio`≤1.10`必须同时通过；
-   profile state永久弃用，不进入formal。
+4. `f0c3f51`首次RLS fresh0→3已证明old-row/current-motion与既有路径，但旧首步ppm门和逐macro wall口径使
+   artifact为16/18 non-pass。第39.4.1的新profile仍fresh0→3：保留首步raw diagnostic，硬门为finite、
+   old-row drift/improvement、current motion、既有24-task correct/null/closure/A-B/action及三步production
+   arithmetic mean`≤1.10`；profile state永久弃用，不进入formal。
 5. profile通过后，fresh0→10启动时预注册config固定`6b5f7a6` macro0 root与唯一尚不存在的macro10 root；
    macro10 strict完成后从raw queue/shards重聚合两份400-row panel并核对commit/checkpoint/state/RNG/language/
    actual video。

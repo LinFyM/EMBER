@@ -7,9 +7,10 @@ Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门�
 macro49 profile定位并淘汰DC-dominated temporal key。第38节Balanced DC--Causal v2随后完成机制、部署、
 zero-memory identity、formal0→25与macro10/25 strict400，曲线为`134/140/139`；blind-add没有保留共同能力，
 因此已退役。2026-08-10唯一活动设计是第39节Exact Anchored Reconciliation：部署图完全继承v2，只替换
-training-time reconciliation与checkpoint sufficient state；canonical实现和CPU合同已完成，尚无RLS GPU、
-training或strict结果。下一动作只能是clean pushed/frozen authority上的fresh0→3 A40 profile，通过后才
-formal0→10。K4、online expert bank和所有旧Writer只由Git、
+training-time reconciliation与checkpoint sufficient state。clean pushed/frozen`f0c3f51`首次live
+fresh0→3已证明RLS保留机制，但原artifact因ppm级GPU数值门和fresh-vs-warm逐步wall口径为16/18 non-pass；
+第39.4.1已预注册不改热路径的测量合同修正。下一动作是从新clean authority再次fresh0→3，17项门通过后
+才formal0→10；当前仍无RLS training checkpoint或strict结果。K4、online expert bank和所有旧Writer只由Git、
 正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
@@ -2590,6 +2591,41 @@ fresh0→10启动时必须在结果出现前把唯一macro0与macro10 strict roo
 同一预注册root，从raw queue/shards重聚合400 rows，核对RLS family、training/evaluation commit、macro10
 checkpoint/manifest以及state、RNG、language和actual video identity，再执行上述三门；formal evaluator
 只接受预声明macro10/25。macro25因此是支持门后的条件动作，不是config列出25就自动授权。
+
+#### 39.4.1 首次live profile与测量合同修正
+
+clean pushed/frozen `f0c3f51`在`gpu02:0--5`完成了原合同的fresh0→3 discarded profile；root=
+`runs/outputs/pi05_v6_exact_anchored_reconciliation_profile_fresh0to3_r6_lb20_mb10_f0c3f51_20260810`。
+运行自然exit0，0 checkpoint/OOM/nonfinite/negative policy forward，结束后六卡全部释放。原18项门为
+16/18通过，artifact必须永久保留`passed=false`，不能用后续合同重算成通过。
+
+RLS目标机制本身得到强正证据。三个macro的current/blind=`.999980/.784334/.640650`；macro2/3对旧
+correct rows的drift/blind=`.248611/.213872`，两次都是`100%`旧rows优于blind；correct/cotangent=
+`.969147/.738140/.621680`，negative/correct=`.020028/.126612/.130233`，task-local correct为
+`24/24,24/24,24/24`，null为`24/24,22/24,22/24`。A/B response=`1.09591e-5/1.13877e-5`，四suite
+fixed-action=`4/4`且response=`.00127798`；application closure最大`.001033`。这证明anchored
+reconciliation在真实full24路径上同时抑制旧feature漂移并保留当前motion，但仍不是closed-loop性能或
+视频因果证据。
+
+两个non-pass都属于预注册**测量合同**失配，而不是把负性能结果改写为成功：
+
+1. 首步RLS与blind RMS为`1.92295965e-6/1.92299763e-6`，绝对差`3.80e-11`、ratio偏离1仅
+   `1.97e-5`。两者是代数等价但乘法顺序不同的FP64 small solve→FP32 operator/RHS路径；本批condition=
+   `106.0`时该差与`condition*eps32`同阶。精确代数已由CPU FP64 oracle覆盖，不能为GPU scalar `1e-5`
+   门扩宽21M-value Program、重复forward或改变B20/B10+10。因此新合同继续原样记录每macro
+   `current_motion_to_blind_ratio`，但不把ppm级首步差作为独立hard gate；finite与当前motion`>=.5x`
+   仍是硬门。
+2. 原wall逻辑要求每个fresh macro都相对单个warm macro49基线`<=1.10`。实测三步production ratio=
+   `1.175588/.984891/.928918`，算术均值=`1.029799`；production总计`65.17118s`，同host、同卡、同
+   schedule的v2前三步为`64.99104s`，只差`.277%`。RLS kernel仅`.139/.208/.224s`，首步包含
+   `1.165s` input wait和一次性冷态抖动。吞吐目标是总训练wall，因此新合同显式固定
+   `arithmetic_mean_over_diagnostic_macros`，仍用原sealed baseline `21.095109596s`和原上限`1.10`；
+   每步ratio继续完整报告，verification仍排除在production timer外。
+
+这次修正不改变Writer、RLS数学、dtype、batch、worker、policy forward、collective、显存或任何部署路径，
+也不直接seal旧root。必须先把新门写入clean pushed commit，再做一次全新fresh0→3；只有新artifact按自身
+预声明17项hard checks全部通过，才能进入formal0→10。若新run的RLS机制门失败则按最早接口退役，不能再
+调阈值或靠重复运行碰运气。
 
 ### 39.5 唯一后备方向
 

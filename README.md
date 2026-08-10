@@ -40,9 +40,12 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   再加入当前correct descent与negative零增量；checkpoint增加training-only FP64`[256,256]` precision和
   `assimilated_rows`，部署仍只读取FP32 Program memory。
 - RLS首步数学上精确退化为v2 blind solve，但后续显式保留旧correct rows；它与v2 checkpoint fresh-
-  incompatible。当前仅完成代码/config/CPU oracle，尚无A40或strict成绩。下一步是clean pushed/frozen
-  fresh0→3 profile；通过old-row drift、当前motion、24-task路径和`≤1.10` wall门后，才formal0→10并立即
-  strict400。fresh formal会预注册固定macro0和唯一macro10 strict root；10→25由immutable 400-row paired
+  incompatible。clean pushed/frozen`f0c3f51`首次fresh0→3已exit0：old drift/blind=`.248611/.213872`、
+  old rows改善=`100%/100%`、current/blind=`.999980/.784334/.640650`，核心RLS与其余路径门均通过。
+  原artifact因首步`1.97e-5` FP32低位差和fresh首宏wall=`1.1756x`而为16/18 non-pass；三步mean wall实际
+  `1.029799x`，同schedule v2总wall只差`.277%`。第39.4.1只把低位ratio降为diagnostic、wall改为三步
+  production均值，模型/训练热路径完全不改；旧root不重解释，必须在新clean commit再fresh0→3。
+  新17门通过后才formal0→10并立即strict400。fresh formal会预注册固定macro0和唯一macro10 strict root；10→25由immutable 400-row paired
   evidence自动执行`correct>=140/lost<=6/breadth>=6`门，不能按结果择root或直接续训。当前没有运行中的
   EMBER GPU任务。
 

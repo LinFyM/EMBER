@@ -7,11 +7,11 @@ Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门�
 macro49 profile定位并淘汰DC-dominated temporal key。第38节Balanced DC--Causal v2随后完成机制、部署、
 zero-memory identity、formal0→25与macro10/25 strict400，曲线为`134/140/139`；blind-add没有保留共同能力，
 因此已退役。2026-08-10唯一活动设计是第39节Exact Anchored Reconciliation：部署图完全继承v2，只替换
-training-time reconciliation与checkpoint sufficient state。clean pushed/frozen`f0c3f51`首次live
-fresh0→3已证明RLS保留机制，但原artifact因ppm级GPU数值门和fresh-vs-warm逐步wall口径为16/18 non-pass；
-第39.4.1已预注册不改热路径的测量合同修正。下一动作是从新clean authority再次fresh0→3，17项门通过后
-才formal0→10；当前仍无RLS training checkpoint或strict结果。K4、online expert bank和所有旧Writer只由Git、
-正式artifact及其负裁决文档保留。
+training-time reconciliation与checkpoint sufficient state。旧`f0c3f51`按原合同保持16/18 non-pass；
+第39.4.1预先修正测量合同后，clean pushed/frozen`f28fc8b`的全新fresh0→3已17/17通过且discarded权重
+未保留，config现为formal-ready。下一动作是从新clean frozen authority identity fresh0→10并立即在
+预注册唯一root跑strict correct400；当前仍无RLS training checkpoint或strict结果。K4、online expert bank
+和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -2626,6 +2626,42 @@ reconciliation在真实full24路径上同时抑制旧feature漂移并保留当�
 也不直接seal旧root。必须先把新门写入clean pushed commit，再做一次全新fresh0→3；只有新artifact按自身
 预声明17项hard checks全部通过，才能进入formal0→10。若新run的RLS机制门失败则按最早接口退役，不能再
 调阈值或靠重复运行碰运气。
+
+#### 39.4.2 新合同live seal与formal根绑定
+
+测量合同由clean pushed`f28fc8b`封存，并从对应独立detached frozen worktree在启动前实时空闲的
+`gpu02:0--5`完成全新fresh0→3。运行保持六rank、train24、B20/B10+10、BF16 policy、workers2、
+deferred NCCL与`NCCL_P2P_DISABLE=1`；natural exit0、0 checkpoint/OOM/nonfinite/negative policy forward，
+结束后六卡回到0MiB。root为
+`runs/outputs/pi05_v6_exact_anchored_reconciliation_profile_fresh0to3_r6_lb20_mb10_f28fc8b_20260810`；
+`mechanism_profile.json`为`100452B`、schema v3、stored/recomputed `passed=true`，completion同样
+`passed=true`且`retained_checkpoint=false`。
+
+预注册17项hard checks全部通过。三个macro的correct/cotangent=
+`.969147/.738140/.621680`、current/blind=`.999980/.784334/.640650`、negative/correct=
+`.020028/.126612/.130233`；macro2/3 old drift/blind=`.248611/.213872`且两次`100%`旧correct rows优于
+blind。task-local correct=`24/24,24/24,24/24`，null=`24/24,22/24,22/24`；application closure最大
+`.001033`，feature rank恒48，precision condition=`1/854.75/1724.84`。最终A/B response=
+`1.09591e-5/1.13877e-5`，四task fixed-action全部非零、aggregate response=`.00127798`。Program state按
+`0→48→96→144`同化。
+
+production wall=`19.9974/20.7508/19.5182s`，对sealed v6 ratios=
+`.947963/.983678/.925249`、算术均值=`.952297`；peak allocated/reserved=
+`43,261,790,208/46,919,581,696B`。所有非timing科学payload与旧f0c run逐字段相同，包括首步raw
+`.999980254`，所以新通过来自预先提交的正确测量合同，而不是重跑碰运气、改数学或降低吞吐。旧f0c
+artifact继续保留16/18 `passed=false`。
+
+该profile只证明最多48条短历史上的reconciliation、LoRA/action传递与实用吞吐，不证明closed-loop、
+same-task视频鲁棒或时序因果。current motion递减、precision condition增长，以及后两macro各2个task-local
+null不通过，仍是formal0→10必须裁决的获取--保留风险。因此config只被切到formal-ready，不授权10→25。
+
+封存前的独立执行审计还发现：通用historical transition虽能读取RLS panel，却未登记v3 candidate；同时
+训练run contract虽预注册macro10 root，evaluator会在错误root跑完后才被resume gate拒绝。当前唯一owner
+原位修复为：transition仅接受RLS macro10/25、拒绝50；formal+correct+RLS macro10在output目录创建前，
+从checkpoint所属training root重读原run contract与manifest，硬核对registered root、formal mode、commit、
+schema、next_macro和metrics rows；完整checkpoint cursor/payload继续由既有adapter验证。没有新CLI参数、
+第二evaluator或热路径开销。下一动作因此是新clean pushed/frozen
+authority的identity fresh0→10，随后只在该预注册root立即运行strict correct400。
 
 ### 39.5 唯一后备方向
 

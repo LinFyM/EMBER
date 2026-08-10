@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -117,6 +118,90 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
     assert module._positive_int("100") == 100
     with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
         module._positive_int("0")
+
+
+def _registered_rls_macro10_args(
+    tmp_path: Path,
+) -> tuple[argparse.Namespace, Path]:
+    module = _launcher_module()
+    config = tmp_path / "rls.json"
+    config.write_text(
+        json.dumps({"schema_version": module.V6_PRIOR_CONFIG_SCHEMA}),
+        encoding="utf-8",
+    )
+    training_root = tmp_path / "formal"
+    checkpoint = training_root / "checkpoints/macro_00000010"
+    checkpoint.mkdir(parents=True)
+    registered = tmp_path / "registered-macro10"
+    commit = "a" * 40
+    (training_root / "run_contract.json").write_text(
+        json.dumps(
+            {
+                "schema_version": module.V6_PRIOR_RUN_SCHEMA,
+                "mode": "formal",
+                "git": {"commit": commit},
+                "config": {"schema": module.V6_PRIOR_CONFIG_SCHEMA},
+                "decision_evaluation": {
+                    "macro10_registered_root": str(registered)
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (checkpoint / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": module.V6_PRIOR_CHECKPOINT_SCHEMA,
+                "next_macro": 10,
+                "metrics_rows": 10,
+                "checkpoint_contract": {
+                    "run_schema": module.V6_PRIOR_RUN_SCHEMA,
+                    "mode": "formal",
+                    "git_commit": commit,
+                    "config": {"schema": module.V6_PRIOR_CONFIG_SCHEMA},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return (
+        argparse.Namespace(
+            mode="formal",
+            expert_manifold_video_condition="correct",
+            expert_manifold_config=config,
+            expert_manifold_checkpoint=checkpoint,
+        ),
+        registered,
+    )
+
+
+def test_rls_macro10_evaluator_requires_its_training_registered_root(
+    tmp_path: Path,
+) -> None:
+    module = _launcher_module()
+    args, registered = _registered_rls_macro10_args(tmp_path)
+    module._validate_registered_rls_macro10_output(args, registered.resolve())
+    wrong = tmp_path / "unregistered-macro10"
+    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
+        module._validate_registered_rls_macro10_output(args, wrong.resolve())
+    assert not wrong.exists()
+
+
+def test_rls_registered_root_gate_is_scoped_to_formal_correct_macro10(
+    tmp_path: Path,
+) -> None:
+    module = _launcher_module()
+    args, registered = _registered_rls_macro10_args(tmp_path)
+    args.mode = "smoke"
+    module._validate_registered_rls_macro10_output(args, registered.resolve())
+    args.mode = "formal"
+    args.expert_manifold_video_condition = "reversed"
+    module._validate_registered_rls_macro10_output(args, registered.resolve())
+    args.expert_manifold_video_condition = "correct"
+    args.expert_manifold_checkpoint = (
+        args.expert_manifold_checkpoint.parent / "macro_00000025"
+    )
+    module._validate_registered_rls_macro10_output(args, registered.resolve())
 
 
 def test_writer_profile_requires_the_canonical_batch_floor() -> None:

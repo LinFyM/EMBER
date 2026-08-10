@@ -38,12 +38,13 @@
   维护FP64`Lambda_0=I_256`，对`F=[correct;negative]`和`E=[-G;0]`使用RLS，把每批目标锚在
   `F M_before+E`。checkpoint新增training-only precision与`assimilated_rows`，deployment仍只加载FP32 Program。
 - RLS首macro在数学上精确退化为v2 blind solve，之后才产生保留效应；family fresh-incompatible，禁止加载
-  v2 macro10/25。clean pushed/frozen`f0c3f51`首次fresh0→3已自然exit0、无checkpoint：old drift/blind=
-  `.248611/.213872`、old rows improved=`1/1`、current/blind=`.999980/.784334/.640650`，其余机制门均过。
-  原18门因首步`1.97e-5`低位ratio和fresh macro0 wall=`1.1756x`成为16/18 non-pass；三步production mean=
-  `1.029799x`且同schedule v2总wall只差`.277%`。旧artifact不可重算。第39.4.1保持全部训练数学和吞吐参数，
-  只让首步ppm差成为diagnostic并以三步production mean对原baseline`≤1.10`；新clean commit必须再做一次
-  fresh0→3。新17门通过后才formal0→10并立即strict400。fresh启动前固定macro0与唯一macro10 strict roots写入run contract；任何
+  v2 macro10/25。旧`f0c3f51`继续按原合同保持16/18 non-pass；第39.4.1未改任何训练热路径。clean
+  pushed/frozen`f28fc8b`随后完成独立fresh0→3，natural exit0、0 checkpoint/OOM/nonfinite/negative forward，
+  raw artifact与completion均`passed=true`且17/17门通过。old drift/blind=`.248611/.213872`、old rows
+  improved=`1/1`、current/blind=`.999980/.784334/.640650`；production三步=`19.9974/20.7508/19.5182s`，
+  mean ratio=`.952297`，peak allocated/reserved=`43,261,790,208/46,919,581,696B`。config已登记
+  `100452B` immutable evidence并formal-ready；profile state未保留。fresh启动前固定macro0与唯一macro10
+  strict roots写入run contract；任何
   10→25续训都从immutable shards重聚合并核对checkpoint与paired identity，且必须由macro10 correct≥140、
   lost≤6、breadth≥6的严格结果授权。formal evaluator只接受predeclared macro10/25。
 
@@ -384,7 +385,7 @@ Experts不解决：
 | Expert-Flow Teacher Audit | 无rollout | gradient residual`.6864/.8387`，teacher方向非冗余 | expert flow loss只在`2/24` tasks、`0/4` suites优于两baseline | CEFD否决；一次性runtime已删除 |
 | Frozen-v6 Counterfactual-Null Program Residual v1 | 无rollout | correct retention `.807966`、A/B/action/closure成立 | DC key导致condition`1315.33`、null仅15/24，吞吐门亦non-pass | v1退役；不训练、不调lambda/seed/P |
 | Balanced DC--Causal Program Residual v2 | macro0/10/25=`134/140/139`、breadth6，m0∪m10=`153` | 13/13机制门、24/24 null、A/B/action/吞吐和部署全通过；短窗net+6 | 10→25 gained/lost=`12/13`；50-video correction近随机正交，旧能力不保留 | blind-add已退役，不续50/不补五臂 |
-| Exact Anchored Reconciliation v3 | 尚无strict结果 | 首步严格退化blind solve；CPU streaming/direct ridge oracle与joint checkpoint/resume通过 | 旧row保留、吞吐和真实闭环仍待A40/strict验证 | 当前唯一active；fresh0→3 profile后才0→10 |
+| Exact Anchored Reconciliation v3 | 尚无strict结果 | CPU oracle/joint resume与f28 live profile 17/17；旧drift压到blind `.249/.214`、mean wall `.952x` | current motion递减、precision cond增大；长期保留和真实闭环仍待strict验证 | 当前唯一active且formal-ready；下一步identity fresh0→10 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -427,9 +428,11 @@ Experts不解决：
   fail closed；fresh formal还必须预注册固定macro0与唯一macro10 strict root，formal evaluator只接受
   predeclared checkpoint，10→25由重聚合400-row配对证据自动过门；
 - v2 formal/strict及same-task诊断已完整封存。v3当前config为
-  `active_implementation_cpu_sealed_awaiting_live_a40_profile`，deployment graph复用已sealed的同构v2证据，
-  formal保持blocked；尚无v3 GPU、checkpoint或strict结果。当前focused=`75 passed`、加载`.env.local`后的
-  全仓=`300 passed in 61.72s`，compileall/JSON/diff-check通过，architecture guard为review且0 hard violation。
+  `active_deployment_sealed_formal_ready`；f28 live mechanism evidence已由config verifier从raw macros重算通过，
+  deployment graph继续使用已sealed的同构v2证据。evaluator在output创建前硬绑定training run contract的
+  macro10 registered root，historical transition已登记RLS 10/25并拒绝50。当前仍没有RLS training checkpoint
+  或strict结果；本轮相关contract/evaluator定向回归=`70 passed`、全仓fresh=`304 passed in 92.19s`，
+  compileall、26 JSON与diff-check均通过。
 
 以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance，不是当前seal：
 
@@ -539,11 +542,11 @@ Experts不解决：
 3. v1/v2已经依次证明full48 algebra、zero identity、freeze、balanced key、LoRA/action传递、mechanism与
    deployment吞吐；v2 strict=`134/140/139`又证明blind-add短期换入能力但不能共同保留。它们现均为RLS
    继承的正证据和对照，不再是待执行动作。
-4. `f0c3f51`首次RLS fresh0→3已证明old-row/current-motion与既有路径，但旧首步ppm门和逐macro wall口径使
-   artifact为16/18 non-pass。第39.4.1的新profile仍fresh0→3：保留首步raw diagnostic，硬门为finite、
-   old-row drift/improvement、current motion、既有24-task correct/null/closure/A-B/action及三步production
-   arithmetic mean`≤1.10`；profile state永久弃用，不进入formal。
-5. profile通过后，fresh0→10启动时预注册config固定`6b5f7a6` macro0 root与唯一尚不存在的macro10 root；
+4. `f0c3f51`旧artifact保持16/18 non-pass；新合同下`f28fc8b` fresh0→3已17/17通过且state永久弃用。
+   它证明三macro old-row/current-motion、既有24-task correct/null/closure/A-B/action和production mean
+   `.952297≤1.10`，但current/blind降至`.64065`、precision condition升至`1724.84`，长期获取/保留冲突仍须
+   formal0→10裁决，不能写成closed-loop或视频因果改善。
+5. fresh0→10启动时预注册config固定`6b5f7a6` macro0 root与唯一尚不存在的macro10 root；
    macro10 strict完成后从raw queue/shards重聚合两份400-row panel并核对commit/checkpoint/state/RNG/language/
    actual video。
 6. 只有macro10 correct`≥140`、相对macro0 lost`≤6`、breadth`≥6`才允许同一frozen commit/root
@@ -551,11 +554,12 @@ Experts不解决：
 7. 首次single checkpoint`≥144`才补完整六臂；严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
    再继续提高。未过门按最早失败接口做单变量修正，不180度转向。
 
-当前具体顺序：完成RLS authority的全仓CPU门、clean commit/push和fresh frozen worktree；实时重查
-`gpu01/gpu02`与`/data1` quota后，只在六张空闲健康A40上运行fresh0→3 profile。保持train24×logical B20、
-physical B10+10、六rank×4 tasks、full48 anchored write、0 negative policy forward和既有NCCL/NUMA映射。
-profile不过即停止RLS；通过后才预注册strict roots并formal0→10，不先跑80-row screen。设备不空闲、拓扑
-不符或storage不足都fail close，不触碰他人进程。
+当前具体顺序：完成profile evidence/evaluator root-binding的全仓CPU门、clean commit/push和新的formal
+frozen worktree；实时重查`gpu01/gpu02`与`/data1` quota后，只在六张空闲健康A40上从identity fresh0→10。
+保持train24×logical B20、physical B10+10、六rank×4 tasks、full48 anchored write、0 negative policy forward和
+既有NCCL/NUMA映射；不从discarded profile续权重，也不先跑80-row screen。macro10 checkpoint发布后立即在
+预注册唯一root做correct400，先核对absolute/breadth/gained-lost，再决定是否10→25。设备不空闲、拓扑不符
+或storage不足都fail close，不触碰他人进程。
 
 ## 10. Canonical assets
 
@@ -566,8 +570,8 @@ profile不过即停止RLS；通过后才预注册strict roots并formal0→10，�
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent和teacher audit均
   formal non-pass/fail-closed。
 - audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
-- active config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；当前为CPU-sealed、
-  awaiting fresh0→3 A40 profile，formal blocked。v2 config由Git与正式artifacts保存，不再是活动入口。
+- active config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；当前已由
+  `f28fc8b` fresh0→3 raw artifact seal为formal-ready。v2 config由Git与正式artifacts保存，不再是活动入口。
 - training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

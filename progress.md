@@ -1,5 +1,26 @@
 # EMBER Progress Ledger
 
+## RLS f28 live seal与formal-ready封口（2026-08-10）
+
+- 测量合同commit`f28fc8b`已clean pushed并创建独立detached worktree。live检查`gpu01/gpu02`、选定
+  `gpu02:0--5`逐卡UUID/serial/NUMA/process及`/data1` quota后，保持六rank、B20/B10+10、BF16、workers2、
+  Ring/Simple/deferred NCCL启动全新fresh0→3；六卡计算期约44.8GB（43.7GiB）且100% utilization。
+- run natural exit0，0 checkpoint/OOM/nonfinite/negative forward；mechanism profile=`100452B`、completion
+  passed且17/17 hard checks全过。production三步=`19.9974/20.7508/19.5182s`、mean ratio=`.952297`，peak
+  allocated/reserved=`43,261,790,208/46,919,581,696B`。old drift/blind=`.248611/.213872`、old rows
+  improved=`1/1`、current/blind=`.999980/.784334/.640650`；六卡随后回到0MiB。
+- 独立subagent与主进程均从raw macros重算通过，核对run/launch commit、completion、exit和无checkpoint。
+  config已登记f28 immutable artifact并切为`active_deployment_sealed_formal_ready`；旧f0c artifact未修改，
+  继续为16/18 non-pass，discarded profile权重均不进入formal。
+- formal前只读审计发现并原位修复两个窄缝隙：通用historical transition登记RLS 10/25并拒绝50；evaluator
+  在创建formal correct macro10 output前重读training run contract与checkpoint manifest，要求路径精确等于
+  预注册root且formal/schema/commit/next_macro/metrics rows一致，完整cursor由既有adapter验证。没有新增CLI
+  或并行evaluator path；定向回归`70 passed`、
+  全仓fresh=`304 passed in 92.19s`，compileall、26 JSON、real config/artifact load和diff-check通过。
+- 下一步是clean commit/push并创建新formal frozen worktree；live preflight
+  后只运行identity fresh0→10，再立即在预注册root做strict correct400。不复用profile state，不先跑80-row
+  screen，不在结果前授权10→25。
+
 ## RLS fresh0→3首次live证据与profile合同修正（2026-08-10）
 
 - implementation已由clean pushed`f0c3f51`封存，并从独立detached worktree在`gpu02:0--5`完成首次
@@ -29,8 +50,8 @@
   checkpoint/deployment state。
 - architecture guard经拆分checkpoint payload、contract spec与paired decision gate后为0 hard violation；
   focused=`75 passed`，加载`.env.local`/LIBERO assets后的全仓=`300 passed in 61.72s`，compileall、JSON与
-  diff-check通过。尚需完成authority终检、commit/push与frozen worktree，之后才进行live GPU/quota
-  preflight和唯一fresh0→3 profile。当前0 RLS GPU、0 training、0 rollout、0 strict分数。
+  diff-check通过。该CPU seal当时尚需authority终检、commit/push、frozen worktree与fresh0→3；这些步骤现已
+  由本文件顶部f28 live seal完成，当时仍为0 RLS GPU/strict分数。
 
 ## Balanced DC--Causal v2 formal与strict终局（2026-08-10）
 

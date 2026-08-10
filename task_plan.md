@@ -226,9 +226,16 @@ formal artifacts保存。
   数均不变，旧artifact不得重解释。
 - [x] 新合同focused=`82 passed`、全仓=`300 passed`，compileall/26 JSON/diff-check通过；旧artifact在新
   config下仍明确拒绝，证明不能被post-hoc重解释。
-- [ ] clean commit/push，创建新的profile frozen worktree，并在live空闲A40上重新fresh0→3；这是合同
-  修复后的新实验，不复用`f0c3f51`权重或artifact。
-- [ ] profile全部机制/吞吐门通过后，formal fresh0→10并立即跑预注册macro10 strict400；不过支持门即停止。
+- [x] 测量合同修正已clean commit/push为`f28fc8b`并创建独立profile frozen worktree；live空闲
+  `gpu02:0--5`上的全新fresh0→3 natural exit0，17/17通过，0 checkpoint/OOM/nonfinite/negative forward。
+  三步production mean ratio=`.952297`，raw artifact=`100452B`且completion passed；旧`f0c3f51`仍保持non-pass。
+- [x] config已登记f28 immutable evidence并转为`active_deployment_sealed_formal_ready`；通用historical
+  transition登记RLS macro10/25并拒绝50，evaluator在创建目录前硬绑定training run contract预注册的macro10
+  root。相关定向回归`70 passed`。
+- [x] profile seal/root-binding后定向=`70 passed`、全仓fresh=`304 passed in 92.19s`，compileall、26 JSON、
+  real config/artifact load和diff-check通过。
+- [ ] clean commit/push并创建新的formal frozen worktree；formal identity fresh0→10后立即跑预注册macro10
+  strict400，不过支持门即停止。
 - [ ] 只有macro10 `correct>=140`、lost`<=6`、breadth`>=6`才在同一frozen commit/root exact-resume10→25；
   `>140`视为更强支持，macro25仍是条件动作而非预授权结果。
 - [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、

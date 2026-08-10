@@ -42,18 +42,17 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   functional rows，只把training-only blind-add改成FP64 feature-space recursive anchored ridge/RLS：每次
   目标锚在更新前的既有condition输出，再叠加当前correct descent、negative零增量；同时保存`[256,256]`
   precision和`assimilated_rows`。首步数学上精确退化为v2 blind solve，之后显式抑制旧correct-row漂移。
-- RLS为fresh-incompatible family，禁止从v2 macro10/25伪resume。clean pushed/frozen`f0c3f51`已在
-  `gpu02:0--5`完成首次fresh0→3 discarded profile，exit0且0 checkpoint/OOM/nonfinite/negative forward。
-  old-row drift/blind=`.248611/.213872`、旧rows改善=`100%/100%`、current/blind=
-  `.999980/.784334/.640650`，其余24-task/LoRA/action/null/closure/state门均通过；原18门只有ppm级首步
-  比值和单个fresh宏步对warm基线的wall门失败，旧artifact必须保持16/18 non-pass。
-- 第39.4.1已据此只修正测量合同而不改架构、RLS数学、dtype、batch、worker或forward：GPU首步ratio继续
-  记录但不以`1e-5`低位差作hard gate，精确等价由CPU FP64 oracle负责；吞吐改为三个diagnostic macros的
-  production算术均值对原sealed baseline仍`≤1.10`。当前mean ratio=`1.029799`，同schedule v2总wall只差
-  `.277%`。必须从新clean pushed/frozen commit再做一次fresh0→3，不能事后seal或复用`f0c3f51` artifact；
-  新run的17项门全部通过后才formal fresh0→10并立即strict400。
+- RLS为fresh-incompatible family，禁止从v2 macro10/25伪resume。`f0c3f51`首次fresh0→3按原合同仍永久
+  保持16/18 non-pass；第39.4.1只修正ppm级首步比值和逐macro cold-wall两个测量门，没有修改架构、数学、
+  dtype、batch、worker或forward。随后clean pushed/frozen`f28fc8b`在`gpu02:0--5`完成全新fresh0→3：
+  natural exit0、0 checkpoint/OOM/nonfinite/negative forward，17/17通过，artifact=`100452B`且
+  completion `passed=true`。old-row drift/blind=`.248611/.213872`、旧rows改善=`100%/100%`、
+  current/blind=`.999980/.784334/.640650`；三步production ratio=`.947963/.983678/.925249`、均值
+  `.952297`，peak allocated/reserved=`43,261,790,208/46,919,581,696B`。config现已登记immutable
+  evidence并进入`active_deployment_sealed_formal_ready`；profile权重未保留，只授权formal fresh0→10。
   fresh formal必须在结果出现前把固定macro0=`6b5f7a6` root与唯一尚不存在的macro10 strict root登记进原
-  run contract；formal evaluator只接受predeclared macro10/25。10→25会从两份immutable 400-row roots
+  run contract；evaluator会在创建output前核对macro10 registered root，通用historical transition只接受
+  RLS macro10/25。10→25会从两份immutable 400-row roots
   重聚合并核对commit/checkpoint/state/RNG/language/actual video，只有correct≥140、lost≤6、breadth≥6才
   允许进入同commit exact-resume，否则fail closed；macro25不是预授权动作。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
@@ -165,8 +164,8 @@ bank或第二套LoRA。
   training-only FP64`[256,256]` precision、`assimilated_rows=48*macro`、cursor和六rank RNG；historical v6
   600 tensors与fixed projection必须strict重建且不能被checkpoint覆盖。部署只加载Program tensor，不加载
   precision。fresh/exact-resume不可混用；v2 checkpoints缺少precision，绝对禁止伪resume。
-- A40只先做fresh0→3 disposable mechanism/throughput profile；通过预注册保留门后formal只允许0→10，随后
-  立刻跑严格paired correct400。macro10支持门为correct≥140、相对macro0 lost≤6、breadth≥6；correct>140
+- fresh0→3 disposable A40 mechanism/throughput profile已经17/17通过且权重弃用；formal现在只允许identity
+  fresh0→10，随后立刻跑严格paired correct400。macro10支持门为correct≥140、相对macro0 lost≤6、breadth≥6；correct>140
   才是强absolute证据。未通过则先裁决能力保留是否为根因，再考虑已设计的on-policy reward-credit后备，
   不能边跑边改阈值或直接续25。
 - fresh0→10必须预注册固定macro0 strict root和唯一macro10 output root；root路径写入run contract，不能在

@@ -1,5 +1,29 @@
 # EMBER Findings
 
+## RLS新合同profile通过：短历史保留成立，长期获取冲突仍待strict裁决（2026-08-10）
+
+- clean pushed/frozen`f28fc8b`在实时空闲`gpu02:0--5`完成独立fresh0→3；root=
+  `runs/outputs/pi05_v6_exact_anchored_reconciliation_profile_fresh0to3_r6_lb20_mb10_f28fc8b_20260810`。
+  raw profile=`100452B`、schema v3、stored/recomputed 17/17通过，completion passed、exit0、0 checkpoint/
+  OOM/nonfinite/negative policy forward；六卡随后释放。logical B20/physical B10+10、BF16、六rank与workers2
+  均未降低，peak allocated/reserved=`43,261,790,208/46,919,581,696B`。
+- 核心证据与旧f0c科学payload完全相同：correct/cotangent=`.969147/.738140/.621680`、current/blind=
+  `.999980/.784334/.640650`；macro2/3 old drift/blind=`.248611/.213872`且旧rows改善均100%。task-local
+  correct全程24/24，null=`24/24,22/24,22/24`；closure最大`.001033`，A/B=`1.09591e-5/1.13877e-5`，
+  fixed-action 4/4。首步raw ppm偏差仍原样存在，证明新run不是靠重跑改变数值；旧f0c artifact仍为16/18
+  non-pass。
+- production=`19.9974/20.7508/19.5182s`，ratios=`.947963/.983678/.925249`、mean=`.952297`。可靠结论是
+  RLS没有实用吞吐代价，不宣称结构性加速；timing相对f0c/v2的差异主要是cold/cache jitter。
+- 风险也很具体：aggregate current motion连续下降，precision condition升到`1724.84`；macro2的
+  Spatial5/Object6与macro3的Object5/Object8构成两项null失败，最弱Object5 correct retention仅`.46942`、
+  shuffled leakage`.40127`。这可能是长期“保留旧功能—获取当前更新”冲突，也可能仍足以改善closed-loop；
+  三macro不能裁决。config因此只解锁identity fresh0→10，必须立即以预注册correct400的absolute、lost和
+  breadth裁决，不能直接续25或写成视频因果改善。
+- 启动链另封住两个执行缝隙：historical transition现只接受RLS macro10/25；formal correct macro10
+  evaluator在创建output前从training run contract/manifest核对唯一registered root、commit、next_macro和
+  metrics rows；完整checkpoint cursor/payload由后续既有adapter验证。
+  这避免完整400 rollout落到错误目录，不改变评测panel或模型。
+
 ## RLS首次live profile：机制成立、原测量合同non-pass（2026-08-10）
 
 - clean pushed/frozen`f0c3f51`在实时空闲`gpu02:0--5`完成fresh0→3；root=
@@ -18,7 +42,7 @@
 - wall三步ratio=`1.175588/.984891/.928918`，均值=`1.029799`；production总计`65.17118s`，同host/同卡/
   同schedule的v2前三步`64.99104s`，差`.277%`。原`all(each fresh macro <= warm macro49*1.10)`把cold
   jitter当结构退化；新合同改为三步production算术均值，baseline和`1.10`阈值均不变。旧root仍non-pass，
-  必须从新clean commit再做一次fresh profile，不能post-hoc seal。
+  当时要求从新clean commit再做一次fresh profile、不能post-hoc seal；该要求现已由上节`f28fc8b`新root完成。
 
 ## v2正式终局、最早瓶颈与RLS选择（2026-08-10）
 

@@ -536,6 +536,8 @@ def test_formal_panel_accepts_anchored_reconciliation_v3_evidence() -> None:
         ("residual", 10, "v6_condition_residual_v2"),
         ("residual", 25, "v6_condition_residual_v2"),
         ("residual", 50, "v6_condition_residual_v2"),
+        ("reconciliation", 10, "v6_anchored_reconciliation_v3"),
+        ("reconciliation", 25, "v6_anchored_reconciliation_v3"),
     ),
 )
 def test_historical_transition_preserves_families_and_pairs_true_rows(
@@ -608,6 +610,14 @@ def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> N
     with pytest.raises(Pi05EvaluationError, match="candidate"):
         historical_baseline_transition_analysis(
             {"legacy": baseline, "current": wrong_tangent_macro}
+        )
+
+    wrong_reconciliation_macro = _result(
+        50, "correct", set(), family="reconciliation"
+    )
+    with pytest.raises(Pi05EvaluationError, match="candidate"):
+        historical_baseline_transition_analysis(
+            {"legacy": baseline, "current": wrong_reconciliation_macro}
         )
 
     drifted = copy.deepcopy(candidate)

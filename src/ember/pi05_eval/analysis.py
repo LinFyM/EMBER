@@ -40,6 +40,7 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_ecp_v2": (10, 25, 50),
     "v6_tangent_tube_v3": (10, 25, 50),
     "v6_condition_residual_v2": (10, 25, 50),
+    "v6_anchored_reconciliation_v3": (10, 25),
 }
 SIX_ARM_CONDITIONS = (
     "correct",

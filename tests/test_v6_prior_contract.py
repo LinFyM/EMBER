@@ -44,16 +44,22 @@ def _load_mutation(
     load_v6_prior_config(path)
 
 
-def test_canonical_residual_awaits_three_macro_profile_and_old_config_fails_closed() -> None:
+def test_canonical_residual_is_formal_ready_after_live_profile_seal() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
-    assert config["profile_run"]["status"] == "awaiting_live_a40_fresh0_to3_profile"
-    assert config["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
+    assert config["status"] == "active_deployment_sealed_formal_ready"
+    assert config["profile_run"]["status"] == (
+        "sealed_from_live_a40_fresh0_to3_profile"
     )
-    assert runtime_for_mode(config, "mechanism-profile") == (3, (), 0)
-    with pytest.raises(ExpertManifoldError, match="blocked by mechanism"):
-        runtime_for_mode(config, "formal")
+    assert config["formal_run"]["status"] == (
+        "ready_after_live_mechanism_and_deployment_seals"
+    )
+    assert config["profile_run"]["artifact_evidence"]["run_commit"] == (
+        "f28fc8b1e512daadf368f949f7de82ccedcb3a75"
+    )
+    with pytest.raises(ExpertManifoldError, match="not in its launch state"):
+        runtime_for_mode(config, "mechanism-profile")
+    assert runtime_for_mode(config, "formal") == (25, (10, 25), 0)
     assert config["method"]["language_only_lora_path"] is False
     assert config["method"]["dynamic_value"] == "one_raw_teacher_video_only"
     assert config["program_residual"]["value_count"] == 20_971_520
@@ -224,16 +230,7 @@ def test_scientific_authorities_and_schedules_are_fixed(
 
 
 def _formal_ready_config() -> dict:
-    config = _raw_config()
-    config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to3_profile"
-    config["profile_run"]["artifact_evidence"] = {"unit": "sealed"}
-    config["status"] = "active_deployment_sealed_formal_ready"
-    config["formal_run"]["status"] = "ready_after_live_mechanism_and_deployment_seals"
-    config["evaluation"][
-        "formal_status"
-    ] = "sealed_from_live_residual_deployment_profile"
-    config["evaluation"]["online_smoke_evidence"] = {"unit": "sealed"}
-    return config
+    return _raw_config()
 
 
 def _args(
@@ -338,10 +335,13 @@ def test_profile_is_fresh_zero_to_three_and_cannot_retain_or_resume(
         },
     )
     sealed = _raw_config()
-    sealed["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to3_profile"
     with pytest.raises(ExpertManifoldError, match="not in its launch state"):
         runtime_for_mode(sealed, "mechanism-profile")
     config = _raw_config()
+    config["status"] = "active_implementation_cpu_sealed_awaiting_live_a40_profile"
+    config["profile_run"]["status"] = "awaiting_live_a40_fresh0_to3_profile"
+    config["profile_run"]["artifact_evidence"] = None
+    config["formal_run"]["status"] = "blocked_until_live_profile_passes_and_is_sealed"
     segment = _resolve_segment(
         _args(resume=None, stop=3, mode="mechanism-profile"), config, _context()
     )

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3",
-  "status": "active_implementation_cpu_sealed_awaiting_live_a40_profile",
+  "status": "active_deployment_sealed_formal_ready",
   "method": {
     "name": "frozen_v6_exact_anchored_reconciliation_program_residual",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -192,7 +192,7 @@
     }
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to3_profile",
+    "status": "sealed_from_live_a40_fresh0_to3_profile",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "schedule_macro": 0,
@@ -226,10 +226,17 @@
       "old_correct_rows_improved_fraction_min": 0.75,
       "current_correct_motion_vs_blind_min": 0.5
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_v6_exact_anchored_reconciliation_profile_fresh0to3_r6_lb20_mb10_f28fc8b_20260810/mechanism_profile.json",
+      "bytes": 100452,
+      "schema": "ember_pi05_v6_exact_anchored_reconciliation_program_residual_profile_v3",
+      "passed": true,
+      "schedule_macro": 0,
+      "run_commit": "f28fc8b1e512daadf368f949f7de82ccedcb3a75"
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "ready_after_live_mechanism_and_deployment_seals",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,

@@ -22,23 +22,20 @@ targets保留14个pivot-selected原生B columns并重解A，两个physical zero-
 Reward residual；两个action targets保持full-rank16 FP32。
 
 full80 generation-only门已过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture`.9997088`，
-dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact；但0 action forward/0 rollout，不能
-视为性能。单一canonical compiler、v9 commit-bound cache、Program-only reference、五臂vertical和有序Gate B/C
-已经实现。clean implementation commit`82c18cc`已推送；首次`gpu02:3` live profile在第一候选warmup处揭示
-CUDA BF16 autocast把紧凑32×32 core matmul降精度、而A40 batched SVD不支持BF16。该run在结果发布前
-fail closed，无profile artifact/rollout/分数，失败root已删除。修复只把紧凑QR/SVD/rank2 lift置于FP32
-autocast-disabled island，最终native LoRA仍是72 BF16+4 F32；不扩完整T或改变吞吐合同。带真实LIBERO assets
-的全仓CPU回归现为`387 passed in 28.53s`。修复提交`c5638a9`随后完成完整profile：B8/16/32=
-`.906874/.903246/.904735 LoRA/s`，全部stable、0 OOM，约12.90GB reserved/34.8GB headroom，选B8；相对旧图
-B8只慢`.479%`。随后的vertical在五臂生成后、cache/rollout前因diagnostic evidence没有合回request的
-`suite/task_id/init_state_id`而fail closed，0 rows且无cache/vertical/result artifact；这不是机制non-pass。
-修复显式恢复request identity，方法级回归和全仓真实assets门现为`388 passed in 23.56s`。profile/vertical要求
-同commit，两个partial roots已删除，必须从下一clean pushed/frozen commit一起重跑。旧Reward训练入口已在
-distributed/runtime初始化前fail closed。下一步先从同一clean pushed implementation commit做B8/16/32吞吐profile与cycle1五臂
-vertical smoke，再跑rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。
-base过门后才读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且
-gained>lost才算load-only通过并补同checkpoint controls。140--143是诊断性non-pass，不授权新训练；两项
-行为门前不启动训练。当前仍无新图A40行为或strict rollout证据。
+dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact。其后的两个Gate-A工程失败分别定位并
+修复CUDA BF16 autocast下的compact SVD和diagnostic request identity所有权；失败roots均未产生科学结果并已
+删除，正确assets全仓回归最终为`388 passed in 23.56s`。
+
+同一clean pushed/frozen`ee56aec`现已完成正式Gate A。32-request/1093-frame/longest67 profile的
+B8/16/32=`.906679/.903080/.904560 LoRA/s`，全部stable、0 OOM、reserved约12.90GB/headroom约34.8GB，
+按吞吐选B8。随后`gpu02:2`四suite五臂vertical完成8/8 state0 rollouts、3 success；这只作smoke。native
+72 BF16 + 4 FP32 cache、configured/actual B8、Writer release/source reuse、source identity、0 forbidden reads、
+144/144 q/v target和四suite q/v-only fixed-action传递全部闭合，raw validator通过。旧native full-rank Reward
+action delta与新full Reward delta cosine=`-.1271`，q/v-only与新full Reward delta cosine=`.5333`，故
+“native可达”不等于“闭环方向保真”。active config已由CPU assembler自动seal到`ee56aec` artifacts；下一步
+只先跑rank14 zero-Program strict400，`correct<130`、breadth<6或相对旧134 lost>10即reject。base过门后才
+读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且gained>lost才
+补同checkpoint controls。140--143是诊断性non-pass；两项行为门前不启动训练。当前仍无新架构strict400分数。
 
 GPU不是固定6卡合同。每次启动前同时live检查`gpu01/gpu02`，选择一个节点并使用该节点当时所有真正空闲、
 健康且能提高有效吞吐的A40；不等待凑卡、不dummy占位、不为跨节点碎片改launcher。Gate A的profile/vertical

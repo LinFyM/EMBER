@@ -16,7 +16,7 @@
   `G0/G0+T` absolute rank16 refactor都失败。local-CD K4 same-video cosine约`.217`、error-to-zero约`.977`；
   absolute refactor的delta cosine`.0045--.0213`、norm ratio`8.7--182`。不再扫描这些数值补丁。
 
-## Q/V pivot-preserving rank14+2：canonical实现与CPU门完成，行为仍未知（2026-08-11）
+## Q/V pivot-preserving rank14+2：Gate A闭合，strict行为仍未知（2026-08-11）
 
 - rank1 stable tangent capture不足；rank2 capture约`.9996`且是最小充分点。action rank2 cosine仅
   `.91--.95`且action原本FP32，所以唯一合理结构是36个q/v targets保留rank14 base + 2个physical zero-B
@@ -37,7 +37,7 @@
 - active config与唯一Program-only reference分别为
   `configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`和
   `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；前者以path/bytes/schema/source commit绑定
-  generation artifact，当前仍awaiting live seal。旧Reward fresh/profile/resume/cycle2已在CLI/training/runtime
+  generation artifact，并已从同commit raw Gate-A evidence自动seal。旧Reward fresh/profile/resume/cycle2已在CLI/training/runtime
   三层初始化前机械关闭。
 - Gate A不是三臂形式检查：同一B4视频forward生成old base/reward、rank14 base、q/v-only、full reward五臂，
   集中D2H后由正式cache/manifest接管、释放Writer；fixed-action中的full Reward直接使用cache重新加载的state，
@@ -55,8 +55,8 @@
   `NotImplementedError`。正确修复是整个compact QR→32×32 SVD→rank2 lift局部禁用autocast，而不是只在SVD
   前cast已经量化的core；输出仍转回BF16，额外FP32工作只发生在原本就应FP32的紧凑因子上。
 - 失败invocation通过了live device/identity门但没有发布profile artifact、cache、rollout或分数，root已删除；
-  不能把它当吞吐non-pass。全仓在正确LIBERO assets环境下现为`387 passed in 28.53s`；这是CPU合同，不是
-  行为分数。当前仍没有新rank-reserved policy action或rollout artifact。
+  不能把它当吞吐non-pass。当时全仓在正确LIBERO assets环境下为`387 passed in 28.53s`；这是CPU合同，不是
+  行为分数，后续真实Gate A见下。
 - `c5638a9`真实profile证明上述FP32 island吞吐代价可忽略：B8/16/32=`.906874/.903246/.904735 LoRA/s`，
   reserved约12.90GB、headroom约34.8GB、0 OOM，B8相对旧rank16同图仅`-.479%`并按最高实测吞吐胜出。
   它是工程证据，不说明闭环价值。
@@ -65,7 +65,16 @@
   request identity，与普通generation profile一致；不能让vertical根据video global ID反推task。失败发生在
   cache/rollout前，0 rows且无结果，不能解释为q/v传递为零。修复后的全仓真实assets为`388 passed in 23.56s`；
   同commit封存要求意味着成功的`c5638a9` profile也必须重跑而不能跨commit拼接。
-- 正确证据顺序是：新graph单卡B8/16/32吞吐profile + cycle1四suitefixed-action vertical；先新rank14
+- 最终clean pushed/frozen`ee56aec`完整重跑同commit Gate A：profile B8/16/32=
+  `.906679/.903080/.904560 LoRA/s`，全部stable/0 OOM，reserved约12.90GB、headroom约34.8GB，按吞吐选B8。
+  vertical configured/actual B8，8/8 jobs单attempt、3 successes；成功率只作smoke。native storage、cache/video
+  identity、source identity、Writer release/source reuse和0 forbidden reads均通过；q/v native residual在
+  144/144 target及四suite fixed action都非零，证明新物理槽真实可执行。
+- 方向诊断没有被漂亮化：old full-rank native Reward action delta与new rank14+2 full Reward delta cosine=
+  `-.1271`，new q/v-only与new full Reward cosine=`.5333`。这与generation-only continuous tangent高cosine并不
+  矛盾：前者经过native old-factor噪声、base改写和非线性policy。它说明Gate A只修复可达性，不能预测closed-loop
+  会提高；Gate B先裁决rank14 base，Gate C再裁决Reward方向。
+- 当前正确证据顺序是：先新rank14
   zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
   只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性
   non-pass，不授权新训练。旧两个400 roots不重跑，旧LoRA cache不复用。

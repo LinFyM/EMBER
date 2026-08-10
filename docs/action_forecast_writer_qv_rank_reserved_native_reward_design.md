@@ -2,10 +2,10 @@
 
 状态：2026-08-11 active design authority；canonical load-only实现、v9 family/cache、ordered evaluator gate
 和CPU seal已完成。活动config=`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1唯一Program-only
-reference=`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；当前仍为
-`awaiting_live_a40_rank_reserved_deployment_profile`且`online_smoke_evidence=null`，尚未formal ready。clean seal
-后先做live Gate A，再有序做Gate B/C。本文只授权现有frozen-v6 macro0与Reward-Credit cycle1 Program的
-load-only行为裁决；完成前不授权新训练。
+reference=`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；同commit`ee56aec` live Gate A已
+通过，config现为`sealed_from_live_a40_rank_reserved_deployment_profile`并登记raw-validated B8 evidence。
+当前下一步是有序Gate B/C。本文只授权现有frozen-v6 macro0与Reward-Credit cycle1 Program的load-only行为
+裁决；完成前不授权新训练。
 
 ## 1. Why this is the next single-variable intervention
 
@@ -174,9 +174,22 @@ diagnostic profile保存episode evidence却没有把request identity的`suite/ta
 保留三项identity，全仓真实assets门=`388 passed in 23.56s`。由于两份Gate-A artifact必须同commit，`c5638a9`
 profile不能跨commit复用；两partial roots已删除，下一clean commit必须完整重跑两步。
 
-profile与vertical都通过后，必须回到tracked、clean、pushed的`codex/bci-continuation`主工作树；纯CPU
+最终同commit`ee56aec0dbdd5ea2f8573c28cc9b9f59bab17f64` Gate A完整通过。固定profile panel的
+B8/16/32=`.906679/.903080/.904560 LoRA/s`，三点stable、0 OOM，peak reserved约`12.90GB`、headroom约
+`34.8GB`，按预注册吞吐规则选B8。vertical的configured/actual cache batch均为8，8/8 state0 jobs单次
+attempt完成、3 successes、rollout-only约`143.22 episodes/hour`；success只作smoke而非方法选择。72 BF16 +
+4 FP32 native storage、cache identity、source identity、Writer release/source reuse、0 forbidden reads、
+144/144 q/v target和四suite q/v-only fixed-action传递全部通过。profile/vertical分别为`10359/25926B`，raw
+validator可重建run commit=`ee56aec`的deployment seal。
+
+完整报告的不利方向诊断为：old full-rank native Reward action delta与rank14+2 full Reward action delta合并
+cosine=`-.127070`，rank14+2 q/v-only与full Reward action delta cosine=`.533292`；方向没有预注册hard threshold，
+所以不反写Gate A，但它明确阻止把“native可达性闭合”夸大成“旧Reward闭环方向已保留”。Gate B/C必须直接
+裁决base reconstruction与Reward方向。
+
+profile与vertical通过后，已回到tracked、clean、pushed的`codex/bci-continuation`主工作树；纯CPU
 `scripts/evaluate_pi05.py rank-reserved-seal`重读两份注册artifact并自动写入path/bytes/run commit/selected
-batch。不得在detached worktree执行seal，不得人工拼`online_smoke_evidence`或跳过raw validator。seal改动随后
+batch并成功写入active config。不得在detached worktree执行seal，不得人工拼`online_smoke_evidence`或跳过raw validator。seal改动随后
 必须commit/push，再从该sealed commit新建frozen worktree；Gate B、Gate C和后续controls保持同一evaluation
 commit，期间不得先写文档形成新的实验commit。
 

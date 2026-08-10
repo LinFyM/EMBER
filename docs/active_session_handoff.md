@@ -45,15 +45,20 @@
   `configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；只读reference绑定旧formal commit/config/
   world-size/manifest和唯一`[256,320,256]` FP32 tensor，不复制84MB、不读optimizer/RNG。旧Reward训练入口在
   distributed/runtime初始化前fail closed；v8旧config只保留结果读取，不能再作为部署入口。
-- 当前顺序只允许：已完成CPU seal并从clean pushed/frozen commit启动后，单卡同32-request panel的
-  B8/16/32吞吐profile；单个更大候选OOM仅作
-  ineligible。winner是formal configured batch，而八条vertical cache的actual forward为`min(selected,8)`。
-  随后做五臂四suite fixed-action、q/v-only hybrid、native cache/manifest/load、Writer release/source-policy reuse和
-  validation8×state0 rollout vertical。再跑新rank14 zero-Program strict400。若correct<130、breadth<6或相对旧134 lost>10，
-  立即reject且不跑第二个400。只有base过门，才用Program-only reference读取原84MB Program跑rank14+2
-  cycle1 strict400；只有correct≥144、breadth≥6、相对新macro0 lost≤6且gained>lost才算load-only通过并补
-  同checkpoint controls。140--143只作诊断性non-pass，不授权新训练；>150仍须完整六臂。两项行为门前不授权
-  新训练。
+- Gate A已从同一clean pushed/frozen`ee56aec0dbdd5ea2f8573c28cc9b9f59bab17f64`完整通过并由raw
+  assembler写入active config：固定32-request/1093-frame/longest67 panel的B8/16/32分别为
+  `.906679/.903080/.904560 LoRA/s`，三点stable、0 OOM，选B8；峰值reserved约`12.90GB`、headroom约
+  `34.8GB`。四suite五臂vertical真实生成8个native cache并完成validation8×state0，3/8 success只作smoke，
+  不能当性能估计。72 BF16 q/v + 4 FP32 action、source identity、Writer release/source reuse、0 forbidden reads、
+  144/144 q/v target和四suite q/v-only fixed-action传递均闭合。profile/vertical raw bytes=`10359/25926`，
+  seal run commit=`ee56aec`、configured/actual cache batch均为8。
+- Gate A也保留不利方向证据而不事后改门：旧native full-rank Reward action delta与新rank14+2 full Reward
+  action delta的合并cosine=`-.1271`，新q/v-only与新full Reward action delta cosine=`.5333`；这说明native
+  可达性已修复但closed-loop方向仍未知。当前下一步只允许先跑新rank14 zero-Program strict400。若
+  correct<130、breadth<6或相对旧134 lost>10，立即reject且不跑第二个400。只有base过门，才用Program-only
+  reference读取原84MB Program跑rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、相对新macro0
+  lost≤6且gained>lost才算load-only通过并补同checkpoint controls。140--143只作诊断性non-pass，不授权
+  新训练；>150仍须完整六臂。两项行为门前不授权新训练。
 - 新旧两个400均复用同一official state/video/env/policy RNG schedule，但必须新生成LoRA cache；旧macro0、
   旧Reward cycle1结果和Program tensor直接作为immutable baseline，不重跑、不复制84MB Program。evaluator是
   单节点、无NCCL；每次优先关注`gpu02`并选单节点当时最多的空闲卡，不为跨节点碎片改launcher或等待凑卡。
@@ -73,6 +78,12 @@
   机制non-pass。canonical修复把这三项从request identity显式合入profile并增加方法级回归；全仓真实assets门为
   `388 passed in 23.56s`。由于profile/vertical必须同commit，上述两个partial roots均删除，下一clean commit须
   同时重跑profile与vertical，不能把`c5638a9` profile跨commit拼入seal。
+- identity修复commit`ee56aec0dbdd5ea2f8573c28cc9b9f59bab17f64`随后完成同commit Gate A。profile在
+  `gpu02:3`复现B8 winner=`.906679 LoRA/s`；vertical在live空闲`gpu02:2`越过identity接口，8/8 jobs单次
+  attempt完成、3 success、rollout-only约`143.22 episodes/hour`。raw validator独立重建
+  `ember_pi05_v6_qv_rank_reserved_deployment_seal_v1`成功；active config已由`rank-reserved-seal`自动登记
+  artifacts和B8；post-seal focused/full回归=`63/388 passed`，compileall与diff-check通过。当前只差本次
+  docs/config clean commit/push及新frozen worktree即可进入Gate B。
 
 ### 1.2 Historical Reward-Credit implementation and retained evidence（2026-08-10--11，formal cycle1已裁决）
 

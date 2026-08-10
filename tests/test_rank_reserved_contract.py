@@ -200,6 +200,9 @@ def test_deployment_seal_only_updates_the_registered_evidence_fields(
 ) -> None:
     path = tmp_path / RANK_RESERVED_CANONICAL_CONFIG.name
     raw = json.loads(RANK_RESERVED_CANONICAL_CONFIG.read_text(encoding="utf-8"))
+    raw["status"] = "awaiting_live_a40_rank_reserved_deployment_profile"
+    raw["evaluation"]["formal_status"] = raw["status"]
+    raw["evaluation"]["online_smoke_evidence"] = None
     path.write_text(json.dumps(raw), encoding="utf-8")
     evidence = {
         "schema": "ember_pi05_v6_qv_rank_reserved_deployment_seal_v1",

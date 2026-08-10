@@ -21,7 +21,7 @@
   state并绑定相同video identity；profile OOM候选只作ineligible，tracked Program与output-root resolver已分离，
   且新增纯CPU `rank-reserved-seal` assembler。初始带真实LIBERO assets的全仓CPU回归为
   `386 passed in 28.76s`。
-  这只封住实现合同，尚无新图A40行为或strict rollout证据。
+  该时点只封住实现合同；后续Gate-A live行为证据见下，strict400仍未产生。
 - clean implementation commit`82c18cc`已push并建Gate-A detached worktree。实时比较两节点后选择空闲
   `gpu02:3`；launcher和worker双重preflight通过，但首个profile候选warmup在compact rank2 SVD前自然
   fail closed：CUDA autocast把32×32 core matmul降为BF16，而A40不支持BF16 batched SVD。没有profile
@@ -40,9 +40,15 @@
 - canonical evaluator的可执行owner-six-GPU门已删除：run contract由配置的8-card node topology约束，
   preflight只拒绝空/重复/负index并继续live检查进程；7/8-card选择不再被软件截断。加载`.env.local`后的
   `tests/test_pi05_eval_contract.py tests/test_pi05_eval_launcher.py`为`51 passed`。
-- 下一步是将identity修复clean commit/push并重建frozen worktree；随后单张空闲A40完整重跑新graph吞吐profile与五臂
-  vertical。两份artifact通过后必须回tracked主分支seal、commit/push，再从sealed commit冻结新worktree，
-  然后按有序Gate B/C条件运行两个strict400。
+- clean pushed/frozen`ee56aec`已完整重跑Gate A。profile在`gpu02:3`得到B8/16/32=
+  `.906679/.903080/.904560 LoRA/s`，三点stable、0 OOM、reserved约12.90GB/headroom约34.8GB并选B8；
+  vertical在`gpu02:2`完成8/8 jobs、3 successes、rollout-only约143.22 episodes/hour。72 BF16+4 FP32 cache、
+  source identity、Writer release/source reuse、0 forbidden reads、144/144 q/v target和四suite q/v-only action
+  传递均通过。old full-rank Reward vs new full Reward action delta cosine=`-.1271`、new q/v-only vs new full=
+  `.5333`，作为Gate B/C风险证据保留。raw validator重建`ee56aec` B8 seal成功，active config已自动登记
+  `10359/25926B` profile/vertical artifacts；post-seal focused/full=`63/388 passed`，compileall/diff-check通过。
+- 下一步是把Gate-A config/docs clean commit/push，再从sealed commit冻结新worktree，然后按有序Gate B/C
+  条件运行strict400。
   q/v一阶tangent固定为`B0 dA+dB A0`，action保留实际二阶cross term；no-video source identity与correct-video
   zero-Program rank14 base分开处理。只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过；
   140--143为诊断性non-pass。两个行为门前不实现或启动fresh训练。

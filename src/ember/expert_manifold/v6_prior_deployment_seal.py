@@ -36,6 +36,7 @@ _ZERO_READS = {
     "reward_reads": 0,
     "terminal_reads": 0,
 }
+_RUNTIME_ARTIFACT_ROOT = Path("runs/outputs")
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -47,8 +48,26 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _relative_record(path: Path, repo_root: Path) -> dict[str, Any]:
     resolved = path.resolve()
-    relative = resolved.relative_to(repo_root.resolve())
+    try:
+        relative = resolved.relative_to(repo_root.resolve())
+    except ValueError:
+        storage_root = (repo_root / _RUNTIME_ARTIFACT_ROOT).resolve()
+        relative = _RUNTIME_ARTIFACT_ROOT / resolved.relative_to(storage_root)
     return {"path": relative.as_posix(), "bytes": resolved.stat().st_size}
+
+
+def _resolve_evidence_path(repo_root: Path, value: object) -> Path:
+    relative = Path(str(value))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError("deployment evidence path is not repo-relative")
+    resolved = (repo_root / relative).resolve()
+    try:
+        resolved.relative_to(repo_root.resolve())
+    except ValueError:
+        if relative.parts[:2] != _RUNTIME_ARTIFACT_ROOT.parts:
+            raise
+        resolved.relative_to((repo_root / _RUNTIME_ARTIFACT_ROOT).resolve())
+    return resolved
 
 
 def _require(condition: bool) -> None:
@@ -583,11 +602,9 @@ def evaluation_artifact_matches(
             for record in records
         ):
             return False
-        if any(Path(str(record["path"])).is_absolute() for record in records):
-            return False
-        paths = [(repo_root / str(record["path"])).resolve() for record in records]
-        for path in paths:
-            path.relative_to(repo_root.resolve())
+        paths = [
+            _resolve_evidence_path(repo_root, record["path"]) for record in records
+        ]
         paths[2].relative_to(paths[1].parent)
         if any(
             path.stat().st_size != int(record["bytes"])

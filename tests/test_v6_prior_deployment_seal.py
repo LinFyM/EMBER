@@ -236,3 +236,86 @@ def test_assembler_reads_both_roots_and_records_raw_artifact_sizes(
             vertical_root=vertical_root,
             repo_root=tmp_path,
         )
+
+
+def test_deployment_evidence_supports_frozen_worktree_runs_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canonical_outputs = tmp_path / "canonical" / "runs" / "outputs"
+    profile_path = canonical_outputs / "profile" / "writer_generation_profile.json"
+    vertical_path = canonical_outputs / "vertical" / "results.json"
+    manifest_path = (
+        canonical_outputs / "vertical" / "writer_lora_cache" / "cache_manifest.json"
+    )
+    for path in (profile_path, vertical_path, manifest_path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}", encoding="utf-8")
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    (worktree / "runs").symlink_to(canonical_outputs.parent)
+    commit = "c" * 40
+    evidence = {
+        "schema": seal_module.V6_PRIOR_DEPLOYMENT_SEAL_SCHEMA,
+        "run_commit": commit,
+        "writer_model_batch_size": 8,
+        "profile": {
+            "path": "runs/outputs/profile/writer_generation_profile.json",
+            "bytes": profile_path.stat().st_size,
+        },
+        "vertical": {
+            "path": "runs/outputs/vertical/results.json",
+            "bytes": vertical_path.stat().st_size,
+        },
+        "cache_manifest": {
+            "path": "runs/outputs/vertical/writer_lora_cache/cache_manifest.json",
+            "bytes": manifest_path.stat().st_size,
+        },
+    }
+    monkeypatch.setattr(
+        seal_module,
+        "assemble_v6_prior_evaluation_smoke_evidence",
+        lambda **_kwargs: dict(evidence),
+    )
+    assert seal_module.evaluation_artifact_matches(
+        config=_config(),
+        evidence=evidence,
+        repo_root=worktree,
+        commit_in_active_lineage=lambda value: value == commit,
+    )
+    assert seal_module._relative_record(profile_path, worktree) == evidence["profile"]
+
+    escaped_profile = tmp_path / "outside" / "writer_generation_profile.json"
+    escaped_profile.parent.mkdir()
+    escaped_profile.write_text("{}", encoding="utf-8")
+    (canonical_outputs / "escape").symlink_to(escaped_profile.parent)
+    escaped_evidence = {
+        **evidence,
+        "profile": {
+            "path": "runs/outputs/escape/writer_generation_profile.json",
+            "bytes": escaped_profile.stat().st_size,
+        },
+    }
+    assert not seal_module.evaluation_artifact_matches(
+        config=_config(),
+        evidence=escaped_evidence,
+        repo_root=worktree,
+        commit_in_active_lineage=lambda value: value == commit,
+    )
+
+    other_manifest = canonical_outputs / "other" / "cache_manifest.json"
+    other_manifest.parent.mkdir()
+    other_manifest.write_text("{}", encoding="utf-8")
+    misplaced_evidence = {
+        **evidence,
+        "cache_manifest": {
+            "path": "runs/outputs/other/cache_manifest.json",
+            "bytes": other_manifest.stat().st_size,
+        },
+    }
+    assert not seal_module.evaluation_artifact_matches(
+        config=_config(),
+        evidence=misplaced_evidence,
+        repo_root=worktree,
+        commit_in_active_lineage=lambda value: value == commit,
+    )

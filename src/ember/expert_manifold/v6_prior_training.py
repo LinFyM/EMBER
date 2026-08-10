@@ -30,7 +30,9 @@ from ember.expert_manifold.v6_prior_contract import (
     load_v6_prior_config,
 )
 from ember.expert_manifold.v6_prior_profile import (
+    FixedActionProfilePanel,
     base_versions,
+    profile_action_panel,
     profile_credit_motion,
     profile_lora_response,
     profile_passes,
@@ -65,10 +67,6 @@ from ember.writer.condition_update import (
 )
 
 
-# One probe per suite on four ranks avoids a rank-0-only profile tail.
-_FIXED_ACTION_PROFILE_TASK_ORDINALS = frozenset((0, 7, 14, 21))
-
-
 @dataclass(frozen=True)
 class TaskObjective:
     task: ExpertTask
@@ -90,7 +88,7 @@ class TaskObjective:
     credit_seconds: float
     program_before: torch.Tensor | None = None
     correct_lora_before: Mapping[str, torch.Tensor] | None = None
-    fixed_policy_query: Mapping[str, torch.Tensor] | None = None
+    fixed_policy_panel: FixedActionProfilePanel | None = None
 
 
 def _collect_task_replay(
@@ -104,7 +102,7 @@ def _collect_task_replay(
     dict[str, torch.Tensor],
     torch.Tensor,
     torch.Tensor,
-    Mapping[str, torch.Tensor] | None,
+    FixedActionProfilePanel | None,
     float,
 ]:
     copy_task_lora_state_(runtime.policy, graph.correct_lora, runtime.lora_contract)
@@ -147,17 +145,17 @@ def _collect_task_replay(
     batch, episode_ids, successes = complete_trajectory_batch(
         trajectories, torch.device("cpu")
     )
-    fixed_query = None
-    if (
-        runtime.args.mode == "mechanism-profile"
-        and task.ordinal in _FIXED_ACTION_PROFILE_TASK_ORDINALS
-    ):
-        fixed_query = dict(trajectories[0].observations[0])
-        if len(fixed_query) != 4:
-            raise ExpertManifoldError(
-                "Reward-Credit fixed-action query topology changed"
-            )
-    return trajectories, batch, episode_ids, successes, fixed_query, seconds
+    fixed_panel = None
+    if runtime.args.mode == "mechanism-profile":
+        fixed_panel = profile_action_panel(trajectories)
+    return (
+        trajectories,
+        batch,
+        episode_ids,
+        successes,
+        fixed_panel,
+        seconds,
+    )
 
 
 def _task_objective(
@@ -203,7 +201,14 @@ def _task_objective(
     replay = _collect_task_replay(
         runtime, schedule_macro=schedule_macro, task=task, graph=graph
     )
-    trajectories, batch, episode_ids, successes, fixed_query, rollout_seconds = replay
+    (
+        trajectories,
+        batch,
+        episode_ids,
+        successes,
+        fixed_panel,
+        rollout_seconds,
+    ) = replay
     copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
     credit_started = time.monotonic()
     with torch.autocast(
@@ -230,6 +235,11 @@ def _task_objective(
     credit_seconds = time.monotonic() - credit_started
     if not reward_credit_is_finite(credit):
         raise ExpertManifoldError("Reward-Credit task summary became non-finite")
+    if profile := runtime.args.mode == "mechanism-profile":
+        if (fixed_panel is not None) is not bool(credit.mixed):
+            raise ExpertManifoldError(
+                "Reward-Credit action panel and mixed credit partition disagree"
+            )
     counters = runtime.rank_counters
     counters["rollouts"] = int(counters["rollouts"]) + 4
     counters["environment_actions"] = int(counters["environment_actions"]) + sum(
@@ -241,7 +251,6 @@ def _task_objective(
     counters["reward_sum"] = float(counters["reward_sum"]) + math.fsum(
         value.reward_sum for value in trajectories
     )
-    profile = runtime.args.mode == "mechanism-profile"
     trajectory_rows = tuple(_trajectory_record(value) for value in trajectories)
     return TaskObjective(
         task=task,
@@ -267,7 +276,7 @@ def _task_objective(
             if profile
             else None
         ),
-        fixed_policy_query=fixed_query,
+        fixed_policy_panel=fixed_panel,
     )
 
 

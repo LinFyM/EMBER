@@ -1,6 +1,33 @@
 # EMBER Findings
 
-## Reward-Credit Program Cotangent canonical实现与CPU seal（2026-08-10，0 GPU结果）
+## Reward-Credit首次A40 profile：主链成立，固定probe门设计non-pass（2026-08-10）
+
+- clean frozen`c4507e9f4872a88cccca37ca7956371bd8a18bd4`在空闲`gpu02:0--5`完成root=
+  `runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b2_20260810`，natural exit0，
+  但stored/raw recomputed `passed=false`且未保留checkpoint。24 tasks、96 rollouts、11 mixed/13 homogeneous、
+  60 success/36 failure、4452 replay chunks、22124 executed steps；wall=`554.268s`，peak allocated/reserved=
+  `16,336,873,984/19,417,530,368B`，0 OOM/nonfinite/watchdog/old/negative forward。
+- reward主链证据为：11/11 mixed cotangent finite/nonzero，13/13 homogeneous cotangent exact zero且0 functional
+  forward；Program cotangent RMS=`5.219e-7`，full48 rank48、condition=`105.66`，predicted negative/correct=
+  `.017081`，application closure relative RMS=`0`；LoRA A/B response=`5.736e-6/6.001e-6`，aggregate fixed-action
+  RMS=`.0006390`。这证明单步reward RHS→Program solve→完整LoRA→至少一个真实BF16 action probe已通，不能
+  推出closed-loop会提高，也尚不能推出每个mixed task均action-effective。
+- 唯一false gate要求固定ordinals`0/7/14/21`全部action-nonzero；实际仅0是mixed，7/14/21均4/0 homogeneous，
+  direct cotangent按设计为零。`1/4`因此与“唯一有RHS的probe通过、三个zero-credit probes不变”完全一致。
+  旧artifact必须保持正式non-pass，不能post-hoc放宽；正确修复是把同一严格门对准全部有reward RHS的tasks。
+- profile v2穷举所有mixed tasks，每task复用K4真实首状态和原始首noise，before/after各一次batch4 forward；
+  raw rows必须精确等于mixed ordinals、每task K4/2 forwards、覆盖四suite且每task LoRA A/B/action RMS均finite
+  nonzero。homogeneous继续exact-zero direct credit；其shared solve motion旧profile为mixed RMS的`1.182%`，
+  是多cycle drift风险而非本次action gate目标。
+- live B2显存远低于旧functional图的40GB类比，因此B8是吞吐优先的直接候选：keyed Nmc4逻辑panel不变，
+  functional invocations预计约`3648→928`。旧profile六rank本地rollout+credit wall约
+  `542.5/140.6/434.8/547.9/418.7/332.6s`；冻结one-task-per-suite静态map后，旧B2 critical cost预测降至
+  `410.1s`且mixed counts变为`2/2/1/2/2/2`。mapping固定跨cycle、RNG排除rank、full48按ordinal排序，故只
+  改吞吐调度，不按结果改task权重。
+- all-mixed/B8实现的全仓CPU回归=`338 passed in 37.69s`；compileall、27 JSON、Black、diff-check、旧artifact
+  v2 fail和architecture guard均通过，0 hard violation/parallel family。该seal只授权新discarded profile。
+
+## Reward-Credit Program Cotangent canonical实现与CPU seal（2026-08-10，profile前状态）
 
 - RLS full400已把最早失败接口从feature-row retention定位到offline source-action cotangent与真实on-policy
   occupancy/binary success错位。第39.5只替换这一项：Balanced P256、frozen v6 decoder、single Program、
@@ -9,17 +36,15 @@
   executed prefixes相反符号，全成/全败严格zero并跳过replay。mixed replay按episode等权和Nmc4 keyed CFM
   形成完整LoRA gradient，再VJP到Program；没有old/current重复forward、ratio、第二epoch、shared Adam、critic、
   progress、SPSA或negative policy forward。
-- 历史B2峰值约40.34GB表明replay B8大概率OOM；当前B2是容量约束下的初始吞吐点，不是为低位精度降速。
+- 历史B2峰值约40.34GB来自不同旧functional图；已被上节active Reward-Credit live B2显存证据覆盖。
   K4 batch4、四persistent env lanes、BF16、六rank×4 tasks、CUDA-complete rendezvous和两次fixed gather保持。
   homogeneous不拼大replay，hot path不做hash或逐tensor防御检查。
 - canonical owner与retired path已收敛：旧ledger/single-lane/success-only、RLS gate/deployment/nonpass owners和
   tests删除；Reward数学、K4 rollout、training/profile与strict decision各有单一owner。CPU覆盖16种outcomes、
   ASPO一阶等价、Nmc4、BF16→FP32 gradient、Program/full48、checkpoint/cursor和fail-close；全仓=
   `336 passed in 59.12s`。
-- 当前config=`configs/pi05_v6_reward_credit_program_cotangent_v1.json`，profile awaiting、formal blocked；尚无
-  Reward-Credit A40 profile、checkpoint或strict分数。下一证据只有clean frozen后的full24×K4×Nmc4 discarded
-  profile；mixed coverage、homogeneous zero、shared zero-credit task motion、closure、BA/action、容量和collective
-  同时过门后才允许formal cycle1。
+- 当前config=`configs/pi05_v6_reward_credit_program_cotangent_v1.json`仍profile awaiting、formal blocked；
+  尚无Reward-Credit checkpoint或strict分数。首次profile和修正见上节；只有全新v2 artifact过门才允许formal。
 
 ## RLS full400正式否决feature-row retention充分性（2026-08-10）
 

@@ -159,7 +159,17 @@
     "teacher_video_seed": 20260722,
     "counterfactual_seed": 20260809,
     "wrong_video_schedule": "deterministic_cross_suite_cycle_with_current_task_language",
-    "rank_assignment": "fixed_one_task_per_suite_per_rank",
+    "rank_assignment": "sealed_failed_profile_cost_balanced_one_task_per_suite_per_rank",
+    "rank_task_ordinals": [
+      [3, 8, 13, 23],
+      [5, 9, 16, 22],
+      [1, 11, 15, 20],
+      [0, 7, 14, 18],
+      [2, 6, 12, 21],
+      [4, 10, 17, 19]
+    ],
+    "rank_assignment_evidence": "runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b2_20260810/mechanism_profile.json",
+    "rank_assignment_cost": "schedule_macro0_rollout_seconds_plus_credit_seconds",
     "teacher_action_episode_pairing": false
   },
   "environment": {
@@ -206,7 +216,7 @@
   "optimization": {
     "precision": "bfloat16",
     "seed": 7,
-    "reward_replay_chunk_batch_size": 2,
+    "reward_replay_chunk_batch_size": 8,
     "rollout_policy_batch_size": 4,
     "optimizer": "none",
     "distributed_update": {
@@ -222,7 +232,7 @@
   },
   "profile_run": {
     "status": "awaiting_live_a40_fresh0_to1_reward_profile",
-    "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b2_20260810",
+    "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b8_allmixedk4_20260810",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "schedule_macro": 0,
@@ -240,7 +250,11 @@
       "mixed_cotangent_nonzero": true,
       "homogeneous_cotangent_exact_zero": true,
       "program_to_lora_response_nonzero": true,
-      "program_to_fixed_action_response_nonzero": true,
+      "program_to_all_mixed_fixed_action_response_nonzero": true,
+      "mixed_action_probe_scope": "all_mixed_tasks",
+      "mixed_suite_count": 4,
+      "fixed_action_queries_per_mixed_task": 4,
+      "fixed_action_policy_forwards_per_mixed_task": 2,
       "full48_feature_rank_min": 24,
       "negative_null_motion_ratio_max": 0.25,
       "predicted_observed_relative_rms_max": 0.005,
@@ -254,7 +268,7 @@
   },
   "formal_run": {
     "status": "blocked_until_live_reward_profile_passes_and_is_sealed",
-    "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b2_20260810",
+    "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 0,

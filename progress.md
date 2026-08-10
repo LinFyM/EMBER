@@ -1,6 +1,22 @@
 # EMBER Progress Ledger
 
-## Reward-Credit Program Cotangent实现与CPU封口（2026-08-10）
+## Reward-Credit首次profile non-pass与all-mixed/B8修正（2026-08-10）
+
+- clean frozen`c4507e9`在live preflight后使用`gpu02:0--5`完成首次full24×K4×Nmc4 B2 discarded profile；
+  root=`runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b2_20260810`，exit/pipeline均0、
+  completion passed=false、无checkpoint，六卡随后释放且未触碰他人设备。
+- 24 tasks/96 rollouts/24 videos、11 mixed/13 homogeneous、60/36 success/failure、4452 replay chunks和22124
+  action steps完整；rank48、condition105.66、negative/correct `.017081`、closure0、LoRA A/B与aggregate action
+  response非零，0 OOM/nonfinite/watchdog。唯一失败为固定action probes `1/4`。
+- 只读复核定位固定probes`0/7/14/21`中只有0有mixed reward RHS，另外三个homogeneous按合同zero credit；
+  旧门与zero-credit保护冲突。旧artifact保持immutable/non-pass，不重写、不续用。
+- canonical已改为profile schema v2：all-mixed K4真实首query/原始noise、raw per-task LoRA A/B/action gate；
+  physical replay B8基于live`16.34/19.42GB` headroom，静态rank map基于旧profile wall并保持每rank一task/suite。
+  全仓`338 passed in 37.69s`，compileall、27 JSON、Black、diff-check和architecture guard均过，0 hard violation/
+  parallel family；旧artifact在v2 raw gate下仍fail。下一步是clean commit/push、新frozen worktree和一个全新
+  root discarded profile；formal仍blocked。
+
+## Reward-Credit Program Cotangent实现与CPU封口（2026-08-10，profile前状态）
 
 - 第39.5唯一后继已在canonical `v6_prior` path原位实现；active config=
   `configs/pi05_v6_reward_credit_program_cotangent_v1.json`。部署仍为exact language + exactly one action-hidden
@@ -9,12 +25,10 @@
   fast path、mixed Nmc4 direct LoRA gradient→Program VJP、full48 single write、interaction cursor与deferred-NCCL
   readiness。删除旧ledger/single-lane/success-only、RLS-specific executable owners、old/current第二forward、
   ratio、第二epoch和shared Adam；历史由Git/docs/artifacts保存。
-- 吞吐保持六rank×4 tasks、BF16和最大已证实并行；replay B2来自历史A40约40.34GB容量证据，不为低位一致性
-  降速。homogeneous不拼replay，热路径无SHA/MD5/逐tensor扫描；profile另报shared solve对zero-credit task的
+- 吞吐保持六rank×4 tasks、BF16和当时最大已证实并行；B2的旧容量类比已由上节live证据覆盖。homogeneous
+  不拼replay，热路径无SHA/MD5/逐tensor扫描；profile另报shared solve对zero-credit task的
   motion以定位漂移。
-- 全仓CPU回归`336 passed in 59.12s`。当前0 Reward-Credit GPU/profile/checkpoint/strict结果；profile=
-  awaiting、formal=blocked。下一步是文档/代码clean commit/push、frozen worktree和live双节点/quota preflight后
-  唯一一次full24×K4×Nmc4 fresh0→1 discarded profile，profile state永久不进入formal。
+- 当时全仓CPU回归`336 passed in 59.12s`。后续首次profile与当前执行边界见上节。
 
 ## RLS formal0→10、strict400与正式退役（2026-08-10）
 

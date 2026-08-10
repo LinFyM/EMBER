@@ -25,7 +25,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     cursor_contract,
     decision_evaluation_contract,
 )
-from ember.expert_manifold.v6_prior_runtime import _resolve_segment
+from ember.expert_manifold.v6_prior_runtime import _local_rank_tasks, _resolve_segment
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 
 
@@ -99,6 +99,36 @@ def test_active_reward_credit_is_profile_only_until_live_full24_seal() -> None:
     assert config["information_wall"]["source_action_reads"] == 0
     assert config["objective"]["old_policy_forwards"] == 0
     assert config["objective"]["learning_epochs"] == 1
+    assert config["optimization"]["reward_replay_chunk_batch_size"] == 8
+    assignments = config["data"]["rank_task_ordinals"]
+    assert sorted(value for row in assignments for value in row) == list(range(24))
+    assert all(len(row) == 4 for row in assignments)
+    assert all({value // 6 for value in row} == {0, 1, 2, 3} for row in assignments)
+
+
+def test_cost_balanced_rank_map_preserves_full24_and_one_task_per_suite() -> None:
+    config = _raw_config()
+    tasks = tuple(
+        SimpleNamespace(
+            ordinal=ordinal,
+            suite=("libero_spatial", "libero_object", "libero_goal", "libero_10")[
+                ordinal // 6
+            ],
+        )
+        for ordinal in range(24)
+    )
+    observed = []
+    for rank in range(6):
+        context = DistributedContext(rank, rank, 6, torch.device("cpu"))
+        local = _local_rank_tasks(tasks, config, context)
+        observed.extend(task.ordinal for task in local)
+        assert {task.suite for task in local} == {
+            "libero_spatial",
+            "libero_object",
+            "libero_goal",
+            "libero_10",
+        }
+    assert sorted(observed) == list(range(24))
 
 
 @pytest.mark.parametrize(

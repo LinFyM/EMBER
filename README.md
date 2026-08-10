@@ -41,18 +41,28 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   formal和strict artifacts继续作为历史证据，不能授权新RLS运行。
 - 当前唯一active implementation是第39.5节**Reward-Credit Program Cotangent**，active config为
   `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，状态仍是
-  `awaiting_live_a40_reward_credit_profile`，尚无GPU、训练或strict结果。one-shot部署图完全不变：exact
+  `awaiting_live_a40_reward_credit_profile`，尚无训练checkpoint或strict结果。one-shot部署图完全不变：exact
   language + exactly one action-hidden video→Balanced P256 key→frozen historical-v6 decoder→single FP32
   Program→完整38-target rank16 LoRA；没有language bypass、few-shot、expert-bank deployment或第二套LoRA。
 - 训练从fresh`M0=0,Lambda0=I`开始，禁止继承RLS10。每task同一套LoRA做K4 batch4 official random-reset
   rollouts，成功与失败均保留executed prefix；binary LOO credit在全成/全败task严格为零，mixed task按episode
   等权、Nmc4 keyed CFM直接形成完整LoRA signed gradient并VJP到Program。六rank×4 tasks、BF16、四persistent
-  env lanes、deferred NCCL保持；replay B2来自A40容量证据，不是为低位数值一致性牺牲吞吐。当前CPU seal为
-  `336 passed`且architecture guard无hard violation。
-- 下一动作只有clean commit/push与frozen worktree后的实时双节点/quota preflight，再运行一次
-  full24×K4×Nmc4、六卡、fresh0→1 discarded profile。profile必须完整覆盖96/96 rollouts、mixed与
-  homogeneous tasks、finite/nonzero与exact-zero cotangent、full48 closure、Program→LoRA→fixed-action且无
-  OOM/nonfinite/watchdog；通过并另行seal后才允许formal cycle0→1。当前没有运行中的EMBER GPU任务。
+  env lanes与deferred NCCL保持。
+- clean frozen`c4507e9`的首次full24 discarded profile已在`gpu02:0--5`自然exit0，但按预注册门正式
+  `passed=false`，不能追认通过。它完成24 tasks/96 rollouts，得到11 mixed+13 homogeneous、full48 rank48、
+  negative/correct motion`.017081`、closure error`0`、LoRA A/B response非零，唯一失败是固定action probes
+  `1/4`。根因是固定ordinals`0/7/14/21`中只有0是mixed，另外三个按合同zero credit；因此旧门错误要求
+  homogeneous task必须发生action change。旧root保持immutable且不进入formal。
+- 新profile合同改为穷举**全部mixed tasks**：每task使用K4真实首状态与原始policy-noise，before/after各一次
+  batch4 forward，要求所有mixed task的Program→LoRA→BF16 action均非零并覆盖四suite；homogeneous仍要求
+  cotangent exact zero并单独报告shared drift。live B2仅占`16.34/19.42GB` allocated/reserved，故重跑直接
+  使用physical B8，不为低位差异降速；同时冻结由旧profile wall得到的one-task-per-suite静态均衡rank map，
+  full24样本、task等权、K4、Nmc4、BF16和full48数学均不变。
+- 修正后全仓CPU回归=`338 passed in 37.69s`；compileall、27份JSON、Black、diff-check和architecture guard
+  通过，0 hard violation、无parallel family。这只证明新profile合同闭合。
+- 下一动作是完成CPU/合同seal、clean commit/push和新frozen worktree，实时双节点/quota preflight后运行一个
+  **新root**的fresh0→1 discarded profile。只有新raw artifact复算全部门通过才另commit解锁formal cycle0→1；
+  当前没有运行中的EMBER GPU任务。
 
 ### Earlier completed evidence
 

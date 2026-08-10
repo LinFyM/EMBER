@@ -10,6 +10,7 @@ import torch
 import ember.expert_manifold.v6_prior_training as training_module
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_profile import (
+    profile_action_panel,
     profile_credit_motion,
     profile_passes,
 )
@@ -159,7 +160,11 @@ def _profile_config() -> dict:
                 "mixed_cotangent_nonzero": True,
                 "homogeneous_cotangent_exact_zero": True,
                 "program_to_lora_response_nonzero": True,
-                "program_to_fixed_action_response_nonzero": True,
+                "program_to_all_mixed_fixed_action_response_nonzero": True,
+                "mixed_action_probe_scope": "all_mixed_tasks",
+                "mixed_suite_count": 4,
+                "fixed_action_queries_per_mixed_task": 4,
+                "fixed_action_policy_forwards_per_mixed_task": 2,
                 "full48_feature_rank_min": 24,
                 "negative_null_motion_ratio_max": 0.25,
                 "predicted_observed_relative_rms_max": 0.005,
@@ -174,12 +179,19 @@ def _profile_config() -> dict:
 
 
 def _profile_row() -> dict:
+    mixed_ordinals = {0, 1, 2, 3, 4, 5, 8, 12, 18}
     records = []
     for ordinal in range(24):
-        mixed = ordinal < 6
+        mixed = ordinal in mixed_ordinals
         records.append(
             {
                 "task_ordinal": ordinal,
+                "suite": (
+                    "libero_spatial",
+                    "libero_object",
+                    "libero_goal",
+                    "libero_10",
+                )[ordinal // 6],
                 "mixed": mixed,
                 "rollouts": 4,
                 "videos": 1,
@@ -202,9 +214,24 @@ def _profile_row() -> dict:
             "lora_a_response_rms": 0.01,
             "lora_b_response_rms": 0.02,
             "fixed_action_response_rms": 0.03,
-            "fixed_action_probe_task_count": 4,
-            "fixed_action_probe_policy_forwards": 8,
-            "fixed_action_passing_task_count": 4,
+            "fixed_action_probe_task_count": len(mixed_ordinals),
+            "fixed_action_probe_query_count": 4 * len(mixed_ordinals),
+            "fixed_action_probe_policy_forwards": 2 * len(mixed_ordinals),
+            "fixed_action_passing_task_count": len(mixed_ordinals),
+            "fixed_action_task_rows": [
+                {
+                    "task_ordinal": ordinal,
+                    "query_count": 4,
+                    "policy_forwards": 2,
+                    "lora_a_value_count": 10,
+                    "lora_a_response_rms": 0.01,
+                    "lora_b_value_count": 10,
+                    "lora_b_response_rms": 0.02,
+                    "fixed_action_value_count": 1400,
+                    "fixed_action_response_rms": 0.03,
+                }
+                for ordinal in sorted(mixed_ordinals)
+            ],
         },
         "negative_policy_forwards": 0,
         "old_policy_forwards": 0,
@@ -257,6 +284,41 @@ def test_mechanism_profile_requires_full24_mixed_and_homogeneous_credit_paths() 
     row = _profile_row()
     row["lora_response"]["fixed_action_response_rms"] = 0.0
     assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["lora_response"]["fixed_action_task_rows"].pop()
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["lora_response"]["fixed_action_task_rows"][0]["task_ordinal"] = 6
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["lora_response"]["fixed_action_task_rows"][0]["query_count"] = 3
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["lora_response"]["fixed_action_task_rows"][0]["fixed_action_response_rms"] = 0.0
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["task_records"][18]["suite"] = "libero_goal"
+    assert profile_passes(config, [row])[0] is False
+
+
+def test_profile_action_panel_retains_all_k4_initial_queries_and_original_noise() -> (
+    None
+):
+    mixed = tuple(_trajectory(lane, success=lane == 0) for lane in range(4))
+    for trajectory in mixed:
+        trajectory.observations[0].update(
+            {
+                "observation.image": torch.zeros(1, 3, 2, 2),
+                "observation.tokens": torch.zeros(1, 2, dtype=torch.long),
+                "observation.mask": torch.ones(1, 2, dtype=torch.bool),
+            }
+        )
+    panel = profile_action_panel(mixed)
+    assert panel is not None
+    assert panel.query["observation.state"].shape == (4, 7)
+    assert panel.noise_seeds == (3000, 3001, 3002, 3003)
+    homogeneous = tuple(_trajectory(lane, success=True) for lane in range(4))
+    assert profile_action_panel(homogeneous) is None
 
 
 def test_profile_reports_shared_motion_on_exact_zero_credit_tasks() -> None:

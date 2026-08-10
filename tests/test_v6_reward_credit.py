@@ -5,7 +5,11 @@ from types import SimpleNamespace
 
 import pytest
 import torch
-from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
+from lerobot.utils.constants import (
+    ACTION,
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+)
 
 from ember.expert_manifold.v6_prior_step import (
     GeneratedConditionGraph,
@@ -29,9 +33,7 @@ from ember.lora import (
 def test_k4_binary_loo_has_exact_zero_sum_and_expected_signs(outcomes) -> None:
     successes = torch.tensor(outcomes)
     advantages = leave_one_out_binary_advantages(successes)
-    torch.testing.assert_close(
-        advantages.sum(), torch.tensor(0.0), rtol=0, atol=1e-7
-    )
+    torch.testing.assert_close(advantages.sum(), torch.tensor(0.0), rtol=0, atol=1e-7)
     if len(set(outcomes)) == 1:
         assert torch.count_nonzero(advantages) == 0
     else:
@@ -51,9 +53,7 @@ def test_episode_chunk_weights_do_not_favor_long_episodes() -> None:
 
 
 def test_direct_credit_matches_old_current_aspo_first_derivative() -> None:
-    advantages = leave_one_out_binary_advantages(
-        torch.tensor([1.0, 0.0, 0.0, 1.0])
-    )
+    advantages = leave_one_out_binary_advantages(torch.tensor([1.0, 0.0, 0.0, 1.0]))
     current = torch.tensor([0.3, -0.2, 0.5, 0.1], requires_grad=True)
     old = current.detach().clone()
     historical_aspo = (-torch.exp(old - current) * advantages).mean()
@@ -211,6 +211,23 @@ def test_reward_lora_gradient_is_microbatch_semantic_and_skips_homogeneous() -> 
     assert full_details["functional_policy_forwards"] == 4
     for name in state:
         torch.testing.assert_close(first[name], full[name], rtol=2e-6, atol=2e-6)
+    b8, b8_details = functional_reward_lora_gradient(
+        policy,
+        state,
+        contract,
+        batch,
+        episode_ids,
+        successes,
+        mc_samples=4,
+        physical_microbatch_size=8,
+        flow_seed_root=31,
+        cycle=0,
+        global_task_id=4,
+        device=torch.device("cpu"),
+    )
+    assert b8_details["functional_policy_forwards"] == 4
+    for name in state:
+        torch.testing.assert_close(second[name], b8[name], rtol=2e-6, atol=2e-6)
     changed, _ = functional_reward_lora_gradient(
         policy,
         state,

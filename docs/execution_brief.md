@@ -6,9 +6,8 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务。
 
-**最新执行状态（2026-08-10）**：第39.5节Reward-Credit Program Cotangent已在唯一canonical path完成
-实现和CPU seal，active config为`configs/pi05_v6_reward_credit_program_cotangent_v1.json`，当前只等待
-full24×K4×Nmc4 live A40 discarded profile，尚无Reward-Credit GPU、训练或strict结果。部署继续是exact
+**最新执行状态（2026-08-10）**：第39.5节Reward-Credit Program Cotangent的首次live A40 discarded
+profile已完成但按旧预注册门正式non-pass；尚无Reward-Credit训练checkpoint或strict结果。部署继续是exact
 language + exactly one action-hidden video、Balanced P256 key、frozen historical-v6 decoder、single Program和
 一套完整38-target rank16 LoRA；fresh `M0=0,Lambda0=I`，禁止继承RLS10。
 
@@ -16,8 +15,12 @@ language + exactly one action-hidden video、Balanced P256 key、frozen historic
 LOO `A_e=(4R_e-sum R)/3`，全成/全败严格零且跳过replay，mixed task按episode等权和Nmc4 keyed CFM直接形成
 Program cotangent。full48仍以24 correct + 24 exact-zero negative rows做single manual write；无old/current第二
 forward、ratio、第二epoch、shared Adam、progress/SPSA或negative policy forward。六rank×4 tasks、BF16、四
-persistent env lanes、deferred NCCL与K4 batch4固定；replay B2是历史A40容量上限的初始高吞吐点，不是数值精度
-退让。全仓CPU回归`336 passed in 59.12s`；正式动作只有clean push/frozen后live preflight与一次profile。
+persistent env lanes、deferred NCCL与K4 batch4固定。旧profile root完成24/96、11 mixed、rank48、closure0、
+LoRA/action response与0 runtime fault；唯一失败来自固定probes把三个homogeneous zero-credit tasks错误要求为
+action-nonzero。旧artifact不可追认。canonical现将gate收紧为all-mixed K4真实query/raw per-task action rows，
+并基于live `16.34/19.42GB`显存把replay上调B8、冻结静态cost-balanced rank map；科学样本与更新数学不变。
+新合同全仓=`338 passed in 37.69s`，compile/JSON/Black/diff/architecture均过且0 hard violation。正式动作只有
+clean push/frozen后live preflight与一个全新root profile。
 
 **最新已完成实验（2026-08-10）**：第39节RLS已从clean frozen`25bbd52`完成formal fresh0→10与预注册
 macro10 strict correct400。训练natural exit0、10 rows、step sum/mean=`199.425195/19.942519s`、input wait=
@@ -175,9 +178,10 @@ identity baseline，不是性能提高。
    strict与same-task诊断都已封存，不能从旧Tangent/audit/v1/v2恢复活动执行；
 5. 第39节RLS的CPU/profile/formal0→10与strict400均已seal；full400 lost15未过门，config/runtime已退役，
    不得fresh、resume25、补六臂或用correct80重解释；
-6. Reward-Credit Program Cotangent设计、canonical实现与CPU seal已完成；GPU前必须clean push/frozen和
-   live preflight，不能从RLS10或任何retired checkpoint续权重；
-7. 唯一下一动作是fresh0→1 discarded profile；通过后另commit seal，才允许formal cycle0→1与立即
+6. Reward-Credit首次discarded profile已完成且旧固定probe门正式non-pass；11 mixed/rank48/closure/action
+   主链健康，根因是三个homogeneous probes与zero-credit合同冲突，旧artifact不可追认；
+7. canonical已改为all-mixed K4 raw action gate、B8和静态均衡rank map；唯一下一动作是新clean frozen上的
+   fresh0→1 discarded profile；通过后另commit seal，才允许formal cycle0→1与立即
    strict400。cycle2只由macro1 support gate授权，不从任何retired checkpoint伪resume。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
@@ -225,8 +229,8 @@ identity baseline，不是性能提高。
 - action query DataLoader默认2 spawn workers、persistent workers、prefetch2；profile若显示GPU仍等待
   data，再实测4 workers/prefetch而不是猜测。
 - reward rollout固定K4 policy batch4；四条persistent env lanes按active-lane compaction每次只做一个batched
-  replan。mixed replay固定Nmc4且physical B2；历史同类图B2峰值reserved约40.34GB，B4容量尚未实证，先用B2
-  不是为低位一致性降速。full profile若证明B4安全且samples/s更高，formal前只上调、不下调科学K/Nmc。
+  replan。mixed replay固定Nmc4；active live B2峰值仅`19.42GB reserved`，修正profile直接使用physical B8，
+  不是为低位一致性降速。B8若OOM则profile自然non-pass，不在同run隐藏fallback；不下调科学K/Nmc。
 - policy activation checkpointing当前保持关闭；现有Writer checkpointing不覆盖OOM所在的frozen PI05
   Gemma MLP。只有B16/B10都无法形成高吞吐有效配置时，才把policy重算作为独立正式候选。
 - 不做SHA/MD5，不重复全仓hash或历史artifact扫描。CPU全仓回归只在代码合同变化后运行一次。
@@ -429,8 +433,9 @@ credit/closure/吞吐，再由fresh cycle1 strict400裁决价值；不能从内�
   strict=`140`且lost15后已fail closed，`f0c3f51/f28fc8b`只保留历史profile provenance。
 - active config：`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；status=
   `awaiting_live_a40_reward_credit_profile`，profile=`awaiting_live_a40_fresh0_to1_reward_profile`，formal=
-  `blocked_until_live_reward_profile_passes_and_is_sealed`。当前0 Reward-Credit GPU/strict结果。
-- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第39.5--39.6节；第38节
+  `blocked_until_live_reward_profile_passes_and_is_sealed`。首次GPU profile为immutable non-pass；当前0 training/
+  strict结果，新profile root仍awaiting。
+- current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第39.5--39.7节；第38节
   只作unchanged deployment/key/macro0 provenance，第39节只作retired RLS根因证据。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。

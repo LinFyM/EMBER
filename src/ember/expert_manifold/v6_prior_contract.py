@@ -16,7 +16,7 @@ V6_PRIOR_CANONICAL_CONFIG = (
 )
 V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_v1"
 V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_run_v1"
-V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_profile_v1"
+V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_profile_v2"
 V6_PRIOR_COMPLETION_SCHEMA = (
     "ember_pi05_v6_reward_credit_program_cotangent_completion_v1"
 )
@@ -179,7 +179,22 @@ _DATA_CRITICAL = {
     "wrong_video_schedule": (
         "deterministic_cross_suite_cycle_with_current_task_language"
     ),
-    "rank_assignment": "fixed_one_task_per_suite_per_rank",
+    "rank_assignment": (
+        "sealed_failed_profile_cost_balanced_one_task_per_suite_per_rank"
+    ),
+    "rank_task_ordinals": [
+        [3, 8, 13, 23],
+        [5, 9, 16, 22],
+        [1, 11, 15, 20],
+        [0, 7, 14, 18],
+        [2, 6, 12, 21],
+        [4, 10, 17, 19],
+    ],
+    "rank_assignment_evidence": (
+        "runs/outputs/pi05_v6_reward_credit_program_cotangent_"
+        "profile_full24_k4_nmc4_r6_b2_20260810/mechanism_profile.json"
+    ),
+    "rank_assignment_cost": "schedule_macro0_rollout_seconds_plus_credit_seconds",
     "teacher_action_episode_pairing": False,
 }
 _ENVIRONMENT_CRITICAL = {
@@ -222,7 +237,7 @@ _OBJECTIVE_CRITICAL = {
 _OPTIMIZATION_CRITICAL = {
     "precision": "bfloat16",
     "seed": 7,
-    "reward_replay_chunk_batch_size": 2,
+    "reward_replay_chunk_batch_size": 8,
     "rollout_policy_batch_size": 4,
     "optimizer": "none",
 }
@@ -257,7 +272,11 @@ _PROFILE_GATES = {
     "mixed_cotangent_nonzero": True,
     "homogeneous_cotangent_exact_zero": True,
     "program_to_lora_response_nonzero": True,
-    "program_to_fixed_action_response_nonzero": True,
+    "program_to_all_mixed_fixed_action_response_nonzero": True,
+    "mixed_action_probe_scope": "all_mixed_tasks",
+    "mixed_suite_count": 4,
+    "fixed_action_queries_per_mixed_task": 4,
+    "fixed_action_policy_forwards_per_mixed_task": 2,
     "full48_feature_rank_min": 24,
     "negative_null_motion_ratio_max": 0.25,
     "predicted_observed_relative_rms_max": 0.005,
@@ -270,7 +289,7 @@ _PROFILE_GATES = {
 _PROFILE_CORE = {
     "registered_output_root": (
         "runs/outputs/pi05_v6_reward_credit_program_cotangent_"
-        "profile_full24_k4_nmc4_r6_b2_20260810"
+        "profile_full24_k4_nmc4_r6_b8_allmixedk4_20260810"
     ),
     "expected_world_size": 6,
     "tasks_per_rank": 4,
@@ -337,7 +356,7 @@ _DECISION_GATES = {
 _FORMAL_CORE = {
     "registered_output_root": (
         "runs/outputs/pi05_v6_reward_credit_program_cotangent_"
-        "formal_cycle0to2_r6_k4_nmc4_b2_20260810"
+        "formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810"
     ),
     "expected_world_size": 6,
     "tasks_per_rank": 4,

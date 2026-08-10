@@ -292,7 +292,9 @@ def build_run_contract(
             "checkpoint_macros": list(segment.checkpoint_macros),
             "num_workers_per_rank": args.num_workers,
             "rollout_policy_batch_size": 4,
-            "reward_replay_chunk_batch_size": 2,
+            "reward_replay_chunk_batch_size": int(
+                config["optimization"]["reward_replay_chunk_batch_size"]
+            ),
             "flow_mc_samples": 4,
             "old_policy_forwards": 0,
             "negative_policy_forwards": 0,

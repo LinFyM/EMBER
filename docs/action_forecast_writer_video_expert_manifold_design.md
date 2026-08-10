@@ -9,9 +9,10 @@ zero-memory identity、formal0→25与macro10/25 strict400，曲线为`134/140/1
 因此已退役。第39节Exact Anchored Reconciliation虽然fresh0→3内部17/17通过，但formal macro10 strict=
 `140/400`、相对macro0 lost15，已经证明offline feature-row retention不足以保护held closed-loop能力并正式
 退役。2026-08-10唯一活动方法是第39.5节Reward-Credit Program Cotangent：部署图完全继承Balanced v2，
-只把training cotangent替换为K4 binary LOO on-policy reward credit。canonical CPU实现已完成，active config=
-`configs/pi05_v6_reward_credit_program_cotangent_v1.json`，当前只等待clean frozen authority上的一次
-full24×K4×Nmc4 discarded profile；尚无Reward-Credit GPU、training checkpoint或strict结果。online expert
+只把training cotangent替换为K4 binary LOO on-policy reward credit。clean frozen`c4507e9`的首次full24 profile
+已完成但按旧固定probe门正式non-pass；第39.7节已把测量改为all-mixed K4 raw action gate，并以live headroom
+上调B8、冻结cost-balanced rank map。active config=
+`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；尚无training checkpoint或strict结果。online expert
 bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
@@ -2765,10 +2766,10 @@ status。fresh state固定`M_0=0,Lambda_0=I`，checkpoint schema同时保存Prog
 - `pi05_eval/reward_credit_gate.py`在创建strict root前绑定run contract/checkpoint/cycle，且从raw400重算cycle1
   support gate；`writer_family_registry.py`仅拥有family登记，不是第二分析路径。
 
-吞吐合同保持K4 policy batch4、四persistent env lanes、BF16、六rank×4 tasks和deferred NCCL。mixed replay
-physical B2来自历史同类A40约40.34GB峰值；它是容量约束下的初始吞吐点，不是为低位一致性降batch。profile
-若实证B4可稳定完成且更快，formal seal前允许只上调replay batch；K4、Nmc4、dtype与并行度不缩。全成/全败
-不拼大replay，热路径不做SHA/MD5、逐tensor扫描、old/current重复forward、ratio或第二epoch。
+首次profile前的吞吐合同保持K4 policy batch4、四persistent env lanes、BF16、六rank×4 tasks和deferred NCCL，
+并以旧图容量类比选择physical B2；这一初始判断已被第39.7节active B2 live headroom证据覆盖，当前改为B8。
+K4、Nmc4、dtype与并行度不缩；全成/全败不拼大replay，热路径不做SHA/MD5、逐tensor扫描、old/current
+重复forward、ratio或第二epoch。
 
 CPU覆盖16种outcomes、LOO零和和符号、homogeneous exact zero、episode/chunk等权、Nmc4 time/noise与physical
 batch不变性、ASPO在old=current首epoch的一阶等价、BF16 decoder输出到FP32 LoRA gradient、Program VJP、
@@ -2780,3 +2781,62 @@ full48 order/negative zero RHS、application、checkpoint/cursor、registered ro
 fresh0→1 discarded profile。必须96/96 rollouts、至少6 mixed tasks、mixed cotangent finite/nonzero、homogeneous
 exact-zero、full48 rank/negative-null/closure、Program→LoRA→fixed-action、0 OOM/nonfinite/watchdog。未过门不启动
 formal；通过后另commit seal并从全新identity state做cycle0→1，随后直接strict400。
+
+### 39.7 首次live non-pass与all-mixed K4测量修正
+
+clean frozen`c4507e9f4872a88cccca37ca7956371bd8a18bd4`在live空闲`gpu02:0--5`完成首次fresh0→1 discarded
+profile：
+
+```text
+runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b2_20260810
+```
+
+进程与tee均natural exit0，24 tasks、96 rollouts、24 videos、11 mixed/13 homogeneous、60/36 successes/failures、
+4452 replay chunks和22124 executed action steps完整，0 OOM/nonfinite/watchdog/old/negative forward；profile未保存
+checkpoint，结束后六卡释放。wall=`554.268338948s`，peak allocated/reserved=
+`16,336,873,984/19,417,530,368B`。
+
+stored和当前config raw复算均`passed=false`。除`program_to_action`外其余门全部通过：11/11 mixed cotangent
+finite/nonzero，13/13 homogeneous cotangent exact zero且0 functional policy forward；Program cotangent RMS=
+`5.21857e-7`，full48 feature rank48、condition=`105.66`，correct motion RMS=`5.06192e-7`，negative/correct=
+`.01708094`，predicted/observed closure relative RMS=`0`；LoRA A/B response RMS=
+`5.73587e-6/6.00059e-6`，aggregate fixed-action response RMS=`.000639038`。
+
+旧门固定probes为ordinals`0/7/14/21`，各suite一个；本次实际只有0是mixed（3/1），7/14/21均4/0
+homogeneous。后者的direct reward cotangent按定义严格为零，shared solve motion仅为mixed RMS的`1.182%`，BF16
+action保持bit-exact不变是合理的低漂移表现。因而`1/4`不能解释成action链失败；它精确暴露了“要求zero-credit
+task必须action-nonzero”的测量合同矛盾。旧artifact仍是正式non-pass，不能事后改门或写成机制通过。
+
+修正后的v2 profile不挑四个task，而穷举**运行时全部mixed tasks**：对每个mixed task保留K4 rollout四条lane
+的首个真实policy observation及各lane原始首个policy-noise seed；用更新前/后LoRA各执行一次batch4
+`predict_action_chunk`。artifact写出per-task raw rows，gate重建并要求：
+
+1. probe ordinals与task records中的全部mixed ordinals精确相等，无重复、无homogeneous混入；
+2. 每task恰好4 queries、2次batch4 policy invocations，mixed tasks覆盖四个suite；
+3. 每个mixed task的LoRA A RMS、LoRA B RMS和BF16 fixed-action RMS均finite且严格非零；
+4. homogeneous仍保持cotangent exact zero和0 functional forward，其shared Program motion继续报告但不要求
+   action change。
+
+这是比旧4-task gate更强的全覆盖门，不是事后放宽；若任一有真实reward RHS的task在部署精度下action-null，
+新profile必须失败。profile schema由v1升为v2，注册新root，旧artifact无法被新config重新解释。
+
+吞吐同时只做两项sample-invariant物理优化。第一，live B2峰值远低于旧functional图约40GB类比，故replay
+physical microbatch直接上调B8；Nmc4 keyed time/noise panel、episode权重和objective不变，短replay允许B8自然
+形成一个完整batch，不做隐藏B4/B2 fallback。旧artifact共3648 functional invocations，B8按chunk counts预计
+约928。第二，旧ordinal-mod-6分配使六rank本地rollout+credit wall约为
+`542.53/140.64/434.75/547.93/418.67/332.57s`。从这份immutable profile的
+`rollout_seconds+credit_seconds`预先冻结：
+
+```text
+rank0 [3,8,13,23]   rank1 [5,9,16,22]   rank2 [1,11,15,20]
+rank3 [0,7,14,18]   rank4 [2,6,12,21]   rank5 [4,10,17,19]
+```
+
+每rank仍恰好一task/suite、train24唯一覆盖，mixed counts=`2/2/1/2/2/2`；按旧B2成本critical local wall约
+`547.9→410.1s`。mapping在launch前封存并固定用于后续cycle，不运行时按outcome重排；environment/policy/flow
+seed均不含rank，gather继续按task ordinal排序，所以full24科学样本、等权和manual write完全不变。
+
+下一证据只能是新clean commit/frozen worktree上的新root fresh0→1 discarded profile。B8若OOM、all-mixed任一
+task action-null、四suite coverage不足或任何旧机制门失败，都自然判non-pass且不自动降配；只有raw v2 gate全过
+才另commit seal并打开formal cycle0→1。修正后全仓CPU回归=`338 passed in 37.69s`，compileall、27份JSON、
+Black、diff-check和architecture guard均通过；guard为0 hard violation且无parallel family。

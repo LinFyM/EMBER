@@ -20,9 +20,9 @@ formal artifacts保存。
 
 - [x] 撤回batch1/`1e-5` direct reproduction gate；Writer generation默认至少batch8，最终取profile最优值。
 - [x] LoRA cache保持72 BF16 + 4 F32原生dtype，batched D2H单次同步。
-- [x] 历史source-action functional图已依次证伪physical B20和B16，B10+10结论只作容量provenance；
-  active Reward-Credit固定K4 policy batch4、四persistent lanes和Nmc4 replay physical B2，profile若实证B4
-  安全且吞吐更高才上调，不为数值微差缩K/Nmc/dtype。
+- [x] 历史source-action functional图的B20/B16/B10只作旧图容量provenance；active Reward-Credit live B2
+  实测仅`16.34/19.42GB` allocated/reserved，故重profile直接上调Nmc4 replay physical B8，不为数值微差缩
+  K/Nmc/dtype；短replay允许B8自然退化为一次完整batch。
 - [x] 合并correct effective alignment、task metric和gradient norm host transfer，移除重复finite scans/sync。
 - [x] action DataLoader改为2 spawn persistent workers + prefetch2，并验证serial/prefetch/resume rows一致。
 - [x] 最终相关定向`68 passed`、全仓`227 passed`、compileall和`git diff --check`全部通过。
@@ -244,7 +244,7 @@ formal artifacts保存。
 - [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
   same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
 
-## Phase 7 — Reward-Credit Program Cotangent（CPU seal完成，等待discarded A40 profile）
+## Phase 7 — Reward-Credit Program Cotangent（首次profile non-pass，修正测量后重profile）
 
 - [x] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
   P256、single Program和完整rank16 LoRA不变；只把offline source-action cotangent替换为train24真实闭环
@@ -252,10 +252,16 @@ formal artifacts保存。
 - [x] 从历史Task-Relative Flow-Credit中只复用已验证的K4 task-relative binary LOO、executed-prefix
   Nmc4 functional estimator、failure样本、runtime asset/EGL/NCCL修复；删除old/current第二forward、第二epoch、
   shared Adam和success-only replay，不恢复已退役RL路径。
-- [x] canonical config/runtime/checkpoint/profile/evaluator与数学CPU门完成；16种K4 outcomes、LOO符号/零和、
-  homogeneous fast path、Nmc4、Program transport、full48、exact-resume和fail-close覆盖，全仓`336 passed`。
-- [ ] clean push/frozen与live双节点/quota preflight后只做一次full24×K4×Nmc4 fresh0→1 discarded profile；
-  保持K4、Nmc4和最大安全并行，不为数值微差降低batch/dtype/GPU利用率。
+- [x] clean frozen`c4507e9`完成首次full24×K4×Nmc4 B2 profile；24/96、11 mixed/13 homogeneous、rank48、
+  closure0与runtime健康，旧门唯一因固定`0/7/14/21`中三个homogeneous action-null而失败。旧root保持
+  immutable/non-pass，不事后seal。
+- [x] 把profile v2改为all-mixed穷举：K4真实首query+原始noise、before/after batch4、raw per-task
+  Program→LoRA A/B→action全非零与四suite覆盖；B8 physical replay和静态cost-balanced one-suite-per-rank map
+  只优化执行，不改full24等权样本或数学。
+- [x] 新合同全仓`338 passed in 37.69s`，compileall、27 JSON、Black、diff-check和architecture guard通过；
+  0 hard violation、无parallel family，旧artifact在v2 raw gate下仍fail。
+- [ ] clean push/frozen与live双节点/quota preflight后，在全新root只做一次
+  full24×K4×Nmc4 B8 fresh0→1 discarded profile；不为数值微差降低batch/dtype/GPU利用率。
 - [ ] profile通过并另commit seal后，formal fresh cycle0→1直接做strict correct400，不跑80-row screen；只有
   correct`>=140`、lost`<=6`、breadth`>=6`且gained>lost才继续cycle2，达到144后补六臂，严格超过150后
   完成同checkpoint因果裁决。

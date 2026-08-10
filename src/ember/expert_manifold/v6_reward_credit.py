@@ -177,7 +177,7 @@ def functional_reward_lora_gradient(
         or bool((valid > action.shape[1]).any())
     ):
         raise RewardProtocolError("reward replay executed-prefix lengths changed")
-    if not 0 < physical_microbatch_size <= count:
+    if physical_microbatch_size <= 0:
         raise RewardProtocolError("invalid reward replay physical microbatch")
     weights, advantages = episode_equal_chunk_weights(episode_ids, successes)
     if bool((advantages == 0).all()):

@@ -47,12 +47,21 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   `reference_correct_rows=0`，old-row improved=`1`是空集合值。短历史feature-row保留成立但不足以保护
   validation闭环能力，最早接口转为functional cotangent与on-policy occupancy/reward credit错位。
 - RLS config/runtime已由formal completion、macro10 checkpoint、strict results和immutable transition共同
-  封为`retired_after_macro10_strict_closed_loop_nonpass`，fresh/restart/resume均fail closed。当前没有active
-  GPU方法；只授权第39.5 Reward-Credit Program Cotangent的设计、实现和CPU seal：保持Balanced-v2
+  封为`retired_after_macro10_strict_closed_loop_nonpass`，fresh/restart/resume均fail closed。第39.5
+  Reward-Credit Program Cotangent已完成canonical实现和首次live discarded profile：保持Balanced-v2
   one-shot部署图、P256、frozen v6 decoder、single Program、full48 RLS和完整rank16 LoRA，只把offline
   source-action cotangent换成train24 K4 binary-LOO、Nmc4 executed-prefix on-policy Program cotangent。
   禁止继承RLS10 precision、恢复old/current双forward、第二epoch、shared Adam、progress reward、SPSA、
-  few-shot或multi-video。新设计CPU seal完成前不得启动GPU。
+  few-shot或multi-video。
+- clean frozen`c4507e9`的首次full24×K4×Nmc4 B2 profile在`gpu02:0--5`完成24 tasks/96 rollouts，11 mixed/
+  13 homogeneous、full48 rank48、closure0、LoRA/action response和runtime health均成立，但按旧预注册门正式
+  non-pass：固定probes`0/7/14/21`中只有0是mixed，另外三个homogeneous按合同zero credit，故不应被要求
+  action-nonzero。旧artifact不可追认或续用。active修正是profile schema v2的all-mixed K4真实query/raw
+  per-task action gate、physical B8和冻结的cost-balanced one-suite-per-rank map；formal仍blocked，下一GPU
+  动作只允许新clean frozen/new root的fresh0→1 discarded profile。
+- 当前all-mixed/B8修正的全仓CPU回归为`338 passed in 37.69s`；compileall、27份JSON、Black、diff-check和
+  architecture guard均通过，guard为0 hard violation且无parallel family。这是新profile的CPU合同，不是GPU
+  或性能结果。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
   EMBER GPU任务；不得把RLS的CPU矩阵等价、profile门或reconstruction/几何当作性能结果。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -135,12 +144,12 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前没有active GPU Writer。第39节RLS已由full400 closed-loop证据退役；其部署图、profile与formal artifact
+当前没有运行中的GPU Writer。第39节RLS已由full400 closed-loop证据退役；其部署图、profile与formal artifact
 继续作历史机制证据，但任何fresh/restart/resume均由状态机拒绝。historical v6-fast macro400仍是下一候选的
 唯一load-only初始化；expert flow、whole-LoRA/ECP/Tangent/CEFD、旧ranking/completion cotangent、task-expert
 输出、RLS10 Program/precision均不得进入新update。
 
-当前只允许设计与实现第39.5 Reward-Credit Program Cotangent，并保持以下边界：
+当前只允许推进第39.5 Reward-Credit Program Cotangent，并保持以下边界：
 
 - 部署端严格不变：exact language + exactly one action-hidden teacher video是唯一输入，P256 Balanced key、
   frozen historical-v6 600 tensors、single FP32 Program residual、完整38-target rank16 LoRA不变；没有
@@ -159,9 +168,10 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 - CPU门必须覆盖LOO零和、全成/全败零、success/failure符号、executed-prefix mask、与旧ASPO的一阶等价、
   cotangent shape/finite、frozen对象零grad、full48顺序/negative-zero、RLS closure、fresh/resume全游标和0
   information-wall读取。通过前不得启动GPU。
-- 首次GPU只允许一次full24×K4×Nmc4 one-epoch discarded profile：96/96 rollouts、至少6 mixed tasks、
-  mixed cotangent finite/nonzero、Program→LoRA→fixed-action非零、0 OOM/nonfinite/watchdog，无old forward/
-  second epoch。保持六卡、每rank4 tasks、BF16、persistent policy/env和最大安全并行，不为微差降吞吐。
+- 首次B2 GPU profile已正式non-pass且保持immutable；下一GPU只允许一个全新root的full24×K4×Nmc4 B8
+  one-epoch discarded profile。它必须96/96 rollouts、至少6 mixed tasks、mixed cotangent finite/nonzero、
+  all-mixed K4 raw Program→LoRA A/B→fixed-action逐task非零并覆盖四suite、0 OOM/nonfinite/watchdog，无old
+  forward/second epoch。保持六卡、每rank4 tasks、BF16、persistent policy/env和最大安全并行，不为微差降吞吐。
 - profile通过后formal从macro0 fresh只跑cycle0→1，直接strict correct400，不跑80-row screen。cycle2门为
   correct≥140、相对macro0 lost≤6、breadth≥6且gained>lost；首次≥144补同checkpoint六臂，严格>150后完成
   correct/same/wrong/shuffled/reversed/no-video因果裁决。cycle1未过门则停止，不扫reward scale/K/Nmc/seed/

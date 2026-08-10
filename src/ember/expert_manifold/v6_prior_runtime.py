@@ -339,6 +339,36 @@ def _load_source(
     return authorities, source, tokenizer
 
 
+def _local_rank_tasks(
+    tasks: Sequence[ExpertTask],
+    config: Mapping[str, Any],
+    context: DistributedContext,
+) -> tuple[ExpertTask, ...]:
+    rows = config["data"]["rank_task_ordinals"]
+    try:
+        valid_shape = (
+            context.world_size == 6
+            and isinstance(rows, list)
+            and len(rows) == 6
+            and all(isinstance(row, list) and len(row) == 4 for row in rows)
+        )
+        ordinals = [[int(value) for value in row] for row in rows]
+    except (TypeError, ValueError):
+        valid_shape = False
+        ordinals = []
+    if not valid_shape or sorted(value for row in ordinals for value in row) != list(
+        range(24)
+    ):
+        raise ExpertManifoldError("Reward-Credit rank assignment is invalid")
+    by_ordinal = {task.ordinal: task for task in tasks}
+    local = tuple(by_ordinal[value] for value in ordinals[context.rank])
+    if len(local) != 4 or len({task.suite for task in local}) != 4:
+        raise ExpertManifoldError(
+            "Reward-Credit rank assignment is not one task per suite"
+        )
+    return local
+
+
 def _build_tasks(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -388,16 +418,7 @@ def _build_tasks(
             bddl_sha256=None,
             horizon=SUITE_HORIZONS[task.suite],
         )
-    local = tuple(task for task in tasks if task.ordinal % 6 == context.rank)
-    if len(local) != 4 or {task.suite for task in local} != {
-        "libero_spatial",
-        "libero_object",
-        "libero_goal",
-        "libero_10",
-    }:
-        raise ExpertManifoldError(
-            "Reward-Credit rank assignment is not one task per suite"
-        )
+    local = _local_rank_tasks(tasks, config, context)
     first, last = map(int, config["data"]["demo_indices"])
     schedule = TeacherVideoSchedule(
         task_ids=tuple(task.global_task_id for task in tasks),

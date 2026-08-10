@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any, Iterator, Mapping, Sequence
 
 import torch
@@ -12,6 +13,44 @@ import torch.distributed as dist
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_runtime import V6PriorRuntime
 from ember.lora import copy_task_lora_state_
+from ember.reward.rollout import RewardTrajectory
+
+
+@dataclass(frozen=True)
+class FixedActionProfilePanel:
+    query: Mapping[str, torch.Tensor]
+    noise_seeds: tuple[int, ...]
+
+
+def profile_action_panel(
+    trajectories: Sequence[RewardTrajectory],
+) -> FixedActionProfilePanel | None:
+    """Retain the exact K4 first-replan panel only when reward credit is mixed."""
+
+    if len(trajectories) != 4:
+        raise ExpertManifoldError("Reward-Credit profile action panel is not K4")
+    if {bool(value.success) for value in trajectories} != {False, True}:
+        return None
+    if any(
+        not value.observations or not value.policy_noise_seeds for value in trajectories
+    ):
+        raise ExpertManifoldError("Reward-Credit profile action panel is incomplete")
+    observations = [value.observations[0] for value in trajectories]
+    keys = set(observations[0])
+    if any(set(value) != keys for value in observations):
+        raise ExpertManifoldError("Reward-Credit profile action query keys changed")
+    query = {
+        name: torch.cat([value[name] for value in observations], dim=0)
+        for name in sorted(keys)
+    }
+    if len(query) != 4 or any(
+        value.ndim == 0 or value.shape[0] != 4 for value in query.values()
+    ):
+        raise ExpertManifoldError("Reward-Credit profile action query is not K4")
+    seeds = tuple(int(value.policy_noise_seeds[0]) for value in trajectories)
+    if len(set(seeds)) != 4:
+        raise ExpertManifoldError("Reward-Credit profile action noise is not K4")
+    return FixedActionProfilePanel(query, seeds)
 
 
 @contextmanager
@@ -32,91 +71,199 @@ def _fixed_action(
     query: Mapping[str, torch.Tensor],
     state: Mapping[str, torch.Tensor],
     *,
-    seed: int,
+    seeds: Sequence[int],
 ) -> torch.Tensor:
     copy_task_lora_state_(runtime.policy, state, runtime.lora_contract)
-    generator = torch.Generator(device="cpu").manual_seed(seed)
-    noise = torch.randn(
-        1,
-        int(runtime.policy.config.chunk_size),
-        int(runtime.policy.config.max_action_dim),
-        generator=generator,
-        dtype=torch.float32,
-    ).to(runtime.context.device)
+    batch_sizes = {
+        int(value.shape[0])
+        for value in query.values()
+        if isinstance(value, torch.Tensor) and value.ndim > 0
+    }
+    if (
+        batch_sizes != {4}
+        or len(seeds) != 4
+        or len(set(int(value) for value in seeds)) != 4
+    ):
+        raise ExpertManifoldError("fixed-action Reward-Credit probe is not K4")
+    noises = []
+    for seed in seeds:
+        generator = torch.Generator(device="cpu").manual_seed(int(seed))
+        noises.append(
+            torch.randn(
+                1,
+                int(runtime.policy.config.chunk_size),
+                int(runtime.policy.config.max_action_dim),
+                generator=generator,
+                dtype=torch.float32,
+            )
+        )
+    noise = torch.cat(noises, dim=0).to(runtime.context.device)
     moved = {
         name: value.to(runtime.context.device, non_blocking=True)
         for name, value in query.items()
     }
     with (
         _policy_attention_state(runtime.policy),
-        torch.autocast(device_type="cuda", dtype=torch.bfloat16),
+        torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ),
     ):
         action = runtime.policy.predict_action_chunk(moved, noise=noise, num_steps=10)
-    if action.ndim != 3 or action.shape[0] != 1:
+    if action.ndim != 3 or action.shape[0] != 4:
         raise ExpertManifoldError("fixed-action Reward-Credit probe changed")
     return action.detach()
+
+
+def _decode_profile_lora(
+    runtime: V6PriorRuntime, objective: Any, motion: torch.Tensor
+) -> Mapping[str, torch.Tensor]:
+    if objective.program_before is None or objective.correct_lora_before is None:
+        raise ExpertManifoldError("Reward-Credit profile lost before-state")
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        after_program = (
+            objective.program_before + motion.to(dtype=objective.program_before.dtype)
+        ).to(dtype=torch.float32)
+        return runtime.writer.base_writer.decode_slots(after_program[None])
+
+
+def _record_lora_evidence(
+    row: torch.Tensor,
+    before_state: Mapping[str, torch.Tensor],
+    after_state: Mapping[str, torch.Tensor],
+) -> None:
+    for name, before in before_state.items():
+        difference = after_state[name] - before
+        columns = (2, 3) if name.endswith(".lora_A.default.weight") else (4, 5)
+        row[columns[0]].add_(difference.float().square().sum())
+        row[columns[1]].add_(difference.numel())
+
+
+def _record_action_evidence(
+    runtime: V6PriorRuntime,
+    row: torch.Tensor,
+    objective: Any,
+    after_state: Mapping[str, torch.Tensor],
+) -> None:
+    panel = objective.fixed_policy_panel
+    if (panel is not None) is not bool(objective.credit.mixed):
+        raise ExpertManifoldError(
+            "Reward-Credit mixed task action probe coverage changed"
+        )
+    if panel is None:
+        return
+    row[1] = 1
+    before = _fixed_action(
+        runtime, panel.query, objective.correct_lora_before, seeds=panel.noise_seeds
+    )
+    after = _fixed_action(runtime, panel.query, after_state, seeds=panel.noise_seeds)
+    difference = after - before
+    row[6].add_(difference.float().square().sum())
+    row[7] = difference.numel()
+    row[8] = 4
+    row[9] = 2
+
+
+def _gather_response_evidence(
+    runtime: V6PriorRuntime, local_evidence: torch.Tensor
+) -> torch.Tensor:
+    gathered = local_evidence
+    if runtime.context.world_size > 1:
+        gathered = torch.empty(
+            runtime.context.world_size * local_evidence.shape[0],
+            local_evidence.shape[1],
+            dtype=local_evidence.dtype,
+            device=local_evidence.device,
+        )
+        dist.all_gather_into_tensor(gathered, local_evidence.contiguous())
+    order = gathered[:, 0].to(dtype=torch.long).argsort()
+    gathered = gathered.index_select(0, order)
+    if not torch.equal(
+        gathered[:, 0].to(dtype=torch.long),
+        torch.arange(24, dtype=torch.long, device=gathered.device),
+    ):
+        raise ExpertManifoldError("Reward-Credit action probe task order changed")
+    return gathered
+
+
+def _probe_response_rows(
+    evidence_rows: Sequence[Sequence[float]],
+) -> list[dict[str, Any]]:
+    probe_rows = []
+    for values in evidence_rows:
+        if values[1] == 0:
+            continue
+        if values[1] != 1:
+            raise ExpertManifoldError("Reward-Credit action probe flag changed")
+        probe_rows.append(
+            {
+                "task_ordinal": int(values[0]),
+                "query_count": int(values[8]),
+                "policy_forwards": int(values[9]),
+                "lora_a_value_count": int(values[3]),
+                "lora_a_response_rms": math.sqrt(values[2] / max(values[3], 1.0)),
+                "lora_b_value_count": int(values[5]),
+                "lora_b_response_rms": math.sqrt(values[4] / max(values[5], 1.0)),
+                "fixed_action_value_count": int(values[7]),
+                "fixed_action_response_rms": math.sqrt(values[6] / max(values[7], 1.0)),
+            }
+        )
+    return probe_rows
+
+
+def _summarize_response_evidence(gathered: torch.Tensor) -> dict[str, Any]:
+    lora_values = gathered[:, 2:6].sum(dim=0).detach().cpu().tolist()
+    probe_rows = _probe_response_rows(gathered.detach().cpu().tolist())
+    action_square = math.fsum(
+        float(row["fixed_action_response_rms"]) ** 2
+        * int(row["fixed_action_value_count"])
+        for row in probe_rows
+    )
+    action_count = sum(int(row["fixed_action_value_count"]) for row in probe_rows)
+    return {
+        "lora_a_response_rms": math.sqrt(lora_values[0] / max(lora_values[1], 1.0)),
+        "lora_b_response_rms": math.sqrt(lora_values[2] / max(lora_values[3], 1.0)),
+        "fixed_action_response_rms": math.sqrt(action_square / max(action_count, 1)),
+        "fixed_action_probe_task_count": len(probe_rows),
+        "fixed_action_probe_query_count": sum(
+            int(row["query_count"]) for row in probe_rows
+        ),
+        "fixed_action_probe_policy_forwards": sum(
+            int(row["policy_forwards"]) for row in probe_rows
+        ),
+        "fixed_action_passing_task_count": sum(
+            float(row["fixed_action_response_rms"]) > 0 for row in probe_rows
+        ),
+        "fixed_action_task_rows": probe_rows,
+    }
 
 
 def profile_lora_response(
     runtime: V6PriorRuntime,
     local: Sequence[Any],
     correct_motion: torch.Tensor,
-) -> dict[str, float | int]:
-    accumulators = torch.zeros(8, dtype=torch.float64, device=runtime.context.device)
+) -> dict[str, Any]:
+    if len(local) != 24 // runtime.context.world_size:
+        raise ExpertManifoldError("Reward-Credit profile local coverage changed")
+    # ordinal, probe, A square/count, B square/count, action square/count,
+    # K4 query count, policy invocation count.
+    evidence = torch.zeros(
+        len(local), 10, dtype=torch.float64, device=runtime.context.device
+    )
     try:
-        for objective in local:
-            if (
-                objective.program_before is None
-                or objective.correct_lora_before is None
-            ):
-                raise ExpertManifoldError("Reward-Credit profile lost before-state")
-            motion = correct_motion[objective.task.ordinal]
-            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-                after_program = (
-                    objective.program_before
-                    + motion.to(dtype=objective.program_before.dtype)
-                ).to(dtype=torch.float32)
-                after = runtime.writer.base_writer.decode_slots(after_program[None])
-            for name, before in objective.correct_lora_before.items():
-                difference = after[name] - before
-                index = 0 if name.endswith(".lora_A.default.weight") else 1
-                accumulators[index].add_(difference.float().square().sum())
-                accumulators[index + 2].add_(difference.numel())
-            if objective.fixed_policy_query is not None:
-                before_action = _fixed_action(
-                    runtime,
-                    objective.fixed_policy_query,
-                    objective.correct_lora_before,
-                    seed=202608110000 + objective.task.ordinal,
-                )
-                after_action = _fixed_action(
-                    runtime,
-                    objective.fixed_policy_query,
-                    after,
-                    seed=202608110000 + objective.task.ordinal,
-                )
-                difference = after_action - before_action
-                accumulators[4].add_(difference.float().square().sum())
-                accumulators[5].add_(difference.numel())
-                accumulators[6].add_(1)
-                accumulators[7].add_(
-                    difference.float().square().mean().sqrt().gt(0).to(torch.float64)
-                )
+        for row, objective in zip(evidence, local, strict=True):
+            row[0] = objective.task.ordinal
+            after = _decode_profile_lora(
+                runtime, objective, correct_motion[objective.task.ordinal]
+            )
+            _record_lora_evidence(row, objective.correct_lora_before, after)
+            _record_action_evidence(runtime, row, objective, after)
     finally:
         copy_task_lora_state_(
             runtime.policy, runtime.identity_state, runtime.lora_contract
         )
-    if runtime.context.world_size > 1:
-        dist.all_reduce(accumulators, op=dist.ReduceOp.SUM)
-    values = accumulators.detach().cpu().tolist()
-    return {
-        "lora_a_response_rms": math.sqrt(values[0] / max(values[2], 1.0)),
-        "lora_b_response_rms": math.sqrt(values[1] / max(values[3], 1.0)),
-        "fixed_action_response_rms": math.sqrt(values[4] / max(values[5], 1.0)),
-        "fixed_action_probe_task_count": int(values[6]),
-        "fixed_action_probe_policy_forwards": int(2 * values[6]),
-        "fixed_action_passing_task_count": int(values[7]),
-    }
+    return _summarize_response_evidence(_gather_response_evidence(runtime, evidence))
 
 
 @torch.no_grad()
@@ -231,7 +378,78 @@ def _credit_checks(
     }
 
 
+def _finite_positive(row: Mapping[str, Any], name: str) -> bool:
+    value = float(row.get(name, math.nan))
+    return math.isfinite(value) and value > 0
+
+
+def _valid_action_response_row(
+    row: Mapping[str, Any], *, queries: int, forwards: int
+) -> bool:
+    return (
+        int(row.get("query_count", -1)) == queries
+        and int(row.get("policy_forwards", -1)) == forwards
+        and all(
+            int(row.get(name, 0)) > 0
+            for name in (
+                "lora_a_value_count",
+                "lora_b_value_count",
+                "fixed_action_value_count",
+            )
+        )
+        and all(
+            _finite_positive(row, name)
+            for name in (
+                "lora_a_response_rms",
+                "lora_b_response_rms",
+                "fixed_action_response_rms",
+            )
+        )
+    )
+
+
+def _all_mixed_action_rows_pass(
+    records: Sequence[Mapping[str, Any]],
+    response: Mapping[str, Any],
+    gates: Mapping[str, Any],
+) -> bool:
+    mixed_records = [value for value in records if value.get("mixed") is True]
+    expected_ordinals = sorted(int(value["task_ordinal"]) for value in mixed_records)
+    action_rows = response.get("fixed_action_task_rows", ())
+    if not isinstance(action_rows, Sequence) or isinstance(action_rows, (str, bytes)):
+        return False
+    if not all(isinstance(value, Mapping) for value in action_rows):
+        return False
+    observed_ordinals = [int(value.get("task_ordinal", -1)) for value in action_rows]
+    required_queries = int(gates["fixed_action_queries_per_mixed_task"])
+    required_forwards = int(gates["fixed_action_policy_forwards_per_mixed_task"])
+    coverage = (
+        gates.get("mixed_action_probe_scope") == "all_mixed_tasks"
+        and len({str(value.get("suite")) for value in mixed_records})
+        == int(gates["mixed_suite_count"])
+        and observed_ordinals == expected_ordinals
+        and len(set(observed_ordinals)) == len(expected_ordinals)
+    )
+    summaries = (
+        int(response.get("fixed_action_probe_task_count", -1)) == len(expected_ordinals)
+        and int(response.get("fixed_action_probe_query_count", -1))
+        == required_queries * len(expected_ordinals)
+        and int(response.get("fixed_action_probe_policy_forwards", -1))
+        == required_forwards * len(expected_ordinals)
+        and int(response.get("fixed_action_passing_task_count", -1))
+        == len(expected_ordinals)
+    )
+    rows_pass = all(
+        _valid_action_response_row(
+            value, queries=required_queries, forwards=required_forwards
+        )
+        for value in action_rows
+    )
+    return coverage and summaries and rows_pass
+
+
 def _mechanism_checks(
+    records: Sequence[Mapping[str, Any]],
     update: Mapping[str, Any],
     application: Mapping[str, Any],
     response: Mapping[str, Any],
@@ -256,12 +474,11 @@ def _mechanism_checks(
         and math.isfinite(float(response.get("lora_b_response_rms", math.nan)))
         and float(response["lora_a_response_rms"]) > 0
         and float(response["lora_b_response_rms"]) > 0,
-        "program_to_action": math.isfinite(
+        "program_to_all_mixed_actions": math.isfinite(
             float(response.get("fixed_action_response_rms", math.nan))
         )
         and float(response["fixed_action_response_rms"]) > 0
-        and int(response.get("fixed_action_probe_task_count", -1)) == 4
-        and int(response.get("fixed_action_passing_task_count", -1)) == 4,
+        and _all_mixed_action_rows_pass(records, response, gates),
     }
 
 
@@ -305,7 +522,7 @@ def profile_passes(
         homogeneous_task_count=len(homogeneous),
     )
     checks.update(_credit_checks(mixed, homogeneous))
-    checks.update(_mechanism_checks(update, application, response, gates))
+    checks.update(_mechanism_checks(records, update, application, response, gates))
     checks.update(_runtime_checks(row, gates))
     return all(checks.values()), {
         "checks": checks,

@@ -485,9 +485,45 @@ def _profile_artifact(value: object, *, config: Mapping[str, Any]) -> bool:
         run = json.loads(
             (expected_root / "run_contract.json").read_text(encoding="utf-8")
         )
-        from ember.expert_manifold.v6_prior_profile import profile_passes
+        completion = json.loads(
+            (expected_root / "completion.json").read_text(encoding="utf-8")
+        )
+        invocations = [
+            json.loads(line)
+            for line in (expected_root / "invocations.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        ]
+        git = run.get("git", {}) if isinstance(run, Mapping) else {}
+        run_commit = git.get("commit") if isinstance(git, Mapping) else None
+        from ember.expert_manifold.v6_prior_profile import (
+            profile_seal_payload_matches,
+        )
 
-        passed, evidence = profile_passes(config, result["macros"])
+        payload_matches = profile_seal_payload_matches(
+            config=config,
+            result=result,
+            run=run,
+            completion=completion,
+            invocations=invocations,
+            profile_schema=V6_PRIOR_PROFILE_SCHEMA,
+            completion_schema=V6_PRIOR_COMPLETION_SCHEMA,
+            profile_gates=_PROFILE_GATES,
+        )
+        evidence_commit = value.get("run_commit")
+        lineage_matches = isinstance(
+            evidence_commit, str
+        ) and git_commit_in_active_authority_lineage(evidence_commit)
+        file_matches = all(
+            (
+                path.is_file(),
+                not path.is_symlink(),
+                path.stat().st_size == expected_bytes > 0,
+                path == expected_root / "mechanism_profile.json",
+                not (expected_root / "checkpoints").exists(),
+            )
+        )
     except (
         ExpertManifoldError,
         json.JSONDecodeError,
@@ -497,25 +533,16 @@ def _profile_artifact(value: object, *, config: Mapping[str, Any]) -> bool:
         ValueError,
     ):
         return False
-    return (
-        set(value) == {"path", "bytes", "schema", "passed", "run_commit"}
-        and value.get("schema") == V6_PRIOR_PROFILE_SCHEMA
-        and value.get("passed") is True
-        and isinstance(value.get("run_commit"), str)
-        and git_commit_in_active_authority_lineage(str(value["run_commit"]))
-        and path.is_file()
-        and not path.is_symlink()
-        and path.stat().st_size == expected_bytes > 0
-        and path == expected_root / "mechanism_profile.json"
-        and isinstance(result, Mapping)
-        and result.get("schema_version") == V6_PRIOR_PROFILE_SCHEMA
-        and result.get("passed") is True
-        and result.get("schedule_macro") == 0
-        and result.get("retain_weight") is False
-        and result.get("gates") == _PROFILE_GATES
-        and result.get("gate_evidence") == evidence
-        and passed is True
-        and run.get("git", {}).get("commit") == value.get("run_commit")
+    return all(
+        (
+            set(value) == {"path", "bytes", "schema", "passed", "run_commit"},
+            value.get("schema") == V6_PRIOR_PROFILE_SCHEMA,
+            value.get("passed") is True,
+            lineage_matches,
+            file_matches,
+            run_commit == evidence_commit,
+            payload_matches,
+        )
     )
 
 

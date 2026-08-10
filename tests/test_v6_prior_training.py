@@ -18,6 +18,7 @@ from ember.expert_manifold.v6_prior_runtime import _reconcile_metrics_cursor
 from ember.expert_manifold.v6_prior_training import (
     TaskObjective,
     _gather_full48,
+    _start_event,
     _task_record,
     build_parser,
 )
@@ -28,6 +29,29 @@ from ember.reward.rollout import RewardTrajectory
 
 def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
+
+
+def test_start_event_reads_the_sealed_runtime_recipe() -> None:
+    runtime = SimpleNamespace(
+        args=SimpleNamespace(mode="mechanism-profile"),
+        segment=SimpleNamespace(start_macro=0, stop_macro=1),
+        ownership=SimpleNamespace(frozen_parameter_count=123),
+        writer=SimpleNamespace(
+            program_memory=SimpleNamespace(value=torch.empty((2, 3, 4)))
+        ),
+        config={
+            "optimization": {
+                "rollout_policy_batch_size": 7,
+                "reward_replay_chunk_batch_size": 11,
+            },
+            "objective": {"flow_mc_samples": 13},
+        },
+    )
+    event = _start_event(runtime)
+    assert event["rollout_policy_batch_size"] == 7
+    assert event["reward_replay_chunk_batch_size"] == 11
+    assert event["flow_mc_samples"] == 13
+    assert "reward_replay_microbatch_size" not in event
 
 
 def _trajectory(cursor: int, *, success: bool) -> RewardTrajectory:

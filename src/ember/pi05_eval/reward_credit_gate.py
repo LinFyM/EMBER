@@ -12,6 +12,9 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_RUN_SCHEMA,
 )
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval_contract import (
+    git_state_is_clean_pushed_or_frozen_authority,
+)
 from ember.pi05_eval.analysis import (
     SIX_ARM_CONDITIONS,
     _assert_row_pairing,
@@ -30,6 +33,9 @@ from ember.pi05_eval.paired_metrics import (
 
 DECISION_EVIDENCE_SCHEMA = "ember_pi05_v6_reward_credit_decision_evidence_v1"
 SIX_ARM_EVIDENCE_SCHEMA = "ember_pi05_v6_reward_credit_six_arm_evidence_v1"
+CONTROL_TRIGGER_EVIDENCE_SCHEMA = (
+    "ember_pi05_v6_reward_credit_control_trigger_evidence_v1"
+)
 
 
 def _fail(message: str) -> None:
@@ -50,6 +56,56 @@ def _registered_roots(
     return run_decision[key][condition], config_decision[key][condition]
 
 
+def _evaluation_contract_matches(
+    contract: Mapping[str, Any],
+    *,
+    checkpoint: Path,
+    output_dir: Path,
+    run_commit: str,
+    requested_condition: str,
+) -> bool:
+    adapter = contract.get("adapter", {})
+    tasks = contract.get("tasks", ())
+    try:
+        adapter_checkpoint: Path | None = Path(
+            str(adapter.get("writer_asset", {}).get("checkpoint", ""))
+        ).resolve()
+        family = _writer_family(adapter)[0]
+    except (OSError, RuntimeError, Pi05EvaluationError):
+        adapter_checkpoint = None
+        family = ""
+    observed = {
+        "mode": contract.get("mode"),
+        "role": contract.get("role"),
+        "output_dir": contract.get("output_dir"),
+        "family": family,
+        "condition": adapter.get("video_condition"),
+        "sampling": adapter.get("video_schedule", {}).get("sampling_mode"),
+        "checkpoint": adapter_checkpoint,
+        "commit": contract.get("git", {}).get("commit"),
+    }
+    expected = {
+        "mode": "formal",
+        "role": "validation",
+        "output_dir": str(output_dir),
+        "family": "v6_reward_credit_program_v1",
+        "condition": requested_condition,
+        "sampling": "without_replacement",
+        "checkpoint": checkpoint,
+        "commit": run_commit,
+    }
+    return (
+        observed == expected
+        and len(tasks) == 8
+        and all(
+            task.get("split_role") == "validation"
+            and tuple(task.get("init_state_ids", ())) == tuple(range(50))
+            for task in tasks
+        )
+        and git_state_is_clean_pushed_or_frozen_authority(contract.get("git", {}))
+    )
+
+
 def _registration_matches(
     *,
     checkpoint: Path,
@@ -63,6 +119,8 @@ def _registration_matches(
     checkpoint_contract: Any,
     registered: Any,
     run_commit: str,
+    requested_condition: str,
+    evaluation_contract: Mapping[str, Any],
 ) -> bool:
     return (
         checkpoint.parent.name == "checkpoints"
@@ -84,12 +142,20 @@ def _registration_matches(
         and isinstance(registered, str)
         and bool(registered)
         and Path(registered).resolve() == configured_output == output_dir
+        and _evaluation_contract_matches(
+            evaluation_contract,
+            checkpoint=checkpoint,
+            output_dir=output_dir,
+            run_commit=run_commit,
+            requested_condition=requested_condition,
+        )
     )
 
 
 def validate_registered_reward_credit_output(
     args: Any,
     output_dir: Path,
+    evaluation_contract: Mapping[str, Any],
 ) -> None:
     """Reject Reward-Credit strict400 outside its pre-registered root."""
 
@@ -98,9 +164,6 @@ def validate_registered_reward_credit_output(
         or getattr(args, "expert_manifold_config", None) is None
         or getattr(args, "expert_manifold_checkpoint", None) is None
     ):
-        return
-    condition = getattr(args, "expert_manifold_video_condition", None)
-    if condition not in SIX_ARM_CONDITIONS:
         return
     config_path = args.expert_manifold_config.resolve()
     try:
@@ -111,16 +174,13 @@ def validate_registered_reward_credit_output(
         ) from error
     if config.get("schema_version") != V6_PRIOR_CONFIG_SCHEMA:
         return
+    condition = getattr(args, "expert_manifold_video_condition", None)
+    if condition not in SIX_ARM_CONDITIONS:
+        raise Pi05EvaluationError(
+            "formal Reward-Credit evaluation requires one registered six-arm condition"
+        )
 
     checkpoint = args.expert_manifold_checkpoint.resolve()
-    try:
-        historical = (
-            config_path.parents[1] / str(config["initialization"]["checkpoint"])
-        ).resolve()
-    except (KeyError, TypeError, ValueError):
-        historical = None
-    if checkpoint == historical:
-        return
     training_root = checkpoint.parent.parent
     try:
         run = json.loads(
@@ -164,10 +224,33 @@ def validate_registered_reward_credit_output(
         checkpoint_contract=checkpoint_contract,
         registered=registered,
         run_commit=run_commit,
+        requested_condition=condition,
+        evaluation_contract=evaluation_contract,
     )
     if not valid:
         raise Pi05EvaluationError(
             "Reward-Credit evaluation output is not its pre-registered root"
+        )
+    if condition != "correct":
+        resolved_decision = {
+            **config_decision,
+            **{
+                f"macro{candidate_macro}_registered_root": str(
+                    (
+                        config_repo_root
+                        / config_decision[f"macro{candidate_macro}_registered_root"]
+                    ).resolve()
+                )
+                for candidate_macro in (1, 2)
+            },
+        }
+        load_reward_credit_control_trigger_evidence(
+            training_root=training_root,
+            current_checkpoint=checkpoint,
+            macro=macro,
+            expected_commit=run_commit,
+            decision_evaluation=resolved_decision,
+            decision_gates=config_formal["decision_gates"],
         )
 
 
@@ -211,6 +294,7 @@ def _candidate_rows(
     *,
     resume_checkpoint: Path,
     expected_commit: str,
+    expected_macro: int = 1,
 ) -> dict[EpisodeKey, Mapping[str, Any]]:
     rows = _formal_panel_index(result)
     asset = result["adapter"].get("writer_asset", {})
@@ -226,10 +310,10 @@ def _candidate_rows(
         and result["adapter"].get("video_condition") == "correct"
         and _method_macro(
             result,
-            allowed_macros=(1,),
-            context="Reward-Credit macro1 support gate",
+            allowed_macros=(expected_macro,),
+            context=f"Reward-Credit macro{expected_macro} gate",
         )
-        == 1
+        == expected_macro
         and result.get("paired_control", {}).get("git", {}).get("commit")
         == expected_commit
         and checkpoint_matches
@@ -237,8 +321,81 @@ def _candidate_rows(
         and isinstance(manifest, Mapping)
         and manifest.get("schema") == V6_PRIOR_CHECKPOINT_SCHEMA
     ):
-        _fail("Reward-Credit macro1 checkpoint identity changed")
+        _fail(f"Reward-Credit macro{expected_macro} checkpoint identity changed")
     return rows
+
+
+def _registered_candidate_correct(
+    *,
+    root: Path,
+    checkpoint: Path,
+    macro: int,
+    expected_commit: str,
+) -> int:
+    normalized = root.resolve()
+    results = _validated_roots((normalized,))
+    rows = _candidate_rows(
+        results[str(normalized)],
+        resume_checkpoint=checkpoint,
+        expected_commit=expected_commit,
+        expected_macro=macro,
+    )
+    return int(summarize_panel(list(rows.values()))["overall"]["successes"])
+
+
+def load_reward_credit_control_trigger_evidence(
+    *,
+    training_root: Path,
+    current_checkpoint: Path,
+    macro: int,
+    expected_commit: str,
+    decision_evaluation: Mapping[str, Any],
+    decision_gates: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Authorize only informative same-checkpoint controls after correct400."""
+
+    if macro not in (1, 2):
+        _fail("Reward-Credit control trigger macro changed")
+    correct_root = Path(
+        str(decision_evaluation[f"macro{macro}_registered_root"])
+    ).resolve()
+    correct = _registered_candidate_correct(
+        root=correct_root,
+        checkpoint=current_checkpoint,
+        macro=macro,
+        expected_commit=expected_commit,
+    )
+    first_threshold = int(decision_gates["first_full_six_arm_correct_min"])
+    goal_threshold = int(decision_gates["goal_full_six_arm_correct_min"])
+    previous_correct: int | None = None
+    required = correct >= first_threshold
+    reason = "first_checkpoint_at_or_above_control_threshold"
+    if macro == 2:
+        previous_correct = _registered_candidate_correct(
+            root=Path(str(decision_evaluation["macro1_registered_root"])),
+            checkpoint=training_root / "checkpoints/macro_00000001",
+            macro=1,
+            expected_commit=expected_commit,
+        )
+        first_new_trigger = previous_correct < first_threshold <= correct
+        goal_checkpoint_trigger = correct >= goal_threshold
+        required = first_new_trigger or goal_checkpoint_trigger
+        reason = (
+            "first_checkpoint_at_or_above_control_threshold"
+            if first_new_trigger
+            else "goal_candidate_requires_same_checkpoint_controls"
+        )
+    if not required:
+        _fail("Reward-Credit control condition is not authorized by correct400")
+    return {
+        "schema_version": CONTROL_TRIGGER_EVIDENCE_SCHEMA,
+        "macro": macro,
+        "correct_root": str(correct_root),
+        "correct": correct,
+        "previous_correct": previous_correct,
+        "reason": reason,
+        "support_gate_independent": True,
+    }
 
 
 def reward_credit_decision_evidence(

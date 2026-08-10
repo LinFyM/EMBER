@@ -56,12 +56,22 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
 - clean frozen`c4507e9`的首次full24×K4×Nmc4 B2 profile在`gpu02:0--5`完成24 tasks/96 rollouts，11 mixed/
   13 homogeneous、full48 rank48、closure0、LoRA/action response和runtime health均成立，但按旧预注册门正式
   non-pass：固定probes`0/7/14/21`中只有0是mixed，另外三个homogeneous按合同zero credit，故不应被要求
-  action-nonzero。旧artifact不可追认或续用。active修正是profile schema v2的all-mixed K4真实query/raw
-  per-task action gate、physical B8和冻结的cost-balanced one-suite-per-rank map；formal仍blocked，下一GPU
-  动作只允许新clean frozen/new root的fresh0→1 discarded profile。
-- 当前all-mixed/B8修正的全仓CPU回归为`338 passed in 37.69s`；compileall、27份JSON、Black、diff-check和
-  architecture guard均通过，guard为0 hard violation且无parallel family。这是新profile的CPU合同，不是GPU
-  或性能结果。
+  action-nonzero。旧artifact不可追认或续用。
+- clean frozen`e6024cf97200721b13834c6ad81de85ce6588ffb`的新profile v2随后在`gpu02:0--5`自然完成并
+  正式`passed=true`：24 tasks/96 rollouts、11 mixed/13 homogeneous、60/36 successes/failures、full48 rank48、
+  negative/correct=`.01704835`、closure=`0`；11/11 mixed tasks的Program→LoRA A/B→真实BF16 action均
+  finite/nonzero且覆盖四suite，homogeneous direct credit全部exact zero。raw forward计数唯一反推出physical
+  B8（928 invocations；同面板B2为3648），0 OOM/nonfinite/watchdog且不保留checkpoint。wall=`507.305s`，
+  peak allocated/reserved=`36,575,930,368/40,928,018,432B`；六卡结束后均已释放。
+- active config已经由raw profile/run/completion/invocation重新验证并置为`formal_ready`；seal validator还会
+  核对sealed optimization/runtime、唯一B8 forward公式、A40 topology与无checkpoint，不能靠artifact自报
+  通过。正式evaluator现还会精确锁定B8、validation 8×50、without-replacement、同一clean pushed/frozen
+  training/evaluation commit和预注册root；historical checkpoint不能冒充Reward-Credit cycle。correct arm必须
+  先完成，首次`>=144`的checkpoint才开放五个controls，cycle2 support与control触发相互独立。prepare使用
+  NFS同目录原子`mkdir`跨进程锁，在私有staging完成全部CPU校验后以一次目录rename发布唯一root；正式Reward
+  条件只能取预注册六臂，`shuffled_keep_first`等额外parser条件不能绕过门。加载`.env.local`后的当前全仓回归
+  为`358 passed in 23.72s`。
+  下一GPU动作只允许clean pushed seal commit的frozen worktree从`M0=0,Lambda0=I`做formal cycle0→1。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
   EMBER GPU任务；不得把RLS的CPU矩阵等价、profile门或reconstruction/几何当作性能结果。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -168,11 +178,9 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 - CPU门必须覆盖LOO零和、全成/全败零、success/failure符号、executed-prefix mask、与旧ASPO的一阶等价、
   cotangent shape/finite、frozen对象零grad、full48顺序/negative-zero、RLS closure、fresh/resume全游标和0
   information-wall读取。通过前不得启动GPU。
-- 首次B2 GPU profile已正式non-pass且保持immutable；下一GPU只允许一个全新root的full24×K4×Nmc4 B8
-  one-epoch discarded profile。它必须96/96 rollouts、至少6 mixed tasks、mixed cotangent finite/nonzero、
-  all-mixed K4 raw Program→LoRA A/B→fixed-action逐task非零并覆盖四suite、0 OOM/nonfinite/watchdog，无old
-  forward/second epoch。保持六卡、每rank4 tasks、BF16、persistent policy/env和最大安全并行，不为微差降吞吐。
-- profile通过后formal从macro0 fresh只跑cycle0→1，直接strict correct400，不跑80-row screen。cycle2门为
+- 首次B2 GPU profile保持immutable non-pass；新B8/all-mixed GPU profile已通过并弃用profile权重。formal从
+  macro0 fresh只跑cycle0→1，保持六卡、每rank4 tasks、BF16、K4/Nmc4/B8、persistent policy/env、balanced
+  rank map和最大安全并行，不为微差降吞吐；直接strict correct400，不跑80-row screen。cycle2门为
   correct≥140、相对macro0 lost≤6、breadth≥6且gained>lost；首次≥144补同checkpoint六臂，严格>150后完成
   correct/same/wrong/shuffled/reversed/no-video因果裁决。cycle1未过门则停止，不扫reward scale/K/Nmc/seed/
   RLS超参；只有credit、closure、BA/action传递全健康而closed-loop仍失败，才上移到P256/Procedure表示。

@@ -9,6 +9,7 @@ import ember.pi05_eval.reward_credit_gate as gate_module
 from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.reward_credit_gate import (
+    load_reward_credit_control_trigger_evidence,
     reward_credit_decision_evidence,
     reward_credit_six_arm_evidence,
 )
@@ -253,3 +254,133 @@ def test_six_arm_goal_consumes_registered_roots_and_causality_thresholds(
     )
     assert failed["goal_passed"] is False
     assert failed["negative_control_checks"]["reversed"] is False
+
+
+def _control_trigger_fixture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    macro1_correct: int,
+    macro2_correct: int,
+) -> tuple[Path, Path, dict, dict]:
+    training_root = tmp_path / "training"
+    checkpoint1 = training_root / "checkpoints/macro_00000001"
+    checkpoint2 = training_root / "checkpoints/macro_00000002"
+    roots = {1: tmp_path / "correct1", 2: tmp_path / "correct2"}
+    all_successes = list(_rows(set()))
+    results = {
+        str(roots[1].resolve()): _result(
+            family="v6_reward_credit_program_v1",
+            macro=1,
+            commit="current-commit",
+            rows=_rows(set(all_successes[:macro1_correct])),
+            checkpoint=checkpoint1,
+        ),
+        str(roots[2].resolve()): _result(
+            family="v6_reward_credit_program_v1",
+            macro=2,
+            commit="current-commit",
+            rows=_rows(set(all_successes[:macro2_correct])),
+            checkpoint=checkpoint2,
+        ),
+    }
+
+    def validated(requested: tuple[Path, ...]) -> dict:
+        return {str(path.resolve()): results[str(path.resolve())] for path in requested}
+
+    monkeypatch.setattr(gate_module, "_validated_roots", validated)
+    decision = {
+        "macro1_registered_root": str(roots[1]),
+        "macro2_registered_root": str(roots[2]),
+    }
+    gates = {
+        "first_full_six_arm_correct_min": 3,
+        "goal_full_six_arm_correct_min": 4,
+    }
+    return training_root, checkpoint2, decision, gates
+
+
+def test_control_trigger_uses_correct_threshold_not_support_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    isolated_analysis: None,
+) -> None:
+    training_root, _, decision, gates = _control_trigger_fixture(
+        tmp_path,
+        monkeypatch,
+        macro1_correct=3,
+        macro2_correct=3,
+    )
+    checkpoint1 = training_root / "checkpoints/macro_00000001"
+    evidence = load_reward_credit_control_trigger_evidence(
+        training_root=training_root,
+        current_checkpoint=checkpoint1,
+        macro=1,
+        expected_commit="current-commit",
+        decision_evaluation=decision,
+        decision_gates=gates,
+    )
+    assert evidence["correct"] == 3
+    assert evidence["support_gate_independent"] is True
+
+
+def test_control_trigger_rejects_macro1_below_threshold(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    isolated_analysis: None,
+) -> None:
+    training_root, _, decision, gates = _control_trigger_fixture(
+        tmp_path,
+        monkeypatch,
+        macro1_correct=2,
+        macro2_correct=3,
+    )
+    with pytest.raises(Pi05EvaluationError, match="not authorized"):
+        load_reward_credit_control_trigger_evidence(
+            training_root=training_root,
+            current_checkpoint=training_root / "checkpoints/macro_00000001",
+            macro=1,
+            expected_commit="current-commit",
+            decision_evaluation=decision,
+            decision_gates=gates,
+        )
+
+
+@pytest.mark.parametrize(
+    ("macro1_correct", "macro2_correct", "allowed", "reason"),
+    (
+        (2, 3, True, "first_checkpoint_at_or_above_control_threshold"),
+        (3, 3, False, None),
+        (3, 4, True, "goal_candidate_requires_same_checkpoint_controls"),
+    ),
+)
+def test_macro2_controls_run_only_for_a_new_first_trigger_or_goal_candidate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    isolated_analysis: None,
+    macro1_correct: int,
+    macro2_correct: int,
+    allowed: bool,
+    reason: str | None,
+) -> None:
+    training_root, checkpoint2, decision, gates = _control_trigger_fixture(
+        tmp_path,
+        monkeypatch,
+        macro1_correct=macro1_correct,
+        macro2_correct=macro2_correct,
+    )
+    arguments = {
+        "training_root": training_root,
+        "current_checkpoint": checkpoint2,
+        "macro": 2,
+        "expected_commit": "current-commit",
+        "decision_evaluation": decision,
+        "decision_gates": gates,
+    }
+    if not allowed:
+        with pytest.raises(Pi05EvaluationError, match="not authorized"):
+            load_reward_credit_control_trigger_evidence(**arguments)
+        return
+    evidence = load_reward_credit_control_trigger_evidence(**arguments)
+    assert evidence["reason"] == reason
+    assert evidence["previous_correct"] == macro1_correct

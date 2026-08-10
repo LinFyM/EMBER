@@ -29,19 +29,21 @@ from ember.pi05_eval.launcher import (
 from ember.pi05_eval.reward_credit_gate import (
     validate_registered_reward_credit_output as _validate_registered_reward_credit_output,
 )
+from ember.pi05_eval.preparation import (
+    parse_gpu_indices as _parse_gpu_indices,
+    prepare_evaluation_run,
+    shards_from_contract as _shards_from_contract,
+)
 from ember.eval_adapters import (
     adapter_requests as _adapter_requests,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
     inspect_task_expert_adapter as _inspect_task_expert_adapter,
     inspect_expert_manifold_writer_adapter as _inspect_expert_manifold_writer_adapter,
-    source_sft_requested as _source_sft_requested,
 )
 from ember.pi05_eval_contract import (
     RUNTIME_REPLICA_PROFILES,
-    build_run_contract,
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
-    inspect_installed_target_tasks,
     inspect_source_checkpoint,
     inspect_tokenizer,
     load_evaluation_authorities,
@@ -49,8 +51,6 @@ from ember.pi05_eval_contract import (
     SEEN_PANEL_RELATIVE_PATH,
 )
 from ember.pi05_eval_queue import (
-    EvaluationTask,
-    build_cost_balanced_shards,
     failed_jobs,
     initialize_queue,
     publish_json_exclusive,
@@ -222,147 +222,17 @@ def _append_jsonl(path: Path, value: dict[str, Any]) -> None:
         os.fsync(handle.fileno())
 
 
-def _shards_from_contract(contract: dict[str, Any]) -> tuple[Any, ...]:
-    tasks = tuple(
-        EvaluationTask(
-            suite=row["suite"],
-            task_id=int(row["task_id"]),
-            horizon=int(row["horizon"]),
-            init_state_ids=tuple(int(value) for value in row["init_state_ids"]),
-        )
-        for row in contract["tasks"]
-    )
-    return build_cost_balanced_shards(
-        tasks,
-        env_batch_size=int(contract["parallel"]["envs_per_replica"]),
-        target_cost=int(contract["parallel"]["shard_target_cost"]),
-        physical_gpu_count=int(contract["parallel"]["physical_gpu_count"]),
-        replicas_per_gpu=int(contract["parallel"]["replicas_per_gpu"]),
-    )
-
-
-def _parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
-    if value is None:
-        return None
-    try:
-        indices = tuple(int(part.strip()) for part in value.split(","))
-    except ValueError as error:
-        raise Pi05EvaluationError("GPU indices must be comma-separated integers") from error
-    if (
-        not indices
-        or any(index < 0 for index in indices)
-        or len(set(indices)) != len(indices)
-    ):
-        raise Pi05EvaluationError("GPU indices must be a non-empty unique sequence")
-    return indices
-
-
 def prepare_run(
     args: argparse.Namespace,
     *,
     create_evaluation_queue: bool = True,
 ) -> dict[str, Any]:
-    writer_kind, source_sft_requested = _adapter_requests(args)
-    adapter_requested = writer_kind is not None or source_sft_requested
-    output_dir = args.output_dir.resolve()
-    _validate_registered_reward_credit_output(args, output_dir)
-    if output_dir.exists() and any(output_dir.iterdir()):
-        raise Pi05EvaluationError(f"PI05 evaluation output is not empty: {output_dir}")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    authorities = load_evaluation_authorities(args.config, REPO_ROOT)
-    formal_count = int(authorities.config["environment"]["fixed_init_state_count"])
-    if args.mode == "formal" and args.state_count != formal_count:
-        raise Pi05EvaluationError("formal PI05 evaluation requires all 50 fixed states")
-    if args.mode == "screen" and not adapter_requested and args.role != "all_targets":
-        raise Pi05EvaluationError("source-base screen must cover all 40 target tasks")
-    tasks, libero_paths = inspect_installed_target_tasks(
-        authorities,
-        role=args.role,
-        state_count=args.state_count,
-        libero_config_dir=output_dir / "libero_config",
-    )
-    model = inspect_source_checkpoint(
-        authorities,
-        args.source_run,
-        args.checkpoint,
-        evaluation_mode=args.mode,
-    )
-    tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    adapter = None
-    if source_sft_requested:
-        adapter = _inspect_source_sft_adapter(
-            config_path=args.source_sft_config.resolve(),
-            checkpoint=args.source_sft_checkpoint.resolve(),
-            source=model,
-            tasks=tasks,
-            evaluation_role=args.role,
-            require_formal=args.mode != "smoke",
-        )
-    elif writer_kind == "task_expert":
-        adapter = _inspect_task_expert_adapter(
-            config_path=args.task_expert_config.resolve(),
-            bank_root=args.task_expert_bank_root.resolve(),
-            step=int(args.task_expert_step),
-            source=model,
-            tasks=tasks,
-            evaluation_role=args.role,
-            require_formal=args.mode != "smoke",
-        )
-    elif writer_kind == "expert_manifold_writer":
-        adapter = _inspect_expert_manifold_writer_adapter(
-            config_path=args.expert_manifold_config.resolve(),
-            checkpoint=args.expert_manifold_checkpoint.resolve(),
-            video_data_root=args.expert_manifold_video_data_root.resolve(),
-            source=model,
-            tasks=tasks,
-            video_condition=str(args.expert_manifold_video_condition),
-            video_seed=int(authorities.config["rng"]["inference_seed"]),
-            video_sampling_mode=str(args.expert_manifold_video_sampling),
-            require_formal=args.mode != "smoke",
-        )
-    contract = build_run_contract(
-        authorities=authorities,
-        tasks=tasks,
-        libero_paths=libero_paths,
-        model=model,
-        tokenizer=tokenizer,
-        output_dir=output_dir,
-        role=args.role,
-        mode=args.mode,
-        replicas_per_gpu=args.replicas_per_gpu,
-        physical_gpu_ids=_parse_gpu_indices(args.gpu_indices),
+    summary = prepare_evaluation_run(
+        args,
+        repo_root=REPO_ROOT,
         command=sys.argv,
-        adapter=adapter,
-        writer_generators_per_gpu=args.writer_generators_per_gpu,
-        writer_generation_batch_size=args.writer_generation_batch_size,
-        writer_cache_root=args.writer_lora_cache_root,
+        create_evaluation_queue=create_evaluation_queue,
     )
-    publish_json_exclusive(output_dir / "run_contract.json", contract)
-    shards = _shards_from_contract(contract)
-    if create_evaluation_queue:
-        initialize_queue(
-            output_dir / "queue.sqlite3",
-            shards,
-            contract_reference=contract["contract_reference"],
-        )
-    summary = {
-        "event": "prepared",
-        "contract_reference": contract["contract_reference"],
-        "tasks": len(tasks),
-        "states": sum(len(task.init_state_ids) for task in tasks),
-        "shards": len(shards),
-        "replicas_per_gpu": args.replicas_per_gpu,
-        "writer_generators_per_gpu": contract["parallel"][
-            "writer_generators_per_gpu"
-        ],
-        "writer_generation_batch_size": contract["parallel"][
-            "writer_generation_batch_size"
-        ],
-        "writer_lora_cache": contract["writer_lora_cache"],
-        "physical_gpu_ids": contract["parallel"]["physical_gpu_ids"],
-        "arm": contract["arm"],
-        "output_dir": str(output_dir),
-    }
     print(json.dumps(summary, sort_keys=True))
     return summary
 
@@ -422,7 +292,9 @@ def _profile_worker_launch(
     return command, environment
 
 
-def _preflight_gpu_identity(preflight: Mapping[str, Any]) -> tuple[tuple[str, ...], ...]:
+def _preflight_gpu_identity(
+    preflight: Mapping[str, Any]
+) -> tuple[tuple[str, ...], ...]:
     identities = []
     for row in preflight.get("gpus", ()):
         fields = tuple(value.strip() for value in str(row).split(",")[:3])
@@ -438,9 +310,7 @@ def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
     contract_git = contract.get("git", {})
     live_git = git_state(REPO_ROOT)
     physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    launcher_preflight, _ = read_json_with_size(
-        output_dir / WRITER_PROFILE_PREFLIGHT
-    )
+    launcher_preflight, _ = read_json_with_size(output_dir / WRITER_PROFILE_PREFLIGHT)
     live_preflight = _gpu_preflight(physical)
     sizes = _profile_batch_sizes(args.profile_batch_sizes)
     if (
@@ -600,7 +470,11 @@ def _active_worker_pids(output_dir: Path) -> list[int]:
             command = path.read_bytes()
         except OSError:
             continue
-        if b"evaluate_pi05.py" in command and b"worker" in command and needle in command:
+        if (
+            b"evaluate_pi05.py" in command
+            and b"worker" in command
+            and needle in command
+        ):
             active.append(int(path.parent.name))
     return sorted(active)
 
@@ -611,9 +485,12 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
     current_git = git_state(REPO_ROOT)
     if (
         current_git["commit"] != contract["git"]["commit"]
-        or contract["mode"] != "smoke" and current_git["dirty_paths"]
+        or contract["mode"] != "smoke"
+        and current_git["dirty_paths"]
     ):
-        raise Pi05EvaluationError("evaluator checkout differs from the sealed run commit")
+        raise Pi05EvaluationError(
+            "evaluator checkout differs from the sealed run commit"
+        )
     expected_role_authority = None
     if contract.get("role") == "seen_panel":
         expected_role_authority = {
@@ -633,9 +510,8 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
     if model != contract["model"] or tokenizer != contract["tokenizer"]:
         raise Pi05EvaluationError("evaluation model or tokenizer changed after prepare")
     normalization = Path(contract["normalization"]["path"])
-    if (
-        not normalization.is_file()
-        or normalization.stat().st_size != int(contract["normalization"]["bytes"])
+    if not normalization.is_file() or normalization.stat().st_size != int(
+        contract["normalization"]["bytes"]
     ):
         raise Pi05EvaluationError("evaluation normalization changed after prepare")
     adapter = contract.get("adapter")
@@ -774,12 +650,16 @@ def start_workers(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     try:
         lock = lock_path.open("a+b")
     except OSError as error:
-        raise Pi05EvaluationError(f"PI05 evaluation run is not prepared: {output_dir}") from error
+        raise Pi05EvaluationError(
+            f"PI05 evaluation run is not prepared: {output_dir}"
+        ) from error
     with lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
-            raise Pi05EvaluationError("another PI05 evaluator launcher owns this run") from error
+            raise Pi05EvaluationError(
+                "another PI05 evaluator launcher owns this run"
+            ) from error
         return _start_workers_locked(output_dir, resume=resume)
 
 
@@ -788,7 +668,9 @@ def _recover_locked_queue(
 ) -> tuple[dict[str, Any], tuple[Any, ...], bool]:
     active = _active_worker_pids(output_dir)
     if active:
-        raise Pi05EvaluationError(f"PI05 evaluator workers are already active: {active}")
+        raise Pi05EvaluationError(
+            f"PI05 evaluator workers are already active: {active}"
+        )
     contract = load_run_contract(output_dir / "run_contract.json")
     _validate_resume_inputs(contract)
     shards = _shards_from_contract(contract)
@@ -802,7 +684,9 @@ def _recover_locked_queue(
     results_exists = (output_dir / "results.json").exists()
     completion_exists = (output_dir / "launcher_completion.json").exists()
     if results_exists and not completion_exists:
-        raise Pi05EvaluationError("PI05 evaluation already has unowned aggregate results")
+        raise Pi05EvaluationError(
+            "PI05 evaluation already has unowned aggregate results"
+        )
     queue = queue_summary(output_dir / "queue.sqlite3")
     complete = queue["status_counts"] == {"complete": len(shards)}
     if complete and not completion_exists:
@@ -843,7 +727,9 @@ def _fail_launcher_invocation(
         return_codes=return_codes,
         queue=queue,
         invocation_id=invocation_id,
-        worker_pids={worker_id: process.pid for worker_id, process in processes.items()},
+        worker_pids={
+            worker_id: process.pid for worker_id, process in processes.items()
+        },
         error=error_text,
     )
     if launch_error is not None and not isinstance(launch_error, Exception):
@@ -872,7 +758,9 @@ def _publish_launcher_completion(
         "finished_unix": finished_unix,
         "wall_seconds": finished_unix - started_unix,
         "worker_ids": list(worker_ids),
-        "worker_pids": {worker_id: process.pid for worker_id, process in processes.items()},
+        "worker_pids": {
+            worker_id: process.pid for worker_id, process in processes.items()
+        },
         "return_codes": return_codes,
         "queue": queue,
         "preflight": dict(preflight),
@@ -1005,7 +893,9 @@ def main() -> int:
     elif args.command == "checkpoint-curve":
         from ember.pi05_eval.analysis import analyze_checkpoint_curve
 
-        print(json.dumps(analyze_checkpoint_curve(args.root, args.output), sort_keys=True))
+        print(
+            json.dumps(analyze_checkpoint_curve(args.root, args.output), sort_keys=True)
+        )
     elif args.command == "historical-baseline-transition":
         from ember.pi05_eval.analysis import analyze_historical_baseline_transition
 

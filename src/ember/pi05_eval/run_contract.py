@@ -171,16 +171,22 @@ def _validate_build_request(
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
     git = git_state(authorities.repo_root)
     if mode != "smoke" and git["dirty_paths"]:
-        raise Pi05EvaluationError("screen/formal PI05 evaluation requires a clean worktree")
+        raise Pi05EvaluationError(
+            "screen/formal PI05 evaluation requires a clean worktree"
+        )
     if replicas_per_gpu not in RUNTIME_REPLICA_PROFILES or not tasks:
-        raise Pi05EvaluationError("PI05 evaluation runtime profile or task panel is invalid")
+        raise Pi05EvaluationError(
+            "PI05 evaluation runtime profile or task panel is invalid"
+        )
     writer_adapter = adapter is not None and adapter.get("kind") in WRITER_ADAPTER_KINDS
     valid_writer_topology = (
         0 < writer_generators_per_gpu <= replicas_per_gpu
         and writer_generation_batch_size > 0
     )
     if writer_adapter and not valid_writer_topology:
-        raise Pi05EvaluationError("Writer generation and rollout topology are incompatible")
+        raise Pi05EvaluationError(
+            "Writer generation and rollout topology are incompatible"
+        )
     if writer_adapter:
         evaluation = adapter.get("evaluation_authority", {})
         try:
@@ -209,6 +215,7 @@ def _validate_build_request(
             "sealed",
             "sealed_from_unchanged_v6_deployment_graph",
             "sealed_from_live_residual_deployment_profile",
+            "sealed_from_unchanged_v6_residual_deployment_graph",
         } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size
@@ -292,13 +299,17 @@ def build_run_contract(
             "config_path": str(authorities.config_path),
             "paths": authorities.paths,
         },
-        "role_authority": {
-            "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
-            "bytes": (authorities.repo_root / SEEN_PANEL_RELATIVE_PATH).stat().st_size,
-            "schema_version": authorities.seen_panel.get("schema_version"),
-        }
-        if role == "seen_panel"
-        else None,
+        "role_authority": (
+            {
+                "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
+                "bytes": (authorities.repo_root / SEEN_PANEL_RELATIVE_PATH)
+                .stat()
+                .st_size,
+                "schema_version": authorities.seen_panel.get("schema_version"),
+            }
+            if role == "seen_panel"
+            else None
+        ),
         "model": dict(model),
         "tokenizer": dict(tokenizer),
         "normalization": {
@@ -309,7 +320,9 @@ def build_run_contract(
             "bytes": (
                 authorities.repo_root
                 / authorities.config["authorities"]["normalization"]["path"]
-            ).stat().st_size,
+            )
+            .stat()
+            .st_size,
             "source_only_numeric_reads": True,
             "validation_or_test_numeric_reads": 0,
         },

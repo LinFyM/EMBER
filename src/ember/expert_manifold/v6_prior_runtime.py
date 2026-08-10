@@ -207,13 +207,6 @@ def _formal_decision_evidence(
         expected_current_commit=str(state["commit"]),
         decision_gates=config["formal_run"]["decision_gates"],
     )
-    requires_support = bool(
-        config["formal_run"]["decision_gates"]["macro2_requires_macro1_support_gate"]
-    )
-    if requires_support and evidence.get("passed") is not True:
-        raise ExpertManifoldError(
-            "macro1 strict400 result did not pass Reward-Credit continuation"
-        )
     if evidence.get("six_arm_required") is True:
         if not all(path.is_dir() for path in controls1.values()):
             raise ExpertManifoldError(
@@ -233,6 +226,13 @@ def _formal_decision_evidence(
                 decision_gates=config["formal_run"]["decision_gates"],
             ),
         }
+    requires_support = bool(
+        config["formal_run"]["decision_gates"]["macro2_requires_macro1_support_gate"]
+    )
+    if requires_support and evidence.get("passed") is not True:
+        raise ExpertManifoldError(
+            "macro1 strict400 result did not pass Reward-Credit continuation"
+        )
     return evidence
 
 

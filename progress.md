@@ -13,8 +13,8 @@
 - canonical已改为profile schema v2：all-mixed K4真实首query/原始noise、raw per-task LoRA A/B/action gate；
   physical replay B8基于live`16.34/19.42GB` headroom，静态rank map基于旧profile wall并保持每rank一task/suite。
   全仓`338 passed in 37.69s`，compileall、27 JSON、Black、diff-check和architecture guard均过，0 hard violation/
-  parallel family；旧artifact在v2 raw gate下仍fail。下一步是clean commit/push、新frozen worktree和一个全新
-  root discarded profile；formal仍blocked。
+  parallel family；旧artifact在v2 raw gate下仍fail。本节封存时下一步是新root profile且formal blocked；
+  该profile现已完成并通过，当前边界见文件末尾。
 
 ## Reward-Credit Program Cotangent实现与CPU封口（2026-08-10，profile前状态）
 
@@ -5169,3 +5169,21 @@ GPU范围和训练步长是当时快照；活动状态只取
   `sealed_from_live_a40_resume_profile_evidence`；`runtime_for_mode(..., formal)`返回`(50,(10,25,50))`。
 - 当前没有EMBER GPU进程，也没有v6-prior新strict成绩。authority同步和全仓回归已完成；下一操作是
   clean commit/push和formal frozen worktree，然后live选卡运行macro0及fresh0→50。
+
+## Reward-Credit B8/all-mixed profile完成并解锁formal（2026-08-10）
+
+- `e6024cf`从clean pushed frozen worktree在live空闲`gpu02:0--5`完成full24×K4×Nmc4 B8 discarded
+  profile；torchrun/tee exit0，completion passed，未保留checkpoint/metrics，结束后六卡均0MiB/P8。
+- raw v2复算与stored evidence完全相等：11 mixed/13 homogeneous、60/36 success/failure、4452 chunks，
+  all-mixed 11/11 LoRA A/B/action非零，rank48、negative/correct`.01704835`、closure0，0 runtime fault。
+  functional forward总数928且physical batch唯一候选为8。
+- 主分支随后修复start/run-contract中的旧字面量，明确collectives字段只描述parameter update，并扩充
+  profile seal：核对sealed optimization/runtime、raw唯一B8公式、completion、单次fresh invocation、A40
+  topology和无checkpoint。active config已置`formal_ready`，discarded profile state不进入训练。
+- formal evaluator启动门随后完成CPU收口：exact B8、validation 8×50、without-replacement、同一clean
+  pushed/frozen commit、checkpoint/root和correct-before-controls均fail-close；historical bypass删除，control
+  trigger与cycle2 support解耦，prepare以NFS原子准备锁、私有staging和一次目录rename发布，正式Reward的额外
+  parser condition不可绕过六臂登记。真实`/data1` NFS smoke通过；结构重归属后architecture guard 0 hard、
+  无parallel family；全仓`358 passed in 23.72s`。
+- 下一步是完成全仓验证、clean commit/push，创建新formal frozen worktree；重新live检查双节点、A40和
+  `/data1` quota后从`M0=0,Lambda0=I`跑cycle0→1并立即strict correct400，不跑80-row screen。

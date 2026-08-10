@@ -715,34 +715,32 @@ def _run_training(runtime: V6PriorRuntime) -> None:
         )
 
 
+def _start_event(runtime: V6PriorRuntime) -> dict[str, Any]:
+    return {
+        "event": "start",
+        "mode": runtime.args.mode,
+        "start_macro": runtime.segment.start_macro,
+        "stop_macro": runtime.segment.stop_macro,
+        "macro_semantics": "one_complete_full24_reward_cycle",
+        "historical_v6_frozen_parameters": runtime.ownership.frozen_parameter_count,
+        "residual_memory_values": runtime.writer.program_memory.value.numel(),
+        "rollout_policy_batch_size": int(
+            runtime.config["optimization"]["rollout_policy_batch_size"]
+        ),
+        "reward_replay_chunk_batch_size": int(
+            runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+        ),
+        "flow_mc_samples": int(runtime.config["objective"]["flow_mc_samples"]),
+    }
+
+
 def train(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     runtime: V6PriorRuntime | None = None
     try:
         runtime = _prepare_runtime(args, context)
         if context.is_main:
-            print(
-                json.dumps(
-                    {
-                        "event": "start",
-                        "mode": args.mode,
-                        "start_macro": runtime.segment.start_macro,
-                        "stop_macro": runtime.segment.stop_macro,
-                        "macro_semantics": "one_complete_full24_reward_cycle",
-                        "historical_v6_frozen_parameters": (
-                            runtime.ownership.frozen_parameter_count
-                        ),
-                        "residual_memory_values": (
-                            runtime.writer.program_memory.value.numel()
-                        ),
-                        "rollout_policy_batch_size": 4,
-                        "reward_replay_microbatch_size": 2,
-                        "flow_mc_samples": 4,
-                    },
-                    sort_keys=True,
-                ),
-                flush=True,
-            )
+            print(json.dumps(_start_event(runtime), sort_keys=True), flush=True)
         if args.mode == "mechanism-profile":
             _run_mechanism_profile(runtime)
         else:

@@ -533,3 +533,171 @@ def profile_passes(
         "max_cuda_allocated_bytes": int(row.get("max_cuda_allocated_bytes", -1)),
         "max_cuda_reserved_bytes": int(row.get("max_cuda_reserved_bytes", -1)),
     }
+
+
+def _raw_replay_recipe_matches(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    task_count: int,
+    physical_batch: int,
+    mc_samples: int,
+) -> bool:
+    mixed = [record for record in records if record.get("mixed") is True]
+    homogeneous = [record for record in records if record.get("mixed") is False]
+    if physical_batch <= 0 or mc_samples <= 0 or not mixed:
+        return False
+    candidates = [
+        candidate
+        for candidate in range(
+            1, max(int(record["replay_chunks"]) for record in mixed) + 1
+        )
+        if all(
+            int(record["functional_policy_forwards"])
+            == mc_samples
+            * ((int(record["replay_chunks"]) + candidate - 1) // candidate)
+            for record in mixed
+        )
+    ]
+    return all(
+        (
+            len(records) == task_count,
+            sorted(int(record.get("task_ordinal", -1)) for record in records)
+            == list(range(task_count)),
+            len(mixed) + len(homogeneous) == task_count,
+            all(int(record.get("mc_samples", -1)) == mc_samples for record in records),
+            all(int(record.get("replay_chunks", 0)) > 0 for record in records),
+            all(
+                int(record.get("functional_policy_forwards", -1)) == 0
+                for record in homogeneous
+            ),
+            candidates == [physical_batch],
+        )
+    )
+
+
+def profile_runtime_matches_config(
+    run: Mapping[str, Any],
+    result: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> bool:
+    """Bind retained raw profile counts to the sealed physical runtime recipe."""
+    try:
+        rows = result["macros"]
+        if not isinstance(rows, list) or len(rows) != 1:
+            return False
+        records = rows[0]["task_records"]
+        optimization = config["optimization"]
+        objective = config["objective"]
+        profile = config["profile_run"]
+        data = config["data"]
+        distributed = optimization["distributed_update"]
+        runtime = run["runtime"]
+        run_data = run["data"]
+        mappings = (
+            optimization,
+            objective,
+            profile,
+            data,
+            distributed,
+            runtime,
+            run_data,
+        )
+        if not isinstance(records, list) or not all(
+            isinstance(value, Mapping) for value in mappings
+        ):
+            return False
+        if not all(isinstance(record, Mapping) for record in records):
+            return False
+        topology = runtime["rank_topology"]
+        if not isinstance(topology, list) or not all(
+            isinstance(row, Mapping) for row in topology
+        ):
+            return False
+        physical_batch = int(optimization["reward_replay_chunk_batch_size"])
+        mc_samples = int(objective["flow_mc_samples"])
+        task_count = int(data["task_count"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    runtime_checks = (
+        run.get("mode") == "mechanism-profile",
+        run.get("optimization") == optimization,
+        run.get("objective") == objective,
+        all(run_data.get(name) == value for name, value in data.items()),
+        int(runtime.get("world_size", -1)) == int(profile["expected_world_size"]),
+        int(runtime.get("tasks_per_rank", -1)) == int(profile["tasks_per_rank"]),
+        int(runtime.get("num_workers_per_rank", -1))
+        == int(profile["num_workers_per_rank"]),
+        int(runtime.get("total_macros", -1)) == int(profile["diagnostic_macros"]),
+        int(runtime.get("schedule_origin", -1)) == int(profile["schedule_macro"]),
+        runtime.get("checkpoint_macros") == [],
+        int(runtime.get("rollout_policy_batch_size", -1))
+        == int(optimization["rollout_policy_batch_size"]),
+        int(runtime.get("reward_replay_chunk_batch_size", -1)) == physical_batch,
+        int(runtime.get("flow_mc_samples", -1)) == mc_samples,
+        int(runtime.get("old_policy_forwards", -1))
+        == int(objective["old_policy_forwards"]),
+        int(runtime.get("negative_policy_forwards", -1))
+        == int(objective["negative_policy_forwards"]),
+        runtime.get("deferred_process_group")
+        is bool(distributed["deferred_process_group"]),
+        runtime.get("nccl_p2p_disable") == str(distributed["nccl_p2p_disable"]),
+        runtime.get("nccl_algo") == distributed["nccl_algo"],
+        runtime.get("nccl_proto") == distributed["nccl_proto"],
+        runtime.get("device") == "NVIDIA A40",
+        len(topology) == int(profile["expected_world_size"]),
+        all(row.get("device_name") == "NVIDIA A40" for row in topology),
+    )
+    return all(runtime_checks) and _raw_replay_recipe_matches(
+        records,
+        task_count=task_count,
+        physical_batch=physical_batch,
+        mc_samples=mc_samples,
+    )
+
+
+def profile_seal_payload_matches(
+    *,
+    config: Mapping[str, Any],
+    result: object,
+    run: object,
+    completion: object,
+    invocations: object,
+    profile_schema: str,
+    completion_schema: str,
+    profile_gates: Mapping[str, Any],
+) -> bool:
+    """Recompute all retained payload claims without trusting self-reported status."""
+    if not all(isinstance(value, Mapping) for value in (result, run, completion)):
+        return False
+    if not isinstance(invocations, list) or len(invocations) != 1:
+        return False
+    invocation = invocations[0]
+    if not isinstance(invocation, Mapping):
+        return False
+    try:
+        passed, evidence = profile_passes(config, result["macros"])
+    except (ExpertManifoldError, KeyError, TypeError, ValueError):
+        return False
+    expected_completion = {
+        "schema_version": completion_schema,
+        "mode": "mechanism-profile",
+        "completed_diagnostic_macros": 1,
+        "passed": True,
+        "retained_checkpoint": False,
+        "content_hash_policy": "disabled_by_owner",
+    }
+    return all(
+        (
+            result.get("schema_version") == profile_schema,
+            result.get("passed") is True,
+            result.get("schedule_macro") == 0,
+            result.get("retain_weight") is False,
+            result.get("gates") == profile_gates,
+            result.get("gate_evidence") == evidence,
+            passed is True,
+            profile_runtime_matches_config(run, result, config),
+            completion == expected_completion,
+            invocation.get("resume") is None,
+            invocation.get("requested_stop_after_macro") == 1,
+        )
+    )

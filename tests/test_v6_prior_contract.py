@@ -19,6 +19,7 @@ from ember.expert_manifold.v6_prior_contract import (
     load_v6_prior_config,
     runtime_for_mode,
 )
+from ember.expert_manifold.v6_prior_profile import profile_runtime_matches_config
 from ember.expert_manifold.v6_prior_run_contract import (
     _ownership_contract,
     checkpoint_contract,
@@ -82,13 +83,13 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_active_reward_credit_is_profile_only_until_live_full24_seal() -> None:
+def test_sealed_live_profile_opens_only_the_formal_reward_credit_run() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
-    assert config["status"] == "awaiting_live_a40_reward_credit_profile"
-    assert runtime_for_mode(config, "mechanism-profile") == (1, (), 0)
-    with pytest.raises(ExpertManifoldError, match="blocked by the live profile"):
-        runtime_for_mode(config, "formal")
+    assert config["status"] == "formal_ready"
+    with pytest.raises(ExpertManifoldError, match="profile is not launchable"):
+        runtime_for_mode(config, "mechanism-profile")
+    assert runtime_for_mode(config, "formal") == (2, (1, 2), 0)
     retired = V6_PRIOR_CANONICAL_CONFIG.with_name(
         "pi05_v6_exact_anchored_reconciliation_program_residual_v3.json"
     )
@@ -104,6 +105,62 @@ def test_active_reward_credit_is_profile_only_until_live_full24_seal() -> None:
     assert sorted(value for row in assignments for value in row) == list(range(24))
     assert all(len(row) == 4 for row in assignments)
     assert all({value // 6 for value in row} == {0, 1, 2, 3} for row in assignments)
+
+
+def test_profile_runtime_seal_binds_raw_forwards_to_unique_physical_b8() -> None:
+    config = _raw_config()
+    chunks = (92, 157, 129, 158, 134, 173, 172, 155, 174, 213, 261)
+    mixed_ordinals = set(range(len(chunks)))
+    records = []
+    for ordinal in range(24):
+        mixed = ordinal in mixed_ordinals
+        replay_chunks = chunks[ordinal] if mixed else 64
+        records.append(
+            {
+                "task_ordinal": ordinal,
+                "mixed": mixed,
+                "mc_samples": 4,
+                "replay_chunks": replay_chunks,
+                "functional_policy_forwards": (
+                    4 * ((replay_chunks + 7) // 8) if mixed else 0
+                ),
+            }
+        )
+    optimization = deepcopy(config["optimization"])
+    objective = deepcopy(config["objective"])
+    distributed = optimization["distributed_update"]
+    run = {
+        "mode": "mechanism-profile",
+        "optimization": optimization,
+        "objective": objective,
+        "data": deepcopy(config["data"]),
+        "runtime": {
+            "world_size": 6,
+            "tasks_per_rank": 4,
+            "num_workers_per_rank": 0,
+            "total_macros": 1,
+            "schedule_origin": 0,
+            "checkpoint_macros": [],
+            "rollout_policy_batch_size": 4,
+            "reward_replay_chunk_batch_size": 8,
+            "flow_mc_samples": 4,
+            "old_policy_forwards": 0,
+            "negative_policy_forwards": 0,
+            "deferred_process_group": True,
+            "nccl_p2p_disable": "1",
+            "nccl_algo": distributed["nccl_algo"],
+            "nccl_proto": distributed["nccl_proto"],
+            "device": "NVIDIA A40",
+            "rank_topology": [{"device_name": "NVIDIA A40"} for _ in range(6)],
+        },
+    }
+    result = {"macros": [{"task_records": records}]}
+    assert profile_runtime_matches_config(run, result, config)
+    run["runtime"]["reward_replay_chunk_batch_size"] = 2
+    assert not profile_runtime_matches_config(run, result, config)
+    run["runtime"]["reward_replay_chunk_batch_size"] = 8
+    records[0]["functional_policy_forwards"] *= 2
+    assert not profile_runtime_matches_config(run, result, config)
 
 
 def test_cost_balanced_rank_map_preserves_full24_and_one_task_per_suite() -> None:
@@ -173,6 +230,12 @@ def test_profile_segment_is_discarded_fresh_zero_to_one_only(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = _raw_config()
+    config["status"] = "awaiting_live_a40_reward_credit_profile"
+    config["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_reward_profile"
+    config["profile_run"]["artifact_evidence"] = None
+    config["formal_run"][
+        "status"
+    ] = "blocked_until_live_reward_profile_passes_and_is_sealed"
     config["profile_run"]["registered_output_root"] = "runs/outputs/profile"
     output = tmp_path / "runs/outputs/profile"
     monkeypatch.setattr(runtime_module, "REPO_ROOT", tmp_path)
@@ -329,6 +392,39 @@ def test_macro1_score_trigger_requires_registered_six_arm_before_cycle2(
         "six_arm_required": True,
         "six_arm": {"goal_passed": False},
     }
+
+
+def test_macro1_control_trigger_precedes_a_failed_continuation_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _formal_ready_config()
+    _, macro1, _, output = _formal_layout(tmp_path, config)
+    checkpoint = output / "checkpoints/macro_00000001"
+    checkpoint.mkdir(parents=True)
+    write_json_atomic(output / "run_contract.json", {"git": {"commit": "a" * 40}})
+    macro1.mkdir(parents=True)
+    monkeypatch.setattr(runtime_module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(
+        runtime_module, "residual_git_state", lambda _root: _git_state()
+    )
+    monkeypatch.setattr(
+        "ember.pi05_eval.reward_credit_gate.load_reward_credit_decision_evidence",
+        lambda **_kwargs: {"passed": False, "six_arm_required": True},
+    )
+    arguments = _args(output_dir=output, resume=checkpoint, stop=2)
+    with pytest.raises(ExpertManifoldError, match="six-arm audit"):
+        _resolve_segment(arguments, config, _context())
+    for path in config["formal_run"]["decision_evaluation"][
+        "macro1_control_registered_roots"
+    ].values():
+        (tmp_path / path).mkdir(parents=True)
+    monkeypatch.setattr(
+        "ember.pi05_eval.reward_credit_gate.load_reward_credit_six_arm_evidence",
+        lambda **_kwargs: {"goal_passed": False},
+    )
+    with pytest.raises(ExpertManifoldError, match="did not pass"):
+        _resolve_segment(arguments, config, _context())
 
 
 def test_exact_resume_requires_original_frozen_commit_to_remain_authorized(

@@ -244,7 +244,7 @@ formal artifacts保存。
 - [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
   same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
 
-## Phase 7 — Reward-Credit Program Cotangent（首次profile non-pass，修正测量后重profile）
+## Phase 7 — Reward-Credit Program Cotangent（B8/all-mixed profile通过，formal待启动）
 
 - [x] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
   P256、single Program和完整rank16 LoRA不变；只把offline source-action cotangent替换为train24真实闭环
@@ -260,9 +260,17 @@ formal artifacts保存。
   只优化执行，不改full24等权样本或数学。
 - [x] 新合同全仓`338 passed in 37.69s`，compileall、27 JSON、Black、diff-check和architecture guard通过；
   0 hard violation、无parallel family，旧artifact在v2 raw gate下仍fail。
-- [ ] clean push/frozen与live双节点/quota preflight后，在全新root只做一次
-  full24×K4×Nmc4 B8 fresh0→1 discarded profile；不为数值微差降低batch/dtype/GPU利用率。
-- [ ] profile通过并另commit seal后，formal fresh cycle0→1直接做strict correct400，不跑80-row screen；只有
+- [x] clean frozen`e6024cf`与live双节点/quota preflight后，在全新root完成唯一
+  full24×K4×Nmc4 B8 fresh0→1 discarded profile；raw v2 gates全部通过，physical batch唯一反推为8，
+  0 runtime fault且无checkpoint。
+- [x] 将profile raw/run/completion/invocation、唯一B8公式、A40 topology和无checkpoint纳入fail-closed seal；
+  active config置为formal ready，未复用discarded state。
+- [x] 收口formal evaluator启动门：selected Writer batch精确为B8；Reward-Credit绑定validation 8×50、
+  without-replacement、同一clean pushed/frozen commit、checkpoint及预注册root；删除historical bypass；correct
+  达到阈值后才开放controls且与support门解耦；prepare使用NFS原子准备锁、私有staging和一次目录rename，
+  失败不占用canonical root；正式Reward只接受预注册六臂。全仓`358 passed in 23.72s`，architecture guard
+  0 hard violation、无parallel family。
+- [ ] 从新clean pushed seal commit的frozen worktree做formal fresh cycle0→1并直接strict correct400，不跑80-row screen；只有
   correct`>=140`、lost`<=6`、breadth`>=6`且gained>lost才继续cycle2，达到144后补六臂，严格超过150后
   完成同checkpoint因果裁决。
 

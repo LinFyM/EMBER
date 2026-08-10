@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_reward_credit_program_cotangent_v1",
-  "status": "awaiting_live_a40_reward_credit_profile",
+  "status": "formal_ready",
   "method": {
     "name": "frozen_v6_reward_credit_program_cotangent",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -231,7 +231,7 @@
     }
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_reward_profile",
+    "status": "sealed_from_live_a40_fresh0_to1_reward_profile",
     "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b8_allmixedk4_20260810",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
@@ -264,10 +264,16 @@
       "nonfinite_count": 0,
       "watchdog_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b8_allmixedk4_20260810/mechanism_profile.json",
+      "bytes": 329591,
+      "schema": "ember_pi05_v6_reward_credit_program_cotangent_profile_v2",
+      "passed": true,
+      "run_commit": "e6024cf97200721b13834c6ad81de85ce6588ffb"
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_reward_profile_passes_and_is_sealed",
+    "status": "ready_after_live_reward_profile_seal",
     "registered_output_root": "runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810",
     "expected_world_size": 6,
     "tasks_per_rank": 4,

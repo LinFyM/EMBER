@@ -43,8 +43,8 @@
   tests删除；Reward数学、K4 rollout、training/profile与strict decision各有单一owner。CPU覆盖16种outcomes、
   ASPO一阶等价、Nmc4、BF16→FP32 gradient、Program/full48、checkpoint/cursor和fail-close；全仓=
   `336 passed in 59.12s`。
-- 当前config=`configs/pi05_v6_reward_credit_program_cotangent_v1.json`仍profile awaiting、formal blocked；
-  尚无Reward-Credit checkpoint或strict分数。首次profile和修正见上节；只有全新v2 artifact过门才允许formal。
+- 本节封存时config仍profile awaiting、formal blocked；后续全新v2 artifact已过门并在文件末尾记录。当前仍
+  尚无Reward-Credit training checkpoint或strict分数。
 
 ## RLS full400正式否决feature-row retention充分性（2026-08-10）
 
@@ -6307,3 +6307,39 @@ Writer/base paired gain 为 +10.74pp，说明当前 full-video hypernetwork 结�
 - retained roots经修正后的assembler完整通过并写回canonical config，formal现在合法解锁。该结果只
   证明吞吐、容量和断点语义，不证明closed-loop；最早科学未知仍是expert/ranking纠偏能否在held任务上
   把正确视频推向policy-effective方向并超过143/150。
+
+## Reward-Credit B8/all-mixed profile科学与吞吐裁决（2026-08-10）
+
+- clean frozen`e6024cf`的新profile v2从raw重算14/14 checks全部通过：24 tasks/96 rollouts，11 mixed/
+  13 homogeneous，full48 rank48、negative/correct=`.01704835`、closure0。11/11 mixed tasks均把Program
+  motion传到完整LoRA A/B和真实BF16 action，四suite全覆盖；homogeneous direct cotangent和functional
+  forward均严格为零。它证明reward-credit主链可执行，不证明closed-loop会提高。
+- mixed rows的`(replay_chunks,Nmc,functional_policy_forwards)`联合整数解唯一为physical batch8；总forward
+  `928`，旧B2同面板为3648。启动行里的旧`microbatch=2`只是硬编码telemetry，不能覆盖实际调用链、run
+  contract与raw计数。后继seal直接把唯一B8公式纳入fail-closed artifact matcher，不为展示错误重复GPU。
+- B8让11个mixed task逐task credit加速`1.161--1.188x`，credit sum降低`15.01%`；balanced map把
+  rank-local critical proxy从旧`547.928s`降到`383.947s`。新profile还额外执行11-task action panel，
+  end-to-end仍`554.268→507.305s`。peak allocated/reserved=`36.576/40.928GB`且0 OOM，说明吞吐优先的
+  B8利用了A40而没有牺牲K4/Nmc4/BF16或并行度。
+- homogeneous shared motion仍为mixed的`1.1794%`，binary K4只有11/24 tasks获得direct credit；因此最关键
+  科学未知仍是这种稀疏、闭环对齐的credit能否在held strict400中提高absolute并减少换手。profile通过只
+  授权fresh cycle0→1及立即strict400，不能用漂亮内部几何提前宣告成功。
+- profile seal把raw唯一B8与run/completion/invocation绑定后，加载`.env.local`的全仓回归为
+  `340 passed in 28.91s`；不需要新增GPU profile或降低batch来证明展示层修复。
+
+## Reward-Credit formal入口的证据完整性收口（2026-08-10）
+
+- 启动前审计发现旧generic sealed-status集合漏掉Reward-Credit的
+  `sealed_from_unchanged_v6_residual_deployment_graph`，因此minimum B8之外的B16/B32理论上仍可通过。现已把
+  inherited deployment seal纳入exact selected-batch门，formal只能使用实测B8；这不增加forward或降低吞吐。
+- 原registered-root门只绑定training root/checkpoint/output，且historical checkpoint可绕过；错误role、sampling
+  或evaluation commit要到昂贵rollout后的analysis才会被拒绝。现在在发布root前绑定validation 8×50、
+  without-replacement、同一clean pushed/frozen training/evaluation commit、Reward-Credit family及exact checkpoint，
+  并删除historical bypass。
+- controls只由同checkpoint correct400触发，不依赖cycle2 support：macro1 correct`>=144`即开放；macro2只在
+  macro1未到144而自身首次到达，或macro2自身`>=151`成为goal candidate时开放。这样既不会让support non-pass
+  遮蔽必要视频因果证据，也不为144--150的非goal macro2重复消耗五臂rollout。
+- `prepare`现在先以NFS同目录原子`mkdir`跨进程锁占有目标，再在唯一私有staging生成LIBERO config、contract
+  和queue，全部CPU检查通过后以一次目录rename发布canonical root；失败、historical冒充、额外Reward parser
+  condition或参数漂移均不留下空root。canonical owner拆到`pi05_eval/preparation.py`后结构门为0 hard violation、
+  无parallel family；真实`/data1` NFS发布smoke通过，加载`.env.local`的全仓回归为`358 passed in 23.72s`。

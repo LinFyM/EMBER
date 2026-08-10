@@ -62,11 +62,15 @@ def test_clean_detached_frozen_authority_checkout_is_launchable() -> None:
 def _pi05_template_dtype_by_name() -> dict[str, str]:
     return {
         f"{target}.lora_{factor}.default.weight": (
-            "F32" if target in {"model.action_in_proj", "model.action_out_proj"} else "BF16"
+            "F32"
+            if target in {"model.action_in_proj", "model.action_out_proj"}
+            else "BF16"
         )
         for target in pi05_target_names()
         for factor in ("A", "B")
     }
+
+
 CONFIG = ROOT / "configs/pi05_target_evaluation_v1.json"
 
 
@@ -441,6 +445,41 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
         writer_generation_batch_size=16,
     )
     assert batched["parallel"]["writer_generation_batch_size"] == 16
+
+
+def test_reward_credit_seal_locks_the_measured_writer_batch8(
+    tmp_path: Path,
+) -> None:
+    inputs = list(_writer_contract_inputs(tmp_path))
+    shared_writer = inputs[4]
+    shared_writer["evaluation_authority"] = {
+        "formal_status": "sealed_from_unchanged_v6_residual_deployment_graph",
+        "throughput_policy": (
+            "highest_measured_batch_throughput_with_device_memory_headroom"
+        ),
+        "minimum_smoke_writer_model_batch_size": 8,
+        "online_smoke_evidence": {"writer_model_batch_size": 8},
+    }
+    correct_mapping = inputs[5]
+    exact = _build_writer_contract(
+        inputs=tuple(inputs),
+        output_dir=tmp_path / "batch8",
+        arm="expert_manifold_v6_condition_residual_correct",
+        condition="correct",
+        mapping=correct_mapping,
+        writer_generation_batch_size=8,
+    )
+    assert exact["parallel"]["writer_generation_batch_size"] == 8
+    for batch_size in (16, 32):
+        with pytest.raises(Pi05EvaluationError, match="selected Writer batch"):
+            _build_writer_contract(
+                inputs=tuple(inputs),
+                output_dir=tmp_path / f"batch{batch_size}",
+                arm="expert_manifold_v6_condition_residual_correct",
+                condition="correct",
+                mapping=correct_mapping,
+                writer_generation_batch_size=batch_size,
+            )
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

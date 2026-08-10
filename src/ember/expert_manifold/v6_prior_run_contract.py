@@ -291,15 +291,20 @@ def build_run_contract(
             "schedule_origin": segment.schedule_origin,
             "checkpoint_macros": list(segment.checkpoint_macros),
             "num_workers_per_rank": args.num_workers,
-            "rollout_policy_batch_size": 4,
+            "rollout_policy_batch_size": int(
+                config["optimization"]["rollout_policy_batch_size"]
+            ),
             "reward_replay_chunk_batch_size": int(
                 config["optimization"]["reward_replay_chunk_batch_size"]
             ),
-            "flow_mc_samples": 4,
-            "old_policy_forwards": 0,
-            "negative_policy_forwards": 0,
+            "flow_mc_samples": int(config["objective"]["flow_mc_samples"]),
+            "old_policy_forwards": int(config["objective"]["old_policy_forwards"]),
+            "negative_policy_forwards": int(
+                config["objective"]["negative_policy_forwards"]
+            ),
             "distributed_model_wrapper": "none",
-            "collectives": ("cuda_complete_file_rendezvous_then_two_fixed_all_gathers"),
+            "collectives": str(config["optimization"]["distributed_update"]["kind"]),
+            "collectives_scope": "parameter_update_only",
             "deferred_process_group": True,
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
             "nccl_algo": os.environ.get("NCCL_ALGO"),

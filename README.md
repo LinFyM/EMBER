@@ -40,8 +40,8 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   不续25、不补六臂、不扫damping/step/window/forgetting，fresh/restart/resume均fail closed。它的profile、
   formal和strict artifacts继续作为历史证据，不能授权新RLS运行。
 - 当前唯一active implementation是第39.5节**Reward-Credit Program Cotangent**，active config为
-  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，状态仍是
-  `awaiting_live_a40_reward_credit_profile`，尚无训练checkpoint或strict结果。one-shot部署图完全不变：exact
+  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，live profile已经从raw artifact封存并置为
+  `formal_ready`；尚无训练checkpoint或strict结果。one-shot部署图完全不变：exact
   language + exactly one action-hidden video→Balanced P256 key→frozen historical-v6 decoder→single FP32
   Program→完整38-target rank16 LoRA；没有language bypass、few-shot、expert-bank deployment或第二套LoRA。
 - 训练从fresh`M0=0,Lambda0=I`开始，禁止继承RLS10。每task同一套LoRA做K4 batch4 official random-reset
@@ -58,11 +58,24 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   cotangent exact zero并单独报告shared drift。live B2仅占`16.34/19.42GB` allocated/reserved，故重跑直接
   使用physical B8，不为低位差异降速；同时冻结由旧profile wall得到的one-task-per-suite静态均衡rank map，
   full24样本、task等权、K4、Nmc4、BF16和full48数学均不变。
-- 修正后全仓CPU回归=`338 passed in 37.69s`；compileall、27份JSON、Black、diff-check和architecture guard
-  通过，0 hard violation、无parallel family。这只证明新profile合同闭合。
-- 下一动作是完成CPU/合同seal、clean commit/push和新frozen worktree，实时双节点/quota preflight后运行一个
-  **新root**的fresh0→1 discarded profile。只有新raw artifact复算全部门通过才另commit解锁formal cycle0→1；
-  当前没有运行中的EMBER GPU任务。
+- clean frozen`e6024cf`的新B8/all-mixed profile已在`gpu02:0--5`自然完成并正式`passed=true`：24 tasks、
+  96 rollouts、11 mixed/13 homogeneous、full48 rank48、negative/correct=`.017048`、closure=`0`；全部11个
+  mixed task的LoRA A/B/action均finite/nonzero并覆盖四suite，homogeneous均exact-zero direct credit。
+  raw forward counts唯一反推出physical B8，总functional invocations=`928`，0 OOM/nonfinite/watchdog，且
+  不保留checkpoint。wall=`507.305s`，峰值allocated/reserved=`36.576/40.928GB`。
+- 相同科学面板下B8使mixed credit sum降低`15.01%`；冻结balanced map使rank-local critical proxy从旧
+  `547.928s`降至`383.947s`，总profile wall降低`8.47%`，同时承担了更强的11-task action probe。封存校验会
+  从raw `(chunks,Nmc,forwards)`重新证明唯一B8并匹配run/completion/invocation，不依赖启动日志中的旧展示值。
+- formal evaluator已补齐不影响吞吐的launch门：Reward-Credit deployment精确锁B8；validation 8×50、
+  without-replacement、同一clean pushed/frozen training/evaluation commit和预注册root全部绑定；historical
+  checkpoint不能占用cycle root。correct400必须先完成，首次`>=144`的checkpoint才开放五个controls，且
+  control触发不依赖cycle2 support。prepare以NFS同目录原子`mkdir`锁串行化同root准备，只在私有staging
+  通过全部CPU校验后以一次目录rename发布canonical root；正式Reward条件只接受预注册六臂。
+- 当前profile/formal-seal代码加载`.env.local`后的全仓回归为`358 passed in 23.72s`，architecture guard为
+  0 hard violation且无parallel implementation family。
+- 下一动作是完成当前profile-seal commit/push和新的formal frozen worktree，实时双节点/quota preflight后从
+  `M0=0,Lambda0=I`只跑formal cycle0→1；随后立即做预注册strict correct400，不跑80-row screen。当前没有
+  运行中的EMBER GPU任务。
 
 ### Earlier completed evidence
 

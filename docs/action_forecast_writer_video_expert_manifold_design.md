@@ -11,7 +11,7 @@ zero-memory identity、formal0→25与macro10/25 strict400，曲线为`134/140/1
 退役。2026-08-10唯一活动方法是第39.5节Reward-Credit Program Cotangent：部署图完全继承Balanced v2，
 只把training cotangent替换为K4 binary LOO on-policy reward credit。clean frozen`c4507e9`的首次full24 profile
 已完成但按旧固定probe门正式non-pass；第39.7节已把测量改为all-mixed K4 raw action gate，并以live headroom
-上调B8、冻结cost-balanced rank map。active config=
+上调B8、冻结cost-balanced rank map。第39.8节的新profile已从raw证据正式通过并解锁formal。active config=
 `configs/pi05_v6_reward_credit_program_cotangent_v1.json`；尚无training checkpoint或strict结果。online expert
 bank和所有旧Writer只由Git、正式artifact及其负裁决文档保留。
 
@@ -2747,10 +2747,9 @@ profile通过后从macro0 fresh只跑reward cycle0→1，随后直接strict corr
 
 ### 39.6 Canonical implementation与CPU seal
 
-唯一active config为`configs/pi05_v6_reward_credit_program_cotangent_v1.json`。profile状态为
-`awaiting_live_a40_fresh0_to1_reward_profile`，formal状态为
-`blocked_until_live_reward_profile_passes_and_is_sealed`；两者必须由retained raw artifact重算解锁，不能只改
-status。fresh state固定`M_0=0,Lambda_0=I`，checkpoint schema同时保存Program、precision、interaction cursor
+唯一active config为`configs/pi05_v6_reward_credit_program_cotangent_v1.json`。首次profile前状态曾为
+`awaiting_live_a40_fresh0_to1_reward_profile`/`blocked_until_live_reward_profile_passes_and_is_sealed`；第39.8节
+已由retained raw artifact重算解锁，不能只改status。fresh state固定`M_0=0,Lambda_0=I`，checkpoint schema同时保存Program、precision、interaction cursor
 和六rank RNG；RLS10/v2 memory与本family均fresh-incompatible。
 
 实现owner与删除边界如下：
@@ -2777,7 +2776,7 @@ full48 order/negative zero RHS、application、checkpoint/cursor、registered ro
 加载`.env.local`后的全仓回归为`336 passed in 59.12s`。这只封存实现合同，不能写成GPU机制、性能或视频
 因果结论。
 
-下一动作严格只有clean commit/push、frozen worktree、实时双节点/配额preflight后的一次full24×K4×Nmc4
+首次profile前的下一动作严格只有clean commit/push、frozen worktree、实时双节点/配额preflight后的一次full24×K4×Nmc4
 fresh0→1 discarded profile。必须96/96 rollouts、至少6 mixed tasks、mixed cotangent finite/nonzero、homogeneous
 exact-zero、full48 rank/negative-null/closure、Program→LoRA→fixed-action、0 OOM/nonfinite/watchdog。未过门不启动
 formal；通过后另commit seal并从全新identity state做cycle0→1，随后直接strict400。
@@ -2836,7 +2835,71 @@ rank3 [0,7,14,18]   rank4 [2,6,12,21]   rank5 [4,10,17,19]
 `547.9→410.1s`。mapping在launch前封存并固定用于后续cycle，不运行时按outcome重排；environment/policy/flow
 seed均不含rank，gather继续按task ordinal排序，所以full24科学样本、等权和manual write完全不变。
 
-下一证据只能是新clean commit/frozen worktree上的新root fresh0→1 discarded profile。B8若OOM、all-mixed任一
+第39.7节封存时的下一证据只能是新clean commit/frozen worktree上的新root fresh0→1 discarded profile。B8若OOM、all-mixed任一
 task action-null、四suite coverage不足或任何旧机制门失败，都自然判non-pass且不自动降配；只有raw v2 gate全过
 才另commit seal并打开formal cycle0→1。修正后全仓CPU回归=`338 passed in 37.69s`，compileall、27份JSON、
 Black、diff-check和architecture guard均通过；guard为0 hard violation且无parallel family。
+
+### 39.8 B8/all-mixed live profile通过与formal边界
+
+clean frozen`e6024cf97200721b13834c6ad81de85ce6588ffb`在live空闲`gpu02:0--5`完成唯一新root：
+
+```text
+runs/outputs/pi05_v6_reward_credit_program_cotangent_profile_full24_k4_nmc4_r6_b8_allmixedk4_20260810
+```
+
+torchrun/tee均exit0，completion=`passed=true, retained_checkpoint=false`。24 tasks、96 rollouts、24 videos、
+11 mixed/13 homogeneous、60/36 success/failure、4452 replay chunks完整；0 OOM/nonfinite/watchdog、0 old/
+negative policy forward。full48 feature rank=`48`、condition=`105.65998`、negative/correct motion=
+`.01704835`、predicted/observed closure=`0`；LoRA A/B aggregate response=
+`5.61099e-6/5.88477e-6`。
+
+all-mixed rows精确覆盖`[0,2,3,4,5,8,9,10,12,15,18]`及四suite。每task均为4条K4真实query、更新前后
+各一次batch4 policy forward，11/11的LoRA A、LoRA B和BF16 action response均finite/nonzero；action RMS
+范围`.00106586--.00364465`。13个homogeneous task全部保持direct cotangent exact zero和0 functional
+forward；shared solve induced motion/mixed motion=`.0117943`，继续作为漂移风险而非通过理由。
+
+本次mixed task逐行满足：
+
+```text
+functional_policy_forwards = 4 * ceil(replay_chunks / 8)
+```
+
+在全部正整数physical batch中联合候选唯一为`{8}`，总functional invocations=`928`；同一deterministic panel
+的旧B2为3648。因而profile start行遗留的硬编码展示`reward_replay_microbatch_size=2`不代表真实执行；实际
+config、run contract、调用链和raw forward计数三重一致为B8。后继seal commit已把start及run-contract中的
+batch/Nmc字段全部改为读取sealed config，并让profile matcher直接核对optimization/runtime、唯一B8公式、
+completion、单次fresh invocation、A40 topology和无checkpoint；不为纯展示错误重复GPU工作。
+
+吞吐归因为：mixed credit seconds sum=`1220.572→1037.347s`（`-15.01%`），11个mixed task逐task
+speedup=`1.161--1.188x`；旧map→balanced map的rank-local critical proxy=`547.928→410.093s`，同一balanced
+map再由B8降至`383.947s`。新profile额外执行11-task all-mixed action panel后，end-to-end仍为
+`554.268→507.305s`（`-8.47%`）。peak allocated/reserved=
+`36,575,930,368/40,928,018,432B`，在46,068MiB A40上充分利用显存且无OOM；结束后六卡释放。
+
+该profile只证明reward cotangent→Program→完整LoRA→真实action链和吞吐合同成立，不是closed-loop性能结果。
+active config现为`formal_ready`，profile state永久弃用。唯一下一GPU动作是从historical v6、
+`M_0=0,Lambda_0=I`在新clean pushed seal commit的frozen worktree做formal cycle0→1；随后直接预注册strict
+correct400，不跑80-row screen。只有correct`>=140`、相对macro0 lost`<=6`、breadth`>=6`且gained>lost
+才允许exact-resume cycle2；首次`>=144`补同checkpoint六臂，严格`>150`后完成最终视频因果裁决。
+
+### 39.9 Formal evaluator入口与control触发边界
+
+正式训练不会因评测入口的通用最小值语义而改变deployment batch：Reward-Credit继承的
+`sealed_from_unchanged_v6_residual_deployment_graph`现被纳入selected-batch硬门，Writer generation必须精确
+为已实测B8，不能静默改成B16/B32。formal invocation在创建唯一root前还必须同时绑定validation 8×50、
+without-replacement、Reward-Credit family、exact macro1/2 checkpoint、training registered root，以及同一
+clean pushed/frozen training/evaluation commit；historical macro400只作为既有macro0跨family reference，不能
+用Reward-Credit config重新生成或占用cycle root。
+
+correct400永远先运行。macro1只要correct`>=144`，无论support gate是否通过，都开放同checkpoint的
+same-task-other/wrong/shuffled/reversed/no-video；完成后support gate才决定是否允许cycle2。macro2若是第一个
+跨过144的checkpoint，同样开放controls；若macro1已经完成144门，macro2在144--150不重复五臂，只有macro2
+自身`>=151`成为最终goal candidate时才要求它自己的same-checkpoint controls。六臂`goal_passed`不是cycle2
+训练的附加门，support仍只由correct/lost/breadth/gained四项决定。
+
+准备阶段由唯一`pi05_eval/preparation.py` owner先用NFS同目录原子`mkdir`取得canonical root的跨进程准备锁，
+再在私有staging完成LIBERO config、adapter、contract、Reward registration和queue校验；全部通过后只做一次
+目录rename发布canonical root。任何失败或遵守canonical launcher的并发占用都不覆盖既有root，也不留下空
+root；正式Reward family的condition若不属于预注册六臂（包括`shuffled_keep_first`）会在发布前拒绝。该收口
+只增加CPU fail-close检查，不增加训练或rollout forward，不改变GPU拓扑和吞吐。

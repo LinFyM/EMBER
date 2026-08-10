@@ -46,8 +46,19 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   correct/without-replacement、method macro0=`historical_v6_macro400_load_only + fresh_elementwise_zero`、
   18 rollout workers + 18 Writer generators和batch8。临时prepare root已清理；该prepare没有启动GPU、
   没有生成scientific row或性能结论。
-- 下一GPU动作必须从包含上述修复与当前authority的新clean pushed/frozen seal评测zero-memory macro0 strict
-  correct400，再决定是否启动fresh0→10；不能把prepare、smoke或mechanism门当性能改进。
+- 该GPU门要求从包含上述修复与当前authority的新clean pushed/frozen seal先评测zero-memory macro0 strict
+  correct400，再决定是否启动fresh0→10；不能把prepare、smoke或mechanism门当性能改进。该动作现已从
+  clean frozen`6b5f7a6`在实时空闲`gpu02:0--5`正式完成：72/72 shards、400 rows、18 workers均attempt1/
+  exit0，strict correct=`134/400`、breadth6、per-task按Spatial/Object/Goal/Long顺序=
+  `0/5/48/34/0/35/11/1`。wall/rollout window=`867.152/616.138s`；400套LoRA由18 generators以54 batches、
+  max batch8全部fresh生成，Writer释放且source policy原进程复用，0 retry/OOM/nonfinite/forbidden reads。
+  GPU已回到0MiB/P8，root实际`1,085,108,227B`。
+- 新macro0与历史native v6 macro0不仅aggregate同为`134`：400个state/language/env seed/policy-noise/video
+  ordinal/order seed全部严格相同，逐episode success也完全相同，gained/lost=`0/0`；每task demos0--49
+  各使用一次。新旧400 cache entries逐tensor CPU直比的30,400 tensors、514,867,200 values全部bit-exact。
+  唯一运行微差是一条共同成功episode终止step `106→107`，不改变success或formal结论，不得为此降低吞吐。
+  这证明v2 zero-memory部署图没有隐藏基线漂移。下一阶段只允许从新的clean pushed/frozen
+  authority做formal fresh0→10并立即strict correct400；仍无v2非零memory训练或性能成绩。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -132,8 +143,9 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 当前唯一active Writer是第38节Balanced DC--Causal frozen-v6 Program Residual；mechanism profile已seal，
 新v8 deployment graph的live throughput/correct smoke双root也已seal，formal runtime已ready；但执行顺序
-要求先封存zero-memory macro0 strict400，之后才可fresh0→10。historical v6-fast macro400是唯一允许的
-load-only初始化；audit已经否决CEFD，
+要求先封存zero-memory macro0 strict400，之后才可fresh0→10。该顺序门已由`6b5f7a6`的exact paired
+macro0=`134`满足；当前下一动作是fresh0→10。historical v6-fast macro400是唯一允许的load-only初始化；
+audit已经否决CEFD，
 step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入residual update。活动实现严格冻结
 historical v6整套600 tensors，在condition-local fused Program后加zero-init residual；跨condition共享只由
 固定action-hidden video key的显式Gram控制。当前v2不读取task expert输出，也没有optimizer/scheduler/

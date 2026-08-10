@@ -190,8 +190,12 @@ formal artifacts保存。
   `af7b101`以canonical `runs/outputs` containment窄修复并保留nested-symlink fail-close。全仓`285 passed`，
   clean frozen prepare exit0并封存8×50、correct/no-replacement、zero residual macro0、18 rollout workers +
   18 Writer generators、batch8合同；临时root已清理，正式评测必须使用新root。
-- [ ] mechanism/deployment两类seal均完成后先评测zero-memory macro0 strict400，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
-  停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
+- [x] clean frozen`6b5f7a6`完成zero-memory macro0 strict400：`134/400`、breadth6、per-task=
+  `0/5/48/34/0/35/11/1`；72/72 shards、400 fresh LoRAs、18 rollout workers + 18 Writer generators、
+  0 retry/error。与历史native
+  macro0 400-row identity和success逐行完全相同，gained/lost=`0/0`；CPU重聚合通过且GPU释放。
+- [ ] 从新clean pushed/frozen authority formal fresh0→10并立即strict correct400；按第37.6/38.3门决定停止、
+  续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。
 - [ ] 若expert alignment升而held下降，重构/减弱train-expert流形监督；不恢复online expert bank。

@@ -1,5 +1,19 @@
 # EMBER Findings
 
+## v2 zero-memory macro0与历史native行为逐行同一（2026-08-10）
+
+- 正式macro0不是只有aggregate同为`134/400`：新旧400个paired episodes的state、language、env/policy RNG、
+  teacher video ordinal/order/selection seed全部0差异，success也逐行完全相同，gained/lost=`0/0`。因此新
+  v8 adapter、balanced key构造和zero residual fusion在完整closed loop中没有引入隐藏基线漂移。进一步
+  逐tensor直比30,400 LoRA tensors、514,867,200 values全部bit-exact；一条共同成功episode晚1 step终止
+  是不影响成功集合的模拟运行微差，不值得降低吞吐追逐。
+- per-task仍是`0/5/48/34/0/35/11/1`、breadth6；这保留了historical v6的强Object/Goal6与Spatial1/
+  Goal3盲点。`134`低于eligible历史best143，不是进步；它的价值是把下一次macro10的任何逐row变化干净
+  归因到非零Program memory，而不是family/evaluator切换。
+- 18 generators以batch8在六卡同时把显存推到约38GiB/card并生成400套LoRA，随后18 retained source policy
+  workers完成72 shards；总wall仅14.45min，较约16min历史预算更快。0 retry/OOM/nonfinite，说明吞吐优先
+  拓扑稳定，无需为低位浮点差异降batch或增加防御性扫描。
+
 ## Frozen-worktree formal prepare的工程边界（2026-08-10）
 
 - CPU-only prepare在GPU前失败不是负科研结果：deployment raw evidence、Writer checkpoint和formal panel都

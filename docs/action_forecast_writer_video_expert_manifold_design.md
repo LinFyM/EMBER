@@ -8,8 +8,9 @@ macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动
 DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
 macro49 mechanism profile已13/13通过并seal，单卡deployment双root也已通过。`d228d0d`写回后第一次
 frozen CPU-only formal prepare暴露合法`runs`软链接被误判越界，`af7b101`已窄修路径owner；同一prepare
-现已exit0、临时root已清理，全仓`285 passed`。当前仍无v2训练或formal strict成绩，下一动作是新clean
-pushed/frozen authority上的zero-memory macro0 strict400。K4、online expert bank和所有旧Writer只由Git、
+现已exit0、临时root已清理，全仓`285 passed`。zero-memory macro0随后以400-row exact identity得到
+`134/400`；当前仍无v2非零memory成绩，下一动作是新clean pushed/frozen authority上的formal fresh0→10
+及即时strict correct400。K4、online expert bank和所有旧Writer只由Git、
 正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
@@ -2442,3 +2443,30 @@ Writer登记为`historical_v6_macro400_load_only`、method macro0、`[256,320,25
 `fresh_elementwise_zero` residual且checkpoint residual bytes=0。estimated peak new bytes=
 `1,064,370,176`。这只解除正式启动的工程阻塞，不是closed-loop成绩；下一证据仍必须是新clean
 pushed/frozen authority上的zero-memory macro0 strict correct400。
+
+### 38.8 Zero-memory macro0完整closed-loop identity（2026-08-10）
+
+从包含第38.7节修复和当前authority的clean pushed/frozen`6b5f7a6`，在启动前live确认空闲的
+`gpu02:0--5`完成正式validation correct400。root为
+`runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810`。
+adapter v8登记historical v6 macro400 load-only、method macro0、`[256,320,256]` FP32
+fresh-elementwise-zero residual且bytes=0；8 tasks×states0--49、seed7、correct/without-replacement。
+
+运行自然exit0：72/72 shards、400 rows、18 rollout workers均attempt1/return0；strict correct=`134/400`、
+correct80=`26/80`、breadth6。per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+`0/5/48/34/0/35/11/1`，per-suite=`5/82/35/12`。总wall=`867.152s`、shard execution window=
+`616.138s`，overall/rollout-only throughput=`.461280/.649205 episodes/s`。400套LoRA由18 generators以
+54个batch全部fresh生成，configured/max observed batch均8，max sampled frames69；0 reuse、0 redundant
+Writer forward，Writer全释放，source policy全原进程复用且未reload。max per-generator allocated/reserved=
+`11,745,421,312/12,895,387,648B`；0 retry/OOM/nonfinite/forbidden reads，六卡结束后0MiB/P8。CPU aggregate
+重建与原results完全一致，root实际`1,085,108,227B`。
+
+最关键的裁决不是aggregate恰好等于历史`134`。以`(suite, task, init_state)`匹配历史native v6 macro0的
+400行后，language、env seed、policy seed/noise序列、teacher demo/reference demo、video order/selection
+seed、video mapping全部0差异；success也逐行完全相同，gained/lost=`0/0`、共同成功/失败=`134/266`。
+新旧400 cache entry IDs相同；独立逐tensor CPU直比400/400 files、30,400 tensors和514,867,200 values
+全部bit-exact。每task demos0--49各出现一次。唯一非输出差异是一条共同成功episode在新root晚1 env step
+终止（`106→107`），其余399 rows steps一致；不改变成功集合或formal结论，也没有理由为此牺牲batch/吞吐。
+这把“v2 key/residual adapter即使memory为零仍可能改变部署行为”的工程风险
+关闭，并给后续Program learning提供exact native baseline；它不是v2非零memory性能证据。按第38.3门，下一
+唯一动作是从新clean pushed/frozen authority formal fresh0→10并立即跑strict correct400。

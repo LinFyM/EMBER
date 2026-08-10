@@ -94,6 +94,20 @@
   states、correct/without-replacement、method macro0 historical-v6 load-only + fresh elementwise-zero residual、
   18 rollout workers + 18 Writer generators和batch8；临时prepare root已清理。该prepare没有启动GPU或
   形成性能证据。
+- **zero-memory macro0 strict400已正式封存**：clean frozen`6b5f7a6`在实时空闲`gpu02:0--5`自然exit0，
+  root=`runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810`。
+  strict correct=`134/400`、correct80=`26/80`、breadth6；per-task按Spatial/Object/Goal/Long=
+  `0/5/48/34/0/35/11/1`，per-suite=`5/82/35/12`。wall/rollout window=`867.152/616.138s`，72/72 shards、
+  400 rows、18 workers均attempt1/exit0。
+- 400套native LoRA由18 generators以54 batches全部fresh生成，configured/max batch均8，0 reuse/redundant
+  forward；Writer全释放、source policy全原进程复用且未reload。max per-generator allocated/reserved=
+  `11,745,421,312/12,895,387,648B`，0 retry/OOM/nonfinite/forbidden reads；六卡结束后0MiB/P8。
+- 与历史native v6 macro0 root的400-row严格identity检查中，state/language/env seed/policy-noise、teacher demo/
+  order/selection seed和video mapping均0差异；success也逐行完全相同，gained/lost=`0/0`、共同成功/失败=
+  `134/266`。新旧400 cache entry IDs相同，逐tensor CPU直比30,400 tensors、514,867,200 values全部
+  bit-exact。唯一微差为一条共同成功episode终止step `106→107`，其余399 rows steps相同；不改变formal
+  结论，也不为它降低吞吐。每task demos0--49各一次。由此v2 zero-memory部署图基线成立，不把`134`写成改进；当前下一
+  科学动作是formal fresh0→10与即时strict correct400，仍无非零Program memory成绩。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -333,7 +347,7 @@ Experts不解决：
 | Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂 |
 | Expert-Flow Teacher Audit | 无rollout | gradient residual`.6864/.8387`，teacher方向非冗余 | expert flow loss只在`2/24` tasks、`0/4` suites优于两baseline | CEFD否决；一次性runtime已删除 |
 | Frozen-v6 Counterfactual-Null Program Residual v1 | 无rollout | correct retention `.807966`、A/B/action/closure成立 | DC key导致condition`1315.33`、null仅15/24，吞吐门亦non-pass | v1退役；不训练、不调lambda/seed/P |
-| Balanced DC--Causal Program Residual v2 | deployment smoke`4/8`，无formal成绩 | 13/13机制门、24/24 null、A/B/action/吞吐与真实部署链路全通过 | same-task噪声、多步累积及strict absolute仍未知 | 当前唯一active implementation；先macro0 strict400再短训裁决 |
+| Balanced DC--Causal Program Residual v2 | zero-memory macro0=`134`、breadth6、历史native逐行0/0 | 13/13机制门、24/24 null、A/B/action/吞吐、真实部署链路与exact baseline identity全通过 | 非零memory的absolute、same-task噪声、多步累积仍未知 | 当前唯一active implementation；formal fresh0→10后立即strict裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -493,12 +507,12 @@ Experts不解决：
    续25；首次`≥144`补完整六臂。single winner严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
    再继续提高；未过门按最早失败接口做单变量修正，不扫P/lambda/eta或180度转向。
 
-当前具体顺序：把`af7b101`的frozen-worktree artifact路径修复与本状态更新clean commit/push；从该严格
-后继建立新的detached frozen worktree，再实时比较`gpu01/gpu02`和`/data1` quota。只在六张同节点A40均
-空闲健康时运行zero-memory macro0 strict correct400；物理卡按现场选择，保持18 rollout workers + 18 Writer generators、batch8、
-dynamic queue、NUMA physical/local映射和deferred-NCCL合同。完成后CPU-only重聚合并与historical native
-macro0=`134`逐episode配对，任何合同差异先按工程问题处理；只有macro0封存后才fresh0→10。设备不空闲、
-拓扑不符或storage不足都fail close，不触碰他人进程。
+当前具体顺序：先把上述macro0 formal artifact、严格0/0 paired identity和当前authority clean commit/push；
+从新严格后继建立fresh formal detached worktree/root。实时重查`gpu01/gpu02`与`/data1` quota，只在六张
+空闲健康A40上运行Program memory fresh0→10；保持train24×logical B20、physical B10+10、六rank×4 tasks、
+full48 exact write、0 negative policy forward和既有NCCL/NUMA映射。macro10完成后立即跑同一correct400，
+按第38.3门与native macro0=`134`逐task/breadth/gained-lost裁决，不先看80-row screen。设备不空闲、拓扑
+不符或storage不足都fail close，不触碰他人进程。
 
 ## 10. Canonical assets
 
@@ -510,7 +524,8 @@ macro0=`134`逐episode配对，任何合同差异先按工程问题处理；只�
   formal non-pass/fail-closed。
 - audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
 - active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism与
-  v8 deployment双root均已seal，formal runtime ready；执行顺序仍要求先封存zero-memory macro0 strict400。
+  v8 deployment双root均已seal，formal runtime ready；zero-memory macro0 strict400已封存并exact identity，
+  当前执行顺序进入fresh0→10。
 - training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

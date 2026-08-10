@@ -99,6 +99,19 @@ load-only + `[256,320,256]` fresh elementwise-zero residual、18 rollout workers
 预算。prepare为CPU-only，未生成rollout、LoRA cache或性能证据。
 临时prepare root已清理，正式run必须使用全新不存在的output root。
 
+该zero-memory macro0随后已从clean frozen`6b5f7a6`在实时空闲`gpu02:0--5`正式完成。root=
+`runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810`；
+strict correct=`134/400`、correct80=`26/80`、breadth6，per-task按Spatial/Object/Goal/Long=
+`0/5/48/34/0/35/11/1`。72/72 shards、400 rows、18 workers全部attempt1/exit0；wall/rollout window=
+`867.152/616.138s`。18 generators生成400 fresh LoRAs、54 batches、max batch8、0 reuse/redundant forward，
+Writer全部释放且source policy全复用；0 retry/OOM/nonfinite/forbidden reads，GPU结束后0MiB/P8。
+
+与历史native v6 macro0的400-row strict pairing得到所有state/language/env seed/policy noise/video ordinal与
+order/selection seed 0差异，success逐行也完全相同：gained/lost=`0/0`、共同成功/失败=`134/266`；每task
+demos0--49各一次。400 cache entries的30,400 LoRA tensors、514,867,200 values逐tensor bit-exact；仅一条
+共同成功episode晚1 env step终止，不改变success集合。因此该结果是当前family可信的exact closed-loop
+identity baseline，不是性能提高。
+
 当前操作顺序：
 
 1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
@@ -106,10 +119,10 @@ load-only + `[256,320,256]` fresh elementwise-zero residual、18 rollout workers
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
 4. 一次性audit与v1 key均已退役；第38节v2 mechanism 13/13通过并seal，不能从旧Tangent/audit/v1恢复执行；
-5. mechanism与deployment两类seal均已齐全，frozen-worktree prepare路径也已修复并通过；下一次GPU从
-   包含`af7b101`与当前authority的新clean pushed/frozen seal先评测zero-memory macro0 strict correct400，
-   不能用CPU prepare或8-row smoke替代；
-6. macro0封存后才formal fresh0→10并立即strict correct400，再按absolute/breadth/churn/mechanics裁决；
+5. mechanism/deployment/prepare与zero-memory macro0现均已封存；macro0与历史native基线400-row逐行
+   identity成立，不能把它写成v2提升；
+6. 下一次GPU从新clean pushed/frozen authority formal fresh0→10并立即strict correct400，再按absolute/
+   breadth/churn/mechanics裁决；
 7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
    不从Tangent checkpoint resume。
 
@@ -119,8 +132,8 @@ load-only + `[256,320,256]` fresh elementwise-zero residual、18 rollout workers
 
 - 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD及第37节v1 key均已退役或
   否决。当前唯一active implementation是第38节balanced-key frozen-v6 counterfactual-null Program residual；
-  mechanism与deployment双root均已seal；按当前执行边界先完成zero-memory macro0 strict400，再运行
-  formal fresh0→10。
+  mechanism与deployment双root均已seal，zero-memory macro0 strict400也已以历史native逐行identity完成；
+  按当前执行边界运行formal fresh0→10。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。

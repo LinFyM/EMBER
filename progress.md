@@ -1,5 +1,24 @@
 # EMBER Progress Ledger
 
+## Balanced DC--Causal v2 zero-memory macro0 strict400完成（2026-08-10）
+
+- clean pushed/frozen commit=`6b5f7a6ad6ef1a778205071f38faec9f936cf54e`；启动前live比较两节点并选择
+  0MiB/0%/P8、无compute process的`gpu02:0--5`，没有触碰忙碌的`gpu01:3`和`gpu02:6--7`。`/data1`
+  used/quota=`573,456,828/1,073,741,824KiB`，正式root实际`1,085,108,227B`。
+- root=`runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810`；
+  72/72 shards、400 rows、18 workers均attempt1/exit0，strict correct=`134/400`、correct80=`26/80`、
+  breadth6，per-task=`0/5/48/34/0/35/11/1`、per-suite=`5/82/35/12`。wall/rollout window=
+  `867.152/616.138s`，CPU aggregate重建完全一致。
+- 400套LoRA由18 generators以54 batches全部fresh生成，configured/max batch8、max frames69、0 reuse/
+  redundant forward；Writer全释放、source policy全复用且未reload。max per-generator allocated/reserved=
+  `11,745,421,312/12,895,387,648B`，0 retry/OOM/nonfinite/forbidden reads；结束后六卡0MiB/P8。
+- 与历史native v6 macro0的400 rows严格配对：state/language/env seed/policy noise、teacher demo/order/selection
+  seed和video mapping均0差异，success逐行同一，gained/lost=`0/0`、共同成功/失败=`134/266`；每task demos
+  0--49各一次。新旧400 cache entries逐tensor直比30,400 tensors、514,867,200 values全部bit-exact；仅一条
+  共同成功episode终止step `106→107`，其余399 rows steps一致。该结果只封存exact zero-memory baseline，
+  不是v2改进。下一步从新clean pushed/frozen
+  authority formal fresh0→10并立即strict correct400。
+
 ## Frozen-worktree formal prepare阻塞修复并通过（2026-08-10）
 
 - deployment写回由clean pushed`d228d0d`封存。对应detached frozen worktree首次CPU-only formal prepare在

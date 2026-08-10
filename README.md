@@ -57,7 +57,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   clean frozen`5d93434`的macro49 mechanism profile **13/13通过**：condition=`106.114`、correct/cotangent=
   `.968254`、negative/correct=`.0218514`、24/24 correct和24/24 null；A/B、4/4 fixed-action、closure、
   0 negative forward全部通过。production ratio=`.949122`，无checkpoint/OOM/nonfinite，六卡已释放。
-- mechanism与deployment artifact现均已seal；当前仍无v2训练或formal strict成绩。clean frozen`2af82aa`
+- mechanism与deployment artifact现均已seal；该阶段仍无v2训练或formal strict成绩。clean frozen`2af82aa`
   在空闲`gpu02:0`上以同一32-request/1093-frame panel实测batch8/16/32=`.911238/.901898/.906482 LoRA/s`，
   三者稳定且显存余量约32.4GiB，按最高实测吞吐选择batch8。随后validation8×state0 correct vertical smoke
   真实生成8套完整LoRA并完成8条LIBERO闭环，`4/8` success；该小样本只作执行证据，不是性能结论。
@@ -68,8 +68,15 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   nested symlink逃逸仍拒绝；全仓`285 passed in 21.38s`。同一clean frozen commit的prepare现已exit0并确认
   8×50 correct/no-replacement、historical-v6+exact-zero residual macro0、18 rollout workers + 18 Writer
   generators和batch8合同；临时prepare root已清理，它未启动
-  GPU或产生性能结果。下一步从包含当前authority的新clean frozen seal评测zero-memory macro0 strict400，
-  再决定fresh0→10。
+  GPU或产生性能结果。当时的下一门是从包含当前authority的新clean frozen seal评测zero-memory macro0
+  strict400；现已由下项正式完成。
+- zero-memory macro0现已从clean frozen`6b5f7a6`在空闲`gpu02:0--5`正式完成：`134/400`、breadth6，
+  per-task按Spatial/Object/Goal/Long为`0/5/48/34/0/35/11/1`。72/72 shards和18 workers均attempt1/exit0；
+  wall=`867.152s`，400套LoRA由18 generators以54 batches、max batch8全部fresh生成，0 retry/OOM/nonfinite/
+  forbidden reads，Writer释放/source复用且GPU已释放。与历史native macro0的400个paired rows在state、RNG、
+  video和success上逐行完全相同，gained/lost=`0/0`；400套cache的30,400个LoRA tensors、514,867,200
+  values也全部bit-exact，不是只碰巧aggregate相等。因此下一步按门formal
+  fresh0→10并立即strict correct400；当前仍无v2非零memory成绩。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少

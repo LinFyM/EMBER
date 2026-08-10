@@ -37,24 +37,22 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   correction consistency=`.141539--.142175`，等于随机正交基准`1/sqrt(50)=.141421`；固定10-video的
   effective-BA pair cosine跨8 tasks落在`[-.001371,.003280]`。因此blind-add把每个新video写成近正交小扰动，
   能偶然换手但不能保留此前能力；这比单看aggregate更直接定位到跨macro reconciliation失效。
-- 当前唯一active implementation改为第39节**Exact Anchored Reconciliation**。它完全保留v2的one-shot
-  deployment graph、P256 balanced video key、frozen v6 decoder、完整rank16 LoRA、B20/B10+10和full48
-  functional rows，只把training-only blind-add改成FP64 feature-space recursive anchored ridge/RLS：每次
-  目标锚在更新前的既有condition输出，再叠加当前correct descent、negative零增量；同时保存`[256,256]`
-  precision和`assimilated_rows`。首步数学上精确退化为v2 blind solve，之后显式抑制旧correct-row漂移。
-- RLS为fresh-incompatible family，禁止从v2 macro10/25伪resume。`f0c3f51`首次fresh0→3按原合同仍永久
-  保持16/18 non-pass；第39.4.1只修正ppm级首步比值和逐macro cold-wall两个测量门，没有修改架构、数学、
-  dtype、batch、worker或forward。随后clean pushed/frozen`f28fc8b`在`gpu02:0--5`完成全新fresh0→3：
-  natural exit0、0 checkpoint/OOM/nonfinite/negative forward，17/17通过，artifact=`100452B`且
-  completion `passed=true`。old-row drift/blind=`.248611/.213872`、旧rows改善=`100%/100%`、
-  current/blind=`.999980/.784334/.640650`；三步production ratio=`.947963/.983678/.925249`、均值
-  `.952297`，peak allocated/reserved=`43,261,790,208/46,919,581,696B`。config现已登记immutable
-  evidence并进入`active_deployment_sealed_formal_ready`；profile权重未保留，只授权formal fresh0→10。
-  fresh formal必须在结果出现前把固定macro0=`6b5f7a6` root与唯一尚不存在的macro10 strict root登记进原
-  run contract；evaluator会在创建output前核对macro10 registered root，通用historical transition只接受
-  RLS macro10/25。10→25会从两份immutable 400-row roots
-  重聚合并核对commit/checkpoint/state/RNG/language/actual video，只有correct≥140、lost≤6、breadth≥6才
-  允许进入同commit exact-resume，否则fail closed；macro25不是预授权动作。
+- 第39节**Exact Anchored Reconciliation**已从clean frozen`25bbd52`完成formal fresh0→10和预注册
+  macro10 strict correct400。训练natural exit0、10 rows、0 OOM/nonfinite，六卡结束后释放；strict=
+  `140/400`、breadth6、per-task=`2/3/47/35/0/34/19/0`。相对exact balanced macro0 retained/gained/lost=
+  `119/21/15`、churn36，未过`lost<=6`门；相对blind-v2 macro10同为140但仍`17/17`换手。RLS没有减少
+  held closed-loop旧成功丢失，因此不续25、不补六臂、不扫damping/step/window/forgetting。
+- correct80在同一比较中为`31 vs 26`、gained/lost=`5/0`，但full400为`21/15`；不得用80-row screen选
+  checkpoint。RLS内部current/blind降到`.230340`、final precision condition约`8325`，而formal的
+  `reference_correct_rows=0`，old-row improved=`1`是空集合值。短历史feature-row保留成立但不足以保护
+  validation闭环能力，最早接口转为functional cotangent与on-policy occupancy/reward credit错位。
+- RLS config/runtime已由formal completion、macro10 checkpoint、strict results和immutable transition共同
+  封为`retired_after_macro10_strict_closed_loop_nonpass`，fresh/restart/resume均fail closed。当前没有active
+  GPU方法；只授权第39.5 Reward-Credit Program Cotangent的设计、实现和CPU seal：保持Balanced-v2
+  one-shot部署图、P256、frozen v6 decoder、single Program、full48 RLS和完整rank16 LoRA，只把offline
+  source-action cotangent换成train24 K4 binary-LOO、Nmc4 executed-prefix on-policy Program cotangent。
+  禁止继承RLS10 precision、恢复old/current双forward、第二epoch、shared Adam、progress reward、SPSA、
+  few-shot或multi-video。新设计CPU seal完成前不得启动GPU。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`，长期`>150/400`目标未达到。当前没有运行中的
   EMBER GPU任务；不得把RLS的CPU矩阵等价、profile门或reconstruction/几何当作性能结果。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -137,40 +135,37 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 
 ## Current scientific boundary and reusable training contract
 
-当前唯一active Writer是第39节Exact Anchored Reconciliation。第38节v2已完成并因blind-add缺少跨macro
-能力保留而退役；RLS只改变训练更新和checkpoint sufficient state，部署计算图与v2同构且代码路径不变。historical
-v6-fast macro400仍是唯一load-only初始化；expert flow、whole-LoRA/ECP/Tangent/CEFD、旧ranking/completion
-cotangent和task-expert输出不得进入活动update。当前方法严格冻结historical v6整套600 tensors，在fused
-Program后只加入同一个video-keyed FP32 residual；没有optimizer/scheduler/scaler、language bypass、expert
-bank或第二套LoRA。
+当前没有active GPU Writer。第39节RLS已由full400 closed-loop证据退役；其部署图、profile与formal artifact
+继续作历史机制证据，但任何fresh/restart/resume均由状态机拒绝。historical v6-fast macro400仍是下一候选的
+唯一load-only初始化；expert flow、whole-LoRA/ECP/Tangent/CEFD、旧ranking/completion cotangent、task-expert
+输出、RLS10 Program/precision均不得进入新update。
 
-当前RLS family保持：
+当前只允许设计与实现第39.5 Reward-Credit Program Cotangent，并保持以下边界：
 
-- train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
-  跨episode独立action queries；先task内mean，再24-task等权。每rank只all-gather本地8个condition features
-  和4个correct cotangents，六rank按固定full48排序独立形成同一Program write；不all-reduce约80MiB memory。
-- correct只使用真实source-action functional cotangent；不得恢复whole-LoRA attraction、ECP completion、
-  Tangent Tube或CEFD。反事实条件只可约束structured residual不被当前correct更新带动，不得最大化negative
-  action error、加载wrong-task expert或形成第二套policy/LoRA。
-- correct video与action queries错开episode；same-task不同video是共同positive分布，不作negative。
-- negative只重排真实输入frames或使用预封存cross-suite wrong mapping；不得最大化negative action
-  error、无限放大LoRA或读取negative任务隐藏信息。
-- 统一step2000 task experts只定义历史train-task policy-effective参照；当前RLS训练和部署均不读取其输出，
-  它们也不保证held泛化、视频顺序或same-task specificity。
-- full48条件`F=[F_correct;F_negative]`，当前functional cotangent只形成correct增量`E=[-G;0]`。目标是
-  `T=F M_before+E`；累计目标的feature precision从`I_256`开始，每macro同化48 rows并用Woodbury/RLS精确更新
-  Program memory。首步必须与旧blind solve等价，后续必须同时保留旧condition输出和当前有效motion。
-- validation/test actions不产生梯度。formal checkpoint分别保存deployment-owned单个FP32 Program memory与
-  training-only FP64`[256,256]` precision、`assimilated_rows=48*macro`、cursor和六rank RNG；historical v6
-  600 tensors与fixed projection必须strict重建且不能被checkpoint覆盖。部署只加载Program tensor，不加载
-  precision。fresh/exact-resume不可混用；v2 checkpoints缺少precision，绝对禁止伪resume。
-- fresh0→3 disposable A40 mechanism/throughput profile已经17/17通过且权重弃用；formal现在只允许identity
-  fresh0→10，随后立刻跑严格paired correct400。macro10支持门为correct≥140、相对macro0 lost≤6、breadth≥6；correct>140
-  才是强absolute证据。未通过则先裁决能力保留是否为根因，再考虑已设计的on-policy reward-credit后备，
-  不能边跑边改阈值或直接续25。
-- fresh0→10必须预注册固定macro0 strict root和唯一macro10 output root；root路径写入run contract，不能在
-  看到outcome后另选。10→25前由canonical paired analysis从queue/shards重聚合，不信任手填aggregate或
-  passed flag；formal deployment也拒绝未声明的中间macro。
+- 部署端严格不变：exact language + exactly one action-hidden teacher video是唯一输入，P256 Balanced key、
+  frozen historical-v6 600 tensors、single FP32 Program residual、完整38-target rank16 LoRA不变；没有
+  language bypass、expert bank、second LoRA或deployment reward/action读取。
+- 从`M_0=0, Lambda_0=I` fresh开始，不能继承RLS10。train24每task一条video生成一套LoRA，并在同一LoRA下
+  执行K4 official random-reset rollouts；成功和失败都只保留真实executed prefixes，未执行后缀不得进入loss。
+- binary task-relative LOO advantage固定为`A_e=(4R_e-sum_j R_j)/3`；全成/全败task严格零credit。每episode
+  executed chunks等权、Nmc4 keyed flow samples等权、先task内mean再24-task等权，直接对当前Program输出
+  求一次signed cotangent。validation/test reward/actions永不产生梯度。
+- full48仍为`F=[phi_correct;phi_negative]`、`E=[-G_reward;0]`，negative只表示本次incremental motion为零，
+  不增加negative policy forward、不最大化wrong action error。Program与FP64 precision继续用现有RLS同化，
+  checkpoint保存Program、precision、rows及rollout/video/env/policy/flow/cursor/六rank RNG；部署只读Program。
+- old=current时旧ASPO首epoch的一阶梯度等价于advantage-weighted current CFM loss，因此禁止detached-old
+  重复forward、ratio、第二replay epoch、shared Adam/AdamW、SPSA、progress reward、critic、pose shaping和
+  success-only replay。只复用历史Relative-Flow已验证的K4/Nmc4、failure replay、runtime asset/EGL/NCCL修复。
+- CPU门必须覆盖LOO零和、全成/全败零、success/failure符号、executed-prefix mask、与旧ASPO的一阶等价、
+  cotangent shape/finite、frozen对象零grad、full48顺序/negative-zero、RLS closure、fresh/resume全游标和0
+  information-wall读取。通过前不得启动GPU。
+- 首次GPU只允许一次full24×K4×Nmc4 one-epoch discarded profile：96/96 rollouts、至少6 mixed tasks、
+  mixed cotangent finite/nonzero、Program→LoRA→fixed-action非零、0 OOM/nonfinite/watchdog，无old forward/
+  second epoch。保持六卡、每rank4 tasks、BF16、persistent policy/env和最大安全并行，不为微差降吞吐。
+- profile通过后formal从macro0 fresh只跑cycle0→1，直接strict correct400，不跑80-row screen。cycle2门为
+  correct≥140、相对macro0 lost≤6、breadth≥6且gained>lost；首次≥144补同checkpoint六臂，严格>150后完成
+  correct/same/wrong/shuffled/reversed/no-video因果裁决。cycle1未过门则停止，不扫reward scale/K/Nmc/seed/
+  RLS超参；只有credit、closure、BA/action传递全健康而closed-loop仍失败，才上移到P256/Procedure表示。
 
 禁止用scalar/global scale、confidence gate、B-only residual、static/language bypass、强制正交或rank
 diversity、multi-video、checkpoint fusion去救一个失败点。few-shot只有在one-shot跨video方差被严格定位为

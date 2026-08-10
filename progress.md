@@ -1,5 +1,28 @@
 # EMBER Progress Ledger
 
+## RLS formal0→10、strict400与正式退役（2026-08-10）
+
+- profile/root-binding seal已clean commit/push为`25bbd52c16cc0f0fd48f478f0fa8b554fcb28dc6`，对应独立
+  detached frozen worktree完成fresh0→10。formal root=
+  `runs/outputs/pi05_v6_exact_anchored_reconciliation_formal_fresh0to10_r6_lb20_mb10_25bbd52_20260810`；
+  launcher、run contract、completion、macro10 checkpoint和exit完整/natural0。10步wall=`199.425195s`、
+  input wait=`.278241s`，peak allocated/reserved=`43,247,554,048/46,919,581,696B`；六卡`gpu02:0--5`
+  结束后回到0MiB，未触碰他人GPU。
+- 预注册strict root=
+  `runs/outputs/pi05_v6_exact_anchored_reconciliation_correct400_noreplacement_seed7_method_macro0010_25bbd52_20260810`；
+  72/72 shards、400 rows、18 workers return0，wall/shard window=`844.837/592.924s`，overall/rollout-only
+  throughput=`.473464/.674623 episodes/s`，400 LoRAs、batch8、18 generators/rollout workers合同不变。
+- strict correct=`140/400`、breadth6、per-task=`2/3/47/35/0/34/19/0`。macro0→RLS gained/lost=
+  `21/15`，门为true/false/true，overall `passed=false`；因此未启动10→25或六臂。RLS相对blind-v2 macro10
+  同分且`17/17`换手，证实feature-space anchoring没有转化成closed-loop retention。
+- 通用transition首次因legacy-baseline硬编码在CPU后处理阶段fail closed，未创建半成品。根因定位后只增加
+  candidate→唯一allowed baseline family映射；focused 28/28、正确环境全仓304/304、compileall/diff-check
+  通过，clean commit/push=`866cca9`。从该clean HEAD生成immutable 33,091B transition artifact；没有改动或
+  重跑训练/rollout。
+- config现由completion、10-row metrics、macro10 manifest、1,875,159B strict results和33,091B transition
+  共同验证`retired_after_macro10_strict_closed_loop_nonpass`。formal runtime拒绝fresh/restart/resume；下一步只
+  做第39.5 reward-credit后继的设计与CPU seal。
+
 ## RLS f28 live seal与formal-ready封口（2026-08-10）
 
 - 测量合同commit`f28fc8b`已clean pushed并创建独立detached worktree。live检查`gpu01/gpu02`、选定

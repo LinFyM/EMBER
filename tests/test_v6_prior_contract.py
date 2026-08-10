@@ -44,22 +44,28 @@ def _load_mutation(
     load_v6_prior_config(path)
 
 
-def test_canonical_residual_is_formal_ready_after_live_profile_seal() -> None:
+def test_canonical_residual_is_retired_after_macro10_closed_loop_nonpass() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
-    assert config["status"] == "active_deployment_sealed_formal_ready"
+    assert config["status"] == (
+        "retired_after_macro10_strict_closed_loop_nonpass"
+    )
     assert config["profile_run"]["status"] == (
         "sealed_from_live_a40_fresh0_to3_profile"
     )
     assert config["formal_run"]["status"] == (
-        "ready_after_live_mechanism_and_deployment_seals"
+        "retired_after_macro10_strict_closed_loop_nonpass"
     )
     assert config["profile_run"]["artifact_evidence"]["run_commit"] == (
         "f28fc8b1e512daadf368f949f7de82ccedcb3a75"
     )
     with pytest.raises(ExpertManifoldError, match="not in its launch state"):
         runtime_for_mode(config, "mechanism-profile")
-    assert runtime_for_mode(config, "formal") == (25, (10, 25), 0)
+    with pytest.raises(
+        ExpertManifoldError,
+        match="blocked by mechanism or deployment state",
+    ):
+        runtime_for_mode(config, "formal")
     assert config["method"]["language_only_lora_path"] is False
     assert config["method"]["dynamic_value"] == "one_raw_teacher_video_only"
     assert config["program_residual"]["value_count"] == 20_971_520
@@ -120,6 +126,14 @@ def test_formal_states_cannot_be_asserted_without_retained_artifacts() -> None:
     config["formal_run"]["status"] = "formal_result_sealed"
     assert not contract_module._formal_state_matches(config)
     config["formal_run"]["status"] = "formal_running_or_resumable"
+    assert not contract_module._formal_state_matches(config)
+
+
+def test_formal_nonpass_state_rejects_changed_transition_evidence() -> None:
+    config = _raw_config()
+    config["formal_run"]["artifact_evidence"]["transition_analysis"][
+        "bytes"
+    ] -= 1
     assert not contract_module._formal_state_matches(config)
 
 
@@ -230,7 +244,13 @@ def test_scientific_authorities_and_schedules_are_fixed(
 
 
 def _formal_ready_config() -> dict:
-    return _raw_config()
+    config = _raw_config()
+    config["status"] = "active_deployment_sealed_formal_ready"
+    config["formal_run"]["status"] = (
+        "ready_after_live_mechanism_and_deployment_seals"
+    )
+    config["formal_run"]["artifact_evidence"] = None
+    return config
 
 
 def _args(

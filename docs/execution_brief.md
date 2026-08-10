@@ -6,7 +6,22 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务。
 
-**最新执行状态（2026-08-10）**：第38节v2已从clean frozen`abd8e08`完成formal0→25，root=
+**最新执行状态（2026-08-10）**：第39节RLS已从clean frozen`25bbd52`完成formal fresh0→10与预注册
+macro10 strict correct400。训练natural exit0、10 rows、step sum/mean=`199.425195/19.942519s`、input wait=
+`.278241s`、peak allocated/reserved=`43,247,554,048/46,919,581,696B`，0 OOM/nonfinite/negative policy
+forward。strict=`140/400`、breadth6、per-task=`2/3/47/35/0/34/19/0`；相对exact balanced macro0=`134`
+严格paired retained/gained/lost=`119/21/15`、net`+6`、churn36，未过`lost<=6`门。相对blind-v2 macro10
+同为140却有`17/17`换手。RLS没有保住closed-loop旧成功，不续25、不补六臂、不扫超参。
+
+full400 transition已封存在
+`runs/outputs/pi05_v6_exact_anchored_reconciliation_macro0010_historical_baseline_transition_866cca9_20260810/analysis.json`。
+correct80会显示`31 vs 26`、gained/lost=`5/0`，与full400的`21/15`相反；以后不使用80-row screen选点。
+RLS内部current/blind降至`.230340`、final precision condition约`8325`，而formal没有保存历史reference rows；
+它付出了acquisition抑制却没有对应闭环retention。config/runtime已封为formal non-pass，fresh/restart/resume
+均fail closed。当前没有active GPU方法；下一最早接口是source-action functional cotangent与closed-loop
+occupancy/reward credit错位，按第39.5只设计同一one-shot部署图上的binary-reward Program cotangent后继。
+
+此前第38节v2已从clean frozen`abd8e08`完成formal0→25，root=
 `runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`。25 macros
 step sum/input wait=`535.464796/2.208183s`，peak allocated/reserved=
 `43,247,029,760/46,917,484,544B`，0 OOM/nonfinite/negative policy forward。macro0/10/25 strict
@@ -19,17 +34,15 @@ v2机制、部署和短期`+6`均真实，但macro10 effective-BA delta/base中�
 pair cosine跨8 tasks为`[-.001371,.003280]`。所以blind-add正在写入近正交video-specific小扰动，能产生
 换手却不能保留旧能力；v2不续50、不补多臂、不扫超参。
 
-当前唯一active是第39节**Exact Anchored Reconciliation**：部署仍为Balanced v2 P256 one-shot graph；训练端
+第39节**Exact Anchored Reconciliation**当时保持Balanced v2 P256 one-shot graph；训练端
 用FP64`Lambda_0=I_256`和RLS把每批target锚到更新前condition输出，再叠加`[-G;0]`。checkpoint增加
 training-only precision/assimilated_rows，部署仍只加载Program memory。family fresh-incompatible。
 旧`f0c3f51`按原合同保持16/18 non-pass。第39.4.1不改热路径；clean pushed/frozen`f28fc8b`随后独立
 fresh0→3 natural exit0且17/17通过：old drift/blind=`.248611/.213872`、old rows改善全1、current/blind=
 `.999980/.784334/.640650`，production ratios=`.947963/.983678/.925249`、mean=`.952297`，0 checkpoint/
 OOM/nonfinite/negative forward。config已登记`100452B` raw artifact并formal-ready；profile权重永久弃用。
-下一动作是formal0→10并立即strict400。10→25只在macro10
-correct≥140、lost≤6、breadth≥6且有严格paired证据时允许。fresh formal必须预注册固定macro0=`6b5f7a6`
-root和唯一尚不存在的macro10 root；evaluator创建output前核对registered root，resume从immutable shards
-重聚合并核对commit/checkpoint/同video配对。macro25是支持门后的条件动作。
+上述formal/strict现已执行并由full400否决；profile与启动合同继续保留为历史机制证据，不再授权RLS训练、
+续训或评测。
 
 以下为此前按时间发生的完整证据，不能覆盖上面的active边界。v6-prior whole-LoRA objective已完成formal
 0→50，同一schedule macro0/10/25/50 strict correct400=`134/127/105/123`；macro0仍最佳，因此已退役。
@@ -147,11 +160,10 @@ identity baseline，不是性能提高。
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
 4. 一次性audit、v1和v2 blind-add均已退役；v2的mechanism/deployment/identity、formal0→25、macro10/25
    strict与same-task诊断都已封存，不能从旧Tangent/audit/v1/v2恢复活动执行；
-5. 第39节RLS的CPU实现与fresh0→3 disposable A40 profile都已seal；profile权重弃用且不作性能；
-6. 下一GPU动作只从新clean frozen authority formal identity-fresh0→10并立即strict400；macro10只有满足
-   correct≥140、lost≤6、breadth≥6
-   的严格paired门，才可同一commit exact-resume10→25；两条strict roots必须在fresh启动时预注册，不能
-   outcome后择优；
+5. 第39节RLS的CPU/profile/formal0→10与strict400均已seal；full400 lost15未过门，config/runtime已退役，
+   不得fresh、resume25、补六臂或用correct80重解释；
+6. 下一候选只允许先完成Reward-Credit Program Cotangent设计与CPU seal；GPU前必须再clean push/frozen和
+   live preflight，不能从RLS10或任何retired checkpoint续权重；
 7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict400，不从任何retired
    checkpoint伪resume。
 
@@ -159,10 +171,9 @@ identity baseline，不是性能提高。
 
 ## 1. Fixed scientific contract
 
-- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD、第37节v1与第38节v2
-  blind-add均已退役或否决。当前唯一active implementation是第39节Exact Anchored Reconciliation；它保留
-  balanced-key frozen-v6 Program deployment图，只改变training update和resume state。fresh0→3 profile已
-  17/17通过且权重弃用；下一步只从identity formal fresh0→10并立即strict400。
+- 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD、第37节v1、第38节v2
+  blind-add和第39节RLS均已退役或否决。当前没有active GPU implementation；只允许设计/CPU实现第39.5
+  Reward-Credit Program Cotangent，保留balanced-key frozen-v6 Program deployment图，仅替换训练cotangent。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。

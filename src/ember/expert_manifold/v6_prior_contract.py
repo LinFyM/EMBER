@@ -21,6 +21,10 @@ from ember.expert_manifold.v6_prior_contract_spec import (
     EXPECTED_UPDATE as _EXPECTED_UPDATE,
     EXPECTED_WRITER as _EXPECTED_WRITER,
 )
+from ember.expert_manifold.v6_prior_formal_nonpass import (
+    formal_macro10_nonpass_artifact_matches,
+    formal_metrics_match as _formal_metrics_match,
+)
 from ember.expert_manifold.v6_prior_policy_batch import (
     LOGICAL_POLICY_BATCH_SIZE,
 )
@@ -673,6 +677,12 @@ _COHERENT_STATES = {
         "formal_result_sealed",
         "sealed_from_live_residual_deployment_profile",
     ),
+    (
+        "retired_after_macro10_strict_closed_loop_nonpass",
+        "sealed_from_live_a40_fresh0_to3_profile",
+        "retired_after_macro10_strict_closed_loop_nonpass",
+        "sealed_from_live_residual_deployment_profile",
+    ),
 }
 
 _EXPECTED_PROFILE_STATIC = {
@@ -745,23 +755,6 @@ def _formal_completion_matches(completion: Mapping[str, Any]) -> bool:
     }
 
 
-def _formal_metrics_match(path: Path) -> bool:
-    try:
-        rows = [
-            json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-    except (OSError, json.JSONDecodeError):
-        return False
-    return (
-        len(rows) == 25
-        and all(isinstance(row, Mapping) for row in rows)
-        and [row.get("macro") for row in rows] == list(range(1, 26))
-        and [row.get("schedule_macro") for row in rows] == list(range(25))
-    )
-
-
 def _formal_run_matches(
     config: Mapping[str, Any],
     run: Mapping[str, Any],
@@ -792,6 +785,10 @@ def _formal_artifact_matches(config: Mapping[str, Any]) -> bool:
         "ready_after_live_mechanism_and_deployment_seals",
     }:
         return evidence is None
+    if status == "retired_after_macro10_strict_closed_loop_nonpass":
+        return isinstance(evidence, Mapping) and (
+            formal_macro10_nonpass_artifact_matches(config, evidence)
+        )
     if status != "formal_result_sealed" or not isinstance(evidence, Mapping):
         return False
     required = {
@@ -914,6 +911,7 @@ def _formal_state_matches(config: Mapping[str, Any]) -> bool:
             "blocked_until_live_profile_passes_and_is_sealed",
             "ready_after_live_mechanism_and_deployment_seals",
             "formal_result_sealed",
+            "retired_after_macro10_strict_closed_loop_nonpass",
         }
         and _projection_matches(formal, _EXPECTED_FORMAL_STATIC)
         and _formal_artifact_matches(config)

@@ -2663,9 +2663,82 @@ schema、next_macro和metrics rows；完整checkpoint cursor/payload继续由既
 第二evaluator或热路径开销。下一动作因此是新clean pushed/frozen
 authority的identity fresh0→10，随后只在该预注册root立即运行strict correct400。
 
-### 39.5 唯一后备方向
+#### 39.4.3 formal0→10与full400终局
 
-RLS证据完成前不实现reward路径。若D层保留被证伪，后备只允许在同一Balanced v2部署图和full48
-preservation solve上，把pointwise source-action cotangent替换为K4真实train24 rollout的binary LOO、Nmc4
-executed-prefix on-policy Program cotangent；不恢复旧高维SPSA、shared Adam、第二replay epoch、progress
-reward或多video。它是随后单变量的credit测试，不与RLS同时打开。
+clean pushed/frozen`25bbd52c16cc0f0fd48f478f0fa8b554fcb28dc6`在实时空闲的`gpu02:0--5`完成唯一
+formal fresh0→10。natural exit0、10 metrics、macro10 checkpoint、Program/precision/cursor/六rank RNG均完整；
+step wall sum/mean=`199.425195/19.942519s`、input wait=`.278241s`，peak allocated/reserved=
+`43,247,554,048/46,919,581,696B`，0 OOM/nonfinite/negative policy forward。结束后六卡全部释放。
+
+唯一预注册macro10 strict root完成72/72 shards、400 rows与18/18 workers return0，correct=`140/400`、
+breadth6、per-task=`2/3/47/35/0/34/19/0`、per-suite=`5/82/34/19`。相对exact balanced macro0，严格paired
+retained/gained/lost=`119/21/15`、net`+6`、churn36；相对blind-v2 macro10同为140却gained/lost=`17/17`。
+预注册门中的correct和breadth通过，`lost<=6`失败，所以不续25、不补六臂、不扫damping/step/window/
+forgetting。权威transition为：
+
+```text
+runs/outputs/pi05_v6_exact_anchored_reconciliation_macro0010_historical_baseline_transition_866cca9_20260810/analysis.json
+```
+
+correct80子集恰好给出macro0→RLS `5/0`，full400却为`21/15`；small screen在本问题上会给出相反的
+retention判断。以后第一个性能门直接使用strict400。
+
+训练内部current/blind从`.999980`降至`.230340`，negative/correct升至`.291493`，logged/final precision
+condition约`7510.5/8325.5`。RLS确实加强了feature-space历史约束并压低当前motion，但没有保住closed-loop
+success set。formal热路径没有保存reference feature，`reference_correct_rows=0`，所以日志中的old-row
+improved=`1`是空集合值。直接被否定的是“train24 offline feature rows上的anchored least squares足以保护
+validation closed-loop能力”；Balanced key、frozen decoder和video-to-LoRA部署图并未因此被整体证伪。
+
+通用historical transition此前把baseline family硬编码为legacy v6；两份RLS root实际科学投影与400-row
+pairing完全相同。`866cca9`只把candidate显式绑定到唯一允许的baseline family，旧候选合同不变；全仓304项
+通过后从clean HEAD生成上述immutable artifact。RLS config/runtime现由formal completion、macro10 checkpoint、
+strict results和transition共同验证为closed-loop non-pass，任何fresh/restart/resume均fail closed。
+
+### 39.5 唯一后备方向：Reward-Credit Program Cotangent
+
+RLS的D层保留假设已被full400证伪，因而现在授权唯一后备单变量：保持同一Balanced v2部署图、P256 key、
+frozen v6 decoder、full48 preservation solve、single Program、one-shot信息墙和完整rank16 LoRA，只把pointwise
+source-action cotangent替换为K4真实train24 rollout的binary LOO、Nmc4 executed-prefix on-policy Program
+cotangent。从macro0重新fresh：`M_0=0, Lambda_0=I`；不能继承RLS10，因为其480条precision约束来自已被
+闭环否决的pointwise functional target。
+
+对task `i`的同一套one-shot LoRA执行K4 official random-reset rollouts，保留成功和失败的真实executed
+prefix。binary leave-one-out advantage为：
+
+```text
+A_ie = (4 * R_ie - sum_j R_ij) / 3
+```
+
+全成或全败task严格零credit。对每条episode的executed chunks和Nmc4 keyed flow samples等权，直接定义：
+
+```text
+L_i = mean_e A_ie * mean_executed_chunk mean_m CFM_loss(chunk, m)
+G_i = grad_(H_i) L_i
+F_i = concat(phi_correct, phi_negative)
+E_i = concat(-G_i, exact_zero_negative)
+```
+
+随后继续使用现有full48 RLS同化`F_i,E_i`。negative仍只表示“本次incremental motion为零”，不增加negative
+policy forward。旧ASPO在`current=old`、ratio=1时的首epoch一阶梯度正好等价于上述advantage-weighted current
+CFM loss：positive advantage降低成功executed-action loss，negative advantage推离失败executed action。
+因此不需要detached-old重复forward、ratio、第二epoch或shared Adam，既保留闭环signed credit又减少冗余计算。
+
+历史Task-Relative Flow-Credit已经证明K4 rollout、failure replay、LOO advantage、Nmc4 executed-prefix和六卡
+runtime可运行；也证明旧success-only“RL”、progress proxy、shared neural condition map、SPSA和只看AS loss
+都不足。新候选只复用已验证的数据/runtime组件，不恢复shared Adam、第二replay epoch、old/current双策略
+forward、旧高维SPSA、progress reward、multi-video、critic或success-only replay。部署端仍只读exact language
+与一条action-hidden video；observation/action/reward只在train24训练credit中使用，不进入Writer输入或部署
+checkpoint。
+
+第一证据序列固定为：CPU验证binary LOO零和、全成/全败严格零、success/failure符号、executed-prefix
+mask、direct Program cotangent与旧ASPO在old=current的一阶等价、shape/finite、frozen对象零grad、full24等权、
+full48顺序、negative RHS零、RLS closure与fresh/resume全部游标。随后一次full24×K4×Nmc4、one-epoch A40
+discarded profile；必须有96/96 rollouts、至少6个mixed tasks、mixed cotangent finite/nonzero、Program→LoRA→
+fixed-action非零、0 OOM/nonfinite/watchdog，且无old detached forward和第二epoch。保持六卡、每rank四tasks、
+BF16、persistent policy/env和最大安全并行，不为微小误差降batch/dtype。
+
+profile通过后从macro0 fresh只跑reward cycle0→1，随后直接strict correct400，不做80-row screen。cycle2支持门
+固定为correct`>=140`、相对macro0 lost`<=6`、breadth`>=6`且gained>lost；首次`>=144`立即补同checkpoint
+六臂，严格`>150`后必须确认correct实质优于wrong/shuffled/reversed/no-video且same-task-other稳定。若cycle1
+未过门，停止且不扫reward scale、K、Nmc、seed或RLS超参；只有Program cotangent、closure和BA/action传递
+都健康而closed-loop仍失败，才把最早接口上移到Balanced P256 feature/Procedure表示。

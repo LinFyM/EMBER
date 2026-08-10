@@ -1,5 +1,28 @@
 # EMBER Findings
 
+## RLS full400正式否决feature-row retention充分性（2026-08-10）
+
+- clean frozen`25bbd52`的formal fresh0→10 natural exit0；10 macros总step wall/input wait=
+  `199.425195/.278241s`，peak allocated/reserved=`43,247,554,048/46,919,581,696B`，feature rank恒48，
+  0 OOM/nonfinite/negative policy forward。macro10 checkpoint的Program、FP64 precision、480 assimilated rows
+  与六rank RNG完整。
+- macro10 correct400=`140/400`、breadth6、per-task=`2/3/47/35/0/34/19/0`。相对exact macro0 `134`
+  gained/lost=`21/15`、retained success119、churn36；blind-v2 macro10相对同一macro0为`19/13`、retained121、
+  churn32。RLS没有减少旧成功丢失，反而多gain2也多lost2；RLS与v2同分之间仍`17/17`换手。
+- full400的Long1从11→19看似`+8`，内部却是gained/lost=`13/5`；v2→RLS在该task更是`9/10`。Goal3仍0、
+  Long2从macro0唯一1个成功降到0。aggregate、suite net和breadth都掩盖了episode能力轮换，不是多task共同累积。
+- correct80恰好为macro0→RLS `5/0`，full400却为`21/15`；small-panel gate在这里给出方向错误。由于correct
+  未达144且retention门失败，不续25、不补六臂。
+- internal current/blind=`.999980→.230340`、negative/correct=`.020028→.291493`，precision logged/final
+  condition约`7510.5/8325.5`；历史精度明显抑制新写入，却未保留validation闭环成功。formal设置
+  `reference_correct_rows=0`，所以old-row improved=`1`是空集合，不能解释retention。
+- 被否定的是“train24离线feature-row anchored RLS足以保护held closed-loop成功集合”，不是整个
+  video-to-LoRA图。最早失败接口转为offline pointwise source-action cotangent对真实on-policy occupancy和
+  binary success的credit错位；下一候选不得继续调RLS ridge/window，也不得跳到few-shot或LoRA健康度优化。
+
+权威transition：
+`runs/outputs/pi05_v6_exact_anchored_reconciliation_macro0010_historical_baseline_transition_866cca9_20260810/analysis.json`。
+
 ## RLS新合同profile通过：短历史保留成立，长期获取冲突仍待strict裁决（2026-08-10）
 
 - clean pushed/frozen`f28fc8b`在实时空闲`gpu02:0--5`完成独立fresh0→3；root=
@@ -70,7 +93,8 @@
 - 因此第39节只改变训练侧reconciliation：部署仍是exact language + exactly one action-hidden video、balanced
   `phi256`、frozen v6、single `M[256,320,256]`和完整rank16 LoRA；RLS累计FP64 precision并把每批target锚定
   到`F M_prev + E`。它直接检验retention根因，不引入expert bank、language bypass、scale、few-shot、额外
-  policy forward或新LoRA图。当前没有RLS GPU/profile/strict结果，不能把CPU数学成立写成性能改善。
+  policy forward或新LoRA图。该选择当时尚无RLS GPU/profile/strict结果，不能把CPU数学成立写成性能改善；
+  后续正式结果已由本文件顶部覆盖。
 
 ## Exact Anchored Reconciliation CPU与决策合同（2026-08-10）
 

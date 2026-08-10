@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3",
-  "status": "active_deployment_sealed_formal_ready",
+  "status": "retired_after_macro10_strict_closed_loop_nonpass",
   "method": {
     "name": "frozen_v6_exact_anchored_reconciliation_program_residual",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -236,7 +236,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_mechanism_and_deployment_seals",
+    "status": "retired_after_macro10_strict_closed_loop_nonpass",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
@@ -258,7 +258,27 @@
       "goal_full_six_arm_correct_min": 151,
       "macro25_requires_macro10_support_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_v6_exact_anchored_reconciliation_formal_fresh0to10_r6_lb20_mb10_25bbd52_20260810/completion.json",
+      "bytes": 214,
+      "schema": "ember_pi05_v6_exact_anchored_reconciliation_program_residual_completion_v3",
+      "run_commit": "25bbd52c16cc0f0fd48f478f0fa8b554fcb28dc6",
+      "metrics_bytes": 175063,
+      "checkpoint_manifest": {
+        "path": "runs/outputs/pi05_v6_exact_anchored_reconciliation_formal_fresh0to10_r6_lb20_mb10_25bbd52_20260810/checkpoints/macro_00000010/manifest.json",
+        "bytes": 13790,
+        "schema": "ember_pi05_v6_anchored_reconciliation_program_residual_checkpoint_v3"
+      },
+      "strict_correct_results": {
+        "path": "runs/outputs/pi05_v6_exact_anchored_reconciliation_correct400_noreplacement_seed7_method_macro0010_25bbd52_20260810/results.json",
+        "bytes": 1875159
+      },
+      "transition_analysis": {
+        "path": "runs/outputs/pi05_v6_exact_anchored_reconciliation_macro0010_historical_baseline_transition_866cca9_20260810/analysis.json",
+        "bytes": 33091,
+        "schema": "ember_pi05_v6_historical_baseline_transition_analysis_v2"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_residual_deployment_profile",

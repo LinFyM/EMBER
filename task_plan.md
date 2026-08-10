@@ -203,7 +203,7 @@ formal artifacts保存。
   effective pair cosine近0。视频路径非零，但最早瓶颈更符合跨macro retention/reconciliation；不把该结果
   写成视频因果性证明，也不据此直接切few-shot。
 
-## Phase 6 — Exact Anchored Reconciliation（当前唯一active方法）
+## Phase 6 — Exact Anchored Reconciliation（已裁决）
 
 - [x] 完成第39节最小设计：部署图、one-shot信息墙、balanced v2 `phi256`、frozen v6 decoder、
   `M[256,320,256]`和完整rank16 LoRA均不变；只在训练/checkpoint加入FP64 `Lambda[256,256]`与
@@ -234,12 +234,27 @@ formal artifacts保存。
   root。相关定向回归`70 passed`。
 - [x] profile seal/root-binding后定向=`70 passed`、全仓fresh=`304 passed in 92.19s`，compileall、26 JSON、
   real config/artifact load和diff-check通过。
-- [ ] clean commit/push并创建新的formal frozen worktree；formal identity fresh0→10后立即跑预注册macro10
+- [x] clean commit/push并创建新的formal frozen worktree；formal identity fresh0→10后立即跑预注册macro10
   strict400，不过支持门即停止。
-- [ ] 只有macro10 `correct>=140`、lost`<=6`、breadth`>=6`才在同一frozen commit/root exact-resume10→25；
-  `>140`视为更强支持，macro25仍是条件动作而非预授权结果。
+- [x] macro10 strict=`140/400`、breadth6，但相对macro0 gained/lost=`21/15`；`lost<=6`失败，故未
+  exact-resume10→25、未补六臂。correct80虽为`5/0`，已由full400证明不能用于选点。
+- [x] 和blind-v2 macro10逐row比较：两者同为140，v2→RLS换手`17/17`；RLS相对macro0的lost从v2的13
+  增至15。由此正式否定feature-row anchoring足以解决held closed-loop retention，config/runtime fail closed。
 - [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
   same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
+
+## Phase 7 — Reward-Credit Program Cotangent（当前设计阶段）
+
+- [ ] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
+  P256、single Program和完整rank16 LoRA不变；只把offline source-action cotangent替换为train24真实闭环
+  binary-reward credit，禁止language bypass、few-shot、progress reward、SPSA和第二LoRA。
+- [ ] 从历史Task-Relative Flow-Credit中只复用已验证的K4 task-relative binary LOO、executed-prefix
+  Nmc4 functional estimator、failure样本、runtime asset/EGL/NCCL修复；删除old/current第二forward、第二epoch、
+  shared Adam和success-only replay，不恢复已退役RL路径。
+- [ ] 先完成数学/信息墙/shape/符号/zero-advantage/finite/checkpoint与吞吐CPU门，再做一次最小A40 full24
+  profile；保持K4、Nmc4和最大安全并行，不为数值微差降低batch/dtype/GPU利用率。
+- [ ] 第一个retained checkpoint直接做strict correct400，不跑80-row screen；只有single checkpoint absolute、
+  breadth、gained/lost和趋势支持才继续，达到144后才补六臂，严格超过150后完成因果裁决。
 
 ## Ongoing evidence-driven iteration rules
 

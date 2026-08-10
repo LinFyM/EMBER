@@ -74,12 +74,20 @@ rank48、condition=`106.114`、correct/cotangent=`.968254`、negative/correct=`.
 production=`20.021842s`、对sealed baseline ratio=`.949122`；本次与baseline同为
 `gpu01:0,1,2|4,5,7`，input wait=`.069295s`对`.076318s`，吞吐pass不是跨host wait假象。profile不保留
 checkpoint，结束后六卡释放。artifact已由config verifier从raw result/run/completion重算并seal；formal
-初始写回曾被标为ready，但v8 deployment graph仍无自己的live吞吐/smoke seal，且当前没有v2训练或
+初始写回曾被标为ready，但v8 deployment graph当时仍无自己的live吞吐/smoke seal，且当时没有v2训练或
 closed-loop成绩；这个状态缺口已由下一段的fail-close修正，不能按旧ready恢复执行。
 
-GPU前复核又修正了formal提前ready与profile-only evidence两个执行缺口：当前formal硬阻塞到双root seal，
-新增唯一deployment-seal owner重读profile/results/cache。全仓`283 passed in 26.10s`，architecture guard相对
-`5d93434`为`+968/-318`、0 hard violation；旧contract缩到1101行，无parallel family或热路径变化。
+GPU前复核又修正了formal提前ready与profile-only evidence两个执行缺口：新增唯一deployment-seal owner
+共同重读profile/results/cache。全仓`283 passed in 26.10s`，architecture guard相对`5d93434`为
+`+968/-318`、0 hard violation；旧contract缩到1101行，无parallel family或热路径变化。
+
+clean frozen`2af82aa`现已在实时空闲`gpu02:0`完成该双root seal。固定validation8×4、32-request/
+1093-frame panel的batch8/16/32=`.911238/.901898/.906482 LoRA/s`，三点均稳定、reserved约12.9GB（约12.0GiB），
+选择实测最快batch8。validation8×state0 correct vertical smoke随后真实生成8套完整native LoRA并完成8条
+LIBERO闭环：`4/8` success、总wall=`336.056s`、单次launcher、0 retry/runtime failure/forbidden reads，Writer释放且
+source policy复用。三件raw artifact由assembler重算通过，config现为formal ready；该8-row结果只作执行证据。
+deployment写回后的全仓CPU门为`284 passed in 26.86s`，compileall、Black、JSON、diff-check、raw seal重建和
+formal runtime均通过；pre-deployment formal fail-close仍有独立负回归。
 
 当前操作顺序：
 
@@ -88,9 +96,9 @@ GPU前复核又修正了formal提前ready与profile-only evidence两个执行缺
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
 4. 一次性audit与v1 key均已退役；第38节v2 mechanism 13/13通过并seal，不能从旧Tangent/audit/v1恢复执行；
-5. 下一次GPU只在新clean pushed/frozen seal上用一张实时空闲A40 profile residual deployment graph的
-   batch8/16/32并做correct smoke，按最高稳定LoRAs/s选batch；
-6. mechanism与deployment两类seal齐全后才评测zero-memory macro0、formal fresh0→10和strict correct400；
+5. mechanism与deployment两类seal均已齐全；下一次GPU从新clean pushed/frozen seal先评测zero-memory
+   macro0 strict correct400，不能用8-row smoke替代；
+6. macro0封存后才formal fresh0→10并立即strict correct400，再按absolute/breadth/churn/mechanics裁决；
 7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
    不从Tangent checkpoint resume。
 
@@ -100,8 +108,8 @@ GPU前复核又修正了formal提前ready与profile-only evidence两个执行缺
 
 - 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD及第37节v1 key均已退役或
   否决。当前唯一active implementation是第38节balanced-key frozen-v6 counterfactual-null Program residual；
-  mechanism profile已seal，但deployment graph尚未获得live throughput/smoke seal；按当前执行边界先完成
-  deployment seal，再运行macro0或formal训练。
+  mechanism与deployment双root均已seal；按当前执行边界先完成zero-memory macro0 strict400，再运行
+  formal fresh0→10。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -300,7 +308,8 @@ linear residual memory。full48显式Gram把24个correct真实functional cotange
 zero-motion约束写入同一memory；不增加PI05 forward、不使用expert/ranking cotangent。该design必须先证明
 fixed feature对真实order敏感、Gram健康、correct motion保留、negative motion近零和macro0 exact identity。
 CPU已证明algebra、topology、identity和fail-closed合同，live mechanism profile已证明真实A40 feature/
-motion/action/吞吐。当前仍须独立seal deployment graph，再由macro0、短训和strict closed-loop裁决价值。
+motion/action/吞吐；deployment双root也已证明真实生成、cache、release/reuse和闭环链路。当前须由macro0、
+短训和strict closed-loop裁决价值。
 
 按以下顺序定位最早接口：
 
@@ -330,10 +339,11 @@ motion/action/吞吐。当前仍须独立seal deployment graph，再由macro0、
 - canonical branch：`codex/bci-continuation`；正式root绑定包含该run contract的clean pushed commit。
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent与teacher-audit均已
   formal non-pass/fail-closed，不能作为活动入口。
-- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism
-  artifact已seal；formal状态和runtime均阻塞到v8 deployment live profile+vertical smoke双root seal。
+- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism与
+  v8 deployment live profile+vertical smoke双root均已seal，formal runtime ready；按当前顺序先评测
+  zero-memory macro0 strict400。
 - current design authority：`docs/action_forecast_writer_video_expert_manifold_design.md`第38节；v1 A40 non-pass
-  已封存，v2 mechanism 13/13通过；仍没有v2 strict或closed-loop结果。
+  已封存，v2 mechanism 13/13与deployment双root通过；仍没有v2 formal strict结果。
 - training/evaluation entries为`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`；retired
   `--mode teacher-audit`及其owners/tests已经删除。
 - fresh/profile要求HEAD等于当前remote authority；同root exact-resume固定原frozen commit且只要求它仍为

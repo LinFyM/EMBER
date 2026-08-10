@@ -1,5 +1,33 @@
 # EMBER Progress Ledger
 
+## Balanced DC--Causal v2 deployment双root seal（2026-08-10）
+
+- GPU前contract/fail-close修复由clean pushed commit=`2af82aa6769570786c64d3c026374150d259360c`
+  封存，detached frozen worktree=
+  `/data1/user/ymdai/worktrees/EMBER-balanced-key-deployment-2af82aa-20260810`。启动前实时比较`gpu01/gpu02`；
+  选择当时0MiB、0%且无compute process的`gpu02:0` A40。`/data1` quota live used/quota=
+  `573,433,076/1,073,741,824KiB`，新增约25MiB只占余量`.00512%`。
+- throughput root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_writer_throughput_profile_val8x4_correct_gpu02g0_2af82aa_20260810`。
+  validation8×4固定32 requests、1093 sampled frames、最长67 frames；batch8/16/32完全共享entry/frame panel，
+  1 warmup+2 measured，LoRAs/s=`.911238/.901898/.906482`，repeat wall=
+  `[34.9668,35.2673]/[35.6341,35.3274]/[35.2987,35.3039]s`。三者stable，peak reserved约
+  `12.91/12.93/12.93GB`、headroom约`34.77GB`，按最高实测吞吐选择batch8。
+- vertical root=
+  `runs/outputs/pi05_v6_balanced_causal_condition_residual_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_2af82aa_20260810`。
+  validation8×state0 correct真实执行8 videos→8完整rank16 LoRAs→native cache→释放Writer→复用source
+  policy→8条LIBERO闭环；8/8 rows、`4/8` success、总wall=`336.0559s`、rollout window=`199.7986s`，
+  单次launcher return0、0 retry/runtime failure。`4/8`只作执行smoke，不是formal性能结论。
+- deployment assembler共同重读profile `10225B`、results `92811B`、cache manifest `52153B`并通过：同一
+  clean commit/v8 adapter、batch选择、8新entries、76 tensors/entry、`2,641,920B`、72 BF16+4 F32、
+  Writer release/source reuse/no reload和0 teacher-action/state/reward/terminal、0 expert-bank读。未做SHA/MD5
+  或逐tensor防御性扫描；结束后`gpu02:0`回到0MiB/P8。
+- config已切为`active_deployment_sealed_formal_ready`，formal=
+  `ready_after_live_mechanism_and_deployment_seals`。下一步只从新的clean pushed/frozen seal先跑zero-memory
+  macro0 strict correct400，再决定fresh0→10；当前仍无v2训练或formal strict成绩。写回后全仓
+  `284 passed in 26.86s`，compileall/Black/JSON/diff-check、raw seal重建、formal-ready与pre-deployment
+  fail-close负回归全部通过。
+
 ## Balanced DC--Causal v2 mechanism profile全门通过（2026-08-10）
 
 - CPU seal clean pushed commit=`5d93434`；旧v1 frozen worktree在确认无进程、无未跟踪改动后移除，新建

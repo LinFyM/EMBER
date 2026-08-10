@@ -182,10 +182,11 @@ formal artifacts保存。
   correct=`.0218514`、24/24 correct与24/24 null、4/4 fixed-action、closure=0。production=
   `20.021842s`、ratio=`.949122`，峰值allocated/reserved=`43.261/46.917GB`；0 OOM/nonfinite/negative
   forward，profile权重未保存且六卡释放。artifact由raw结果重算并写回config seal。
-- [ ] mechanism profile过门并写回seal后，在一张实时空闲A40上对新residual deployment graph实测Writer
-  batch8/16/32并完成correct smoke；只接受同一clean commit的profile+vertical双root、v8 residual adapter、
-  validation8×state0 results与native cache manifest，profile-only evidence不能解锁formal。
-- [ ] 两类profile均seal后先评测zero-memory macro0，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
+- [x] clean frozen`2af82aa`在实时空闲`gpu02:0`完成新residual deployment graph双root seal。同一32-request/
+  1093-frame panel的batch8/16/32=`.911238/.901898/.906482 LoRA/s`，均稳定且有约32.4GiB headroom，选batch8；
+  validation8×state0 correct真实闭环8/8 rows、`4/8` success、单次launcher、8套native LoRA、0禁止读取，
+  assembler通过且GPU释放；写回后全仓`284 passed`。`4/8`只作执行证据。
+- [ ] 两类profile均seal后先评测zero-memory macro0 strict400，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
   停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。

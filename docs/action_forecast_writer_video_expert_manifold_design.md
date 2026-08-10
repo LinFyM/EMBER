@@ -6,8 +6,8 @@ Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢�
 Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门并否决CEFD；第37节v1又由唯一
 macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动设计是第38节Balanced
 DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
-macro49 mechanism profile已13/13通过并seal；当前尚无v2训练、rollout或strict成绩，下一动作是单卡
-deployment graph profile/correct smoke。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
+macro49 mechanism profile已13/13通过并seal，单卡deployment双root也已通过；当前尚无v2训练或formal
+strict成绩，下一动作是zero-memory macro0 strict400。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
 负裁决文档保留。
 
 ## 1. 结论先行
@@ -2396,3 +2396,25 @@ config evidence只保存三个raw artifact的repo-relative path+bytes、run comm
 最终无GPU合同回归为`283 passed in 26.10s`、compileall/Black/26 JSON/diff-check；architecture guard相对
 `5d93434`无hard violation，原1243行contract缩为1101行，新增逻辑集中在一个不进入热路径的deployment-seal
 owner，未出现parallel implementation family。
+
+### 38.6 Deployment实证与下一裁决（2026-08-10）
+
+clean pushed/frozen`2af82aa`在live空闲`gpu02:0`完成了第38.5节预注册的两步。throughput profile固定
+validation8×4、32 requests、1093 sampled frames和相同longest-first entry序列，仅改变物理forward分组。
+batch8/16/32的LoRAs/s=`.911238/.901898/.906482`，两次measured wall分别为
+`34.9668/35.2673`、`35.6341/35.3274`、`35.2987/35.3039s`；三点均stable，reserved约12.9GB（约12.0GiB）且
+headroom约32.4GiB。因此按原规则选择实测最高的batch8，不因BF16低位差异或可用显存改变结论。
+
+随后的validation8×state0 correct vertical smoke真实执行一条完整部署链：8条action-hidden videos各生成
+一套完整38-target rank16 LoRA，写入72 BF16+4 F32的native cache，每entry`2,641,920` bytes；Writer随后
+释放，同一个source policy无reload复用并完成8条LIBERO闭环。结果为8/8 rows、`4/8` success、单次launcher
+return0、总wall=`336.056s`、rollout window=`199.799s`，0 retry/runtime failure/forbidden reads。结束后GPU回到
+0MiB/P8。
+
+唯一deployment assembler共同重读profile、results和cache manifest，验证同commit/v8 adapter、固定panel、
+selected batch、8新entries、lifecycle与信息墙后通过。config状态因此切为
+`active_deployment_sealed_formal_ready`，formal为`ready_after_live_mechanism_and_deployment_seals`。
+这里的`4/8`只证明真实执行，不能作absolute或视频因果成绩。下一步必须从新clean pushed/frozen seal先做
+zero-memory macro0 strict correct400，以同schedule建立closed-loop基线；随后才fresh0→10并即时strict400，
+按第38.3门裁决停止、继续或补完整因果臂。deployment写回后的CPU门为全仓`284 passed in 26.86s`，并
+重新验证raw seal等于config evidence、formal runtime ready和pre-deployment状态必然fail-close。

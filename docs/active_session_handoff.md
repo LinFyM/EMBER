@@ -70,18 +70,23 @@
   authority ancestor现可直接用于v8 evaluator，不需制造第二主分支。
 - v2聚焦`52 passed`、带LIBERO assets最终全仓`281 passed in 21.34s`；compileall、26份JSON、diff-check与
   architecture guard通过。profile artifact已从raw macro/run/completion重算并写入config；mechanism状态
-  sealed，但formal现硬阻塞到deployment seal。**当前仍没有v2训练、rollout或strict成绩**，v8 deployment
-  evaluation仍被自己的live profile+vertical artifact阻塞。
+  sealed。**当前仍没有v2训练或formal strict成绩**；唯一v2 rollout只是下述8-row deployment execution smoke。
 - 当前deployment verifier已恢复并收敛为一个双root owner：必须同时重读同commit的32-request batch8/16/32
   profile、validation8×state0 correct results和native LoRA cache manifest，核对单卡A40、selected batch、
-  8 rows/entries、单次launcher、0 retry/failure/forbidden reads及Writer release/source reuse。旧的profile-only
+  8 rows/entries、单次launcher、0 retry/runtime failure/forbidden reads及Writer release/source reuse。旧的profile-only
   evidence不能seal，formal runtime也同时要求该evaluation artifact，不再靠文档顺序防止误启动。
 - 该GPU前修复的最终CPU门为全仓`283 passed in 26.10s`、compileall、Black、26份JSON、真实config load与
   diff-check；architecture guard相对`5d93434`为`+968/-318`且0 hard violation，原contract缩到1101行，
   没有parallel family或训练/推理热路径变化。
-- 下一GPU动作是新clean push/frozen之后用一张实时空闲A40 profile residual deployment graph的batch
-  `8/16/32`并做correct vertical smoke；只按LoRAs/s选最快稳定batch，不按BF16低位差异或空余显存选型。
-  deployment seal后才评测zero-memory macro0、formal0→10和strict correct400。
+- clean frozen`2af82aa`已在实时空闲`gpu02:0`完成deployment双root。固定32-request/1093-frame panel的
+  batch8/16/32吞吐=`.911238/.901898/.906482 LoRA/s`，repeat分别约`34.97/35.27`、`35.63/35.33`、
+  `35.30/35.30s`；三者稳定且reserved约12.9GB（约12.0GiB），按最高实测吞吐选择batch8。
+- validation8×state0 correct vertical root真实执行8 videos→8完整LoRAs→native cache→释放Writer→复用
+  source policy→8条LIBERO闭环；`4/8` success、总wall=`336.056s`、rollout window=`199.799s`，8/8 rows、
+  单次launcher、0 retry/runtime failure/forbidden reads。双root assembler已通过且GPU释放；`4/8`不是正式性能分数。
+- config现为`active_deployment_sealed_formal_ready`。下一GPU动作从新clean pushed/frozen seal先评测
+  zero-memory macro0 strict correct400；只有该真实基线封存后才fresh0→10并立即strict correct400。
+  deployment写回后全仓`284 passed in 26.86s`，raw三件证据重建与formal runtime均通过。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -321,7 +326,7 @@ Experts不解决：
 | Condition-Local Tangent Tube | `134→131` | relative-anchor tube中位`.01390/.01408`，证明局部半径约束工作且吞吐可接受 | direction ratio=`108.93/126.88`、completion`0/24`、breadth`6→5`；只压小更新而未旋进expert方向 | 已退役；不续25、不扫权重、不补六臂 |
 | Expert-Flow Teacher Audit | 无rollout | gradient residual`.6864/.8387`，teacher方向非冗余 | expert flow loss只在`2/24` tasks、`0/4` suites优于两baseline | CEFD否决；一次性runtime已删除 |
 | Frozen-v6 Counterfactual-Null Program Residual v1 | 无rollout | correct retention `.807966`、A/B/action/closure成立 | DC key导致condition`1315.33`、null仅15/24，吞吐门亦non-pass | v1退役；不训练、不调lambda/seed/P |
-| Balanced DC--Causal Program Residual v2 | 尚无rollout成绩 | 13/13机制门、24/24 null、A/B/action/吞吐全通过 | same-task噪声、多步累积与closed-loop仍未知 | 当前唯一active implementation；先deployment profile再macro0/短训strict裁决 |
+| Balanced DC--Causal Program Residual v2 | deployment smoke`4/8`，无formal成绩 | 13/13机制门、24/24 null、A/B/action/吞吐与真实部署链路全通过 | same-task噪声、多步累积及strict absolute仍未知 | 当前唯一active implementation；先macro0 strict400再短训裁决 |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -360,9 +365,8 @@ Experts不解决：
   authority，exact-resume保持原frozen commit且要求它仍为authority ancestor；错误family和stale artifact
   fail closed；
 - CPU seal为聚焦`52 passed`、带LIBERO assets全仓`281 passed in 21.34s`、compileall、26份JSON和
-  diff-check通过，architecture guard无hard violation。v2 mechanism artifact已seal，config为
-  `active_mechanism_sealed_awaiting_deployment_seal`；没有v2 rollout或strict结果，deployment graph仍待
-  独立live seal，formal runtime实际fail closed。
+  diff-check通过，architecture guard无hard violation。v2 mechanism与deployment artifacts均已seal，config为
+  `active_deployment_sealed_formal_ready`；只有validation8×state0 execution smoke，没有v2 formal strict结果。
 
 以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance，不是当前seal：
 
@@ -496,8 +500,8 @@ preflight合同，实时比较`gpu01/gpu02`和`/data1` quota；只运行上述v2
 - retired config：`configs/pi05_v6_condition_local_tangent_tube_writer_v3.json`；Tangent和teacher audit均
   formal non-pass/fail-closed。
 - audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
-- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；只允许等待中的
-  mechanism profile，formal/evaluation仍由artifact gate阻塞。
+- active config：`configs/pi05_v6_counterfactual_null_condition_kernel_program_residual_v2.json`；mechanism与
+  v8 deployment双root均已seal，formal runtime ready；执行顺序仍要求先封存zero-memory macro0 strict400。
 - training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

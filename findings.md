@@ -1,10 +1,25 @@
 # EMBER Findings
 
+## v2 deployment seal通过后的科学边界（2026-08-10）
+
+- 新v8 residual graph在公平32-request/1093-frame panel上，batch8/16/32吞吐仅相差约1%，且三者均稳定、
+  显存余量约32.4GiB。batch8以`.911238 LoRA/s`略高于batch32`.906482`和batch16`.901898`，所以选8是
+  measured-throughput裁决，不是追求位级相同、保守显存或主观偏好；新graph也没有借用historical v6 seal。
+- validation8×state0 vertical smoke证明完整部署生命周期成立：每个视频一次生成完整LoRA、native cache、
+  Writer释放、同一source policy复用、真实LIBERO闭环8/8 rows执行完成、成功`4/8`且无重试/runtime failure。双root assembler从raw
+  profile/results/manifest重算通过，排除了“只生成LoRA但真实policy/env路径没走通”的执行缺口。
+- `4/8` success的样本太小、只含correct/state0且不是paired400；它不能说明absolute已改善，也不能说明
+  correct优于same/wrong/shuffled/reversed/no-video。当前证据只把首个未知接口从部署可执行性推进到真实
+  closed-loop能力；下一决定必须来自同schedule macro0 strict400，而不是放大解释smoke。
+- 机制profile和deployment均通过仍不解决独立block L2可能放大same-task示范噪声、多macro memory累积、
+  task coexistence或checkpoint drift。先测macro0可把“frozen v6+新key的zero-memory部署图”与历史v6严格对齐；
+  随后fresh0→10才隔离Program memory学习的净作用。这一顺序维持单变量证据链。
+
 ## Balanced DC--Causal v2机制通过与剩余科学边界（2026-08-10）
 
 - profile结果本身过门后又发现一处与科学结论无关、但会污染执行顺序的证据链缺口：formal runtime曾只
   检查mechanism seal，v8 evaluation verifier也只读throughput profile而未读required vertical smoke。
-  这会让“文档禁止提前训练”和“机器实际允许训练”分裂。当前已把formal硬阻塞到mechanism+deployment
+  这会让“文档禁止提前训练”和“机器实际允许训练”分裂。当时先把formal硬阻塞到mechanism+deployment
   双seal，并恢复唯一双root verifier共同重读profile、validation8×state0 results和native cache manifest；
   修复不进入GPU热路径，也不把8-row smoke success当性能证据。
 - clean frozen`5d93434`在与sealed baseline相同的`gpu01:0,1,2|4,5,7` panel完成唯一macro49 profile；

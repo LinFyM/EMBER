@@ -57,17 +57,21 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   clean frozen`5d93434`的macro49 mechanism profile **13/13通过**：condition=`106.114`、correct/cotangent=
   `.968254`、negative/correct=`.0218514`、24/24 correct和24/24 null；A/B、4/4 fixed-action、closure、
   0 negative forward全部通过。production ratio=`.949122`，无checkpoint/OOM/nonfinite，六卡已释放。
-- mechanism artifact已seal；当前仍无v2训练、rollout或strict成绩。下一步只在新clean frozen seal上用一张
-  空闲A40实测v8 residual graph的batch8/16/32和correct smoke；通过后才跑macro0与formal0→10。
-- config/runtime已硬阻塞formal，直到同一clean commit的profile root、validation8×state0 vertical root和
-  native LoRA cache manifest由双root verifier共同通过；只做generation的profile不能单独冒充deployment seal。
+- mechanism与deployment artifact现均已seal；当前仍无v2训练或formal strict成绩。clean frozen`2af82aa`
+  在空闲`gpu02:0`上以同一32-request/1093-frame panel实测batch8/16/32=`.911238/.901898/.906482 LoRA/s`，
+  三者稳定且显存余量约32.4GiB，按最高实测吞吐选择batch8。随后validation8×state0 correct vertical smoke
+  真实生成8套完整LoRA并完成8条LIBERO闭环，`4/8` success；该小样本只作执行证据，不是性能结论。
+- 双root verifier已共同通过同一commit的profile root、vertical `results.json`和native LoRA cache manifest，
+  并核对单次launcher、8 rows/entries、76 tensors、Writer release/source reuse和零禁止读取。config/runtime
+  现为formal ready；写回后全仓`284 passed in 26.86s`，raw seal重建与formal runtime通过。下一步从新clean
+  frozen seal先评测zero-memory macro0 strict correct400，再决定fresh0→10。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少
   host sync。
 - 历史v6 fixed-panel profile在同一32 requests/1093 sampled frames上得到batch8/16/32吞吐
-  `.911427/.905107/.906432 LoRA/s`并选择batch8；当前residual graph不能继承该seal，必须在
-  mechanism通过后重新实测新v8 residual graph的batch8/16/32和correct smoke。
+  `.911427/.905107/.906432 LoRA/s`；新v8 residual graph的独立复测为
+  `.911238/.901898/.906482 LoRA/s`。两者都由实测选择batch8，且新graph没有借用历史seal。
 - logical B20保持不变；physical B20和B16已由A40容量实证排除，balanced B10+10以FP32 leaf-gradient
   加权累积完成train24×20=`480/480` queries。旧whole-LoRA gradient seal的expert/ranking weights为
   `.008355172068998324/.28570466890490887`；ECP重新实测的projection/ranking weights为

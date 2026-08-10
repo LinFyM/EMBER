@@ -44,15 +44,14 @@ def _load_mutation(
     load_v6_prior_config(path)
 
 
-def test_only_canonical_residual_config_is_active_and_tangent_fails_closed() -> None:
+def test_canonical_residual_is_formal_ready_and_tangent_fails_closed() -> None:
     config = load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG)
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["profile_run"]["status"] == "sealed_from_live_a40_macro49_profile"
     assert config["formal_run"]["status"] == (
-        "blocked_until_live_deployment_profile_and_smoke_seal"
+        "ready_after_live_mechanism_and_deployment_seals"
     )
-    with pytest.raises(ExpertManifoldError, match="deployment state"):
-        runtime_for_mode(config, "formal")
+    assert runtime_for_mode(config, "formal") == (50, (10, 25, 50), 0)
     assert config["method"]["language_only_lora_path"] is False
     assert config["method"]["dynamic_value"] == "one_raw_teacher_video_only"
     assert config["program_residual"]["value_count"] == 20_971_520
@@ -61,6 +60,23 @@ def test_only_canonical_residual_config_is_active_and_tangent_fails_closed() -> 
     )
     with pytest.raises(ExpertManifoldError, match="non-canonical"):
         load_v6_prior_config(old)
+
+
+def test_formal_runtime_fails_closed_before_deployment_seal() -> None:
+    config = _raw_config()
+    config["status"] = "active_mechanism_sealed_awaiting_deployment_seal"
+    config["formal_run"][
+        "status"
+    ] = "blocked_until_live_deployment_profile_and_smoke_seal"
+    config["evaluation"][
+        "formal_status"
+    ] = "blocked_until_new_residual_deployment_graph_live_profile"
+    config["evaluation"]["online_smoke_evidence"] = None
+    with pytest.raises(
+        ExpertManifoldError,
+        match="blocked by mechanism or deployment state",
+    ):
+        runtime_for_mode(config, "formal")
 
 
 def test_profile_seal_recomputes_macro_instead_of_trusting_passed_flags(

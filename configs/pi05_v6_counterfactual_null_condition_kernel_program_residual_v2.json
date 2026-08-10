@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2",
-  "status": "active_mechanism_sealed_awaiting_deployment_seal",
+  "status": "active_deployment_sealed_formal_ready",
   "method": {
     "name": "frozen_v6_counterfactual_null_condition_kernel_program_residual",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -218,7 +218,7 @@
     }
   },
   "formal_run": {
-    "status": "blocked_until_live_deployment_profile_and_smoke_seal",
+    "status": "ready_after_live_mechanism_and_deployment_seals",
     "expected_world_size": 6,
     "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
@@ -237,10 +237,26 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "blocked_until_new_residual_deployment_graph_live_profile",
+    "formal_status": "sealed_from_live_residual_deployment_profile",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
     "required_writer_model_batch_sizes": [8, 16, 32],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": null
+    "online_smoke_evidence": {
+      "schema": "ember_pi05_v6_condition_program_residual_deployment_seal_v1",
+      "run_commit": "2af82aa6769570786c64d3c026374150d259360c",
+      "writer_model_batch_size": 8,
+      "profile": {
+        "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_writer_throughput_profile_val8x4_correct_gpu02g0_2af82aa_20260810/writer_generation_profile.json",
+        "bytes": 10225
+      },
+      "vertical": {
+        "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_2af82aa_20260810/results.json",
+        "bytes": 92811
+      },
+      "cache_manifest": {
+        "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_writer_vertical_smoke_val8x1_correct_b8_gpu02g0_2af82aa_20260810/writer_lora_cache/cache_manifest.json",
+        "bytes": 52153
+      }
+    }
   }
 }

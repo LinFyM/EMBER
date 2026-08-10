@@ -9,7 +9,6 @@ import pytest
 from ember.expert_manifold.contract import ExpertManifoldError, load_task_expert_config
 from ember.expert_manifold.inference import (
     _trained_writer_asset,
-    inspect_expert_manifold_writer_evaluation,
     inspect_v6_prior_writer_asset,
 )
 from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
@@ -27,28 +26,28 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_residual_deployment_requires_its_own_live_profile() -> None:
+def test_residual_deployment_uses_its_own_live_profile_and_vertical_smoke() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
     assert evaluation["throughput_policy"] == (
         "highest_measured_batch_throughput_with_device_memory_headroom"
     )
     assert evaluation["required_writer_model_batch_sizes"] == [8, 16, 32]
     assert evaluation["formal_status"] == (
-        "blocked_until_new_residual_deployment_graph_live_profile"
+        "sealed_from_live_residual_deployment_profile"
     )
-    assert evaluation["online_smoke_evidence"] is None
-    with pytest.raises(ExpertManifoldError, match="live deployment profile"):
-        inspect_expert_manifold_writer_evaluation(
-            config_path=CONFIG,
-            checkpoint=Path("/missing"),
-            video_data_root=Path("/missing"),
-            source={},
-            task_keys=(("libero_spatial", 1),),
-            video_condition="correct",
-            video_seed=7,
-            video_sampling_mode="without_replacement",
-            require_formal=True,
-        )
+    evidence = evaluation["online_smoke_evidence"]
+    assert evidence["schema"] == (
+        "ember_pi05_v6_condition_program_residual_deployment_seal_v1"
+    )
+    assert evidence["writer_model_batch_size"] == 8
+    assert set(evidence) == {
+        "schema",
+        "run_commit",
+        "writer_model_batch_size",
+        "profile",
+        "vertical",
+        "cache_manifest",
+    }
 
 
 def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:

@@ -30,13 +30,17 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   只把video-DC static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。
   clean frozen`5d93434`的macro49 mechanism profile已13/13通过：condition=`106.114`、correct/cotangent=
   `.968254`、negative/correct=`.0218514`、24/24 correct与24/24 null，A/B、4/4 fixed-action、closure和
-  production ratio=`.949122`全部通过。artifact已seal；尚无v2训练、rollout或strict结果。
-- 下一GPU动作只允许在新clean pushed/frozen seal上用一张实时空闲A40完成v8 residual deployment graph的
-  batch8/16/32吞吐profile与correct smoke。该deployment seal完成前不得直接启动formal训练；通过后先跑
-  zero-memory macro0，再fresh0→10并立即strict correct400。
-- formal runtime现同时要求mechanism artifact与deployment双root seal；当前config状态是
-  `active_mechanism_sealed_awaiting_deployment_seal`，不会因mechanism已过门而提前开放训练。deployment
-  evidence必须同时重读throughput profile、validation8×state0 results和native LoRA cache manifest。
+  production ratio=`.949122`全部通过。mechanism artifact已seal；尚无v2训练或formal strict结果。
+- clean frozen`2af82aa`已在实时空闲`gpu02:0`完成v8 residual deployment双root seal。同一32-request/
+  1093-frame panel的batch8/16/32吞吐=`.911238/.901898/.906482 LoRA/s`，三者稳定且显存余量均约32.4GiB，
+  因实测最高吞吐选择batch8。validation8×state0 correct vertical smoke真实生成8套native LoRA并完成8条
+  LIBERO闭环，`4/8` success、单次launcher、0 retry/runtime failure/forbidden reads，Writer释放后复用source policy。
+  该`4/8`只证明部署链路，不是正式性能成绩。
+- formal runtime同时要求mechanism artifact与deployment双root seal；当前config状态是
+  `active_deployment_sealed_formal_ready`，evaluation evidence共同重读throughput profile、validation8×state0
+  results和native LoRA cache manifest。下一GPU动作必须先从新clean pushed/frozen seal评测zero-memory
+  macro0 strict correct400，再决定是否启动fresh0→10；不能把smoke或mechanism门当性能改进。deployment
+  写回后的CPU门为全仓`284 passed in 26.86s`，raw seal重建与formal runtime均通过。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差

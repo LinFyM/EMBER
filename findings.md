@@ -1,5 +1,26 @@
 # EMBER Findings
 
+## Reward-Credit Program Cotangent canonical实现与CPU seal（2026-08-10，0 GPU结果）
+
+- RLS full400已把最早失败接口从feature-row retention定位到offline source-action cotangent与真实on-policy
+  occupancy/binary success错位。第39.5只替换这一项：Balanced P256、frozen v6 decoder、single Program、
+  full48 transport、one-shot信息墙和完整rank16 LoRA均不改；fresh `M0=0,Lambda0=I`，不继承RLS10。
+- 同一task/video的一套LoRA做K4 policy-batch4 random-reset rollouts；binary LOO在mixed task给success/failure
+  executed prefixes相反符号，全成/全败严格zero并跳过replay。mixed replay按episode等权和Nmc4 keyed CFM
+  形成完整LoRA gradient，再VJP到Program；没有old/current重复forward、ratio、第二epoch、shared Adam、critic、
+  progress、SPSA或negative policy forward。
+- 历史B2峰值约40.34GB表明replay B8大概率OOM；当前B2是容量约束下的初始吞吐点，不是为低位精度降速。
+  K4 batch4、四persistent env lanes、BF16、六rank×4 tasks、CUDA-complete rendezvous和两次fixed gather保持。
+  homogeneous不拼大replay，hot path不做hash或逐tensor防御检查。
+- canonical owner与retired path已收敛：旧ledger/single-lane/success-only、RLS gate/deployment/nonpass owners和
+  tests删除；Reward数学、K4 rollout、training/profile与strict decision各有单一owner。CPU覆盖16种outcomes、
+  ASPO一阶等价、Nmc4、BF16→FP32 gradient、Program/full48、checkpoint/cursor和fail-close；全仓=
+  `336 passed in 59.12s`。
+- 当前config=`configs/pi05_v6_reward_credit_program_cotangent_v1.json`，profile awaiting、formal blocked；尚无
+  Reward-Credit A40 profile、checkpoint或strict分数。下一证据只有clean frozen后的full24×K4×Nmc4 discarded
+  profile；mixed coverage、homogeneous zero、shared zero-credit task motion、closure、BA/action、容量和collective
+  同时过门后才允许formal cycle1。
+
 ## RLS full400正式否决feature-row retention充分性（2026-08-10）
 
 - clean frozen`25bbd52`的formal fresh0→10 natural exit0；10 macros总step wall/input wait=

@@ -24,6 +24,8 @@ class Pi05ExecutedPrefixFlowLoss(torch.nn.Module):
         *,
         noise: torch.Tensor | None = None,
         time: torch.Tensor | None = None,
+        validate_prefix_values: bool = True,
+        collect_details: bool = True,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         valid = batch.get("executed_action_steps")
         if not isinstance(valid, torch.Tensor) or valid.ndim != 1:
@@ -44,15 +46,19 @@ class Pi05ExecutedPrefixFlowLoss(torch.nn.Module):
         action_dim = int(self.policy.config.output_features[ACTION].shape[0])
         losses = losses[:, :, :action_dim]
         valid = valid.to(device=losses.device, dtype=torch.long)
-        if (
-            valid.shape[0] != losses.shape[0]
-            or bool((valid <= 0).any())
-            or bool((valid > losses.shape[1]).any())
+        if valid.shape[0] != losses.shape[0] or (
+            validate_prefix_values
+            and (
+                bool((valid <= 0).any())
+                or bool((valid > losses.shape[1]).any())
+            )
         ):
             raise RewardProtocolError("PI05 reward executed-action mask is invalid")
         mask = torch.arange(losses.shape[1], device=losses.device)[None] < valid[:, None]
         numerator = (losses * mask[:, :, None]).sum(dim=(1, 2))
         per_chunk = numerator / (valid * action_dim).to(dtype=losses.dtype)
+        if not collect_details:
+            return per_chunk, {}
         return per_chunk, {
             "loss": float(per_chunk.mean().detach()),
             "successful_chunks": int(per_chunk.numel()),
@@ -63,29 +69,6 @@ class Pi05ExecutedPrefixFlowLoss(torch.nn.Module):
         }
 
 
-def equal_episode_loss(
-    per_chunk: torch.Tensor, episode_ids: torch.Tensor
-) -> tuple[torch.Tensor, dict[str, int]]:
-    """Average chunks within each success, then weight successful episodes equally."""
-
-    if (
-        per_chunk.ndim != 1
-        or episode_ids.ndim != 1
-        or per_chunk.shape != episode_ids.shape
-        or per_chunk.numel() == 0
-    ):
-        raise RewardProtocolError("PI05 reward episode aggregation shape changed")
-    ids = episode_ids.to(device=per_chunk.device, dtype=torch.long)
-    unique = torch.unique(ids, sorted=True)
-    if not torch.equal(unique, torch.arange(unique.numel(), device=unique.device)):
-        raise RewardProtocolError("PI05 reward episode IDs must be contiguous")
-    losses = torch.stack([per_chunk[ids == episode].mean() for episode in unique])
-    return losses.mean(), {
-        "successful_episodes": int(unique.numel()),
-        "successful_chunks": int(per_chunk.numel()),
-    }
-
-
 def functional_executed_prefix_flow_loss(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
@@ -94,6 +77,8 @@ def functional_executed_prefix_flow_loss(
     *,
     noise: torch.Tensor | None = None,
     time: torch.Tensor | None = None,
+    validate_prefix_values: bool = True,
+    collect_details: bool = True,
 ) -> tuple[torch.Tensor, dict[str, Any]]:
     """Evaluate executed-prefix loss with differentiable generated LoRA tensors."""
 
@@ -106,6 +91,11 @@ def functional_executed_prefix_flow_loss(
         replay,
         prefixed,
         args=(batch,),
-        kwargs={"noise": noise, "time": time},
+        kwargs={
+            "noise": noise,
+            "time": time,
+            "validate_prefix_values": validate_prefix_values,
+            "collect_details": collect_details,
+        },
         strict=False,
     )

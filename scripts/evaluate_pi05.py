@@ -26,6 +26,9 @@ from ember.pi05_eval.launcher import (
     spawn_worker_processes,
     terminate_owned_workers as _terminate_owned_workers,
 )
+from ember.pi05_eval.reward_credit_gate import (
+    validate_registered_reward_credit_output as _validate_registered_reward_credit_output,
+)
 from ember.eval_adapters import (
     adapter_requests as _adapter_requests,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
@@ -254,70 +257,6 @@ def _parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
     return indices
 
 
-def _validate_registered_rls_macro10_output(
-    args: argparse.Namespace,
-    output_dir: Path,
-) -> None:
-    """Reject an RLS macro10 evaluation outside its training-time registered root."""
-
-    if (
-        getattr(args, "mode", None) != "formal"
-        or getattr(args, "expert_manifold_video_condition", None) != "correct"
-        or getattr(args, "expert_manifold_config", None) is None
-        or getattr(args, "expert_manifold_checkpoint", None) is None
-    ):
-        return
-    config_path = args.expert_manifold_config.resolve()
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise Pi05EvaluationError(
-            "RLS macro10 evaluation config is unreadable"
-        ) from error
-    if config.get("schema_version") != V6_PRIOR_CONFIG_SCHEMA:
-        return
-
-    checkpoint = args.expert_manifold_checkpoint.resolve()
-    if checkpoint.name != "macro_00000010":
-        return
-    training_root = checkpoint.parent.parent
-    try:
-        run = json.loads(
-            (training_root / "run_contract.json").read_text(encoding="utf-8")
-        )
-        manifest = json.loads(
-            (checkpoint / "manifest.json").read_text(encoding="utf-8")
-        )
-        checkpoint_contract = manifest["checkpoint_contract"]
-        registered = run["decision_evaluation"]["macro10_registered_root"]
-        run_commit = run["git"]["commit"]
-    except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
-        raise Pi05EvaluationError(
-            "RLS macro10 evaluation registration is incomplete"
-        ) from error
-    if (
-        checkpoint.parent.name != "checkpoints"
-        or run.get("schema_version") != V6_PRIOR_RUN_SCHEMA
-        or run.get("mode") != "formal"
-        or run.get("config", {}).get("schema") != V6_PRIOR_CONFIG_SCHEMA
-        or manifest.get("schema_version") != V6_PRIOR_CHECKPOINT_SCHEMA
-        or manifest.get("next_macro") != 10
-        or manifest.get("metrics_rows") != 10
-        or not isinstance(checkpoint_contract, Mapping)
-        or checkpoint_contract.get("run_schema") != V6_PRIOR_RUN_SCHEMA
-        or checkpoint_contract.get("mode") != "formal"
-        or checkpoint_contract.get("config", {}).get("schema")
-        != V6_PRIOR_CONFIG_SCHEMA
-        or checkpoint_contract.get("git_commit") != run_commit
-        or not isinstance(registered, str)
-        or not registered
-        or Path(registered).resolve() != output_dir
-    ):
-        raise Pi05EvaluationError(
-            "RLS macro10 evaluation output is not its pre-registered root"
-        )
-
-
 def prepare_run(
     args: argparse.Namespace,
     *,
@@ -326,7 +265,7 @@ def prepare_run(
     writer_kind, source_sft_requested = _adapter_requests(args)
     adapter_requested = writer_kind is not None or source_sft_requested
     output_dir = args.output_dir.resolve()
-    _validate_registered_rls_macro10_output(args, output_dir)
+    _validate_registered_reward_credit_output(args, output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise Pi05EvaluationError(f"PI05 evaluation output is not empty: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=True)

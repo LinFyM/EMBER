@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from types import SimpleNamespace
 
 import numpy as np
@@ -17,19 +16,15 @@ from ember.lora import (
 from ember.pi05_processing import libero_policy_input
 from ember.reward.loss import (
     Pi05ExecutedPrefixFlowLoss,
-    equal_episode_loss,
     functional_executed_prefix_flow_loss,
-)
-from ember.reward.ledger import (
-    InteractionCursors,
-    ledger_prefix_summary,
-    write_rollout_once,
 )
 from ember.reward.protocol import (
     RewardProtocolError,
     RewardTask,
     environment_seed,
     policy_noise_seed,
+    reward_credit_environment_seed,
+    reward_credit_policy_noise_seed,
     task_local_video_demo,
     update_seed,
 )
@@ -37,8 +32,7 @@ from ember.reward.rollout import (
     complete_trajectory_batch,
     RandomResetEnvironmentPool,
     RewardTrajectory,
-    collect_randomized_reward_trajectory,
-    successful_trajectory_batch,
+    collect_randomized_reward_trajectories,
 )
 
 
@@ -59,7 +53,7 @@ def test_random_reset_pool_keeps_counterfactual_lanes_independent(
         problem_folder="libero_spatial",
         bddl_file=path.name,
         bddl_bytes=len(payload),
-        bddl_sha256=hashlib.sha256(payload).hexdigest(),
+        bddl_sha256=None,
         horizon=220,
     )
 
@@ -83,14 +77,12 @@ def test_random_reset_pool_keeps_counterfactual_lanes_independent(
         return value
 
     monkeypatch.setattr(pool, "_new_environment", create)
-    plus = pool.get(task, lane=0)
-    minus = pool.get(task, lane=1)
-    assert plus is pool.get(task, lane=0)
-    assert minus is pool.get(task, lane=1)
-    assert plus is not minus
-    assert len(created) == 2
+    lanes = tuple(pool.get(task, lane=lane) for lane in range(4))
+    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(4))
+    assert len({id(value) for value in lanes}) == 4
+    assert len(created) == 4
     with pytest.raises(RewardProtocolError, match="lane"):
-        pool.get(task, lane=2)
+        pool.get(task, lane=4)
     pool.close()
     assert all(value.closed for value in created)
 
@@ -107,8 +99,11 @@ def _observation(marker: int = 0) -> dict[str, np.ndarray]:
 
 
 class _FakeEnvironment:
-    def __init__(self, *, success_after_policy_steps: int | None) -> None:
+    def __init__(
+        self, *, success_after_policy_steps: int | None, marker: int = 0
+    ) -> None:
         self.success_after_policy_steps = success_after_policy_steps
+        self.marker = marker
         self.events: list[tuple[str, object]] = []
         self.policy_steps = 0
 
@@ -117,7 +112,7 @@ class _FakeEnvironment:
 
     def reset(self) -> dict[str, np.ndarray]:
         self.events.append(("reset", None))
-        return _observation()
+        return _observation(self.marker)
 
     def step(self, action: np.ndarray):
         action = np.asarray(action)
@@ -125,9 +120,9 @@ class _FakeEnvironment:
             self.events.append(("dummy", None))
             return _observation(), 0.0, False, {}
         self.policy_steps += 1
-        self.events.append(("policy", self.policy_steps))
+        self.events.append(("policy", action.copy()))
         success = self.policy_steps == self.success_after_policy_steps
-        return _observation(self.policy_steps), float(success), success, {}
+        return _observation(self.marker + self.policy_steps), float(success), success, {}
 
 
 class _FakePolicy(torch.nn.Module):
@@ -145,7 +140,10 @@ class _FakePolicy(torch.nn.Module):
         assert "observation.images.right_wrist_0_rgb" not in batch
         self.noises.append(noise.detach().cpu())
         self.num_steps.append(num_steps)
-        return torch.zeros((1, 50, 7), dtype=torch.float32, device=noise.device)
+        image = batch["observation.images.base_0_rgb"]
+        marker = image.to(device=noise.device).mean(dim=(1, 2, 3))
+        value = marker + noise[:, 0, 0] * 1e-3
+        return value[:, None, None].expand(-1, 50, 7).contiguous()
 
 
 def _preprocess(value: dict[str, object]) -> dict[str, torch.Tensor]:
@@ -186,13 +184,21 @@ def test_reward_schedules_exclude_arm_rank_and_execution_order() -> None:
     )
     assert task_local_video_demo(19, 24, 11) == demo
     assert task_local_video_demo(19, 24, 12) != demo
+    assert reward_credit_environment_seed(7, "libero_goal", 4, 11, 9) == 2993136934
+    assert (
+        reward_credit_policy_noise_seed(13, "libero_goal", 4, 11, 9, 3)
+        == 3231831300698984293
+    )
 
 
-def test_random_reset_rollout_settles_then_executes_five_step_replans() -> None:
-    env = _FakeEnvironment(success_after_policy_steps=7)
+def test_k4_rollout_compacts_active_lanes_without_crossing_replay_identity() -> None:
+    envs = tuple(
+        _FakeEnvironment(success_after_policy_steps=value, marker=lane * 20)
+        for lane, value in enumerate((1, 6, None, 11))
+    )
     policy = _FakePolicy()
-    trajectory = collect_randomized_reward_trajectory(
-        env=env,
+    trajectories = collect_randomized_reward_trajectories(
+        envs=envs,
         policy=policy,
         preprocess=_preprocess,
         postprocess=lambda value: value,
@@ -201,67 +207,48 @@ def test_random_reset_rollout_settles_then_executes_five_step_replans() -> None:
         global_task_id=6,
         language="put the bowl on the tray",
         adaptation_seed=23,
-        rollout_cursor=4,
-        env_seed=29,
-        policy_seed_root=31,
+        rollout_cursors=(0, 1, 2, 3),
+        env_seeds=(29, 31, 37, 41),
+        policy_seed_root=43,
         device=torch.device("cpu"),
-        max_horizon=220,
+        max_horizon=12,
         dummy_settling_steps=10,
         dummy_action=[0, 0, 0, 0, 0, 0, -1],
         action_execution_horizon=5,
         num_inference_steps=10,
     )
-    assert env.events[:2] == [("seed", 29), ("reset", None)]
-    assert env.events[2:12] == [("dummy", None)] * 10
-    assert [event for event, _ in env.events[12:]] == ["policy"] * 7
-    assert trajectory.success and trajectory.steps == 7
-    assert trajectory.valid_action_steps == (5, 2)
-    assert trajectory.progress_start_frame is not None
-    assert trajectory.progress_terminal_frame is not None
-    assert trajectory.progress_start_frame.dtype == torch.uint8
-    assert trajectory.progress_terminal_frame.dtype == torch.uint8
-    assert not torch.equal(
-        trajectory.progress_start_frame, trajectory.progress_terminal_frame
-    )
-    assert len(trajectory.policy_noise_seeds) == 2
-    assert policy.num_steps == [10, 10]
-    assert not torch.equal(policy.noises[0], policy.noises[1])
-    assert trajectory.ledger_row()["fixed_init_state_id"] is None
-    assert trajectory.ledger_row()["dummy_settling_steps"] == 10
-
-
-def test_randomness_cursor_decouples_antithetic_rng_from_artifact_identity() -> None:
-    trajectories = []
-    policies = []
-    for rollout_cursor in (8, 9):
-        policy = _FakePolicy()
-        policies.append(policy)
-        trajectories.append(
-            collect_randomized_reward_trajectory(
-                env=_FakeEnvironment(success_after_policy_steps=1),
-                policy=policy,
-                preprocess=_preprocess,
-                postprocess=lambda value: value,
-                suite="libero_spatial",
-                task_id=6,
-                global_task_id=6,
-                language="put the bowl on the tray",
-                adaptation_seed=23,
-                rollout_cursor=rollout_cursor,
-                randomness_cursor=4,
-                env_seed=29,
-                policy_seed_root=31,
-                device=torch.device("cpu"),
-                max_horizon=220,
-                dummy_settling_steps=10,
-                dummy_action=[0, 0, 0, 0, 0, 0, -1],
-                action_execution_horizon=5,
-                num_inference_steps=10,
+    assert len(trajectories) == 4
+    assert [value.success for value in trajectories] == [True, True, False, True]
+    assert [value.valid_action_steps for value in trajectories] == [
+        (1,),
+        (5, 1),
+        (5, 5, 2),
+        (5, 5, 1),
+    ]
+    assert [value.rollout_cursor for value in trajectories] == [0, 1, 2, 3]
+    assert [noise.shape[0] for noise in policy.noises] == [4, 3, 2]
+    assert policy.reset_count == 1
+    for lane, (trajectory, env) in enumerate(zip(trajectories, envs, strict=True)):
+        expected_seeds = tuple(
+            reward_credit_policy_noise_seed(
+                43, "libero_spatial", 6, 23, lane, replan
             )
+            for replan in range(len(trajectory.policy_noise_seeds))
         )
-    assert [value.rollout_cursor for value in trajectories] == [8, 9]
-    assert trajectories[0].policy_noise_seeds == trajectories[1].policy_noise_seeds
-    assert torch.equal(policies[0].noises[0], policies[1].noises[0])
+        assert trajectory.policy_noise_seeds == expected_seeds
+        environment_rows = [value for name, value in env.events if name == "policy"]
+        replay_rows = [
+            action[0, step].numpy()
+            for action, valid in zip(
+                trajectory.action_chunks,
+                trajectory.valid_action_steps,
+                strict=True,
+            )
+            for step in range(valid)
+        ]
+        assert len(environment_rows) == len(replay_rows)
+        for environment, replay in zip(environment_rows, replay_rows, strict=True):
+            np.testing.assert_allclose(environment, replay)
 
 
 def _trajectory(valid: tuple[int, ...], *, success: bool = True) -> RewardTrajectory:
@@ -285,22 +272,11 @@ def _trajectory(valid: tuple[int, ...], *, success: bool = True) -> RewardTrajec
         steps=sum(valid),
         reward_sum=1.0,
         dummy_settling_steps=10,
-        initial_observation_sha256="a" * 64,
         policy_noise_seeds=tuple(range(len(valid))),
         observations=observations,
         action_chunks=tuple(torch.zeros((1, 50, 7)) for _ in valid),
         valid_action_steps=valid,
     )
-
-
-def test_success_batch_preserves_exact_executed_prefixes() -> None:
-    batch, episode_ids = successful_trajectory_batch(
-        (_trajectory((5, 2)), _trajectory((4,))), torch.device("cpu")
-    )
-    assert batch[ACTION].shape == (3, 50, 7)
-    assert batch["executed_action_steps"].tolist() == [5, 2, 4]
-    assert batch["action_is_pad"].sum(dim=1).tolist() == [45, 48, 46]
-    assert episode_ids.tolist() == [0, 0, 1]
 
 
 def test_complete_batch_retains_failure_prefixes_and_binary_outcomes() -> None:
@@ -312,6 +288,17 @@ def test_complete_batch_retains_failure_prefixes_and_binary_outcomes() -> None:
     assert batch["executed_action_steps"].tolist() == [5, 2, 5]
     assert episode_ids.tolist() == [0, 0, 1]
     assert successes.tolist() == [1.0, 0.0]
+
+
+def test_complete_batch_skips_tensor_concatenation_for_zero_credit_panel() -> None:
+    batch, episode_ids, successes = complete_trajectory_batch(
+        tuple(_trajectory((5, 2), success=False) for _ in range(4)),
+        torch.device("cpu"),
+    )
+    assert set(batch) == {"executed_action_steps"}
+    assert batch["executed_action_steps"].tolist() == [5, 2] * 4
+    assert episode_ids.tolist() == [0, 0, 1, 1, 2, 2, 3, 3]
+    assert successes.tolist() == [0.0] * 4
 
 
 class _LossModel(torch.nn.Module):
@@ -365,38 +352,6 @@ def test_executed_prefix_loss_ignores_unexecuted_45_of_50_actions() -> None:
     torch.testing.assert_close(before, after)
     assert details["executed_action_steps"] == 10
     assert details["masked_unexecuted_action_steps"] == 90
-
-
-def test_equal_episode_loss_does_not_overweight_long_successes() -> None:
-    loss, details = equal_episode_loss(
-        torch.tensor([1.0, 3.0, 9.0]), torch.tensor([0, 0, 1])
-    )
-    torch.testing.assert_close(loss, torch.tensor(5.5))
-    assert details == {"successful_episodes": 2, "successful_chunks": 3}
-
-
-def test_immutable_ledger_prefix_binds_three_distinct_cursors(tmp_path) -> None:
-    first = _trajectory((5,)).ledger_row()
-    first["rollout_cursor"] = 0
-    second = _trajectory((5, 2)).ledger_row()
-    second["rollout_cursor"] = 1
-    path = write_rollout_once(tmp_path, "task_024_identity_seed_003", first)
-    assert write_rollout_once(tmp_path, "task_024_identity_seed_003", first) == path
-    write_rollout_once(tmp_path, "task_024_identity_seed_003", second)
-    summary = ledger_prefix_summary(tmp_path, "task_024_identity_seed_003", 2)
-    assert summary["rollout_cursor"] == 2
-    assert summary["environment_action_cursor"] == 12
-    assert summary["successes"] == 2
-    cursors = InteractionCursors(
-        rollout=summary["rollout_cursor"],
-        environment_actions=summary["environment_action_cursor"],
-        optimizer_updates=1,
-    )
-    assert cursors.to_dict() == {
-        "rollout_cursor": 2,
-        "environment_action_cursor": 12,
-        "optimizer_update_cursor": 1,
-    }
 
 
 class _ProjectedLossModel(torch.nn.Module):

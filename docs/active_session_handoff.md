@@ -14,7 +14,38 @@
 - 当前没有EMBER GPU进程。任何新GPU工作前必须实时比较`gpu01/gpu02`，只用空闲A40、合计最多6张，
   不干扰他人；多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
 
-### 1.1 Latest experiment and architecture decision（2026-08-10）
+### 1.1 Active Reward-Credit implementation（2026-08-10，尚无GPU结果）
+
+- 第39.5节唯一后继已在canonical path原位实现，active config为
+  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，状态仍是
+  `awaiting_live_a40_reward_credit_profile`。部署严格不变：historical v6-fast macro400的600 tensors冻结，
+  exact language加恰好一条action-hidden video经Balanced P256 key和single FP32 Program residual生成一套
+  完整38-target rank16 LoRA；没有language bypass、few-shot、expert-bank deployment或第二套LoRA。
+- 训练从`M_0=0, Lambda_0=I` fresh开始，不能继承RLS10。每个train task的一条video只生成一次LoRA，随后
+  在四个persistent env lanes做K4 official random-reset batched rollout；成功与失败都保留真实executed prefix。
+  `A_e=(4R_e-sum R)/3`，全成/全败task严格零credit且不拼replay；mixed task以episode等权、Nmc4 keyed CFM
+  直接对完整LoRA求signed gradient，再VJP到Program cotangent。现有full48 exact reconciliation只接收正号
+  `G`，其内部构造负梯度写入；negative 24 rows仍为exact-zero incremental motion且无额外policy forward。
+- runtime保持六rank×4 tasks、K4 policy batch4、BF16 policy、四persistent env lanes、deferred NCCL和
+  CUDA-complete FileStore readiness后两次fixed gather。reward replay physical B2来自历史A40约40.34GB容量证据，
+  不是为微小数值差异降低吞吐；profile若证明B4安全且更快才上调。已移除旧ledger、single-lane collector、
+  success-only collator、RLS-specific gate/deployment/nonpass owner、old/current第二forward、ratio、第二epoch、
+  shared Adam和热路径hash；历史仍由Git、docs与formal artifacts保存。
+- canonical owners为`reward/rollout.py`（K4 batched environment path）、`expert_manifold/v6_reward_credit.py`
+  （唯一reward数学）、`v6_prior_training.py`（task-immediate graph→rollout→replay→cotangent→release）、
+  `v6_prior_profile.py`（机制/profile门）、`pi05_eval/reward_credit_gate.py`（registered strict root与cycle2门）。
+  `writer_family_registry.py`和`pi05_eval_analysis_fixture.py`只是从超大owner拆出的单一登记/fixture，不是并行方法。
+- CPU已覆盖16种K4 outcomes、LOO符号/零和、ASPO首epoch一阶等价、Nmc4 time/noise/physical-batch不变性、
+  BF16 decoder→FP32 Program grad、homogeneous zero fast path、full48 transport、checkpoint/cursor、profile→formal
+  fail-close及strict registered-root/six-arm trigger gate；加载`.env.local`后的最终全仓为
+  `336 passed in 59.12s`，architecture guard 0 hard violation。当前没有Reward-Credit GPU profile、training
+  或strict分数。
+- 下一动作只有：clean commit/push和frozen worktree后，实时重查`gpu01/gpu02`与`/data1` quota，运行一次
+  full24×K4×Nmc4、六卡、fresh0→1 discarded profile。必须96/96 rollouts、至少6 mixed tasks、mixed
+  cotangent finite/nonzero、homogeneous exact-zero、full48 closure、Program→LoRA→fixed-action、0 OOM/nonfinite/
+  watchdog才可另commit seal并启动formal cycle0→1；profile state永久不进入formal。
+
+### 1.2 Latest completed experiment and architecture decision（2026-08-10）
 
 - 第39节RLS已从clean frozen`25bbd52c16cc0f0fd48f478f0fa8b554fcb28dc6`完成formal fresh0→10和
   唯一预注册的macro10 strict correct400。formal natural exit0、10 rows、macro10 checkpoint完整；step
@@ -34,8 +65,8 @@
 - RLS内部current/blind从`.999980`降到`.230340`、negative/correct升到`.291493`，logged/final precision
   condition约`7510.5/8325.5`；formal热路径没有保存reference rows，`reference_correct_rows=0`，所以
   `reference_rows_improved_fraction=1`是空集合值。最早失效接口已转向offline source-action functional
-  cotangent与真实closed-loop occupancy/reward credit错位。当前没有active GPU方法；下一单变量按第39.5
-  保持one-shot部署图，只替换为train24 binary-reward on-policy Program cotangent。
+  cotangent与真实closed-loop occupancy/reward credit错位。该结论已触发第39.5唯一active implementation：
+  保持one-shot部署图，只替换为train24 binary-reward on-policy Program cotangent；当前仍无该后继的GPU结果。
 - 第38节v2已从clean frozen`abd8e0826e52758eda53b1963f8b12db92bf3748`完整训练0→25。formal root=
   `runs/outputs/pi05_v6_balanced_causal_condition_residual_formal_r6_lb20_mb10_abd8e08_20260810`，25 rows、
   completion25，step sum/mean=`535.464796/21.418592s`，peak allocated/reserved=
@@ -69,7 +100,7 @@
   lost≤6、breadth≥6的严格结果授权。formal evaluator只接受predeclared macro10/25；这些profile与启动合同
   继续作为有效历史机制/provenance证据，但已由上面的full400否决，不再授权GPU动作。
 
-### 1.2 Chronological evidence retained below
+### 1.3 Chronological evidence retained below
 
 - **2026-08-10最新裁决**：第35节Tangent Tube已从clean frozen`b308941`完成formal fresh0→10和
   同一one-shot correct400。训练10 macros总step wall=`207.444s`、input wait=`.265s`、peak
@@ -303,7 +334,7 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 因此只有当当前one-shot的同任务跨video方差被closed-loop证据定位为最早瓶颈后，才恢复固定K聚合；不能
 通过平均多个无效LoRA或expert route伪造提升。
 
-## 3. Current deployment architecture and active diagnostic
+## 3. Current deployment architecture and active training path
 
 部署图恢复历史v6-fast完整video-to-LoRA生成器：
 
@@ -318,24 +349,21 @@ one-shot是当前目标合同。few-shot的合理作用是从多个同任务视�
 
 `runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400`
 
-其600个Writer tensors只作load-only初始化。encoder/Core/transition/Procedure共483 tensors、
-`7,060,992` parameters冻结；compiler+factor heads的41 tensors、`3,714,304` parameters在audit中仅用于
-求梯度，不创建optimizer/scheduler、不更新，也没有active训练方法。
+其600个Writer tensors只作load-only初始化并全部冻结。Balanced P256 video key在fused Program后添加single
+FP32 residual memory，再由同一个frozen compiler/factor decoder生成LoRA；部署checkpoint只拥有该Program，
+不读取training reward、observation/action replay、RLS precision或task experts。
 
-第36节diagnostic在不改变部署图的前提下增加三条严格匹配的比较臂：
+当前第39.5训练路径只在development-train信息域内增加真实闭环credit：
 
-- macro0 Writer读取exact language和一条correct action-hidden video，生成完整LoRA；统一step2000 task
-  expert是task-local privileged teacher，sealed tangent macro10只加载41个compiler/factor tensors作为
-  历史比较decoder，二者都`no_grad`；
-- train24每task仍读取20条同task跨episode action queries。logical B20只因A40容量切为B10+10；每个slice
-  依次执行expert、tangent10和唯一一次可微macro0 policy forward，三臂复用同一flow time/noise及offset，
-  因而正式runtime固定每task 6次PI05 policy forward；
-- action projection实际width必须为7；三臂velocity裁到真实7维后仅在小tensor上转FP32计算expert、macro0、
-  tangent10 target loss和CEFD distillation loss，不改变BF16主干吞吐；
-- positive、completion、ranking和候选distillation四类gradient先rank内4-task等权mean，再一次stacked
-  all-reduce/world6形成full24 mean；CEFD向量只与现有三向量的归一化Gram span比较，不做parameter update；
-- reversed、shuffled、wrong保持8/8/8 schedule；audit不读held action、不rollout、不创建checkpoint或长期
-  cache。部署仍是单一600-tensor Writer，不读expert bank、tangent decoder或任何诊断artifact。
+- 每task exact language加一条correct action-hidden video只生成一次LoRA，同一LoRA在四条persistent env lanes
+  执行K4 official random-reset batched rollouts；
+- success与failure都保留executed prefix，binary LOO只在mixed task产生正负credit；全成/全败精确zero且在
+  replay拼接与functional policy forward前退出；
+- mixed task以episode等权、Nmc4 keyed time/noise直接对完整LoRA求signed CFM gradient，再VJP到Program；
+- 六rank各完成4 tasks后，经CUDA-complete rendezvous固定gather 24 cotangents与24+24 condition rows；现有
+  full48 solve进行single identical manual Program/precision write，无optimizer/scheduler/scaler或memory all-reduce；
+- reward/observation/action仅属于train24 credit，Writer输入和deployment checkpoint仍只有language+video；
+  validation/test action/reward、teacher action、expert output与negative policy forward均为0。
 
 ## 4. What task experts solve and do not solve
 
@@ -407,7 +435,7 @@ Experts不解决：
 | Frozen-v6 Counterfactual-Null Program Residual v1 | 无rollout | correct retention `.807966`、A/B/action/closure成立 | DC key导致condition`1315.33`、null仅15/24，吞吐门亦non-pass | v1退役；不训练、不调lambda/seed/P |
 | Balanced DC--Causal Program Residual v2 | macro0/10/25=`134/140/139`、breadth6，m0∪m10=`153` | 13/13机制门、24/24 null、A/B/action/吞吐和部署全通过；短窗net+6 | 10→25 gained/lost=`12/13`；50-video correction近随机正交，旧能力不保留 | blind-add已退役，不续50/不补五臂 |
 | Exact Anchored Reconciliation v3 | `134→140` | CPU oracle/profile成立；full400 gained21 | lost15、相对v2没有改善retention、correct80误导 | 已退役；不续25、不补六臂、不扫RLS超参 |
-| Reward-Credit Program Cotangent | 尚无结果 | 补齐“binary reward + explicit Program memory + frozen-v6 decoder”缺失象限 | 仍需CPU seal与full24 K4 profile | 当前唯一设计方向；尚未授权GPU |
+| Reward-Credit Program Cotangent | 尚无GPU/strict结果 | 补齐“binary reward + explicit Program memory + frozen-v6 decoder”缺失象限；canonical CPU实现与336项回归已过 | 仍需full24 K4 profile裁决mixed coverage、shared motion、容量和collective | 当前唯一active；只授权一次discarded profile |
 
 任何需要精确数字的决策必须回到对应design/artifact，而不是从本表反推未列指标。
 
@@ -426,46 +454,40 @@ Experts不解决：
 6. **架构与recipe耦合。** v5.2/v6交叉结果证明不能按某一architecture aggregate整体判死，也不能直接
    恢复old recipe；需要对比最早传递接口和任务换手。
 7. **当前假设是局部且可证伪的。** v2已证明balanced video key、显式condition kernel和
-   Program→LoRA→action传递工作，也取得`134→140`，但每个新video的近正交blind correction没有保留旧rows。
-   v3只把更新换成exact anchored reconciliation，不改video encoder、Procedure、FactorHeads、functional
-   target、deployment或scientific batch。若旧row保留机制成立而strict仍无共同提高，才重新打开on-policy
-   reward credit或更早表示，不因一次低分立即换整条路线。
+   Program→LoRA→action传递工作；RLS又证明feature-row retention成立仍不能保护held success。第39.5因此只把
+   offline source-action cotangent换成K4 binary on-policy reward credit，不改video encoder、Procedure、
+   FactorHeads、Program transport、deployment或LoRA topology。若mixed credit、closure和BA/action都健康而
+   strict仍无共同提高，才把最早接口上移到Balanced key/Procedure，不因一次低分换整条路线。
 
 ## 7. Current engineering state
 
-当前第39节RLS实现状态如下：
+当前第39.5节Reward-Credit实现状态如下：
 
 - 唯一CLI仍是`scripts/train_v6_prior_writer.py`，活动mode仅`mechanism-profile/formal`；一次性
   `teacher-audit`、flow teacher和旧effective objective owner/tests已经删除，没有第二runner或部署路径；
-- `writer/condition_update.py`拥有balanced static/causal fixed feature、single FP32 Program memory和唯一RLS
-  solve/apply；checkpoint payload编解码与原子目录发布分离，contract静态科学规格与状态机验证分离，但没有
-  第二数学或部署实现；
-  `v6_prior_step.py`拥有correct graph/counterfactual feature，training只做local objectives、两次all-gather和
-  identical manual write；`v6_prior_profile.py`只拥有一次性verification和gates；
+- `reward/rollout.py`唯一拥有K4 batched env path，`v6_reward_credit.py`唯一拥有LOO/Nmc4/Program VJP数学，
+  `v6_prior_training.py`拥有task-immediate graph/replay/cotangent与两次gather，`v6_prior_profile.py`只拥有
+  一次性verification和gates；`reward_credit_gate.py`拥有registered strict root与cycle2 decision；
 - 600-tensor historical v6 strict-load后全部冻结，fixed projection nonpersistent。Program memory是唯一
   deployment mutable state；training checkpoint另存FP64 precision、assimilated rows、cursor和六rank RNG，
   不存在optimizer/scheduler/scaler或memory all-reduce；
-- config/runtime/contract/checkpoint/adapter/evaluator/analysis状态机已经联锁；fresh必须等于当前remote
-  authority，exact-resume保持原frozen commit且要求它仍为authority ancestor；错误family和stale artifact
-  fail closed；fresh formal还必须预注册固定macro0与唯一macro10 strict root，formal evaluator只接受
-  predeclared checkpoint，10→25由重聚合400-row配对证据自动过门；
-- v2 formal/strict及same-task诊断已完整封存。v3当前config为
-  `active_deployment_sealed_formal_ready`；f28 live mechanism evidence已由config verifier从raw macros重算通过，
-  deployment graph继续使用已sealed的同构v2证据。evaluator在output创建前硬绑定training run contract的
-  macro10 registered root，historical transition已登记RLS 10/25并拒绝50。当前仍没有RLS training checkpoint
-  或strict结果；本轮相关contract/evaluator定向回归=`70 passed`、全仓fresh=`304 passed in 92.19s`，
-  compileall、26 JSON与diff-check均通过。
+- config/runtime/contract/checkpoint/adapter/evaluator/analysis状态机联锁；fresh必须等于当前remote authority，
+  exact-resume保持原frozen commit且要求authority ancestry；错误family和stale artifact fail closed；profile只
+  允许fresh0→1且不留state，formal只允许fresh0→1或通过raw400 support gate后的exact-resume1→2；
+- active config为`configs/pi05_v6_reward_credit_program_cotangent_v1.json`，profile awaiting、formal blocked。
+  inherited v2 deployment seal会从raw双root重读；RLS config/runtime已formal non-pass。CPU全仓=
+  `336 passed in 59.12s`，当前尚无Reward-Credit GPU/profile/checkpoint/strict结果。
 
-以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance，不是当前seal：
+以下是仍被当前候选继承或用作比较的historical throughput/runtime provenance：
 
 - evaluator取消historical smoke中的8次冗余direct Writer forward和`1e-5`逐tensor门；batch默认8并要求
   profile至少实测`8/16/32`。三者处理同一32-request longest-first panel和同一总帧数，只改变实际
   forward分批，最终从稳定且有显存余量的候选中取LoRAs/s最高值；
 - 76-tensor LoRA保持template原生dtype：72个BF16、4个F32，单entry tensor bytes从强制FP32的
   `5,148,672`降到`2,641,920`；batch GPU→CPU staging只同步一次；
-- functional objective仍是logical B20；live A40已依次证明single physical B20和B16+4不能容纳，当前使用
-  balanced physical B10+10，通过完整有序logical panel identity重放同一20个独立Beta/Gaussian draws，
-  并用76个FP32 leaf-gradient buffers按`10/20`和`10/20`加权累积；
+- 旧source-action functional objective的logical B20/B10+10只作容量参照；active reward rollout是K4 policy
+  batch4、四persistent lanes，mixed replay为Nmc4 physical B2。B2来自历史同类A40约40.34GB峰值，profile若
+  证明B4安全且更快才上调；不为低位数值缩K/Nmc/dtype/并行度；
 - PI05 formal functional路径不再调用只供日志使用的`.cpu().numpy().tolist()`/`.item()`；loss-only实现与
   原forward的loss及LoRA leaf gradients由固定noise/time测试验证一致，通用details接口保持不变；
 - correct effective alignment只计算一次，task metrics和gradient norms合并成少量host transfer；
@@ -481,9 +503,8 @@ Experts不解决：
 - evaluation seal只能由profile root与vertical smoke root的retained artifacts组装，校验三候选完整request/
   sampled-frame panel严格相同、warmup/repeats、最长视频、selected throughput、native cache、release/reuse
   和单次成功launcher；
-- config状态图已修为`blocked → evaluation sealed/gradient ready → gradient+aux sealed/profile ready →
-  profile sealed/formal ready`，不再自我依赖；task-expert authority使用窄loader，不会因已退役topological
-  Writer/meta字段变化阻断当前训练监督；
+- active状态图为`CPU sealed/profile awaiting → profile artifact sealed/formal ready → cycle1 strict support →
+  conditional cycle2`；task experts不进入当前训练监督或部署；
 - clean frozen `ded0c80`在live空闲`gpu02:0`完成32-request、1093 sampled-frame fixed panel。
   batch8/16/32吞吐分别为`.911427/.905107/.906432 LoRA/s`，三者均稳定且峰值reserved约
   `12.82--12.85GB`；batch8按封存规则实测最快。大batch没有吞吐收益，剩余显存本身不是选慢配置的理由；
@@ -538,12 +559,14 @@ Experts不解决：
 - **feature sufficiency风险**：固定256维JL key只保留四个时序矩和frame-evidence/text-query innovation。
   它原理上区分content/order且无language-only value，但可能对细粒度阶段、接触事件或same-task视频变化
   不充分。首先看真实full48 rank、task-local retained/null及五臂，不能按漂亮Gram宣告成功。
-- **functional-to-closed-loop错位**：Program cotangent是真实source-action pointwise functional descent，
-  但历史已反复证明functional loss可与closed-loop错位。即使application、LoRA和fixed-action传递都通过，
-  strict correct仍可能不升；这时应把证据指向credit objective，而非继续调rank/能量或延长训练。
-- **累积与漂移风险**：RLS没有Adam、momentum、global scale或cap，避免shared optimizer旋转，并显式锚定
-  历史condition；但有限P256上的保留仍可能压低当前获取或与closed-loop credit错位。先在10评测完整paired
-  correct400，只有support gate通过才到25；以per-task gained/lost、breadth和相邻checkpoint churn判断共同积累。
+- **稀疏binary credit风险**：K4只有mixed task产生相对credit；全成/全败严格零是无偏且防止臆造方向，但也
+  无法直接扩展当前完全失败tasks的breadth。profile至少6 mixed只是可训练性门，不代表验证任务能共同提高。
+- **失败prefix归因风险**：负advantage把失败episode全部executed prefixes作为anti-target；真正失败原因可能只
+  位于后段，均匀episode/chunk credit会把责任扩散到此前正确动作。若Program/LoRA/action传递健康而strict下降，
+  首先检查这一reward-credit assignment，不用scale、rank或延长训练掩盖。
+- **shared solve漂移风险**：homogeneous task的直接cotangent精确为零，但full48共享condition solve仍可能因
+  mixed rows使其correct condition发生Program motion。discarded profile额外报告zero-credit task motion比例；
+  它是定位task drift的诊断，不另设事后门，最终只由paired gained/lost与breadth裁决。
 - **counterfactual覆盖风险**：每个task/visit只取wrong/shuffled/reversed之一，full48只把当前24个negative
   motion压近零；它可能学习局部异常特征而非可迁移程序。必须由same-task-other、cross-suite wrong、
   shuffled、reversed和no-video同checkpoint六臂裁决。
@@ -562,26 +585,24 @@ Experts不解决：
 2. whole-LoRA/ECP/Tangent/audit连续证据把首个失效接口定位到shared condition update transport，并否决
    expert-flow teacher；这是选择显式condition kernel的依据，不是新方法成绩。
 3. v1/v2已经依次证明full48 algebra、zero identity、freeze、balanced key、LoRA/action传递、mechanism与
-   deployment吞吐；v2 strict=`134/140/139`又证明blind-add短期换入能力但不能共同保留。它们现均为RLS
-   继承的正证据和对照，不再是待执行动作。
-4. `f0c3f51`旧artifact保持16/18 non-pass；新合同下`f28fc8b` fresh0→3已17/17通过且state永久弃用。
-   它证明三macro old-row/current-motion、既有24-task correct/null/closure/A-B/action和production mean
-   `.952297≤1.10`，但current/blind降至`.64065`、precision condition升至`1724.84`，长期获取/保留冲突仍须
-   formal0→10裁决，不能写成closed-loop或视频因果改善。
-5. fresh0→10启动时预注册config固定`6b5f7a6` macro0 root与唯一尚不存在的macro10 root；
-   macro10 strict完成后从raw queue/shards重聚合两份400-row panel并核对commit/checkpoint/state/RNG/language/
-   actual video。
-6. 只有macro10 correct`≥140`、相对macro0 lost`≤6`、breadth`≥6`才允许同一frozen commit/root
-   exact-resume10→25；否则按old-row保留、当前获取和closed-loop错位中最早失败接口裁决，不扫lambda/step。
-7. 首次single checkpoint`≥144`才补完整六臂；严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
+   deployment吞吐；v2 strict=`134/140/139`又证明blind-add短期换入能力但不能共同保留。它们是当前部署图的
+   正证据和exact macro0对照，不再是待执行动作。
+4. RLS fresh0→3内部17/17通过，但formal macro10 strict=`140`、相对macro0 lost15，否定offline feature-row
+   anchoring足以保留held closed-loop能力；RLS全部runtime已fail closed，不能从其precision或Program续训。
+5. Reward-Credit只替换最早失败接口：同一one-shot LoRA上的K4 binary LOO把真实success/failure occupancy直接
+   传成Program cotangent；不同时改feature、decoder、rank、scale、K/Nmc、video数或deployment图。
+6. 唯一discarded full24 profile先裁决96 rollouts、mixed/homogeneous credit、full48 closure、BA/action传递、
+   shared zero-credit task motion、吞吐/显存和collective；未过即按最早失败项修正，不启动formal。
+7. profile通过后只做fresh cycle0→1并立即strict correct400；只有correct`≥140`、相对macro0 lost`≤6`、
+   breadth`≥6`且gained>lost才允许cycle2，不跑80-row screen、不扫reward/RLS超参。
+8. 首次single checkpoint`≥144`才补完整六臂；严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
    再继续提高。未过门按最早失败接口做单变量修正，不180度转向。
 
-当前具体顺序：完成profile evidence/evaluator root-binding的全仓CPU门、clean commit/push和新的formal
-frozen worktree；实时重查`gpu01/gpu02`与`/data1` quota后，只在六张空闲健康A40上从identity fresh0→10。
-下一候选保持train24、六rank×4 tasks、full48 anchored write、0 negative policy forward和既有NCCL/NUMA
-映射；K4/Nmc4科学batch不缩，不从RLS10或discarded profile续权重，也不跑80-row screen。先完成CPU seal，
-再以一次full24×K4×Nmc4 profile验证mixed credit、吞吐、显存和collective；设备不空闲、拓扑不符或storage
-不足都fail close，不触碰他人进程。
+当前具体顺序：完成文档与CPU seal、clean commit/push和新的profile frozen worktree；实时重查
+`gpu01/gpu02`与`/data1` quota后，只在最多六张空闲健康A40运行一次identity fresh0→1 discarded profile。
+保持train24、六rank×4 tasks、K4/Nmc4、full48 anchored write、0 negative/old policy forward和既有NCCL/NUMA
+映射；不从RLS10或discarded profile续权重，也不跑80-row screen。设备不空闲、拓扑不符或storage不足都
+fail close，不触碰他人进程。
 
 ## 10. Canonical assets
 
@@ -593,7 +614,9 @@ frozen worktree；实时重查`gpu01/gpu02`与`/data1` quota后，只在六张�
   formal non-pass/fail-closed。
 - audit/tangent comparison assets只作retained provenance，不进入第37节runtime。
 - retired RLS config：`configs/pi05_v6_exact_anchored_reconciliation_program_residual_v3.json`；由f28 profile、
-  25bbd52 formal/strict与866cca9 transition共同封为closed-loop non-pass。下一候选尚无active config。
+  25bbd52 formal/strict与866cca9 transition共同封为closed-loop non-pass。
+- active config：`configs/pi05_v6_reward_credit_program_cotangent_v1.json`；profile awaiting、formal blocked，
+  当前只允许fresh discarded profile。
 - training/evaluation entries：`scripts/train_v6_prior_writer.py`与`scripts/evaluate_pi05.py`。
 - target split：`configs/libero_24_8_8_v1/`。
 - current source policy、tokenizer、data、video和simulation asset的BCI绝对路径均由CLI或`.env.local`

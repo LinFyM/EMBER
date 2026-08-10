@@ -75,6 +75,19 @@ def _contract() -> dict[str, object]:
     }
 
 
+def _interaction_cursor(macro: int = 1) -> dict[str, int | float]:
+    return {
+        "next_macro": macro,
+        "rollouts": macro * 16,
+        "environment_actions": macro * 123,
+        "successes": macro * 5,
+        "reward_sum": float(macro * 5),
+        "pending_environment_episodes": 0,
+        "pending_policy_action_chunks": 0,
+        "pending_replay_microbatches": 0,
+    }
+
+
 def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
 
@@ -93,6 +106,7 @@ def _save(
         metrics_rows=1,
         cursor_contract=_cursor(),
         checkpoint_contract=_contract(),
+        interaction_cursor=_interaction_cursor(),
         expected_memory_shape=_SHAPE,
     )
 
@@ -167,6 +181,7 @@ def test_checkpoint_atomically_separates_deployment_memory_and_training_state(
     )
     assert inspected["next_macro"] == 1
     assert inspected["metrics_rows"] == 1
+    assert inspected["rng"]["interaction_cursors"] == [_interaction_cursor()]
     assert inspected["program_memory"] == {
         "file": PROGRAM_MEMORY_FILE,
         "key": PROGRAM_MEMORY_KEY,
@@ -239,7 +254,7 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
     destination_reconciliation = _reconciliation()
     with torch.no_grad():
         destination.value.fill_(91.0)
-    macro, rows = load_v6_prior_checkpoint(
+    macro, rows, interaction = load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         memory=destination,
         reconciliation=destination_reconciliation,
@@ -249,6 +264,7 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
         expected_memory_shape=_SHAPE,
     )
     assert (macro, rows) == (1, 1)
+    assert interaction == _interaction_cursor()
     assert torch.equal(destination.value, saved_value)
     assert destination_reconciliation.assimilated_rows == 48
     assert torch.equal(destination_reconciliation.precision, _reconciliation(1).precision)
@@ -266,6 +282,44 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
             expected_memory_shape=_SHAPE,
         )
     assert torch.equal(destination.value, untouched)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("next_macro", 2),
+        ("rollouts", 15),
+        ("pending_environment_episodes", 1),
+        ("pending_policy_action_chunks", 1),
+        ("pending_replay_microbatches", 1),
+    ),
+)
+def test_load_rejects_changed_interaction_cursor_before_mutating_memory(
+    tmp_path: Path,
+    field: str,
+    value: int,
+) -> None:
+    checkpoint = _save(tmp_path, _memory())
+    rng_path = checkpoint / "rng_rank_000.pt"
+    rng = torch.load(rng_path, map_location="cpu", weights_only=False)
+    rng["interaction_cursor"][field] = value
+    torch.save(rng, rng_path)
+    _refresh_size(checkpoint, rng_path.name)
+    destination = _memory()
+    with torch.no_grad():
+        destination.value.fill_(91.0)
+    before = destination.value.clone()
+    with pytest.raises(ExpertManifoldError, match="checkpoint validation failed"):
+        load_v6_prior_checkpoint(
+            checkpoint=checkpoint,
+            memory=destination,
+            reconciliation=_reconciliation(),
+            context=_context(),
+            expected_cursor_contract=_cursor(),
+            expected_checkpoint_contract=_contract(),
+            expected_memory_shape=_SHAPE,
+        )
+    assert torch.equal(destination.value, before)
 
 
 def test_fresh_one_step_then_resume_has_identical_memory_and_rng_trajectory(

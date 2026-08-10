@@ -11,7 +11,7 @@ formal artifacts保存。
 - [x] one-shot：exact language + exactly one action-hidden video；video-only dynamic value；一套完整
   38-target rank16 LoRA；无language bypass、多video/LoRA/checkpoint融合。
 - [x] fixed 24/8/8 split、frozen source/normalization、validation/test action隔离和official paired evaluator。
-- [x] task experts只作历史privileged policy-effective参考；当前RLS训练和deployment均不读取其输出。
+- [x] task experts只作历史privileged policy-effective参考；当前Reward-Credit训练和deployment均不读取其输出。
 - [x] GPU launch前live比较`gpu01/gpu02`，只用最多6张空闲A40；多卡遵守
   `NCCL_P2P_DISABLE=1`、NUMA映射和deferred-NCCL。
 - [x] 吞吐优先：接受普通BF16低位差异，不为逐元素复现固定batch1、重复forward或扩宽LoRA cache。
@@ -20,8 +20,9 @@ formal artifacts保存。
 
 - [x] 撤回batch1/`1e-5` direct reproduction gate；Writer generation默认至少batch8，最终取profile最优值。
 - [x] LoRA cache保持72 BF16 + 4 F32原生dtype，batched D2H单次同步。
-- [x] functional单物理batch直接梯度与真实multi-microbatch FP32 accumulation均有唯一实现；A40当前图已
-  依次证伪physical B20和B16，active执行保持logical B20并使用balanced physical B10+10。
+- [x] 历史source-action functional图已依次证伪physical B20和B16，B10+10结论只作容量provenance；
+  active Reward-Credit固定K4 policy batch4、四persistent lanes和Nmc4 replay physical B2，profile若实证B4
+  安全且吞吐更高才上调，不为数值微差缩K/Nmc/dtype。
 - [x] 合并correct effective alignment、task metric和gradient norm host transfer，移除重复finite scans/sync。
 - [x] action DataLoader改为2 spawn persistent workers + prefetch2，并验证serial/prefetch/resume rows一致。
 - [x] 最终相关定向`68 passed`、全仓`227 passed`、compileall和`git diff --check`全部通过。
@@ -243,18 +244,21 @@ formal artifacts保存。
 - [ ] single checkpoint先超过历史`143`并严格`>150`后才补完整paired五/六臂，裁决真实时序视频因果、
   same-task鲁棒性、breadth和换手；未达标则回到最早失效接口做下一轮最小改动。
 
-## Phase 7 — Reward-Credit Program Cotangent（当前设计阶段）
+## Phase 7 — Reward-Credit Program Cotangent（CPU seal完成，等待discarded A40 profile）
 
-- [ ] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
+- [x] 保持Balanced-v2 one-shot部署图、exact language + exactly one action-hidden video、frozen v6 decoder、
   P256、single Program和完整rank16 LoRA不变；只把offline source-action cotangent替换为train24真实闭环
   binary-reward credit，禁止language bypass、few-shot、progress reward、SPSA和第二LoRA。
-- [ ] 从历史Task-Relative Flow-Credit中只复用已验证的K4 task-relative binary LOO、executed-prefix
+- [x] 从历史Task-Relative Flow-Credit中只复用已验证的K4 task-relative binary LOO、executed-prefix
   Nmc4 functional estimator、failure样本、runtime asset/EGL/NCCL修复；删除old/current第二forward、第二epoch、
   shared Adam和success-only replay，不恢复已退役RL路径。
-- [ ] 先完成数学/信息墙/shape/符号/zero-advantage/finite/checkpoint与吞吐CPU门，再做一次最小A40 full24
-  profile；保持K4、Nmc4和最大安全并行，不为数值微差降低batch/dtype/GPU利用率。
-- [ ] 第一个retained checkpoint直接做strict correct400，不跑80-row screen；只有single checkpoint absolute、
-  breadth、gained/lost和趋势支持才继续，达到144后才补六臂，严格超过150后完成因果裁决。
+- [x] canonical config/runtime/checkpoint/profile/evaluator与数学CPU门完成；16种K4 outcomes、LOO符号/零和、
+  homogeneous fast path、Nmc4、Program transport、full48、exact-resume和fail-close覆盖，全仓`336 passed`。
+- [ ] clean push/frozen与live双节点/quota preflight后只做一次full24×K4×Nmc4 fresh0→1 discarded profile；
+  保持K4、Nmc4和最大安全并行，不为数值微差降低batch/dtype/GPU利用率。
+- [ ] profile通过并另commit seal后，formal fresh cycle0→1直接做strict correct400，不跑80-row screen；只有
+  correct`>=140`、lost`<=6`、breadth`>=6`且gained>lost才继续cycle2，达到144后补六臂，严格超过150后
+  完成同checkpoint因果裁决。
 
 ## Ongoing evidence-driven iteration rules
 

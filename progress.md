@@ -1,5 +1,21 @@
 # EMBER Progress Ledger
 
+## Reward-Credit Program Cotangent实现与CPU封口（2026-08-10）
+
+- 第39.5唯一后继已在canonical `v6_prior` path原位实现；active config=
+  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`。部署仍为exact language + exactly one action-hidden
+  video、Balanced P256、frozen v6-fast、single Program和一套完整rank16 LoRA；fresh state禁止继承RLS10。
+- runtime完成K4四persistent-lane batch4 rollout、success+failure executed-prefix、binary LOO、homogeneous zero
+  fast path、mixed Nmc4 direct LoRA gradient→Program VJP、full48 single write、interaction cursor与deferred-NCCL
+  readiness。删除旧ledger/single-lane/success-only、RLS-specific executable owners、old/current第二forward、
+  ratio、第二epoch和shared Adam；历史由Git/docs/artifacts保存。
+- 吞吐保持六rank×4 tasks、BF16和最大已证实并行；replay B2来自历史A40约40.34GB容量证据，不为低位一致性
+  降速。homogeneous不拼replay，热路径无SHA/MD5/逐tensor扫描；profile另报shared solve对zero-credit task的
+  motion以定位漂移。
+- 全仓CPU回归`336 passed in 59.12s`。当前0 Reward-Credit GPU/profile/checkpoint/strict结果；profile=
+  awaiting、formal=blocked。下一步是文档/代码clean commit/push、frozen worktree和live双节点/quota preflight后
+  唯一一次full24×K4×Nmc4 fresh0→1 discarded profile，profile state永久不进入formal。
+
 ## RLS formal0→10、strict400与正式退役（2026-08-10）
 
 - profile/root-binding seal已clean commit/push为`25bbd52c16cc0f0fd48f478f0fa8b554fcb28dc6`，对应独立

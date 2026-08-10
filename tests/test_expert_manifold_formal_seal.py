@@ -26,14 +26,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_residual_deployment_uses_its_own_live_profile_and_vertical_smoke() -> None:
+def test_reward_credit_inherits_the_unchanged_live_residual_deployment_graph() -> None:
     evaluation = load_v6_prior_config(CONFIG)["evaluation"]
     assert evaluation["throughput_policy"] == (
         "highest_measured_batch_throughput_with_device_memory_headroom"
     )
     assert evaluation["required_writer_model_batch_sizes"] == [8, 16, 32]
     assert evaluation["formal_status"] == (
-        "sealed_from_live_residual_deployment_profile"
+        "sealed_from_unchanged_v6_residual_deployment_graph"
     )
     evidence = evaluation["online_smoke_evidence"]
     assert evidence["schema"] == (
@@ -94,7 +94,9 @@ def test_historical_v6_is_real_load_only_asset_with_exact_zero_residual() -> Non
     }
 
 
-def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
+def _synthetic_inspection(
+    config: dict, source: dict, checkpoint: Path, *, macro: int = 1
+) -> dict:
     configured = (
         REPO_ROOT / str(config["initialization"]["checkpoint"])
     ).resolve() / "writer.safetensors"
@@ -159,6 +161,9 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
         "program_residual": config["program_residual"],
         "reconciliation": config["reconciliation"],
         "update": config["update"],
+        "environment": config["environment"],
+        "objective": config["objective"],
+        "rng": config["rng"],
         "ownership": ownership,
         "world_size": 6,
         "rank_topology": [{"rank": rank} for rank in range(6)],
@@ -166,10 +171,10 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
     }
     return {
         "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
-        "next_macro": 10,
-        "metrics_rows": 10,
+        "next_macro": macro,
+        "metrics_rows": macro,
         "world_size": 6,
-        "cursor_contract": cursor_contract(config, 10),
+        "cursor_contract": cursor_contract(config, macro),
         "checkpoint_contract": contract,
         "program_memory": {
             "file": "program_memory.safetensors",
@@ -188,7 +193,7 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "shape": [256, 256],
             "value_count": 65_536,
             "finite": None,
-            "assimilated_rows": 480,
+            "assimilated_rows": macro * 48,
             "deployment_owned": False,
         },
         "payload_value_validation": "deployment_metadata_only",
@@ -202,7 +207,7 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
 ) -> None:
     config = load_v6_prior_config(CONFIG)
     source = {"checkpoint": "/synthetic/source"}
-    checkpoint = tmp_path / "checkpoints/macro_00000010"
+    checkpoint = tmp_path / "checkpoints/macro_00000001"
     checkpoint.mkdir(parents=True)
     (checkpoint / "manifest.json").write_text("{}", encoding="utf-8")
     (checkpoint / "program_memory.safetensors").write_bytes(b"formal-memory")
@@ -234,6 +239,15 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     )
     assert asset["kind"] == "v6_condition_program_residual_checkpoint"
     assert asset["residual_state"]["tensor_count"] == 1
+
+    macro2 = _synthetic_inspection(config, source, checkpoint, macro=2)
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: macro2,
+    )
+    assert _trained_writer_asset(
+        config, checkpoint, source, require_formal=True
+    )["method_macro"] == 2
 
     undeclared = deepcopy(inspection)
     undeclared["next_macro"] = 7

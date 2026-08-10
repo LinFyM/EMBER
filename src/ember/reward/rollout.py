@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -13,8 +12,11 @@ from lerobot.utils.constants import ACTION
 
 from ember.pi05_assets import configure_libero_runtime_assets
 from ember.pi05_processing import libero_policy_input
-from ember.pi05_source_checkpoint import sha256_file
-from ember.reward.protocol import RewardProtocolError, RewardTask, policy_noise_seed
+from ember.reward.protocol import (
+    RewardProtocolError,
+    RewardTask,
+    reward_credit_policy_noise_seed,
+)
 
 
 def _single_bool(value: Any) -> bool:
@@ -39,29 +41,27 @@ def _success(done: bool, reward: float, info: Mapping[str, Any]) -> bool:
     return False
 
 
-def _cpu_tensor_batch(batch: Mapping[str, Any]) -> dict[str, torch.Tensor]:
+def _cpu_tensor_rows(
+    batch: Mapping[str, Any],
+) -> tuple[dict[str, torch.Tensor], ...]:
     tensors = {
         key: value.detach().to(device="cpu").contiguous()
         for key, value in batch.items()
         if isinstance(value, torch.Tensor)
     }
-    if not tensors or any(value.ndim == 0 or value.shape[0] != 1 for value in tensors.values()):
-        raise RewardProtocolError("PI05 reward rollout lost the single-env batch")
-    return tensors
+    sizes = {int(value.shape[0]) for value in tensors.values() if value.ndim > 0}
+    if not tensors or any(value.ndim == 0 for value in tensors.values()) or len(sizes) != 1:
+        raise RewardProtocolError("PI05 reward rollout lost its tensor batch")
+    size = sizes.pop()
+    if size <= 0:
+        raise RewardProtocolError("PI05 reward rollout produced an empty tensor batch")
+    return tuple(
+        {name: value[row : row + 1] for name, value in tensors.items()}
+        for row in range(size)
+    )
 
 
-def tensor_batch_sha256(batch: Mapping[str, torch.Tensor]) -> str:
-    digest = hashlib.sha256()
-    for name in sorted(batch):
-        value = batch[name].detach().to(device="cpu").contiguous()
-        digest.update(f"{name}\0{value.dtype}\0{tuple(value.shape)}\0".encode())
-        digest.update(value.view(torch.uint8).numpy().tobytes())
-    return digest.hexdigest()
-
-
-def _flow_noise(
-    *, seed: int, chunk_size: int, max_action_dim: int, device: torch.device
-) -> torch.Tensor:
+def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch.Tensor:
     generator = torch.Generator(device="cpu")
     generator.manual_seed(seed)
     return torch.randn(
@@ -69,27 +69,15 @@ def _flow_noise(
         generator=generator,
         dtype=torch.float32,
         device="cpu",
-    ).to(device=device)
-
-
-def _agentview_uint8(observation: Mapping[str, Any]) -> torch.Tensor:
-    """Copy only the rotated third-person RGB used by the progress observer."""
-
-    value = np.asarray(observation.get("agentview_image"))
-    if value.ndim != 3 or value.shape[-1] != 3 or value.dtype != np.uint8:
-        raise RewardProtocolError("LIBERO progress observer lost agentview RGB")
-    return torch.from_numpy(
-        np.ascontiguousarray(value[::-1, ::-1].transpose(2, 0, 1))
     )
 
 
 class RandomResetEnvironmentPool:
     """Retain independent persistent LIBERO lanes for each task.
 
-    A lane has its own environment-local randomization history.  Antithetic
-    callers keep the two signs on separate lanes so equal seeds and reset
-    indices reproduce the same official random reset without reading fixed
-    benchmark init states.
+    Each of the four reward-credit episodes owns a separate environment lane,
+    so keyed random resets never depend on another episode's termination time.
+    No fixed benchmark init state is read.
     """
 
     def __init__(
@@ -118,18 +106,14 @@ class RandomResetEnvironmentPool:
         )
 
     def get(self, task: RewardTask, *, lane: int = 0) -> Any:
-        if lane not in {0, 1}:
-            raise RewardProtocolError("random-reset environment lane must be 0 or 1")
+        if not 0 <= lane < 4:
+            raise RewardProtocolError("random-reset environment lane must be in 0..3")
         key = (task.global_task_id, lane)
         if key in self._envs:
             return self._envs[key]
         path = self.bddl_root / task.problem_folder / task.bddl_file
         if task.global_task_id not in self._validated_tasks:
-            if (
-                not path.is_file()
-                or path.stat().st_size != task.bddl_bytes
-                or sha256_file(path) != task.bddl_sha256
-            ):
+            if not path.is_file() or path.stat().st_size != task.bddl_bytes:
                 raise RewardProtocolError(
                     f"installed reward BDDL changed: {task.suite}/{task.task_id}"
                 )
@@ -164,35 +148,28 @@ class RewardTrajectory:
     steps: int
     reward_sum: float
     dummy_settling_steps: int
-    initial_observation_sha256: str
     policy_noise_seeds: tuple[int, ...]
     observations: tuple[dict[str, torch.Tensor], ...]
     action_chunks: tuple[torch.Tensor, ...]
     valid_action_steps: tuple[int, ...]
-    progress_start_frame: torch.Tensor | None = None
-    progress_terminal_frame: torch.Tensor | None = None
 
-    def ledger_row(self) -> dict[str, Any]:
-        return {
-            "suite": self.suite,
-            "task_id": self.task_id,
-            "global_task_id": self.global_task_id,
-            "adaptation_seed": self.adaptation_seed,
-            "rollout_cursor": self.rollout_cursor,
-            "env_seed": self.env_seed,
-            "policy_seed_root": self.policy_seed_root,
-            "policy_noise_seeds": list(self.policy_noise_seeds),
-            "initial_observation_sha256": self.initial_observation_sha256,
-            "official_random_reset": True,
-            "fixed_init_state_id": None,
-            "set_init_state_called": False,
-            "dummy_settling_steps": self.dummy_settling_steps,
-            "success": self.success,
-            "steps": self.steps,
-            "reward_sum": self.reward_sum,
-            "action_chunk_count": len(self.valid_action_steps),
-            "valid_action_steps": list(self.valid_action_steps),
-        }
+
+@dataclass
+class _RewardLaneState:
+    env: Any
+    rollout_cursor: int
+    env_seed: int
+    observation: Mapping[str, Any]
+    replay_observations: list[dict[str, torch.Tensor]] = field(default_factory=list)
+    replay_actions: list[torch.Tensor] = field(default_factory=list)
+    valid_action_steps: list[int] = field(default_factory=list)
+    noise_seeds: list[int] = field(default_factory=list)
+    reward_sum: float = 0.0
+    steps: int = 0
+    success: bool = False
+
+    def is_active(self, max_horizon: int) -> bool:
+        return not self.success and self.steps < max_horizon
 
 
 def _validate_rollout_contract(
@@ -261,13 +238,10 @@ def _trajectory_result(
     steps: int,
     reward_sum: float,
     dummy_settling_steps: int,
-    initial_observation_sha256: str,
     noise_seeds: Sequence[int],
     observations: Sequence[dict[str, torch.Tensor]],
     action_chunks: Sequence[torch.Tensor],
     valid_action_steps: Sequence[int],
-    progress_start_frame: torch.Tensor | None = None,
-    progress_terminal_frame: torch.Tensor | None = None,
 ) -> RewardTrajectory:
     return RewardTrajectory(
         suite=suite,
@@ -281,67 +255,218 @@ def _trajectory_result(
         steps=steps,
         reward_sum=reward_sum,
         dummy_settling_steps=dummy_settling_steps,
-        initial_observation_sha256=initial_observation_sha256,
         policy_noise_seeds=tuple(noise_seeds),
         observations=tuple(observations),
         action_chunks=tuple(action_chunks),
         valid_action_steps=tuple(valid_action_steps),
-        progress_start_frame=progress_start_frame,
-        progress_terminal_frame=progress_terminal_frame,
     )
 
 
-def _plan_action_chunk(
+def _validate_k4_panel(
+    envs: Sequence[Any],
+    rollout_cursors: Sequence[int],
+    env_seeds: Sequence[int],
+) -> None:
+    lane_count = len(envs)
+    if (
+        lane_count != 4
+        or len(rollout_cursors) != lane_count
+        or len(env_seeds) != lane_count
+        or len(set(rollout_cursors)) != lane_count
+        or len({id(env) for env in envs}) != lane_count
+        or len(set(int(seed) for seed in env_seeds)) != lane_count
+    ):
+        raise RewardProtocolError("reward-credit rollout panel must be exact K4")
+
+
+def _initialize_reward_lanes(
     *,
-    observation: Mapping[str, Any],
-    language: str,
+    envs: Sequence[Any],
+    policy: torch.nn.Module,
+    task_id: int,
+    global_task_id: int,
+    adaptation_seed: int,
+    rollout_cursors: Sequence[int],
+    env_seeds: Sequence[int],
+    policy_seed_root: int,
+    max_horizon: int,
+    dummy_settling_steps: int,
+    action_execution_horizon: int,
+    num_inference_steps: int,
+    dummy_action: Sequence[float],
+) -> list[_RewardLaneState]:
+    dummies = [
+        _validate_rollout_contract(
+            policy=policy,
+            task_id=task_id,
+            global_task_id=global_task_id,
+            adaptation_seed=adaptation_seed,
+            rollout_cursor=int(cursor),
+            env_seed=int(env_seed),
+            policy_seed_root=policy_seed_root,
+            max_horizon=max_horizon,
+            dummy_settling_steps=dummy_settling_steps,
+            action_execution_horizon=action_execution_horizon,
+            num_inference_steps=num_inference_steps,
+            dummy_action=dummy_action,
+        )
+        for cursor, env_seed in zip(rollout_cursors, env_seeds, strict=True)
+    ]
+    return [
+        _RewardLaneState(
+            env=env,
+            rollout_cursor=int(cursor),
+            env_seed=int(env_seed),
+            observation=_random_reset_with_settling(
+                env,
+                env_seed=int(env_seed),
+                dummy=dummy,
+                steps=dummy_settling_steps,
+            ),
+        )
+        for env, cursor, env_seed, dummy in zip(
+            envs, rollout_cursors, env_seeds, dummies, strict=True
+        )
+    ]
+
+
+def _batched_policy_replan(
+    *,
+    active: Sequence[_RewardLaneState],
+    policy: torch.nn.Module,
     preprocess: Any,
     postprocess: Any,
-    policy: torch.nn.Module,
-    policy_seed_root: int,
     suite: str,
     task_id: int,
+    language: str,
     adaptation_seed: int,
-    rollout_cursor: int,
-    replan_index: int,
+    policy_seed_root: int,
     device: torch.device,
     num_inference_steps: int,
-) -> tuple[dict[str, torch.Tensor], torch.Tensor, np.ndarray, int]:
-    batch = preprocess(libero_policy_input(observation, language))
-    stored = _cpu_tensor_batch(batch)
-    noise_seed = policy_noise_seed(
-        policy_seed_root,
-        suite,
-        task_id,
-        adaptation_seed,
-        rollout_cursor,
-        replan_index,
-    )
-    noise = _flow_noise(
-        seed=noise_seed,
-        chunk_size=int(policy.config.chunk_size),
-        max_action_dim=int(policy.config.max_action_dim),
-        device=device,
-    )
+    policy_seed_fn: Callable[..., int],
+) -> tuple[
+    tuple[dict[str, torch.Tensor], ...], torch.Tensor, np.ndarray, tuple[int, ...]
+]:
+    prepared: list[dict[str, torch.Tensor]] = []
+    noises: list[torch.Tensor] = []
+    current_seeds: list[int] = []
+    for lane in active:
+        prepared.append(preprocess(libero_policy_input(lane.observation, language)))
+        seed = policy_seed_fn(
+            policy_seed_root,
+            suite,
+            task_id,
+            adaptation_seed,
+            lane.rollout_cursor,
+            len(lane.noise_seeds),
+        )
+        current_seeds.append(seed)
+        noises.append(
+            _flow_noise_cpu(
+                seed=seed,
+                chunk_size=int(policy.config.chunk_size),
+                max_action_dim=int(policy.config.max_action_dim),
+            )
+        )
+    keys = set(prepared[0])
+    if any(set(batch) != keys for batch in prepared):
+        raise RewardProtocolError("batched reward rollout observation keys changed")
+    policy_batch = {
+        name: torch.cat([batch[name] for batch in prepared], dim=0)
+        for name in sorted(keys)
+    }
+    stored = _cpu_tensor_rows(policy_batch)
+    noise = torch.cat(noises, dim=0).to(device=device)
     with torch.inference_mode():
         normalized = policy.predict_action_chunk(
-            batch, noise=noise, num_steps=num_inference_steps
+            policy_batch,
+            noise=noise,
+            num_steps=num_inference_steps,
         )
-    if (
-        normalized.ndim != 3
-        or normalized.shape[0] != 1
-        or normalized.shape[1] != int(policy.config.chunk_size)
-        or normalized.shape[2] != 7
-    ):
-        raise RewardProtocolError("PI05 reward policy returned an invalid action chunk")
+    if normalized.shape != (len(active), int(policy.config.chunk_size), 7):
+        raise RewardProtocolError(
+            "batched PI05 reward policy returned an invalid action chunk"
+        )
     normalized = normalized.detach()
-    actions = postprocess(normalized).to(device="cpu").numpy()[0]
-    return stored, normalized.to(device="cpu").contiguous(), actions, noise_seed
+    staged = torch.cat((normalized, postprocess(normalized)), dim=-1).to(device="cpu")
+    return (
+        stored,
+        staged[:, :, :7].contiguous(),
+        staged[:, :, 7:].numpy(),
+        tuple(current_seeds),
+    )
 
 
-def collect_randomized_reward_trajectory(
+def _advance_reward_lane(
     *,
-    env: Any,
+    lane: _RewardLaneState,
+    stored: dict[str, torch.Tensor],
+    normalized_chunk: torch.Tensor,
+    environment_actions: np.ndarray,
+    noise_seed: int,
+    action_execution_horizon: int,
+    max_horizon: int,
+) -> None:
+    lane.replay_observations.append(stored)
+    lane.replay_actions.append(normalized_chunk)
+    lane.noise_seeds.append(noise_seed)
+    executed = 0
+    for action in environment_actions[:action_execution_horizon]:
+        observation, reward, done, info = _transition(lane.env.step(action))
+        lane.observation = observation
+        lane.reward_sum += reward
+        lane.steps += 1
+        executed += 1
+        lane.success = _success(done, reward, info)
+        if lane.success or lane.steps >= max_horizon:
+            break
+    lane.valid_action_steps.append(executed)
+
+
+def _finalize_reward_trajectories(
+    *,
+    lanes: Sequence[_RewardLaneState],
+    suite: str,
+    task_id: int,
+    global_task_id: int,
+    adaptation_seed: int,
+    policy_seed_root: int,
+    dummy_settling_steps: int,
+    retain_failure_replay: bool,
+) -> tuple[RewardTrajectory, ...]:
+    trajectories = []
+    for lane in lanes:
+        if not lane.replay_observations:
+            raise RewardProtocolError("batched reward lane made no policy observation")
+        if not lane.success and not retain_failure_replay:
+            lane.replay_observations.clear()
+            lane.replay_actions.clear()
+            lane.valid_action_steps.clear()
+        trajectories.append(
+            _trajectory_result(
+                suite=suite,
+                task_id=task_id,
+                global_task_id=global_task_id,
+                adaptation_seed=adaptation_seed,
+                rollout_cursor=lane.rollout_cursor,
+                env_seed=lane.env_seed,
+                policy_seed_root=policy_seed_root,
+                success=lane.success,
+                steps=lane.steps,
+                reward_sum=lane.reward_sum,
+                dummy_settling_steps=dummy_settling_steps,
+                noise_seeds=lane.noise_seeds,
+                observations=lane.replay_observations,
+                action_chunks=lane.replay_actions,
+                valid_action_steps=lane.valid_action_steps,
+            )
+        )
+    return tuple(trajectories)
+
+
+def collect_randomized_reward_trajectories(
+    *,
+    envs: Sequence[Any],
     policy: torch.nn.Module,
     preprocess: Any,
     postprocess: Any,
@@ -350,8 +475,8 @@ def collect_randomized_reward_trajectory(
     global_task_id: int,
     language: str,
     adaptation_seed: int,
-    rollout_cursor: int,
-    env_seed: int,
+    rollout_cursors: Sequence[int],
+    env_seeds: Sequence[int],
     policy_seed_root: int,
     device: torch.device,
     max_horizon: int,
@@ -359,18 +484,25 @@ def collect_randomized_reward_trajectory(
     dummy_action: Sequence[float],
     action_execution_horizon: int,
     num_inference_steps: int,
-    retain_failure_replay: bool = False,
-    randomness_cursor: int | None = None,
-) -> RewardTrajectory:
-    """Collect one seeded trajectory, optionally decoupling RNG from row identity."""
+    retain_failure_replay: bool = True,
+    policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
+) -> tuple[RewardTrajectory, ...]:
+    """Collect the sealed K4 task panel with one batched policy forward per replan.
 
-    dummy = _validate_rollout_contract(
+    All lanes share the already-installed task LoRA, while reset and PI05 flow
+    noise remain episode-local.  Active-lane compaction only changes the physical
+    batch shape; it never changes a lane's keyed randomness or replay identity.
+    """
+
+    _validate_k4_panel(envs, rollout_cursors, env_seeds)
+    lanes = _initialize_reward_lanes(
+        envs=envs,
         policy=policy,
         task_id=task_id,
         global_task_id=global_task_id,
         adaptation_seed=adaptation_seed,
-        rollout_cursor=rollout_cursor,
-        env_seed=env_seed,
+        rollout_cursors=rollout_cursors,
+        env_seeds=env_seeds,
         policy_seed_root=policy_seed_root,
         max_horizon=max_horizon,
         dummy_settling_steps=dummy_settling_steps,
@@ -378,132 +510,52 @@ def collect_randomized_reward_trajectory(
         num_inference_steps=num_inference_steps,
         dummy_action=dummy_action,
     )
-    seed_cursor = rollout_cursor if randomness_cursor is None else randomness_cursor
-    if seed_cursor < 0:
-        raise RewardProtocolError("PI05 reward randomness cursor must be non-negative")
-    observation = _random_reset_with_settling(
-        env,
-        env_seed=env_seed,
-        dummy=dummy,
-        steps=dummy_settling_steps,
-    )
-    progress_start_frame = _agentview_uint8(observation)
-
     policy.reset()
-    observations: list[dict[str, torch.Tensor]] = []
-    action_chunks: list[torch.Tensor] = []
-    valid_action_steps: list[int] = []
-    noise_seeds: list[int] = []
-    reward_sum = 0.0
-    steps = 0
-    success = False
-    initial_observation_sha256 = ""
 
-    while not success and steps < max_horizon:
-        stored, normalized, environment_actions, noise_seed = _plan_action_chunk(
-            observation=observation,
-            language=language,
+    while True:
+        active = [lane for lane in lanes if lane.is_active(max_horizon)]
+        if not active:
+            break
+        stored, normalized, environment_actions, seeds = _batched_policy_replan(
+            active=active,
+            policy=policy,
             preprocess=preprocess,
             postprocess=postprocess,
-            policy=policy,
-            policy_seed_root=policy_seed_root,
             suite=suite,
             task_id=task_id,
+            language=language,
             adaptation_seed=adaptation_seed,
-            rollout_cursor=seed_cursor,
-            replan_index=len(noise_seeds),
+            policy_seed_root=policy_seed_root,
             device=device,
             num_inference_steps=num_inference_steps,
+            policy_seed_fn=policy_seed_fn,
         )
-        if not initial_observation_sha256:
-            initial_observation_sha256 = tensor_batch_sha256(stored)
-        observations.append(stored)
-        action_chunks.append(normalized)
-        noise_seeds.append(noise_seed)
-        executed = 0
-        for action in environment_actions[:action_execution_horizon]:
-            observation, reward, done, info = _transition(env.step(action))
-            reward_sum += reward
-            steps += 1
-            executed += 1
-            success = _success(done, reward, info)
-            if success or steps >= max_horizon:
-                break
-        valid_action_steps.append(executed)
-
-    if not initial_observation_sha256:
-        raise RewardProtocolError("PI05 reward trajectory made no policy observation")
-    progress_terminal_frame = _agentview_uint8(observation)
-    if not success and not retain_failure_replay:
-        observations.clear()
-        action_chunks.clear()
-        valid_action_steps.clear()
-    return _trajectory_result(
+        for batch_row, lane in enumerate(active):
+            _advance_reward_lane(
+                lane=lane,
+                stored=stored[batch_row],
+                normalized_chunk=normalized[batch_row : batch_row + 1].contiguous(),
+                environment_actions=environment_actions[batch_row],
+                noise_seed=seeds[batch_row],
+                action_execution_horizon=action_execution_horizon,
+                max_horizon=max_horizon,
+            )
+    return _finalize_reward_trajectories(
+        lanes=lanes,
         suite=suite,
         task_id=task_id,
         global_task_id=global_task_id,
         adaptation_seed=adaptation_seed,
-        rollout_cursor=rollout_cursor,
-        env_seed=env_seed,
         policy_seed_root=policy_seed_root,
-        success=success,
-        steps=steps,
-        reward_sum=reward_sum,
         dummy_settling_steps=dummy_settling_steps,
-        initial_observation_sha256=initial_observation_sha256,
-        noise_seeds=noise_seeds,
-        observations=observations,
-        action_chunks=action_chunks,
-        valid_action_steps=valid_action_steps,
-        progress_start_frame=progress_start_frame,
-        progress_terminal_frame=progress_terminal_frame,
+        retain_failure_replay=retain_failure_replay,
     )
-
-
-def successful_trajectory_batch(
-    trajectories: Sequence[RewardTrajectory], device: torch.device
-) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
-    successful = [trajectory for trajectory in trajectories if trajectory.success]
-    if not successful:
-        raise RewardProtocolError("cannot collate an empty successful rollout batch")
-    chunks = [
-        (episode, observation, action, valid)
-        for episode, trajectory in enumerate(successful)
-        for observation, action, valid in zip(
-            trajectory.observations,
-            trajectory.action_chunks,
-            trajectory.valid_action_steps,
-            strict=True,
-        )
-    ]
-    keys = set(chunks[0][1])
-    if any(set(observation) != keys for _, observation, _, _ in chunks):
-        raise RewardProtocolError("PI05 reward observation tensor keys changed")
-    batch = {
-        key: torch.cat([observation[key] for _, observation, _, _ in chunks]).to(device)
-        for key in sorted(keys)
-    }
-    actions = torch.cat([action for _, _, action, _ in chunks]).to(device)
-    valid = torch.tensor(
-        [count for _, _, _, count in chunks], dtype=torch.long, device=device
-    )
-    if actions.ndim != 3 or bool((valid <= 0).any()) or bool((valid > actions.shape[1]).any()):
-        raise RewardProtocolError("PI05 reward executed-action prefix is invalid")
-    batch[ACTION] = actions
-    batch["executed_action_steps"] = valid
-    batch["action_is_pad"] = (
-        torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
-    )
-    episode_ids = torch.tensor(
-        [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
-    )
-    return batch, episode_ids
 
 
 def complete_trajectory_batch(
     trajectories: Sequence[RewardTrajectory], device: torch.device
 ) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
-    """Collate successful and failed on-policy prefixes for relative credit."""
+    """Collate successful and failed on-policy prefixes for K4 reward credit."""
 
     if len(trajectories) < 2 or any(
         not trajectory.observations
@@ -511,7 +563,7 @@ def complete_trajectory_batch(
         or len(trajectory.observations) != len(trajectory.valid_action_steps)
         for trajectory in trajectories
     ):
-        raise RewardProtocolError("relative flow credit requires complete replay")
+        raise RewardProtocolError("reward credit requires complete K4 replay")
     chunks = [
         (episode, observation, action, valid)
         for episode, trajectory in enumerate(trajectories)
@@ -522,23 +574,8 @@ def complete_trajectory_batch(
             strict=True,
         )
     ]
-    keys = set(chunks[0][1])
-    if any(set(observation) != keys for _, observation, _, _ in chunks):
-        raise RewardProtocolError("PI05 relative replay observation keys changed")
-    batch = {
-        key: torch.cat([observation[key] for _, observation, _, _ in chunks]).to(device)
-        for key in sorted(keys)
-    }
-    actions = torch.cat([action for _, _, action, _ in chunks]).to(device)
     valid = torch.tensor(
         [count for _, _, _, count in chunks], dtype=torch.long, device=device
-    )
-    if actions.ndim != 3 or bool((valid <= 0).any()) or bool((valid > actions.shape[1]).any()):
-        raise RewardProtocolError("PI05 relative replay executed prefix is invalid")
-    batch[ACTION] = actions
-    batch["executed_action_steps"] = valid
-    batch["action_is_pad"] = (
-        torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
     episode_ids = torch.tensor(
         [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
@@ -547,5 +584,24 @@ def complete_trajectory_batch(
         [trajectory.success for trajectory in trajectories],
         dtype=torch.float32,
         device=device,
+    )
+    if bool((valid <= 0).any()):
+        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
+    if bool((successes == successes[0]).all()):
+        return {"executed_action_steps": valid}, episode_ids, successes
+    keys = set(chunks[0][1])
+    if any(set(observation) != keys for _, observation, _, _ in chunks):
+        raise RewardProtocolError("PI05 reward replay observation keys changed")
+    batch = {
+        key: torch.cat([observation[key] for _, observation, _, _ in chunks]).to(device)
+        for key in sorted(keys)
+    }
+    actions = torch.cat([action for _, _, action, _ in chunks]).to(device)
+    if actions.ndim != 3 or bool((valid > actions.shape[1]).any()):
+        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
+    batch[ACTION] = actions
+    batch["executed_action_steps"] = valid
+    batch["action_is_pad"] = (
+        torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
     return batch, episode_ids, successes

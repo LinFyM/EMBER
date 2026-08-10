@@ -41,7 +41,9 @@ def test_launcher_lock_precedes_queue_or_worker_inspection(
             reached_locked_body = True
 
         monkeypatch.setattr(module, "_start_workers_locked", unexpected)
-        with pytest.raises(Pi05EvaluationError, match="another PI05 evaluator launcher"):
+        with pytest.raises(
+            Pi05EvaluationError, match="another PI05 evaluator launcher"
+        ):
             module.start_workers(tmp_path, resume=True)
         assert not reached_locked_body
 
@@ -66,7 +68,8 @@ def test_no_video_control_is_scoped_to_expert_manifold() -> None:
 
 
 def test_gpu_preflight_queries_only_explicit_devices(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[list[str]] = []
     monkeypatch.setenv("EMBER_STORAGE_ROOT", str(tmp_path))
@@ -75,7 +78,9 @@ def test_gpu_preflight_queries_only_explicit_devices(
         del kwargs
         calls.append(list(command))
         if command[0] == "df":
-            return SimpleNamespace(stdout="size used avail pcent target\n1000 100 900 10% /data\n")
+            return SimpleNamespace(
+                stdout="size used avail pcent target\n1000 100 900 10% /data\n"
+            )
         if "--query-gpu" in " ".join(command):
             return SimpleNamespace(
                 stdout=(
@@ -97,7 +102,9 @@ def test_gpu_preflight_queries_only_explicit_devices(
     assert len(gpu_calls) == 2
     assert all(call[1:3] == ["-i", "4,7"] for call in gpu_calls)
     assert not any(call[0] == "du" for call in calls)
-    assert any(call[0] == "df" and call[-1] == str(tmp_path.resolve()) for call in calls)
+    assert any(
+        call[0] == "df" and call[-1] == str(tmp_path.resolve()) for call in calls
+    )
 
 
 def test_storage_root_requires_explicit_host_configuration(
@@ -120,19 +127,45 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
         module._positive_int("0")
 
 
-def _registered_rls_macro10_args(
-    tmp_path: Path,
+def _registered_reward_credit_args(
+    tmp_path: Path, *, macro: int, condition: str = "correct"
 ) -> tuple[argparse.Namespace, Path]:
     module = _launcher_module()
-    config = tmp_path / "rls.json"
+    config = tmp_path / "configs/reward-credit.json"
+    config.parent.mkdir()
+    registered_relative = f"registered-macro{macro}-{condition}"
+    control_roots = {
+        name: f"registered-macro{macro}-{name}"
+        for name in (
+            "same_task_other",
+            "cross_suite_wrong",
+            "shuffled",
+            "reversed",
+            "no_video",
+        )
+    }
     config.write_text(
-        json.dumps({"schema_version": module.V6_PRIOR_CONFIG_SCHEMA}),
+        json.dumps(
+            {
+                "schema_version": module.V6_PRIOR_CONFIG_SCHEMA,
+                "initialization": {"checkpoint": "historical"},
+                "formal_run": {
+                    "registered_output_root": "formal",
+                    "decision_evaluation": {
+                        f"macro{macro}_registered_root": (
+                            f"registered-macro{macro}-correct"
+                        ),
+                        f"macro{macro}_control_registered_roots": control_roots,
+                    },
+                },
+            }
+        ),
         encoding="utf-8",
     )
     training_root = tmp_path / "formal"
-    checkpoint = training_root / "checkpoints/macro_00000010"
+    checkpoint = training_root / f"checkpoints/macro_{macro:08d}"
     checkpoint.mkdir(parents=True)
-    registered = tmp_path / "registered-macro10"
+    registered = tmp_path / registered_relative
     commit = "a" * 40
     (training_root / "run_contract.json").write_text(
         json.dumps(
@@ -142,7 +175,13 @@ def _registered_rls_macro10_args(
                 "git": {"commit": commit},
                 "config": {"schema": module.V6_PRIOR_CONFIG_SCHEMA},
                 "decision_evaluation": {
-                    "macro10_registered_root": str(registered)
+                    f"macro{macro}_registered_root": str(
+                        tmp_path / f"registered-macro{macro}-correct"
+                    ),
+                    f"macro{macro}_control_registered_roots": {
+                        name: str(tmp_path / path)
+                        for name, path in control_roots.items()
+                    },
                 },
             }
         ),
@@ -152,8 +191,8 @@ def _registered_rls_macro10_args(
         json.dumps(
             {
                 "schema_version": module.V6_PRIOR_CHECKPOINT_SCHEMA,
-                "next_macro": 10,
-                "metrics_rows": 10,
+                "next_macro": macro,
+                "metrics_rows": macro,
                 "checkpoint_contract": {
                     "run_schema": module.V6_PRIOR_RUN_SCHEMA,
                     "mode": "formal",
@@ -167,7 +206,7 @@ def _registered_rls_macro10_args(
     return (
         argparse.Namespace(
             mode="formal",
-            expert_manifold_video_condition="correct",
+            expert_manifold_video_condition=condition,
             expert_manifold_config=config,
             expert_manifold_checkpoint=checkpoint,
         ),
@@ -175,33 +214,86 @@ def _registered_rls_macro10_args(
     )
 
 
-def test_rls_macro10_evaluator_requires_its_training_registered_root(
-    tmp_path: Path,
+@pytest.mark.parametrize("macro", (1, 2))
+def test_reward_credit_evaluator_requires_its_training_registered_root(
+    tmp_path: Path, macro: int
 ) -> None:
     module = _launcher_module()
-    args, registered = _registered_rls_macro10_args(tmp_path)
-    module._validate_registered_rls_macro10_output(args, registered.resolve())
-    wrong = tmp_path / "unregistered-macro10"
+    args, registered = _registered_reward_credit_args(tmp_path, macro=macro)
+    module._validate_registered_reward_credit_output(args, registered.resolve())
+    wrong = tmp_path / f"unregistered-macro{macro}"
     with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_rls_macro10_output(args, wrong.resolve())
+        module._validate_registered_reward_credit_output(args, wrong.resolve())
     assert not wrong.exists()
 
 
-def test_rls_registered_root_gate_is_scoped_to_formal_correct_macro10(
+@pytest.mark.parametrize(
+    "condition",
+    ("same_task_other", "cross_suite_wrong", "shuffled", "reversed", "no_video"),
+)
+def test_reward_credit_controls_require_their_canonical_registered_root(
+    tmp_path: Path, condition: str
+) -> None:
+    module = _launcher_module()
+    args, registered = _registered_reward_credit_args(
+        tmp_path, macro=1, condition=condition
+    )
+    module._validate_registered_reward_credit_output(args, registered.resolve())
+
+
+def test_reward_credit_gate_rejects_tampered_training_or_run_root(
     tmp_path: Path,
 ) -> None:
     module = _launcher_module()
-    args, registered = _registered_rls_macro10_args(tmp_path)
-    args.mode = "smoke"
-    module._validate_registered_rls_macro10_output(args, registered.resolve())
-    args.mode = "formal"
-    args.expert_manifold_video_condition = "reversed"
-    module._validate_registered_rls_macro10_output(args, registered.resolve())
-    args.expert_manifold_video_condition = "correct"
-    args.expert_manifold_checkpoint = (
-        args.expert_manifold_checkpoint.parent / "macro_00000025"
+    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
+    run_path = args.expert_manifold_checkpoint.parent.parent / "run_contract.json"
+    run = json.loads(run_path.read_text(encoding="utf-8"))
+    run["decision_evaluation"]["macro1_registered_root"] = str(tmp_path / "tampered")
+    run_path.write_text(json.dumps(run), encoding="utf-8")
+    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
+        module._validate_registered_reward_credit_output(
+            args, (tmp_path / "tampered").resolve()
+        )
+    run["decision_evaluation"]["macro1_registered_root"] = str(registered)
+    run_path.write_text(json.dumps(run), encoding="utf-8")
+    copied = tmp_path / "copied/checkpoints/macro_00000001"
+    copied.mkdir(parents=True)
+    (copied.parent.parent / "run_contract.json").write_text(
+        json.dumps(run), encoding="utf-8"
     )
-    module._validate_registered_rls_macro10_output(args, registered.resolve())
+    (copied / "manifest.json").write_bytes(
+        (args.expert_manifold_checkpoint / "manifest.json").read_bytes()
+    )
+    args.expert_manifold_checkpoint = copied
+    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
+        module._validate_registered_reward_credit_output(args, registered.resolve())
+
+
+def test_reward_credit_gate_rejects_renamed_active_checkpoint(
+    tmp_path: Path,
+) -> None:
+    module = _launcher_module()
+    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
+    renamed = args.expert_manifold_checkpoint.parent / "renamed-reward-cycle"
+    args.expert_manifold_checkpoint.rename(renamed)
+    args.expert_manifold_checkpoint = renamed
+    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
+        module._validate_registered_reward_credit_output(args, registered.resolve())
+
+
+def test_reward_credit_registered_root_gate_is_scoped_to_formal_reward_cycles(
+    tmp_path: Path,
+) -> None:
+    module = _launcher_module()
+    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
+    args.mode = "smoke"
+    module._validate_registered_reward_credit_output(args, registered.resolve())
+    args.mode = "formal"
+    args.expert_manifold_video_condition = "unsupported"
+    module._validate_registered_reward_credit_output(args, registered.resolve())
+    args.expert_manifold_video_condition = "correct"
+    args.expert_manifold_checkpoint = tmp_path / "historical"
+    module._validate_registered_reward_credit_output(args, registered.resolve())
 
 
 def test_writer_profile_requires_the_canonical_batch_floor() -> None:

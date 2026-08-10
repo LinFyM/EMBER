@@ -151,7 +151,7 @@ def program_cotangent(
     graph: GeneratedConditionGraph,
     lora_gradients: Mapping[str, torch.Tensor],
 ) -> torch.Tensor:
-    """Transport one task-local B20 LoRA VJP to its complete Program leaf."""
+    """Transport one task-local LoRA VJP to its complete Program leaf."""
 
     names = tuple(graph.correct_lora)
     if set(lora_gradients) != set(names):
@@ -163,6 +163,6 @@ def program_cotangent(
     )[0]
     if gradient.shape != graph.program_leaf.shape:
         raise ExpertManifoldError("functional loss did not reach the complete Program")
-    # functional_lora_loss_gradient already returns the task-local B20 mean.
-    # No rank/task/world-size scaling is permitted here.
+    # The caller owns task-local aggregation.  No rank/task/world-size scaling
+    # is permitted here.
     return gradient[0].detach().to(dtype=torch.float32)

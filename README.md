@@ -34,20 +34,25 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   consistency=`.141539--.142175`，几乎精确等于随机正交基准`.141421`，固定10-video effective-BA pair
   cosine跨8 tasks为`[-.001371,.003280]`。blind-add正在叠加video-specific近正交小扰动，解释了偶然换手和
   不能保留旧能力。
-- 当前唯一active implementation是第39节**Exact Anchored Reconciliation**。one-shot部署图完全不变，
-  仍是exact language + one action-hidden video→Balanced v2 P256 key→frozen v6 decoder→完整38-target rank16
-  LoRA；只把training update换成累计anchored ridge/RLS。每macro把目标锚在更新前的既有condition输出，
-  再加入当前correct descent与negative零增量；checkpoint增加training-only FP64`[256,256]` precision和
-  `assimilated_rows`，部署仍只读取FP32 Program memory。
-- RLS首步数学上精确退化为v2 blind solve，但后续显式保留旧correct rows；它与v2 checkpoint fresh-
-  incompatible。旧`f0c3f51` artifact仍按原合同保持16/18 non-pass。测量合同预先修正后，clean
-  pushed/frozen`f28fc8b`的独立fresh0→3已natural exit0且17/17通过：old drift/blind=
-  `.248611/.213872`、old rows改善=`100%/100%`、current/blind=`.999980/.784334/.640650`，三步production
-  ratio=`.947963/.983678/.925249`、mean=`.952297`；0 checkpoint/OOM/nonfinite/negative forward，B20/
-  B10+10、BF16和六卡并行均未降低。config已登记raw artifact并进入formal-ready，但这只证明短历史
-  reconciliation与吞吐，不是strict性能或视频因果结果。下一动作是从新clean frozen authority做formal0→10，
-  同一run contract预注册固定macro0和唯一macro10 strict root；随后立即correct400，并按
-  `correct>=140/lost<=6/breadth>=6`决定是否允许10→25。当前没有运行中的EMBER GPU任务。
+- 第39节**Exact Anchored Reconciliation**随后已完成formal fresh0→10与预注册macro10 strict correct400：
+  `140/400`、breadth6；相对exact macro0=`134`的paired gained/lost=`21/15`，未过`lost<=6`，相对blind-v2
+  macro10同为140且仍有`17/17`换手。RLS没有把内部历史保留转化为closed-loop retention，因此已退役：
+  不续25、不补六臂、不扫damping/step/window/forgetting，fresh/restart/resume均fail closed。它的profile、
+  formal和strict artifacts继续作为历史证据，不能授权新RLS运行。
+- 当前唯一active implementation是第39.5节**Reward-Credit Program Cotangent**，active config为
+  `configs/pi05_v6_reward_credit_program_cotangent_v1.json`，状态仍是
+  `awaiting_live_a40_reward_credit_profile`，尚无GPU、训练或strict结果。one-shot部署图完全不变：exact
+  language + exactly one action-hidden video→Balanced P256 key→frozen historical-v6 decoder→single FP32
+  Program→完整38-target rank16 LoRA；没有language bypass、few-shot、expert-bank deployment或第二套LoRA。
+- 训练从fresh`M0=0,Lambda0=I`开始，禁止继承RLS10。每task同一套LoRA做K4 batch4 official random-reset
+  rollouts，成功与失败均保留executed prefix；binary LOO credit在全成/全败task严格为零，mixed task按episode
+  等权、Nmc4 keyed CFM直接形成完整LoRA signed gradient并VJP到Program。六rank×4 tasks、BF16、四persistent
+  env lanes、deferred NCCL保持；replay B2来自A40容量证据，不是为低位数值一致性牺牲吞吐。当前CPU seal为
+  `336 passed`且architecture guard无hard violation。
+- 下一动作只有clean commit/push与frozen worktree后的实时双节点/quota preflight，再运行一次
+  full24×K4×Nmc4、六卡、fresh0→1 discarded profile。profile必须完整覆盖96/96 rollouts、mixed与
+  homogeneous tasks、finite/nonzero与exact-zero cotangent、full48 closure、Program→LoRA→fixed-action且无
+  OOM/nonfinite/watchdog；通过并另行seal后才允许formal cycle0→1。当前没有运行中的EMBER GPU任务。
 
 ### Earlier completed evidence
 

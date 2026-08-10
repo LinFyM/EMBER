@@ -41,13 +41,13 @@ from ember.writer.condition_update import (
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_anchored_reconciliation_program_residual_checkpoint_v3"
+    "ember_pi05_v6_reward_credit_program_cotangent_checkpoint_v4"
 )
 V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_anchored_reconciliation_program_residual_rank_rng_v3"
+    "ember_pi05_v6_reward_credit_program_cotangent_rank_state_v4"
 )
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_anchored_reconciliation_program_residual_inspection_v3"
+    "ember_pi05_v6_reward_credit_program_cotangent_inspection_v4"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)
@@ -75,6 +75,17 @@ _RNG_KEYS = {
     "numpy",
     "torch_cpu",
     "torch_cuda",
+    "interaction_cursor",
+}
+_INTERACTION_CURSOR_KEYS = {
+    "next_macro",
+    "rollouts",
+    "environment_actions",
+    "successes",
+    "reward_sum",
+    "pending_environment_episodes",
+    "pending_policy_action_chunks",
+    "pending_replay_microbatches",
 }
 
 
@@ -145,7 +156,54 @@ def _json_object(value: Mapping[str, Any], component: str) -> dict[str, Any]:
     return normalized
 
 
-def _rng_state(context: DistributedContext) -> dict[str, Any]:
+def _interaction_cursor(
+    value: Mapping[str, Any] | None, *, macro: int
+) -> dict[str, Any]:
+    normalized = (
+        {
+            "next_macro": macro,
+            "rollouts": macro * 16,
+            "environment_actions": 0,
+            "successes": 0,
+            "reward_sum": 0.0,
+            "pending_environment_episodes": 0,
+            "pending_policy_action_chunks": 0,
+            "pending_replay_microbatches": 0,
+        }
+        if value is None
+        else _json_object(value, "interaction cursor")
+    )
+    if (
+        set(normalized) != _INTERACTION_CURSOR_KEYS
+        or type(normalized.get("next_macro")) is not int
+        or normalized.get("next_macro") != macro
+        or type(normalized.get("rollouts")) is not int
+        or normalized.get("rollouts") != macro * 16
+        or any(
+            type(normalized.get(name)) is not int or int(normalized[name]) < 0
+            for name in ("environment_actions", "successes")
+        )
+        or not isinstance(normalized.get("reward_sum"), (int, float))
+        or not np.isfinite(float(normalized["reward_sum"]))
+        or any(
+            normalized.get(name) != 0
+            for name in (
+                "pending_environment_episodes",
+                "pending_policy_action_chunks",
+                "pending_replay_microbatches",
+            )
+        )
+    ):
+        raise _error("interaction cursor")
+    return normalized
+
+
+def _rng_state(
+    context: DistributedContext,
+    *,
+    macro: int,
+    interaction_cursor: Mapping[str, Any] | None,
+) -> dict[str, Any]:
     cuda_state = None
     if context.device.type == "cuda":
         cuda_state = torch.cuda.get_rng_state(context.device).cpu()
@@ -158,6 +216,9 @@ def _rng_state(context: DistributedContext) -> dict[str, Any]:
         "numpy": np.random.get_state(),
         "torch_cpu": torch.get_rng_state(),
         "torch_cuda": cuda_state,
+        "interaction_cursor": _interaction_cursor(
+            interaction_cursor, macro=macro
+        ),
     }
 
 
@@ -198,7 +259,11 @@ def _validate_rng(
         random.Random().setstate(value["python"])
         np.random.RandomState().set_state(value["numpy"])
         torch.Generator(device="cpu").set_state(value["torch_cpu"])
-    except (TypeError, ValueError, RuntimeError) as error:
+        cursor = value.get("interaction_cursor")
+        if not isinstance(cursor, Mapping) or type(cursor.get("next_macro")) is not int:
+            raise _error(f"rank {rank} interaction cursor")
+        _interaction_cursor(cursor, macro=cursor["next_macro"])
+    except (KeyError, TypeError, ValueError, RuntimeError) as error:
         raise _error(f"rank {rank} RNG") from error
     return value
 
@@ -436,6 +501,7 @@ def save_v6_prior_checkpoint(
     metrics_rows: int,
     cursor_contract: Mapping[str, Any],
     checkpoint_contract: Mapping[str, Any],
+    interaction_cursor: Mapping[str, Any] | None = None,
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
     rows_per_macro: int = FORMAL_ROWS_PER_MACRO,
 ) -> Path:
@@ -494,7 +560,11 @@ def save_v6_prior_checkpoint(
     error = None
     rng_name = f"rng_rank_{context.rank:03d}.pt"
     try:
-        saved_rng = _rng_state(context)
+        saved_rng = _rng_state(
+            context,
+            macro=macro,
+            interaction_cursor=interaction_cursor,
+        )
         torch.save(saved_rng, temporary / rng_name)
     except Exception as caught:
         error = caught
@@ -543,7 +613,7 @@ def load_v6_prior_checkpoint(
     expected_checkpoint_contract: Mapping[str, Any],
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
     rows_per_macro: int = FORMAL_ROWS_PER_MACRO,
-) -> tuple[int, int]:
+) -> tuple[int, int, dict[str, Any]]:
     """Restore Program memory, precision, and this rank's RNG."""
 
     destination: torch.Tensor | None = None
@@ -587,6 +657,8 @@ def load_v6_prior_checkpoint(
         )
         if rng["device_type"] != context.device.type:
             raise _error(f"rank {context.rank} RNG device")
+        if rng["interaction_cursor"]["next_macro"] != layout.macro:
+            raise _error(f"rank {context.rank} interaction cursor")
     except Exception as caught:
         error = caught
     _raise_distributed(context, "resume payload load", error)
@@ -612,7 +684,7 @@ def load_v6_prior_checkpoint(
     _raise_distributed(context, "resume state restoration", error)
     if layout is None:
         raise _error("resume payload agreement")
-    return layout.macro, layout.metrics_rows
+    return layout.macro, layout.metrics_rows, dict(rng["interaction_cursor"])
 
 
 def inspect_v6_prior_checkpoint(
@@ -717,6 +789,11 @@ def inspect_v6_prior_checkpoint(
             "rank_count": layout.world_size,
             "ranks": list(range(layout.world_size)),
             "device_types": device_types,
+            "interaction_cursors": (
+                [dict(value["interaction_cursor"]) for value in rng]
+                if validate_payload_values
+                else []
+            ),
         },
         "payload_value_validation": payload_validation,
         "content_hash_policy": _CONTENT_HASH_POLICY,

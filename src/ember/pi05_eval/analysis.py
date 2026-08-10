@@ -27,27 +27,19 @@ from ember.pi05_eval.paired_metrics import (
     summarize_panel,
     task_key as _task_key,
 )
+from ember.pi05_eval.writer_family_registry import (
+    CHECKPOINT_MACROS,
+    HISTORICAL_TRANSITION_BASELINE_FAMILIES,
+    HISTORICAL_TRANSITION_CANDIDATE_MACROS,
+    PROGRAM_RESIDUAL_WRITER_FAMILIES,
+    WRITER_FAMILIES,
+)
 from ember.pi05_target_data import SUITE_ORDER
 
 
 CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
 SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
-HISTORICAL_BASELINE_TRANSITION_SCHEMA = (
-    "ember_pi05_v6_historical_baseline_transition_analysis_v2"
-)
-CHECKPOINT_MACROS = (0, 10, 25, 50)
-HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
-    "v6_ecp_v2": (10, 25, 50),
-    "v6_tangent_tube_v3": (10, 25, 50),
-    "v6_condition_residual_v2": (10, 25, 50),
-    "v6_anchored_reconciliation_v3": (10, 25),
-}
-HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
-    "v6_ecp_v2": "legacy_v6_prior_v1",
-    "v6_tangent_tube_v3": "legacy_v6_prior_v1",
-    "v6_condition_residual_v2": "legacy_v6_prior_v1",
-    "v6_anchored_reconciliation_v3": "v6_condition_residual_v2",
-}
+HISTORICAL_BASELINE_TRANSITION_SCHEMA = "ember_pi05_v6_historical_baseline_transition_analysis_v2"
 SIX_ARM_CONDITIONS = (
     "correct",
     "same_task_other",
@@ -60,56 +52,6 @@ SIX_ARM_CONDITIONS = (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TARGET_DATA_MANIFEST = REPO_ROOT / "configs/pi05_target_data_v1/manifest.json"
 
-WRITER_FAMILIES = {
-    "legacy_v6_prior_v1": {
-        "adapter_schema": "ember_pi05_v6_prior_eval_adapter_v5",
-        "episode_schema": "ember_pi05_v6_prior_episode_v5",
-        "config_schema": "ember_pi05_v6_prior_policy_effective_writer_v1",
-        "arm_prefix": "expert_manifold_v6_prior_",
-        "trained_checkpoint_kind": "v6_prior_trained_checkpoint",
-        "formal_statuses": ("sealed",),
-    },
-    "v6_ecp_v2": {
-        "adapter_schema": "ember_pi05_v6_ecp_eval_adapter_v6",
-        "episode_schema": "ember_pi05_v6_ecp_episode_v6",
-        "config_schema": "ember_pi05_v6_ecp_policy_effective_writer_v2",
-        "arm_prefix": "expert_manifold_v6_ecp_",
-        "trained_checkpoint_kind": "v6_ecp_trained_checkpoint",
-        "formal_statuses": ("sealed",),
-    },
-    "v6_tangent_tube_v3": {
-        "adapter_schema": "ember_pi05_v6_tangent_tube_eval_adapter_v7",
-        "episode_schema": "ember_pi05_v6_tangent_tube_episode_v7",
-        "config_schema": "ember_pi05_v6_condition_local_tangent_tube_writer_v3",
-        "arm_prefix": "expert_manifold_v6_tangent_tube_",
-        "trained_checkpoint_kind": "v6_tangent_tube_trained_checkpoint",
-        "formal_statuses": (
-            "sealed",
-            "sealed_from_unchanged_v6_deployment_graph",
-        ),
-    },
-    "v6_condition_residual_v2": {
-        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
-        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
-        "config_schema": (
-            "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2"
-        ),
-        "arm_prefix": "expert_manifold_v6_condition_residual_",
-        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
-        "formal_statuses": ("sealed_from_live_residual_deployment_profile",),
-    },
-    "v6_anchored_reconciliation_v3": {
-        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
-        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
-        "config_schema": (
-            "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3"
-        ),
-        "arm_prefix": "expert_manifold_v6_condition_residual_",
-        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
-        "formal_statuses": ("sealed_from_live_residual_deployment_profile",),
-    },
-}
-
 
 def _fail(message: str) -> None:
     raise Pi05EvaluationError(message)
@@ -119,8 +61,7 @@ def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, str]]:
     for name, family in WRITER_FAMILIES.items():
         if (
             adapter.get("schema_version") == family["adapter_schema"]
-            and adapter.get("config", {}).get("schema")
-            == family["config_schema"]
+            and adapter.get("config", {}).get("schema") == family["config_schema"]
         ):
             return name, family
     _fail("Writer result is not a sealed supported method family")
@@ -164,8 +105,7 @@ def _formal_adapter(
         or any(wall.get(key) != value for key, value in expected_wall.items())
         or adapter.get("lora_contract", {}).get("rank") != 16
         or adapter.get("lora_contract", {}).get("target_count") != 38
-        or adapter.get("evaluation_authority", {}).get("formal_status")
-        not in family["formal_statuses"]
+        or adapter.get("evaluation_authority", {}).get("formal_status") not in family["formal_statuses"]
         or paired.get("git", {}).get("dirty_paths") != []
     ):
         _fail("analysis requires a sealed formal validation Expert-Manifold panel")
@@ -202,10 +142,7 @@ def _sealed_validation_tasks() -> list[dict[str, Any]]:
 def _formal_tasks(paired: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], list[TaskKey]]:
     tasks = paired.get("tasks", [])
     authority = _sealed_validation_tasks()
-    expected = [
-        {key: task[key] for key in ("suite", "task_id", "split_role", "language")}
-        for task in authority
-    ]
+    expected = [{key: task[key] for key in ("suite", "task_id", "split_role", "language")} for task in authority]
     observed = [
         {
             "suite": str(task.get("suite", "")),
@@ -215,13 +152,7 @@ def _formal_tasks(paired: Mapping[str, Any]) -> tuple[list[Mapping[str, Any]], l
         }
         for task in tasks
     ]
-    if (
-        observed != expected
-        or any(
-            list(map(int, task.get("init_state_ids", []))) != list(range(50))
-            for task in tasks
-        )
-    ):
+    if observed != expected or any(list(map(int, task.get("init_state_ids", []))) != list(range(50)) for task in tasks):
         _fail("formal validation panel must exactly match the sealed 8 tasks, languages, and states 0..49")
     task_keys = [(str(task["suite"]), int(task["task_id"])) for task in tasks]
     return list(tasks), task_keys
@@ -245,9 +176,7 @@ def _formal_panel_index(result: Mapping[str, Any]) -> dict[EpisodeKey, Mapping[s
     return indexed
 
 
-def _validate_episode_evidence(
-    row: Mapping[str, Any], adapter: Mapping[str, Any], mapping: Mapping[str, Any]
-) -> None:
+def _validate_episode_evidence(row: Mapping[str, Any], adapter: Mapping[str, Any], mapping: Mapping[str, Any]) -> None:
     writer = row.get("writer", {})
     condition = str(adapter["video_condition"])
     family_name, family = _writer_family(adapter)
@@ -273,28 +202,20 @@ def _validate_episode_evidence(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_demo_offset": SAME_TASK_OTHER_OFFSET if same else None,
     }
-    if family_name in {
-        "v6_condition_residual_v2",
-        "v6_anchored_reconciliation_v3",
-    }:
+    if family_name in PROGRAM_RESIDUAL_WRITER_FAMILIES:
         expected.update(
             {
                 "writer_parameter_count": int(asset["writer_parameter_count"]),
                 "writer_deployment_trainable_parameter_count": 0,
-                "writer_program_residual_value_count": int(
-                    asset["program_residual_value_count"]
-                ),
-                "generated_lora_tensor_count": int(
-                    asset["generated_lora_tensor_count"]
-                ),
+                "writer_program_residual_value_count": int(asset["program_residual_value_count"]),
+                "generated_lora_tensor_count": int(asset["generated_lora_tensor_count"]),
             }
         )
     valid = (
         len(references) == len(selected) == 1
         and 0 <= int(references[0]) < 50
         and 0 <= int(selected[0]) < 50
-        and int(selected[0])
-        == ((int(references[0]) + SAME_TASK_OTHER_OFFSET) % 50 if same else int(references[0]))
+        and int(selected[0]) == ((int(references[0]) + SAME_TASK_OTHER_OFFSET) % 50 if same else int(references[0]))
         and len(writer.get("teacher_video_order_seeds", [])) == 1
         and all(writer.get(key) == value for key, value in expected.items())
         and adapter.get("information_wall", {}).get("no_video_counterfactual") is (not frames_used)
@@ -303,14 +224,19 @@ def _validate_episode_evidence(
         _fail("Writer episode evidence violates its paired video condition")
 
 
-def _scientific_projection(
-    result: Mapping[str, Any], *, allow_checkpoint_change: bool
-) -> dict[str, Any]:
+def _scientific_projection(result: Mapping[str, Any], *, allow_checkpoint_change: bool) -> dict[str, Any]:
     projection = copy.deepcopy(result["paired_control"])
     projection.pop("parallel", None)
     if allow_checkpoint_change:
         asset = projection["writer"]["writer_asset"]
-        for key in ("reference", "kind", "method_macro", "checkpoint", "manifest", "training_mode"):
+        for key in (
+            "reference",
+            "kind",
+            "method_macro",
+            "checkpoint",
+            "manifest",
+            "training_mode",
+        ):
             asset.pop(key, None)
         state = asset.get("writer_state")
         if isinstance(state, dict):
@@ -378,11 +304,7 @@ def _method_macro(
     _, family = _writer_family(adapter)
     asset = adapter["writer_asset"]
     macro = int(asset.get("method_macro", -1))
-    expected_kind = (
-        "historical_v6_macro400_load_only"
-        if macro == 0
-        else family["trained_checkpoint_kind"]
-    )
+    expected_kind = "historical_v6_macro400_load_only" if macro == 0 else family["trained_checkpoint_kind"]
     if macro not in allowed_macros or asset.get("kind") != expected_kind:
         _fail(f"{context} contains an unexpected method macro or checkpoint kind")
     return macro
@@ -403,10 +325,15 @@ def _curve_set_evidence(rows_by_macro: Mapping[int, Sequence[Mapping[str, Any]]]
     success_sets = {macro: {key for key, row in rows.items() if row["success"]} for macro, rows in indexes.items()}
     union = set().union(*success_sets.values())
     intersection = set.intersection(*success_sets.values())
-    task_keys = sorted({key[:2] for key in next(iter(indexes.values()))}, key=lambda key: (*_suite_sort_key(key[0]), key[1]))
+    task_keys = sorted(
+        {key[:2] for key in next(iter(indexes.values()))},
+        key=lambda key: (*_suite_sort_key(key[0]), key[1]),
+    )
     task_rows = []
     for suite, task_id in task_keys:
-        counts = {str(macro): sum(key[:2] == (suite, task_id) for key in values) for macro, values in success_sets.items()}
+        counts = {
+            str(macro): sum(key[:2] == (suite, task_id) for key in values) for macro, values in success_sets.items()
+        }
         task_rows.append(
             {
                 "suite": suite,
@@ -446,10 +373,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
         by_macro[macro] = (root, result, indexed)
     if tuple(sorted(by_macro)) != CHECKPOINT_MACROS:
         _fail("checkpoint curve requires exactly method macros 0, 10, 25, and 50")
-    families = {
-        _writer_family(result["adapter"])[0]
-        for _, result, _ in by_macro.values()
-    }
+    families = {_writer_family(result["adapter"])[0] for _, result, _ in by_macro.values()}
     if len(families) != 1:
         _fail("checkpoint curve cannot mix legacy and current method families")
     method_family = next(iter(families))
@@ -493,8 +417,7 @@ def checkpoint_curve_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) 
         },
         "comparisons": {
             name: {
-                f"{left}_to_{right}": paired_transition_summary(rows[left], rows[right])
-                for left, right in comparisons
+                f"{left}_to_{right}": paired_transition_summary(rows[left], rows[right]) for left, right in comparisons
             }
             for name, rows in panels.items()
         },
@@ -552,9 +475,7 @@ def historical_baseline_transition_analysis(
         by_family[family] = (root, result, indexed)
     supported_pairs = [
         (baseline_family, candidate_family)
-        for candidate_family, baseline_family in (
-            HISTORICAL_TRANSITION_BASELINE_FAMILIES.items()
-        )
+        for candidate_family, baseline_family in (HISTORICAL_TRANSITION_BASELINE_FAMILIES.items())
         if set(by_family) == {baseline_family, candidate_family}
     ]
     if len(supported_pairs) != 1:
@@ -577,13 +498,9 @@ def historical_baseline_transition_analysis(
         allowed_macros=candidate_macros,
         context="historical baseline transition candidate",
     )
-    if _historical_transition_projection(baseline[1]) != _historical_transition_projection(
-        candidate[1]
-    ):
+    if _historical_transition_projection(baseline[1]) != _historical_transition_projection(candidate[1]):
         _fail("historical baseline transition changed its shared scientific contract")
-    _assert_row_pairing(
-        baseline[2], candidate[2], require_same_actual_video=True
-    )
+    _assert_row_pairing(baseline[2], candidate[2], require_same_actual_video=True)
 
     baseline_rows = list(baseline[2].values())
     candidate_rows = list(candidate[2].values())
@@ -618,16 +535,12 @@ def historical_baseline_transition_analysis(
             "config_schema": family_contract["config_schema"],
             "contract_reference": result["contract_reference"],
             "git": copy.deepcopy(result["paired_control"]["git"]),
-            "parallel_provenance": copy.deepcopy(
-                result["paired_control"].get("parallel", {})
-            ),
+            "parallel_provenance": copy.deepcopy(result["paired_control"].get("parallel", {})),
         }
 
     return {
         "schema_version": HISTORICAL_BASELINE_TRANSITION_SCHEMA,
-        "analysis_scope": (
-            "cross_family_historical_baseline_transition_not_checkpoint_curve"
-        ),
+        "analysis_scope": ("cross_family_historical_baseline_transition_not_checkpoint_curve"),
         "method_families": {
             "historical_baseline": baseline_family,
             "current_candidate": candidate_family,
@@ -649,10 +562,7 @@ def historical_baseline_transition_analysis(
             "current_candidate": root_evidence(candidate),
         },
         "panels": {
-            panel: {
-                role: summarize_panel(rows)
-                for role, rows in role_rows.items()
-            }
+            panel: {role: summarize_panel(rows) for role, rows in role_rows.items()}
             for panel, role_rows in panels.items()
         },
         "baseline_to_candidate": {
@@ -686,10 +596,7 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
         by_condition[condition] = (root, result, indexed)
     if set(by_condition) != set(SIX_ARM_CONDITIONS):
         _fail("six-arm audit requires exactly the canonical six video conditions")
-    families = {
-        _writer_family(result["adapter"])[0]
-        for _, result, _ in by_condition.values()
-    }
+    families = {_writer_family(result["adapter"])[0] for _, result, _ in by_condition.values()}
     if len(families) != 1:
         _fail("six-arm audit cannot mix legacy and current method families")
     method_family = next(iter(families))
@@ -730,7 +637,11 @@ def six_arm_paired_analysis(results_by_root: Mapping[str, Mapping[str, Any]]) ->
         "arms": {condition: summarize_panel(arm_rows[condition]) for condition in SIX_ARM_CONDITIONS},
         "comparisons_to_correct": {
             condition: {
-                "interpretation": "same-task cross-video robustness" if condition == "same_task_other" else "video counterfactual control",
+                "interpretation": (
+                    "same-task cross-video robustness"
+                    if condition == "same_task_other"
+                    else "video counterfactual control"
+                ),
                 **_control_outcome_summary(arm_rows["correct"], arm_rows[condition]),
             }
             for condition in SIX_ARM_CONDITIONS
@@ -760,9 +671,7 @@ def _validated_roots(roots: Sequence[Path]) -> dict[str, Mapping[str, Any]]:
         legacy = False
         if isinstance(stored, Mapping):
             try:
-                legacy = _writer_family(stored.get("adapter", {}))[0].startswith(
-                    "legacy_"
-                )
+                legacy = _writer_family(stored.get("adapter", {}))[0].startswith("legacy_")
             except Pi05EvaluationError:
                 legacy = False
         if legacy:
@@ -775,9 +684,7 @@ def _validated_roots(roots: Sequence[Path]) -> dict[str, Mapping[str, Any]]:
     return results
 
 
-def analyze_checkpoint_curve(
-    roots: Sequence[Path], output_path: Path
-) -> dict[str, Any]:
+def analyze_checkpoint_curve(roots: Sequence[Path], output_path: Path) -> dict[str, Any]:
     result = checkpoint_curve_analysis(_validated_roots(roots))
     publish_json_exclusive(output_path.resolve(), result)
     return result
@@ -788,14 +695,25 @@ def analyze_historical_baseline_transition(
     current_root: Path,
     output_path: Path,
 ) -> dict[str, Any]:
-    result = historical_baseline_transition_analysis(
-        _validated_roots((legacy_root, current_root))
-    )
+    result = historical_baseline_transition_analysis(_validated_roots((legacy_root, current_root)))
     publish_json_exclusive(output_path.resolve(), result)
     return result
 
 
 def audit_six_arms(roots: Sequence[Path], output_path: Path) -> dict[str, Any]:
-    result = six_arm_paired_analysis(_validated_roots(roots))
+    validated = _validated_roots(roots)
+    result = six_arm_paired_analysis(validated)
+    if result["method_family"] == "v6_reward_credit_program_v1":
+        from ember.pi05_eval.reward_credit_gate import (
+            reward_credit_six_arm_evidence_from_config,
+        )
+
+        correct = next(value for value in validated.values() if value["adapter"]["video_condition"] == "correct")
+        config = correct["adapter"]["config"]
+        result["reward_credit_goal"] = reward_credit_six_arm_evidence_from_config(
+            result,
+            config_path=Path(str(config["path"])),
+            expected_bytes=int(config["bytes"]),
+        )
     publish_json_exclusive(output_path.resolve(), result)
     return result

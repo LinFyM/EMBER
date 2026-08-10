@@ -93,6 +93,7 @@ def initialize_deferred_process_group(
     rendezvous_root.mkdir(parents=True, exist_ok=True)
     ready_path = rendezvous_root / f".rank-local-cuda-ready-{token}"
     store = dist.FileStore(str(ready_path), context.world_size)
+    torch.cuda.synchronize(context.device)
     store.set(f"rank-{context.rank}", b"ready")
     store.wait(
         [f"rank-{rank}" for rank in range(context.world_size)],

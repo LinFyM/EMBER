@@ -370,6 +370,9 @@ def _residual_contract_matches(
         "program_residual",
         "reconciliation",
         "update",
+        "environment",
+        "objective",
+        "rng",
         "ownership",
         "world_size",
         "rank_topology",
@@ -395,6 +398,9 @@ def _residual_contract_matches(
         "program_residual": config["program_residual"],
         "reconciliation": config["reconciliation"],
         "update": config["update"],
+        "environment": config["environment"],
+        "objective": config["objective"],
+        "rng": config["rng"],
         "ownership": _expected_residual_ownership(config),
         "world_size": 6,
         "content_hash_policy": "disabled_by_owner",
@@ -568,7 +574,10 @@ def inspect_expert_manifold_writer_evaluation(
     if video_condition not in VIDEO_CONDITIONS:
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
-    if require_formal and status != "sealed_from_live_residual_deployment_profile":
+    if require_formal and status not in {
+        "sealed_from_live_residual_deployment_profile",
+        "sealed_from_unchanged_v6_residual_deployment_graph",
+    }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"
         )

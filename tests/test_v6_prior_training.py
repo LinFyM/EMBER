@@ -7,24 +7,49 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+import ember.expert_manifold.v6_prior_training as training_module
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.expert_manifold.v6_prior_profile import (
+    profile_credit_motion,
+    profile_passes,
+)
 from ember.expert_manifold.v6_prior_runtime import _reconcile_metrics_cursor
 from ember.expert_manifold.v6_prior_training import (
     TaskObjective,
     _gather_full48,
-    _profile_passes,
-    _profile_task_local_motion,
     _task_record,
     build_parser,
 )
+from ember.expert_manifold.v6_reward_credit import RewardProgramCreditSummary
 from ember.pi05_source_checkpoint import DistributedContext
+from ember.reward.rollout import RewardTrajectory
 
 
 def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
 
 
-def _objective(ordinal: int) -> TaskObjective:
+def _trajectory(cursor: int, *, success: bool) -> RewardTrajectory:
+    return RewardTrajectory(
+        suite="libero_spatial",
+        task_id=0,
+        global_task_id=100,
+        adaptation_seed=7,
+        rollout_cursor=cursor,
+        env_seed=1000 + cursor,
+        policy_seed_root=2000,
+        success=success,
+        steps=5,
+        reward_sum=float(success),
+        dummy_settling_steps=10,
+        policy_noise_seeds=(3000 + cursor,),
+        observations=({"observation.state": torch.zeros(1, 7)},),
+        action_chunks=(torch.zeros(1, 50, 7),),
+        valid_action_steps=(5,),
+    )
+
+
+def _objective(ordinal: int, *, mixed: bool = True) -> TaskObjective:
     correct = torch.zeros(256, dtype=torch.float32)
     negative = torch.zeros(256, dtype=torch.float32)
     correct[ordinal] = 1.0
@@ -32,30 +57,68 @@ def _objective(ordinal: int) -> TaskObjective:
     task = SimpleNamespace(
         ordinal=ordinal,
         global_task_id=ordinal + 100,
-        suite=f"suite-{ordinal // 6}",
+        suite=(
+            "libero_spatial",
+            "libero_object",
+            "libero_goal",
+            "libero_10",
+        )[ordinal // 6],
         task_id=ordinal % 6,
+    )
+    successes = (True, False, True, False) if mixed else (False,) * 4
+    trajectories = tuple(
+        _trajectory(ordinal * 4 + lane, success=value)
+        for lane, value in enumerate(successes)
+    )
+    success_count = sum(successes)
+    credit = RewardProgramCreditSummary(
+        objective=0.25 if mixed else 0.0,
+        successes=success_count,
+        failures=4 - success_count,
+        mixed=mixed,
+        positive_episodes=success_count if mixed else 0,
+        negative_episodes=4 - success_count if mixed else 0,
+        zero_episodes=0 if mixed else 4,
+        replay_chunks=4,
+        executed_action_steps=20,
+        mc_samples=4,
+        functional_policy_forwards=8 if mixed else 0,
+        program_cotangent_rms=float(ordinal + 1) if mixed else 0.0,
     )
     return TaskObjective(
         task=task,
-        task_visit=3,
+        task_visit=0,
         teacher_demo=4,
         counterfactual_kind=("reversed", "shuffled", "wrong")[ordinal % 3],
         counterfactual_task=None,
         counterfactual_demo=None,
-        functional_loss=torch.tensor(float(ordinal), dtype=torch.float32),
         correct_feature=correct,
         negative_feature=negative,
-        program_cotangent=torch.full((2, 3), float(ordinal + 1)),
+        program_cotangent=torch.full((2, 3), float(ordinal + 1) if mixed else 0.0),
+        credit=credit,
+        trajectory_rows=tuple(
+            training_module._trajectory_record(value) for value in trajectories
+        ),
         correct_raw_frames=100,
         correct_sampled_frames=21,
         negative_raw_frames=100,
         negative_sampled_frames=21,
+        rollout_seconds=1.0,
+        credit_seconds=2.0,
     )
 
 
-def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> None:
+def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = SimpleNamespace(context=_context())
+    monkeypatch.setattr(
+        training_module,
+        "_credit_ready_rendezvous",
+        lambda _runtime, *, macro: (None, None),
+    )
     local = [_objective(index) for index in reversed(range(24))]
-    correct, negative, cotangents = _gather_full48(local, _context())
+    correct, negative, cotangents = _gather_full48(runtime, local, macro=0)
     assert correct.shape == negative.shape == (24, 256)
     assert cotangents.shape == (24, 2, 3)
     assert torch.equal(correct[:, :24], torch.eye(24))
@@ -67,58 +130,75 @@ def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> 
         )
 
 
-def test_full48_gather_rejects_duplicate_or_missing_task_ordinals() -> None:
+def test_full48_gather_rejects_duplicate_or_missing_task_ordinals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = SimpleNamespace(context=_context())
+    monkeypatch.setattr(
+        training_module,
+        "_credit_ready_rendezvous",
+        lambda _runtime, *, macro: (None, None),
+    )
     local = [_objective(index) for index in range(24)]
     local[-1] = _objective(22)
     with pytest.raises(ExpertManifoldError, match="task order changed"):
-        _gather_full48(local, _context())
+        _gather_full48(runtime, local, macro=0)
 
 
 def _profile_config() -> dict:
     return {
         "profile_run": {
-            "diagnostic_macros": 3,
-            "throughput_baseline": {"step_seconds": 20.0},
             "gates": {
-                "feature_rank_min": 24,
-                "correct_motion_to_cotangent_rms_min": 0.25,
-                "negative_to_correct_motion_rms_max": 0.25,
+                "tasks": 24,
+                "rollouts": 96,
+                "rollouts_per_task": 4,
+                "videos": 24,
+                "videos_per_task": 1,
+                "mixed_tasks_min": 6,
+                "homogeneous_tasks_min": 1,
+                "mixed_cotangent_nonzero": True,
+                "homogeneous_cotangent_exact_zero": True,
+                "program_to_lora_response_nonzero": True,
+                "program_to_fixed_action_response_nonzero": True,
+                "full48_feature_rank_min": 24,
+                "negative_null_motion_ratio_max": 0.25,
                 "predicted_observed_relative_rms_max": 0.005,
-                "production_wall_aggregation": (
-                    "arithmetic_mean_over_diagnostic_macros"
-                ),
-                "production_wall_ratio_max": 1.1,
-                "fixed_action_response_rms_min": 0.0,
-                "fixed_action_probe_task_count": 4,
-                "fixed_action_passing_task_count_min": 4,
-                "correct_retained_task_count_min": 18,
-                "negative_null_task_count_min": 18,
+                "extra_negative_policy_forwards": 0,
+                "old_policy_forwards": 0,
                 "oom_count": 0,
                 "nonfinite_count": 0,
-                "old_panel_drift_rms_vs_blind_max": 0.5,
-                "old_correct_rows_improved_fraction_min": 0.75,
-                "current_correct_motion_vs_blind_min": 0.5,
+                "watchdog_count": 0,
             }
         }
     }
 
 
-def _profile_row(index: int) -> dict:
+def _profile_row() -> dict:
+    records = []
+    for ordinal in range(24):
+        mixed = ordinal < 6
+        records.append(
+            {
+                "task_ordinal": ordinal,
+                "mixed": mixed,
+                "rollouts": 4,
+                "videos": 1,
+                "program_cotangent_rms": 0.1 if mixed else 0.0,
+                "functional_policy_forwards": 8 if mixed else 0,
+            }
+        )
     return {
+        "tasks": 24,
+        "rollouts": 96,
+        "videos": 24,
+        "successes": 12,
+        "task_records": records,
         "update": {
             "feature_rank": 24,
-            "correct_cotangent_rms": 2.0,
-            "predicted_correct_motion_rms": 1.0,
             "predicted_negative_to_correct_ratio": 0.1,
-            "current_motion_to_blind_ratio": 1.0 if index == 0 else 0.75,
-            "reference_to_blind_ratio": 0.0 if index == 0 else 0.4,
-            "reference_rows_improved_fraction": 1.0 if index == 0 else 0.8,
-            "assimilated_rows_before": index * 48,
-            "assimilated_rows_after": (index + 1) * 48,
-            "reference_correct_rows": index * 24,
         },
         "application": {"predicted_observed_relative_rms": 0.001},
-        "lora_response": None if index < 2 else {
+        "lora_response": {
             "lora_a_response_rms": 0.01,
             "lora_b_response_rms": 0.02,
             "fixed_action_response_rms": 0.03,
@@ -126,89 +206,87 @@ def _profile_row(index: int) -> dict:
             "fixed_action_probe_policy_forwards": 8,
             "fixed_action_passing_task_count": 4,
         },
-        "task_local_motion": {
-            "task_count": 24,
-            "correct_retained_passing_tasks": 24,
-            "negative_null_passing_tasks": 24,
-            "rows": [{"task_ordinal": value} for value in range(24)],
-        },
-        "profile_task_seconds": 19.0,
-        "production_kernel_seconds": 1.0,
         "negative_policy_forwards": 0,
+        "old_policy_forwards": 0,
         "oom_count": 0,
         "nonfinite_count": 0,
+        "watchdog_count": 0,
+        "step_seconds": 10.0,
+        "max_cuda_allocated_bytes": 30_000_000_000,
+        "max_cuda_reserved_bytes": 40_000_000_000,
     }
 
 
-def _profile_rows() -> list[dict]:
-    return [_profile_row(index) for index in range(3)]
-
-
-def test_mechanism_profile_requires_every_predeclared_path_and_throughput_gate() -> None:
-    passed, evidence = _profile_passes(_profile_config(), _profile_rows())
+def test_mechanism_profile_requires_full24_mixed_and_homogeneous_credit_paths() -> None:
+    config = _profile_config()
+    passed, evidence = profile_passes(config, [_profile_row()])
     assert passed is True
     assert all(evidence["checks"].values())
-    assert evidence["production_wall_mean_ratio"] == 1.0
     mutations = (
-        ("update", "feature_rank", 23),
-        ("update", "predicted_correct_motion_rms", 0.1),
-        ("update", "predicted_negative_to_correct_ratio", 0.3),
-        ("application", "predicted_observed_relative_rms", 0.01),
-        ("lora_response", "lora_a_response_rms", 0.0),
-        ("lora_response", "lora_b_response_rms", 0.0),
-        ("lora_response", "fixed_action_response_rms", 0.0),
-        ("lora_response", "lora_a_response_rms", float("inf")),
-        ("lora_response", "lora_b_response_rms", float("inf")),
+        ("tasks", 23),
+        ("rollouts", 95),
+        ("videos", 23),
+        ("negative_policy_forwards", 1),
+        ("watchdog_count", 1),
     )
-    for section, key, value in mutations:
-        rows = _profile_rows()
-        rows[-1][section][key] = value
-        assert _profile_passes(_profile_config(), rows)[0] is False
-    rows = _profile_rows()
-    rows[-1]["production_kernel_seconds"] = 9.1
-    assert _profile_passes(_profile_config(), rows)[0] is False
-    rows = _profile_rows()
-    rows[0]["profile_task_seconds"] = 23.4
-    assert _profile_passes(_profile_config(), rows)[0] is True
-    rows = _profile_rows()
-    rows[-1]["negative_policy_forwards"] = 1
-    assert _profile_passes(_profile_config(), rows)[0] is False
-    for key, value in (
-        ("reference_to_blind_ratio", 0.51),
-        ("reference_rows_improved_fraction", 0.74),
-        ("current_motion_to_blind_ratio", 0.49),
-        ("current_motion_to_blind_ratio", float("inf")),
-    ):
-        rows = _profile_rows()
-        rows[1]["update"][key] = value
-        assert _profile_passes(_profile_config(), rows)[0] is False
+    for key, value in mutations:
+        row = _profile_row()
+        row[key] = value
+        assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["task_records"][0]["program_cotangent_rms"] = 0.0
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    row["task_records"][6]["functional_policy_forwards"] = 1
+    assert profile_passes(config, [row])[0] is False
+    row = _profile_row()
+    for record in row["task_records"]:
+        record["mixed"] = True
+        record["program_cotangent_rms"] = 0.1
+        record["functional_policy_forwards"] = 8
+    assert profile_passes(config, [row])[0] is False
+    for invalid in (None, 0, "false"):
+        row = _profile_row()
+        row["task_records"][6]["mixed"] = invalid
+        with pytest.raises(ExpertManifoldError, match="partition changed"):
+            profile_passes(config, [row])
+    row = _profile_row()
+    del row["task_records"][6]["mixed"]
+    with pytest.raises(ExpertManifoldError, match="partition changed"):
+        profile_passes(config, [row])
+    row = _profile_row()
+    row["lora_response"]["fixed_action_response_rms"] = 0.0
+    assert profile_passes(config, [row])[0] is False
 
 
-def test_task_local_profile_keeps_all_24_retained_and_null_rows() -> None:
-    cotangents = torch.ones((24, 2, 3), dtype=torch.float32)
-    motion = torch.cat(
-        (
-            torch.full((24, 2, 3), 0.5),
-            torch.full((24, 2, 3), 0.05),
-        )
-    )
-    evidence = _profile_task_local_motion(
-        cotangents,
-        motion,
-        _profile_config()["profile_run"]["gates"],
-    )
-    assert evidence["task_count"] == 24
-    assert evidence["correct_retained_passing_tasks"] == 24
-    assert evidence["negative_null_passing_tasks"] == 24
-    assert [row["task_ordinal"] for row in evidence["rows"]] == list(range(24))
+def test_profile_reports_shared_motion_on_exact_zero_credit_tasks() -> None:
+    cotangents = torch.zeros(4, 2, 3)
+    cotangents[:2] = 1
+    motion = torch.zeros_like(cotangents)
+    motion[:2] = 2
+    motion[2:] = 1
+    evidence = profile_credit_motion(cotangents, motion)
+    assert evidence == {
+        "mixed_correct_motion_rms": 2.0,
+        "homogeneous_correct_motion_rms": 1.0,
+        "homogeneous_to_mixed_motion_ratio": 0.5,
+        "homogeneous_task_count": 2,
+        "homogeneous_moving_task_count": 2,
+    }
 
 
-def test_task_record_reports_one_correct_b20_and_zero_negative_policy_forwards() -> None:
+def test_task_record_reports_k4_signed_replay_and_no_retired_forwards() -> None:
     row = _task_record(_objective(0))
-    assert row["source_action_queries"] == 20
-    assert row["physical_correct_policy_forwards"] == 2
+    assert row["rollouts"] == 4
+    assert row["successes"] == 2
+    assert row["failures"] == 2
+    assert row["replay_chunks"] == 4
+    assert row["executed_action_steps"] == 20
+    assert row["videos"] == 1
+    assert row["teacher_action_reads"] == 0
+    assert row["source_action_reads"] == 0
+    assert row["old_policy_forwards"] == 0
     assert row["negative_policy_forwards"] == 0
-    assert row["writer_video_encodes"] == 1
 
 
 def test_resume_reconciles_post_checkpoint_metrics_into_failure_packet(
@@ -217,29 +295,40 @@ def test_resume_reconciles_post_checkpoint_metrics_into_failure_packet(
     metrics = tmp_path / "metrics.jsonl"
     metrics.write_text(
         "".join(
-            json.dumps({"macro": macro, "value": macro}) + "\n"
-            for macro in range(1, 18)
+            json.dumps({"macro": macro, "value": macro}) + "\n" for macro in (1, 2)
         ),
         encoding="utf-8",
     )
-    assert _reconcile_metrics_cursor(
-        metrics,
-        context=_context(),
-        expected_rows=10,
-    ) == 10
+    assert (
+        _reconcile_metrics_cursor(
+            metrics,
+            context=_context(),
+            expected_rows=1,
+        )
+        == 1
+    )
     retained = [json.loads(line) for line in metrics.read_text().splitlines()]
-    assert [row["macro"] for row in retained] == list(range(1, 11))
-    packet = tmp_path / "failure_packets/orphaned_after_step_00000010.jsonl"
-    assert [
-        json.loads(line)["macro"] for line in packet.read_text().splitlines()
-    ] == list(range(11, 18))
+    assert [row["macro"] for row in retained] == [1]
+    packet = tmp_path / "failure_packets/orphaned_after_step_00000001.jsonl"
+    assert [json.loads(line)["macro"] for line in packet.read_text().splitlines()] == [
+        2
+    ]
 
 
-def test_cli_exposes_only_residual_profile_and_formal_modes() -> None:
+def test_cli_exposes_only_reward_profile_and_formal_modes() -> None:
     parser = build_parser()
     mode = next(action for action in parser._actions if action.dest == "mode")
+    workers = next(action for action in parser._actions if action.dest == "num_workers")
     assert tuple(mode.choices) == ("mechanism-profile", "formal")
+    assert workers.default == 0
     destinations = {action.dest for action in parser._actions}
     assert destinations.isdisjoint(
-        {"expert_bank_root", "warm_start", "teacher_audit", "auxiliary_weight"}
+        {
+            "expert_bank_root",
+            "warm_start",
+            "teacher_audit",
+            "auxiliary_weight",
+            "old_policy",
+            "learning_epochs",
+        }
     )

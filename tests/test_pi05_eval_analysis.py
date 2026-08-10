@@ -525,25 +525,45 @@ def test_formal_panel_accepts_anchored_reconciliation_v3_evidence() -> None:
 
 
 @pytest.mark.parametrize(
-    ("candidate_family", "candidate_macro", "expected_family"),
     (
-        ("ecp", 10, "v6_ecp_v2"),
-        ("ecp", 25, "v6_ecp_v2"),
-        ("ecp", 50, "v6_ecp_v2"),
-        ("tangent", 10, "v6_tangent_tube_v3"),
-        ("tangent", 25, "v6_tangent_tube_v3"),
-        ("tangent", 50, "v6_tangent_tube_v3"),
-        ("residual", 10, "v6_condition_residual_v2"),
-        ("residual", 25, "v6_condition_residual_v2"),
-        ("residual", 50, "v6_condition_residual_v2"),
-        ("reconciliation", 10, "v6_anchored_reconciliation_v3"),
-        ("reconciliation", 25, "v6_anchored_reconciliation_v3"),
+        "baseline_family",
+        "candidate_family",
+        "candidate_macro",
+        "expected_baseline_family",
+        "expected_candidate_family",
+    ),
+    (
+        ("legacy", "ecp", 10, "legacy_v6_prior_v1", "v6_ecp_v2"),
+        ("legacy", "ecp", 25, "legacy_v6_prior_v1", "v6_ecp_v2"),
+        ("legacy", "ecp", 50, "legacy_v6_prior_v1", "v6_ecp_v2"),
+        ("legacy", "tangent", 10, "legacy_v6_prior_v1", "v6_tangent_tube_v3"),
+        ("legacy", "tangent", 25, "legacy_v6_prior_v1", "v6_tangent_tube_v3"),
+        ("legacy", "tangent", 50, "legacy_v6_prior_v1", "v6_tangent_tube_v3"),
+        ("legacy", "residual", 10, "legacy_v6_prior_v1", "v6_condition_residual_v2"),
+        ("legacy", "residual", 25, "legacy_v6_prior_v1", "v6_condition_residual_v2"),
+        ("legacy", "residual", 50, "legacy_v6_prior_v1", "v6_condition_residual_v2"),
+        (
+            "residual",
+            "reconciliation",
+            10,
+            "v6_condition_residual_v2",
+            "v6_anchored_reconciliation_v3",
+        ),
+        (
+            "residual",
+            "reconciliation",
+            25,
+            "v6_condition_residual_v2",
+            "v6_anchored_reconciliation_v3",
+        ),
     ),
 )
 def test_historical_transition_preserves_families_and_pairs_true_rows(
+    baseline_family: str,
     candidate_family: str,
     candidate_macro: int,
-    expected_family: str,
+    expected_baseline_family: str,
+    expected_candidate_family: str,
 ) -> None:
     baseline_success = _success_keys(
         lambda _suite, _task, state: state == 0
@@ -552,7 +572,7 @@ def test_historical_transition_preserves_families_and_pairs_true_rows(
         lambda suite, task, state: state == 0
         or (suite == "libero_spatial" and task == 1 and state == 1)
     )
-    baseline = _result(0, "correct", baseline_success, family="legacy")
+    baseline = _result(0, "correct", baseline_success, family=baseline_family)
     candidate = _result(
         candidate_macro, "correct", candidate_success, family=candidate_family
     )
@@ -572,8 +592,8 @@ def test_historical_transition_preserves_families_and_pairs_true_rows(
     )
     assert analysis["schema_version"] == HISTORICAL_BASELINE_TRANSITION_SCHEMA
     assert analysis["method_families"] == {
-        "historical_baseline": "legacy_v6_prior_v1",
-        "current_candidate": expected_family,
+        "historical_baseline": expected_baseline_family,
+        "current_candidate": expected_candidate_family,
     }
     assert analysis["contract_audit"]["checkpoint_curve_membership_claimed"] is False
     assert analysis["panels"]["correct400"]["historical_baseline"]["overall"]["successes"] == 8
@@ -597,7 +617,7 @@ def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> N
         "ecp": candidate,
         "tangent": _result(10, "correct", set(), family="tangent"),
     }
-    with pytest.raises(Pi05EvaluationError, match="legacy v1"):
+    with pytest.raises(Pi05EvaluationError, match="supported baseline"):
         historical_baseline_transition_analysis(ecp_and_tangent)
 
     wrong_macro = _result(100, "correct", set(), family="ecp")
@@ -617,7 +637,30 @@ def test_historical_transition_rejects_wrong_identity_or_scientific_drift() -> N
     )
     with pytest.raises(Pi05EvaluationError, match="candidate"):
         historical_baseline_transition_analysis(
-            {"legacy": baseline, "current": wrong_reconciliation_macro}
+            {
+                "baseline": _result(0, "correct", set(), family="residual"),
+                "current": wrong_reconciliation_macro,
+            }
+        )
+
+    with pytest.raises(Pi05EvaluationError, match="supported baseline"):
+        historical_baseline_transition_analysis(
+            {
+                "legacy": baseline,
+                "current": _result(
+                    10, "correct", set(), family="reconciliation"
+                ),
+            }
+        )
+
+    with pytest.raises(Pi05EvaluationError, match="baseline"):
+        historical_baseline_transition_analysis(
+            {
+                "baseline": _result(10, "correct", set(), family="residual"),
+                "current": _result(
+                    10, "correct", set(), family="reconciliation"
+                ),
+            }
         )
 
     drifted = copy.deepcopy(candidate)

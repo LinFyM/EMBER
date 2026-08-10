@@ -42,6 +42,12 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_condition_residual_v2": (10, 25, 50),
     "v6_anchored_reconciliation_v3": (10, 25),
 }
+HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
+    "v6_ecp_v2": "legacy_v6_prior_v1",
+    "v6_tangent_tube_v3": "legacy_v6_prior_v1",
+    "v6_condition_residual_v2": "legacy_v6_prior_v1",
+    "v6_anchored_reconciliation_v3": "v6_condition_residual_v2",
+}
 SIX_ARM_CONDITIONS = (
     "correct",
     "same_task_other",
@@ -528,7 +534,7 @@ def _historical_transition_projection(result: Mapping[str, Any]) -> dict[str, An
 def historical_baseline_transition_analysis(
     results_by_root: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Compare immutable legacy macro0 with one sealed current-family checkpoint."""
+    """Compare one sealed candidate with its explicit immutable macro0 baseline."""
 
     if len(results_by_root) != 2:
         _fail("historical baseline transition requires exactly two roots")
@@ -544,19 +550,21 @@ def historical_baseline_transition_analysis(
         if family in by_family:
             _fail("historical baseline transition contains a duplicate method family")
         by_family[family] = (root, result, indexed)
-    candidate_families = set(by_family) - {"legacy_v6_prior_v1"}
-    if (
-        "legacy_v6_prior_v1" not in by_family
-        or len(candidate_families) != 1
-        or not candidate_families.issubset(HISTORICAL_TRANSITION_CANDIDATE_MACROS)
-    ):
+    supported_pairs = [
+        (baseline_family, candidate_family)
+        for candidate_family, baseline_family in (
+            HISTORICAL_TRANSITION_BASELINE_FAMILIES.items()
+        )
+        if set(by_family) == {baseline_family, candidate_family}
+    ]
+    if len(supported_pairs) != 1:
         _fail(
-            "historical baseline transition requires legacy v1 and exactly one "
-            "supported current candidate family"
+            "historical baseline transition requires exactly one supported "
+            "baseline and current candidate family pair"
         )
 
-    baseline = by_family["legacy_v6_prior_v1"]
-    candidate_family = next(iter(candidate_families))
+    baseline_family, candidate_family = supported_pairs[0]
+    baseline = by_family[baseline_family]
     candidate = by_family[candidate_family]
     _method_macro(
         baseline[1],
@@ -621,7 +629,7 @@ def historical_baseline_transition_analysis(
             "cross_family_historical_baseline_transition_not_checkpoint_curve"
         ),
         "method_families": {
-            "historical_baseline": "legacy_v6_prior_v1",
+            "historical_baseline": baseline_family,
             "current_candidate": candidate_family,
         },
         "contract_audit": {

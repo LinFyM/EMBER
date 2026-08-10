@@ -156,6 +156,15 @@ cache与执行合同；没有预注册数值方向阈值，不能事后把方向
 
 该门只允许窄smoke，不选择方法。
 
+首次clean`82c18cc` Gate-A invocation在live空闲`gpu02:3`通过launcher/worker双重A40身份与无compute-process
+检查并加载真实source/Writer，但在第一候选warmup中由CUDA运行时fail closed。根因不是OOM或架构输出，而是
+外层BF16 autocast把显式FP32输入的紧凑`left_r @ right_r.T`重新降为BF16；A40的batched SVD没有BF16 kernel。
+该root没有生成`writer_generation_profile.json`、cache、rollout或任何可用吞吐点，已删除且不得封存。兼容修复
+对整个compact QR→32×32 core SVD→rank2 lift局部关闭autocast，再按原合同把q/v residual factors转回BF16。
+它不展开full T、不改rank、cache dtype/bytes、信息墙或Gate阈值，也不是为底层微小误差牺牲吞吐；必须由新clean
+pushed commit完整重跑同一B8/16/32 panel实测裁决。模拟CUDA autocast的回归及全仓真实assets门为
+`387 passed in 28.53s`。
+
 profile与vertical都通过后，必须回到tracked、clean、pushed的`codex/bci-continuation`主工作树；纯CPU
 `scripts/evaluate_pi05.py rank-reserved-seal`重读两份注册artifact并自动写入path/bytes/run commit/selected
 batch。不得在detached worktree执行seal，不得人工拼`online_smoke_evidence`或跳过raw validator。seal改动随后
@@ -239,5 +248,5 @@ transition分析只是从原超大owner机械拆出的同一合同，不是第�
 旧inline实现已经原位移除，历史只由Git和frozen artifacts保存；没有兼容并行版本、第二compiler或第二CLI
 family。结构守卫相对`513eb43`为`review`但hard violations、parallel version families和parallel function
 families均为空；review来自这次完整deployment/gate合同的净增长，以上owner和Gate B/C退役条件即其生命周期
-说明。带真实LIBERO assets的全仓fresh CPU回归为`386 passed in 28.76s`，compileall与diff-check通过；这些
+说明。带真实LIBERO assets的全仓fresh CPU回归为`387 passed in 28.53s`，compileall与diff-check通过；这些
 只证明工程合同，不构成A40行为或closed-loop性能证据。

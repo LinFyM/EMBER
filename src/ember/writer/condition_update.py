@@ -404,23 +404,27 @@ def compact_rank2_effective_tangent(
         or base_a.shape[-2] * 2 > min(base_a.shape[-1], base_b.shape[-2])
     ):
         raise ConditionUpdateError("invalid effective tangent factor pair")
-    left = torch.cat(
-        (base_b.to(dtype=torch.float32), delta_b.to(dtype=torch.float32)),
-        dim=-1,
-    )
-    right = torch.cat(
-        (delta_a.to(dtype=torch.float32), base_a.to(dtype=torch.float32)),
-        dim=-2,
-    )
-    left_q, left_r = torch.linalg.qr(left, mode="reduced")
-    right_q, right_r = torch.linalg.qr(right.transpose(-1, -2), mode="reduced")
-    core = torch.matmul(left_r, right_r.transpose(-1, -2))
-    core_u, singular, core_vh = torch.linalg.svd(core, full_matrices=False)
-    scale = singular[..., :2].clamp_min(0).sqrt()
-    residual_b = torch.matmul(left_q, core_u[..., :, :2]) * scale.unsqueeze(-2)
-    residual_a = scale.unsqueeze(-1) * torch.matmul(
-        core_vh[..., :2, :], right_q.transpose(-1, -2)
-    )
+    # CUDA autocast otherwise converts the small core matmul back to BF16, but
+    # A40 batched SVD has no BF16 kernel.  Keep only this compact 2r x 2r
+    # factorization in FP32; the published LoRA factors retain native dtype.
+    with torch.autocast(device_type=base_a.device.type, enabled=False):
+        left = torch.cat(
+            (base_b.to(dtype=torch.float32), delta_b.to(dtype=torch.float32)),
+            dim=-1,
+        )
+        right = torch.cat(
+            (delta_a.to(dtype=torch.float32), base_a.to(dtype=torch.float32)),
+            dim=-2,
+        )
+        left_q, left_r = torch.linalg.qr(left, mode="reduced")
+        right_q, right_r = torch.linalg.qr(right.transpose(-1, -2), mode="reduced")
+        core = torch.matmul(left_r, right_r.transpose(-1, -2))
+        core_u, singular, core_vh = torch.linalg.svd(core, full_matrices=False)
+        scale = singular[..., :2].clamp_min(0).sqrt()
+        residual_b = torch.matmul(left_q, core_u[..., :, :2]) * scale.unsqueeze(-2)
+        residual_a = scale.unsqueeze(-1) * torch.matmul(
+            core_vh[..., :2, :], right_q.transpose(-1, -2)
+        )
     return residual_a.to(dtype=base_a.dtype), residual_b.to(dtype=base_b.dtype)
 
 

@@ -464,3 +464,41 @@ def test_compact_rank2_matches_effective_tangent_without_second_order_term() -> 
     assert torch.isfinite(zero_a).all() and torch.isfinite(zero_b).all()
     assert not torch.count_nonzero(zero_a)
     assert not torch.count_nonzero(zero_b)
+
+
+def test_compact_rank2_keeps_small_svd_fp32_under_outer_autocast(
+    monkeypatch,
+) -> None:
+    generator = torch.Generator().manual_seed(37)
+    base_a = torch.randn(2, 16, 35, generator=generator, dtype=torch.bfloat16)
+    base_b = torch.randn(2, 40, 16, generator=generator, dtype=torch.bfloat16)
+    delta_a = torch.randn(2, 16, 35, generator=generator, dtype=torch.bfloat16)
+    delta_b = torch.randn(2, 40, 16, generator=generator, dtype=torch.bfloat16)
+    original_matmul = torch.matmul
+    original_svd = torch.linalg.svd
+    observed_svd_dtypes = []
+
+    def emulate_cuda_autocast_matmul(left, right, *args, **kwargs):
+        result = original_matmul(left, right, *args, **kwargs)
+        if torch.is_autocast_enabled("cpu") and result.dtype == torch.float32:
+            return result.to(dtype=torch.bfloat16)
+        return result
+
+    def require_fp32_svd(value, *args, **kwargs):
+        observed_svd_dtypes.append(value.dtype)
+        assert value.dtype == torch.float32
+        return original_svd(value, *args, **kwargs)
+
+    monkeypatch.setattr(torch, "matmul", emulate_cuda_autocast_matmul)
+    monkeypatch.setattr(torch.linalg, "svd", require_fp32_svd)
+    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
+        residual_a, residual_b = compact_rank2_effective_tangent(
+            base_a,
+            base_b,
+            delta_a,
+            delta_b,
+        )
+
+    assert observed_svd_dtypes == [torch.float32]
+    assert residual_a.dtype == residual_b.dtype == torch.bfloat16
+    assert torch.isfinite(residual_a).all() and torch.isfinite(residual_b).all()

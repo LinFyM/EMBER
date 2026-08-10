@@ -50,8 +50,13 @@
 - profile schema v2允许单个更大batch OOM后记录为ineligible并继续保留稳定候选；8-request vertical明确记录
   configured selected batch与实际`min(selected,8)` cache forward，不把配置值冒充真实batch。Gate C的tracked
   Program reference不再误走output-root resolver；纯CPU `rank-reserved-seal`从两份注册artifact自动组装config。
-- 全仓在正确LIBERO assets环境下为`386 passed in 28.76s`；这是CPU合同，不是行为分数。当前仍没有新
-  rank-reserved policy action或rollout artifact。
+- clean implementation commit`82c18cc`首次真实A40 profile在第一候选warmup定位出一个纯运行时边界：即使
+  tensor先`.float()`，外层CUDA BF16 autocast仍会把compact core matmul降回BF16，A40 batched SVD随即
+  `NotImplementedError`。正确修复是整个compact QR→32×32 SVD→rank2 lift局部禁用autocast，而不是只在SVD
+  前cast已经量化的core；输出仍转回BF16，额外FP32工作只发生在原本就应FP32的紧凑因子上。
+- 失败invocation通过了live device/identity门但没有发布profile artifact、cache、rollout或分数，root已删除；
+  不能把它当吞吐non-pass。全仓在正确LIBERO assets环境下现为`387 passed in 28.53s`；这是CPU合同，不是
+  行为分数。当前仍没有新rank-reserved policy action或rollout artifact。
 - 正确证据顺序是：新graph单卡B8/16/32吞吐profile + cycle1四suitefixed-action vertical；先新rank14
   zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
   只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性

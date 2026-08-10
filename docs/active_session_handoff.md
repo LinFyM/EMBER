@@ -57,6 +57,13 @@
 - 新旧两个400均复用同一official state/video/env/policy RNG schedule，但必须新生成LoRA cache；旧macro0、
   旧Reward cycle1结果和Program tensor直接作为immutable baseline，不重跑、不复制84MB Program。evaluator是
   单节点、无NCCL；每次优先关注`gpu02`并选单节点当时最多的空闲卡，不为跨节点碎片改launcher或等待凑卡。
+- canonical implementation已由clean commit`82c18cc4011fdc5d88f6e7747f71471d6749acd5`推送并建立detached
+  Gate-A worktree。首次live profile在`gpu02:3`通过双重idle/UUID门并加载真实模型，但在第一候选warmup的
+  compact rank2 CUDA SVD前fail closed：外层BF16 autocast把本应FP32的32×32 core matmul降回BF16，而A40
+  `svd_cuda_gesvdjBatched`不支持BF16。没有`writer_generation_profile.json`、rollout或科学分数；失败root只含
+  contract/preflight/log并已删除。修复仅对紧凑QR→core SVD→rank2 lift局部关闭autocast，最终72个q/v tensors
+  仍发布BF16，不扩完整T、不改cache/schema/architecture。模拟CUDA autocast的CPU回归及全仓真实assets门为
+  `387 passed in 28.53s`；必须从新clean pushed commit重建frozen worktree并完整重跑B8/16/32，不能复用失败root。
 
 ### 1.2 Historical Reward-Credit implementation and retained evidence（2026-08-10--11，formal cycle1已裁决）
 

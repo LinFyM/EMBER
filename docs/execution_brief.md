@@ -24,7 +24,11 @@ Reward residual；两个action targets保持full-rank16 FP32。
 full80 generation-only门已过：q/v base error约`.0007523`、task max≤`.001302`，rank2 capture`.9997088`，
 dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact；但0 action forward/0 rollout，不能
 视为性能。单一canonical compiler、v9 commit-bound cache、Program-only reference、五臂vertical和有序Gate B/C
-已经实现；带真实LIBERO assets的全仓CPU回归为`386 passed in 28.76s`。旧Reward训练入口已在distributed/runtime
+已经实现。clean implementation commit`82c18cc`已推送；首次`gpu02:3` live profile在第一候选warmup处揭示
+CUDA BF16 autocast把紧凑32×32 core matmul降精度、而A40 batched SVD不支持BF16。该run在结果发布前
+fail closed，无profile artifact/rollout/分数，失败root已删除。修复只把紧凑QR/SVD/rank2 lift置于FP32
+autocast-disabled island，最终native LoRA仍是72 BF16+4 F32；不扩完整T或改变吞吐合同。带真实LIBERO assets
+的全仓CPU回归现为`387 passed in 28.53s`。旧Reward训练入口已在distributed/runtime
 初始化前fail closed。下一步先从同一clean pushed implementation commit做B8/16/32吞吐profile与cycle1五臂
 vertical smoke，再跑rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。
 base过门后才读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且

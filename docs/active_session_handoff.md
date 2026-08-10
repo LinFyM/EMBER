@@ -64,6 +64,15 @@
   contract/preflight/log并已删除。修复仅对紧凑QR→core SVD→rank2 lift局部关闭autocast，最终72个q/v tensors
   仍发布BF16，不扩完整T、不改cache/schema/architecture。模拟CUDA autocast的CPU回归及全仓真实assets门为
   `387 passed in 28.53s`；必须从新clean pushed commit重建frozen worktree并完整重跑B8/16/32，不能复用失败root。
+- 修复提交`c5638a9c1b07082e179a7bc5fa3d95e083fcec44`随后在同一live空闲`gpu02:3`完成完整profile：固定
+  32 requests/1093 sampled frames/longest67，B8/16/32 LoRAs/s=`.906874/.903246/.904735`，两次measured
+  wall分别为`35.153/35.419`、`35.436/35.420`、`35.352/35.387s`；三点stable、0 OOM，peak reserved约
+  `12.90GB`且headroom约`34.8GB`，按实测选B8。B8相对旧rank16同图`.911238`只慢`.479%`，局部FP32 island
+  没有实用吞吐损失。紧接的vertical在五臂生成后、cache/rollout前因diagnostic evidence遗漏调用identity的
+  `suite/task_id/init_state_id`而`KeyError: suite`；0 completed rows、无cache manifest/vertical/result，不能作
+  机制non-pass。canonical修复把这三项从request identity显式合入profile并增加方法级回归；全仓真实assets门为
+  `388 passed in 23.56s`。由于profile/vertical必须同commit，上述两个partial roots均删除，下一clean commit须
+  同时重跑profile与vertical，不能把`c5638a9` profile跨commit拼入seal。
 
 ### 1.2 Historical Reward-Credit implementation and retained evidence（2026-08-10--11，formal cycle1已裁决）
 

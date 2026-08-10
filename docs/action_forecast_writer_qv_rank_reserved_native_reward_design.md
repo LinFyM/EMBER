@@ -165,6 +165,15 @@ cache与执行合同；没有预注册数值方向阈值，不能事后把方向
 pushed commit完整重跑同一B8/16/32 panel实测裁决。模拟CUDA autocast的回归及全仓真实assets门为
 `387 passed in 28.53s`。
 
+下一clean`c5638a9` invocation完成了该profile：固定32-request/1093-frame/longest67 panel上B8/16/32=
+`.906874/.903246/.904735 LoRA/s`，三点stable、0 OOM，peak reserved约`12.90GB`、headroom约`34.8GB`，按规则
+选B8；B8相对旧rank16同图仅慢`.479%`。其vertical在共享五臂生成后、cache与rollout前fail closed：adapter的
+diagnostic profile保存episode evidence却没有把request identity的`suite/task_id/init_state_id`合回，vertical
+据此排序时`KeyError: suite`。该失败为0 completed rows且没有cache manifest、vertical或results，不裁决机制。
+修复只恢复证据identity所有权，不改生成状态；新增直接调用`prepare_diagnostic_five_arms`的回归并确认profile
+保留三项identity，全仓真实assets门=`388 passed in 23.56s`。由于两份Gate-A artifact必须同commit，`c5638a9`
+profile不能跨commit复用；两partial roots已删除，下一clean commit必须完整重跑两步。
+
 profile与vertical都通过后，必须回到tracked、clean、pushed的`codex/bci-continuation`主工作树；纯CPU
 `scripts/evaluate_pi05.py rank-reserved-seal`重读两份注册artifact并自动写入path/bytes/run commit/selected
 batch。不得在detached worktree执行seal，不得人工拼`online_smoke_evidence`或跳过raw validator。seal改动随后
@@ -248,5 +257,5 @@ transition分析只是从原超大owner机械拆出的同一合同，不是第�
 旧inline实现已经原位移除，历史只由Git和frozen artifacts保存；没有兼容并行版本、第二compiler或第二CLI
 family。结构守卫相对`513eb43`为`review`但hard violations、parallel version families和parallel function
 families均为空；review来自这次完整deployment/gate合同的净增长，以上owner和Gate B/C退役条件即其生命周期
-说明。带真实LIBERO assets的全仓fresh CPU回归为`387 passed in 28.53s`，compileall与diff-check通过；这些
+说明。带真实LIBERO assets的全仓fresh CPU回归为`388 passed in 23.56s`，compileall与diff-check通过；这些
 只证明工程合同，不构成A40行为或closed-loop性能证据。

@@ -27,6 +27,12 @@
   fail closed：CUDA autocast把32×32 core matmul降为BF16，而A40不支持BF16 batched SVD。没有profile
   result/cache/rollout/分数，失败root已删除。修复对compact QR/SVD/rank2 lift局部关闭autocast并保持最终
   q/v native BF16；新增模拟CUDA autocast回归，正确assets环境全仓=`387 passed in 28.53s`。
+- 修复提交`c5638a9`在live空闲`gpu02:3`完成32-request/1093-frame profile；B8/16/32=
+  `.906874/.903246/.904735 LoRA/s`，三点stable、0 OOM、reserved约12.90GB/headroom约34.8GB，选B8，
+  相对旧rank16 B8只慢`.479%`。随后vertical在共享五臂生成后、cache/rollout前因diagnostic row缺少
+  `suite/task_id/init_state_id`而fail closed；queue为8 pending/0 complete，无cache manifest、vertical/results。
+  修复显式合并request identity并新增方法级回归；全仓真实assets=`388 passed in 23.56s`。因Gate-A两份
+  artifact必须同commit，成功profile和失败vertical两个partial roots都删除，下一commit完整重跑两步。
 - Owner进一步澄清设备策略：不存在固定6卡要求。authority现统一为每次live比较`gpu01/gpu02`，选择一个
   节点并使用该节点所有真正空闲、健康且提高有效吞吐的A40，不等待凑卡、不dummy占位；独立evaluator使用
   所选单节点当时全部有效空卡，训练
@@ -34,7 +40,7 @@
 - canonical evaluator的可执行owner-six-GPU门已删除：run contract由配置的8-card node topology约束，
   preflight只拒绝空/重复/负index并继续live检查进程；7/8-card选择不再被软件截断。加载`.env.local`后的
   `tests/test_pi05_eval_contract.py tests/test_pi05_eval_launcher.py`为`51 passed`。
-- 下一步是将兼容修复clean commit/push并重建frozen worktree；随后单张空闲A40完整重跑新graph吞吐profile与五臂
+- 下一步是将identity修复clean commit/push并重建frozen worktree；随后单张空闲A40完整重跑新graph吞吐profile与五臂
   vertical。两份artifact通过后必须回tracked主分支seal、commit/push，再从sealed commit冻结新worktree，
   然后按有序Gate B/C条件运行两个strict400。
   q/v一阶tangent固定为`B0 dA+dB A0`，action保留实际二阶cross term；no-video source identity与correct-video

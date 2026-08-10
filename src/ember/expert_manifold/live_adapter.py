@@ -482,10 +482,13 @@ class FrozenExpertManifoldTaskAdapter(WriterLoRARolloutAdapter):
         self._last_diagnostic_five_arm_profile = tuple(
             {
                 **dict(row),
+                "suite": str(identity["suite"]),
+                "task_id": int(identity["task_id"]),
+                "init_state_id": int(identity["init_state_id"]),
                 "raw_frames": int(video.raw_frame_count),
                 "sampled_frames": int(video.frames.shape[0]),
             }
-            for row, video in zip(rows, videos, strict=True)
+            for identity, row, video in zip(identities, rows, videos, strict=True)
             if video is not None
         )
         result: dict[str, tuple[dict[str, torch.Tensor], ...]] = {}

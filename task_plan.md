@@ -298,6 +298,10 @@ formal artifacts保存。
 - [x] clean pushed`82c18cc`首次Gate-A真实加载定位CUDA兼容缺口：外层BF16 autocast使compact 32×32 core
   SVD收到BF16并在A40 fail closed。未发布profile结果或rollout；失败root已删除。整个compact QR/SVD/rank2
   lift现局部禁用autocast，native输出仍为BF16；模拟CUDA行为与全仓真实assets回归`387 passed`。
+- [x] clean pushed`c5638a9`完整profile实测B8/16/32=`.906874/.903246/.904735 LoRA/s`，三点stable、0 OOM、
+  reserved约12.90GB，选B8且相对旧图只慢`.479%`。随后的vertical在五臂生成后因diagnostic profile遗漏
+  request identity而在cache/rollout前fail closed；0 rows/无结果，不作机制裁决。已恢复suite/task/init字段并以
+  方法级回归封口，全仓真实assets=`388 passed`；因同commit要求，两个partial roots删除后须一起重跑。
 - [ ] live单卡做同32-request B8/16/32吞吐profile并选samples/s最高点；同一cycle1 vertical smoke比较五臂
   （含q/v-only hybrid）的四suite batched fixed-action。profile更大候选OOM只作ineligible；vertical明确区分
   configured winner与8-entry actual cache batch，full/q/v-only使用cache-loaded q/v，paired base从同一state
@@ -305,7 +309,7 @@ formal artifacts保存。
   forbidden read，不以逐元素微差门禁。
   registered roots分别是`runs/outputs/pi05_v6_qv_rank_reserved_native_reward_profile_b8_b16_b32_20260811`和
   `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_vertical_four_suite_20260811`。
-  必须从包含上述兼容修复的新clean pushed/frozen commit全新运行，不能复用`82c18cc`失败root。
+  必须从包含上述两项兼容修复的新clean pushed/frozen commit全新运行，不能复用`82c18cc/c5638a9` roots。
 - [x] 实现纯CPU `rank-reserved-seal` assembler，只从注册profile/vertical raw artifacts写回status/evidence；
   tracked Program asset resolver与`runs/outputs` evidence resolver分离，Gate C不再机械阻断。seal只允许在
   tracked canonical branch head执行；Gate A后必须seal commit/push并新建frozen worktree，才进入Gate B/C。

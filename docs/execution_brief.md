@@ -28,8 +28,13 @@ dynamic cosine`.9975247`、video-centered cosine`.950556`，action exact；但0 
 CUDA BF16 autocast把紧凑32×32 core matmul降精度、而A40 batched SVD不支持BF16。该run在结果发布前
 fail closed，无profile artifact/rollout/分数，失败root已删除。修复只把紧凑QR/SVD/rank2 lift置于FP32
 autocast-disabled island，最终native LoRA仍是72 BF16+4 F32；不扩完整T或改变吞吐合同。带真实LIBERO assets
-的全仓CPU回归现为`387 passed in 28.53s`。旧Reward训练入口已在distributed/runtime
-初始化前fail closed。下一步先从同一clean pushed implementation commit做B8/16/32吞吐profile与cycle1五臂
+的全仓CPU回归现为`387 passed in 28.53s`。修复提交`c5638a9`随后完成完整profile：B8/16/32=
+`.906874/.903246/.904735 LoRA/s`，全部stable、0 OOM，约12.90GB reserved/34.8GB headroom，选B8；相对旧图
+B8只慢`.479%`。随后的vertical在五臂生成后、cache/rollout前因diagnostic evidence没有合回request的
+`suite/task_id/init_state_id`而fail closed，0 rows且无cache/vertical/result artifact；这不是机制non-pass。
+修复显式恢复request identity，方法级回归和全仓真实assets门现为`388 passed in 23.56s`。profile/vertical要求
+同commit，两个partial roots已删除，必须从下一clean pushed/frozen commit一起重跑。旧Reward训练入口已在
+distributed/runtime初始化前fail closed。下一步先从同一clean pushed implementation commit做B8/16/32吞吐profile与cycle1五臂
 vertical smoke，再跑rank14 zero-Program strict400；`correct<130`、breadth<6或相对旧134 lost>10即reject。
 base过门后才读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且
 gained>lost才算load-only通过并补同checkpoint controls。140--143是诊断性non-pass，不授权新训练；两项

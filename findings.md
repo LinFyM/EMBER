@@ -57,6 +57,14 @@
 - 失败invocation通过了live device/identity门但没有发布profile artifact、cache、rollout或分数，root已删除；
   不能把它当吞吐non-pass。全仓在正确LIBERO assets环境下现为`387 passed in 28.53s`；这是CPU合同，不是
   行为分数。当前仍没有新rank-reserved policy action或rollout artifact。
+- `c5638a9`真实profile证明上述FP32 island吞吐代价可忽略：B8/16/32=`.906874/.903246/.904735 LoRA/s`，
+  reserved约12.90GB、headroom约34.8GB、0 OOM，B8相对旧rank16同图仅`-.479%`并按最高实测吞吐胜出。
+  它是工程证据，不说明闭环价值。
+- 随后的vertical已完成共享五臂生成才因profile row缺少`suite/task_id/init_state_id`而失败；episode evidence
+  本身不拥有language task identity，而调用request拥有。正确边界是adapter在保存diagnostic profile时显式合并
+  request identity，与普通generation profile一致；不能让vertical根据video global ID反推task。失败发生在
+  cache/rollout前，0 rows且无结果，不能解释为q/v传递为零。修复后的全仓真实assets为`388 passed in 23.56s`；
+  同commit封存要求意味着成功的`c5638a9` profile也必须重跑而不能跨commit拼接。
 - 正确证据顺序是：新graph单卡B8/16/32吞吐profile + cycle1四suitefixed-action vertical；先新rank14
   zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
   只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性

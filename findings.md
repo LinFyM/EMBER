@@ -1,5 +1,17 @@
 # EMBER Findings
 
+## Frozen-worktree formal prepare的工程边界（2026-08-10）
+
+- CPU-only prepare在GPU前失败不是负科研结果：deployment raw evidence、Writer checkpoint和formal panel都
+  一致，唯一差异是frozen worktree的`runs`软链接使resolved artifact位于canonical仓库。旧verifier把
+  “不在worktree物理目录”错误等同于“越出canonical outputs authority”。
+- 正确安全边界不是禁止软链接，而是双重限定：词法路径必须精确位于`runs/outputs/...`，resolved target
+  必须仍包含于该worktree解析出的canonical outputs root。这样既支持正式frozen checkout复用唯一retained
+  artifacts，也拒绝absolute/`..`/伪前缀/nested-symlink和manifest跨root逃逸；不需要SHA/MD5或逐tensor扫描。
+- `af7b101`修复后同一CPU-only prepare登记8×50 correct/no-replacement和exact-zero residual macro0并exit0，
+  全仓`285 passed`，临时prepare root已清理。它只证明启动合同可构造；没有CUDA、rollout、LoRA cache或
+  性能样本，不能替代strict400。
+
 ## v2 deployment seal通过后的科学边界（2026-08-10）
 
 - 新v8 residual graph在公平32-request/1093-frame panel上，batch8/16/32吞吐仅相差约1%，且三者均稳定、

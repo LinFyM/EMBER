@@ -6,9 +6,11 @@ Tangent Tube均已正式退役，不能从其中的旧“当前/下一步”恢�
 Audit已正式证明expert flow teacher仅在`2/24` tasks、`0/4` suites过门并否决CEFD；第37节v1又由唯一
 macro49 profile定位并淘汰DC-dominated temporal key。2026-08-10唯一活动设计是第38节Balanced
 DC--Causal Condition Key v2；canonical实现、checkpoint/deployment/evaluator联锁和CPU seal已完成，
-macro49 mechanism profile已13/13通过并seal，单卡deployment双root也已通过；当前尚无v2训练或formal
-strict成绩，下一动作是zero-memory macro0 strict400。K4、online expert bank和所有旧Writer只由Git、正式artifact及其
-负裁决文档保留。
+macro49 mechanism profile已13/13通过并seal，单卡deployment双root也已通过。`d228d0d`写回后第一次
+frozen CPU-only formal prepare暴露合法`runs`软链接被误判越界，`af7b101`已窄修路径owner；同一prepare
+现已exit0、临时root已清理，全仓`285 passed`。当前仍无v2训练或formal strict成绩，下一动作是新clean
+pushed/frozen authority上的zero-memory macro0 strict400。K4、online expert bank和所有旧Writer只由Git、
+正式artifact及其负裁决文档保留。
 
 ## 1. 结论先行
 
@@ -2418,3 +2420,25 @@ selected batch、8新entries、lifecycle与信息墙后通过。config状态因�
 zero-memory macro0 strict correct400，以同schedule建立closed-loop基线；随后才fresh0→10并即时strict400，
 按第38.3门裁决停止、继续或补完整因果臂。deployment写回后的CPU门为全仓`284 passed in 26.86s`，并
 重新验证raw seal等于config evidence、formal runtime ready和pre-deployment状态必然fail-close。
+
+### 38.7 Frozen-worktree formal prepare路径合同修复（2026-08-10）
+
+deployment evidence由`d228d0d`写回并clean push后，第一次从对应detached frozen worktree执行CPU-only
+formal prepare，在0 CUDA worker、0 cache和0 scientific row时被runtime拒绝。三个raw artifacts和seal
+内容都未改变；根因是frozen worktree的`runs`是指向canonical仓库`runs`的软链接，旧evaluation verifier
+先对artifact调用`.resolve()`，再强制要求resolved path位于worktree自身，因而把合法canonical artifact
+误判为越界。相同artifact以canonical repo root检查通过，证明失效接口是deployment evidence path owner，
+不是Writer、checkpoint、panel或GPU runtime。
+
+`af7b101`做唯一窄修复：record和load只为词法parts精确以`runs/outputs`开头、且resolved target仍包含在
+`(repo_root / runs/outputs).resolve()`内的路径提供canonical映射；绝对路径、`..`、`runs/outputside`、
+nested symlink逃逸以及不在vertical root内的manifest继续fail closed。主仓与frozen worktree因此生成同一
+稳定repo-relative evidence，不引入fallback family、hash扫描或热路径开销。正向symlink round-trip与两类
+逃逸负回归加入现有owner tests；全仓`285 passed in 21.38s`、compileall/Black/JSON/diff-check通过。
+
+clean frozen`af7b101`随后重跑完全相同的CPU-only prepare并exit0。run contract精确确认formal validation
+8 tasks×states0--49、correct/without-replacement、seed7、18 rollout workers与18 Writer generators、batch8；adapter v8把
+Writer登记为`historical_v6_macro400_load_only`、method macro0、`[256,320,256]` FP32
+`fresh_elementwise_zero` residual且checkpoint residual bytes=0。estimated peak new bytes=
+`1,064,370,176`。这只解除正式启动的工程阻塞，不是closed-loop成绩；下一证据仍必须是新clean
+pushed/frozen authority上的zero-memory macro0 strict correct400。

@@ -86,7 +86,14 @@
   单次launcher、0 retry/runtime failure/forbidden reads。双root assembler已通过且GPU释放；`4/8`不是正式性能分数。
 - config现为`active_deployment_sealed_formal_ready`。下一GPU动作从新clean pushed/frozen seal先评测
   zero-memory macro0 strict correct400；只有该真实基线封存后才fresh0→10并立即strict correct400。
-  deployment写回后全仓`284 passed in 26.86s`，raw三件证据重建与formal runtime均通过。
+- deployment写回由clean pushed`d228d0d`封存。其frozen worktree的首次CPU-only formal prepare在0 CUDA
+  worker/0 scientific row时暴露一个工程合同错误：`runs`软链接经`.resolve()`落到canonical仓库后被旧
+  evaluation verifier误判为越出worktree。`af7b101`只修artifact路径owner，允许词法
+  `runs/outputs/...`且resolved target仍在canonical outputs root；nested symlink和manifest越界继续拒绝。
+  全仓`285 passed in 21.38s`，clean frozen`af7b101`的同一formal prepare已exit0，精确登记8 tasks×50
+  states、correct/without-replacement、method macro0 historical-v6 load-only + fresh elementwise-zero residual、
+  18 rollout workers + 18 Writer generators和batch8；临时prepare root已清理。该prepare没有启动GPU或
+  形成性能证据。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。v6-prior已完成formal 0→50；同一
   schedule macro0/10/25/50 strict correct400=`134/127/105/123`，correct80=`26/26/24/27`。小panel在
   macro50看似上升而full400仍下降，进一步证明不能用screen替代正式裁决。
@@ -486,10 +493,12 @@ Experts不解决：
    续25；首次`≥144`补完整六臂。single winner严格`>150`后必须以同checkpoint六臂确认真实视频/时序因果，
    再继续提高；未过门按最早失败接口做单变量修正，不扫P/lambda/eta或180度转向。
 
-当前具体顺序：完成v2代码/authority clean commit并push；从新frozen worktree读取formal launch与GPU
-preflight合同，实时比较`gpu01/gpu02`和`/data1` quota；只运行上述v2 macro49 mechanism profile，优先
-使用sealed baseline同一`gpu01:0,1,2,4,5,7` panel减少跨host噪声。任何设备不空闲、拓扑不符或storage不足
-都fail close，不触碰他人进程。
+当前具体顺序：把`af7b101`的frozen-worktree artifact路径修复与本状态更新clean commit/push；从该严格
+后继建立新的detached frozen worktree，再实时比较`gpu01/gpu02`和`/data1` quota。只在六张同节点A40均
+空闲健康时运行zero-memory macro0 strict correct400；物理卡按现场选择，保持18 rollout workers + 18 Writer generators、batch8、
+dynamic queue、NUMA physical/local映射和deferred-NCCL合同。完成后CPU-only重聚合并与historical native
+macro0=`134`逐episode配对，任何合同差异先按工程问题处理；只有macro0封存后才fresh0→10。设备不空闲、
+拓扑不符或storage不足都fail close，不触碰他人进程。
 
 ## 10. Canonical assets
 

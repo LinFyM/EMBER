@@ -53,7 +53,7 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   static与centered sqrt-causal-prefix dynamic分别fixed-JL到128、各自zero-L2后拼成P256。无optimizer、
   expert target、negative policy forward或第二LoRA。
 - v2 implementation CPU seal为聚焦`52 passed`、全仓`281 passed`。mechanism写回与deployment双root
-  fail-close修复后当前全仓为`283 passed`，compileall/Black/JSON/diff-check和architecture 0 hard violation。随后
+  fail-close修复后当时全仓为`283 passed`，compileall/Black/JSON/diff-check和architecture 0 hard violation。随后
   clean frozen`5d93434`的macro49 mechanism profile **13/13通过**：condition=`106.114`、correct/cotangent=
   `.968254`、negative/correct=`.0218514`、24/24 correct和24/24 null；A/B、4/4 fixed-action、closure、
   0 negative forward全部通过。production ratio=`.949122`，无checkpoint/OOM/nonfinite，六卡已释放。
@@ -63,8 +63,13 @@ object pose或hidden normalization；video是唯一dynamic value，不能存在l
   真实生成8套完整LoRA并完成8条LIBERO闭环，`4/8` success；该小样本只作执行证据，不是性能结论。
 - 双root verifier已共同通过同一commit的profile root、vertical `results.json`和native LoRA cache manifest，
   并核对单次launcher、8 rows/entries、76 tensors、Writer release/source reuse和零禁止读取。config/runtime
-  现为formal ready；写回后全仓`284 passed in 26.86s`，raw seal重建与formal runtime通过。下一步从新clean
-  frozen seal先评测zero-memory macro0 strict correct400，再决定fresh0→10。
+  现为formal ready。写回后的clean frozen worktree首次CPU-only formal prepare在CUDA初始化前发现一个纯工程
+  问题：`runs`软链接解析到canonical仓库后被旧verifier误判为越界。`af7b101`已把路径owner收窄修复，
+  nested symlink逃逸仍拒绝；全仓`285 passed in 21.38s`。同一clean frozen commit的prepare现已exit0并确认
+  8×50 correct/no-replacement、historical-v6+exact-zero residual macro0、18 rollout workers + 18 Writer
+  generators和batch8合同；临时prepare root已清理，它未启动
+  GPU或产生性能结果。下一步从包含当前authority的新clean frozen seal评测zero-memory macro0 strict400，
+  再决定fresh0→10。
 - 首次A40 batch8 smoke只发现普通BF16 batch-shape roundoff（max`.001953125`、mean约`4.70e-5`，direct
   repeat为零）。此前固定batch1和重复direct forward的决定已经撤回；当前吞吐优先，从稳定且有显存
   余量的候选中选择实测LoRAs/s最高的batch，并使用原生BF16/F32 LoRA cache、action prefetch和更少

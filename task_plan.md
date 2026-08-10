@@ -186,7 +186,11 @@ formal artifacts保存。
   1093-frame panel的batch8/16/32=`.911238/.901898/.906482 LoRA/s`，均稳定且有约32.4GiB headroom，选batch8；
   validation8×state0 correct真实闭环8/8 rows、`4/8` success、单次launcher、8套native LoRA、0禁止读取，
   assembler通过且GPU释放；写回后全仓`284 passed`。`4/8`只作执行证据。
-- [ ] 两类profile均seal后先评测zero-memory macro0 strict400，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
+- [x] `d228d0d` frozen CPU-only formal prepare在0 CUDA/0 row时发现`runs`软链接artifact被误判越界；
+  `af7b101`以canonical `runs/outputs` containment窄修复并保留nested-symlink fail-close。全仓`285 passed`，
+  clean frozen prepare exit0并封存8×50、correct/no-replacement、zero residual macro0、18 rollout workers +
+  18 Writer generators、batch8合同；临时root已清理，正式评测必须使用新root。
+- [ ] mechanism/deployment两类seal均完成后先评测zero-memory macro0 strict400，再fresh0→10并立即strict correct400；按第37.6/38.3门决定
   停止、续25或补六臂，不用correct80 screen、不扫P/lambda/eta、不解冻base。
 - [ ] 若absolute升但video margin弱，只改counterfactual credit/Procedure temporal objective。
 - [ ] 若margin升但absolute降，诊断ranking伤害policy；不写成训练不足。

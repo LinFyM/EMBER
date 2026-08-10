@@ -89,6 +89,16 @@ source policy复用。三件raw artifact由assembler重算通过，config现为f
 deployment写回后的全仓CPU门为`284 passed in 26.86s`，compileall、Black、JSON、diff-check、raw seal重建和
 formal runtime均通过；pre-deployment formal fail-close仍有独立负回归。
 
+deployment seal由clean pushed`d228d0d`封存。其frozen worktree第一次CPU-only formal prepare在任何CUDA
+初始化前触发`residual Writer config violates its sealed contract`：不是科学non-pass，而是evaluation
+artifact路径先`.resolve()`到canonical仓库，再被旧逻辑强制要求位于frozen worktree内。`af7b101`把唯一
+路径owner修为仅接受词法`runs/outputs/...`且resolved target仍在canonical outputs root；nested symlink
+逃逸和vertical manifest越界继续fail closed。全仓新门为`285 passed in 21.38s`。clean frozen`af7b101`
+上的同一prepare已exit0，登记8 tasks×50 states、correct/without-replacement、historical-v6 macro400
+load-only + `[256,320,256]` fresh elementwise-zero residual、18 rollout workers + 18 Writer generators、batch8和约1.064GB新增root
+预算。prepare为CPU-only，未生成rollout、LoRA cache或性能证据。
+临时prepare root已清理，正式run必须使用全新不存在的output root。
+
 当前操作顺序：
 
 1. v6-prior whole-LoRA、ECP与Tangent三条连续单变量实验的formal/strict/机制诊断均已封存并释放GPU；
@@ -96,8 +106,9 @@ formal runtime均通过；pre-deployment formal fail-close仍有独立负回归�
    `131`，所以禁止靠续训、扫权重或硬加大auxiliary掩盖首个失效接口；
 3. audit teacher-quality已方向性失败，禁止CEFD、weight profile、换expert step或把gradient novelty当价值；
 4. 一次性audit与v1 key均已退役；第38节v2 mechanism 13/13通过并seal，不能从旧Tangent/audit/v1恢复执行；
-5. mechanism与deployment两类seal均已齐全；下一次GPU从新clean pushed/frozen seal先评测zero-memory
-   macro0 strict correct400，不能用8-row smoke替代；
+5. mechanism与deployment两类seal均已齐全，frozen-worktree prepare路径也已修复并通过；下一次GPU从
+   包含`af7b101`与当前authority的新clean pushed/frozen seal先评测zero-memory macro0 strict correct400，
+   不能用CPU prepare或8-row smoke替代；
 6. macro0封存后才formal fresh0→10并立即strict correct400，再按absolute/breadth/churn/mechanics裁决；
 7. 任一后续候选仍须clean push/frozen、live preflight、短正式训练和及时strict correct400，
    不从Tangent checkpoint resume。

@@ -1,5 +1,20 @@
 # EMBER Progress Ledger
 
+## Frozen-worktree formal prepare阻塞修复并通过（2026-08-10）
+
+- deployment写回由clean pushed`d228d0d`封存。对应detached frozen worktree首次CPU-only formal prepare在
+  任何CUDA初始化、cache或scientific row产生前fail closed；精确错误为residual Writer sealed contract
+  violation。只读分层定位证明raw seal/profile/results/manifest均匹配，根因是`runs`软链接resolved到canonical
+  仓库后被旧verifier误判为越出frozen worktree。
+- clean pushed`af7b101`以单一path owner窄修复：仅允许词法`runs/outputs/...`映射到resolved canonical
+  outputs root，绝对/`..`/伪前缀/nested symlink和vertical manifest越界继续拒绝。新增symlink round-trip与
+  escape回归；全仓`285 passed in 21.38s`，compileall/Black/JSON/diff-check通过。
+- clean frozen`af7b101`重跑同一CPU-only prepare自然exit0：formal validation 8 tasks×50 states、correct/
+  without-replacement、seed7、18 rollout workers + 18 Writer generators、batch8；v8 adapter确认historical v6 macro400 load-only、
+  method macro0、`[256,320,256]` FP32 fresh elementwise-zero residual且residual checkpoint bytes=0；
+  `estimated_peak_new_bytes=1,064,370,176`。临时prepare root已清理；未启动GPU，也没有新增strict成绩。
+  下一步仍是新clean pushed/frozen authority上的zero-memory macro0 strict correct400。
+
 ## Balanced DC--Causal v2 deployment双root seal（2026-08-10）
 
 - GPU前contract/fail-close修复由clean pushed commit=`2af82aa6769570786c64d3c026374150d259360c`

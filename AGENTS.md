@@ -38,9 +38,16 @@ correct严格超过`150/400`并尽可能继续提高。只有出现无法通过�
   该`4/8`只证明部署链路，不是正式性能成绩。
 - formal runtime同时要求mechanism artifact与deployment双root seal；当前config状态是
   `active_deployment_sealed_formal_ready`，evaluation evidence共同重读throughput profile、validation8×state0
-  results和native LoRA cache manifest。下一GPU动作必须先从新clean pushed/frozen seal评测zero-memory
-  macro0 strict correct400，再决定是否启动fresh0→10；不能把smoke或mechanism门当性能改进。deployment
-  写回后的CPU门为全仓`284 passed in 26.86s`，raw seal重建与formal runtime均通过。
+  results和native LoRA cache manifest。deployment写回由clean pushed`d228d0d`封存；随后在其frozen
+  worktree做CPU-only formal prepare时，机器在任何CUDA初始化前正确暴露`runs`软链接被`.resolve()`后误判为
+  越出worktree的工程合同错误。`af7b101`只修复这一artifact路径owner：仅允许词法`runs/outputs/...`且
+  resolved target仍位于canonical outputs root，nested symlink逃逸继续fail closed。全仓现为
+  `285 passed in 21.38s`；clean frozen`af7b101`的同一CPU-only prepare已exit0，精确登记8 tasks×50 states、
+  correct/without-replacement、method macro0=`historical_v6_macro400_load_only + fresh_elementwise_zero`、
+  18 rollout workers + 18 Writer generators和batch8。临时prepare root已清理；该prepare没有启动GPU、
+  没有生成scientific row或性能结论。
+- 下一GPU动作必须从包含上述修复与当前authority的新clean pushed/frozen seal评测zero-memory macro0 strict
+  correct400，再决定是否启动fresh0→10；不能把prepare、smoke或mechanism门当性能改进。
 - 历史最好single checkpoint仍是v6-fast macro400的`143/400`。同一current schedule的v6-prior
   macro0/10/25/50 strict correct400=`134/127/105/123`，所以macro0是该轮winner且新训练没有改进。
 - `30b2ccf`的batch8诊断显示普通BF16 batch-shape roundoff：相对single forward最大差
@@ -124,28 +131,31 @@ transfer共同比较。先找最早失效接口，只改一个有因果指向的
 ## Current scientific boundary and reusable training contract
 
 当前唯一active Writer是第38节Balanced DC--Causal frozen-v6 Program Residual；mechanism profile已seal，
-但在新v8 deployment graph的live throughput/correct smoke封印前**不可训练**。historical v6-fast macro400
-是唯一允许的load-only初始化；audit已经否决CEFD，
+新v8 deployment graph的live throughput/correct smoke双root也已seal，formal runtime已ready；但执行顺序
+要求先封存zero-memory macro0 strict400，之后才可fresh0→10。historical v6-fast macro400是唯一允许的
+load-only初始化；audit已经否决CEFD，
 step2000 expert flow、旧completion/ECP/Tangent/ranking cotangent不得进入residual update。活动实现严格冻结
 historical v6整套600 tensors，在condition-local fused Program后加zero-init residual；跨condition共享只由
-固定action-hidden video key的显式Gram控制。旧v1/Tangent/ECP optimizer、scheduler、sampler、RNG和
-checkpoint不得加载或冒充exact resume。
+固定action-hidden video key的显式Gram控制。当前v2不读取task expert输出，也没有optimizer/scheduler/
+scaler state；旧v1/Tangent/ECP optimizer、scheduler、sampler、RNG和checkpoint不得加载或冒充exact resume。
 
 当前v2继续保持：
 
 - train24 task-complete宏步，6 ranks×4 tasks；每task一条correct video、一套LoRA、B20同task
-  跨episode独立action queries；先task内mean，再24-task等权并一次flat all-reduce。
+  跨episode独立action queries；先task内mean，再24-task等权。每rank只all-gather本地8个condition features
+  和4个correct cotangents，六rank按固定full48排序独立形成同一Program write；不all-reduce约80MiB memory。
 - correct只使用真实source-action functional cotangent；不得恢复whole-LoRA attraction、ECP completion、
   Tangent Tube或CEFD。反事实条件只可约束structured residual不被当前correct更新带动，不得最大化negative
   action error、加载wrong-task expert或形成第二套policy/LoRA。
 - correct video与action queries错开episode；same-task不同video是共同positive分布，不作negative。
 - negative只重排真实输入frames或使用预封存cross-suite wrong mapping；不得最大化negative action
   error、无限放大LoRA或读取negative任务隐藏信息。
-- task experts统一使用step2000，不按task混合checkpoint；它们定义train-task policy-effective目标，
-  不保证held泛化、视频顺序或same-task specificity。
-- validation/test actions不产生梯度。formal checkpoint必须含Writer、optimizer、scheduler/scaler、
-  sampler/cursor、每rank RNG、counterfactual schedule和完整schema；fresh/exact-resume不可混用。Tangent
-  dynamic anchor及其auxiliary只由Git与retained artifacts保存，不进入下一活动runtime。
+- 统一step2000 task experts只定义历史train-task policy-effective参照；当前v2训练和部署均不读取其输出，
+  它们也不保证held泛化、视频顺序或same-task specificity。
+- validation/test actions不产生梯度。formal checkpoint只拥有单个FP32 Program memory、cursor、六rank RNG、
+  zero-residual lineage、fixed update contract和完整schema；historical v6的600 tensors与fixed projection必须
+  strict重建且不能被checkpoint覆盖。fresh/exact-resume不可混用；当前family没有optimizer/scheduler/scaler
+  moments。Tangent dynamic anchor及其auxiliary只由Git与retained artifacts保存，不进入下一活动runtime。
 
 禁止用scalar/global scale、confidence gate、B-only residual、static/language bypass、强制正交或rank
 diversity、multi-video、checkpoint fusion去救一个失败点。few-shot只有在one-shot跨video方差被严格定位为

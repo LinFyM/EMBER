@@ -11,7 +11,7 @@
     "retroactively_changes_original_gate_b": false,
     "scientific_role": "deconfound_rank14_compression_from_upstream_writer_regeneration"
   },
-  "implementation_commit": "07462c928420f2fbddd7a7004fb169bc4ea89ea0",
+  "implementation_commit": "d3c8621a69e54c591f3680dd76da9a57b80234ed",
   "original_gate_b_nonpass": {
     "breadth": 7,
     "commit": "0fd823f8cb5ab45164b185c0a42cb358044b095d",

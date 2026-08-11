@@ -26,23 +26,33 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pick_gc_formal_is_blocked_during_world4_topology_reprofile() -> None:
+def test_pick_gc_world4_deployment_is_sealed_from_its_live_evidence() -> None:
     config = load_v6_prior_config(CONFIG)
     evaluation = config["evaluation"]
-    assert config["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert config["status"] == "active_formal_ready"
     assert config["profile_run"]["expected_world_size"] == 4
     assert config["profile_run"]["tasks_per_rank"] == 6
-    assert config["profile_run"]["status"] == "awaiting_live_a40_fresh0_to1_profile"
-    assert config["profile_run"]["artifact_evidence"] is None
-    assert config["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
+    assert config["profile_run"]["status"] == (
+        "sealed_from_live_a40_fresh0_to1_profile"
     )
+    profile = config["profile_run"]["artifact_evidence"]
+    assert profile["run_commit"] == "09bbed368b81f6ba77bf86636340f2ad27ee3be3"
+    assert profile["world_size"] == 4
+    assert profile["tasks_per_rank"] == 6
+    assert profile["passed"] is True
+    assert profile["completion"]["passed"] is True
+    assert config["formal_run"]["status"] == "ready_after_live_profile_seal"
     assert evaluation["throughput_policy"] == (
         "highest_measured_batch_throughput_with_device_memory_headroom"
     )
     assert evaluation["required_writer_model_batch_sizes"] == [8, 16, 32]
-    assert evaluation["formal_status"] == "awaiting_live_pick_gc_deployment_profile"
-    assert evaluation["online_smoke_evidence"] is None
+    assert evaluation["formal_status"] == (
+        "sealed_from_live_pick_gc_deployment_profile"
+    )
+    evidence = evaluation["online_smoke_evidence"]
+    assert evidence["run_commit"] == "717b561518b9a654f81fd9d27643f7272ddf93ff"
+    assert evidence["writer_model_batch_size"] == 32
+    assert evidence["completion"]["passed"] is True
 
 
 def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:

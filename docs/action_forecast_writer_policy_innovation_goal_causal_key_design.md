@@ -3,8 +3,9 @@
 状态：2026-08-11唯一active successor authority。PICK-GC canonical owner、fresh-incompatible config、
 implementation阶段`345 passed` CPU回归；exact raw full48、world6 discarded mechanism、B8/16/32吞吐与
 zero-memory deployment vertical均已通过并封存，seal后完整回归为`346 passed`；`5200bee`时点已formal-ready，
-但尚未训练或做strict paired400。该commit封存后live资源没有单节点world6，且authority禁止等待凑卡；当前只把执行
-拓扑改为world4/local6并重新关闭formal资格，必须先通过同算法的world4 discarded mechanism profile。
+但尚未训练或做strict paired400。该commit封存后live资源没有单节点world6，且authority禁止等待凑卡；执行
+拓扑只改为world4/local6。`09bbed3`上的discarded profile已经复现全部机制数值并通过归一吞吐门，formal资格现已
+重新打开。
 
 ## 1. Decision
 
@@ -226,11 +227,18 @@ artifact seal已经主动重置；world4必须在fresh macro0 discarded profile�
 门，失败就不训练。既有exact raw、B32 generation和zero-memory vertical不依赖训练world size，保留为immutable
 evidence，但只有world4 profile过门后才原样重新挂回formal seal。
 
+实际`09bbed3` world4 profile使用`gpu02:2,3,4,5`，physical/local/NUMA为`2/0/0, 3/1/0, 4/2/1, 5/3/1`；
+launch前四卡均4MiB/0%、ECC与row remap全0，Git clean且origin一致。结果中functional loss、24 task records、
+full48 update、application与LoRA/action response相对world6 artifact逐字段exact：rank48、condition=`152.61008`、
+correct motion/cotangent=`.96457`、negative/correct=`.03901`、retained/null=`24/24`，三类negative各`8/8`。
+step=`34.94275s`，相对归一基准`38.02684s`为`.89871<1.25`；14项检查全true、exit0、无checkpoint，GPU已释放。
+因此纯拓扑复现通过，既有B32 deployment evidence原样重新挂回，world4 formal fresh`0→10`获准。
+
 ## 10. What this result can and cannot conclude
 
 exact raw与world6 full48 condition已经分别以`152.45803`和`152.61008`通过，因此key数值可解性、
-Program→LoRA→action闭合均不再是科学接口疑点；world4 topology的机制/吞吐复现仍是当前formal前工程门。
-这些结果仍不能说明blind offline
+Program→LoRA→action闭合均不再是科学接口疑点；world4又exact复现机制payload并通过归一吞吐门，因此formal前
+工程门也已关闭。这些结果仍不能说明blind offline
 credit能覆盖held on-policy occupancy，也不能预言closed-loop分数。若macro10闭环失败，最早剩余接口就是
 blind offline credit或key与held occupancy错位；不得回头把失败归因于已通过的full48 condition或
 Program→LoRA增益，也不因此否定condition-local memory、few-shot、task-level manifold supervision或新的

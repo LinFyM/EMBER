@@ -154,11 +154,21 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    preseal = load_v6_prior_config()
+    sealed = load_v6_prior_config()
+    preseal = deepcopy(sealed)
+    preseal["status"] = "active_cpu_ready_awaiting_live_profile"
+    preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
+    preseal["profile_run"]["artifact_evidence"] = None
+    preseal["formal_run"]["status"] = (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    preseal["evaluation"]["formal_status"] = (
+        "awaiting_live_pick_gc_deployment_profile"
+    )
+    preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
-    sealed = _formal_ready_config()
     assert runtime_for_mode(sealed, "formal") == (25, (10, 25), 0)
 
 

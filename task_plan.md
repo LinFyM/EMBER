@@ -39,6 +39,8 @@
   frozen worktree已建立。
 - [x] live无单节点world6后只改执行拓扑为world4/local6；profile-only authority由本commit封存，push后从新
   frozen worktree重过discarded mechanism与归一吞吐门，失败不训练。
+- [x] `09bbed3` world4 profile相对world6机制payload逐字段exact，14 checks全true；step`34.94275s`、归一
+  ratio`.89871<1.25`、exit0、无checkpoint，formal-ready reseal由本commit封存。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
 
 ## Repository closeout

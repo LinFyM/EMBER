@@ -454,6 +454,27 @@ def _motion_ratio(numerator: float, denominator: float) -> float:
 
 
 @torch.no_grad()
+def success_key_constraint_motion(
+    features: torch.Tensor,
+    delta: torch.Tensor,
+) -> torch.Tensor:
+    """Read stored FP32 equality geometry without TF32 diagnostic roundoff."""
+
+    previous_tf32 = None
+    if features.is_cuda:
+        previous_tf32 = torch.backends.cuda.matmul.allow_tf32
+        torch.backends.cuda.matmul.allow_tf32 = False
+    try:
+        return torch.matmul(
+            features.to(dtype=torch.float32),
+            delta.flatten(1).to(dtype=torch.float32),
+        ).reshape(features.shape[0], *delta.shape[1:])
+    finally:
+        if previous_tf32 is not None:
+            torch.backends.cuda.matmul.allow_tf32 = previous_tf32
+
+
+@torch.no_grad()
 def success_key_nullspace_program_delta(
     correct_features: torch.Tensor,
     negative_features: torch.Tensor,
@@ -617,7 +638,7 @@ def success_key_nullspace_program_delta(
         )
 
     delta_flat = delta.flatten(1)
-    predicted = features @ delta_flat
+    predicted = success_key_constraint_motion(features, delta).flatten(1)
     correct_motion = predicted[:conditions]
     negative_motion = predicted[conditions:]
     protected_motion = correct_motion[current_protected_mask]
@@ -630,7 +651,7 @@ def success_key_nullspace_program_delta(
         _root_mean_square(unprotected_motion) if unprotected_motion.numel() else 0.0
     )
     negative_motion_rms = _root_mean_square(negative_motion)
-    anchor_motion = anchor_features.to(dtype=torch.float32) @ delta_flat
+    anchor_motion = success_key_constraint_motion(anchor_features, delta).flatten(1)
     anchor_motion_rms = (
         _root_mean_square(anchor_motion) if anchor_motion.numel() else 0.0
     )

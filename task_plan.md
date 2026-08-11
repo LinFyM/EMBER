@@ -78,8 +78,13 @@
 - [x] 原位替换OSG-PC executable path并泛化唯一full48 solver；建立fresh-incompatible config/checkpoint，完成
   synthetic/bank/resume/outcome-only/Program→LoRA→action CPU门；加载`.env.local`的完整回归`334 passed`，
   compileall与diff-check通过，无active replay/VJP或并行solver残留。
-- [ ] 从clean pushed implementation seal做live GPU/storage preflight，再运行唯一discarded full24 K4+B20
-  mechanism/throughput profile；不过门不训练。
+- [x] 从clean pushed implementation seal完成双节点/quota/health/NUMA preflight，按显存峰值选择
+  `gpu02:3,4,5` world3；首个full24 K4+B20 profile通过15/16 checks，step=`487.002s`、scaled ratio=
+  `.47999`，唯一non-pass是TF32 equality diagnostic的`1.1228e-4>1e-5`。
+- [x] 同真实success-key basis的CPU/GPU FP32 ratio约`7.2e-8/7.10e-8`，TF32为`8.44e-5`，且live
+  protected LoRA/BA/action exact zero；定位为measurement contract violation，不追认首root pass。
+- [ ] 只把既有hard-equality diagnostics切到FP32 GEMM，production TF32/BF16、method/gate/forward数不变；
+  clean commit/push后做一次fresh reprofile，不过门不训练。
 - [ ] profile通过后fresh`0→5`，立即strict paired correct400；只在`>=140`、lost`<=8`、breadth/suite共同趋势
   过门时exact-resume到10，macro10以严格`>150`裁决。
 

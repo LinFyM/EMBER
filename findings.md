@@ -192,3 +192,9 @@ trajectory replay、CFM VJP和per-success task-local cone，成本只剩同源K4
 或held occupancy。canonical实现、fresh schema和完整CPU回归`334 passed`现已关闭工程接口，但尚无live或性能
 证据；zero anchor motion只能是机制门，最终仍由macro5/10的strict paired400 retained/gained/lost与视频controls
 裁决。
+
+首个SKNC world3 live profile进一步给出强机制证据：11个4/4 anchors覆盖四suite，rank=`48→37`、condition=
+`29.65`、projected energy=`.778`，outcome-only、negative null、unprotected descent、LoRA/BA/action和吞吐
+全部过门。唯一false是Program ratio=`1.1228e-4`；但protected LoRA/BA/action全为exact zero，且同stored update
+的GPU full-FP32 ratio=`7.10e-8`、TF32=`8.44e-5`。因此这是hard-equality diagnostic错误继承production TF32
+所致，不是success-key nullspace科学假设失败；首root仍作为measurement non-pass保留，只允许修测量后重过。

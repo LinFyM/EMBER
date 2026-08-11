@@ -59,6 +59,7 @@ from ember.writer.condition_update import (
     SuccessKeyNullspaceUpdateSummary,
     apply_program_residual_delta_,
     program_residual_delta_application_evidence,
+    success_key_constraint_motion,
     success_key_nullspace_program_delta,
 )
 from ember.writer.functional import (
@@ -600,9 +601,7 @@ def _apply_macro_update(
     before = cotangents.new_zeros(
         full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
     )
-    full_motion = torch.matmul(
-        full_features.to(dtype=torch.float32), delta.flatten(1)
-    ).reshape_as(before)
+    full_motion = success_key_constraint_motion(full_features, delta)
     application = program_residual_delta_application_evidence(
         runtime.writer.program_memory,
         delta,

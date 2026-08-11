@@ -20,8 +20,9 @@
   评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
 - 当前唯一active successor design是SKNC：K4只保留binary outcome，current 4/4 success keys加每train task
   第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。canonical实现、fresh schema与
-  完整CPU回归`334 passed`已完成；尚未profile、训练或评测，下一步是clean pushed head的唯一discarded live
-  profile。
+  完整CPU回归`334 passed`已完成。首个world3 profile通过15/16 checks，唯一失败是TF32 equality diagnostic；
+  同stored update的FP32 probe过门且LoRA/BA/action exact zero。首root不追认pass，尚未训练或评测；下一步是
+  clean pushed measurement-only fix的唯一reprofile。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -255,6 +256,16 @@ OSG-PC不同：无successful replay、executed-prefix cotangent或per-success VJ
 通过。clean commit/push后立即做GPU/storage preflight和唯一discarded live profile；formal首段固定fresh`0→5`
 并立即strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
 
+首个SKNC live root为
+`runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_b8398d2_20260812`。它来自
+`b8398d2` detached worktree和`gpu02:3,4,5` world3，step=`487.0019s`、scaled ratio=`.47999`；
+11个4/4 tasks覆盖四suite，rank=`48→37`、condition=`29.6497`、projected energy=`.77843`，15/16 checks
+为true。唯一false是protected Program ratio=`1.1228e-4>1e-5`；绝对RMS仅`2.3266e-10`且protected
+LoRA/effective-BA/fixed-action均exact zero。实际success-key basis的CPU与GPU full-FP32 probe分别约
+`7.2e-8/7.10e-8`，TF32 probe=`8.44e-5`，确认是verification measurement而非stored delta漂移。
+首root保留为engineering measurement non-pass；只允许把既有hard-equality diagnostic切到FP32 GEMM后从新clean
+commit重过一次，production TF32/BF16、forward数、method和gate不变。
+
 ## 9. Runtime and GPU boundary
 
 任何未来GPU launch前：
@@ -315,6 +326,6 @@ checkpoint。PICK-GC部署证据root为
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
 canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
-logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh config/
-schema与CPU机制证据现已完成；当前下一步是clean pushed head的live GPU/storage preflight和唯一discarded
-profile，旧OSG命令不得恢复。
+logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh
+config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。当前下一步是
+measurement-only fix clean push后的live GPU/storage recheck和一次fresh reprofile，旧OSG命令不得恢复。

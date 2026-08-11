@@ -30,8 +30,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   deployment与评测均关闭；当前full-replay per-success VJP执行图已退役，但不能据此否定所有success constraint。
 - 当前唯一active successor design是SKNC：同一K4 panel只用`4/4` binary success认证condition key，并把完整
   shared Program update限制在这些keys的nullspace；每train task只持久化第一条success key。它不保存/回放
-  trajectory action，也不求reward VJP。canonical实现、fresh schema与完整CPU回归`334 passed`已完成；尚未
-  profile、训练或评测，下一步是clean pushed head的唯一discarded live profile。
+  trajectory action，也不求reward VJP。canonical实现、fresh schema与完整CPU回归`334 passed`已完成。首个
+  world3 profile通过15/16 checks；唯一失败是TF32 verification把stored FP32 equality的`7.10e-8`读成
+  `1.1228e-4`，而protected LoRA/BA/action全为exact zero。首root不追认pass，待measurement-only修复重过；
+  尚未训练或评测。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -112,8 +114,8 @@ EMBER/
 ```
 
 进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC已封存
-non-pass；SKNC canonical实现与CPU门已完成，只授权从clean pushed head运行预注册discarded live profile，
-不过门不训练，不能从旧文档恢复GPU命令。
+non-pass；SKNC canonical实现与CPU门已完成，首个TF32 measurement non-pass后只允许从新clean pushed fix重过
+一次discarded live profile，不过门不训练，不能从旧文档恢复GPU命令。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
 吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、

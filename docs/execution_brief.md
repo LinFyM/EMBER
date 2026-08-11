@@ -9,8 +9,10 @@ paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gaine
 controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾触发600s NCCL watchdog，wall lower bound
 至少是matched baseline的`1.912x>1.25x`，未到full48 report。当前唯一active design是SKNC：只用K4 4/4
 binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。它尚未
-运行live profile、训练或评测；canonical实现、fresh schema和完整CPU回归`334 passed`已完成，下一合法动作是
-从clean pushed head运行唯一discarded live profile。
+训练或评测；canonical实现、fresh schema和完整CPU回归`334 passed`已完成。首个world3 profile通过15/16
+checks，唯一non-pass是hard-equality diagnostic误用TF32：reported ratio=`1.1228e-4`，同stored update的FP32
+probe=`7.10e-8`，LoRA/BA/action protected response全为exact zero。首root不追认pass；下一合法动作是clean
+seal measurement-only修复后重过一次profile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -216,9 +218,10 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
-deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证和完整回归已完成；下一合法动作是
-从clean pushed head运行唯一discarded live profile。launch仍须重新复核gpu01/gpu02、quota、fresh root、
-物理/NUMA topology与现有进程，并先满足SKNC profile合同。
+deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证和完整回归已完成；首个world3
+profile因TF32 diagnostic measurement单项non-pass。下一合法动作是从clean pushed measurement-fix head重过一次
+discarded live profile。launch仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与现有进程，
+并先满足SKNC profile合同。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

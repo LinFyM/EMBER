@@ -1,8 +1,9 @@
 # Success-Key Nullspace Consolidation
 
 状态：2026-08-11 canonical implementation与fresh-incompatible config/checkpoint schema已完成；加载
-`.env.local`的完整CPU回归为`334 passed`，compileall与diff-check通过。尚未运行live profile、训练或评测。
-简称SKNC。
+`.env.local`的完整CPU回归为`334 passed`。首个world3 live profile完成15/16 checks，唯一non-pass来自
+hard-equality verification误用TF32 GEMM；该root不追认pass。measurement-only修复已实现，尚待clean seal后重过
+一次profile；尚未训练或评测。简称SKNC。
 它从PICK-GC strict`138/400`与OSG-PC工程non-pass后最早仍开放的接口出发：保留PICK-GC已经接通的
 ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、B20 blind source-action
 objective、full48 correct/negative panel、原生38-target rank16 compiler和one-shot部署；只把“如何在共享Program
@@ -281,6 +282,20 @@ hard gates：
 
 `.20`只约束“还有可学习子空间”，不是性能代理；若这一固定首版被success span压平，不能降低门、减少K、软化
 constraint或只保护挑选tasks。任一hard gate失败即拒绝当前SKNC，不重跑同配置或做小超参sweep。
+
+首个live attempt来自clean pushed `b8398d2`、`gpu02:3,4,5`、world3/local8。96 rollouts中success=`61`，
+11个tasks为`4/4`且四suite覆盖为`2/3/3/3`；rank为`48→37`、anchor rank11、condition=`29.6497`、
+projected energy median=`.77843`，outcome-only、negative null、unprotected descent、LoRA/BA/action closure与
+wall `487.002s`、scaled ratio=`.47999`均通过。唯一失败为TF32读出的protected/unprotected Program motion
+ratio=`1.1228e-4>1e-5`，绝对RMS=`2.3266e-10`；protected LoRA、effective BA与fixed action全为exact zero。
+
+随后使用同一真实success-key basis和同形状stored FP32 `DeltaM`做无rollout probe：TF32读出ratio=
+`8.44e-5`，关闭TF32但仍保持FP32 tensor/GEMM时ratio=`7.10e-8`，unprotected motion不变；CPU同几何为
+`7.2e-8`。因此首个non-pass是verification precision违反本节声明的FP32 equality measurement，不是method、
+stored update或policy closure失败。唯一允许的修复是只在既有constraint diagnostics的matmul临时关闭TF32；
+production solve、Program read、LoRA/policy、BF16/TF32、forward数、gate和所有科学变量不变。修复后允许从新
+clean pushed commit做一次fresh profile；首root永久保留为engineering measurement non-pass，不retroactively
+改写。
 
 ### 8.3 Formal and strict paired400
 

@@ -13,6 +13,7 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_runtime import V6PriorRuntime
 from ember.lora import copy_task_lora_state_, task_lora_state_dict
 from ember.pi05_source_checkpoint import DistributedContext
+from ember.writer.condition_update import success_key_constraint_motion
 
 
 _SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
@@ -360,7 +361,7 @@ def profile_success_key_application(
         or protected_mask.dtype != torch.bool
     ):
         raise ExpertManifoldError("SKNC success-key application topology changed")
-    motion = anchor_features.to(dtype=torch.float32) @ delta.flatten(1)
+    motion = success_key_constraint_motion(anchor_features, delta)
     rms = float(motion.square().mean().sqrt()) if motion.numel() else 0.0
     maximum = float(motion.abs().max()) if motion.numel() else 0.0
     if not math.isfinite(rms) or not math.isfinite(maximum):

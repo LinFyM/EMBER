@@ -2,16 +2,16 @@
 
 ## 0. Current operation
 
-当前没有active Writer design、训练、rollout、profile或GPU任务。uniform pivot-rank14已以compiler-only
-`138/400`但lost15正式non-pass；Gate C、cycle1、controls与训练关闭。下一session不能从历史command恢复执行，
-必须先建立新的design authority。
+当前唯一active Writer design是PICK；尚无训练、rollout、profile或GPU任务。uniform pivot-rank14已以
+compiler-only`138/400`但lost15正式non-pass；Gate C、cycle1、controls与训练关闭。PICK只允许按其design
+authority从CPU/cache、canonical owner替换和最小live mechanism门顺序推进，不能从历史command恢复执行。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Before any new design
+## 1. Active design gate
 
-新设计文档必须回答：
+PICK design已经回答下列问题；实现和每次authority更新必须保持这些答案不漂移：
 
 1. 它改变的唯一主要变量是什么？
 2. 它针对`docs/research_history.md`中的哪个最早失效接口？
@@ -21,8 +21,8 @@ same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好�
 6. 如何避免按held task outcome反向选择target/rank/route？
 7. 预计GPU、wall、显存、存储峰值和可恢复状态是什么？
 
-未经新authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official evaluator，
-不启动profile/training/rollout。
+未经新的单变量authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official
+evaluator。PICK的profile/training/rollout仅在其前序CPU/cache/live mechanism门通过后解锁。
 
 ## 2. Fixed information contract
 
@@ -201,3 +201,7 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 
 它们只能在新session建立明确的单变量design authority后重新获得执行资格。任何旧artifact中的
 `formal_ready`只描述历史时点，不构成当前授权。
+
+PICK当前只授权CPU/cache实现与验证。它的live raw-frame mechanism/profile必须先由clean pushed commit、
+重新GPU/quota preflight和discarded root合同解锁；formal fresh0→10又必须等待live mechanism与deployment
+seal通过。不能把本段理解为已授权立即启动GPU。

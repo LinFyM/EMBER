@@ -8,10 +8,10 @@
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。不存在待跑Gate B/C，也不存在active
-  successor、Writer训练或EMBER GPU进程。
+- 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。不存在待跑Gate B/C；当前唯一active
+  successor是PICK，但只完成design authority，尚未实现、profile、训练或rollout，也没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
-  evidence和可复用基础保留。下一session的首要任务是形成新设计，不得从旧命令恢复实验。
+  evidence和可复用基础保留。PICK必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
   工作以后仍须来自clean pushed commit的detached frozen worktree。
 
@@ -150,21 +150,29 @@ Experts不能：
 稳定规则：视频被使用不等于正确使用；LoRA健康度是约束不是目标；task drift没有单一原因；small panel和
 checkpoint union会误导；新topology必须从train24机制推导，不能按held得失设计。
 
-## 7. Open scientific questions
+## 7. Active successor and remaining questions
 
-当前没有已选后继。新session应先从以下未解决接口中选一个单变量假设，而不是同时改video encoder、compiler、
-objective、topology和recipe：
+当前已选后继为
+`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`中的PICK。它只替换Balanced-v2的condition
+evidence owner：用frozen source-policy zero-image-subtracted high-level video innovation构造相同的balanced
+static/causal key；frozen-v6 600 tensors、Program memory、full-rank16 compiler、blind full48 update和one-shot
+部署保持不变。
 
-- 如何在不损伤v6-fast base support的前提下，为视频condition保留可写、policy-effective的动态自由度？
-- 如何让same-task不同video的shared high-level program一致，而correct顺序又明显优于shuffle/reverse？
-- 如何把24-task task-complete更新从正交换手变成single-checkpoint共同积累？
-- online regeneration的额外`-10`来自哪个最早接口：evidence extraction、batch-conditioned hidden、compiler
-  conditioning还是policy occupancy sensitivity？
-- one-shot与fixed-k few-shot的真正信息/计算权衡是什么？few-shot应聚合高层不变量，而非平均低层轨迹。
+选择依据是sealed train24×50 cache中causal descriptor的same/cross cosine约`.9195/.1565`、reverse约
+`-.9755`、shuffle约`-.0053`，而Balanced-v2最新最早失败正是同task 50-video correction近随机正交。该cache
+只作train-only design evidence，不能替代online机制或closed-loop。
 
-未授权候选包括pivot15+1、train-derived mixed topology、显式base-preserving residual、few-shot set encoder和
-policy-aware reward credit。它们都必须先说明为何不重复历史失败，并预注册何种证据能证伪。特别是pivot15+1
-不能恢复旧balanced-rank15，rank1 tangent capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
+PICK必须回答：
+
+- online raw-frame key能否重现cache中的same-task与有向顺序结构；
+- 一致condition neighborhood能否让Program/effective-BA correction脱离随机正交，而不抹掉held task差异；
+- blind AS credit在key修复后是否仍是closed-loop首因；
+- 额外frozen innovation forward能否在A40上保持可接受吞吐；
+- strict400能否同时提高absolute、breadth和retention，并让correct优于视频controls。
+
+仍未授权的其它候选包括pivot15+1、train-derived mixed topology、few-shot set encoder和新的reward credit。
+它们不能与PICK并行实现或作为失败时自动fallback。特别是pivot15+1不能恢复旧balanced-rank15，rank1 tangent
+capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
 
 ## 8. Runtime and GPU boundary
 
@@ -199,5 +207,5 @@ policy-aware reward credit。它们都必须先说明为何不重复历史失败
 本次收尾没有启动GPU、训练、rollout或profile，也没有修改formal实验结果。删除的源码/设计仍可从`3a6f801`
 精确恢复；profile checkpoint payload没有保留副本，但它们从未是formal/consumer asset。
 
-新session开始时先确认当前HEAD、clean和origin同步，完整读`AGENTS.md`规定的最小清单。不要创建长期实验，
-直到新design authority明确了单变量、历史对比、hard gate、真实评测点和吞吐合同。
+PICK实现前先确认当前HEAD、clean和origin同步，并按新design的owner/retirement边界替换旧key。GPU前必须重新
+live检查双节点、quota、frozen commit与峰值；CPU/cache与live mechanism门不过不得创建formal训练root。

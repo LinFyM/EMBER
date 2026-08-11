@@ -15,8 +15,9 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `138/400`、breadth7，但相对old134 retained/gained/lost=`119/19/15`，违反lost`<=10`。
 - compression和online regeneration均造成独立能力换手；Gate C、cycle1、controls和新训练未授权。
 - 该结果不等于视频、Reward、continuous tangent、task experts或所有rank-reserved topology整体无效。
-- 当前没有active successor，也没有EMBER GPU任务。本次仓库整理已经完成；新session恢复实现或实验前必须
-  先建立新的单变量design authority和可证伪门。
+- 当前唯一active successor是Policy-Innovation Causal Consensus Key（PICK）：保留frozen-v6 full-rank base、
+  compiler和Program residual，只把Balanced-v2 condition evidence替换为frozen source-policy high-level video
+  innovation。design authority已建立，但尚未实现、profile、训练或rollout，也没有EMBER GPU任务。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -28,10 +29,11 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/research_history.md`
-5. `task_plan.md`
-6. `findings.md`
-7. `docs/concept.md`
+4. `docs/action_forecast_writer_policy_innovation_consensus_key_design.md`
+5. `docs/research_history.md`
+6. `task_plan.md`
+7. `findings.md`
+8. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -161,6 +163,8 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 - historical best Writer：v6-fast macro400，精确root见`docs/active_session_handoff.md`。
 - latest rank14 decision root：
   `runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`。
+- PICK train-only design-selection cache：
+  `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`；它不是新方法成绩。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from dataclasses import asdict
 import importlib.util
 from pathlib import Path
@@ -15,11 +14,6 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_ADAPTER_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
-)
-from ember.expert_manifold.rank_reserved_contract import (
-    RANK_RESERVED_ADAPTER_SCHEMA,
-    RANK_RESERVED_CONFIG_SCHEMA,
-    RANK_RESERVED_EPISODE_SCHEMA,
 )
 import ember.expert_manifold.live_adapter as live_adapter_module
 from ember.expert_manifold.live_adapter import (
@@ -108,53 +102,6 @@ def _complete_writer():
     return module._model()[0]
 
 
-def _rank_reserved_adapter(condition: str = "correct", *, macro: int = 0) -> dict:
-    adapter = deepcopy(_writer_adapter(condition))
-    adapter["schema_version"] = RANK_RESERVED_ADAPTER_SCHEMA
-    adapter["config"] = {"schema": RANK_RESERVED_CONFIG_SCHEMA}
-    adapter["arm"] = f"expert_manifold_v6_qv_rank_reserved_native_reward_{condition}"
-    adapter["writer_asset"].update(
-        {
-            "kind": (
-                "v6_qv_rank14_zero_program_load_only"
-                if macro == 0
-                else "v6_qv_rank14_plus2_reward_program_load_only"
-            ),
-            "method_macro": macro,
-            "enable_program_residual": macro == 1,
-        }
-    )
-    return adapter
-
-
-def test_rank_reserved_episode_schema_is_bound_to_the_new_config_pair() -> None:
-    evidence = expected_expert_manifold_episode_evidence(
-        _rank_reserved_adapter(macro=1),
-        suite="libero_spatial",
-        task_id=0,
-        init_state_id=4,
-        lora_reference="rank-reserved",
-    )
-    assert evidence["schema_version"] == RANK_RESERVED_EPISODE_SCHEMA
-    assert evidence["writer_program_residual_enabled"] is True
-    assert (
-        evidence["writer_qv_base_rank"],
-        evidence["writer_qv_residual_rank"],
-        evidence["writer_action_rank"],
-    ) == (14, 2, 16)
-
-    crossed = _rank_reserved_adapter()
-    crossed["config"] = {"schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"}
-    with pytest.raises(ExpertManifoldError, match="deployment adapter"):
-        expected_expert_manifold_episode_evidence(
-            crossed,
-            suite="libero_spatial",
-            task_id=0,
-            init_state_id=4,
-            lora_reference="crossed",
-        )
-
-
 def test_no_video_prepare_uses_identity_without_writer_or_video_reads(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -206,7 +153,7 @@ def test_no_video_prepare_uses_identity_without_writer_or_video_reads(
 
 def test_no_video_episode_input_skips_the_real_video_store() -> None:
     adapter = FrozenExpertManifoldTaskAdapter.__new__(FrozenExpertManifoldTaskAdapter)
-    adapter.evaluation_adapter = _rank_reserved_adapter("no_video", macro=1)
+    adapter.evaluation_adapter = _writer_adapter("no_video")
     mapping = adapter.evaluation_adapter["task_video_mapping"][0]
     adapter.language_by_id = {int(mapping["language_global_task_id"]): "task zero"}
     adapter.store = SimpleNamespace(
@@ -224,80 +171,10 @@ def test_no_video_episode_input_skips_the_real_video_store() -> None:
     assert language == "task zero"
 
 
-def test_rank_reserved_diagnostic_profile_retains_request_identity(
+@pytest.mark.parametrize("residual_value", (0.25, float("nan")))
+def test_live_adapter_strict_loads_frozen_base_then_only_finite_residual_memory(
     monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    adapter = FrozenExpertManifoldTaskAdapter.__new__(FrozenExpertManifoldTaskAdapter)
-    adapter.evaluation_adapter = _rank_reserved_adapter(macro=1)
-    adapter.identity_state = {}
-    adapter.policy = object()
-    adapter.lora_contract = object()
-    adapter.device = torch.device("cpu")
-    adapter._last_diagnostic_five_arm_profile = ()
-    video = SimpleNamespace(
-        raw_frame_count=15,
-        frames=torch.zeros(3, 2, 2, 3),
-    )
-    adapter._episode_input = lambda **_identity: (
-        {"teacher_video_order_seeds": [11], "evidence": "retained"},
-        video,
-        "task zero",
-    )
-    adapter.tokenizer = lambda _languages: (
-        torch.zeros(1, 1, dtype=torch.long),
-        torch.ones(1, 1, dtype=torch.bool),
-        torch.zeros(1, 2, dtype=torch.long),
-    )
-    adapter.writer = SimpleNamespace(
-        forward_diagnostic_five_arms=lambda *_args, **_kwargs: {
-            "rank14_plus2_reward": {"test.weight": torch.ones(1)}
-        }
-    )
-    monkeypatch.setattr(
-        live_adapter_module,
-        "copy_task_lora_state_",
-        lambda *_args, **_kwargs: None,
-    )
-    monkeypatch.setattr(
-        live_adapter_module,
-        "_ordered_video_tensors",
-        lambda *_args, **_kwargs: (
-            torch.zeros(3, 2, 2, 3),
-            torch.arange(3),
-        ),
-    )
-    monkeypatch.setattr(
-        live_adapter_module,
-        "validate_lora_state",
-        lambda *_args, **_kwargs: None,
-    )
-
-    generated = adapter.prepare_diagnostic_five_arms(
-        (
-            {
-                "suite": "libero_spatial",
-                "task_id": 4,
-                "init_state_id": 0,
-            },
-        )
-    )
-
-    assert tuple(generated) == ("rank14_plus2_reward",)
-    assert adapter.last_diagnostic_five_arm_profile() == (
-        {
-            "teacher_video_order_seeds": [11],
-            "evidence": "retained",
-            "suite": "libero_spatial",
-            "task_id": 4,
-            "init_state_id": 0,
-            "raw_frames": 15,
-            "sampled_frames": 3,
-        },
-    )
-
-
-def test_live_adapter_strict_loads_frozen_base_then_only_registered_residual_memory(
-    monkeypatch: pytest.MonkeyPatch,
+    residual_value: float,
 ) -> None:
     writer = _complete_writer()
     warm_state = {
@@ -308,7 +185,7 @@ def test_live_adapter_strict_loads_frozen_base_then_only_registered_residual_mem
         name: value.detach().cpu().clone()
         for name, value in writer.template_state().items()
     }
-    residual = torch.full((2, 320, 256), 0.25, dtype=torch.float32)
+    residual = torch.full((2, 320, 256), residual_value, dtype=torch.float32)
     writer.load_state_dict(
         {name: torch.zeros_like(value) for name, value in warm_state.items()},
         strict=True,
@@ -359,9 +236,7 @@ def test_live_adapter_strict_loads_frozen_base_then_only_registered_residual_mem
         },
         "observed": {
             "writer_asset": {
-                "kind": "v6_qv_rank14_plus2_reward_program_load_only",
-                "method_macro": 1,
-                "enable_program_residual": True,
+                "kind": "v6_condition_program_residual_checkpoint",
                 "residual_state": {
                     "path": "/synthetic/trained/program_memory.safetensors",
                     "shape": [2, 320, 256],
@@ -372,6 +247,10 @@ def test_live_adapter_strict_loads_frozen_base_then_only_registered_residual_mem
         "template": template,
         "device": torch.device("cpu"),
     }
+    if not np.isfinite(residual_value):
+        with pytest.raises(ExpertManifoldError, match="evaluation state changed"):
+            _build_v6_writer(**arguments)
+        return
     result = _build_v6_writer(**arguments)
 
     assert events == ["historical_warm_start", "residual_checkpoint"]
@@ -382,36 +261,6 @@ def test_live_adapter_strict_loads_frozen_base_then_only_registered_residual_mem
     assert torch.equal(result.program_memory.value, residual)
     assert "projection" not in result.state_dict()
     assert all(not parameter.requires_grad for parameter in result.parameters())
-
-    residual.fill_(float("nan"))
-    events.clear()
-    with pytest.raises(ExpertManifoldError, match="evaluation state changed"):
-        _build_v6_writer(**arguments)
-    assert events == ["historical_warm_start", "residual_checkpoint"]
-
-    arguments["observed"]["writer_asset"].update(
-        {
-            "kind": "v6_qv_rank14_zero_program_load_only",
-            "method_macro": 0,
-            "enable_program_residual": False,
-        }
-    )
-    events.clear()
-    macro0 = _build_v6_writer(**arguments)
-    assert events == ["historical_warm_start"]
-    assert not torch.count_nonzero(macro0.program_memory.value)
-
-    arguments["observed"]["writer_asset"]["enable_program_residual"] = True
-    events.clear()
-    with pytest.raises(ExpertManifoldError, match="asset identity changed"):
-        _build_v6_writer(**arguments)
-    assert events == ["historical_warm_start"]
-
-    events.clear()
-    arguments["observed"]["writer_asset"].pop("enable_program_residual")
-    with pytest.raises(ExpertManifoldError, match="retired v6 deployment assets"):
-        _build_v6_writer(**arguments)
-    assert events == ["historical_warm_start"]
 
 
 def test_per_task_rows_summarizes_one_shot_teacher_videos() -> None:

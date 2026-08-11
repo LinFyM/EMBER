@@ -14,7 +14,6 @@ import pytest
 
 import ember.pi05_eval.preparation as preparation_module
 import ember.pi05_eval.reward_credit_gate as reward_gate_module
-import ember.writer.evaluation_cache as evaluation_cache_module
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval import launcher as runtime_launcher
 
@@ -131,31 +130,6 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
     assert module._positive_int("100") == 100
     with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
         module._positive_int("0")
-
-
-def test_prefilled_missing_manifest_fails_before_any_worker_spawn(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        evaluation_cache_module,
-        "writer_cache_manifest_is_ready",
-        lambda _contract: False,
-    )
-    contract = {
-        "adapter": {"kind": "expert_manifold_writer"},
-        "writer_lora_cache": {
-            "generation_recipe": {"population": {"mode": "prefilled"}}
-        },
-    }
-    spawned: list[tuple[str, bool]] = []
-    with pytest.raises(Pi05EvaluationError, match="fallback is forbidden"):
-        runtime_launcher._stage_writer_generators(
-            contract,
-            invocation_id="a" * 32,
-            processes={},
-            spawn=lambda worker_id, writer: spawned.append((worker_id, writer)),
-        )
-    assert spawned == []
 
 
 def _registered_reward_credit_args(
@@ -586,50 +560,6 @@ def test_prepare_lock_is_exclusive_across_preparers(tmp_path: Path) -> None:
     with pytest.raises(Pi05EvaluationError, match="owns the output lock"):
         preparation_module._claim_prepare_lock(output)
     assert lock == tmp_path / ".canonical.prepare.lock"
-
-
-def test_writer_profile_requires_the_canonical_batch_floor() -> None:
-    module = _launcher_module()
-    assert module._profile_batch_sizes("8,16,32") == (8, 16, 32)
-    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
-        module._profile_batch_sizes("1,8,16")
-    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
-        module._profile_batch_sizes("8,16,24")
-
-
-def test_writer_profile_launch_isolated_to_one_physical_gpu(tmp_path: Path) -> None:
-    module = _launcher_module()
-    command, environment = module._profile_worker_launch(
-        output_dir=tmp_path,
-        contract={
-            "parallel": {
-                "replicas_per_gpu": 1,
-                "omp_threads_per_worker": {"1": 12},
-            }
-        },
-        physical_gpu=5,
-        batch_sizes=(8, 16, 32),
-        warmup_runs=1,
-        measured_runs=2,
-    )
-    assert environment["CUDA_DEVICE_ORDER"] == "PCI_BUS_ID"
-    assert environment["CUDA_VISIBLE_DEVICES"] == "5"
-    assert environment["OMP_NUM_THREADS"] == "12"
-    assert command[2:7] == [
-        "profile-writer-worker",
-        "--output-dir",
-        str(tmp_path.resolve()),
-        "--worker-id",
-        "5-r0",
-    ]
-    assert command[-6:] == [
-        "--profile-batch-sizes",
-        "8,16,32",
-        "--profile-warmup-runs",
-        "1",
-        "--profile-measured-runs",
-        "2",
-    ]
 
 
 def test_partial_launch_cleanup_stops_only_owned_processes() -> None:

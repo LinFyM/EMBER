@@ -16,12 +16,10 @@ from ember.expert_manifold.v6_prior import (
     load_v6_prior_warm_start_,
 )
 from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
-from ember.writer.condition_update import stable_factor_head_linearization
 from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
 )
-from ember.writer.rank_reserved_compiler import FrozenV6RankReservedRewardWriter
 from ember.writer.temporal import (
     CausalProcedureEncoder,
     LanguageSemanticCore,
@@ -182,142 +180,6 @@ def test_v6_writer_becomes_video_conditioned_after_heads_open() -> None:
     output = model(*_inputs(), policy=torch.nn.Identity())
     assert any(not torch.equal(value[0], value[1]) for value in output.values())
     assert not hasattr(model, "shared_lora")
-
-
-def test_rank_reserved_macro0_preserves_action_and_public_native_topology() -> None:
-    model, _ = _model()
-    for name, buffer_name in model._template_buffers.items():
-        if ".self_attn." in name:
-            setattr(model, buffer_name, getattr(model, buffer_name).to(torch.bfloat16))
-    for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    writer = FrozenV6RankReservedRewardWriter(
-        model,
-        feature_width=8,
-        feature_seed=29,
-        enable_program_residual=False,
-    )
-    slots = torch.randn(2, 320, 256)
-    baseline = model.decode_slots(slots)
-    generated = writer.decode_rank_reserved_slots(slots, None)
-    assert set(generated) == set(baseline)
-    assert len(generated) == 76
-    for name, value in generated.items():
-        assert value.shape == (2, *model.template_state()[name].shape)
-        if ".self_attn." in name:
-            assert value.dtype == torch.bfloat16
-            if name.endswith(".lora_A.default.weight"):
-                assert torch.count_nonzero(value[..., 14:, :]) == 0
-            else:
-                assert torch.count_nonzero(value[..., :, 14:]) == 0
-        else:
-            assert value.dtype == torch.float32
-            assert torch.equal(value, baseline[name])
-    assert any(
-        not torch.equal(value[0], model.template_state()[name])
-        for name, value in generated.items()
-        if ".self_attn." in name
-    )
-    single = writer.decode_rank_reserved_slots(slots[:1], None)
-    assert all(
-        value.shape == model.template_state()[name].shape
-        for name, value in single.items()
-    )
-    assert all(not parameter.requires_grad for parameter in writer.parameters())
-
-
-def test_rank_reserved_reward_motion_reaches_qv_slots_and_exact_action_factors() -> (
-    None
-):
-    model, _ = _model()
-    for name, buffer_name in model._template_buffers.items():
-        if ".self_attn." in name:
-            setattr(model, buffer_name, getattr(model, buffer_name).to(torch.bfloat16))
-    for head in model.factor_heads.values():
-        torch.nn.init.normal_(head.network[-1].weight, std=0.01)
-    writer = FrozenV6RankReservedRewardWriter(
-        model,
-        feature_width=8,
-        feature_seed=31,
-        enable_program_residual=True,
-    )
-    slots = torch.randn(1, 320, 256)
-    residual = torch.randn_like(slots) * 0.01
-    baseline = model.decode_slots(slots)
-    generated = writer.decode_rank_reserved_slots(slots, residual)
-    diagnostic = writer.diagnostic_five_arm_slots(slots, residual)
-    assert set(diagnostic) == {
-        "old_full_rank_base",
-        "old_full_rank_reward",
-        "rank14_base",
-        "rank14_plus2_qv_only",
-        "rank14_plus2_reward",
-    }
-    assert all(
-        torch.equal(diagnostic["old_full_rank_base"][name], baseline[name])
-        for name in baseline
-    )
-    old_reward = model.decode_slots(slots + residual)
-    assert all(
-        torch.equal(diagnostic["old_full_rank_reward"][name], old_reward[name])
-        for name in old_reward
-    )
-    assert all(
-        torch.equal(diagnostic["rank14_plus2_reward"][name], generated[name])
-        for name in generated
-    )
-    assert all(
-        torch.equal(
-            diagnostic["rank14_plus2_qv_only"][name],
-            diagnostic[
-                "rank14_plus2_reward" if ".self_attn." in name else "rank14_base"
-            ][name],
-        )
-        for name in generated
-    )
-    qv_a = [
-        value
-        for name, value in generated.items()
-        if ".self_attn." in name and name.endswith(".lora_A.default.weight")
-    ]
-    qv_b = [
-        value
-        for name, value in generated.items()
-        if ".self_attn." in name and name.endswith(".lora_B.default.weight")
-    ]
-    assert len(qv_a) == len(qv_b) == 36
-    assert all(torch.count_nonzero(value[14:]) > 0 for value in qv_a)
-    assert all(torch.count_nonzero(value[:, 14:]) > 0 for value in qv_b)
-
-    sources = writer._slot_sources(slots)
-    residual_sources = writer._slot_sources(residual)
-    for module in ("action_in", "action_out"):
-        tangent_factors = {}
-        for factor in ("a", "b"):
-            key = f"{module}_{factor}"
-            _, tangent = stable_factor_head_linearization(
-                model.factor_heads[key], sources[module], residual_sources[module]
-            )
-            assert tangent is not None
-            oriented = tangent[0].transpose(-1, -2) if factor == "b" else tangent[0]
-            tangent_factors[factor] = oriented
-            name = writer._factor_names[key][0]
-            torch.testing.assert_close(
-                generated[name], baseline[name] + oriented.to(baseline[name].dtype)
-            )
-        name_a = writer._factor_names[f"{module}_a"][0]
-        name_b = writer._factor_names[f"{module}_b"][0]
-        expected_product = torch.matmul(
-            baseline[name_b] + tangent_factors["b"],
-            baseline[name_a] + tangent_factors["a"],
-        )
-        torch.testing.assert_close(
-            torch.matmul(generated[name_b], generated[name_a]),
-            expected_product,
-        )
-        assert torch.count_nonzero(
-            torch.matmul(tangent_factors["b"], tangent_factors["a"])
-        )
 
 
 def test_staged_evidence_path_matches_forward_and_reorders_only_temporal_memory() -> (

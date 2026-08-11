@@ -14,7 +14,6 @@ from ember.writer.evaluation_cache import (
     assigned_writer_cache_batches,
     assigned_writer_cache_requests,
     build_writer_lora_cache_descriptor,
-    finalize_prefilled_writer_cache,
     finalize_writer_cache,
     load_writer_cache_entry,
     stage_writer_lora_states_to_cpu,
@@ -31,10 +30,6 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_EPISODE_SCHEMA,
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
-)
-from ember.expert_manifold.rank_reserved_contract import (
-    RANK_RESERVED_ADAPTER_SCHEMA,
-    RANK_RESERVED_CONFIG_SCHEMA,
 )
 from ember.writer.errors import WriterModelError
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -69,12 +64,9 @@ def _contract(
     *,
     replicas: int = 2,
     state_count: int = 3,
-    rank_reserved: bool = False,
-    macro: int = 0,
     physical_gpu_count: int = 1,
     generators_per_gpu: int = 1,
     generation_batch_size: int = 2,
-    population_recipe: dict | None = None,
 ) -> dict:
     lora = _lora_contract()
     mapping = [
@@ -89,40 +81,19 @@ def _contract(
             "video_split_role": "validation",
         }
     ]
-    adapter_schema = (
-        RANK_RESERVED_ADAPTER_SCHEMA
-        if rank_reserved
-        else EXPERT_MANIFOLD_ADAPTER_SCHEMA
-    )
-    config_schema = (
-        RANK_RESERVED_CONFIG_SCHEMA
-        if rank_reserved
-        else "ember_pi05_v6_reward_credit_program_cotangent_v1"
-    )
     contract = {
         "adapter": {
-            "schema_version": adapter_schema,
+            "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "config": {"schema": config_schema},
-            "arm": (
-                "expert_manifold_v6_qv_rank_reserved_native_reward_correct"
-                if rank_reserved
-                else "expert_manifold_v6_condition_residual_correct"
-            ),
+            "config": {
+                "schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"
+            },
+            "arm": "expert_manifold_v6_condition_residual_correct",
             "video_condition": "correct",
             "writer_asset": {
                 "reference": "v6-prior:historical-macro400",
-                "kind": (
-                    "v6_qv_rank14_zero_program_load_only"
-                    if rank_reserved and macro == 0
-                    else (
-                        "v6_qv_rank14_plus2_reward_program_load_only"
-                        if rank_reserved
-                        else "historical_v6_macro400_load_only"
-                    )
-                ),
-                "method_macro": macro if rank_reserved else 0,
-                **({"enable_program_residual": macro == 1} if rank_reserved else {}),
+                "kind": "historical_v6_macro400_load_only",
+                "method_macro": 0,
                 "writer_parameter_count": 10_775_296,
                 "program_residual_value_count": 20_971_520,
                 "generated_lora_tensor_count": 2,
@@ -163,7 +134,6 @@ def _contract(
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
         lora_storage_per_entry=_lora_storage(),
-        population_recipe=population_recipe,
     )
     return contract
 
@@ -416,104 +386,6 @@ def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(
     assert "sha256" not in str(manifest).lower()
 
 
-def test_legacy_generated_v8_manifest_without_new_population_fields_is_accepted(
-    tmp_path: Path,
-) -> None:
-    contract = _contract(tmp_path / "cache", state_count=1)
-    _populate(contract, _lora_contract())
-    manifest_path = tmp_path / "cache/cache_manifest.json"
-    manifest = read_json(manifest_path)
-    new_outer_fields = (
-        "population_mode",
-        "writer_or_video_forward_required",
-        "source_policy_load_required_for_population",
-    )
-    for name in new_outer_fields:
-        contract["writer_lora_cache"].pop(name)
-        manifest["descriptor"].pop(name)
-    write_json_atomic(manifest_path, manifest)
-
-    observed = validate_writer_cache_manifest(
-        contract, verify_entry_files=True
-    )
-
-    assert observed["generator_invocation_id"] == "b" * 32
-    assert observed["generator_workers"] == ["0-r0"]
-    assert observed["descriptor"]["persistent_source_policy_handoff"] is True
-    assert (
-        observed["descriptor"][
-            "writer_modules_released_before_rollout_scale_out"
-        ]
-        is True
-    )
-
-
-def test_prefilled_cache_has_exact_population_identity_without_fake_generators(
-    tmp_path: Path,
-) -> None:
-    recipe = {
-        "schema_version": "test_prefilled_population_v1",
-        "mode": "prefilled",
-        "reference_suffix": "compiler-only-test",
-        "generator_processes": 0,
-        "writer_forwards": 0,
-        "video_reads": 0,
-        "source_policy_loads": 0,
-    }
-    contract = _contract(
-        tmp_path / "cache",
-        state_count=1,
-        rank_reserved=True,
-        generation_batch_size=8,
-        population_recipe=recipe,
-    )
-    descriptor = contract["writer_lora_cache"]
-    assert descriptor["population_mode"] == "prefilled"
-    assert descriptor["generation_recipe"]["population"] == recipe
-    assert descriptor["generation_recipe"]["generator_worker_count"] == 0
-    assert descriptor["persistent_source_policy_handoff"] is False
-    assert descriptor["source_policy_load_required_for_population"] is False
-    assert descriptor["reference"].endswith(
-        ":population-compiler-only-test"
-    )
-
-    lora = _lora_contract()
-    request = writer_cache_requests(contract)[0]
-    evidence = expected_expert_manifold_episode_evidence(
-        contract["adapter"],
-        suite=request.suite,
-        task_id=request.task_id,
-        init_state_id=request.init_state_id,
-        lora_reference="run:prefilled",
-    )
-    evidence["writer_generation_seconds"] = 0.0
-    write_writer_cache_entry(
-        contract,
-        request,
-        state=_state(1.0),
-        evidence=evidence,
-        generation={"population_mode": "prefilled"},
-        lora_contract=lora,
-    )
-    population_evidence = {"transform": "complete"}
-    manifest = finalize_prefilled_writer_cache(
-        contract, evidence=population_evidence
-    )
-    assert manifest["population"]["recipe"] == recipe
-    assert manifest["population"]["evidence"] == population_evidence
-    assert "generator_invocation_id" not in manifest
-    assert "generator_workers" not in manifest
-    assert validate_writer_cache_manifest(
-        contract, verify_entry_files=True
-    ) == manifest
-    with pytest.raises(WriterModelError, match="generator finalization"):
-        finalize_writer_cache(
-            contract,
-            invocation_id="b" * 32,
-            worker_ids=("0-r0",),
-        )
-
-
 def test_writer_cache_rejects_precision_widening(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "cache")
     lora = _lora_contract()
@@ -600,39 +472,3 @@ def test_partial_cache_entry_cannot_cross_video_conditions(tmp_path: Path) -> No
     )
     with pytest.raises(WriterModelError, match="cache entry changed"):
         writer_cache_entry_is_complete(wrong, writer_cache_requests(wrong)[0])
-
-
-def test_rank_reserved_cache_identity_rejects_v8_and_cross_macro_reuse(
-    tmp_path: Path,
-) -> None:
-    root = tmp_path / "cache"
-    old = _contract(root, state_count=1)
-    macro0 = _contract(root, state_count=1, rank_reserved=True, macro=0)
-    cycle1 = _contract(root, state_count=1, rank_reserved=True, macro=1)
-
-    assert (
-        old["writer_lora_cache"]["identity"] != macro0["writer_lora_cache"]["identity"]
-    )
-    assert (
-        macro0["writer_lora_cache"]["identity"]
-        != cycle1["writer_lora_cache"]["identity"]
-    )
-    changed_commit = copy.deepcopy(cycle1)
-    changed_commit["git"]["commit"] = "b" * 40
-    changed_commit["writer_lora_cache"] = build_writer_lora_cache_descriptor(
-        changed_commit,
-        root=root,
-        generators_per_gpu=1,
-        generation_batch_size=2,
-        lora_parameter_count=_lora_contract().parameter_count,
-        lora_tensor_count=_lora_contract().state_tensor_count,
-        lora_storage_per_entry=_lora_storage(),
-    )
-    assert (
-        cycle1["writer_lora_cache"]["identity"]
-        != changed_commit["writer_lora_cache"]["identity"]
-    )
-    assert (
-        macro0["writer_lora_cache"]["generation_recipe"]["episode_evidence_schema"]
-        == "ember_pi05_v6_qv_rank_reserved_native_reward_episode_v9"
-    )

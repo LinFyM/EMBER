@@ -59,14 +59,14 @@ from ember.reward.protocol import RewardTask, SUITE_HORIZONS
 from ember.reward.rollout import RandomResetEnvironmentPool
 from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_sampling import TeacherVideoSchedule
-from ember.writer.condition_update import ProgramReconciliationState
+from ember.writer.condition_update import (
+    FrozenV6ConditionResidualWriter,
+    ProgramReconciliationState,
+    validate_frozen_v6_residual_writer,
+)
 from ember.writer.data import RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.rank_reserved_compiler import (
-    FrozenV6RankReservedRewardWriter,
-    validate_frozen_v6_rank_reserved_writer,
-)
 from ember.writer.topology import visible_physical_cuda_index
 
 
@@ -108,7 +108,7 @@ class V6PriorRuntime:
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
-    writer: FrozenV6RankReservedRewardWriter
+    writer: FrozenV6ConditionResidualWriter
     identity_state: dict[str, torch.Tensor]
     reconciliation: ProgramReconciliationState
     env_pool: RandomResetEnvironmentPool
@@ -437,7 +437,7 @@ def _build_policy_writer(
     source_config: Mapping[str, Any],
 ) -> tuple[
     torch.nn.Module,
-    FrozenV6RankReservedRewardWriter,
+    FrozenV6ConditionResidualWriter,
     dict[str, torch.Tensor],
     LoRAContract,
     V6PriorWarmStart,
@@ -477,13 +477,12 @@ def _build_policy_writer(
         raise ExpertManifoldError("historical v6 load changed physical identity")
     ownership = freeze_v6_prior_writer(base)
     feature = config["condition_feature"]
-    writer = FrozenV6RankReservedRewardWriter(
+    writer = FrozenV6ConditionResidualWriter(
         base,
         feature_width=int(feature["feature_width"]),
         feature_seed=int(feature["projection_seed"]),
-        enable_program_residual=True,
     ).to(context.device)
-    validate_frozen_v6_rank_reserved_writer(writer, require_zero_memory=True)
+    validate_frozen_v6_residual_writer(writer, require_zero_memory=True)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ExpertManifoldError("Reward-Credit source policy is not frozen")
     return policy, writer, identity, lora, warm_start, ownership
@@ -580,7 +579,7 @@ def _restore_resume(
     config: Mapping[str, Any],
     segment: RuntimeSegment,
     context: DistributedContext,
-    writer: FrozenV6RankReservedRewardWriter,
+    writer: FrozenV6ConditionResidualWriter,
     reconciliation: ProgramReconciliationState,
     checkpoint_contract_value: Mapping[str, Any],
 ) -> dict[str, Any] | None:
@@ -596,7 +595,7 @@ def _restore_resume(
     )
     if loaded != segment.start_macro or rows != segment.start_macro:
         raise ExpertManifoldError("Reward-Credit resume cursor changed")
-    validate_frozen_v6_rank_reserved_writer(writer, require_zero_memory=False)
+    validate_frozen_v6_residual_writer(writer, require_zero_memory=False)
     return interaction_cursor
 
 
@@ -622,6 +621,5 @@ def _prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> V6PriorRuntime:
     raise ExpertManifoldError(
-        "Reward-Credit training is retired on the active HEAD; rank-reserved "
-        "evaluation is load-only"
+        "Reward-Credit training is retired on the active HEAD"
     )

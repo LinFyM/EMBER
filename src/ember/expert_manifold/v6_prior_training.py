@@ -735,8 +735,7 @@ def _start_event(runtime: V6PriorRuntime) -> dict[str, Any]:
 
 def train(args: argparse.Namespace) -> None:
     raise ExpertManifoldError(
-        "Reward-Credit training is retired on the active HEAD; only load-only "
-        "rank-reserved behavior evaluation is authorized"
+        "Reward-Credit training and behavior evaluation are retired on the active HEAD"
     )
 
 
@@ -757,6 +756,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     raise ExpertManifoldError(
-        "Reward-Credit training is retired on the active HEAD; only the sealed "
-        "cycle1 Program may enter the rank-reserved load-only evaluator"
+        "Reward-Credit training is retired on the active HEAD; the sealed cycle1 "
+        "Program remains historical result evidence only"
     )

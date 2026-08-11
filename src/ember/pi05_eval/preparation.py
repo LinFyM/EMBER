@@ -18,9 +18,6 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.reward_credit_gate import (
     validate_registered_reward_credit_output,
 )
-from ember.pi05_eval.rank_reserved_gate import (
-    validate_registered_rank_reserved_output,
-)
 from ember.pi05_eval_contract import (
     build_run_contract,
     inspect_installed_target_tasks,
@@ -174,12 +171,8 @@ def _prepared_payload(
         writer_generators_per_gpu=args.writer_generators_per_gpu,
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
-        writer_cache_population_recipe=getattr(
-            args, "writer_cache_population_recipe", None
-        ),
     )
     validate_registered_reward_credit_output(args, output_dir, contract)
-    validate_registered_rank_reserved_output(args, output_dir, contract)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

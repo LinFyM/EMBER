@@ -21,13 +21,6 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_RUN_SCHEMA,
 )
 from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
-from ember.expert_manifold.rank_reserved_contract import (
-    RANK_RESERVED_CANONICAL_CONFIG,
-    load_rank_reserved_config,
-    load_rank_reserved_profile_evidence,
-    rank_reserved_output_path,
-    seal_rank_reserved_deployment,
-)
 from ember.pi05_eval.launcher import (
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
@@ -35,9 +28,6 @@ from ember.pi05_eval.launcher import (
 )
 from ember.pi05_eval.reward_credit_gate import (
     validate_registered_reward_credit_output as _validate_registered_reward_credit_output,
-)
-from ember.pi05_eval.rank_reserved_gate import (
-    validate_prepared_rank_reserved_contract,
 )
 from ember.pi05_eval.preparation import (
     parse_gpu_indices as _parse_gpu_indices,
@@ -72,8 +62,6 @@ from ember.pi05_eval_queue import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs/pi05_target_evaluation_v1.json"
-WRITER_PROFILE_PREFLIGHT = "writer_generation_preflight.json"
-WRITER_PROFILE_WORKER_LOG = "writer_generation_profile_worker.log"
 
 
 def _positive_int(value: str) -> int:
@@ -170,57 +158,6 @@ def parse_args() -> argparse.Namespace:
     _add_prepare_arguments(prepare)
     run = commands.add_parser("run")
     _add_prepare_arguments(run)
-    profile_writer = commands.add_parser("profile-writer-generation")
-    _add_prepare_arguments(profile_writer)
-    profile_writer.add_argument(
-        "--profile-batch-sizes",
-        default="8,16,32",
-        help="Ascending comma-separated actual Writer forward batches.",
-    )
-    profile_writer.add_argument(
-        "--profile-warmup-runs",
-        type=_positive_int,
-        default=1,
-    )
-    profile_writer.add_argument(
-        "--profile-measured-runs",
-        type=_positive_int,
-        default=2,
-    )
-    profile_worker = commands.add_parser("profile-writer-worker")
-    profile_worker.add_argument("--output-dir", type=Path, required=True)
-    profile_worker.add_argument("--worker-id", required=True)
-    profile_worker.add_argument("--profile-batch-sizes", required=True)
-    profile_worker.add_argument(
-        "--profile-warmup-runs",
-        type=_positive_int,
-        required=True,
-    )
-    profile_worker.add_argument(
-        "--profile-measured-runs",
-        type=_positive_int,
-        required=True,
-    )
-    rank_reserved_vertical = commands.add_parser("rank-reserved-vertical")
-    _add_prepare_arguments(rank_reserved_vertical)
-    rank_reserved_seal = commands.add_parser("rank-reserved-seal")
-    rank_reserved_seal.add_argument(
-        "--expert-manifold-config",
-        type=Path,
-        default=RANK_RESERVED_CANONICAL_CONFIG,
-    )
-    compiler_prepare = commands.add_parser("rank-reserved-compiler-prepare")
-    _add_prepare_arguments(compiler_prepare)
-    compiler_cache = commands.add_parser("rank-reserved-compiler-cache")
-    compiler_cache.add_argument("--output-dir", type=Path, required=True)
-    compiler_cache.add_argument("--gpu-index", type=int, required=True)
-    compiler_cache_worker = commands.add_parser(
-        "rank-reserved-compiler-cache-worker", help=argparse.SUPPRESS
-    )
-    compiler_cache_worker.add_argument("--output-dir", type=Path, required=True)
-    compiler_cache_worker.add_argument("--gpu-index", type=int, required=True)
-    compiler_evidence = commands.add_parser("rank-reserved-compiler-evidence")
-    compiler_evidence.add_argument("--output-dir", type=Path, required=True)
     start = commands.add_parser("start")
     start.add_argument("--output-dir", type=Path, required=True)
     resume = commands.add_parser("resume")
@@ -265,47 +202,6 @@ def prepare_run(
     )
     print(json.dumps(summary, sort_keys=True))
     return summary
-
-
-def _profile_batch_sizes(value: str) -> tuple[int, ...]:
-    from ember.pi05_eval.rank_reserved_launch import _profile_batch_sizes as parse
-
-    return parse(value)
-
-
-def _profile_worker_launch(**kwargs: Any) -> tuple[list[str], dict[str, str]]:
-    from ember.pi05_eval.rank_reserved_launch import _profile_worker_launch as launch
-
-    return launch(**kwargs)
-
-
-def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
-    from ember.pi05_eval.rank_reserved_launch import profile_writer_worker_run as run
-
-    return run(args)
-
-
-def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
-    from ember.pi05_eval.rank_reserved_launch import profile_writer_run as run
-
-    return run(args, prepare_run_fn=prepare_run)
-
-
-def rank_reserved_vertical_run(args: argparse.Namespace) -> dict[str, Any]:
-    from ember.pi05_eval.rank_reserved_launch import rank_reserved_vertical_run as run
-
-    return run(
-        args,
-        prepare_run_fn=prepare_run,
-        start_workers_fn=start_workers,
-    )
-
-
-def rank_reserved_seal_run(args: argparse.Namespace) -> dict[str, Any]:
-    from ember.pi05_eval.rank_reserved_launch import rank_reserved_seal_run as run
-
-    return run(args)
-
 
 
 def _active_worker_pids(output_dir: Path) -> list[int]:
@@ -401,12 +297,6 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
         if observed != adapter:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    validate_prepared_rank_reserved_contract(
-        Path(contract["output_dir"]),
-        contract,
-    )
-
-
 def _worker_ids(
     replicas_per_gpu: int, physical_gpu_ids: Sequence[int]
 ) -> tuple[str, ...]:
@@ -716,21 +606,7 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
 
 def main() -> int:
     args = parse_args()
-    if args.command == "profile-writer-generation":
-        profile_writer_run(args)
-    elif args.command == "profile-writer-worker":
-        profile_writer_worker_run(args)
-    elif args.command == "rank-reserved-vertical":
-        rank_reserved_vertical_run(args)
-    elif args.command == "rank-reserved-seal":
-        rank_reserved_seal_run(args)
-    elif args.command.startswith("rank-reserved-compiler-"):
-        from ember.pi05_eval.rank_reserved_compiler_diagnostic import (
-            compiler_diagnostic_cli_run,
-        )
-
-        compiler_diagnostic_cli_run(args, prepare_run)
-    elif args.command in {"prepare", "run"}:
+    if args.command in {"prepare", "run"}:
         prepare_run(args)
         if args.command == "run":
             start_workers(args.output_dir, resume=False)

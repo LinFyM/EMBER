@@ -9,7 +9,7 @@ import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior import counterfactual_frame_order
-from ember.writer.rank_reserved_compiler import FrozenV6RankReservedRewardWriter
+from ember.writer.condition_update import FrozenV6ConditionResidualWriter
 from ember.writer.data import RawTeacherVideo
 
 
@@ -40,7 +40,7 @@ def _video_tensors(
 
 def generate_condition_graph(
     *,
-    writer: FrozenV6RankReservedRewardWriter,
+    writer: FrozenV6ConditionResidualWriter,
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,

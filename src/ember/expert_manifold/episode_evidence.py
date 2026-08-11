@@ -6,11 +6,6 @@ import math
 from typing import Any, Mapping
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.rank_reserved_contract import (
-    RANK_RESERVED_ADAPTER_SCHEMA,
-    RANK_RESERVED_CONFIG_SCHEMA,
-    RANK_RESERVED_EPISODE_SCHEMA,
-)
 from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
@@ -43,11 +38,6 @@ def expert_manifold_episode_schema(adapter: Mapping[str, Any]) -> str:
         and config_schema in legacy_config_schemas
     ):
         return EXPERT_MANIFOLD_EPISODE_SCHEMA
-    if (
-        schema == RANK_RESERVED_ADAPTER_SCHEMA
-        and config_schema == RANK_RESERVED_CONFIG_SCHEMA
-    ):
-        return RANK_RESERVED_EPISODE_SCHEMA
     raise ExpertManifoldError("invalid Expert-Manifold deployment adapter")
 
 
@@ -141,17 +131,6 @@ def expected_expert_manifold_episode_evidence(
     }
     if adapter["video_condition"] == "same_task_other":
         result["teacher_demo_offset"] = SAME_TASK_OTHER_OFFSET
-    if adapter["schema_version"] == RANK_RESERVED_ADAPTER_SCHEMA:
-        result.update(
-            {
-                "writer_program_residual_enabled": bool(
-                    adapter["writer_asset"]["enable_program_residual"]
-                ),
-                "writer_qv_base_rank": 14,
-                "writer_qv_residual_rank": 2,
-                "writer_action_rank": 16,
-            }
-        )
     return result
 
 

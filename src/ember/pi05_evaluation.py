@@ -635,34 +635,11 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
 
 def _run_writer_bootstrap(runtime: WorkerRuntime, invocation_id: str) -> None:
     from ember.writer.evaluation_runtime import run_writer_generation_phase
-    from ember.writer.rank_reserved_vertical import (
-        RANK_RESERVED_VERTICAL_PREFLIGHT,
-        complete_rank_reserved_vertical,
-        is_rank_reserved_vertical_contract,
-        prepare_rank_reserved_vertical,
-    )
-
-    vertical_prepared = None
-    vertical_preflight = None
-    if is_rank_reserved_vertical_contract(runtime.contract, runtime.output_dir):
-        vertical_preflight, _ = read_json_with_size(
-            runtime.output_dir / RANK_RESERVED_VERTICAL_PREFLIGHT
-        )
-        vertical_prepared = prepare_rank_reserved_vertical(
-            runtime,
-            preflight=vertical_preflight,
-        )
     run_writer_generation_phase(
         runtime,
         invocation_id=invocation_id,
         append_event=_append_worker_event,
     )
-    if vertical_prepared is not None and vertical_preflight is not None:
-        complete_rank_reserved_vertical(
-            runtime,
-            vertical_prepared,
-            preflight=vertical_preflight,
-        )
 
 
 def _drain_claim_queue(

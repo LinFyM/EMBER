@@ -17,13 +17,6 @@ from ember.expert_manifold.episode_evidence import (
     expert_manifold_episode_schema,
     validate_expert_manifold_episode_evidence,
 )
-from ember.expert_manifold.rank_reserved_contract import (
-    RANK_RESERVED_ADAPTER_SCHEMA,
-    RANK_RESERVED_CONFIG_SCHEMA,
-    RANK_RESERVED_EPISODE_SCHEMA,
-    load_rank_reserved_config,
-    rank_reserved_asset,
-)
 from ember.expert_manifold.v6_prior import (
     V6_WRITER_PARAMETER_TENSOR_COUNT,
     V6_WRITER_STATE_TENSOR_COUNT,
@@ -57,15 +50,13 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active rank-reserved deployment config."""
+    """Reject retired Writer configs when no deployment family is active."""
 
     path = path.resolve()
     try:
-        schema = read_json(path).get("schema_version")
-    except (AttributeError, OSError, ValueError) as error:
+        read_json(path)
+    except (OSError, ValueError) as error:
         raise ExpertManifoldError("invalid Expert-Manifold config") from error
-    if schema == RANK_RESERVED_CONFIG_SCHEMA:
-        return load_rank_reserved_config(path)
     raise ExpertManifoldError(
         "retired Expert-Manifold configs are read-only result evidence"
     )
@@ -562,65 +553,6 @@ def inspect_v6_prior_writer_asset(
     )
 
 
-def _rank_reserved_writer_asset(
-    config: Mapping[str, Any],
-    checkpoint: Path,
-    source: Mapping[str, Any],
-) -> dict[str, Any]:
-    """Bind one active compiler asset without reopening the old training state."""
-
-    selected = rank_reserved_asset(config, checkpoint)
-    configured_base = (
-        REPO_ROOT / str(config["initialization"]["checkpoint"])
-    ).resolve()
-    historical = _historical_writer_asset(
-        config,
-        configured_base,
-        source,
-    )
-    common = {
-        "kind": selected["kind"],
-        "training_mode": "sealed_program_load_only",
-        "source_macro": 400,
-        "method_macro": int(selected["method_macro"]),
-        "checkpoint": str(checkpoint.resolve()),
-        "enable_program_residual": bool(selected["enable_program_residual"]),
-        "writer_state": historical["writer_state"],
-        "compiler": dict(config["compiler"]),
-    }
-    if not common["enable_program_residual"]:
-        return {
-            **common,
-            "manifest": historical["manifest"],
-            "residual_state": historical["residual_state"],
-        }
-    reference = selected.get("program_reference")
-    if not isinstance(reference, Mapping):
-        raise ExpertManifoldError("rank-reserved Program reference is missing")
-    memory = reference["program_memory"]
-    reference_path = Path(str(reference["path"])).resolve()
-    return {
-        **common,
-        "manifest": {
-            "path": str(reference_path),
-            "bytes": reference_path.stat().st_size,
-            "schema": reference["schema_version"],
-        },
-        "source_program_checkpoint": dict(reference["source_checkpoint"]),
-        "residual_state": {
-            "kind": "sealed_reward_program_reference",
-            "path": str(memory["path"]),
-            "bytes": int(memory["bytes"]),
-            "tensor_count": int(memory["tensor_count"]),
-            "key": str(memory["key"]),
-            "dtype": "torch.float32",
-            "shape": list(memory["shape"]),
-            "value_count": int(memory["value_count"]),
-            "payload_validation": "source_manifest_and_safetensors_header_only",
-        },
-    }
-
-
 def _evaluation_writer_asset(
     *,
     config_path: Path,
@@ -628,36 +560,26 @@ def _evaluation_writer_asset(
     source: Mapping[str, Any],
     video_condition: str,
     require_formal: bool,
-) -> tuple[Path, dict[str, Any], bool, str, dict[str, Any]]:
+) -> tuple[Path, dict[str, Any], str, dict[str, Any]]:
     config_path = config_path.resolve()
     config = load_expert_manifold_deployment_config(config_path)
-    rank_reserved = config["schema_version"] == RANK_RESERVED_CONFIG_SCHEMA
     if video_condition not in VIDEO_CONDITIONS:
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
-    formal_statuses = (
-        {"sealed_from_live_a40_rank_reserved_deployment_profile"}
-        if rank_reserved
-        else {
-            "sealed_from_live_residual_deployment_profile",
-            "sealed_from_unchanged_v6_residual_deployment_graph",
-        }
-    )
-    if require_formal and status not in formal_statuses:
+    if require_formal and status not in {
+        "sealed_from_live_residual_deployment_profile",
+        "sealed_from_unchanged_v6_residual_deployment_graph",
+    }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"
         )
-    writer_asset = (
-        _rank_reserved_writer_asset(config, checkpoint, source)
-        if rank_reserved
-        else inspect_v6_prior_writer_asset(
-            config,
-            checkpoint,
-            source,
-            require_formal=require_formal,
-        )
+    writer_asset = inspect_v6_prior_writer_asset(
+        config,
+        checkpoint,
+        source,
+        require_formal=require_formal,
     )
-    return config_path, config, rank_reserved, status, writer_asset
+    return config_path, config, status, writer_asset
 
 
 def inspect_expert_manifold_writer_evaluation(
@@ -672,7 +594,7 @@ def inspect_expert_manifold_writer_evaluation(
     video_sampling_mode: str,
     require_formal: bool,
 ) -> dict[str, Any]:
-    config_path, config, rank_reserved, status, writer_asset = (
+    config_path, config, status, writer_asset = (
         _evaluation_writer_asset(
             config_path=config_path,
             checkpoint=checkpoint,
@@ -690,33 +612,18 @@ def inspect_expert_manifold_writer_evaluation(
         video_sampling_mode=video_sampling_mode,
     )
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    config_schema = (
-        RANK_RESERVED_CONFIG_SCHEMA if rank_reserved else V6_PRIOR_CONFIG_SCHEMA
-    )
-    adapter_schema = (
-        RANK_RESERVED_ADAPTER_SCHEMA
-        if rank_reserved
-        else EXPERT_MANIFOLD_ADAPTER_SCHEMA
-    )
-    arm_prefix = (
-        "expert_manifold_v6_qv_rank_reserved_native_reward_"
-        if rank_reserved
-        else "expert_manifold_v6_condition_residual_"
-    )
     reference = (
-        f"{config_schema}:{writer_asset['kind']}:"
+        f"{V6_PRIOR_CONFIG_SCHEMA}:{writer_asset['kind']}:"
         f"m{int(writer_asset['method_macro'])}:"
         f"base{int(writer_asset['writer_state']['bytes'])}bytes:"
         f"residual{int(writer_asset['residual_state']['bytes'])}bytes:rank16"
     )
     return {
-        "schema_version": adapter_schema,
+        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"{arm_prefix}{video_condition}",
+        "arm": f"expert_manifold_v6_condition_residual_{video_condition}",
         "execution_backend": (
-            "online_frozen_v6_rank_reserved_native_reward_then_episode_lora_cache"
-            if rank_reserved
-            else "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
+            "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
         ),
         "config": {
             "path": str(config_path),

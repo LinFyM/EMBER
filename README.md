@@ -32,13 +32,12 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `1/3/45/32/0/37/18/1`，相对old134 retained/gained/lost=`121/16/13`、churn29。训练端15个persisted anchors、
   macro5 rank36、projected energy`.592`和Program closure均健康，但Long task1净`+7`掩盖Object净`-5`及
   Spatial净`-1`；未过`correct>=140`、`lost<=8`和单task集中门，故不resume、不补controls、不sweep。
-- 当前唯一active successor design是SRTP：SKNC产生同一个shared blind update `D0`后，只对mixed K4 tasks
-  从每episode最多4个on-policy occupancy landmarks计算LOO reward tangent，再把最终24-task shared update投影到
-  全部reward half-spaces。它保留B20幅度、all-success anchors、PICK ordered key、FP32 Program和native rank16
-  compiler，同时避免Reward-Credit的sub-ULP direct write与OSG的full-prefix长尾。首个clean world3 live macro因
-  decoder graph跨K4保留，在mixed reward CFM处三rank同时OOM；没有mechanism report/checkpoint，属于已定位的
-  执行图错误而非科学结果。修复只做compiler activation recompute：blind VJP后释放原graph，Nmc4结束后仅对
-  mixed task重解同一Program一次，不改变视频、K4、B20、policy forward或objective；完整CPU回归`359 passed`。
+- SRTP已终局non-pass并退役：首个world3 macro因decoder graph跨K4保留而三rank在mixed reward CFM处OOM；释放
+  graph并只在Nmc4后重解compiler的唯一同合同reprofile仍三rank OOM，最差仅余16.31MiB。两次均没有mechanism
+  report/checkpoint，deployment/formal未授权。最早工程失效接口因此是完整logical B<=16 landmark policy-gradient
+  本体显存，不再允许降batch、改dtype、allocator开关或第三次修补。这个结果只淘汰当前SRTP执行合同，不否定
+  constant-memory occupancy、shared reward half-space或所有on-policy credit。
+- 当前没有active successor；下一步从上述最早接口与历史paired400证据形成新的单变量design authority。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -119,10 +118,10 @@ EMBER/
 └── tests/
 ```
 
-进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC与SKNC均已
-封存non-pass；SRTP现为`active_cpu_ready_awaiting_live_profile`。`d172add`的首个profile已因明确的graph-lifetime
-OOM退出并保留log/failure artifact；当前只允许从修复后的clean pushed commit重做一次同合同reprofile。该门
-通过前不能formal，也不能从旧文档恢复Reward/OSG/SKNC命令或resume其checkpoint。设计见
+进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC、SKNC与SRTP均
+已封存non-pass；SRTP config为`profile_result_sealed_nonpass`，两个OOM failure artifacts保留且同配置重跑、
+deployment、formal全部关闭。当前必须先形成新的design authority，不能从旧文档恢复Reward/OSG/SKNC/SRTP
+命令或resume其checkpoint。SRTP边界见
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高

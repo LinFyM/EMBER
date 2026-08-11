@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_shared_reward_tangent_projection_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "profile_result_sealed_nonpass",
   "method": {
     "name": "frozen_v6_shared_reward_tangent_projection",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -287,7 +287,7 @@
     "regularized_condition_number_max": 150
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "profile_result_sealed_nonpass",
     "allowed_world_sizes": [
       1,
       2,
@@ -345,10 +345,21 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_e31e2fd_retry1_20260812/failure.json",
+      "bytes": 686,
+      "schema": "ember_pi05_srtp_mechanism_profile_failure_v1",
+      "passed": false,
+      "run_commit": "e31e2fd1ecff7d0b2a18485398b8fc3d6d46acc4",
+      "world_size": 3,
+      "failed_rank_count": 3,
+      "failure_kind": "cuda_out_of_memory_after_decoder_graph_release",
+      "mechanism_profile_written": false,
+      "prior_attempt": "runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_d172add_20260812/failure.json"
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "blocked_by_profile_nonpass",
     "allowed_world_sizes": [
       1,
       2,
@@ -386,7 +397,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "awaiting_live_srtp_deployment_smoke",
+    "formal_status": "not_run_after_profile_nonpass",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",

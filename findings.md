@@ -227,19 +227,20 @@ Reward profile的11 mixed tasks原需4452 chunks/928 forwards；固定16 rows/ta
 OSG长尾而不减少K4 outcome覆盖。这个设计的最快否决证据是raw constraints不冲突、投影近零、negative motion
 破坏或wall超过matched SKNC `1.25x`；只有live shared projection接通后才允许fresh macro5 paired400。
 
-SRTP现已完成唯一canonical实现，但这仍只是工程证据。rollout在线reservoir保证每episode最多4 rows并保留真实
+SRTP的canonical实现曾通过CPU工程门。rollout在线reservoir保证每episode最多4 rows并保留真实
 first/last；mixed panel只做4次logical B<=16 CFM forward，homogeneous panel严格0 forward；最终投影用anchor-
 null feature与Program cotangent的factorized Gram在CPU FP64 NNLS求dual，只在GPU FP32合成一次大correction。
 synthetic覆盖了无约束/原更新已可行的逐元素退化、相关与重复half-space、task permutation、KKT feasibility、
 anchor closure和正alignment；50组额外随机相关约束也无violation。fresh checkpoint schema拒绝SKNC resume，
-ephemeral landmark不进TaskObjective record或checkpoint。完整CPU回归`359 passed`不能预测closed-loop；当前仍只
-授权discarded live macro，以mixed>=8且至少3 suite覆盖、四suiteall-success anchor、raw violation>=2、
-final violation=0、energy>=.25、
-negative ratio<=.15和matched SKNC wall<=1.25x裁决机制是否值得formal。
+ephemeral landmark不进TaskObjective record或checkpoint。完整CPU回归`359 passed`不能预测closed-loop；原计划
+只有在mixed>=8且至少3 suite覆盖、四suite all-success anchor、raw violation>=2、final violation=0、
+energy>=.25、negative ratio<=.15和matched SKNC wall<=1.25x全过后才允许formal，实际运行在这些机制证据产生前
+就因OOM停止。
 
-首个`d172add` world3 live macro没有产生科学机制结果：三rank均在mixed reward CFM处OOM，单次申请484MiB时
-只剩约379--463MiB。最早工程失效接口是decoder graph lifetime，而不是landmark数量、K4 credit或shared
-projection；blind VJP错误地为未来reward VJP保留了graph并跨rollout存活。针对性修复让blind VJP立即消费原graph，
-reward LoRA cotangent完成后仅重解同一Program compiler一次；视频、condition、policy forward、objective、seed和
-batch均不变，完整CPU回归更新为`359 passed`。只允许一次同合同reprofile，不能把这个OOM用降batch/dtype sweep
-救活，也不能把它写成SRTP科学有效或无效的证据。
+首个`d172add` world3 live macro没有产生科学机制结果：三rank均在mixed reward CFM处OOM。它先把最早工程失效
+定位为decoder graph lifetime；针对性修复让blind VJP立即消费原graph，reward LoRA cotangent完成后只重解同一
+Program compiler一次，视频、condition、policy forward、objective、seed和batch均不变，完整CPU回归`359 passed`。
+但唯一`e31e2fd`同合同reprofile仍三rank在相同CFM路径OOM，申请`254/484/484 MiB`时只余
+`19/16.31/417.06 MiB`。因此更早且充分的失败接口是完整logical B<=16 landmark policy-gradient本体显存，而非
+decoder graph；SRTP执行合同终局退役，不降batch/dtype、不加allocator开关、不做第三次修补。由于两次都没到
+shared projection report，这个结果既不证明也不否定reward half-space的科学价值，只否定当前获取它的执行图。

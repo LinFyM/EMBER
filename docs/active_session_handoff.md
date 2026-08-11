@@ -22,11 +22,12 @@
   `1/3/45/32/0/37/18/1`；old134→SKNC retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、
   projected energy`.592`和Program closure健康，但Long task1净`+7`伴随Object/Spatial净`-5/-1`，未过
   `correct>=140`、`lost<=8`及单task集中门。resume`5→10`、controls和sweep全部关闭。
-- 当前唯一active successor design是SRTP：保留SKNC相同的shared `D0`、anchors、PICK key与native compiler；
-  mixed K4 tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合
-  后直接投影最终Program update。canonical实现已完成；`d172add`首个world3 profile因decoder graph跨K4保留而
-  在mixed CFM处三rank OOM，现已用不改objective的compiler recompute修复并通过完整CPU`359 passed`，等待唯一
-  一次clean reprofile。历史Reward/OSG/SKNC config不能恢复执行。
+- SRTP已在profile门终局退役：`d172add`首轮因decoder graph跨K4保留而三rank在mixed CFM处OOM；唯一
+  `e31e2fd`同合同reprofile释放graph后仍三rank OOM，申请`254/484/484 MiB`时free`19/16.31/417.06 MiB`。
+  两次均无mechanism report/checkpoint，deployment/formal未授权；完整logical B<=16 landmark policy-gradient
+  本体是最早工程失效接口，不允许第三次修补或batch/dtype/allocator sweep。
+- 当前没有active successor；历史Reward/OSG/SKNC/SRTP config均不能恢复执行。下一步先形成新的单变量design
+  authority，再实现或启动GPU。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -305,7 +306,7 @@ formal阶段随后按authority完整执行并得到上文2.1的`137/400`、bread
 或compiler断链；它直接否决“单train24 all-success key可保护held support，blind B20可在其nullspace内共同改善”
 这一组合。canonical config现为`formal_result_sealed`，macro5 checkpoint只作formal evidence，不能继续训练。
 
-## 9. Active SRTP design authority
+## 9. Retired SRTP design boundary
 
 SRTP只改变SKNC最早失败的support/credit接口。SKNC先按原合同产生anchor-null shared update `D0`；对K4 mixed
 tasks，rollout期间每episode只保留first、last和两个seeded reservoir interior rows，用binary LOO advantage与
@@ -327,16 +328,18 @@ ordered video仍通过PICK terminal-goal residual与causal prefix成为唯一dyn
 full48 zero RHS，language没有condition value。teacher action始终hidden；train24 policy-generated landmarks和
 outcome只作ephemeral credit，不进checkpoint/deployment。完整authority与CPU/live/formal falsifiers见
 `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。SRTP canonical code、fresh-incompatible
-config、constant-memory landmark/K4 credit/shared projection tests已经闭合。`d172add`首个clean world3 macro
-使用gpu02物理3/4/5，三rank都在mixed reward CFM forward处申请484MiB时OOM；最低报告free约379MiB，未写
-mechanism profile/checkpoint，退出后设备正常释放。根因是blind Program VJP为随后reward VJP保留decoder graph，
-使其跨整段K4占用显存。现已改为blind VJP立即释放原graph、rollout只持detached LoRA，Nmc4结束后仅对mixed task
-重解同一detached Program compiler一次；不重复video/condition/policy forward，不改objective或seed。完整CPU
-回归`359 passed`。下一步是clean commit/push、新frozen worktree和一次同合同reprofile；再OOM或任一hard gate
-失败即退役，不能降B、扩dtype、加allocator开关或恢复旧Reward/OSG path。
+config、constant-memory landmark/K4 credit/shared projection tests曾闭合。`d172add`首个clean world3 macro使用
+gpu02物理3/4/5，三rank都在mixed reward CFM forward处OOM，未写mechanism profile/checkpoint。其root cause
+修复为blind VJP立即释放原graph、Nmc4后只对mixed task重解compiler，完整CPU`359 passed`；但`e31e2fd`唯一
+同合同reprofile仍在三个rank相同CFM路径OOM。故decoder lifecycle不是充分原因，完整logical landmark batch的
+policy-gradient peak才是最早工程失效；SRTP终局退役，不能降B、扩dtype、加allocator开关或恢复旧Reward/OSG。
 
 OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_d172add_20260812`，
 对应log/exit在`runs/logs/`同前缀文件；`failure.json`明确记录exit1、无mechanism report和无retained checkpoint。
+最终reprofile evidence root为
+`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_e31e2fd_retry1_20260812`，同样有同前缀
+log/exit与`failure.json`，exit1、三rank OOM、无mechanism report/checkpoint。config现为
+`profile_result_sealed_nonpass`。
 
 ## 10. Runtime and GPU boundary
 
@@ -402,6 +405,6 @@ logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nu
 config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
 reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
-raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP authority、canonical实现、active
-config与CPU gate已写入active tree；`d172add` OOM root/log/failure artifact保留且无checkpoint/mechanism report。
-下一步clean push后只做一次graph-lifetime修复的同合同reprofile，旧Reward/OSG/SKNC命令不得恢复。
+raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
+roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
+和formal关闭。当前无active successor，下一步先写新的design authority，旧Reward/OSG/SKNC/SRTP命令不得恢复。

@@ -27,11 +27,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_historical_sknc_pick_gc_osg_are_sealed_and_srtp_is_preprofile() -> None:
+def test_historical_sknc_pick_gc_osg_and_srtp_are_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
-    assert active["profile_run"]["artifact_evidence"] is None
+    assert active["status"] == "profile_result_sealed_nonpass"
+    srtp = active["profile_run"]["artifact_evidence"]
+    assert srtp["passed"] is False
+    assert srtp["failed_rank_count"] == 3
+    assert srtp["mechanism_profile_written"] is False
+    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
     assert active["formal_run"]["artifact_evidence"] is None
+    assert active["evaluation"]["formal_status"] == (
+        "not_run_after_profile_nonpass"
+    )
     assert active["evaluation"]["online_smoke_evidence"] is None
 
     config = json.loads(

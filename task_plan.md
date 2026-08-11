@@ -113,9 +113,13 @@
 - [x] `d172add` clean commit/push、frozen worktree和双节点/quota/NUMA preflight完成；按实时余量选择gpu02物理
   3/4/5做首个world3 macro，但三rank在mixed reward CFM处因decoder graph跨K4保留同时OOM，未写mechanism
   report/checkpoint，退出后设备正常释放。
-- [ ] 已原位改成blind VJP立即释放graph、mixed Nmc4后compiler-only重解一次，scientific合同不变且完整CPU
-  `359 passed`；clean commit/push、新frozen worktree后只重做一次同合同reprofile，再失败即退役。
-- [ ] 只有discarded live与B8/16/32 deployment门全过才fresh`0→5`，随后立即strict paired400并按预注册门裁决。
+- [x] 原位改成blind VJP立即释放graph、mixed Nmc4后compiler-only重解一次，scientific合同不变且完整CPU
+  `359 passed`；`e31e2fd` clean pushed后的唯一同合同reprofile仍三rank在mixed CFM处OOM，未写mechanism
+  report/checkpoint。SRTP按门终局退役，不降batch/dtype、不开allocator、不做第三次修补。
+- [x] SRTP deployment、formal fresh`0→5`与strict paired400因profile non-pass全部关闭；config封存为
+  `profile_result_sealed_nonpass`，两个failure roots/logs保留。
+- [ ] 当前无active successor；从完整logical landmark policy-gradient本体显存与历史credit错位这一最早接口出发，
+  写新的单变量、可证伪design authority后再实现或启动GPU。
 
 ## Repository closeout
 

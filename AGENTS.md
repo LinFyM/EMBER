@@ -28,13 +28,14 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `1/3/45/32/0/37/18/1`；相对immutable old134 retained/gained/lost=`121/16/13`、churn29。Program closure、
   projected rank/energy和outcome-only信息墙均健康，但未过`correct>=140`、`lost<=8`及单task增益集中门；
   `5→10` resume、controls和参数sweep全部关闭。它只淘汰PICK-GC+first-all-success-key nullspace+blind B20。
-- 当前唯一active successor design是SRTP：保留SKNC完整D0/anchors/PICK key/native compiler，只为mixed K4
-  tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合后的最终
-  shared Program update上同时投影所有reward half-spaces。首个clean world3 discarded macro在mixed reward CFM
-  forward处三rank同时OOM：原实现错误地把decoder autograd graph跨K4保留，未写mechanism report/checkpoint，不能
-  当作科学non-pass。现已改为blind VJP先消费原graph、K4后仅对mixed task重解同一detached Program的compiler
-  一次；不重复video/policy forward且数学objective不变，完整CPU回归`359 passed`。下一门是clean push后唯一
-  一次该工程修复的authority-identical reprofile；再OOM或任一机制门失败即退役，不降batch/改dtype/扫参数。
+- SRTP已在profile工程门终局non-pass并退役：`d172add`首个world3 macro因decoder graph跨K4保留而三rank在mixed
+  reward CFM处OOM；`e31e2fd`释放原graph、只在Nmc4后重解compiler的唯一同合同reprofile仍三rank OOM，申请
+  `254/484/484 MiB`时分别只余`19/16.31/417.06 MiB`。两次均无mechanism report/checkpoint，deployment/formal
+  未授权。第二次把最早工程失效接口定位到完整logical B<=16 landmark policy-gradient本体，而非decoder graph；
+  不得再降batch、改dtype、开allocator选项或补第三次修复。该结果淘汰当前SRTP执行合同，不否定constant-memory
+  landmarks、shared reward half-space或所有on-policy credit。
+- 当前没有active successor。下一步必须从这一最早接口与历史closed-loop证据重新做单变量第一性原理设计，先写
+  可证伪authority，再实现或启动GPU；不得直接恢复Reward/OSG/SKNC/SRTP旧路径。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -195,11 +196,10 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`和
   `runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；
   decision evidence、paired transition、raw rows和checkpoint均保留，但不能resume或补controls。
-- 当前active design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；active
-  config是`configs/pi05_v6_shared_reward_tangent_projection_v1.json`，状态
-  `active_cpu_ready_awaiting_live_profile`。尚无SRTP checkpoint或成绩；`d172add`的OOM attempt只有失败artifact。
-  下一合法动作是修复commit clean push、frozen worktree与live preflight后执行唯一一次同合同reprofile，不是
-  formal训练。
+- 最新retired design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；config
+  `configs/pi05_v6_shared_reward_tangent_projection_v1.json`状态为`profile_result_sealed_nonpass`。`d172add`与
+  `e31e2fd`两个OOM roots/logs/failure artifacts保留，均无checkpoint/成绩；deployment、formal和同配置重跑关闭。
+- 当前无active successor；下一合法动作是新的第一性原理design authority，不是GPU、deployment或formal训练。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

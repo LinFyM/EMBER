@@ -2,8 +2,9 @@
 
 状态：2026-08-11唯一active successor authority。PICK-GC canonical owner、fresh-incompatible config、
 implementation阶段`345 passed` CPU回归；exact raw full48、world6 discarded mechanism、B8/16/32吞吐与
-zero-memory deployment vertical均已通过并封存，seal后完整回归为`346 passed`；当前已formal-ready，但尚未
-训练或做strict paired400。
+zero-memory deployment vertical均已通过并封存，seal后完整回归为`346 passed`；`5200bee`时点已formal-ready，
+但尚未训练或做strict paired400。该commit封存后live资源没有单节点world6，且authority禁止等待凑卡；当前只把执行
+拓扑改为world4/local6并重新关闭formal资格，必须先通过同算法的world4 discarded mechanism profile。
 
 ## 1. Decision
 
@@ -166,9 +167,11 @@ PICK-GC去掉跨task高度相关的whole-video static mean；两个zero-sum temp
 
 ### 9.2 Discarded full48 mechanism and throughput gate
 
-沿用PICK全部门：rank48、condition`<=200`、correct retained至少21/24、三类negative各至少6/8且合计至少18、
+沿用PICK全部科学门：rank48、condition`<=200`、correct retained至少21/24、三类negative各至少6/8且合计至少18、
 negative/correct motion`<=.15`、Program application/LoRA A/B/四suite fixed-action闭合、0 OOM/nonfinite/
-forbidden reads/negative action forward、production wall不超过sealed world6 baseline的`1.75x`。
+forbidden reads/negative action forward。world4 topology reprofile的吞吐基准只按每rank task数从sealed PICK-GC
+world6实测`25.351229s × 6/4 = 38.026844s`线性归一，预注册上限为该值的`1.25x`；不得拿减少GPU导致的自然
+wall增长冒充架构退化，也不得在结果后改比例。
 
 随后只做一次longest-video B8/16/32 generation profile并选择最高stable LoRAs/s；不为低位一致性固定batch1、
 重复forward或扩dtype。
@@ -209,10 +212,25 @@ clean pushed commit `717b561`上的全部前序门已经完成：
 这些证据把最早未决接口推进到blind offline full24 credit能否在held on-policy occupancy上积累support；只有
 fresh`0→10`和随后的strict paired correct400能裁决，前序机制数值不能替代closed-loop。
 
+### 9.5 Resource-driven world4 topology amendment
+
+`5200bee`已经把world6与deployment证据封存并push。2026-08-11 18:47+08:00再次同时live检查两节点时，
+`gpu02`只有physical`1--5`五张空闲，`gpu01`只有`2/4/6/7`四张空闲；没有任何单节点world6。不能跨节点拼卡、
+触碰他人进程或等待凑卡，而train24 task-complete要求world size整除24，因此选world4；第五张空卡不能在保持
+每task等权、每rank固定local task数的合同下提高吞吐。
+
+这不是新的科学方法：每个task仍独立产生相同video/query/RNG cotangent，collective仍只all-gather完整24个
+correct、24个negative与24个cotangent，随后按task ordinal固定排序`0...23`再做同一FP32 full48 solve；没有
+memory all-reduce。唯一变化是world6/local4变为world4/local6及其低位kernel/reduction order。正式资格和config
+artifact seal已经主动重置；world4必须在fresh macro0 discarded profile上复现全部数值/闭合门及上述归一吞吐
+门，失败就不训练。既有exact raw、B32 generation和zero-memory vertical不依赖训练world size，保留为immutable
+evidence，但只有world4 profile过门后才原样重新挂回formal seal。
+
 ## 10. What this result can and cannot conclude
 
 exact raw与world6 full48 condition已经分别以`152.45803`和`152.61008`通过，因此key数值可解性、
-Program→LoRA→action闭合和production吞吐均不再是formal前的未决接口。这些结果仍不能说明blind offline
+Program→LoRA→action闭合均不再是科学接口疑点；world4 topology的机制/吞吐复现仍是当前formal前工程门。
+这些结果仍不能说明blind offline
 credit能覆盖held on-policy occupancy，也不能预言closed-loop分数。若macro10闭环失败，最早剩余接口就是
 blind offline credit或key与held occupancy错位；不得回头把失败归因于已通过的full48 condition或
 Program→LoRA增益，也不因此否定condition-local memory、few-shot、task-level manifold supervision或新的

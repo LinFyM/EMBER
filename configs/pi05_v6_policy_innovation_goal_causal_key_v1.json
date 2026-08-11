@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_policy_innovation_goal_causal_key_v1",
-  "status": "active_formal_ready",
+  "status": "active_cpu_ready_awaiting_live_profile",
   "method": {
     "name": "frozen_v6_policy_innovation_goal_causal_key",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -178,9 +178,9 @@
     "physical_policy_forwards_per_task": 2,
     "extra_negative_policy_forwards_per_task": 0,
     "distributed_update": {
-      "kind": "all_gather_local4_features_and_cotangents_then_identical_local_manual_write",
-      "world_size": 6,
-      "tasks_per_rank": 4,
+      "kind": "all_gather_local6_features_and_cotangents_then_identical_local_manual_write",
+      "world_size": 4,
+      "tasks_per_rank": 6,
       "memory_allreduce": false,
       "nccl_p2p_disable": "1",
       "nccl_algo": "Ring",
@@ -198,20 +198,26 @@
     "regularized_condition_number_max": 150.0
   },
   "profile_run": {
-    "status": "sealed_from_live_a40_fresh0_to1_profile",
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "expected_world_size": 4,
+    "tasks_per_rank": 6,
     "schedule_macro": 0,
     "diagnostic_macros": 1,
     "num_workers_per_rank": 2,
     "retain_weight": false,
     "throughput_baseline": {
-      "path": "runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_lb20_mb10_9c814ff_20260809/gradient_profile.json",
-      "schema": "ember_pi05_v6_prior_gradient_profile_seal_v1",
-      "schedule_macro": 49,
+      "path": "runs/outputs/pi05_pick_gc_goal_causal_full48_profile_macro0_r6_b20_717b561_20260811/mechanism_profile.json",
+      "schema": "ember_pi05_v6_policy_innovation_goal_causal_key_profile_v1",
+      "schedule_macro": 0,
       "task_count": 24,
       "action_queries_per_task": 20,
-      "step_seconds": 21.09510959603358
+      "source_world_size": 6,
+      "source_tasks_per_rank": 4,
+      "target_world_size": 4,
+      "target_tasks_per_rank": 6,
+      "scaling": "source_step_seconds_times_target_tasks_per_rank_over_source_tasks_per_rank",
+      "source_step_seconds": 25.351229034829885,
+      "step_seconds": 38.02684355224483
     },
     "gates": {
       "feature_rank_min": 48,
@@ -222,7 +228,7 @@
       "negative_null_task_count_min": 18,
       "negative_null_per_kind_min": 6,
       "predicted_observed_relative_rms_max": 0.005,
-      "production_wall_ratio_max": 1.75,
+      "production_wall_ratio_max": 1.25,
       "lora_a_response_rms_min": 0.0,
       "lora_b_response_rms_min": 0.0,
       "fixed_action_response_rms_min": 0.0,
@@ -232,25 +238,12 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": {
-      "path": "runs/outputs/pi05_pick_gc_goal_causal_full48_profile_macro0_r6_b20_717b561_20260811/mechanism_profile.json",
-      "bytes": 36354,
-      "schema": "ember_pi05_v6_policy_innovation_goal_causal_key_profile_v1",
-      "passed": true,
-      "schedule_macro": 0,
-      "run_commit": "717b561518b9a654f81fd9d27643f7272ddf93ff",
-      "exact_raw_feature_gate": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_exact_full48_feature_gate_gpu02p1_717b561_20260811/exact_full48_feature_gate.json",
-        "bytes": 8577,
-        "schema": "ember_pi05_pick_gc_exact_full48_feature_gate_v1",
-        "passed": true
-      }
-    }
+    "artifact_evidence": null
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "expected_world_size": 4,
+    "tasks_per_rank": 6,
     "num_workers_per_rank": 2,
     "total_macros": 25,
     "checkpoint_macros": [
@@ -276,7 +269,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "sealed_from_live_pick_gc_deployment_profile",
+    "formal_status": "awaiting_live_pick_gc_deployment_profile",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
     "required_writer_model_batch_sizes": [
       8,
@@ -284,36 +277,6 @@
       32
     ],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": {
-      "schema": "ember_pi05_pick_gc_deployment_seal_v1",
-      "run_commit": "717b561518b9a654f81fd9d27643f7272ddf93ff",
-      "writer_model_batch_size": 32,
-      "profile": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_writer_profile_val8x4_correct_gpu02p1_717b561_20260811/writer_generation_profile.json",
-        "bytes": 10375,
-        "schema": "ember_pi05_writer_generation_profile_v2"
-      },
-      "vertical_identity": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811/zero_memory_vertical_identity.json",
-        "bytes": 2873,
-        "schema": "ember_pi05_pick_gc_zero_memory_vertical_identity_v1"
-      },
-      "vertical": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811/results.json",
-        "bytes": 92276,
-        "schema": "ember_pi05_target_eval_results_v2"
-      },
-      "cache_manifest": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811/writer_lora_cache/cache_manifest.json",
-        "bytes": 52214,
-        "schema": "ember_pi05_expert_manifold_writer_lora_cache_manifest_v3"
-      },
-      "completion": {
-        "path": "runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811/completion.json",
-        "bytes": 779,
-        "schema": "ember_pi05_pick_gc_zero_memory_deployment_smoke_completion_v1",
-        "passed": true
-      }
-    }
+    "online_smoke_evidence": null
   }
 }

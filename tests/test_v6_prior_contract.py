@@ -56,7 +56,7 @@ def _formal_ready_config() -> dict:
 
 
 def _context() -> DistributedContext:
-    return DistributedContext(0, 0, 6, torch.device("cpu"))
+    return DistributedContext(0, 0, 4, torch.device("cpu"))
 
 
 def _args(
@@ -105,7 +105,9 @@ def test_pick_gc_config_seals_only_goal_causal_innovation_and_blind_full48() -> 
     assert "reconciliation" not in config
     assert "environment" not in config
     assert config["data"]["action_queries_per_task"] == 20
-    assert config["optimization"]["distributed_update"]["world_size"] == 6
+    distributed = config["optimization"]["distributed_update"]
+    assert distributed["world_size"] == 4
+    assert distributed["tasks_per_rank"] == 6
 
 
 @pytest.mark.parametrize(
@@ -152,21 +154,11 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    sealed = load_v6_prior_config()
-    preseal = deepcopy(sealed)
-    preseal["status"] = "active_cpu_ready_awaiting_live_profile"
-    preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
-    preseal["profile_run"]["artifact_evidence"] = None
-    preseal["formal_run"]["status"] = (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
-    preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_pick_gc_deployment_profile"
-    )
-    preseal["evaluation"]["online_smoke_evidence"] = None
+    preseal = load_v6_prior_config()
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
+    sealed = _formal_ready_config()
     assert runtime_for_mode(sealed, "formal") == (25, (10, 25), 0)
 
 

@@ -207,11 +207,11 @@ _EXPECTED_OPTIMIZATION = {
     "extra_negative_policy_forwards_per_task": 0,
     "distributed_update": {
         "kind": (
-            "all_gather_local4_features_and_cotangents_then_identical_"
+            "all_gather_local6_features_and_cotangents_then_identical_"
             "local_manual_write"
         ),
-        "world_size": 6,
-        "tasks_per_rank": 4,
+        "world_size": 4,
+        "tasks_per_rank": 6,
         "memory_allreduce": False,
         "nccl_p2p_disable": "1",
         "nccl_algo": "Ring",
@@ -229,16 +229,16 @@ _EXPECTED_CACHE_GATE = {
     "regularized_condition_number_max": 150.0,
 }
 _PROFILE_STATIC = {
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "expected_world_size": 4,
+    "tasks_per_rank": 6,
     "schedule_macro": 0,
     "diagnostic_macros": 1,
     "num_workers_per_rank": 2,
     "retain_weight": False,
 }
 _FORMAL_STATIC = {
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "expected_world_size": 4,
+    "tasks_per_rank": 6,
     "num_workers_per_rank": 2,
     "total_macros": 25,
     "checkpoint_macros": [10, 25],
@@ -246,14 +246,23 @@ _FORMAL_STATIC = {
 }
 _EXPECTED_PROFILE_BASELINE = {
     "path": (
-        "runs/outputs/pi05_v6_prior_gradient_profile_macro49_r6_lb20_mb10_"
-        "9c814ff_20260809/gradient_profile.json"
+        "runs/outputs/pi05_pick_gc_goal_causal_full48_profile_macro0_r6_b20_"
+        "717b561_20260811/mechanism_profile.json"
     ),
-    "schema": "ember_pi05_v6_prior_gradient_profile_seal_v1",
-    "schedule_macro": 49,
+    "schema": "ember_pi05_v6_policy_innovation_goal_causal_key_profile_v1",
+    "schedule_macro": 0,
     "task_count": 24,
     "action_queries_per_task": 20,
-    "step_seconds": 21.09510959603358,
+    "source_world_size": 6,
+    "source_tasks_per_rank": 4,
+    "target_world_size": 4,
+    "target_tasks_per_rank": 6,
+    "scaling": (
+        "source_step_seconds_times_target_tasks_per_rank_over_"
+        "source_tasks_per_rank"
+    ),
+    "source_step_seconds": 25.351229034829885,
+    "step_seconds": 38.02684355224483,
 }
 _EXPECTED_PROFILE_GATES = {
     "feature_rank_min": 48,
@@ -264,7 +273,7 @@ _EXPECTED_PROFILE_GATES = {
     "negative_null_task_count_min": 18,
     "negative_null_per_kind_min": 6,
     "predicted_observed_relative_rms_max": 0.005,
-    "production_wall_ratio_max": 1.75,
+    "production_wall_ratio_max": 1.25,
     "lora_a_response_rms_min": 0.0,
     "lora_b_response_rms_min": 0.0,
     "fixed_action_response_rms_min": 0.0,

@@ -35,8 +35,10 @@
   retained/null=`24/24`、Program/LoRA/action/throughput闭合。
 - [x] longest-video B8/16/32均stable，按`.47119/.47244/.47299` LoRAs/s选B32；zero-memory四suite
   LoRA/action bit-exact，canonical cache与8/8 rollout通过。
-- [x] formal-ready evidence seal由本commit封存，完整回归`346 passed`；push后从该commit建立新的clean detached
-  frozen worktree。
+- [x] world6/deployment formal-ready evidence由`5200bee`封存并push，完整回归`346 passed`；对应clean detached
+  frozen worktree已建立。
+- [x] live无单节点world6后只改执行拓扑为world4/local6；profile-only authority由本commit封存，push后从新
+  frozen worktree重过discarded mechanism与归一吞吐门，失败不训练。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
 
 ## Repository closeout

@@ -157,6 +157,10 @@ condition=`152.45803`；world6 mechanism condition=`152.61008`、retained/null=`
 B32 deployment又证明zero-memory native LoRA/action bit-exact并完成canonical cache-to-rollout。因此PICK原先的
 common-mode conditioning接口已经被这一单变量修复，不能再把后续失败归因于key数值不可解或compiler无增益。
 
+`5200bee`封存后live资源没有单节点world6。full48实现会在collective后按task ordinal固定排序完整24 task，
+没有memory all-reduce，所以world4/local6只改变执行分区，不改变video/query/RNG、full48输入或FP32 solve。
+当前formal资格先关闭，必须在world4 discarded profile复现机制门；这项拓扑门不能替代后续closed-loop裁决。
+
 最早未决接口现为blind offline full24 credit是否覆盖held on-policy occupancy并让多task support在同一Program
 memory共存。formal fresh`0→10`后的strict paired400若未过`144/breadth6/lost8/gained>lost`，只淘汰当前
 PICK-GC+blind-credit组合；heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。

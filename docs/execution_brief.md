@@ -5,8 +5,10 @@
 PICK只因full48 condition=`483.61515>200`退役。当前唯一active Writer successor PICK-GC已经完成
 implementation阶段`345 passed`及seal后完整回归`346 passed`、exact raw full48（condition=`152.45803`）、world6 discarded mechanism
 （condition=`152.61008`、retained/null=`24/24`）、B8/16/32吞吐选择和zero-memory deployment vertical；
-四suite native LoRA/action均bit-exact，canonical 8-entry cache与8/8 rollout完整。配置现为formal-ready，尚无
-formal训练或strict paired400结果，不能把这些机制门写成方法成功。
+四suite native LoRA/action均bit-exact，canonical 8-entry cache与8/8 rollout完整。`5200bee`时点配置曾
+formal-ready，但尚无formal训练或strict paired400结果，不能把这些机制门写成方法成功。该commit封存后live资源没有单节点world6；
+为遵守不等待/不跨节点和fresh按live空卡定topology，当前config已重置为world4/local6 profile-only，formal再次
+blocked，必须先过同算法的world4 discarded mechanism/归一吞吐门。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -24,8 +26,8 @@ PICK-GC design已经回答下列问题；实现和每次authority更新必须保
 7. 预计GPU、wall、显存、存储峰值和可恢复状态是什么？
 
 未经新的单变量authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official
-evaluator。PICK-GC前序CPU/cache/live mechanism/deployment门已经通过；formal训练只能从封存这些证据的
-clean pushed commit与新detached frozen worktree启动。
+evaluator。PICK-GC前序CPU/cache/world6 mechanism/deployment门已经通过；资源驱动的world4拓扑必须从新的
+clean pushed commit与detached frozen worktree重新profile并封存，之后formal训练也只能从其后clean seal启动。
 
 ## 2. Fixed information contract
 
@@ -206,7 +208,8 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 `formal_ready`只描述历史时点，不构成当前授权。
 
 PICK-GC的CPU、exact raw full48、discarded mechanism、B32 throughput和zero-memory deployment vertical已
-通过并封存。当前唯一获准的下一GPU阶段是从新clean pushed seal commit做formal fresh`0→10`，随后立即
-strict paired correct400；macro10必须`correct>=144`、breadth`>=6`、lost`<=8`且gained>lost。未看到该结果前
-不得resume到25；旧方法、额外candidate、controls或参数sweep仍未授权。每次launch仍须同时复核gpu01/gpu02、
-quota、fresh root、world6 topology与他人进程。
+通过并封存。当前唯一获准的下一GPU阶段是world4/local6 fresh macro0 discarded profile；它过全部原科学门且
+wall不超过`(25.351229s×6/4)×1.25`后，才可重新seal并做formal fresh`0→10`，随后立即strict paired
+correct400。macro10必须`correct>=144`、breadth`>=6`、lost`<=8`且gained>lost。未看到该结果前不得resume到25；
+旧方法、额外candidate、controls或参数sweep仍未授权。每次launch仍须同时复核gpu01/gpu02、quota、fresh root、
+world4物理/NUMA topology与他人进程。

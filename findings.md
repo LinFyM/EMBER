@@ -273,3 +273,10 @@ full48与paired rows仍按ordinal排序。这个设计只会被task-level live t
 因此ownership由实际完成速度而非CPU enqueue或静态frame proxy决定。full48 payload在原tensor gather内携带24条
 小timing rows，支持0--8个local tasks而不新增object collective；Phase-A wall失败会在96条paired rollouts前写
 non-pass并结束。旧PCUG schema/config状态与eval family已原位替换，旧结果只由Git、design和failure artifact保存。
+
+首次Work-Queue PCUG world3 live Phase-A提供了两个分离结论。科学计算本体在`72.9700s`完成，只有matched
+SKNC的`0.15246x`，24 tasks与三rank各8个ownership均完整，说明task-addressable B20与variable gather没有重现
+旧static PCUG的`>809s`长尾；但claim累计`60.8736s`，来自两个约`30.4s`的`flock`等待。实现检查确认cursor位于
+共享`/data1` output root，而design明确要求host-local cursor，因此这是storage/locking层工程违约，不是PCUG
+科学non-pass。paired probe未启动、没有checkpoint。唯一窄修是把一字节cursor移到节点本地`/tmp`；架构、
+objective、B20、world3、queue order、cap与全部hard gates保持不变后重跑原复现。

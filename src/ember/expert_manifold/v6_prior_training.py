@@ -6,6 +6,7 @@ import argparse
 import fcntl
 import json
 import math
+import os
 import time
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -594,8 +595,9 @@ def _collect_local_objectives(
     if len(jobs) != _TRAIN_TASK_COUNT:
         raise ExpertManifoldError("Work-Queue PCUG lost train24 jobs")
     queue_path = (
-        runtime.args.output_dir
-        / "task_queue"
+        Path("/tmp")
+        / f"ember-wqpcug-{os.getuid()}"
+        / runtime.args.output_dir.name
         / f"macro_{schedule_macro:08d}.cursor"
     )
     if runtime.context.is_main:

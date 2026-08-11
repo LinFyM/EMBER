@@ -22,7 +22,9 @@ deployment/formal与同配置重跑关闭。actual candidate paired-guard的科�
 当前唯一active successor是Work-Queue PCUG：保持PCUG全部科学变量，只把Phase-A固定rank ownership改成
 task-keyed runtime claim queue；每rank最多8个retained graphs，world4--6可真实work steal，world3退化8/8/8。
 canonical实现、fresh schema、task-addressable B20、variable-count gather与完整CPU`345 passed`已完成；尚未
-获得live证据。
+获得paired科学证据。首次world3 Phase-A本体在`72.9700s / 0.15246x SKNC`完成24 tasks，但cursor误落共享
+`/data1`导致累计`flock` claim=`60.8736s>1s`，在paired前工程non-pass；它只暴露host-local实现违约。
+cursor已移到节点本地`/tmp`，其余sealed变量不变，等待唯一clean reprofile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

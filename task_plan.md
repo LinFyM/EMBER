@@ -134,8 +134,11 @@
   task ordinal等权汇聚。CPU/live/formal快速否决门已预注册。
 - [x] 原位实现task-addressable exact B20、24-job atomic queue、variable-count padded gather和24条task timing；
   fresh schema/config/eval family已替换旧PCUG，完整CPU`345 passed`。没有worker pool、preload、hash或fallback。
-- [ ] clean pushed detached worktree上按live合适A40数运行唯一discarded macro；Phase A必须先于PCUG paired probe
-  在matched scaled SKNC wall内完成，否则终局退役该执行合同。
+- [x] clean pushed`7c86bf8` detached worktree在gpu02物理3/4/5 world3运行首次discarded macro；Phase-A本体
+  `72.9700s / 0.15246x SKNC`、24 tasks完整且每rank8，但host-local cursor误落共享`/data1`，两次`flock`
+  各等待约`30.4s`，累计claim=`60.8736s>1s`，因此paired前工程non-pass且无checkpoint。
+- [ ] 只修cursor到节点本地`/tmp`，clean push后按同world3、同架构/objective/gates做唯一reprofile；若仍不过门则
+  按实际最早接口裁决，不改queue order、cap、world size、threshold或科学合同。
 
 ## Repository closeout
 

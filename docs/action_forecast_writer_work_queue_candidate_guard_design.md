@@ -1,6 +1,9 @@
 # Work-Queue Paired Candidate Guard
 
-状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成，尚未live profile或训练。它是PCUG之后唯一active
+状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成。首次world3 live profile的Phase-A本体仅
+`72.9700s / 0.15246x SKNC`，24 tasks完整且每rank 8个，但实现把声明为host-local的cursor误放在共享`/data1`，
+两次`flock`各等待约`30.4s`，累计claim=`60.8736s>1s`，因此在paired前工程non-pass。cursor已窄修到节点本地
+`/tmp`，架构、objective、门限与科学样本不变，等待clean pushed commit唯一reprofile。它仍是PCUG之后唯一active
 successor；只有Phase-A与随后原PCUG机制门通过才可打开deployment/formal。
 PCUG的actual candidate paired-guard科学假设没有被检验；本设计只替换其最早失效的Phase-A任务所有权接口，
 不得被写成新的Writer科学架构或PCUG同配置重跑。

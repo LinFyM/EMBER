@@ -33,7 +33,9 @@
 - Work-Queue PCUG是当前唯一active successor design：保留未被检验的actual candidate pairing、K2x2 outcomes、
   harmful/stable closest projection和first-stable bank，只把Phase A固定rank ownership改成task-keyed runtime
   claim queue。每rank retained graph cap为8；canonical实现、fresh-incompatible schema、exact B20逐row等价、
-  Phase-A early stop和完整CPU`345 passed`已完成，尚未profile或训练。不得并行转向representation/rank/few-shot。
+  Phase-A early stop和完整CPU`345 passed`已完成。首次world3 live Phase-A本体只用`72.9700s`且24 tasks完整，
+  但cursor错误落在共享`/data1`使两次`flock`各等待约`30.4s`、累计claim=`60.8736s>1s`，在paired前工程non-pass。
+  cursor现已窄修到节点本地`/tmp`，其余合同不变，等待clean reprofile。不得并行转向representation/rank/few-shot。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -441,5 +443,6 @@ reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B3
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
-和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；config已封存non-pass，
-同配置重跑、deployment和formal关闭。当前无active successor，旧PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；旧static config已封存
+non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG是唯一active successor；旧PCUG/Reward/OSG/
+SKNC/SRTP命令不得恢复。

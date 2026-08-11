@@ -129,8 +129,13 @@
 - [x] PCUG以clean pushed`238cab4`、gpu02物理3/4/5/6 world4启动；Phase A在full24 gather前达到
   `809.72185s / 2.25568x>1.5x`wall下界。按不可逆hard gate停止自己的torchrun；无OOM、paired report或checkpoint，
   GPU正常释放，failure artifact与config non-pass状态已封存。
-- [ ] 从Phase-A rank-local tail写新的单变量successor authority；保留未被检验的actual candidate pairing，不
-  直接重跑PCUG、放宽wall、改pair/threshold/seed或转向无关架构。
+- [x] 从Phase-A rank-local tail封存Work-Queue PCUG单变量authority：保留未被检验的actual candidate pairing，
+  只把static rank ownership改为task-keyed runtime claim queue；每rank最多8个retained graphs，full24仍按
+  task ordinal等权汇聚。CPU/live/formal快速否决门已预注册。
+- [ ] 原位实现task-addressable exact B20、24-job atomic queue、variable-count padded gather和24条task timing；
+  不恢复旧PCUG命令、不放宽wall、不扫queue order/cap/worker/world size。
+- [ ] clean pushed detached worktree上按live合适A40数运行唯一discarded macro；Phase A必须先于PCUG paired probe
+  在matched scaled SKNC wall内完成，否则终局退役该执行合同。
 
 ## Repository closeout
 

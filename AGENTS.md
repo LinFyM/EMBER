@@ -39,8 +39,9 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `2.25568x>1.5x`。rank3/物理6先等待，物理3--5持续100%，run尚未完成Phase A full24 gather，也未开始paired
   probe；无OOM、nonfinite、mechanism report或checkpoint。formal/deployment关闭，不重跑同配置。该结果只淘汰
   当前static world4 PCUG execution contract，不检验actual candidate paired-guard的科学假设。
-- 当前没有active successor。下一步必须从Phase-A rank-local tail这个最早失败接口写新的单变量authority；不得
-  恢复PCUG/SRTP旧命令、直接formal，或因未取得paired evidence转去无关架构。
+- Work-Queue PCUG是当前唯一active successor design：保留actual candidate paired guard全部科学变量，只把
+  Phase A从static rank ownership改为task-keyed runtime claim queue，并以每rank最多8个retained graphs控制
+  A40显存。尚未实现、profile或训练；不得恢复旧PCUG命令、直接formal，或并行转向无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -52,15 +53,16 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
-5. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-6. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-7. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-8. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-9. `docs/research_history.md`
-10. `task_plan.md`
-11. `findings.md`
-12. `docs/concept.md`
+4. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
+5. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+6. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+7. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+8. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+9. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+10. `docs/research_history.md`
+11. `task_plan.md`
+12. `findings.md`
+13. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读

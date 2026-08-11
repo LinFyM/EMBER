@@ -19,6 +19,9 @@ Program update，但两个clean world3 attempts都在mixed reward CFM处三rank 
 Phase A full24 gather前就越过wall hard gate：`809.72185s / 2.25568x>1.5x`下界，物理3--5持续100%、物理6
 先等待；无OOM/nonfinite、paired probe、mechanism report或checkpoint。PCUG当前execution contract终局退役，
 deployment/formal与同配置重跑关闭。actual candidate paired-guard的科学假设仍未被检验。
+当前唯一active successor是Work-Queue PCUG：保持PCUG全部科学变量，只把Phase-A固定rank ownership改成
+task-keyed runtime claim queue；每rank最多8个retained graphs，world4--6可真实work steal，world3退化8/8/8。
+它尚未实现或获得live证据。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -45,6 +48,11 @@ SKNC把Program到action的protected motion压到零，但strict仍lost13并发�
 stable-success keys只在最终write前对`D0`做closest equality projection，harm不持久化。它测量实际update的因果
 损失而非surrogate gradient，不让task-local guard被后续full24 solve改写。完整公式与hard gates见
 `docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
+PCUG旧static world4 execution已被wall门淘汰，但paired science尚未执行。Work-Queue successor以
+`(task_id, task_visit)`纯函数重取完全相同B20 rows，让完成task的rank立即领取下一job，full24仍按ordinal排序；
+唯一变量是physical task ownership。它必须先过Phase-A wall和每rank8-graph显存门，再沿用PCUG paired、guard、
+deployment与macro5 strict400门。完整authority见
+`docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
 
 ## 2. Fixed information contract
 

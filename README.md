@@ -41,7 +41,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   Phase A尚未完成full24 gather时wall下界已达`809.72185s`，相对scaled matched SKNC为`2.25568x>1.5x`。
   run无OOM/nonfinite、mechanism report或checkpoint；gpu6的共驻低利用率服务不是长尾rank，物理3--5反而持续
   100%。这只淘汰当前static world4 execution contract，不检验actual candidate paired guard。formal、deployment
-  和同配置重跑全部关闭；当前没有active successor。
+  和同配置重跑全部关闭。
+- 当前唯一active successor design是Work-Queue PCUG：actual candidate、paired K2x2与final guard完全不变，只把
+  Phase A的24个确定性task jobs从static rank ownership改为完成驱动的host-local claim queue；每rank最多保留
+  8个graphs。它尚未实现或取得live证据，首先必须把world4 Phase-A wall压到`358.970267s`以内。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -128,6 +131,8 @@ deployment、formal全部关闭。PCUG也已因live Phase-A wall non-pass并封�
 SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 [`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
+当前Work-Queue successor的单变量、显存边界和快速否决门见
+[`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
 吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、
@@ -144,6 +149,8 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
+- [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：
+  当前唯一active successor，task-addressable B20、runtime claim queue与profile/formal门；
 - [`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`](docs/action_forecast_writer_success_key_nullspace_consolidation_design.md)：
   当前唯一SKNC单变量设计、nullspace公式与证伪门；
 - [`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`](docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md)：

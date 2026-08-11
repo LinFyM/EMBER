@@ -4,6 +4,8 @@
 discarded macro在Phase A full24 gather与paired probe前达到wall下界`809.72185s`，相对scaled matched SKNC为
 `2.25568x>1.5x`。无OOM、nonfinite、mechanism report或checkpoint；同配置重跑、deployment与formal关闭。
 这个结果只淘汰当前static world4 PCUG execution contract，不检验actual candidate paired-guard科学假设。
+后继`docs/action_forecast_writer_work_queue_candidate_guard_design.md`只替换Phase-A task ownership并继续检验该
+未决科学假设；旧PCUG config、command与同配置rerun仍关闭。
 
 实现保持一个canonical trainer/solver/deployment family：SRTP tangent/landmark runtime与测试已删除；exact
 candidate cast、paired K2×2、ephemeral harm guard、first-stable bank、FP64小SVD/FP32大投影、world-size 1--6

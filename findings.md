@@ -259,3 +259,11 @@ non-pass。run-contract后`809.72185s`仍未完成Phase A full24 gather，wall�
 nonfinite、mechanism report或checkpoint。这个结果只淘汰“static cost-balanced world4 Phase A + PCUG”执行合同，
 既没有支持也没有否定paired candidate guard；下一设计必须先消除global candidate形成前的rank-local tail，不能
 把未执行的科学机制写成负结果，也不能因此转向无关架构。
+
+Work-Queue PCUG据此成为唯一active successor design。旧sampler所谓dynamic只是在macro前按correct-video
+sampled-frame cost做uneven static ownership；world4四rank cost仅`207/216/206/204`，实际却由一个rank先等待、
+三个rank把Phase-A wall拖到`>809s`，说明该proxy不能控制critical path。B20 rows、video、counterfactual与policy
+RNG本来都是`(task_id, task_visit)`纯函数，因此可以让空闲rank完成一个task后原子领取下一个，而不改变任何
+科学样本、full24权重或PCUG update。每rank最多保留8个graphs，复用SKNC world3已证明可容纳的显存上界；
+full48与paired rows仍按ordinal排序。这个设计只会被task-level live timing、Phase-A wall与随后原PCUG机制门
+裁决，不用静态latency拟合、world-size sweep或更多防御性检查救失败执行图。

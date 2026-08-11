@@ -30,8 +30,9 @@
   与paired probe前就越过wall hard gate：从run-contract发布到owner停止的下界`809.72185s`，相对scaled matched
   SKNC=`2.25568x>1.5x`。物理3--5持续100%、物理6先等待；无OOM/nonfinite、mechanism report或checkpoint。
   deployment/formal与同配置重跑关闭；只淘汰当前execution contract，不检验paired-guard科学假设。
-- 当前没有active successor；下一设计必须针对Phase-A rank-local tail，并继承未被否定的candidate-pairing机制，
-  不得因没有取得paired evidence转向无关representation/rank/few-shot路线。
+- Work-Queue PCUG是当前唯一active successor design：保留未被检验的actual candidate pairing、K2x2 outcomes、
+  harmful/stable closest projection和first-stable bank，只把Phase A固定rank ownership改成task-keyed runtime
+  claim queue。每rank retained graph cap为8；尚未实现、profile或训练，不得并行转向representation/rank/few-shot。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

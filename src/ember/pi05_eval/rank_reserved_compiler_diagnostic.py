@@ -419,7 +419,13 @@ def compiler_diagnostic_rollout_projection(
             "environment": contract["environment"],
             "rng": contract["rng"],
             "libero_paths": contract["libero_paths"],
-            "tasks": contract["tasks"],
+            "tasks": [
+                {
+                    **task,
+                    "init_state_ids": list(task["init_state_ids"]),
+                }
+                for task in contract["tasks"]
+            ],
             "adapter_source": adapter_source,
         }
     except (KeyError, TypeError) as error:

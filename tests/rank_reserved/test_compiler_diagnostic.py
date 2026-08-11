@@ -453,7 +453,13 @@ def test_target_rollout_identity_is_exactly_bound_to_old134(
         "environment": {"render_resolution": 256, "terminate_on_success": True},
         "rng": {"inference_seed": 7},
         "libero_paths": {"assets": "/canonical/libero-assets"},
-        "tasks": [{"suite": "libero_spatial", "task_id": 1}],
+        "tasks": [
+            {
+                "suite": "libero_spatial",
+                "task_id": 1,
+                "init_state_ids": [0, 1],
+            }
+        ],
         "parallel": {"physical_gpu_ids": [0]},
         "adapter": {"source": {"checkpoint": "/canonical/source-step1000"}},
     }
@@ -465,6 +471,9 @@ def test_target_rollout_identity_is_exactly_bound_to_old134(
     target["normalization"]["path"] = (
         "/new-worktree/configs/source/normalization.json"
     )
+    # Fresh contracts carry tuples in memory; sealed JSON contracts reload lists.
+    # That representation-only difference must not change rollout identity.
+    target["tasks"][0]["init_state_ids"] = (0, 1)
     paired_fields = (
         "mode",
         "role",

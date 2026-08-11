@@ -27,17 +27,27 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_sknc_is_active_while_osg_pc_and_pick_gc_remain_provenance() -> None:
+def test_sknc_pick_gc_and_osg_pc_formal_states_are_sealed() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert config["status"] == "active_formal_ready"
+    assert config["status"] == "formal_result_sealed"
     assert config["profile_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
     assert config["profile_run"]["maximum_world_size"] == 6
     profile = config["profile_run"]["artifact_evidence"]
     assert profile["passed"] is True
     assert profile["world_size"] == 3
     assert profile["all_checks_passed"] is True
-    assert config["formal_run"]["status"] == "ready_after_live_profile_seal"
-    assert config["formal_run"]["artifact_evidence"] is None
+    assert config["formal_run"]["status"] == "formal_result_sealed"
+    result = config["formal_run"]["artifact_evidence"]
+    assert result["training"]["completed_macro"] == 5
+    assert result["strict_correct400"]["successes"] == 137
+    assert result["strict_correct400"]["breadth"] == 7
+    assert result["paired_old134"]["retained_gained_lost"] == [121, 16, 13]
+    assert result["decision"] == {
+        "macro5_gate_passed": False,
+        "exact_resume_macro5_to10_authorized": False,
+        "six_arm_controls_authorized": False,
+        "scope": "retire_sknc_plus_blind_b20_only",
+    }
     smoke = config["evaluation"]["online_smoke_evidence"]
     assert smoke["writer_model_batch_size"] == 32
     assert smoke["profile"]["passed"] is True

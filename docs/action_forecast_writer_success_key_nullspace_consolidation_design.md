@@ -1,9 +1,8 @@
 # Success-Key Nullspace Consolidation
 
-状态：2026-08-12 canonical implementation与fresh-incompatible config/checkpoint schema已完成；加载
-`.env.local`的完整CPU回归为`334 passed`。首个world3 TF32 measurement non-pass永久保留；clean `f4fdac7`
-reprofile已`16/16`通过，B8/16/32 deployment profile全部稳定并选择B32。config已`active_formal_ready`；尚未
-训练或评测，下一步固定fresh`0→5`并立即strict paired400。简称SKNC。
+状态：2026-08-12 formal终局non-pass并退役。clean world3机制与B32部署门通过后，formal fresh`0→5`的
+strict paired400=`137/400`、breadth7、相对old134 retained/gained/lost=`121/16/13`；未过absolute、retention和
+单task增益集中门，不resume、不补controls、不sweep。简称SKNC。
 它从PICK-GC strict`138/400`与OSG-PC工程non-pass后最早仍开放的接口出发：保留PICK-GC已经接通的
 ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、B20 blind source-action
 objective、full48 correct/negative panel、原生38-target rank16 compiler和one-shot部署；只把“如何在共享Program
@@ -327,6 +326,31 @@ same/wrong/shuffled/reversed/no-video以提前检查视频因果；最终goal ch
 paired分析必须逐task对比v6-fast143、macro0 old134、compiler138、online128与PICK-GC138，报告retained/gained/
 lost、churn、breadth、suite、哪些anchors持续成功或失效；checkpoint union、task-specific选择和多checkpoint
 融合不计。
+
+### 8.4 Formal result and terminal decision
+
+clean pushed `e3863cb`的detached worktree在`gpu02:3,4,5`以world3完成fresh`0→5`。五个macro的functional
+loss=`.09910/.09610/.09915/.09782/.09893`，没有改善趋势；all-success task数=`11/9/8/8/12`，persisted
+bank=`11/14/14/14/15`。macro5 projected rank36、energy ratio`.59195`、protected/unprotected Program ratio=
+`1.276e-7`，所以anchor容量没有单调坍缩，Program equality与compiler closure仍成立。
+
+同checkpoint strict paired correct400为`137/400`、breadth7、per-task（Spatial1/3, Object1/3, Goal3/6,
+Long1/2）=`1/3/45/32/0/37/18/1`，per-suite=`4/77/37/19`。相对immutable old134严格相同state、env/policy
+RNG与correct video identity的transition为`121 retained/16 gained/13 lost/250 both-fail`、churn29。suite净值为
+Spatial`-1`、Object`-5`、Goal`+2`、Long`+7`；最大正贡献来自Long task1净`+7`，占全部正task净贡献`7/10`。
+
+因此macro5同时违反`correct>=140`、`lost<=8`和单task增益不独占三项门；breadth、gained>lost、两个suite不降
+与内部closure通过不能覆盖这些hard failures。SKNC正式non-pass，不exact-resume`5→10`，不补six-arm controls，
+不做threshold/rank/scale/dtype/seed sweep。最早失效接口是train24单video success-key neighborhood无法代表held
+video/初始化occupancy support，且blind B20在剩余nullspace内仍无on-policy reward方向保证。负结果只淘汰本设计
+实际组合，不外推否定所有success constraint、reward credit、few-shot或task-level manifold supervision。
+
+formal roots：
+
+- training：`runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`
+- strict400：`runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`
+- strict root内保留`sknc_historical_transition_old134_to_macro0005.json`与
+  `sknc_formal_decision_evidence.json`
 
 ## 9. Fast falsifiers and interpretation
 

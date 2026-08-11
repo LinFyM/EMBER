@@ -18,12 +18,13 @@
 - OSG-PC唯一world6 discarded profile在full48前因rank-local task path长尾触发600s NCCL watchdog；最小wall
   lower bound=`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal与
   评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
-- 当前唯一active successor design是SKNC：K4只保留binary outcome，current 4/4 success keys加每train task
-  第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。canonical实现、fresh schema与
-  完整CPU回归`334 passed`已完成。首个world3 TF32 measurement non-pass永久保留；clean `f4fdac7` reprofile
-  已`16/16`通过，11个4/4 anchors、rank=`48→37`、Program ratio=`8.95e-8`、step=`478.627s`、scaled wall
-  ratio=`.47173`。同commit B8/16/32 deployment profile全部稳定并选择B32=`.47166 LoRA/s`，无OOM/nonfinite或
-  hidden teacher read。config已`active_formal_ready`；尚未训练或评测，下一步fresh`0→5`并立即strict paired400。
+- SKNC已完成formal fresh`0→5`与strict paired400并退役：`137/400`、breadth7、per-task=
+  `1/3/45/32/0/37/18/1`；old134→SKNC retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、
+  projected energy`.592`和Program closure健康，但Long task1净`+7`伴随Object/Spatial净`-5/-1`，未过
+  `correct>=140`、`lost<=8`及单task集中门。resume`5→10`、controls和sweep全部关闭。
+- 当前没有active successor。下一步必须针对train24 single-video success-key neighborhood不能代表held video/
+  initialization occupancy、blind B20又无真实reward方向保证这一最早接口，先写新的单变量authority；历史
+  config/artifact中的ready状态不能恢复执行。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -31,7 +32,29 @@
 
 ## 2. Latest formal decision
 
-### 2.1 PICK-GC formal macro10
+### 2.1 SKNC formal macro5
+
+formal训练root：
+`runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`；clean pushed commit
+`e3863cb7b8a9f19c87815f0984f360870bf13d5c`，`gpu02:3,4,5` world3，5/5 macros与checkpoint完成、exit0。
+functional loss=`.09910/.09610/.09915/.09782/.09893`；persisted bank=`11/14/14/14/15`，macro5 rank36、
+projected energy`.59195`、protected Program ratio=`1.276e-7`。这关闭了容量坍缩、constraint失效和compiler
+断链解释；训练仍没有functional趋势。
+
+strict root：
+`runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；42/42
+shards、400/400 rows、9/9 workers exit0，wall=`1689.604s`。结果`137/400`、breadth7、per-task=
+`1/3/45/32/0/37/18/1`、per-suite=`4/77/37/19`。相对immutable old134严格配对为
+`121 retained/16 gained/13 lost/250 both-fail`、churn29、Jaccard`.80667`；suite净值Spatial`-1`、Object`-5`、
+Goal`+2`、Long`+7`。最大正贡献Long task1净`+7`占正task净贡献`7/10`。
+
+macro5的absolute、retention和增益集中三项hard gate失败；breadth7、gained>lost、两个suite不降和健康closure
+不足以授权续训。SKNC正式non-pass，不resume、不补controls、不sweep。strict root内保留
+`sknc_historical_transition_old134_to_macro0005.json`和`sknc_formal_decision_evidence.json`。结论只淘汰
+PICK-GC+first-all-success-key nullspace+blind B20；最早失败接口是train24单video key/support不能外推held
+video/occupancy，且blind B20没有on-policy improvement guarantee。
+
+### 2.2 PICK-GC formal macro10
 
 formal训练root：
 `runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`；训练commit
@@ -54,7 +77,7 @@ source-action cotangent→held on-policy useful support/coexistence。正式deci
 `pick_gc_formal_decision_evidence.json`。只有PICK-GC+blind-credit组合被淘汰；ordered goal-causal key、
 condition-local FP32 Program、native rank16 compiler、few-shot与新的on-policy credit均未被该结果否定。
 
-### 2.2 Online Gate B
+### 2.3 Online Gate B
 
 online-regenerated rank14 zero-Program root：
 
@@ -69,7 +92,7 @@ online-regenerated rank14 zero-Program root：
 这是可信的端到端non-pass，但old/new分别使用18/12 generators，旧cache在worker内部局部拼B8，改变了
 co-batch、position、padding和tail；因此不能把全部退化归于rank14 compression。
 
-### 2.3 Compiler-only deconfounding
+### 2.4 Compiler-only deconfounding
 
 一次性clean去混杂root：
 
@@ -233,7 +256,7 @@ B20 loader batch只需`1.70/0.0002/.91/.14s`，排除确定性DataLoader瓶颈�
 因此当前OSG-PC无论未观测到的guard几何如何都不能formal、重跑同配置或扫K/Nmc/microbatch；负结果范围仅是
 “PICK-GC B20 proposal + current full-replay per-success VJP execution graph”，不否定所有on-policy guard。
 
-## 8. Active SKNC design authority
+## 8. Retired SKNC design and formal terminal
 
 SKNC保留PICK-GC已通过的ordered goal-causal key、historical v6-fast frozen base、B20 blind source-action
 cotangent、FP32 Program、full48 negative-zero panel和native 38-target rank16 compiler，只改变最终shared memory
@@ -274,6 +297,11 @@ step=`478.6270s`、scaled ratio=`.47173`，无checkpoint。deployment root为
 `runs/outputs/pi05_sknc_writer_profile_val8x4_correct_gpu02p3_f4fdac7_20260812`；B8/16/32均stable且选择B32=
 `.4716606 LoRA/s`，peak reserved约12.93GB、headroom约34.77GB，hidden teacher reads、OOM和nonfinite均为0。
 两项证据已经写入canonical config并打开formal fresh`0→5`。
+
+formal阶段随后按authority完整执行并得到上文2.1的`137/400`、breadth7、old134→SKNC
+`121/16/13`。macro5训练内部closure与projected capacity仍过门，故该负结果不能归因于实现、nullspace数值误差
+或compiler断链；它直接否决“单train24 all-success key可保护held support，blind B20可在其nullspace内共同改善”
+这一组合。canonical config现为`formal_result_sealed`，macro5 checkpoint只作formal evidence，不能继续训练。
 
 ## 9. Runtime and GPU boundary
 
@@ -338,5 +366,6 @@ canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败ro
 logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh
 config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
 reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
-config。当前下一步是从新clean pushed seal head live重查GPU/storage后fresh`0→5`，立即strict paired400；
-旧OSG命令不得恢复，macro5不过门不得resume。
+config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
+raw rows、transition和decision evidence完整保留，resume与controls关闭。当前无active successor，下一步先写针对
+held video/occupancy support与on-policy credit alignment的新单变量authority；旧OSG/SKNC命令不得恢复。

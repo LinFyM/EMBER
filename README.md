@@ -28,13 +28,12 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - OSG-PC的唯一world6 discarded profile在full48前因rank-local长尾触发600s NCCL watchdog；从run-contract发布
   到timeout至少`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、
   deployment与评测均关闭；当前full-replay per-success VJP执行图已退役，但不能据此否定所有success constraint。
-- 当前唯一active successor design是SKNC：同一K4 panel只用`4/4` binary success认证condition key，并把完整
-  shared Program update限制在这些keys的nullspace；每train task只持久化第一条success key。它不保存/回放
-  trajectory action，也不求reward VJP。canonical实现、fresh schema与完整CPU回归`334 passed`已完成。首个
-  world3 root的TF32 measurement non-pass永久保留；clean `f4fdac7` reprofile已`16/16`通过，11个4/4 anchors、
-  rank=`48→37`、Program ratio=`8.95e-8`、step=`478.627s`。部署B8/16/32均稳定并选择B32=`.47166 LoRA/s`，
-  无OOM/nonfinite或hidden teacher read。config现为`active_formal_ready`；尚未训练或评测，下一步fresh`0→5`
-  后立即strict paired400。
+- SKNC已完成formal fresh`0→5`和single-checkpoint strict paired400：`137/400`、breadth7、per-task=
+  `1/3/45/32/0/37/18/1`，相对old134 retained/gained/lost=`121/16/13`、churn29。训练端15个persisted anchors、
+  macro5 rank36、projected energy`.592`和Program closure均健康，但Long task1净`+7`掩盖Object净`-5`及
+  Spatial净`-1`；未过`correct>=140`、`lost<=8`和单task集中门，故不resume、不补controls、不sweep。
+- 当前没有active successor。下一步只允许针对“train24 success-key neighborhood与blind B20不能外推held
+  on-policy support/coexistence”写新的单变量authority，再恢复实现或GPU实验。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -49,10 +48,11 @@ compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且�
 都是独立换手源；Gate C、cycle1、controls和训练均未授权。该结论只淘汰当前uniform rank14合同，不淘汰
 视频、Reward、continuous tangent或所有parameter-manifold思路。
 
-PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；它最早在full48 key
-conditioning失效。PICK-GC把condition修到`152.61`、让FP32 Program连续积累并传出非零effective-BA tangent，
-但strict仍只有138且lost16。故最早失败接口已经推进到blind train24 source-action cotangent不能覆盖held
-on-policy有用support与共同积累；不应再用扩大LoRA norm/rank或恢复训练补救。
+PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；PICK-GC把condition修到
+`152.61`并传出非零effective-BA tangent，但strict只有138且lost16。SKNC又证明硬保护train24 all-success
+condition keys可在healthy rank/energy下把lost降到13，却仍不能保护held video/initialization support，且blind
+B20继续把能力从Object/Spatial换到Long。故最早失败接口已从compiler推进到video-conditioned support的跨video/
+跨occupancy可识别性与credit alignment；不应靠扩大LoRA norm/rank、延长训练或阈值sweep补救。
 详见[`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)。
 
 ## What matters scientifically
@@ -114,9 +114,9 @@ EMBER/
 └── tests/
 ```
 
-进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC已封存
-non-pass；SKNC的world3 mechanism profile与B32 deployment smoke已经sealed，只有新的clean pushed
-formal-ready head可按实时拓扑fresh训练`0→5`。不能从旧文档恢复GPU命令，macro5不过预注册门不得resume。
+进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC与SKNC均已
+封存non-pass；当前没有获准GPU launch的active method。必须先形成新的单变量design authority并由clean pushed
+head封存，不能从旧文档恢复OSG/SKNC命令或resume其checkpoint。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
 吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、

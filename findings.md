@@ -206,3 +206,15 @@ ratio=`.47173`共同说明SKNC的representation→constrained Program→native c
 但仍不能推出closed-loop改善。实际deployment panel的B8/16/32均stable，B32最高`.47166 LoRA/s`，且没有
 hidden teacher read；因此工程接口关闭，最早未决接口重新落到blind B20在success-key nullspace内能否产生
 跨task共同的held on-policy改善，必须由fresh macro5 strict paired400裁决。
+
+formal fresh`0→5`给出了清晰的负答案。训练在world3完成，persisted anchor bank从11增至15 tasks；macro5仍有
+rank36、projected energy`.59195`、protected/unprotected Program ratio=`1.276e-7`，且没有hidden read、replay
+或reward gradient，故不是nullspace容量坍缩或compiler重新失联。strict paired400为`137/400`、breadth7、
+per-task=`1/3/45/32/0/37/18/1`。相对old134严格配对为`121 retained/16 gained/13 lost`、churn29：Long task1
+净`+7`和Goal6净`+2`伴随两个Object tasks净`-5`、Spatial3净`-2`。SKNC把PICK-GC的lost16降到13，但仍远高于
+预注册8，且总分未过140；hard train24 success-key protection没有外推为held video/初始化support protection。
+
+因此最早失败接口进一步收窄为两部分的交界：PICK condition key对单条train video的完整LoRA地址是可保护的，
+但它不是跨video/occupancy的任务support坐标；同时blind B20 source-action cotangent在剩余nullspace内没有真实
+reward方向保证，继续发生suite换手。这个结果只淘汰“PICK-GC + first-all-success-key nullspace + blind B20”，
+不否定所有binary success constraint、on-policy continuous credit、few-shot或task-level manifold supervision。

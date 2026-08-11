@@ -5,9 +5,8 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-11，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PICK-GC
-formal=`138/400`、breadth6并已退役。当前唯一active方法是已通过CPU实现门、尚未做live profile的OSG-PC，
-只检验成功on-policy occupancy可行锥能否保护blind proposal的已有support。
+2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；SKNC最新
+formal=`137/400`、breadth7、old134→SKNC lost13并已退役。当前没有active successor。
 
 ## 1. Stable problem definition
 
@@ -81,6 +80,8 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Q/V uniform pivot-rank14 | online`128`; compiler-only`138` | 去混杂后可分离compression与regeneration影响 | old→compiler`119/19/15`，compiler→online`115/13/23`；两者独立换手，统一rank14退役 |
 | Policy-Innovation Consensus Key | no rollout | raw same/order、full48 correct/null、Program→LoRA→action与吞吐全部闭合 | exact full48 condition=`483.61515>200`；static common mode导致key collision，未获formal训练资格 |
 | Policy-Innovation Goal-Causal Key | `138/400`, breadth6 | full48 condition修到`152.61`，FP32 Program与effective BA切向写出闭合 | macro0→macro10=`118/20/16`、churn36；blind offline source-action credit不覆盖held on-policy support，组合退役 |
+| On-Policy Success-Guarded Program Credit | no rollout | success-prefix continuous guard的canonical执行图与fresh schema可实现 | world6 rank-local长尾触发600s NCCL watchdog，wall至少matched `1.912x>1.25x`；只淘汰current replay/VJP graph |
+| Success-Key Nullspace Consolidation | `137/400`, breadth7 | 4/4 success key可在healthy rank/energy下硬保护完整conditioned Program/LoRA/action | old134→SKNC=`121/16/13`、churn29；train24 single-video key不外推held support，blind B20继续suite换手 |
 
 ## 4. Final rank14 adjudication
 
@@ -139,6 +140,8 @@ credit retention、正确顺序的policy-effective方向和single-checkpoint漂�
    `.001953125`级roundoff固定batch1、重复forward、扩dtype或做逐tensor/内容hash门禁。
 10. **负结果只淘汰实际假设。** rank14失败淘汰uniform pivot14 support合同，不淘汰所有rank reservation；
     expert bank失败淘汰当前reader+24-expert字典，不淘汰所有task-level manifold监督。
+11. **train success不是held support坐标。** 对单条train video完整LoRA做hard zero-motion仍可能在held video与
+    initialization上lost13；support表示必须跨video/occupancy成立，blind nullspace写入本身不提供改善方向。
 
 ## 7. Do-not-repeat registry
 

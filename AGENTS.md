@@ -24,13 +24,13 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   600s后NCCL watchdog，至少一个rank未到达；从run-contract发布到timeout已`969.9709s`，是matched
   `507.3054s`的至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、deployment与评测均未授权；
   只淘汰当前full-replay per-success VJP执行图，不否定所有success constraint。
-- 当前唯一active method是SKNC：K4只保留binary outcome；4/4 correct-video key在最终shared Program solve中
-  形成硬零运动nullspace，且每train task只持久化第一条all-success key。canonical implementation、fresh schema
-  与完整CPU回归`334 passed`已完成。首个world3 root因TF32 measurement单项non-pass并永久保留；只关闭
-  constraint diagnostic的TF32后，clean `f4fdac7` fresh reprofile以`16/16` checks通过：11个4/4 anchors、
-  rank=`48→37`、Program ratio=`8.95e-8`、step=`478.627s`、scaled wall ratio=`.47173`。同commit部署
-  B8/16/32 profile全部稳定且选择B32=`.47166 LoRA/s`，无OOM/nonfinite或hidden teacher read；当前config已
-  `active_formal_ready`，下一步固定fresh`0→5`并立即strict paired400，尚无SKNC性能成绩。
+- SKNC已完成formal fresh`0→5`和strict paired400并正式non-pass：`137/400`、breadth7、per-task=
+  `1/3/45/32/0/37/18/1`；相对immutable old134 retained/gained/lost=`121/16/13`、churn29。Program closure、
+  projected rank/energy和outcome-only信息墙均健康，但未过`correct>=140`、`lost<=8`及单task增益集中门；
+  `5→10` resume、controls和参数sweep全部关闭。它只淘汰PICK-GC+first-all-success-key nullspace+blind B20。
+- 当前没有active successor。下一步必须从SKNC的最早失效接口——train24 video-conditioned success-key
+  neighborhood与blind B20不能保护/改善held on-policy support——写新的单变量design authority后才能实现或
+  launch GPU；不得从历史“formal-ready”状态恢复执行。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -185,10 +185,11 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
 - 最新retired config：`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`；状态为
   `profile_result_sealed_nonpass`，不能profile、formal或resume。
-- 当前active config：`configs/pi05_v6_success_key_nullspace_consolidation_v1.json`；canonical原位实现、
-  fresh-incompatible checkpoint schema、CPU机制验证、architecture审计、world3 `16/16` live profile和B32
-  deployment smoke均已sealed。下一合法GPU动作是从新的clean pushed formal-ready head按实时同节点可用卡
-  fresh训练`0→5`，随后立即strict paired correct400；macro5不过门不得resume。
+- 最新retired config：`configs/pi05_v6_success_key_nullspace_consolidation_v1.json`；状态为
+  `formal_result_sealed`。formal训练root与macro5 strict400 root分别为
+  `runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`和
+  `runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；
+  decision evidence、paired transition、raw rows和checkpoint均保留，但不能resume或补controls。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

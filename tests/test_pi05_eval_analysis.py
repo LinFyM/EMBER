@@ -283,6 +283,20 @@ def test_reward_credit_historical_transition_rejects_unregistered_macro() -> Non
         ),
         (
             "residual",
+            "sknc",
+            5,
+            "v6_condition_residual_v2",
+            "v6_sknc_v1",
+        ),
+        (
+            "residual",
+            "sknc",
+            10,
+            "v6_condition_residual_v2",
+            "v6_sknc_v1",
+        ),
+        (
+            "residual",
             "reward",
             2,
             "v6_condition_residual_v2",

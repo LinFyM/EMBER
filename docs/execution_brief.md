@@ -7,20 +7,19 @@ Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`
 paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gained/lost=`118/20/16`、churn36，
 未过`correct>=144`与`lost<=8`门，因此PICK-GC+blind offline source-action credit也已退役，不resume、不补
 controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾触发600s NCCL watchdog，wall lower bound
-至少是matched baseline的`1.912x>1.25x`，未到full48 report。当前唯一active design是SKNC：只用K4 4/4
-binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。首个
-world3 root因TF32 diagnostic measurement单项non-pass并保留；clean `f4fdac7` reprofile已`16/16`通过，
-11个4/4 anchors、rank=`48→37`、condition=`29.65`、projected energy=`.778`、Program ratio=`8.95e-8`、
-step=`478.627s`、scaled wall ratio=`.47173`。B8/16/32 deployment profile均稳定并选择B32=`.47166 LoRA/s`，
-无OOM/nonfinite或hidden teacher read。config已`active_formal_ready`；SKNC尚无训练或paired成绩，下一合法动作是
-fresh`0→5`并立即strict paired400。
+至少是matched baseline的`1.912x>1.25x`，未到full48 report。SKNC用K4 4/4 binary success keys约束最终shared
+Program write，clean world3机制与B32部署门均通过；formal fresh`0→5`后strict paired400=`137/400`、breadth7，
+相对old134 retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、projected energy`.592`与Program
+closure健康，但Long净`+7`掩盖Object/Spatial净`-5/-1`，未过`correct>=140`、`lost<=8`和单task集中门。
+SKNC已退役，不resume、不补controls、不sweep。当前没有active design；下一合法动作只能是先写针对held
+video/occupancy support与on-policy credit alignment的新单变量authority。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Active SKNC design gate
+## 1. Next design gate
 
-OSG-PC及任何后继在实现前必须回答：
+任何新successor在实现前必须回答：
 
 1. 它改变的唯一主要变量是什么？
 2. 它针对`docs/research_history.md`中的哪个最早失效接口？
@@ -34,9 +33,11 @@ OSG-PC及任何后继在实现前必须回答：
 blind train24 offline cotangent→held on-policy useful support/coexistence。OSG-PC试图用成功train24 executed-prefix
 half-space保护support，但current full-replay per-success VJP graph先在吞吐/长尾接口失败，尚未产生shared guard
 transfer证据。后继必须保留信息墙与已通过接口，同时正面限制on-policy credit的cost/occupancy length。
-SKNC以每task first all-success key和本macro current all-success keys约束最终shared write，测试“完整conditioned
-LoRA零运动”能否保护support，同时把on-policy cost限制为outcome-only K4。完整单变量公式、owner替换和hard
-gates见`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。
+SKNC以每task first all-success key和本macro current all-success keys约束最终shared write，确实把Program到action
+的protected motion压到零，但strict仍lost13并发生suite换手。故train24单video key不是held video/initialization
+occupancy的充分support坐标，blind B20在剩余nullspace内也没有reward-improvement保证。下一设计必须直接改变这
+一最早接口，同时保留PICK/v6的ordered video key、FP32 Program和native full-rank compiler；完整SKNC终局见
+`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。
 
 ## 2. Fixed information contract
 
@@ -219,10 +220,10 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
-deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证、clean world3 `16/16` profile与
-B32 deployment smoke均已sealed，config为`active_formal_ready`。下一合法动作是从新clean pushed seal head
-fresh训练`0→5`并立即strict paired400；launch仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA
-topology与现有进程，有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+deployment和评测全部关闭。SKNC canonical实现、clean world3 `16/16` profile、B32 deployment smoke、formal
+fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`formal_result_sealed`，resume、controls和
+sweep关闭。当前没有获准GPU launch的方法；新authority完成并封存后，launch仍须重新复核gpu01/gpu02、quota、
+fresh root、物理/NUMA topology与现有进程，有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

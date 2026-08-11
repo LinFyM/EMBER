@@ -170,7 +170,13 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    ready = load_v6_prior_config()
+    sealed = load_v6_prior_config()
+    with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
+        runtime_for_mode(sealed, "formal")
+    ready = deepcopy(sealed)
+    ready["status"] = "active_formal_ready"
+    ready["formal_run"]["status"] = "ready_after_live_profile_seal"
+    ready["formal_run"]["artifact_evidence"] = None
     preseal = deepcopy(ready)
     preseal["status"] = "active_cpu_ready_awaiting_live_profile"
     preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
@@ -186,12 +192,6 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
     assert runtime_for_mode(ready, "formal") == (10, (5, 10), 0)
-    result_sealed = deepcopy(ready)
-    result_sealed["status"] = "formal_result_sealed"
-    result_sealed["formal_run"]["status"] = "formal_result_sealed"
-    result_sealed["formal_run"]["artifact_evidence"] = {"path": "result.json"}
-    with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
-        runtime_for_mode(result_sealed, "formal")
 
 
 def test_preprofile_artifact_injection_fails_closed(

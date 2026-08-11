@@ -11,6 +11,7 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_anchored_reconciliation_v3": (10, 25),
     "v6_reward_credit_program_v1": (1, 2),
     "v6_pick_gc_v1": (10, 25),
+    "v6_sknc_v1": (5, 10),
 }
 HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_ecp_v2": "legacy_v6_prior_v1",
@@ -19,6 +20,7 @@ HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_anchored_reconciliation_v3": "v6_condition_residual_v2",
     "v6_reward_credit_program_v1": "v6_condition_residual_v2",
     "v6_pick_gc_v1": "v6_condition_residual_v2",
+    "v6_sknc_v1": "v6_condition_residual_v2",
 }
 
 WRITER_FAMILIES = {

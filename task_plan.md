@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-更新时间：2026-08-11。本文只记录当前收尾与下一 session 的决策流程；已完成实验、精确数值和禁止重复项见
+更新时间：2026-08-12。本文只记录当前收尾与下一 session 的决策流程；已完成实验、精确数值和禁止重复项见
 `docs/research_history.md`，实时状态见`docs/active_session_handoff.md`。
 
 ## Long-term goal
@@ -28,6 +28,10 @@
   `correct>=144`与`lost<=8`门，PICK-GC+blind offline credit退役。
 - [x] effective-BA不是identity或能量塌缩：norm中位比`1.000016`、相对L2`.002397`；最早失败接口推进到
   blind offline cotangent→held on-policy useful support/coexistence。
+- [x] SKNC formal macro5 strict=`137/400`、breadth7，相对old134 retained/gained/lost=`121/16/13`、churn29；
+  Program/constraint/energy门通过但`correct>=140`、`lost<=8`和单task增益集中门失败，SKNC+blind B20退役。
+- [x] 当前无active successor；新设计必须直接处理train24 success-key neighborhood不能代表held video/
+  initialization occupancy，以及blind B20 improvement direction与真实reward不对齐的最早接口。
 
 ## Completed PICK-GC phase
 
@@ -51,7 +55,7 @@
   resume10→25、six-arm controls与参数sweep。
 - [x] formal result、paired transition与effective-BA诊断写入config、handoff、design和retained decision evidence。
 
-## Active SKNC successor
+## Completed SKNC successor
 
 - [x] 从第一性原理选择一个只改变credit/occupancy接口的successor；不得恢复Reward/RLS/rank14 executable，
   也不得并行实现多个候选。
@@ -87,9 +91,20 @@
   clean `f4fdac7` fresh reprofile的16项checks全部通过：Program ratio=`8.95e-8`、step=`478.627s`、scaled
   wall ratio=`.47173`，未保留checkpoint。
 - [x] 完成实际evaluation adapter的B8/16/32 Writer deployment profile；全部stable、无OOM/nonfinite或hidden
-  teacher read，选择B32=`.47166 LoRA/s`。canonical config现为`active_formal_ready`。
-- [ ] profile通过后fresh`0→5`，立即strict paired correct400；只在`>=140`、lost`<=8`、breadth/suite共同趋势
-  过门时exact-resume到10，macro10以严格`>150`裁决。
+  teacher read，选择B32=`.47166 LoRA/s`；该formal-ready阶段随后由正式结果终结。
+- [x] 从clean pushed `e3863cb` detached worktree在`gpu02:3,4,5` world3完成formal fresh`0→5`；5个macro
+  functional loss无趋势，bank增长到15 tasks，macro5 rank36、projected energy`.592`、Program closure通过。
+- [x] macro5 strict paired400以9个persistent workers完成400/400 rows、exit0；结果137/breadth7，old134→SKNC
+  `121 retained/16 gained/13 lost`，Long净`+7`但Object/Spatial净`-5/-1`，按预注册门停止。
+- [x] exact-resume`5→10`、six-arm controls、threshold/rank/scale/dtype/seed sweep均关闭；formal checkpoint、raw
+  rows、paired transition和decision evidence保留。
+
+## Next successor authority
+
+- [ ] 从第一性原理选择一个主要变量，解释怎样用视频中的有向高层过程形成跨video/初始化可共享的policy credit，
+  同时阻断language/static bypass并让多task能力在同一checkpoint共存。
+- [ ] 在实现前写新的可证伪design authority，明确继承v6/PICK/SKNC的有效接口、最快CPU/live falsifier、GPU成本
+  和首次paired400门；不得恢复SKNC训练或同时实现多个候选。
 
 ## Repository closeout
 

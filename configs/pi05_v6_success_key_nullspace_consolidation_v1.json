@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_success_key_nullspace_consolidation_v1",
-  "status": "active_formal_ready",
+  "status": "formal_result_sealed",
   "method": {
     "name": "frozen_v6_success_key_nullspace_consolidation",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -348,7 +348,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
+    "status": "formal_result_sealed",
     "allowed_world_sizes": [
       1,
       2,
@@ -383,7 +383,39 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro10_requires_macro5_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "training": {
+        "root": "runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812",
+        "run_commit": "e3863cb7b8a9f19c87815f0984f360870bf13d5c",
+        "completed_macro": 5,
+        "world_size": 3,
+        "completion_schema": "ember_pi05_v6_success_key_nullspace_consolidation_completion_v1"
+      },
+      "strict_correct400": {
+        "root": "runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812",
+        "contract_reference": "ember_pi05_target_eval_launch_v2:53c81780fc63454590d95f99aeb1d03f",
+        "successes": 137,
+        "breadth": 7,
+        "per_task": [1, 3, 45, 32, 0, 37, 18, 1],
+        "per_suite": [4, 77, 37, 19]
+      },
+      "paired_old134": {
+        "retained_gained_lost": [121, 16, 13],
+        "churn": 29,
+        "artifact": "runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812/sknc_historical_transition_old134_to_macro0005.json"
+      },
+      "decision_evidence": {
+        "path": "runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812/sknc_formal_decision_evidence.json",
+        "schema": "ember_pi05_sknc_formal_decision_evidence_v1",
+        "passed": false
+      },
+      "decision": {
+        "macro5_gate_passed": false,
+        "exact_resume_macro5_to10_authorized": false,
+        "six_arm_controls_authorized": false,
+        "scope": "retire_sknc_plus_blind_b20_only"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_sknc_deployment_smoke",

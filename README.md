@@ -23,9 +23,11 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - PICK的raw-frame门通过，但world6 discarded full48 profile只因condition=`483.61515>200` non-pass；其余
   14项机制、动作与吞吐门通过，未获formal训练资格。
-- 当前唯一active successor是PICK-GC：保留PICK的frozen-policy evidence、frozen-v6 full-rank base、
-  高增益compiler、blind credit与causal-prefix block，只把static block改为terminal goal residual。
-  canonical implementation与完整CPU回归`345 passed`已完成，尚未继续GPU；任何旧“下一步”命令仍不得恢复。
+- PICK-GC已完成formal fresh`0→10`与strict paired400：`138/400`、breadth6，相对immutable macro0
+  retained/gained/lost=`118/20/16`。它未过`correct>=144`与`lost<=8`门，resume、controls和参数sweep均关闭。
+- 当前唯一active successor design是OSG-PC：保留PICK-GC B20改进proposal，只用真实train24成功rollout的
+  executed-prefix cotangent构造无权重可行锥，解析投影后再写同一FP32 Program。它尚未实现或获得GPU资格，
+  当前无EMBER GPU进程；任何旧“下一步”命令仍不得恢复。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -41,9 +43,9 @@ compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且�
 视频、Reward、continuous tangent或所有parameter-manifold思路。
 
 PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；它最早在full48 key
-conditioning失效。train24×50 cache中的PICK-GC goal/causal key保持same-task mean/median=`.9026/.9160`，把
-cross-task从`.4987`降到`.1345`、correct24 condition max从`108.56`降到`21.62`，且reverse=`-.8030`、shuffle
-约0。它只测试去掉static common mode能否让同一Program memory稳定共存；这些仍只是train-only design evidence。
+conditioning失效。PICK-GC把condition修到`152.61`、让FP32 Program连续积累并传出非零effective-BA tangent，
+但strict仍只有138且lost16。故最早失败接口已经推进到blind train24 source-action cotangent不能覆盖held
+on-policy有用support与共同积累；不应再用扩大LoRA norm/rank或恢复训练补救。
 详见[`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)。
 
 ## What matters scientifically
@@ -122,8 +124,10 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
+- [`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`](docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md)：
+  当前唯一OSG-PC单变量设计与证伪门；
 - [`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)：
-  当前唯一PICK-GC单变量设计与证伪门；
+  PICK-GC设计、formal结果与退役边界；
 - [`docs/research_history.md`](docs/research_history.md)：完整精炼实验谱系与禁止重复项；
 - [`task_plan.md`](task_plan.md)：当前整理/交接状态；
 - [`findings.md`](findings.md)：最重要的第一性原理结论；

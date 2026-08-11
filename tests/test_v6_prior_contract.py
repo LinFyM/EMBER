@@ -48,6 +48,7 @@ def _formal_ready_config() -> dict:
     config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to1_profile"
     config["profile_run"]["artifact_evidence"] = {"path": "profile.json"}
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
+    config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
         "sealed_from_live_pick_gc_deployment_profile"
     )
@@ -154,8 +155,9 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    sealed = load_v6_prior_config()
-    preseal = deepcopy(sealed)
+    result_sealed = load_v6_prior_config()
+    ready = _formal_ready_config()
+    preseal = deepcopy(ready)
     preseal["status"] = "active_cpu_ready_awaiting_live_profile"
     preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
     preseal["profile_run"]["artifact_evidence"] = None
@@ -169,7 +171,21 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
-    assert runtime_for_mode(sealed, "formal") == (25, (10, 25), 0)
+    assert runtime_for_mode(ready, "formal") == (25, (10, 25), 0)
+    with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
+        runtime_for_mode(result_sealed, "formal")
+
+
+def test_formal_result_evidence_mutation_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _raw_config()
+    config["formal_run"]["artifact_evidence"]["strict_correct400"]["results"][
+        "successes"
+    ] = 151
+    with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
+        _load_mutation(tmp_path, monkeypatch, config)
 
 
 def test_runtime_segments_are_fresh_zero_to_ten_then_exact_ten_to_twentyfive(

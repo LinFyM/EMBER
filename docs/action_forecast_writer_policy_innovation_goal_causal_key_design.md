@@ -1,11 +1,11 @@
 # Policy-Innovation Goal–Causal Key Writer
 
-状态：2026-08-11唯一active successor authority。PICK-GC canonical owner、fresh-incompatible config、
-implementation阶段`345 passed` CPU回归；exact raw full48、world6 discarded mechanism、B8/16/32吞吐与
-zero-memory deployment vertical均已通过并封存，seal后完整回归为`346 passed`；`5200bee`时点已formal-ready，
-但尚未训练或做strict paired400。该commit封存后live资源没有单节点world6，且authority禁止等待凑卡；执行
-拓扑只改为world4/local6。`09bbed3`上的discarded profile已经复现全部机制数值并通过归一吞吐门，formal资格现已
-重新打开。
+状态：2026-08-11 formal non-pass、已退役。PICK-GC canonical owner、fresh-incompatible config、exact raw
+full48、world6/world4 discarded mechanism、B8/16/32吞吐与zero-memory deployment vertical均通过；随后
+formal fresh`0→10`完整训练，但single-checkpoint strict paired correct仅`138/400`、breadth6，相对immutable
+macro0 retained/gained/lost=`118/20/16`。它同时未过`correct>=144`和`lost<=8`预注册门，因此不得resume到25、
+不得补controls或做参数sweep。本文现在是PICK-GC+blind offline source-action credit的封存结果authority，
+不再授权GPU执行。
 
 ## 1. Decision
 
@@ -234,12 +234,52 @@ correct motion/cotangent=`.96457`、negative/correct=`.03901`、retained/null=`2
 step=`34.94275s`，相对归一基准`38.02684s`为`.89871<1.25`；14项检查全true、exit0、无checkpoint，GPU已释放。
 因此纯拓扑复现通过，既有B32 deployment evidence原样重新挂回，world4 formal fresh`0→10`获准。
 
+### 9.6 Sealed formal result
+
+formal训练root为
+`runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`，训练commit
+`c2e1ff878b6b68cb5bc45bb5443cdbd54ab8e62a`。world4从全零Program memory完成10个task-complete macro，
+checkpoint、4-rank RNG、cursor和10行metrics完整；每一步feature rank均48，condition范围`83.61--152.88`，
+functional loss约`.093--.100`且没有改善趋势。10次value-delta RMS的RSS=`3.4596e-6`，最终FP32 Program
+memory RMS=`3.5493e-6`、20,971,520个值全部非零，说明更新主要在连续memory中积累而非简单相消。
+
+strict evaluation先暴露一个纯工程错误：evaluator用过时的默认world6校验真实world4 checkpoint，未进入GPU；
+`398425ee018097ba4c446f91bfe04ea65f6c7c5f`把expected world size改为读取sealed config并加回归，canonical
+环境完整测试`346 passed`。随后从该clean pushed commit的detached worktree完成48/48 shards、400/400 rows、
+12/12 persistent rollout workers，正式root为
+`runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
+
+按Spatial1/3、Object1/3、Goal3/6、Long1/2顺序：
+
+| checkpoint | total | breadth | per-task |
+| --- | ---: | ---: | --- |
+| v6-fast historical best | 143 | 6 | `0/3/46/37/0/36/20/1` |
+| immutable macro0 | 134 | 6 | `0/5/48/34/0/35/11/1` |
+| rank14 compiler-only | 138 | 7 | `1/1/46/32/0/35/22/1` |
+| rank14 online | 128 | 7 | `1/1/47/29/0/36/13/1` |
+| PICK-GC macro10 | 138 | 6 | `1/3/48/33/0/39/14/0` |
+
+macro0→PICK-GC在相同400个task/state、env seed、policy seed root和policy-noise common prefix下为
+retained/gained/lost/both-fail=`118/20/16/246`、churn36、net`+4`。79个noise-list长度差异全部来自不同的
+提前终止；teacher video identity也逐row一致。PICK-GC虽与compiler-only同为138，却少一个breadth，仍低于
+v6-fast 5分；Long1和Object3的丢失由Goal6等增益抵消，属于target-heterogeneous capability rotation。
+
+对同一400个task/state/video的macro0 B8与macro10 B32缓存，以低秩trace恒等式计算effective BA而不展开矩阵：
+整体范数中位比=`1.000016`，cosine=`.99999724`，相对L2=`.002397`；q/v/action相对L2中位分别
+`.002406/.002385/.003968`。batch shape会贡献普通BF16低位差异，因此不解释逐元素细节；但结合非零Program、
+fixed-action闭合和真实`+20/-16`，可以确认写出既非identity也非能量塌缩，而是很小、很高杠杆且未对准held
+occupancy的切向更新。这个结果不支持增大scale、norm或rank来补救。
+
+完整决策、逐task/逐suite转移、pairing和effective-BA证据封存在上述eval root的
+`pick_gc_formal_decision_evidence.json`。正式裁决是：只退役PICK-GC key与blind train24 B20 source-action
+functional cotangent的组合；保留goal-causal ordered evidence、condition-local FP32 Program memory和原生
+rank16 compiler作为未被否定的子机制。下一设计必须只改变credit/occupancy接口，不能恢复本run、做小sweep或
+把negative LoRA人为破坏。
+
 ## 10. What this result can and cannot conclude
 
-exact raw与world6 full48 condition已经分别以`152.45803`和`152.61008`通过，因此key数值可解性、
-Program→LoRA→action闭合均不再是科学接口疑点；world4又exact复现机制payload并通过归一吞吐门，因此formal前
-工程门也已关闭。这些结果仍不能说明blind offline
-credit能覆盖held on-policy occupancy，也不能预言closed-loop分数。若macro10闭环失败，最早剩余接口就是
-blind offline credit或key与held occupancy错位；不得回头把失败归因于已通过的full48 condition或
-Program→LoRA增益，也不因此否定condition-local memory、few-shot、task-level manifold supervision或新的
-on-policy credit。
+PICK-GC已经实测修复PICK的full48 condition collision，并证明ordered key、full48 solve、FP32 Program写入、
+native compiler和fixed action全链闭合；formal closed-loop却只有138且lost16。故当前最早失效接口是blind
+train24 offline source-action functional cotangent到held on-policy有用support与共存的映射，而不是key数值
+可解性或单纯Program→LoRA传递。该负结果不否定condition-local memory、few-shot、task-level manifold
+supervision或新的on-policy reward credit；也不能反向证明任何这些候选有效。

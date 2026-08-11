@@ -24,8 +24,12 @@
   condition=`483.61515>200` non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
 - [x] 从该最早失效接口选择唯一successor PICK-GC：只把static block换为goal residual并保留causal prefix；
   新authority是`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`。
+- [x] PICK-GC formal macro10 strict=`138/400`、breadth6，相对macro0 retained/gained/lost=`118/20/16`；未过
+  `correct>=144`与`lost<=8`门，PICK-GC+blind offline credit退役。
+- [x] effective-BA不是identity或能量塌缩：norm中位比`1.000016`、相对L2`.002397`；最早失败接口推进到
+  blind offline cotangent→held on-policy useful support/coexistence。
 
-## Active PICK-GC phase
+## Completed PICK-GC phase
 
 - [x] train24×50 cache门：same mean/median`.90260/.91604`、cross`.13455/.11375`、reverse
   `-.80305/-.80877`、shuffle约0、correct24 condition max`21.62`；GE漏中间shuffle、SDE same`.86177`，均拒绝。
@@ -41,7 +45,22 @@
   frozen worktree重过discarded mechanism与归一吞吐门，失败不训练。
 - [x] `09bbed3` world4 profile相对world6机制payload逐字段exact，14 checks全true；step`34.94275s`、归一
   ratio`.89871<1.25`、exit0、无checkpoint，formal-ready reseal由本commit封存。
-- [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
+- [x] world4 formal fresh0→10完整结束并保存macro10 checkpoint/cursor/RNG/metrics；每步rank48且Program memory
+  非零积累。
+- [x] strict paired400完成48/48 shards、400/400 rows、12/12 workers；结果138/breadth6/lost16，正式关闭
+  resume10→25、six-arm controls与参数sweep。
+- [x] formal result、paired transition与effective-BA诊断写入config、handoff、design和retained decision evidence。
+
+## Active successor synthesis
+
+- [x] 从第一性原理选择一个只改变credit/occupancy接口的successor；不得恢复Reward/RLS/rank14 executable，
+  也不得并行实现多个候选。
+- [x] OSG-PC明确保留PICK-GC ordered goal-causal key、condition-local FP32 Program与native full-rank16 compiler，
+  以每条成功train24 rollout的executed-prefix half-space解析保护已有support；authority见
+  `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`；并解释train24 on-policy
+  reward/occupancy如何形成连续cotangent、保护task-complete已有support。
+- [x] 预注册CPU投影、discarded full24 K4+B20、formal macro5与strict paired400门；实现前不launch GPU。
+- [ ] 原位替换唯一canonical runtime/config/tests，不保留PICK-GC或旧Reward可执行分支；先过CPU和architecture gate。
 
 ## Repository closeout
 

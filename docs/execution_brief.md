@@ -2,20 +2,18 @@
 
 ## 0. Current operation
 
-PICK只因full48 condition=`483.61515>200`退役。当前唯一active Writer successor PICK-GC已经完成
-implementation阶段`345 passed`及seal后完整回归`346 passed`、exact raw full48（condition=`152.45803`）、world6 discarded mechanism
-（condition=`152.61008`、retained/null=`24/24`）、B8/16/32吞吐选择和zero-memory deployment vertical；
-四suite native LoRA/action均bit-exact，canonical 8-entry cache与8/8 rollout完整。`5200bee`时点配置曾
-formal-ready，但尚无formal训练或strict paired400结果，不能把这些机制门写成方法成功。该commit封存后live资源
-没有单节点world6；执行拓扑改为world4/local6。`09bbed3` discarded profile已经逐字段exact复现world6机制
-payload，并以`34.94275/38.02684=.89871<1.25`过归一吞吐门；config现重新formal-ready。
+PICK只因full48 condition=`483.61515>200`退役；PICK-GC随后把condition降到`152.61`并通过
+Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`0→10`后的single-checkpoint strict
+paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gained/lost=`118/20/16`、churn36，
+未过`correct>=144`与`lost<=8`门，因此PICK-GC+blind offline source-action credit也已退役，不resume、不补
+controls、不sweep。当前唯一active design为尚未实现的OSG-PC；没有EMBER GPU进程。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Active design gate
+## 1. Successor design gate
 
-PICK-GC design已经回答下列问题；实现和每次authority更新必须保持这些答案不漂移：
+OSG-PC及任何后继在实现前必须回答：
 
 1. 它改变的唯一主要变量是什么？
 2. 它针对`docs/research_history.md`中的哪个最早失效接口？
@@ -25,10 +23,10 @@ PICK-GC design已经回答下列问题；实现和每次authority更新必须保
 6. 如何避免按held task outcome反向选择target/rank/route？
 7. 预计GPU、wall、显存、存储峰值和可恢复状态是什么？
 
-未经新的单变量authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official
-evaluator。PICK-GC前序CPU/cache/world6 mechanism/deployment门已经通过；资源驱动的world4拓扑已从新的clean
-pushed commit与detached frozen worktree重新profile并由`09bbed3`通过。formal训练只能从挂回这些immutable
-evidence后的clean seal启动。
+最新接口裁决是：PICK-GC key、condition-local FP32 Program和native rank16 compiler已接通；最早失败在blind
+train24 offline functional cotangent→held on-policy useful support/coexistence。OSG-PC只增加成功train24 rollout
+的executed-prefix half-space并做解析Program projection；split、信息墙、source policy、normalization、public
+LoRA topology和official evaluator保持，也不得恢复PICK-GC训练。
 
 ## 2. Fixed information contract
 
@@ -208,9 +206,8 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 它们只能在新session建立明确的单变量design authority后重新获得执行资格。任何旧artifact中的
 `formal_ready`只描述历史时点，不构成当前授权。
 
-PICK-GC的CPU、exact raw full48、discarded mechanism、B32 throughput和zero-memory deployment vertical已
-通过并封存；world4/local6 discarded profile也已复现全部机制payload并通过归一吞吐门。当前唯一获准的下一GPU
-阶段是从新clean formal seal做fresh`0→10`，随后立即strict paired correct400。macro10必须`correct>=144`、
-breadth`>=6`、lost`<=8`且gained>lost。未看到该结果前不得resume到25；
-旧方法、额外candidate、controls或参数sweep仍未授权。每次launch仍须同时复核gpu01/gpu02、quota、fresh root、
-world4物理/NUMA topology与他人进程。
+PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
+checkpoint与参数sweep全部关闭。OSG-PC authority已形成但下一GPU阶段仍未授权：必须先原位实现唯一owner并
+完成CPU/synthetic projection合同，再由clean pushed frozen commit和live资源执行一次discarded full24门。
+任何未来launch仍须同时
+复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与他人进程。

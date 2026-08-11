@@ -26,10 +26,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pick_gc_world4_deployment_is_sealed_from_its_live_evidence() -> None:
+def test_pick_gc_world4_formal_nonpass_is_sealed_from_live_evidence() -> None:
     config = load_v6_prior_config(CONFIG)
     evaluation = config["evaluation"]
-    assert config["status"] == "active_formal_ready"
+    assert config["status"] == "formal_result_sealed"
     assert config["profile_run"]["expected_world_size"] == 4
     assert config["profile_run"]["tasks_per_rank"] == 6
     assert config["profile_run"]["status"] == (
@@ -41,7 +41,20 @@ def test_pick_gc_world4_deployment_is_sealed_from_its_live_evidence() -> None:
     assert profile["tasks_per_rank"] == 6
     assert profile["passed"] is True
     assert profile["completion"]["passed"] is True
-    assert config["formal_run"]["status"] == "ready_after_live_profile_seal"
+    formal = config["formal_run"]
+    assert formal["status"] == "formal_result_sealed"
+    result = formal["artifact_evidence"]
+    assert result["training"]["completed_macro"] == 10
+    assert result["strict_correct400"]["results"]["successes"] == 138
+    assert result["strict_correct400"]["results"]["breadth"] == 6
+    assert result["strict_correct400"]["decision_evidence"]["passed"] is False
+    assert result["decision"] == {
+        "macro10_gate_passed": False,
+        "resume_macro10_to25_authorized": False,
+        "six_arm_controls_authorized": False,
+        "retained_gained_lost_to_macro0": [118, 20, 16],
+        "scope": "retire_pick_gc_plus_blind_offline_source_action_credit_only",
+    }
     assert evaluation["throughput_policy"] == (
         "highest_measured_batch_throughput_with_device_memory_headroom"
     )

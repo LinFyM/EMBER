@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_policy_innovation_goal_causal_key_v1",
-  "status": "active_formal_ready",
+  "status": "formal_result_sealed",
   "method": {
     "name": "frozen_v6_policy_innovation_goal_causal_key",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -268,7 +268,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
+    "status": "formal_result_sealed",
     "expected_world_size": 4,
     "tasks_per_rank": 6,
     "num_workers_per_rank": 2,
@@ -293,7 +293,62 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro25_requires_macro10_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "training": {
+        "root": "runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811",
+        "run_commit": "c2e1ff878b6b68cb5bc45bb5443cdbd54ab8e62a",
+        "completed_macro": 10,
+        "completion": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811/completion.json",
+          "bytes": 201,
+          "schema": "ember_pi05_v6_policy_innovation_goal_causal_key_completion_v1"
+        },
+        "checkpoint_manifest": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811/checkpoints/macro_00000010/manifest.json",
+          "bytes": 11500,
+          "schema": "ember_pi05_v6_policy_innovation_goal_causal_key_checkpoint_v1"
+        },
+        "metrics": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811/metrics.jsonl",
+          "bytes": 203002,
+          "rows": 10
+        }
+      },
+      "strict_correct400": {
+        "root": "runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811",
+        "evaluation_commit": "398425ee018097ba4c446f91bfe04ea65f6c7c5f",
+        "results": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811/results.json",
+          "bytes": 1823130,
+          "schema": "ember_pi05_target_eval_results_v2",
+          "episodes": 400,
+          "successes": 138,
+          "breadth": 6
+        },
+        "launcher_completion": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811/launcher_completion.json",
+          "bytes": 2251,
+          "schema": "ember_pi05_eval_launcher_completion_v1"
+        },
+        "decision_evidence": {
+          "path": "runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811/pick_gc_formal_decision_evidence.json",
+          "bytes": 64464,
+          "schema": "ember_pi05_pick_gc_formal_decision_evidence_v1",
+          "passed": false
+        }
+      },
+      "decision": {
+        "macro10_gate_passed": false,
+        "resume_macro10_to25_authorized": false,
+        "six_arm_controls_authorized": false,
+        "retained_gained_lost_to_macro0": [
+          118,
+          20,
+          16
+        ],
+        "scope": "retire_pick_gc_plus_blind_offline_source_action_credit_only"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_pick_gc_deployment_profile",

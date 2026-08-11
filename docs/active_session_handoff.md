@@ -11,19 +11,44 @@
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、
   `345 passed`回归、raw-frame门和world6 discarded full48 profile；profile仅因condition=`483.61515>200`
   non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
-- 当前唯一active successor PICK-GC只把PICK的static block换为terminal goal residual并保留causal-prefix。
-  implementation阶段`345 passed`、exact raw full48、world6 discarded mechanism、B8/16/32吞吐和zero-memory
-  deployment vertical已全部通过，seal后完整回归为`346 passed`并由`5200bee`push封存。随后live资源没有单节点
-  world6；执行拓扑只改为world4/local6。`09bbed3` discarded profile已经逐字段exact复现world6机制payload并
-  通过归一吞吐门，formal资格现已重新打开。尚未formal训练或做strict paired400，目前没有EMBER GPU进程。
+- PICK-GC已完成formal fresh`0→10`及strict paired correct400并正式退役：`138/400`、breadth6、per-task
+  （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/3/48/33/0/39/14/0`；相对immutable macro0
+  retained/gained/lost=`118/20/16`、churn36。它未过`correct>=144`与`lost<=8`门，不得resume到25、补controls
+  或做参数sweep。
+- 当前唯一active successor design是OSG-PC：保留PICK-GC的B20 proposal，只将其投影到“不增大train24成功
+  on-policy executed-prefix loss”的parameter-free可行锥，再走同一full48 Program write。它尚未实现、profile
+  或获得GPU训练资格；当前没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
-  evidence和可复用基础保留。PICK-GC必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
+  evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
   工作以后仍须来自clean pushed commit的detached frozen worktree。
 
 ## 2. Latest formal decision
 
-### 2.1 Online Gate B
+### 2.1 PICK-GC formal macro10
+
+formal训练root：
+`runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`；训练commit
+`c2e1ff878b6b68cb5bc45bb5443cdbd54ab8e62a`。10个macro全部rank48，condition=`83.61--152.88`，最终
+20,971,520值FP32 Program memory RMS=`3.5493e-6`且全部非零。functional loss约`.093--.100`无下降趋势，
+所以机制写入健康但offline surrogate没有形成更好趋势。
+
+strict root：
+`runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`；
+48/48 shards、400/400 rows、12/12 workers exit0。结果`138/400`、breadth6；macro0→macro10严格相同
+task/state/video/env/policy RNG pairing下 retained/gained/lost/both-fail=`118/20/16/246`、churn36。各基线同一
+task顺序为：v6-fast143=`0/3/46/37/0/36/20/1`、macro0 134=`0/5/48/34/0/35/11/1`、compiler138=
+`1/1/46/32/0/35/22/1`、online128=`1/1/47/29/0/36/13/1`、PICK-GC138=
+`1/3/48/33/0/39/14/0`。
+
+paired缓存的effective-BA整体范数中位比=`1.000016`、cosine=`.99999724`、相对L2=`.002397`；action端
+相对L2=`.003968`。这套小而非零的切向写入已造成20 gains与16 losses，排除identity/能量塌缩，也不支持靠
+扩大scale或rank补救。结合pre-formal condition/closure门，最早失效接口被推进到blind train24 offline
+source-action cotangent→held on-policy useful support/coexistence。正式decision evidence位于eval root的
+`pick_gc_formal_decision_evidence.json`。只有PICK-GC+blind-credit组合被淘汰；ordered goal-causal key、
+condition-local FP32 Program、native rank16 compiler、few-shot与新的on-policy credit均未被该结果否定。
+
+### 2.2 Online Gate B
 
 online-regenerated rank14 zero-Program root：
 
@@ -38,7 +63,7 @@ online-regenerated rank14 zero-Program root：
 这是可信的端到端non-pass，但old/new分别使用18/12 generators，旧cache在worker内部局部拼B8，改变了
 co-batch、position、padding和tail；因此不能把全部退化归于rank14 compression。
 
-### 2.2 Compiler-only deconfounding
+### 2.3 Compiler-only deconfounding
 
 一次性clean去混杂root：
 
@@ -156,37 +181,31 @@ Experts不能：
 稳定规则：视频被使用不等于正确使用；LoRA健康度是约束不是目标；task drift没有单一原因；small panel和
 checkpoint union会误导；新topology必须从train24机制推导，不能按held得失设计。
 
-## 7. Active successor and remaining questions
+## 7. Active OSG-PC design and boundary
 
-当前已选后继为
-`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`中的PICK-GC。PICK本身已证明frozen
-source-policy zero-image-subtracted innovation能在raw frames读取same-task与顺序、full48 solver能把credit传到
-Program/LoRA/action且吞吐可接受；它最早只在48-key conditioning失败。
+PICK-GC的formal结果把因果链进一步收窄：frozen-policy goal/causal innovation能读取
+same-task与顺序，full48 key可解，condition-local FP32 Program会连续积累，native compiler会把它传到effective
+BA与action；但blind source-action cotangent没有在held rollout occupancy上稳定积累support。下一设计必须保留
+这些已通过接口，只改变credit/occupancy这一项主要变量。
 
-PICK-GC只把static mean换为`terminal quartile - whole-video mean`，保留PICK原有centered causal prefix。
-sealed train24×50 cache中complete same mean/median=`.90260/.91604`、cross=`.13455/.11375`、
-reverse=`-.80305/-.80877`、shuffle约0，50个correct24 panels均rank24且condition max=`21.62`。相比PICK，
-same-task略降但过既定门，cross与condition明显改善。terminal-minus-initial版本会漏掉保留首尾的中间阶段
-shuffle，reversal-symmetric endpoint则same mean仅`.86177`；两者均已拒绝，不实现。
+当前已选的OSG-PC定义为：对每task保持`d0=-grad_H L_source(B20)`，用同一correct-video LoRA做K4 train24
+random-reset rollouts；每条成功episode的executed-prefix CFM cotangent `r_e`形成`<r_e,d><=0`，然后取离`d0`
+最近的Euclidean feasible-cone projection。无success或raw已可行时逐元素退化为blind proposal；非零projection
+仍严格保持source descent。binary reward只选择已有support，不用作sub-ULP improvement gradient。
 
-PICK-GC继续保持historical v6 600 tensors、完整rank16 compiler、B20 blind full48 credit和单个FP32 Program
-memory。前序结果为：
+它回答：
 
-- exact raw full48 rank48、condition=`152.45803`、same=`.94501`、reverse=`-.81318`、shuffle=`-.09783`、
-  target-language wrong=`.12235`；shuffle只以约`.00217`余量过门，不夸大其分离强度；
-- world6 mechanism condition=`152.61008`、correct motion/cotangent=`.96457`、negative/correct=`.03901`、
-  retained/null=`24/24`，Program/LoRA/action与四suite breadth闭合，wall ratio=`1.13558`；
-- B8/B16/B32吞吐=`.47119/.47244/.47299` LoRAs/s，均stable并含67帧最长video，按规则选B32；
-- zero-memory四suite LoRA `76/76` tensors与action均bit-exact，Program memory为0；canonical 8-entry cache、
-  Writer释放、source policy复用和8/8 rollouts通过，smoke观测`4/8` success不作选择门。
+1. train24奖励或on-policy occupancy如何提供比source-action B20更接近真实闭环的support约束；
+2. 如何保持exact language + one action-hidden video是部署时唯一动态输入，并让正确顺序成为有用更新的必要key；
+3. 如何在每个task-complete更新中避免牺牲另一个task的已有reward support，而不读取held actions/outcomes；
+4. 如何直接写入现有FP32 Program并复用native rank16 compiler，避免Reward-Credit的BF16 ULP和uniform rank14
+   compression/regeneration损伤；
+5. 哪个小规模train-only reward/occupancy gate能快速否决它，以及何时必须做strict paired400。
 
-因此raw conditioning、Program→LoRA→action和部署图已不再是最早科学接口。world4已经证明同一full24 solve在
-新执行拓扑保持机制/吞吐；下一科学裁决只剩blind AS credit能否在held on-policy occupancy上让同一checkpoint
-共同积累support，由formal fresh`0→10`及其strict paired400判断。
-
-仍未授权的其它候选包括pivot15+1、train-derived mixed topology、few-shot set encoder和新的reward credit。
-它们不能与PICK-GC并行实现或作为失败时自动fallback。特别是pivot15+1不能恢复旧balanced-rank15，rank1 tangent
-capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
+完整公式、owner替换、CPU/live/profile/formal门见
+`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`。Reward-Credit、RLS和rank14历史
+只能作为边界证据，不能直接恢复。few-shot、task-level manifold supervision与heterogeneous topology仍是
+开放方向，不能与OSG-PC并行实现。design commit和CPU合同完成前不得GPU训练。
 
 ## 8. Runtime and GPU boundary
 
@@ -203,9 +222,9 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
 18:47+08:00新快照中`gpu02:1-5`空闲而`:0/:6/:7`属于他人，`gpu01`只有`:2/:4/:6/:7`空闲；没有单节点
 world6。train24 full48按可整除且不跨节点的world4/local6重过profile；实际physical topology为gpu02
 `:2,:3,:4,:5`，两侧NUMA各2卡；`:1`有历史corrected ECC/remap而未选，第五张空卡也不能保持固定local task数。
-该profile已完成并释放四卡；formal fresh launch前仍必须重查，不能把快照当预约。
-`strg01`最新报告`/data1`用量`508269652 KiB`、quota`1073741824 KiB`，profile/vertical实际新增远低于1GiB，
-formal加随后的correct400峰值仍估计不足2GiB。
+PICK-GC formal与strict400均已完成并释放四卡；完成后selected physical2--5均0MiB/0%且无本次compute process。
+`strg01`最近一次报告`/data1`用量`508362308 KiB`、quota`1073741824 KiB`；这是漂移快照，任何新launch仍需
+同时重查两节点、quota与峰值预算，不能把旧空闲状态当预约。
 
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
@@ -235,5 +254,7 @@ checkpoint。PICK-GC部署证据root为
 `runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811`。
 首次vertical的staging-path失败及retry完成后的CPU finalizer字段失败都保留为engineering evidence；两者未改变
 科学合同或GPU结果。`5200bee` deployment seal与`09bbed3` world4 profile authority均已push并有detached frozen
-worktree；world4 profile exit0、14 checks全true且没有checkpoint。当前下一步是commit/push formal-ready reseal、
-建立新frozen worktree后fresh`0→10`并立即strict paired400；未过`144/breadth6/lost8/gained>lost`不得resume到25。
+worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
+cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。当前下一步
+是原位实现唯一OSG-PC owner并完成CPU/synthetic projection门；通过后才可从新clean frozen commit做一次
+discarded full24 K4+B20 profile，未过门不得formal。

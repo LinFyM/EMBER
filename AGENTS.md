@@ -17,10 +17,12 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - 该结果不等于视频、Reward、continuous tangent、task experts或所有rank-reserved topology整体无效。
 - PICK的raw-frame门通过；world6 discarded full48 profile只因regularized Gram condition=`483.61515>200`
   non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
-- 当前唯一active successor是PICK-GC：继续保留frozen-v6 full-rank base、compiler、Program residual和blind
-  full48 credit，只把PICK的static block替换为terminal goal residual并原样保留causal-prefix block。
-  canonical implementation、fresh-incompatible config与完整CPU回归`345 passed`已完成；尚未profile、训练或
-  rollout，也没有EMBER GPU任务。
+- PICK-GC已完成formal fresh`0→10`和strict paired400：`138/400`、breadth6，相对immutable macro0
+  retained/gained/lost=`118/20/16`、churn36，未过`correct>=144`与`lost<=8`门。其resume、controls和sweep
+  全部关闭；只淘汰PICK-GC+blind offline source-action credit组合。
+- 当前唯一active successor design是OSG-PC：保留ordered goal-causal key、blind B20 proposal、condition-local
+  FP32 Program和native rank16 compiler，只把proposal解析投影到“不增大train24成功on-policy executed-prefix
+  loss”的可行锥。design已写明但尚未实现、profile或获得GPU训练资格；当前无EMBER GPU任务。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -32,11 +34,12 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-5. `docs/research_history.md`
-6. `task_plan.md`
-7. `findings.md`
-8. `docs/concept.md`
+4. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+5. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+6. `docs/research_history.md`
+7. `task_plan.md`
+8. `findings.md`
+9. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -168,6 +171,9 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`。
 - PICK/PICK-GC train-only design-selection cache：
   `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`；它不是新方法成绩。
+- PICK-GC formal训练与strict400：
+  `runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`和
+  `runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

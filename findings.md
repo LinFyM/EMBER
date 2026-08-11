@@ -145,24 +145,26 @@ single-checkpoint drift。简单平均video features、平均LoRA或让数量越
 这条链要求下一设计延续已有认知，只改变最早失效接口。负结果只淘汰实际受检验的假设：rank14失败不等于
 所有rank reservation失败，expert bank失败也不等于所有task-level manifold监督失败。
 
-## 10. Current falsifiable hypothesis
+## 10. Latest interface verdict
 
 PICK已经给出一次清晰的接口定位：frozen-policy innovation的raw same/order结构、full48 correct/negative motion、
 Program→BA→action和吞吐均工作，但48-key regularized Gram condition=`483.61515>200`。因此不能把它写成方法
 成功，也不能把失败归因于video encoder、compiler或动作增益；PICK未进入formal训练。
 
-当前唯一active假设PICK-GC只把PICK的static block换成terminal goal residual，保留centered causal prefix。
+PICK-GC只把PICK的static block换成terminal goal residual，保留centered causal prefix。
 train24 cache的same/cross/reverse与condition门，以及exact target-language wrong full48均已通过：raw rank48、
 condition=`152.45803`；world6 mechanism condition=`152.61008`、retained/null=`24/24`、Program→BA→action闭合。
 B32 deployment又证明zero-memory native LoRA/action bit-exact并完成canonical cache-to-rollout。因此PICK原先的
 common-mode conditioning接口已经被这一单变量修复，不能再把后续失败归因于key数值不可解或compiler无增益。
 
-`5200bee`封存后live资源没有单节点world6。full48实现会在collective后按task ordinal固定排序完整24 task，
-没有memory all-reduce，所以world4/local6只改变执行分区，不改变video/query/RNG、full48输入或FP32 solve。
-当前formal资格先关闭，必须在world4 discarded profile复现机制门；这项拓扑门不能替代后续closed-loop裁决。
-`09bbed3`结果已逐字段exact复现world6的functional/task/update/application/LoRA payload，step=`34.94275s`，
-归一ratio=`.89871<1.25`，所以纯执行拓扑门通过并重新打开formal；它仍不是closed-loop方法证据。
+world4 formal fresh`0→10`已完成：每步feature rank48，condition稳定可解，最终FP32 Program memory RMS
+`3.5493e-6`且全部值非零。strict paired400只有`138`、breadth6；相对macro0 retained/gained/lost=
+`118/20/16`。effective-BA整体范数中位比`1.000016`、相对L2`.002397`，说明小而真实的policy tangent已经传出，
+却仍造成36个episode换手。故PICK-GC+blind offline credit按预注册门退役；失败不能再归于condition数值、
+identity写出、LoRA能量或单纯compiler闭合。
 
-最早未决接口现为blind offline full24 credit是否覆盖held on-policy occupancy并让多task support在同一Program
-memory共存。formal fresh`0→10`后的strict paired400若未过`144/breadth6/lost8/gained>lost`，只淘汰当前
-PICK-GC+blind-credit组合；heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。
+当前最早失效接口是blind train24 source-action functional cotangent到held on-policy有用support与共同积累的
+映射。当前唯一active假设OSG-PC不再用微小reward cotangent替换proposal，而是对每条成功train24 rollout构造
+executed-prefix Program half-space，把原B20 proposal解析投影到“不一阶损伤已有success support”的可行锥；
+full48 key、FP32 Program和native rank16保持。它已有design authority但尚未实现或获得GPU资格；heterogeneous
+topology、few-shot和task-level manifold supervision仍是开放问题而非自动fallback。

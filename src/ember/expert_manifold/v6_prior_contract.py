@@ -294,6 +294,94 @@ _EXPECTED_FORMAL_GATES = {
     "goal_same_task_other_correct_ratio_min": 0.9,
     "macro25_requires_macro10_gate": True,
 }
+_EXPECTED_FORMAL_ARTIFACT_EVIDENCE = {
+    "training": {
+        "root": (
+            "runs/outputs/"
+            "pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811"
+        ),
+        "run_commit": "c2e1ff878b6b68cb5bc45bb5443cdbd54ab8e62a",
+        "completed_macro": 10,
+        "completion": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_"
+                "20260811/completion.json"
+            ),
+            "bytes": 201,
+            "schema": (
+                "ember_pi05_v6_policy_innovation_goal_causal_key_completion_v1"
+            ),
+        },
+        "checkpoint_manifest": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_"
+                "20260811/checkpoints/macro_00000010/manifest.json"
+            ),
+            "bytes": 11500,
+            "schema": (
+                "ember_pi05_v6_policy_innovation_goal_causal_key_checkpoint_v1"
+            ),
+        },
+        "metrics": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_"
+                "20260811/metrics.jsonl"
+            ),
+            "bytes": 203002,
+            "rows": 10,
+        },
+    },
+    "strict_correct400": {
+        "root": (
+            "runs/outputs/"
+            "pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_"
+            "macro0010_retry1_398425e_20260811"
+        ),
+        "evaluation_commit": "398425ee018097ba4c446f91bfe04ea65f6c7c5f",
+        "results": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_"
+                "macro0010_retry1_398425e_20260811/results.json"
+            ),
+            "bytes": 1823130,
+            "schema": "ember_pi05_target_eval_results_v2",
+            "episodes": 400,
+            "successes": 138,
+            "breadth": 6,
+        },
+        "launcher_completion": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_"
+                "macro0010_retry1_398425e_20260811/launcher_completion.json"
+            ),
+            "bytes": 2251,
+            "schema": "ember_pi05_eval_launcher_completion_v1",
+        },
+        "decision_evidence": {
+            "path": (
+                "runs/outputs/"
+                "pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_"
+                "macro0010_retry1_398425e_20260811/"
+                "pick_gc_formal_decision_evidence.json"
+            ),
+            "bytes": 64464,
+            "schema": "ember_pi05_pick_gc_formal_decision_evidence_v1",
+            "passed": False,
+        },
+    },
+    "decision": {
+        "macro10_gate_passed": False,
+        "resume_macro10_to25_authorized": False,
+        "six_arm_controls_authorized": False,
+        "retained_gained_lost_to_macro0": [118, 20, 16],
+        "scope": "retire_pick_gc_plus_blind_offline_source_action_credit_only",
+    },
+}
 _EXPECTED_EVALUATION_STATIC = {
     "throughput_policy": (
         "highest_measured_batch_throughput_with_device_memory_headroom"
@@ -404,6 +492,7 @@ def _profile_and_formal_match(config: Mapping[str, Any]) -> bool:
     if not all(isinstance(value, Mapping) for value in (profile, formal, evaluation)):
         return False
     profile_artifact = profile.get("artifact_evidence")
+    formal_artifact = formal.get("artifact_evidence")
     evaluation_artifact = evaluation.get("online_smoke_evidence")
     initial = config.get("status") == "active_cpu_ready_awaiting_live_profile"
     sealed = config.get("status") in {"active_formal_ready", "formal_result_sealed"}
@@ -415,6 +504,13 @@ def _profile_and_formal_match(config: Mapping[str, Any]) -> bool:
         and bool(profile_artifact)
         and isinstance(evaluation_artifact, Mapping)
         and bool(evaluation_artifact)
+    )
+    formal_artifact_valid = (
+        config.get("status") != "formal_result_sealed"
+        and formal_artifact is None
+    ) or (
+        config.get("status") == "formal_result_sealed"
+        and formal_artifact == _EXPECTED_FORMAL_ARTIFACT_EVIDENCE
     )
     return (
         _state_tuple(config) in _COHERENT_STATES
@@ -435,9 +531,9 @@ def _profile_and_formal_match(config: Mapping[str, Any]) -> bool:
         and profile.get("throughput_baseline") == _EXPECTED_PROFILE_BASELINE
         and profile.get("gates") == _EXPECTED_PROFILE_GATES
         and formal.get("decision_gates") == _EXPECTED_FORMAL_GATES
-        and formal.get("artifact_evidence") is None
         and _static_projection_matches(evaluation, _EXPECTED_EVALUATION_STATIC)
         and artifacts_valid
+        and formal_artifact_valid
     )
 
 

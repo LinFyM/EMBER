@@ -17,7 +17,10 @@
   或做参数sweep。
 - OSG-PC唯一world6 discarded profile在full48前因rank-local task path长尾触发600s NCCL watchdog；最小wall
   lower bound=`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal与
-  评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。当前没有active successor或EMBER GPU进程。
+  评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
+- 当前唯一active successor design是SKNC：K4只保留binary outcome，current 4/4 success keys加每train task
+  第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。它尚未实现或获得GPU资格；当前
+  没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -227,7 +230,31 @@ B20 loader batch只需`1.70/0.0002/.91/.14s`，排除确定性DataLoader瓶颈�
 因此当前OSG-PC无论未观测到的guard几何如何都不能formal、重跑同配置或扫K/Nmc/microbatch；负结果范围仅是
 “PICK-GC B20 proposal + current full-replay per-success VJP execution graph”，不否定所有on-policy guard。
 
-## 8. Runtime and GPU boundary
+## 8. Active SKNC design authority
+
+SKNC保留PICK-GC已通过的ordered goal-causal key、historical v6-fast frozen base、B20 blind source-action
+cotangent、FP32 Program、full48 negative-zero panel和native 38-target rank16 compiler，只改变最终shared memory
+write的可行域。K4同一96-rollout panel不保存trajectory、action或observation，也不做reward/CFM VJP；只有某个
+current correct-video LoRA在四条random-reset lanes上`4/4`成功时，该condition key才成为本macro hard anchor。
+
+设anchors为`A`、旧full48 features为`X`，以
+`Pi=I-A^T(AA^T)^dagger A`和`X_perp=X Pi`构造唯一write。原B20 cotangents和negative zeros仍全部进入
+`-X_perp^T(X_perp X_perp^T+lambda I)^-1Y`；所以这不是task proposal乘零或confidence gate，而是把整个
+shared update参数化到`null(A)`。`A DeltaMemory=0`直接保护该key的Program read、完整LoRA和所有状态上的policy
+函数，保护位置晚于task汇合，不再出现OSG task-local cone经full48 compiler后失真。每train task只永久保存第一条
+按既定sampler出现的4/4 key；本macro 4/4 key即使已有旧anchor仍临时受保护，但不累计bank、替换或挑选video。
+
+它与RLS不同：RLS只固定offline action rows；SKNC用真实on-policy all-success认证完整conditioned LoRA。它与
+OSG-PC不同：无successful replay、executed-prefix cotangent或per-success VJP，wall应只由B20加K4主导。主要
+风险是anchor span压平待学feature、单train24 key无法代表same-task其它video/held occupancy，或blind B20只会
+在剩余空间继续产生错误方向。zero anchor motion只是机制证据，不能替代paired400。
+
+完整authority为`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。当前只授权原位替换
+OSG executable owner、建立fresh schema/config、CPU synthetic/bank/resume/outcome-only/Program→LoRA→action门和
+完整回归。全部通过并clean commit/push后，才可重新做GPU/storage preflight和唯一discarded live profile；formal
+首段固定fresh`0→5`并立即strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
+
+## 9. Runtime and GPU boundary
 
 任何未来GPU launch前：
 
@@ -259,7 +286,7 @@ quota与fresh root。
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
 
-## 9. Repository state and handoff
+## 10. Repository state and handoff
 
 2026-08-11 compiler-only结果由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存。随后cleanup完成：
 
@@ -287,5 +314,5 @@ checkpoint。PICK-GC部署证据root为
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
 canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
-logs与`engineering_failure.json`均保留且无checkpoint。当前下一步不是重跑，而是从本次最早失败接口形成新的
-单变量design authority，再决定实现或GPU动作。
+logs与`engineering_failure.json`均保留且无checkpoint。当前下一步不是重跑，而是从SKNC已明确的
+success-key nullspace合同出发完成canonical实现与CPU机制证据；design本身不授权GPU，旧OSG命令不得恢复。

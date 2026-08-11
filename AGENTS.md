@@ -23,7 +23,10 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - OSG-PC已完成唯一一次world6 discarded profile并因工程hard gate退役：rank5在`profile_max_seconds`等待
   600s后NCCL watchdog，至少一个rank未到达；从run-contract发布到timeout已`969.9709s`，是matched
   `507.3054s`的至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、deployment与评测均未授权；
-  只淘汰当前full-replay per-success VJP执行图，不否定所有success constraint。当前没有active successor或GPU任务。
+  只淘汰当前full-replay per-success VJP执行图，不否定所有success constraint。
+- 当前唯一active design authority是SKNC：K4只保留binary outcome；4/4 correct-video key在最终shared Program
+  solve中形成硬零运动nullspace，且每train task只持久化第一条all-success key。它尚未实现、profile、训练或
+  评测；当前没有EMBER GPU任务，不能从设计文档直接跳过CPU/architecture gate发射。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -35,12 +38,13 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-5. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-6. `docs/research_history.md`
-7. `task_plan.md`
-8. `findings.md`
-9. `docs/concept.md`
+4. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+5. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+6. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+7. `docs/research_history.md`
+8. `task_plan.md`
+9. `findings.md`
+10. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -176,7 +180,9 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`和
   `runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
 - 最新retired config：`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`；状态为
-  `profile_result_sealed_nonpass`，不能profile、formal或resume。当前必须先形成新的单变量design authority。
+  `profile_result_sealed_nonpass`，不能profile、formal或resume。
+- 当前active design：`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`；只授权原位实现、
+  CPU机制验证和architecture审计，尚未授权GPU。实现后必须建立fresh-incompatible config/checkpoint schema。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

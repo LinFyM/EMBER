@@ -7,12 +7,14 @@ Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`
 paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gained/lost=`118/20/16`、churn36，
 未过`correct>=144`与`lost<=8`门，因此PICK-GC+blind offline source-action credit也已退役，不resume、不补
 controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾触发600s NCCL watchdog，wall lower bound
-至少是matched baseline的`1.912x>1.25x`，未到full48 report；当前没有active方法或EMBER GPU进程。
+至少是matched baseline的`1.912x>1.25x`，未到full48 report。当前唯一active design是SKNC：只用K4 4/4
+binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。它尚未
+实现或获得GPU资格；当前没有EMBER GPU进程。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Successor design gate
+## 1. Active SKNC design gate
 
 OSG-PC及任何后继在实现前必须回答：
 
@@ -28,6 +30,9 @@ OSG-PC及任何后继在实现前必须回答：
 blind train24 offline cotangent→held on-policy useful support/coexistence。OSG-PC试图用成功train24 executed-prefix
 half-space保护support，但current full-replay per-success VJP graph先在吞吐/长尾接口失败，尚未产生shared guard
 transfer证据。后继必须保留信息墙与已通过接口，同时正面限制on-policy credit的cost/occupancy length。
+SKNC以每task first all-success key和本macro current all-success keys约束最终shared write，测试“完整conditioned
+LoRA零运动”能否保护support，同时把on-policy cost限制为outcome-only K4。完整单变量公式、owner替换和hard
+gates见`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。
 
 ## 2. Fixed information contract
 
@@ -204,13 +209,14 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 - RLS、ECP、Tangent、Expert-Flow、old v*/K4/Expert-Manifold的resume；
 - pivot15+1、mixed topology、few-shot或其它新候选的profile/training/rollout。
 
-它们只能在新session建立明确的单变量design authority后重新获得执行资格。任何旧artifact中的
+它们只能在新的单变量design authority明确授权后重新获得执行资格。任何旧artifact中的
 `formal_ready`只描述历史时点，不构成当前授权。
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
-deployment和评测全部关闭。下一合法动作是新的单变量design authority与CPU机制验证；任何未来GPU launch仍须
-重新复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与他人进程。
+deployment和评测全部关闭。SKNC design authority已建立；下一合法动作是原位canonical实现、CPU机制验证、
+完整回归和clean pushed seal，不能先launch。任何未来GPU launch仍须重新复核gpu01/gpu02、quota、fresh root、
+物理/NUMA topology与他人进程，并先满足SKNC discarded profile合同。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

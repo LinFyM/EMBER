@@ -28,7 +28,9 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - OSG-PC的唯一world6 discarded profile在full48前因rank-local长尾触发600s NCCL watchdog；从run-contract发布
   到timeout至少`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、
   deployment与评测均关闭；当前full-replay per-success VJP执行图已退役，但不能据此否定所有success constraint。
-  当前没有active successor或EMBER GPU进程，下一步必须先形成新的单变量design authority。
+- 当前唯一active successor design是SKNC：同一K4 panel只用`4/4` binary success认证condition key，并把完整
+  shared Program update限制在这些keys的nullspace；每train task只持久化第一条success key。它不保存/回放
+  trajectory action，也不求reward VJP。设计已完成，但尚未实现、profile、训练或评测；当前没有EMBER GPU进程。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -109,7 +111,7 @@ EMBER/
 ```
 
 进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。当前没有活动GPU
-进程；OSG-PC已封存non-pass，不能从旧文档复制命令恢复profile或formal。
+进程；OSG-PC已封存non-pass，SKNC目前只授权canonical实现与CPU机制验证，不能从设计或旧文档直接恢复GPU命令。
 
 GPU工作若由未来authority恢复，每次同时live检查`gpu01/gpu02`，选一个节点并使用该节点所有真正空闲、
 健康且能提高吞吐的A40；没有固定6卡上限，不等待凑卡、不dummy占位、不跨节点拼碎片、不干扰他人。
@@ -125,8 +127,10 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
+- [`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`](docs/action_forecast_writer_success_key_nullspace_consolidation_design.md)：
+  当前唯一SKNC单变量设计、nullspace公式与证伪门；
 - [`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`](docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md)：
-  当前唯一OSG-PC单变量设计与证伪门；
+  retired OSG-PC设计、工程non-pass与负结果边界；
 - [`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)：
   PICK-GC设计、formal结果与退役边界；
 - [`docs/research_history.md`](docs/research_history.md)：完整精炼实验谱系与禁止重复项；

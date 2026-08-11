@@ -51,7 +51,7 @@
   resume10→25、six-arm controls与参数sweep。
 - [x] formal result、paired transition与effective-BA诊断写入config、handoff、design和retained decision evidence。
 
-## Active successor synthesis
+## Active SKNC successor
 
 - [x] 从第一性原理选择一个只改变credit/occupancy接口的successor；不得恢复Reward/RLS/rank14 executable，
   也不得并行实现多个候选。
@@ -70,8 +70,17 @@
   all-reduce等待600s后watchdog，wall lower bound=`1.912x>1.25x`，exit1且无report/checkpoint，GPU已健康释放。
 - [x] OSG-PC按hard gate封存为`profile_result_sealed_nonpass`；同配置重跑、formal、deployment、评测和参数sweep
   全部关闭。负结果只淘汰current full-replay per-success VJP执行图。
-- [ ] 从第一性原理选择下一单变量successor：必须保留PICK-GC已通过的视频key、FP32 Program和native compiler，
-  同时让on-policy credit不随成功轨迹长度/episode数形成不可控rank尾延迟；先写authority，不直接launch GPU。
+- [x] 从第一性原理选择下一单变量successor SKNC：保留PICK-GC视频key、FP32 Program、B20 objective与native
+  compiler；K4只保留binary outcome，4/4 current/persisted success keys直接约束最终shared memory write的
+  nullspace，不再随成功轨迹长度/episode数做replay VJP。
+- [x] 完成`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`：明确first-only per-task
+  anchor bank、解析投影公式、非scalar-gate边界、CPU/live/formal门与macro5立即strict paired400。
+- [ ] 原位替换OSG-PC executable path并泛化唯一full48 solver；建立fresh-incompatible config/checkpoint，完成
+  synthetic/bank/resume/outcome-only/Program→LoRA→action CPU门和完整回归。
+- [ ] 从clean pushed implementation seal做live GPU/storage preflight，再运行唯一discarded full24 K4+B20
+  mechanism/throughput profile；不过门不训练。
+- [ ] profile通过后fresh`0→5`，立即strict paired correct400；只在`>=140`、lost`<=8`、breadth/suite共同趋势
+  过门时exact-resume到10，macro10以严格`>150`裁决。
 
 ## Repository closeout
 

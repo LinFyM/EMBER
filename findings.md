@@ -179,3 +179,15 @@ full48仍是唯一shared write owner，并新增continuous/native实际应用后
 约2.75s总计，说明current K4 rollout/retention task path产生不可接受的rank-local长尾；但因没有stage journal，
 不能继续把它归因到具体simulator或VJP。没有task records、projection或shared guard report，因此科学guard假设
 仍未被正反验证；被淘汰的是current full-replay per-success VJP执行图，而不是所有on-policy success constraint。
+
+下一单变量authority是SKNC。它保留PICK-GC的ordered goal-causal key、B20 blind cotangent、FP32 Program与
+native rank16 compiler，但K4只保留binary outcome：current correct-video LoRA只有在四条random-reset lanes
+`4/4`成功时，其condition key才进入硬约束。24-task full48 objective仍完整求解，memory增量被参数化到current
+4/4 keys与每train task第一条persisted 4/4 key共同span的正交补，因此不是按task乘零的scalar gate。
+
+该约束直接使`phi_success @ DeltaMemory=0`，目标是让完整conditioned Program/LoRA/policy函数在shared write后
+保持不变，而不是像RLS只保护offline action rows，或像OSG-PC回放某些成功prefix的一阶loss。它删除所有成功
+trajectory replay、CFM VJP和per-success task-local cone，成本只剩同源K4 rollout加small-matrix solve。其关键
+风险也已预注册：anchor span可能压平可学习feature，single train24 success key可能不能代表same-task其它video
+或held occupancy。设计完成但尚无实现或性能证据；zero anchor motion只能是机制门，最终仍由macro5/10的
+strict paired400 retained/gained/lost与视频controls裁决。

@@ -14,6 +14,7 @@ import pytest
 
 import ember.pi05_eval.preparation as preparation_module
 import ember.pi05_eval.reward_credit_gate as reward_gate_module
+import ember.writer.evaluation_cache as evaluation_cache_module
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval import launcher as runtime_launcher
 
@@ -130,6 +131,31 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
     assert module._positive_int("100") == 100
     with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
         module._positive_int("0")
+
+
+def test_prefilled_missing_manifest_fails_before_any_worker_spawn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        evaluation_cache_module,
+        "writer_cache_manifest_is_ready",
+        lambda _contract: False,
+    )
+    contract = {
+        "adapter": {"kind": "expert_manifold_writer"},
+        "writer_lora_cache": {
+            "generation_recipe": {"population": {"mode": "prefilled"}}
+        },
+    }
+    spawned: list[tuple[str, bool]] = []
+    with pytest.raises(Pi05EvaluationError, match="fallback is forbidden"):
+        runtime_launcher._stage_writer_generators(
+            contract,
+            invocation_id="a" * 32,
+            processes={},
+            spawn=lambda worker_id, writer: spawned.append((worker_id, writer)),
+        )
+    assert spawned == []
 
 
 def _registered_reward_credit_args(

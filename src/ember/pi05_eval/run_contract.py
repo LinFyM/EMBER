@@ -56,6 +56,7 @@ def _parallel_contract(
     physical_gpu_ids: Sequence[int],
     replicas_per_gpu: int,
     writer_adapter: bool,
+    prefilled_population: bool,
     writer_generators_per_gpu: int,
     writer_generation_batch_size: int,
 ) -> dict[str, Any]:
@@ -74,16 +75,22 @@ def _parallel_contract(
         "replicas_per_gpu": replicas_per_gpu,
         "worker_count": physical_count * replicas_per_gpu,
         "writer_generators_per_gpu": (
-            writer_generators_per_gpu if writer_adapter else 0
+            writer_generators_per_gpu
+            if writer_adapter and not prefilled_population
+            else 0
         ),
         "writer_generation_worker_count": (
-            physical_count * writer_generators_per_gpu if writer_adapter else 0
+            physical_count * writer_generators_per_gpu
+            if writer_adapter and not prefilled_population
+            else 0
         ),
         "writer_generation_batch_size": (
             writer_generation_batch_size if writer_adapter else 0
         ),
         "writer_and_rollout_parallelism_decoupled": writer_adapter,
-        "generator_source_policy_processes_reused_for_rollout": writer_adapter,
+        "generator_source_policy_processes_reused_for_rollout": (
+            writer_adapter and not prefilled_population
+        ),
         "one_policy_per_worker": True,
         "cpu_only_launcher": True,
         "sharding_algorithm": (
@@ -137,6 +144,7 @@ def _attach_writer_cache(
     writer_cache_root: Path | None,
     writer_generators_per_gpu: int,
     writer_generation_batch_size: int,
+    writer_cache_population_recipe: Mapping[str, Any] | None,
 ) -> None:
     contract["writer_lora_cache"] = None
     if adapter is None or adapter.get("kind") not in WRITER_ADAPTER_KINDS:
@@ -159,7 +167,27 @@ def _attach_writer_cache(
         lora_storage_per_entry=adapter["writer_asset"]["writer_state"][
             "template_lora_storage"
         ],
+        population_recipe=writer_cache_population_recipe,
     )
+
+
+def _validate_prefilled_cache_request(
+    adapter: Mapping[str, Any] | None,
+    writer_cache_root: Path | None,
+    population_recipe: Mapping[str, Any] | None,
+) -> None:
+    if population_recipe is None:
+        return
+    if not (
+        isinstance(adapter, Mapping)
+        and adapter.get("schema_version")
+        == "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
+        and writer_cache_root is None
+    ):
+        raise Pi05EvaluationError(
+            "prefilled Writer cache population is restricted to "
+            "rank-reserved output ownership"
+        )
 
 
 def _validate_build_request(
@@ -173,6 +201,7 @@ def _validate_build_request(
     writer_generators_per_gpu: int,
     writer_generation_batch_size: int,
     writer_cache_root: Path | None,
+    writer_cache_population_recipe: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], bool]:
     if mode not in {"smoke", "screen", "formal"}:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation mode: {mode}")
@@ -258,6 +287,9 @@ def _validate_build_request(
         raise Pi05EvaluationError(
             "rank-reserved Writer caches are owned by the current output and commit"
         )
+    _validate_prefilled_cache_request(
+        adapter, writer_cache_root, writer_cache_population_recipe
+    )
     return git, writer_adapter
 
 
@@ -302,6 +334,7 @@ def build_run_contract(
     writer_generators_per_gpu: int = 1,
     writer_generation_batch_size: int = 8,
     writer_cache_root: Path | None = None,
+    writer_cache_population_recipe: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     git, writer_adapter = _validate_build_request(
         authorities,
@@ -313,6 +346,7 @@ def build_run_contract(
         writer_generators_per_gpu=writer_generators_per_gpu,
         writer_generation_batch_size=writer_generation_batch_size,
         writer_cache_root=writer_cache_root,
+        writer_cache_population_recipe=writer_cache_population_recipe,
     )
     gpu_ids = _resolve_gpu_ids(authorities, physical_gpu_ids)
     contract = {
@@ -367,6 +401,7 @@ def build_run_contract(
             physical_gpu_ids=gpu_ids,
             replicas_per_gpu=replicas_per_gpu,
             writer_adapter=writer_adapter,
+            prefilled_population=writer_cache_population_recipe is not None,
             writer_generators_per_gpu=writer_generators_per_gpu,
             writer_generation_batch_size=writer_generation_batch_size,
         ),
@@ -381,6 +416,7 @@ def build_run_contract(
         writer_cache_root=writer_cache_root,
         writer_generators_per_gpu=writer_generators_per_gpu,
         writer_generation_batch_size=writer_generation_batch_size,
+        writer_cache_population_recipe=writer_cache_population_recipe,
     )
     contract["paired_control"] = None
     if writer_adapter:

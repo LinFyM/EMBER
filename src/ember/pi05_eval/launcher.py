@@ -236,6 +236,15 @@ def _stage_writer_generators(
 
     if writer_cache_manifest_is_ready(contract):
         return ()
+    population = (
+        contract.get("writer_lora_cache", {})
+        .get("generation_recipe", {})
+        .get("population")
+    )
+    if isinstance(population, Mapping) and population.get("mode") == "prefilled":
+        raise Pi05EvaluationError(
+            "prefilled Writer cache is missing; generator fallback is forbidden"
+        )
     physical_gpu_ids = tuple(
         int(value) for value in contract["parallel"]["physical_gpu_ids"]
     )

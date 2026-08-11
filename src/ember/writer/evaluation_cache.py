@@ -31,6 +31,9 @@ WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
 WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
     "ember_pi05_expert_manifold_writer_lora_generator_marker_v3"
 )
+WRITER_LORA_PREFILLED_POPULATION_SCHEMA = (
+    "ember_pi05_expert_manifold_writer_lora_prefilled_population_v1"
+)
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
 WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
@@ -165,8 +168,11 @@ def build_writer_lora_cache_descriptor(
     lora_parameter_count: int,
     lora_tensor_count: int,
     lora_storage_per_entry: Mapping[str, Any],
+    population_recipe: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    worker_count = int(contract["parallel"]["physical_gpu_count"]) * generators_per_gpu
+    configured_worker_count = (
+        int(contract["parallel"]["physical_gpu_count"]) * generators_per_gpu
+    )
     if (
         generators_per_gpu <= 0
         or generators_per_gpu > int(contract["parallel"]["replicas_per_gpu"])
@@ -208,10 +214,13 @@ def build_writer_lora_cache_descriptor(
         or set(storage["dtype_by_name"].values()) - set(storage["dtype_tensor_counts"])
     ):
         raise WriterModelError("Writer cache LoRA storage contract changed")
+    population = _validated_prefilled_population(population_recipe)
     adapter = contract["adapter"]
     recipe = {
-        "generators_per_gpu": generators_per_gpu,
-        "generator_worker_count": worker_count,
+        "generators_per_gpu": 0 if population is not None else generators_per_gpu,
+        "generator_worker_count": (
+            0 if population is not None else configured_worker_count
+        ),
         "generation_batch_size": generation_batch_size,
         "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
         "episode_evidence_schema": writer_episode_schema(adapter),
@@ -220,9 +229,16 @@ def build_writer_lora_cache_descriptor(
         "precision": "bfloat16_compute_template_native_mixed_lora_state",
         "storage_per_entry": storage,
     }
+    if population is not None:
+        recipe["population"] = population
     identity = _cache_identity_payload(contract, recipe)
     entry_count = len(writer_cache_requests(contract))
     tensor_bytes = entry_count * storage["tensor_bytes"]
+    population_suffix = (
+        ""
+        if population is None
+        else f":population-{population['reference_suffix']}"
+    )
     return {
         "schema_version": WRITER_LORA_CACHE_SCHEMA,
         "root": str(root.resolve()),
@@ -230,6 +246,7 @@ def build_writer_lora_cache_descriptor(
             f"{contract['adapter']['writer_asset']['reference']}:"
             f"{entry_count}episodes:seed{contract['rng']['inference_seed']}:"
             f"batch{generation_batch_size}:native{storage['tensor_bytes']}bytes"
+            f"{population_suffix}"
         ),
         "identity": identity,
         "entry_count": entry_count,
@@ -240,8 +257,11 @@ def build_writer_lora_cache_descriptor(
         "estimated_tensor_bytes": tensor_bytes,
         "estimated_peak_new_bytes": tensor_bytes + entry_count * 16_384 + 1_048_576,
         "generation_recipe": recipe,
-        "persistent_source_policy_handoff": True,
-        "writer_modules_released_before_rollout_scale_out": True,
+        "population_mode": "generated" if population is None else "prefilled",
+        "persistent_source_policy_handoff": population is None,
+        "writer_modules_released_before_rollout_scale_out": population is None,
+        "writer_or_video_forward_required": population is None,
+        "source_policy_load_required_for_population": population is None,
     }
 
 
@@ -445,6 +465,26 @@ def lora_state_storage(state: Mapping[str, torch.Tensor]) -> dict[str, Any]:
     }
 
 
+def _validated_prefilled_population(
+    population_recipe: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if population_recipe is None:
+        return None
+    population = dict(population_recipe)
+    suffix = str(population.get("reference_suffix", ""))
+    if (
+        population.get("mode") != "prefilled"
+        or not population.get("schema_version")
+        or re.fullmatch(r"[a-z0-9_-]+", suffix) is None
+        or int(population.get("generator_processes", -1)) != 0
+        or int(population.get("writer_forwards", -1)) != 0
+        or int(population.get("video_reads", -1)) != 0
+        or int(population.get("source_policy_loads", -1)) != 0
+    ):
+        raise WriterModelError("Writer cache prefilled population recipe changed")
+    return population
+
+
 def write_writer_cache_entry(
     contract: Mapping[str, Any],
     request: WriterCacheRequest,
@@ -608,11 +648,31 @@ def validate_writer_cache_manifest(
     descriptor = _descriptor(contract)
     manifest = read_json(writer_cache_manifest_path(contract))
     expected_ids = [request.entry_id for request in writer_cache_requests(contract)]
+    population_recipe = descriptor["generation_recipe"].get("population")
+    generated_population = (
+        isinstance(manifest.get("generator_invocation_id"), str)
+        and isinstance(manifest.get("generator_workers"), list)
+        and "population" not in manifest
+        and population_recipe is None
+    )
+    population = manifest.get("population")
+    prefilled_population = (
+        isinstance(population, Mapping)
+        and population.get("schema_version")
+        == WRITER_LORA_PREFILLED_POPULATION_SCHEMA
+        and population.get("mode") == "prefilled"
+        and population.get("recipe") == population_recipe
+        and isinstance(population_recipe, Mapping)
+        and isinstance(population.get("evidence"), Mapping)
+        and "generator_invocation_id" not in manifest
+        and "generator_workers" not in manifest
+    )
     if (
         manifest.get("schema_version") != WRITER_LORA_CACHE_MANIFEST_SCHEMA
         or manifest.get("cache_reference") != descriptor["reference"]
         or manifest.get("descriptor") != descriptor
         or manifest.get("entry_ids") != expected_ids
+        or not (generated_population or prefilled_population)
     ):
         raise WriterModelError("Writer LoRA cache manifest changed")
     if verify_entry_files:
@@ -635,6 +695,8 @@ def finalize_writer_cache(
     invocation_id: str,
     worker_ids: Sequence[str],
 ) -> dict[str, Any]:
+    if _descriptor(contract)["generation_recipe"].get("population") is not None:
+        raise WriterModelError("prefilled Writer cache cannot use generator finalization")
     path = writer_cache_manifest_path(contract)
     if path.exists():
         return validate_writer_cache_manifest(contract, verify_entry_files=True)
@@ -658,6 +720,49 @@ def finalize_writer_cache(
         "tensor_file_bytes": tensor_bytes,
         "generator_invocation_id": invocation_id,
         "generator_workers": list(worker_ids),
+    }
+    write_json_atomic(path, manifest)
+    return validate_writer_cache_manifest(contract, verify_entry_files=True)
+
+
+def finalize_prefilled_writer_cache(
+    contract: Mapping[str, Any],
+    *,
+    evidence: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Seal a complete externally populated cache without fake generators."""
+
+    recipe = _descriptor(contract)["generation_recipe"].get("population")
+    if not isinstance(recipe, Mapping) or recipe.get("mode") != "prefilled":
+        raise WriterModelError("Writer cache lacks its prefilled population recipe")
+    population = {
+        "schema_version": WRITER_LORA_PREFILLED_POPULATION_SCHEMA,
+        "mode": "prefilled",
+        "recipe": dict(recipe),
+        "evidence": dict(evidence),
+    }
+    path = writer_cache_manifest_path(contract)
+    if path.exists():
+        manifest = validate_writer_cache_manifest(contract, verify_entry_files=True)
+        if manifest.get("population") != population:
+            raise WriterModelError("Writer prefilled cache population changed")
+        return manifest
+    descriptor = _descriptor(contract)
+    entries, tensor_bytes = [], 0
+    for request in writer_cache_requests(contract):
+        record = validate_writer_cache_entry_record(contract, request)
+        entries.append(
+            {"entry_id": request.entry_id, "lora_bytes": record["lora_file"]["bytes"]}
+        )
+        tensor_bytes += int(record["lora_file"]["bytes"])
+    manifest = {
+        "schema_version": WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+        "cache_reference": descriptor["reference"],
+        "descriptor": descriptor,
+        "entry_ids": [row["entry_id"] for row in entries],
+        "entries": entries,
+        "tensor_file_bytes": tensor_bytes,
+        "population": population,
     }
     write_json_atomic(path, manifest)
     return validate_writer_cache_manifest(contract, verify_entry_files=True)

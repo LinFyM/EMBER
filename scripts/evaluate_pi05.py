@@ -209,6 +209,18 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=RANK_RESERVED_CANONICAL_CONFIG,
     )
+    compiler_prepare = commands.add_parser("rank-reserved-compiler-prepare")
+    _add_prepare_arguments(compiler_prepare)
+    compiler_cache = commands.add_parser("rank-reserved-compiler-cache")
+    compiler_cache.add_argument("--output-dir", type=Path, required=True)
+    compiler_cache.add_argument("--gpu-index", type=int, required=True)
+    compiler_cache_worker = commands.add_parser(
+        "rank-reserved-compiler-cache-worker", help=argparse.SUPPRESS
+    )
+    compiler_cache_worker.add_argument("--output-dir", type=Path, required=True)
+    compiler_cache_worker.add_argument("--gpu-index", type=int, required=True)
+    compiler_evidence = commands.add_parser("rank-reserved-compiler-evidence")
+    compiler_evidence.add_argument("--output-dir", type=Path, required=True)
     start = commands.add_parser("start")
     start.add_argument("--output-dir", type=Path, required=True)
     resume = commands.add_parser("resume")
@@ -712,6 +724,12 @@ def main() -> int:
         rank_reserved_vertical_run(args)
     elif args.command == "rank-reserved-seal":
         rank_reserved_seal_run(args)
+    elif args.command.startswith("rank-reserved-compiler-"):
+        from ember.pi05_eval.rank_reserved_compiler_diagnostic import (
+            compiler_diagnostic_cli_run,
+        )
+
+        compiler_diagnostic_cli_run(args, prepare_run)
     elif args.command in {"prepare", "run"}:
         prepare_run(args)
         if args.command == "run":

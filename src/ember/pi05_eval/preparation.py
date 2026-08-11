@@ -174,6 +174,9 @@ def _prepared_payload(
         writer_generators_per_gpu=args.writer_generators_per_gpu,
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
+        writer_cache_population_recipe=getattr(
+            args, "writer_cache_population_recipe", None
+        ),
     )
     validate_registered_reward_credit_output(args, output_dir, contract)
     validate_registered_rank_reserved_output(args, output_dir, contract)

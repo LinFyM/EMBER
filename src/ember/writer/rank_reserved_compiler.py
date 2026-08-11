@@ -16,11 +16,78 @@ from ember.writer.model import CompleteLoRAWriter, WriterModelError
 from ember.writer.temporal import SlotNormalizedCoreProcedureCompiler
 
 
+RANK_RESERVED_QV_BASE_RANK = 14
+RANK_RESERVED_QV_RESIDUAL_RANK = 2
+
+
+def compile_rank_reserved_qv_factors(
+    base_a: torch.Tensor,
+    base_b: torch.Tensor,
+    *,
+    tangent_a: torch.Tensor | None = None,
+    tangent_b: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Publish one native rank14 base plus two physical residual slots.
+
+    The leading dimensions are deliberately opaque.  Online Writer decoding uses
+    ``[batch, layer]`` while the compiler-only diagnostic uses the same
+    ``[8, 18]`` topology loaded from the immutable v8 cache.
+    """
+
+    if (
+        base_a.ndim < 2
+        or base_b.ndim != base_a.ndim
+        or base_a.shape[:-2] != base_b.shape[:-2]
+        or base_a.shape[-2] != CompleteLoRAWriter.PUBLIC_LORA_RANK
+        or base_b.shape[-1] != CompleteLoRAWriter.PUBLIC_LORA_RANK
+        or base_a.dtype != base_b.dtype
+        or base_a.device != base_b.device
+        or (tangent_a is None) != (tangent_b is None)
+    ):
+        raise ConditionUpdateError("rank-reserved q/v factor topology changed")
+    reduced_a, reduced_b, pivots = pivot_preserving_base_factors(
+        base_a,
+        base_b,
+        keep=RANK_RESERVED_QV_BASE_RANK,
+    )
+    if tangent_a is None:
+        residual_a = reduced_a.new_zeros(
+            *reduced_a.shape[:-2],
+            RANK_RESERVED_QV_RESIDUAL_RANK,
+            reduced_a.shape[-1],
+        )
+        residual_b = reduced_b.new_zeros(
+            *reduced_b.shape[:-2],
+            reduced_b.shape[-2],
+            RANK_RESERVED_QV_RESIDUAL_RANK,
+        )
+    else:
+        if (
+            tangent_a.shape != base_a.shape
+            or tangent_b is None
+            or tangent_b.shape != base_b.shape
+            or tangent_a.device != base_a.device
+            or tangent_b.device != base_b.device
+        ):
+            raise ConditionUpdateError("rank-reserved q/v tangent topology changed")
+        residual_a, residual_b = compact_rank2_effective_tangent(
+            base_a,
+            base_b,
+            tangent_a,
+            tangent_b,
+        )
+    return (
+        torch.cat((reduced_a, residual_a), dim=-2),
+        torch.cat((reduced_b, residual_b), dim=-1),
+        pivots,
+    )
+
+
 class FrozenV6RankReservedRewardWriter(torch.nn.Module):
     """Compile frozen-v6 Program motion into one native rank14+2 public LoRA."""
 
-    QV_BASE_RANK = 14
-    QV_RESIDUAL_RANK = 2
+    QV_BASE_RANK = RANK_RESERVED_QV_BASE_RANK
+    QV_RESIDUAL_RANK = RANK_RESERVED_QV_RESIDUAL_RANK
 
     def __init__(
         self,
@@ -154,37 +221,20 @@ class FrozenV6RankReservedRewardWriter(torch.nn.Module):
         )
         base_a = self._native_factor(f"{module}_a", rows_a)
         base_b = self._native_factor(f"{module}_b", rows_b)
-        reduced_a, reduced_b, _ = pivot_preserving_base_factors(
-            base_a,
-            base_b,
-            keep=self.QV_BASE_RANK,
-        )
-        if residual is None:
-            residual_a = reduced_a.new_zeros(
-                *reduced_a.shape[:-2], self.QV_RESIDUAL_RANK, reduced_a.shape[-1]
-            )
-            residual_b = reduced_b.new_zeros(
-                *reduced_b.shape[:-2], reduced_b.shape[-2], self.QV_RESIDUAL_RANK
-            )
-        else:
+        tangent_a = tangent_b = None
+        if residual is not None:
             if delta_rows_a is None or delta_rows_b is None:
                 raise ConditionUpdateError("rank-reserved tangent was not decoded")
-            residual_a, residual_b = compact_rank2_effective_tangent(
-                base_a,
-                base_b,
-                delta_rows_a,
-                delta_rows_b.transpose(-1, -2),
-            )
-        self._publish_factor(
-            result,
-            f"{module}_a",
-            torch.cat((reduced_a, residual_a), dim=-2),
+            tangent_a = delta_rows_a
+            tangent_b = delta_rows_b.transpose(-1, -2)
+        public_a, public_b, _ = compile_rank_reserved_qv_factors(
+            base_a,
+            base_b,
+            tangent_a=tangent_a,
+            tangent_b=tangent_b,
         )
-        self._publish_factor(
-            result,
-            f"{module}_b",
-            torch.cat((reduced_b, residual_b), dim=-1),
-        )
+        self._publish_factor(result, f"{module}_a", public_a)
+        self._publish_factor(result, f"{module}_b", public_b)
 
     def _decode_action(
         self,

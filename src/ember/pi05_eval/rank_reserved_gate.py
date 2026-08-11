@@ -501,6 +501,18 @@ def validate_registered_rank_reserved_output(
 ) -> None:
     """Permit only the registered Gate-B/Gate-C formal roots in order."""
 
+    from ember.pi05_eval.rank_reserved_compiler_diagnostic import (
+        is_compiler_diagnostic_output,
+        validate_compiler_diagnostic_contract,
+    )
+
+    if is_compiler_diagnostic_output(output_dir):
+        validate_compiler_diagnostic_contract(
+            output_dir,
+            evaluation_contract,
+            require_cache_ready=False,
+        )
+        return
     if (
         getattr(args, "mode", None) != "formal"
         or getattr(args, "expert_manifold_config", None) is None
@@ -577,6 +589,18 @@ def validate_prepared_rank_reserved_contract(
     if adapter.get("schema_version") != (
         "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
     ):
+        return
+    from ember.pi05_eval.rank_reserved_compiler_diagnostic import (
+        is_compiler_diagnostic_output,
+        validate_compiler_diagnostic_contract,
+    )
+
+    if is_compiler_diagnostic_output(output_dir):
+        validate_compiler_diagnostic_contract(
+            output_dir,
+            evaluation_contract,
+            require_cache_ready=True,
+        )
         return
     validate_registered_rank_reserved_output(
         SimpleNamespace(

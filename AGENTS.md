@@ -28,9 +28,10 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `1/3/45/32/0/37/18/1`；相对immutable old134 retained/gained/lost=`121/16/13`、churn29。Program closure、
   projected rank/energy和outcome-only信息墙均健康，但未过`correct>=140`、`lost<=8`及单task增益集中门；
   `5→10` resume、controls和参数sweep全部关闭。它只淘汰PICK-GC+first-all-success-key nullspace+blind B20。
-- 当前没有active successor。下一步必须从SKNC的最早失效接口——train24 video-conditioned success-key
-  neighborhood与blind B20不能保护/改善held on-policy support——写新的单变量design authority后才能实现或
-  launch GPU；不得从历史“formal-ready”状态恢复执行。
+- 当前唯一active successor design是SRTP：保留SKNC完整D0/anchors/PICK key/native compiler，只为mixed K4
+  tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合后的最终
+  shared Program update上同时投影所有reward half-spaces。它尚未实现或运行；必须先过CPU、discarded live与
+  deployment门，不能从历史Reward/OSG代码整条恢复。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -42,13 +43,14 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-5. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-6. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-7. `docs/research_history.md`
-8. `task_plan.md`
-9. `findings.md`
-10. `docs/concept.md`
+4. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+5. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+6. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+7. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+8. `docs/research_history.md`
+9. `task_plan.md`
+10. `findings.md`
+11. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -190,6 +192,8 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`和
   `runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；
   decision evidence、paired transition、raw rows和checkpoint均保留，但不能resume或补controls。
+- 当前active design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；尚无
+  SRTP config、checkpoint或成绩，下一合法动作是原位实现并先过CPU gate，不是直接launch GPU。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

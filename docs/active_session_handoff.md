@@ -22,9 +22,9 @@
   `1/3/45/32/0/37/18/1`；old134→SKNC retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、
   projected energy`.592`和Program closure健康，但Long task1净`+7`伴随Object/Spatial净`-5/-1`，未过
   `correct>=140`、`lost<=8`及单task集中门。resume`5→10`、controls和sweep全部关闭。
-- 当前没有active successor。下一步必须针对train24 single-video success-key neighborhood不能代表held video/
-  initialization occupancy、blind B20又无真实reward方向保证这一最早接口，先写新的单变量authority；历史
-  config/artifact中的ready状态不能恢复执行。
+- 当前唯一active successor design是SRTP：保留SKNC相同的shared `D0`、anchors、PICK key与native compiler；
+  mixed K4 tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合
+  后直接投影最终Program update。尚未实现或运行；历史Reward/OSG/SKNC config不能恢复执行。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -303,7 +303,31 @@ formal阶段随后按authority完整执行并得到上文2.1的`137/400`、bread
 或compiler断链；它直接否决“单train24 all-success key可保护held support，blind B20可在其nullspace内共同改善”
 这一组合。canonical config现为`formal_result_sealed`，macro5 checkpoint只作formal evidence，不能继续训练。
 
-## 9. Runtime and GPU boundary
+## 9. Active SRTP design authority
+
+SRTP只改变SKNC最早失败的support/credit接口。SKNC先按原合同产生anchor-null shared update `D0`；对K4 mixed
+tasks，rollout期间每episode只保留first、last和两个seeded reservoir interior rows，用binary LOO advantage与
+封存Nmc4 CFM语义形成一个Program tangent `r_i`。随后直接在最终shared memory上求：
+
+```text
+min_D 0.5 ||D-D0||^2
+s.t.  A D = 0
+      <r_i, phi_i D> <= 0  for every mixed task
+```
+
+small dual Gram可解析为`<P_A phi_i,P_A phi_j><r_i,r_j>`并用FP64 NNLS求解；大tensor correction只合成一次。
+all-success tasks继续由SKNC current/persisted key保护；all-failure tasks不伪造reward方向，继续使用B20 acquisition。
+约束发生在24-task汇合后，所以不重复OSG task-local guard经full48 solve失真。reward只约束B20的有益半空间，不
+直接写sub-ULP tangent。历史同源11 mixed tasks从4452 chunks/928 forwards降为固定44 forwards，避免Long horizon
+主导wall。
+
+ordered video仍通过PICK terminal-goal residual与causal prefix成为唯一dynamic address，negative features保持
+full48 zero RHS，language没有condition value。teacher action始终hidden；train24 policy-generated landmarks和
+outcome只作ephemeral credit，不进checkpoint/deployment。完整authority与CPU/live/formal falsifiers见
+`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。当前尚无SRTP code/config/checkpoint；
+下一步是原位实现并过CPU/architecture gate，不得直接launch GPU或恢复旧Reward/OSG path。
+
+## 10. Runtime and GPU boundary
 
 任何未来GPU launch前：
 
@@ -335,7 +359,7 @@ quota与fresh root。
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
 
-## 10. Repository state and handoff
+## 11. Repository state and handoff
 
 2026-08-11 compiler-only结果由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存。随后cleanup完成：
 
@@ -367,5 +391,5 @@ logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nu
 config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
 reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
-raw rows、transition和decision evidence完整保留，resume与controls关闭。当前无active successor，下一步先写针对
-held video/occupancy support与on-policy credit alignment的新单变量authority；旧OSG/SKNC命令不得恢复。
+raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP authority已写入active tree但尚无
+实现或成绩；下一步原位实现fixed-landmark shared reward projection并过CPU gate，旧Reward/OSG/SKNC命令不得恢复。

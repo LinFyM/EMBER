@@ -30,8 +30,8 @@
   blind offline cotangent→held on-policy useful support/coexistence。
 - [x] SKNC formal macro5 strict=`137/400`、breadth7，相对old134 retained/gained/lost=`121/16/13`、churn29；
   Program/constraint/energy门通过但`correct>=140`、`lost<=8`和单task增益集中门失败，SKNC+blind B20退役。
-- [x] 当前无active successor；新设计必须直接处理train24 success-key neighborhood不能代表held video/
-  initialization occupancy，以及blind B20 improvement direction与真实reward不对齐的最早接口。
+- [x] SKNC终局后先关闭active successor；随后只从train24 success-key neighborhood不能代表held video/
+  initialization occupancy，以及blind B20与真实reward不对齐的最早接口选择SRTP。
 
 ## Completed PICK-GC phase
 
@@ -101,9 +101,13 @@
 
 ## Next successor authority
 
-- [ ] 从第一性原理选择一个主要变量，解释怎样用视频中的有向高层过程形成跨video/初始化可共享的policy credit，
+- [x] 从第一性原理选择一个主要变量，解释怎样用视频中的有向高层过程形成跨video/初始化可共享的policy credit，
   同时阻断language/static bypass并让多task能力在同一checkpoint共存。
-- [ ] 在实现前写新的可证伪design authority，明确继承v6/PICK/SKNC的有效接口、最快CPU/live falsifier、GPU成本
+- [x] 选择SRTP：保留SKNC `D0`/anchors/PICK key/native compiler；mixed K4每episode最多4个constant-memory
+  occupancy landmarks产生LOO reward tangent，所有half-spaces直接投影task汇合后的最终shared Program update。
+- [x] 完成`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`，明确direct Reward sub-ULP、OSG
+  full-prefix长尾与task-local guard失真边界，以及解析small-dual QP、CPU/live/formal门。
+- [ ] 原位实现fresh-incompatible SRTP，明确继承v6/PICK/SKNC的有效接口、最快CPU/live falsifier、GPU成本
   和首次paired400门；不得恢复SKNC训练或同时实现多个候选。
 
 ## Repository closeout

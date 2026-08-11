@@ -218,3 +218,11 @@ per-task=`1/3/45/32/0/37/18/1`。相对old134严格配对为`121 retained/16 gai
 但它不是跨video/occupancy的任务support坐标；同时blind B20 source-action cotangent在剩余nullspace内没有真实
 reward方向保证，继续发生suite换手。这个结果只淘汰“PICK-GC + first-all-success-key nullspace + blind B20”，
 不否定所有binary success constraint、on-policy continuous credit、few-shot或task-level manifold supervision。
+
+下一单变量authority据此选择SRTP。它不再把reward tangent作为sub-ULP direct update，也不恢复OSG每条成功
+trajectory的full-prefix VJP；SKNC先产生完全相同的shared `D0`，mixed K4 tasks再用first/last加两个reservoir
+interior landmarks形成每task一个LOO signed Program cotangent。约束`<r_i, phi_i D><=0`直接在24-task汇合后的
+最终memory上同时求最近投影，all-success仍由anchor equality保护、all-failure仍保留B20 acquisition。历史同源
+Reward profile的11 mixed tasks原需4452 chunks/928 forwards；固定16 rows/task与Nmc4只需44 forwards，针对性移除
+OSG长尾而不减少K4 outcome覆盖。这个设计的最快否决证据是raw constraints不冲突、投影近零、negative motion
+破坏或wall超过matched SKNC `1.25x`；只有live shared projection接通后才允许fresh macro5 paired400。

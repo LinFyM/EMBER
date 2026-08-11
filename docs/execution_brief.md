@@ -11,13 +11,13 @@ controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾�
 Program write，clean world3机制与B32部署门均通过；formal fresh`0→5`后strict paired400=`137/400`、breadth7，
 相对old134 retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、projected energy`.592`与Program
 closure健康，但Long净`+7`掩盖Object/Spatial净`-5/-1`，未过`correct>=140`、`lost<=8`和单task集中门。
-SKNC已退役，不resume、不补controls、不sweep。当前没有active design；下一合法动作只能是先写针对held
-video/occupancy support与on-policy credit alignment的新单变量authority。
+SKNC已退役，不resume、不补controls、不sweep。当前唯一active design是SRTP：fixed-landmark mixed reward
+tangent直接投影最终shared Program update；尚未实现或运行，下一合法动作是原位实现并过CPU gate。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Next design gate
+## 1. Active SRTP design gate
 
 任何新successor在实现前必须回答：
 
@@ -33,11 +33,12 @@ same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好�
 blind train24 offline cotangent→held on-policy useful support/coexistence。OSG-PC试图用成功train24 executed-prefix
 half-space保护support，但current full-replay per-success VJP graph先在吞吐/长尾接口失败，尚未产生shared guard
 transfer证据。后继必须保留信息墙与已通过接口，同时正面限制on-policy credit的cost/occupancy length。
-SKNC以每task first all-success key和本macro current all-success keys约束最终shared write，确实把Program到action
-的protected motion压到零，但strict仍lost13并发生suite换手。故train24单video key不是held video/initialization
-occupancy的充分support坐标，blind B20在剩余nullspace内也没有reward-improvement保证。下一设计必须直接改变这
-一最早接口，同时保留PICK/v6的ordered video key、FP32 Program和native full-rank compiler；完整SKNC终局见
-`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。
+SKNC把Program到action的protected motion压到零，但strict仍lost13并发生suite换手，说明single-video key不是
+held support坐标。SRTP保留同一个SKNC shared update `D0`，mixed K4 tasks只保留每episode first/last与两个
+reservoir interior occupancy rows，计算LOO signed Program tangent；随后在all-success anchor nullspace内，把
+最终24-task shared update一次投影到全部`<r_i,phi_i D><=0`。这既不缩小B20/native rank16幅度，也不让task-local
+guard在full48汇合后漂移。完整公式、常数内存实现边界与hard gates见
+`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。
 
 ## 2. Fixed information contract
 
@@ -222,8 +223,9 @@ PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
 deployment和评测全部关闭。SKNC canonical实现、clean world3 `16/16` profile、B32 deployment smoke、formal
 fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`formal_result_sealed`，resume、controls和
-sweep关闭。当前没有获准GPU launch的方法；新authority完成并封存后，launch仍须重新复核gpu01/gpu02、quota、
-fresh root、物理/NUMA topology与现有进程，有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+sweep关闭。SRTP目前只有design authority，尚未获准GPU launch；实现、CPU/architecture gate与clean push完成
+后，launch仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与现有进程，有多少合适的同节点卡
+就用多少、最多6张，不等待凑卡。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

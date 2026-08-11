@@ -32,8 +32,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `1/3/45/32/0/37/18/1`，相对old134 retained/gained/lost=`121/16/13`、churn29。训练端15个persisted anchors、
   macro5 rank36、projected energy`.592`和Program closure均健康，但Long task1净`+7`掩盖Object净`-5`及
   Spatial净`-1`；未过`correct>=140`、`lost<=8`和单task集中门，故不resume、不补controls、不sweep。
-- 当前没有active successor。下一步只允许针对“train24 success-key neighborhood与blind B20不能外推held
-  on-policy support/coexistence”写新的单变量authority，再恢复实现或GPU实验。
+- 当前唯一active successor design是SRTP：SKNC产生同一个shared blind update `D0`后，只对mixed K4 tasks
+  从每episode最多4个on-policy occupancy landmarks计算LOO reward tangent，再把最终24-task shared update投影到
+  全部reward half-spaces。它保留B20幅度、all-success anchors、PICK ordered key、FP32 Program和native rank16
+  compiler，同时避免Reward-Credit的sub-ULP direct write与OSG的full-prefix长尾。尚未实现或运行。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -115,8 +117,9 @@ EMBER/
 ```
 
 进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC与SKNC均已
-封存non-pass；当前没有获准GPU launch的active method。必须先形成新的单变量design authority并由clean pushed
-head封存，不能从旧文档恢复OSG/SKNC命令或resume其checkpoint。
+封存non-pass；SRTP只有design authority，尚未获准GPU launch。必须先原位实现并过CPU/architecture gate，不能
+从旧文档恢复Reward/OSG/SKNC命令或resume其checkpoint。设计见
+[`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
 吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、

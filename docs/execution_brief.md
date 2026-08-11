@@ -6,7 +6,37 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务。
 
-**最新执行状态（2026-08-11）**：Reward-Credit已从clean frozen`e3857f7`完成formal cycle0→1和预注册
+**当前最新裁决（2026-08-11）**：Q/V Rank-Reserved的zero-Program Gate B已从clean frozen
+`0fd823f8cb5ab45164b185c0a42cb358044b095d`完成，root=
+`runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`。400/400 rows、48/48
+shards、12 workers均完整，strict=`128/400`、breadth7；相对paired old full-rank macro0 `134/400`为
+retained/gained/lost=`113/15/21`。它违反`correct>=130`和`lost<=10`，所以正式Gate B为non-pass，Gate C、
+controls与新训练均未启动且继续封锁。
+
+该分数是真实端到端non-pass，但不是干净的rank14容量反事实。old134用了18个Writer generator workers，
+new128用了12个；当前旧调度是先做`request ordinal % worker_count`、再由各worker局部拼B8，所以卡/worker数
+改变了co-batch、position、padding和tail shape。未改结构的action负对照只有`504/1600` tensors bit-equal，
+action effective-BA relative difference=`.003355`；q/v root-to-root difference=`.002160`，其中投影分解约
+`23.5%`平方误差来自rank14/span外，约`76.5%`来自span内Writer regeneration。lost组误差反而更小，不能用
+`.075%` reconstruction或root-to-root误差解释21个loss。
+
+当前只推进一次去混杂compiler-only strict400，不重跑旧baseline、不跑现有Gate C：从immutable old134的
+exact per-video cache出发，在A40上按全局sealed-order B8只执行现有q/v pivot rank14+两个zero slots，action
+四tensor逐元素原样复制，0 video/Writer/teacher-action/reward reads；生成显式派生provenance后复用同一400
+state/video/RNG rollout panel。硬门仍为`correct>=130`、breadth`>=6`、lost`<=10`。clean pushed
+`ea3f3bf`已把并行修正为先形成全局canonical B8、再把整批派给任意空闲worker，使卡数只影响吞吐、不影响
+Writer数值上下文；400 requests固定50个B8，fresh无额外forward。若该去混杂门仍失败，
+退役统一rank14 base；若通过，再构造same-forward online对照并重新决定Reward Gate C。
+
+实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`与one-time authority E=
+`c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`现已封存。正式target合同把prefilled population写成0 Writer
+generators/0 handoff，并与old134的完整rollout identity绑定；transform使用与online相同的global B8、ambient
+BF16 autocast、TF32和GPU-local NUMA，action四tensor写后逐一exact核对，partial resume整批重算只补missing。
+缺manifest在worker spawn前fail closed。主线fresh相关回归`127 passed`、active config仍5634 bytes；authority
+明确不追认原Gate B、也不授权Gate C。当前target root尚不存在，GPU尚未启动；下一步只是在clean pushed
+frozen worktree上live重查两节点/配额后完成这一条transform+strict400。
+
+**此前执行状态（2026-08-11）**：Reward-Credit已从clean frozen`e3857f7`完成formal cycle0→1和预注册
 correct400。训练root=
 `runs/outputs/pi05_v6_reward_credit_program_cotangent_formal_cycle0to2_r6_k4_nmc4_b8_balanced_20260810`，
 natural exit0、24 tasks/96 rollouts、B8、0 OOM/nonfinite；strict root=

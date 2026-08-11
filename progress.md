@@ -1,5 +1,33 @@
 # EMBER Progress Ledger
 
+## Rank-Reserved Gate B完成、正式non-pass与去混杂后继（2026-08-11）
+
+- Gate-A seal/config/docs先后以`0bc8375`、`0fd823f`推送；phase-independent seal fixture以`19cfc32`恢复。
+  Gate B使用clean frozen`0fd823f8cb5ab45164b185c0a42cb358044b095d`，root=
+  `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`。
+- 启动前live选择`gpu02:2,3,4,5`，4卡×3 replicas/generators、B8、无NCCL。48/48 shards、400/400 rows、
+  400 cache entries、12 workers均attempt1/return0；wall=`1143.131s`、rollout-only约`1655.21 episodes/hour`，
+  结束后释放所用GPU。
+- strict=`128/400`、breadth7、per-task=`1/1/47/29/0/36/13/1`；相对old134 retained/gained/lost=
+  `113/15/21`、churn36、Jaccard`.758389`、McNemar p=`.405032`。按预注册correct与lost门正式non-pass，
+  Gate C/controls/training均未启动。
+- 三路独立只读审计确认artifact/pairing完整，同时定位旧18-generator与新12-generator的局部B8 membership
+  混杂。action负对照只有`504/1600` tensors bit-equal；q/v差异分解约`23.5%`平方误差来自rank14/span外、
+  `76.5%`来自span内regeneration，且误差不能预测loss。因此保留128 non-pass，但不把它误写为rank14容量的
+  干净反事实。
+- 当前实现阶段只做两项：canonical global B8整批派worker；old134 exact cache→A40 B8 rank14 compiler-only
+  派生cache与同一strict400。保持原门、action bit-exact、0 video/Writer/forbidden reads；若失败才退役rank14，
+  若通过再补same-forward online对照。尚未启动新的GPU工作。
+- 第一项已完成并推送为`ea3f3bf7f7e1892dc86a8cb3b77c47f8138e3dbe`：descriptor使用global
+  batch-first assignment，legacy cache按原assignment继续可读且未知算法fail closed；400/B8固定50批，partial
+  resume整批forward只写missing，fresh 0 redundant。主线复跑`22 passed`，compileall/diff-check通过。
+- 第二项实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`与authority E=
+  `c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`已完成。两路只读审查先后拦截并修复ambient autocast、prefilled
+  fake-generator provenance、source rollout identity、descriptor接线和拆分后CLI import问题；最终authority只比I
+  多一个JSON，lineage exact，active config仍5634 bytes。主线在设置canonical LIBERO assets后fresh相关回归
+  `127 passed`；未创建target root、未启动GPU。下一步只做clean push/frozen worktree、live双节点/配额检查和
+  compiler-only transform+strict400。
+
 ## Reward-Credit cycle1终局与rank-reserved native后继（2026-08-11）
 
 - clean pushed/frozen`e3857f7`完成formal Reward cycle0→1；root=

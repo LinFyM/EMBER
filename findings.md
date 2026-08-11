@@ -16,7 +16,32 @@
   `G0/G0+T` absolute rank16 refactor都失败。local-CD K4 same-video cosine约`.217`、error-to-zero约`.977`；
   absolute refactor的delta cosine`.0045--.0213`、norm ratio`8.7--182`。不再扫描这些数值补丁。
 
-## Q/V pivot-preserving rank14+2：Gate A闭合，strict行为仍未知（2026-08-11）
+## Rank14 Gate B：正式128 non-pass，但旧Writer batching混入compiler反事实（2026-08-11）
+
+- clean frozen`0fd823f`的正式Gate B root完整得到`128/400`、breadth7；相对immutable old134为
+  retained/gained/lost=`113/15/21`、churn36。它明确违反correct`>=130`和lost`<=10`，所以当前端到端
+  rank-reserved recipe正式失败，Gate C不得启动。
+- 失败不是artifact或pairing问题：400 state、actual video、env/policy RNG严格配对，400 LoRA、48 shards和
+  12 worker completion完整。真正的新发现是两次Writer cache生成上下文不配对：old/new用了18/12 generators，
+  `request.ordinal % worker_count`后局部B8会改变同一video的co-batch、position、padding与tail。
+- action路径在macro0结构上完全不变，却只有`504/1600` factor tensors bit-equal、effective-BA relative
+  difference=`.003355`，直接证明差异先于rank14投影。q/v root差异=`.002160`；把old BA投到new retained-B
+  span后，rank14/span外约占`23.5%`平方误差，span内Writer regeneration约占`76.5%`。lost组误差低于
+  retained-success组，误差预测loss AUC约`.335`，没有数值误差剂量关系。
+- 因而应同时保留两句话：`128`是现有recipe不可继续的正式non-pass；它干净淘汰了“同为B8即可跨worker
+  topology比较compiler”的假设，但尚未干净淘汰rank14容量。下一最小证据是immutable old134 exact cache只做
+  A40 B8 rank14 compiler、action exact copy后的paired strict400，不是换seed重跑，也不是直接180度换架构。
+- 在线cache已由clean pushed`ea3f3bf`改为global canonical B8后整批派worker。这样空多少卡用多少卡只提高
+  吞吐，不再改变科学输入；400 requests固定50个完整B8，fresh无额外forward，partial resume重算整批而只补
+  missing entries。compiler-only仍用原门；失败才退役rank14，通过才投资
+  same-forward online对照和Reward Gate C。
+- 去混杂合同审计进一步确认“同一compiler”不仅是同一公式，还必须包括ambient CUDA BF16 autocast与TF32；
+  否则pivot/solve内部matmul仍会走不同数值路径。实现I=`07462c9`因此复用同一shared owner并绑定该上下文，
+  而不是用batch1、扩精度或逐元素ULP补丁追bitwise。prefilled run contract也必须真实写0 generators/0 handoff，
+  且target source policy与完整task/environment/RNG身份必须和old134相同。E=`c92b4a5`已把这些条件封成one-time
+  authority，明确不能追认原128 Gate B或直接授权Gate C。
+
+## Q/V pivot-preserving rank14+2：Gate A闭合的历史机制证据（2026-08-11）
 
 - rank1 stable tangent capture不足；rank2 capture约`.9996`且是最小充分点。action rank2 cosine仅
   `.91--.95`且action原本FP32，所以唯一合理结构是36个q/v targets保留rank14 base + 2个physical zero-B
@@ -74,12 +99,14 @@
   `-.1271`，new q/v-only与new full Reward cosine=`.5333`。这与generation-only continuous tangent高cosine并不
   矛盾：前者经过native old-factor噪声、base改写和非线性policy。它说明Gate A只修复可达性，不能预测closed-loop
   会提高；Gate B先裁决rank14 base，Gate C再裁决Reward方向。
-- 当前正确证据顺序是：先新rank14
+- 当时预注册证据顺序是：先新rank14
   zero-Program strict400，只有correct≥130、breadth≥6且相对旧134 lost≤10才跑cycle1 rank14+2 strict400。
   只有cycle1 correct≥144、breadth≥6、lost≤6且gained>lost才算通过并补controls；140--143是诊断性
   non-pass，不授权新训练。旧两个400 roots不重跑，旧LoRA cache不复用。
-- 评测parallel topology被scientific projection明确排除，故不同空卡数不破坏paired身份。旧软件额外把
-  配置中的8卡截成最多6卡，只会损失吞吐，现已删除；仍坚持单节点dynamic queue，不为跨节点碎片重写launcher。
+- 此处旧结论“评测parallel topology已被scientific projection排除”已由正式Gate-B审计推翻：rollout queue
+  topology不改变state/RNG pairing，但旧Writer的ordinal-mod-worker局部B8会改变生成数值上下文。正确修复是
+  global canonical B8整批派发，不是固定卡数。旧软件额外把8卡截成最多6卡的门仍已正确删除；继续单节点
+  dynamic queue，不为跨节点碎片重写launcher。
 
 ## Reward-Credit首次A40 profile：主链成立，固定probe门设计non-pass（2026-08-10）
 

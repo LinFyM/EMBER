@@ -16,6 +16,53 @@
   训练多卡固定`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL；独立评测按live空卡
   动态扩展cost-balanced queue。
 
+### 1.0 Gate B正式non-pass、批次拓扑混杂与当前去混杂裁决（2026-08-11）
+
+- sealed commit`0fd823f8cb5ab45164b185c0a42cb358044b095d`的rank14 zero-Program Gate B已在
+  `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`完成。live选择
+  `gpu02:2,3,4,5`，4卡×3 replicas/generators、B8、无NCCL；48/48 shards、400/400 rows、12 workers均
+  attempt1/return0，strict=`128/400`、breadth7，per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+  `1/1/47/29/0/36/13/1`。相对immutable old full-rank macro0 `134/400`为retained/gained/lost=
+  `113/15/21`、churn36、Jaccard`.758389`、McNemar p=`.405032`。它违反correct`>=130`与lost`<=10`，
+  因而是正式Gate-B non-pass；Gate C、controls和新训练继续机械封锁。
+- artifact本身完整可信：old/new 400 rows的task/state、实际teacher video、env seed、逐replan policy RNG严格
+  配对；新root的400 LoRA cache、48 shards和launcher completion完整。这个non-pass不能删除、覆盖或改写成
+  “只是工程失败”。
+- 但当前结果不能把全部`128`归因于rank14 compiler。旧134 root用了18个generator workers，新root用了12个；
+  旧cache owner先按`request.ordinal % worker_count`分单条请求，再在每个worker内部拼B8。因此worker数变化会
+  改变同一video的co-batch、batch position、padding length和tail shape，虽然命令都写B8。结构上未改变的
+  action负对照也只有`504/1600` factor tensors bit-equal，action effective-BA relative difference=`.003355`；
+  q/v full-root relative difference=`.002160`。把old BA投到new retained-B span后，rank14/span外项只占约
+  `23.5%`平方误差，span内Writer regeneration项约占`76.5%`。lost episodes的数值误差反而低于retained
+  successes，用误差预测loss的AUC约`.335`，不存在“rank14误差越大越失败”的剂量关系。
+- 因此正式裁决分两层保持：现有端到端recipe=`128/400`并拒绝；被直接淘汰的评测假设是“只要都标B8，
+  不同generator拓扑就是compiler-only对照”，而rank14容量假设尚未被干净证伪。`findings.md`中旧的
+  “parallel topology已排除”表述已失效。
+- 当前最便宜且信息增益最高的下一证据是compiler-only counterfactual re-adjudication：从immutable old134的
+  exact per-video LoRA cache读取同一rank16 native state；在A40上按全局sealed request order固定50个B8，只对
+  36个q/v pairs运行当前pivot-preserving rank14 solve并追加两个physical zero A/B slots，四个action tensors
+  bit-exact复制；不重新读取video、不运行Writer、不读teacher action/reward。派生cache显式记录source root、
+  contract、entry和compiler provenance，再用普通strict evaluator在完全相同400 state/video/RNG panel回放。
+  仍预注册`correct>=130`、breadth`>=6`、相对old134 lost`<=10`，不因结果改门。
+- 在线Writer cache调度已由clean pushed commit`ea3f3bf7f7e1892dc86a8cb3b77c47f8138e3dbe`改为全局
+  canonical B8后再按batch ordinal派给任意数量workers；400 requests固定为50个完整B8，卡数只影响哪个
+  worker执行整批，不再改变batch membership，partial resume也重算完整canonical batch而只写missing entries。
+  fresh不增加redundant forward，聚焦回归`22 passed`。这保持B8吞吐赢家，并消除未来online/same-forward比较的
+  隐藏变量。
+- compiler-only实现与one-time authority已分别封存为I=
+  `07462c928420f2fbddd7a7004fb169bc4ea89ea0`、E=
+  `c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`；E相对I只新增
+  `configs/pi05_v6_qv_rank_reserved_compiler_only_diagnostic_v1.json`。派生population在run/cache合同中明确为
+  0 generator、0 Writer/video/source-policy population handoff；target rollout identity与old134的model、tokenizer、
+  normalization、policy、environment、RNG、LIBERO paths、tasks和adapter source严格绑定。q/v使用同一shared
+  compiler、global B8、与online完全一致的ambient BF16 autocast+TF32；action四tensor在CPU直接复制并对写后
+  safetensors做1600次exact equality。single-A40 transform要求visible cuda0和GPU-local NUMA；partial resume
+  重算完整B8、只写missing；缺prefilled manifest在任何rollout worker spawn前fail closed。主线fresh相关回归
+  `127 passed`；active config仍为5634 bytes。authority明确不追认原Gate B且`authorizes_cycle1=false`。
+- 当前尚未创建target root或启动GPU。若compiler-only strict400仍失败，才干净退役当前统一rank14 base；若通过，
+  再值得做canonical same-forward full-rank/rank14与Reward Gate C，而不是直接恢复被当前formal non-pass封锁的旧
+  Gate C。
+
 ### 1.1 Active Q/V Rank-Reserved Native Reward Compiler（2026-08-11）
 
 - Reward-Credit已从clean frozen`e3857f73ce92fa7f790a7e49f8166d7e5ef5b9e5`完成formal cycle0→1。

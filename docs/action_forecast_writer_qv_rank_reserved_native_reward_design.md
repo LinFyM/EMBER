@@ -209,6 +209,42 @@ per-suite gained/lost必须完整报告，但由于“广泛退化”没有预�
 
 该结果建立新compiler自己的真实base；不能用`.075%` reconstruction error推定identity。
 
+#### Gate B observed result and deconfounded re-adjudication（2026-08-11）
+
+sealed`0fd823f`正式root已给出`128/400`、breadth7、相对old134 retained/gained/lost=`113/15/21`，因此按
+上述原门正式non-pass，Gate C仍被阻断。artifact与400-way pairing完整，这个结果不得覆盖或删除。
+
+事后只读审计同时发现原对照的最早混杂发生在compiler之前：old/new分别使用18/12 generator workers，而旧
+cache调度先按单条request ordinal对worker取模、再局部拼B8。即使Program为零且action compiler结构不变，
+action cache也只有`504/1600` tensors bit-equal、effective-BA relative difference=`.003355`；q/v总差异的
+平方能量约`76.5%`位于new retained-B span内，只有约`23.5%`可归于rank14/span外。误差与episode loss没有
+正剂量关系。因此当前formal只拒绝“当前端到端recipe”，不能单独退役rank14容量假设。
+
+新增一次、且仅一次counterfactual re-adjudication，保持原Gate B阈值不变：
+
+- source固定为immutable old134 formal root的exact 400-entry native LoRA cache；不得重新生成old Writer状态；
+- 按sealed request order切成50个global B8，在A40上对每批q/v 18-layer stacks调用当前同一
+  `pivot_preserving_base_factors(keep=14)`，追加两个physical zero A/B slots；四个action tensors bit-exact复制；
+- 0 video forward、0 Writer forward、0 teacher action/state/reward/terminal reads；teacher-video身份继承source
+  entry且必须与target schedule逐episode相同；
+- 派生cache必须在descriptor、entry generation和manifest三层显式绑定source run/cache contract、source entry、
+  compiler batch和target implementation commit；未完整seal时launcher必须fail closed，不能回退online Writer
+  混填partial cache；
+- partial resume必须重算整个canonical B8而只写missing entries，保持数值上下文；normal online Writer也改为
+  先形成同一global B8再按batch ordinal分派worker，worker/card数量不得改变batch membership；
+- rollout仍使用official paired validation 8×50、同state/video/env/policy RNG。通过仍要求correct`>=130`、
+  breadth`>=6`、相对old134 lost`<=10`。
+
+实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`抽取并复用唯一q/v compiler owner，保持旧算子顺序；
+counterfactual调用必须与online一样处于CUDA BF16 autocast且`allow_tf32=true`，不能用公式相同替代运行上下文
+相同。authority E=`c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`只新增one-time diagnostic JSON，绑定
+old134 source/cache、完整rollout identity、50×B8、1600个action tensor写后exact equality、single-A40 local
+NUMA transform和prefilled fail-close。它明确`retroactively_changes_original_gate_b=false`、
+`authorizes_cycle1=false`；active 5634-byte Writer config不变。
+
+这个派生root只回答rank14 compiler容量，不冒充online deployment分数。若仍失败，退役当前统一rank14 base；
+若通过，先用canonical same-forward full-rank/rank14 online cache确认部署一致性，之后才可重新开放Reward Gate C。
+
 ### Gate C: current cycle1 Program load-only strict correct400
 
 只有Gate B保留base后，才把已正式训练的Reward cycle1 Program通过同一compiler做load-only correct400；

@@ -317,8 +317,21 @@ formal artifacts保存。
   tracked Program asset resolver与`runs/outputs` evidence resolver分离，Gate C不再机械阻断。seal只允许在
   tracked canonical branch head执行；Gate A raw validator已重建`ee56aec`、B8、`10359/25926B` evidence并
   自动写config。当前只需将config/docs clean commit/push并新建frozen worktree，才进入Gate B/C。
-- [ ] 先跑新rank14 zero-Program strict400；若correct<130、breadth<6或相对旧134 lost>10则reject，不浪费
-  第二个400。旧macro0 rows、source policy、split、video和RNG schedule直接复用，不重跑旧baseline。
+- [x] 新rank14 zero-Program strict400已完成：`128/400`、breadth7、相对old134 retained/gained/lost=
+  `113/15/21`，正式违反correct与lost门；Gate C未启动。400 rows/cache/shards/pairing均完整，结果保留为当前
+  端到端recipe non-pass。
+- [x] Gate-B只读根因审计定位到compiler之前的batch-topology混杂：old/new为18/12 generators，旧
+  ordinal-mod-worker再局部B8调度改变co-batch/position/padding/tail；action负对照仅`504/1600` tensors
+  bit-equal，q/v差异约`76.5%`平方能量来自span内regeneration。纠正“parallel topology已排除”的旧结论。
+- [x] clean pushed`ea3f3bf`已在canonical cache owner中实现global sealed-order B8、整批按batch ordinal派
+  worker及whole-batch partial resume；400 requests固定50个完整B8，fresh无redundant forward。保持B8
+  吞吐赢家，不固定卡数、不降batch/precision；聚焦回归`22 passed`。
+- [x] 实现I=`07462c9`与one-time authority E=`c92b4a5`已封存old134 exact cache→A40 B8 q/v rank14
+  compiler-only派生链：0 Writer/video/source-policy population、完整source rollout identity、ambient BF16
+  autocast+TF32、action写后1600次exact equality、GPU-local NUMA、partial整批重算和manifest-before-spawn
+  fail-close。主线fresh相关回归`127 passed`，active config保持5634 bytes；target root/GPU尚未创建或启动。
+- [ ] 用同一paired 400 panel运行compiler-only strict裁决；门仍为correct≥130、breadth≥6、lost≤10。若失败，
+  退役统一rank14 base；若通过，先补canonical same-forward online full-rank/rank14对照，再决定是否重开Gate C。
 - [ ] 只有新macro0过门，才跑现有cycle1 Program的rank14+2 load-only strict400；只有correct≥144、
   breadth≥6、相对新macro0 lost≤6且gained>lost才算通过并补同checkpoint controls。140--143为诊断性
   non-pass且不授权新训练；>150完成六臂。

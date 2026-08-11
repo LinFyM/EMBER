@@ -107,8 +107,11 @@
   occupancy landmarks产生LOO reward tangent，所有half-spaces直接投影task汇合后的最终shared Program update。
 - [x] 完成`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`，明确direct Reward sub-ULP、OSG
   full-prefix长尾与task-local guard失真边界，以及解析small-dual QP、CPU/live/formal门。
-- [ ] 原位实现fresh-incompatible SRTP，明确继承v6/PICK/SKNC的有效接口、最快CPU/live falsifier、GPU成本
-  和首次paired400门；不得恢复SKNC训练或同时实现多个候选。
+- [x] 原位实现fresh-incompatible SRTP：每episode first/last+reservoir2、mixed-only Nmc4 B16 Program tangent、
+  final shared NNLS projection与fresh checkpoint/config schema均进入唯一canonical path；完整CPU回归`358 passed`。
+- [ ] clean commit/push并建立frozen worktree；live检查双节点、进程、quota、NUMA和显存余量后，按实时有效卡数
+  （至多6、不等待凑卡、少量显存占用不自动排除）执行唯一discarded full24 macro与hard gate。
+- [ ] 只有discarded live与B8/16/32 deployment门全过才fresh`0→5`，随后立即strict paired400并按预注册门裁决。
 
 ## Repository closeout
 

@@ -1,4 +1,4 @@
-"""SKNC task-complete outcome certification and constrained Program updates."""
+"""SRTP task-complete landmark credit and constrained Program updates."""
 
 from __future__ import annotations
 
@@ -41,6 +41,10 @@ from ember.expert_manifold.v6_prior_step import (
     generate_condition_graph,
     program_cotangent,
 )
+from ember.expert_manifold.v6_reward_tangent import (
+    RewardTangentSummary,
+    landmark_reward_program_cotangent,
+)
 from ember.expert_manifold.v6_success_key import (
     SuccessKeyBankUpdateSummary,
     SuccessKeyConstraintPlan,
@@ -57,10 +61,12 @@ from ember.reward.rollout import (
 from ember.writer.condition_update import (
     ProgramDeltaApplicationSummary,
     SuccessKeyNullspaceUpdateSummary,
+    SharedRewardTangentProjectionSummary,
     apply_program_residual_delta_,
     program_residual_delta_application_evidence,
     success_key_constraint_motion,
     success_key_nullspace_program_delta,
+    shared_reward_tangent_program_projection,
 )
 from ember.writer.functional import (
     TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
@@ -81,9 +87,12 @@ class TaskObjective:
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
     program_cotangent: torch.Tensor
+    reward_program_cotangent: torch.Tensor
+    reward_tangent: RewardTangentSummary
     success_count: int
     trajectory_rows: tuple[Mapping[str, Any], ...]
     rollout_seconds: float
+    reward_credit_seconds: float
     correct_raw_frames: int
     correct_sampled_frames: int
     negative_raw_frames: int
@@ -116,7 +125,7 @@ def _policy_rng_seed_for_logical_batch(
         or frame_indices.shape != demo_indices.shape
         or demo_indices.numel() != _LOGICAL_POLICY_BATCH_SIZE
     ):
-        raise ExpertManifoldError("SKNC action-query randomness changed")
+        raise ExpertManifoldError("SRTP action-query randomness changed")
     return task_logical_batch_policy_rng_seed(
         optimization_seed=int(config["optimization"]["seed"]),
         task_id=task_id,
@@ -145,8 +154,13 @@ def _trajectory_record(value: RewardRolloutOutcome) -> dict[str, Any]:
         "steps": value.steps,
         "reward_sum": value.reward_sum,
         "replan_count": len(value.policy_noise_seeds),
-        "retained_observation_tensors": 0,
-        "retained_action_tensors": 0,
+        "selected_landmarks": len(value.landmarks),
+        "selected_landmark_ordinals": [
+            landmark.replan_ordinal for landmark in value.landmarks
+        ],
+        "selected_executed_action_steps": [
+            landmark.executed_action_steps for landmark in value.landmarks
+        ],
     }
 
 
@@ -192,6 +206,7 @@ def _collect_task_outcomes(
             rollout_cursors=rollout_cursors,
             env_seeds=environment_seeds,
             policy_seed_root=int(runtime.config["rng"]["policy_noise_seed_root"]),
+            landmark_seed_root=int(runtime.config["rng"]["landmark_seed_root"]),
             device=runtime.context.device,
             max_horizon=reward_task.horizon,
             dummy_settling_steps=int(environment["dummy_settling_steps"]),
@@ -205,7 +220,7 @@ def _collect_task_outcomes(
         )
     seconds = time.monotonic() - started
     if len(outcomes) != 4:
-        raise ExpertManifoldError("SKNC outcome panel is not exact K4")
+        raise ExpertManifoldError("SRTP outcome panel is not exact K4")
     return outcomes, sum(value.success for value in outcomes), seconds
 
 
@@ -299,13 +314,31 @@ def _task_objective(
         }
         if len(fixed_policy_query) != 4:
             raise ExpertManifoldError("fixed-action profile query changed")
-    cotangent = program_cotangent(graph, lora_gradients)
+    cotangent = program_cotangent(graph, lora_gradients, retain_graph=True)
+    del lora_gradients
     outcomes, success_count, rollout_seconds = _collect_task_outcomes(
         runtime,
         schedule_macro=schedule_macro,
         task=task,
         lora_state=graph.correct_lora,
     )
+    reward_started = time.monotonic()
+    with torch.autocast(
+        device_type=runtime.context.device.type,
+        dtype=torch.bfloat16,
+        enabled=runtime.context.device.type == "cuda",
+    ):
+        reward_cotangent, reward_tangent = landmark_reward_program_cotangent(
+            graph,
+            policy=runtime.policy,
+            contract=runtime.lora_contract,
+            outcomes=outcomes,
+            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
+            schedule_macro=schedule_macro,
+            global_task_id=task.global_task_id,
+            device=runtime.context.device,
+        )
+    reward_credit_seconds = time.monotonic() - reward_started
     return TaskObjective(
         task=task,
         task_visit=task_visit,
@@ -317,9 +350,12 @@ def _task_objective(
         correct_feature=graph.correct_feature.detach(),
         negative_feature=graph.negative_feature.detach(),
         program_cotangent=cotangent,
+        reward_program_cotangent=reward_cotangent,
+        reward_tangent=reward_tangent,
         success_count=success_count,
         trajectory_rows=tuple(_trajectory_record(value) for value in outcomes),
         rollout_seconds=rollout_seconds,
+        reward_credit_seconds=reward_credit_seconds,
         correct_raw_frames=graph.correct_raw_frames,
         correct_sampled_frames=graph.correct_sampled_frames,
         negative_raw_frames=graph.negative_raw_frames,
@@ -343,6 +379,7 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
             (
                 value.functional_loss.to(dtype=torch.float32),
                 value.program_cotangent.square().mean().sqrt(),
+                value.reward_program_cotangent.square().mean().sqrt(),
                 correct_norm,
                 negative_norm,
                 cosine,
@@ -368,22 +405,27 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "counterfactual_demo": value.counterfactual_demo,
         "functional_loss": scalars[0],
         "program_cotangent_rms": scalars[1],
-        "correct_feature_norm": scalars[2],
-        "negative_feature_norm": scalars[3],
-        "correct_negative_feature_cosine": scalars[4],
+        "reward_program_cotangent_rms": scalars[2],
+        "correct_feature_norm": scalars[3],
+        "negative_feature_norm": scalars[4],
+        "correct_negative_feature_cosine": scalars[5],
         "success_count": value.success_count,
         "all_success": value.success_count == 4,
         "trajectories": list(value.trajectory_rows),
         "rollout_seconds": value.rollout_seconds,
+        "reward_credit_seconds": value.reward_credit_seconds,
         "correct_raw_frames": value.correct_raw_frames,
         "correct_sampled_frames": value.correct_sampled_frames,
         "negative_raw_frames": value.negative_raw_frames,
         "negative_sampled_frames": value.negative_sampled_frames,
         "source_action_queries": 20,
         "physical_correct_policy_forwards": 2,
+        "reward_tangent": asdict(value.reward_tangent),
         "trajectory_replay_policy_forwards": 0,
-        "trajectory_replay_cfm_forwards": 0,
-        "reward_gradient_count": 0,
+        "trajectory_replay_cfm_forwards": (
+            value.reward_tangent.functional_policy_forwards
+        ),
+        "reward_gradient_count": int(value.reward_tangent.mixed),
         "negative_policy_forwards": 0,
         "historical_v6_video_encodes": 1,
         "post_rollout_factorhead_redecodes": 0,
@@ -410,7 +452,13 @@ def _all_gather_fixed(value: torch.Tensor, context: DistributedContext) -> torch
 def _gather_full48(
     local: Sequence[TaskObjective],
     context: DistributedContext,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+]:
     maximum_local = math.ceil(24 / context.world_size)
     if not 0 < len(local) <= maximum_local:
         raise ExpertManifoldError("residual Writer local task coverage changed")
@@ -448,11 +496,17 @@ def _gather_full48(
     cotangents[: len(local)] = torch.stack(
         [value.program_cotangent for value in local]
     )
+    reward_cotangents = torch.zeros_like(cotangents)
+    reward_cotangents[: len(local)] = torch.stack(
+        [value.reward_program_cotangent for value in local]
+    )
     gathered_payload = _all_gather_fixed(payload, context)
     gathered_cotangents = _all_gather_fixed(cotangents, context)
+    gathered_reward_cotangents = _all_gather_fixed(reward_cotangents, context)
     present = gathered_payload[:, 0] >= 0
     gathered_payload = gathered_payload[present]
     gathered_cotangents = gathered_cotangents[present]
+    gathered_reward_cotangents = gathered_reward_cotangents[present]
     if gathered_payload.shape[0] != 24:
         raise ExpertManifoldError("residual Writer padded gather lost train24")
     ordinals = gathered_payload[:, 0].to(dtype=torch.long)
@@ -467,6 +521,7 @@ def _gather_full48(
         gathered_payload.index_select(0, order)[:, 2:258],
         gathered_payload.index_select(0, order)[:, 258:],
         gathered_cotangents.index_select(0, order),
+        gathered_reward_cotangents.index_select(0, order),
         gathered_payload.index_select(0, order)[:, 1].to(dtype=torch.long),
     )
 
@@ -549,6 +604,7 @@ def _apply_macro_update(
     step_started: float,
 ) -> tuple[
     SuccessKeyNullspaceUpdateSummary,
+    SharedRewardTangentProjectionSummary,
     SuccessKeyBankUpdateSummary,
     ProgramDeltaApplicationSummary | None,
     dict[str, Any] | None,
@@ -566,13 +622,13 @@ def _apply_macro_update(
         )
         torch.cuda.synchronize(runtime.context.device)
         kernel_started = time.monotonic()
-    correct, negative, cotangents, success_counts = _gather_full48(
+    correct, negative, cotangents, reward_cotangents, success_counts = _gather_full48(
         local_objectives, runtime.context
     )
     constraint_plan = runtime.success_key_bank.constraint_plan(
         correct, success_counts
     )
-    delta, update = success_key_nullspace_program_delta(
+    blind_delta, update = success_key_nullspace_program_delta(
         correct,
         negative,
         cotangents,
@@ -580,6 +636,14 @@ def _apply_macro_update(
         constraint_plan.current_all_success_mask,
         step_size=float(runtime.config["update"]["step_size"]),
         relative_damping=float(runtime.config["update"]["relative_damping"]),
+    )
+    mixed_mask = (success_counts > 0) & (success_counts < 4)
+    delta, reward_projection = shared_reward_tangent_program_projection(
+        blind_delta,
+        correct,
+        reward_cotangents,
+        mixed_mask,
+        constraint_plan.features,
     )
     full_features = torch.cat((correct, negative), dim=0)
     apply_program_residual_delta_(runtime.writer.program_memory, delta)
@@ -589,7 +653,18 @@ def _apply_macro_update(
         constraint_plan,
     )
     if not profile:
-        return update, bank_update, None, None, None, None, None, None, None
+        return (
+            update,
+            reward_projection,
+            bank_update,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
     torch.cuda.synchronize(runtime.context.device)
     kernel_seconds = _profile_max_seconds(
         runtime.context, time.monotonic() - kernel_started
@@ -632,6 +707,7 @@ def _apply_macro_update(
     )
     return (
         update,
+        reward_projection,
         bank_update,
         application,
         task_local,
@@ -649,6 +725,7 @@ def _macro_record(
     schedule_macro: int,
     records: Sequence[Mapping[str, Any]],
     update: SuccessKeyNullspaceUpdateSummary,
+    reward_projection: SharedRewardTangentProjectionSummary,
     bank_update: SuccessKeyBankUpdateSummary,
     application: ProgramDeltaApplicationSummary | None,
     task_local: Mapping[str, Any] | None,
@@ -678,6 +755,13 @@ def _macro_record(
         )
         for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
     }
+    suite_mixed = {
+        suite: sum(
+            value["suite"] == suite and 0 < int(value["success_count"]) < 4
+            for value in records
+        )
+        for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+    }
     outcome_evidence = {
         "rollouts": len(trajectory_rows),
         "success_episodes": sum(success_counts),
@@ -685,17 +769,19 @@ def _macro_record(
         "all_success_tasks": sum(value == 4 for value in success_counts),
         "all_failure_tasks": sum(value == 0 for value in success_counts),
         "all_success_tasks_per_suite": suite_all_success,
+        "mixed_tasks": sum(0 < value < 4 for value in success_counts),
+        "mixed_tasks_per_suite": suite_mixed,
         "environment_action_steps": sum(
             int(value["steps"]) for value in trajectory_rows
         ),
         "policy_replans": sum(
             int(value["replan_count"]) for value in trajectory_rows
         ),
-        "retained_observation_tensors": sum(
-            int(value["retained_observation_tensors"]) for value in trajectory_rows
+        "selected_landmarks": sum(
+            int(value["selected_landmarks"]) for value in trajectory_rows
         ),
-        "retained_action_tensors": sum(
-            int(value["retained_action_tensors"]) for value in trajectory_rows
+        "maximum_landmarks_per_episode": max(
+            int(value["selected_landmarks"]) for value in trajectory_rows
         ),
         "trajectory_replay_policy_forwards": sum(
             int(value["trajectory_replay_policy_forwards"]) for value in records
@@ -705,6 +791,9 @@ def _macro_record(
         ),
         "reward_gradient_count": sum(
             int(value["reward_gradient_count"]) for value in records
+        ),
+        "reward_credit_seconds": sum(
+            float(value["reward_credit_seconds"]) for value in records
         ),
     }
     seconds, allocated, reserved, input_wait_seconds = runtime_metrics
@@ -716,10 +805,18 @@ def _macro_record(
         "program_cotangent_rms": math.sqrt(
             sum(float(value["program_cotangent_rms"]) ** 2 for value in records) / 24
         ),
+        "reward_program_cotangent_rms": math.sqrt(
+            sum(
+                float(value["reward_program_cotangent_rms"]) ** 2
+                for value in records
+            )
+            / 24
+        ),
         "success_outcomes": outcome_evidence,
         "success_key_bank": asdict(bank_update),
         "counterfactual_counts": counterfactual_counts,
         "update": asdict(update),
+        "reward_projection": asdict(reward_projection),
         "application": asdict(application) if application is not None else None,
         "task_local_motion": task_local,
         "lora_response": lora_response,
@@ -741,6 +838,7 @@ def _macro_record(
         for name in (
             "functional_loss",
             "program_cotangent_rms",
+            "reward_program_cotangent_rms",
             "step_seconds",
         )
     ):
@@ -772,14 +870,15 @@ def _run_one_macro(
         schedule_macro=schedule_macro,
         records=records,
         update=update_evidence[0],
-        bank_update=update_evidence[1],
-        application=update_evidence[2],
-        task_local=update_evidence[3],
-        lora_response=update_evidence[4],
-        success_key_application=update_evidence[5],
-        profile_task_seconds=update_evidence[6],
-        kernel_seconds=update_evidence[7],
-        verification_seconds=update_evidence[8],
+        reward_projection=update_evidence[1],
+        bank_update=update_evidence[2],
+        application=update_evidence[3],
+        task_local=update_evidence[4],
+        lora_response=update_evidence[5],
+        success_key_application=update_evidence[6],
+        profile_task_seconds=update_evidence[7],
+        kernel_seconds=update_evidence[8],
+        verification_seconds=update_evidence[9],
         runtime_metrics=runtime_metrics,
     )
     task_counts = [

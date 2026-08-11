@@ -360,6 +360,9 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         ),
         "environment_seed_root": int(config["rng"]["environment_seed_root"]),
         "policy_noise_seed_root": int(config["rng"]["policy_noise_seed_root"]),
+        "landmark_seed_root": int(config["rng"]["landmark_seed_root"]),
+        "flow_credit_seed_root": int(config["rng"]["flow_credit_seed_root"]),
+        "landmark_policy": "first_last_plus_two_seeded_uniform_reservoir_interior",
         "success_key_anchor_policy": "first_all_success_per_train_task",
     }
 

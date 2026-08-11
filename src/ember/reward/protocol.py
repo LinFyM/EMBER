@@ -61,6 +61,7 @@ _SEED_TAGS = {
     "update": 0xA4093822299F31D0,
     "task_video": 0x082EFA98EC4E6C89,
     "flow_sample": 0x452821E638D01377,
+    "landmark": 0xBE5466CF34E90C6C,
 }
 _SUITE_IDS = {
     "libero_spatial": 0,
@@ -267,6 +268,30 @@ def flow_sample_seed(
         global_task_id,
         mc_index,
     )
+
+
+def reward_tangent_landmark_index(
+    root_seed: int,
+    *,
+    suite: str,
+    task_id: int,
+    adaptation_seed: int,
+    rollout_cursor: int,
+    interior_count: int,
+) -> int:
+    """Choose one stateless reservoir index for an interior occupancy row."""
+
+    if interior_count <= 0:
+        raise RewardProtocolError("invalid reward landmark reservoir count")
+    return mixed_seed(
+        "landmark",
+        root_seed,
+        suite,
+        task_id,
+        adaptation_seed,
+        rollout_cursor,
+        interior_count,
+    ) % interior_count
 
 
 def rank_strided_assignments(

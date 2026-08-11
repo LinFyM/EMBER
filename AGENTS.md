@@ -30,8 +30,9 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `5→10` resume、controls和参数sweep全部关闭。它只淘汰PICK-GC+first-all-success-key nullspace+blind B20。
 - 当前唯一active successor design是SRTP：保留SKNC完整D0/anchors/PICK key/native compiler，只为mixed K4
   tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合后的最终
-  shared Program update上同时投影所有reward half-spaces。它尚未实现或运行；必须先过CPU、discarded live与
-  deployment门，不能从历史Reward/OSG代码整条恢复。
+  shared Program update上同时投影所有reward half-spaces。canonical实现与fresh-incompatible config已完成，
+  synthetic/constant-memory/credit/projection/resume合同及完整CPU回归`358 passed`；尚无GPU、checkpoint或成绩。
+  下一门是clean push后的唯一discarded live macro，不能从历史Reward/OSG代码整条恢复。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -192,8 +193,10 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`和
   `runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；
   decision evidence、paired transition、raw rows和checkpoint均保留，但不能resume或补controls。
-- 当前active design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；尚无
-  SRTP config、checkpoint或成绩，下一合法动作是原位实现并先过CPU gate，不是直接launch GPU。
+- 当前active design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；active
+  config是`configs/pi05_v6_shared_reward_tangent_projection_v1.json`，状态
+  `active_cpu_ready_awaiting_live_profile`。尚无SRTP checkpoint或成绩；下一合法动作是clean push、frozen
+  worktree与live preflight后执行一次discarded macro，不是formal训练。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

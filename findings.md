@@ -226,3 +226,13 @@ interior landmarks形成每task一个LOO signed Program cotangent。约束`<r_i,
 Reward profile的11 mixed tasks原需4452 chunks/928 forwards；固定16 rows/task与Nmc4只需44 forwards，针对性移除
 OSG长尾而不减少K4 outcome覆盖。这个设计的最快否决证据是raw constraints不冲突、投影近零、negative motion
 破坏或wall超过matched SKNC `1.25x`；只有live shared projection接通后才允许fresh macro5 paired400。
+
+SRTP现已完成唯一canonical实现，但这仍只是工程证据。rollout在线reservoir保证每episode最多4 rows并保留真实
+first/last；mixed panel只做4次logical B<=16 CFM forward，homogeneous panel严格0 forward；最终投影用anchor-
+null feature与Program cotangent的factorized Gram在CPU FP64 NNLS求dual，只在GPU FP32合成一次大correction。
+synthetic覆盖了无约束/原更新已可行的逐元素退化、相关与重复half-space、task permutation、KKT feasibility、
+anchor closure和正alignment；50组额外随机相关约束也无violation。fresh checkpoint schema拒绝SKNC resume，
+ephemeral landmark不进TaskObjective record或checkpoint。完整CPU回归`358 passed`不能预测closed-loop；当前仍只
+授权discarded live macro，以mixed>=8且至少3 suite覆盖、四suiteall-success anchor、raw violation>=2、
+final violation=0、energy>=.25、
+negative ratio<=.15和matched SKNC wall<=1.25x裁决机制是否值得formal。

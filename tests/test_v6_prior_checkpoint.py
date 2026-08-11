@@ -153,7 +153,7 @@ def test_checkpoint_is_atomic_memory_and_training_bank_only_and_inspectable(
     encoded_manifest = json.dumps(manifest, sort_keys=True).lower()
     assert "writer.safetensors" not in encoded_manifest
     assert "trainer.pt" not in encoded_manifest
-    assert "projection" not in encoded_manifest
+    assert "projection.safetensors" not in encoded_manifest
     public_arguments = set(inspect.signature(save_v6_prior_checkpoint).parameters)
     assert public_arguments.isdisjoint(
         {"writer", "base_writer", "projection", "optimizer", "scheduler", "scaler"}

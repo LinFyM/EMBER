@@ -27,8 +27,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_sknc_pick_gc_and_osg_pc_formal_states_are_sealed() -> None:
-    config = load_v6_prior_config(CONFIG)
+def test_historical_sknc_pick_gc_osg_are_sealed_and_srtp_is_preprofile() -> None:
+    active = load_v6_prior_config(CONFIG)
+    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["profile_run"]["artifact_evidence"] is None
+    assert active["formal_run"]["artifact_evidence"] is None
+    assert active["evaluation"]["online_smoke_evidence"] is None
+
+    config = json.loads(
+        (
+            REPO_ROOT
+            / "configs/pi05_v6_success_key_nullspace_consolidation_v1.json"
+        ).read_text(encoding="utf-8")
+    )
     assert config["status"] == "formal_result_sealed"
     assert config["profile_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
     assert config["profile_run"]["maximum_world_size"] == 6

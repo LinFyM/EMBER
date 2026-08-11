@@ -1,4 +1,4 @@
-"""Outcome-only official random-reset LIBERO panels for SKNC."""
+"""Official K4 outcomes with constant-memory SRTP occupancy landmarks."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from ember.reward.protocol import (
     RewardProtocolError,
     RewardTask,
     reward_credit_policy_noise_seed,
+    reward_tangent_landmark_index,
 )
 
 
@@ -115,6 +116,17 @@ class RandomResetEnvironmentPool:
 
 
 @dataclass
+class RewardOccupancyLandmark:
+    """One ephemeral on-policy replan row selected during a K4 rollout."""
+
+    replan_ordinal: int
+    observation: dict[str, torch.Tensor]
+    normalized_action_chunk: torch.Tensor
+    executed_action_steps: int
+    policy_noise_seed: int
+
+
+@dataclass
 class RewardRolloutOutcome:
     suite: str
     task_id: int
@@ -128,6 +140,7 @@ class RewardRolloutOutcome:
     reward_sum: float
     dummy_settling_steps: int
     policy_noise_seeds: tuple[int, ...]
+    landmarks: tuple[RewardOccupancyLandmark, ...]
 
 
 @dataclass
@@ -136,6 +149,10 @@ class _RewardLaneState:
     rollout_cursor: int
     env_seed: int
     observation: Mapping[str, Any]
+    first_landmark: RewardOccupancyLandmark | None = None
+    last_landmark: RewardOccupancyLandmark | None = None
+    interior_landmarks: list[RewardOccupancyLandmark] = field(default_factory=list)
+    interior_count: int = 0
     noise_seeds: list[int] = field(default_factory=list)
     reward_sum: float = 0.0
     steps: int = 0
@@ -212,6 +229,7 @@ def _outcome_result(
     reward_sum: float,
     dummy_settling_steps: int,
     noise_seeds: Sequence[int],
+    landmarks: Sequence[RewardOccupancyLandmark],
 ) -> RewardRolloutOutcome:
     return RewardRolloutOutcome(
         suite=suite,
@@ -226,6 +244,7 @@ def _outcome_result(
         reward_sum=reward_sum,
         dummy_settling_steps=dummy_settling_steps,
         policy_noise_seeds=tuple(noise_seeds),
+        landmarks=tuple(landmarks),
     )
 
 
@@ -311,7 +330,12 @@ def _batched_policy_replan(
     device: torch.device,
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int],
-) -> tuple[np.ndarray, tuple[int, ...]]:
+) -> tuple[
+    tuple[dict[str, torch.Tensor], ...],
+    torch.Tensor,
+    np.ndarray,
+    tuple[int, ...],
+]:
     prepared: list[dict[str, torch.Tensor]] = []
     noises: list[torch.Tensor] = []
     current_seeds: list[int] = []
@@ -351,17 +375,79 @@ def _batched_policy_replan(
         raise RewardProtocolError(
             "batched PI05 reward policy returned an invalid action chunk"
         )
-    environment_actions = postprocess(normalized.detach()).to(device="cpu")
-    return environment_actions.numpy(), tuple(current_seeds)
+    normalized = normalized.detach()
+    environment_actions = postprocess(normalized).to(device="cpu")
+    return tuple(prepared), normalized, environment_actions.numpy(), tuple(current_seeds)
+
+
+def _retain_landmark(
+    lane: _RewardLaneState,
+    landmark: RewardOccupancyLandmark,
+    *,
+    landmark_seed_root: int,
+    suite: str,
+    task_id: int,
+    adaptation_seed: int,
+) -> None:
+    """Keep first/last plus a two-row uniform reservoir over the interior."""
+
+    if lane.first_landmark is None:
+        lane.first_landmark = landmark
+        lane.last_landmark = landmark
+        return
+    previous = lane.last_landmark
+    if previous is None:
+        raise RewardProtocolError("reward landmark buffer lost its last row")
+    if previous.replan_ordinal != lane.first_landmark.replan_ordinal:
+        lane.interior_count += 1
+        if len(lane.interior_landmarks) < 2:
+            lane.interior_landmarks.append(previous)
+        else:
+            selected = reward_tangent_landmark_index(
+                landmark_seed_root,
+                suite=suite,
+                task_id=task_id,
+                adaptation_seed=adaptation_seed,
+                rollout_cursor=lane.rollout_cursor,
+                interior_count=lane.interior_count,
+            )
+            if selected < 2:
+                lane.interior_landmarks[selected] = previous
+    lane.last_landmark = landmark
+
+
+def _selected_landmarks(
+    lane: _RewardLaneState,
+) -> tuple[RewardOccupancyLandmark, ...]:
+    if lane.first_landmark is None or lane.last_landmark is None:
+        raise RewardProtocolError("reward lane made no policy observation")
+    unique = {
+        value.replan_ordinal: value
+        for value in (
+            lane.first_landmark,
+            *lane.interior_landmarks,
+            lane.last_landmark,
+        )
+    }
+    result = tuple(unique[index] for index in sorted(unique))
+    if not 0 < len(result) <= 4:
+        raise RewardProtocolError("reward landmark budget changed")
+    return result
 
 
 def _advance_reward_lane(
     *,
     lane: _RewardLaneState,
+    stored: dict[str, torch.Tensor],
+    normalized_chunk: torch.Tensor,
     environment_actions: np.ndarray,
     noise_seed: int,
     action_execution_horizon: int,
     max_horizon: int,
+    landmark_seed_root: int,
+    suite: str,
+    task_id: int,
+    adaptation_seed: int,
 ) -> None:
     lane.noise_seeds.append(noise_seed)
     executed = 0
@@ -375,7 +461,21 @@ def _advance_reward_lane(
         if lane.success or lane.steps >= max_horizon:
             break
     if executed <= 0:
-        raise RewardProtocolError("outcome-only reward lane executed no action")
+        raise RewardProtocolError("reward landmark lane executed no action")
+    _retain_landmark(
+        lane,
+        RewardOccupancyLandmark(
+            replan_ordinal=len(lane.noise_seeds) - 1,
+            observation={name: value.detach() for name, value in stored.items()},
+            normalized_action_chunk=normalized_chunk.detach().contiguous(),
+            executed_action_steps=executed,
+            policy_noise_seed=noise_seed,
+        ),
+        landmark_seed_root=landmark_seed_root,
+        suite=suite,
+        task_id=task_id,
+        adaptation_seed=adaptation_seed,
+    )
 
 
 def _finalize_reward_outcomes(
@@ -406,6 +506,7 @@ def _finalize_reward_outcomes(
                 reward_sum=lane.reward_sum,
                 dummy_settling_steps=dummy_settling_steps,
                 noise_seeds=lane.noise_seeds,
+                landmarks=_selected_landmarks(lane),
             )
         )
     return tuple(outcomes)
@@ -425,6 +526,7 @@ def collect_randomized_reward_outcomes(
     rollout_cursors: Sequence[int],
     env_seeds: Sequence[int],
     policy_seed_root: int,
+    landmark_seed_root: int,
     device: torch.device,
     max_horizon: int,
     dummy_settling_steps: int,
@@ -433,12 +535,12 @@ def collect_randomized_reward_outcomes(
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
 ) -> tuple[RewardRolloutOutcome, ...]:
-    """Collect the sealed K4 panel while retaining only scalar outcome metadata.
+    """Collect K4 while retaining at most four selected rows per episode.
 
     All lanes share the already-installed task LoRA, while reset and PI05 flow
     noise remain episode-local.  Active-lane compaction only changes the physical
-    batch shape; it never changes a lane's keyed randomness.  Observations and
-    action chunks are never transferred to CPU or retained for replay.
+    batch shape; it never changes a lane's keyed randomness.  First/last and a
+    two-row stateless reservoir are ephemeral training credit only.
     """
 
     _validate_k4_panel(envs, rollout_cursors, env_seeds)
@@ -463,7 +565,7 @@ def collect_randomized_reward_outcomes(
         active = [lane for lane in lanes if lane.is_active(max_horizon)]
         if not active:
             break
-        environment_actions, seeds = _batched_policy_replan(
+        stored, normalized, environment_actions, seeds = _batched_policy_replan(
             active=active,
             policy=policy,
             preprocess=preprocess,
@@ -480,10 +582,16 @@ def collect_randomized_reward_outcomes(
         for batch_row, lane in enumerate(active):
             _advance_reward_lane(
                 lane=lane,
+                stored=stored[batch_row],
+                normalized_chunk=normalized[batch_row : batch_row + 1],
                 environment_actions=environment_actions[batch_row],
                 noise_seed=seeds[batch_row],
                 action_execution_horizon=action_execution_horizon,
                 max_horizon=max_horizon,
+                landmark_seed_root=landmark_seed_root,
+                suite=suite,
+                task_id=task_id,
+                adaptation_seed=adaptation_seed,
             )
     return _finalize_reward_outcomes(
         lanes=lanes,

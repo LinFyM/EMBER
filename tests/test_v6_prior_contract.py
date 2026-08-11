@@ -51,7 +51,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_sknc_deployment_smoke"
+        "sealed_from_live_srtp_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -86,7 +86,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_sknc_config_changes_only_shared_write_and_outcome_certificate() -> None:
+def test_srtp_config_changes_only_final_shared_write_and_fixed_reward_credit() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -101,16 +101,23 @@ def test_sknc_config_changes_only_shared_write_and_outcome_certificate() -> None
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_success_key_equality_constrained_counterfactual_null_condition_kernel"
+        "full48_success_key_nullspace_then_shared_reward_tangent_projection"
     )
-    assert config["update"]["parameterization"].endswith("orthogonal_complement")
+    assert config["update"]["blind_parameterization"].endswith(
+        "orthogonal_complement"
+    )
+    assert config["update"]["reward_projection"].startswith("euclidean_nearest")
     assert config["update"]["task_scalar_gate_or_mask"] is False
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
     assert "reconciliation" not in config
     assert config["environment"]["rollouts_per_task"] == 4
     assert config["environment"]["retain_success_replay"] is False
     assert config["environment"]["retain_failure_replay"] is False
-    assert config["objective"]["trajectory_replay"] == "exact_absent"
+    assert config["objective"]["trajectory_replay"] == (
+        "fixed_landmarks_only_no_full_prefix_replay"
+    )
+    assert config["objective"]["maximum_logical_landmark_batch"] == 16
+    assert config["objective"]["flow_mc_samples"] == 4
     assert config["success_key_bank"]["task_slots"] == 24
     assert config["success_key_bank"]["deployment_read"] is False
     assert config["data"]["action_queries_per_task"] == 20
@@ -167,6 +174,11 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
             V6_PRIOR_CANONICAL_CONFIG.parent
             / "pi05_v6_policy_innovation_goal_causal_key_v1.json"
         )
+    with pytest.raises(ExpertManifoldError, match="canonical config path"):
+        load_v6_prior_config(
+            V6_PRIOR_CANONICAL_CONFIG.parent
+            / "pi05_v6_success_key_nullspace_consolidation_v1.json"
+        )
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
@@ -185,7 +197,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_sknc_deployment_smoke"
+        "awaiting_live_srtp_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -205,7 +217,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_sknc_deployment_smoke"
+        "awaiting_live_srtp_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
@@ -293,6 +305,9 @@ def test_cursor_seals_k4_randomness_without_cumulative_precision_state() -> None
         "next_rollout_cursor_per_task": 40,
         "environment_seed_root": 2026081101,
         "policy_noise_seed_root": 2026081102,
+        "landmark_seed_root": 2026081201,
+        "flow_credit_seed_root": 2026081103,
+        "landmark_policy": "first_last_plus_two_seeded_uniform_reservoir_interior",
         "success_key_anchor_policy": "first_all_success_per_train_task",
     }
     assert all("precision" not in key for key in cursor)

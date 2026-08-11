@@ -324,8 +324,10 @@ all-success tasks继续由SKNC current/persisted key保护；all-failure tasks�
 ordered video仍通过PICK terminal-goal residual与causal prefix成为唯一dynamic address，negative features保持
 full48 zero RHS，language没有condition value。teacher action始终hidden；train24 policy-generated landmarks和
 outcome只作ephemeral credit，不进checkpoint/deployment。完整authority与CPU/live/formal falsifiers见
-`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。当前尚无SRTP code/config/checkpoint；
-下一步是原位实现并过CPU/architecture gate，不得直接launch GPU或恢复旧Reward/OSG path。
+`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。SRTP canonical code、fresh-incompatible
+config、constant-memory landmark/K4 credit/shared projection tests与完整CPU回归`358 passed`已经闭合；尚无GPU、
+checkpoint或成绩。下一步必须先clean push，再从frozen worktree完成live preflight与唯一discarded macro，不能
+直接formal或恢复旧Reward/OSG path。
 
 ## 10. Runtime and GPU boundary
 
@@ -391,5 +393,6 @@ logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nu
 config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
 reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
-raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP authority已写入active tree但尚无
-实现或成绩；下一步原位实现fixed-landmark shared reward projection并过CPU gate，旧Reward/OSG/SKNC命令不得恢复。
+raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP authority、canonical实现、active
+config与CPU gate已写入active tree，但尚无GPU/checkpoint/成绩；下一步clean push后做唯一discarded live macro，
+旧Reward/OSG/SKNC命令不得恢复。

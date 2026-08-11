@@ -12,6 +12,7 @@ from ember.expert_manifold.v6_prior_profile import (
     profile_success_key_application,
 )
 from ember.expert_manifold.v6_prior_runtime import _reconcile_metrics_cursor
+from ember.expert_manifold.v6_reward_tangent import RewardTangentSummary
 from ember.expert_manifold.v6_prior_training import (
     TaskObjective,
     _gather_full48,
@@ -41,7 +42,13 @@ def _objective(ordinal: int) -> TaskObjective:
         suite=_SUITES[ordinal // 6],
         task_id=ordinal % 6,
     )
-    success_count = 4 if ordinal in {0, 6, 12, 18, 19, 20} else 1
+    success_count = (
+        4
+        if ordinal in {0, 6, 12, 18, 19, 20}
+        else 0
+        if ordinal in {21, 22, 23}
+        else 1
+    )
     return TaskObjective(
         task=task,
         task_visit=3,
@@ -53,6 +60,27 @@ def _objective(ordinal: int) -> TaskObjective:
         correct_feature=correct,
         negative_feature=negative,
         program_cotangent=torch.full((2, 3), float(ordinal + 1)),
+        reward_program_cotangent=(
+            torch.full((2, 3), float(ordinal + 1) / 10)
+            if 0 < success_count < 4
+            else torch.zeros((2, 3))
+        ),
+        reward_tangent=RewardTangentSummary(
+            objective=0.1 if 0 < success_count < 4 else 0.0,
+            successes=success_count,
+            failures=4 - success_count,
+            mixed=0 < success_count < 4,
+            positive_episodes=success_count if 0 < success_count < 4 else 0,
+            negative_episodes=4 - success_count if 0 < success_count < 4 else 0,
+            selected_landmarks=16,
+            maximum_landmarks_per_episode=4,
+            executed_action_steps=80,
+            mc_samples=4,
+            functional_policy_forwards=4 if 0 < success_count < 4 else 0,
+            program_cotangent_rms=(
+                float(ordinal + 1) / 10 if 0 < success_count < 4 else 0.0
+            ),
+        ),
         success_count=success_count,
         trajectory_rows=tuple(
             {
@@ -63,12 +91,14 @@ def _objective(ordinal: int) -> TaskObjective:
                 "steps": 5,
                 "reward_sum": float(lane < success_count),
                 "replan_count": 1,
-                "retained_observation_tensors": 0,
-                "retained_action_tensors": 0,
+                "selected_landmarks": 4,
+                "selected_landmark_ordinals": [0, 1, 2, 3],
+                "selected_executed_action_steps": [5, 5, 5, 5],
             }
             for lane in range(4)
         ),
         rollout_seconds=2.0,
+        reward_credit_seconds=1.0,
         correct_raw_frames=100,
         correct_sampled_frames=21,
         negative_raw_frames=100,
@@ -78,7 +108,7 @@ def _objective(ordinal: int) -> TaskObjective:
 
 def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> None:
     local = [_objective(index) for index in reversed(range(24))]
-    correct, negative, cotangents, success_counts = _gather_full48(
+    correct, negative, cotangents, reward_cotangents, success_counts = _gather_full48(
         local, _context()
     )
     assert correct.shape == negative.shape == (24, 256)
@@ -89,6 +119,10 @@ def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> 
         assert torch.equal(
             cotangents[ordinal], torch.full((2, 3), float(ordinal + 1))
         )
+        if 0 < _objective(ordinal).success_count < 4:
+            assert torch.count_nonzero(reward_cotangents[ordinal]) > 0
+        else:
+            assert torch.count_nonzero(reward_cotangents[ordinal]) == 0
         assert success_counts[ordinal] == _objective(ordinal).success_count
 
 
@@ -113,12 +147,20 @@ def _profile_config() -> dict:
                 "rollout_count": 96,
                 "all_success_task_count_min": 6,
                 "all_success_task_per_suite_min": 1,
+                "mixed_task_count_min": 8,
+                "mixed_suite_count_min": 3,
+                "maximum_landmarks_per_episode": 4,
+                "flow_mc_samples": 4,
                 "original_feature_rank": 48,
+                "projected_feature_rank_min": 24,
                 "active_regularized_gram_condition_number_max": 200.0,
                 "unprotected_projected_feature_energy_ratio_median_min": 0.2,
                 "protected_to_unprotected_motion_ratio_max": 1e-5,
                 "negative_to_unprotected_motion_rms_max": 0.15,
                 "unprotected_descent_fraction_min": 0.8,
+                "raw_reward_violation_count_min": 2,
+                "final_reward_violation_count": 0,
+                "projected_to_blind_energy_ratio_min": 0.25,
                 "negative_null_task_count_min": 18,
                 "negative_null_per_kind_min": 6,
                 "predicted_observed_relative_rms_max": 0.005,
@@ -156,6 +198,16 @@ def _profile_row() -> dict:
             "predicted_negative_to_unprotected_ratio": 0.1,
             "unprotected_projected_feature_energy_ratio_median": 0.8,
             "value_delta_rms": 0.01,
+        },
+        "reward_projection": {
+            "mixed_constraints": 15,
+            "raw_violation_count": 3,
+            "final_violation_count": 0,
+            "projection_changed": True,
+            "projected_to_blind_energy_ratio": 0.8,
+            "blind_projected_inner_product": 1.0,
+            "blind_projected_cosine": 0.9,
+            "projected_delta_rms": 0.008,
         },
         "application": {"predicted_observed_relative_rms": 0.001},
         "lora_response": {
@@ -200,21 +252,28 @@ def _profile_row() -> dict:
         },
         "success_outcomes": {
             "rollouts": 96,
-            "success_episodes": 42,
-            "failure_episodes": 54,
+            "success_episodes": 39,
+            "failure_episodes": 57,
             "all_success_tasks": 6,
-            "all_failure_tasks": 0,
+            "all_failure_tasks": 3,
             "all_success_tasks_per_suite": {
                 "libero_spatial": 1,
                 "libero_object": 1,
                 "libero_goal": 1,
                 "libero_10": 3,
             },
-            "retained_observation_tensors": 0,
-            "retained_action_tensors": 0,
+            "mixed_tasks": 15,
+            "mixed_tasks_per_suite": {
+                "libero_spatial": 5,
+                "libero_object": 5,
+                "libero_goal": 5,
+                "libero_10": 0,
+            },
+            "selected_landmarks": 384,
+            "maximum_landmarks_per_episode": 4,
             "trajectory_replay_policy_forwards": 0,
-            "trajectory_replay_cfm_forwards": 0,
-            "reward_gradient_count": 0,
+            "trajectory_replay_cfm_forwards": 60,
+            "reward_gradient_count": 15,
         },
         "success_key_bank": {
             "current_all_success_count": 6,
@@ -230,6 +289,7 @@ def _profile_row() -> dict:
         "step_seconds": 20.0,
         "functional_loss": 1.0,
         "program_cotangent_rms": 2.0,
+        "reward_program_cotangent_rms": 0.2,
         "negative_policy_forwards": 0,
         "oom_count": 0,
         "nonfinite_count": 0,
@@ -247,7 +307,7 @@ def test_mechanism_profile_requires_rank_closure_outcomes_and_scaled_wall() -> N
         ("application", "predicted_observed_relative_rms", 0.01),
         ("task_local_motion", "negative_to_unprotected_motion_ratio", 0.3),
         ("lora_response", "protected_effective_ba_to_unprotected_ratio", 0.1),
-        ("success_outcomes", "retained_action_tensors", 1),
+        ("success_outcomes", "maximum_landmarks_per_episode", 5),
     ):
         row = _profile_row()
         row[section][key] = value
@@ -259,6 +319,9 @@ def test_mechanism_profile_requires_rank_closure_outcomes_and_scaled_wall() -> N
     row["step_seconds"] = 25.0
     assert _profile_passes(_profile_config(), row)[0] is True
     row["step_seconds"] = 32.0
+    assert _profile_passes(_profile_config(), row)[0] is False
+    row = _profile_row()
+    row["success_outcomes"]["mixed_tasks_per_suite"]["libero_goal"] = 0
     assert _profile_passes(_profile_config(), row)[0] is False
 
 
@@ -301,6 +364,10 @@ def test_task_record_reports_b20_k4_outcomes_and_no_replay() -> None:
     assert row["trajectory_replay_cfm_forwards"] == 0
     assert row["reward_gradient_count"] == 0
     assert row["negative_policy_forwards"] == 0
+    mixed = _task_record(_objective(1))
+    assert mixed["trajectory_replay_cfm_forwards"] == 4
+    assert mixed["reward_gradient_count"] == 1
+    assert mixed["reward_program_cotangent_rms"] > 0
 
 
 def test_resume_reconciles_post_checkpoint_metrics_into_failure_packet(

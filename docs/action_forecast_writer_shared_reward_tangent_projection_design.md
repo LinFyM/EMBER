@@ -1,7 +1,9 @@
 # Shared Reward-Tangent Projection
 
-状态：2026-08-12 design authority，尚未实现或运行。简称SRTP。只有本文的CPU、discarded live和deployment门
-依次通过并由clean pushed commit封存后，才允许formal fresh训练。
+状态：2026-08-12 active implementation authority。canonical实现与fresh-incompatible config已完成；constant-
+memory landmark、K4 credit、small-dual projection、checkpoint隔离及完整CPU回归`358 passed`。尚无GPU、checkpoint
+或closed-loop成绩。只有discarded live和deployment门依次通过并由clean pushed commit封存后，才允许formal
+fresh训练。
 
 SRTP从SKNC macro5的正式终局出发：保留historical v6-fast Writer、PICK-GC ordered goal-causal condition key、
 B20 blind source-action proposal、FP32 Program、SKNC all-success anchor bank和native 38-target rank16 compiler；
@@ -244,7 +246,7 @@ rollouts。实际launch前同时live检查gpu01/gpu02，选同节点至多6张�
 
 必须同时满足：
 
-- 四suite完整；mixed tasks`>=8`且四suite都有，all-success tasks`>=6`；
+- 四suite task/outcome完整；mixed tasks`>=8`且至少覆盖3个suite，all-success tasks`>=6`且四suite都有；
 - 每episode retained rows`<=4`，mixed functional forwards恰为`4 * mixed_tasks`，无full-prefix replay；
 - mixed cotangentsfinite/nonzero，homogeneous cotangent/forward exact zero；
 - blind shared update至少2条reward constraint为正且projection实际改变，否则SRTP退化为SKNC；
@@ -255,6 +257,12 @@ rollouts。实际launch前同时live检查gpu01/gpu02，选同节点至多6张�
 
 任一hard gate失败即拒绝当前SRTP，不扫landmark数、Nmc、reward scale、QP tolerance、anchor threshold、rank、
 dtype或seed。
+
+这里的mixed suite门在GPU launch前按既有封存证据纠正过一次：同一env/policy seed的historical Reward profile为
+`5/3/2/1`，matched SKNC world3 profile为`4/3/2/0`，差异只来自一个Long task在`3/4`与`4/4`成功边界上随正常
+batch低位变化切换。要求单个stochastic panel四suite都mixed会把已知的允许低位差异变成必然/偶然hard fail。
+因此不挑seed、不改schedule，保留mixed总数`>=8`，要求至少3 suite有一阶tangent，同时用四suite all-success
+anchor coverage和完整24-task negative/B20路径覆盖第四suite。flow credit root仍复用封存Reward的`2026081103`。
 
 ### 10.3 Deployment and formal
 

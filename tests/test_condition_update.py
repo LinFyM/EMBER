@@ -5,7 +5,7 @@ import torch
 
 from ember.writer.condition_update import (
     ConditionUpdateError,
-    PolicyInnovationCausalConditionFeature,
+    PolicyInnovationGoalCausalConditionFeature,
     ProgramResidualMemory,
     apply_program_residual_delta_with_evidence_,
     counterfactual_null_program_delta,
@@ -13,7 +13,7 @@ from ember.writer.condition_update import (
 
 
 def test_policy_innovation_feature_is_zero_preserving_and_reads_real_order() -> None:
-    encoder = PolicyInnovationCausalConditionFeature(
+    encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=3,
         feature_width=6,
         initialization_seed=17,
@@ -47,26 +47,48 @@ def test_policy_innovation_feature_is_zero_preserving_and_reads_real_order() -> 
         assert encoder(innovation).dtype == torch.float32
 
 
-def test_balanced_static_and_causal_blocks_break_reverse_collinearity() -> None:
-    encoder = PolicyInnovationCausalConditionFeature(
+def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
+    encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=3,
         feature_width=6,
         initialization_seed=17,
     )
-    static = torch.tensor([2.0, -1.0, 0.5])
-    dynamic = torch.tensor([0.25, 1.5, -0.75])
-    innovations = torch.stack((static + dynamic, static - dynamic))[None]
+    encoder.projection.copy_(torch.eye(3).repeat(2, 1, 1))
+    innovations = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 3.0],
+            [-1.0, 1.0, 2.0],
+        ]
+    )[None]
     natural = encoder(innovations)
-    reversed_feature = encoder(
-        innovations,
-        phase_order=torch.tensor([1, 0], dtype=torch.long),
-    )
-    torch.testing.assert_close(
-        (natural * reversed_feature).sum(),
-        torch.zeros(()),
-        rtol=0,
-        atol=2e-6,
-    )
+    whole = innovations.mean(dim=1)
+    goal = innovations[:, -1] - whole
+    centered = innovations - whole[:, None]
+    scale = torch.arange(1, 5, dtype=torch.float32).sqrt()
+    causal = (centered.cumsum(dim=1) / scale[None, :, None]).mean(dim=1)
+    expected = torch.cat(
+        (torch.nn.functional.normalize(goal), torch.nn.functional.normalize(causal)),
+        dim=1,
+    ) / 2**0.5
+    torch.testing.assert_close(natural, expected, rtol=1e-6, atol=1e-6)
+
+    reversed_feature = encoder(innovations.flip(1))
+    reverse_goal = innovations[:, 0] - whole
+    reverse_centered = innovations.flip(1) - whole[:, None]
+    reverse_causal = (
+        reverse_centered.cumsum(dim=1) / scale[None, :, None]
+    ).mean(dim=1)
+    reverse_expected = torch.cat(
+        (
+            torch.nn.functional.normalize(reverse_goal),
+            torch.nn.functional.normalize(reverse_causal),
+        ),
+        dim=1,
+    ) / 2**0.5
+    torch.testing.assert_close(reversed_feature, reverse_expected, rtol=1e-6, atol=1e-6)
+    assert not torch.equal(natural, reversed_feature)
 
 
 def test_blind_full48_update_preserves_negative_rows_and_closes_memory() -> None:

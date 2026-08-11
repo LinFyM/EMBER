@@ -151,11 +151,11 @@ PICK已经给出一次清晰的接口定位：frozen-policy innovation的raw sam
 Program→BA→action和吞吐均工作，但48-key regularized Gram condition=`483.61515>200`。因此不能把它写成方法
 成功，也不能把失败归因于video encoder、compiler或动作增益；PICK未进入formal训练。
 
-当前唯一active假设是PICK-GE：只把PICK的static/causal descriptor换成terminal goal residual与directed
-effect。train24×50 action-hidden cache中complete same mean/median=`.90054/.91575`、cross=`.13525/.11310`、
-reverse=`-.81563/-.81973`、shuffle约0、correct24 condition max=`22.04`。一个使reverse精确正交的SDE变体因
-same-task mean/median仅`.86177/.88508`被预先门拒绝，不实现。
+当前唯一active假设是PICK-GC：只把PICK的static block换成terminal goal residual，原样保留已通过raw门的
+centered causal prefix。train24×50 action-hidden cache中complete same mean/median=`.90260/.91604`、
+cross=`.13455/.11375`、reverse=`-.80305/-.80877`、shuffle约0、correct24 condition max=`21.62`。
+terminal-minus-initial effect会漏掉保留首尾的中间阶段shuffle；SDE same mean仅`.86177`，两者均拒绝。
 
-PICK-GE先由exact target-language wrong full48 rank/condition、再由Program→BA/action与macro10 strict400否决。
-若exact condition仍失败，只淘汰这组linear goal/effect key；若机制通过而闭环失败，最早剩余接口转向blind
+PICK-GC先由exact target-language wrong full48 rank/condition、再由Program→BA/action与macro10 strict400否决。
+若exact condition仍失败，只淘汰这组linear goal/causal key；若机制通过而闭环失败，最早剩余接口转向blind
 offline credit或held occupancy错位。heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。

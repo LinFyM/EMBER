@@ -6,7 +6,7 @@
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-11，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；当前
-active successor是尚未形成closed-loop成绩的PICK-GE。
+active successor是尚未形成closed-loop成绩的PICK-GC。
 
 ## 1. Stable problem definition
 

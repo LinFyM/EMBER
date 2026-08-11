@@ -51,7 +51,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active PICK deployment family; old configs stay evidence."""
+    """Load only the active PICK-GC deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -544,7 +544,7 @@ def _evaluation_writer_asset(
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
     if require_formal and status not in {
-        "sealed_from_live_pick_deployment_profile",
+        "sealed_from_live_pick_gc_deployment_profile",
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
     }:

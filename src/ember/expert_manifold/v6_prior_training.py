@@ -102,7 +102,7 @@ def _policy_rng_seed_for_logical_batch(
         or frame_indices.shape != demo_indices.shape
         or demo_indices.numel() != _LOGICAL_POLICY_BATCH_SIZE
     ):
-        raise ExpertManifoldError("PICK action-query randomness changed")
+        raise ExpertManifoldError("PICK-GC action-query randomness changed")
     return task_logical_batch_policy_rng_seed(
         optimization_seed=int(config["optimization"]["seed"]),
         task_id=task_id,

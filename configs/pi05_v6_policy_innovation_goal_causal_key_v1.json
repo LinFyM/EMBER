@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_pi05_v6_policy_innovation_consensus_key_v1",
+  "schema_version": "ember_pi05_v6_policy_innovation_goal_causal_key_v1",
   "status": "active_cpu_ready_awaiting_live_profile",
   "method": {
-    "name": "frozen_v6_policy_innovation_consensus_key",
+    "name": "frozen_v6_policy_innovation_goal_causal_key",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": false,
@@ -60,7 +60,7 @@
     "test_actions_read": 0
   },
   "writer": {
-    "architecture": "frozen_pi05_v6_plus_policy_innovation_keyed_program_residual_v1",
+    "architecture": "frozen_pi05_v6_plus_policy_innovation_goal_causal_keyed_program_residual_v1",
     "base_architecture": "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_slot_fusion_v6",
     "frame_stride": 5,
     "max_frames_per_encoder_call": 32,
@@ -86,15 +86,15 @@
     "all_600_state_tensors_frozen": true
   },
   "condition_feature": {
-    "kind": "frozen_source_policy_zero_image_subtracted_phase_aligned_static_causal_jl_v1",
+    "kind": "frozen_source_policy_zero_image_subtracted_phase_aligned_goal_causal_jl_v1",
     "input": "final_task_span_language_mean_plus_final_action_suffix_mean_actual_frame_minus_matched_zero_image",
     "source_policy": "same_frozen_pi05_libero_policy_used_for_functional_loss_and_rollout",
     "baseline": "same_language_same_fixed_suffix_noise_zero_image",
     "innovation_width": 3072,
     "phase_slots": 16,
     "phase_alignment": "linear_order_preserving_align_corners",
-    "static_block": "phase_mean_policy_innovation",
-    "dynamic_block": "sqrt_normalized_causal_prefix_mean_of_phase_centered_policy_innovation",
+    "goal_block": "terminal_quartile_mean_minus_whole_video_mean_policy_innovation",
+    "causal_block": "sqrt_normalized_causal_prefix_mean_of_phase_centered_policy_innovation",
     "descriptor_width": 6144,
     "feature_width": 256,
     "projection_seed": 20260810,
@@ -190,11 +190,10 @@
   },
   "cache_gate": {
     "status": "passed_on_canonical_train24_action_hidden_feature_cache",
-    "same_task_causal_cosine_median_min": 0.85,
-    "cross_task_causal_cosine_mean_max": 0.30,
-    "correct_reversed_causal_cosine_median_max": -0.85,
-    "shuffled_causal_cosine_abs_mean_max": 0.10,
-    "complete_key_same_task_cosine_mean_min": 0.90,
+    "same_task_complete_cosine_mean_min": 0.90,
+    "cross_task_complete_cosine_mean_max": 0.30,
+    "correct_reversed_complete_cosine_max": 0.0,
+    "shuffled_complete_cosine_abs_mean_max": 0.10,
     "correct24_rank_min": 24,
     "regularized_condition_number_max": 150.0
   },
@@ -264,7 +263,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "awaiting_live_pick_deployment_profile",
+    "formal_status": "awaiting_live_pick_gc_deployment_profile",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
     "required_writer_model_batch_sizes": [
       8,

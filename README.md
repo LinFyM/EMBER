@@ -23,9 +23,9 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - PICK的raw-frame门通过，但world6 discarded full48 profile只因condition=`483.61515>200` non-pass；其余
   14项机制、动作与吞吐门通过，未获formal训练资格。
-- 当前唯一active successor是PICK-GE：保留PICK的frozen-policy evidence、frozen-v6 full-rank base、
-  高增益compiler与blind credit，只把static/causal key改为terminal goal residual与directed effect。
-  design已封存，尚未实现或继续GPU；任何旧“下一步”命令仍不得恢复。
+- 当前唯一active successor是PICK-GC：保留PICK的frozen-policy evidence、frozen-v6 full-rank base、
+  高增益compiler、blind credit与causal-prefix block，只把static block改为terminal goal residual。
+  canonical implementation与完整CPU回归`345 passed`已完成，尚未继续GPU；任何旧“下一步”命令仍不得恢复。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -41,10 +41,10 @@ compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且�
 视频、Reward、continuous tangent或所有parameter-manifold思路。
 
 PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；它最早在full48 key
-conditioning失效。train24×50 cache中的PICK-GE goal/effect key保持same-task mean/median=`.9005/.9158`，把
-cross-task从`.4987`降到`.1352`、correct24 condition max从`108.56`降到`22.04`，且reverse=`-.8156`、shuffle
+conditioning失效。train24×50 cache中的PICK-GC goal/causal key保持same-task mean/median=`.9026/.9160`，把
+cross-task从`.4987`降到`.1345`、correct24 condition max从`108.56`降到`21.62`，且reverse=`-.8030`、shuffle
 约0。它只测试去掉static common mode能否让同一Program memory稳定共存；这些仍只是train-only design evidence。
-详见[`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md)。
+详见[`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)。
 
 ## What matters scientifically
 
@@ -122,8 +122,8 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
-- [`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md)：
-  当前唯一PICK-GE单变量设计与证伪门；
+- [`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)：
+  当前唯一PICK-GC单变量设计与证伪门；
 - [`docs/research_history.md`](docs/research_history.md)：完整精炼实验谱系与禁止重复项；
 - [`task_plan.md`](task_plan.md)：当前整理/交接状态；
 - [`findings.md`](findings.md)：最重要的第一性原理结论；

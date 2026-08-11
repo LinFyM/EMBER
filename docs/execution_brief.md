@@ -4,15 +4,16 @@
 
 PICK的canonical实现与`345 passed`回归、raw-frame门和world6 discarded full48 profile已完成；profile仅因
 condition=`483.61515>200` non-pass，其余14项机制、动作与吞吐门通过，未启动训练或rollout。当前唯一active
-Writer successor是PICK-GE；它尚未实现或继续GPU，只允许按新design authority从CPU/cache、exact raw full48
-feature gate、discarded full48 mechanism macro和deployment profile顺序推进，不能从历史command恢复执行。
+Writer successor是PICK-GC；canonical implementation与`345 passed`回归已完成但尚未继续GPU，只允许按新
+design authority从exact raw full48 feature gate、discarded full48 mechanism macro和deployment profile顺序
+推进，不能从历史command恢复执行。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
 ## 1. Active design gate
 
-PICK-GE design已经回答下列问题；实现和每次authority更新必须保持这些答案不漂移：
+PICK-GC design已经回答下列问题；实现和每次authority更新必须保持这些答案不漂移：
 
 1. 它改变的唯一主要变量是什么？
 2. 它针对`docs/research_history.md`中的哪个最早失效接口？
@@ -23,7 +24,7 @@ PICK-GE design已经回答下列问题；实现和每次authority更新必须保
 7. 预计GPU、wall、显存、存储峰值和可恢复状态是什么？
 
 未经新的单变量authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official
-evaluator。PICK-GE的profile/training/rollout仅在其前序CPU/cache/live mechanism门通过后解锁。
+evaluator。PICK-GC的profile/training/rollout仅在其前序CPU/cache/live mechanism门通过后解锁。
 
 ## 2. Fixed information contract
 
@@ -203,6 +204,6 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 它们只能在新session建立明确的单变量design authority后重新获得执行资格。任何旧artifact中的
 `formal_ready`只描述历史时点，不构成当前授权。
 
-PICK-GE的CPU实现、exact raw full48 feature gate、discarded full48 mechanism与deployment profile已由owner
+PICK-GC的CPU实现、exact raw full48 feature gate、discarded full48 mechanism与deployment profile已由owner
 本次自主研究授权，但GPU工作必须来自clean pushed commit，并在launch前同时复核gpu01/gpu02、quota和fresh
 discarded root合同。formal fresh0→10仍必须等待全部前序门通过；任何旧方法或额外candidate仍未授权。

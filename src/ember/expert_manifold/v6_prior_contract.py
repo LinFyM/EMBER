@@ -1,4 +1,4 @@
-"""Canonical scientific and launch contract for the active PICK Writer."""
+"""Canonical scientific and launch contract for the active PICK-GC Writer."""
 
 from __future__ import annotations
 
@@ -17,13 +17,13 @@ from ember.writer.functional import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_policy_innovation_consensus_key_v1.json"
+    REPO_ROOT / "configs/pi05_v6_policy_innovation_goal_causal_key_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_policy_innovation_consensus_key_v1"
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_policy_innovation_consensus_key_launch_v1"
-V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_policy_innovation_consensus_key_profile_v1"
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_policy_innovation_goal_causal_key_v1"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_policy_innovation_goal_causal_key_launch_v1"
+V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_policy_innovation_goal_causal_key_profile_v1"
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_policy_innovation_consensus_key_completion_v1"
+    "ember_pi05_v6_policy_innovation_goal_causal_key_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
@@ -55,7 +55,7 @@ _EXPECTED_AUTHORITIES = {
     "source_base_config": {"path": "configs/pi05_source_base_v1.json"},
 }
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_policy_innovation_consensus_key",
+    "name": "frozen_v6_policy_innovation_goal_causal_key",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": False,
@@ -76,7 +76,9 @@ _EXPECTED_INITIALIZATION = {
     "scaler": "not_instantiated",
 }
 _EXPECTED_WRITER = {
-    "architecture": "frozen_pi05_v6_plus_policy_innovation_keyed_program_residual_v1",
+    "architecture": (
+        "frozen_pi05_v6_plus_policy_innovation_goal_causal_keyed_program_residual_v1"
+    ),
     "base_architecture": (
         "pi05_task_grounded_semantic_set_visual_transition_causal_procedure_"
         "slot_fusion_v6"
@@ -107,7 +109,7 @@ _EXPECTED_WRITER = {
 _EXPECTED_CONDITION_FEATURE = {
     "kind": (
         "frozen_source_policy_zero_image_subtracted_phase_aligned_"
-        "static_causal_jl_v1"
+        "goal_causal_jl_v1"
     ),
     "input": (
         "final_task_span_language_mean_plus_final_action_suffix_mean_"
@@ -120,8 +122,10 @@ _EXPECTED_CONDITION_FEATURE = {
     "innovation_width": 3072,
     "phase_slots": 16,
     "phase_alignment": "linear_order_preserving_align_corners",
-    "static_block": "phase_mean_policy_innovation",
-    "dynamic_block": (
+    "goal_block": (
+        "terminal_quartile_mean_minus_whole_video_mean_policy_innovation"
+    ),
+    "causal_block": (
         "sqrt_normalized_causal_prefix_mean_of_phase_centered_policy_innovation"
     ),
     "descriptor_width": 6144,
@@ -217,11 +221,10 @@ _EXPECTED_OPTIMIZATION = {
 }
 _EXPECTED_CACHE_GATE = {
     "status": "passed_on_canonical_train24_action_hidden_feature_cache",
-    "same_task_causal_cosine_median_min": 0.85,
-    "cross_task_causal_cosine_mean_max": 0.30,
-    "correct_reversed_causal_cosine_median_max": -0.85,
-    "shuffled_causal_cosine_abs_mean_max": 0.10,
-    "complete_key_same_task_cosine_mean_min": 0.90,
+    "same_task_complete_cosine_mean_min": 0.90,
+    "cross_task_complete_cosine_mean_max": 0.30,
+    "correct_reversed_complete_cosine_max": 0.0,
+    "shuffled_complete_cosine_abs_mean_max": 0.10,
     "correct24_rank_min": 24,
     "regularized_condition_number_max": 150.0,
 }
@@ -294,19 +297,19 @@ _COHERENT_STATES = {
         "active_cpu_ready_awaiting_live_profile",
         "awaiting_live_a40_fresh0_to1_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "awaiting_live_pick_deployment_profile",
+        "awaiting_live_pick_gc_deployment_profile",
     ),
     (
         "active_formal_ready",
         "sealed_from_live_a40_fresh0_to1_profile",
         "ready_after_live_profile_seal",
-        "sealed_from_live_pick_deployment_profile",
+        "sealed_from_live_pick_gc_deployment_profile",
     ),
     (
         "formal_result_sealed",
         "sealed_from_live_a40_fresh0_to1_profile",
         "formal_result_sealed",
-        "sealed_from_live_pick_deployment_profile",
+        "sealed_from_live_pick_gc_deployment_profile",
     ),
 }
 
@@ -318,9 +321,9 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
         row = config["authorities"][name]
         path = (REPO_ROOT / str(row["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing PICK Writer authority: {name}") from error
+        raise ExpertManifoldError(f"missing PICK-GC Writer authority: {name}") from error
     if not path.is_file():
-        raise ExpertManifoldError(f"PICK Writer authority is missing: {name}")
+        raise ExpertManifoldError(f"PICK-GC Writer authority is missing: {name}")
     return path
 
 
@@ -471,24 +474,24 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
 
 
 def load_v6_prior_config(path: Path = V6_PRIOR_CANONICAL_CONFIG) -> dict[str, Any]:
-    """Load only the active PICK config and fail closed on scientific drift."""
+    """Load only the active PICK-GC config and fail closed on scientific drift."""
 
     path = path.resolve()
     if path != V6_PRIOR_CANONICAL_CONFIG.resolve() or not path.is_file():
-        raise ExpertManifoldError("PICK Writer requires its canonical config path")
+        raise ExpertManifoldError("PICK-GC Writer requires its canonical config path")
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ExpertManifoldError("invalid PICK Writer config") from error
+        raise ExpertManifoldError("invalid PICK-GC Writer config") from error
     if not isinstance(config, dict) or not _config_matches(config):
         raise ExpertManifoldError(
-            "PICK Writer config violates its fail-closed contract"
+            "PICK-GC Writer config violates its fail-closed contract"
         )
     for name in _EXPECTED_AUTHORITIES:
         authority_path(config, name)
     initialization = (REPO_ROOT / _EXPECTED_INITIALIZATION["checkpoint"]).resolve()
     if not initialization.is_dir():
-        raise ExpertManifoldError("PICK historical v6 initialization is missing")
+        raise ExpertManifoldError("PICK-GC historical v6 initialization is missing")
     return config
 
 
@@ -503,18 +506,18 @@ def runtime_for_mode(
             "awaiting_live_a40_fresh0_to1_profile",
             "sealed_from_live_a40_fresh0_to1_profile",
         }:
-            raise ExpertManifoldError("PICK mechanism profile is not authorized")
+            raise ExpertManifoldError("PICK-GC mechanism profile is not authorized")
         return 1, (), int(config["profile_run"]["schedule_macro"])
     if mode == "formal":
         if (
             config["status"] != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("PICK formal training is blocked by live gates")
+            raise ExpertManifoldError("PICK-GC formal training is blocked by live gates")
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),
             0,
         )
-    raise ExpertManifoldError(f"unsupported PICK Writer mode: {mode}")
+    raise ExpertManifoldError(f"unsupported PICK-GC Writer mode: {mode}")

@@ -3,7 +3,7 @@
 状态：2026-08-11 retained non-pass authority。PICK的raw-frame门通过，但discarded full48 profile的
 regularized Gram condition=`483.61515`超过预注册上限`200`；其余14项机制、动作与吞吐门通过。
 因此PICK未获formal训练资格，当前唯一后继是
-`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`中的PICK-GE。不得恢复本文旧“下一步”。
+`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`中的PICK-GC。不得恢复本文旧“下一步”。
 
 ## 1. 决策摘要
 

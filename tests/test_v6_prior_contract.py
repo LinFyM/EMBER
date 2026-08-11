@@ -48,7 +48,9 @@ def _formal_ready_config() -> dict:
     config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to1_profile"
     config["profile_run"]["artifact_evidence"] = {"path": "profile.json"}
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
-    config["evaluation"]["formal_status"] = "sealed_from_live_pick_deployment_profile"
+    config["evaluation"]["formal_status"] = (
+        "sealed_from_live_pick_gc_deployment_profile"
+    )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
 
@@ -82,12 +84,18 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_pick_config_seals_only_policy_innovation_and_blind_full48() -> None:
+def test_pick_gc_config_seals_only_goal_causal_innovation_and_blind_full48() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
     assert config["condition_feature"]["innovation_width"] == 3072
     assert config["condition_feature"]["phase_slots"] == 16
+    assert config["condition_feature"]["goal_block"].startswith(
+        "terminal_quartile"
+    )
+    assert config["condition_feature"]["causal_block"].startswith(
+        "sqrt_normalized_causal_prefix"
+    )
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (

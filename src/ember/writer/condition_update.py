@@ -46,8 +46,8 @@ class ProgramDeltaApplicationSummary:
     predicted_observed_relative_rms: float
 
 
-class PolicyInnovationCausalConditionFeature(torch.nn.Module):
-    """Build one balanced key from phase-aligned frozen-policy innovations."""
+class PolicyInnovationGoalCausalConditionFeature(torch.nn.Module):
+    """Build one goal/causal key from phase-aligned frozen-policy innovations."""
 
     BLOCK_COUNT = 2
 
@@ -122,7 +122,8 @@ class PolicyInnovationCausalConditionFeature(torch.nn.Module):
         if (
             innovations.ndim != 3
             or min(innovations.shape[:2]) <= 0
-            or innovations.shape[1] <= 1
+            or innovations.shape[1] < 4
+            or innovations.shape[1] % 4
             or innovations.shape[2] != self.innovation_width
             or not innovations.is_floating_point()
         ):
@@ -133,16 +134,21 @@ class PolicyInnovationCausalConditionFeature(torch.nn.Module):
             enabled=False,
         ):
             ordered = innovations.index_select(1, order).to(dtype=torch.float32)
-            static = ordered.mean(dim=1)
-            centered = ordered - static.unsqueeze(1)
+            quartile = ordered.shape[1] // 4
+            whole = ordered.mean(dim=1)
+            terminal = ordered[:, -quartile:].mean(dim=1)
+            goal = terminal - whole
+            centered = ordered - whole.unsqueeze(1)
             prefix_scale = torch.arange(
                 1,
                 ordered.shape[1] + 1,
                 dtype=torch.float32,
                 device=ordered.device,
             ).sqrt_()
-            causal = (centered.cumsum(dim=1) / prefix_scale[None, :, None]).mean(dim=1)
-            descriptors = torch.stack((static, causal), dim=1)
+            causal = (
+                centered.cumsum(dim=1) / prefix_scale[None, :, None]
+            ).mean(dim=1)
+            descriptors = torch.stack((goal, causal), dim=1)
             projected = torch.einsum("cbw,bhw->cbh", descriptors, self.projection)
             balanced = self._zero_preserving_normalize(projected)
             features = self._zero_preserving_normalize(balanced.flatten(1))
@@ -227,7 +233,7 @@ class FrozenV6ConditionResidualWriter(torch.nn.Module):
             padded_action_dim=padded_action_dim,
             initialization_seed=innovation_seed,
         )
-        self.condition_feature = PolicyInnovationCausalConditionFeature(
+        self.condition_feature = PolicyInnovationGoalCausalConditionFeature(
             innovation_width=innovation_width,
             feature_width=feature_width,
             initialization_seed=feature_seed,
@@ -597,7 +603,7 @@ def validate_frozen_v6_residual_writer(
 
     base_state = writer.base_writer.state_dict()
     projection_shape = (
-        PolicyInnovationCausalConditionFeature.BLOCK_COUNT,
+        PolicyInnovationGoalCausalConditionFeature.BLOCK_COUNT,
         writer.condition_feature.block_width,
         writer.policy_innovation.feature_width,
     )

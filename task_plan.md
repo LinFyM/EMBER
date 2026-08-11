@@ -22,14 +22,15 @@
   和训练全部退役。
 - [x] PICK canonical implementation、`345 passed` CPU门和raw-frame probe通过；world6 discarded full48只因
   condition=`483.61515>200` non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
-- [x] 从该最早失效接口选择唯一successor PICK-GE：只把static/causal descriptor换为goal residual/direct
-  effect；新authority是`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`。
+- [x] 从该最早失效接口选择唯一successor PICK-GC：只把static block换为goal residual并保留causal prefix；
+  新authority是`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`。
 
-## Active PICK-GE phase
+## Active PICK-GC phase
 
-- [x] train24×50 cache门：same mean/median`.90054/.91575`、cross`.13525/.11310`、reverse
-  `-.81563/-.81973`、shuffle约0、correct24 condition max`22.04`；SDE因same mean`.86177`拒绝。
-- [ ] 原位替换PICK descriptor/config/tests，不保留并行strategy；完整CPU回归、commit/push和frozen worktree。
+- [x] train24×50 cache门：same mean/median`.90260/.91604`、cross`.13455/.11375`、reverse
+  `-.80305/-.80877`、shuffle约0、correct24 condition max`21.62`；GE漏中间shuffle、SDE same`.86177`，均拒绝。
+- [x] 原位替换PICK descriptor/config/tests，不保留并行strategy；完整CPU回归`345 passed`。
+- [ ] commit/push并建立clean frozen worktree。
 - [ ] 先过exact raw full48 rank48/condition≤200，再过discarded full48 mechanism门。
 - [ ] profile B8/16/32并封存deployment vertical；不得用低吞吐数值补丁过门。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。

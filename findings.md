@@ -298,3 +298,10 @@ minimum correction；large `D0`与correction仍为FP32。synthetic tests同时�
 no-guard identity和duplicate-row不变性；profile把negative preservation设为独立hard gate，formal则在每macro
 写Program前检查guard/negative closure、rank、energy、alignment与blind negative ratio。完整CPU`345 passed`，
 没有额外policy/video forward、negative rollout、parallel trainer或防御性hash。
+
+首个NPCG live profile确认仿射composition本身解决了WQ的最早科学断层：final negative ratio从WQ的`.50179`
+降到`.03524`，wrong/shuffled/reversed均从`0/8`恢复到`8/8`，同时paired outcomes完全不变、rank33、energy
+`.35360`且LoRA/effective BA/fixed-action closure健康。唯一失败是protected Program ratio=`1.5831e-4>1e-5`，
+绝对残差只有`3.43e-10`。实现中constraint right-hand side与correction沿用了全局TF32，而真实Program read为了
+equality诊断显式关闭TF32；两种数值语义错配直接解释该残差。因此首个run是工程合同违约，不淘汰NPCG科学假设；
+唯一允许窄修是full-FP32 constraint matmul加一次固定residual refinement，不改门限或其它科学变量。

@@ -460,5 +460,7 @@ config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
 和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；旧static config已封存
-non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG也已因negative-null机制门封存；
-Negative-Preserving Candidate Guard是唯一active successor。旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG也已因negative-null机制门封存。
+Negative-Preserving Candidate Guard首个clean world3完整profile已通过negative preservation与其余18项门，
+唯一因solver TF32和实际Program full-FP32 read错配未过closure；canonical数值窄修与完整CPU`345 passed`已完成
+并等待同合同reprofile。NPCG仍是唯一active successor；旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

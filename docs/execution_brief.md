@@ -26,8 +26,11 @@ deployment/formal、重跑和sweep关闭。
 
 当前唯一active successor是Negative-Preserving Candidate Guard：保持blind `D0`、paired outcomes、B20、queue、
 first-stable bank和native rank16 compiler，只把final correction限制在current negative rows的nullspace，使
-`N(D1-D0)=0`与correct guard `G D1=0`同时成立。canonical实现、fresh schema与完整CPU`345 passed`已完成，
-尚未live profile。
+`N(D1-D0)=0`与correct guard `G D1=0`同时成立。首个clean world3完整profile把final negative ratio降至
+`.03524`且三类各`8/8`，paired outcomes、rank33、energy`.35360`、LoRA/effective BA/action及其余机制门均通过；
+唯一`guard_program_closure=1.5831e-4>1e-5`。根因是solver允许TF32而真实Program constraint read关闭TF32，
+不是科学门失败。canonical solver已统一full-FP32约束语义并固定一次residual refinement，完整CPU`345 passed`，
+等待同合同reprofile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

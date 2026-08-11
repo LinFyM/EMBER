@@ -339,6 +339,20 @@ def _rms(value: torch.Tensor) -> float:
     return float(value.to(dtype=torch.float32).square().mean().sqrt())
 
 
+def _constraint_matmul(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
+    """Match the full-FP32 Program constraint read used after the write."""
+
+    previous_tf32 = None
+    if left.is_cuda:
+        previous_tf32 = torch.backends.cuda.matmul.allow_tf32
+        torch.backends.cuda.matmul.allow_tf32 = False
+    try:
+        return torch.matmul(left, right)
+    finally:
+        if previous_tf32 is not None:
+            torch.backends.cuda.matmul.allow_tf32 = previous_tf32
+
+
 @torch.no_grad()
 def negative_preserving_candidate_guard_correction(
     blind_delta: torch.Tensor,
@@ -419,7 +433,7 @@ def negative_preserving_candidate_guard_correction(
     blind_flat = blind_delta.flatten(1)
     blind_energy = blind_flat.square().sum()
     raw_motion = (
-        guards @ blind_flat
+        _constraint_matmul(guards, blind_flat)
         if guards.shape[0]
         else blind_flat.new_empty((0, blind_flat.shape[1]))
     )
@@ -457,8 +471,14 @@ def negative_preserving_candidate_guard_correction(
                 restricted_vh[:restricted_guard_rank].transpose(0, 1)
                 / restricted_singular_values[:restricted_guard_rank]
             ) @ restricted_u[:, :restricted_guard_rank].transpose(0, 1)
-            correction_flat = -(
-                restricted_pinv64.to(dtype=torch.float32) @ raw_motion
+            restricted_pinv = restricted_pinv64.to(dtype=torch.float32)
+            correction_flat = -_constraint_matmul(
+                restricted_pinv, raw_motion
+            )
+            first_projected_flat = blind_flat + correction_flat
+            residual_motion = _constraint_matmul(guards, first_projected_flat)
+            correction_flat -= _constraint_matmul(
+                restricted_pinv, residual_motion
             )
             correction = correction_flat.reshape_as(blind_delta).contiguous()
             projected = (blind_delta + correction).contiguous()
@@ -478,7 +498,7 @@ def negative_preserving_candidate_guard_correction(
     projected_flat = projected.flatten(1)
     correction_flat = correction.flatten(1)
     final_motion = (
-        guards @ projected_flat
+        _constraint_matmul(guards, projected_flat)
         if guards.shape[0]
         else projected_flat.new_empty((0, projected_flat.shape[1]))
     )
@@ -494,9 +514,11 @@ def negative_preserving_candidate_guard_correction(
         final_violations = int((final_norm > row_tolerance).sum())
     else:
         final_violations = 0
-    blind_negative_motion = negative_features @ blind_flat
-    final_negative_motion = negative_features @ projected_flat
-    negative_correction_motion = negative_features @ correction_flat
+    blind_negative_motion = _constraint_matmul(negative_features, blind_flat)
+    final_negative_motion = _constraint_matmul(negative_features, projected_flat)
+    negative_correction_motion = _constraint_matmul(
+        negative_features, correction_flat
+    )
     negative_row_tolerance = (
         64
         * max(blind_delta.shape)

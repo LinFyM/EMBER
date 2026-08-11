@@ -65,7 +65,12 @@ def test_current_and_persisted_guards_close_with_positive_retained_direction() -
     )
     guards = torch.cat((persisted, correct[[1, 2]]))
     motion = guards @ projected.flatten(1)
-    torch.testing.assert_close(motion, torch.zeros_like(motion), rtol=0, atol=2e-5)
+    unprotected_motion = correct[3:] @ projected.flatten(1)
+    closure_ratio = (
+        motion.square().mean().sqrt()
+        / unprotected_motion.square().mean().sqrt()
+    )
+    assert closure_ratio < 1e-5
     torch.testing.assert_close(
         negative @ projected.flatten(1),
         negative @ blind.flatten(1),

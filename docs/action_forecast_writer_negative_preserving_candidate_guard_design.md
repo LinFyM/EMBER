@@ -1,8 +1,16 @@
 # Negative-Preserving Candidate Guard
 
-状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成，尚未live profile。Work-Queue PCUG已在完整
-机制profile中只因`negative_null`失败而退役；本设计是唯一active successor。实现已原位替换canonical guard
-owner，没有保留WQ-PCUG并行可执行版本。
+状态：2026-08-12 首个clean world3 live profile已执行完整科学面板，negative preservation与其余18项机制门
+通过，唯一失败是TF32 solver与full-FP32 Program constraint read不一致造成的`guard_program_closure`工程违约。
+canonical solver已统一full-FP32约束语义并做一次固定residual refinement，完整CPU`345 passed`；等待同合同
+reprofile。本设计仍是唯一active successor，没有保留WQ-PCUG并行可执行版本。
+
+首个NPCG profile来自clean pushed `ef0008d`、gpu02物理3/4/5 world3：Phase A=`44.67883s`、total=
+`554.57395s / 1.15868x SKNC`，paired outcomes与WQ-PCUG完全一致。final negative ratio=`.03524`，三类各
+`8/8`达门，negative correction violation=`0`；rank=`33`、energy=`.35360`、alignment=`.52158`，LoRA、
+effective BA与fixed-action closure均通过。唯一失败的protected Program ratio=`1.5831e-4>1e-5`，绝对残差
+`3.43e-10`。代码检查定位到right-hand side与correction的FP32 matmul允许TF32，而真实constraint read显式关闭
+TF32；这是同一公式的数值实现不一致，不是放宽门或科学sweep，首个root保留且无checkpoint。
 
 ## 1. Latest evidence and earliest failure
 
@@ -58,7 +66,8 @@ Z* = -(G Q_N)^+ G D0
 C* = Q_N Z*
 ```
 
-只对小feature matrices做FP64 SVD/rank solve；large `D0`、motion与correction保持FP32，不扩policy/video dtype，
+只对小feature matrices做FP64 SVD/rank solve；large `D0`、motion与correction保持FP32；约束乘法关闭TF32并做一次
+固定residual refinement，使solver和实际Program full-FP32 constraint read具有同一数值语义，不扩policy/video dtype，
 不增加forward、host scan、hash或per-task route。若restricted guard不满秩或任一closure失败，profile直接non-pass。
 
 ## 3. Why this is not union-nullspace compression

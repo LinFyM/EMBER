@@ -144,8 +144,12 @@
   `NC=0`与`G(D0+C)=0`，不改D0、paired outcomes、queue、B20、compiler、rank或门限。
 - [x] 原位实现NPCG minimum correction、fresh schema/eval family、negative-preservation profile门与formal
   pre-write fail-close；synthetic no-guard/closure/duplicate-row证据和完整CPU`345 passed`通过，无parallel path。
-- [ ] clean push后按live合适A40数运行唯一discarded macro0。任一原门或negative preservation门失败即退役，
-  不做参数/world-size sweep。
+- [x] clean pushed`ef0008d`在gpu02物理3/4/5 world3完成首个discarded macro0：paired outcomes与WQ完全一致，
+  negative ratio`.03524`、三类各`8/8`及其余18项门通过；唯一Program closure ratio=`1.5831e-4>1e-5`。
+  根因是solver TF32与实际constraint full-FP32语义错配，属于公式实现工程违约，root保留且无checkpoint。
+- [x] 只把约束matmul统一为full FP32并固定一次residual refinement；架构、数据、门限、dtype、world size与
+  forward数不变，针对测试34 passed、加载assets后的完整CPU`345 passed`。
+- [ ] clean push后按同一world3科学合同reprofile。若任一门仍失败即退役，不做参数/world-size sweep。
 
 ## Repository closeout
 

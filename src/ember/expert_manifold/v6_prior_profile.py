@@ -494,10 +494,23 @@ def profile_passes(
     )
     baseline_contract = config["profile_run"]["throughput_baseline"]
     baseline = float(baseline_contract["step_seconds"]) * (
-        int(row["maximum_tasks_per_rank"])
-        / int(baseline_contract["source_tasks_per_rank"])
+        int(baseline_contract["source_world_size"]) / int(row["world_size"])
     )
     wall_ratio = float(row["step_seconds"]) / baseline
+    phase_a_ratio = float(row.get("phase_a_seconds", math.inf)) / baseline
+    phase_a_rows = row.get("phase_a_task_rows", ())
+    task_counts = [int(value) for value in row.get("task_counts_per_rank", ())]
+    queue_rows_ok = (
+        len(phase_a_rows) == int(gates["task_count"])
+        and sorted(int(value.get("queue_index", -1)) for value in phase_a_rows)
+        == list(range(int(gates["task_count"])))
+        and all(
+            0 <= int(value.get("rank", -1)) < int(row["world_size"])
+            and 0 <= float(value.get("started_seconds", -1))
+            <= float(value.get("finished_seconds", -1))
+            for value in phase_a_rows
+        )
+    )
     candidate_response_ok = (
         set(candidate_response) == set(_SUITES)
         and all(
@@ -532,6 +545,14 @@ def profile_passes(
         == int(gates["negative_policy_forwards"])
         and sum(int(record.get("reward_gradient_count", -1)) for record in records)
         == 0,
+        "work_queue_coverage_and_cap": queue_rows_ok
+        and len(task_counts) == int(row["world_size"])
+        and sum(task_counts) == int(gates["task_count"])
+        and max(task_counts) <= int(gates["retained_task_cap_max"])
+        and float(row.get("queue_claim_seconds", math.inf))
+        <= float(gates["queue_claim_seconds_max"]),
+        "phase_a_wall": math.isfinite(phase_a_ratio)
+        and phase_a_ratio <= float(gates["phase_a_wall_ratio_max"]),
         "exact_paired_coverage": paired_records_ok
         and int(outcomes.get("paired_states", -1))
         == int(gates["paired_state_count"])
@@ -668,6 +689,10 @@ def profile_passes(
         "negative_null_per_kind": per_kind,
         "lora_response": dict(response),
         "step_seconds": float(row["step_seconds"]),
+        "phase_a_seconds": float(row["phase_a_seconds"]),
+        "phase_a_wall_ratio_to_matched_sknc": phase_a_ratio,
+        "phase_a_task_rows": list(phase_a_rows),
+        "queue_claim_seconds": float(row["queue_claim_seconds"]),
         "scaled_step_seconds_baseline": baseline,
         "world_size": int(row["world_size"]),
         "task_counts_per_rank": list(row["task_counts_per_rank"]),

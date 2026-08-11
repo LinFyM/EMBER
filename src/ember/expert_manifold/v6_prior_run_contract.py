@@ -211,10 +211,7 @@ def build_run_contract(
     schedule_start = segment.schedule_origin
     schedule_stop = schedule_start + segment.total_macros
     git = dict(git_state_fn(repo_root))
-    task_counts = [
-        len(sampler.tasks_for_step(schedule_start, rank=rank))
-        for rank in range(context.world_size)
-    ]
+    retained_task_cap = max(8, (24 + context.world_size - 1) // context.world_size)
     return {
         "schema_version": V6_PRIOR_RUN_SCHEMA,
         "mode": args.mode,
@@ -265,9 +262,8 @@ def build_run_contract(
             "device": torch.cuda.get_device_name(context.device),
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
             "world_size": context.world_size,
-            "task_counts_per_rank_at_schedule_start": task_counts,
-            "minimum_tasks_per_rank": min(task_counts),
-            "maximum_tasks_per_rank": max(task_counts),
+            "task_job_count_per_macro": 24,
+            "retained_task_cap_per_rank": retained_task_cap,
             "task_assignment": config[
                 "optimization"
             ]["distributed_update"]["task_assignment"],
@@ -276,8 +272,9 @@ def build_run_contract(
             "schedule_origin": segment.schedule_origin,
             "checkpoint_macros": list(segment.checkpoint_macros),
             "num_workers_per_rank": args.num_workers,
-            "action_loader_prefetch_factor": 2 if args.num_workers else None,
-            "action_loader_persistent_workers": args.num_workers > 0,
+            "action_batch_loader": "task_addressable_sync_pinned_collate",
+            "action_loader_prefetch_factor": None,
+            "action_loader_persistent_workers": False,
             "logical_policy_batch_size": 20,
             "functional_policy_microbatch_size": 10,
             "physical_policy_forwards_per_task": 2,
@@ -299,6 +296,7 @@ def build_run_contract(
                 "paired_outcome_tensor_all_gathers": 1,
                 "task_record_object_all_gathers": 1,
                 "profile_guard_object_all_gathers": 0,
+                "phase_a_wall_scalar_all_reduces": 1,
                 "memory_allreduce": False,
             },
             "deferred_process_group": True,

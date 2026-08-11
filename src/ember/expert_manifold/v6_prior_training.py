@@ -1,8 +1,9 @@
-"""PCUG task-complete blind acquisition and paired closed-loop protection."""
+"""Work-Queue PCUG blind acquisition and paired closed-loop protection."""
 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import math
 import time
@@ -12,6 +13,7 @@ from typing import Any, Mapping, Sequence
 
 import torch
 import torch.distributed as dist
+from torch.utils.data import default_collate
 
 from ember.expert_manifold.contract import ExpertManifoldError, ExpertTask
 from ember.expert_manifold.v6_candidate_guard import (
@@ -86,6 +88,12 @@ class TaskObjective:
     correct_sampled_frames: int
     negative_raw_frames: int
     negative_sampled_frames: int
+    phase_a_queue_index: int = -1
+    phase_a_rank: int = -1
+    phase_a_started_seconds: float = 0.0
+    phase_a_finished_seconds: float = 0.0
+    phase_a_batch_load_seconds: float = 0.0
+    phase_a_claim_seconds: float = 0.0
     fixed_policy_query: Mapping[str, torch.Tensor] | None = None
     paired: PairedTaskEvidence | None = None
 
@@ -101,12 +109,53 @@ class MacroUpdateEvidence:
     task_local: Mapping[str, Any] | None
     lora_response: Mapping[str, Any] | None
     success_key_application: Mapping[str, Any] | None
+    phase_a_seconds: float
+    phase_a_rows: tuple[Mapping[str, Any], ...]
     profile_task_seconds: float | None
     kernel_seconds: float | None
     verification_seconds: float | None
 
 
 _LOGICAL_POLICY_BATCH_SIZE = 20
+_TRAIN_TASK_COUNT = 24
+_WORK_QUEUE_MINIMUM_RETAINED_TASK_CAP = 8
+
+
+class _AtomicTaskClaimQueue:
+    """Claim deterministic task jobs across same-host torchrun ranks."""
+
+    def __init__(self, path: Path, jobs: Sequence[tuple[int, int]]) -> None:
+        self.path = path
+        self.jobs = tuple(jobs)
+
+    def claim(self) -> tuple[int, tuple[int, int] | None, float]:
+        started = time.monotonic()
+        with self.path.open("r+", encoding="ascii") as handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            index = int(handle.read().strip())
+            if index < len(self.jobs):
+                handle.seek(0)
+                handle.write(str(index + 1))
+                handle.truncate()
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        return (
+            index,
+            self.jobs[index] if index < len(self.jobs) else None,
+            time.monotonic() - started,
+        )
+
+
+class _PhaseAProfileNonPass(ExpertManifoldError):
+    def __init__(self, evidence: Mapping[str, Any]) -> None:
+        super().__init__("Work-Queue PCUG Phase-A profile gate failed")
+        self.evidence = dict(evidence)
+
+
+def _retained_task_cap(world_size: int) -> int:
+    return max(
+        _WORK_QUEUE_MINIMUM_RETAINED_TASK_CAP,
+        math.ceil(_TRAIN_TASK_COUNT / world_size),
+    )
 
 
 def _policy_rng_seed_for_logical_batch(
@@ -150,13 +199,12 @@ def _batch_task_id(batch: Mapping[str, Any]) -> int:
 def _task_objective(
     runtime: V6PriorRuntime,
     *,
-    schedule_macro: int,
-    microtask: int,
+    task_id: int,
+    task_visit: int,
     batch: Mapping[str, Any],
 ) -> TaskObjective:
-    task_id, task_visit = runtime.sampler.task_visit_for_step(schedule_macro, microtask)
     if _batch_task_id(batch) != task_id:
-        raise ExpertManifoldError("PCUG sampler and action batch disagree")
+        raise ExpertManifoldError("Work-Queue PCUG sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
     excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     teacher_demo = runtime.video_schedule.demos_for_task_visit(
@@ -334,6 +382,12 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "correct_sampled_frames": value.correct_sampled_frames,
         "negative_raw_frames": value.negative_raw_frames,
         "negative_sampled_frames": value.negative_sampled_frames,
+        "phase_a_queue_index": value.phase_a_queue_index,
+        "phase_a_rank": value.phase_a_rank,
+        "phase_a_started_seconds": value.phase_a_started_seconds,
+        "phase_a_finished_seconds": value.phase_a_finished_seconds,
+        "phase_a_batch_load_seconds": value.phase_a_batch_load_seconds,
+        "phase_a_claim_seconds": value.phase_a_claim_seconds,
         "source_action_queries": 20,
         "physical_correct_policy_forwards": 2,
         "base_rollouts": 2,
@@ -383,34 +437,53 @@ def _sorted_gather_rows(
 
 def _gather_full48(
     local: Sequence[TaskObjective], context: DistributedContext
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    maximum_local = math.ceil(24 / context.world_size)
-    if not 0 < len(local) <= maximum_local:
-        raise ExpertManifoldError("PCUG local task coverage changed")
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    tuple[Mapping[str, Any], ...],
+]:
+    maximum_local = _retained_task_cap(context.world_size)
+    if not 0 <= len(local) <= maximum_local:
+        raise ExpertManifoldError("Work-Queue PCUG local task coverage changed")
     payload = torch.zeros(
-        maximum_local, 1 + 2 * 256, dtype=torch.float32, device=context.device
+        maximum_local, 7 + 2 * 256, dtype=torch.float32, device=context.device
     )
     payload[:, 0].fill_(-1)
-    payload[: len(local), 0] = torch.tensor(
-        [value.task.ordinal for value in local],
+    if local:
+        payload[: len(local), :7] = torch.tensor(
+            [
+                (
+                    value.task.ordinal,
+                    value.phase_a_rank,
+                    value.phase_a_queue_index,
+                    value.phase_a_started_seconds,
+                    value.phase_a_finished_seconds,
+                    value.phase_a_batch_load_seconds,
+                    value.phase_a_claim_seconds,
+                )
+                for value in local
+            ],
+            dtype=torch.float32,
+            device=context.device,
+        )
+        payload[: len(local), 7:263] = torch.stack(
+            [value.correct_feature for value in local]
+        )
+        payload[: len(local), 263:] = torch.stack(
+            [value.negative_feature for value in local]
+        )
+    cotangent_shape = local[0].program_cotangent.shape if local else (320, 256)
+    cotangents = torch.zeros(
+        maximum_local,
+        *cotangent_shape,
         dtype=torch.float32,
         device=context.device,
     )
-    payload[: len(local), 1:257] = torch.stack(
-        [value.correct_feature for value in local]
-    )
-    payload[: len(local), 257:] = torch.stack(
-        [value.negative_feature for value in local]
-    )
-    cotangents = torch.zeros(
-        maximum_local,
-        *local[0].program_cotangent.shape,
-        dtype=local[0].program_cotangent.dtype,
-        device=context.device,
-    )
-    cotangents[: len(local)] = torch.stack(
-        [value.program_cotangent for value in local]
-    )
+    if local:
+        cotangents[: len(local)] = torch.stack(
+            [value.program_cotangent for value in local]
+        )
     gathered_payload = _all_gather_fixed(payload, context)
     gathered_cotangents = _all_gather_fixed(cotangents, context)
     present = gathered_payload[:, 0] >= 0
@@ -427,17 +500,30 @@ def _gather_full48(
         raise ExpertManifoldError("PCUG full24 task order changed")
     gathered_payload = gathered_payload.index_select(0, order)
     gathered_cotangents = gathered_cotangents.index_select(0, order)
+    timing = tuple(
+        {
+            "task_ordinal": int(row[0]),
+            "rank": int(row[1]),
+            "queue_index": int(row[2]),
+            "started_seconds": float(row[3]),
+            "finished_seconds": float(row[4]),
+            "batch_load_seconds": float(row[5]),
+            "claim_seconds": float(row[6]),
+        }
+        for row in gathered_payload.detach().cpu().tolist()
+    )
     return (
-        gathered_payload[:, 1:257],
-        gathered_payload[:, 257:],
+        gathered_payload[:, 7:263],
+        gathered_payload[:, 263:],
         gathered_cotangents,
+        timing,
     )
 
 
 def _gather_paired_outcomes(
     local: Sequence[TaskObjective], context: DistributedContext
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    maximum_local = math.ceil(24 / context.world_size)
+    maximum_local = _retained_task_cap(context.world_size)
     payload = torch.full(
         (maximum_local, 5), -1.0, dtype=torch.float32, device=context.device
     )
@@ -499,29 +585,69 @@ def _runtime_maximums(
 
 
 def _collect_local_objectives(
-    runtime: V6PriorRuntime, schedule_macro: int
+    runtime: V6PriorRuntime,
+    schedule_macro: int,
+    *,
+    step_started: float,
 ) -> tuple[list[TaskObjective], float]:
-    local = []
-    input_wait_seconds = 0.0
-    local_count = len(
-        runtime.sampler.tasks_for_step(schedule_macro, rank=runtime.context.rank)
+    jobs = runtime.sampler.task_queue_for_step(schedule_macro)
+    if len(jobs) != _TRAIN_TASK_COUNT:
+        raise ExpertManifoldError("Work-Queue PCUG lost train24 jobs")
+    queue_path = (
+        runtime.args.output_dir
+        / "task_queue"
+        / f"macro_{schedule_macro:08d}.cursor"
     )
-    for microtask in range(local_count):
+    if runtime.context.is_main:
+        queue_path.parent.mkdir(parents=True, exist_ok=True)
+        queue_path.write_text("0", encoding="ascii")
+    if runtime.context.world_size > 1:
+        dist.barrier(device_ids=[runtime.context.local_rank])
+    queue = _AtomicTaskClaimQueue(queue_path, jobs)
+    local: list[TaskObjective] = []
+    input_wait_seconds = 0.0
+    cap = _retained_task_cap(runtime.context.world_size)
+    while len(local) < cap:
+        queue_index, job, claim_seconds = queue.claim()
+        if job is None:
+            break
+        task_id, task_visit = job
+        task_started = time.monotonic()
         input_started = time.monotonic()
-        batch = next(runtime.iterator)
-        input_wait_seconds += time.monotonic() - input_started
+        indices = runtime.sampler.batch_indices_for_task_visit(
+            schedule_macro, task_id, task_visit
+        )
+        batch = default_collate([runtime.dataset[index] for index in indices])
+        if runtime.context.device.type == "cuda":
+            batch = {
+                name: value.pin_memory() if isinstance(value, torch.Tensor) else value
+                for name, value in batch.items()
+            }
+        batch_load_seconds = time.monotonic() - input_started
+        input_wait_seconds += batch_load_seconds
+        objective = _task_objective(
+            runtime,
+            task_id=task_id,
+            task_visit=task_visit,
+            batch=batch,
+        )
+        if runtime.context.device.type == "cuda":
+            torch.cuda.synchronize(runtime.context.device)
         local.append(
-            _task_objective(
-                runtime,
-                schedule_macro=schedule_macro,
-                microtask=microtask,
-                batch=batch,
+            replace(
+                objective,
+                phase_a_queue_index=queue_index,
+                phase_a_rank=runtime.context.rank,
+                phase_a_started_seconds=task_started - step_started,
+                phase_a_finished_seconds=time.monotonic() - step_started,
+                phase_a_batch_load_seconds=batch_load_seconds,
+                phase_a_claim_seconds=claim_seconds,
             )
         )
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()) or any(
         parameter.grad is not None for parameter in runtime.writer.base_writer.parameters()
     ):
-        raise ExpertManifoldError("PCUG touched frozen parameter gradients")
+        raise ExpertManifoldError("Work-Queue PCUG touched frozen parameter gradients")
     return local, input_wait_seconds
 
 
@@ -542,9 +668,60 @@ def _apply_macro_update(
     profile: bool,
     step_started: float,
 ) -> MacroUpdateEvidence:
-    correct, negative, cotangents = _gather_full48(
+    correct, negative, cotangents, phase_a_rows = _gather_full48(
         local_objectives, runtime.context
     )
+    phase_a_seconds = _profile_max_seconds(
+        runtime.context, time.monotonic() - step_started
+    )
+    if profile:
+        baseline_contract = runtime.config["profile_run"]["throughput_baseline"]
+        baseline_seconds = float(baseline_contract["source_step_seconds"]) * (
+            int(baseline_contract["source_world_size"])
+            / runtime.context.world_size
+        )
+        gates = runtime.config["profile_run"]["gates"]
+        task_counts = [
+            sum(int(row["rank"]) == rank for row in phase_a_rows)
+            for rank in range(runtime.context.world_size)
+        ]
+        claim_seconds = sum(float(row["claim_seconds"]) for row in phase_a_rows)
+        queue_rows_valid = (
+            sorted(int(row["queue_index"]) for row in phase_a_rows)
+            == list(range(_TRAIN_TASK_COUNT))
+            and sum(task_counts) == _TRAIN_TASK_COUNT
+            and all(
+                0 <= float(row["started_seconds"])
+                <= float(row["finished_seconds"])
+                for row in phase_a_rows
+            )
+        )
+        phase_a_evidence = {
+            "passed": (
+                queue_rows_valid
+                and phase_a_seconds
+                <= baseline_seconds * float(gates["phase_a_wall_ratio_max"])
+                and claim_seconds <= float(gates["queue_claim_seconds_max"])
+                and max(task_counts) <= int(gates["retained_task_cap_max"])
+            ),
+            "phase_a_seconds": phase_a_seconds,
+            "scaled_sknc_step_seconds": baseline_seconds,
+            "phase_a_wall_ratio": phase_a_seconds / baseline_seconds,
+            "phase_a_wall_ratio_max": float(gates["phase_a_wall_ratio_max"]),
+            "queue_claim_seconds": claim_seconds,
+            "queue_claim_seconds_max": float(gates["queue_claim_seconds_max"]),
+            "task_counts_per_rank": task_counts,
+            "queue_rows_valid": queue_rows_valid,
+            "retained_task_cap": _retained_task_cap(runtime.context.world_size),
+            "task_rows": list(phase_a_rows),
+        }
+        if runtime.context.is_main:
+            print(
+                json.dumps({"event": "phase_a_complete", **phase_a_evidence}, sort_keys=True),
+                flush=True,
+            )
+        if not phase_a_evidence["passed"]:
+            raise _PhaseAProfileNonPass(phase_a_evidence)
     persisted_plan = runtime.success_key_bank.persisted_plan()
     no_current_guards = torch.zeros(24, dtype=torch.bool, device=runtime.context.device)
     blind_delta, blind_update = success_key_nullspace_program_delta(
@@ -606,6 +783,8 @@ def _apply_macro_update(
             task_local=None,
             lora_response=None,
             success_key_application=None,
+            phase_a_seconds=phase_a_seconds,
+            phase_a_rows=phase_a_rows,
             profile_task_seconds=None,
             kernel_seconds=None,
             verification_seconds=None,
@@ -652,6 +831,8 @@ def _apply_macro_update(
         task_local=task_local,
         lora_response=lora_response,
         success_key_application=success_key_application,
+        phase_a_seconds=phase_a_seconds,
+        phase_a_rows=phase_a_rows,
         profile_task_seconds=profile_task_seconds,
         kernel_seconds=kernel_seconds,
         verification_seconds=verification_seconds,
@@ -733,6 +914,11 @@ def _macro_record(
         "production_kernel_seconds": evidence.kernel_seconds,
         "profile_task_seconds": evidence.profile_task_seconds,
         "profile_verification_seconds": evidence.verification_seconds,
+        "phase_a_seconds": evidence.phase_a_seconds,
+        "phase_a_task_rows": list(evidence.phase_a_rows),
+        "queue_claim_seconds": sum(
+            float(value["claim_seconds"]) for value in evidence.phase_a_rows
+        ),
         "step_seconds": seconds,
         "input_wait_seconds": input_wait_seconds,
         "max_cuda_allocated_bytes": allocated,
@@ -754,7 +940,9 @@ def _run_one_macro(runtime: V6PriorRuntime, *, macro: int) -> dict[str, Any]:
     schedule_macro = runtime.segment.schedule_origin + macro
     versions_before = _base_versions(runtime) if profile else ()
     step_started = time.monotonic()
-    local, input_wait = _collect_local_objectives(runtime, schedule_macro)
+    local, input_wait = _collect_local_objectives(
+        runtime, schedule_macro, step_started=step_started
+    )
     evidence = _apply_macro_update(
         runtime,
         local,
@@ -776,7 +964,7 @@ def _run_one_macro(runtime: V6PriorRuntime, *, macro: int) -> dict[str, Any]:
         runtime_metrics=runtime_metrics,
     )
     task_counts = [
-        len(runtime.sampler.tasks_for_step(schedule_macro, rank=rank))
+        sum(int(value["rank"]) == rank for value in evidence.phase_a_rows)
         for rank in range(runtime.context.world_size)
     ]
     row["world_size"] = runtime.context.world_size
@@ -786,7 +974,36 @@ def _run_one_macro(runtime: V6PriorRuntime, *, macro: int) -> dict[str, Any]:
 
 
 def _run_mechanism_profile(runtime: V6PriorRuntime) -> None:
-    row = _run_one_macro(runtime, macro=0)
+    try:
+        row = _run_one_macro(runtime, macro=0)
+    except _PhaseAProfileNonPass as error:
+        result = {
+            "schema_version": V6_PRIOR_PROFILE_SCHEMA,
+            "passed": False,
+            "failure_stage": "phase_a_full24_gather_before_paired_probe",
+            "retain_weight": False,
+            "gates": dict(runtime.config["profile_run"]["gates"]),
+            "phase_a": error.evidence,
+            "paired_probe_started": False,
+            "retained_checkpoint": False,
+            "content_hash_policy": "disabled_by_owner",
+        }
+        if runtime.context.is_main:
+            write_json_atomic(runtime.args.output_dir / "mechanism_profile.json", result)
+            write_json_atomic(
+                runtime.args.output_dir / "completion.json",
+                {
+                    "schema_version": V6_PRIOR_COMPLETION_SCHEMA,
+                    "mode": "mechanism-profile",
+                    "completed_diagnostic_macros": 0,
+                    "passed": False,
+                    "failure_stage": result["failure_stage"],
+                    "retained_checkpoint": False,
+                    "content_hash_policy": "disabled_by_owner",
+                },
+            )
+            print(json.dumps(result, sort_keys=True), flush=True)
+        return
     passed, gate_evidence = _profile_passes(runtime.config, row)
     result = {
         "schema_version": V6_PRIOR_PROFILE_SCHEMA,
@@ -895,7 +1112,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--num-workers", type=int, default=2)
+    parser.add_argument("--num-workers", type=int, default=0)
     return parser
 
 

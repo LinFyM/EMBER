@@ -267,3 +267,9 @@ RNG本来都是`(task_id, task_visit)`纯函数，因此可以让空闲rank完�
 科学样本、full24权重或PCUG update。每rank最多保留8个graphs，复用SKNC world3已证明可容纳的显存上界；
 full48与paired rows仍按ordinal排序。这个设计只会被task-level live timing、Phase-A wall与随后原PCUG机制门
 裁决，不用静态latency拟合、world-size sweep或更多防御性检查救失败执行图。
+
+该执行接口现已完成canonical实现并通过完整CPU`345 passed`。新sampler public入口对world3/4/5旧schedule逐task
+逐row保持完全相同B20；host-local cursor只做24次短`flock` claim，rank在每个真实GPU task边界同步后领取下一项，
+因此ownership由实际完成速度而非CPU enqueue或静态frame proxy决定。full48 payload在原tensor gather内携带24条
+小timing rows，支持0--8个local tasks而不新增object collective；Phase-A wall失败会在96条paired rollouts前写
+non-pass并结束。旧PCUG schema/config状态与eval family已原位替换，旧结果只由Git、design和failure artifact保存。

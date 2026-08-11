@@ -41,7 +41,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   当前static world4 PCUG execution contract，不检验actual candidate paired-guard的科学假设。
 - Work-Queue PCUG是当前唯一active successor design：保留actual candidate paired guard全部科学变量，只把
   Phase A从static rank ownership改为task-keyed runtime claim queue，并以每rank最多8个retained graphs控制
-  A40显存。尚未实现、profile或训练；不得恢复旧PCUG命令、直接formal，或并行转向无关架构。
+  A40显存。canonical实现、fresh schema、task-addressable exact B20、Phase-A early stop和完整CPU`345 passed`
+  已完成；尚未live profile或训练。不得恢复旧PCUG命令、直接formal，或并行转向无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

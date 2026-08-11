@@ -612,7 +612,7 @@ def _evaluation_writer_asset(
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
         "sealed_from_live_sknc_deployment_smoke",
-        "sealed_from_live_pcug_deployment_smoke",
+        "sealed_from_live_wq_pcug_deployment_smoke",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"

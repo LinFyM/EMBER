@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_pi05_v6_paired_candidate_update_guard_v1",
-  "status": "profile_result_sealed_nonpass",
+  "schema_version": "ember_pi05_v6_work_queue_candidate_update_guard_v1",
+  "status": "active_cpu_ready_awaiting_live_profile",
   "method": {
-    "name": "frozen_v6_paired_candidate_update_guard",
+    "name": "frozen_v6_work_queue_paired_candidate_update_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": false,
@@ -258,9 +258,10 @@
     "rollout_policy_batch_size": 2,
     "optimizer": "none",
     "distributed_update": {
-      "kind": "all_gather_dynamic_local_task_shard_blind_evidence_then_paired_outcomes_then_identical_final_guarded_manual_write",
-      "world_size": "fresh_live_1_to_6_then_exact_resume_locked",
-      "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
+      "kind": "host_local_completion_driven_task_claim_then_full48_blind_evidence_then_paired_outcomes_then_identical_final_guarded_manual_write",
+      "world_size": "fresh_live_3_to_6_then_exact_resume_locked",
+      "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
+      "retained_task_cap_per_rank": "max_8_or_ceil_train24_over_world_size",
       "memory_allreduce": false,
       "nccl_p2p_disable": "1",
       "nccl_algo": "Ring",
@@ -278,20 +279,18 @@
     "regularized_condition_number_max": 150
   },
   "profile_run": {
-    "status": "profile_result_sealed_nonpass",
+    "status": "awaiting_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [
-      1,
-      2,
       3,
       4,
       5,
       6
     ],
     "maximum_world_size": 6,
-    "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
+    "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
     "schedule_macro": 0,
     "diagnostic_macros": 1,
-    "num_workers_per_rank": 2,
+    "num_workers_per_rank": 0,
     "retain_weight": false,
     "throughput_baseline": {
       "path": "runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_f4fdac7_20260812/mechanism_profile.json",
@@ -301,7 +300,7 @@
       "rollouts": 96,
       "source_world_size": 3,
       "source_tasks_per_rank": 8,
-      "scaling": "source_step_seconds_times_actual_max_tasks_per_rank_over_source_tasks_per_rank",
+      "scaling": "source_step_seconds_times_source_world_size_over_actual_world_size",
       "source_step_seconds": 478.62702268897556,
       "step_seconds": 478.62702268897556
     },
@@ -329,38 +328,27 @@
       "protected_to_unprotected_lora_response_ratio_max": 0.00001,
       "protected_fixed_action_response_rms_max": 0.000001,
       "unprotected_fixed_action_probe_task_count": 4,
+      "retained_task_cap_max": 8,
+      "queue_claim_seconds_max": 1,
+      "phase_a_wall_ratio_max": 1,
       "production_wall_ratio_max": 1.5,
       "negative_policy_forwards": 0,
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": {
-      "path": "runs/outputs/pi05_pcug_paired_candidate_guard_full24_profile_macro0_r4_b20_238cab4_20260812/failure.json",
-      "bytes": 1432,
-      "schema": "ember_pi05_pcug_mechanism_profile_failure_v1",
-      "passed": false,
-      "run_commit": "238cab4656291980241966956103138eb36dd93e",
-      "world_size": 4,
-      "failure_kind": "irreversible_profile_wall_gate_violation",
-      "profile_step_seconds_lower_bound": 809.72185,
-      "wall_ratio_lower_bound": 2.255679437545892,
-      "paired_probe_started": false,
-      "mechanism_profile_written": false
-    }
+    "artifact_evidence": null
   },
   "formal_run": {
-    "status": "blocked_by_profile_nonpass",
+    "status": "blocked_until_live_profile_passes_and_is_sealed",
     "allowed_world_sizes": [
-      1,
-      2,
       3,
       4,
       5,
       6
     ],
     "maximum_world_size": 6,
-    "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
-    "num_workers_per_rank": 2,
+    "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
+    "num_workers_per_rank": 0,
     "total_macros": 10,
     "checkpoint_macros": [
       5,
@@ -387,7 +375,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "not_run_after_profile_nonpass",
+    "formal_status": "awaiting_live_wq_pcug_deployment_smoke",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",

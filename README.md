@@ -44,7 +44,8 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   和同配置重跑全部关闭。
 - 当前唯一active successor design是Work-Queue PCUG：actual candidate、paired K2x2与final guard完全不变，只把
   Phase A的24个确定性task jobs从static rank ownership改为完成驱动的host-local claim queue；每rank最多保留
-  8个graphs。它尚未实现或取得live证据，首先必须把world4 Phase-A wall压到`358.970267s`以内。
+  8个graphs。canonical实现与完整CPU`345 passed`已完成但尚无live证据；首先必须把world4 Phase-A wall压到
+  `358.970267s`以内。
 
 最新uniform pivot-rank14路线已终局否决：
 

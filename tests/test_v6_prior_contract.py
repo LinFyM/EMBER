@@ -51,7 +51,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_pcug_deployment_smoke"
+        "sealed_from_live_wq_pcug_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -73,7 +73,7 @@ def _args(
         output_dir=output_dir,
         resume=resume,
         stop_after_macro=stop,
-        num_workers=2,
+        num_workers=0,
     )
 
 
@@ -123,8 +123,8 @@ def test_pcug_config_changes_only_candidate_protection_interface() -> None:
     assert config["success_key_bank"]["harmful_key_policy"].endswith("never_persist")
     assert config["data"]["action_queries_per_task"] == 20
     distributed = config["optimization"]["distributed_update"]
-    assert distributed["world_size"] == "fresh_live_1_to_6_then_exact_resume_locked"
-    assert config["formal_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
+    assert distributed["world_size"] == "fresh_live_3_to_6_then_exact_resume_locked"
+    assert config["formal_run"]["allowed_world_sizes"] == [3, 4, 5, 6]
 
 
 @pytest.mark.parametrize(
@@ -203,7 +203,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_pcug_deployment_smoke"
+        "awaiting_live_wq_pcug_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -223,7 +223,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_pcug_deployment_smoke"
+        "awaiting_live_wq_pcug_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
@@ -277,15 +277,16 @@ def test_runtime_accepts_every_live_world_up_to_six_and_rejects_larger_world(
         runtime_module, "residual_git_state", lambda _root: _git_state()
     )
     arguments = _args(output_dir=tmp_path / "run", resume=None, stop=5)
-    for world_size in range(1, 7):
+    for world_size in range(3, 7):
         segment = _resolve_segment(arguments, config, _context(world_size))
         assert (segment.start_macro, segment.stop_macro) == (0, 5)
-    with pytest.raises(ExpertManifoldError):
-        _resolve_segment(arguments, config, _context(7))
-    arguments.num_workers = 0
+    for world_size in (1, 2, 7):
+        with pytest.raises(ExpertManifoldError):
+            _resolve_segment(arguments, config, _context(world_size))
+    arguments.num_workers = 2
     with pytest.raises(ExpertManifoldError):
         _resolve_segment(arguments, config, _context())
-    arguments.num_workers = 2
+    arguments.num_workers = 0
     monkeypatch.setattr(
         runtime_module,
         "residual_git_state",

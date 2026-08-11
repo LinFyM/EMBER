@@ -1,6 +1,7 @@
 # Work-Queue Paired Candidate Guard
 
-状态：2026-08-12 design authority已封存，尚未实现、profile或训练。它是PCUG之后唯一active successor。
+状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成，尚未live profile或训练。它是PCUG之后唯一active
+successor；只有Phase-A与随后原PCUG机制门通过才可打开deployment/formal。
 PCUG的actual candidate paired-guard科学假设没有被检验；本设计只替换其最早失效的Phase-A任务所有权接口，
 不得被写成新的Writer科学架构或PCUG同配置重跑。
 
@@ -47,7 +48,7 @@ world size和同一24-task工作量下直接缩短critical path。
 `MixedTaskBatchSampler`新增一个公开的task-addressable入口：
 
 ```text
-indices_for_task_visit(task_id, task_visit, step) -> exactly 20 dataset rows
+batch_indices_for_task_visit(step, task_id, task_visit) -> exactly 20 dataset rows
 ```
 
 它必须复用现有episode order、teacher exclusion、Latin phase strata和jitter函数。对旧静态iterator中的每个

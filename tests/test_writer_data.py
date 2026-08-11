@@ -152,6 +152,21 @@ def test_dynamic_uneven_sampler_uses_all_five_ranks_and_covers_train24_once() ->
     resumed = list(sampler(4, 0, 1)) + list(sampler(4, 1, 3))
     assert resumed == full
 
+    reference: dict[tuple[int, int], tuple[int, ...]] = {}
+    for rank_sampler in samplers:
+        batches = iter(rank_sampler)
+        for step in range(3):
+            for task_id in rank_sampler.tasks_for_step(step):
+                reference[step, task_id] = tuple(next(batches))
+    for step in range(3):
+        queue = samplers[0].task_queue_for_step(step)
+        assert len(queue) == 24
+        assert {task_id for task_id, visit in queue if visit == step} == set(task_ids)
+        for task_id, task_visit in queue:
+            assert samplers[0].batch_indices_for_task_visit(
+                step, task_id, task_visit
+            ) == reference[step, task_id]
+
 
 def test_dataloader_prefetch_preserves_exact_sampler_and_resume_rows() -> None:
     dataset, _ = _dataset()

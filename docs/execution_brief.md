@@ -21,7 +21,8 @@ Phase A full24 gather前就越过wall hard gate：`809.72185s / 2.25568x>1.5x`�
 deployment/formal与同配置重跑关闭。actual candidate paired-guard的科学假设仍未被检验。
 当前唯一active successor是Work-Queue PCUG：保持PCUG全部科学变量，只把Phase-A固定rank ownership改成
 task-keyed runtime claim queue；每rank最多8个retained graphs，world4--6可真实work steal，world3退化8/8/8。
-它尚未实现或获得live证据。
+canonical实现、fresh schema、task-addressable B20、variable-count gather与完整CPU`345 passed`已完成；尚未
+获得live证据。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

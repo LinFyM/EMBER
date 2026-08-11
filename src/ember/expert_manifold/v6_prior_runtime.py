@@ -1,4 +1,4 @@
-"""Assets, paired K2 environments, and exact-resume runtime for PCUG."""
+"""Assets, paired K2 environments, and exact-resume Work-Queue runtime."""
 
 from __future__ import annotations
 
@@ -8,12 +8,11 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import h5py
 import torch
 import torch.distributed as dist
-from torch.utils.data import DataLoader
 
 from ember.expert_manifold.contract import (
     ExpertManifoldError,
@@ -107,7 +106,6 @@ class V6PriorRuntime:
     dataset: FunctionalQueryDataset
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
-    iterator: Iterator[dict[str, Any]]
     video_store: RawTeacherVideoStore
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     processor: Pi05LiberoProcessor
@@ -181,7 +179,7 @@ def _resolve_segment(
         in tuple(int(value) for value in selected["allowed_world_sizes"])
         and context.world_size <= int(selected["maximum_world_size"])
         and selected["task_assignment"]
-        == "cost_balanced_long_first_dynamic_uneven_train24"
+        == "host_local_atomic_completion_driven_long_first_train24"
         and args.num_workers == int(selected["num_workers_per_rank"])
         and 0 <= start < stop <= total
         and profile_valid
@@ -285,7 +283,6 @@ def _build_data(
     FunctionalQueryDataset,
     MixedTaskBatchSampler,
     TeacherVideoSchedule,
-    DataLoader[Any],
 ]:
     expert_config = load_task_expert_config(
         authority_path(config, "task_expert_config")
@@ -326,19 +323,7 @@ def _build_data(
         task_video_costs=costs,
         assignment_strategy="cost_balanced_long_first_dynamic_uneven",
     )
-    loader = DataLoader(
-        dataset,
-        batch_sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=True,
-        persistent_workers=args.num_workers > 0,
-        prefetch_factor=2 if args.num_workers else None,
-        multiprocessing_context="spawn" if args.num_workers else None,
-        generator=torch.Generator().manual_seed(
-            int(config["optimization"]["seed"]) + context.rank + 0xA55A
-        ),
-    )
-    return tasks, dataset, sampler, schedule, loader
+    return tasks, dataset, sampler, schedule
 
 
 def _build_reward_tasks(
@@ -570,7 +555,7 @@ def _prepare_runtime(
     seed_everything(int(config["optimization"]["seed"]), context)
     _configure_egl(context)
     authorities, source, tokenizer = _load_source(args, config)
-    tasks, dataset, sampler, schedule, loader = _build_data(
+    tasks, dataset, sampler, schedule = _build_data(
         args=args,
         config=config,
         context=context,
@@ -650,7 +635,6 @@ def _prepare_runtime(
     except Exception:
         env_pool.close()
         raise
-    iterator = iter(loader)
     torch.cuda.reset_peak_memory_stats(context.device)
     if context.world_size > 1:
         dist.barrier(device_ids=[context.local_rank])
@@ -667,7 +651,6 @@ def _prepare_runtime(
         dataset=dataset,
         sampler=sampler,
         video_schedule=schedule,
-        iterator=iterator,
         video_store=video_store,
         language_tokens=language,
         processor=processor,

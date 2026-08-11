@@ -233,7 +233,9 @@ class MixedTaskBatchSampler:
             raise WriterModelError("task assignment step must be non-negative")
         return divmod(step, self.optimizer_updates_per_task_cycle)
 
-    def _cost_balanced_groups(self, task_cycle: int) -> tuple[tuple[int, ...], ...]:
+    def _cost_order_for_task_cycle(
+        self, task_cycle: int
+    ) -> tuple[dict[int, int], dict[int, int], tuple[int, ...]]:
         current_costs = {
             task_id: sum(
                 self.task_video_costs[task_id][demo]
@@ -253,9 +255,17 @@ class MixedTaskBatchSampler:
             )
         ).permutation(self.task_ids)
         tie_rank = {int(task_id): index for index, task_id in enumerate(tie_order)}
-        ordered = sorted(
-            self.task_ids,
-            key=lambda task_id: (-current_costs[task_id], tie_rank[task_id]),
+        ordered = tuple(
+            sorted(
+                self.task_ids,
+                key=lambda task_id: (-current_costs[task_id], tie_rank[task_id]),
+            )
+        )
+        return current_costs, tie_rank, ordered
+
+    def _cost_balanced_groups(self, task_cycle: int) -> tuple[tuple[int, ...], ...]:
+        current_costs, tie_rank, ordered = self._cost_order_for_task_cycle(
+            task_cycle
         )
         groups: list[list[int]] = [[] for _ in range(self.world_size)]
         loads = [0] * self.world_size
@@ -300,28 +310,8 @@ class MixedTaskBatchSampler:
     ) -> tuple[tuple[int, int, int, int], ...]:
         """Assign train tasks once with deterministic unequal rank capacities."""
 
-        current_costs = {
-            task_id: sum(
-                self.task_video_costs[task_id][demo]
-                for demo in self.video_schedule.demos_for_task_visit(
-                    task_id,
-                    task_cycle,
-                    excluded=self.action_demo_indices_for_task_visit(
-                        task_id, task_cycle
-                    ),
-                )
-            )
-            for task_id in self.task_ids
-        }
-        tie_order = np.random.default_rng(
-            np.random.SeedSequence(
-                [self.seed, task_cycle, self._GROUP_SEED_TAG]
-            )
-        ).permutation(self.task_ids)
-        tie_rank = {int(task_id): index for index, task_id in enumerate(tie_order)}
-        ordered = sorted(
-            self.task_ids,
-            key=lambda task_id: (-current_costs[task_id], tie_rank[task_id]),
+        current_costs, tie_rank, ordered = self._cost_order_for_task_cycle(
+            task_cycle
         )
         base, remainder = divmod(len(self.task_ids), self.world_size)
         rank_offset = (self.seed + task_cycle) % self.world_size
@@ -484,6 +474,17 @@ class MixedTaskBatchSampler:
             if rank == selected_rank
         )
 
+    def task_queue_for_step(self, step: int) -> tuple[tuple[int, int], ...]:
+        """Return the deterministic long-first jobs before physical rank ownership."""
+
+        if not self.start_step <= step < self.stop_step:
+            raise WriterModelError("task queue step is outside the sampler")
+        task_cycle, phase = self.task_cycle_and_phase(step)
+        if not self.dynamic_task_assignment or phase != 0:
+            raise WriterModelError("task queue requires complete-task dynamic sampling")
+        _, _, ordered = self._cost_order_for_task_cycle(task_cycle)
+        return tuple((task_id, task_cycle) for task_id in ordered)
+
     def task_visit_for_step(self, step: int, microtask: int) -> tuple[int, int]:
         """Return one task and its visit index inside a macro update."""
 
@@ -604,6 +605,33 @@ class MixedTaskBatchSampler:
         row_offset = min(int(np.floor(phase * len(rows))), len(rows) - 1)
         return rows[row_offset]
 
+    def batch_indices_for_task_visit(
+        self,
+        step: int,
+        task_id: int,
+        task_visit: int,
+    ) -> tuple[int, ...]:
+        """Return the exact task-pure row indices independent of physical rank."""
+
+        if not self.start_step <= step < self.stop_step:
+            raise WriterModelError("task-addressable batch step is outside sampler")
+        jobs = {
+            selected_task: selected_visit
+            for _, _, selected_task, selected_visit in self.assignments_for_step(step)
+        }
+        if jobs.get(task_id) != task_visit:
+            raise WriterModelError("task-addressable batch is outside the schedule")
+        phase_strata = self._phase_strata_for_task_visit(task_id, task_visit)
+        return tuple(
+            self._sample_for_task_visit(
+                task_id,
+                task_visit,
+                batch_offset,
+                phase_stratum=phase_strata[batch_offset],
+            )
+            for batch_offset in range(self.batch_size_for_step(step))
+        )
+
     def coverage_for_steps(
         self, start_step: int, stop_step: int
     ) -> dict[int, tuple[int, ...]]:
@@ -691,18 +719,9 @@ class MixedTaskBatchSampler:
             ) in self.assignments_for_step(step):
                 if rank != self.rank:
                     continue
-                phase_strata = self._phase_strata_for_task_visit(
-                    task_id, task_visit
+                yield list(
+                    self.batch_indices_for_task_visit(step, task_id, task_visit)
                 )
-                yield [
-                    self._sample_for_task_visit(
-                        task_id,
-                        task_visit,
-                        batch_offset,
-                        phase_stratum=phase_strata[batch_offset],
-                    )
-                    for batch_offset in range(self.batch_size_for_step(step))
-                ]
 
 
 class TeacherVideoSchedule:

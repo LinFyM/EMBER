@@ -14,9 +14,11 @@ from ember.expert_manifold.v6_prior_runtime import _reconcile_metrics_cursor
 from ember.expert_manifold.v6_prior_step import GeneratedConditionGraph
 from ember.expert_manifold.v6_prior_training import (
     TaskObjective,
+    _AtomicTaskClaimQueue,
     _gather_full48,
     _profile_passes,
     _profile_task_local_motion,
+    _retained_task_cap,
     _task_record,
     build_parser,
 )
@@ -31,6 +33,23 @@ _BENEFICIAL = {1, 7}
 
 def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
+
+
+def test_atomic_work_queue_claims_each_job_once_and_uses_bounded_live_caps(
+    tmp_path,
+) -> None:
+    jobs = tuple((100 + index, 3) for index in range(24))
+    cursor = tmp_path / "cursor"
+    cursor.write_text("0", encoding="ascii")
+    queues = (_AtomicTaskClaimQueue(cursor, jobs), _AtomicTaskClaimQueue(cursor, jobs))
+    claimed = []
+    for index in range(24):
+        queue_index, job, seconds = queues[index % 2].claim()
+        claimed.append((queue_index, job))
+        assert seconds >= 0
+    assert claimed == list(enumerate(jobs))
+    assert queues[0].claim()[1] is None
+    assert [_retained_task_cap(world) for world in range(1, 7)] == [24, 12, 8, 8, 8, 8]
 
 
 def _paired(ordinal: int) -> PairedTaskEvidence:
@@ -116,11 +135,12 @@ def _objective(ordinal: int) -> TaskObjective:
 
 def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> None:
     local = [_objective(index) for index in reversed(range(24))]
-    correct, negative, cotangents = _gather_full48(local, _context())
+    correct, negative, cotangents, timing = _gather_full48(local, _context())
     assert correct.shape == negative.shape == (24, 256)
     assert cotangents.shape == (24, 2, 3)
     assert torch.equal(correct[:, :24], torch.eye(24))
     assert torch.equal(negative[:, 24:48], torch.eye(24))
+    assert [row["task_ordinal"] for row in timing] == list(range(24))
     for ordinal in range(24):
         assert torch.equal(
             cotangents[ordinal], torch.full((2, 3), float(ordinal + 1))
@@ -141,7 +161,7 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         7, 0, 23, -1, 2, 11, 19, 3, 5, 13, 1, 22, 8,
         15, 4, 18, 6, 14, 9, 20, 10, 16, 12, 21, 17,
     ]
-    payload = torch.zeros(25, 513, dtype=torch.float32)
+    payload = torch.zeros(25, 519, dtype=torch.float32)
     payload[:, 0].fill_(-1)
     cotangents = torch.zeros(25, 2, 3, dtype=torch.float32)
     for row, ordinal in enumerate(order):
@@ -149,8 +169,11 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
             continue
         objective = _objective(ordinal)
         payload[row, 0] = ordinal
-        payload[row, 1:257] = objective.correct_feature
-        payload[row, 257:] = objective.negative_feature
+        payload[row, 1] = row % 5
+        payload[row, 2] = row
+        payload[row, 4] = 1
+        payload[row, 7:263] = objective.correct_feature
+        payload[row, 263:] = objective.negative_feature
         cotangents[row] = objective.program_cotangent
     gathered = iter((payload, cotangents))
     monkeypatch.setattr(
@@ -159,13 +182,14 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         lambda value, context: next(gathered),
     )
 
-    correct, negative, aligned = _gather_full48(
+    correct, negative, aligned, timing = _gather_full48(
         [_objective(index) for index in range(5)],
         DistributedContext(0, 0, 5, torch.device("cpu")),
     )
 
     assert torch.equal(correct[:, :24], torch.eye(24))
     assert torch.equal(negative[:, 24:48], torch.eye(24))
+    assert [row["task_ordinal"] for row in timing] == list(range(24))
     for ordinal in range(24):
         assert torch.equal(aligned[ordinal], torch.full((2, 3), float(ordinal + 1)))
 
@@ -176,6 +200,7 @@ def _profile_config() -> dict:
             "throughput_baseline": {
                 "step_seconds": 20.0,
                 "source_tasks_per_rank": 4,
+                "source_world_size": 6,
             },
             "gates": {
                 "task_count": 24,
@@ -201,6 +226,9 @@ def _profile_config() -> dict:
                 "protected_to_unprotected_lora_response_ratio_max": 1e-5,
                 "protected_fixed_action_response_rms_max": 1e-6,
                 "unprotected_fixed_action_probe_task_count": 4,
+                "retained_task_cap_max": 8,
+                "queue_claim_seconds_max": 1.0,
+                "phase_a_wall_ratio_max": 1.0,
                 "production_wall_ratio_max": 1.5,
                 "negative_policy_forwards": 0,
                 "oom_count": 0,
@@ -307,6 +335,20 @@ def _profile_row() -> dict:
             "persisted_after_count": 4,
         },
         "task_records": records,
+        "phase_a_task_rows": [
+            {
+                "task_ordinal": ordinal,
+                "rank": ordinal % 6,
+                "queue_index": ordinal,
+                "started_seconds": float(ordinal),
+                "finished_seconds": float(ordinal + 1),
+                "batch_load_seconds": 0.01,
+                "claim_seconds": 0.001,
+            }
+            for ordinal in range(24)
+        ],
+        "phase_a_seconds": 19.0,
+        "queue_claim_seconds": 0.024,
         "world_size": 6,
         "task_counts_per_rank": [4] * 6,
         "maximum_tasks_per_rank": 4,
@@ -336,9 +378,20 @@ def test_mechanism_profile_requires_pairs_guards_closure_and_scaled_wall() -> No
         row[section][key] = value
         assert _profile_passes(_profile_config(), row)[0] is False
     row = _profile_row()
+    row["phase_a_seconds"] = 20.1
+    assert _profile_passes(_profile_config(), row)[0] is False
+    row = _profile_row()
+    row["phase_a_task_rows"][0]["queue_index"] = 1
+    assert _profile_passes(_profile_config(), row)[0] is False
+    row = _profile_row()
     row["maximum_tasks_per_rank"] = 5
     row["task_counts_per_rank"] = [5, 5, 5, 5, 4]
     row["world_size"] = 5
+    row["phase_a_task_rows"] = [
+        {**value, "rank": index % 5}
+        for index, value in enumerate(row["phase_a_task_rows"])
+    ]
+    row["phase_a_seconds"] = 23.0
     row["step_seconds"] = 25.0
     assert _profile_passes(_profile_config(), row)[0] is True
     row["step_seconds"] = 38.0

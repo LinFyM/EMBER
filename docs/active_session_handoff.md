@@ -8,11 +8,13 @@
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。不存在待跑Gate B/C；当前唯一active
-  successor是PICK。canonical implementation、fresh-incompatible config、memory-only checkpoint与deployment
-  wiring已完成，当前CPU回归`345 passed`；尚未profile、训练或rollout，也没有EMBER GPU进程。
+- 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、
+  `345 passed`回归、raw-frame门和world6 discarded full48 profile；profile仅因condition=`483.61515>200`
+  non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
+- 当前唯一active successor是PICK-GE：只把PICK的static/causal descriptor换为terminal goal residual与
+  directed effect；design authority已建立，尚未实现、继续GPU、训练或rollout，也没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
-  evidence和可复用基础保留。PICK必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
+  evidence和可复用基础保留。PICK-GE必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
   工作以后仍须来自clean pushed commit的detached frozen worktree。
 
@@ -154,27 +156,26 @@ checkpoint union会误导；新topology必须从train24机制推导，不能按h
 ## 7. Active successor and remaining questions
 
 当前已选后继为
-`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`中的PICK。它只替换Balanced-v2的condition
-evidence owner：用frozen source-policy zero-image-subtracted high-level video innovation构造相同的balanced
-static/causal key；frozen-v6 600 tensors、Program memory、full-rank16 compiler、blind full48 update和one-shot
-部署保持不变。
+`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`中的PICK-GE。PICK本身已证明frozen
+source-policy zero-image-subtracted innovation能在raw frames读取same-task与顺序、full48 solver能把credit传到
+Program/LoRA/action且吞吐可接受；它最早只在48-key conditioning失败。
 
-选择依据是sealed train24×50 cache中causal descriptor的same/cross cosine约`.9195/.1565`、reverse约
-`-.9755`、shuffle约`-.0053`，而Balanced-v2最新最早失败正是同task 50-video correction近随机正交。该cache
-只作train-only design evidence，不能替代online机制或closed-loop。
+PICK-GE仅把两块descriptor改为`terminal quartile - whole-video mean`与
+`terminal quartile - initial quartile`。sealed train24×50 cache中complete same mean/median=`.90054/.91575`、
+cross=`.13525/.11310`、reverse=`-.81563/-.81973`、shuffle约0，50个correct24 panels均rank24且condition
+max=`22.04`。相比PICK，same-task略降但过既定门，cross与condition明显改善。reversal-symmetric endpoint备选
+因same mean/median仅`.86177/.88508`已拒绝，不实现。
 
-PICK的CPU实现保持historical v6的600 tensors、完整rank16 compiler与B20 blind full48 credit，只把condition key
-替换为frozen source-policy innovation。旧Balanced/RLS/Reward executable owner已从当前canonical path移除；
-checkpoint只保存单个FP32 Program memory和每rank RNG。它仍必须回答：
+PICK-GE继续保持historical v6 600 tensors、完整rank16 compiler、B20 blind full48 credit和单个FP32 Program
+memory。它仍必须回答：
 
-- online raw-frame key能否重现cache中的same-task与有向顺序结构；
-- 一致condition neighborhood能否让Program/effective-BA correction脱离随机正交，而不抹掉held task差异；
-- blind AS credit在key修复后是否仍是closed-loop首因；
-- 额外frozen innovation forward能否在A40上保持可接受吞吐；
+- exact target-language wrong加入后，raw full48能否rank48且condition`<=200`；
+- goal/effect neighborhood能否在不抹掉held task差异时稳定积累Program/effective-BA correction；
+- blind AS credit在key conditioning修复后是否仍是closed-loop首因；
 - strict400能否同时提高absolute、breadth和retention，并让correct优于视频controls。
 
 仍未授权的其它候选包括pivot15+1、train-derived mixed topology、few-shot set encoder和新的reward credit。
-它们不能与PICK并行实现或作为失败时自动fallback。特别是pivot15+1不能恢复旧balanced-rank15，rank1 tangent
+它们不能与PICK-GE并行实现或作为失败时自动fallback。特别是pivot15+1不能恢复旧balanced-rank15，rank1 tangent
 capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
 
 ## 8. Runtime and GPU boundary
@@ -215,9 +216,7 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
   compileall、config fail-close、diff-check通过；architecture gate无hard violation、无parallel family，active
   source净减少1984行。
 
-本次收尾没有启动GPU、训练、rollout或profile，也没有修改formal实验结果。删除的源码/设计仍可从`3a6f801`
-精确恢复；profile checkpoint payload没有保留副本，但它们从未是formal/consumer asset。
-
-下一步先把当前实现以clean pushed commit冻结；随后在gpu02做raw-frame key等价/顺序probe和discarded full48
-macro profile，再做B8/16/32 deployment vertical。CPU/cache或任一live mechanism门不过不得创建formal训练root；
-全部通过后才解锁fresh0→10并立即strict paired400。
+PICK的raw probe与full48 profile roots、contract、log、metrics和completion已保留；profile没有memory checkpoint。
+当前下一步是从PICK-GE clean pushed commit冻结新worktree，做exact raw full48 feature gate；通过后才运行
+discarded full48 macro与B8/16/32 deployment vertical。CPU/cache或任一live mechanism门不过不得创建formal
+训练root；全部通过后才解锁fresh0→10并立即strict paired400。

@@ -1,9 +1,9 @@
 # Policy-Innovation Causal Consensus Key Writer
 
-状态：2026-08-11 active implementation authority。本文建立 uniform pivot-rank14 终局之后的唯一 successor；
-canonical PICK owner与blind full48 runtime已完成CPU实现和回归，但尚未profile、训练或rollout。任何GPU工作
-必须先完成本文的live机制门，并继续服从
-`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。
+状态：2026-08-11 retained non-pass authority。PICK的raw-frame门通过，但discarded full48 profile的
+regularized Gram condition=`483.61515`超过预注册上限`200`；其余14项机制、动作与吞吐门通过。
+因此PICK未获formal训练资格，当前唯一后继是
+`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`中的PICK-GE。不得恢复本文旧“下一步”。
 
 ## 1. 决策摘要
 

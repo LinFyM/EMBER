@@ -5,8 +5,8 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-11，没有active successor，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格
-`>150/400`目标未完成。
+2026-08-11，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；当前
+active successor是尚未形成closed-loop成绩的PICK-GE。
 
 ## 1. Stable problem definition
 
@@ -78,6 +78,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Exact Anchored Reconciliation | `134→140` | RLS/历史row保留机制可运行 | full400 lost15，correct80误导；offline row保留不保护held occupancy |
 | Reward-Credit Program Cotangent | cycle1`134`, `14/14`换手 | on-policy reward可形成有内容Program与continuous tangent | q/v约`1e-8 RMS`运动低于非零BF16 factor约`1e-4` ULP；不续cycle2 |
 | Q/V uniform pivot-rank14 | online`128`; compiler-only`138` | 去混杂后可分离compression与regeneration影响 | old→compiler`119/19/15`，compiler→online`115/13/23`；两者独立换手，统一rank14退役 |
+| Policy-Innovation Consensus Key | no rollout | raw same/order、full48 correct/null、Program→LoRA→action与吞吐全部闭合 | exact full48 condition=`483.61515>200`；static common mode导致key collision，未获formal训练资格 |
 
 ## 4. Final rank14 adjudication
 

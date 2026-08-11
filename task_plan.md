@@ -20,16 +20,17 @@
   但预注册 lost 上限为10，仍未过门。
 - [x] compression 与 online regeneration 被分离为两个独立换手源；uniform rank14、Gate C、cycle1、controls
   和训练全部退役。
-- [x] 从最新证据选择唯一 successor：PICK只替换Balanced-v2 condition evidence，保留frozen-v6原生full-rank
-  base、Program memory、blind full48 update和one-shot部署。
-- [x] 新design authority已写入`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`；canonical
-  implementation与CPU门已完成，当前尚无EMBER GPU进程，尚未profile、训练或rollout。
+- [x] PICK canonical implementation、`345 passed` CPU门和raw-frame probe通过；world6 discarded full48只因
+  condition=`483.61515>200` non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
+- [x] 从该最早失效接口选择唯一successor PICK-GE：只把static/causal descriptor换为goal residual/direct
+  effect；新authority是`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`。
 
-## Active PICK phase
+## Active PICK-GE phase
 
-- [x] 按canonical owner原位替换旧Balanced-v2 key，迁移通用policy-innovation encoder而不保留import shim。
-- [x] 完成train24×50 cache统计、zero/order/identity/freeze/resume、world-size与fresh-incompatible CPU门。
-- [ ] clean commit/push并冻结world6后，通过raw-frame和discarded full48 mechanism门。
+- [x] train24×50 cache门：same mean/median`.90054/.91575`、cross`.13525/.11310`、reverse
+  `-.81563/-.81973`、shuffle约0、correct24 condition max`22.04`；SDE因same mean`.86177`拒绝。
+- [ ] 原位替换PICK descriptor/config/tests，不保留并行strategy；完整CPU回归、commit/push和frozen worktree。
+- [ ] 先过exact raw full48 rank48/condition≤200，再过discarded full48 mechanism门。
 - [ ] profile B8/16/32并封存deployment vertical；不得用低吞吐数值补丁过门。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
 
@@ -48,7 +49,7 @@
 - [x] 核对Markdown links、compileall、CLI、`git diff --check`、工作树与主/远端branch结构；收尾后输出
   new-session prompt。
 
-## PICK live launch contract: 2026-08-11
+## Retained PICK live launch contract and result: 2026-08-11
 
 - frozen workspace：`/data1/user/ymdai/worktrees/EMBER-pick-f4a61a8-20260811`，detached自包含本段的clean
   pushed authority；`PYTHONPATH`显式指向该worktree的`src`，只把ignored `runs`链接到canonical artifact root。
@@ -83,6 +84,9 @@ torchrun --standalone --nnodes=1 --nproc_per_node=6 scripts/train_v6_prior_write
 - storage/resume：`strg01 /data1`当前`508230484/1073741824 KiB`，raw/profile/log/temp峰值新增估计<2GiB；两个
   output roots必须fresh，均不resume/overwrite。失败root作为non-pass evidence保留；只有raw、full48与后续
   B8/16/32 deployment vertical全部通过才允许创建formal fresh0→10 root。
+- result：authority-matched raw probe通过；full48 profile rank48、correct retained24/24、negative null24/24、
+  leakage`.03815`、Program/LoRA/action/throughput全部闭合，但condition=`483.61515`，故`passed=false`且没有
+  deployment profile、formal训练或rollout。
 
 ## Next-session decision procedure
 

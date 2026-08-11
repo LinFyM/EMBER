@@ -147,11 +147,15 @@ single-checkpoint drift。简单平均video features、平均LoRA或让数量越
 
 ## 10. Current falsifiable hypothesis
 
-当前唯一active假设是PICK：保留historical v6的高增益full-rank compiler和blind Program credit，只把
-demo-specific Balanced key换成frozen source-policy zero-image-subtracted static/causal innovation key。train24×50
-cache显示其causal same-task/cross-task约`.9195/.1565`，reverse约`-.9755`，complete key在50个correct24 panel
-均rank24；这些只足以选择设计，不能支持方法claim。
+PICK已经给出一次清晰的接口定位：frozen-policy innovation的raw same/order结构、full48 correct/negative motion、
+Program→BA→action和吞吐均工作，但48-key regularized Gram condition=`483.61515>200`。因此不能把它写成方法
+成功，也不能把失败归因于video encoder、compiler或动作增益；PICK未进入formal训练。
 
-它最先会被online raw-frame结构、full48 rank/leakage、Program→BA/action闭合、吞吐或macro10 strict400任一门
-否决。若失败，只淘汰当前PICK key与blind AS credit组合；heterogeneous topology、few-shot和新的occupancy credit
-仍是未授权开放问题，不得自动切换。
+当前唯一active假设是PICK-GE：只把PICK的static/causal descriptor换成terminal goal residual与directed
+effect。train24×50 action-hidden cache中complete same mean/median=`.90054/.91575`、cross=`.13525/.11310`、
+reverse=`-.81563/-.81973`、shuffle约0、correct24 condition max=`22.04`。一个使reverse精确正交的SDE变体因
+same-task mean/median仅`.86177/.88508`被预先门拒绝，不实现。
+
+PICK-GE先由exact target-language wrong full48 rank/condition、再由Program→BA/action与macro10 strict400否决。
+若exact condition仍失败，只淘汰这组linear goal/effect key；若机制通过而闭环失败，最早剩余接口转向blind
+offline credit或held occupancy错位。heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。

@@ -21,9 +21,11 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   absolute、breadth、稳定积累和视频时序因果性。
 - 当前目标未完成；历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- 当前唯一active successor是Policy-Innovation Causal Consensus Key（PICK）：保留frozen-v6原生full-rank
-  base与高增益compiler，只替换Balanced-v2的condition evidence。design已封存，尚未实现或启动GPU；任何旧
-  “下一步”命令仍不得恢复。
+- PICK的raw-frame门通过，但world6 discarded full48 profile只因condition=`483.61515>200` non-pass；其余
+  14项机制、动作与吞吐门通过，未获formal训练资格。
+- 当前唯一active successor是PICK-GE：保留PICK的frozen-policy evidence、frozen-v6 full-rank base、
+  高增益compiler与blind credit，只把static/causal key改为terminal goal residual与directed effect。
+  design已封存，尚未实现或继续GPU；任何旧“下一步”命令仍不得恢复。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -38,11 +40,11 @@ compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且�
 都是独立换手源；Gate C、cycle1、controls和训练均未授权。该结论只淘汰当前uniform rank14合同，不淘汰
 视频、Reward、continuous tangent或所有parameter-manifold思路。
 
-新PICK假设直接承接最新失效链：Balanced-v2的高增益residual图达到140，但同task 50条正确视频修正近随机
-正交；现有sealed frozen-policy innovation cache则给出causal same-task cosine约`.92`、cross-task约`.16`、
-reverse约`-.98`。PICK只测试把这类policy-aware有向证据接到同一个frozen-v6 Program memory，能否把分散的
-success union转成single-checkpoint共同积累。详见
-[`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`](docs/action_forecast_writer_policy_innovation_consensus_key_design.md)。
+PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；它最早在full48 key
+conditioning失效。train24×50 cache中的PICK-GE goal/effect key保持same-task mean/median=`.9005/.9158`，把
+cross-task从`.4987`降到`.1352`、correct24 condition max从`108.56`降到`22.04`，且reverse=`-.8156`、shuffle
+约0。它只测试去掉static common mode能否让同一Program memory稳定共存；这些仍只是train-only design evidence。
+详见[`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md)。
 
 ## What matters scientifically
 
@@ -120,8 +122,8 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
-- [`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`](docs/action_forecast_writer_policy_innovation_consensus_key_design.md)：
-  当前唯一PICK单变量设计与证伪门；
+- [`docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md)：
+  当前唯一PICK-GE单变量设计与证伪门；
 - [`docs/research_history.md`](docs/research_history.md)：完整精炼实验谱系与禁止重复项；
 - [`task_plan.md`](task_plan.md)：当前整理/交接状态；
 - [`findings.md`](findings.md)：最重要的第一性原理结论；

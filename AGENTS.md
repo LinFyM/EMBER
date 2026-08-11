@@ -15,9 +15,11 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `138/400`、breadth7，但相对old134 retained/gained/lost=`119/19/15`，违反lost`<=10`。
 - compression和online regeneration均造成独立能力换手；Gate C、cycle1、controls和新训练未授权。
 - 该结果不等于视频、Reward、continuous tangent、task experts或所有rank-reserved topology整体无效。
-- 当前唯一active successor是Policy-Innovation Causal Consensus Key（PICK）：保留frozen-v6 full-rank base、
-  compiler和Program residual，只把Balanced-v2 condition evidence替换为frozen source-policy high-level video
-  innovation。design authority已建立，但尚未实现、profile、训练或rollout，也没有EMBER GPU任务。
+- PICK的raw-frame门通过；world6 discarded full48 profile只因regularized Gram condition=`483.61515>200`
+  non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
+- 当前唯一active successor是PICK-GE：继续保留frozen-v6 full-rank base、compiler、Program residual和blind
+  full48 credit，只把PICK的static/causal descriptor替换为terminal goal residual与directed effect。
+  design authority已建立，但尚未实现、profile、训练或rollout，也没有EMBER GPU任务。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -29,7 +31,7 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_policy_innovation_consensus_key_design.md`
+4. `docs/action_forecast_writer_policy_innovation_goal_effect_key_design.md`
 5. `docs/research_history.md`
 6. `task_plan.md`
 7. `findings.md`
@@ -163,7 +165,7 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 - historical best Writer：v6-fast macro400，精确root见`docs/active_session_handoff.md`。
 - latest rank14 decision root：
   `runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`。
-- PICK train-only design-selection cache：
+- PICK/PICK-GE train-only design-selection cache：
   `runs/outputs/pi05_expert_manifold_feature_cache_train24x50_r6_222d3ac_20260808`；它不是新方法成绩。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 

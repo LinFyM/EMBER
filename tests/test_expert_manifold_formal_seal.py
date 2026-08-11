@@ -27,23 +27,32 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_work_queue_pcug_profile_nonpass_and_historical_nonpasses_remain_sealed() -> None:
-    work_queue = load_v6_prior_config(CONFIG)
-    assert work_queue["status"] == "profile_result_sealed_nonpass"
-    profile = work_queue["profile_run"]["artifact_evidence"]
-    assert profile["passed"] is False
-    assert profile["failed_checks"] == ["negative_null"]
-    assert profile["paired_states"] == 48
-    assert profile["discordant_states"] == 7
-    assert profile["harmful_task_count"] == 3
-    assert profile["harmful_suite_count"] == 2
-    assert profile["negative_to_unprotected_program_motion_ratio"] > 0.15
-    artifact = read_json(REPO_ROOT / profile["path"])
-    assert artifact["passed"] is False
-    assert artifact["gate_evidence"]["checks"]["negative_null"] is False
-    assert work_queue["formal_run"]["status"] == "blocked_by_profile_nonpass"
-    assert work_queue["evaluation"]["formal_status"] == "not_run_after_profile_nonpass"
-    assert work_queue["evaluation"]["online_smoke_evidence"] is None
+def test_npcg_is_active_and_work_queue_pcug_nonpass_remains_sealed() -> None:
+    npcg = load_v6_prior_config(CONFIG)
+    assert npcg["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert npcg["profile_run"]["artifact_evidence"] is None
+    assert npcg["formal_run"]["status"] == (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    assert npcg["evaluation"]["formal_status"] == (
+        "awaiting_live_npcg_deployment_smoke"
+    )
+    assert npcg["evaluation"]["online_smoke_evidence"] is None
+
+    work_queue = read_json(
+        REPO_ROOT
+        / "runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_"
+        "reprofile_macro0_r3_b20_d799758_20260812/mechanism_profile.json"
+    )
+    assert work_queue["passed"] is False
+    evidence = work_queue["gate_evidence"]
+    assert [name for name, passed in evidence["checks"].items() if not passed] == [
+        "negative_null"
+    ]
+    assert evidence["paired_outcomes"]["paired_states"] == 48
+    assert evidence["paired_outcomes"]["discordant_states"] == 7
+    assert evidence["paired_outcomes"]["harmful_task_count"] == 3
+    assert evidence["negative_to_unprotected_program_motion_ratio"] > 0.15
 
     pcug_profile = read_json(
         REPO_ROOT

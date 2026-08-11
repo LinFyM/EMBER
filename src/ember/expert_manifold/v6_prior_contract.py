@@ -1,4 +1,4 @@
-"""Fail-closed scientific and launch contract for active Work-Queue PCUG."""
+"""Fail-closed scientific and launch contract for active NPCG."""
 
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
     REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_work_queue_candidate_update_guard_v1"
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_work_queue_candidate_update_guard_launch_v1"
-V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_work_queue_candidate_update_guard_profile_v1"
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_v1"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_launch_v1"
+V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_profile_v1"
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_work_queue_candidate_update_guard_completion_v1"
+    "ember_pi05_v6_negative_preserving_candidate_guard_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
@@ -62,7 +62,7 @@ _UNCHANGED_PICK_GC_SECTIONS = (
     "cache_gate",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_work_queue_paired_candidate_update_guard",
+    "name": "frozen_v6_negative_preserving_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": False,
@@ -132,7 +132,10 @@ _EXPECTED_SUCCESS_KEY_BANK = {
     "checkpoint_tensor_count": 3,
 }
 _EXPECTED_UPDATE = {
-    "kind": "full48_persisted_success_nullspace_then_paired_candidate_update_guard",
+    "kind": (
+        "full48_persisted_success_nullspace_then_paired_candidate_negative_"
+        "preserving_guard"
+    ),
     "correct_conditions": 24,
     "negative_conditions": 24,
     "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
@@ -171,9 +174,10 @@ _EXPECTED_UPDATE = {
         "current_harmful_keys"
     ),
     "final_projection": (
-        "euclidean_nearest_blind_update_via_fp64_thin_guard_row_basis_and_"
-        "one_fp32_feature_projection"
+        "minimum_norm_guard_correction_in_current_negative_nullspace_via_"
+        "fp64_small_solve_and_fp32_large_rhs"
     ),
+    "negative_preservation": "final_negative_motion_equals_blind_negative_motion",
     "no_current_guards": "elementwise_exact_provisional_blind_update",
     "step_size": 1,
     "relative_damping": 0.01,
@@ -216,7 +220,10 @@ _EXPECTED_ENVIRONMENT = {
     "persistent_env_lanes_per_task": 2,
 }
 _EXPECTED_OBJECTIVE = {
-    "name": "blind_source_functional_program_credit_with_paired_candidate_final_equality_guard",
+    "name": (
+        "blind_source_functional_program_credit_with_paired_candidate_"
+        "negative_preserving_final_guard"
+    ),
     "positive_policy_randomness": {
         "scope": "one_independent_flow_noise_and_time_per_action_query",
         "seed_scheme": TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
@@ -251,8 +258,8 @@ _EXPECTED_OPTIMIZATION = {
     "distributed_update": {
         "kind": (
             "host_local_completion_driven_task_claim_then_full48_blind_"
-            "evidence_then_paired_outcomes_then_identical_final_guarded_"
-            "manual_write"
+            "evidence_then_paired_outcomes_then_identical_final_negative_"
+            "preserving_guarded_manual_write"
         ),
         "world_size": "fresh_live_3_to_6_then_exact_resume_locked",
         "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -297,6 +304,7 @@ _EXPECTED_PROFILE_GATES = {
     "projected_feature_rank_min": 24,
     "projected_to_blind_energy_ratio_min": 0.25,
     "final_guard_violation_count": 0,
+    "negative_preservation_violation_count": 0,
     "protected_to_unprotected_motion_ratio_max": 0.00001,
     "negative_to_unprotected_motion_rms_max": 0.15,
     "negative_null_task_count_min": 18,
@@ -362,19 +370,19 @@ _COHERENT_STATES = {
         "active_cpu_ready_awaiting_live_profile",
         "awaiting_live_a40_fresh0_to1_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "awaiting_live_wq_pcug_deployment_smoke",
+        "awaiting_live_npcg_deployment_smoke",
     ),
     (
         "active_formal_ready",
         "sealed_from_live_a40_fresh0_to1_profile",
         "ready_after_live_profile_seal",
-        "sealed_from_live_wq_pcug_deployment_smoke",
+        "sealed_from_live_npcg_deployment_smoke",
     ),
     (
         "formal_result_sealed",
         "sealed_from_live_a40_fresh0_to1_profile",
         "formal_result_sealed",
-        "sealed_from_live_wq_pcug_deployment_smoke",
+        "sealed_from_live_npcg_deployment_smoke",
     ),
     (
         "profile_result_sealed_nonpass",

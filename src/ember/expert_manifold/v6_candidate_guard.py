@@ -1,4 +1,4 @@
-"""Paired closed-loop classification and final PCUG Program projection."""
+"""Paired classification and final negative-preserving Program correction."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ class PairedCandidateClassification:
 
 @dataclass(frozen=True)
 class CandidateGuardProjectionSummary:
-    """Geometry and closure of the closest equality-guarded shared update."""
+    """Geometry and closure of the negative-preserving guarded update."""
 
     persisted_guard_rows: int
     current_stable_guard_rows: int
@@ -83,12 +83,20 @@ class CandidateGuardProjectionSummary:
     current_guard_rows: int
     total_guard_rows: int
     guard_rank: int
+    negative_rows: int
+    negative_rank: int
+    restricted_guard_rank: int
     original_feature_rank: int
     projected_feature_rank: int
     raw_guard_motion_rms: float
     final_guard_motion_rms: float
     final_guard_motion_max_abs: float
     final_guard_violation_count: int
+    blind_negative_motion_rms: float
+    final_negative_motion_rms: float
+    negative_correction_motion_rms: float
+    negative_correction_motion_max_abs: float
+    negative_preservation_violation_count: int
     projection_changed: bool
     correction_rms: float
     blind_delta_rms: float
@@ -332,15 +340,16 @@ def _rms(value: torch.Tensor) -> float:
 
 
 @torch.no_grad()
-def closest_candidate_guard_projection(
+def negative_preserving_candidate_guard_correction(
     blind_delta: torch.Tensor,
     persisted_features: torch.Tensor,
     correct_features: torch.Tensor,
+    negative_features: torch.Tensor,
     stable_success_mask: torch.Tensor,
     harmful_mask: torch.Tensor,
     analysis_features: torch.Tensor,
 ) -> tuple[torch.Tensor, CandidateGuardProjectionSummary]:
-    """Project ``D0`` once onto persisted and current PCUG equality rows."""
+    """Apply the minimum guard correction that preserves ``N @ D0``."""
 
     feature_width = blind_delta.shape[0] if blind_delta.ndim == 3 else 0
     current_shape = (_TASK_COUNT, feature_width)
@@ -349,6 +358,7 @@ def closest_candidate_guard_projection(
         or min(blind_delta.shape[1:]) <= 0
         or blind_delta.dtype != torch.float32
         or correct_features.shape != current_shape
+        or negative_features.shape != current_shape
         or persisted_features.ndim != 2
         or persisted_features.shape[1:] != (feature_width,)
         or analysis_features.ndim != 2
@@ -363,6 +373,7 @@ def closest_candidate_guard_projection(
                 blind_delta.device,
                 persisted_features.device,
                 correct_features.device,
+                negative_features.device,
                 stable_success_mask.device,
                 harmful_mask.device,
                 analysis_features.device,
@@ -370,52 +381,102 @@ def closest_candidate_guard_projection(
         )
         != 1
     ):
-        raise ExpertManifoldError("invalid PCUG candidate-guard projection batch")
+        raise ExpertManifoldError("invalid NPCG correction batch")
     if not all(
         bool(torch.isfinite(value).all())
         for value in (
             blind_delta,
             persisted_features,
             correct_features,
+            negative_features,
             analysis_features,
         )
     ):
-        raise ExpertManifoldError("PCUG candidate-guard projection is non-finite")
+        raise ExpertManifoldError("NPCG correction input is non-finite")
 
     current_mask = stable_success_mask | harmful_mask
     guards = torch.cat(
         (persisted_features, correct_features[current_mask]), dim=0
     ).contiguous()
-    original_rank = _numerical_rank(analysis_features.to(dtype=torch.float64))
+    analysis64 = analysis_features.to(dtype=torch.float64)
+    negative64 = negative_features.to(dtype=torch.float64)
+    original_rank = _numerical_rank(analysis64)
+    _, negative_singular_values, negative_vh = torch.linalg.svd(
+        negative64, full_matrices=False
+    )
+    negative_maximum = (
+        float(negative_singular_values.max())
+        if negative_singular_values.numel()
+        else 0.0
+    )
+    negative_tolerance = (
+        max(negative64.shape)
+        * torch.finfo(torch.float64).eps
+        * negative_maximum
+    )
+    negative_rank = int((negative_singular_values > negative_tolerance).sum())
+    negative_basis64 = negative_vh[:negative_rank].transpose(0, 1).contiguous()
     blind_flat = blind_delta.flatten(1)
     blind_energy = blind_flat.square().sum()
-    projected = blind_delta
-    guard_rank = 0
-    projected_rank = original_rank
-    if guards.shape[0]:
-        guards64 = guards.to(dtype=torch.float64)
-        _, singular_values, vh = torch.linalg.svd(guards64, full_matrices=False)
-        maximum = float(singular_values.max()) if singular_values.numel() else 0.0
-        tolerance = max(guards64.shape) * torch.finfo(torch.float64).eps * maximum
-        guard_rank = int((singular_values > tolerance).sum())
-        if guard_rank <= 0:
-            raise ExpertManifoldError("PCUG guard rows have zero numerical rank")
-        basis64 = vh[:guard_rank].transpose(0, 1).contiguous()
-        basis = basis64.to(dtype=torch.float32)
-        projected_flat = blind_flat - basis @ (basis.transpose(0, 1) @ blind_flat)
-        projected = projected_flat.reshape_as(blind_delta).contiguous()
-        projected_features64 = analysis_features.to(dtype=torch.float64)
-        projected_features64 -= (
-            projected_features64 @ basis64
-        ) @ basis64.transpose(0, 1)
-        projected_rank = _numerical_rank(projected_features64)
-
     raw_motion = (
         guards @ blind_flat
         if guards.shape[0]
         else blind_flat.new_empty((0, blind_flat.shape[1]))
     )
+    projected = blind_delta
+    guard_rank = 0
+    restricted_guard_rank = 0
+    projected_rank = original_rank
+    correction = torch.zeros_like(blind_delta)
+    if guards.shape[0]:
+        guards64 = guards.to(dtype=torch.float64)
+        guard_rank = _numerical_rank(guards64)
+        if guard_rank <= 0:
+            raise ExpertManifoldError("NPCG guard rows have zero numerical rank")
+        restricted64 = guards64 - (
+            (guards64 @ negative_basis64) @ negative_basis64.transpose(0, 1)
+        )
+        restricted_u, restricted_singular_values, restricted_vh = torch.linalg.svd(
+            restricted64, full_matrices=False
+        )
+        restricted_maximum = (
+            float(restricted_singular_values.max())
+            if restricted_singular_values.numel()
+            else 0.0
+        )
+        restricted_tolerance = (
+            max(restricted64.shape)
+            * torch.finfo(torch.float64).eps
+            * restricted_maximum
+        )
+        restricted_guard_rank = int(
+            (restricted_singular_values > restricted_tolerance).sum()
+        )
+        if restricted_guard_rank:
+            restricted_pinv64 = (
+                restricted_vh[:restricted_guard_rank].transpose(0, 1)
+                / restricted_singular_values[:restricted_guard_rank]
+            ) @ restricted_u[:, :restricted_guard_rank].transpose(0, 1)
+            correction_flat = -(
+                restricted_pinv64.to(dtype=torch.float32) @ raw_motion
+            )
+            correction = correction_flat.reshape_as(blind_delta).contiguous()
+            projected = (blind_delta + correction).contiguous()
+            correction_operator64 = restricted_pinv64 @ guards64
+            projected_features64 = analysis64 @ (
+                torch.eye(
+                    feature_width,
+                    dtype=torch.float64,
+                    device=blind_delta.device,
+                )
+                - correction_operator64
+            )
+        else:
+            projected_features64 = analysis64
+        projected_rank = _numerical_rank(projected_features64)
+
     projected_flat = projected.flatten(1)
+    correction_flat = correction.flatten(1)
     final_motion = (
         guards @ projected_flat
         if guards.shape[0]
@@ -433,12 +494,27 @@ def closest_candidate_guard_projection(
         final_violations = int((final_norm > row_tolerance).sum())
     else:
         final_violations = 0
+    blind_negative_motion = negative_features @ blind_flat
+    final_negative_motion = negative_features @ projected_flat
+    negative_correction_motion = negative_features @ correction_flat
+    negative_row_tolerance = (
+        64
+        * max(blind_delta.shape)
+        * torch.finfo(torch.float32).eps
+        * torch.linalg.vector_norm(negative_features, dim=1)
+        * torch.linalg.vector_norm(correction_flat)
+    )
+    negative_preservation_violations = int(
+        (
+            torch.linalg.vector_norm(negative_correction_motion, dim=1)
+            > negative_row_tolerance
+        ).sum()
+    )
     projected_energy = projected_flat.square().sum()
     inner = torch.sum(blind_flat * projected_flat)
     cosine = inner / (
         blind_energy.sqrt() * projected_energy.sqrt()
     ).clamp_min(torch.finfo(torch.float32).tiny)
-    correction = blind_delta - projected
     values = (
         projected,
         raw_motion,
@@ -450,7 +526,7 @@ def closest_candidate_guard_projection(
         cosine,
     )
     if not all(bool(torch.isfinite(value).all()) for value in values):
-        raise ExpertManifoldError("PCUG projected candidate became invalid")
+        raise ExpertManifoldError("NPCG corrected candidate became invalid")
     summary = CandidateGuardProjectionSummary(
         persisted_guard_rows=int(persisted_features.shape[0]),
         current_stable_guard_rows=int(stable_success_mask.sum()),
@@ -458,6 +534,9 @@ def closest_candidate_guard_projection(
         current_guard_rows=int(current_mask.sum()),
         total_guard_rows=int(guards.shape[0]),
         guard_rank=guard_rank,
+        negative_rows=int(negative_features.shape[0]),
+        negative_rank=negative_rank,
+        restricted_guard_rank=restricted_guard_rank,
         original_feature_rank=original_rank,
         projected_feature_rank=projected_rank,
         raw_guard_motion_rms=_rms(raw_motion) if raw_motion.numel() else 0.0,
@@ -466,6 +545,11 @@ def closest_candidate_guard_projection(
             float(final_motion.abs().max()) if final_motion.numel() else 0.0
         ),
         final_guard_violation_count=final_violations,
+        blind_negative_motion_rms=_rms(blind_negative_motion),
+        final_negative_motion_rms=_rms(final_negative_motion),
+        negative_correction_motion_rms=_rms(negative_correction_motion),
+        negative_correction_motion_max_abs=float(negative_correction_motion.abs().max()),
+        negative_preservation_violation_count=negative_preservation_violations,
         projection_changed=not torch.equal(projected, blind_delta),
         correction_rms=_rms(correction),
         blind_delta_rms=_rms(blind_delta),
@@ -486,10 +570,13 @@ def closest_candidate_guard_projection(
         for value in (
             summary.raw_guard_motion_rms,
             summary.final_guard_motion_rms,
+            summary.blind_negative_motion_rms,
+            summary.final_negative_motion_rms,
+            summary.negative_correction_motion_rms,
             summary.projected_to_blind_energy_ratio,
             summary.blind_projected_inner_product,
             summary.blind_projected_cosine,
         )
     ):
-        raise ExpertManifoldError("PCUG projection evidence became invalid")
+        raise ExpertManifoldError("NPCG correction evidence became invalid")
     return projected, summary

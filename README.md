@@ -133,7 +133,7 @@ SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 [`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
 Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。当前Negative-Preserving
-Candidate Guard的单变量公式、显存边界和快速否决门见
+Candidate Guard的canonical实现与完整CPU`345 passed`已完成；单变量公式、显存边界和快速否决门见
 [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)；
 WQ-PCUG sealed结果见
 [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。

@@ -142,8 +142,10 @@
   blind ratio`.03991`被correct-only final projection放大到`.50179`，三类均`0/8`，WQ-PCUG按门退役。
 - [x] 从最早失效接口封存Negative-Preserving Candidate Guard authority：只令final minimum correction满足
   `NC=0`与`G(D0+C)=0`，不改D0、paired outcomes、queue、B20、compiler、rank或门限。
-- [ ] 原位实现NPCG fresh schema与synthetic closure/rank证据，完整CPU回归后clean push；随后按live合适A40数
-  运行唯一discarded macro0。任一原门或negative preservation门失败即退役，不做参数/world-size sweep。
+- [x] 原位实现NPCG minimum correction、fresh schema/eval family、negative-preservation profile门与formal
+  pre-write fail-close；synthetic no-guard/closure/duplicate-row证据和完整CPU`345 passed`通过，无parallel path。
+- [ ] clean push后按live合适A40数运行唯一discarded macro0。任一原门或negative preservation门失败即退役，
+  不做参数/world-size sweep。
 
 ## Repository closeout
 

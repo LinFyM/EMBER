@@ -37,7 +37,8 @@
   `negative_null`失败；deployment/formal、重跑与sweep关闭。
 - Negative-Preserving Candidate Guard是当前唯一active successor design：blind `D0`、paired outcomes、queue、
   B20与compiler不变，只让final guard correction位于current negative rows的nullspace，从而同时满足correct
-  reward guard与`N D1=N D0`。尚未实现或profile；不得并行转向representation/rank/few-shot。
+  reward guard与`N D1=N D0`。canonical实现、fresh schema、formal fail-close、synthetic closure与完整CPU
+  `345 passed`已完成，尚未live profile；不得并行转向representation/rank/few-shot。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

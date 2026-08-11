@@ -45,7 +45,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   wrong/shuffled/reversed均`0/8`达门。19项checks只有`negative_null`失败，deployment/formal关闭，不重跑或sweep。
 - Negative-Preserving Candidate Guard是当前唯一active successor design：保持Work-Queue PCUG的blind `D0`、
   paired outcomes与全部科学合同，只要求final guard correction位于current negative rows的nullspace，使correct
-  reward guard不能破坏blind solve已有的negative-video抑制。尚未实现或profile；不得直接formal或并行转向无关架构。
+  reward guard不能破坏blind solve已有的negative-video抑制。canonical实现、fresh schema、synthetic closure与
+  完整CPU`345 passed`已完成，尚未live profile；不得直接formal或并行转向无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

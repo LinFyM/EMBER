@@ -597,6 +597,20 @@ def profile_passes(
         >= float(gates["projected_to_blind_energy_ratio_min"])
         and float(guard.get("blind_projected_inner_product", 0.0)) > 0
         and float(guard.get("blind_projected_cosine", 0.0)) > 0,
+        "negative_preservation": int(guard.get("negative_rows", -1))
+        == int(gates["task_count"])
+        and int(guard.get("negative_rank", -1)) > 0
+        and int(guard.get("restricted_guard_rank", -1)) > 0
+        and int(guard.get("negative_preservation_violation_count", -1))
+        == int(gates["negative_preservation_violation_count"])
+        and all(
+            math.isfinite(float(guard.get(name, math.nan)))
+            for name in (
+                "blind_negative_motion_rms",
+                "final_negative_motion_rms",
+                "negative_correction_motion_rms",
+            )
+        ),
         "projected_feature_rank": int(guard.get("original_feature_rank", -1))
         == int(gates["original_feature_rank"])
         and int(guard.get("projected_feature_rank", -1))
@@ -678,6 +692,8 @@ def profile_passes(
         "rank": {
             "original": int(guard["original_feature_rank"]),
             "guard": int(guard["guard_rank"]),
+            "negative": int(guard["negative_rank"]),
+            "restricted_guard": int(guard["restricted_guard_rank"]),
             "projected": int(guard["projected_feature_rank"]),
         },
         "protected_to_unprotected_program_motion_ratio": float(

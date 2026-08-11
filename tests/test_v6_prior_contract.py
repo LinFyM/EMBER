@@ -51,7 +51,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_wq_pcug_deployment_smoke"
+        "sealed_from_live_npcg_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -86,7 +86,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_pcug_config_changes_only_candidate_protection_interface() -> None:
+def test_npcg_config_changes_only_final_correction_subspace() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -101,12 +101,18 @@ def test_pcug_config_changes_only_candidate_protection_interface() -> None:
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_persisted_success_nullspace_then_paired_candidate_update_guard"
+        "full48_persisted_success_nullspace_then_paired_candidate_negative_"
+        "preserving_guard"
     )
     assert config["update"]["blind_parameterization"].endswith(
         "orthogonal_complement"
     )
-    assert config["update"]["final_projection"].startswith("euclidean_nearest")
+    assert config["update"]["final_projection"].startswith(
+        "minimum_norm_guard_correction"
+    )
+    assert config["update"]["negative_preservation"] == (
+        "final_negative_motion_equals_blind_negative_motion"
+    )
     assert config["update"]["task_scalar_gate_or_mask"] is False
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
     assert "reconciliation" not in config
@@ -203,7 +209,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_wq_pcug_deployment_smoke"
+        "awaiting_live_npcg_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -223,7 +229,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_wq_pcug_deployment_smoke"
+        "awaiting_live_npcg_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}

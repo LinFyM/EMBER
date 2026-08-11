@@ -292,3 +292,9 @@ projection只对persisted/stable/harmful correct rows做homogeneous nullspace，
 24/24 tasks失败。因此先前negative zero-RHS不是没有作用，而是在reward-derived correct guard阶段被覆盖。
 最小后继不是把`[G;N]`整体压缩update，而是解negative-preserving affine correction：`C=min ||C||`且`NC=0`、
 `G(D0+C)=0`。它保留`ND1=ND0`，只改变final correction subspace，并避免把full48 support无必要压到约9维。
+
+NPCG canonical实现把上述仿射问题化为两个小feature SVD：先取current negative rowspace，再在其正交补内求guard
+minimum correction；large `D0`与correction仍为FP32。synthetic tests同时验证`G D1=0`、`N(D1-D0)=0`、
+no-guard identity和duplicate-row不变性；profile把negative preservation设为独立hard gate，formal则在每macro
+写Program前检查guard/negative closure、rank、energy、alignment与blind negative ratio。完整CPU`345 passed`，
+没有额外policy/video forward、negative rollout、parallel trainer或防御性hash。

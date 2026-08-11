@@ -4,7 +4,7 @@ import torch
 
 from ember.expert_manifold.v6_candidate_guard import (
     classify_paired_candidate_outcomes,
-    closest_candidate_guard_projection,
+    negative_preserving_candidate_guard_correction,
 )
 
 
@@ -35,15 +35,15 @@ def _projection_inputs(seed: int = 17):
     correct = torch.randn(24, 32, generator=generator)
     negative = torch.randn(24, 32, generator=generator)
     blind = torch.randn(32, 3, 4, generator=generator)
-    return blind, correct, torch.cat((correct, negative))
+    return blind, correct, negative, torch.cat((correct, negative))
 
 
 def test_no_guard_projection_is_elementwise_identity() -> None:
-    blind, correct, full = _projection_inputs()
+    blind, correct, negative, full = _projection_inputs()
     empty = correct.new_empty((0, correct.shape[1]))
     mask = torch.zeros(24, dtype=torch.bool)
-    projected, summary = closest_candidate_guard_projection(
-        blind, empty, correct, mask, mask, full
+    projected, summary = negative_preserving_candidate_guard_correction(
+        blind, empty, correct, negative, mask, mask, full
     )
     assert projected is blind
     assert torch.equal(projected, blind)
@@ -54,40 +54,50 @@ def test_no_guard_projection_is_elementwise_identity() -> None:
 
 
 def test_current_and_persisted_guards_close_with_positive_retained_direction() -> None:
-    blind, correct, full = _projection_inputs()
+    blind, correct, negative, full = _projection_inputs()
     stable = torch.zeros(24, dtype=torch.bool)
     harmful = torch.zeros(24, dtype=torch.bool)
     stable[1] = True
     harmful[2] = True
     persisted = correct[[0]]
-    projected, summary = closest_candidate_guard_projection(
-        blind, persisted, correct, stable, harmful, full
+    projected, summary = negative_preserving_candidate_guard_correction(
+        blind, persisted, correct, negative, stable, harmful, full
     )
     guards = torch.cat((persisted, correct[[1, 2]]))
     motion = guards @ projected.flatten(1)
     torch.testing.assert_close(motion, torch.zeros_like(motion), rtol=0, atol=2e-5)
+    torch.testing.assert_close(
+        negative @ projected.flatten(1),
+        negative @ blind.flatten(1),
+        rtol=2e-5,
+        atol=2e-5,
+    )
     assert summary.persisted_guard_rows == 1
     assert summary.current_stable_guard_rows == 1
     assert summary.current_harmful_guard_rows == 1
     assert summary.total_guard_rows == 3
     assert summary.guard_rank == 3
+    assert summary.negative_rows == 24
+    assert summary.negative_rank == 24
+    assert summary.restricted_guard_rank == 3
     assert summary.final_guard_violation_count == 0
+    assert summary.negative_preservation_violation_count == 0
     assert summary.projection_changed
-    assert 0 < summary.projected_to_blind_energy_ratio < 1
+    assert summary.projected_to_blind_energy_ratio > 0
     assert summary.blind_projected_inner_product > 0
     assert summary.blind_projected_cosine > 0
 
 
 def test_duplicate_permuted_persisted_rows_define_same_final_projection() -> None:
-    blind, correct, full = _projection_inputs(29)
+    blind, correct, negative, full = _projection_inputs(29)
     stable = torch.zeros(24, dtype=torch.bool)
     harmful = torch.zeros(24, dtype=torch.bool)
     harmful[[3, 7]] = True
-    expected, _ = closest_candidate_guard_projection(
-        blind, correct[[0, 1]], correct, stable, harmful, full
+    expected, _ = negative_preserving_candidate_guard_correction(
+        blind, correct[[0, 1]], correct, negative, stable, harmful, full
     )
-    observed, summary = closest_candidate_guard_projection(
-        blind, correct[[1, 0, 1]], correct, stable, harmful, full
+    observed, summary = negative_preserving_candidate_guard_correction(
+        blind, correct[[1, 0, 1]], correct, negative, stable, harmful, full
     )
     torch.testing.assert_close(observed, expected, rtol=3e-5, atol=3e-6)
     assert summary.total_guard_rows == 5

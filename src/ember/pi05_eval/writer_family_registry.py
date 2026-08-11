@@ -13,7 +13,7 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_pick_gc_v1": (10, 25),
     "v6_sknc_v1": (5, 10),
     "v6_srtp_v1": (5, 10),
-    "v6_wq_pcug_v1": (5, 10),
+    "v6_npcg_v1": (5, 10),
 }
 HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_ecp_v2": "legacy_v6_prior_v1",
@@ -24,7 +24,7 @@ HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_pick_gc_v1": "v6_condition_residual_v2",
     "v6_sknc_v1": "v6_condition_residual_v2",
     "v6_srtp_v1": "v6_condition_residual_v2",
-    "v6_wq_pcug_v1": "v6_condition_residual_v2",
+    "v6_npcg_v1": "v6_condition_residual_v2",
 }
 
 WRITER_FAMILIES = {
@@ -120,13 +120,13 @@ WRITER_FAMILIES = {
         "formal_statuses": ("sealed_from_live_srtp_deployment_smoke",),
         "checkpoint_curve_macros": (0, 5, 10),
     },
-    "v6_wq_pcug_v1": {
+    "v6_npcg_v1": {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v9",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v9",
-        "config_schema": "ember_pi05_v6_work_queue_candidate_update_guard_v1",
+        "config_schema": "ember_pi05_v6_negative_preserving_candidate_guard_v1",
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
-        "formal_statuses": ("sealed_from_live_wq_pcug_deployment_smoke",),
+        "formal_statuses": ("sealed_from_live_npcg_deployment_smoke",),
         "checkpoint_curve_macros": (0, 5, 10),
     },
     "v6_qv_rank_reserved_native_reward_v1": {
@@ -154,7 +154,7 @@ PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(
         "v6_osg_pc_v1",
         "v6_sknc_v1",
         "v6_srtp_v1",
-        "v6_wq_pcug_v1",
+        "v6_npcg_v1",
         "v6_qv_rank_reserved_native_reward_v1",
     }
 )

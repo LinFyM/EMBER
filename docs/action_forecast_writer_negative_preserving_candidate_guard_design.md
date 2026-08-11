@@ -1,8 +1,8 @@
 # Negative-Preserving Candidate Guard
 
-状态：2026-08-12 单变量design authority，尚未实现或live profile。Work-Queue PCUG已在完整机制profile中只因
-`negative_null`失败而退役；本设计是唯一active successor。实现必须原位替换canonical guard owner，不能保留
-WQ-PCUG并行可执行版本。
+状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成，尚未live profile。Work-Queue PCUG已在完整
+机制profile中只因`negative_null`失败而退役；本设计是唯一active successor。实现已原位替换canonical guard
+owner，没有保留WQ-PCUG并行可执行版本。
 
 ## 1. Latest evidence and earliest failure
 

@@ -1,4 +1,4 @@
-"""Work-Queue PCUG blind acquisition and paired closed-loop protection."""
+"""NPCG blind acquisition, paired protection, and negative-preserving write."""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ from ember.expert_manifold.v6_candidate_guard import (
     PairedCandidateClassification,
     PairedTaskEvidence,
     classify_paired_candidate_outcomes,
-    closest_candidate_guard_projection,
     collect_paired_task_evidence,
+    negative_preserving_candidate_guard_correction,
 )
 from ember.expert_manifold.v6_prior import counterfactual_kind, cross_suite_wrong_task
 from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
@@ -148,7 +148,7 @@ class _AtomicTaskClaimQueue:
 
 class _PhaseAProfileNonPass(ExpertManifoldError):
     def __init__(self, evidence: Mapping[str, Any]) -> None:
-        super().__init__("Work-Queue PCUG Phase-A profile gate failed")
+        super().__init__("NPCG Work-Queue Phase-A profile gate failed")
         self.evidence = dict(evidence)
 
 
@@ -205,7 +205,7 @@ def _task_objective(
     batch: Mapping[str, Any],
 ) -> TaskObjective:
     if _batch_task_id(batch) != task_id:
-        raise ExpertManifoldError("Work-Queue PCUG sampler and action batch disagree")
+        raise ExpertManifoldError("NPCG sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
     excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     teacher_demo = runtime.video_schedule.demos_for_task_visit(
@@ -446,7 +446,7 @@ def _gather_full48(
 ]:
     maximum_local = _retained_task_cap(context.world_size)
     if not 0 <= len(local) <= maximum_local:
-        raise ExpertManifoldError("Work-Queue PCUG local task coverage changed")
+        raise ExpertManifoldError("NPCG local task coverage changed")
     payload = torch.zeros(
         maximum_local, 7 + 2 * 256, dtype=torch.float32, device=context.device
     )
@@ -593,7 +593,7 @@ def _collect_local_objectives(
 ) -> tuple[list[TaskObjective], float]:
     jobs = runtime.sampler.task_queue_for_step(schedule_macro)
     if len(jobs) != _TRAIN_TASK_COUNT:
-        raise ExpertManifoldError("Work-Queue PCUG lost train24 jobs")
+        raise ExpertManifoldError("NPCG lost train24 jobs")
     queue_path = (
         Path("/tmp")
         / f"ember-wqpcug-{os.getuid()}"
@@ -649,7 +649,7 @@ def _collect_local_objectives(
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()) or any(
         parameter.grad is not None for parameter in runtime.writer.base_writer.parameters()
     ):
-        raise ExpertManifoldError("Work-Queue PCUG touched frozen parameter gradients")
+        raise ExpertManifoldError("NPCG touched frozen parameter gradients")
     return local, input_wait_seconds
 
 
@@ -760,14 +760,32 @@ def _apply_macro_update(
         torch.cuda.synchronize(runtime.context.device)
         kernel_started = time.monotonic()
     full_features = torch.cat((correct, negative), dim=0)
-    delta, guard_projection = closest_candidate_guard_projection(
+    delta, guard_projection = negative_preserving_candidate_guard_correction(
         blind_delta,
         persisted_plan.features,
         correct,
+        negative,
         classification.stable_success_mask,
         classification.harmful_mask,
         full_features,
     )
+    if not profile:
+        gates = runtime.config["profile_run"]["gates"]
+        if not (
+            guard_projection.final_guard_violation_count
+            == int(gates["final_guard_violation_count"])
+            and guard_projection.negative_preservation_violation_count
+            == int(gates["negative_preservation_violation_count"])
+            and guard_projection.projected_feature_rank
+            >= int(gates["projected_feature_rank_min"])
+            and guard_projection.projected_to_blind_energy_ratio
+            >= float(gates["projected_to_blind_energy_ratio_min"])
+            and guard_projection.blind_projected_inner_product > 0
+            and guard_projection.blind_projected_cosine > 0
+            and blind_update.predicted_negative_to_unprotected_ratio
+            <= float(gates["negative_to_unprotected_motion_rms_max"])
+        ):
+            raise ExpertManifoldError("NPCG formal correction left its sealed feasible set")
     apply_program_residual_delta_(runtime.writer.program_memory, delta)
     bank_update = runtime.success_key_bank.commit_first_stable_successes_(
         correct,

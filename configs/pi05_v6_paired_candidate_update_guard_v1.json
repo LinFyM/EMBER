@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_pi05_v6_work_queue_candidate_update_guard_v1",
-  "status": "profile_result_sealed_nonpass",
+  "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_v1",
+  "status": "active_cpu_ready_awaiting_live_profile",
   "method": {
-    "name": "frozen_v6_work_queue_paired_candidate_update_guard",
+    "name": "frozen_v6_negative_preserving_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": false,
@@ -141,7 +141,7 @@
     "checkpoint_tensor_count": 3
   },
   "update": {
-    "kind": "full48_persisted_success_nullspace_then_paired_candidate_update_guard",
+    "kind": "full48_persisted_success_nullspace_then_paired_candidate_negative_preserving_guard",
     "correct_conditions": 24,
     "negative_conditions": 24,
     "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
@@ -164,7 +164,8 @@
     "harmful_classification": "paired_losses_strictly_greater_than_paired_gains",
     "stable_success_classification": "base_and_candidate_all_four_outcomes_success",
     "final_equality_constraint": "persisted_stable_keys_union_current_stable_success_keys_union_current_harmful_keys",
-    "final_projection": "euclidean_nearest_blind_update_via_fp64_thin_guard_row_basis_and_one_fp32_feature_projection",
+    "final_projection": "minimum_norm_guard_correction_in_current_negative_nullspace_via_fp64_small_solve_and_fp32_large_rhs",
+    "negative_preservation": "final_negative_motion_equals_blind_negative_motion",
     "no_current_guards": "elementwise_exact_provisional_blind_update",
     "step_size": 1,
     "relative_damping": 0.01,
@@ -225,7 +226,7 @@
     "persistent_env_lanes_per_task": 2
   },
   "objective": {
-    "name": "blind_source_functional_program_credit_with_paired_candidate_final_equality_guard",
+    "name": "blind_source_functional_program_credit_with_paired_candidate_negative_preserving_final_guard",
     "positive_policy_randomness": {
       "scope": "one_independent_flow_noise_and_time_per_action_query",
       "seed_scheme": "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3",
@@ -258,7 +259,7 @@
     "rollout_policy_batch_size": 2,
     "optimizer": "none",
     "distributed_update": {
-      "kind": "host_local_completion_driven_task_claim_then_full48_blind_evidence_then_paired_outcomes_then_identical_final_guarded_manual_write",
+      "kind": "host_local_completion_driven_task_claim_then_full48_blind_evidence_then_paired_outcomes_then_identical_final_negative_preserving_guarded_manual_write",
       "world_size": "fresh_live_3_to_6_then_exact_resume_locked",
       "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
       "retained_task_cap_per_rank": "max_8_or_ceil_train24_over_world_size",
@@ -279,7 +280,7 @@
     "regularized_condition_number_max": 150
   },
   "profile_run": {
-    "status": "profile_result_sealed_nonpass",
+    "status": "awaiting_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [
       3,
       4,
@@ -320,6 +321,7 @@
       "projected_feature_rank_min": 24,
       "projected_to_blind_energy_ratio_min": 0.25,
       "final_guard_violation_count": 0,
+      "negative_preservation_violation_count": 0,
       "protected_to_unprotected_motion_ratio_max": 0.00001,
       "negative_to_unprotected_motion_rms_max": 0.15,
       "negative_null_task_count_min": 18,
@@ -336,33 +338,10 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": {
-      "path": "runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_reprofile_macro0_r3_b20_d799758_20260812/mechanism_profile.json",
-      "schema": "ember_pi05_v6_work_queue_candidate_update_guard_profile_v1",
-      "passed": false,
-      "world_size": 3,
-      "step_seconds": 558.0586198819801,
-      "production_wall_ratio_to_matched_sknc": 1.1659571930284038,
-      "paired_states": 48,
-      "discordant_states": 7,
-      "harmful_task_count": 3,
-      "harmful_suite_count": 2,
-      "projected_feature_rank": 33,
-      "projected_to_blind_energy_ratio": 0.7649204730987549,
-      "failed_checks": [
-        "negative_null"
-      ],
-      "negative_to_unprotected_program_motion_ratio": 0.5017923582155617,
-      "negative_null_per_kind": {
-        "reversed": 0,
-        "shuffled": 0,
-        "wrong": 0
-      },
-      "retained_checkpoint": false
-    }
+    "artifact_evidence": null
   },
   "formal_run": {
-    "status": "blocked_by_profile_nonpass",
+    "status": "blocked_until_live_profile_passes_and_is_sealed",
     "allowed_world_sizes": [
       3,
       4,
@@ -398,7 +377,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "not_run_after_profile_nonpass",
+    "formal_status": "awaiting_live_npcg_deployment_smoke",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",

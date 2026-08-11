@@ -15,9 +15,9 @@
   （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/3/48/33/0/39/14/0`；相对immutable macro0
   retained/gained/lost=`118/20/16`、churn36。它未过`correct>=144`与`lost<=8`门，不得resume到25、补controls
   或做参数sweep。
-- 当前唯一active successor design是OSG-PC：保留PICK-GC的B20 proposal，只将其投影到“不增大train24成功
-  on-policy executed-prefix loss”的parameter-free可行锥，再走同一full48 Program write。它已完成唯一canonical
-  实现、fresh schema与CPU/synthetic门；尚未做discarded live profile、formal或评测，当前没有EMBER GPU进程。
+- OSG-PC唯一world6 discarded profile在full48前因rank-local task path长尾触发600s NCCL watchdog；最小wall
+  lower bound=`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal与
+  评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。当前没有active successor或EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -181,14 +181,14 @@ Experts不能：
 稳定规则：视频被使用不等于正确使用；LoRA健康度是约束不是目标；task drift没有单一原因；small panel和
 checkpoint union会误导；新topology必须从train24机制推导，不能按held得失设计。
 
-## 7. Active OSG-PC design and boundary
+## 7. Retired OSG-PC design and boundary
 
 PICK-GC的formal结果把因果链进一步收窄：frozen-policy goal/causal innovation能读取
 same-task与顺序，full48 key可解，condition-local FP32 Program会连续积累，native compiler会把它传到effective
 BA与action；但blind source-action cotangent没有在held rollout occupancy上稳定积累support。下一设计必须保留
 这些已通过接口，只改变credit/occupancy这一项主要变量。
 
-当前已选的OSG-PC定义为：对每task保持`d0=-grad_H L_source(B20)`，用同一correct-video LoRA做K4 train24
+已检验的OSG-PC定义为：对每task保持`d0=-grad_H L_source(B20)`，用同一correct-video LoRA做K4 train24
 random-reset rollouts；每条成功episode的executed-prefix CFM cotangent `r_e`形成`<r_e,d><=0`，然后取离`d0`
 最近的Euclidean feasible-cone projection。无success或raw已可行时逐元素退化为blind proposal；非零projection
 仍严格保持source descent。binary reward只选择已有support，不用作sub-ULP improvement gradient。
@@ -207,16 +207,25 @@ random-reset rollouts；每条成功episode的executed-prefix CFM cotangent `r_e
 只能作为边界证据，不能直接恢复。few-shot、task-level manifold supervision与heterogeneous topology仍是
 开放方向，不能与OSG-PC并行实现。
 
-OSG-PC已经原位实现为唯一active path：`v6_reward_credit.py`只保留per-success retention VJP与最多4条约束的
+OSG-PC曾原位实现为唯一active path：`v6_reward_credit.py`只保留per-success retention VJP与最多4条约束的
 解析Program锥投影；`reward/rollout.py`只让成功episode进入replay，失败episode replay/gradient严格为0；每个
 task仍只做一次正确视频encode，rollout后只重解FactorHeads。训练继续复用同一full48 solver，并在profile中
 额外报告“实际full48写入”对每条success guard和source descent的影响，以暴露task-local safe RHS在shared write
 中是否重新被破坏。唯一config为`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`，状态
-`active_cpu_ready_awaiting_live_profile`。加载`.env.local`后的fresh完整CPU回归为`340 passed`，compileall与
+`profile_result_sealed_nonpass`。加载`.env.local`后的fresh完整CPU回归为`340 passed`，compileall与
 `git diff --check`通过；这只证明实现合同，不构成GPU机制或closed-loop证据。
 retention sampling按历史完整K4 task panel生成后只索引success row ordinal，因此失败actions仍不保留，且其它lane
 的success集合不会使已有guard换Monte Carlo样本。deployment adapter/episode已升fresh v9，formal status与
 checkpoint-curve registry显式支持OSG-PC的`0/5/10`，不再误用PICK-GC v8或固定`0/10/25/50`。
+
+唯一live attempt来自clean pushed `9263851`、gpu02物理0--5、world6/local4。run-contract于22:41:36发布；
+rank5最迟22:47:46进入`profile_max_seconds`的一元素all-reduce并等待，22:57:46在sequence12触发600s watchdog，
+此前sequence11已完成。live telemetry中physical GPU3长期idle而其它选中GPU在collective busy；CPU重放rank3四个
+B20 loader batch只需`1.70/0.0002/.91/.14s`，排除确定性DataLoader瓶颈，但本次未加stage journal，不能把缺席rank
+进一步武断归因到某个task、simulator或VJP。run-contract到timeout的lower bound=`969.970854s`，是matched
+`507.305412s`的`1.912006x`，已超过`1.25x`门；随后exit1、六卡释放、volatile/uncorrectable ECC仍全0。
+因此当前OSG-PC无论未观测到的guard几何如何都不能formal、重跑同配置或扫K/Nmc/microbatch；负结果范围仅是
+“PICK-GC B20 proposal + current full-replay per-success VJP execution graph”，不否定所有on-policy guard。
 
 ## 8. Runtime and GPU boundary
 
@@ -277,6 +286,6 @@ checkpoint。PICK-GC部署证据root为
 科学合同或GPU结果。`5200bee` deployment seal与`09bbed3` world4 profile authority均已push并有detached frozen
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
-canonical实现已由`e22cff1`封存并push；当前只在该科学commit上追加上述live world6/local4执行拓扑authority，
-完成CPU复验、push与detached frozen worktree后做一次discarded full24 K4+B20 profile。profile未过全部预注册
-机制、吞吐及实际guard传递证据，不得formal。
+canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
+logs与`engineering_failure.json`均保留且无checkpoint。当前下一步不是重跑，而是从本次最早失败接口形成新的
+单变量design authority，再决定实现或GPU动作。

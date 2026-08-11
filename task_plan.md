@@ -66,10 +66,12 @@
   一个trainer/Writer/full48 solver，没有parallel family或compatibility fallback。
 - [x] 22:22--22:23+08:00双节点、进程、深度GPU健康、quota与fresh-root preflight完成；选择`gpu02:0--5`
   单节点world6/local4，`:6/:7`属于他人不触碰，GPU1历史已纠正ECC/remap须发射前后监测；profile峰值`<2GiB`。
-- [ ] 封存并push world6 topology authority，从clean detached frozen commit在临launch前重查资源，只做一次
-  discarded full24 K4+B20 profile；未过全部预注册机制、吞吐和实际guard传递证据不得formal。
-- [ ] profile通过才fresh`0→5`并立即strict paired correct400；按`correct>=140`、breadth、lost/gained与suite门
-  决定是否exact-resume`5→10`，最终仍只认single-checkpoint strict`>150`。
+- [x] `9263851` world6 authority从clean detached worktree完成唯一discarded profile；rank-local长尾使sequence12
+  all-reduce等待600s后watchdog，wall lower bound=`1.912x>1.25x`，exit1且无report/checkpoint，GPU已健康释放。
+- [x] OSG-PC按hard gate封存为`profile_result_sealed_nonpass`；同配置重跑、formal、deployment、评测和参数sweep
+  全部关闭。负结果只淘汰current full-replay per-success VJP执行图。
+- [ ] 从第一性原理选择下一单变量successor：必须保留PICK-GC已通过的视频key、FP32 Program和native compiler，
+  同时让on-policy credit不随成功轨迹长度/episode数形成不可控rank尾延迟；先写authority，不直接launch GPU。
 
 ## Repository closeout
 

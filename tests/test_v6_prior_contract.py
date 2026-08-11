@@ -194,6 +194,14 @@ def test_preprofile_artifact_injection_fails_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = _raw_config()
+    config["status"] = "active_cpu_ready_awaiting_live_profile"
+    config["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
+    config["formal_run"]["status"] = (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    config["evaluation"]["formal_status"] = (
+        "awaiting_live_osg_pc_deployment_smoke"
+    )
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)

@@ -26,15 +26,21 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_osg_pc_is_preprofile_while_pick_gc_nonpass_remains_provenance() -> None:
+def test_osg_pc_profile_nonpass_and_pick_gc_nonpass_remain_provenance() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert config["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert config["status"] == "profile_result_sealed_nonpass"
     assert config["profile_run"]["expected_world_size"] == 6
     assert config["profile_run"]["tasks_per_rank"] == 4
-    assert config["profile_run"]["status"] == (
-        "awaiting_live_a40_fresh0_to1_profile"
+    assert config["profile_run"]["status"] == "profile_result_sealed_nonpass"
+    profile = config["profile_run"]["artifact_evidence"]
+    assert profile["exit_code"] == 1
+    assert profile["watchdog_count"] == 1
+    assert profile["production_wall_ratio_lower_bound"] > 1.25
+    assert profile["passed"] is False
+    assert config["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert config["evaluation"]["formal_status"] == (
+        "not_run_after_profile_nonpass"
     )
-    assert config["profile_run"]["artifact_evidence"] is None
     assert config["formal_run"]["artifact_evidence"] is None
     assert config["evaluation"]["online_smoke_evidence"] is None
 

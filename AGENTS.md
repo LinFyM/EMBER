@@ -20,10 +20,10 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - PICK-GC已完成formal fresh`0→10`和strict paired400：`138/400`、breadth6，相对immutable macro0
   retained/gained/lost=`118/20/16`、churn36，未过`correct>=144`与`lost<=8`门。其resume、controls和sweep
   全部关闭；只淘汰PICK-GC+blind offline source-action credit组合。
-- 当前唯一active successor是OSG-PC：保留ordered goal-causal key、blind B20 proposal、condition-local FP32
-  Program和native rank16 compiler，只把proposal解析投影到“不增大train24成功on-policy executed-prefix loss”的
-  可行锥。它已原位替换canonical runtime/config/tests并通过fresh完整CPU回归`340 passed`、compileall与
-  diff-check；尚未做discarded live profile、formal训练或评测，当前无EMBER GPU任务。
+- OSG-PC已完成唯一一次world6 discarded profile并因工程hard gate退役：rank5在`profile_max_seconds`等待
+  600s后NCCL watchdog，至少一个rank未到达；从run-contract发布到timeout已`969.9709s`，是matched
+  `507.3054s`的至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、deployment与评测均未授权；
+  只淘汰当前full-replay per-success VJP执行图，不否定所有success constraint。当前没有active successor或GPU任务。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -175,8 +175,8 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 - PICK-GC formal训练与strict400：
   `runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`和
   `runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
-- 当前唯一active config：`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`；状态仅为
-  `active_cpu_ready_awaiting_live_profile`，不表示已有GPU或closed-loop证据。
+- 最新retired config：`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`；状态为
+  `profile_result_sealed_nonpass`，不能profile、formal或resume。当前必须先形成新的单变量design authority。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

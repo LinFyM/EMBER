@@ -1,6 +1,6 @@
 # On-Policy Success-Guarded Program Credit
 
-状态：2026-08-11唯一active successor design authority；canonical实现与CPU/synthetic门已完成，尚未profile、
+状态：2026-08-11唯一world6 profile因rank-local长尾和NCCL watchdog退役；未到full48 mechanism report，未做
 formal训练或评测。简称OSG-PC。
 它从PICK-GC formal non-pass后最早失效的credit/occupancy接口出发，只改变task-local Program update的credit
 约束；PICK-GC ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、full48
@@ -261,7 +261,15 @@ pending/failure均为no，发射前后仍须复核。matched world6/local4基线
 任一hard gate失败即拒绝当前OSG-PC，不扫constraint margin、reward scale、K、Nmc、projection tolerance、
 source step或key。
 
-### 8.3 Formal and strict paired400
+实际结果：clean pushed `9263851`在gpu02物理0--5执行。run-contract发布后最迟约370s，rank5已进入
+`profile_max_seconds`的一元素all-reduce；等待600s后于sequence12 watchdog，前11个collective均已完成。到timeout
+的task wall lower bound=`969.970854s`，相对matched `507.305412s`为至少`1.912006x>1.25x`。live telemetry中
+physical GPU3长期idle；离线重放其确定性四个B20 loader batch仅`1.70/0.0002/.91/.14s`，排除loader本身，但本次
+没有stage journal，无法严谨区分某个simulator seed与retention path。exit1、无mechanism report/completion/
+checkpoint，post-run六卡0MiB且volatile/uncorrectable ECC全0。故当前OSG-PC按本节hard gate退役，不得formal、
+同配置重跑或超参补救；只淘汰current full-replay per-success VJP执行图。
+
+### 8.3 Formal and strict paired400 (not reached)
 
 profile通过并由clean pushed seal封存后，从zero Program fresh训练`0→5`；每macro都重新采当前K4 occupancy，
 不得复用stale success replay。checkpoint保存5与10，但首次只创建macro5。随后立即用与macro0 old134相同的

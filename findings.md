@@ -163,10 +163,10 @@ world4 formal fresh`0→10`已完成：每步feature rank48，condition稳定可
 却仍造成36个episode换手。故PICK-GC+blind offline credit按预注册门退役；失败不能再归于condition数值、
 identity写出、LoRA能量或单纯compiler闭合。
 
-当前最早失效接口是blind train24 source-action functional cotangent到held on-policy有用support与共同积累的
-映射。当前唯一active假设OSG-PC不再用微小reward cotangent替换proposal，而是对每条成功train24 rollout构造
+当前最早科学失效接口是blind train24 source-action functional cotangent到held on-policy有用support与共同积累的
+映射。OSG-PC曾不再用微小reward cotangent替换proposal，而是对每条成功train24 rollout构造
 executed-prefix Program half-space，把原B20 proposal解析投影到“不一阶损伤已有success support”的可行锥；
-full48 key、FP32 Program和native rank16保持。它已完成CPU实现但尚未获得live profile证据；heterogeneous
+full48 key、FP32 Program和native rank16保持。它已完成CPU实现但未获得完整live mechanism evidence；heterogeneous
 topology、few-shot和task-level manifold supervision仍是开放问题而非自动fallback。
 
 OSG-PC现已完成唯一canonical CPU实现：success binary只选择保护约束，失败轨迹完全不进入replay/gradient；
@@ -174,5 +174,8 @@ OSG-PC现已完成唯一canonical CPU实现：success binary只选择保护约�
 blind proposal。历史完整K4 flow panel只按成功row ordinal取样，避免success-only压缩改变另一条guard的MC身份。
 full48仍是唯一shared write owner，并新增continuous/native实际应用后的guard/source-descent报告，因为task-local
 可行不自动保证shared damped solve后的真实memory motion仍可行。fresh完整CPU回归`340 passed`只关闭工程接口；
-真实train24 success覆盖、projection是否非退化以及shared write是否保留guard，仍必须由一次discarded live profile
-裁决，不能从synthetic KKT结果推断closed-loop提升。
+唯一world6 live profile在full48前失败：rank5在`profile_max_seconds`等待600s后watchdog，run-contract到timeout
+至少`969.9709s`，相对matched baseline至少`1.912x>1.25x`。此前11个collective正常，CPU rank3 B20 loader仅需
+约2.75s总计，说明current K4 rollout/retention task path产生不可接受的rank-local长尾；但因没有stage journal，
+不能继续把它归因到具体simulator或VJP。没有task records、projection或shared guard report，因此科学guard假设
+仍未被正反验证；被淘汰的是current full-replay per-success VJP执行图，而不是所有on-policy success constraint。

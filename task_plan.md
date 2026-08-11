@@ -22,14 +22,14 @@
   和训练全部退役。
 - [x] 从最新证据选择唯一 successor：PICK只替换Balanced-v2 condition evidence，保留frozen-v6原生full-rank
   base、Program memory、blind full48 update和one-shot部署。
-- [x] 新design authority已写入`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`；当前尚无
-  EMBER GPU进程，尚未实现、profile、训练或rollout。
+- [x] 新design authority已写入`docs/action_forecast_writer_policy_innovation_consensus_key_design.md`；canonical
+  implementation与CPU门已完成，当前尚无EMBER GPU进程，尚未profile、训练或rollout。
 
 ## Active PICK phase
 
-- [ ] 按canonical owner原位替换旧Balanced-v2 key，迁移通用policy-innovation encoder而不保留import shim。
-- [ ] 完成sealed train24×50 cache统计、zero/order/identity/freeze/resume和fresh-incompatible CPU门。
-- [ ] clean commit/push后重新做双节点GPU、进程、quota与峰值preflight；通过raw-frame和full48 mechanism门。
+- [x] 按canonical owner原位替换旧Balanced-v2 key，迁移通用policy-innovation encoder而不保留import shim。
+- [x] 完成train24×50 cache统计、zero/order/identity/freeze/resume、world-size与fresh-incompatible CPU门。
+- [ ] clean commit/push并冻结world6后，通过raw-frame和discarded full48 mechanism门。
 - [ ] profile B8/16/32并封存deployment vertical；不得用低吞吐数值补丁过门。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
 

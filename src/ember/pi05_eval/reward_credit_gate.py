@@ -6,11 +6,6 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
-from ember.expert_manifold.v6_prior_contract import (
-    V6_PRIOR_CONFIG_SCHEMA,
-    V6_PRIOR_RUN_SCHEMA,
-)
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
     git_state_is_clean_pushed_or_frozen_authority,
@@ -35,6 +30,11 @@ DECISION_EVIDENCE_SCHEMA = "ember_pi05_v6_reward_credit_decision_evidence_v1"
 SIX_ARM_EVIDENCE_SCHEMA = "ember_pi05_v6_reward_credit_six_arm_evidence_v1"
 CONTROL_TRIGGER_EVIDENCE_SCHEMA = (
     "ember_pi05_v6_reward_credit_control_trigger_evidence_v1"
+)
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_v1"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_reward_credit_program_cotangent_run_v1"
+V6_PRIOR_CHECKPOINT_SCHEMA = (
+    "ember_pi05_v6_reward_credit_program_cotangent_checkpoint_v4"
 )
 
 

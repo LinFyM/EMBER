@@ -20,7 +20,7 @@ from ember.expert_manifold.contract import (
     load_train_tasks,
     parse_task_indices,
 )
-from ember.expert_manifold.video_features import FrozenPi05VideoInnovationEncoder
+from ember.writer.policy_innovation import FrozenPi05VideoInnovationEncoder
 from ember.pi05_eval_contract import (
     git_state,
     inspect_source_checkpoint,

@@ -10,6 +10,7 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_condition_residual_v2": (10, 25, 50),
     "v6_anchored_reconciliation_v3": (10, 25),
     "v6_reward_credit_program_v1": (1, 2),
+    "v6_pick_v1": (10, 25),
 }
 HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_ecp_v2": "legacy_v6_prior_v1",
@@ -17,6 +18,7 @@ HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_condition_residual_v2": "legacy_v6_prior_v1",
     "v6_anchored_reconciliation_v3": "v6_condition_residual_v2",
     "v6_reward_credit_program_v1": "v6_condition_residual_v2",
+    "v6_pick_v1": "v6_condition_residual_v2",
 }
 
 WRITER_FAMILIES = {
@@ -75,6 +77,14 @@ WRITER_FAMILIES = {
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
         "formal_statuses": ("sealed_from_unchanged_v6_residual_deployment_graph",),
     },
+    "v6_pick_v1": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v8",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+        "config_schema": "ember_pi05_v6_policy_innovation_consensus_key_v1",
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+        "formal_statuses": ("sealed_from_live_pick_deployment_profile",),
+    },
     "v6_qv_rank_reserved_native_reward_v1": {
         "adapter_schema": (
             "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
@@ -96,6 +106,7 @@ PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(
         "v6_condition_residual_v2",
         "v6_anchored_reconciliation_v3",
         "v6_reward_credit_program_v1",
+        "v6_pick_v1",
         "v6_qv_rank_reserved_native_reward_v1",
     }
 )

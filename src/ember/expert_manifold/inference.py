@@ -32,6 +32,7 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_RUN_SCHEMA,
     authority_path,
     git_commit_in_active_authority_lineage,
+    load_v6_prior_config,
 )
 from ember.expert_manifold.v6_prior_run_contract import cursor_contract
 from ember.expert_manifold.video_schedule import (
@@ -50,16 +51,9 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Reject retired Writer configs when no deployment family is active."""
+    """Load only the active PICK deployment family; old configs stay evidence."""
 
-    path = path.resolve()
-    try:
-        read_json(path)
-    except (OSError, ValueError) as error:
-        raise ExpertManifoldError("invalid Expert-Manifold config") from error
-    raise ExpertManifoldError(
-        "retired Expert-Manifold configs are read-only result evidence"
-    )
+    return load_v6_prior_config(path)
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -320,6 +314,18 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "persistent": False,
             "checkpoint_owned": False,
         },
+        "fixed_policy_innovation_encoder": {
+            "feature_width": int(config["condition_feature"]["innovation_width"]),
+            "phase_slots": int(config["condition_feature"]["phase_slots"]),
+            "fixed_suffix_noise_shape": [
+                int(config["writer"]["action_horizon"]),
+                int(config["writer"]["padded_action_dim"]),
+            ],
+            "trainable_parameter_count": 0,
+            "persistent_state_tensor_count": 0,
+            "checkpoint_owned": False,
+            "deployment_owned": True,
+        },
         "program_residual_memory": {
             "shape": _program_residual_shape(config),
             "dtype": "torch.float32",
@@ -328,14 +334,6 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "manual_update": True,
             "checkpoint_owned": True,
             "deployment_owned": True,
-        },
-        "reconciliation_precision": {
-            "shape": list(config["reconciliation"]["precision_shape"]),
-            "dtype": "torch.float64",
-            "value_count": math.prod(config["reconciliation"]["precision_shape"]),
-            "trainable": False,
-            "checkpoint_owned": True,
-            "deployment_owned": False,
         },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
@@ -365,7 +363,8 @@ def _residual_contract_matches(
         or contract_config.get("schema") != V6_PRIOR_CONFIG_SCHEMA
         or config_bytes <= 0
         or not isinstance(topology, list)
-        or len(topology) != 6
+        or len(topology)
+        != int(config["optimization"]["distributed_update"]["world_size"])
     ):
         return False
     expected_keys = {
@@ -377,11 +376,7 @@ def _residual_contract_matches(
         "initialization",
         "condition_feature",
         "program_residual",
-        "reconciliation",
         "update",
-        "environment",
-        "objective",
-        "rng",
         "ownership",
         "world_size",
         "rank_topology",
@@ -394,9 +389,7 @@ def _residual_contract_matches(
         "writer_state_value_count": int(
             historical["writer_state"]["state_value_count"]
         ),
-        "residual_memory": (
-            "fresh_zero_and_identity_reconciliation_then_joint_exact_resume"
-        ),
+        "residual_memory": "fresh_zero_then_memory_only_exact_resume",
     }
     fixed = {
         "run_schema": V6_PRIOR_RUN_SCHEMA,
@@ -405,13 +398,9 @@ def _residual_contract_matches(
         "initialization": expected_initialization,
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
-        "reconciliation": config["reconciliation"],
         "update": config["update"],
-        "environment": config["environment"],
-        "objective": config["objective"],
-        "rng": config["rng"],
         "ownership": _expected_residual_ownership(config),
-        "world_size": 6,
+        "world_size": int(config["optimization"]["distributed_update"]["world_size"]),
         "content_hash_policy": "disabled_by_owner",
     }
     return (
@@ -429,8 +418,7 @@ def _residual_inspection(
     try:
         macro = int(inspection.get("next_macro", -1))
         memory = inspection.get("program_memory", {})
-        reconciliation = inspection.get("reconciliation", {})
-        if not isinstance(memory, Mapping) or not isinstance(reconciliation, Mapping):
+        if not isinstance(memory, Mapping):
             raise TypeError("memory metadata")
         identity = {
             "checkpoint_schema": inspection.get("checkpoint_schema"),
@@ -441,7 +429,9 @@ def _residual_inspection(
         }
         expected_identity = {
             "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
-            "world_size": 6,
+            "world_size": int(
+                config["optimization"]["distributed_update"]["world_size"]
+            ),
             "metrics_rows": macro,
             "content_hash_policy": "disabled_by_owner",
             "payload_value_validation": "deployment_metadata_only",
@@ -454,18 +444,6 @@ def _residual_inspection(
             "finite": None,
         }
         observed_memory = {name: memory.get(name) for name in expected_memory}
-        expected_reconciliation = {
-            "tensor_count": 1,
-            "dtype": "torch.float64",
-            "shape": list(config["reconciliation"]["precision_shape"]),
-            "value_count": math.prod(config["reconciliation"]["precision_shape"]),
-            "finite": None,
-            "assimilated_rows": macro * int(config["reconciliation"]["rows_per_macro"]),
-            "deployment_owned": False,
-        }
-        observed_reconciliation = {
-            name: reconciliation.get(name) for name in expected_reconciliation
-        }
     except (TypeError, ValueError):
         raise ExpertManifoldError("v6-prior residual checkpoint changed") from None
     if (
@@ -474,7 +452,6 @@ def _residual_inspection(
         or identity != expected_identity
         or inspection.get("cursor_contract") != cursor_contract(config, macro)
         or observed_memory != expected_memory
-        or observed_reconciliation != expected_reconciliation
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
     return macro, memory
@@ -567,6 +544,7 @@ def _evaluation_writer_asset(
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
     if require_formal and status not in {
+        "sealed_from_live_pick_deployment_profile",
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
     }:
@@ -594,14 +572,12 @@ def inspect_expert_manifold_writer_evaluation(
     video_sampling_mode: str,
     require_formal: bool,
 ) -> dict[str, Any]:
-    config_path, config, status, writer_asset = (
-        _evaluation_writer_asset(
-            config_path=config_path,
-            checkpoint=checkpoint,
-            source=source,
-            video_condition=video_condition,
-            require_formal=require_formal,
-        )
+    config_path, config, status, writer_asset = _evaluation_writer_asset(
+        config_path=config_path,
+        checkpoint=checkpoint,
+        source=source,
+        video_condition=video_condition,
+        require_formal=require_formal,
     )
     mapping, video_data, schedule, pairing = _evaluation_video_contract(
         config,

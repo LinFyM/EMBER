@@ -20,25 +20,6 @@ class _ProgramMemory(torch.nn.Module):
         return torch.zeros(features.shape[0], 320, 2, dtype=torch.float32)
 
 
-class _ConditionFeature(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.orders: list[torch.Tensor | None] = []
-
-    def forward(
-        self,
-        evidence: SimpleNamespace,
-        indices: torch.Tensor,
-        *,
-        frame_order: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        self.orders.append(None if frame_order is None else frame_order.clone())
-        order = torch.arange(indices.numel()) if frame_order is None else frame_order.cpu()
-        value = torch.zeros(1, 256, dtype=torch.float32)
-        value[0, : order.numel()] = evidence.frames.index_select(0, order).float().mean((1, 2, 3))
-        return torch.nn.functional.normalize(value, dim=1)
-
-
 class _BaseWriter(torch.nn.Module):
     program_width = 2
 
@@ -79,15 +60,48 @@ class _Writer(SimpleNamespace):
     def __init__(self) -> None:
         super().__init__(
             base_writer=_BaseWriter(),
-            condition_feature=_ConditionFeature(),
             program_memory=_ProgramMemory(),
         )
+        self.condition_orders: list[torch.Tensor | None] = []
+        self.condition_tokens: list[torch.Tensor] = []
+        self.condition_frames: list[torch.Tensor] = []
+
+    def paired_condition_features(
+        self,
+        _policy: torch.nn.Module,
+        frames: torch.Tensor,
+        _offsets: torch.Tensor,
+        tokens: torch.Tensor,
+        _mask: torch.Tensor,
+        _span: torch.Tensor,
+        *,
+        negative_frames: torch.Tensor | None = None,
+        negative_offsets: torch.Tensor | None = None,
+        frame_order: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self.condition_orders.append(
+            None if frame_order is None else frame_order.clone()
+        )
+        self.condition_tokens.append(tokens.clone())
+        self.condition_frames.append(frames.clone())
+        if negative_frames is not None:
+            assert negative_offsets is not None and frame_order is None
+            self.condition_frames.append(negative_frames.clone())
+            negative_ordered = negative_frames
+        else:
+            assert negative_offsets is None and frame_order is not None
+            negative_ordered = frames.index_select(0, frame_order.cpu())
+
+        def feature(value: torch.Tensor) -> torch.Tensor:
+            result = torch.zeros(1, 256, dtype=torch.float32)
+            result[0, : value.shape[0]] = value.float().mean((1, 2, 3))
+            return torch.nn.functional.normalize(result, dim=1)
+
+        return feature(frames), feature(negative_ordered)
 
 
 def _video(offset: int = 0) -> RawTeacherVideo:
-    frames = (
-        np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2) + offset
-    )
+    frames = np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2) + offset
     return RawTeacherVideo(
         frames=frames,
         frame_indices=np.array([0, 5, 10, 15], dtype=np.int64),
@@ -119,9 +133,8 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
         device=torch.device("cpu"),
     )
     assert len(writer.base_writer.encoder_frames) == 1
-    assert writer.condition_feature.orders[0] is None
     assert torch.equal(
-        writer.condition_feature.orders[1],
+        writer.condition_orders[0],
         torch.tensor([3, 2, 1, 0]),
     )
     assert graph.correct_feature.shape == graph.negative_feature.shape == (256,)
@@ -130,7 +143,9 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
     assert graph.program_input_before.dtype == torch.bfloat16
 
 
-def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forward() -> None:
+def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forward() -> (
+    None
+):
     writer = _Writer()
     target_tokens = _language()
     graph = generate_condition_graph(
@@ -146,11 +161,14 @@ def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forwar
         teacher_demo=3,
         device=torch.device("cpu"),
     )
-    assert len(writer.base_writer.encoder_tokens) == 2
-    assert all(torch.equal(tokens, target_tokens[0]) for tokens in writer.base_writer.encoder_tokens)
+    assert len(writer.base_writer.encoder_tokens) == 1
+    assert len(writer.condition_tokens) == 1
+    assert all(
+        torch.equal(tokens, target_tokens[0]) for tokens in writer.condition_tokens
+    )
     assert not torch.equal(
-        writer.base_writer.encoder_frames[0],
-        writer.base_writer.encoder_frames[1],
+        writer.condition_frames[0],
+        writer.condition_frames[1],
     )
     assert graph.negative_raw_frames == 16
     assert graph.negative_sampled_frames == 4

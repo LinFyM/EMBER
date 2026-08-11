@@ -1,8 +1,9 @@
-"""Atomic Program-memory and reconciliation checkpoints for frozen v6."""
+"""Atomic memory-only checkpoints for the frozen-v6 Program residual."""
 
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
 import time
@@ -13,45 +14,29 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 import torch.distributed as dist
+from safetensors import safe_open
+from safetensors.torch import load_file, save_file
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_prior_checkpoint_payload import (
-    PROGRAM_MEMORY_FILE,
-    PROGRAM_MEMORY_KEY,
-    RECONCILIATION_FILE,
-    RECONCILIATION_KEY,
-    inspect_program_memory_metadata as _inspect_program_memory_metadata,
-    inspect_reconciliation_metadata as _inspect_reconciliation_metadata,
-    load_program_memory as _load_program_memory,
-    load_reconciliation_precision as _load_reconciliation_precision,
-    reconciliation_shape as _reconciliation_shape,
-    validate_live_memory as _validate_live_memory,
-    validate_live_reconciliation as _validate_live_reconciliation,
-    write_state_payload,
-)
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
     write_json_atomic,
 )
-from ember.writer.condition_update import (
-    ProgramReconciliationState,
-    ProgramResidualMemory,
-)
+from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_reward_credit_program_cotangent_checkpoint_v4"
+    "ember_pi05_v6_policy_innovation_consensus_key_checkpoint_v1"
 )
-V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_reward_credit_program_cotangent_rank_state_v4"
-)
+V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_policy_innovation_consensus_key_rank_rng_v1"
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_reward_credit_program_cotangent_inspection_v4"
+    "ember_pi05_v6_policy_innovation_consensus_key_inspection_v1"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)
-FORMAL_ROWS_PER_MACRO = 48
+PROGRAM_MEMORY_FILE = "program_memory.safetensors"
+PROGRAM_MEMORY_KEY = "program_memory.value"
 _CONTENT_HASH_POLICY = "disabled_by_owner"
 _MANIFEST_KEYS = {
     "schema_version",
@@ -59,8 +44,6 @@ _MANIFEST_KEYS = {
     "metrics_rows",
     "world_size",
     "program_memory_shape",
-    "reconciliation_precision_shape",
-    "assimilated_rows",
     "cursor_contract",
     "checkpoint_contract",
     "files",
@@ -75,17 +58,6 @@ _RNG_KEYS = {
     "numpy",
     "torch_cpu",
     "torch_cuda",
-    "interaction_cursor",
-}
-_INTERACTION_CURSOR_KEYS = {
-    "next_macro",
-    "rollouts",
-    "environment_actions",
-    "successes",
-    "reward_sum",
-    "pending_environment_episodes",
-    "pending_policy_action_chunks",
-    "pending_replay_microbatches",
 }
 
 
@@ -97,8 +69,6 @@ class _CheckpointLayout:
     metrics_rows: int
     world_size: int
     memory_shape: tuple[int, int, int]
-    reconciliation_shape: tuple[int, int]
-    assimilated_rows: int
 
 
 def _error(component: str) -> ExpertManifoldError:
@@ -125,8 +95,7 @@ def _raise_distributed(
     ]
     if observed:
         raise ExpertManifoldError(
-            f"v6 Program-residual checkpoint {phase} failed; "
-            + "; ".join(observed)
+            f"v6 Program-residual checkpoint {phase} failed; " + "; ".join(observed)
         )
 
 
@@ -156,54 +125,31 @@ def _json_object(value: Mapping[str, Any], component: str) -> dict[str, Any]:
     return normalized
 
 
-def _interaction_cursor(
-    value: Mapping[str, Any] | None, *, macro: int
-) -> dict[str, Any]:
-    normalized = (
-        {
-            "next_macro": macro,
-            "rollouts": macro * 16,
-            "environment_actions": 0,
-            "successes": 0,
-            "reward_sum": 0.0,
-            "pending_environment_episodes": 0,
-            "pending_policy_action_chunks": 0,
-            "pending_replay_microbatches": 0,
-        }
-        if value is None
-        else _json_object(value, "interaction cursor")
-    )
-    if (
-        set(normalized) != _INTERACTION_CURSOR_KEYS
-        or type(normalized.get("next_macro")) is not int
-        or normalized.get("next_macro") != macro
-        or type(normalized.get("rollouts")) is not int
-        or normalized.get("rollouts") != macro * 16
-        or any(
-            type(normalized.get(name)) is not int or int(normalized[name]) < 0
-            for name in ("environment_actions", "successes")
-        )
-        or not isinstance(normalized.get("reward_sum"), (int, float))
-        or not np.isfinite(float(normalized["reward_sum"]))
-        or any(
-            normalized.get(name) != 0
-            for name in (
-                "pending_environment_episodes",
-                "pending_policy_action_chunks",
-                "pending_replay_microbatches",
-            )
-        )
-    ):
-        raise _error("interaction cursor")
-    return normalized
+def _memory_tensor(
+    memory: ProgramResidualMemory | torch.Tensor,
+) -> torch.Tensor:
+    if isinstance(memory, ProgramResidualMemory):
+        return memory.value
+    if isinstance(memory, torch.Tensor):
+        return memory
+    raise _error("Program memory owner")
 
 
-def _rng_state(
-    context: DistributedContext,
+def _validate_live_memory(
+    memory: ProgramResidualMemory | torch.Tensor,
+    expected_shape: tuple[int, int, int],
     *,
-    macro: int,
-    interaction_cursor: Mapping[str, Any] | None,
-) -> dict[str, Any]:
+    require_finite: bool,
+) -> torch.Tensor:
+    value = _memory_tensor(memory)
+    if value.dtype != torch.float32 or tuple(value.shape) != expected_shape:
+        raise _error("Program memory tensor schema")
+    if require_finite and not bool(torch.isfinite(value).all()):
+        raise _error("non-finite Program memory")
+    return value
+
+
+def _rng_state(context: DistributedContext) -> dict[str, Any]:
     cuda_state = None
     if context.device.type == "cuda":
         cuda_state = torch.cuda.get_rng_state(context.device).cpu()
@@ -216,9 +162,6 @@ def _rng_state(
         "numpy": np.random.get_state(),
         "torch_cpu": torch.get_rng_state(),
         "torch_cuda": cuda_state,
-        "interaction_cursor": _interaction_cursor(
-            interaction_cursor, macro=macro
-        ),
     }
 
 
@@ -259,11 +202,7 @@ def _validate_rng(
         random.Random().setstate(value["python"])
         np.random.RandomState().set_state(value["numpy"])
         torch.Generator(device="cpu").set_state(value["torch_cpu"])
-        cursor = value.get("interaction_cursor")
-        if not isinstance(cursor, Mapping) or type(cursor.get("next_macro")) is not int:
-            raise _error(f"rank {rank} interaction cursor")
-        _interaction_cursor(cursor, macro=cursor["next_macro"])
-    except (KeyError, TypeError, ValueError, RuntimeError) as error:
+    except (TypeError, ValueError, RuntimeError) as error:
         raise _error(f"rank {rank} RNG") from error
     return value
 
@@ -289,14 +228,51 @@ def _restore_rng(value: Mapping[str, Any], context: DistributedContext) -> None:
     torch.set_rng_state(validated["torch_cpu"])
 
 
+def _load_program_memory(
+    path: Path,
+    expected_shape: tuple[int, int, int],
+) -> torch.Tensor:
+    try:
+        state = load_file(str(path), device="cpu")
+    except Exception as error:
+        raise _error("Program memory file") from error
+    if set(state) != {PROGRAM_MEMORY_KEY}:
+        raise _error("Program memory key")
+    value = state[PROGRAM_MEMORY_KEY]
+    if value.dtype != torch.float32 or tuple(value.shape) != expected_shape:
+        raise _error("Program memory tensor schema")
+    if not bool(torch.isfinite(value).all()):
+        raise _error("non-finite Program memory")
+    return value
+
+
+def _inspect_program_memory_metadata(
+    path: Path,
+    expected_shape: tuple[int, int, int],
+) -> dict[str, Any]:
+    try:
+        with safe_open(str(path), framework="pt", device="cpu") as handle:
+            if set(handle.keys()) != {PROGRAM_MEMORY_KEY}:
+                raise _error("Program memory key")
+            value = handle.get_slice(PROGRAM_MEMORY_KEY)
+            if value.get_dtype() != "F32" or tuple(value.get_shape()) != expected_shape:
+                raise _error("Program memory tensor schema")
+    except ExpertManifoldError:
+        raise
+    except Exception as error:
+        raise _error("Program memory file") from error
+    return {
+        "dtype": "torch.float32",
+        "shape": list(expected_shape),
+        "value_count": math.prod(expected_shape),
+    }
+
+
 def _read_manifest(checkpoint: Path) -> tuple[Path, dict[str, Any]]:
     if checkpoint.is_symlink():
         raise _error("checkpoint directory")
     checkpoint = checkpoint.resolve()
-    if (
-        not checkpoint.is_dir()
-        or checkpoint.parent.name != "checkpoints"
-    ):
+    if not checkpoint.is_dir() or checkpoint.parent.name != "checkpoints":
         raise _error("checkpoint directory")
     try:
         manifest = read_json(checkpoint / "manifest.json")
@@ -311,13 +287,10 @@ def _manifest_identity(
     *,
     expected_memory_shape: tuple[int, int, int],
     expected_world_size: int,
-    rows_per_macro: int,
 ) -> tuple[int, int]:
     macro = manifest.get("next_macro")
     metrics_rows = manifest.get("metrics_rows")
     recorded_shape = manifest.get("program_memory_shape")
-    recorded_reconciliation_shape = manifest.get("reconciliation_precision_shape")
-    assimilated_rows = manifest.get("assimilated_rows")
     if (
         set(manifest) != _MANIFEST_KEYS
         or manifest.get("schema_version") != V6_PRIOR_CHECKPOINT_SCHEMA
@@ -329,11 +302,6 @@ def _manifest_identity(
         or manifest.get("world_size") != expected_world_size
         or not isinstance(recorded_shape, list)
         or tuple(recorded_shape) != expected_memory_shape
-        or not isinstance(recorded_reconciliation_shape, list)
-        or tuple(recorded_reconciliation_shape)
-        != _reconciliation_shape(expected_memory_shape)
-        or type(assimilated_rows) is not int
-        or assimilated_rows != macro * rows_per_macro
         or manifest.get("content_hash_policy") != _CONTENT_HASH_POLICY
         or not isinstance(manifest.get("files"), dict)
     ):
@@ -348,7 +316,6 @@ def _validate_payload_files(
 ) -> None:
     expected_files = {
         PROGRAM_MEMORY_FILE,
-        RECONCILIATION_FILE,
         *(f"rng_rank_{rank:03d}.pt" for rank in range(world_size)),
     }
     physical_files = {path.name for path in checkpoint.iterdir()}
@@ -377,9 +344,7 @@ def _validate_contracts(
     expected_checkpoint_contract: Mapping[str, Any] | None,
 ) -> None:
     cursor = _json_object(manifest.get("cursor_contract"), "cursor contract")
-    contract = _json_object(
-        manifest.get("checkpoint_contract"), "checkpoint contract"
-    )
+    contract = _json_object(manifest.get("checkpoint_contract"), "checkpoint contract")
     if cursor.get("next_macro") != macro:
         raise _error("cursor contract")
     if expected_cursor_contract is not None and cursor != _json_object(
@@ -399,7 +364,6 @@ def _validate_layout(
     expected_world_size: int,
     expected_cursor_contract: Mapping[str, Any] | None,
     expected_checkpoint_contract: Mapping[str, Any] | None,
-    rows_per_macro: int,
 ) -> _CheckpointLayout:
     checkpoint, manifest = _read_manifest(checkpoint)
     macro, metrics_rows = _manifest_identity(
@@ -407,7 +371,6 @@ def _validate_layout(
         manifest,
         expected_memory_shape=expected_memory_shape,
         expected_world_size=expected_world_size,
-        rows_per_macro=rows_per_macro,
     )
     _validate_payload_files(checkpoint, manifest["files"], expected_world_size)
     _validate_contracts(
@@ -423,72 +386,7 @@ def _validate_layout(
         metrics_rows=metrics_rows,
         world_size=expected_world_size,
         memory_shape=expected_memory_shape,
-        reconciliation_shape=_reconciliation_shape(expected_memory_shape),
-        assimilated_rows=macro * rows_per_macro,
     )
-
-
-def _initialize_checkpoint_directory(
-    *,
-    output_dir: Path,
-    temporary: Path,
-    final: Path,
-    macro: int,
-) -> None:
-    checkpoints = final.parent
-    checkpoints.mkdir(parents=True, exist_ok=True)
-    if temporary.exists() and not final.exists():
-        failure_packets = output_dir / "failure_packets"
-        failure_packets.mkdir(parents=True, exist_ok=True)
-        os.replace(
-            temporary,
-            failure_packets
-            / f"incomplete_checkpoint_macro_{macro:08d}_{time.time_ns()}",
-        )
-    if final.exists() or temporary.exists():
-        raise _error("checkpoint already exists")
-    temporary.mkdir()
-
-
-def _publish_main_payload(
-    *,
-    temporary: Path,
-    final: Path,
-    memory: torch.Tensor,
-    precision: torch.Tensor,
-    macro: int,
-    metrics_rows: int,
-    world_size: int,
-    memory_shape: tuple[int, int, int],
-    reconciliation_shape: tuple[int, int],
-    assimilated_rows: int,
-    cursor_contract: Mapping[str, Any],
-    checkpoint_contract: Mapping[str, Any],
-) -> None:
-    write_state_payload(temporary, memory, precision)
-    payload_names = {
-        PROGRAM_MEMORY_FILE,
-        RECONCILIATION_FILE,
-        *(f"rng_rank_{rank:03d}.pt" for rank in range(world_size)),
-    }
-    files = {name: (temporary / name).stat().st_size for name in payload_names}
-    write_json_atomic(
-        temporary / "manifest.json",
-        {
-            "schema_version": V6_PRIOR_CHECKPOINT_SCHEMA,
-            "next_macro": macro,
-            "metrics_rows": metrics_rows,
-            "world_size": world_size,
-            "program_memory_shape": list(memory_shape),
-            "reconciliation_precision_shape": list(reconciliation_shape),
-            "assimilated_rows": assimilated_rows,
-            "cursor_contract": cursor_contract,
-            "checkpoint_contract": checkpoint_contract,
-            "files": files,
-            "content_hash_policy": _CONTENT_HASH_POLICY,
-        },
-    )
-    os.replace(temporary, final)
 
 
 def save_v6_prior_checkpoint(
@@ -496,16 +394,13 @@ def save_v6_prior_checkpoint(
     output_dir: Path,
     macro: int,
     memory: ProgramResidualMemory | torch.Tensor,
-    reconciliation: ProgramReconciliationState,
     context: DistributedContext,
     metrics_rows: int,
     cursor_contract: Mapping[str, Any],
     checkpoint_contract: Mapping[str, Any],
-    interaction_cursor: Mapping[str, Any] | None = None,
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
-    rows_per_macro: int = FORMAL_ROWS_PER_MACRO,
 ) -> Path:
-    """Atomically publish Program memory, training precision, and per-rank RNG."""
+    """Atomically publish only Program memory and per-rank RNG at a macro boundary."""
 
     shape = _shape(expected_memory_shape)
     if (
@@ -515,8 +410,6 @@ def save_v6_prior_checkpoint(
         or metrics_rows != macro
         or context.world_size <= 0
         or not 0 <= context.rank < context.world_size
-        or type(rows_per_macro) is not int
-        or rows_per_macro <= 0
     ):
         raise _error("checkpoint cursor")
     cursor = _json_object(cursor_contract, "cursor contract")
@@ -524,14 +417,6 @@ def save_v6_prior_checkpoint(
     if cursor.get("next_macro") != macro:
         raise _error("cursor contract")
     value = _validate_live_memory(memory, shape, require_finite=False)
-    reconciliation_shape = _reconciliation_shape(shape)
-    expected_assimilated_rows = macro * rows_per_macro
-    precision = _validate_live_reconciliation(
-        reconciliation,
-        reconciliation_shape,
-        expected_assimilated_rows=expected_assimilated_rows,
-        require_finite=False,
-    )
     checkpoints = output_dir / "checkpoints"
     final = checkpoints / f"macro_{macro:08d}"
     temporary = checkpoints / f".macro_{macro:08d}.tmp"
@@ -539,19 +424,18 @@ def save_v6_prior_checkpoint(
     try:
         if context.is_main:
             _validate_live_memory(memory, shape, require_finite=True)
-            _validate_live_reconciliation(
-                reconciliation,
-                reconciliation_shape,
-                expected_assimilated_rows=expected_assimilated_rows,
-                require_finite=True,
-                require_positive_definite=True,
-            )
-            _initialize_checkpoint_directory(
-                output_dir=output_dir,
-                temporary=temporary,
-                final=final,
-                macro=macro,
-            )
+            checkpoints.mkdir(parents=True, exist_ok=True)
+            if temporary.exists() and not final.exists():
+                failure_packets = output_dir / "failure_packets"
+                failure_packets.mkdir(parents=True, exist_ok=True)
+                os.replace(
+                    temporary,
+                    failure_packets
+                    / (f"incomplete_checkpoint_macro_{macro:08d}_" f"{time.time_ns()}"),
+                )
+            if final.exists() or temporary.exists():
+                raise _error("checkpoint already exists")
+            temporary.mkdir()
     except Exception as caught:
         error = caught
     _raise_distributed(context, "initialization", error)
@@ -560,11 +444,7 @@ def save_v6_prior_checkpoint(
     error = None
     rng_name = f"rng_rank_{context.rank:03d}.pt"
     try:
-        saved_rng = _rng_state(
-            context,
-            macro=macro,
-            interaction_cursor=interaction_cursor,
-        )
+        saved_rng = _rng_state(context)
         torch.save(saved_rng, temporary / rng_name)
     except Exception as caught:
         error = caught
@@ -573,20 +453,30 @@ def save_v6_prior_checkpoint(
     error = None
     try:
         if context.is_main:
-            _publish_main_payload(
-                temporary=temporary,
-                final=final,
-                memory=value,
-                precision=precision,
-                macro=macro,
-                metrics_rows=metrics_rows,
-                world_size=context.world_size,
-                memory_shape=shape,
-                reconciliation_shape=reconciliation_shape,
-                assimilated_rows=expected_assimilated_rows,
-                cursor_contract=cursor,
-                checkpoint_contract=contract,
+            save_file(
+                {PROGRAM_MEMORY_KEY: value.detach().cpu().contiguous()},
+                str(temporary / PROGRAM_MEMORY_FILE),
             )
+            payload_names = {
+                PROGRAM_MEMORY_FILE,
+                *(f"rng_rank_{rank:03d}.pt" for rank in range(context.world_size)),
+            }
+            files = {name: (temporary / name).stat().st_size for name in payload_names}
+            write_json_atomic(
+                temporary / "manifest.json",
+                {
+                    "schema_version": V6_PRIOR_CHECKPOINT_SCHEMA,
+                    "next_macro": macro,
+                    "metrics_rows": metrics_rows,
+                    "world_size": context.world_size,
+                    "program_memory_shape": list(shape),
+                    "cursor_contract": cursor,
+                    "checkpoint_contract": contract,
+                    "files": files,
+                    "content_hash_policy": _CONTENT_HASH_POLICY,
+                },
+            )
+            os.replace(temporary, final)
     except Exception as caught:
         error = caught
     _raise_distributed(context, "publication", error)
@@ -607,49 +497,29 @@ def load_v6_prior_checkpoint(
     *,
     checkpoint: Path,
     memory: ProgramResidualMemory | torch.Tensor,
-    reconciliation: ProgramReconciliationState,
     context: DistributedContext,
     expected_cursor_contract: Mapping[str, Any],
     expected_checkpoint_contract: Mapping[str, Any],
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
-    rows_per_macro: int = FORMAL_ROWS_PER_MACRO,
-) -> tuple[int, int, dict[str, Any]]:
-    """Restore Program memory, precision, and this rank's RNG."""
+) -> tuple[int, int]:
+    """Restore Program memory and this rank's RNG without accepting base state."""
 
     destination: torch.Tensor | None = None
     layout: _CheckpointLayout | None = None
     restored: torch.Tensor | None = None
-    restored_precision: torch.Tensor | None = None
     rng: Mapping[str, Any] | None = None
     error: Exception | None = None
     try:
         shape = _shape(expected_memory_shape)
-        if type(rows_per_macro) is not int or rows_per_macro <= 0:
-            raise _error("rows per macro")
-        destination = _validate_live_memory(
-            memory, shape, require_finite=False
-        )
-        _validate_live_reconciliation(
-            reconciliation,
-            _reconciliation_shape(shape),
-            expected_assimilated_rows=reconciliation.assimilated_rows,
-            require_finite=False,
-        )
+        destination = _validate_live_memory(memory, shape, require_finite=False)
         layout = _validate_layout(
             checkpoint,
             expected_memory_shape=shape,
             expected_world_size=context.world_size,
             expected_cursor_contract=expected_cursor_contract,
             expected_checkpoint_contract=expected_checkpoint_contract,
-            rows_per_macro=rows_per_macro,
         )
-        restored = _load_program_memory(
-            layout.checkpoint / PROGRAM_MEMORY_FILE, shape
-        )
-        restored_precision = _load_reconciliation_precision(
-            layout.checkpoint / RECONCILIATION_FILE,
-            layout.reconciliation_shape,
-        )
+        restored = _load_program_memory(layout.checkpoint / PROGRAM_MEMORY_FILE, shape)
         rng = _load_rng(
             layout.checkpoint / f"rng_rank_{context.rank:03d}.pt",
             rank=context.rank,
@@ -657,34 +527,22 @@ def load_v6_prior_checkpoint(
         )
         if rng["device_type"] != context.device.type:
             raise _error(f"rank {context.rank} RNG device")
-        if rng["interaction_cursor"]["next_macro"] != layout.macro:
-            raise _error(f"rank {context.rank} interaction cursor")
     except Exception as caught:
         error = caught
     _raise_distributed(context, "resume payload load", error)
 
     error = None
     try:
-        if (
-            destination is None
-            or layout is None
-            or restored is None
-            or restored_precision is None
-            or rng is None
-        ):
+        if destination is None or layout is None or restored is None or rng is None:
             raise _error("resume payload agreement")
         destination.copy_(restored.to(device=destination.device))
-        reconciliation.precision.copy_(
-            restored_precision.to(device=reconciliation.precision.device)
-        )
-        reconciliation.assimilated_rows = layout.assimilated_rows
         _restore_rng(rng, context)
     except Exception as caught:
         error = caught
     _raise_distributed(context, "resume state restoration", error)
     if layout is None:
         raise _error("resume payload agreement")
-    return layout.macro, layout.metrics_rows, dict(rng["interaction_cursor"])
+    return layout.macro, layout.metrics_rows
 
 
 def inspect_v6_prior_checkpoint(
@@ -695,40 +553,25 @@ def inspect_v6_prior_checkpoint(
     expected_cursor_contract: Mapping[str, Any] | None = None,
     expected_checkpoint_contract: Mapping[str, Any] | None = None,
     validate_payload_values: bool = True,
-    rows_per_macro: int = FORMAL_ROWS_PER_MACRO,
 ) -> dict[str, Any]:
     """Validate one checkpoint without mutating live memory or global RNG."""
 
     shape = _shape(expected_memory_shape)
     if type(expected_world_size) is not int or expected_world_size <= 0:
         raise _error("expected world size")
-    if type(rows_per_macro) is not int or rows_per_macro <= 0:
-        raise _error("rows per macro")
     layout = _validate_layout(
         checkpoint,
         expected_memory_shape=shape,
         expected_world_size=expected_world_size,
         expected_cursor_contract=expected_cursor_contract,
         expected_checkpoint_contract=expected_checkpoint_contract,
-        rows_per_macro=rows_per_macro,
     )
     if validate_payload_values:
-        memory = _load_program_memory(
-            layout.checkpoint / PROGRAM_MEMORY_FILE, shape
-        )
+        memory = _load_program_memory(layout.checkpoint / PROGRAM_MEMORY_FILE, shape)
         memory_metadata = {
             "dtype": str(memory.dtype),
             "shape": list(memory.shape),
             "value_count": memory.numel(),
-        }
-        reconciliation = _load_reconciliation_precision(
-            layout.checkpoint / RECONCILIATION_FILE,
-            layout.reconciliation_shape,
-        )
-        reconciliation_metadata = {
-            "dtype": str(reconciliation.dtype),
-            "shape": list(reconciliation.shape),
-            "value_count": reconciliation.numel(),
         }
         rng = tuple(
             _load_rng(
@@ -739,7 +582,6 @@ def inspect_v6_prior_checkpoint(
             for rank in range(layout.world_size)
         )
         finite: bool | None = True
-        reconciliation_finite: bool | None = True
         device_types = [value["device_type"] for value in rng]
         payload_validation = "full_values"
     else:
@@ -747,12 +589,7 @@ def inspect_v6_prior_checkpoint(
             layout.checkpoint / PROGRAM_MEMORY_FILE,
             shape,
         )
-        reconciliation_metadata = _inspect_reconciliation_metadata(
-            layout.checkpoint / RECONCILIATION_FILE,
-            layout.reconciliation_shape,
-        )
         finite = None
-        reconciliation_finite = None
         device_types = []
         payload_validation = "deployment_metadata_only"
     return {
@@ -775,25 +612,11 @@ def inspect_v6_prior_checkpoint(
             **memory_metadata,
             "finite": finite,
         },
-        "reconciliation": {
-            "file": RECONCILIATION_FILE,
-            "key": RECONCILIATION_KEY,
-            "tensor_count": 1,
-            **reconciliation_metadata,
-            "finite": reconciliation_finite,
-            "assimilated_rows": layout.assimilated_rows,
-            "deployment_owned": False,
-        },
         "rng": {
             "schema_version": V6_PRIOR_RNG_SCHEMA,
             "rank_count": layout.world_size,
             "ranks": list(range(layout.world_size)),
             "device_types": device_types,
-            "interaction_cursors": (
-                [dict(value["interaction_cursor"]) for value in rng]
-                if validate_payload_values
-                else []
-            ),
         },
         "payload_value_validation": payload_validation,
         "content_hash_policy": _CONTENT_HASH_POLICY,

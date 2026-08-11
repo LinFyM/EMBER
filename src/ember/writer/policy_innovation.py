@@ -5,7 +5,9 @@ from __future__ import annotations
 import torch
 import torch.nn.functional as F
 
-from ember.expert_manifold.contract import ExpertManifoldError
+
+class PolicyInnovationError(RuntimeError):
+    """Raised when frozen policy video evidence violates its sealed contract."""
 
 
 NATIVE_IMAGE_TOKENS = 256
@@ -15,7 +17,7 @@ def phase_resample(value: torch.Tensor, slots: int) -> torch.Tensor:
     """Linearly align one ordered variable-length video to fixed phase slots."""
 
     if value.ndim != 2 or value.shape[0] < 2 or slots <= 1:
-        raise ExpertManifoldError("video innovation needs at least two frames and phases")
+        raise PolicyInnovationError("video innovation needs at least two frames and phases")
     source_dtype = value.dtype
     aligned = F.interpolate(
         value.to(torch.float32).transpose(0, 1)[None],
@@ -52,7 +54,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             or padded_action_dim != 32
             or initialization_seed < 0
         ):
-            raise ExpertManifoldError("invalid frozen video-innovation topology")
+            raise PolicyInnovationError("invalid frozen video-innovation topology")
         self.image_width = int(image_width)
         self.expert_width = int(expert_width)
         self.feature_width = int(feature_width)
@@ -69,7 +71,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
                 dtype=torch.float32,
                 generator=generator,
             ),
-            persistent=True,
+            persistent=False,
         )
 
     @staticmethod
@@ -82,7 +84,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             or frames.shape[1] != 3
             or frames.dtype != torch.uint8
         ):
-            raise ExpertManifoldError("teacher frames changed shape or dtype")
+            raise PolicyInnovationError("teacher frames changed shape or dtype")
         value = frames.to(torch.float32).div_(255.0).permute(0, 2, 3, 1)
         value = resize_with_pad_torch(value, 224, 224)
         return (value * 2.0 - 1.0).permute(0, 3, 1, 2)
@@ -107,10 +109,10 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             )
         else:
             if frames.shape[0] != batch:
-                raise ExpertManifoldError("frame-language video batch changed")
+                raise PolicyInnovationError("frame-language video batch changed")
             image_tokens = bridge.embed_image(self._prepare_images(frames))
         if image_tokens.shape != (batch, NATIVE_IMAGE_TOKENS, self.image_width):
-            raise ExpertManifoldError("PI0.5 image-token topology changed")
+            raise PolicyInnovationError("PI0.5 image-token topology changed")
         prefix = torch.cat((image_tokens, text_tokens), dim=1)
         prefix_padding = torch.cat(
             (
@@ -155,17 +157,17 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             self.action_horizon,
             self.expert_width,
         ):
-            raise ExpertManifoldError("PI0.5 high-level video hidden changed")
+            raise PolicyInnovationError("PI0.5 high-level video hidden changed")
         expert_grounded = suffix_hidden.to(torch.float32).mean(dim=1)
         result = torch.cat((grounded, expert_grounded), dim=-1)
         if result.shape != (batch, self.feature_width) or not bool(
             torch.isfinite(result).all()
         ):
-            raise ExpertManifoldError("PI0.5 grounded video feature changed")
+            raise PolicyInnovationError("PI0.5 grounded video feature changed")
         return result
 
     @torch.inference_mode()
-    def forward(
+    def frame_innovations(
         self,
         policy: torch.nn.Module,
         frames: torch.Tensor,
@@ -174,7 +176,9 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode each physical frame once and retain contiguous video counts."""
+
         videos = language_tokens.shape[0]
         valid = (
             frames.ndim == 4
@@ -192,7 +196,7 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             and int(frame_video_ids.max()) < videos
         )
         if not valid:
-            raise ExpertManifoldError("invalid frozen video-innovation batch")
+            raise PolicyInnovationError("invalid frozen video-innovation batch")
         counts = torch.bincount(frame_video_ids, minlength=videos)
         expected_ids = torch.repeat_interleave(
             torch.arange(videos, device=frames.device), counts
@@ -208,13 +212,13 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             or not torch.equal(frame_video_ids, expected_ids)
             or not torch.equal(video_offsets.to(frames.device), expected_offsets)
         ):
-            raise ExpertManifoldError("video innovations must be contiguous")
+            raise PolicyInnovationError("video innovations must be contiguous")
         core = policy.model
         if (
             int(core.config.chunk_size) != self.action_horizon
             or int(core.config.max_action_dim) != self.padded_action_dim
         ):
-            raise ExpertManifoldError("PI0.5 source policy topology changed")
+            raise PolicyInnovationError("PI0.5 source policy topology changed")
         baseline = self._encode(
             core, None, language_tokens, language_mask, task_span_mask
         )
@@ -231,16 +235,55 @@ class FrozenPi05VideoInnovationEncoder(torch.nn.Module):
             )
             frame_rows.append(actual - baseline.index_select(0, selected))
         innovation = torch.cat(frame_rows)
+        if innovation.shape != (frames.shape[0], self.feature_width):
+            raise PolicyInnovationError("per-frame video innovation changed shape")
+        return innovation, counts
+
+    def align_phases(
+        self,
+        innovation: torch.Tensor,
+        counts: torch.Tensor,
+    ) -> torch.Tensor:
+        """Phase-align already encoded contiguous per-video innovations."""
+
+        if (
+            innovation.ndim != 2
+            or innovation.shape[1] != self.feature_width
+            or counts.ndim != 1
+            or counts.dtype != torch.long
+            or counts.device != innovation.device
+            or int(counts.sum()) != innovation.shape[0]
+            or bool((counts < 2).any())
+        ):
+            raise PolicyInnovationError("invalid phase-alignment inputs")
         result = torch.stack(
             [
-                phase_resample(innovation[left:right], self.phase_slots)
-                for left, right in zip(
-                    expected_offsets[:-1].tolist(),
-                    expected_offsets[1:].tolist(),
-                    strict=True,
-                )
+                phase_resample(value, self.phase_slots)
+                for value in innovation.split(counts.detach().cpu().tolist())
             ]
         )
-        if result.shape != (videos, self.phase_slots, self.feature_width):
-            raise ExpertManifoldError("phase-aligned video innovation changed shape")
+        if result.shape != (counts.numel(), self.phase_slots, self.feature_width):
+            raise PolicyInnovationError("phase-aligned video innovation changed shape")
         return result
+
+    @torch.inference_mode()
+    def forward(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_video_ids: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        innovation, counts = self.frame_innovations(
+            policy,
+            frames,
+            frame_video_ids,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        return self.align_phases(innovation, counts)

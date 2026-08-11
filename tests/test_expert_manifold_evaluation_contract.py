@@ -230,9 +230,21 @@ def test_live_adapter_strict_loads_frozen_base_then_only_finite_residual_memory(
     )
     arguments = {
         "config": {
-            "writer": {},
+            "writer": {
+                "max_frames_per_encoder_call": 32,
+                "image_width": 2048,
+                "expert_width": 1024,
+                "action_horizon": 50,
+                "padded_action_dim": 32,
+                "initialization_seed": 7,
+            },
             "initialization": {"checkpoint": "/synthetic/historical-v6"},
-            "condition_feature": {"feature_width": 2, "projection_seed": 17},
+            "condition_feature": {
+                "feature_width": 2,
+                "projection_seed": 17,
+                "innovation_width": 3072,
+                "phase_slots": 16,
+            },
         },
         "observed": {
             "writer_asset": {

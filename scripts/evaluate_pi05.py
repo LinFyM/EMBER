@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
-from ember.expert_manifold.v6_prior_contract import (
+from ember.pi05_eval.reward_credit_gate import (
+    V6_PRIOR_CHECKPOINT_SCHEMA,
     V6_PRIOR_CONFIG_SCHEMA,
     V6_PRIOR_RUN_SCHEMA,
 )
@@ -297,6 +297,8 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
         if observed != adapter:
             raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
+
+
 def _worker_ids(
     replicas_per_gpu: int, physical_gpu_ids: Sequence[int]
 ) -> tuple[str, ...]:

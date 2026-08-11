@@ -78,10 +78,7 @@ def generate_condition_graph(
             task_span,
         )
         correct_memories = base.build_memories(correct_evidence, correct_indices)
-        correct_feature = writer.condition_feature(correct_evidence, correct_indices)
         base_slots = base.compile_slots(correct_memories)
-        stored_residual = writer.program_memory(correct_feature)
-        stored_program = base_slots + stored_residual.to(dtype=base_slots.dtype)
 
         if kind == "wrong":
             if counterfactual_video is None:
@@ -89,18 +86,17 @@ def generate_condition_graph(
             negative_frames, negative_indices, negative_offsets = _video_tensors(
                 counterfactual_video, device
             )
-            # The exact target-task tokens remain unchanged.  Only the video is
+            # The exact target-task tokens remain unchanged. Only the video is
             # replaced, so the information wall cannot leak wrong-task language.
-            negative_evidence = base.encode_video_evidence(
+            correct_feature, negative_feature = writer.paired_condition_features(
                 policy,
-                negative_frames,
-                negative_offsets,
+                correct_frames,
+                correct_offsets,
                 tokens,
                 mask,
                 task_span,
-            )
-            negative_feature = writer.condition_feature(
-                negative_evidence, negative_indices
+                negative_frames=negative_frames,
+                negative_offsets=negative_offsets,
             )
         else:
             frame_order = counterfactual_frame_order(
@@ -115,11 +111,17 @@ def generate_condition_graph(
             if frame_order is None:
                 raise ExpertManifoldError("ordered negative lost its frame order")
             negative_indices = correct_indices
-            negative_feature = writer.condition_feature(
-                correct_evidence,
-                correct_indices,
+            correct_feature, negative_feature = writer.paired_condition_features(
+                policy,
+                correct_frames,
+                correct_offsets,
+                tokens,
+                mask,
+                task_span,
                 frame_order=frame_order,
             )
+        stored_residual = writer.program_memory(correct_feature)
+        stored_program = base_slots + stored_residual.to(dtype=base_slots.dtype)
 
     # The Program itself is the only differentiable leaf.  The historical v6
     # graph, fixed feature, and manual memory are all outside autograd ownership.

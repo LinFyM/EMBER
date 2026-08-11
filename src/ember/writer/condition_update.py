@@ -1,4 +1,4 @@
-"""Video-keyed Program residuals with exact anchored reconciliation."""
+"""Policy-innovation-keyed Program residuals with blind full48 updates."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from ember.writer.model import (
     CompleteLoRAWriter,
     WriterModelError,
     WriterMemories,
-    WriterVideoEvidence,
 )
+from ember.writer.policy_innovation import FrozenPi05VideoInnovationEncoder
 from ember.writer.temporal import SlotNormalizedCoreProcedureCompiler
 
 
@@ -22,72 +22,19 @@ class ConditionUpdateError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class AnchoredReconciliationUpdateSummary:
-    """Small-matrix and induced-motion evidence for one anchored update."""
+class CounterfactualNullUpdateSummary:
+    """Small-matrix and induced-motion evidence for one blind full48 update."""
 
     correct_conditions: int
     negative_conditions: int
     damping: float
     feature_rank: int
-    precision_condition_number: float
-    innovation_condition_number: float
+    regularized_gram_condition_number: float
     correct_cotangent_rms: float
     predicted_correct_motion_rms: float
     predicted_negative_motion_rms: float
     predicted_negative_to_correct_ratio: float
-    blind_predicted_correct_motion_rms: float
-    current_motion_to_blind_ratio: float
-    reference_correct_rows: int
-    reference_motion_rms: float
-    blind_reference_motion_rms: float
-    reference_to_blind_ratio: float
-    reference_rows_improved_fraction: float
     value_delta_rms: float
-    assimilated_rows_before: int
-    assimilated_rows_after: int
-
-
-@dataclass(frozen=True)
-class _AnchoredLinearSolve:
-    """Small feature-space factors shared by the write and diagnostics."""
-
-    features: torch.Tensor
-    small_features: torch.Tensor
-    gram: torch.Tensor
-    damping: torch.Tensor
-    gain: torch.Tensor
-    blind_cholesky: torch.Tensor
-    next_precision: torch.Tensor
-    feature_rank: int
-    precision_condition_number: float
-    innovation_condition_number: float
-
-
-@dataclass(frozen=True)
-class _ReferenceMotionEvidence:
-    rows: int
-    motion_rms: float
-    blind_motion_rms: float
-    improved_fraction: float
-
-
-class ProgramReconciliationState(torch.nn.Module):
-    """Training-only sufficient state for exact cumulative anchored ridge."""
-
-    def __init__(self, *, feature_width: int) -> None:
-        super().__init__()
-        if feature_width <= 0:
-            raise ConditionUpdateError("invalid reconciliation feature width")
-        self.register_buffer(
-            "precision",
-            torch.eye(feature_width, dtype=torch.float64),
-            persistent=True,
-        )
-        self.assimilated_rows = 0
-
-    @property
-    def feature_width(self) -> int:
-        return int(self.precision.shape[0])
 
 
 @dataclass(frozen=True)
@@ -99,64 +46,64 @@ class ProgramDeltaApplicationSummary:
     predicted_observed_relative_rms: float
 
 
-class FixedBalancedCausalConditionFeature(torch.nn.Module):
-    """Build one balanced static/dynamic key from frozen v6 video evidence."""
+class PolicyInnovationCausalConditionFeature(torch.nn.Module):
+    """Build one balanced key from phase-aligned frozen-policy innovations."""
 
     BLOCK_COUNT = 2
 
     def __init__(
         self,
         *,
-        program_width: int,
+        innovation_width: int,
         feature_width: int,
         initialization_seed: int,
     ) -> None:
         super().__init__()
         if (
-            min(program_width, feature_width) <= 0
+            min(innovation_width, feature_width) <= 0
             or feature_width % self.BLOCK_COUNT
             or initialization_seed < 0
         ):
-            raise ConditionUpdateError("invalid fixed condition-feature dimensions")
+            raise ConditionUpdateError("invalid policy-innovation key dimensions")
         generator = torch.Generator(device="cpu").manual_seed(initialization_seed)
         block_width = feature_width // self.BLOCK_COUNT
         projection = torch.empty(
             self.BLOCK_COUNT,
             block_width,
-            program_width,
+            innovation_width,
             dtype=torch.float32,
         )
         projection.normal_(generator=generator)
         projection = F.normalize(projection, dim=-1, eps=1e-12).contiguous()
-        self.program_width = int(program_width)
+        self.innovation_width = int(innovation_width)
         self.feature_width = int(feature_width)
         self.block_width = int(block_width)
         self.initialization_seed = int(initialization_seed)
-        # The projection is regenerated from the sealed config seed.  Keeping it
-        # non-persistent makes it impossible for a residual checkpoint to cover
-        # either this fixed authority or the historical 600-tensor v6 base.
+        # Regenerate this fixed authority from config rather than allowing a
+        # residual checkpoint to own either the key or the historical v6 base.
         self.register_buffer("projection", projection, persistent=False)
 
     @staticmethod
     def _validated_order(
-        evidence: WriterVideoEvidence,
-        frame_order: torch.Tensor | None,
+        innovations: torch.Tensor,
+        phase_order: torch.Tensor | None,
     ) -> torch.Tensor:
-        total = evidence.offsets[-1]
-        device = evidence.frame_evidence.device
-        if frame_order is None:
-            return torch.arange(total, dtype=torch.long, device=device)
+        phases = innovations.shape[1]
+        device = innovations.device
+        if phase_order is None:
+            return torch.arange(phases, dtype=torch.long, device=device)
         if (
-            frame_order.ndim != 1
-            or frame_order.shape != (total,)
-            or frame_order.dtype != torch.long
-            or frame_order.device != device
+            phase_order.ndim != 1
+            or phase_order.shape != (phases,)
+            or phase_order.dtype != torch.long
+            or phase_order.device != device
+            or not torch.equal(
+                phase_order.sort().values,
+                torch.arange(phases, dtype=torch.long, device=device),
+            )
         ):
-            raise ConditionUpdateError("condition feature frame order changed")
-        # Counterfactual frame orders are produced by the sealed schedule owner.
-        # Re-sorting every GPU order here added one device synchronization per
-        # condition without adding a second trust boundary.
-        return frame_order
+            raise ConditionUpdateError("policy-innovation phase order changed")
+        return phase_order
 
     @staticmethod
     def _zero_preserving_normalize(value: torch.Tensor) -> torch.Tensor:
@@ -166,78 +113,45 @@ class FixedBalancedCausalConditionFeature(torch.nn.Module):
 
     def forward(
         self,
-        evidence: WriterVideoEvidence,
-        frame_indices: torch.Tensor,
+        innovations: torch.Tensor,
         *,
-        frame_order: torch.Tensor | None = None,
+        phase_order: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Encode actual frame content in the supplied sampled-frame order."""
+        """Encode ordered `[conditions, phases, innovation_width]` values."""
 
-        total = evidence.offsets[-1]
-        conditions = len(evidence.offsets) - 1
         if (
-            conditions <= 0
-            or evidence.frame_evidence.ndim != 3
-            or evidence.frame_evidence.shape[0] != total
-            or evidence.frame_evidence.shape[-1] != self.program_width
-            or evidence.text_queries.shape
-            != (
-                conditions,
-                evidence.frame_evidence.shape[1],
-                self.program_width,
-            )
-            or evidence.valid_task_tokens.shape
-            != (conditions, evidence.frame_evidence.shape[1])
-            or evidence.valid_task_tokens.dtype != torch.bool
-            or frame_indices.shape != (total,)
-            or frame_indices.dtype != torch.long
-            or frame_indices.device != evidence.frame_evidence.device
+            innovations.ndim != 3
+            or min(innovations.shape[:2]) <= 0
+            or innovations.shape[1] <= 1
+            or innovations.shape[2] != self.innovation_width
+            or not innovations.is_floating_point()
         ):
-            raise ConditionUpdateError("condition feature evidence topology changed")
-        order = self._validated_order(evidence, frame_order)
-        # This fixed key and the manual memory map are an explicit FP32 contract.
-        # Both callers intentionally run the surrounding video/Writer graph under
-        # BF16 autocast, so disable autocast locally instead of relying on ambient
-        # dtype state.
+            raise ConditionUpdateError("policy-innovation key topology changed")
+        order = self._validated_order(innovations, phase_order)
         with torch.autocast(
-            device_type=evidence.frame_evidence.device.type,
+            device_type=innovations.device.type,
             enabled=False,
         ):
-            ordered_frames = evidence.frame_evidence.index_select(0, order).to(
-                dtype=torch.float32
-            )
-            descriptor_blocks = []
-            for condition, (left, right) in enumerate(
-                zip(evidence.offsets, evidence.offsets[1:])
-            ):
-                valid_tokens = evidence.valid_task_tokens[condition]
-                innovation = (
-                    ordered_frames[left:right, valid_tokens]
-                    - evidence.text_queries[condition, valid_tokens]
-                    .to(dtype=torch.float32)
-                    .unsqueeze(0)
-                ).mean(dim=1)
-                static = innovation.mean(dim=0)
-                centered = innovation - static
-                prefix_scale = torch.arange(
-                    1,
-                    innovation.shape[0] + 1,
-                    dtype=torch.float32,
-                    device=innovation.device,
-                ).sqrt_()
-                causal = (centered.cumsum(dim=0) / prefix_scale.unsqueeze(1)).mean(
-                    dim=0
-                )
-                descriptor_blocks.append(torch.stack((static, causal)))
-            descriptors = torch.stack(descriptor_blocks)
+            ordered = innovations.index_select(1, order).to(dtype=torch.float32)
+            static = ordered.mean(dim=1)
+            centered = ordered - static.unsqueeze(1)
+            prefix_scale = torch.arange(
+                1,
+                ordered.shape[1] + 1,
+                dtype=torch.float32,
+                device=ordered.device,
+            ).sqrt_()
+            causal = (centered.cumsum(dim=1) / prefix_scale[None, :, None]).mean(dim=1)
+            descriptors = torch.stack((static, causal), dim=1)
             projected = torch.einsum("cbw,bhw->cbh", descriptors, self.projection)
             balanced = self._zero_preserving_normalize(projected)
             features = self._zero_preserving_normalize(balanced.flatten(1))
         if (
-            features.shape != (conditions, self.feature_width)
+            features.shape != (innovations.shape[0], self.feature_width)
             or features.dtype != torch.float32
+            or not bool(torch.isfinite(features).all())
         ):
-            raise ConditionUpdateError("condition feature became invalid")
+            raise ConditionUpdateError("policy-innovation key became invalid")
         return features
 
 
@@ -289,14 +203,32 @@ class FrozenV6ConditionResidualWriter(torch.nn.Module):
         *,
         feature_width: int,
         feature_seed: int,
+        innovation_width: int = 3072,
+        phase_slots: int = 16,
+        max_frames_per_encoder_call: int = 32,
+        image_width: int = 2048,
+        expert_width: int = 1024,
+        action_horizon: int = 50,
+        padded_action_dim: int = 32,
+        innovation_seed: int = 7,
     ) -> None:
         super().__init__()
         if base_writer.program_width <= 0:
             raise ConditionUpdateError("invalid frozen v6 Writer")
         base_writer.requires_grad_(False).eval()
         self.base_writer = base_writer
-        self.condition_feature = FixedBalancedCausalConditionFeature(
-            program_width=base_writer.program_width,
+        self.policy_innovation = FrozenPi05VideoInnovationEncoder(
+            image_width=image_width,
+            expert_width=expert_width,
+            feature_width=innovation_width,
+            phase_slots=phase_slots,
+            max_frames_per_encoder_call=max_frames_per_encoder_call,
+            action_horizon=action_horizon,
+            padded_action_dim=padded_action_dim,
+            initialization_seed=innovation_seed,
+        )
+        self.condition_feature = PolicyInnovationCausalConditionFeature(
+            innovation_width=innovation_width,
             feature_width=feature_width,
             initialization_seed=feature_seed,
         )
@@ -309,9 +241,137 @@ class FrozenV6ConditionResidualWriter(torch.nn.Module):
     def train(self, mode: bool = True) -> FrozenV6ConditionResidualWriter:
         super().train(mode)
         self.base_writer.eval()
+        self.policy_innovation.eval()
         self.condition_feature.eval()
         self.program_memory.eval()
         return self
+
+    def condition_features(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        *,
+        frame_order: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Encode one or more raw videos through the frozen policy key owner."""
+
+        offsets = self.base_writer._validated_offsets(video_offsets, frames.shape[0])
+        conditions = len(offsets) - 1
+        lengths = torch.tensor(
+            [right - left for left, right in zip(offsets, offsets[1:])],
+            dtype=torch.long,
+            device=frames.device,
+        )
+        frame_video_ids = torch.repeat_interleave(
+            torch.arange(conditions, device=frames.device), lengths
+        )
+        ordered_frames = frames
+        if frame_order is not None:
+            order = self.base_writer._validate_frame_order(
+                frame_order, offsets, device=frames.device
+            )
+            ordered_frames = frames.index_select(0, order)
+        innovations = self.policy_innovation(
+            policy,
+            ordered_frames,
+            frame_video_ids,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        return self.condition_feature(innovations)
+
+    def paired_condition_features(
+        self,
+        policy: torch.nn.Module,
+        correct_frames: torch.Tensor,
+        correct_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        *,
+        negative_frames: torch.Tensor | None = None,
+        negative_offsets: torch.Tensor | None = None,
+        frame_order: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode correct and counterfactual keys without duplicate frame forwards."""
+
+        correct_bounds = self.base_writer._validated_offsets(
+            correct_offsets, correct_frames.shape[0]
+        )
+        wrong_video = negative_frames is not None or negative_offsets is not None
+        if (
+            len(correct_bounds) != 2
+            or language_tokens.shape[0] != 1
+            or language_mask.shape[0] != 1
+            or task_span_mask.shape[0] != 1
+            or wrong_video == (frame_order is not None)
+            or (negative_frames is None) != (negative_offsets is None)
+        ):
+            raise ConditionUpdateError("paired policy-innovation ownership changed")
+        if wrong_video:
+            assert negative_frames is not None and negative_offsets is not None
+            negative_bounds = self.base_writer._validated_offsets(
+                negative_offsets, negative_frames.shape[0]
+            )
+            if len(negative_bounds) != 2:
+                raise ConditionUpdateError("wrong-video policy key is not one-shot")
+            lengths = torch.tensor(
+                (correct_frames.shape[0], negative_frames.shape[0]),
+                dtype=torch.long,
+                device=correct_frames.device,
+            )
+            frames = torch.cat((correct_frames, negative_frames), dim=0)
+            frame_video_ids = torch.repeat_interleave(
+                torch.arange(2, device=correct_frames.device), lengths
+            )
+            offsets = torch.tensor(
+                (0, correct_frames.shape[0], frames.shape[0]),
+                dtype=torch.long,
+                device=correct_offsets.device,
+            )
+            innovations, counts = self.policy_innovation.frame_innovations(
+                policy,
+                frames,
+                frame_video_ids,
+                offsets,
+                language_tokens.repeat(2, 1),
+                language_mask.repeat(2, 1),
+                task_span_mask.repeat(2, 1),
+            )
+            aligned = self.policy_innovation.align_phases(innovations, counts)
+            features = self.condition_feature(aligned)
+            return features[:1], features[1:]
+
+        assert frame_order is not None
+        order = self.base_writer._validate_frame_order(
+            frame_order, correct_bounds, device=correct_frames.device
+        )
+        frame_video_ids = torch.zeros(
+            correct_frames.shape[0], dtype=torch.long, device=correct_frames.device
+        )
+        innovations, counts = self.policy_innovation.frame_innovations(
+            policy,
+            correct_frames,
+            frame_video_ids,
+            correct_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        correct_aligned = self.policy_innovation.align_phases(innovations, counts)
+        negative_aligned = self.policy_innovation.align_phases(
+            innovations.index_select(0, order), counts
+        )
+        return (
+            self.condition_feature(correct_aligned),
+            self.condition_feature(negative_aligned),
+        )
 
     def condition_slots(
         self,
@@ -344,7 +404,14 @@ class FrozenV6ConditionResidualWriter(torch.nn.Module):
             task_span_mask,
         )
         memories = self.base_writer.build_memories(evidence, frame_indices)
-        features = self.condition_feature(evidence, frame_indices)
+        features = self.condition_features(
+            policy,
+            frames,
+            video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
         return self.base_writer.decode_slots(self.condition_slots(memories, features))
 
 
@@ -352,77 +419,40 @@ def _root_mean_square(value: torch.Tensor) -> float:
     return float(value.to(dtype=torch.float32).square().mean().sqrt())
 
 
-def _row_root_mean_square(value: torch.Tensor) -> torch.Tensor:
-    return value.to(dtype=torch.float32).flatten(1).square().mean(dim=1).sqrt()
-
-
-def _validate_anchored_reconciliation_batch(
+@torch.no_grad()
+def counterfactual_null_program_delta(
     correct_features: torch.Tensor,
     negative_features: torch.Tensor,
     correct_cotangents: torch.Tensor,
-    reconciliation: ProgramReconciliationState,
-    reference_correct_features: torch.Tensor | None,
     *,
     step_size: float,
     relative_damping: float,
-) -> tuple[int, torch.Tensor]:
-    if correct_features.ndim != 2:
-        raise ConditionUpdateError("invalid anchored-reconciliation update batch")
-    conditions = correct_features.shape[0]
-    valid_batch = (
-        conditions > 0
-        and negative_features.shape == correct_features.shape
-        and correct_cotangents.ndim == 3
-        and correct_cotangents.shape[0] == conditions
-        and min(correct_cotangents.shape[1:]) > 0
-        and correct_features.device == negative_features.device
-        and correct_features.device == correct_cotangents.device
-    )
-    valid_state = (
-        reconciliation.precision.shape
-        == (correct_features.shape[1], correct_features.shape[1])
-        and reconciliation.precision.dtype == torch.float64
-        and reconciliation.precision.device == correct_features.device
-        and type(reconciliation.assimilated_rows) is int
-        and reconciliation.assimilated_rows >= 0
-    )
-    valid_scalars = (
-        math.isfinite(step_size)
-        and step_size > 0
-        and math.isfinite(relative_damping)
-        and relative_damping > 0
-    )
-    if not (valid_batch and valid_state and valid_scalars):
-        raise ConditionUpdateError("invalid anchored-reconciliation update batch")
-    if reference_correct_features is None:
-        reference_correct_features = correct_features.new_empty(
-            (0, correct_features.shape[1])
-        )
+) -> tuple[torch.Tensor, CounterfactualNullUpdateSummary]:
+    """Solve one blind full48 kernel and return an FP32 Program-memory write."""
+
+    conditions = correct_features.shape[0] if correct_features.ndim == 2 else 0
     if (
-        reference_correct_features.ndim != 2
-        or reference_correct_features.shape[1:] != correct_features.shape[1:]
-        or reference_correct_features.device != correct_features.device
+        conditions <= 0
+        or negative_features.shape != correct_features.shape
+        or correct_cotangents.ndim != 3
+        or correct_cotangents.shape[0] != conditions
+        or min(correct_cotangents.shape[1:]) <= 0
+        or correct_features.device != negative_features.device
+        or correct_features.device != correct_cotangents.device
+        or not math.isfinite(step_size)
+        or step_size <= 0
+        or not math.isfinite(relative_damping)
+        or relative_damping <= 0
     ):
-        raise ConditionUpdateError("invalid reconciliation reference features")
-    finite_values = (
-        correct_features,
-        negative_features,
-        correct_cotangents,
-        reconciliation.precision,
-        reference_correct_features,
-    )
-    if not all(bool(torch.isfinite(value).all()) for value in finite_values):
-        raise ConditionUpdateError("anchored reconciliation contains non-finite values")
-    return conditions, reference_correct_features
+        raise ConditionUpdateError("invalid counterfactual-null update batch")
+    if not all(
+        bool(torch.isfinite(value).all())
+        for value in (correct_features, negative_features, correct_cotangents)
+    ):
+        raise ConditionUpdateError(
+            "counterfactual-null update contains non-finite values"
+        )
 
-
-def _anchored_linear_solve(
-    correct_features: torch.Tensor,
-    negative_features: torch.Tensor,
-    reconciliation: ProgramReconciliationState,
-    *,
-    relative_damping: float,
-) -> _AnchoredLinearSolve:
     features = torch.cat((correct_features, negative_features), dim=0).to(
         dtype=torch.float32
     )
@@ -432,209 +462,74 @@ def _anchored_linear_solve(
     if not bool(torch.isfinite(mean_diagonal)) or float(mean_diagonal) <= 0:
         raise ConditionUpdateError("condition feature Gram has zero energy")
     damping = float(relative_damping) * mean_diagonal
-    identity = torch.eye(gram.shape[0], dtype=torch.float64, device=gram.device)
-    try:
-        precision_cholesky = torch.linalg.cholesky(reconciliation.precision)
-        precision_solve = torch.cholesky_solve(
-            small_features.transpose(0, 1), precision_cholesky
+    regularized = (
+        gram
+        + torch.eye(
+            gram.shape[0],
+            dtype=torch.float64,
+            device=gram.device,
         )
-        innovation = damping * identity + small_features @ precision_solve
-        innovation_cholesky = torch.linalg.cholesky(innovation)
-        blind_cholesky = torch.linalg.cholesky(gram + identity * damping)
+        * damping
+    )
+    try:
+        cholesky = torch.linalg.cholesky(regularized)
     except RuntimeError as error:
         raise ConditionUpdateError(
-            "anchored reconciliation feature solve is not positive definite"
+            "condition feature Gram is not positive definite"
         ) from error
-    gain = torch.cholesky_solve(
-        precision_solve.transpose(0, 1), innovation_cholesky
-    ).transpose(0, 1)
-    next_precision = (
-        reconciliation.precision
-        + small_features.transpose(0, 1) @ small_features / damping
-    ).contiguous()
-    eigenvalues = torch.linalg.eigvalsh(gram)
-    tolerance = 1e-5 * float(eigenvalues.abs().max())
-    precision_condition = float(torch.linalg.cond(reconciliation.precision))
-    innovation_condition = float(torch.linalg.cond(innovation))
-    if (
-        not bool(torch.isfinite(next_precision).all())
-        or not math.isfinite(precision_condition)
-        or not math.isfinite(innovation_condition)
-    ):
-        raise ConditionUpdateError("anchored reconciliation solve became invalid")
-    return _AnchoredLinearSolve(
-        features=features,
-        small_features=small_features,
-        gram=gram,
-        damping=damping,
-        gain=gain,
-        blind_cholesky=blind_cholesky,
-        next_precision=next_precision,
-        feature_rank=int((eigenvalues > tolerance).sum()),
-        precision_condition_number=precision_condition,
-        innovation_condition_number=innovation_condition,
-    )
 
-
-def _reference_motion_evidence(
-    reference_features: torch.Tensor,
-    solve: _AnchoredLinearSolve,
-    correct_gain: torch.Tensor,
-    cotangent_flat: torch.Tensor,
-    *,
-    step_size: float,
-) -> _ReferenceMotionEvidence:
-    rows = int(reference_features.shape[0])
-    if not rows:
-        return _ReferenceMotionEvidence(0, 0.0, 0.0, 1.0)
-    reference_small = reference_features.to(dtype=torch.float64)
-    reference_motion = -float(step_size) * (
-        (reference_small @ correct_gain).to(dtype=torch.float32) @ cotangent_flat
-    )
-    blind_gain = torch.cholesky_solve(
-        solve.small_features, solve.blind_cholesky
-    ).transpose(0, 1)[:, : correct_gain.shape[1]]
-    blind_motion = -float(step_size) * (
-        (reference_small @ blind_gain).to(dtype=torch.float32) @ cotangent_flat
-    )
-    reference_rows = _row_root_mean_square(reference_motion)
-    blind_rows = _row_root_mean_square(blind_motion)
-    return _ReferenceMotionEvidence(
-        rows=rows,
-        motion_rms=_root_mean_square(reference_motion),
-        blind_motion_rms=_root_mean_square(blind_motion),
-        improved_fraction=float(
-            (reference_rows < blind_rows).to(dtype=torch.float32).mean()
-        ),
-    )
-
-
-@torch.no_grad()
-def anchored_reconciliation_program_delta(
-    correct_features: torch.Tensor,
-    negative_features: torch.Tensor,
-    correct_cotangents: torch.Tensor,
-    reconciliation: ProgramReconciliationState,
-    *,
-    step_size: float,
-    relative_damping: float,
-    reference_correct_features: torch.Tensor | None = None,
-) -> tuple[
-    torch.Tensor,
-    torch.Tensor,
-    AnchoredReconciliationUpdateSummary,
-]:
-    """Return one exact recursive anchored-ridge write and next precision."""
-    conditions, reference_correct_features = _validate_anchored_reconciliation_batch(
-        correct_features,
-        negative_features,
-        correct_cotangents,
-        reconciliation,
-        reference_correct_features,
-        step_size=step_size,
-        relative_damping=relative_damping,
-    )
-    solve = _anchored_linear_solve(
-        correct_features,
-        negative_features,
-        reconciliation,
-        relative_damping=relative_damping,
-    )
-    # Only feature-space solves use FP64; the 21M-value Program write stays FP32.
-    correct_gain = solve.gain[:, :conditions].to(dtype=torch.float32)
+    # Only the 48x48 solve is FP64. The complete 21M-value RHS and write stay FP32.
+    inverse = torch.cholesky_inverse(cholesky)
+    correct_operator = inverse[:, :conditions].to(dtype=torch.float32)
     cotangent_flat = correct_cotangents.to(dtype=torch.float32).flatten(1)
-    delta_flat = -float(step_size) * (correct_gain @ cotangent_flat)
+    coefficients = correct_operator @ cotangent_flat
+    delta_flat = -float(step_size) * (features.transpose(0, 1) @ coefficients)
     delta = delta_flat.reshape(
-        solve.features.shape[1],
+        features.shape[1],
         correct_cotangents.shape[1],
         correct_cotangents.shape[2],
     ).contiguous()
-    motion_operator = (solve.small_features @ solve.gain[:, :conditions]).to(
-        dtype=torch.float32
-    )
+
+    motion_operator = (gram @ inverse[:, :conditions]).to(dtype=torch.float32)
     predicted = -float(step_size) * (motion_operator @ cotangent_flat)
     correct_motion = predicted[:conditions]
     negative_motion = predicted[conditions:]
     correct_motion_rms = _root_mean_square(correct_motion)
     negative_motion_rms = _root_mean_square(negative_motion)
-    blind_operator = torch.cholesky_solve(
-        solve.gram[:, :conditions], solve.blind_cholesky
-    ).to(dtype=torch.float32)
-    blind_current = -float(step_size) * (blind_operator @ cotangent_flat)
-    blind_correct_rms = _root_mean_square(blind_current[:conditions])
-    reference = _reference_motion_evidence(
-        reference_correct_features,
-        solve,
-        solve.gain[:, :conditions],
-        cotangent_flat,
-        step_size=step_size,
-    )
-    if not bool(torch.isfinite(delta).all()):
-        raise ConditionUpdateError("anchored Program write became invalid")
-    return (
-        delta,
-        solve.next_precision,
-        AnchoredReconciliationUpdateSummary(
-            correct_conditions=conditions,
-            negative_conditions=conditions,
-            damping=float(solve.damping),
-            feature_rank=solve.feature_rank,
-            precision_condition_number=solve.precision_condition_number,
-            innovation_condition_number=solve.innovation_condition_number,
-            correct_cotangent_rms=_root_mean_square(correct_cotangents),
-            predicted_correct_motion_rms=correct_motion_rms,
-            predicted_negative_motion_rms=negative_motion_rms,
-            predicted_negative_to_correct_ratio=(
-                negative_motion_rms / correct_motion_rms
-                if correct_motion_rms > 0
-                else torch.finfo(torch.float32).max
-            ),
-            blind_predicted_correct_motion_rms=blind_correct_rms,
-            current_motion_to_blind_ratio=(
-                correct_motion_rms / blind_correct_rms if blind_correct_rms > 0 else 1.0
-            ),
-            reference_correct_rows=reference.rows,
-            reference_motion_rms=reference.motion_rms,
-            blind_reference_motion_rms=reference.blind_motion_rms,
-            reference_to_blind_ratio=(
-                reference.motion_rms / reference.blind_motion_rms
-                if reference.blind_motion_rms > 0
-                else 0.0
-            ),
-            reference_rows_improved_fraction=reference.improved_fraction,
-            value_delta_rms=_root_mean_square(delta),
-            assimilated_rows_before=reconciliation.assimilated_rows,
-            assimilated_rows_after=(
-                reconciliation.assimilated_rows + solve.features.shape[0]
-            ),
+    eigenvalues = torch.linalg.eigvalsh(gram)
+    tolerance = 1e-5 * float(eigenvalues.abs().max())
+    feature_rank = int((eigenvalues > tolerance).sum())
+    condition = float(torch.linalg.cond(regularized))
+    if not bool(torch.isfinite(delta).all()) or not math.isfinite(condition):
+        raise ConditionUpdateError("counterfactual-null Program write became invalid")
+    return delta, CounterfactualNullUpdateSummary(
+        correct_conditions=conditions,
+        negative_conditions=conditions,
+        damping=float(damping),
+        feature_rank=feature_rank,
+        regularized_gram_condition_number=condition,
+        correct_cotangent_rms=_root_mean_square(correct_cotangents),
+        predicted_correct_motion_rms=correct_motion_rms,
+        predicted_negative_motion_rms=negative_motion_rms,
+        predicted_negative_to_correct_ratio=(
+            negative_motion_rms / correct_motion_rms
+            if correct_motion_rms > 0
+            else torch.finfo(torch.float32).max
         ),
+        value_delta_rms=_root_mean_square(delta),
     )
 
 
 @torch.no_grad()
-def apply_anchored_reconciliation_update_(
+def apply_program_residual_delta_(
     memory: ProgramResidualMemory,
-    reconciliation: ProgramReconciliationState,
     delta: torch.Tensor,
-    next_precision: torch.Tensor,
-    *,
-    assimilated_rows_after: int,
 ) -> None:
-    """Commit one prevalidated FP32 Program write and FP64 precision update."""
+    """Apply one manual FP32 write without optimizer or hidden state."""
 
-    if (
-        delta.shape != memory.value.shape
-        or delta.device != memory.value.device
-        or next_precision.shape != reconciliation.precision.shape
-        or next_precision.dtype != torch.float64
-        or next_precision.device != reconciliation.precision.device
-        or type(assimilated_rows_after) is not int
-        or assimilated_rows_after <= reconciliation.assimilated_rows
-    ):
-        raise ConditionUpdateError("anchored Program update changed topology")
+    if delta.shape != memory.value.shape or delta.device != memory.value.device:
+        raise ConditionUpdateError("Program residual delta changed topology")
     memory.value.add_(delta.to(dtype=torch.float32))
-    reconciliation.precision.copy_(next_precision)
-    reconciliation.assimilated_rows = assimilated_rows_after
 
 
 @torch.no_grad()
@@ -675,6 +570,24 @@ def program_residual_delta_application_evidence(
     )
 
 
+@torch.no_grad()
+def apply_program_residual_delta_with_evidence_(
+    memory: ProgramResidualMemory,
+    delta: torch.Tensor,
+    features: torch.Tensor,
+) -> ProgramDeltaApplicationSummary:
+    """Apply one write and verify it in CPU or one-shot profile oracles."""
+
+    before = memory(features).clone()
+    apply_program_residual_delta_(memory, delta)
+    return program_residual_delta_application_evidence(
+        memory,
+        delta,
+        features,
+        before,
+    )
+
+
 def validate_frozen_v6_residual_writer(
     writer: FrozenV6ConditionResidualWriter,
     *,
@@ -683,9 +596,29 @@ def validate_frozen_v6_residual_writer(
     """Fail closed if the wrapper gains trainable or malformed dynamic state."""
 
     base_state = writer.base_writer.state_dict()
+    projection_shape = (
+        PolicyInnovationCausalConditionFeature.BLOCK_COUNT,
+        writer.condition_feature.block_width,
+        writer.policy_innovation.feature_width,
+    )
+    fixed_state_is_empty = (
+        not writer.policy_innovation.state_dict()
+        and not writer.condition_feature.state_dict()
+    )
     if (
         len(base_state) != 600
         or any(parameter.requires_grad for parameter in writer.parameters())
+        or not fixed_state_is_empty
+        or writer.policy_innovation.feature_width
+        != writer.condition_feature.innovation_width
+        or writer.condition_feature.projection.shape != projection_shape
+        or writer.condition_feature.projection.dtype != torch.float32
+        or writer.policy_innovation.fixed_suffix_noise.dtype != torch.float32
+        or writer.policy_innovation.fixed_suffix_noise.shape
+        != (
+            writer.policy_innovation.action_horizon,
+            writer.policy_innovation.padded_action_dim,
+        )
         or writer.program_memory.value.dtype != torch.float32
         or writer.program_memory.value.shape
         != (
@@ -693,6 +626,9 @@ def validate_frozen_v6_residual_writer(
             SlotNormalizedCoreProcedureCompiler.QUERY_COUNT,
             writer.base_writer.program_width,
         )
-        or (require_zero_memory and bool(torch.count_nonzero(writer.program_memory.value)))
+        or (
+            require_zero_memory
+            and bool(torch.count_nonzero(writer.program_memory.value))
+        )
     ):
         raise WriterModelError("frozen v6 residual Writer ownership changed")

@@ -145,14 +145,13 @@ single-checkpoint drift。简单平均video features、平均LoRA或让数量越
 这条链要求下一设计延续已有认知，只改变最早失效接口。负结果只淘汰实际受检验的假设：rank14失败不等于
 所有rank reservation失败，expert bank失败也不等于所有task-level manifold监督失败。
 
-## 10. Open questions for the next design
+## 10. Current falsifiable hypothesis
 
-- 能否从train24 policy geometry预先推导 heterogeneous target ownership/topology，同时保持old support，
-  而不是按held得失挑rank？
-- 能否让task-level policy target与视频内有向事件绑定，使wrong/order corruption在compiler前就落到不同且
-  有用的cotangent？
-- 能否用on-policy或更接近occupancy的credit训练shared Writer，又避免高成本rollout和checkpoint换手？
-- few-shot应怎样聚合“跨video不变量 + 每条video内部时序”，并在one-shot能力不被掩盖的matched实验中评估？
-- 哪个历史143的结构优势必须保留，哪个接口才是其视频margin弱与晚期漂移的真正原因？
+当前唯一active假设是PICK：保留historical v6的高增益full-rank compiler和blind Program credit，只把
+demo-specific Balanced key换成frozen source-policy zero-image-subtracted static/causal innovation key。train24×50
+cache显示其causal same-task/cross-task约`.9195/.1565`，reverse约`-.9755`，complete key在50个correct24 panel
+均rank24；这些只足以选择设计，不能支持方法claim。
 
-这些只是设计问题，不是已授权候选。新session必须先形成单变量、可证伪的authority，再恢复实现或GPU工作。
+它最先会被online raw-frame结构、full48 rank/leakage、Program→BA/action闭合、吞吐或macro10 strict400任一门
+否决。若失败，只淘汰当前PICK key与blind AS credit组合；heterogeneous topology、few-shot和新的occupancy credit
+仍是未授权开放问题，不得自动切换。

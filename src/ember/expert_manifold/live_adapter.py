@@ -71,6 +71,16 @@ def _build_v6_writer(
         base_writer,
         feature_width=int(config["condition_feature"]["feature_width"]),
         feature_seed=int(config["condition_feature"]["projection_seed"]),
+        innovation_width=int(config["condition_feature"]["innovation_width"]),
+        phase_slots=int(config["condition_feature"]["phase_slots"]),
+        max_frames_per_encoder_call=int(
+            config["writer"]["max_frames_per_encoder_call"]
+        ),
+        image_width=int(config["writer"]["image_width"]),
+        expert_width=int(config["writer"]["expert_width"]),
+        action_horizon=int(config["writer"]["action_horizon"]),
+        padded_action_dim=int(config["writer"]["padded_action_dim"]),
+        innovation_seed=int(config["writer"]["initialization_seed"]),
     )
     trained = observed["writer_asset"]["kind"] != "historical_v6_macro400_load_only"
     if trained:

@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 
 import ember.pi05_eval.reward_credit_gate as gate_module
-from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.reward_credit_gate import (
+    V6_PRIOR_CHECKPOINT_SCHEMA,
     load_reward_credit_control_trigger_evidence,
     reward_credit_decision_evidence,
     reward_credit_six_arm_evidence,

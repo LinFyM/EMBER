@@ -1,7 +1,8 @@
 # Policy-Innovation Causal Consensus Key Writer
 
-状态：2026-08-11 active design authority。本文建立 uniform pivot-rank14 终局之后的唯一 successor；截至本文
-写入时尚未实现、profile、训练或 rollout。任何 GPU 工作必须先完成本文的 CPU/机制门，并继续服从
+状态：2026-08-11 active implementation authority。本文建立 uniform pivot-rank14 终局之后的唯一 successor；
+canonical PICK owner与blind full48 runtime已完成CPU实现和回归，但尚未profile、训练或rollout。任何GPU工作
+必须先完成本文的live机制门，并继续服从
 `AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。
 
 ## 1. 决策摘要

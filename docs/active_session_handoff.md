@@ -9,7 +9,8 @@
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。不存在待跑Gate B/C；当前唯一active
-  successor是PICK，但只完成design authority，尚未实现、profile、训练或rollout，也没有EMBER GPU进程。
+  successor是PICK。canonical implementation、fresh-incompatible config、memory-only checkpoint与deployment
+  wiring已完成，当前CPU回归`345 passed`；尚未profile、训练或rollout，也没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。PICK必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -162,7 +163,9 @@ static/causal key；frozen-v6 600 tensors、Program memory、full-rank16 compile
 `-.9755`、shuffle约`-.0053`，而Balanced-v2最新最早失败正是同task 50-video correction近随机正交。该cache
 只作train-only design evidence，不能替代online机制或closed-loop。
 
-PICK必须回答：
+PICK的CPU实现保持historical v6的600 tensors、完整rank16 compiler与B20 blind full48 credit，只把condition key
+替换为frozen source-policy innovation。旧Balanced/RLS/Reward executable owner已从当前canonical path移除；
+checkpoint只保存单个FP32 Program memory和每rank RNG。它仍必须回答：
 
 - online raw-frame key能否重现cache中的same-task与有向顺序结构；
 - 一致condition neighborhood能否让Program/effective-BA correction脱离随机正交，而不抹掉held task差异；
@@ -185,6 +188,11 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
 - fresh按live world size设计，exact-resume锁定原world size；
 - 先查`/data1`独立user quota与峰值预算。
 
+2026-08-11最新live snapshot：`gpu01`和`gpu02`各有6张健康空闲A40；选择`gpu02:0-5`，因为它们连续、显存与
+利用率均为0、ECC为0，`gpu02:6-7`属于他人作业，禁止触碰。fresh topology因此固定为world6、每rank4 tasks，
+与sealed吞吐基线同world size；launch前仍须再次live复核。`strg01`报告`/data1`用量`508230484 KiB`、quota
+`1073741824 KiB`，本阶段profile/formal预计峰值新增不足2GiB。
+
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
 
@@ -202,10 +210,14 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
   metrics、summary/completion。另清理34个uv临时目录、17个零字节日志、3个空/错误roots和3个空转tail进程；
 - 为未来效率保留可复用`.cache/uv`主体、`.venv`、formal results/checkpoints、paired raw rows、task experts、
   source policy、data/models、feature caches、acceptance与migration evidence；
-- 加载现有`.env.local`资产映射后的完整CPU回归为`361 passed`；compileall、CLI、Markdown links和diff-check通过。
+- cleanup封存时加载`.env.local`的完整CPU回归为`361 passed`。PICK替换退役Reward/RLS测试与实现后，当前完整
+  回归为`345 passed`；新增真实encoder合同验证zero-image baseline只算一次、每个物理frame只编码一次。
+  compileall、config fail-close、diff-check通过；architecture gate无hard violation、无parallel family，active
+  source净减少1984行。
 
 本次收尾没有启动GPU、训练、rollout或profile，也没有修改formal实验结果。删除的源码/设计仍可从`3a6f801`
 精确恢复；profile checkpoint payload没有保留副本，但它们从未是formal/consumer asset。
 
-PICK实现前先确认当前HEAD、clean和origin同步，并按新design的owner/retirement边界替换旧key。GPU前必须重新
-live检查双节点、quota、frozen commit与峰值；CPU/cache与live mechanism门不过不得创建formal训练root。
+下一步先把当前实现以clean pushed commit冻结；随后在gpu02做raw-frame key等价/顺序probe和discarded full48
+macro profile，再做B8/16/32 deployment vertical。CPU/cache或任一live mechanism门不过不得创建formal训练root；
+全部通过后才解锁fresh0→10并立即strict paired400。

@@ -31,6 +31,7 @@ def expert_manifold_episode_schema(adapter: Mapping[str, Any]) -> str:
     legacy_config_schemas = {
         "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2",
         "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3",
+        "ember_pi05_v6_reward_credit_program_cotangent_v1",
         V6_PRIOR_CONFIG_SCHEMA,
     }
     if (

@@ -2,6 +2,7 @@ from argparse import Namespace
 import copy
 import math
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -34,7 +35,7 @@ from ember.expert_manifold.model import (
     TopologicalLoRAChunkLayout,
     phase_centered_causal_memory,
 )
-from ember.expert_manifold.video_features import (
+from ember.writer.policy_innovation import (
     FrozenPi05VideoInnovationEncoder,
     phase_resample,
 )
@@ -471,6 +472,65 @@ def test_video_encoder_retains_task_span_and_action_expert_widths() -> None:
     assert encoder.image_width == 2048
     assert encoder.expert_width == 1024
     assert encoder.feature_width == 3072
+
+
+def test_video_encoder_subtracts_one_baseline_and_encodes_each_frame_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    encoder = FrozenPi05VideoInnovationEncoder(
+        image_width=2048,
+        expert_width=1024,
+        feature_width=3072,
+        phase_slots=16,
+        max_frames_per_encoder_call=3,
+        action_horizon=50,
+        padded_action_dim=32,
+        initialization_seed=7,
+    )
+    calls: list[tuple[int, ...] | None] = []
+
+    def fake_encode(
+        owner: FrozenPi05VideoInnovationEncoder,
+        _core: torch.nn.Module,
+        frames: torch.Tensor | None,
+        language_tokens: torch.Tensor,
+        _language_mask: torch.Tensor,
+        _task_span_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        if frames is None:
+            calls.append(None)
+            return torch.zeros(language_tokens.shape[0], owner.feature_width)
+        frame_ids = tuple(int(value) for value in frames[:, 0, 0, 0])
+        calls.append(frame_ids)
+        values = frames[:, 0, 0, 0].to(torch.float32)
+        return values[:, None].expand(-1, owner.feature_width)
+
+    monkeypatch.setattr(FrozenPi05VideoInnovationEncoder, "_encode", fake_encode)
+    frames = (
+        torch.arange(5, dtype=torch.uint8)
+        .reshape(5, 1, 1, 1)
+        .expand(-1, 3, 2, 2)
+    )
+    language_tokens = torch.tensor(((1, 2, 0), (1, 3, 0)), dtype=torch.long)
+    language_mask = torch.tensor(((True, True, False), (True, True, False)))
+    task_span_mask = torch.tensor(((False, True, False), (False, True, False)))
+    innovation, counts = encoder.frame_innovations(
+        SimpleNamespace(
+            model=SimpleNamespace(
+                config=SimpleNamespace(chunk_size=50, max_action_dim=32)
+            )
+        ),
+        frames,
+        torch.tensor((0, 0, 1, 1, 1), dtype=torch.long),
+        torch.tensor((0, 2, 5), dtype=torch.long),
+        language_tokens,
+        language_mask,
+        task_span_mask,
+    )
+
+    assert calls == [None, (0, 1, 2), (3, 4)]
+    assert torch.equal(counts, torch.tensor((2, 3), dtype=torch.long))
+    torch.testing.assert_close(innovation[:, 0], torch.arange(5, dtype=torch.float32))
 
 
 def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> None:

@@ -16,8 +16,8 @@
   retained/gained/lost=`118/20/16`、churn36。它未过`correct>=144`与`lost<=8`门，不得resume到25、补controls
   或做参数sweep。
 - 当前唯一active successor design是OSG-PC：保留PICK-GC的B20 proposal，只将其投影到“不增大train24成功
-  on-policy executed-prefix loss”的parameter-free可行锥，再走同一full48 Program write。它尚未实现、profile
-  或获得GPU训练资格；当前没有EMBER GPU进程。
+  on-policy executed-prefix loss”的parameter-free可行锥，再走同一full48 Program write。它已完成唯一canonical
+  实现、fresh schema与CPU/synthetic门；尚未做discarded live profile、formal或评测，当前没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -205,7 +205,18 @@ random-reset rollouts；每条成功episode的executed-prefix CFM cotangent `r_e
 完整公式、owner替换、CPU/live/profile/formal门见
 `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`。Reward-Credit、RLS和rank14历史
 只能作为边界证据，不能直接恢复。few-shot、task-level manifold supervision与heterogeneous topology仍是
-开放方向，不能与OSG-PC并行实现。design commit和CPU合同完成前不得GPU训练。
+开放方向，不能与OSG-PC并行实现。
+
+OSG-PC已经原位实现为唯一active path：`v6_reward_credit.py`只保留per-success retention VJP与最多4条约束的
+解析Program锥投影；`reward/rollout.py`只让成功episode进入replay，失败episode replay/gradient严格为0；每个
+task仍只做一次正确视频encode，rollout后只重解FactorHeads。训练继续复用同一full48 solver，并在profile中
+额外报告“实际full48写入”对每条success guard和source descent的影响，以暴露task-local safe RHS在shared write
+中是否重新被破坏。唯一config为`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`，状态
+`active_cpu_ready_awaiting_live_profile`。加载`.env.local`后的fresh完整CPU回归为`340 passed`，compileall与
+`git diff --check`通过；这只证明实现合同，不构成GPU机制或closed-loop证据。
+retention sampling按历史完整K4 task panel生成后只索引success row ordinal，因此失败actions仍不保留，且其它lane
+的success集合不会使已有guard换Monte Carlo样本。deployment adapter/episode已升fresh v9，formal status与
+checkpoint-curve registry显式支持OSG-PC的`0/5/10`，不再误用PICK-GC v8或固定`0/10/25/50`。
 
 ## 8. Runtime and GPU boundary
 
@@ -256,5 +267,5 @@ checkpoint。PICK-GC部署证据root为
 科学合同或GPU结果。`5200bee` deployment seal与`09bbed3` world4 profile authority均已push并有detached frozen
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。当前下一步
-是原位实现唯一OSG-PC owner并完成CPU/synthetic projection门；通过后才可从新clean frozen commit做一次
-discarded full24 K4+B20 profile，未过门不得formal。
+是先封存并push已通过CPU门的唯一OSG-PC实现，再从该clean frozen commit重查双节点GPU、`/data1` quota与fresh
+root，做一次discarded full24 K4+B20 profile。profile未过全部预注册机制、吞吐及实际guard传递证据，不得formal。

@@ -27,13 +27,15 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_policy_innovation_goal_causal_key_checkpoint_v1"
+    "ember_pi05_v6_on_policy_success_guarded_program_credit_checkpoint_v1"
 )
-V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_policy_innovation_goal_causal_key_rank_rng_v1"
+V6_PRIOR_RNG_SCHEMA = (
+    "ember_pi05_v6_on_policy_success_guarded_program_credit_rank_rng_v1"
+)
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_policy_innovation_goal_causal_key_inspection_v1"
+    "ember_pi05_v6_on_policy_success_guarded_program_credit_inspection_v1"
 )
-V6_PRIOR_WORLD_SIZE = 6
+V6_PRIOR_WORLD_SIZE = 4
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)
 PROGRAM_MEMORY_FILE = "program_memory.safetensors"
 PROGRAM_MEMORY_KEY = "program_memory.value"

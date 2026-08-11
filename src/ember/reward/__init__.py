@@ -15,17 +15,16 @@ from ember.reward.protocol import (
     update_seed,
 )
 from ember.reward.rollout import (
-    complete_trajectory_batch,
     RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_randomized_reward_trajectories,
+    successful_trajectory_batch,
 )
 
 __all__ = [
     "Pi05ExecutedPrefixFlowLoss",
     "RewardTask",
     "RewardTrajectory",
-    "complete_trajectory_batch",
     "RandomResetEnvironmentPool",
     "collect_randomized_reward_trajectories",
     "environment_seed",
@@ -34,6 +33,7 @@ __all__ = [
     "policy_noise_seed",
     "reward_credit_environment_seed",
     "reward_credit_policy_noise_seed",
+    "successful_trajectory_batch",
     "task_local_video_demo",
     "update_seed",
 ]

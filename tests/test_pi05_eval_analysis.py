@@ -149,6 +149,21 @@ def test_checkpoint_curve_accepts_tangent_family_but_not_macro100() -> None:
         checkpoint_curve_analysis(tangent)
 
 
+def test_checkpoint_curve_accepts_osg_pc_macro0_5_10_authority() -> None:
+    results = {
+        f"osg-{macro}": _result(macro, "correct", set(), family="osg")
+        for macro in (0, 5, 10)
+    }
+    analysis = checkpoint_curve_analysis(results)
+    assert analysis["method_family"] == "v6_osg_pc_v1"
+    assert set(analysis["panels"]["correct400"]) == {"0", "5", "10"}
+    assert set(analysis["comparisons"]["correct400"]) == {
+        "0_to_5",
+        "5_to_10",
+        "0_to_10",
+    }
+
+
 def test_checkpoint_curve_accepts_residual_memory_identity_changes_only() -> None:
     residual = {
         f"residual-{macro}": _result(

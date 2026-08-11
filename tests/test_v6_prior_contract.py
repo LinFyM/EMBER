@@ -50,7 +50,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_pick_gc_deployment_profile"
+        "sealed_from_live_osg_pc_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -85,7 +85,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_pick_gc_config_seals_only_goal_causal_innovation_and_blind_full48() -> None:
+def test_osg_pc_config_changes_only_credit_and_adds_success_guards() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -100,11 +100,17 @@ def test_pick_gc_config_seals_only_goal_causal_innovation_and_blind_full48() -> 
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_blind_counterfactual_null_condition_kernel"
+        "full48_on_policy_success_guarded_counterfactual_null_condition_kernel"
     )
+    assert config["update"]["projection"].startswith("parameter_free")
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
     assert "reconciliation" not in config
-    assert "environment" not in config
+    assert config["environment"]["rollouts_per_task"] == 4
+    assert config["environment"]["retain_failure_replay"] is False
+    assert config["objective"]["retention_flow_panel_row_identity"] == (
+        "historical_complete_k4_task_panel_then_success_row_select"
+    )
+    assert config["objective"]["retention_flow_mc_samples"] == 4
     assert config["data"]["action_queries_per_task"] == 20
     distributed = config["optimization"]["distributed_update"]
     assert distributed["world_size"] == 4
@@ -121,6 +127,8 @@ def test_pick_gc_config_seals_only_goal_causal_innovation_and_blind_full48() -> 
         ("update", "relative_damping", 0.02),
         ("data", "teacher_video_seed", 1),
         ("objective", "name", "reward_credit"),
+        ("rng", "environment_seed_root", 1),
+        ("environment", "retain_failure_replay", True),
         ("optimization", "functional_policy_microbatch_size", 1),
         ("profile_run", "gates", {}),
         ("formal_run", "decision_gates", {}),
@@ -152,6 +160,11 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
             V6_PRIOR_CANONICAL_CONFIG.parent
             / "pi05_v6_reward_credit_program_cotangent_v1.json"
         )
+    with pytest.raises(ExpertManifoldError, match="canonical config path"):
+        load_v6_prior_config(
+            V6_PRIOR_CANONICAL_CONFIG.parent
+            / "pi05_v6_policy_innovation_goal_causal_key_v1.json"
+        )
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
@@ -165,30 +178,28 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_pick_gc_deployment_profile"
+        "awaiting_live_osg_pc_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
-    assert runtime_for_mode(ready, "formal") == (25, (10, 25), 0)
+    assert runtime_for_mode(ready, "formal") == (10, (5, 10), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(result_sealed, "formal")
 
 
-def test_formal_result_evidence_mutation_fails_closed(
+def test_preprofile_artifact_injection_fails_closed(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = _raw_config()
-    config["formal_run"]["artifact_evidence"]["strict_correct400"]["results"][
-        "successes"
-    ] = 151
+    config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)
 
 
-def test_runtime_segments_are_fresh_zero_to_ten_then_exact_ten_to_twentyfive(
+def test_runtime_segments_are_fresh_zero_to_five_then_exact_five_to_ten(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -197,13 +208,13 @@ def test_runtime_segments_are_fresh_zero_to_ten_then_exact_ten_to_twentyfive(
         runtime_module, "residual_git_state", lambda _root: _git_state()
     )
     fresh = _resolve_segment(
-        _args(output_dir=tmp_path / "run", resume=None, stop=10),
+        _args(output_dir=tmp_path / "run", resume=None, stop=5),
         config,
         _context(),
     )
-    assert (fresh.start_macro, fresh.stop_macro) == (0, 10)
-    assert fresh.checkpoint_macros == (10, 25)
-    for stop in (None, 25):
+    assert (fresh.start_macro, fresh.stop_macro) == (0, 5)
+    assert fresh.checkpoint_macros == (5, 10)
+    for stop in (None, 10):
         with pytest.raises(ExpertManifoldError, match="sealed segment"):
             _resolve_segment(
                 _args(output_dir=tmp_path / "run", resume=None, stop=stop),
@@ -211,18 +222,18 @@ def test_runtime_segments_are_fresh_zero_to_ten_then_exact_ten_to_twentyfive(
                 _context(),
             )
 
-    checkpoint = tmp_path / "run/checkpoints/macro_00000010"
+    checkpoint = tmp_path / "run/checkpoints/macro_00000005"
     checkpoint.mkdir(parents=True)
     write_json_atomic(
         checkpoint.parent.parent / "run_contract.json",
         {"git": {"commit": "a" * 40}},
     )
     resumed = _resolve_segment(
-        _args(output_dir=tmp_path / "run", resume=checkpoint, stop=25),
+        _args(output_dir=tmp_path / "run", resume=checkpoint, stop=10),
         config,
         _context(),
     )
-    assert (resumed.start_macro, resumed.stop_macro) == (10, 25)
+    assert (resumed.start_macro, resumed.stop_macro) == (5, 10)
 
 
 def test_runtime_rejects_wrong_world_workers_dirty_or_unpushed_state(
@@ -233,7 +244,7 @@ def test_runtime_rejects_wrong_world_workers_dirty_or_unpushed_state(
     monkeypatch.setattr(
         runtime_module, "residual_git_state", lambda _root: _git_state()
     )
-    arguments = _args(output_dir=tmp_path / "run", resume=None, stop=10)
+    arguments = _args(output_dir=tmp_path / "run", resume=None, stop=5)
     with pytest.raises(ExpertManifoldError):
         _resolve_segment(
             arguments,
@@ -253,7 +264,7 @@ def test_runtime_rejects_wrong_world_workers_dirty_or_unpushed_state(
         _resolve_segment(arguments, config, _context())
 
 
-def test_cursor_has_no_reward_or_cumulative_precision_state() -> None:
+def test_cursor_seals_k4_randomness_without_cumulative_precision_state() -> None:
     cursor = cursor_contract(_raw_config(), 10)
     assert cursor == {
         "next_macro": 10,
@@ -265,8 +276,13 @@ def test_cursor_has_no_reward_or_cumulative_precision_state() -> None:
         "videos_per_task_visit": 1,
         "action_queries_per_task": 20,
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "rollouts_per_task": 4,
+        "next_rollout_cursor_per_task": 40,
+        "environment_seed_root": 2026081101,
+        "policy_noise_seed_root": 2026081102,
+        "retention_flow_seed_root": 2026081103,
     }
-    assert all("reward" not in key and "precision" not in key for key in cursor)
+    assert all("precision" not in key for key in cursor)
 
 
 def test_ownership_records_fixed_policy_encoder_but_checkpoints_only_memory() -> None:

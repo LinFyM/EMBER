@@ -22,6 +22,7 @@ from ember.expert_manifold.live_adapter import (
     _ordered_video_tensors,
 )
 from ember.expert_manifold.v6_prior_checkpoint import PROGRAM_MEMORY_KEY
+from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
@@ -74,7 +75,7 @@ def _writer_adapter(condition: str = "correct") -> dict:
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "config": {"schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"},
+        "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
         "arm": f"expert_manifold_v6_condition_residual_{condition}",
         "video_condition": condition,
         "writer_asset": {

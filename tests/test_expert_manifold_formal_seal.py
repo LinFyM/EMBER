@@ -26,24 +26,24 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pick_gc_world4_formal_nonpass_is_sealed_from_live_evidence() -> None:
+def test_osg_pc_is_preprofile_while_pick_gc_nonpass_remains_provenance() -> None:
     config = load_v6_prior_config(CONFIG)
-    evaluation = config["evaluation"]
-    assert config["status"] == "formal_result_sealed"
+    assert config["status"] == "active_cpu_ready_awaiting_live_profile"
     assert config["profile_run"]["expected_world_size"] == 4
     assert config["profile_run"]["tasks_per_rank"] == 6
     assert config["profile_run"]["status"] == (
-        "sealed_from_live_a40_fresh0_to1_profile"
+        "awaiting_live_a40_fresh0_to1_profile"
     )
-    profile = config["profile_run"]["artifact_evidence"]
-    assert profile["run_commit"] == "09bbed368b81f6ba77bf86636340f2ad27ee3be3"
-    assert profile["world_size"] == 4
-    assert profile["tasks_per_rank"] == 6
-    assert profile["passed"] is True
-    assert profile["completion"]["passed"] is True
-    formal = config["formal_run"]
-    assert formal["status"] == "formal_result_sealed"
-    result = formal["artifact_evidence"]
+    assert config["profile_run"]["artifact_evidence"] is None
+    assert config["formal_run"]["artifact_evidence"] is None
+    assert config["evaluation"]["online_smoke_evidence"] is None
+
+    pick_gc_path = (
+        REPO_ROOT / "configs/pi05_v6_policy_innovation_goal_causal_key_v1.json"
+    )
+    pick_gc = json.loads(pick_gc_path.read_text(encoding="utf-8"))
+    assert pick_gc["status"] == "formal_result_sealed"
+    result = pick_gc["formal_run"]["artifact_evidence"]
     assert result["training"]["completed_macro"] == 10
     assert result["strict_correct400"]["results"]["successes"] == 138
     assert result["strict_correct400"]["results"]["breadth"] == 6
@@ -55,17 +55,6 @@ def test_pick_gc_world4_formal_nonpass_is_sealed_from_live_evidence() -> None:
         "retained_gained_lost_to_macro0": [118, 20, 16],
         "scope": "retire_pick_gc_plus_blind_offline_source_action_credit_only",
     }
-    assert evaluation["throughput_policy"] == (
-        "highest_measured_batch_throughput_with_device_memory_headroom"
-    )
-    assert evaluation["required_writer_model_batch_sizes"] == [8, 16, 32]
-    assert evaluation["formal_status"] == (
-        "sealed_from_live_pick_gc_deployment_profile"
-    )
-    evidence = evaluation["online_smoke_evidence"]
-    assert evidence["run_commit"] == "717b561518b9a654f81fd9d27643f7272ddf93ff"
-    assert evidence["writer_model_batch_size"] == 32
-    assert evidence["completion"]["passed"] is True
 
 
 def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
@@ -175,6 +164,9 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
         "update": config["update"],
+        "environment": config["environment"],
+        "objective": config["objective"],
+        "rng": config["rng"],
         "ownership": ownership,
         "world_size": 4,
         "rank_topology": [{"rank": rank} for rank in range(4)],

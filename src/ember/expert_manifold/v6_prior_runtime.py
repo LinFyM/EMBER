@@ -1,4 +1,4 @@
-"""Asset loading and exact-resume runtime for the residual Writer."""
+"""Assets, K4 environments, and exact-resume runtime for OSG-PC."""
 
 from __future__ import annotations
 
@@ -41,6 +41,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     residual_git_state,
 )
 from ember.lora import LoRAContract
+from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
@@ -56,6 +57,8 @@ from ember.pi05_source_setup import (
     load_stats,
     seed_everything,
 )
+from ember.reward.protocol import RewardTask, SUITE_HORIZONS
+from ember.reward.rollout import RandomResetEnvironmentPool
 from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.condition_update import (
@@ -65,6 +68,7 @@ from ember.writer.condition_update import (
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.writer.topology import visible_physical_cuda_index
 
 
 _RESUME_NAME = re.compile(r"macro_([0-9]{8})")
@@ -97,6 +101,7 @@ class V6PriorRuntime:
     tokenizer: dict[str, Any]
     tasks: tuple[ExpertTask, ...]
     task_by_global_id: dict[int, ExpertTask]
+    reward_task_by_global_id: dict[int, RewardTask]
     dataset: FunctionalQueryDataset
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
@@ -106,6 +111,8 @@ class V6PriorRuntime:
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     writer: FrozenV6ConditionResidualWriter
+    identity_state: dict[str, torch.Tensor]
+    env_pool: RandomResetEnvironmentPool
     lora_contract: LoRAContract
     warm_start: V6PriorWarmStart
     ownership: V6PriorOwnership
@@ -200,6 +207,21 @@ def _validate_collective_environment(context: DistributedContext) -> None:
     }
     if {name: os.environ.get(name) for name in expected} != expected:
         raise ExpertManifoldError("residual Writer collective environment changed")
+
+
+def _configure_egl(context: DistributedContext) -> None:
+    expected = {
+        "MUJOCO_GL": "egl",
+        "PYOPENGL_PLATFORM": "egl",
+        "MUJOCO_EGL_DEVICE_ID": str(
+            visible_physical_cuda_index(context.local_rank)
+        ),
+    }
+    for name, value in expected.items():
+        observed = os.environ.get(name)
+        if observed not in {None, value}:
+            raise ExpertManifoldError(f"OSG-PC {name} mapping changed")
+        os.environ[name] = value
 
 
 def _load_source(
@@ -314,6 +336,48 @@ def _build_data(
     return tasks, dataset, sampler, schedule, loader
 
 
+def _build_reward_tasks(
+    tasks: Sequence[ExpertTask],
+    config: Mapping[str, Any],
+) -> dict[int, RewardTask]:
+    manifest = read_json(authority_path(config, "target_data_manifest"))
+    rows = {
+        int(row["global_task_id"]): row
+        for row in manifest.get("tasks", [])
+        if row.get("split_role") == "train"
+    }
+    if len(rows) != 24:
+        raise ExpertManifoldError("OSG-PC target manifest lost train24")
+    reward_tasks = {}
+    for task in tasks:
+        row = rows.get(task.global_task_id)
+        if (
+            not isinstance(row, Mapping)
+            or row.get("suite") != task.suite
+            or int(row.get("task_id", -1)) != task.task_id
+            or row.get("language") != task.language
+            or Path(str(row.get("hdf5", {}).get("relative_path", ""))).name
+            != task.authority.path.name
+        ):
+            raise ExpertManifoldError("OSG-PC HDF5 and task manifest disagree")
+        bddl = row.get("bddl")
+        if not isinstance(bddl, Mapping):
+            raise ExpertManifoldError("OSG-PC train task lost BDDL authority")
+        reward_tasks[task.global_task_id] = RewardTask(
+            suite=task.suite,
+            task_id=task.task_id,
+            global_task_id=task.global_task_id,
+            split_role="train",
+            language=task.language,
+            problem_folder=str(row["problem_folder"]),
+            bddl_file=str(bddl["filename"]),
+            bddl_bytes=int(bddl["bytes"]),
+            bddl_sha256=None,
+            horizon=SUITE_HORIZONS[task.suite],
+        )
+    return reward_tasks
+
+
 def _build_policy_writer(
     *,
     config: Mapping[str, Any],
@@ -323,6 +387,7 @@ def _build_policy_writer(
 ) -> tuple[
     torch.nn.Module,
     FrozenV6ConditionResidualWriter,
+    dict[str, torch.Tensor],
     LoRAContract,
     V6PriorWarmStart,
     V6PriorOwnership,
@@ -334,6 +399,7 @@ def _build_policy_writer(
         policy.config.gradient_checkpointing = False
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     template = prepare_frozen_writer_policy(policy, lora)
+    identity = {name: value.detach().clone() for name, value in template.items()}
     bridge = policy.model.paligemma_with_expert
     writer_config = {
         name: value
@@ -378,7 +444,7 @@ def _build_policy_writer(
     validate_frozen_v6_residual_writer(writer, require_zero_memory=True)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ExpertManifoldError("residual Writer source policy is not frozen")
-    return policy, writer, lora, warm_start, ownership
+    return policy, writer, identity, lora, warm_start, ownership
 
 
 def _build_language_inputs(
@@ -445,6 +511,27 @@ def _reconcile_metrics_cursor(
     return int(result["rows"])
 
 
+def _prepare_libero_paths(
+    args: argparse.Namespace,
+    context: DistributedContext,
+) -> dict[str, str]:
+    payload: list[Any] = [None]
+    if context.is_main:
+        try:
+            payload[0] = prepare_libero_config(args.output_dir / "libero_config")
+        except Exception as error:
+            payload[0] = {"error": repr(error)}
+    if context.world_size > 1:
+        dist.broadcast_object_list(payload, src=0, device=context.device)
+    paths = payload[0]
+    if not isinstance(paths, Mapping) or paths.get("error"):
+        raise ExpertManifoldError(f"OSG-PC LIBERO path preparation failed: {paths}")
+    os.environ["LIBERO_CONFIG_PATH"] = str(
+        (args.output_dir / "libero_config").resolve()
+    )
+    return {str(name): str(value) for name, value in paths.items()}
+
+
 def _restore_resume(
     runtime_args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -474,6 +561,7 @@ def _prepare_runtime(
     config = load_v6_prior_config(args.config)
     segment = _resolve_segment(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
+    _configure_egl(context)
     authorities, source, tokenizer = _load_source(args, config)
     tasks, dataset, sampler, schedule, loader = _build_data(
         args=args,
@@ -481,7 +569,8 @@ def _prepare_runtime(
         context=context,
         segment=segment,
     )
-    policy, writer, lora, warm_start, ownership = _build_policy_writer(
+    reward_tasks = _build_reward_tasks(tasks, config)
+    policy, writer, identity, lora, warm_start, ownership = _build_policy_writer(
         config=config,
         context=context,
         source=source,
@@ -516,25 +605,37 @@ def _prepare_runtime(
     )
     checkpoint_contract_value = checkpoint_contract(contract)
     publish_contract(args, contract, context)
-    _restore_resume(
-        args,
-        config,
-        segment,
-        context,
-        writer,
-        checkpoint_contract_value,
+    paths = _prepare_libero_paths(args, context)
+    env_pool = RandomResetEnvironmentPool(
+        bddl_root=Path(paths["bddl_files"]),
+        assets_root=Path(paths["assets"]),
+        render_resolution=int(config["environment"]["render_resolution"]),
     )
-    metrics_path = args.output_dir / "metrics.jsonl"
-    expected_rows = segment.start_macro if args.mode == "formal" else 0
-    if (
-        _reconcile_metrics_cursor(
-            metrics_path,
-            context=context,
-            expected_rows=expected_rows,
+    try:
+        _restore_resume(
+            args,
+            config,
+            segment,
+            context,
+            writer,
+            checkpoint_contract_value,
         )
-        != expected_rows
-    ):
-        raise ExpertManifoldError("residual Writer metrics differ from resume cursor")
+        metrics_path = args.output_dir / "metrics.jsonl"
+        expected_rows = segment.start_macro if args.mode == "formal" else 0
+        if (
+            _reconcile_metrics_cursor(
+                metrics_path,
+                context=context,
+                expected_rows=expected_rows,
+            )
+            != expected_rows
+        ):
+            raise ExpertManifoldError(
+                "residual Writer metrics differ from resume cursor"
+            )
+    except Exception:
+        env_pool.close()
+        raise
     iterator = iter(loader)
     torch.cuda.reset_peak_memory_stats(context.device)
     if context.world_size > 1:
@@ -548,6 +649,7 @@ def _prepare_runtime(
         tokenizer=dict(tokenizer),
         tasks=tasks,
         task_by_global_id={task.global_task_id: task for task in tasks},
+        reward_task_by_global_id=reward_tasks,
         dataset=dataset,
         sampler=sampler,
         video_schedule=schedule,
@@ -557,6 +659,8 @@ def _prepare_runtime(
         processor=processor,
         policy=policy,
         writer=writer,
+        identity_state=identity,
+        env_pool=env_pool,
         lora_contract=lora,
         warm_start=warm_start,
         ownership=ownership,

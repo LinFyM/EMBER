@@ -6,7 +6,7 @@ PICK只因full48 condition=`483.61515>200`退役；PICK-GC随后把condition降�
 Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`0→10`后的single-checkpoint strict
 paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gained/lost=`118/20/16`、churn36，
 未过`correct>=144`与`lost<=8`门，因此PICK-GC+blind offline source-action credit也已退役，不resume、不补
-controls、不sweep。当前唯一active design为尚未实现的OSG-PC；没有EMBER GPU进程。
+controls、不sweep。当前唯一active方法为已通过CPU实现门、尚未做live profile的OSG-PC；没有EMBER GPU进程。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -207,7 +207,6 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 `formal_ready`只描述历史时点，不构成当前授权。
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
-checkpoint与参数sweep全部关闭。OSG-PC authority已形成但下一GPU阶段仍未授权：必须先原位实现唯一owner并
-完成CPU/synthetic projection合同，再由clean pushed frozen commit和live资源执行一次discarded full24门。
-任何未来launch仍须同时
+checkpoint与参数sweep全部关闭。OSG-PC已原位实现唯一owner并通过CPU/synthetic合同；下一合法GPU动作仅为从
+clean pushed frozen commit和live资源执行一次discarded full24门，不得直接formal。任何未来launch仍须同时
 复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与他人进程。

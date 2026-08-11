@@ -31,6 +31,7 @@ from ember.expert_manifold.inference import (
     EXPERT_MANIFOLD_WRITER_KIND,
     expected_expert_manifold_episode_evidence,
 )
+from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.writer.errors import WriterModelError
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
@@ -85,9 +86,7 @@ def _contract(
         "adapter": {
             "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
             "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "config": {
-                "schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"
-            },
+            "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
             "arm": "expert_manifold_v6_condition_residual_correct",
             "video_condition": "correct",
             "writer_asset": {

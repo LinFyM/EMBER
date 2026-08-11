@@ -211,6 +211,9 @@ def _validate_build_request(
             "ember_pi05_v6_condition_program_residual_eval_adapter_v8": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
+            "ember_pi05_v6_condition_program_residual_eval_adapter_v9": (
+                "highest_measured_batch_throughput_with_device_memory_headroom"
+            ),
         }
         expected_throughput_policy = throughput_by_schema.get(
             str(adapter.get("schema_version"))
@@ -230,6 +233,7 @@ def _validate_build_request(
             "sealed_from_live_pick_gc_deployment_profile",
             "sealed_from_live_residual_deployment_profile",
             "sealed_from_unchanged_v6_residual_deployment_graph",
+            "sealed_from_live_osg_pc_deployment_smoke",
         } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size

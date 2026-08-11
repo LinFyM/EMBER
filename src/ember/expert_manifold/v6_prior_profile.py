@@ -134,6 +134,121 @@ def profile_task_local_motion(
     }
 
 
+@torch.no_grad()
+def profile_success_guard_application(
+    local_objectives: Sequence[Any],
+    full_motion: torch.Tensor,
+    context: DistributedContext,
+) -> dict[str, Any]:
+    """Measure continuous and native-Program motion against every success guard."""
+
+    local_rows = []
+    for objective in local_objectives:
+        guards = objective.retention_program_cotangents
+        before = objective.program_before
+        if guards is None or before is None:
+            raise ExpertManifoldError("OSG-PC profile lost retention cotangents")
+        continuous = full_motion[objective.task.ordinal]
+        if continuous.shape != before.shape:
+            raise ExpertManifoldError("OSG-PC applied guard Program shape changed")
+        native = (
+            (before + continuous.to(dtype=before.dtype)).to(dtype=torch.float32)
+            - before.to(dtype=torch.float32)
+        )
+        continuous64 = continuous.flatten().to(dtype=torch.float64)
+        native64 = native.flatten().to(dtype=torch.float64)
+        blind = (-objective.source_program_cotangent).flatten().to(dtype=torch.float64)
+        safe = (-objective.program_cotangent).flatten().to(dtype=torch.float64)
+        continuous_tolerance = 64 * torch.finfo(torch.float32).eps * max(
+            float(torch.linalg.vector_norm(continuous64)),
+            torch.finfo(torch.float64).tiny,
+        )
+        native_tolerance = 64 * torch.finfo(torch.float32).eps * max(
+            float(torch.linalg.vector_norm(native64)),
+            torch.finfo(torch.float64).tiny,
+        )
+        desired_values = []
+        continuous_values = []
+        native_values = []
+        for guard in guards:
+            normalized = guard.flatten().to(dtype=torch.float64)
+            normalized = normalized / torch.linalg.vector_norm(normalized)
+            desired_values.append(float(torch.dot(normalized, safe)))
+            continuous_values.append(float(torch.dot(normalized, continuous64)))
+            native_values.append(float(torch.dot(normalized, native64)))
+        blind_energy = torch.dot(blind, blind)
+        continuous_source_ratio = (
+            float(torch.dot(blind, continuous64) / blind_energy)
+            if float(blind_energy) > 0
+            else 1.0
+        )
+        native_source_ratio = (
+            float(torch.dot(blind, native64) / blind_energy)
+            if float(blind_energy) > 0
+            else 1.0
+        )
+        local_rows.append(
+            {
+                "task_ordinal": objective.task.ordinal,
+                "constraint_count": len(guards),
+                "continuous_tolerance": continuous_tolerance,
+                "native_program_tolerance": native_tolerance,
+                "desired_maximum_constraint_value": (
+                    max(desired_values) if desired_values else 0.0
+                ),
+                "continuous_maximum_constraint_value": (
+                    max(continuous_values) if continuous_values else 0.0
+                ),
+                "native_program_maximum_constraint_value": (
+                    max(native_values) if native_values else 0.0
+                ),
+                "continuous_violating_constraints": sum(
+                    value > continuous_tolerance for value in continuous_values
+                ),
+                "native_program_violating_constraints": sum(
+                    value > native_tolerance for value in native_values
+                ),
+                "continuous_source_descent_ratio": continuous_source_ratio,
+                "native_program_source_descent_ratio": native_source_ratio,
+            }
+        )
+    gathered: list[Any] = [None] * context.world_size
+    if context.world_size > 1:
+        dist.all_gather_object(gathered, local_rows)
+    else:
+        gathered[0] = local_rows
+    rows = [dict(value) for rank_rows in gathered for value in rank_rows]
+    rows.sort(key=lambda value: int(value["task_ordinal"]))
+    if len(rows) != 24 or [int(value["task_ordinal"]) for value in rows] != list(
+        range(24)
+    ):
+        raise ExpertManifoldError("OSG-PC applied guard profile lost train24")
+    return {
+        "task_count": len(rows),
+        "constraint_count": sum(int(value["constraint_count"]) for value in rows),
+        "continuous_violating_constraint_count": sum(
+            int(value["continuous_violating_constraints"]) for value in rows
+        ),
+        "native_program_violating_constraint_count": sum(
+            int(value["native_program_violating_constraints"]) for value in rows
+        ),
+        "maximum_continuous_constraint_value": max(
+            float(value["continuous_maximum_constraint_value"]) for value in rows
+        ),
+        "maximum_native_program_constraint_value": max(
+            float(value["native_program_maximum_constraint_value"])
+            for value in rows
+        ),
+        "minimum_continuous_source_descent_ratio": min(
+            float(value["continuous_source_descent_ratio"]) for value in rows
+        ),
+        "minimum_native_program_source_descent_ratio": min(
+            float(value["native_program_source_descent_ratio"]) for value in rows
+        ),
+        "rows": rows,
+    }
+
+
 @contextmanager
 def _policy_attention_state(policy: torch.nn.Module) -> Iterator[None]:
     bridge = policy.model.paligemma_with_expert
@@ -196,15 +311,18 @@ def profile_passes(
     application = row["application"]
     response = row["lora_response"]
     task_local = row["task_local_motion"]
+    guard_application = row["success_guard_application"]
     if not all(
         isinstance(value, Mapping)
-        for value in (update, application, response, task_local)
+        for value in (update, application, response, task_local, guard_application)
     ):
         raise ExpertManifoldError("mechanism profile evidence is incomplete")
     values = _profile_values(config, row, update, application, response)
     checks = _profile_checks(gates, task_local, response, row, values)
     return all(checks.values()), {
         "checks": checks,
+        "success_guard": dict(row["success_guard"]),
+        "success_guard_application": dict(guard_application),
         "feature_rank": int(update["feature_rank"]),
         "regularized_gram_condition_number": float(
             update["regularized_gram_condition_number"]
@@ -283,6 +401,22 @@ def _profile_checks(
     task_rows = task_local.get("rows", ())
     task_records = row.get("task_records", ())
     per_kind_null = _negative_null_per_kind(row, gates)
+    guard = row.get("success_guard", {})
+    guard_application = row.get("success_guard_application", {})
+    guarded_by_suite = guard.get("guarded_tasks_per_suite", {})
+    success_program_cotangents = [
+        float(value)
+        for record in task_records
+        for value in record.get("retention_credit", {}).get(
+            "program_cotangent_rms", ()
+        )
+    ]
+    exact_fallback = all(
+        not bool(record.get("guard_projection", {}).get("changed"))
+        for record in task_records
+        if int(record.get("retention_credit", {}).get("successes", -1)) == 0
+        or bool(record.get("guard_projection", {}).get("raw_feasible"))
+    )
     return {
         "feature_rank": int(row["update"]["feature_rank"])
         >= int(gates["feature_rank_min"]),
@@ -324,6 +458,102 @@ def _profile_checks(
         ),
         "functional_policy_program_credit": math.isfinite(values["cotangent"])
         and values["cotangent"] > 0,
+        "full24_success_guard": (
+            len(task_records) == int(gates["task_count"])
+            and sum(
+                int(value.get("historical_v6_video_encodes", -1))
+                for value in task_records
+            )
+            == int(gates["video_count"])
+            and sum(
+                int(value.get("source_action_queries", -1))
+                for value in task_records
+            )
+            == int(gates["source_action_query_count"])
+            and int(guard.get("rollouts", -1)) == int(gates["rollout_count"])
+            and int(guard.get("guarded_tasks", -1))
+            >= int(gates["guarded_task_count_min"])
+            and int(guard.get("all_success_tasks", -1))
+            >= int(gates["all_success_task_count_min"])
+            and isinstance(guarded_by_suite, Mapping)
+            and set(guarded_by_suite)
+            == {"libero_spatial", "libero_object", "libero_goal", "libero_10"}
+            and all(
+                int(value) >= int(gates["guarded_task_per_suite_min"])
+                for value in guarded_by_suite.values()
+            )
+            and len(success_program_cotangents)
+            == int(guard.get("success_episodes", -1))
+            and all(
+                int(record.get("retention_credit", {}).get("flow_panel_chunks", 0))
+                >= int(record.get("retention_credit", {}).get("replay_chunks", 0))
+                and len(
+                    record.get("retention_credit", {}).get(
+                        "flow_panel_row_indices", ()
+                    )
+                )
+                == int(record.get("retention_credit", {}).get("replay_chunks", -1))
+                for record in task_records
+            )
+            and all(
+                math.isfinite(value) and value > 0
+                for value in success_program_cotangents
+            )
+            == bool(gates["success_program_cotangent_nonzero"])
+            and int(guard.get("failure_replay_gradient_episodes", -1))
+            == int(gates["failure_replay_gradient_episodes"])
+            and int(guard.get("projection_changed_tasks", -1))
+            >= int(gates["projection_changed_task_count_min"])
+            and exact_fallback == bool(gates["exact_blind_fallback_required"])
+            and math.isfinite(float(guard.get("maximum_constraint_value", math.inf)))
+            and float(guard.get("minimum_source_descent_ratio", -math.inf)) >= 0
+        ),
+        "full48_applied_success_guard": (
+            isinstance(guard_application, Mapping)
+            and int(guard_application.get("task_count", -1))
+            == int(gates["task_count"])
+            and int(guard_application.get("constraint_count", -1))
+            == int(guard.get("success_episodes", -2))
+            and int(
+                guard_application.get("continuous_violating_constraint_count", -1)
+            )
+            >= 0
+            and int(
+                guard_application.get(
+                    "native_program_violating_constraint_count", -1
+                )
+            )
+            >= 0
+            and math.isfinite(
+                float(
+                    guard_application.get(
+                        "maximum_continuous_constraint_value", math.inf
+                    )
+                )
+            )
+            and math.isfinite(
+                float(
+                    guard_application.get(
+                        "maximum_native_program_constraint_value", math.inf
+                    )
+                )
+            )
+            and math.isfinite(
+                float(
+                    guard_application.get(
+                        "minimum_continuous_source_descent_ratio", -math.inf
+                    )
+                )
+            )
+            and math.isfinite(
+                float(
+                    guard_application.get(
+                        "minimum_native_program_source_descent_ratio", -math.inf
+                    )
+                )
+            )
+            and bool(gates["applied_guard_evidence_required"])
+        ),
         "negative_policy_forwards": int(row["negative_policy_forwards"]) == 0,
         "oom_and_nonfinite": int(row["oom_count"]) == int(gates["oom_count"])
         and int(row["nonfinite_count"]) == int(gates["nonfinite_count"])

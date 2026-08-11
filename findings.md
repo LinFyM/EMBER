@@ -166,5 +166,13 @@ identity写出、LoRA能量或单纯compiler闭合。
 当前最早失效接口是blind train24 source-action functional cotangent到held on-policy有用support与共同积累的
 映射。当前唯一active假设OSG-PC不再用微小reward cotangent替换proposal，而是对每条成功train24 rollout构造
 executed-prefix Program half-space，把原B20 proposal解析投影到“不一阶损伤已有success support”的可行锥；
-full48 key、FP32 Program和native rank16保持。它已有design authority但尚未实现或获得GPU资格；heterogeneous
+full48 key、FP32 Program和native rank16保持。它已完成CPU实现但尚未获得live profile证据；heterogeneous
 topology、few-shot和task-level manifold supervision仍是开放问题而非自动fallback。
+
+OSG-PC现已完成唯一canonical CPU实现：success binary只选择保护约束，失败轨迹完全不进入replay/gradient；
+每条成功episode形成独立Program cotangent，最多4条约束由解析KKT投影，no-success与raw-feasible逐元素退化为
+blind proposal。历史完整K4 flow panel只按成功row ordinal取样，避免success-only压缩改变另一条guard的MC身份。
+full48仍是唯一shared write owner，并新增continuous/native实际应用后的guard/source-descent报告，因为task-local
+可行不自动保证shared damped solve后的真实memory motion仍可行。fresh完整CPU回归`340 passed`只关闭工程接口；
+真实train24 success覆盖、projection是否非退化以及shared write是否保留guard，仍必须由一次discarded live profile
+裁决，不能从synthetic KKT结果推断closed-loop提升。

@@ -6,8 +6,8 @@
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-11，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PICK-GC
-formal=`138/400`、breadth6并已退役。当前唯一active design是尚未实现的OSG-PC，只检验成功on-policy
-occupancy可行锥能否保护blind proposal的已有support。
+formal=`138/400`、breadth6并已退役。当前唯一active方法是已通过CPU实现门、尚未做live profile的OSG-PC，
+只检验成功on-policy occupancy可行锥能否保护blind proposal的已有support。
 
 ## 1. Stable problem definition
 

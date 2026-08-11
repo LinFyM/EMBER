@@ -1,6 +1,7 @@
 # On-Policy Success-Guarded Program Credit
 
-状态：2026-08-11唯一active successor design authority；尚未实现、profile或获得GPU训练资格。简称OSG-PC。
+状态：2026-08-11唯一active successor design authority；canonical实现与CPU/synthetic门已完成，尚未profile、
+formal训练或评测。简称OSG-PC。
 它从PICK-GC formal non-pass后最早失效的credit/occupancy接口出发，只改变task-local Program update的credit
 约束；PICK-GC ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、full48
 correct/negative solve、原生38-target rank16 compiler、B20 source-action proposal和one-shot部署图全部保持。
@@ -110,6 +111,10 @@ r_i,e      = grad_H L_i,e^keep
 episode独立形成一条half-space，避免把不同初始化平均后互相掩盖。它们只约束局部一阶变化，不要求Writer复刻
 teacher轨迹，也不把失败动作当目标。
 
+success-only collator仍保留四条lane各自的replan计数和原full-K4 row ordinal：先按历史task-key生成完整K4
+flow panel，再只索引成功rows。失败observations/actions不保留、不forward也不求梯度；其长度只防止success集合
+变化时让另一条成功episode的Monte Carlo样本错位。物理microbatch同样不能改变panel row identity。
+
 为了显存与吞吐，correct video只encode一次。rollout使用detach后的current LoRA；retention VJP从已保存的
 current Program input重新建立一次FactorHead decode leaf，不重复video encoder或source Writer forward。
 
@@ -218,6 +223,12 @@ closed-loop success。因此该结构只比offline row retention更直接，不�
 6. full48无冲突时逐字段退化为PICK-GC raw solve，negative RHS严格0；
 7. checkpoint包含Program、K4 rollout cursor、teacher/action sampler、每rank RNG与exact world-size topology；
 8. formal-result-sealed PICK-GC checkpoint/config不能误resume为OSG-PC fresh。
+
+实现裁决：上述owner已原位替换，没有第二trainer、Writer、full48 solver、strategy flag或旧LOO可执行API。
+success-only replay、per-success Nmc4 keyed CFM cotangent、0--4 guard解析KKT、raw-feasible/no-success exact fallback、
+Program re-decode identity、full48 negative zero及fresh-incompatible checkpoint/config均有直接测试。加载
+`.env.local`后的fresh完整CPU回归为`340 passed in 85.24s`；compileall与`git diff --check`通过。该结果只授予
+下一节discarded live gate，不说明真实rollout guard覆盖、shared full48应用后仍可行或closed-loop有效。
 
 ### 8.2 One discarded full24 live gate
 

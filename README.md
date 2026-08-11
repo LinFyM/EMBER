@@ -26,8 +26,9 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - PICK-GC已完成formal fresh`0→10`与strict paired400：`138/400`、breadth6，相对immutable macro0
   retained/gained/lost=`118/20/16`。它未过`correct>=144`与`lost<=8`门，resume、controls和参数sweep均关闭。
 - 当前唯一active successor design是OSG-PC：保留PICK-GC B20改进proposal，只用真实train24成功rollout的
-  executed-prefix cotangent构造无权重可行锥，解析投影后再写同一FP32 Program。它尚未实现或获得GPU资格，
-  当前无EMBER GPU进程；任何旧“下一步”命令仍不得恢复。
+  executed-prefix cotangent构造无权重可行锥，解析投影后再写同一FP32 Program。唯一canonical实现、fresh-
+  incompatible schema和CPU机制门已经完成，完整回归`340 passed`；尚无discarded profile、formal或评测结果，
+  当前无EMBER GPU进程。下一步只能从clean pushed commit经live双节点/存储preflight启动一次discarded full24门。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -107,8 +108,8 @@ EMBER/
 └── tests/
 ```
 
-进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。当前无活动Writer
-训练命令；不要从旧文档复制launch command。
+进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。当前没有活动GPU
+进程；OSG-PC profile命令必须按launch当时的live topology和fresh output root生成，不要从旧文档复制命令。
 
 GPU工作若由未来authority恢复，每次同时live检查`gpu01/gpu02`，选一个节点并使用该节点所有真正空闲、
 健康且能提高吞吐的A40；没有固定6卡上限，不等待凑卡、不dummy占位、不跨节点拼碎片、不干扰他人。

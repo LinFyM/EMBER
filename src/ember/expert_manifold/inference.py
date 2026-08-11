@@ -51,7 +51,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active PICK-GC deployment family; old configs stay evidence."""
+    """Load only the active OSG-PC deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -377,6 +377,9 @@ def _residual_contract_matches(
         "condition_feature",
         "program_residual",
         "update",
+        "environment",
+        "objective",
+        "rng",
         "ownership",
         "world_size",
         "rank_topology",
@@ -399,6 +402,9 @@ def _residual_contract_matches(
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
         "update": config["update"],
+        "environment": config["environment"],
+        "objective": config["objective"],
+        "rng": config["rng"],
         "ownership": _expected_residual_ownership(config),
         "world_size": int(config["optimization"]["distributed_update"]["world_size"]),
         "content_hash_policy": "disabled_by_owner",
@@ -553,6 +559,7 @@ def _evaluation_writer_asset(
         "sealed_from_live_pick_gc_deployment_profile",
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
+        "sealed_from_live_osg_pc_deployment_smoke",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"

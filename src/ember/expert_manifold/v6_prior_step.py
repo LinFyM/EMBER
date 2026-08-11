@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping
 
 import torch
@@ -155,6 +155,8 @@ def generate_condition_graph(
 def program_cotangent(
     graph: GeneratedConditionGraph,
     lora_gradients: Mapping[str, torch.Tensor],
+    *,
+    retain_graph: bool = False,
 ) -> torch.Tensor:
     """Transport one task-local LoRA VJP to its complete Program leaf."""
 
@@ -165,9 +167,43 @@ def program_cotangent(
         tuple(graph.correct_lora[name] for name in names),
         graph.program_leaf,
         grad_outputs=tuple(lora_gradients[name] for name in names),
+        retain_graph=retain_graph,
     )[0]
     if gradient.shape != graph.program_leaf.shape:
         raise ExpertManifoldError("functional loss did not reach the complete Program")
     # The caller owns task-local aggregation.  No rank/task/world-size scaling
     # is permitted here.
     return gradient[0].detach().to(dtype=torch.float32)
+
+
+def redecode_condition_graph(
+    graph: GeneratedConditionGraph,
+    writer: FrozenV6ConditionResidualWriter,
+    *,
+    device: torch.device,
+) -> GeneratedConditionGraph:
+    """Rebuild only the FactorHead graph from the saved current Program input."""
+
+    if (
+        graph.program_input_before.shape != graph.program_leaf.shape
+        or graph.program_input_before.device != device
+    ):
+        raise ExpertManifoldError("OSG-PC saved Program input changed")
+    program_leaf = (
+        graph.program_input_before.detach()
+        .to(device=device, dtype=torch.float32)
+        .requires_grad_(True)
+    )
+    with torch.autocast(
+        device_type=device.type,
+        dtype=torch.bfloat16,
+        enabled=device.type == "cuda",
+    ):
+        correct_lora = writer.base_writer.decode_slots(program_leaf)
+    if set(correct_lora) != set(graph.correct_lora):
+        raise ExpertManifoldError("OSG-PC retention re-decode changed LoRA topology")
+    return replace(
+        graph,
+        correct_lora=correct_lora,
+        program_leaf=program_leaf,
+    )

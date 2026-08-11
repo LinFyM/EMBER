@@ -29,10 +29,10 @@ from ember.reward.protocol import (
     update_seed,
 )
 from ember.reward.rollout import (
-    complete_trajectory_batch,
     RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_randomized_reward_trajectories,
+    successful_trajectory_batch,
 )
 
 
@@ -273,32 +273,46 @@ def _trajectory(valid: tuple[int, ...], *, success: bool = True) -> RewardTrajec
         reward_sum=1.0,
         dummy_settling_steps=10,
         policy_noise_seeds=tuple(range(len(valid))),
-        observations=observations,
-        action_chunks=tuple(torch.zeros((1, 50, 7)) for _ in valid),
-        valid_action_steps=valid,
+        observations=observations if success else (),
+        action_chunks=(
+            tuple(torch.zeros((1, 50, 7)) for _ in valid) if success else ()
+        ),
+        valid_action_steps=valid if success else (),
     )
 
 
-def test_complete_batch_retains_failure_prefixes_and_binary_outcomes() -> None:
-    batch, episode_ids, successes = complete_trajectory_batch(
-        (_trajectory((5, 2)), _trajectory((5,), success=False)),
-        torch.device("cpu"),
+def test_success_batch_retains_only_success_prefixes_and_original_episode_ids() -> None:
+    batch, episode_ids, successes, panel_rows, panel_chunks = (
+        successful_trajectory_batch(
+            (
+                _trajectory((5, 2)),
+                _trajectory((5,), success=False),
+                _trajectory((4,)),
+                _trajectory((5, 5), success=False),
+            ),
+            torch.device("cpu"),
+        )
     )
     assert batch[ACTION].shape == (3, 50, 7)
-    assert batch["executed_action_steps"].tolist() == [5, 2, 5]
-    assert episode_ids.tolist() == [0, 0, 1]
-    assert successes.tolist() == [1.0, 0.0]
+    assert batch["executed_action_steps"].tolist() == [5, 2, 4]
+    assert episode_ids.tolist() == [0, 0, 2]
+    assert successes.tolist() == [1.0, 0.0, 1.0, 0.0]
+    assert panel_rows.tolist() == [0, 1, 3]
+    assert panel_chunks == 6
 
 
-def test_complete_batch_skips_tensor_concatenation_for_zero_credit_panel() -> None:
-    batch, episode_ids, successes = complete_trajectory_batch(
-        tuple(_trajectory((5, 2), success=False) for _ in range(4)),
-        torch.device("cpu"),
+def test_all_failure_batch_contains_no_replay_tensors() -> None:
+    batch, episode_ids, successes, panel_rows, panel_chunks = (
+        successful_trajectory_batch(
+            tuple(_trajectory((5, 2), success=False) for _ in range(4)),
+            torch.device("cpu"),
+        )
     )
-    assert set(batch) == {"executed_action_steps"}
-    assert batch["executed_action_steps"].tolist() == [5, 2] * 4
-    assert episode_ids.tolist() == [0, 0, 1, 1, 2, 2, 3, 3]
+    assert batch == {}
+    assert episode_ids.numel() == 0
     assert successes.tolist() == [0.0] * 4
+    assert panel_rows.numel() == 0
+    assert panel_chunks == 8
 
 
 class _LossModel(torch.nn.Module):

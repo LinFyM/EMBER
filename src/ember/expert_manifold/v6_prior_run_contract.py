@@ -236,7 +236,9 @@ def build_run_contract(
         "condition_feature": dict(config["condition_feature"]),
         "program_residual": dict(config["program_residual"]),
         "update": dict(config["update"]),
+        "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
+        "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
         "ownership": _ownership_contract(ownership, writer),
         "runtime": {
@@ -255,11 +257,24 @@ def build_run_contract(
             "logical_policy_batch_size": 20,
             "functional_policy_microbatch_size": 10,
             "physical_policy_forwards_per_task": 2,
+            "rollouts_per_task": 4,
+            "retention_flow_mc_samples": 4,
+            "retention_replay_microbatch_size": int(
+                config["optimization"]["retention_replay_microbatch_size"]
+            ),
+            "failed_rollout_replay_retained": False,
             "negative_policy_forwards_per_task": 0,
             "policy_gradient_checkpointing": False,
             "writer_activation_checkpointing_effective": False,
             "distributed_model_wrapper": "none",
-            "collectives": "two_all_gathers_no_memory_allreduce",
+            "collectives": {
+                "full48_tensor_all_gathers": 2,
+                "task_record_object_all_gathers": 1,
+                "profile_guard_object_all_gathers": int(
+                    args.mode == "mechanism-profile"
+                ),
+                "memory_allreduce": False,
+            },
             "deferred_process_group": True,
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
             "nccl_algo": os.environ.get("NCCL_ALGO"),
@@ -290,6 +305,9 @@ def checkpoint_contract(run_contract: Mapping[str, Any]) -> dict[str, Any]:
         "condition_feature": run_contract["condition_feature"],
         "program_residual": run_contract["program_residual"],
         "update": run_contract["update"],
+        "environment": run_contract["environment"],
+        "objective": run_contract["objective"],
+        "rng": run_contract["rng"],
         "ownership": run_contract["ownership"],
         "world_size": run_contract["runtime"]["world_size"],
         "rank_topology": run_contract["runtime"]["rank_topology"],
@@ -311,6 +329,15 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         "videos_per_task_visit": 1,
         "action_queries_per_task": int(data["action_queries_per_task"]),
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "rollouts_per_task": int(config["environment"]["rollouts_per_task"]),
+        "next_rollout_cursor_per_task": macro * int(
+            config["environment"]["rollouts_per_task"]
+        ),
+        "environment_seed_root": int(config["rng"]["environment_seed_root"]),
+        "policy_noise_seed_root": int(config["rng"]["policy_noise_seed_root"]),
+        "retention_flow_seed_root": int(
+            config["rng"]["retention_flow_seed_root"]
+        ),
     }
 
 

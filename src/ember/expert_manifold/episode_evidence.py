@@ -18,9 +18,9 @@ from ember.expert_manifold.video_schedule import (
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
+    "ember_pi05_v6_condition_program_residual_eval_adapter_v9"
 )
-EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_condition_program_residual_episode_v8"
+EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_condition_program_residual_episode_v9"
 
 
 def expert_manifold_episode_schema(adapter: Mapping[str, Any]) -> str:
@@ -28,15 +28,9 @@ def expert_manifold_episode_schema(adapter: Mapping[str, Any]) -> str:
 
     schema = adapter.get("schema_version")
     config_schema = adapter.get("config", {}).get("schema")
-    legacy_config_schemas = {
-        "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2",
-        "ember_pi05_v6_exact_anchored_reconciliation_program_residual_v3",
-        "ember_pi05_v6_reward_credit_program_cotangent_v1",
-        V6_PRIOR_CONFIG_SCHEMA,
-    }
     if (
         schema == EXPERT_MANIFOLD_ADAPTER_SCHEMA
-        and config_schema in legacy_config_schemas
+        and config_schema == V6_PRIOR_CONFIG_SCHEMA
     ):
         return EXPERT_MANIFOLD_EPISODE_SCHEMA
     raise ExpertManifoldError("invalid Expert-Manifold deployment adapter")

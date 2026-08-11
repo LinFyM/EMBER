@@ -431,32 +431,45 @@ def _curve_set_evidence(
 def checkpoint_curve_analysis(
     results_by_root: Mapping[str, Mapping[str, Any]]
 ) -> dict[str, Any]:
-    """Build strict macro0/10/25/50 analysis from validated result payloads."""
+    """Build the family-sealed checkpoint curve from validated result payloads."""
 
     by_macro: dict[
         int, tuple[str, Mapping[str, Any], dict[EpisodeKey, Mapping[str, Any]]]
     ] = {}
+    observed_families = set()
     for root, result in results_by_root.items():
         indexed = _formal_panel_index(result)
         if result["adapter"]["video_condition"] != "correct":
             _fail("checkpoint curve accepts only correct-video roots")
-        macro = _method_macro(result)
+        family_name, family = _writer_family(result["adapter"])
+        observed_families.add(family_name)
+        macro = _method_macro(
+            result,
+            allowed_macros=tuple(
+                family.get("checkpoint_curve_macros", CHECKPOINT_MACROS)
+            ),
+        )
         if macro in by_macro:
             _fail("checkpoint curve contains duplicate method macros")
         by_macro[macro] = (root, result, indexed)
-    if tuple(sorted(by_macro)) != CHECKPOINT_MACROS:
-        _fail("checkpoint curve requires exactly method macros 0, 10, 25, and 50")
-    families = {
-        _writer_family(result["adapter"])[0] for _, result, _ in by_macro.values()
-    }
-    if len(families) != 1:
+    if len(observed_families) != 1:
         _fail("checkpoint curve cannot mix legacy and current method families")
-    method_family = next(iter(families))
+    method_family = next(iter(observed_families))
+    family = WRITER_FAMILIES[method_family]
+    expected_macros = tuple(
+        family.get("checkpoint_curve_macros", CHECKPOINT_MACROS)
+    )
+    if not expected_macros or expected_macros[0] != 0:
+        _fail("checkpoint curve family has an invalid macro authority")
+    if tuple(sorted(by_macro)) != expected_macros:
+        _fail(
+            "checkpoint curve requires exactly its family-sealed method macros"
+        )
     reference_projection = _scientific_projection(
         by_macro[0][1], allow_checkpoint_change=True
     )
     reference_rows = by_macro[0][2]
-    for macro in CHECKPOINT_MACROS[1:]:
+    for macro in expected_macros[1:]:
         if (
             _scientific_projection(by_macro[macro][1], allow_checkpoint_change=True)
             != reference_projection
@@ -467,13 +480,19 @@ def checkpoint_curve_analysis(
         )
     panels: dict[str, dict[int, list[Mapping[str, Any]]]] = {
         "correct80": {
-            macro: _prefix_rows(by_macro[macro][2], 10) for macro in CHECKPOINT_MACROS
+            macro: _prefix_rows(by_macro[macro][2], 10)
+            for macro in expected_macros
         },
         "correct400": {
-            macro: list(by_macro[macro][2].values()) for macro in CHECKPOINT_MACROS
+            macro: list(by_macro[macro][2].values()) for macro in expected_macros
         },
     }
-    comparisons = ((0, 10), (10, 25), (25, 50), (0, 25), (0, 50))
+    comparisons = list(zip(expected_macros, expected_macros[1:]))
+    comparisons.extend(
+        (0, macro)
+        for macro in expected_macros[2:]
+        if (0, macro) not in comparisons
+    )
     return {
         "schema_version": CHECKPOINT_CURVE_SCHEMA,
         "method_family": method_family,
@@ -499,11 +518,11 @@ def checkpoint_curve_analysis(
                     by_macro[macro][1]["paired_control"].get("parallel", {})
                 ),
             }
-            for macro in CHECKPOINT_MACROS
+            for macro in expected_macros
         ],
         "panels": {
             name: {
-                str(macro): summarize_panel(rows[macro]) for macro in CHECKPOINT_MACROS
+                str(macro): summarize_panel(rows[macro]) for macro in expected_macros
             }
             for name, rows in panels.items()
         },

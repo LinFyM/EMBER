@@ -11,6 +11,7 @@ from ember.expert_manifold.v6_prior_step import (
     GeneratedConditionGraph,
     generate_condition_graph,
     program_cotangent,
+    redecode_condition_graph,
 )
 from ember.writer.data import RawTeacherVideo
 
@@ -141,6 +142,16 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
     assert graph.program_leaf.dtype == torch.float32
     assert graph.program_leaf.requires_grad
     assert graph.program_input_before.dtype == torch.bfloat16
+    rebuilt = redecode_condition_graph(
+        graph, writer, device=torch.device("cpu")  # type: ignore[arg-type]
+    )
+    assert len(writer.base_writer.encoder_frames) == 1
+    assert rebuilt.program_leaf is not graph.program_leaf
+    assert rebuilt.program_leaf.requires_grad
+    for name in graph.correct_lora:
+        torch.testing.assert_close(
+            rebuilt.correct_lora[name], graph.correct_lora[name], rtol=0, atol=0
+        )
 
 
 def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forward() -> (

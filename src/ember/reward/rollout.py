@@ -552,56 +552,95 @@ def collect_randomized_reward_trajectories(
     )
 
 
-def complete_trajectory_batch(
+def successful_trajectory_batch(
     trajectories: Sequence[RewardTrajectory], device: torch.device
-) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
-    """Collate successful and failed on-policy prefixes for K4 reward credit."""
+) -> tuple[
+    dict[str, torch.Tensor],
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    int,
+]:
+    """Collate only successful K4 prefixes and reject retained failure replay."""
 
-    if len(trajectories) < 2 or any(
-        not trajectory.observations
-        or len(trajectory.observations) != len(trajectory.action_chunks)
-        or len(trajectory.observations) != len(trajectory.valid_action_steps)
-        for trajectory in trajectories
-    ):
-        raise RewardProtocolError("reward credit requires complete K4 replay")
-    chunks = [
-        (episode, observation, action, valid)
-        for episode, trajectory in enumerate(trajectories)
-        for observation, action, valid in zip(
-            trajectory.observations,
-            trajectory.action_chunks,
-            trajectory.valid_action_steps,
-            strict=True,
+    if len(trajectories) != 4:
+        raise RewardProtocolError("OSG-PC replay panel must be exact K4")
+    for trajectory in trajectories:
+        lengths = (
+            len(trajectory.observations),
+            len(trajectory.action_chunks),
+            len(trajectory.valid_action_steps),
         )
-    ]
-    valid = torch.tensor(
-        [count for _, _, _, count in chunks], dtype=torch.long, device=device
-    )
-    episode_ids = torch.tensor(
-        [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
-    )
+        if trajectory.success:
+            if (
+                not lengths[0]
+                or len(set(lengths)) != 1
+                or lengths[0] != len(trajectory.policy_noise_seeds)
+            ):
+                raise RewardProtocolError("successful OSG-PC replay is incomplete")
+        elif any(lengths) or not trajectory.policy_noise_seeds:
+            raise RewardProtocolError("failed OSG-PC replay was retained")
+    chunks = []
+    panel_offset = 0
+    for episode, trajectory in enumerate(trajectories):
+        if trajectory.success:
+            chunks.extend(
+                (episode, panel_offset + chunk, observation, action, valid)
+                for chunk, (observation, action, valid) in enumerate(
+                    zip(
+                        trajectory.observations,
+                        trajectory.action_chunks,
+                        trajectory.valid_action_steps,
+                        strict=True,
+                    )
+                )
+            )
+        panel_offset += len(trajectory.policy_noise_seeds)
+    if panel_offset <= 0:
+        raise RewardProtocolError("OSG-PC flow panel lost its K4 replay rows")
     successes = torch.tensor(
         [trajectory.success for trajectory in trajectories],
         dtype=torch.float32,
         device=device,
     )
+    if not chunks:
+        return (
+            {},
+            torch.empty(0, dtype=torch.long, device=device),
+            successes,
+            torch.empty(0, dtype=torch.long, device=device),
+            panel_offset,
+        )
+    valid = torch.tensor(
+        [count for _, _, _, _, count in chunks], dtype=torch.long, device=device
+    )
+    episode_ids = torch.tensor(
+        [episode for episode, _, _, _, _ in chunks],
+        dtype=torch.long,
+        device=device,
+    )
+    panel_rows = torch.tensor(
+        [row for _, row, _, _, _ in chunks],
+        dtype=torch.long,
+        device=device,
+    )
     if bool((valid <= 0).any()):
-        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
-    if bool((successes == successes[0]).all()):
-        return {"executed_action_steps": valid}, episode_ids, successes
-    keys = set(chunks[0][1])
-    if any(set(observation) != keys for _, observation, _, _ in chunks):
-        raise RewardProtocolError("PI05 reward replay observation keys changed")
+        raise RewardProtocolError("OSG-PC replay executed prefix is invalid")
+    keys = set(chunks[0][2])
+    if any(set(observation) != keys for _, _, observation, _, _ in chunks):
+        raise RewardProtocolError("OSG-PC replay observation keys changed")
     batch = {
-        key: torch.cat([observation[key] for _, observation, _, _ in chunks]).to(device)
+        key: torch.cat(
+            [observation[key] for _, _, observation, _, _ in chunks]
+        ).to(device)
         for key in sorted(keys)
     }
-    actions = torch.cat([action for _, _, action, _ in chunks]).to(device)
+    actions = torch.cat([action for _, _, _, action, _ in chunks]).to(device)
     if actions.ndim != 3 or bool((valid > actions.shape[1]).any()):
-        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
+        raise RewardProtocolError("OSG-PC replay executed prefix is invalid")
     batch[ACTION] = actions
     batch["executed_action_steps"] = valid
     batch["action_is_pad"] = (
         torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
-    return batch, episode_ids, successes
+    return batch, episode_ids, successes, panel_rows, panel_offset

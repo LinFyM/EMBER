@@ -31,9 +31,11 @@
   `docs/novelty_and_landscape.md`改为稳定定义。
 - [x] 保留 v4 root-cause、v6、Expert-Manifold history、最终 rank14 decision 和 benchmark validity 五类深证据；
   其余追加式历史设计由 Git commit`3a6f801`保存，不再留在 active tree。
-- [ ] 删除已退役 rank/compiler 可执行路径和孤立 artifact helper，完成 CPU 回归。
-- [ ] 移除已合并 clean worktree/branch、明确临时文件和非 formal profile/smoke checkpoint payload。
-- [ ] 核对 Markdown 链接、`git diff --check`、CPU tests、工作树 clean、主分支 push，并输出新 session prompt。
+- [x] 删除已退役 rank/compiler 可执行路径和孤立 artifact helper；完整CPU回归`361 passed`。
+- [x] 移除已合并clean worktree/branch、明确临时文件和38组非formal profile/smoke checkpoint payload；formal
+  evidence与可复用cache保留。
+- [x] 核对Markdown links、compileall、CLI、`git diff --check`、工作树与主/远端branch结构；收尾后输出
+  new-session prompt。
 
 ## Next-session decision procedure
 

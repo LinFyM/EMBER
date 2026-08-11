@@ -1,10 +1,8 @@
 # Q/V Rank-Reserved Native Reward Compiler
 
-状态：2026-08-11 closed design/evidence authority。canonical load-only实现、v9 family/cache、ordered
-evaluator gate和CPU seal均已完成；Gate A通过，但online Gate B=`128/400`且compiler-only重裁决=`138/400`、
-lost15，二者均未通过。活动时期的config=
-`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1 Program-only reference=
-`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；它们现在只保留历史证据，不再是活动入口。
+状态：2026-08-11 closed design/evidence authority。Gate A曾通过，但online Gate B=`128/400`且compiler-only
+重裁决=`138/400`、lost15，二者均未通过。活动时期的config、load-only compiler、cache、gate与CLI runtime已
+在终局裁决后从active tree删除；精确实现可由Git commit`3a6f801`读取，formal artifacts保持不变。
 Gate C、cycle1、controls与新训练均未授权。
 
 ## 1. Why this was the next single-variable intervention
@@ -311,16 +309,9 @@ direction在rank-reserved compiler上的load-only组合。负结果不能扩大�
 
 ## 8. Canonical implementation ownership and retirement
 
-本设计只保留一条活动实现。数学/JVP留在`writer/condition_update.py`，完整LoRA编译由
-`writer/rank_reserved_compiler.py`拥有，吞吐profile与五臂vertical分别由
-`writer/generation_profile.py`和`writer/rank_reserved_vertical.py`拥有，cache生成、释放和rollout handoff仍由
-`writer/evaluation_runtime.py`统一接管。静态authority、live deployment evidence与config facade分别归
-`expert_manifold/rank_reserved_authority.py`、`rank_reserved_deployment.py`和`rank_reserved_contract.py`；正式
-root/gate校验与CLI launch归`pi05_eval/rank_reserved_gate.py`和`rank_reserved_launch.py`。episode evidence和历史
-transition分析只是从原超大owner机械拆出的同一合同，不是第二套算法或evaluator。
+活动时期只有一条实现：数学/JVP在`writer/condition_update.py`，rank compiler、vertical、authority、
+deployment、contract、gate与launch分别由专用owners承担。终局non-pass后，这些rank专用owners、三个configs
+和专用tests已整体删除，不保留兼容stub或第二CLI；通用condition-update机制与results-only历史schema解析保留。
 
-旧inline实现已经原位移除，历史只由Git和frozen artifacts保存；没有兼容并行版本、第二compiler或第二CLI
-family。结构守卫相对`513eb43`为`review`但hard violations、parallel version families和parallel function
-families均为空；review来自这次完整deployment/gate合同的净增长，以上owner和Gate B/C退役条件即其生命周期
-说明。带真实LIBERO assets的全仓fresh CPU回归为`388 passed in 23.56s`，compileall与diff-check通过；这些
-只证明工程合同，不构成A40行为或closed-loop性能证据。
+删除不改变任何formal result。需要审计精确runtime、旧CPU seal或owner边界时使用
+`git show 3a6f801:<path>`；不能从该快照恢复活动入口，除非未来新authority基于新的科学证据选择性移植。

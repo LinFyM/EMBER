@@ -10,8 +10,8 @@
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。不存在待跑Gate B/C，也不存在active
   successor、Writer训练或EMBER GPU进程。
-- 当前任务是整理仓库、移除退役可执行路径/临时资产、压缩历史证据并交给新session。整理不得偷偷选择或
-  实现下一架构。
+- 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
+  evidence和可复用基础保留。下一session的首要任务是形成新设计，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
   工作以后仍须来自clean pushed commit的detached frozen worktree。
 
@@ -182,14 +182,22 @@ policy-aware reward credit。它们都必须先说明为何不重复历史失败
 
 ## 9. Repository state and handoff
 
-2026-08-11 compiler-only结果已由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存并推送。
-本次cleanup在其后：
+2026-08-11 compiler-only结果由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存。随后cleanup完成：
 
-- 历史设计压缩到`docs/research_history.md`；
-- 退役rank/compiler执行路径、旧worktree/merged topic branch、明确临时文件与无consumer profile权重将清理；
-- formal results、数据、task experts、source policy和唯一机制证据保留；
-- 删除的源码/设计仍可从`3a6f801`精确恢复。
+- `04ed4e6`把约3.65万行追加式Markdown压成约3400行authority/history，删除错误train-only normalization与
+  两个无caller旧配置负载；
+- `4f172dd`删除退役rank/compiler的3个configs、14个专用runtime/contract/launcher/compiler owners、孤立
+  artifact hasher及专用tests，净删8408行；results-only历史schema与可复用v6/Reward基础保留；
+- 主工作树外12个旧worktrees与全部topic worktree已删除；本地和origin现在都只保留`main`与
+  `codex/bci-continuation`，旧refs仍由6.15MB、138-head灾备bundle和Git历史覆盖；
+- 删除38个已结束profile/smoke roots中的非formal checkpoint payload，实际约74.69GB；保留各root的contract、
+  metrics、summary/completion。另清理34个uv临时目录、17个零字节日志、3个空/错误roots和3个空转tail进程；
+- 为未来效率保留可复用`.cache/uv`主体、`.venv`、formal results/checkpoints、paired raw rows、task experts、
+  source policy、data/models、feature caches、acceptance与migration evidence；
+- 加载现有`.env.local`资产映射后的完整CPU回归为`361 passed`；compileall、CLI、Markdown links和diff-check通过。
 
-新session开始时先确认当前HEAD/clean/push状态，完整读`AGENTS.md`规定的最小清单，核对本节是否已被后续
-commit更新。不要创建长期实验，直到新设计authority明确了单变量、历史对比、hard gate、真实评测点和
-吞吐合同。
+本次收尾没有启动GPU、训练、rollout或profile，也没有修改formal实验结果。删除的源码/设计仍可从`3a6f801`
+精确恢复；profile checkpoint payload没有保留副本，但它们从未是formal/consumer asset。
+
+新session开始时先确认当前HEAD、clean和origin同步，完整读`AGENTS.md`规定的最小清单。不要创建长期实验，
+直到新design authority明确了单变量、历史对比、hard gate、真实评测点和吞吐合同。

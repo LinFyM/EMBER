@@ -15,8 +15,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `138/400`、breadth7，但相对old134 retained/gained/lost=`119/19/15`，违反lost`<=10`。
 - compression和online regeneration均造成独立能力换手；Gate C、cycle1、controls和新训练未授权。
 - 该结果不等于视频、Reward、continuous tangent、task experts或所有rank-reserved topology整体无效。
-- 当前没有active successor，也没有EMBER GPU任务。仓库整理与新session交接完成前不得启动实验；未来恢复
-  必须先建立新的单变量design authority和可证伪门。
+- 当前没有active successor，也没有EMBER GPU任务。本次仓库整理已经完成；新session恢复实现或实验前必须
+  先建立新的单变量design authority和可证伪门。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

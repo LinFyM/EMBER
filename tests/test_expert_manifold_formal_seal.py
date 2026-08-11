@@ -27,16 +27,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pcug_is_active_and_historical_sknc_pick_gc_osg_srtp_are_sealed() -> None:
-    active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
-    assert active["profile_run"]["artifact_evidence"] is None
-    assert active["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
-    assert active["evaluation"]["formal_status"] == (
-        "awaiting_live_pcug_deployment_smoke"
-    )
+def test_pcug_and_historical_sknc_pick_gc_osg_srtp_are_sealed() -> None:
+    pcug = load_v6_prior_config(CONFIG)
+    assert pcug["status"] == "profile_result_sealed_nonpass"
+    pcug_profile = pcug["profile_run"]["artifact_evidence"]
+    assert pcug_profile["passed"] is False
+    assert pcug_profile["wall_ratio_lower_bound"] > 1.5
+    assert pcug_profile["paired_probe_started"] is False
+    assert pcug_profile["mechanism_profile_written"] is False
+    assert pcug["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert pcug["formal_run"]["artifact_evidence"] is None
+    assert pcug["evaluation"]["formal_status"] == "not_run_after_profile_nonpass"
+    assert pcug["evaluation"]["online_smoke_evidence"] is None
 
     historical_srtp = json.loads(
         (

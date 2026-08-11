@@ -253,9 +253,9 @@ first-success bank。final update是`D0`到这些keys共同nullspace的closest p
 backward。它最快会被以下证据否决：candidate与base几乎无discordance、没有跨suite harmful tasks、projection
 退化或破坏rank/energy、wall超过matched SKNC `1.5x`，以及macro5 strict不能把lost压到8以内并提高absolute。
 
-PCUG canonical实现已完成并通过完整CPU回归`344 passed`。active path只保留一个trainer/solver/deployment
-family；SRTP reward-tangent、landmark replay与对应测试已删除。CPU证据闭合了exact candidate cast次序、paired
-classification、closest projection、first-stable bank、fresh-incompatible checkpoint，以及world5 padded gather
-中的feature/cotangent对齐；这些仍只是工程与机制前置条件，不是性能证据。当前尚无live profile、checkpoint或
-closed-loop结果，必须由discarded macro的真实discordance、harmful suite覆盖、guard closure、rank/energy和wall
-共同决定是否获得formal资格。
+PCUG canonical实现完成并通过完整CPU回归`344 passed`，但唯一world4 discarded macro在paired probe前就终局
+non-pass。run-contract后`809.72185s`仍未完成Phase A full24 gather，wall下界为scaled matched SKNC的
+`2.25568x>1.5x`；物理3--5持续100%，物理6先等待，因此共驻在物理6的低利用率服务不是长尾来源。run无OOM、
+nonfinite、mechanism report或checkpoint。这个结果只淘汰“static cost-balanced world4 Phase A + PCUG”执行合同，
+既没有支持也没有否定paired candidate guard；下一设计必须先消除global candidate形成前的rank-local tail，不能
+把未执行的科学机制写成负结果，也不能因此转向无关架构。

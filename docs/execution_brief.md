@@ -15,15 +15,15 @@ SKNC已退役，不resume、不补controls、不sweep。SRTP随后让fixed-landm
 Program update，但两个clean world3 attempts都在mixed reward CFM处三rank OOM。`d172add`首轮暴露decoder graph
 跨K4保留；`e31e2fd`释放graph并只在Nmc4后重解compiler仍申请`254/484/484 MiB`失败，最差free仅16.31MiB。
 两次均无mechanism report/checkpoint，deployment/formal未授权；当前SRTP执行合同终局退役，不降batch、改dtype、
-开allocator或做第三次修补。当前唯一active successor是PCUG：严格配对比较实际base/candidate shared
-update，对candidate losses多于gains的task在最终write施加临时zero-motion guard；每task总rollout仍为4且没有
-policy backward。canonical两阶段实现、fresh-incompatible config和完整CPU回归`344 passed`已经闭合；尚未运行
-live profile、训练或评测。
+开allocator或做第三次修补。PCUG随后完成canonical实现与`344 passed`，但唯一clean world4 discarded macro在
+Phase A full24 gather前就越过wall hard gate：`809.72185s / 2.25568x>1.5x`下界，物理3--5持续100%、物理6
+先等待；无OOM/nonfinite、paired probe、mechanism report或checkpoint。PCUG当前execution contract终局退役，
+deployment/formal与同配置重跑关闭。actual candidate paired-guard的科学假设仍未被检验。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Active PCUG profile gate
+## 1. Successor design gate
 
 任何新successor在实现前必须回答：
 
@@ -231,9 +231,10 @@ deployment和评测全部关闭。SKNC canonical实现、clean world3 `16/16` pr
 fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`formal_result_sealed`，resume、controls和
 sweep关闭。SRTP的`d172add`与`e31e2fd` world3 attempts均exit1，后者证明释放decoder graph仍不能让完整logical
 B<=16 reward CFM gradient进入A40；config已封存为`profile_result_sealed_nonpass`，同配置重跑、deployment与formal
-关闭。PCUG canonical实现与CPU gate已闭合，config状态为`active_cpu_ready_awaiting_live_profile`；任何新GPU
-动作前必须先clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、fresh root、物理/
-NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+关闭。PCUG唯一world4 run在paired probe前因wall下界`2.25568x`封存non-pass，config为
+`profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。当前没有active successor；任何新GPU
+动作前必须先写新authority、clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、
+fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

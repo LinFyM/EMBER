@@ -26,10 +26,12 @@
   `e31e2fd`同合同reprofile释放graph后仍三rank OOM，申请`254/484/484 MiB`时free`19/16.31/417.06 MiB`。
   两次均无mechanism report/checkpoint，deployment/formal未授权；完整logical B<=16 landmark policy-gradient
   本体是最早工程失效接口，不允许第三次修补或batch/dtype/allocator sweep。
-- 当前唯一active successor是PCUG：先形成实际blind `D0`，再在两个exact-paired random initializations
-  上比较base/candidate Programs；candidate losses多于gains的task与stable-success task在最终write中临时
-  zero-motion，只有stable-success key持久化。每task总rollout仍4条，无policy backward。canonical实现、config、
-  checkpoint/eval schema与完整CPU回归`344 passed`已完成；尚未运行live profile、训练或评测。
+- PCUG canonical实现与完整CPU`344 passed`后运行唯一clean world4 discarded macro，但在Phase A full24 gather
+  与paired probe前就越过wall hard gate：从run-contract发布到owner停止的下界`809.72185s`，相对scaled matched
+  SKNC=`2.25568x>1.5x`。物理3--5持续100%、物理6先等待；无OOM/nonfinite、mechanism report或checkpoint。
+  deployment/formal与同配置重跑关闭；只淘汰当前execution contract，不检验paired-guard科学假设。
+- 当前没有active successor；下一设计必须针对Phase-A rank-local tail，并继承未被否定的candidate-pairing机制，
+  不得因没有取得paired evidence转向无关representation/rank/few-shot路线。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -343,7 +345,7 @@ OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile
 log/exit与`failure.json`，exit1、三rank OOM、无mechanism report/checkpoint。config现为
 `profile_result_sealed_nonpass`。
 
-## 10. Active PCUG implementation authority
+## 10. PCUG terminal profile decision
 
 PCUG不再求完整reward gradient，而是直接测量当前shared candidate的闭环因果效果。Phase A先用完整24-task
 B20/full48和persisted stable-success bank形成`D0`；Phase B对两个相同env/state/policy RNG分别运行base与
@@ -362,8 +364,14 @@ CPU/live/formal gates见`docs/action_forecast_writer_paired_candidate_update_gua
 canonical实现已经原位替换SRTP：保留exact candidate cast次序、paired K2×2、ephemeral harmful guard、persistent
 stable bank、FP64小SVD加FP32大投影、world-size 1--6 padded gather与fresh-incompatible checkpoint/eval schema；
 SRTP tangent/landmark runtime和测试已删除。完整CPU回归`344 passed`，包含world5 padded rank对齐回归。当前
-config为`active_cpu_ready_awaiting_live_profile`；下一步是clean seal后运行一次discarded live macro，不得直接
-formal训练。
+唯一live run来自clean pushed`238cab4`、gpu02物理3/4/5/6 world4。run contract于05:30:16发布；到05:43:46
+Phase A仍未完成full24 gather，物理3--5持续100%、物理6已等待。wall下界`809.72185s`，scaled baseline=
+`358.970267s`，ratio=`2.255679>1.5`；owner在门已不可逆为false后SIGTERM自己的torchrun以停止浪费。
+
+failure root为`runs/outputs/pi05_pcug_paired_candidate_guard_full24_profile_macro0_r4_b20_238cab4_20260812`，含
+run contract、invocation和`failure.json`；同前缀launch contract/log/exit在`runs/logs/`。无OOM、nonfinite、
+paired outcomes、mechanism report或checkpoint；退出后物理3--5回到0MiB，物理6只剩既有4593MiB低利用率服务，
+ECC仍为0。config现为`profile_result_sealed_nonpass`，同配置重跑、deployment、formal关闭。
 
 ## 11. Runtime and GPU boundary
 
@@ -431,5 +439,5 @@ reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B3
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
-和formal关闭。PCUG canonical实现与CPU gate已经闭合，但尚无GPU/profile/checkpoint/成绩；下一步是clean seal和
-唯一discarded live macro，旧Reward/OSG/SKNC/SRTP命令不得恢复。
+和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；config已封存non-pass，
+同配置重跑、deployment和formal关闭。当前无active successor，旧PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

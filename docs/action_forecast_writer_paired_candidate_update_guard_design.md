@@ -1,10 +1,9 @@
 # Paired Candidate-Update Guard
 
-状态：2026-08-12 canonical实现与完整CPU gate已完成，config为`active_cpu_ready_awaiting_live_profile`；尚未
-profile、训练或评测。PCUG只改变SKNC最早失败的shared-credit接口：先形成原始shared blind candidate，再用严格
-配对的closed-loop base/candidate outcomes识别这次candidate实际会伤害的tasks，最后在同一次memory write前把
-这些task的condition motion投影为零。它不做policy gradient、trajectory replay、landmark imitation或
-reward-scale sweep。
+状态：2026-08-12 profile终局non-pass并退役。canonical实现与完整CPU`344 passed`已完成，但唯一clean world4
+discarded macro在Phase A full24 gather与paired probe前达到wall下界`809.72185s`，相对scaled matched SKNC为
+`2.25568x>1.5x`。无OOM、nonfinite、mechanism report或checkpoint；同配置重跑、deployment与formal关闭。
+这个结果只淘汰当前static world4 PCUG execution contract，不检验actual candidate paired-guard科学假设。
 
 实现保持一个canonical trainer/solver/deployment family：SRTP tangent/landmark runtime与测试已删除；exact
 candidate cast、paired K2×2、ephemeral harm guard、first-stable bank、FP64小SVD/FP32大投影、world-size 1--6

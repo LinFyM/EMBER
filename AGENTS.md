@@ -34,11 +34,13 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   未授权。第二次把最早工程失效接口定位到完整logical B<=16 landmark policy-gradient本体，而非decoder graph；
   不得再降batch、改dtype、开allocator选项或补第三次修复。该结果淘汰当前SRTP执行合同，不否定constant-memory
   landmarks、shared reward half-space或所有on-policy credit。
-- 当前唯一active successor是PCUG：先用persisted stable-success bank形成原始blind `D0`，再对两个相同
-  random initializations分别运行base/candidate Programs，严格配对识别candidate losses；最终只把当前harmful与
-  stable-success condition motion投影为零，harm guard不持久化。每task仍共4 rollouts、无policy backward或
-  trajectory replay。canonical两阶段实现、fresh-incompatible config、checkpoint/eval schema和SRTP原位退役已完成，
-  完整CPU回归`344 passed`；尚未profile、训练或评测。下一合法动作是clean seal后运行一次discarded live macro。
+- PCUG已在唯一discarded live macro的工程门终局non-pass：clean pushed`238cab4`、gpu02物理3/4/5/6 world4，
+  从run-contract发布到owner按不可逆wall失败停止的下界为`809.72185s`，是scaled matched SKNC baseline的
+  `2.25568x>1.5x`。rank3/物理6先等待，物理3--5持续100%，run尚未完成Phase A full24 gather，也未开始paired
+  probe；无OOM、nonfinite、mechanism report或checkpoint。formal/deployment关闭，不重跑同配置。该结果只淘汰
+  当前static world4 PCUG execution contract，不检验actual candidate paired-guard的科学假设。
+- 当前没有active successor。下一步必须从Phase-A rank-local tail这个最早失败接口写新的单变量authority；不得
+  恢复PCUG/SRTP旧命令、直接formal，或因未取得paired evidence转去无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -203,10 +205,10 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 - 最新retired design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；config
   `configs/pi05_v6_shared_reward_tangent_projection_v1.json`状态为`profile_result_sealed_nonpass`。`d172add`与
   `e31e2fd`两个OOM roots/logs/failure artifacts保留，均无checkpoint/成绩；deployment、formal和同配置重跑关闭。
-- 当前active authority：`docs/action_forecast_writer_paired_candidate_update_guard_design.md`；canonical config为
-  `configs/pi05_v6_paired_candidate_update_guard_v1.json`，状态`active_cpu_ready_awaiting_live_profile`。PCUG尚无
-  GPU profile、checkpoint或成绩；下一合法动作是从clean pushed commit的frozen worktree做一次discarded live
-  macro，不得直接formal训练。
+- 最新retired authority：`docs/action_forecast_writer_paired_candidate_update_guard_design.md`；canonical config
+  `configs/pi05_v6_paired_candidate_update_guard_v1.json`状态为`profile_result_sealed_nonpass`。world4 failure root、
+  run contract、launch contract、log和exit保留，无paired evidence、checkpoint或成绩；同配置重跑、deployment和
+  formal关闭。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

@@ -124,8 +124,13 @@
 - [x] 原位替换SRTP runtime为fresh-incompatible PCUG两阶段macro，完成exact candidate Program、paired K2×2、
   ephemeral harm guard、persistent stable bank、closest projection、checkpoint隔离与完整CPU/architecture gate；
   SRTP active path已删除，完整CPU回归`344 passed`。
-- [ ] clean commit/push并建立detached frozen worktree；按live双节点状态使用1--6张合适A40运行唯一discarded
-  fresh macro0 profile。只有全部hard gates通过并封存后，才做B8/16/32 deployment smoke和formal fresh`0→5`。
+- [x] clean commit/push并建立detached frozen worktree；按live双节点状态使用4张合适A40运行唯一discarded
+  fresh macro0 profile。live hard gate未过，故B8/16/32 deployment smoke和formal fresh`0→5`均关闭。
+- [x] PCUG以clean pushed`238cab4`、gpu02物理3/4/5/6 world4启动；Phase A在full24 gather前达到
+  `809.72185s / 2.25568x>1.5x`wall下界。按不可逆hard gate停止自己的torchrun；无OOM、paired report或checkpoint，
+  GPU正常释放，failure artifact与config non-pass状态已封存。
+- [ ] 从Phase-A rank-local tail写新的单变量successor authority；保留未被检验的actual candidate pairing，不
+  直接重跑PCUG、放宽wall、改pair/threshold/seed或转向无关架构。
 
 ## Repository closeout
 

@@ -326,10 +326,13 @@ formal artifacts保存。
 - [x] clean pushed`ea3f3bf`已在canonical cache owner中实现global sealed-order B8、整批按batch ordinal派
   worker及whole-batch partial resume；400 requests固定50个完整B8，fresh无redundant forward。保持B8
   吞吐赢家，不固定卡数、不降batch/precision；聚焦回归`22 passed`。
-- [x] 实现I=`07462c9`与one-time authority E=`c92b4a5`已封存old134 exact cache→A40 B8 q/v rank14
+- [x] 初始I/E=`07462c9`/`c92b4a5`已封存old134 exact cache→A40 B8 q/v rank14
   compiler-only派生链：0 Writer/video/source-policy population、完整source rollout identity、ambient BF16
   autocast+TF32、action写后1600次exact equality、GPU-local NUMA、partial整批重算和manifest-before-spawn
   fail-close。主线fresh相关回归`127 passed`，active config保持5634 bytes；target root/GPU尚未创建或启动。
+- [x] 首次formal prepare在atomic publish前暴露纯serialization boundary bug：old JSON list与fresh tuple值相同却
+  被projection判不等；40/41其他predicates与paired-control全过，未创建root或启动GPU。I2=`d3c8621`仅规范化
+  `init_state_ids`容器且继续逐task/state严格比较，E2=`825fce3`只更新authority；聚焦回归`68 passed`。
 - [ ] 用同一paired 400 panel运行compiler-only strict裁决；门仍为correct≥130、breadth≥6、lost≤10。若失败，
   退役统一rank14 base；若通过，先补canonical same-forward online full-rank/rank14对照，再决定是否重开Gate C。
 - [ ] 只有新macro0过门，才跑现有cycle1 Program的rank14+2 load-only strict400；只有correct≥144、

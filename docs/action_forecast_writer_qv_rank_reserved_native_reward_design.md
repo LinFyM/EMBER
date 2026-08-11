@@ -235,12 +235,14 @@ action cache也只有`504/1600` tensors bit-equal、effective-BA relative differ
 - rollout仍使用official paired validation 8×50、同state/video/env/policy RNG。通过仍要求correct`>=130`、
   breadth`>=6`、相对old134 lost`<=10`。
 
-实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`抽取并复用唯一q/v compiler owner，保持旧算子顺序；
-counterfactual调用必须与online一样处于CUDA BF16 autocast且`allow_tf32=true`，不能用公式相同替代运行上下文
-相同。authority E=`c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`只新增one-time diagnostic JSON，绑定
-old134 source/cache、完整rollout identity、50×B8、1600个action tensor写后exact equality、single-A40 local
-NUMA transform和prefilled fail-close。它明确`retroactively_changes_original_gate_b=false`、
-`authorizes_cycle1=false`；active 5634-byte Writer config不变。
+实现最初以I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`抽取并复用唯一q/v compiler owner；首次formal
+prepare随后在发布root前fail closed：old134 JSON中的`tasks[*].init_state_ids`为list，fresh in-memory contract为
+等值tuple，rollout projection把纯序列化类型差异误判成identity drift。没有target root、cache或GPU进程产生。
+最窄修复I2=`d3c8621a69e54c591f3680dd76da9a57b80234ed`只在projection中规范化该序列并保留全部task/state值比较；
+authority E2=`825fce3`相对I2只更新one-time diagnostic JSON。counterfactual仍必须与online一样处于CUDA BF16
+autocast且`allow_tf32=true`，不能用公式相同替代运行上下文相同。E2继续绑定old134 source/cache、完整rollout
+identity、50×B8、1600个action tensor写后exact equality、single-A40 local NUMA transform和prefilled fail-close；
+它明确`retroactively_changes_original_gate_b=false`、`authorizes_cycle1=false`，active 5634-byte Writer config不变。
 
 这个派生root只回答rank14 compiler容量，不冒充online deployment分数。若仍失败，退役当前统一rank14 base；
 若通过，先用canonical same-forward full-rank/rank14 online cache确认部署一致性，之后才可重新开放Reward Gate C。

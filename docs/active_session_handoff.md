@@ -49,16 +49,19 @@
   worker执行整批，不再改变batch membership，partial resume也重算完整canonical batch而只写missing entries。
   fresh不增加redundant forward，聚焦回归`22 passed`。这保持B8吞吐赢家，并消除未来online/same-forward比较的
   隐藏变量。
-- compiler-only实现与one-time authority已分别封存为I=
-  `07462c928420f2fbddd7a7004fb169bc4ea89ea0`、E=
-  `c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`；E相对I只新增
+- compiler-only初始实现/authority为`07462c9`/`c92b4a5`。第一次formal prepare在atomic publish前按合同
+  fail closed：old134 sealed JSON把`tasks[*].init_state_ids`读成list，fresh in-memory contract保留等值tuple，
+  rollout projection误把容器类型当identity drift；其余40/41 predicates全真，8 task的值均严格为`0..49`，
+  paired-control全等。失败未留下target root、cache或GPU进程。最窄修复与新authority现封存为I2=
+  `d3c8621a69e54c591f3680dd76da9a57b80234ed`、E2=`825fce3`；E2相对I2只更新
   `configs/pi05_v6_qv_rank_reserved_compiler_only_diagnostic_v1.json`。派生population在run/cache合同中明确为
   0 generator、0 Writer/video/source-policy population handoff；target rollout identity与old134的model、tokenizer、
   normalization、policy、environment、RNG、LIBERO paths、tasks和adapter source严格绑定。q/v使用同一shared
   compiler、global B8、与online完全一致的ambient BF16 autocast+TF32；action四tensor在CPU直接复制并对写后
   safetensors做1600次exact equality。single-A40 transform要求visible cuda0和GPU-local NUMA；partial resume
   重算完整B8、只写missing；缺prefilled manifest在任何rollout worker spawn前fail closed。主线fresh相关回归
-  `127 passed`；active config仍为5634 bytes。authority明确不追认原Gate B且`authorizes_cycle1=false`。
+  原实现相关`127 passed`，序列化边界修复后聚焦相关回归`68 passed`；active config仍为5634 bytes。authority
+  明确不追认原Gate B且`authorizes_cycle1=false`。
 - 当前尚未创建target root或启动GPU。若compiler-only strict400仍失败，才干净退役当前统一rank14 base；若通过，
   再值得做canonical same-forward full-rank/rank14与Reward Gate C，而不是直接恢复被当前formal non-pass封锁的旧
   Gate C。

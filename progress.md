@@ -27,6 +27,12 @@
   多一个JSON，lineage exact，active config仍5634 bytes。主线在设置canonical LIBERO assets后fresh相关回归
   `127 passed`；未创建target root、未启动GPU。下一步只做clean push/frozen worktree、live双节点/配额检查和
   compiler-only transform+strict400。
+- clean pushed/frozen`dbf3c14`上的第一次formal prepare在atomic publish前fail closed。独立双路展开确认
+  `_target_contract_matches` 41项中40项为真，唯一false是old134 JSON的list与fresh contract等值tuple；8个
+  `init_state_ids`均为`0..49`，paired-control全等。没有target root、cache或GPU进程产生。
+- 最窄修复I2=`d3c8621a69e54c591f3680dd76da9a57b80234ed`只把rollout projection中的state序列规范化为
+  JSON list并保留所有task/state比较；E2=`825fce3`只更新one-time authority，active config仍5634 bytes。
+  修复后compiler diagnostic/launcher/cache聚焦回归`68 passed`，等待新docs封存与frozen worktree后重试。
 
 ## Reward-Credit cycle1终局与rank-reserved native后继（2026-08-11）
 

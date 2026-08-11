@@ -38,8 +38,12 @@
 - 去混杂合同审计进一步确认“同一compiler”不仅是同一公式，还必须包括ambient CUDA BF16 autocast与TF32；
   否则pivot/solve内部matmul仍会走不同数值路径。实现I=`07462c9`因此复用同一shared owner并绑定该上下文，
   而不是用batch1、扩精度或逐元素ULP补丁追bitwise。prefilled run contract也必须真实写0 generators/0 handoff，
-  且target source policy与完整task/environment/RNG身份必须和old134相同。E=`c92b4a5`已把这些条件封成one-time
-  authority，明确不能追认原128 Gate B或直接授权Gate C。
+  且target source policy与完整task/environment/RNG身份必须和old134相同。当前E2=`825fce3`把这些条件封成
+  one-time authority，明确不能追认原128 Gate B或直接授权Gate C。
+- sealed JSON与fresh in-memory contract也必须先做representation canonicalization再比较科学身份。首次正式
+  prepare的41项predicate中唯一false来自8个完全相同的`init_state_ids=0..49`：JSON为list、dataclass/asdict
+  路径保留tuple。正确修复只规范化该字段的容器、仍比较每个task/state；不能删除tasks身份门，也不应改全局
+  contract builder。atomic prepare正确保证这次失败没有发布root或启动GPU。
 
 ## Q/V pivot-preserving rank14+2：Gate A闭合的历史机制证据（2026-08-11）
 

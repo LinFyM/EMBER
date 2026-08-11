@@ -28,11 +28,15 @@ state/video/RNG rollout panel。硬门仍为`correct>=130`、breadth`>=6`、lost
 Writer数值上下文；400 requests固定50个B8，fresh无额外forward。若该去混杂门仍失败，
 退役统一rank14 base；若通过，再构造same-forward online对照并重新决定Reward Gate C。
 
-实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`与one-time authority E=
-`c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`现已封存。正式target合同把prefilled population写成0 Writer
+初始实现/authority `07462c9`/`c92b4a5`后的首次formal prepare在发布root前fail closed：old134 JSON中的
+`init_state_ids`为list，fresh in-memory contract为等值tuple，41项合同谓词中只有该序列化表示导致的rollout
+projection不等；paired-control和真实task/state值全部相同，且没有启动GPU或留下target root。最窄修复I2=
+`d3c8621a69e54c591f3680dd76da9a57b80234ed`仅规范化identity projection中的序列容器，E2=`825fce3`只更新
+one-time authority。正式target合同仍把prefilled population写成0 Writer
 generators/0 handoff，并与old134的完整rollout identity绑定；transform使用与online相同的global B8、ambient
 BF16 autocast、TF32和GPU-local NUMA，action四tensor写后逐一exact核对，partial resume整批重算只补missing。
-缺manifest在worker spawn前fail closed。主线fresh相关回归`127 passed`、active config仍5634 bytes；authority
+缺manifest在worker spawn前fail closed。原实现相关回归`127 passed`，修复后聚焦回归`68 passed`；active config
+仍5634 bytes，authority
 明确不追认原Gate B、也不授权Gate C。当前target root尚不存在，GPU尚未启动；下一步只是在clean pushed
 frozen worktree上live重查两节点/配额后完成这一条transform+strict400。
 

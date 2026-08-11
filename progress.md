@@ -1,38 +1,31 @@
 # EMBER Progress Ledger
 
-## Rank-Reserved Gate B完成、正式non-pass与去混杂后继（2026-08-11）
+## Rank-Reserved Gate B与compiler-only去混杂全部收尾（2026-08-11）
 
-- Gate-A seal/config/docs先后以`0bc8375`、`0fd823f`推送；phase-independent seal fixture以`19cfc32`恢复。
-  Gate B使用clean frozen`0fd823f8cb5ab45164b185c0a42cb358044b095d`，root=
-  `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`。
-- 启动前live选择`gpu02:2,3,4,5`，4卡×3 replicas/generators、B8、无NCCL。48/48 shards、400/400 rows、
-  400 cache entries、12 workers均attempt1/return0；wall=`1143.131s`、rollout-only约`1655.21 episodes/hour`，
-  结束后释放所用GPU。
-- strict=`128/400`、breadth7、per-task=`1/1/47/29/0/36/13/1`；相对old134 retained/gained/lost=
-  `113/15/21`、churn36、Jaccard`.758389`、McNemar p=`.405032`。按预注册correct与lost门正式non-pass，
-  Gate C/controls/training均未启动。
-- 三路独立只读审计确认artifact/pairing完整，同时定位旧18-generator与新12-generator的局部B8 membership
-  混杂。action负对照只有`504/1600` tensors bit-equal；q/v差异分解约`23.5%`平方误差来自rank14/span外、
-  `76.5%`来自span内regeneration，且误差不能预测loss。因此保留128 non-pass，但不把它误写为rank14容量的
-  干净反事实。
-- 当前实现阶段只做两项：canonical global B8整批派worker；old134 exact cache→A40 B8 rank14 compiler-only
-  派生cache与同一strict400。保持原门、action bit-exact、0 video/Writer/forbidden reads；若失败才退役rank14，
-  若通过再补same-forward online对照。尚未启动新的GPU工作。
-- 第一项已完成并推送为`ea3f3bf7f7e1892dc86a8cb3b77c47f8138e3dbe`：descriptor使用global
-  batch-first assignment，legacy cache按原assignment继续可读且未知算法fail closed；400/B8固定50批，partial
-  resume整批forward只写missing，fresh 0 redundant。主线复跑`22 passed`，compileall/diff-check通过。
-- 第二项实现I=`07462c928420f2fbddd7a7004fb169bc4ea89ea0`与authority E=
-  `c92b4a5d4ebf09a946af6a818d7b941d3e851aa0`已完成。两路只读审查先后拦截并修复ambient autocast、prefilled
-  fake-generator provenance、source rollout identity、descriptor接线和拆分后CLI import问题；最终authority只比I
-  多一个JSON，lineage exact，active config仍5634 bytes。主线在设置canonical LIBERO assets后fresh相关回归
-  `127 passed`；未创建target root、未启动GPU。下一步只做clean push/frozen worktree、live双节点/配额检查和
-  compiler-only transform+strict400。
-- clean pushed/frozen`dbf3c14`上的第一次formal prepare在atomic publish前fail closed。独立双路展开确认
-  `_target_contract_matches` 41项中40项为真，唯一false是old134 JSON的list与fresh contract等值tuple；8个
-  `init_state_ids`均为`0..49`，paired-control全等。没有target root、cache或GPU进程产生。
-- 最窄修复I2=`d3c8621a69e54c591f3680dd76da9a57b80234ed`只把rollout projection中的state序列规范化为
-  JSON list并保留所有task/state比较；E2=`825fce3`只更新one-time authority，active config仍5634 bytes。
-  修复后compiler diagnostic/launcher/cache聚焦回归`68 passed`，等待新docs封存与frozen worktree后重试。
+- online Gate B使用clean frozen`0fd823f`完成：root=
+  `runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`，strict=`128/400`、
+  breadth7，相对old134 retained/gained/lost=`113/15/21`，正式non-pass；artifact/pairing完整。
+- 三路审计定位old18/new12 generators的局部B8 membership混杂。global batch-first修复已推送为`ea3f3bf`；
+  400/B8固定50批，partial resume整批forward只写missing，卡/worker数今后只改变吞吐。
+- compiler-only I/E=`07462c9`/`c92b4a5`及list/tuple最窄修复I2/E2=`d3c8621`/`825fce3`已封存；修复后
+  聚焦回归`68 passed`。正式evaluation/docs commit=`6db37c1138e1357108d07a3be3b3af5449a72932`，frozen
+  worktree=`/data1/user/ymdai/worktrees/EMBER-compiler-only-formal-6db37c1-20260811`。
+- formal root=
+  `runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`。single-A40 transform
+  natural exit0：wall=`69.464s`、400/400 entries、50×B8、36 q/v targets、1600/1600 action tensors exact、
+  400/400 video identities exact、0 Writer/video/action read、0 policy forward/rollout/update，peak allocated/reserved
+  约`121.3/155.2MB`。
+- strict launch live选择`gpu02:2,3,4,5`，4卡×3 persistent workers、无NCCL；48/48 shards、400/400 rows、
+  12/12 return0，wall=`1037.920s`、overall约`1387.39 episodes/hour`，结束后GPU全部释放。
+- 结果=`138/400`、breadth7，per-task=`1/1/46/32/0/35/22/1`；相对old134 retained/gained/lost=
+  `119/19/15`、net`+4`、churn34、Jaccard`.777778`、p=`.607591`。lost`15>10`使正式counterfactual门失败；
+  evidence schema=`ember_pi05_v6_qv_rank_reserved_compiler_only_decision_evidence_v1`。
+- old/compiler/online逐task显示Long1净`+11`掩盖Spatial/Object净`-3/-4`；compiler→online又发生
+  `23 lost/13 gained`、net`-10`。compression和regeneration均是独立换手源，不能用aggregate或几何误差替代
+  支持保持裁决。
+- 终局保持`original_gate_b_passed=false`、`retroactively_changes_original_gate_b=false`、
+  `authorizes_cycle1=false`。uniform pivot-rank14退役；Gate C、rank14+2 cycle1、controls和训练均未启动且不再
+  授权。当前无EMBER GPU任务；按owner指令，下一工作是全面仓库整理与新session交接，不启动后继实验。
 
 ## Reward-Credit cycle1终局与rank-reserved native后继（2026-08-11）
 

@@ -6,39 +6,33 @@
 严格`>150/400`并继续提高，同时保留真实视频时序因果、same-task鲁棒、breadth和稳定积累。当前没有
 运行中的EMBER GPU任务。
 
-**当前最新裁决（2026-08-11）**：Q/V Rank-Reserved的zero-Program Gate B已从clean frozen
-`0fd823f8cb5ab45164b185c0a42cb358044b095d`完成，root=
-`runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`。400/400 rows、48/48
-shards、12 workers均完整，strict=`128/400`、breadth7；相对paired old full-rank macro0 `134/400`为
-retained/gained/lost=`113/15/21`。它违反`correct>=130`和`lost<=10`，所以正式Gate B为non-pass，Gate C、
-controls与新训练均未启动且继续封锁。
+**当前最新裁决（2026-08-11）**：online-regenerated rank14 Gate B的`128/400`、breadth7、相对old134
+retained/gained/lost=`113/15/21`仍是可信端到端non-pass，但18/12 generator造成的局部B8上下文差异使它不是
+干净的compression反事实。一次性compiler-only去混杂已从clean pushed/frozen`6db37c1`完成，root=
+`runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`，decision evidence=
+`compiler_only_diagnostic_evidence.json`。
 
-该分数是真实端到端non-pass，但不是干净的rank14容量反事实。old134用了18个Writer generator workers，
-new128用了12个；当前旧调度是先做`request ordinal % worker_count`、再由各worker局部拼B8，所以卡/worker数
-改变了co-batch、position、padding和tail shape。未改结构的action负对照只有`504/1600` tensors bit-equal，
-action effective-BA relative difference=`.003355`；q/v root-to-root difference=`.002160`，其中投影分解约
-`23.5%`平方误差来自rank14/span外，约`76.5%`来自span内Writer regeneration。lost组误差反而更小，不能用
-`.075%` reconstruction或root-to-root误差解释21个loss。
+single-A40 transform从old134 exact cache生成400/400 entries：50×B8、36 q/v targets做pivot rank14、action
+1600 tensors全部bit-exact、400 video identities exact，0 Writer/video/action读取、0 policy forward/rollout/update；
+wall=`69.464s`。随后live空闲`gpu02:2,3,4,5`以4卡×3 persistent workers、无NCCL完成strict400：48/48
+shards、400/400 rows、12/12 return0、wall=`1037.920s`，结果`138/400`、breadth7。相对old134为
+retained/gained/lost=`119/19/15`、net`+4`、churn34、Jaccard`.777778`。由于lost`15>10`，正式
+`counterfactual_gate_passed=false`；correct与breadth过线不能覆盖支持保持门。
 
-当前只推进一次去混杂compiler-only strict400，不重跑旧baseline、不跑现有Gate C：从immutable old134的
-exact per-video cache出发，在A40上按全局sealed-order B8只执行现有q/v pivot rank14+两个zero slots，action
-四tensor逐元素原样复制，0 video/Writer/teacher-action/reward reads；生成显式派生provenance后复用同一400
-state/video/RNG rollout panel。硬门仍为`correct>=130`、breadth`>=6`、lost`<=10`。clean pushed
-`ea3f3bf`已把并行修正为先形成全局canonical B8、再把整批派给任意空闲worker，使卡数只影响吞吐、不影响
-Writer数值上下文；400 requests固定50个B8，fresh无额外forward。若该去混杂门仍失败，
-退役统一rank14 base；若通过，再构造same-forward online对照并重新决定Reward Gate C。
+逐task old/compiler/online为`0/5/48/34/0/35/11/1` → `1/1/46/32/0/35/22/1` →
+`1/1/47/29/0/36/13/1`。compiler的aggregate `+4`完全由Long1净`+11`掩盖Spatial净`-3`、Object净`-4`；
+compiler→online又发生`23 lost/13 gained`、net`-10`，Long1单task净`-9`。compression与regeneration均是独立
+换手源，tiny reconstruction error不能替代闭环支持证据。
 
-初始实现/authority `07462c9`/`c92b4a5`后的首次formal prepare在发布root前fail closed：old134 JSON中的
-`init_state_ids`为list，fresh in-memory contract为等值tuple，41项合同谓词中只有该序列化表示导致的rollout
-projection不等；paired-control和真实task/state值全部相同，且没有启动GPU或留下target root。最窄修复I2=
-`d3c8621a69e54c591f3680dd76da9a57b80234ed`仅规范化identity projection中的序列容器，E2=`825fce3`只更新
-one-time authority。正式target合同仍把prefilled population写成0 Writer
-generators/0 handoff，并与old134的完整rollout identity绑定；transform使用与online相同的global B8、ambient
-BF16 autocast、TF32和GPU-local NUMA，action四tensor写后逐一exact核对，partial resume整批重算只补missing。
-缺manifest在worker spawn前fail closed。原实现相关回归`127 passed`，修复后聚焦回归`68 passed`；active config
-仍5634 bytes，authority
-明确不追认原Gate B、也不授权Gate C。当前target root尚不存在，GPU尚未启动；下一步只是在clean pushed
-frozen worktree上live重查两节点/配额后完成这一条transform+strict400。
+终局为`original_gate_b_passed=false`、`retroactively_changes_original_gate_b=false`、
+`authorizes_cycle1=false`：uniform pivot-rank14 base合同退役；现有rank14+2 Gate C/cycle1、controls和新训练
+全部继续关闭。该裁决不等于视频或Reward tangent整体无效，也不授权balanced-rank15、held-outcome target routing
+或任何新拓扑。当前执行到此停止；owner要求先完成文档封存，随后全面整理仓库、修正错误表述并生成新session
+交接prompt。当前没有EMBER GPU任务。
+
+online cache的global canonical B8修复`ea3f3bf`仍保留，未来卡数只改变吞吐、不改变batch membership。首次
+compiler-only prepare的list/tuple等值序列化误判由I2=`d3c8621`最窄修复，E2=`825fce3`只更新authority；
+41项中其余40项与paired controls均通过，失败未发布root或启动GPU，修复后聚焦回归`68 passed`。
 
 **此前执行状态（2026-08-11）**：Reward-Credit已从clean frozen`e3857f7`完成formal cycle0→1和预注册
 correct400。训练root=
@@ -51,7 +45,7 @@ cycle2、不补controls、不扫Reward超参。
 最新分层诊断证明Program/video与continuous tangent并未先失败：correct的task-common/same-video结构从
 Program传到analytic FactorHead与effective BA；真正首断点是q/v约`1e-8 RMS`的factor delta小于非零BF16
 A/B约`1e-4`局部ULP，native own-target cosine仅约`.037`。FP16、dither、local-CD、gauge/global scale和
-absolute refactor均直接失败。唯一active design改为Q/V Rank-Reserved Native Reward Compiler：36个q/v
+absolute refactor均直接失败。当时唯一active design改为Q/V Rank-Reserved Native Reward Compiler：36个q/v
 targets保留14个pivot-selected原生B columns并重解A，两个physical zero-B slots写condition-local rank2
 Reward residual；两个action targets保持full-rank16 FP32。
 
@@ -66,10 +60,9 @@ B8/16/32=`.906679/.903080/.904560 LoRA/s`，全部stable、0 OOM、reserved约12
 72 BF16 + 4 FP32 cache、configured/actual B8、Writer release/source reuse、source identity、0 forbidden reads、
 144/144 q/v target和四suite q/v-only fixed-action传递全部闭合，raw validator通过。旧native full-rank Reward
 action delta与新full Reward delta cosine=`-.1271`，q/v-only与新full Reward delta cosine=`.5333`，故
-“native可达”不等于“闭环方向保真”。active config已由CPU assembler自动seal到`ee56aec` artifacts；下一步
-只先跑rank14 zero-Program strict400，`correct<130`、breadth<6或相对旧134 lost>10即reject。base过门后才
-读取原84MB Program做rank14+2 cycle1 strict400；只有correct≥144、breadth≥6、lost≤6且gained>lost才
-补同checkpoint controls。140--143是诊断性non-pass；两项行为门前不启动训练。当前仍无新架构strict400分数。
+“native可达”不等于“闭环方向保真”。active时期的config已由CPU assembler seal到`ee56aec` artifacts；其后
+online rank14 strict=`128`与compiler-only=`138/lost15`均已按门non-pass，原定cycle1 strict400、controls与
+fresh训练未启动且不再授权。最终状态只取本节顶部，不从这段历史Gate-A记录恢复命令。
 
 GPU不是固定6卡合同。每次启动前同时live检查`gpu01/gpu02`，选择一个节点并使用该节点当时所有真正空闲、
 健康且能提高有效吞吐的A40；不等待凑卡、不dummy占位、不为跨节点碎片改launcher。Gate A的profile/vertical
@@ -234,16 +227,16 @@ identity baseline，不是性能提高。
    不得fresh、resume25、补六臂或用correct80重解释；
 6. Reward-Credit B8/all-mixed profile、formal cycle0→1和strict400均已完成；strict仍为134且14/14换手，
    因而cycle2与训练超参扫描关闭；
-7. 当前只推进q/v pivot-preserving rank14 base + condition-local rank2 physical zero-B residual。先跑新
-   macro0 strict400，再有条件跑现有cycle1 Program load-only strict400；两项行为门前不启动fresh训练。
+7. q/v pivot-preserving rank14 base + condition-local rank2 physical zero-B residual现已完成Gate B与
+   compiler-only裁决并关闭；cycle1 Program load-only与fresh训练未启动。当前只做仓库整理和交接。
 
 不得从下文自行跳到later stage，也不得从历史文档恢复已退役命令。
 
 ## 1. Fixed scientific contract
 
 - 方法：one-shot Video-Conditioned Writer总路线；whole-LoRA/ECP/Tangent/CEFD、第37节v1、第38节v2
-  blind-add、第39节RLS与Reward cycle2均已退役或否决。唯一active design是q/v rank-reserved native
-  compiler；保留balanced-key frozen-v6 Program，只改变q/v physical slot编译。
+  blind-add、第39节RLS、Reward cycle2与q/v rank-reserved native compiler均已裁决关闭。整理期间没有
+  已授权active design；balanced-key frozen-v6 Program与q/v compiler只保留历史证据。
 - 输入：exact task language + exactly one action-hidden raw teacher video。
 - 视频是唯一dynamic value；无language-only LoRA bypass、expert-bank部署、multi-video/LoRA/checkpoint
   平均或融合。
@@ -261,9 +254,8 @@ identity baseline，不是性能提高。
   `(B0+dB)(A0+dA)`并保留该小cross term。q/v base/residual slots不做gauge mixing。
 - correct-video zero-Program输出rank14 v6 base，并非identity；no-video必须显式跳过pivot/lstsq/SVD，返回
   template-A/zero-B source identity。
-- 当前只允许load-only行为门：新rank14 macro0过门后才跑既有cycle1 Program。只有cycle1 correct`>=144`、
-  lost`<=6`、breadth`>=6`且gained>lost才算通过并补controls；140--143不授权新训练。任何fresh训练的state、
-  optimizer、VJP和resume合同必须由后续独立design重新封存。
+- 历史load-only行为门已在rank14 base支持保持阶段失败；既有cycle1 Program不再运行。任何后继的state、
+  optimizer、VJP、topology和resume合同都必须由未来独立design重新封存，不能继承本设计的未执行Gate C。
 
 ## 2. Throughput-first runtime contract
 

@@ -16,34 +16,31 @@
   `G0/G0+T` absolute rank16 refactor都失败。local-CD K4 same-video cosine约`.217`、error-to-zero约`.977`；
   absolute refactor的delta cosine`.0045--.0213`、norm ratio`8.7--182`。不再扫描这些数值补丁。
 
-## Rank14 Gate B：正式128 non-pass，但旧Writer batching混入compiler反事实（2026-08-11）
+## Rank14 Gate B与compiler-only终局：compression和regeneration均造成换手（2026-08-11）
 
-- clean frozen`0fd823f`的正式Gate B root完整得到`128/400`、breadth7；相对immutable old134为
-  retained/gained/lost=`113/15/21`、churn36。它明确违反correct`>=130`和lost`<=10`，所以当前端到端
-  rank-reserved recipe正式失败，Gate C不得启动。
-- 失败不是artifact或pairing问题：400 state、actual video、env/policy RNG严格配对，400 LoRA、48 shards和
-  12 worker completion完整。真正的新发现是两次Writer cache生成上下文不配对：old/new用了18/12 generators，
-  `request.ordinal % worker_count`后局部B8会改变同一video的co-batch、position、padding与tail。
-- action路径在macro0结构上完全不变，却只有`504/1600` factor tensors bit-equal、effective-BA relative
-  difference=`.003355`，直接证明差异先于rank14投影。q/v root差异=`.002160`；把old BA投到new retained-B
-  span后，rank14/span外约占`23.5%`平方误差，span内Writer regeneration约占`76.5%`。lost组误差低于
-  retained-success组，误差预测loss AUC约`.335`，没有数值误差剂量关系。
-- 因而应同时保留两句话：`128`是现有recipe不可继续的正式non-pass；它干净淘汰了“同为B8即可跨worker
-  topology比较compiler”的假设，但尚未干净淘汰rank14容量。下一最小证据是immutable old134 exact cache只做
-  A40 B8 rank14 compiler、action exact copy后的paired strict400，不是换seed重跑，也不是直接180度换架构。
-- 在线cache已由clean pushed`ea3f3bf`改为global canonical B8后整批派worker。这样空多少卡用多少卡只提高
-  吞吐，不再改变科学输入；400 requests固定50个完整B8，fresh无额外forward，partial resume重算整批而只补
-  missing entries。compiler-only仍用原门；失败才退役rank14，通过才投资
-  same-forward online对照和Reward Gate C。
-- 去混杂合同审计进一步确认“同一compiler”不仅是同一公式，还必须包括ambient CUDA BF16 autocast与TF32；
-  否则pivot/solve内部matmul仍会走不同数值路径。实现I=`07462c9`因此复用同一shared owner并绑定该上下文，
-  而不是用batch1、扩精度或逐元素ULP补丁追bitwise。prefilled run contract也必须真实写0 generators/0 handoff，
-  且target source policy与完整task/environment/RNG身份必须和old134相同。当前E2=`825fce3`把这些条件封成
-  one-time authority，明确不能追认原128 Gate B或直接授权Gate C。
-- sealed JSON与fresh in-memory contract也必须先做representation canonicalization再比较科学身份。首次正式
-  prepare的41项predicate中唯一false来自8个完全相同的`init_state_ids=0..49`：JSON为list、dataclass/asdict
-  路径保留tuple。正确修复只规范化该字段的容器、仍比较每个task/state；不能删除tasks身份门，也不应改全局
-  contract builder。atomic prepare正确保证这次失败没有发布root或启动GPU。
+- online-regenerated rank14 Gate B从clean frozen`0fd823f`完整得到`128/400`、breadth7；相对immutable
+  old134 retained/gained/lost=`113/15/21`、churn36，正式违反correct与lost门。artifact和pairing完整，但old/new
+  的18/12 generator局部B8改变co-batch/position/padding/tail，故不能把全部128归因于rank14 compression。
+- 去混杂compiler-only root=
+  `runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`。它从old134 exact
+  cache只做50×B8 q/v pivot-rank14 transform，action 1600 tensors bit-exact、400 video identity exact、0 Writer/
+  video/action read、0 policy forward/rollout/update；strict 400 rows与48 shards均完整。结果`138/400`、breadth7，
+  相对old134 retained/gained/lost=`119/19/15`、net`+4`、churn34、Jaccard`.777778`、p=`.607591`。
+- correct与breadth虽过线，lost`15>10`使counterfactual hard gate失败。old成功保留率只有`119/134=.8881`，
+  直接证明`.075%`量级的漂亮base reconstruction不足以保证closed-loop support retention。
+- 逐task old/compiler/online按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+  `0/5/48/34/0/35/11/1`、`1/1/46/32/0/35/22/1`、`1/1/47/29/0/36/13/1`。old→compiler的
+  suite净变化是Spatial`-3`、Object`-4`、Goal`0`、Long`+11`；总分`+4`完全由Long1的13 gained/2 lost掩盖，
+  是target-heterogeneous rotation而非共同积累。breadth7也很脆弱：Spatial1仅`1/50`，Goal3仍`0/50`。
+- compiler→online retained/gained/lost=`115/13/23`、net`-10`、churn36；Long1单task15 lost/6 gained、净`-9`。
+  三臂intersection=`108`、union=`161`，说明compression与online regeneration是两个独立换手源，而不是一个
+  修好就会回到old的单一问题。
+- 因而最终边界是：原Gate B保持false，去混杂门也false，`authorizes_cycle1=false`；当前uniform pivot-rank14
+  base合同退役，Gate C/rank14+2/controls/training不得继续。被淘汰的是该统一topology，不是video、Reward
+  signal或continuous tangent总命题；不得用held validation task结果手调target/rank分配。
+- global canonical B8修复`ea3f3bf`仍是正确吞吐基础：卡数只影响整批由谁执行，不影响batch membership。
+  首次prepare的JSON list/in-memory tuple等值表示误判由I2=`d3c8621`最窄修复；保留完整task/state identity门，
+  不把低层容器表示提升成科学差异。
 
 ## Q/V pivot-preserving rank14+2：Gate A闭合的历史机制证据（2026-08-11）
 

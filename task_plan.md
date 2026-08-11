@@ -316,7 +316,7 @@ formal artifacts保存。
 - [x] 实现纯CPU `rank-reserved-seal` assembler，只从注册profile/vertical raw artifacts写回status/evidence；
   tracked Program asset resolver与`runs/outputs` evidence resolver分离，Gate C不再机械阻断。seal只允许在
   tracked canonical branch head执行；Gate A raw validator已重建`ee56aec`、B8、`10359/25926B` evidence并
-  自动写config。当前只需将config/docs clean commit/push并新建frozen worktree，才进入Gate B/C。
+  自动写config。其后config/docs commit、frozen worktree与Gate B均已完成；Gate C因non-pass未进入。
 - [x] 新rank14 zero-Program strict400已完成：`128/400`、breadth7、相对old134 retained/gained/lost=
   `113/15/21`，正式违反correct与lost门；Gate C未启动。400 rows/cache/shards/pairing均完整，结果保留为当前
   端到端recipe non-pass。
@@ -333,13 +333,17 @@ formal artifacts保存。
 - [x] 首次formal prepare在atomic publish前暴露纯serialization boundary bug：old JSON list与fresh tuple值相同却
   被projection判不等；40/41其他predicates与paired-control全过，未创建root或启动GPU。I2=`d3c8621`仅规范化
   `init_state_ids`容器且继续逐task/state严格比较，E2=`825fce3`只更新authority；聚焦回归`68 passed`。
-- [ ] 用同一paired 400 panel运行compiler-only strict裁决；门仍为correct≥130、breadth≥6、lost≤10。若失败，
-  退役统一rank14 base；若通过，先补canonical same-forward online full-rank/rank14对照，再决定是否重开Gate C。
-- [ ] 只有新macro0过门，才跑现有cycle1 Program的rank14+2 load-only strict400；只有correct≥144、
-  breadth≥6、相对新macro0 lost≤6且gained>lost才算通过并补同checkpoint controls。140--143为诊断性
-  non-pass且不授权新训练；>150完成六臂。
-- [ ] 两个行为门前不实现或启动fresh训练。若load-only通过，再单独设计native-forward + continuous VJP/STE；
-  不对zero tangent做SVD backward，不扩dtype、不降B8。
+- [x] compiler-only transform+strict400已从clean pushed/frozen`6db37c1`完成：400 entries、50×B8、action
+  1600 tensors exact、0 Writer/video/action read；48/48 shards、400/400 rows、12/12 return0。结果`138/400`、
+  breadth7，相对old134 retained/gained/lost=`119/19/15`、net`+4`、churn34。lost`15>10`，所以正式门失败并
+  退役当前uniform pivot-rank14 base；decision evidence明确`authorizes_cycle1=false`。
+- [x] 三臂分解完成：old/compiler/online per-task=`0/5/48/34/0/35/11/1`、
+  `1/1/46/32/0/35/22/1`、`1/1/47/29/0/36/13/1`；compression丢15个old成功，regeneration再发生
+  `23 lost/13 gained`。aggregate改善由Long1净`+11`掩盖Spatial/Object退化，不是稳定累积。
+- [x] 现有Gate C、cycle1 rank14+2、controls与fresh训练永久关闭为本架构non-pass，不启动第二个400或新训练。
+  pivot15+1若在未来交接中出现，只能列为未授权问题，不能恢复balanced-rank15或按held outcome手调target。
+- [ ] 按owner新指令全面整理仓库：保留唯一canonical active状态、修正旧“当前/下一步”表述、清理经验证
+  无用文件与重复路径、汇总历史实验经验，并生成可直接交给新session的完整prompt；期间不启动GPU实验。
 
 ## Ongoing evidence-driven iteration rules
 

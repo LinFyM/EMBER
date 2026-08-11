@@ -1,13 +1,13 @@
 # Q/V Rank-Reserved Native Reward Compiler
 
-状态：2026-08-11 active design authority；canonical load-only实现、v9 family/cache、ordered evaluator gate
-和CPU seal已完成。活动config=`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1唯一Program-only
-reference=`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；同commit`ee56aec` live Gate A已
-通过，config现为`sealed_from_live_a40_rank_reserved_deployment_profile`并登记raw-validated B8 evidence。
-当前下一步是有序Gate B/C。本文只授权现有frozen-v6 macro0与Reward-Credit cycle1 Program的load-only行为
-裁决；完成前不授权新训练。
+状态：2026-08-11 closed design/evidence authority。canonical load-only实现、v9 family/cache、ordered
+evaluator gate和CPU seal均已完成；Gate A通过，但online Gate B=`128/400`且compiler-only重裁决=`138/400`、
+lost15，二者均未通过。活动时期的config=
+`configs/pi05_v6_qv_rank_reserved_native_reward_v1.json`，cycle1 Program-only reference=
+`configs/pi05_v6_qv_rank_reserved_cycle1_program_load_only_v1.json`；它们现在只保留历史证据，不再是活动入口。
+Gate C、cycle1、controls与新训练均未授权。
 
-## 1. Why this is the next single-variable intervention
+## 1. Why this was the next single-variable intervention
 
 Reward-Credit cycle1 已完成正式训练，但同一paired correct400仍为`134/400`、breadth6，
 相对zero-Program macro0恰好`14 gained / 14 lost`。这不能证明reward credit无效，因为随后沿
@@ -244,13 +244,27 @@ autocast且`allow_tf32=true`，不能用公式相同替代运行上下文相同�
 identity、50×B8、1600个action tensor写后exact equality、single-A40 local NUMA transform和prefilled fail-close；
 它明确`retroactively_changes_original_gate_b=false`、`authorizes_cycle1=false`，active 5634-byte Writer config不变。
 
-这个派生root只回答rank14 compiler容量，不冒充online deployment分数。若仍失败，退役当前统一rank14 base；
-若通过，先用canonical same-forward full-rank/rank14 online cache确认部署一致性，之后才可重新开放Reward Gate C。
+正式派生root现为
+`runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`，evaluation commit=
+`6db37c1138e1357108d07a3be3b3af5449a72932`。single-A40 transform完成400 entries、50×B8、1600个action
+tensor bit-exact和400个video identity exact，0 Writer/video/action read、0 policy forward/rollout/update；随后
+4卡×3 workers完成48/48 shards与400/400 rows。compiler-only=`138/400`、breadth7；相对old134
+retained/gained/lost=`119/19/15`、net`+4`、churn34。由于lost`15>10`，去混杂门正式失败；correct和breadth
+过线不能覆盖support-retention hard gate。
+
+逐task old/compiler/online为`0/5/48/34/0/35/11/1`、`1/1/46/32/0/35/22/1`、
+`1/1/47/29/0/36/13/1`。aggregate改善完全由Long1净`+11`主导，同时Spatial净`-3`、Object净`-4`；
+compiler→online还发生`23 lost/13 gained`、net`-10`。因此compression与regeneration都是独立换手源。
+
+正式decision evidence保持`counterfactual_gate_passed=false`、`original_gate_b_passed=false`、
+`retroactively_changes_original_gate_b=false`、`authorizes_cycle1=false`。本文定义的uniform pivot-preserving
+rank14 base-retention合同到此退役；rank14+2 cycle1不再具备Gate C入口。淘汰对象是当前统一compiler topology，
+不是teacher-video、Reward signal或continuous tangent的总命题。
 
 ### Gate C: current cycle1 Program load-only strict correct400
 
-只有Gate B保留base后，才把已正式训练的Reward cycle1 Program通过同一compiler做load-only correct400；
-不先训练、不改Reward scale/K/Nmc/RLS参数、不挑checkpoint。
+本节是已封存的条件合同，不再是活动执行入口。Gate B与去混杂重裁决均未保住base，故现有Reward cycle1
+Program、rank14+2 load-only、controls和新训练全部继续硬阻断；以下阈值只保留为历史预注册证据。
 
 - 若低于Gate B macro0，说明已学Reward方向即使原生可达也没有闭环价值，拒绝当前Reward方向/compiler组合。
 - 只有`correct>=144`、breadth`>=6`、相对Gate B gained>lost且lost`<=6`，才算load-only通过；立即补

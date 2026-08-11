@@ -14,11 +14,16 @@ from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_checkpoint import (
     PROGRAM_MEMORY_FILE,
     PROGRAM_MEMORY_KEY,
+    SUCCESS_KEY_BANK_FILE,
+    SUCCESS_KEY_FEATURES_KEY,
+    SUCCESS_KEY_PRESENT_KEY,
+    SUCCESS_KEY_TASK_IDS_KEY,
     V6_PRIOR_CHECKPOINT_SCHEMA,
     inspect_v6_prior_checkpoint,
     load_v6_prior_checkpoint,
     save_v6_prior_checkpoint,
 )
+from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -28,6 +33,7 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 _SHAPE = (2, 3, 4)
+_BANK_SHAPE = (24, 2)
 
 
 def _memory() -> ProgramResidualMemory:
@@ -35,6 +41,12 @@ def _memory() -> ProgramResidualMemory:
         feature_width=_SHAPE[0],
         program_slots=_SHAPE[1],
         program_width=_SHAPE[2],
+    )
+
+
+def _bank() -> SuccessKeyAnchorBank:
+    return SuccessKeyAnchorBank(
+        range(24), feature_width=_BANK_SHAPE[1], device=torch.device("cpu")
     )
 
 
@@ -66,16 +78,22 @@ def _context() -> DistributedContext:
     return DistributedContext(0, 0, 1, torch.device("cpu"))
 
 
-def _save(root: Path, memory: ProgramResidualMemory) -> Path:
+def _save(
+    root: Path,
+    memory: ProgramResidualMemory,
+    bank: SuccessKeyAnchorBank | None = None,
+) -> Path:
     return save_v6_prior_checkpoint(
         output_dir=root,
         macro=1,
         memory=memory,
+        success_key_bank=bank or _bank(),
         context=_context(),
         metrics_rows=1,
         cursor_contract=_cursor(),
         checkpoint_contract=_contract(),
         expected_memory_shape=_SHAPE,
+        expected_bank_shape=_BANK_SHAPE,
     )
 
 
@@ -98,17 +116,22 @@ def _draw_rng() -> tuple[float, float, torch.Tensor]:
     return random.random(), float(np.random.random()), torch.rand(5)
 
 
-def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
+def test_checkpoint_is_atomic_memory_and_training_bank_only_and_inspectable(
     tmp_path: Path,
 ) -> None:
     memory = _memory()
+    bank = _bank()
     with torch.no_grad():
         memory.value.copy_(torch.arange(24, dtype=torch.float32).reshape(_SHAPE))
-    checkpoint = _save(tmp_path, memory)
+        bank.present[[2, 9]] = True
+        bank.features[2] = torch.tensor([1.0, 2.0])
+        bank.features[9] = torch.tensor([3.0, 4.0])
+    checkpoint = _save(tmp_path, memory, bank)
 
     assert {path.name for path in checkpoint.iterdir()} == {
         "manifest.json",
         PROGRAM_MEMORY_FILE,
+        SUCCESS_KEY_BANK_FILE,
         "rng_rank_000.pt",
     }
     assert not list(checkpoint.parent.glob(".*.tmp"))
@@ -117,6 +140,12 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     assert state[PROGRAM_MEMORY_KEY].dtype == torch.float32
     assert tuple(state[PROGRAM_MEMORY_KEY].shape) == _SHAPE
     assert torch.equal(state[PROGRAM_MEMORY_KEY], memory.value)
+    bank_state = load_file(str(checkpoint / SUCCESS_KEY_BANK_FILE), device="cpu")
+    assert set(bank_state) == {
+        SUCCESS_KEY_FEATURES_KEY,
+        SUCCESS_KEY_PRESENT_KEY,
+        SUCCESS_KEY_TASK_IDS_KEY,
+    }
 
     manifest = read_json(checkpoint / "manifest.json")
     assert manifest["schema_version"] == V6_PRIOR_CHECKPOINT_SCHEMA
@@ -133,6 +162,7 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     inspected = inspect_v6_prior_checkpoint(
         checkpoint,
         expected_memory_shape=_SHAPE,
+        expected_bank_shape=_BANK_SHAPE,
         expected_world_size=1,
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
@@ -148,11 +178,15 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
         "value_count": 24,
         "finite": True,
     }
+    assert inspected["success_key_bank"]["present_count"] == 2
+    assert inspected["success_key_bank"]["present_ordinals"] == [2, 9]
+    assert inspected["success_key_bank"]["feature_shape"] == [24, 2]
     assert "writer" not in inspected
     assert "trainer" not in inspected
     metadata_only = inspect_v6_prior_checkpoint(
         checkpoint,
         expected_memory_shape=_SHAPE,
+        expected_bank_shape=_BANK_SHAPE,
         expected_world_size=1,
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
@@ -160,6 +194,7 @@ def test_checkpoint_is_atomic_single_tensor_memory_only_and_inspectable(
     )
     assert metadata_only["payload_value_validation"] == ("deployment_metadata_only")
     assert metadata_only["program_memory"]["finite"] is None
+    assert metadata_only["success_key_bank"]["finite"] is None
     assert metadata_only["rng"]["device_types"] == []
 
 
@@ -183,28 +218,36 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
     np.random.seed(103)
     torch.manual_seed(107)
     source = _memory()
+    source_bank = _bank()
     with torch.no_grad():
         source.value.normal_()
+        source_bank.present[4] = True
+        source_bank.features[4] = torch.tensor([5.0, 6.0])
     saved_value = source.value.clone()
-    checkpoint = _save(tmp_path, source)
+    checkpoint = _save(tmp_path, source, source_bank)
     expected_rng = _draw_rng()
 
     random.seed(1001)
     np.random.seed(1003)
     torch.manual_seed(1007)
     destination = _memory()
+    destination_bank = _bank()
     with torch.no_grad():
         destination.value.fill_(91.0)
     macro, rows = load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         memory=destination,
+        success_key_bank=destination_bank,
         context=_context(),
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
         expected_memory_shape=_SHAPE,
+        expected_bank_shape=_BANK_SHAPE,
     )
     assert (macro, rows) == (1, 1)
     assert torch.equal(destination.value, saved_value)
+    assert destination_bank.present.nonzero().flatten().tolist() == [4]
+    torch.testing.assert_close(destination_bank.features[4], torch.tensor([5.0, 6.0]))
     _assert_rng_equal(_draw_rng(), expected_rng)
 
     untouched = destination.value.clone()
@@ -212,10 +255,12 @@ def test_load_restores_only_memory_cursor_and_current_rank_rng(tmp_path: Path) -
         load_v6_prior_checkpoint(
             checkpoint=checkpoint,
             memory=destination,
+            success_key_bank=destination_bank,
             context=_context(),
             expected_cursor_contract={**_cursor(), "teacher_video_seed": 19},
             expected_checkpoint_contract=_contract(),
             expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
         )
     assert torch.equal(destination.value, untouched)
 
@@ -247,13 +292,16 @@ def test_fresh_one_step_then_resume_has_identical_memory_and_rng_trajectory(
     np.random.seed(2)
     torch.manual_seed(3)
     resumed = _memory()
+    resumed_bank = _bank()
     load_v6_prior_checkpoint(
         checkpoint=checkpoint,
         memory=resumed,
+        success_key_bank=resumed_bank,
         context=_context(),
         expected_cursor_contract=_cursor(),
         expected_checkpoint_contract=_contract(),
         expected_memory_shape=_SHAPE,
+        expected_bank_shape=_BANK_SHAPE,
     )
     update(resumed)
     resumed_rng = _draw_rng()
@@ -288,6 +336,7 @@ def test_inspection_rejects_wrong_key_dtype_shape_and_nonfinite(
         inspect_v6_prior_checkpoint(
             checkpoint,
             expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
             expected_world_size=1,
         )
 
@@ -299,7 +348,10 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
     (checkpoint / "trainer.pt").touch()
     with pytest.raises(ExpertManifoldError, match="manifest"):
         inspect_v6_prior_checkpoint(
-            checkpoint, expected_memory_shape=_SHAPE, expected_world_size=1
+            checkpoint,
+            expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
+            expected_world_size=1,
         )
 
     legacy = _save(tmp_path / "legacy", _memory())
@@ -308,7 +360,10 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
     write_json_atomic(legacy / "manifest.json", manifest)
     with pytest.raises(ExpertManifoldError, match="manifest"):
         inspect_v6_prior_checkpoint(
-            legacy, expected_memory_shape=_SHAPE, expected_world_size=1
+            legacy,
+            expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
+            expected_world_size=1,
         )
 
     wrong_dtype = torch.zeros(_SHAPE, dtype=torch.float64)
@@ -317,11 +372,13 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
             output_dir=tmp_path / "wrong_dtype",
             macro=1,
             memory=wrong_dtype,
+            success_key_bank=_bank(),
             context=_context(),
             metrics_rows=1,
             cursor_contract=_cursor(),
             checkpoint_contract=_contract(),
             expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
         )
     nonfinite = torch.full(_SHAPE, torch.inf, dtype=torch.float32)
     with pytest.raises(ExpertManifoldError, match="non-finite"):
@@ -329,9 +386,11 @@ def test_checkpoint_rejects_extra_files_old_schema_and_invalid_live_memory(
             output_dir=tmp_path / "nonfinite",
             macro=1,
             memory=nonfinite,
+            success_key_bank=_bank(),
             context=_context(),
             metrics_rows=1,
             cursor_contract=_cursor(),
             checkpoint_contract=_contract(),
             expected_memory_shape=_SHAPE,
+            expected_bank_shape=_BANK_SHAPE,
         )

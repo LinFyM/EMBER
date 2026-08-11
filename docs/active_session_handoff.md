@@ -19,8 +19,9 @@
   lower bound=`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal与
   评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
 - 当前唯一active successor design是SKNC：K4只保留binary outcome，current 4/4 success keys加每train task
-  第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。它尚未实现或获得GPU资格；当前
-  没有EMBER GPU进程。
+  第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。canonical实现、fresh schema与
+  完整CPU回归`334 passed`已完成；尚未profile、训练或评测，下一步是clean pushed head的唯一discarded live
+  profile。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -249,18 +250,18 @@ OSG-PC不同：无successful replay、executed-prefix cotangent或per-success VJ
 风险是anchor span压平待学feature、单train24 key无法代表same-task其它video/held occupancy，或blind B20只会
 在剩余空间继续产生错误方向。zero anchor motion只是机制证据，不能替代paired400。
 
-完整authority为`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。当前只授权原位替换
-OSG executable owner、建立fresh schema/config、CPU synthetic/bank/resume/outcome-only/Program→LoRA→action门和
-完整回归。全部通过并clean commit/push后，才可重新做GPU/storage preflight和唯一discarded live profile；formal
-首段固定fresh`0→5`并立即strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
+完整authority为`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。OSG executable owner
+已被原位替换，fresh schema/config、CPU synthetic/bank/resume/outcome-only/Program→LoRA→action门和完整回归均已
+通过。clean commit/push后立即做GPU/storage preflight和唯一discarded live profile；formal首段固定fresh`0→5`
+并立即strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
 
 ## 9. Runtime and GPU boundary
 
 任何未来GPU launch前：
 
 - 同时live检查`gpu01/gpu02`，选一个节点；
-- 使用该节点所有真正空闲、健康且能提高吞吐的A40，没有6-card cap；
-- 不等待凑卡、不dummy占位、不跨节点拼碎片、不干扰他人；
+- 使用该节点至多6张健康、低利用率、显存余量足够且能提高吞吐的A40；非零显存或低利用率进程不自动排除；
+- 不等待凑满6卡、不dummy占位、不跨节点拼碎片，不抢占或明显干扰他人；
 - evaluator无NCCL；多卡训练用`NCCL_P2P_DISABLE=1`、NUMA physical/local rank mapping和deferred-NCCL；
 - fresh按live world size设计，exact-resume锁定原world size；
 - 先查`/data1`独立user quota与峰值预算。
@@ -314,5 +315,6 @@ checkpoint。PICK-GC部署证据root为
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
 canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
-logs与`engineering_failure.json`均保留且无checkpoint。当前下一步不是重跑，而是从SKNC已明确的
-success-key nullspace合同出发完成canonical实现与CPU机制证据；design本身不授权GPU，旧OSG命令不得恢复。
+logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh config/
+schema与CPU机制证据现已完成；当前下一步是clean pushed head的live GPU/storage preflight和唯一discarded
+profile，旧OSG命令不得恢复。

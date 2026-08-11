@@ -30,7 +30,8 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   deployment与评测均关闭；当前full-replay per-success VJP执行图已退役，但不能据此否定所有success constraint。
 - 当前唯一active successor design是SKNC：同一K4 panel只用`4/4` binary success认证condition key，并把完整
   shared Program update限制在这些keys的nullspace；每train task只持久化第一条success key。它不保存/回放
-  trajectory action，也不求reward VJP。设计已完成，但尚未实现、profile、训练或评测；当前没有EMBER GPU进程。
+  trajectory action，也不求reward VJP。canonical实现、fresh schema与完整CPU回归`334 passed`已完成；尚未
+  profile、训练或评测，下一步是clean pushed head的唯一discarded live profile。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -110,11 +111,13 @@ EMBER/
 └── tests/
 ```
 
-进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。当前没有活动GPU
-进程；OSG-PC已封存non-pass，SKNC目前只授权canonical实现与CPU机制验证，不能从设计或旧文档直接恢复GPU命令。
+进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC已封存
+non-pass；SKNC canonical实现与CPU门已完成，只授权从clean pushed head运行预注册discarded live profile，
+不过门不训练，不能从旧文档恢复GPU命令。
 
-GPU工作若由未来authority恢复，每次同时live检查`gpu01/gpu02`，选一个节点并使用该节点所有真正空闲、
-健康且能提高吞吐的A40；没有固定6卡上限，不等待凑卡、不dummy占位、不跨节点拼碎片、不干扰他人。
+GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
+吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、
+不跨节点拼碎片。
 多卡训练遵守`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
 
 吞吐优先：接受正常BF16/TF32/batch低位差异，不为微小roundoff固定batch1、重复forward、扩dtype或逐tensor

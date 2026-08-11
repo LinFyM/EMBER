@@ -116,6 +116,43 @@ def test_sampler_resume_and_seed_are_sample_exact() -> None:
     assert changed != full
 
 
+def test_dynamic_uneven_sampler_uses_all_five_ranks_and_covers_train24_once() -> None:
+    task_ids = tuple(range(100, 124))
+    dataset, _ = _dataset(task_ids=task_ids)
+    schedule = TeacherVideoSchedule(
+        task_ids=task_ids, demo_indices=range(8), seed=19, videos_per_visit=1
+    )
+
+    def sampler(rank: int, start: int, stop: int) -> MixedTaskBatchSampler:
+        return MixedTaskBatchSampler(
+            dataset,  # type: ignore[arg-type]
+            task_ids=task_ids,
+            per_rank_batch_size=2,
+            start_step=start,
+            stop_step=stop,
+            rank=rank,
+            world_size=5,
+            seed=20260720,
+            tasks_per_rank_per_update=5,
+            video_schedule=schedule,
+            task_video_costs={
+                task_id: {demo: task_id + demo for demo in range(8)}
+                for task_id in task_ids
+            },
+            assignment_strategy="cost_balanced_long_first_dynamic_uneven",
+        )
+
+    samplers = [sampler(rank, 0, 3) for rank in range(5)]
+    for step in range(3):
+        assignments = [value.tasks_for_step(step) for value in samplers]
+        assert sorted(map(len, assignments)) == [4, 5, 5, 5, 5]
+        assert {task for shard in assignments for task in shard} == set(task_ids)
+        assert sum(map(len, assignments)) == 24
+    full = list(sampler(4, 0, 3))
+    resumed = list(sampler(4, 0, 1)) + list(sampler(4, 1, 3))
+    assert resumed == full
+
+
 def test_dataloader_prefetch_preserves_exact_sampler_and_resume_rows() -> None:
     dataset, _ = _dataset()
 

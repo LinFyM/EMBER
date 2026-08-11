@@ -51,7 +51,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active OSG-PC deployment family; old configs stay evidence."""
+    """Load only the active SKNC deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -335,6 +335,23 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
+        "success_key_anchor_bank": {
+            "feature_shape": [
+                int(config["success_key_bank"]["task_slots"]),
+                int(config["success_key_bank"]["feature_width"]),
+            ],
+            "feature_dtype": "torch.float32",
+            "present_shape": [int(config["success_key_bank"]["task_slots"])],
+            "task_global_ids": sorted(
+                global_task_id
+                for global_task_id, row in _target_rows(config).items()
+                if row["split_role"] == "train"
+            ),
+            "checkpoint_owned": True,
+            "deployment_owned": False,
+            "trainable": False,
+            "first_all_success_only": True,
+        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -353,6 +370,7 @@ def _residual_contract_matches(
     topology = contract.get("rank_topology")
     try:
         config_bytes = int(contract_config.get("bytes", -1))
+        world_size = int(contract.get("world_size", -1))
     except (AttributeError, TypeError, ValueError):
         return False
     if (
@@ -363,8 +381,9 @@ def _residual_contract_matches(
         or contract_config.get("schema") != V6_PRIOR_CONFIG_SCHEMA
         or config_bytes <= 0
         or not isinstance(topology, list)
-        or len(topology)
-        != int(config["optimization"]["distributed_update"]["world_size"])
+        or world_size not in config["formal_run"]["allowed_world_sizes"]
+        or world_size > int(config["formal_run"]["maximum_world_size"])
+        or len(topology) != world_size
     ):
         return False
     expected_keys = {
@@ -376,6 +395,7 @@ def _residual_contract_matches(
         "initialization",
         "condition_feature",
         "program_residual",
+        "success_key_bank",
         "update",
         "environment",
         "objective",
@@ -393,6 +413,7 @@ def _residual_contract_matches(
             historical["writer_state"]["state_value_count"]
         ),
         "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+        "success_key_bank": "fresh_empty_then_exact_resume",
     }
     fixed = {
         "run_schema": V6_PRIOR_RUN_SCHEMA,
@@ -401,12 +422,13 @@ def _residual_contract_matches(
         "initialization": expected_initialization,
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
+        "success_key_bank": config["success_key_bank"],
         "update": config["update"],
         "environment": config["environment"],
         "objective": config["objective"],
         "rng": config["rng"],
         "ownership": _expected_residual_ownership(config),
-        "world_size": int(config["optimization"]["distributed_update"]["world_size"]),
+        "world_size": world_size,
         "content_hash_policy": "disabled_by_owner",
     }
     return (
@@ -420,11 +442,14 @@ def _residual_contract_matches(
 def _residual_inspection(
     inspection: Mapping[str, Any],
     config: Mapping[str, Any],
+    *,
+    expected_world_size: int,
 ) -> tuple[int, Mapping[str, Any]]:
     try:
         macro = int(inspection.get("next_macro", -1))
         memory = inspection.get("program_memory", {})
-        if not isinstance(memory, Mapping):
+        bank = inspection.get("success_key_bank", {})
+        if not isinstance(memory, Mapping) or not isinstance(bank, Mapping):
             raise TypeError("memory metadata")
         identity = {
             "checkpoint_schema": inspection.get("checkpoint_schema"),
@@ -435,9 +460,7 @@ def _residual_inspection(
         }
         expected_identity = {
             "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
-            "world_size": int(
-                config["optimization"]["distributed_update"]["world_size"]
-            ),
+            "world_size": expected_world_size,
             "metrics_rows": macro,
             "content_hash_policy": "disabled_by_owner",
             "payload_value_validation": "deployment_metadata_only",
@@ -450,6 +473,23 @@ def _residual_inspection(
             "finite": None,
         }
         observed_memory = {name: memory.get(name) for name in expected_memory}
+        expected_bank = {
+            "tensor_count": 3,
+            "feature_dtype": "torch.float32",
+            "feature_shape": [
+                int(config["success_key_bank"]["task_slots"]),
+                int(config["success_key_bank"]["feature_width"]),
+            ],
+            "feature_value_count": (
+                int(config["success_key_bank"]["task_slots"])
+                * int(config["success_key_bank"]["feature_width"])
+            ),
+            "present_dtype": "torch.uint8",
+            "task_global_ids_dtype": "torch.int64",
+            "present_count": None,
+            "finite": None,
+        }
+        observed_bank = {name: bank.get(name) for name in expected_bank}
     except (TypeError, ValueError):
         raise ExpertManifoldError("v6-prior residual checkpoint changed") from None
     if (
@@ -458,6 +498,7 @@ def _residual_inspection(
         or identity != expected_identity
         or inspection.get("cursor_contract") != cursor_contract(config, macro)
         or observed_memory != expected_memory
+        or observed_bank != expected_bank
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
     return macro, memory
@@ -473,11 +514,18 @@ def _trained_writer_asset(
     manifest_path = checkpoint / "manifest.json"
     if not manifest_path.is_file():
         raise ExpertManifoldError("v6-prior residual checkpoint is incomplete")
+    try:
+        declared_world_size = int(read_json(manifest_path).get("world_size", -1))
+    except (AttributeError, TypeError, ValueError):
+        raise ExpertManifoldError("v6-prior residual checkpoint changed") from None
+    if (
+        declared_world_size not in config["formal_run"]["allowed_world_sizes"]
+        or declared_world_size > int(config["formal_run"]["maximum_world_size"])
+    ):
+        raise ExpertManifoldError("v6-prior residual checkpoint topology changed")
     inspection = inspect_v6_prior_checkpoint(
         checkpoint,
-        expected_world_size=int(
-            config["optimization"]["distributed_update"]["world_size"]
-        ),
+        expected_world_size=declared_world_size,
         validate_payload_values=False,
     )
     contract = inspection.get("checkpoint_contract", {})
@@ -490,7 +538,11 @@ def _trained_writer_asset(
         contract, config, source, historical, configured_writer
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
-    macro, memory = _residual_inspection(inspection, config)
+    macro, memory = _residual_inspection(
+        inspection,
+        config,
+        expected_world_size=declared_world_size,
+    )
     if require_formal and macro not in {
         int(value) for value in config["formal_run"]["checkpoint_macros"]
     }:
@@ -559,7 +611,7 @@ def _evaluation_writer_asset(
         "sealed_from_live_pick_gc_deployment_profile",
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
-        "sealed_from_live_osg_pc_deployment_smoke",
+        "sealed_from_live_sknc_deployment_smoke",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"

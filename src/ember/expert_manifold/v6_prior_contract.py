@@ -1,4 +1,4 @@
-"""Canonical scientific and launch contract for the active OSG-PC Writer."""
+"""Fail-closed scientific and launch contract for the active SKNC Writer."""
 
 from __future__ import annotations
 
@@ -17,20 +17,17 @@ from ember.writer.functional import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT
-    / "configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json"
+    REPO_ROOT / "configs/pi05_v6_success_key_nullspace_consolidation_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = (
-    "ember_pi05_v6_on_policy_success_guarded_program_credit_v1"
-)
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_success_key_nullspace_consolidation_v1"
 V6_PRIOR_RUN_SCHEMA = (
-    "ember_pi05_v6_on_policy_success_guarded_program_credit_launch_v1"
+    "ember_pi05_v6_success_key_nullspace_consolidation_launch_v1"
 )
 V6_PRIOR_PROFILE_SCHEMA = (
-    "ember_pi05_v6_on_policy_success_guarded_program_credit_profile_v1"
+    "ember_pi05_v6_success_key_nullspace_consolidation_profile_v1"
 )
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_on_policy_success_guarded_program_credit_completion_v1"
+    "ember_pi05_v6_success_key_nullspace_consolidation_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
@@ -48,6 +45,7 @@ _EXPECTED_TOP_LEVEL = {
     "writer",
     "condition_feature",
     "program_residual",
+    "success_key_bank",
     "update",
     "data",
     "environment",
@@ -61,19 +59,33 @@ _EXPECTED_TOP_LEVEL = {
 }
 _UNCHANGED_PICK_GC_SECTIONS = (
     "authorities",
-    "initialization",
     "writer",
     "condition_feature",
     "program_residual",
     "data",
+    "cache_gate",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_on_policy_success_guarded_program_credit",
+    "name": "frozen_v6_success_key_nullspace_consolidation",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": False,
     "deployment_expert_bank_read": False,
     "deployment_output": "one complete 38-target rank16 public LoRA",
+}
+_EXPECTED_INITIALIZATION = {
+    "kind": "strict_load_and_freeze_historical_v6_fast_macro400",
+    "checkpoint": (
+        "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_"
+        "s2400_4efa737_20260729/checkpoints/step_00000400"
+    ),
+    "writer_state_tensor_count": 600,
+    "writer_parameter_count": 10775296,
+    "residual_memory": "elementwise_zero_on_fresh_or_memory_only_exact_resume",
+    "success_key_bank": "empty_on_fresh_or_bank_only_exact_resume",
+    "optimizer": "not_instantiated",
+    "scheduler": "not_instantiated",
+    "scaler": "not_instantiated",
 }
 _EXPECTED_INFORMATION_WALL = {
     "writer_video_split_roles": ["train", "validation", "test"],
@@ -92,19 +104,42 @@ _EXPECTED_INFORMATION_WALL = {
     "teacher_action_reads": 0,
     "source_actions_enter_only": "blind_correct_condition_functional_loss",
     "training_reward_scope": (
-        "development_train_binary_success_selects_retention_constraints_only"
+        "development_train_binary_success_selects_first_all_success_key_"
+        "equality_constraints_only"
     ),
     "training_observation_action_scope": (
-        "successful_development_train_on_policy_executed_prefixes_only"
+        "online_environment_execution_only_without_retention_or_replay"
     ),
+    "successful_rollout_replay_gradient_episodes": 0,
     "failed_rollout_replay_gradient_episodes": 0,
     "negative_action_forwards": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0,
 }
+_EXPECTED_SUCCESS_KEY_BANK = {
+    "kind": "training_only_first_all_success_condition_key_bank",
+    "task_slots": 24,
+    "feature_width": 256,
+    "feature_dtype": "float32",
+    "presence_dtype": "bool_runtime_uint8_checkpoint",
+    "certificate": "exact_k4_all_four_random_reset_rollouts_success",
+    "current_all_success_constraint_timing": "before_same_macro_shared_write",
+    "persistent_policy": (
+        "first_certified_key_per_sealed_train_task_never_replace"
+    ),
+    "current_key_policy": (
+        "every_current_all_success_key_is_temporary_constraint_even_if_task_"
+        "already_present"
+    ),
+    "zero_to_three_success_policy": "no_add_no_remove",
+    "deployment_read": False,
+    "stores_lora_action_observation_or_reward": False,
+    "checkpoint_tensor_count": 3,
+}
 _EXPECTED_UPDATE = {
     "kind": (
-        "full48_on_policy_success_guarded_counterfactual_null_condition_kernel"
+        "full48_success_key_equality_constrained_counterfactual_null_condition_"
+        "kernel"
     ),
     "correct_conditions": 24,
     "negative_conditions": 24,
@@ -116,25 +151,37 @@ _EXPECTED_UPDATE = {
     "blind_proposal": (
         "negative_correct_condition_source_functional_program_cotangent"
     ),
-    "success_guard": (
-        "per_success_on_policy_executed_prefix_program_cotangent_halfspace"
+    "constraint": (
+        "every_persisted_and_current_all_success_key_has_exact_zero_"
+        "incremental_program_motion"
     ),
-    "projection": "parameter_free_exact_euclidean_k4_active_subset_kkt",
-    "constraint": "retention_cotangent_inner_safe_direction_nonpositive",
-    "no_success_or_raw_feasible": "elementwise_exact_blind_proposal",
-    "correct_rhs": "negative_safe_program_direction_as_full48_cotangent",
+    "parameterization": (
+        "objective_features_projected_into_success_key_row_span_orthogonal_"
+        "complement"
+    ),
+    "projector": (
+        "implicit_fp64_thin_svd_row_basis_without_dense_256_square_"
+        "materialization"
+    ),
+    "dependent_anchor_policy": (
+        "machine_epsilon_matrix_size_numerical_rank_only"
+    ),
+    "no_anchor": "elementwise_exact_pick_gc_full48_kernel",
+    "correct_rhs": "negative_correct_condition_program_cotangent",
     "negative_rhs": "exact_zero_incremental_program_motion",
     "step_size": 1.0,
     "relative_damping": 0.01,
     "projection_small_solve_dtype": "float64",
     "full48_small_solve_dtype": "float64",
     "large_rhs_and_memory_write_dtype": "float32",
+    "postsolve_roundoff_correction": "thin_success_key_row_basis_fp32",
     "optimizer": "none_manual_add",
     "persistent_precision_or_optimizer_state": False,
     "momentum": False,
     "weight_decay": False,
     "gradient_clip": False,
     "global_scale_margin_or_cap": False,
+    "task_scalar_gate_or_mask": False,
 }
 _EXPECTED_ENVIRONMENT = {
     "reset": "official_random_reset_without_set_init_state",
@@ -148,14 +195,15 @@ _EXPECTED_ENVIRONMENT = {
     "action_execution_horizon": 5,
     "num_inference_steps": 10,
     "terminate_on_success": True,
-    "retain_success_replay": True,
+    "retain_success_replay": False,
     "retain_failure_replay": False,
     "rollout_policy_batch_size": 4,
     "persistent_env_lanes_per_task": 4,
 }
 _EXPECTED_OBJECTIVE = {
     "name": (
-        "blind_source_proposal_with_success_only_on_policy_retention_constraints"
+        "blind_source_functional_program_credit_with_binary_success_key_"
+        "equality_constraints"
     ),
     "positive_policy_randomness": {
         "scope": "one_independent_flow_noise_and_time_per_action_query",
@@ -163,19 +211,14 @@ _EXPECTED_OBJECTIVE = {
         "flow_time_sampling_scheme": INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
         "flow_noise_sampling_scheme": INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     },
-    "retention_episode_aggregation": (
-        "mean_chunks_within_each_success_episode_without_cross_episode_average"
+    "success_certificate": "four_of_four_binary_environment_success",
+    "success_rollout_payload": (
+        "metadata_only_seed_lane_length_reward_sum_and_success_bit"
     ),
-    "retention_flow_mc_samples": 4,
-    "retention_flow_time_sampling": (
-        "task_keyed_independent_beta15_scaled_0999_offset_0001"
-    ),
-    "retention_flow_noise_sampling": "task_keyed_independent_gaussian",
-    "retention_flow_panel_physical_batch_invariance": True,
-    "retention_flow_panel_row_identity": (
-        "historical_complete_k4_task_panel_then_success_row_select"
-    ),
+    "success_episode_gradient": "exact_absent",
     "failure_episode_gradient": "exact_absent",
+    "trajectory_replay": "exact_absent",
+    "reward_weight_scale_or_direction": "exact_absent",
     "negative_policy_forwards": 0,
     "critic": False,
     "progress_reward": False,
@@ -184,38 +227,27 @@ _EXPECTED_OBJECTIVE = {
 _EXPECTED_RNG = {
     "environment_seed_root": 2026081101,
     "policy_noise_seed_root": 2026081102,
-    "retention_flow_seed_root": 2026081103,
     "scheme": "order_independent_splitmix64_without_rank_or_physical_microbatch",
 }
 _EXPECTED_OPTIMIZATION = {
     "precision": "bfloat16",
     "seed": 7,
     "functional_policy_microbatch_size": 10,
-    "retention_replay_microbatch_size": 8,
     "rollout_policy_batch_size": 4,
     "optimizer": "none",
     "distributed_update": {
         "kind": (
-            "all_gather_local4_features_and_safe_cotangents_then_identical_"
-            "local_manual_write"
+            "all_gather_dynamic_local_task_shard_features_cotangents_and_"
+            "success_counts_then_identical_local_constrained_manual_write"
         ),
-        "world_size": 6,
-        "tasks_per_rank": 4,
+        "world_size": "fresh_live_1_to_6_then_exact_resume_locked",
+        "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
         "memory_allreduce": False,
         "nccl_p2p_disable": "1",
         "nccl_algo": "Ring",
         "nccl_proto": "Simple",
         "deferred_process_group": True,
     },
-}
-_EXPECTED_CACHE_GATE = {
-    "status": "inherited_passed_unchanged_pick_gc_condition_feature",
-    "same_task_complete_cosine_mean_min": 0.9,
-    "cross_task_complete_cosine_mean_max": 0.3,
-    "correct_reversed_complete_cosine_max": 0.0,
-    "shuffled_complete_cosine_abs_mean_max": 0.1,
-    "correct24_rank_min": 24,
-    "regularized_condition_number_max": 150.0,
 }
 _EXPECTED_PROFILE_BASELINE = {
     "path": (
@@ -228,10 +260,9 @@ _EXPECTED_PROFILE_BASELINE = {
     "rollouts": 96,
     "source_world_size": 6,
     "source_tasks_per_rank": 4,
-    "target_world_size": 6,
-    "target_tasks_per_rank": 4,
     "scaling": (
-        "source_step_seconds_times_target_tasks_per_rank_over_source_tasks_per_rank"
+        "source_step_seconds_times_actual_max_tasks_per_rank_over_source_"
+        "tasks_per_rank"
     ),
     "source_step_seconds": 507.30541240703315,
     "step_seconds": 507.30541240703315,
@@ -241,35 +272,29 @@ _EXPECTED_PROFILE_GATES = {
     "video_count": 24,
     "source_action_query_count": 480,
     "rollout_count": 96,
-    "guarded_task_count_min": 18,
     "all_success_task_count_min": 6,
-    "guarded_task_per_suite_min": 2,
-    "success_program_cotangent_nonzero": True,
-    "failure_replay_gradient_episodes": 0,
-    "projection_changed_task_count_min": 1,
-    "exact_blind_fallback_required": True,
-    "applied_guard_evidence_required": True,
-    "feature_rank_min": 48,
-    "regularized_gram_condition_number_max": 200.0,
-    "correct_motion_to_cotangent_rms_min": 0.25,
-    "negative_to_correct_motion_rms_max": 0.15,
-    "correct_retained_task_count_min": 21,
+    "all_success_task_per_suite_min": 1,
+    "original_feature_rank": 48,
+    "active_regularized_gram_condition_number_max": 200.0,
+    "unprotected_projected_feature_energy_ratio_median_min": 0.2,
+    "protected_to_unprotected_motion_ratio_max": 1e-5,
+    "negative_to_unprotected_motion_rms_max": 0.15,
+    "unprotected_descent_fraction_min": 0.8,
     "negative_null_task_count_min": 18,
     "negative_null_per_kind_min": 6,
     "predicted_observed_relative_rms_max": 0.005,
+    "protected_to_unprotected_lora_response_ratio_max": 1e-5,
+    "protected_fixed_action_response_rms_max": 1e-6,
+    "unprotected_fixed_action_probe_task_count": 4,
     "production_wall_ratio_max": 1.25,
-    "lora_a_response_rms_min": 0.0,
-    "lora_b_response_rms_min": 0.0,
-    "fixed_action_response_rms_min": 0.0,
-    "fixed_action_probe_task_count": 4,
-    "fixed_action_passing_task_count_min": 4,
-    "extra_negative_policy_forwards": 0,
+    "negative_policy_forwards": 0,
     "oom_count": 0,
     "nonfinite_count": 0,
 }
 _PROFILE_STATIC = {
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
+    "maximum_world_size": 6,
+    "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
     "schedule_macro": 0,
     "diagnostic_macros": 1,
     "num_workers_per_rank": 2,
@@ -289,8 +314,9 @@ _EXPECTED_FORMAL_GATES = {
     "macro10_requires_macro5_gate": True,
 }
 _FORMAL_STATIC = {
-    "expected_world_size": 6,
-    "tasks_per_rank": 4,
+    "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
+    "maximum_world_size": 6,
+    "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
     "num_workers_per_rank": 2,
     "total_macros": 10,
     "checkpoint_macros": [5, 10],
@@ -302,25 +328,31 @@ _EXPECTED_EVALUATION_STATIC = {
     ),
     "required_writer_model_batch_sizes": [8, 16, 32],
     "minimum_smoke_writer_model_batch_size": 8,
+    "maximum_world_size": 6,
+    "device_selection": (
+        "use_up_to_six_healthy_low_utilization_same_node_devices_with_"
+        "sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_"
+        "automatic_exclusion"
+    ),
 }
 _COHERENT_STATES = {
     (
         "active_cpu_ready_awaiting_live_profile",
         "awaiting_live_a40_fresh0_to1_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "awaiting_live_osg_pc_deployment_smoke",
+        "awaiting_live_sknc_deployment_smoke",
     ),
     (
         "active_formal_ready",
         "sealed_from_live_a40_fresh0_to1_profile",
         "ready_after_live_profile_seal",
-        "sealed_from_live_osg_pc_deployment_smoke",
+        "sealed_from_live_sknc_deployment_smoke",
     ),
     (
         "formal_result_sealed",
         "sealed_from_live_a40_fresh0_to1_profile",
         "formal_result_sealed",
-        "sealed_from_live_osg_pc_deployment_smoke",
+        "sealed_from_live_sknc_deployment_smoke",
     ),
     (
         "profile_result_sealed_nonpass",
@@ -332,15 +364,13 @@ _COHERENT_STATES = {
 
 
 def authority_path(config: Mapping[str, Any], name: str) -> Path:
-    """Resolve one registered authority and reject missing files."""
-
     try:
         row = config["authorities"][name]
         path = (REPO_ROOT / str(row["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing OSG-PC Writer authority: {name}") from error
+        raise ExpertManifoldError(f"missing SKNC Writer authority: {name}") from error
     if not path.is_file():
-        raise ExpertManifoldError(f"OSG-PC Writer authority is missing: {name}")
+        raise ExpertManifoldError(f"SKNC Writer authority is missing: {name}")
     return path
 
 
@@ -357,8 +387,6 @@ def _git_is_ancestor(left: str, right: str) -> bool:
 
 
 def git_commit_in_active_authority_lineage(commit: str) -> bool:
-    """Require a retained commit shared by this checkout and active remote."""
-
     if len(commit) != 40 or any(
         character not in "0123456789abcdef" for character in commit
     ):
@@ -427,11 +455,7 @@ def _lifecycle_artifacts_match(config: Mapping[str, Any]) -> bool:
     if status == "active_cpu_ready_awaiting_live_profile":
         return profile is formal is smoke is None
     if status == "active_formal_ready":
-        return (
-            _nonempty_artifact(profile)
-            and formal is None
-            and _nonempty_artifact(smoke)
-        )
+        return _nonempty_artifact(profile) and formal is None and _nonempty_artifact(smoke)
     if status == "formal_result_sealed":
         return all(_nonempty_artifact(value) for value in (profile, formal, smoke))
     if status == "profile_result_sealed_nonpass":
@@ -474,66 +498,58 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
         set(config) == _EXPECTED_TOP_LEVEL
         and config.get("schema_version") == V6_PRIOR_CONFIG_SCHEMA
         and config.get("method") == _EXPECTED_METHOD
+        and config.get("initialization") == _EXPECTED_INITIALIZATION
         and config.get("information_wall") == _EXPECTED_INFORMATION_WALL
+        and config.get("success_key_bank") == _EXPECTED_SUCCESS_KEY_BANK
         and config.get("update") == _EXPECTED_UPDATE
         and config.get("environment") == _EXPECTED_ENVIRONMENT
         and config.get("objective") == _EXPECTED_OBJECTIVE
         and config.get("rng") == _EXPECTED_RNG
         and config.get("optimization") == _EXPECTED_OPTIMIZATION
-        and config.get("cache_gate") == _EXPECTED_CACHE_GATE
         and _provenance_sections_match(config)
         and _profile_formal_evaluation_match(config)
     )
 
 
 def load_v6_prior_config(path: Path = V6_PRIOR_CANONICAL_CONFIG) -> dict[str, Any]:
-    """Load only the active OSG-PC config and fail closed on scientific drift."""
-
     path = path.resolve()
     if path != V6_PRIOR_CANONICAL_CONFIG.resolve() or not path.is_file():
-        raise ExpertManifoldError("OSG-PC Writer requires its canonical config path")
+        raise ExpertManifoldError("SKNC Writer requires its canonical config path")
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ExpertManifoldError("invalid OSG-PC Writer config") from error
+        raise ExpertManifoldError("invalid SKNC Writer config") from error
     if not isinstance(config, dict) or not _config_matches(config):
-        raise ExpertManifoldError(
-            "OSG-PC Writer config violates its fail-closed contract"
-        )
+        raise ExpertManifoldError("SKNC Writer config violates its fail-closed contract")
     for name in config["authorities"]:
         authority_path(config, name)
-    initialization = (
-        REPO_ROOT / str(config["initialization"]["checkpoint"])
-    ).resolve()
+    initialization = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     if not initialization.is_dir():
-        raise ExpertManifoldError("OSG-PC historical v6 initialization is missing")
+        raise ExpertManifoldError("SKNC historical v6 initialization is missing")
     return config
 
 
 def runtime_for_mode(
-    config: Mapping[str, Any],
-    mode: str,
+    config: Mapping[str, Any], mode: str
 ) -> tuple[int, tuple[int, ...], int]:
-    """Return the exact active runtime segment for profile or formal training."""
-
     if mode == "mechanism-profile":
         if (
             config.get("status") != "active_cpu_ready_awaiting_live_profile"
             or config["profile_run"]["status"]
             != "awaiting_live_a40_fresh0_to1_profile"
         ):
-            raise ExpertManifoldError("OSG-PC mechanism profile is not authorized")
+            raise ExpertManifoldError("SKNC mechanism profile is not authorized")
         return 1, (), int(config["profile_run"]["schedule_macro"])
     if mode == "formal":
         if (
             config.get("status") != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("OSG-PC formal training is blocked by live gates")
+            raise ExpertManifoldError("SKNC formal training is blocked by live gates")
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),
             0,
         )
-    raise ExpertManifoldError(f"unsupported OSG-PC Writer mode: {mode}")
+    raise ExpertManifoldError(f"unsupported SKNC Writer mode: {mode}")

@@ -8,6 +8,7 @@ import pytest
 
 from ember.expert_manifold.contract import ExpertManifoldError, load_task_expert_config
 from ember.expert_manifold.inference import (
+    _expected_residual_ownership,
     _trained_writer_asset,
     inspect_v6_prior_writer_asset,
 )
@@ -26,23 +27,29 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_osg_pc_profile_nonpass_and_pick_gc_nonpass_remain_provenance() -> None:
+def test_sknc_is_active_while_osg_pc_and_pick_gc_remain_provenance() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert config["status"] == "profile_result_sealed_nonpass"
-    assert config["profile_run"]["expected_world_size"] == 6
-    assert config["profile_run"]["tasks_per_rank"] == 4
-    assert config["profile_run"]["status"] == "profile_result_sealed_nonpass"
-    profile = config["profile_run"]["artifact_evidence"]
+    assert config["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert config["profile_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
+    assert config["profile_run"]["maximum_world_size"] == 6
+    assert config["profile_run"]["artifact_evidence"] is None
+    assert config["formal_run"]["status"].startswith("blocked_until_live_profile")
+
+    osg_path = (
+        REPO_ROOT
+        / "configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json"
+    )
+    osg = json.loads(osg_path.read_text(encoding="utf-8"))
+    assert osg["status"] == "profile_result_sealed_nonpass"
+    profile = osg["profile_run"]["artifact_evidence"]
     assert profile["exit_code"] == 1
     assert profile["watchdog_count"] == 1
     assert profile["production_wall_ratio_lower_bound"] > 1.25
     assert profile["passed"] is False
-    assert config["formal_run"]["status"] == "blocked_by_profile_nonpass"
-    assert config["evaluation"]["formal_status"] == (
+    assert osg["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert osg["evaluation"]["formal_status"] == (
         "not_run_after_profile_nonpass"
     )
-    assert config["formal_run"]["artifact_evidence"] is None
-    assert config["evaluation"]["online_smoke_evidence"] is None
 
     pick_gc_path = (
         REPO_ROOT / "configs/pi05_v6_policy_innovation_goal_causal_key_v1.json"
@@ -111,45 +118,7 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
     configured = (
         REPO_ROOT / str(config["initialization"]["checkpoint"])
     ).resolve() / "writer.safetensors"
-    ownership = {
-        "historical_v6_base": {
-            "state_tensor_count": 600,
-            "parameter_tensor_count": 523,
-            "parameter_count": 10_775_296,
-            "trainable_parameter_count": 0,
-            "checkpoint_owned": False,
-            "deployment_owned": True,
-        },
-        "fixed_projection": {
-            "shape": [2, 128, 3072],
-            "dtype": "torch.float32",
-            "trainable": False,
-            "persistent": False,
-            "checkpoint_owned": False,
-        },
-        "fixed_policy_innovation_encoder": {
-            "feature_width": 3072,
-            "phase_slots": 16,
-            "fixed_suffix_noise_shape": [50, 32],
-            "trainable_parameter_count": 0,
-            "persistent_state_tensor_count": 0,
-            "checkpoint_owned": False,
-            "deployment_owned": True,
-        },
-        "program_residual_memory": {
-            "shape": [256, 320, 256],
-            "dtype": "torch.float32",
-            "value_count": 20_971_520,
-            "trainable": False,
-            "manual_update": True,
-            "checkpoint_owned": True,
-            "deployment_owned": True,
-        },
-        "source_policy_trainable_parameter_count": 0,
-        "optimizer": "not_instantiated",
-        "scheduler": "not_instantiated",
-        "scaler": "not_instantiated",
-    }
+    ownership = _expected_residual_ownership(config)
     contract = {
         "run_schema": V6_PRIOR_RUN_SCHEMA,
         "mode": "formal",
@@ -166,23 +135,25 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "writer_state_tensor_count": 600,
             "writer_state_value_count": 12_064_064,
             "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "success_key_bank": "fresh_empty_then_exact_resume",
         },
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
+        "success_key_bank": config["success_key_bank"],
         "update": config["update"],
         "environment": config["environment"],
         "objective": config["objective"],
         "rng": config["rng"],
         "ownership": ownership,
-        "world_size": 6,
-        "rank_topology": [{"rank": rank} for rank in range(6)],
+        "world_size": 5,
+        "rank_topology": [{"rank": rank} for rank in range(5)],
         "content_hash_policy": "disabled_by_owner",
     }
     return {
         "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
         "next_macro": 10,
         "metrics_rows": 10,
-        "world_size": 6,
+        "world_size": 5,
         "cursor_contract": cursor_contract(config, 10),
         "checkpoint_contract": contract,
         "program_memory": {
@@ -192,6 +163,24 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "dtype": "torch.float32",
             "shape": [256, 320, 256],
             "value_count": 20_971_520,
+            "finite": None,
+        },
+        "success_key_bank": {
+            "file": "success_key_bank.safetensors",
+            "keys": [
+                "success_key_bank.features",
+                "success_key_bank.present",
+                "success_key_bank.task_global_ids",
+            ],
+            "tensor_count": 3,
+            "feature_dtype": "torch.float32",
+            "feature_shape": [24, 256],
+            "feature_value_count": 6144,
+            "present_dtype": "torch.uint8",
+            "task_global_ids_dtype": "torch.int64",
+            "present_count": None,
+            "present_ordinals": [],
+            "task_global_ids": [],
             "finite": None,
         },
         "payload_value_validation": "deployment_metadata_only",
@@ -207,7 +196,9 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     source = {"checkpoint": "/synthetic/source"}
     checkpoint = tmp_path / "checkpoints/macro_00000010"
     checkpoint.mkdir(parents=True)
-    (checkpoint / "manifest.json").write_text("{}", encoding="utf-8")
+    (checkpoint / "manifest.json").write_text(
+        json.dumps({"world_size": 5}), encoding="utf-8"
+    )
     (checkpoint / "program_memory.safetensors").write_bytes(b"formal-memory")
     inspection = _synthetic_inspection(config, source, checkpoint)
     inspection_arguments = {}
@@ -247,7 +238,7 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     assert asset["kind"] == "v6_condition_program_residual_checkpoint"
     assert asset["residual_state"]["tensor_count"] == 1
     assert inspection_arguments == {
-        "expected_world_size": 6,
+        "expected_world_size": 5,
         "validate_payload_values": False,
     }
 

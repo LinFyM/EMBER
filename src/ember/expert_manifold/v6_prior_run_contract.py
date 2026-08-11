@@ -18,6 +18,7 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_CONFIG_SCHEMA,
     V6_PRIOR_RUN_SCHEMA,
 )
+from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -132,6 +133,7 @@ def _data_contract(
 def _ownership_contract(
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
+    success_key_bank: SuccessKeyAnchorBank,
 ) -> dict[str, Any]:
     memory = writer.program_memory.value
     return {
@@ -170,6 +172,16 @@ def _ownership_contract(
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
+        "success_key_anchor_bank": {
+            "feature_shape": list(success_key_bank.features.shape),
+            "feature_dtype": str(success_key_bank.features.dtype),
+            "present_shape": list(success_key_bank.present.shape),
+            "task_global_ids": success_key_bank.task_global_ids.detach().cpu().tolist(),
+            "checkpoint_owned": True,
+            "deployment_owned": False,
+            "trainable": False,
+            "first_all_success_only": True,
+        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -191,6 +203,7 @@ def build_run_contract(
     warm_start: V6PriorWarmStart,
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
+    success_key_bank: SuccessKeyAnchorBank,
     repo_root: Any,
     git_state_fn: Any = residual_git_state,
     rank_topology_fn: Any = rank_topology,
@@ -198,6 +211,10 @@ def build_run_contract(
     schedule_start = segment.schedule_origin
     schedule_stop = schedule_start + segment.total_macros
     git = dict(git_state_fn(repo_root))
+    task_counts = [
+        len(sampler.tasks_for_step(schedule_start, rank=rank))
+        for rank in range(context.world_size)
+    ]
     return {
         "schema_version": V6_PRIOR_RUN_SCHEMA,
         "mode": args.mode,
@@ -220,6 +237,7 @@ def build_run_contract(
             "writer_state_tensor_count": warm_start.state_tensor_count,
             "writer_state_value_count": warm_start.state_value_count,
             "residual_memory": "fresh_zero_then_memory_only_exact_resume",
+            "success_key_bank": "fresh_empty_then_exact_resume",
         },
         "data": _data_contract(
             args,
@@ -235,18 +253,24 @@ def build_run_contract(
         "writer": dict(config["writer"]),
         "condition_feature": dict(config["condition_feature"]),
         "program_residual": dict(config["program_residual"]),
+        "success_key_bank": dict(config["success_key_bank"]),
         "update": dict(config["update"]),
         "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
         "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
-        "ownership": _ownership_contract(ownership, writer),
+        "ownership": _ownership_contract(ownership, writer, success_key_bank),
         "runtime": {
             "host": socket.gethostname(),
             "device": torch.cuda.get_device_name(context.device),
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
             "world_size": context.world_size,
-            "tasks_per_rank": 24 // context.world_size,
+            "task_counts_per_rank_at_schedule_start": task_counts,
+            "minimum_tasks_per_rank": min(task_counts),
+            "maximum_tasks_per_rank": max(task_counts),
+            "task_assignment": config[
+                "optimization"
+            ]["distributed_update"]["task_assignment"],
             "rank_topology": rank_topology_fn(context),
             "total_macros": segment.total_macros,
             "schedule_origin": segment.schedule_origin,
@@ -258,11 +282,12 @@ def build_run_contract(
             "functional_policy_microbatch_size": 10,
             "physical_policy_forwards_per_task": 2,
             "rollouts_per_task": 4,
-            "retention_flow_mc_samples": 4,
-            "retention_replay_microbatch_size": int(
-                config["optimization"]["retention_replay_microbatch_size"]
-            ),
+            "outcome_records_per_task": 4,
+            "successful_rollout_replay_retained": False,
             "failed_rollout_replay_retained": False,
+            "trajectory_replay_policy_forwards": 0,
+            "trajectory_replay_cfm_forwards": 0,
+            "reward_gradient_count": 0,
             "negative_policy_forwards_per_task": 0,
             "policy_gradient_checkpointing": False,
             "writer_activation_checkpointing_effective": False,
@@ -270,9 +295,7 @@ def build_run_contract(
             "collectives": {
                 "full48_tensor_all_gathers": 2,
                 "task_record_object_all_gathers": 1,
-                "profile_guard_object_all_gathers": int(
-                    args.mode == "mechanism-profile"
-                ),
+                "profile_guard_object_all_gathers": 0,
                 "memory_allreduce": False,
             },
             "deferred_process_group": True,
@@ -300,10 +323,12 @@ def checkpoint_contract(run_contract: Mapping[str, Any]) -> dict[str, Any]:
                 "writer_state_tensor_count",
                 "writer_state_value_count",
                 "residual_memory",
+                "success_key_bank",
             )
         },
         "condition_feature": run_contract["condition_feature"],
         "program_residual": run_contract["program_residual"],
+        "success_key_bank": run_contract["success_key_bank"],
         "update": run_contract["update"],
         "environment": run_contract["environment"],
         "objective": run_contract["objective"],
@@ -335,9 +360,7 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         ),
         "environment_seed_root": int(config["rng"]["environment_seed_root"]),
         "policy_noise_seed_root": int(config["rng"]["policy_noise_seed_root"]),
-        "retention_flow_seed_root": int(
-            config["rng"]["retention_flow_seed_root"]
-        ),
+        "success_key_anchor_policy": "first_all_success_per_train_task",
     }
 
 

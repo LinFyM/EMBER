@@ -1,8 +1,9 @@
-"""Assets, K4 environments, and exact-resume runtime for OSG-PC."""
+"""Assets, outcome-only K4 environments, and exact-resume runtime for SKNC."""
 
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -40,6 +41,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     publish_contract,
     residual_git_state,
 )
+from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.lora import LoRAContract
 from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
@@ -111,6 +113,7 @@ class V6PriorRuntime:
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     writer: FrozenV6ConditionResidualWriter
+    success_key_bank: SuccessKeyAnchorBank
     identity_state: dict[str, torch.Tensor]
     env_pool: RandomResetEnvironmentPool
     lora_contract: LoRAContract
@@ -174,9 +177,11 @@ def _resolve_segment(
             and state.get("authority_contains_commit") is True
         )
     valid = (
-        context.world_size == int(selected["expected_world_size"])
-        and 24 % context.world_size == 0
-        and 24 // context.world_size == int(selected["tasks_per_rank"])
+        context.world_size
+        in tuple(int(value) for value in selected["allowed_world_sizes"])
+        and context.world_size <= int(selected["maximum_world_size"])
+        and selected["task_assignment"]
+        == "cost_balanced_long_first_dynamic_uneven_train24"
         and args.num_workers == int(selected["num_workers_per_rank"])
         and 0 <= start < stop <= total
         and profile_valid
@@ -220,7 +225,7 @@ def _configure_egl(context: DistributedContext) -> None:
     for name, value in expected.items():
         observed = os.environ.get(name)
         if observed not in {None, value}:
-            raise ExpertManifoldError(f"OSG-PC {name} mapping changed")
+            raise ExpertManifoldError(f"SKNC {name} mapping changed")
         os.environ[name] = value
 
 
@@ -316,10 +321,10 @@ def _build_data(
         rank=context.rank,
         world_size=context.world_size,
         seed=int(data["sampler_seed"]),
-        tasks_per_rank_per_update=24 // context.world_size,
+        tasks_per_rank_per_update=math.ceil(24 / context.world_size),
         video_schedule=schedule,
         task_video_costs=costs,
-        assignment_strategy="cost_balanced_long_first",
+        assignment_strategy="cost_balanced_long_first_dynamic_uneven",
     )
     loader = DataLoader(
         dataset,
@@ -347,7 +352,7 @@ def _build_reward_tasks(
         if row.get("split_role") == "train"
     }
     if len(rows) != 24:
-        raise ExpertManifoldError("OSG-PC target manifest lost train24")
+        raise ExpertManifoldError("SKNC target manifest lost train24")
     reward_tasks = {}
     for task in tasks:
         row = rows.get(task.global_task_id)
@@ -359,10 +364,10 @@ def _build_reward_tasks(
             or Path(str(row.get("hdf5", {}).get("relative_path", ""))).name
             != task.authority.path.name
         ):
-            raise ExpertManifoldError("OSG-PC HDF5 and task manifest disagree")
+            raise ExpertManifoldError("SKNC HDF5 and task manifest disagree")
         bddl = row.get("bddl")
         if not isinstance(bddl, Mapping):
-            raise ExpertManifoldError("OSG-PC train task lost BDDL authority")
+            raise ExpertManifoldError("SKNC train task lost BDDL authority")
         reward_tasks[task.global_task_id] = RewardTask(
             suite=task.suite,
             task_id=task.task_id,
@@ -525,7 +530,7 @@ def _prepare_libero_paths(
         dist.broadcast_object_list(payload, src=0, device=context.device)
     paths = payload[0]
     if not isinstance(paths, Mapping) or paths.get("error"):
-        raise ExpertManifoldError(f"OSG-PC LIBERO path preparation failed: {paths}")
+        raise ExpertManifoldError(f"SKNC LIBERO path preparation failed: {paths}")
     os.environ["LIBERO_CONFIG_PATH"] = str(
         (args.output_dir / "libero_config").resolve()
     )
@@ -538,6 +543,7 @@ def _restore_resume(
     segment: RuntimeSegment,
     context: DistributedContext,
     writer: FrozenV6ConditionResidualWriter,
+    success_key_bank: SuccessKeyAnchorBank,
     checkpoint_contract_value: Mapping[str, Any],
 ) -> None:
     if runtime_args.resume is None:
@@ -545,6 +551,7 @@ def _restore_resume(
     loaded, rows = load_v6_prior_checkpoint(
         checkpoint=runtime_args.resume,
         memory=writer.program_memory,
+        success_key_bank=success_key_bank,
         context=context,
         expected_cursor_contract=cursor_contract(config, segment.start_macro),
         expected_checkpoint_contract=checkpoint_contract_value,
@@ -576,6 +583,11 @@ def _prepare_runtime(
         source=source,
         source_config=authorities.source_base_config,
     )
+    success_key_bank = SuccessKeyAnchorBank(
+        [task.global_task_id for task in tasks],
+        feature_width=int(config["condition_feature"]["feature_width"]),
+        device=context.device,
+    )
     video_store, processor, language = _build_language_inputs(
         args=args,
         config=config,
@@ -601,6 +613,7 @@ def _prepare_runtime(
         warm_start=warm_start,
         ownership=ownership,
         writer=writer,
+        success_key_bank=success_key_bank,
         repo_root=REPO_ROOT,
     )
     checkpoint_contract_value = checkpoint_contract(contract)
@@ -618,6 +631,7 @@ def _prepare_runtime(
             segment,
             context,
             writer,
+            success_key_bank,
             checkpoint_contract_value,
         )
         metrics_path = args.output_dir / "metrics.jsonl"
@@ -659,6 +673,7 @@ def _prepare_runtime(
         processor=processor,
         policy=policy,
         writer=writer,
+        success_key_bank=success_key_bank,
         identity_state=identity,
         env_pool=env_pool,
         lora_contract=lora,

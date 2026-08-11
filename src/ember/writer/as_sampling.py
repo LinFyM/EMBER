@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import struct
 from typing import Any, Iterator, Mapping, Sequence
 
@@ -23,6 +24,7 @@ def _task_complete_batch_cycle(
     world_size: int,
     tasks_per_rank_per_update: int,
     optimizer_updates_per_task_cycle: int,
+    dynamic_task_assignment: bool = False,
 ) -> tuple[int, ...]:
     cycle = tuple(
         int(value)
@@ -37,11 +39,23 @@ def _task_complete_batch_cycle(
         or not 0 <= rank < world_size
         or tasks_per_rank_per_update <= 0
         or optimizer_updates_per_task_cycle <= 0
-        or len(task_ids)
-        != (
-            world_size
-            * tasks_per_rank_per_update
-            * optimizer_updates_per_task_cycle
+        or (
+            not dynamic_task_assignment
+            and len(task_ids)
+            != (
+                world_size
+                * tasks_per_rank_per_update
+                * optimizer_updates_per_task_cycle
+            )
+        )
+        or (
+            dynamic_task_assignment
+            and (
+                optimizer_updates_per_task_cycle != 1
+                or world_size > len(task_ids)
+                or tasks_per_rank_per_update
+                != math.ceil(len(task_ids) / world_size)
+            )
         )
     )
     if invalid:
@@ -129,6 +143,9 @@ class MixedTaskBatchSampler:
         task_video_costs: Mapping[int, Mapping[int, int]],
         assignment_strategy: str = "cost_balanced_long_first",
     ) -> None:
+        dynamic_task_assignment = (
+            assignment_strategy == "cost_balanced_long_first_dynamic_uneven"
+        )
         batch_cycle = _task_complete_batch_cycle(
             task_ids=task_ids,
             per_rank_batch_size=per_rank_batch_size,
@@ -139,6 +156,7 @@ class MixedTaskBatchSampler:
             world_size=world_size,
             tasks_per_rank_per_update=tasks_per_rank_per_update,
             optimizer_updates_per_task_cycle=optimizer_updates_per_task_cycle,
+            dynamic_task_assignment=dynamic_task_assignment,
         )
         episode_rows, episodes_per_task = _task_complete_episode_rows(
             dataset,
@@ -158,6 +176,7 @@ class MixedTaskBatchSampler:
             optimizer_updates_per_task_cycle
         )
         self.assignment_strategy = str(assignment_strategy)
+        self.dynamic_task_assignment = dynamic_task_assignment
         self.tasks_per_rank_per_cycle = (
             self.tasks_per_rank_per_update
             * self.optimizer_updates_per_task_cycle
@@ -173,6 +192,7 @@ class MixedTaskBatchSampler:
         )
         if self.assignment_strategy not in {
             "cost_balanced_long_first",
+            "cost_balanced_long_first_dynamic_uneven",
             "randomized_latin_group4",
         }:
             raise WriterModelError("unsupported task assignment strategy")
@@ -197,6 +217,11 @@ class MixedTaskBatchSampler:
         }
 
     def __len__(self) -> int:
+        if self.dynamic_task_assignment:
+            return sum(
+                len(self.tasks_for_step(step))
+                for step in range(self.start_step, self.stop_step)
+            )
         return (
             self.stop_step - self.start_step
         ) * self.tasks_per_rank_per_update
@@ -269,6 +294,78 @@ class MixedTaskBatchSampler:
         ):
             raise WriterModelError("task-complete cost balancing failed")
         return result
+
+    def _dynamic_cost_balanced_assignments(
+        self, task_cycle: int
+    ) -> tuple[tuple[int, int, int, int], ...]:
+        """Assign train tasks once with deterministic unequal rank capacities."""
+
+        current_costs = {
+            task_id: sum(
+                self.task_video_costs[task_id][demo]
+                for demo in self.video_schedule.demos_for_task_visit(
+                    task_id,
+                    task_cycle,
+                    excluded=self.action_demo_indices_for_task_visit(
+                        task_id, task_cycle
+                    ),
+                )
+            )
+            for task_id in self.task_ids
+        }
+        tie_order = np.random.default_rng(
+            np.random.SeedSequence(
+                [self.seed, task_cycle, self._GROUP_SEED_TAG]
+            )
+        ).permutation(self.task_ids)
+        tie_rank = {int(task_id): index for index, task_id in enumerate(tie_order)}
+        ordered = sorted(
+            self.task_ids,
+            key=lambda task_id: (-current_costs[task_id], tie_rank[task_id]),
+        )
+        base, remainder = divmod(len(self.task_ids), self.world_size)
+        rank_offset = (self.seed + task_cycle) % self.world_size
+        capacities = [base] * self.world_size
+        for offset in range(remainder):
+            capacities[(rank_offset + offset) % self.world_size] += 1
+        groups: list[list[int]] = [[] for _ in range(self.world_size)]
+        loads = [0] * self.world_size
+        for task_id in ordered:
+            candidates = [
+                rank
+                for rank, group in enumerate(groups)
+                if len(group) < capacities[rank]
+            ]
+            rank = min(
+                candidates,
+                key=lambda value: (
+                    loads[value],
+                    (value - rank_offset) % self.world_size,
+                ),
+            )
+            groups[rank].append(task_id)
+            loads[rank] += current_costs[task_id]
+        assignments = tuple(
+            (rank, microtask, task_id, task_cycle)
+            for rank, group in enumerate(groups)
+            for microtask, task_id in enumerate(
+                sorted(
+                    group,
+                    key=lambda value: (-current_costs[value], tie_rank[value]),
+                )
+            )
+        )
+        if (
+            len(assignments) != len(self.task_ids)
+            or {task_id for _, _, task_id, _ in assignments} != set(self.task_ids)
+            or tuple(
+                sum(rank == selected for rank, _, _, _ in assignments)
+                for selected in range(self.world_size)
+            )
+            != tuple(capacities)
+        ):
+            raise WriterModelError("dynamic task-complete cost balancing failed")
+        return assignments
 
     def _latin_task_matrix(
         self, superblock: int, *, independent_tail: bool = False
@@ -354,6 +451,10 @@ class MixedTaskBatchSampler:
         task_cycle, phase = self.task_cycle_and_phase(step)
         if self.assignment_strategy == "randomized_latin_group4":
             return self._randomized_latin_assignments(task_cycle, phase)
+        if self.dynamic_task_assignment:
+            if phase != 0:
+                raise WriterModelError("dynamic task assignment gained a phase")
+            return self._dynamic_cost_balanced_assignments(task_cycle)
         groups = self._cost_balanced_groups(task_cycle)
         assignments: list[tuple[int, int, int, int]] = []
         for rank in range(self.world_size):
@@ -388,7 +489,7 @@ class MixedTaskBatchSampler:
 
         if (
             not self.start_step <= step < self.stop_step
-            or not 0 <= microtask < self.tasks_per_rank_per_update
+            or not 0 <= microtask < len(self.tasks_for_step(step))
         ):
             raise WriterModelError("task-complete microtask is outside the sampler")
         matches = tuple(
@@ -567,8 +668,11 @@ class MixedTaskBatchSampler:
             "stop_step": stop_step,
             "global_examples": (
                 (stop_step - start_step)
-                * self.world_size
-                * self.tasks_per_rank_per_update
+                * (
+                    len(self.task_ids)
+                    if self.dynamic_task_assignment
+                    else self.world_size * self.tasks_per_rank_per_update
+                )
                 * self.per_rank_batch_size
             ),
             "unique_query_rows": len(unique_rows),

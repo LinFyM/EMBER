@@ -9,7 +9,8 @@ paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gaine
 controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾触发600s NCCL watchdog，wall lower bound
 至少是matched baseline的`1.912x>1.25x`，未到full48 report。当前唯一active design是SKNC：只用K4 4/4
 binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。它尚未
-实现或获得GPU资格；当前没有EMBER GPU进程。
+运行live profile、训练或评测；canonical实现、fresh schema和完整CPU回归`334 passed`已完成，下一合法动作是
+从clean pushed head运行唯一discarded live profile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -66,12 +67,13 @@ few-shot若被新设计采用，必须显式改变本节合同：固定`k`或定
 
 1. 同时检查`gpu01`、`gpu02`的GPU index/UUID、memory、utilization、health和compute process；
 2. 选择一个节点；
-3. 使用该节点所有真正空闲、健康且能提高吞吐的A40；
+3. 使用该节点至多6张健康、低利用率、显存余量足够且能提高吞吐的A40；非零显存或低利用率进程不自动排除；
 4. 在进程spawn前再次核对；
 5. 结束后确认本次进程退出并释放设备。
 
-没有6-card hard cap。不等待凑卡、不dummy occupancy、不跨节点拼碎片、不触碰他人进程。单卡mechanism/profile
-按其科学目的使用单卡；strict evaluator按selected node全部有益空卡动态扩展，不使用NCCL。多卡训练必须：
+上限6卡，但不要求6卡。不等待凑满、不dummy occupancy、不跨节点拼碎片，不抢占或明显干扰他人进程。单卡
+mechanism/profile按其科学目的使用单卡；strict evaluator按selected node至多6张有益卡动态扩展，不使用NCCL。
+多卡训练必须：
 
 - `NCCL_P2P_DISABLE=1`
 - physical GPU到local rank显式映射
@@ -214,9 +216,9 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
-deployment和评测全部关闭。SKNC design authority已建立；下一合法动作是原位canonical实现、CPU机制验证、
-完整回归和clean pushed seal，不能先launch。任何未来GPU launch仍须重新复核gpu01/gpu02、quota、fresh root、
-物理/NUMA topology与他人进程，并先满足SKNC discarded profile合同。
+deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证和完整回归已完成；下一合法动作是
+从clean pushed head运行唯一discarded live profile。launch仍须重新复核gpu01/gpu02、quota、fresh root、
+物理/NUMA topology与现有进程，并先满足SKNC profile合同。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

@@ -75,8 +75,9 @@
   nullspace，不再随成功轨迹长度/episode数做replay VJP。
 - [x] 完成`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`：明确first-only per-task
   anchor bank、解析投影公式、非scalar-gate边界、CPU/live/formal门与macro5立即strict paired400。
-- [ ] 原位替换OSG-PC executable path并泛化唯一full48 solver；建立fresh-incompatible config/checkpoint，完成
-  synthetic/bank/resume/outcome-only/Program→LoRA→action CPU门和完整回归。
+- [x] 原位替换OSG-PC executable path并泛化唯一full48 solver；建立fresh-incompatible config/checkpoint，完成
+  synthetic/bank/resume/outcome-only/Program→LoRA→action CPU门；加载`.env.local`的完整回归`334 passed`，
+  compileall与diff-check通过，无active replay/VJP或并行solver残留。
 - [ ] 从clean pushed implementation seal做live GPU/storage preflight，再运行唯一discarded full24 K4+B20
   mechanism/throughput profile；不过门不训练。
 - [ ] profile通过后fresh`0→5`，立即strict paired correct400；只在`>=140`、lost`<=8`、breadth/suite共同趋势
@@ -164,7 +165,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=6 scripts/train_v6_prior_write
 
 - 不为普通 BF16/TF32、batch shape、kernel 或 reduction order 的低位差异固定 batch1、重复 forward、扩 dtype、
   加逐 tensor 内容扫描或 SHA-256/MD5。
-- GPU launch 时同时 live 检查`gpu01/gpu02`，选择一个节点，使用该节点所有真正空闲、健康且能提高吞吐的
-  A40；没有固定6卡上限，不等待凑卡、不跨节点拼碎片、不干扰他人。
+- GPU launch 时同时 live 检查`gpu01/gpu02`，选择一个节点，使用至多6张健康、低利用率、显存余量足够且能
+  提高吞吐的A40；非零显存或低利用率进程不自动排除。不等待凑满6卡、不跨节点拼碎片，不抢占或明显干扰他人。
 - independent rollout 使用动态队列；多卡训练遵守`NCCL_P2P_DISABLE=1`、NUMA physical/local rank 映射和
   deferred-NCCL。exact-resume 仍锁原 topology。

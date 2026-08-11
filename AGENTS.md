@@ -24,9 +24,10 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   600s后NCCL watchdog，至少一个rank未到达；从run-contract发布到timeout已`969.9709s`，是matched
   `507.3054s`的至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、deployment与评测均未授权；
   只淘汰当前full-replay per-success VJP执行图，不否定所有success constraint。
-- 当前唯一active design authority是SKNC：K4只保留binary outcome；4/4 correct-video key在最终shared Program
-  solve中形成硬零运动nullspace，且每train task只持久化第一条all-success key。它尚未实现、profile、训练或
-  评测；当前没有EMBER GPU任务，不能从设计文档直接跳过CPU/architecture gate发射。
+- 当前唯一active method是SKNC：K4只保留binary outcome；4/4 correct-video key在最终shared Program solve中
+  形成硬零运动nullspace，且每train task只持久化第一条all-success key。canonical implementation、fresh schema
+  与完整CPU回归`334 passed`已完成；尚未profile、训练或评测，下一步是clean pushed head的唯一discarded live
+  profile。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -139,11 +140,11 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 ## GPU and host
 
 - 每次GPU launch前必须同时live检查`gpu01`与`gpu02`，区分空闲、忙碌和故障卡。
-- 选择一个节点，并使用该节点当时所有真正空闲、健康且能提高有效吞吐的A40；没有固定6卡上限，不等待
-  凑卡、不dummy occupancy、不为跨节点碎片改launcher。
+- 选择一个节点，使用至多6张健康、低利用率、显存余量足够且能提高有效吞吐的A40；非零显存或低利用率
+  进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy occupancy、不跨节点拼碎片。
 - 不reset、kill、pause、抢占或干扰他人进程。设备边界、ownership和telemetry都是live state。
 - 独立evaluator无NCCL；多卡训练固定`NCCL_P2P_DISABLE=1`，遵守NUMA physical/local rank映射和deferred-NCCL。
-- exact-resume锁定原world size；fresh world size按live空卡与task-complete合同决定，不能硬编码6。
+- exact-resume锁定原world size；fresh world size按live可用卡与task-complete合同在`1--6`内决定，不能硬编码6。
 
 ## Storage and artifacts
 
@@ -181,8 +182,9 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   `runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`。
 - 最新retired config：`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`；状态为
   `profile_result_sealed_nonpass`，不能profile、formal或resume。
-- 当前active design：`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`；只授权原位实现、
-  CPU机制验证和architecture审计，尚未授权GPU。实现后必须建立fresh-incompatible config/checkpoint schema。
+- 当前active config：`configs/pi05_v6_success_key_nullspace_consolidation_v1.json`；canonical原位实现、
+  fresh-incompatible checkpoint schema、CPU机制验证和architecture审计已完成。下一合法GPU动作是从clean pushed
+  head运行design预注册的唯一discarded live profile；不过门不训练。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

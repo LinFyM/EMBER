@@ -189,5 +189,6 @@ native rank16 compiler，但K4只保留binary outcome：current correct-video Lo
 保持不变，而不是像RLS只保护offline action rows，或像OSG-PC回放某些成功prefix的一阶loss。它删除所有成功
 trajectory replay、CFM VJP和per-success task-local cone，成本只剩同源K4 rollout加small-matrix solve。其关键
 风险也已预注册：anchor span可能压平可学习feature，single train24 success key可能不能代表same-task其它video
-或held occupancy。设计完成但尚无实现或性能证据；zero anchor motion只能是机制门，最终仍由macro5/10的
-strict paired400 retained/gained/lost与视频controls裁决。
+或held occupancy。canonical实现、fresh schema和完整CPU回归`334 passed`现已关闭工程接口，但尚无live或性能
+证据；zero anchor motion只能是机制门，最终仍由macro5/10的strict paired400 retained/gained/lost与视频controls
+裁决。

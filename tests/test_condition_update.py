@@ -8,7 +8,7 @@ from ember.writer.condition_update import (
     PolicyInnovationGoalCausalConditionFeature,
     ProgramResidualMemory,
     apply_program_residual_delta_with_evidence_,
-    counterfactual_null_program_delta,
+    success_key_nullspace_program_delta,
 )
 
 
@@ -91,23 +91,47 @@ def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
     assert not torch.equal(natural, reversed_feature)
 
 
-def test_blind_full48_update_preserves_negative_rows_and_closes_memory() -> None:
-    correct = torch.eye(4, dtype=torch.float32)[:2]
-    negative = torch.eye(4, dtype=torch.float32)[2:]
-    cotangents = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4) / 10
-    delta, summary = counterfactual_null_program_delta(
+def _solve(
+    correct: torch.Tensor,
+    negative: torch.Tensor,
+    cotangents: torch.Tensor,
+    *,
+    anchors: torch.Tensor | None = None,
+    protected: torch.Tensor | None = None,
+    step_size: float = 1.0,
+):
+    return success_key_nullspace_program_delta(
         correct,
         negative,
         cotangents,
-        step_size=1.0,
+        (
+            anchors
+            if anchors is not None
+            else correct.new_empty((0, correct.shape[1]))
+        ),
+        (
+            protected
+            if protected is not None
+            else torch.zeros(correct.shape[0], dtype=torch.bool)
+        ),
+        step_size=step_size,
         relative_damping=0.01,
     )
+
+
+def test_zero_anchor_full48_update_preserves_negative_rows_and_closes_memory() -> None:
+    correct = torch.eye(4, dtype=torch.float32)[:2]
+    negative = torch.eye(4, dtype=torch.float32)[2:]
+    cotangents = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4) / 10
+    delta, summary = _solve(correct, negative, cotangents)
     full = torch.cat((correct, negative))
     predicted = (full @ delta.flatten(1)).reshape(4, 3, 4)
     torch.testing.assert_close(predicted[:2], -cotangents / 1.01, rtol=2e-5, atol=2e-6)
     assert torch.equal(predicted[2:], torch.zeros_like(predicted[2:]))
-    assert summary.feature_rank == 4
-    assert summary.predicted_negative_to_correct_ratio == 0
+    assert summary.original_feature_rank == 4
+    assert summary.projected_feature_rank == 4
+    assert summary.anchor_rank == 0
+    assert summary.predicted_negative_to_unprotected_ratio == 0
     assert delta.dtype == torch.float32
 
     memory = ProgramResidualMemory(
@@ -121,17 +145,13 @@ def test_blind_full48_update_preserves_negative_rows_and_closes_memory() -> None
     assert evidence.predicted_observed_relative_rms == 0
 
 
-def test_blind_update_matches_explicit_nonorthogonal_ridge() -> None:
+def test_zero_anchor_update_matches_explicit_nonorthogonal_ridge() -> None:
     generator = torch.Generator().manual_seed(29)
     correct = torch.randn(3, 7, generator=generator)
     negative = torch.randn(3, 7, generator=generator)
     cotangent = torch.randn(3, 2, 4, generator=generator)
-    delta, summary = counterfactual_null_program_delta(
-        correct,
-        negative,
-        cotangent,
-        step_size=0.7,
-        relative_damping=0.01,
+    delta, summary = _solve(
+        correct, negative, cotangent, step_size=0.7
     )
     features = torch.cat((correct, negative)).to(torch.float64)
     gram = features @ features.T
@@ -145,23 +165,88 @@ def test_blind_update_matches_explicit_nonorthogonal_ridge() -> None:
     torch.testing.assert_close(
         delta.flatten(1).to(torch.float64), expected, rtol=2e-5, atol=2e-6
     )
-    assert summary.regularized_gram_condition_number >= 1
+    assert summary.active_regularized_gram_condition_number >= 1
+
+
+def test_success_keys_hard_constrain_shared_write_without_masking_objective() -> None:
+    correct = torch.eye(4, dtype=torch.float32)[:2]
+    negative = torch.eye(4, dtype=torch.float32)[2:]
+    cotangent = torch.arange(1, 17, dtype=torch.float32).reshape(2, 2, 4)
+    anchors = correct[:1].clone()
+    protected = torch.tensor([True, False])
+    delta, summary = _solve(
+        correct,
+        negative,
+        cotangent,
+        anchors=anchors,
+        protected=protected,
+    )
+    motion = torch.cat((correct, negative)) @ delta.flatten(1)
+    torch.testing.assert_close(
+        anchors @ delta.flatten(1),
+        torch.zeros(1, 8),
+        rtol=0,
+        atol=1e-7,
+    )
+    assert torch.count_nonzero(motion[0]) == 0
+    assert torch.count_nonzero(motion[1]) > 0
+    assert torch.count_nonzero(motion[2:]) == 0
+    assert summary.current_protected_conditions == 1
+    assert summary.anchor_rank == 1
+    assert summary.original_feature_rank == 4
+    assert summary.projected_feature_rank == 3
+
+
+def test_duplicate_and_permuted_success_keys_define_the_same_nullspace() -> None:
+    generator = torch.Generator().manual_seed(91)
+    correct = torch.randn(4, 9, generator=generator)
+    negative = torch.randn(4, 9, generator=generator)
+    cotangent = torch.randn(4, 2, 3, generator=generator)
+    anchors = correct[[0, 2]]
+    protected = torch.tensor([True, False, True, False])
+    expected, _ = _solve(
+        correct,
+        negative,
+        cotangent,
+        anchors=anchors,
+        protected=protected,
+    )
+    observed, summary = _solve(
+        correct,
+        negative,
+        cotangent,
+        anchors=anchors[[1, 0, 1]],
+        protected=protected,
+    )
+    torch.testing.assert_close(observed, expected, rtol=3e-5, atol=3e-6)
+    assert summary.anchor_constraint_rows == 3
+    assert summary.anchor_rank == 2
+
+
+def test_all_condition_directions_constrained_produces_finite_zero_write() -> None:
+    correct = torch.eye(3)
+    negative = torch.eye(3).roll(1, dims=0)
+    cotangent = torch.randn(3, 2, 2, generator=torch.Generator().manual_seed(5))
+    delta, summary = _solve(
+        correct,
+        negative,
+        cotangent,
+        anchors=torch.eye(3),
+        protected=torch.ones(3, dtype=torch.bool),
+    )
+    assert torch.equal(delta, torch.zeros_like(delta))
+    assert summary.projected_feature_rank == 0
+    assert summary.anchor_rank == 3
 
 
 def test_rank_deficient_features_and_zero_credit_remain_finite() -> None:
     correct = torch.ones(2, 3)
     negative = torch.ones(2, 3)
     cotangent = torch.zeros(2, 2, 2)
-    delta, summary = counterfactual_null_program_delta(
-        correct,
-        negative,
-        cotangent,
-        step_size=1.0,
-        relative_damping=0.01,
-    )
+    delta, summary = _solve(correct, negative, cotangent)
     assert torch.isfinite(delta).all()
-    assert summary.feature_rank == 1
-    assert summary.predicted_negative_to_correct_ratio > 1e30
+    assert summary.original_feature_rank == 1
+    assert summary.predicted_negative_to_unprotected_ratio == 0
     assert torch.count_nonzero(delta) == 0
 
 
@@ -183,10 +268,12 @@ def test_blind_update_rejects_invalid_batches(
     cotangent: torch.Tensor,
 ) -> None:
     with pytest.raises(ConditionUpdateError):
-        counterfactual_null_program_delta(
+        success_key_nullspace_program_delta(
             correct,
             negative,
             cotangent,
+            correct.new_empty((0, correct.shape[1])),
+            torch.zeros(correct.shape[0], dtype=torch.bool),
             step_size=1.0,
             relative_damping=0.01,
         )

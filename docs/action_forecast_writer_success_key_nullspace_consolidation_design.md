@@ -1,6 +1,8 @@
 # Success-Key Nullspace Consolidation
 
-状态：2026-08-11 design authority已建立，尚未实现、profile、训练或评测。简称SKNC。
+状态：2026-08-11 canonical implementation与fresh-incompatible config/checkpoint schema已完成；加载
+`.env.local`的完整CPU回归为`334 passed`，compileall与diff-check通过。尚未运行live profile、训练或评测。
+简称SKNC。
 它从PICK-GC strict`138/400`与OSG-PC工程non-pass后最早仍开放的接口出发：保留PICK-GC已经接通的
 ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、B20 blind source-action
 objective、full48 correct/negative panel、原生38-target rank16 compiler和one-shot部署；只把“如何在共享Program
@@ -253,8 +255,10 @@ gate必须检查owner、caller、config和tests，旧OSG executable path须退�
 
 从historical v6-fast macro400、zero Program、empty anchor bank fresh执行一个完整macro0：24 videos、480 B20 source
 queries、K4=96 official random-reset rollouts、outcome-only certification、constrained full48 write；不保存checkpoint。
-实际launch前重新同时检查gpu01/gpu02、进程、健康、quota与fresh root，选择单节点所有有益空闲A40；train24
-world size必须整除24，NCCL/NUMA/deferred-init合同不变。
+实际launch前重新同时检查gpu01/gpu02、进程、健康、quota与fresh root，选择单节点至多6张健康、低利用率且
+显存余量足够的有益A40；已有少量显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。fresh world size
+允许`1--6`，train24用deterministic cost-balanced uneven分配，NCCL/NUMA/deferred-init合同不变；exact resume锁
+原world size/topology。
 
 hard gates：
 
@@ -262,16 +266,18 @@ hard gates：
 - outcome-only记录96条，success/failure trajectory replay tensors、replay policy/CFM forwards、reward gradients全为0；
   只允许预注册的shared-write后fixed-action closure forward；
 - anchor bank新增数等于首次4/4 task数，task槽唯一；constraint count、numerical rank与suite覆盖一致；
-- protected current Program motion相对unprotected correct motion`<=1e-5`，protected LoRA/effective-BA/fixed-action在声明
-  tolerance内不变；至少一个unprotected correct condition和四suite各一个fixed-action response非零；
+- protected current Program motion相对unprotected correct motion`<=1e-5`，全部protected keys的LoRA/effective-BA
+  在声明tolerance内不变；fixed-action只对每suite最低ordinal的一个protected和一个unprotected key做同噪声闭合，
+  最多8个probe/16次policy forward，且四suite各一个unprotected response非零；
 - projected objective rank等于数值reference，active nonzero spectrum的regularized condition`<=200`；unprotected
   correct projected/original feature-energy ratio中位至少`.20`，避免success span把剩余objective机械抹掉；
 - negative/correct motion`<=.15`，未受保护correct中至少80%保留与自身cotangent正相关的descent motion，三类
   negative各至少6/8且总计至少18个null；
 - full48 predicted/application closure、Program、LoRA A/B与action response finite；0 OOM/nonfinite/watchdog/
   forbidden reads/negative policy forwards；
-- 从run-contract发布到完整report的wall不超过matched world6 K4 baseline
-  `507.30541240703315s × 1.25`。该基线与OSG使用相同K4规模；SKNC不允许因成功轨迹数量增加额外VJP长尾。
+- 从run-contract发布到完整report的wall不超过matched world6 K4 baseline按实际最大rank task数缩放后的
+  `507.30541240703315s × ceil(24/world_size)/4 × 1.25`。该基线与OSG使用相同K4规模；SKNC不允许因成功轨迹
+  数量增加额外VJP长尾。
 
 `.20`只约束“还有可学习子空间”，不是性能代理；若这一固定首版被success span压平，不能降低门、减少K、软化
 constraint或只保护挑选tasks。任一hard gate失败即拒绝当前SKNC，不重跑同配置或做小超参sweep。
@@ -315,8 +321,9 @@ few-shot、task-level manifold supervision或reward-guided continuous improvemen
 ## 10. Cost, storage and recovery expectation
 
 与OSG-PC相比，SKNC删除全部successful replay/VJP；GPU主成本应回到B20加96条K4 rollout，small-matrix projector和
-最多48×256 anchors可忽略。首版仍按matched world6 K4 baseline预留约8.5分钟，hard上限约10.6分钟；正式每macro
-按live topology重新估算，不用这份旧空闲快照预约设备。
+最多48×256 anchors可忽略。world6时仍按matched K4 baseline预留约8.5分钟、hard上限约10.6分钟；其它fresh
+world size按`ceil(24/world_size)/4`缩放，不等待凑满6卡。正式每macro按live topology重新估算，不用旧快照
+预约设备。
 
 anchor bank最多约24×256 FP32加少量metadata，checkpoint增量远小于1MiB；formal root预计仍由Program/checkpoint
 主体主导，首次0→5峰值新增应低于2GiB，但发射前必须重新查`strg01 /data1`独立quota与实际root。checkpoint拥有

@@ -1,4 +1,4 @@
-"""One-shot mechanism evidence for the frozen-v6 Program residual."""
+"""Mechanism evidence for SKNC's outcome-only constrained Program write."""
 
 from __future__ import annotations
 
@@ -15,6 +15,9 @@ from ember.lora import copy_task_lora_state_, task_lora_state_dict
 from ember.pi05_source_checkpoint import DistributedContext
 
 
+_SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+
+
 def profile_max_seconds(context: DistributedContext, seconds: float) -> float:
     value = torch.tensor(seconds, dtype=torch.float64, device=context.device)
     if context.world_size > 1:
@@ -22,23 +25,105 @@ def profile_max_seconds(context: DistributedContext, seconds: float) -> float:
     return float(value)
 
 
+def _rms_from_totals(square_sum: float, count: int) -> float:
+    return math.sqrt(square_sum / count) if count else 0.0
+
+
+def _ratio(numerator: float, denominator: float) -> float:
+    if denominator > 0:
+        return numerator / denominator
+    return 0.0 if numerator == 0 else math.inf
+
+
+def _lora_response_row(
+    before: Mapping[str, torch.Tensor],
+    after: Mapping[str, torch.Tensor],
+) -> dict[str, float | int]:
+    if set(before) != set(after):
+        raise ExpertManifoldError("SKNC profile LoRA topology changed")
+    a_square = b_square = ba_square = 0.0
+    a_count = b_count = ba_count = 0
+    for name, before_a in before.items():
+        if not name.endswith(".lora_A.default.weight"):
+            continue
+        b_name = name.replace(
+            ".lora_A.default.weight", ".lora_B.default.weight"
+        )
+        if b_name not in before:
+            raise ExpertManifoldError("SKNC profile lost a LoRA factor pair")
+        after_a = after[name]
+        before_b = before[b_name]
+        after_b = after[b_name]
+        a_delta = (after_a - before_a).to(dtype=torch.float32)
+        b_delta = (after_b - before_b).to(dtype=torch.float32)
+        ba_delta = (
+            after_b.to(dtype=torch.float32) @ after_a.to(dtype=torch.float32)
+            - before_b.to(dtype=torch.float32) @ before_a.to(dtype=torch.float32)
+        )
+        a_square += float(a_delta.square().sum())
+        b_square += float(b_delta.square().sum())
+        ba_square += float(ba_delta.square().sum())
+        a_count += a_delta.numel()
+        b_count += b_delta.numel()
+        ba_count += ba_delta.numel()
+    if min(a_count, b_count, ba_count) <= 0:
+        raise ExpertManifoldError("SKNC profile LoRA response is empty")
+    return {
+        "lora_a_square_sum": a_square,
+        "lora_a_value_count": a_count,
+        "lora_b_square_sum": b_square,
+        "lora_b_value_count": b_count,
+        "effective_ba_square_sum": ba_square,
+        "effective_ba_value_count": ba_count,
+    }
+
+
+def _fixed_action_ordinals(
+    protected_mask: torch.Tensor, *, protected: bool
+) -> tuple[int, ...]:
+    result = []
+    for start in range(0, 24, 6):
+        candidates = [
+            ordinal
+            for ordinal in range(start, start + 6)
+            if bool(protected_mask[ordinal]) is protected
+        ]
+        if candidates:
+            result.append(candidates[0])
+    return tuple(result)
+
+
 def profile_lora_response(
     runtime: V6PriorRuntime,
     local: Sequence[Any],
     correct_motion: torch.Tensor,
-) -> dict[str, float]:
-    accumulators = torch.zeros(8, dtype=torch.float64, device=runtime.context.device)
+    protected_mask: torch.Tensor,
+) -> dict[str, Any]:
+    """Trace protected/unprotected motion through LoRA, BA, and fixed actions."""
+
+    if (
+        correct_motion.shape[0] != 24
+        or protected_mask.shape != (24,)
+        or protected_mask.dtype != torch.bool
+    ):
+        raise ExpertManifoldError("SKNC profile protection topology changed")
+    protected_action_ordinals = set(
+        _fixed_action_ordinals(protected_mask, protected=True)
+    )
+    unprotected_action_ordinals = set(
+        _fixed_action_ordinals(protected_mask, protected=False)
+    )
     identity = task_lora_state_dict(runtime.policy, clone=True)
+    local_rows: list[dict[str, Any]] = []
     try:
         for objective in local:
-            if (
-                objective.program_before is None
-                or objective.correct_lora_before is None
-            ):
-                raise ExpertManifoldError("mechanism profile lost its before state")
-            motion = correct_motion[objective.task.ordinal]
+            if objective.program_before is None or objective.correct_lora_before is None:
+                raise ExpertManifoldError("SKNC profile lost its before state")
+            ordinal = int(objective.task.ordinal)
+            protected = bool(protected_mask[ordinal])
+            motion = correct_motion[ordinal]
             if motion.shape != objective.program_before.shape:
-                raise ExpertManifoldError("mechanism profile Program motion changed")
+                raise ExpertManifoldError("SKNC profile Program motion changed")
             with torch.autocast(
                 device_type=runtime.context.device.type,
                 dtype=torch.bfloat16,
@@ -49,49 +134,138 @@ def profile_lora_response(
                     + motion.to(dtype=objective.program_before.dtype)
                 ).to(dtype=torch.float32)
                 after = runtime.writer.base_writer.decode_slots(after_program[None])
-            for name, before in objective.correct_lora_before.items():
-                difference = after[name] - before
-                index = 0 if name.endswith(".lora_A.default.weight") else 1
-                accumulators[index].add_(
-                    difference.to(dtype=torch.float32).square().sum()
-                )
-                accumulators[index + 2].add_(difference.numel())
-            if objective.fixed_policy_query is not None:
+            response = _lora_response_row(objective.correct_lora_before, after)
+            fixed_probe = (
+                ordinal in protected_action_ordinals
+                or ordinal in unprotected_action_ordinals
+            )
+            action_rms = None
+            if fixed_probe:
+                if objective.fixed_policy_query is None:
+                    raise ExpertManifoldError("SKNC profile lost fixed-action query")
                 before_action = _fixed_action(
                     runtime,
                     objective.fixed_policy_query,
                     objective.correct_lora_before,
-                    seed=202608110000 + objective.task.ordinal,
+                    seed=202608110000 + ordinal,
                 )
                 after_action = _fixed_action(
                     runtime,
                     objective.fixed_policy_query,
                     after,
-                    seed=202608110000 + objective.task.ordinal,
+                    seed=202608110000 + ordinal,
                 )
-                difference = after_action - before_action
-                action_rms = difference.to(dtype=torch.float32).square().mean().sqrt()
-                accumulators[4].add_(difference.to(dtype=torch.float32).square().sum())
-                accumulators[5].add_(difference.numel())
-                accumulators[6].add_(1)
-                accumulators[7].add_(int(float(action_rms) > 0))
+                action_rms = float(
+                    (after_action - before_action)
+                    .to(dtype=torch.float32)
+                    .square()
+                    .mean()
+                    .sqrt()
+                )
+            local_rows.append(
+                {
+                    "task_ordinal": ordinal,
+                    "suite": objective.task.suite,
+                    "protected": protected,
+                    "fixed_action_probe": fixed_probe,
+                    "fixed_action_response_rms": action_rms,
+                    **response,
+                }
+            )
     finally:
         copy_task_lora_state_(runtime.policy, identity, runtime.lora_contract)
+    gathered: list[Any] = [None] * runtime.context.world_size
     if runtime.context.world_size > 1:
-        dist.all_reduce(accumulators, op=dist.ReduceOp.SUM)
+        dist.all_gather_object(gathered, local_rows)
+    else:
+        gathered[0] = local_rows
+    rows = [dict(row) for rank_rows in gathered for row in rank_rows]
+    rows.sort(key=lambda row: int(row["task_ordinal"]))
+    if len(rows) != 24 or [int(row["task_ordinal"]) for row in rows] != list(
+        range(24)
+    ):
+        raise ExpertManifoldError("SKNC profile LoRA response lost train24")
+
+    def aggregate(prefix: str, protected: bool) -> float:
+        square = sum(
+            float(row[f"{prefix}_square_sum"])
+            for row in rows
+            if bool(row["protected"]) is protected
+        )
+        count = sum(
+            int(row[f"{prefix}_value_count"])
+            for row in rows
+            if bool(row["protected"]) is protected
+        )
+        return _rms_from_totals(square, count)
+
+    protected_a = aggregate("lora_a", True)
+    unprotected_a = aggregate("lora_a", False)
+    protected_b = aggregate("lora_b", True)
+    unprotected_b = aggregate("lora_b", False)
+    protected_ba = aggregate("effective_ba", True)
+    unprotected_ba = aggregate("effective_ba", False)
+    protected_action = [
+        float(row["fixed_action_response_rms"])
+        for row in rows
+        if bool(row["protected"]) and bool(row["fixed_action_probe"])
+    ]
+    protected_action_rows = [
+        row
+        for row in rows
+        if bool(row["protected"]) and bool(row["fixed_action_probe"])
+    ]
+    unprotected_action_rows = [
+        row
+        for row in rows
+        if not bool(row["protected"]) and bool(row["fixed_action_probe"])
+    ]
+    unprotected_actions = [
+        float(row["fixed_action_response_rms"])
+        for row in unprotected_action_rows
+    ]
+    probe_count = len(protected_action) + len(unprotected_actions)
     return {
-        "lora_a_response_rms": float(
-            (accumulators[0] / accumulators[2].clamp_min(1)).sqrt()
+        "task_count": 24,
+        "protected_task_count": sum(bool(row["protected"]) for row in rows),
+        "unprotected_task_count": sum(not bool(row["protected"]) for row in rows),
+        "protected_lora_a_response_rms": protected_a,
+        "unprotected_lora_a_response_rms": unprotected_a,
+        "protected_lora_a_to_unprotected_ratio": _ratio(
+            protected_a, unprotected_a
         ),
-        "lora_b_response_rms": float(
-            (accumulators[1] / accumulators[3].clamp_min(1)).sqrt()
+        "protected_lora_b_response_rms": protected_b,
+        "unprotected_lora_b_response_rms": unprotected_b,
+        "protected_lora_b_to_unprotected_ratio": _ratio(
+            protected_b, unprotected_b
         ),
-        "fixed_action_response_rms": float(
-            (accumulators[4] / accumulators[5].clamp_min(1)).sqrt()
+        "protected_effective_ba_response_rms": protected_ba,
+        "unprotected_effective_ba_response_rms": unprotected_ba,
+        "protected_effective_ba_to_unprotected_ratio": _ratio(
+            protected_ba, unprotected_ba
         ),
-        "fixed_action_probe_task_count": int(accumulators[6].item()),
-        "fixed_action_probe_policy_forwards": int(2 * accumulators[6].item()),
-        "fixed_action_passing_task_count": int(accumulators[7].item()),
+        "fixed_action_probe_task_count": probe_count,
+        "fixed_action_probe_policy_forwards": 2 * probe_count,
+        "protected_fixed_action_probe_task_count": len(protected_action),
+        "protected_fixed_action_probe_suites": sorted(
+            {str(row["suite"]) for row in protected_action_rows}
+        ),
+        "protected_fixed_action_response_rms": _rms_from_totals(
+            sum(value * value for value in protected_action), len(protected_action)
+        ),
+        "protected_fixed_action_response_max": max(protected_action, default=0.0),
+        "unprotected_fixed_action_probe_task_count": len(unprotected_actions),
+        "unprotected_fixed_action_probe_suites": sorted(
+            {str(row["suite"]) for row in unprotected_action_rows}
+        ),
+        "unprotected_fixed_action_response_rms": _rms_from_totals(
+            sum(value * value for value in unprotected_actions),
+            len(unprotected_actions),
+        ),
+        "unprotected_fixed_action_passing_task_count": sum(
+            value > 0 for value in unprotected_actions
+        ),
+        "rows": rows,
     }
 
 
@@ -99,35 +273,73 @@ def profile_lora_response(
 def profile_task_local_motion(
     cotangents: torch.Tensor,
     full_motion: torch.Tensor,
+    protected_mask: torch.Tensor,
     gates: Mapping[str, Any],
 ) -> dict[str, Any]:
-    if cotangents.shape[0] != 24 or full_motion.shape[0] != 48:
-        raise ExpertManifoldError("task-local profile motion changed")
-    correct = full_motion[:24].flatten(1).square().mean(dim=1).sqrt()
-    negative = full_motion[24:].flatten(1).square().mean(dim=1).sqrt()
-    credit = cotangents.flatten(1).square().mean(dim=1).sqrt()
-    tiny = torch.finfo(torch.float32).tiny
-    retained = correct / credit.clamp_min(tiny)
-    leakage = negative / correct.clamp_min(tiny)
-    values = torch.stack((correct, negative, credit, retained, leakage))
+    if (
+        cotangents.shape[0] != 24
+        or full_motion.shape[0] != 48
+        or protected_mask.shape != (24,)
+        or protected_mask.dtype != torch.bool
+    ):
+        raise ExpertManifoldError("SKNC task-local profile motion changed")
+    flat_credit = cotangents.flatten(1).to(dtype=torch.float64)
+    flat_correct = full_motion[:24].flatten(1).to(dtype=torch.float64)
+    flat_negative = full_motion[24:].flatten(1).to(dtype=torch.float64)
+    credit = flat_credit.square().mean(dim=1).sqrt()
+    correct = flat_correct.square().mean(dim=1).sqrt()
+    negative = flat_negative.square().mean(dim=1).sqrt()
+    unprotected = ~protected_mask
+    global_unprotected = (
+        flat_correct[unprotected].square().mean().sqrt()
+        if bool(unprotected.any())
+        else flat_correct.new_zeros(())
+    )
+    protected_rms = (
+        flat_correct[protected_mask].square().mean().sqrt()
+        if bool(protected_mask.any())
+        else flat_correct.new_zeros(())
+    )
+    negative_rms = flat_negative.square().mean().sqrt()
+    tiny = torch.finfo(torch.float64).tiny
+    descent = -(
+        (flat_credit * flat_correct).sum(dim=1)
+        / (
+            torch.linalg.vector_norm(flat_credit, dim=1)
+            * torch.linalg.vector_norm(flat_correct, dim=1)
+        ).clamp_min(tiny)
+    )
+    negative_ratio = negative / global_unprotected.clamp_min(tiny)
+    values = torch.cat((credit, correct, negative, descent, negative_ratio))
     if not bool(torch.isfinite(values).all()):
-        raise ExpertManifoldError("task-local profile motion became non-finite")
-    retained_minimum = float(gates["correct_motion_to_cotangent_rms_min"])
-    leakage_maximum = float(gates["negative_to_correct_motion_rms_max"])
+        raise ExpertManifoldError("SKNC task-local motion became non-finite")
+    null_maximum = float(gates["negative_to_unprotected_motion_rms_max"])
     return {
         "task_count": 24,
-        "correct_retained_threshold": retained_minimum,
-        "negative_leakage_threshold": leakage_maximum,
-        "correct_retained_passing_tasks": int((retained >= retained_minimum).sum()),
-        "negative_null_passing_tasks": int((leakage <= leakage_maximum).sum()),
+        "protected_task_count": int(protected_mask.sum()),
+        "unprotected_task_count": int(unprotected.sum()),
+        "unprotected_correct_motion_rms": float(global_unprotected),
+        "protected_correct_motion_rms": float(protected_rms),
+        "protected_to_unprotected_motion_ratio": _ratio(
+            float(protected_rms), float(global_unprotected)
+        ),
+        "negative_motion_rms": float(negative_rms),
+        "negative_to_unprotected_motion_ratio": _ratio(
+            float(negative_rms), float(global_unprotected)
+        ),
+        "unprotected_descent_passing_tasks": int((descent[unprotected] > 0).sum()),
+        "negative_null_passing_tasks": int((negative_ratio <= null_maximum).sum()),
         "rows": [
             {
                 "task_ordinal": ordinal,
+                "protected": bool(protected_mask[ordinal]),
                 "cotangent_rms": float(credit[ordinal]),
                 "correct_motion_rms": float(correct[ordinal]),
                 "negative_motion_rms": float(negative[ordinal]),
-                "correct_motion_to_cotangent_rms": float(retained[ordinal]),
-                "negative_to_correct_motion_rms": float(leakage[ordinal]),
+                "descent_cosine": float(descent[ordinal]),
+                "negative_to_unprotected_motion_rms": float(
+                    negative_ratio[ordinal]
+                ),
             }
             for ordinal in range(24)
         ],
@@ -135,117 +347,29 @@ def profile_task_local_motion(
 
 
 @torch.no_grad()
-def profile_success_guard_application(
-    local_objectives: Sequence[Any],
-    full_motion: torch.Tensor,
-    context: DistributedContext,
+def profile_success_key_application(
+    anchor_features: torch.Tensor,
+    delta: torch.Tensor,
+    protected_mask: torch.Tensor,
 ) -> dict[str, Any]:
-    """Measure continuous and native-Program motion against every success guard."""
-
-    local_rows = []
-    for objective in local_objectives:
-        guards = objective.retention_program_cotangents
-        before = objective.program_before
-        if guards is None or before is None:
-            raise ExpertManifoldError("OSG-PC profile lost retention cotangents")
-        continuous = full_motion[objective.task.ordinal]
-        if continuous.shape != before.shape:
-            raise ExpertManifoldError("OSG-PC applied guard Program shape changed")
-        native = (
-            (before + continuous.to(dtype=before.dtype)).to(dtype=torch.float32)
-            - before.to(dtype=torch.float32)
-        )
-        continuous64 = continuous.flatten().to(dtype=torch.float64)
-        native64 = native.flatten().to(dtype=torch.float64)
-        blind = (-objective.source_program_cotangent).flatten().to(dtype=torch.float64)
-        safe = (-objective.program_cotangent).flatten().to(dtype=torch.float64)
-        continuous_tolerance = 64 * torch.finfo(torch.float32).eps * max(
-            float(torch.linalg.vector_norm(continuous64)),
-            torch.finfo(torch.float64).tiny,
-        )
-        native_tolerance = 64 * torch.finfo(torch.float32).eps * max(
-            float(torch.linalg.vector_norm(native64)),
-            torch.finfo(torch.float64).tiny,
-        )
-        desired_values = []
-        continuous_values = []
-        native_values = []
-        for guard in guards:
-            normalized = guard.flatten().to(dtype=torch.float64)
-            normalized = normalized / torch.linalg.vector_norm(normalized)
-            desired_values.append(float(torch.dot(normalized, safe)))
-            continuous_values.append(float(torch.dot(normalized, continuous64)))
-            native_values.append(float(torch.dot(normalized, native64)))
-        blind_energy = torch.dot(blind, blind)
-        continuous_source_ratio = (
-            float(torch.dot(blind, continuous64) / blind_energy)
-            if float(blind_energy) > 0
-            else 1.0
-        )
-        native_source_ratio = (
-            float(torch.dot(blind, native64) / blind_energy)
-            if float(blind_energy) > 0
-            else 1.0
-        )
-        local_rows.append(
-            {
-                "task_ordinal": objective.task.ordinal,
-                "constraint_count": len(guards),
-                "continuous_tolerance": continuous_tolerance,
-                "native_program_tolerance": native_tolerance,
-                "desired_maximum_constraint_value": (
-                    max(desired_values) if desired_values else 0.0
-                ),
-                "continuous_maximum_constraint_value": (
-                    max(continuous_values) if continuous_values else 0.0
-                ),
-                "native_program_maximum_constraint_value": (
-                    max(native_values) if native_values else 0.0
-                ),
-                "continuous_violating_constraints": sum(
-                    value > continuous_tolerance for value in continuous_values
-                ),
-                "native_program_violating_constraints": sum(
-                    value > native_tolerance for value in native_values
-                ),
-                "continuous_source_descent_ratio": continuous_source_ratio,
-                "native_program_source_descent_ratio": native_source_ratio,
-            }
-        )
-    gathered: list[Any] = [None] * context.world_size
-    if context.world_size > 1:
-        dist.all_gather_object(gathered, local_rows)
-    else:
-        gathered[0] = local_rows
-    rows = [dict(value) for rank_rows in gathered for value in rank_rows]
-    rows.sort(key=lambda value: int(value["task_ordinal"]))
-    if len(rows) != 24 or [int(value["task_ordinal"]) for value in rows] != list(
-        range(24)
+    if (
+        anchor_features.ndim != 2
+        or delta.ndim != 3
+        or anchor_features.shape[1] != delta.shape[0]
+        or protected_mask.shape != (24,)
+        or protected_mask.dtype != torch.bool
     ):
-        raise ExpertManifoldError("OSG-PC applied guard profile lost train24")
+        raise ExpertManifoldError("SKNC success-key application topology changed")
+    motion = anchor_features.to(dtype=torch.float32) @ delta.flatten(1)
+    rms = float(motion.square().mean().sqrt()) if motion.numel() else 0.0
+    maximum = float(motion.abs().max()) if motion.numel() else 0.0
+    if not math.isfinite(rms) or not math.isfinite(maximum):
+        raise ExpertManifoldError("SKNC success-key motion became non-finite")
     return {
-        "task_count": len(rows),
-        "constraint_count": sum(int(value["constraint_count"]) for value in rows),
-        "continuous_violating_constraint_count": sum(
-            int(value["continuous_violating_constraints"]) for value in rows
-        ),
-        "native_program_violating_constraint_count": sum(
-            int(value["native_program_violating_constraints"]) for value in rows
-        ),
-        "maximum_continuous_constraint_value": max(
-            float(value["continuous_maximum_constraint_value"]) for value in rows
-        ),
-        "maximum_native_program_constraint_value": max(
-            float(value["native_program_maximum_constraint_value"])
-            for value in rows
-        ),
-        "minimum_continuous_source_descent_ratio": min(
-            float(value["continuous_source_descent_ratio"]) for value in rows
-        ),
-        "minimum_native_program_source_descent_ratio": min(
-            float(value["native_program_source_descent_ratio"]) for value in rows
-        ),
-        "rows": rows,
+        "constraint_row_count": int(anchor_features.shape[0]),
+        "current_protected_task_count": int(protected_mask.sum()),
+        "anchor_program_motion_rms": rms,
+        "anchor_program_motion_max_abs": maximum,
     }
 
 
@@ -290,7 +414,7 @@ def _fixed_action(
             dict(query), noise=noise, num_steps=10
         )
     if action.ndim != 3 or action.shape[0] != 1:
-        raise ExpertManifoldError("fixed-action profile output changed")
+        raise ExpertManifoldError("SKNC fixed-action profile output changed")
     return action.detach()
 
 
@@ -302,260 +426,228 @@ def base_versions(runtime: V6PriorRuntime) -> tuple[tuple[str, int], ...]:
     )
 
 
-def profile_passes(
-    config: Mapping[str, Any],
-    row: Mapping[str, Any],
-) -> tuple[bool, dict[str, Any]]:
-    gates = config["profile_run"]["gates"]
-    update = row["update"]
-    application = row["application"]
-    response = row["lora_response"]
-    task_local = row["task_local_motion"]
-    guard_application = row["success_guard_application"]
-    if not all(
-        isinstance(value, Mapping)
-        for value in (update, application, response, task_local, guard_application)
-    ):
-        raise ExpertManifoldError("mechanism profile evidence is incomplete")
-    values = _profile_values(config, row, update, application, response)
-    checks = _profile_checks(gates, task_local, response, row, values)
-    return all(checks.values()), {
-        "checks": checks,
-        "success_guard": dict(row["success_guard"]),
-        "success_guard_application": dict(guard_application),
-        "feature_rank": int(update["feature_rank"]),
-        "regularized_gram_condition_number": float(
-            update["regularized_gram_condition_number"]
-        ),
-        "correct_motion_to_cotangent_rms": values["retained"],
-        "negative_to_correct_motion_rms": values["negative_ratio"],
-        "negative_null_per_kind": _negative_null_per_kind(row, gates),
-        "production_kernel_wall_fraction": values["kernel_fraction"],
-        "production_wall_ratio_to_sealed_v6": values["production_ratio"],
-    }
-
-
-def _profile_values(
-    config: Mapping[str, Any],
-    row: Mapping[str, Any],
-    update: Mapping[str, Any],
-    application: Mapping[str, Any],
-    response: Mapping[str, Any],
-) -> dict[str, float]:
-    result = {
-        "cotangent": float(update["correct_cotangent_rms"]),
-        "predicted_correct": float(update["predicted_correct_motion_rms"]),
-        "negative_ratio": float(update["predicted_negative_to_correct_ratio"]),
-        "closure": float(application["predicted_observed_relative_rms"]),
-        "lora_a": float(response["lora_a_response_rms"]),
-        "lora_b": float(response["lora_b_response_rms"]),
-        "fixed_action": float(response["fixed_action_response_rms"]),
-    }
-    result["retained"] = (
-        result["predicted_correct"] / result["cotangent"]
-        if result["cotangent"] > 0
-        else 0.0
-    )
-    result["production"] = float(row["profile_task_seconds"]) + float(
-        row["production_kernel_seconds"]
-    )
-    result["kernel_fraction"] = float(row["production_kernel_seconds"]) / max(
-        result["production"], torch.finfo(torch.float64).tiny
-    )
-    result["production_ratio"] = result["production"] / float(
-        config["profile_run"]["throughput_baseline"]["step_seconds"]
-    )
-    result["finite"] = float(all(math.isfinite(value) for value in result.values()))
-    return result
-
-
 def _negative_null_per_kind(
-    row: Mapping[str, Any],
-    gates: Mapping[str, Any],
+    row: Mapping[str, Any], gates: Mapping[str, Any]
 ) -> dict[str, int]:
-    task_rows = row.get("task_local_motion", {}).get("rows", ())
-    leakage_by_ordinal = {
+    ratios = {
         int(value.get("task_ordinal", -1)): float(
-            value.get("negative_to_correct_motion_rms", math.inf)
+            value.get("negative_to_unprotected_motion_rms", math.inf)
         )
-        for value in task_rows
+        for value in row.get("task_local_motion", {}).get("rows", ())
     }
+    maximum = float(gates["negative_to_unprotected_motion_rms_max"])
     return {
         kind: sum(
             record.get("counterfactual_kind") == kind
-            and leakage_by_ordinal.get(int(record.get("task_ordinal", -1)), math.inf)
-            <= float(gates["negative_to_correct_motion_rms_max"])
+            and ratios.get(int(record.get("task_ordinal", -1)), math.inf)
+            <= maximum
             for record in row.get("task_records", ())
         )
         for kind in ("reversed", "shuffled", "wrong")
     }
 
 
-def _profile_checks(
-    gates: Mapping[str, Any],
-    task_local: Mapping[str, Any],
-    response: Mapping[str, Any],
-    row: Mapping[str, Any],
-    values: Mapping[str, float],
-) -> dict[str, bool]:
-    task_rows = task_local.get("rows", ())
-    task_records = row.get("task_records", ())
-    per_kind_null = _negative_null_per_kind(row, gates)
-    guard = row.get("success_guard", {})
-    guard_application = row.get("success_guard_application", {})
-    guarded_by_suite = guard.get("guarded_tasks_per_suite", {})
-    success_program_cotangents = [
-        float(value)
-        for record in task_records
-        for value in record.get("retention_credit", {}).get(
-            "program_cotangent_rms", ()
-        )
-    ]
-    exact_fallback = all(
-        not bool(record.get("guard_projection", {}).get("changed"))
-        for record in task_records
-        if int(record.get("retention_credit", {}).get("successes", -1)) == 0
-        or bool(record.get("guard_projection", {}).get("raw_feasible"))
+def profile_passes(
+    config: Mapping[str, Any], row: Mapping[str, Any]
+) -> tuple[bool, dict[str, Any]]:
+    gates = config["profile_run"]["gates"]
+    required = (
+        "update",
+        "application",
+        "task_local_motion",
+        "lora_response",
+        "success_key_application",
+        "success_outcomes",
+        "success_key_bank",
     )
-    return {
-        "feature_rank": int(row["update"]["feature_rank"])
-        >= int(gates["feature_rank_min"]),
-        "feature_condition": float(row["update"]["regularized_gram_condition_number"])
-        <= float(gates["regularized_gram_condition_number_max"]),
-        "correct_motion_retained": values["retained"]
-        >= float(gates["correct_motion_to_cotangent_rms_min"]),
-        "counterfactual_null": math.isfinite(values["negative_ratio"])
-        and values["negative_ratio"]
-        <= float(gates["negative_to_correct_motion_rms_max"]),
-        "predicted_observed_closure": math.isfinite(values["closure"])
-        and values["closure"] <= float(gates["predicted_observed_relative_rms_max"]),
-        "production_wall_overhead": values["production_ratio"]
-        <= float(gates["production_wall_ratio_max"]),
-        "lora_a_response": math.isfinite(values["lora_a"])
-        and values["lora_a"] > float(gates["lora_a_response_rms_min"]),
-        "lora_b_response": math.isfinite(values["lora_b"])
-        and values["lora_b"] > float(gates["lora_b_response_rms_min"]),
-        "fixed_action_response": math.isfinite(values["fixed_action"])
-        and values["fixed_action"] > float(gates["fixed_action_response_rms_min"])
-        and int(response["fixed_action_probe_task_count"])
-        == int(gates["fixed_action_probe_task_count"])
-        and int(response["fixed_action_probe_policy_forwards"])
-        == 2 * int(gates["fixed_action_probe_task_count"]),
-        "fixed_action_breadth": int(response["fixed_action_passing_task_count"])
-        >= int(gates["fixed_action_passing_task_count_min"]),
-        "task_local_motion_evidence": int(task_local.get("task_count", -1)) == 24
-        and len(task_rows) == 24
-        and [int(value.get("task_ordinal", -1)) for value in task_rows]
-        == list(range(24))
-        and int(task_local.get("correct_retained_passing_tasks", -1))
-        >= int(gates["correct_retained_task_count_min"])
+    if not all(isinstance(row.get(name), Mapping) for name in required):
+        raise ExpertManifoldError("SKNC mechanism profile evidence is incomplete")
+    update = row["update"]
+    application = row["application"]
+    task_local = row["task_local_motion"]
+    response = row["lora_response"]
+    key_application = row["success_key_application"]
+    outcomes = row["success_outcomes"]
+    bank = row["success_key_bank"]
+    records = row.get("task_records", ())
+    per_kind = _negative_null_per_kind(row, gates)
+    protected = int(outcomes.get("all_success_tasks", -1))
+    unprotected = int(update.get("unprotected_correct_conditions", -1))
+    required_descent = math.ceil(
+        float(gates["unprotected_descent_fraction_min"]) * max(unprotected, 0)
+    )
+    baseline_contract = config["profile_run"]["throughput_baseline"]
+    baseline = float(baseline_contract["step_seconds"]) * (
+        int(row["maximum_tasks_per_rank"])
+        / int(baseline_contract["source_tasks_per_rank"])
+    )
+    wall_ratio = float(row["step_seconds"]) / baseline
+    outcome_only = (
+        int(outcomes.get("retained_observation_tensors", -1)) == 0
+        and int(outcomes.get("retained_action_tensors", -1)) == 0
+        and int(outcomes.get("trajectory_replay_policy_forwards", -1)) == 0
+        and int(outcomes.get("trajectory_replay_cfm_forwards", -1)) == 0
+        and int(outcomes.get("reward_gradient_count", -1)) == 0
+        and all(
+            int(trajectory.get("retained_observation_tensors", -1)) == 0
+            and int(trajectory.get("retained_action_tensors", -1)) == 0
+            for record in records
+            for trajectory in record.get("trajectories", ())
+        )
+    )
+    all_success_by_suite = outcomes.get("all_success_tasks_per_suite", {})
+    checks = {
+        "full24_information_wall": len(records) == int(gates["task_count"])
+        and sum(int(record.get("historical_v6_video_encodes", -1)) for record in records)
+        == int(gates["video_count"])
+        and sum(int(record.get("source_action_queries", -1)) for record in records)
+        == int(gates["source_action_query_count"])
+        and sum(int(record.get("negative_policy_forwards", -1)) for record in records)
+        == int(gates["negative_policy_forwards"]),
+        "k4_outcome_coverage": int(outcomes.get("rollouts", -1))
+        == int(gates["rollout_count"])
+        and protected >= int(gates["all_success_task_count_min"])
+        and isinstance(all_success_by_suite, Mapping)
+        and set(all_success_by_suite) == set(_SUITES)
+        and all(
+            int(all_success_by_suite[suite])
+            >= int(gates["all_success_task_per_suite_min"])
+            for suite in _SUITES
+        ),
+        "outcome_only_credit": outcome_only,
+        "first_success_bank": int(bank.get("persisted_before_count", -1)) == 0
+        and int(bank.get("current_all_success_count", -1)) == protected
+        and int(bank.get("newly_stored_count", -1)) == protected
+        and int(bank.get("persisted_after_count", -1)) == protected
+        and int(bank.get("constraint_row_count", -1)) == protected
+        and int(update.get("anchor_constraint_rows", -1)) == protected
+        and int(key_application.get("constraint_row_count", -1)) == protected,
+        "feature_rank_partition": int(update.get("original_feature_rank", -1))
+        == int(gates["original_feature_rank"])
+        and int(update.get("anchor_rank", -1)) == protected
+        and int(update.get("projected_feature_rank", -1))
+        + int(update.get("anchor_rank", -1))
+        == int(update.get("original_feature_rank", -2)),
+        "projected_condition": float(
+            update.get("active_regularized_gram_condition_number", math.inf)
+        )
+        <= float(gates["active_regularized_gram_condition_number_max"]),
+        "projected_energy": float(
+            update.get(
+                "unprotected_projected_feature_energy_ratio_median", -math.inf
+            )
+        )
+        >= float(gates["unprotected_projected_feature_energy_ratio_median_min"]),
+        "protected_program_closure": float(
+            task_local.get("protected_to_unprotected_motion_ratio", math.inf)
+        )
+        <= float(gates["protected_to_unprotected_motion_ratio_max"])
+        and float(
+            update.get("predicted_protected_to_unprotected_ratio", math.inf)
+        )
+        <= float(gates["protected_to_unprotected_motion_ratio_max"])
+        and _ratio(
+            float(key_application.get("anchor_program_motion_rms", math.inf)),
+            float(task_local.get("unprotected_correct_motion_rms", 0.0)),
+        )
+        <= float(gates["protected_to_unprotected_motion_ratio_max"]),
+        "unprotected_descent": int(
+            task_local.get("unprotected_descent_passing_tasks", -1)
+        )
+        >= required_descent
+        and float(task_local.get("unprotected_correct_motion_rms", 0.0)) > 0,
+        "negative_null": float(
+            task_local.get("negative_to_unprotected_motion_ratio", math.inf)
+        )
+        <= float(gates["negative_to_unprotected_motion_rms_max"])
         and int(task_local.get("negative_null_passing_tasks", -1))
         >= int(gates["negative_null_task_count_min"])
-        and len(task_records) == 24
         and all(
             count >= int(gates["negative_null_per_kind_min"])
-            for count in per_kind_null.values()
+            for count in per_kind.values()
         ),
-        "functional_policy_program_credit": math.isfinite(values["cotangent"])
-        and values["cotangent"] > 0,
-        "full24_success_guard": (
-            len(task_records) == int(gates["task_count"])
-            and sum(
-                int(value.get("historical_v6_video_encodes", -1))
-                for value in task_records
+        "predicted_observed_closure": float(
+            application.get("predicted_observed_relative_rms", math.inf)
+        )
+        <= float(gates["predicted_observed_relative_rms_max"]),
+        "protected_lora_closure": all(
+            float(response.get(name, math.inf))
+            <= float(gates["protected_to_unprotected_lora_response_ratio_max"])
+            for name in (
+                "protected_lora_a_to_unprotected_ratio",
+                "protected_lora_b_to_unprotected_ratio",
+                "protected_effective_ba_to_unprotected_ratio",
             )
-            == int(gates["video_count"])
-            and sum(
-                int(value.get("source_action_queries", -1))
-                for value in task_records
-            )
-            == int(gates["source_action_query_count"])
-            and int(guard.get("rollouts", -1)) == int(gates["rollout_count"])
-            and int(guard.get("guarded_tasks", -1))
-            >= int(gates["guarded_task_count_min"])
-            and int(guard.get("all_success_tasks", -1))
-            >= int(gates["all_success_task_count_min"])
-            and isinstance(guarded_by_suite, Mapping)
-            and set(guarded_by_suite)
-            == {"libero_spatial", "libero_object", "libero_goal", "libero_10"}
-            and all(
-                int(value) >= int(gates["guarded_task_per_suite_min"])
-                for value in guarded_by_suite.values()
-            )
-            and len(success_program_cotangents)
-            == int(guard.get("success_episodes", -1))
-            and all(
-                int(record.get("retention_credit", {}).get("flow_panel_chunks", 0))
-                >= int(record.get("retention_credit", {}).get("replay_chunks", 0))
-                and len(
-                    record.get("retention_credit", {}).get(
-                        "flow_panel_row_indices", ()
-                    )
-                )
-                == int(record.get("retention_credit", {}).get("replay_chunks", -1))
-                for record in task_records
-            )
-            and all(
-                math.isfinite(value) and value > 0
-                for value in success_program_cotangents
-            )
-            == bool(gates["success_program_cotangent_nonzero"])
-            and int(guard.get("failure_replay_gradient_episodes", -1))
-            == int(gates["failure_replay_gradient_episodes"])
-            and int(guard.get("projection_changed_tasks", -1))
-            >= int(gates["projection_changed_task_count_min"])
-            and exact_fallback == bool(gates["exact_blind_fallback_required"])
-            and math.isfinite(float(guard.get("maximum_constraint_value", math.inf)))
-            and float(guard.get("minimum_source_descent_ratio", -math.inf)) >= 0
         ),
-        "full48_applied_success_guard": (
-            isinstance(guard_application, Mapping)
-            and int(guard_application.get("task_count", -1))
-            == int(gates["task_count"])
-            and int(guard_application.get("constraint_count", -1))
-            == int(guard.get("success_episodes", -2))
-            and int(
-                guard_application.get("continuous_violating_constraint_count", -1)
+        "unprotected_lora_response": all(
+            math.isfinite(float(response.get(name, math.nan)))
+            and float(response.get(name, 0.0)) > 0
+            for name in (
+                "unprotected_lora_a_response_rms",
+                "unprotected_lora_b_response_rms",
+                "unprotected_effective_ba_response_rms",
             )
-            >= 0
-            and int(
-                guard_application.get(
-                    "native_program_violating_constraint_count", -1
-                )
-            )
-            >= 0
-            and math.isfinite(
-                float(
-                    guard_application.get(
-                        "maximum_continuous_constraint_value", math.inf
-                    )
-                )
-            )
-            and math.isfinite(
-                float(
-                    guard_application.get(
-                        "maximum_native_program_constraint_value", math.inf
-                    )
-                )
-            )
-            and math.isfinite(
-                float(
-                    guard_application.get(
-                        "minimum_continuous_source_descent_ratio", -math.inf
-                    )
-                )
-            )
-            and math.isfinite(
-                float(
-                    guard_application.get(
-                        "minimum_native_program_source_descent_ratio", -math.inf
-                    )
-                )
-            )
-            and bool(gates["applied_guard_evidence_required"])
         ),
-        "negative_policy_forwards": int(row["negative_policy_forwards"]) == 0,
-        "oom_and_nonfinite": int(row["oom_count"]) == int(gates["oom_count"])
-        and int(row["nonfinite_count"]) == int(gates["nonfinite_count"])
-        and bool(values["finite"]),
+        "fixed_action_closure_and_breadth": int(
+            response.get("protected_fixed_action_probe_task_count", -1)
+        )
+        == len(_SUITES)
+        and set(response.get("protected_fixed_action_probe_suites", ()))
+        == set(_SUITES)
+        and float(response.get("protected_fixed_action_response_max", math.inf))
+        <= float(gates["protected_fixed_action_response_rms_max"])
+        and int(response.get("unprotected_fixed_action_probe_task_count", -1))
+        == int(gates["unprotected_fixed_action_probe_task_count"])
+        and set(response.get("unprotected_fixed_action_probe_suites", ()))
+        == set(_SUITES)
+        and int(response.get("unprotected_fixed_action_passing_task_count", -1))
+        == int(gates["unprotected_fixed_action_probe_task_count"])
+        and int(response.get("fixed_action_probe_policy_forwards", -1))
+        == 2 * int(response.get("fixed_action_probe_task_count", -2)),
+        "production_wall_overhead": math.isfinite(wall_ratio)
+        and wall_ratio <= float(gates["production_wall_ratio_max"]),
+        "oom_and_nonfinite": int(row.get("oom_count", -1))
+        == int(gates["oom_count"])
+        and int(row.get("nonfinite_count", -1))
+        == int(gates["nonfinite_count"])
+        and all(
+            math.isfinite(float(value))
+            for value in (
+                row.get("functional_loss", math.nan),
+                row.get("program_cotangent_rms", math.nan),
+                row.get("step_seconds", math.nan),
+                update.get("value_delta_rms", math.nan),
+            )
+        ),
     }
+    evidence = {
+        "checks": checks,
+        "success_outcomes": dict(outcomes),
+        "success_key_bank": dict(bank),
+        "success_key_application": dict(key_application),
+        "rank": {
+            "original": int(update["original_feature_rank"]),
+            "anchor": int(update["anchor_rank"]),
+            "projected": int(update["projected_feature_rank"]),
+        },
+        "active_regularized_gram_condition_number": float(
+            update["active_regularized_gram_condition_number"]
+        ),
+        "unprotected_projected_feature_energy_ratio_median": float(
+            update["unprotected_projected_feature_energy_ratio_median"]
+        ),
+        "protected_to_unprotected_program_motion_ratio": float(
+            task_local["protected_to_unprotected_motion_ratio"]
+        ),
+        "negative_to_unprotected_program_motion_ratio": float(
+            task_local["negative_to_unprotected_motion_ratio"]
+        ),
+        "negative_null_per_kind": per_kind,
+        "lora_response": dict(response),
+        "step_seconds": float(row["step_seconds"]),
+        "scaled_step_seconds_baseline": baseline,
+        "world_size": int(row["world_size"]),
+        "task_counts_per_rank": list(row["task_counts_per_rank"]),
+        "production_wall_ratio_to_sealed_k4": wall_ratio,
+    }
+    return all(checks.values()), evidence

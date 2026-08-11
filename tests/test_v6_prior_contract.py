@@ -23,6 +23,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     _ownership_contract,
     cursor_contract,
 )
+from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.expert_manifold.v6_prior_runtime import _resolve_segment
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 
@@ -50,14 +51,14 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_osg_pc_deployment_smoke"
+        "sealed_from_live_sknc_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
 
 
-def _context() -> DistributedContext:
-    return DistributedContext(0, 0, 6, torch.device("cpu"))
+def _context(world_size: int = 6) -> DistributedContext:
+    return DistributedContext(0, 0, world_size, torch.device("cpu"))
 
 
 def _args(
@@ -85,7 +86,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_osg_pc_config_changes_only_credit_and_adds_success_guards() -> None:
+def test_sknc_config_changes_only_shared_write_and_outcome_certificate() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -100,21 +101,22 @@ def test_osg_pc_config_changes_only_credit_and_adds_success_guards() -> None:
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_on_policy_success_guarded_counterfactual_null_condition_kernel"
+        "full48_success_key_equality_constrained_counterfactual_null_condition_kernel"
     )
-    assert config["update"]["projection"].startswith("parameter_free")
+    assert config["update"]["parameterization"].endswith("orthogonal_complement")
+    assert config["update"]["task_scalar_gate_or_mask"] is False
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
     assert "reconciliation" not in config
     assert config["environment"]["rollouts_per_task"] == 4
+    assert config["environment"]["retain_success_replay"] is False
     assert config["environment"]["retain_failure_replay"] is False
-    assert config["objective"]["retention_flow_panel_row_identity"] == (
-        "historical_complete_k4_task_panel_then_success_row_select"
-    )
-    assert config["objective"]["retention_flow_mc_samples"] == 4
+    assert config["objective"]["trajectory_replay"] == "exact_absent"
+    assert config["success_key_bank"]["task_slots"] == 24
+    assert config["success_key_bank"]["deployment_read"] is False
     assert config["data"]["action_queries_per_task"] == 20
     distributed = config["optimization"]["distributed_update"]
-    assert distributed["world_size"] == 6
-    assert distributed["tasks_per_rank"] == 4
+    assert distributed["world_size"] == "fresh_live_1_to_6_then_exact_resume_locked"
+    assert config["formal_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
 
 
 @pytest.mark.parametrize(
@@ -178,7 +180,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_osg_pc_deployment_smoke"
+        "awaiting_live_sknc_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -200,7 +202,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_osg_pc_deployment_smoke"
+        "awaiting_live_sknc_deployment_smoke"
     )
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
@@ -244,7 +246,7 @@ def test_runtime_segments_are_fresh_zero_to_five_then_exact_five_to_ten(
     assert (resumed.start_macro, resumed.stop_macro) == (5, 10)
 
 
-def test_runtime_rejects_wrong_world_workers_dirty_or_unpushed_state(
+def test_runtime_accepts_every_live_world_up_to_six_and_rejects_larger_world(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -253,12 +255,11 @@ def test_runtime_rejects_wrong_world_workers_dirty_or_unpushed_state(
         runtime_module, "residual_git_state", lambda _root: _git_state()
     )
     arguments = _args(output_dir=tmp_path / "run", resume=None, stop=5)
+    for world_size in range(1, 7):
+        segment = _resolve_segment(arguments, config, _context(world_size))
+        assert (segment.start_macro, segment.stop_macro) == (0, 5)
     with pytest.raises(ExpertManifoldError):
-        _resolve_segment(
-            arguments,
-            config,
-            DistributedContext(0, 0, 2, torch.device("cpu")),
-        )
+        _resolve_segment(arguments, config, _context(7))
     arguments.num_workers = 0
     with pytest.raises(ExpertManifoldError):
         _resolve_segment(arguments, config, _context())
@@ -288,12 +289,12 @@ def test_cursor_seals_k4_randomness_without_cumulative_precision_state() -> None
         "next_rollout_cursor_per_task": 40,
         "environment_seed_root": 2026081101,
         "policy_noise_seed_root": 2026081102,
-        "retention_flow_seed_root": 2026081103,
+        "success_key_anchor_policy": "first_all_success_per_train_task",
     }
     assert all("precision" not in key for key in cursor)
 
 
-def test_ownership_records_fixed_policy_encoder_but_checkpoints_only_memory() -> None:
+def test_ownership_records_deployment_memory_and_training_only_success_bank() -> None:
     ownership = V6PriorOwnership(10_775_296, 523, 600)
     writer = SimpleNamespace(
         condition_feature=SimpleNamespace(
@@ -309,8 +310,13 @@ def test_ownership_records_fixed_policy_encoder_but_checkpoints_only_memory() ->
             value=torch.empty((256, 320, 256), dtype=torch.float32, device="meta")
         ),
     )
-    observed = _ownership_contract(ownership, writer)
+    bank = SuccessKeyAnchorBank(
+        range(24), feature_width=256, device=torch.device("cpu")
+    )
+    observed = _ownership_contract(ownership, writer, bank)
     assert observed["fixed_policy_innovation_encoder"]["checkpoint_owned"] is False
     assert observed["fixed_projection"]["shape"] == [2, 128, 3072]
     assert observed["program_residual_memory"]["checkpoint_owned"] is True
+    assert observed["success_key_anchor_bank"]["checkpoint_owned"] is True
+    assert observed["success_key_anchor_bank"]["deployment_owned"] is False
     assert "reconciliation_precision" not in observed

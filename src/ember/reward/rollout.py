@@ -1,4 +1,4 @@
-"""Official random-reset LIBERO trajectories for PI05 reward adaptation."""
+"""Outcome-only official random-reset LIBERO panels for SKNC."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 import torch
-from lerobot.utils.constants import ACTION
 
 from ember.pi05_assets import configure_libero_runtime_assets
 from ember.pi05_processing import libero_policy_input
@@ -39,26 +38,6 @@ def _success(done: bool, reward: float, info: Mapping[str, Any]) -> bool:
     if "is_success" in info:
         return _single_bool(info["is_success"])
     return False
-
-
-def _cpu_tensor_rows(
-    batch: Mapping[str, Any],
-) -> tuple[dict[str, torch.Tensor], ...]:
-    tensors = {
-        key: value.detach().to(device="cpu").contiguous()
-        for key, value in batch.items()
-        if isinstance(value, torch.Tensor)
-    }
-    sizes = {int(value.shape[0]) for value in tensors.values() if value.ndim > 0}
-    if not tensors or any(value.ndim == 0 for value in tensors.values()) or len(sizes) != 1:
-        raise RewardProtocolError("PI05 reward rollout lost its tensor batch")
-    size = sizes.pop()
-    if size <= 0:
-        raise RewardProtocolError("PI05 reward rollout produced an empty tensor batch")
-    return tuple(
-        {name: value[row : row + 1] for name, value in tensors.items()}
-        for row in range(size)
-    )
 
 
 def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch.Tensor:
@@ -136,7 +115,7 @@ class RandomResetEnvironmentPool:
 
 
 @dataclass
-class RewardTrajectory:
+class RewardRolloutOutcome:
     suite: str
     task_id: int
     global_task_id: int
@@ -149,9 +128,6 @@ class RewardTrajectory:
     reward_sum: float
     dummy_settling_steps: int
     policy_noise_seeds: tuple[int, ...]
-    observations: tuple[dict[str, torch.Tensor], ...]
-    action_chunks: tuple[torch.Tensor, ...]
-    valid_action_steps: tuple[int, ...]
 
 
 @dataclass
@@ -160,9 +136,6 @@ class _RewardLaneState:
     rollout_cursor: int
     env_seed: int
     observation: Mapping[str, Any]
-    replay_observations: list[dict[str, torch.Tensor]] = field(default_factory=list)
-    replay_actions: list[torch.Tensor] = field(default_factory=list)
-    valid_action_steps: list[int] = field(default_factory=list)
     noise_seeds: list[int] = field(default_factory=list)
     reward_sum: float = 0.0
     steps: int = 0
@@ -225,7 +198,7 @@ def _random_reset_with_settling(
     return observation
 
 
-def _trajectory_result(
+def _outcome_result(
     *,
     suite: str,
     task_id: int,
@@ -239,11 +212,8 @@ def _trajectory_result(
     reward_sum: float,
     dummy_settling_steps: int,
     noise_seeds: Sequence[int],
-    observations: Sequence[dict[str, torch.Tensor]],
-    action_chunks: Sequence[torch.Tensor],
-    valid_action_steps: Sequence[int],
-) -> RewardTrajectory:
-    return RewardTrajectory(
+) -> RewardRolloutOutcome:
+    return RewardRolloutOutcome(
         suite=suite,
         task_id=task_id,
         global_task_id=global_task_id,
@@ -256,9 +226,6 @@ def _trajectory_result(
         reward_sum=reward_sum,
         dummy_settling_steps=dummy_settling_steps,
         policy_noise_seeds=tuple(noise_seeds),
-        observations=tuple(observations),
-        action_chunks=tuple(action_chunks),
-        valid_action_steps=tuple(valid_action_steps),
     )
 
 
@@ -344,9 +311,7 @@ def _batched_policy_replan(
     device: torch.device,
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int],
-) -> tuple[
-    tuple[dict[str, torch.Tensor], ...], torch.Tensor, np.ndarray, tuple[int, ...]
-]:
+) -> tuple[np.ndarray, tuple[int, ...]]:
     prepared: list[dict[str, torch.Tensor]] = []
     noises: list[torch.Tensor] = []
     current_seeds: list[int] = []
@@ -375,7 +340,6 @@ def _batched_policy_replan(
         name: torch.cat([batch[name] for batch in prepared], dim=0)
         for name in sorted(keys)
     }
-    stored = _cpu_tensor_rows(policy_batch)
     noise = torch.cat(noises, dim=0).to(device=device)
     with torch.inference_mode():
         normalized = policy.predict_action_chunk(
@@ -387,28 +351,18 @@ def _batched_policy_replan(
         raise RewardProtocolError(
             "batched PI05 reward policy returned an invalid action chunk"
         )
-    normalized = normalized.detach()
-    staged = torch.cat((normalized, postprocess(normalized)), dim=-1).to(device="cpu")
-    return (
-        stored,
-        staged[:, :, :7].contiguous(),
-        staged[:, :, 7:].numpy(),
-        tuple(current_seeds),
-    )
+    environment_actions = postprocess(normalized.detach()).to(device="cpu")
+    return environment_actions.numpy(), tuple(current_seeds)
 
 
 def _advance_reward_lane(
     *,
     lane: _RewardLaneState,
-    stored: dict[str, torch.Tensor],
-    normalized_chunk: torch.Tensor,
     environment_actions: np.ndarray,
     noise_seed: int,
     action_execution_horizon: int,
     max_horizon: int,
 ) -> None:
-    lane.replay_observations.append(stored)
-    lane.replay_actions.append(normalized_chunk)
     lane.noise_seeds.append(noise_seed)
     executed = 0
     for action in environment_actions[:action_execution_horizon]:
@@ -420,10 +374,11 @@ def _advance_reward_lane(
         lane.success = _success(done, reward, info)
         if lane.success or lane.steps >= max_horizon:
             break
-    lane.valid_action_steps.append(executed)
+    if executed <= 0:
+        raise RewardProtocolError("outcome-only reward lane executed no action")
 
 
-def _finalize_reward_trajectories(
+def _finalize_reward_outcomes(
     *,
     lanes: Sequence[_RewardLaneState],
     suite: str,
@@ -432,18 +387,13 @@ def _finalize_reward_trajectories(
     adaptation_seed: int,
     policy_seed_root: int,
     dummy_settling_steps: int,
-    retain_failure_replay: bool,
-) -> tuple[RewardTrajectory, ...]:
-    trajectories = []
+) -> tuple[RewardRolloutOutcome, ...]:
+    outcomes = []
     for lane in lanes:
-        if not lane.replay_observations:
+        if not lane.noise_seeds:
             raise RewardProtocolError("batched reward lane made no policy observation")
-        if not lane.success and not retain_failure_replay:
-            lane.replay_observations.clear()
-            lane.replay_actions.clear()
-            lane.valid_action_steps.clear()
-        trajectories.append(
-            _trajectory_result(
+        outcomes.append(
+            _outcome_result(
                 suite=suite,
                 task_id=task_id,
                 global_task_id=global_task_id,
@@ -456,15 +406,12 @@ def _finalize_reward_trajectories(
                 reward_sum=lane.reward_sum,
                 dummy_settling_steps=dummy_settling_steps,
                 noise_seeds=lane.noise_seeds,
-                observations=lane.replay_observations,
-                action_chunks=lane.replay_actions,
-                valid_action_steps=lane.valid_action_steps,
             )
         )
-    return tuple(trajectories)
+    return tuple(outcomes)
 
 
-def collect_randomized_reward_trajectories(
+def collect_randomized_reward_outcomes(
     *,
     envs: Sequence[Any],
     policy: torch.nn.Module,
@@ -484,14 +431,14 @@ def collect_randomized_reward_trajectories(
     dummy_action: Sequence[float],
     action_execution_horizon: int,
     num_inference_steps: int,
-    retain_failure_replay: bool = True,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
-) -> tuple[RewardTrajectory, ...]:
-    """Collect the sealed K4 task panel with one batched policy forward per replan.
+) -> tuple[RewardRolloutOutcome, ...]:
+    """Collect the sealed K4 panel while retaining only scalar outcome metadata.
 
     All lanes share the already-installed task LoRA, while reset and PI05 flow
     noise remain episode-local.  Active-lane compaction only changes the physical
-    batch shape; it never changes a lane's keyed randomness or replay identity.
+    batch shape; it never changes a lane's keyed randomness.  Observations and
+    action chunks are never transferred to CPU or retained for replay.
     """
 
     _validate_k4_panel(envs, rollout_cursors, env_seeds)
@@ -516,7 +463,7 @@ def collect_randomized_reward_trajectories(
         active = [lane for lane in lanes if lane.is_active(max_horizon)]
         if not active:
             break
-        stored, normalized, environment_actions, seeds = _batched_policy_replan(
+        environment_actions, seeds = _batched_policy_replan(
             active=active,
             policy=policy,
             preprocess=preprocess,
@@ -533,14 +480,12 @@ def collect_randomized_reward_trajectories(
         for batch_row, lane in enumerate(active):
             _advance_reward_lane(
                 lane=lane,
-                stored=stored[batch_row],
-                normalized_chunk=normalized[batch_row : batch_row + 1].contiguous(),
                 environment_actions=environment_actions[batch_row],
                 noise_seed=seeds[batch_row],
                 action_execution_horizon=action_execution_horizon,
                 max_horizon=max_horizon,
             )
-    return _finalize_reward_trajectories(
+    return _finalize_reward_outcomes(
         lanes=lanes,
         suite=suite,
         task_id=task_id,
@@ -548,99 +493,4 @@ def collect_randomized_reward_trajectories(
         adaptation_seed=adaptation_seed,
         policy_seed_root=policy_seed_root,
         dummy_settling_steps=dummy_settling_steps,
-        retain_failure_replay=retain_failure_replay,
     )
-
-
-def successful_trajectory_batch(
-    trajectories: Sequence[RewardTrajectory], device: torch.device
-) -> tuple[
-    dict[str, torch.Tensor],
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    int,
-]:
-    """Collate only successful K4 prefixes and reject retained failure replay."""
-
-    if len(trajectories) != 4:
-        raise RewardProtocolError("OSG-PC replay panel must be exact K4")
-    for trajectory in trajectories:
-        lengths = (
-            len(trajectory.observations),
-            len(trajectory.action_chunks),
-            len(trajectory.valid_action_steps),
-        )
-        if trajectory.success:
-            if (
-                not lengths[0]
-                or len(set(lengths)) != 1
-                or lengths[0] != len(trajectory.policy_noise_seeds)
-            ):
-                raise RewardProtocolError("successful OSG-PC replay is incomplete")
-        elif any(lengths) or not trajectory.policy_noise_seeds:
-            raise RewardProtocolError("failed OSG-PC replay was retained")
-    chunks = []
-    panel_offset = 0
-    for episode, trajectory in enumerate(trajectories):
-        if trajectory.success:
-            chunks.extend(
-                (episode, panel_offset + chunk, observation, action, valid)
-                for chunk, (observation, action, valid) in enumerate(
-                    zip(
-                        trajectory.observations,
-                        trajectory.action_chunks,
-                        trajectory.valid_action_steps,
-                        strict=True,
-                    )
-                )
-            )
-        panel_offset += len(trajectory.policy_noise_seeds)
-    if panel_offset <= 0:
-        raise RewardProtocolError("OSG-PC flow panel lost its K4 replay rows")
-    successes = torch.tensor(
-        [trajectory.success for trajectory in trajectories],
-        dtype=torch.float32,
-        device=device,
-    )
-    if not chunks:
-        return (
-            {},
-            torch.empty(0, dtype=torch.long, device=device),
-            successes,
-            torch.empty(0, dtype=torch.long, device=device),
-            panel_offset,
-        )
-    valid = torch.tensor(
-        [count for _, _, _, _, count in chunks], dtype=torch.long, device=device
-    )
-    episode_ids = torch.tensor(
-        [episode for episode, _, _, _, _ in chunks],
-        dtype=torch.long,
-        device=device,
-    )
-    panel_rows = torch.tensor(
-        [row for _, row, _, _, _ in chunks],
-        dtype=torch.long,
-        device=device,
-    )
-    if bool((valid <= 0).any()):
-        raise RewardProtocolError("OSG-PC replay executed prefix is invalid")
-    keys = set(chunks[0][2])
-    if any(set(observation) != keys for _, _, observation, _, _ in chunks):
-        raise RewardProtocolError("OSG-PC replay observation keys changed")
-    batch = {
-        key: torch.cat(
-            [observation[key] for _, _, observation, _, _ in chunks]
-        ).to(device)
-        for key in sorted(keys)
-    }
-    actions = torch.cat([action for _, _, _, action, _ in chunks]).to(device)
-    if actions.ndim != 3 or bool((valid > actions.shape[1]).any()):
-        raise RewardProtocolError("OSG-PC replay executed prefix is invalid")
-    batch[ACTION] = actions
-    batch["executed_action_steps"] = valid
-    batch["action_is_pad"] = (
-        torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
-    )
-    return batch, episode_ids, successes, panel_rows, panel_offset

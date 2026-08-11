@@ -96,6 +96,15 @@ WRITER_FAMILIES = {
         "formal_statuses": ("sealed_from_live_osg_pc_deployment_smoke",),
         "checkpoint_curve_macros": (0, 5, 10),
     },
+    "v6_sknc_v1": {
+        "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v9",
+        "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v9",
+        "config_schema": "ember_pi05_v6_success_key_nullspace_consolidation_v1",
+        "arm_prefix": "expert_manifold_v6_condition_residual_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+        "formal_statuses": ("sealed_from_live_sknc_deployment_smoke",),
+        "checkpoint_curve_macros": (0, 5, 10),
+    },
     "v6_qv_rank_reserved_native_reward_v1": {
         "adapter_schema": (
             "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
@@ -119,6 +128,7 @@ PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(
         "v6_reward_credit_program_v1",
         "v6_pick_gc_v1",
         "v6_osg_pc_v1",
+        "v6_sknc_v1",
         "v6_qv_rank_reserved_native_reward_v1",
     }
 )

@@ -1,12 +1,12 @@
 # Action-Forecast Writer v4 根因复审
 
-状态：2026-07-26，历史机制证据。本文覆盖此前“已拍板 frame-local Intent +
-adjacent Transition”的结论。该方案仍是一个有价值的局部修复候选，但新证据
-证明：absolute-time Plan/Revision 只是最直接的行为放大器，不是完整根因；
-保留 v4 visual-state 和两个 Meta-LoRA 原样不动，不能解决更上游的表示旁路和
-训练可识别性问题。本文不再定义活动架构；2026-07-26 owner 后续对齐并批准的
-v5 唯一活动设计见
-[`action_forecast_writer_v5_design.md`](action_forecast_writer_v5_design.md)。
+状态：2026-07-26历史机制证据，2026-08-11归档。本文不定义活动架构；后续完整演进与最终结论见
+[`research_history.md`](research_history.md)。精确v5历史设计可由
+`git show 3a6f801:docs/action_forecast_writer_v5_design.md`读取。
+
+本文覆盖此前“已拍板 frame-local Intent + adjacent Transition”的结论。新证据证明：absolute-time
+Plan/Revision只是最直接的行为放大器，不是完整根因；保留v4 visual-state和两个Meta-LoRA原样不动，不能
+解决更上游的表示旁路与训练可识别性问题。
 
 本轮诊断当时的边界：
 

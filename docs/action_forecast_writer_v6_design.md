@@ -3,8 +3,8 @@
 ## 1. 决策与版本定位
 
 owner 于 2026-07-28 确认采用本设计，并把原计划中的 v5.3 提升为 v6。
-v6实验现已完成，本文只作provenance；当前authority为
-[`action_forecast_writer_recenter_design.md`](action_forecast_writer_recenter_design.md)。
+v6实验现已完成，本文只作历史最好`143/400`架构的provenance；当前没有active successor，完整后继与
+裁决见[`research_history.md`](research_history.md)。精确v5.3/Recenter历史可由Git commit`3a6f801`读取。
 2026-07-28 owner 又明确要求v6从step0直接采用task-complete多任务更新；
 因此本文早期曾记录的
 “首版沿用 v5.2 one-task-per-rank update”已经失效，不再作为对照约束。
@@ -69,7 +69,7 @@ teacher action 只进入 frozen source policy 下的 AS functional loss。Writer
 - 320个 public LoRA routing identities；
 - 一次性生成完整 task-specific rank-16 public LoRA；
 - public LoRA targets、template、rank和 functionally identity 初始化；
-- 只使用物理 GPU4–7。
+- 当时只使用A100物理GPU4–7；该设备边界已经失效，未来只服从`AGENTS.md`的BCI live GPU合同。
 
 ## 3. 第一性原理职责分离
 

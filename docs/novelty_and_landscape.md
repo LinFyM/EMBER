@@ -1,110 +1,96 @@
-# Novelty and Baseline Landscape
+# EMBER Novelty and Baseline Landscape
 
-状态说明（2026-08-11）：下方2026-08-06 layer-aligned hypernetwork、K4和v5.1文字是历史定位，
-不是活动方法。当前唯一active design是`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；
-Reward cycle1已有strict134，当前只裁决tiny video-conditioned Reward tangent能否通过q/v physical zero-B
-slots进入真实closed-loop。实时状态只取`AGENTS.md`、`docs/active_session_handoff.md`与
-`docs/execution_brief.md`顶部。
+状态：2026-08-11稳定研究定位。当前没有active successor；本文不授权实现或实验。
 
-## 2026-08-06 历史layer-aligned hypernetwork定位
+## Research position
 
-当时活动Writer保持exact task language + K4 action-hidden videos联合生成一套LoRA。它借鉴
-SHINE从冻结backbone全部layer memory进行layer/token交替M2P，以及Doc-to-LoRA显式组织
-layer/module/rank输出的原则，但不复制document reconstruction、文本任务或监督专用loss。
-EMBER的差异在于：输入仍是机器人teacher videos，video trace来自冻结PI05 action expert的
-真实层级；输出是38个public targets的完整rank16 LoRA；训练先使用同一PI05 functional
-cotangent，未来可原样替换为rollout reward credit。
+EMBER研究的是video-conditioned parameter generation for robot control：shared Writer只在rollout前读取一次任务
+语言和action-hidden教学视频，生成完整task LoRA；frozen source policy随后从新初始化闭环执行。
 
-该设计不是为了做漂亮的LoRA谱。它检验semantic-to-parameter alignment是否是K4表示已经
-有效、但24-task共享梯度仍近正交抵消的最早结构接口。若失败，只有在layer/group级证据仍
-显示coexistence冲突时才打开sparse experts，而不是预先用大容量掩盖未对齐表示。
+它与几类相邻问题不同：
 
-## EMBER 的核心问题
+- 不是直接target action-SFT：部署task不提供action labels；
+- 不是每步video-conditioned policy：示范不会在每个control step反复进入policy；
+- 不是trajectory imitation：video与action supervision跨episode，不要求逐帧对齐；
+- 不是retrieval/expert routing：held部署不能读取task-expert bank或task ID；
+- 不是通用hypernetwork几何任务：生成LoRA的价值由robot closed-loop而非reconstruction决定；
+- 不是language-only task adapter：video必须是唯一dynamic value。
 
-直接target action-SFT很强，但要求目标机器人轨迹。EMBER研究的是：一个在独立source corpus上获得基本embodiment能力的VLA，能否在held task只看一条action-hidden teaching video，就生成比无视频source adaptation更有用的task LoRA；如果环境practice继续放大差异，再增加reward-adaptation claim。
+潜在贡献不在“首次生成LoRA”这一单点，而在一个严格信息墙下同时解决：action-hidden视频理解、一次性参数
+编译、跨初始化泛化、跨task共同积累，以及视频内容/顺序的闭环因果验证。
 
-当前证据链：
+## Matched empirical landscape
 
-1. generic π0.5在目标8 tasks为0/400，说明必须先建立公平共享的LIBERO source foundation；
-2. 过滤后的LIBERO-90 action-SFT产生共享frozen π0.5-LIBERO base；
-3. Source-SFT只使用目标source actions，held不看视频；
-4. AS/RL Writer在held看一条正确视频并生成task LoRA；
-5. cross-suite wrong-video控制视频内容是否真正有因果价值；
-6. test-task identity/AS/RL Writer三臂RL检验初始化是否改善practice；
-7. 8-test联合action-SFT shared LoRA给出privileged ceiling。
+| reference | information at deployment | role |
+| --- | --- | --- |
+| generic π0.5 | language + observation | 未适配foundation下界；目标8曾为0/400 |
+| frozen source base | language + observation | 过滤source actions建立的共同embodiment起点；48/400 |
+| mixed-task Source-SFT | language + observation；训练读target actions | privileged shared-LoRA reference；109/400 |
+| EMBER AS-Writer | language + one action-hidden video | 核心zero-interaction方法；历史最好143/400 |
+| optional RL-Writer | 同上；训练期读source reward | 检验action-free practice能否改善Writer |
+| matched direct video policy | 每步language + video + observation | 可选baseline，比较一次编译与持续condition |
+| direct-action oracle | language + observation；训练读test actions | privileged ceiling，不是同信息墙baseline |
 
-v5已证明wrong-video语义效应可以成立，但其additive fusion把Procedure顺序差
-压到行为无效；step1400五臂`115/108/74/113/114`因此封存为负结果。
+所有matched比较应共享source policy、normalization、split、task states、policy interface与official evaluator。
+参数量、训练action chunks、rollout interactions、wall time、policy latency和显存应分别报告，不用机械相同步数
+掩盖方法差异。
 
-当时唯一活动Writer是v5.1 Language-Axial Semantic Core + Causal Action
-Procedure + Slot-Normalized Fusion。它不把action-hidden teacher video强行
-解释成与独立机器人episode逐时刻对齐的7D future-action trajectory，而是把
-单条视频分解为两种互补证据：
+## What the historical evidence already establishes
 
-- 对帧集合置换严格不变的Semantic Core，保存对象、场景、目标关系和整段视频
-  共同支持的高层任务内容；
-- 对真实顺序敏感的可变长causal Procedure，保存这些交互状态如何有向演进。
+- action-hidden视频确实包含可解码的task与时序信号；旧Gate -1与后续hidden/LoRA/action反事实均支持这一点。
+- 视频敏感不等于正确视频理解：v4曾出现`shuffled=148 > correct=109`。
+- Semantic Core/Procedure分解能增强wrong-video区分，但compiler可把顺序差压到行为无效。
+- v6-fast证明one-shot Writer在共同source base上可达`143/400`，但晚期训练与大量后续路线持续换手。
+- 更高rank、更均匀谱、更多atoms/lanes/experts、SFT量级norm与更低functional loss均不是性能充分条件。
+- task experts是有效task-level policy targets，却不携带same-task video specificity或时间顺序。
+- few-shot K4能改善部分集合/leave-one-out稳定性，但尚未解决full24 credit retention和strict performance。
+- 最新rank14去混杂证明，即便parameter reconstruction很小，compression与online regeneration也可独立破坏
+  closed-loop support。
 
-text-only contextual task queries与multimodal task-token evidence先形成
-language-axis Core；中心化Procedure再通过zero-init AdaLN调制Core slots，并
-经过一个post-fusion block生成LoRA。这一设计同时吸收v4
-`shuffled=148/400 > correct=109/400`和v5 `shuffled=113≈correct=115`的教训：
-必须先保住高层任务内容，也必须防止融合层把正确顺序的作用压没。
+因此下一贡献不能只是“再换一个hypernetwork decoder”。它必须以已有失效链为约束，说明为何视频的有向
+证据能落到有用policy direction，且不同task/video更新能在同一checkpoint共存。
 
-训练时每rank每step只处理一个task：1条teacher video生成1套one-shot LoRA，
-整批`B_a`条独立action queries全部监督该LoRA；每条action只计算一次，推理
-仍严格one-shot。每套video LoRA由完整action batch约束，要求其跨初态有效；
-后续task visits轮换video，共享Writer的跨step梯度应强化跨示范稳定的高层
-语义；demo-specific速度、路径和抓取角度则因与宽action分布不一致而难以稳定
-解释监督。这仍需same-task一致性、
-wrong/shuffled/reversed控制和rollout共同验证，不能仅凭内部LoRA不同宣称成立。
+## Required causality controls
 
-## 为什么共享LIBERO-90 base不破坏故事
+wrong-video控制language-only或generic-adapter旁路；same-task-other控制demo nuisance；shuffled/reversed控制帧序
+因果；no-video控制动态路径必要性。所有arms需严格配对state、RNG和video identity，且重排真实frames后完整
+forward。
 
-所有方法都需要一般视觉、语言、机器人控制和action-space能力。用与目标40 exact task去重后的LIBERO-90 actions训练共同base，等价于一般机器人foundation adaptation；它不向任何方法泄露目标task actions。真正受比较的信息差仍然是held task video、held reward或held actions。
+理想关系不是只让negative变差，而是：
 
-若base过弱，Writer必须同时解决embodiment与task acquisition；若base已有基本能力，correct-video与wrong-video、Source-SFT之间的差异更能回答视频是否提供目标知识。base不应被故意训弱，也不应先追求把目标40做满。
+```text
+correct high and broad
+same-task-other close to correct
+wrong, shuffled, reversed, no-video materially lower for the right reason
+```
 
-## Source-SFT
+absolute仍是第一目标。一个`correct=80, wrong=20`的漂亮margin不能优于`correct=143`的强但视频margin弱方法；
+健康度和因果controls是解释与约束，不是替代性能的主指标。
 
-Source-SFT从同一frozen base出发，在24/32目标source tasks上联合训练一套shared LoRA，held只靠language/current observation。它与Writer各自按validation选最佳，不强制相同步数；通过完整报告action chunks、GPU-hours和参数量解释计算差异。
+## One-shot versus few-shot novelty
 
-## Wrong-video是核心机制对照
+one-shot要求从单条video区分高层任务与低层偶然性，是最强设定。few-shot可以把“跨demo共同信息”显式变成
+统计对象，但会带来新的公平性问题：video数量、总帧数、Writer FLOPs、挑选策略、每条内部时序与集合聚合。
 
-错误视频来自另一suite，正确language与执行task保持不变。若Writer只是生成通用adapter或主要依赖language，wrong-video可能同样提升；`correct - wrong` 才是视频内容价值的直接证据。这不是独立训练Language-only/Video-only Writer arm，不违反精简baseline原则。
+值得研究的few-shot方向应同时具备：
 
-对当前v5.1还必须同时报告same-task other teacher、shuffle与reverse。期望关系是：
-same-task other与correct的policy-function差异最小且表现接近；correct稳定优于
-wrong、shuffle和reverse。大多数当前操作任务都包含有价值的阶段顺序，因此
-`correct > shuffled/reversed`仍是硬门，而不是允许相等的装饰性指标。
+- 每条video内部使用有序encoder；
+- videos之间用置换不变集合聚合；
+- 能处理固定`k`，之后再讨论variable cardinality与mask；
+- 不平均生成后的LoRA，不做多checkpoint融合；
+- 与one-shot按video/frame/FLOP预算清楚对照；
+- 仍通过same/wrong/shuffled/reversed/no-video和single-checkpoint paired400裁决。
 
-## ViVLA 是最直接的可选 matched baseline
+few-shot若只提高内部一致性而不提高absolute/retention，不构成核心进步。
 
-ViVLA-style方法在执行时直接以expert video、当前观察和language condition policy；EMBER则把视频一次编译成LoRA。公平matched版本使用同一个frozen π0.5-LIBERO source base、24/32 source tasks、one-video held输入、相同target-action wall和evaluator。是否每步重看视频是方法差异，不是不公平。
+## Claim boundaries
 
-优先完成EMBER核心闭环；有时间再实现ViVLA-style matched reproduction，并报告success、video preprocessing、policy latency、显存和rollout throughput。原生ViVLA的大规模外部数据结果只作相关工作，不与matched因果表混写。
+可以主张的最终结果取决于证据：
 
-## Test-task reward adaptation
+- zero-interaction claim：correct-video single checkpoint严格超过matched baselines并有因果controls；
+- stability claim：多task breadth高、相邻checkpoint churn低、重复训练呈共同积累；
+- few-shot claim：多video在匹配口径下改善one-shot且不是挑video/平均带来的假象；
+- adaptation claim：相同reward interaction下Writer初始化提高learning curve或终点。
 
-task-local RL在最终test task本身训练，与一般RL benchmark在同一任务训练/测试的口径一致。它不需要validation预冻结；但三种初始化仍应使用相同环境/策略seed schedules、RL代码和可比资源，报告完整learning curves、interactions-to-best和fresh fixed-state结果。
-
-## Joint direct-action oracle
-
-target-action oracle在8个test tasks上联合训练一套shared LoRA并使用每task全部50条actions。它回答“目标actions可见时，同一共享LoRA空间可达到什么水平”，不是同信息墙baseline，也不是8套task-local adapters。
-
-## Seen-task evidence
-
-seen panel用于区分“方法根本没在source distribution学会”与“source acquisition成立但held transfer失败”。它必须覆盖四suites并在outcome前选定；不能替代validation/test，也不能单独证明泛化。
-
-## 相关工作边界
-
-R+X、SeeTraceAct、RAD、RoboCasa等继续作为视频数据场景与相关工作参考；当前实证收敛在LIBERO-90 source foundation + LIBERO-40 target benchmark。sim-to-real与真实机器人暂不进入核心执行。
-
-## 当前不允许的结论
-
-- generic π0.5的0/400不是EMBER失败，只说明原始base不适合直接执行LIBERO。
-- 新source base在40-task快速screen有少量成功不等于EMBER成立。
-- correct-video只高于base但不高于wrong-video，不能充分证明视频内容被利用。
-- Source-SFT或joint direct oracle强不能否定视频setting，因为它们使用额外action labels。
-- task-local RL不是EMBER必要组成；RL-Writer失败也不能抹掉AS-Writer结果。
-- 旧SmolVLA/70-10-10结果不能冒充新π0.5协议证据。
+不能从generic base的0/400、source base的少量成功、训练loss、small panel、checkpoint union、expert
+reconstruction或漂亮LoRA谱单独推出任何上述claim。精确实验谱系见`docs/research_history.md`。

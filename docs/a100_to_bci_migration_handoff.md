@@ -1,7 +1,8 @@
 # A100 → BCI Migration Handoff
 
-状态：2026-08-03最终迁移authority。本文交给后续迁移智能体；本session不执行跨机
-迁移，也不在BCI创建、覆盖或删除文件。
+状态：2026-08-03迁移历史authority；A100→BCI迁移现已完成。本文仅保留源资产、manifest与路径恢复
+provenance，不再定义当前分支、设备边界、下一实验或同步命令。当前BCI authority见`AGENTS.md`和
+`docs/active_session_handoff.md`；历史命令中的`/data/ymdai`不得批量改写。
 
 ## 0. 2026-08-03 post-seal增量：必须做第二次同步
 

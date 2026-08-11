@@ -1,103 +1,101 @@
 # EMBER Concept
 
-状态说明（2026-08-11）：本文保留长期问题定义和信息面；正文中把v5/v5.1写作“当前”的段落是历史设计
-快照，不是执行authority。当前唯一active design是
-`docs/action_forecast_writer_qv_rank_reserved_native_reward_design.md`；它先裁决q/v rank14 base与现有
-Reward cycle1 Program的load-only native rank14+2行为，不授权新训练。实时状态和下一动作只取
-`AGENTS.md`、`docs/active_session_handoff.md`与`docs/execution_brief.md`顶部。
+状态：2026-08-11稳定问题定义。本文不指定活动架构或启动命令；当前没有active successor。
 
-## 一句话定义
+## One-sentence definition
 
 ```text
-Writer(task language, exactly one action-hidden teaching video)
-    -> complete task-specific LoRA for a frozen π0.5-LIBERO source policy
+Writer(exact task language, action-hidden teaching video[s])
+    -> one complete task-conditioned LoRA
+    -> frozen source policy executes the task from unseen initializations
 ```
 
-EMBER 把不能直接用于目标 action-SFT 的视频任务知识编译成策略参数。Writer直接生成的zero-interaction LoRA是第一主结果；reward practice可以增强，但不是方法定义。
+当前canonical benchmark保持one-shot：恰好一条video。few-shot是未来可研究变量，不是已经启用的合同。
 
-## 共同地基
+## Why this problem matters
 
-generic π0.5 已在目标8 test tasks上得到 `0/400`，说明它没有足够LIBERO embodiment competence。LIBERO-90与目标40 tasks的specification-only overlap过滤、剩余71 source tasks×50 action episodes联合训练和共享π0.5-LIBERO source base冻结均已完成。所有主方法从该base开始；`pi05_libero`因读过目标40 actions而禁止使用。
+机器人教学视频包含对象、目标关系、动作阶段和时序因果，但不一定附带与目标机器人逐帧对齐的action。
+EMBER不让policy在每个控制步反复观看示范，而是让shared Writer在rollout前阅读任务语言和视频一次，把其中的
+任务知识编译成策略参数。生成的LoRA随后应对不同初始状态有效，而不是复现某条示范的低层轨迹。
 
-source base只负责基本camera/controller/robot/action与通用技能，不追求先解决目标任务。它要在全部40目标tasks的快速screen上开始产生部分成功，从而给Writer和reward exploration一个真实可用的地基。
+这把学习问题分成三层：
 
-## AS-Writer
+1. 从视频识别跨初始化仍成立的高层任务内容和有向过程；
+2. 将这些证据编译成policy-effective的完整LoRA；
+3. 让多task知识在同一Writer checkpoint稳定共存，并泛化到held tasks/videos。
 
-每个source update：
+## Shared foundation
 
-1. 每rank从24 development train tasks的全局均衡schedule取得一个task；
-2. 为该task visit抽1条action-hidden teacher video；
-3. 该video经过one-shot Writer，只生成1套完整LoRA；
-4. 采`B_a`条独立同task agent observation/action chunks；
-5. 全部action queries都在这套LoRA下做一次frozen source-base functional
-   forward；
-6. `B_a`个action losses直接求均值并只更新Writer；下一step更换task。
+generic`lerobot/pi05_base`在目标LIBERO tasks上缺少足够embodiment能力，因此所有方法共享一个只在过滤后
+LIBERO-90 source corpus上训练的π0.5-LIBERO base。source corpus与目标40做specification-only去重；
+normalization只来自source并冻结。目标40固定为24 train / 8 validation / 8 test。
 
-video与action sample不要求配对，Writer不能靠逐帧复制目标action。同一套
-LoRA同时接收`B_a`条不同初态、episode和action chunk的共同梯度；task被后续
-访问时轮换teacher video，跨step SGD平均不同视频的偶然低层细节。推理和held
-evaluation仍严格每次一条video。
-held evaluation每rollout随机采一条正确task视频，报告对teacher-video分布的
-性能，不挑最好video。
+source base提供通用视觉、语言、机器人控制与action-space能力，但不读取目标40 actions。禁止使用已经读过
+目标40 actions的`pi05_libero`，否则无法区分foundation competence与视频学习。
 
-v5已经证明：permutation-invariant Core和causal Procedure可以同时存在，
-wrong-video语义效应也能成立，但若下游用additive refiner把两者编译成LoRA，
-Procedure的顺序差可能被压到行为无效。step1400五臂
-`115/108/74/113/114`封存了这个失败。
+## Information wall
 
-历史v5.1把视频理解分成Semantic Core与Causal Procedure，但重新定义上游
-语义轴和融合：
+部署时Writer可读：
 
-- text-only Gemma对纯任务token产生video-independent contextual queries；
-- multimodal PaliGemma只取每帧task-language span hidden作为视觉证据；
-- token-aligned frame-set attention先沿frame集合聚合，再沿language tokens做
-  bidirectional Core composition，因此Core对同帧集合顺序严格不变；
-- Action Expert固定native suffix产生per-frame interaction hidden，两层causal
-  Transformer形成Procedure；
-- 320 slots先读Core，中心化Procedure再生成zero-init AdaLN参数调制Core，
-  最后经过一个post-fusion slot block生成LoRA。
+- exact task language；
+- 当前合同下恰好一条原始action-hidden teacher video。
 
-完整合同见
-[`action_forecast_writer_v5_1_proposal.md`](action_forecast_writer_v5_1_proposal.md)。
+Writer不可读teacher action、proprio/state、reward、terminal、task ID、filename、episode identity、object
+pose、hidden normalization或held outcome。language可提供query/context/address，但video必须是唯一dynamic
+value；不能有language-only LoRA bypass、expert-bank route、第二套LoRA或checkpoint融合。
 
-## RL-Writer
+每个rollout只生成一套完整38-target public rank-16 LoRA。frozen source policy没有trainable parameter，
+no-video/step0必须是functional identity。
 
-RL-Writer不是完整AS-Writer的默认后训练阶段。当前路线从新架构规定初态做短、task-balanced AS cold start，直到24个development-train tasks各在official random-reset rollout中至少成功一次；随后关闭action数据入口，跨source tasks只用官方环境reward训练video-to-LoRA映射。cold-start必须报告teacher-action consumption、每task first-success step和wall，不能加载完整AS best冒充独立RL路线。
+## Learning without low-level pairing
 
-## Source-SFT
+AS训练中，video与action query来自同一task但不同episode。一条video生成一套LoRA，再由多条独立action
+queries共同约束，使该LoRA不能只适配示范的单一初始化或逐帧动作。
 
-Source-SFT在同一frozen source base上，以24/32 source task actions联合训练一套shared multi-task LoRA。它在held task只看language/current observation，不看teacher video。它和AS-Writer各自按validation选最佳，不强制相同步数；对比回答“一般source action adaptation”与“额外读取held video”之间的差异。
+这一错开监督是必要的防捷径手段，却不是视频理解的充分条件：同task所有videos共享task-level action target，
+模型仍可能只从language或高频低层视觉相关性推断一个controller。架构需要让视频证据成为必要动态通路；
+correct/same/wrong/shuffled/reversed/no-video闭环controls负责最终裁决。
 
-## Seen 与 wrong-video
+## One-shot and few-shot
 
-seen-task比较检验方法是否先在训练过的目标task distribution上学到能力；它不能替代held泛化。
+one-shot最严格，也最接近“一次示范即可学习”的目标；其风险是单条demo中的速度、路径、视角与偶然运动会
+盖过高层不变量。
 
-wrong-video是必要视频因果对照：保持正确language、执行task、init state和policy RNG，只把Writer输入换成另一suite的视频。若wrong-video LoRA与correct-video同样有效，说明增益可能主要来自language或通用adapter；只有correct明显优于wrong，才能支持视频内容被使用。
+few-shot的合理动机是比较多条同task示范，保留各自内部时序，同时提取跨demo共同语义。有效设计应支持集合
+置换不变而不破坏单视频内部顺序，并显式处理1/3/5等cardinality。简单平均frames、features或LoRAs不能自动
+满足这些要求，也可能牺牲因果顺序和吞吐。
 
-## Test-task reward adaptation
+任何few-shot研究都必须另立matched authority：固定或明确定义`k`，不挑video，仍action-hidden，报告额外
+计算，并与同训练/eval口径one-shot对照。历史K4只证明集合稳定性部分改善，不证明性能或drift已经解决。
 
-task-local RL只在最终test阶段开始。每个test task本身是adaptation training domain，因此可直接在该task上调优并训练到曲线接近最佳，不需要在validation上预先冻结算法。
+## Evaluation meaning
 
-三臂从同一source base开始：identity LoRA、AS-Writer LoRA、RL-Writer LoRA。每个task/adaptation seed随机选一条teacher video，两个Writer臂共用该视频并固定生成的初始化LoRA；随后只更新task LoRA。训练与checkpoint选择使用官方random BDDL reset reward rollouts；固定50 states只用于独立fresh evaluation。
+最终方法由同一single checkpoint的official strict paired closed-loop评价：
 
-## Privileged oracle
+- correct：正确task的自然顺序video；
+- same-task-other：同task另一条video，测demo鲁棒性；
+- wrong：另一suite视频，测内容特异性；
+- shuffled/reversed：真实输入帧重排，测时序因果；
+- no-video：测动态视频通路是否必要。
 
-最终direct-action oracle不是per-task LoRA。它使用8个test tasks×每task50条teacher action episodes，联合训练一套shared multi-task LoRA。它证明同一LoRA空间在目标actions可见时能达到什么水平，但不属于与EMBER相同的信息条件。
+配对必须保持task、initial state、env/policy RNG与video ordinal。视频影响hidden、LoRA或action不等于视频被
+正确理解；只有correct沿有用方向稳定胜过controls，才支持视频因果claim。
 
-## Information surfaces
+## Baselines and claim boundary
 
-| 方法/阶段 | 目标视频 | 目标action | 目标reward | 更新对象 |
-| --- | --- | --- | --- | --- |
-| frozen source base test | 否 | 否 | 只读评估success | 无 |
-| Source-SFT source training | 否 | source task actions | 否 | shared LoRA |
-| AS-Writer source training | one source video | source task actions仅进loss | 否 | Writer |
-| RL-Writer source training | one source video | 明确报告的短AS cold start；转型后否 | source reward | Writer |
-| held zero-interaction | one held video | 否 | 否 | 无 |
-| test task-local RL | run-start one held video | 否 | test task reward | task LoRA |
-| joint direct oracle | 可忽略 | 8 test tasks actions | 否 | one shared LoRA |
+- frozen source base：无目标视频/动作的共同起点；
+- Source-SFT：privileged target-action shared LoRA参照，held不读视频；
+- AS-Writer：source action只进入functional loss，部署读视频；
+- 可选RL-Writer：action入口关闭后用source environment reward更新Writer；
+- matched video-conditioned policy：若实现，比较每步读视频与一次编译的取舍；
+- final direct-action oracle：使用test actions的privileged ceiling，不是同信息墙baseline。
 
-## Claim boundary
+核心claim是：在共同source policy上，正确held教学视频生成的zero-interaction LoRA能带来高closed-loop性能，
+且其优势来自视频内容与顺序而非language或通用adapter。reward adaptation若后来改善sample efficiency或终点，
+是附加claim，不是EMBER定义本身。
 
-核心claim是：对于一个已有基本LIBERO能力、但没有目标task action supervision的共享source policy，正确held teaching video生成的LoRA比无视频source-policy adaptation更有用，并且明显优于cross-suite wrong-video生成的LoRA。若Writer初始化进一步让test-task reward training更快或终点更高，再增加adaptation claim。
+## Success criterion
 
-不声称RL是EMBER必需组成，不声称target-action oracle是信息匹配baseline，也不使用bank、geometry、shared subspace或额外shared adapter。
+当前底线是同一shared method、同一single checkpoint strict paired correct严格`>150/400`，并继续提高absolute、
+task breadth、稳定共同积累与视频因果性。LoRA能量、rank、cosine、重建/functional loss和内部margin只是解释
+工具，不能替代真实闭环。

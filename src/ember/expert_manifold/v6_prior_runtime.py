@@ -1,4 +1,4 @@
-"""Assets, landmark K4 environments, and exact-resume runtime for SRTP."""
+"""Assets, paired K2 environments, and exact-resume runtime for PCUG."""
 
 from __future__ import annotations
 
@@ -225,7 +225,7 @@ def _configure_egl(context: DistributedContext) -> None:
     for name, value in expected.items():
         observed = os.environ.get(name)
         if observed not in {None, value}:
-            raise ExpertManifoldError(f"SRTP {name} mapping changed")
+            raise ExpertManifoldError(f"PCUG {name} mapping changed")
         os.environ[name] = value
 
 
@@ -352,7 +352,7 @@ def _build_reward_tasks(
         if row.get("split_role") == "train"
     }
     if len(rows) != 24:
-        raise ExpertManifoldError("SRTP target manifest lost train24")
+        raise ExpertManifoldError("PCUG target manifest lost train24")
     reward_tasks = {}
     for task in tasks:
         row = rows.get(task.global_task_id)
@@ -364,10 +364,10 @@ def _build_reward_tasks(
             or Path(str(row.get("hdf5", {}).get("relative_path", ""))).name
             != task.authority.path.name
         ):
-            raise ExpertManifoldError("SRTP HDF5 and task manifest disagree")
+            raise ExpertManifoldError("PCUG HDF5 and task manifest disagree")
         bddl = row.get("bddl")
         if not isinstance(bddl, Mapping):
-            raise ExpertManifoldError("SRTP train task lost BDDL authority")
+            raise ExpertManifoldError("PCUG train task lost BDDL authority")
         reward_tasks[task.global_task_id] = RewardTask(
             suite=task.suite,
             task_id=task.task_id,
@@ -530,7 +530,7 @@ def _prepare_libero_paths(
         dist.broadcast_object_list(payload, src=0, device=context.device)
     paths = payload[0]
     if not isinstance(paths, Mapping) or paths.get("error"):
-        raise ExpertManifoldError(f"SRTP LIBERO path preparation failed: {paths}")
+        raise ExpertManifoldError(f"PCUG LIBERO path preparation failed: {paths}")
     os.environ["LIBERO_CONFIG_PATH"] = str(
         (args.output_dir / "libero_config").resolve()
     )

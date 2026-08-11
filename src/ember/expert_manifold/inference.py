@@ -51,7 +51,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active SRTP deployment family; old configs stay evidence."""
+    """Load only the active PCUG deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -350,7 +350,7 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "checkpoint_owned": True,
             "deployment_owned": False,
             "trainable": False,
-            "first_all_success_only": True,
+            "first_stable_success_only": True,
         },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
@@ -612,7 +612,7 @@ def _evaluation_writer_asset(
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
         "sealed_from_live_sknc_deployment_smoke",
-        "sealed_from_live_srtp_deployment_smoke",
+        "sealed_from_live_pcug_deployment_smoke",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"

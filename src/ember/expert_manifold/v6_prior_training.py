@@ -1,4 +1,4 @@
-"""SRTP task-complete landmark credit and constrained Program updates."""
+"""PCUG task-complete blind acquisition and paired closed-loop protection."""
 
 from __future__ import annotations
 
@@ -14,13 +14,17 @@ import torch
 import torch.distributed as dist
 
 from ember.expert_manifold.contract import ExpertManifoldError, ExpertTask
-from ember.expert_manifold.v6_prior import (
-    counterfactual_kind,
-    cross_suite_wrong_task,
+from ember.expert_manifold.v6_candidate_guard import (
+    CandidateGuardProjectionSummary,
+    PairedCandidateClassification,
+    PairedTaskEvidence,
+    classify_paired_candidate_outcomes,
+    closest_candidate_guard_projection,
+    collect_paired_task_evidence,
 )
+from ember.expert_manifold.v6_prior import counterfactual_kind, cross_suite_wrong_task
 from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
 from ember.expert_manifold.v6_prior_contract import (
-    REPO_ROOT,
     V6_PRIOR_CANONICAL_CONFIG,
     V6_PRIOR_COMPLETION_SCHEMA,
     V6_PRIOR_MODES,
@@ -38,35 +42,25 @@ from ember.expert_manifold.v6_prior_profile import (
 from ember.expert_manifold.v6_prior_runtime import V6PriorRuntime, _prepare_runtime
 from ember.expert_manifold.v6_prior_run_contract import cursor_contract
 from ember.expert_manifold.v6_prior_step import (
+    GeneratedConditionGraph,
     generate_condition_graph,
     program_cotangent,
 )
-from ember.expert_manifold.v6_reward_tangent import (
-    RewardTangentSummary,
-    landmark_reward_program_cotangent,
-)
 from ember.expert_manifold.v6_success_key import (
+    PersistedSuccessKeyPlan,
     SuccessKeyBankUpdateSummary,
-    SuccessKeyConstraintPlan,
 )
 from ember.lora import copy_task_lora_state_
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_distributed
-from ember.reward.protocol import reward_credit_environment_seed
-from ember.reward.rollout import (
-    RewardRolloutOutcome,
-    collect_randomized_reward_outcomes,
-)
 from ember.writer.condition_update import (
     ProgramDeltaApplicationSummary,
     SuccessKeyNullspaceUpdateSummary,
-    SharedRewardTangentProjectionSummary,
     apply_program_residual_delta_,
     program_residual_delta_application_evidence,
     success_key_constraint_motion,
     success_key_nullspace_program_delta,
-    shared_reward_tangent_program_projection,
 )
 from ember.writer.functional import (
     TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
@@ -87,19 +81,29 @@ class TaskObjective:
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
     program_cotangent: torch.Tensor
-    reward_program_cotangent: torch.Tensor
-    reward_tangent: RewardTangentSummary
-    success_count: int
-    trajectory_rows: tuple[Mapping[str, Any], ...]
-    rollout_seconds: float
-    reward_credit_seconds: float
+    graph: GeneratedConditionGraph
     correct_raw_frames: int
     correct_sampled_frames: int
     negative_raw_frames: int
     negative_sampled_frames: int
-    program_before: torch.Tensor | None = None
-    correct_lora_before: Mapping[str, torch.Tensor] | None = None
     fixed_policy_query: Mapping[str, torch.Tensor] | None = None
+    paired: PairedTaskEvidence | None = None
+
+
+@dataclass(frozen=True)
+class MacroUpdateEvidence:
+    local_objectives: tuple[TaskObjective, ...]
+    blind_update: SuccessKeyNullspaceUpdateSummary
+    classification: PairedCandidateClassification
+    guard_projection: CandidateGuardProjectionSummary
+    bank_update: SuccessKeyBankUpdateSummary
+    application: ProgramDeltaApplicationSummary | None
+    task_local: Mapping[str, Any] | None
+    lora_response: Mapping[str, Any] | None
+    success_key_application: Mapping[str, Any] | None
+    profile_task_seconds: float | None
+    kernel_seconds: float | None
+    verification_seconds: float | None
 
 
 _LOGICAL_POLICY_BATCH_SIZE = 20
@@ -112,8 +116,6 @@ def _policy_rng_seed_for_logical_batch(
     task_id: int,
     task_visit: int,
 ) -> int:
-    """Bind functional randomness to the complete task-local B20 query set."""
-
     randomness = config["objective"]["positive_policy_randomness"]
     demo_indices = batch.get("demo_index")
     frame_indices = batch.get("frame_index")
@@ -125,7 +127,7 @@ def _policy_rng_seed_for_logical_batch(
         or frame_indices.shape != demo_indices.shape
         or demo_indices.numel() != _LOGICAL_POLICY_BATCH_SIZE
     ):
-        raise ExpertManifoldError("SRTP action-query randomness changed")
+        raise ExpertManifoldError("PCUG action-query randomness changed")
     return task_logical_batch_policy_rng_seed(
         optimization_seed=int(config["optimization"]["seed"]),
         task_id=task_id,
@@ -138,90 +140,11 @@ def _policy_rng_seed_for_logical_batch(
 def _batch_task_id(batch: Mapping[str, Any]) -> int:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
-        raise ExpertManifoldError("residual Writer action batch lost task identity")
+        raise ExpertManifoldError("PCUG action batch lost task identity")
     unique = values.unique()
     if unique.numel() != 1:
-        raise ExpertManifoldError("residual Writer action batch crossed tasks")
+        raise ExpertManifoldError("PCUG action batch crossed tasks")
     return int(unique.item())
-
-
-def _trajectory_record(value: RewardRolloutOutcome) -> dict[str, Any]:
-    return {
-        "rollout_cursor": value.rollout_cursor,
-        "environment_seed": value.env_seed,
-        "policy_noise_seeds": list(value.policy_noise_seeds),
-        "success": value.success,
-        "steps": value.steps,
-        "reward_sum": value.reward_sum,
-        "replan_count": len(value.policy_noise_seeds),
-        "selected_landmarks": len(value.landmarks),
-        "selected_landmark_ordinals": [
-            landmark.replan_ordinal for landmark in value.landmarks
-        ],
-        "selected_executed_action_steps": [
-            landmark.executed_action_steps for landmark in value.landmarks
-        ],
-    }
-
-
-def _collect_task_outcomes(
-    runtime: V6PriorRuntime,
-    *,
-    schedule_macro: int,
-    task: ExpertTask,
-    lora_state: Mapping[str, torch.Tensor],
-) -> tuple[
-    tuple[RewardRolloutOutcome, ...],
-    int,
-    float,
-]:
-    reward_task = runtime.reward_task_by_global_id[task.global_task_id]
-    rollout_cursors = tuple(schedule_macro * 4 + lane for lane in range(4))
-    environment_seeds = tuple(
-        reward_credit_environment_seed(
-            int(runtime.config["rng"]["environment_seed_root"]),
-            reward_task.suite,
-            reward_task.task_id,
-            int(runtime.config["optimization"]["seed"]),
-            cursor,
-        )
-        for cursor in rollout_cursors
-    )
-    environment = runtime.config["environment"]
-    copy_task_lora_state_(runtime.policy, lora_state, runtime.lora_contract)
-    started = time.monotonic()
-    try:
-        outcomes = collect_randomized_reward_outcomes(
-            envs=tuple(
-                runtime.env_pool.get(reward_task, lane=lane) for lane in range(4)
-            ),
-            policy=runtime.policy,
-            preprocess=runtime.processor,
-            postprocess=runtime.processor.unnormalize_action,
-            suite=reward_task.suite,
-            task_id=reward_task.task_id,
-            global_task_id=reward_task.global_task_id,
-            language=reward_task.language,
-            adaptation_seed=int(runtime.config["optimization"]["seed"]),
-            rollout_cursors=rollout_cursors,
-            env_seeds=environment_seeds,
-            policy_seed_root=int(runtime.config["rng"]["policy_noise_seed_root"]),
-            landmark_seed_root=int(runtime.config["rng"]["landmark_seed_root"]),
-            device=runtime.context.device,
-            max_horizon=reward_task.horizon,
-            dummy_settling_steps=int(environment["dummy_settling_steps"]),
-            dummy_action=environment["dummy_action"],
-            action_execution_horizon=int(environment["action_execution_horizon"]),
-            num_inference_steps=int(environment["num_inference_steps"]),
-        )
-    finally:
-        copy_task_lora_state_(
-            runtime.policy, runtime.identity_state, runtime.lora_contract
-        )
-    seconds = time.monotonic() - started
-    if len(outcomes) != 4:
-        raise ExpertManifoldError("SRTP outcome panel is not exact K4")
-    return outcomes, sum(value.success for value in outcomes), seconds
 
 
 def _task_objective(
@@ -233,7 +156,7 @@ def _task_objective(
 ) -> TaskObjective:
     task_id, task_visit = runtime.sampler.task_visit_for_step(schedule_macro, microtask)
     if _batch_task_id(batch) != task_id:
-        raise ExpertManifoldError("residual Writer sampler and action batch disagree")
+        raise ExpertManifoldError("PCUG sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
     excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     teacher_demo = runtime.video_schedule.demos_for_task_visit(
@@ -246,9 +169,7 @@ def _task_objective(
     negative_video = None
     if kind == "wrong":
         negative_task = cross_suite_wrong_task(
-            runtime.tasks,
-            task_ordinal=task.ordinal,
-            task_visit=task_visit,
+            runtime.tasks, task_ordinal=task.ordinal, task_visit=task_visit
         )
         negative_demo = runtime.video_schedule.demos_for_task_visit(
             negative_task.global_task_id, task_visit
@@ -256,9 +177,7 @@ def _task_objective(
         negative_video = runtime.video_store.load(
             negative_task.global_task_id, negative_demo
         )
-    copy_task_lora_state_(
-        runtime.policy, runtime.identity_state, runtime.lora_contract
-    )
+    copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
     graph = generate_condition_graph(
         writer=runtime.writer,
         policy=runtime.policy,
@@ -299,55 +218,22 @@ def _task_objective(
             ),
             collect_policy_details=False,
         )
-    retain_profile = runtime.args.mode == "mechanism-profile"
-    correct_lora_before = (
-        {name: value.detach() for name, value in graph.correct_lora.items()}
-        if retain_profile
-        else None
-    )
-    fixed_policy_query = None
-    if retain_profile:
-        fixed_policy_query = {
+    fixed_query = None
+    if runtime.args.mode == "mechanism-profile":
+        fixed_query = {
             name: value[:1].detach()
             for name, value in policy_batch.items()
             if name.startswith("observation.")
         }
-        if len(fixed_policy_query) != 4:
-            raise ExpertManifoldError("fixed-action profile query changed")
-    deployment_lora = {
-        name: value.detach() for name, value in graph.correct_lora.items()
-    }
+        if len(fixed_query) != 4:
+            raise ExpertManifoldError("PCUG fixed-action profile query changed")
     cotangent = program_cotangent(graph, lora_gradients)
     graph = replace(
         graph,
-        correct_lora=deployment_lora,
+        correct_lora={name: value.detach() for name, value in graph.correct_lora.items()},
         program_leaf=graph.program_leaf.detach(),
     )
     del lora_gradients, policy_batch
-    outcomes, success_count, rollout_seconds = _collect_task_outcomes(
-        runtime,
-        schedule_macro=schedule_macro,
-        task=task,
-        lora_state=graph.correct_lora,
-    )
-    reward_started = time.monotonic()
-    with torch.autocast(
-        device_type=runtime.context.device.type,
-        dtype=torch.bfloat16,
-        enabled=runtime.context.device.type == "cuda",
-    ):
-        reward_cotangent, reward_tangent = landmark_reward_program_cotangent(
-            graph,
-            writer=runtime.writer,
-            policy=runtime.policy,
-            contract=runtime.lora_contract,
-            outcomes=outcomes,
-            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-            schedule_macro=schedule_macro,
-            global_task_id=task.global_task_id,
-            device=runtime.context.device,
-        )
-    reward_credit_seconds = time.monotonic() - reward_started
     return TaskObjective(
         task=task,
         task_visit=task_visit,
@@ -359,25 +245,35 @@ def _task_objective(
         correct_feature=graph.correct_feature.detach(),
         negative_feature=graph.negative_feature.detach(),
         program_cotangent=cotangent,
-        reward_program_cotangent=reward_cotangent,
-        reward_tangent=reward_tangent,
-        success_count=success_count,
-        trajectory_rows=tuple(_trajectory_record(value) for value in outcomes),
-        rollout_seconds=rollout_seconds,
-        reward_credit_seconds=reward_credit_seconds,
+        graph=graph,
         correct_raw_frames=graph.correct_raw_frames,
         correct_sampled_frames=graph.correct_sampled_frames,
         negative_raw_frames=graph.negative_raw_frames,
         negative_sampled_frames=graph.negative_sampled_frames,
-        program_before=(
-            graph.program_input_before[0].detach() if retain_profile else None
-        ),
-        correct_lora_before=correct_lora_before,
-        fixed_policy_query=fixed_policy_query,
+        fixed_policy_query=fixed_query,
     )
 
 
+def _collect_paired_task_evidence(
+    runtime: V6PriorRuntime,
+    objective: TaskObjective,
+    *,
+    schedule_macro: int,
+    blind_motion: torch.Tensor,
+) -> TaskObjective:
+    evidence = collect_paired_task_evidence(
+        runtime,
+        task=objective.task,
+        graph=objective.graph,
+        schedule_macro=schedule_macro,
+        blind_motion=blind_motion,
+    )
+    return replace(objective, paired=evidence)
+
+
 def _task_record(value: TaskObjective) -> dict[str, Any]:
+    if value.paired is None:
+        raise ExpertManifoldError("PCUG task record lacks paired outcomes")
     correct_norm = torch.linalg.vector_norm(value.correct_feature)
     negative_norm = torch.linalg.vector_norm(value.negative_feature)
     cosine = torch.dot(value.correct_feature, value.negative_feature) / (
@@ -388,7 +284,6 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
             (
                 value.functional_loss.to(dtype=torch.float32),
                 value.program_cotangent.square().mean().sqrt(),
-                value.reward_program_cotangent.square().mean().sqrt(),
                 correct_norm,
                 negative_norm,
                 cosine,
@@ -398,6 +293,10 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         .cpu()
         .tolist()
     )
+    base = value.paired.base_success
+    candidate = value.paired.candidate_success
+    losses = sum(left and not right for left, right in zip(base, candidate, strict=True))
+    gains = sum(not left and right for left, right in zip(base, candidate, strict=True))
     return {
         "task_ordinal": value.task.ordinal,
         "global_task_id": value.task.global_task_id,
@@ -414,30 +313,37 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "counterfactual_demo": value.counterfactual_demo,
         "functional_loss": scalars[0],
         "program_cotangent_rms": scalars[1],
-        "reward_program_cotangent_rms": scalars[2],
-        "correct_feature_norm": scalars[3],
-        "negative_feature_norm": scalars[4],
-        "correct_negative_feature_cosine": scalars[5],
-        "success_count": value.success_count,
-        "all_success": value.success_count == 4,
-        "trajectories": list(value.trajectory_rows),
-        "rollout_seconds": value.rollout_seconds,
-        "reward_credit_seconds": value.reward_credit_seconds,
+        "correct_feature_norm": scalars[2],
+        "negative_feature_norm": scalars[3],
+        "correct_negative_feature_cosine": scalars[4],
+        "base_success": list(base),
+        "candidate_success": list(candidate),
+        "paired_losses": losses,
+        "paired_gains": gains,
+        "harmful": losses > gains,
+        "beneficial": gains > losses,
+        "indifferent": losses == gains,
+        "stable_success": all(base) and all(candidate),
+        "exact_pair_count": value.paired.exact_pair_count,
+        "trajectories": list(value.paired.trajectory_rows),
+        "rollout_seconds": value.paired.rollout_seconds,
+        "candidate_program_motion_rms": value.paired.candidate_program_motion_rms,
+        "candidate_lora_response_rms": value.paired.candidate_lora_response_rms,
+        "candidate_action_response_rms": value.paired.candidate_action_response_rms,
         "correct_raw_frames": value.correct_raw_frames,
         "correct_sampled_frames": value.correct_sampled_frames,
         "negative_raw_frames": value.negative_raw_frames,
         "negative_sampled_frames": value.negative_sampled_frames,
         "source_action_queries": 20,
         "physical_correct_policy_forwards": 2,
-        "reward_tangent": asdict(value.reward_tangent),
+        "base_rollouts": 2,
+        "candidate_rollouts": 2,
+        "reward_gradient_count": 0,
         "trajectory_replay_policy_forwards": 0,
-        "trajectory_replay_cfm_forwards": (
-            value.reward_tangent.functional_policy_forwards
-        ),
-        "reward_gradient_count": int(value.reward_tangent.mixed),
+        "trajectory_replay_cfm_forwards": 0,
         "negative_policy_forwards": 0,
         "historical_v6_video_encodes": 1,
-        "post_rollout_factorhead_redecodes": 0,
+        "post_candidate_factorhead_redecodes": 1,
         "policy_innovation_key_count": 2,
         "policy_innovation_unique_video_count": (
             2 if value.counterfactual_kind == "wrong" else 1
@@ -458,42 +364,42 @@ def _all_gather_fixed(value: torch.Tensor, context: DistributedContext) -> torch
     return output
 
 
+def _sorted_gather_rows(
+    payload: torch.Tensor, context: DistributedContext
+) -> torch.Tensor:
+    gathered = _all_gather_fixed(payload, context)
+    present = gathered[:, 0] >= 0
+    gathered = gathered[present]
+    if gathered.shape[0] != 24:
+        raise ExpertManifoldError("PCUG padded gather lost train24")
+    ordinals = gathered[:, 0].to(dtype=torch.long)
+    order = ordinals.argsort()
+    sorted_ordinals = ordinals.index_select(0, order)
+    expected = torch.arange(24, dtype=torch.long, device=context.device)
+    if not torch.equal(sorted_ordinals, expected):
+        raise ExpertManifoldError("PCUG full24 task order changed")
+    return gathered.index_select(0, order)
+
+
 def _gather_full48(
-    local: Sequence[TaskObjective],
-    context: DistributedContext,
-) -> tuple[
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-    torch.Tensor,
-]:
+    local: Sequence[TaskObjective], context: DistributedContext
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     maximum_local = math.ceil(24 / context.world_size)
     if not 0 < len(local) <= maximum_local:
-        raise ExpertManifoldError("residual Writer local task coverage changed")
-    payload = torch.empty(
-        maximum_local,
-        2 + 2 * 256,
-        dtype=torch.float32,
-        device=context.device,
+        raise ExpertManifoldError("PCUG local task coverage changed")
+    payload = torch.zeros(
+        maximum_local, 1 + 2 * 256, dtype=torch.float32, device=context.device
     )
-    payload.zero_()
     payload[:, 0].fill_(-1)
-    payload[:, 1].fill_(-1)
     payload[: len(local), 0] = torch.tensor(
         [value.task.ordinal for value in local],
         dtype=torch.float32,
         device=context.device,
     )
-    payload[: len(local), 1] = torch.tensor(
-        [value.success_count for value in local],
-        dtype=torch.float32,
-        device=context.device,
-    )
-    payload[: len(local), 2:258] = torch.stack(
+    payload[: len(local), 1:257] = torch.stack(
         [value.correct_feature for value in local]
     )
-    payload[: len(local), 258:] = torch.stack(
+    payload[: len(local), 257:] = torch.stack(
         [value.negative_feature for value in local]
     )
     cotangents = torch.zeros(
@@ -505,39 +411,57 @@ def _gather_full48(
     cotangents[: len(local)] = torch.stack(
         [value.program_cotangent for value in local]
     )
-    reward_cotangents = torch.zeros_like(cotangents)
-    reward_cotangents[: len(local)] = torch.stack(
-        [value.reward_program_cotangent for value in local]
-    )
     gathered_payload = _all_gather_fixed(payload, context)
     gathered_cotangents = _all_gather_fixed(cotangents, context)
-    gathered_reward_cotangents = _all_gather_fixed(reward_cotangents, context)
     present = gathered_payload[:, 0] >= 0
     gathered_payload = gathered_payload[present]
     gathered_cotangents = gathered_cotangents[present]
-    gathered_reward_cotangents = gathered_reward_cotangents[present]
     if gathered_payload.shape[0] != 24:
-        raise ExpertManifoldError("residual Writer padded gather lost train24")
+        raise ExpertManifoldError("PCUG padded gather lost train24")
     ordinals = gathered_payload[:, 0].to(dtype=torch.long)
     order = ordinals.argsort()
-    sorted_ordinals = ordinals.index_select(0, order)
     if not torch.equal(
-        sorted_ordinals,
+        ordinals.index_select(0, order),
         torch.arange(24, dtype=torch.long, device=context.device),
     ):
-        raise ExpertManifoldError("residual Writer full48 task order changed")
+        raise ExpertManifoldError("PCUG full24 task order changed")
+    gathered_payload = gathered_payload.index_select(0, order)
+    gathered_cotangents = gathered_cotangents.index_select(0, order)
     return (
-        gathered_payload.index_select(0, order)[:, 2:258],
-        gathered_payload.index_select(0, order)[:, 258:],
-        gathered_cotangents.index_select(0, order),
-        gathered_reward_cotangents.index_select(0, order),
-        gathered_payload.index_select(0, order)[:, 1].to(dtype=torch.long),
+        gathered_payload[:, 1:257],
+        gathered_payload[:, 257:],
+        gathered_cotangents,
     )
 
 
+def _gather_paired_outcomes(
+    local: Sequence[TaskObjective], context: DistributedContext
+) -> tuple[torch.Tensor, torch.Tensor]:
+    maximum_local = math.ceil(24 / context.world_size)
+    payload = torch.full(
+        (maximum_local, 5), -1.0, dtype=torch.float32, device=context.device
+    )
+    for row, value in enumerate(local):
+        if value.paired is None:
+            raise ExpertManifoldError("PCUG local outcome gather is incomplete")
+        payload[row] = torch.tensor(
+            (
+                value.task.ordinal,
+                *value.paired.base_success,
+                *value.paired.candidate_success,
+            ),
+            dtype=torch.float32,
+            device=context.device,
+        )
+    gathered = _sorted_gather_rows(payload, context)
+    outcomes = gathered[:, 1:]
+    if bool(((outcomes != 0) & (outcomes != 1)).any()):
+        raise ExpertManifoldError("PCUG gathered outcomes are not binary")
+    return outcomes[:, :2].to(dtype=torch.bool), outcomes[:, 2:].to(dtype=torch.bool)
+
+
 def _gather_task_records(
-    local: list[dict[str, Any]],
-    context: DistributedContext,
+    local: list[dict[str, Any]], context: DistributedContext
 ) -> list[dict[str, Any]]:
     rows: list[Any] = [None] * context.world_size
     if context.world_size > 1:
@@ -549,7 +473,7 @@ def _gather_task_records(
     if len(result) != 24 or [int(row["task_ordinal"]) for row in result] != list(
         range(24)
     ):
-        raise ExpertManifoldError("residual Writer macro did not cover train24")
+        raise ExpertManifoldError("PCUG macro did not cover train24")
     return result
 
 
@@ -575,19 +499,18 @@ def _runtime_maximums(
 
 
 def _collect_local_objectives(
-    runtime: V6PriorRuntime,
-    schedule_macro: int,
+    runtime: V6PriorRuntime, schedule_macro: int
 ) -> tuple[list[TaskObjective], float]:
-    local_objectives = []
+    local = []
     input_wait_seconds = 0.0
-    local_task_count = len(
+    local_count = len(
         runtime.sampler.tasks_for_step(schedule_macro, rank=runtime.context.rank)
     )
-    for microtask in range(local_task_count):
+    for microtask in range(local_count):
         input_started = time.monotonic()
         batch = next(runtime.iterator)
         input_wait_seconds += time.monotonic() - input_started
-        local_objectives.append(
+        local.append(
             _task_objective(
                 runtime,
                 schedule_macro=schedule_macro,
@@ -595,34 +518,60 @@ def _collect_local_objectives(
                 batch=batch,
             )
         )
-    if any(
-        parameter.grad is not None for parameter in runtime.policy.parameters()
-    ) or any(
-        parameter.grad is not None
-        for parameter in runtime.writer.base_writer.parameters()
+    if any(parameter.grad is not None for parameter in runtime.policy.parameters()) or any(
+        parameter.grad is not None for parameter in runtime.writer.base_writer.parameters()
     ):
-        raise ExpertManifoldError("residual Writer touched frozen parameter gradients")
-    return local_objectives, input_wait_seconds
+        raise ExpertManifoldError("PCUG touched frozen parameter gradients")
+    return local, input_wait_seconds
+
+
+def _final_guard_features(
+    plan: PersistedSuccessKeyPlan,
+    correct: torch.Tensor,
+    classification: PairedCandidateClassification,
+) -> torch.Tensor:
+    current = classification.stable_success_mask | classification.harmful_mask
+    return torch.cat((plan.features, correct[current]), dim=0).contiguous()
 
 
 def _apply_macro_update(
     runtime: V6PriorRuntime,
     local_objectives: Sequence[TaskObjective],
     *,
+    schedule_macro: int,
     profile: bool,
     step_started: float,
-) -> tuple[
-    SuccessKeyNullspaceUpdateSummary,
-    SharedRewardTangentProjectionSummary,
-    SuccessKeyBankUpdateSummary,
-    ProgramDeltaApplicationSummary | None,
-    dict[str, Any] | None,
-    dict[str, float] | None,
-    dict[str, Any] | None,
-    float | None,
-    float | None,
-    float | None,
-]:
+) -> MacroUpdateEvidence:
+    correct, negative, cotangents = _gather_full48(
+        local_objectives, runtime.context
+    )
+    persisted_plan = runtime.success_key_bank.persisted_plan()
+    no_current_guards = torch.zeros(24, dtype=torch.bool, device=runtime.context.device)
+    blind_delta, blind_update = success_key_nullspace_program_delta(
+        correct,
+        negative,
+        cotangents,
+        persisted_plan.features,
+        no_current_guards,
+        step_size=float(runtime.config["update"]["step_size"]),
+        relative_damping=float(runtime.config["update"]["relative_damping"]),
+    )
+    blind_motion = success_key_constraint_motion(correct, blind_delta)
+    paired_local = tuple(
+        _collect_paired_task_evidence(
+            runtime,
+            value,
+            schedule_macro=schedule_macro,
+            blind_motion=blind_motion[value.task.ordinal],
+        )
+        for value in local_objectives
+    )
+    base_success, candidate_success = _gather_paired_outcomes(
+        paired_local, runtime.context
+    )
+    classification = classify_paired_candidate_outcomes(
+        base_success, candidate_success
+    )
     profile_task_seconds = None
     if profile:
         torch.cuda.synchronize(runtime.context.device)
@@ -631,48 +580,35 @@ def _apply_macro_update(
         )
         torch.cuda.synchronize(runtime.context.device)
         kernel_started = time.monotonic()
-    correct, negative, cotangents, reward_cotangents, success_counts = _gather_full48(
-        local_objectives, runtime.context
-    )
-    constraint_plan = runtime.success_key_bank.constraint_plan(
-        correct, success_counts
-    )
-    blind_delta, update = success_key_nullspace_program_delta(
-        correct,
-        negative,
-        cotangents,
-        constraint_plan.features,
-        constraint_plan.current_all_success_mask,
-        step_size=float(runtime.config["update"]["step_size"]),
-        relative_damping=float(runtime.config["update"]["relative_damping"]),
-    )
-    mixed_mask = (success_counts > 0) & (success_counts < 4)
-    delta, reward_projection = shared_reward_tangent_program_projection(
-        blind_delta,
-        correct,
-        reward_cotangents,
-        mixed_mask,
-        constraint_plan.features,
-    )
     full_features = torch.cat((correct, negative), dim=0)
-    apply_program_residual_delta_(runtime.writer.program_memory, delta)
-    bank_update = runtime.success_key_bank.commit_first_successes_(
+    delta, guard_projection = closest_candidate_guard_projection(
+        blind_delta,
+        persisted_plan.features,
         correct,
-        success_counts,
-        constraint_plan,
+        classification.stable_success_mask,
+        classification.harmful_mask,
+        full_features,
+    )
+    apply_program_residual_delta_(runtime.writer.program_memory, delta)
+    bank_update = runtime.success_key_bank.commit_first_stable_successes_(
+        correct,
+        classification.stable_success_mask,
+        persisted_plan,
     )
     if not profile:
-        return (
-            update,
-            reward_projection,
-            bank_update,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
+        return MacroUpdateEvidence(
+            local_objectives=paired_local,
+            blind_update=blind_update,
+            classification=classification,
+            guard_projection=guard_projection,
+            bank_update=bank_update,
+            application=None,
+            task_local=None,
+            lora_response=None,
+            success_key_application=None,
+            profile_task_seconds=None,
+            kernel_seconds=None,
+            verification_seconds=None,
         )
     torch.cuda.synchronize(runtime.context.device)
     kernel_seconds = _profile_max_seconds(
@@ -680,8 +616,6 @@ def _apply_macro_update(
     )
     torch.cuda.synchronize(runtime.context.device)
     verification_started = time.monotonic()
-    # The mechanism profile is fresh-only, so its pre-write residual is exact
-    # zero.  Allocate this verification-only tensor outside production timing.
     before = cotangents.new_zeros(
         full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
     )
@@ -693,38 +627,34 @@ def _apply_macro_update(
         before,
         predicted=full_motion,
     )
+    protected = classification.stable_success_mask | classification.harmful_mask
     task_local = _profile_task_local_motion(
-        cotangents,
-        full_motion,
-        constraint_plan.current_all_success_mask,
-        runtime.config["profile_run"]["gates"],
+        cotangents, full_motion, protected, runtime.config["profile_run"]["gates"]
     )
+    guard_features = _final_guard_features(persisted_plan, correct, classification)
     success_key_application = _profile_success_key_application(
-        constraint_plan.features,
-        delta,
-        constraint_plan.current_all_success_mask,
+        guard_features, delta, protected
     )
     lora_response = _profile_lora_response(
-        runtime,
-        local_objectives,
-        full_motion[:24],
-        constraint_plan.current_all_success_mask,
+        runtime, paired_local, full_motion[:24], protected
     )
     torch.cuda.synchronize(runtime.context.device)
     verification_seconds = _profile_max_seconds(
         runtime.context, time.monotonic() - verification_started
     )
-    return (
-        update,
-        reward_projection,
-        bank_update,
-        application,
-        task_local,
-        lora_response,
-        success_key_application,
-        profile_task_seconds,
-        kernel_seconds,
-        verification_seconds,
+    return MacroUpdateEvidence(
+        local_objectives=paired_local,
+        blind_update=blind_update,
+        classification=classification,
+        guard_projection=guard_projection,
+        bank_update=bank_update,
+        application=application,
+        task_local=task_local,
+        lora_response=lora_response,
+        success_key_application=success_key_application,
+        profile_task_seconds=profile_task_seconds,
+        kernel_seconds=kernel_seconds,
+        verification_seconds=verification_seconds,
     )
 
 
@@ -733,16 +663,7 @@ def _macro_record(
     macro: int,
     schedule_macro: int,
     records: Sequence[Mapping[str, Any]],
-    update: SuccessKeyNullspaceUpdateSummary,
-    reward_projection: SharedRewardTangentProjectionSummary,
-    bank_update: SuccessKeyBankUpdateSummary,
-    application: ProgramDeltaApplicationSummary | None,
-    task_local: Mapping[str, Any] | None,
-    lora_response: Mapping[str, float] | None,
-    success_key_application: Mapping[str, Any] | None,
-    profile_task_seconds: float | None,
-    kernel_seconds: float | None,
-    verification_seconds: float | None,
+    evidence: MacroUpdateEvidence,
     runtime_metrics: tuple[float, int, int, float],
 ) -> dict[str, Any]:
     counterfactual_counts = {
@@ -750,60 +671,44 @@ def _macro_record(
         for name in ("reversed", "shuffled", "wrong")
     }
     if counterfactual_counts != {"reversed": 8, "shuffled": 8, "wrong": 8}:
-        raise ExpertManifoldError("residual Writer negative schedule changed")
-    success_counts = [int(value["success_count"]) for value in records]
-    trajectory_rows = [
-        trajectory
-        for value in records
-        for trajectory in value["trajectories"]
+        raise ExpertManifoldError("PCUG negative schedule changed")
+    trajectories = [
+        trajectory for record in records for trajectory in record["trajectories"]
     ]
-    suite_all_success = {
-        suite: sum(
-            value["suite"] == suite and int(value["success_count"]) == 4
-            for value in records
-        )
+    harmful_by_suite = {
+        suite: sum(record["suite"] == suite and record["harmful"] for record in records)
         for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
     }
-    suite_mixed = {
-        suite: sum(
-            value["suite"] == suite and 0 < int(value["success_count"]) < 4
-            for value in records
-        )
+    candidate_response_by_suite = {
+        suite: {
+            "program_motion_rms_max": max(
+                float(record["candidate_program_motion_rms"])
+                for record in records
+                if record["suite"] == suite
+            ),
+            "lora_response_rms_max": max(
+                float(record["candidate_lora_response_rms"])
+                for record in records
+                if record["suite"] == suite
+            ),
+            "action_response_rms_max": max(
+                float(record["candidate_action_response_rms"])
+                for record in records
+                if record["suite"] == suite
+            ),
+        }
         for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
     }
     outcome_evidence = {
-        "rollouts": len(trajectory_rows),
-        "success_episodes": sum(success_counts),
-        "failure_episodes": 4 * len(records) - sum(success_counts),
-        "all_success_tasks": sum(value == 4 for value in success_counts),
-        "all_failure_tasks": sum(value == 0 for value in success_counts),
-        "all_success_tasks_per_suite": suite_all_success,
-        "mixed_tasks": sum(0 < value < 4 for value in success_counts),
-        "mixed_tasks_per_suite": suite_mixed,
-        "environment_action_steps": sum(
-            int(value["steps"]) for value in trajectory_rows
-        ),
-        "policy_replans": sum(
-            int(value["replan_count"]) for value in trajectory_rows
-        ),
-        "selected_landmarks": sum(
-            int(value["selected_landmarks"]) for value in trajectory_rows
-        ),
-        "maximum_landmarks_per_episode": max(
-            int(value["selected_landmarks"]) for value in trajectory_rows
-        ),
-        "trajectory_replay_policy_forwards": sum(
-            int(value["trajectory_replay_policy_forwards"]) for value in records
-        ),
-        "trajectory_replay_cfm_forwards": sum(
-            int(value["trajectory_replay_cfm_forwards"]) for value in records
-        ),
-        "reward_gradient_count": sum(
-            int(value["reward_gradient_count"]) for value in records
-        ),
-        "reward_credit_seconds": sum(
-            float(value["reward_credit_seconds"]) for value in records
-        ),
+        **asdict(evidence.classification.summary),
+        "rollouts": len(trajectories),
+        "exact_pair_records": sum(int(record["exact_pair_count"]) for record in records),
+        "harmful_tasks_per_suite": harmful_by_suite,
+        "environment_action_steps": sum(int(value["steps"]) for value in trajectories),
+        "policy_replans": sum(int(value["replan_count"]) for value in trajectories),
+        "reward_gradient_count": 0,
+        "trajectory_replay_policy_forwards": 0,
+        "trajectory_replay_cfm_forwards": 0,
     }
     seconds, allocated, reserved, input_wait_seconds = runtime_metrics
     row = {
@@ -814,26 +719,20 @@ def _macro_record(
         "program_cotangent_rms": math.sqrt(
             sum(float(value["program_cotangent_rms"]) ** 2 for value in records) / 24
         ),
-        "reward_program_cotangent_rms": math.sqrt(
-            sum(
-                float(value["reward_program_cotangent_rms"]) ** 2
-                for value in records
-            )
-            / 24
-        ),
-        "success_outcomes": outcome_evidence,
-        "success_key_bank": asdict(bank_update),
+        "paired_outcomes": outcome_evidence,
+        "candidate_response_by_suite": candidate_response_by_suite,
+        "success_key_bank": asdict(evidence.bank_update),
         "counterfactual_counts": counterfactual_counts,
-        "update": asdict(update),
-        "reward_projection": asdict(reward_projection),
-        "application": asdict(application) if application is not None else None,
-        "task_local_motion": task_local,
-        "lora_response": lora_response,
-        "success_key_application": success_key_application,
+        "blind_update": asdict(evidence.blind_update),
+        "candidate_guard_projection": asdict(evidence.guard_projection),
+        "application": asdict(evidence.application) if evidence.application else None,
+        "task_local_motion": evidence.task_local,
+        "lora_response": evidence.lora_response,
+        "success_key_application": evidence.success_key_application,
         "task_records": list(records),
-        "production_kernel_seconds": kernel_seconds,
-        "profile_task_seconds": profile_task_seconds,
-        "profile_verification_seconds": verification_seconds,
+        "production_kernel_seconds": evidence.kernel_seconds,
+        "profile_task_seconds": evidence.profile_task_seconds,
+        "profile_verification_seconds": evidence.verification_seconds,
         "step_seconds": seconds,
         "input_wait_seconds": input_wait_seconds,
         "max_cuda_allocated_bytes": allocated,
@@ -844,50 +743,36 @@ def _macro_record(
     }
     if not all(
         math.isfinite(float(row[name]))
-        for name in (
-            "functional_loss",
-            "program_cotangent_rms",
-            "reward_program_cotangent_rms",
-            "step_seconds",
-        )
+        for name in ("functional_loss", "program_cotangent_rms", "step_seconds")
     ):
-        raise ExpertManifoldError("residual Writer metric became non-finite")
+        raise ExpertManifoldError("PCUG metric became non-finite")
     return row
 
 
-def _run_one_macro(
-    runtime: V6PriorRuntime,
-    *,
-    macro: int,
-) -> dict[str, Any]:
+def _run_one_macro(runtime: V6PriorRuntime, *, macro: int) -> dict[str, Any]:
     profile = runtime.args.mode == "mechanism-profile"
     schedule_macro = runtime.segment.schedule_origin + macro
     versions_before = _base_versions(runtime) if profile else ()
     step_started = time.monotonic()
     local, input_wait = _collect_local_objectives(runtime, schedule_macro)
-    update_evidence = _apply_macro_update(
-        runtime, local, profile=profile, step_started=step_started
+    evidence = _apply_macro_update(
+        runtime,
+        local,
+        schedule_macro=schedule_macro,
+        profile=profile,
+        step_started=step_started,
     )
     records = _gather_task_records(
-        [_task_record(value) for value in local], runtime.context
+        [_task_record(value) for value in evidence.local_objectives], runtime.context
     )
     runtime_metrics = _runtime_maximums(runtime.context, step_started, input_wait)
     if profile and _base_versions(runtime) != versions_before:
-        raise ExpertManifoldError("historical v6 state changed during profile")
+        raise ExpertManifoldError("historical v6 state changed during PCUG profile")
     row = _macro_record(
         macro=macro,
         schedule_macro=schedule_macro,
         records=records,
-        update=update_evidence[0],
-        reward_projection=update_evidence[1],
-        bank_update=update_evidence[2],
-        application=update_evidence[3],
-        task_local=update_evidence[4],
-        lora_response=update_evidence[5],
-        success_key_application=update_evidence[6],
-        profile_task_seconds=update_evidence[7],
-        kernel_seconds=update_evidence[8],
-        verification_seconds=update_evidence[9],
+        evidence=evidence,
         runtime_metrics=runtime_metrics,
     )
     task_counts = [
@@ -1018,7 +903,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in ("config", "source_run", "checkpoint", "tokenizer_path", "data_root"):
         path = getattr(args, name).resolve()
         if not path.exists():
-            raise ExpertManifoldError(f"missing residual Writer path: {path}")
+            raise ExpertManifoldError(f"missing PCUG Writer path: {path}")
         setattr(args, name, path)
     args.output_dir = args.output_dir.resolve()
     args.resume = args.resume.resolve() if args.resume else None
@@ -1026,19 +911,19 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         if args.output_dir.exists() and (
             not args.output_dir.is_dir() or any(args.output_dir.iterdir())
         ):
-            raise ExpertManifoldError("fresh residual Writer output is not empty")
+            raise ExpertManifoldError("fresh PCUG Writer output is not empty")
     elif (
         not args.resume.is_dir()
         or args.resume.parent.name != "checkpoints"
         or args.resume.parent.parent.resolve() != args.output_dir
         or not (args.output_dir / "run_contract.json").is_file()
     ):
-        raise ExpertManifoldError("residual Writer resume output ownership changed")
+        raise ExpertManifoldError("PCUG Writer resume output ownership changed")
     if args.config != V6_PRIOR_CANONICAL_CONFIG.resolve():
-        raise ExpertManifoldError("residual Writer requires the canonical config")
+        raise ExpertManifoldError("PCUG Writer requires the canonical config")
     load_v6_prior_config(args.config)
     if args.num_workers < 0 or (
         args.stop_after_macro is not None and args.stop_after_macro <= 0
     ):
-        raise ExpertManifoldError("invalid residual Writer worker or stop boundary")
+        raise ExpertManifoldError("invalid PCUG Writer worker or stop boundary")
     return args

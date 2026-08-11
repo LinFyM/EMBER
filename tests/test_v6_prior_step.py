@@ -9,6 +9,7 @@ import torch
 from ember.expert_manifold.contract import ExpertManifoldError
 from ember.expert_manifold.v6_prior_step import (
     GeneratedConditionGraph,
+    decode_candidate_program,
     generate_condition_graph,
     program_cotangent,
     redecoded_program_cotangent,
@@ -142,6 +143,37 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
     assert graph.program_leaf.dtype == torch.float32
     assert graph.program_leaf.requires_grad
     assert graph.program_input_before.dtype == torch.bfloat16
+    assert graph.base_program_slots.dtype == torch.bfloat16
+    assert graph.residual_before.dtype == torch.float32
+
+
+def test_candidate_program_reproduces_post_write_cast_order() -> None:
+    writer = _Writer()
+    graph = generate_condition_graph(
+        writer=writer,  # type: ignore[arg-type]
+        policy=torch.nn.Identity(),
+        correct_video=_video(),
+        counterfactual_video=None,
+        language_tokens=_language(),
+        kind="reversed",
+        counterfactual_seed=17,
+        task_ordinal=2,
+        task_visit=3,
+        teacher_demo=4,
+        device=torch.device("cpu"),
+    )
+    motion = torch.full((320, 2), 0.00390625, dtype=torch.float32)
+    program, state = decode_candidate_program(
+        graph,
+        writer=writer,  # type: ignore[arg-type]
+        motion=motion,
+        device=torch.device("cpu"),
+    )
+    expected = graph.base_program_slots + (
+        graph.residual_before + motion.unsqueeze(0)
+    ).to(dtype=graph.base_program_slots.dtype)
+    assert torch.equal(program, expected.to(dtype=torch.float32))
+    assert torch.equal(state["target.lora_A.default.weight"], program[0, 0:1])
 
 
 def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forward() -> (
@@ -185,6 +217,8 @@ def test_program_cotangent_transports_complete_a_b_vjp_without_hidden_scaling() 
         correct_lora=outputs,
         program_leaf=leaf,
         program_input_before=leaf.detach(),
+        base_program_slots=leaf.detach(),
+        residual_before=torch.zeros_like(leaf),
         correct_feature=torch.zeros(256),
         negative_feature=torch.zeros(256),
         correct_raw_frames=1,
@@ -218,6 +252,8 @@ def test_redecoded_program_cotangent_matches_the_original_compiler_graph() -> No
         correct_lora=state,
         program_leaf=leaf,
         program_input_before=leaf.detach(),
+        base_program_slots=leaf.detach(),
+        residual_before=torch.zeros_like(leaf),
         correct_feature=torch.zeros(256),
         negative_feature=torch.zeros(256),
         correct_raw_frames=1,

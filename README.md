@@ -37,10 +37,11 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   report/checkpoint，deployment/formal未授权。最早工程失效接口因此是完整logical B<=16 landmark policy-gradient
   本体显存，不再允许降batch、改dtype、allocator开关或第三次修补。这个结果只淘汰当前SRTP执行合同，不否定
   constant-memory occupancy、shared reward half-space或所有on-policy credit。
-- 当前唯一active successor design是PCUG：先形成真正准备写入的shared blind `D0`，再在两个完全相同的随机
+- 当前唯一active successor是PCUG：先形成真正准备写入的shared blind `D0`，再在两个完全相同的随机
   初始化上严格配对比较base与candidate Programs；若candidate losses多于gains，就在最终write中把该task的
   condition motion投影为零。每task总rollout仍为4，无policy backward、landmark replay或reward scale；harm guard
-  只约束当前step，stable-success key才持久化。design已封存，尚未实现或产生GPU/closed-loop结果。
+  只约束当前step，stable-success key才持久化。canonical实现和fresh config已闭合，SRTP active path已删除，完整
+  CPU回归`344 passed`；尚无GPU profile、checkpoint或closed-loop结果。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -123,8 +124,8 @@ EMBER/
 
 进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC、SKNC与SRTP均
 已封存non-pass；SRTP config为`profile_result_sealed_nonpass`，两个OOM failure artifacts保留且同配置重跑、
-deployment、formal全部关闭。PCUG现只有design authority，必须先原位实现与CPU/architecture gate，不能从旧
-文档恢复Reward/OSG/SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
+deployment、formal全部关闭。PCUG现为CPU-ready、等待一次discarded live macro；必须从clean pushed commit的
+frozen worktree运行，不能从旧文档恢复Reward/OSG/SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 [`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
 

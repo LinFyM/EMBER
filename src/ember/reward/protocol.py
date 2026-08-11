@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any
 
 
 SUITE_HORIZONS = {
@@ -60,8 +60,6 @@ _SEED_TAGS = {
     "policy_noise": 0x13198A2E03707344,
     "update": 0xA4093822299F31D0,
     "task_video": 0x082EFA98EC4E6C89,
-    "flow_sample": 0x452821E638D01377,
-    "landmark": 0xBE5466CF34E90C6C,
 }
 _SUITE_IDS = {
     "libero_spatial": 0,
@@ -171,7 +169,6 @@ def policy_noise_seed(
         replan_index,
     )
 
-
 def update_seed(
     root_seed: int,
     suite: str,
@@ -246,57 +243,3 @@ def reward_credit_policy_noise_seed(
         rollout_cursor,
         replan_index,
     )
-
-
-def flow_sample_seed(
-    root_seed: int,
-    *,
-    cycle: int,
-    global_task_id: int,
-    mc_index: int,
-) -> int:
-    """Seed one complete task-local Nmc flow panel.
-
-    Physical replay microbatch boundaries are absent so changing a throughput
-    microbatch cannot change the scientific sample panel.
-    """
-
-    return mixed_seed(
-        "flow_sample",
-        root_seed,
-        cycle,
-        global_task_id,
-        mc_index,
-    )
-
-
-def reward_tangent_landmark_index(
-    root_seed: int,
-    *,
-    suite: str,
-    task_id: int,
-    adaptation_seed: int,
-    rollout_cursor: int,
-    interior_count: int,
-) -> int:
-    """Choose one stateless reservoir index for an interior occupancy row."""
-
-    if interior_count <= 0:
-        raise RewardProtocolError("invalid reward landmark reservoir count")
-    return mixed_seed(
-        "landmark",
-        root_seed,
-        suite,
-        task_id,
-        adaptation_seed,
-        rollout_cursor,
-        interior_count,
-    ) % interior_count
-
-
-def rank_strided_assignments(
-    values: Sequence[Any], world_size: int
-) -> tuple[tuple[Any, ...], ...]:
-    if world_size <= 0 or not values or len(set(values)) != len(values):
-        raise RewardProtocolError("invalid reward rank assignment")
-    return tuple(tuple(values[rank::world_size]) for rank in range(world_size))

@@ -20,7 +20,7 @@ from ember.reward.protocol import (
 )
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
-    collect_randomized_reward_outcomes,
+    collect_paired_reward_arm_outcomes,
 )
 
 
@@ -65,12 +65,12 @@ def test_random_reset_pool_keeps_counterfactual_lanes_independent(
         return value
 
     monkeypatch.setattr(pool, "_new_environment", create)
-    lanes = tuple(pool.get(task, lane=lane) for lane in range(4))
-    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(4))
-    assert len({id(value) for value in lanes}) == 4
-    assert len(created) == 4
+    lanes = tuple(pool.get(task, lane=lane) for lane in range(2))
+    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(2))
+    assert len({id(value) for value in lanes}) == 2
+    assert len(created) == 2
     with pytest.raises(RewardProtocolError, match="lane"):
-        pool.get(task, lane=4)
+        pool.get(task, lane=2)
     pool.close()
     assert all(value.closed for value in created)
 
@@ -100,6 +100,7 @@ class _FakeEnvironment:
 
     def reset(self) -> dict[str, np.ndarray]:
         self.events.append(("reset", None))
+        self.policy_steps = 0
         return _observation(self.marker)
 
     def step(self, action: np.ndarray):
@@ -179,13 +180,13 @@ def test_reward_schedules_exclude_arm_rank_and_execution_order() -> None:
     )
 
 
-def test_k4_rollout_compacts_lanes_and_retains_bounded_landmarks() -> None:
+def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
     envs = tuple(
         _FakeEnvironment(success_after_policy_steps=value, marker=lane * 20)
-        for lane, value in enumerate((1, 6, None, 11))
+        for lane, value in enumerate((1, 6))
     )
     policy = _FakePolicy()
-    outcomes = collect_randomized_reward_outcomes(
+    outcomes = collect_paired_reward_arm_outcomes(
         envs=envs,
         policy=policy,
         preprocess=_preprocess,
@@ -195,10 +196,9 @@ def test_k4_rollout_compacts_lanes_and_retains_bounded_landmarks() -> None:
         global_task_id=6,
         language="put the bowl on the tray",
         adaptation_seed=23,
-        rollout_cursors=(0, 1, 2, 3),
-        env_seeds=(29, 31, 37, 41),
+        rollout_cursors=(0, 1),
+        env_seeds=(29, 31),
         policy_seed_root=43,
-        landmark_seed_root=47,
         device=torch.device("cpu"),
         max_horizon=12,
         dummy_settling_steps=10,
@@ -206,11 +206,11 @@ def test_k4_rollout_compacts_lanes_and_retains_bounded_landmarks() -> None:
         action_execution_horizon=5,
         num_inference_steps=10,
     )
-    assert len(outcomes) == 4
-    assert [value.success for value in outcomes] == [True, True, False, True]
-    assert [value.steps for value in outcomes] == [1, 6, 12, 11]
-    assert [value.rollout_cursor for value in outcomes] == [0, 1, 2, 3]
-    assert [noise.shape[0] for noise in policy.noises] == [4, 3, 2]
+    assert len(outcomes) == 2
+    assert [value.success for value in outcomes] == [True, True]
+    assert [value.steps for value in outcomes] == [1, 6]
+    assert [value.rollout_cursor for value in outcomes] == [0, 1]
+    assert [noise.shape[0] for noise in policy.noises] == [2, 1]
     assert policy.reset_count == 1
     for lane, (outcome, env) in enumerate(zip(outcomes, envs, strict=True)):
         expected_seeds = tuple(
@@ -222,21 +222,7 @@ def test_k4_rollout_compacts_lanes_and_retains_bounded_landmarks() -> None:
         assert outcome.policy_noise_seeds == expected_seeds
         environment_rows = [value for name, value in env.events if name == "policy"]
         assert len(environment_rows) == outcome.steps
-        assert 0 < len(outcome.landmarks) <= 4
-        assert [value.replan_ordinal for value in outcome.landmarks] == sorted(
-            value.replan_ordinal for value in outcome.landmarks
-        )
-        assert outcome.landmarks[0].replan_ordinal == 0
-        assert outcome.landmarks[-1].replan_ordinal == len(expected_seeds) - 1
-        for landmark in outcome.landmarks:
-            assert landmark.normalized_action_chunk.shape == (1, 50, 7)
-            assert 0 < landmark.executed_action_steps <= 5
-            assert set(landmark.observation) == {
-                "observation.images.base_0_rgb",
-                "observation.images.left_wrist_0_rgb",
-                OBS_LANGUAGE_TOKENS,
-                OBS_LANGUAGE_ATTENTION_MASK,
-            }
+        assert outcome.initial_normalized_action_chunk.shape == (1, 50, 7)
         assert set(vars(outcome)) == {
             "suite",
             "task_id",
@@ -250,16 +236,16 @@ def test_k4_rollout_compacts_lanes_and_retains_bounded_landmarks() -> None:
             "reward_sum",
             "dummy_settling_steps",
             "policy_noise_seeds",
-            "landmarks",
+            "initial_normalized_action_chunk",
         }
 
 
-def test_landmark_reservoir_is_reproducible_and_never_exceeds_four_rows() -> None:
+def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:
     def collect():
-        return collect_randomized_reward_outcomes(
+        return collect_paired_reward_arm_outcomes(
             envs=tuple(
                 _FakeEnvironment(success_after_policy_steps=None, marker=lane * 20)
-                for lane in range(4)
+                for lane in range(2)
             ),
             policy=_FakePolicy(),
             preprocess=_preprocess,
@@ -269,10 +255,9 @@ def test_landmark_reservoir_is_reproducible_and_never_exceeds_four_rows() -> Non
             global_task_id=22,
             language="do the task",
             adaptation_seed=23,
-            rollout_cursors=(0, 1, 2, 3),
-            env_seeds=(29, 31, 37, 41),
+            rollout_cursors=(0, 1),
+            env_seeds=(29, 31),
             policy_seed_root=43,
-            landmark_seed_root=47,
             device=torch.device("cpu"),
             max_horizon=40,
             dummy_settling_steps=10,
@@ -283,12 +268,15 @@ def test_landmark_reservoir_is_reproducible_and_never_exceeds_four_rows() -> Non
 
     first = collect()
     second = collect()
-    first_ordinals = [
-        [row.replan_ordinal for row in outcome.landmarks] for outcome in first
+    assert [value.policy_noise_seeds for value in first] == [
+        value.policy_noise_seeds for value in second
     ]
-    second_ordinals = [
-        [row.replan_ordinal for row in outcome.landmarks] for outcome in second
-    ]
-    assert first_ordinals == second_ordinals
-    assert all(len(value) == 4 for value in first_ordinals)
-    assert all(value[0] == 0 and value[-1] == 7 for value in first_ordinals)
+    for left, right in zip(first, second, strict=True):
+        assert left.env_seed == right.env_seed
+        assert left.rollout_cursor == right.rollout_cursor
+        torch.testing.assert_close(
+            left.initial_normalized_action_chunk,
+            right.initial_normalized_action_chunk,
+            rtol=0,
+            atol=0,
+        )

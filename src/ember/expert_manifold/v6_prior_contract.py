@@ -1,4 +1,4 @@
-"""Fail-closed scientific and launch contract for the active SRTP Writer."""
+"""Fail-closed scientific and launch contract for the active PCUG Writer."""
 
 from __future__ import annotations
 
@@ -17,13 +17,13 @@ from ember.writer.functional import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_shared_reward_tangent_projection_v1.json"
+    REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_shared_reward_tangent_projection_v1"
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_shared_reward_tangent_projection_launch_v1"
-V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_shared_reward_tangent_projection_profile_v1"
+V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_paired_candidate_update_guard_v1"
+V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_paired_candidate_update_guard_launch_v1"
+V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_paired_candidate_update_guard_profile_v1"
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_shared_reward_tangent_projection_completion_v1"
+    "ember_pi05_v6_paired_candidate_update_guard_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
@@ -62,7 +62,7 @@ _UNCHANGED_PICK_GC_SECTIONS = (
     "cache_gate",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_shared_reward_tangent_projection",
+    "name": "frozen_v6_paired_candidate_update_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": False,
@@ -84,7 +84,11 @@ _EXPECTED_INITIALIZATION = {
     "scaler": "not_instantiated",
 }
 _EXPECTED_INFORMATION_WALL = {
-    "writer_video_split_roles": ["train", "validation", "test"],
+    "writer_video_split_roles": [
+        "train",
+        "validation",
+        "test",
+    ],
     "writer_forbidden_inputs": [
         "action",
         "proprio",
@@ -100,88 +104,82 @@ _EXPECTED_INFORMATION_WALL = {
     "teacher_action_reads": 0,
     "source_actions_enter_only": "blind_correct_condition_functional_loss",
     "training_reward_scope": (
-        "development_train_mixed_k4_fixed_landmark_program_tangent_halfspaces_"
-        "plus_all_success_key_equalities"
+        "development_train_exact_paired_base_candidate_binary_outcomes_for_"
+        "final_equality_guards_only"
     ),
     "training_observation_action_scope": (
-        "online_policy_generated_constant_memory_landmarks_for_train24_reward_"
-        "tangent_only"
+        "online_policy_generated_train24_base_candidate_rollouts_without_"
+        "policy_backward_or_replay"
     ),
-    "maximum_landmarks_per_episode": 4,
-    "landmark_payload_checkpointed": False,
+    "paired_rollout_payload_checkpointed": False,
     "negative_action_forwards": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0,
 }
 _EXPECTED_SUCCESS_KEY_BANK = {
-    "kind": "training_only_first_all_success_condition_key_bank",
+    "kind": "training_only_first_stable_success_condition_key_bank",
     "task_slots": 24,
     "feature_width": 256,
     "feature_dtype": "float32",
     "presence_dtype": "bool_runtime_uint8_checkpoint",
-    "certificate": "exact_k4_all_four_random_reset_rollouts_success",
-    "current_all_success_constraint_timing": "before_same_macro_shared_write",
-    "persistent_policy": (
-        "first_certified_key_per_sealed_train_task_never_replace"
-    ),
-    "current_key_policy": (
-        "every_current_all_success_key_is_temporary_constraint_even_if_task_"
-        "already_present"
-    ),
-    "zero_to_three_success_policy": "no_add_no_remove",
+    "certificate": "exact_k2_base_and_candidate_all_four_random_reset_rollouts_success",
+    "provisional_constraint_timing": "persisted_keys_only_before_candidate_probe",
+    "persistent_policy": "first_stable_success_key_per_sealed_train_task_never_replace",
+    "current_stable_key_policy": "temporary_final_guard_and_first_success_bank_candidate",
+    "harmful_key_policy": "current_candidate_final_guard_only_never_persist",
     "deployment_read": False,
     "stores_lora_action_observation_or_reward": False,
     "checkpoint_tensor_count": 3,
 }
 _EXPECTED_UPDATE = {
-    "kind": "full48_success_key_nullspace_then_shared_reward_tangent_projection",
+    "kind": "full48_persisted_success_nullspace_then_paired_candidate_update_guard",
     "correct_conditions": 24,
     "negative_conditions": 24,
     "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
-    "negative_schedule": (
-        "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong"
-    ),
-    "negative_counts_per_macro": {"reversed": 8, "shuffled": 8, "wrong": 8},
-    "blind_proposal": (
-        "negative_correct_condition_source_functional_program_cotangent"
-    ),
-    "equality_constraint": (
-        "every_persisted_and_current_all_success_key_has_exact_zero_"
-        "incremental_program_motion"
+    "negative_schedule": "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong",
+    "negative_counts_per_macro": {
+        "reversed": 8,
+        "shuffled": 8,
+        "wrong": 8,
+    },
+    "blind_proposal": "negative_correct_condition_source_functional_program_cotangent",
+    "provisional_equality_constraint": (
+        "every_persisted_stable_success_key_has_exact_zero_incremental_"
+        "program_motion"
     ),
     "blind_parameterization": (
-        "objective_features_projected_into_success_key_row_span_orthogonal_"
-        "complement"
+        "objective_features_projected_into_persisted_success_key_row_span_"
+        "orthogonal_complement"
     ),
     "anchor_projector": (
         "implicit_fp64_thin_svd_row_basis_without_dense_256_square_"
         "materialization"
     ),
-    "dependent_anchor_policy": (
-        "machine_epsilon_matrix_size_numerical_rank_only"
-    ),
+    "dependent_anchor_policy": "machine_epsilon_matrix_size_numerical_rank_only",
     "no_anchor": "elementwise_exact_pick_gc_full48_kernel",
     "correct_rhs": "negative_correct_condition_program_cotangent",
     "negative_rhs": "exact_zero_incremental_program_motion",
-    "reward_constraint": (
-        "each_current_mixed_k4_program_tangent_inner_product_with_final_shared_"
-        "write_nonpositive"
+    "candidate_program_arithmetic": "base_slots_plus_cast_residual_plus_condition_motion",
+    "paired_candidate_test": (
+        "two_random_initializations_base_k2_then_candidate_k2_with_exact_"
+        "shared_env_and_policy_keys"
     ),
-    "reward_constraint_timing": (
-        "after_blind_full48_shared_solve_before_single_memory_add"
+    "harmful_classification": "paired_losses_strictly_greater_than_paired_gains",
+    "stable_success_classification": "base_and_candidate_all_four_outcomes_success",
+    "final_equality_constraint": (
+        "persisted_stable_keys_union_current_stable_success_keys_union_"
+        "current_harmful_keys"
     ),
-    "reward_projection": (
-        "euclidean_nearest_anchor_null_update_via_nonnegative_small_dual"
+    "final_projection": (
+        "euclidean_nearest_blind_update_via_fp64_thin_guard_row_basis_and_"
+        "one_fp32_feature_projection"
     ),
-    "reward_dual_solver": "scipy_nnls_on_fp64_machine_epsilon_eigenspace",
-    "no_mixed_or_raw_feasible": "elementwise_exact_blind_shared_update",
-    "step_size": 1.0,
+    "no_current_guards": "elementwise_exact_provisional_blind_update",
+    "step_size": 1,
     "relative_damping": 0.01,
     "projection_small_solve_dtype": "float64",
     "full48_small_solve_dtype": "float64",
-    "reward_small_dual_dtype": "float64_cpu",
     "large_rhs_and_memory_write_dtype": "float32",
-    "postsolve_roundoff_correction": "thin_success_key_row_basis_fp32",
     "optimizer": "none_manual_add",
     "persistent_precision_or_optimizer_state": False,
     "momentum": False,
@@ -193,8 +191,18 @@ _EXPECTED_UPDATE = {
 _EXPECTED_ENVIRONMENT = {
     "reset": "official_random_reset_without_set_init_state",
     "rollouts_per_task": 4,
+    "paired_initializations_per_task": 2,
+    "rollouts_per_arm": 2,
     "dummy_settling_steps": 10,
-    "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+    "dummy_action": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+    ],
     "render_resolution": 256,
     "model_resolution": 224,
     "camera_rotation_degrees": 180,
@@ -204,41 +212,26 @@ _EXPECTED_ENVIRONMENT = {
     "terminate_on_success": True,
     "retain_success_replay": False,
     "retain_failure_replay": False,
-    "rollout_policy_batch_size": 4,
-    "persistent_env_lanes_per_task": 4,
-    "occupancy_landmarks_per_episode_max": 4,
-    "occupancy_landmark_selection": (
-        "first_last_plus_two_seeded_uniform_reservoir_interior"
-    ),
-    "occupancy_landmark_retention": (
-        "ephemeral_train24_only_never_checkpointed"
-    ),
+    "rollout_policy_batch_size": 2,
+    "persistent_env_lanes_per_task": 2,
 }
 _EXPECTED_OBJECTIVE = {
-    "name": (
-        "blind_source_functional_program_credit_with_shared_mixed_reward_"
-        "tangent_projection"
-    ),
+    "name": "blind_source_functional_program_credit_with_paired_candidate_final_equality_guard",
     "positive_policy_randomness": {
         "scope": "one_independent_flow_noise_and_time_per_action_query",
         "seed_scheme": TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
         "flow_time_sampling_scheme": INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
         "flow_noise_sampling_scheme": INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
     },
-    "success_certificate": "four_of_four_binary_environment_success",
-    "mixed_outcome_advantage": "k4_leave_one_out_binary_(4y_minus_sumy)_over_3",
-    "episode_weighting": "one_quarter_then_equal_selected_landmark_mean",
-    "landmark_selection": "first_last_plus_two_seeded_uniform_reservoir_interior",
-    "maximum_landmarks_per_episode": 4,
-    "maximum_logical_landmark_batch": 16,
-    "flow_mc_samples": 4,
-    "flow_time_sampling": "task_keyed_independent_exact_beta15_time_v1",
-    "flow_noise_sampling": "task_keyed_independent_gaussian_v1",
-    "physical_landmark_batch_size": 16,
-    "mixed_reward_credit": "executed_prefix_cfm_program_cotangent_halfspace_only",
-    "homogeneous_reward_credit": "exact_zero_without_functional_forward",
-    "trajectory_replay": "fixed_landmarks_only_no_full_prefix_replay",
-    "reward_weight_scale_or_direction": "none_projection_halfspace_only",
+    "stable_success_certificate": "base_and_candidate_four_of_four_binary_environment_success",
+    "paired_loss": "base_success_and_candidate_failure_on_same_initialization",
+    "paired_gain": "base_failure_and_candidate_success_on_same_initialization",
+    "task_harm": "paired_loss_count_strictly_greater_than_paired_gain_count",
+    "candidate_scale": "exact_provisional_blind_update_no_line_search",
+    "reward_use": "binary_final_guard_membership_only",
+    "policy_backward": False,
+    "trajectory_replay": False,
+    "reward_weight_scale_or_direction": "none_equality_guard_only",
     "negative_policy_forwards": 0,
     "critic": False,
     "progress_reward": False,
@@ -247,20 +240,18 @@ _EXPECTED_OBJECTIVE = {
 _EXPECTED_RNG = {
     "environment_seed_root": 2026081101,
     "policy_noise_seed_root": 2026081102,
-    "landmark_seed_root": 2026081201,
-    "flow_credit_seed_root": 2026081103,
     "scheme": "order_independent_splitmix64_without_rank_or_physical_microbatch",
 }
 _EXPECTED_OPTIMIZATION = {
     "precision": "bfloat16",
     "seed": 7,
     "functional_policy_microbatch_size": 10,
-    "rollout_policy_batch_size": 4,
+    "rollout_policy_batch_size": 2,
     "optimizer": "none",
     "distributed_update": {
         "kind": (
-            "all_gather_dynamic_local_task_shard_features_blind_and_reward_"
-            "cotangents_success_counts_then_identical_local_projected_manual_write"
+            "all_gather_dynamic_local_task_shard_blind_evidence_then_paired_"
+            "outcomes_then_identical_final_guarded_manual_write"
         ),
         "world_size": "fresh_live_1_to_6_then_exact_resume_locked",
         "task_assignment": "cost_balanced_long_first_dynamic_uneven_train24",
@@ -293,29 +284,27 @@ _EXPECTED_PROFILE_GATES = {
     "task_count": 24,
     "video_count": 24,
     "source_action_query_count": 480,
+    "paired_state_count": 48,
+    "base_rollout_count": 48,
+    "candidate_rollout_count": 48,
     "rollout_count": 96,
-    "all_success_task_count_min": 6,
-    "all_success_task_per_suite_min": 1,
-    "mixed_task_count_min": 8,
-    "mixed_suite_count_min": 3,
-    "maximum_landmarks_per_episode": 4,
-    "flow_mc_samples": 4,
+    "discordant_state_count_min": 4,
+    "harmful_task_count_min": 2,
+    "harmful_suite_count_min": 2,
+    "candidate_gain_count_min": 1,
     "original_feature_rank": 48,
     "projected_feature_rank_min": 24,
-    "active_regularized_gram_condition_number_max": 200.0,
-    "unprotected_projected_feature_energy_ratio_median_min": 0.2,
-    "protected_to_unprotected_motion_ratio_max": 1e-5,
-    "negative_to_unprotected_motion_rms_max": 0.15,
-    "raw_reward_violation_count_min": 2,
-    "final_reward_violation_count": 0,
     "projected_to_blind_energy_ratio_min": 0.25,
+    "final_guard_violation_count": 0,
+    "protected_to_unprotected_motion_ratio_max": 0.00001,
+    "negative_to_unprotected_motion_rms_max": 0.15,
     "negative_null_task_count_min": 18,
     "negative_null_per_kind_min": 6,
     "predicted_observed_relative_rms_max": 0.005,
-    "protected_to_unprotected_lora_response_ratio_max": 1e-5,
-    "protected_fixed_action_response_rms_max": 1e-6,
+    "protected_to_unprotected_lora_response_ratio_max": 0.00001,
+    "protected_fixed_action_response_rms_max": 0.000001,
     "unprotected_fixed_action_probe_task_count": 4,
-    "production_wall_ratio_max": 1.25,
+    "production_wall_ratio_max": 1.5,
     "negative_policy_forwards": 0,
     "oom_count": 0,
     "nonfinite_count": 0,
@@ -330,11 +319,11 @@ _PROFILE_STATIC = {
     "retain_weight": False,
 }
 _EXPECTED_FORMAL_GATES = {
-    "macro5_correct_min": 140,
+    "macro5_correct_min": 142,
     "macro5_breadth_min": 6,
     "macro5_lost_to_macro0_max": 8,
     "macro5_gained_must_exceed_lost": True,
-    "macro5_non_declining_suite_count_min": 2,
+    "macro5_non_declining_suite_count_min": 3,
     "macro5_single_task_net_gain_fraction_max": 0.5,
     "first_full_six_arm_correct_min": 144,
     "goal_full_six_arm_correct_min": 151,
@@ -369,19 +358,19 @@ _COHERENT_STATES = {
         "active_cpu_ready_awaiting_live_profile",
         "awaiting_live_a40_fresh0_to1_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "awaiting_live_srtp_deployment_smoke",
+        "awaiting_live_pcug_deployment_smoke",
     ),
     (
         "active_formal_ready",
         "sealed_from_live_a40_fresh0_to1_profile",
         "ready_after_live_profile_seal",
-        "sealed_from_live_srtp_deployment_smoke",
+        "sealed_from_live_pcug_deployment_smoke",
     ),
     (
         "formal_result_sealed",
         "sealed_from_live_a40_fresh0_to1_profile",
         "formal_result_sealed",
-        "sealed_from_live_srtp_deployment_smoke",
+        "sealed_from_live_pcug_deployment_smoke",
     ),
     (
         "profile_result_sealed_nonpass",
@@ -397,9 +386,9 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
         row = config["authorities"][name]
         path = (REPO_ROOT / str(row["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing SRTP Writer authority: {name}") from error
+        raise ExpertManifoldError(f"missing PCUG Writer authority: {name}") from error
     if not path.is_file():
-        raise ExpertManifoldError(f"SRTP Writer authority is missing: {name}")
+        raise ExpertManifoldError(f"PCUG Writer authority is missing: {name}")
     return path
 
 
@@ -543,18 +532,18 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
 def load_v6_prior_config(path: Path = V6_PRIOR_CANONICAL_CONFIG) -> dict[str, Any]:
     path = path.resolve()
     if path != V6_PRIOR_CANONICAL_CONFIG.resolve() or not path.is_file():
-        raise ExpertManifoldError("SRTP Writer requires its canonical config path")
+        raise ExpertManifoldError("PCUG Writer requires its canonical config path")
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ExpertManifoldError("invalid SRTP Writer config") from error
+        raise ExpertManifoldError("invalid PCUG Writer config") from error
     if not isinstance(config, dict) or not _config_matches(config):
-        raise ExpertManifoldError("SRTP Writer config violates its fail-closed contract")
+        raise ExpertManifoldError("PCUG Writer config violates its fail-closed contract")
     for name in config["authorities"]:
         authority_path(config, name)
     initialization = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     if not initialization.is_dir():
-        raise ExpertManifoldError("SRTP historical v6 initialization is missing")
+        raise ExpertManifoldError("PCUG historical v6 initialization is missing")
     return config
 
 
@@ -567,18 +556,18 @@ def runtime_for_mode(
             or config["profile_run"]["status"]
             != "awaiting_live_a40_fresh0_to1_profile"
         ):
-            raise ExpertManifoldError("SRTP mechanism profile is not authorized")
+            raise ExpertManifoldError("PCUG mechanism profile is not authorized")
         return 1, (), int(config["profile_run"]["schedule_macro"])
     if mode == "formal":
         if (
             config.get("status") != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("SRTP formal training is blocked by live gates")
+            raise ExpertManifoldError("PCUG formal training is blocked by live gates")
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),
             0,
         )
-    raise ExpertManifoldError(f"unsupported SRTP Writer mode: {mode}")
+    raise ExpertManifoldError(f"unsupported PCUG Writer mode: {mode}")

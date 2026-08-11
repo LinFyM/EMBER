@@ -51,7 +51,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_srtp_deployment_smoke"
+        "sealed_from_live_pcug_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -86,7 +86,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_srtp_config_changes_only_final_shared_write_and_fixed_reward_credit() -> None:
+def test_pcug_config_changes_only_candidate_protection_interface() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -101,25 +101,26 @@ def test_srtp_config_changes_only_final_shared_write_and_fixed_reward_credit() -
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_success_key_nullspace_then_shared_reward_tangent_projection"
+        "full48_persisted_success_nullspace_then_paired_candidate_update_guard"
     )
     assert config["update"]["blind_parameterization"].endswith(
         "orthogonal_complement"
     )
-    assert config["update"]["reward_projection"].startswith("euclidean_nearest")
+    assert config["update"]["final_projection"].startswith("euclidean_nearest")
     assert config["update"]["task_scalar_gate_or_mask"] is False
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
     assert "reconciliation" not in config
     assert config["environment"]["rollouts_per_task"] == 4
+    assert config["environment"]["paired_initializations_per_task"] == 2
+    assert config["environment"]["rollouts_per_arm"] == 2
     assert config["environment"]["retain_success_replay"] is False
     assert config["environment"]["retain_failure_replay"] is False
-    assert config["objective"]["trajectory_replay"] == (
-        "fixed_landmarks_only_no_full_prefix_replay"
-    )
-    assert config["objective"]["maximum_logical_landmark_batch"] == 16
-    assert config["objective"]["flow_mc_samples"] == 4
+    assert config["objective"]["trajectory_replay"] is False
+    assert config["objective"]["policy_backward"] is False
+    assert config["objective"]["reward_use"] == "binary_final_guard_membership_only"
     assert config["success_key_bank"]["task_slots"] == 24
     assert config["success_key_bank"]["deployment_read"] is False
+    assert config["success_key_bank"]["harmful_key_policy"].endswith("never_persist")
     assert config["data"]["action_queries_per_task"] == 20
     distributed = config["optimization"]["distributed_update"]
     assert distributed["world_size"] == "fresh_live_1_to_6_then_exact_resume_locked"
@@ -179,6 +180,11 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
             V6_PRIOR_CANONICAL_CONFIG.parent
             / "pi05_v6_success_key_nullspace_consolidation_v1.json"
         )
+    with pytest.raises(ExpertManifoldError, match="canonical config path"):
+        load_v6_prior_config(
+            V6_PRIOR_CANONICAL_CONFIG.parent
+            / "pi05_v6_shared_reward_tangent_projection_v1.json"
+        )
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
@@ -197,7 +203,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_srtp_deployment_smoke"
+        "awaiting_live_pcug_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -217,7 +223,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_srtp_deployment_smoke"
+        "awaiting_live_pcug_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
@@ -289,7 +295,7 @@ def test_runtime_accepts_every_live_world_up_to_six_and_rejects_larger_world(
         _resolve_segment(arguments, config, _context())
 
 
-def test_cursor_seals_k4_randomness_without_cumulative_precision_state() -> None:
+def test_cursor_seals_paired_randomness_without_cumulative_precision_state() -> None:
     cursor = cursor_contract(_raw_config(), 10)
     assert cursor == {
         "next_macro": 10,
@@ -302,13 +308,12 @@ def test_cursor_seals_k4_randomness_without_cumulative_precision_state() -> None
         "action_queries_per_task": 20,
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
         "rollouts_per_task": 4,
-        "next_rollout_cursor_per_task": 40,
+        "paired_initializations_per_task": 2,
+        "next_paired_state_cursor_per_task": 20,
         "environment_seed_root": 2026081101,
         "policy_noise_seed_root": 2026081102,
-        "landmark_seed_root": 2026081201,
-        "flow_credit_seed_root": 2026081103,
-        "landmark_policy": "first_last_plus_two_seeded_uniform_reservoir_interior",
-        "success_key_anchor_policy": "first_all_success_per_train_task",
+        "paired_arm_policy": "base_k2_then_candidate_k2_with_identical_keys",
+        "success_key_anchor_policy": "first_stable_success_per_train_task",
     }
     assert all("precision" not in key for key in cursor)
 
@@ -338,4 +343,5 @@ def test_ownership_records_deployment_memory_and_training_only_success_bank() ->
     assert observed["program_residual_memory"]["checkpoint_owned"] is True
     assert observed["success_key_anchor_bank"]["checkpoint_owned"] is True
     assert observed["success_key_anchor_bank"]["deployment_owned"] is False
+    assert observed["success_key_anchor_bank"]["first_stable_success_only"] is True
     assert "reconciliation_precision" not in observed

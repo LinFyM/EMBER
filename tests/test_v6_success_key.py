@@ -14,40 +14,40 @@ def _bank() -> SuccessKeyAnchorBank:
 
 
 def _features() -> torch.Tensor:
-    generator = torch.Generator().manual_seed(19)
-    return torch.randn(24, 6, generator=generator)
+    return torch.randn(24, 6, generator=torch.Generator().manual_seed(19))
 
 
-def test_current_all_success_keys_constrain_before_first_commit() -> None:
+def test_current_stable_keys_do_not_enter_provisional_plan_before_commit() -> None:
     bank = _bank()
     features = _features()
-    success = torch.tensor([4, 3, 4, *([0] * 21)], dtype=torch.long)
-    plan = bank.constraint_plan(features, success)
-    torch.testing.assert_close(plan.features, features[[0, 2]])
-    assert plan.current_all_success_mask.nonzero().flatten().tolist() == [0, 2]
+    stable = torch.zeros(24, dtype=torch.bool)
+    stable[[0, 2]] = True
+    plan = bank.persisted_plan()
+    assert plan.features.shape == (0, 6)
     assert not bool(plan.persisted_before_mask.any())
-    summary = bank.commit_first_successes_(features, success, plan)
-    assert summary.constraint_row_count == 2
+    summary = bank.commit_first_stable_successes_(features, stable, plan)
+    assert summary.current_stable_success_ordinals == (0, 2)
     assert summary.newly_stored_ordinals == (0, 2)
     assert summary.persisted_after_ordinals == (0, 2)
 
 
-def test_first_success_key_is_never_replaced_but_current_key_is_constrained() -> None:
+def test_first_stable_key_is_never_replaced_and_harmful_is_not_persisted() -> None:
     bank = _bank()
     first = _features()
-    success = torch.tensor([4, *([0] * 23)], dtype=torch.long)
-    first_plan = bank.constraint_plan(first, success)
-    bank.commit_first_successes_(first, success, first_plan)
+    stable = torch.zeros(24, dtype=torch.bool)
+    stable[0] = True
+    bank.commit_first_stable_successes_(first, stable, bank.persisted_plan())
     stored = bank.features[0].clone()
 
     second = _features().roll(1, dims=1)
-    second_plan = bank.constraint_plan(second, success)
-    assert second_plan.features.shape == (2, 6)
-    torch.testing.assert_close(second_plan.features[0], stored)
-    torch.testing.assert_close(second_plan.features[1], second[0])
-    summary = bank.commit_first_successes_(second, success, second_plan)
+    plan = bank.persisted_plan()
+    assert plan.features.shape == (1, 6)
+    torch.testing.assert_close(plan.features[0], stored)
+    no_stable = torch.zeros(24, dtype=torch.bool)
+    summary = bank.commit_first_stable_successes_(second, no_stable, plan)
     assert summary.newly_stored_count == 0
     torch.testing.assert_close(bank.features[0], stored)
+    assert not bool(bank.present[1])
 
 
 def test_bank_restore_preserves_slot_authority() -> None:
@@ -71,11 +71,12 @@ def test_bank_restore_preserves_slot_authority() -> None:
         )
 
 
-def test_stale_constraint_plan_cannot_commit() -> None:
+def test_stale_persisted_plan_cannot_commit() -> None:
     bank = _bank()
     features = _features()
-    success = torch.tensor([4, *([0] * 23)], dtype=torch.long)
-    plan = bank.constraint_plan(features, success)
-    other = success.roll(1)
+    stale = bank.persisted_plan()
+    stable = torch.zeros(24, dtype=torch.bool)
+    stable[0] = True
+    bank.commit_first_stable_successes_(features, stable, stale)
     with pytest.raises(ExpertManifoldError, match="plan changed"):
-        bank.commit_first_successes_(features, other, plan)
+        bank.commit_first_stable_successes_(features, stable, stale)

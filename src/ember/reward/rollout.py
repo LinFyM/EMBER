@@ -1,8 +1,8 @@
-"""Official K4 outcomes with constant-memory SRTP occupancy landmarks."""
+"""Exact K2 random-reset rollout arm for PCUG paired candidate tests."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
@@ -15,7 +15,6 @@ from ember.reward.protocol import (
     RewardProtocolError,
     RewardTask,
     reward_credit_policy_noise_seed,
-    reward_tangent_landmark_index,
 )
 
 
@@ -36,14 +35,11 @@ def _transition(value: Any) -> tuple[Mapping[str, Any], float, bool, Mapping[str
 def _success(done: bool, reward: float, info: Mapping[str, Any]) -> bool:
     if done or reward > 0:
         return True
-    if "is_success" in info:
-        return _single_bool(info["is_success"])
-    return False
+    return _single_bool(info["is_success"]) if "is_success" in info else False
 
 
 def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch.Tensor:
-    generator = torch.Generator(device="cpu")
-    generator.manual_seed(seed)
+    generator = torch.Generator(device="cpu").manual_seed(seed)
     return torch.randn(
         (1, chunk_size, max_action_dim),
         generator=generator,
@@ -53,12 +49,7 @@ def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch
 
 
 class RandomResetEnvironmentPool:
-    """Retain independent persistent LIBERO lanes for each task.
-
-    Each of the four reward-credit episodes owns a separate environment lane,
-    so keyed random resets never depend on another episode's termination time.
-    No fixed benchmark init state is read.
-    """
+    """Retain two independent environment lanes per train task."""
 
     def __init__(
         self, *, bddl_root: Path, assets_root: Path, render_resolution: int
@@ -86,8 +77,8 @@ class RandomResetEnvironmentPool:
         )
 
     def get(self, task: RewardTask, *, lane: int = 0) -> Any:
-        if not 0 <= lane < 4:
-            raise RewardProtocolError("random-reset environment lane must be in 0..3")
+        if not 0 <= lane < 2:
+            raise RewardProtocolError("PCUG random-reset lane must be in 0..1")
         key = (task.global_task_id, lane)
         if key in self._envs:
             return self._envs[key]
@@ -115,18 +106,7 @@ class RandomResetEnvironmentPool:
         self.close()
 
 
-@dataclass
-class RewardOccupancyLandmark:
-    """One ephemeral on-policy replan row selected during a K4 rollout."""
-
-    replan_ordinal: int
-    observation: dict[str, torch.Tensor]
-    normalized_action_chunk: torch.Tensor
-    executed_action_steps: int
-    policy_noise_seed: int
-
-
-@dataclass
+@dataclass(frozen=True)
 class RewardRolloutOutcome:
     suite: str
     task_id: int
@@ -140,7 +120,7 @@ class RewardRolloutOutcome:
     reward_sum: float
     dummy_settling_steps: int
     policy_noise_seeds: tuple[int, ...]
-    landmarks: tuple[RewardOccupancyLandmark, ...]
+    initial_normalized_action_chunk: torch.Tensor
 
 
 @dataclass
@@ -149,14 +129,11 @@ class _RewardLaneState:
     rollout_cursor: int
     env_seed: int
     observation: Mapping[str, Any]
-    first_landmark: RewardOccupancyLandmark | None = None
-    last_landmark: RewardOccupancyLandmark | None = None
-    interior_landmarks: list[RewardOccupancyLandmark] = field(default_factory=list)
-    interior_count: int = 0
-    noise_seeds: list[int] = field(default_factory=list)
+    noise_seeds: list[int]
     reward_sum: float = 0.0
     steps: int = 0
     success: bool = False
+    initial_action_chunk: torch.Tensor | None = None
 
     def is_active(self, max_horizon: int) -> bool:
         return not self.success and self.steps < max_horizon
@@ -215,57 +192,23 @@ def _random_reset_with_settling(
     return observation
 
 
-def _outcome_result(
-    *,
-    suite: str,
-    task_id: int,
-    global_task_id: int,
-    adaptation_seed: int,
-    rollout_cursor: int,
-    env_seed: int,
-    policy_seed_root: int,
-    success: bool,
-    steps: int,
-    reward_sum: float,
-    dummy_settling_steps: int,
-    noise_seeds: Sequence[int],
-    landmarks: Sequence[RewardOccupancyLandmark],
-) -> RewardRolloutOutcome:
-    return RewardRolloutOutcome(
-        suite=suite,
-        task_id=task_id,
-        global_task_id=global_task_id,
-        adaptation_seed=adaptation_seed,
-        rollout_cursor=rollout_cursor,
-        env_seed=env_seed,
-        policy_seed_root=policy_seed_root,
-        success=success,
-        steps=steps,
-        reward_sum=reward_sum,
-        dummy_settling_steps=dummy_settling_steps,
-        policy_noise_seeds=tuple(noise_seeds),
-        landmarks=tuple(landmarks),
-    )
-
-
-def _validate_k4_panel(
+def _validate_paired_arm_panel(
     envs: Sequence[Any],
     rollout_cursors: Sequence[int],
     env_seeds: Sequence[int],
 ) -> None:
-    lane_count = len(envs)
     if (
-        lane_count != 4
-        or len(rollout_cursors) != lane_count
-        or len(env_seeds) != lane_count
-        or len(set(rollout_cursors)) != lane_count
-        or len({id(env) for env in envs}) != lane_count
-        or len(set(int(seed) for seed in env_seeds)) != lane_count
+        len(envs) != 2
+        or len(rollout_cursors) != 2
+        or len(env_seeds) != 2
+        or len(set(int(value) for value in rollout_cursors)) != 2
+        or len(set(int(value) for value in env_seeds)) != 2
+        or len({id(env) for env in envs}) != 2
     ):
-        raise RewardProtocolError("reward-credit rollout panel must be exact K4")
+        raise RewardProtocolError("PCUG rollout arm must be exact K2")
 
 
-def _initialize_reward_lanes(
+def _initialize_lanes(
     *,
     envs: Sequence[Any],
     policy: torch.nn.Module,
@@ -304,11 +247,9 @@ def _initialize_reward_lanes(
             rollout_cursor=int(cursor),
             env_seed=int(env_seed),
             observation=_random_reset_with_settling(
-                env,
-                env_seed=int(env_seed),
-                dummy=dummy,
-                steps=dummy_settling_steps,
+                env, env_seed=int(env_seed), dummy=dummy, steps=dummy_settling_steps
             ),
+            noise_seeds=[],
         )
         for env, cursor, env_seed, dummy in zip(
             envs, rollout_cursors, env_seeds, dummies, strict=True
@@ -330,33 +271,8 @@ def _batched_policy_replan(
     device: torch.device,
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int],
-) -> tuple[
-    tuple[dict[str, torch.Tensor], ...],
-    torch.Tensor,
-    np.ndarray,
-    tuple[int, ...],
-]:
-    prepared: list[dict[str, torch.Tensor]] = []
-    noises: list[torch.Tensor] = []
-    current_seeds: list[int] = []
-    for lane in active:
-        prepared.append(preprocess(libero_policy_input(lane.observation, language)))
-        seed = policy_seed_fn(
-            policy_seed_root,
-            suite,
-            task_id,
-            adaptation_seed,
-            lane.rollout_cursor,
-            len(lane.noise_seeds),
-        )
-        current_seeds.append(seed)
-        noises.append(
-            _flow_noise_cpu(
-                seed=seed,
-                chunk_size=int(policy.config.chunk_size),
-                max_action_dim=int(policy.config.max_action_dim),
-            )
-        )
+) -> tuple[torch.Tensor, np.ndarray, tuple[int, ...]]:
+    prepared = [preprocess(libero_policy_input(lane.observation, language)) for lane in active]
     keys = set(prepared[0])
     if any(set(batch) != keys for batch in prepared):
         raise RewardProtocolError("batched reward rollout observation keys changed")
@@ -364,92 +280,53 @@ def _batched_policy_replan(
         name: torch.cat([batch[name] for batch in prepared], dim=0)
         for name in sorted(keys)
     }
-    noise = torch.cat(noises, dim=0).to(device=device)
+    seeds = tuple(
+        policy_seed_fn(
+            policy_seed_root,
+            suite,
+            task_id,
+            adaptation_seed,
+            lane.rollout_cursor,
+            len(lane.noise_seeds),
+        )
+        for lane in active
+    )
+    noise = torch.cat(
+        [
+            _flow_noise_cpu(
+                seed=seed,
+                chunk_size=int(policy.config.chunk_size),
+                max_action_dim=int(policy.config.max_action_dim),
+            )
+            for seed in seeds
+        ],
+        dim=0,
+    ).to(device=device)
     with torch.inference_mode():
         normalized = policy.predict_action_chunk(
-            policy_batch,
-            noise=noise,
-            num_steps=num_inference_steps,
+            policy_batch, noise=noise, num_steps=num_inference_steps
         )
     if normalized.shape != (len(active), int(policy.config.chunk_size), 7):
         raise RewardProtocolError(
             "batched PI05 reward policy returned an invalid action chunk"
         )
     normalized = normalized.detach()
-    environment_actions = postprocess(normalized).to(device="cpu")
-    return tuple(prepared), normalized, environment_actions.numpy(), tuple(current_seeds)
+    actions = postprocess(normalized).to(device="cpu").numpy()
+    return normalized, actions, seeds
 
 
-def _retain_landmark(
-    lane: _RewardLaneState,
-    landmark: RewardOccupancyLandmark,
-    *,
-    landmark_seed_root: int,
-    suite: str,
-    task_id: int,
-    adaptation_seed: int,
-) -> None:
-    """Keep first/last plus a two-row uniform reservoir over the interior."""
-
-    if lane.first_landmark is None:
-        lane.first_landmark = landmark
-        lane.last_landmark = landmark
-        return
-    previous = lane.last_landmark
-    if previous is None:
-        raise RewardProtocolError("reward landmark buffer lost its last row")
-    if previous.replan_ordinal != lane.first_landmark.replan_ordinal:
-        lane.interior_count += 1
-        if len(lane.interior_landmarks) < 2:
-            lane.interior_landmarks.append(previous)
-        else:
-            selected = reward_tangent_landmark_index(
-                landmark_seed_root,
-                suite=suite,
-                task_id=task_id,
-                adaptation_seed=adaptation_seed,
-                rollout_cursor=lane.rollout_cursor,
-                interior_count=lane.interior_count,
-            )
-            if selected < 2:
-                lane.interior_landmarks[selected] = previous
-    lane.last_landmark = landmark
-
-
-def _selected_landmarks(
-    lane: _RewardLaneState,
-) -> tuple[RewardOccupancyLandmark, ...]:
-    if lane.first_landmark is None or lane.last_landmark is None:
-        raise RewardProtocolError("reward lane made no policy observation")
-    unique = {
-        value.replan_ordinal: value
-        for value in (
-            lane.first_landmark,
-            *lane.interior_landmarks,
-            lane.last_landmark,
-        )
-    }
-    result = tuple(unique[index] for index in sorted(unique))
-    if not 0 < len(result) <= 4:
-        raise RewardProtocolError("reward landmark budget changed")
-    return result
-
-
-def _advance_reward_lane(
+def _advance_lane(
     *,
     lane: _RewardLaneState,
-    stored: dict[str, torch.Tensor],
     normalized_chunk: torch.Tensor,
     environment_actions: np.ndarray,
     noise_seed: int,
     action_execution_horizon: int,
     max_horizon: int,
-    landmark_seed_root: int,
-    suite: str,
-    task_id: int,
-    adaptation_seed: int,
 ) -> None:
     lane.noise_seeds.append(noise_seed)
+    if lane.initial_action_chunk is None:
+        lane.initial_action_chunk = normalized_chunk.detach().clone()
     executed = 0
     for action in environment_actions[:action_execution_horizon]:
         observation, reward, done, info = _transition(lane.env.step(action))
@@ -461,24 +338,10 @@ def _advance_reward_lane(
         if lane.success or lane.steps >= max_horizon:
             break
     if executed <= 0:
-        raise RewardProtocolError("reward landmark lane executed no action")
-    _retain_landmark(
-        lane,
-        RewardOccupancyLandmark(
-            replan_ordinal=len(lane.noise_seeds) - 1,
-            observation={name: value.detach() for name, value in stored.items()},
-            normalized_action_chunk=normalized_chunk.detach().contiguous(),
-            executed_action_steps=executed,
-            policy_noise_seed=noise_seed,
-        ),
-        landmark_seed_root=landmark_seed_root,
-        suite=suite,
-        task_id=task_id,
-        adaptation_seed=adaptation_seed,
-    )
+        raise RewardProtocolError("PCUG reward lane executed no action")
 
 
-def _finalize_reward_outcomes(
+def _finalize_outcomes(
     *,
     lanes: Sequence[_RewardLaneState],
     suite: str,
@@ -488,12 +351,12 @@ def _finalize_reward_outcomes(
     policy_seed_root: int,
     dummy_settling_steps: int,
 ) -> tuple[RewardRolloutOutcome, ...]:
-    outcomes = []
+    result = []
     for lane in lanes:
-        if not lane.noise_seeds:
-            raise RewardProtocolError("batched reward lane made no policy observation")
-        outcomes.append(
-            _outcome_result(
+        if not lane.noise_seeds or lane.initial_action_chunk is None:
+            raise RewardProtocolError("PCUG reward lane made no policy observation")
+        result.append(
+            RewardRolloutOutcome(
                 suite=suite,
                 task_id=task_id,
                 global_task_id=global_task_id,
@@ -505,14 +368,14 @@ def _finalize_reward_outcomes(
                 steps=lane.steps,
                 reward_sum=lane.reward_sum,
                 dummy_settling_steps=dummy_settling_steps,
-                noise_seeds=lane.noise_seeds,
-                landmarks=_selected_landmarks(lane),
+                policy_noise_seeds=tuple(lane.noise_seeds),
+                initial_normalized_action_chunk=lane.initial_action_chunk,
             )
         )
-    return tuple(outcomes)
+    return tuple(result)
 
 
-def collect_randomized_reward_outcomes(
+def collect_paired_reward_arm_outcomes(
     *,
     envs: Sequence[Any],
     policy: torch.nn.Module,
@@ -526,7 +389,6 @@ def collect_randomized_reward_outcomes(
     rollout_cursors: Sequence[int],
     env_seeds: Sequence[int],
     policy_seed_root: int,
-    landmark_seed_root: int,
     device: torch.device,
     max_horizon: int,
     dummy_settling_steps: int,
@@ -535,16 +397,10 @@ def collect_randomized_reward_outcomes(
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
 ) -> tuple[RewardRolloutOutcome, ...]:
-    """Collect K4 while retaining at most four selected rows per episode.
+    """Run one exact K2 arm; a second call with the same keys forms its pair."""
 
-    All lanes share the already-installed task LoRA, while reset and PI05 flow
-    noise remain episode-local.  Active-lane compaction only changes the physical
-    batch shape; it never changes a lane's keyed randomness.  First/last and a
-    two-row stateless reservoir are ephemeral training credit only.
-    """
-
-    _validate_k4_panel(envs, rollout_cursors, env_seeds)
-    lanes = _initialize_reward_lanes(
+    _validate_paired_arm_panel(envs, rollout_cursors, env_seeds)
+    lanes = _initialize_lanes(
         envs=envs,
         policy=policy,
         task_id=task_id,
@@ -560,12 +416,11 @@ def collect_randomized_reward_outcomes(
         dummy_action=dummy_action,
     )
     policy.reset()
-
     while True:
         active = [lane for lane in lanes if lane.is_active(max_horizon)]
         if not active:
             break
-        stored, normalized, environment_actions, seeds = _batched_policy_replan(
+        normalized, actions, seeds = _batched_policy_replan(
             active=active,
             policy=policy,
             preprocess=preprocess,
@@ -579,21 +434,16 @@ def collect_randomized_reward_outcomes(
             num_inference_steps=num_inference_steps,
             policy_seed_fn=policy_seed_fn,
         )
-        for batch_row, lane in enumerate(active):
-            _advance_reward_lane(
+        for row, lane in enumerate(active):
+            _advance_lane(
                 lane=lane,
-                stored=stored[batch_row],
-                normalized_chunk=normalized[batch_row : batch_row + 1],
-                environment_actions=environment_actions[batch_row],
-                noise_seed=seeds[batch_row],
+                normalized_chunk=normalized[row : row + 1],
+                environment_actions=actions[row],
+                noise_seed=seeds[row],
                 action_execution_horizon=action_execution_horizon,
                 max_horizon=max_horizon,
-                landmark_seed_root=landmark_seed_root,
-                suite=suite,
-                task_id=task_id,
-                adaptation_seed=adaptation_seed,
             )
-    return _finalize_reward_outcomes(
+    return _finalize_outcomes(
         lanes=lanes,
         suite=suite,
         task_id=task_id,

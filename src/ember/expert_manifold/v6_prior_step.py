@@ -20,6 +20,8 @@ class GeneratedConditionGraph:
     correct_lora: Mapping[str, torch.Tensor]
     program_leaf: torch.Tensor
     program_input_before: torch.Tensor
+    base_program_slots: torch.Tensor
+    residual_before: torch.Tensor
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
     correct_raw_frames: int
@@ -143,6 +145,8 @@ def generate_condition_graph(
         correct_lora=correct_lora,
         program_leaf=program_leaf,
         program_input_before=stored_program.detach(),
+        base_program_slots=base_slots.detach(),
+        residual_before=stored_residual.detach(),
         correct_feature=correct_feature[0],
         negative_feature=negative_feature[0],
         correct_raw_frames=int(correct_video.raw_frame_count),
@@ -150,6 +154,42 @@ def generate_condition_graph(
         negative_raw_frames=int(negative_source.raw_frame_count),
         negative_sampled_frames=int(negative_indices.numel()),
     )
+
+
+def decode_candidate_program(
+    graph: GeneratedConditionGraph,
+    *,
+    writer: FrozenV6ConditionResidualWriter,
+    motion: torch.Tensor,
+    device: torch.device,
+) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
+    """Reproduce the exact post-write Program arithmetic, then decode once."""
+
+    if (
+        graph.base_program_slots.shape != graph.residual_before.shape
+        or graph.base_program_slots.shape != graph.program_input_before.shape
+        or graph.base_program_slots.shape[0] != 1
+        or motion.shape != graph.residual_before.shape[1:]
+        or motion.dtype != torch.float32
+        or motion.device != graph.residual_before.device
+    ):
+        raise ExpertManifoldError("PCUG candidate Program topology changed")
+    with (
+        torch.no_grad(),
+        torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ),
+    ):
+        candidate_program = graph.base_program_slots + (
+            graph.residual_before + motion.unsqueeze(0)
+        ).to(dtype=graph.base_program_slots.dtype)
+        candidate_program = candidate_program.to(dtype=torch.float32)
+        candidate_lora = writer.base_writer.decode_slots(candidate_program)
+    return candidate_program.detach(), {
+        name: value.detach() for name, value in candidate_lora.items()
+    }
 
 
 def program_cotangent(

@@ -27,19 +27,34 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_historical_sknc_pick_gc_osg_and_srtp_are_sealed() -> None:
+def test_pcug_is_active_and_historical_sknc_pick_gc_osg_srtp_are_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "profile_result_sealed_nonpass"
-    srtp = active["profile_run"]["artifact_evidence"]
+    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["profile_run"]["artifact_evidence"] is None
+    assert active["formal_run"]["status"] == (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    assert active["evaluation"]["formal_status"] == (
+        "awaiting_live_pcug_deployment_smoke"
+    )
+
+    historical_srtp = json.loads(
+        (
+            REPO_ROOT
+            / "configs/pi05_v6_shared_reward_tangent_projection_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert historical_srtp["status"] == "profile_result_sealed_nonpass"
+    srtp = historical_srtp["profile_run"]["artifact_evidence"]
     assert srtp["passed"] is False
     assert srtp["failed_rank_count"] == 3
     assert srtp["mechanism_profile_written"] is False
-    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
-    assert active["formal_run"]["artifact_evidence"] is None
-    assert active["evaluation"]["formal_status"] == (
+    assert historical_srtp["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert historical_srtp["formal_run"]["artifact_evidence"] is None
+    assert historical_srtp["evaluation"]["formal_status"] == (
         "not_run_after_profile_nonpass"
     )
-    assert active["evaluation"]["online_smoke_evidence"] is None
+    assert historical_srtp["evaluation"]["online_smoke_evidence"] is None
 
     config = json.loads(
         (

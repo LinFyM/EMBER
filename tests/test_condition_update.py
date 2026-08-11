@@ -8,7 +8,6 @@ from ember.writer.condition_update import (
     PolicyInnovationGoalCausalConditionFeature,
     ProgramResidualMemory,
     apply_program_residual_delta_with_evidence_,
-    shared_reward_tangent_program_projection,
     success_key_nullspace_program_delta,
 )
 
@@ -249,96 +248,6 @@ def test_rank_deficient_features_and_zero_credit_remain_finite() -> None:
     assert summary.original_feature_rank == 1
     assert summary.predicted_negative_to_unprotected_ratio == 0
     assert torch.count_nonzero(delta) == 0
-
-
-def test_reward_projection_is_exact_identity_without_constraint_or_violation() -> None:
-    generator = torch.Generator().manual_seed(701)
-    delta = torch.randn(5, 2, 3, generator=generator)
-    features = torch.randn(4, 5, generator=generator)
-    reward = torch.zeros(4, 2, 3)
-    projected, summary = shared_reward_tangent_program_projection(
-        delta,
-        features,
-        reward,
-        torch.zeros(4, dtype=torch.bool),
-        features.new_empty((0, 5)),
-    )
-    assert projected is delta
-    assert torch.equal(projected, delta)
-    assert summary.mixed_constraints == 0
-    assert summary.projection_changed is False
-
-    reward[0] = -(features[0] @ delta.flatten(1)).reshape(2, 3)
-    projected, summary = shared_reward_tangent_program_projection(
-        delta,
-        features,
-        reward,
-        torch.tensor([True, False, False, False]),
-        features.new_empty((0, 5)),
-    )
-    assert projected is delta
-    assert summary.raw_violation_count == 0
-
-
-def test_reward_projection_satisfies_correlated_halfspaces_and_anchors() -> None:
-    delta = torch.zeros(4, 2, 2)
-    delta[1, 0, 0] = 2.0
-    delta[2, 0, 1] = 1.0
-    features = torch.tensor(
-        [
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 1.0, 1.0, 0.0],
-            [0.0, 2.0, 2.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-        ]
-    )
-    reward = torch.zeros(4, 2, 2)
-    reward[0, 0, 0] = 1.0
-    reward[1, 0] = torch.tensor([1.0, 1.0])
-    reward[2] = reward[1]
-    reward[3, 0, 1] = -1.0
-    projected, summary = shared_reward_tangent_program_projection(
-        delta,
-        features,
-        reward,
-        torch.ones(4, dtype=torch.bool),
-        torch.tensor([[1.0, 0.0, 0.0, 0.0]]),
-    )
-    constraints = (
-        reward * (features @ projected.flatten(1)).reshape(4, 2, 2)
-    ).flatten(1).sum(dim=1)
-    assert summary.raw_violation_count >= 2
-    assert summary.final_violation_count == 0
-    assert bool((constraints <= 2e-5).all())
-    torch.testing.assert_close(
-        projected[0], torch.zeros_like(projected[0]), rtol=0, atol=1e-7
-    )
-    assert summary.projection_changed is True
-    assert summary.blind_projected_inner_product > 0
-    assert summary.blind_projected_cosine > 0
-
-
-def test_reward_projection_is_permutation_and_duplicate_invariant() -> None:
-    generator = torch.Generator().manual_seed(911)
-    delta = torch.randn(6, 2, 3, generator=generator)
-    features = torch.randn(3, 6, generator=generator)
-    reward = torch.randn(3, 2, 3, generator=generator)
-    motion = (features @ delta.flatten(1)).reshape(3, 2, 3)
-    reward.copy_(motion)
-    mask = torch.ones(3, dtype=torch.bool)
-    expected, _ = shared_reward_tangent_program_projection(
-        delta, features, reward, mask, features.new_empty((0, 6))
-    )
-    order = torch.tensor([2, 0, 1, 1])
-    observed, summary = shared_reward_tangent_program_projection(
-        delta,
-        features.index_select(0, order),
-        reward.index_select(0, order),
-        torch.ones(4, dtype=torch.bool),
-        features.new_empty((0, 6)),
-    )
-    torch.testing.assert_close(observed, expected, rtol=3e-5, atol=3e-6)
-    assert summary.final_violation_count == 0
 
 
 @pytest.mark.parametrize(

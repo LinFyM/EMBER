@@ -180,7 +180,7 @@ def _ownership_contract(
             "checkpoint_owned": True,
             "deployment_owned": False,
             "trainable": False,
-            "first_all_success_only": True,
+            "first_stable_success_only": True,
         },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
@@ -282,6 +282,8 @@ def build_run_contract(
             "functional_policy_microbatch_size": 10,
             "physical_policy_forwards_per_task": 2,
             "rollouts_per_task": 4,
+            "paired_initializations_per_task": 2,
+            "rollouts_per_arm": 2,
             "outcome_records_per_task": 4,
             "successful_rollout_replay_retained": False,
             "failed_rollout_replay_retained": False,
@@ -294,6 +296,7 @@ def build_run_contract(
             "distributed_model_wrapper": "none",
             "collectives": {
                 "full48_tensor_all_gathers": 2,
+                "paired_outcome_tensor_all_gathers": 1,
                 "task_record_object_all_gathers": 1,
                 "profile_guard_object_all_gathers": 0,
                 "memory_allreduce": False,
@@ -355,15 +358,16 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         "action_queries_per_task": int(data["action_queries_per_task"]),
         "full48_order": "correct_0_to_23_then_negative_0_to_23",
         "rollouts_per_task": int(config["environment"]["rollouts_per_task"]),
-        "next_rollout_cursor_per_task": macro * int(
-            config["environment"]["rollouts_per_task"]
+        "paired_initializations_per_task": int(
+            config["environment"]["paired_initializations_per_task"]
+        ),
+        "next_paired_state_cursor_per_task": macro * int(
+            config["environment"]["paired_initializations_per_task"]
         ),
         "environment_seed_root": int(config["rng"]["environment_seed_root"]),
         "policy_noise_seed_root": int(config["rng"]["policy_noise_seed_root"]),
-        "landmark_seed_root": int(config["rng"]["landmark_seed_root"]),
-        "flow_credit_seed_root": int(config["rng"]["flow_credit_seed_root"]),
-        "landmark_policy": "first_last_plus_two_seeded_uniform_reservoir_interior",
-        "success_key_anchor_policy": "first_all_success_per_train_task",
+        "paired_arm_policy": "base_k2_then_candidate_k2_with_identical_keys",
+        "success_key_anchor_policy": "first_stable_success_per_train_task",
     }
 
 

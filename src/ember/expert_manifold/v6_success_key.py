@@ -1,4 +1,4 @@
-"""Outcome-only success-key anchors for SKNC Program consolidation."""
+"""Persistent stable-success condition keys for PCUG consolidation."""
 
 from __future__ import annotations
 
@@ -11,31 +11,40 @@ from ember.expert_manifold.contract import ExpertManifoldError
 
 
 @dataclass(frozen=True)
-class SuccessKeyConstraintPlan:
-    """One macro's current and persisted equality-constraint rows."""
+class PersistedSuccessKeyPlan:
+    """Snapshot used by the provisional blind solve and later bank commit."""
 
     features: torch.Tensor
-    current_all_success_mask: torch.Tensor
     persisted_before_mask: torch.Tensor
 
 
 @dataclass(frozen=True)
 class SuccessKeyBankUpdateSummary:
-    """Deterministic first-success bank transition at one macro boundary."""
+    """Deterministic first-stable-success transition at a macro boundary."""
 
-    current_all_success_count: int
-    current_all_success_ordinals: tuple[int, ...]
+    current_stable_success_count: int
+    current_stable_success_ordinals: tuple[int, ...]
     persisted_before_count: int
     persisted_before_ordinals: tuple[int, ...]
-    constraint_row_count: int
     newly_stored_count: int
     newly_stored_ordinals: tuple[int, ...]
     persisted_after_count: int
     persisted_after_ordinals: tuple[int, ...]
 
 
+def _ordinals(mask: torch.Tensor) -> tuple[int, ...]:
+    return tuple(
+        int(value)
+        for value in torch.nonzero(mask, as_tuple=False)
+        .flatten()
+        .detach()
+        .cpu()
+        .tolist()
+    )
+
+
 class SuccessKeyAnchorBank:
-    """Replicated, training-only first-4/4 key bank with one slot per task."""
+    """Replicated first-stable-success key bank with one slot per train task."""
 
     TASK_COUNT = 24
 
@@ -53,7 +62,7 @@ class SuccessKeyAnchorBank:
             or min(ids) < 0
             or feature_width <= 0
         ):
-            raise ExpertManifoldError("invalid SKNC success-key bank authority")
+            raise ExpertManifoldError("invalid PCUG success-key bank authority")
         self.features = torch.zeros(
             self.TASK_COUNT,
             feature_width,
@@ -71,94 +80,69 @@ class SuccessKeyAnchorBank:
     def feature_width(self) -> int:
         return int(self.features.shape[1])
 
-    def _validated_macro_inputs(
+    def _validate_macro_inputs(
         self,
         correct_features: torch.Tensor,
-        success_counts: torch.Tensor,
-    ) -> torch.Tensor:
+        stable_success_mask: torch.Tensor,
+    ) -> None:
         if (
             correct_features.shape != self.features.shape
             or correct_features.dtype != torch.float32
             or correct_features.device != self.features.device
-            or success_counts.shape != (self.TASK_COUNT,)
-            or success_counts.device != self.features.device
-            or success_counts.dtype not in {torch.int32, torch.int64}
+            or stable_success_mask.shape != (self.TASK_COUNT,)
+            or stable_success_mask.dtype != torch.bool
+            or stable_success_mask.device != self.features.device
             or not bool(torch.isfinite(correct_features).all())
-            or bool((success_counts < 0).any())
-            or bool((success_counts > 4).any())
             or bool((correct_features.square().sum(dim=1) <= 0).any())
         ):
-            raise ExpertManifoldError("invalid SKNC macro success-key inputs")
+            raise ExpertManifoldError("invalid PCUG macro success-key inputs")
         self.validate()
-        return success_counts == 4
 
-    def constraint_plan(
-        self,
-        correct_features: torch.Tensor,
-        success_counts: torch.Tensor,
-    ) -> SuccessKeyConstraintPlan:
-        """Build persisted rows first, then current 4/4 rows in task order."""
+    def persisted_plan(self) -> PersistedSuccessKeyPlan:
+        """Freeze the only equality rows allowed to affect provisional ``D0``."""
 
-        current = self._validated_macro_inputs(correct_features, success_counts)
+        self.validate()
         persisted = self.present.clone()
-        rows = torch.cat(
-            (self.features[persisted], correct_features[current]),
-            dim=0,
-        ).contiguous()
-        return SuccessKeyConstraintPlan(
-            features=rows,
-            current_all_success_mask=current,
+        return PersistedSuccessKeyPlan(
+            features=self.features[persisted].contiguous(),
             persisted_before_mask=persisted,
         )
 
     @torch.no_grad()
-    def commit_first_successes_(
+    def commit_first_stable_successes_(
         self,
         correct_features: torch.Tensor,
-        success_counts: torch.Tensor,
-        plan: SuccessKeyConstraintPlan,
+        stable_success_mask: torch.Tensor,
+        plan: PersistedSuccessKeyPlan,
     ) -> SuccessKeyBankUpdateSummary:
-        """Persist only a task's first deterministic all-success key."""
+        """Persist stable-success keys; update-specific harmful keys stay ephemeral."""
 
-        current = self._validated_macro_inputs(correct_features, success_counts)
+        self._validate_macro_inputs(correct_features, stable_success_mask)
         if (
             plan.features.device != self.features.device
             or plan.features.dtype != torch.float32
-            or plan.current_all_success_mask.dtype != torch.bool
+            or plan.persisted_before_mask.shape != self.present.shape
             or plan.persisted_before_mask.dtype != torch.bool
-            or plan.current_all_success_mask.device != self.features.device
             or plan.persisted_before_mask.device != self.features.device
-            or not torch.equal(plan.current_all_success_mask, current)
             or not torch.equal(plan.persisted_before_mask, self.present)
             or plan.features.shape
-            != (int(self.present.sum() + current.sum()), self.feature_width)
+            != (int(self.present.sum()), self.feature_width)
+            or not torch.equal(plan.features, self.features[self.present])
         ):
-            raise ExpertManifoldError("SKNC success-key plan changed before commit")
-        newly_stored = current & ~self.present
+            raise ExpertManifoldError("PCUG success-key plan changed before commit")
+        newly_stored = stable_success_mask & ~self.present
         self.features[newly_stored] = correct_features[newly_stored]
         self.present.logical_or_(newly_stored)
         self.validate()
-
-        def ordinals(mask: torch.Tensor) -> tuple[int, ...]:
-            return tuple(
-                int(value)
-                for value in torch.nonzero(mask, as_tuple=False)
-                .flatten()
-                .detach()
-                .cpu()
-                .tolist()
-            )
-
         return SuccessKeyBankUpdateSummary(
-            current_all_success_count=int(current.sum()),
-            current_all_success_ordinals=ordinals(current),
+            current_stable_success_count=int(stable_success_mask.sum()),
+            current_stable_success_ordinals=_ordinals(stable_success_mask),
             persisted_before_count=int(plan.persisted_before_mask.sum()),
-            persisted_before_ordinals=ordinals(plan.persisted_before_mask),
-            constraint_row_count=int(plan.features.shape[0]),
+            persisted_before_ordinals=_ordinals(plan.persisted_before_mask),
             newly_stored_count=int(newly_stored.sum()),
-            newly_stored_ordinals=ordinals(newly_stored),
+            newly_stored_ordinals=_ordinals(newly_stored),
             persisted_after_count=int(self.present.sum()),
-            persisted_after_ordinals=ordinals(self.present),
+            persisted_after_ordinals=_ordinals(self.present),
         )
 
     @torch.no_grad()
@@ -169,8 +153,6 @@ class SuccessKeyAnchorBank:
         present: torch.Tensor,
         task_global_ids: torch.Tensor,
     ) -> None:
-        """Restore exact-resume state after validating task-slot ownership."""
-
         if (
             features.shape != self.features.shape
             or features.dtype != torch.float32
@@ -185,7 +167,7 @@ class SuccessKeyAnchorBank:
             or bool((features[~present] != 0).any())
             or bool((features[present].square().sum(dim=1) <= 0).any())
         ):
-            raise ExpertManifoldError("invalid SKNC success-key checkpoint state")
+            raise ExpertManifoldError("invalid PCUG success-key checkpoint state")
         self.features.copy_(features.to(device=self.features.device))
         self.present.copy_(present.to(device=self.present.device))
         self.validate()
@@ -208,4 +190,4 @@ class SuccessKeyAnchorBank:
             or bool((self.features[self.present].square().sum(dim=1) <= 0).any())
             or self.task_global_ids.unique().numel() != self.TASK_COUNT
         ):
-            raise ExpertManifoldError("SKNC success-key bank became invalid")
+            raise ExpertManifoldError("PCUG success-key bank became invalid")

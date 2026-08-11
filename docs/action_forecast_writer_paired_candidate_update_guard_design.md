@@ -1,9 +1,15 @@
 # Paired Candidate-Update Guard
 
-状态：2026-08-12 active design authority，尚未实现、profile、训练或评测。PCUG只改变SKNC最早失败的shared-credit
-接口：先形成原始shared blind candidate，再用严格配对的closed-loop base/candidate outcomes识别这次candidate
-实际会伤害的tasks，最后在同一次memory write前把这些task的condition motion投影为零。它不做policy gradient、
-trajectory replay、landmark imitation或reward-scale sweep。
+状态：2026-08-12 canonical实现与完整CPU gate已完成，config为`active_cpu_ready_awaiting_live_profile`；尚未
+profile、训练或评测。PCUG只改变SKNC最早失败的shared-credit接口：先形成原始shared blind candidate，再用严格
+配对的closed-loop base/candidate outcomes识别这次candidate实际会伤害的tasks，最后在同一次memory write前把
+这些task的condition motion投影为零。它不做policy gradient、trajectory replay、landmark imitation或
+reward-scale sweep。
+
+实现保持一个canonical trainer/solver/deployment family：SRTP tangent/landmark runtime与测试已删除；exact
+candidate cast、paired K2×2、ephemeral harm guard、first-stable bank、FP64小SVD/FP32大投影、world-size 1--6
+padded gather和fresh-incompatible checkpoint/eval schema均已接线。完整CPU回归为`344 passed`，其中包含
+world5 padded rank下feature/cotangent严格对齐；这些不构成live机制或closed-loop成绩。
 
 ## 1. Why this interface
 

@@ -236,6 +236,7 @@ def _validate_build_request(
             "sealed_from_live_osg_pc_deployment_smoke",
             "sealed_from_live_sknc_deployment_smoke",
             "sealed_from_live_srtp_deployment_smoke",
+            "sealed_from_live_pcug_deployment_smoke",
         } and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size

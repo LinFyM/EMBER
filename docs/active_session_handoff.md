@@ -26,9 +26,10 @@
   `e31e2fd`同合同reprofile释放graph后仍三rank OOM，申请`254/484/484 MiB`时free`19/16.31/417.06 MiB`。
   两次均无mechanism report/checkpoint，deployment/formal未授权；完整logical B<=16 landmark policy-gradient
   本体是最早工程失效接口，不允许第三次修补或batch/dtype/allocator sweep。
-- 当前唯一active successor design是PCUG：先形成实际blind `D0`，再在两个exact-paired random initializations
+- 当前唯一active successor是PCUG：先形成实际blind `D0`，再在两个exact-paired random initializations
   上比较base/candidate Programs；candidate losses多于gains的task与stable-success task在最终write中临时
-  zero-motion，只有stable-success key持久化。每task总rollout仍4条，无policy backward。尚未实现或运行。
+  zero-motion，只有stable-success key持久化。每task总rollout仍4条，无policy backward。canonical实现、config、
+  checkpoint/eval schema与完整CPU回归`344 passed`已完成；尚未运行live profile、训练或评测。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -342,7 +343,7 @@ OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile
 log/exit与`failure.json`，exit1、三rank OOM、无mechanism report/checkpoint。config现为
 `profile_result_sealed_nonpass`。
 
-## 10. Active PCUG design authority
+## 10. Active PCUG implementation authority
 
 PCUG不再求完整reward gradient，而是直接测量当前shared candidate的闭环因果效果。Phase A先用完整24-task
 B20/full48和persisted stable-success bank形成`D0`；Phase B对两个相同env/state/policy RNG分别运行base与
@@ -356,8 +357,13 @@ final update不是带新guards重算full48，而是把`D0`投影到persisted、s
 
 这一设计保留v6-fast/PICK/SKNC的video condition、B20幅度、negative zero RHS、FP32 Program和native rank16，
 只把success evidence从unpaired 4/4状态升级为actual candidate-vs-base causal loss。完整两阶段算法、anti-bypass、
-CPU/live/formal gates见`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。当前只有design
-authority；下一步是原位替换SRTP runtime、CPU/architecture gate和clean seal，不得直接GPU。
+CPU/live/formal gates见`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
+
+canonical实现已经原位替换SRTP：保留exact candidate cast次序、paired K2×2、ephemeral harmful guard、persistent
+stable bank、FP64小SVD加FP32大投影、world-size 1--6 padded gather与fresh-incompatible checkpoint/eval schema；
+SRTP tangent/landmark runtime和测试已删除。完整CPU回归`344 passed`，包含world5 padded rank对齐回归。当前
+config为`active_cpu_ready_awaiting_live_profile`；下一步是clean seal后运行一次discarded live macro，不得直接
+formal训练。
 
 ## 11. Runtime and GPU boundary
 
@@ -425,5 +431,5 @@ reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B3
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
-和formal关闭。PCUG design authority现为唯一active successor但尚未实现；下一步闭合canonical实现与CPU gate，
-旧Reward/OSG/SKNC/SRTP命令不得恢复。
+和formal关闭。PCUG canonical实现与CPU gate已经闭合，但尚无GPU/profile/checkpoint/成绩；下一步是clean seal和
+唯一discarded live macro，旧Reward/OSG/SKNC/SRTP命令不得恢复。

@@ -1,4 +1,4 @@
-"""Atomic Program-memory and success-key-bank checkpoints for SRTP."""
+"""Atomic Program-memory and success-key-bank checkpoints for PCUG."""
 
 from __future__ import annotations
 
@@ -28,13 +28,13 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_shared_reward_tangent_projection_checkpoint_v1"
+    "ember_pi05_v6_paired_candidate_update_guard_checkpoint_v1"
 )
 V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_shared_reward_tangent_projection_rank_rng_v1"
+    "ember_pi05_v6_paired_candidate_update_guard_rank_rng_v1"
 )
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_shared_reward_tangent_projection_inspection_v1"
+    "ember_pi05_v6_paired_candidate_update_guard_inspection_v1"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)

@@ -121,8 +121,11 @@
 - [x] 从完整logical landmark policy-gradient本体显存与历史credit错位出发选择PCUG：严格配对actual base/
   candidate closed-loop outcomes，只对当前harmful/stable tasks做final closest zero-motion projection；每task总
   rollout仍4条且无policy backward。design authority已写。
-- [ ] 原位替换SRTP runtime为fresh-incompatible PCUG两阶段macro，完成exact candidate Program、paired K2×2、
-  ephemeral harm guard、persistent stable bank、closest projection、checkpoint隔离与完整CPU/architecture gate。
+- [x] 原位替换SRTP runtime为fresh-incompatible PCUG两阶段macro，完成exact candidate Program、paired K2×2、
+  ephemeral harm guard、persistent stable bank、closest projection、checkpoint隔离与完整CPU/architecture gate；
+  SRTP active path已删除，完整CPU回归`344 passed`。
+- [ ] clean commit/push并建立detached frozen worktree；按live双节点状态使用1--6张合适A40运行唯一discarded
+  fresh macro0 profile。只有全部hard gates通过并封存后，才做B8/16/32 deployment smoke和formal fresh`0→5`。
 
 ## Repository closeout
 

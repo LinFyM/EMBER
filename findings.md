@@ -1,6 +1,6 @@
 # EMBER Findings
 
-更新时间：2026-08-11。本文只保留跨架构仍成立的第一性原理结论。逐方法结果、精确旧 commit/root 与禁止重复项
+更新时间：2026-08-12。本文只保留跨架构仍成立的第一性原理结论。逐方法结果、精确旧 commit/root 与禁止重复项
 见`docs/research_history.md`；逐日原始记录可由 Git commit`3a6f801`读取。
 
 ## 1. Current empirical boundary
@@ -252,3 +252,10 @@ first-success bank。final update是`D0`到这些keys共同nullspace的closest p
 不会再被shared solve改写，其他tasks也只发生必要的最小变化。每task仍总计4 rollouts且reward路径无policy
 backward。它最快会被以下证据否决：candidate与base几乎无discordance、没有跨suite harmful tasks、projection
 退化或破坏rank/energy、wall超过matched SKNC `1.5x`，以及macro5 strict不能把lost压到8以内并提高absolute。
+
+PCUG canonical实现已完成并通过完整CPU回归`344 passed`。active path只保留一个trainer/solver/deployment
+family；SRTP reward-tangent、landmark replay与对应测试已删除。CPU证据闭合了exact candidate cast次序、paired
+classification、closest projection、first-stable bank、fresh-incompatible checkpoint，以及world5 padded gather
+中的feature/cotangent对齐；这些仍只是工程与机制前置条件，不是性能证据。当前尚无live profile、checkpoint或
+closed-loop结果，必须由discarded macro的真实discordance、harmful suite覆盖、guard closure、rank/energy和wall
+共同决定是否获得formal资格。

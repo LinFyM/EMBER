@@ -24,7 +24,9 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.evaluation_cache import (
-    assigned_writer_cache_requests,
+    WriterCacheGenerationBatch,
+    WriterCacheRequest,
+    assigned_writer_cache_batches,
     load_writer_cache_entry,
     lora_state_storage,
     stage_writer_lora_states_to_cpu,
@@ -237,6 +239,135 @@ def _finish_generation_handoff(
     return summary
 
 
+def _prepare_writer_generation_batch(
+    runtime: Any,
+    requests: Sequence[WriterCacheRequest],
+) -> tuple[Sequence[Any], tuple[dict[str, Any], ...], Sequence[Any], float]:
+    batch_started = time.monotonic()
+    prepared = runtime.task_adapter.prepare_episodes(
+        [
+            {
+                "suite": request.suite,
+                "task_id": request.task_id,
+                "init_state_id": request.init_state_id,
+            }
+            for request in requests
+        ]
+    )
+    if len(prepared) != len(requests):
+        raise WriterModelError("Writer generation batch coverage changed")
+    profile_reader = getattr(
+        runtime.task_adapter,
+        "last_generation_batch_profile",
+        None,
+    )
+    if not callable(profile_reader):
+        raise WriterModelError("Writer generation batch lacks video-length evidence")
+    video_profile = tuple(profile_reader())
+    observed_profile = tuple(
+        (str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
+        for row in video_profile
+    )
+    expected_profile = tuple(
+        (request.suite, request.task_id, request.init_state_id)
+        for request in requests
+    )
+    if observed_profile != expected_profile:
+        raise WriterModelError("Writer generation video-length ownership changed")
+    staged_states = stage_writer_lora_states_to_cpu(
+        tuple(item.state for item in prepared)
+    )
+    return (
+        prepared,
+        video_profile,
+        staged_states,
+        time.monotonic() - batch_started,
+    )
+
+
+def _generate_writer_cache_batch(
+    runtime: Any,
+    *,
+    assigned_batch: WriterCacheGenerationBatch,
+    generator_index: int,
+) -> dict[str, Any]:
+    requests = assigned_batch.requests
+    complete = tuple(
+        writer_cache_entry_is_complete(runtime.contract, request)
+        for request in requests
+    )
+    if all(complete):
+        return {
+            "generated_entries": 0,
+            "reused_entries": len(requests),
+            "redundant_writer_forwards": 0,
+            "batch": None,
+        }
+    pending = tuple(
+        request
+        for request, was_complete in zip(requests, complete, strict=True)
+        if not was_complete
+    )
+    forward_requests = requests if assigned_batch.canonical_global else pending
+    prepared, profile, states, batch_seconds = _prepare_writer_generation_batch(
+        runtime,
+        forward_requests,
+    )
+    complete_in_forward = (
+        complete if assigned_batch.canonical_global else (False,) * len(pending)
+    )
+    generated_entries = 0
+    batch_entry_ids = [request.entry_id for request in forward_requests]
+    for position, (request, was_complete, item, state, video) in enumerate(
+        zip(
+            forward_requests,
+            complete_in_forward,
+            prepared,
+            states,
+            profile,
+            strict=True,
+        )
+    ):
+        if was_complete:
+            continue
+        evidence = dict(item.evidence)
+        evidence["writer_generation_seconds"] = batch_seconds / len(forward_requests)
+        write_writer_cache_entry(
+            runtime.contract,
+            request,
+            state=state,
+            evidence=evidence,
+            generation={
+                "generator_worker_id": runtime.worker_id,
+                "generator_index": generator_index,
+                "batch_ordinal": assigned_batch.ordinal,
+                "position_in_batch": position,
+                "batch_entry_ids": batch_entry_ids,
+                "batch_size": len(forward_requests),
+                "batch_wall_seconds": batch_seconds,
+                "raw_frames": int(video["raw_frames"]),
+                "sampled_frames": int(video["sampled_frames"]),
+            },
+            lora_contract=runtime.task_adapter.lora_contract,
+        )
+        generated_entries += 1
+    return {
+        "generated_entries": generated_entries,
+        "reused_entries": sum(complete),
+        "redundant_writer_forwards": (
+            sum(complete) if assigned_batch.canonical_global else 0
+        ),
+        "batch": {
+            "batch_ordinal": assigned_batch.ordinal,
+            "entry_ids": batch_entry_ids,
+            "batch_size": len(forward_requests),
+            "raw_frame_counts": [int(row["raw_frames"]) for row in profile],
+            "sampled_frame_counts": [int(row["sampled_frames"]) for row in profile],
+            "wall_seconds": batch_seconds,
+        },
+    }
+
+
 def run_writer_generation_phase(
     runtime: Any,
     *,
@@ -247,7 +378,7 @@ def run_writer_generation_phase(
 
     generators_per_gpu = int(runtime.contract["parallel"]["writer_generators_per_gpu"])
     generator_index = runtime.gpu_slot * generators_per_gpu + runtime.replica
-    requests = assigned_writer_cache_requests(
+    assigned_batches = assigned_writer_cache_batches(
         runtime.contract,
         generator_index=generator_index,
     )
@@ -256,114 +387,34 @@ def run_writer_generation_phase(
         raise WriterModelError("Writer generator lacks batched LoRA generation")
     phase_started = time.monotonic()
     generated_entries = reused_entries = generated_batches = 0
+    redundant_writer_forwards = 0
     batch_rows = []
     torch.cuda.reset_peak_memory_stats()
-    for batch_ordinal, offset in enumerate(range(0, len(requests), batch_size)):
-        request_batch = requests[offset : offset + batch_size]
-        complete = [
-            writer_cache_entry_is_complete(runtime.contract, request)
-            for request in request_batch
-        ]
-        if all(complete):
-            reused_entries += len(request_batch)
-            continue
-        pending_requests = tuple(
-            request
-            for request, was_complete in zip(request_batch, complete, strict=True)
-            if not was_complete
+    for assigned_batch in assigned_batches:
+        result = _generate_writer_cache_batch(
+            runtime,
+            assigned_batch=assigned_batch,
+            generator_index=generator_index,
         )
-        batch_started = time.monotonic()
-        prepared = runtime.task_adapter.prepare_episodes(
-            [
-                {
-                    "suite": request.suite,
-                    "task_id": request.task_id,
-                    "init_state_id": request.init_state_id,
-                }
-                for request in pending_requests
-            ]
-        )
-        if len(prepared) != len(pending_requests):
-            raise WriterModelError("Writer generation batch coverage changed")
-        if not callable(
-            getattr(runtime.task_adapter, "last_generation_batch_profile", None)
-        ):
-            raise WriterModelError(
-                "Writer generation batch lacks video-length evidence"
-            )
-        video_profile = runtime.task_adapter.last_generation_batch_profile()
-        expected_profile = tuple(
-            (request.suite, request.task_id, request.init_state_id)
-            for request in pending_requests
-        )
-        observed_profile = tuple(
-            (
-                str(row["suite"]),
-                int(row["task_id"]),
-                int(row["init_state_id"]),
-            )
-            for row in video_profile
-        )
-        if observed_profile != expected_profile:
-            raise WriterModelError("Writer generation video-length ownership changed")
-        staged_states = stage_writer_lora_states_to_cpu(
-            tuple(item.state for item in prepared)
-        )
-        batch_seconds = time.monotonic() - batch_started
-        generated_batches += 1
-        reused_entries += sum(complete)
-        for position, (request, item, state) in enumerate(
-            zip(pending_requests, prepared, staged_states, strict=True)
-        ):
-            evidence = dict(item.evidence)
-            evidence["writer_generation_seconds"] = batch_seconds / len(
-                pending_requests
-            )
-            write_writer_cache_entry(
-                runtime.contract,
-                request,
-                state=state,
-                evidence=evidence,
-                generation={
-                    "generator_worker_id": runtime.worker_id,
-                    "generator_index": generator_index,
-                    "batch_ordinal": batch_ordinal,
-                    "position_in_batch": position,
-                    "batch_entry_ids": [value.entry_id for value in pending_requests],
-                    "batch_size": len(pending_requests),
-                    "batch_wall_seconds": batch_seconds,
-                    "raw_frames": int(video_profile[position]["raw_frames"]),
-                    "sampled_frames": int(video_profile[position]["sampled_frames"]),
-                },
-                lora_contract=runtime.task_adapter.lora_contract,
-            )
-            generated_entries += 1
-        batch_rows.append(
-            {
-                "batch_ordinal": batch_ordinal,
-                "entry_ids": [request.entry_id for request in pending_requests],
-                "batch_size": len(pending_requests),
-                "raw_frame_counts": [int(row["raw_frames"]) for row in video_profile],
-                "sampled_frame_counts": [
-                    int(row["sampled_frames"]) for row in video_profile
-                ],
-                "wall_seconds": batch_seconds,
-            }
-        )
-        del item, state, prepared, staged_states, video_profile
+        generated_entries += int(result["generated_entries"])
+        reused_entries += int(result["reused_entries"])
+        redundant_writer_forwards += int(result["redundant_writer_forwards"])
+        if result["batch"] is not None:
+            generated_batches += 1
+            batch_rows.append(result["batch"])
     return _finish_generation_handoff(
         runtime,
         invocation_id=invocation_id,
         append_event=append_event,
         generation={
             "generator_index": generator_index,
-            "assigned_entries": len(requests),
+            "assigned_entries": sum(len(batch.requests) for batch in assigned_batches),
             "generated_entries": generated_entries,
             "reused_entries": reused_entries,
             "generated_batches": generated_batches,
             "generation_batch_size": batch_size,
             "generation_wall_seconds": time.monotonic() - phase_started,
-            "redundant_writer_forwards": 0,
+            "redundant_writer_forwards": redundant_writer_forwards,
             "batch_shape_bf16_roundoff_accepted": True,
             "batches": batch_rows,
         },

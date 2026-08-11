@@ -9,6 +9,9 @@ from safetensors.torch import save_file
 
 from ember.lora import LoRATarget, SmolVLALoRAContract
 from ember.writer.evaluation_cache import (
+    WRITER_LORA_ASSIGNMENT,
+    WRITER_LORA_LEGACY_ASSIGNMENT,
+    assigned_writer_cache_batches,
     assigned_writer_cache_requests,
     build_writer_lora_cache_descriptor,
     finalize_writer_cache,
@@ -67,6 +70,9 @@ def _contract(
     state_count: int = 3,
     rank_reserved: bool = False,
     macro: int = 0,
+    physical_gpu_count: int = 1,
+    generators_per_gpu: int = 1,
+    generation_batch_size: int = 2,
 ) -> dict:
     lora = _lora_contract()
     mapping = [
@@ -142,13 +148,16 @@ def _contract(
         "policy": {"num_inference_steps": 10},
         "rng": {"inference_seed": 7},
         "git": {"commit": "a" * 40},
-        "parallel": {"physical_gpu_count": 1, "replicas_per_gpu": replicas},
+        "parallel": {
+            "physical_gpu_count": physical_gpu_count,
+            "replicas_per_gpu": replicas,
+        },
     }
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
         contract,
         root=root,
-        generators_per_gpu=1,
-        generation_batch_size=2,
+        generators_per_gpu=generators_per_gpu,
+        generation_batch_size=generation_batch_size,
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
         lora_storage_per_entry=_lora_storage(),
@@ -211,6 +220,131 @@ def test_one_shot_cache_retains_one_entry_per_episode(tmp_path: Path) -> None:
     assert len(writer_cache_requests(contract)) == 50
     assert len(writer_cache_episode_request_map(contract)) == 50
     assert len({request.entry_id for request in writer_cache_requests(contract)}) == 50
+
+
+def test_active_cache_descriptor_uses_explicit_global_batch_first_assignment(
+    tmp_path: Path,
+) -> None:
+    contract = _contract(tmp_path / "cache")
+    recipe = contract["writer_lora_cache"]["generation_recipe"]
+    assert recipe["assignment"] == WRITER_LORA_ASSIGNMENT
+    assert recipe["assignment"] != WRITER_LORA_LEGACY_ASSIGNMENT
+
+
+def test_global_batch_membership_and_position_are_worker_count_invariant(
+    tmp_path: Path,
+) -> None:
+    contracts = (
+        _contract(
+            tmp_path / "two-workers",
+            replicas=2,
+            state_count=23,
+            physical_gpu_count=2,
+            generation_batch_size=4,
+        ),
+        _contract(
+            tmp_path / "six-workers",
+            replicas=3,
+            state_count=23,
+            physical_gpu_count=2,
+            generators_per_gpu=3,
+            generation_batch_size=4,
+        ),
+    )
+    observed = []
+    for contract in contracts:
+        worker_count = contract["writer_lora_cache"]["generation_recipe"][
+            "generator_worker_count"
+        ]
+        worker_batches = tuple(
+            assigned_writer_cache_batches(contract, generator_index=worker)
+            for worker in range(worker_count)
+        )
+        assert all(
+            batch.ordinal % worker_count == worker
+            for worker, batches in enumerate(worker_batches)
+            for batch in batches
+        )
+        batches = sorted(
+            (batch for batches in worker_batches for batch in batches),
+            key=lambda batch: batch.ordinal,
+        )
+        observed.append(
+            tuple(
+                (
+                    batch.ordinal,
+                    tuple(request.ordinal for request in batch.requests),
+                    batch.canonical_global,
+                )
+                for batch in batches
+            )
+        )
+    assert observed[0] == observed[1]
+    assert observed[0] == (
+        (0, (0, 1, 2, 3), True),
+        (1, (4, 5, 6, 7), True),
+        (2, (8, 9, 10, 11), True),
+        (3, (12, 13, 14, 15), True),
+        (4, (16, 17, 18, 19), True),
+        (5, (20, 21, 22), True),
+    )
+
+
+def test_fresh_correct400_batch8_has_exactly_fifty_global_batches(
+    tmp_path: Path,
+) -> None:
+    contract = _contract(
+        tmp_path / "cache",
+        replicas=3,
+        state_count=400,
+        physical_gpu_count=4,
+        generators_per_gpu=3,
+        generation_batch_size=8,
+    )
+    batches = tuple(
+        batch
+        for worker in range(12)
+        for batch in assigned_writer_cache_batches(contract, generator_index=worker)
+    )
+    assert len(batches) == 50
+    assert sorted(batch.ordinal for batch in batches) == list(range(50))
+    assert all(len(batch.requests) == 8 for batch in batches)
+    assert sorted(
+        request.ordinal for batch in batches for request in batch.requests
+    ) == list(range(400))
+
+
+def test_legacy_assignment_keeps_request_modulo_worker_semantics(
+    tmp_path: Path,
+) -> None:
+    contract = _contract(
+        tmp_path / "cache",
+        replicas=2,
+        state_count=10,
+        physical_gpu_count=2,
+        generators_per_gpu=2,
+        generation_batch_size=2,
+    )
+    descriptor = contract["writer_lora_cache"]
+    descriptor["generation_recipe"]["assignment"] = WRITER_LORA_LEGACY_ASSIGNMENT
+    descriptor["identity"]["generation_recipe"][
+        "assignment"
+    ] = WRITER_LORA_LEGACY_ASSIGNMENT
+
+    batches = assigned_writer_cache_batches(contract, generator_index=1)
+
+    assert tuple(
+        tuple(request.ordinal for request in batch.requests) for batch in batches
+    ) == ((1, 5), (9,))
+    assert all(batch.canonical_global is False for batch in batches)
+
+    changed = copy.deepcopy(contract)
+    changed["writer_lora_cache"]["generation_recipe"]["assignment"] = "unknown"
+    changed["writer_lora_cache"]["identity"]["generation_recipe"][
+        "assignment"
+    ] = "unknown"
+    with pytest.raises(WriterModelError, match="assignment algorithm is unsupported"):
+        assigned_writer_cache_batches(changed, generator_index=1)
 
 
 def test_cache_staging_preserves_native_tensor_dtypes() -> None:

@@ -34,7 +34,11 @@ WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
 WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
-WRITER_LORA_ASSIGNMENT = "request ordinal modulo generator worker count"
+WRITER_LORA_ASSIGNMENT = (
+    "sealed request order chunked by generation_batch_size into contiguous global "
+    "batches then batch ordinal modulo generator worker count"
+)
+WRITER_LORA_LEGACY_ASSIGNMENT = "request ordinal modulo generator worker count"
 _TORCH_DTYPE_NAMES = {
     torch.bfloat16: "BF16",
     torch.float16: "F16",
@@ -63,6 +67,13 @@ class WriterCacheRequest:
         if re.fullmatch(r"[a-z0-9_]+", self.suite) is None:
             raise WriterModelError("Writer cache suite is unsafe")
         return f"{self.suite}_task_{self.task_id:02d}_state_{self.init_state_id:03d}"
+
+
+@dataclass(frozen=True)
+class WriterCacheGenerationBatch:
+    ordinal: int
+    requests: tuple[WriterCacheRequest, ...]
+    canonical_global: bool
 
 
 def is_writer_adapter(adapter: Mapping[str, Any] | None) -> bool:
@@ -308,15 +319,56 @@ def writer_cache_root(contract: Mapping[str, Any]) -> Path:
 def assigned_writer_cache_requests(
     contract: Mapping[str, Any], *, generator_index: int
 ) -> tuple[WriterCacheRequest, ...]:
-    descriptor = _descriptor(contract)
-    workers = int(descriptor["generation_recipe"]["generator_worker_count"])
-    if not 0 <= generator_index < workers:
-        raise WriterModelError("Writer generator index is invalid")
     return tuple(
         request
-        for request in writer_cache_requests(contract)
-        if request.ordinal % workers == generator_index
+        for batch in assigned_writer_cache_batches(
+            contract,
+            generator_index=generator_index,
+        )
+        for request in batch.requests
     )
+
+
+def assigned_writer_cache_batches(
+    contract: Mapping[str, Any], *, generator_index: int
+) -> tuple[WriterCacheGenerationBatch, ...]:
+    descriptor = _descriptor(contract)
+    recipe = descriptor["generation_recipe"]
+    workers = int(recipe["generator_worker_count"])
+    if not 0 <= generator_index < workers:
+        raise WriterModelError("Writer generator index is invalid")
+    batch_size = int(recipe["generation_batch_size"])
+    requests = writer_cache_requests(contract)
+    assignment = str(recipe.get("assignment", ""))
+    if assignment == WRITER_LORA_ASSIGNMENT:
+        global_batches = tuple(
+            WriterCacheGenerationBatch(
+                ordinal=batch_ordinal,
+                requests=requests[offset : offset + batch_size],
+                canonical_global=True,
+            )
+            for batch_ordinal, offset in enumerate(range(0, len(requests), batch_size))
+        )
+        return tuple(
+            batch
+            for batch in global_batches
+            if batch.ordinal % workers == generator_index
+        )
+    if assignment == WRITER_LORA_LEGACY_ASSIGNMENT:
+        assigned = tuple(
+            request
+            for request in requests
+            if request.ordinal % workers == generator_index
+        )
+        return tuple(
+            WriterCacheGenerationBatch(
+                ordinal=batch_ordinal,
+                requests=assigned[offset : offset + batch_size],
+                canonical_global=False,
+            )
+            for batch_ordinal, offset in enumerate(range(0, len(assigned), batch_size))
+        )
+    raise WriterModelError("Writer cache assignment algorithm is unsupported")
 
 
 def _entry_root(root: Path, request: WriterCacheRequest) -> Path:

@@ -198,3 +198,11 @@ trajectory replay、CFM VJP和per-success task-local cone，成本只剩同源K4
 全部过门。唯一false是Program ratio=`1.1228e-4`；但protected LoRA/BA/action全为exact zero，且同stored update
 的GPU full-FP32 ratio=`7.10e-8`、TF32=`8.44e-5`。因此这是hard-equality diagnostic错误继承production TF32
 所致，不是success-key nullspace科学假设失败；首root仍作为measurement non-pass保留，只允许修测量后重过。
+
+clean `f4fdac7` reprofile保持同一outcome panel与所有科学变量，success/failure仍为`61/35`、11个4/4 anchors；
+关闭TF32的既有constraint diagnostic把Program ratio恢复为`8.95e-8`，16/16 checks全部通过。rank=`48→37`、
+condition=`29.65`、projected energy=`.778`、protected LoRA/BA/action exact zero、step=`478.627s`和scaled wall
+ratio=`.47173`共同说明SKNC的representation→constrained Program→native compiler→fixed action接口已接通，
+但仍不能推出closed-loop改善。实际deployment panel的B8/16/32均stable，B32最高`.47166 LoRA/s`，且没有
+hidden teacher read；因此工程接口关闭，最早未决接口重新落到blind B20在success-key nullspace内能否产生
+跨task共同的held on-policy改善，必须由fresh macro5 strict paired400裁决。

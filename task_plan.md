@@ -83,8 +83,11 @@
   `.47999`，唯一non-pass是TF32 equality diagnostic的`1.1228e-4>1e-5`。
 - [x] 同真实success-key basis的CPU/GPU FP32 ratio约`7.2e-8/7.10e-8`，TF32为`8.44e-5`，且live
   protected LoRA/BA/action exact zero；定位为measurement contract violation，不追认首root pass。
-- [ ] 只把既有hard-equality diagnostics切到FP32 GEMM，production TF32/BF16、method/gate/forward数不变；
-  clean commit/push后做一次fresh reprofile，不过门不训练。
+- [x] 只把既有hard-equality diagnostics切到FP32 GEMM，production TF32/BF16、method/gate/forward数不变；
+  clean `f4fdac7` fresh reprofile的16项checks全部通过：Program ratio=`8.95e-8`、step=`478.627s`、scaled
+  wall ratio=`.47173`，未保留checkpoint。
+- [x] 完成实际evaluation adapter的B8/16/32 Writer deployment profile；全部stable、无OOM/nonfinite或hidden
+  teacher read，选择B32=`.47166 LoRA/s`。canonical config现为`active_formal_ready`。
 - [ ] profile通过后fresh`0→5`，立即strict paired correct400；只在`>=140`、lost`<=8`、breadth/suite共同趋势
   过门时exact-resume到10，macro10以严格`>150`裁决。
 

@@ -1,9 +1,9 @@
 # Success-Key Nullspace Consolidation
 
-状态：2026-08-11 canonical implementation与fresh-incompatible config/checkpoint schema已完成；加载
-`.env.local`的完整CPU回归为`334 passed`。首个world3 live profile完成15/16 checks，唯一non-pass来自
-hard-equality verification误用TF32 GEMM；该root不追认pass。measurement-only修复已实现，尚待clean seal后重过
-一次profile；尚未训练或评测。简称SKNC。
+状态：2026-08-12 canonical implementation与fresh-incompatible config/checkpoint schema已完成；加载
+`.env.local`的完整CPU回归为`334 passed`。首个world3 TF32 measurement non-pass永久保留；clean `f4fdac7`
+reprofile已`16/16`通过，B8/16/32 deployment profile全部稳定并选择B32。config已`active_formal_ready`；尚未
+训练或评测，下一步固定fresh`0→5`并立即strict paired400。简称SKNC。
 它从PICK-GC strict`138/400`与OSG-PC工程non-pass后最早仍开放的接口出发：保留PICK-GC已经接通的
 ordered goal-causal key、historical v6-fast frozen base、单一FP32 Program memory、B20 blind source-action
 objective、full48 correct/negative panel、原生38-target rank16 compiler和one-shot部署；只把“如何在共享Program
@@ -296,6 +296,15 @@ stored update或policy closure失败。唯一允许的修复是只在既有const
 production solve、Program read、LoRA/policy、BF16/TF32、forward数、gate和所有科学变量不变。修复后允许从新
 clean pushed commit做一次fresh profile；首root永久保留为engineering measurement non-pass，不retroactively
 改写。
+
+唯一允许的fresh reprofile来自clean pushed `f4fdac7`、同一`gpu02:3,4,5` world3/local8。96 rollouts的
+success/failure=`61/35`、11个4/4 tasks与四suite覆盖`2/3/3/3`和首root完全一致；rank=`48→37`、condition=
+`29.6497`、projected energy=`.77843`，protected/unprotected Program ratio=`8.9506e-8`，protected
+LoRA/effective-BA/fixed-action仍全为exact zero，unprotected fixed-action RMS=`.0015961`。step=`478.627s`、
+scaled wall ratio=`.47173`，16项hard checks全部通过且未保留checkpoint。随后同commit实际evaluation adapter
+在longest-first val8x4 correct panel上测B8/16/32，三者均stable、无OOM/nonfinite，最高B32=`.47166 LoRA/s`，
+peak reserved=`12,931,039,232` bytes、headroom=`34,768,683,008` bytes；teacher action/state/reward/terminal
+读取均为0。两项证据已sealed到canonical config，formal fresh`0→5`获得执行资格。
 
 ### 8.3 Formal and strict paired400
 

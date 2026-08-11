@@ -170,8 +170,7 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    result_sealed = load_v6_prior_config()
-    ready = _formal_ready_config()
+    ready = load_v6_prior_config()
     preseal = deepcopy(ready)
     preseal["status"] = "active_cpu_ready_awaiting_live_profile"
     preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
@@ -187,6 +186,10 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
     assert runtime_for_mode(ready, "formal") == (10, (5, 10), 0)
+    result_sealed = deepcopy(ready)
+    result_sealed["status"] = "formal_result_sealed"
+    result_sealed["formal_run"]["status"] = "formal_result_sealed"
+    result_sealed["formal_run"]["artifact_evidence"] = {"path": "result.json"}
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(result_sealed, "formal")
 
@@ -204,6 +207,7 @@ def test_preprofile_artifact_injection_fails_closed(
     config["evaluation"]["formal_status"] = (
         "awaiting_live_sknc_deployment_smoke"
     )
+    config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)

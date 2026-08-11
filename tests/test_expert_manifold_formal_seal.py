@@ -29,11 +29,18 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 def test_sknc_is_active_while_osg_pc_and_pick_gc_remain_provenance() -> None:
     config = load_v6_prior_config(CONFIG)
-    assert config["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert config["status"] == "active_formal_ready"
     assert config["profile_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
     assert config["profile_run"]["maximum_world_size"] == 6
-    assert config["profile_run"]["artifact_evidence"] is None
-    assert config["formal_run"]["status"].startswith("blocked_until_live_profile")
+    profile = config["profile_run"]["artifact_evidence"]
+    assert profile["passed"] is True
+    assert profile["world_size"] == 3
+    assert profile["all_checks_passed"] is True
+    assert config["formal_run"]["status"] == "ready_after_live_profile_seal"
+    assert config["formal_run"]["artifact_evidence"] is None
+    smoke = config["evaluation"]["online_smoke_evidence"]
+    assert smoke["writer_model_batch_size"] == 32
+    assert smoke["profile"]["passed"] is True
 
     osg_path = (
         REPO_ROOT

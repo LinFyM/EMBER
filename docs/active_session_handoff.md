@@ -20,9 +20,10 @@
   评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
 - 当前唯一active successor design是SKNC：K4只保留binary outcome，current 4/4 success keys加每train task
   第一条persisted 4/4 key在最终shared Program solve形成硬nullspace equality。canonical实现、fresh schema与
-  完整CPU回归`334 passed`已完成。首个world3 profile通过15/16 checks，唯一失败是TF32 equality diagnostic；
-  同stored update的FP32 probe过门且LoRA/BA/action exact zero。首root不追认pass，尚未训练或评测；下一步是
-  clean pushed measurement-only fix的唯一reprofile。
+  完整CPU回归`334 passed`已完成。首个world3 TF32 measurement non-pass永久保留；clean `f4fdac7` reprofile
+  已`16/16`通过，11个4/4 anchors、rank=`48→37`、Program ratio=`8.95e-8`、step=`478.627s`、scaled wall
+  ratio=`.47173`。同commit B8/16/32 deployment profile全部稳定并选择B32=`.47166 LoRA/s`，无OOM/nonfinite或
+  hidden teacher read。config已`active_formal_ready`；尚未训练或评测，下一步fresh`0→5`并立即strict paired400。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -253,8 +254,8 @@ OSG-PC不同：无successful replay、executed-prefix cotangent或per-success VJ
 
 完整authority为`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。OSG executable owner
 已被原位替换，fresh schema/config、CPU synthetic/bank/resume/outcome-only/Program→LoRA→action门和完整回归均已
-通过。clean commit/push后立即做GPU/storage preflight和唯一discarded live profile；formal首段固定fresh`0→5`
-并立即strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
+通过；clean world3 mechanism profile与B32 deployment profile均已sealed。formal首段固定fresh`0→5`并立即
+strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
 
 首个SKNC live root为
 `runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_b8398d2_20260812`。它来自
@@ -265,6 +266,14 @@ LoRA/effective-BA/fixed-action均exact zero。实际success-key basis的CPU与GP
 `7.2e-8/7.10e-8`，TF32 probe=`8.44e-5`，确认是verification measurement而非stored delta漂移。
 首root保留为engineering measurement non-pass；只允许把既有hard-equality diagnostic切到FP32 GEMM后从新clean
 commit重过一次，production TF32/BF16、forward数、method和gate不变。
+
+该唯一reprofile来自`f4fdac7`与同一`gpu02:3,4,5` world3，root为
+`runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_f4fdac7_20260812`。success/failure、
+4/4 task集合、rank/condition/energy与首root一致；protected Program ratio=`8.9506e-8`，16/16 checks全true，
+step=`478.6270s`、scaled ratio=`.47173`，无checkpoint。deployment root为
+`runs/outputs/pi05_sknc_writer_profile_val8x4_correct_gpu02p3_f4fdac7_20260812`；B8/16/32均stable且选择B32=
+`.4716606 LoRA/s`，peak reserved约12.93GB、headroom约34.77GB，hidden teacher reads、OOM和nonfinite均为0。
+两项证据已经写入canonical config并打开formal fresh`0→5`。
 
 ## 9. Runtime and GPU boundary
 
@@ -327,5 +336,7 @@ worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal m
 cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
 canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
 logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh
-config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。当前下一步是
-measurement-only fix clean push后的live GPU/storage recheck和一次fresh reprofile，旧OSG命令不得恢复。
+config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
+reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
+config。当前下一步是从新clean pushed seal head live重查GPU/storage后fresh`0→5`，立即strict paired400；
+旧OSG命令不得恢复，macro5不过门不得resume。

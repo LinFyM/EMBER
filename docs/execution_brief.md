@@ -8,11 +8,12 @@ paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gaine
 未过`correct>=144`与`lost<=8`门，因此PICK-GC+blind offline source-action credit也已退役，不resume、不补
 controls、不sweep。OSG-PC随后在唯一world6 profile中因rank-local长尾触发600s NCCL watchdog，wall lower bound
 至少是matched baseline的`1.912x>1.25x`，未到full48 report。当前唯一active design是SKNC：只用K4 4/4
-binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。它尚未
-训练或评测；canonical实现、fresh schema和完整CPU回归`334 passed`已完成。首个world3 profile通过15/16
-checks，唯一non-pass是hard-equality diagnostic误用TF32：reported ratio=`1.1228e-4`，同stored update的FP32
-probe=`7.10e-8`，LoRA/BA/action protected response全为exact zero。首root不追认pass；下一合法动作是clean
-seal measurement-only修复后重过一次profile。
+binary success key在最终shared Program solve施加nullspace equality，不保存trajectory或求reward VJP。首个
+world3 root因TF32 diagnostic measurement单项non-pass并保留；clean `f4fdac7` reprofile已`16/16`通过，
+11个4/4 anchors、rank=`48→37`、condition=`29.65`、projected energy=`.778`、Program ratio=`8.95e-8`、
+step=`478.627s`、scaled wall ratio=`.47173`。B8/16/32 deployment profile均稳定并选择B32=`.47166 LoRA/s`，
+无OOM/nonfinite或hidden teacher read。config已`active_formal_ready`；SKNC尚无训练或paired成绩，下一合法动作是
+fresh`0→5`并立即strict paired400。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -218,10 +219,10 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 
 PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 non-pass；其resume、controls、额外
 checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mechanism report；同配置重跑、formal、
-deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证和完整回归已完成；首个world3
-profile因TF32 diagnostic measurement单项non-pass。下一合法动作是从clean pushed measurement-fix head重过一次
-discarded live profile。launch仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与现有进程，
-并先满足SKNC profile合同。
+deployment和评测全部关闭。SKNC canonical实现、fresh schema、CPU机制验证、clean world3 `16/16` profile与
+B32 deployment smoke均已sealed，config为`active_formal_ready`。下一合法动作是从新clean pushed seal head
+fresh训练`0→5`并立即strict paired400；launch仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA
+topology与现有进程，有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

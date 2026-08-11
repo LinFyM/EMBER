@@ -1,0 +1,113 @@
+{
+  "active_config": {
+    "bytes": 5634,
+    "path": "configs/pi05_v6_qv_rank_reserved_native_reward_v1.json",
+    "schema": "ember_pi05_v6_qv_rank_reserved_native_reward_v1"
+  },
+  "content_hash_policy": "disabled_by_owner",
+  "decision": {
+    "authorizes_cycle1": false,
+    "counterfactual_gate_uses_original_gate_b_thresholds": true,
+    "retroactively_changes_original_gate_b": false,
+    "scientific_role": "deconfound_rank14_compression_from_upstream_writer_regeneration"
+  },
+  "implementation_commit": "07462c928420f2fbddd7a7004fb169bc4ea89ea0",
+  "original_gate_b_nonpass": {
+    "breadth": 7,
+    "commit": "0fd823f8cb5ab45164b185c0a42cb358044b095d",
+    "correct": 128,
+    "gained_from_old134": 15,
+    "lost_from_old134": 21,
+    "passed": false,
+    "results": {
+      "bytes": 1909406,
+      "path": "runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811/results.json",
+      "schema": "ember_pi05_target_eval_results_v2"
+    },
+    "root": "runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811",
+    "run_contract": {
+      "bytes": 130222,
+      "path": "runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811/run_contract.json",
+      "schema": "ember_pi05_target_eval_launch_v2"
+    }
+  },
+  "schema_version": "ember_pi05_v6_qv_rank_reserved_compiler_only_diagnostic_authority_v1",
+  "source_old134": {
+    "breadth": 6,
+    "cache": {
+      "entry_count": 400,
+      "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v8",
+      "manifest": {
+        "bytes": 110652,
+        "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810/writer_lora_cache/cache_manifest.json",
+        "schema": "ember_pi05_expert_manifold_writer_lora_cache_manifest_v3"
+      },
+      "reference": "ember_pi05_v6_counterfactual_null_condition_kernel_program_residual_v2:historical_v6_macro400_load_only:m0:base45818648bytes:residual0bytes:rank16:400episodes:seed7:batch8:native2641920bytes",
+      "root": "runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810/writer_lora_cache"
+    },
+    "commit": "6b5f7a6ad6ef1a778205071f38faec9f936cf54e",
+    "correct": 134,
+    "results": {
+      "bytes": 1869489,
+      "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810/results.json",
+      "schema": "ember_pi05_target_eval_results_v2"
+    },
+    "root": "runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810",
+    "run_contract": {
+      "bytes": 128166,
+      "path": "runs/outputs/pi05_v6_balanced_causal_condition_residual_correct400_noreplacement_seed7_method_macro0000_6b5f7a6_20260810/run_contract.json",
+      "reference": "ember_pi05_target_eval_launch_v2:151f9d5f9dc4499497e41306ab99363a",
+      "schema": "ember_pi05_target_eval_launch_v2"
+    }
+  },
+  "status": "authorized_one_time_after_original_gate_b_nonpass",
+  "target": {
+    "cache_root_owned_by_output": true,
+    "condition": "correct",
+    "entry_count": 400,
+    "method_macro": 0,
+    "mode": "formal",
+    "role": "validation",
+    "rollout_identity_fields": [
+      "mode",
+      "role",
+      "model",
+      "tokenizer",
+      "normalization",
+      "policy",
+      "environment",
+      "rng",
+      "libero_paths",
+      "tasks",
+      "adapter_source"
+    ],
+    "root": "runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811",
+    "same_rollout_identity_as_old134": true,
+    "states_per_task": 50,
+    "task_count": 8
+  },
+  "transform": {
+    "action_bit_exact_validation": "target_safetensors_vs_source_tensor_torch_equal",
+    "action_copy": "cpu_native_direct_tensor_copy_without_arithmetic",
+    "action_target_count": 2,
+    "action_tensor_equal_checks": 1600,
+    "ambient_bf16_autocast": true,
+    "batch_count": 50,
+    "batch_size": 8,
+    "cuda_local_device": 0,
+    "fp32_matmul_allow_tf32": true,
+    "gpu_local_numa_binding": "required",
+    "policy_forwards": 0,
+    "population": "prefilled_without_writer_generator_marker",
+    "qv_leading_shape": [
+      8,
+      18
+    ],
+    "qv_public_topology": "pivot_rank14_plus_two_physical_zero_a_b_slots",
+    "qv_target_count": 36,
+    "rollouts": 0,
+    "source_cache_read_only": true,
+    "teacher_video_or_action_reads": 0,
+    "training_updates": 0
+  }
+}

@@ -14,10 +14,14 @@ from lerobot.utils.constants import (
 )
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_prior_step import GeneratedConditionGraph, program_cotangent
+from ember.expert_manifold.v6_prior_step import (
+    GeneratedConditionGraph,
+    redecoded_program_cotangent,
+)
 from ember.lora import LoRAContract, validate_lora_state
 from ember.reward.protocol import RewardProtocolError, flow_sample_seed
 from ember.reward.rollout import RewardRolloutOutcome
+from ember.writer.condition_update import FrozenV6ConditionResidualWriter
 
 
 @dataclass(frozen=True)
@@ -218,6 +222,7 @@ def _functional_executed_prefix_flow_loss(
 def landmark_reward_program_cotangent(
     graph: GeneratedConditionGraph,
     *,
+    writer: FrozenV6ConditionResidualWriter,
     policy: torch.nn.Module,
     contract: LoRAContract,
     outcomes: Sequence[RewardRolloutOutcome],
@@ -271,7 +276,13 @@ def landmark_reward_program_cotangent(
             objective.add_(scalar.detach())
             for name, gradient in zip(names, gradients, strict=True):
                 lora_gradients[name].add_(gradient.to(dtype=torch.float32))
-        cotangent = program_cotangent(graph, lora_gradients)
+        del batch, gradients, leaves, noises, per_row, scalar, times
+        cotangent = redecoded_program_cotangent(
+            writer=writer,
+            program_value=graph.program_leaf,
+            lora_gradients=lora_gradients,
+            device=device,
+        )
         forwards = 4
     else:
         objective = torch.zeros((), dtype=torch.float32, device=device)

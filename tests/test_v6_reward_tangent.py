@@ -127,6 +127,24 @@ class _ProjectedPolicy(torch.nn.Module):
         return batch[ACTION]
 
 
+class _ProgramDecoder(torch.nn.Module):
+    def __init__(self, contract: SmolVLALoRAContract) -> None:
+        super().__init__()
+        self.contract = contract
+        self.decode_calls = 0
+
+    def decode_slots(self, program: torch.Tensor) -> dict[str, torch.Tensor]:
+        self.decode_calls += 1
+        flat = program.flatten()
+        offset = 0
+        state = {}
+        for name, shape in expected_lora_state_shapes(self.contract).items():
+            count = shape[0] * shape[1]
+            state[name] = flat[offset : offset + count].reshape(shape)
+            offset += count
+        return state
+
+
 def _graph_and_policy():
     policy = _ProjectedPolicy()
     contract = SmolVLALoRAContract(
@@ -148,6 +166,7 @@ def _graph_and_policy():
         count = shape[0] * shape[1]
         state[name] = flat[offset : offset + count].reshape(shape)
         offset += count
+    writer = SimpleNamespace(base_writer=_ProgramDecoder(contract))
     graph = GeneratedConditionGraph(
         correct_lora=state,
         program_leaf=program,
@@ -159,19 +178,19 @@ def _graph_and_policy():
         negative_raw_frames=10,
         negative_sampled_frames=3,
     )
-    return graph, policy, contract
+    return graph, writer, policy, contract
 
 
 def test_mixed_landmark_credit_reaches_program_and_homogeneous_skips_forward() -> None:
-    graph, policy, contract = _graph_and_policy()
+    graph, writer, policy, contract = _graph_and_policy()
     blind = program_cotangent(
         graph,
         {name: torch.ones_like(value) for name, value in graph.correct_lora.items()},
-        retain_graph=True,
     )
     assert torch.count_nonzero(blind) > 0
     cotangent, summary = landmark_reward_program_cotangent(
         graph,
+        writer=writer,  # type: ignore[arg-type]
         policy=policy,
         contract=contract,
         outcomes=_outcomes(),
@@ -186,10 +205,12 @@ def test_mixed_landmark_credit_reaches_program_and_homogeneous_skips_forward() -
     assert summary.selected_landmarks == 10
     assert summary.maximum_landmarks_per_episode == 4
     assert summary.program_cotangent_rms > 0
+    assert writer.base_writer.decode_calls == 1
     assert all(parameter.grad is None for parameter in policy.parameters())
 
     zero, zero_summary = landmark_reward_program_cotangent(
         graph,
+        writer=writer,  # type: ignore[arg-type]
         policy=policy,
         contract=contract,
         outcomes=_outcomes((True, True, True, True)),
@@ -201,3 +222,4 @@ def test_mixed_landmark_credit_reaches_program_and_homogeneous_skips_forward() -
     assert torch.count_nonzero(zero) == 0
     assert zero_summary.mixed is False
     assert zero_summary.functional_policy_forwards == 0
+    assert writer.base_writer.decode_calls == 1

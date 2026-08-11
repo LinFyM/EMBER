@@ -24,7 +24,9 @@
   `correct>=140`、`lost<=8`及单task集中门。resume`5→10`、controls和sweep全部关闭。
 - 当前唯一active successor design是SRTP：保留SKNC相同的shared `D0`、anchors、PICK key与native compiler；
   mixed K4 tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合
-  后直接投影最终Program update。尚未实现或运行；历史Reward/OSG/SKNC config不能恢复执行。
+  后直接投影最终Program update。canonical实现已完成；`d172add`首个world3 profile因decoder graph跨K4保留而
+  在mixed CFM处三rank OOM，现已用不改objective的compiler recompute修复并通过完整CPU`359 passed`，等待唯一
+  一次clean reprofile。历史Reward/OSG/SKNC config不能恢复执行。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -325,9 +327,16 @@ ordered video仍通过PICK terminal-goal residual与causal prefix成为唯一dyn
 full48 zero RHS，language没有condition value。teacher action始终hidden；train24 policy-generated landmarks和
 outcome只作ephemeral credit，不进checkpoint/deployment。完整authority与CPU/live/formal falsifiers见
 `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。SRTP canonical code、fresh-incompatible
-config、constant-memory landmark/K4 credit/shared projection tests与完整CPU回归`358 passed`已经闭合；尚无GPU、
-checkpoint或成绩。下一步必须先clean push，再从frozen worktree完成live preflight与唯一discarded macro，不能
-直接formal或恢复旧Reward/OSG path。
+config、constant-memory landmark/K4 credit/shared projection tests已经闭合。`d172add`首个clean world3 macro
+使用gpu02物理3/4/5，三rank都在mixed reward CFM forward处申请484MiB时OOM；最低报告free约379MiB，未写
+mechanism profile/checkpoint，退出后设备正常释放。根因是blind Program VJP为随后reward VJP保留decoder graph，
+使其跨整段K4占用显存。现已改为blind VJP立即释放原graph、rollout只持detached LoRA，Nmc4结束后仅对mixed task
+重解同一detached Program compiler一次；不重复video/condition/policy forward，不改objective或seed。完整CPU
+回归`359 passed`。下一步是clean commit/push、新frozen worktree和一次同合同reprofile；再OOM或任一hard gate
+失败即退役，不能降B、扩dtype、加allocator开关或恢复旧Reward/OSG path。
+
+OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_d172add_20260812`，
+对应log/exit在`runs/logs/`同前缀文件；`failure.json`明确记录exit1、无mechanism report和无retained checkpoint。
 
 ## 10. Runtime and GPU boundary
 
@@ -394,5 +403,5 @@ config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnosti
 reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP authority、canonical实现、active
-config与CPU gate已写入active tree，但尚无GPU/checkpoint/成绩；下一步clean push后做唯一discarded live macro，
-旧Reward/OSG/SKNC命令不得恢复。
+config与CPU gate已写入active tree；`d172add` OOM root/log/failure artifact保留且无checkpoint/mechanism report。
+下一步clean push后只做一次graph-lifetime修复的同合同reprofile，旧Reward/OSG/SKNC命令不得恢复。

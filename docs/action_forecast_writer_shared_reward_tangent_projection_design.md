@@ -1,8 +1,10 @@
 # Shared Reward-Tangent Projection
 
 状态：2026-08-12 active implementation authority。canonical实现与fresh-incompatible config已完成；constant-
-memory landmark、K4 credit、small-dual projection、checkpoint隔离及完整CPU回归`358 passed`。尚无GPU、checkpoint
-或closed-loop成绩。只有discarded live和deployment门依次通过并由clean pushed commit封存后，才允许formal
+memory landmark、K4 credit、small-dual projection与checkpoint隔离已闭合。`d172add`首个clean world3 discarded
+macro在mixed reward CFM处因decoder graph跨K4保留而三rank同时OOM，没有mechanism report/checkpoint。执行图
+已改为compiler activation recompute且完整CPU回归`359 passed`；尚无通过的GPU profile、checkpoint或
+closed-loop成绩。只有修复后的reprofile和deployment门依次通过并由clean pushed commit封存后，才允许formal
 fresh训练。
 
 SRTP从SKNC macro5的正式终局出发：保留historical v6-fast Writer、PICK-GC ordered goal-causal condition key、
@@ -116,6 +118,13 @@ r_i = grad_{H_i} J_i,          H_i = phi_i M
 
 mixed task的`r_i`必须finite且nonzero；homogeneous task严格zero且不做functional forward。`r_i`只定义一阶
 half-space，不直接作为memory delta，因此避免历史Reward-Credit连续tangent低于native factor ULP的问题。
+
+首个live macro暴露了一个不改变数学定义的执行图错误：blind LoRA→Program VJP使用`retain_graph=True`，使完整
+decoder activation跨K4和reward CFM存活，三张A40都在一次484MiB申请时只剩约379--463MiB而OOM。修复后blind
+VJP立即消费原decoder graph，rollout只持有detached LoRA；四次mixed CFM先形成detached LoRA cotangent，随后只
+重解同一个detached Program的compiler一次并传回`r_i`。这不重读video、不重算condition feature、不增加policy
+forward，也不改变BF16/TF32、B20、B<=16、Nmc4、seed或gradient；homogeneous task仍不重解。它是activation
+recompute而非数值复现用的重复forward，且必须由原wall门实测其代价。
 
 ## 5. Projection on the final shared update
 
@@ -257,6 +266,10 @@ rollouts。实际launch前同时live检查gpu01/gpu02，选同节点至多6张�
 
 任一hard gate失败即拒绝当前SRTP，不扫landmark数、Nmc、reward scale、QP tolerance、anchor threshold、rank、
 dtype或seed。
+
+`d172add`的首个profile在进入上述机制裁决前发生可复现OOM，因此该commit的graph-lifetime implementation已经
+退役，不把它伪装成科学non-pass，也不修改任何scientific常数。只允许修复后的clean commit做一次
+authority-identical reprofile；若仍OOM、wall超门或任一机制check失败，SRTP直接退役，不再做第二次工程修补。
 
 这里的mixed suite门在GPU launch前按既有封存证据纠正过一次：同一env/policy seed的historical Reward profile为
 `5/3/2/1`，matched SKNC world3 profile为`4/3/2/0`，差异只来自一个Long task在`3/4`与`4/4`成功边界上随正常

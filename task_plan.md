@@ -108,9 +108,13 @@
 - [x] 完成`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`，明确direct Reward sub-ULP、OSG
   full-prefix长尾与task-local guard失真边界，以及解析small-dual QP、CPU/live/formal门。
 - [x] 原位实现fresh-incompatible SRTP：每episode first/last+reservoir2、mixed-only Nmc4 B16 Program tangent、
-  final shared NNLS projection与fresh checkpoint/config schema均进入唯一canonical path；完整CPU回归`358 passed`。
-- [ ] clean commit/push并建立frozen worktree；live检查双节点、进程、quota、NUMA和显存余量后，按实时有效卡数
-  （至多6、不等待凑卡、少量显存占用不自动排除）执行唯一discarded full24 macro与hard gate。
+  final shared NNLS projection与fresh checkpoint/config schema均进入唯一canonical path；初始完整CPU回归
+  `358 passed`，graph-lifetime修复后为`359 passed`。
+- [x] `d172add` clean commit/push、frozen worktree和双节点/quota/NUMA preflight完成；按实时余量选择gpu02物理
+  3/4/5做首个world3 macro，但三rank在mixed reward CFM处因decoder graph跨K4保留同时OOM，未写mechanism
+  report/checkpoint，退出后设备正常释放。
+- [ ] 已原位改成blind VJP立即释放graph、mixed Nmc4后compiler-only重解一次，scientific合同不变且完整CPU
+  `359 passed`；clean commit/push、新frozen worktree后只重做一次同合同reprofile，再失败即退役。
 - [ ] 只有discarded live与B8/16/32 deployment门全过才fresh`0→5`，随后立即strict paired400并按预注册门裁决。
 
 ## Repository closeout

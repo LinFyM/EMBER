@@ -11,6 +11,7 @@ from ember.expert_manifold.v6_prior_step import (
     GeneratedConditionGraph,
     generate_condition_graph,
     program_cotangent,
+    redecoded_program_cotangent,
 )
 from ember.writer.data import RawTeacherVideo
 
@@ -202,3 +203,33 @@ def test_program_cotangent_transports_complete_a_b_vjp_without_hidden_scaling() 
             graph,
             {"target.lora_A.default.weight": torch.ones_like(leaf)},
         )
+
+
+def test_redecoded_program_cotangent_matches_the_original_compiler_graph() -> None:
+    writer = _Writer()
+    leaf = torch.randn(1, 320, 2, generator=torch.Generator().manual_seed(41))
+    leaf.requires_grad_(True)
+    state = writer.base_writer.decode_slots(leaf)
+    gradients = {
+        name: torch.randn_like(value, generator=torch.Generator().manual_seed(index))
+        for index, (name, value) in enumerate(state.items(), start=43)
+    }
+    graph = GeneratedConditionGraph(
+        correct_lora=state,
+        program_leaf=leaf,
+        program_input_before=leaf.detach(),
+        correct_feature=torch.zeros(256),
+        negative_feature=torch.zeros(256),
+        correct_raw_frames=1,
+        correct_sampled_frames=1,
+        negative_raw_frames=1,
+        negative_sampled_frames=1,
+    )
+    expected = program_cotangent(graph, gradients)
+    observed = redecoded_program_cotangent(
+        writer=writer,  # type: ignore[arg-type]
+        program_value=leaf,
+        lora_gradients=gradients,
+        device=torch.device("cpu"),
+    )
+    torch.testing.assert_close(observed, expected, rtol=0, atol=0)

@@ -6,7 +6,7 @@ import argparse
 import json
 import math
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -314,8 +314,16 @@ def _task_objective(
         }
         if len(fixed_policy_query) != 4:
             raise ExpertManifoldError("fixed-action profile query changed")
-    cotangent = program_cotangent(graph, lora_gradients, retain_graph=True)
-    del lora_gradients
+    deployment_lora = {
+        name: value.detach() for name, value in graph.correct_lora.items()
+    }
+    cotangent = program_cotangent(graph, lora_gradients)
+    graph = replace(
+        graph,
+        correct_lora=deployment_lora,
+        program_leaf=graph.program_leaf.detach(),
+    )
+    del lora_gradients, policy_batch
     outcomes, success_count, rollout_seconds = _collect_task_outcomes(
         runtime,
         schedule_macro=schedule_macro,
@@ -330,6 +338,7 @@ def _task_objective(
     ):
         reward_cotangent, reward_tangent = landmark_reward_program_cotangent(
             graph,
+            writer=runtime.writer,
             policy=runtime.policy,
             contract=runtime.lora_contract,
             outcomes=outcomes,

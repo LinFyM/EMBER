@@ -160,17 +160,55 @@ def program_cotangent(
 ) -> torch.Tensor:
     """Transport one task-local LoRA VJP to its complete Program leaf."""
 
-    names = tuple(graph.correct_lora)
+    return _transport_program_cotangent(
+        graph.correct_lora,
+        graph.program_leaf,
+        lora_gradients,
+        retain_graph=retain_graph,
+    )
+
+
+def _transport_program_cotangent(
+    lora_state: Mapping[str, torch.Tensor],
+    program_leaf: torch.Tensor,
+    lora_gradients: Mapping[str, torch.Tensor],
+    *,
+    retain_graph: bool = False,
+) -> torch.Tensor:
+    names = tuple(lora_state)
     if set(lora_gradients) != set(names):
         raise ExpertManifoldError("functional LoRA cotangent topology changed")
     gradient = torch.autograd.grad(
-        tuple(graph.correct_lora[name] for name in names),
-        graph.program_leaf,
+        tuple(lora_state[name] for name in names),
+        program_leaf,
         grad_outputs=tuple(lora_gradients[name] for name in names),
         retain_graph=retain_graph,
     )[0]
-    if gradient.shape != graph.program_leaf.shape:
+    if gradient.shape != program_leaf.shape:
         raise ExpertManifoldError("functional loss did not reach the complete Program")
     # The caller owns task-local aggregation.  No rank/task/world-size scaling
     # is permitted here.
     return gradient[0].detach().to(dtype=torch.float32)
+
+
+def redecoded_program_cotangent(
+    *,
+    writer: FrozenV6ConditionResidualWriter,
+    program_value: torch.Tensor,
+    lora_gradients: Mapping[str, torch.Tensor],
+    device: torch.device,
+) -> torch.Tensor:
+    """Replay only the compiler to transport a delayed LoRA cotangent."""
+
+    program_leaf = program_value.detach().to(dtype=torch.float32).requires_grad_(True)
+    with torch.autocast(
+        device_type=device.type,
+        dtype=torch.bfloat16,
+        enabled=device.type == "cuda",
+    ):
+        lora_state = writer.base_writer.decode_slots(program_leaf)
+    return _transport_program_cotangent(
+        lora_state,
+        program_leaf,
+        lora_gradients,
+    )

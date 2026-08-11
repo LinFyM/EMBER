@@ -35,8 +35,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - 当前唯一active successor design是SRTP：SKNC产生同一个shared blind update `D0`后，只对mixed K4 tasks
   从每episode最多4个on-policy occupancy landmarks计算LOO reward tangent，再把最终24-task shared update投影到
   全部reward half-spaces。它保留B20幅度、all-success anchors、PICK ordered key、FP32 Program和native rank16
-  compiler，同时避免Reward-Credit的sub-ULP direct write与OSG的full-prefix长尾。canonical实现、fresh schema
-  与完整CPU回归已通过，尚未运行GPU或产生checkpoint/成绩。
+  compiler，同时避免Reward-Credit的sub-ULP direct write与OSG的full-prefix长尾。首个clean world3 live macro因
+  decoder graph跨K4保留，在mixed reward CFM处三rank同时OOM；没有mechanism report/checkpoint，属于已定位的
+  执行图错误而非科学结果。修复只做compiler activation recompute：blind VJP后释放原graph，Nmc4结束后仅对
+  mixed task重解同一Program一次，不改变视频、K4、B20、policy forward或objective；完整CPU回归`359 passed`。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -118,9 +120,9 @@ EMBER/
 ```
 
 进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC与SKNC均已
-封存non-pass；SRTP现为`active_cpu_ready_awaiting_live_profile`。必须先从clean pushed commit做live GPU、进程、
-quota与topology preflight，再执行唯一discarded macro；该门通过前不能formal，也不能从旧文档恢复
-Reward/OSG/SKNC命令或resume其checkpoint。设计见
+封存non-pass；SRTP现为`active_cpu_ready_awaiting_live_profile`。`d172add`的首个profile已因明确的graph-lifetime
+OOM退出并保留log/failure artifact；当前只允许从修复后的clean pushed commit重做一次同合同reprofile。该门
+通过前不能formal，也不能从旧文档恢复Reward/OSG/SKNC命令或resume其checkpoint。设计见
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高

@@ -30,9 +30,11 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `5→10` resume、controls和参数sweep全部关闭。它只淘汰PICK-GC+first-all-success-key nullspace+blind B20。
 - 当前唯一active successor design是SRTP：保留SKNC完整D0/anchors/PICK key/native compiler，只为mixed K4
   tasks从每episode最多4个constant-memory occupancy landmarks计算LOO reward tangent，并在24-task汇合后的最终
-  shared Program update上同时投影所有reward half-spaces。canonical实现与fresh-incompatible config已完成，
-  synthetic/constant-memory/credit/projection/resume合同及完整CPU回归`358 passed`；尚无GPU、checkpoint或成绩。
-  下一门是clean push后的唯一discarded live macro，不能从历史Reward/OSG代码整条恢复。
+  shared Program update上同时投影所有reward half-spaces。首个clean world3 discarded macro在mixed reward CFM
+  forward处三rank同时OOM：原实现错误地把decoder autograd graph跨K4保留，未写mechanism report/checkpoint，不能
+  当作科学non-pass。现已改为blind VJP先消费原graph、K4后仅对mixed task重解同一detached Program的compiler
+  一次；不重复video/policy forward且数学objective不变，完整CPU回归`359 passed`。下一门是clean push后唯一
+  一次该工程修复的authority-identical reprofile；再OOM或任一机制门失败即退役，不降batch/改dtype/扫参数。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -195,8 +197,9 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
   decision evidence、paired transition、raw rows和checkpoint均保留，但不能resume或补controls。
 - 当前active design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；active
   config是`configs/pi05_v6_shared_reward_tangent_projection_v1.json`，状态
-  `active_cpu_ready_awaiting_live_profile`。尚无SRTP checkpoint或成绩；下一合法动作是clean push、frozen
-  worktree与live preflight后执行一次discarded macro，不是formal训练。
+  `active_cpu_ready_awaiting_live_profile`。尚无SRTP checkpoint或成绩；`d172add`的OOM attempt只有失败artifact。
+  下一合法动作是修复commit clean push、frozen worktree与live preflight后执行唯一一次同合同reprofile，不是
+  formal训练。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

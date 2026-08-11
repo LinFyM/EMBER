@@ -232,7 +232,14 @@ first/last；mixed panel只做4次logical B<=16 CFM forward，homogeneous panel�
 null feature与Program cotangent的factorized Gram在CPU FP64 NNLS求dual，只在GPU FP32合成一次大correction。
 synthetic覆盖了无约束/原更新已可行的逐元素退化、相关与重复half-space、task permutation、KKT feasibility、
 anchor closure和正alignment；50组额外随机相关约束也无violation。fresh checkpoint schema拒绝SKNC resume，
-ephemeral landmark不进TaskObjective record或checkpoint。完整CPU回归`358 passed`不能预测closed-loop；当前仍只
+ephemeral landmark不进TaskObjective record或checkpoint。完整CPU回归`359 passed`不能预测closed-loop；当前仍只
 授权discarded live macro，以mixed>=8且至少3 suite覆盖、四suiteall-success anchor、raw violation>=2、
 final violation=0、energy>=.25、
 negative ratio<=.15和matched SKNC wall<=1.25x裁决机制是否值得formal。
+
+首个`d172add` world3 live macro没有产生科学机制结果：三rank均在mixed reward CFM处OOM，单次申请484MiB时
+只剩约379--463MiB。最早工程失效接口是decoder graph lifetime，而不是landmark数量、K4 credit或shared
+projection；blind VJP错误地为未来reward VJP保留了graph并跨rollout存活。针对性修复让blind VJP立即消费原graph，
+reward LoRA cotangent完成后仅重解同一Program compiler一次；视频、condition、policy forward、objective、seed和
+batch均不变，完整CPU回归更新为`359 passed`。只允许一次同合同reprofile，不能把这个OOM用降batch/dtype sweep
+救活，也不能把它写成SRTP科学有效或无效的证据。

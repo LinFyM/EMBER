@@ -12,8 +12,11 @@ Program write，clean world3机制与B32部署门均通过；formal fresh`0→5`
 相对old134 retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、projected energy`.592`与Program
 closure健康，但Long净`+7`掩盖Object/Spatial净`-5/-1`，未过`correct>=140`、`lost<=8`和单task集中门。
 SKNC已退役，不resume、不补controls、不sweep。当前唯一active design是SRTP：fixed-landmark mixed reward
-tangent直接投影最终shared Program update。canonical实现、fresh-incompatible config与完整CPU回归`358 passed`
-已完成；尚无GPU、checkpoint或成绩，下一合法动作是clean push后的唯一discarded live macro。
+tangent直接投影最终shared Program update。`d172add`首个clean world3 discarded macro在mixed reward CFM处
+三rank同时OOM，因为decoder autograd graph被跨K4保留；没有mechanism report或checkpoint。该执行图已原位改为
+blind VJP后释放graph、Nmc4后仅为mixed task重解同一detached Program compiler一次，scientific objective、
+policy forward数和信息墙不变；完整CPU回归`359 passed`。下一合法动作是clean push后做唯一一次同合同工程
+reprofile；再OOM或机制门失败即退役。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -225,9 +228,9 @@ checkpoint与参数sweep全部关闭。OSG-PC profile exit1且无checkpoint/mech
 deployment和评测全部关闭。SKNC canonical实现、clean world3 `16/16` profile、B32 deployment smoke、formal
 fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`formal_result_sealed`，resume、controls和
 sweep关闭。SRTP目前已完成canonical implementation与CPU/architecture gate，active config状态为
-`active_cpu_ready_awaiting_live_profile`；clean push后仍须重新复核gpu01/gpu02、quota、fresh root、物理/NUMA
-topology与现有进程，有多少合适的同节点卡
-就用多少、最多6张，不等待凑卡。
+`active_cpu_ready_awaiting_live_profile`；`d172add`首个world3 attempt已因decoder graph lifetime OOM退出，修复后
+须clean push并重新复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与现有进程，有多少合适的同节点卡
+就用多少、最多6张，不等待凑卡。只允许一次同合同reprofile。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

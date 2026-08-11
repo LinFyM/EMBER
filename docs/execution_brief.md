@@ -15,13 +15,14 @@ SKNC已退役，不resume、不补controls、不sweep。SRTP随后让fixed-landm
 Program update，但两个clean world3 attempts都在mixed reward CFM处三rank OOM。`d172add`首轮暴露decoder graph
 跨K4保留；`e31e2fd`释放graph并只在Nmc4后重解compiler仍申请`254/484/484 MiB`失败，最差free仅16.31MiB。
 两次均无mechanism report/checkpoint，deployment/formal未授权；当前SRTP执行合同终局退役，不降batch、改dtype、
-开allocator或做第三次修补。当前没有active successor，下一合法动作是针对完整logical landmark policy-gradient
-本体显存与历史closed-loop credit错位形成新的单变量design authority。
+开allocator或做第三次修补。当前唯一active successor design是PCUG：严格配对比较实际base/candidate shared
+update，对candidate losses多于gains的task在最终write施加临时zero-motion guard；每task总rollout仍为4且没有
+policy backward。design已封存，尚未实现或运行。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
 
-## 1. Active SRTP design gate
+## 1. Active PCUG design gate
 
 任何新successor在实现前必须回答：
 
@@ -38,11 +39,11 @@ blind train24 offline cotangent→held on-policy useful support/coexistence。OS
 half-space保护support，但current full-replay per-success VJP graph先在吞吐/长尾接口失败，尚未产生shared guard
 transfer证据。后继必须保留信息墙与已通过接口，同时正面限制on-policy credit的cost/occupancy length。
 SKNC把Program到action的protected motion压到零，但strict仍lost13并发生suite换手，说明single-video key不是
-held support坐标。SRTP保留同一个SKNC shared update `D0`，mixed K4 tasks只保留每episode first/last与两个
-reservoir interior occupancy rows，计算LOO signed Program tangent；随后在all-success anchor nullspace内，把
-最终24-task shared update一次投影到全部`<r_i,phi_i D><=0`。这既不缩小B20/native rank16幅度，也不让task-local
-guard在full48汇合后漂移。完整公式、常数内存实现边界与hard gates见
-`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。
+当前shared candidate是否有害的充分证据。SRTP又证明完整reward policy-gradient执行图不适合A40合同。PCUG因此
+先产生真正准备写入的blind `D0`，再在两个相同initializations上配对base/candidate闭环结果；harmful与当前
+stable-success keys只在最终write前对`D0`做closest equality projection，harm不持久化。它测量实际update的因果
+损失而非surrogate gradient，不让task-local guard被后续full24 solve改写。完整公式与hard gates见
+`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
 
 ## 2. Fixed information contract
 
@@ -229,8 +230,9 @@ deployment和评测全部关闭。SKNC canonical实现、clean world3 `16/16` pr
 fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`formal_result_sealed`，resume、controls和
 sweep关闭。SRTP的`d172add`与`e31e2fd` world3 attempts均exit1，后者证明释放decoder graph仍不能让完整logical
 B<=16 reward CFM gradient进入A40；config已封存为`profile_result_sealed_nonpass`，同配置重跑、deployment与formal
-关闭。当前无active successor；任何新GPU动作前必须先有新的design authority，再重新复核gpu01/gpu02、quota、
-fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+关闭。PCUG design现为唯一active authority但尚未实现；任何新GPU动作前必须先闭合实现与CPU gate，再重新复核
+gpu01/gpu02、quota、fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不
+等待凑卡。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

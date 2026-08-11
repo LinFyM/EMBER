@@ -34,8 +34,11 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   未授权。第二次把最早工程失效接口定位到完整logical B<=16 landmark policy-gradient本体，而非decoder graph；
   不得再降batch、改dtype、开allocator选项或补第三次修复。该结果淘汰当前SRTP执行合同，不否定constant-memory
   landmarks、shared reward half-space或所有on-policy credit。
-- 当前没有active successor。下一步必须从这一最早接口与历史closed-loop证据重新做单变量第一性原理设计，先写
-  可证伪authority，再实现或启动GPU；不得直接恢复Reward/OSG/SKNC/SRTP旧路径。
+- 当前唯一active successor design是PCUG：先用persisted stable-success bank形成原始blind `D0`，再对两个相同
+  random initializations分别运行base/candidate Programs，严格配对识别candidate losses；最终只把当前harmful与
+  stable-success condition motion投影为零，harm guard不持久化。每task仍共4 rollouts、无policy backward或
+  trajectory replay。它直接测试“这次实际shared update是否伤害任务”，同时保持closest projection和原B20幅度。
+  design authority已写，尚未实现、profile、训练或评测。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -47,14 +50,15 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-5. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-6. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-7. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-8. `docs/research_history.md`
-9. `task_plan.md`
-10. `findings.md`
-11. `docs/concept.md`
+4. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+5. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+6. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+7. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+8. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+9. `docs/research_history.md`
+10. `task_plan.md`
+11. `findings.md`
+12. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -199,7 +203,8 @@ few-shot可减少部分偶然性，但不自动解决共享credit、正确时序
 - 最新retired design authority：`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`；config
   `configs/pi05_v6_shared_reward_tangent_projection_v1.json`状态为`profile_result_sealed_nonpass`。`d172add`与
   `e31e2fd`两个OOM roots/logs/failure artifacts保留，均无checkpoint/成绩；deployment、formal和同配置重跑关闭。
-- 当前无active successor；下一合法动作是新的第一性原理design authority，不是GPU、deployment或formal训练。
+- 当前active design authority：`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。PCUG尚无实现、
+  config、GPU、checkpoint或成绩；下一合法动作是原位实现与CPU/architecture gate，不是直接GPU或formal训练。
 - split：`configs/libero_24_8_8_v1/`；数据、tokenizer、simulation assets由CLI/`.env.local`提供。
 
 旧方法的可执行入口被清理不代表实验记录丢失。需要恢复某个已证明有效的子机制时，先从

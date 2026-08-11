@@ -244,3 +244,11 @@ Program compiler一次，视频、condition、policy forward、objective、seed�
 `19/16.31/417.06 MiB`。因此更早且充分的失败接口是完整logical B<=16 landmark policy-gradient本体显存，而非
 decoder graph；SRTP执行合同终局退役，不降batch/dtype、不加allocator开关、不做第三次修补。由于两次都没到
 shared projection report，这个结果既不证明也不否定reward half-space的科学价值，只否定当前获取它的执行图。
+
+SRTP之后的单变量选择是PCUG。它不再估计高维reward gradient，而是先形成真正准备commit的blind shared `D0`，
+再对两个相同random initializations严格配对运行base与candidate Programs。只有candidate造成的paired losses严格
+多于gains时，该task才在最终write获得临时zero-motion guard；base/candidate四臂全成功仍进入persistent
+first-success bank。final update是`D0`到这些keys共同nullspace的closest projection，不重算full48，因此guard
+不会再被shared solve改写，其他tasks也只发生必要的最小变化。每task仍总计4 rollouts且reward路径无policy
+backward。它最快会被以下证据否决：candidate与base几乎无discordance、没有跨suite harmful tasks、projection
+退化或破坏rank/energy、wall超过matched SKNC `1.5x`，以及macro5 strict不能把lost压到8以内并提高absolute。

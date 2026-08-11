@@ -26,8 +26,9 @@
   `e31e2fd`同合同reprofile释放graph后仍三rank OOM，申请`254/484/484 MiB`时free`19/16.31/417.06 MiB`。
   两次均无mechanism report/checkpoint，deployment/formal未授权；完整logical B<=16 landmark policy-gradient
   本体是最早工程失效接口，不允许第三次修补或batch/dtype/allocator sweep。
-- 当前没有active successor；历史Reward/OSG/SKNC/SRTP config均不能恢复执行。下一步先形成新的单变量design
-  authority，再实现或启动GPU。
+- 当前唯一active successor design是PCUG：先形成实际blind `D0`，再在两个exact-paired random initializations
+  上比较base/candidate Programs；candidate losses多于gains的task与stable-success task在最终write中临时
+  zero-motion，只有stable-success key持久化。每task总rollout仍4条，无policy backward。尚未实现或运行。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -341,7 +342,24 @@ OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile
 log/exit与`failure.json`，exit1、三rank OOM、无mechanism report/checkpoint。config现为
 `profile_result_sealed_nonpass`。
 
-## 10. Runtime and GPU boundary
+## 10. Active PCUG design authority
+
+PCUG不再求完整reward gradient，而是直接测量当前shared candidate的闭环因果效果。Phase A先用完整24-task
+B20/full48和persisted stable-success bank形成`D0`；Phase B对两个相同env/state/policy RNG分别运行base与
+candidate，共48 pairs/96 rollouts。若同task candidate losses严格多于gains，则该condition key只在当前macro
+进入final equality guard；base/candidate四臂全成功的key同时进入first-success bank。
+
+final update不是带新guards重算full48，而是把`D0`投影到persisted、stable与harmful keys的共同nullspace，保证
+它是离原candidate最近的可行write。这样guard不会再被后续shared solve改变，未guard tasks也只承受必要的最小
+旋转。candidate Program必须按真正commit后的`base_slots + cast(residual + phi D0)`生成，不能用低位不同的
+`current_program + motion`冒充。
+
+这一设计保留v6-fast/PICK/SKNC的video condition、B20幅度、negative zero RHS、FP32 Program和native rank16，
+只把success evidence从unpaired 4/4状态升级为actual candidate-vs-base causal loss。完整两阶段算法、anti-bypass、
+CPU/live/formal gates见`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。当前只有design
+authority；下一步是原位替换SRTP runtime、CPU/architecture gate和clean seal，不得直接GPU。
+
+## 11. Runtime and GPU boundary
 
 任何未来GPU launch前：
 
@@ -373,7 +391,7 @@ quota与fresh root。
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
 
-## 11. Repository state and handoff
+## 12. Repository state and handoff
 
 2026-08-11 compiler-only结果由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存。随后cleanup完成：
 
@@ -407,4 +425,5 @@ reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B3
 config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
-和formal关闭。当前无active successor，下一步先写新的design authority，旧Reward/OSG/SKNC/SRTP命令不得恢复。
+和formal关闭。PCUG design authority现为唯一active successor但尚未实现；下一步闭合canonical实现与CPU gate，
+旧Reward/OSG/SKNC/SRTP命令不得恢复。

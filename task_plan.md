@@ -118,8 +118,11 @@
   report/checkpoint。SRTP按门终局退役，不降batch/dtype、不开allocator、不做第三次修补。
 - [x] SRTP deployment、formal fresh`0→5`与strict paired400因profile non-pass全部关闭；config封存为
   `profile_result_sealed_nonpass`，两个failure roots/logs保留。
-- [ ] 当前无active successor；从完整logical landmark policy-gradient本体显存与历史credit错位这一最早接口出发，
-  写新的单变量、可证伪design authority后再实现或启动GPU。
+- [x] 从完整logical landmark policy-gradient本体显存与历史credit错位出发选择PCUG：严格配对actual base/
+  candidate closed-loop outcomes，只对当前harmful/stable tasks做final closest zero-motion projection；每task总
+  rollout仍4条且无policy backward。design authority已写。
+- [ ] 原位替换SRTP runtime为fresh-incompatible PCUG两阶段macro，完成exact candidate Program、paired K2×2、
+  ephemeral harm guard、persistent stable bank、closest projection、checkpoint隔离与完整CPU/architecture gate。
 
 ## Repository closeout
 

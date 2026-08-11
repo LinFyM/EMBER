@@ -467,7 +467,13 @@ def _trained_writer_asset(
     manifest_path = checkpoint / "manifest.json"
     if not manifest_path.is_file():
         raise ExpertManifoldError("v6-prior residual checkpoint is incomplete")
-    inspection = inspect_v6_prior_checkpoint(checkpoint, validate_payload_values=False)
+    inspection = inspect_v6_prior_checkpoint(
+        checkpoint,
+        expected_world_size=int(
+            config["optimization"]["distributed_update"]["world_size"]
+        ),
+        validate_payload_values=False,
+    )
     contract = inspection.get("checkpoint_contract", {})
     if not isinstance(contract, Mapping):
         raise ExpertManifoldError("v6-prior residual checkpoint contract changed")

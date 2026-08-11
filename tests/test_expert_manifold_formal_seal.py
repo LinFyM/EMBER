@@ -199,9 +199,18 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     (checkpoint / "manifest.json").write_text("{}", encoding="utf-8")
     (checkpoint / "program_memory.safetensors").write_bytes(b"formal-memory")
     inspection = _synthetic_inspection(config, source, checkpoint)
+    inspection_arguments = {}
+
+    def inspect_checkpoint(
+        observed_checkpoint: Path, **arguments: object
+    ) -> dict:
+        assert observed_checkpoint == checkpoint
+        inspection_arguments.update(arguments)
+        return inspection
+
     monkeypatch.setattr(
         "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
-        lambda _checkpoint, **_kwargs: inspection,
+        inspect_checkpoint,
     )
     monkeypatch.setattr(
         "ember.expert_manifold.inference._historical_writer_asset",
@@ -226,6 +235,10 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     )
     assert asset["kind"] == "v6_condition_program_residual_checkpoint"
     assert asset["residual_state"]["tensor_count"] == 1
+    assert inspection_arguments == {
+        "expected_world_size": 4,
+        "validate_payload_values": False,
+    }
 
     invalid = deepcopy(inspection)
     invalid["checkpoint_contract"] = deepcopy(inspection["checkpoint_contract"])

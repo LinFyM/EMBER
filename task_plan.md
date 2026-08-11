@@ -48,6 +48,42 @@
 - [x] 核对Markdown links、compileall、CLI、`git diff --check`、工作树与主/远端branch结构；收尾后输出
   new-session prompt。
 
+## PICK live launch contract: 2026-08-11
+
+- frozen workspace：`/data1/user/ymdai/worktrees/EMBER-pick-f4a61a8-20260811`，detached自包含本段的clean
+  pushed authority；`PYTHONPATH`显式指向该worktree的`src`，只把ignored `runs`链接到canonical artifact root。
+- assets：source run `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722`及其step1000 checkpoint；tokenizer
+  `models/tokenizers/openpi/paligemma_tokenizer.model`；target data
+  `data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`；simulation path由canonical `.env.local`提供。
+- live allocation：`gpu02` physical GPU`0,1,2,3,4,5`，world6、每rank4 tasks、每rank2 loader workers；GPU6–7
+  属于他人。launch前再次要求0–5 memory/utilization/process/ECC空闲健康。
+- raw-key gate：先在`gpu02:0`运行retained probe
+  `runs/outputs/pi05_pick_policy_innovation_raw_key_probe_f4a61a8_20260811/raw_key_probe.py`；必须重现zero、same/cross、
+  reverse/shuffle、wrong-target-language，以及hidden重排与raw-frame重跑等价，失败即不启动full48。
+- discarded full48 profile exact command由
+  `runs/logs/pi05_pick_policy_innovation_full48_profile_macro0_r6_b20_f4a61a8_20260811.launch.sh`执行：
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=6 scripts/train_v6_prior_writer.py \
+  --config configs/pi05_v6_policy_innovation_consensus_key_v1.json \
+  --mode mechanism-profile \
+  --source-run /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 \
+  --checkpoint /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000 \
+  --tokenizer-path /data1/user/ymdai/projects/EMBER/models/tokenizers/openpi/paligemma_tokenizer.model \
+  --data-root /data1/user/ymdai/projects/EMBER/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a \
+  --output-dir /data1/user/ymdai/projects/EMBER/runs/outputs/pi05_pick_policy_innovation_full48_profile_macro0_r6_b20_f4a61a8_20260811 \
+  --stop-after-macro 1 --num-workers 2
+```
+
+  environment固定`CUDA_VISIBLE_DEVICES=0,1,2,3,4,5`、`NCCL_P2P_DISABLE=1`、`NCCL_ALGO=Ring`、
+  `NCCL_PROTO=Simple`、native BF16/TF32和internal GPU-local NUMA binding/deferred NCCL。
+- scale/gates：24 train tasks×one action-hidden video×B20 queries，full48 rank必须48、condition≤200、retained≥21、
+  negative null≥18且每类≥6、aggregate leakage≤.15、Program/BA/action闭合、0 OOM/nonfinite/negative action forward，
+  production wall≤sealed world6 baseline`21.0951s`的`1.75x`。profile不保留memory checkpoint。
+- storage/resume：`strg01 /data1`当前`508230484/1073741824 KiB`，raw/profile/log/temp峰值新增估计<2GiB；两个
+  output roots必须fresh，均不resume/overwrite。失败root作为non-pass evidence保留；只有raw、full48与后续
+  B8/16/32 deployment vertical全部通过才允许创建formal fresh0→10 root。
+
 ## Next-session decision procedure
 
 新 session 不应从旧文档中的某条“下一步”直接启动。顺序固定为：

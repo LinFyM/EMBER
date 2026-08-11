@@ -57,7 +57,7 @@ def _formal_ready_config() -> dict:
 
 
 def _context() -> DistributedContext:
-    return DistributedContext(0, 0, 4, torch.device("cpu"))
+    return DistributedContext(0, 0, 6, torch.device("cpu"))
 
 
 def _args(
@@ -113,8 +113,8 @@ def test_osg_pc_config_changes_only_credit_and_adds_success_guards() -> None:
     assert config["objective"]["retention_flow_mc_samples"] == 4
     assert config["data"]["action_queries_per_task"] == 20
     distributed = config["optimization"]["distributed_update"]
-    assert distributed["world_size"] == 4
-    assert distributed["tasks_per_rank"] == 6
+    assert distributed["world_size"] == 6
+    assert distributed["tasks_per_rank"] == 4
 
 
 @pytest.mark.parametrize(

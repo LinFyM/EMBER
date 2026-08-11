@@ -237,6 +237,16 @@ PICK-GC formal与strict400均已完成并释放四卡；完成后selected physic
 `strg01`最近一次报告`/data1`用量`508362308 KiB`、quota`1073741824 KiB`；这是漂移快照，任何新launch仍需
 同时重查两节点、quota与峰值预算，不能把旧空闲状态当预约。
 
+OSG-PC实施后的新快照为2026-08-11 22:22--22:23+08:00：`gpu01`只有物理`:2/:4/:6`空闲，未选；
+`gpu02:0--5`均为`0 MiB/0%`、P8且无compute process，`:6/:7`由他人占用。深度健康检查显示`:0--5`均无
+volatile/uncorrectable ECC、pending repair或remap failure；`:1`只有历史累计6次已纠正DRAM与1条已纠正remap，
+当前pending/failure均为no，故可用但须发射前后监测。OSG-PC train24 profile据此只改执行拓扑为单节点
+world6/local4，NUMA0为物理0--3、NUMA1为4--5，继续设置`NCCL_P2P_DISABLE=1`；matched基线为world6/local4
+`507.30541240703315s`，production wall门为`<=1.25x`。当时`strg01 /data1`用量`509424560 KiB`、quota
+`1073741824 KiB`，shared available约85T，fresh profile峰值估计`<2 GiB`且目标root不存在。以上仍不是预约；
+clean pushed topology seal和detached frozen worktree完成后，真正launch前必须再同时复查两节点、进程、健康、
+quota与fresh root。
+
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
 
@@ -266,6 +276,7 @@ checkpoint。PICK-GC部署证据root为
 首次vertical的staging-path失败及retry完成后的CPU finalizer字段失败都保留为engineering evidence；两者未改变
 科学合同或GPU结果。`5200bee` deployment seal与`09bbed3` world4 profile authority均已push并有detached frozen
 worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
-cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。当前下一步
-是先封存并push已通过CPU门的唯一OSG-PC实现，再从该clean frozen commit重查双节点GPU、`/data1` quota与fresh
-root，做一次discarded full24 K4+B20 profile。profile未过全部预注册机制、吞吐及实际guard传递证据，不得formal。
+cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
+canonical实现已由`e22cff1`封存并push；当前只在该科学commit上追加上述live world6/local4执行拓扑authority，
+完成CPU复验、push与detached frozen worktree后做一次discarded full24 K4+B20 profile。profile未过全部预注册
+机制、吞吐及实际guard传递证据，不得formal。

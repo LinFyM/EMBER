@@ -210,3 +210,7 @@ PICK-GC的formal macro10与strict400已经完成并封存为138/breadth6/lost16 
 checkpoint与参数sweep全部关闭。OSG-PC已原位实现唯一owner并通过CPU/synthetic合同；下一合法GPU动作仅为从
 clean pushed frozen commit和live资源执行一次discarded full24门，不得直接formal。任何未来launch仍须同时
 复核gpu01/gpu02、quota、fresh root、物理/NUMA topology与他人进程。
+
+2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
+纠正ECC/remap且当前无pending/failure。active config、checkpoint topology和profile baseline已相应绑定world6，
+但这不是设备预约；push seal和frozen worktree完成后，实际launch前仍须做最后一次双节点/健康/进程/quota复查。

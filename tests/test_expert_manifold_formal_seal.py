@@ -29,8 +29,8 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 def test_osg_pc_is_preprofile_while_pick_gc_nonpass_remains_provenance() -> None:
     config = load_v6_prior_config(CONFIG)
     assert config["status"] == "active_cpu_ready_awaiting_live_profile"
-    assert config["profile_run"]["expected_world_size"] == 4
-    assert config["profile_run"]["tasks_per_rank"] == 6
+    assert config["profile_run"]["expected_world_size"] == 6
+    assert config["profile_run"]["tasks_per_rank"] == 4
     assert config["profile_run"]["status"] == (
         "awaiting_live_a40_fresh0_to1_profile"
     )
@@ -168,15 +168,15 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
         "objective": config["objective"],
         "rng": config["rng"],
         "ownership": ownership,
-        "world_size": 4,
-        "rank_topology": [{"rank": rank} for rank in range(4)],
+        "world_size": 6,
+        "rank_topology": [{"rank": rank} for rank in range(6)],
         "content_hash_policy": "disabled_by_owner",
     }
     return {
         "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
         "next_macro": 10,
         "metrics_rows": 10,
-        "world_size": 4,
+        "world_size": 6,
         "cursor_contract": cursor_contract(config, 10),
         "checkpoint_contract": contract,
         "program_memory": {
@@ -241,7 +241,7 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     assert asset["kind"] == "v6_condition_program_residual_checkpoint"
     assert asset["residual_state"]["tensor_count"] == 1
     assert inspection_arguments == {
-        "expected_world_size": 4,
+        "expected_world_size": 6,
         "validate_payload_values": False,
     }
 

@@ -64,8 +64,10 @@
   per-success retention VJP、解析KKT投影、full48实际guard诊断和fresh schema均闭合。
 - [x] 加载`.env.local`后的fresh完整CPU回归`340 passed`，compileall与diff-check通过；architecture gate确认只有
   一个trainer/Writer/full48 solver，没有parallel family或compatibility fallback。
-- [ ] 从clean pushed frozen commit完成双节点GPU、quota、topology与fresh-root preflight，只做一次discarded
-  full24 K4+B20 profile；未过全部预注册机制、吞吐和实际guard传递证据不得formal。
+- [x] 22:22--22:23+08:00双节点、进程、深度GPU健康、quota与fresh-root preflight完成；选择`gpu02:0--5`
+  单节点world6/local4，`:6/:7`属于他人不触碰，GPU1历史已纠正ECC/remap须发射前后监测；profile峰值`<2GiB`。
+- [ ] 封存并push world6 topology authority，从clean detached frozen commit在临launch前重查资源，只做一次
+  discarded full24 K4+B20 profile；未过全部预注册机制、吞吐和实际guard传递证据不得formal。
 - [ ] profile通过才fresh`0→5`并立即strict paired correct400；按`correct>=140`、breadth、lost/gained与suite门
   决定是否exact-resume`5→10`，最终仍只认single-checkpoint strict`>150`。
 

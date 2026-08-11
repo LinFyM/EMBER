@@ -231,9 +231,9 @@
     "rollout_policy_batch_size": 4,
     "optimizer": "none",
     "distributed_update": {
-      "kind": "all_gather_local6_features_and_safe_cotangents_then_identical_local_manual_write",
-      "world_size": 4,
-      "tasks_per_rank": 6,
+      "kind": "all_gather_local4_features_and_safe_cotangents_then_identical_local_manual_write",
+      "world_size": 6,
+      "tasks_per_rank": 4,
       "memory_allreduce": false,
       "nccl_p2p_disable": "1",
       "nccl_algo": "Ring",
@@ -252,8 +252,8 @@
   },
   "profile_run": {
     "status": "awaiting_live_a40_fresh0_to1_profile",
-    "expected_world_size": 4,
-    "tasks_per_rank": 6,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
     "schedule_macro": 0,
     "diagnostic_macros": 1,
     "num_workers_per_rank": 2,
@@ -266,11 +266,11 @@
       "rollouts": 96,
       "source_world_size": 6,
       "source_tasks_per_rank": 4,
-      "target_world_size": 4,
-      "target_tasks_per_rank": 6,
+      "target_world_size": 6,
+      "target_tasks_per_rank": 4,
       "scaling": "source_step_seconds_times_target_tasks_per_rank_over_source_tasks_per_rank",
       "source_step_seconds": 507.30541240703315,
-      "step_seconds": 760.9581186105497
+      "step_seconds": 507.30541240703315
     },
     "gates": {
       "task_count": 24,
@@ -307,8 +307,8 @@
   },
   "formal_run": {
     "status": "blocked_until_live_profile_passes_and_is_sealed",
-    "expected_world_size": 4,
-    "tasks_per_rank": 6,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
     "total_macros": 10,
     "checkpoint_macros": [

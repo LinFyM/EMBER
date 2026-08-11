@@ -236,6 +236,11 @@ Program re-decode identity、full48 negative zero及fresh-incompatible checkpoin
 queries、K4 random-reset rollouts、success guards、full48 write，不保留checkpoint。live topology由launch前双节点
 检查决定，task-complete仍须world size整除24。
 
+2026-08-11 22:23+08:00的launch-preflight中，`gpu02`物理`0--5`均空闲且无active ECC/repair故障，故本次
+profile封存为单节点world6/local4；物理`6--7`属于他人，不触碰。GPU1只有历史已纠正的DRAM/remap记录，当前
+pending/failure均为no，发射前后仍须复核。matched world6/local4基线为`507.30541240703315s`，吞吐门仍是
+`<=1.25x`。这只改变执行拓扑，不改变OSG-PC科学合同；实际launch前必须再次同时检查两节点、进程和quota。
+
 必须同时满足：
 
 - 24 videos、480 source queries、96/96 rollouts、四suite完整；至少18/24 tasks有success guard、至少6个

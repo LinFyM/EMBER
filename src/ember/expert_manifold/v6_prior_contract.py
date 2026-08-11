@@ -196,11 +196,11 @@ _EXPECTED_OPTIMIZATION = {
     "optimizer": "none",
     "distributed_update": {
         "kind": (
-            "all_gather_local6_features_and_safe_cotangents_then_identical_"
+            "all_gather_local4_features_and_safe_cotangents_then_identical_"
             "local_manual_write"
         ),
-        "world_size": 4,
-        "tasks_per_rank": 6,
+        "world_size": 6,
+        "tasks_per_rank": 4,
         "memory_allreduce": False,
         "nccl_p2p_disable": "1",
         "nccl_algo": "Ring",
@@ -228,13 +228,13 @@ _EXPECTED_PROFILE_BASELINE = {
     "rollouts": 96,
     "source_world_size": 6,
     "source_tasks_per_rank": 4,
-    "target_world_size": 4,
-    "target_tasks_per_rank": 6,
+    "target_world_size": 6,
+    "target_tasks_per_rank": 4,
     "scaling": (
         "source_step_seconds_times_target_tasks_per_rank_over_source_tasks_per_rank"
     ),
     "source_step_seconds": 507.30541240703315,
-    "step_seconds": 760.9581186105497,
+    "step_seconds": 507.30541240703315,
 }
 _EXPECTED_PROFILE_GATES = {
     "task_count": 24,
@@ -268,8 +268,8 @@ _EXPECTED_PROFILE_GATES = {
     "nonfinite_count": 0,
 }
 _PROFILE_STATIC = {
-    "expected_world_size": 4,
-    "tasks_per_rank": 6,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
     "schedule_macro": 0,
     "diagnostic_macros": 1,
     "num_workers_per_rank": 2,
@@ -289,8 +289,8 @@ _EXPECTED_FORMAL_GATES = {
     "macro10_requires_macro5_gate": True,
 }
 _FORMAL_STATIC = {
-    "expected_world_size": 4,
-    "tasks_per_rank": 6,
+    "expected_world_size": 6,
+    "tasks_per_rank": 4,
     "num_workers_per_rank": 2,
     "total_macros": 10,
     "checkpoint_macros": [5, 10],

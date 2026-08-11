@@ -1,10 +1,9 @@
 # Work-Queue Paired Candidate Guard
 
-状态：2026-08-12 canonical实现与完整CPU`345 passed`已完成。首次world3 live profile的Phase-A本体仅
-`72.9700s / 0.15246x SKNC`，24 tasks完整且每rank 8个，但实现把声明为host-local的cursor误放在共享`/data1`，
-两次`flock`各等待约`30.4s`，累计claim=`60.8736s>1s`，因此在paired前工程non-pass。cursor已窄修到节点本地
-`/tmp`，架构、objective、门限与科学样本不变，等待clean pushed commit唯一reprofile。它仍是PCUG之后唯一active
-successor；只有Phase-A与随后原PCUG机制门通过才可打开deployment/formal。
+状态：2026-08-12 terminal mechanism non-pass。host-local cursor修复后的clean world3 reprofile完整执行96条
+paired rollouts，19项checks中只有`negative_null`失败；deployment/formal关闭，不重跑或扫参数。本设计只淘汰
+WQ-PCUG的correct-only final projection，不否定work queue、actual candidate pairing或negative-preserving
+correction。唯一active successor见`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`。
 PCUG的actual candidate paired-guard科学假设没有被检验；本设计只替换其最早失效的Phase-A任务所有权接口，
 不得被写成新的Writer科学架构或PCUG同配置重跑。
 
@@ -158,6 +157,14 @@ motion<=.15，production total wall<=matched SKNC`1.5x`。
 
 任一hard gate失败即淘汰当前Work-Queue PCUG，不扫queue order、cap、worker数、world size、pair数、threshold、
 scale、seed、dtype或projection tolerance。task timing只能定位失败，不得按task历史时间制作held-aware路由。
+
+### 7.3 Sealed live result
+
+`d799758` world3 reprofile的Phase A=`44.74125s`、claim=`.00558s`、total=`558.05862s / 1.16596x`，全部
+吞吐、显存与coverage门通过。48 exact pairs产生7个discordance、3 gains/4 losses、3 harmful tasks跨2 suites；
+15-row correct guard保留`.76492`能量、rank33且closure为零。blind solve的negative ratio原为`.03991`，但
+correct-only final projection后升至`.50179`，wrong/shuffled/reversed均`0/8`达门。paired前接口、reward evidence、
+projection可行性和action传递都已接通；最早失败明确是final guard composition丢失negative-video抑制。
 
 ## 8. Formal decision
 

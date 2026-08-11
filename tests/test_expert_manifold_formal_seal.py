@@ -27,16 +27,22 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_work_queue_pcug_is_active_and_historical_nonpasses_remain_sealed() -> None:
+def test_work_queue_pcug_profile_nonpass_and_historical_nonpasses_remain_sealed() -> None:
     work_queue = load_v6_prior_config(CONFIG)
-    assert work_queue["status"] == "active_cpu_ready_awaiting_live_profile"
-    assert work_queue["profile_run"]["artifact_evidence"] is None
-    assert work_queue["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
-    assert work_queue["evaluation"]["formal_status"] == (
-        "awaiting_live_wq_pcug_deployment_smoke"
-    )
+    assert work_queue["status"] == "profile_result_sealed_nonpass"
+    profile = work_queue["profile_run"]["artifact_evidence"]
+    assert profile["passed"] is False
+    assert profile["failed_checks"] == ["negative_null"]
+    assert profile["paired_states"] == 48
+    assert profile["discordant_states"] == 7
+    assert profile["harmful_task_count"] == 3
+    assert profile["harmful_suite_count"] == 2
+    assert profile["negative_to_unprotected_program_motion_ratio"] > 0.15
+    artifact = read_json(REPO_ROOT / profile["path"])
+    assert artifact["passed"] is False
+    assert artifact["gate_evidence"]["checks"]["negative_null"] is False
+    assert work_queue["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert work_queue["evaluation"]["formal_status"] == "not_run_after_profile_nonpass"
     assert work_queue["evaluation"]["online_smoke_evidence"] is None
 
     pcug_profile = read_json(

@@ -280,3 +280,15 @@ SKNC的`0.15246x`，24 tasks与三rank各8个ownership均完整，说明task-add
 共享`/data1` output root，而design明确要求host-local cursor，因此这是storage/locking层工程违约，不是PCUG
 科学non-pass。paired probe未启动、没有checkpoint。唯一窄修是把一字节cursor移到节点本地`/tmp`；架构、
 objective、B20、world3、queue order、cap与全部hard gates保持不变后重跑原复现。
+
+host-local修复后的WQ-PCUG完整profile把paired candidate从推测变成了实证。Phase A=`44.74125s`、total=
+`558.05862s / 1.16596x`，48 exact pairs的base/candidate successes=`34/33`，有7 discordance、3 gains/4 losses、
+3 harmful tasks跨Object/Goal；15-row correct guard保留`.76492`能量、rank33，Program/LoRA/fixed-action protected
+closure均为零。这否定“candidate太小、paired reward无内容或correct guard不可行”解释，也保留了work queue与actual
+candidate pairing机制。
+
+唯一失败揭示constraint composition断层。full48 blind solve报告negative/unprotected ratio=`.03991`，但final
+projection只对persisted/stable/harmful correct rows做homogeneous nullspace，最终negative ratio升到`.50179`且
+24/24 tasks失败。因此先前negative zero-RHS不是没有作用，而是在reward-derived correct guard阶段被覆盖。
+最小后继不是把`[G;N]`整体压缩update，而是解negative-preserving affine correction：`C=min ||C||`且`NC=0`、
+`G(D0+C)=0`。它保留`ND1=ND0`，只改变final correction subspace，并避免把full48 support无必要压到约9维。

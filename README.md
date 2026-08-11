@@ -132,7 +132,10 @@ deployment、formal全部关闭。PCUG也已因live Phase-A wall non-pass并封�
 SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 [`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
-当前Work-Queue successor的单变量、显存边界和快速否决门见
+Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。当前Negative-Preserving
+Candidate Guard的单变量公式、显存边界和快速否决门见
+[`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)；
+WQ-PCUG sealed结果见
 [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。
 
 GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
@@ -150,8 +153,10 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
+- [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)：
+  当前唯一active successor，negative-preserving correction公式与profile/formal门；
 - [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：
-  当前唯一active successor，task-addressable B20、runtime claim queue与profile/formal门；
+  retired WQ-PCUG、task-addressable queue与sealed negative-null non-pass；
 - [`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`](docs/action_forecast_writer_success_key_nullspace_consolidation_design.md)：
   当前唯一SKNC单变量设计、nullspace公式与证伪门；
 - [`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`](docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md)：

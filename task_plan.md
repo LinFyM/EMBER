@@ -137,8 +137,13 @@
 - [x] clean pushed`7c86bf8` detached worktree在gpu02物理3/4/5 world3运行首次discarded macro；Phase-A本体
   `72.9700s / 0.15246x SKNC`、24 tasks完整且每rank8，但host-local cursor误落共享`/data1`，两次`flock`
   各等待约`30.4s`，累计claim=`60.8736s>1s`，因此paired前工程non-pass且无checkpoint。
-- [ ] 只修cursor到节点本地`/tmp`，clean push后按同world3、同架构/objective/gates做唯一reprofile；若仍不过门则
-  按实际最早接口裁决，不改queue order、cap、world size、threshold或科学合同。
+- [x] `d799758`把cursor窄修到节点本地`/tmp`并完成同world3唯一reprofile：Phase A=`44.74125s`、claim=
+  `.00558s`、total=`558.05862s / 1.16596x`；paired/guard/rank/energy/closure均过门，只有negative-null失败。
+  blind ratio`.03991`被correct-only final projection放大到`.50179`，三类均`0/8`，WQ-PCUG按门退役。
+- [x] 从最早失效接口封存Negative-Preserving Candidate Guard authority：只令final minimum correction满足
+  `NC=0`与`G(D0+C)=0`，不改D0、paired outcomes、queue、B20、compiler、rank或门限。
+- [ ] 原位实现NPCG fresh schema与synthetic closure/rank证据，完整CPU回归后clean push；随后按live合适A40数
+  运行唯一discarded macro0。任一原门或negative preservation门失败即退役，不做参数/world-size sweep。
 
 ## Repository closeout
 

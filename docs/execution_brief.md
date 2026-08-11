@@ -18,13 +18,15 @@ Program update，但两个clean world3 attempts都在mixed reward CFM处三rank 
 开allocator或做第三次修补。PCUG随后完成canonical实现与`344 passed`，但唯一clean world4 discarded macro在
 Phase A full24 gather前就越过wall hard gate：`809.72185s / 2.25568x>1.5x`下界，物理3--5持续100%、物理6
 先等待；无OOM/nonfinite、paired probe、mechanism report或checkpoint。PCUG当前execution contract终局退役，
-deployment/formal与同配置重跑关闭。actual candidate paired-guard的科学假设仍未被检验。
-当前唯一active successor是Work-Queue PCUG：保持PCUG全部科学变量，只把Phase-A固定rank ownership改成
-task-keyed runtime claim queue；每rank最多8个retained graphs，world4--6可真实work steal，world3退化8/8/8。
-canonical实现、fresh schema、task-addressable B20、variable-count gather与完整CPU`345 passed`已完成；尚未
-获得paired科学证据。首次world3 Phase-A本体在`72.9700s / 0.15246x SKNC`完成24 tasks，但cursor误落共享
-`/data1`导致累计`flock` claim=`60.8736s>1s`，在paired前工程non-pass；它只暴露host-local实现违约。
-cursor已移到节点本地`/tmp`，其余sealed变量不变，等待唯一clean reprofile。
+deployment/formal与同配置重跑关闭。Work-Queue successor随后完整执行actual pairing：world3 Phase A=
+`44.74125s`、total=`558.05862s / 1.16596x SKNC`，48 exact pairs有7 discordance、3 gains/4 losses、3 harmful
+tasks跨2 suites；correct guard rank33、energy`.76492`和全部closure健康。唯一失败是final negative-null：blind
+ratio`.03991`经correct-only projection变成`.50179`，wrong/shuffled/reversed各`0/8`达门。因此WQ-PCUG退役，
+deployment/formal、重跑和sweep关闭。
+
+当前唯一active successor是Negative-Preserving Candidate Guard：保持blind `D0`、paired outcomes、B20、queue、
+first-stable bank和native rank16 compiler，只把final correction限制在current negative rows的nullspace，使
+`N(D1-D0)=0`与correct guard `G D1=0`同时成立。尚未实现或profile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -51,10 +53,10 @@ SKNC把Program到action的protected motion压到零，但strict仍lost13并发�
 stable-success keys只在最终write前对`D0`做closest equality projection，harm不持久化。它测量实际update的因果
 损失而非surrogate gradient，不让task-local guard被后续full24 solve改写。完整公式与hard gates见
 `docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
-PCUG旧static world4 execution已被wall门淘汰，但paired science尚未执行。Work-Queue successor以
-`(task_id, task_visit)`纯函数重取完全相同B20 rows，让完成task的rank立即领取下一job，full24仍按ordinal排序；
-唯一变量是physical task ownership。它必须先过Phase-A wall和每rank8-graph显存门，再沿用PCUG paired、guard、
-deployment与macro5 strict400门。完整authority见
+Work-Queue已证明actual pairing有内容且吞吐可接受，也定位correct-only projection会破坏blind negative suppression。
+Negative-Preserving successor不把完整update硬压进`Null([G;N])`，而只令最小guard correction `C`满足`NC=0`，
+从而保留`ND1=ND0`与policy-effective support。完整authority见
+`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`；WQ sealed边界见
 `docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
 
 ## 2. Fixed information contract

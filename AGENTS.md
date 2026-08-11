@@ -39,10 +39,13 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `2.25568x>1.5x`。rank3/物理6先等待，物理3--5持续100%，run尚未完成Phase A full24 gather，也未开始paired
   probe；无OOM、nonfinite、mechanism report或checkpoint。formal/deployment关闭，不重跑同配置。该结果只淘汰
   当前static world4 PCUG execution contract，不检验actual candidate paired-guard的科学假设。
-- Work-Queue PCUG是当前唯一active successor design：保留actual candidate paired guard全部科学变量，只把
-  Phase A从static rank ownership改为task-keyed runtime claim queue，并以每rank最多8个retained graphs控制
-  A40显存。canonical实现、fresh schema、task-addressable exact B20、Phase-A early stop和完整CPU`345 passed`
-  已完成；尚未live profile或训练。不得恢复旧PCUG命令、直接formal，或并行转向无关架构。
+- Work-Queue PCUG已完成clean world3完整机制profile并退役：Phase A=`44.74125s`、total=`558.05862s / 1.16596x`
+  matched SKNC，48 exact pairs有7 discordance、3 gains/4 losses、3 harmful tasks跨2 suites；correct guard closure、
+  rank33和energy`.76492`健康。但blind negative ratio从`.03991`被correct-only final projection放大到`.50179`，
+  wrong/shuffled/reversed均`0/8`达门。19项checks只有`negative_null`失败，deployment/formal关闭，不重跑或sweep。
+- Negative-Preserving Candidate Guard是当前唯一active successor design：保持Work-Queue PCUG的blind `D0`、
+  paired outcomes与全部科学合同，只要求final guard correction位于current negative rows的nullspace，使correct
+  reward guard不能破坏blind solve已有的negative-video抑制。尚未实现或profile；不得直接formal或并行转向无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -54,16 +57,17 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
-5. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
-6. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-7. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-8. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-9. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-10. `docs/research_history.md`
-11. `task_plan.md`
-12. `findings.md`
-13. `docs/concept.md`
+4. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
+5. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
+6. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+7. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+8. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+9. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+10. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+11. `docs/research_history.md`
+12. `task_plan.md`
+13. `findings.md`
+14. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读

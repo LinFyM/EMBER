@@ -30,18 +30,33 @@
   与paired probe前就越过wall hard gate：从run-contract发布到owner停止的下界`809.72185s`，相对scaled matched
   SKNC=`2.25568x>1.5x`。物理3--5持续100%、物理6先等待；无OOM/nonfinite、mechanism report或checkpoint。
   deployment/formal与同配置重跑关闭；只淘汰当前execution contract，不检验paired-guard科学假设。
-- Work-Queue PCUG是当前唯一active successor design：保留未被检验的actual candidate pairing、K2x2 outcomes、
-  harmful/stable closest projection和first-stable bank，只把Phase A固定rank ownership改成task-keyed runtime
-  claim queue。每rank retained graph cap为8；canonical实现、fresh-incompatible schema、exact B20逐row等价、
-  Phase-A early stop和完整CPU`345 passed`已完成。首次world3 live Phase-A本体只用`72.9700s`且24 tasks完整，
-  但cursor错误落在共享`/data1`使两次`flock`各等待约`30.4s`、累计claim=`60.8736s>1s`，在paired前工程non-pass。
-  cursor现已窄修到节点本地`/tmp`，其余合同不变，等待clean reprofile。不得并行转向representation/rank/few-shot。
+- Work-Queue PCUG已完成clean world3 full mechanism profile并退役：Phase A=`44.74125s`、total=
+  `558.05862s / 1.16596x SKNC`；48 exact pairs产生7 discordance、3 gains/4 losses、3 harmful tasks跨2 suites，
+  correct guard的rank33、energy`.76492`和Program/LoRA/action closure均健康。但blind negative ratio从`.03991`
+  被correct-only final projection放大到`.50179`，wrong/shuffled/reversed各`0/8`达门。19项checks只有
+  `negative_null`失败；deployment/formal、重跑与sweep关闭。
+- Negative-Preserving Candidate Guard是当前唯一active successor design：blind `D0`、paired outcomes、queue、
+  B20与compiler不变，只让final guard correction位于current negative rows的nullspace，从而同时满足correct
+  reward guard与`N D1=N D0`。尚未实现或profile；不得并行转向representation/rank/few-shot。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
   工作以后仍须来自clean pushed commit的detached frozen worktree。
 
 ## 2. Latest formal decision
+
+### 2.0 Work-Queue PCUG mechanism profile
+
+正式profile root：
+`runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_reprofile_macro0_r3_b20_d799758_20260812`；commit
+`d79975888bdae7a3f139472d37fb9659daf72224`，gpu02物理3/4/5 world3，exit0且不保留checkpoint。首次共享盘cursor
+attempt只定位工程违约；本root使用节点本地`/tmp` cursor，claim总计`.00558s`并完整进入paired science。
+
+base/candidate successes=`34/33`，7 discordant states、3 gains/4 losses；harmful ordinals=`8/12/17`，跨Object与
+Goal；stable ordinals=`0/1/3/6/7/11/13/14/16/18/19/21`。final correct guard 15 rows/rank15，feature rank
+`48→33`，energy ratio`.76492`、cosine`.87460`、violation0，四suite candidate action response非零。blind full48
+predicted negative ratio=`.03991`，但final actual negative ratio=`.50179`，24 tasks无一过`.15`，三类各`0/8`。
+因此只淘汰correct-only final guard composition；actual pairing、queue和blind negative solve均得到正证据。
 
 ### 2.1 SKNC formal macro5
 
@@ -444,5 +459,5 @@ config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137
 raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
 roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
 和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；旧static config已封存
-non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG是唯一active successor；旧PCUG/Reward/OSG/
-SKNC/SRTP命令不得恢复。
+non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG也已因negative-null机制门封存；
+Negative-Preserving Candidate Guard是唯一active successor。旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

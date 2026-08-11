@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_work_queue_candidate_update_guard_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "profile_result_sealed_nonpass",
   "method": {
     "name": "frozen_v6_work_queue_paired_candidate_update_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -279,7 +279,7 @@
     "regularized_condition_number_max": 150
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "profile_result_sealed_nonpass",
     "allowed_world_sizes": [
       3,
       4,
@@ -336,10 +336,33 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_reprofile_macro0_r3_b20_d799758_20260812/mechanism_profile.json",
+      "schema": "ember_pi05_v6_work_queue_candidate_update_guard_profile_v1",
+      "passed": false,
+      "world_size": 3,
+      "step_seconds": 558.0586198819801,
+      "production_wall_ratio_to_matched_sknc": 1.1659571930284038,
+      "paired_states": 48,
+      "discordant_states": 7,
+      "harmful_task_count": 3,
+      "harmful_suite_count": 2,
+      "projected_feature_rank": 33,
+      "projected_to_blind_energy_ratio": 0.7649204730987549,
+      "failed_checks": [
+        "negative_null"
+      ],
+      "negative_to_unprotected_program_motion_ratio": 0.5017923582155617,
+      "negative_null_per_kind": {
+        "reversed": 0,
+        "shuffled": 0,
+        "wrong": 0
+      },
+      "retained_checkpoint": false
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "blocked_by_profile_nonpass",
     "allowed_world_sizes": [
       3,
       4,
@@ -375,7 +398,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "awaiting_live_wq_pcug_deployment_smoke",
+    "formal_status": "not_run_after_profile_nonpass",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",

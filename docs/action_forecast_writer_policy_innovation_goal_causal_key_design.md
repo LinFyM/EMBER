@@ -1,8 +1,9 @@
 # Policy-Innovation Goal–Causal Key Writer
 
-状态：2026-08-11唯一active successor authority；PICK原始static/causal key已在exact full48
-mechanism profile因条件数non-pass。PICK-GC canonical owner、fresh-incompatible config与完整CPU回归
-`345 passed`已完成，尚未profile、训练或rollout。
+状态：2026-08-11唯一active successor authority。PICK-GC canonical owner、fresh-incompatible config、
+implementation阶段`345 passed` CPU回归；exact raw full48、world6 discarded mechanism、B8/16/32吞吐与
+zero-memory deployment vertical均已通过并封存，seal后完整回归为`346 passed`；当前已formal-ready，但尚未
+训练或做strict paired400。
 
 ## 1. Decision
 
@@ -185,9 +186,34 @@ PICK-GC+blind-credit组合，不切RLS/Reward/rank/few-shot，不做小参数swe
 exact-resume`10→25`后再paired400；首次`>150`或达到144并通过稳定门，立即补同checkpoint
 same/wrong/shuffled/reversed/no-video严格controls。
 
+### 9.4 Sealed pre-formal result
+
+clean pushed commit `717b561`上的全部前序门已经完成：
+
+- exact raw full48：rank=`48`、condition=`152.45803`、4-suite same-task mean=`.94501`、
+  reversed=`-.81318`、shuffled=`-.09783`、target-language wrong=`.12235`，raw/hidden reorder误差和zero key均为0；
+  shuffle aggregate距`.10`上限很近，因此这里只解释为过预注册门，不写成强shuffle分离。
+- world6 discarded mechanism：condition=`152.61008`、correct motion/cotangent=`.96457`、
+  negative/correct=`.03901`、correct retained=`24/24`，reversed/shuffled/wrong各null=`8/8`；Program、LoRA A/B、
+  四suite fixed action均闭合，production wall ratio=`1.13558`，0 OOM/nonfinite/negative policy forward。
+- longest-first同面板吞吐：B8/B16/B32分别`.47119/.47244/.47299` LoRAs/s，三者均stable、最长67帧、
+  约34.8GiB余量；按预注册最高吞吐规则选B32，但其相对B16优势仅约`.12%`，不作方法收益解释。
+- zero-memory vertical：四suite每个`76/76` LoRA tensors与immutable native v6 bit-exact，四个同噪声action也
+  bit-exact，Program memory非零数0；canonical evaluator随后生成8-entry cache、释放Writer并复用同一source
+  policy完成8/8 rollouts，观测`4/8` success仅是smoke结果，不参与方法选择。
+
+首次vertical把prepare与identity放在同一Python进程，LIBERO缓存了原子rename前的staging config而失败；retry只
+恢复标准进程边界，没有改变模型、面板或门。canonical rollout全部成功后，第一次CPU finalizer又误读manifest
+字段；修正为`len(entries)`后只重跑CPU验证。两项均是保留的工程失败，不是科学non-pass，也没有重跑GPU结果。
+
+这些证据把最早未决接口推进到blind offline full24 credit能否在held on-policy occupancy上积累support；只有
+fresh`0→10`和随后的strict paired correct400能裁决，前序机制数值不能替代closed-loop。
+
 ## 10. What this result can and cannot conclude
 
-若exact full48仍因condition失败，只淘汰这组goal/causal linear descriptor，不否定frozen policy innovation、
-condition-local memory、few-shot、task-level manifold supervision或新的on-policy credit。若机制通过而macro10
-闭环失败，则最早剩余接口转为blind offline credit或key与held occupancy错位；不能再把失败归因于
-Program→LoRA增益或full48数值可解性。
+exact raw与world6 full48 condition已经分别以`152.45803`和`152.61008`通过，因此key数值可解性、
+Program→LoRA→action闭合和production吞吐均不再是formal前的未决接口。这些结果仍不能说明blind offline
+credit能覆盖held on-policy occupancy，也不能预言closed-loop分数。若macro10闭环失败，最早剩余接口就是
+blind offline credit或key与held occupancy错位；不得回头把失败归因于已通过的full48 condition或
+Program→LoRA增益，也不因此否定condition-local memory、few-shot、task-level manifold supervision或新的
+on-policy credit。

@@ -2,11 +2,11 @@
 
 ## 0. Current operation
 
-PICK的canonical实现与`345 passed`回归、raw-frame门和world6 discarded full48 profile已完成；profile仅因
-condition=`483.61515>200` non-pass，其余14项机制、动作与吞吐门通过，未启动训练或rollout。当前唯一active
-Writer successor是PICK-GC；canonical implementation与`345 passed`回归已完成但尚未继续GPU，只允许按新
-design authority从exact raw full48 feature gate、discarded full48 mechanism macro和deployment profile顺序
-推进，不能从历史command恢复执行。
+PICK只因full48 condition=`483.61515>200`退役。当前唯一active Writer successor PICK-GC已经完成
+implementation阶段`345 passed`及seal后完整回归`346 passed`、exact raw full48（condition=`152.45803`）、world6 discarded mechanism
+（condition=`152.61008`、retained/null=`24/24`）、B8/16/32吞吐选择和zero-memory deployment vertical；
+四suite native LoRA/action均bit-exact，canonical 8-entry cache与8/8 rollout完整。配置现为formal-ready，尚无
+formal训练或strict paired400结果，不能把这些机制门写成方法成功。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -24,7 +24,8 @@ PICK-GC design已经回答下列问题；实现和每次authority更新必须保
 7. 预计GPU、wall、显存、存储峰值和可恢复状态是什么？
 
 未经新的单变量authority，不修改split、信息墙、source policy、normalization、public LoRA topology或official
-evaluator。PICK-GC的profile/training/rollout仅在其前序CPU/cache/live mechanism门通过后解锁。
+evaluator。PICK-GC前序CPU/cache/live mechanism/deployment门已经通过；formal训练只能从封存这些证据的
+clean pushed commit与新detached frozen worktree启动。
 
 ## 2. Fixed information contract
 
@@ -204,6 +205,8 @@ checkpoint。严格`>150`后仍须补完整controls才能支持视频因果claim
 它们只能在新session建立明确的单变量design authority后重新获得执行资格。任何旧artifact中的
 `formal_ready`只描述历史时点，不构成当前授权。
 
-PICK-GC的CPU实现、exact raw full48 feature gate、discarded full48 mechanism与deployment profile已由owner
-本次自主研究授权，但GPU工作必须来自clean pushed commit，并在launch前同时复核gpu01/gpu02、quota和fresh
-discarded root合同。formal fresh0→10仍必须等待全部前序门通过；任何旧方法或额外candidate仍未授权。
+PICK-GC的CPU、exact raw full48、discarded mechanism、B32 throughput和zero-memory deployment vertical已
+通过并封存。当前唯一获准的下一GPU阶段是从新clean pushed seal commit做formal fresh`0→10`，随后立即
+strict paired correct400；macro10必须`correct>=144`、breadth`>=6`、lost`<=8`且gained>lost。未看到该结果前
+不得resume到25；旧方法、额外candidate、controls或参数sweep仍未授权。每次launch仍须同时复核gpu01/gpu02、
+quota、fresh root、world6 topology与他人进程。

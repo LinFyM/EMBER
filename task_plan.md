@@ -30,9 +30,13 @@
 - [x] train24×50 cache门：same mean/median`.90260/.91604`、cross`.13455/.11375`、reverse
   `-.80305/-.80877`、shuffle约0、correct24 condition max`21.62`；GE漏中间shuffle、SDE same`.86177`，均拒绝。
 - [x] 原位替换PICK descriptor/config/tests，不保留并行strategy；完整CPU回归`345 passed`。
-- [ ] commit/push并建立clean frozen worktree。
-- [ ] 先过exact raw full48 rank48/condition≤200，再过discarded full48 mechanism门。
-- [ ] profile B8/16/32并封存deployment vertical；不得用低吞吐数值补丁过门。
+- [x] implementation commit`717b561`已push并建立clean detached frozen worktree。
+- [x] exact raw full48 rank48/condition`152.45803`与discarded world6 mechanism condition`152.61008`均过门；
+  retained/null=`24/24`、Program/LoRA/action/throughput闭合。
+- [x] longest-video B8/16/32均stable，按`.47119/.47244/.47299` LoRAs/s选B32；zero-memory四suite
+  LoRA/action bit-exact，canonical cache与8/8 rollout通过。
+- [x] formal-ready evidence seal由本commit封存，完整回归`346 passed`；push后从该commit建立新的clean detached
+  frozen worktree。
 - [ ] formal fresh0→10后立即strict paired400，按`144/breadth6/lost8`门裁决；首次过144补完整视频controls。
 
 ## Repository closeout

@@ -497,6 +497,41 @@ def test_reward_credit_seal_locks_the_measured_writer_batch8(
             )
 
 
+def test_pick_gc_seal_locks_the_measured_writer_batch32(
+    tmp_path: Path,
+) -> None:
+    inputs = list(_writer_contract_inputs(tmp_path))
+    shared_writer = inputs[4]
+    shared_writer["evaluation_authority"] = {
+        "formal_status": "sealed_from_live_pick_gc_deployment_profile",
+        "throughput_policy": (
+            "highest_measured_batch_throughput_with_device_memory_headroom"
+        ),
+        "minimum_smoke_writer_model_batch_size": 8,
+        "online_smoke_evidence": {"writer_model_batch_size": 32},
+    }
+    correct_mapping = inputs[5]
+    exact = _build_writer_contract(
+        inputs=tuple(inputs),
+        output_dir=tmp_path / "batch32",
+        arm="expert_manifold_v6_condition_residual_correct",
+        condition="correct",
+        mapping=correct_mapping,
+        writer_generation_batch_size=32,
+    )
+    assert exact["parallel"]["writer_generation_batch_size"] == 32
+    for batch_size in (8, 16):
+        with pytest.raises(Pi05EvaluationError, match="selected Writer batch"):
+            _build_writer_contract(
+                inputs=tuple(inputs),
+                output_dir=tmp_path / f"batch{batch_size}",
+                arm="expert_manifold_v6_condition_residual_correct",
+                condition="correct",
+                mapping=correct_mapping,
+                writer_generation_batch_size=batch_size,
+            )
+
+
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(
     tmp_path: Path,
 ) -> None:

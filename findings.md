@@ -151,11 +151,12 @@ PICK已经给出一次清晰的接口定位：frozen-policy innovation的raw sam
 Program→BA→action和吞吐均工作，但48-key regularized Gram condition=`483.61515>200`。因此不能把它写成方法
 成功，也不能把失败归因于video encoder、compiler或动作增益；PICK未进入formal训练。
 
-当前唯一active假设是PICK-GC：只把PICK的static block换成terminal goal residual，原样保留已通过raw门的
-centered causal prefix。train24×50 action-hidden cache中complete same mean/median=`.90260/.91604`、
-cross=`.13455/.11375`、reverse=`-.80305/-.80877`、shuffle约0、correct24 condition max=`21.62`。
-terminal-minus-initial effect会漏掉保留首尾的中间阶段shuffle；SDE same mean仅`.86177`，两者均拒绝。
+当前唯一active假设PICK-GC只把PICK的static block换成terminal goal residual，保留centered causal prefix。
+train24 cache的same/cross/reverse与condition门，以及exact target-language wrong full48均已通过：raw rank48、
+condition=`152.45803`；world6 mechanism condition=`152.61008`、retained/null=`24/24`、Program→BA→action闭合。
+B32 deployment又证明zero-memory native LoRA/action bit-exact并完成canonical cache-to-rollout。因此PICK原先的
+common-mode conditioning接口已经被这一单变量修复，不能再把后续失败归因于key数值不可解或compiler无增益。
 
-PICK-GC先由exact target-language wrong full48 rank/condition、再由Program→BA/action与macro10 strict400否决。
-若exact condition仍失败，只淘汰这组linear goal/causal key；若机制通过而闭环失败，最早剩余接口转向blind
-offline credit或held occupancy错位。heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。
+最早未决接口现为blind offline full24 credit是否覆盖held on-policy occupancy并让多task support在同一Program
+memory共存。formal fresh`0→10`后的strict paired400若未过`144/breadth6/lost8/gained>lost`，只淘汰当前
+PICK-GC+blind-credit组合；heterogeneous topology、few-shot和新的occupancy credit仍是未授权开放问题。

@@ -227,6 +227,7 @@ def _validate_build_request(
         if evaluation.get("formal_status") in {
             "sealed",
             "sealed_from_unchanged_v6_deployment_graph",
+            "sealed_from_live_pick_gc_deployment_profile",
             "sealed_from_live_residual_deployment_profile",
             "sealed_from_unchanged_v6_residual_deployment_graph",
         } and (

@@ -11,9 +11,10 @@
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、
   `345 passed`回归、raw-frame门和world6 discarded full48 profile；profile仅因condition=`483.61515>200`
   non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
-- 当前唯一active successor是PICK-GC：只把PICK的static block换为terminal goal residual并原样保留
-  causal-prefix block；canonical implementation、fresh-incompatible config与完整CPU回归`345 passed`已完成，
-  尚未继续GPU、训练或rollout，也没有EMBER GPU进程。
+- 当前唯一active successor PICK-GC只把PICK的static block换为terminal goal residual并保留causal-prefix。
+  implementation阶段`345 passed`、exact raw full48、world6 discarded mechanism、B8/16/32吞吐和zero-memory
+  deployment vertical已全部通过，seal后完整回归为`346 passed`；config现为formal-ready。尚未formal训练或做
+  strict paired400，目前没有EMBER GPU进程。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。PICK-GC必须从canonical owner替换与前序机制门推进，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -168,12 +169,18 @@ same-task略降但过既定门，cross与condition明显改善。terminal-minus-
 shuffle，reversal-symmetric endpoint则same mean仅`.86177`；两者均已拒绝，不实现。
 
 PICK-GC继续保持historical v6 600 tensors、完整rank16 compiler、B20 blind full48 credit和单个FP32 Program
-memory。它仍必须回答：
+memory。前序结果为：
 
-- exact target-language wrong加入后，raw full48能否rank48且condition`<=200`；
-- goal/causal neighborhood能否在不抹掉held task差异时稳定积累Program/effective-BA correction；
-- blind AS credit在key conditioning修复后是否仍是closed-loop首因；
-- strict400能否同时提高absolute、breadth和retention，并让correct优于视频controls。
+- exact raw full48 rank48、condition=`152.45803`、same=`.94501`、reverse=`-.81318`、shuffle=`-.09783`、
+  target-language wrong=`.12235`；shuffle只以约`.00217`余量过门，不夸大其分离强度；
+- world6 mechanism condition=`152.61008`、correct motion/cotangent=`.96457`、negative/correct=`.03901`、
+  retained/null=`24/24`，Program/LoRA/action与四suite breadth闭合，wall ratio=`1.13558`；
+- B8/B16/B32吞吐=`.47119/.47244/.47299` LoRAs/s，均stable并含67帧最长video，按规则选B32；
+- zero-memory四suite LoRA `76/76` tensors与action均bit-exact，Program memory为0；canonical 8-entry cache、
+  Writer释放、source policy复用和8/8 rollouts通过，smoke观测`4/8` success不作选择门。
+
+因此raw conditioning、Program→LoRA→action和部署图已不再是最早未决接口。下一裁决只剩blind AS credit能否在
+held on-policy occupancy上让同一checkpoint共同积累support；由formal fresh`0→10`及其strict paired400判断。
 
 仍未授权的其它候选包括pivot15+1、train-derived mixed topology、few-shot set encoder和新的reward credit。
 它们不能与PICK-GC并行实现或作为失败时自动fallback。特别是pivot15+1不能恢复旧balanced-rank15，rank1 tangent
@@ -190,10 +197,10 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
 - fresh按live world size设计，exact-resume锁定原world size；
 - 先查`/data1`独立user quota与峰值预算。
 
-2026-08-11最新live snapshot：`gpu01`和`gpu02`各有6张健康空闲A40；选择`gpu02:0-5`，因为它们连续、显存与
-利用率均为0、ECC为0，`gpu02:6-7`属于他人作业，禁止触碰。fresh topology因此固定为world6、每rank4 tasks，
-与sealed吞吐基线同world size；launch前仍须再次live复核。`strg01`报告`/data1`用量`508230484 KiB`、quota
-`1073741824 KiB`，本阶段profile/formal预计峰值新增不足2GiB。
+2026-08-11 deployment launch前同时检查两节点：`gpu02:0-5`为空闲健康A40、ECC0，`gpu02:6-7`属于他人；
+单卡profile/vertical使用`:1`并已释放。formal候选topology仍为world6、每rank4 tasks，但launch前必须重新检查
+两节点，不能把该快照当预约。`strg01`最新报告`/data1`用量`508240004 KiB`、quota`1073741824 KiB`，本阶段
+profile/vertical实际新增远低于1GiB，formal峰值仍估计不足2GiB。
 
 吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
 追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
@@ -217,7 +224,10 @@ capture历史约`.9185`，也不能因base多保留一列直接启动cycle1。
   compileall、config fail-close、diff-check通过；architecture gate无hard violation、无parallel family，active
   source净减少1984行。
 
-PICK的raw probe与full48 profile roots、contract、log、metrics和completion已保留；profile没有memory checkpoint。
-当前下一步是从PICK-GC clean pushed commit冻结新worktree，做exact raw full48 feature gate；通过后才运行
-discarded full48 macro与B8/16/32 deployment vertical。CPU/cache或任一live mechanism门不过不得创建formal
-训练root；全部通过后才解锁fresh0→10并立即strict paired400。
+PICK与PICK-GC的raw/full48 roots、contracts、logs、metrics和completions均已保留，discarded profile没有memory
+checkpoint。PICK-GC部署证据root为
+`runs/outputs/pi05_pick_gc_goal_causal_writer_profile_val8x4_correct_gpu02p1_717b561_20260811`和
+`runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811`。
+首次vertical的staging-path失败及retry完成后的CPU finalizer字段失败都保留为engineering evidence；两者未改变
+科学合同或GPU结果。当前下一步是commit/push formal-ready seal、建立新detached frozen worktree，然后fresh
+`0→10`并立即strict paired400；未过`144/breadth6/lost8/gained>lost`不得resume到25。

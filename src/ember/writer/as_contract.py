@@ -200,12 +200,8 @@ def writer_trainable_contract(
     writer: torch.nn.Module, policy: torch.nn.Module, lora: Any
 ) -> dict[str, Any]:
     trainable = [(name, value) for name, value in writer.named_parameters() if value.requires_grad]
-    frozen_writer = [
-        name for name, value in writer.named_parameters() if not value.requires_grad
-    ]
     if (
         not trainable
-        or frozen_writer
         or any(value.requires_grad for value in policy.parameters())
     ):
         raise WriterModelError("dynamic-K Writer freeze boundary changed")
@@ -214,6 +210,9 @@ def writer_trainable_contract(
         "writer_parameter_count": sum(value.numel() for value in writer.parameters()),
         "writer_trainable_parameter_count": sum(value.numel() for _, value in trainable),
         "writer_trainable_parameter_tensors": len(trainable),
+        "writer_frozen_parameter_count": sum(
+            value.numel() for value in writer.parameters() if not value.requires_grad
+        ),
         "generated_lora_parameter_count": lora.parameter_count,
         "generated_lora_tensor_count": lora.state_tensor_count,
         "source_policy_trainable_parameter_count": 0,

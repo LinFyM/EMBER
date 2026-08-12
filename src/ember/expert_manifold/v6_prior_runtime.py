@@ -56,7 +56,9 @@ from ember.pi05_source_setup import (
     load_stats,
     seed_everything,
 )
-from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.expert_manifold.legacy_v6_architecture import (
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
+)
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.condition_update import (
     FrozenV6ConditionResidualWriter,
@@ -64,7 +66,10 @@ from ember.writer.condition_update import (
 )
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.expert_manifold.legacy_v6_model import (
+    CompleteLoRAWriter,
+    build_lora_tensor_specs,
+)
 
 
 _RESUME_NAME = re.compile(r"macro_([0-9]{8})")

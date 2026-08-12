@@ -10,8 +10,8 @@ import torch
 from safetensors.torch import load_file
 
 from ember.expert_manifold.contract import ExpertManifoldError, ExpertTask
-from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
-from ember.writer.model import CompleteLoRAWriter
+from ember.expert_manifold.legacy_v6_architecture import V6_WRITER_PARAMETER_COUNT
+from ember.expert_manifold.legacy_v6_model import CompleteLoRAWriter
 
 
 V6_WRITER_STATE_TENSOR_COUNT = 600

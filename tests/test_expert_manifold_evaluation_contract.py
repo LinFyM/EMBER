@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-import importlib.util
-from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -37,6 +35,7 @@ from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import _per_task_rows
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, validate_shard_result
 from ember.writer.data import RawTeacherVideo
+from fixtures.legacy_v6_writer import _model as _legacy_v6_model
 
 
 def _rows() -> list[dict]:
@@ -95,12 +94,7 @@ def _writer_adapter(condition: str = "correct") -> dict:
 
 
 def _complete_writer():
-    path = Path(__file__).with_name("test_writer_model.py")
-    spec = importlib.util.spec_from_file_location("live_adapter_writer_helper", path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module._model()[0]
+    return _legacy_v6_model()[0]
 
 
 def test_no_video_prepare_uses_identity_without_writer_or_video_reads(

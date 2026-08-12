@@ -1,52 +1,14 @@
-"""Shared small Writer fixtures for CPU model-contract tests."""
+"""Shared rank-8 Dynamic-K Writer fixtures."""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-
-
-class _Projection(torch.nn.Module):
-    def __init__(self, input_width: int, output_width: int) -> None:
-        super().__init__()
-        self.in_features = input_width
-        self.out_features = output_width
-
-
-class _Layer(torch.nn.Module):
-    def __init__(self, dimensions: dict[str, tuple[int, int]]) -> None:
-        super().__init__()
-        self.self_attn = torch.nn.Module()
-        for name, (input_width, output_width) in dimensions.items():
-            setattr(self.self_attn, name, _Projection(input_width, output_width))
-
-
-class _Backbone(torch.nn.Module):
-    def __init__(self, dimensions: dict[str, tuple[int, int]]) -> None:
-        super().__init__()
-        self.layers = torch.nn.ModuleList(_Layer(dimensions) for _ in range(18))
-
-
-def _backbones() -> tuple[_Backbone, _Backbone]:
-    return (
-        _Backbone(
-            {
-                "q_proj": (2048, 2048),
-                "k_proj": (2048, 256),
-                "v_proj": (2048, 256),
-                "o_proj": (2048, 2048),
-            }
-        ),
-        _Backbone(
-            {
-                "q_proj": (1024, 2048),
-                "k_proj": (1024, 256),
-                "v_proj": (1024, 256),
-                "o_proj": (2048, 1024),
-            }
-        ),
-    )
+from ember.writer.backbone_memory import BackboneMemoryOutput
+from ember.writer.lora_mapper import build_lora_tensor_specs
+from ember.writer.model import CompleteLoRAWriter
 
 
 def _template() -> dict[str, torch.Tensor]:
@@ -59,28 +21,23 @@ def _template() -> dict[str, torch.Tensor]:
         )
         for projection, output_width in (("q_proj", 2048), ("v_proj", 256)):
             state[prefix + projection + ".lora_A.default.weight"] = torch.randn(
-                16,
-                1024,
-                generator=generator,
+                8, 1024, generator=generator
             )
             state[prefix + projection + ".lora_B.default.weight"] = torch.zeros(
-                output_width,
-                16,
+                output_width, 8
             )
     for module, input_width, output_width in (
         ("model.action_in_proj", 32, 1024),
         ("model.action_out_proj", 1024, 32),
     ):
         state[module + ".lora_A.default.weight"] = torch.randn(
-            16,
-            input_width,
-            generator=generator,
+            8, input_width, generator=generator
         )
-        state[module + ".lora_B.default.weight"] = torch.zeros(output_width, 16)
+        state[module + ".lora_B.default.weight"] = torch.zeros(output_width, 8)
     return state
 
 
-class _FakeSemanticEncoder(torch.nn.Module):
+class _FakeBackboneMemory(torch.nn.Module):
     def forward(
         self,
         _policy: torch.nn.Module,
@@ -89,76 +46,72 @@ class _FakeSemanticEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        counts = task_span_mask.sum(dim=1)
-        maximum = int(counts.max())
-        valid = torch.arange(maximum)[None] < counts[:, None]
-        language = language_tokens.to(torch.float32).mean(dim=1)
-        text = language[:, None, None].expand(-1, maximum, 256).clone()
-        image = frames.to(torch.float32).mean(dim=(1, 2, 3))
-        frame_value = image + language.index_select(0, frame_condition_ids)
-        evidence = frame_value[:, None, None].expand(-1, maximum, 256).clone()
-        grounded = evidence.clone()
-        interaction = frame_value[:, None].expand(-1, 256).clone()
-        return text, evidence, grounded, interaction, valid
+    ) -> BackboneMemoryOutput:
+        language = language_tokens.float().mean(dim=1)
+        frame = frames.float().mean(dim=(1, 2, 3))
+        content = frame + language.index_select(0, frame_condition_ids)
+        layer = torch.arange(18, device=frames.device).float()[None, :, None, None]
+        rank = torch.arange(8, device=frames.device).float()[None, None, :, None]
+        memory = content[:, None, None, None] + 0.01 * layer + 0.001 * rank
+        memory = memory.expand(-1, -1, -1, 1024).clone()
+        maximum = int(task_span_mask.sum(dim=1).max())
+        return BackboneMemoryOutput(
+            layer_memory=memory,
+            probe_hidden=memory.new_zeros(frames.shape[0], 50, 1024),
+            task_hidden=memory.new_zeros(frames.shape[0], maximum, 2048),
+            valid_task_tokens=torch.ones(
+                frames.shape[0], maximum, dtype=torch.bool, device=frames.device
+            ),
+        )
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
-    torch.manual_seed(3)
     template = _template()
-    pali, expert = _backbones()
-    model = CompleteLoRAWriter(
-        build_lora_tensor_specs(template),
+    bridge = SimpleNamespace(
+        paligemma=SimpleNamespace(
+            model=SimpleNamespace(language_model=SimpleNamespace(layers=[None] * 18))
+        ),
+        gemma_expert=SimpleNamespace(model=SimpleNamespace(layers=[None] * 18)),
+    )
+    model = CompleteLoRAWriter.__new__(CompleteLoRAWriter)
+    torch.nn.Module.__init__(model)
+    model.tensor_specs = build_lora_tensor_specs(template)
+    model.backbone_memory = _FakeBackboneMemory()
+    from ember.writer.memory_program import DynamicKMemoryProgram
+    from ember.writer.lora_mapper import CompleteLoRAMapper
+
+    model.memory_program = DynamicKMemoryProgram()
+    model.lora_mapper = CompleteLoRAMapper(
+        model.tensor_specs,
         template_state=template,
-        paligemma_model=pali,
-        expert_model=expert,
-        image_width=2048,
-        expert_width=1024,
         program_width=256,
-        text_meta_lora_rank=4,
-        vl_meta_lora_rank=4,
-        action_meta_lora_rank=4,
-        patch_grounding_heads=8,
-        max_frames_per_encoder_call=4,
-        action_horizon=50,
-        padded_action_dim=32,
-        semantic_core_heads=8,
-        semantic_core_blocks=2,
-        procedure_heads=8,
-        procedure_blocks=2,
-        visual_transition_heads=8,
-        fusion_heads=8,
-        factor_hidden_width=256,
-        initialization_seed=7,
-        activation_checkpointing=True,
+        mapper_width=1024,
+        dynamic_a=False,
     )
     return model, template
 
 
 def _inputs() -> tuple[torch.Tensor, ...]:
-    frames = torch.arange(5 * 3 * 4 * 4, dtype=torch.uint8).reshape(
-        5,
-        3,
-        4,
-        4,
-    )
-    frame_indices = torch.tensor([0, 5, 0, 5, 10], dtype=torch.long)
-    offsets = torch.tensor([0, 2, 5], dtype=torch.long)
+    frames = torch.arange(8 * 3 * 4 * 4, dtype=torch.uint8).reshape(8, 3, 4, 4)
+    frame_indices = torch.tensor([0, 5, 10, 0, 5, 0, 5, 10])
+    video_offsets = torch.tensor([0, 3, 5, 8], dtype=torch.long)
+    condition_video_offsets = torch.tensor([0, 2, 3], dtype=torch.long)
     tokens = torch.tensor(
-        [[1, 10, 11, 12, 13, 0], [1, 20, 21, 22, 23, 24]],
-        dtype=torch.long,
+        [[1, 10, 11, 12, 13, 0], [1, 20, 21, 22, 23, 24]], dtype=torch.long
     )
     masks = tokens.ne(0)
-    task_spans = torch.tensor(
+    spans = torch.tensor(
         [
             [False, False, True, True, False, False],
             [False, True, True, True, True, False],
         ]
     )
-    return frames, frame_indices, offsets, tokens, masks, task_spans
+    return (
+        frames,
+        frame_indices,
+        video_offsets,
+        condition_video_offsets,
+        tokens,
+        masks,
+        spans,
+    )

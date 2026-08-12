@@ -210,9 +210,13 @@ class DynamicKMemoryProgram(torch.nn.Module):
 
     @staticmethod
     def _offsets(value: torch.Tensor, *, final: int, name: str) -> tuple[int, ...]:
-        if value.ndim != 1 or value.dtype != torch.long:
+        if (
+            value.device.type != "cpu"
+            or value.ndim != 1
+            or value.dtype != torch.long
+        ):
             raise MemoryProgramError(f"{name} must be a one-dimensional long tensor")
-        offsets = tuple(int(item) for item in value.detach().cpu().tolist())
+        offsets = tuple(int(item) for item in value.tolist())
         if (
             len(offsets) < 2
             or offsets[0] != 0
@@ -355,19 +359,28 @@ class DynamicKMemoryProgram(torch.nn.Module):
             singleton_video_index not in range(count) for count in cardinalities
         ):
             raise MemoryProgramError("dynamic-K cardinality must stay within 1..4")
-        ordinal_values = tuple(
-            int(item) for item in frame_indices.detach().cpu().tolist()
+        starts = torch.tensor(
+            video_bounds[:-1], dtype=torch.long, device=frame_indices.device
         )
-        if any(
-            ordinal_values[start] != 0
-            or any(
-                right <= left
-                for left, right in zip(
-                    ordinal_values[start:stop], ordinal_values[start + 1 : stop]
+        internal = torch.ones(
+            frame_indices.shape[0] - 1,
+            dtype=torch.bool,
+            device=frame_indices.device,
+        )
+        if len(video_bounds) > 2:
+            internal[
+                torch.tensor(
+                    video_bounds[1:-1],
+                    dtype=torch.long,
+                    device=frame_indices.device,
                 )
-            )
-            for start, stop in zip(video_bounds, video_bounds[1:])
-        ):
+                - 1
+            ] = False
+        invalid_ordinals = (
+            (frame_indices.index_select(0, starts) != 0).any()
+            | ((frame_indices[1:] <= frame_indices[:-1]) & internal).any()
+        )
+        if bool(invalid_ordinals):
             raise MemoryProgramError(
                 "each video's frame indices must start at zero and increase"
             )

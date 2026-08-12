@@ -30,7 +30,9 @@ from ember.lora import copy_task_lora_state_, validate_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
+from ember.expert_manifold.legacy_v6_architecture import (
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
+)
 from ember.writer.data import RawTeacherVideo, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapter
@@ -38,7 +40,10 @@ from ember.writer.condition_update import (
     FrozenV6ConditionResidualWriter,
     validate_frozen_v6_residual_writer,
 )
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
+from ember.expert_manifold.legacy_v6_model import (
+    CompleteLoRAWriter,
+    build_lora_tensor_specs,
+)
 
 
 def _build_v6_writer(

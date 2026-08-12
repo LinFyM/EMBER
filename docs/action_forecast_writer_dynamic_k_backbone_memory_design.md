@@ -224,8 +224,10 @@ action_out: 1024 → 1056 = 1024(A) + 32(B)
 q/v mapper跨18层共享，所有mapper跨8 rank coordinates共享；不是38个独立wide heads。首版A精确保持确定性
 随机template，只动态生成B；这不是历史已否定的“B-only residual”，因为这里是fresh rank8完整adapter的正常
 LoRA gauge，而非给已有rank16 LoRA叠加小B correction。B readout严格zero-init，保证fresh step0/no-video
-functional identity。初始第一步只有B支路获得梯度；B非零后，
-梯度再传回shared hidden、memory/temporal/set/M2P路径，和历史template-A/zero-B机制一致。
+functional identity。初始第一步的**functional梯度**只有B支路获得；B非零后，functional梯度再传回shared
+hidden、memory/temporal/set/M2P路径，和历史template-A/zero-B机制一致。K>1时低权重representation
+consistency从第一步起可以训练singleton/set上游表示，但不能绕过zero-B直接改变policy；这是第6节一致性目标的
+预期作用，不应误写为functional路径已经打开。
 
 这里保留历史FactorHeads已证明的shared family ownership，但移除`320 generic slots→8个256-hidden two-layer heads`
 的额外压缩。最早风险是同一shared family basis仍把不同task/layer方向压成共同更新；必须直接测mapper前后传递。

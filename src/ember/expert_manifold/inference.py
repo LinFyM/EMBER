@@ -49,7 +49,7 @@ from ember.expert_manifold.video_schedule import (
 )
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
-from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
+from ember.expert_manifold.legacy_v6_architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:

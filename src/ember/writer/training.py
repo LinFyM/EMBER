@@ -207,6 +207,50 @@ def _condition_inputs(
     return store, processor, language
 
 
+def _build_optimizer(
+    writer: torch.nn.Module,
+    config: Mapping[str, Any],
+    total_macros: int,
+) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
+    optimizer_config = config["optimization"]["optimizer"]
+    optimizer = torch.optim.AdamW(
+        (value for value in writer.parameters() if value.requires_grad),
+        lr=float(config["optimization"]["scheduler"]["peak_lr"]),
+        betas=tuple(optimizer_config["betas"]),
+        eps=float(optimizer_config["eps"]),
+        weight_decay=float(optimizer_config["weight_decay"]),
+    )
+    scheduler = build_exposure_scheduler(
+        optimizer, config["optimization"]["scheduler"], total_macros
+    )
+    return optimizer, scheduler
+
+
+def _resume_if_requested(
+    *,
+    args: argparse.Namespace,
+    context: DistributedContext,
+    writer: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    contract: Mapping[str, Any],
+    initial_macro: int,
+) -> int:
+    if args.resume is None:
+        return 0
+    loaded, metrics_rows = load_writer_checkpoint(
+        checkpoint=args.resume,
+        context=context,
+        writer=writer,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        contract=contract,
+    )
+    if loaded != initial_macro:
+        raise WriterModelError("dynamic-K resume cursor disagrees with its state")
+    return metrics_rows
+
+
 def prepare_runtime(
     args: argparse.Namespace, context: DistributedContext
 ) -> WriterRuntime:
@@ -223,21 +267,15 @@ def prepare_runtime(
     task_ids = tuple(task.task_id for task in tasks)
     authorities, source, tokenizer = load_run_authorities(args, config)
     video_data = inspect_video_data(args.data_root, config, task_ids)
-    policy = load_policy(Path(source["model_path"]), authorities.source_base_config, context.device)
+    policy = load_policy(
+        Path(source["model_path"]),
+        authorities.source_base_config,
+        context.device,
+    )
     writer, lora = build_writer(config, policy)
     writer.to(context.device)
     trainable = writer_trainable_contract(writer, policy, lora)
-    optimizer_config = config["optimization"]["optimizer"]
-    optimizer = torch.optim.AdamW(
-        (value for value in writer.parameters() if value.requires_grad),
-        lr=float(config["optimization"]["scheduler"]["peak_lr"]),
-        betas=tuple(optimizer_config["betas"]),
-        eps=float(optimizer_config["eps"]),
-        weight_decay=float(optimizer_config["weight_decay"]),
-    )
-    scheduler = build_exposure_scheduler(
-        optimizer, config["optimization"]["scheduler"], total
-    )
+    optimizer, scheduler = _build_optimizer(writer, config, total)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     contract = build_contract(
         args=args,
@@ -255,18 +293,15 @@ def prepare_runtime(
     )
     publish_contract(args, context, contract)
     _synchronize_writer(writer, context)
-    expected_metrics_rows = 0
-    if args.resume is not None:
-        loaded, expected_metrics_rows = load_writer_checkpoint(
-            checkpoint=args.resume,
-            context=context,
-            writer=writer,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            contract=contract,
-        )
-        if loaded != initial_macro:
-            raise WriterModelError("dynamic-K resume cursor disagrees with its state")
+    expected_metrics_rows = _resume_if_requested(
+        args=args,
+        context=context,
+        writer=writer,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        contract=contract,
+        initial_macro=initial_macro,
+    )
     sampler, schedule, loader = _build_sampler(
         dataset=dataset,
         task_ids=task_ids,

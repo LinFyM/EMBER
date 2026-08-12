@@ -160,6 +160,8 @@ class CompleteLoRAMapper(torch.nn.Module):
                 for family, shapes in self._FAMILY_SHAPES.items()
             }
         )
+        for mapper in self.families.values():
+            mapper.a.weight.requires_grad_(self.dynamic_a)
         self.tensor_specs = tensor_specs
         self._template_buffers: dict[str, str] = {}
         self._decoding: dict[str, tuple[str, int, int]] = {}
@@ -209,22 +211,33 @@ class CompleteLoRAMapper(torch.nn.Module):
         if program.ndim != 4 or tuple(program.shape[1:]) != expected:
             raise LoRAMapperError("layer/rank program topology changed")
         projected = self.project(program)
-        family_outputs: dict[tuple[str, int], tuple[torch.Tensor, torch.Tensor]] = {}
-        for family, mapper in self.families.items():
-            groups = (
-                range(1, self.EXPERT_LAYERS + 1)
-                if family in {"q", "v"}
-                else (0,) if family == "action_in" else (self.POLICY_GROUPS - 1,)
-            )
-            for group in groups:
-                family_outputs[(family, group)] = mapper(
-                    projected[:, group], dynamic_a=self.dynamic_a
-                )
+        q_a, q_b = self.families["q"](
+            projected[:, 1 : self.EXPERT_LAYERS + 1],
+            dynamic_a=self.dynamic_a,
+        )
+        v_a, v_b = self.families["v"](
+            projected[:, 1 : self.EXPERT_LAYERS + 1],
+            dynamic_a=self.dynamic_a,
+        )
+        action_in = self.families["action_in"](
+            projected[:, 0], dynamic_a=self.dynamic_a
+        )
+        action_out = self.families["action_out"](
+            projected[:, -1], dynamic_a=self.dynamic_a
+        )
+        family_outputs = {
+            "q": (q_a, q_b),
+            "v": (v_a, v_b),
+            "action_in": action_in,
+            "action_out": action_out,
+        }
 
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             family, group, factor = self._decoding[item.name]
-            rows = family_outputs[(family, group)][factor]
+            rows = family_outputs[family][factor]
+            if family in {"q", "v"}:
+                rows = rows[:, group - 1]
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(template.dtype) + template[None]

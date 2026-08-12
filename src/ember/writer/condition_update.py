@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn.functional as F
 
-from ember.writer.model import (
+from ember.expert_manifold.legacy_v6_model import (
     CompleteLoRAWriter,
     WriterModelError,
     WriterMemories,

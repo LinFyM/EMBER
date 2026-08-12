@@ -186,7 +186,8 @@ def _task_gradient(
     packed: tuple[torch.Tensor, ...],
     policy_batch: Mapping[str, Any],
     policy_seed: int,
-) -> tuple[torch.Tensor, torch.Tensor, Mapping[str, Any], tuple[torch.Tensor | None, ...]]:
+    gradient_sum: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, Mapping[str, Any]]:
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         generated, consistency = runtime.writer.forward_training(
             *packed,
@@ -229,13 +230,15 @@ def _task_gradient(
     if consistency.requires_grad:
         outputs = (*outputs, consistency)
         grad_outputs = (*grad_outputs, torch.ones_like(consistency) * weight)
-    gradients = torch.autograd.grad(
-        outputs,
-        tuple(item.parameter for item in runtime.gradient_layout),
-        grad_outputs=grad_outputs,
-        allow_unused=True,
-    )
-    return functional_loss, consistency.detach(), detail, gradients
+    before = tuple(item.parameter.grad for item in runtime.gradient_layout)
+    if any(value is not None for value in before):
+        raise WriterModelError("dynamic-K task gradient buffer was not cleared")
+    torch.autograd.backward(outputs, grad_tensors=grad_outputs)
+    gradients = tuple(item.parameter.grad for item in runtime.gradient_layout)
+    accumulate_flat_gradient(gradient_sum, gradients, runtime.gradient_layout)
+    for item in runtime.gradient_layout:
+        item.parameter.grad = None
+    return functional_loss, consistency.detach(), detail
 
 
 def run_writer_step(
@@ -266,15 +269,15 @@ def run_writer_step(
         )
         packed, video_metrics = _pack_condition(runtime, task_id, demos)
         policy_seed = _policy_seed(runtime, batch, task_id, task_visit)
-        functional, consistency, _, gradients = _task_gradient(
+        functional, consistency, _ = _task_gradient(
             runtime,
             packed,
             runtime.processor.training_batch(batch),
             policy_seed,
+            flat,
         )
         if not bool(torch.isfinite(functional)) or not bool(torch.isfinite(consistency)):
             raise WriterModelError(f"non-finite dynamic-K loss at macro {macro}")
-        accumulate_flat_gradient(flat, gradients, runtime.gradient_layout)
         records.append(
             {
                 "task_id": task_id,

@@ -27,9 +27,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pvjfc_is_active_and_cveg_candidate_guard_nonpass_remains_sealed() -> None:
+def test_pvjfc_profile_nonpass_and_cveg_candidate_guard_nonpass_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["status"] == "profile_result_sealed_nonpass"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
         "frozen_v6_paired_video_joint_functional_credit"
@@ -37,9 +37,16 @@ def test_pvjfc_is_active_and_cveg_candidate_guard_nonpass_remains_sealed() -> No
     assert active["information_wall"]["training_outcome_rollouts"] == 0
     assert active["information_wall"]["training_reward_reads"] == 0
     assert active["update"]["view_weights"] == [0.5, 0.5]
-    assert active["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
+    assert active["profile_run"]["status"] == "profile_result_sealed_nonpass"
+    profile = active["profile_run"]["artifact_evidence"]
+    assert profile["passed"] is False
+    assert profile["failed_checks"] == ["regularized_condition"]
+    assert profile["positive_feature_rank"] == 48
+    assert profile["full_feature_rank"] == 96
+    assert profile["regularized_condition"] > 200
+    assert profile["both_view_descent_tasks"] == 24
+    assert profile["formal_authorized"] is False
+    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
     cveg = json.loads(
         (REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json")
         .read_text(encoding="utf-8")

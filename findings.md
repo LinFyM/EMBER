@@ -390,5 +390,13 @@ PVJFC canonical实现已经原位替换CVEG。每个task只构造一次B20 batch
 48 correct、48 matched negative和48 cotangent，以固定半权做一个96-row ridge write。部署仍是一条video生成一套
 完整rank16 LoRA；checkpoint只有Program memory与rank RNG。旧candidate guard、success bank、outcome rollout、
 hard E和其active tests已删除。swap invariance、duplicate-view对独立闭式single-view ridge退化、world1--6
-padded gather、信息墙与exact-resume的完整CPU回归为`329 passed`。这只是implementation closure，尚无GPU机制或
-closed-loop证据；下一裁决是clean pushed commit上的唯一fresh macro0 profile。
+padded gather、信息墙与exact-resume的完整CPU回归为`329 passed`。
+
+clean`a4f4c75`、gpu02:0--5 world6的唯一PVJFC macro0 profile把最早失败定位在condition shared-credit几何，
+而不是paired cotangent内容或吞吐。positive/full rank=`48/96`，24/24 tasks的primary与companion derivative均负，
+四suite joint derivative均负；negative/correct motion ratio=`.07266`且reversed/shuffled/wrong分别`14/15/16`
+views达`.15`门，Program write、LoRA A/B、effective BA、固定action全非零。Phase A/total仅`49.918/51.543s`，
+相比CVEG显著更快。唯一false是regularized condition=`597.861>200`；因此profile总门non-pass、无checkpoint且
+formal不开放。这个结果淘汰的是unit-normalized PICK-GC raw condition rows与`.01` full96 ridge的当前组合，不能
+外推否定continuous paired-video credit；同时也不授权调damping或放condition门。下一单变量应让condition表示中
+承载paired useful cotangent的方向与跨video/static共同高能方向结构性分离，而不是继续堆guard或追漂亮rank。

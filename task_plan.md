@@ -185,8 +185,11 @@
 - [x] 原位实现fresh-incompatible PVJFC并删除active candidate-guard/bank路径：两view各自完整Writer/functional
   cotangent、same B20/RNG、full96 joint solve、memory-only checkpoint与one-shot eval schema均已接通；swap、
   duplicate-view闭式退化、world1--6 padded gather和完整CPU`329 passed`。
-- [ ] 从clean pushed implementation seal建立detached frozen worktree，双节点live选1--6张合适A40完成唯一macro0
-  mechanism profile；通过后才开放fresh`0→5`与macro5 strict paired400。
+- [x] clean pushed`a4f4c75`后在detached frozen worktree完成双节点live选择与gpu02:0--5 world6唯一macro0
+  profile：`11/12` checks通过，rank`48/96`、24/24双view descent、negative`.07266`、全链路和wall`51.543s`
+  均健康；唯一regularized condition=`597.861>200`，故总门non-pass、无checkpoint且formal关闭。
+- [ ] 从PVJFC最早失败的condition可分辨shared-credit接口推出新的单变量authority；不得扫damping、condition门、
+  view weight、rank、scale、seed或dtype，也不得把paired-video continuous credit整体判死。
 
 ## Repository closeout
 

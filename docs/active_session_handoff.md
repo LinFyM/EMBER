@@ -43,12 +43,15 @@
   guard而不可行；同合同诊断macro5完成后，唯一directional strict400只有`131/400`、breadth6、per-task=
   `1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`。这同时否定当前binary
   hard guard的稳定性与hard E组合的absolute价值；不resume、不补controls、不把E原样继承。
-- active successor是PVJFC：两条ordered action-hidden train videos分别生成完整Program cotangent，共享
+- PVJFC已经在机制门终局non-pass：两条ordered action-hidden train videos分别生成完整Program cotangent，共享
   B20/action RNG并以半权做swap-invariant joint solve；deployment仍one-shot，删除outcome、bank与hard E。
   fresh-incompatible canonical implementation已经原位完成，旧candidate-guard/success-bank owner已从active
   tree删除；swap与duplicate-view闭式退化、full96 gather、memory-only checkpoint/resume、信息墙和profile门的
-  完整CPU回归为`329 passed`。当前尚无GPU机制或性能证据；下一步只是在clean pushed commit的detached frozen
-  worktree做一次fresh macro0 profile。
+  完整CPU回归为`329 passed`。clean`a4f4c75`、gpu02:0--5 world6唯一macro0 profile的rank=`48/96`、24/24
+  双view与四suite descent、negative ratio`.07266`、Program/LoRA/BA/action、wall`51.543s`均通过；唯一失败是
+  regularized condition=`597.861>200`。root无checkpoint，formal关闭，不扫damping/threshold等小参数。该结果只
+  淘汰当前PICK-GC condition feature×full96 ridge合同，不否定continuous paired-video credit本身；当前没有
+  active successor，下一步先针对condition可分辨shared-credit子空间写新的单变量authority。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

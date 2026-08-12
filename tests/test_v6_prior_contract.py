@@ -51,6 +51,17 @@ def _formal_ready_config() -> dict:
     return config
 
 
+def _preprofile_config() -> dict:
+    config = _raw_config()
+    config["status"] = "active_cpu_ready_awaiting_live_profile"
+    config["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
+    config["profile_run"]["artifact_evidence"] = None
+    config["formal_run"]["status"] = (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    return config
+
+
 def _context(world_size: int = 6) -> DistributedContext:
     return DistributedContext(0, 0, world_size, torch.device("cpu"))
 
@@ -146,7 +157,12 @@ def test_unknown_fields_and_retired_configs_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    preseal = _raw_config()
+    sealed = _raw_config()
+    with pytest.raises(ExpertManifoldError, match="not authorized"):
+        runtime_for_mode(sealed, "mechanism-profile")
+    with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
+        runtime_for_mode(sealed, "formal")
+    preseal = _preprofile_config()
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
@@ -157,7 +173,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
 def test_preprofile_artifact_injection_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    config = _raw_config()
+    config = _preprofile_config()
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)

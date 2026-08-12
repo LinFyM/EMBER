@@ -83,8 +83,11 @@ zero RHS。它不平均video/feature/LoRA/cotangent，不读outcome，不保存s
 swap invariance和duplicate-view退化为single-view是hard contract；完整design与快速否决门见
 `docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`。canonical实现已原位替换CVEG：两个view
 串行释放policy graph，full24 dynamic queue后一次gather 48 correct、48 zero-RHS negative和两套Program cotangent，
-只保留一份FP32 Program memory；旧outcome/bank/hard-E executable与测试已删除，完整CPU`329 passed`。当前尚未
-获得GPU机制或性能证据；只开放clean pushed commit上的唯一fresh macro0 profile，失败不做参数小扫。
+只保留一份FP32 Program memory；旧outcome/bank/hard-E executable与测试已删除，完整CPU`329 passed`。唯一live
+macro0 profile为`11/12` checks通过但总门non-pass：rank`48/96`、24/24双view descent、negative`.07266`、全链路
+与`51.543s` wall通过，regularized condition=`597.861>200`失败。没有checkpoint，formal关闭且不做damping/
+threshold等小扫。当前没有active successor；下一设计必须直接处理raw condition rows的共同高能方向与有用
+paired cotangent可分辨性，不能把一个condition数字冒充closed-loop结论。
 
 ## 2. Fixed information contract
 

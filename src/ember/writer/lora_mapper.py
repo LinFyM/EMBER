@@ -99,9 +99,20 @@ class ShapeFamilyMapper(torch.nn.Module):
         self.b = torch.nn.Linear(hidden_width, b_width, bias=False)
         torch.nn.init.zeros_(self.b.weight)
 
-    def forward(self, value: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self,
+        value: torch.Tensor,
+        *,
+        dynamic_a: bool,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         hidden = torch.nn.functional.gelu(self.hidden(value))
-        return self.a(hidden), self.b(hidden)
+        a = self.a(hidden) if dynamic_a else torch.zeros(
+            *hidden.shape[:-1],
+            self.a.out_features,
+            dtype=hidden.dtype,
+            device=hidden.device,
+        )
+        return a, self.b(hidden)
 
 
 class CompleteLoRAMapper(torch.nn.Module):
@@ -126,6 +137,7 @@ class CompleteLoRAMapper(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
         program_width: int,
         mapper_width: int,
+        dynamic_a: bool = False,
     ) -> None:
         super().__init__()
         if not tensor_specs or set(template_state) != {item.name for item in tensor_specs}:
@@ -135,6 +147,7 @@ class CompleteLoRAMapper(torch.nn.Module):
             raise LoRAMapperError("public Writer LoRA rank is not uniform")
         self.rank = ranks.pop()
         self.program_width = int(program_width)
+        self.dynamic_a = bool(dynamic_a)
         self.project = torch.nn.Linear(program_width, mapper_width, bias=False)
         self.families = torch.nn.ModuleDict(
             {
@@ -204,7 +217,9 @@ class CompleteLoRAMapper(torch.nn.Module):
                 else (0,) if family == "action_in" else (self.POLICY_GROUPS - 1,)
             )
             for group in groups:
-                family_outputs[(family, group)] = mapper(projected[:, group])
+                family_outputs[(family, group)] = mapper(
+                    projected[:, group], dynamic_a=self.dynamic_a
+                )
 
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:

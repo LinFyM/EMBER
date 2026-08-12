@@ -212,7 +212,7 @@ suffix变84，真实context计算是8-token方案的显著倍数，而且34容�
 
 每个`[group,rank,256]`状态先用shared bias-free `256→1024` projector，再由四个跨layer/rank共享的
 shape-family mapper一次输出拼接的A row与B column。每个mapper使用一个共享hidden layer再分A/B输出支路；
-A支路正常初始化，B支路严格zero-init：
+A支路保留为后续可证伪接口但首版关闭，B支路严格zero-init：
 
 ```text
 q:          1024 → 3072 = 1024(A) + 2048(B)
@@ -221,8 +221,10 @@ action_in:  1024 → 1056 = 32(A)   + 1024(B)
 action_out: 1024 → 1056 = 1024(A) + 32(B)
 ```
 
-q/v mapper跨18层共享，所有mapper跨8 rank coordinates共享；不是38个独立wide heads。A加确定性随机template，
-B readout严格zero-init，保证fresh step0/no-video functional identity。初始第一步只有B支路获得梯度；B非零后，
+q/v mapper跨18层共享，所有mapper跨8 rank coordinates共享；不是38个独立wide heads。首版A精确保持确定性
+随机template，只动态生成B；这不是历史已否定的“B-only residual”，因为这里是fresh rank8完整adapter的正常
+LoRA gauge，而非给已有rank16 LoRA叠加小B correction。B readout严格zero-init，保证fresh step0/no-video
+functional identity。初始第一步只有B支路获得梯度；B非零后，
 梯度再传回shared hidden、memory/temporal/set/M2P路径，和历史template-A/zero-B机制一致。
 
 这里保留历史FactorHeads已证明的shared family ownership，但移除`320 generic slots→8个256-hidden two-layer heads`

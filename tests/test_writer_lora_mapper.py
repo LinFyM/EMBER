@@ -43,8 +43,7 @@ def test_complete_mapper_starts_at_functional_identity_and_opens_b_only() -> Non
     output = mapper(program)
     for name, value in output.items():
         expected = template[name][None].expand_as(value)
-        if ".lora_B." in name:
-            assert torch.equal(value, expected)
+        assert torch.equal(value, expected)
     loss = sum(value.square().mean() for name, value in output.items() if ".lora_B." in name)
     loss.backward()
     assert all(family.b.weight.grad is not None for family in mapper.families.values())

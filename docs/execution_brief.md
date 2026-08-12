@@ -2,6 +2,13 @@
 
 ## 0. Current operation
 
+当前active operation已切换到Dynamic-K backbone-memory rank-8 Writer。它用exact language与K1--K4 action-hidden
+videos，在真实图文+Action Expert联合forward中逐层更新8 memory tokens；视频内保序、视频间集合聚合，最后
+一次写完整38-target rank8 LoRA。budget64 world6 full24 B20 live profile已通过：一宏`32.8066s`、K1--K4各
+6 tasks、峰值allocated/reserved `39.15/45.41GB`、loss与梯度finite、checkpoint完整。无budget执行图已由
+micro10 OOM和micro8超过16分钟/NCCL heartbeat否决。下一步从clean frozen commit fresh`0→50`，随后立即
+single-checkpoint strict paired correct400；正式选择仍只认真实closed-loop，profile checkpoint不作为训练输入。
+
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、
 400/400 rows strict correct400=`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`。相对old134严格配对为

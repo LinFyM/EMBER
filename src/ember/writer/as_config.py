@@ -149,6 +149,19 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
         "sealed",
     }:
         raise WriterModelError("dynamic-K Writer formal status changed")
+    if config["formal_run"].get("status") == "sealed":
+        evidence = config["formal_run"].get("profile_evidence", {})
+        if (
+            evidence.get("source_commit")
+            != "2dacfd478a3ab03d6921a72b0632bb52b94be063"
+            or int(evidence.get("world_size", 0)) != 6
+            or int(evidence.get("completion_macro", 0)) != 1
+            or float(evidence.get("macro_seconds", 0)) <= 0
+            or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
+            or evidence.get("global_k_histogram")
+            != {"1": 6, "2": 6, "3": 6, "4": 6}
+        ):
+            raise WriterModelError("sealed dynamic-K live profile evidence changed")
 
 
 def load_writer_config(path: Path) -> dict[str, Any]:

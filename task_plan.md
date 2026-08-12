@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-更新时间：2026-08-12。本文只记录当前收尾与下一 session 的决策流程；已完成实验、精确数值和禁止重复项见
+更新时间：2026-08-13。本文只记录当前收尾与下一 session 的决策流程；已完成实验、精确数值和禁止重复项见
 `docs/research_history.md`，实时状态见`docs/active_session_handoff.md`。
 
 ## Long-term goal
@@ -14,11 +14,14 @@
 
 ## Current decision
 
-- [ ] 实现并裁决Dynamic-K backbone-memory rank-8 Writer：K1--K4从step0均衡训练；8个真实Action Expert
+- [x] 实现Dynamic-K backbone-memory rank-8 Writer：K1--K4从step0均衡训练；8个真实Action Expert
   context memory tokens在正常图像+语言+固定probe的同一次forward中逐层更新；每video独立有向编码，跨video
   置换不变共识；共享layer/rank mapper一次写完整38-target LoRA。
-- [ ] 首个主要失效接口检验为“同task不同video的有向memory程序能否在shared Writer中形成共同credit”；
-  先做identity/order/set/gradient/throughput机制门，随后fresh task-complete训练并尽快strict paired400。
+- [x] identity/order/set/gradient/world6机制门与A40吞吐profile通过。完整stride5 K-set一宏超过16分钟并触发
+  NCCL heartbeat；固定每condition 64个真实有序frame预算后，full24 B20 micro8 world6一宏`32.8066s`，
+  K1--K4各6 tasks，functional/consistency/gradient均finite，峰值allocated/reserved `39.15/45.41GB`。
+- [ ] 从clean frozen commit fresh训练`0→50`，随后立即做single-checkpoint strict paired correct400；首个主要
+  失效接口仍是“同task不同video的有向memory程序能否在shared Writer中形成共同credit”。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。
 - [x] uniform pivot-rank14 online Gate B=`128/400`，相对 old134 lost21，未过门。

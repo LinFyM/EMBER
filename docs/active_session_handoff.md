@@ -6,6 +6,14 @@
 
 - 长期Goal未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
+- 当前active successor是Dynamic-K backbone-memory rank-8 Writer，不再是“无active successor”。它接受K1--K4
+  action-hidden videos与exact language，在真实图像+语言+50 Action probes的18层联合forward中更新8 memory
+  tokens；每video独立有向编码、跨video置换不变聚合，再由共享layer/rank mapper写一套完整38-target rank8 LoRA。
+  CPU完整回归`364 passed`。无budget micro10 OOM；无budget micro8虽无OOM却超过16分钟/宏并触发NCCL
+  heartbeat。唯一工程修正budget64已在clean `2dacfd4`上通过world6 full24 B20 profile：`32.8066s/宏`，K1--K4
+  各6 tasks，峰值allocated/reserved `39.15/45.41GB`，loss/consistency/gradient有限且checkpoint完整。
+  当前下一步是从新的clean frozen commit fresh训练`0→50`并立刻strict paired correct400；profile checkpoint
+  不是训练输入。
 - MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
   （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
   相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。

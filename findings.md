@@ -1,6 +1,6 @@
 # EMBER Findings
 
-更新时间：2026-08-12。本文只保留跨架构仍成立的第一性原理结论。逐方法结果、精确旧 commit/root 与禁止重复项
+更新时间：2026-08-13。本文只保留跨架构仍成立的第一性原理结论。逐方法结果、精确旧 commit/root 与禁止重复项
 见`docs/research_history.md`；逐日原始记录可由 Git commit`3a6f801`读取。
 
 ## 1. Current empirical boundary
@@ -12,6 +12,13 @@
 直接形成逐层memory grid；只让有符号视频变化进入dynamic value，再由跨video共识和共享layer/rank mapper写出
 fresh完整LoRA。它继承v6的task-grounded address、真实frame ordinal与causal Procedure，但不继承旧K4的固定
 四基/DCT16/phase-wise mean，也不继承已退役Program residual/guard/solver。
+
+实现与live机制门已经闭合。无frame预算的真实A40 profile在micro10 OOM；micro8虽然不OOM，但完整K-set的
+joint backbone一宏超过16分钟并触发480秒NCCL heartbeat，故该执行图不可用。唯一工程修正是在stride5候选后、
+joint backbone前给每condition固定64个真实有序frames，并对K条video使用相同`floor(64/K)` cap和含首尾均匀
+索引。budget64 world6 full24 B20 profile一宏`32.8066s`，K1/2/3/4各6 tasks，functional loss`.15611`、
+consistency`.009984`、gradient norm`.02361`均finite，峰值allocated/reserved约`39.15/45.41GB`；checkpoint完整。
+这只证明执行图、动态K和梯度链路可训练，不证明closed-loop有效，下一裁决是fresh macro50 strict paired400。
 
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |

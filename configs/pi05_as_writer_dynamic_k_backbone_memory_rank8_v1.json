@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1",
-  "status": "profile_pending",
+  "status": "formal_ready_from_budget64_live_profile",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -122,7 +122,20 @@
     "stop_after_macro": 1
   },
   "formal_run": {
-    "status": "unsealed_pending_live_profile",
+    "status": "sealed",
+    "profile_evidence": {
+      "source_commit": "2dacfd478a3ab03d6921a72b0632bb52b94be063",
+      "run_root": "runs/outputs/pi05_dynamic_k_backbone_memory_rank8_budget64_profile_r6_b20_micro8_2dacfd4_20260813",
+      "world_size": 6,
+      "macro_seconds": 32.8066023089923,
+      "max_cuda_allocated_bytes": 39151977984,
+      "max_cuda_reserved_bytes": 45409632256,
+      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
+      "global_mean_functional_loss": 0.15610782212267318,
+      "global_mean_consistency_loss": 0.009983559643539289,
+      "gradient_norm_before_clip": 0.023607876151800156,
+      "completion_macro": 1
+    },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 400,
     "per_task_action_batch_size": 20,

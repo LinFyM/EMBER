@@ -324,3 +324,11 @@ solver或compiler。train24×50 action-hidden audit进一步显示first-stable k
 均值/p90=`.40954/.59171`；所有observed stable rows仍留下均值约`.27650`。因此精确保护train视频点不能代替
 跨视频/held-occupancy support neighborhood，NPCG + blind B20正式退役。后继不能靠增加point数、平均key或
 参数小扫，而应让每次shared write对same-task action-hidden video nuisance具有结构化等变/不变约束。
+
+这个接口的最小结构性干预是CVEG，而不是增加point guards或改成few-shot部署。每task每macro保留原primary
+one-shot condition，再从同一no-replacement cycle取一条action-query-disjoint的ordered companion，令
+`E=phi(companion)-phi(primary)`。blind update位于`Null([persisted success keys; E])`，final NPCG correction
+位于`Null([negative rows; E])`，所以每次新增shared Program motion对两条正确video相同，同时reward guard不能
+重新打开negative或跨video nuisance response。retained cache的50-panel审计显示单companion后correct/reverse
+过程能量中位数仍为`.780/.789`；2--4 companions会把correct能量进一步降到`.639/.529/.436`，首个版本因此固定
+一条且不扫K。它只在训练期增加等变约束，部署仍严格一条action-hidden video生成一套LoRA。

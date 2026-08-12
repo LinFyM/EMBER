@@ -29,8 +29,12 @@ negative ratio`.03524`、三类各`8/8`，部署选择B32；formal五宏的corre
 健康。但macro5 strict paired400只有`135/400`、breadth5、per-task=`0/2/46/36/0/37/14/0`，相对old134为
 retained/gained/lost=`117/18/17`、churn35，未过correct、breadth与lost门。train24×50 action-hidden audit显示
 first-stable point对held same-task videos仍有`.40954`平均正交残差；故最早失败推进到point address无法定义
-跨视频/held occupancy support neighborhood。NPCG已退役，不resume、不补controls、不小扫；当前没有active
-successor。
+跨视频/held occupancy support neighborhood。NPCG已退役，不resume、不补controls、不小扫。
+
+Cross-Video Equivariant Candidate Guard现为唯一active successor：保持NPCG全部已通过接口，只在训练期为每个
+primary增加一条same-task action-hidden ordered companion，以difference row `E`让每个shared Program write
+满足`E D=0`；NPCG final correction改为同时保持`[N;E]` response。部署仍是一条video、一套LoRA，不做few-shot
+aggregation或平均。单companion离线审计保留correct/reverse能量中位数`.780/.789`，尚未实现或运行。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -63,6 +67,8 @@ Negative-Preserving successor不把完整update硬压进`Null([G;N])`，而只�
 policy-effective support。完整retired authority见
 `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`；WQ sealed边界见
 `docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
+当前CVEG的完整单变量公式、采样合同、机制门和formal裁决见
+`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
 ## 2. Fixed information contract
 
@@ -250,8 +256,8 @@ fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`for
 sweep关闭。SRTP的`d172add`与`e31e2fd` world3 attempts均exit1，后者证明释放decoder graph仍不能让完整logical
 B<=16 reward CFM gradient进入A40；config已封存为`profile_result_sealed_nonpass`，同配置重跑、deployment与formal
 关闭。PCUG唯一world4 run在paired probe前因wall下界`2.25568x`封存non-pass，config为
-`profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。当前没有active successor；任何新GPU
-动作前必须先写新authority、clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、
+`profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。CVEG是当前active successor；任何新GPU
+动作前必须完成canonical实现、clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、
 fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
 
 NPCG formal macro5与strict400也已sealed：135/breadth5/lost17，config为`formal_result_sealed`；resume、controls、

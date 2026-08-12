@@ -38,7 +38,11 @@
 - Negative-Preserving Candidate Guard已完成并正式退役：formal fresh`0→5`五宏的correct/negative closure、
   rank和energy持续健康，但macro5 strict paired400只有`135/400`、breadth5、per-task=
   `0/2/46/36/0/37/14/0`。相对old134为retained/gained/lost=`117/18/17`、churn35，未过absolute、breadth与
-  lost门；不resume、不补controls、不做point-count、threshold或seed sweep。当前没有active successor。
+  lost门；不resume、不补controls、不做point-count、threshold或seed sweep。
+- Cross-Video Equivariant Candidate Guard已从该最早失效接口选为唯一active successor：每task每macro在不改变
+  primary one-shot schedule的前提下增加一条训练期action-hidden ordered companion，以
+  `E=phi(companion)-phi(primary)`约束blind与final shared Program write满足`E D=0`；final affine correction同时
+  保持negative与equivariance response。部署仍一条video、一套LoRA，不平均、不挑video。设计已封存，尚未实现。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -66,6 +70,15 @@ train24×50 action-hidden audit显示first-stable key到同任务其它videos的
 `.90100/.91979/.80615`，正交残差均值/p90=`.40954/.59171`；所有五宏observed stable rows仍留下平均
 `.27650`残差。因此最早失败不是Program、negative guard、rank或compiler，而是pointwise train24地址没有定义
 跨视频/held occupancy support neighborhood。NPCG正式non-pass；exact resume、controls和小修全部关闭。
+
+### 2.0a Active CVEG design decision
+
+retained train24x50 cache的50-panel审计中，单companion difference `E`始终rank24；投影`Null(E)`后correct
+feature energy mean/median=`.77415/.78016`，correct-minus-reversed过程差分能量mean/median=
+`.78444/.78943`。在NPCG macro5 Program geometry中，held same-task video-difference response降为原来的
+`.7536`，reverse response fraction仍为mean/median=`1.035/.966`。2--4 companions继续压nuisance但correct
+energy降为`.639/.529/.436`，故首个版本固定一条，不做K sweep。完整公式、采样和证伪门见
+`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
 ### 2.1 Work-Queue PCUG mechanism profile
 
@@ -488,5 +501,5 @@ Negative-Preserving Candidate Guard首个clean world3完整profile已通过negat
 `5.7508e-8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定并选择B32；config已封存两份evidence并打开
 formal fresh`0→5`。该formal及strict paired400现均已完成：五宏无OOM/nonfinite，macro5 rank34、energy
 `.38951`、negative ratio`.03234`，但strict只有135/breadth5、old134→NPCG=`117/18/17`，因此config封存为
-`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；当前没有active successor，旧WQ-PCUG/PCUG/
-Reward/OSG/SKNC/SRTP命令不得恢复。
+`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；当前active CVEG必须原位替换canonical owner，
+旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

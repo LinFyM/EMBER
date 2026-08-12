@@ -159,10 +159,19 @@
 - [x] 从封存macro5 checkpoint完成single-checkpoint strict paired400：`135/400`、breadth5、old134→NPCG
   retained/gained/lost=`117/18/17`、churn35；correct、breadth与lost门失败，故不resume或补controls。
 - [x] train24×50 action-hidden地址audit定位最早失效接口：first-stable point对held same-task videos仍有平均
-  `.40954`正交残差；point closure不等于video/occupancy neighborhood protection。当前没有active successor。
-- [ ] 针对跨视频condition neighborhood写新的单变量design authority；必须保留ordered goal-causal video、
-  queue、actual candidate pairing、negative-preserving affine guard和native rank16 compiler，且不能只是增加/
-  平均point keys或调ridge/scale/threshold。
+  `.40954`正交残差；point closure不等于video/occupancy neighborhood protection。该时点没有active successor，
+  后续CVEG authority现已覆盖这一历史状态。
+- [x] 针对跨视频condition neighborhood封存CVEG单变量authority：primary schedule不变，每task每macro增加一条
+  training-only action-hidden ordered companion，以`E=phi(companion)-phi(primary)`同时约束blind与final
+  shared Program write；保留queue、actual pairing、negative-preserving affine guard与native rank16 compiler。
+  部署仍严格one-shot，不平均或挑video；单companion离线审计保留correct/reverse能量中位数`.780/.789`。
+- [ ] 原位实现fresh-incompatible CVEG：companion schedule/cost、condition feature、full24 gather、`[A;E]` blind
+  anchors、`[N;E]` response-preserving correction、机制报告、schema/config/eval family；不保留NPCG executable
+  parallel path。
+- [ ] targeted/full CPU通过后clean commit/push，在detached frozen worktree按live gpu01/gpu02状态选择同节点
+  1--6张合适A40做唯一discarded macro0 profile；小显存低利用率共驻卡有余量即可使用，不等待6卡。
+- [ ] profile全过后做longest-video deployment batch profile、formal fresh`0→5`并立即strict paired400；只有
+  correct>=142、breadth>=6、lost<=8、gained>lost且至少3 suites不降才resume`5→10`。
 
 ## Repository closeout
 

@@ -43,13 +43,14 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   matched SKNC，48 exact pairs有7 discordance、3 gains/4 losses、3 harmful tasks跨2 suites；correct guard closure、
   rank33和energy`.76492`健康。但blind negative ratio从`.03991`被correct-only final projection放大到`.50179`，
   wrong/shuffled/reversed均`0/8`达门。19项checks只有`negative_null`失败，deployment/formal关闭，不重跑或sweep。
-- Negative-Preserving Candidate Guard是当前唯一active successor design：保持Work-Queue PCUG的blind `D0`、
-  paired outcomes与全部科学合同，只要求final guard correction位于current negative rows的nullspace，使correct
-  reward guard不能破坏blind solve已有的negative-video抑制。首个clean world3完整profile中negative ratio
-  `.03524`、三类各`8/8`及其余18项机制门通过，唯一`guard_program_closure`因TF32 solver与full-FP32实际read
-  数值语义不一致失败。canonical窄修后的matched reprofile 20/20全过，B8/16/32部署均稳定并选择B32；config已
-  封存证据。formal fresh`0→5`已exit0，bank最终16、macro5 rank34/energy`.38951`、checkpoint完整；必须立即
-  对该single checkpoint做strict paired400，未出结果前不得resume、补controls或并行转向无关架构。
+- Negative-Preserving Candidate Guard已完成formal fresh`0→5`和macro5 strict paired400并退役：`135/400`、
+  breadth5、相对old134 retained/gained/lost=`117/18/17`。五宏negative/correct closure、rank和energy健康，
+  但point key到held same-task videos仍有平均`.40954`正交残差；不resume、不补controls、不做point/threshold/
+  seed sweep。
+- Cross-Video Equivariant Candidate Guard是当前唯一active successor authority：primary one-shot schedule、
+  ordered negative、work queue、paired candidate、NPCG affine correction和native rank16 compiler全部保留；
+  每task每macro只增加一条训练期action-hidden ordered companion，以`E=phi(companion)-phi(primary)`约束每个
+  shared Program write满足`E D=0`。部署仍严格一条video、一套LoRA；尚未实现或运行。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -61,17 +62,18 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
-5. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
-6. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
-7. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-8. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-9. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-10. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-11. `docs/research_history.md`
-12. `task_plan.md`
-13. `findings.md`
-14. `docs/concept.md`
+4. `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`
+5. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
+6. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
+7. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+8. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+9. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+10. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+11. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+12. `docs/research_history.md`
+13. `task_plan.md`
+14. `findings.md`
+15. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读

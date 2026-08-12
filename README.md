@@ -45,7 +45,11 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - NPCG已完成formal fresh`0→5`与single-checkpoint strict paired400并退役：`135/400`、breadth5、per-task=
   `0/2/46/36/0/37/14/0`。相对old134严格配对为retained/gained/lost=`117/18/17`、churn35；全部Program、
   negative、rank和energy机制门健康，但未过`correct>=142`、breadth、lost三项门。不得resume、补controls或
-  做point-count/threshold/seed小扫；当前没有active successor。
+  做point-count/threshold/seed小扫。
+- 当前唯一active successor是Cross-Video Equivariant Candidate Guard：训练时为每个primary correct video增加一条
+  同任务、action-hidden、保持顺序的companion，并约束shared Program新增motion在二者之间相同；部署仍严格是
+  one-shot一条video、一套LoRA，不做video/feature/LoRA平均。离线50-panel审计中单companion保留correct/reverse
+  能量中位数`.780/.789`，现已封存设计authority，尚未实现或运行。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -156,6 +160,8 @@ checkpoint与resume合同正确。
 
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
+- [`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`](docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md)：
+  当前active CVEG的单companion采样、equivariance公式、机制门与paired400裁决；
 - [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)：
   retired NPCG的negative-preserving correction公式、formal结果与否决边界；
 - [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：

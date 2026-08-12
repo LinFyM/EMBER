@@ -14,6 +14,9 @@
   各6 tasks，峰值allocated/reserved `39.15/45.41GB`，loss/consistency/gradient有限且checkpoint完整。
   当前下一步是从新的clean frozen commit fresh训练`0→50`并立刻strict paired correct400；profile checkpoint
   不是训练输入。
+- K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
+  0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
+  profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。
 - MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
   （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
   相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。

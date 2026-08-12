@@ -19,6 +19,9 @@ joint backbone前给每condition固定64个真实有序frames，并对K条video�
 索引。budget64 world6 full24 B20 profile一宏`32.8066s`，K1/2/3/4各6 tasks，functional loss`.15611`、
 consistency`.009984`、gradient norm`.02361`均finite，峰值allocated/reserved约`39.15/45.41GB`；checkpoint完整。
 这只证明执行图、动态K和梯度链路可训练，不证明closed-loop有效，下一裁决是fresh macro50 strict paired400。
+同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved
+约`13.4GB`，因此吞吐authority选择B8并锁定formal evaluator。该结果只解决评测效率和首次live执行风险，
+不改变任何科学结论。
 
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |

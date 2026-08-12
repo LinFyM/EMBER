@@ -243,27 +243,38 @@ def _validate_build_request(
                 "Writer generation batch violates its throughput authority"
             )
         smoke = evaluation.get("online_smoke_evidence")
-        if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND and evaluation.get(
-            "formal_status"
-        ) in {
-            "sealed",
-            "sealed_from_unchanged_v6_deployment_graph",
-            "sealed_from_live_pick_gc_deployment_profile",
-            "sealed_from_live_residual_deployment_profile",
-            "sealed_from_unchanged_v6_residual_deployment_graph",
-            "sealed_from_live_osg_pc_deployment_smoke",
-            "sealed_from_live_sknc_deployment_smoke",
-            "sealed_from_live_srtp_deployment_smoke",
-            "sealed_from_live_cveg_deployment_smoke",
-            "sealed_from_live_cgik_full96_profile",
-            "sealed_from_live_mgci_full96_profile",
-        } and (
+        sealed_dynamic_k = (
+            adapter.get("kind") == DYNAMIC_K_WRITER_KIND
+            and evaluation.get("formal_status") == "sealed"
+        )
+        sealed_expert_manifold = (
+            adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND
+            and evaluation.get("formal_status") in {
+                "sealed",
+                "sealed_from_unchanged_v6_deployment_graph",
+                "sealed_from_live_pick_gc_deployment_profile",
+                "sealed_from_live_residual_deployment_profile",
+                "sealed_from_unchanged_v6_residual_deployment_graph",
+                "sealed_from_live_osg_pc_deployment_smoke",
+                "sealed_from_live_sknc_deployment_smoke",
+                "sealed_from_live_srtp_deployment_smoke",
+                "sealed_from_live_cveg_deployment_smoke",
+                "sealed_from_live_cgik_full96_profile",
+                "sealed_from_live_mgci_full96_profile",
+            }
+        )
+        if (sealed_dynamic_k or sealed_expert_manifold) and (
             not isinstance(smoke, Mapping)
             or writer_generation_batch_size
-            != int(smoke.get("writer_model_batch_size", -1))
+            != int(
+                smoke.get(
+                    "selected_writer_model_batch_size",
+                    smoke.get("writer_model_batch_size", -1),
+                )
+            )
         ):
             raise Pi05EvaluationError(
-                "sealed v6-prior evaluation requires its selected Writer batch"
+                "sealed Writer evaluation requires its selected Writer batch"
             )
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")

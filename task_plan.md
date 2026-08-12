@@ -22,6 +22,8 @@
   K1--K4各6 tasks，functional/consistency/gradient均finite，峰值allocated/reserved `39.15/45.41GB`。
 - [ ] 从clean frozen commit fresh训练`0→50`，随后立即做single-checkpoint strict paired correct400；首个主要
   失效接口仍是“同task不同video的有向memory程序能否在shared Writer中形成共同credit”。
+- [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高
+  实测吞吐选择并锁定B8；正式correct400只允许B8。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。
 - [x] uniform pivot-rank14 online Gate B=`128/400`，相对 old134 lost21，未过门。

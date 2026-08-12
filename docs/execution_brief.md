@@ -8,6 +8,8 @@ videos，在真实图文+Action Expert联合forward中逐层更新8 memory token
 6 tasks、峰值allocated/reserved `39.15/45.41GB`、loss与梯度finite、checkpoint完整。无budget执行图已由
 micro10 OOM和micro8超过16分钟/NCCL heartbeat否决。下一步从clean frozen commit fresh`0→50`，随后立即
 single-checkpoint strict paired correct400；正式选择仍只认真实closed-loop，profile checkpoint不作为训练输入。
+同构K1 deployment profile的B8/16/32均stable且0 OOM，LoRA/s=`.97433/.96463/.96598`，已按最高实测吞吐
+选择并锁定B8；该profile不是性能证据。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

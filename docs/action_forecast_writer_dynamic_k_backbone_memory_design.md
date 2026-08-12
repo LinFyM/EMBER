@@ -299,6 +299,13 @@ per-layer memory grid
 比较；报告K、aggregate、per-task/per-suite、breadth、retained/gained/lost、checkpoint churn、same-task-other、
 wrong/shuffled/reversed/no-video。目标保持严格`>150/400`，达到后继续提高。
 
+部署吞吐使用同构budget64 profile checkpoint做单A40真实K1 generation profile。validation 8 tasks各4个
+state形成固定32-request longest-first panel，B8/B16/B32各warmup1、measured2；三者全部stable且无OOM，
+LoRA/s分别为`.97433/.96463/.96598`，峰值reserved约`13.38/13.38/13.40GB`，因此按预注册最高实测吞吐
+选择B8。正式评测必须精确使用B8，不能把minimum batch当作任意更大batch；profile root为
+`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。该证据只选择
+部署吞吐，不构成closed-loop或科学性能证据。
+
 ## 10. 工程所有权与参考
 
 - `CompleteLoRAWriter`保留外部ragged batch→76 LoRA tensors API、tensor specs、identity template和安装逻辑；

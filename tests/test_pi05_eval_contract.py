@@ -462,6 +462,70 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     assert batched["parallel"]["writer_generation_batch_size"] == 16
 
 
+def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
+    tmp_path: Path,
+) -> None:
+    inputs = list(_writer_contract_inputs(tmp_path))
+    shared_writer = inputs[4]
+    shared_writer.update(
+        schema_version=(
+            "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1"
+        ),
+        kind="dynamic_k_backbone_memory_writer",
+    )
+    shared_writer["config"] = {
+        "path": str(
+            ROOT / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json"
+        ),
+        "schema": "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1",
+    }
+    shared_writer["lora_contract"] = {
+        "reference": (
+            "configs/pi05_lora_rank8_writer_v1.json:76tensors:643584parameters"
+        )
+    }
+    storage = shared_writer["writer_asset"]["writer_state"][
+        "template_lora_storage"
+    ]
+    storage["parameter_count"] = 643_584
+    storage["tensor_bytes"] = 1_320_960
+    storage["dtype_parameter_counts"] = {
+        "BF16": 626_688,
+        "F32": 16_896,
+    }
+    shared_writer["evaluation_authority"] = {
+        "formal_status": "sealed",
+        "throughput_policy": (
+            "highest_measured_batch_throughput_with_device_memory_headroom"
+        ),
+        "minimum_smoke_writer_model_batch_size": 8,
+        "online_smoke_evidence": {
+            "selected_writer_model_batch_size": 8,
+        },
+    }
+    correct_mapping = inputs[5]
+    with pytest.raises(
+        Pi05EvaluationError, match="selected Writer batch"
+    ):
+        _build_writer_contract(
+            inputs=tuple(inputs),
+            output_dir=tmp_path / "out-b16",
+            arm="dynamic_k_backbone_memory_rank8_correct",
+            condition="correct",
+            mapping=correct_mapping,
+            writer_generation_batch_size=16,
+        )
+    exact = _build_writer_contract(
+        inputs=tuple(inputs),
+        output_dir=tmp_path / "out-b8",
+        arm="dynamic_k_backbone_memory_rank8_correct",
+        condition="correct",
+        mapping=correct_mapping,
+        writer_generation_batch_size=8,
+    )
+    assert exact["parallel"]["writer_generation_batch_size"] == 8
+
+
 def test_reward_credit_seal_locks_the_measured_writer_batch8(
     tmp_path: Path,
 ) -> None:

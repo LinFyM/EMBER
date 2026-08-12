@@ -849,6 +849,14 @@ def _apply_macro_update(
     )
     if not profile:
         gates = runtime.config["profile_run"]["gates"]
+        blind_equivariance_ratio = _motion_ratio(
+            success_key_constraint_motion(equivariance, blind_delta),
+            success_key_constraint_motion(correct, blind_delta),
+        )
+        final_equivariance_ratio = _motion_ratio(
+            success_key_constraint_motion(equivariance, delta),
+            success_key_constraint_motion(correct, delta),
+        )
         if not (
             guard_projection.final_guard_violation_count
             == int(gates["final_guard_violation_count"])
@@ -864,18 +872,39 @@ def _apply_macro_update(
             and guard_projection.blind_projected_cosine > 0
             and blind_update.predicted_negative_to_unprotected_ratio
             <= float(gates["negative_to_unprotected_motion_rms_max"])
-            and _motion_ratio(
-                success_key_constraint_motion(equivariance, blind_delta),
-                success_key_constraint_motion(correct, blind_delta),
-            )
+            and blind_equivariance_ratio
             <= float(gates["equivariance_to_primary_motion_rms_max"])
-            and _motion_ratio(
-                success_key_constraint_motion(equivariance, delta),
-                success_key_constraint_motion(correct, delta),
-            )
+            and final_equivariance_ratio
             <= float(gates["equivariance_to_primary_motion_rms_max"])
         ):
-            raise ExpertManifoldError("CVEG formal correction left its sealed feasible set")
+            evidence = {
+                "blind_equivariance_ratio": blind_equivariance_ratio,
+                "blind_projected_cosine": guard_projection.blind_projected_cosine,
+                "blind_projected_inner_product": (
+                    guard_projection.blind_projected_inner_product
+                ),
+                "equivariance_preservation_violation_count": (
+                    guard_projection.equivariance_preservation_violation_count
+                ),
+                "final_equivariance_ratio": final_equivariance_ratio,
+                "final_guard_violation_count": (
+                    guard_projection.final_guard_violation_count
+                ),
+                "negative_preservation_violation_count": (
+                    guard_projection.negative_preservation_violation_count
+                ),
+                "negative_to_unprotected_motion_ratio": (
+                    blind_update.predicted_negative_to_unprotected_ratio
+                ),
+                "projected_feature_rank": guard_projection.projected_feature_rank,
+                "projected_to_blind_energy_ratio": (
+                    guard_projection.projected_to_blind_energy_ratio
+                ),
+            }
+            raise ExpertManifoldError(
+                "CVEG formal correction left its sealed feasible set: "
+                + json.dumps(evidence, sort_keys=True)
+            )
     apply_program_residual_delta_(runtime.writer.program_memory, delta)
     bank_update = runtime.success_key_bank.commit_first_stable_successes_(
         correct,

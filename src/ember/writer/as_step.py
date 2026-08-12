@@ -79,6 +79,27 @@ def assign_flat_gradient(
         ).to(dtype=item.parameter.dtype)
 
 
+def gather_full24_records(
+    local_records: Sequence[Mapping[str, Any]],
+    *,
+    world_size: int,
+    task_ids: Sequence[int],
+) -> list[dict[str, Any]]:
+    """Gather the small per-task evidence rows without touching tensor gradients."""
+
+    shards: list[Any] = [None] * world_size
+    if world_size > 1:
+        dist.all_gather_object(shards, list(local_records))
+    else:
+        shards[0] = list(local_records)
+    records = [dict(row) for shard in shards for row in shard]
+    expected = {int(task_id) for task_id in task_ids}
+    observed = [int(row["task_id"]) for row in records]
+    if len(records) != 24 or len(set(observed)) != 24 or set(observed) != expected:
+        raise WriterModelError("dynamic-K per-task evidence lost full24 coverage")
+    return sorted(records, key=lambda row: int(row["task_id"]))
+
+
 def _batch_task_id(batch: Mapping[str, Any]) -> int:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
@@ -312,6 +333,11 @@ def run_writer_step(
     }
     if set(global_k_histogram.values()) != {6}:
         raise WriterModelError("dynamic-K macro lost its exact 6/6/6/6 balance")
+    global_records = gather_full24_records(
+        records,
+        world_size=runtime.context.world_size,
+        task_ids=runtime.task_ids,
+    )
     runtime.optimizer.step()
     runtime.scheduler.step()
     completed = macro + 1
@@ -328,6 +354,14 @@ def run_writer_step(
             str(k): sum(row["K"] == k for row in records) for k in range(1, 5)
         },
         "global_k_histogram": global_k_histogram,
+        "global_mean_functional_loss": sum(
+            row["functional_loss"] for row in global_records
+        )
+        / len(global_records),
+        "global_mean_consistency_loss": sum(
+            row["consistency_loss"] for row in global_records
+        )
+        / len(global_records),
         "gradient_norm_before_clip": float(grad_norm),
         "gradient_clip_norm": clip,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
@@ -339,5 +373,5 @@ def run_writer_step(
         "max_cuda_reserved_bytes": torch.cuda.max_memory_reserved(
             runtime.context.device
         ),
-        "conditions": records,
+        "conditions": global_records,
     }

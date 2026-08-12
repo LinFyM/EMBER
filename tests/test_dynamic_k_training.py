@@ -18,6 +18,7 @@ from ember.writer.as_step import (
     _task_gradient,
     accumulate_flat_gradient,
     assign_flat_gradient,
+    gather_full24_records,
     parameter_layout,
     reduce_full24_gradient,
 )
@@ -204,6 +205,25 @@ def test_flat_gradient_accumulates_tasks_then_divides_once_by_24() -> None:
 def test_flat_gradient_contract_rejects_non_full24_reduction() -> None:
     with pytest.raises(WriterModelError, match="full24"):
         reduce_full24_gradient(torch.ones(2), world_size=1, global_task_count=23)
+
+
+def test_full24_task_evidence_is_gathered_and_sorted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = [{"task_id": task, "functional_loss": 1.0} for task in range(12)]
+    second = [{"task_id": task, "functional_loss": 2.0} for task in range(12, 24)]
+
+    def gather(shards: list[object], local: object) -> None:
+        assert local == first
+        shards[:] = [first, second]
+
+    monkeypatch.setattr("ember.writer.as_step.dist.all_gather_object", gather)
+    records = gather_full24_records(
+        first,
+        world_size=2,
+        task_ids=tuple(range(24)),
+    )
+    assert [row["task_id"] for row in records] == list(range(24))
 
 
 def test_task_gradient_skips_fixed_template_a_outputs(

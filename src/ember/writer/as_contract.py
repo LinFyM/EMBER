@@ -180,7 +180,13 @@ def load_run_authorities(
     ) != 1000:
         raise WriterModelError("source policy is not the retained step1000 checkpoint")
     tokenizer = args.tokenizer_path.resolve()
-    if not tokenizer.is_file():
+    tokenizer_manifest = read_json(authority_path(config, "tokenizer_manifest"))
+    expected_tokenizer_bytes = int(tokenizer_manifest.get("bytes", -1))
+    if (
+        not tokenizer.is_file()
+        or expected_tokenizer_bytes <= 0
+        or tokenizer.stat().st_size != expected_tokenizer_bytes
+    ):
         raise WriterModelError("OpenPI tokenizer is missing")
     source_config = read_json(authority_path(config, "source_base_config"))
     source = {
@@ -192,7 +198,7 @@ def load_run_authorities(
     }
     return SimpleNamespace(source_base_config=source_config), source, {
         "path": str(tokenizer),
-        "bytes": tokenizer.stat().st_size,
+        "bytes": expected_tokenizer_bytes,
     }
 
 

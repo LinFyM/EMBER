@@ -188,7 +188,12 @@ def _task_gradient(
     policy_seed: int,
     gradient_sum: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, Mapping[str, Any]]:
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+    device_type = runtime.context.device.type
+    with torch.autocast(
+        device_type=device_type,
+        dtype=torch.bfloat16,
+        enabled=device_type == "cuda",
+    ):
         generated, consistency = runtime.writer.forward_training(
             *packed,
             policy=runtime.policy,
@@ -225,8 +230,11 @@ def _task_gradient(
         raise WriterModelError("K1 dynamic-K consistency loss must be exact zero")
     if video_count > 1 and not consistency.requires_grad:
         raise WriterModelError("K>1 dynamic-K consistency lost its training graph")
-    outputs = tuple(generated[name] for name in names)
-    grad_outputs = tuple(lora_gradients[name] for name in names)
+    active_names = tuple(name for name in names if generated[name].requires_grad)
+    if not active_names:
+        raise WriterModelError("dynamic-K generated LoRA lost every trainable output")
+    outputs = tuple(generated[name] for name in active_names)
+    grad_outputs = tuple(lora_gradients[name] for name in active_names)
     if consistency.requires_grad:
         outputs = (*outputs, consistency)
         grad_outputs = (*grad_outputs, torch.ones_like(consistency) * weight)

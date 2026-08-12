@@ -15,6 +15,7 @@ from ember.writer.as_contract import publish_contract
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.as_step import (
     _pack_condition,
+    _task_gradient,
     accumulate_flat_gradient,
     assign_flat_gradient,
     parameter_layout,
@@ -203,6 +204,49 @@ def test_flat_gradient_accumulates_tasks_then_divides_once_by_24() -> None:
 def test_flat_gradient_contract_rejects_non_full24_reduction() -> None:
     with pytest.raises(WriterModelError, match="full24"):
         reduce_full24_gradient(torch.ones(2), world_size=1, global_task_count=23)
+
+
+def test_task_gradient_skips_fixed_template_a_outputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameter = torch.nn.Parameter(torch.tensor(2.0))
+
+    class _Writer:
+        @staticmethod
+        def forward_training(*_args: object, **_kwargs: object):
+            return {
+                "fixed_a": torch.ones(2),
+                "dynamic_b": parameter * torch.ones(2),
+            }, parameter * 0.0
+
+    monkeypatch.setattr(
+        "ember.writer.as_step.functional_lora_loss_gradient",
+        lambda *_args, **_kwargs: (
+            torch.tensor(1.0),
+            {},
+            {"fixed_a": torch.ones(2), "dynamic_b": torch.full((2,), 3.0)},
+        ),
+    )
+    runtime = SimpleNamespace(
+        writer=_Writer(),
+        policy=torch.nn.Identity(),
+        lora_contract=object(),
+        context=SimpleNamespace(device=torch.device("cpu")),
+        config={
+            "conditioning_training": {
+                "policy_flow_time_sampling_scheme": None,
+                "policy_flow_noise_sampling_scheme": None,
+                "singleton_to_full_consistency": {"weight": 0.05},
+            },
+            "optimization": {"functional_policy_microbatch_size": 2},
+        },
+        gradient_layout=(SimpleNamespace(parameter=parameter, start=0, stop=1),),
+    )
+    flat = torch.zeros(1)
+    packed = (None, None, None, torch.tensor([0, 1]), None, None, None)
+    _task_gradient(runtime, packed, {}, 7, flat)
+    assert flat.item() == pytest.approx(6.0)
+    assert parameter.grad is None
 
 
 def test_scheduler_applies_warmup_lr_before_first_optimizer_step() -> None:

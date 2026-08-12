@@ -166,8 +166,8 @@ _EXPECTED_UPDATE = {
         "cross_video_difference_row_span_orthogonal_complement"
     ),
     "anchor_projector": (
-        "implicit_fp64_thin_svd_row_basis_without_dense_256_square_"
-        "materialization"
+        "implicit_fp64_thin_svd_row_basis_plus_one_fixed_full_fp32_residual_"
+        "refinement_without_dense_256_square_materialization"
     ),
     "dependent_anchor_policy": "machine_epsilon_matrix_size_numerical_rank_only",
     "equivariance_row": "companion_condition_feature_minus_primary_condition_feature",

@@ -195,6 +195,9 @@ def test_success_keys_hard_constrain_shared_write_without_masking_objective() ->
     assert summary.anchor_rank == 1
     assert summary.original_feature_rank == 4
     assert summary.projected_feature_rank == 3
+    assert summary.predicted_anchor_motion_rms < 1e-8 * (
+        summary.predicted_unprotected_correct_motion_rms
+    )
 
 
 def test_duplicate_and_permuted_success_keys_define_the_same_nullspace() -> None:

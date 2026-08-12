@@ -340,3 +340,13 @@ Program、LoRA、effective-BA与fixed-action传递；checkpoint cursor只封存p
 第二套LoRA。fresh schema拒绝NPCG exact-resume，eval deployment仍只接受一条video。针对性39项与完整CPU
 `346 passed`，没有新增policy forward、hash、逐tensor扫描或parallel executable path以外的科学所需单条
 companion video forward。下一裁决必须是clean pushed commit上的唯一discarded macro0 live profile。
+
+CVEG首个clean world3 macro0完整执行，Phase A=`53.6446s`、total=`549.0601s / 1.1476x` matched SKNC；24
+primary/companion distinct且action-query-disjoint，E rank24，correct/reversed过程能量中位数`.78197/.77227`，
+negative final ratio`.03286`且wrong/shuffled/reversed各8/8，guard rank15、projected rank33、energy`.35404`，
+96条paired rollout有7 discordance、2 gains/5 losses，Program/LoRA/BA/action与wall门均通过。22项中唯一false
+是cross-video equivariance ratio：blind/final=`8.86e-5/1.26e-4`，但绝对E motion都只有`1.697e-10`，final
+correction在E上的motion RMS=`1.11e-13`且violation0。说明final response-preserving solver正确保持了blind输入，
+而blind FP64 rowspace投影转为FP32 21M-value write时留下TF32量级residual。该root是measurement non-pass，不是
+架构科学non-pass；唯一窄修是复用NPCG语义，在原FP32 write上做一次fixed full-FP32 anchor residual refinement，
+不改E、sample、ridge、scale、rank、dtype、forward或threshold，随后只重跑同一profile。

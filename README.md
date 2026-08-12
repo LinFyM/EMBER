@@ -49,8 +49,9 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - 当前唯一active successor是Cross-Video Equivariant Candidate Guard：训练时为每个primary correct video增加一条
   同任务、action-hidden、保持顺序的companion，并约束shared Program新增motion在二者之间相同；部署仍严格是
   one-shot一条video、一套LoRA，不做video/feature/LoRA平均。离线50-panel审计中单companion保留correct/reverse
-  能量中位数`.780/.789`。canonical实现已原位替换NPCG executable path，fresh-incompatible config/checkpoint/
-  eval family与完整CPU`346 passed`已封存，下一步是clean commit后的唯一discarded live macro0 profile。
+  能量中位数`.780/.789`。首个world3 profile为21/22 measurement non-pass：E rank24、live energy`.782/.772`、
+  negative三类8/8与wall均通过，唯一E ratio失败来自FP32大Program上的`1.697e-10`绝对residual。当前只允许一次
+  fixed full-FP32 residual refinement后原合同reprofile，不改门、样本、ridge、scale、rank或forward数。
 
 最新uniform pivot-rank14路线已终局否决：
 

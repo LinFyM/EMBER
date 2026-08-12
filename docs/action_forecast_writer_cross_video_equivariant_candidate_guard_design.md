@@ -1,8 +1,10 @@
 # Cross-Video Equivariant Candidate Guard
 
 状态：2026-08-12从NPCG strict non-pass后的最早失效接口选定，当前唯一active successor authority；canonical
-实现与fresh-incompatible contract已完成，完整CPU`346 passed`，尚未profile或训练。科学变量、采样、机制门和
-formal裁决已在实现前封存，不能根据live结果增加companion数量、放宽约束或改ridge/scale/threshold。
+实现与fresh-incompatible contract已完成。首个live profile的21/22门通过，唯一失败是FP64 rowspace投影落到
+FP32大Program时的`E` closure；允许一次与NPCG既有语义相同的fixed full-FP32 residual refinement后原合同
+reprofile。科学变量、采样、机制门和formal裁决已在实现前封存，不能增加companion数量、放宽约束或改
+ridge/scale/threshold。
 
 ## 1. Latest evidence and earliest failure
 
@@ -112,6 +114,7 @@ profile中计入真实wall，不用matched one-shot以外的FLOPs优势作结论
    correct LoRA和negative construction不变；
 3. full24 gather携带`correct/negative/companion/cotangent`，差分`E`只在shared rank按ordinal形成；
 4. blind solver把`E`与persisted keys共同作为zero-motion anchors；final affine solver保护`[N;E]` response；
+   FP64 small solve落到FP32大Program后固定做一次anchor residual refinement，不改变proposal或约束；
 5. profile显式报告`E` rank、correct/reverse retained energy、blind/final equivariance motion、negative和
    equivariance correction closure，以及原full48 rank/energy/action evidence；
 6. fresh-incompatible config/schema/checkpoint/eval family替换canonical owner；sealed NPCG config和artifacts只作

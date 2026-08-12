@@ -44,7 +44,10 @@
   `E=phi(companion)-phi(primary)`约束blind与final shared Program write满足`E D=0`；final affine correction同时
   保持negative与equivariance response。canonical实现已完成，fresh-incompatible contract、checkpoint和eval
   family已原位替换NPCG active path，完整CPU`346 passed`；部署仍一条video、一套LoRA，不平均、不挑video，
-  当前等待clean pushed commit后的唯一discarded macro0 live profile。
+  首个world3 discarded macro0已完成21/22门：E rank24、correct/reverse retained energy`.782/.772`、negative
+  三类各8/8、rank/energy/wall均通过；唯一失败是blind/final E ratio=`8.86e-5/1.26e-4`，绝对E motion仅
+  `1.697e-10`且final correction E violation0。最早接口是FP64 projector落到FP32大Program的数值residual，
+  允许一次fixed full-FP32 refinement后原合同reprofile，不改门或科学变量。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

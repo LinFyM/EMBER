@@ -169,7 +169,8 @@
   anchors、`[N;E]` response-preserving correction、机制报告、schema/config/eval family；不保留NPCG executable
   parallel path。synthetic/contract/full CPU均通过，正确assets环境下为`346 passed`。
 - [ ] targeted/full CPU通过后clean commit/push，在detached frozen worktree按live gpu01/gpu02状态选择同节点
-  1--6张合适A40做唯一discarded macro0 profile；小显存低利用率共驻卡有余量即可使用，不等待6卡。
+  1--6张合适A40做唯一discarded macro0 profile；首个world3 profile为21/22 measurement non-pass，唯一
+  `E` closure ratio失败已定位到FP32落地residual，允许一次固定full-FP32 refinement后同合同reprofile。
 - [ ] profile全过后做longest-video deployment batch profile、formal fresh`0→5`并立即strict paired400；只有
   correct>=142、breadth>=6、lost<=8、gained>lost且至少3 suites不降才resume`5→10`。
 

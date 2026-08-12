@@ -453,6 +453,20 @@ def _motion_ratio(numerator: float, denominator: float) -> float:
     return 0.0 if numerator == 0 else torch.finfo(torch.float32).max
 
 
+def _constraint_matmul(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
+    previous_tf32 = None
+    if left.is_cuda:
+        previous_tf32 = torch.backends.cuda.matmul.allow_tf32
+        torch.backends.cuda.matmul.allow_tf32 = False
+    try:
+        return torch.matmul(
+            left.to(dtype=torch.float32), right.to(dtype=torch.float32)
+        )
+    finally:
+        if previous_tf32 is not None:
+            torch.backends.cuda.matmul.allow_tf32 = previous_tf32
+
+
 @torch.no_grad()
 def success_key_constraint_motion(
     features: torch.Tensor,
@@ -460,18 +474,9 @@ def success_key_constraint_motion(
 ) -> torch.Tensor:
     """Read stored FP32 equality geometry without TF32 diagnostic roundoff."""
 
-    previous_tf32 = None
-    if features.is_cuda:
-        previous_tf32 = torch.backends.cuda.matmul.allow_tf32
-        torch.backends.cuda.matmul.allow_tf32 = False
-    try:
-        return torch.matmul(
-            features.to(dtype=torch.float32),
-            delta.flatten(1).to(dtype=torch.float32),
-        ).reshape(features.shape[0], *delta.shape[1:])
-    finally:
-        if previous_tf32 is not None:
-            torch.backends.cuda.matmul.allow_tf32 = previous_tf32
+    return _constraint_matmul(features, delta.flatten(1)).reshape(
+        features.shape[0], *delta.shape[1:]
+    )
 
 
 @torch.no_grad()
@@ -532,9 +537,12 @@ def success_key_nullspace_program_delta(
 
     anchor_rank = 0
     basis64 = small_features.new_empty((small_features.shape[1], 0))
+    anchor_pinv64 = small_features.new_empty((small_features.shape[1], 0))
     if anchor_features.shape[0]:
         anchors64 = anchor_features.to(dtype=torch.float64)
-        _, singular_values, vh = torch.linalg.svd(anchors64, full_matrices=False)
+        anchor_u, singular_values, vh = torch.linalg.svd(
+            anchors64, full_matrices=False
+        )
         maximum = float(singular_values.max()) if singular_values.numel() else 0.0
         tolerance = (
             max(anchors64.shape)
@@ -545,6 +553,9 @@ def success_key_nullspace_program_delta(
         if anchor_rank <= 0:
             raise ConditionUpdateError("success-key anchors have zero numerical rank")
         basis64 = vh[:anchor_rank].transpose(0, 1).contiguous()
+        anchor_pinv64 = (
+            basis64 / singular_values[:anchor_rank]
+        ) @ anchor_u[:, :anchor_rank].transpose(0, 1)
         projected64 = small_features - (small_features @ basis64) @ basis64.T
     else:
         if bool(current_protected_mask.any()):
@@ -617,6 +628,12 @@ def success_key_nullspace_program_delta(
         if anchor_rank:
             basis = basis64.to(dtype=torch.float32)
             delta_flat.sub_(basis @ (basis.transpose(0, 1) @ delta_flat))
+            anchor_residual = _constraint_matmul(anchor_features, delta_flat)
+            delta_flat.sub_(
+                _constraint_matmul(
+                    anchor_pinv64.to(dtype=torch.float32), anchor_residual
+                )
+            )
         delta = delta_flat.reshape(
             features.shape[1],
             correct_cotangents.shape[1],

@@ -1,4 +1,4 @@
-"""Fail-closed scientific and launch contract for active NPCG."""
+"""Fail-closed scientific and launch contract for active CVEG."""
 
 from __future__ import annotations
 
@@ -19,11 +19,17 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
     REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_v1"
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_launch_v1"
-V6_PRIOR_PROFILE_SCHEMA = "ember_pi05_v6_negative_preserving_candidate_guard_profile_v1"
+V6_PRIOR_CONFIG_SCHEMA = (
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1"
+)
+V6_PRIOR_RUN_SCHEMA = (
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_launch_v1"
+)
+V6_PRIOR_PROFILE_SCHEMA = (
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_profile_v1"
+)
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_negative_preserving_candidate_guard_completion_v1"
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
@@ -58,11 +64,9 @@ _UNCHANGED_PICK_GC_SECTIONS = (
     "writer",
     "condition_feature",
     "program_residual",
-    "data",
-    "cache_gate",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_negative_preserving_candidate_guard",
+    "name": "frozen_v6_cross_video_equivariant_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": False,
@@ -112,6 +116,10 @@ _EXPECTED_INFORMATION_WALL = {
         "policy_backward_or_replay"
     ),
     "paired_rollout_payload_checkpointed": False,
+    "training_companion_video_scope": (
+        "one_same_task_action_hidden_ordered_video_for_equivariance_only"
+    ),
+    "deployment_companion_video_count": 0,
     "negative_action_forwards": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0,
@@ -133,12 +141,15 @@ _EXPECTED_SUCCESS_KEY_BANK = {
 }
 _EXPECTED_UPDATE = {
     "kind": (
-        "full48_persisted_success_nullspace_then_paired_candidate_negative_"
+        "full48_cross_video_equivariant_blind_then_paired_candidate_response_"
         "preserving_guard"
     ),
     "correct_conditions": 24,
     "negative_conditions": 24,
-    "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
+    "equivariance_conditions": 24,
+    "ordering": (
+        "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23"
+    ),
     "negative_schedule": "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong",
     "negative_counts_per_macro": {
         "reversed": 8,
@@ -147,19 +158,20 @@ _EXPECTED_UPDATE = {
     },
     "blind_proposal": "negative_correct_condition_source_functional_program_cotangent",
     "provisional_equality_constraint": (
-        "every_persisted_stable_success_key_has_exact_zero_incremental_"
-        "program_motion"
+        "persisted_stable_success_keys_and_current_companion_minus_primary_"
+        "rows_have_exact_zero_incremental_program_motion"
     ),
     "blind_parameterization": (
-        "objective_features_projected_into_persisted_success_key_row_span_"
-        "orthogonal_complement"
+        "objective_features_projected_into_persisted_success_and_current_"
+        "cross_video_difference_row_span_orthogonal_complement"
     ),
     "anchor_projector": (
         "implicit_fp64_thin_svd_row_basis_without_dense_256_square_"
         "materialization"
     ),
     "dependent_anchor_policy": "machine_epsilon_matrix_size_numerical_rank_only",
-    "no_anchor": "elementwise_exact_pick_gc_full48_kernel",
+    "equivariance_row": "companion_condition_feature_minus_primary_condition_feature",
+    "no_anchor": "not_applicable_one_companion_difference_per_task_always_present",
     "correct_rhs": "negative_correct_condition_program_cotangent",
     "negative_rhs": "exact_zero_incremental_program_motion",
     "candidate_program_arithmetic": "base_slots_plus_cast_residual_plus_condition_motion",
@@ -174,10 +186,13 @@ _EXPECTED_UPDATE = {
         "current_harmful_keys"
     ),
     "final_projection": (
-        "minimum_norm_guard_correction_in_current_negative_nullspace_via_"
-        "fp64_small_solve_and_fp32_large_rhs"
+        "minimum_norm_guard_correction_in_current_negative_and_equivariance_"
+        "response_nullspace_via_fp64_small_solve_and_fp32_large_rhs"
     ),
     "negative_preservation": "final_negative_motion_equals_blind_negative_motion",
+    "equivariance_preservation": (
+        "final_companion_minus_primary_motion_equals_blind_zero_motion"
+    ),
     "no_current_guards": "elementwise_exact_provisional_blind_update",
     "step_size": 1,
     "relative_damping": 0.01,
@@ -191,6 +206,36 @@ _EXPECTED_UPDATE = {
     "gradient_clip": False,
     "global_scale_margin_or_cap": False,
     "task_scalar_gate_or_mask": False,
+}
+_EXPECTED_DATA = {
+    "task_count": 24,
+    "episodes_per_task": 50,
+    "demo_indices": [0, 49],
+    "action_chunk_size": 50,
+    "action_queries_per_task": 20,
+    "videos_per_task_per_macro": 1,
+    "training_companion_videos_per_task_per_macro": 1,
+    "teacher_video_schedule": (
+        "deterministic_no_replacement_primary_plus_next_legal_cycle_companion"
+    ),
+    "teacher_action_episode_overlap": False,
+    "task_aggregation": "task_local_B20_mean_with_no_cross_task_rescale",
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "counterfactual_seed": 20260809,
+    "wrong_video_schedule": (
+        "deterministic_cross_suite_cycle_with_current_task_language"
+    ),
+}
+_EXPECTED_CACHE_GATE = {
+    "status": "passed_single_companion_train24x50_offline_audit",
+    "panel_count": 50,
+    "equivariance_rank_min": 24,
+    "correct_retained_energy_median_min": 0.65,
+    "observed_correct_retained_energy_median": 0.78016,
+    "reverse_process_retained_energy_median_min": 0.70,
+    "observed_reverse_process_retained_energy_median": 0.78943,
+    "companion_count": 1,
 }
 _EXPECTED_ENVIRONMENT = {
     "reset": "official_random_reset_without_set_init_state",
@@ -222,7 +267,7 @@ _EXPECTED_ENVIRONMENT = {
 _EXPECTED_OBJECTIVE = {
     "name": (
         "blind_source_functional_program_credit_with_paired_candidate_"
-        "negative_preserving_final_guard"
+        "cross_video_equivariant_response_preserving_final_guard"
     ),
     "positive_policy_randomness": {
         "scope": "one_independent_flow_noise_and_time_per_action_query",
@@ -258,10 +303,10 @@ _EXPECTED_OPTIMIZATION = {
     "distributed_update": {
         "kind": (
             "host_local_completion_driven_task_claim_then_full48_blind_"
-            "evidence_then_paired_outcomes_then_identical_final_negative_"
-            "preserving_guarded_manual_write"
+            "plus_companion_equivariance_then_paired_outcomes_then_identical_"
+            "final_response_preserving_guarded_manual_write"
         ),
-        "world_size": "fresh_live_3_to_6_then_exact_resume_locked",
+        "world_size": "fresh_live_1_to_6_then_exact_resume_locked",
         "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
         "retained_task_cap_per_rank": "max_8_or_ceil_train24_over_world_size",
         "memory_allreduce": False,
@@ -291,20 +336,24 @@ _EXPECTED_PROFILE_BASELINE = {
 _EXPECTED_PROFILE_GATES = {
     "task_count": 24,
     "video_count": 24,
+    "companion_video_count": 24,
     "source_action_query_count": 480,
     "paired_state_count": 48,
     "base_rollout_count": 48,
     "candidate_rollout_count": 48,
     "rollout_count": 96,
-    "discordant_state_count_min": 4,
-    "harmful_task_count_min": 2,
-    "harmful_suite_count_min": 2,
-    "candidate_gain_count_min": 1,
+    "discordant_state_count_min": 2,
+    "candidate_directional_change_count_min": 1,
+    "stable_success_task_count_min": 6,
+    "equivariance_row_count": 24,
+    "equivariance_rank_min": 24,
     "original_feature_rank": 48,
     "projected_feature_rank_min": 24,
     "projected_to_blind_energy_ratio_min": 0.25,
     "final_guard_violation_count": 0,
     "negative_preservation_violation_count": 0,
+    "equivariance_preservation_violation_count": 0,
+    "equivariance_to_primary_motion_rms_max": 0.00001,
     "protected_to_unprotected_motion_ratio_max": 0.00001,
     "negative_to_unprotected_motion_rms_max": 0.15,
     "negative_null_task_count_min": 18,
@@ -313,7 +362,7 @@ _EXPECTED_PROFILE_GATES = {
     "protected_to_unprotected_lora_response_ratio_max": 0.00001,
     "protected_fixed_action_response_rms_max": 0.000001,
     "unprotected_fixed_action_probe_task_count": 4,
-    "retained_task_cap_max": 8,
+    "retained_task_cap_max": 24,
     "queue_claim_seconds_max": 1,
     "phase_a_wall_ratio_max": 1,
     "production_wall_ratio_max": 1.5,
@@ -322,7 +371,7 @@ _EXPECTED_PROFILE_GATES = {
     "nonfinite_count": 0,
 }
 _PROFILE_STATIC = {
-    "allowed_world_sizes": [3, 4, 5, 6],
+    "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
     "schedule_macro": 0,
@@ -344,7 +393,7 @@ _EXPECTED_FORMAL_GATES = {
     "macro10_requires_macro5_gate": True,
 }
 _FORMAL_STATIC = {
-    "allowed_world_sizes": [3, 4, 5, 6],
+    "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
     "num_workers_per_rank": 0,
@@ -370,19 +419,19 @@ _COHERENT_STATES = {
         "active_cpu_ready_awaiting_live_profile",
         "awaiting_live_a40_fresh0_to1_profile",
         "blocked_until_live_profile_passes_and_is_sealed",
-        "awaiting_live_npcg_deployment_smoke",
+        "awaiting_live_cveg_deployment_smoke",
     ),
     (
         "active_formal_ready",
         "sealed_from_live_a40_fresh0_to1_profile",
         "ready_after_live_profile_seal",
-        "sealed_from_live_npcg_deployment_smoke",
+        "sealed_from_live_cveg_deployment_smoke",
     ),
     (
         "formal_result_sealed",
         "sealed_from_live_a40_fresh0_to1_profile",
         "formal_result_sealed",
-        "sealed_from_live_npcg_deployment_smoke",
+        "sealed_from_live_cveg_deployment_smoke",
     ),
     (
         "profile_result_sealed_nonpass",
@@ -532,10 +581,12 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
         and config.get("information_wall") == _EXPECTED_INFORMATION_WALL
         and config.get("success_key_bank") == _EXPECTED_SUCCESS_KEY_BANK
         and config.get("update") == _EXPECTED_UPDATE
+        and config.get("data") == _EXPECTED_DATA
         and config.get("environment") == _EXPECTED_ENVIRONMENT
         and config.get("objective") == _EXPECTED_OBJECTIVE
         and config.get("rng") == _EXPECTED_RNG
         and config.get("optimization") == _EXPECTED_OPTIMIZATION
+        and config.get("cache_gate") == _EXPECTED_CACHE_GATE
         and _provenance_sections_match(config)
         and _profile_formal_evaluation_match(config)
     )

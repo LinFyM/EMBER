@@ -101,6 +101,22 @@ class _Writer(SimpleNamespace):
 
         return feature(frames), feature(negative_ordered)
 
+    def condition_features(
+        self,
+        _policy: torch.nn.Module,
+        frames: torch.Tensor,
+        _offsets: torch.Tensor,
+        tokens: torch.Tensor,
+        _mask: torch.Tensor,
+        _span: torch.Tensor,
+    ) -> torch.Tensor:
+        self.condition_orders.append(None)
+        self.condition_tokens.append(tokens.clone())
+        self.condition_frames.append(frames.clone())
+        result = torch.zeros(1, 256, dtype=torch.float32)
+        result[0, : frames.shape[0]] = frames.float().mean((1, 2, 3))
+        return torch.nn.functional.normalize(result, dim=1)
+
 
 def _video(offset: int = 0) -> RawTeacherVideo:
     frames = np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2) + offset
@@ -126,6 +142,7 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
         policy=torch.nn.Identity(),
         correct_video=_video(),
         counterfactual_video=None,
+        companion_video=_video(25),
         language_tokens=_language(),
         kind="reversed",
         counterfactual_seed=17,
@@ -139,7 +156,10 @@ def test_ordered_negative_reuses_one_video_encode_and_keeps_sampled_ordinals() -
         writer.condition_orders[0],
         torch.tensor([3, 2, 1, 0]),
     )
-    assert graph.correct_feature.shape == graph.negative_feature.shape == (256,)
+    assert graph.correct_feature.shape == graph.negative_feature.shape == (
+        graph.companion_feature.shape
+    ) == (256,)
+    assert graph.companion_sampled_frames == 4
     assert graph.program_leaf.dtype == torch.float32
     assert graph.program_leaf.requires_grad
     assert graph.program_input_before.dtype == torch.bfloat16
@@ -154,6 +174,7 @@ def test_candidate_program_reproduces_post_write_cast_order() -> None:
         policy=torch.nn.Identity(),
         correct_video=_video(),
         counterfactual_video=None,
+        companion_video=_video(25),
         language_tokens=_language(),
         kind="reversed",
         counterfactual_seed=17,
@@ -186,6 +207,7 @@ def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forwar
         policy=torch.nn.Identity(),
         correct_video=_video(),
         counterfactual_video=_video(50),
+        companion_video=_video(25),
         language_tokens=target_tokens,
         kind="wrong",
         counterfactual_seed=19,
@@ -195,7 +217,7 @@ def test_wrong_video_keeps_exact_target_language_and_has_no_action_policy_forwar
         device=torch.device("cpu"),
     )
     assert len(writer.base_writer.encoder_tokens) == 1
-    assert len(writer.condition_tokens) == 1
+    assert len(writer.condition_tokens) == 2
     assert all(
         torch.equal(tokens, target_tokens[0]) for tokens in writer.condition_tokens
     )
@@ -221,10 +243,13 @@ def test_program_cotangent_transports_complete_a_b_vjp_without_hidden_scaling() 
         residual_before=torch.zeros_like(leaf),
         correct_feature=torch.zeros(256),
         negative_feature=torch.zeros(256),
+        companion_feature=torch.zeros(256),
         correct_raw_frames=1,
         correct_sampled_frames=1,
         negative_raw_frames=1,
         negative_sampled_frames=1,
+        companion_raw_frames=1,
+        companion_sampled_frames=1,
     )
     gradients = {
         "target.lora_A.default.weight": torch.full_like(leaf, 3.0),
@@ -256,10 +281,13 @@ def test_redecoded_program_cotangent_matches_the_original_compiler_graph() -> No
         residual_before=torch.zeros_like(leaf),
         correct_feature=torch.zeros(256),
         negative_feature=torch.zeros(256),
+        companion_feature=torch.zeros(256),
         correct_raw_frames=1,
         correct_sampled_frames=1,
         negative_raw_frames=1,
         negative_sampled_frames=1,
+        companion_raw_frames=1,
+        companion_sampled_frames=1,
     )
     expected = program_cotangent(graph, gradients)
     observed = redecoded_program_cotangent(

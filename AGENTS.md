@@ -50,7 +50,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - Cross-Video Equivariant Candidate Guard是当前唯一active successor authority：primary one-shot schedule、
   ordered negative、work queue、paired candidate、NPCG affine correction和native rank16 compiler全部保留；
   每task每macro只增加一条训练期action-hidden ordered companion，以`E=phi(companion)-phi(primary)`约束每个
-  shared Program write满足`E D=0`。部署仍严格一条video、一套LoRA；尚未实现或运行。
+  shared Program write满足`E D=0`。canonical实现和fresh-incompatible contract已完成，完整CPU`346 passed`；
+  部署仍严格一条video、一套LoRA，当前等待clean pushed commit后的唯一discarded macro0 live profile。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

@@ -477,11 +477,15 @@ def profile_passes(
     candidate_response = row["candidate_response_by_suite"]
     bank = row["success_key_bank"]
     records = row.get("task_records", ())
-    per_kind = _negative_null_per_kind(row, gates)
-    harmful_suites = sum(
-        int(value) > 0
-        for value in outcomes.get("harmful_tasks_per_suite", {}).values()
+    companion_rows_ok = all(
+        int(record.get("teacher_demo", -1))
+        != int(record.get("companion_demo", -1))
+        and int(record.get("companion_demo", -1))
+        not in {int(value) for value in record.get("action_query_demos", ())}
+        and int(record.get("companion_sampled_frames", 0)) > 0
+        for record in records
     )
+    per_kind = _negative_null_per_kind(row, gates)
     stable = int(outcomes.get("stable_success_task_count", -1))
     harmful = int(outcomes.get("harmful_task_count", -1))
     current_guards = stable + harmful
@@ -545,6 +549,10 @@ def profile_passes(
         == int(gates["negative_policy_forwards"])
         and sum(int(record.get("reward_gradient_count", -1)) for record in records)
         == 0,
+        "companion_information_wall": companion_rows_ok
+        and sum(int(record.get("companion_sampled_frames", 0)) > 0 for record in records)
+        == int(gates["companion_video_count"])
+        and all(int(record.get("policy_innovation_key_count", -1)) == 3 for record in records),
         "work_queue_coverage_and_cap": queue_rows_ok
         and len(task_counts) == int(row["world_size"])
         and sum(task_counts) == int(gates["task_count"])
@@ -565,14 +573,16 @@ def profile_passes(
         and int(outcomes.get("rollouts", -1)) == int(gates["rollout_count"]),
         "paired_causal_evidence": int(outcomes.get("discordant_states", -1))
         >= int(gates["discordant_state_count_min"])
-        and harmful >= int(gates["harmful_task_count_min"])
-        and harmful_suites >= int(gates["harmful_suite_count_min"])
-        and int(outcomes.get("gains", -1)) >= int(gates["candidate_gain_count_min"]),
+        and int(outcomes.get("gains", -1)) + int(outcomes.get("losses", -1))
+        >= int(gates["candidate_directional_change_count_min"])
+        and stable >= int(gates["stable_success_task_count_min"]),
         "candidate_response_four_suites": candidate_response_ok,
-        "provisional_blind_fresh_equivalence": int(
+        "provisional_blind_equivariance": int(
             blind.get("anchor_constraint_rows", -1)
         )
-        == 0
+        == int(gates["equivariance_row_count"])
+        and int(blind.get("anchor_rank", -1))
+        >= int(gates["equivariance_rank_min"])
         and int(blind.get("current_protected_conditions", -1)) == 0
         and int(bank.get("persisted_before_count", -1)) == 0,
         "first_stable_success_bank": int(
@@ -611,6 +621,26 @@ def profile_passes(
                 "negative_correction_motion_rms",
             )
         ),
+        "cross_video_equivariance": int(guard.get("equivariance_rows", -1))
+        == int(gates["equivariance_row_count"])
+        and int(guard.get("equivariance_rank", -1))
+        >= int(gates["equivariance_rank_min"])
+        and int(guard.get("response_preserving_rows", -1))
+        == int(gates["task_count"]) + int(gates["equivariance_row_count"])
+        and int(guard.get("equivariance_preservation_violation_count", -1))
+        == int(gates["equivariance_preservation_violation_count"])
+        and int(task_local.get("equivariance_rows", -1))
+        == int(gates["equivariance_row_count"])
+        and int(task_local.get("equivariance_rank", -1))
+        >= int(gates["equivariance_rank_min"])
+        and float(
+            task_local.get(
+                "blind_equivariance_to_primary_motion_ratio", math.inf
+            )
+        )
+        <= float(gates["equivariance_to_primary_motion_rms_max"])
+        and float(task_local.get("equivariance_to_primary_motion_ratio", math.inf))
+        <= float(gates["equivariance_to_primary_motion_rms_max"]),
         "projected_feature_rank": int(guard.get("original_feature_rank", -1))
         == int(gates["original_feature_rank"])
         and int(guard.get("projected_feature_rank", -1))
@@ -693,6 +723,8 @@ def profile_passes(
             "original": int(guard["original_feature_rank"]),
             "guard": int(guard["guard_rank"]),
             "negative": int(guard["negative_rank"]),
+            "equivariance": int(guard["equivariance_rank"]),
+            "response_preserving": int(guard["response_preserving_rank"]),
             "restricted_guard": int(guard["restricted_guard_rank"]),
             "projected": int(guard["projected_feature_rank"]),
         },
@@ -702,6 +734,14 @@ def profile_passes(
         "negative_to_unprotected_program_motion_ratio": float(
             task_local["negative_to_unprotected_motion_ratio"]
         ),
+        "cross_video_retained_energy": {
+            "correct_median": float(
+                task_local["correct_feature_retained_energy_ratio_median"]
+            ),
+            "reverse_process_median": float(
+                task_local["reverse_process_retained_energy_ratio_median"]
+            ),
+        },
         "negative_null_per_kind": per_kind,
         "lora_response": dict(response),
         "step_seconds": float(row["step_seconds"]),

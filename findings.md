@@ -332,3 +332,11 @@ one-shot condition，再从同一no-replacement cycle取一条action-query-disjo
 重新打开negative或跨video nuisance response。retained cache的50-panel审计显示单companion后correct/reverse
 过程能量中位数仍为`.780/.789`；2--4 companions会把correct能量进一步降到`.639/.529/.436`，首个版本因此固定
 一条且不扫K。它只在训练期增加等变约束，部署仍严格一条action-hidden video生成一套LoRA。
+
+CVEG canonical实现现已完成。primary schedule逐visit保持不变，companion只在训练图内编码一次；full24 gather
+按ordinal携带`correct/negative/companion/cotangent`，blind anchors为`[persisted;E]`，final affine correction
+保护`[N;E]` response。profile同时报告blind/final等变closure、E rank、correct/reversed过程能量、negative、
+Program、LoRA、effective-BA与fixed-action传递；checkpoint cursor只封存pair schedule，不保存companion feature或
+第二套LoRA。fresh schema拒绝NPCG exact-resume，eval deployment仍只接受一条video。针对性39项与完整CPU
+`346 passed`，没有新增policy forward、hash、逐tensor扫描或parallel executable path以外的科学所需单条
+companion video forward。下一裁决必须是clean pushed commit上的唯一discarded macro0 live profile。

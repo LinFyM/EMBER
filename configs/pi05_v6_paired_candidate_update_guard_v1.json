@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_v1",
-  "status": "formal_result_sealed",
+  "schema_version": "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1",
+  "status": "active_cpu_ready_awaiting_live_profile",
   "method": {
-    "name": "frozen_v6_negative_preserving_candidate_guard",
+    "name": "frozen_v6_cross_video_equivariant_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "language_only_lora_path": false,
@@ -60,6 +60,8 @@
     "training_reward_scope": "development_train_exact_paired_base_candidate_binary_outcomes_for_final_equality_guards_only",
     "training_observation_action_scope": "online_policy_generated_train24_base_candidate_rollouts_without_policy_backward_or_replay",
     "paired_rollout_payload_checkpointed": false,
+    "training_companion_video_scope": "one_same_task_action_hidden_ordered_video_for_equivariance_only",
+    "deployment_companion_video_count": 0,
     "negative_action_forwards": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0
@@ -141,10 +143,11 @@
     "checkpoint_tensor_count": 3
   },
   "update": {
-    "kind": "full48_persisted_success_nullspace_then_paired_candidate_negative_preserving_guard",
+    "kind": "full48_cross_video_equivariant_blind_then_paired_candidate_response_preserving_guard",
     "correct_conditions": 24,
     "negative_conditions": 24,
-    "ordering": "correct_task_ordinal_0_to_23_then_negative_task_ordinal_0_to_23",
+    "equivariance_conditions": 24,
+    "ordering": "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23",
     "negative_schedule": "task_ordinal_plus_task_visit_modulo_reversed_shuffled_wrong",
     "negative_counts_per_macro": {
       "reversed": 8,
@@ -152,11 +155,12 @@
       "wrong": 8
     },
     "blind_proposal": "negative_correct_condition_source_functional_program_cotangent",
-    "provisional_equality_constraint": "every_persisted_stable_success_key_has_exact_zero_incremental_program_motion",
-    "blind_parameterization": "objective_features_projected_into_persisted_success_key_row_span_orthogonal_complement",
+    "provisional_equality_constraint": "persisted_stable_success_keys_and_current_companion_minus_primary_rows_have_exact_zero_incremental_program_motion",
+    "blind_parameterization": "objective_features_projected_into_persisted_success_and_current_cross_video_difference_row_span_orthogonal_complement",
     "anchor_projector": "implicit_fp64_thin_svd_row_basis_without_dense_256_square_materialization",
     "dependent_anchor_policy": "machine_epsilon_matrix_size_numerical_rank_only",
-    "no_anchor": "elementwise_exact_pick_gc_full48_kernel",
+    "equivariance_row": "companion_condition_feature_minus_primary_condition_feature",
+    "no_anchor": "not_applicable_one_companion_difference_per_task_always_present",
     "correct_rhs": "negative_correct_condition_program_cotangent",
     "negative_rhs": "exact_zero_incremental_program_motion",
     "candidate_program_arithmetic": "base_slots_plus_cast_residual_plus_condition_motion",
@@ -164,8 +168,9 @@
     "harmful_classification": "paired_losses_strictly_greater_than_paired_gains",
     "stable_success_classification": "base_and_candidate_all_four_outcomes_success",
     "final_equality_constraint": "persisted_stable_keys_union_current_stable_success_keys_union_current_harmful_keys",
-    "final_projection": "minimum_norm_guard_correction_in_current_negative_nullspace_via_fp64_small_solve_and_fp32_large_rhs",
+    "final_projection": "minimum_norm_guard_correction_in_current_negative_and_equivariance_response_nullspace_via_fp64_small_solve_and_fp32_large_rhs",
     "negative_preservation": "final_negative_motion_equals_blind_negative_motion",
+    "equivariance_preservation": "final_companion_minus_primary_motion_equals_blind_zero_motion",
     "no_current_guards": "elementwise_exact_provisional_blind_update",
     "step_size": 1,
     "relative_damping": 0.01,
@@ -190,7 +195,8 @@
     "action_chunk_size": 50,
     "action_queries_per_task": 20,
     "videos_per_task_per_macro": 1,
-    "teacher_video_schedule": "deterministic_no_replacement_cycles",
+    "training_companion_videos_per_task_per_macro": 1,
+    "teacher_video_schedule": "deterministic_no_replacement_primary_plus_next_legal_cycle_companion",
     "teacher_action_episode_overlap": false,
     "task_aggregation": "task_local_B20_mean_with_no_cross_task_rescale",
     "sampler_seed": 20260721,
@@ -226,7 +232,7 @@
     "persistent_env_lanes_per_task": 2
   },
   "objective": {
-    "name": "blind_source_functional_program_credit_with_paired_candidate_negative_preserving_final_guard",
+    "name": "blind_source_functional_program_credit_with_paired_candidate_cross_video_equivariant_response_preserving_final_guard",
     "positive_policy_randomness": {
       "scope": "one_independent_flow_noise_and_time_per_action_query",
       "seed_scheme": "task_logical_batch_keyed_stateless_policy_cpu_cuda_splitmix64_v3",
@@ -259,8 +265,8 @@
     "rollout_policy_batch_size": 2,
     "optimizer": "none",
     "distributed_update": {
-      "kind": "host_local_completion_driven_task_claim_then_full48_blind_evidence_then_paired_outcomes_then_identical_final_negative_preserving_guarded_manual_write",
-      "world_size": "fresh_live_3_to_6_then_exact_resume_locked",
+      "kind": "host_local_completion_driven_task_claim_then_full48_blind_plus_companion_equivariance_then_paired_outcomes_then_identical_final_response_preserving_guarded_manual_write",
+      "world_size": "fresh_live_1_to_6_then_exact_resume_locked",
       "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
       "retained_task_cap_per_rank": "max_8_or_ceil_train24_over_world_size",
       "memory_allreduce": false,
@@ -271,17 +277,20 @@
     }
   },
   "cache_gate": {
-    "status": "passed_on_canonical_train24_action_hidden_feature_cache",
-    "same_task_complete_cosine_mean_min": 0.9,
-    "cross_task_complete_cosine_mean_max": 0.3,
-    "correct_reversed_complete_cosine_max": 0,
-    "shuffled_complete_cosine_abs_mean_max": 0.1,
-    "correct24_rank_min": 24,
-    "regularized_condition_number_max": 150
+    "status": "passed_single_companion_train24x50_offline_audit",
+    "panel_count": 50,
+    "equivariance_rank_min": 24,
+    "correct_retained_energy_median_min": 0.65,
+    "observed_correct_retained_energy_median": 0.78016,
+    "reverse_process_retained_energy_median_min": 0.7,
+    "observed_reverse_process_retained_energy_median": 0.78943,
+    "companion_count": 1
   },
   "profile_run": {
-    "status": "sealed_from_live_a40_fresh0_to1_profile",
+    "status": "awaiting_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [
+      1,
+      2,
       3,
       4,
       5,
@@ -308,20 +317,24 @@
     "gates": {
       "task_count": 24,
       "video_count": 24,
+      "companion_video_count": 24,
       "source_action_query_count": 480,
       "paired_state_count": 48,
       "base_rollout_count": 48,
       "candidate_rollout_count": 48,
       "rollout_count": 96,
-      "discordant_state_count_min": 4,
-      "harmful_task_count_min": 2,
-      "harmful_suite_count_min": 2,
-      "candidate_gain_count_min": 1,
+      "discordant_state_count_min": 2,
+      "candidate_directional_change_count_min": 1,
+      "stable_success_task_count_min": 6,
+      "equivariance_row_count": 24,
+      "equivariance_rank_min": 24,
       "original_feature_rank": 48,
       "projected_feature_rank_min": 24,
       "projected_to_blind_energy_ratio_min": 0.25,
       "final_guard_violation_count": 0,
       "negative_preservation_violation_count": 0,
+      "equivariance_preservation_violation_count": 0,
+      "equivariance_to_primary_motion_rms_max": 0.00001,
       "protected_to_unprotected_motion_ratio_max": 0.00001,
       "negative_to_unprotected_motion_rms_max": 0.15,
       "negative_null_task_count_min": 18,
@@ -330,7 +343,7 @@
       "protected_to_unprotected_lora_response_ratio_max": 0.00001,
       "protected_fixed_action_response_rms_max": 0.000001,
       "unprotected_fixed_action_probe_task_count": 4,
-      "retained_task_cap_max": 8,
+      "retained_task_cap_max": 24,
       "queue_claim_seconds_max": 1,
       "phase_a_wall_ratio_max": 1,
       "production_wall_ratio_max": 1.5,
@@ -338,29 +351,13 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": {
-      "path": "runs/outputs/pi05_npcg_constraint_precision_reprofile_macro0_r3_b20_4156012_20260812/mechanism_profile.json",
-      "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_profile_v1",
-      "source_commit": "4156012d6f2b30e57e3c5c199e36ed629f5e5582",
-      "passed": true,
-      "checks_passed": 20,
-      "phase_a_seconds": 44.34676417708397,
-      "step_seconds": 554.9925514289644,
-      "production_wall_ratio_to_matched_sknc": 1.15955122698873,
-      "protected_to_unprotected_program_motion_ratio": 5.750829627462502e-08,
-      "negative_to_unprotected_program_motion_ratio": 0.0352438739171953,
-      "negative_null_per_kind": {
-        "wrong": 8,
-        "shuffled": 8,
-        "reversed": 8
-      },
-      "projected_feature_rank": 33,
-      "projected_to_blind_energy_ratio": 0.3536011576652527
-    }
+    "artifact_evidence": null
   },
   "formal_run": {
-    "status": "formal_result_sealed",
+    "status": "blocked_until_live_profile_passes_and_is_sealed",
     "allowed_world_sizes": [
+      1,
+      2,
       3,
       4,
       5,
@@ -392,66 +389,10 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro10_requires_macro5_gate": true
     },
-    "artifact_evidence": {
-      "training": {
-        "root": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_formal_fresh0to5_r3_b20_f8491e9_retry1_20260812",
-        "run_commit": "f8491e9",
-        "completed_macro": 5,
-        "world_size": 3,
-        "guard_and_negative_closure_passed_all_macros": true
-      },
-      "strict_correct400": {
-        "root": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812",
-        "evaluation_commit": "5235d05b763101d4c2393058a3bc634f09490ed0",
-        "contract_reference": "ember_pi05_target_eval_launch_v2:315d665c7b7944f9bb1cd5517d203385",
-        "successes": 135,
-        "breadth": 5,
-        "per_task": [
-          0,
-          2,
-          46,
-          36,
-          0,
-          37,
-          14,
-          0
-        ],
-        "per_suite": [
-          2,
-          82,
-          37,
-          14
-        ]
-      },
-      "paired_old134": {
-        "retained_gained_lost": [
-          117,
-          18,
-          17
-        ],
-        "churn": 35,
-        "artifact": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812/npcg_historical_transition_old134_to_macro0005.json"
-      },
-      "decision_evidence": {
-        "path": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812/npcg_formal_decision_evidence.json",
-        "schema": "ember_pi05_npcg_formal_decision_evidence_v1",
-        "passed": false
-      },
-      "address_generalization": {
-        "first_stable_key_same_task_cosine_mean": 0.9010037779808044,
-        "first_stable_key_orthogonal_residual_mean": 0.40953588485717773,
-        "all_observed_stable_key_orthogonal_residual_mean": 0.2764959931373596
-      },
-      "decision": {
-        "macro5_gate_passed": false,
-        "exact_resume_macro5_to10_authorized": false,
-        "six_arm_controls_authorized": false,
-        "scope": "retire_npcg_point_guards_plus_blind_b20_only"
-      }
-    }
+    "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "sealed_from_live_npcg_deployment_smoke",
+    "formal_status": "awaiting_live_cveg_deployment_smoke",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
@@ -461,22 +402,6 @@
       32
     ],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": {
-      "path": "runs/outputs/pi05_npcg_writer_profile_val8x4_correct_gpu02p3_4156012_20260812/writer_generation_profile.json",
-      "schema_version": "ember_pi05_writer_generation_profile_v2",
-      "source_commit": "4156012d6f2b30e57e3c5c199e36ed629f5e5582",
-      "profiled_writer_model_batch_sizes": [
-        8,
-        16,
-        32
-      ],
-      "writer_model_batch_size": 32,
-      "longest_sampled_video_frames": 67,
-      "oom_count": 0,
-      "nonfinite_count": 0,
-      "batch32_loras_per_second": 0.47144172720510946,
-      "batch32_peak_allocated_bytes": 11837472256,
-      "batch32_memory_headroom_bytes": 34768683008
-    }
+    "online_smoke_evidence": null
   }
 }

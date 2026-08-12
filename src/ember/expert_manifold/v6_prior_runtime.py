@@ -303,6 +303,9 @@ def _build_data(
         demo_indices=demos,
         seed=int(data["teacher_video_seed"]),
         videos_per_visit=1,
+        companion_videos_per_visit=int(
+            data["training_companion_videos_per_task_per_macro"]
+        ),
     )
     costs = _video_costs(
         tasks,

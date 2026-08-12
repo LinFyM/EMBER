@@ -51,7 +51,7 @@ def _formal_ready_config() -> dict:
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_npcg_deployment_smoke"
+        "sealed_from_live_cveg_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
@@ -86,7 +86,7 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_npcg_config_changes_only_final_correction_subspace() -> None:
+def test_cveg_config_adds_one_training_companion_and_equivariant_guard() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["language_only_lora_path"] is False
@@ -101,17 +101,20 @@ def test_npcg_config_changes_only_final_correction_subspace() -> None:
     assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
     assert config["condition_feature"]["learned_parameters"] == 0
     assert config["update"]["kind"] == (
-        "full48_persisted_success_nullspace_then_paired_candidate_negative_"
-        "preserving_guard"
+        "full48_cross_video_equivariant_blind_then_paired_candidate_"
+        "response_preserving_guard"
     )
     assert config["update"]["blind_parameterization"].endswith(
         "orthogonal_complement"
     )
     assert config["update"]["final_projection"].startswith(
-        "minimum_norm_guard_correction"
+        "minimum_norm_guard_correction_in_current_negative_and_equivariance"
     )
     assert config["update"]["negative_preservation"] == (
         "final_negative_motion_equals_blind_negative_motion"
+    )
+    assert config["update"]["equivariance_preservation"] == (
+        "final_companion_minus_primary_motion_equals_blind_zero_motion"
     )
     assert config["update"]["task_scalar_gate_or_mask"] is False
     assert config["update"]["persistent_precision_or_optimizer_state"] is False
@@ -128,9 +131,12 @@ def test_npcg_config_changes_only_final_correction_subspace() -> None:
     assert config["success_key_bank"]["deployment_read"] is False
     assert config["success_key_bank"]["harmful_key_policy"].endswith("never_persist")
     assert config["data"]["action_queries_per_task"] == 20
+    assert config["data"]["videos_per_task_per_macro"] == 1
+    assert config["data"]["training_companion_videos_per_task_per_macro"] == 1
+    assert config["information_wall"]["deployment_companion_video_count"] == 0
     distributed = config["optimization"]["distributed_update"]
-    assert distributed["world_size"] == "fresh_live_3_to_6_then_exact_resume_locked"
-    assert config["formal_run"]["allowed_world_sizes"] == [3, 4, 5, 6]
+    assert distributed["world_size"] == "fresh_live_1_to_6_then_exact_resume_locked"
+    assert config["formal_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
 
 
 @pytest.mark.parametrize(
@@ -204,7 +210,7 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_npcg_deployment_smoke"
+        "awaiting_live_cveg_deployment_smoke"
     )
     preseal["evaluation"]["online_smoke_evidence"] = None
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
@@ -223,7 +229,7 @@ def test_preprofile_artifact_injection_fails_closed(
         "blocked_until_live_profile_passes_and_is_sealed"
     )
     config["evaluation"]["formal_status"] = (
-        "awaiting_live_npcg_deployment_smoke"
+        "awaiting_live_cveg_deployment_smoke"
     )
     config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
@@ -277,12 +283,11 @@ def test_runtime_accepts_every_live_world_up_to_six_and_rejects_larger_world(
         runtime_module, "residual_git_state", lambda _root: _git_state()
     )
     arguments = _args(output_dir=tmp_path / "run", resume=None, stop=5)
-    for world_size in range(3, 7):
+    for world_size in range(1, 7):
         segment = _resolve_segment(arguments, config, _context(world_size))
         assert (segment.start_macro, segment.stop_macro) == (0, 5)
-    for world_size in (1, 2, 7):
-        with pytest.raises(ExpertManifoldError):
-            _resolve_segment(arguments, config, _context(world_size))
+    with pytest.raises(ExpertManifoldError):
+        _resolve_segment(arguments, config, _context(7))
     arguments.num_workers = 2
     with pytest.raises(ExpertManifoldError):
         _resolve_segment(arguments, config, _context())
@@ -306,8 +311,11 @@ def test_cursor_seals_paired_randomness_without_cumulative_precision_state() -> 
         "counterfactual_seed": 20260809,
         "counterfactual_phase": 1,
         "videos_per_task_visit": 1,
+        "training_companion_videos_per_task_visit": 1,
         "action_queries_per_task": 20,
-        "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "condition_order": (
+            "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23"
+        ),
         "rollouts_per_task": 4,
         "paired_initializations_per_task": 2,
         "next_paired_state_cursor_per_task": 20,

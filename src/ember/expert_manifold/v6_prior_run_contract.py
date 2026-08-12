@@ -278,6 +278,7 @@ def build_run_contract(
             "logical_policy_batch_size": 20,
             "functional_policy_microbatch_size": 10,
             "physical_policy_forwards_per_task": 2,
+            "training_companion_video_forwards_per_task": 1,
             "rollouts_per_task": 4,
             "paired_initializations_per_task": 2,
             "rollouts_per_arm": 2,
@@ -292,7 +293,7 @@ def build_run_contract(
             "writer_activation_checkpointing_effective": False,
             "distributed_model_wrapper": "none",
             "collectives": {
-                "full48_tensor_all_gathers": 2,
+                "full48_plus_companion_tensor_all_gathers": 2,
                 "paired_outcome_tensor_all_gathers": 1,
                 "task_record_object_all_gathers": 1,
                 "profile_guard_object_all_gathers": 0,
@@ -353,8 +354,13 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         "counterfactual_seed": int(data["counterfactual_seed"]),
         "counterfactual_phase": macro % 3,
         "videos_per_task_visit": 1,
+        "training_companion_videos_per_task_visit": int(
+            data["training_companion_videos_per_task_per_macro"]
+        ),
         "action_queries_per_task": int(data["action_queries_per_task"]),
-        "full48_order": "correct_0_to_23_then_negative_0_to_23",
+        "condition_order": (
+            "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23"
+        ),
         "rollouts_per_task": int(config["environment"]["rollouts_per_task"]),
         "paired_initializations_per_task": int(
             config["environment"]["paired_initializations_per_task"]

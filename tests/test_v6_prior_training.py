@@ -91,8 +91,11 @@ def _paired(ordinal: int) -> PairedTaskEvidence:
 def _objective(ordinal: int) -> TaskObjective:
     correct = torch.zeros(256, dtype=torch.float32)
     negative = torch.zeros(256, dtype=torch.float32)
+    companion = torch.zeros(256, dtype=torch.float32)
     correct[ordinal] = 1.0
     negative[ordinal + 24] = 1.0
+    companion[ordinal] = 1.0
+    companion[ordinal + 48] = 0.5
     task = SimpleNamespace(
         ordinal=ordinal,
         global_task_id=ordinal + 100,
@@ -108,38 +111,47 @@ def _objective(ordinal: int) -> TaskObjective:
         residual_before=program,
         correct_feature=correct,
         negative_feature=negative,
+        companion_feature=companion,
         correct_raw_frames=100,
         correct_sampled_frames=21,
         negative_raw_frames=100,
         negative_sampled_frames=21,
+        companion_raw_frames=90,
+        companion_sampled_frames=19,
     )
     return TaskObjective(
         task=task,
         task_visit=3,
         teacher_demo=4,
+        companion_demo=5,
+        action_query_demos=(0, 1),
         counterfactual_kind=("reversed", "shuffled", "wrong")[ordinal % 3],
         counterfactual_task=None,
         counterfactual_demo=None,
         functional_loss=torch.tensor(float(ordinal), dtype=torch.float32),
         correct_feature=correct,
         negative_feature=negative,
+        companion_feature=companion,
         program_cotangent=torch.full((2, 3), float(ordinal + 1)),
         graph=graph,
         correct_raw_frames=100,
         correct_sampled_frames=21,
         negative_raw_frames=100,
         negative_sampled_frames=21,
+        companion_raw_frames=90,
+        companion_sampled_frames=19,
         paired=_paired(ordinal),
     )
 
 
 def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> None:
     local = [_objective(index) for index in reversed(range(24))]
-    correct, negative, cotangents, timing = _gather_full48(local, _context())
-    assert correct.shape == negative.shape == (24, 256)
+    correct, negative, companion, cotangents, timing = _gather_full48(local, _context())
+    assert correct.shape == negative.shape == companion.shape == (24, 256)
     assert cotangents.shape == (24, 2, 3)
     assert torch.equal(correct[:, :24], torch.eye(24))
     assert torch.equal(negative[:, 24:48], torch.eye(24))
+    assert torch.equal(companion[:, :24], torch.eye(24))
     assert [row["task_ordinal"] for row in timing] == list(range(24))
     for ordinal in range(24):
         assert torch.equal(
@@ -161,7 +173,7 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         7, 0, 23, -1, 2, 11, 19, 3, 5, 13, 1, 22, 8,
         15, 4, 18, 6, 14, 9, 20, 10, 16, 12, 21, 17,
     ]
-    payload = torch.zeros(25, 519, dtype=torch.float32)
+    payload = torch.zeros(25, 775, dtype=torch.float32)
     payload[:, 0].fill_(-1)
     cotangents = torch.zeros(25, 2, 3, dtype=torch.float32)
     for row, ordinal in enumerate(order):
@@ -173,7 +185,8 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         payload[row, 2] = row
         payload[row, 4] = 1
         payload[row, 7:263] = objective.correct_feature
-        payload[row, 263:] = objective.negative_feature
+        payload[row, 263:519] = objective.negative_feature
+        payload[row, 519:] = objective.companion_feature
         cotangents[row] = objective.program_cotangent
     gathered = iter((payload, cotangents))
     monkeypatch.setattr(
@@ -182,13 +195,14 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         lambda value, context: next(gathered),
     )
 
-    correct, negative, aligned, timing = _gather_full48(
+    correct, negative, companion, aligned, timing = _gather_full48(
         [_objective(index) for index in range(5)],
         DistributedContext(0, 0, 5, torch.device("cpu")),
     )
 
     assert torch.equal(correct[:, :24], torch.eye(24))
     assert torch.equal(negative[:, 24:48], torch.eye(24))
+    assert torch.equal(companion[:, :24], torch.eye(24))
     assert [row["task_ordinal"] for row in timing] == list(range(24))
     for ordinal in range(24):
         assert torch.equal(aligned[ordinal], torch.full((2, 3), float(ordinal + 1)))
@@ -205,20 +219,24 @@ def _profile_config() -> dict:
             "gates": {
                 "task_count": 24,
                 "video_count": 24,
+                "companion_video_count": 24,
                 "source_action_query_count": 480,
                 "paired_state_count": 48,
                 "base_rollout_count": 48,
                 "candidate_rollout_count": 48,
                 "rollout_count": 96,
-                "discordant_state_count_min": 4,
-                "harmful_task_count_min": 2,
-                "harmful_suite_count_min": 2,
-                "candidate_gain_count_min": 1,
+                "discordant_state_count_min": 2,
+                "candidate_directional_change_count_min": 1,
+                "stable_success_task_count_min": 4,
+                "equivariance_row_count": 24,
+                "equivariance_rank_min": 24,
                 "original_feature_rank": 48,
                 "projected_feature_rank_min": 24,
                 "projected_to_blind_energy_ratio_min": 0.25,
                 "final_guard_violation_count": 0,
                 "negative_preservation_violation_count": 0,
+                "equivariance_preservation_violation_count": 0,
+                "equivariance_to_primary_motion_rms_max": 1e-5,
                 "protected_to_unprotected_motion_ratio_max": 1e-5,
                 "negative_to_unprotected_motion_rms_max": 0.15,
                 "negative_null_task_count_min": 18,
@@ -227,7 +245,7 @@ def _profile_config() -> dict:
                 "protected_to_unprotected_lora_response_ratio_max": 1e-5,
                 "protected_fixed_action_response_rms_max": 1e-6,
                 "unprotected_fixed_action_probe_task_count": 4,
-                "retained_task_cap_max": 8,
+                "retained_task_cap_max": 24,
                 "queue_claim_seconds_max": 1.0,
                 "phase_a_wall_ratio_max": 1.0,
                 "production_wall_ratio_max": 1.5,
@@ -253,7 +271,8 @@ def _profile_row() -> dict:
     return {
         "blind_update": {
             "current_protected_conditions": 0,
-            "anchor_constraint_rows": 0,
+            "anchor_constraint_rows": 24,
+            "anchor_rank": 24,
             "value_delta_rms": 0.01,
         },
         "candidate_guard_projection": {
@@ -263,8 +282,12 @@ def _profile_row() -> dict:
             "current_guard_rows": 6,
             "total_guard_rows": 6,
             "guard_rank": 6,
+            "response_preserving_rows": 48,
+            "response_preserving_rank": 48,
             "negative_rows": 24,
             "negative_rank": 24,
+            "equivariance_rows": 24,
+            "equivariance_rank": 24,
             "restricted_guard_rank": 6,
             "original_feature_rank": 48,
             "projected_feature_rank": 42,
@@ -273,6 +296,10 @@ def _profile_row() -> dict:
             "final_negative_motion_rms": 0.01,
             "negative_correction_motion_rms": 0.0,
             "negative_preservation_violation_count": 0,
+            "blind_equivariance_motion_rms": 0.0,
+            "final_equivariance_motion_rms": 0.0,
+            "equivariance_correction_motion_rms": 0.0,
+            "equivariance_preservation_violation_count": 0,
             "projection_changed": True,
             "projected_to_blind_energy_ratio": 0.8,
             "blind_projected_inner_product": 1.0,
@@ -298,6 +325,12 @@ def _profile_row() -> dict:
             "protected_to_unprotected_motion_ratio": 0.0,
             "negative_to_unprotected_motion_ratio": 0.1,
             "negative_null_passing_tasks": 24,
+            "equivariance_rows": 24,
+            "equivariance_rank": 24,
+            "correct_feature_retained_energy_ratio_median": 0.78,
+            "reverse_process_retained_energy_ratio_median": 0.79,
+            "equivariance_to_primary_motion_ratio": 0.0,
+            "blind_equivariance_to_primary_motion_ratio": 0.0,
             "rows": [
                 {
                     "task_ordinal": ordinal,
@@ -382,10 +415,21 @@ def test_mechanism_profile_requires_pairs_guards_closure_and_scaled_wall() -> No
             "negative_preservation_violation_count",
             1,
         ),
+        (
+            "candidate_guard_projection",
+            "equivariance_preservation_violation_count",
+            1,
+        ),
         ("application", "predicted_observed_relative_rms", 0.01),
         ("task_local_motion", "negative_to_unprotected_motion_ratio", 0.3),
+        (
+            "task_local_motion",
+            "blind_equivariance_to_primary_motion_ratio",
+            0.1,
+        ),
+        ("task_local_motion", "equivariance_to_primary_motion_ratio", 0.1),
         ("lora_response", "protected_effective_ba_to_unprotected_ratio", 0.1),
-        ("paired_outcomes", "discordant_states", 3),
+        ("paired_outcomes", "discordant_states", 1),
     ):
         row = _profile_row()
         row[section][key] = value

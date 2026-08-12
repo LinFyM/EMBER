@@ -15,7 +15,7 @@ from ember.writer.data import RawTeacherVideo
 
 @dataclass(frozen=True)
 class GeneratedConditionGraph:
-    """Correct functional graph plus one action-free counterfactual key."""
+    """Primary graph plus counterfactual and training companion keys."""
 
     correct_lora: Mapping[str, torch.Tensor]
     program_leaf: torch.Tensor
@@ -24,10 +24,13 @@ class GeneratedConditionGraph:
     residual_before: torch.Tensor
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
+    companion_feature: torch.Tensor
     correct_raw_frames: int
     correct_sampled_frames: int
     negative_raw_frames: int
     negative_sampled_frames: int
+    companion_raw_frames: int
+    companion_sampled_frames: int
 
 
 def _video_tensors(
@@ -46,6 +49,7 @@ def generate_condition_graph(
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,
+    companion_video: RawTeacherVideo,
     language_tokens: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
     kind: str,
     counterfactual_seed: int,
@@ -54,13 +58,16 @@ def generate_condition_graph(
     teacher_demo: int,
     device: torch.device,
 ) -> GeneratedConditionGraph:
-    """Encode correct once and build a negative feature without policy actions."""
+    """Build primary, negative, and same-task companion condition features."""
 
     if (kind == "wrong") != (counterfactual_video is not None):
         raise ExpertManifoldError("counterfactual video ownership changed")
     tokens, mask, task_span = language_tokens
     correct_frames, correct_indices, correct_offsets = _video_tensors(
         correct_video, device
+    )
+    companion_frames, companion_indices, companion_offsets = _video_tensors(
+        companion_video, device
     )
     base = writer.base_writer
     with (
@@ -122,6 +129,14 @@ def generate_condition_graph(
                 task_span,
                 frame_order=frame_order,
             )
+        companion_feature = writer.condition_features(
+            policy,
+            companion_frames,
+            companion_offsets,
+            tokens,
+            mask,
+            task_span,
+        )
         stored_residual = writer.program_memory(correct_feature)
         stored_program = base_slots + stored_residual.to(dtype=base_slots.dtype)
 
@@ -137,6 +152,7 @@ def generate_condition_graph(
     if (
         program_leaf.shape != (1, 320, base.program_width)
         or correct_feature.shape != negative_feature.shape
+        or correct_feature.shape != companion_feature.shape
         or correct_feature.shape[0] != 1
     ):
         raise ExpertManifoldError("condition Program graph changed topology")
@@ -149,10 +165,13 @@ def generate_condition_graph(
         residual_before=stored_residual.detach(),
         correct_feature=correct_feature[0],
         negative_feature=negative_feature[0],
+        companion_feature=companion_feature[0],
         correct_raw_frames=int(correct_video.raw_frame_count),
         correct_sampled_frames=int(correct_indices.numel()),
         negative_raw_frames=int(negative_source.raw_frame_count),
         negative_sampled_frames=int(negative_indices.numel()),
+        companion_raw_frames=int(companion_video.raw_frame_count),
+        companion_sampled_frames=int(companion_indices.numel()),
     )
 
 

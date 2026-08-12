@@ -1,4 +1,4 @@
-"""Paired classification and final negative-preserving Program correction."""
+"""Paired classification and final response-preserving Program correction."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ class PairedCandidateClassification:
 
 @dataclass(frozen=True)
 class CandidateGuardProjectionSummary:
-    """Geometry and closure of the negative-preserving guarded update."""
+    """Geometry and closure of the response-preserving guarded update."""
 
     persisted_guard_rows: int
     current_stable_guard_rows: int
@@ -83,8 +83,12 @@ class CandidateGuardProjectionSummary:
     current_guard_rows: int
     total_guard_rows: int
     guard_rank: int
+    response_preserving_rows: int
+    response_preserving_rank: int
     negative_rows: int
     negative_rank: int
+    equivariance_rows: int
+    equivariance_rank: int
     restricted_guard_rank: int
     original_feature_rank: int
     projected_feature_rank: int
@@ -97,6 +101,11 @@ class CandidateGuardProjectionSummary:
     negative_correction_motion_rms: float
     negative_correction_motion_max_abs: float
     negative_preservation_violation_count: int
+    blind_equivariance_motion_rms: float
+    final_equivariance_motion_rms: float
+    equivariance_correction_motion_rms: float
+    equivariance_correction_motion_max_abs: float
+    equivariance_preservation_violation_count: int
     projection_changed: bool
     correction_rms: float
     blind_delta_rms: float
@@ -354,16 +363,18 @@ def _constraint_matmul(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
 
 
 @torch.no_grad()
-def negative_preserving_candidate_guard_correction(
+def response_preserving_candidate_guard_correction(
     blind_delta: torch.Tensor,
     persisted_features: torch.Tensor,
     correct_features: torch.Tensor,
-    negative_features: torch.Tensor,
+    response_features: torch.Tensor,
     stable_success_mask: torch.Tensor,
     harmful_mask: torch.Tensor,
     analysis_features: torch.Tensor,
+    *,
+    negative_rows: int,
 ) -> tuple[torch.Tensor, CandidateGuardProjectionSummary]:
-    """Apply the minimum guard correction that preserves ``N @ D0``."""
+    """Apply the minimum guard correction preserving all declared responses."""
 
     feature_width = blind_delta.shape[0] if blind_delta.ndim == 3 else 0
     current_shape = (_TASK_COUNT, feature_width)
@@ -372,7 +383,9 @@ def negative_preserving_candidate_guard_correction(
         or min(blind_delta.shape[1:]) <= 0
         or blind_delta.dtype != torch.float32
         or correct_features.shape != current_shape
-        or negative_features.shape != current_shape
+        or response_features.ndim != 2
+        or response_features.shape[1:] != (feature_width,)
+        or not 0 < negative_rows <= response_features.shape[0]
         or persisted_features.ndim != 2
         or persisted_features.shape[1:] != (feature_width,)
         or analysis_features.ndim != 2
@@ -387,7 +400,7 @@ def negative_preserving_candidate_guard_correction(
                 blind_delta.device,
                 persisted_features.device,
                 correct_features.device,
-                negative_features.device,
+                response_features.device,
                 stable_success_mask.device,
                 harmful_mask.device,
                 analysis_features.device,
@@ -395,41 +408,47 @@ def negative_preserving_candidate_guard_correction(
         )
         != 1
     ):
-        raise ExpertManifoldError("invalid NPCG correction batch")
+        raise ExpertManifoldError("invalid CVEG correction batch")
     if not all(
         bool(torch.isfinite(value).all())
         for value in (
             blind_delta,
             persisted_features,
             correct_features,
-            negative_features,
+            response_features,
             analysis_features,
         )
     ):
-        raise ExpertManifoldError("NPCG correction input is non-finite")
+        raise ExpertManifoldError("CVEG correction input is non-finite")
 
     current_mask = stable_success_mask | harmful_mask
     guards = torch.cat(
         (persisted_features, correct_features[current_mask]), dim=0
     ).contiguous()
     analysis64 = analysis_features.to(dtype=torch.float64)
-    negative64 = negative_features.to(dtype=torch.float64)
+    response64 = response_features.to(dtype=torch.float64)
+    negative_features = response_features[:negative_rows]
+    equivariance_features = response_features[negative_rows:]
     original_rank = _numerical_rank(analysis64)
-    _, negative_singular_values, negative_vh = torch.linalg.svd(
-        negative64, full_matrices=False
+    _, response_singular_values, response_vh = torch.linalg.svd(
+        response64, full_matrices=False
     )
-    negative_maximum = (
-        float(negative_singular_values.max())
-        if negative_singular_values.numel()
+    response_maximum = (
+        float(response_singular_values.max())
+        if response_singular_values.numel()
         else 0.0
     )
-    negative_tolerance = (
-        max(negative64.shape)
+    response_tolerance = (
+        max(response64.shape)
         * torch.finfo(torch.float64).eps
-        * negative_maximum
+        * response_maximum
     )
-    negative_rank = int((negative_singular_values > negative_tolerance).sum())
-    negative_basis64 = negative_vh[:negative_rank].transpose(0, 1).contiguous()
+    response_rank = int((response_singular_values > response_tolerance).sum())
+    response_basis64 = response_vh[:response_rank].transpose(0, 1).contiguous()
+    negative_rank = _numerical_rank(negative_features.to(dtype=torch.float64))
+    equivariance_rank = _numerical_rank(
+        equivariance_features.to(dtype=torch.float64)
+    )
     blind_flat = blind_delta.flatten(1)
     blind_energy = blind_flat.square().sum()
     raw_motion = (
@@ -446,9 +465,12 @@ def negative_preserving_candidate_guard_correction(
         guards64 = guards.to(dtype=torch.float64)
         guard_rank = _numerical_rank(guards64)
         if guard_rank <= 0:
-            raise ExpertManifoldError("NPCG guard rows have zero numerical rank")
-        restricted64 = guards64 - (
-            (guards64 @ negative_basis64) @ negative_basis64.transpose(0, 1)
+            raise ExpertManifoldError("CVEG guard rows have zero numerical rank")
+        restricted64 = (
+            torch.zeros_like(guards64)
+            if response_rank == feature_width
+            else guards64
+            - (guards64 @ response_basis64) @ response_basis64.transpose(0, 1)
         )
         restricted_u, restricted_singular_values, restricted_vh = torch.linalg.svd(
             restricted64, full_matrices=False
@@ -532,6 +554,28 @@ def negative_preserving_candidate_guard_correction(
             > negative_row_tolerance
         ).sum()
     )
+    blind_equivariance_motion = _constraint_matmul(
+        equivariance_features, blind_flat
+    )
+    final_equivariance_motion = _constraint_matmul(
+        equivariance_features, projected_flat
+    )
+    equivariance_correction_motion = _constraint_matmul(
+        equivariance_features, correction_flat
+    )
+    equivariance_row_tolerance = (
+        64
+        * max(blind_delta.shape)
+        * torch.finfo(torch.float32).eps
+        * torch.linalg.vector_norm(equivariance_features, dim=1)
+        * torch.linalg.vector_norm(correction_flat)
+    )
+    equivariance_preservation_violations = int(
+        (
+            torch.linalg.vector_norm(equivariance_correction_motion, dim=1)
+            > equivariance_row_tolerance
+        ).sum()
+    )
     projected_energy = projected_flat.square().sum()
     inner = torch.sum(blind_flat * projected_flat)
     cosine = inner / (
@@ -548,7 +592,7 @@ def negative_preserving_candidate_guard_correction(
         cosine,
     )
     if not all(bool(torch.isfinite(value).all()) for value in values):
-        raise ExpertManifoldError("NPCG corrected candidate became invalid")
+        raise ExpertManifoldError("CVEG corrected candidate became invalid")
     summary = CandidateGuardProjectionSummary(
         persisted_guard_rows=int(persisted_features.shape[0]),
         current_stable_guard_rows=int(stable_success_mask.sum()),
@@ -556,8 +600,12 @@ def negative_preserving_candidate_guard_correction(
         current_guard_rows=int(current_mask.sum()),
         total_guard_rows=int(guards.shape[0]),
         guard_rank=guard_rank,
+        response_preserving_rows=int(response_features.shape[0]),
+        response_preserving_rank=response_rank,
         negative_rows=int(negative_features.shape[0]),
         negative_rank=negative_rank,
+        equivariance_rows=int(equivariance_features.shape[0]),
+        equivariance_rank=equivariance_rank,
         restricted_guard_rank=restricted_guard_rank,
         original_feature_rank=original_rank,
         projected_feature_rank=projected_rank,
@@ -572,6 +620,17 @@ def negative_preserving_candidate_guard_correction(
         negative_correction_motion_rms=_rms(negative_correction_motion),
         negative_correction_motion_max_abs=float(negative_correction_motion.abs().max()),
         negative_preservation_violation_count=negative_preservation_violations,
+        blind_equivariance_motion_rms=_rms(blind_equivariance_motion),
+        final_equivariance_motion_rms=_rms(final_equivariance_motion),
+        equivariance_correction_motion_rms=_rms(equivariance_correction_motion),
+        equivariance_correction_motion_max_abs=(
+            float(equivariance_correction_motion.abs().max())
+            if equivariance_correction_motion.numel()
+            else 0.0
+        ),
+        equivariance_preservation_violation_count=(
+            equivariance_preservation_violations
+        ),
         projection_changed=not torch.equal(projected, blind_delta),
         correction_rms=_rms(correction),
         blind_delta_rms=_rms(blind_delta),
@@ -595,10 +654,13 @@ def negative_preserving_candidate_guard_correction(
             summary.blind_negative_motion_rms,
             summary.final_negative_motion_rms,
             summary.negative_correction_motion_rms,
+            summary.blind_equivariance_motion_rms,
+            summary.final_equivariance_motion_rms,
+            summary.equivariance_correction_motion_rms,
             summary.projected_to_blind_energy_ratio,
             summary.blind_projected_inner_product,
             summary.blind_projected_cosine,
         )
     ):
-        raise ExpertManifoldError("NPCG correction evidence became invalid")
+        raise ExpertManifoldError("CVEG correction evidence became invalid")
     return projected, summary

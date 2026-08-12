@@ -1,4 +1,4 @@
-"""NPCG blind acquisition, paired protection, and negative-preserving write."""
+"""CVEG blind acquisition, paired protection, and response-preserving write."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from ember.expert_manifold.v6_candidate_guard import (
     PairedTaskEvidence,
     classify_paired_candidate_outcomes,
     collect_paired_task_evidence,
-    negative_preserving_candidate_guard_correction,
+    response_preserving_candidate_guard_correction,
 )
 from ember.expert_manifold.v6_prior import counterfactual_kind, cross_suite_wrong_task
 from ember.expert_manifold.v6_prior_checkpoint import save_v6_prior_checkpoint
@@ -77,18 +77,23 @@ class TaskObjective:
     task: ExpertTask
     task_visit: int
     teacher_demo: int
+    companion_demo: int
+    action_query_demos: tuple[int, ...]
     counterfactual_kind: str
     counterfactual_task: ExpertTask | None
     counterfactual_demo: int | None
     functional_loss: torch.Tensor
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
+    companion_feature: torch.Tensor
     program_cotangent: torch.Tensor
     graph: GeneratedConditionGraph
     correct_raw_frames: int
     correct_sampled_frames: int
     negative_raw_frames: int
     negative_sampled_frames: int
+    companion_raw_frames: int
+    companion_sampled_frames: int
     phase_a_queue_index: int = -1
     phase_a_rank: int = -1
     phase_a_started_seconds: float = 0.0
@@ -122,6 +127,46 @@ _TRAIN_TASK_COUNT = 24
 _WORK_QUEUE_MINIMUM_RETAINED_TASK_CAP = 8
 
 
+def _rms(value: torch.Tensor) -> float:
+    return float(value.to(dtype=torch.float32).square().mean().sqrt())
+
+
+def _motion_ratio(numerator: torch.Tensor, denominator: torch.Tensor) -> float:
+    denominator_rms = _rms(denominator)
+    numerator_rms = _rms(numerator)
+    return (
+        numerator_rms / denominator_rms
+        if denominator_rms > 0
+        else (0.0 if numerator_rms == 0 else math.inf)
+    )
+
+
+def _feature_rank(value: torch.Tensor) -> int:
+    singular_values = torch.linalg.svdvals(value.to(dtype=torch.float64))
+    maximum = float(singular_values.max()) if singular_values.numel() else 0.0
+    if maximum == 0:
+        return 0
+    tolerance = max(value.shape) * torch.finfo(torch.float64).eps * maximum
+    return int((singular_values > tolerance).sum())
+
+
+def _nullspace_energy_ratio_median(
+    features: torch.Tensor, anchors: torch.Tensor
+) -> float:
+    features64 = features.to(dtype=torch.float64)
+    anchors64 = anchors.to(dtype=torch.float64)
+    _, singular_values, vh = torch.linalg.svd(anchors64, full_matrices=False)
+    maximum = float(singular_values.max()) if singular_values.numel() else 0.0
+    tolerance = max(anchors64.shape) * torch.finfo(torch.float64).eps * maximum
+    rank = int((singular_values > tolerance).sum())
+    basis = vh[:rank].transpose(0, 1)
+    projected = features64 - (features64 @ basis) @ basis.transpose(0, 1)
+    ratio = projected.square().sum(dim=1) / features64.square().sum(
+        dim=1
+    ).clamp_min(torch.finfo(torch.float64).tiny)
+    return float(ratio.median())
+
+
 class _AtomicTaskClaimQueue:
     """Claim deterministic task jobs across same-host torchrun ranks."""
 
@@ -148,7 +193,7 @@ class _AtomicTaskClaimQueue:
 
 class _PhaseAProfileNonPass(ExpertManifoldError):
     def __init__(self, evidence: Mapping[str, Any]) -> None:
-        super().__init__("NPCG Work-Queue Phase-A profile gate failed")
+        super().__init__("CVEG Work-Queue Phase-A profile gate failed")
         self.evidence = dict(evidence)
 
 
@@ -205,13 +250,17 @@ def _task_objective(
     batch: Mapping[str, Any],
 ) -> TaskObjective:
     if _batch_task_id(batch) != task_id:
-        raise ExpertManifoldError("NPCG sampler and action batch disagree")
+        raise ExpertManifoldError("CVEG sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
     excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     teacher_demo = runtime.video_schedule.demos_for_task_visit(
         task_id, task_visit, excluded=excluded
     )[0]
+    companion_demo = runtime.video_schedule.companion_demos_for_task_visit(
+        task_id, task_visit, excluded=excluded
+    )[0]
     correct_video = runtime.video_store.load(task_id, teacher_demo)
+    companion_video = runtime.video_store.load(task_id, companion_demo)
     kind = counterfactual_kind(task.ordinal, task_visit)
     negative_task = None
     negative_demo = None
@@ -232,6 +281,7 @@ def _task_objective(
         policy=runtime.policy,
         correct_video=correct_video,
         counterfactual_video=negative_video,
+        companion_video=companion_video,
         language_tokens=runtime.language_tokens[task_id],
         kind=kind,
         counterfactual_seed=int(runtime.config["data"]["counterfactual_seed"]),
@@ -287,18 +337,23 @@ def _task_objective(
         task=task,
         task_visit=task_visit,
         teacher_demo=teacher_demo,
+        companion_demo=companion_demo,
+        action_query_demos=tuple(excluded),
         counterfactual_kind=kind,
         counterfactual_task=negative_task,
         counterfactual_demo=negative_demo,
         functional_loss=functional_loss.detach(),
         correct_feature=graph.correct_feature.detach(),
         negative_feature=graph.negative_feature.detach(),
+        companion_feature=graph.companion_feature.detach(),
         program_cotangent=cotangent,
         graph=graph,
         correct_raw_frames=graph.correct_raw_frames,
         correct_sampled_frames=graph.correct_sampled_frames,
         negative_raw_frames=graph.negative_raw_frames,
         negative_sampled_frames=graph.negative_sampled_frames,
+        companion_raw_frames=graph.companion_raw_frames,
+        companion_sampled_frames=graph.companion_sampled_frames,
         fixed_policy_query=fixed_query,
     )
 
@@ -325,6 +380,10 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         raise ExpertManifoldError("PCUG task record lacks paired outcomes")
     correct_norm = torch.linalg.vector_norm(value.correct_feature)
     negative_norm = torch.linalg.vector_norm(value.negative_feature)
+    companion_norm = torch.linalg.vector_norm(value.companion_feature)
+    companion_cosine = torch.dot(
+        value.correct_feature, value.companion_feature
+    ) / (correct_norm * companion_norm).clamp_min(torch.finfo(torch.float32).tiny)
     cosine = torch.dot(value.correct_feature, value.negative_feature) / (
         correct_norm * negative_norm
     ).clamp_min(torch.finfo(torch.float32).tiny)
@@ -336,6 +395,8 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
                 correct_norm,
                 negative_norm,
                 cosine,
+                companion_norm,
+                companion_cosine,
             )
         )
         .detach()
@@ -353,6 +414,8 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "task_id": value.task.task_id,
         "task_visit": value.task_visit,
         "teacher_demo": value.teacher_demo,
+        "companion_demo": value.companion_demo,
+        "action_query_demos": list(value.action_query_demos),
         "counterfactual_kind": value.counterfactual_kind,
         "counterfactual_global_task_id": (
             value.counterfactual_task.global_task_id
@@ -365,6 +428,8 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "correct_feature_norm": scalars[2],
         "negative_feature_norm": scalars[3],
         "correct_negative_feature_cosine": scalars[4],
+        "companion_feature_norm": scalars[5],
+        "correct_companion_feature_cosine": scalars[6],
         "base_success": list(base),
         "candidate_success": list(candidate),
         "paired_losses": losses,
@@ -383,6 +448,8 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "correct_sampled_frames": value.correct_sampled_frames,
         "negative_raw_frames": value.negative_raw_frames,
         "negative_sampled_frames": value.negative_sampled_frames,
+        "companion_raw_frames": value.companion_raw_frames,
+        "companion_sampled_frames": value.companion_sampled_frames,
         "phase_a_queue_index": value.phase_a_queue_index,
         "phase_a_rank": value.phase_a_rank,
         "phase_a_started_seconds": value.phase_a_started_seconds,
@@ -399,9 +466,9 @@ def _task_record(value: TaskObjective) -> dict[str, Any]:
         "negative_policy_forwards": 0,
         "historical_v6_video_encodes": 1,
         "post_candidate_factorhead_redecodes": 1,
-        "policy_innovation_key_count": 2,
+        "policy_innovation_key_count": 3,
         "policy_innovation_unique_video_count": (
-            2 if value.counterfactual_kind == "wrong" else 1
+            3 if value.counterfactual_kind == "wrong" else 2
         ),
         "policy_innovation_duplicate_frame_forwards": 0,
     }
@@ -442,13 +509,14 @@ def _gather_full48(
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
+    torch.Tensor,
     tuple[Mapping[str, Any], ...],
 ]:
     maximum_local = _retained_task_cap(context.world_size)
     if not 0 <= len(local) <= maximum_local:
-        raise ExpertManifoldError("NPCG local task coverage changed")
+        raise ExpertManifoldError("CVEG local task coverage changed")
     payload = torch.zeros(
-        maximum_local, 7 + 2 * 256, dtype=torch.float32, device=context.device
+        maximum_local, 7 + 3 * 256, dtype=torch.float32, device=context.device
     )
     payload[:, 0].fill_(-1)
     if local:
@@ -471,8 +539,11 @@ def _gather_full48(
         payload[: len(local), 7:263] = torch.stack(
             [value.correct_feature for value in local]
         )
-        payload[: len(local), 263:] = torch.stack(
+        payload[: len(local), 263:519] = torch.stack(
             [value.negative_feature for value in local]
+        )
+        payload[: len(local), 519:] = torch.stack(
+            [value.companion_feature for value in local]
         )
     cotangent_shape = local[0].program_cotangent.shape if local else (320, 256)
     cotangents = torch.zeros(
@@ -515,7 +586,8 @@ def _gather_full48(
     )
     return (
         gathered_payload[:, 7:263],
-        gathered_payload[:, 263:],
+        gathered_payload[:, 263:519],
+        gathered_payload[:, 519:],
         gathered_cotangents,
         timing,
     )
@@ -593,7 +665,7 @@ def _collect_local_objectives(
 ) -> tuple[list[TaskObjective], float]:
     jobs = runtime.sampler.task_queue_for_step(schedule_macro)
     if len(jobs) != _TRAIN_TASK_COUNT:
-        raise ExpertManifoldError("NPCG lost train24 jobs")
+        raise ExpertManifoldError("CVEG lost train24 jobs")
     queue_path = (
         Path("/tmp")
         / f"ember-wqpcug-{os.getuid()}"
@@ -649,7 +721,7 @@ def _collect_local_objectives(
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()) or any(
         parameter.grad is not None for parameter in runtime.writer.base_writer.parameters()
     ):
-        raise ExpertManifoldError("NPCG touched frozen parameter gradients")
+        raise ExpertManifoldError("CVEG touched frozen parameter gradients")
     return local, input_wait_seconds
 
 
@@ -670,9 +742,10 @@ def _apply_macro_update(
     profile: bool,
     step_started: float,
 ) -> MacroUpdateEvidence:
-    correct, negative, cotangents, phase_a_rows = _gather_full48(
+    correct, negative, companion, cotangents, phase_a_rows = _gather_full48(
         local_objectives, runtime.context
     )
+    equivariance = companion - correct
     phase_a_seconds = _profile_max_seconds(
         runtime.context, time.monotonic() - step_started
     )
@@ -725,12 +798,15 @@ def _apply_macro_update(
         if not phase_a_evidence["passed"]:
             raise _PhaseAProfileNonPass(phase_a_evidence)
     persisted_plan = runtime.success_key_bank.persisted_plan()
+    blind_anchors = torch.cat(
+        (persisted_plan.features, equivariance), dim=0
+    ).contiguous()
     no_current_guards = torch.zeros(24, dtype=torch.bool, device=runtime.context.device)
     blind_delta, blind_update = success_key_nullspace_program_delta(
         correct,
         negative,
         cotangents,
-        persisted_plan.features,
+        blind_anchors,
         no_current_guards,
         step_size=float(runtime.config["update"]["step_size"]),
         relative_damping=float(runtime.config["update"]["relative_damping"]),
@@ -760,14 +836,16 @@ def _apply_macro_update(
         torch.cuda.synchronize(runtime.context.device)
         kernel_started = time.monotonic()
     full_features = torch.cat((correct, negative), dim=0)
-    delta, guard_projection = negative_preserving_candidate_guard_correction(
+    preserved_responses = torch.cat((negative, equivariance), dim=0)
+    delta, guard_projection = response_preserving_candidate_guard_correction(
         blind_delta,
         persisted_plan.features,
         correct,
-        negative,
+        preserved_responses,
         classification.stable_success_mask,
         classification.harmful_mask,
         full_features,
+        negative_rows=negative.shape[0],
     )
     if not profile:
         gates = runtime.config["profile_run"]["gates"]
@@ -776,6 +854,8 @@ def _apply_macro_update(
             == int(gates["final_guard_violation_count"])
             and guard_projection.negative_preservation_violation_count
             == int(gates["negative_preservation_violation_count"])
+            and guard_projection.equivariance_preservation_violation_count
+            == int(gates["equivariance_preservation_violation_count"])
             and guard_projection.projected_feature_rank
             >= int(gates["projected_feature_rank_min"])
             and guard_projection.projected_to_blind_energy_ratio
@@ -784,8 +864,18 @@ def _apply_macro_update(
             and guard_projection.blind_projected_cosine > 0
             and blind_update.predicted_negative_to_unprotected_ratio
             <= float(gates["negative_to_unprotected_motion_rms_max"])
+            and _motion_ratio(
+                success_key_constraint_motion(equivariance, blind_delta),
+                success_key_constraint_motion(correct, blind_delta),
+            )
+            <= float(gates["equivariance_to_primary_motion_rms_max"])
+            and _motion_ratio(
+                success_key_constraint_motion(equivariance, delta),
+                success_key_constraint_motion(correct, delta),
+            )
+            <= float(gates["equivariance_to_primary_motion_rms_max"])
         ):
-            raise ExpertManifoldError("NPCG formal correction left its sealed feasible set")
+            raise ExpertManifoldError("CVEG formal correction left its sealed feasible set")
     apply_program_residual_delta_(runtime.writer.program_memory, delta)
     bank_update = runtime.success_key_bank.commit_first_stable_successes_(
         correct,
@@ -819,6 +909,19 @@ def _apply_macro_update(
         full_features.shape[0], cotangents.shape[1], cotangents.shape[2]
     )
     full_motion = success_key_constraint_motion(full_features, delta)
+    equivariance_motion = success_key_constraint_motion(equivariance, delta)
+    blind_correct_motion = success_key_constraint_motion(correct, blind_delta)
+    blind_equivariance_motion = success_key_constraint_motion(
+        equivariance, blind_delta
+    )
+    reversed_mask = torch.tensor(
+        [
+            counterfactual_kind(ordinal, schedule_macro) == "reversed"
+            for ordinal in range(_TRAIN_TASK_COUNT)
+        ],
+        dtype=torch.bool,
+        device=correct.device,
+    )
     application = program_residual_delta_application_evidence(
         runtime.writer.program_memory,
         delta,
@@ -830,6 +933,27 @@ def _apply_macro_update(
     task_local = _profile_task_local_motion(
         cotangents, full_motion, protected, runtime.config["profile_run"]["gates"]
     )
+    task_local = {
+        **task_local,
+        "equivariance_rows": int(equivariance.shape[0]),
+        "equivariance_rank": _feature_rank(equivariance),
+        "correct_feature_retained_energy_ratio_median": (
+            blind_update.unprotected_projected_feature_energy_ratio_median
+        ),
+        "reverse_process_retained_energy_ratio_median": (
+            _nullspace_energy_ratio_median(
+                correct[reversed_mask] - negative[reversed_mask], equivariance
+            )
+        ),
+        "blind_equivariance_motion_rms": _rms(blind_equivariance_motion),
+        "blind_equivariance_to_primary_motion_ratio": _motion_ratio(
+            blind_equivariance_motion, blind_correct_motion
+        ),
+        "final_equivariance_motion_rms": _rms(equivariance_motion),
+        "equivariance_to_primary_motion_ratio": _motion_ratio(
+            equivariance_motion, full_motion[:24]
+        ),
+    }
     guard_features = _final_guard_features(persisted_plan, correct, classification)
     success_key_application = _profile_success_key_application(
         guard_features, delta, protected

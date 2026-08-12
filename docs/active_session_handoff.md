@@ -42,7 +42,9 @@
 - Cross-Video Equivariant Candidate Guard已从该最早失效接口选为唯一active successor：每task每macro在不改变
   primary one-shot schedule的前提下增加一条训练期action-hidden ordered companion，以
   `E=phi(companion)-phi(primary)`约束blind与final shared Program write满足`E D=0`；final affine correction同时
-  保持negative与equivariance response。部署仍一条video、一套LoRA，不平均、不挑video。设计已封存，尚未实现。
+  保持negative与equivariance response。canonical实现已完成，fresh-incompatible contract、checkpoint和eval
+  family已原位替换NPCG active path，完整CPU`346 passed`；部署仍一条video、一套LoRA，不平均、不挑video，
+  当前等待clean pushed commit后的唯一discarded macro0 live profile。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

@@ -27,31 +27,53 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_npcg_formal_nonpass_and_work_queue_pcug_nonpass_remain_sealed() -> None:
-    npcg = load_v6_prior_config(CONFIG)
-    assert npcg["status"] == "formal_result_sealed"
-    profile = npcg["profile_run"]["artifact_evidence"]
+def test_active_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None:
+    cveg = load_v6_prior_config(CONFIG)
+    assert cveg["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert cveg["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
+    assert cveg["method"]["name"] == (
+        "frozen_v6_cross_video_equivariant_candidate_guard"
+    )
+    assert cveg["data"]["videos_per_task_per_macro"] == 1
+    assert cveg["data"]["training_companion_videos_per_task_per_macro"] == 1
+    assert cveg["information_wall"]["deployment_companion_video_count"] == 0
+    assert cveg["profile_run"]["artifact_evidence"] is None
+    assert cveg["formal_run"]["artifact_evidence"] is None
+    assert cveg["evaluation"]["online_smoke_evidence"] is None
+
+    profile = read_json(
+        REPO_ROOT
+        / "runs/outputs/pi05_npcg_constraint_precision_reprofile_macro0_"
+        "r3_b20_4156012_20260812/mechanism_profile.json"
+    )
     assert profile["passed"] is True
-    assert profile["checks_passed"] == 20
-    assert profile["negative_null_per_kind"] == {
-        "wrong": 8,
-        "shuffled": 8,
+    assert len(profile["gate_evidence"]["checks"]) == 20
+    assert all(profile["gate_evidence"]["checks"].values())
+    assert profile["gate_evidence"]["negative_null_per_kind"] == {
         "reversed": 8,
+        "shuffled": 8,
+        "wrong": 8,
     }
-    assert npcg["formal_run"]["status"] == "formal_result_sealed"
-    result = npcg["formal_run"]["artifact_evidence"]
+    completion = read_json(
+        REPO_ROOT
+        / "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_"
+        "formal_fresh0to5_r3_b20_f8491e9_retry1_20260812/completion.json"
+    )
+    assert completion["completed_macro"] == 5
+    assert completion["metrics_rows"] == 5
+    result = read_json(
+        REPO_ROOT
+        / "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_"
+        "correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_"
+        "20260812/npcg_formal_decision_evidence.json"
+    )
     assert result["strict_correct400"]["successes"] == 135
     assert result["strict_correct400"]["breadth"] == 5
-    assert result["paired_old134"]["retained_gained_lost"] == [117, 18, 17]
-    assert result["decision_evidence"]["passed"] is False
+    assert result["paired_old134_to_npcg"]["retained_success"] == 117
+    assert result["paired_old134_to_npcg"]["gained"] == 18
+    assert result["paired_old134_to_npcg"]["lost"] == 17
+    assert result["decision"]["passed"] is False
     assert result["decision"]["exact_resume_macro5_to10_authorized"] is False
-    assert npcg["evaluation"]["formal_status"] == (
-        "sealed_from_live_npcg_deployment_smoke"
-    )
-    smoke = npcg["evaluation"]["online_smoke_evidence"]
-    assert smoke["writer_model_batch_size"] == 32
-    assert smoke["oom_count"] == 0
-    assert smoke["nonfinite_count"] == 0
 
     work_queue = read_json(
         REPO_ROOT

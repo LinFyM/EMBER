@@ -165,9 +165,9 @@
   training-only action-hidden ordered companion，以`E=phi(companion)-phi(primary)`同时约束blind与final
   shared Program write；保留queue、actual pairing、negative-preserving affine guard与native rank16 compiler。
   部署仍严格one-shot，不平均或挑video；单companion离线审计保留correct/reverse能量中位数`.780/.789`。
-- [ ] 原位实现fresh-incompatible CVEG：companion schedule/cost、condition feature、full24 gather、`[A;E]` blind
+- [x] 原位实现fresh-incompatible CVEG：companion schedule/cost、condition feature、full24 gather、`[A;E]` blind
   anchors、`[N;E]` response-preserving correction、机制报告、schema/config/eval family；不保留NPCG executable
-  parallel path。
+  parallel path。synthetic/contract/full CPU均通过，正确assets环境下为`346 passed`。
 - [ ] targeted/full CPU通过后clean commit/push，在detached frozen worktree按live gpu01/gpu02状态选择同节点
   1--6张合适A40做唯一discarded macro0 profile；小显存低利用率共驻卡有余量即可使用，不等待6卡。
 - [ ] profile全过后做longest-video deployment batch profile、formal fresh`0→5`并立即strict paired400；只有

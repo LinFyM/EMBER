@@ -239,6 +239,46 @@ def test_one_shot_schedule_covers_all_videos_and_excludes_action_queries() -> No
     ]
 
 
+def test_one_shot_companion_keeps_primary_schedule_and_skips_queries() -> None:
+    dataset, _ = _dataset(task_ids=(10,), demos=50, rows_per_demo=20)
+    plain = TeacherVideoSchedule(
+        task_ids=(10,), demo_indices=range(50), seed=19, videos_per_visit=1
+    )
+    schedule = TeacherVideoSchedule(
+        task_ids=(10,),
+        demo_indices=range(50),
+        seed=19,
+        videos_per_visit=1,
+        companion_videos_per_visit=1,
+    )
+    sampler = MixedTaskBatchSampler(
+        dataset,  # type: ignore[arg-type]
+        task_ids=(10,),
+        per_rank_batch_size=20,
+        start_step=0,
+        stop_step=50,
+        rank=0,
+        world_size=1,
+        seed=20260720,
+        tasks_per_rank_per_update=1,
+        video_schedule=schedule,
+        task_video_costs={10: {demo: 1 for demo in range(50)}},
+    )
+    for visit in range(50):
+        excluded = sampler.action_demo_indices_for_task_visit(10, visit)
+        primary = schedule.demos_for_task_visit(10, visit, excluded=excluded)
+        companion = schedule.companion_demos_for_task_visit(
+            10, visit, excluded=excluded
+        )
+        assert primary == plain.demos_for_task_visit(10, visit, excluded=excluded)
+        assert len(companion) == 1
+        assert companion[0] != primary[0]
+        assert companion[0] not in excluded
+        assert schedule.training_demos_for_task_visit(
+            10, visit, excluded=excluded
+        ) == primary + companion
+
+
 def test_joint_consumed_summary_covers_k4_and_action_schedules() -> None:
     dataset, _ = _dataset()
     sampler = _sampler(dataset, rank=0, start_step=0, stop_step=8)

@@ -1,8 +1,8 @@
 # Cross-Video Equivariant Candidate Guard
 
-状态：2026-08-12从NPCG strict non-pass后的最早失效接口选定，当前唯一active successor authority；尚未实现、
-profile或训练。实现前的科学变量、采样、机制门和formal裁决在本文封存，不能根据live结果增加companion数量、
-放宽约束或改ridge/scale/threshold。
+状态：2026-08-12从NPCG strict non-pass后的最早失效接口选定，当前唯一active successor authority；canonical
+实现与fresh-incompatible contract已完成，完整CPU`346 passed`，尚未profile或训练。科学变量、采样、机制门和
+formal裁决已在实现前封存，不能根据live结果增加companion数量、放宽约束或改ridge/scale/threshold。
 
 ## 1. Latest evidence and earliest failure
 

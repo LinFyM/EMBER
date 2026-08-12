@@ -34,7 +34,8 @@ first-stable point对held same-task videos仍有`.40954`平均正交残差；故
 Cross-Video Equivariant Candidate Guard现为唯一active successor：保持NPCG全部已通过接口，只在训练期为每个
 primary增加一条same-task action-hidden ordered companion，以difference row `E`让每个shared Program write
 满足`E D=0`；NPCG final correction改为同时保持`[N;E]` response。部署仍是一条video、一套LoRA，不做few-shot
-aggregation或平均。单companion离线审计保留correct/reverse能量中位数`.780/.789`，尚未实现或运行。
+aggregation或平均。单companion离线审计保留correct/reverse能量中位数`.780/.789`；canonical实现、fresh
+schemas、机制报告和eval family已完成，完整CPU`346 passed`，当前只差clean pushed commit后的live profile。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

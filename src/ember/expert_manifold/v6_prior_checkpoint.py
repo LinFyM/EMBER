@@ -1,4 +1,4 @@
-"""Atomic Program-memory and success-key-bank checkpoints for NPCG."""
+"""Atomic Program-memory and success-key-bank checkpoints for CVEG."""
 
 from __future__ import annotations
 
@@ -28,13 +28,13 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_negative_preserving_candidate_guard_checkpoint_v1"
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_checkpoint_v1"
 )
 V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_negative_preserving_candidate_guard_rank_rng_v1"
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_rank_rng_v1"
 )
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_negative_preserving_candidate_guard_inspection_v1"
+    "ember_pi05_v6_cross_video_equivariant_candidate_guard_inspection_v1"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)

@@ -112,6 +112,21 @@ FAMILY_CONTRACTS = {
         "arm_prefix": "expert_manifold_v6_cgik_jc_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
     },
+    "mgci": {
+        "adapter_schema": (
+            "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_"
+            "eval_adapter_v11"
+        ),
+        "episode_schema": (
+            "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_"
+            "episode_v11"
+        ),
+        "config_schema": (
+            "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_v1"
+        ),
+        "arm_prefix": "expert_manifold_v6_mgci_jc_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+    },
 }
 
 
@@ -186,6 +201,7 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         "osg",
         "sknc",
         "cgik",
+        "mgci",
     }:
         writer_asset.update(
             {
@@ -220,6 +236,8 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         formal_status = "sealed_from_live_sknc_deployment_smoke"
     elif family == "cgik":
         formal_status = "sealed_from_live_cgik_full96_profile"
+    elif family == "mgci":
+        formal_status = "sealed_from_live_mgci_full96_profile"
     return {
         "schema_version": contract["adapter_schema"],
         "kind": "expert_manifold_writer",
@@ -281,6 +299,7 @@ def _rows(
             "osg",
             "sknc",
             "cgik",
+            "mgci",
         )
     }
     rows = []

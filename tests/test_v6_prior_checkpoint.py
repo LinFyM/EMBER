@@ -151,7 +151,7 @@ def test_checkpoint_rejects_wrong_schema_contract_extra_file_and_tensor(tmp_path
     original = json.loads(manifest_path.read_text())
     manifest = dict(original)
     manifest["schema_version"] = (
-        "ember_pi05_v6_paired_video_joint_functional_credit_checkpoint_v1"
+        "ember_pi05_v6_causal_goal_interaction_key_joint_credit_checkpoint_v1"
     )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="manifest"):
@@ -168,6 +168,21 @@ def test_checkpoint_rejects_wrong_schema_contract_extra_file_and_tensor(tmp_path
     save_file({"wrong": torch.zeros(_SHAPE)}, str(checkpoint / PROGRAM_MEMORY_FILE))
     _refresh_size(checkpoint, PROGRAM_MEMORY_FILE)
     with pytest.raises(ExpertManifoldError, match="Program memory key"):
+        inspect_v6_prior_checkpoint(
+            checkpoint, expected_memory_shape=_SHAPE, expected_world_size=1
+        )
+
+
+def test_checkpoint_rejects_cgik_rng_schema(tmp_path: Path) -> None:
+    checkpoint = _save(tmp_path, _memory())
+    rng_path = checkpoint / "rng_rank_000.pt"
+    rng = torch.load(rng_path, map_location="cpu", weights_only=False)
+    rng["schema_version"] = (
+        "ember_pi05_v6_causal_goal_interaction_key_joint_credit_rank_rng_v1"
+    )
+    torch.save(rng, rng_path)
+    _refresh_size(checkpoint, rng_path.name)
+    with pytest.raises(ExpertManifoldError, match="rank 0 RNG"):
         inspect_v6_prior_checkpoint(
             checkpoint, expected_memory_shape=_SHAPE, expected_world_size=1
         )

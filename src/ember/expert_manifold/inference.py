@@ -53,7 +53,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active CGIK-JC deployment family; old configs stay evidence."""
+    """Load only the active MGCI-JC deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -574,11 +574,11 @@ def _evaluation_writer_asset(
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
     if status in {
-        "blocked_until_live_cgik_full96_profile_passes",
-        "not_run_after_cgik_profile_nonpass",
+        "blocked_until_live_mgci_full96_profile_passes",
+        "not_run_after_mgci_profile_nonpass",
     }:
         raise ExpertManifoldError(
-            "CGIK-JC deployment is blocked until its live profile passes"
+            "MGCI-JC deployment is blocked until its live profile passes"
         )
     if require_formal and status not in {
         "sealed_from_live_pick_gc_deployment_profile",
@@ -586,7 +586,7 @@ def _evaluation_writer_asset(
         "sealed_from_unchanged_v6_residual_deployment_graph",
         "sealed_from_live_sknc_deployment_smoke",
         "sealed_from_live_cveg_deployment_smoke",
-        "sealed_from_live_cgik_full96_profile",
+        "sealed_from_live_mgci_full96_profile",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"
@@ -637,7 +637,7 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_cgik_jc_{video_condition}",
+        "arm": f"expert_manifold_v6_mgci_jc_{video_condition}",
         "execution_backend": (
             "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
         ),

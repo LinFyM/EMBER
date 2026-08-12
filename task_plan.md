@@ -198,7 +198,9 @@
   signed interaction块明显更健康；由此选择MGCI-JC，只把第一块改成`abs(goal)*causal`。
 - [x] 写MGCI-JC单变量design authority；cache预验correct48=`108.81`、correct+reverse16=`130.78`，same-task
   cosine`.806/.848`。只授权实现、CPU门和一次raw full96 profile。
-- [ ] 原位实现fresh-incompatible MGCI-JC，完成完整CPU与唯一full96机制profile；不得小扫。
+- [x] 原位实现fresh-incompatible MGCI-JC：只改第一condition block；fresh checkpoint/RNG/inspection、eval v11和
+  历史CGIK family共存接线完成，显式LIBERO assets root下完整CPU`339 passed`、compileall与config gate通过。
+- [ ] 从clean pushed commit建立detached frozen worktree并完成唯一full96机制profile；不得小扫。
 
 ## Repository closeout
 

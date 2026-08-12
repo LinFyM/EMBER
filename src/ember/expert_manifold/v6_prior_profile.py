@@ -41,7 +41,7 @@ def _lora_response_row(
     before: Mapping[str, torch.Tensor], after: Mapping[str, torch.Tensor]
 ) -> dict[str, float | int]:
     if set(before) != set(after):
-        raise ExpertManifoldError("CGIK-JC profile LoRA topology changed")
+        raise ExpertManifoldError("MGCI-JC profile LoRA topology changed")
     square_terms: dict[str, list[torch.Tensor]] = {
         "lora_a": [],
         "lora_b": [],
@@ -53,7 +53,7 @@ def _lora_response_row(
             continue
         b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
         if b_name not in before:
-            raise ExpertManifoldError("CGIK-JC profile lost a LoRA factor pair")
+            raise ExpertManifoldError("MGCI-JC profile lost a LoRA factor pair")
         after_a = after[name]
         before_b = before[b_name]
         after_b = after[b_name]
@@ -69,7 +69,7 @@ def _lora_response_row(
             square_terms[prefix].append(value.square().sum())
             counts[prefix] += value.numel()
     if any(value <= 0 for value in counts.values()):
-        raise ExpertManifoldError("CGIK-JC profile LoRA response is empty")
+        raise ExpertManifoldError("MGCI-JC profile LoRA response is empty")
     totals = torch.stack(
         [torch.stack(square_terms[name]).sum() for name in square_terms]
     ).detach().cpu().tolist()
@@ -120,7 +120,7 @@ def _fixed_action(
             dict(query), noise=noise, num_steps=10
         )
     if action.ndim != 3 or action.shape[0] != 1:
-        raise ExpertManifoldError("CGIK-JC fixed-action profile output changed")
+        raise ExpertManifoldError("MGCI-JC fixed-action profile output changed")
     return action.detach()
 
 
@@ -140,7 +140,7 @@ def profile_lora_response(
     """Trace both views in four suites through LoRA, effective BA, and action."""
 
     if correct_motion.shape[0] != 2 * _TASK_COUNT:
-        raise ExpertManifoldError("CGIK-JC profile response topology changed")
+        raise ExpertManifoldError("MGCI-JC profile response topology changed")
     identity = task_lora_state_dict(runtime.policy, clone=True)
     local_rows: list[dict[str, Any]] = []
     try:
@@ -149,13 +149,13 @@ def profile_lora_response(
             if ordinal not in {0, 6, 12, 18}:
                 continue
             if objective.fixed_policy_query is None:
-                raise ExpertManifoldError("CGIK-JC profile lost fixed-action query")
+                raise ExpertManifoldError("MGCI-JC profile lost fixed-action query")
             for view_index, (view_name, view) in enumerate(
                 (("primary", objective.primary), ("companion", objective.companion))
             ):
                 graph = view.profile_graph
                 if graph is None or not graph.correct_lora:
-                    raise ExpertManifoldError("CGIK-JC profile lost before graph")
+                    raise ExpertManifoldError("MGCI-JC profile lost before graph")
                 motion = correct_motion[ordinal + view_index * _TASK_COUNT]
                 with torch.autocast(
                     device_type=runtime.context.device.type,
@@ -203,7 +203,7 @@ def profile_lora_response(
     expected = {(suite, view) for suite in _SUITES for view in ("primary", "companion")}
     observed = {(str(row["suite"]), str(row["view"])) for row in rows}
     if len(rows) != 8 or observed != expected:
-        raise ExpertManifoldError("CGIK-JC profile response lost four-suite paired views")
+        raise ExpertManifoldError("MGCI-JC profile response lost four-suite paired views")
     return {
         "probe_rows": len(rows),
         "policy_forwards": 2 * len(rows),
@@ -235,7 +235,7 @@ def profile_task_local_motion(
     gates: Mapping[str, Any],
 ) -> dict[str, Any]:
     if cotangents.shape[0] != 48 or full_motion.shape[0] != 96:
-        raise ExpertManifoldError("CGIK-JC task-local profile topology changed")
+        raise ExpertManifoldError("MGCI-JC task-local profile topology changed")
     credit = cotangents.flatten(1).to(dtype=torch.float32)
     correct = full_motion[:48].flatten(1).to(dtype=torch.float32)
     negative = full_motion[48:].flatten(1).to(dtype=torch.float32)
@@ -301,7 +301,7 @@ def profile_passes(
     gates = config["profile_run"]["gates"]
     for name in ("update", "application", "task_local_motion", "lora_response"):
         if not isinstance(row.get(name), Mapping):
-            raise ExpertManifoldError("CGIK-JC mechanism profile evidence is incomplete")
+            raise ExpertManifoldError("MGCI-JC mechanism profile evidence is incomplete")
     update = row["update"]
     application = row["application"]
     task_local = row["task_local_motion"]

@@ -60,7 +60,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `50.032s` wall均通过，但condition仍`>200`。root无checkpoint，formal、deployment、同配置重跑与小扫关闭。
 - active successor design是MGCI-JC：只把CGIK独立`u_c`块改为`abs(u_g)*u_c`，signed`u_g*u_c`块不变；
   selected correct48 condition=`108.81`、correct+reverse16=`130.78`，same-task cosine仍`.806/.848`。它只主张
-  清除已定位的raw-causal shared mode，当前仅授权实现、CPU门和一次同合同raw full96 profile。
+  清除已定位的raw-causal shared mode。fresh-incompatible canonical实现与完整CPU`339 passed`已经完成；当前
+  只授权clean pushed frozen worktree上的一次同合同raw full96 profile。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

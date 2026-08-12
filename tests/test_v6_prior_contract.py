@@ -49,9 +49,12 @@ def _formal_ready_config() -> dict:
     config["profile_run"]["artifact_evidence"] = {"path": "profile.json"}
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
     config["evaluation"]["formal_status"] = (
-        "sealed_from_live_cgik_full96_profile"
+        "sealed_from_live_mgci_full96_profile"
     )
-    config["evaluation"]["online_smoke_evidence"] = {"path": "profile.json"}
+    config["evaluation"]["online_smoke_evidence"] = {
+        "path": "profile.json",
+        "writer_model_batch_size": 32,
+    }
     return config
 
 
@@ -91,11 +94,11 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_cgik_config_seals_two_train_views_and_one_deployment_view() -> None:
+def test_mgci_config_seals_two_train_views_and_one_deployment_view() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert config["method"]["name"] == (
-        "frozen_v6_causal_goal_interaction_key_joint_credit"
+        "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit"
     )
     assert config["method"]["training_views_per_task"] == 2
     assert config["method"]["deployment_views_per_task"] == 1
@@ -111,8 +114,8 @@ def test_cgik_config_seals_two_train_views_and_one_deployment_view() -> None:
     assert config["data"]["action_queries_per_task"] == 20
     assert config["data"]["training_companion_videos_per_task_per_macro"] == 1
     assert config["condition_feature"]["output_blocks"] == [
-        "causal",
-        "goal_causal_interaction",
+        "goal_magnitude_gated_causal",
+        "signed_goal_causal_interaction",
     ]
     assert config["condition_feature"]["goal_only_output_path"] is False
     assert config["formal_run"]["allowed_world_sizes"] == list(range(1, 7))
@@ -127,7 +130,8 @@ def test_cgik_config_seals_two_train_views_and_one_deployment_view() -> None:
         ("condition_feature", "innovation_width", 1024),
         ("condition_feature", "phase_slots", 8),
         ("condition_feature", "projection_seed", 1),
-        ("condition_feature", "interaction_block", "sum"),
+        ("condition_feature", "magnitude_gated_causal_block", "sum"),
+        ("condition_feature", "signed_interaction_block", "sum"),
         ("condition_feature", "fusion", "concatenate"),
         ("update", "kind", "single-view"),
         ("update", "view_weights", [1, 1]),
@@ -165,6 +169,7 @@ def test_unknown_fields_and_retired_configs_are_rejected(
         "pi05_v6_success_key_nullspace_consolidation_v1.json",
         "pi05_v6_policy_innovation_goal_causal_key_v1.json",
         "pi05_v6_paired_video_joint_functional_credit_v1.json",
+        "pi05_v6_causal_goal_interaction_key_joint_credit_v1.json",
     ):
         with pytest.raises(ExpertManifoldError, match="canonical config path"):
             load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG.parent / name)

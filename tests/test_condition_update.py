@@ -47,7 +47,7 @@ def test_policy_innovation_feature_is_zero_preserving_and_reads_real_order() -> 
         assert encoder(innovation).dtype == torch.float32
 
 
-def test_causal_goal_interaction_encodes_terminal_role_and_internal_order() -> None:
+def test_magnitude_gated_causal_interaction_encodes_goal_and_order() -> None:
     encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=3,
         feature_width=6,
@@ -70,9 +70,10 @@ def test_causal_goal_interaction_encodes_terminal_role_and_internal_order() -> N
     causal = (centered.cumsum(dim=1) / scale[None, :, None]).mean(dim=1)
     goal_block = torch.nn.functional.normalize(goal)
     causal_block = torch.nn.functional.normalize(causal)
-    interaction = torch.nn.functional.normalize(goal_block * causal_block)
+    odd = torch.nn.functional.normalize(goal_block.abs() * causal_block)
+    even = torch.nn.functional.normalize(goal_block * causal_block)
     expected = torch.nn.functional.normalize(
-        torch.cat((causal_block, interaction), dim=1)
+        torch.cat((odd, even), dim=1)
     )
     torch.testing.assert_close(natural, expected, rtol=1e-6, atol=1e-6)
 
@@ -84,17 +85,20 @@ def test_causal_goal_interaction_encodes_terminal_role_and_internal_order() -> N
     ).mean(dim=1)
     reverse_goal_block = torch.nn.functional.normalize(reverse_goal)
     reverse_causal_block = torch.nn.functional.normalize(reverse_causal)
-    reverse_interaction = torch.nn.functional.normalize(
+    reverse_odd = torch.nn.functional.normalize(
+        reverse_goal_block.abs() * reverse_causal_block
+    )
+    reverse_even = torch.nn.functional.normalize(
         reverse_goal_block * reverse_causal_block
     )
     reverse_expected = torch.nn.functional.normalize(
-        torch.cat((reverse_causal_block, reverse_interaction), dim=1)
+        torch.cat((reverse_odd, reverse_even), dim=1)
     )
     torch.testing.assert_close(reversed_feature, reverse_expected, rtol=1e-6, atol=1e-6)
     assert not torch.equal(natural, reversed_feature)
 
 
-def test_causal_goal_interaction_separates_joint_sign_reversal() -> None:
+def test_magnitude_gated_causal_interaction_separates_joint_sign_reversal() -> None:
     encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=2,
         feature_width=4,
@@ -106,6 +110,13 @@ def test_causal_goal_interaction_separates_joint_sign_reversal() -> None:
     innovations = torch.stack((first, second, -second, -first))[None]
     correct = encoder(innovations)
     reversed_feature = encoder(innovations.flip(1))
+    half = correct.shape[1] // 2
+    torch.testing.assert_close(
+        reversed_feature[:, :half], -correct[:, :half], rtol=0, atol=1e-6
+    )
+    torch.testing.assert_close(
+        reversed_feature[:, half:], correct[:, half:], rtol=0, atol=1e-6
+    )
     torch.testing.assert_close(
         (correct * reversed_feature).sum(dim=1),
         torch.zeros(1),
@@ -114,7 +125,20 @@ def test_causal_goal_interaction_separates_joint_sign_reversal() -> None:
     )
 
 
-def test_causal_goal_interaction_requires_nonzero_causal_evidence() -> None:
+def test_magnitude_gated_blocks_have_equal_pre_normalization_norms() -> None:
+    goal = torch.tensor([[1.0, -2.0, 3.0]])
+    causal = torch.tensor([[-4.0, 5.0, -6.0]])
+    odd = goal.abs() * causal
+    even = goal * causal
+    torch.testing.assert_close(
+        torch.linalg.vector_norm(odd, dim=1),
+        torch.linalg.vector_norm(even, dim=1),
+        rtol=0,
+        atol=0,
+    )
+
+
+def test_magnitude_gated_causal_interaction_requires_both_descriptors() -> None:
     encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=2,
         feature_width=4,
@@ -123,6 +147,13 @@ def test_causal_goal_interaction_requires_nonzero_causal_evidence() -> None:
     encoder.projection.copy_(torch.eye(2).repeat(2, 1, 1))
     constant = torch.tensor([[[1.0, -2.0]]]).repeat(1, 4, 1)
     assert torch.equal(encoder(constant), torch.zeros(1, 4))
+
+    # The terminal quartile equals the whole-video mean, while the ordered
+    # prefix statistic remains nonzero: a zero goal must still zero both blocks.
+    goal_zero = torch.tensor(
+        [[[1.0, 0.0], [-1.0, 0.0], [0.0, 0.0], [0.0, 0.0]]]
+    )
+    assert torch.equal(encoder(goal_zero), torch.zeros(1, 4))
 
 
 def _paired_video_solve(

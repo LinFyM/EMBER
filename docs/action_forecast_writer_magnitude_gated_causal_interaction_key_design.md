@@ -29,6 +29,9 @@ rank-16 LoRA。
 本方法简称 **MGCI-JC**。当前只授权实现、CPU门和一次discarded raw-frame full96 profile。profile通过前不授权
 formal、deployment结果或closed-loop评测。
 
+实现状态：fresh-incompatible canonical owner、checkpoint/RNG/inspection三套identity和eval v11 family已经完成，
+完整CPU回归`339 passed`。这不改变上述科学授权；下一步仍只有一次clean pushed frozen worktree raw full96 profile。
+
 ## 2. Earliest failed interface
 
 CGIK profile的12项门只有condition失败，且相对PVJFC已经同时改善：

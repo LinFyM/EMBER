@@ -57,8 +57,9 @@
   唯一false仍是`regularized_condition<=200`，故总门non-pass、无checkpoint，formal/deployment/重跑/小扫关闭。
 - active successor是MGCI-JC：只把CGIK第一块从`u_c`改成`abs(u_g)*u_c`，第二块`u_g*u_c`不变。cache对同一
   selected correct48给出condition=`108.81`、correct+reverse16=`130.78`，same-task cosine mean/median仍
-  `.806/.848`。它当前只授权实现、CPU门和一次同合同raw full96 profile；不得调damping、门、block weight、
-  projection seed/width、view数、rank、scale或dtype。
+  `.806/.848`。fresh-incompatible canonical实现、checkpoint/RNG/inspection与eval v11 identity及完整CPU
+  `339 passed`已经完成；当前只授权clean pushed frozen worktree上的一次同合同raw full96 profile。不得调
+  damping、门、block weight、projection seed/width、view数、rank、scale或dtype。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

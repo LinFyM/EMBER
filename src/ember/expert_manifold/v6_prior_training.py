@@ -158,7 +158,7 @@ def _policy_rng_seed_for_logical_batch(
         or frame_indices.shape != demo_indices.shape
         or demo_indices.numel() != _LOGICAL_POLICY_BATCH_SIZE
     ):
-        raise ExpertManifoldError("CGIK-JC action-query randomness changed")
+        raise ExpertManifoldError("MGCI-JC action-query randomness changed")
     return task_logical_batch_policy_rng_seed(
         optimization_seed=int(config["optimization"]["seed"]),
         task_id=task_id,
@@ -171,10 +171,10 @@ def _policy_rng_seed_for_logical_batch(
 def _batch_task_id(batch: Mapping[str, Any]) -> int:
     values = batch.get("task_id")
     if not isinstance(values, torch.Tensor) or values.ndim != 1:
-        raise ExpertManifoldError("CGIK-JC action batch lost task identity")
+        raise ExpertManifoldError("MGCI-JC action batch lost task identity")
     unique = values.unique()
     if unique.numel() != 1:
-        raise ExpertManifoldError("CGIK-JC action batch crossed tasks")
+        raise ExpertManifoldError("MGCI-JC action batch crossed tasks")
     return int(unique.item())
 
 
@@ -262,7 +262,7 @@ def _task_objective(
     batch: Mapping[str, Any],
 ) -> TaskObjective:
     if _batch_task_id(batch) != task_id:
-        raise ExpertManifoldError("CGIK-JC sampler and action batch disagree")
+        raise ExpertManifoldError("MGCI-JC sampler and action batch disagree")
     task = runtime.task_by_global_id[task_id]
     excluded = runtime.sampler.action_demo_indices_for_task_visit(task_id, task_visit)
     primary_demo = runtime.video_schedule.demos_for_task_visit(
@@ -272,7 +272,7 @@ def _task_objective(
         task_id, task_visit, excluded=excluded
     )[0]
     if primary_demo == companion_demo or companion_demo in excluded:
-        raise ExpertManifoldError("CGIK-JC paired videos lost cross-episode separation")
+        raise ExpertManifoldError("MGCI-JC paired videos lost cross-episode separation")
     kind = counterfactual_kind(task.ordinal, task_visit)
     negative_task = None
     negative_demos: tuple[int | None, int | None] = (None, None)
@@ -292,7 +292,7 @@ def _task_objective(
             wrong_id, task_visit
         )[0]
         if wrong_primary == wrong_companion:
-            raise ExpertManifoldError("CGIK-JC wrong-video pair collapsed")
+            raise ExpertManifoldError("MGCI-JC wrong-video pair collapsed")
         negative_demos = (wrong_primary, wrong_companion)
         negative_videos = (
             runtime.video_store.load(wrong_id, wrong_primary),
@@ -338,7 +338,7 @@ def _task_objective(
             if name.startswith("observation.")
         }
         if len(fixed_query) != 4:
-            raise ExpertManifoldError("CGIK-JC fixed-action profile query changed")
+            raise ExpertManifoldError("MGCI-JC fixed-action profile query changed")
     del policy_batch
     return TaskObjective(
         task=task,
@@ -457,7 +457,7 @@ def _gather_paired_video_rows(
 ]:
     maximum_local = _retained_task_cap(context.world_size)
     if not 0 <= len(local) <= maximum_local:
-        raise ExpertManifoldError("CGIK-JC local task coverage changed")
+        raise ExpertManifoldError("MGCI-JC local task coverage changed")
     payload = torch.zeros(
         maximum_local, 7 + 4 * 256, dtype=torch.float32, device=context.device
     )
@@ -507,14 +507,14 @@ def _gather_paired_video_rows(
     gathered_payload = gathered_payload[present]
     gathered_cotangents = gathered_cotangents[present]
     if gathered_payload.shape[0] != _TRAIN_TASK_COUNT:
-        raise ExpertManifoldError("CGIK-JC padded gather lost train24")
+        raise ExpertManifoldError("MGCI-JC padded gather lost train24")
     ordinals = gathered_payload[:, 0].to(dtype=torch.long)
     order = ordinals.argsort()
     if not torch.equal(
         ordinals.index_select(0, order),
         torch.arange(_TRAIN_TASK_COUNT, dtype=torch.long, device=context.device),
     ):
-        raise ExpertManifoldError("CGIK-JC full96 task order changed")
+        raise ExpertManifoldError("MGCI-JC full96 task order changed")
     rows = gathered_payload.index_select(0, order)
     gradients = gathered_cotangents.index_select(0, order)
     timing = tuple(
@@ -548,7 +548,7 @@ def _gather_task_records(
     if len(result) != 24 or [int(row["task_ordinal"]) for row in result] != list(
         range(24)
     ):
-        raise ExpertManifoldError("CGIK-JC macro did not cover train24")
+        raise ExpertManifoldError("MGCI-JC macro did not cover train24")
     return result
 
 
@@ -581,10 +581,10 @@ def _collect_local_objectives(
 ) -> tuple[list[TaskObjective], float]:
     jobs = runtime.sampler.task_queue_for_step(schedule_macro)
     if len(jobs) != _TRAIN_TASK_COUNT:
-        raise ExpertManifoldError("CGIK-JC lost train24 jobs")
+        raise ExpertManifoldError("MGCI-JC lost train24 jobs")
     queue_path = (
         Path("/tmp")
-        / f"ember-cgik-jc-{os.getuid()}"
+        / f"ember-mgci-jc-{os.getuid()}"
         / runtime.args.output_dir.name
         / f"macro_{schedule_macro:08d}.cursor"
     )
@@ -634,7 +634,7 @@ def _collect_local_objectives(
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()) or any(
         parameter.grad is not None for parameter in runtime.writer.base_writer.parameters()
     ):
-        raise ExpertManifoldError("CGIK-JC touched frozen parameter gradients")
+        raise ExpertManifoldError("MGCI-JC touched frozen parameter gradients")
     return local, input_wait_seconds
 
 
@@ -740,7 +740,7 @@ def _macro_record(
         for name in ("reversed", "shuffled", "wrong")
     }
     if counterfactual_counts != {"reversed": 8, "shuffled": 8, "wrong": 8}:
-        raise ExpertManifoldError("CGIK-JC negative schedule changed")
+        raise ExpertManifoldError("MGCI-JC negative schedule changed")
     seconds, allocated, reserved, input_wait_seconds = runtime_metrics
     row = {
         "macro": macro + 1,
@@ -781,7 +781,7 @@ def _macro_record(
         math.isfinite(float(row[name]))
         for name in ("functional_loss", "program_cotangent_rms", "step_seconds")
     ):
-        raise ExpertManifoldError("CGIK-JC metric became non-finite")
+        raise ExpertManifoldError("MGCI-JC metric became non-finite")
     return row
 
 
@@ -805,7 +805,7 @@ def _run_one_macro(runtime: V6PriorRuntime, *, macro: int) -> dict[str, Any]:
     )
     runtime_metrics = _runtime_maximums(runtime.context, step_started, input_wait)
     if profile and _base_versions(runtime) != versions_before:
-        raise ExpertManifoldError("historical v6 state changed during CGIK-JC profile")
+        raise ExpertManifoldError("historical v6 state changed during MGCI-JC profile")
     row = _macro_record(
         macro=macro,
         schedule_macro=schedule_macro,
@@ -939,7 +939,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     for name in ("config", "source_run", "checkpoint", "tokenizer_path", "data_root"):
         path = getattr(args, name).resolve()
         if not path.exists():
-            raise ExpertManifoldError(f"missing CGIK-JC Writer path: {path}")
+            raise ExpertManifoldError(f"missing MGCI-JC Writer path: {path}")
         setattr(args, name, path)
     args.output_dir = args.output_dir.resolve()
     args.resume = args.resume.resolve() if args.resume else None
@@ -947,19 +947,19 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         if args.output_dir.exists() and (
             not args.output_dir.is_dir() or any(args.output_dir.iterdir())
         ):
-            raise ExpertManifoldError("fresh CGIK-JC Writer output is not empty")
+            raise ExpertManifoldError("fresh MGCI-JC Writer output is not empty")
     elif (
         not args.resume.is_dir()
         or args.resume.parent.name != "checkpoints"
         or args.resume.parent.parent.resolve() != args.output_dir
         or not (args.output_dir / "run_contract.json").is_file()
     ):
-        raise ExpertManifoldError("CGIK-JC Writer resume output ownership changed")
+        raise ExpertManifoldError("MGCI-JC Writer resume output ownership changed")
     if args.config != V6_PRIOR_CANONICAL_CONFIG.resolve():
-        raise ExpertManifoldError("CGIK-JC Writer requires the canonical config")
+        raise ExpertManifoldError("MGCI-JC Writer requires the canonical config")
     load_v6_prior_config(args.config)
     if args.num_workers < 0 or (
         args.stop_after_macro is not None and args.stop_after_macro <= 0
     ):
-        raise ExpertManifoldError("invalid CGIK-JC Writer worker or stop boundary")
+        raise ExpertManifoldError("invalid MGCI-JC Writer worker or stop boundary")
     return args

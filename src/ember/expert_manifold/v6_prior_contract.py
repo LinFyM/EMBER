@@ -1,4 +1,4 @@
-"""Fail-closed scientific and launch contract for active CGIK-JC."""
+"""Fail-closed scientific and launch contract for active MGCI-JC."""
 
 from __future__ import annotations
 
@@ -18,24 +18,24 @@ from ember.writer.functional import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
     REPO_ROOT
-    / "configs/pi05_v6_causal_goal_interaction_key_joint_credit_v1.json"
+    / "configs/pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_v1.json"
 )
 V6_PRIOR_CONFIG_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_v1"
 )
 V6_PRIOR_RUN_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_run_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_run_v1"
 )
 V6_PRIOR_PROFILE_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_profile_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_profile_v1"
 )
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_completion_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
-_PVJFC_PROVENANCE_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_paired_video_joint_functional_credit_v1.json"
+_CGIK_PROVENANCE_CONFIG = (
+    REPO_ROOT / "configs/pi05_v6_causal_goal_interaction_key_joint_credit_v1.json"
 )
 
 _EXPECTED_TOP_LEVEL = {
@@ -57,7 +57,7 @@ _EXPECTED_TOP_LEVEL = {
     "formal_run",
     "evaluation",
 }
-_UNCHANGED_PVJFC_SECTIONS = (
+_UNCHANGED_CGIK_SECTIONS = (
     "authorities",
     "initialization",
     "information_wall",
@@ -69,7 +69,7 @@ _UNCHANGED_PVJFC_SECTIONS = (
     "optimization",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_causal_goal_interaction_key_joint_credit",
+    "name": "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "training_views_per_task": 2,
@@ -79,13 +79,13 @@ _EXPECTED_METHOD = {
     "deployment_output": "one complete 38-target rank16 public LoRA",
 }
 _EXPECTED_WRITER_ARCHITECTURE = (
-    "frozen_pi05_v6_plus_policy_innovation_causal_goal_interaction_keyed_"
-    "program_residual_v1"
+    "frozen_pi05_v6_plus_policy_innovation_magnitude_gated_causal_"
+    "interaction_keyed_program_residual_v1"
 )
 _EXPECTED_CONDITION_FEATURE = {
     "kind": (
-        "frozen_source_policy_zero_image_subtracted_phase_aligned_causal_goal_"
-        "interaction_jl_v1"
+        "frozen_source_policy_zero_image_subtracted_phase_aligned_magnitude_"
+        "gated_causal_interaction_jl_v1"
     ),
     "input": (
         "final_task_span_language_mean_plus_final_action_suffix_mean_actual_"
@@ -104,10 +104,16 @@ _EXPECTED_CONDITION_FEATURE = {
     "causal_block": (
         "sqrt_normalized_causal_prefix_mean_of_phase_centered_policy_innovation"
     ),
-    "interaction_block": (
+    "magnitude_gated_causal_block": (
+        "zero_preserving_l2_of_abs_fixed_jl_goal_times_fixed_jl_causal"
+    ),
+    "signed_interaction_block": (
         "zero_preserving_l2_of_fixed_jl_goal_times_fixed_jl_causal"
     ),
-    "output_blocks": ["causal", "goal_causal_interaction"],
+    "output_blocks": [
+        "goal_magnitude_gated_causal",
+        "signed_goal_causal_interaction",
+    ],
     "goal_only_output_path": False,
     "descriptor_width": 6144,
     "feature_width": 256,
@@ -115,11 +121,12 @@ _EXPECTED_CONDITION_FEATURE = {
     "projection_shape": [2, 128, 3072],
     "projection": "two_fixed_no_bias_row_normalized_fp32_nonpersistent_blocks",
     "block_normalization": (
-        "goal_and_causal_independent_zero_preserving_l2_then_interaction_"
-        "zero_preserving_l2"
+        "goal_and_causal_independent_zero_preserving_l2_then_magnitude_gated_"
+        "causal_and_signed_interaction_independent_zero_preserving_l2"
     ),
     "fusion": (
-        "concatenate_causal_plus_goal_causal_interaction_then_zero_preserving_l2"
+        "concatenate_goal_magnitude_gated_causal_plus_signed_goal_causal_"
+        "interaction_then_zero_preserving_l2"
     ),
     "ordered_negative_hot_path": (
         "each_real_frame_encoded_once_then_hidden_reordered_before_phase_alignment"
@@ -337,9 +344,9 @@ _EXPECTED_EVALUATION_STATIC = {
     "required_writer_model_batch_sizes": [8, 16, 32],
     "minimum_smoke_writer_model_batch_size": 8,
 }
-_EVALUATION_BLOCKED_STATUS = "blocked_until_live_cgik_full96_profile_passes"
-_EVALUATION_SEALED_STATUS = "sealed_from_live_cgik_full96_profile"
-_EVALUATION_NONPASS_STATUS = "not_run_after_cgik_profile_nonpass"
+_EVALUATION_BLOCKED_STATUS = "blocked_until_live_mgci_full96_profile_passes"
+_EVALUATION_SEALED_STATUS = "sealed_from_live_mgci_full96_profile"
+_EVALUATION_NONPASS_STATUS = "not_run_after_mgci_profile_nonpass"
 _COHERENT_STATES = {
     (
         "active_cpu_ready_awaiting_live_profile",
@@ -368,9 +375,9 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
     try:
         path = (REPO_ROOT / str(config["authorities"][name]["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing CGIK-JC Writer authority: {name}") from error
+        raise ExpertManifoldError(f"missing MGCI-JC Writer authority: {name}") from error
     if not path.is_file():
-        raise ExpertManifoldError(f"CGIK-JC Writer authority is missing: {name}")
+        raise ExpertManifoldError(f"MGCI-JC Writer authority is missing: {name}")
     return path
 
 
@@ -415,16 +422,22 @@ def git_commit_in_active_authority_lineage(commit: str) -> bool:
 
 def _provenance_sections_match(config: Mapping[str, Any]) -> bool:
     try:
-        pvjfc = json.loads(_PVJFC_PROVENANCE_CONFIG.read_text(encoding="utf-8"))
+        cgik = json.loads(_CGIK_PROVENANCE_CONFIG.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
-    writer = dict(pvjfc.get("writer", {}))
+    writer = dict(cgik.get("writer", {}))
     writer["architecture"] = _EXPECTED_WRITER_ARCHITECTURE
-    condition = dict(pvjfc.get("condition_feature", {}))
+    condition = dict(cgik.get("condition_feature", {}))
+    condition.pop("interaction_block", None)
     condition.update(
         {
             "kind": _EXPECTED_CONDITION_FEATURE["kind"],
-            "interaction_block": _EXPECTED_CONDITION_FEATURE["interaction_block"],
+            "magnitude_gated_causal_block": _EXPECTED_CONDITION_FEATURE[
+                "magnitude_gated_causal_block"
+            ],
+            "signed_interaction_block": _EXPECTED_CONDITION_FEATURE[
+                "signed_interaction_block"
+            ],
             "output_blocks": _EXPECTED_CONDITION_FEATURE["output_blocks"],
             "goal_only_output_path": False,
             "block_normalization": _EXPECTED_CONDITION_FEATURE[
@@ -435,8 +448,8 @@ def _provenance_sections_match(config: Mapping[str, Any]) -> bool:
     )
     return (
         all(
-            config.get(name) == pvjfc.get(name)
-            for name in _UNCHANGED_PVJFC_SECTIONS
+            config.get(name) == cgik.get(name)
+            for name in _UNCHANGED_CGIK_SECTIONS
         )
         and config.get("writer") == writer
         and config.get("condition_feature") == condition
@@ -534,20 +547,20 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
 def load_v6_prior_config(path: Path = V6_PRIOR_CANONICAL_CONFIG) -> dict[str, Any]:
     path = path.resolve()
     if path != V6_PRIOR_CANONICAL_CONFIG.resolve() or not path.is_file():
-        raise ExpertManifoldError("CGIK-JC Writer requires its canonical config path")
+        raise ExpertManifoldError("MGCI-JC Writer requires its canonical config path")
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ExpertManifoldError("invalid CGIK-JC Writer config") from error
+        raise ExpertManifoldError("invalid MGCI-JC Writer config") from error
     if not isinstance(config, dict) or not _config_matches(config):
         raise ExpertManifoldError(
-            "CGIK-JC Writer config violates its fail-closed contract"
+            "MGCI-JC Writer config violates its fail-closed contract"
         )
     for name in config["authorities"]:
         authority_path(config, name)
     initialization = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     if not initialization.is_dir():
-        raise ExpertManifoldError("CGIK-JC historical v6 initialization is missing")
+        raise ExpertManifoldError("MGCI-JC historical v6 initialization is missing")
     return config
 
 
@@ -560,18 +573,18 @@ def runtime_for_mode(
             or config["profile_run"]["status"]
             != "awaiting_live_a40_fresh0_to1_profile"
         ):
-            raise ExpertManifoldError("CGIK-JC mechanism profile is not authorized")
+            raise ExpertManifoldError("MGCI-JC mechanism profile is not authorized")
         return 1, (), int(config["profile_run"]["schedule_macro"])
     if mode == "formal":
         if (
             config.get("status") != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("CGIK-JC formal training is blocked by live gates")
+            raise ExpertManifoldError("MGCI-JC formal training is blocked by live gates")
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),
             0,
         )
-    raise ExpertManifoldError(f"unsupported CGIK-JC Writer mode: {mode}")
+    raise ExpertManifoldError(f"unsupported MGCI-JC Writer mode: {mode}")

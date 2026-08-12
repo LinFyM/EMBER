@@ -27,13 +27,13 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_checkpoint_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_checkpoint_v1"
 )
 V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_rank_rng_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_rank_rng_v1"
 )
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_inspection_v1"
+    "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_inspection_v1"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)

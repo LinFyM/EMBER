@@ -7,7 +7,7 @@
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PVJFC与
 CGIK-JC的唯一macro0 profile分别因condition=`597.861/270.188>200` non-pass，均无checkpoint或closed-loop
-成绩。active successor由当前authority定义为MGCI-JC；本文不提供启动命令。
+成绩。active successor由当前authority定义为MGCI-JC，canonical实现已CPU-ready；本文不提供启动命令。
 
 ## 1. Stable problem definition
 

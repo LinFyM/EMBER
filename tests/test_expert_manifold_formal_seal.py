@@ -32,35 +32,56 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_cgik_pvjfc_and_candidate_guard_nonpasses_remain_sealed() -> None:
+def test_mgci_active_and_historical_nonpasses_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "profile_result_sealed_nonpass"
+    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
-        "frozen_v6_causal_goal_interaction_key_joint_credit"
+        "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit"
     )
     assert active["information_wall"]["training_outcome_rollouts"] == 0
     assert active["information_wall"]["training_reward_reads"] == 0
     assert active["update"]["view_weights"] == [0.5, 0.5]
-    assert active["profile_run"]["status"] == "profile_result_sealed_nonpass"
-    active_profile = active["profile_run"]["artifact_evidence"]
-    assert active_profile["passed"] is False
-    assert active_profile["failed_checks"] == ["regularized_condition"]
-    assert active_profile["regularized_condition"] == pytest.approx(
+    assert active["profile_run"]["status"] == (
+        "awaiting_live_a40_fresh0_to1_profile"
+    )
+    assert active["profile_run"]["artifact_evidence"] is None
+    assert active["formal_run"]["status"] == (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    assert active["evaluation"]["formal_status"] == (
+        "blocked_until_live_mgci_full96_profile_passes"
+    )
+    assert active["evaluation"]["online_smoke_evidence"] is None
+
+    cgik = json.loads(
+        (
+            REPO_ROOT
+            / "configs/pi05_v6_causal_goal_interaction_key_joint_credit_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert cgik["status"] == "profile_result_sealed_nonpass"
+    assert cgik["method"]["name"] == (
+        "frozen_v6_causal_goal_interaction_key_joint_credit"
+    )
+    cgik_profile = cgik["profile_run"]["artifact_evidence"]
+    assert cgik_profile["passed"] is False
+    assert cgik_profile["failed_checks"] == ["regularized_condition"]
+    assert cgik_profile["regularized_condition"] == pytest.approx(
         270.18844360333486
     )
-    assert active_profile["negative_null_per_kind"] == {
+    assert cgik_profile["negative_null_per_kind"] == {
         "reversed": 16,
         "shuffled": 16,
         "wrong": 16,
     }
-    assert active_profile["retained_checkpoint"] is False
-    assert active_profile["formal_authorized"] is False
-    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
-    assert active["evaluation"]["formal_status"] == (
+    assert cgik_profile["retained_checkpoint"] is False
+    assert cgik_profile["formal_authorized"] is False
+    assert cgik["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert cgik["evaluation"]["formal_status"] == (
         "not_run_after_cgik_profile_nonpass"
     )
-    assert active["evaluation"]["online_smoke_evidence"] is None
+    assert cgik["evaluation"]["online_smoke_evidence"] is None
 
     pvjfc = json.loads(
         (
@@ -278,7 +299,7 @@ def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
         load_v6_prior_config(old)
 
 
-def test_cgik_preprofile_blocks_smoke_and_formal_evaluation() -> None:
+def test_mgci_preprofile_blocks_smoke_and_formal_evaluation() -> None:
     config = load_v6_prior_config(CONFIG)
     checkpoint = (REPO_ROOT / config["initialization"]["checkpoint"]).resolve()
     for require_formal in (False, True):
@@ -470,11 +491,33 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
 
     invalid_inspection_schema = deepcopy(inspection)
     invalid_inspection_schema["schema_version"] = (
-        "ember_pi05_v6_paired_video_joint_functional_credit_inspection_v1"
+        "ember_pi05_v6_causal_goal_interaction_key_joint_credit_inspection_v1"
     )
     monkeypatch.setattr(
         "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
         lambda _checkpoint, **_kwargs: invalid_inspection_schema,
+    )
+    with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)
+
+    invalid_checkpoint_schema = deepcopy(inspection)
+    invalid_checkpoint_schema["checkpoint_schema"] = (
+        "ember_pi05_v6_causal_goal_interaction_key_joint_credit_checkpoint_v1"
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: invalid_checkpoint_schema,
+    )
+    with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)
+
+    invalid_rng_schema = deepcopy(inspection)
+    invalid_rng_schema["rng"]["schema_version"] = (
+        "ember_pi05_v6_causal_goal_interaction_key_joint_credit_rank_rng_v1"
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: invalid_rng_schema,
     )
     with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
         _trained_writer_asset(config, checkpoint, source, require_formal=True)

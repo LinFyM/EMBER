@@ -420,3 +420,8 @@ continuous credit；也不授权调damping、门、block weight、seed、width�
 只把第一块改成`abs(goal)*causal`，第二块仍为`goal*causal`。同一cache预验correct48=`108.81`、
 correct+reverse16=`130.78`、same-task cosine mean/median=`.806/.848`。这不是新时序阶数或whitening，只是移除
 已定位的独立raw-causal公共地址；只有一次真实full96 profile能授权formal。
+
+MGCI-JC已原位实现：公开condition owner保持不变，唯一算法diff是`[u_c,u_g*u_c]→[abs(u_g)*u_c,u_g*u_c]`；
+旧CGIK config继续sealed non-pass，MGCI使用fresh config/run/profile/completion/checkpoint/RNG/inspection和eval v11
+identity。其余shared full96 solve、B20、negative schedule、optimizer与deployment合同逐节继承CGIK。显式LIBERO
+assets root下完整CPU为`339 passed`，compileall、canonical config load与diff检查通过；这些只授权一次live profile。

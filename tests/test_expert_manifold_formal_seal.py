@@ -34,7 +34,7 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 def test_mgci_active_and_historical_nonpasses_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["status"] == "active_formal_ready"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
         "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit"
@@ -43,16 +43,31 @@ def test_mgci_active_and_historical_nonpasses_remain_sealed() -> None:
     assert active["information_wall"]["training_reward_reads"] == 0
     assert active["update"]["view_weights"] == [0.5, 0.5]
     assert active["profile_run"]["status"] == (
-        "awaiting_live_a40_fresh0_to1_profile"
+        "sealed_from_live_a40_fresh0_to1_profile"
     )
-    assert active["profile_run"]["artifact_evidence"] is None
-    assert active["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
+    active_profile = active["profile_run"]["artifact_evidence"]
+    assert active_profile["passed"] is True
+    assert active_profile["checks_passed"] == active_profile["checks_total"] == 12
+    assert active_profile["positive_feature_rank"] == 48
+    assert active_profile["full_feature_rank"] == 96
+    assert active_profile["regularized_condition"] == pytest.approx(
+        174.81328134177383
     )
+    assert active_profile["both_view_descent_tasks"] == 24
+    assert active_profile["negative_null_per_kind"] == {
+        "reversed": 16,
+        "shuffled": 16,
+        "wrong": 16,
+    }
+    assert active_profile["retained_checkpoint"] is False
+    assert active_profile["formal_authorized"] is True
+    assert active["formal_run"]["status"] == "ready_after_live_profile_seal"
     assert active["evaluation"]["formal_status"] == (
-        "blocked_until_live_mgci_full96_profile_passes"
+        "sealed_from_live_mgci_full96_profile"
     )
-    assert active["evaluation"]["online_smoke_evidence"] is None
+    assert active["evaluation"]["online_smoke_evidence"][
+        "writer_model_batch_size"
+    ] == 32
 
     cgik = json.loads(
         (
@@ -299,18 +314,21 @@ def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
         load_v6_prior_config(old)
 
 
-def test_mgci_preprofile_blocks_smoke_and_formal_evaluation() -> None:
+def test_mgci_profile_seal_opens_formal_evaluation() -> None:
     config = load_v6_prior_config(CONFIG)
     checkpoint = (REPO_ROOT / config["initialization"]["checkpoint"]).resolve()
+    source = read_json(checkpoint.parent.parent / "run_contract.json")["source"]
     for require_formal in (False, True):
-        with pytest.raises(ExpertManifoldError, match="blocked until its live profile"):
-            _evaluation_writer_asset(
-                config_path=CONFIG,
-                checkpoint=checkpoint,
-                source={},
-                video_condition="correct",
-                require_formal=require_formal,
-            )
+        _, observed, status, asset = _evaluation_writer_asset(
+            config_path=CONFIG,
+            checkpoint=checkpoint,
+            source=source,
+            video_condition="correct",
+            require_formal=require_formal,
+        )
+        assert observed["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
+        assert status == "sealed_from_live_mgci_full96_profile"
+        assert asset["kind"] == "historical_v6_macro400_load_only"
 
 
 def test_task_expert_authority_remains_independent_of_retired_writer_paths(

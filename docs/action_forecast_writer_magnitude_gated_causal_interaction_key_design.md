@@ -30,7 +30,9 @@ rank-16 LoRA。
 formal、deployment结果或closed-loop评测。
 
 实现状态：fresh-incompatible canonical owner、checkpoint/RNG/inspection三套identity和eval v11 family已经完成，
-完整CPU回归`339 passed`。这不改变上述科学授权；下一步仍只有一次clean pushed frozen worktree raw full96 profile。
+完整CPU回归`339 passed`。clean`eb1e53b`上的唯一raw full96 profile以condition=`174.813`、rank`48/96`、24/24
+双view与四suite descent、negative ratio=`.02088`、三类各16/16、全链路和`49.841s`通过12/12门，无checkpoint。
+因此当前按第9节开放fresh formal`0→5`；不得重跑profile或绕过macro5 strict400门。
 
 ## 2. Earliest failed interface
 

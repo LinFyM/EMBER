@@ -425,3 +425,9 @@ MGCI-JC已原位实现：公开condition owner保持不变，唯一算法diff是
 旧CGIK config继续sealed non-pass，MGCI使用fresh config/run/profile/completion/checkpoint/RNG/inspection和eval v11
 identity。其余shared full96 solve、B20、negative schedule、optimizer与deployment合同逐节继承CGIK。显式LIBERO
 assets root下完整CPU为`339 passed`，compileall、canonical config load与diff检查通过；这些只授权一次live profile。
+
+clean`eb1e53b`唯一raw-frame full96 profile随后以12/12通过：condition=`174.813`，比PVJFC/CGIK的
+`597.861/270.188`继续下降；positive/full rank=`48/96`，24/24双view和四suite derivative为负，negative motion
+ratio=`.02088`且reversed/shuffled/wrong各16/16，Program→A/B→BA→fixed action全非零，wall=`49.841s`，OOM/
+nonfinite/outcome rollout/negative policy forward均0。root没有checkpoint。MGCI因此只获得fresh`0→5`真实闭环
+裁决资格；condition通过不是性能结论，也不授权profile重跑或小扫。

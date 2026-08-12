@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "active_formal_ready",
   "method": {
     "name": "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -190,7 +190,7 @@
     }
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "sealed_from_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -219,10 +219,30 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_mgci_jc_full96_profile_macro0_r6_b20_eb1e53b_20260812/mechanism_profile.json",
+      "schema": "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_profile_v1",
+      "source_commit": "eb1e53bdfb6e74e6290c37f4b85114427562a708",
+      "passed": true,
+      "checks_passed": 12,
+      "checks_total": 12,
+      "positive_feature_rank": 48,
+      "full_feature_rank": 96,
+      "regularized_condition": 174.81328134177383,
+      "both_view_descent_tasks": 24,
+      "negative_to_correct_motion_ratio": 0.02088325276780897,
+      "negative_null_per_kind": {"reversed": 16, "shuffled": 16, "wrong": 16},
+      "phase_a_seconds": 48.31620991998352,
+      "step_seconds": 49.840680411085486,
+      "world_size": 6,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "retained_checkpoint": false,
+      "formal_authorized": true
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "ready_after_live_profile_seal",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -247,12 +267,34 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "blocked_until_live_mgci_full96_profile_passes",
+    "formal_status": "sealed_from_live_mgci_full96_profile",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_same_node_devices_with_sufficient_peak_memory_headroom_without_waiting_low_utilization_partial_occupancy_is_allowed",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
     "required_writer_model_batch_sizes": [8, 16, 32],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": null
+    "online_smoke_evidence": {
+      "schema": "ember_pi05_mgci_full96_profile_deployment_authority_v1",
+      "run_commit": "eb1e53bdfb6e74e6290c37f4b85114427562a708",
+      "writer_model_batch_size": 32,
+      "batch_selection": "inherited_unchanged_batch32_writer_topology_from_cveg_profile",
+      "throughput_profile": {
+        "path": "runs/outputs/pi05_cveg_writer_profile_val8x4_correct_gpu02p3_2eb1e8e_20260812/writer_generation_profile.json",
+        "schema": "ember_pi05_writer_generation_profile_v2",
+        "source_commit": "2eb1e8eeecb1d09f7a4f6457eec7edc80609882b",
+        "profiled_writer_model_batch_sizes": [8, 16, 32],
+        "selected_loras_per_second": 0.4713804924700972,
+        "selected_peak_allocated_bytes": 11837472256
+      },
+      "mechanism_profile": {
+        "path": "runs/outputs/pi05_mgci_jc_full96_profile_macro0_r6_b20_eb1e53b_20260812/mechanism_profile.json",
+        "schema": "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_profile_v1",
+        "passed": true,
+        "complete_lora_response_nonzero": true,
+        "fixed_action_response_nonzero": true,
+        "oom_count": 0,
+        "nonfinite_count": 0
+      }
+    }
   }
 }

@@ -200,7 +200,11 @@
   cosine`.806/.848`。只授权实现、CPU门和一次raw full96 profile。
 - [x] 原位实现fresh-incompatible MGCI-JC：只改第一condition block；fresh checkpoint/RNG/inspection、eval v11和
   历史CGIK family共存接线完成，显式LIBERO assets root下完整CPU`339 passed`、compileall与config gate通过。
-- [ ] 从clean pushed commit建立detached frozen worktree并完成唯一full96机制profile；不得小扫。
+- [x] clean pushed`eb1e53b`、detached frozen worktree、gpu02:0--5 world6唯一full96 profile：12/12门通过，
+  condition=`174.813`、rank`48/96`、24/24双view、negative`.02088`、三类16/16、全链路和`49.841s`健康；
+  root无checkpoint，不重跑、不小扫。
+- [ ] 封存profile gate后从clean pushed commit fresh formal`0→5`，保存macro1--5；完成后立即strict paired correct400，
+  按correct>=140、breadth>=6、lost<=10、gained>lost、至少3 suites不降及非单task主导裁决是否resume。
 
 ## Repository closeout
 

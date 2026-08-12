@@ -66,6 +66,10 @@ def _preprofile_config() -> dict:
     config["formal_run"]["status"] = (
         "blocked_until_live_profile_passes_and_is_sealed"
     )
+    config["evaluation"]["formal_status"] = (
+        "blocked_until_live_mgci_full96_profile_passes"
+    )
+    config["evaluation"]["online_smoke_evidence"] = None
     return config
 
 

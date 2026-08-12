@@ -92,8 +92,9 @@ condition降到`270.188`、negative ratio降到`.02457`且三类各16/16，但12
 小扫关闭。active successor是MGCI-JC：只用goal magnitude调制CGIK的独立raw-causal块，保留signed
 interaction及全部paired-credit合同；完整公式与一次性门见
 `docs/action_forecast_writer_magnitude_gated_causal_interaction_key_design.md`。fresh-incompatible canonical实现、
-三套resume identity、eval v11接线和完整CPU`339 passed`已完成；下一动作是clean pushed frozen worktree上的
-唯一raw full96 profile。
+三套resume identity、eval v11接线和完整CPU`339 passed`已完成；clean`eb1e53b`唯一raw full96 profile又以
+condition=`174.813`、rank`48/96`、24/24双view、negative`.02088`和`49.841s`通过12/12门。当前授权fresh
+formal`0→5`，随后立即single-checkpoint strict paired correct400。
 
 ## 2. Fixed information contract
 

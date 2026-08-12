@@ -2,8 +2,11 @@
 
 ## Authority and current truth
 
-本文件、`docs/active_session_handoff.md`和`docs/execution_brief.md`共同定义当前authority。历史设计、旧日志、
-formal artifact与Git快照中的“当前/下一步/active”都只表示当时状态，不能自行恢复执行。
+`docs/current_owner_requirements.md`记录本session已经明确的owner目标、方法要求、设计偏好与协作方式，是当前
+需求authority；本文件定义安全、信息墙、Git、GPU、存储、正式评测与已封存实验边界。`docs/active_session_handoff.md`
+和`docs/execution_brief.md`保留当时实验事实、资产位置和工程合同，但不再作为“重新接管/交接”或当前架构的
+指挥文件。历史设计、旧日志、formal artifact与Git快照中的“当前/下一步/active/暂停”都只表示当时状态，
+不能自行恢复执行。若owner最新明确表达与旧文档叙事冲突，以最新表达及同步后的current requirements为准。
 
 2026-08-12当前真相：
 
@@ -13,7 +16,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - MGCI-JC已完成fresh formal`0→5`与macro5 strict paired400并终局non-pass：`134/400`、breadth6、per-task=
   `1/5/46/30/0/34/18/0`，相对old134为`114 retained/20 gained/20 lost`、churn40。除breadth外全部macro5门
-  失败；不resume、不补controls、不小扫。当前没有active successor，owner要求本轮分析与封存后暂停讨论。
+  失败；不resume、不补controls、不小扫。该次“暂停讨论”只属当时状态；owner现已授权围绕新的dynamic-K
+  backbone-memory rank-8 Writer持续自主迭代，具体authority见对应新design。
 - 最新uniform pivot-rank14路线已经终局non-pass并退役：online=`128/400`；old-cache compiler-only=
   `138/400`、breadth7，但相对old134 retained/gained/lost=`119/19/15`，违反lost`<=10`。
 - compression和online regeneration均造成独立能力换手；Gate C、cycle1、controls和新训练未授权。
@@ -72,24 +76,26 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 
 修改代码、配置、数据、split、模型或实验状态，或启动任何GPU工作前，主进程必须完整读到EOF：
 
-1. `README.md`
-2. `docs/active_session_handoff.md`
-3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_magnitude_gated_causal_interaction_key_design.md`
-5. `docs/action_forecast_writer_causal_goal_interaction_key_design.md`
-6. `docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`
-7. `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`
-8. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
-9. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
-10. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
-11. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-12. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-13. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-14. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-15. `docs/research_history.md`
-16. `task_plan.md`
-17. `findings.md`
-18. `docs/concept.md`
+1. `docs/current_owner_requirements.md`
+2. `README.md`
+3. `docs/active_session_handoff.md`
+4. `docs/execution_brief.md`
+5. `docs/action_forecast_writer_magnitude_gated_causal_interaction_key_design.md`
+6. `docs/action_forecast_writer_causal_goal_interaction_key_design.md`
+7. `docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`
+8. `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`
+9. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
+10. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
+11. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+12. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+13. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+14. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+15. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+16. `docs/research_history.md`
+17. `task_plan.md`
+18. `findings.md`
+19. `docs/concept.md`
+20. `docs/action_forecast_writer_dynamic_k_backbone_memory_design.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读
@@ -131,21 +137,21 @@ single-checkpoint结果。
 
 ## Information wall and deployment
 
-canonical benchmark目前保持one-shot：
+canonical历史基线保持one-shot；当前新方法另立dynamic-K authority：
 
-- Writer输入只能是exact task language加恰好一条action-hidden teacher video。
+- 历史one-shot Writer输入是exact task language加恰好一条action-hidden teacher video；新方法可在同一Writer
+  中接收authority规定范围内的一条或多条action-hidden same-task videos，训练必须真实覆盖其cardinality。
 - video是唯一dynamic value；language可作query/context/address，但不能单独生成LoRA或形成bypass。
 - Writer不得读取teacher action、proprio、reward、terminal、task ID、filename、object pose、hidden
   normalization或其它元数据。
-- 每episode一条video生成一套完整38-target public rank-16 LoRA；不做video/LoRA/checkpoint平均或融合，
-  不挑最好video。
+- 每个condition只生成一套完整38-target public LoRA；新方法可fresh改变rank，但不得压缩旧checkpoint冒充fresh。
+  不做分别生成的video LoRA、checkpoint平均或融合，不挑最好video。
 - frame stride固定5；frozen source policy无trainable parameters；no-video/step0必须functional identity。
 - task experts和历史feature cache只能作train24监督或机制分析，不能成为held部署输入、nearest-expert route或
   第二套LoRA。
 
-few-shot是允许研究的未来变量，但不能悄悄改变one-shot基线：必须另写authority，固定`k`或定义可变数量的
-集合聚合，保持action-hidden、禁止video挑选，并与相同计算/评测口径的one-shot对照。K4历史已经证明
-few-shot可减少部分偶然性，但不自动解决共享credit、正确时序或task drift。
+当前dynamic-K方法必须在新design中定义可变数量集合聚合，保持action-hidden、禁止video挑选；K1与K>1都走
+同一canonical graph。K4历史已经证明few-shot可减少部分偶然性，但不自动解决共享credit、正确时序或task drift。
 
 ## Training contract for any successor
 

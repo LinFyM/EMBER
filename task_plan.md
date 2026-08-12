@@ -8,11 +8,17 @@
 - [ ] 同一 shared method、同一 single checkpoint 的 strict paired correct 严格`>150/400`，随后继续提高。
 - [ ] 高分必须同时具有较高 task breadth、低 checkpoint 换手、same-task-other video 鲁棒性，以及 correct
   对 wrong/shuffled/reversed/no-video 的实质优势。
-- [x] canonical one-shot 信息墙固定为 exact task language + exactly one action-hidden teacher video；video 是
-  唯一 dynamic value；一次生成完整 38-target rank-16 LoRA。
+- [x] canonical历史one-shot信息墙固定为exact task language + exactly one action-hidden teacher video；video是
+  唯一dynamic value；当前新方法另立Dynamic-K+fresh rank-8 authority，保留历史基线而不受其rank/cardinality绑死。
 - [x] frozen source policy、source-only normalization、24/8/8 split 和 official paired evaluator 已封存。
 
 ## Current decision
+
+- [ ] 实现并裁决Dynamic-K backbone-memory rank-8 Writer：K1--K4从step0均衡训练；8个真实Action Expert
+  context memory tokens在正常图像+语言+固定probe的同一次forward中逐层更新；每video独立有向编码，跨video
+  置换不变共识；共享layer/rank mapper一次写完整38-target LoRA。
+- [ ] 首个主要失效接口检验为“同task不同video的有向memory程序能否在shared Writer中形成共同credit”；
+  先做identity/order/set/gradient/throughput机制门，随后fresh task-complete训练并尽快strict paired400。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。
 - [x] uniform pivot-rank14 online Gate B=`128/400`，相对 old134 lost21，未过门。

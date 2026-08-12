@@ -3,9 +3,9 @@
 EMBER研究能否把机器人教学视频中的任务知识一次性编译成策略参数：
 
 ```text
-exact task language + one action-hidden teaching video
-                    -> shared Writer
-                    -> one complete rank-16 task LoRA
+exact task language + one or more action-hidden teaching videos
+                    -> one shared Dynamic-K Writer
+                    -> one complete task-conditioned LoRA
                     -> frozen π0.5-LIBERO source policy
                     -> closed-loop execution on unseen initializations
 ```
@@ -119,8 +119,8 @@ single checkpoint的paired400及视频controls。
 - source corpus为与目标40 specification-only去重后的71个LIBERO-90 tasks，每task 50条成功episodes。
 - 目标40固定split是24 train / 8 validation / 8 test，封存在`configs/libero_24_8_8_v1/`。
 - normalization只来自source corpus并冻结；validation/test actions不产生梯度。
-- canonical deployment目前保持exact language + exactly one action-hidden video；未来few-shot必须另立matched
-  authority，不能悄悄替换one-shot基线。
+- canonical历史基线保持exact language + exactly one action-hidden video；当前新方法由独立design authority
+  定义同一Writer的K1--K4动态输入与fresh rank-8完整LoRA，不能把few-shot成绩冒充one-shot成绩。
 - official evaluator严格配对correct/same/wrong/shuffled/reversed/no-video的state、env/policy RNG和video。
 - checkpoint只由真实paired closed-loop选择；80-row screen、loss、几何或checkpoint union不能代表真实水平。
 
@@ -165,6 +165,10 @@ checkpoint与resume合同正确。
 
 修改或运行前完整阅读[`AGENTS.md`](AGENTS.md)以及其中的最小清单。主要入口：
 
+- [`docs/current_owner_requirements.md`](docs/current_owner_requirements.md)：当前session的owner目标、方法要求、
+  设计偏好、开放变量和协作方式；不是handoff或某个候选架构；
+- [`docs/action_forecast_writer_dynamic_k_backbone_memory_design.md`](docs/action_forecast_writer_dynamic_k_backbone_memory_design.md)：
+  当前active Dynamic-K、真实Action Expert memory、fresh rank-8 Writer架构与可证伪实验合同；
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
 - [`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`](docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md)：

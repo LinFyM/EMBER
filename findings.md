@@ -7,6 +7,12 @@
 
 长期目标是同一 shared method、同一 single checkpoint 的 strict paired correct 严格`>150/400`。目前未达到：
 
+2026-08-13新的active架构判断是Dynamic-K backbone-memory rank-8 Writer。它不是从旧rank16 checkpoint压缩，
+而是针对same-task不同video correction近正交与post-backbone compiler衰减，从真实图文+Action Expert联合forward
+直接形成逐层memory grid；只让有符号视频变化进入dynamic value，再由跨video共识和共享layer/rank mapper写出
+fresh完整LoRA。它继承v6的task-grounded address、真实frame ordinal与causal Procedure，但不继承旧K4的固定
+四基/DCT16/phase-wise mean，也不继承已退役Program residual/guard/solver。
+
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频特异性强，absolute不足 |

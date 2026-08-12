@@ -335,23 +335,6 @@ def _expected_residual_ownership(config: Mapping[str, Any]) -> dict[str, Any]:
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
-        "success_key_anchor_bank": {
-            "feature_shape": [
-                int(config["success_key_bank"]["task_slots"]),
-                int(config["success_key_bank"]["feature_width"]),
-            ],
-            "feature_dtype": "torch.float32",
-            "present_shape": [int(config["success_key_bank"]["task_slots"])],
-            "task_global_ids": sorted(
-                global_task_id
-                for global_task_id, row in _target_rows(config).items()
-                if row["split_role"] == "train"
-            ),
-            "checkpoint_owned": True,
-            "deployment_owned": False,
-            "trainable": False,
-            "first_stable_success_only": True,
-        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -395,9 +378,7 @@ def _residual_contract_matches(
         "initialization",
         "condition_feature",
         "program_residual",
-        "success_key_bank",
         "update",
-        "environment",
         "objective",
         "rng",
         "ownership",
@@ -413,7 +394,6 @@ def _residual_contract_matches(
             historical["writer_state"]["state_value_count"]
         ),
         "residual_memory": "fresh_zero_then_memory_only_exact_resume",
-        "success_key_bank": "fresh_empty_then_exact_resume",
     }
     fixed = {
         "run_schema": V6_PRIOR_RUN_SCHEMA,
@@ -422,9 +402,7 @@ def _residual_contract_matches(
         "initialization": expected_initialization,
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
-        "success_key_bank": config["success_key_bank"],
         "update": config["update"],
-        "environment": config["environment"],
         "objective": config["objective"],
         "rng": config["rng"],
         "ownership": _expected_residual_ownership(config),
@@ -448,8 +426,7 @@ def _residual_inspection(
     try:
         macro = int(inspection.get("next_macro", -1))
         memory = inspection.get("program_memory", {})
-        bank = inspection.get("success_key_bank", {})
-        if not isinstance(memory, Mapping) or not isinstance(bank, Mapping):
+        if not isinstance(memory, Mapping):
             raise TypeError("memory metadata")
         identity = {
             "checkpoint_schema": inspection.get("checkpoint_schema"),
@@ -473,23 +450,6 @@ def _residual_inspection(
             "finite": None,
         }
         observed_memory = {name: memory.get(name) for name in expected_memory}
-        expected_bank = {
-            "tensor_count": 3,
-            "feature_dtype": "torch.float32",
-            "feature_shape": [
-                int(config["success_key_bank"]["task_slots"]),
-                int(config["success_key_bank"]["feature_width"]),
-            ],
-            "feature_value_count": (
-                int(config["success_key_bank"]["task_slots"])
-                * int(config["success_key_bank"]["feature_width"])
-            ),
-            "present_dtype": "torch.uint8",
-            "task_global_ids_dtype": "torch.int64",
-            "present_count": None,
-            "finite": None,
-        }
-        observed_bank = {name: bank.get(name) for name in expected_bank}
     except (TypeError, ValueError):
         raise ExpertManifoldError("v6-prior residual checkpoint changed") from None
     if (
@@ -498,7 +458,7 @@ def _residual_inspection(
         or identity != expected_identity
         or inspection.get("cursor_contract") != cursor_contract(config, macro)
         or observed_memory != expected_memory
-        or observed_bank != expected_bank
+        or "success_key_bank" in inspection
     ):
         raise ExpertManifoldError("v6-prior residual checkpoint changed")
     return macro, memory

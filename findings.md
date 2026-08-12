@@ -383,4 +383,12 @@ composition，而是shared credit acquisition本身；后继不能继续给singl
 v6+Program+rank16 LoRA路径上、对同一B20及同一policy RNG求Program cotangent；两条correct及各自negative以
 `1/2+1/2`进入一次weighted joint solve。它允许same-task不同video有不同的有用motion，不把cotangent、feature或
 LoRA先平均；同时swap invariance和duplicate-view退化确保没有顺序偏置或task权重翻倍。该设计只检验continuous
-paired-video credit是否比single-point blind proposal更接近跨video共同support，尚无机制或性能证据。
+paired-video credit是否比single-point blind proposal更接近跨video共同support。
+
+PVJFC canonical实现已经原位替换CVEG。每个task只构造一次B20 batch与keyed policy seed，两条view串行完成
+独立Writer图、functional LoRA VJP和Program cotangent后立即释放大graph；dynamic queue收齐train24后只gather
+48 correct、48 matched negative和48 cotangent，以固定半权做一个96-row ridge write。部署仍是一条video生成一套
+完整rank16 LoRA；checkpoint只有Program memory与rank RNG。旧candidate guard、success bank、outcome rollout、
+hard E和其active tests已删除。swap invariance、duplicate-view对独立闭式single-view ridge退化、world1--6
+padded gather、信息墙与exact-resume的完整CPU回归为`329 passed`。这只是implementation closure，尚无GPU机制或
+closed-loop证据；下一裁决是clean pushed commit上的唯一fresh macro0 profile。

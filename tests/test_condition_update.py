@@ -8,7 +8,7 @@ from ember.writer.condition_update import (
     PolicyInnovationGoalCausalConditionFeature,
     ProgramResidualMemory,
     apply_program_residual_delta_with_evidence_,
-    success_key_nullspace_program_delta,
+    paired_video_joint_program_delta,
 )
 
 
@@ -91,192 +91,126 @@ def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
     assert not torch.equal(natural, reversed_feature)
 
 
-def _solve(
+def _paired_video_solve(
     correct: torch.Tensor,
     negative: torch.Tensor,
-    cotangents: torch.Tensor,
+    cotangent: torch.Tensor,
     *,
-    anchors: torch.Tensor | None = None,
-    protected: torch.Tensor | None = None,
-    step_size: float = 1.0,
+    task_count: int,
 ):
-    return success_key_nullspace_program_delta(
+    return paired_video_joint_program_delta(
         correct,
         negative,
-        cotangents,
-        (
-            anchors
-            if anchors is not None
-            else correct.new_empty((0, correct.shape[1]))
+        cotangent,
+        task_count=task_count,
+        view_weights=torch.full(
+            (correct.shape[0],), 0.5, dtype=torch.float32, device=correct.device
         ),
-        (
-            protected
-            if protected is not None
-            else torch.zeros(correct.shape[0], dtype=torch.bool)
-        ),
-        step_size=step_size,
+        step_size=1.0,
         relative_damping=0.01,
     )
 
 
-def test_zero_anchor_full48_update_preserves_negative_rows_and_closes_memory() -> None:
-    correct = torch.eye(4, dtype=torch.float32)[:2]
-    negative = torch.eye(4, dtype=torch.float32)[2:]
-    cotangents = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4) / 10
-    delta, summary = _solve(correct, negative, cotangents)
-    full = torch.cat((correct, negative))
-    predicted = (full @ delta.flatten(1)).reshape(4, 3, 4)
-    torch.testing.assert_close(predicted[:2], -cotangents / 1.01, rtol=2e-5, atol=2e-6)
-    assert torch.equal(predicted[2:], torch.zeros_like(predicted[2:]))
-    assert summary.original_feature_rank == 4
-    assert summary.projected_feature_rank == 4
-    assert summary.anchor_rank == 0
-    assert summary.predicted_negative_to_unprotected_ratio == 0
-    assert delta.dtype == torch.float32
+def test_paired_video_duplicate_views_degenerate_to_single_view_solve() -> None:
+    generator = torch.Generator().manual_seed(307)
+    tasks = 4
+    correct = torch.randn(tasks, 11, generator=generator)
+    negative = torch.randn(tasks, 11, generator=generator)
+    cotangent = torch.randn(tasks, 2, 3, generator=generator)
+    features64 = torch.cat((correct, negative)).to(dtype=torch.float64)
+    gram64 = features64 @ features64.T
+    damping64 = 0.01 * gram64.diagonal().mean()
+    rhs64 = torch.cat(
+        (cotangent.flatten(1), torch.zeros_like(cotangent).flatten(1))
+    ).to(dtype=torch.float64)
+    single = -features64.T @ torch.linalg.solve(
+        gram64 + damping64 * torch.eye(2 * tasks, dtype=torch.float64),
+        rhs64,
+    )
+    paired, summary, motion = _paired_video_solve(
+        torch.cat((correct, correct)),
+        torch.cat((negative, negative)),
+        torch.cat((cotangent, cotangent)),
+        task_count=tasks,
+    )
+    torch.testing.assert_close(
+        paired.flatten(1).to(dtype=torch.float64),
+        single,
+        rtol=2e-5,
+        atol=2e-6,
+    )
+    assert summary.task_count == tasks
+    assert summary.views_per_task == 2
+    assert summary.row_count == 4 * tasks
 
     memory = ProgramResidualMemory(
-        feature_width=4,
-        program_slots=3,
-        program_width=4,
+        feature_width=correct.shape[1],
+        program_slots=cotangent.shape[1],
+        program_width=cotangent.shape[2],
     )
-    evidence = apply_program_residual_delta_with_evidence_(memory, delta, full)
-    torch.testing.assert_close(memory(full), predicted)
+    all_rows = torch.cat((correct, correct, negative, negative))
+    torch.testing.assert_close(
+        motion,
+        (all_rows @ paired.flatten(1)).reshape(4 * tasks, 2, 3),
+    )
+    evidence = apply_program_residual_delta_with_evidence_(memory, paired, all_rows)
     assert evidence.predicted_observed_max_abs == 0
     assert evidence.predicted_observed_relative_rms == 0
 
 
-def test_zero_anchor_update_matches_explicit_nonorthogonal_ridge() -> None:
-    generator = torch.Generator().manual_seed(29)
-    correct = torch.randn(3, 7, generator=generator)
-    negative = torch.randn(3, 7, generator=generator)
-    cotangent = torch.randn(3, 2, 4, generator=generator)
-    delta, summary = _solve(
-        correct, negative, cotangent, step_size=0.7
+def test_paired_video_joint_solve_is_invariant_to_per_task_view_swaps() -> None:
+    generator = torch.Generator().manual_seed(311)
+    tasks = 5
+    correct = torch.randn(2 * tasks, 13, generator=generator)
+    negative = torch.randn(2 * tasks, 13, generator=generator)
+    cotangent = torch.randn(2 * tasks, 2, 4, generator=generator)
+    expected, _, _ = _paired_video_solve(
+        correct, negative, cotangent, task_count=tasks
     )
-    features = torch.cat((correct, negative)).to(torch.float64)
-    gram = features @ features.T
-    damping = 0.01 * gram.diagonal().mean()
-    right = torch.cat(
-        (-0.7 * cotangent.flatten(1), torch.zeros_like(cotangent).flatten(1))
-    ).to(torch.float64)
-    expected = features.T @ torch.linalg.solve(
-        gram + damping * torch.eye(6, dtype=torch.float64), right
+    permutation = torch.arange(2 * tasks)
+    for task in (0, 2, 4):
+        permutation[task], permutation[tasks + task] = (
+            permutation[tasks + task].clone(),
+            permutation[task].clone(),
+        )
+    observed, _, _ = _paired_video_solve(
+        correct[permutation],
+        negative[permutation],
+        cotangent[permutation],
+        task_count=tasks,
     )
-    torch.testing.assert_close(
-        delta.flatten(1).to(torch.float64), expected, rtol=2e-5, atol=2e-6
-    )
-    assert summary.active_regularized_gram_condition_number >= 1
+    torch.testing.assert_close(observed, expected, rtol=2e-5, atol=2e-6)
 
 
-def test_success_keys_hard_constrain_shared_write_without_masking_objective() -> None:
-    correct = torch.eye(4, dtype=torch.float32)[:2]
-    negative = torch.eye(4, dtype=torch.float32)[2:]
-    cotangent = torch.arange(1, 17, dtype=torch.float32).reshape(2, 2, 4)
-    anchors = correct[:1].clone()
-    protected = torch.tensor([True, False])
-    delta, summary = _solve(
-        correct,
-        negative,
-        cotangent,
-        anchors=anchors,
-        protected=protected,
+def test_paired_video_joint_solve_descends_both_views_and_limits_negatives() -> None:
+    tasks = 3
+    primary = torch.eye(6)[:tasks]
+    companion = torch.eye(6)[tasks:]
+    correct = torch.cat((primary, companion))
+    negative = torch.zeros_like(correct)
+    cotangent = torch.arange(1, 1 + 6 * 4, dtype=torch.float32).reshape(6, 2, 2)
+    delta, summary, _ = _paired_video_solve(
+        correct, negative, cotangent, task_count=tasks
     )
-    motion = torch.cat((correct, negative)) @ delta.flatten(1)
-    torch.testing.assert_close(
-        anchors @ delta.flatten(1),
-        torch.zeros(1, 8),
-        rtol=0,
-        atol=1e-7,
-    )
-    assert torch.count_nonzero(motion[0]) == 0
-    assert torch.count_nonzero(motion[1]) > 0
-    assert torch.count_nonzero(motion[2:]) == 0
-    assert summary.current_protected_conditions == 1
-    assert summary.anchor_rank == 1
-    assert summary.original_feature_rank == 4
-    assert summary.projected_feature_rank == 3
-    assert summary.predicted_anchor_motion_rms < 1e-8 * (
-        summary.predicted_unprotected_correct_motion_rms
-    )
-
-
-def test_duplicate_and_permuted_success_keys_define_the_same_nullspace() -> None:
-    generator = torch.Generator().manual_seed(91)
-    correct = torch.randn(4, 9, generator=generator)
-    negative = torch.randn(4, 9, generator=generator)
-    cotangent = torch.randn(4, 2, 3, generator=generator)
-    anchors = correct[[0, 2]]
-    protected = torch.tensor([True, False, True, False])
-    expected, _ = _solve(
-        correct,
-        negative,
-        cotangent,
-        anchors=anchors,
-        protected=protected,
-    )
-    observed, summary = _solve(
-        correct,
-        negative,
-        cotangent,
-        anchors=anchors[[1, 0, 1]],
-        protected=protected,
-    )
-    torch.testing.assert_close(observed, expected, rtol=3e-5, atol=3e-6)
-    assert summary.anchor_constraint_rows == 3
-    assert summary.anchor_rank == 2
-
-
-def test_all_condition_directions_constrained_produces_finite_zero_write() -> None:
-    correct = torch.eye(3)
-    negative = torch.eye(3).roll(1, dims=0)
-    cotangent = torch.randn(3, 2, 2, generator=torch.Generator().manual_seed(5))
-    delta, summary = _solve(
-        correct,
-        negative,
-        cotangent,
-        anchors=torch.eye(3),
-        protected=torch.ones(3, dtype=torch.bool),
-    )
-    assert torch.equal(delta, torch.zeros_like(delta))
-    assert summary.projected_feature_rank == 0
-    assert summary.anchor_rank == 3
-
-
-def test_rank_deficient_features_and_zero_credit_remain_finite() -> None:
-    correct = torch.ones(2, 3)
-    negative = torch.ones(2, 3)
-    cotangent = torch.zeros(2, 2, 2)
-    delta, summary = _solve(correct, negative, cotangent)
+    assert summary.primary_directional_derivative < 0
+    assert summary.companion_directional_derivative < 0
+    assert summary.joint_directional_derivative < 0
+    assert summary.negative_to_correct_motion_ratio == 0
+    assert summary.value_delta_rms > 0
     assert torch.isfinite(delta).all()
-    assert summary.original_feature_rank == 1
-    assert summary.predicted_negative_to_unprotected_ratio == 0
-    assert torch.count_nonzero(delta) == 0
 
 
-@pytest.mark.parametrize(
-    "correct,negative,cotangent",
-    (
-        (torch.empty(0, 3), torch.empty(0, 3), torch.empty(0, 2, 2)),
-        (torch.ones(2, 3), torch.ones(1, 3), torch.ones(2, 2, 2)),
-        (
-            torch.full((2, 3), torch.nan),
-            torch.ones(2, 3),
-            torch.ones(2, 2, 2),
-        ),
-    ),
-)
-def test_blind_update_rejects_invalid_batches(
-    correct: torch.Tensor,
-    negative: torch.Tensor,
-    cotangent: torch.Tensor,
-) -> None:
-    with pytest.raises(ConditionUpdateError):
-        success_key_nullspace_program_delta(
+def test_paired_video_joint_solve_rejects_changed_weights() -> None:
+    correct = torch.eye(4)
+    negative = torch.zeros_like(correct)
+    cotangent = torch.ones(4, 2, 2)
+    with pytest.raises(ConditionUpdateError, match="view weights"):
+        paired_video_joint_program_delta(
             correct,
             negative,
             cotangent,
-            correct.new_empty((0, correct.shape[1])),
-            torch.zeros(correct.shape[0], dtype=torch.bool),
+            task_count=2,
+            view_weights=torch.tensor([0.5, 0.5, 0.25, 0.75]),
             step_size=1.0,
             relative_damping=0.01,
         )

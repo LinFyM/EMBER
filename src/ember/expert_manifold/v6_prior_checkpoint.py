@@ -1,4 +1,4 @@
-"""Atomic Program-memory and success-key-bank checkpoints for CVEG."""
+"""Atomic memory-only checkpoints for the frozen-v6 Program residual."""
 
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ from safetensors import safe_open
 from safetensors.torch import load_file, save_file
 
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -28,23 +27,16 @@ from ember.writer.condition_update import ProgramResidualMemory
 
 
 V6_PRIOR_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_cross_video_equivariant_candidate_guard_checkpoint_v1"
+    "ember_pi05_v6_paired_video_joint_functional_credit_checkpoint_v1"
 )
-V6_PRIOR_RNG_SCHEMA = (
-    "ember_pi05_v6_cross_video_equivariant_candidate_guard_rank_rng_v1"
-)
+V6_PRIOR_RNG_SCHEMA = "ember_pi05_v6_paired_video_joint_functional_credit_rank_rng_v1"
 V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA = (
-    "ember_pi05_v6_cross_video_equivariant_candidate_guard_inspection_v1"
+    "ember_pi05_v6_paired_video_joint_functional_credit_inspection_v1"
 )
 V6_PRIOR_WORLD_SIZE = 6
 FORMAL_PROGRAM_MEMORY_SHAPE = (256, 320, 256)
-FORMAL_SUCCESS_KEY_BANK_SHAPE = (24, 256)
 PROGRAM_MEMORY_FILE = "program_memory.safetensors"
 PROGRAM_MEMORY_KEY = "program_memory.value"
-SUCCESS_KEY_BANK_FILE = "success_key_bank.safetensors"
-SUCCESS_KEY_FEATURES_KEY = "success_key_bank.features"
-SUCCESS_KEY_PRESENT_KEY = "success_key_bank.present"
-SUCCESS_KEY_TASK_IDS_KEY = "success_key_bank.task_global_ids"
 _CONTENT_HASH_POLICY = "disabled_by_owner"
 _MANIFEST_KEYS = {
     "schema_version",
@@ -52,7 +44,6 @@ _MANIFEST_KEYS = {
     "metrics_rows",
     "world_size",
     "program_memory_shape",
-    "success_key_bank_shape",
     "cursor_contract",
     "checkpoint_contract",
     "files",
@@ -78,7 +69,6 @@ class _CheckpointLayout:
     metrics_rows: int
     world_size: int
     memory_shape: tuple[int, int, int]
-    bank_shape: tuple[int, int]
 
 
 def _error(component: str) -> ExpertManifoldError:
@@ -118,20 +108,6 @@ def _shape(value: Sequence[int]) -> tuple[int, int, int]:
         type(dimension) is not int or dimension <= 0 for dimension in dimensions
     ):
         raise _error("Program memory shape")
-    return dimensions
-
-
-def _bank_shape(value: Sequence[int]) -> tuple[int, int]:
-    try:
-        dimensions = tuple(value)
-    except TypeError as error:
-        raise _error("success-key bank shape") from error
-    if (
-        len(dimensions) != 2
-        or any(type(dimension) is not int or dimension <= 0 for dimension in dimensions)
-        or dimensions[0] != SuccessKeyAnchorBank.TASK_COUNT
-    ):
-        raise _error("success-key bank shape")
     return dimensions
 
 
@@ -292,86 +268,6 @@ def _inspect_program_memory_metadata(
     }
 
 
-def _validate_live_bank(
-    bank: SuccessKeyAnchorBank,
-    expected_shape: tuple[int, int],
-) -> None:
-    if not isinstance(bank, SuccessKeyAnchorBank):
-        raise _error("success-key bank owner")
-    bank.validate()
-    if tuple(bank.features.shape) != expected_shape:
-        raise _error("success-key bank tensor schema")
-
-
-def _load_success_key_bank(
-    path: Path,
-    expected_shape: tuple[int, int],
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    try:
-        state = load_file(str(path), device="cpu")
-    except Exception as error:
-        raise _error("success-key bank file") from error
-    expected = {
-        SUCCESS_KEY_FEATURES_KEY,
-        SUCCESS_KEY_PRESENT_KEY,
-        SUCCESS_KEY_TASK_IDS_KEY,
-    }
-    if set(state) != expected:
-        raise _error("success-key bank keys")
-    features = state[SUCCESS_KEY_FEATURES_KEY]
-    present_u8 = state[SUCCESS_KEY_PRESENT_KEY]
-    task_global_ids = state[SUCCESS_KEY_TASK_IDS_KEY]
-    if (
-        features.dtype != torch.float32
-        or tuple(features.shape) != expected_shape
-        or present_u8.dtype != torch.uint8
-        or tuple(present_u8.shape) != (expected_shape[0],)
-        or bool(((present_u8 != 0) & (present_u8 != 1)).any())
-        or task_global_ids.dtype != torch.int64
-        or tuple(task_global_ids.shape) != (expected_shape[0],)
-        or task_global_ids.unique().numel() != expected_shape[0]
-        or not bool(torch.isfinite(features).all())
-    ):
-        raise _error("success-key bank tensor schema")
-    present = present_u8.to(dtype=torch.bool)
-    if bool((features[~present] != 0).any()) or bool(
-        (features[present].square().sum(dim=1) <= 0).any()
-    ):
-        raise _error("success-key bank values")
-    return features, present, task_global_ids
-
-
-def _inspect_success_key_bank_metadata(
-    path: Path,
-    expected_shape: tuple[int, int],
-) -> dict[str, Any]:
-    expected = {
-        SUCCESS_KEY_FEATURES_KEY: ("F32", expected_shape),
-        SUCCESS_KEY_PRESENT_KEY: ("U8", (expected_shape[0],)),
-        SUCCESS_KEY_TASK_IDS_KEY: ("I64", (expected_shape[0],)),
-    }
-    try:
-        with safe_open(str(path), framework="pt", device="cpu") as handle:
-            if set(handle.keys()) != set(expected):
-                raise _error("success-key bank keys")
-            for name, (dtype, shape) in expected.items():
-                value = handle.get_slice(name)
-                if value.get_dtype() != dtype or tuple(value.get_shape()) != shape:
-                    raise _error("success-key bank tensor schema")
-    except ExpertManifoldError:
-        raise
-    except Exception as error:
-        raise _error("success-key bank file") from error
-    return {
-        "feature_dtype": "torch.float32",
-        "feature_shape": list(expected_shape),
-        "feature_value_count": math.prod(expected_shape),
-        "present_dtype": "torch.uint8",
-        "task_global_ids_dtype": "torch.int64",
-        "tensor_count": 3,
-    }
-
-
 def _read_manifest(checkpoint: Path) -> tuple[Path, dict[str, Any]]:
     if checkpoint.is_symlink():
         raise _error("checkpoint directory")
@@ -390,13 +286,11 @@ def _manifest_identity(
     manifest: Mapping[str, Any],
     *,
     expected_memory_shape: tuple[int, int, int],
-    expected_bank_shape: tuple[int, int],
     expected_world_size: int,
 ) -> tuple[int, int]:
     macro = manifest.get("next_macro")
     metrics_rows = manifest.get("metrics_rows")
     recorded_shape = manifest.get("program_memory_shape")
-    recorded_bank_shape = manifest.get("success_key_bank_shape")
     if (
         set(manifest) != _MANIFEST_KEYS
         or manifest.get("schema_version") != V6_PRIOR_CHECKPOINT_SCHEMA
@@ -408,8 +302,6 @@ def _manifest_identity(
         or manifest.get("world_size") != expected_world_size
         or not isinstance(recorded_shape, list)
         or tuple(recorded_shape) != expected_memory_shape
-        or not isinstance(recorded_bank_shape, list)
-        or tuple(recorded_bank_shape) != expected_bank_shape
         or manifest.get("content_hash_policy") != _CONTENT_HASH_POLICY
         or not isinstance(manifest.get("files"), dict)
     ):
@@ -424,7 +316,6 @@ def _validate_payload_files(
 ) -> None:
     expected_files = {
         PROGRAM_MEMORY_FILE,
-        SUCCESS_KEY_BANK_FILE,
         *(f"rng_rank_{rank:03d}.pt" for rank in range(world_size)),
     }
     physical_files = {path.name for path in checkpoint.iterdir()}
@@ -470,7 +361,6 @@ def _validate_layout(
     checkpoint: Path,
     *,
     expected_memory_shape: tuple[int, int, int],
-    expected_bank_shape: tuple[int, int],
     expected_world_size: int,
     expected_cursor_contract: Mapping[str, Any] | None,
     expected_checkpoint_contract: Mapping[str, Any] | None,
@@ -480,7 +370,6 @@ def _validate_layout(
         checkpoint,
         manifest,
         expected_memory_shape=expected_memory_shape,
-        expected_bank_shape=expected_bank_shape,
         expected_world_size=expected_world_size,
     )
     _validate_payload_files(checkpoint, manifest["files"], expected_world_size)
@@ -497,7 +386,6 @@ def _validate_layout(
         metrics_rows=metrics_rows,
         world_size=expected_world_size,
         memory_shape=expected_memory_shape,
-        bank_shape=expected_bank_shape,
     )
 
 
@@ -506,18 +394,15 @@ def save_v6_prior_checkpoint(
     output_dir: Path,
     macro: int,
     memory: ProgramResidualMemory | torch.Tensor,
-    success_key_bank: SuccessKeyAnchorBank,
     context: DistributedContext,
     metrics_rows: int,
     cursor_contract: Mapping[str, Any],
     checkpoint_contract: Mapping[str, Any],
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
-    expected_bank_shape: Sequence[int] = FORMAL_SUCCESS_KEY_BANK_SHAPE,
 ) -> Path:
-    """Atomically publish Program, success-key bank, and per-rank RNG."""
+    """Atomically publish only Program memory and per-rank RNG at a macro boundary."""
 
     shape = _shape(expected_memory_shape)
-    bank_shape = _bank_shape(expected_bank_shape)
     if (
         type(macro) is not int
         or macro <= 0
@@ -532,7 +417,6 @@ def save_v6_prior_checkpoint(
     if cursor.get("next_macro") != macro:
         raise _error("cursor contract")
     value = _validate_live_memory(memory, shape, require_finite=False)
-    _validate_live_bank(success_key_bank, bank_shape)
     checkpoints = output_dir / "checkpoints"
     final = checkpoints / f"macro_{macro:08d}"
     temporary = checkpoints / f".macro_{macro:08d}.tmp"
@@ -540,7 +424,6 @@ def save_v6_prior_checkpoint(
     try:
         if context.is_main:
             _validate_live_memory(memory, shape, require_finite=True)
-            _validate_live_bank(success_key_bank, bank_shape)
             checkpoints.mkdir(parents=True, exist_ok=True)
             if temporary.exists() and not final.exists():
                 failure_packets = output_dir / "failure_packets"
@@ -574,25 +457,8 @@ def save_v6_prior_checkpoint(
                 {PROGRAM_MEMORY_KEY: value.detach().cpu().contiguous()},
                 str(temporary / PROGRAM_MEMORY_FILE),
             )
-            save_file(
-                {
-                    SUCCESS_KEY_FEATURES_KEY: (
-                        success_key_bank.features.detach().cpu().contiguous()
-                    ),
-                    SUCCESS_KEY_PRESENT_KEY: (
-                        success_key_bank.present.detach()
-                        .to(device="cpu", dtype=torch.uint8)
-                        .contiguous()
-                    ),
-                    SUCCESS_KEY_TASK_IDS_KEY: (
-                        success_key_bank.task_global_ids.detach().cpu().contiguous()
-                    ),
-                },
-                str(temporary / SUCCESS_KEY_BANK_FILE),
-            )
             payload_names = {
                 PROGRAM_MEMORY_FILE,
-                SUCCESS_KEY_BANK_FILE,
                 *(f"rng_rank_{rank:03d}.pt" for rank in range(context.world_size)),
             }
             files = {name: (temporary / name).stat().st_size for name in payload_names}
@@ -604,7 +470,6 @@ def save_v6_prior_checkpoint(
                     "metrics_rows": metrics_rows,
                     "world_size": context.world_size,
                     "program_memory_shape": list(shape),
-                    "success_key_bank_shape": list(bank_shape),
                     "cursor_contract": cursor,
                     "checkpoint_contract": contract,
                     "files": files,
@@ -632,38 +497,29 @@ def load_v6_prior_checkpoint(
     *,
     checkpoint: Path,
     memory: ProgramResidualMemory | torch.Tensor,
-    success_key_bank: SuccessKeyAnchorBank,
     context: DistributedContext,
     expected_cursor_contract: Mapping[str, Any],
     expected_checkpoint_contract: Mapping[str, Any],
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
-    expected_bank_shape: Sequence[int] = FORMAL_SUCCESS_KEY_BANK_SHAPE,
 ) -> tuple[int, int]:
     """Restore Program memory and this rank's RNG without accepting base state."""
 
     destination: torch.Tensor | None = None
     layout: _CheckpointLayout | None = None
     restored: torch.Tensor | None = None
-    restored_bank: tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None = None
     rng: Mapping[str, Any] | None = None
     error: Exception | None = None
     try:
         shape = _shape(expected_memory_shape)
-        bank_shape = _bank_shape(expected_bank_shape)
         destination = _validate_live_memory(memory, shape, require_finite=False)
-        _validate_live_bank(success_key_bank, bank_shape)
         layout = _validate_layout(
             checkpoint,
             expected_memory_shape=shape,
-            expected_bank_shape=bank_shape,
             expected_world_size=context.world_size,
             expected_cursor_contract=expected_cursor_contract,
             expected_checkpoint_contract=expected_checkpoint_contract,
         )
         restored = _load_program_memory(layout.checkpoint / PROGRAM_MEMORY_FILE, shape)
-        restored_bank = _load_success_key_bank(
-            layout.checkpoint / SUCCESS_KEY_BANK_FILE, bank_shape
-        )
         rng = _load_rng(
             layout.checkpoint / f"rng_rank_{context.rank:03d}.pt",
             rank=context.rank,
@@ -677,20 +533,9 @@ def load_v6_prior_checkpoint(
 
     error = None
     try:
-        if (
-            destination is None
-            or layout is None
-            or restored is None
-            or restored_bank is None
-            or rng is None
-        ):
+        if destination is None or layout is None or restored is None or rng is None:
             raise _error("resume payload agreement")
         destination.copy_(restored.to(device=destination.device))
-        success_key_bank.restore_(
-            features=restored_bank[0],
-            present=restored_bank[1],
-            task_global_ids=restored_bank[2],
-        )
         _restore_rng(rng, context)
     except Exception as caught:
         error = caught
@@ -704,7 +549,6 @@ def inspect_v6_prior_checkpoint(
     checkpoint: Path,
     *,
     expected_memory_shape: Sequence[int] = FORMAL_PROGRAM_MEMORY_SHAPE,
-    expected_bank_shape: Sequence[int] = FORMAL_SUCCESS_KEY_BANK_SHAPE,
     expected_world_size: int = V6_PRIOR_WORLD_SIZE,
     expected_cursor_contract: Mapping[str, Any] | None = None,
     expected_checkpoint_contract: Mapping[str, Any] | None = None,
@@ -713,41 +557,21 @@ def inspect_v6_prior_checkpoint(
     """Validate one checkpoint without mutating live memory or global RNG."""
 
     shape = _shape(expected_memory_shape)
-    bank_shape = _bank_shape(expected_bank_shape)
     if type(expected_world_size) is not int or expected_world_size <= 0:
         raise _error("expected world size")
     layout = _validate_layout(
         checkpoint,
         expected_memory_shape=shape,
-        expected_bank_shape=bank_shape,
         expected_world_size=expected_world_size,
         expected_cursor_contract=expected_cursor_contract,
         expected_checkpoint_contract=expected_checkpoint_contract,
     )
     if validate_payload_values:
         memory = _load_program_memory(layout.checkpoint / PROGRAM_MEMORY_FILE, shape)
-        bank_features, bank_present, bank_task_ids = _load_success_key_bank(
-            layout.checkpoint / SUCCESS_KEY_BANK_FILE,
-            bank_shape,
-        )
         memory_metadata = {
             "dtype": str(memory.dtype),
             "shape": list(memory.shape),
             "value_count": memory.numel(),
-        }
-        bank_metadata = {
-            "feature_dtype": str(bank_features.dtype),
-            "feature_shape": list(bank_features.shape),
-            "feature_value_count": bank_features.numel(),
-            "present_dtype": "torch.uint8",
-            "task_global_ids_dtype": str(bank_task_ids.dtype),
-            "tensor_count": 3,
-            "present_count": int(bank_present.sum()),
-            "present_ordinals": bank_present.nonzero(as_tuple=False)
-            .flatten()
-            .tolist(),
-            "task_global_ids": bank_task_ids.tolist(),
-            "finite": True,
         }
         rng = tuple(
             _load_rng(
@@ -765,16 +589,6 @@ def inspect_v6_prior_checkpoint(
             layout.checkpoint / PROGRAM_MEMORY_FILE,
             shape,
         )
-        bank_metadata = {
-            **_inspect_success_key_bank_metadata(
-                layout.checkpoint / SUCCESS_KEY_BANK_FILE,
-                bank_shape,
-            ),
-            "present_count": None,
-            "present_ordinals": [],
-            "task_global_ids": [],
-            "finite": None,
-        }
         finite = None
         device_types = []
         payload_validation = "deployment_metadata_only"
@@ -797,15 +611,6 @@ def inspect_v6_prior_checkpoint(
             "tensor_count": 1,
             **memory_metadata,
             "finite": finite,
-        },
-        "success_key_bank": {
-            "file": SUCCESS_KEY_BANK_FILE,
-            "keys": [
-                SUCCESS_KEY_FEATURES_KEY,
-                SUCCESS_KEY_PRESENT_KEY,
-                SUCCESS_KEY_TASK_IDS_KEY,
-            ],
-            **bank_metadata,
         },
         "rng": {
             "schema_version": V6_PRIOR_RNG_SCHEMA,

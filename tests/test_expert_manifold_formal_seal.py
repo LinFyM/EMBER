@@ -27,10 +27,27 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None:
-    cveg = load_v6_prior_config(CONFIG)
+def test_pvjfc_is_active_and_cveg_candidate_guard_nonpass_remains_sealed() -> None:
+    active = load_v6_prior_config(CONFIG)
+    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
+    assert active["method"]["name"] == (
+        "frozen_v6_paired_video_joint_functional_credit"
+    )
+    assert active["information_wall"]["training_outcome_rollouts"] == 0
+    assert active["information_wall"]["training_reward_reads"] == 0
+    assert active["update"]["view_weights"] == [0.5, 0.5]
+    assert active["formal_run"]["status"] == (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    cveg = json.loads(
+        (REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json")
+        .read_text(encoding="utf-8")
+    )
     assert cveg["status"] == "formal_result_sealed"
-    assert cveg["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
+    assert cveg["schema_version"] == (
+        "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1"
+    )
     assert cveg["method"]["name"] == (
         "frozen_v6_cross_video_equivariant_candidate_guard"
     )
@@ -282,13 +299,10 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "writer_state_tensor_count": 600,
             "writer_state_value_count": 12_064_064,
             "residual_memory": "fresh_zero_then_memory_only_exact_resume",
-            "success_key_bank": "fresh_empty_then_exact_resume",
         },
         "condition_feature": config["condition_feature"],
         "program_residual": config["program_residual"],
-        "success_key_bank": config["success_key_bank"],
         "update": config["update"],
-        "environment": config["environment"],
         "objective": config["objective"],
         "rng": config["rng"],
         "ownership": ownership,
@@ -310,24 +324,6 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "dtype": "torch.float32",
             "shape": [256, 320, 256],
             "value_count": 20_971_520,
-            "finite": None,
-        },
-        "success_key_bank": {
-            "file": "success_key_bank.safetensors",
-            "keys": [
-                "success_key_bank.features",
-                "success_key_bank.present",
-                "success_key_bank.task_global_ids",
-            ],
-            "tensor_count": 3,
-            "feature_dtype": "torch.float32",
-            "feature_shape": [24, 256],
-            "feature_value_count": 6144,
-            "present_dtype": "torch.uint8",
-            "task_global_ids_dtype": "torch.int64",
-            "present_count": None,
-            "present_ordinals": [],
-            "task_global_ids": [],
             "finite": None,
         },
         "payload_value_validation": "deployment_metadata_only",

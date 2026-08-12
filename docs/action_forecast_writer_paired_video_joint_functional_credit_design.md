@@ -7,6 +7,9 @@ PVJFC是CVEG终局non-pass后的active successor design。它只替换最早已�
 frozen v6 Writer、PICK-GC ordered condition feature、FP32 Program memory、完整38-target rank16 compiler、B20
 source-action监督与negative zero-RHS均保持不变。
 
+2026-08-12 implementation status：canonical owner已原位实现本设计并删除旧candidate-guard/success-bank
+executable；完整CPU回归`329 passed`。这不构成机制或性能证据，live macro0 profile仍待clean pushed commit。
+
 CVEG directional strict只有`131/400`、breadth6；old134→CVEG为`113 retained/18 gained/21 lost`，NPCG135→
 CVEG为`114/17/21`。canonical与诊断formal又因一条K2 outcome翻转而走出不同hard-guard轨迹。因此后继不再：
 

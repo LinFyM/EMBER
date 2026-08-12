@@ -1,4 +1,4 @@
-"""Policy-innovation-keyed Program residuals with blind full48 updates."""
+"""Policy-innovation-keyed Program residuals with paired-video joint credit."""
 
 from __future__ import annotations
 
@@ -22,38 +22,36 @@ class ConditionUpdateError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class SuccessKeyNullspaceUpdateSummary:
-    """Small-matrix and induced-motion evidence for one SKNC full48 write."""
-
-    correct_conditions: int
-    negative_conditions: int
-    current_protected_conditions: int
-    unprotected_correct_conditions: int
-    anchor_constraint_rows: int
-    anchor_rank: int
-    original_feature_rank: int
-    projected_feature_rank: int
-    damping: float
-    active_regularized_gram_condition_number: float
-    correct_cotangent_rms: float
-    predicted_unprotected_correct_motion_rms: float
-    predicted_protected_correct_motion_rms: float
-    predicted_negative_motion_rms: float
-    predicted_protected_to_unprotected_ratio: float
-    predicted_negative_to_unprotected_ratio: float
-    predicted_anchor_motion_rms: float
-    predicted_anchor_motion_max_abs: float
-    unprotected_projected_feature_energy_ratio_median: float
-    value_delta_rms: float
-
-
-@dataclass(frozen=True)
 class ProgramDeltaApplicationSummary:
     """Numerical closure of one optional predicted/observed memory write."""
 
     observed_motion_rms: float
     predicted_observed_max_abs: float
     predicted_observed_relative_rms: float
+
+
+@dataclass(frozen=True)
+class PairedVideoJointUpdateSummary:
+    """Evidence for one weighted paired-video joint Program solve."""
+
+    task_count: int
+    views_per_task: int
+    correct_conditions: int
+    negative_conditions: int
+    row_count: int
+    positive_feature_rank: int
+    original_feature_rank: int
+    regularized_gram_condition_number: float
+    damping: float
+    correct_cotangent_rms: float
+    primary_directional_derivative: float
+    companion_directional_derivative: float
+    joint_directional_derivative: float
+    negative_to_correct_motion_ratio: float
+    primary_motion_rms: float
+    companion_motion_rms: float
+    negative_motion_rms: float
+    value_delta_rms: float
 
 
 class PolicyInnovationGoalCausalConditionFeature(torch.nn.Module):
@@ -454,25 +452,15 @@ def _motion_ratio(numerator: float, denominator: float) -> float:
 
 
 def _constraint_matmul(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
-    previous_tf32 = None
-    if left.is_cuda:
-        previous_tf32 = torch.backends.cuda.matmul.allow_tf32
-        torch.backends.cuda.matmul.allow_tf32 = False
-    try:
-        return torch.matmul(
-            left.to(dtype=torch.float32), right.to(dtype=torch.float32)
-        )
-    finally:
-        if previous_tf32 is not None:
-            torch.backends.cuda.matmul.allow_tf32 = previous_tf32
+    return torch.matmul(left.to(dtype=torch.float32), right.to(dtype=torch.float32))
 
 
 @torch.no_grad()
-def success_key_constraint_motion(
+def program_delta_condition_motion(
     features: torch.Tensor,
     delta: torch.Tensor,
 ) -> torch.Tensor:
-    """Read stored FP32 equality geometry without TF32 diagnostic roundoff."""
+    """Read the induced Program motion with the runtime's native matmul mode."""
 
     return _constraint_matmul(features, delta.flatten(1)).reshape(
         features.shape[0], *delta.shape[1:]
@@ -480,245 +468,152 @@ def success_key_constraint_motion(
 
 
 @torch.no_grad()
-def success_key_nullspace_program_delta(
+def paired_video_joint_program_delta(
     correct_features: torch.Tensor,
     negative_features: torch.Tensor,
     correct_cotangents: torch.Tensor,
-    anchor_features: torch.Tensor,
-    current_protected_mask: torch.Tensor,
     *,
+    task_count: int,
+    view_weights: torch.Tensor,
     step_size: float,
     relative_damping: float,
-) -> tuple[torch.Tensor, SuccessKeyNullspaceUpdateSummary]:
-    """Solve the blind full48 objective inside certified success-key nullspace."""
+) -> tuple[torch.Tensor, PairedVideoJointUpdateSummary, torch.Tensor]:
+    """Solve the symmetric paired-video functional objective in one shared map."""
 
     conditions = correct_features.shape[0] if correct_features.ndim == 2 else 0
+    views = conditions // task_count if task_count > 0 else 0
     if (
-        conditions <= 0
+        task_count <= 0
+        or views != 2
+        or conditions != 2 * task_count
         or negative_features.shape != correct_features.shape
         or correct_cotangents.ndim != 3
         or correct_cotangents.shape[0] != conditions
         or min(correct_cotangents.shape[1:]) <= 0
         or correct_features.device != negative_features.device
         or correct_features.device != correct_cotangents.device
-        or anchor_features.ndim != 2
-        or anchor_features.shape[1:] != correct_features.shape[1:]
-        or anchor_features.device != correct_features.device
-        or current_protected_mask.shape != (conditions,)
-        or current_protected_mask.dtype != torch.bool
-        or current_protected_mask.device != correct_features.device
+        or view_weights.shape != (conditions,)
+        or view_weights.dtype != torch.float32
+        or view_weights.device != correct_features.device
         or not math.isfinite(step_size)
         or step_size <= 0
         or not math.isfinite(relative_damping)
         or relative_damping <= 0
     ):
-        raise ConditionUpdateError("invalid success-key nullspace update batch")
+        raise ConditionUpdateError("invalid paired-video joint update batch")
     if not all(
         bool(torch.isfinite(value).all())
         for value in (
             correct_features,
             negative_features,
             correct_cotangents,
-            anchor_features,
+            view_weights,
         )
     ):
-        raise ConditionUpdateError(
-            "success-key nullspace update contains non-finite values"
-        )
+        raise ConditionUpdateError("paired-video joint update contains non-finite values")
+    expected_weights = torch.full_like(view_weights, 0.5)
+    if not torch.equal(view_weights, expected_weights):
+        raise ConditionUpdateError("paired-video view weights changed")
 
     features = torch.cat((correct_features, negative_features), dim=0).to(
         dtype=torch.float32
     )
-    small_features = features.to(dtype=torch.float64)
-    original_gram = small_features @ small_features.transpose(0, 1)
-    original_rank = _numerical_rank(
-        torch.linalg.eigvalsh(original_gram), small_features.shape[1]
+    row_weights = torch.cat((view_weights, view_weights), dim=0)
+    square_root_weights = row_weights.sqrt()
+    weighted_features64 = (
+        features.to(dtype=torch.float64)
+        * square_root_weights.to(dtype=torch.float64).unsqueeze(1)
     )
+    gram = weighted_features64 @ weighted_features64.transpose(0, 1)
+    feature_energy = features.to(dtype=torch.float64).square().sum(dim=1)
+    damping_tensor = float(relative_damping) * (
+        (row_weights.to(dtype=torch.float64) * feature_energy).sum()
+        / row_weights.to(dtype=torch.float64).sum()
+    )
+    if not bool(torch.isfinite(damping_tensor)) or float(damping_tensor) <= 0:
+        raise ConditionUpdateError("paired-video joint damping became invalid")
+    regularized = gram + torch.eye(
+        gram.shape[0], dtype=torch.float64, device=gram.device
+    ) * damping_tensor
+    try:
+        cholesky = torch.linalg.cholesky(regularized)
+    except RuntimeError as error:
+        raise ConditionUpdateError(
+            "paired-video regularized Gram is not positive definite"
+        ) from error
 
-    anchor_rank = 0
-    basis64 = small_features.new_empty((small_features.shape[1], 0))
-    anchor_pinv64 = small_features.new_empty((small_features.shape[1], 0))
-    if anchor_features.shape[0]:
-        anchors64 = anchor_features.to(dtype=torch.float64)
-        anchor_u, singular_values, vh = torch.linalg.svd(
-            anchors64, full_matrices=False
-        )
-        maximum = float(singular_values.max()) if singular_values.numel() else 0.0
-        tolerance = (
-            max(anchors64.shape)
-            * torch.finfo(torch.float64).eps
-            * maximum
-        )
-        anchor_rank = int((singular_values > tolerance).sum())
-        if anchor_rank <= 0:
-            raise ConditionUpdateError("success-key anchors have zero numerical rank")
-        basis64 = vh[:anchor_rank].transpose(0, 1).contiguous()
-        anchor_pinv64 = (
-            basis64 / singular_values[:anchor_rank]
-        ) @ anchor_u[:, :anchor_rank].transpose(0, 1)
-        projected64 = small_features - (small_features @ basis64) @ basis64.T
-    else:
-        if bool(current_protected_mask.any()):
-            raise ConditionUpdateError("protected correct rows lack success-key anchors")
-        # Preserve the sealed PICK-GC arithmetic path exactly when no anchor exists.
-        projected64 = small_features
+    rhs = torch.zeros(
+        features.shape[0],
+        correct_cotangents[0].numel(),
+        dtype=torch.float32,
+        device=features.device,
+    )
+    rhs[:conditions] = correct_cotangents.to(dtype=torch.float32).flatten(1)
+    rhs.mul_(square_root_weights.unsqueeze(1))
+    # Keep only the 96x96 inverse in FP64. The 96x81,920 cotangent RHS and
+    # complete condition-to-Program write remain FP32.
+    inverse = torch.cholesky_inverse(cholesky).to(dtype=torch.float32)
+    coefficients = inverse @ rhs
+    delta_flat = -float(step_size) * (
+        weighted_features64.to(dtype=torch.float32).transpose(0, 1) @ coefficients
+    )
+    delta = delta_flat.reshape(
+        features.shape[1],
+        correct_cotangents.shape[1],
+        correct_cotangents.shape[2],
+    ).contiguous()
 
-    projected = projected64.to(dtype=torch.float32)
-    if bool(current_protected_mask.any()):
-        protected_projected = projected64[:conditions][current_protected_mask]
-        protected_original = small_features[:conditions][current_protected_mask]
-        scale = protected_original.square().sum(dim=1).sqrt().clamp_min(
-            torch.finfo(torch.float64).tiny
-        )
-        residual = protected_projected.square().sum(dim=1).sqrt() / scale
-        tolerance = (
-            64
-            * max(anchor_features.shape)
-            * torch.finfo(torch.float64).eps
-        )
-        if bool((residual > tolerance).any()):
-            raise ConditionUpdateError(
-                "current protected rows are absent from the success-key span"
-            )
-
-    gram = projected64 @ projected64.transpose(0, 1)
-    mean_diagonal = gram.diagonal().mean()
-    if not bool(torch.isfinite(mean_diagonal)) or float(mean_diagonal) < 0:
-        raise ConditionUpdateError("condition feature Gram has invalid energy")
-    if float(mean_diagonal) == 0:
-        delta = torch.zeros(
-            features.shape[1],
-            correct_cotangents.shape[1],
-            correct_cotangents.shape[2],
-            dtype=torch.float32,
-            device=features.device,
-        )
-        projected_eigenvalues = torch.zeros(
-            features.shape[0], dtype=torch.float64, device=features.device
-        )
-        damping = 0.0
-        active_condition = 1.0
-    else:
-        damping_tensor = float(relative_damping) * mean_diagonal
-        damping = float(damping_tensor)
-        regularized = (
-            gram
-            + torch.eye(
-                gram.shape[0],
-                dtype=torch.float64,
-                device=gram.device,
-            )
-            * damping_tensor
-        )
-        try:
-            cholesky = torch.linalg.cholesky(regularized)
-        except RuntimeError as error:
-            raise ConditionUpdateError(
-                "condition feature Gram is not positive definite"
-            ) from error
-
-        # Only the 48x48 solve is FP64. The complete 21M-value RHS and write stay FP32.
-        inverse = torch.cholesky_inverse(cholesky)
-        correct_operator = inverse[:, :conditions].to(dtype=torch.float32)
-        cotangent_flat = correct_cotangents.to(dtype=torch.float32).flatten(1)
-        coefficients = correct_operator @ cotangent_flat
-        delta_flat = -float(step_size) * (
-            projected.transpose(0, 1) @ coefficients
-        )
-        if anchor_rank:
-            basis = basis64.to(dtype=torch.float32)
-            delta_flat.sub_(basis @ (basis.transpose(0, 1) @ delta_flat))
-            anchor_residual = _constraint_matmul(anchor_features, delta_flat)
-            delta_flat.sub_(
-                _constraint_matmul(
-                    anchor_pinv64.to(dtype=torch.float32), anchor_residual
-                )
-            )
-        delta = delta_flat.reshape(
-            features.shape[1],
-            correct_cotangents.shape[1],
-            correct_cotangents.shape[2],
-        ).contiguous()
-        projected_eigenvalues = torch.linalg.eigvalsh(gram)
-        positive = projected_eigenvalues[
-            projected_eigenvalues
-            > (
-                max(gram.shape)
-                * torch.finfo(torch.float64).eps
-                * projected_eigenvalues.abs().max()
-            )
-        ]
-        active_condition = (
-            float((positive.max() + damping_tensor) / (positive.min() + damping_tensor))
-            if positive.numel()
-            else 1.0
-        )
-
-    delta_flat = delta.flatten(1)
-    predicted = success_key_constraint_motion(features, delta).flatten(1)
-    correct_motion = predicted[:conditions]
-    negative_motion = predicted[conditions:]
-    protected_motion = correct_motion[current_protected_mask]
-    unprotected_mask = ~current_protected_mask
-    unprotected_motion = correct_motion[unprotected_mask]
-    protected_motion_rms = (
-        _root_mean_square(protected_motion) if protected_motion.numel() else 0.0
+    motion = program_delta_condition_motion(features, delta)
+    correct_motion = motion[:conditions]
+    negative_motion = motion[conditions:]
+    primary_motion = correct_motion[:task_count]
+    companion_motion = correct_motion[task_count:]
+    cotangents = correct_cotangents.to(dtype=torch.float32)
+    primary_derivative = float((cotangents[:task_count] * primary_motion).sum())
+    companion_derivative = float((cotangents[task_count:] * companion_motion).sum())
+    joint_derivative = 0.5 * (primary_derivative + companion_derivative)
+    correct_rms = _root_mean_square(correct_motion)
+    negative_rms = _root_mean_square(negative_motion)
+    positive_gram = weighted_features64[:conditions] @ weighted_features64[
+        :conditions
+    ].transpose(0, 1)
+    positive_eigenvalues = torch.linalg.eigvalsh(positive_gram)
+    eigenvalues = torch.linalg.eigvalsh(gram)
+    regularized_eigenvalues = torch.linalg.eigvalsh(regularized)
+    active_condition = float(
+        regularized_eigenvalues.max() / regularized_eigenvalues.min()
     )
-    unprotected_motion_rms = (
-        _root_mean_square(unprotected_motion) if unprotected_motion.numel() else 0.0
-    )
-    negative_motion_rms = _root_mean_square(negative_motion)
-    anchor_motion = success_key_constraint_motion(anchor_features, delta).flatten(1)
-    anchor_motion_rms = (
-        _root_mean_square(anchor_motion) if anchor_motion.numel() else 0.0
-    )
-    anchor_motion_max_abs = (
-        float(anchor_motion.abs().max()) if anchor_motion.numel() else 0.0
-    )
-    original_correct_energy = small_features[:conditions].square().sum(dim=1)
-    projected_correct_energy = projected64[:conditions].square().sum(dim=1)
-    unprotected_energy_ratio = (
-        projected_correct_energy[unprotected_mask]
-        / original_correct_energy[unprotected_mask].clamp_min(
-            torch.finfo(torch.float64).tiny
-        )
-    )
-    energy_median = (
-        float(unprotected_energy_ratio.median())
-        if unprotected_energy_ratio.numel()
-        else 1.0
-    )
-    projected_rank = _numerical_rank(
-        projected_eigenvalues, projected64.shape[1]
-    )
-    if not bool(torch.isfinite(delta).all()) or not math.isfinite(active_condition):
-        raise ConditionUpdateError("success-key nullspace Program write became invalid")
-    return delta, SuccessKeyNullspaceUpdateSummary(
+    summary = PairedVideoJointUpdateSummary(
+        task_count=task_count,
+        views_per_task=views,
         correct_conditions=conditions,
         negative_conditions=conditions,
-        current_protected_conditions=int(current_protected_mask.sum()),
-        unprotected_correct_conditions=int(unprotected_mask.sum()),
-        anchor_constraint_rows=int(anchor_features.shape[0]),
-        anchor_rank=anchor_rank,
-        original_feature_rank=original_rank,
-        projected_feature_rank=projected_rank,
-        damping=float(damping),
-        active_regularized_gram_condition_number=active_condition,
-        correct_cotangent_rms=_root_mean_square(correct_cotangents),
-        predicted_unprotected_correct_motion_rms=unprotected_motion_rms,
-        predicted_protected_correct_motion_rms=protected_motion_rms,
-        predicted_negative_motion_rms=negative_motion_rms,
-        predicted_protected_to_unprotected_ratio=_motion_ratio(
-            protected_motion_rms, unprotected_motion_rms
+        row_count=2 * conditions,
+        positive_feature_rank=_numerical_rank(
+            positive_eigenvalues, features.shape[1]
         ),
-        predicted_negative_to_unprotected_ratio=_motion_ratio(
-            negative_motion_rms, unprotected_motion_rms
-        ),
-        predicted_anchor_motion_rms=anchor_motion_rms,
-        predicted_anchor_motion_max_abs=anchor_motion_max_abs,
-        unprotected_projected_feature_energy_ratio_median=energy_median,
+        original_feature_rank=_numerical_rank(eigenvalues, features.shape[1]),
+        regularized_gram_condition_number=active_condition,
+        damping=float(damping_tensor),
+        correct_cotangent_rms=_root_mean_square(cotangents),
+        primary_directional_derivative=primary_derivative,
+        companion_directional_derivative=companion_derivative,
+        joint_directional_derivative=joint_derivative,
+        negative_to_correct_motion_ratio=_motion_ratio(negative_rms, correct_rms),
+        primary_motion_rms=_root_mean_square(primary_motion),
+        companion_motion_rms=_root_mean_square(companion_motion),
+        negative_motion_rms=negative_rms,
         value_delta_rms=_root_mean_square(delta),
     )
+    if not all(
+        math.isfinite(float(value))
+        for value in (
+            *summary.__dict__.values(),
+        )
+        if isinstance(value, float)
+    ):
+        raise ConditionUpdateError("paired-video joint update became non-finite")
+    return delta, summary, motion
 
 
 @torch.no_grad()

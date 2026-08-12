@@ -8,14 +8,12 @@ import torch
 
 import ember.expert_manifold.v6_prior_training as prior_training
 from ember.expert_manifold.contract import ExpertManifoldError
-from ember.expert_manifold.v6_candidate_guard import PairedTaskEvidence
-from ember.expert_manifold.v6_prior_profile import profile_success_key_application
 from ember.expert_manifold.v6_prior_runtime import _reconcile_metrics_cursor
-from ember.expert_manifold.v6_prior_step import GeneratedConditionGraph
 from ember.expert_manifold.v6_prior_training import (
     TaskObjective,
+    ViewObjective,
     _AtomicTaskClaimQueue,
-    _gather_full48,
+    _gather_paired_video_rows,
     _profile_passes,
     _profile_task_local_motion,
     _retained_task_cap,
@@ -26,156 +24,110 @@ from ember.pi05_source_checkpoint import DistributedContext
 
 
 _SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
-_HARMFUL = {0, 6}
-_STABLE = {12, 18, 19, 20}
-_BENEFICIAL = {1, 7}
 
 
-def _context() -> DistributedContext:
-    return DistributedContext(0, 0, 1, torch.device("cpu"))
+def _context(world_size: int = 1) -> DistributedContext:
+    return DistributedContext(0, 0, world_size, torch.device("cpu"))
 
 
-def test_atomic_work_queue_claims_each_job_once_and_uses_bounded_live_caps(
-    tmp_path,
-) -> None:
-    jobs = tuple((100 + index, 3) for index in range(24))
-    cursor = tmp_path / "cursor"
-    cursor.write_text("0", encoding="ascii")
-    queues = (_AtomicTaskClaimQueue(cursor, jobs), _AtomicTaskClaimQueue(cursor, jobs))
-    claimed = []
-    for index in range(24):
-        queue_index, job, seconds = queues[index % 2].claim()
-        claimed.append((queue_index, job))
-        assert seconds >= 0
-    assert claimed == list(enumerate(jobs))
-    assert queues[0].claim()[1] is None
-    assert [_retained_task_cap(world) for world in range(1, 7)] == [24, 12, 8, 8, 8, 8]
-
-
-def _paired(ordinal: int) -> PairedTaskEvidence:
-    if ordinal in _HARMFUL:
-        base, candidate = (True, True), (True, False)
-    elif ordinal in _STABLE:
-        base = candidate = (True, True)
-    elif ordinal in _BENEFICIAL:
-        base, candidate = (False, False), (True, False)
-    else:
-        base = candidate = (False, False)
-    rows = tuple(
-        {
-            "arm": arm,
-            "rollout_cursor": lane,
-            "environment_seed": lane + 10,
-            "policy_seed_root": 13,
-            "policy_noise_seeds": [lane + 20],
-            "success": success[lane],
-            "steps": 5,
-            "reward_sum": float(success[lane]),
-            "replan_count": 1,
-        }
-        for arm, success in (("base", base), ("candidate", candidate))
-        for lane in range(2)
+def _view(ordinal: int, *, companion: bool) -> ViewObjective:
+    correct = torch.zeros(256, dtype=torch.float32)
+    negative = torch.zeros(256, dtype=torch.float32)
+    offset = 48 if companion else 0
+    correct[ordinal + offset] = 1
+    negative[ordinal + offset + 96] = 1
+    gradient = torch.full(
+        (320, 256), float(ordinal + 1 + int(companion)), dtype=torch.float32
     )
-    return PairedTaskEvidence(
-        base_success=base,
-        candidate_success=candidate,
-        trajectory_rows=rows,
-        exact_pair_count=2,
-        candidate_program_motion_rms=0.1,
-        candidate_lora_response_rms=0.2,
-        candidate_action_response_rms=0.3,
-        rollout_seconds=2.0,
+    return ViewObjective(
+        demo=5 if companion else 4,
+        counterfactual_demo=(9 if companion else 8) if ordinal % 3 == 2 else None,
+        functional_loss=torch.tensor(float(ordinal + int(companion))),
+        correct_feature=correct,
+        negative_feature=negative,
+        program_cotangent=gradient,
+        correct_raw_frames=100,
+        correct_sampled_frames=21,
+        negative_raw_frames=90,
+        negative_sampled_frames=19,
     )
 
 
 def _objective(ordinal: int) -> TaskObjective:
-    correct = torch.zeros(256, dtype=torch.float32)
-    negative = torch.zeros(256, dtype=torch.float32)
-    companion = torch.zeros(256, dtype=torch.float32)
-    correct[ordinal] = 1.0
-    negative[ordinal + 24] = 1.0
-    companion[ordinal] = 1.0
-    companion[ordinal + 48] = 0.5
-    task = SimpleNamespace(
-        ordinal=ordinal,
-        global_task_id=ordinal + 100,
-        suite=_SUITES[ordinal // 6],
-        task_id=ordinal % 6,
-    )
-    program = torch.zeros(1, 2, 3)
-    graph = GeneratedConditionGraph(
-        correct_lora={},
-        program_leaf=program,
-        program_input_before=program,
-        base_program_slots=program,
-        residual_before=program,
-        correct_feature=correct,
-        negative_feature=negative,
-        companion_feature=companion,
-        correct_raw_frames=100,
-        correct_sampled_frames=21,
-        negative_raw_frames=100,
-        negative_sampled_frames=21,
-        companion_raw_frames=90,
-        companion_sampled_frames=19,
-    )
     return TaskObjective(
-        task=task,
+        task=SimpleNamespace(
+            ordinal=ordinal,
+            global_task_id=100 + ordinal,
+            suite=_SUITES[ordinal // 6],
+            task_id=ordinal % 6,
+        ),
         task_visit=3,
-        teacher_demo=4,
-        companion_demo=5,
         action_query_demos=(0, 1),
         counterfactual_kind=("reversed", "shuffled", "wrong")[ordinal % 3],
-        counterfactual_task=None,
-        counterfactual_demo=None,
-        functional_loss=torch.tensor(float(ordinal), dtype=torch.float32),
-        correct_feature=correct,
-        negative_feature=negative,
-        companion_feature=companion,
-        program_cotangent=torch.full((2, 3), float(ordinal + 1)),
-        graph=graph,
-        correct_raw_frames=100,
-        correct_sampled_frames=21,
-        negative_raw_frames=100,
-        negative_sampled_frames=21,
-        companion_raw_frames=90,
-        companion_sampled_frames=19,
-        paired=_paired(ordinal),
+        counterfactual_task=(
+            SimpleNamespace(global_task_id=200 + ordinal)
+            if ordinal % 3 == 2
+            else None
+        ),
+        primary=_view(ordinal, companion=False),
+        companion=_view(ordinal, companion=True),
+        phase_a_queue_index=ordinal,
+        phase_a_rank=0,
+        phase_a_finished_seconds=1,
     )
 
 
-def test_full48_gather_sorts_train24_and_never_rescales_program_cotangents() -> None:
+def test_atomic_queue_supports_any_world_size_up_to_six_without_waiting() -> None:
+    assert [_retained_task_cap(world) for world in range(1, 7)] == [24, 12, 8, 8, 8, 8]
+
+
+def test_atomic_work_queue_claims_each_job_once(tmp_path) -> None:
+    jobs = tuple((100 + index, 3) for index in range(24))
+    cursor = tmp_path / "cursor"
+    cursor.write_text("0", encoding="ascii")
+    queues = (_AtomicTaskClaimQueue(cursor, jobs), _AtomicTaskClaimQueue(cursor, jobs))
+    claimed = [queues[index % 2].claim()[:2] for index in range(24)]
+    assert claimed == list(enumerate(jobs))
+    assert queues[0].claim()[1] is None
+
+
+def test_full96_gather_orders_primary_then_companion_without_rescaling() -> None:
     local = [_objective(index) for index in reversed(range(24))]
-    correct, negative, companion, cotangents, timing = _gather_full48(local, _context())
-    assert correct.shape == negative.shape == companion.shape == (24, 256)
-    assert cotangents.shape == (24, 2, 3)
-    assert torch.equal(correct[:, :24], torch.eye(24))
-    assert torch.equal(negative[:, 24:48], torch.eye(24))
-    assert torch.equal(companion[:, :24], torch.eye(24))
+    correct, negative, cotangents, timing = _gather_paired_video_rows(
+        local, _context()
+    )
+    assert correct.shape == negative.shape == (48, 256)
+    assert cotangents.shape == (48, 320, 256)
+    assert torch.equal(correct[:24, :24], torch.eye(24))
+    assert torch.equal(correct[24:, 48:72], torch.eye(24))
+    assert torch.equal(negative[:24, 96:120], torch.eye(24))
+    assert torch.equal(negative[24:, 144:168], torch.eye(24))
     assert [row["task_ordinal"] for row in timing] == list(range(24))
     for ordinal in range(24):
         assert torch.equal(
-            cotangents[ordinal], torch.full((2, 3), float(ordinal + 1))
+            cotangents[ordinal],
+            torch.full((320, 256), float(ordinal + 1)),
+        )
+        assert torch.equal(
+            cotangents[24 + ordinal],
+            torch.full((320, 256), float(ordinal + 2)),
         )
 
 
-def test_full48_gather_rejects_duplicate_or_missing_task_ordinals() -> None:
+def test_full96_gather_rejects_duplicate_task_ordinals() -> None:
     local = [_objective(index) for index in range(24)]
     local[-1] = _objective(22)
     with pytest.raises(ExpertManifoldError, match="task order changed"):
-        _gather_full48(local, _context())
+        _gather_paired_video_rows(local, _context())
 
 
-def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
+def test_full96_padded_gather_keeps_all_four_features_and_two_cotangents_aligned(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    order = [
-        7, 0, 23, -1, 2, 11, 19, 3, 5, 13, 1, 22, 8,
-        15, 4, 18, 6, 14, 9, 20, 10, 16, 12, 21, 17,
-    ]
-    payload = torch.zeros(25, 775, dtype=torch.float32)
+    order = [7, 0, 23, -1, 2, 11, 19, 3, 5, 13, 1, 22, 8, 15, 4, 18, 6, 14, 9, 20, 10, 16, 12, 21, 17]
+    payload = torch.zeros(25, 1031, dtype=torch.float32)
     payload[:, 0].fill_(-1)
-    cotangents = torch.zeros(25, 2, 3, dtype=torch.float32)
+    cotangents = torch.zeros(25, 2, 320, 256, dtype=torch.float32)
     for row, ordinal in enumerate(order):
         if ordinal < 0:
             continue
@@ -184,336 +136,175 @@ def test_full48_gather_keeps_cotangents_aligned_across_padded_ranks(
         payload[row, 1] = row % 5
         payload[row, 2] = row
         payload[row, 4] = 1
-        payload[row, 7:263] = objective.correct_feature
-        payload[row, 263:519] = objective.negative_feature
-        payload[row, 519:] = objective.companion_feature
-        cotangents[row] = objective.program_cotangent
+        payload[row, 7:263] = objective.primary.correct_feature
+        payload[row, 263:519] = objective.primary.negative_feature
+        payload[row, 519:775] = objective.companion.correct_feature
+        payload[row, 775:] = objective.companion.negative_feature
+        cotangents[row, 0] = objective.primary.program_cotangent
+        cotangents[row, 1] = objective.companion.program_cotangent
     gathered = iter((payload, cotangents))
     monkeypatch.setattr(
         prior_training,
         "_all_gather_fixed",
         lambda value, context: next(gathered),
     )
-
-    correct, negative, companion, aligned, timing = _gather_full48(
-        [_objective(index) for index in range(5)],
-        DistributedContext(0, 0, 5, torch.device("cpu")),
+    correct, negative, gradients, timing = _gather_paired_video_rows(
+        [_objective(index) for index in range(5)], _context(5)
     )
-
-    assert torch.equal(correct[:, :24], torch.eye(24))
-    assert torch.equal(negative[:, 24:48], torch.eye(24))
-    assert torch.equal(companion[:, :24], torch.eye(24))
+    assert torch.equal(correct[:24, :24], torch.eye(24))
+    assert torch.equal(correct[24:, 48:72], torch.eye(24))
+    assert torch.equal(negative[:24, 96:120], torch.eye(24))
+    assert torch.equal(negative[24:, 144:168], torch.eye(24))
     assert [row["task_ordinal"] for row in timing] == list(range(24))
-    for ordinal in range(24):
-        assert torch.equal(aligned[ordinal], torch.full((2, 3), float(ordinal + 1)))
+    assert gradients.shape == (48, 320, 256)
 
 
 def _profile_config() -> dict:
     return {
         "profile_run": {
-            "throughput_baseline": {
-                "step_seconds": 20.0,
-                "source_tasks_per_rank": 4,
-                "source_world_size": 6,
-            },
             "gates": {
-                "task_count": 24,
-                "video_count": 24,
-                "companion_video_count": 24,
-                "source_action_query_count": 480,
-                "paired_state_count": 48,
-                "base_rollout_count": 48,
-                "candidate_rollout_count": 48,
-                "rollout_count": 96,
-                "discordant_state_count_min": 2,
-                "candidate_directional_change_count_min": 1,
-                "stable_success_task_count_min": 4,
-                "equivariance_row_count": 24,
-                "equivariance_rank_min": 24,
-                "original_feature_rank": 48,
-                "projected_feature_rank_min": 24,
-                "projected_to_blind_energy_ratio_min": 0.25,
-                "final_guard_violation_count": 0,
-                "negative_preservation_violation_count": 0,
-                "equivariance_preservation_violation_count": 0,
-                "equivariance_to_primary_motion_rms_max": 1e-5,
-                "protected_to_unprotected_motion_ratio_max": 1e-5,
-                "negative_to_unprotected_motion_rms_max": 0.15,
-                "negative_null_task_count_min": 18,
-                "negative_null_per_kind_min": 6,
+                "positive_feature_rank_min": 24,
+                "full_feature_rank_min": 48,
+                "regularized_condition_max": 200,
+                "both_view_descent_task_count_min": 12,
+                "negative_to_correct_motion_rms_max": 0.15,
+                "negative_null_per_kind_min": 12,
                 "predicted_observed_relative_rms_max": 0.005,
-                "protected_to_unprotected_lora_response_ratio_max": 1e-5,
-                "protected_fixed_action_response_rms_max": 1e-6,
-                "unprotected_fixed_action_probe_task_count": 4,
                 "retained_task_cap_max": 24,
-                "queue_claim_seconds_max": 1.0,
-                "phase_a_wall_ratio_max": 1.0,
-                "production_wall_ratio_max": 1.5,
-                "negative_policy_forwards": 0,
+                "queue_claim_seconds_max": 1,
+                "step_seconds_max": 292.4,
                 "oom_count": 0,
                 "nonfinite_count": 0,
-            },
+            }
         }
     }
 
 
 def _profile_row() -> dict:
-    protected = _HARMFUL | _STABLE
     records = [_task_record(_objective(ordinal)) for ordinal in range(24)]
-    response = {
-        suite: {
-            "program_motion_rms_max": 0.1,
-            "lora_response_rms_max": 0.2,
-            "action_response_rms_max": 0.3,
-        }
-        for suite in _SUITES
-    }
     return {
-        "blind_update": {
-            "current_protected_conditions": 0,
-            "anchor_constraint_rows": 24,
-            "anchor_rank": 24,
-            "value_delta_rms": 0.01,
-        },
-        "candidate_guard_projection": {
-            "persisted_guard_rows": 0,
-            "current_stable_guard_rows": 4,
-            "current_harmful_guard_rows": 2,
-            "current_guard_rows": 6,
-            "total_guard_rows": 6,
-            "guard_rank": 6,
-            "response_preserving_rows": 48,
-            "response_preserving_rank": 48,
-            "negative_rows": 24,
-            "negative_rank": 24,
-            "equivariance_rows": 24,
-            "equivariance_rank": 24,
-            "restricted_guard_rank": 6,
-            "original_feature_rank": 48,
-            "projected_feature_rank": 42,
-            "final_guard_violation_count": 0,
-            "blind_negative_motion_rms": 0.01,
-            "final_negative_motion_rms": 0.01,
-            "negative_correction_motion_rms": 0.0,
-            "negative_preservation_violation_count": 0,
-            "blind_equivariance_motion_rms": 0.0,
-            "final_equivariance_motion_rms": 0.0,
-            "equivariance_correction_motion_rms": 0.0,
-            "equivariance_preservation_violation_count": 0,
-            "projection_changed": True,
-            "projected_to_blind_energy_ratio": 0.8,
-            "blind_projected_inner_product": 1.0,
-            "blind_projected_cosine": 0.9,
-            "projected_delta_rms": 0.008,
+        "update": {
+            "positive_feature_rank": 48,
+            "original_feature_rank": 96,
+            "regularized_gram_condition_number": 80,
+            "value_delta_rms": 0.1,
+            "primary_motion_rms": 1.0,
+            "companion_motion_rms": 1.0,
         },
         "application": {"predicted_observed_relative_rms": 0.001},
-        "lora_response": {
-            "protected_lora_a_to_unprotected_ratio": 0.0,
-            "protected_lora_b_to_unprotected_ratio": 0.0,
-            "protected_effective_ba_to_unprotected_ratio": 0.0,
-            "protected_fixed_action_probe_task_count": 4,
-            "protected_fixed_action_probe_suites": list(_SUITES),
-            "protected_fixed_action_response_max": 0.0,
-            "unprotected_fixed_action_probe_task_count": 4,
-            "unprotected_fixed_action_probe_suites": list(_SUITES),
-            "unprotected_fixed_action_passing_task_count": 4,
-            "fixed_action_probe_task_count": 8,
-            "fixed_action_probe_policy_forwards": 16,
-        },
         "task_local_motion": {
-            "unprotected_correct_motion_rms": 1.0,
-            "protected_to_unprotected_motion_ratio": 0.0,
-            "negative_to_unprotected_motion_ratio": 0.1,
-            "negative_null_passing_tasks": 24,
-            "equivariance_rows": 24,
-            "equivariance_rank": 24,
-            "correct_feature_retained_energy_ratio_median": 0.78,
-            "reverse_process_retained_energy_ratio_median": 0.79,
-            "equivariance_to_primary_motion_ratio": 0.0,
-            "blind_equivariance_to_primary_motion_ratio": 0.0,
-            "rows": [
-                {
-                    "task_ordinal": ordinal,
-                    "protected": ordinal in protected,
-                    "negative_to_unprotected_motion_rms": 0.1,
-                }
-                for ordinal in range(24)
-            ],
-        },
-        "success_key_application": {
-            "constraint_row_count": 6,
-            "current_protected_task_count": 6,
-            "anchor_program_motion_rms": 0.0,
-            "anchor_program_motion_max_abs": 0.0,
-        },
-        "paired_outcomes": {
-            "paired_states": 48,
-            "base_rollouts": 48,
-            "candidate_rollouts": 48,
-            "base_successes": 8,
-            "candidate_successes": 8,
-            "losses": 2,
-            "gains": 2,
-            "discordant_states": 4,
-            "harmful_task_count": 2,
-            "beneficial_task_count": 2,
-            "indifferent_task_count": 20,
-            "stable_success_task_count": 4,
-            "rollouts": 96,
-            "exact_pair_records": 48,
-            "harmful_tasks_per_suite": {
-                "libero_spatial": 1,
-                "libero_object": 1,
-                "libero_goal": 0,
-                "libero_10": 0,
+            "total_directional_derivative": -3,
+            "primary_directional_derivative": -2,
+            "companion_directional_derivative": -1,
+            "suite_joint_directional_derivatives": {
+                suite: -0.5 for suite in _SUITES
+            },
+            "both_view_descent_task_count": 18,
+            "negative_to_correct_motion_ratio": 0.1,
+            "negative_null_per_kind": {
+                "reversed": 16,
+                "shuffled": 16,
+                "wrong": 16,
             },
         },
-        "candidate_response_by_suite": response,
-        "success_key_bank": {
-            "current_stable_success_count": 4,
-            "persisted_before_count": 0,
-            "newly_stored_count": 4,
-            "persisted_after_count": 4,
+        "lora_response": {
+            "probe_rows": 8,
+            "policy_forwards": 16,
+            "all_program_motion_nonzero": True,
+            "all_lora_a_response_nonzero": True,
+            "all_lora_b_response_nonzero": True,
+            "all_effective_ba_response_nonzero": True,
+            "all_fixed_action_response_nonzero": True,
         },
         "task_records": records,
+        "correct_condition_rows": 48,
+        "negative_condition_rows": 48,
+        "logical_source_action_queries": 960,
+        "outcome_rollouts": 0,
         "phase_a_task_rows": [
             {
                 "task_ordinal": ordinal,
                 "rank": ordinal % 6,
                 "queue_index": ordinal,
-                "started_seconds": float(ordinal),
-                "finished_seconds": float(ordinal + 1),
-                "batch_load_seconds": 0.01,
-                "claim_seconds": 0.001,
+                "started_seconds": ordinal,
+                "finished_seconds": ordinal + 1,
             }
             for ordinal in range(24)
         ],
-        "phase_a_seconds": 19.0,
-        "queue_claim_seconds": 0.024,
+        "queue_claim_seconds": 0.1,
+        "phase_a_seconds": 100,
+        "step_seconds": 200,
         "world_size": 6,
         "task_counts_per_rank": [4] * 6,
-        "maximum_tasks_per_rank": 4,
-        "step_seconds": 20.0,
-        "functional_loss": 1.0,
-        "program_cotangent_rms": 2.0,
-        "negative_policy_forwards": 0,
+        "functional_loss": 1,
+        "program_cotangent_rms": 2,
         "oom_count": 0,
         "nonfinite_count": 0,
     }
 
 
-def test_mechanism_profile_requires_pairs_guards_closure_and_scaled_wall() -> None:
+def test_profile_requires_continuous_joint_credit_without_outcomes() -> None:
     passed, evidence = _profile_passes(_profile_config(), _profile_row())
-    assert passed is True
+    assert passed
     assert all(evidence["checks"].values())
     for section, key, value in (
-        ("candidate_guard_projection", "projected_feature_rank", 23),
-        ("candidate_guard_projection", "projected_to_blind_energy_ratio", 0.1),
-        ("candidate_guard_projection", "final_guard_violation_count", 1),
-        (
-            "candidate_guard_projection",
-            "negative_preservation_violation_count",
-            1,
-        ),
-        (
-            "candidate_guard_projection",
-            "equivariance_preservation_violation_count",
-            1,
-        ),
+        ("update", "positive_feature_rank", 23),
+        ("update", "regularized_gram_condition_number", 201),
+        ("task_local_motion", "primary_directional_derivative", 0),
+        ("task_local_motion", "both_view_descent_task_count", 11),
+        ("task_local_motion", "negative_to_correct_motion_ratio", 0.2),
         ("application", "predicted_observed_relative_rms", 0.01),
-        ("task_local_motion", "negative_to_unprotected_motion_ratio", 0.3),
-        (
-            "task_local_motion",
-            "blind_equivariance_to_primary_motion_ratio",
-            0.1,
-        ),
-        ("task_local_motion", "equivariance_to_primary_motion_ratio", 0.1),
-        ("lora_response", "protected_effective_ba_to_unprotected_ratio", 0.1),
-        ("paired_outcomes", "discordant_states", 1),
+        ("lora_response", "all_effective_ba_response_nonzero", False),
     ):
         row = _profile_row()
         row[section][key] = value
-        assert _profile_passes(_profile_config(), row)[0] is False
+        assert not _profile_passes(_profile_config(), row)[0]
     row = _profile_row()
-    row["phase_a_seconds"] = 20.1
-    assert _profile_passes(_profile_config(), row)[0] is False
-    row = _profile_row()
-    row["phase_a_task_rows"][0]["queue_index"] = 1
-    assert _profile_passes(_profile_config(), row)[0] is False
-    row = _profile_row()
-    row["maximum_tasks_per_rank"] = 5
-    row["task_counts_per_rank"] = [5, 5, 5, 5, 4]
-    row["world_size"] = 5
-    row["phase_a_task_rows"] = [
-        {**value, "rank": index % 5}
-        for index, value in enumerate(row["phase_a_task_rows"])
-    ]
-    row["phase_a_seconds"] = 23.0
-    row["step_seconds"] = 25.0
-    assert _profile_passes(_profile_config(), row)[0] is True
-    row["step_seconds"] = 38.0
-    assert _profile_passes(_profile_config(), row)[0] is False
+    row["outcome_rollouts"] = 1
+    assert not _profile_passes(_profile_config(), row)[0]
 
 
-def test_task_local_profile_closes_guards_and_keeps_unprotected_descent() -> None:
-    protected = torch.zeros(24, dtype=torch.bool)
-    protected[:6] = True
-    cotangents = torch.ones((24, 2, 3), dtype=torch.float32)
-    correct = torch.full((24, 2, 3), -0.5)
-    correct[protected] = 0
-    motion = torch.cat((correct, torch.full((24, 2, 3), 0.05)))
+def test_task_local_profile_requires_both_views_and_zero_rhs_negatives() -> None:
+    cotangents = torch.ones((48, 2, 3), dtype=torch.float32)
+    correct = torch.full((48, 2, 3), -0.5)
+    negative = torch.full((48, 2, 3), 0.025)
     evidence = _profile_task_local_motion(
         cotangents,
-        motion,
-        protected,
+        torch.cat((correct, negative)),
+        0,
         _profile_config()["profile_run"]["gates"],
     )
-    assert evidence["protected_to_unprotected_motion_ratio"] == 0
-    assert evidence["unprotected_descent_passing_tasks"] == 18
-    assert evidence["negative_null_passing_tasks"] == 24
+    assert evidence["both_view_descent_task_count"] == 24
+    assert evidence["negative_null_passing_views"] == 48
+    assert evidence["negative_null_per_kind"] == {
+        "reversed": 16,
+        "shuffled": 16,
+        "wrong": 16,
+    }
 
 
-def test_success_key_application_reports_final_guarded_write() -> None:
-    anchors = torch.eye(3)
-    delta = torch.zeros((3, 2, 2))
-    delta[2, 0, 0] = 1.0
-    evidence = profile_success_key_application(
-        anchors[:2], delta, torch.tensor([True, True] + [False] * 22)
-    )
-    assert evidence["constraint_row_count"] == 2
-    assert evidence["anchor_program_motion_rms"] == 0
+def test_task_record_counts_two_complete_views_same_twenty_queries_and_no_reward() -> None:
+    row = _task_record(_objective(2))
+    assert row["distinct_ordered_correct_videos"] == 2
+    assert row["distinct_wrong_videos"] == 2
+    assert row["unique_source_action_queries"] == 20
+    assert row["logical_source_action_queries"] == 40
+    assert row["physical_correct_policy_forwards"] == 4
+    assert row["outcome_rollouts"] == row["reward_reads"] == 0
+    assert row["teacher_action_reads"] == 0
 
 
-def test_task_record_reports_b20_exact_pairs_and_no_reward_backward() -> None:
-    row = _task_record(_objective(0))
-    assert row["source_action_queries"] == 20
-    assert row["physical_correct_policy_forwards"] == 2
-    assert row["base_rollouts"] == row["candidate_rollouts"] == 2
-    assert row["harmful"] is True
-    assert row["exact_pair_count"] == 2
-    assert row["trajectory_replay_policy_forwards"] == 0
-    assert row["trajectory_replay_cfm_forwards"] == 0
-    assert row["reward_gradient_count"] == 0
-    assert row["candidate_action_response_rms"] > 0
-
-
-def test_resume_reconciles_post_checkpoint_metrics_into_failure_packet(tmp_path) -> None:
+def test_resume_reconciles_post_checkpoint_metrics(tmp_path) -> None:
     metrics = tmp_path / "metrics.jsonl"
     metrics.write_text(
-        "".join(
-            json.dumps({"macro": macro, "value": macro}) + "\n"
-            for macro in range(1, 18)
-        ),
+        "".join(json.dumps({"macro": macro}) + "\n" for macro in range(1, 8)),
         encoding="utf-8",
     )
-    assert _reconcile_metrics_cursor(
-        metrics, context=_context(), expected_rows=10
-    ) == 10
-    retained = [json.loads(line) for line in metrics.read_text().splitlines()]
-    assert [row["macro"] for row in retained] == list(range(1, 11))
+    assert _reconcile_metrics_cursor(metrics, context=_context(), expected_rows=5) == 5
+    assert len(metrics.read_text().splitlines()) == 5
 
 
-def test_cli_exposes_only_residual_profile_and_formal_modes() -> None:
+def test_cli_exposes_only_profile_and_formal_modes() -> None:
     parser = build_parser()
     mode = next(action for action in parser._actions if action.dest == "mode")
     assert tuple(mode.choices) == ("mechanism-profile", "formal")

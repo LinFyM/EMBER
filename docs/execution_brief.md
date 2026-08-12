@@ -81,7 +81,10 @@ active successor是PVJFC，只替换shared credit acquisition：每task的primar
 Program与cotangent，两view共享同一个B20及policy RNG，以固定半权进入96-row continuous solve；各自negative为
 zero RHS。它不平均video/feature/LoRA/cotangent，不读outcome，不保存success bank，也不强制两view motion相同。
 swap invariance和duplicate-view退化为single-view是hard contract；完整design与快速否决门见
-`docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`。当前尚未实现或获得GPU证据。
+`docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`。canonical实现已原位替换CVEG：两个view
+串行释放policy graph，full24 dynamic queue后一次gather 48 correct、48 zero-RHS negative和两套Program cotangent，
+只保留一份FP32 Program memory；旧outcome/bank/hard-E executable与测试已删除，完整CPU`329 passed`。当前尚未
+获得GPU机制或性能证据；只开放clean pushed commit上的唯一fresh macro0 profile，失败不做参数小扫。
 
 ## 2. Fixed information contract
 

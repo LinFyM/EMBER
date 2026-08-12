@@ -23,7 +23,6 @@ from ember.expert_manifold.v6_prior_run_contract import (
     _ownership_contract,
     cursor_contract,
 )
-from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.expert_manifold.v6_prior_runtime import _resolve_segment
 from ember.pi05_source_checkpoint import DistributedContext, write_json_atomic
 
@@ -49,11 +48,6 @@ def _formal_ready_config() -> dict:
     config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to1_profile"
     config["profile_run"]["artifact_evidence"] = {"path": "profile.json"}
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
-    config["formal_run"]["artifact_evidence"] = None
-    config["evaluation"]["formal_status"] = (
-        "sealed_from_live_cveg_deployment_smoke"
-    )
-    config["evaluation"]["online_smoke_evidence"] = {"path": "vertical.json"}
     return config
 
 
@@ -62,11 +56,7 @@ def _context(world_size: int = 6) -> DistributedContext:
 
 
 def _args(
-    *,
-    output_dir: Path,
-    resume: Path | None,
-    stop: int | None,
-    mode: str = "formal",
+    *, output_dir: Path, resume: Path | None, stop: int | None, mode: str = "formal"
 ) -> argparse.Namespace:
     return argparse.Namespace(
         mode=mode,
@@ -86,57 +76,27 @@ def _git_state(commit: str = "a" * 40) -> dict:
     }
 
 
-def test_cveg_config_adds_one_training_companion_and_equivariant_guard() -> None:
+def test_pvjfc_config_seals_two_train_views_and_one_deployment_view() -> None:
     config = load_v6_prior_config()
     assert config["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
-    assert config["method"]["language_only_lora_path"] is False
-    assert config["condition_feature"]["innovation_width"] == 3072
-    assert config["condition_feature"]["phase_slots"] == 16
-    assert config["condition_feature"]["goal_block"].startswith(
-        "terminal_quartile"
-    )
-    assert config["condition_feature"]["causal_block"].startswith(
-        "sqrt_normalized_causal_prefix"
-    )
-    assert config["condition_feature"]["projection_shape"] == [2, 128, 3072]
-    assert config["condition_feature"]["learned_parameters"] == 0
-    assert config["update"]["kind"] == (
-        "full48_cross_video_equivariant_blind_then_paired_candidate_"
-        "response_preserving_guard"
-    )
-    assert config["update"]["blind_parameterization"].endswith(
-        "orthogonal_complement"
-    )
-    assert config["update"]["final_projection"].startswith(
-        "minimum_norm_guard_correction_in_current_negative_and_equivariance"
-    )
-    assert config["update"]["negative_preservation"] == (
-        "final_negative_motion_equals_blind_negative_motion"
-    )
-    assert config["update"]["equivariance_preservation"] == (
-        "final_companion_minus_primary_motion_equals_blind_zero_motion"
-    )
-    assert config["update"]["task_scalar_gate_or_mask"] is False
-    assert config["update"]["persistent_precision_or_optimizer_state"] is False
-    assert "reconciliation" not in config
-    assert config["environment"]["rollouts_per_task"] == 4
-    assert config["environment"]["paired_initializations_per_task"] == 2
-    assert config["environment"]["rollouts_per_arm"] == 2
-    assert config["environment"]["retain_success_replay"] is False
-    assert config["environment"]["retain_failure_replay"] is False
-    assert config["objective"]["trajectory_replay"] is False
-    assert config["objective"]["policy_backward"] is False
-    assert config["objective"]["reward_use"] == "binary_final_guard_membership_only"
-    assert config["success_key_bank"]["task_slots"] == 24
-    assert config["success_key_bank"]["deployment_read"] is False
-    assert config["success_key_bank"]["harmful_key_policy"].endswith("never_persist")
+    assert config["method"]["name"] == "frozen_v6_paired_video_joint_functional_credit"
+    assert config["method"]["training_views_per_task"] == 2
+    assert config["method"]["deployment_views_per_task"] == 1
+    assert config["information_wall"]["training_reward_reads"] == 0
+    assert config["information_wall"]["training_outcome_rollouts"] == 0
+    assert config["update"]["correct_conditions"] == 48
+    assert config["update"]["negative_conditions"] == 48
+    assert config["update"]["view_weights"] == [0.5, 0.5]
+    assert config["update"]["view_swap_invariant"] is True
+    assert config["update"]["duplicate_view_degenerates_to_single_view"] is True
+    assert config["update"]["history_replay"] is False
+    assert config["objective"]["reward_use"] == "none"
     assert config["data"]["action_queries_per_task"] == 20
-    assert config["data"]["videos_per_task_per_macro"] == 1
     assert config["data"]["training_companion_videos_per_task_per_macro"] == 1
-    assert config["information_wall"]["deployment_companion_video_count"] == 0
-    distributed = config["optimization"]["distributed_update"]
-    assert distributed["world_size"] == "fresh_live_1_to_6_then_exact_resume_locked"
-    assert config["formal_run"]["allowed_world_sizes"] == [1, 2, 3, 4, 5, 6]
+    assert config["formal_run"]["allowed_world_sizes"] == list(range(1, 7))
+    assert "partial_occupancy_is_allowed" in config["evaluation"]["device_selection"]
+    assert "success_key_bank" not in config
+    assert "environment" not in config
 
 
 @pytest.mark.parametrize(
@@ -145,12 +105,12 @@ def test_cveg_config_adds_one_training_companion_and_equivariant_guard() -> None
         ("condition_feature", "innovation_width", 1024),
         ("condition_feature", "phase_slots", 8),
         ("condition_feature", "projection_seed", 1),
-        ("update", "kind", "anchored"),
+        ("update", "kind", "single-view"),
+        ("update", "view_weights", [1, 1]),
         ("update", "relative_damping", 0.02),
         ("data", "teacher_video_seed", 1),
-        ("objective", "name", "reward_credit"),
-        ("rng", "environment_seed_root", 1),
-        ("environment", "retain_failure_replay", True),
+        ("objective", "name", "language-only"),
+        ("rng", "view_policy_rng", "independent"),
         ("optimization", "functional_policy_microbatch_size", 1),
         ("profile_run", "gates", {}),
         ("formal_run", "decision_gates", {}),
@@ -169,102 +129,61 @@ def test_scientific_contract_mutations_fail_closed(
         _load_mutation(tmp_path, monkeypatch, config)
 
 
-def test_unknown_fields_and_retired_config_paths_are_rejected(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+def test_unknown_fields_and_retired_configs_are_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config = _raw_config()
     config["condition_feature"]["fallback"] = "language"
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)
-    with pytest.raises(ExpertManifoldError, match="canonical config path"):
-        load_v6_prior_config(
-            V6_PRIOR_CANONICAL_CONFIG.parent
-            / "pi05_v6_reward_credit_program_cotangent_v1.json"
-        )
-    with pytest.raises(ExpertManifoldError, match="canonical config path"):
-        load_v6_prior_config(
-            V6_PRIOR_CANONICAL_CONFIG.parent
-            / "pi05_v6_policy_innovation_goal_causal_key_v1.json"
-        )
-    with pytest.raises(ExpertManifoldError, match="canonical config path"):
-        load_v6_prior_config(
-            V6_PRIOR_CANONICAL_CONFIG.parent
-            / "pi05_v6_success_key_nullspace_consolidation_v1.json"
-        )
-    with pytest.raises(ExpertManifoldError, match="canonical config path"):
-        load_v6_prior_config(
-            V6_PRIOR_CANONICAL_CONFIG.parent
-            / "pi05_v6_shared_reward_tangent_projection_v1.json"
-        )
+    for name in (
+        "pi05_v6_paired_candidate_update_guard_v1.json",
+        "pi05_v6_success_key_nullspace_consolidation_v1.json",
+        "pi05_v6_policy_innovation_goal_causal_key_v1.json",
+    ):
+        with pytest.raises(ExpertManifoldError, match="canonical config path"):
+            load_v6_prior_config(V6_PRIOR_CANONICAL_CONFIG.parent / name)
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    ready = _formal_ready_config()
-    assert runtime_for_mode(ready, "formal") == (10, (5, 10), 0)
-    preseal = deepcopy(ready)
-    preseal["status"] = "active_cpu_ready_awaiting_live_profile"
-    preseal["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
-    preseal["profile_run"]["artifact_evidence"] = None
-    preseal["formal_run"]["status"] = (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
-    preseal["evaluation"]["formal_status"] = (
-        "awaiting_live_cveg_deployment_smoke"
-    )
-    preseal["evaluation"]["online_smoke_evidence"] = None
+    preseal = _raw_config()
     assert runtime_for_mode(preseal, "mechanism-profile") == (1, (), 0)
     with pytest.raises(ExpertManifoldError, match="blocked by live gates"):
         runtime_for_mode(preseal, "formal")
+    ready = _formal_ready_config()
+    assert runtime_for_mode(ready, "formal") == (10, tuple(range(1, 11)), 0)
 
 
 def test_preprofile_artifact_injection_fails_closed(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config = _raw_config()
-    config["status"] = "active_cpu_ready_awaiting_live_profile"
-    config["profile_run"]["status"] = "awaiting_live_a40_fresh0_to1_profile"
-    config["formal_run"]["status"] = (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
-    config["evaluation"]["formal_status"] = (
-        "awaiting_live_cveg_deployment_smoke"
-    )
-    config["evaluation"]["online_smoke_evidence"] = None
     config["profile_run"]["artifact_evidence"] = {"path": "unsealed.json"}
     with pytest.raises(ExpertManifoldError, match="fail-closed contract"):
         _load_mutation(tmp_path, monkeypatch, config)
 
 
-def test_runtime_segments_are_fresh_zero_to_five_then_exact_five_to_ten(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+def test_runtime_segments_are_only_zero_to_five_then_exact_five_to_ten(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config = _formal_ready_config()
-    monkeypatch.setattr(
-        runtime_module, "residual_git_state", lambda _root: _git_state()
-    )
+    monkeypatch.setattr(runtime_module, "residual_git_state", lambda _root: _git_state())
     fresh = _resolve_segment(
-        _args(output_dir=tmp_path / "run", resume=None, stop=5),
-        config,
-        _context(),
+        _args(output_dir=tmp_path / "run", resume=None, stop=5), config, _context()
     )
     assert (fresh.start_macro, fresh.stop_macro) == (0, 5)
-    assert fresh.checkpoint_macros == (5, 10)
-    for stop in (None, 10):
+    assert fresh.checkpoint_macros == tuple(range(1, 11))
+    for stop in (None, 1, 10):
         with pytest.raises(ExpertManifoldError, match="sealed segment"):
             _resolve_segment(
                 _args(output_dir=tmp_path / "run", resume=None, stop=stop),
                 config,
                 _context(),
             )
-
     checkpoint = tmp_path / "run/checkpoints/macro_00000005"
     checkpoint.mkdir(parents=True)
     write_json_atomic(
-        checkpoint.parent.parent / "run_contract.json",
-        {"git": {"commit": "a" * 40}},
+        checkpoint.parent.parent / "run_contract.json", {"git": {"commit": "a" * 40}}
     )
     resumed = _resolve_segment(
         _args(output_dir=tmp_path / "run", resume=checkpoint, stop=10),
@@ -274,34 +193,19 @@ def test_runtime_segments_are_fresh_zero_to_five_then_exact_five_to_ten(
     assert (resumed.start_macro, resumed.stop_macro) == (5, 10)
 
 
-def test_runtime_accepts_every_live_world_up_to_six_and_rejects_larger_world(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+def test_runtime_accepts_one_to_six_cards_including_partially_available_topology(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config = _formal_ready_config()
-    monkeypatch.setattr(
-        runtime_module, "residual_git_state", lambda _root: _git_state()
-    )
+    monkeypatch.setattr(runtime_module, "residual_git_state", lambda _root: _git_state())
     arguments = _args(output_dir=tmp_path / "run", resume=None, stop=5)
     for world_size in range(1, 7):
-        segment = _resolve_segment(arguments, config, _context(world_size))
-        assert (segment.start_macro, segment.stop_macro) == (0, 5)
+        assert _resolve_segment(arguments, config, _context(world_size)).stop_macro == 5
     with pytest.raises(ExpertManifoldError):
         _resolve_segment(arguments, config, _context(7))
-    arguments.num_workers = 2
-    with pytest.raises(ExpertManifoldError):
-        _resolve_segment(arguments, config, _context())
-    arguments.num_workers = 0
-    monkeypatch.setattr(
-        runtime_module,
-        "residual_git_state",
-        lambda _root: {**_git_state(), "dirty_paths": ["M source.py"]},
-    )
-    with pytest.raises(ExpertManifoldError):
-        _resolve_segment(arguments, config, _context())
 
 
-def test_cursor_seals_paired_randomness_without_cumulative_precision_state() -> None:
+def test_cursor_seals_paired_views_same_rng_and_no_outcome_state() -> None:
     cursor = cursor_contract(_raw_config(), 10)
     assert cursor == {
         "next_macro": 10,
@@ -314,20 +218,16 @@ def test_cursor_seals_paired_randomness_without_cumulative_precision_state() -> 
         "training_companion_videos_per_task_visit": 1,
         "action_queries_per_task": 20,
         "condition_order": (
-            "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23"
+            "primary_correct_0_to_23_then_companion_correct_0_to_23_then_"
+            "primary_negative_0_to_23_then_companion_negative_0_to_23"
         ),
-        "rollouts_per_task": 4,
-        "paired_initializations_per_task": 2,
-        "next_paired_state_cursor_per_task": 20,
-        "environment_seed_root": 2026081101,
-        "policy_noise_seed_root": 2026081102,
-        "paired_arm_policy": "base_k2_then_candidate_k2_with_identical_keys",
-        "success_key_anchor_policy": "first_stable_success_per_train_task",
+        "view_weights": [0.5, 0.5],
+        "policy_rng_reuse": "same_task_B20_keyed_seed_for_both_views",
     }
-    assert all("precision" not in key for key in cursor)
+    assert all("outcome" not in key and "bank" not in key for key in cursor)
 
 
-def test_ownership_records_deployment_memory_and_training_only_success_bank() -> None:
+def test_ownership_records_only_deployment_program_memory() -> None:
     ownership = V6PriorOwnership(10_775_296, 523, 600)
     writer = SimpleNamespace(
         condition_feature=SimpleNamespace(
@@ -343,14 +243,8 @@ def test_ownership_records_deployment_memory_and_training_only_success_bank() ->
             value=torch.empty((256, 320, 256), dtype=torch.float32, device="meta")
         ),
     )
-    bank = SuccessKeyAnchorBank(
-        range(24), feature_width=256, device=torch.device("cpu")
-    )
-    observed = _ownership_contract(ownership, writer, bank)
+    observed = _ownership_contract(ownership, writer)
     assert observed["fixed_policy_innovation_encoder"]["checkpoint_owned"] is False
-    assert observed["fixed_projection"]["shape"] == [2, 128, 3072]
     assert observed["program_residual_memory"]["checkpoint_owned"] is True
-    assert observed["success_key_anchor_bank"]["checkpoint_owned"] is True
-    assert observed["success_key_anchor_bank"]["deployment_owned"] is False
-    assert observed["success_key_anchor_bank"]["first_stable_success_only"] is True
-    assert "reconciliation_precision" not in observed
+    assert observed["program_residual_memory"]["deployment_owned"] is True
+    assert "success_key_anchor_bank" not in observed

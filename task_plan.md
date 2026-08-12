@@ -182,8 +182,11 @@
 - [x] 从`single-video blind cotangent -> hard E/binary guard`的已否决接口推出PVJFC单变量authority：两条完整
   ordered-video cotangent共享B20/RNG并以半权joint solve，封存swap invariance与duplicate-view退化；无outcome、
   success bank、hard E或部署multi-video。
-- [ ] 原位实现fresh-incompatible PVJFC，删除active candidate-guard/bank路径，完成CPU、唯一live mechanism
-  profile、fresh0→5与macro5 strict paired400。
+- [x] 原位实现fresh-incompatible PVJFC并删除active candidate-guard/bank路径：两view各自完整Writer/functional
+  cotangent、same B20/RNG、full96 joint solve、memory-only checkpoint与one-shot eval schema均已接通；swap、
+  duplicate-view闭式退化、world1--6 padded gather和完整CPU`329 passed`。
+- [ ] 从clean pushed implementation seal建立detached frozen worktree，双节点live选1--6张合适A40完成唯一macro0
+  mechanism profile；通过后才开放fresh`0→5`与macro5 strict paired400。
 
 ## Repository closeout
 

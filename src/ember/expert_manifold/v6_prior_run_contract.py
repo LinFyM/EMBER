@@ -18,7 +18,6 @@ from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_CONFIG_SCHEMA,
     V6_PRIOR_RUN_SCHEMA,
 )
-from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.pi05_source_checkpoint import (
     DistributedContext,
     read_json,
@@ -133,7 +132,6 @@ def _data_contract(
 def _ownership_contract(
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
-    success_key_bank: SuccessKeyAnchorBank,
 ) -> dict[str, Any]:
     memory = writer.program_memory.value
     return {
@@ -172,16 +170,6 @@ def _ownership_contract(
             "checkpoint_owned": True,
             "deployment_owned": True,
         },
-        "success_key_anchor_bank": {
-            "feature_shape": list(success_key_bank.features.shape),
-            "feature_dtype": str(success_key_bank.features.dtype),
-            "present_shape": list(success_key_bank.present.shape),
-            "task_global_ids": success_key_bank.task_global_ids.detach().cpu().tolist(),
-            "checkpoint_owned": True,
-            "deployment_owned": False,
-            "trainable": False,
-            "first_stable_success_only": True,
-        },
         "source_policy_trainable_parameter_count": 0,
         "optimizer": "not_instantiated",
         "scheduler": "not_instantiated",
@@ -203,7 +191,6 @@ def build_run_contract(
     warm_start: V6PriorWarmStart,
     ownership: V6PriorOwnership,
     writer: FrozenV6ConditionResidualWriter,
-    success_key_bank: SuccessKeyAnchorBank,
     repo_root: Any,
     git_state_fn: Any = residual_git_state,
     rank_topology_fn: Any = rank_topology,
@@ -234,7 +221,6 @@ def build_run_contract(
             "writer_state_tensor_count": warm_start.state_tensor_count,
             "writer_state_value_count": warm_start.state_value_count,
             "residual_memory": "fresh_zero_then_memory_only_exact_resume",
-            "success_key_bank": "fresh_empty_then_exact_resume",
         },
         "data": _data_contract(
             args,
@@ -250,13 +236,11 @@ def build_run_contract(
         "writer": dict(config["writer"]),
         "condition_feature": dict(config["condition_feature"]),
         "program_residual": dict(config["program_residual"]),
-        "success_key_bank": dict(config["success_key_bank"]),
         "update": dict(config["update"]),
-        "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
         "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
-        "ownership": _ownership_contract(ownership, writer, success_key_bank),
+        "ownership": _ownership_contract(ownership, writer),
         "runtime": {
             "host": socket.gethostname(),
             "device": torch.cuda.get_device_name(context.device),
@@ -277,27 +261,18 @@ def build_run_contract(
             "action_loader_persistent_workers": False,
             "logical_policy_batch_size": 20,
             "functional_policy_microbatch_size": 10,
-            "physical_policy_forwards_per_task": 2,
-            "training_companion_video_forwards_per_task": 1,
-            "rollouts_per_task": 4,
-            "paired_initializations_per_task": 2,
-            "rollouts_per_arm": 2,
-            "outcome_records_per_task": 4,
-            "successful_rollout_replay_retained": False,
-            "failed_rollout_replay_retained": False,
-            "trajectory_replay_policy_forwards": 0,
-            "trajectory_replay_cfm_forwards": 0,
-            "reward_gradient_count": 0,
+            "physical_policy_forwards_per_task": 4,
+            "ordered_video_forwards_per_task": 2,
+            "outcome_rollouts_per_task": 0,
+            "reward_reads_per_task": 0,
             "negative_policy_forwards_per_task": 0,
             "policy_gradient_checkpointing": False,
             "writer_activation_checkpointing_effective": False,
             "distributed_model_wrapper": "none",
             "collectives": {
-                "full48_plus_companion_tensor_all_gathers": 2,
-                "paired_outcome_tensor_all_gathers": 1,
+                "full96_tensor_all_gathers": 2,
                 "task_record_object_all_gathers": 1,
-                "profile_guard_object_all_gathers": 0,
-                "phase_a_wall_scalar_all_reduces": 1,
+                "profile_response_object_all_gathers": 1,
                 "memory_allreduce": False,
             },
             "deferred_process_group": True,
@@ -325,14 +300,11 @@ def checkpoint_contract(run_contract: Mapping[str, Any]) -> dict[str, Any]:
                 "writer_state_tensor_count",
                 "writer_state_value_count",
                 "residual_memory",
-                "success_key_bank",
             )
         },
         "condition_feature": run_contract["condition_feature"],
         "program_residual": run_contract["program_residual"],
-        "success_key_bank": run_contract["success_key_bank"],
         "update": run_contract["update"],
-        "environment": run_contract["environment"],
         "objective": run_contract["objective"],
         "rng": run_contract["rng"],
         "ownership": run_contract["ownership"],
@@ -359,19 +331,11 @@ def cursor_contract(config: Mapping[str, Any], macro: int) -> dict[str, Any]:
         ),
         "action_queries_per_task": int(data["action_queries_per_task"]),
         "condition_order": (
-            "correct_0_to_23_then_negative_0_to_23_then_companion_0_to_23"
+            "primary_correct_0_to_23_then_companion_correct_0_to_23_then_"
+            "primary_negative_0_to_23_then_companion_negative_0_to_23"
         ),
-        "rollouts_per_task": int(config["environment"]["rollouts_per_task"]),
-        "paired_initializations_per_task": int(
-            config["environment"]["paired_initializations_per_task"]
-        ),
-        "next_paired_state_cursor_per_task": macro * int(
-            config["environment"]["paired_initializations_per_task"]
-        ),
-        "environment_seed_root": int(config["rng"]["environment_seed_root"]),
-        "policy_noise_seed_root": int(config["rng"]["policy_noise_seed_root"]),
-        "paired_arm_policy": "base_k2_then_candidate_k2_with_identical_keys",
-        "success_key_anchor_policy": "first_stable_success_per_train_task",
+        "view_weights": [0.5, 0.5],
+        "policy_rng_reuse": "same_task_B20_keyed_seed_for_both_views",
     }
 
 

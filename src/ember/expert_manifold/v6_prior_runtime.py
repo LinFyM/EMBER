@@ -1,4 +1,4 @@
-"""Assets, paired K2 environments, and exact-resume Work-Queue runtime."""
+"""Assets and exact-resume Work-Queue runtime for paired-video credit."""
 
 from __future__ import annotations
 
@@ -40,9 +40,7 @@ from ember.expert_manifold.v6_prior_run_contract import (
     publish_contract,
     residual_git_state,
 )
-from ember.expert_manifold.v6_success_key import SuccessKeyAnchorBank
 from ember.lora import LoRAContract
-from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
@@ -58,8 +56,6 @@ from ember.pi05_source_setup import (
     load_stats,
     seed_everything,
 )
-from ember.reward.protocol import RewardTask, SUITE_HORIZONS
-from ember.reward.rollout import RandomResetEnvironmentPool
 from ember.writer.architecture import LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.condition_update import (
@@ -69,7 +65,6 @@ from ember.writer.condition_update import (
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.topology import visible_physical_cuda_index
 
 
 _RESUME_NAME = re.compile(r"macro_([0-9]{8})")
@@ -102,7 +97,6 @@ class V6PriorRuntime:
     tokenizer: dict[str, Any]
     tasks: tuple[ExpertTask, ...]
     task_by_global_id: dict[int, ExpertTask]
-    reward_task_by_global_id: dict[int, RewardTask]
     dataset: FunctionalQueryDataset
     sampler: MixedTaskBatchSampler
     video_schedule: TeacherVideoSchedule
@@ -111,9 +105,7 @@ class V6PriorRuntime:
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
     writer: FrozenV6ConditionResidualWriter
-    success_key_bank: SuccessKeyAnchorBank
     identity_state: dict[str, torch.Tensor]
-    env_pool: RandomResetEnvironmentPool
     lora_contract: LoRAContract
     warm_start: V6PriorWarmStart
     ownership: V6PriorOwnership
@@ -149,8 +141,10 @@ def _resolve_segment(
     profile_valid = args.mode != "mechanism-profile" or (
         args.resume is None and args.stop_after_macro in {None, 1} and stop == 1
     )
-    formal_boundaries = (0, *checkpoints)
-    formal_segments = set(zip(formal_boundaries, formal_boundaries[1:]))
+    formal_segments = {
+        (int(left), int(right))
+        for left, right in config["formal_run"]["launch_segments"]
+    }
     formal_valid = args.mode != "formal" or (
         args.stop_after_macro is not None
         and checkpoints
@@ -210,21 +204,6 @@ def _validate_collective_environment(context: DistributedContext) -> None:
     }
     if {name: os.environ.get(name) for name in expected} != expected:
         raise ExpertManifoldError("residual Writer collective environment changed")
-
-
-def _configure_egl(context: DistributedContext) -> None:
-    expected = {
-        "MUJOCO_GL": "egl",
-        "PYOPENGL_PLATFORM": "egl",
-        "MUJOCO_EGL_DEVICE_ID": str(
-            visible_physical_cuda_index(context.local_rank)
-        ),
-    }
-    for name, value in expected.items():
-        observed = os.environ.get(name)
-        if observed not in {None, value}:
-            raise ExpertManifoldError(f"PCUG {name} mapping changed")
-        os.environ[name] = value
 
 
 def _load_source(
@@ -327,48 +306,6 @@ def _build_data(
         assignment_strategy="cost_balanced_long_first_dynamic_uneven",
     )
     return tasks, dataset, sampler, schedule
-
-
-def _build_reward_tasks(
-    tasks: Sequence[ExpertTask],
-    config: Mapping[str, Any],
-) -> dict[int, RewardTask]:
-    manifest = read_json(authority_path(config, "target_data_manifest"))
-    rows = {
-        int(row["global_task_id"]): row
-        for row in manifest.get("tasks", [])
-        if row.get("split_role") == "train"
-    }
-    if len(rows) != 24:
-        raise ExpertManifoldError("PCUG target manifest lost train24")
-    reward_tasks = {}
-    for task in tasks:
-        row = rows.get(task.global_task_id)
-        if (
-            not isinstance(row, Mapping)
-            or row.get("suite") != task.suite
-            or int(row.get("task_id", -1)) != task.task_id
-            or row.get("language") != task.language
-            or Path(str(row.get("hdf5", {}).get("relative_path", ""))).name
-            != task.authority.path.name
-        ):
-            raise ExpertManifoldError("PCUG HDF5 and task manifest disagree")
-        bddl = row.get("bddl")
-        if not isinstance(bddl, Mapping):
-            raise ExpertManifoldError("PCUG train task lost BDDL authority")
-        reward_tasks[task.global_task_id] = RewardTask(
-            suite=task.suite,
-            task_id=task.task_id,
-            global_task_id=task.global_task_id,
-            split_role="train",
-            language=task.language,
-            problem_folder=str(row["problem_folder"]),
-            bddl_file=str(bddl["filename"]),
-            bddl_bytes=int(bddl["bytes"]),
-            bddl_sha256=None,
-            horizon=SUITE_HORIZONS[task.suite],
-        )
-    return reward_tasks
 
 
 def _build_policy_writer(
@@ -504,34 +441,12 @@ def _reconcile_metrics_cursor(
     return int(result["rows"])
 
 
-def _prepare_libero_paths(
-    args: argparse.Namespace,
-    context: DistributedContext,
-) -> dict[str, str]:
-    payload: list[Any] = [None]
-    if context.is_main:
-        try:
-            payload[0] = prepare_libero_config(args.output_dir / "libero_config")
-        except Exception as error:
-            payload[0] = {"error": repr(error)}
-    if context.world_size > 1:
-        dist.broadcast_object_list(payload, src=0, device=context.device)
-    paths = payload[0]
-    if not isinstance(paths, Mapping) or paths.get("error"):
-        raise ExpertManifoldError(f"PCUG LIBERO path preparation failed: {paths}")
-    os.environ["LIBERO_CONFIG_PATH"] = str(
-        (args.output_dir / "libero_config").resolve()
-    )
-    return {str(name): str(value) for name, value in paths.items()}
-
-
 def _restore_resume(
     runtime_args: argparse.Namespace,
     config: Mapping[str, Any],
     segment: RuntimeSegment,
     context: DistributedContext,
     writer: FrozenV6ConditionResidualWriter,
-    success_key_bank: SuccessKeyAnchorBank,
     checkpoint_contract_value: Mapping[str, Any],
 ) -> None:
     if runtime_args.resume is None:
@@ -539,7 +454,6 @@ def _restore_resume(
     loaded, rows = load_v6_prior_checkpoint(
         checkpoint=runtime_args.resume,
         memory=writer.program_memory,
-        success_key_bank=success_key_bank,
         context=context,
         expected_cursor_contract=cursor_contract(config, segment.start_macro),
         expected_checkpoint_contract=checkpoint_contract_value,
@@ -556,7 +470,6 @@ def _prepare_runtime(
     config = load_v6_prior_config(args.config)
     segment = _resolve_segment(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
-    _configure_egl(context)
     authorities, source, tokenizer = _load_source(args, config)
     tasks, dataset, sampler, schedule = _build_data(
         args=args,
@@ -564,17 +477,11 @@ def _prepare_runtime(
         context=context,
         segment=segment,
     )
-    reward_tasks = _build_reward_tasks(tasks, config)
     policy, writer, identity, lora, warm_start, ownership = _build_policy_writer(
         config=config,
         context=context,
         source=source,
         source_config=authorities.source_base_config,
-    )
-    success_key_bank = SuccessKeyAnchorBank(
-        [task.global_task_id for task in tasks],
-        feature_width=int(config["condition_feature"]["feature_width"]),
-        device=context.device,
     )
     video_store, processor, language = _build_language_inputs(
         args=args,
@@ -601,43 +508,29 @@ def _prepare_runtime(
         warm_start=warm_start,
         ownership=ownership,
         writer=writer,
-        success_key_bank=success_key_bank,
         repo_root=REPO_ROOT,
     )
     checkpoint_contract_value = checkpoint_contract(contract)
     publish_contract(args, contract, context)
-    paths = _prepare_libero_paths(args, context)
-    env_pool = RandomResetEnvironmentPool(
-        bddl_root=Path(paths["bddl_files"]),
-        assets_root=Path(paths["assets"]),
-        render_resolution=int(config["environment"]["render_resolution"]),
+    _restore_resume(
+        args,
+        config,
+        segment,
+        context,
+        writer,
+        checkpoint_contract_value,
     )
-    try:
-        _restore_resume(
-            args,
-            config,
-            segment,
-            context,
-            writer,
-            success_key_bank,
-            checkpoint_contract_value,
+    metrics_path = args.output_dir / "metrics.jsonl"
+    expected_rows = segment.start_macro if args.mode == "formal" else 0
+    if (
+        _reconcile_metrics_cursor(
+            metrics_path,
+            context=context,
+            expected_rows=expected_rows,
         )
-        metrics_path = args.output_dir / "metrics.jsonl"
-        expected_rows = segment.start_macro if args.mode == "formal" else 0
-        if (
-            _reconcile_metrics_cursor(
-                metrics_path,
-                context=context,
-                expected_rows=expected_rows,
-            )
-            != expected_rows
-        ):
-            raise ExpertManifoldError(
-                "residual Writer metrics differ from resume cursor"
-            )
-    except Exception:
-        env_pool.close()
-        raise
+        != expected_rows
+    ):
+        raise ExpertManifoldError("residual Writer metrics differ from resume cursor")
     torch.cuda.reset_peak_memory_stats(context.device)
     if context.world_size > 1:
         dist.barrier(device_ids=[context.local_rank])
@@ -650,7 +543,6 @@ def _prepare_runtime(
         tokenizer=dict(tokenizer),
         tasks=tasks,
         task_by_global_id={task.global_task_id: task for task in tasks},
-        reward_task_by_global_id=reward_tasks,
         dataset=dataset,
         sampler=sampler,
         video_schedule=schedule,
@@ -659,9 +551,7 @@ def _prepare_runtime(
         processor=processor,
         policy=policy,
         writer=writer,
-        success_key_bank=success_key_bank,
         identity_state=identity,
-        env_pool=env_pool,
         lora_contract=lora,
         warm_start=warm_start,
         ownership=ownership,

@@ -1,4 +1,4 @@
-"""One-task Program leaf and counterfactual feature construction."""
+"""One ordered-video Program leaf and matched counterfactual construction."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from ember.writer.data import RawTeacherVideo
 
 
 @dataclass(frozen=True)
-class GeneratedConditionGraph:
-    """Primary graph plus counterfactual and training companion keys."""
+class GeneratedViewGraph:
+    """One complete one-shot Writer graph and its zero-RHS counterfactual key."""
 
     correct_lora: Mapping[str, torch.Tensor]
     program_leaf: torch.Tensor
@@ -24,13 +24,10 @@ class GeneratedConditionGraph:
     residual_before: torch.Tensor
     correct_feature: torch.Tensor
     negative_feature: torch.Tensor
-    companion_feature: torch.Tensor
     correct_raw_frames: int
     correct_sampled_frames: int
     negative_raw_frames: int
     negative_sampled_frames: int
-    companion_raw_frames: int
-    companion_sampled_frames: int
 
 
 def _video_tensors(
@@ -43,13 +40,12 @@ def _video_tensors(
     return frames, indices, offsets
 
 
-def generate_condition_graph(
+def generate_view_graph(
     *,
     writer: FrozenV6ConditionResidualWriter,
     policy: torch.nn.Module,
     correct_video: RawTeacherVideo,
     counterfactual_video: RawTeacherVideo | None,
-    companion_video: RawTeacherVideo,
     language_tokens: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
     kind: str,
     counterfactual_seed: int,
@@ -57,17 +53,14 @@ def generate_condition_graph(
     task_visit: int,
     teacher_demo: int,
     device: torch.device,
-) -> GeneratedConditionGraph:
-    """Build primary, negative, and same-task companion condition features."""
+) -> GeneratedViewGraph:
+    """Build one ordered correct Program and its matched negative feature."""
 
     if (kind == "wrong") != (counterfactual_video is not None):
         raise ExpertManifoldError("counterfactual video ownership changed")
     tokens, mask, task_span = language_tokens
     correct_frames, correct_indices, correct_offsets = _video_tensors(
         correct_video, device
-    )
-    companion_frames, companion_indices, companion_offsets = _video_tensors(
-        companion_video, device
     )
     base = writer.base_writer
     with (
@@ -95,8 +88,7 @@ def generate_condition_graph(
             negative_frames, negative_indices, negative_offsets = _video_tensors(
                 counterfactual_video, device
             )
-            # The exact target-task tokens remain unchanged. Only the video is
-            # replaced, so the information wall cannot leak wrong-task language.
+            # Target-task language is unchanged; only RGB evidence is replaced.
             correct_feature, negative_feature = writer.paired_condition_features(
                 policy,
                 correct_frames,
@@ -129,19 +121,10 @@ def generate_condition_graph(
                 task_span,
                 frame_order=frame_order,
             )
-        companion_feature = writer.condition_features(
-            policy,
-            companion_frames,
-            companion_offsets,
-            tokens,
-            mask,
-            task_span,
-        )
         stored_residual = writer.program_memory(correct_feature)
         stored_program = base_slots + stored_residual.to(dtype=base_slots.dtype)
 
-    # The Program itself is the only differentiable leaf.  The historical v6
-    # graph, fixed feature, and manual memory are all outside autograd ownership.
+    # The complete Program is the sole differentiable Writer leaf.
     program_leaf = stored_program.detach().to(dtype=torch.float32).requires_grad_(True)
     with torch.autocast(
         device_type=device.type,
@@ -152,12 +135,11 @@ def generate_condition_graph(
     if (
         program_leaf.shape != (1, 320, base.program_width)
         or correct_feature.shape != negative_feature.shape
-        or correct_feature.shape != companion_feature.shape
         or correct_feature.shape[0] != 1
     ):
-        raise ExpertManifoldError("condition Program graph changed topology")
+        raise ExpertManifoldError("paired-video Program graph changed topology")
     negative_source = counterfactual_video or correct_video
-    return GeneratedConditionGraph(
+    return GeneratedViewGraph(
         correct_lora=correct_lora,
         program_leaf=program_leaf,
         program_input_before=stored_program.detach(),
@@ -165,109 +147,27 @@ def generate_condition_graph(
         residual_before=stored_residual.detach(),
         correct_feature=correct_feature[0],
         negative_feature=negative_feature[0],
-        companion_feature=companion_feature[0],
         correct_raw_frames=int(correct_video.raw_frame_count),
         correct_sampled_frames=int(correct_indices.numel()),
         negative_raw_frames=int(negative_source.raw_frame_count),
         negative_sampled_frames=int(negative_indices.numel()),
-        companion_raw_frames=int(companion_video.raw_frame_count),
-        companion_sampled_frames=int(companion_indices.numel()),
     )
-
-
-def decode_candidate_program(
-    graph: GeneratedConditionGraph,
-    *,
-    writer: FrozenV6ConditionResidualWriter,
-    motion: torch.Tensor,
-    device: torch.device,
-) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
-    """Reproduce the exact post-write Program arithmetic, then decode once."""
-
-    if (
-        graph.base_program_slots.shape != graph.residual_before.shape
-        or graph.base_program_slots.shape != graph.program_input_before.shape
-        or graph.base_program_slots.shape[0] != 1
-        or motion.shape != graph.residual_before.shape[1:]
-        or motion.dtype != torch.float32
-        or motion.device != graph.residual_before.device
-    ):
-        raise ExpertManifoldError("PCUG candidate Program topology changed")
-    with (
-        torch.no_grad(),
-        torch.autocast(
-            device_type=device.type,
-            dtype=torch.bfloat16,
-            enabled=device.type == "cuda",
-        ),
-    ):
-        candidate_program = graph.base_program_slots + (
-            graph.residual_before + motion.unsqueeze(0)
-        ).to(dtype=graph.base_program_slots.dtype)
-        candidate_program = candidate_program.to(dtype=torch.float32)
-        candidate_lora = writer.base_writer.decode_slots(candidate_program)
-    return candidate_program.detach(), {
-        name: value.detach() for name, value in candidate_lora.items()
-    }
 
 
 def program_cotangent(
-    graph: GeneratedConditionGraph,
+    graph: GeneratedViewGraph,
     lora_gradients: Mapping[str, torch.Tensor],
-    *,
-    retain_graph: bool = False,
 ) -> torch.Tensor:
-    """Transport one task-local LoRA VJP to its complete Program leaf."""
+    """Transport one view's LoRA VJP to its complete Program leaf."""
 
-    return _transport_program_cotangent(
-        graph.correct_lora,
-        graph.program_leaf,
-        lora_gradients,
-        retain_graph=retain_graph,
-    )
-
-
-def _transport_program_cotangent(
-    lora_state: Mapping[str, torch.Tensor],
-    program_leaf: torch.Tensor,
-    lora_gradients: Mapping[str, torch.Tensor],
-    *,
-    retain_graph: bool = False,
-) -> torch.Tensor:
-    names = tuple(lora_state)
+    names = tuple(graph.correct_lora)
     if set(lora_gradients) != set(names):
         raise ExpertManifoldError("functional LoRA cotangent topology changed")
     gradient = torch.autograd.grad(
-        tuple(lora_state[name] for name in names),
-        program_leaf,
+        tuple(graph.correct_lora[name] for name in names),
+        graph.program_leaf,
         grad_outputs=tuple(lora_gradients[name] for name in names),
-        retain_graph=retain_graph,
     )[0]
-    if gradient.shape != program_leaf.shape:
+    if gradient.shape != graph.program_leaf.shape:
         raise ExpertManifoldError("functional loss did not reach the complete Program")
-    # The caller owns task-local aggregation.  No rank/task/world-size scaling
-    # is permitted here.
     return gradient[0].detach().to(dtype=torch.float32)
-
-
-def redecoded_program_cotangent(
-    *,
-    writer: FrozenV6ConditionResidualWriter,
-    program_value: torch.Tensor,
-    lora_gradients: Mapping[str, torch.Tensor],
-    device: torch.device,
-) -> torch.Tensor:
-    """Replay only the compiler to transport a delayed LoRA cotangent."""
-
-    program_leaf = program_value.detach().to(dtype=torch.float32).requires_grad_(True)
-    with torch.autocast(
-        device_type=device.type,
-        dtype=torch.bfloat16,
-        enabled=device.type == "cuda",
-    ):
-        lora_state = writer.base_writer.decode_slots(program_leaf)
-    return _transport_program_cotangent(
-        lora_state,
-        program_leaf,
-        lora_gradients,
-    )

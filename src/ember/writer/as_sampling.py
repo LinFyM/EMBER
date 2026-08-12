@@ -237,7 +237,10 @@ class MixedTaskBatchSampler:
         self, task_cycle: int
     ) -> tuple[dict[int, int], dict[int, int], tuple[int, ...]]:
         current_costs = {
-            task_id: sum(
+            task_id: (
+                self.per_rank_batch_size if self.dynamic_task_assignment else 0
+            )
+            + sum(
                 self.task_video_costs[task_id][demo]
                 for demo in self.video_schedule.training_demos_for_task_visit(
                     task_id,
@@ -728,6 +731,7 @@ class TeacherVideoSchedule:
     """Deterministic primary videos plus optional training-only companions."""
 
     _SEED_TAG = 0x71DE0
+    _DYNAMIC_K_SEED_TAG = 0xD14A4C
 
     def __init__(
         self,
@@ -737,6 +741,7 @@ class TeacherVideoSchedule:
         seed: int,
         videos_per_visit: int = 4,
         companion_videos_per_visit: int = 0,
+        dynamic_k_max: int | None = None,
     ) -> None:
         if (
             not task_ids
@@ -748,6 +753,10 @@ class TeacherVideoSchedule:
             or companion_videos_per_visit < 0
             or companion_videos_per_visit >= len(demo_indices)
             or (companion_videos_per_visit and videos_per_visit != 1)
+            or dynamic_k_max not in {None, 4}
+            or (dynamic_k_max is not None and videos_per_visit != dynamic_k_max)
+            or (dynamic_k_max is not None and companion_videos_per_visit != 0)
+            or (dynamic_k_max is not None and len(task_ids) % dynamic_k_max)
         ):
             raise WriterModelError("invalid teacher-video schedule")
         self.task_ids = tuple(sorted(int(value) for value in task_ids))
@@ -755,6 +764,26 @@ class TeacherVideoSchedule:
         self.seed = int(seed)
         self.videos_per_visit = int(videos_per_visit)
         self.companion_videos_per_visit = int(companion_videos_per_visit)
+        self.dynamic_k_max = dynamic_k_max
+        dynamic_order = np.random.default_rng(
+            np.random.SeedSequence([self.seed, self._DYNAMIC_K_SEED_TAG])
+        ).permutation(self.task_ids)
+        self._dynamic_k_position = {
+            int(task_id): position
+            for position, task_id in enumerate(dynamic_order)
+        }
+
+    def shot_count_for_task_visit(self, task_id: int, task_visit: int) -> int:
+        """Return the sealed K for one task and macro visit."""
+
+        if task_id not in self.task_ids or task_visit < 0:
+            raise WriterModelError("teacher-video request is outside the schedule")
+        if self.dynamic_k_max is None:
+            return self.videos_per_visit
+        return 1 + (
+            (self._dynamic_k_position[task_id] + task_visit)
+            % self.dynamic_k_max
+        )
 
     def _one_shot_order(self, task_id: int, task_visit: int) -> tuple[int, ...]:
         cycle = task_visit // len(self.demo_indices)
@@ -777,7 +806,8 @@ class TeacherVideoSchedule:
         if task_id not in self.task_ids or task_visit < 0:
             raise WriterModelError("teacher-video request is outside the schedule")
         excluded_set = {int(value) for value in excluded}
-        if self.videos_per_visit == 1:
+        count = self.shot_count_for_task_visit(task_id, task_visit)
+        if count == 1 and self.dynamic_k_max is None:
             offset = task_visit % len(self.demo_indices)
             selected = self._one_shot_order(task_id, task_visit)[offset]
             if selected in excluded_set:
@@ -788,14 +818,14 @@ class TeacherVideoSchedule:
         candidates = [
             int(value) for value in self.demo_indices if int(value) not in excluded_set
         ]
-        if len(candidates) < self.videos_per_visit:
+        if len(candidates) < count:
             raise WriterModelError("action queries leave too few independent videos")
         order = np.random.default_rng(
             np.random.SeedSequence(
                 [self.seed, task_id, task_visit, self._SEED_TAG]
             )
         ).permutation(candidates)
-        return tuple(int(value) for value in order[: self.videos_per_visit])
+        return tuple(int(value) for value in order[:count])
 
     def companion_demos_for_task_visit(
         self,
@@ -904,10 +934,26 @@ class TeacherVideoSchedule:
         companion_counts = tuple(
             len(value) for value in companion_coverage.values()
         )
+        shot_counts = tuple(
+            len(
+                self.demos_for_task_visit(
+                    task_id,
+                    visit,
+                    excluded=sampler.action_demo_indices_for_task_visit(
+                        task_id, visit
+                    ),
+                )
+            )
+            for step in range(start_step, stop_step)
+            for _, _, task_id, visit in sampler.assignments_for_step(step)
+        )
         return {
             "query": query,
             "teacher_video_seed": self.seed,
             "videos_per_task_visit": self.videos_per_visit,
+            "dynamic_k_max": self.dynamic_k_max,
+            "min_videos_per_task_visit": min(shot_counts, default=0),
+            "max_videos_per_task_visit": max(shot_counts, default=0),
             "training_companion_videos_per_task_visit": (
                 self.companion_videos_per_visit
             ),

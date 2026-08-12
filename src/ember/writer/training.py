@@ -260,6 +260,8 @@ def prepare_runtime(
     )
     args.stop_after_macro = stop_macro
     initial_macro = checkpoint_macro(args.resume)
+    if args.resume is not None and args.resume.parent.parent != args.output_dir:
+        raise WriterModelError("dynamic-K resume checkpoint belongs to another run")
     if not 0 <= initial_macro < stop_macro:
         raise WriterModelError("dynamic-K resume cursor is outside this segment")
     seed_everything(int(config["optimization"]["seed"]), context)

@@ -317,6 +317,41 @@ def test_publish_contract_accepts_only_exact_resume_contract(tmp_path: Path) -> 
         publish_contract(args, context, {**contract, "changed": True})
 
 
+def test_prepare_runtime_rejects_cross_run_resume(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ember.writer.training import prepare_runtime
+
+    monkeypatch.setattr(
+        "ember.writer.training.load_writer_config",
+        lambda _path: {
+            "profile_defaults": {
+                "allowed_world_sizes": [1],
+                "total_macros": 2,
+                "per_task_action_batch_size": 20,
+                "checkpoint_macros": [2],
+                "stop_after_macro": 2,
+            }
+        },
+    )
+    monkeypatch.setattr(
+        "ember.writer.training.resolve_mode_config", lambda config, _mode: config
+    )
+    args = argparse.Namespace(
+        config=tmp_path / "config.json",
+        mode="profile",
+        total_macros=None,
+        batch_size=None,
+        checkpoint_macros=None,
+        stop_after_macro=None,
+        resume=tmp_path / "run_a/checkpoints/macro_00000001",
+        output_dir=tmp_path / "run_b",
+    )
+    context = DistributedContext(0, 0, 1, torch.device("cpu"))
+    with pytest.raises(WriterModelError, match="another run"):
+        prepare_runtime(args, context)
+
+
 def test_hashless_checkpoint_restores_training_state(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

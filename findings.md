@@ -358,3 +358,17 @@ correct/reverse energy`.78197/.77227`、negative ratio`.03285`与三类8/8均保
 这确认最早违约只是大Program数值落地，并未靠放门或改变update获得pass。实际one-shot部署B8/16/32 LoRA/s=
 `.46888/.47040/.47138`，三档最长67帧且0 OOM/nonfinite，按封存规则选择B32；下一有信息量证据只能来自formal
 macro5后的single-checkpoint strict paired400。
+
+CVEG formal把最早失败再推进了一层。canonical fresh retry在macro3 sealed feasible-set gate拒绝且无checkpoint；
+相同合同诊断复现的macro1逐值一致，macro2 functional loss、blind negative ratio与persisted bank也一致，但
+task23的一条paired rollout从`candidate gain`翻成`candidate loss`，于是它从beneficial变为harmful，current hard
+equality guard改变，shared Program随即分叉。诊断run因此完成5宏，而canonical run在第三步不可行。这个证据
+不是“普通随机性可以忽略”：它说明只有两状态的binary candidate classification被直接放大成高维exact equality，
+造成checkpoint路径依赖。固定batch1、物理rank或逐元素一致既低效，也不能解决真实closed-loop成功边界本身的
+不连续性。
+
+诊断五宏bank=`10/14/16/16/16`、energy=`.354/.375/.287/.274/.498`，K2 candidate净成功=
+`-3/-1/-3/-3/0`，全部E/negative/guard closure仍健康。因此cross-video E与minimum correction没有被否定；被
+否定的是当前`binary K2 outcome -> current hard equality guard`作为稳定共同积累机制。仍需对diagnostic macro5
+做一次directional strict400，因为closed-loop absolute高于内部稳定性surrogate：低分会同时否定当前组合的性能
+价值，高分只说明E应由下一稳定credit接口继承，不能把这个checkpoint冒充可重复winner。

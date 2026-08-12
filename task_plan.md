@@ -173,8 +173,13 @@
   `584.649s / 1.2215x`、blind/final E ratio=`7.91e-8/9.56e-8`，paired outcomes逐项不变。
 - [x] 完成longest-video one-shot deployment B8/16/32 profile：LoRA/s=`.46888/.47040/.47138`、最长67帧、
   0 OOM/nonfinite，选择B32；机制与部署evidence已写入canonical config并打开formal。
-- [ ] 从clean pushed formal-ready commit按live合适卡数fresh`0→5`并立即strict paired400；只有
-  correct>=142、breadth>=6、lost<=8、gained>lost且至少3 suites不降才resume`5→10`。
+- [x] 从clean pushed formal-ready commit启动formal：canonical retry完成macro1/2后在macro3 sealed
+  feasible-set gate拒绝且无checkpoint；诊断复现因macro2 task23一条K2 outcome翻转走出另一hard-guard轨迹并
+  完成macro5。由此定位最早失败为`binary K2 -> current hard equality guard`的路径放大，不resume当前合同。
+- [ ] 对诊断macro5做一次明确标注的directional strict paired400，与old134/v6-fast143逐行比较；结果只决定
+  跨视频E是否值得被稳定后继继承，不授予该checkpoint winner、resume或controls资格。
+- [ ] 只替换current binary K2 hard guard接口形成fresh-incompatible successor；保留E、negative preservation、
+  B20 blind proposal、FP32 Program与native rank16 compiler，不做pair/seed/rank/threshold sweep。
 
 ## Repository closeout
 

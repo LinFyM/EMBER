@@ -46,12 +46,12 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `0/2/46/36/0/37/14/0`。相对old134严格配对为retained/gained/lost=`117/18/17`、churn35；全部Program、
   negative、rank和energy机制门健康，但未过`correct>=142`、breadth、lost三项门。不得resume、补controls或
   做point-count/threshold/seed小扫。
-- 当前唯一active successor是Cross-Video Equivariant Candidate Guard：训练时为每个primary correct video增加一条
-  同任务、action-hidden、保持顺序的companion，并约束shared Program新增motion在二者之间相同；部署仍严格是
-  one-shot一条video、一套LoRA，不做video/feature/LoRA平均。离线50-panel审计中单companion保留correct/reverse
-  能量中位数`.780/.789`。fixed full-FP32 refinement后的同合同world3 reprofile已22/22全过：blind/final E
-  ratio=`7.91e-8/9.56e-8`、live energy`.782/.772`、negative三类8/8、total=`584.649s / 1.2215x`。实际
-  one-shot部署B8/16/32均稳定，LoRA/s=`.46888/.47040/.47138`，选择B32；formal fresh`0→5`现已开放。
+- Cross-Video Equivariant Candidate Guard的机制与one-shot B32部署门已通过，但formal没有形成可重复的5宏
+  checkpoint：canonical fresh run在macro3 sealed feasible-set gate拒绝；同合同诊断复现因macro2 task23的一条
+  paired K2 rollout从candidate gain翻成candidate loss而走出不同hard-guard轨迹并完成macro5。两次macro1数值
+  一致，分叉最早发生在`binary K2 outcome -> current hard equality guard -> shared Program write`，不是E投影、
+  negative closure或compiler。该诊断macro5只做一次directional strict400，不得冒充稳定formal winner或resume；
+  下一架构只替换这个离散guard接口。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -163,7 +163,7 @@ checkpoint与resume合同正确。
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
 - [`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`](docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md)：
-  当前active CVEG的单companion采样、equivariance公式、机制门与paired400裁决；
+  CVEG的单companion采样、equivariance公式、机制门、formal稳定性non-pass与directional paired400边界；
 - [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)：
   retired NPCG的negative-preserving correction公式、formal结果与否决边界；
 - [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：

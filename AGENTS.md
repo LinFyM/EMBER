@@ -47,13 +47,13 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   breadth5、相对old134 retained/gained/lost=`117/18/17`。五宏negative/correct closure、rank和energy健康，
   但point key到held same-task videos仍有平均`.40954`正交残差；不resume、不补controls、不做point/threshold/
   seed sweep。
-- Cross-Video Equivariant Candidate Guard是当前唯一active successor authority：primary one-shot schedule、
-  ordered negative、work queue、paired candidate、NPCG affine correction和native rank16 compiler全部保留；
-  每task每macro只增加一条训练期action-hidden ordered companion，以`E=phi(companion)-phi(primary)`约束每个
-  shared Program write满足`E D=0`。fixed full-FP32 residual refinement后的同合同world3 reprofile已22/22全过：
-  blind/final equivariance ratio=`7.91e-8/9.56e-8`、E rank24、correct/reverse energy`.782/.772`、negative三类
-  8/8，total=`584.649s / 1.2215x` matched SKNC。one-shot部署B8/16/32均稳定并按真实吞吐选择B32；canonical
-  config已封存两份evidence并开放formal fresh`0→5`。部署仍严格一条video、一套LoRA。
+- Cross-Video Equivariant Candidate Guard的机制与部署门已通过，但formal暴露新的训练稳定性失败：canonical
+  fresh run前两宏完成后在macro3封存feasible-set gate拒绝且无checkpoint；同合同诊断复现仅因macro2 task23
+  的一条K2 paired outcome从candidate gain翻成candidate loss，就改变current harmful guard和最终Program，随后
+  完成5宏。两次macro1逐值相同、macro2 functional loss与blind negative ratio也相同，分叉发生在
+  `binary K2 outcome -> current hard equality guard -> shared write`。诊断macro5 checkpoint只允许做一次明确标注
+  的directional strict400以判断CVEG方向的absolute闭环价值，不能作为可重复formal winner或resume起点；下一
+  successor只允许替换该离散current-guard接口。部署仍严格一条video、一套LoRA。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

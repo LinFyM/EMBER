@@ -31,15 +31,15 @@ retained/gained/lost=`117/18/17`、churn35，未过correct、breadth与lost门�
 first-stable point对held same-task videos仍有`.40954`平均正交残差；故最早失败推进到point address无法定义
 跨视频/held occupancy support neighborhood。NPCG已退役，不resume、不补controls、不小扫。
 
-Cross-Video Equivariant Candidate Guard现为唯一active successor：保持NPCG全部已通过接口，只在训练期为每个
-primary增加一条same-task action-hidden ordered companion，以difference row `E`让每个shared Program write
-满足`E D=0`；NPCG final correction改为同时保持`[N;E]` response。部署仍是一条video、一套LoRA，不做few-shot
-aggregation或平均。单companion离线审计保留correct/reverse能量中位数`.780/.789`；canonical实现、fresh
-schemas、机制报告和eval family已完成。fixed full-FP32 refinement后的matched world3 reprofile 22/22全过：
-blind/final E ratio=`7.91e-8/9.56e-8`、E rank24、correct/reverse energy`.782/.772`、negative三类8/8，total=
-`584.649s / 1.2215x` matched SKNC；paired outcomes仍为base/candidate=`34/31`、2 gains/5 losses，确认窄修没有
-改变科学面板。实际one-shot deployment B8/16/32均稳定，LoRA/s=`.46888/.47040/.47138`并选择B32；canonical
-config现为formal-ready，下一裁决是fresh`0→5`后立即strict paired400。
+CVEG的机制与one-shot B32部署门已通过，但formal把最早失败推进到离散candidate credit反馈。canonical
+`ad7d9bd` fresh run先因NCCL把超过480秒的rank-local rollout误判为watchdog hang而零宏退出；只关闭heartbeat
+monitor后的retry完成macro1/2，却在macro3 sealed feasible-set gate主动拒绝，无checkpoint。为取得拒绝值加入的
+异常可观测性不改变成功路径；同world3诊断复现的macro1逐值一致，但macro2 task23在不同物理rank上的一条paired
+rollout从candidate gain翻成candidate loss，令current harmful guard不同，Program轨迹随即分叉并完成5宏。
+诊断五宏bank=`10/14/16/16/16`、energy=`.354/.375/.287/.274/.498`，K2 candidate净值依次
+`-3/-1/-3/-3/0`，全部E/negative/guard closure仍通过。这否决当前`binary K2 -> current hard equality guard`
+作为稳定共同积累机制，不否定跨视频E或negative-preserving correction。诊断macro5仍做一次directional
+strict400以判断CVEG的absolute闭环价值，但无论高低都不能把该执行当作可重复formal winner或resume起点。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -72,7 +72,7 @@ Negative-Preserving successor不把完整update硬压进`Null([G;N])`，而只�
 policy-effective support。完整retired authority见
 `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`；WQ sealed边界见
 `docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
-当前CVEG的完整单变量公式、采样合同、机制门和formal裁决见
+当前CVEG的完整单变量公式、采样合同、机制门与训练稳定性裁决见
 `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
 ## 2. Fixed information contract
@@ -261,9 +261,10 @@ fresh`0→5`与strict400均已sealed；结果137/breadth7/lost13，config为`for
 sweep关闭。SRTP的`d172add`与`e31e2fd` world3 attempts均exit1，后者证明释放decoder graph仍不能让完整logical
 B<=16 reward CFM gradient进入A40；config已封存为`profile_result_sealed_nonpass`，同配置重跑、deployment与formal
 关闭。PCUG唯一world4 run在paired probe前因wall下界`2.25568x`封存non-pass，config为
-`profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。CVEG是当前active successor；任何新GPU
-动作前必须完成canonical实现、clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、
-fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+`profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。CVEG当前训练合同也已由K2 hard-guard
+路径分叉判为稳定性non-pass；仅开放diagnostic macro5的一次directional strict400。任何后继GPU动作前必须有
+新的单变量design authority、clean commit/push和detached frozen worktree，再复核gpu01/gpu02、quota、fresh
+root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
 
 NPCG formal macro5与strict400也已sealed：135/breadth5/lost17，config为`formal_result_sealed`；resume、controls、
 point-count/threshold/seed sweep全部关闭。下一GPU动作必须来自新的单变量design authority，且直接针对

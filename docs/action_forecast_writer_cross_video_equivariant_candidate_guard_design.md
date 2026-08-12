@@ -1,10 +1,10 @@
 # Cross-Video Equivariant Candidate Guard
 
-状态：2026-08-12从NPCG strict non-pass后的最早失效接口选定，当前唯一active successor authority；canonical
-实现与fresh-incompatible contract已完成。首个live profile唯一的FP32大Program `E` closure数值违约经一次
-fixed full-FP32 residual refinement后，同合同world3 reprofile已22/22全过；随后实际one-shot B8/16/32部署均
-stable并选择B32。canonical config已封存两项evidence并开放formal fresh`0→5`。科学变量、采样、机制门和
-formal裁决已在实现前封存，不能增加companion数量、放宽约束或改ridge/scale/threshold。
+状态：2026-08-12机制与部署门通过，formal训练稳定性non-pass。canonical fresh run在macro3 sealed feasible-set
+gate拒绝且无checkpoint；相同合同诊断复现因一条K2 outcome翻转而走出不同hard-guard轨迹并完成macro5，证明
+当前`binary K2 outcome -> current hard equality guard -> shared write`不是稳定共同积累接口。诊断macro5只做
+一次directional strict400判断跨视频E方向的absolute闭环价值，不能作为可重复formal winner或resume起点。
+不得通过增加pair数、固定batch1/物理rank、放宽energy门或改seed救当前合同。
 
 ## 1. Latest evidence and earliest failure
 
@@ -170,6 +170,25 @@ task wall。macro5完成后立即做single-checkpoint strict paired correct400�
 若续到macro10，立即再次strict paired400；只有correct至少达到历史143附近且相对old134稳定，才运行same/wrong/
 shuffled/reversed/no-video controls。最终成功仍要求同一single checkpoint strict correct严格`>150/400`，并证明
 correct video沿有用policy direction优于controls；内部equivariance本身不能宣告方法有效。
+
+### 8.1 Formal stability result
+
+canonical `ad7d9bd` fresh root在关闭NCCL heartbeat误报后的retry完成前两宏，macro3在commit前触发既有
+feasible-set gate并exit1，无checkpoint。只增加失败值输出的`5268391`诊断复现与它在macro1逐值一致；macro2
+functional loss、blind proposal和persisted bank也一致，但task23的一条paired rollout从candidate gain翻成
+candidate loss，使它从beneficial变为harmful，current equality guard不同，最终Program update随即分叉。
+
+诊断复现完成5宏：bank=`10/14/16/16/16`，projected energy=
+`.35404/.37467/.28736/.27384/.49831`，base/candidate successes=
+`34/31,33/32,34/31,32/29,29/29`；所有E、negative和guard closure为0 violation，0 OOM/nonfinite。该结果说明
+跨视频等变与constraint composition数值可行，但K2离散边界对正常BF16/动态物理rank低位差异敏感，并通过
+current hard guard放大为checkpoint级路径分叉。固定task到同一物理rank或追求逐元素一致违反效率合同，也没有
+解决真实部署边界敏感性；增加K或阈值是未经authority的sweep。因此当前CVEG训练合同non-pass。
+
+为了不让内部surrogate替代真实性能，诊断macro5允许一次同口径strict paired400，且必须标注为directional：
+若低分，跨视频E在当前组合下也无absolute价值；若高分，只说明E值得由稳定credit接口继承，不能恢复本run的
+resume、controls或winner资格。下一successor保留one-shot E、negative-preserving correction、B20 proposal、
+FP32 Program和native compiler，只替换current binary K2 hard guard。
 
 ## 9. Rejected alternatives
 

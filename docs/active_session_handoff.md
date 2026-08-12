@@ -39,15 +39,12 @@
   rank和energy持续健康，但macro5 strict paired400只有`135/400`、breadth5、per-task=
   `0/2/46/36/0/37/14/0`。相对old134为retained/gained/lost=`117/18/17`、churn35，未过absolute、breadth与
   lost门；不resume、不补controls、不做point-count、threshold或seed sweep。
-- Cross-Video Equivariant Candidate Guard已从该最早失效接口选为唯一active successor：每task每macro在不改变
-  primary one-shot schedule的前提下增加一条训练期action-hidden ordered companion，以
-  `E=phi(companion)-phi(primary)`约束blind与final shared Program write满足`E D=0`；final affine correction同时
-  保持negative与equivariance response。canonical实现已完成，fresh-incompatible contract、checkpoint和eval
-  family已原位替换NPCG active path，完整CPU`346 passed`；部署仍一条video、一套LoRA，不平均、不挑video。
-  首跑唯一E closure数值违约经一次fixed full-FP32 refinement后，同world3科学合同reprofile已22/22全过：
-  blind/final E ratio=`7.91e-8/9.56e-8`、E rank24、correct/reverse energy`.782/.772`、negative三类8/8、
-  total=`584.649s / 1.2215x`；paired outcomes与首跑逐项不变。实际one-shot deployment B8/16/32均stable并以
-  `.47138 LoRA/s`选择B32；config已封存profile/deployment evidence并开放formal fresh`0→5`。
+- Cross-Video Equivariant Candidate Guard的机制与one-shot B32部署门已通过，但formal训练不稳定。canonical
+  fresh retry完成macro1/2后在macro3 sealed feasible-set gate拒绝且无checkpoint；同合同诊断复现仅因macro2
+  task23的一条paired K2 outcome从candidate gain翻成candidate loss，就改变current harmful equality guard，
+  随后走出另一条Program轨迹并完成macro5。两次macro1逐值相同，macro2的functional loss与blind negative ratio
+  也相同；最早分叉明确位于`binary K2 outcome -> current hard guard -> shared write`，不是E/negative投影或
+  compiler。诊断macro5只允许一次directional strict400判断absolute价值，不能作为稳定formal winner或resume。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -76,7 +73,7 @@ train24×50 action-hidden audit显示first-stable key到同任务其它videos的
 `.27650`残差。因此最早失败不是Program、negative guard、rank或compiler，而是pointwise train24地址没有定义
 跨视频/held occupancy support neighborhood。NPCG正式non-pass；exact resume、controls和小修全部关闭。
 
-### 2.0a Active CVEG design decision
+### 2.0a CVEG formal stability decision
 
 retained train24x50 cache的50-panel审计中，单companion difference `E`始终rank24；投影`Null(E)`后correct
 feature energy mean/median=`.77415/.78016`，correct-minus-reversed过程差分能量mean/median=
@@ -92,6 +89,17 @@ equivariance ratio=`7.91e-8/9.56e-8`，negative ratio`.03285`、三类各8/8，r
 同commit one-shot deployment root为
 `runs/outputs/pi05_cveg_writer_profile_val8x4_correct_gpu02p3_2eb1e8e_20260812`；B8/16/32 LoRA/s=
 `.46888/.47040/.47138`、最长67帧、0 OOM/nonfinite，选择B32。两项只开放formal训练，不构成性能结论。
+
+formal canonical retry root为
+`runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_formal_fresh0to5_r3_b20_ad7d9bd_retry1_20260812`。
+macro1/2的bank=`10/14`、rank=`33/34`、energy=`.35404/.40256`，但macro3在写入前触发sealed feasible-set
+gate并exit1；root无checkpoint。诊断提交`5268391`只让既有gate在失败时输出已计算值；相同world3 fresh复现root
+`runs/outputs/pi05_cveg_formal_gate_repro_fresh0to5_r3_b20_5268391_retry1_20260812`完成5宏并保存checkpoint。
+两run在macro2以前唯一科学分叉是task23：相同teacher/companion/candidate Program下，canonical为
+`base=[1,0], candidate=[1,1]`，复现为`base=[0,1], candidate=[0,0]`；它从beneficial翻为harmful，改变当步
+hard equality guard。复现五宏bank=`10/14/16/16/16`、energy=`.35404/.37467/.28736/.27384/.49831`，K2
+base/candidate=`34/31,33/32,34/31,32/29,29/29`，全部closure与OOM/nonfinite门通过。这个checkpoint只用于
+directional strict400，不得按其完成状态选择为canonical稳定训练结果。
 
 ### 2.1 Work-Queue PCUG mechanism profile
 
@@ -514,5 +522,5 @@ Negative-Preserving Candidate Guard首个clean world3完整profile已通过negat
 `5.7508e-8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定并选择B32；config已封存两份evidence并打开
 formal fresh`0→5`。该formal及strict paired400现均已完成：五宏无OOM/nonfinite，macro5 rank34、energy
 `.38951`、negative ratio`.03234`，但strict只有135/breadth5、old134→NPCG=`117/18/17`，因此config封存为
-`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；当前active CVEG必须原位替换canonical owner，
-旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；CVEG随后原位替换canonical owner并已由本文件
+前述formal稳定性证据判为non-pass。旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

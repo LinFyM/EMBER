@@ -7,8 +7,16 @@ import pytest
 import torch
 from safetensors.torch import save_file
 
+from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
+    expected_writer_episode,
+    validate_writer_episode,
+    writer_episode_schema,
+)
 from ember.lora import LoRATarget, SmolVLALoRAContract
 from ember.writer.evaluation_cache import (
+    DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA,
+    DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM,
     WRITER_LORA_ASSIGNMENT,
     WRITER_LORA_LEGACY_ASSIGNMENT,
     assigned_writer_cache_batches,
@@ -33,6 +41,10 @@ from ember.expert_manifold.inference import (
 )
 from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.writer.errors import WriterModelError
+from ember.writer.evaluation import (
+    DYNAMIC_K_ADAPTER_SCHEMA,
+    DYNAMIC_K_EPISODE_SCHEMA,
+)
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
@@ -363,6 +375,70 @@ def test_expert_manifold_cache_declares_one_shot_episode_evidence(
     assert descriptor["estimated_tensor_bytes"] == (
         descriptor["entry_count"] * _lora_storage()["tensor_bytes"]
     )
+
+
+def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "legacy")
+    adapter = contract["adapter"]
+    adapter.update(
+        {
+            "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
+            "kind": DYNAMIC_K_WRITER_KIND,
+            "arm": "dynamic_k_backbone_memory_rank8_correct",
+            "config": {
+                "schema": (
+                    "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"
+                )
+            },
+            "writer_asset": {
+                "reference": "dynamic-k:m50:rank8",
+                "kind": "dynamic_k_writer_macro_checkpoint",
+                "method_macro": 50,
+                "writer_parameter_count": 123,
+                "generated_lora_tensor_count": 2,
+            },
+            "lora_contract": {"reference": "rank8:test:2tensors:14parameters"},
+            "task_video_mapping_reference": "identity_k1_v1",
+            "pairing_reference": "ember_pi05_dynamic_k_one_shot_pairing_v1",
+        }
+    )
+    adapter["video_schedule"]["backbone_total_frames_per_condition"] = 64
+    contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
+        contract,
+        root=tmp_path / "dynamic",
+        generators_per_gpu=1,
+        generation_batch_size=2,
+        lora_parameter_count=14,
+        lora_tensor_count=2,
+        lora_storage_per_entry=_lora_storage(),
+    )
+    row = expected_writer_episode(
+        adapter,
+        suite="libero_spatial",
+        task_id=1,
+        init_state_id=2,
+        lora_reference="dynamic-k:episode:2",
+    )
+    row["writer_generation_seconds"] = 0.1
+    assert row["condition_video_offsets"] == [0, 1]
+    assert row["backbone_total_frames_per_condition"] == 64
+    assert writer_episode_schema(adapter) == DYNAMIC_K_EPISODE_SCHEMA
+    assert validate_writer_episode(
+        adapter,
+        row,
+        suite="libero_spatial",
+        task_id=1,
+        init_state_id=2,
+    )
+    assert contract["writer_lora_cache"]["generation_recipe"][
+        "episode_evidence_schema"
+    ] == DYNAMIC_K_EPISODE_SCHEMA
+    assert contract["writer_lora_cache"]["schema_version"] == (
+        DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA
+    )
+    assert contract["writer_lora_cache"]["generation_recipe"][
+        "cache_key_algorithm"
+    ] == DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM
 
 
 def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(

@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
     adapter_requests,
+    inspect_dynamic_k_writer_adapter,
     inspect_expert_manifold_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
@@ -108,6 +110,18 @@ def _inspect_adapter(
             video_condition=str(args.expert_manifold_video_condition),
             video_seed=int(authorities.config["rng"]["inference_seed"]),
             video_sampling_mode=str(args.expert_manifold_video_sampling),
+            require_formal=args.mode != "smoke",
+        )
+    if writer_kind == DYNAMIC_K_WRITER_KIND:
+        return inspect_dynamic_k_writer_adapter(
+            config_path=args.dynamic_k_writer_config.resolve(),
+            checkpoint=args.dynamic_k_writer_checkpoint.resolve(),
+            video_data_root=args.dynamic_k_writer_video_data_root.resolve(),
+            source=model,
+            tasks=tasks,
+            video_condition=str(args.dynamic_k_writer_video_condition),
+            video_seed=int(authorities.config["rng"]["inference_seed"]),
+            video_sampling_mode=str(args.dynamic_k_writer_video_sampling),
             require_formal=args.mode != "smoke",
         )
     return None

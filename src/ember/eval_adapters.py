@@ -11,7 +11,10 @@ from ember.pi05_assets import Pi05EvaluationError
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-WRITER_ADAPTER_KINDS = frozenset({EXPERT_MANIFOLD_WRITER_KIND})
+DYNAMIC_K_WRITER_KIND = "dynamic_k_backbone_memory_writer"
+WRITER_ADAPTER_KINDS = frozenset(
+    {EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND}
+)
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -61,16 +64,35 @@ def expert_manifold_writer_requested(args: Any) -> bool:
     )
 
 
+def dynamic_k_writer_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            getattr(args, "dynamic_k_writer_config", None),
+            getattr(args, "dynamic_k_writer_checkpoint", None),
+            getattr(args, "dynamic_k_writer_video_data_root", None),
+            getattr(args, "dynamic_k_writer_video_condition", None),
+        ),
+        "Dynamic-K Writer",
+    )
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     sft_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
     manifold_requested = expert_manifold_writer_requested(args)
-    if sum((sft_requested, expert_requested, manifold_requested)) > 1:
+    dynamic_k_requested = dynamic_k_writer_requested(args)
+    if sum(
+        (sft_requested, expert_requested, manifold_requested, dynamic_k_requested)
+    ) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
     kind = (
         "task_expert"
         if expert_requested
-        else EXPERT_MANIFOLD_WRITER_KIND if manifold_requested else None
+        else (
+            EXPERT_MANIFOLD_WRITER_KIND
+            if manifold_requested
+            else DYNAMIC_K_WRITER_KIND if dynamic_k_requested else None
+        )
     )
     return kind, sft_requested
 
@@ -79,7 +101,7 @@ def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
     """Return method-specific assets shared by correct/wrong Writer arms."""
 
     if (
-        adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND
+        adapter.get("kind") not in WRITER_ADAPTER_KINDS
         or "video_data" not in adapter
     ):
         raise Pi05EvaluationError(
@@ -179,6 +201,71 @@ def inspect_expert_manifold_writer_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def inspect_dynamic_k_writer_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    video_data_root: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    video_condition: str,
+    video_seed: int,
+    video_sampling_mode: str,
+    require_formal: bool,
+) -> dict[str, Any]:
+    from ember.writer.errors import WriterModelError
+    from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
+
+    try:
+        return inspect_dynamic_k_writer_evaluation(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            video_data_root=video_data_root,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            video_condition=video_condition,
+            video_seed=video_seed,
+            video_sampling_mode=video_sampling_mode,
+            require_formal=require_formal,
+        )
+    except WriterModelError as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
+def reinspect_writer_adapter(
+    adapter: Mapping[str, Any],
+    *,
+    source: Mapping[str, Any],
+    task_keys: Sequence[tuple[str, int]],
+    require_formal: bool,
+) -> dict[str, Any]:
+    """Rebuild one prepared Writer adapter from its immutable asset record."""
+
+    kind = adapter.get("kind")
+    common = {
+        "config_path": Path(str(adapter["config"]["path"])),
+        "checkpoint": Path(str(adapter["writer_asset"]["checkpoint"])),
+        "video_data_root": Path(str(adapter["video_data"]["root"])),
+        "source": source,
+        "task_keys": task_keys,
+        "video_condition": str(adapter["video_condition"]),
+        "video_seed": int(adapter["video_schedule"]["seed"]),
+        "video_sampling_mode": str(adapter["video_schedule"]["sampling_mode"]),
+        "require_formal": require_formal,
+    }
+    if kind == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import (
+            inspect_expert_manifold_writer_evaluation,
+        )
+
+        return inspect_expert_manifold_writer_evaluation(**common)
+    if kind == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
+
+        return inspect_dynamic_k_writer_evaluation(**common)
+    raise Pi05EvaluationError("retired Writer adapter kind")
+
+
 def expected_writer_episode(
     adapter: Mapping[str, Any],
     *,
@@ -188,19 +275,30 @@ def expected_writer_episode(
     lora_reference: str,
     evidence_schema: str | None = None,
 ) -> dict[str, Any]:
-    if adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
-        raise Pi05EvaluationError("retired Writer adapter kind")
-    from ember.expert_manifold.inference import (
-        expected_expert_manifold_episode_evidence,
-    )
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import (
+            expected_expert_manifold_episode_evidence,
+        )
 
-    result = expected_expert_manifold_episode_evidence(
-        adapter,
-        suite=suite,
-        task_id=task_id,
-        init_state_id=init_state_id,
-        lora_reference=lora_reference,
-    )
+        result = expected_expert_manifold_episode_evidence(
+            adapter,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+            lora_reference=lora_reference,
+        )
+    elif adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.evaluation import expected_dynamic_k_episode_evidence
+
+        result = expected_dynamic_k_episode_evidence(
+            adapter,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+            lora_reference=lora_reference,
+        )
+    else:
+        raise Pi05EvaluationError("retired Writer adapter kind")
     if evidence_schema is not None and result["schema_version"] != evidence_schema:
         raise Pi05EvaluationError("Writer episode evidence schema changed")
     return result
@@ -214,27 +312,41 @@ def validate_writer_episode(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    if adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
-        return False
-    from ember.expert_manifold.inference import (
-        validate_expert_manifold_episode_evidence,
-    )
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import (
+            validate_expert_manifold_episode_evidence,
+        )
 
-    return validate_expert_manifold_episode_evidence(
-        adapter,
-        row,
-        suite=suite,
-        task_id=task_id,
-        init_state_id=init_state_id,
-    )
+        return validate_expert_manifold_episode_evidence(
+            adapter,
+            row,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+        )
+    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.evaluation import validate_dynamic_k_episode_evidence
+
+        return validate_dynamic_k_episode_evidence(
+            adapter,
+            row,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+        )
+    return False
 
 
 def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
-    if adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
-        raise Pi05EvaluationError("retired Writer adapter kind")
-    from ember.expert_manifold.inference import expert_manifold_episode_schema
+    if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+        from ember.expert_manifold.inference import expert_manifold_episode_schema
 
-    return expert_manifold_episode_schema(adapter)
+        return expert_manifold_episode_schema(adapter)
+    if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.evaluation import dynamic_k_episode_schema
+
+        return dynamic_k_episode_schema(adapter)
+    raise Pi05EvaluationError("retired Writer adapter kind")
 
 
 def load_evaluation_adapter(
@@ -269,13 +381,19 @@ def load_evaluation_adapter(
         from ember.expert_manifold.evaluation import FrozenTaskExpertAdapter
 
         return FrozenTaskExpertAdapter(**common)
-    if adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
+    if adapter.get("kind") not in WRITER_ADAPTER_KINDS:
         raise Pi05EvaluationError("retired evaluation adapter kind")
     common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
     if writer_generation:
-        from ember.expert_manifold.live_adapter import FrozenExpertManifoldTaskAdapter
+        if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND:
+            from ember.expert_manifold.live_adapter import (
+                FrozenExpertManifoldTaskAdapter,
+            )
 
-        return FrozenExpertManifoldTaskAdapter(**common)
+            return FrozenExpertManifoldTaskAdapter(**common)
+        from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
+
+        return FrozenDynamicKTaskAdapter(**common)
     from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
 
     common["cache_contract"] = contract

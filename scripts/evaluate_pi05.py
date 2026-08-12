@@ -35,11 +35,14 @@ from ember.pi05_eval.preparation import (
     shards_from_contract as _shards_from_contract,
 )
 from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
     adapter_requests as _adapter_requests,
+    inspect_dynamic_k_writer_adapter as _inspect_dynamic_k_writer_adapter,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
     inspect_task_expert_adapter as _inspect_task_expert_adapter,
     inspect_expert_manifold_writer_adapter as _inspect_expert_manifold_writer_adapter,
 )
+from ember.writer.evaluation import DYNAMIC_K_VIDEO_CONDITIONS
 from ember.pi05_eval_contract import (
     RUNTIME_REPLICA_PROFILES,
     git_state,
@@ -146,6 +149,18 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--expert-manifold-video-sampling",
+        choices=("with_replacement", "without_replacement"),
+        default="without_replacement",
+    )
+    parser.add_argument("--dynamic-k-writer-config", type=Path)
+    parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)
+    parser.add_argument("--dynamic-k-writer-video-data-root", type=Path)
+    parser.add_argument(
+        "--dynamic-k-writer-video-condition",
+        choices=tuple(sorted(DYNAMIC_K_VIDEO_CONDITIONS)),
+    )
+    parser.add_argument(
+        "--dynamic-k-writer-video-sampling",
         choices=("with_replacement", "without_replacement"),
         default="without_replacement",
     )
@@ -283,6 +298,18 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
             )
         elif adapter.get("kind") == "expert_manifold_writer":
             observed = _inspect_expert_manifold_writer_adapter(
+                config_path=Path(adapter["config"]["path"]),
+                checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
+                video_data_root=Path(adapter["video_data"]["root"]),
+                source=model,
+                tasks=tasks,
+                video_condition=str(adapter["video_condition"]),
+                video_seed=int(adapter["video_schedule"]["seed"]),
+                video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
+                require_formal=contract["mode"] != "smoke",
+            )
+        elif adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
+            observed = _inspect_dynamic_k_writer_adapter(
                 config_path=Path(adapter["config"]["path"]),
                 checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
                 video_data_root=Path(adapter["video_data"]["root"]),

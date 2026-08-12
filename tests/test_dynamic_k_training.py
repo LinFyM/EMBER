@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
+from safetensors.torch import save_file
 
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
@@ -22,10 +23,16 @@ from ember.writer.as_step import (
     parameter_layout,
     reduce_full24_gradient,
 )
-from ember.writer.checkpoint import load_writer_checkpoint, save_writer_checkpoint
+from ember.writer.checkpoint import (
+    DEPLOYMENT_CHECKPOINT_KIND,
+    load_writer_checkpoint,
+    load_writer_deployment_state_,
+    save_writer_checkpoint,
+)
 from ember.writer.data import RawTeacherVideo
 from ember.writer.errors import WriterModelError
 from ember.writer.update_schedule import build_exposure_scheduler
+from ember.writer.live_adapter import k1_condition_video_offsets
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -408,3 +415,105 @@ def test_hashless_checkpoint_restores_training_state(
     )
     assert (macro, rows) == (1, 1)
     assert torch.equal(writer.weight, expected)
+
+
+def test_deployment_checkpoint_loads_only_writer_safetensors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ember.writer.checkpoint as checkpoint_module
+
+    expected = torch.nn.Linear(3, 2)
+    state_path = tmp_path / "writer.safetensors"
+    save_file(
+        {name: value.detach().clone() for name, value in expected.state_dict().items()},
+        str(state_path),
+    )
+    observed = torch.nn.Linear(3, 2)
+    with torch.no_grad():
+        observed.weight.zero_()
+        observed.bias.zero_()
+    monkeypatch.setattr(
+        checkpoint_module.torch,
+        "load",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("deployment must not load optimizer or RNG state")
+        ),
+    )
+    load_writer_deployment_state_(
+        writer=observed,
+        writer_asset={
+            "kind": DEPLOYMENT_CHECKPOINT_KIND,
+            "writer_state": {
+                "path": str(state_path),
+                "bytes": state_path.stat().st_size,
+            },
+        },
+        device=torch.device("cpu"),
+    )
+    assert all(
+        torch.equal(left, right)
+        for left, right in zip(
+            observed.state_dict().values(), expected.state_dict().values(), strict=True
+        )
+    )
+
+
+def test_k1_evaluation_offsets_assign_exactly_one_video_per_condition() -> None:
+    offsets = k1_condition_video_offsets(4)
+    assert offsets.tolist() == [0, 1, 2, 3, 4]
+    assert offsets.dtype == torch.long and offsets.device.type == "cpu"
+
+
+def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:
+    from ember.eval_adapters import DYNAMIC_K_WRITER_KIND, adapter_requests
+
+    args = argparse.Namespace(
+        source_sft_config=None,
+        source_sft_checkpoint=None,
+        task_expert_config=None,
+        task_expert_bank_root=None,
+        task_expert_step=None,
+        expert_manifold_config=None,
+        expert_manifold_checkpoint=None,
+        expert_manifold_video_data_root=None,
+        expert_manifold_video_condition=None,
+        dynamic_k_writer_config=Path("config.json"),
+        dynamic_k_writer_checkpoint=Path("macro_00000050"),
+        dynamic_k_writer_video_data_root=Path("videos"),
+        dynamic_k_writer_video_condition="correct",
+    )
+    assert adapter_requests(args) == (DYNAMIC_K_WRITER_KIND, False)
+
+
+def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
+    import importlib
+
+    from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
+
+    importlib.import_module("ember.pi05_eval_contract")
+    writer_lora_contract = importlib.import_module(
+        "ember.pi05_eval.run_contract"
+    )._writer_lora_contract
+
+    config = (
+        REPO_ROOT
+        / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json"
+    )
+    lora = writer_lora_contract(
+        SimpleNamespace(repo_root=REPO_ROOT),
+        {
+            "kind": DYNAMIC_K_WRITER_KIND,
+            "config": {"path": str(config)},
+            "lora_contract": {
+                "reference": (
+                    "configs/pi05_lora_rank8_writer_v1.json:"
+                    "76tensors:643584parameters"
+                )
+            },
+        },
+    )
+    assert (lora.rank, lora.parameter_count, lora.state_tensor_count) == (
+        8,
+        643_584,
+        76,
+    )

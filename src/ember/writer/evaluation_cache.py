@@ -1,4 +1,4 @@
-"""Atomic per-episode Expert-Manifold Writer-LoRA caches."""
+"""Atomic per-episode Writer-LoRA caches with method-specific schemas."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
+    EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     validate_writer_episode,
     writer_episode_schema,
@@ -33,6 +35,19 @@ WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
 )
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
 WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
+DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA = "ember_pi05_dynamic_k_writer_lora_cache_v1"
+DYNAMIC_K_WRITER_LORA_CACHE_ENTRY_SCHEMA = (
+    "ember_pi05_dynamic_k_writer_lora_cache_entry_v1"
+)
+DYNAMIC_K_WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
+    "ember_pi05_dynamic_k_writer_lora_cache_manifest_v1"
+)
+DYNAMIC_K_WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
+    "ember_pi05_dynamic_k_writer_lora_generator_marker_v1"
+)
+DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM = (
+    "one_entry_per_episode_dynamic_k_k1_video_set_v1"
+)
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = (
     "sealed request order chunked by generation_batch_size into contiguous global "
@@ -45,6 +60,27 @@ _TORCH_DTYPE_NAMES = {
     torch.float32: "F32",
     torch.float64: "F64",
 }
+
+
+def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
+    kind = adapter.get("kind")
+    if kind == EXPERT_MANIFOLD_WRITER_KIND:
+        return {
+            "cache": WRITER_LORA_CACHE_SCHEMA,
+            "entry": WRITER_LORA_CACHE_ENTRY_SCHEMA,
+            "manifest": WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+            "marker": WRITER_LORA_GENERATOR_MARKER_SCHEMA,
+            "key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
+        }
+    if kind == DYNAMIC_K_WRITER_KIND:
+        return {
+            "cache": DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA,
+            "entry": DYNAMIC_K_WRITER_LORA_CACHE_ENTRY_SCHEMA,
+            "manifest": DYNAMIC_K_WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+            "marker": DYNAMIC_K_WRITER_LORA_GENERATOR_MARKER_SCHEMA,
+            "key_algorithm": DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM,
+        }
+    raise WriterModelError("Writer cache adapter kind changed")
 
 
 @dataclass(frozen=True)
@@ -128,7 +164,7 @@ def _cache_identity_payload(
     if not is_writer_adapter(adapter):
         raise WriterModelError("Writer cache requires a Writer adapter")
     return {
-        "schema_version": WRITER_LORA_CACHE_SCHEMA,
+        "schema_version": _writer_cache_schemas(adapter)["cache"],
         "adapter": dict(adapter),
         "model_step": int(contract["model"]["optimizer_step"]),
         "tokenizer_path": str(contract["tokenizer"]["path"]),
@@ -204,7 +240,7 @@ def build_writer_lora_cache_descriptor(
         "generators_per_gpu": generators_per_gpu,
         "generator_worker_count": configured_worker_count,
         "generation_batch_size": generation_batch_size,
-        "cache_key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
+        "cache_key_algorithm": _writer_cache_schemas(adapter)["key_algorithm"],
         "episode_evidence_schema": writer_episode_schema(adapter),
         "request_order": WRITER_LORA_VIDEO_REQUEST_ORDER,
         "assignment": WRITER_LORA_ASSIGNMENT,
@@ -215,7 +251,7 @@ def build_writer_lora_cache_descriptor(
     entry_count = len(writer_cache_requests(contract))
     tensor_bytes = entry_count * storage["tensor_bytes"]
     return {
-        "schema_version": WRITER_LORA_CACHE_SCHEMA,
+        "schema_version": _writer_cache_schemas(adapter)["cache"],
         "root": str(root.resolve()),
         "reference": (
             f"{contract['adapter']['writer_asset']['reference']}:"
@@ -294,7 +330,8 @@ def _descriptor(contract: Mapping[str, Any]) -> dict[str, Any]:
         raise WriterModelError("Writer evaluation lacks its LoRA cache")
     observed = _cache_identity_payload(contract, descriptor["generation_recipe"])
     if (
-        descriptor.get("schema_version") != WRITER_LORA_CACHE_SCHEMA
+        descriptor.get("schema_version")
+        != _writer_cache_schemas(contract["adapter"])["cache"]
         or descriptor.get("identity") != observed
         or int(descriptor.get("entry_count", -1))
         != len(writer_cache_requests(contract))
@@ -376,7 +413,8 @@ def validate_writer_cache_entry_record(
         raise WriterModelError(f"Writer cache entry is incomplete: {request.entry_id}")
     record = read_json(record_path)
     if (
-        record.get("schema_version") != WRITER_LORA_CACHE_ENTRY_SCHEMA
+        record.get("schema_version")
+        != _writer_cache_schemas(contract["adapter"])["entry"]
         or record.get("cache_reference") != descriptor["reference"]
         or record.get("request") != request.record()
         or record.get("entry_id") != request.entry_id
@@ -473,7 +511,9 @@ def write_writer_cache_entry(
         write_json_atomic(
             temporary / "entry.json",
             {
-                "schema_version": WRITER_LORA_CACHE_ENTRY_SCHEMA,
+                "schema_version": _writer_cache_schemas(contract["adapter"])[
+                    "entry"
+                ],
                 "cache_reference": descriptor["reference"],
                 "cache_identity": descriptor["identity"],
                 "entry_id": request.entry_id,
@@ -538,7 +578,7 @@ def write_generator_marker(
 ) -> Path:
     requests = assigned_writer_cache_requests(contract, generator_index=generator_index)
     marker = {
-        "schema_version": WRITER_LORA_GENERATOR_MARKER_SCHEMA,
+        "schema_version": _writer_cache_schemas(contract["adapter"])["marker"],
         "cache_reference": _descriptor(contract)["reference"],
         "invocation_id": invocation_id,
         "worker_id": worker_id,
@@ -570,7 +610,8 @@ def validate_generator_markers(
         marker = read_json(generator_marker_path(contract, invocation_id, worker_id))
         expected = assigned_writer_cache_requests(contract, generator_index=index)
         if (
-            marker.get("schema_version") != WRITER_LORA_GENERATOR_MARKER_SCHEMA
+            marker.get("schema_version")
+            != _writer_cache_schemas(contract["adapter"])["marker"]
             or marker.get("cache_reference") != descriptor["reference"]
             or marker.get("invocation_id") != invocation_id
             or marker.get("worker_id") != worker_id
@@ -600,7 +641,8 @@ def validate_writer_cache_manifest(
     manifest = read_json(writer_cache_manifest_path(contract))
     expected_ids = [request.entry_id for request in writer_cache_requests(contract)]
     if (
-        manifest.get("schema_version") != WRITER_LORA_CACHE_MANIFEST_SCHEMA
+        manifest.get("schema_version")
+        != _writer_cache_schemas(contract["adapter"])["manifest"]
         or manifest.get("cache_reference") != descriptor["reference"]
         or manifest.get("descriptor") != descriptor
         or manifest.get("entry_ids") != expected_ids
@@ -643,7 +685,7 @@ def finalize_writer_cache(
         )
         tensor_bytes += int(record["lora_file"]["bytes"])
     manifest = {
-        "schema_version": WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+        "schema_version": _writer_cache_schemas(contract["adapter"])["manifest"],
         "cache_reference": descriptor["reference"],
         "descriptor": descriptor,
         "entry_ids": [row["entry_id"] for row in entries],

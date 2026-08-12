@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
     EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     paired_writer_identity,
@@ -107,11 +108,17 @@ def _writer_lora_contract(
     )
     from ember.pi05_lora import load_pi05_lora_contract
 
-    if adapter["kind"] != EXPERT_MANIFOLD_WRITER_KIND:
-        raise Pi05EvaluationError("unknown Writer LoRA authority")
     config_path = Path(adapter["config"]["path"])
-    config = load_v6_prior_config(config_path)
-    path = expert_authority_path(config, "lora_contract")
+    if adapter["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
+        config = load_v6_prior_config(config_path)
+        path = expert_authority_path(config, "lora_contract")
+    elif adapter["kind"] == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.as_config import authority_path, load_writer_config
+
+        config = load_writer_config(config_path)
+        path = authority_path(config, "lora_contract")
+    else:
+        raise Pi05EvaluationError("unknown Writer LoRA authority")
     result = load_pi05_lora_contract(path)
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
@@ -220,6 +227,9 @@ def _validate_build_request(
             "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_eval_adapter_v11": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
+            "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1": (
+                "highest_measured_batch_throughput_with_device_memory_headroom"
+            ),
         }
         expected_throughput_policy = throughput_by_schema.get(
             str(adapter.get("schema_version"))
@@ -230,10 +240,12 @@ def _validate_build_request(
             or writer_generation_batch_size < minimum_batch_size
         ):
             raise Pi05EvaluationError(
-                "v6-prior Writer generation batch violates its throughput authority"
+                "Writer generation batch violates its throughput authority"
             )
         smoke = evaluation.get("online_smoke_evidence")
-        if evaluation.get("formal_status") in {
+        if adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND and evaluation.get(
+            "formal_status"
+        ) in {
             "sealed",
             "sealed_from_unchanged_v6_deployment_graph",
             "sealed_from_live_pick_gc_deployment_profile",

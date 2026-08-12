@@ -22,6 +22,7 @@ from ember.writer.errors import WriterModelError
 
 
 CHECKPOINT_SCHEMA = "ember_pi05_dynamic_k_writer_checkpoint_v1"
+DEPLOYMENT_CHECKPOINT_KIND = "dynamic_k_writer_macro_checkpoint"
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 
 
@@ -169,3 +170,36 @@ def load_writer_checkpoint(
     scheduler.load_state_dict(trainer["scheduler"])
     restore_rng(rank_state["rng"], context)
     return expected_macro, int(trainer["metrics_rows"])
+
+
+def load_writer_deployment_state_(
+    *,
+    writer: torch.nn.Module,
+    writer_asset: Mapping[str, Any],
+    device: torch.device,
+) -> None:
+    """Load only the Writer weights needed for deployment.
+
+    Deployment deliberately does not deserialize ``trainer_state.pt`` or any
+    per-rank RNG state.  The immutable asset record is produced by the
+    evaluation inspector before the policy process is constructed.
+    """
+
+    state_record = writer_asset.get("writer_state", {})
+    path = Path(str(state_record.get("path", "")))
+    if (
+        writer_asset.get("kind") != DEPLOYMENT_CHECKPOINT_KIND
+        or not path.is_file()
+        or path.name != "writer.safetensors"
+        or path.stat().st_size != int(state_record.get("bytes", -1))
+    ):
+        raise WriterModelError("dynamic-K deployment Writer state changed")
+    state = load_file(str(path), device=str(device))
+    try:
+        writer.load_state_dict(state, strict=True)
+    except RuntimeError as error:
+        raise WriterModelError(
+            "dynamic-K deployment Writer topology changed"
+        ) from error
+    finally:
+        del state

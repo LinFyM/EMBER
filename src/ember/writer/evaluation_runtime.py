@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import os
 import time
 from pathlib import Path
@@ -11,24 +10,19 @@ from typing import Any, Callable, Mapping, Sequence
 import torch
 
 from ember.eval_adapters import (
+    DYNAMIC_K_WRITER_KIND,
     EXPERT_MANIFOLD_WRITER_KIND,
+    WRITER_ADAPTER_KINDS,
     expected_writer_episode,
+    reinspect_writer_adapter,
     validate_writer_episode,
 )
-from ember.expert_manifold.inference import (
-    inspect_expert_manifold_writer_evaluation,
-    load_expert_manifold_deployment_config,
-)
-from ember.expert_manifold.v6_prior_contract import REPO_ROOT, authority_path
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authority
-from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.evaluation_cache import (
     WriterCacheGenerationBatch,
     WriterCacheRequest,
     assigned_writer_cache_batches,
     load_writer_cache_entry,
-    lora_state_storage,
     stage_writer_lora_states_to_cpu,
     validate_writer_cache_manifest,
     write_generator_marker,
@@ -36,7 +30,6 @@ from ember.writer.evaluation_cache import (
     writer_cache_entry_is_complete,
     writer_cache_episode_request_map,
     writer_cache_manifest_path,
-    writer_cache_requests,
 )
 from ember.writer.errors import WriterModelError
 from ember.writer.functional import prepare_frozen_writer_policy
@@ -59,31 +52,33 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         cache_contract: Mapping[str, Any],
     ) -> None:
         del tokenizer_path
-        if evaluation_adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND:
-            raise WriterModelError(
-                "cached rollout requires the canonical Expert-Manifold Writer"
-            )
-        common = {
-            "config_path": Path(evaluation_adapter["config"]["path"]),
-            "checkpoint": Path(evaluation_adapter["writer_asset"]["checkpoint"]),
-            "video_data_root": Path(evaluation_adapter["video_data"]["root"]),
-            "source": source,
-            "task_keys": task_keys,
-            "video_condition": str(evaluation_adapter["video_condition"]),
-            "video_seed": int(evaluation_adapter["video_schedule"]["seed"]),
-            "video_sampling_mode": str(
-                evaluation_adapter["video_schedule"]["sampling_mode"]
-            ),
-            "require_formal": require_formal,
-        }
-        observed = inspect_expert_manifold_writer_evaluation(**common)
-        config = load_expert_manifold_deployment_config(
-            Path(observed["config"]["path"])
+        if evaluation_adapter.get("kind") not in WRITER_ADAPTER_KINDS:
+            raise WriterModelError("cached rollout requires a canonical Writer")
+        observed = reinspect_writer_adapter(
+            evaluation_adapter,
+            source=source,
+            task_keys=task_keys,
+            require_formal=require_formal,
         )
         if observed != dict(evaluation_adapter):
             raise WriterModelError(
                 "PI05 Writer evaluation artifacts changed after prepare"
             )
+        if observed["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
+            from ember.expert_manifold.inference import (
+                load_expert_manifold_deployment_config,
+            )
+            from ember.expert_manifold.v6_prior_contract import authority_path
+
+            config = load_expert_manifold_deployment_config(
+                Path(observed["config"]["path"])
+            )
+        elif observed["kind"] == DYNAMIC_K_WRITER_KIND:
+            from ember.writer.as_config import authority_path, load_writer_config
+
+            config = load_writer_config(Path(observed["config"]["path"]))
+        else:
+            raise WriterModelError("cached Writer kind changed")
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         template = prepare_frozen_writer_policy(policy, lora)
         self._initialize_rollout(
@@ -346,6 +341,9 @@ def _generate_writer_cache_batch(
                 "batch_size": len(forward_requests),
                 "batch_wall_seconds": batch_seconds,
                 "raw_frames": int(video["raw_frames"]),
+                "available_stride5_frames": int(
+                    video.get("available_stride5_frames", video["sampled_frames"])
+                ),
                 "sampled_frames": int(video["sampled_frames"]),
             },
             lora_contract=runtime.task_adapter.lora_contract,
@@ -362,6 +360,10 @@ def _generate_writer_cache_batch(
             "entry_ids": batch_entry_ids,
             "batch_size": len(forward_requests),
             "raw_frame_counts": [int(row["raw_frames"]) for row in profile],
+            "available_stride5_frame_counts": [
+                int(row.get("available_stride5_frames", row["sampled_frames"]))
+                for row in profile
+            ],
             "sampled_frame_counts": [int(row["sampled_frames"]) for row in profile],
             "wall_seconds": batch_seconds,
         },

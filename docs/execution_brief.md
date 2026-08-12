@@ -24,15 +24,13 @@ tasks跨2 suites；correct guard rank33、energy`.76492`和全部closure健康�
 ratio`.03991`经correct-only projection变成`.50179`，wrong/shuffled/reversed各`0/8`达门。因此WQ-PCUG退役，
 deployment/formal、重跑和sweep关闭。
 
-当前唯一active successor是Negative-Preserving Candidate Guard：保持blind `D0`、paired outcomes、B20、queue、
-first-stable bank和native rank16 compiler，只把final correction限制在current negative rows的nullspace，使
-`N(D1-D0)=0`与correct guard `G D1=0`同时成立。首个clean world3完整profile把final negative ratio降至
-`.03524`且三类各`8/8`，paired outcomes、rank33、energy`.35360`、LoRA/effective BA/action及其余机制门均通过；
-唯一`guard_program_closure=1.5831e-4>1e-5`。根因是solver允许TF32而真实Program constraint read关闭TF32，
-不是科学门失败。canonical solver统一full-FP32约束语义后matched reprofile 20/20全过：protected ratio
-`5.7508e-8`、negative ratio`.03524`、三类各`8/8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定、
-0 OOM/nonfinite并选择B32；profile与deployment evidence已封存。formal fresh`0→5`已exit0，bank最终16，
-macro5 rank34、energy`.38951`、negative ratio`.03234`且checkpoint完整；下一裁决是立即strict paired400。
+Negative-Preserving Candidate Guard随后修复了WQ的final negative-null：matched reprofile 20/20全过，final
+negative ratio`.03524`、三类各`8/8`，部署选择B32；formal五宏的correct/negative closure、rank和energy也持续
+健康。但macro5 strict paired400只有`135/400`、breadth5、per-task=`0/2/46/36/0/37/14/0`，相对old134为
+retained/gained/lost=`117/18/17`、churn35，未过correct、breadth与lost门。train24×50 action-hidden audit显示
+first-stable point对held same-task videos仍有`.40954`平均正交残差；故最早失败推进到point address无法定义
+跨视频/held occupancy support neighborhood。NPCG已退役，不resume、不补controls、不小扫；当前没有active
+successor。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -61,7 +59,8 @@ stable-success keys只在最终write前对`D0`做closest equality projection，h
 `docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
 Work-Queue已证明actual pairing有内容且吞吐可接受，也定位correct-only projection会破坏blind negative suppression。
 Negative-Preserving successor不把完整update硬压进`Null([G;N])`，而只令最小guard correction `C`满足`NC=0`，
-从而保留`ND1=ND0`与policy-effective support。完整authority见
+从而保留`ND1=ND0`；它已证明该constraint composition可行，但135/400结果否定point guards足以保护held
+policy-effective support。完整retired authority见
 `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`；WQ sealed边界见
 `docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
 
@@ -254,6 +253,10 @@ B<=16 reward CFM gradient进入A40；config已封存为`profile_result_sealed_no
 `profile_result_sealed_nonpass`，同配置重跑、deployment和formal关闭。当前没有active successor；任何新GPU
 动作前必须先写新authority、clean commit/push并建立detached frozen worktree，再复核gpu01/gpu02、quota、
 fresh root、物理/NUMA topology与现有进程。有多少合适的同节点卡就用多少、最多6张，不等待凑卡。
+
+NPCG formal macro5与strict400也已sealed：135/breadth5/lost17，config为`formal_result_sealed`；resume、controls、
+point-count/threshold/seed sweep全部关闭。下一GPU动作必须来自新的单变量design authority，且直接针对
+same-task action-hidden video neighborhood而不是恢复更多point guards。
 
 2026-08-11 22:23+08:00资源快照选择`gpu02:0--5`的单节点world6/local4；`:6/:7`属于他人。GPU1只有历史已
 纠正ECC/remap且当前无pending/failure。OSG-PC attempt结束后物理0--5均0MiB且volatile/uncorrectable ECC全0；

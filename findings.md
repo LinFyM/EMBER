@@ -316,4 +316,11 @@ NPCG formal fresh五宏首次把机制证据推进到task-complete连续积累�
 guard restricted solve均可行，feature rank=`33/36/35/34/34`，energy=`.354/.487/.457/.320/.390`，blind
 negative ratio=`.040/.026/.015/.014/.032`；五宏约束残差均约`1e-13`且step wall稳定在`531--565s`。这否定
 “negative-preserving correction会随bank增长立刻不可行或压缩掉shared update”的快速反例，但仍不能证明
-closed-loop support真正保留。macro5 strict400是决定该内部共存是否传到真实policy occupancy的必要下一证据。
+closed-loop support真正保留。
+
+macro5 strict400最终只有`135/400`、breadth5；相对old134为`117 retained/18 gained/17 lost`、churn35，Long1
+同一task内也出现10 gains/7 losses。因为五宏Program/negative closure、rank与energy持续健康，最早失败不在
+solver或compiler。train24×50 action-hidden audit进一步显示first-stable key到同任务其它videos的正交残差
+均值/p90=`.40954/.59171`；所有observed stable rows仍留下均值约`.27650`。因此精确保护train视频点不能代替
+跨视频/held-occupancy support neighborhood，NPCG + blind B20正式退役。后继不能靠增加point数、平均key或
+参数小扫，而应让每次shared write对same-task action-hidden video nuisance具有结构化等变/不变约束。

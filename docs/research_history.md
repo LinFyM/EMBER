@@ -5,8 +5,10 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；SKNC最新
-formal=`137/400`、breadth7、old134→SKNC lost13并已退役。当前SRTP只有design authority，尚无实现或成绩。
+2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；最新NPCG
+formal=`135/400`、breadth5、old134→NPCG retained/gained/lost=`117/18/17`并已退役。NPCG证明negative-
+preserving affine guard在多宏下可行，却未解决point address到跨视频/held occupancy support的泛化；当前没有
+active successor。
 
 ## 1. Stable problem definition
 

@@ -27,9 +27,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_npcg_is_active_and_work_queue_pcug_nonpass_remains_sealed() -> None:
+def test_npcg_formal_nonpass_and_work_queue_pcug_nonpass_remain_sealed() -> None:
     npcg = load_v6_prior_config(CONFIG)
-    assert npcg["status"] == "active_formal_ready"
+    assert npcg["status"] == "formal_result_sealed"
     profile = npcg["profile_run"]["artifact_evidence"]
     assert profile["passed"] is True
     assert profile["checks_passed"] == 20
@@ -38,7 +38,13 @@ def test_npcg_is_active_and_work_queue_pcug_nonpass_remains_sealed() -> None:
         "shuffled": 8,
         "reversed": 8,
     }
-    assert npcg["formal_run"]["status"] == "ready_after_live_profile_seal"
+    assert npcg["formal_run"]["status"] == "formal_result_sealed"
+    result = npcg["formal_run"]["artifact_evidence"]
+    assert result["strict_correct400"]["successes"] == 135
+    assert result["strict_correct400"]["breadth"] == 5
+    assert result["paired_old134"]["retained_gained_lost"] == [117, 18, 17]
+    assert result["decision_evidence"]["passed"] is False
+    assert result["decision"]["exact_resume_macro5_to10_authorized"] is False
     assert npcg["evaluation"]["formal_status"] == (
         "sealed_from_live_npcg_deployment_smoke"
     )

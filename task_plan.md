@@ -156,8 +156,13 @@
 - [x] clean pushed`f8491e9`、gpu02物理3/4/5 world3完成formal fresh`0→5`并exit0；首次空启动仅因launcher
   `num_workers=2`与NPCG sealed 0不符而在模型加载前失败，retry科学合同不变。bank最终16，macro5 rank34、
   energy`.38951`、cosine`.60652`、negative ratio`.03234`且checkpoint完整，无OOM/nonfinite。
-- [ ] 从封存macro5 checkpoint立即跑single-checkpoint strict paired400；任一预注册门失败即停止，不resume或
-  补controls。
+- [x] 从封存macro5 checkpoint完成single-checkpoint strict paired400：`135/400`、breadth5、old134→NPCG
+  retained/gained/lost=`117/18/17`、churn35；correct、breadth与lost门失败，故不resume或补controls。
+- [x] train24×50 action-hidden地址audit定位最早失效接口：first-stable point对held same-task videos仍有平均
+  `.40954`正交残差；point closure不等于video/occupancy neighborhood protection。当前没有active successor。
+- [ ] 针对跨视频condition neighborhood写新的单变量design authority；必须保留ordered goal-causal video、
+  queue、actual candidate pairing、negative-preserving affine guard和native rank16 compiler，且不能只是增加/
+  平均point keys或调ridge/scale/threshold。
 
 ## Repository closeout
 

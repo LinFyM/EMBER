@@ -42,10 +42,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   run无OOM/nonfinite、mechanism report或checkpoint；gpu6的共驻低利用率服务不是长尾rank，物理3--5反而持续
   100%。这只淘汰当前static world4 execution contract，不检验actual candidate paired guard。formal、deployment
   和同配置重跑全部关闭。
-- 当前唯一active successor design是Work-Queue PCUG：actual candidate、paired K2x2与final guard完全不变，只把
-  Phase A的24个确定性task jobs从static rank ownership改为完成驱动的host-local claim queue；每rank最多保留
-  8个graphs。canonical实现与完整CPU`345 passed`已完成但尚无live证据；首先必须把world4 Phase-A wall压到
-  `358.970267s`以内。
+- NPCG已完成formal fresh`0→5`与single-checkpoint strict paired400并退役：`135/400`、breadth5、per-task=
+  `0/2/46/36/0/37/14/0`。相对old134严格配对为retained/gained/lost=`117/18/17`、churn35；全部Program、
+  negative、rank和energy机制门健康，但未过`correct>=142`、breadth、lost三项门。不得resume、补controls或
+  做point-count/threshold/seed小扫；当前没有active successor。
 
 最新uniform pivot-rank14路线已终局否决：
 
@@ -61,10 +61,11 @@ compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且�
 视频、Reward、continuous tangent或所有parameter-manifold思路。
 
 PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；PICK-GC把condition修到
-`152.61`并传出非零effective-BA tangent，但strict只有138且lost16。SKNC又证明硬保护train24 all-success
-condition keys可在healthy rank/energy下把lost降到13，却仍不能保护held video/initialization support，且blind
-B20继续把能力从Object/Spatial换到Long。故最早失败接口已从compiler推进到video-conditioned support的跨video/
-跨occupancy可识别性与credit alignment；不应靠扩大LoRA norm/rank、延长训练或阈值sweep补救。
+`152.61`并传出非零effective-BA tangent，但strict只有138且lost16。SKNC把lost降到13；NPCG又同时保住paired
+correct guard与negative response，但strict降到135且仍有35个paired状态翻转。train24×50 action-hidden audit显示
+first-stable key对同任务其它视频的平均正交残差`.40954`，即精确保护一个视频点并不等于保护该任务的跨视频/
+跨occupancy support。故最早失败接口已从compiler与constraint composition推进到video-conditioned address的
+neighborhood泛化与credit alignment；不应靠扩大LoRA norm/rank、延长训练或point/threshold sweep补救。
 详见[`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)。
 
 ## What matters scientifically
@@ -132,11 +133,10 @@ deployment、formal全部关闭。PCUG也已因live Phase-A wall non-pass并封�
 SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 [`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
 [`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
-Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。当前Negative-Preserving
-Candidate Guard首个完整profile已通过negative preservation和其余18项门，仅因TF32 solver与full-FP32
-constraint read错配未过Program closure；窄修后的matched reprofile 20/20全过，部署B8/16/32均稳定并选择
-B32；formal fresh`0→5`已完成并留下macro5 single checkpoint，正在进入strict paired400。单变量公式、显存
-边界和快速否决门见
+Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。Negative-Preserving Candidate
+Guard随后修复该接口：matched reprofile 20/20全过，部署B8/16/32均稳定并选择B32，formal五宏约束也持续健康；
+但macro5 strict paired400只有`135/400`、breadth5、old134→NPCG=`117/18/17`，因此正式non-pass并关闭resume与
+controls。单变量公式、结果边界和快速否决门见
 [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)；
 WQ-PCUG sealed结果见
 [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。
@@ -157,7 +157,7 @@ checkpoint与resume合同正确。
 - [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
 - [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
 - [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)：
-  当前唯一active successor，negative-preserving correction公式与profile/formal门；
+  retired NPCG的negative-preserving correction公式、formal结果与否决边界；
 - [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：
   retired WQ-PCUG、task-addressable queue与sealed negative-null non-pass；
 - [`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`](docs/action_forecast_writer_success_key_nullspace_consolidation_design.md)：

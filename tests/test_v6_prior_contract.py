@@ -194,7 +194,7 @@ def test_unknown_fields_and_retired_config_paths_are_rejected(
 
 
 def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() -> None:
-    ready = load_v6_prior_config()
+    ready = _formal_ready_config()
     assert runtime_for_mode(ready, "formal") == (10, (5, 10), 0)
     preseal = deepcopy(ready)
     preseal["status"] = "active_cpu_ready_awaiting_live_profile"

@@ -35,10 +35,10 @@
   correct guard的rank33、energy`.76492`和Program/LoRA/action closure均健康。但blind negative ratio从`.03991`
   被correct-only final projection放大到`.50179`，wrong/shuffled/reversed各`0/8`达门。19项checks只有
   `negative_null`失败；deployment/formal、重跑与sweep关闭。
-- Negative-Preserving Candidate Guard是当前唯一active successor design：blind `D0`、paired outcomes、queue、
-  B20与compiler不变，只让final guard correction位于current negative rows的nullspace，从而同时满足correct
-  reward guard与`N D1=N D0`。canonical实现、fresh schema、formal fail-close、synthetic closure与完整CPU
-  `345 passed`已完成，尚未live profile；不得并行转向representation/rank/few-shot。
+- Negative-Preserving Candidate Guard已完成并正式退役：formal fresh`0→5`五宏的correct/negative closure、
+  rank和energy持续健康，但macro5 strict paired400只有`135/400`、breadth5、per-task=
+  `0/2/46/36/0/37/14/0`。相对old134为retained/gained/lost=`117/18/17`、churn35，未过absolute、breadth与
+  lost门；不resume、不补controls、不做point-count、threshold或seed sweep。当前没有active successor。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -46,7 +46,28 @@
 
 ## 2. Latest formal decision
 
-### 2.0 Work-Queue PCUG mechanism profile
+### 2.0 NPCG formal macro5
+
+formal训练root：
+`runs/outputs/pi05_npcg_negative_preserving_candidate_guard_formal_fresh0to5_r3_b20_f8491e9_retry1_20260812`；
+clean pushed commit`f8491e9`，gpu02物理3/4/5 world3，5/5 macros与macro5 checkpoint完成、exit0。五宏
+first-stable bank=`12/13/15/15/16`、feature rank=`33/36/35/34/34`、energy=
+`.354/.487/.457/.320/.390`、blind negative ratio=`.040/.026/.015/.014/.032`；correct与negative constraint
+残差均约`1e-13`，无OOM/nonfinite。
+
+strict root：
+`runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812`；
+gpu02物理3/4/5、9 persistent workers、400/400 rows、exit0。结果`135/400`、breadth5、per-task=
+`0/2/46/36/0/37/14/0`、per-suite=`2/82/37/14`。相对old134严格配对为`117 retained/18 gained/17 lost/248
+both-fail`、churn35、Jaccard`.76471`；suite净值Spatial`-3`、Object`0`、Goal`+2`、Long`+2`。Long task1本身
+就有10 gains/7 losses，说明净增仍由初始化换手组成。
+
+train24×50 action-hidden audit显示first-stable key到同任务其它videos的cosine均值/中位数/p10=
+`.90100/.91979/.80615`，正交残差均值/p90=`.40954/.59171`；所有五宏observed stable rows仍留下平均
+`.27650`残差。因此最早失败不是Program、negative guard、rank或compiler，而是pointwise train24地址没有定义
+跨视频/held occupancy support neighborhood。NPCG正式non-pass；exact resume、controls和小修全部关闭。
+
+### 2.1 Work-Queue PCUG mechanism profile
 
 正式profile root：
 `runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_reprofile_macro0_r3_b20_d799758_20260812`；commit
@@ -59,7 +80,7 @@ Goal；stable ordinals=`0/1/3/6/7/11/13/14/16/18/19/21`。final correct guard 15
 predicted negative ratio=`.03991`，但final actual negative ratio=`.50179`，24 tasks无一过`.15`，三类各`0/8`。
 因此只淘汰correct-only final guard composition；actual pairing、queue和blind negative solve均得到正证据。
 
-### 2.1 SKNC formal macro5
+### 2.2 SKNC formal macro5
 
 formal训练root：
 `runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`；clean pushed commit
@@ -81,7 +102,7 @@ macro5的absolute、retention和增益集中三项hard gate失败；breadth7、g
 PICK-GC+first-all-success-key nullspace+blind B20；最早失败接口是train24单video key/support不能外推held
 video/occupancy，且blind B20没有on-policy improvement guarantee。
 
-### 2.2 PICK-GC formal macro10
+### 2.3 PICK-GC formal macro10
 
 formal训练root：
 `runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`；训练commit
@@ -104,7 +125,7 @@ source-action cotangent→held on-policy useful support/coexistence。正式deci
 `pick_gc_formal_decision_evidence.json`。只有PICK-GC+blind-credit组合被淘汰；ordered goal-causal key、
 condition-local FP32 Program、native rank16 compiler、few-shot与新的on-policy credit均未被该结果否定。
 
-### 2.3 Online Gate B
+### 2.4 Online Gate B
 
 online-regenerated rank14 zero-Program root：
 
@@ -119,7 +140,7 @@ online-regenerated rank14 zero-Program root：
 这是可信的端到端non-pass，但old/new分别使用18/12 generators，旧cache在worker内部局部拼B8，改变了
 co-batch、position、padding和tail；因此不能把全部退化归于rank14 compression。
 
-### 2.4 Compiler-only deconfounding
+### 2.5 Compiler-only deconfounding
 
 一次性clean去混杂root：
 
@@ -465,6 +486,7 @@ Negative-Preserving Candidate Guard首个clean world3完整profile已通过negat
 唯一因solver TF32和实际Program full-FP32 read错配未过closure；canonical数值窄修与完整CPU`345 passed`已完成
 后，clean pushed`4156012` matched reprofile 20/20全过，negative ratio`.03524`、三类各`8/8`、protected ratio
 `5.7508e-8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定并选择B32；config已封存两份evidence并打开
-formal fresh`0→5`。该formal现已exit0：五宏均无OOM/nonfinite，bank最终16，macro5 guard29/rank29、feature
-rank34、energy`.38951`、negative ratio`.03234`且checkpoint完整。下一步必须对该single checkpoint立即跑
-strict paired400；NPCG仍是唯一active successor，旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+formal fresh`0→5`。该formal及strict paired400现均已完成：五宏无OOM/nonfinite，macro5 rank34、energy
+`.38951`、negative ratio`.03234`，但strict只有135/breadth5、old134→NPCG=`117/18/17`，因此config封存为
+`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；当前没有active successor，旧WQ-PCUG/PCUG/
+Reward/OSG/SKNC/SRTP命令不得恢复。

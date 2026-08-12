@@ -1,15 +1,21 @@
 # Negative-Preserving Candidate Guard
 
-状态：2026-08-12 matched world3 reprofile的20项机制门全部通过；随后同commit部署B8/16/32均稳定并按真实
-LoRA/s选择B32。canonical config已封存profile/deployment evidence并打开formal fresh`0→5`。本设计仍是唯一
-active successor，没有保留WQ-PCUG并行可执行版本。
+状态：2026-08-12 formal non-pass并退役。matched world3 reprofile的20项机制门全部通过；随后同commit部署
+B8/16/32均稳定并按真实LoRA/s选择B32。formal fresh`0→5`与macro5 single-checkpoint strict paired400均已
+完成，canonical config封存为`formal_result_sealed`；不resume、不补controls、不做point-count或参数sweep。
 
 formal fresh`0→5`已由clean pushed `f8491e9`、gpu02物理3/4/5 world3完成并exit0；首次空启动仅因launcher
 沿用旧SKNC的`num_workers=2`而在模型加载前被NPCG sealed `num_workers=0`拒绝，retry没有改变科学合同。
 五个macro均无OOM/nonfinite，step seconds=`551.61/560.17/565.03/530.64/555.81`；first-stable bank从
 `12→13→15→15→16`增长，macro5 guard rows/rank=`29/29`、feature rank=`34`、energy=`.38951`、cosine=
-`.60652`、blind negative ratio=`.03234`且closure约`3e-13`。macro5 checkpoint已完整写出；下一步是该同一
-checkpoint的strict paired correct400，尚无absolute closed-loop结论。
+`.60652`、blind negative ratio=`.03234`且closure约`3e-13`。macro5 checkpoint已完整写出。strict correct400
+结果为`135/400`、breadth5、per-task=`0/2/46/36/0/37/14/0`；相对old134严格配对为retained/gained/lost=
+`117/18/17`、churn35。`correct>=142`、breadth>=6和lost<=8三项门失败，故内部closure不能转写成方法有效。
+
+train24×50 action-hidden cache与五宏outcome的后验定位表明，16个出现first-stable certificate的task中，first key
+对held same-task videos的cosine均值/中位数/p10=`.90100/.91979/.80615`，正交残差均值/p90=
+`.40954/.59171`；即使合并五宏全部56个stable occurrences，held same-task平均残差仍约`.27650`。这把最早
+失败接口推进到：pointwise train24 success/harmful key不能定义跨视频或held occupancy的support neighborhood。
 
 首个NPCG profile来自clean pushed `ef0008d`、gpu02物理3/4/5 world3：Phase A=`44.67883s`、total=
 `554.57395s / 1.15868x SKNC`，paired outcomes与WQ-PCUG完全一致。final negative ratio=`.03524`，三类各
@@ -161,12 +167,14 @@ pair count，不通过降低negative门或projected-rank门救结果。
 
 ## 8. Deployment and formal decision
 
-profile与B8/16/32 deployment已全过并选择B32；下一步fresh `0->5`并立即strict paired correct400。继续`5->10`
-仍要求macro5 correct>=142、breadth>=6、相对immutable macro0 lost<=8且gained>lost、至少3 suites不降、最大
-单task净增不超过全部正净增`.5`，并且每macro两类closure、rank、energy和paired evidence不坍缩。
+profile与B8/16/32 deployment全过并选择B32；formal fresh`0→5`也保持两类closure、rank、energy与paired evidence
+健康。然而macro5 strict correct400=`135`、breadth5、相对immutable macro0 lost17，明确未过预注册门。虽然
+gained18略高于lost17，且Object/Goal/Long三个suite不降，净`+1`掩盖了35个paired状态翻转；Long task1内部就有
+10 gains/7 losses，不是稳定support积累。
 
-首次correct>=144才补same/wrong/shuffled/reversed/no-video。最终成功仍是同一single checkpoint correct>150，
-correct严格优于全部negative controls，same-task-other至少保留correct的`.9`，且不依赖checkpoint/task轮换。
+因此exact resume`5→10`、same/wrong/shuffled/reversed/no-video controls、重复seed和任何小修全部关闭。这个结果
+淘汰的是NPCG point guards + blind B20，不淘汰work queue、paired actual candidate evidence、negative-preserving
+affine solver、ordered goal-causal condition或“应保护action-hidden video neighborhood”这一后继假设。
 
 ## 9. Rejected alternatives
 
@@ -177,3 +185,5 @@ correct严格优于全部negative controls，same-task-other至少保留correct�
 - 不减少stable/harmful guards：这会牺牲已经验证的correct support保护；
 - 不改D0 solver、step scale、rank16 compiler、B20、K2、queue或success classification；
 - 不转few-shot、expert routing、language gate或新encoder：当前证据支持先修final constraint composition接口。
+- formal结果后不增加更多point guards、不平均guard keys、不resume或扫SVD/ridge/scale/threshold；这些都没有
+  解决一个reward-certified视频地址如何泛化到同任务其它视频和held occupancy。

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_v1",
-  "status": "active_formal_ready",
+  "status": "formal_result_sealed",
   "method": {
     "name": "frozen_v6_negative_preserving_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -359,7 +359,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
+    "status": "formal_result_sealed",
     "allowed_world_sizes": [
       3,
       4,
@@ -392,7 +392,63 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro10_requires_macro5_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "training": {
+        "root": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_formal_fresh0to5_r3_b20_f8491e9_retry1_20260812",
+        "run_commit": "f8491e9",
+        "completed_macro": 5,
+        "world_size": 3,
+        "guard_and_negative_closure_passed_all_macros": true
+      },
+      "strict_correct400": {
+        "root": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812",
+        "evaluation_commit": "5235d05b763101d4c2393058a3bc634f09490ed0",
+        "contract_reference": "ember_pi05_target_eval_launch_v2:315d665c7b7944f9bb1cd5517d203385",
+        "successes": 135,
+        "breadth": 5,
+        "per_task": [
+          0,
+          2,
+          46,
+          36,
+          0,
+          37,
+          14,
+          0
+        ],
+        "per_suite": [
+          2,
+          82,
+          37,
+          14
+        ]
+      },
+      "paired_old134": {
+        "retained_gained_lost": [
+          117,
+          18,
+          17
+        ],
+        "churn": 35,
+        "artifact": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812/npcg_historical_transition_old134_to_macro0005.json"
+      },
+      "decision_evidence": {
+        "path": "runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812/npcg_formal_decision_evidence.json",
+        "schema": "ember_pi05_npcg_formal_decision_evidence_v1",
+        "passed": false
+      },
+      "address_generalization": {
+        "first_stable_key_same_task_cosine_mean": 0.9010037779808044,
+        "first_stable_key_orthogonal_residual_mean": 0.40953588485717773,
+        "all_observed_stable_key_orthogonal_residual_mean": 0.2764959931373596
+      },
+      "decision": {
+        "macro5_gate_passed": false,
+        "exact_resume_macro5_to10_authorized": false,
+        "six_arm_controls_authorized": false,
+        "scope": "retire_npcg_point_guards_plus_blind_b20_only"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_npcg_deployment_smoke",

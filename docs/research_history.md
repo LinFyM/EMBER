@@ -5,9 +5,9 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PVJFC最新
-macro0 profile只因condition=`597.861>200` non-pass，无checkpoint或closed-loop成绩。active successor由当前
-authority定义为CGIK-JC；本文不提供其启动命令。
+2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PVJFC与
+CGIK-JC的唯一macro0 profile分别因condition=`597.861/270.188>200` non-pass，均无checkpoint或closed-loop
+成绩。当前没有active successor；本文不提供启动命令。
 
 ## 1. Stable problem definition
 

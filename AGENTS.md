@@ -55,9 +55,11 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - PVJFC已经在唯一macro0机制profile因regularized condition=`597.861>200`终局non-pass；其它11项门、
   rank`48/96`、24/24双view下降、negative ratio`.07266`、全链路和`51.543s` wall均通过。只淘汰PICK-GC
   raw condition rows×full96 ridge，不否定continuous paired-video credit。
-- active successor design是CGIK-JC：只把condition key从`[goal, causal]`改为
-  `[causal, goal*causal]`，保留PVJFC的两条独立cotangent、same B20/RNG与full96 solve；cache预验把selected
-  correct48 condition从`250.11`降到`163.88`且rank仍48。当前仅design-authorized，尚未实现或获得live证据。
+- CGIK-JC已经在唯一macro0机制profile终局non-pass：它把PVJFC condition从`597.861`降到`270.188`，并把
+  negative ratio降到`.02457`、三类negative提高到各16/16；rank`48/96`、24/24双view descent、全链路和
+  `50.032s` wall均通过，但condition仍`>200`。root无checkpoint，formal、deployment、同配置重跑与小扫关闭。
+- 当前没有active successor。下一步必须先解释CGIK剩余full96 shared mode，再写新的单变量design authority；
+  不得把condition门、damping、block weight、projection seed/width、view数、rank、scale或dtype当作后继。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

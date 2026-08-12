@@ -32,9 +32,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_pvjfc_profile_nonpass_and_cveg_candidate_guard_nonpass_remain_sealed() -> None:
+def test_cgik_pvjfc_and_candidate_guard_nonpasses_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert active["status"] == "profile_result_sealed_nonpass"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
         "frozen_v6_causal_goal_interaction_key_joint_credit"
@@ -42,15 +42,23 @@ def test_pvjfc_profile_nonpass_and_cveg_candidate_guard_nonpass_remain_sealed() 
     assert active["information_wall"]["training_outcome_rollouts"] == 0
     assert active["information_wall"]["training_reward_reads"] == 0
     assert active["update"]["view_weights"] == [0.5, 0.5]
-    assert active["profile_run"]["status"] == (
-        "awaiting_live_a40_fresh0_to1_profile"
+    assert active["profile_run"]["status"] == "profile_result_sealed_nonpass"
+    active_profile = active["profile_run"]["artifact_evidence"]
+    assert active_profile["passed"] is False
+    assert active_profile["failed_checks"] == ["regularized_condition"]
+    assert active_profile["regularized_condition"] == pytest.approx(
+        270.18844360333486
     )
-    assert active["profile_run"]["artifact_evidence"] is None
-    assert active["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
+    assert active_profile["negative_null_per_kind"] == {
+        "reversed": 16,
+        "shuffled": 16,
+        "wrong": 16,
+    }
+    assert active_profile["retained_checkpoint"] is False
+    assert active_profile["formal_authorized"] is False
+    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
     assert active["evaluation"]["formal_status"] == (
-        "blocked_until_live_cgik_full96_profile_passes"
+        "not_run_after_cgik_profile_nonpass"
     )
     assert active["evaluation"]["online_smoke_evidence"] is None
 

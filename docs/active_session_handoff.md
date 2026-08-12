@@ -51,9 +51,12 @@
   双view与四suite descent、negative ratio`.07266`、Program/LoRA/BA/action、wall`51.543s`均通过；唯一失败是
   regularized condition=`597.861>200`。root无checkpoint，formal关闭，不扫damping/threshold等小参数。该结果只
   淘汰当前PICK-GC condition feature×full96 ridge合同，不否定continuous paired-video credit本身。
-- active successor是CGIK-JC：只把condition key从`[goal, causal]`改为`[causal, goal*causal]`；每个非零地址
-  都必须含ordered causal evidence，goal只能调制过程。retained cache对本次selected correct48的预验保持rank48，
-  condition从`250.11`降到`163.88`，same-task pair cosine仍为`.85312`；当前只授权实现、CPU门和一次full96 profile。
+- CGIK-JC已经完成实现、完整CPU`335 passed`及clean`623505b`上的唯一gpu02:0--5 world6 macro0 profile。
+  它把PVJFC condition从`597.861`降到`270.188`，negative ratio从`.07266`降到`.02457`，三类negative均
+  `16/16`；rank`48/96`、24/24双view与四suite descent、Program/LoRA/BA/action、wall`50.032s`全部通过。
+  唯一false仍是`regularized_condition<=200`，故总门non-pass、无checkpoint，formal/deployment/重跑/小扫关闭。
+- 当前没有active successor。下一design必须针对CGIK仍残留的full96 shared spectral mode，不能调damping、门、
+  block weight、projection seed/width、view数、rank、scale或dtype，也不能恢复hard E、whitening或point guard。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

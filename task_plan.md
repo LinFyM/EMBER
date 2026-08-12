@@ -191,8 +191,11 @@
 - [x] 从PVJFC最早失败的condition可分辨shared-credit接口推出CGIK-JC单变量authority：只把key从
   `[goal, causal]`改为`[causal, goal*causal]`，保留paired continuous credit；selected correct48 cache
   condition=`250.11→163.88`、rank48、same-task cosine`.85312`。
-- [ ] 原位实现fresh-incompatible CGIK-JC，完成focused/full CPU与一次clean full96机制profile；不得扫damping、
-  condition门、block weight、projection seed/width、view count、rank、scale或dtype。
+- [x] 原位实现fresh-incompatible CGIK-JC并在clean pushed`623505b`上完成完整CPU`335 passed`及唯一world6
+  full96 profile：11/12门通过，condition=`270.188>200`；negative`.02457`、三类16/16、24/24双view、全链路
+  与`50.032s`健康，但按门终局non-pass、无checkpoint，formal/重跑/小扫关闭。
+- [ ] 分解CGIK剩余full96 shared spectral mode，选择一个未被历史否决的单变量successor并先写design authority；
+  当前不得启动GPU。
 
 ## Repository closeout
 

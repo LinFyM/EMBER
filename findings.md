@@ -407,3 +407,10 @@ reversed与correct又近反平行，Gram中反号不会抵消。CGIK-JC因此只
 `[causal, goal*causal]`，让所有地址必须含有序过程并打破correct/reverse同一直线；cache预验condition=`163.88`、
 rank48、same-task cosine`.85312`。这只授权一次真实full96 profile；历史PICK-GC152.61但strict138已经证明
 condition改善不能选择模型。
+
+CGIK-JC随后完成了真正raw-frame full96裁决。clean`623505b`、gpu02:0--5 world6 profile的rank仍为`48/96`，
+24/24 tasks两个view和四suite均下降，negative ratio降到`.02457`且reversed/shuffled/wrong各`16/16`，完整
+Program→LoRA→BA→action链与`50.032s` wall通过；但condition仅降到`270.188>200`，因此总门仍non-pass且没有
+checkpoint。它证明causal-goal interaction确实打破了大部分correct/reverse共线与negative leakage，却没有清除
+full96剩余shared mode。该结果只淘汰当前`[causal, goal*causal]`固定key×full96 ridge，不否定interaction或paired
+continuous credit；也不授权调damping、门、block weight、seed、width、view数、rank、scale或dtype。

@@ -50,10 +50,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   正常低位差异并走出不同checkpoint轨迹；诊断macro5的唯一directional strict400又只有`131/400`、breadth6、
   per-task=`1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`；硬E既未稳定
   shared能力，也使absolute继续下降。因此不resume、不补controls、不把hard E或binary guard原样继承。
-- PVJFC的canonical实现与完整CPU`329 passed`已闭合；唯一macro0 profile的rank`48/96`、24/24双view下降、
-  negative ratio`.07266`、全链路和`51.543s` wall均健康，但唯一失败是condition=`597.861>200`，故无checkpoint、
-  formal关闭。active successor是CGIK-JC：只把condition key从独立`[goal, causal]`改成
-  `[causal, goal*causal]`，保留PVJFC全部paired continuous credit；当前仅design-authorized。
+- PVJFC与其单变量后继CGIK-JC都在唯一macro0机制profile因condition门终局non-pass。CGIK把condition
+  `597.861→270.188`、negative ratio`.07266→.02457`，三类negative均16/16；rank`48/96`、24/24双view
+  descent、全链路与`50.032s` wall健康，但仍未过`<=200`。无checkpoint或closed-loop成绩，formal、重跑和
+  小扫关闭；当前没有active successor。
 
 最新uniform pivot-rank14路线已终局否决：
 

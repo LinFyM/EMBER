@@ -2,7 +2,7 @@
 
 ## 1. Decision
 
-本设计是PVJFC唯一一次macro0机制profile以`regularized condition=597.861>200`终止后的active
+本设计是PVJFC唯一一次macro0机制profile以`regularized condition=597.861>200`终止后的历史
 successor authority。它只替换condition key的最后固定组合：
 
 ```text
@@ -18,8 +18,16 @@ CGIK-JC:
 48 correct和48 matched negative以`1/2+1/2`权重进入同一个full96 continuous solve；部署仍只输入一条视频并
 生成一套完整38-target rank-16 LoRA。
 
-本方法简称 **CGIK-JC**：Causal–Goal Interaction Key Joint Credit。当前只授权实现、CPU门和一次discarded
-full96机制profile。profile通过前不授权formal训练、deployment结果或closed-loop评测。
+本方法简称 **CGIK-JC**：Causal–Goal Interaction Key Joint Credit。唯一discarded full96机制profile已经完成并
+终局non-pass；formal训练、deployment结果、closed-loop评测、同配置重跑与参数小扫均不授权。
+
+### Sealed result
+
+clean pushed commit`623505b`、gpu02:0--5 world6的唯一macro0 profile为`11/12` checks通过。CGIK把PVJFC
+condition从`597.861`降到`270.188`，negative/correct motion从`.07266`降到`.02457`，reversed/shuffled/wrong
+均为`16/16`；rank=`48/96`、24/24双view下降、四suite下降、Program→LoRA A/B→effective BA→fixed action和
+`50.032s` wall全部通过，0 OOM/nonfinite。唯一失败仍是预注册`regularized_condition<=200`。artifact：
+`runs/outputs/pi05_cgik_jc_full96_profile_macro0_r6_b20_623505b_20260812/mechanism_profile.json`。root无checkpoint。
 
 ## 2. The earliest failed interface
 

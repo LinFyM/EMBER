@@ -77,7 +77,7 @@ policy-effective support。完整retired authority见
 退役CVEG的完整公式、采样合同、稳定性与directional strict裁决见
 `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
-active successor是PVJFC，只替换shared credit acquisition：每task的primary/companion都构造完整one-shot
+PVJFC只替换shared credit acquisition：每task的primary/companion都构造完整one-shot
 Program与cotangent，两view共享同一个B20及policy RNG，以固定半权进入96-row continuous solve；各自negative为
 zero RHS。它不平均video/feature/LoRA/cotangent，不读outcome，不保存success bank，也不强制两view motion相同。
 swap invariance和duplicate-view退化为single-view是hard contract；完整design与快速否决门见
@@ -85,11 +85,11 @@ swap invariance和duplicate-view退化为single-view是hard contract；完整des
 串行释放policy graph，full24 dynamic queue后一次gather 48 correct、48 zero-RHS negative和两套Program cotangent，
 只保留一份FP32 Program memory；旧outcome/bank/hard-E executable与测试已删除，完整CPU`329 passed`。唯一live
 macro0 profile为`11/12` checks通过但总门non-pass：rank`48/96`、24/24双view descent、negative`.07266`、全链路
-与`51.543s` wall通过，regularized condition=`597.861>200`失败。没有checkpoint，formal关闭且不做damping/
-threshold等小扫。active successor是CGIK-JC：只把condition组合改为
-`[causal, goal*causal]`，保留PVJFC continuous paired credit与full96合同。cache预验selected correct48
-condition=`163.88`且rank48；完整公式、边界和一次性profile门见
-`docs/action_forecast_writer_causal_goal_interaction_key_design.md`。condition过门仍不能冒充closed-loop结论。
+与`51.543s` wall通过，regularized condition=`597.861>200`失败。CGIK-JC随后只把condition组合改为
+`[causal, goal*causal]`，保留PVJFC continuous paired credit与full96合同。clean`623505b`唯一profile把
+condition降到`270.188`、negative ratio降到`.02457`且三类各16/16，但12项门仍只有condition失败；rank、
+24/24双view descent、全链路和`50.032s` wall均健康。两者均无checkpoint或closed-loop成绩，formal、重跑与
+小扫关闭。当前没有active successor；下一GPU动作必须先有针对剩余shared spectral mode的新单变量authority。
 
 ## 2. Fixed information contract
 

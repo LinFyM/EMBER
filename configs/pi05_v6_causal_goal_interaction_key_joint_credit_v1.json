@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "profile_result_sealed_nonpass",
   "method": {
     "name": "frozen_v6_causal_goal_interaction_key_joint_credit",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -189,7 +189,7 @@
     }
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "profile_result_sealed_nonpass",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -218,10 +218,31 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_cgik_jc_full96_profile_macro0_r6_b20_623505b_20260812/mechanism_profile.json",
+      "schema": "ember_pi05_v6_causal_goal_interaction_key_joint_credit_profile_v1",
+      "source_commit": "623505bb05bebcb676125f948042ab7f01c98464",
+      "passed": false,
+      "checks_passed": 11,
+      "checks_total": 12,
+      "failed_checks": ["regularized_condition"],
+      "positive_feature_rank": 48,
+      "full_feature_rank": 96,
+      "regularized_condition": 270.18844360333486,
+      "both_view_descent_tasks": 24,
+      "negative_to_correct_motion_ratio": 0.02457481164533756,
+      "negative_null_per_kind": {"reversed": 16, "shuffled": 16, "wrong": 16},
+      "phase_a_seconds": 48.49566218093969,
+      "step_seconds": 50.032454838976264,
+      "world_size": 6,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "retained_checkpoint": false,
+      "formal_authorized": false
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "blocked_by_profile_nonpass",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -246,7 +267,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "blocked_until_live_cgik_full96_profile_passes",
+    "formal_status": "not_run_after_cgik_profile_nonpass",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_same_node_devices_with_sufficient_peak_memory_headroom_without_waiting_low_utilization_partial_occupancy_is_allowed",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",

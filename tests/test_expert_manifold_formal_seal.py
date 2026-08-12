@@ -27,9 +27,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_active_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None:
+def test_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None:
     cveg = load_v6_prior_config(CONFIG)
-    assert cveg["status"] == "active_formal_ready"
+    assert cveg["status"] == "formal_result_sealed"
     assert cveg["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert cveg["method"]["name"] == (
         "frozen_v6_cross_video_equivariant_candidate_guard"
@@ -48,8 +48,25 @@ def test_active_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None
         "shuffled": 8,
         "reversed": 8,
     }
-    assert cveg["formal_run"]["status"] == "ready_after_live_profile_seal"
-    assert cveg["formal_run"]["artifact_evidence"] is None
+    assert cveg["formal_run"]["status"] == "formal_result_sealed"
+    result = cveg["formal_run"]["artifact_evidence"]
+    assert result["canonical_training"]["completed_macro"] == 2
+    assert result["canonical_training"]["checkpoint_written"] is False
+    assert result["diagnostic_reproduction"]["stable_formal_checkpoint"] is False
+    strict = result["directional_strict_correct400"]
+    assert strict["successes"] == 131
+    assert strict["breadth"] == 6
+    assert strict["per_task"] == [1, 2, 47, 30, 0, 35, 16, 0]
+    assert strict["paired_old134_retained_gained_lost"] == [113, 18, 21]
+    assert strict["paired_npcg135_retained_gained_lost"] == [114, 17, 21]
+    assert result["decision"] == {
+        "passed": False,
+        "exact_resume_authorized": False,
+        "six_arm_controls_authorized": False,
+        "scope": (
+            "retire_cveg_hard_cross_video_equivariance_plus_binary_current_guard"
+        ),
+    }
     assert cveg["evaluation"]["formal_status"] == (
         "sealed_from_live_cveg_deployment_smoke"
     )

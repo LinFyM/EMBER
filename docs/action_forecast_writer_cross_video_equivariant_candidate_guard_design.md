@@ -185,10 +185,12 @@ candidate loss，使它从beneficial变为harmful，current equality guard不同
 current hard guard放大为checkpoint级路径分叉。固定task到同一物理rank或追求逐元素一致违反效率合同，也没有
 解决真实部署边界敏感性；增加K或阈值是未经authority的sweep。因此当前CVEG训练合同non-pass。
 
-为了不让内部surrogate替代真实性能，诊断macro5允许一次同口径strict paired400，且必须标注为directional：
-若低分，跨视频E在当前组合下也无absolute价值；若高分，只说明E值得由稳定credit接口继承，不能恢复本run的
-resume、controls或winner资格。下一successor保留one-shot E、negative-preserving correction、B20 proposal、
-FP32 Program和native compiler，只替换current binary K2 hard guard。
+为了不让内部surrogate替代真实性能，诊断macro5完成了一次同口径directional strict paired400：结果只有
+`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`。相对old134严格配对为
+`113 retained/18 gained/21 lost`、churn39；相对NPCG135为`114/17/21`、churn38。Object3相对NPCG净`-6`，
+Long1仍以`10 gains/8 losses`换手换来净`+2`。这低于old134、NPCG135、SKNC137、PICK-GC138与v6-fast143，
+所以不仅binary current guard不稳定，hard `E DeltaM=0`在当前blind-credit组合中也无absolute价值。CVEG终局
+non-pass，不resume、不补controls；后继可以保留training-only paired-video动机，但不得把hard E原样继承。
 
 ## 9. Rejected alternatives
 

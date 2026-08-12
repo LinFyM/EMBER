@@ -39,12 +39,10 @@
   rank和energy持续健康，但macro5 strict paired400只有`135/400`、breadth5、per-task=
   `0/2/46/36/0/37/14/0`。相对old134为retained/gained/lost=`117/18/17`、churn35，未过absolute、breadth与
   lost门；不resume、不补controls、不做point-count、threshold或seed sweep。
-- Cross-Video Equivariant Candidate Guard的机制与one-shot B32部署门已通过，但formal训练不稳定。canonical
-  fresh retry完成macro1/2后在macro3 sealed feasible-set gate拒绝且无checkpoint；同合同诊断复现仅因macro2
-  task23的一条paired K2 outcome从candidate gain翻成candidate loss，就改变current harmful equality guard，
-  随后走出另一条Program轨迹并完成macro5。两次macro1逐值相同，macro2的functional loss与blind negative ratio
-  也相同；最早分叉明确位于`binary K2 outcome -> current hard guard -> shared write`，不是E/negative投影或
-  compiler。诊断macro5只允许一次directional strict400判断absolute价值，不能作为稳定formal winner或resume。
+- Cross-Video Equivariant Candidate Guard已经终局non-pass。canonical formal在macro3前因K2边界翻转改变hard
+  guard而不可行；同合同诊断macro5完成后，唯一directional strict400只有`131/400`、breadth6、per-task=
+  `1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`。这同时否定当前binary
+  hard guard的稳定性与hard E组合的absolute价值；不resume、不补controls、不把E原样继承。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -100,6 +98,14 @@ gate并exit1；root无checkpoint。诊断提交`5268391`只让既有gate在失�
 hard equality guard。复现五宏bank=`10/14/16/16/16`、energy=`.35404/.37467/.28736/.27384/.49831`，K2
 base/candidate=`34/31,33/32,34/31,32/29,29/29`，全部closure与OOM/nonfinite门通过。这个checkpoint只用于
 directional strict400，不得按其完成状态选择为canonical稳定训练结果。
+
+directional strict root：
+`runs/outputs/pi05_cveg_directional_correct400_noreplacement_seed7_macro0005_d36ca6d_gpu02_20260812`；42/42 shards、
+400/400 rows、9/9 workers exit0，结果`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`、per-suite=
+`3/77/35/16`。old134→CVEG为`113 retained/18 gained/21 lost/248 both-fail`、churn39；NPCG→CVEG为
+`114/17/21/248`、churn38。最大退化是Object3相对NPCG`1 gain/7 losses`，Long1则`10/8`高换手后仅净`+2`。
+该结果低于old134、NPCG135、SKNC137、PICK-GC138和v6-fast143，故hard cross-video equality与binary guard组合
+终局退役；低分不能外推成所有训练期multi-video或continuous shared credit无效。
 
 ### 2.1 Work-Queue PCUG mechanism profile
 

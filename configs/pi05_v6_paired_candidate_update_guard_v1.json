@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1",
-  "status": "active_formal_ready",
+  "status": "formal_result_sealed",
   "method": {
     "name": "frozen_v6_cross_video_equivariant_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -385,7 +385,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
+    "status": "formal_result_sealed",
     "allowed_world_sizes": [
       1,
       2,
@@ -420,7 +420,58 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro10_requires_macro5_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "canonical_training": {
+        "path": "runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_formal_fresh0to5_r3_b20_ad7d9bd_retry1_20260812",
+        "completed_macro": 2,
+        "failed_before_macro": 3,
+        "failure": "sealed_feasible_set_gate",
+        "checkpoint_written": false
+      },
+      "diagnostic_reproduction": {
+        "path": "runs/outputs/pi05_cveg_formal_gate_repro_fresh0to5_r3_b20_5268391_retry1_20260812",
+        "completed_macro": 5,
+        "stable_formal_checkpoint": false,
+        "earliest_divergence": "macro2_task23_binary_k2_outcome_to_current_hard_guard"
+      },
+      "directional_strict_correct400": {
+        "path": "runs/outputs/pi05_cveg_directional_correct400_noreplacement_seed7_macro0005_d36ca6d_gpu02_20260812/results.json",
+        "successes": 131,
+        "breadth": 6,
+        "per_task": [
+          1,
+          2,
+          47,
+          30,
+          0,
+          35,
+          16,
+          0
+        ],
+        "per_suite": [
+          3,
+          77,
+          35,
+          16
+        ],
+        "paired_old134_retained_gained_lost": [
+          113,
+          18,
+          21
+        ],
+        "paired_npcg135_retained_gained_lost": [
+          114,
+          17,
+          21
+        ]
+      },
+      "decision": {
+        "passed": false,
+        "exact_resume_authorized": false,
+        "six_arm_controls_authorized": false,
+        "scope": "retire_cveg_hard_cross_video_equivariance_plus_binary_current_guard"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_cveg_deployment_smoke",

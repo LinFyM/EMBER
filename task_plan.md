@@ -176,10 +176,11 @@
 - [x] 从clean pushed formal-ready commit启动formal：canonical retry完成macro1/2后在macro3 sealed
   feasible-set gate拒绝且无checkpoint；诊断复现因macro2 task23一条K2 outcome翻转走出另一hard-guard轨迹并
   完成macro5。由此定位最早失败为`binary K2 -> current hard equality guard`的路径放大，不resume当前合同。
-- [ ] 对诊断macro5做一次明确标注的directional strict paired400，与old134/v6-fast143逐行比较；结果只决定
-  跨视频E是否值得被稳定后继继承，不授予该checkpoint winner、resume或controls资格。
-- [ ] 只替换current binary K2 hard guard接口形成fresh-incompatible successor；保留E、negative preservation、
-  B20 blind proposal、FP32 Program与native rank16 compiler，不做pair/seed/rank/threshold sweep。
+- [x] 对诊断macro5完成唯一directional strict paired400：`131/400`、breadth6、per-task=
+  `1/2/47/30/0/35/16/0`；old134→CVEG=`113/18/21`，NPCG→CVEG=`114/17/21`。它低于全部当前强基线，
+  因此不授予winner、resume或controls，hard E也不原样继承。
+- [ ] 从`single-video blind cotangent -> hard E/binary guard`的已否决接口转向continuous paired-video shared
+  credit：先写fresh-incompatible单变量design authority，再原位替换canonical owner并做机制/profile/strict400。
 
 ## Repository closeout
 

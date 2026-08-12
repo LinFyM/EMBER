@@ -47,13 +47,11 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   breadth5、相对old134 retained/gained/lost=`117/18/17`。五宏negative/correct closure、rank和energy健康，
   但point key到held same-task videos仍有平均`.40954`正交残差；不resume、不补controls、不做point/threshold/
   seed sweep。
-- Cross-Video Equivariant Candidate Guard的机制与部署门已通过，但formal暴露新的训练稳定性失败：canonical
-  fresh run前两宏完成后在macro3封存feasible-set gate拒绝且无checkpoint；同合同诊断复现仅因macro2 task23
-  的一条K2 paired outcome从candidate gain翻成candidate loss，就改变current harmful guard和最终Program，随后
-  完成5宏。两次macro1逐值相同、macro2 functional loss与blind negative ratio也相同，分叉发生在
-  `binary K2 outcome -> current hard equality guard -> shared write`。诊断macro5 checkpoint只允许做一次明确标注
-  的directional strict400以判断CVEG方向的absolute闭环价值，不能作为可重复formal winner或resume起点；下一
-  successor只允许替换该离散current-guard接口。部署仍严格一条video、一套LoRA。
+- Cross-Video Equivariant Candidate Guard已经终局non-pass：canonical formal在macro3前因一条K2 outcome翻转
+  改变hard guard而走向不可行，证明`binary K2 -> exact equality -> shared write`不稳定；诊断macro5随后完成唯一
+  directional strict400，只有`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`。相对old134为
+  retained/gained/lost=`113/18/21`，相对NPCG135为`114/17/21`。硬跨视频E没有换来absolute或低换手，反而
+  Object3净退6且Long1仍有18次初始化换手；不resume、不补controls，也不把E原样带入后继。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

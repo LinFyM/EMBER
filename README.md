@@ -46,12 +46,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   `0/2/46/36/0/37/14/0`。相对old134严格配对为retained/gained/lost=`117/18/17`、churn35；全部Program、
   negative、rank和energy机制门健康，但未过`correct>=142`、breadth、lost三项门。不得resume、补controls或
   做point-count/threshold/seed小扫。
-- Cross-Video Equivariant Candidate Guard的机制与one-shot B32部署门已通过，但formal没有形成可重复的5宏
-  checkpoint：canonical fresh run在macro3 sealed feasible-set gate拒绝；同合同诊断复现因macro2 task23的一条
-  paired K2 rollout从candidate gain翻成candidate loss而走出不同hard-guard轨迹并完成macro5。两次macro1数值
-  一致，分叉最早发生在`binary K2 outcome -> current hard equality guard -> shared Program write`，不是E投影、
-  negative closure或compiler。该诊断macro5只做一次directional strict400，不得冒充稳定formal winner或resume；
-  下一架构只替换这个离散guard接口。
+- Cross-Video Equivariant Candidate Guard已经终局non-pass：formal先证明二值K2 outcome经hard equality会放大
+  正常低位差异并走出不同checkpoint轨迹；诊断macro5的唯一directional strict400又只有`131/400`、breadth6、
+  per-task=`1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`；硬E既未稳定
+  shared能力，也使absolute继续下降。因此不resume、不补controls、不把hard E或binary guard原样继承。
 
 最新uniform pivot-rank14路线已终局否决：
 

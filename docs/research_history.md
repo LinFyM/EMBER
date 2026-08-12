@@ -5,10 +5,9 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；最新NPCG
-formal=`135/400`、breadth5、old134→NPCG retained/gained/lost=`117/18/17`并已退役。NPCG证明negative-
-preserving affine guard在多宏下可行，却未解决point address到跨视频/held occupancy support的泛化；当前没有
-active successor。
+2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；最新CVEG
+directional strict=`131/400`、breadth6、old134→CVEG retained/gained/lost=`113/18/21`。它先暴露binary K2
+hard guard的路径不稳定，再证明hard cross-video equality没有absolute或retention价值；当前没有active successor。
 
 ## 1. Stable problem definition
 
@@ -84,6 +83,8 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Policy-Innovation Goal-Causal Key | `138/400`, breadth6 | full48 condition修到`152.61`，FP32 Program与effective BA切向写出闭合 | macro0→macro10=`118/20/16`、churn36；blind offline source-action credit不覆盖held on-policy support，组合退役 |
 | On-Policy Success-Guarded Program Credit | no rollout | success-prefix continuous guard的canonical执行图与fresh schema可实现 | world6 rank-local长尾触发600s NCCL watchdog，wall至少matched `1.912x>1.25x`；只淘汰current replay/VJP graph |
 | Success-Key Nullspace Consolidation | `137/400`, breadth7 | 4/4 success key可在healthy rank/energy下硬保护完整conditioned Program/LoRA/action | old134→SKNC=`121/16/13`、churn29；train24 single-video key不外推held support，blind B20继续suite换手 |
+| Negative-Preserving Candidate Guard | `135/400`, breadth5 | actual candidate与negative response可在同一affine correction中闭合 | old134→NPCG=`117/18/17`；point guard未保护held occupancy，约束健康不等于共同积累 |
+| Cross-Video Equivariant Candidate Guard | directional `131/400`, breadth6 | single companion E与negative/guard可数值闭合 | K2 outcome经hard equality放大低位差异；hard E又使NPCG→CVEG=`114/17/21`，稳定性与absolute均non-pass |
 
 ## 4. Final rank14 adjudication
 

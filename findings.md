@@ -372,3 +372,9 @@ equality guard改变，shared Program随即分叉。诊断run因此完成5宏，
 否定的是当前`binary K2 outcome -> current hard equality guard`作为稳定共同积累机制。仍需对diagnostic macro5
 做一次directional strict400，因为closed-loop absolute高于内部稳定性surrogate：低分会同时否定当前组合的性能
 价值，高分只说明E应由下一稳定credit接口继承，不能把这个checkpoint冒充可重复winner。
+
+directional strict400最终为`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`。相对old134严格配对为
+`113 retained/18 gained/21 lost`，相对NPCG135为`114/17/21`；Object3净退6，Long1仍以18次换手换来净增2。
+因此hard E在当前blind-credit组合中也没有absolute或retention价值。连续guard路线从PICK-GC138、SKNC137、
+NPCG135到CVEG131，在Program/negative/rank/energy均健康时持续走低，说明最早可行动失效接口已不再是constraint
+composition，而是shared credit acquisition本身；后继不能继续给single-video blind cotangent加硬保护。

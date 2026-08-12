@@ -38,8 +38,10 @@ monitor后的retry完成macro1/2，却在macro3 sealed feasible-set gate主动�
 rollout从candidate gain翻成candidate loss，令current harmful guard不同，Program轨迹随即分叉并完成5宏。
 诊断五宏bank=`10/14/16/16/16`、energy=`.354/.375/.287/.274/.498`，K2 candidate净值依次
 `-3/-1/-3/-3/0`，全部E/negative/guard closure仍通过。这否决当前`binary K2 -> current hard equality guard`
-作为稳定共同积累机制，不否定跨视频E或negative-preserving correction。诊断macro5仍做一次directional
-strict400以判断CVEG的absolute闭环价值，但无论高低都不能把该执行当作可重复formal winner或resume起点。
+作为稳定共同积累机制。诊断macro5随后完成唯一directional strict400：`131/400`、breadth6、per-task=
+`1/2/47/30/0/35/16/0`、per-suite=`3/77/35/16`。相对old134严格配对为`113 retained/18 gained/21 lost`，
+相对NPCG135为`114/17/21`；Object3相对NPCG净`-6`，Long1虽净`+2`却有`10 gained/8 lost`。因此当前hard E
+组合也没有absolute或retention价值，不能原样继承；CVEG不resume、不补controls。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。
@@ -72,7 +74,7 @@ Negative-Preserving successor不把完整update硬压进`Null([G;N])`，而只�
 policy-effective support。完整retired authority见
 `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`；WQ sealed边界见
 `docs/action_forecast_writer_work_queue_candidate_guard_design.md`。
-当前CVEG的完整单变量公式、采样合同、机制门与训练稳定性裁决见
+退役CVEG的完整公式、采样合同、稳定性与directional strict裁决见
 `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
 ## 2. Fixed information contract

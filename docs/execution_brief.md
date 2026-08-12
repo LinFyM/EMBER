@@ -89,7 +89,9 @@ macro0 profile为`11/12` checks通过但总门non-pass：rank`48/96`、24/24双v
 `[causal, goal*causal]`，保留PVJFC continuous paired credit与full96合同。clean`623505b`唯一profile把
 condition降到`270.188`、negative ratio降到`.02457`且三类各16/16，但12项门仍只有condition失败；rank、
 24/24双view descent、全链路和`50.032s` wall均健康。两者均无checkpoint或closed-loop成绩，formal、重跑与
-小扫关闭。当前没有active successor；下一GPU动作必须先有针对剩余shared spectral mode的新单变量authority。
+小扫关闭。active successor是MGCI-JC：只用goal magnitude调制CGIK的独立raw-causal块，保留signed
+interaction及全部paired-credit合同；完整公式与一次性门见
+`docs/action_forecast_writer_magnitude_gated_causal_interaction_key_design.md`。
 
 ## 2. Fixed information contract
 

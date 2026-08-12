@@ -53,7 +53,8 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - PVJFC与其单变量后继CGIK-JC都在唯一macro0机制profile因condition门终局non-pass。CGIK把condition
   `597.861→270.188`、negative ratio`.07266→.02457`，三类negative均16/16；rank`48/96`、24/24双view
   descent、全链路与`50.032s` wall健康，但仍未过`<=200`。无checkpoint或closed-loop成绩，formal、重跑和
-  小扫关闭；当前没有active successor。
+  小扫关闭。active successor是MGCI-JC：只把独立raw-causal块改为goal-magnitude-gated causal，signed
+  interaction不变；当前仅design-authorized。
 
 最新uniform pivot-rank14路线已终局否决：
 

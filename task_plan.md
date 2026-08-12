@@ -194,8 +194,11 @@
 - [x] 原位实现fresh-incompatible CGIK-JC并在clean pushed`623505b`上完成完整CPU`335 passed`及唯一world6
   full96 profile：11/12门通过，condition=`270.188>200`；negative`.02457`、三类16/16、24/24双view、全链路
   与`50.032s`健康，但按门终局non-pass、无checkpoint，formal/重跑/小扫关闭。
-- [ ] 分解CGIK剩余full96 shared spectral mode，选择一个未被历史否决的单变量successor并先写design authority；
-  当前不得启动GPU。
+- [x] 分解CGIK剩余谱：reverse16已令condition`163.88→213.68`，独立raw causal块自身`322.87→679.39`，
+  signed interaction块明显更健康；由此选择MGCI-JC，只把第一块改成`abs(goal)*causal`。
+- [x] 写MGCI-JC单变量design authority；cache预验correct48=`108.81`、correct+reverse16=`130.78`，same-task
+  cosine`.806/.848`。只授权实现、CPU门和一次raw full96 profile。
+- [ ] 原位实现fresh-incompatible MGCI-JC，完成完整CPU与唯一full96机制profile；不得小扫。
 
 ## Repository closeout
 

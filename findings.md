@@ -414,3 +414,9 @@ Program→LoRA→BA→action链与`50.032s` wall通过；但condition仅降到`2
 checkpoint。它证明causal-goal interaction确实打破了大部分correct/reverse共线与negative leakage，却没有清除
 full96剩余shared mode。该结果只淘汰当前`[causal, goal*causal]`固定key×full96 ridge，不否定interaction或paired
 continuous credit；也不授权调damping、门、block weight、seed、width、view数、rank、scale或dtype。
+
+剩余谱分块把最早接口进一步定位：CGIK独立raw-causal块correct48 condition=`322.87`，加16条reversed后
+`679.39`，reverse约98%能量落入correct causal span；signed interaction块对应`106.24→201.58`。因此MGCI-JC
+只把第一块改成`abs(goal)*causal`，第二块仍为`goal*causal`。同一cache预验correct48=`108.81`、
+correct+reverse16=`130.78`、same-task cosine mean/median=`.806/.848`。这不是新时序阶数或whitening，只是移除
+已定位的独立raw-causal公共地址；只有一次真实full96 profile能授权formal。

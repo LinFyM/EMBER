@@ -55,8 +55,10 @@
   它把PVJFC condition从`597.861`降到`270.188`，negative ratio从`.07266`降到`.02457`，三类negative均
   `16/16`；rank`48/96`、24/24双view与四suite descent、Program/LoRA/BA/action、wall`50.032s`全部通过。
   唯一false仍是`regularized_condition<=200`，故总门non-pass、无checkpoint，formal/deployment/重跑/小扫关闭。
-- 当前没有active successor。下一design必须针对CGIK仍残留的full96 shared spectral mode，不能调damping、门、
-  block weight、projection seed/width、view数、rank、scale或dtype，也不能恢复hard E、whitening或point guard。
+- active successor是MGCI-JC：只把CGIK第一块从`u_c`改成`abs(u_g)*u_c`，第二块`u_g*u_c`不变。cache对同一
+  selected correct48给出condition=`108.81`、correct+reverse16=`130.78`，same-task cosine mean/median仍
+  `.806/.848`。它当前只授权实现、CPU门和一次同合同raw full96 profile；不得调damping、门、block weight、
+  projection seed/width、view数、rank、scale或dtype。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

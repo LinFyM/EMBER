@@ -196,6 +196,39 @@ WRITER_FAMILIES = {
         },
         "formal_statuses": ("sealed_from_live_a40_rank_reserved_deployment_profile",),
     },
+    "dynamic_k_backbone_memory_rank8_v1": {
+        "adapter_schema": (
+            "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1"
+        ),
+        "episode_schema": (
+            "ember_pi05_dynamic_k_backbone_memory_rank8_episode_v1"
+        ),
+        "config_schema": (
+            "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"
+        ),
+        "writer_kind": "dynamic_k_backbone_memory_writer",
+        "arm_prefix": "dynamic_k_backbone_memory_rank8_",
+        "trained_checkpoint_kind": "dynamic_k_writer_macro_checkpoint",
+        "formal_statuses": ("sealed",),
+        "lora_rank": 8,
+        "lora_target_count": 38,
+        "videos_per_condition": 1,
+        "writer_input": (
+            "exact task language plus one action-hidden teacher video through "
+            "the dynamic-K graph"
+        ),
+        "episode_validator": "dynamic_k",
+        "checkpoint_curve_allowed_macros": (
+            50,
+            100,
+            150,
+            200,
+            250,
+            300,
+            350,
+            400,
+        ),
+    },
 }
 
 PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(

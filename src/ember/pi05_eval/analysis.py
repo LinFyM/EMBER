@@ -38,8 +38,8 @@ from ember.pi05_eval.writer_family_registry import (
 from ember.pi05_target_data import SUITE_ORDER
 
 
-CHECKPOINT_CURVE_SCHEMA = "ember_pi05_v6_writer_checkpoint_curve_analysis_v2"
-SIX_ARM_AUDIT_SCHEMA = "ember_pi05_v6_writer_six_arm_paired_analysis_v2"
+CHECKPOINT_CURVE_SCHEMA = "ember_pi05_writer_checkpoint_curve_analysis_v3"
+SIX_ARM_AUDIT_SCHEMA = "ember_pi05_writer_six_arm_paired_analysis_v3"
 SIX_ARM_CONDITIONS = (
     "correct",
     "same_task_other",
@@ -57,7 +57,7 @@ def _fail(message: str) -> None:
     raise Pi05EvaluationError(message)
 
 
-def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, str]]:
+def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, Any]]:
     for name, family in WRITER_FAMILIES.items():
         if (
             adapter.get("schema_version") == family["adapter_schema"]
@@ -77,7 +77,6 @@ def _formal_adapter(
     schedule = adapter.get("video_schedule", {})
     wall = adapter.get("information_wall", {})
     expected_wall = {
-        "writer_input": "exact task language plus one action-hidden teacher video",
         "video_is_only_dynamic_value": True,
         "teacher_action_reads": 0,
         "teacher_state_reads": 0,
@@ -86,11 +85,15 @@ def _formal_adapter(
         "language_only_lora_path": False,
         "deployment_expert_bank_read": False,
     }
+    expected_writer_input = family.get(
+        "writer_input", "exact task language plus one action-hidden teacher video"
+    )
     if (
         result.get("schema_version") != AGGREGATE_SCHEMA
         or result.get("mode") != "formal"
         or result.get("role") != "validation"
-        or adapter.get("kind") != EXPERT_MANIFOLD_WRITER_KIND
+        or adapter.get("kind")
+        != family.get("writer_kind", EXPERT_MANIFOLD_WRITER_KIND)
         or condition not in SIX_ARM_CONDITIONS
         or result.get("arm") != f"{family['arm_prefix']}{condition}"
         or paired.get("mode") != "formal"
@@ -99,12 +102,16 @@ def _formal_adapter(
         or int(schedule.get("seed", -1)) != 7
         or int(schedule.get("demo_count", -1)) != 50
         or schedule.get("sampling_mode") != "without_replacement"
-        or int(schedule.get("videos_per_condition", -1)) != 1
+        or int(schedule.get("videos_per_condition", -1))
+        != int(family.get("videos_per_condition", 1))
         or schedule.get("paired_between_all_video_conditions") is not True
         or schedule.get("queue_order_independent") is not True
         or any(wall.get(key) != value for key, value in expected_wall.items())
-        or adapter.get("lora_contract", {}).get("rank") != 16
-        or adapter.get("lora_contract", {}).get("target_count") != 38
+        or wall.get("writer_input") != expected_writer_input
+        or adapter.get("lora_contract", {}).get("rank")
+        != int(family.get("lora_rank", 16))
+        or adapter.get("lora_contract", {}).get("target_count")
+        != int(family.get("lora_target_count", 38))
         or adapter.get("evaluation_authority", {}).get("formal_status")
         not in family["formal_statuses"]
         or paired.get("git", {}).get("dirty_paths") != []
@@ -201,6 +208,16 @@ def _validate_episode_evidence(
     writer = row.get("writer", {})
     condition = str(adapter["video_condition"])
     family_name, family = _writer_family(adapter)
+    if family.get("episode_validator") == "dynamic_k":
+        if not _validate_dynamic_k_episode_evidence(
+            adapter,
+            writer,
+            suite=str(row["suite"]),
+            task_id=int(row["task_id"]),
+            init_state_id=int(row["init_state_id"]),
+        ):
+            _fail("Writer episode evidence violates its paired video condition")
+        return
     references = list(writer.get("teacher_reference_demo_indices", []))
     selected = list(writer.get("teacher_demo_indices", []))
     same = condition == "same_task_other"
@@ -264,6 +281,27 @@ def _validate_episode_evidence(
     )
     if not valid:
         _fail("Writer episode evidence violates its paired video condition")
+
+
+def _validate_dynamic_k_episode_evidence(
+    adapter: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    *,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+) -> bool:
+    """Delegate Dynamic-K evidence ownership to its deployment adapter."""
+
+    from ember.writer.evaluation import validate_dynamic_k_episode_evidence
+
+    return validate_dynamic_k_episode_evidence(
+        adapter,
+        evidence,
+        suite=suite,
+        task_id=task_id,
+        init_state_id=init_state_id,
+    )
 
 
 def _scientific_projection(
@@ -446,7 +484,10 @@ def checkpoint_curve_analysis(
         macro = _method_macro(
             result,
             allowed_macros=tuple(
-                family.get("checkpoint_curve_macros", CHECKPOINT_MACROS)
+                family.get(
+                    "checkpoint_curve_allowed_macros",
+                    family.get("checkpoint_curve_macros", CHECKPOINT_MACROS),
+                )
             ),
         )
         if macro in by_macro:
@@ -456,19 +497,35 @@ def checkpoint_curve_analysis(
         _fail("checkpoint curve cannot mix legacy and current method families")
     method_family = next(iter(observed_families))
     family = WRITER_FAMILIES[method_family]
-    expected_macros = tuple(
-        family.get("checkpoint_curve_macros", CHECKPOINT_MACROS)
-    )
-    if not expected_macros or expected_macros[0] != 0:
-        _fail("checkpoint curve family has an invalid macro authority")
-    if tuple(sorted(by_macro)) != expected_macros:
-        _fail(
-            "checkpoint curve requires exactly its family-sealed method macros"
+    if "checkpoint_curve_allowed_macros" not in family:
+        expected_macros = tuple(
+            family.get("checkpoint_curve_macros", CHECKPOINT_MACROS)
         )
+        if tuple(sorted(by_macro)) != expected_macros:
+            _fail(
+                "checkpoint curve requires exactly its family-sealed method macros"
+            )
+    else:
+        allowed_macros = tuple(
+            family.get("checkpoint_curve_allowed_macros", CHECKPOINT_MACROS)
+        )
+        observed_macros = tuple(sorted(by_macro))
+        if (
+            not observed_macros
+            or observed_macros != allowed_macros[: len(observed_macros)]
+        ):
+            _fail(
+                "checkpoint curve requires a non-empty prefix of its "
+                "family-sealed method macros"
+            )
+        expected_macros = observed_macros
+    if not expected_macros:
+        _fail("checkpoint curve family has an invalid macro authority")
+    reference_macro = expected_macros[0]
     reference_projection = _scientific_projection(
-        by_macro[0][1], allow_checkpoint_change=True
+        by_macro[reference_macro][1], allow_checkpoint_change=True
     )
-    reference_rows = by_macro[0][2]
+    reference_rows = by_macro[reference_macro][2]
     for macro in expected_macros[1:]:
         if (
             _scientific_projection(by_macro[macro][1], allow_checkpoint_change=True)
@@ -489,9 +546,9 @@ def checkpoint_curve_analysis(
     }
     comparisons = list(zip(expected_macros, expected_macros[1:]))
     comparisons.extend(
-        (0, macro)
+        (reference_macro, macro)
         for macro in expected_macros[2:]
-        if (0, macro) not in comparisons
+        if (reference_macro, macro) not in comparisons
     )
     return {
         "schema_version": CHECKPOINT_CURVE_SCHEMA,

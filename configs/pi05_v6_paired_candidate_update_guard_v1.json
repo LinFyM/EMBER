@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "active_formal_ready",
   "method": {
     "name": "frozen_v6_negative_preserving_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -280,7 +280,7 @@
     "regularized_condition_number_max": 150
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "sealed_from_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [
       3,
       4,
@@ -338,10 +338,28 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_npcg_constraint_precision_reprofile_macro0_r3_b20_4156012_20260812/mechanism_profile.json",
+      "schema_version": "ember_pi05_v6_negative_preserving_candidate_guard_profile_v1",
+      "source_commit": "4156012d6f2b30e57e3c5c199e36ed629f5e5582",
+      "passed": true,
+      "checks_passed": 20,
+      "phase_a_seconds": 44.34676417708397,
+      "step_seconds": 554.9925514289644,
+      "production_wall_ratio_to_matched_sknc": 1.15955122698873,
+      "protected_to_unprotected_program_motion_ratio": 5.750829627462502e-08,
+      "negative_to_unprotected_program_motion_ratio": 0.0352438739171953,
+      "negative_null_per_kind": {
+        "wrong": 8,
+        "shuffled": 8,
+        "reversed": 8
+      },
+      "projected_feature_rank": 33,
+      "projected_to_blind_energy_ratio": 0.3536011576652527
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "ready_after_live_profile_seal",
     "allowed_world_sizes": [
       3,
       4,
@@ -377,7 +395,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "awaiting_live_npcg_deployment_smoke",
+    "formal_status": "sealed_from_live_npcg_deployment_smoke",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
@@ -387,6 +405,22 @@
       32
     ],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": null
+    "online_smoke_evidence": {
+      "path": "runs/outputs/pi05_npcg_writer_profile_val8x4_correct_gpu02p3_4156012_20260812/writer_generation_profile.json",
+      "schema_version": "ember_pi05_writer_generation_profile_v2",
+      "source_commit": "4156012d6f2b30e57e3c5c199e36ed629f5e5582",
+      "profiled_writer_model_batch_sizes": [
+        8,
+        16,
+        32
+      ],
+      "selected_writer_model_batch_size": 32,
+      "longest_sampled_video_frames": 67,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "batch32_loras_per_second": 0.47144172720510946,
+      "batch32_peak_allocated_bytes": 11837472256,
+      "batch32_memory_headroom_bytes": 34768683008
+    }
   }
 }

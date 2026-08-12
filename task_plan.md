@@ -149,7 +149,12 @@
   根因是solver TF32与实际constraint full-FP32语义错配，属于公式实现工程违约，root保留且无checkpoint。
 - [x] 只把约束matmul统一为full FP32并固定一次residual refinement；架构、数据、门限、dtype、world size与
   forward数不变，针对测试34 passed、加载assets后的完整CPU`345 passed`。
-- [ ] clean push后按同一world3科学合同reprofile。若任一门仍失败即退役，不做参数/world-size sweep。
+- [x] clean pushed`4156012`同world3 reprofile 20/20全过：protected ratio`5.7508e-8`、negative ratio`.03524`、
+  三类各`8/8`、rank33、energy`.35360`，total=`554.99255s / 1.15955x`；无checkpoint。
+- [x] 同commit单卡部署B8/16/32均覆盖67-frame longest video且0 OOM/nonfinite，LoRA/s=
+  `.46856/.47052/.47144`，按规则选择B32；profile/deployment evidence已写入canonical config。
+- [ ] clean push formal-ready seal后按live合适A40 fresh`0→5`，随后立即single-checkpoint strict paired400；
+  macro5任一预注册门失败即停止，不resume或补controls。
 
 ## Repository closeout
 

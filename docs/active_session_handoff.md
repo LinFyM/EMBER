@@ -463,4 +463,6 @@ roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config�
 non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG也已因negative-null机制门封存。
 Negative-Preserving Candidate Guard首个clean world3完整profile已通过negative preservation与其余18项门，
 唯一因solver TF32和实际Program full-FP32 read错配未过closure；canonical数值窄修与完整CPU`345 passed`已完成
-并等待同合同reprofile。NPCG仍是唯一active successor；旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+后，clean pushed`4156012` matched reprofile 20/20全过，negative ratio`.03524`、三类各`8/8`、protected ratio
+`5.7508e-8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定并选择B32；config已封存两份evidence并打开
+formal fresh`0→5`。NPCG仍是唯一active successor；旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。

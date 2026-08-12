@@ -305,3 +305,9 @@ no-guard identity和duplicate-row不变性；profile把negative preservation设�
 绝对残差只有`3.43e-10`。实现中constraint right-hand side与correction沿用了全局TF32，而真实Program read为了
 equality诊断显式关闭TF32；两种数值语义错配直接解释该残差。因此首个run是工程合同违约，不淘汰NPCG科学假设；
 唯一允许窄修是full-FP32 constraint matmul加一次固定residual refinement，不改门限或其它科学变量。
+
+窄修后的matched reprofile给出完整机制pass，而不是通过改门：protected Program ratio降到`5.7508e-8`，final
+negative ratio保持`.03524`且三类各`8/8`，paired outcomes逐项不变；rank33、energy`.35360`与全部LoRA/BA/action
+证据仍健康，总耗时`554.99255s / 1.15955x`。这确认NPCG同时保留correct reward guard与blind negative suppression，
+并把最早失效接口推进到真实多macro闭环积累。B8/16/32部署均稳定且B32以`.47144 LoRA/s`略胜；该差异只用于
+吞吐选择，不构成科学性能证据。下一次有信息量的裁决是formal fresh macro5后的strict paired400。

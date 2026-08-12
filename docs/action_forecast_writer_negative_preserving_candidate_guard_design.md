@@ -1,9 +1,8 @@
 # Negative-Preserving Candidate Guard
 
-状态：2026-08-12 首个clean world3 live profile已执行完整科学面板，negative preservation与其余18项机制门
-通过，唯一失败是TF32 solver与full-FP32 Program constraint read不一致造成的`guard_program_closure`工程违约。
-canonical solver已统一full-FP32约束语义并做一次固定residual refinement，完整CPU`345 passed`；等待同合同
-reprofile。本设计仍是唯一active successor，没有保留WQ-PCUG并行可执行版本。
+状态：2026-08-12 matched world3 reprofile的20项机制门全部通过；随后同commit部署B8/16/32均稳定并按真实
+LoRA/s选择B32。canonical config已封存profile/deployment evidence并打开formal fresh`0→5`。本设计仍是唯一
+active successor，没有保留WQ-PCUG并行可执行版本。
 
 首个NPCG profile来自clean pushed `ef0008d`、gpu02物理3/4/5 world3：Phase A=`44.67883s`、total=
 `554.57395s / 1.15868x SKNC`，paired outcomes与WQ-PCUG完全一致。final negative ratio=`.03524`，三类各
@@ -11,6 +10,12 @@ reprofile。本设计仍是唯一active successor，没有保留WQ-PCUG并行可
 effective BA与fixed-action closure均通过。唯一失败的protected Program ratio=`1.5831e-4>1e-5`，绝对残差
 `3.43e-10`。代码检查定位到right-hand side与correction的FP32 matmul允许TF32，而真实constraint read显式关闭
 TF32；这是同一公式的数值实现不一致，不是放宽门或科学sweep，首个root保留且无checkpoint。
+
+full-FP32窄修后的clean pushed `4156012` matched reprofile保持paired outcomes完全不变，20/20 checks全过：
+Phase A=`44.34676s`、total=`554.99255s / 1.15955x SKNC`；protected Program ratio降到`5.7508e-8`，
+negative ratio=`.03524`且wrong/shuffled/reversed各`8/8`，rank33、energy`.35360`及LoRA/effective BA/action
+closure全部健康。B8/16/32部署profile均包含67-frame longest video、0 OOM/nonfinite，LoRA/s分别为
+`.46856/.47052/.47144`，选择B32；这只证明机制与部署吞吐，尚不证明closed-loop提升。
 
 ## 1. Latest evidence and earliest failure
 
@@ -149,7 +154,7 @@ pair count，不通过降低negative门或projected-rank门救结果。
 
 ## 8. Deployment and formal decision
 
-profile全过后才跑B8/16/32 deployment profile；随后fresh `0->5`并立即strict paired correct400。继续`5->10`
+profile与B8/16/32 deployment已全过并选择B32；下一步fresh `0->5`并立即strict paired correct400。继续`5->10`
 仍要求macro5 correct>=142、breadth>=6、相对immutable macro0 lost<=8且gained>lost、至少3 suites不降、最大
 单task净增不超过全部正净增`.5`，并且每macro两类closure、rank、energy和paired evidence不坍缩。
 

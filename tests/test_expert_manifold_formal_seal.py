@@ -29,15 +29,23 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 def test_npcg_is_active_and_work_queue_pcug_nonpass_remains_sealed() -> None:
     npcg = load_v6_prior_config(CONFIG)
-    assert npcg["status"] == "active_cpu_ready_awaiting_live_profile"
-    assert npcg["profile_run"]["artifact_evidence"] is None
-    assert npcg["formal_run"]["status"] == (
-        "blocked_until_live_profile_passes_and_is_sealed"
-    )
+    assert npcg["status"] == "active_formal_ready"
+    profile = npcg["profile_run"]["artifact_evidence"]
+    assert profile["passed"] is True
+    assert profile["checks_passed"] == 20
+    assert profile["negative_null_per_kind"] == {
+        "wrong": 8,
+        "shuffled": 8,
+        "reversed": 8,
+    }
+    assert npcg["formal_run"]["status"] == "ready_after_live_profile_seal"
     assert npcg["evaluation"]["formal_status"] == (
-        "awaiting_live_npcg_deployment_smoke"
+        "sealed_from_live_npcg_deployment_smoke"
     )
-    assert npcg["evaluation"]["online_smoke_evidence"] is None
+    smoke = npcg["evaluation"]["online_smoke_evidence"]
+    assert smoke["selected_writer_model_batch_size"] == 32
+    assert smoke["oom_count"] == 0
+    assert smoke["nonfinite_count"] == 0
 
     work_queue = read_json(
         REPO_ROOT

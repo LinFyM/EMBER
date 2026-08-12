@@ -29,8 +29,9 @@ first-stable bank和native rank16 compiler，只把final correction限制在curr
 `N(D1-D0)=0`与correct guard `G D1=0`同时成立。首个clean world3完整profile把final negative ratio降至
 `.03524`且三类各`8/8`，paired outcomes、rank33、energy`.35360`、LoRA/effective BA/action及其余机制门均通过；
 唯一`guard_program_closure=1.5831e-4>1e-5`。根因是solver允许TF32而真实Program constraint read关闭TF32，
-不是科学门失败。canonical solver已统一full-FP32约束语义并固定一次residual refinement，完整CPU`345 passed`，
-等待同合同reprofile。
+不是科学门失败。canonical solver统一full-FP32约束语义后matched reprofile 20/20全过：protected ratio
+`5.7508e-8`、negative ratio`.03524`、三类各`8/8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定、
+0 OOM/nonfinite并选择B32；profile与deployment evidence已封存，formal fresh`0→5`开放。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

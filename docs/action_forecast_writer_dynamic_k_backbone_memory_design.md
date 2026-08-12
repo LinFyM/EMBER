@@ -50,7 +50,9 @@ memory或rank8必然解决task drift；paired400仍是裁决。
 
 - exact task language；
 - 每个condition的`K∈{1,2,3,4}`条同task RGB teacher videos；
-- 每条video按stride5采样并保留末帧及真实sampled-frame ordinal。
+- 每条video先按stride5建立有序候选并保留末帧及真实sampled-frame ordinal；进入昂贵joint backbone前，
+  每个condition固定总预算64帧，按`floor(64/K)`给每条video相同cap，并以包含首尾的确定性均匀索引取帧。
+  这保留真实ordinal、视频内方向与跨video置换等变性，同时使K1--K4计算有明确上界。
 
 不得读取teacher action、proprio/state、reward、terminal、task ID、filename、object pose、hidden
 normalization或rollout outcome。AS训练中的actions只进入frozen source-policy functional loss；video与B20
@@ -140,7 +142,8 @@ U_k ∈ R^(18 × 8 × 256)
 - 所有dynamic values来自`D/G`，若video所有帧相同则精确为零；静态language或learned memory本身不能写LoRA；
 - language和层/rank identity可以进入Q/K address，不能作为V/content旁路；
 - shuffled/reversed必须先重排真实frames，再重算`D/G`和causal program；
-- stride5序列多长就处理多长，不人为发明16个“阶段token”。
+- 时间token仍是真实stride5 frame states而非学习出的“阶段token”；A40实测完整K-set可超过16分钟/宏并触发
+  NCCL heartbeat，因此joint backbone只处理上述固定预算内的真实帧，所有下游D/G仍使用其真实ordinal。
 
 这继承v6中task-grounded address、adjacent visual transition、真实frame ordinal和causal Procedure；不机械复制
 其separate text-only/VL前端，因为真实memory已经在联合backbone中进行task-conditioned视觉读取。
@@ -251,7 +254,7 @@ global_loss = equal mean over 24 tasks
 本轮减少same-task correction正交性的主要机制；task-complete等权与shared mapper负责让不同task在同一参数中
 学习。若表示一致而仍换手，才把最早接口推进到optimizer/functional credit。
 
-任意fresh world size 1--6：K和实际videos选定后，以`B20固定成本 + stride5总帧数`估task cost，在当次实际
+任意fresh world size 1--6：K和实际videos选定后，以`B20固定成本 + budget后总帧数`估task cost，在当次实际
 world上LPT分配，允许world5为`5/5/5/5/4`，rank内long-first。每task backward系数为`world_size/24`，DDP均值
 后严格得到24-task equal mean；rank内只在最后task同步。不padding/dummy task、不等待6卡。
 

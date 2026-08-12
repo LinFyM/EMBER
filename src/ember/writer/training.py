@@ -157,6 +157,9 @@ def _build_sampler(
             }
             for task_id, per_demo in video_data["sampled_frame_counts_by_task"].items()
         },
+        condition_frame_budget=int(
+            config["writer"]["backbone_total_frames_per_condition"]
+        ),
         assignment_strategy="cost_balanced_long_first_dynamic_uneven",
     )
     workers = num_workers

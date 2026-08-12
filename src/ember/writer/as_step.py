@@ -10,6 +10,7 @@ import torch
 import torch.distributed as dist
 
 from ember.writer.errors import WriterModelError
+from ember.writer.frame_budget import apply_condition_frame_budget
 from ember.writer.functional import (
     TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
     functional_lora_loss_gradient,
@@ -144,7 +145,11 @@ def _pack_condition(
     task_id: int,
     demos: Sequence[int],
 ) -> tuple[tuple[torch.Tensor, ...], dict[str, Any]]:
-    videos = [runtime.video_store.load(task_id, demo) for demo in demos]
+    available_videos = [runtime.video_store.load(task_id, demo) for demo in demos]
+    videos = apply_condition_frame_budget(
+        available_videos,
+        int(runtime.config["writer"]["backbone_total_frames_per_condition"]),
+    )
     frames = torch.cat([torch.from_numpy(video.frames) for video in videos]).to(
         runtime.context.device, non_blocking=True
     )
@@ -177,7 +182,13 @@ def _pack_condition(
     ), {
         "K": len(videos),
         "teacher_demo_indices": list(demos),
+        "available_stride5_frames": [
+            int(len(video.frame_indices)) for video in available_videos
+        ],
         "sampled_frames": [int(value) for value in counts.tolist()],
+        "total_available_stride5_frames": sum(
+            int(len(video.frame_indices)) for video in available_videos
+        ),
         "total_sampled_frames": int(counts.sum()),
     }
 

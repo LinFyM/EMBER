@@ -86,6 +86,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         != "libero_opengl_rotate_180_chw_uint8"
         or int(writer.get("frame_stride", 0)) != 5
         or writer.get("include_final_frame") is not True
+        or int(writer.get("backbone_total_frames_per_condition", 0)) != 64
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
         or int(writer.get("native_action_probe_tokens", 0)) != 50
         or int(writer.get("backbone_memory_tokens", 0)) != 8

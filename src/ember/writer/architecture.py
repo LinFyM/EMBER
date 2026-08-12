@@ -37,6 +37,7 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "generated_adapter": "complete_pi05_task_specific_rank8_lora",
     "input": "exact_task_language_plus_one_to_four_action_hidden_videos",
     "frame_stride": 5,
+    "backbone_total_frames_per_condition": 64,
     "native_action_probe_tokens": 50,
     "backbone_memory_tokens": 8,
     "backbone_layers": 18,

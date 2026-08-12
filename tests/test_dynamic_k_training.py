@@ -304,6 +304,7 @@ def test_ragged_offsets_remain_cpu_long_while_frames_follow_device() -> None:
     runtime = SimpleNamespace(
         video_store=_Store(),
         context=SimpleNamespace(device=torch.device("cpu")),
+        config={"writer": {"backbone_total_frames_per_condition": 64}},
         language_tokens={
             7: (
                 torch.ones((1, 3), dtype=torch.long),

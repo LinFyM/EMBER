@@ -142,6 +142,7 @@ class MixedTaskBatchSampler:
         optimizer_updates_per_task_cycle: int = 1,
         video_schedule: TeacherVideoSchedule,
         task_video_costs: Mapping[int, Mapping[int, int]],
+        condition_frame_budget: int | None = None,
         assignment_strategy: str = "cost_balanced_long_first",
     ) -> None:
         dynamic_task_assignment = (
@@ -185,6 +186,9 @@ class MixedTaskBatchSampler:
         self.episodes_per_task = episodes_per_task
         self.episode_rows = episode_rows
         self.video_schedule = video_schedule
+        if condition_frame_budget is not None and condition_frame_budget < 1:
+            raise WriterModelError("condition frame budget must be positive")
+        self.condition_frame_budget = condition_frame_budget
         self.task_video_costs = _task_complete_video_costs(
             task_ids=self.task_ids,
             episode_rows=episode_rows,
@@ -237,22 +241,31 @@ class MixedTaskBatchSampler:
     def _cost_order_for_task_cycle(
         self, task_cycle: int
     ) -> tuple[dict[int, int], dict[int, int], tuple[int, ...]]:
-        current_costs = {
-            task_id: (
+        current_costs = {}
+        for task_id in self.task_ids:
+            demos = self.video_schedule.training_demos_for_task_visit(
+                task_id,
+                task_cycle,
+                excluded=self.action_demo_indices_for_task_visit(
+                    task_id, task_cycle
+                ),
+            )
+            per_video_cap = (
+                self.condition_frame_budget // len(demos)
+                if self.condition_frame_budget is not None
+                else None
+            )
+            if per_video_cap is not None and per_video_cap <= 0:
+                raise WriterModelError("condition frame budget cannot cover its videos")
+            video_cost = sum(
+                min(self.task_video_costs[task_id][demo], per_video_cap)
+                if per_video_cap is not None
+                else self.task_video_costs[task_id][demo]
+                for demo in demos
+            )
+            current_costs[task_id] = (
                 self.per_rank_batch_size if self.dynamic_task_assignment else 0
-            )
-            + sum(
-                self.task_video_costs[task_id][demo]
-                for demo in self.video_schedule.training_demos_for_task_visit(
-                    task_id,
-                    task_cycle,
-                    excluded=self.action_demo_indices_for_task_visit(
-                        task_id, task_cycle
-                    ),
-                )
-            )
-            for task_id in self.task_ids
-        }
+            ) + video_cost
         tie_order = np.random.default_rng(
             np.random.SeedSequence(
                 [self.seed, task_cycle, self._GROUP_SEED_TAG]

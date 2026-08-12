@@ -47,7 +47,7 @@ def test_policy_innovation_feature_is_zero_preserving_and_reads_real_order() -> 
         assert encoder(innovation).dtype == torch.float32
 
 
-def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
+def test_causal_goal_interaction_encodes_terminal_role_and_internal_order() -> None:
     encoder = PolicyInnovationGoalCausalConditionFeature(
         innovation_width=3,
         feature_width=6,
@@ -68,10 +68,12 @@ def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
     centered = innovations - whole[:, None]
     scale = torch.arange(1, 5, dtype=torch.float32).sqrt()
     causal = (centered.cumsum(dim=1) / scale[None, :, None]).mean(dim=1)
-    expected = torch.cat(
-        (torch.nn.functional.normalize(goal), torch.nn.functional.normalize(causal)),
-        dim=1,
-    ) / 2**0.5
+    goal_block = torch.nn.functional.normalize(goal)
+    causal_block = torch.nn.functional.normalize(causal)
+    interaction = torch.nn.functional.normalize(goal_block * causal_block)
+    expected = torch.nn.functional.normalize(
+        torch.cat((causal_block, interaction), dim=1)
+    )
     torch.testing.assert_close(natural, expected, rtol=1e-6, atol=1e-6)
 
     reversed_feature = encoder(innovations.flip(1))
@@ -80,15 +82,47 @@ def test_goal_causal_blocks_encode_terminal_role_and_internal_order() -> None:
     reverse_causal = (
         reverse_centered.cumsum(dim=1) / scale[None, :, None]
     ).mean(dim=1)
-    reverse_expected = torch.cat(
-        (
-            torch.nn.functional.normalize(reverse_goal),
-            torch.nn.functional.normalize(reverse_causal),
-        ),
-        dim=1,
-    ) / 2**0.5
+    reverse_goal_block = torch.nn.functional.normalize(reverse_goal)
+    reverse_causal_block = torch.nn.functional.normalize(reverse_causal)
+    reverse_interaction = torch.nn.functional.normalize(
+        reverse_goal_block * reverse_causal_block
+    )
+    reverse_expected = torch.nn.functional.normalize(
+        torch.cat((reverse_causal_block, reverse_interaction), dim=1)
+    )
     torch.testing.assert_close(reversed_feature, reverse_expected, rtol=1e-6, atol=1e-6)
     assert not torch.equal(natural, reversed_feature)
+
+
+def test_causal_goal_interaction_separates_joint_sign_reversal() -> None:
+    encoder = PolicyInnovationGoalCausalConditionFeature(
+        innovation_width=2,
+        feature_width=4,
+        initialization_seed=19,
+    )
+    encoder.projection.copy_(torch.eye(2).repeat(2, 1, 1))
+    first = torch.tensor([1.0, 2.0])
+    second = torch.tensor([2.0, -1.0])
+    innovations = torch.stack((first, second, -second, -first))[None]
+    correct = encoder(innovations)
+    reversed_feature = encoder(innovations.flip(1))
+    torch.testing.assert_close(
+        (correct * reversed_feature).sum(dim=1),
+        torch.zeros(1),
+        rtol=0,
+        atol=1e-6,
+    )
+
+
+def test_causal_goal_interaction_requires_nonzero_causal_evidence() -> None:
+    encoder = PolicyInnovationGoalCausalConditionFeature(
+        innovation_width=2,
+        feature_width=4,
+        initialization_seed=23,
+    )
+    encoder.projection.copy_(torch.eye(2).repeat(2, 1, 1))
+    constant = torch.tensor([[[1.0, -2.0]]]).repeat(1, 4, 1)
+    assert torch.equal(encoder(constant), torch.zeros(1, 4))
 
 
 def _paired_video_solve(

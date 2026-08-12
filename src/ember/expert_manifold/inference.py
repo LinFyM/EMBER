@@ -23,6 +23,8 @@ from ember.expert_manifold.v6_prior import (
 )
 from ember.expert_manifold.v6_prior_checkpoint import (
     V6_PRIOR_CHECKPOINT_SCHEMA,
+    V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA,
+    V6_PRIOR_RNG_SCHEMA,
     inspect_v6_prior_checkpoint,
 )
 from ember.expert_manifold.v6_prior_contract import (
@@ -51,7 +53,7 @@ from ember.writer.architecture import V6_WRITER_PARAMETER_COUNT
 
 
 def load_expert_manifold_deployment_config(path: Path) -> dict[str, Any]:
-    """Load only the active PCUG deployment family; old configs stay evidence."""
+    """Load only the active CGIK-JC deployment family; old configs stay evidence."""
 
     return load_v6_prior_config(path)
 
@@ -429,14 +431,18 @@ def _residual_inspection(
         if not isinstance(memory, Mapping):
             raise TypeError("memory metadata")
         identity = {
+            "inspection_schema": inspection.get("schema_version"),
             "checkpoint_schema": inspection.get("checkpoint_schema"),
+            "rng_schema": inspection.get("rng", {}).get("schema_version"),
             "world_size": int(inspection.get("world_size", -1)),
             "metrics_rows": int(inspection.get("metrics_rows", -1)),
             "content_hash_policy": inspection.get("content_hash_policy"),
             "payload_value_validation": inspection.get("payload_value_validation"),
         }
         expected_identity = {
+            "inspection_schema": V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA,
             "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
+            "rng_schema": V6_PRIOR_RNG_SCHEMA,
             "world_size": expected_world_size,
             "metrics_rows": macro,
             "content_hash_policy": "disabled_by_owner",
@@ -567,12 +573,20 @@ def _evaluation_writer_asset(
     if video_condition not in VIDEO_CONDITIONS:
         raise ExpertManifoldError("unsupported Expert-Manifold video condition")
     status = str(config["evaluation"]["formal_status"])
+    if status in {
+        "blocked_until_live_cgik_full96_profile_passes",
+        "not_run_after_cgik_profile_nonpass",
+    }:
+        raise ExpertManifoldError(
+            "CGIK-JC deployment is blocked until its live profile passes"
+        )
     if require_formal and status not in {
         "sealed_from_live_pick_gc_deployment_profile",
         "sealed_from_live_residual_deployment_profile",
         "sealed_from_unchanged_v6_residual_deployment_graph",
         "sealed_from_live_sknc_deployment_smoke",
         "sealed_from_live_cveg_deployment_smoke",
+        "sealed_from_live_cgik_full96_profile",
     }:
         raise ExpertManifoldError(
             "formal residual evaluation requires its live deployment profile"
@@ -623,7 +637,7 @@ def inspect_expert_manifold_writer_evaluation(
     return {
         "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
         "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "arm": f"expert_manifold_v6_condition_residual_{video_condition}",
+        "arm": f"expert_manifold_v6_cgik_jc_{video_condition}",
         "execution_backend": (
             "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
         ),

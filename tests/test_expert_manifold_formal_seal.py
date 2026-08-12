@@ -8,11 +8,16 @@ import pytest
 
 from ember.expert_manifold.contract import ExpertManifoldError, load_task_expert_config
 from ember.expert_manifold.inference import (
+    _evaluation_writer_asset,
     _expected_residual_ownership,
     _trained_writer_asset,
     inspect_v6_prior_writer_asset,
 )
-from ember.expert_manifold.v6_prior_checkpoint import V6_PRIOR_CHECKPOINT_SCHEMA
+from ember.expert_manifold.v6_prior_checkpoint import (
+    V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA,
+    V6_PRIOR_CHECKPOINT_SCHEMA,
+    V6_PRIOR_RNG_SCHEMA,
+)
 from ember.expert_manifold.v6_prior_contract import (
     V6_PRIOR_CANONICAL_CONFIG,
     V6_PRIOR_CONFIG_SCHEMA,
@@ -29,16 +34,34 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 def test_pvjfc_profile_nonpass_and_cveg_candidate_guard_nonpass_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "profile_result_sealed_nonpass"
+    assert active["status"] == "active_cpu_ready_awaiting_live_profile"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
-        "frozen_v6_paired_video_joint_functional_credit"
+        "frozen_v6_causal_goal_interaction_key_joint_credit"
     )
     assert active["information_wall"]["training_outcome_rollouts"] == 0
     assert active["information_wall"]["training_reward_reads"] == 0
     assert active["update"]["view_weights"] == [0.5, 0.5]
-    assert active["profile_run"]["status"] == "profile_result_sealed_nonpass"
-    profile = active["profile_run"]["artifact_evidence"]
+    assert active["profile_run"]["status"] == (
+        "awaiting_live_a40_fresh0_to1_profile"
+    )
+    assert active["profile_run"]["artifact_evidence"] is None
+    assert active["formal_run"]["status"] == (
+        "blocked_until_live_profile_passes_and_is_sealed"
+    )
+    assert active["evaluation"]["formal_status"] == (
+        "blocked_until_live_cgik_full96_profile_passes"
+    )
+    assert active["evaluation"]["online_smoke_evidence"] is None
+
+    pvjfc = json.loads(
+        (
+            REPO_ROOT
+            / "configs/pi05_v6_paired_video_joint_functional_credit_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert pvjfc["status"] == "profile_result_sealed_nonpass"
+    profile = pvjfc["profile_run"]["artifact_evidence"]
     assert profile["passed"] is False
     assert profile["failed_checks"] == ["regularized_condition"]
     assert profile["positive_feature_rank"] == 48
@@ -46,7 +69,7 @@ def test_pvjfc_profile_nonpass_and_cveg_candidate_guard_nonpass_remain_sealed() 
     assert profile["regularized_condition"] > 200
     assert profile["both_view_descent_tasks"] == 24
     assert profile["formal_authorized"] is False
-    assert active["formal_run"]["status"] == "blocked_by_profile_nonpass"
+    assert pvjfc["formal_run"]["status"] == "blocked_by_profile_nonpass"
     cveg = json.loads(
         (REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json")
         .read_text(encoding="utf-8")
@@ -247,6 +270,20 @@ def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
         load_v6_prior_config(old)
 
 
+def test_cgik_preprofile_blocks_smoke_and_formal_evaluation() -> None:
+    config = load_v6_prior_config(CONFIG)
+    checkpoint = (REPO_ROOT / config["initialization"]["checkpoint"]).resolve()
+    for require_formal in (False, True):
+        with pytest.raises(ExpertManifoldError, match="blocked until its live profile"):
+            _evaluation_writer_asset(
+                config_path=CONFIG,
+                checkpoint=checkpoint,
+                source={},
+                video_condition="correct",
+                require_formal=require_formal,
+            )
+
+
 def test_task_expert_authority_remains_independent_of_retired_writer_paths(
     tmp_path: Path,
 ) -> None:
@@ -318,6 +355,7 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
         "content_hash_policy": "disabled_by_owner",
     }
     return {
+        "schema_version": V6_PRIOR_CHECKPOINT_INSPECTION_SCHEMA,
         "checkpoint_schema": V6_PRIOR_CHECKPOINT_SCHEMA,
         "next_macro": 10,
         "metrics_rows": 10,
@@ -332,6 +370,12 @@ def _synthetic_inspection(config: dict, source: dict, checkpoint: Path) -> dict:
             "shape": [256, 320, 256],
             "value_count": 20_971_520,
             "finite": None,
+        },
+        "rng": {
+            "schema_version": V6_PRIOR_RNG_SCHEMA,
+            "rank_count": 5,
+            "ranks": list(range(5)),
+            "device_types": [],
         },
         "payload_value_validation": "deployment_metadata_only",
         "content_hash_policy": "disabled_by_owner",
@@ -412,6 +456,17 @@ def test_trained_asset_accepts_only_formal_memory_owner_and_exact_cursor(
     monkeypatch.setattr(
         "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
         lambda _checkpoint, **_kwargs: invalid_cursor,
+    )
+    with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
+        _trained_writer_asset(config, checkpoint, source, require_formal=True)
+
+    invalid_inspection_schema = deepcopy(inspection)
+    invalid_inspection_schema["schema_version"] = (
+        "ember_pi05_v6_paired_video_joint_functional_credit_inspection_v1"
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.inference.inspect_v6_prior_checkpoint",
+        lambda _checkpoint, **_kwargs: invalid_inspection_schema,
     )
     with pytest.raises(ExpertManifoldError, match="residual checkpoint changed"):
         _trained_writer_asset(config, checkpoint, source, require_formal=True)

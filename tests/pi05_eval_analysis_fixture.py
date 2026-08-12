@@ -99,6 +99,19 @@ FAMILY_CONTRACTS = {
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
     },
+    "cgik": {
+        "adapter_schema": (
+            "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10"
+        ),
+        "episode_schema": (
+            "ember_pi05_v6_causal_goal_interaction_joint_credit_episode_v10"
+        ),
+        "config_schema": (
+            "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"
+        ),
+        "arm_prefix": "expert_manifold_v6_cgik_jc_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+    },
 }
 
 
@@ -166,7 +179,14 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
             "template_lora_storage": {"tensor_count": 76, "rank": 16},
         },
     }
-    if family in {"residual", "reconciliation", "reward", "osg", "sknc"}:
+    if family in {
+        "residual",
+        "reconciliation",
+        "reward",
+        "osg",
+        "sknc",
+        "cgik",
+    }:
         writer_asset.update(
             {
                 "program_residual_value_count": 20_971_520,
@@ -198,6 +218,8 @@ def _adapter(macro: int, condition: str, *, family: str = "ecp") -> dict:
         formal_status = "sealed_from_live_osg_pc_deployment_smoke"
     elif family == "sknc":
         formal_status = "sealed_from_live_sknc_deployment_smoke"
+    elif family == "cgik":
+        formal_status = "sealed_from_live_cgik_full96_profile"
     return {
         "schema_version": contract["adapter_schema"],
         "kind": "expert_manifold_writer",
@@ -252,7 +274,14 @@ def _rows(
     )
     residual_configs = {
         FAMILY_CONTRACTS[name]["config_schema"]
-        for name in ("residual", "reconciliation", "reward", "osg", "sknc")
+        for name in (
+            "residual",
+            "reconciliation",
+            "reward",
+            "osg",
+            "sknc",
+            "cgik",
+        )
     }
     rows = []
     for suite, task_id in TASKS:

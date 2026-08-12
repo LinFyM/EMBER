@@ -150,7 +150,9 @@ def test_checkpoint_rejects_wrong_schema_contract_extra_file_and_tensor(tmp_path
     manifest_path = checkpoint / "manifest.json"
     original = json.loads(manifest_path.read_text())
     manifest = dict(original)
-    manifest["schema_version"] = "old-cveg"
+    manifest["schema_version"] = (
+        "ember_pi05_v6_paired_video_joint_functional_credit_checkpoint_v1"
+    )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ExpertManifoldError, match="manifest"):
         inspect_v6_prior_checkpoint(

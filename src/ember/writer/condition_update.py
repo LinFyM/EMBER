@@ -55,7 +55,7 @@ class PairedVideoJointUpdateSummary:
 
 
 class PolicyInnovationGoalCausalConditionFeature(torch.nn.Module):
-    """Build one goal/causal key from phase-aligned frozen-policy innovations."""
+    """Build one causal/goal-interaction key from frozen-policy innovations."""
 
     BLOCK_COUNT = 2
 
@@ -159,7 +159,13 @@ class PolicyInnovationGoalCausalConditionFeature(torch.nn.Module):
             descriptors = torch.stack((goal, causal), dim=1)
             projected = torch.einsum("cbw,bhw->cbh", descriptors, self.projection)
             balanced = self._zero_preserving_normalize(projected)
-            features = self._zero_preserving_normalize(balanced.flatten(1))
+            goal_block, causal_block = balanced.unbind(dim=1)
+            interaction = self._zero_preserving_normalize(
+                goal_block * causal_block
+            )
+            features = self._zero_preserving_normalize(
+                torch.cat((causal_block, interaction), dim=1)
+            )
         if (
             features.shape != (innovations.shape[0], self.feature_width)
             or features.dtype != torch.float32

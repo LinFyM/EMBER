@@ -1,4 +1,4 @@
-"""Fail-closed scientific and launch contract for active PVJFC."""
+"""Fail-closed scientific and launch contract for active CGIK-JC."""
 
 from __future__ import annotations
 
@@ -17,23 +17,25 @@ from ember.writer.functional import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V6_PRIOR_CANONICAL_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_paired_video_joint_functional_credit_v1.json"
+    REPO_ROOT
+    / "configs/pi05_v6_causal_goal_interaction_key_joint_credit_v1.json"
 )
-V6_PRIOR_CONFIG_SCHEMA = "ember_pi05_v6_paired_video_joint_functional_credit_v1"
-V6_PRIOR_RUN_SCHEMA = "ember_pi05_v6_paired_video_joint_functional_credit_run_v1"
+V6_PRIOR_CONFIG_SCHEMA = (
+    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"
+)
+V6_PRIOR_RUN_SCHEMA = (
+    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_run_v1"
+)
 V6_PRIOR_PROFILE_SCHEMA = (
-    "ember_pi05_v6_paired_video_joint_functional_credit_profile_v1"
+    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_profile_v1"
 )
 V6_PRIOR_COMPLETION_SCHEMA = (
-    "ember_pi05_v6_paired_video_joint_functional_credit_completion_v1"
+    "ember_pi05_v6_causal_goal_interaction_key_joint_credit_completion_v1"
 )
 V6_PRIOR_MODES = ("mechanism-profile", "formal")
 _ACTIVE_AUTHORITY_REF = "origin/codex/bci-continuation"
-_PICK_GC_PROVENANCE_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_policy_innovation_goal_causal_key_v1.json"
-)
-_CVEG_PROVENANCE_CONFIG = (
-    REPO_ROOT / "configs/pi05_v6_paired_candidate_update_guard_v1.json"
+_PVJFC_PROVENANCE_CONFIG = (
+    REPO_ROOT / "configs/pi05_v6_paired_video_joint_functional_credit_v1.json"
 )
 
 _EXPECTED_TOP_LEVEL = {
@@ -55,14 +57,19 @@ _EXPECTED_TOP_LEVEL = {
     "formal_run",
     "evaluation",
 }
-_UNCHANGED_PICK_GC_SECTIONS = (
+_UNCHANGED_PVJFC_SECTIONS = (
     "authorities",
-    "writer",
-    "condition_feature",
+    "initialization",
+    "information_wall",
     "program_residual",
+    "update",
+    "data",
+    "objective",
+    "rng",
+    "optimization",
 )
 _EXPECTED_METHOD = {
-    "name": "frozen_v6_paired_video_joint_functional_credit",
+    "name": "frozen_v6_causal_goal_interaction_key_joint_credit",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
     "dynamic_value": "one_raw_teacher_video_only",
     "training_views_per_task": 2,
@@ -70,6 +77,55 @@ _EXPECTED_METHOD = {
     "language_only_lora_path": False,
     "deployment_expert_bank_read": False,
     "deployment_output": "one complete 38-target rank16 public LoRA",
+}
+_EXPECTED_WRITER_ARCHITECTURE = (
+    "frozen_pi05_v6_plus_policy_innovation_causal_goal_interaction_keyed_"
+    "program_residual_v1"
+)
+_EXPECTED_CONDITION_FEATURE = {
+    "kind": (
+        "frozen_source_policy_zero_image_subtracted_phase_aligned_causal_goal_"
+        "interaction_jl_v1"
+    ),
+    "input": (
+        "final_task_span_language_mean_plus_final_action_suffix_mean_actual_"
+        "frame_minus_matched_zero_image"
+    ),
+    "source_policy": (
+        "same_frozen_pi05_libero_policy_used_for_functional_loss_and_rollout"
+    ),
+    "baseline": "same_language_same_fixed_suffix_noise_zero_image",
+    "innovation_width": 3072,
+    "phase_slots": 16,
+    "phase_alignment": "linear_order_preserving_align_corners",
+    "goal_block": (
+        "terminal_quartile_mean_minus_whole_video_mean_policy_innovation"
+    ),
+    "causal_block": (
+        "sqrt_normalized_causal_prefix_mean_of_phase_centered_policy_innovation"
+    ),
+    "interaction_block": (
+        "zero_preserving_l2_of_fixed_jl_goal_times_fixed_jl_causal"
+    ),
+    "output_blocks": ["causal", "goal_causal_interaction"],
+    "goal_only_output_path": False,
+    "descriptor_width": 6144,
+    "feature_width": 256,
+    "projection_seed": 20260810,
+    "projection_shape": [2, 128, 3072],
+    "projection": "two_fixed_no_bias_row_normalized_fp32_nonpersistent_blocks",
+    "block_normalization": (
+        "goal_and_causal_independent_zero_preserving_l2_then_interaction_"
+        "zero_preserving_l2"
+    ),
+    "fusion": (
+        "concatenate_causal_plus_goal_causal_interaction_then_zero_preserving_l2"
+    ),
+    "ordered_negative_hot_path": (
+        "each_real_frame_encoded_once_then_hidden_reordered_before_phase_alignment"
+    ),
+    "formal_evaluator": "actual_reordered_frames_complete_lora_forward",
+    "learned_parameters": 0,
 }
 _EXPECTED_INITIALIZATION = {
     "kind": "strict_load_and_freeze_historical_v6_fast_macro400",
@@ -270,7 +326,6 @@ _EXPECTED_FORMAL_GATES = {
     "macro10_requires_macro5_gate": True,
 }
 _EXPECTED_EVALUATION_STATIC = {
-    "formal_status": "sealed_from_unchanged_v6_residual_deployment_graph",
     "maximum_world_size": 6,
     "device_selection": (
         "use_up_to_six_healthy_same_node_devices_with_sufficient_peak_memory_"
@@ -282,6 +337,9 @@ _EXPECTED_EVALUATION_STATIC = {
     "required_writer_model_batch_sizes": [8, 16, 32],
     "minimum_smoke_writer_model_batch_size": 8,
 }
+_EVALUATION_BLOCKED_STATUS = "blocked_until_live_cgik_full96_profile_passes"
+_EVALUATION_SEALED_STATUS = "sealed_from_live_cgik_full96_profile"
+_EVALUATION_NONPASS_STATUS = "not_run_after_cgik_profile_nonpass"
 _COHERENT_STATES = {
     (
         "active_cpu_ready_awaiting_live_profile",
@@ -310,9 +368,9 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
     try:
         path = (REPO_ROOT / str(config["authorities"][name]["path"])).resolve()
     except (KeyError, TypeError, ValueError) as error:
-        raise ExpertManifoldError(f"missing PVJFC Writer authority: {name}") from error
+        raise ExpertManifoldError(f"missing CGIK-JC Writer authority: {name}") from error
     if not path.is_file():
-        raise ExpertManifoldError(f"PVJFC Writer authority is missing: {name}")
+        raise ExpertManifoldError(f"CGIK-JC Writer authority is missing: {name}")
     return path
 
 
@@ -357,16 +415,48 @@ def git_commit_in_active_authority_lineage(commit: str) -> bool:
 
 def _provenance_sections_match(config: Mapping[str, Any]) -> bool:
     try:
-        pick_gc = json.loads(_PICK_GC_PROVENANCE_CONFIG.read_text(encoding="utf-8"))
-        cveg = json.loads(_CVEG_PROVENANCE_CONFIG.read_text(encoding="utf-8"))
+        pvjfc = json.loads(_PVJFC_PROVENANCE_CONFIG.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
-    return all(
-        config.get(name) == pick_gc.get(name)
-        for name in _UNCHANGED_PICK_GC_SECTIONS
-    ) and config.get("evaluation", {}).get("online_smoke_evidence") == cveg.get(
-        "evaluation", {}
-    ).get("online_smoke_evidence")
+    writer = dict(pvjfc.get("writer", {}))
+    writer["architecture"] = _EXPECTED_WRITER_ARCHITECTURE
+    condition = dict(pvjfc.get("condition_feature", {}))
+    condition.update(
+        {
+            "kind": _EXPECTED_CONDITION_FEATURE["kind"],
+            "interaction_block": _EXPECTED_CONDITION_FEATURE["interaction_block"],
+            "output_blocks": _EXPECTED_CONDITION_FEATURE["output_blocks"],
+            "goal_only_output_path": False,
+            "block_normalization": _EXPECTED_CONDITION_FEATURE[
+                "block_normalization"
+            ],
+            "fusion": _EXPECTED_CONDITION_FEATURE["fusion"],
+        }
+    )
+    return (
+        all(
+            config.get(name) == pvjfc.get(name)
+            for name in _UNCHANGED_PVJFC_SECTIONS
+        )
+        and config.get("writer") == writer
+        and config.get("condition_feature") == condition
+    )
+
+
+def _evaluation_lifecycle_matches(config: Mapping[str, Any]) -> bool:
+    evaluation = config.get("evaluation", {})
+    status = config.get("status")
+    formal_status = evaluation.get("formal_status")
+    evidence = evaluation.get("online_smoke_evidence")
+    if status == "active_cpu_ready_awaiting_live_profile":
+        return formal_status == _EVALUATION_BLOCKED_STATUS and evidence is None
+    if status in {"active_formal_ready", "formal_result_sealed"}:
+        return (
+            formal_status == _EVALUATION_SEALED_STATUS
+            and isinstance(evidence, Mapping)
+            and bool(evidence)
+        )
+    return formal_status == _EVALUATION_NONPASS_STATUS and evidence is None
 
 
 def _lifecycle_matches(config: Mapping[str, Any]) -> bool:
@@ -400,6 +490,9 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
         and config.get("method") == _EXPECTED_METHOD
         and config.get("initialization") == _EXPECTED_INITIALIZATION
         and config.get("information_wall") == _EXPECTED_INFORMATION_WALL
+        and config.get("writer", {}).get("architecture")
+        == _EXPECTED_WRITER_ARCHITECTURE
+        and config.get("condition_feature") == _EXPECTED_CONDITION_FEATURE
         and config.get("update") == _EXPECTED_UPDATE
         and config.get("data") == _EXPECTED_DATA
         and config.get("objective") == _EXPECTED_OBJECTIVE
@@ -424,6 +517,7 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
         and {name: formal.get(name) for name in _FORMAL_STATIC} == _FORMAL_STATIC
         and formal.get("decision_gates") == _EXPECTED_FORMAL_GATES
         and set(evaluation) == {
+            "formal_status",
             "online_smoke_evidence",
             *_EXPECTED_EVALUATION_STATIC,
         }
@@ -433,24 +527,27 @@ def _config_matches(config: Mapping[str, Any]) -> bool:
         == _EXPECTED_EVALUATION_STATIC
         and _provenance_sections_match(config)
         and _lifecycle_matches(config)
+        and _evaluation_lifecycle_matches(config)
     )
 
 
 def load_v6_prior_config(path: Path = V6_PRIOR_CANONICAL_CONFIG) -> dict[str, Any]:
     path = path.resolve()
     if path != V6_PRIOR_CANONICAL_CONFIG.resolve() or not path.is_file():
-        raise ExpertManifoldError("PVJFC Writer requires its canonical config path")
+        raise ExpertManifoldError("CGIK-JC Writer requires its canonical config path")
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ExpertManifoldError("invalid PVJFC Writer config") from error
+        raise ExpertManifoldError("invalid CGIK-JC Writer config") from error
     if not isinstance(config, dict) or not _config_matches(config):
-        raise ExpertManifoldError("PVJFC Writer config violates its fail-closed contract")
+        raise ExpertManifoldError(
+            "CGIK-JC Writer config violates its fail-closed contract"
+        )
     for name in config["authorities"]:
         authority_path(config, name)
     initialization = (REPO_ROOT / str(config["initialization"]["checkpoint"])).resolve()
     if not initialization.is_dir():
-        raise ExpertManifoldError("PVJFC historical v6 initialization is missing")
+        raise ExpertManifoldError("CGIK-JC historical v6 initialization is missing")
     return config
 
 
@@ -463,18 +560,18 @@ def runtime_for_mode(
             or config["profile_run"]["status"]
             != "awaiting_live_a40_fresh0_to1_profile"
         ):
-            raise ExpertManifoldError("PVJFC mechanism profile is not authorized")
+            raise ExpertManifoldError("CGIK-JC mechanism profile is not authorized")
         return 1, (), int(config["profile_run"]["schedule_macro"])
     if mode == "formal":
         if (
             config.get("status") != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("PVJFC formal training is blocked by live gates")
+            raise ExpertManifoldError("CGIK-JC formal training is blocked by live gates")
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),
             tuple(int(value) for value in formal["checkpoint_macros"]),
             0,
         )
-    raise ExpertManifoldError(f"unsupported PVJFC Writer mode: {mode}")
+    raise ExpertManifoldError(f"unsupported CGIK-JC Writer mode: {mode}")

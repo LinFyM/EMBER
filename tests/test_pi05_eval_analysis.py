@@ -164,6 +164,16 @@ def test_checkpoint_curve_accepts_osg_pc_macro0_5_10_authority() -> None:
     }
 
 
+def test_checkpoint_curve_routes_cgik_as_fresh_0_5_10_family() -> None:
+    results = {
+        f"cgik-{macro}": _result(macro, "correct", set(), family="cgik")
+        for macro in (0, 5, 10)
+    }
+    analysis = checkpoint_curve_analysis(results)
+    assert analysis["method_family"] == "v6_cgik_jc_v1"
+    assert set(analysis["panels"]["correct400"]) == {"0", "5", "10"}
+
+
 def test_checkpoint_curve_accepts_residual_memory_identity_changes_only() -> None:
     residual = {
         f"residual-{macro}": _result(

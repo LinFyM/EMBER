@@ -15,6 +15,7 @@ HISTORICAL_TRANSITION_CANDIDATE_MACROS = {
     "v6_srtp_v1": (5, 10),
     "v6_cveg_v1": (5, 10),
     "v6_pvjfc_v1": (5, 10),
+    "v6_cgik_jc_v1": (5, 10),
 }
 HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_ecp_v2": "legacy_v6_prior_v1",
@@ -27,6 +28,7 @@ HISTORICAL_TRANSITION_BASELINE_FAMILIES = {
     "v6_srtp_v1": "v6_condition_residual_v2",
     "v6_cveg_v1": "v6_condition_residual_v2",
     "v6_pvjfc_v1": "v6_condition_residual_v2",
+    "v6_cgik_jc_v1": "v6_condition_residual_v2",
 }
 
 WRITER_FAMILIES = {
@@ -146,6 +148,21 @@ WRITER_FAMILIES = {
         ),
         "checkpoint_curve_macros": (0, 5, 10),
     },
+    "v6_cgik_jc_v1": {
+        "adapter_schema": (
+            "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10"
+        ),
+        "episode_schema": (
+            "ember_pi05_v6_causal_goal_interaction_joint_credit_episode_v10"
+        ),
+        "config_schema": (
+            "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"
+        ),
+        "arm_prefix": "expert_manifold_v6_cgik_jc_",
+        "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
+        "formal_statuses": ("sealed_from_live_cgik_full96_profile",),
+        "checkpoint_curve_macros": (0, 5, 10),
+    },
     "v6_qv_rank_reserved_native_reward_v1": {
         "adapter_schema": (
             "ember_pi05_v6_qv_rank_reserved_native_reward_eval_adapter_v9"
@@ -173,6 +190,7 @@ PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(
         "v6_srtp_v1",
         "v6_cveg_v1",
         "v6_pvjfc_v1",
+        "v6_cgik_jc_v1",
         "v6_qv_rank_reserved_native_reward_v1",
     }
 )

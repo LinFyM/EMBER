@@ -18,9 +18,11 @@ from ember.expert_manifold.video_schedule import (
 
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 EXPERT_MANIFOLD_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_condition_program_residual_eval_adapter_v9"
+    "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10"
 )
-EXPERT_MANIFOLD_EPISODE_SCHEMA = "ember_pi05_v6_condition_program_residual_episode_v9"
+EXPERT_MANIFOLD_EPISODE_SCHEMA = (
+    "ember_pi05_v6_causal_goal_interaction_joint_credit_episode_v10"
+)
 
 
 def expert_manifold_episode_schema(adapter: Mapping[str, Any]) -> str:

@@ -400,3 +400,10 @@ views达`.15`门，Program write、LoRA A/B、effective BA、固定action全非�
 formal不开放。这个结果淘汰的是unit-normalized PICK-GC raw condition rows与`.01` full96 ridge的当前组合，不能
 外推否定continuous paired-video credit；同时也不授权调damping或放condition门。下一单变量应让condition表示中
 承载paired useful cotangent的方向与跨video/static共同高能方向结构性分离，而不是继续堆guard或追漂亮rank。
+
+selected macro0 correct48的cache谱进一步定位：primary/companion各自condition约`17.47/16.05`，合并后因
+same-task pair cosine均值`.89895`升到`250.11`；pair-symmetric能量约`94.95%`，低能private方向只贡献形式rank。
+reversed与correct又近反平行，Gram中反号不会抵消。CGIK-JC因此只把key从独立goal/causal改为
+`[causal, goal*causal]`，让所有地址必须含有序过程并打破correct/reverse同一直线；cache预验condition=`163.88`、
+rank48、same-task cosine`.85312`。这只授权一次真实full96 profile；历史PICK-GC152.61但strict138已经证明
+condition改善不能选择模型。

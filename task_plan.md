@@ -188,8 +188,11 @@
 - [x] clean pushed`a4f4c75`后在detached frozen worktree完成双节点live选择与gpu02:0--5 world6唯一macro0
   profile：`11/12` checks通过，rank`48/96`、24/24双view descent、negative`.07266`、全链路和wall`51.543s`
   均健康；唯一regularized condition=`597.861>200`，故总门non-pass、无checkpoint且formal关闭。
-- [ ] 从PVJFC最早失败的condition可分辨shared-credit接口推出新的单变量authority；不得扫damping、condition门、
-  view weight、rank、scale、seed或dtype，也不得把paired-video continuous credit整体判死。
+- [x] 从PVJFC最早失败的condition可分辨shared-credit接口推出CGIK-JC单变量authority：只把key从
+  `[goal, causal]`改为`[causal, goal*causal]`，保留paired continuous credit；selected correct48 cache
+  condition=`250.11→163.88`、rank48、same-task cosine`.85312`。
+- [ ] 原位实现fresh-incompatible CGIK-JC，完成focused/full CPU与一次clean full96机制profile；不得扫damping、
+  condition门、block weight、projection seed/width、view count、rank、scale或dtype。
 
 ## Repository closeout
 

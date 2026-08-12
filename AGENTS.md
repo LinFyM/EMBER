@@ -52,10 +52,12 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   directional strict400，只有`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`。相对old134为
   retained/gained/lost=`113/18/21`，相对NPCG135为`114/17/21`。硬跨视频E没有换来absolute或低换手，反而
   Object3净退6且Long1仍有18次初始化换手；不resume、不补controls，也不把E原样带入后继。
-- active successor design是Paired-Video Joint Functional Credit：每task用两条不同ordered action-hidden videos，
-  在相同跨episode B20 queries与相同policy RNG上各自产生完整Program cotangent，以固定`1/2+1/2`权重做交换不变
-  joint solve；不平均features/LoRAs，不使用outcome、success bank或hard E。当前仅design-authorized，尚未实现或
-  获得GPU机制证据。
+- PVJFC已经在唯一macro0机制profile因regularized condition=`597.861>200`终局non-pass；其它11项门、
+  rank`48/96`、24/24双view下降、negative ratio`.07266`、全链路和`51.543s` wall均通过。只淘汰PICK-GC
+  raw condition rows×full96 ridge，不否定continuous paired-video credit。
+- active successor design是CGIK-JC：只把condition key从`[goal, causal]`改为
+  `[causal, goal*causal]`，保留PVJFC的两条独立cotangent、same B20/RNG与full96 solve；cache预验把selected
+  correct48 condition从`250.11`降到`163.88`且rank仍48。当前仅design-authorized，尚未实现或获得live证据。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。
@@ -67,19 +69,20 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 1. `README.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. `docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`
-5. `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`
-6. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
-7. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
-8. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
-9. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
-10. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
-11. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
-12. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
-13. `docs/research_history.md`
-14. `task_plan.md`
-15. `findings.md`
-16. `docs/concept.md`
+4. `docs/action_forecast_writer_causal_goal_interaction_key_design.md`
+5. `docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`
+6. `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`
+7. `docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`
+8. `docs/action_forecast_writer_work_queue_candidate_guard_design.md`
+9. `docs/action_forecast_writer_paired_candidate_update_guard_design.md`
+10. `docs/action_forecast_writer_shared_reward_tangent_projection_design.md`
+11. `docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`
+12. `docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`
+13. `docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`
+14. `docs/research_history.md`
+15. `task_plan.md`
+16. `findings.md`
+17. `docs/concept.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读

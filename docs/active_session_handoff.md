@@ -50,8 +50,10 @@
   完整CPU回归为`329 passed`。clean`a4f4c75`、gpu02:0--5 world6唯一macro0 profile的rank=`48/96`、24/24
   双view与四suite descent、negative ratio`.07266`、Program/LoRA/BA/action、wall`51.543s`均通过；唯一失败是
   regularized condition=`597.861>200`。root无checkpoint，formal关闭，不扫damping/threshold等小参数。该结果只
-  淘汰当前PICK-GC condition feature×full96 ridge合同，不否定continuous paired-video credit本身；当前没有
-  active successor，下一步先针对condition可分辨shared-credit子空间写新的单变量authority。
+  淘汰当前PICK-GC condition feature×full96 ridge合同，不否定continuous paired-video credit本身。
+- active successor是CGIK-JC：只把condition key从`[goal, causal]`改为`[causal, goal*causal]`；每个非零地址
+  都必须含ordered causal evidence，goal只能调制过程。retained cache对本次selected correct48的预验保持rank48，
+  condition从`250.11`降到`163.88`，same-task pair cosine仍为`.85312`；当前只授权实现、CPU门和一次full96 profile。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU

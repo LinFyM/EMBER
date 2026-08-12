@@ -1,6 +1,6 @@
 # EMBER Novelty and Baseline Landscape
 
-状态：2026-08-11稳定研究定位。当前没有active successor；本文不授权实现或实验。
+状态：2026-08-12稳定研究定位。active successor只取当前authority；本文不授权实现或实验。
 
 ## Research position
 

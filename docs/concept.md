@@ -1,6 +1,6 @@
 # EMBER Concept
 
-状态：2026-08-11稳定问题定义。本文不指定活动架构或启动命令；当前没有active successor。
+状态：2026-08-12稳定问题定义。本文不指定活动架构或启动命令；active successor只取当前authority。
 
 ## One-sentence definition
 

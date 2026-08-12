@@ -378,3 +378,9 @@ directional strict400最终为`131/400`、breadth6、per-task=`1/2/47/30/0/35/16
 因此hard E在当前blind-credit组合中也没有absolute或retention价值。连续guard路线从PICK-GC138、SKNC137、
 NPCG135到CVEG131，在Program/negative/rank/energy均健康时持续走低，说明最早可行动失效接口已不再是constraint
 composition，而是shared credit acquisition本身；后继不能继续给single-video blind cotangent加硬保护。
+
+第一性原理后继因此选择PVJFC，而不是删一个guard的小修。每task的两条ordered action-hidden videos各自在完整
+v6+Program+rank16 LoRA路径上、对同一B20及同一policy RNG求Program cotangent；两条correct及各自negative以
+`1/2+1/2`进入一次weighted joint solve。它允许same-task不同video有不同的有用motion，不把cotangent、feature或
+LoRA先平均；同时swap invariance和duplicate-view退化确保没有顺序偏置或task权重翻倍。该设计只检验continuous
+paired-video credit是否比single-point blind proposal更接近跨video共同support，尚无机制或性能证据。

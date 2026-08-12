@@ -50,6 +50,9 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
   正常低位差异并走出不同checkpoint轨迹；诊断macro5的唯一directional strict400又只有`131/400`、breadth6、
   per-task=`1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`；硬E既未稳定
   shared能力，也使absolute继续下降。因此不resume、不补controls、不把hard E或binary guard原样继承。
+- active successor design是PVJFC：train24每task用两条不同ordered action-hidden videos，在同一跨episode B20与
+  同一policy RNG上分别取得完整Program cotangent，以`1/2+1/2`权重进入交换不变joint solve；部署仍只读一条
+  video。它删除binary rollout guard、success bank与hard E，目前尚无实现、profile或性能结果。
 
 最新uniform pivot-rank14路线已终局否决：
 

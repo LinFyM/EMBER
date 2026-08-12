@@ -77,6 +77,12 @@ policy-effective support。完整retired authority见
 退役CVEG的完整公式、采样合同、稳定性与directional strict裁决见
 `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
 
+active successor是PVJFC，只替换shared credit acquisition：每task的primary/companion都构造完整one-shot
+Program与cotangent，两view共享同一个B20及policy RNG，以固定半权进入96-row continuous solve；各自negative为
+zero RHS。它不平均video/feature/LoRA/cotangent，不读outcome，不保存success bank，也不强制两view motion相同。
+swap invariance和duplicate-view退化为single-view是hard contract；完整design与快速否决门见
+`docs/action_forecast_writer_paired_video_joint_functional_credit_design.md`。当前尚未实现或获得GPU证据。
+
 ## 2. Fixed information contract
 
 - 输入：exact task language + exactly one action-hidden teacher video。

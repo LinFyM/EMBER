@@ -179,8 +179,11 @@
 - [x] 对诊断macro5完成唯一directional strict paired400：`131/400`、breadth6、per-task=
   `1/2/47/30/0/35/16/0`；old134→CVEG=`113/18/21`，NPCG→CVEG=`114/17/21`。它低于全部当前强基线，
   因此不授予winner、resume或controls，hard E也不原样继承。
-- [ ] 从`single-video blind cotangent -> hard E/binary guard`的已否决接口转向continuous paired-video shared
-  credit：先写fresh-incompatible单变量design authority，再原位替换canonical owner并做机制/profile/strict400。
+- [x] 从`single-video blind cotangent -> hard E/binary guard`的已否决接口推出PVJFC单变量authority：两条完整
+  ordered-video cotangent共享B20/RNG并以半权joint solve，封存swap invariance与duplicate-view退化；无outcome、
+  success bank、hard E或部署multi-video。
+- [ ] 原位实现fresh-incompatible PVJFC，删除active candidate-guard/bank路径，完成CPU、唯一live mechanism
+  profile、fresh0→5与macro5 strict paired400。
 
 ## Repository closeout
 

@@ -32,9 +32,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 
-def test_mgci_active_and_historical_nonpasses_remain_sealed() -> None:
+def test_mgci_formal_nonpass_and_historical_nonpasses_remain_sealed() -> None:
     active = load_v6_prior_config(CONFIG)
-    assert active["status"] == "active_formal_ready"
+    assert active["status"] == "formal_result_sealed"
     assert active["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert active["method"]["name"] == (
         "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit"
@@ -61,7 +61,21 @@ def test_mgci_active_and_historical_nonpasses_remain_sealed() -> None:
     }
     assert active_profile["retained_checkpoint"] is False
     assert active_profile["formal_authorized"] is True
-    assert active["formal_run"]["status"] == "ready_after_live_profile_seal"
+    assert active["formal_run"]["status"] == "formal_result_sealed"
+    result = active["formal_run"]["artifact_evidence"]
+    assert result["training"]["completed_macro"] == 5
+    assert result["strict_correct400"]["successes"] == 134
+    assert result["strict_correct400"]["breadth"] == 6
+    assert result["strict_correct400"]["per_task"] == [
+        1, 5, 46, 30, 0, 34, 18, 0
+    ]
+    assert result["paired_old134"]["retained_gained_lost"] == [114, 20, 20]
+    assert result["decision"] == {
+        "macro5_gate_passed": False,
+        "exact_resume_macro5_to10_authorized": False,
+        "video_controls_authorized": False,
+        "scope": "retire_mgci_jc_plus_paired_blind_b20_only",
+    }
     assert active["evaluation"]["formal_status"] == (
         "sealed_from_live_mgci_full96_profile"
     )
@@ -314,7 +328,7 @@ def test_old_expert_asset_config_cannot_enter_residual_runtime() -> None:
         load_v6_prior_config(old)
 
 
-def test_mgci_profile_seal_opens_formal_evaluation() -> None:
+def test_mgci_formal_result_keeps_sealed_checkpoint_evaluation_readable() -> None:
     config = load_v6_prior_config(CONFIG)
     checkpoint = (REPO_ROOT / config["initialization"]["checkpoint"]).resolve()
     source = read_json(checkpoint.parent.parent / "run_contract.json")["source"]

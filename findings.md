@@ -26,6 +26,13 @@ compiler-only净增4，却违反预注册 lost`<=10`；增益由 Long1 净`+11`�
 compiler 到 online 又有`13 gained/23 lost`。因此 uniform compression 与 online regeneration 都会造成
 独立的 target-heterogeneous capability rotation。rank14 路线、Gate C、cycle1、controls和训练已经退役。
 
+最新MGCI-JC裁决：full96 mechanism profile把PVJFC/CGIK condition从`597.861/270.188`修到`174.813`，并保持
+rank`48/96`、negative ratio`.02088`及Program→BA→action非零；但formal macro5 strict只有`134/400`、breadth6、
+per-task=`1/5/46/30/0/34/18/0`。相对old134为`114 retained/20 gained/20 lost`、churn40，suite净值=
+`+1/-6/-1/+6`。因此健康key、rank和transmission仍与能力换手共存；当前最早失效接口是blind offline B20
+source-action cotangent RHS到held on-policy useful support的映射，而不是condition谱或幅度不足。当前没有active
+successor，后继credit方向等待owner讨论。
+
 ## 2. The actual learning problem
 
 EMBER不是从视频复制一段动作。部署时策略面对未见初始化，Writer必须从语言与 action-hidden video 提取跨
@@ -260,7 +267,7 @@ nonfinite、mechanism report或checkpoint。这个结果只淘汰“static cost-
 既没有支持也没有否定paired candidate guard；下一设计必须先消除global candidate形成前的rank-local tail，不能
 把未执行的科学机制写成负结果，也不能因此转向无关架构。
 
-Work-Queue PCUG据此成为唯一active successor design。旧sampler所谓dynamic只是在macro前按correct-video
+Work-Queue PCUG据此在当时成为唯一active successor design。旧sampler所谓dynamic只是在macro前按correct-video
 sampled-frame cost做uneven static ownership；world4四rank cost仅`207/216/206/204`，实际却由一个rank先等待、
 三个rank把Phase-A wall拖到`>809s`，说明该proxy不能控制critical path。B20 rows、video、counterfactual与policy
 RNG本来都是`(task_id, task_visit)`纯函数，因此可以让空闲rank完成一个task后原子领取下一个，而不改变任何
@@ -431,3 +438,10 @@ clean`eb1e53b`唯一raw-frame full96 profile随后以12/12通过：condition=`17
 ratio=`.02088`且reversed/shuffled/wrong各16/16，Program→A/B→BA→fixed action全非零，wall=`49.841s`，OOM/
 nonfinite/outcome rollout/negative policy forward均0。root没有checkpoint。MGCI因此只获得fresh`0→5`真实闭环
 裁决资格；condition通过不是性能结论，也不授权profile重跑或小扫。
+
+fresh formal`0→5`随后完成，五宏rank均`48/96`、negative/correct motion保持`.020--.030`且无OOM/nonfinite；
+macro5 strict correct400=`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`。old134→MGCI严格配对为
+`114 retained/20 gained/20 lost/246 both-fail`、churn40；suite净值=`+1/-6/-1/+6`。held effective-BA相对old134
+median cosine=`.99999719`、norm ratio=`1.00001636`、relative L2=`.00242453`，gained rows也没有更大变化。
+因此MGCI只修复condition key谱和negative suppression，没有把blind B20 credit变成新的held useful tangent；
+MGCI-JC+paired blind B20组合终局退役，不resume、不补controls。当前没有active successor，暂停讨论。

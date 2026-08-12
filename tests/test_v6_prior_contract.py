@@ -48,6 +48,7 @@ def _formal_ready_config() -> dict:
     config["profile_run"]["status"] = "sealed_from_live_a40_fresh0_to1_profile"
     config["profile_run"]["artifact_evidence"] = {"path": "profile.json"}
     config["formal_run"]["status"] = "ready_after_live_profile_seal"
+    config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
         "sealed_from_live_mgci_full96_profile"
     )
@@ -66,6 +67,7 @@ def _preprofile_config() -> dict:
     config["formal_run"]["status"] = (
         "blocked_until_live_profile_passes_and_is_sealed"
     )
+    config["formal_run"]["artifact_evidence"] = None
     config["evaluation"]["formal_status"] = (
         "blocked_until_live_mgci_full96_profile_passes"
     )
@@ -186,6 +188,14 @@ def test_profile_is_authorized_before_formal_and_formal_opens_only_after_seal() 
         runtime_for_mode(preseal, "formal")
     ready = _formal_ready_config()
     assert runtime_for_mode(ready, "formal") == (10, tuple(range(1, 11)), 0)
+
+
+def test_sealed_formal_result_cannot_resume_training() -> None:
+    sealed = _raw_config()
+    assert sealed["status"] == "formal_result_sealed"
+    assert sealed["formal_run"]["status"] == "formal_result_sealed"
+    with pytest.raises(ExpertManifoldError, match="sealed result"):
+        runtime_for_mode(sealed, "formal")
 
 
 def test_preprofile_artifact_injection_fails_closed(

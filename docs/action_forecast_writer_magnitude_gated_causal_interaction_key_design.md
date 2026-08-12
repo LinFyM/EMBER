@@ -26,13 +26,14 @@ CGIK/PVJFC合同：两条不同、原序、action-hidden训练视频各自生成
 48 correct与48 matched zero-RHS negative以半权进入同一个full96 solve；部署仍只有一条video、一套完整38-target
 rank-16 LoRA。
 
-本方法简称 **MGCI-JC**。当前只授权实现、CPU门和一次discarded raw-frame full96 profile。profile通过前不授权
-formal、deployment结果或closed-loop评测。
+本方法简称 **MGCI-JC**。设计时只授权实现、CPU门和一次discarded raw-frame full96 profile；profile通过后才
+授权fresh formal`0→5`与macro5 strict paired400。
 
 实现状态：fresh-incompatible canonical owner、checkpoint/RNG/inspection三套identity和eval v11 family已经完成，
 完整CPU回归`339 passed`。clean`eb1e53b`上的唯一raw full96 profile以condition=`174.813`、rank`48/96`、24/24
 双view与四suite descent、negative ratio=`.02088`、三类各16/16、全链路和`49.841s`通过12/12门，无checkpoint。
-因此当前按第9节开放fresh formal`0→5`；不得重跑profile或绕过macro5 strict400门。
+随后fresh formal`0→5`与macro5 strict paired400均已完成。strict只有`134/400`、breadth6、相对old134为
+`114 retained / 20 gained / 20 lost`，故按第9节终局non-pass：不resume、不补controls、不小扫。
 
 ## 2. Earliest failed interface
 
@@ -209,3 +210,54 @@ deferred NCCL、native BF16/TF32和dynamic queue。launch前查`strg01 /data1` q
 - **phase-adjacent path-area key**：cache condition更低，但same-task cosine约`.71--.76`，更易重演v4/trace低层路径
   nuisance；只有MGCI被真实profile否决后才可重新立独立authority。
 - **更多rank、experts、few-shot或learned metric**：同时改变capacity、部署或监督接口，不能与当前最早失败隔离。
+
+## 12. Formal result and final decision
+
+clean pushed`e4c3331`、gpu02物理2--5 world4的fresh formal root为
+`runs/outputs/pi05_mgci_jc_formal_fresh0to5_r4_b20_e4c3331_20260812`。macro1--5均rank`48/96`，condition=
+`174.81/205.84/191.57/148.20/176.64`，negative/correct motion=
+`.0209/.0274/.0201/.0202/.0296`，无OOM/nonfinite。functional loss横盘于`.0961--.0991`，不能选择模型。
+
+strict root为
+`runs/outputs/pi05_mgci_jc_correct400_noreplacement_seed7_macro0005_e4c3331_gpu02_20260812`：gpu02物理2--5、
+12个persistent workers、48/48 shards、400/400 rows、exit0、无failure。结果：
+
+- correct=`134/400`，breadth6；
+- per-task（Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`；
+- per-suite=`6/76/34/18`；
+- old134→MGCI strict paired=`114 retained / 20 gained / 20 lost / 246 both-fail`，churn40；
+- suite净值=`+1/-6/-1/+6`，Long1净`+7`主要抵消Object净`-6`。
+
+同teacher schedule下，compiler138→MGCI=`115 retained / 19 gained / 23 lost`，online128→MGCI=
+`111 / 23 / 17`；相对PICK-GC138、SKNC137、NPCG135、CVEG131也都保持`37--44`个episode churn，而非形成单调
+success-set扩张。v6-fast143使用不同实际teacher schedule，不能声称strict episode pairing；只比较aggregate和
+per-task时，MGCI低9分，逐task差=`+1/+2/0/-7/0/-2/-2/-1`。历史old134 raw schema与当前eval v11使canonical
+transition CLI按合同拒绝；只读分析逐项验证400个task/state、teacher demo/order、env/policy seed和policy-noise
+prefix后计算配对，不新增兼容执行路径。
+
+因此breadth是唯一通过项；`correct>=140`、`lost<=10`、`gained>lost`、至少3 suites不下降以及非单task主导均失败。
+exact resume`5→10`、wrong/shuffled/reversed/no-video/same controls及rank、scale、damping、seed、width、dtype小扫全部
+关闭。
+
+MGCI确实把PVJFC/CGIK full96 condition从`597.861/270.188`修到`174.813`，negative leakage也降到`.02088`，
+Program→BA→fixed-action幅度没有坍缩；macro5 memory RMS=`2.044e-6`、participation ratio=`27.63`。但相邻memory
+增量cosine约`-.050--.037`，多数task response被新宏反向推动。same-task跨visit key cosine约`.909`，同一delta
+跨这些videos的Program response cosine约`.968--.980`，说明最早问题已不在video key nuisance或condition谱。
+
+最强证据把失败接口定位为：
+
+```text
+correct-video-conditioned current Program
+  + blind offline B20 source-action functional cotangent RHS
+  -> no stable held on-policy improvement direction
+  -> 20 gains / 20 losses and suite/task capability rotation
+```
+
+frozen FactorHeads可能进一步压缩Program方向，但目前只有跨train/held population的间接证据，不能宣称compiler
+collapse。正式scope只淘汰MGCI-JC与paired blind B20 credit的当前组合；保留goal-magnitude-gated causal
+interaction key、paired ordered-video representation、full96 negative-zero solve、FP32 Program和native rank16
+compiler。下一credit design尚未选择，等待owner讨论；当前没有active successor。
+
+held400上，MGCI与old134的effective-BA median cosine=`.99999719`、norm ratio=`1.00001636`、relative L2=
+`.00242453`；gained rows的relative L2反而不大于retained/lost。这个结果排除“写入太小”作为充分解释，也说明当前
+key修复主要改变condition/组织方式，没有把blind B20 RHS旋到新的held useful policy tangent。

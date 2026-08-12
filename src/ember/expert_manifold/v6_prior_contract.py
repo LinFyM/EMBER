@@ -580,7 +580,9 @@ def runtime_for_mode(
             config.get("status") != "active_formal_ready"
             or config["formal_run"]["status"] != "ready_after_live_profile_seal"
         ):
-            raise ExpertManifoldError("MGCI-JC formal training is blocked by live gates")
+            raise ExpertManifoldError(
+                "MGCI-JC formal training is blocked by live gates or sealed result"
+            )
         formal = config["formal_run"]
         return (
             int(formal["total_macros"]),

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_v1",
-  "status": "active_formal_ready",
+  "status": "formal_result_sealed",
   "method": {
     "name": "frozen_v6_magnitude_gated_causal_interaction_key_joint_credit",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -242,7 +242,7 @@
     }
   },
   "formal_run": {
-    "status": "ready_after_live_profile_seal",
+    "status": "formal_result_sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "maximum_world_size": 6,
     "task_assignment": "host_local_atomic_completion_driven_long_first_train24",
@@ -264,7 +264,38 @@
       "goal_same_task_other_correct_ratio_min": 0.9,
       "macro10_requires_macro5_gate": true
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "training": {
+        "root": "runs/outputs/pi05_mgci_jc_formal_fresh0to5_r4_b20_e4c3331_20260812",
+        "run_commit": "e4c33315ec1def9f128cc22608f72530a99a12af",
+        "completed_macro": 5,
+        "world_size": 4,
+        "completion_schema": "ember_pi05_v6_magnitude_gated_causal_interaction_key_joint_credit_completion_v1"
+      },
+      "strict_correct400": {
+        "root": "runs/outputs/pi05_mgci_jc_correct400_noreplacement_seed7_macro0005_e4c3331_gpu02_20260812",
+        "contract_reference": "ember_pi05_target_eval_launch_v2:b8483876237e450296c422cdc008e824",
+        "successes": 134,
+        "breadth": 6,
+        "per_task": [1, 5, 46, 30, 0, 34, 18, 0],
+        "per_suite": [6, 76, 34, 18]
+      },
+      "paired_old134": {
+        "retained_gained_lost": [114, 20, 20],
+        "churn": 40
+      },
+      "decision_evidence": {
+        "path": "runs/outputs/pi05_mgci_jc_correct400_noreplacement_seed7_macro0005_e4c3331_gpu02_20260812/mgci_formal_decision_evidence.json",
+        "schema": "ember_pi05_mgci_jc_formal_decision_evidence_v1",
+        "passed": false
+      },
+      "decision": {
+        "macro5_gate_passed": false,
+        "exact_resume_macro5_to10_authorized": false,
+        "video_controls_authorized": false,
+        "scope": "retire_mgci_jc_plus_paired_blind_b20_only"
+      }
+    }
   },
   "evaluation": {
     "formal_status": "sealed_from_live_mgci_full96_profile",

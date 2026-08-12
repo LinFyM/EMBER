@@ -6,9 +6,9 @@
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PVJFC与
-CGIK-JC的唯一macro0 profile分别因condition=`597.861/270.188>200` non-pass，均无checkpoint或closed-loop
-成绩。active successor MGCI-JC的唯一raw full96 profile已以condition=`174.813`通过全部门，当前进入fresh
-formal`0→5`；仍无closed-loop成绩。本文不提供启动命令。
+CGIK-JC的唯一macro0 profile分别因condition=`597.861/270.188>200` non-pass。MGCI-JC把condition进一步修到
+`174.813`并通过profile，但formal macro5 strict只有`134/400`、breadth6，old134→MGCI=`114/20/20`、churn40。
+因此当前没有active successor；等待owner讨论，本文不提供启动命令。
 
 ## 1. Stable problem definition
 
@@ -86,6 +86,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Success-Key Nullspace Consolidation | `137/400`, breadth7 | 4/4 success key可在healthy rank/energy下硬保护完整conditioned Program/LoRA/action | old134→SKNC=`121/16/13`、churn29；train24 single-video key不外推held support，blind B20继续suite换手 |
 | Negative-Preserving Candidate Guard | `135/400`, breadth5 | actual candidate与negative response可在同一affine correction中闭合 | old134→NPCG=`117/18/17`；point guard未保护held occupancy，约束健康不等于共同积累 |
 | Cross-Video Equivariant Candidate Guard | directional `131/400`, breadth6 | single companion E与negative/guard可数值闭合 | K2 outcome经hard equality放大低位差异；hard E又使NPCG→CVEG=`114/17/21`，稳定性与absolute均non-pass |
+| Magnitude-Gated Causal Interaction Joint Credit | `134/400`, breadth6 | full96 condition修到`174.813`，paired video、negative与Program→BA→action全链路闭合 | old134→MGCI=`114/20/20`；key谱修复未改变blind offline credit的held task换手 |
 
 ## 4. Final rank14 adjudication
 

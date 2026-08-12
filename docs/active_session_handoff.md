@@ -6,6 +6,10 @@
 
 - 长期Goal未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
+- MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
+  （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
+  相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。
+  除breadth外全部macro5门失败，不resume、不补controls、不小扫。当前没有active successor；本轮封存后暂停讨论。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、
@@ -55,11 +59,10 @@
   它把PVJFC condition从`597.861`降到`270.188`，negative ratio从`.07266`降到`.02457`，三类negative均
   `16/16`；rank`48/96`、24/24双view与四suite descent、Program/LoRA/BA/action、wall`50.032s`全部通过。
   唯一false仍是`regularized_condition<=200`，故总门non-pass、无checkpoint，formal/deployment/重跑/小扫关闭。
-- active successor是MGCI-JC：只把CGIK第一块从`u_c`改成`abs(u_g)*u_c`，第二块`u_g*u_c`不变。cache对同一
-  selected correct48给出condition=`108.81`、correct+reverse16=`130.78`。clean`eb1e53b`唯一raw full96 profile
-  已12/12通过：condition=`174.813`、rank=`48/96`、24/24双view和四suite下降、negative ratio=`.02088`、三类
-  各16/16、全链路与`49.841s` wall健康，无checkpoint。当前只授权fresh formal`0→5`并立即strict paired400；
-  不重跑profile，不调damping、门、block weight、projection seed/width、view数、rank、scale或dtype。
+- MGCI-JC只把CGIK第一块从`u_c`改成`abs(u_g)*u_c`，第二块`u_g*u_c`不变；唯一raw full96 profile曾以
+  condition=`174.813`、rank=`48/96`、24/24双view、negative ratio=`.02088`及全链路通过12/12门。formal五宏
+  仍保持rank48、negative ratio`.020--.030`、无OOM/nonfinite，但strict结果回到134并发生20/20换手。
+  这验证了key谱修复，不验证closed-loop方法；MGCI-JC+paired blind B20组合现已退役。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -67,7 +70,40 @@
 
 ## 2. Latest formal decision
 
-### 2.0 NPCG formal macro5
+### 2.0 MGCI-JC formal macro5
+
+formal root：
+`runs/outputs/pi05_mgci_jc_formal_fresh0to5_r4_b20_e4c3331_20260812`；clean pushed commit`e4c3331`，gpu02
+物理2--5 world4，5/5 macros与macro5 checkpoint完成、exit0。五宏positive/full rank均`48/96`，condition=
+`174.81/205.84/191.57/148.20/176.64`，negative/correct motion=`.0209/.0274/.0201/.0202/.0296`，无OOM/
+nonfinite。Program memory RMS增长到`2.044e-6`，participation ratio=`27.63`，相邻memory增量近正交而非raw覆盖。
+
+strict root：
+`runs/outputs/pi05_mgci_jc_correct400_noreplacement_seed7_macro0005_e4c3331_gpu02_20260812`；gpu02物理2--5、
+12 persistent workers、48/48 shards、400/400 rows、exit0、无failure。结果`134/400`、breadth6、per-task=
+`1/5/46/30/0/34/18/0`、per-suite=`6/76/34/18`。相对old134严格配对为`114 retained/20 gained/20 lost/246
+both-fail`、churn40；suite净值=`+1/-6/-1/+6`。完整decision evidence位于strict root的
+`mgci_formal_decision_evidence.json`。
+
+同schedule strict比较：compiler138→MGCI=`115/19/23`、online128→MGCI=`111/23/17`，相对PICK-GC138、
+SKNC137、NPCG135和CVEG131也都有`37--44` churn。v6-fast143的actual teacher schedule不同，只能比较aggregate/
+per-task；MGCI低9分，逐task差=`+1/+2/0/-7/0/-2/-2/-1`，不得写成strict episode pairing。old134 raw schema与
+eval v11不兼容使canonical transition CLI按合同拒绝；只读分析逐项验证400个配对签名后计算上述数字，没有新增
+兼容代码。
+
+MGCI把PVJFC/CGIK condition从`597.861/270.188`修到`174.813`，Program→BA→action幅度也未坍缩；但correct
+视频仍只决定condition地址，B20 blind offline source-action cotangent决定policy方向。same-task跨visit key cosine
+约`.909`、同一delta跨这些videos的Program response cosine约`.968--.980`，而连续macro对多数task response反向。
+因此最早失败推进到blind cotangent RHS→held on-policy useful support，而不是key谱、rank或纯transmission。
+FactorHeads可能进一步压缩方向，但当前只有跨population间接证据，不能写成compiler collapse。
+held effective-BA相对old134的median cosine=`.99999719`、norm ratio=`1.00001636`、relative L2=`.00242453`，且
+gained rows并没有更大变化；这进一步说明condition修复没有产生新的held useful policy tangent。
+
+正式裁决：breadth是唯一通过门；`correct>=140`、lost`<=10`、gained`>lost`、至少3 suites不下降与非单task
+主导均失败。MGCI-JC+paired blind B20终局退役；不resume`5→10`、不补视频controls、不扫参数。当前没有active
+successor，等待owner讨论。
+
+### 2.0a NPCG formal macro5
 
 formal训练root：
 `runs/outputs/pi05_npcg_negative_preserving_candidate_guard_formal_fresh0to5_r3_b20_f8491e9_retry1_20260812`；
@@ -88,7 +124,7 @@ train24×50 action-hidden audit显示first-stable key到同任务其它videos的
 `.27650`残差。因此最早失败不是Program、negative guard、rank或compiler，而是pointwise train24地址没有定义
 跨视频/held occupancy support neighborhood。NPCG正式non-pass；exact resume、controls和小修全部关闭。
 
-### 2.0a CVEG formal stability decision
+### 2.0b CVEG formal stability decision
 
 retained train24x50 cache的50-panel审计中，单companion difference `E`始终rank24；投影`Null(E)`后correct
 feature energy mean/median=`.77415/.78016`，correct-minus-reversed过程差分能量mean/median=

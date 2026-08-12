@@ -11,6 +11,9 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   `150/400`，并继续提高absolute、task breadth、稳定积累和teacher-video时序因果性。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+- MGCI-JC已完成fresh formal`0→5`与macro5 strict paired400并终局non-pass：`134/400`、breadth6、per-task=
+  `1/5/46/30/0/34/18/0`，相对old134为`114 retained/20 gained/20 lost`、churn40。除breadth外全部macro5门
+  失败；不resume、不补controls、不小扫。当前没有active successor，owner要求本轮分析与封存后暂停讨论。
 - 最新uniform pivot-rank14路线已经终局non-pass并退役：online=`128/400`；old-cache compiler-only=
   `138/400`、breadth7，但相对old134 retained/gained/lost=`119/19/15`，违反lost`<=10`。
 - compression和online regeneration均造成独立能力换手；Gate C、cycle1、controls和新训练未授权。
@@ -58,10 +61,9 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
 - CGIK-JC已经在唯一macro0机制profile终局non-pass：它把PVJFC condition从`597.861`降到`270.188`，并把
   negative ratio降到`.02457`、三类negative提高到各16/16；rank`48/96`、24/24双view descent、全链路和
   `50.032s` wall均通过，但condition仍`>200`。root无checkpoint，formal、deployment、同配置重跑与小扫关闭。
-- active successor design是MGCI-JC：只把CGIK独立`u_c`块改为`abs(u_g)*u_c`，signed`u_g*u_c`块不变；
-  clean`eb1e53b`唯一raw full96 profile已`12/12`通过：condition=`174.813`、rank`48/96`、24/24双view与四suite
-  descent、negative ratio=`.02088`、三类各16/16、全链路及`49.841s` wall均健康；无checkpoint。它只主张清除
-  raw-causal shared mode，当前已授权fresh formal`0→5`，随后必须立即strict paired correct400按macro5门裁决。
+- MGCI-JC只把CGIK独立`u_c`块改为`abs(u_g)*u_c`，signed`u_g*u_c`块不变；唯一raw full96 profile曾以
+  condition=`174.813`、rank`48/96`、negative ratio=`.02088`和全链路通过12/12门。但formal strict结果如上
+  回到134并发生20/20换手，只验证key谱修复，不验证closed-loop方法。MGCI-JC+paired blind B20组合已退役。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

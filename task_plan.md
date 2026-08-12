@@ -203,8 +203,13 @@
 - [x] clean pushed`eb1e53b`、detached frozen worktree、gpu02:0--5 world6唯一full96 profile：12/12门通过，
   condition=`174.813`、rank`48/96`、24/24双view、negative`.02088`、三类16/16、全链路和`49.841s`健康；
   root无checkpoint，不重跑、不小扫。
-- [ ] 封存profile gate后从clean pushed commit fresh formal`0→5`，保存macro1--5；完成后立即strict paired correct400，
-  按correct>=140、breadth>=6、lost<=10、gained>lost、至少3 suites不降及非单task主导裁决是否resume。
+- [x] clean pushed`e4c3331`后world4 fresh formal`0→5`完成，五宏rank`48/96`、negative ratio约`.020--.030`且无
+  OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、400/400 rows strict correct400。
+- [x] MGCI macro5终局=`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`；old134→MGCI严格配对=
+  `114/20/20`、churn40，suite净值=`+1/-6/-1/+6`。除breadth外全部macro5门失败，不resume、不补controls、不小扫。
+- [x] 完成Program/BA/action与跨架构审计：MGCI修复condition/negative谱且全链路非零，但相邻blind B20 credit使
+  task response持续旋转；最早失效接口推进到offline source-action cotangent RHS→held on-policy useful support。
+- [x] 按owner要求完成本轮分析与formal artifact/Git封存后暂停；不选择active successor，不启动后继GPU实验。
 
 ## Repository closeout
 

@@ -2,6 +2,12 @@
 
 ## 0. Current operation
 
+MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
+negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、
+400/400 rows strict correct400=`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`。相对old134严格配对为
+`114 retained/20 gained/20 lost`、churn40，suite净值=`+1/-6/-1/+6`。因此只过breadth门，不resume、不补
+same/wrong/shuffled/reversed/no-video controls、不扫小参数。当前没有active successor；本轮封存后暂停讨论。
+
 PICK只因full48 condition=`483.61515>200`退役；PICK-GC随后把condition降到`152.61`并通过
 Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`0→10`后的single-checkpoint strict
 paired correct只有`138/400`、breadth6。相对immutable macro0 retained/gained/lost=`118/20/16`、churn36，
@@ -89,12 +95,12 @@ macro0 profile为`11/12` checks通过但总门non-pass：rank`48/96`、24/24双v
 `[causal, goal*causal]`，保留PVJFC continuous paired credit与full96合同。clean`623505b`唯一profile把
 condition降到`270.188`、negative ratio降到`.02457`且三类各16/16，但12项门仍只有condition失败；rank、
 24/24双view descent、全链路和`50.032s` wall均健康。两者均无checkpoint或closed-loop成绩，formal、重跑与
-小扫关闭。active successor是MGCI-JC：只用goal magnitude调制CGIK的独立raw-causal块，保留signed
-interaction及全部paired-credit合同；完整公式与一次性门见
+小扫关闭。MGCI-JC随后只用goal magnitude调制CGIK的独立raw-causal块，保留signed
+interaction及全部paired-credit合同；完整公式与最终裁决见
 `docs/action_forecast_writer_magnitude_gated_causal_interaction_key_design.md`。fresh-incompatible canonical实现、
 三套resume identity、eval v11接线和完整CPU`339 passed`已完成；clean`eb1e53b`唯一raw full96 profile又以
-condition=`174.813`、rank`48/96`、24/24双view、negative`.02088`和`49.841s`通过12/12门。当前授权fresh
-formal`0→5`，随后立即single-checkpoint strict paired correct400。
+condition=`174.813`、rank`48/96`、24/24双view、negative`.02088`和`49.841s`通过12/12门。但formal macro5
+strict只有134且old134→MGCI=`114/20/20`；condition/negative改善没有转化为共同closed-loop积累，当前组合关闭。
 
 ## 2. Fixed information contract
 

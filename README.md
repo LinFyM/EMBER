@@ -53,9 +53,10 @@ object pose或hidden normalization；video是唯一dynamic value，不允许lang
 - PVJFC与其单变量后继CGIK-JC都在唯一macro0机制profile因condition门终局non-pass。CGIK把condition
   `597.861→270.188`、negative ratio`.07266→.02457`，三类negative均16/16；rank`48/96`、24/24双view
   descent、全链路与`50.032s` wall健康，但仍未过`<=200`。无checkpoint或closed-loop成绩，formal、重跑和
-  小扫关闭。active successor是MGCI-JC：只把独立raw-causal块改为goal-magnitude-gated causal，signed
-  interaction不变。clean`eb1e53b`唯一full96 profile以condition=`174.813`、rank`48/96`、24/24双view、negative
-  `.02088`及`49.841s`通过全部12项门；当前开放fresh formal`0→5`，尚无closed-loop成绩。
+  小扫关闭。MGCI-JC随后只把独立raw-causal块改为goal-magnitude-gated causal，signed interaction不变；唯一
+  full96 profile以condition=`174.813`、rank`48/96`、negative`.02088`通过12/12门。但fresh formal macro5的
+  strict只有`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`；old134→MGCI=`114/20/20`、churn40。
+  它验证key谱修复却未改善absolute或共同积累，故不resume、不补controls。当前没有active successor，等待讨论。
 
 最新uniform pivot-rank14路线已终局否决：
 

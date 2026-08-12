@@ -29,7 +29,7 @@ CONFIG = V6_PRIOR_CANONICAL_CONFIG
 
 def test_active_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None:
     cveg = load_v6_prior_config(CONFIG)
-    assert cveg["status"] == "active_cpu_ready_awaiting_live_profile"
+    assert cveg["status"] == "active_formal_ready"
     assert cveg["schema_version"] == V6_PRIOR_CONFIG_SCHEMA
     assert cveg["method"]["name"] == (
         "frozen_v6_cross_video_equivariant_candidate_guard"
@@ -37,9 +37,27 @@ def test_active_cveg_and_prior_candidate_guard_nonpasses_remain_sealed() -> None
     assert cveg["data"]["videos_per_task_per_macro"] == 1
     assert cveg["data"]["training_companion_videos_per_task_per_macro"] == 1
     assert cveg["information_wall"]["deployment_companion_video_count"] == 0
-    assert cveg["profile_run"]["artifact_evidence"] is None
+    profile = cveg["profile_run"]["artifact_evidence"]
+    assert profile["passed"] is True
+    assert profile["checks_passed"] == 22
+    assert profile["equivariance_rank"] == 24
+    assert profile["blind_equivariance_to_primary_motion_ratio"] < 1e-5
+    assert profile["final_equivariance_to_primary_motion_ratio"] < 1e-5
+    assert profile["negative_null_per_kind"] == {
+        "wrong": 8,
+        "shuffled": 8,
+        "reversed": 8,
+    }
+    assert cveg["formal_run"]["status"] == "ready_after_live_profile_seal"
     assert cveg["formal_run"]["artifact_evidence"] is None
-    assert cveg["evaluation"]["online_smoke_evidence"] is None
+    assert cveg["evaluation"]["formal_status"] == (
+        "sealed_from_live_cveg_deployment_smoke"
+    )
+    smoke = cveg["evaluation"]["online_smoke_evidence"]
+    assert smoke["writer_model_batch_size"] == 32
+    assert smoke["longest_sampled_video_frames"] == 67
+    assert smoke["oom_count"] == 0
+    assert smoke["nonfinite_count"] == 0
 
     profile = read_json(
         REPO_ROOT

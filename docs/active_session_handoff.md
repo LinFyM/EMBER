@@ -43,11 +43,11 @@
   primary one-shot schedule的前提下增加一条训练期action-hidden ordered companion，以
   `E=phi(companion)-phi(primary)`约束blind与final shared Program write满足`E D=0`；final affine correction同时
   保持negative与equivariance response。canonical实现已完成，fresh-incompatible contract、checkpoint和eval
-  family已原位替换NPCG active path，完整CPU`346 passed`；部署仍一条video、一套LoRA，不平均、不挑video，
-  首个world3 discarded macro0已完成21/22门：E rank24、correct/reverse retained energy`.782/.772`、negative
-  三类各8/8、rank/energy/wall均通过；唯一失败是blind/final E ratio=`8.86e-5/1.26e-4`，绝对E motion仅
-  `1.697e-10`且final correction E violation0。最早接口是FP64 projector落到FP32大Program的数值residual，
-  允许一次fixed full-FP32 refinement后原合同reprofile，不改门或科学变量。
+  family已原位替换NPCG active path，完整CPU`346 passed`；部署仍一条video、一套LoRA，不平均、不挑video。
+  首跑唯一E closure数值违约经一次fixed full-FP32 refinement后，同world3科学合同reprofile已22/22全过：
+  blind/final E ratio=`7.91e-8/9.56e-8`、E rank24、correct/reverse energy`.782/.772`、negative三类8/8、
+  total=`584.649s / 1.2215x`；paired outcomes与首跑逐项不变。实际one-shot deployment B8/16/32均stable并以
+  `.47138 LoRA/s`选择B32；config已封存profile/deployment evidence并开放formal fresh`0→5`。
 - 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
   evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
 - canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
@@ -84,6 +84,14 @@ feature energy mean/median=`.77415/.78016`，correct-minus-reversed过程差分�
 `.7536`，reverse response fraction仍为mean/median=`1.035/.966`。2--4 companions继续压nuisance但correct
 energy降为`.639/.529/.436`，故首个版本固定一条，不做K sweep。完整公式、采样和证伪门见
 `docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
+
+live裁决现已完成：clean `2eb1e8e`、gpu02物理3/4/5 world3的matched reprofile root为
+`runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_full24_reprofile_macro0_r3_b20_2eb1e8e_20260812`，
+22/22 checks全过且不保留checkpoint。Phase A=`53.08484s`、total=`584.64916s / 1.22151x`；blind/final
+equivariance ratio=`7.91e-8/9.56e-8`，negative ratio`.03285`、三类各8/8，rank=`48→33`、energy`.35404`。
+同commit one-shot deployment root为
+`runs/outputs/pi05_cveg_writer_profile_val8x4_correct_gpu02p3_2eb1e8e_20260812`；B8/16/32 LoRA/s=
+`.46888/.47040/.47138`、最长67帧、0 OOM/nonfinite，选择B32。两项只开放formal训练，不构成性能结论。
 
 ### 2.1 Work-Queue PCUG mechanism profile
 

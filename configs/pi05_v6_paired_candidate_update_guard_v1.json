@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1",
-  "status": "active_cpu_ready_awaiting_live_profile",
+  "status": "active_formal_ready",
   "method": {
     "name": "frozen_v6_cross_video_equivariant_candidate_guard",
     "writer_input": "exact task language plus exactly one action-hidden teacher video",
@@ -287,7 +287,7 @@
     "companion_count": 1
   },
   "profile_run": {
-    "status": "awaiting_live_a40_fresh0_to1_profile",
+    "status": "sealed_from_live_a40_fresh0_to1_profile",
     "allowed_world_sizes": [
       1,
       2,
@@ -351,10 +351,41 @@
       "oom_count": 0,
       "nonfinite_count": 0
     },
-    "artifact_evidence": null
+    "artifact_evidence": {
+      "path": "runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_full24_reprofile_macro0_r3_b20_2eb1e8e_20260812/mechanism_profile.json",
+      "schema_version": "ember_pi05_v6_cross_video_equivariant_candidate_guard_profile_v1",
+      "source_commit": "2eb1e8eeecb1d09f7a4f6457eec7edc80609882b",
+      "passed": true,
+      "checks_passed": 22,
+      "phase_a_seconds": 53.084835505113006,
+      "step_seconds": 584.6491581050213,
+      "production_wall_ratio_to_matched_sknc": 1.2215130579556552,
+      "blind_equivariance_to_primary_motion_ratio": 7.91081562441154e-08,
+      "final_equivariance_to_primary_motion_ratio": 9.561544662915163e-08,
+      "protected_to_unprotected_program_motion_ratio": 6.05380389747499e-08,
+      "negative_to_unprotected_program_motion_ratio": 0.03284890304868893,
+      "negative_null_per_kind": {
+        "wrong": 8,
+        "shuffled": 8,
+        "reversed": 8
+      },
+      "equivariance_rank": 24,
+      "projected_feature_rank": 33,
+      "projected_to_blind_energy_ratio": 0.3540407121181488,
+      "correct_retained_energy_median": 0.7819732107054851,
+      "reverse_process_retained_energy_median": 0.7722661676351092,
+      "paired_base_candidate_successes": [
+        34,
+        31
+      ],
+      "paired_gains_losses": [
+        2,
+        5
+      ]
+    }
   },
   "formal_run": {
-    "status": "blocked_until_live_profile_passes_and_is_sealed",
+    "status": "ready_after_live_profile_seal",
     "allowed_world_sizes": [
       1,
       2,
@@ -392,7 +423,7 @@
     "artifact_evidence": null
   },
   "evaluation": {
-    "formal_status": "awaiting_live_cveg_deployment_smoke",
+    "formal_status": "sealed_from_live_cveg_deployment_smoke",
     "maximum_world_size": 6,
     "device_selection": "use_up_to_six_healthy_low_utilization_same_node_devices_with_sufficient_memory_headroom_without_waiting_nonzero_memory_is_not_automatic_exclusion",
     "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
@@ -402,6 +433,22 @@
       32
     ],
     "minimum_smoke_writer_model_batch_size": 8,
-    "online_smoke_evidence": null
+    "online_smoke_evidence": {
+      "path": "runs/outputs/pi05_cveg_writer_profile_val8x4_correct_gpu02p3_2eb1e8e_20260812/writer_generation_profile.json",
+      "schema_version": "ember_pi05_writer_generation_profile_v2",
+      "source_commit": "2eb1e8eeecb1d09f7a4f6457eec7edc80609882b",
+      "profiled_writer_model_batch_sizes": [
+        8,
+        16,
+        32
+      ],
+      "writer_model_batch_size": 32,
+      "longest_sampled_video_frames": 67,
+      "oom_count": 0,
+      "nonfinite_count": 0,
+      "batch32_loras_per_second": 0.4713804924700972,
+      "batch32_peak_allocated_bytes": 11837472256,
+      "batch32_memory_headroom_bytes": 34768683008
+    }
   }
 }

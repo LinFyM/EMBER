@@ -350,3 +350,11 @@ correction在E上的motion RMS=`1.11e-13`且violation0。说明final response-pr
 而blind FP64 rowspace投影转为FP32 21M-value write时留下TF32量级residual。该root是measurement non-pass，不是
 架构科学non-pass；唯一窄修是复用NPCG语义，在原FP32 write上做一次fixed full-FP32 anchor residual refinement，
 不改E、sample、ridge、scale、rank、dtype、forward或threshold，随后只重跑同一profile。
+
+fixed full-FP32 residual refinement后的clean `2eb1e8e` matched reprofile把数值接口闭合且未改变科学面板：
+22/22 checks全过，blind/final equivariance ratio从`8.86e-5/1.26e-4`降到`7.91e-8/9.56e-8`，E rank24、
+correct/reverse energy`.78197/.77227`、negative ratio`.03285`与三类8/8均保持；base/candidate仍为`34/31`、
+2 gains/5 losses。一次FP32 refinement使total从`549.060s`增到`584.649s`，仍为matched SKNC的`1.2215x<1.5x`。
+这确认最早违约只是大Program数值落地，并未靠放门或改变update获得pass。实际one-shot部署B8/16/32 LoRA/s=
+`.46888/.47040/.47138`，三档最长67帧且0 OOM/nonfinite，按封存规则选择B32；下一有信息量证据只能来自formal
+macro5后的single-checkpoint strict paired400。

@@ -35,9 +35,11 @@ Cross-Video Equivariant Candidate Guard现为唯一active successor：保持NPCG
 primary增加一条same-task action-hidden ordered companion，以difference row `E`让每个shared Program write
 满足`E D=0`；NPCG final correction改为同时保持`[N;E]` response。部署仍是一条video、一套LoRA，不做few-shot
 aggregation或平均。单companion离线审计保留correct/reverse能量中位数`.780/.789`；canonical实现、fresh
-schemas、机制报告和eval family已完成。首个world3 profile中21/22门通过，唯一E ratio失败来自FP64 rowspace
-投影落到FP32大Program的`1.697e-10`绝对残差；E rank24、retained energy、negative、rank、energy与wall均通过。
-当前只允许一次fixed full-FP32 residual refinement后原合同reprofile，不改任何科学门或样本。
+schemas、机制报告和eval family已完成。fixed full-FP32 refinement后的matched world3 reprofile 22/22全过：
+blind/final E ratio=`7.91e-8/9.56e-8`、E rank24、correct/reverse energy`.782/.772`、negative三类8/8，total=
+`584.649s / 1.2215x` matched SKNC；paired outcomes仍为base/candidate=`34/31`、2 gains/5 losses，确认窄修没有
+改变科学面板。实际one-shot deployment B8/16/32均稳定，LoRA/s=`.46888/.47040/.47138`并选择B32；canonical
+config现为formal-ready，下一裁决是fresh`0→5`后立即strict paired400。
 
 长期成功条件是同一single checkpoint strict paired correct严格`>150/400`，并具备breadth、低换手、
 same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。历史最好仍为v6-fast`143/400`。

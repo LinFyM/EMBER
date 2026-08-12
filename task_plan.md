@@ -168,10 +168,12 @@
 - [x] 原位实现fresh-incompatible CVEG：companion schedule/cost、condition feature、full24 gather、`[A;E]` blind
   anchors、`[N;E]` response-preserving correction、机制报告、schema/config/eval family；不保留NPCG executable
   parallel path。synthetic/contract/full CPU均通过，正确assets环境下为`346 passed`。
-- [ ] targeted/full CPU通过后clean commit/push，在detached frozen worktree按live gpu01/gpu02状态选择同节点
-  1--6张合适A40做唯一discarded macro0 profile；首个world3 profile为21/22 measurement non-pass，唯一
-  `E` closure ratio失败已定位到FP32落地residual，允许一次固定full-FP32 refinement后同合同reprofile。
-- [ ] profile全过后做longest-video deployment batch profile、formal fresh`0→5`并立即strict paired400；只有
+- [x] targeted/full CPU通过后clean commit/push，在detached frozen worktree以gpu02物理3/4/5 world3完成profile；
+  首跑唯一`E` closure数值违约经一次固定full-FP32 refinement后matched reprofile 22/22全过，total=
+  `584.649s / 1.2215x`、blind/final E ratio=`7.91e-8/9.56e-8`，paired outcomes逐项不变。
+- [x] 完成longest-video one-shot deployment B8/16/32 profile：LoRA/s=`.46888/.47040/.47138`、最长67帧、
+  0 OOM/nonfinite，选择B32；机制与部署evidence已写入canonical config并打开formal。
+- [ ] 从clean pushed formal-ready commit按live合适卡数fresh`0→5`并立即strict paired400；只有
   correct>=142、breadth>=6、lost<=8、gained>lost且至少3 suites不降才resume`5→10`。
 
 ## Repository closeout

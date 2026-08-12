@@ -1,10 +1,10 @@
 # Cross-Video Equivariant Candidate Guard
 
 状态：2026-08-12从NPCG strict non-pass后的最早失效接口选定，当前唯一active successor authority；canonical
-实现与fresh-incompatible contract已完成。首个live profile的21/22门通过，唯一失败是FP64 rowspace投影落到
-FP32大Program时的`E` closure；允许一次与NPCG既有语义相同的fixed full-FP32 residual refinement后原合同
-reprofile。科学变量、采样、机制门和formal裁决已在实现前封存，不能增加companion数量、放宽约束或改
-ridge/scale/threshold。
+实现与fresh-incompatible contract已完成。首个live profile唯一的FP32大Program `E` closure数值违约经一次
+fixed full-FP32 residual refinement后，同合同world3 reprofile已22/22全过；随后实际one-shot B8/16/32部署均
+stable并选择B32。canonical config已封存两项evidence并开放formal fresh`0→5`。科学变量、采样、机制门和
+formal裁决已在实现前封存，不能增加companion数量、放宽约束或改ridge/scale/threshold。
 
 ## 1. Latest evidence and earliest failure
 

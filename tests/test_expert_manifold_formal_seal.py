@@ -43,7 +43,7 @@ def test_npcg_is_active_and_work_queue_pcug_nonpass_remains_sealed() -> None:
         "sealed_from_live_npcg_deployment_smoke"
     )
     smoke = npcg["evaluation"]["online_smoke_evidence"]
-    assert smoke["selected_writer_model_batch_size"] == 32
+    assert smoke["writer_model_batch_size"] == 32
     assert smoke["oom_count"] == 0
     assert smoke["nonfinite_count"] == 0
 

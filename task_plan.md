@@ -153,8 +153,11 @@
   三类各`8/8`、rank33、energy`.35360`，total=`554.99255s / 1.15955x`；无checkpoint。
 - [x] 同commit单卡部署B8/16/32均覆盖67-frame longest video且0 OOM/nonfinite，LoRA/s=
   `.46856/.47052/.47144`，按规则选择B32；profile/deployment evidence已写入canonical config。
-- [ ] clean push formal-ready seal后按live合适A40 fresh`0→5`，随后立即single-checkpoint strict paired400；
-  macro5任一预注册门失败即停止，不resume或补controls。
+- [x] clean pushed`f8491e9`、gpu02物理3/4/5 world3完成formal fresh`0→5`并exit0；首次空启动仅因launcher
+  `num_workers=2`与NPCG sealed 0不符而在模型加载前失败，retry科学合同不变。bank最终16，macro5 rank34、
+  energy`.38951`、cosine`.60652`、negative ratio`.03234`且checkpoint完整，无OOM/nonfinite。
+- [ ] 从封存macro5 checkpoint立即跑single-checkpoint strict paired400；任一预注册门失败即停止，不resume或
+  补controls。
 
 ## Repository closeout
 

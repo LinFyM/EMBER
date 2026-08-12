@@ -311,3 +311,9 @@ negative ratio保持`.03524`且三类各`8/8`，paired outcomes逐项不变；ra
 证据仍健康，总耗时`554.99255s / 1.15955x`。这确认NPCG同时保留correct reward guard与blind negative suppression，
 并把最早失效接口推进到真实多macro闭环积累。B8/16/32部署均稳定且B32以`.47144 LoRA/s`略胜；该差异只用于
 吞吐选择，不构成科学性能证据。下一次有信息量的裁决是formal fresh macro5后的strict paired400。
+
+NPCG formal fresh五宏首次把机制证据推进到task-complete连续积累：first-stable bank为`12/13/15/15/16`，每宏
+guard restricted solve均可行，feature rank=`33/36/35/34/34`，energy=`.354/.487/.457/.320/.390`，blind
+negative ratio=`.040/.026/.015/.014/.032`；五宏约束残差均约`1e-13`且step wall稳定在`531--565s`。这否定
+“negative-preserving correction会随bank增长立刻不可行或压缩掉shared update”的快速反例，但仍不能证明
+closed-loop support真正保留。macro5 strict400是决定该内部共存是否传到真实policy occupancy的必要下一证据。

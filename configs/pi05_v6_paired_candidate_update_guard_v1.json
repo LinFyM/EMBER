@@ -414,7 +414,7 @@
         16,
         32
       ],
-      "selected_writer_model_batch_size": 32,
+      "writer_model_batch_size": 32,
       "longest_sampled_video_frames": 67,
       "oom_count": 0,
       "nonfinite_count": 0,

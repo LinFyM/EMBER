@@ -4,6 +4,13 @@
 LoRA/s选择B32。canonical config已封存profile/deployment evidence并打开formal fresh`0→5`。本设计仍是唯一
 active successor，没有保留WQ-PCUG并行可执行版本。
 
+formal fresh`0→5`已由clean pushed `f8491e9`、gpu02物理3/4/5 world3完成并exit0；首次空启动仅因launcher
+沿用旧SKNC的`num_workers=2`而在模型加载前被NPCG sealed `num_workers=0`拒绝，retry没有改变科学合同。
+五个macro均无OOM/nonfinite，step seconds=`551.61/560.17/565.03/530.64/555.81`；first-stable bank从
+`12→13→15→15→16`增长，macro5 guard rows/rank=`29/29`、feature rank=`34`、energy=`.38951`、cosine=
+`.60652`、blind negative ratio=`.03234`且closure约`3e-13`。macro5 checkpoint已完整写出；下一步是该同一
+checkpoint的strict paired correct400，尚无absolute closed-loop结论。
+
 首个NPCG profile来自clean pushed `ef0008d`、gpu02物理3/4/5 world3：Phase A=`44.67883s`、total=
 `554.57395s / 1.15868x SKNC`，paired outcomes与WQ-PCUG完全一致。final negative ratio=`.03524`，三类各
 `8/8`达门，negative correction violation=`0`；rank=`33`、energy=`.35360`、alignment=`.52158`，LoRA、

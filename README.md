@@ -135,7 +135,8 @@ SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
 Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。当前Negative-Preserving
 Candidate Guard首个完整profile已通过negative preservation和其余18项门，仅因TF32 solver与full-FP32
 constraint read错配未过Program closure；窄修后的matched reprofile 20/20全过，部署B8/16/32均稳定并选择
-B32，formal fresh`0→5`已开放。单变量公式、显存边界和快速否决门见
+B32；formal fresh`0→5`已完成并留下macro5 single checkpoint，正在进入strict paired400。单变量公式、显存
+边界和快速否决门见
 [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)；
 WQ-PCUG sealed结果见
 [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。

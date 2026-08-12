@@ -48,7 +48,8 @@ formal artifact与Git快照中的“当前/下一步/active”都只表示当时
   reward guard不能破坏blind solve已有的negative-video抑制。首个clean world3完整profile中negative ratio
   `.03524`、三类各`8/8`及其余18项机制门通过，唯一`guard_program_closure`因TF32 solver与full-FP32实际read
   数值语义不一致失败。canonical窄修后的matched reprofile 20/20全过，B8/16/32部署均稳定并选择B32；config已
-  封存证据并打开formal fresh`0→5`。不得跳过macro5 strict400门或并行转向无关架构。
+  封存证据。formal fresh`0→5`已exit0，bank最终16、macro5 rank34/energy`.38951`、checkpoint完整；必须立即
+  对该single checkpoint做strict paired400，未出结果前不得resume、补controls或并行转向无关架构。
 
 canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`codex/bci-continuation`。正式训练或
 评测必须来自该分支clean pushed commit的detached frozen worktree。

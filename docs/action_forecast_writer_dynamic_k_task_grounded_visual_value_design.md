@@ -1,7 +1,8 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
 状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→100
-已完成。macro50/100 K1 strict=`88/86`；同一run正按预注册合同exact-resume 100→150，尚未终局。
+已完成。macro50/100 K1 strict=`88/86`；同一run已完成macro150 checkpoint并按预注册合同exact-resume 150→200，
+macro150 strict运行中，尚未终局。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
@@ -264,3 +265,21 @@ Long1净`+5`，所以aggregate近似不变不能解释为共同积累。
 action部分cosine`.73896`、relative-L2`.73396`、norm ratio`.98674`。这排除简单全局scale解释，并表明Writer
 继续以task-specific方式重写policy方向。macro100仍不单独扩大或缩小本design的解释边界；按第12节继续
 macro150/200，完整曲线后才裁决该结构。
+
+## 16. Fixed-A diagnostic and successor boundary
+
+macro150到达前对当前mapper的可达空间做了不读取held action/reward的CPU诊断。对old134 first4×8 validation
+LoRA，逐样本最优rank8能保留`.99999946` effective-BA能量，而当前固定随机template-A的行空间只保留
+`.0195042`；对24个step2000 train task experts为`.998094/.184501`。这说明当前结果不能解释为rank8天然容量
+不足，更早的mapper限制是所有condition只能通过B选择同一固定右子空间。
+
+但把24个experts拟合成每target一套最优共享rank8 A也不是答案：它在train experts保留`.940630`，应用到
+old134 held LoRA仅`.068108`。所以该证据不授权expert-derived static A、bank routing或SFT reconstruction；它只
+预注册task/video-conditioned A这一窄变量。历史v6-fast143完整生成A/B说明这种写出可工作，但同时混有旧前端、
+rank16和nonlinear heads，不能冒充本轮隔离证据。
+
+当前0→200曲线合同不变。若终局non-pass，successor保留本design的joint multimodal evidence、visual/action D/G、
+causal temporal、permutation-invariant set、20×8 M2P、rank8、direct mapper和B20，只在同一projected Program上
+增加四个bias-free direct family-A readouts；A residual与B均保持step0 functional identity。不得恢复旧family
+hidden/GELU、提高rank、引入expert target或同时改objective。若完整曲线通过，则本诊断只保留为机制解释，不触发
+successor。

@@ -15,7 +15,7 @@
   gap=`24`。同期BA平均cosine`.809`、relative-L2`.696`、norm ratio`1.174`；action norm ratio`.987`但cosine
   仅`.739`。当前最早断点仍是visual evidence经B20 functional credit形成的policy direction缺少on-policy
   usefulness并持续task-specific重写，不是视频未读、set噪声、近identity或整体scale；
-- 同一root当前锁定gpu01物理`4,5,6`、world3 exact-resume 100→150；不以macro50/100早期点提前终止；
+- 同一root当前锁定gpu01物理`4,5,6`、world3 exact-resume 150→200；不以macro50/100早期点提前终止；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -269,8 +269,41 @@ macro100 K1 strict400 root已完整结束：
   ratio`1.17376`；action部分cosine`.73896`、relative-L2`.73396`、norm ratio`.98674`。各task变化与净得失不
   单调，正式artifact为同root下`benchmark_comparison.json`与`checkpoint_transition_geometry_macro0050_to0100.json`。
 
-当前继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best
-崩落>15，才续到400。
+macro100→150随后以相同world3 topology正常完成：metrics共150条连续finite，macro150 checkpoint含完整
+`writer.safetensors`、`trainer_state.pt`和3个rank state，`completion.completed_macro=150`。当前从该checkpoint
+exact-resume 150→200，macro151准确从`task_visit=150`恢复，K1--K4各6、`64.127s`、finite。
+
+macro150 K1 strict400已在clean frozen evaluator `99c2323`并行启动：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0150_trainr3_evalr5_99c2323_gpu02_20260813`
+
+启动前双节点live检查后，gpu02仍只有物理`1,2,3,4,6`五张合适卡：1--4约350MiB/0% util，6约4.9GiB/0%；
+GPU0已占36.6GiB，GPU5占30.7GiB且100% util，GPU7占19.7GiB且91% util，均不适合约13.5GiB峰值的Writer
+生成；不跨节点拼gpu01单卡。400/400 LoRA已由5个generators写出并切换为15个persistent rollout workers。
+
+当前继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，
+才续到400。
+
+## 10. Fixed-A reachable-subspace diagnostic
+
+macro100 strict root内新增只读CPU artifact：
+
+`fixed_a_reachable_subspace_analysis.json`
+
+它用低秩QR精确计算`W=B@A`的可达右子空间能量，不构造dense BA；样本为old134的8个validation tasks×first4
+states共32套native rank16 LoRA，以及24个统一step2000 task experts：
+
+- old134：逐样本最优rank8保留`.99999946`总能量，当前固定随机A只保留`.0195042`；q/v/action分别为
+  `.021978/.012768/.262524`；
+- train24 experts：逐expert最优rank8保留`.998094`，当前固定随机A只保留`.184501`；
+- 每target在全部24 experts上拟合一套最优共享rank8 A，可在train experts保留`.940630`，但应用到old134 held
+  LoRA只保留`.068108`，q/v/action为`.079511/.037639/.422943`。
+
+因此rank8本身不是这里的首要容量瓶颈；当前direct-family-B把所有task/video限制在同一随机A行空间，而换一套
+train24静态A也没有足够held外推。历史v6-fast143使用完整task-conditioned A/B，提供结构先例但没有隔离本变量。
+该offline几何不能选择checkpoint或证明closed-loop收益。若且仅若当前完整0→200曲线non-pass，下一候选才是保留
+全部evidence、temporal/set、20×8 M2P、rank8和B20，只给同一projected Program增加bias-free direct family-A
+readout；不恢复旧nonlinear family hidden、expert bank、rank sweep或旧前端。
 
 完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/
 机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

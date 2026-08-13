@@ -44,7 +44,7 @@ few-shot、memory tokens、所有视觉目标或LoRA输出。
 - frozen source policy trainable参数为0；validation/test action/reward不产生梯度；
 - precision BF16/TF32，AdamW peak LR`3e-4`、warmup17、cosine400、clip1.0；
 - checkpoint每25个完整macro写出，含Writer、optimizer、scheduler、sampler/RNG和world topology；
-- 当前formal已完整到macro100并锁world3 exact-resume 100→150；后续resume继续锁同一topology。
+- 当前formal已完整到macro150并锁world3 exact-resume 150→200；后续resume继续锁同一topology。
 
 训练曲线只检查进程健康、finite、K平衡和明显异常，不能选checkpoint或证明方法。
 
@@ -82,8 +82,13 @@ macro100同一panel=`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。macro5
 relative-L2`.69630`、norm ratio`1.17376`；action norm ratio`.98674`但方向cosine`.73896`。因此不是整体scale
 变化，而是task-specific方向继续重写；Object1在总数34不变时仍有7 gain/7 lost尤其说明aggregate掩盖漂移。
 
-历史v6-fast早期也弱于后期，design已预注册macro50/100不作终局门。继续macro150/200；只有完整曲线best≥125、
+历史v6-fast早期也弱于后期，design已预注册macro50/100不作终局门。macro150完整checkpoint已封存，当前
+world3 exact-resume 150→200且macro150 strict400并行运行；只有完整曲线best≥125、
 breadth≥6且macro200未相对best崩落>15，才resume 200→400。
+
+额外fixed-A诊断表明：old134有效BA的逐样本最优rank8保留`.999999`能量，当前随机固定A只可达`.01950`；
+train24 experts对应`.99809/.18450`。train24最优共享A虽在experts保留`.94063`，到old134 held只剩`.06811`。
+这只预注册“若完整曲线non-pass，则单独让A随task/video生成”的候选；不提前改变当前训练，也不把offline几何当性能。
 
 ## 5. K4 result and next design boundary
 
@@ -104,7 +109,8 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。formal已完整到macro100，macro100 strict400已结束，同拓扑100→150 exact-resume继续运行。精确活动root
+锁B8。formal已完整到macro150，macro100 strict400已结束、macro150 strict400运行中，同拓扑150→200
+exact-resume继续运行。精确活动root
 与状态只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：

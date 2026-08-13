@@ -58,16 +58,24 @@ Dynamic-K backbone-memory、semantic-address与Direct-Family-B前代macro50 K1 s
 task mean。退役设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`；当前design
 authority为`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→100，K1--K4全程各6；K1 strict
+当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→150，K1--K4全程各6；K1 strict
 correct400在macro50/100分别为`88/86`，breadth为`5/6`，macro100 per-task=
 `1/3/34/0/0/35/12/1`。macro50→100严格同episode为`62 retained/24 gained/26 lost`、churn50；两点success
 union=`112`、single-best gap=`24`，说明aggregate近似不变但能力仍明显换手。effective BA同期平均cosine
 `.809`、relative-L2`.696`、norm ratio`1.174`，action部分cosine`.739`且norm ratio`.987`；这不是整体scale
 漂移，而是task-specific policy方向持续重写。
 
-macro50/100都不是终局门：历史v6-fast也从较弱早期继续上升。同一root当前锁定world3 topology exact-resume
-100→150。按预注册合同继续strict macro150/200，再以absolute、breadth与相邻checkpoint共同积累决定是否终止
-或进入下一单变量successor。精确root和实时状态只取`docs/active_session_handoff.md`。
+macro50/100都不是终局门：历史v6-fast也从较弱早期继续上升。同一root已从完整macro150 checkpoint锁定world3
+topology exact-resume 150→200；macro150 K1 strict400也已并行启动。按预注册合同完成macro150/200，再以absolute、
+breadth与相邻checkpoint共同积累决定是否终止或进入下一单变量successor。
+
+当前另有一个只作后续定位的fixed-A reachable-subspace结果：对old134 validation LoRA，rank8逐样本最优可保留
+`99.9999%` effective-BA能量，而当前固定随机A行空间只保留`1.95%`；对24个step2000 task experts分别为
+`99.81%`与`18.45%`。一套在train24上最优的共享rank8 A虽可保留train expert的`94.06%`，应用到old134 held
+LoRA仍只有`6.81%`。它不证明dynamic A会提高closed-loop，但明确区分了“rank8容量不足”和“所有task被钉在同一
+随机输入行空间”。只有完整macro50/100/150/200曲线non-pass后，才允许把task/video-conditioned direct A+B
+readout作为下一单变量候选；不得换成静态expert A、恢复旧前端或提前中止当前曲线。精确root和实时状态只取
+`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

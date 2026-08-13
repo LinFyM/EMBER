@@ -162,7 +162,19 @@ row retention都曾改善而closed-loop下降。离线B20只覆盖局部功能�
 
 experts可作train24 privileged teacher或几何参照，不能在held部署成为task ID route、nearest bank或第二套LoRA。
 
-## 10. 连续历史认知
+## 10. Fixed random A is a reachable-subspace bottleneck, not a rank-8 capacity result
+
+当前Direct-Family-B及Visual-Value都只生成B，A固定为step0随机template。对`W=B@A`做低秩QR能量投影后，
+old134 validation的32套强LoRA中，逐样本最优rank8平均可保留`.99999946` effective-BA能量，当前固定随机A
+行空间只保留`.0195042`。24个step2000 task experts中对应为`.998094/.184501`。所以“rank8不够”与“任意
+task都只能写入同一随机输入行空间”是两个不同假设；证据支持后者是严重限制，不能用增加rank或追stable rank救。
+
+同样重要的是，一套在train24 experts上逐target最优的共享rank8 A虽然保留`.940630`训练能量，应用到old134 held
+LoRA只保留`.068108`。因此静态SFT/expert A basis并不是合理解法；若当前完整曲线失败，窄候选应由task/video
+conditioned Program动态生成A，同时保留现有rank8、direct readout及全部视频结构。该分析只证明可达空间限制，
+不证明动态A闭环有效；历史v6-fast完整动态A/B只提供可行性先例，不能替代新的单变量fresh实验。
+
+## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；
 2. v5/v5.2分离Semantic Core与Procedure，但正确时序可在fusion/compiler后衰减；
@@ -181,7 +193,7 @@ experts可作train24 privileged teacher或几何参照，不能在held部署成�
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 
-## 11. 选择方法与工程原则
+## 12. 选择方法与工程原则
 
 Task-Grounded Visual-Value实现与profile新增的边界：同一次joint forward中的task-conditioned raw patch Value可在
 不更新frozen policy、不增加第二次backbone forward的前提下接入visual D/G与完整LoRA梯度链。直接实现的

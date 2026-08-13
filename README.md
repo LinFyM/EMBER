@@ -50,7 +50,7 @@ Core/Procedure/compiler/factor路径。Slot-Set只有约197k参数，K=1严格�
 few-shot共同程序能否在强底座上带来净增。warm start只作机制开发，若成功仍需从零训练。完整authority见
 [`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`](docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md)。
 canonical实现、370项CPU测试、真实GPU机制门和world5 full24 B20 profile已通过，formal合同已seal并进入fresh
-macro0→25。
+macro0→25。该训练现已完成，K4 generation profile锁B8，当前进入macro25 K4 strict paired correct400。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

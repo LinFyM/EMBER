@@ -82,7 +82,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   base无梯度；
 - [x] 完成gpu01 world5 full24 B20真实profile：`30.7422s/macro`、peak reserved=`40.75GB`、K1--K4各6、
   最长323帧、0 OOM/nonfinite，并seal formal合同；
-- [ ] 训练到macro25并做K4 strict paired correct400；仅有明确增益才续到50；
+- [x] 从clean detached `26ebc43` fresh训练到macro25，25/25 metrics、completion和checkpoint完整；
+- [x] 完成macro25 K4 B8/B16/B32 deployment profile，按最高吞吐锁B8；
+- [ ] 完成macro25 K4 strict paired correct400；仅有明确增益才续到50；
 - [ ] 若超过150，补K1--K4 scaling与五臂因果controls；若机制成立，再制定同架构fresh训练authority。
 
 ## Continuous loop after this result
@@ -109,5 +111,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。V6 Dynamic Slot-Set profile已通过且无活动GPU进程；当前从clean pushed seal commit fresh训练
-macro0→25。
+无权限或资产阻塞。V6 Dynamic Slot-Set macro25与K4 generation profile已完整结束且无活动GPU进程；当前进入
+macro25 K4 strict paired correct400。

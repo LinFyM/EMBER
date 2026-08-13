@@ -15,8 +15,8 @@
   `-43/-47/-37`，相对v6-fast逐task差=`+4/-2/-8/-37/0/+1/-9/-1`；
 - 当前active design：V6 Dynamic Slot-Set Bridge；冻结历史v6-fast macro400，只训练K1恒等、K>1置换不变的
   per-policy-slot集合层，原生v6 factor heads只解码一次；
-- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现、GPU机制验证和
-  full24 B20 profile均完成，formal合同已seal，当前下一步是clean pushed commit上的fresh macro0→25；
+- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现、机制/profile和
+  fresh macro0→25均完成，K4 deployment B8已seal，当前下一步是macro25 K4 strict paired correct400；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -421,4 +421,18 @@ full24 profile root：
 - 首次`8278f74`尝试在任何step前因worktree-relative v6 asset路径fail-closed；`07e9477`改为runtime显式asset root，
   全量CPU仍`370 passed`，科学合同未变。
 
-当前无EMBER GPU进程；formal config已seal，下一步fresh macro0→25、checkpoint25，不加载profile checkpoint。
+formal training root：
+
+`runs/outputs/pi05_v6_dynamic_slot_set_bridge_formal_fresh0to25_r5_b20_26ebc43_gpu01_20260814`
+
+- clean detached `26ebc43`，gpu01物理`0,1,4,5,6` world5，fresh macro0→25；
+- 25/25 metrics、completion和macro25 checkpoint完整，总耗时=`750.446s`；
+- 末步functional/gradient=`.095644/5.152e-6`，K1--K4每macro各6，peak reserved=`40.75GB`，0 OOM/nonfinite。
+
+K4 generation profile root：
+
+`runs/outputs/pi05_v6_dynamic_slot_set_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_26ebc43_macro0025_20260814`
+
+- fixed validation8x4 correct panel，B8/B16/B32=`.224364/.224185/.224350 LoRA/s`，全部stable、0 OOM；
+- peak reserved约`12.95/12.97/13.01GB`，最长condition=`226` frames，按最高实测吞吐锁B8；
+- 当前无EMBER GPU进程；下一步从新的clean pushed evaluator authority做macro25 K4 strict400。

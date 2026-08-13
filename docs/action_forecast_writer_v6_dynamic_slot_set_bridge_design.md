@@ -125,3 +125,9 @@ finite，所有视频完整保留，最长condition=`323`帧；`30.7422s/macro`�
 norm=`1.7725e-6`，peak allocated/reserved=`36.48/40.75GB`，0 OOM/nonfinite。第一份`8278f74`尝试在任何
 optimizer step前因frozen worktree错误解析相对v6资产路径fail-closed；`07e9477`把同一checkpoint从runtime显式
 canonical asset root解析，未改科学图。profile checkpoint不进入formal训练；下一步fresh macro0→25。
+
+fresh formal macro0→25使用clean detached `26ebc43`、同一gpu01 world5，25/25 macros和macro25 checkpoint完整；
+总耗时`750.446s`，末步functional/gradient=`.095644/5.152e-6`，K1--K4始终各6，0 OOM/nonfinite。
+macro25 K4 generation profile在gpu01物理2上对同一fixed validation8x4 panel测得B8/B16/B32=`.224364/.224185/
+.224350 LoRA/s`，三者稳定、0 OOM，peak reserved约`12.95/12.97/13.01GB`；按最高吞吐规则锁B8。下一步是
+macro25 K4 strict paired correct400。

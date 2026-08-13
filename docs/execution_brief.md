@@ -25,6 +25,9 @@ v6/source无梯度，真实video倒序明显改变Program；全量CPU=`370 passe
 低位差异，不为此拆分forward或降低吞吐。full24 B20 world5 profile=`30.7422s/macro`、peak reserved=`40.75GB`、
 K1--K4各6、最长323帧、0 OOM/nonfinite；formal合同已seal，当前fresh训练到macro25。
 
+macro0→25已经完整结束，总耗时`750.446s`；macro25 K4 deployment B8/B16/B32=`.224364/.224185/.224350
+LoRA/s`，三者稳定且显存余量充足，按最高吞吐规则锁B8。当前立即做K4 strict paired correct400。
+
 ## 2. Single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、compiler、rank16 topology和factor heads全部

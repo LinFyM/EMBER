@@ -57,7 +57,7 @@ exact language + K=1..4 same-task action-hidden ordered videos
 也不把warm start冒充最终方法；若机制通过，仍需同一train24信息墙下从零训练。当前authority为
 `docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`，精确run状态只取
 `docs/active_session_handoff.md`。canonical实现、全量CPU、真实GPU机制门与world5 full24 profile已通过，formal
-合同已seal，当前进入fresh macro0→25。
+macro0→25和K4 generation profile已完成，当前进入macro25 K4 strict paired correct400。
 
 ## 4. Long-term objective and decision rule
 

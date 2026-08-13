@@ -1,7 +1,7 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
 状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→100
-已完成。macro50 K1 strict=`88/400`；同一run正按预注册合同exact-resume 100→150，macro100 strict运行中，尚未终局。
+已完成。macro50/100 K1 strict=`88/86`；同一run正按预注册合同exact-resume 100→150，尚未终局。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
@@ -252,3 +252,15 @@ paired BA cosine仅`.831`、relative-L2`.584`。functional loss轨迹几乎一�
 分target诊断中，q/v norm为Direct-B的`.947/.952x`，action-in/out norm则从`.446`增至`1.545`。后者不是异常
 能量本身：old134 action norm=`1.573`；但新架构对old134 action方向的cosine仅`.031`。所以不得据此回调action
 scale或追SFT能量；它支持的仍是“能量健康但方向/occupancy credit错误”。
+
+## 15. Macro100 intermediate evidence
+
+同一fresh run的macro100 K1 strict=`86/400`、breadth6、per-task=
+`1/3/34/0/0/35/12/1`。相对macro50严格同episode为`62 retained/24 gained/26 lost`、churn50、net`-2`；两点
+success union=`112`、single-best gap=`24`。Object1的总数保持34但内部仍有7 gain/7 lost，Goal6净`-6`而
+Long1净`+5`，所以aggregate近似不变不能解释为共同积累。
+
+同期前4个配对state/video的effective BA平均cosine`.80856`、relative-L2`.69630`、norm ratio`1.17376`；
+action部分cosine`.73896`、relative-L2`.73396`、norm ratio`.98674`。这排除简单全局scale解释，并表明Writer
+继续以task-specific方式重写policy方向。macro100仍不单独扩大或缩小本design的解释边界；按第12节继续
+macro150/200，完整曲线后才裁决该结构。

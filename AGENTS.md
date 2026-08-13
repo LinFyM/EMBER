@@ -58,17 +58,16 @@ Dynamic-K backbone-memory、semantic-address与Direct-Family-B前代macro50 K1 s
 task mean。退役设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`；当前design
 authority为`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→50，K1--K4全程各6；macro50 K1
-strict correct400=`88/400`、breadth5、per-task=`4/0/34/2/0/41/7/0`。相对最接近的Direct-Family-B 102为
-`74 retained/14 gained/28 lost`；主要净损失来自Object1/3。新增视觉Value没有造成同task视频噪声爆炸：
-task/video effective-BA SNR `16.34→19.05`、task-mean offdiag cosine`.749→.707`，但相对Direct-B的BA平均
-cosine仅`.831`、relative-L2`.584`，说明它学会大幅旋转LoRA，却未对准held on-policy有用方向。训练functional
-loss与Direct-B几乎相同，因此内部几何和surrogate均不能替代闭环裁决。
+当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→100，K1--K4全程各6；K1 strict
+correct400在macro50/100分别为`88/86`，breadth为`5/6`，macro100 per-task=
+`1/3/34/0/0/35/12/1`。macro50→100严格同episode为`62 retained/24 gained/26 lost`、churn50；两点success
+union=`112`、single-best gap=`24`，说明aggregate近似不变但能力仍明显换手。effective BA同期平均cosine
+`.809`、relative-L2`.696`、norm ratio`1.174`，action部分cosine`.739`且norm ratio`.987`；这不是整体scale
+漂移，而是task-specific policy方向持续重写。
 
-macro50不是终局门：历史v6-fast也从较弱早期继续上升。同一root已完整到macro100，当前锁定world3 topology
-exact-resume 100→150；macro100 K1 strict400正并行运行。按预注册合同继续strict macro100/150/200，再以
-absolute、breadth与相邻checkpoint共同积累决定是否终止或进入下一单变量successor。精确root和实时状态只取
-`docs/active_session_handoff.md`。
+macro50/100都不是终局门：历史v6-fast也从较弱早期继续上升。同一root当前锁定world3 topology exact-resume
+100→150。按预注册合同继续strict macro150/200，再以absolute、breadth与相邻checkpoint共同积累决定是否终止
+或进入下一单变量successor。精确root和实时状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

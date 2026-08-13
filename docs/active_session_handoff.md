@@ -10,12 +10,12 @@
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 最新完成closed-loop节点与active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；fresh
-  macro0→50已完成，macro50 K1 strict=`88/400`、breadth5，尚未达到长期目标；
-- 相对最接近的Direct-Family-B 102为`74 retained/14 gained/28 lost`；视觉Value提高task/video BA SNR并降低
-  跨task共线，却把BA大幅旋到held无用方向。当前最早断点是visual evidence经B20 functional credit形成的
-  policy direction缺少on-policy usefulness，不是视频未读、set噪声或近identity；
-- 同一root已完整到macro100，当前锁定gpu01物理`4,5,6`、world3 exact-resume 100→150；macro100 strict400
-  正在gpu02物理`1,2,3,4,6`并行运行，不以macro50单点提前终止；
+  macro0→100已完成，macro50/100 K1 strict=`88/86`、breadth=`5/6`，尚未达到长期目标；
+- macro50→100严格同episode为`62 retained/24 gained/26 lost`、churn50，success union=`112`、single-best
+  gap=`24`。同期BA平均cosine`.809`、relative-L2`.696`、norm ratio`1.174`；action norm ratio`.987`但cosine
+  仅`.739`。当前最早断点仍是visual evidence经B20 functional credit形成的policy direction缺少on-policy
+  usefulness并持续task-specific重写，不是视频未读、set噪声、近identity或整体scale；
+- 同一root当前锁定gpu01物理`4,5,6`、world3 exact-resume 100→150；不以macro50/100早期点提前终止；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -251,17 +251,25 @@ macro50 K1 strict400已从clean frozen `99c2323`完整结束：
 Writer state，`completion.completed_macro=100`。当前100→150 tmux为`ember_tgvv_resume100to150_caa2e30`；macro101
 准确从`task_visit=100`恢复，K1--K4各6、`64.218s`、finite。
 
-macro100 K1 strict400 root：
+macro100 K1 strict400 root已完整结束：
 
 `runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0100_trainr3_evalr5_99c2323_gpu02_20260813`
 
 - clean frozen evaluator仍是`99c2323`；validation8×50、correct K1、without-replacement seed7、B8不变；
 - gpu02物理`1,2,3,4,6`，5个Writer generators、15个persistent workers；启动preflight仍为1--4约350MiB/0%
   util、GPU6约4.9GiB/0% util，预计新增`535,986,176` bytes；
-- tmux=`ember_tgvv_correct400_m100_99c2323`；已封存macro100 adapter/run contract并开始生成400-entry cache，尚无
-  closed-loop结果。
+- 60/60 shards、400/400 rows、15/15 workers exit0，无failure artifact；wall=`1116.200s`；
+- strict=`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`、per-suite=`4/34/35/13`，top3=
+  `81/86=94.19%`；
+- 相对macro50的88为`62 retained/24 gained/26 lost`、churn50、net`-2`；两点episode-level union=`112`，
+  single-best gap=`24`。Object1内部7 gain/7 lost但总数仍34；Goal6净`-6`、Long1净`+5`，是能力换手而非共同积累；
+- 相对Direct-Family-B102为`63 retained/23 gained/39 lost`、churn62、net`-16`；相对old134/compiler138/
+  online128净`-48/-52/-42`；相对v6-fast143逐task差=`+1/0/-12/-37/0/-1/-8/0`；
+- macro50→100前4个严格配对state/video的implicit effective-BA：cosine`.80856`、relative-L2`.69630`、norm
+  ratio`1.17376`；action部分cosine`.73896`、relative-L2`.73396`、norm ratio`.98674`。各task变化与净得失不
+  单调，正式artifact为同root下`benchmark_comparison.json`与`checkpoint_transition_geometry_macro0050_to0100.json`。
 
-macro100结果后继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best
+当前继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best
 崩落>15，才续到400。
 
 完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/

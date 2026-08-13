@@ -12,8 +12,8 @@ effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删
 不是解决Program→policy effectiveness和共同积累的充分条件。同一checkpoint K4=`98/400`，相对K1为
 `80 retained/18 gained/22 lost`；set将same-task相对方差约降`6.3x`却保持task mean cosine`.99604`，证明
 few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass。最新Task-Grounded Visual-Value
-macro50=`88/400`、breadth5；它提高task/video BA SNR并降低跨task共线，却大幅旋转到held无用方向。其预注册
-0→200曲线尚未完成，不得把macro50写成终局。
+macro50/100=`88/86`、breadth`5/6`；它提高task/video BA SNR并降低跨task共线，却大幅旋转到held无用方向，且
+50→100发生`62/24/26` retained/gained/lost、churn50。其预注册0→200曲线尚未完成，不得把前两个点写成终局。
 
 ## 1. Stable problem definition
 
@@ -97,7 +97,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
 | Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
-| Task-Grounded Visual-Value rank8 | macro50=`88`, breadth5 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | 相对Direct-B=`74/14/28` retained/gained/lost；action方向对old cosine仅`.031`、functional loss近同而held更差，当前visual Value + B20 credit未对准on-policy方向；继续100/150/200 |
+| Task-Grounded Visual-Value rank8 | macro50/100=`88/86`, breadth5/6 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | 50→100=`62/24/26` retained/gained/lost、churn50；aggregate近稳但能力继续换手，当前visual Value + B20 credit未对准on-policy方向；继续150/200 |
 
 ## 4. Final rank14 adjudication
 

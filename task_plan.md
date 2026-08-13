@@ -49,7 +49,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成macro50 K1 strict=`88/400`、breadth5及逐task/churn/effective-BA分析；
 - [x] 定位当前最早断点：视觉Value确实改变并分化BA，但当前functional credit没有把它对准held on-policy方向；
 - [x] 完成同world3 exact-resume 50→100与完整macro100 checkpoint，启动100→150及macro100 K1 strict400；
-- [ ] 按完整0→200合同继续100/150/200与相邻checkpoint共同积累分析。
+- [x] 完成macro100 K1 strict=`86/400`、breadth6以及macro50→100的严格churn与effective-BA方向分析；
+- [ ] 按完整0→200合同继续150/200与相邻checkpoint共同积累分析。
 
 ## Continuous loop after this result
 

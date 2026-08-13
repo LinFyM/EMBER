@@ -18,7 +18,7 @@
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
 | Direct-Family-B K4 deployment | 98 | — | — | — | — | set把same-task方差降约6.3x，却稳定同一错误task mean |
-| Task-Grounded Visual-Value rank8 macro50 | 88 | — | — | — | — | 视觉Value分化BA但没有对准held on-policy有用方向 |
+| Task-Grounded Visual-Value rank8 macro50/100 | 88/86 | — | — | — | — | 视觉Value分化BA，但相邻checkpoint仍以churn50换手 |
 
 Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
 直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
@@ -38,6 +38,11 @@ functional loss轨迹几乎不变进一步复现offline surrogate/on-policy outc
 相对old134的action effective-BA cosine只有`.031`，方向仍近正交。Object3的净损失最大而总体BA变化幅度反而
 最小之一，也排除“旋转越大越差”的标量解释。因此后续不得用全局scale、action scale或SFT能量匹配救该方法；
 需要解决视觉credit如何选择policy/occupancy有效方向。
+
+macro100进一步得到`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。相对macro50为
+`62 retained/24 gained/26 lost`、churn50，两点union=`112`而single best仅88。BA 50→100平均cosine`.809`、
+relative-L2`.696`；action norm ratio近1但方向cosine仅`.739`。尤其Object1总数同为34却7 gain/7 lost，证明
+“总分稳定”不是能力稳定；当前functional credit继续在task和episode decision boundary之间换手。
 
 ## 2. 真正的学习问题
 
@@ -171,7 +176,8 @@ experts可作train24 privileged teacher或几何参照，不能在held部署成�
 10. Balanced residual、RLS、Reward-Credit依次定位跨video正交、offline/on-policy错位和native-factor精度边界；
 11. uniform rank14证明compression和regeneration可分别破坏old support；
 12. Dynamic-K 100与semantic-address 101把断点推进到Program→mapper→policy direction；
-13. Visual-Value macro50进一步证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy有用方向。
+13. Visual-Value macro50/100进一步证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy
+    有用方向，且aggregate稳定时仍可发生显著checkpoint churn。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

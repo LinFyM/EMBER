@@ -18,9 +18,10 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 negative loss、expert、reward或language-only Value。完整公式与门见
 `action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-formal从clean `caa2e30`在gpu01物理`4,5,6`、world3 fresh完成macro0→50；macro50 K1 strict400=
-`88/400`、breadth5。该单点不是终局门，同一root正锁定world3 topology exact-resume到100；完整曲线继续
-100/150/200。精确host、devices、paths与artifact只取`active_session_handoff.md`。
+formal从clean `caa2e30`在gpu01物理`4,5,6`、world3 fresh完成macro0→100；macro50/100 K1 strict400=
+`88/86`、breadth=`5/6`。两点严格配对churn50，说明aggregate近似稳定但能力仍换手。该早期曲线不是终局门，
+同一root正锁定world3 topology exact-resume到150；完整曲线继续150/200。精确host、devices、paths与artifact只取
+`active_session_handoff.md`。
 
 ## 2. Why this experiment is valid
 
@@ -47,7 +48,7 @@ few-shot、memory tokens、所有视觉目标或LoRA输出。
 
 训练曲线只检查进程健康、finite、K平衡和明显异常，不能选checkpoint或证明方法。
 
-## 4. Current macro50 K1 strict400 adjudication
+## 4. Current macro50/100 K1 strict400 adjudication
 
 正式arm为：
 
@@ -76,7 +77,12 @@ cosine`.749→.707`，norm均值`136.64→126.47`；但新旧BA平均cosine仅`.
 loss轨迹与Direct-B几乎相同，却让held rollout更差。因此目前最早断点是raw visual D/G经当前functional credit
 学到的LoRA方向缺少held on-policy usefulness，而非“没有读取视觉”、set不稳或LoRA过小。
 
-历史v6-fast早期也弱于后期，design已预注册macro50不作终局门。继续macro100/150/200；只有完整曲线best≥125、
+macro100同一panel=`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。macro50→100严格同episode为
+`62 retained/24 gained/26 lost`、churn50，union=`112`而single best只有88。BA平均cosine`.80856`、
+relative-L2`.69630`、norm ratio`1.17376`；action norm ratio`.98674`但方向cosine`.73896`。因此不是整体scale
+变化，而是task-specific方向继续重写；Object1在总数34不变时仍有7 gain/7 lost尤其说明aggregate掩盖漂移。
+
+历史v6-fast早期也弱于后期，design已预注册macro50/100不作终局门。继续macro150/200；只有完整曲线best≥125、
 breadth≥6且macro200未相对best崩落>15，才resume 200→400。
 
 ## 5. K4 result and next design boundary
@@ -98,8 +104,8 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。formal已完整到macro100，macro100 strict400与同拓扑100→150 exact-resume并行运行。精确活动root与状态
-只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
+锁B8。formal已完整到macro100，macro100 strict400已结束，同拓扑100→150 exact-resume继续运行。精确活动root
+与状态只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 

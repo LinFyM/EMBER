@@ -1,6 +1,7 @@
 # Dynamic-K Semantic-Address Backbone-Memory Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible successor authority；实现、profile、formal和closed-loop均未完成。
+日期：2026-08-13。状态：fresh-incompatible canonical implementation完成；CPU门通过，live profile、formal和
+closed-loop均未完成。
 
 ## 1. 要解决的最早失效接口
 
@@ -29,6 +30,14 @@ absolute `task_hidden`、absolute `probe_hidden`没有消费者，`Z`本身也�
 
 本successor只修改这一个接口。shared mapper的低stable-rank与跨task共线是已观察到的下游症状，但本轮不同时
 修改；否则无法判断低分来自Semantic Core缺失还是参数写出拓扑。
+
+实现前又在frozen `b541785` macro50上做了8-task（train/validation各四suite）五臂逐接口定位。mean-Z的
+same-task relative L2均值`.0272`，cross-suite wrong为`.1071`，8/8 tasks均为same<wrong，证明absolute memory
+保留了稳定的task/video语义邻域。现有D/G Program并没有完全抹掉wrong/order：video Program对same/wrong/
+shuffle/reverse的relative L2为`.433/.960/1.423/2.002`，final Program为`.358/.981/1.242/2.213`，effective BA
+为`.247/.850/1.021/2.306`。因此本改动不是因为Program“读不到”wrong/order，而是因为当前Procedure缺少一个
+显式、跨same-task video稳定的Semantic Core来选择这些变化；它是有依据但高风险的必要性实验。若closed-loop
+仍差，不能继续把失败归因于语义被D/G完全删除，而应把最早接口推进到shared mapper或functional credit。
 
 ## 2. 保留不变的合同
 

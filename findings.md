@@ -29,6 +29,10 @@ old134大，故它不是没看视频，而是删除Semantic Core后把不同视�
 唯一Key/Value content。这样语义只能决定“从有向变化里读什么”，不能独立成为LoRA value；constant/static和
 language-only仍保持identity。set、M2P、rank8 mapper、B20与dynamic-K recipe保持不变，以便closed-loop结果能
 裁决Semantic Core address，而不是把representation与mapper改动混在一起。
+实现前的8-task逐接口probe给出更精确边界：mean-Z的same/wrong relative L2为`.0272/.1071`，8/8 tasks均
+same<wrong，说明absolute memory确有跨video task语义；旧video/final Program和effective BA仍保留强wrong与
+order差异，故100分不能写成“D/G完全删除了语义或顺序”。当前可证伪假设是：把稳定absolute Core只作为Query
+address，能否让已有Procedure沿task-correct policy方向工作；若不能，最早接口应推进到mapper或functional credit。
 同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved
 约`13.4GB`，因此吞吐authority选择B8并锁定formal evaluator。该结果只解决评测效率和首次live执行风险，
 不改变任何科学结论。

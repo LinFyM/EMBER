@@ -26,10 +26,15 @@
 - [x] 完成macro50 effective-BA定位：总norm不小，但stable rank约1、action-target能量低、相对old方向近正交，
   task mean BA高度同向；video variance更大，排除“完全没读video”。代码中最早失配是absolute Semantic Core在
   Program前被差分删除，`task_hidden/probe_hidden`完全未用。
-- [ ] 实现唯一semantic-address successor：每video absolute mean memory只进入temporal Query，D/G仍为唯一
+- [x] 实现唯一semantic-address successor：每video absolute mean memory只进入temporal Query，D/G仍为唯一
   dynamic Key/Value content；其余dynamic K、set、M2P、rank8 mapper、B20和recipe不变。过CPU/机制/吞吐门后fresh
   `0→50`并立刻strict paired correct400。fresh authority已封存为
-  `docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
+  `docs/action_forecast_writer_dynamic_k_semantic_address_design.md`；clean `96e7cf6`实现已push，完整CPU`372 passed`。
+- [x] frozen macro50 8-task逐接口probe：absolute mean-Z的same/wrong relative L2=`.0272/.1071`且8/8
+  same<wrong；旧final Program仍有same/wrong/shuffle/reverse=`.358/.981/1.242/2.213`。这支持semantic address
+  的信息来源，但不支持“旧Program完全丢失任务/顺序”。
+- [ ] 从clean frozen implementation做full24 B20 discarded live profile；通过后封存profile authority并fresh
+  `0→50`。
 - [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高
   实测吞吐选择并锁定B8；正式correct400只允许B8。
 

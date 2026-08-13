@@ -18,6 +18,11 @@
   与language/static-only仍不能写LoRA。先完成fresh-incompatible authority和canonical实现，再过机制/吞吐门并
   fresh`0→50`立即strict paired correct400；本轮不同时修改shared mapper。
   fresh-incompatible authority为`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
+  canonical query-only实现已在clean `96e7cf6`完成并push，完整CPU回归`372 passed`；旧v1 checkpoint因fresh
+  launch schema与新增参数不能resume。8-task frozen macro50逐接口probe中mean-Z same/wrong relative L2为
+  `.0272/.1071`且8/8 same<wrong，证明absolute memory具有稳定task语义；旧final Program仍保留same/wrong/
+  shuffle/reverse差异`.358/.981/1.242/2.213`，所以该successor检验的是Semantic Core能否更好地选择已有
+  Procedure，而不是声称旧Program完全没有视频/顺序信号。下一步是live full24 B20 profile。
 - K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
   0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
   profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。

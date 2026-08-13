@@ -16,6 +16,11 @@ shared mapper、B20 objective、dynamic K和recipe均不变。constant/static与
 先过zero/order/set/gradient/吞吐机制门，再fresh`0→50`立即strict paired correct400；本轮不同时改mapper，若
 M2P语义已经健康而family head后才坍缩，下一轮才单独做layer-direct readout。
 完整公式、边界与快速否决门见`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
+canonical implementation已在clean `96e7cf6`完成并push，完整CPU`372 passed`。frozen macro50的8-task逐接口
+probe显示mean-Z same-task相对差`.0272`、wrong`.1071`且8/8 same<wrong；旧final Program对same/wrong/
+shuffle/reverse仍有`.358/.981/1.242/2.213`差异。该证据支持absolute memory提供稳定语义address，也警告旧
+Procedure本身并未失明；若新closed-loop仍差，下一接口应是mapper/credit，而不是继续堆前端。当前下一操作是
+clean frozen commit的full24 B20 discarded live profile。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

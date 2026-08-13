@@ -90,7 +90,8 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。精确活动root与运行状态只取`active_session_handoff.md`；profile不冒充性能结果。
+锁B8。fresh 0→50现已完整封存，macro50 strict400与同拓扑50→100 exact-resume并行运行。精确活动root与状态
+只取`active_session_handoff.md`；profile不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 
@@ -110,6 +111,7 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 
 - launch前同时live检查gpu01/gpu02；单节点至多6张，有多少真正合适就用多少；
 - 允许在显存峰值余量充足、低util且不明显干扰他人的卡上共驻；不抢占、kill、reset或dummy占卡；
+- evaluator当前保守共驻门为util≤10%、已用≤8GiB且剩余≥32GiB；任一越界即拒绝；
 - 多卡训练设置`NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL；
 - fresh可用world1--6；exact resume锁原world topology；
 - evaluator用动态cost queue和persistent model/env，不静态拆task；

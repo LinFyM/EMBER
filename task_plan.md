@@ -44,7 +44,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] matched world4 profile优化为`49.0775/46.2242=1.061727x`，K平衡、finite、无OOM并seal config；
 - [x] 从clean pushed `caa2e30`创建detached frozen worktree，在gpu01物理`4,5,6`以world3 fresh启动正式0→50；
 - [x] 完成macro25完整checkpoint，并以相同生成图完成K1 B8/B16/B32 live deployment profile，锁B8；
-- [ ] 从sealed clean commit fresh macro0→50，完成macro25/50 checkpoint并做K1 strict paired correct400；
+- [x] 从sealed clean commit fresh macro0→50，完整封存50条metrics、macro25/50 checkpoints与completion；
+- [x] 同world3 exact-resume 50→100，并从clean frozen evaluator并行启动macro50 K1 strict paired correct400；
+- [ ] 完成macro50 K1 strict paired correct400及逐task/churn分析；
 - [ ] 按完整0→200合同继续100/150/200与相邻checkpoint共同积累分析。
 
 ## Continuous loop after this result

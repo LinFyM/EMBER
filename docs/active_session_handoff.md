@@ -14,8 +14,8 @@
 - K4已正式证明cross-video set会显著过滤same-task demo nuisance，但不会自动产生更有用的task mean；下一fresh
   successor只前移到per-video高层视觉语义Value/Procedure接口，不继续修改K、set、mapper或LoRA几何；
 - active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；design、canonical实现、CPU机制与
-  matched world4 profile已通过；正式fresh 0→50已从sealed clean commit启动并完成首个健康macro；尚无新
-  closed-loop成绩；
+  matched world4 profile已通过；正式fresh 0→50已完整结束，50→100 exact-resume与macro50 K1 strict400正在
+  并行运行；尚无新closed-loop成绩；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -204,6 +204,13 @@ direct family-B与完整rank8 LoRA；只改变set之前的evidence owner：让�
   `.068287`，三卡约100%利用率且峰值allocated/reserved=`39.298/45.546GB`；只证明正式合同已健康运行；
 - tmux：gpu01 `ember_tgvv_formal_caa2e30`；精确命令与环境以该root的`run_contract.json`为准。
 
+fresh 0→50现已完整结束：`metrics.jsonl`恰好50条、macro1--50唯一连续，K1--K4全程各6，全部loss/gradient/
+seconds finite；macro25/50两个checkpoint均为world3且5个声明文件尺寸完整；`completion.completed_macro=50`，
+总耗时`3398.5443s`。macro50 functional/consistency/gradient=`.114084/.005499/.049901`，只作训练健康证据。
+
+同一root已从macro50以相同gpu01物理`4,5,6`和world3 exact-resume到100，tmux
+`ember_tgvv_resume50to100_caa2e30`；首个续训macro51已完成，证明optimizer/scheduler/RNG/cursor恢复链工作。
+
 macro25 checkpoint已完整写出且训练继续。用该checkpoint在gpu02物理GPU1完成K1部署定标：
 
 `runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_k1_writer_generation_profile_val8x4_correct_gpu02p1_caa2e30_macro0025_retry1_20260813`
@@ -217,6 +224,18 @@ macro25 checkpoint已完整写出且训练继续。用该checkpoint在gpu02物�
 
 macro50完成后立即做K1 strict paired correct400。历史v6-fast macro50也只有106，因此不以单个50点低于120提前
 杀死整个0→200裁决；按design继续100/150/200并分析相邻checkpoint共同积累。
+
+macro50 K1 strict400已从clean frozen `99c2323`启动：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0050_trainr3_evalr5_99c2323_gpu02_20260813`
+
+- gpu02物理`1,2,3,4,6`，5个Writer generators、15个persistent rollout workers；validation8×50、correct K1、
+  without-replacement seed7、generation B8；
+- GPU0约36GB、GPU5/7高util而未选；所选1--4约349MiB/0% util，GPU6约4.9GB/0% util，符合owner允许安全
+  低util共驻的边界，不等待第6卡；
+- evaluator准入窄修复`99c2323`只允许util≤10%、used≤8GiB、free≥32GiB，超门仍fail-closed；全量CPU
+  `383 passed`；不改变scientific panel、Writer、随机性或rollout；
+- 5个generator已封存400-entry LoRA cache并release Writer，15个workers已扩出，queue正在执行；尚无结果。
 
 之后继续：真实结果 -> 深入接口分析 -> 一个主要因果变量 -> authority -> canonical实现/机制/吞吐 -> fresh训练 ->
 single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

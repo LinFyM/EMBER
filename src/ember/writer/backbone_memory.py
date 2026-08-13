@@ -417,9 +417,9 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
         )
         attention_mask = core._prepare_attention_masks_4d(
             make_backbone_memory_mask(
-            prefix_padding,
-            action_horizon=self.action_horizon,
-            memory_tokens=self.MEMORY_TOKENS,
+                prefix_padding,
+                action_horizon=self.action_horizon,
+                memory_tokens=self.MEMORY_TOKENS,
             )
         )
         total_padding = torch.cat(
@@ -501,8 +501,9 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
         task_span_mask: torch.Tensor,
         maximum_task_tokens: int,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        frozen_prefix = prefix_hidden.detach()
         task_hidden = self._pack_task_hidden(
-            prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :],
+            frozen_prefix[:, self.NATIVE_IMAGE_TOKENS :],
             task_span_mask,
             maximum_task_tokens,
         )
@@ -510,10 +511,13 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             torch.arange(maximum_task_tokens, device=prefix_hidden.device)[None]
             < task_span_mask.sum(dim=1)[:, None]
         )
-        task_evidence = self.evidence_projection(task_hidden)
-        patch_evidence = self.evidence_projection(
-            prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
+        projected_prefix = self.evidence_projection(frozen_prefix)
+        task_evidence = self._pack_task_hidden(
+            projected_prefix[:, self.NATIVE_IMAGE_TOKENS :],
+            task_span_mask,
+            maximum_task_tokens,
         )
+        patch_evidence = projected_prefix[:, : self.NATIVE_IMAGE_TOKENS]
         visual_evidence = task_evidence + self.patch_grounding(
             task_evidence,
             patch_evidence,

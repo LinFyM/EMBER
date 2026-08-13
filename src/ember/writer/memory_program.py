@@ -309,32 +309,28 @@ class DynamicKMemoryProgram(torch.nn.Module):
         visual_transition = torch.zeros_like(visual_evidence)
         visual_transition[1:] = visual_evidence[1:] - visual_evidence[:-1]
         visual_goal = visual_evidence[-1:] - visual_evidence[:1]
+        visual_values = torch.cat((visual_transition, visual_goal))
+        visual_masks = torch.cat(
+            (valid_task_tokens, valid_task_tokens[-1:] & valid_task_tokens[:1])
+        )
         cell_query = semantic_address.reshape(
             self.EXPERT_LAYERS * self.RANK_TOKENS,
             self.PROGRAM_WIDTH,
         )
         cell_route = self._cell_route()
-        visual_transition_readout = self.visual_reader(
+        visual_readouts = self.visual_reader(
             cell_query,
             cell_route,
-            visual_transition,
-            valid_task_tokens,
+            visual_values,
+            visual_masks,
         ).reshape(
-            memory.shape[0],
+            memory.shape[0] + 1,
             self.EXPERT_LAYERS,
             self.RANK_TOKENS,
             self.PROGRAM_WIDTH,
         )
-        visual_goal_readout = self.visual_reader(
-            cell_query,
-            cell_route,
-            visual_goal,
-            valid_task_tokens[-1:] & valid_task_tokens[:1],
-        )[0].reshape(
-            self.EXPERT_LAYERS,
-            self.RANK_TOKENS,
-            self.PROGRAM_WIDTH,
-        )
+        visual_transition_readout = visual_readouts[:-1]
+        visual_goal_readout = visual_readouts[-1]
         transition = self.dynamic_projection(adjacent) + visual_transition_readout
         terminal_goal = self.dynamic_projection(goal[-1]) + visual_goal_readout
         frames = memory.shape[0]

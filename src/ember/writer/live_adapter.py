@@ -110,7 +110,11 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             config["writer"]["backbone_total_frames_per_condition"]
         )
         self.evaluation_k = int(observed["information_wall"]["evaluation_k"])
-        self.writer, lora = build_writer(config, policy)
+        self.writer, lora = build_writer(
+            config,
+            policy,
+            asset_root=Path(str(source["source_run"])).resolve().parents[2],
+        )
         self.writer.to(device)
         load_writer_deployment_state_(
             writer=self.writer,

@@ -86,7 +86,10 @@ class WriterRuntime:
 
 
 def build_writer(
-    config: Mapping[str, Any], policy: torch.nn.Module
+    config: Mapping[str, Any],
+    policy: torch.nn.Module,
+    *,
+    asset_root: Path,
 ) -> tuple[torch.nn.Module, Any]:
     """Construct through the dynamic-K model's stable policy-owned factory."""
 
@@ -103,6 +106,10 @@ def build_writer(
         policy=policy,
         template_state=template,
         writer_config=config["writer"],
+        warm_start_checkpoint=(
+            asset_root
+            / str(config["writer"]["v6_fast_warm_start_checkpoint"])
+        ).resolve(),
     )
     if not callable(getattr(writer, "forward_training", None)):
         raise WriterModelError(
@@ -277,7 +284,11 @@ def prepare_runtime(
         authorities.source_base_config,
         context.device,
     )
-    writer, lora = build_writer(config, policy)
+    writer, lora = build_writer(
+        config,
+        policy,
+        asset_root=args.source_run.resolve().parents[2],
+    )
     writer.to(context.device)
     trainable = writer_trainable_contract(writer, policy, lora)
     optimizer, scheduler = _build_optimizer(writer, config, total)

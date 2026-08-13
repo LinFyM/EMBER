@@ -20,9 +20,6 @@ from ember.writer.errors import WriterModelError
 from ember.writer.slot_set import PolicySlotSetFusion, SlotSetDiagnostics
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
 @dataclass(frozen=True)
 class WriterProgramOutput:
     """Frozen per-video v6 slots and their trainable set aggregation."""
@@ -55,6 +52,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
         template_state: Mapping[str, torch.Tensor],
         writer_config: Mapping[str, Any],
+        warm_start_checkpoint: Path,
     ) -> CompleteLoRAWriter:
         """Construct and strictly load the frozen v6-fast performance base."""
 
@@ -75,10 +73,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             expert_model=bridge.gemma_expert.model,
             **arguments,
         )
-        checkpoint = (
-            REPO_ROOT / str(writer_config["v6_fast_warm_start_checkpoint"])
-        ).resolve()
-        load_v6_prior_warm_start_(base, checkpoint)
+        load_v6_prior_warm_start_(base, warm_start_checkpoint)
         return cls(base)
 
     def train(self, mode: bool = True) -> CompleteLoRAWriter:

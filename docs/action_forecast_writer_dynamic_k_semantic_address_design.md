@@ -43,26 +43,32 @@ absolute `task_hidden`、absolute `probe_hidden`没有消费者，`Z`本身也�
 - train24、B20 cross-episode functional objective、K-balanced full24 macro、optimizer、scheduler和BF16/TF32均不变。
 - 不新增language-only/static LoRA head、scalar gate、confidence、expert bank、第二套LoRA或held outcome入口。
 
-## 3. 唯一架构变量：Semantic Core只作为temporal address
+## 3. 唯一架构变量：Semantic Core只作为temporal Query address
 
 对第`k`条video、Action Expert层`l`、rank memory token`r`，已有backbone memory为
 `Z_k[f,l,r] in R^1024`。新增：
 
 ```text
 C_k[l,r] = W_sem( RMS( mean_f Z_k[f,l,r] ) ) in R^256
-R_k[l,r] = E_layer[l] + E_rank[r] + C_k[l,r]
+R[l,r]   = E_layer[l] + E_rank[r]
 ```
 
 其中`RMS`无可学习偏置，`W_sem`是唯一新增的bias-free `1024→256`投影。temporal self-attention改为：
 
 ```text
-Q,K <- RMS(dynamic content) + R_k
-V   <- dynamic content from D/G only
+Q <- W_q( RMS(dynamic content) + R + C_k )
+K <- W_k( RMS(dynamic content) + R )
+V <- W_v( dynamic content from D/G only )
 ```
 
-`C_k`不进入V、residual、FFN、set value、M2P value或LoRA head。它只回答“在这条任务与video的语义背景下，
+`C_k`不进入K、V、residual、FFN、set value、M2P value或LoRA head。它只回答“在这条任务与video的语义背景下，
 哪些有向变化应被选择和组合”。这恢复v5/v6有效的Semantic Core×Procedure原则，但不恢复其旧前端、固定K4、
 DCT/phase mean或rank16 compiler。
+
+只进入Q而不对称地同时进入Q/K，是为了避免经RoPE产生由absolute task semantics独立决定的时间kernel。若同一个
+`C_k`同时进入Q/K，旋转后的semantic×semantic项可以形成几乎不读D/G的task-conditioned phase template，重演v4
+的absolute-time/action-phase shortcut。query-only address仍能让Semantic Core选择D/G key/value，却不给静态语义
+自己构造一套时序轨迹的通道。
 
 选择`mean_f Z`而不是单独再建language encoder或visual encoder有三个原因：
 
@@ -106,7 +112,7 @@ CPU与单GPU机制必须同时满足：
 
 1. constant-frame K1/K4的Program与完整LoRA增量精确为零；只换language也不能越过该identity；
 2. video permutation不改变K>1输出；每video shuffle/reverse产生非零Program差异；
-3. `C_k`按video、layer、rank有正确shape，且只出现在temporal Q/K route；
+3. `C_k`按video、layer、rank有正确shape，且只出现在temporal Query route，Key/Value不读取它；
 4. mapper B打开后functional与consistency gradient均能到达`W_sem`、Action Meta-LoRA、temporal、set、M2P、B；
 5. step0 template A/zero B仍完整38-target rank8 identity；source policy零trainable parameter；
 6. longest-video full24 B20 profile无OOM/nonfinite，K1--K4各6 tasks，macro wall不劣于前版`32.81s`的1.20倍，

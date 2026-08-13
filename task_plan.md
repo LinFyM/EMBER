@@ -26,8 +26,8 @@
 - [x] 完成macro50 effective-BA定位：总norm不小，但stable rank约1、action-target能量低、相对old方向近正交，
   task mean BA高度同向；video variance更大，排除“完全没读video”。代码中最早失配是absolute Semantic Core在
   Program前被差分删除，`task_hidden/probe_hidden`完全未用。
-- [ ] 实现唯一semantic-address successor：每video absolute mean memory只进入temporal Q/K，D/G仍为唯一
-  dynamic V/content；其余dynamic K、set、M2P、rank8 mapper、B20和recipe不变。过CPU/机制/吞吐门后fresh
+- [ ] 实现唯一semantic-address successor：每video absolute mean memory只进入temporal Query，D/G仍为唯一
+  dynamic Key/Value content；其余dynamic K、set、M2P、rank8 mapper、B20和recipe不变。过CPU/机制/吞吐门后fresh
   `0→50`并立刻strict paired correct400。fresh authority已封存为
   `docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
 - [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高

@@ -11,7 +11,7 @@ Dynamic-K backbone-memory rank-8 Writer首轮已经完成：clean`5319022` world
 当前active operation是封存并实现单变量Dynamic-K semantic-address successor。现有backbone memory已经在真实
 图像+exact language+50 Action probes的联合forward中正确更新，但Program只消费相邻/终点差分，完全不用absolute
 `task_hidden/probe_hidden`，等价于在有向Procedure前删除对象、关系与目标Semantic Core。successor只让每条video
-的absolute mean memory经一条bias-free投影进入temporal Q/K route；D/G仍是唯一V/content，set、M2P、rank8
+的absolute mean memory经一条bias-free投影只进入temporal Query route；D/G仍是唯一Key/Value content，set、M2P、rank8
 shared mapper、B20 objective、dynamic K和recipe均不变。constant/static与language-only因此仍保持identity。
 先过zero/order/set/gradient/吞吐机制门，再fresh`0→50`立即strict paired correct400；本轮不同时改mapper，若
 M2P语义已经健康而family head后才坍缩，下一轮才单独做layer-direct readout。

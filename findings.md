@@ -25,8 +25,8 @@ effective BA总norm均值`135.64`说明不是identity，然而action-target norm
 相对old134 effective cosine仅`.01--.02`；八task mean BA方向off-diagonal cosine均值`.702`。video方差反而比
 old134大，故它不是没看视频，而是删除Semantic Core后把不同视频的变化写入高度共同、错误的policy方向。
 
-当前successor只改变这个最早结构接口：每video absolute mean memory作为temporal Q/K semantic address，D/G仍是
-唯一V/content。这样语义只能决定“从有向变化里读什么”，不能独立成为LoRA value；constant/static和
+当前successor只改变这个最早结构接口：每video absolute mean memory作为temporal Query semantic address，D/G仍是
+唯一Key/Value content。这样语义只能决定“从有向变化里读什么”，不能独立成为LoRA value；constant/static和
 language-only仍保持identity。set、M2P、rank8 mapper、B20与dynamic-K recipe保持不变，以便closed-loop结果能
 裁决Semantic Core address，而不是把representation与mapper改动混在一起。
 同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved

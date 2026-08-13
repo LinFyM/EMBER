@@ -14,7 +14,7 @@
   `80/20/48`；相对v6-fast143 aggregate低43且breadth少2。故不exact-resume`50→100`。
 - 当前唯一active successor判断是Dynamic-K semantic-address backbone-memory rank-8 Writer：保留真实图文+
   Action-probe backbone memory、动态K、有向D/G value、set、M2P、rank8 mapper和训练recipe，只恢复一个更早的
-  结构接口——逐video absolute memory均值只进入temporal Q/K地址，D/G仍是唯一V/content，因此constant-video
+  结构接口——逐video absolute memory均值只进入temporal Query地址，D/G仍是唯一Key/Value content，因此constant-video
   与language/static-only仍不能写LoRA。先完成fresh-incompatible authority和canonical实现，再过机制/吞吐门并
   fresh`0→50`立即strict paired correct400；本轮不同时修改shared mapper。
   fresh-incompatible authority为`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。

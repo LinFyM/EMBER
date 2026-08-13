@@ -343,4 +343,4 @@ policy geometry。
 最早代码级失配出现在mapper之前：backbone输出的absolute `task_hidden`与`probe_hidden`没有任何消费者，
 `layer_memory`又在`_encode_video`入口被严格转换为相邻差分与终点差分。因而架构保留“怎么变化”的Procedure，
 却在有向编码前删除了“哪些对象、关系与目标”的Semantic Core。下一authority只恢复absolute memory作为temporal
-Q/K address；D/G继续作为唯一V/content。本设计由Git和上述formal artifacts封存，不再是active实现。
+Query address；D/G继续作为唯一Key/Value content。本设计由Git和上述formal artifacts封存，不再是active实现。

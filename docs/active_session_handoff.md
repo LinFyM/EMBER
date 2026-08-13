@@ -9,14 +9,14 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：Dynamic-K Task-Grounded Full-Factor macro50 K1 strict=`91/400`、breadth5、per-task=
-  `4/1/38/0/0/37/11/0`，未达到125门，终局non-pass；
-- 相对matched fixed-A macro50为`70 retained/21 gained/18 lost`、净增3；相对old134/compiler138/online128净
-  `-43/-47/-37`，相对v6-fast逐task差=`+4/-2/-8/-37/0/+1/-9/-1`；
-- 当前active design：V6 Dynamic Slot-Set Bridge；冻结历史v6-fast macro400，只训练K1恒等、K>1置换不变的
-  per-policy-slot集合层，原生v6 factor heads只解码一次；
-- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现、机制/profile和
-  fresh macro0→25均完成，K4 deployment B8已seal，当前下一步是macro25 K4 strict paired correct400；
+- 最新完成closed-loop：V6 Dynamic Slot-Set Bridge macro25 K4 strict=`130/400`、breadth6、per-task=
+  `1/2/48/32/0/34/13/0`，未超过old134且breadth<7，终局non-pass；
+- 相对K1 old134为`117 retained / 13 gained / 17 lost`、净`-4`、churn30；relative BA约`.047`而same-task方差降
+  `9.26x`，证明post-compiler set稳定了demo nuisance但没有修正task mean；
+- 当前active design：V6 Shared-Core Procedure-Set Bridge；冻结历史v6-fast，只把约197k集合层从完整compiler后
+  前移到shared Core读出与最终Core/Procedure fusion之间；
+- active authority=`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项
+  定向门与全量CPU=`371 passed`，当前下一步是真实GPU机制门和full24 B20 profile；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -178,7 +178,7 @@ checkpoint、schedule或科学panel。
 - split：`configs/libero_24_8_8_v1/`；
 - LIBERO assets：`.env.local`中的`EMBER_LIBERO_ASSETS_ROOT`；
 - task experts：`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`中的统一step2000；
-- historical config由commit与formal root保存；当前active config见§11；
+- historical config由commit与formal root保存；当前active config与状态见§13；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
 ## 9. Completed Visual-Value formal curve
@@ -436,3 +436,42 @@ K4 generation profile root：
 - fixed validation8x4 correct panel，B8/B16/B32=`.224364/.224185/.224350 LoRA/s`，全部stable、0 OOM；
 - peak reserved约`12.95/12.97/13.01GB`，最长condition=`226` frames，按最高实测吞吐锁B8；
 - 当前无EMBER GPU进程；下一步从新的clean pushed evaluator authority做macro25 K4 strict400。
+
+## 13. V6 Dynamic Slot-Set terminal result and Shared-Core Procedure-Set successor
+
+K4 strict root：
+
+`runs/outputs/pi05_v6_dynamic_slot_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr5_evalr6_34c0431_gpu01_20260814`
+
+- clean detached `34c0431`，gpu01物理`0,1,2,4,5,6`，6 Writer generators + 18 persistent rollout workers；
+  400/400 LoRAs、72/72 queue jobs、400 rows、18/18 workers均完整exit0；
+- wall=`1182.222s`、rollout-only=`677.514s`；strict=`130/400`、breadth6、per-task=
+  `1/2/48/32/0/34/13/0`、per-suite=`3/80/34/13`、top3=`114/130=87.69%`；
+- vs old134=`117 retained / 13 gained / 17 lost`、net`-4`、churn30、Jaccard`.795918`、paired
+  McNemar p=`.584665`；每task净变化=`+1/-3/0/-2/0/-1/+2/-1`；
+- count-only相对compiler138/online128/Full-Factor91/v6-fast143分别为`-8/+2/+39/-13`；
+- 未超过old134且breadth低于7，按门终局non-pass；不resume50、不补五臂、不扫K/LR/seed/temperature。
+
+matched nested-dose分析保存在同root的
+`k1_old134_to_k4_slot_set_nested_dose_analysis.json`：
+
+- 400套LoRA的K4 vs K1 effective-BA cosine mean/median=`.998690/.999275`，relative-L2 mean/median=
+  `.046910/.040562`，norm ratio mean=`.998592`；q/v/action结论一致；
+- first4 states/task的task mean K1→K4 cosine=`.999832`；same-task centered variance/sample从`.002281`降到
+  `.000246`，约`9.26x`；跨task mean offdiag cosine只从`.49935`到`.49749`；
+- retained success的BA变化反而小于retained failure（`.03745` vs `.05165`），gained/lost=`.04881/.03998`，没有
+  可用的scalar correction-size分界。
+
+因此上一轮不是读取失败：多视频确实稳定了同task nuisance，也基本保住old134支持；但在每条video已经分别经过
+完整compiler之后，set只能形成约4.7%的邻域修正，无法改变高层task mean。最早可检验接口前移到“Core/Procedure
+何时跨video共享”，而不是继续改post-compiler set或放大修正。
+
+active successor为`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。唯一主变量是把相同
+197120参数集合层前移：native Core reader先从无序per-video Core union产生一个shared Core；每条有序Procedure以
+该shared Core独立读出；Procedure-set再置换不变聚合；原生AdaLN/post-fusion/factor heads只运行一次。没有frame
+拼接、phase alignment、LoRA平均、rank变化、negative、expert或RL。
+
+canonical实现已原位替换旧schema/config/runtime，旧路径由commit`34c0431`与formal artifacts保存。64项定向CPU
+测试通过：compiler阶段化与旧图逐tensor相等，K1在任意set参数下严格等于native v6，K>1 video set换位不变且
+video内倒序敏感，base无梯度、Procedure-Set梯度非零；全量CPU=`371 passed`。当前无EMBER GPU进程；下一步为真实GPU机制门与full24
+B20 profile，profile seal前不得formal训练。

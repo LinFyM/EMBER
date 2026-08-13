@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_dynamic_slot_set_bridge_checkpoint_v1"
+    "ember_pi05_v6_shared_core_procedure_set_bridge_checkpoint_v1"
 )
 DEPLOYMENT_CHECKPOINT_KIND = (
-    "v6_dynamic_slot_set_bridge_macro_checkpoint"
+    "v6_shared_core_procedure_set_bridge_macro_checkpoint"
 )
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 

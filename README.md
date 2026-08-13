@@ -30,27 +30,29 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的Full-Factor rank8在macro50 K1 strict为`91/400`、breadth5、per-task=
-`4/1/38/0/0/37/11/0`。它相对matched fixed-A macro50只净增3，且effective BA只有fixed-A约`.245x`并近乎
-正交；因此终局non-pass，不resume、不做mapper小修。
+最新完成的**V6 Dynamic Slot-Set Bridge**在macro25 K4 strict为`130/400`、breadth6、per-task=
+`1/2/48/32/0/34/13/0`。相对其K1严格恒等的old134为`117 retained / 13 gained / 17 lost`，净`-4`；K4把
+same-task LoRA方差约降`9.26x`，但task mean几乎不变。它证明多视频集合确实稳定了demo nuisance，也证明在每条
+video都已独立完成compiler之后再聚合过晚；按门终局non-pass，不resume或扫K/LR/seed。
 
-当前active successor是**V6 Dynamic Slot-Set Bridge**：
+当前active successor是**V6 Shared-Core Procedure-Set Bridge**：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
     -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> each video independently compiles 320 policy/rank-aligned Program slots
-    -> per-slot permutation-invariant mean backbone + selected centered residual
-    -> native v6 factor heads decode once
+    -> native Core reader jointly reads the unordered union of video Core memories
+    -> each ordered Procedure is read against that one shared Core state
+    -> permutation-invariant Procedure-set aggregation before native AdaLN fusion
+    -> native compiler remainder and factor heads run once
     -> complete 38-target rank-16 LoRA
 ```
 
-它保留昨晚对齐的逐video保序、跨video集合处理和单一LoRA部署原则，同时恢复唯一闭环证明过143的v6
-Core/Procedure/compiler/factor路径。Slot-Set只有约197k参数，K=1严格恒等于原v6；首轮只训练该层，快速判断
-few-shot共同程序能否在强底座上带来净增。warm start只作机制开发，若成功仍需从零训练。完整authority见
-[`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`](docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md)。
-canonical实现、370项CPU测试、真实GPU机制门和world5 full24 B20 profile已通过，formal合同已seal并进入fresh
-macro0→25。该训练现已完成，K4 generation profile锁B8，当前进入macro25 K4 strict paired correct400。
+它只把同一个约197k集合层从完整compiler之后前移到shared Core与最终Core/Procedure fusion之间，不做frame拼接、
+phase alignment或LoRA平均。K=1仍严格恒等于原v6；K>1先形成共同高层语义，再比较各video内部有序过程。完整
+authority见
+[`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
+canonical实现、64项定向门和全量`371 passed`已通过，当前进入真实GPU机制验证与full24 B20 profile；尚无
+closed-loop claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

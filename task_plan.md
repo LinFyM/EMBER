@@ -75,7 +75,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 定位tiny-B/weak-near-orthogonal-BA重参数化，未达到125门，不resume、不做rank/scale/mapper小修；
 - [x] 转以v6-fast为性能骨架写受控Dynamic Slot-Set bridge authority。
 
-## Active iteration: V6 Dynamic Slot-Set Bridge
+## Completed iteration: V6 Dynamic Slot-Set Bridge
 
 - [x] 原位切换canonical Writer到冻结v6-fast + 197120参数Slot-Set层，并删除退役rank8 executable路径；
 - [x] 完成全量CPU=`370 passed`与真实GPU机制门：K1逐tensor恒等、K轴换位仅BF16低位差异、video内倒序敏感、
@@ -84,8 +84,20 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   最长323帧、0 OOM/nonfinite，并seal formal合同；
 - [x] 从clean detached `26ebc43` fresh训练到macro25，25/25 metrics、completion和checkpoint完整；
 - [x] 完成macro25 K4 B8/B16/B32 deployment profile，按最高吞吐锁B8；
-- [ ] 完成macro25 K4 strict paired correct400；仅有明确增益才续到50；
-- [ ] 若超过150，补K1--K4 scaling与五臂因果controls；若机制成立，再制定同架构fresh训练authority。
+- [x] 完成macro25 K4 strict paired correct400：`130/400`、breadth6、per-task=`1/2/48/32/0/34/13/0`；
+- [x] 相对old134=`117/13/17` retained/gained/lost，net`-4`；未过134/breadth7门，终局停止；
+- [x] 完成nested-dose分析：same-task方差降`9.26x`但task mean K1→K4 cosine`.999832`，定位post-compiler
+  aggregation只能稳定nuisance、不能修正高层task mean。
+
+## Active iteration: V6 Shared-Core Procedure-Set Bridge
+
+- [x] 写单变量authority：保留v6全部强路径，只把set从完整compiler后前移到shared Core与最终fusion之间；
+- [x] 原位替换canonical实现/schema/config，删除旧post-compiler runtime path；
+- [x] 完成64项定向CPU门：compiler阶段化严格等价、K1恒等、K-set换位不变、video内顺序敏感、梯度/freeze正确；
+- [x] 完成全量CPU=`371 passed`；
+- [ ] 完成真实GPU机制门；
+- [ ] 完成full24 B20 profile并seal formal合同；
+- [ ] fresh macro0→25，随后K4 strict paired correct400；按134/breadth7门立即裁决。
 
 ## Continuous loop after this result
 
@@ -111,5 +123,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。V6 Dynamic Slot-Set macro25与K4 generation profile已完整结束且无活动GPU进程；当前进入
-macro25 K4 strict paired correct400。
+无权限或资产阻塞。V6 Dynamic Slot-Set已以130终局，当前无活动EMBER GPU进程；Shared-Core Procedure-Set的
+canonical CPU实现已完成，下一步是真实GPU机制门和full24 profile。

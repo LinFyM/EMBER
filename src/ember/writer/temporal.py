@@ -477,6 +477,25 @@ class ProcedureSlotReader(torch.nn.Module):
         valid_procedure: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         normalized_core = self.core_norm(core_slots)
+        slots, centered = self.read_normalized_core(
+            routing,
+            normalized_core,
+            procedure,
+            positions,
+            valid_procedure,
+        )
+        return slots, normalized_core, centered
+
+    def read_normalized_core(
+        self,
+        routing: torch.Tensor,
+        normalized_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Read one ordered Procedure using an already shared Core state."""
+
         mask = valid_procedure[..., None]
         count = mask.sum(dim=1, keepdim=True).clamp_min(1)
         mean = (procedure * mask).sum(dim=1, keepdim=True) / count
@@ -488,7 +507,7 @@ class ProcedureSlotReader(torch.nn.Module):
             valid_procedure,
             positions,
         )
-        return slots, normalized_core, centered
+        return slots, centered
 
 
 class PostFusionSlotBlock(torch.nn.Module):
@@ -591,6 +610,54 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
         )
         return torch.cat((expert, action_in, action_out), dim=0)
 
+    def routing(self, batch: int) -> torch.Tensor:
+        """Return the native normalized policy-slot routing for one batch."""
+
+        if batch <= 0:
+            raise VariableEpisodeInputError("compiler routing batch is empty")
+        return self.routing_norm(self._routing())[None].expand(batch, -1, -1)
+
+    def read_core_slots(
+        self,
+        routing: torch.Tensor,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.core_reader(routing, core, valid_core)
+
+    def normalize_core_slots(self, core_slots: torch.Tensor) -> torch.Tensor:
+        return self.procedure_reader.core_norm(core_slots)
+
+    def read_procedure_slots(
+        self,
+        routing: torch.Tensor,
+        normalized_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.procedure_reader.read_normalized_core(
+            routing,
+            normalized_core,
+            procedure,
+            positions,
+            valid_procedure,
+        )
+
+    def fuse_readouts(
+        self,
+        routing: torch.Tensor,
+        normalized_core: torch.Tensor,
+        procedure_slots: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Apply the native AdaLN and post-fusion after memory-set readout."""
+
+        gamma, beta = self.modulation(
+            self.procedure_norm(procedure_slots)
+        ).chunk(2, dim=-1)
+        fused = (1.0 + gamma) * normalized_core + beta
+        return self.post_fusion(fused, routing), gamma, beta
+
     @staticmethod
     def _validate_memories(
         core: torch.Tensor,
@@ -634,24 +701,22 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
             positions,
             valid_procedure,
         )
-        routing = self.routing_norm(self._routing())[None].expand(
-            core.shape[0],
-            -1,
-            -1,
-        )
-        core_slots = self.core_reader(routing, core, valid_core)
-        procedure_slots, normalized_core, centered = self.procedure_reader(
+        routing = self.routing(core.shape[0])
+        core_slots = self.read_core_slots(routing, core, valid_core)
+        normalized_core = self.normalize_core_slots(core_slots)
+        procedure_slots, centered = self.read_procedure_slots(
             routing,
-            core_slots,
+            normalized_core,
             procedure,
             positions,
             valid_procedure,
         )
-        gamma, beta = self.modulation(
-            self.procedure_norm(procedure_slots)
-        ).chunk(2, dim=-1)
+        output, gamma, beta = self.fuse_readouts(
+            routing,
+            normalized_core,
+            procedure_slots,
+        )
         fused = (1.0 + gamma) * normalized_core + beta
-        output = self.post_fusion(fused, routing)
         return output, {
             "core_slots": core_slots,
             "procedure_centered": centered,

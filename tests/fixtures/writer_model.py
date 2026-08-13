@@ -1,4 +1,4 @@
-"""Shared fixtures for the v6 Dynamic Slot-Set Writer."""
+"""Shared fixtures for the v6 shared-Core Procedure-set Writer."""
 
 from __future__ import annotations
 
@@ -44,8 +44,54 @@ class _Evidence:
 
 @dataclass(frozen=True)
 class _Memories:
-    evidence: _Evidence
-    frame_indices: torch.Tensor
+    core: torch.Tensor
+    valid_core: torch.Tensor
+    procedure: torch.Tensor
+    positions: torch.Tensor
+    valid_procedure: torch.Tensor
+
+
+class _FakeCompiler(torch.nn.Module):
+    def routing(self, batch: int) -> torch.Tensor:
+        slot = torch.arange(320).float()[:, None] * 1e-3
+        width = torch.arange(256).float()[None] * 1e-4
+        return (slot + width)[None].expand(batch, -1, -1)
+
+    @staticmethod
+    def read_core_slots(
+        routing: torch.Tensor,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+    ) -> torch.Tensor:
+        mask = valid_core[..., None]
+        mean = core.masked_fill(~mask, 0).sum(1) / mask.sum(1).clamp_min(1)
+        return routing + mean[:, None]
+
+    @staticmethod
+    def normalize_core_slots(core_slots: torch.Tensor) -> torch.Tensor:
+        return core_slots
+
+    @staticmethod
+    def read_procedure_slots(
+        routing: torch.Tensor,
+        normalized_core: torch.Tensor,
+        procedure: torch.Tensor,
+        positions: torch.Tensor,
+        valid_procedure: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        weights = (positions + 1).to(procedure.dtype) * valid_procedure
+        summary = (procedure * weights[..., None]).sum(1)
+        summary = summary / weights.sum(1, keepdim=True).clamp_min(1)
+        return routing + normalized_core + summary[:, None], procedure
+
+    @staticmethod
+    def fuse_readouts(
+        _routing: torch.Tensor,
+        normalized_core: torch.Tensor,
+        procedure_slots: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        zeros = torch.zeros_like(procedure_slots)
+        return normalized_core + procedure_slots, zeros, zeros
 
 
 class _FakeV6Base(torch.nn.Module):
@@ -57,6 +103,7 @@ class _FakeV6Base(torch.nn.Module):
         self._template = template
         self.factor = torch.nn.Linear(256, 1, bias=False)
         torch.nn.init.normal_(self.factor.weight, std=0.01)
+        self.compiler = _FakeCompiler()
 
     def template_state(self) -> dict[str, torch.Tensor]:
         return self._template
@@ -80,30 +127,45 @@ class _FakeV6Base(torch.nn.Module):
     def build_memories(
         evidence: _Evidence, frame_indices: torch.Tensor
     ) -> _Memories:
-        return _Memories(evidence=evidence, frame_indices=frame_indices)
+        videos = len(evidence.offsets) - 1
+        lengths = [right - left for left, right in zip(evidence.offsets, evidence.offsets[1:])]
+        maximum = max(lengths)
+        core = torch.zeros(videos, 2, 256)
+        procedure = torch.zeros(videos, maximum, 256)
+        positions = torch.zeros(videos, maximum, dtype=torch.long)
+        valid = torch.zeros(videos, maximum, dtype=torch.bool)
+        width = torch.arange(256).float() * 1e-4
+        for video, (left, right) in enumerate(
+            zip(evidence.offsets, evidence.offsets[1:])
+        ):
+            values = evidence.frames[left:right].float().mean(dim=(1, 2, 3))
+            language = evidence.language_tokens[video].float().mean()
+            core[video] = values.mean() + language + width
+            procedure[video, : right - left] = values[:, None] + width
+            positions[video, : right - left] = frame_indices[left:right]
+            valid[video, : right - left] = True
+        return _Memories(
+            core=core,
+            valid_core=torch.ones(videos, 2, dtype=torch.bool),
+            procedure=procedure,
+            positions=positions,
+            valid_procedure=valid,
+        )
 
     def compile_slots(self, memories: _Memories) -> torch.Tensor:
-        rows = []
-        slot = torch.arange(320, device=memories.frame_indices.device).float()
-        width = torch.arange(256, device=memories.frame_indices.device).float()
-        for video, (left, right) in enumerate(
-            zip(memories.evidence.offsets, memories.evidence.offsets[1:])
-        ):
-            frame_value = memories.evidence.frames[left:right].float().mean(
-                dim=(1, 2, 3)
-            )
-            ordinal = torch.arange(
-                1, right - left + 1, device=frame_value.device
-            ).float()
-            ordered = (frame_value * ordinal).sum() / ordinal.sum()
-            language = memories.evidence.language_tokens[video].float().mean()
-            rows.append(
-                ordered
-                + language
-                + slot[:, None] * 1e-3
-                + width[None] * 1e-4
-            )
-        return torch.stack(rows)
+        routing = self.compiler.routing(memories.core.shape[0])
+        core = self.compiler.read_core_slots(
+            routing, memories.core, memories.valid_core
+        )
+        normalized = self.compiler.normalize_core_slots(core)
+        procedure, _ = self.compiler.read_procedure_slots(
+            routing,
+            normalized,
+            memories.procedure,
+            memories.positions,
+            memories.valid_procedure,
+        )
+        return self.compiler.fuse_readouts(routing, normalized, procedure)[0]
 
     def decode_slots(self, slots: torch.Tensor) -> dict[str, torch.Tensor]:
         scalars = self.factor(slots[:, :76]).squeeze(-1)

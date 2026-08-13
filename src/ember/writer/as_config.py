@@ -1,4 +1,4 @@
-"""Configuration authority for the v6 Dynamic Slot-Set bridge."""
+"""Configuration authority for the v6 shared-Core Procedure-set bridge."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_v1"
+    "ember_pi05_v6_shared_core_procedure_set_bridge_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_launch_v1"
+    "ember_pi05_v6_shared_core_procedure_set_bridge_as_writer_launch_v1"
 )
 
 
@@ -69,7 +69,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         or lora.parameter_count != 1_287_168
         or lora.state_tensor_count != 76
     ):
-        raise WriterModelError("v6 Slot-Set rank-16 LoRA contract changed")
+        raise WriterModelError("v6 memory-set rank-16 LoRA contract changed")
 
 
 def _validate_method(config: Mapping[str, Any]) -> None:
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_v6_dynamic_slot_set_bridge_v1",
+        "architecture": "pi05_v6_shared_core_procedure_set_bridge_v1",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -89,13 +89,18 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "per_video_encoder": "native_v6_language_axial_core_procedure",
         "program_width": 256,
         "policy_slot_count": 320,
-        "slot_set_fusion": (
-            "permutation_invariant_mean_backbone_plus_selected_centered_residual"
+        "core_set_fusion": (
+            "native_core_reader_over_unordered_union_of_per_video_language_"
+            "aligned_core_tokens"
         ),
-        "slot_set_qk": "shared_bias_free_pre_rms_256_to_256",
-        "slot_set_value": "raw_centered_per_video_slot_no_value_projection",
-        "slot_set_output": "shared_bias_free_zero_initialized_256_to_256",
-        "k1_contract": "exact_native_v6_identity_for_all_slot_set_parameters",
+        "procedure_set_fusion": (
+            "permutation_invariant_mean_backbone_plus_selected_centered_"
+            "residual_before_native_adaln_fusion"
+        ),
+        "procedure_set_qk": "shared_bias_free_pre_rms_256_to_256",
+        "procedure_set_value": "raw_centered_per_video_slot_no_value_projection",
+        "procedure_set_output": "shared_bias_free_zero_initialized_256_to_256",
+        "k1_contract": "exact_native_v6_identity_for_all_procedure_set_parameters",
         "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
         "v6_fast_warm_start_checkpoint": (
             "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_"

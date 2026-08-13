@@ -62,9 +62,9 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_v6_dynamic_slot_set_config_is_mechanical_and_loadable() -> None:
+def test_v6_shared_core_procedure_set_config_is_loadable() -> None:
     config = load_writer_config(
-        REPO_ROOT / "configs/pi05_as_writer_v6_dynamic_slot_set_bridge_v1.json"
+        REPO_ROOT / "configs/pi05_as_writer_v6_shared_core_procedure_set_bridge_v1.json"
     )
     lora = load_pi05_lora_contract(
         REPO_ROOT / "configs/pi05_lora_v1.json"
@@ -73,8 +73,9 @@ def test_v6_dynamic_slot_set_config_is_mechanical_and_loadable() -> None:
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
     assert config["writer"]["k1_contract"].startswith("exact_native_v6_identity")
-    assert config["writer"]["slot_set_fusion"].endswith(
-        "selected_centered_residual"
+    assert config["writer"]["core_set_fusion"].startswith("native_core_reader")
+    assert config["writer"]["procedure_set_fusion"].endswith(
+        "native_adaln_fusion"
     )
     assert config["writer"]["policy_slot_count"] == 320
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
@@ -573,7 +574,7 @@ def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:
     assert adapter_requests(args) == (DYNAMIC_K_WRITER_KIND, False)
 
 
-def test_evaluator_resolves_the_v6_slot_set_rank16_lora_authority() -> None:
+def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
     import importlib
 
     from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
@@ -583,7 +584,7 @@ def test_evaluator_resolves_the_v6_slot_set_rank16_lora_authority() -> None:
         "ember.pi05_eval.run_contract"
     )._writer_lora_contract
 
-    config = REPO_ROOT / "configs/pi05_as_writer_v6_dynamic_slot_set_bridge_v1.json"
+    config = REPO_ROOT / "configs/pi05_as_writer_v6_shared_core_procedure_set_bridge_v1.json"
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),
         {
@@ -604,22 +605,11 @@ def test_evaluator_resolves_the_v6_slot_set_rank16_lora_authority() -> None:
     )
 
 
-def test_v6_slot_set_k4_deployment_profile_is_sealed() -> None:
+def test_v6_memory_set_k4_deployment_profile_awaits_live_measurement() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
     )
 
     assert DYNAMIC_K_GENERATION_BATCH_SIZE == 8
-    assert DYNAMIC_K_GENERATION_PROFILES == {
-        4: {
-            "schema": "ember_pi05_writer_generation_profile_v2",
-            "path": (
-                "runs/outputs/"
-                "pi05_v6_dynamic_slot_set_bridge_k4_writer_generation_profile_"
-                "val8x4_correct_gpu01p2_26ebc43_macro0025_20260814/"
-                "writer_generation_profile.json"
-            ),
-            "selected_writer_model_batch_size": 8,
-        }
-    }
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

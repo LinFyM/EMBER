@@ -37,27 +37,28 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**Dynamic-K Task-Grounded Full-Factor Rank-8 Writer**：macro50 K1 strict=
-`91/400`、breadth5、per-task=`4/1/38/0/0/37/11/0`，终局non-pass，不resume、不做mapper小修。相对matched
-fixed-A macro50的88只净增3，且低于fixed-A best96、Direct-B102、old134、compiler138和v6-fast143。
+最新完成closed-loop是**V6 Dynamic Slot-Set Bridge**：macro25 K4 strict=`130/400`、breadth6、per-task=
+`1/2/48/32/0/34/13/0`。相对结构恒等的K1 old134为`117/13/17` retained/gained/lost，净`-4`；same-task
+方差约降`9.26x`而task mean几乎不变。它终局non-pass，不resume或扫K/LR/seed/temperature。
 
-当前active design是**V6 Dynamic Slot-Set Bridge**：
+当前active design是**V6 Shared-Core Procedure-Set Bridge**：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
     -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> each video independently produces 320 policy-aligned Program slots
-    -> per-slot permutation-invariant mean backbone + selected centered residual
-    -> native frozen v6 factor heads decode once
+    -> native Core reader jointly reads the unordered union of per-video Core
+    -> each ordered Procedure is read against the same shared Core state
+    -> permutation-invariant Procedure-set aggregation
+    -> native AdaLN/post-fusion/factor heads run once
     -> one complete 38-target rank-16 task LoRA
 ```
 
-该bridge加载历史v6-fast macro400作为机制开发底座并全部冻结，只训练约197k参数的Slot-Set层。K=1由中心化
-残差恒零而严格等于原v6；K>1才学习过滤same-task demo nuisance。它不平均最终LoRA，不增加negative/expert/RL，
-也不把warm start冒充最终方法；若机制通过，仍需同一train24信息墙下从零训练。当前authority为
-`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`，精确run状态只取
-`docs/active_session_handoff.md`。canonical实现、全量CPU、真实GPU机制门与world5 full24 profile已通过，formal
-macro0→25和K4 generation profile已完成，当前进入macro25 K4 strict paired correct400。
+该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层；唯一主变量是把集合聚合从完整compiler之后前移到
+共同Core读出与最终Core/Procedure fusion之间。它不拼接Procedure、不做phase alignment、LoRA平均、negative、
+expert或RL。K=1严格等于原v6；warm start若成功仍需同一train24信息墙下建立从零recipe。当前authority为
+`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项定向门和全量CPU
+`371 passed`已通过，
+当前进入真实GPU机制/profile，精确run状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

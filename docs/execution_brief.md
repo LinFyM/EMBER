@@ -5,46 +5,44 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and active method
 
-Dynamic-K Task-Grounded Full-Factor Rank-8 Writer已完成formal fresh macro0→50及K1 strict paired400。结果为
-`91/400`、breadth5、per-task=`4/1/38/0/0/37/11/0`、per-suite=`5/38/37/11`，top3占`86/91`。相对
-matched fixed-A macro50 88为`70 retained/21 gained/18 lost`，仅净增3；低于fixed-A best96、Direct-B102、
-old134、compiler138、online128和v6-fast143。按预注册125门终局non-pass，不resume、不补五臂。
+V6 Dynamic Slot-Set Bridge已完成macro25 K4 strict paired correct400：`130/400`、breadth6、per-task=
+`1/2/48/32/0/34/13/0`、per-suite=`3/80/34/13`，top3占`114/130=87.69%`。相对K1严格恒等的old134为
+`117 retained / 13 gained / 17 lost`、净`-4`、churn30；四个suite净变化=`-2/-2/-1/+1`。它没有超过134且
+breadth低于7，按预注册门终局non-pass，不resume、不补controls或扫K/LR/seed/temperature。
 
-matched first4 states/task中，Full-Factor相对fixed-A的raw A cosine/norm ratio=`.735154/1.376207`，raw B=
-`.248553/.062232`，effective BA=`.058529/.244792`。训练loss几乎相同却形成larger-A/tiny-B的弱、近正交policy
-update，说明当前B20 surrogate不能约束有用factor allocation。该证据终止当前rank8前端/mapper小修。
+matched 8 tasks×first4 states中，K4相对K1 effective-BA cosine mean/median=`.998690/.999275`、relative-L2=
+`.046910/.040562`、norm ratio mean=`.998592`。same-task centered variance/sample从`.002281`降到`.000246`，约
+`9.26x`，但task mean K1→K4 cosine=`.999832`，跨task mean offdiag只从`.49935`到`.49749`。因此set确实读取并
+稳定了多条视频；失败不是“没有set”或破坏旧支持，而是完整compiler之后的集合层只能产生old134邻域小修。
 
-当前active方法是V6 Dynamic Slot-Set Bridge：每条video独立运行冻结原生v6 evidence→Core→ordered Procedure→
-320 policy slots；每个对应slot只沿K轴做置换不变的mean backbone + selected centered residual；原生v6 factor heads
-只解码一次。K=1中心化残差恒零，因此严格等于历史v6；K>1才学习same-task共同程序。首轮只训练约197k Slot-Set
-参数，warm start只作机制开发，若成功仍需从零训练。完整合同见
-`action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。
+当前active方法是V6 Shared-Core Procedure-Set Bridge。它保留冻结v6-fast的language-axial evidence、Semantic
+Core、有向Procedure、native compiler remainder、factor heads和rank16 topology，只把同一个约197k set层从完整
+compiler之后前移到shared Core读出与最终Core/Procedure fusion之间：原生Core reader先联合读取无序Core union；
+每条有序Procedure再以同一shared Core解释；Procedure-set置换不变聚合后，原生AdaLN/post-fusion/factor heads只
+运行一次。完整合同见`action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。
 
-canonical实现与GPU机制门已通过：K1的76个LoRA tensors逐元素等于native v6，只有197120个Slot-Set参数可训练，
-v6/source无梯度，真实video倒序明显改变Program；全量CPU=`370 passed`。K2/K4换位只产生BF16 batched-forward
-低位差异，不为此拆分forward或降低吞吐。full24 B20 world5 profile=`30.7422s/macro`、peak reserved=`40.75GB`、
-K1--K4各6、最长323帧、0 OOM/nonfinite；formal合同已seal，当前fresh训练到macro25。
-
-macro0→25已经完整结束，总耗时`750.446s`；macro25 K4 deployment B8/B16/B32=`.224364/.224185/.224350
-LoRA/s`，三者稳定且显存余量充足，按最高吞吐规则锁B8。当前立即做K4 strict paired correct400。
+canonical实现已完成。64项定向门验证native compiler阶段化前后逐tensor相等、K1在任意set参数下严格等于native
+v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set参数获得梯度；全量CPU=`371 passed`。当前
+先做真实GPU机制门和full24 B20 profile；尚未seal formal训练，也没有closed-loop claim。
 
 ## 2. Single changed variable and training semantics
 
-- v6的language-conditioned evidence、Semantic Core、有向Procedure、compiler、rank16 topology和factor heads全部
-  加载macro400并冻结；
-- 唯一新增/训练的是跨video Slot-Set层，不加memory、rank变化、negative、expert、reward或新LoRA mapper；
+- v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology
+  和factor heads全部加载macro400并冻结；
+- 唯一新增/训练的是跨video Procedure-Set层，唯一架构变量是集合边界前移；不加memory、rank变化、negative、
+  expert、reward或新LoRA mapper；
 - 24 train tasks构成一个完整macro，task内B20 mean后24-task等权；
 - 每macro K1/K2/K3/K4各6，各task每四个macro覆盖全部K；
 - K条video同task、action-hidden、互不重复且与action episodes错开，每条video保留stride-5完整序列；
-- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Slot-Set functional gradient；
+- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Procedure-Set functional gradient；
 - profile只裁决真实wall/显存/batch，训练loss不选择checkpoint。
 
 ## 3. Closed-loop adjudication
 
-完成K1逐tensor等价、K轴置换不变、video内顺序敏感、gradient/freeze和full24 profile后，首个正式节点为macro25
-K4 strict paired correct400。K1复用严格等价的old134 paired基线；K4若没有明确超过134或breadth低于7即终止，
-不扫K/LR/temperature/seed。若K4超过150，封存single-checkpoint结果并补K1--K4 scaling及correct/same/wrong/
-shuffled/reversed/no-video controls；机制成功后再授权同架构fresh训练。
+完成K1逐tensor等价、K轴置换不变、video内顺序敏感、gradient/freeze和full24 profile后，fresh macro0→25并做K4
+strict paired correct400。K1复用严格等价的old134 paired基线；K4若没有明确超过134或breadth低于7即终止，不扫
+K/LR/temperature/seed。若K4超过150，封存single-checkpoint结果并补K1--K4 scaling及correct/same/wrong/
+shuffled/reversed/no-video controls；机制成功后再建立同架构fresh训练recipe。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
@@ -56,8 +54,7 @@ success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同�
 1. absolute、per-task/per-suite、breadth；
 2. 相对最接近方法和历史强基线的retained/gained/lost与能力集中；
 3. 若有相邻checkpoint，分析persistent/gained/lost与union gap；
-4. 沿`input evidence -> per-video Program -> set -> M2P -> mapper -> effective BA -> fixed action -> rollout`定位
-   最早失效接口；
+4. 沿`input evidence -> Core/Procedure -> set/compiler -> effective BA -> fixed action -> rollout`定位最早失效接口；
 5. 分离科学non-pass与明确工程合同违约；
 6. 只对最早接口提出一个主要因果变量，写可证伪authority后实现；
 7. 做最小必要CPU/机制验证和吞吐profile，尽快回到真实paired400。

@@ -203,6 +203,18 @@ cosine`.735`且norm`1.376x`，B却只有`.062x`，effective BA只有`.245x`且co
 base无梯度；K2/K4换位只产生BF16 batched-forward低位差异，而真实video倒序的Program mean abs变化为`.21703`。
 因此接下来的full24/closed-loop失败若发生，不能归因于K1底座被代码改坏或Procedure完全忽略顺序。
 
+该bridge随后在macro25 K4 strict得到`130/400`、breadth6，相对old134为`117/13/17` retained/gained/lost。更关键的
+nested-dose证据是：same-task centered BA variance约降`9.26x`，但task mean K1→K4 cosine仍`.999832`，全400
+relative BA改变量约`.047`。所以few-shot set不是无效；它成功过滤了一部分demo-specific nuisance，却因为位于
+完整compiler之后，只能稳定已有错误或不足的task mean，不能为held occupancy增加有用方向。下一轮不能放大这个
+residual或调K，而应让多video在compiler承诺最终policy方向之前形成shared semantic Core并比较有序Procedure。
+
+当前Shared-Core Procedure-Set只前移这一边界：每条video仍独立形成v6 Core与有向Procedure；原生Core reader对
+无序Core union联合读出一个shared Core；每条Procedure在该shared Core下独立解释；同一197120参数set只聚合这些
+Procedure readouts，之后原生AdaLN/post-fusion/factor heads一次完成LoRA。它避免历史K4 phase alignment，也不把
+不同demo的Procedure拼成虚假物理序列。其CPU实现已证明K1严格保留v6和集合/顺序合同，但尚无GPU或closed-loop
+证据，不能提前写成有效方法。
+
 ## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；
@@ -223,6 +235,8 @@ base无梯度；K2/K4换位只产生BF16 batched-forward低位差异，而真实
     Full-Factor单变量实验，不证明动态A一定有效。
 15. Full-Factor `91`表明dynamic A在当前rank8 Program+B20下反而诱导tiny-B/weak-BA重参数化；下一轮不能再修
     mapper，而应在v6强底座上隔离检验跨video Program aggregation。
+16. V6 Dynamic Slot-Set K4=`130`且same-task方差降`9.26x`，说明post-compiler few-shot nuisance reduction有效，
+    但task mean几乎锁死；下一最早接口是compiler之前的shared Core/Procedure解释边界。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

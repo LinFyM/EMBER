@@ -1,7 +1,8 @@
 # V6 Dynamic Slot-Set Bridge
 
-状态：2026-08-14 active controlled bridge authority，canonical实现、真实GPU机制门和full24吞吐profile已通过，
-formal合同已seal并进入fresh macro0→25。
+状态：2026-08-14 terminal non-pass。canonical实现、真实GPU机制门、full24 profile、fresh macro0→25和K4 strict
+paired correct400均已完成；结果`130/400`、breadth6，未过预注册门，不得恢复续训或sweep。本文以下主体保留
+当时的预注册合同，终局解释见§8。
 本文授权以历史v6-fast macro400为冻结性能底座，只新增一个K=1严格恒等、K>1置换不变的跨视频Program-slot
 集合层。它是机制开发实验；若成功，仍需在同一train24信息墙内完成从零训练，warm start不能成为最终论文方法
 的隐含前提。
@@ -131,3 +132,19 @@ fresh formal macro0→25使用clean detached `26ebc43`、同一gpu01 world5，25
 macro25 K4 generation profile在gpu01物理2上对同一fixed validation8x4 panel测得B8/B16/B32=`.224364/.224185/
 .224350 LoRA/s`，三者稳定、0 OOM，peak reserved约`12.95/12.97/13.01GB`；按最高吞吐规则锁B8。下一步是
 macro25 K4 strict paired correct400。
+
+## 8. Terminal adjudication
+
+formal K4 root：
+
+`runs/outputs/pi05_v6_dynamic_slot_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr5_evalr6_34c0431_gpu01_20260814`
+
+strict=`130/400`、breadth6、per-task=`1/2/48/32/0/34/13/0`。相对K1严格恒等的old134为
+`117 retained / 13 gained / 17 lost`、net`-4`、churn30；未超过134且breadth低于7，按门终止。
+
+matched first4 states/task中，K4相对K1的same-task centered effective-BA variance/sample从`.002281`降到
+`.000246`，约`9.26x`；但task mean K1→K4 cosine仍为`.999832`，全400 relative-L2 mean仅`.046910`。因此
+Slot-Set确实读取并稳定了same-task多视频，却因位于每条video完整compiler之后，只能形成old134邻域小修，不能
+改变高层task mean。该结果淘汰的是post-compiler aggregation boundary，不是否定动态K、逐video保序或v6
+Core/Procedure。successor只把同一集合边界前移到shared Core与最终Core/Procedure fusion之间，authority为
+`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。

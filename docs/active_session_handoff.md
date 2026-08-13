@@ -9,12 +9,12 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其同一macro50 checkpoint
+- 最新完成closed-loop architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其同一macro50 checkpoint
   K1/K4 strict为`102/98`、breadth均5，按预注册门终局non-pass，不resume；
 - K4已正式证明cross-video set会显著过滤same-task demo nuisance，但不会自动产生更有用的task mean；下一fresh
   successor只前移到per-video高层视觉语义Value/Procedure接口，不继续修改K、set、mapper或LoRA几何；
-- active design：`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`；当前处于canonical
-  implementation与机制验证阶段，尚无fresh checkpoint或新closed-loop成绩；
+- active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；design、canonical实现、CPU机制与
+  matched world4 profile已通过，正式fresh 0→50待从sealed clean commit启动；尚无新closed-loop成绩；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -153,7 +153,21 @@ task mean。当前最早失效接口是set之前的task-grounded高层evidence/P
 而fail closed；queue保持60 pending、无rollout/cache。`73b9514`只修复该窄工程合同并有回归测试，不改变Writer、
 checkpoint、schedule或科学panel。
 
-## 7. Retained canonical assets
+## 7. Active Task-Grounded Visual-Value implementation and profile
+
+- canonical实现`9d43e82`；数学等价吞吐优化`690dea5`；均已push，完整CPU=`378 passed`；
+- 唯一主变量是同一次joint forward中的task-token query/raw-patch Value，按真实输入顺序重算visual D/G，再以
+  semantic address + layer/rank route写入原18x8 Program；无额外backbone forward、prediction/negative loss、
+  expert target、reward或language-only Value；
+- 全新config/launch/checkpoint/evaluator schema，不能误resume Direct-Family-B或profile state；
+- 首次world4 profile=`58.2544s/macro`，同gpu02物理0--3、同world4/B20/K调度的Direct-Family-B matched为
+  `46.2242s`，即`1.2603x`，超过`1.15x`门，因而没有启动formal；
+- 只截断frozen prefix无用backward、合并bias-free evidence projection GEMM和共享visual reader调用；优化后
+  `49.0775s/macro`，matched=`1.061727x`，通过门。K1--K4各6，functional/consistency=`.156108/.009484`，
+  gradient norm=`.068287`，峰值allocated/reserved=`39.303/45.561GB`，无OOM且完整checkpoint/completion；
+- profile只证明机制与吞吐，不是closed-loop成绩。正式训练必须fresh macro0，不加载任何profile checkpoint。
+
+## 8. Retained canonical assets
 
 - source policy：
   `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000`；
@@ -162,10 +176,10 @@ checkpoint、schedule或科学panel。
 - split：`configs/libero_24_8_8_v1/`；
 - LIBERO assets：`.env.local`中的`EMBER_LIBERO_ASSETS_ROOT`；
 - task experts：`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`中的统一step2000；
-- current config：`configs/pi05_as_writer_dynamic_k_semantic_address_direct_family_b_rank8_v1.json`；
+- current config：`configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_rank8_v1.json`；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
-## 8. Immediate next evidence and continuous loop
+## 9. Immediate next evidence and continuous loop
 
 K4裁决已经完成，不能再通过增加K、调set或mapper救这个checkpoint。下一fresh design保留动态K1--K4、真实
 image/language/Action-probe context中的8个memory tokens、逐video保序、跨video置换不变set、20×8 M2P、
@@ -174,6 +188,10 @@ direct family-B与完整rank8 LoRA；只改变set之前的evidence owner：让�
 该设计必须继承v5.2/v6已经验证的task-grounded patch/value原则，又避免恢复其多套旧前端或language-value旁路。
 正式公式、机制门、吞吐门和macro0→200裁决见
 `docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
+
+下一步从新的clean pushed seal fresh macro0→50，checkpoint25/50；绝不加载profile或Direct-Family-B state。
+macro50完成后立即做K1 strict paired correct400。历史v6-fast macro50也只有106，因此不以单个50点低于120提前
+杀死整个0→200裁决；按design继续100/150/200并分析相邻checkpoint共同积累。
 
 之后继续：真实结果 -> 深入接口分析 -> 一个主要因果变量 -> authority -> canonical实现/机制/吞吐 -> fresh训练 ->
 single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

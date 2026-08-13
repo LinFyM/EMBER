@@ -30,13 +30,14 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成方法是
-**Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**：
+最新完成closed-loop方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；当前active successor是
+**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
     -> 每帧真实π0.5 image/language/Action-probe context + 8 memory tokens
-    -> 每video有向transition、terminal goal与Query-only semantic address
+    -> task token查询raw patch Value并按输入顺序形成visual transition/terminal goal
+    -> Action-memory transition、terminal goal与Query-only semantic address
     -> causal temporal encoder（video内保序）
     -> permutation-invariant set attention（video间提取共同程序）
     -> 20 policy groups × 8 rank coordinates M2P
@@ -60,6 +61,9 @@ task mean仍与K1高度一致。结论不是“few-shot无效”，而是当前s
 训练变量固定为同一次joint forward中的task-grounded raw visual goal/transition Value，不再调K、mapper或几何。
 完整active design见
 [`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`](docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md)。
+该successor的canonical实现与CPU机制已完成；数学等价优化后的matched world4 profile为
+`49.0775/46.2242=1.061727x`，通过预注册`1.15x`上限，K平衡、finite、无OOM。profile不计closed-loop成绩；
+下一步从sealed clean commit fresh训练并在macro50做single-checkpoint K1 strict correct400。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

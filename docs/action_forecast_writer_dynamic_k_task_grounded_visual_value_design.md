@@ -1,7 +1,8 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
-状态：2026-08-13 active successor design authority。它从fresh训练，不加载或resume任何Direct-Family-B Writer
-checkpoint。长期目标、信息墙、GPU与评测边界仍由`AGENTS.md`和`docs/current_owner_requirements.md`定义。
+状态：2026-08-13 active successor design authority；canonical实现与matched profile已通过，fresh formal待启动。
+它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
+`AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
 ## 1. 决策
 
@@ -197,6 +198,12 @@ CPU/单卡机制必须证明：
 随后用真实最长视频做full24 B20 profile。matched Direct-Family-B world5为`39.4234s/macro`；新分支没有额外
 backbone forward，预注册吞吐上限为matched `1.15x`且不得OOM。超过后只优化张量布局/重复计算，不通过删除科学
 Value、固定batch1或扩dtype规避。
+
+实测执行：首次`9d43e82`在同gpu02物理0--3/world4/B20为`58.2544s/macro`；同拓扑Direct-Family-B matched
+为`46.2242s`，即`1.2603x`，因此没有启动formal。随后只做数学等价优化：截断frozen prefix hidden的无用
+backward、合并bias-free evidence projection GEMM、把transition与goal拼batch共享一次visual reader。
+`690dea5`复测为`49.0775s`、matched比`1.061727x`，通过门；K1--K4各6、loss/gradient finite，峰值
+allocated/reserved=`39.303/45.561GB`，无OOM。完整CPU=`378 passed`。
 
 ## 12. Fresh训练与closed-loop裁决
 

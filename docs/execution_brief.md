@@ -3,7 +3,7 @@
 更新时间：2026-08-13。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Latest completed experiment
+## 1. Latest completed closed-loop experiment and active successor
 
 最新完成方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer。它保持：
 
@@ -85,7 +85,10 @@ full24 recipe保持。它直接继承v5.2/v6的强机制，但不恢复旧多前
 
 active design为`action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。实现只允许在同一次joint
 forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value；不加prediction loss、negative loss、
-额外forward或并行Writer。机制与world profile通过后fresh macro0→200，再评测50/100/150/200。
+额外forward或并行Writer。canonical实现为`9d43e82`，`690dea5`只做数学等价吞吐优化；完整CPU=`378 passed`。
+同gpu02物理0--3、world4、B20 matched profile为Direct-Family-B `46.2242s`、successor `49.0775s`，比例
+`1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。下一步fresh macro0→50并做K1
+strict correct400，再按design继续100/150/200；profile不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 

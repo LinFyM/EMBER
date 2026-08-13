@@ -39,7 +39,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 补齐canonical K2--K4 evaluator并用同一checkpoint完成K4 strict correct400：`98/400`、breadth5；
 - [x] 完成nested K1→K4与effective-BA分析：set将same-task方差约降`6.3x`，但没有修正task mean或解锁task；
 - [x] 固定下一fresh design：保留Dynamic-K/memory/set/M2P/rank8，单独恢复task-grounded视觉Value与有向transition；
-- [ ] 原位实现、机制/吞吐验证、fresh训练并进入下一次strict paired400。
+- [x] 原位实现Task-Grounded Visual-Value并切换fresh-incompatible config/checkpoint/evaluator schema；
+- [x] 完整CPU`378 passed`与机制门通过；首次profile `1.2603x`超门后只做数学等价效率修复；
+- [x] matched world4 profile优化为`49.0775/46.2242=1.061727x`，K平衡、finite、无OOM并seal config；
+- [ ] 从sealed clean commit fresh macro0→50，完成macro25/50 checkpoint并做K1 strict paired correct400；
+- [ ] 按完整0→200合同继续100/150/200与相邻checkpoint共同积累分析。
 
 ## Continuous loop after this result
 
@@ -65,4 +69,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前工作由task-grounded视觉Value successor的design、实现、profile和fresh formal决定。
+无权限或资产阻塞。当前工作由task-grounded视觉Value successor的fresh formal与strict closed-loop决定。

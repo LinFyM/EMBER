@@ -37,14 +37,15 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成architecture是
-**Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**。它忠实落实owner讨论、SHINE/Doc2LoRA类成熟
-Hypernetwork原则与EMBER历史证据：
+最新完成closed-loop architecture是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；当前active
+implementation是**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**。它忠实落实owner讨论、
+SHINE/Doc2LoRA类成熟Hypernetwork原则与EMBER历史证据：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
     -> 每帧真实image/language/Action-probe joint backbone + 8 memory tokens
-    -> 每video有向transition、terminal goal和Query-only semantic address
+    -> task token查询raw patch Value并按输入顺序形成visual transition/terminal goal
+    -> Action-memory transition、terminal goal和Query-only semantic address
     -> causal temporal encoder
     -> permutation-invariant cross-video set aggregation
     -> policy-group/rank M2P
@@ -64,6 +65,10 @@ correct400分别为`102/400`与`98/400`，breadth均为5，按预注册门终局
 但当前per-video Program/functional credit没有识别出更有用的高层过程。下一fresh successor只加入同一次joint
 forward中的task-grounded raw visual goal/transition Value，不继续调K、set、mapper或LoRA几何。精确root和实时
 边界只取`docs/active_session_handoff.md`。
+
+该successor已在`690dea5`通过完整CPU与matched world4 profile：`49.0775/46.2242=1.061727x`，低于`1.15x`
+吞吐上限，K1--K4各6、finite、无OOM；profile不是closed-loop成绩。下一步从新的sealed clean commit fresh
+macro0→50，不加载旧方法或profile state，随后立即做macro50 K1 strict correct400。
 
 ## 4. Long-term objective and decision rule
 

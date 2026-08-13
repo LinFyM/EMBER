@@ -162,6 +162,12 @@ experts可作train24 privileged teacher或几何参照，不能在held部署成�
 
 ## 11. 选择方法与工程原则
 
+Task-Grounded Visual-Value实现与profile新增的边界：同一次joint forward中的task-conditioned raw patch Value可在
+不更新frozen policy、不增加第二次backbone forward的前提下接入visual D/G与完整LoRA梯度链。直接实现的
+matched吞吐为`1.2603x`；截断frozen prefix无用反向图并合并projection/reader后为`1.061727x`，functional
+loss逐位一致，科学主变量不变。这只证明机制与效率合同健康，不能证明视频知识更有用或task drift改善；后者只认
+fresh single-checkpoint strict closed-loop。
+
 - 不用loss、small panel、union、norm、rank、cosine或内部margin选择最终checkpoint；
 - 不靠rank/scale/seed/dtype/temperature小扫救失败checkpoint；
 - 不恢复language-only LoRA bypass、平均LoRA、checkpoint融合或held expert route；

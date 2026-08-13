@@ -18,8 +18,9 @@ projector后由四个bias-free zero-init linears直接生成q/v/action-in/action
 `action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
 
 formal从clean `c5353f3` fresh macro0完整训练至50。第一次world6 run在owner停止时停于macro16且没有
-checkpoint，不resume；world5 retry完整封存macro25/50。K1 macro50 strict400已完成为`102/400`、breadth5，
-按预注册门终局non-pass，不resume到100。精确host、devices、paths与artifact只取`active_session_handoff.md`。
+checkpoint，不resume；world5 retry完整封存macro25/50。同一macro50 checkpoint的K1/K4 strict400分别为
+`102/98`、breadth均5，终局non-pass，不resume到100。精确host、devices、paths与artifact只取
+`active_session_handoff.md`。
 
 ## 2. Why this experiment is valid
 
@@ -70,12 +71,21 @@ common direction、压小order contrast的接口。因此本轮只检验：去�
 effective-BA cosine仅从`.77947`降至`.74895`，没有带来绝对或breadth增益。按`<120`或breadth<6门终止，
 不resume、不做小扫、不补K1完整controls。
 
-## 5. Immediate next evidence and next design
+## 5. K4 result and next design boundary
 
-当前checkpoint训练时覆盖K1--K4，但formal deployment只测过K1。先补齐K2--K4 evaluator的video-set、cache、
-episode evidence和pairing合同，并以同一checkpoint做K4 strict correct400，单独裁决few-shot是否materially优于
-K1；这不改变K1 non-pass。若K4也弱，下一fresh architecture应停止继续改mapper，把失效点前移到per-video
-高层Program的可识别性和offline functional credit与held on-policy方向的错位。
+同一checkpoint的nested K4 strict=`98/400`，相对K1为`80 retained/18 gained/22 lost`、net`-4`，没有解锁
+新task。K4把same-task effective-BA相对方差从`.021674`降到`.003438`，而task mean K1→K4 cosine仍
+`.99604`。所以动态K/set的功能是明确的nuisance reduction，但当前被聚合的per-video mean本身不是足够高层、
+policy-effective的任务知识。
+
+下一fresh architecture只改变set之前的evidence接口：复用同一次joint backbone已计算的task-conditioned视觉
+hidden，让真实image content成为bias-free Value，构成per-video Semantic Core及按实际输入顺序重算的visual
+transition；现有Action-memory作为layer/rank对齐carrier、动态K/set、M2P、direct mapper、rank8 LoRA和B20
+full24 recipe保持。它直接继承v5.2/v6的强机制，但不恢复旧多前端、VL Meta-LoRA或rank16 compiler。
+
+active design为`action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。实现只允许在同一次joint
+forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value；不加prediction loss、negative loss、
+额外forward或并行Writer。机制与world profile通过后fresh macro0→200，再评测50/100/150/200。
 
 每轮strict结果完成后，按以下顺序分析：
 

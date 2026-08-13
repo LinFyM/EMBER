@@ -256,3 +256,23 @@ B8/B16/B32吞吐分别为`.51618/.51298/.51056 LoRA/s`，两次repeat均稳定�
 `runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_writer_generation_profile_val8x4_correct_gpu01p2_9c5cec2_retry2_20260813`。
 gpu02物理0的首次尝试被其它用户中途占满而OOM；物理1 retry1又被外部进程临时共享导致B8/B16计时污染，二者均不
 作为authority，不能据其异常数值选择batch。
+
+## 13. K4 formal verdict and retirement boundary
+
+evaluator的nested Dynamic-K扩展在clean `73b9514`上完成。正式K4 root为：
+
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_correct400_noreplacement_seed7_macro0050_trainr5_evalr5_73b9514_gpu01_retry1_20260813`
+
+60/60 shards、400 rows、15 workers全部正常结束。K4 strict=`98/400`、breadth5，per-task=
+`1/0/42/8/0/41/6/0`；同一checkpoint、同一state/RNG、K1视频作为K4首元素的nested K1→K4为
+`80 retained/18 gained/22 lost`、net`-4`、McNemar `p=.635828`。
+
+K4没有能量坍缩：400对effective-BA cosine mean=`.98787`、norm ratio mean=`.99876`。它也不是完全忽略额外
+视频：validation前4 states的same-task相对方差从`.021674`降为`.003438`，约`6.3x`；但task-mean cosine仍
+`.99604`，cross-task offdiag只从`.74895`降到`.73816`。因此本实验精确否定的是：“当前per-video Program经
+set稳定后会自然成为更有用的few-shot任务程序。”它不否定Dynamic-K/few-shot；相反，它证明集合聚合能过滤
+nuisance，只是稳定了错误均值。
+
+本架构完整退役：不resume、不扫K/set/mapper/rank/scale，不补K2/K3或K1五臂。下一架构应保留已经证明工作的
+动态K、memory、set和部署合同，把单变量前移到set之前的task-grounded视觉Value与有向Procedure。精确nested、
+逐task和effective-BA证据见formal root下`k1_k4_nested_dose_analysis.json`。

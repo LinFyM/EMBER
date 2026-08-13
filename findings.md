@@ -17,6 +17,7 @@
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
+| Direct-Family-B K4 deployment | 98 | — | — | — | — | set把same-task方差降约6.3x，却稳定同一错误task mean |
 
 Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
 直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
@@ -89,10 +90,12 @@ task、state、policy RNG和video ordinal。不能只把negative人为推坏制�
 历史K4改善了部分permutation、same-video和leave-one-out内部稳定性，但best strict只有108，且未解决full24
 credit retention、正确顺序或checkpoint drift。这只否定旧K4组合，不否定few-shot本身。
 
-当前Writer训练时每macro让K1/K2/K3/K4各覆盖6个tasks，避免只见两个端点却宣称动态cardinality。K1已经正式
-裁决为102，但K2--K4尚未进入formal evaluator，所以不能从K1 non-pass外推“多视频聚合无效”。下一项必要证据是
-同一checkpoint的K4 strict correct400。若K>1更强，就诚实报告few-shot及实际视频数和计算成本；若不强，则把
-失效点前移到Program可识别性与functional credit，而不是继续救mapper。
+当前Writer训练时每macro让K1/K2/K3/K4各覆盖6个tasks，避免只见两个端点却宣称动态cardinality。同一checkpoint
+K1/K4 strict为`102/98`；nested K1→K4=`80/18/22` retained/gained/lost，breadth均5。K4把same-task
+effective-BA centered variance/sample从`.021674`降为`.003438`，task mean却保持cosine`.99604`且没有解锁
+新task。这是比“few-shot没涨分”更具体的结论：set确实提取了跨video共性，但当前共性主要是错误task mean。
+所以不能继续调K、挑video或平均LoRA；也不能由此否定few-shot。下一断点必须前移到per-video高层evidence及
+task-level functional credit如何识别正确过程。
 
 ## 6. Task drift是核心症状，不是单一病因
 

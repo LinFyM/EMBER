@@ -9,8 +9,9 @@
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
 effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
-不是解决Program→policy effectiveness和共同积累的充分条件。该arm终局non-pass，不resume；K2--K4正式部署
-能力仍未测试。
+不是解决Program→policy effectiveness和共同积累的充分条件。同一checkpoint K4=`98/400`，相对K1为
+`80 retained/18 gained/22 lost`；set将same-task相对方差约降`6.3x`却保持task mean cosine`.99604`，证明
+few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass，不resume。
 
 ## 1. Stable problem definition
 
@@ -93,7 +94,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Backbone-Memory rank8 | `100/400`, breadth4 | 真实图文+Action probes中8 memory tokens、动态K与完整rank8 LoRA图可训练部署 | 删除absolute Semantic Core后任务集中；task mean BA offdiag`.702`，不resume |
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
-| Dynamic-K Direct-Family-B rank8 | `102/400`, breadth5 | 删除hidden/GELU使BA task offdiag`.77947→.74895`，direct readout图可稳定训练部署 | semantic→direct=`82/20/19`、churn39；几何改善未转化为absolute/breadth，mapper小修退役；K>1未裁决 |
+| Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
 
 ## 4. Final rank14 adjudication
 
@@ -130,9 +131,10 @@ manifold，并提供SFT LoRA能量、rank坐标和跨target参考；但同一tas
 包含same-task video差异或时间顺序。soft/hard bank held=`15/80`/`3/80`进一步否定直接部署字典。
 
 K4实验说明few-shot能过滤单条示范的部分偶然低层细节、改善内部same/LOO稳定性，但未解决full24 shared
-credit retention、正确顺序的policy-effective方向和single-checkpoint漂移。当前Dynamic-K训练已实际覆盖
-K1--K4，但尚未证明K>1闭环更强；后续应按真实最强设定报告one-shot、few-shot或scaling claim，不因旧K4失败
-否定多视频，也不靠挑video或平均LoRA制造增益。
+credit retention、正确顺序的policy-effective方向和single-checkpoint漂移。最新Dynamic-K nested K4又给出
+同样但更强的定位：same-task effective-BA方差约降低`6.3x`，closed-loop却`102→98`且无新task。后续应按真实
+最强设定报告one-shot、few-shot或scaling claim，不因K4失败否定多视频，也不靠增加K、挑video或平均LoRA制造
+增益；优先修正被聚合的per-video高层证据与policy credit。
 
 ## 6. Stable cross-experiment cognition
 

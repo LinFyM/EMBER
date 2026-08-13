@@ -36,8 +36,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成macro50 single-checkpoint K1 strict paired correct400：`102/400`、breadth5；
 - [x] 完成absolute、per-task/per-suite、breadth、paired churn、能力集中和effective-BA接口分析；
 - [x] 按`<120`或breadth<6预注册门终止；不resume到100、不做小扫、不补K1五臂controls；
-- [ ] 补齐canonical K2--K4 evaluator并用同一checkpoint完成K4 strict correct400，单独裁决few-shot增益；
-- [ ] 根据K4结果选择下一fresh训练的唯一主要因果变量。
+- [x] 补齐canonical K2--K4 evaluator并用同一checkpoint完成K4 strict correct400：`98/400`、breadth5；
+- [x] 完成nested K1→K4与effective-BA分析：set将same-task方差约降`6.3x`，但没有修正task mean或解锁task；
+- [x] 固定下一fresh design：保留Dynamic-K/memory/set/M2P/rank8，单独恢复task-grounded视觉Value与有向transition；
+- [ ] 原位实现、机制/吞吐验证、fresh训练并进入下一次strict paired400。
 
 ## Continuous loop after this result
 
@@ -63,4 +65,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前工作由Dynamic-K K>1 formal evaluation support与随后K4 strict400决定。
+无权限或资产阻塞。当前工作由task-grounded视觉Value successor的design、实现、profile和fresh formal决定。

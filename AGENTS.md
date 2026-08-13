@@ -54,12 +54,16 @@ exact language + K=1..4 same-task action-hidden ordered videos
 
 Dynamic-K backbone-memory和semantic-address前代macro50 strict分别为`100/400`与`101/400`，均已退役。逐接口
 probe把首个明显新增common-direction定位到旧family hidden/GELU；Direct-Family-B只删除这个接口，保留全部上游。
-完整设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
+退役设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。当前active successor为
+`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-clean `c5353f3`的fresh formal已在gpu01 world5从macro0完整到50；同一checkpoint的K1 strict paired correct400
-在gpu01六卡得到`102/400`、breadth5，按预注册门终局non-pass，不resume。BA task共线只轻微改善，能力仍换手。
-当前没有fresh-training successor；先补齐同一Dynamic-K checkpoint的K2--K4正式evaluator并裁决K4 few-shot，
-再选下一训练单变量。精确root和实时边界只取`docs/active_session_handoff.md`。
+clean `c5353f3`的fresh formal已在gpu01 world5从macro0完整到50；同一checkpoint的K1/K4 strict paired
+correct400分别为`102/400`与`98/400`，breadth均为5，按预注册门终局non-pass，不resume。nested K1→K4为
+`80 retained/18 gained/22 lost`、net`-4`、McNemar `p=.635828`。K4把same-task effective-BA相对方差从
+`.021674`降到`.003438`，却基本保留同一个task mean并没有解锁新task：cross-video set确实在过滤nuisance，
+但当前per-video Program/functional credit没有识别出更有用的高层过程。下一fresh successor只加入同一次joint
+forward中的task-grounded raw visual goal/transition Value，不继续调K、set、mapper或LoRA几何。精确root和实时
+边界只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

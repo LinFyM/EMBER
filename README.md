@@ -28,7 +28,7 @@ exact task language + one or more action-hidden correct teaching videos
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。训练loss、functional loss、LoRA norm/rank/cosine、
 reconstruction与内部margin只作诊断，正式选择只认严格配对的single-checkpoint closed-loop结果。
 
-## Latest completed architecture
+## Latest result and active successor
 
 最新完成方法是
 **Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**：
@@ -50,13 +50,17 @@ mapper逐接口probe的历史证据。它不是对外部方法的机械复刻，
 
 上一代Dynamic-K backbone-memory和semantic-address macro50 strict分别为`100/400`和`101/400`。最新32-point
 probe显示task差异在M2P/final/shared projector仍较健康，首个明显common-direction增长出现在旧family
-hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重新推翻视频前端。完整公式和裁决门见
+hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重新推翻视频前端。退役架构的完整公式和裁决门见
 [`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`](docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md)。
 
-截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50；K1 strict paired correct400为
-`102/400`、breadth5，按预注册门终局non-pass，不resume。task-mean effective-BA共线从`.77947`降至
-`.74895`却只增加1个成功，说明mapper简化没有解决共同积累。当前先补齐同一checkpoint的K2--K4 evaluator，
-正式裁决多视频few-shot增益，再选择下一fresh训练变量。实时run identity和下一裁决只取
+截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50；同一checkpoint的K1/K4 strict paired
+correct400为`102/98`，breadth均为5，按预注册门终局non-pass，不resume。K4相对K1为
+`80 retained/18 gained/22 lost`，并把same-task effective-BA相对方差约降低`6.3x`，但没有解锁新task，
+task mean仍与K1高度一致。结论不是“few-shot无效”，而是当前set聚合只稳定了错误的高层均值；下一fresh
+训练变量固定为同一次joint forward中的task-grounded raw visual goal/transition Value，不再调K、mapper或几何。
+完整active design见
+[`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`](docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md)。
+实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

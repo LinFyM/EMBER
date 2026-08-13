@@ -9,10 +9,12 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其K1 macro50 strict为
-  `102/400`、breadth5，按预注册门终局non-pass，不resume；
-- 当前没有已经授权fresh训练的successor；下一项有信息量工作是为同一Dynamic-K checkpoint补齐正式K2--K4
-  deployment/evidence合同，先判断多视频聚合是否产生真实few-shot增益，再选择下一训练单变量；
+- 最新完成architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其同一macro50 checkpoint
+  K1/K4 strict为`102/98`、breadth均5，按预注册门终局non-pass，不resume；
+- K4已正式证明cross-video set会显著过滤same-task demo nuisance，但不会自动产生更有用的task mean；下一fresh
+  successor只前移到per-video高层视觉语义Value/Procedure接口，不继续修改K、set、mapper或LoRA几何；
+- active design：`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`；当前处于canonical
+  implementation与机制验证阶段，尚无fresh checkpoint或新closed-loop成绩；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -121,7 +123,37 @@ Program到policy direction、held on-policy usefulness或shared capability coexi
 修复了一个窄工程问题：registered historical Dynamic-K families应使用各自episode schema，而runtime通用
 writer-input事实不应被方法名措辞误拒；该修复不改变任何raw row、score或科学合同。
 
-## 6. Retained canonical assets
+## 6. Completed K4 nested video-dose adjudication
+
+formal K4 root：
+
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_correct400_noreplacement_seed7_macro0050_trainr5_evalr5_73b9514_gpu01_retry1_20260813`
+
+- frozen worktree clean detached `73b9514`；gpu01物理`2,4,5,6,7`，5个Writer generators、15个persistent
+  rollout workers；启动时同节点只有这5张卡适合使用，未等待或跨节点拼卡；
+- validation8×50、correct、without-replacement seed7、显式K4、每condition总frame budget64；K1视频是K4集合
+  的严格nested第一个元素；generation B8来自sealed K4 profile；
+- 60/60 shards、400/400 rows、15/15 workers exit0、0 failed；wall=`1098.3835s`，overall=`.36417`
+  episodes/s；Writer 400 entries由50个B8 batches一次生成，无重复forward；
+- strict=`98/400`、breadth5，per-task=`1/0/42/8/0/41/6/0`，per-suite=`1/50/41/6`，top3=
+  `91/98=92.86%`；相对v6-fast143逐task差=`+1/-3/-4/-29/0/+5/-14/-1`；
+- nested K1→K4为`80 retained/18 gained/22 lost/280 retained failure`，net`-4`、churn40、Jaccard
+  `.6667`、exact McNemar `p=.635828`；没有新task被解锁；
+- 全400对effective-BA K1→K4 cosine mean/median=`.98787/.99225`、relative-L2 mean/median=
+  `.15325/.13764`、norm ratio mean=`.99876`，排除K4能量坍缩；gained与lost没有可分离的有用方向；
+- validation每task前4 states中，same-task centered variance/sample从K1 `.021674`降到K4 `.003438`
+  （约`6.3x`），task-mean K1→K4 cosine=`.99604`；跨task mean offdiag只从`.74895`轻降到`.73816`。
+
+因此set aggregator和动态K训练合同本身已工作：更多视频成功滤掉单demo偶然性，却主要稳定同一个窄而错误的
+task mean。当前最早失效接口是set之前的task-grounded高层evidence/Procedure及其task-level functional credit，
+不是视频数量、集合不变性、mapper、rank或LoRA能量。正式分析为同一root下
+`k1_k4_nested_dose_analysis.json`。
+
+第一次formal root（commit `ca28da8`）在任何GPU工作前因resume/start adapter inspection漏传`evaluation_k=4`
+而fail closed；queue保持60 pending、无rollout/cache。`73b9514`只修复该窄工程合同并有回归测试，不改变Writer、
+checkpoint、schedule或科学panel。
+
+## 7. Retained canonical assets
 
 - source policy：
   `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000`；
@@ -133,14 +165,15 @@ writer-input事实不应被方法名措辞误拒；该修复不改变任何raw r
 - current config：`configs/pi05_as_writer_dynamic_k_semantic_address_direct_family_b_rank8_v1.json`；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
-## 7. Immediate next evidence and continuous loop
+## 8. Immediate next evidence and continuous loop
 
-当前Writer从fresh训练起真实覆盖K1/K2/K3/K4，但现有formal evaluator只执行过K1。下一步先补齐一个canonical、
-fail-closed的K2--K4 video-set generation/cache/evidence/evaluation合同，并用同一macro50 checkpoint先做K4 strict
-correct400。它回答的是“当前cross-video set是否真正产生few-shot增益”，不是续训、换checkpoint或反向救K1结果。
-若K4仍无material improvement，下一训练设计不得继续在mapper上做小修，而应把最早失效接口前移到高层Program的
-可识别性与train24 functional credit对held on-policy方向的错位。若K4显著更强，则诚实把当前setting视为few-shot，
-随后补K1--K4 scaling与视频因果controls。
+K4裁决已经完成，不能再通过增加K、调set或mapper救这个checkpoint。下一fresh design保留动态K1--K4、真实
+image/language/Action-probe context中的8个memory tokens、逐video保序、跨video置换不变set、20×8 M2P、
+direct family-B与完整rank8 LoRA；只改变set之前的evidence owner：让冻结VLM中由exact language定位的真实视觉
+内容成为LoRA Value，并同时提供稳定Semantic Core与有向视觉transition，而不是只让absolute Action memory作Q。
+该设计必须继承v5.2/v6已经验证的task-grounded patch/value原则，又避免恢复其多套旧前端或language-value旁路。
+正式公式、机制门、吞吐门和macro0→200裁决见
+`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
 之后继续：真实结果 -> 深入接口分析 -> 一个主要因果变量 -> authority -> canonical实现/机制/吞吐 -> fresh训练 ->
 single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

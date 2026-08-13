@@ -30,8 +30,7 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成closed-loop方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；当前active successor是
-**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**：
+最新完成closed-loop节点与当前active方法是**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
@@ -54,16 +53,18 @@ probe显示task差异在M2P/final/shared projector仍较健康，首个明显com
 hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重新推翻视频前端。退役架构的完整公式和裁决门见
 [`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`](docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md)。
 
-截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50；同一checkpoint的K1/K4 strict paired
-correct400为`102/98`，breadth均为5，按预注册门终局non-pass，不resume。K4相对K1为
-`80 retained/18 gained/22 lost`，并把same-task effective-BA相对方差约降低`6.3x`，但没有解锁新task，
-task mean仍与K1高度一致。结论不是“few-shot无效”，而是当前set聚合只稳定了错误的高层均值；下一fresh
-训练变量固定为同一次joint forward中的task-grounded raw visual goal/transition Value，不再调K、mapper或几何。
-完整active design见
+前代Direct-Family-B在macro50的K1/K4 strict为`102/98`，K4把same-task effective-BA方差约降`6.3x`却没有
+解锁task；因此当前方法只新增同一次joint forward中的task-grounded raw visual goal/transition Value，不改
+dynamic K、set、M2P、direct mapper、rank8或B20 recipe。完整active design见
 [`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`](docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md)。
-该successor的canonical实现与CPU机制已完成；数学等价优化后的matched world4 profile为
-`49.0775/46.2242=1.061727x`，通过预注册`1.15x`上限，K平衡、finite、无OOM。profile不计closed-loop成绩；
-下一步从sealed clean commit fresh训练并在macro50做single-checkpoint K1 strict correct400。
+该方法从clean `caa2e30` fresh完成macro0→50；macro50 K1 strict=`88/400`、breadth5、per-task=
+`4/0/34/2/0/41/7/0`。相对Direct-Family-B 102为`74 retained/14 gained/28 lost`。虽然task/video BA SNR提高且
+跨task共线下降，生成BA相对前代仍发生`.584` relative-L2的大旋转，而held closed-loop更差；这把最早断点收紧到
+“visual evidence经当前B20 functional credit写成的policy direction没有on-policy usefulness”，不是视频未读、
+K-set失效、近identity或简单几何坍缩。
+
+该单点不提前终止预注册曲线。同一root正以相同world3 topology exact-resume到macro100；随后继续评测
+100/150/200，分析同一checkpoint的absolute、breadth和相邻checkpoint换手，再决定下一单变量。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

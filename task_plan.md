@@ -46,7 +46,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成macro25完整checkpoint，并以相同生成图完成K1 B8/B16/B32 live deployment profile，锁B8；
 - [x] 从sealed clean commit fresh macro0→50，完整封存50条metrics、macro25/50 checkpoints与completion；
 - [x] 同world3 exact-resume 50→100，并从clean frozen evaluator并行启动macro50 K1 strict paired correct400；
-- [ ] 完成macro50 K1 strict paired correct400及逐task/churn分析；
+- [x] 完成macro50 K1 strict=`88/400`、breadth5及逐task/churn/effective-BA分析；
+- [x] 定位当前最早断点：视觉Value确实改变并分化BA，但当前functional credit没有把它对准held on-policy方向；
 - [ ] 按完整0→200合同继续100/150/200与相邻checkpoint共同积累分析。
 
 ## Continuous loop after this result
@@ -73,4 +74,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前工作由task-grounded视觉Value successor的fresh formal与strict closed-loop决定。
+无权限或资产阻塞。当前工作由task-grounded视觉Value同一fresh run的macro100/150/200 strict曲线决定。

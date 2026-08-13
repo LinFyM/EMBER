@@ -9,13 +9,13 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其同一macro50 checkpoint
-  K1/K4 strict为`102/98`、breadth均5，按预注册门终局non-pass，不resume；
-- K4已正式证明cross-video set会显著过滤same-task demo nuisance，但不会自动产生更有用的task mean；下一fresh
-  successor只前移到per-video高层视觉语义Value/Procedure接口，不继续修改K、set、mapper或LoRA几何；
-- active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；design、canonical实现、CPU机制与
-  matched world4 profile已通过；正式fresh 0→50已完整结束，50→100 exact-resume与macro50 K1 strict400正在
-  并行运行；尚无新closed-loop成绩；
+- 最新完成closed-loop节点与active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；fresh
+  macro0→50已完成，macro50 K1 strict=`88/400`、breadth5，尚未达到长期目标；
+- 相对最接近的Direct-Family-B 102为`74 retained/14 gained/28 lost`；视觉Value提高task/video BA SNR并降低
+  跨task共线，却把BA大幅旋到held无用方向。当前最早断点是visual evidence经B20 functional credit形成的
+  policy direction缺少on-policy usefulness，不是视频未读、set噪声或近identity；
+- 同一root正锁定gpu01物理`4,5,6`、world3 exact-resume 50→100；按预注册合同继续macro100/150/200 strict曲线，
+  不以macro50单点提前终止；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -180,7 +180,7 @@ checkpoint、schedule或科学panel。
 - current config：`configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_rank8_v1.json`；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
-## 9. Immediate next evidence and continuous loop
+## 9. Active formal curve and immediate next evidence
 
 K4裁决已经完成，不能再通过增加K、调set或mapper救这个checkpoint。下一fresh design保留动态K1--K4、真实
 image/language/Action-probe context中的8个memory tokens、逐video保序、跨video置换不变set、20×8 M2P、
@@ -225,7 +225,7 @@ macro25 checkpoint已完整写出且训练继续。用该checkpoint在gpu02物�
 macro50完成后立即做K1 strict paired correct400。历史v6-fast macro50也只有106，因此不以单个50点低于120提前
 杀死整个0→200裁决；按design继续100/150/200并分析相邻checkpoint共同积累。
 
-macro50 K1 strict400已从clean frozen `99c2323`启动：
+macro50 K1 strict400已从clean frozen `99c2323`完整结束：
 
 `runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0050_trainr3_evalr5_99c2323_gpu02_20260813`
 
@@ -235,7 +235,21 @@ macro50 K1 strict400已从clean frozen `99c2323`启动：
   低util共驻的边界，不等待第6卡；
 - evaluator准入窄修复`99c2323`只允许util≤10%、used≤8GiB、free≥32GiB，超门仍fail-closed；全量CPU
   `383 passed`；不改变scientific panel、Writer、随机性或rollout；
-- 5个generator已封存400-entry LoRA cache并release Writer，15个workers已扩出，queue正在执行；尚无结果。
+- 60/60 shards、400/400 rows、15/15 workers exit0，无failure artifact；wall=`1100.373s`；
+- strict=`88/400`、breadth5、per-task=`4/0/34/2/0/41/7/0`、per-suite=`4/36/41/7`，top3=
+  `82/88=93.18%`；
+- 相对Direct-Family-B 102为`74 retained/14 gained/28 lost`、churn42、McNemar `p=.0436`；相对semantic101、
+  Dynamic-K100、old134、compiler138、online128的净差分别为`-13/-12/-46/-50/-40`；
+- 相对v6-fast143的per-task差=`+4/-3/-12/-35/0/+5/-13/-1`；能力仍高度集中，Object3由Direct-B的11降到2；
+- exact effective-BA前4 state/video对照：task/video SNR `16.34→19.05`、task-mean offdiag cosine
+  `.74895→.70731`、norm mean `136.64→126.47`，但paired BA cosine mean`.83086`、relative-L2 mean`.58417`；
+  functional loss轨迹与Direct-B几乎相同。新增Value确实进入LoRA且形成更task-specific方向，但这些方向没有
+  提高held closed-loop；完整分析artifact为同root下`benchmark_comparison.json`和
+  `effective_ba_task_geometry_comparison.json`。
 
-之后继续：真实结果 -> 深入接口分析 -> 一个主要因果变量 -> authority -> canonical实现/机制/吞吐 -> fresh训练 ->
-single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。
+当前50→100 exact-resume仍在`ember_tgvv_resume50to100_caa2e30`正常运行，K1--K4每macro各6、finite、约
+`65--67s/macro`。macro100完成后立即用同一clean frozen evaluator做K1 strict400，并继续同topology
+100→150；随后重复macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，才续到400。
+
+完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/
+机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

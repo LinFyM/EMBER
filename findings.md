@@ -18,12 +18,20 @@
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
 | Direct-Family-B K4 deployment | 98 | — | — | — | — | set把same-task方差降约6.3x，却稳定同一错误task mean |
+| Task-Grounded Visual-Value rank8 macro50 | 88 | — | — | — | — | 视觉Value分化BA但没有对准held on-policy有用方向 |
 
 Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
 直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
 `82 retained/20 gained/19 lost`，aggregate几乎不变却继续换手。task-mean effective-BA cosine
 `.77947→.74895`证明几何略改善，但真实性能没有改善；因此“common-direction主要由该hidden造成且删除即可提高
 policy effectiveness”被否决，不能继续靠mapper小修或内部几何选择方法。
+
+Task-Grounded Visual-Value在其预注册macro50节点得到`88/400`、breadth5、per-task=
+`4/0/34/2/0/41/7/0`。相对Direct-Family-B 102为`74 retained/14 gained/28 lost`，不是共同积累。它没有让LoRA
+变成identity或增加same-task噪声：task/video BA SNR `16.34→19.05`，task-mean offdiag cosine`.749→.707`；但
+BA相对前代平均cosine`.831`、relative-L2`.584`，说明视觉路径把LoRA显著旋向了对held rollout无用的方向。
+functional loss轨迹几乎不变进一步复现offline surrogate/on-policy outcome错位。macro50仍只是完整0→200曲线的
+首点，不能提前外推终局。
 
 ## 2. 真正的学习问题
 
@@ -156,7 +164,8 @@ experts可作train24 privileged teacher或几何参照，不能在held部署成�
 9. task experts证明task-level LoRA有效，但expert reconstruction/routing不提供held support；
 10. Balanced residual、RLS、Reward-Credit依次定位跨video正交、offline/on-policy错位和native-factor精度边界；
 11. uniform rank14证明compression和regeneration可分别破坏old support；
-12. Dynamic-K 100与semantic-address 101把当前断点推进到Program→mapper→policy direction。
+12. Dynamic-K 100与semantic-address 101把断点推进到Program→mapper→policy direction；
+13. Visual-Value macro50进一步证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy有用方向。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

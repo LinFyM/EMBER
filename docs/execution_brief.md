@@ -3,9 +3,9 @@
 更新时间：2026-08-13。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Latest completed closed-loop experiment and active successor
+## 1. Latest completed closed-loop experiment and active method
 
-最新完成方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer。它保持：
+当前active方法是Dynamic-K Task-Grounded Visual-Value Rank-8 Writer。它从Direct-Family-B保持：
 
 - exact language + dynamic K1--K4 action-hidden same-task ordered videos；
 - 每帧真实π0.5 joint image/language/Action-probe context中的8个memory tokens；
@@ -13,25 +13,25 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 - causal temporal、permutation-invariant set、20x8 policy-group/rank M2P；
 - fixed template A、完整38-target rank-8 LoRA、train24 full-task B20 functional recipe。
 
-唯一主要变量是删除旧mapper的四个family hidden/GELU与inactive dynamic-A heads，让shared `256->1024`
-projector后由四个bias-free zero-init linears直接生成q/v/action-in/action-out B。完整公式与门见
-`action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
+唯一主要变量是同一次joint backbone forward中的task-conditioned raw patch Value：它形成有向visual transition
+和terminal goal，并以semantic address + layer/rank route读入现有Program。没有额外backbone forward、prediction/
+negative loss、expert、reward或language-only Value。完整公式与门见
+`action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-formal从clean `c5353f3` fresh macro0完整训练至50。第一次world6 run在owner停止时停于macro16且没有
-checkpoint，不resume；world5 retry完整封存macro25/50。同一macro50 checkpoint的K1/K4 strict400分别为
-`102/98`、breadth均5，终局non-pass，不resume到100。精确host、devices、paths与artifact只取
-`active_session_handoff.md`。
+formal从clean `caa2e30`在gpu01物理`4,5,6`、world3 fresh完成macro0→50；macro50 K1 strict400=
+`88/400`、breadth5。该单点不是终局门，同一root正锁定world3 topology exact-resume到100；完整曲线继续
+100/150/200。精确host、devices、paths与artifact只取`active_session_handoff.md`。
 
 ## 2. Why this experiment is valid
 
-该方法不是根据最终LoRA猜测瓶颈。上一代semantic-address macro50=`101/400`后，validation8 x 4 ordinals x five-arm
-逐接口probe显示：M2P/final/shared projector保留较多task/order结构；旧family hidden/GELU是第一个明显增加
-common direction、压小order contrast的接口。因此本轮只检验：去掉这个没有独立依据的nonlinear bottleneck，
-能否让已有Program写成更policy-effective、任务可分的LoRA。
+Direct-Family-B的K1/K4=`102/98`且same-task BA方差约降`6.3x`，说明dynamic K/set能过滤nuisance，但被稳定的
+per-video task mean本身不够policy-effective。历史v5.2/v6又证明task-token查询raw patch Value与visual transition
+是未被否定的强机制。因此本轮只检验：恢复task-grounded视觉过程Value，能否让现有Dynamic-K memory结构写出
+更有用且可共存的LoRA。
 
-这轮没有改变video数量、memory、rank、set、M2P、loss、数据或optimizer，因而macro50与semantic101的差异可以
-归因于mapper变量。若失败，只淘汰这个direct readout假设，不否定Dynamic-K、memory tokens、few-shot、rank8或
-视频学习整体。
+这轮没有改变video数量、memory token数、rank、set、M2P、mapper、loss、数据或optimizer。若完整曲线失败，只
+淘汰当前“无VL Meta、同forward task query、raw D/G reader、B20 functional recipe”的组合，不否定Dynamic-K、
+few-shot、memory tokens、所有视觉目标或LoRA输出。
 
 ## 3. Training semantics
 
@@ -42,12 +42,12 @@ common direction、压小order contrast的接口。因此本轮只检验：去�
 - video与action queries同task但跨episode，不允许逐帧动作复制；
 - frozen source policy trainable参数为0；validation/test action/reward不产生梯度；
 - precision BF16/TF32，AdamW peak LR`3e-4`、warmup17、cosine400、clip1.0；
-- checkpoint只在完整macro25/50写出，含Writer、optimizer、scheduler、sampler/RNG和world topology；
-- 当前fresh world5；若获准50->100，必须同一world5 exact-resume。
+- checkpoint每25个完整macro写出，含Writer、optimizer、scheduler、sampler/RNG和world topology；
+- 当前formal world3；50→100及后续resume必须锁同一world3 topology。
 
 训练曲线只检查进程健康、finite、K平衡和明显异常，不能选checkpoint或证明方法。
 
-## 4. K1 strict400 adjudication
+## 4. Current macro50 K1 strict400 adjudication
 
 正式arm为：
 
@@ -56,7 +56,7 @@ common direction、压小order contrast的接口。因此本轮只检验：去�
 - one generated LoRA per rollout condition；
 - Writer generation batch=`8`，来自sealed throughput profile；
 - official π0.5/LIBERO preprocessing、dynamic rollout queue和persistent workers；
-- 同一macro50 single checkpoint，不挑task、不融合checkpoint。
+- 同一macro50 single checkpoint，不挑task、不融合checkpoint；generation B8。
 
 比较：
 
@@ -66,10 +66,18 @@ common direction、压小order contrast的接口。因此本轮只检验：去�
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、churn、top-task concentration；必要时再
 看task-mean effective BA、action-target energy和Program->mapper几何解释结果。
 
-结果为`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`、per-suite=`1/51/43/7`，top3占
-`94/102`。相对semantic101虽净`+1`，但有`20 gained/19 lost`；相对old134为`22 gained/54 lost`。task-mean
-effective-BA cosine仅从`.77947`降至`.74895`，没有带来绝对或breadth增益。按`<120`或breadth<6门终止，
-不resume、不做小扫、不补K1完整controls。
+结果为`88/400`、breadth5、per-task=`4/0/34/2/0/41/7/0`、per-suite=`4/36/41/7`，top3占
+`82/88=93.18%`。相对Direct-Family-B 102为`74 retained/14 gained/28 lost`、churn42、net`-14`；相对
+old134/compiler138/online128分别净`-46/-50/-40`。相对v6-fast143逐task差为
+`+4/-3/-12/-35/0/+5/-13/-1`。
+
+exact effective-BA诊断没有发现视频噪声或identity坍缩：task/video SNR `16.34→19.05`，task-mean offdiag
+cosine`.749→.707`，norm均值`136.64→126.47`；但新旧BA平均cosine仅`.831`、relative-L2`.584`。functional
+loss轨迹与Direct-B几乎相同，却让held rollout更差。因此目前最早断点是raw visual D/G经当前functional credit
+学到的LoRA方向缺少held on-policy usefulness，而非“没有读取视觉”、set不稳或LoRA过小。
+
+历史v6-fast早期也弱于后期，design已预注册macro50不作终局门。继续macro100/150/200；只有完整曲线best≥125、
+breadth≥6且macro200未相对best崩落>15，才resume 200→400。
 
 ## 5. K4 result and next design boundary
 
@@ -90,8 +98,8 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。fresh 0→50现已完整封存，macro50 strict400与同拓扑50→100 exact-resume并行运行。精确活动root与状态
-只取`active_session_handoff.md`；profile不冒充性能结果。
+锁B8。fresh 0→50和macro50 strict400现已完整封存；同拓扑50→100 exact-resume仍在运行。精确活动root与状态
+只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 

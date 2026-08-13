@@ -5,13 +5,15 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-13，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。最新Dynamic-K
+2026-08-13，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
 effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
 不是解决Program→policy effectiveness和共同积累的充分条件。同一checkpoint K4=`98/400`，相对K1为
 `80 retained/18 gained/22 lost`；set将same-task相对方差约降`6.3x`却保持task mean cosine`.99604`，证明
-few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass，不resume。
+few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass。最新Task-Grounded Visual-Value
+macro50=`88/400`、breadth5；它提高task/video BA SNR并降低跨task共线，却大幅旋转到held无用方向。其预注册
+0→200曲线尚未完成，不得把macro50写成终局。
 
 ## 1. Stable problem definition
 
@@ -95,6 +97,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
 | Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
+| Task-Grounded Visual-Value rank8 | macro50=`88`, breadth5 | exact language查询raw patch Value能进入有向D/G并显著分化effective BA | 相对Direct-B=`74/14/28` retained/gained/lost；functional loss近同而held更差，当前visual Value + B20 credit未对准on-policy方向；继续预注册100/150/200 |
 
 ## 4. Final rank14 adjudication
 

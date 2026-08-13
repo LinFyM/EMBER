@@ -1,7 +1,7 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
-状态：2026-08-13 active successor design authority；canonical实现、matched训练profile与K1部署profile已通过，
-fresh formal正在运行。
+状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→50
+已完成。macro50 K1 strict=`88/400`；同一run正按预注册合同exact-resume到100，尚未终局。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
@@ -236,3 +236,15 @@ set聚合到更policy-effective、可共同积累的任务程序。
 
 若失败，只淘汰本轮具体组合：无VL Meta、同forward multimodal task query、raw D/G reader、当前B20 functional
 recipe。它不否定dynamic K、few-shot、memory tokens、所有视觉预测目标、Writer reward或LoRA输出整体。
+
+## 14. Macro50 intermediate evidence
+
+clean `caa2e30`、world3 fresh macro0→50完成后，K1 strict correct400=`88/400`、breadth5、per-task按
+Spatial1/3、Object1/3、Goal3/6、Long1/2为`4/0/34/2/0/41/7/0`。相对Direct-Family-B 102为
+`74 retained/14 gained/28 lost`、net`-14`、churn42；损失主要在Object1/3。
+
+这不是visual path未工作：同一correct K1前4 state/video的exact effective-BA中，task/video SNR从Direct-B
+`16.34`升至`19.05`，task-mean offdiag cosine从`.749`降至`.707`，norm均值仍为`126.47`；但相对Direct-B的
+paired BA cosine仅`.831`、relative-L2`.584`。functional loss轨迹几乎一致。因此当前证据支持“raw visual D/G
+经B20 functional credit造成了material但held无用的policy旋转”，不支持“视频没读到”“set噪声爆炸”或“LoRA
+近identity”。按本design第12节继续macro100/150/200；macro50不能单独裁决整套组合。

@@ -34,10 +34,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_eval_adapter_v1"
+    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_eval_adapter_v1"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_episode_v1"
+    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_episode_v1"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -46,28 +46,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
 DYNAMIC_K_GENERATION_BATCH_SIZE = 8
-DYNAMIC_K_GENERATION_PROFILES = {
-    1: {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_dynamic_k_semantic_address_direct_family_b_writer_generation_"
-            "profile_val8x4_correct_gpu01p1_3866f50_20260813/"
-            "writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    },
-    4: {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_writer_"
-            "generation_profile_val8x4_correct_gpu01p2_9c5cec2_retry2_20260813/"
-            "writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    },
-}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:
@@ -424,8 +403,7 @@ def inspect_dynamic_k_writer_evaluation(
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
-            "dynamic_k_semantic_address_direct_family_b_rank8_"
-            f"{video_condition}"
+            "dynamic_k_task_grounded_visual_value_rank8_" f"{video_condition}"
         ),
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {

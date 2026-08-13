@@ -10,7 +10,7 @@ from lerobot.policies.pi_gemma import _gated_residual, layernorm_forward
 from torch.utils.checkpoint import checkpoint
 from transformers.models.gemma import modeling_gemma
 
-from ember.writer.video_program import MetaLoRAStack
+from ember.writer.video_program import MetaLoRAStack, TaskQueriedPatchGrounding
 
 
 class BackboneMemoryError(RuntimeError):
@@ -24,6 +24,7 @@ class BackboneMemoryOutput:
     layer_memory: torch.Tensor
     probe_hidden: torch.Tensor
     task_hidden: torch.Tensor
+    visual_evidence: torch.Tensor
     valid_task_tokens: torch.Tensor
 
 
@@ -87,6 +88,8 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
         bridge: torch.nn.Module,
         image_width: int,
         expert_width: int,
+        program_width: int,
+        evidence_heads: int,
         max_frames_per_encoder_call: int,
         action_horizon: int,
         padded_action_dim: int,
@@ -101,6 +104,8 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             min(
                 image_width,
                 expert_width,
+                program_width,
+                evidence_heads,
                 max_frames_per_encoder_call,
                 action_horizon,
                 padded_action_dim,
@@ -116,11 +121,18 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             raise BackboneMemoryError("invalid PI05 backbone-memory topology")
         self.image_width = int(image_width)
         self.expert_width = int(expert_width)
+        self.program_width = int(program_width)
         self.max_frames_per_encoder_call = int(max_frames_per_encoder_call)
         self.action_horizon = int(action_horizon)
         self.padded_action_dim = int(padded_action_dim)
         self.activation_checkpointing = bool(activation_checkpointing)
         self.action_meta_lora = MetaLoRAStack(expert_model.layers, action_meta_lora_rank)
+        self.evidence_projection = torch.nn.Linear(
+            image_width, program_width, bias=False
+        )
+        self.patch_grounding = TaskQueriedPatchGrounding(
+            width=program_width, heads=evidence_heads
+        )
         generator = torch.Generator(device="cpu").manual_seed(
             int(initialization_seed) + 0xD1A6
         )
@@ -403,12 +415,13 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             ),
             dim=1,
         )
-        boolean_mask = make_backbone_memory_mask(
+        attention_mask = core._prepare_attention_masks_4d(
+            make_backbone_memory_mask(
             prefix_padding,
             action_horizon=self.action_horizon,
             memory_tokens=self.MEMORY_TOKENS,
+            )
         )
-        attention_mask = core._prepare_attention_masks_4d(boolean_mask)
         total_padding = torch.cat(
             (
                 prefix_padding,
@@ -423,11 +436,7 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
         )
         position_ids = torch.cumsum(total_padding, dim=1) - 1
         noise = self.fixed_suffix_noise[None].expand(frames.shape[0], -1, -1)
-        timestep = torch.ones(
-            frames.shape[0],
-            dtype=torch.float32,
-            device=frames.device,
-        )
+        timestep = torch.ones(frames.shape[0], dtype=torch.float32, device=frames.device)
         action_suffix, action_padding, action_markers, adarms_condition = core.embed_suffix(
             noise, timestep
         )
@@ -441,8 +450,7 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             or not bool(action_padding.all())
             or action_markers.shape != action_suffix.shape[:2]
             or not torch.equal(action_markers, expected_markers)
-            or adarms_condition.shape
-            != (frames.shape[0], self.expert_width)
+            or adarms_condition.shape != (frames.shape[0], self.expert_width)
         ):
             raise BackboneMemoryError("PI05 Action probe layout changed")
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
@@ -474,21 +482,44 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             )
         ):
             raise BackboneMemoryError("PI05 backbone-memory output layout changed")
+        task_hidden, visual_evidence, valid_task_tokens = self._extract_task_evidence(
+            prefix_hidden,
+            task_span_mask,
+            maximum_task_tokens,
+        )
+        return BackboneMemoryOutput(
+            layer_memory=layer_memory,
+            probe_hidden=suffix_hidden[:, : self.action_horizon],
+            task_hidden=task_hidden,
+            visual_evidence=visual_evidence,
+            valid_task_tokens=valid_task_tokens,
+        )
+
+    def _extract_task_evidence(
+        self,
+        prefix_hidden: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        maximum_task_tokens: int,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         task_hidden = self._pack_task_hidden(
             prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :],
             task_span_mask,
             maximum_task_tokens,
         )
         valid_task_tokens = (
-            torch.arange(maximum_task_tokens, device=frames.device)[None]
+            torch.arange(maximum_task_tokens, device=prefix_hidden.device)[None]
             < task_span_mask.sum(dim=1)[:, None]
         )
-        return BackboneMemoryOutput(
-            layer_memory=layer_memory,
-            probe_hidden=suffix_hidden[:, : self.action_horizon],
-            task_hidden=task_hidden,
-            valid_task_tokens=valid_task_tokens,
+        task_evidence = self.evidence_projection(task_hidden)
+        patch_evidence = self.evidence_projection(
+            prefix_hidden[:, : self.NATIVE_IMAGE_TOKENS]
         )
+        visual_evidence = task_evidence + self.patch_grounding(
+            task_evidence,
+            patch_evidence,
+            valid_task_tokens,
+        )
+        return task_hidden, visual_evidence, valid_task_tokens
 
     def _validate_forward_batch(
         self,
@@ -589,5 +620,6 @@ class Pi05BackboneMemoryEncoder(torch.nn.Module):
             layer_memory=torch.cat([row.layer_memory for row in rows]),
             probe_hidden=torch.cat([row.probe_hidden for row in rows]),
             task_hidden=torch.cat([row.task_hidden for row in rows]),
+            visual_evidence=torch.cat([row.visual_evidence for row in rows]),
             valid_task_tokens=torch.cat([row.valid_task_tokens for row in rows]),
         )

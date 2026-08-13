@@ -74,6 +74,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             bridge=bridge,
             image_width=image_width,
             expert_width=expert_width,
+            program_width=program_width,
+            evidence_heads=temporal_heads,
             max_frames_per_encoder_call=max_frames_per_encoder_call,
             action_horizon=action_horizon,
             padded_action_dim=padded_action_dim,
@@ -219,6 +221,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         program, diagnostics = self.memory_program(
             backbone.layer_memory,
+            backbone.visual_evidence,
+            backbone.valid_task_tokens,
             frame_indices,
             video_offsets,
             condition_video_offsets,

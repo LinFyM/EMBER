@@ -149,6 +149,8 @@ def _encoder(
         bridge=bridge,
         image_width=4,
         expert_width=4,
+        program_width=4,
+        evidence_heads=1,
         max_frames_per_encoder_call=microbatch,
         action_horizon=50,
         padded_action_dim=32,
@@ -259,6 +261,7 @@ def test_joint_forward_shapes_layer_capture_and_shared_condition_language() -> N
     assert output.layer_memory.shape == (4, 18, 8, 4)
     assert output.probe_hidden.shape == (4, 50, 4)
     assert output.task_hidden.shape == (4, 3, 4)
+    assert output.visual_evidence.shape == (4, 3, 4)
     assert output.valid_task_tokens.tolist() == [
         [True, True, False],
         [True, True, False],
@@ -305,13 +308,25 @@ def test_gradients_reach_memory_and_action_meta_lora_only() -> None:
     policy = _Policy()
     encoder = _encoder(policy, activation_checkpointing=True)
     output = encoder(policy, *_inputs())
-    output.layer_memory.float().square().mean().backward()
+    (
+        output.layer_memory.float().square().mean()
+        + output.visual_evidence.float().square().mean()
+    ).backward()
     assert encoder.memory_tokens.grad is not None
     assert encoder.memory_tokens.grad.abs().sum() > 0
     assert any(
         adapter.b.grad is not None and adapter.b.grad.abs().sum() > 0
         for adapter in encoder.action_meta_lora.adapters.values()
     )
+    assert encoder.evidence_projection.weight.grad is not None
+    assert encoder.evidence_projection.weight.grad.abs().sum() > 0
+    for projection in (
+        encoder.patch_grounding.query,
+        encoder.patch_grounding.key,
+        encoder.patch_grounding.output,
+    ):
+        assert projection.weight.grad is not None
+        assert projection.weight.grad.abs().sum() > 0
     assert all(parameter.grad is None for parameter in policy.parameters())
     names = tuple(name for name, _ in encoder.named_parameters())
     assert names[0] == "memory_tokens"

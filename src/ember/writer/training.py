@@ -446,8 +446,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=REPO_ROOT
         / (
-            "configs/pi05_as_writer_dynamic_k_semantic_address_"
-            "direct_family_b_rank8_v1.json"
+            "configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_"
+            "rank8_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

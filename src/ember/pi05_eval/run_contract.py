@@ -30,6 +30,43 @@ from ember.pi05_eval_contract import (
 )
 
 
+_BATCH_THROUGHPUT_POLICY = (
+    "highest_measured_batch_throughput_with_device_memory_headroom"
+)
+_WRITER_THROUGHPUT_BY_SCHEMA = {
+    "ember_pi05_v6_prior_eval_adapter_v5": (
+        "highest_measured_throughput_with_device_memory_headroom"
+    ),
+    "ember_pi05_v6_ecp_eval_adapter_v6": (
+        "highest_measured_throughput_with_device_memory_headroom"
+    ),
+    "ember_pi05_v6_tangent_tube_eval_adapter_v7": (
+        "highest_measured_throughput_with_device_memory_headroom"
+    ),
+    "ember_pi05_v6_condition_program_residual_eval_adapter_v8": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_v6_condition_program_residual_eval_adapter_v9": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_eval_adapter_v11": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_eval_adapter_v1": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_eval_adapter_v1": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
+}
+
+
 def _resolve_gpu_ids(
     authorities: EvaluationAuthorities,
     physical_gpu_ids: Sequence[int] | None,
@@ -205,37 +242,7 @@ def _validate_build_request(
             raise Pi05EvaluationError(
                 "Writer generation lacks its throughput authority"
             ) from error
-        throughput_by_schema = {
-            "ember_pi05_v6_prior_eval_adapter_v5": (
-                "highest_measured_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_ecp_eval_adapter_v6": (
-                "highest_measured_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_tangent_tube_eval_adapter_v7": (
-                "highest_measured_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_condition_program_residual_eval_adapter_v8": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_condition_program_residual_eval_adapter_v9": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_eval_adapter_v11": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-            "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
-            "eval_adapter_v1": (
-                "highest_measured_batch_throughput_with_device_memory_headroom"
-            ),
-        }
-        expected_throughput_policy = throughput_by_schema.get(
+        expected_throughput_policy = _WRITER_THROUGHPUT_BY_SCHEMA.get(
             str(adapter.get("schema_version"))
         )
         if (

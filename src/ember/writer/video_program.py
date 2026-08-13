@@ -89,7 +89,7 @@ class MetaLoRAStack(torch.nn.Module):
 
 
 class TaskQueriedPatchGrounding(torch.nn.Module):
-    """Read per-frame image-position content with text-only task queries."""
+    """Read per-frame image-position content with task-token queries."""
 
     NATIVE_IMAGE_TOKENS = 256
 

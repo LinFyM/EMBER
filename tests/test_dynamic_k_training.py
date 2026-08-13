@@ -62,12 +62,12 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_rank8_dynamic_k_direct_family_b_config_is_mechanical_and_loadable() -> None:
+def test_rank8_task_grounded_visual_value_config_is_mechanical_and_loadable() -> None:
     config = load_writer_config(
         REPO_ROOT
         / (
-            "configs/pi05_as_writer_dynamic_k_semantic_address_"
-            "direct_family_b_rank8_v1.json"
+            "configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_"
+            "rank8_v1.json"
         )
     )
     lora = load_pi05_lora_contract(
@@ -78,6 +78,9 @@ def test_rank8_dynamic_k_direct_family_b_config_is_mechanical_and_loadable() -> 
     assert config["data"]["dynamic_k_max"] == 4
     assert config["writer"]["temporal_semantic_address"] == (
         "per_video_absolute_mean_memory_to_temporal_query_only"
+    )
+    assert config["writer"]["task_grounded_visual_evidence"].startswith(
+        "same_joint_forward_task_query_to_raw_patch_value"
     )
     assert config["writer"]["lora_a"] == (
         "fixed_template_without_dynamic_a_head"
@@ -591,8 +594,8 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
     config = (
         REPO_ROOT
         / (
-            "configs/pi05_as_writer_dynamic_k_semantic_address_"
-            "direct_family_b_rank8_v1.json"
+            "configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_"
+            "rank8_v1.json"
         )
     )
     lora = writer_lora_contract(

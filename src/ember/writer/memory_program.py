@@ -20,6 +20,8 @@ class MemoryProgramDiagnostics:
     """Live intermediate states for representation-to-mapper diagnostics."""
 
     semantic_addresses: torch.Tensor
+    visual_transition_readouts: torch.Tensor
+    visual_goal_readouts: torch.Tensor
     video_programs: torch.Tensor
     shared_program: torch.Tensor
     singleton_program: torch.Tensor
@@ -140,6 +142,55 @@ class _ZeroPreservingCrossAttention(torch.nn.Module):
         return self.output(_merge_heads(attended))
 
 
+class _TaskGroundedVisualReader(torch.nn.Module):
+    """Let memory cells read raw task-grounded visual change as Value."""
+
+    def __init__(self, *, width: int, heads: int) -> None:
+        super().__init__()
+        self.heads = heads
+        self.query_norm = RMSNorm(width)
+        self.evidence_norm = RMSNorm(width)
+        self.query = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(width, width, bias=False)
+        self.output = torch.nn.Linear(width, width, bias=False)
+
+    def forward(
+        self,
+        query_content: torch.Tensor,
+        query_route: torch.Tensor,
+        evidence: torch.Tensor,
+        valid_tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        if (
+            query_content.ndim != 2
+            or query_route.ndim != 2
+            or query_content.shape != query_route.shape
+            or evidence.ndim != 3
+            or query_content.shape[-1] != evidence.shape[-1]
+            or valid_tokens.shape != evidence.shape[:2]
+            or valid_tokens.dtype != torch.bool
+        ):
+            raise MemoryProgramError("task-grounded visual reader changed shape")
+        frames = evidence.shape[0]
+        query = _split_heads(
+            self.query(self.query_norm(query_content) + query_route)[None].expand(
+                frames, -1, -1
+            ),
+            self.heads,
+        )
+        key = _split_heads(self.key(self.evidence_norm(evidence)), self.heads)
+        value = _split_heads(evidence, self.heads)
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            attn_mask=valid_tokens[:, None, None],
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        return self.output(_merge_heads(attended))
+
+
 class DynamicKMemoryProgram(torch.nn.Module):
     """Compile ragged per-frame backbone memories into a ``20 x 8`` program."""
 
@@ -162,6 +213,9 @@ class DynamicKMemoryProgram(torch.nn.Module):
         )
         self.goal_fusion = torch.nn.Linear(
             2 * self.PROGRAM_WIDTH, self.PROGRAM_WIDTH, bias=False
+        )
+        self.visual_reader = _TaskGroundedVisualReader(
+            width=self.PROGRAM_WIDTH, heads=heads
         )
         self.temporal_blocks = torch.nn.ModuleList(
             _ZeroPreservingSelfAttention(
@@ -240,16 +294,49 @@ class DynamicKMemoryProgram(torch.nn.Module):
         return offsets
 
     def _encode_video(
-        self, memory: torch.Tensor, positions: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self,
+        memory: torch.Tensor,
+        visual_evidence: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+        positions: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         adjacent = torch.zeros_like(memory)
         adjacent[1:] = memory[1:] - memory[:-1]
         goal = memory - memory[:1]
-        transition = self.dynamic_projection(adjacent)
-        terminal_goal = self.dynamic_projection(goal[-1])
         semantic_address = self.semantic_address_projection(
             self.semantic_address_norm(memory.mean(dim=0))
         )
+        visual_transition = torch.zeros_like(visual_evidence)
+        visual_transition[1:] = visual_evidence[1:] - visual_evidence[:-1]
+        visual_goal = visual_evidence[-1:] - visual_evidence[:1]
+        cell_query = semantic_address.reshape(
+            self.EXPERT_LAYERS * self.RANK_TOKENS,
+            self.PROGRAM_WIDTH,
+        )
+        cell_route = self._cell_route()
+        visual_transition_readout = self.visual_reader(
+            cell_query,
+            cell_route,
+            visual_transition,
+            valid_task_tokens,
+        ).reshape(
+            memory.shape[0],
+            self.EXPERT_LAYERS,
+            self.RANK_TOKENS,
+            self.PROGRAM_WIDTH,
+        )
+        visual_goal_readout = self.visual_reader(
+            cell_query,
+            cell_route,
+            visual_goal,
+            valid_task_tokens[-1:] & valid_task_tokens[:1],
+        )[0].reshape(
+            self.EXPERT_LAYERS,
+            self.RANK_TOKENS,
+            self.PROGRAM_WIDTH,
+        )
+        transition = self.dynamic_projection(adjacent) + visual_transition_readout
+        terminal_goal = self.dynamic_projection(goal[-1]) + visual_goal_readout
         frames = memory.shape[0]
         content = transition.permute(1, 2, 0, 3).reshape(
             self.EXPERT_LAYERS * self.RANK_TOKENS,
@@ -276,7 +363,40 @@ class DynamicKMemoryProgram(torch.nn.Module):
         return (
             self.goal_fusion(torch.cat((terminal, terminal_goal), dim=-1)),
             semantic_address,
+            visual_transition_readout,
+            visual_goal_readout,
         )
+
+    @staticmethod
+    def _validate_frame_order(
+        frame_indices: torch.Tensor,
+        video_bounds: tuple[int, ...],
+    ) -> None:
+        starts = torch.tensor(
+            video_bounds[:-1], dtype=torch.long, device=frame_indices.device
+        )
+        internal = torch.ones(
+            frame_indices.shape[0] - 1,
+            dtype=torch.bool,
+            device=frame_indices.device,
+        )
+        if len(video_bounds) > 2:
+            internal[
+                torch.tensor(
+                    video_bounds[1:-1],
+                    dtype=torch.long,
+                    device=frame_indices.device,
+                )
+                - 1
+            ] = False
+        invalid_ordinals = (
+            (frame_indices.index_select(0, starts) != 0).any()
+            | ((frame_indices[1:] <= frame_indices[:-1]) & internal).any()
+        )
+        if bool(invalid_ordinals):
+            raise MemoryProgramError(
+                "each video's frame indices must start at zero and increase"
+            )
 
     def _aggregate_set(self, programs: torch.Tensor) -> torch.Tensor:
         shots = programs.shape[0]
@@ -353,6 +473,8 @@ class DynamicKMemoryProgram(torch.nn.Module):
     def forward(
         self,
         memory_states: torch.Tensor,
+        visual_evidence: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
         frame_indices: torch.Tensor,
         video_offsets: torch.Tensor,
         condition_video_offsets: torch.Tensor,
@@ -368,6 +490,14 @@ class DynamicKMemoryProgram(torch.nn.Module):
         )
         if memory_states.ndim != 4 or memory_states.shape[1:] != expected_tail:
             raise MemoryProgramError("memory states changed shape")
+        if (
+            visual_evidence.ndim != 3
+            or visual_evidence.shape[0] != memory_states.shape[0]
+            or visual_evidence.shape[-1] != self.PROGRAM_WIDTH
+            or valid_task_tokens.shape != visual_evidence.shape[:2]
+            or valid_task_tokens.dtype != torch.bool
+        ):
+            raise MemoryProgramError("task-grounded visual evidence changed shape")
         if (
             frame_indices.shape != memory_states.shape[:1]
             or frame_indices.dtype != torch.long
@@ -388,38 +518,23 @@ class DynamicKMemoryProgram(torch.nn.Module):
             singleton_video_index not in range(count) for count in cardinalities
         ):
             raise MemoryProgramError("dynamic-K cardinality must stay within 1..4")
-        starts = torch.tensor(
-            video_bounds[:-1], dtype=torch.long, device=frame_indices.device
-        )
-        internal = torch.ones(
-            frame_indices.shape[0] - 1,
-            dtype=torch.bool,
-            device=frame_indices.device,
-        )
-        if len(video_bounds) > 2:
-            internal[
-                torch.tensor(
-                    video_bounds[1:-1],
-                    dtype=torch.long,
-                    device=frame_indices.device,
-                )
-                - 1
-            ] = False
-        invalid_ordinals = (
-            (frame_indices.index_select(0, starts) != 0).any()
-            | ((frame_indices[1:] <= frame_indices[:-1]) & internal).any()
-        )
-        if bool(invalid_ordinals):
-            raise MemoryProgramError(
-                "each video's frame indices must start at zero and increase"
-            )
+        self._validate_frame_order(frame_indices, video_bounds)
         positions = frame_indices.to(device=memory_states.device)
         encoded_videos = tuple(
-            self._encode_video(memory_states[start:stop], positions[start:stop])
+            self._encode_video(
+                memory_states[start:stop],
+                visual_evidence[start:stop],
+                valid_task_tokens[start:stop],
+                positions[start:stop],
+            )
             for start, stop in zip(video_bounds, video_bounds[1:])
         )
         video_programs = torch.stack(tuple(item[0] for item in encoded_videos))
         semantic_addresses = torch.stack(tuple(item[1] for item in encoded_videos))
+        visual_transition_readouts = torch.cat(
+            tuple(item[2] for item in encoded_videos)
+        )
+        visual_goal_readouts = torch.stack(tuple(item[3] for item in encoded_videos))
         shared_programs = []
         singleton_programs = []
         multi_condition = []
@@ -450,6 +565,8 @@ class DynamicKMemoryProgram(torch.nn.Module):
         output, m2p_input, layer_program = self._m2p(shared_program)
         diagnostics = MemoryProgramDiagnostics(
             semantic_addresses=semantic_addresses,
+            visual_transition_readouts=visual_transition_readouts,
+            visual_goal_readouts=visual_goal_readouts,
             video_programs=video_programs,
             shared_program=shared_program,
             singleton_program=singleton_program,

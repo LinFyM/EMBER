@@ -55,13 +55,16 @@ class _FakeBackboneMemory(torch.nn.Module):
         memory = content[:, None, None, None] + 0.01 * layer + 0.001 * rank
         memory = memory.expand(-1, -1, -1, 1024).clone()
         maximum = int(task_span_mask.sum(dim=1).max())
+        valid = torch.arange(maximum, device=frames.device)[None] < task_span_mask.sum(
+            dim=1
+        ).index_select(0, frame_condition_ids)[:, None]
+        visual = content[:, None, None].expand(-1, maximum, 256).clone()
         return BackboneMemoryOutput(
             layer_memory=memory,
             probe_hidden=memory.new_zeros(frames.shape[0], 50, 1024),
             task_hidden=memory.new_zeros(frames.shape[0], maximum, 2048),
-            valid_task_tokens=torch.ones(
-                frames.shape[0], maximum, dtype=torch.bool, device=frames.device
-            ),
+            visual_evidence=visual,
+            valid_task_tokens=valid,
         )
 
 

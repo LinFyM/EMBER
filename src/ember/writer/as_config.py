@@ -1,4 +1,4 @@
-"""Configuration authority for the direct-family-B Dynamic-K Writer."""
+"""Configuration authority for the task-grounded visual-value Writer."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_as_writer_v1"
+    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_as_writer_launch_v1"
+    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_as_writer_launch_v1"
 )
 
 
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_dynamic_k_semantic_address_direct_family_b_rank8_v1",
+        "architecture": "pi05_dynamic_k_task_grounded_visual_value_rank8_v1",
         "generated_adapter": "complete_pi05_task_specific_rank8_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -99,6 +99,13 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         ),
         "temporal_semantic_address": (
             "per_video_absolute_mean_memory_to_temporal_query_only"
+        ),
+        "task_grounded_visual_evidence": (
+            "same_joint_forward_task_query_to_raw_patch_value_then_ordered_"
+            "difference_and_terminal_goal"
+        ),
+        "visual_cell_readout": (
+            "semantic_address_plus_layer_rank_route_query_with_raw_visual_value"
         ),
         "action_meta_lora_rank": 4,
         "temporal_blocks": 2,
@@ -172,9 +179,9 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
     if config["formal_run"].get("status") == "sealed":
         evidence = config["formal_run"].get("profile_evidence", {})
         if (
-            evidence.get("source_commit")
-            != "3866f50ab72439a4b522ead0c1a86fb7d30aa60b"
-            or int(evidence.get("world_size", 0)) != 5
+            not isinstance(evidence.get("source_commit"), str)
+            or len(evidence["source_commit"]) != 40
+            or int(evidence.get("world_size", 0)) not in range(1, 7)
             or int(evidence.get("completion_macro", 0)) != 1
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0

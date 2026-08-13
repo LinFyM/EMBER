@@ -112,9 +112,12 @@ owner明确提出：完整LoRA即使是adapter仍然高维，当前Writer可能�
 输出架构应具有规模可扩展性：基础policy更大、LoRA targets或参数更多时，Writer可通过共享层对应解码、参数
 复用或结构化生成扩展，而不是为每个target增加一个彼此独立的巨大wide head。
 
-## 6. 下一版架构中memory token的准确含义
+## 6. 当前架构中memory token的准确含义
 
-memory token是owner对下一版架构的重要设计要求/启发，但不是EMBER的最终goal。不能再偷换概念。
+memory token是owner对当前架构的重要设计要求/启发，但不是EMBER的最终goal。不能再偷换概念。当前
+Dynamic-K Writer已经把这一要求落实为8个真实memory tokens：它们与每帧真实图像、exact language和50个固定
+Action probes共同进入π0.5 joint backbone，并保留其经过18个Action Expert层后的逐层状态。这个具体实现正在
+接受formal closed-loop检验；若失败，应定位最早失效接口，而不是把“使用memory token”本身写成不可修改目标。
 
 ### 6.1 什么才算memory token
 
@@ -132,8 +135,8 @@ memory token是owner对下一版架构的重要设计要求/启发，但不是EM
 - 没有真实图像/语言上下文、只把memory塞进Action Expert的空输入；
 - 任意固定数量的“phase tokens”，但没有解释它们与实际stride-5帧序列的关系。
 
-此前草稿中的`20x256`后处理latent最多只能叫layer-aligned program slots，`5056`个位置只是LoRA参数分块；二者
-都不是owner所说的SHINE式memory token。
+当前`20x8x256`后处理状态只能叫policy-group/rank-aligned Program：20对应action-in、18个Action Expert层和
+action-out，8对应LoRA rank coordinates。它们不是额外memory tokens；真正进入backbone的memory始终只有8个。
 
 ### 6.2 memory放在哪里
 
@@ -141,12 +144,13 @@ memory token是owner对下一版架构的重要设计要求/启发，但不是EM
 state/noise/time等预测动作。若使用Action Expert内部memory，它必须和正常有效prefix一起运行；不能用blank/
 zero image、无prefix、memory-only或凭空构造的action query来“为了使用Action Expert而使用Action Expert”。
 
-memory究竟进入VLM、Action Expert还是跨两者交互，需要由真实接口和科学作用决定。不能因为policy有20个层级，
-就默认每个维度都做纵向、横向、视频维和时间维attention。每一种交互必须回答：它在哪个阶段发生、交换什么
-信息、为何该阶段需要它。
+当前实现选择让memory位于Action Expert suffix，但它不是无prefix空跑：同一次joint forward的prefix包含真实
+image tokens与exact language。视频时间轴只在逐video causal encoder中交互，K轴只在set aggregator中交互，
+policy-group/rank轴只在M2P中交互；不能因为policy有20个层级，就在每个阶段把所有维度混在一起attention。
 
-memory token数量应少而有依据。此前随意提出约70个tokens没有依据；下一设计必须参照真实policy topology、
-SHINE/Doc2LoRA等方法的机制和实际显存/吞吐，说明为什么需要这个数量。
+memory token数量应少而有依据。此前随意提出约70个tokens没有依据；当前8个tokens与fresh rank-8 LoRA坐标
+对齐，并已通过最长视频吞吐与显存profile。这个对应关系是当前可证伪假设，不是“rank永远必须等于token数”的
+普遍定律。
 
 ### 6.3 与视频处理的关系
 
@@ -161,7 +165,32 @@ memory不能替代视频理解。设计仍需清楚区分：
 不要求在时间、video、policy layer和LoRA parameter四个轴上到处做attention。应选择最少但足以表达必要关系的
 交互，并用完整数据流解释。
 
-## 7. policy结构、Meta-LoRA与旧架构继承
+## 7. 当前完整架构判断、成熟Hypernetwork参照与历史继承
+
+昨晚讨论形成、当前已经实现的完整数据流是：
+
+```text
+exact language + K=1..4 same-task action-hidden ordered videos
+    -> 每帧真实image/language/Action-probe joint backbone + 8 memory tokens
+    -> 每video有向transition D、terminal goal residual G和Query-only semantic address
+    -> causal temporal encoder（video内部保序）
+    -> permutation-invariant set attention（videos之间提取共同程序）
+    -> policy-group/rank M2P
+    -> shared projector + shape-family readout
+    -> one complete 38-target rank-8 task LoRA
+```
+
+当前架构同时吸收三类依据：
+
+1. owner的现实启发与需求：语言说明任务，正确视频展示完成方式；模型提取跨初始化成立的高层程序，而不是复制
+   teacher低层轨迹；同一Writer支持动态视频数量并一次生成task adaptation；
+2. SHINE、Doc2LoRA等成熟Hypernetwork研究：少量memory进入原生backbone上下文，保留layer-aligned状态，再用
+   共享、结构化mapper生成LoRA；这里学习其第一性原理与可扩展性，不照搬文本模型输入、token数或flat payload；
+3. EMBER历史证据：保留v5/v6的Semantic Core与有向Procedure思想、K4的逐video保序/跨video集合边界，以及
+   policy-effective完整LoRA；不继承已被否定的language-only bypass、简单平均、高rank/正交目标或独立wide heads。
+
+引用成熟工作只影响架构设计，不引入额外target-task训练数据。当前Writer仍只使用封存train24视频与action
+functional supervision，因此不会因为参考外部论文而改变与target-task LoRA基线的数据公平边界。
 
 - 设计必须准确描述pi0.5中的Gemma/VLM和Action Expert，不能用未解释的“Q层”“QV action”等占位说法。
   38个LoRA targets的真实归属、shape和层对应必须从代码/合同给出。
@@ -172,7 +201,8 @@ memory不能替代视频理解。设计仍需清楚区分：
 - 同样，不能因为owner提到SHINE/Doc2LoRA就一比一照搬。需要研究这些工作为什么能从原生backbone上下文中的
   memory生成LoRA、用了多少tokens、怎样做层对应和规模扩展，再选择适用于视频/policy的部分。
 - 必须对比现有FactorHeads、wide head和SHINE式共享mapper的作用与瓶颈，不能默认历史实现已经最好，也不能
-  因为新方法更“漂亮”就判定它有效。
+  因为新方法更“漂亮”就判定它有效。当前Direct-Family-B正是根据逐接口probe，只删除已定位造成common-direction
+  增长的family hidden/GELU；它保留此前已认可的整个输入、memory、temporal、set与M2P链，而不是另起炉灶。
 
 ## 8. 训练要求与RL边界
 
@@ -253,20 +283,22 @@ GPU/工程要求：
 - 不用大量半成品术语、临时缩写或未定义token数量让owner反向猜设计；
 - 不播报“读到EOF”“正在交接”“正在检查第几份文档”等机械过程。只汇报会影响科研判断的证据、完成的实现、
   实验进展、结果和真实阻塞；
-- 已授权自主推进与使用subagents加速。主进程负责统一科研判断，不能把多个agent意见拼成摇摆方案；
+- 已授权自主持续推进；owner于2026-08-13最新要求暂时不使用subagents，后续实现、训练、评测和分析均由当前
+  主任务完成，直到owner再次明确改变；
 - 一个完整实验结束后，先完成全部逐task、因果和接口分析，再自主进入下一轮有因果依据的设计/实现/实验；
   不拿半分析结果打扰owner。只有owner当时明确要求暂停、出现真正权限阻塞或需要改变核心目标时才停下讨论。
 
-## 12. 当前纠偏与下一步边界
+## 12. 方法、原则和目标的边界
 
-此前未提交的`action_forecast_writer_dynamic_k_program_rank_design.md`不是当前architecture authority。它把
-post-encoder latent slots和LoRA parameter chunks误称为memory tokens，并在未充分回应owner要求时固定rank-16；
-这些具体接口不能进入实现或实验。但该轮已经对齐的总体数据流没有被owner否定：dynamic-K action-hidden
-videos逐条保序编码、提取跨video共同高层程序、与exact language共同条件化、一次生成一套完整task LoRA，
-以及由shared layer/rank结构扩展Writer。后继只能修正被指出的memory位置、token含义、rank和decoder接口，
-不能把整套已认可设计推翻后另起炉灶。
+当前长期goal保持第2--3节，不把memory token、rank-8、K值、LoRA decoder或某个optimizer写成项目goal。
+Dynamic-K Semantic-Address Direct-Family-B是当前最忠实实现昨晚完整推导的可证伪架构，不是最终教条。
 
-当前长期goal保持第2--3节，不把memory token、rank-8、K值或某个optimizer写成项目goal。下一版架构判断必须
-同时使用本文要求与历史证据，先决定最早科学失效接口，再选择真正的memory机制、rank、video cardinality和
-training objective。任何选择都要解释为什么能改善高层视频知识、正确顺序、policy-effective写出和multi-task
-共同积累，而不是因为某个组件被提到就机械加入。
+后续迭代遵循以下边界：
+
+- 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->
+  closed loop`定位最早失效接口；
+- 已经被机制证据支持、且本轮没有被检验否定的上游不能因一个aggregate低分被整体推翻；
+- owner的局部建议只修改对应局部，不能触发无证据的整套180度重写；
+- 若证据最终否定当前memory位置、rank或LoRA形式，可以改方法，但必须保留“语言与正确视频共同提供高层任务
+  知识、一次生成policy-effective adaptation、单checkpoint多任务共存”的核心问题；
+- 后续task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验，不得提前混入当前分数。

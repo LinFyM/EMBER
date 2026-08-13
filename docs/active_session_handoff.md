@@ -1,639 +1,140 @@
-# EMBER Active Session Handoff
+# EMBER Active Session State
+
+更新时间：2026-08-13。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
+表示当时时点。稳定目标与owner要求见`docs/current_owner_requirements.md`，历史结果见`docs/research_history.md`。
 
 ## 1. Current truth
 
-这是唯一跨session科研入口，覆盖历史文档、Git快照和artifact中的旧“当前/下一步”。
-
-- 长期Goal未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
-  `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
-- Dynamic-K semantic-address rank-8 Writer已经完成并终局non-pass。clean `9e70b81` world5 fresh`0→50`
-  用`1953.93s`结束；clean `3f630da` macro50 strict paired correct400=`101/400`、breadth6、per-task（Spatial1/3,
-  Object1/3, Goal3/6, Long1/2）=`2/1/40/18/0/37/3/0`、per-suite=`3/58/37/3`。相对Dynamic-K v1 100为
-  `84 retained/17 gained/16 lost`，相对old134为`82/19/52`，相对compiler138为`80/21/58`，相对online128为
-  `83/18/45`；低于v6-fast143共42。按`<120`门不resume、不补controls、不扫semantic-address参数。
-- 最新32-point逐接口证据把最早新增失真定位到Program后的nonlinear family mapper：correct task-mean offdiag
-  cosine从M2P/final/shared-project的`.492/.529/.530`，经family hidden升到`.634`，dynamic B/effective BA再到
-  `.779/.779`；final到project的task-pair Spearman仍`.979`，B后降到`.794`。五臂真实raw-frame forward中
-  same/wrong/shuffle/reverse relative-L2从final`.301/.984/1.355/2.162`压到B的
-  `.190/.753/1.040/1.781`，所有stage仍8/8 same<wrong。完整artifact为strict root下
-  `semantic_mapper_stage_localization.json`。
-- 当前唯一active successor是Dynamic-K semantic-address direct-family-B Writer：保留全部输入、8个真实memory
-  tokens、dynamic K、有向Procedure、set、M2P、shared`256→1024`projector、fixed A、rank8与B20 recipe；只删除
-  四个family `1024→1024` hidden/GELU和无效dynamic-A heads，改为四个bias-free、zero-init、跨layer/rank共享的
-  direct B linears。它不同于已失败的Target-Owned独立heads与K4 direct payload。fresh authority见
-  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。canonical实现现已原位完成：mapper
-  只含shared projector与四个direct B readouts，共`3,702,784`个trainable参数/5个trainable tensors；旧
-  `ShapeFamilyMapper`和失联的第二份architecture contract已删除。fresh config/checkpoint/eval identity全部隔离，
-  加载LIBERO assets authority后的完整CPU回归=`372 passed`。clean`3866f50` world5 full24 B20 profile=
-  `39.4234s`，相对semantic同world5为`1.00476x`，K1--K4各6、loss/gradient finite、checkpoint完整，峰值
-  allocated/reserved=`39.093/45.445GB`。单A40固定validation8×4 deployment profile的B8/16/32 LoRA/s=
-  `.97732/.96489/.96513`，全stable、0 OOM，按最高吞吐锁定B8。当前下一步是从fresh macro0正式训练到50，
-  不得从旧semantic或profile checkpoint迁移任何state。
-- Dynamic-K backbone-memory rank-8 Writer的首轮正式裁决已经完成并终局non-pass。clean `5319022`、world6
-  fresh`0→50`用`1810.10s`完成，functional loss首/末5宏从`.15307`降到`.12095`，23/24 train tasks斜率为负；
-  但macro50 single-checkpoint strict paired correct400只有`100/400`、breadth4，per-task（Spatial1/3,
-  Object1/3, Goal3/6, Long1/2）=`0/0/42/18/0/36/4/0`，per-suite=`0/60/36/4`，前三task占96%成功。
-  相对old134严格配对为`82 retained/18 gained/52 lost`；相对compiler138为`81/19/57`，相对online128为
-  `80/20/48`；相对v6-fast143 aggregate低43且breadth少2。故不exact-resume`50→100`。
-- 已退役successor是Dynamic-K semantic-address backbone-memory rank-8 Writer：保留真实图文+
-  Action-probe backbone memory、动态K、有向D/G value、set、M2P、rank8 mapper和训练recipe，只恢复一个更早的
-  结构接口——逐video absolute memory均值只进入temporal Query地址，D/G仍是唯一Key/Value content，因此constant-video
-  与language/static-only仍不能写LoRA。先完成fresh-incompatible authority和canonical实现，再过机制/吞吐门并
-  fresh`0→50`立即strict paired correct400；本轮不同时修改shared mapper。
-  fresh-incompatible authority为`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
-  canonical query-only实现已在clean `96e7cf6`完成并push，完整CPU回归`372 passed`；旧v1 checkpoint因fresh
-  launch schema与新增参数不能resume。8-task frozen macro50逐接口probe中mean-Z same/wrong relative L2为
-  `.0272/.1071`且8/8 same<wrong，证明absolute memory具有稳定task语义；旧final Program仍保留same/wrong/
-  shuffle/reverse差异`.358/.981/1.242/2.213`，所以该successor检验的是Semantic Core能否更好地选择已有
-  Procedure，而不是声称旧Program完全没有视频/顺序信号。clean `05299b4` world5 full24 B20 live profile已
-  通过：K1--K4各6，macro=`39.2367s`，相对matched旧world6=`1.196x<1.20x`，峰值allocated/reserved=
-  `39.155/45.414GB`，loss/consistency/gradient finite，checkpoint与completion完整、exit0。formal fresh
-  `0→50`随后已经按上述结果完成并终局non-pass。
-- K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
-  0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
-  profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。
-- macro50 strict root为
-  `runs/outputs/pi05_dynamic_k_backbone_memory_rank8_correct400_noreplacement_seed7_macro0050_b541785_gpu02_20260813`。
-  effective-BA不是identity：candidate总norm均值`135.64`，但action-target norm均值仅`.513`，相对old134的
-  effective cosine约`.01--.02`、stable rank约`1.00`；同task视频方差明显大于old134，而八个task mean BA的
-  off-diagonal cosine均值`.702`。模型读到video并写出大LoRA，却把不同任务编译到高度共同、错误的policy
-  geometry。代码层最早可见失配在其之前：backbone的absolute `task_hidden/probe_hidden`完全未用，memory又被
-  强制只取相邻差分和终点差分，使“对象/关系/目标是什么”的Semantic Core在Procedure之前被删除。
-- MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
-  （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
-  相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。
-  除breadth外全部macro5门失败，不resume、不补controls、不小扫。该路线没有active successor；当前active operation
-  是上述direct-family-B Writer。
-- 历史最好single checkpoint仍是v6-fast macro400：
-  `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、
-  `345 passed`回归、raw-frame门和world6 discarded full48 profile；profile仅因condition=`483.61515>200`
-  non-pass，其余14项机制、动作与吞吐门通过，未获formal训练资格。
-- PICK-GC已完成formal fresh`0→10`及strict paired correct400并正式退役：`138/400`、breadth6、per-task
-  （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/3/48/33/0/39/14/0`；相对immutable macro0
-  retained/gained/lost=`118/20/16`、churn36。它未过`correct>=144`与`lost<=8`门，不得resume到25、补controls
-  或做参数sweep。
-- OSG-PC唯一world6 discarded profile在full48前因rank-local task path长尾触发600s NCCL watchdog；最小wall
-  lower bound=`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal与
-  评测均未授权；当前full-replay per-success VJP执行图按hard gate退役。
-- SKNC已完成formal fresh`0→5`与strict paired400并退役：`137/400`、breadth7、per-task=
-  `1/3/45/32/0/37/18/1`；old134→SKNC retained/gained/lost=`121/16/13`、churn29。macro5 bank15、rank36、
-  projected energy`.592`和Program closure健康，但Long task1净`+7`伴随Object/Spatial净`-5/-1`，未过
-  `correct>=140`、`lost<=8`及单task集中门。resume`5→10`、controls和sweep全部关闭。
-- SRTP已在profile门终局退役：`d172add`首轮因decoder graph跨K4保留而三rank在mixed CFM处OOM；唯一
-  `e31e2fd`同合同reprofile释放graph后仍三rank OOM，申请`254/484/484 MiB`时free`19/16.31/417.06 MiB`。
-  两次均无mechanism report/checkpoint，deployment/formal未授权；完整logical B<=16 landmark policy-gradient
-  本体是最早工程失效接口，不允许第三次修补或batch/dtype/allocator sweep。
-- PCUG canonical实现与完整CPU`344 passed`后运行唯一clean world4 discarded macro，但在Phase A full24 gather
-  与paired probe前就越过wall hard gate：从run-contract发布到owner停止的下界`809.72185s`，相对scaled matched
-  SKNC=`2.25568x>1.5x`。物理3--5持续100%、物理6先等待；无OOM/nonfinite、mechanism report或checkpoint。
-  deployment/formal与同配置重跑关闭；只淘汰当前execution contract，不检验paired-guard科学假设。
-- Work-Queue PCUG已完成clean world3 full mechanism profile并退役：Phase A=`44.74125s`、total=
-  `558.05862s / 1.16596x SKNC`；48 exact pairs产生7 discordance、3 gains/4 losses、3 harmful tasks跨2 suites，
-  correct guard的rank33、energy`.76492`和Program/LoRA/action closure均健康。但blind negative ratio从`.03991`
-  被correct-only final projection放大到`.50179`，wrong/shuffled/reversed各`0/8`达门。19项checks只有
-  `negative_null`失败；deployment/formal、重跑与sweep关闭。
-- Negative-Preserving Candidate Guard已完成并正式退役：formal fresh`0→5`五宏的correct/negative closure、
-  rank和energy持续健康，但macro5 strict paired400只有`135/400`、breadth5、per-task=
-  `0/2/46/36/0/37/14/0`。相对old134为retained/gained/lost=`117/18/17`、churn35，未过absolute、breadth与
-  lost门；不resume、不补controls、不做point-count、threshold或seed sweep。
-- Cross-Video Equivariant Candidate Guard已经终局non-pass。canonical formal在macro3前因K2边界翻转改变hard
-  guard而不可行；同合同诊断macro5完成后，唯一directional strict400只有`131/400`、breadth6、per-task=
-  `1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`。这同时否定当前binary
-  hard guard的稳定性与hard E组合的absolute价值；不resume、不补controls、不把E原样继承。
-- PVJFC已经在机制门终局non-pass：两条ordered action-hidden train videos分别生成完整Program cotangent，共享
-  B20/action RNG并以半权做swap-invariant joint solve；deployment仍one-shot，删除outcome、bank与hard E。
-  fresh-incompatible canonical implementation已经原位完成，旧candidate-guard/success-bank owner已从active
-  tree删除；swap与duplicate-view闭式退化、full96 gather、memory-only checkpoint/resume、信息墙和profile门的
-  完整CPU回归为`329 passed`。clean`a4f4c75`、gpu02:0--5 world6唯一macro0 profile的rank=`48/96`、24/24
-  双view与四suite descent、negative ratio`.07266`、Program/LoRA/BA/action、wall`51.543s`均通过；唯一失败是
-  regularized condition=`597.861>200`。root无checkpoint，formal关闭，不扫damping/threshold等小参数。该结果只
-  淘汰当前PICK-GC condition feature×full96 ridge合同，不否定continuous paired-video credit本身。
-- CGIK-JC已经完成实现、完整CPU`335 passed`及clean`623505b`上的唯一gpu02:0--5 world6 macro0 profile。
-  它把PVJFC condition从`597.861`降到`270.188`，negative ratio从`.07266`降到`.02457`，三类negative均
-  `16/16`；rank`48/96`、24/24双view与四suite descent、Program/LoRA/BA/action、wall`50.032s`全部通过。
-  唯一false仍是`regularized_condition<=200`，故总门non-pass、无checkpoint，formal/deployment/重跑/小扫关闭。
-- MGCI-JC只把CGIK第一块从`u_c`改成`abs(u_g)*u_c`，第二块`u_g*u_c`不变；唯一raw full96 profile曾以
-  condition=`174.813`、rank=`48/96`、24/24双view、negative ratio=`.02088`及全链路通过12/12门。formal五宏
-  仍保持rank48、negative ratio`.020--.030`、无OOM/nonfinite，但strict结果回到134并发生20/20换手。
-  这验证了key谱修复，不验证closed-loop方法；MGCI-JC+paired blind B20组合现已退役。
-- 本次仓库整理已经完成：退役可执行路径、重复历史文档、旧worktree/branch与明确临时资产已清理，正式
-  evidence和可复用基础保留。任何successor必须原位替换canonical owner并重过对应机制门，不得从旧命令恢复实验。
-- canonical workspace是`/data1/user/ymdai/projects/EMBER`，主写分支是`codex/bci-continuation`。正式GPU
-  工作以后仍须来自clean pushed commit的detached frozen worktree。
-
-## 2. Latest formal decision
-
-### 2.0 MGCI-JC formal macro5
-
-formal root：
-`runs/outputs/pi05_mgci_jc_formal_fresh0to5_r4_b20_e4c3331_20260812`；clean pushed commit`e4c3331`，gpu02
-物理2--5 world4，5/5 macros与macro5 checkpoint完成、exit0。五宏positive/full rank均`48/96`，condition=
-`174.81/205.84/191.57/148.20/176.64`，negative/correct motion=`.0209/.0274/.0201/.0202/.0296`，无OOM/
-nonfinite。Program memory RMS增长到`2.044e-6`，participation ratio=`27.63`，相邻memory增量近正交而非raw覆盖。
-
-strict root：
-`runs/outputs/pi05_mgci_jc_correct400_noreplacement_seed7_macro0005_e4c3331_gpu02_20260812`；gpu02物理2--5、
-12 persistent workers、48/48 shards、400/400 rows、exit0、无failure。结果`134/400`、breadth6、per-task=
-`1/5/46/30/0/34/18/0`、per-suite=`6/76/34/18`。相对old134严格配对为`114 retained/20 gained/20 lost/246
-both-fail`、churn40；suite净值=`+1/-6/-1/+6`。完整decision evidence位于strict root的
-`mgci_formal_decision_evidence.json`。
-
-同schedule strict比较：compiler138→MGCI=`115/19/23`、online128→MGCI=`111/23/17`，相对PICK-GC138、
-SKNC137、NPCG135和CVEG131也都有`37--44` churn。v6-fast143的actual teacher schedule不同，只能比较aggregate/
-per-task；MGCI低9分，逐task差=`+1/+2/0/-7/0/-2/-2/-1`，不得写成strict episode pairing。old134 raw schema与
-eval v11不兼容使canonical transition CLI按合同拒绝；只读分析逐项验证400个配对签名后计算上述数字，没有新增
-兼容代码。
-
-MGCI把PVJFC/CGIK condition从`597.861/270.188`修到`174.813`，Program→BA→action幅度也未坍缩；但correct
-视频仍只决定condition地址，B20 blind offline source-action cotangent决定policy方向。same-task跨visit key cosine
-约`.909`、同一delta跨这些videos的Program response cosine约`.968--.980`，而连续macro对多数task response反向。
-因此最早失败推进到blind cotangent RHS→held on-policy useful support，而不是key谱、rank或纯transmission。
-FactorHeads可能进一步压缩方向，但当前只有跨population间接证据，不能写成compiler collapse。
-held effective-BA相对old134的median cosine=`.99999719`、norm ratio=`1.00001636`、relative L2=`.00242453`，且
-gained rows并没有更大变化；这进一步说明condition修复没有产生新的held useful policy tangent。
-
-正式裁决：breadth是唯一通过门；`correct>=140`、lost`<=10`、gained`>lost`、至少3 suites不下降与非单task
-主导均失败。MGCI-JC+paired blind B20终局退役；不resume`5→10`、不补视频controls、不扫参数。当前没有active
-successor，等待owner讨论。
-
-### 2.0a NPCG formal macro5
-
-formal训练root：
-`runs/outputs/pi05_npcg_negative_preserving_candidate_guard_formal_fresh0to5_r3_b20_f8491e9_retry1_20260812`；
-clean pushed commit`f8491e9`，gpu02物理3/4/5 world3，5/5 macros与macro5 checkpoint完成、exit0。五宏
-first-stable bank=`12/13/15/15/16`、feature rank=`33/36/35/34/34`、energy=
-`.354/.487/.457/.320/.390`、blind negative ratio=`.040/.026/.015/.014/.032`；correct与negative constraint
-残差均约`1e-13`，无OOM/nonfinite。
-
-strict root：
-`runs/outputs/pi05_npcg_negative_preserving_candidate_guard_correct400_noreplacement_seed7_macro0005_5235d05_gpu02_retry1_20260812`；
-gpu02物理3/4/5、9 persistent workers、400/400 rows、exit0。结果`135/400`、breadth5、per-task=
-`0/2/46/36/0/37/14/0`、per-suite=`2/82/37/14`。相对old134严格配对为`117 retained/18 gained/17 lost/248
-both-fail`、churn35、Jaccard`.76471`；suite净值Spatial`-3`、Object`0`、Goal`+2`、Long`+2`。Long task1本身
-就有10 gains/7 losses，说明净增仍由初始化换手组成。
-
-train24×50 action-hidden audit显示first-stable key到同任务其它videos的cosine均值/中位数/p10=
-`.90100/.91979/.80615`，正交残差均值/p90=`.40954/.59171`；所有五宏observed stable rows仍留下平均
-`.27650`残差。因此最早失败不是Program、negative guard、rank或compiler，而是pointwise train24地址没有定义
-跨视频/held occupancy support neighborhood。NPCG正式non-pass；exact resume、controls和小修全部关闭。
-
-### 2.0b CVEG formal stability decision
-
-retained train24x50 cache的50-panel审计中，单companion difference `E`始终rank24；投影`Null(E)`后correct
-feature energy mean/median=`.77415/.78016`，correct-minus-reversed过程差分能量mean/median=
-`.78444/.78943`。在NPCG macro5 Program geometry中，held same-task video-difference response降为原来的
-`.7536`，reverse response fraction仍为mean/median=`1.035/.966`。2--4 companions继续压nuisance但correct
-energy降为`.639/.529/.436`，故首个版本固定一条，不做K sweep。完整公式、采样和证伪门见
-`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`。
-
-live裁决现已完成：clean `2eb1e8e`、gpu02物理3/4/5 world3的matched reprofile root为
-`runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_full24_reprofile_macro0_r3_b20_2eb1e8e_20260812`，
-22/22 checks全过且不保留checkpoint。Phase A=`53.08484s`、total=`584.64916s / 1.22151x`；blind/final
-equivariance ratio=`7.91e-8/9.56e-8`，negative ratio`.03285`、三类各8/8，rank=`48→33`、energy`.35404`。
-同commit one-shot deployment root为
-`runs/outputs/pi05_cveg_writer_profile_val8x4_correct_gpu02p3_2eb1e8e_20260812`；B8/16/32 LoRA/s=
-`.46888/.47040/.47138`、最长67帧、0 OOM/nonfinite，选择B32。两项只开放formal训练，不构成性能结论。
-
-formal canonical retry root为
-`runs/outputs/pi05_cveg_cross_video_equivariant_candidate_guard_formal_fresh0to5_r3_b20_ad7d9bd_retry1_20260812`。
-macro1/2的bank=`10/14`、rank=`33/34`、energy=`.35404/.40256`，但macro3在写入前触发sealed feasible-set
-gate并exit1；root无checkpoint。诊断提交`5268391`只让既有gate在失败时输出已计算值；相同world3 fresh复现root
-`runs/outputs/pi05_cveg_formal_gate_repro_fresh0to5_r3_b20_5268391_retry1_20260812`完成5宏并保存checkpoint。
-两run在macro2以前唯一科学分叉是task23：相同teacher/companion/candidate Program下，canonical为
-`base=[1,0], candidate=[1,1]`，复现为`base=[0,1], candidate=[0,0]`；它从beneficial翻为harmful，改变当步
-hard equality guard。复现五宏bank=`10/14/16/16/16`、energy=`.35404/.37467/.28736/.27384/.49831`，K2
-base/candidate=`34/31,33/32,34/31,32/29,29/29`，全部closure与OOM/nonfinite门通过。这个checkpoint只用于
-directional strict400，不得按其完成状态选择为canonical稳定训练结果。
-
-directional strict root：
-`runs/outputs/pi05_cveg_directional_correct400_noreplacement_seed7_macro0005_d36ca6d_gpu02_20260812`；42/42 shards、
-400/400 rows、9/9 workers exit0，结果`131/400`、breadth6、per-task=`1/2/47/30/0/35/16/0`、per-suite=
-`3/77/35/16`。old134→CVEG为`113 retained/18 gained/21 lost/248 both-fail`、churn39；NPCG→CVEG为
-`114/17/21/248`、churn38。最大退化是Object3相对NPCG`1 gain/7 losses`，Long1则`10/8`高换手后仅净`+2`。
-该结果低于old134、NPCG135、SKNC137、PICK-GC138和v6-fast143，故hard cross-video equality与binary guard组合
-终局退役；低分不能外推成所有训练期multi-video或continuous shared credit无效。
-
-### 2.1 Work-Queue PCUG mechanism profile
-
-正式profile root：
-`runs/outputs/pi05_wqpcug_work_queue_candidate_guard_full24_reprofile_macro0_r3_b20_d799758_20260812`；commit
-`d79975888bdae7a3f139472d37fb9659daf72224`，gpu02物理3/4/5 world3，exit0且不保留checkpoint。首次共享盘cursor
-attempt只定位工程违约；本root使用节点本地`/tmp` cursor，claim总计`.00558s`并完整进入paired science。
-
-base/candidate successes=`34/33`，7 discordant states、3 gains/4 losses；harmful ordinals=`8/12/17`，跨Object与
-Goal；stable ordinals=`0/1/3/6/7/11/13/14/16/18/19/21`。final correct guard 15 rows/rank15，feature rank
-`48→33`，energy ratio`.76492`、cosine`.87460`、violation0，四suite candidate action response非零。blind full48
-predicted negative ratio=`.03991`，但final actual negative ratio=`.50179`，24 tasks无一过`.15`，三类各`0/8`。
-因此只淘汰correct-only final guard composition；actual pairing、queue和blind negative solve均得到正证据。
-
-### 2.2 SKNC formal macro5
-
-formal训练root：
-`runs/outputs/pi05_sknc_success_key_nullspace_formal_fresh0to5_r3_b20_e3863cb_20260812`；clean pushed commit
-`e3863cb7b8a9f19c87815f0984f360870bf13d5c`，`gpu02:3,4,5` world3，5/5 macros与checkpoint完成、exit0。
-functional loss=`.09910/.09610/.09915/.09782/.09893`；persisted bank=`11/14/14/14/15`，macro5 rank36、
-projected energy`.59195`、protected Program ratio=`1.276e-7`。这关闭了容量坍缩、constraint失效和compiler
-断链解释；训练仍没有functional趋势。
-
-strict root：
-`runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812`；42/42
-shards、400/400 rows、9/9 workers exit0，wall=`1689.604s`。结果`137/400`、breadth7、per-task=
-`1/3/45/32/0/37/18/1`、per-suite=`4/77/37/19`。相对immutable old134严格配对为
-`121 retained/16 gained/13 lost/250 both-fail`、churn29、Jaccard`.80667`；suite净值Spatial`-1`、Object`-5`、
-Goal`+2`、Long`+7`。最大正贡献Long task1净`+7`占正task净贡献`7/10`。
-
-macro5的absolute、retention和增益集中三项hard gate失败；breadth7、gained>lost、两个suite不降和健康closure
-不足以授权续训。SKNC正式non-pass，不resume、不补controls、不sweep。strict root内保留
-`sknc_historical_transition_old134_to_macro0005.json`和`sknc_formal_decision_evidence.json`。结论只淘汰
-PICK-GC+first-all-success-key nullspace+blind B20；最早失败接口是train24单video key/support不能外推held
-video/occupancy，且blind B20没有on-policy improvement guarantee。
-
-### 2.3 PICK-GC formal macro10
-
-formal训练root：
-`runs/outputs/pi05_pick_gc_goal_causal_formal_fresh0to10_r4_b20_c2e1ff8_20260811`；训练commit
-`c2e1ff878b6b68cb5bc45bb5443cdbd54ab8e62a`。10个macro全部rank48，condition=`83.61--152.88`，最终
-20,971,520值FP32 Program memory RMS=`3.5493e-6`且全部非零。functional loss约`.093--.100`无下降趋势，
-所以机制写入健康但offline surrogate没有形成更好趋势。
-
-strict root：
-`runs/outputs/pi05_pick_gc_goal_causal_correct400_noreplacement_seed7_macro0010_retry1_398425e_20260811`；
-48/48 shards、400/400 rows、12/12 workers exit0。结果`138/400`、breadth6；macro0→macro10严格相同
-task/state/video/env/policy RNG pairing下 retained/gained/lost/both-fail=`118/20/16/246`、churn36。各基线同一
-task顺序为：v6-fast143=`0/3/46/37/0/36/20/1`、macro0 134=`0/5/48/34/0/35/11/1`、compiler138=
-`1/1/46/32/0/35/22/1`、online128=`1/1/47/29/0/36/13/1`、PICK-GC138=
-`1/3/48/33/0/39/14/0`。
-
-paired缓存的effective-BA整体范数中位比=`1.000016`、cosine=`.99999724`、相对L2=`.002397`；action端
-相对L2=`.003968`。这套小而非零的切向写入已造成20 gains与16 losses，排除identity/能量塌缩，也不支持靠
-扩大scale或rank补救。结合pre-formal condition/closure门，最早失效接口被推进到blind train24 offline
-source-action cotangent→held on-policy useful support/coexistence。正式decision evidence位于eval root的
-`pick_gc_formal_decision_evidence.json`。只有PICK-GC+blind-credit组合被淘汰；ordered goal-causal key、
-condition-local FP32 Program、native rank16 compiler、few-shot与新的on-policy credit均未被该结果否定。
-
-### 2.4 Online Gate B
-
-online-regenerated rank14 zero-Program root：
-
-`runs/outputs/pi05_v6_qv_rank_reserved_native_reward_correct400_macro0000_20260811`
-
-- clean frozen commit：`0fd823f8cb5ab45164b185c0a42cb358044b095d`
-- strict=`128/400`、breadth7
-- per-task（Spatial1/3, Object1/3, Goal3/6, Long1/2）：`1/1/47/29/0/36/13/1`
-- 相对immutable old full-rank macro0 `134/400`：retained/gained/lost=`113/15/21`、churn36
-- 400 rows/cache、48 shards、task/state/video/env/policy RNG pairing和launcher completion完整
-
-这是可信的端到端non-pass，但old/new分别使用18/12 generators，旧cache在worker内部局部拼B8，改变了
-co-batch、position、padding和tail；因此不能把全部退化归于rank14 compression。
-
-### 2.5 Compiler-only deconfounding
-
-一次性clean去混杂root：
-
-`runs/outputs/pi05_v6_qv_rank_reserved_compiler_only_old134_to_rank14_correct400_20260811`
-
-- evaluation commit：`6db37c1138e1357108d07a3be3b3af5449a72932`
-- decision evidence：`compiler_only_diagnostic_evidence.json`
-- schema：`ember_pi05_v6_qv_rank_reserved_compiler_only_decision_evidence_v1`
-- single-A40 transform：400/400 entries、50×B8、36 q/v targets；1600 action tensors bit-exact，400 video
-  identities exact；0 teacher read、0 Writer/policy forward、0 rollout/update；wall=`69.464s`
-- strict replay：`gpu02:2,3,4,5`，4 cards×3 persistent workers，无NCCL；48/48 shards、400/400 rows、
-  12/12 return0；wall=`1037.920s`，overall约`1387.39 episodes/hour`
-- result=`138/400`、breadth7、per-task=`1/1/46/32/0/35/22/1`
-- old→compiler retained/gained/lost=`119/19/15`、net`+4`、churn34、Jaccard`.777778`、p=`.607591`
-
-预注册门是correct`>=130`、breadth`>=6`、lost`<=10`。前两项通过，但lost15，所以
-`counterfactual_gate_passed=false`。总分`+4`完全由Long1净`+11`掩盖Spatial/Object净`-3/-4`；breadth7中的
-Spatial1仅`1/50`，Goal3仍`0/50`。这属于target-heterogeneous capability rotation，不是稳定累积。
-
-compiler→online retained/gained/lost=`115/13/23`、net`-10`、churn36，其中Long1净`-9`。compression与
-regeneration都是独立换手源；修好batching不能自动恢复old support。
-
-正式终局：
-
-- `original_gate_b_passed=false`
-- `counterfactual_gate_passed=false`
-- `retroactively_changes_original_gate_b=false`
-- `authorizes_cycle1=false`
-
-uniform pivot-rank14 base、rank14+2 cycle1、Gate C、controls与fresh训练全部关闭。该结论不外推为“视频、
-Reward、continuous tangent或所有rank-reserved topology无效”。
-
-## 3. Fixed scientific foundation
-
-### 3.1 Data and split
-
-- benchmark：LIBERO Spatial/Object/Goal/Long共40 tasks。
-- development split：`configs/libero_24_8_8_v1/`，每suite 6 train / 2 validation / 2 test，共24/8/8。
-- source corpus：LIBERO-90 specification-only audit排除19个与目标40 exact semantic/composition重合tasks，
-  保留71 tasks×50成功episodes。
-- source policy不能使用读过目标40 actions的`pi05_libero`；normalization只来自filtered source并冻结。
-- validation选定方法后才合并32 source / 8 test；不得按outcome改task、video、state或topology。
-
-### 3.2 Information wall
-
-- canonical deployment：exact task language + exactly one action-hidden teacher video。
-- video是唯一dynamic value；language不能形成LoRA bypass。
-- 禁止teacher action/proprio/reward/terminal、task ID、filename、object pose、hidden normalization和其它元数据。
-- 每episode一条video生成一套完整38-target public rank-16 LoRA；不平均/融合video、LoRA或checkpoint。
-- frame stride5；frozen source policy无trainable parameters；no-video/step0 functional identity。
-- held每rollout从正确task的50条videos无放回取一条，不挑最好video。
-
-few-shot可作为未来新设计，但K4历史只证明它能减少部分单video偶然性；没有证明它解决共享credit、时序语义
-或task drift。任何few-shot必须与one-shot matched比较并保持action-hidden。
-
-### 3.3 Evaluation
-
-- official preprocessing：render256/model224、两相机180° rotate、7D state/action、10 flow steps、执行前5
-  actions后replan、dummy settling10、成功即停、horizon 220/280/300/520。
-- correct/same-task-other/cross-suite-wrong/shuffled/reversed/no-video严格配对state、env/policy RNG、video
-  ordinal和处理；shuffle/reverse对真实frames重排后完整forward。
-- evaluator使用cost-balanced dynamic queue、long-first、persistent model/env；不静态task/GPU分配。
-- checkpoint只认single paired400；报告aggregate、per-task/suite、breadth、retained/gained/lost与churn。
-
-## 4. Canonical assets
-
-- frozen source policy：
-  `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000`
-- task-expert bank：
-  `runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`
-- split：`configs/libero_24_8_8_v1/`
-- source/target manifests：`configs/pi05_source_corpus_v1/`、`configs/pi05_target_data_v1/`
-- tokenizer/model/data/simulation paths：由CLI或`.env.local`提供；历史A100绝对路径只作provenance
-- formal results：`runs/outputs/`；迁移/retained manifests：`evidence/`
-
-source policy是下游inference asset，不支持source-SFT exact resume。历史formal outputs、400-row results、
-task experts、数据和checkpoints默认保留；screen/profile临时权重只有在确认无consumer后清理。
-
-## 5. Task experts: what they do and do not do
-
-同一formal root中的24 tasks已统一续到step2000。step250/500/1000/1500/2000的development-train
-direct-expert closed-loop为`432/557/624/638/658` of 1200；step2000有23/24 tasks非零、task9仍0。
-
-Experts能：
-
-- 给出“该train task的什么public LoRA确实能闭环工作”的policy-effective task-level target；
-- 提供正常task-local SFT LoRA的能量、rank坐标、跨target分配和有效方向参考；
-- 作为train24 privileged机制监督，降低纯functional query的歧义。
-
-Experts不能：
-
-- 证明held task从video生成LoRA；
-- 区分同task的不同videos，因为同task expert target对所有video恒定；
-- 提供correct/shuffled/reversed的时序监督；
-- 直接作为held dictionary。soft/hard bank的`15/80`/`3/80`已否定当前部署方式。
-
-因此expert reconstruction和LoRA健康度只能辅助，最终仍由paired closed-loop视频controls裁决。
-
-## 6. High-level causal chain
-
-完整逐方法表见`docs/research_history.md`。必须继承的连续认识是：
-
-1. v4证明视频与顺序会影响行为，但模型利用absolute-time/action-phase shortcut，shuffle可更好。
-2. v5/v5.2把task identity与Procedure分开并增强wrong-video区分，但正确顺序没有稳定传进compiler。
-3. v6-fast达到143，说明特定architecture×task-complete recipe有效；后期却退化，累积仍不稳定。
-4. v7/v8/v10及Loom/Core/Prior说明内部时序更漂亮、去DC或更强fusion都不保证policy-effective direction。
-5. Target-Spectral、Policy-Lane/Atom/Owned-Factor说明高rank、正交、均匀能量、更多capacity不是目标。
-6. SFB union193但single127；VR改善functional evidence却闭环退化：surrogate与union都不能选模型。
-7. K4/few-shot、trace与video routing证明视频能被读取，但不能自动解决full24 credit retention和正确时序。
-8. Task experts有效但不是video teacher；address/barycentric/bank证明reconstruction、route和expert复现仍不足。
-9. Balanced residual显示不同video correction近正交；RLS显示offline feature-row保留不等于held occupancy。
-10. Reward-Credit显示on-policy reward能形成健康continuous tangent，但q/v native BF16 factor写出低于ULP。
-11. rank14最终显示uniform compression本身损伤support，online regeneration又额外换手；tiny几何误差不够。
-
-稳定规则：视频被使用不等于正确使用；LoRA健康度是约束不是目标；task drift没有单一原因；small panel和
-checkpoint union会误导；新topology必须从train24机制推导，不能按held得失设计。
-
-## 7. Retired OSG-PC design and boundary
-
-PICK-GC的formal结果把因果链进一步收窄：frozen-policy goal/causal innovation能读取
-same-task与顺序，full48 key可解，condition-local FP32 Program会连续积累，native compiler会把它传到effective
-BA与action；但blind source-action cotangent没有在held rollout occupancy上稳定积累support。下一设计必须保留
-这些已通过接口，只改变credit/occupancy这一项主要变量。
-
-已检验的OSG-PC定义为：对每task保持`d0=-grad_H L_source(B20)`，用同一correct-video LoRA做K4 train24
-random-reset rollouts；每条成功episode的executed-prefix CFM cotangent `r_e`形成`<r_e,d><=0`，然后取离`d0`
-最近的Euclidean feasible-cone projection。无success或raw已可行时逐元素退化为blind proposal；非零projection
-仍严格保持source descent。binary reward只选择已有support，不用作sub-ULP improvement gradient。
-
-它回答：
-
-1. train24奖励或on-policy occupancy如何提供比source-action B20更接近真实闭环的support约束；
-2. 如何保持exact language + one action-hidden video是部署时唯一动态输入，并让正确顺序成为有用更新的必要key；
-3. 如何在每个task-complete更新中避免牺牲另一个task的已有reward support，而不读取held actions/outcomes；
-4. 如何直接写入现有FP32 Program并复用native rank16 compiler，避免Reward-Credit的BF16 ULP和uniform rank14
-   compression/regeneration损伤；
-5. 哪个小规模train-only reward/occupancy gate能快速否决它，以及何时必须做strict paired400。
-
-完整公式、owner替换、CPU/live/profile/formal门见
-`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`。Reward-Credit、RLS和rank14历史
-只能作为边界证据，不能直接恢复。few-shot、task-level manifold supervision与heterogeneous topology仍是
-开放方向，不能与OSG-PC并行实现。
-
-OSG-PC曾原位实现为唯一active path：`v6_reward_credit.py`只保留per-success retention VJP与最多4条约束的
-解析Program锥投影；`reward/rollout.py`只让成功episode进入replay，失败episode replay/gradient严格为0；每个
-task仍只做一次正确视频encode，rollout后只重解FactorHeads。训练继续复用同一full48 solver，并在profile中
-额外报告“实际full48写入”对每条success guard和source descent的影响，以暴露task-local safe RHS在shared write
-中是否重新被破坏。唯一config为`configs/pi05_v6_on_policy_success_guarded_program_credit_v1.json`，状态
-`profile_result_sealed_nonpass`。加载`.env.local`后的fresh完整CPU回归为`340 passed`，compileall与
-`git diff --check`通过；这只证明实现合同，不构成GPU机制或closed-loop证据。
-retention sampling按历史完整K4 task panel生成后只索引success row ordinal，因此失败actions仍不保留，且其它lane
-的success集合不会使已有guard换Monte Carlo样本。deployment adapter/episode已升fresh v9，formal status与
-checkpoint-curve registry显式支持OSG-PC的`0/5/10`，不再误用PICK-GC v8或固定`0/10/25/50`。
-
-唯一live attempt来自clean pushed `9263851`、gpu02物理0--5、world6/local4。run-contract于22:41:36发布；
-rank5最迟22:47:46进入`profile_max_seconds`的一元素all-reduce并等待，22:57:46在sequence12触发600s watchdog，
-此前sequence11已完成。live telemetry中physical GPU3长期idle而其它选中GPU在collective busy；CPU重放rank3四个
-B20 loader batch只需`1.70/0.0002/.91/.14s`，排除确定性DataLoader瓶颈，但本次未加stage journal，不能把缺席rank
-进一步武断归因到某个task、simulator或VJP。run-contract到timeout的lower bound=`969.970854s`，是matched
-`507.305412s`的`1.912006x`，已超过`1.25x`门；随后exit1、六卡释放、volatile/uncorrectable ECC仍全0。
-因此当前OSG-PC无论未观测到的guard几何如何都不能formal、重跑同配置或扫K/Nmc/microbatch；负结果范围仅是
-“PICK-GC B20 proposal + current full-replay per-success VJP execution graph”，不否定所有on-policy guard。
-
-## 8. Retired SKNC design and formal terminal
-
-SKNC保留PICK-GC已通过的ordered goal-causal key、historical v6-fast frozen base、B20 blind source-action
-cotangent、FP32 Program、full48 negative-zero panel和native 38-target rank16 compiler，只改变最终shared memory
-write的可行域。K4同一96-rollout panel不保存trajectory、action或observation，也不做reward/CFM VJP；只有某个
-current correct-video LoRA在四条random-reset lanes上`4/4`成功时，该condition key才成为本macro hard anchor。
-
-设anchors为`A`、旧full48 features为`X`，以
-`Pi=I-A^T(AA^T)^dagger A`和`X_perp=X Pi`构造唯一write。原B20 cotangents和negative zeros仍全部进入
-`-X_perp^T(X_perp X_perp^T+lambda I)^-1Y`；所以这不是task proposal乘零或confidence gate，而是把整个
-shared update参数化到`null(A)`。`A DeltaMemory=0`直接保护该key的Program read、完整LoRA和所有状态上的policy
-函数，保护位置晚于task汇合，不再出现OSG task-local cone经full48 compiler后失真。每train task只永久保存第一条
-按既定sampler出现的4/4 key；本macro 4/4 key即使已有旧anchor仍临时受保护，但不累计bank、替换或挑选video。
-
-它与RLS不同：RLS只固定offline action rows；SKNC用真实on-policy all-success认证完整conditioned LoRA。它与
-OSG-PC不同：无successful replay、executed-prefix cotangent或per-success VJP，wall应只由B20加K4主导。主要
-风险是anchor span压平待学feature、单train24 key无法代表same-task其它video/held occupancy，或blind B20只会
-在剩余空间继续产生错误方向。zero anchor motion只是机制证据，不能替代paired400。
-
-完整authority为`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`。OSG executable owner
-已被原位替换，fresh schema/config、CPU synthetic/bank/resume/outcome-only/Program→LoRA→action门和完整回归均已
-通过；clean world3 mechanism profile与B32 deployment profile均已sealed。formal首段固定fresh`0→5`并立即
-strict paired400，macro5不过`>=140/lost<=8`等门即停，macro10以严格`>150`裁决。
-
-首个SKNC live root为
-`runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_b8398d2_20260812`。它来自
-`b8398d2` detached worktree和`gpu02:3,4,5` world3，step=`487.0019s`、scaled ratio=`.47999`；
-11个4/4 tasks覆盖四suite，rank=`48→37`、condition=`29.6497`、projected energy=`.77843`，15/16 checks
-为true。唯一false是protected Program ratio=`1.1228e-4>1e-5`；绝对RMS仅`2.3266e-10`且protected
-LoRA/effective-BA/fixed-action均exact zero。实际success-key basis的CPU与GPU full-FP32 probe分别约
-`7.2e-8/7.10e-8`，TF32 probe=`8.44e-5`，确认是verification measurement而非stored delta漂移。
-首root保留为engineering measurement non-pass；只允许把既有hard-equality diagnostic切到FP32 GEMM后从新clean
-commit重过一次，production TF32/BF16、forward数、method和gate不变。
-
-该唯一reprofile来自`f4fdac7`与同一`gpu02:3,4,5` world3，root为
-`runs/outputs/pi05_sknc_success_key_nullspace_full24_profile_macro0_r3_b20_f4fdac7_20260812`。success/failure、
-4/4 task集合、rank/condition/energy与首root一致；protected Program ratio=`8.9506e-8`，16/16 checks全true，
-step=`478.6270s`、scaled ratio=`.47173`，无checkpoint。deployment root为
-`runs/outputs/pi05_sknc_writer_profile_val8x4_correct_gpu02p3_f4fdac7_20260812`；B8/16/32均stable且选择B32=
-`.4716606 LoRA/s`，peak reserved约12.93GB、headroom约34.77GB，hidden teacher reads、OOM和nonfinite均为0。
-两项证据已经写入canonical config并打开formal fresh`0→5`。
-
-formal阶段随后按authority完整执行并得到上文2.1的`137/400`、breadth7、old134→SKNC
-`121/16/13`。macro5训练内部closure与projected capacity仍过门，故该负结果不能归因于实现、nullspace数值误差
-或compiler断链；它直接否决“单train24 all-success key可保护held support，blind B20可在其nullspace内共同改善”
-这一组合。canonical config现为`formal_result_sealed`，macro5 checkpoint只作formal evidence，不能继续训练。
-
-## 9. Retired SRTP design boundary
-
-SRTP只改变SKNC最早失败的support/credit接口。SKNC先按原合同产生anchor-null shared update `D0`；对K4 mixed
-tasks，rollout期间每episode只保留first、last和两个seeded reservoir interior rows，用binary LOO advantage与
-封存Nmc4 CFM语义形成一个Program tangent `r_i`。随后直接在最终shared memory上求：
+- 长期Goal处于active：同一shared Writer、同一single checkpoint的strict paired correct严格`>150/400`，同时
+  保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
+- 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
+- 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
+- 当前active architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；
+- 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
+- 当前下一有信息量裁决是已启动的macro50 single-checkpoint strict paired correct400，不以训练loss提前判断。
+
+## 2. Active architecture
+
+完整设计authority：
+`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
+
+数据流：
 
 ```text
-min_D 0.5 ||D-D0||^2
-s.t.  A D = 0
-      <r_i, phi_i D> <= 0  for every mixed task
+exact language + K=1..4 same-task action-hidden ordered videos
+-> 每帧真实joint image/language/50 Action-probe context + 8 memory tokens
+-> per-video signed adjacent transitions D + terminal goal residual G
+-> absolute memory mean只作temporal Query semantic address
+-> causal temporal encoder
+-> permutation-invariant cross-video set attention + symmetric reduction
+-> 20 policy groups x 8 rank coordinates M2P
+-> shared bias-free 256->1024 projector
+-> four bias-free zero-init direct family-B readouts
+-> one complete 38-target rank-8 task LoRA
 ```
 
-small dual Gram可解析为`<P_A phi_i,P_A phi_j><r_i,r_j>`并用FP64 NNLS求解；大tensor correction只合成一次。
-all-success tasks继续由SKNC current/persisted key保护；all-failure tasks不伪造reward方向，继续使用B20 acquisition。
-约束发生在24-task汇合后，所以不重复OSG task-local guard经full48 solve失真。reward只约束B20的有益半空间，不
-直接写sub-ULP tangent。历史同源11 mixed tasks从4452 chunks/928 forwards降为固定44 forwards，避免Long horizon
-主导wall。
+当前方法保留Dynamic-K semantic-address的全部输入、memory、temporal、set、M2P、fixed A和B20 recipe，只删除
+旧mapper的四个family `1024->1024` hidden/GELU与未启用dynamic-A heads。最新mapper为5个trainable matrices、
+`3,702,784`参数；整个Writer共`9,987,840`个trainable参数，输出76 tensors / `643,584`个LoRA scalars。
 
-ordered video仍通过PICK terminal-goal residual与causal prefix成为唯一dynamic address，negative features保持
-full48 zero RHS，language没有condition value。teacher action始终hidden；train24 policy-generated landmarks和
-outcome只作ephemeral credit，不进checkpoint/deployment。完整authority与CPU/live/formal falsifiers见
-`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`。SRTP canonical code、fresh-incompatible
-config、constant-memory landmark/K4 credit/shared projection tests曾闭合。`d172add`首个clean world3 macro使用
-gpu02物理3/4/5，三rank都在mixed reward CFM forward处OOM，未写mechanism profile/checkpoint。其root cause
-修复为blind VJP立即释放原graph、Nmc4后只对mixed task重解compiler，完整CPU`359 passed`；但`e31e2fd`唯一
-同合同reprofile仍在三个rank相同CFM路径OOM。故decoder lifecycle不是充分原因，完整logical landmark batch的
-policy-gradient peak才是最早工程失效；SRTP终局退役，不能降B、扩dtype、加allocator开关或恢复旧Reward/OSG。
+单变量依据：semantic-address macro50 strict=`101/400`，但逐接口probe中correct task-mean off-diagonal cosine从
+M2P/final/shared-project的`.492/.529/.530`到family hidden的`.634`和dynamic-B/effective-BA的`.779/.779`。
+因此首个新增common-direction接口是旧nonlinear family mapper，不是继续重写已经能保留task/order差异的视频
+前端。上一代结果和probe只支持这个窄假设；Direct-Family-B尚无closed-loop成绩。
 
-OOM evidence root为`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_d172add_20260812`，
-对应log/exit在`runs/logs/`同前缀文件；`failure.json`明确记录exit1、无mechanism report和无retained checkpoint。
-最终reprofile evidence root为
-`runs/outputs/pi05_srtp_shared_reward_tangent_full24_profile_macro0_r3_b20_e31e2fd_retry1_20260812`，同样有同前缀
-log/exit与`failure.json`，exit1、三rank OOM、无mechanism report/checkpoint。config现为
-`profile_result_sealed_nonpass`。
+## 3. Completed formal training
 
-## 10. PCUG terminal profile decision
+第一次world6 formal attempt：
 
-PCUG不再求完整reward gradient，而是直接测量当前shared candidate的闭环因果效果。Phase A先用完整24-task
-B20/full48和persisted stable-success bank形成`D0`；Phase B对两个相同env/state/policy RNG分别运行base与
-candidate，共48 pairs/96 rollouts。若同task candidate losses严格多于gains，则该condition key只在当前macro
-进入final equality guard；base/candidate四臂全成功的key同时进入first-success bank。
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_formal_fresh0to50_r6_b20_c5353f3_20260813`
 
-final update不是带新guards重算full48，而是把`D0`投影到persisted、stable与harmful keys的共同nullspace，保证
-它是离原candidate最近的可行write。这样guard不会再被后续shared solve改变，未guard tasks也只承受必要的最小
-旋转。candidate Program必须按真正commit后的`base_slots + cast(residual + phi D0)`生成，不能用低位不同的
-`current_program + motion`冒充。
+owner要求停止时停在完整macro16，无macro25 checkpoint、无completion、无strict评测。它只记录一次用户中止的
+非完整run，不得resume、不得作为正式成绩，也不得覆盖。
 
-这一设计保留v6-fast/PICK/SKNC的video condition、B20幅度、negative zero RHS、FP32 Program和native rank16，
-只把success evidence从unpaired 4/4状态升级为actual candidate-vs-base causal loss。完整两阶段算法、anti-bypass、
-CPU/live/formal gates见`docs/action_forecast_writer_paired_candidate_update_guard_design.md`。
+完整fresh run：
 
-canonical实现已经原位替换SRTP：保留exact candidate cast次序、paired K2×2、ephemeral harmful guard、persistent
-stable bank、FP64小SVD加FP32大投影、world-size 1--6 padded gather与fresh-incompatible checkpoint/eval schema；
-SRTP tangent/landmark runtime和测试已删除。完整CPU回归`344 passed`，包含world5 padded rank对齐回归。当前
-唯一live run来自clean pushed`238cab4`、gpu02物理3/4/5/6 world4。run contract于05:30:16发布；到05:43:46
-Phase A仍未完成full24 gather，物理3--5持续100%、物理6已等待。wall下界`809.72185s`，scaled baseline=
-`358.970267s`，ratio=`2.255679>1.5`；owner在门已不可逆为false后SIGTERM自己的torchrun以停止浪费。
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_formal_fresh0to50_r5_b20_c5353f3_retry1_20260813`
 
-failure root为`runs/outputs/pi05_pcug_paired_candidate_guard_full24_profile_macro0_r4_b20_238cab4_20260812`，含
-run contract、invocation和`failure.json`；同前缀launch contract/log/exit在`runs/logs/`。无OOM、nonfinite、
-paired outcomes、mechanism report或checkpoint；退出后物理3--5回到0MiB，物理6只剩既有4593MiB低利用率服务，
-ECC仍为0。config现为`profile_result_sealed_nonpass`，同配置重跑、deployment、formal关闭。
+- frozen worktree：`/data1/user/ymdai/worktrees/EMBER-direct-family-b-formal-c5353f3`；
+- clean commit：`c5353f3442a88565eded3b968dda104df5acc5cb`，与origin一致；
+- host/devices：`gpu01`物理GPU`0,4,5,6,7`，world5；启动时五卡空闲健康，gpu01 1/2/3属于他人；
+- launch：fresh macro0，formal total400，当前段stop-after50，B20，checkpoint every25，num_workers0；
+- dynamic K：每macro的24 tasks中K1/K2/K3/K4各6，task等权、跨episode action queries；
+- environment：BF16/TF32、`NCCL_P2P_DISABLE=1`、GPU-local NUMA、deferred NCCL；
+- 原训练tmux `ember_dfb_r5_retry1`已正常退出；
+- log：`runs/logs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_formal_fresh0to50_r5_b20_c5353f3_retry1_20260813.log`；
+- output是fresh root，不从world6中止run、旧semantic checkpoint或profile checkpoint迁移任何state；
+- storage preflight：`/data1` user quota约`493 GiB / 1 TiB`，两个约185MiB checkpoint加run metadata远低于余量。
 
-## 11. Runtime and GPU boundary
+训练已完整结束：`metrics.jsonl`有50条，`completion.json.completed_macro=50`，macro25/50两个checkpoint均有
+完整manifest，tmux/torchrun正常退出；总耗时`2138.7067s`。macro50 functional/consistency loss=
+`.115038/.005875`、gradient norm=`.050324`且K1--K4各6，只证明训练合同健康，不是性能结论。
 
-任何未来GPU launch前：
+## 4. Sealed profile evidence
 
-- 同时live检查`gpu01/gpu02`，选一个节点；
-- 使用该节点至多6张健康、低利用率、显存余量足够且能提高吞吐的A40；非零显存或低利用率进程不自动排除；
-- 不等待凑满6卡、不dummy占位、不跨节点拼碎片，不抢占或明显干扰他人；
-- evaluator无NCCL；多卡训练用`NCCL_P2P_DISABLE=1`、NUMA physical/local rank mapping和deferred-NCCL；
-- fresh按live world size设计，exact-resume锁定原world size；
-- 先查`/data1`独立user quota与峰值预算。
+- canonical implementation：`3866f50`；runtime profile seal：`c5353f3`；完整CPU回归=`372 passed`；
+- world5 full24 B20 profile：`39.4234s/macro`，相对matched semantic-address world5=`1.00476x`，K1--K4各6，
+  loss/gradient finite，峰值allocated/reserved=`39.093/45.445 GB`；
+- fixed validation8x4 deployment B8/B16/B32 LoRA/s=`.97732/.96489/.96513`，全部覆盖最长视频且0 OOM，正式
+  evaluator锁B8；
+- source policy、normalization、24/8/8 split、official LIBERO preprocessing和38-target topology不变。
 
-2026-08-11 deployment launch前的旧快照曾有`gpu02:0-5`空闲，单卡profile/vertical使用`:1`并已释放。
-18:47+08:00新快照中`gpu02:1-5`空闲而`:0/:6/:7`属于他人，`gpu01`只有`:2/:4/:6/:7`空闲；没有单节点
-world6。train24 full48按可整除且不跨节点的world4/local6重过profile；实际physical topology为gpu02
-`:2,:3,:4,:5`，两侧NUMA各2卡；`:1`有历史corrected ECC/remap而未选，第五张空卡也不能保持固定local task数。
-PICK-GC formal与strict400均已完成并释放四卡；完成后selected physical2--5均0MiB/0%且无本次compute process。
-`strg01`最近一次报告`/data1`用量`508362308 KiB`、quota`1073741824 KiB`；这是漂移快照，任何新launch仍需
-同时重查两节点、quota与峰值预算，不能把旧空闲状态当预约。
+## 5. Active strict400 evaluation
 
-OSG-PC实施后的新快照为2026-08-11 22:22--22:23+08:00：`gpu01`只有物理`:2/:4/:6`空闲，未选；
-`gpu02:0--5`均为`0 MiB/0%`、P8且无compute process，`:6/:7`由他人占用。深度健康检查显示`:0--5`均无
-volatile/uncorrectable ECC、pending repair或remap failure；`:1`只有历史累计6次已纠正DRAM与1条已纠正remap，
-当前pending/failure均为no，故可用但须发射前后监测。OSG-PC train24 profile据此只改执行拓扑为单节点
-world6/local4，NUMA0为物理0--3、NUMA1为4--5，继续设置`NCCL_P2P_DISABLE=1`；matched基线为world6/local4
-`507.30541240703315s`，production wall门为`<=1.25x`。当时`strg01 /data1`用量`509424560 KiB`、quota
-`1073741824 KiB`，shared available约85T，fresh profile峰值估计`<2 GiB`且目标root不存在。以上仍不是预约；
-clean pushed topology seal和detached frozen worktree完成后，真正launch前必须再同时复查两节点、进程、健康、
-quota与fresh root。
+活动正式root：
 
-吞吐优先：原生BF16/TF32和batch低位差异可接受，不用batch1、重复forward、扩dtype、ULP/dither或内容hash
-追微小复现。科学门只保护信息墙、pairing、shape/finite、串样、OOM、asset、checkpoint和resume语义。
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_correct400_noreplacement_seed7_macro0050_trainr5_evalr6_c5353f3_gpu01_retry1_20260813`
 
-## 12. Repository state and handoff
+- frozen eval worktree：`/data1/user/ymdai/worktrees/EMBER-direct-family-b-eval-c5353f3`，clean detached `c5353f3`；
+- host/devices：gpu01物理GPU`0,2,4,5,6,7`，六卡；每卡3个persistent rollout replicas、1个Writer generator；
+- arm：validation8×50、correct K1、without-replacement seed7、macro50 single checkpoint、generation B8；
+- tmux：`ember_dfb_correct400_m50_retry1`；
+- log：`runs/logs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_correct400_noreplacement_seed7_macro0050_trainr5_evalr6_c5353f3_gpu01_retry1_20260813.log`；
+- 400-entry LoRA cache估算peak新增`535,986,176` bytes，仍在已检查quota内；
+- 第一份无`retry1`的eval root只完成prepare；启动瞬间GPU1被他人新占约34GB，原子preflight拒绝启动，因而没有
+  Worker、LoRA cache或rollout结果。它不得冒充失败实验或活动root。
 
-2026-08-11 compiler-only结果由commit`3a6f801d08facb3e855ab24f84e0b53cb8802e88`封存。随后cleanup完成：
+训练完成边界已经满足：
 
-- `04ed4e6`把约3.65万行追加式Markdown压成约3400行authority/history，删除错误train-only normalization与
-  两个无caller旧配置负载；
-- `4f172dd`删除退役rank/compiler的3个configs、14个专用runtime/contract/launcher/compiler owners、孤立
-  artifact hasher及专用tests，净删8408行；results-only历史schema与可复用v6/Reward基础保留；
-- 主工作树外12个旧worktrees与全部topic worktree已删除；本地和origin现在都只保留`main`与
-  `codex/bci-continuation`，旧refs仍由6.15MB、138-head灾备bundle和Git历史覆盖；
-- 删除38个已结束profile/smoke roots中的非formal checkpoint payload，实际约74.69GB；保留各root的contract、
-  metrics、summary/completion。另清理34个uv临时目录、17个零字节日志、3个空/错误roots和3个空转tail进程；
-- 为未来效率保留可复用`.cache/uv`主体、`.venv`、formal results/checkpoints、paired raw rows、task experts、
-  source policy、data/models、feature caches、acceptance与migration evidence；
-- cleanup封存时加载`.env.local`的完整CPU回归为`361 passed`。PICK替换退役Reward/RLS测试与实现后，当前完整
-  回归为`345 passed`；新增真实encoder合同验证zero-image baseline只算一次、每个物理frame只编码一次。
-  compileall、config fail-close、diff-check通过；architecture gate无hard violation、无parallel family，active
-  source净减少1984行；`5200bee`的formal evidence seal后完整回归为`346 passed`。
+- `completion.json`且`completed_macro=50`；
+- `metrics.jsonl`覆盖macro1--50；
+- macro25与macro50 checkpoint完整；
+- launcher/torchrun正常退出，无failure artifacts或nonfinite；
+- macro50 checkpoint schema、world5 rank states和run contract一致。
 
-PICK与PICK-GC的raw/full48 roots、contracts、logs、metrics和completions均已保留，discarded profile没有memory
-checkpoint。PICK-GC部署证据root为
-`runs/outputs/pi05_pick_gc_goal_causal_writer_profile_val8x4_correct_gpu02p1_717b561_20260811`和
-`runs/outputs/pi05_pick_gc_goal_causal_zero_memory_vertical_retry1_val8x1_correct_b32_gpu02p1_717b561_20260811`。
-首次vertical的staging-path失败及retry完成后的CPU finalizer字段失败都保留为engineering evidence；两者未改变
-科学合同或GPU结果。`5200bee` deployment seal与`09bbed3` world4 profile authority均已push并有detached frozen
-worktree；world4 profile exit0、14 checks全true且没有checkpoint。formal macro10 checkpoint、strict400 raw rows、
-cache、launcher completion和决策证据也已保留；结果138/breadth6/lost16已封存并关闭resume与controls。OSG-PC
-canonical实现由`e22cff1`封存，world6 topology由`9263851`封存；失败root、run-contract、launch contract、exit1、
-logs与`engineering_failure.json`均保留且无checkpoint。SKNC success-key nullspace canonical实现、fresh
-config/schema与CPU机制证据现已完成；首个world3 root按TF32 diagnostic non-pass保留。`f4fdac7` fresh
-reprofile的16项checks全部通过，deployment B8/16/32全部稳定并选择B32；formal-ready evidence已写入canonical
-config。`e3863cb` formal fresh`0→5`及其strict400随后完成并封存为137/breadth7/lost13 non-pass；训练checkpoint、
-raw rows、transition和decision evidence完整保留，resume与controls关闭。SRTP的`d172add`与`e31e2fd` OOM
-roots/logs/failure artifacts保留且均无checkpoint/mechanism report；config已封存non-pass，同配置重跑、deployment
-和formal关闭。PCUG world4 failure root/log/exit与CPU实现均保留，但paired机制未被执行；旧static config已封存
-non-pass，同配置重跑、deployment和formal关闭。Work-Queue PCUG也已因negative-null机制门封存。
-Negative-Preserving Candidate Guard首个clean world3完整profile已通过negative preservation与其余18项门，
-唯一因solver TF32和实际Program full-FP32 read错配未过closure；canonical数值窄修与完整CPU`345 passed`已完成
-后，clean pushed`4156012` matched reprofile 20/20全过，negative ratio`.03524`、三类各`8/8`、protected ratio
-`5.7508e-8`、total`554.99255s / 1.15955x`。部署B8/16/32均稳定并选择B32；config已封存两份evidence并打开
-formal fresh`0→5`。该formal及strict paired400现均已完成：五宏无OOM/nonfinite，macro5 rank34、energy
-`.38951`、negative ratio`.03234`，但strict只有135/breadth5、old134→NPCG=`117/18/17`，因此config封存为
-`formal_result_sealed`。NPCG不resume、不补controls、不做小扫；CVEG随后原位替换canonical owner并已由本文件
-前述formal稳定性证据判为non-pass。旧WQ-PCUG/PCUG/Reward/OSG/SKNC/SRTP命令不得恢复。
+当前正用macro50同一个checkpoint完成validation8 x 50 states的correct-video、without-replacement seed7 strict
+paired400，Writer generation batch固定B8。完成必须有72 shards全部complete、18 worker return code全0、
+launcher completion、400无缺失/重复raw rows、results/run summary一致且无failure artifact。正式报告包括
+aggregate、per-task、per-suite、breadth，并与
+semantic101、Dynamic-K100、old134、compiler138、online128做严格paired retained/gained/lost；与v6-fast143按
+aggregate/per-task比较。
+
+预注册裁决沿用design：
+
+- `<120`或breadth`<6`：终局non-pass，不resume；
+- `120..133`：低于old134，除非明确工程合同违约，否则不resume；
+- `134..143`：只有相对old134 gained>lost、至少3 suites不下降且task-mean BA共线显著弱于`.779`才resume到100；
+- `>=144`：exact-resume到100；目标仍严格`>150`；
+- `>150`后补same-task-other、wrong、shuffled、reversed、no-video严格controls。
+
+无论结果高低，先完成逐task成功集合、breadth、retained/gained/lost、能力集中、Program->mapper->BA->action最早
+失效接口分析，再决定下一轮。不得靠小参数sweep救当前checkpoint，也不得因aggregate低分把昨晚已经对齐的完整
+架构思想整体推翻。
+
+## 6. Retained canonical assets
+
+- source policy：
+  `runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000`；
+- tokenizer：`models/tokenizers/openpi/paligemma_tokenizer.model`；
+- target data：`data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a`；
+- split：`configs/libero_24_8_8_v1/`；
+- LIBERO assets：`.env.local`中的`EMBER_LIBERO_ASSETS_ROOT`；
+- task experts：`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`中的统一step2000；
+- current config：`configs/pi05_as_writer_dynamic_k_semantic_address_direct_family_b_rank8_v1.json`；
+- historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
+
+## 7. Continuous research loop
+
+当前formal -> macro50 strict400 -> 深入分析 -> 选择最早失效接口 -> 单变量authority -> 实现/机制/吞吐 -> 下一次
+真实训练与评测。整个循环持续服务长期Goal。memory token、rank8、Dynamic-K范围和Direct-Family-B是当前方法，
+不是Goal本身；只有真实证据可以修改它们，不能因措辞、局部建议或历史“下一步”随意摇摆。

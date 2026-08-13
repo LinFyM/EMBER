@@ -1,96 +1,93 @@
 # EMBER Novelty and Baseline Landscape
 
-状态：2026-08-12稳定研究定位。active successor只取当前authority；本文不授权实现或实验。
+状态：2026-08-13稳定研究定位。本文不授权当前run或绑定具体架构。
 
 ## Research position
 
-EMBER研究的是video-conditioned parameter generation for robot control：shared Writer只在rollout前读取一次任务
-语言和action-hidden教学视频，生成完整task LoRA；frozen source policy随后从新初始化闭环执行。
+EMBER研究video-conditioned parameter generation for robot control：shared Writer在rollout前读取一次exact task
+language和一条或多条action-hidden正确教学视频，生成一套完整task adaptation；frozen source policy随后从未见
+初始化闭环执行。
 
-它与几类相邻问题不同：
+它不是：
 
-- 不是直接target action-SFT：部署task不提供action labels；
-- 不是每步video-conditioned policy：示范不会在每个control step反复进入policy；
-- 不是trajectory imitation：video与action supervision跨episode，不要求逐帧对齐；
-- 不是retrieval/expert routing：held部署不能读取task-expert bank或task ID；
-- 不是通用hypernetwork几何任务：生成LoRA的价值由robot closed-loop而非reconstruction决定；
-- 不是language-only task adapter：video必须是唯一dynamic value。
+- 直接target action-SFT，因为部署task没有action labels；
+- 每步video-conditioned policy，因为示范不会在每个control step反复输入；
+- trajectory imitation，因为video与action supervision跨episode、不逐帧对齐；
+- retrieval/expert routing，因为held部署不能读task ID或expert bank；
+- language-only adapter，因为video必须是唯一dynamic value；
+- 只追求LoRA reconstruction的通用Hypernetwork，因为价值由robot closed-loop决定。
 
-潜在贡献不在“首次生成LoRA”这一单点，而在一个严格信息墙下同时解决：action-hidden视频理解、一次性参数
-编译、跨初始化泛化、跨task共同积累，以及视频内容/顺序的闭环因果验证。
+潜在贡献不是“首次生成LoRA”，而是在严格信息墙下同时解决：action-hidden视频高层理解、正确顺序、一次性
+policy参数编译、跨初始化泛化、动态视频数量和single-checkpoint多任务共同积累。
 
-## Matched empirical landscape
+## Relationship to mature Hypernetworks
 
-| reference | information at deployment | role |
+SHINE、Doc2LoRA等工作说明：在原生backbone context中放置少量memory、保留逐层状态、再通过共享结构化mapper
+生成LoRA，是比每个参数独立预测更可扩展的设计原则。EMBER学习这一原则，但不机械复制它们的文本输入、token
+数量、rank或flat payload。
+
+EMBER新增的困难是视频内部有向过程、多个videos的集合结构、异构robot-policy target topology、action-hidden
+跨episode监督、闭环状态分布和视频因果controls。外部研究只提供架构参照，不增加target-task训练数据，也不能
+替代EMBER从v4到v6、K4和task-drift实验形成的负结果边界。
+
+## Empirical landscape
+
+| reference | deployment information | role / best evidence |
 | --- | --- | --- |
 | generic π0.5 | language + observation | 未适配foundation下界；目标8曾为0/400 |
-| frozen source base | language + observation | 过滤source actions建立的共同embodiment起点；48/400 |
+| frozen source base | language + observation | 过滤source actions建立的共同起点；48/400 |
 | mixed-task Source-SFT | language + observation；训练读target actions | privileged shared-LoRA reference；109/400 |
-| EMBER AS-Writer | language + one action-hidden video | 核心zero-interaction方法；历史最好143/400 |
+| EMBER AS-Writer | language + action-hidden video(s) | 核心zero-interaction方法；历史最好143/400 |
 | optional RL-Writer | 同上；训练期读source reward | 检验action-free practice能否改善Writer |
-| matched direct video policy | 每步language + video + observation | 可选baseline，比较一次编译与持续condition |
+| matched direct video policy | 每步language + video + observation | 可选比较一次编译与持续conditioning |
 | direct-action oracle | language + observation；训练读test actions | privileged ceiling，不是同信息墙baseline |
 
-所有matched比较应共享source policy、normalization、split、task states、policy interface与official evaluator。
-参数量、训练action chunks、rollout interactions、wall time、policy latency和显存应分别报告，不用机械相同步数
-掩盖方法差异。
+共同比较应共享source policy、normalization、split、task states、policy interface和official evaluator。参数量、
+训练actions、视频数、rollout interactions、wall time、policy latency和显存分别诚实报告；不要求机械相同步数或
+FLOPs来掩盖方法本身的取舍。
 
-## What the historical evidence already establishes
+## Historical constraints on novelty
 
-- action-hidden视频确实包含可解码的task与时序信号；旧Gate -1与后续hidden/LoRA/action反事实均支持这一点。
-- 视频敏感不等于正确视频理解：v4曾出现`shuffled=148 > correct=109`。
-- Semantic Core/Procedure分解能增强wrong-video区分，但compiler可把顺序差压到行为无效。
-- v6-fast证明one-shot Writer在共同source base上可达`143/400`，但晚期训练与大量后续路线持续换手。
-- 更高rank、更均匀谱、更多atoms/lanes/experts、SFT量级norm与更低functional loss均不是性能充分条件。
-- task experts是有效task-level policy targets，却不携带same-task video specificity或时间顺序。
-- few-shot K4能改善部分集合/leave-one-out稳定性，但尚未解决full24 credit retention和strict performance。
-- 最新rank14去混杂证明，即便parameter reconstruction很小，compression与online regeneration也可独立破坏
-  closed-loop support。
+- action-hidden视频含可解码task与时序信号，但视频敏感不等于正确理解；v4曾有`shuffled=148>correct=109`；
+- Semantic Core/Procedure分解能增强wrong-video辨识，但compiler可把顺序差压到行为无效；
+- v6-fast证明共同source base上的Writer可达143，但晚期训练和后续路线持续task换手；
+- 更高rank、更均匀谱、更多atoms/lanes/experts、SFT量级norm和更低functional loss均非充分条件；
+- task experts是有效task-level policy targets，却不含same-task video specificity或时序；
+- K4能改善部分集合稳定性，但旧实现没有解决strict performance或full24 credit retention；
+- rank14去混杂证明compression与online regeneration可独立破坏closed-loop support；
+- Dynamic-K 100和semantic-address 101说明真实memory、动态K与Query semantic address仍未自动形成正确policy方向。
 
-因此下一贡献不能只是“再换一个hypernetwork decoder”。它必须以已有失效链为约束，说明为何视频的有向
-证据能落到有用policy direction，且不同task/video更新能在同一checkpoint共存。
+因此下一贡献不能只是换一个decoder名字。它必须说明有向视频证据如何落到有用policy direction，以及不同
+task/video能力为何能在同一checkpoint共存。
 
 ## Required causality controls
 
-wrong-video控制language-only或generic-adapter旁路；same-task-other控制demo nuisance；shuffled/reversed控制帧序
-因果；no-video控制动态路径必要性。所有arms需严格配对state、RNG和video identity，且重排真实frames后完整
-forward。
+wrong控制language-only或generic-adapter旁路；same-task-other测demo nuisance；shuffled/reversed测帧序因果；
+no-video测动态通路必要性。所有arms严格配对state、RNG和video identity，并在真实frames重排后完整forward。
 
-理想关系不是只让negative变差，而是：
+理想证据是correct高且广、same接近correct、wrong/shuffled/reversed/no-video因正确原因实质更低。absolute仍是
+第一目标；一个`correct=80, wrong=20`的漂亮margin不能取代`correct=143`的强方法。
 
-```text
-correct high and broad
-same-task-other close to correct
-wrong, shuffled, reversed, no-video materially lower for the right reason
-```
+## One-shot, few-shot and scaling claims
 
-absolute仍是第一目标。一个`correct=80, wrong=20`的漂亮margin不能优于`correct=143`的强但视频margin弱方法；
-健康度和因果controls是解释与约束，不是替代性能的主指标。
+one-shot要求从一条demo区分任务本质与偶然性；few-shot把跨demo共同信息变成可学习对象。动态K方法应逐video
+保序、跨video置换不变，不平均生成后的LoRAs，也不挑video。
 
-## One-shot versus few-shot novelty
+论文claim由实际最强可靠设定决定，而非预先强制K1对K4的人工公平：
 
-one-shot要求从单条video区分高层任务与低层偶然性，是最强设定。few-shot可以把“跨demo共同信息”显式变成
-统计对象，但会带来新的公平性问题：video数量、总帧数、Writer FLOPs、挑选策略、每条内部时序与集合聚合。
+- K1最好：报告one-shot；
+- 固定K>1最好：报告few-shot；
+- 同一模型在多个K上稳定且随K提升：报告dynamic-cardinality/scaling。
 
-值得研究的few-shot方向应同时具备：
-
-- 每条video内部使用有序encoder；
-- videos之间用置换不变集合聚合；
-- 能处理固定`k`，之后再讨论variable cardinality与mask；
-- 不平均生成后的LoRA，不做多checkpoint融合；
-- 与one-shot按video/frame/FLOP预算清楚对照；
-- 仍通过same/wrong/shuffled/reversed/no-video和single-checkpoint paired400裁决。
-
-few-shot若只提高内部一致性而不提高absolute/retention，不构成核心进步。
+每种claim都要报告实际K、帧数、计算和训练曝光，并用single-checkpoint closed-loop与视频controls验证。内部
+一致性提高而absolute/retention不提高，不构成核心进步。
 
 ## Claim boundaries
 
-可以主张的最终结果取决于证据：
-
 - zero-interaction claim：correct-video single checkpoint严格超过matched baselines并有因果controls；
-- stability claim：多task breadth高、相邻checkpoint churn低、重复训练呈共同积累；
-- few-shot claim：多video在匹配口径下改善one-shot且不是挑video/平均带来的假象；
-- adaptation claim：相同reward interaction下Writer初始化提高learning curve或终点。
+- stability claim：breadth高、相邻checkpoint churn低、重复训练呈共同积累；
+- few-shot/scaling claim：更多videos稳定增加真实能力，不来自挑video、平均LoRA或计算隐瞒；
+- adaptation claim：相同reward interactions下，视频生成LoRA提高后续learning curve或终点。
 
-不能从generic base的0/400、source base的少量成功、训练loss、small panel、checkpoint union、expert
-reconstruction或漂亮LoRA谱单独推出任何上述claim。精确实验谱系见`docs/research_history.md`。
+generic base的0/400、训练loss、small panel、checkpoint union、expert reconstruction或漂亮LoRA谱都不能单独
+推出上述claim。精确实验谱系见`docs/research_history.md`。

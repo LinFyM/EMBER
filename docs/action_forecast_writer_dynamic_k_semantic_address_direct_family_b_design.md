@@ -1,6 +1,8 @@
 # Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible design authority；实现、live profile、formal训练与closed-loop均未开始。
+日期：2026-08-13。状态：fresh-incompatible design authority；canonical实现、CPU机制门、live training profile、
+deployment吞吐profile与fresh formal `0→50`已封存，macro50 strict paired correct400正在进行，尚无closed-loop
+结论。
 
 ## 1. 这轮只解决哪个最早失效接口
 

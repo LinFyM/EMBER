@@ -8,16 +8,17 @@
 2026-08-13，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。最新Dynamic-K
 backbone-memory与semantic-address macro50 strict分别为`100/400`和`101/400`；semantic-address相对old134为
 `82 retained/19 gained/52 lost`，终局non-pass。32-point逐接口probe把最早新增common-direction定位到shared
-projector之后的family hidden/GELU与B readout；当前只记录新的direct-family-B design authority，不在本文提供
-启动命令。其canonical实现已完成并通过`372 passed` CPU门；world5 training profile=`39.4234s`，deployment
-B8/16/32 LoRA/s=`.97732/.96489/.96513`并锁B8。尚无formal训练或rollout结论。
+projector之后的family hidden/GELU与B readout；当前Direct-Family-B只删除这一窄接口。其canonical实现已通过
+`372 passed` CPU门；world5 training profile=`39.4234s`，deployment B8/16/32 LoRA/s=
+`.97732/.96489/.96513`并锁B8。fresh formal已完整到macro50，strict400正在进行，尚无rollout结论。
 
 ## 1. Stable problem definition
 
-EMBER研究：给定exact task language与一条action-hidden teacher video，shared Writer一次生成一套完整
-rank-16 task LoRA；该LoRA挂到同一个frozen π0.5-LIBERO source policy后，应在未见初始化上闭环完成任务。
+EMBER研究：给定exact task language与一条或多条action-hidden teacher videos，shared Writer一次生成一套完整
+task adaptation；该adaptation挂到同一个frozen π0.5-LIBERO source policy后，应在未见初始化上闭环完成任务。
 视频是唯一dynamic value，不允许language-only LoRA bypass、teacher action/reward/proprio读取、task ID、
-文件名、object pose、multi-video/LoRA/checkpoint平均或held oracle。
+文件名、object pose、多个独立LoRA/checkpoint平均或held oracle。当前方法使用fresh rank8；历史方法的rank16、
+rank14等都是具体实验合同，不是长期问题定义。
 
 最终方法必须由同一single checkpoint的strict paired closed-loop裁决，并同时满足高absolute、task breadth、
 低checkpoint换手、same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。训练loss、functional loss、
@@ -128,8 +129,9 @@ manifold，并提供SFT LoRA能量、rank坐标和跨target参考；但同一tas
 包含same-task video差异或时间顺序。soft/hard bank held=`15/80`/`3/80`进一步否定直接部署字典。
 
 K4实验说明few-shot能过滤单条示范的部分偶然低层细节、改善内部same/LOO稳定性，但未解决full24 shared
-credit retention、正确顺序的policy-effective方向和single-checkpoint漂移。未来few-shot只能作为明确变量，
-不能因直觉自动替换one-shot；动态视频数量也不是当前已验证能力。
+credit retention、正确顺序的policy-effective方向和single-checkpoint漂移。当前Dynamic-K训练已实际覆盖
+K1--K4，但尚未证明K>1闭环更强；后续应按真实最强设定报告one-shot、few-shot或scaling claim，不因旧K4失败
+否定多视频，也不靠挑video或平均LoRA制造增益。
 
 ## 6. Stable cross-experiment cognition
 

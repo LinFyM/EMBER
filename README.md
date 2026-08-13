@@ -1,192 +1,116 @@
 # EMBER
 
-EMBER研究能否把机器人教学视频中的任务知识一次性编译成策略参数：
+EMBER研究能否把机器人教学视频中的任务知识一次性编译为策略参数：
 
 ```text
-exact task language + one or more action-hidden teaching videos
-                    -> one shared Dynamic-K Writer
+exact task language + one or more action-hidden correct teaching videos
+                    -> one shared Writer
                     -> one complete task-conditioned LoRA
                     -> frozen π0.5-LIBERO source policy
-                    -> closed-loop execution on unseen initializations
+                    -> closed-loop execution from unseen initializations
 ```
 
-Writer只在rollout前运行一次。它不读取teacher action、proprio、reward、terminal、task ID、filename、
-object pose或hidden normalization；video是唯一dynamic value，不允许language-only LoRA bypass。
+现实启发是人观看正确示范后，结合任务名称理解对象、目标状态、必要动作阶段和有向顺序，再在不同身体、视角与
+初始状态下尝试；他不是逐像素或逐关节复制示范轨迹。EMBER因此让Writer只在rollout前读取一次语言与视频，
+生成的LoRA随后独立驱动冻结policy闭环执行。
 
-## Current status
+## Scientific target
 
-- workspace：`/data1/user/ymdai/projects/EMBER`
-- branch：`codex/bci-continuation`
-- 长期目标：同一shared method、同一single checkpoint的strict paired correct严格`>150/400`，并继续提高
-  absolute、breadth、稳定积累和视频时序因果性。
-- 当前目标未完成；历史最好single checkpoint仍是v6-fast macro400：
-  `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
-- PICK的raw-frame门通过，但world6 discarded full48 profile只因condition=`483.61515>200` non-pass；其余
-  14项机制、动作与吞吐门通过，未获formal训练资格。
-- PICK-GC已完成formal fresh`0→10`与strict paired400：`138/400`、breadth6，相对immutable macro0
-  retained/gained/lost=`118/20/16`。它未过`correct>=144`与`lost<=8`门，resume、controls和参数sweep均关闭。
-- OSG-PC的唯一world6 discarded profile在full48前因rank-local长尾触发600s NCCL watchdog；从run-contract发布
-  到timeout至少`969.9709s`，相对matched baseline至少`1.912x>1.25x`。无mechanism report/checkpoint，formal、
-  deployment与评测均关闭；当前full-replay per-success VJP执行图已退役，但不能据此否定所有success constraint。
-- SKNC已完成formal fresh`0→5`和single-checkpoint strict paired400：`137/400`、breadth7、per-task=
-  `1/3/45/32/0/37/18/1`，相对old134 retained/gained/lost=`121/16/13`、churn29。训练端15个persisted anchors、
-  macro5 rank36、projected energy`.592`和Program closure均健康，但Long task1净`+7`掩盖Object净`-5`及
-  Spatial净`-1`；未过`correct>=140`、`lost<=8`和单task集中门，故不resume、不补controls、不sweep。
-- SRTP已终局non-pass并退役：首个world3 macro因decoder graph跨K4保留而三rank在mixed reward CFM处OOM；释放
-  graph并只在Nmc4后重解compiler的唯一同合同reprofile仍三rank OOM，最差仅余16.31MiB。两次均没有mechanism
-  report/checkpoint，deployment/formal未授权。最早工程失效接口因此是完整logical B<=16 landmark policy-gradient
-  本体显存，不再允许降batch、改dtype、allocator开关或第三次修补。这个结果只淘汰当前SRTP执行合同，不否定
-  constant-memory occupancy、shared reward half-space或所有on-policy credit。
-- PCUG canonical实现与`344 passed`后运行了唯一discarded world4 macro，但在paired probe前终局non-pass：
-  Phase A尚未完成full24 gather时wall下界已达`809.72185s`，相对scaled matched SKNC为`2.25568x>1.5x`。
-  run无OOM/nonfinite、mechanism report或checkpoint；gpu6的共驻低利用率服务不是长尾rank，物理3--5反而持续
-  100%。这只淘汰当前static world4 execution contract，不检验actual candidate paired guard。formal、deployment
-  和同配置重跑全部关闭。
-- NPCG已完成formal fresh`0→5`与single-checkpoint strict paired400并退役：`135/400`、breadth5、per-task=
-  `0/2/46/36/0/37/14/0`。相对old134严格配对为retained/gained/lost=`117/18/17`、churn35；全部Program、
-  negative、rank和energy机制门健康，但未过`correct>=142`、breadth、lost三项门。不得resume、补controls或
-  做point-count/threshold/seed小扫。
-- Cross-Video Equivariant Candidate Guard已经终局non-pass：formal先证明二值K2 outcome经hard equality会放大
-  正常低位差异并走出不同checkpoint轨迹；诊断macro5的唯一directional strict400又只有`131/400`、breadth6、
-  per-task=`1/2/47/30/0/35/16/0`。相对old134为`113/18/21`，相对NPCG135为`114/17/21`；硬E既未稳定
-  shared能力，也使absolute继续下降。因此不resume、不补controls、不把hard E或binary guard原样继承。
-- PVJFC与其单变量后继CGIK-JC都在唯一macro0机制profile因condition门终局non-pass。CGIK把condition
-  `597.861→270.188`、negative ratio`.07266→.02457`，三类negative均16/16；rank`48/96`、24/24双view
-  descent、全链路与`50.032s` wall健康，但仍未过`<=200`。无checkpoint或closed-loop成绩，formal、重跑和
-  小扫关闭。MGCI-JC随后只把独立raw-causal块改为goal-magnitude-gated causal，signed interaction不变；唯一
-  full96 profile以condition=`174.813`、rank`48/96`、negative`.02088`通过12/12门。但fresh formal macro5的
-  strict只有`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`；old134→MGCI=`114/20/20`、churn40。
-  它验证key谱修复却未改善absolute或共同积累，故不resume、不补controls。当前没有active successor，等待讨论。
+当前底线是同一shared method、同一single checkpoint的strict paired correct严格`>150/400`，并继续提高：
 
-最新uniform pivot-rank14路线已终局否决：
+- absolute closed-loop success与task breadth；
+- 多task能力在同一checkpoint共同积累，而非checkpoint之间换手；
+- correct视频实质优于wrong、shuffled、reversed和no-video；
+- same-task不同视频保持鲁棒；
+- 视频语义和有向过程真实传到LoRA、effective BA与policy action。
 
-| arm | correct | breadth | 相对old134 retained/gained/lost |
-| --- | ---: | ---: | ---: |
-| old full-rank cache | 134 | 6 | reference |
-| compiler-only rank14 | 138 | 7 | `119/19/15` |
-| online-regenerated rank14 | 128 | 7 | `113/15/21` |
+历史最好single checkpoint仍是v6-fast macro400：
+`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。训练loss、functional loss、LoRA norm/rank/cosine、
+reconstruction与内部margin只作诊断，正式选择只认严格配对的single-checkpoint closed-loop结果。
 
-compiler-only虽然净增4，但预注册要求lost`<=10`，实际lost15；且总增益由Long1净`+11`掩盖Spatial/Object
-净`-3/-4`。compiler→online又发生`23 lost/13 gained`。因此uniform compression和online regeneration
-都是独立换手源；Gate C、cycle1、controls和训练均未授权。该结论只淘汰当前uniform rank14合同，不淘汰
-视频、Reward、continuous tangent或所有parameter-manifold思路。
+## Current architecture
 
-PICK证明frozen-policy innovation能稳定读取视频与顺序并传到Program、LoRA和action；PICK-GC把condition修到
-`152.61`并传出非零effective-BA tangent，但strict只有138且lost16。SKNC把lost降到13；NPCG又同时保住paired
-correct guard与negative response，但strict降到135且仍有35个paired状态翻转。train24×50 action-hidden audit显示
-first-stable key对同任务其它视频的平均正交残差`.40954`，即精确保护一个视频点并不等于保护该任务的跨视频/
-跨occupancy support。故最早失败接口已从compiler与constraint composition推进到video-conditioned address的
-neighborhood泛化与credit alignment；不应靠扩大LoRA norm/rank、延长训练或point/threshold sweep补救。
-详见[`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)。
+当前唯一active方法是
+**Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**：
 
-## What matters scientifically
+```text
+exact language + K=1..4 same-task ordered action-hidden videos
+    -> 每帧真实π0.5 image/language/Action-probe context + 8 memory tokens
+    -> 每video有向transition、terminal goal与Query-only semantic address
+    -> causal temporal encoder（video内保序）
+    -> permutation-invariant set attention（video间提取共同程序）
+    -> 20 policy groups × 8 rank coordinates M2P
+    -> shared projector + four direct shape-family B readouts
+    -> complete 38-target rank-8 LoRA
+```
 
-EMBER不是“生成一个看起来像SFT的LoRA”就算成功。最终方法必须同时具备：
+它综合了三类依据：owner关于“语言说明任务、正确视频说明完成方式”的完整要求；SHINE/Doc2LoRA类成熟
+Hypernetwork的少量memory、layer-aligned状态与结构化LoRA生成原则；以及EMBER从v4到v6、K4、task drift和
+mapper逐接口probe的历史证据。它不是对外部方法的机械复刻，也没有引入额外target-task数据。
 
-- 高strict closed-loop absolute；
-- 多task breadth与低checkpoint能力轮换；
-- correct明显优于wrong、shuffled、reversed和no-video；
-- same-task不同teacher video鲁棒；
-- 视频语义/时序真实传到effective LoRA和policy action；
-- one-shot生成后对不同初始化有效，而非复制示范的低层轨迹。
+上一代Dynamic-K backbone-memory和semantic-address macro50 strict分别为`100/400`和`101/400`。最新32-point
+probe显示task差异在M2P/final/shared projector仍较健康，首个明显common-direction增长出现在旧family
+hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重新推翻视频前端。完整公式和裁决门见
+[`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`](docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md)。
 
-LoRA norm、stable rank、能量分布、factor cosine、reconstruction/functional loss与hidden差异只是诊断指标。
-历史已经多次出现“几何更健康、loss更低、内部margin更漂亮，但closed-loop更差”。正式选择只认同一
-single checkpoint的paired400及视频controls。
+截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50，strict paired correct400正在gpu01六卡执行。
+实时run identity、进度和下一裁决只取
+[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
-## Core evidence in one view
+## Information wall
 
-- frozen source base：`48/400`；privileged mixed-task Source-SFT：`109/400`。
-- v5.2 old具有强视频特异性`132/138/74/82/83`；v6-fast task-complete具有最高absolute
-  `143/135/125/128/129`。二者交叉结果证明架构与recipe强耦合。
-- SFB checkpoint union达到193但single best只有127，直接暴露能力换手。
-- variance reduction让functional evidence更漂亮却没有改善closed-loop，证明surrogate不能选方法。
-- K4/few-shot可减少单video偶然性并改善内部same/LOO稳定性，但没有解决full24 shared credit或正确时序。
-- 24个task experts统一step2000的train direct-expert=`658/1200`、23/24 tasks非零；它们提供policy-effective
-  task-level target，却不提供held泛化、same-task video specificity或时间顺序。
-- Expert-Manifold address binding、barycentric和soft/hard bank依次证明：地址辨识、视频路由、expert重建或
-  近精确expert复现都不是held performance的充分条件。
-- Balanced residual、RLS、Reward-Credit把失效链收窄到跨video correction近正交、offline row保留不等于
-  on-policy support、以及q/v continuous tangent低于native BF16 factor ULP。
-- 最终rank14反事实又证明：tiny reconstruction error不保证closed-loop support；压缩与regeneration都能
-  引发target-heterogeneous rotation。
+Writer可读取exact language与同task action-hidden videos。它不能读取teacher action、proprio/state、reward、
+terminal、task ID、filename、object pose、hidden normalization或policy outcome。训练action只进入冻结source
+policy的train24 functional loss；validation/test actions或reward不产生梯度。
 
-完整不重复清单和每条路线结果见[`docs/research_history.md`](docs/research_history.md)。
+每个condition只生成一套完整task LoRA。不挑video，不平均frames、raw features、分别生成的LoRAs或checkpoints，
+不使用held expert dictionary。视频与action query同task但跨episode采样，要求生成的LoRA跨初始化有效，而不是
+复制某条teacher trajectory。
 
 ## Data and evaluation
 
-- 起点是generic`lerobot/pi05_base`，不是读过目标LIBERO-40 actions的`pi05_libero`。
-- source corpus为与目标40 specification-only去重后的71个LIBERO-90 tasks，每task 50条成功episodes。
-- 目标40固定split是24 train / 8 validation / 8 test，封存在`configs/libero_24_8_8_v1/`。
-- normalization只来自source corpus并冻结；validation/test actions不产生梯度。
-- canonical历史基线保持exact language + exactly one action-hidden video；当前新方法由独立design authority
-  定义同一Writer的K1--K4动态输入与fresh rank-8完整LoRA，不能把few-shot成绩冒充one-shot成绩。
-- official evaluator严格配对correct/same/wrong/shuffled/reversed/no-video的state、env/policy RNG和video。
-- checkpoint只由真实paired closed-loop选择；80-row screen、loss、几何或checkpoint union不能代表真实水平。
+- foundation从generic`lerobot/pi05_base`开始，不使用读过目标40 actions的`pi05_libero`；
+- source policy只在与目标40 specification-only去重后的71个LIBERO-90 tasks上训练并冻结；
+- 目标40固定split为24 train / 8 validation / 8 test，位于`configs/libero_24_8_8_v1/`；
+- normalization只来自source corpus并冻结；
+- official evaluator严格配对correct/same/wrong/shuffled/reversed/no-video的state、RNG与video identity；
+- checkpoint union、挑task checkpoint、多checkpoint融合和80-row screen都不能冒充正式结果。
 
-## Runtime layout
+## Repository map
 
 ```text
 EMBER/
-├── configs/    # frozen split/source/evaluation and retained manifests
-├── data/       # datasets and LIBERO assets
-├── models/     # tokenizer/model assets
-├── runs/       # formal training/evaluation/checkpoints/results
-├── evidence/   # retained migration/manifests
-├── src/ember/  # reusable source policy, Writer core and evaluator
-├── scripts/    # canonical entrypoints
-└── tests/
+├── configs/                 # frozen split, source, Writer and evaluation contracts
+├── data/                    # canonical datasets and LIBERO assets
+├── models/                  # tokenizer/model assets
+├── runs/                    # formal checkpoints, raw rows and retained evidence
+├── src/ember/writer/        # one canonical active Writer implementation
+├── scripts/                 # canonical training/evaluation entrypoints
+├── tests/
+├── docs/current_owner_requirements.md
+├── docs/active_session_handoff.md
+├── docs/execution_brief.md
+└── docs/research_history.md
 ```
 
-进入仓库后使用`.venv`；`.env.local`只提供BCI本地默认路径，关键资产仍由CLI显式传入。OSG-PC、SKNC与SRTP均
-已封存non-pass；SRTP config为`profile_result_sealed_nonpass`，两个OOM failure artifacts保留且同配置重跑、
-deployment、formal全部关闭。PCUG也已因live Phase-A wall non-pass并封存；不能从旧文档恢复PCUG/Reward/OSG/
-SKNC/SRTP命令或resume其checkpoint。PCUG与SRTP边界分别见
-[`docs/action_forecast_writer_paired_candidate_update_guard_design.md`](docs/action_forecast_writer_paired_candidate_update_guard_design.md)和
-[`docs/action_forecast_writer_shared_reward_tangent_projection_design.md`](docs/action_forecast_writer_shared_reward_tangent_projection_design.md)。
-Work-Queue PCUG已完成full mechanism profile并只因final negative-null失败退役。Negative-Preserving Candidate
-Guard随后修复该接口：matched reprofile 20/20全过，部署B8/16/32均稳定并选择B32，formal五宏约束也持续健康；
-但macro5 strict paired400只有`135/400`、breadth5、old134→NPCG=`117/18/17`，因此正式non-pass并关闭resume与
-controls。单变量公式、结果边界和快速否决门见
-[`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)；
-WQ-PCUG sealed结果见
-[`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)。
+主要文档：
 
-GPU工作每次同时live检查`gpu01/gpu02`，选一个节点并使用至多6张健康、低利用率、显存余量足够且能提高
-吞吐的A40；非零显存或低利用率进程不自动排除，但不得抢占或明显干扰他人。不等待凑满6卡、不dummy占位、
-不跨节点拼碎片。
-多卡训练遵守`NCCL_P2P_DISABLE=1`、NUMA physical/local rank映射和deferred-NCCL。
+- [`AGENTS.md`](AGENTS.md)：仓库科学、信息墙、GPU、存储、Git与实验规则；
+- [`docs/current_owner_requirements.md`](docs/current_owner_requirements.md)：昨晚讨论形成的目标、原则、完整架构
+  推导、方法/目标边界和当前协作要求；
+- [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一实时状态与run identity；
+- [`docs/execution_brief.md`](docs/execution_brief.md)：当前实验合同和下一裁决流程；
+- [`docs/research_history.md`](docs/research_history.md)：所有历史路线的精炼连续认知与禁止重复项；
+- [`docs/concept.md`](docs/concept.md)：稳定问题定义；
+- [`docs/novelty_and_landscape.md`](docs/novelty_and_landscape.md)：论文claim与baseline边界；
+- [`task_plan.md`](task_plan.md)：长期迭代阶段；
+- [`findings.md`](findings.md)：当前保留的第一性原理结论。
 
-吞吐优先：接受正常BF16/TF32/batch低位差异，不为微小roundoff固定batch1、重复forward、扩dtype或逐tensor
-校验；不新增SHA-256/MD5或大量内容hash。正式launch仍必须保证信息墙、pairing、finite、OOM、asset、
-checkpoint与resume合同正确。
+## Runtime principles
 
-## Documentation
+GPU launch前同时live检查gpu01/gpu02，单节点使用至多6张真正合适且能提高吞吐的A40；有几张用几张，不等凑满、
+不跨节点、不dummy占卡。少量显存或低利用率进程不自动排除，只要余量足够且不干扰他人。多卡训练固定
+`NCCL_P2P_DISABLE=1`、GPU-local NUMA mapping与deferred NCCL。
 
-修改或运行前完整阅读[`AGENTS.md`](AGENTS.md)以及其中的最小清单。主要入口：
-
-- [`docs/current_owner_requirements.md`](docs/current_owner_requirements.md)：当前session的owner目标、方法要求、
-  设计偏好、开放变量和协作方式；不是handoff或某个候选架构；
-- [`docs/action_forecast_writer_dynamic_k_backbone_memory_design.md`](docs/action_forecast_writer_dynamic_k_backbone_memory_design.md)：
-  当前active Dynamic-K、真实Action Expert memory、fresh rank-8 Writer架构与可证伪实验合同；
-- [`docs/active_session_handoff.md`](docs/active_session_handoff.md)：唯一当前状态、资产与开放问题；
-- [`docs/execution_brief.md`](docs/execution_brief.md)：通用实验、评测、GPU与吞吐合同；
-- [`docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md`](docs/action_forecast_writer_cross_video_equivariant_candidate_guard_design.md)：
-  CVEG的单companion采样、equivariance公式、机制门、formal稳定性non-pass与directional paired400边界；
-- [`docs/action_forecast_writer_negative_preserving_candidate_guard_design.md`](docs/action_forecast_writer_negative_preserving_candidate_guard_design.md)：
-  retired NPCG的negative-preserving correction公式、formal结果与否决边界；
-- [`docs/action_forecast_writer_work_queue_candidate_guard_design.md`](docs/action_forecast_writer_work_queue_candidate_guard_design.md)：
-  retired WQ-PCUG、task-addressable queue与sealed negative-null non-pass；
-- [`docs/action_forecast_writer_success_key_nullspace_consolidation_design.md`](docs/action_forecast_writer_success_key_nullspace_consolidation_design.md)：
-  当前唯一SKNC单变量设计、nullspace公式与证伪门；
-- [`docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md`](docs/action_forecast_writer_on_policy_success_guarded_program_credit_design.md)：
-  retired OSG-PC设计、工程non-pass与负结果边界；
-- [`docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md`](docs/action_forecast_writer_policy_innovation_goal_causal_key_design.md)：
-  PICK-GC设计、formal结果与退役边界；
-- [`docs/research_history.md`](docs/research_history.md)：完整精炼实验谱系与禁止重复项；
-- [`task_plan.md`](task_plan.md)：当前整理/交接状态；
-- [`findings.md`](findings.md)：最重要的第一性原理结论；
-- [`docs/concept.md`](docs/concept.md)：长期科学定义。
-
-大量旧design和逐日ledger已从active tree移除；它们仍可由Git commit`3a6f801`精确读取。正式artifacts和
-关键结果没有因文档/代码退役而删除。
+吞吐优先，接受正常BF16/TF32、batch和kernel低位差异；不为防御性安心固定batch1、重复forward、扩dtype、逐tensor
+扫描或新增内容hash。正式launch仍保证信息墙、pairing、finite、OOM、asset、checkpoint与resume语义正确。

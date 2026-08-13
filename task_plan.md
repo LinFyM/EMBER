@@ -1,6 +1,6 @@
 # EMBER Persistent Plan
 
-更新时间：2026-08-13。本文只记录长期Goal与当前迭代阶段；实时run状态见
+更新时间：2026-08-14。本文只记录长期Goal与当前迭代阶段；实时run状态见
 `docs/active_session_handoff.md`，历史实验见`docs/research_history.md`。
 
 ## Goal
@@ -20,7 +20,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - 方法不依赖teacher actions、task ID、held expert bank、挑video、多LoRA/checkpoint融合或language-only shortcut；
 - 从fresh训练可复现，不长期依赖旧checkpoint换手。
 
-## Completed iteration: Direct-Family-B K1
+## Completed iteration: Dynamic-K through Visual-Value
 
 - [x] 综合owner昨晚要求、SHINE/Doc2LoRA类Hypernetwork原则和EMBER历史实验，形成Dynamic-K、真实backbone
   memory、per-video causal Program、cross-video set、policy group/rank M2P与完整rank8 LoRA数据流；
@@ -55,7 +55,21 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成macro150 strict=`86/400`、100→150 churn48、三点union/intersection与effective-BA方向分析；
 - [x] 完成old134同task 3-video-fit/1-video-held-out A行空间分析：overall保留`.9997255`，确认候选A应跨
   same-task视频稳定并由完整Program生成；
-- [ ] 完成150→200 exact-resume、macro200 strict400与完整相邻checkpoint共同积累裁决。
+- [x] 完成150→200 exact-resume与macro200 strict=`96/400`；完整曲线`88/86/86/96`终局non-pass；
+- [x] 完成macro150→200=`71/25/15` retained/gained/lost、相对old134=`68/28/66`与compiler138=`73/23/65`
+  的严格裁决，确认晚期净增仍集中在少数task且没有共同积累；
+- [x] 写Dynamic-K Task-Grounded Full-Factor单变量authority：输入、前端、Program、rank8与B20全部不变，只让
+  同一Program生成`A_template + dynamic residual A`和dynamic B；
+- [x] 原位替换唯一canonical mapper并切换fresh-incompatible config/checkpoint/eval schema；
+- [x] 完成step0 identity、A/B梯度staging、顺序/set/动态K与freeze边界机制验证；全量CPU=`383 passed`。
+
+## Active iteration: Task-Grounded Full-Factor Rank-8
+
+- [ ] 在clean pushed commit上完成双节点live GPU选择、quota检查与full24 B20 profile；
+- [ ] profile通过后fresh训练macro0→100，checkpoint every25；
+- [ ] 完成macro50/100 single-checkpoint K1 strict paired correct400与逐task/churn比较；
+- [ ] 只有相对fixed-A96出现实质改善或可信上升趋势才续到150/200；最晚macro200以best≥125、breadth≥6裁决；
+- [ ] 若Full-Factor仍失败，终止当前前端的A/B mapper小修，转以v6-fast为性能骨架做受控机制移植。
 
 ## Continuous loop after this result
 
@@ -81,5 +95,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前工作由task-grounded视觉Value同一fresh run的macro150/200 strict终局曲线决定；若non-pass，
-下一候选只开放task/video-conditioned direct A readout，不改变已接通的视频与Program链路。
+无权限或资产阻塞。当前等待Full-Factor live profile；旧Visual-Value训练与评测均已结束且无活动进程。

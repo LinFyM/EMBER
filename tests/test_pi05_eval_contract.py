@@ -469,7 +469,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     shared_writer = inputs[4]
     shared_writer.update(
         schema_version=(
-            "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_"
+            "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_"
             "eval_adapter_v1"
         ),
         kind="dynamic_k_backbone_memory_writer",
@@ -478,12 +478,12 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         "path": str(
             ROOT
             / (
-                "configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_"
+                "configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_"
                 "rank8_v1.json"
             )
         ),
         "schema": (
-            "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_"
+            "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_"
             "as_writer_v1"
         ),
     }
@@ -516,7 +516,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         _build_writer_contract(
             inputs=tuple(inputs),
             output_dir=tmp_path / "out-b16",
-            arm="dynamic_k_task_grounded_visual_value_rank8_correct",
+            arm="dynamic_k_task_grounded_full_factor_rank8_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=16,
@@ -524,7 +524,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     exact = _build_writer_contract(
         inputs=tuple(inputs),
         output_dir=tmp_path / "out-b8",
-        arm="dynamic_k_task_grounded_visual_value_rank8_correct",
+        arm="dynamic_k_task_grounded_full_factor_rank8_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=8,

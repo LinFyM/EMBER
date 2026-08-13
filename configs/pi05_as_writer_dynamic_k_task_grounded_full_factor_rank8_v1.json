@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_as_writer_v1",
-  "status": "formal_ready_from_matched_live_profile",
+  "schema_version": "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_v1",
+  "status": "active_cpu_ready_awaiting_live_profile",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -10,7 +10,7 @@
     "tokenizer_manifest": {"path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json"}
   },
   "method": {
-    "name": "dynamic_k_task_grounded_visual_value_rank8_writer",
+    "name": "dynamic_k_task_grounded_full_factor_rank8_writer",
     "writer_input": "exact task language plus one to four action-hidden same-task teacher videos",
     "deployment_output": "one complete 38-target rank8 task-conditioned LoRA",
     "source_policy": "frozen_pi05_libero_source_policy"
@@ -29,7 +29,7 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_dynamic_k_task_grounded_visual_value_rank8_v1",
+    "architecture": "pi05_dynamic_k_task_grounded_full_factor_rank8_v1",
     "generated_adapter": "complete_pi05_task_specific_rank8_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -44,7 +44,7 @@
     "program_width": 256,
     "mapper_width": 1024,
     "mapper_project": "shared_bias_free_256_to_1024",
-    "lora_a": "fixed_template_without_dynamic_a_head",
+    "lora_a_readout": "four_bias_free_zero_initialized_direct_shape_family_residual_linears_shared_across_layers_and_rank",
     "lora_b_readout": "four_bias_free_zero_initialized_direct_shape_family_linears_shared_across_layers_and_rank",
     "temporal_semantic_address": "per_video_absolute_mean_memory_to_temporal_query_only",
     "task_grounded_visual_evidence": "same_joint_forward_task_query_to_raw_patch_value_then_ordered_difference_and_terminal_goal",
@@ -73,7 +73,7 @@
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "dynamic_k_task_grounded_visual_value_correct_video_functional_as",
+    "method": "dynamic_k_task_grounded_full_factor_correct_video_functional_as",
     "update_topology": "one_complete_full24_equal_task_mean_per_macro",
     "global_tasks_per_optimizer_update": 24,
     "task_assignment": "cost_balanced_long_first_dynamic_uneven",
@@ -129,23 +129,8 @@
     "stop_after_macro": 1
   },
   "formal_run": {
-    "status": "sealed",
-    "profile_evidence": {
-      "source_commit": "690dea5ea609b52ef72392cab1f02bdce308ab39",
-      "run_root": "runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_optimized_profile_r4_b20_690dea5_gpu02_20260813",
-      "world_size": 4,
-      "macro_seconds": 49.07749792607501,
-      "matched_baseline_root": "runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_matched_profile_r4_b20_3866f50_gpu02_20260813",
-      "matched_baseline_macro_seconds": 46.22421345184557,
-      "matched_throughput_ratio": 1.061727053013068,
-      "max_cuda_allocated_bytes": 39302833152,
-      "max_cuda_reserved_bytes": 45560627200,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "global_mean_functional_loss": 0.15610782212267318,
-      "global_mean_consistency_loss": 0.009484296043713888,
-      "gradient_norm_before_clip": 0.06828746944665909,
-      "completion_macro": 1
-    },
+    "status": "unsealed_pending_live_profile",
+    "profile_evidence": null,
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 400,
     "per_task_action_batch_size": 20,

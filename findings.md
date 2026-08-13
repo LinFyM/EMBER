@@ -1,6 +1,6 @@
 # EMBER Findings
 
-更新时间：2026-08-13。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
+更新时间：2026-08-14。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
 `docs/research_history.md`；当前run只取`docs/active_session_handoff.md`。
 
 ## 1. 当前经验边界
@@ -18,7 +18,7 @@
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
 | Direct-Family-B K4 deployment | 98 | — | — | — | — | set把same-task方差降约6.3x，却稳定同一错误task mean |
-| Task-Grounded Visual-Value rank8 macro50/100 | 88/86 | — | — | — | — | 视觉Value分化BA，但相邻checkpoint仍以churn50换手 |
+| Task-Grounded Visual-Value rank8 | 88/86/86/96 | — | — | — | — | 视觉Value分化BA，但四点都远低于门且持续换手 |
 
 Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
 直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
@@ -43,6 +43,11 @@ macro100进一步得到`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。相
 `62 retained/24 gained/26 lost`、churn50，两点union=`112`而single best仅88。BA 50→100平均cosine`.809`、
 relative-L2`.696`；action norm ratio近1但方向cosine仅`.739`。尤其Object1总数同为34却7 gain/7 lost，证明
 “总分稳定”不是能力稳定；当前functional credit继续在task和episode decision boundary之间换手。
+
+完整终点macro150/200=`86/96`，macro200 per-task=`1/0/37/2/0/42/13/1`，top3占`92/96`。150→200虽为
+`71 retained/25 gained/15 lost`、净增10，仍有churn40且没有解锁持续失败的Spatial3/Goal3；相对old134为
+`68/28/66`，相对compiler138为`73/23/65`。因此四点`88/86/86/96`终局否决当前fixed-A组合；不能用晚期净增、
+union或继续训练为它辩护。
 
 ## 2. 真正的学习问题
 
@@ -164,7 +169,7 @@ experts可作train24 privileged teacher或几何参照，不能在held部署成�
 
 ## 10. Fixed random A is a reachable-subspace bottleneck, not a rank-8 capacity result
 
-当前Direct-Family-B及Visual-Value都只生成B，A固定为step0随机template。对`W=B@A`做低秩QR能量投影后，
+已完成的Direct-Family-B及Visual-Value都只生成B，A固定为step0随机template。对`W=B@A`做低秩QR能量投影后，
 old134 validation的32套强LoRA中，逐样本最优rank8平均可保留`.99999946` effective-BA能量，当前固定随机A
 行空间只保留`.0195042`。24个step2000 task experts中对应为`.998094/.184501`。所以“rank8不够”与“任意
 task都只能写入同一随机输入行空间”是两个不同假设；证据支持后者是严重限制，不能用增加rank或追stable rank救。
@@ -180,6 +185,11 @@ overall effective-BA能量保留`.9997255`，q/v/action=`.9997540/.9996504/.9992
 成为不受约束的video-specific A。现有Dynamic-K的shared Program与singleton Program一致性正好可把这个归纳偏置传给
 同一Program上的dynamic-A readout，不需要另造expert bank、task ID route或额外一致性损失。
 
+当前Full-Factor successor严格只开放这一接口：同一`20×8`Program经同一shared projector同时进入四个direct
+A residual heads与四个direct B heads；全部zero-init，故step0仍为`A=A_template,B=0`。它不是增加rank、expert
+basis或第二套LoRA，也不改变视频表示与训练objective。若它不能把absolute明显拉回至少125附近，就应停止当前
+前端的mapper修补，回到v6-fast骨架做受控桥接。
+
 ## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；
@@ -194,10 +204,10 @@ overall effective-BA能量保留`.9997255`，q/v/action=`.9997540/.9996504/.9992
 10. Balanced residual、RLS、Reward-Credit依次定位跨video正交、offline/on-policy错位和native-factor精度边界；
 11. uniform rank14证明compression和regeneration可分别破坏old support；
 12. Dynamic-K 100与semantic-address 101把断点推进到Program→mapper→policy direction；
-13. Visual-Value macro50/100进一步证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy
-    有用方向，且aggregate稳定时仍可发生显著checkpoint churn。
-14. Visual-Value macro150仍为86；50/100/150 union125、best88、intersection53，100→150 BA relative-L2`.528`，
-    证明近似平坦aggregate持续掩盖episode和policy方向换手。
+13. Visual-Value四点`88/86/86/96`证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy
+    有用方向，且aggregate近稳时仍可发生显著checkpoint churn；该组合终局non-pass。
+14. fixed-A能量投影与same-task video LOO把最早可隔离接口推进到task/video-conditioned A row space；它只授权
+    Full-Factor单变量实验，不证明动态A一定有效。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

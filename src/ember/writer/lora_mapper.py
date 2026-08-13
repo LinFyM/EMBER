@@ -112,13 +112,22 @@ class CompleteLoRAMapper(torch.nn.Module):
         self.rank = ranks.pop()
         self.program_width = int(program_width)
         self.project = torch.nn.Linear(program_width, mapper_width, bias=False)
+        self.family_a_readouts = torch.nn.ModuleDict(
+            {
+                family: torch.nn.Linear(mapper_width, shapes[0], bias=False)
+                for family, shapes in self._FAMILY_SHAPES.items()
+            }
+        )
         self.family_b_readouts = torch.nn.ModuleDict(
             {
                 family: torch.nn.Linear(mapper_width, shapes[1], bias=False)
                 for family, shapes in self._FAMILY_SHAPES.items()
             }
         )
-        for readout in self.family_b_readouts.values():
+        for readout in (
+            *self.family_a_readouts.values(),
+            *self.family_b_readouts.values(),
+        ):
             torch.nn.init.zeros_(readout.weight)
         self.tensor_specs = tensor_specs
         self._template_buffers: dict[str, str] = {}
@@ -169,6 +178,16 @@ class CompleteLoRAMapper(torch.nn.Module):
         if program.ndim != 4 or tuple(program.shape[1:]) != expected:
             raise LoRAMapperError("layer/rank program topology changed")
         projected = self.project(program)
+        family_a = {
+            "q": self.family_a_readouts["q"](
+                projected[:, 1 : self.EXPERT_LAYERS + 1]
+            ),
+            "v": self.family_a_readouts["v"](
+                projected[:, 1 : self.EXPERT_LAYERS + 1]
+            ),
+            "action_in": self.family_a_readouts["action_in"](projected[:, 0]),
+            "action_out": self.family_a_readouts["action_out"](projected[:, -1]),
+        }
         family_b = {
             "q": self.family_b_readouts["q"](
                 projected[:, 1 : self.EXPERT_LAYERS + 1]
@@ -185,7 +204,10 @@ class CompleteLoRAMapper(torch.nn.Module):
             family, group, factor = self._decoding[item.name]
             template = getattr(self, self._template_buffers[item.name])
             if factor == 0:
-                value = template[None].expand(program.shape[0], *template.shape)
+                rows = family_a[family]
+                if family in {"q", "v"}:
+                    rows = rows[:, group - 1]
+                value = rows.to(template.dtype) + template[None]
             else:
                 rows = family_b[family]
                 if family in {"q", "v"}:

@@ -5,6 +5,17 @@ import torch
 from fixtures.writer_model import _inputs, _model
 
 
+def _effective_sum(state: dict[str, torch.Tensor]) -> torch.Tensor:
+    modules: dict[str, dict[str, torch.Tensor]] = {}
+    for name, value in state.items():
+        module, factor = name.rsplit(".lora_", 1)
+        modules.setdefault(module, {})[factor[0]] = value
+    return sum(
+        torch.matmul(pair["B"].float(), pair["A"].float()).sum()
+        for pair in modules.values()
+    )
+
+
 def test_dynamic_k_writer_starts_at_exact_complete_rank8_identity() -> None:
     model, template = _model()
     output = model(*_inputs(), policy=torch.nn.Identity())
@@ -54,9 +65,11 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
         *_inputs(), policy=torch.nn.Identity()
     )
     assert consistency.ndim == 0 and consistency.item() > 0
-    sum(value.float().sum() for value in generated.values()).backward()
+    _effective_sum(generated).backward()
     assert model.lora_mapper.family_b_readouts["q"].weight.grad is not None
     assert model.lora_mapper.family_b_readouts["q"].weight.grad.abs().sum() > 0
+    assert model.lora_mapper.family_a_readouts["q"].weight.grad is not None
+    assert not model.lora_mapper.family_a_readouts["q"].weight.grad.count_nonzero()
     assert model.lora_mapper.project.weight.grad is not None
     assert not model.lora_mapper.project.weight.grad.count_nonzero()
     assert model.memory_program.dynamic_projection.weight.grad is not None
@@ -67,10 +80,20 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
     model.zero_grad(set_to_none=True)
     torch.nn.init.normal_(model.lora_mapper.family_b_readouts["q"].weight, std=0.01)
     torch.nn.init.normal_(model.lora_mapper.family_b_readouts["v"].weight, std=0.01)
+    torch.nn.init.normal_(
+        model.lora_mapper.family_b_readouts["action_in"].weight, std=0.01
+    )
+    torch.nn.init.normal_(
+        model.lora_mapper.family_b_readouts["action_out"].weight, std=0.01
+    )
     generated, consistency = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
     )
-    (sum(value.float().sum() for value in generated.values()) + consistency).backward()
+    (_effective_sum(generated) + consistency).backward()
+    assert all(
+        readout.weight.grad is not None and readout.weight.grad.abs().sum() > 0
+        for readout in model.lora_mapper.family_a_readouts.values()
+    )
     assert model.memory_program.dynamic_projection.weight.grad is not None
     assert model.memory_program.dynamic_projection.weight.grad.abs().sum() > 0
     assert model.memory_program.semantic_address_projection.weight.grad is not None

@@ -212,7 +212,7 @@ def writer_trainable_contract(
     ):
         raise WriterModelError("dynamic-K Writer freeze boundary changed")
     return {
-        "object": "dynamic_k_task_grounded_visual_value_rank8_writer_only",
+        "object": "dynamic_k_task_grounded_full_factor_rank8_writer_only",
         "writer_parameter_count": sum(value.numel() for value in writer.parameters()),
         "writer_trainable_parameter_count": sum(value.numel() for _, value in trainable),
         "writer_trainable_parameter_tensors": len(trainable),

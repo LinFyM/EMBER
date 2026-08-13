@@ -37,8 +37,8 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop节点与当前active implementation都是**Dynamic-K Task-Grounded Visual-Value Rank-8
-Writer**。它忠实落实owner讨论、
+最新完成closed-loop是**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**；当前active implementation是
+**Dynamic-K Task-Grounded Full-Factor Rank-8 Writer**。它忠实落实owner讨论、
 SHINE/Doc2LoRA类成熟Hypernetwork原则与EMBER历史证据：
 
 ```text
@@ -49,32 +49,26 @@ exact language + K=1..4 same-task action-hidden ordered videos
     -> causal temporal encoder
     -> permutation-invariant cross-video set aggregation
     -> policy-group/rank M2P
-    -> shared projector + direct shape-family B readouts
+    -> shared projector + direct shape-family A-residual/B readouts
     -> one complete 38-target rank-8 task LoRA
 ```
 
 Dynamic-K backbone-memory、semantic-address与Direct-Family-B前代macro50 K1 strict分别为`100/101/102`，
 均已退役。Direct-Family-B同一checkpoint的K4=`98`；set把same-task effective-BA方差约降`6.3x`却没有修正
-task mean。退役设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`；当前design
-authority为`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
+task mean。Visual-Value完整曲线为`88/86/86/96`，macro200 top3=`92/96`，终局non-pass。当前design
+authority为`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`。
 
-当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→150，K1--K4全程各6；K1 strict
-correct400在macro50/100/150为`88/86/86`，breadth为`5/6/6`，macro150 per-task=
-`1/0/36/1/1/40/7/0`。macro100→150严格同episode为`62 retained/24 gained/24 lost`、churn48；三点success
-union=`125`、single-best gap=`37`、共同成功仅`53`，说明aggregate近似不变但能力仍明显换手。effective BA同期
-平均cosine`.878`、relative-L2`.528`、norm ratio`1.081`，action部分cosine`.859`、relative-L2`.621`；这不是
-整体scale漂移或固定成功集合上的平台，而是task-specific policy方向持续重写。
-
-macro50/100都不是终局门：历史v6-fast也从较弱早期继续上升。同一root已从完整macro150 checkpoint锁定world3
-topology exact-resume 150→200；macro150 K1 strict400已完整结束。按预注册合同完成macro200，再以absolute、
-breadth与相邻checkpoint共同积累决定是否终止或进入下一单变量successor。
+Visual-Value macro200 strict=`96/400`、breadth6、per-task=`1/0/37/2/0/42/13/1`；150→200仍churn40，完整
+曲线没有达到125门。当前Full-Factor只让同一20x8 Program生成`A_template + dynamic residual A`和dynamic B；
+其余joint multimodal evidence、ordered visual D/G、causal temporal、dynamic-K set、rank8和B20全部不变。
+全部A/B heads zero-init，step0严格identity；当前CPU=`383 passed`，尚无GPU profile或closed-loop结果。
 
 当前另有一个只作后续定位的fixed-A reachable-subspace结果：对old134 validation LoRA，rank8逐样本最优可保留
 `99.9999%` effective-BA能量，而当前固定随机A行空间只保留`1.95%`；对24个step2000 task experts分别为
 `99.81%`与`18.45%`。一套在train24上最优的共享rank8 A虽可保留train expert的`94.06%`，应用到old134 held
 LoRA仍只有`6.81%`。它不证明dynamic A会提高closed-loop，但明确区分了“rank8容量不足”和“所有task被钉在同一
-随机输入行空间”。只有完整macro50/100/150/200曲线non-pass后，才允许把task/video-conditioned direct A+B
-readout作为下一单变量候选；不得换成静态expert A、恢复旧前端或提前中止当前曲线。精确root和实时状态只取
+随机输入行空间”。该结果已授权当前task/video-conditioned direct A+B readout单变量；不得换成静态expert A或
+同时恢复旧前端。精确root和实时状态只取
 `docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule

@@ -31,7 +31,18 @@ def _template(rank: int = 8) -> dict[str, torch.Tensor]:
     return state
 
 
-def test_complete_mapper_starts_at_functional_identity_and_opens_b_only() -> None:
+def _effective_sum(state: dict[str, torch.Tensor]) -> torch.Tensor:
+    modules: dict[str, dict[str, torch.Tensor]] = {}
+    for name, value in state.items():
+        module, factor = name.rsplit(".lora_", 1)
+        modules.setdefault(module, {})[factor[0]] = value
+    return sum(
+        torch.matmul(pair["B"].float(), pair["A"].float()).sum()
+        for pair in modules.values()
+    )
+
+
+def test_complete_mapper_starts_at_functional_identity_and_stages_full_factors() -> None:
     template = _template()
     mapper = CompleteLoRAMapper(
         build_lora_tensor_specs(template),
@@ -44,20 +55,25 @@ def test_complete_mapper_starts_at_functional_identity_and_opens_b_only() -> Non
     for name, value in output.items():
         expected = template[name][None].expand_as(value)
         assert torch.equal(value, expected)
-    loss = sum(value.square().mean() for name, value in output.items() if ".lora_B." in name)
-    loss.backward()
+    _effective_sum(output).backward()
     assert all(
-        readout.weight.grad is not None
+        readout.weight.grad is not None and readout.weight.grad.abs().sum() > 0
         for readout in mapper.family_b_readouts.values()
+    )
+    assert all(
+        readout.weight.grad is not None and not readout.weight.grad.count_nonzero()
+        for readout in mapper.family_a_readouts.values()
     )
     assert program.grad is not None
     assert torch.count_nonzero(program.grad) == 0
     assert mapper.project.weight.grad is not None
     assert torch.count_nonzero(mapper.project.weight.grad) == 0
-    assert all(readout.bias is None for readout in mapper.family_b_readouts.values())
-    assert not any(
-        ".hidden." in name or ".a." in name or "dynamic_a" in name
-        for name in mapper.state_dict()
+    assert all(
+        readout.bias is None
+        for readout in (
+            *mapper.family_a_readouts.values(),
+            *mapper.family_b_readouts.values(),
+        )
     )
 
 
@@ -69,7 +85,10 @@ def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
         program_width=256,
         mapper_width=128,
     )
-    for readout in mapper.family_b_readouts.values():
+    for readout in (
+        *mapper.family_a_readouts.values(),
+        *mapper.family_b_readouts.values(),
+    ):
         torch.nn.init.normal_(readout.weight, std=0.01)
     program = torch.randn(3, 20, 8, 256)
     output = mapper(program)
@@ -78,7 +97,6 @@ def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
     assert any(
         not torch.equal(value[0], value[1])
         for name, value in output.items()
-        if ".lora_B." in name
     )
     projected = mapper.project(program)
     q_name = next(
@@ -95,3 +113,16 @@ def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
         projected[:, 0]
     ).transpose(-1, -2)
     torch.testing.assert_close(output[action_in_name], expected_action_in)
+
+    q_a_name = q_name.replace(".lora_B.", ".lora_A.")
+    expected_q_a = (
+        mapper.family_a_readouts["q"](projected[:, 8]) + template[q_a_name]
+    )
+    torch.testing.assert_close(output[q_a_name], expected_q_a)
+
+    mapper.zero_grad(set_to_none=True)
+    _effective_sum(output).backward()
+    assert all(
+        readout.weight.grad is not None and readout.weight.grad.abs().sum() > 0
+        for readout in mapper.family_a_readouts.values()
+    )

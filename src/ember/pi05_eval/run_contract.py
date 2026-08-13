@@ -64,6 +64,9 @@ _WRITER_THROUGHPUT_BY_SCHEMA = {
     "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_eval_adapter_v1": (
         _BATCH_THROUGHPUT_POLICY
     ),
+    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_eval_adapter_v1": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
 }
 
 

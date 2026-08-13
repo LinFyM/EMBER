@@ -1,6 +1,6 @@
 # EMBER Active Session State
 
-更新时间：2026-08-13。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
+更新时间：2026-08-14。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
 表示当时时点。稳定目标与owner要求见`docs/current_owner_requirements.md`，历史结果见`docs/research_history.md`。
 
 ## 1. Current truth
@@ -9,13 +9,15 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop节点与active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；fresh
-  macro0→100已完成，macro50/100 K1 strict=`88/86`、breadth=`5/6`，尚未达到长期目标；
-- macro50→100严格同episode为`62 retained/24 gained/26 lost`、churn50，success union=`112`、single-best
-  gap=`24`。同期BA平均cosine`.809`、relative-L2`.696`、norm ratio`1.174`；action norm ratio`.987`但cosine
-  仅`.739`。当前最早断点仍是visual evidence经B20 functional credit形成的policy direction缺少on-policy
-  usefulness并持续task-specific重写，不是视频未读、set噪声、近identity或整体scale；
-- 同一root当前锁定gpu01物理`4,5,6`、world3 exact-resume 150→200；不以macro50/100早期点提前终止；
+- 最新完成closed-loop：Dynamic-K Task-Grounded Visual-Value完整曲线=`88/86/86/96`；macro200 breadth6、
+  per-task=`1/0/37/2/0/42/13/1`、top3=`92/96`，未达到125门，终局non-pass；
+- macro150→200严格为`71 retained/25 gained/15 lost`、churn40；相对old134=`68/28/66`、compiler138=
+  `73/23/65`。晚期净增仍高度集中，不是shared capability共同积累；
+- 当前active implementation：Dynamic-K Task-Grounded Full-Factor Rank-8 Writer；只在同一projected Program上
+  新增四个zero-init direct family-A residual readouts，其他输入、前端、Program、rank8和B20均不变；
+- active design=`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`；全量CPU=`383 passed`，
+  Writer trainable参数`12,728,576`，新增A heads=`3,178,496`；尚无GPU profile或closed-loop结果；
+- 当前没有EMBER GPU训练或评测进程；下一步是clean pushed commit上的双节点live选择与full24 B20 profile；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -154,7 +156,7 @@ task mean。当前最早失效接口是set之前的task-grounded高层evidence/P
 而fail closed；queue保持60 pending、无rollout/cache。`73b9514`只修复该窄工程合同并有回归测试，不改变Writer、
 checkpoint、schedule或科学panel。
 
-## 7. Active Task-Grounded Visual-Value implementation and profile
+## 7. Completed Task-Grounded Visual-Value implementation and profile
 
 - canonical实现`9d43e82`；数学等价吞吐优化`690dea5`；均已push，完整CPU=`378 passed`；
 - 唯一主变量是同一次joint forward中的task-token query/raw-patch Value，按真实输入顺序重算visual D/G，再以
@@ -177,10 +179,10 @@ checkpoint、schedule或科学panel。
 - split：`configs/libero_24_8_8_v1/`；
 - LIBERO assets：`.env.local`中的`EMBER_LIBERO_ASSETS_ROOT`；
 - task experts：`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`中的统一step2000；
-- current config：`configs/pi05_as_writer_dynamic_k_task_grounded_visual_value_rank8_v1.json`；
+- historical config由commit与formal root保存；当前active config见§11；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
-## 9. Active formal curve and immediate next evidence
+## 9. Completed Visual-Value formal curve
 
 K4裁决已经完成，不能再通过增加K、调set或mapper救这个checkpoint。下一fresh design保留动态K1--K4、真实
 image/language/Action-probe context中的8个memory tokens、逐video保序、跨video置换不变set、20×8 M2P、
@@ -270,7 +272,7 @@ macro100 K1 strict400 root已完整结束：
   单调，正式artifact为同root下`benchmark_comparison.json`与`checkpoint_transition_geometry_macro0050_to0100.json`。
 
 macro100→150随后以相同world3 topology正常完成：metrics共150条连续finite，macro150 checkpoint含完整
-`writer.safetensors`、`trainer_state.pt`和3个rank state，`completion.completed_macro=150`。当前从该checkpoint
+`writer.safetensors`、`trainer_state.pt`和3个rank state，`completion.completed_macro=150`。随后从该checkpoint
 exact-resume 150→200，macro151准确从`task_visit=150`恢复，K1--K4各6、`64.127s`、finite。
 
 macro150 K1 strict400已在clean frozen evaluator `99c2323`完整结束：
@@ -294,8 +296,7 @@ GPU0已占36.6GiB，GPU5占30.7GiB且100% util，GPU7占19.7GiB且91% util，均
   action为`.85946/.62125/1.14658`。正式artifact为同root下`benchmark_comparison.json`、
   `checkpoint_transition_geometry_macro0100_to0150.json`与`checkpoint_curve_success_sets_macro0050_0100_0150.json`。
 
-当前继续同topology训练并评测macro200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，
-才续到400。
+同topology训练与macro200评测已经完成；结果见§11。best未达125，按预注册门不续到400。
 
 ## 10. Fixed-A reachable-subspace diagnostic
 
@@ -325,5 +326,37 @@ video-specific噪声，而是跨same-task视频极稳定、同时不能由一套
 因此候选A必须由完整language+video Program生成并继承现有shared-vs-singleton Program一致性，不能变成task ID、
 language-only route或逐视频自由漂移；B及其余Program仍承载正确视频证据。该结论仍只界定结构，不替代closed-loop。
 
-完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/
-机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。
+完整曲线后的推进顺序保持：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority ->
+canonical实现/机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法
+变量，不是Goal。
+
+## 11. Macro200 terminal result and Full-Factor successor
+
+Visual-Value macro200 K1 strict root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0200_trainr3_evalr4_99c2323_gpu02_20260814`
+
+- 48/48 shards、400/400 rows、12/12 workers exit0、0 failed，wall=`1244.5794s`；
+- strict=`96/400`、breadth6、per-task=`1/0/37/2/0/42/13/1`、per-suite=`1/39/42/14`；
+- top3=`92/96=95.83%`；150→200=`71 retained/25 gained/15 lost`、churn40；
+- 相对Direct-B102=`74/22/28`，old134=`68/28/66`，compiler138=`73/23/65`，online128=`74/22/54`；
+- 完整曲线`88/86/86/96`，best远低于125，按门终局non-pass；不resume到400、不补五臂。
+
+active Full-Factor authority：
+`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`。
+
+当前canonical graph：
+
+```text
+exact language + dynamic K ordered videos
+-> joint image/language/Action probes + 8 memory tokens
+-> task-grounded visual D/G -> causal temporal -> set -> 20x8 M2P
+-> shared 256->1024 project
+-> 4 direct dynamic-A residual heads + 4 direct dynamic-B heads
+-> one complete 38-target rank-8 LoRA
+```
+
+所有A/B heads zero-init，step0仍exact identity；首次effective-BA credit只打开B，B非零后A与上游获得真实
+functional gradient。未改变数据、K schedule、frame budget、objective、optimizer、rank或source policy。canonical
+config=`configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_rank8_v1.json`，当前状态为
+`unsealed_pending_live_profile`。CPU=`383 passed`，结构扫描无新增hard违规；等待live profile。

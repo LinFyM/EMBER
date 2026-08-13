@@ -1,4 +1,4 @@
-"""Configuration authority for the task-grounded visual-value Writer."""
+"""Configuration authority for the task-grounded full-factor Writer."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_as_writer_v1"
+    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_as_writer_launch_v1"
+    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_launch_v1"
 )
 
 
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_dynamic_k_task_grounded_visual_value_rank8_v1",
+        "architecture": "pi05_dynamic_k_task_grounded_full_factor_rank8_v1",
         "generated_adapter": "complete_pi05_task_specific_rank8_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -92,7 +92,10 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "program_width": 256,
         "mapper_width": 1024,
         "mapper_project": "shared_bias_free_256_to_1024",
-        "lora_a": "fixed_template_without_dynamic_a_head",
+        "lora_a_readout": (
+            "four_bias_free_zero_initialized_direct_shape_family_residual_"
+            "linears_shared_across_layers_and_rank"
+        ),
         "lora_b_readout": (
             "four_bias_free_zero_initialized_direct_shape_family_linears_"
             "shared_across_layers_and_rank"

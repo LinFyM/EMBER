@@ -1,4 +1,4 @@
-"""Configuration authority for the dynamic-K Backbone-Memory Writer."""
+"""Configuration authority for the direct-family-B Dynamic-K Writer."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_as_writer_v1"
+    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_as_writer_launch_v1"
+    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_as_writer_launch_v1"
 )
 
 
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_dynamic_k_semantic_address_backbone_memory_rank8_v1",
+        "architecture": "pi05_dynamic_k_semantic_address_direct_family_b_rank8_v1",
         "generated_adapter": "complete_pi05_task_specific_rank8_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -90,6 +90,13 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "backbone_layers": 18,
         "backbone_width": 1024,
         "program_width": 256,
+        "mapper_width": 1024,
+        "mapper_project": "shared_bias_free_256_to_1024",
+        "lora_a": "fixed_template_without_dynamic_a_head",
+        "lora_b_readout": (
+            "four_bias_free_zero_initialized_direct_shape_family_linears_"
+            "shared_across_layers_and_rank"
+        ),
         "temporal_semantic_address": (
             "per_video_absolute_mean_memory_to_temporal_query_only"
         ),
@@ -165,9 +172,7 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
     if config["formal_run"].get("status") == "sealed":
         evidence = config["formal_run"].get("profile_evidence", {})
         if (
-            evidence.get("source_commit")
-            != "05299b4d35f288cd5e0bbabfb61ccd132aeacdf9"
-            or int(evidence.get("world_size", 0)) != 5
+            int(evidence.get("world_size", 0)) not in {1, 2, 3, 4, 5, 6}
             or int(evidence.get("completion_macro", 0)) != 1
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0

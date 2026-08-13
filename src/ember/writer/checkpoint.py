@@ -21,8 +21,12 @@ from ember.pi05_source_checkpoint import (
 from ember.writer.errors import WriterModelError
 
 
-CHECKPOINT_SCHEMA = "ember_pi05_dynamic_k_writer_checkpoint_v1"
-DEPLOYMENT_CHECKPOINT_KIND = "dynamic_k_writer_macro_checkpoint"
+CHECKPOINT_SCHEMA = (
+    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_checkpoint_v1"
+)
+DEPLOYMENT_CHECKPOINT_KIND = (
+    "dynamic_k_semantic_address_direct_family_b_rank8_macro_checkpoint"
+)
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 
 

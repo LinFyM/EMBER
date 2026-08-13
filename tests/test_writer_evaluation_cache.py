@@ -384,16 +384,19 @@ def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
         {
             "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
             "kind": DYNAMIC_K_WRITER_KIND,
-            "arm": "dynamic_k_semantic_address_rank8_correct",
+            "arm": "dynamic_k_semantic_address_direct_family_b_rank8_correct",
             "config": {
                 "schema": (
-                    "ember_pi05_dynamic_k_semantic_address_backbone_memory_"
+                    "ember_pi05_dynamic_k_semantic_address_direct_family_b_"
                     "rank8_as_writer_v1"
                 )
             },
             "writer_asset": {
                 "reference": "dynamic-k:m50:rank8",
-                "kind": "dynamic_k_writer_macro_checkpoint",
+                "kind": (
+                    "dynamic_k_semantic_address_direct_family_b_rank8_"
+                    "macro_checkpoint"
+                ),
                 "method_macro": 50,
                 "writer_parameter_count": 123,
                 "generated_lora_tensor_count": 2,

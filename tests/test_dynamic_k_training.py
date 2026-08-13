@@ -58,10 +58,13 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_rank8_dynamic_k_semantic_address_config_is_mechanical_and_loadable() -> None:
+def test_rank8_dynamic_k_direct_family_b_config_is_mechanical_and_loadable() -> None:
     config = load_writer_config(
         REPO_ROOT
-        / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json"
+        / (
+            "configs/pi05_as_writer_dynamic_k_semantic_address_"
+            "direct_family_b_rank8_v1.json"
+        )
     )
     lora = load_pi05_lora_contract(
         REPO_ROOT / "configs/pi05_lora_rank8_writer_v1.json"
@@ -71,6 +74,12 @@ def test_rank8_dynamic_k_semantic_address_config_is_mechanical_and_loadable() ->
     assert config["data"]["dynamic_k_max"] == 4
     assert config["writer"]["temporal_semantic_address"] == (
         "per_video_absolute_mean_memory_to_temporal_query_only"
+    )
+    assert config["writer"]["lora_a"] == (
+        "fixed_template_without_dynamic_a_head"
+    )
+    assert config["writer"]["lora_b_readout"].startswith(
+        "four_bias_free_zero_initialized_direct_shape_family_linears"
     )
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
@@ -500,7 +509,10 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
 
     config = (
         REPO_ROOT
-        / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json"
+        / (
+            "configs/pi05_as_writer_dynamic_k_semantic_address_"
+            "direct_family_b_rank8_v1.json"
+        )
     )
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),

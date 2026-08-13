@@ -15,14 +15,19 @@ probe显示，correct task-mean offdiag cosine在M2P/final/shared project为`.49
 shared`256→1024`projector、fixed A、rank8和B20，只删除四个family hidden/GELU与无效dynamic-A heads，让四个
 bias-free zero-init family B linears直接读取projected Program并跨layer/rank共享。它不是target-owned独立heads，
 也不改成34-token/direct flat payload。完整公式、历史边界和formal门见
-`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。当前下一操作是fresh-incompatible
-canonical实现、CPU门、live full24 B20 profile、真实generation profile，再fresh`0→50`立即strict paired400。
+`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。fresh-incompatible canonical实现
+已完成：唯一mapper state keys为shared `project.weight`和四个`family_b_readouts.*.weight`，共`3,702,784`
+trainable参数；无hidden/GELU、dynamic-A或parallel fallback。旧失联`writer/architecture.py`已删除，fresh
+config/checkpoint/eval schema fail-closed，evaluation先处于deployment-profile pending。完整CPU回归在正式
+LIBERO assets环境下为`372 passed`。当前下一操作是clean commit/push、live full24 B20 profile、真实generation
+profile，再fresh`0→50`立即strict paired400。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、
 400/400 rows strict correct400=`134/400`、breadth6、per-task=`1/5/46/30/0/34/18/0`。相对old134严格配对为
 `114 retained/20 gained/20 lost`、churn40，suite净值=`+1/-6/-1/+6`。因此只过breadth门，不resume、不补
-same/wrong/shuffled/reversed/no-video controls、不扫小参数。当前没有active successor；本轮封存后暂停讨论。
+same/wrong/shuffled/reversed/no-video controls、不扫小参数。该路线没有active successor；当前active operation是
+direct-family-B Writer。
 
 PICK只因full48 condition=`483.61515>200`退役；PICK-GC随后把condition降到`152.61`并通过
 Program→LoRA→action、world4吞吐和zero-memory部署门，但formal fresh`0→10`后的single-checkpoint strict

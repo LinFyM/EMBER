@@ -21,7 +21,11 @@
   tokens、dynamic K、有向Procedure、set、M2P、shared`256→1024`projector、fixed A、rank8与B20 recipe；只删除
   四个family `1024→1024` hidden/GELU和无效dynamic-A heads，改为四个bias-free、zero-init、跨layer/rank共享的
   direct B linears。它不同于已失败的Target-Owned独立heads与K4 direct payload。fresh authority见
-  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`；当前尚未实现或launch。
+  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。canonical实现现已原位完成：mapper
+  只含shared projector与四个direct B readouts，共`3,702,784`个trainable参数/5个trainable tensors；旧
+  `ShapeFamilyMapper`和失联的第二份architecture contract已删除。fresh config/checkpoint/eval identity全部隔离，
+  evaluation处于`deployment_profile_pending`。加载LIBERO assets authority后的完整CPU回归=`372 passed`；
+  当前下一步是clean commit/push后的live full24 B20 profile，不得从旧semantic checkpoint迁移任何state。
 - Dynamic-K backbone-memory rank-8 Writer的首轮正式裁决已经完成并终局non-pass。clean `5319022`、world6
   fresh`0→50`用`1810.10s`完成，functional loss首/末5宏从`.15307`降到`.12095`，23/24 train tasks斜率为负；
   但macro50 single-checkpoint strict paired correct400只有`100/400`、breadth4，per-task（Spatial1/3,
@@ -55,7 +59,8 @@
 - MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
   （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
   相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。
-  除breadth外全部macro5门失败，不resume、不补controls、不小扫。当前没有active successor；本轮封存后暂停讨论。
+  除breadth外全部macro5门失败，不resume、不补controls、不小扫。该路线没有active successor；当前active operation
+  是上述direct-family-B Writer。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 - 最新uniform pivot-rank14路线已经完成全部预注册裁决并退役。PICK随后完成canonical implementation、

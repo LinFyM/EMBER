@@ -101,6 +101,8 @@ canonical仓库是`/data1/user/ymdai/projects/EMBER`，唯一主写分支是`cod
 18. `findings.md`
 19. `docs/concept.md`
 20. `docs/action_forecast_writer_dynamic_k_backbone_memory_design.md`
+21. `docs/action_forecast_writer_dynamic_k_semantic_address_design.md`
+22. `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`
 
 涉及历史架构细节时先查`docs/research_history.md`；只有确需精确旧公式/命令时再从Git commit`3a6f801`
 读取对应旧design、旧`findings.md`或旧`progress.md`。涉及迁移/路径恢复时再读

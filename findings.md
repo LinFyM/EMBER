@@ -48,6 +48,12 @@ same/wrong/shuffle/reverse=`.301/.984/1.355/2.162`压到B的`.190/.753/1.040/1.7
 删除这层非线性和未启用A heads，保留四family跨layer/rank共享与fixed-A完整LoRA。历史Target-Owned独立heads、
 SFB/store routing和K4 direct payload均未精确测试这个窄变量。
 
+该successor现已实现为一个shared bias-free `256→1024` projector加q/v/action-in/action-out四个bias-free、
+zero-init direct B linears；A只读取固定template buffer。canonical mapper从`11,075,584`参数（其中
+`7,897,088` trainable）降到`3,702,784`且全部trainable，只有5个trainable tensors。step0完整76 tensors保持
+identity，第一步只打开B，B打开后梯度能回到projector与视频上游；完整CPU`372 passed`。这些只证明机制闭合，
+不预测closed-loop性能。
+
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频特异性强，absolute不足 |

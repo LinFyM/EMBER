@@ -45,7 +45,9 @@
   Target-Spectral、Lane、Atom、SFB与K4 direct payload不构成同一反事实。
 - [x] 封存fresh direct-family-B design authority；唯一变量是四个跨layer/rank共享的zero-init direct B linears，
   其余memory/dynamic-K/M2P/fixed-A/rank8/B20全不变。
-- [ ] 原位实现fresh schema，完成targeted/full CPU门与旧checkpoint fail-closed；不保留旧mapper并行path。
+- [x] 原位实现fresh schema并完成CPU门：mapper仅含shared projector+四个direct B readouts，参数`3,702,784`；
+  删除旧ShapeFamilyMapper、dynamic-A heads和失联architecture双authority；fresh config/checkpoint/eval identity
+  隔离，正式LIBERO assets环境下完整CPU=`372 passed`。
 - [ ] 完成live full24 B20与真实generation profile，再fresh`0→50`并立即strict paired correct400。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。

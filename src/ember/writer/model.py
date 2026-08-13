@@ -87,7 +87,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             template_state=template_state,
             program_width=program_width,
             mapper_width=mapper_width,
-            dynamic_a=False,
         )
 
     @classmethod

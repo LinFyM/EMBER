@@ -86,7 +86,6 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         template_state=template,
         program_width=256,
         mapper_width=1024,
-        dynamic_a=False,
     )
     return model, template
 

@@ -55,17 +55,18 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
     )
     assert consistency.ndim == 0 and consistency.item() > 0
     sum(value.float().sum() for value in generated.values()).backward()
-    assert model.lora_mapper.families["q"].b.weight.grad is not None
-    assert model.lora_mapper.families["q"].b.weight.grad.abs().sum() > 0
-    assert model.lora_mapper.families["q"].a.weight.grad is None
+    assert model.lora_mapper.family_b_readouts["q"].weight.grad is not None
+    assert model.lora_mapper.family_b_readouts["q"].weight.grad.abs().sum() > 0
+    assert model.lora_mapper.project.weight.grad is not None
+    assert not model.lora_mapper.project.weight.grad.count_nonzero()
     assert model.memory_program.dynamic_projection.weight.grad is not None
     assert not model.memory_program.dynamic_projection.weight.grad.count_nonzero()
     assert model.memory_program.semantic_address_projection.weight.grad is not None
     assert not model.memory_program.semantic_address_projection.weight.grad.count_nonzero()
 
     model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.lora_mapper.families["q"].b.weight, std=0.01)
-    torch.nn.init.normal_(model.lora_mapper.families["v"].b.weight, std=0.01)
+    torch.nn.init.normal_(model.lora_mapper.family_b_readouts["q"].weight, std=0.01)
+    torch.nn.init.normal_(model.lora_mapper.family_b_readouts["v"].weight, std=0.01)
     generated, consistency = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
     )
@@ -74,6 +75,8 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
     assert model.memory_program.dynamic_projection.weight.grad.abs().sum() > 0
     assert model.memory_program.semantic_address_projection.weight.grad is not None
     assert model.memory_program.semantic_address_projection.weight.grad.abs().sum() > 0
+    assert model.lora_mapper.project.weight.grad is not None
+    assert model.lora_mapper.project.weight.grad.abs().sum() > 0
 
 
 def test_k1_uses_same_graph_and_has_exact_zero_consistency() -> None:

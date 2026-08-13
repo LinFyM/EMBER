@@ -46,9 +46,19 @@ def test_complete_mapper_starts_at_functional_identity_and_opens_b_only() -> Non
         assert torch.equal(value, expected)
     loss = sum(value.square().mean() for name, value in output.items() if ".lora_B." in name)
     loss.backward()
-    assert all(family.b.weight.grad is not None for family in mapper.families.values())
+    assert all(
+        readout.weight.grad is not None
+        for readout in mapper.family_b_readouts.values()
+    )
     assert program.grad is not None
     assert torch.count_nonzero(program.grad) == 0
+    assert mapper.project.weight.grad is not None
+    assert torch.count_nonzero(mapper.project.weight.grad) == 0
+    assert all(readout.bias is None for readout in mapper.family_b_readouts.values())
+    assert not any(
+        ".hidden." in name or ".a." in name or "dynamic_a" in name
+        for name in mapper.state_dict()
+    )
 
 
 def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
@@ -59,9 +69,10 @@ def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
         program_width=256,
         mapper_width=128,
     )
-    for family in mapper.families.values():
-        torch.nn.init.normal_(family.b.weight, std=0.01)
-    output = mapper(torch.randn(3, 20, 8, 256))
+    for readout in mapper.family_b_readouts.values():
+        torch.nn.init.normal_(readout.weight, std=0.01)
+    program = torch.randn(3, 20, 8, 256)
+    output = mapper(program)
     assert set(output) == set(template)
     assert all(value.shape == (3, *template[name].shape) for name, value in output.items())
     assert any(
@@ -69,3 +80,18 @@ def test_complete_mapper_generates_all_rank8_shapes_after_b_opens() -> None:
         for name, value in output.items()
         if ".lora_B." in name
     )
+    projected = mapper.project(program)
+    q_name = next(
+        name
+        for name in sorted(template)
+        if ".layers.7.self_attn.q_proj.lora_B." in name
+    )
+    expected_q = mapper.family_b_readouts["q"](projected[:, 8]).transpose(-1, -2)
+    torch.testing.assert_close(output[q_name], expected_q)
+    action_in_name = next(
+        name for name in template if "action_in_proj.lora_B." in name
+    )
+    expected_action_in = mapper.family_b_readouts["action_in"](
+        projected[:, 0]
+    ).transpose(-1, -2)
+    torch.testing.assert_close(output[action_in_name], expected_action_in)

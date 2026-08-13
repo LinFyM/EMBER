@@ -80,41 +80,6 @@ def build_lora_tensor_specs(
     return tuple(result)
 
 
-class ShapeFamilyMapper(torch.nn.Module):
-    """Share one nonlinear family basis while keeping A/B initialization distinct."""
-
-    def __init__(
-        self,
-        *,
-        input_width: int,
-        hidden_width: int,
-        a_width: int,
-        b_width: int,
-    ) -> None:
-        super().__init__()
-        if min(input_width, hidden_width, a_width, b_width) <= 0:
-            raise LoRAMapperError("invalid shape-family mapper dimensions")
-        self.hidden = torch.nn.Linear(input_width, hidden_width, bias=False)
-        self.a = torch.nn.Linear(hidden_width, a_width, bias=False)
-        self.b = torch.nn.Linear(hidden_width, b_width, bias=False)
-        torch.nn.init.zeros_(self.b.weight)
-
-    def forward(
-        self,
-        value: torch.Tensor,
-        *,
-        dynamic_a: bool,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        hidden = torch.nn.functional.gelu(self.hidden(value))
-        a = self.a(hidden) if dynamic_a else torch.zeros(
-            *hidden.shape[:-1],
-            self.a.out_features,
-            dtype=hidden.dtype,
-            device=hidden.device,
-        )
-        return a, self.b(hidden)
-
-
 class CompleteLoRAMapper(torch.nn.Module):
     """Decode a ``[batch,20,rank,width]`` program into all 76 PI05 tensors."""
 
@@ -137,7 +102,6 @@ class CompleteLoRAMapper(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
         program_width: int,
         mapper_width: int,
-        dynamic_a: bool = False,
     ) -> None:
         super().__init__()
         if not tensor_specs or set(template_state) != {item.name for item in tensor_specs}:
@@ -147,21 +111,15 @@ class CompleteLoRAMapper(torch.nn.Module):
             raise LoRAMapperError("public Writer LoRA rank is not uniform")
         self.rank = ranks.pop()
         self.program_width = int(program_width)
-        self.dynamic_a = bool(dynamic_a)
         self.project = torch.nn.Linear(program_width, mapper_width, bias=False)
-        self.families = torch.nn.ModuleDict(
+        self.family_b_readouts = torch.nn.ModuleDict(
             {
-                family: ShapeFamilyMapper(
-                    input_width=mapper_width,
-                    hidden_width=mapper_width,
-                    a_width=shapes[0],
-                    b_width=shapes[1],
-                )
+                family: torch.nn.Linear(mapper_width, shapes[1], bias=False)
                 for family, shapes in self._FAMILY_SHAPES.items()
             }
         )
-        for mapper in self.families.values():
-            mapper.a.weight.requires_grad_(self.dynamic_a)
+        for readout in self.family_b_readouts.values():
+            torch.nn.init.zeros_(readout.weight)
         self.tensor_specs = tensor_specs
         self._template_buffers: dict[str, str] = {}
         self._decoding: dict[str, tuple[str, int, int]] = {}
@@ -211,35 +169,28 @@ class CompleteLoRAMapper(torch.nn.Module):
         if program.ndim != 4 or tuple(program.shape[1:]) != expected:
             raise LoRAMapperError("layer/rank program topology changed")
         projected = self.project(program)
-        q_a, q_b = self.families["q"](
-            projected[:, 1 : self.EXPERT_LAYERS + 1],
-            dynamic_a=self.dynamic_a,
-        )
-        v_a, v_b = self.families["v"](
-            projected[:, 1 : self.EXPERT_LAYERS + 1],
-            dynamic_a=self.dynamic_a,
-        )
-        action_in = self.families["action_in"](
-            projected[:, 0], dynamic_a=self.dynamic_a
-        )
-        action_out = self.families["action_out"](
-            projected[:, -1], dynamic_a=self.dynamic_a
-        )
-        family_outputs = {
-            "q": (q_a, q_b),
-            "v": (v_a, v_b),
-            "action_in": action_in,
-            "action_out": action_out,
+        family_b = {
+            "q": self.family_b_readouts["q"](
+                projected[:, 1 : self.EXPERT_LAYERS + 1]
+            ),
+            "v": self.family_b_readouts["v"](
+                projected[:, 1 : self.EXPERT_LAYERS + 1]
+            ),
+            "action_in": self.family_b_readouts["action_in"](projected[:, 0]),
+            "action_out": self.family_b_readouts["action_out"](projected[:, -1]),
         }
 
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             family, group, factor = self._decoding[item.name]
-            rows = family_outputs[family][factor]
-            if family in {"q", "v"}:
-                rows = rows[:, group - 1]
-            generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
-            value = generated.to(template.dtype) + template[None]
+            if factor == 0:
+                value = template[None].expand(program.shape[0], *template.shape)
+            else:
+                rows = family_b[family]
+                if family in {"q", "v"}:
+                    rows = rows[:, group - 1]
+                generated = rows.transpose(-1, -2)
+                value = generated.to(template.dtype) + template[None]
             result[item.name] = value[0] if program.shape[0] == 1 else value
         return result

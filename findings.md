@@ -190,6 +190,15 @@ A residual heads与四个direct B heads；全部zero-init，故step0仍为`A=A_t
 basis或第二套LoRA，也不改变视频表示与训练objective。若它不能把absolute明显拉回至少125附近，就应停止当前
 前端的mapper修补，回到v6-fast骨架做受控桥接。
 
+该裁决已经发生：Full-Factor macro50 K1 strict=`91/400`，相对matched fixed-A 88仅净增3。raw A虽与fixed-A
+cosine`.735`且norm`1.376x`，B却只有`.062x`，effective BA只有`.245x`且cosine`.0585`。因此“打开dynamic A”
+没有把已读到的视频证据写入强policy方向，而是让同一个B20 surrogate找到更弱的factor gauge。当前Program/mapper
+小修到此终止；这不否定rank8理论容量或memory/few-shot原则，只否定该完整组合。
+
+当前最小桥接以v6-fast为baseline，只在每条video已经形成原生320个policy slots之后增加跨video集合层。K=1
+严格恒等，K>1用mean backbone加task-conditioned centered residual，最后只运行一次原生factor heads。这样既
+保留v6的143性能几何，又把昨晚“逐video保序、video间置换不变、不平均最终LoRA”的要求隔离成唯一变量。
+
 ## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；
@@ -208,6 +217,8 @@ basis或第二套LoRA，也不改变视频表示与训练objective。若它不�
     有用方向，且aggregate近稳时仍可发生显著checkpoint churn；该组合终局non-pass。
 14. fixed-A能量投影与same-task video LOO把最早可隔离接口推进到task/video-conditioned A row space；它只授权
     Full-Factor单变量实验，不证明动态A一定有效。
+15. Full-Factor `91`表明dynamic A在当前rank8 Program+B20下反而诱导tiny-B/weak-BA重参数化；下一轮不能再修
+    mapper，而应在v6强底座上隔离检验跨video Program aggregation。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

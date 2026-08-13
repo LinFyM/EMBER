@@ -37,39 +37,25 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**；当前active implementation是
-**Dynamic-K Task-Grounded Full-Factor Rank-8 Writer**。它忠实落实owner讨论、
-SHINE/Doc2LoRA类成熟Hypernetwork原则与EMBER历史证据：
+最新完成closed-loop是**Dynamic-K Task-Grounded Full-Factor Rank-8 Writer**：macro50 K1 strict=
+`91/400`、breadth5、per-task=`4/1/38/0/0/37/11/0`，终局non-pass，不resume、不做mapper小修。相对matched
+fixed-A macro50的88只净增3，且低于fixed-A best96、Direct-B102、old134、compiler138和v6-fast143。
+
+当前active design是**V6 Dynamic Slot-Set Bridge**：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
-    -> 每帧真实image/language/Action-probe joint backbone + 8 memory tokens
-    -> task token查询raw patch Value并按输入顺序形成visual transition/terminal goal
-    -> Action-memory transition、terminal goal和Query-only semantic address
-    -> causal temporal encoder
-    -> permutation-invariant cross-video set aggregation
-    -> policy-group/rank M2P
-    -> shared projector + direct shape-family A-residual/B readouts
-    -> one complete 38-target rank-8 task LoRA
+    -> each video independently runs frozen native v6 evidence/Core/Procedure
+    -> each video independently produces 320 policy-aligned Program slots
+    -> per-slot permutation-invariant mean backbone + selected centered residual
+    -> native frozen v6 factor heads decode once
+    -> one complete 38-target rank-16 task LoRA
 ```
 
-Dynamic-K backbone-memory、semantic-address与Direct-Family-B前代macro50 K1 strict分别为`100/101/102`，
-均已退役。Direct-Family-B同一checkpoint的K4=`98`；set把same-task effective-BA方差约降`6.3x`却没有修正
-task mean。Visual-Value完整曲线为`88/86/86/96`，macro200 top3=`92/96`，终局non-pass。当前design
-authority为`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`。
-
-Visual-Value macro200 strict=`96/400`、breadth6、per-task=`1/0/37/2/0/42/13/1`；150→200仍churn40，完整
-曲线没有达到125门。当前Full-Factor只让同一20x8 Program生成`A_template + dynamic residual A`和dynamic B；
-其余joint multimodal evidence、ordered visual D/G、causal temporal、dynamic-K set、rank8和B20全部不变。
-全部A/B heads zero-init，step0严格identity；当前CPU=`383 passed`，live world4 full24 B20 profile=
-`47.4409s/macro`且峰值reserved=`45.563GB`，已seal formal，尚无closed-loop结果。
-
-当前另有一个只作后续定位的fixed-A reachable-subspace结果：对old134 validation LoRA，rank8逐样本最优可保留
-`99.9999%` effective-BA能量，而当前固定随机A行空间只保留`1.95%`；对24个step2000 task experts分别为
-`99.81%`与`18.45%`。一套在train24上最优的共享rank8 A虽可保留train expert的`94.06%`，应用到old134 held
-LoRA仍只有`6.81%`。它不证明dynamic A会提高closed-loop，但明确区分了“rank8容量不足”和“所有task被钉在同一
-随机输入行空间”。该结果已授权当前task/video-conditioned direct A+B readout单变量；不得换成静态expert A或
-同时恢复旧前端。精确root和实时状态只取
+该bridge加载历史v6-fast macro400作为机制开发底座并全部冻结，只训练约197k参数的Slot-Set层。K=1由中心化
+残差恒零而严格等于原v6；K>1才学习过滤same-task demo nuisance。它不平均最终LoRA，不增加negative/expert/RL，
+也不把warm start冒充最终方法；若机制通过，仍需同一train24信息墙下从零训练。当前authority为
+`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`，精确run状态只取
 `docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule

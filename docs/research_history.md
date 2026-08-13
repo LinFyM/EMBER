@@ -12,9 +12,9 @@ effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删
 不是解决Program→policy effectiveness和共同积累的充分条件。同一checkpoint K4=`98/400`，相对K1为
 `80 retained/18 gained/22 lost`；set将same-task相对方差约降`6.3x`却保持task mean cosine`.99604`，证明
 few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass。Task-Grounded Visual-Value完整
-曲线=`88/86/86/96`，macro200 breadth6、top3=`92/96`；150→200仍churn40，相对old134丢66只得28。它提高
-task/video BA SNR并降低跨task共线，却大幅旋转到held无用方向，终局non-pass。当前active successor只让同一
-Program条件化生成A residual与B，其他结构和B20 recipe不变。
+曲线=`88/86/86/96`，macro200 breadth6、top3=`92/96`；150→200仍churn40，相对old134丢66只得28。Full-Factor
+随后macro50=`91`，只比matched fixed-A净增3，并形成tiny-B/weak-near-orthogonal BA，终局non-pass。当前active
+successor以冻结v6-fast为性能底座，只新增K1恒等、K>1置换不变的Slot-Set层。
 
 ## 1. Stable problem definition
 
@@ -100,7 +100,8 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
 | Task-Grounded Visual-Value rank8 | `88/86/86/96`, breadth5/6/6/6 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | macro200 top3占95.83%，150→200仍churn40；完整曲线终局non-pass |
 | Fixed-A reachable-subspace diagnostic | no rollout；old134 fixed/optimal rank8=`.01950/.999999` | rank8容量足够表示已知强BA，但当前随机固定A只开放极窄右子空间 | train24最优共享A在experts保留`.94063`、到old134 held仅`.06811`；只支持后续task/video-conditioned A候选，不支持静态expert basis或性能claim |
-| Task-Grounded Full-Factor rank8 | active pre-profile | 同一Program生成zero-init A residual与B，补全rank8 task-conditioned LoRA写出 | 尚无GPU/profile/closed-loop结果，不得冒充有效方法 |
+| Task-Grounded Full-Factor rank8 | `91/400`, breadth5 | 完整dynamic A/B可训练且相对matched fixed-A净增3 | B norm仅`.062x`、BA norm`.245x`且近正交；offline loss接受弱重参数化，当前前端/mapper组合终局non-pass |
+| V6 Dynamic Slot-Set Bridge | active pre-implementation | 以v6强底座隔离检验K1恒等、K>1集合共同程序 | 尚无profile/closed-loop；warm start只作机制开发，不得冒充fresh最终方法 |
 
 ## 4. Final rank14 adjudication
 

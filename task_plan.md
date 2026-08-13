@@ -63,16 +63,25 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换唯一canonical mapper并切换fresh-incompatible config/checkpoint/eval schema；
 - [x] 完成step0 identity、A/B梯度staging、顺序/set/动态K与freeze边界机制验证；全量CPU=`383 passed`。
 
-## Active iteration: Task-Grounded Full-Factor Rank-8
+## Completed iteration: Task-Grounded Full-Factor Rank-8
 
 - [x] 双节点live检查后用gpu01物理1/4/5/6 world4完成full24 B20 profile：`47.4409s/macro`、
   peak reserved `45.563GB`、K1--K4各6、无OOM/nonfinite；
 - [x] 将live profile seal进formal config；
-- [ ] 从clean pushed commit fresh训练macro0→50，checkpoint every25；
+- [x] 从clean pushed commit fresh训练macro0→50，checkpoint every25；
 - [x] 用macro25 checkpoint完成K1部署定标：B8/B16/B32=`.979553/.975323/.972106 LoRA/s`，锁B8；
-- [ ] 完成macro50 single-checkpoint K1 strict paired correct400与逐task比较；若通过续训门，再评macro100并分析churn；
-- [ ] 只有相对fixed-A96出现实质改善或可信上升趋势才续到150/200；最晚macro200以best≥125、breadth≥6裁决；
-- [ ] 若Full-Factor仍失败，终止当前前端的A/B mapper小修，转以v6-fast为性能骨架做受控机制移植。
+- [x] 完成macro50 K1 strict paired correct400：`91/400`、breadth5、per-task=`4/1/38/0/0/37/11/0`；
+- [x] 相对matched fixed-A=`70/21/18` retained/gained/lost，仅净增3且低于fixed-A best96与Direct-B102；
+- [x] 定位tiny-B/weak-near-orthogonal-BA重参数化，未达到125门，不resume、不做rank/scale/mapper小修；
+- [x] 转以v6-fast为性能骨架写受控Dynamic Slot-Set bridge authority。
+
+## Active iteration: V6 Dynamic Slot-Set Bridge
+
+- [ ] 原位切换canonical Writer到冻结v6-fast + 约197k Slot-Set层；
+- [ ] 验证K1逐tensor恒等、K>1置换不变、video内顺序敏感和唯一trainable ownership；
+- [ ] 完成full24 B20真实profile并seal formal合同；
+- [ ] 训练到macro25并做K4 strict paired correct400；仅有明确增益才续到50；
+- [ ] 若超过150，补K1--K4 scaling与五臂因果controls；若机制成立，再制定同架构fresh训练authority。
 
 ## Continuous loop after this result
 
@@ -98,4 +107,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前等待Full-Factor live profile；旧Visual-Value训练与评测均已结束且无活动进程。
+无权限或资产阻塞。Full-Factor训练、评测和分析均已结束且无活动GPU进程；当前进入V6 Dynamic Slot-Set实现。

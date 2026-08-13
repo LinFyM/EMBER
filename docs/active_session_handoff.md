@@ -9,15 +9,14 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：Dynamic-K Task-Grounded Visual-Value完整曲线=`88/86/86/96`；macro200 breadth6、
-  per-task=`1/0/37/2/0/42/13/1`、top3=`92/96`，未达到125门，终局non-pass；
-- macro150→200严格为`71 retained/25 gained/15 lost`、churn40；相对old134=`68/28/66`、compiler138=
-  `73/23/65`。晚期净增仍高度集中，不是shared capability共同积累；
-- 当前active implementation：Dynamic-K Task-Grounded Full-Factor Rank-8 Writer；只在同一projected Program上
-  新增四个zero-init direct family-A residual readouts，其他输入、前端、Program、rank8和B20均不变；
-- active design=`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`；全量CPU=`383 passed`；
-  live full24 B20 world4 profile=`47.4409s/macro`、峰值reserved=`45.563GB`、K1--K4各6，已通过并封存；
-- 当前下一步是从clean pushed commit fresh formal macro0→50；
+- 最新完成closed-loop：Dynamic-K Task-Grounded Full-Factor macro50 K1 strict=`91/400`、breadth5、per-task=
+  `4/1/38/0/0/37/11/0`，未达到125门，终局non-pass；
+- 相对matched fixed-A macro50为`70 retained/21 gained/18 lost`、净增3；相对old134/compiler138/online128净
+  `-43/-47/-37`，相对v6-fast逐task差=`+4/-2/-8/-37/0/+1/-9/-1`；
+- 当前active design：V6 Dynamic Slot-Set Bridge；冻结历史v6-fast macro400，只训练K1恒等、K>1置换不变的
+  per-policy-slot集合层，原生v6 factor heads只解码一次；
+- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；当前下一步是canonical实现与
+  K1/set/gradient机制验证；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -376,3 +375,32 @@ macro25 checkpoint完整写出后，用clean frozen `0d6cda7`在gpu02物理GPU1�
 - B8/B16/B32 LoRA/s=`.979553/.975323/.972106`，三者均stable、最长64帧、0 OOM/nonfinite；
 - 按highest-throughput规则锁B8；peak reserved分别=`12.973/13.453/13.474GB`；
 - profile只决定同一Writer graph的evaluation batch，不选择checkpoint或读取closed-loop outcome；formal训练继续到50。
+
+## 12. Full-Factor terminal result and V6 Slot-Set successor
+
+formal training root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_full_factor_rank8_formal_fresh0to50_r4_b20_0d6cda7_gpu01_20260814`
+
+- gpu01物理`1,4,5,6`、world4，macro1--50完整finite，K1--K4每macro各6；
+- macro50 functional/consistency/grad=`.114267/.002160/.307680`，总耗时`2372.278s`；
+- macro25/50 checkpoint和completion完整；全量CPU在正确LIBERO assets路径下=`383 passed`。
+
+K1 strict root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_full_factor_rank8_correct400_noreplacement_seed7_macro0050_trainr4_evalr5_c0501bc_gpu02_20260814`
+
+- gpu02物理`1,2,3,4,6`，5 generators + 15 persistent rollout workers；60/60 shards、400 rows、全部exit0；
+- strict=`91/400`、breadth5、per-task=`4/1/38/0/0/37/11/0`、per-suite=`5/38/37/11`，top3占
+  `86/91=94.51%`；
+- vs fixed-A macro50 88=`70/21/18`，vs fixed-A best96=`69/22/27`，vs Direct-B102=`72/19/30`；
+- vs old134/compiler138/online128分别净`-43/-47/-37`；不满足125门，不resume到100。
+
+matched first4 states/task的factor定位：Full-Factor vs fixed-A raw A cosine/norm ratio=`.735154/1.376207`，raw B=
+`.248553/.062232`，effective BA=`.058529/.244792`。offline loss几乎相同而完整factor学成larger-A/tiny-B的弱更新，
+所以最早失败接口是functional surrogate下的factor credit/gauge allocation，不是训练时长或rank8理论容量。
+
+active successor是`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。它以v6-fast为baseline：每条
+video独立形成原生Core/Procedure和320 slots，只沿K轴新增mean-backbone + selected-centered-residual集合层；K1
+结构上严格等于原v6，K>1才训练，最后原生factor heads只运行一次。首轮warm start只作机制开发，成功后仍需
+fresh recipe。当前无EMBER GPU进程。

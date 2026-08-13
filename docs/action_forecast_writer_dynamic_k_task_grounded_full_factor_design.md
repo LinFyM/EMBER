@@ -1,8 +1,8 @@
 # Dynamic-K Task-Grounded Full-Factor Rank-8 Writer
 
-状态：2026-08-14 active single-variable successor authority。本文只授权在当前Dynamic-K Task-Grounded
-Visual-Value Writer上，把fixed template-A改为同一task/video Program条件化的dynamic A residual；其余输入、
-前端、训练与评测合同不变。
+状态：2026-08-14 terminal non-pass historical authority。本文曾只授权在Dynamic-K Task-Grounded
+Visual-Value Writer上，把fixed template-A改为同一task/video Program条件化的dynamic A residual；该单变量
+实验已经完成并由本文第10节封存，不再续训或做mapper小修。
 
 ## 1. Predecessor adjudication
 
@@ -131,3 +131,20 @@ macro50/100；只有出现相对fixed-A的实质改善或可信上升趋势才�
 - canonical config与checkpoint/eval schema切换到Full-Factor；旧fixed-A实现由Git、frozen worktree与formal artifacts
   保存，不保留可执行策略flag；
 - registry中旧family只作为历史raw-row分析合同，不是可启动实现。
+
+## 10. Terminal result
+
+formal fresh macro0→50完整结束，K1 strict paired correct400为`91/400`、breadth5，逐task按
+Spatial1/3、Object1/3、Goal3/6、Long1/2为`4/1/38/0/0/37/11/0`。相对matched fixed-A macro50的
+`88`仅净增3（`70 retained / 21 gained / 18 lost`），低于fixed-A历史最好`96`、Direct-B`102`、old`134`、
+compiler`138`和v6-fast`143`，因此未达到本文预注册的125续训门。
+
+机制分析进一步说明它不是简单“还没训够”：Full-Factor与fixed-A的raw A overall cosine=`.73515`、norm ratio=
+`1.37621`，但B cosine仅`.24855`、norm ratio仅`.06223`；最终effective BA cosine=`.05853`、norm ratio=
+`.24479`。也就是说，dynamic A让同一个offline B20 functional objective找到了一套更大的A和极小的B，得到与
+fixed-A近似的训练loss，却把policy update旋到近乎正交且更弱的区域。最早失败接口是functional credit下的
+factorization/gauge allocation，而不是rank8理论容量、视频没有被读取或吞吐不够。
+
+正式裁决：不resume到100，不扫rank/scale/LR/seed，不再修当前mapper。下一受控实验以v6-fast原生性能路径为
+baseline，只增加动态K的跨视频Program集合桥接；memory token和rank8仍是已认真检验过、可在强底座稳定后逐项
+重引入的方法变量，不是被该负结果永久否定的原则。

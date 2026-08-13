@@ -30,40 +30,25 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成closed-loop方法是**Dynamic-K Task-Grounded Visual-Value Rank-8 Writer**；当前active successor是
-**Dynamic-K Task-Grounded Full-Factor Rank-8 Writer**：
+最新完成的Full-Factor rank8在macro50 K1 strict为`91/400`、breadth5、per-task=
+`4/1/38/0/0/37/11/0`。它相对matched fixed-A macro50只净增3，且effective BA只有fixed-A约`.245x`并近乎
+正交；因此终局non-pass，不resume、不做mapper小修。
+
+当前active successor是**V6 Dynamic Slot-Set Bridge**：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
-    -> 每帧真实π0.5 image/language/Action-probe context + 8 memory tokens
-    -> task token查询raw patch Value并按输入顺序形成visual transition/terminal goal
-    -> Action-memory transition、terminal goal与Query-only semantic address
-    -> causal temporal encoder（video内保序）
-    -> permutation-invariant set attention（video间提取共同程序）
-    -> 20 policy groups × 8 rank coordinates M2P
-    -> shared projector + four direct shape-family A-residual/B readouts
-    -> complete 38-target rank-8 LoRA
+    -> each video independently runs frozen native v6 evidence/Core/Procedure
+    -> each video independently compiles 320 policy/rank-aligned Program slots
+    -> per-slot permutation-invariant mean backbone + selected centered residual
+    -> native v6 factor heads decode once
+    -> complete 38-target rank-16 LoRA
 ```
 
-它综合了三类依据：owner关于“语言说明任务、正确视频说明完成方式”的完整要求；SHINE/Doc2LoRA类成熟
-Hypernetwork的少量memory、layer-aligned状态与结构化LoRA生成原则；以及EMBER从v4到v6、K4、task drift和
-mapper逐接口probe的历史证据。它不是对外部方法的机械复刻，也没有引入额外target-task数据。
-
-上一代Dynamic-K backbone-memory和semantic-address macro50 strict分别为`100/400`和`101/400`。32-point
-probe显示task差异在M2P/final/shared projector仍较健康，首个明显common-direction增长出现在旧family
-hidden/GELU；因此Direct-Family-B只删除这个已定位接口，没有重新推翻视频前端。退役架构的完整公式和裁决门见
-[`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`](docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md)。
-
-Direct-Family-B在macro50的K1/K4 strict为`102/98`，K4把same-task effective-BA方差约降`6.3x`却没有解锁
-task。Visual-Value随后只新增同一次joint forward中的task-grounded raw visual goal/transition Value；完整K1
-strict曲线为`88/86/86/96`，macro200 breadth6、per-task=`1/0/37/2/0/42/13/1`，150→200仍churn40，终局
-non-pass。它证明视觉Value会改变task/video-specific BA，却没有把变化写进held on-policy有用方向。
-
-fixed-A只读诊断进一步发现：old134有效BA的逐样本最优rank8可保留`.999999`能量，Visual-Value固定随机A只可达
-`.01950`；train24最优静态共享A到held old134也只保留`.06811`。因此当前Full-Factor严格只开放一个接口：同一
-`20×8` Program经同一projector同时生成`A_template + dynamic residual A`与dynamic B。所有A/B heads
-zero-init，step0仍exact identity；dynamic K、视觉前端、temporal/set、rank8和B20均不变。完整authority见
-[`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`](docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md)。
+它保留昨晚对齐的逐video保序、跨video集合处理和单一LoRA部署原则，同时恢复唯一闭环证明过143的v6
+Core/Procedure/compiler/factor路径。Slot-Set只有约197k参数，K=1严格恒等于原v6；首轮只训练该层，快速判断
+few-shot共同程序能否在强底座上带来净增。warm start只作机制开发，若成功仍需从零训练。完整authority见
+[`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`](docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md)。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

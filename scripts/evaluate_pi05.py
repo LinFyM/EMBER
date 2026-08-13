@@ -164,6 +164,13 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         choices=("with_replacement", "without_replacement"),
         default="without_replacement",
     )
+    parser.add_argument(
+        "--dynamic-k-writer-evaluation-k",
+        type=int,
+        choices=(1, 2, 3, 4),
+        default=1,
+        help="Number of correct action-hidden teaching videos supplied to one Writer call.",
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -307,6 +314,9 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 video_seed=int(adapter["video_schedule"]["seed"]),
                 video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
                 require_formal=contract["mode"] != "smoke",
+                evaluation_k=int(
+                    adapter.get("information_wall", {}).get("evaluation_k", 1)
+                ),
             )
         elif adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
             observed = _inspect_dynamic_k_writer_adapter(

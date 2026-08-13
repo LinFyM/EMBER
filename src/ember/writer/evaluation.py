@@ -11,7 +11,7 @@ from safetensors import safe_open
 from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
 from ember.expert_manifold.video_schedule import (
     frame_order_seed,
-    reference_demo_index,
+    reference_demo_indices,
     task_video_mapping,
     video_schedule_contract,
     video_selection_seed,
@@ -41,19 +41,35 @@ DYNAMIC_K_EPISODE_SCHEMA = (
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
+DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
+    "ember_pi05_dynamic_k_nested_video_set_pairing_v1"
+)
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
-DYNAMIC_K_EVALUATION_STATUS = "sealed"
 DYNAMIC_K_GENERATION_BATCH_SIZE = 8
-DYNAMIC_K_GENERATION_PROFILE = {
-    "schema": "ember_pi05_writer_generation_profile_v2",
-    "path": (
-        "runs/outputs/"
-        "pi05_dynamic_k_semantic_address_direct_family_b_writer_generation_"
-        "profile_val8x4_correct_gpu01p1_3866f50_20260813/"
-        "writer_generation_profile.json"
-    ),
-    "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+DYNAMIC_K_GENERATION_PROFILES = {
+    1: {
+        "schema": "ember_pi05_writer_generation_profile_v2",
+        "path": (
+            "runs/outputs/"
+            "pi05_dynamic_k_semantic_address_direct_family_b_writer_generation_"
+            "profile_val8x4_correct_gpu01p1_3866f50_20260813/"
+            "writer_generation_profile.json"
+        ),
+        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+    },
 }
+
+
+def dynamic_k_writer_input(evaluation_k: int) -> str:
+    if evaluation_k == 1:
+        return (
+            "exact task language plus one action-hidden teacher video through "
+            "the dynamic-K graph"
+        )
+    return (
+        f"exact task language plus {evaluation_k} action-hidden teacher videos "
+        "through the dynamic-K graph"
+    )
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -227,6 +243,7 @@ def _video_contract(
     task_keys: Sequence[tuple[str, int]],
     video_seed: int,
     video_sampling_mode: str,
+    evaluation_k: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     rows = _target_rows(config)
     by_key = {(str(row["suite"]), int(row["task_id"])): row for row in rows.values()}
@@ -267,6 +284,18 @@ def _video_contract(
         demo_count=50,
         sampling_mode=video_sampling_mode,
     )
+    if evaluation_k > 1:
+        schedule.update(
+            {
+                "algorithm": (
+                    "numeric_seeded_task_permutation_nested_k_video_set_per_"
+                    "state_block"
+                ),
+                "videos_per_condition": evaluation_k,
+                "nested_k1_prefix": True,
+                "within_condition_unique": True,
+            }
+        )
     schedule.update(
         {
             "frame_stride": int(config["writer"]["frame_stride"]),
@@ -290,6 +319,52 @@ def _video_contract(
     )
 
 
+def _evaluation_contract(
+    *,
+    config: Mapping[str, Any],
+    evaluation_k: int,
+    video_condition: str,
+    video_sampling_mode: str,
+    require_formal: bool,
+) -> Mapping[str, Any] | None:
+    if not 1 <= evaluation_k <= int(config["data"]["dynamic_k_max"]):
+        raise WriterModelError("dynamic-K evaluation K is outside training support")
+    if video_condition not in DYNAMIC_K_VIDEO_CONDITIONS:
+        raise WriterModelError("dynamic-K evaluator currently supports correct only")
+    if evaluation_k > 1 and video_sampling_mode != "without_replacement":
+        raise WriterModelError(
+            "multi-video evaluation requires without-replacement video sampling"
+        )
+    profile = DYNAMIC_K_GENERATION_PROFILES.get(evaluation_k)
+    if require_formal and profile is None:
+        raise WriterModelError(
+            f"formal dynamic-K K{evaluation_k} evaluation requires a live profile"
+        )
+    return profile
+
+
+def _evaluation_information_wall(
+    config: Mapping[str, Any], evaluation_k: int
+) -> dict[str, Any]:
+    return {
+        "writer_input": dynamic_k_writer_input(evaluation_k),
+        "video_is_only_dynamic_value": True,
+        "no_video_counterfactual": False,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+        "language_only_lora_path": False,
+        "deployment_expert_bank_read": False,
+        "evaluation_k": evaluation_k,
+        "dynamic_k_training_range": [1, int(config["data"]["dynamic_k_max"])],
+        "frame_stride": int(config["writer"]["frame_stride"]),
+        "backbone_total_frames_per_condition": int(
+            config["writer"]["backbone_total_frames_per_condition"]
+        ),
+    }
+
+
 def inspect_dynamic_k_writer_evaluation(
     *,
     config_path: Path,
@@ -301,13 +376,19 @@ def inspect_dynamic_k_writer_evaluation(
     video_seed: int,
     video_sampling_mode: str,
     require_formal: bool,
+    evaluation_k: int = 1,
 ) -> dict[str, Any]:
-    """Inspect one K1 deployment without loading optimizer or RNG payloads."""
+    """Inspect one Dynamic-K deployment without loading optimizer or RNG payloads."""
 
     config_path = config_path.resolve()
     config = load_writer_config(config_path)
-    if video_condition not in DYNAMIC_K_VIDEO_CONDITIONS:
-        raise WriterModelError("dynamic-K evaluator currently supports K1 correct only")
+    profile = _evaluation_contract(
+        config=config,
+        evaluation_k=evaluation_k,
+        video_condition=video_condition,
+        video_sampling_mode=video_sampling_mode,
+        require_formal=require_formal,
+    )
     writer_asset = _writer_asset(
         config=config,
         checkpoint=checkpoint,
@@ -320,6 +401,7 @@ def inspect_dynamic_k_writer_evaluation(
         task_keys=task_keys,
         video_seed=video_seed,
         video_sampling_mode=video_sampling_mode,
+        evaluation_k=evaluation_k,
     )
     lora_path = authority_path(config, "lora_contract")
     lora = load_pi05_lora_contract(lora_path)
@@ -348,14 +430,14 @@ def inspect_dynamic_k_writer_evaluation(
             **writer_asset,
         },
         "evaluation_authority": {
-            "formal_status": DYNAMIC_K_EVALUATION_STATUS,
+            "formal_status": "sealed" if profile is not None else "profile_required",
             "throughput_policy": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
             "minimum_smoke_writer_model_batch_size": (
                 DYNAMIC_K_GENERATION_BATCH_SIZE
             ),
-            "online_smoke_evidence": dict(DYNAMIC_K_GENERATION_PROFILE),
+            "online_smoke_evidence": None if profile is None else dict(profile),
         },
         "video_data": video_data,
         "video_condition": video_condition,
@@ -363,9 +445,13 @@ def inspect_dynamic_k_writer_evaluation(
         "task_video_mapping": mapping,
         "task_video_mapping_reference": (
             f"{config['authorities']['target_data_manifest']['path']}:"
-            f"{len(mapping)}tasks:{video_condition}:K1"
+            f"{len(mapping)}tasks:{video_condition}:K{evaluation_k}"
         ),
-        "pairing_reference": DYNAMIC_K_PAIRING_REFERENCE,
+        "pairing_reference": (
+            DYNAMIC_K_PAIRING_REFERENCE
+            if evaluation_k == 1
+            else DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE
+        ),
         "lora_contract": {
             "reference": (
                 f"{lora_path.relative_to(Path(__file__).resolve().parents[3])}:"
@@ -378,29 +464,7 @@ def inspect_dynamic_k_writer_evaluation(
             key: str(Path(str(source[key])).resolve())
             for key in ("source_run", "checkpoint", "model_path")
         },
-        "information_wall": {
-            "writer_input": (
-                "exact task language plus one action-hidden teacher video through "
-                "the dynamic-K graph"
-            ),
-            "video_is_only_dynamic_value": True,
-            "no_video_counterfactual": False,
-            "teacher_action_reads": 0,
-            "teacher_state_reads": 0,
-            "reward_reads": 0,
-            "terminal_reads": 0,
-            "language_only_lora_path": False,
-            "deployment_expert_bank_read": False,
-            "evaluation_k": 1,
-            "dynamic_k_training_range": [
-                1,
-                int(config["data"]["dynamic_k_max"]),
-            ],
-            "frame_stride": int(config["writer"]["frame_stride"]),
-            "backbone_total_frames_per_condition": int(
-                config["writer"]["backbone_total_frames_per_condition"]
-            ),
-        },
+        "information_wall": _evaluation_information_wall(config, evaluation_k),
         "content_hash_policy": "disabled_by_owner",
     }
 
@@ -445,13 +509,22 @@ def expected_dynamic_k_episode_evidence(
     seed = int(schedule["seed"])
     mode = str(schedule["sampling_mode"])
     demo_count = int(schedule["demo_count"])
-    selected = reference_demo_index(
+    evaluation_k = int(schedule["videos_per_condition"])
+    wall_evaluation_k = int(
+        adapter.get("information_wall", {}).get("evaluation_k", evaluation_k)
+    )
+    if wall_evaluation_k != evaluation_k:
+        raise WriterModelError("dynamic-K information wall K changed")
+    if int(schedule["videos_per_condition"]) != evaluation_k:
+        raise WriterModelError("dynamic-K adapter video count changed")
+    selected = reference_demo_indices(
         seed,
         suite,
         task_id,
         init_state_id,
         demo_count=demo_count,
         sampling_mode=mode,
+        video_count=evaluation_k,
     )
     asset = adapter["writer_asset"]
     return {
@@ -459,8 +532,8 @@ def expected_dynamic_k_episode_evidence(
         "writer_method": DYNAMIC_K_WRITER_KIND,
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
-        "evaluation_k": 1,
-        "condition_video_offsets": [0, 1],
+        "evaluation_k": evaluation_k,
+        "condition_video_offsets": [0, evaluation_k],
         "backbone_total_frames_per_condition": int(
             schedule["backbone_total_frames_per_condition"]
         ),
@@ -475,7 +548,7 @@ def expected_dynamic_k_episode_evidence(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_video_kind": adapter["video_condition"],
         "teacher_video_frames_used": True,
-        "teacher_video_count": 1,
+        "teacher_video_count": evaluation_k,
         "teacher_video_seed_root": seed,
         "teacher_video_selection_seed": video_selection_seed(
             seed,
@@ -489,14 +562,19 @@ def expected_dynamic_k_episode_evidence(
         "video_task_id": int(mapping["video_task_id"]),
         "video_global_task_id": int(mapping["video_global_task_id"]),
         "video_split_role": str(mapping["video_split_role"]),
-        "teacher_demo_indices": [selected],
-        "teacher_reference_demo_indices": [selected],
+        "teacher_demo_indices": list(selected),
+        "teacher_reference_demo_indices": list(selected),
         "task_video_mapping_reference": adapter["task_video_mapping_reference"],
         "pairing_reference": adapter["pairing_reference"],
         "writer_generation_seed_schedule": (
             "numeric_seedsequence_one_shot_frame_order_v1"
+            if evaluation_k == 1
+            else "numeric_seedsequence_nested_video_set_frame_order_v1"
         ),
-        "teacher_video_order_seeds": [frame_order_seed(seed, suite, task_id, selected)],
+        "teacher_video_order_seeds": [
+            frame_order_seed(seed, suite, task_id, demo_index)
+            for demo_index in selected
+        ],
     }
 
 

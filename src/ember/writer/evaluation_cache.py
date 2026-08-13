@@ -48,6 +48,9 @@ DYNAMIC_K_WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
 DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM = (
     "one_entry_per_episode_dynamic_k_k1_video_set_v1"
 )
+DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM = (
+    "one_entry_per_episode_dynamic_k_nested_video_set_v1"
+)
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = (
     "sealed request order chunked by generation_batch_size into contiguous global "
@@ -73,12 +76,19 @@ def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
             "key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
         }
     if kind == DYNAMIC_K_WRITER_KIND:
+        evaluation_k = int(
+            adapter.get("information_wall", {}).get("evaluation_k", 1)
+        )
         return {
             "cache": DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA,
             "entry": DYNAMIC_K_WRITER_LORA_CACHE_ENTRY_SCHEMA,
             "manifest": DYNAMIC_K_WRITER_LORA_CACHE_MANIFEST_SCHEMA,
             "marker": DYNAMIC_K_WRITER_LORA_GENERATOR_MARKER_SCHEMA,
-            "key_algorithm": DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM,
+            "key_algorithm": (
+                DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM
+                if evaluation_k == 1
+                else DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM
+            ),
         }
     raise WriterModelError("Writer cache adapter kind changed")
 

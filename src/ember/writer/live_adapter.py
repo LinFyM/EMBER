@@ -1,4 +1,4 @@
-"""Online K1 generation for the Dynamic-K Backbone-Memory Writer."""
+"""Online K1--K4 generation for the Dynamic-K Backbone-Memory Writer."""
 
 from __future__ import annotations
 
@@ -30,12 +30,18 @@ from ember.writer.lora_rollout import PreparedWriterLoRA, WriterLoRARolloutAdapt
 from ember.writer.training import build_writer
 
 
-def k1_condition_video_offsets(batch_size: int) -> torch.Tensor:
-    """Return the canonical one-video-per-condition ragged ownership."""
+def condition_video_offsets(batch_size: int, evaluation_k: int) -> torch.Tensor:
+    """Return canonical fixed-K ragged ownership for one condition batch."""
 
-    if batch_size <= 0:
-        raise WriterModelError("dynamic-K K1 generation batch is empty")
-    return torch.arange(batch_size + 1, dtype=torch.long, device="cpu")
+    if batch_size <= 0 or evaluation_k <= 0:
+        raise WriterModelError("dynamic-K generation batch or K is invalid")
+    return torch.arange(
+        0,
+        (batch_size + 1) * evaluation_k,
+        evaluation_k,
+        dtype=torch.long,
+        device="cpu",
+    )
 
 
 def _video_runtime(
@@ -70,7 +76,7 @@ def _video_runtime(
 
 
 class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
-    """Generate one complete rank-8 LoRA from one correct teaching video."""
+    """Generate one complete rank-8 LoRA from a correct teaching-video set."""
 
     def __init__(
         self,
@@ -95,6 +101,7 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
                 evaluation_adapter["video_schedule"]["sampling_mode"]
             ),
             require_formal=require_formal,
+            evaluation_k=int(evaluation_adapter["information_wall"]["evaluation_k"]),
         )
         if observed != dict(evaluation_adapter):
             raise WriterModelError("dynamic-K evaluation assets changed")
@@ -102,6 +109,7 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
         self.total_frame_budget = int(
             config["writer"]["backbone_total_frames_per_condition"]
         )
+        self.evaluation_k = int(observed["information_wall"]["evaluation_k"])
         self.writer, lora = build_writer(config, policy)
         self.writer.to(device)
         load_writer_deployment_state_(
@@ -129,7 +137,9 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
 
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
-    ) -> tuple[dict[str, Any], RawTeacherVideo, str, int]:
+    ) -> tuple[
+        dict[str, Any], tuple[RawTeacherVideo, ...], str, tuple[int, ...]
+    ]:
         reference = (
             f"{self.evaluation_adapter['writer_asset']['reference']}:"
             f"{suite}:{task_id}:{init_state_id}"
@@ -142,16 +152,19 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             lora_reference=reference,
         )
         global_task_id = int(row["video_global_task_id"])
-        available = self.store.load(global_task_id, int(row["teacher_demo_indices"][0]))
-        (video,) = apply_condition_frame_budget(
-            (available,),
+        available = tuple(
+            self.store.load(global_task_id, int(demo_index))
+            for demo_index in row["teacher_demo_indices"]
+        )
+        videos = apply_condition_frame_budget(
+            available,
             self.total_frame_budget,
         )
         return (
             row,
-            video,
+            videos,
             self.language_by_id[int(row["language_global_task_id"])],
-            int(available.frames.shape[0]),
+            tuple(int(video.frames.shape[0]) for video in available),
         )
 
     def generation_request_profiles(
@@ -173,19 +186,26 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
                 init_state_id=init_state_id,
                 lora_reference=reference,
             )
-            raw, sampled_stride5 = self.store.frame_counts(
-                int(evidence["video_global_task_id"]),
-                int(evidence["teacher_demo_indices"][0]),
+            counts = tuple(
+                self.store.frame_counts(
+                    int(evidence["video_global_task_id"]), int(demo_index)
+                )
+                for demo_index in evidence["teacher_demo_indices"]
             )
-            sampled = min(sampled_stride5, self.total_frame_budget)
+            per_video_budget = self.total_frame_budget // len(counts)
             rows.append(
                 {
                     "suite": suite,
                     "task_id": task_id,
                     "init_state_id": init_state_id,
-                    "raw_frames": raw,
-                    "available_stride5_frames": sampled_stride5,
-                    "sampled_frames": sampled,
+                    "raw_frames": sum(raw for raw, _ in counts),
+                    "available_stride5_frames": sum(
+                        available for _, available in counts
+                    ),
+                    "sampled_frames": sum(
+                        min(available, per_video_budget)
+                        for _, available in counts
+                    ),
                 }
             )
         return tuple(rows)
@@ -209,18 +229,22 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             )
             for identity in identities
         )
-        rows, videos, languages, available_counts = zip(*inputs, strict=True)
+        rows, video_sets, languages, available_count_sets = zip(*inputs, strict=True)
         self._last_generation_batch_profile = tuple(
             {
                 "suite": str(identity["suite"]),
                 "task_id": int(identity["task_id"]),
                 "init_state_id": int(identity["init_state_id"]),
-                "raw_frames": int(video.raw_frame_count),
-                "available_stride5_frames": int(available),
-                "sampled_frames": int(video.frames.shape[0]),
+                "raw_frames": sum(
+                    int(video.raw_frame_count) for video in videos
+                ),
+                "available_stride5_frames": sum(available_counts),
+                "sampled_frames": sum(
+                    int(video.frames.shape[0]) for video in videos
+                ),
             }
-            for identity, video, available in zip(
-                identities, videos, available_counts, strict=True
+            for identity, videos, available_counts in zip(
+                identities, video_sets, available_count_sets, strict=True
             )
         )
         started = time.monotonic()
@@ -228,19 +252,20 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
             self._physical_lora_is_identity = True
         tokens, masks, spans = self.tokenizer(list(languages))
+        flattened_videos = tuple(video for videos in video_sets for video in videos)
         frames = [
             torch.from_numpy(video.frames).to(self.device, non_blocking=True)
-            for video in videos
+            for video in flattened_videos
         ]
         indices = [
             torch.from_numpy(video.frame_indices).to(self.device, non_blocking=True)
-            for video in videos
+            for video in flattened_videos
         ]
         offsets = [0]
         for value in frames:
             offsets.append(offsets[-1] + int(value.shape[0]))
         video_offsets = torch.tensor(offsets, dtype=torch.long, device="cpu")
-        condition_video_offsets = k1_condition_video_offsets(len(rows))
+        ownership = condition_video_offsets(len(rows), self.evaluation_k)
         autocast = (
             torch.autocast(device_type="cuda", dtype=torch.bfloat16)
             if self.device.type == "cuda"
@@ -251,7 +276,7 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
                 torch.cat(frames),
                 torch.cat(indices),
                 video_offsets,
-                condition_video_offsets,
+                ownership,
                 tokens,
                 masks,
                 spans,
@@ -303,4 +328,5 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
         del self.language_by_id
         del self.tokenizer
         del self.total_frame_budget
+        del self.evaluation_k
         del self.writer

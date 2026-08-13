@@ -32,7 +32,11 @@ from ember.writer.checkpoint import (
 from ember.writer.data import RawTeacherVideo
 from ember.writer.errors import WriterModelError
 from ember.writer.update_schedule import build_exposure_scheduler
-from ember.writer.live_adapter import k1_condition_video_offsets
+import ember.writer.live_adapter as live_adapter_module
+from ember.writer.live_adapter import (
+    FrozenDynamicKTaskAdapter,
+    condition_video_offsets,
+)
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -470,10 +474,87 @@ def test_deployment_checkpoint_loads_only_writer_safetensors(
     )
 
 
-def test_k1_evaluation_offsets_assign_exactly_one_video_per_condition() -> None:
-    offsets = k1_condition_video_offsets(4)
-    assert offsets.tolist() == [0, 1, 2, 3, 4]
+@pytest.mark.parametrize(
+    ("evaluation_k", "expected"),
+    ((1, [0, 1, 2, 3, 4]), (4, [0, 4, 8, 12, 16])),
+)
+def test_evaluation_offsets_assign_fixed_k_videos_per_condition(
+    evaluation_k: int, expected: list[int]
+) -> None:
+    offsets = condition_video_offsets(4, evaluation_k)
+    assert offsets.tolist() == expected
     assert offsets.dtype == torch.long and offsets.device.type == "cpu"
+
+
+def test_live_evaluator_supplies_k4_as_one_ragged_writer_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = FrozenDynamicKTaskAdapter.__new__(FrozenDynamicKTaskAdapter)
+    adapter.evaluation_k = 4
+    adapter._physical_lora_is_identity = True
+    adapter.device = torch.device("cpu")
+    adapter.policy = object()
+    adapter.identity_state = {}
+    adapter.lora_contract = object()
+    adapter.tokenizer = lambda languages: (
+        torch.zeros((len(languages), 3), dtype=torch.long),
+        torch.ones((len(languages), 3), dtype=torch.bool),
+        torch.ones((len(languages), 3), dtype=torch.bool),
+    )
+    requests = (
+        {"suite": "libero_spatial", "task_id": 1, "init_state_id": 0},
+        {"suite": "libero_object", "task_id": 1, "init_state_id": 0},
+    )
+
+    def episode_input(**identity: object):
+        condition = 0 if identity["suite"] == "libero_spatial" else 1
+        videos = tuple(
+            RawTeacherVideo(
+                frames=np.full((2, 3, 2, 2), condition * 4 + video, dtype=np.uint8),
+                frame_indices=np.asarray((0, 5), dtype=np.int64),
+                raw_frame_count=6,
+            )
+            for video in range(4)
+        )
+        return (
+            {"lora_reference": f"condition-{condition}"},
+            videos,
+            f"task-{condition}",
+            (2, 2, 2, 2),
+        )
+
+    adapter._episode_input = episode_input
+    captured = {}
+
+    def writer(
+        frames: torch.Tensor,
+        _indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        ownership: torch.Tensor,
+        *_args: object,
+        **_kwargs: object,
+    ) -> dict[str, torch.Tensor]:
+        captured.update(
+            frames=frames,
+            video_offsets=video_offsets,
+            ownership=ownership,
+        )
+        return {"generated": torch.zeros((2, 1))}
+
+    adapter.writer = writer
+    monkeypatch.setattr(live_adapter_module, "validate_lora_state", lambda *_args: None)
+    prepared = adapter.prepare_episodes(requests)
+
+    assert len(prepared) == 2
+    assert captured["video_offsets"].tolist() == list(range(0, 17, 2))
+    assert captured["ownership"].tolist() == [0, 4, 8]
+    assert [int(captured["frames"][index * 2, 0, 0, 0]) for index in range(8)] == list(
+        range(8)
+    )
+    assert [row["sampled_frames"] for row in adapter.last_generation_batch_profile()] == [
+        8,
+        8,
+    ]
 
 
 def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:

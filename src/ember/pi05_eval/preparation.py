@@ -123,6 +123,7 @@ def _inspect_adapter(
             video_seed=int(authorities.config["rng"]["inference_seed"]),
             video_sampling_mode=str(args.dynamic_k_writer_video_sampling),
             require_formal=args.mode != "smoke",
+            evaluation_k=int(getattr(args, "dynamic_k_writer_evaluation_k", 1)),
         )
     return None
 

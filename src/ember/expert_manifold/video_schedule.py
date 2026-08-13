@@ -159,6 +159,50 @@ def reference_demo_index(
     return int(rng.permutation(demo_count)[position])
 
 
+def reference_demo_indices(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    *,
+    demo_count: int,
+    sampling_mode: str,
+    video_count: int,
+) -> tuple[int, ...]:
+    """Return a nested, within-set unique prefix of the paired video schedule."""
+
+    if video_count == 1:
+        return (
+            reference_demo_index(
+                root_seed,
+                suite,
+                task_id,
+                init_state_id,
+                demo_count=demo_count,
+                sampling_mode=sampling_mode,
+            ),
+        )
+    if (
+        demo_count != 50
+        or not 1 < video_count <= demo_count
+        or sampling_mode != "without_replacement"
+    ):
+        raise ExpertManifoldError(
+            "multi-video evaluation requires the 50-video permutation schedule"
+        )
+    block, position = divmod(init_state_id, demo_count)
+    rng = np.random.default_rng(
+        np.random.SeedSequence(
+            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+        )
+    )
+    permutation = rng.permutation(demo_count)
+    return tuple(
+        int(permutation[(position + offset) % demo_count])
+        for offset in range(video_count)
+    )
+
+
 def condition_demo_index(
     root_seed: int,
     suite: str,

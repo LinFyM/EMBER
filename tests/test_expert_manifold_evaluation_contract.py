@@ -24,6 +24,7 @@ from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET,
     reference_demo_index,
+    reference_demo_indices,
     shuffled_frame_permutation,
     task_video_mapping,
     video_schedule_contract,
@@ -308,6 +309,35 @@ def test_writer_video_schedule_and_wrong_map_are_order_independent() -> None:
             sampling_mode="without_replacement",
         )
         < 50
+    )
+    k1 = reference_demo_indices(
+        *request,
+        demo_count=50,
+        sampling_mode="without_replacement",
+        video_count=1,
+    )
+    k4 = reference_demo_indices(
+        *request,
+        demo_count=50,
+        sampling_mode="without_replacement",
+        video_count=4,
+    )
+    assert k1 == k4[:1]
+    assert len(set(k4)) == 4
+    all_sets = [
+        reference_demo_indices(
+            7,
+            "libero_spatial",
+            6,
+            state,
+            demo_count=50,
+            sampling_mode="without_replacement",
+            video_count=4,
+        )
+        for state in range(50)
+    ]
+    assert sorted(demo for demos in all_sets for demo in demos) == sorted(
+        list(range(50)) * 4
     )
     keys = (
         ("libero_spatial", 1),

@@ -237,3 +237,15 @@ hidden/GELU确实轻微减弱common direction，却没有带来closed-loop增益
 否定“删除family hidden/GELU即可把现有Program变成policy-effective LoRA”；不否定Dynamic-K、memory token、
 rank8或few-shot。K2--K4尚未被正式evaluator测试，后续若评测只是独立判定同一checkpoint的真实few-shot部署
 能力，不得反向改写本K1裁决。
+
+## 12. Same-checkpoint Dynamic-K deployment audit
+
+K1结果没有裁决训练时真实覆盖的K2--K4 set path。后续评测因此只扩展同一个canonical evaluator，不增加新Writer、
+不平均features或生成后的LoRA，也不改变macro50 checkpoint。CLI显式选择`evaluation_k=1..4`；每个condition的K条
+action-hidden视频在一次ragged Writer forward中共同生成一套完整rank-8 LoRA，总frame budget仍为64。
+
+without-replacement seed7 schedule采用同一task/state permutation的nested prefix：K1保持历史选中的第一条，K4再取
+后续三条；每个50-state block内无重复集合成员，且每条teacher video在K4 panel中恰出现4次。K1原adapter、pairing、
+episode与cache-key合同逐字段保留；K>1使用独立video-set pairing/evidence identity，避免把K1 cache误作few-shot。
+K2--K4在完成单A40 B8/B16/B32真实generation profile前只能做smoke，formal fail closed。第一项正式实验固定K4
+strict correct400；它只回答当前cross-video set是否产生真实few-shot增益，不救援或改写K1 non-pass。

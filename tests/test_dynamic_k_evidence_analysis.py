@@ -88,7 +88,7 @@ def _dynamic_result(macro: int) -> dict:
     return result
 
 
-def _direct_family_b_result(macro: int) -> dict:
+def _direct_family_b_result(macro: int, evaluation_k: int = 1) -> dict:
     result = _dynamic_result(macro)
     adapter = result["adapter"]
     adapter.update(
@@ -109,6 +109,20 @@ def _direct_family_b_result(macro: int) -> dict:
     adapter["writer_asset"]["kind"] = (
         "dynamic_k_semantic_address_direct_family_b_rank8_macro_checkpoint"
     )
+    if evaluation_k > 1:
+        adapter["video_schedule"]["videos_per_condition"] = evaluation_k
+        adapter["information_wall"].update(
+            {
+                "evaluation_k": evaluation_k,
+                "writer_input": (
+                    f"exact task language plus {evaluation_k} action-hidden "
+                    "teacher videos through the dynamic-K graph"
+                ),
+            }
+        )
+        adapter["pairing_reference"] = (
+            "ember_pi05_dynamic_k_nested_video_set_pairing_v1"
+        )
     for row in result["rows"]:
         row["writer"].update(
             {
@@ -118,6 +132,9 @@ def _direct_family_b_result(macro: int) -> dict:
                 ),
                 "method_arm": adapter["arm"],
                 "writer_checkpoint_kind": adapter["writer_asset"]["kind"],
+                "evaluation_k": evaluation_k,
+                "condition_video_offsets": [0, evaluation_k],
+                "pairing_reference": adapter["pairing_reference"],
             }
         )
     result["arm"] = adapter["arm"]
@@ -170,6 +187,26 @@ def test_direct_family_b_formal_panel_accepts_runtime_writer_input(
     )
     indexed = analysis._formal_panel_index(_direct_family_b_result(50))
     assert len(indexed) == 400
+
+
+def test_direct_family_b_formal_panel_accepts_k4_runtime_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        analysis,
+        "paired_writer_identity",
+        lambda adapter: {key: adapter[key] for key in _WRITER_IDENTITY_KEYS},
+    )
+    calls = []
+
+    def validate(_adapter: dict, evidence: dict, **_identity: object) -> bool:
+        calls.append(evidence["evaluation_k"])
+        return True
+
+    monkeypatch.setattr(analysis, "_validate_dynamic_k_episode_evidence", validate)
+    indexed = analysis._formal_panel_index(_direct_family_b_result(50, 4))
+    assert len(indexed) == 400
+    assert calls == [4] * 400
 
 
 def test_dynamic_k_family_rejects_rank16_or_nonprefix_curve(

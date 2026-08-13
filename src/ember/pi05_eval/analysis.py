@@ -67,6 +67,33 @@ def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, Any]]:
     _fail("Writer result is not a sealed supported method family")
 
 
+def _formal_video_input_matches(
+    family: Mapping[str, Any],
+    schedule: Mapping[str, Any],
+    wall: Mapping[str, Any],
+) -> bool:
+    observed_videos = int(schedule.get("videos_per_condition", -1))
+    supported_videos = tuple(
+        int(value)
+        for value in family.get(
+            "supported_videos_per_condition",
+            (int(family.get("videos_per_condition", 1)),),
+        )
+    )
+    expected_input = family.get(
+        "writer_input", "exact task language plus one action-hidden teacher video"
+    )
+    if observed_videos > 1:
+        expected_input = str(
+            family.get("multi_video_writer_input_template", "")
+        ).format(evaluation_k=observed_videos)
+    return (
+        observed_videos in supported_videos
+        and wall.get("writer_input") == expected_input
+        and int(wall.get("evaluation_k", observed_videos)) == observed_videos
+    )
+
+
 def _formal_adapter(
     result: Mapping[str, Any],
 ) -> tuple[Mapping[str, Any], Mapping[str, Any], str]:
@@ -85,9 +112,6 @@ def _formal_adapter(
         "language_only_lora_path": False,
         "deployment_expert_bank_read": False,
     }
-    expected_writer_input = family.get(
-        "writer_input", "exact task language plus one action-hidden teacher video"
-    )
     if (
         result.get("schema_version") != AGGREGATE_SCHEMA
         or result.get("mode") != "formal"
@@ -102,12 +126,10 @@ def _formal_adapter(
         or int(schedule.get("seed", -1)) != 7
         or int(schedule.get("demo_count", -1)) != 50
         or schedule.get("sampling_mode") != "without_replacement"
-        or int(schedule.get("videos_per_condition", -1))
-        != int(family.get("videos_per_condition", 1))
+        or not _formal_video_input_matches(family, schedule, wall)
         or schedule.get("paired_between_all_video_conditions") is not True
         or schedule.get("queue_order_independent") is not True
         or any(wall.get(key) != value for key, value in expected_wall.items())
-        or wall.get("writer_input") != expected_writer_input
         or adapter.get("lora_contract", {}).get("rank")
         != int(family.get("lora_rank", 16))
         or adapter.get("lora_contract", {}).get("target_count")

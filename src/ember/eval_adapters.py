@@ -212,6 +212,7 @@ def inspect_dynamic_k_writer_adapter(
     video_seed: int,
     video_sampling_mode: str,
     require_formal: bool,
+    evaluation_k: int = 1,
 ) -> dict[str, Any]:
     from ember.writer.errors import WriterModelError
     from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
@@ -227,6 +228,7 @@ def inspect_dynamic_k_writer_adapter(
             video_seed=video_seed,
             video_sampling_mode=video_sampling_mode,
             require_formal=require_formal,
+            evaluation_k=evaluation_k,
         )
     except WriterModelError as error:
         raise Pi05EvaluationError(str(error)) from error
@@ -262,6 +264,9 @@ def reinspect_writer_adapter(
     if kind == DYNAMIC_K_WRITER_KIND:
         from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
 
+        common["evaluation_k"] = int(
+            adapter.get("information_wall", {}).get("evaluation_k", 1)
+        )
         return inspect_dynamic_k_writer_evaluation(**common)
     raise Pi05EvaluationError("retired Writer adapter kind")
 

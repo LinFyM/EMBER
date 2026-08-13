@@ -17,6 +17,7 @@ from ember.lora import LoRATarget, SmolVLALoRAContract
 from ember.writer.evaluation_cache import (
     DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA,
     DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM,
+    DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM,
     WRITER_LORA_ASSIGNMENT,
     WRITER_LORA_LEGACY_ASSIGNMENT,
     assigned_writer_cache_batches,
@@ -443,6 +444,42 @@ def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
     assert contract["writer_lora_cache"]["generation_recipe"][
         "cache_key_algorithm"
     ] == DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM
+
+
+def test_dynamic_k_cache_dispatches_nested_k4_video_sets(tmp_path: Path) -> None:
+    contract = _contract(tmp_path / "dynamic-k4")
+    adapter = contract["adapter"]
+    adapter.update(
+        {
+            "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
+            "kind": DYNAMIC_K_WRITER_KIND,
+            "config": {
+                "schema": (
+                    "ember_pi05_dynamic_k_semantic_address_direct_family_b_"
+                    "rank8_as_writer_v1"
+                )
+            },
+            "information_wall": {"evaluation_k": 4},
+        }
+    )
+    adapter["video_schedule"].update(
+        {
+            "videos_per_condition": 4,
+            "backbone_total_frames_per_condition": 64,
+        }
+    )
+    descriptor = build_writer_lora_cache_descriptor(
+        contract,
+        root=tmp_path / "dynamic-k4-cache",
+        generators_per_gpu=1,
+        generation_batch_size=2,
+        lora_parameter_count=14,
+        lora_tensor_count=2,
+        lora_storage_per_entry=_lora_storage(),
+    )
+    assert descriptor["generation_recipe"]["cache_key_algorithm"] == (
+        DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM
+    )
 
 
 def test_writer_cache_is_atomic_complete_and_loadable_without_hashes(

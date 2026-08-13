@@ -49,7 +49,8 @@ exact language + K=1..4 same-task ordered action-hidden videos
 Core/Procedure/compiler/factor路径。Slot-Set只有约197k参数，K=1严格恒等于原v6；首轮只训练该层，快速判断
 few-shot共同程序能否在强底座上带来净增。warm start只作机制开发，若成功仍需从零训练。完整authority见
 [`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`](docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md)。
-canonical实现、370项CPU测试和真实GPU机制门已通过，当前进入full24 B20吞吐profile。
+canonical实现、370项CPU测试、真实GPU机制门和world5 full24 B20 profile已通过，formal合同已seal并进入fresh
+macro0→25。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

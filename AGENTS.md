@@ -56,7 +56,8 @@ exact language + K=1..4 same-task action-hidden ordered videos
 残差恒零而严格等于原v6；K>1才学习过滤same-task demo nuisance。它不平均最终LoRA，不增加negative/expert/RL，
 也不把warm start冒充最终方法；若机制通过，仍需同一train24信息墙下从零训练。当前authority为
 `docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`，精确run状态只取
-`docs/active_session_handoff.md`。canonical实现、全量CPU和真实GPU机制门已通过，当前进入full24 B20 profile。
+`docs/active_session_handoff.md`。canonical实现、全量CPU、真实GPU机制门与world5 full24 profile已通过，formal
+合同已seal，当前进入fresh macro0→25。
 
 ## 4. Long-term objective and decision rule
 

@@ -15,8 +15,8 @@
   `-43/-47/-37`，相对v6-fast逐task差=`+4/-2/-8/-37/0/+1/-9/-1`；
 - 当前active design：V6 Dynamic Slot-Set Bridge；冻结历史v6-fast macro400，只训练K1恒等、K>1置换不变的
   per-policy-slot集合层，原生v6 factor heads只解码一次；
-- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现与GPU机制验证已
-  完成，当前下一步是full24 B20 profile并seal formal合同；
+- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现、GPU机制验证和
+  full24 B20 profile均完成，formal合同已seal，当前下一步是clean pushed commit上的fresh macro0→25；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -408,4 +408,17 @@ fresh recipe。
 canonical实现已完成：复用native v6 owner，只新增约197k参数的`PolicySlotSetFusion`，并删除退役rank8
 backbone-memory/memory-program/LoRA-mapper active路径。全量CPU=`370 passed`；真实GPU smoke中K1的76个LoRA
 tensors逐元素等于native v6，base无梯度，K2/K4 video换位最终LoRA/Program只出现正常BF16低位差异，真实video
-倒序Program mean abs变化=`.21703`，峰值reserved=`19.27GB`。当前无EMBER GPU进程，下一步直接做full24 profile。
+倒序Program mean abs变化=`.21703`，峰值reserved=`19.27GB`。
+
+full24 profile root：
+
+`runs/outputs/pi05_v6_dynamic_slot_set_bridge_profile_r5_b20_07e9477_gpu01_20260814`
+
+- clean detached `07e9477`，gpu01物理`0,1,4,5,6` world5，24/24 tasks，K1--K4各6；
+- 所有selected videos完整保留，最长condition=`323` frames；`30.7422s/macro`，functional=`.101173`，gradient
+  norm=`1.7725e-6`，peak allocated/reserved=`36.48/40.75GB`，0 OOM/nonfinite；
+- checkpoint、completion和exit0完整；profile state不进入formal训练；
+- 首次`8278f74`尝试在任何step前因worktree-relative v6 asset路径fail-closed；`07e9477`改为runtime显式asset root，
+  全量CPU仍`370 passed`，科学合同未变。
+
+当前无EMBER GPU进程；formal config已seal，下一步fresh macro0→25、checkpoint25，不加载profile checkpoint。

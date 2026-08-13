@@ -1,6 +1,7 @@
 # V6 Dynamic Slot-Set Bridge
 
-状态：2026-08-14 active controlled bridge authority，canonical实现和真实GPU机制门已通过，等待full24吞吐profile。
+状态：2026-08-14 active controlled bridge authority，canonical实现、真实GPU机制门和full24吞吐profile已通过，
+formal合同已seal并进入fresh macro0→25。
 本文授权以历史v6-fast macro400为冻结性能底座，只新增一个K=1严格恒等、K>1置换不变的跨视频Program-slot
 集合层。它是机制开发实验；若成功，仍需在同一train24信息墙内完成从零训练，warm start不能成为最终论文方法
 的隐含前提。
@@ -117,4 +118,10 @@ gpu01物理GPU4上的真实source-policy smoke给出：
 - 同一K1真实视频倒序使Program mean abs变化=`.21703`，显著大于换序低位差异，内部时序路径保持有效；
 - peak allocated/reserved=`18.75/19.27GB`，未发生OOM或nonfinite。
 
-这些结果只通过机制门，不是closed-loop成绩。下一步仍是full24 B20 profile、seal config，然后fresh macro0→25。
+这些结果只通过机制门，不是closed-loop成绩。
+
+full24 B20 profile使用clean detached `07e9477`、gpu01物理`0,1,4,5,6` world5：K1--K4各6，24/24 tasks
+finite，所有视频完整保留，最长condition=`323`帧；`30.7422s/macro`，global functional=`.101173`，gradient
+norm=`1.7725e-6`，peak allocated/reserved=`36.48/40.75GB`，0 OOM/nonfinite。第一份`8278f74`尝试在任何
+optimizer step前因frozen worktree错误解析相对v6资产路径fail-closed；`07e9477`把同一checkpoint从runtime显式
+canonical asset root解析，未改科学图。profile checkpoint不进入formal训练；下一步fresh macro0→25。

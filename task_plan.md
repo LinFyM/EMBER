@@ -80,7 +80,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位切换canonical Writer到冻结v6-fast + 197120参数Slot-Set层，并删除退役rank8 executable路径；
 - [x] 完成全量CPU=`370 passed`与真实GPU机制门：K1逐tensor恒等、K轴换位仅BF16低位差异、video内倒序敏感、
   base无梯度；
-- [ ] 完成full24 B20真实profile并seal formal合同；
+- [x] 完成gpu01 world5 full24 B20真实profile：`30.7422s/macro`、peak reserved=`40.75GB`、K1--K4各6、
+  最长323帧、0 OOM/nonfinite，并seal formal合同；
 - [ ] 训练到macro25并做K4 strict paired correct400；仅有明确增益才续到50；
 - [ ] 若超过150，补K1--K4 scaling与五臂因果controls；若机制成立，再制定同架构fresh训练authority。
 
@@ -108,4 +109,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。V6 Dynamic Slot-Set canonical实现与机制验证已完成且无活动GPU进程；当前进入full24 profile。
+无权限或资产阻塞。V6 Dynamic Slot-Set profile已通过且无活动GPU进程；当前从clean pushed seal commit fresh训练
+macro0→25。

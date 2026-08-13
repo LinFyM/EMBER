@@ -22,7 +22,8 @@ update，说明当前B20 surrogate不能约束有用factor allocation。该证�
 
 canonical实现与GPU机制门已通过：K1的76个LoRA tensors逐元素等于native v6，只有197120个Slot-Set参数可训练，
 v6/source无梯度，真实video倒序明显改变Program；全量CPU=`370 passed`。K2/K4换位只产生BF16 batched-forward
-低位差异，不为此拆分forward或降低吞吐。当前待完成full24 B20 profile并seal正式训练合同。
+低位差异，不为此拆分forward或降低吞吐。full24 B20 world5 profile=`30.7422s/macro`、peak reserved=`40.75GB`、
+K1--K4各6、最长323帧、0 OOM/nonfinite；formal合同已seal，当前fresh训练到macro25。
 
 ## 2. Single changed variable and training semantics
 

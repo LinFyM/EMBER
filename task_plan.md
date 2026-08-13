@@ -98,7 +98,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成真实GPU机制门：K1 zero/nonzero set均逐tensor恒等，倒序敏感，base无梯度；
 - [x] 完成gpu01 world6 full24 B20 profile：steady`24.249s`、reserved`40.758GB`、K各6、最长323帧；
 - [x] macro1→2 q/k参数均非零更新并seal formal合同；profile checkpoint不进入formal；
-- [ ] fresh macro0→25，随后K4 strict paired correct400；按134/breadth7门立即裁决。
+- [x] clean detached `502618b`、gpu01 world6 fresh macro0→25：25/25 metrics、completion与完整checkpoint，
+  总耗时`662.730s`，0 OOM/nonfinite；
+- [x] macro25 K4 deployment profile：B8/B16/B32=`.223358/.223313/.223323 LoRA/s`，三者stable，
+  按最高吞吐锁B8；
+- [ ] 从profile-sealed clean commit做K4 strict paired correct400；按134/breadth7门立即裁决。
 
 ## Continuous loop after this result
 
@@ -124,5 +128,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Shared-Core Procedure-Set的canonical CPU/GPU机制与profile均通过，当前无活动EMBER GPU
-进程；formal合同已seal，下一步fresh macro0→25。
+无权限或资产阻塞。Shared-Core Procedure-Set fresh macro0→25及K4 live deployment profile完整；当前无活动
+EMBER GPU进程，下一步从profile-sealed clean commit做K4 strict paired correct400。

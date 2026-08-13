@@ -169,3 +169,10 @@ full24 B20 live profile root：
   credit已展开到完整set，不是永久只训练output head；
 - completion、两组完整checkpoint、6 rank RNG state和exit0齐全。profile只seal吞吐/机制，正式训练必须fresh
   macro0，不加载profile checkpoint。
+
+clean detached `502618b`随后在相同gpu01物理`0,1,2,4,5,6` world6完成fresh macro0→25：25条metrics、
+macro25 checkpoint、completion与exit0齐全，总耗时`662.7296s`，每macro K1--K4严格各6，loss first/last=
+`.10118184/.09565479`、梯度范数范围`3.5721e-6..1.3584e-5`、0 OOM/nonfinite。macro25 checkpoint在
+gpu01物理4的K4 correct val8×4固定最长优先面板上完成deployment profile：B8/B16/B32=
+`.2233579/.2233132/.2233235 LoRA/s`，全部stable、0 OOM，峰值reserved约`12.95/12.97/13.01GB`；按预注册
+最高吞吐规则锁B8。该profile只封存正式evaluator batch，不作方法有效性证据。

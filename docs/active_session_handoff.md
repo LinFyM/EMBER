@@ -16,7 +16,9 @@
 - 当前active design：V6 Shared-Core Procedure-Set Bridge；冻结历史v6-fast，只把约197k集合层从完整compiler后
   前移到shared Core读出与最终Core/Procedure fusion之间；
 - active authority=`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项
-  定向门、全量CPU=`371 passed`和真实world6机制/profile均通过；formal合同已seal，当前下一步是fresh macro0→25；
+  定向门、全量CPU=`371 passed`和真实world6机制/profile均通过；clean detached fresh macro0→25已完整结束；
+- macro25 K4 B8/B16/B32 live生成吞吐=`.223358/.223313/.223323 LoRA/s`，三者stable且0 OOM，按规则锁B8；
+- 当前下一步是从profile-sealed clean commit做K4 strict paired correct400；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -489,4 +491,21 @@ full24 B20 profile root：
 - macro1→2 query/key delta norm=`4.1365e-5/3.9905e-5`，证明首步后完整set credit展开；
 - completion macro2、两组checkpoints、6 rank states、exit0完整。profile checkpoint不进入formal。
 
-profile evidence现已seal入config；当前无EMBER GPU进程，下一步从新的clean pushed commit fresh训练macro0→25。
+profile evidence现已seal入config。clean detached `502618b`随后完成正式fresh macro0→25：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_formal_fresh0to25_r6_b20_502618b_gpu01_20260814`
+
+- gpu01物理`0,1,2,4,5,6` world6；25/25 metrics、macro25完整checkpoint、completion、exit0；
+- 总耗时=`662.7296s`，每macro K1--K4各6，loss first/last=`.10118184/.09565479`；
+- gradient范围=`3.5721e-6..1.3584e-5`，peak reserved=`40.758GB`，0 OOM/nonfinite。
+
+macro25 K4 deployment profile root：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p4_502618b_macro0025_20260814`
+
+- gpu01物理4；固定val8×4 correct最长优先面板；B8/B16/B32分别=`.2233579/.2233132/.2233235 LoRA/s`；
+- 三者stable、0 OOM，峰值reserved约`12.95/12.97/13.01GB`；按最高吞吐锁B8；
+- profile只裁决deployment batch，不提供closed-loop方法证据。
+
+当前无EMBER GPU进程。下一步把profile封存进clean pushed evaluator authority后立即做macro25 K4 strict paired
+correct400，并按`134/breadth7`预注册门裁决。

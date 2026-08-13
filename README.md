@@ -52,8 +52,9 @@ phase alignment或LoRA平均。K=1仍严格恒等于原v6；K>1先形成共同�
 authority见
 [`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
 canonical实现、64项定向门、全量`371 passed`和真实GPU机制/profile均通过：world6 steady macro为`24.25s`，
-峰值reserved约`40.76GB`，K1--K4各6且最长323帧完整。formal合同已seal，当前从fresh macro0训练到25；尚无
-新closed-loop claim。
+峰值reserved约`40.76GB`，K1--K4各6且最长323帧完整。clean detached fresh macro0→25已完整结束；macro25 K4
+B8/B16/B32生成吞吐=`.223358/.223313/.223323 LoRA/s`，锁B8。当前等待profile-sealed clean commit的strict
+paired correct400，尚无新closed-loop claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

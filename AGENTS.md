@@ -57,8 +57,9 @@ exact language + K=1..4 same-task action-hidden ordered videos
 共同Core读出与最终Core/Procedure fusion之间。它不拼接Procedure、不做phase alignment、LoRA平均、negative、
 expert或RL。K=1严格等于原v6；warm start若成功仍需同一train24信息墙下建立从零recipe。当前authority为
 `docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项定向门、全量CPU
-`371 passed`和真实world6机制/profile已通过，steady macro=`24.2495s`、peak reserved=`40.758GB`；formal合同
-已seal，当前进入fresh macro0→25，精确run状态只取`docs/active_session_handoff.md`。
+`371 passed`和真实world6机制/profile已通过，steady macro=`24.2495s`、peak reserved=`40.758GB`；clean detached
+fresh macro0→25已完成，K4 B8/B16/B32 live生成吞吐=`.223358/.223313/.223323 LoRA/s`并锁B8。当前下一裁决是
+profile-sealed clean commit的strict paired correct400，精确run状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

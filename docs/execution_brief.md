@@ -24,7 +24,11 @@ compiler之后前移到shared Core读出与最终Core/Procedure fusion之间：�
 canonical实现已完成。64项定向门验证native compiler阶段化前后逐tensor相等、K1在任意set参数下严格等于native
 v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set参数获得梯度；全量CPU=`371 passed`。
 真实gpu01 world6 full24 B20 profile的macro1/2=`26.011/24.249s`、peak reserved=`40.758GB`、K1--K4各6、最长
-323帧且0 OOM/nonfinite；macro1→2 q/k delta非零，完整set credit已打开。formal合同已seal，当前fresh macro0→25。
+323帧且0 OOM/nonfinite；macro1→2 q/k delta非零，完整set credit已打开。clean detached `502618b` fresh
+macro0→25也已完整结束：25/25 metrics、completion与checkpoint齐全，总耗时`662.730s`，loss first/last=
+`.101182/.095655`，0 OOM/nonfinite。macro25 K4 B8/B16/B32 deployment profile分别为
+`.223358/.223313/.223323 LoRA/s`，三者stable且峰值reserved约`13.01GB`，按最高吞吐锁B8；下一步直接做
+strict paired correct400。
 
 ## 2. Single changed variable and training semantics
 

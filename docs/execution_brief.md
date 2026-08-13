@@ -93,6 +93,9 @@ breadth≥6且macro200未相对best崩落>15，才resume 200→400。
 额外fixed-A诊断表明：old134有效BA的逐样本最优rank8保留`.999999`能量，当前随机固定A只可达`.01950`；
 train24 experts对应`.99809/.18450`。train24最优共享A虽在experts保留`.94063`，到old134 held只剩`.06811`。
 这只预注册“若完整曲线non-pass，则单独让A随task/video生成”的候选；不提前改变当前训练，也不把offline几何当性能。
+同一old134上按task做3-video-fit/1-video-held-out时，rank8 A行空间保留`.9997255`，8个task均高于`.99916`：
+所需A应是从完整language+video Program得到、跨same-task视频稳定的task program，不是静态全局basis，也不是任意
+per-video correction。现有shared/singleton Program consistency会直接约束候选A，无需新增LoRA consistency objective。
 
 ## 5. K4 result and next design boundary
 

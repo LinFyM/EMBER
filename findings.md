@@ -174,6 +174,12 @@ LoRA只保留`.068108`。因此静态SFT/expert A basis并不是合理解法；�
 conditioned Program动态生成A，同时保留现有rank8、direct readout及全部视频结构。该分析只证明可达空间限制，
 不证明动态A闭环有效；历史v6-fast完整动态A/B只提供可行性先例，不能替代新的单变量fresh实验。
 
+old134同一task的四条独立视频还提供了关键区分：用其中三条联合拟合rank8 A行空间、对第四条leave-one-video-out，
+overall effective-BA能量保留`.9997255`，q/v/action=`.9997540/.9996504/.9992049`，逐task最低仍`.9991674`。
+所以强方法所需的A是跨same-task视频高度稳定的task-level functional input subspace；它既不是当前随机固定A，也不应
+成为不受约束的video-specific A。现有Dynamic-K的shared Program与singleton Program一致性正好可把这个归纳偏置传给
+同一Program上的dynamic-A readout，不需要另造expert bank、task ID route或额外一致性损失。
+
 ## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；

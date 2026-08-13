@@ -318,5 +318,12 @@ train24静态A也没有足够held外推。历史v6-fast143使用完整task-condi
 全部evidence、temporal/set、20×8 M2P、rank8和B20，只给同一projected Program增加bias-free direct family-A
 readout；不恢复旧nonlinear family hidden、expert bank、rank sweep或旧前端。
 
+macro150 strict root内的`fixed_a_same_task_video_loo_analysis.json`进一步对old134的每个validation task用3条
+视频拟合rank8 A行空间并leave-one-video-out测试第4条：overall保留`.9997255`，q/v/action分别为
+`.9997540/.9996504/.9992049`，8个task逐task均高于`.99916`。这说明强Writer中的有效A行空间不是任意
+video-specific噪声，而是跨same-task视频极稳定、同时不能由一套train24静态A向held task外推的task-level结构。
+因此候选A必须由完整language+video Program生成并继承现有shared-vs-singleton Program一致性，不能变成task ID、
+language-only route或逐视频自由漂移；B及其余Program仍承载正确视频证据。该结论仍只界定结构，不替代closed-loop。
+
 完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/
 机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

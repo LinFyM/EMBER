@@ -95,8 +95,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换canonical实现/schema/config，删除旧post-compiler runtime path；
 - [x] 完成64项定向CPU门：compiler阶段化严格等价、K1恒等、K-set换位不变、video内顺序敏感、梯度/freeze正确；
 - [x] 完成全量CPU=`371 passed`；
-- [ ] 完成真实GPU机制门；
-- [ ] 完成full24 B20 profile并seal formal合同；
+- [x] 完成真实GPU机制门：K1 zero/nonzero set均逐tensor恒等，倒序敏感，base无梯度；
+- [x] 完成gpu01 world6 full24 B20 profile：steady`24.249s`、reserved`40.758GB`、K各6、最长323帧；
+- [x] macro1→2 q/k参数均非零更新并seal formal合同；profile checkpoint不进入formal；
 - [ ] fresh macro0→25，随后K4 strict paired correct400；按134/breadth7门立即裁决。
 
 ## Continuous loop after this result
@@ -123,5 +124,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。V6 Dynamic Slot-Set已以130终局，当前无活动EMBER GPU进程；Shared-Core Procedure-Set的
-canonical CPU实现已完成，下一步是真实GPU机制门和full24 profile。
+无权限或资产阻塞。Shared-Core Procedure-Set的canonical CPU/GPU机制与profile均通过，当前无活动EMBER GPU
+进程；formal合同已seal，下一步fresh macro0→25。

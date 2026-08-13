@@ -56,9 +56,9 @@ exact language + K=1..4 same-task action-hidden ordered videos
 该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层；唯一主变量是把集合聚合从完整compiler之后前移到
 共同Core读出与最终Core/Procedure fusion之间。它不拼接Procedure、不做phase alignment、LoRA平均、negative、
 expert或RL。K=1严格等于原v6；warm start若成功仍需同一train24信息墙下建立从零recipe。当前authority为
-`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项定向门和全量CPU
-`371 passed`已通过，
-当前进入真实GPU机制/profile，精确run状态只取`docs/active_session_handoff.md`。
+`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项定向门、全量CPU
+`371 passed`和真实world6机制/profile已通过，steady macro=`24.2495s`、peak reserved=`40.758GB`；formal合同
+已seal，当前进入fresh macro0→25，精确run状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

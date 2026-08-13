@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_shared_core_procedure_set_bridge_as_writer_v1",
-  "status": "active_profile_pending",
+  "status": "active_formal_ready",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -140,7 +140,29 @@
     "stop_after_macro": 1
   },
   "formal_run": {
-    "status": "unsealed_pending_live_profile",
+    "status": "sealed",
+    "profile_evidence": {
+      "source_commit": "97c0de2fc36d5566f7086bfe5ba3ba3563dd58c4",
+      "run_root": "runs/outputs/pi05_v6_shared_core_procedure_set_bridge_profile_r6_b20_97c0de2_gpu01_20260814",
+      "host": "gpu01",
+      "physical_gpu_ids": [0, 1, 2, 4, 5, 6],
+      "world_size": 6,
+      "completion_macro": 2,
+      "first_macro_seconds": 26.01095342996996,
+      "macro_seconds": 24.249484056024812,
+      "global_mean_functional_loss": 0.09570903827746709,
+      "global_mean_consistency_loss": 0.0,
+      "gradient_norm_before_clip": 6.296289939200506e-6,
+      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
+      "longest_total_sampled_frames": 323,
+      "all_selected_videos_untruncated": true,
+      "max_cuda_allocated_bytes": 36495013888,
+      "max_cuda_reserved_bytes": 40758149120,
+      "macro1_to_macro2_query_delta_norm": 4.1364557546330616e-5,
+      "macro1_to_macro2_key_delta_norm": 3.990528057329357e-5,
+      "oom_count": 0,
+      "nonfinite_count": 0
+    },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 400,
     "per_task_action_batch_size": 20,

@@ -78,6 +78,9 @@ def test_v6_shared_core_procedure_set_config_is_loadable() -> None:
         "native_adaln_fusion"
     )
     assert config["writer"]["policy_slot_count"] == 320
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["profile_evidence"]["world_size"] == 6
+    assert config["formal_run"]["profile_evidence"]["completion_macro"] == 2
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,

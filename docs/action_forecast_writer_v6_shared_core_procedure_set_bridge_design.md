@@ -1,6 +1,6 @@
 # V6 Shared-Core Procedure-Set Bridge
 
-状态：2026-08-14 canonical implementation complete、GPU profile pending的active design authority。上一轮V6 Dynamic Slot-Set Bridge已在macro25 K4 strict paired
+状态：2026-08-14 canonical implementation、GPU mechanism/profile complete且formal seal ready的active design authority。上一轮V6 Dynamic Slot-Set Bridge已在macro25 K4 strict paired
 correct400得到`130/400`、breadth6，按预注册门终局non-pass；其实现和checkpoint只由Git与formal artifacts保存，
 不得继续训练或通过K/LR/seed/temperature sweep救援。
 
@@ -148,3 +148,24 @@ checkpoint能力包装成论文最终方法。
 读出/融合的窄复用接口，不复制compiler。`slot_set.py`继续拥有唯一跨video集合算子。上一轮post-compiler路径、
 schema、config和专属tests在本次替换时删除，由commit`34c0431`及formal artifacts保存；不保留runtime flag或
 第二canonical实现。
+
+## 8. 实现与live profile证据
+
+canonical实现保持一个Writer路径，只给native compiler增加Core read、normalized-Procedure read和最终fusion的窄
+阶段接口；`fused_slots`由这些接口原样组合，CPU逐tensor等价测试锁住旧图。K1在Procedure-Set output为zero或
+nonzero时，76个LoRA tensors均与native v6逐元素相等；K>1 set换位只有正常BF16 sample-order低位差异，真实
+video倒序使Program mean abs变化`.217034`。source/v6 base无梯度，唯一trainable为5 tensors / `197120`参数。
+
+full24 B20 live profile root：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_profile_r6_b20_97c0de2_gpu01_20260814`
+
+- clean detached `97c0de2`，gpu01物理`0,1,2,4,5,6` world6；macro1/2均24/24 tasks、K1--K4各6；
+- macro1/2 wall=`26.01095/24.24948s`，functional=`.10118184/.09570904`，gradient norm=
+  `4.3242e-6/6.2963e-6`；
+- 全部selected videos未截断，跨两步最长condition=`323`帧；peak allocated/reserved=
+  `36,495,013,888/40,758,149,120` bytes；0 OOM/nonfinite；
+- macro1→2的Procedure-Set query/key delta norm=`4.1365e-5/3.9905e-5`，证明zero-output首步后真实functional
+  credit已展开到完整set，不是永久只训练output head；
+- completion、两组完整checkpoint、6 rank RNG state和exit0齐全。profile只seal吞吐/机制，正式训练必须fresh
+  macro0，不加载profile checkpoint。

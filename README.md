@@ -51,8 +51,9 @@ exact language + K=1..4 same-task ordered action-hidden videos
 phase alignment或LoRA平均。K=1仍严格恒等于原v6；K>1先形成共同高层语义，再比较各video内部有序过程。完整
 authority见
 [`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
-canonical实现、64项定向门和全量`371 passed`已通过，当前进入真实GPU机制验证与full24 B20 profile；尚无
-closed-loop claim。
+canonical实现、64项定向门、全量`371 passed`和真实GPU机制/profile均通过：world6 steady macro为`24.25s`，
+峰值reserved约`40.76GB`，K1--K4各6且最长323帧完整。formal合同已seal，当前从fresh macro0训练到25；尚无
+新closed-loop claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

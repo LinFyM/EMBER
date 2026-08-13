@@ -192,9 +192,11 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             not isinstance(evidence.get("source_commit"), str)
             or len(evidence["source_commit"]) != 40
             or int(evidence.get("world_size", 0)) not in range(1, 7)
-            or int(evidence.get("completion_macro", 0)) != 1
+            or int(evidence.get("completion_macro", 0)) != 2
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
+            or float(evidence.get("macro1_to_macro2_query_delta_norm", 0)) <= 0
+            or float(evidence.get("macro1_to_macro2_key_delta_norm", 0)) <= 0
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
         ):

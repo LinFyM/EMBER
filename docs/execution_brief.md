@@ -22,8 +22,9 @@ compiler之后前移到shared Core读出与最终Core/Procedure fusion之间：�
 运行一次。完整合同见`action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。
 
 canonical实现已完成。64项定向门验证native compiler阶段化前后逐tensor相等、K1在任意set参数下严格等于native
-v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set参数获得梯度；全量CPU=`371 passed`。当前
-先做真实GPU机制门和full24 B20 profile；尚未seal formal训练，也没有closed-loop claim。
+v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set参数获得梯度；全量CPU=`371 passed`。
+真实gpu01 world6 full24 B20 profile的macro1/2=`26.011/24.249s`、peak reserved=`40.758GB`、K1--K4各6、最长
+323帧且0 OOM/nonfinite；macro1→2 q/k delta非零，完整set credit已打开。formal合同已seal，当前fresh macro0→25。
 
 ## 2. Single changed variable and training semantics
 

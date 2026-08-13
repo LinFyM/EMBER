@@ -16,7 +16,7 @@
 - 当前active design：V6 Shared-Core Procedure-Set Bridge；冻结历史v6-fast，只把约197k集合层从完整compiler后
   前移到shared Core读出与最终Core/Procedure fusion之间；
 - active authority=`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项
-  定向门与全量CPU=`371 passed`，当前下一步是真实GPU机制门和full24 B20 profile；
+  定向门、全量CPU=`371 passed`和真实world6机制/profile均通过；formal合同已seal，当前下一步是fresh macro0→25；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -473,5 +473,20 @@ active successor为`docs/action_forecast_writer_v6_shared_core_procedure_set_bri
 
 canonical实现已原位替换旧schema/config/runtime，旧路径由commit`34c0431`与formal artifacts保存。64项定向CPU
 测试通过：compiler阶段化与旧图逐tensor相等，K1在任意set参数下严格等于native v6，K>1 video set换位不变且
-video内倒序敏感，base无梯度、Procedure-Set梯度非零；全量CPU=`371 passed`。当前无EMBER GPU进程；下一步为真实GPU机制门与full24
-B20 profile，profile seal前不得formal训练。
+video内倒序敏感，base无梯度、Procedure-Set梯度非零；全量CPU=`371 passed`。
+
+真实机制smoke在gpu01物理4完成：K1在zero/nonzero set output下均与native v6的76 tensors逐元素相等；倒序
+Program mean abs=`.217034`；trainable=`197120`，rank16 LoRA=`1,287,168`参数，base无梯度，peak reserved=
+`19.367GB`。
+
+full24 B20 profile root：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_profile_r6_b20_97c0de2_gpu01_20260814`
+
+- clean detached `97c0de2`，gpu01物理`0,1,2,4,5,6` world6；macro1/2均K1--K4各6；
+- wall=`26.01095/24.24948s`，functional=`.10118184/.09570904`，gradient=`4.3242e-6/6.2963e-6`；
+- 最长condition=`323`帧且全部未截断；peak allocated/reserved=`36.495/40.758GB`；0 OOM/nonfinite；
+- macro1→2 query/key delta norm=`4.1365e-5/3.9905e-5`，证明首步后完整set credit展开；
+- completion macro2、两组checkpoints、6 rank states、exit0完整。profile checkpoint不进入formal。
+
+profile evidence现已seal入config；当前无EMBER GPU进程，下一步从新的clean pushed commit fresh训练macro0→25。

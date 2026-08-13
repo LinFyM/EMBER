@@ -97,7 +97,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
 | Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
-| Task-Grounded Visual-Value rank8 | macro50=`88`, breadth5 | exact language查询raw patch Value能进入有向D/G并显著分化effective BA | 相对Direct-B=`74/14/28` retained/gained/lost；functional loss近同而held更差，当前visual Value + B20 credit未对准on-policy方向；继续预注册100/150/200 |
+| Task-Grounded Visual-Value rank8 | macro50=`88`, breadth5 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | 相对Direct-B=`74/14/28` retained/gained/lost；action方向对old cosine仅`.031`、functional loss近同而held更差，当前visual Value + B20 credit未对准on-policy方向；继续100/150/200 |
 
 ## 4. Final rank14 adjudication
 

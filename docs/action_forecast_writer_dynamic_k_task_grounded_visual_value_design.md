@@ -248,3 +248,7 @@ Spatial1/3、Object1/3、Goal3/6、Long1/2为`4/0/34/2/0/41/7/0`。相对Direct-
 paired BA cosine仅`.831`、relative-L2`.584`。functional loss轨迹几乎一致。因此当前证据支持“raw visual D/G
 经B20 functional credit造成了material但held无用的policy旋转”，不支持“视频没读到”“set噪声爆炸”或“LoRA
 近identity”。按本design第12节继续macro100/150/200；macro50不能单独裁决整套组合。
+
+分target诊断中，q/v norm为Direct-B的`.947/.952x`，action-in/out norm则从`.446`增至`1.545`。后者不是异常
+能量本身：old134 action norm=`1.573`；但新架构对old134 action方向的cosine仅`.031`。所以不得据此回调action
+scale或追SFT能量；它支持的仍是“能量健康但方向/occupancy credit错误”。

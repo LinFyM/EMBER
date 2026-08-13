@@ -9,11 +9,13 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 当前active architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；
+- 最新完成architecture：Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer；其K1 macro50 strict为
+  `102/400`、breadth5，按预注册门终局non-pass，不resume；
+- 当前没有已经授权fresh训练的successor；下一项有信息量工作是为同一Dynamic-K checkpoint补齐正式K2--K4
+  deployment/evidence合同，先判断多视频聚合是否产生真实few-shot增益，再选择下一训练单变量；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
-- 当前下一有信息量裁决是已启动的macro50 single-checkpoint strict paired correct400，不以训练loss提前判断。
 
-## 2. Active architecture
+## 2. Latest completed architecture
 
 完整设计authority：
 `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
@@ -40,7 +42,7 @@ exact language + K=1..4 same-task action-hidden ordered videos
 单变量依据：semantic-address macro50 strict=`101/400`，但逐接口probe中correct task-mean off-diagonal cosine从
 M2P/final/shared-project的`.492/.529/.530`到family hidden的`.634`和dynamic-B/effective-BA的`.779/.779`。
 因此首个新增common-direction接口是旧nonlinear family mapper，不是继续重写已经能保留task/order差异的视频
-前端。上一代结果和probe只支持这个窄假设；Direct-Family-B尚无closed-loop成绩。
+前端。上一代结果和probe只支持这个窄假设；下文的closed-loop结果已经否决其充分性。
 
 ## 3. Completed formal training
 
@@ -79,22 +81,22 @@ owner要求停止时停在完整macro16，无macro25 checkpoint、无completion�
   evaluator锁B8；
 - source policy、normalization、24/8/8 split、official LIBERO preprocessing和38-target topology不变。
 
-## 5. Active strict400 evaluation
+## 5. Completed K1 strict400 and terminal analysis
 
-活动正式root：
+正式root：
 
 `runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_correct400_noreplacement_seed7_macro0050_trainr5_evalr6_c5353f3_gpu01_retry1_20260813`
 
 - frozen eval worktree：`/data1/user/ymdai/worktrees/EMBER-direct-family-b-eval-c5353f3`，clean detached `c5353f3`；
 - host/devices：gpu01物理GPU`0,2,4,5,6,7`，六卡；每卡3个persistent rollout replicas、1个Writer generator；
 - arm：validation8×50、correct K1、without-replacement seed7、macro50 single checkpoint、generation B8；
-- tmux：`ember_dfb_correct400_m50_retry1`；
+- 原tmux `ember_dfb_correct400_m50_retry1`已正常退出；
 - log：`runs/logs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_correct400_noreplacement_seed7_macro0050_trainr5_evalr6_c5353f3_gpu01_retry1_20260813.log`；
 - 400-entry LoRA cache估算peak新增`535,986,176` bytes，仍在已检查quota内；
 - 第一份无`retry1`的eval root只完成prepare；启动瞬间GPU1被他人新占约34GB，原子preflight拒绝启动，因而没有
   Worker、LoRA cache或rollout结果。它不得冒充失败实验或活动root。
 
-训练完成边界已经满足：
+完成边界：
 
 - `completion.json`且`completed_macro=50`；
 - `metrics.jsonl`覆盖macro1--50；
@@ -102,24 +104,22 @@ owner要求停止时停在完整macro16，无macro25 checkpoint、无completion�
 - launcher/torchrun正常退出，无failure artifacts或nonfinite；
 - macro50 checkpoint schema、world5 rank states和run contract一致。
 
-当前正用macro50同一个checkpoint完成validation8 x 50 states的correct-video、without-replacement seed7 strict
-paired400，Writer generation batch固定B8。完成必须有72 shards全部complete、18 worker return code全0、
-launcher completion、400无缺失/重复raw rows、results/run summary一致且无failure artifact。正式报告包括
-aggregate、per-task、per-suite、breadth，并与
-semantic101、Dynamic-K100、old134、compiler138、online128做严格paired retained/gained/lost；与v6-fast143按
-aggregate/per-task比较。
+- 72/72 shards complete，18/18 worker return code为0；
+- 400 rows及`(suite, task, init_state)` keys均唯一，无failure artifact；
+- strict=`102/400`、breadth5，per-task=`0/1/40/11/0/43/7/0`，per-suite=`1/51/43/7`；
+- top3=`94/102`，说明能力仍集中；相对semantic101为`82 retained/20 gained/19 lost`、churn39；
+- 相对Dynamic-K100为`79/23/21`、churn44；相对old134为`80/22/54`、churn76；相对compiler138为
+  `79/23/59`、churn82；相对online128为`79/23/49`、churn72；
+- 相对v6-fast143的per-task差=`0/-2/-6/-26/0/+7/-13/-1`。
 
-预注册裁决沿用design：
+exact effective-BA对照中，task-mean offdiag cosine从semantic的`.77947`降到Direct-B的`.74895`，但K1
+closed-loop只`101→102`且breadth`6→5`。因此删除family hidden/GELU只轻微缓解几何压缩，不能解决
+Program到policy direction、held on-policy usefulness或shared capability coexistence。该方法按门终局non-pass，
+不resume到100、不做小超参sweep、不补K1五臂controls。
 
-- `<120`或breadth`<6`：终局non-pass，不resume；
-- `120..133`：低于old134，除非明确工程合同违约，否则不resume；
-- `134..143`：只有相对old134 gained>lost、至少3 suites不下降且task-mean BA共线显著弱于`.779`才resume到100；
-- `>=144`：exact-resume到100；目标仍严格`>150`；
-- `>150`后补same-task-other、wrong、shuffled、reversed、no-video严格controls。
-
-无论结果高低，先完成逐task成功集合、breadth、retained/gained/lost、能力集中、Program->mapper->BA->action最早
-失效接口分析，再决定下一轮。不得靠小参数sweep救当前checkpoint，也不得因aggregate低分把昨晚已经对齐的完整
-架构思想整体推翻。
+分析artifact：同一root下`benchmark_comparison.json`与`effective_ba_task_geometry_comparison.json`。分析工具同时
+修复了一个窄工程问题：registered historical Dynamic-K families应使用各自episode schema，而runtime通用
+writer-input事实不应被方法名措辞误拒；该修复不改变任何raw row、score或科学合同。
 
 ## 6. Retained canonical assets
 
@@ -133,8 +133,14 @@ aggregate/per-task比较。
 - current config：`configs/pi05_as_writer_dynamic_k_semantic_address_direct_family_b_rank8_v1.json`；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
-## 7. Continuous research loop
+## 7. Immediate next evidence and continuous loop
 
-当前formal -> macro50 strict400 -> 深入分析 -> 选择最早失效接口 -> 单变量authority -> 实现/机制/吞吐 -> 下一次
-真实训练与评测。整个循环持续服务长期Goal。memory token、rank8、Dynamic-K范围和Direct-Family-B是当前方法，
-不是Goal本身；只有真实证据可以修改它们，不能因措辞、局部建议或历史“下一步”随意摇摆。
+当前Writer从fresh训练起真实覆盖K1/K2/K3/K4，但现有formal evaluator只执行过K1。下一步先补齐一个canonical、
+fail-closed的K2--K4 video-set generation/cache/evidence/evaluation合同，并用同一macro50 checkpoint先做K4 strict
+correct400。它回答的是“当前cross-video set是否真正产生few-shot增益”，不是续训、换checkpoint或反向救K1结果。
+若K4仍无material improvement，下一训练设计不得继续在mapper上做小修，而应把最早失效接口前移到高层Program的
+可识别性与train24 functional credit对held on-policy方向的错位。若K4显著更强，则诚实把当前setting视为few-shot，
+随后补K1--K4 scaling与视频因果controls。
+
+之后继续：真实结果 -> 深入接口分析 -> 一个主要因果变量 -> authority -> canonical实现/机制/吞吐 -> fresh训练 ->
+single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

@@ -88,6 +88,45 @@ def _dynamic_result(macro: int) -> dict:
     return result
 
 
+def _direct_family_b_result(macro: int) -> dict:
+    result = _dynamic_result(macro)
+    adapter = result["adapter"]
+    adapter.update(
+        {
+            "schema_version": (
+                "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
+                "eval_adapter_v1"
+            ),
+            "arm": "dynamic_k_semantic_address_direct_family_b_rank8_correct",
+            "config": {
+                "schema": (
+                    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
+                    "as_writer_v1"
+                )
+            },
+        }
+    )
+    adapter["writer_asset"]["kind"] = (
+        "dynamic_k_semantic_address_direct_family_b_rank8_macro_checkpoint"
+    )
+    for row in result["rows"]:
+        row["writer"].update(
+            {
+                "schema_version": (
+                    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
+                    "episode_v1"
+                ),
+                "method_arm": adapter["arm"],
+                "writer_checkpoint_kind": adapter["writer_asset"]["kind"],
+            }
+        )
+    result["arm"] = adapter["arm"]
+    result["paired_control"]["writer"] = {
+        key: adapter[key] for key in _WRITER_IDENTITY_KEYS
+    }
+    return result
+
+
 def test_dynamic_k_rank8_family_accepts_incremental_macro50_curve(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -99,7 +138,13 @@ def test_dynamic_k_rank8_family_accepts_incremental_macro50_curve(
     calls = []
 
     def validate(_adapter: dict, evidence: dict, **identity: object) -> bool:
-        calls.append((evidence["evaluation_k"], identity["init_state_id"]))
+        calls.append(
+            (
+                evidence["evaluation_k"],
+                identity["init_state_id"],
+                identity["registered_episode_schema"],
+            )
+        )
         return True
 
     monkeypatch.setattr(analysis, "_validate_dynamic_k_episode_evidence", validate)
@@ -107,6 +152,24 @@ def test_dynamic_k_rank8_family_accepts_incremental_macro50_curve(
     assert result["method_family"] == "dynamic_k_backbone_memory_rank8_v1"
     assert result["panels"]["correct400"]["50"]["overall"]["episodes"] == 400
     assert len(calls) == 400
+    assert {call[2] for call in calls} == {
+        "ember_pi05_dynamic_k_backbone_memory_rank8_episode_v1"
+    }
+
+
+def test_direct_family_b_formal_panel_accepts_runtime_writer_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        analysis,
+        "paired_writer_identity",
+        lambda adapter: {key: adapter[key] for key in _WRITER_IDENTITY_KEYS},
+    )
+    monkeypatch.setattr(
+        analysis, "_validate_dynamic_k_episode_evidence", lambda *args, **kwargs: True
+    )
+    indexed = analysis._formal_panel_index(_direct_family_b_result(50))
+    assert len(indexed) == 400
 
 
 def test_dynamic_k_family_rejects_rank16_or_nonprefix_curve(

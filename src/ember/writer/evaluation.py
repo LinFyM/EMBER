@@ -422,10 +422,17 @@ def expected_dynamic_k_episode_evidence(
     task_id: int,
     init_state_id: int,
     lora_reference: str,
+    registered_episode_schema: str | None = None,
 ) -> dict[str, Any]:
     if not lora_reference:
         raise WriterModelError("dynamic-K episode lost its LoRA reference")
-    schema = dynamic_k_episode_schema(adapter)
+    schema = (
+        dynamic_k_episode_schema(adapter)
+        if registered_episode_schema is None
+        else str(registered_episode_schema)
+    )
+    if not schema:
+        raise WriterModelError("dynamic-K episode schema is empty")
     matches = [
         row
         for row in adapter["task_video_mapping"]
@@ -500,6 +507,7 @@ def validate_dynamic_k_episode_evidence(
     suite: str,
     task_id: int,
     init_state_id: int,
+    registered_episode_schema: str | None = None,
 ) -> bool:
     if not isinstance(row, Mapping):
         return False
@@ -511,6 +519,7 @@ def validate_dynamic_k_episode_evidence(
             task_id=task_id,
             init_state_id=init_state_id,
             lora_reference=str(row.get("lora_reference", "")),
+            registered_episode_schema=registered_episode_schema,
         )
     except (KeyError, TypeError, ValueError, WriterModelError):
         return False

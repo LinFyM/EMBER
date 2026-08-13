@@ -249,7 +249,7 @@ WRITER_FAMILIES = {
         "videos_per_condition": 1,
         "writer_input": (
             "exact task language plus one action-hidden teacher video through "
-            "the dynamic-K semantic-address graph"
+            "the dynamic-K graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (
@@ -287,7 +287,7 @@ WRITER_FAMILIES = {
         "videos_per_condition": 1,
         "writer_input": (
             "exact task language plus one action-hidden teacher video through "
-            "the dynamic-K semantic-address direct-family-B graph"
+            "the dynamic-K graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (

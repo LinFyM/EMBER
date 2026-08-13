@@ -20,7 +20,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - 方法不依赖teacher actions、task ID、held expert bank、挑video、多LoRA/checkpoint融合或language-only shortcut；
 - 从fresh训练可复现，不长期依赖旧checkpoint换手。
 
-## Current iteration: Direct-Family-B
+## Completed iteration: Direct-Family-B K1
 
 - [x] 综合owner昨晚要求、SHINE/Doc2LoRA类Hypernetwork原则和EMBER历史实验，形成Dynamic-K、真实backbone
   memory、per-video causal Program、cross-video set、policy group/rank M2P与完整rank8 LoRA数据流；
@@ -33,9 +33,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 记录owner中止的world6 macro16 run；无checkpoint，不resume、不冒充成绩；
 - [x] 双节点live资源选择、quota检查和fresh world5 formal launch；
 - [x] 完成当前fresh formal macro0->50与macro25/50 checkpoint；
-- [ ] 完成macro50 single-checkpoint strict paired correct400；
-- [ ] 分析absolute、per-task/per-suite、breadth、retained/gained/lost、能力集中和最早失效接口；
-- [ ] 按预注册门决定终止、exact-resume到100或补完整视频controls。
+- [x] 完成macro50 single-checkpoint K1 strict paired correct400：`102/400`、breadth5；
+- [x] 完成absolute、per-task/per-suite、breadth、paired churn、能力集中和effective-BA接口分析；
+- [x] 按`<120`或breadth<6预注册门终止；不resume到100、不做小扫、不补K1五臂controls；
+- [ ] 补齐canonical K2--K4 evaluator并用同一checkpoint完成K4 strict correct400，单独裁决few-shot增益；
+- [ ] 根据K4结果选择下一fresh训练的唯一主要因果变量。
 
 ## Continuous loop after this result
 
@@ -61,4 +63,4 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。当前工作由active formal run和随后strict400决定。
+无权限或资产阻塞。当前工作由Dynamic-K K>1 formal evaluation support与随后K4 strict400决定。

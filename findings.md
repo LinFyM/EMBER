@@ -16,10 +16,13 @@
 | v6-fast task-complete | 143 | 135 | 125 | 128 | 129 | 历史最佳single checkpoint，仍未过150且视频margin弱 |
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
+| Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
 
-当前Direct-Family-B只检验一个更窄接口：保留semantic-address全部上游，删除逐接口probe定位到的family
-hidden/GELU common-direction bottleneck，让shared projector直接生成四类B。fresh训练已完整到macro50，strict400
-正在进行，尚无closed-loop结论；训练loss、有限梯度和健康checkpoint均不能提前判定有效。
+Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
+直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
+`82 retained/20 gained/19 lost`，aggregate几乎不变却继续换手。task-mean effective-BA cosine
+`.77947→.74895`证明几何略改善，但真实性能没有改善；因此“common-direction主要由该hidden造成且删除即可提高
+policy effectiveness”被否决，不能继续靠mapper小修或内部几何选择方法。
 
 ## 2. 真正的学习问题
 
@@ -86,9 +89,10 @@ task、state、policy RNG和video ordinal。不能只把negative人为推坏制�
 历史K4改善了部分permutation、same-video和leave-one-out内部稳定性，但best strict只有108，且未解决full24
 credit retention、正确顺序或checkpoint drift。这只否定旧K4组合，不否定few-shot本身。
 
-当前Writer训练时每macro让K1/K2/K3/K4各覆盖6个tasks，避免只见两个端点却宣称动态cardinality。当前首个
-strict400裁决仍是K1 correct，原因是现有正式evaluator先裁决one-shot真实能力；这不把K1写成长期Goal。若后续
-K>1更强，就应诚实报告few-shot及其实际视频数和计算成本，而不要求为了形式公平人为降配更强方法。
+当前Writer训练时每macro让K1/K2/K3/K4各覆盖6个tasks，避免只见两个端点却宣称动态cardinality。K1已经正式
+裁决为102，但K2--K4尚未进入formal evaluator，所以不能从K1 non-pass外推“多视频聚合无效”。下一项必要证据是
+同一checkpoint的K4 strict correct400。若K>1更强，就诚实报告few-shot及实际视频数和计算成本；若不强，则把
+失效点前移到Program可识别性与functional credit，而不是继续救mapper。
 
 ## 6. Task drift是核心症状，不是单一病因
 

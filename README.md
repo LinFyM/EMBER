@@ -28,9 +28,9 @@ exact task language + one or more action-hidden correct teaching videos
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。训练loss、functional loss、LoRA norm/rank/cosine、
 reconstruction与内部margin只作诊断，正式选择只认严格配对的single-checkpoint closed-loop结果。
 
-## Current architecture
+## Latest completed architecture
 
-当前唯一active方法是
+最新完成方法是
 **Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**：
 
 ```text
@@ -53,8 +53,10 @@ probe显示task差异在M2P/final/shared projector仍较健康，首个明显com
 hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重新推翻视频前端。完整公式和裁决门见
 [`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`](docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md)。
 
-截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50，strict paired correct400正在gpu01六卡执行。
-实时run identity、进度和下一裁决只取
+截至2026-08-13，clean `c5353f3`上的fresh formal已完整到macro50；K1 strict paired correct400为
+`102/400`、breadth5，按预注册门终局non-pass，不resume。task-mean effective-BA共线从`.77947`降至
+`.74895`却只增加1个成功，说明mapper简化没有解决共同积累。当前先补齐同一checkpoint的K2--K4 evaluator，
+正式裁决多视频few-shot增益，再选择下一fresh训练变量。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

@@ -215,6 +215,7 @@ def _validate_episode_evidence(
             suite=str(row["suite"]),
             task_id=int(row["task_id"]),
             init_state_id=int(row["init_state_id"]),
+            registered_episode_schema=str(family["episode_schema"]),
         ):
             _fail("Writer episode evidence violates its paired video condition")
         return
@@ -290,6 +291,7 @@ def _validate_dynamic_k_episode_evidence(
     suite: str,
     task_id: int,
     init_state_id: int,
+    registered_episode_schema: str,
 ) -> bool:
     """Delegate Dynamic-K evidence ownership to its deployment adapter."""
 
@@ -301,6 +303,7 @@ def _validate_dynamic_k_episode_evidence(
         suite=suite,
         task_id=task_id,
         init_state_id=init_state_id,
+        registered_episode_schema=registered_episode_schema,
     )
 
 

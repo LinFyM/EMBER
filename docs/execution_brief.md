@@ -3,9 +3,9 @@
 更新时间：2026-08-13。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Current experiment
+## 1. Latest completed experiment
 
-当前active方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer。它保持：
+最新完成方法是Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer。它保持：
 
 - exact language + dynamic K1--K4 action-hidden same-task ordered videos；
 - 每帧真实π0.5 joint image/language/Action-probe context中的8个memory tokens；
@@ -17,9 +17,9 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 projector后由四个bias-free zero-init linears直接生成q/v/action-in/action-out B。完整公式与门见
 `action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
 
-当前formal从clean `c5353f3` fresh macro0完整训练至50。第一次world6 run在owner停止时停于macro16且没有
-checkpoint，不resume；world5 retry完整封存macro25/50。macro50 strict400正在执行，精确host、devices、paths
-和实时完成边界只取`active_session_handoff.md`。
+formal从clean `c5353f3` fresh macro0完整训练至50。第一次world6 run在owner停止时停于macro16且没有
+checkpoint，不resume；world5 retry完整封存macro25/50。K1 macro50 strict400已完成为`102/400`、breadth5，
+按预注册门终局non-pass，不resume到100。精确host、devices、paths与artifact只取`active_session_handoff.md`。
 
 ## 2. Why this experiment is valid
 
@@ -46,9 +46,9 @@ common direction、压小order contrast的接口。因此本轮只检验：去�
 
 训练曲线只检查进程健康、finite、K平衡和明显异常，不能选checkpoint或证明方法。
 
-## 4. Strict400 evaluation
+## 4. K1 strict400 adjudication
 
-macro50完整封存后，正式arm为：
+正式arm为：
 
 - role=`validation`，8 tasks x 50 states=`400` rows；
 - correct-video，without-replacement seed7；
@@ -65,10 +65,17 @@ macro50完整封存后，正式arm为：
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、churn、top-task concentration；必要时再
 看task-mean effective BA、action-target energy和Program->mapper几何解释结果。
 
-续训门：`<120`或breadth<6终止；120--133默认终止；134--143须同时满足相对old134净保留、至少3 suites不降和
-BA共线改善；`>=144` exact-resume到100。`>150`后才补完整same/wrong/shuffled/reversed/no-video controls。
+结果为`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`、per-suite=`1/51/43/7`，top3占
+`94/102`。相对semantic101虽净`+1`，但有`20 gained/19 lost`；相对old134为`22 gained/54 lost`。task-mean
+effective-BA cosine仅从`.77947`降至`.74895`，没有带来绝对或breadth增益。按`<120`或breadth<6门终止，
+不resume、不做小扫、不补K1完整controls。
 
-## 5. Post-result analysis and next design
+## 5. Immediate next evidence and next design
+
+当前checkpoint训练时覆盖K1--K4，但formal deployment只测过K1。先补齐K2--K4 evaluator的video-set、cache、
+episode evidence和pairing合同，并以同一checkpoint做K4 strict correct400，单独裁决few-shot是否materially优于
+K1；这不改变K1 non-pass。若K4也弱，下一fresh architecture应停止继续改mapper，把失效点前移到per-video
+高层Program的可识别性和offline functional credit与held on-policy方向的错位。
 
 每轮strict结果完成后，按以下顺序分析：
 

@@ -291,7 +291,9 @@ GPU/工程要求：
 ## 12. 方法、原则和目标的边界
 
 当前长期goal保持第2--3节，不把memory token、rank-8、K值、LoRA decoder或某个optimizer写成项目goal。
-Dynamic-K Semantic-Address Direct-Family-B是当前最忠实实现昨晚完整推导的可证伪架构，不是最终教条。
+Dynamic-K Semantic-Address Direct-Family-B是昨晚完整推导后最新完成的可证伪架构，不是最终教条；其K1
+`102/400`已终局non-pass。当前只保留未被该K1结果否定的Dynamic-K/few-shot问题，先以同一checkpoint的K>1
+正式评测补齐证据，再决定下一fresh架构。
 
 后续迭代遵循以下边界：
 

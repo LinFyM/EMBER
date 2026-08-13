@@ -37,7 +37,7 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-当前唯一active architecture是
+最新完成architecture是
 **Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer**。它忠实落实owner讨论、SHINE/Doc2LoRA类成熟
 Hypernetwork原则与EMBER历史证据：
 
@@ -53,13 +53,13 @@ exact language + K=1..4 same-task action-hidden ordered videos
 ```
 
 Dynamic-K backbone-memory和semantic-address前代macro50 strict分别为`100/400`与`101/400`，均已退役。逐接口
-probe把首个明显新增common-direction定位到旧family hidden/GELU；当前方法只删除这个接口，保留全部已认可上游。
+probe把首个明显新增common-direction定位到旧family hidden/GELU；Direct-Family-B只删除这个接口，保留全部上游。
 完整设计见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
 
-clean pushed commit为`c5353f3442a88565eded3b968dda104df5acc5cb`。2026-08-13 fresh formal已在gpu01物理
-`0,4,5,6,7`、world5从macro0完整训练到macro50；同一checkpoint的strict paired correct400正在gpu01六卡
-执行。精确root和实时边界只取`docs/active_session_handoff.md`。此前owner中止的world6 run停在macro16且无
-完整checkpoint，只作中止记录，不得伪装resume或成绩。
+clean `c5353f3`的fresh formal已在gpu01 world5从macro0完整到50；同一checkpoint的K1 strict paired correct400
+在gpu01六卡得到`102/400`、breadth5，按预注册门终局non-pass，不resume。BA task共线只轻微改善，能力仍换手。
+当前没有fresh-training successor；先补齐同一Dynamic-K checkpoint的K2--K4正式evaluator并裁决K4 few-shot，
+再选下一训练单变量。精确root和实时边界只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

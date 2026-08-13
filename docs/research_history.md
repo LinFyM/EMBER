@@ -6,11 +6,11 @@
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-13，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。最新Dynamic-K
-backbone-memory与semantic-address macro50 strict分别为`100/400`和`101/400`；semantic-address相对old134为
-`82 retained/19 gained/52 lost`，终局non-pass。32-point逐接口probe把最早新增common-direction定位到shared
-projector之后的family hidden/GELU与B readout；当前Direct-Family-B只删除这一窄接口。其canonical实现已通过
-`372 passed` CPU门；world5 training profile=`39.4234s`，deployment B8/16/32 LoRA/s=
-`.97732/.96489/.96513`并锁B8。fresh formal已完整到macro50，strict400正在进行，尚无rollout结论。
+backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
+相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
+effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
+不是解决Program→policy effectiveness和共同积累的充分条件。该arm终局non-pass，不resume；K2--K4正式部署
+能力仍未测试。
 
 ## 1. Stable problem definition
 
@@ -93,6 +93,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Backbone-Memory rank8 | `100/400`, breadth4 | 真实图文+Action probes中8 memory tokens、动态K与完整rank8 LoRA图可训练部署 | 删除absolute Semantic Core后任务集中；task mean BA offdiag`.702`，不resume |
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
+| Dynamic-K Direct-Family-B rank8 | `102/400`, breadth5 | 删除hidden/GELU使BA task offdiag`.77947→.74895`，direct readout图可稳定训练部署 | semantic→direct=`82/20/19`、churn39；几何改善未转化为absolute/breadth，mapper小修退役；K>1未裁决 |
 
 ## 4. Final rank14 adjudication
 

@@ -1,8 +1,7 @@
 # Dynamic-K Semantic-Address Direct-Family-B Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible design authority；canonical实现、CPU机制门、live training profile、
-deployment吞吐profile与fresh formal `0→50`已封存，macro50 strict paired correct400正在进行，尚无closed-loop
-结论。
+日期：2026-08-13。状态：formal macro50与K1 strict paired correct400已完成，终局non-pass；不resume到100，
+不再作为fresh训练active successor。本文保留实际受检验的单变量、预注册门与最终裁决。
 
 ## 1. 这轮只解决哪个最早失效接口
 
@@ -202,3 +201,39 @@ energy，以及相邻checkpoint能力轮换。loss、Program geometry、norm、r
 跨layer/rank共享的direct family-B readout能保留更多policy-effective差异。”失败只淘汰这一具体direct readout；
 不否定dynamic K、memory token、rank8、所有shared mapper、few-shot或未来reward credit。无论内部几何是否改善，
 最终方法仍只由single-checkpoint strict paired closed-loop裁决。
+
+## 11. Formal terminal verdict
+
+fresh world5训练完整到macro50，正式K1 correct root为：
+
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_correct400_noreplacement_seed7_macro0050_trainr5_evalr6_c5353f3_gpu01_retry1_20260813`
+
+72/72 shards complete、18/18 workers exit0、400 rows无缺失或重复。single-checkpoint strict结果为
+`102/400`、breadth5；per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+`0/1/40/11/0/43/7/0`，per-suite=`1/51/43/7`。top3 tasks贡献`94/102=92.16%`，能力仍集中在少数
+pick/place任务。
+
+严格逐episode比较为：
+
+| reference | retained | gained | lost | churn | net | McNemar p |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| semantic-address 101 | 82 | 20 | 19 | 39 | +1 | 1.000000 |
+| Dynamic-K 100 | 79 | 23 | 21 | 44 | +2 | .880396 |
+| old 134 | 80 | 22 | 54 | 76 | -32 | .000313 |
+| compiler 138 | 79 | 23 | 59 | 82 | -36 | .000087 |
+| online 128 | 79 | 23 | 49 | 72 | -26 | .002943 |
+
+相对v6-fast143的per-task差为`0/-2/-6/-26/0/+7/-13/-1`，仅Goal6增加，Object3与Long1明显丢失。
+Direct-B相对semantic101也不是共同积累：Object3 `18→11`，Goal6 `37→43`，Long1 `3→7`，aggregate只`+1`却
+有39个episode换手。
+
+同一correct K1前4个video/state ordinal的exact implicit effective-BA诊断复现semantic基线task-mean offdiag
+cosine `.77947`，Direct-B降至`.74895`；`Vtask .26607→.27793`，但`Vvideo .01151→.01701`，task/video SNR
+`23.11→16.34`。effective norm均值`152.43→136.64`，stable rank均值仍约`1.0033→1.0046`。所以删除
+hidden/GELU确实轻微减弱common direction，却没有带来closed-loop增益或多task共存；mapper局部压缩不是主因。
+完整artifact为同一root下的`benchmark_comparison.json`和`effective_ba_task_geometry_comparison.json`。
+
+按`<120`或breadth`<6`预注册门，本方法终局non-pass，不resume、不扫超参、不补K1五臂controls。该负结果只
+否定“删除family hidden/GELU即可把现有Program变成policy-effective LoRA”；不否定Dynamic-K、memory token、
+rank8或few-shot。K2--K4尚未被正式evaluator测试，后续若评测只是独立判定同一checkpoint的真实few-shot部署
+能力，不得反向改写本K1裁决。

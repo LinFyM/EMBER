@@ -1,7 +1,7 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
-状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→50
-已完成。macro50 K1 strict=`88/400`；同一run正按预注册合同exact-resume到100，尚未终局。
+状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→100
+已完成。macro50 K1 strict=`88/400`；同一run正按预注册合同exact-resume 100→150，macro100 strict运行中，尚未终局。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 

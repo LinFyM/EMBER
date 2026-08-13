@@ -43,7 +43,7 @@ few-shot、memory tokens、所有视觉目标或LoRA输出。
 - frozen source policy trainable参数为0；validation/test action/reward不产生梯度；
 - precision BF16/TF32，AdamW peak LR`3e-4`、warmup17、cosine400、clip1.0；
 - checkpoint每25个完整macro写出，含Writer、optimizer、scheduler、sampler/RNG和world topology；
-- 当前formal world3；50→100及后续resume必须锁同一world3 topology。
+- 当前formal已完整到macro100并锁world3 exact-resume 100→150；后续resume继续锁同一topology。
 
 训练曲线只检查进程健康、finite、K平衡和明显异常，不能选checkpoint或证明方法。
 
@@ -98,7 +98,7 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。fresh 0→50和macro50 strict400现已完整封存；同拓扑50→100 exact-resume仍在运行。精确活动root与状态
+锁B8。formal已完整到macro100，macro100 strict400与同拓扑100→150 exact-resume并行运行。精确活动root与状态
 只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：

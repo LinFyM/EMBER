@@ -65,9 +65,10 @@ task/video effective-BA SNR `16.34→19.05`、task-mean offdiag cosine`.749→.7
 cosine仅`.831`、relative-L2`.584`，说明它学会大幅旋转LoRA，却未对准held on-policy有用方向。训练functional
 loss与Direct-B几乎相同，因此内部几何和surrogate均不能替代闭环裁决。
 
-macro50不是终局门：历史v6-fast也从较弱早期继续上升。当前同一root、同一world3 topology正exact-resume
-50→100；按预注册合同继续strict macro100/150/200，再以absolute、breadth与相邻checkpoint共同积累决定是否
-终止或进入下一单变量successor。精确root和实时状态只取`docs/active_session_handoff.md`。
+macro50不是终局门：历史v6-fast也从较弱早期继续上升。同一root已完整到macro100，当前锁定world3 topology
+exact-resume 100→150；macro100 K1 strict400正并行运行。按预注册合同继续strict macro100/150/200，再以
+absolute、breadth与相邻checkpoint共同积累决定是否终止或进入下一单变量successor。精确root和实时状态只取
+`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

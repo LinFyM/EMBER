@@ -63,8 +63,9 @@ dynamic K、set、M2P、direct mapper、rank8或B20 recipe。完整active design
 “visual evidence经当前B20 functional credit写成的policy direction没有on-policy usefulness”，不是视频未读、
 K-set失效、近identity或简单几何坍缩。
 
-该单点不提前终止预注册曲线。同一root正以相同world3 topology exact-resume到macro100；随后继续评测
-100/150/200，分析同一checkpoint的absolute、breadth和相邻checkpoint换手，再决定下一单变量。
+该单点不提前终止预注册曲线。同一root已完整到macro100并以相同world3 topology exact-resume到150；macro100
+strict400正并行运行。随后继续评测150/200，分析同一checkpoint的absolute、breadth和相邻checkpoint换手，再
+决定下一单变量。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

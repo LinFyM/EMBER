@@ -14,8 +14,8 @@
 - 相对最接近的Direct-Family-B 102为`74 retained/14 gained/28 lost`；视觉Value提高task/video BA SNR并降低
   跨task共线，却把BA大幅旋到held无用方向。当前最早断点是visual evidence经B20 functional credit形成的
   policy direction缺少on-policy usefulness，不是视频未读、set噪声或近identity；
-- 同一root正锁定gpu01物理`4,5,6`、world3 exact-resume 50→100；按预注册合同继续macro100/150/200 strict曲线，
-  不以macro50单点提前终止；
+- 同一root已完整到macro100，当前锁定gpu01物理`4,5,6`、world3 exact-resume 100→150；macro100 strict400
+  正在gpu02物理`1,2,3,4,6`并行运行，不以macro50单点提前终止；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -247,9 +247,22 @@ macro50 K1 strict400已从clean frozen `99c2323`完整结束：
   提高held closed-loop；完整分析artifact为同root下`benchmark_comparison.json`和
   `effective_ba_task_geometry_comparison.json`。
 
-当前50→100 exact-resume仍在`ember_tgvv_resume50to100_caa2e30`正常运行，K1--K4每macro各6、finite、约
-`65--67s/macro`。macro100完成后立即用同一clean frozen evaluator做K1 strict400，并继续同topology
-100→150；随后重复macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，才续到400。
+50→100已正常完成：metrics共100条、macro1--100连续finite，macro100 checkpoint含world3完整trainer/rank/
+Writer state，`completion.completed_macro=100`。当前100→150 tmux为`ember_tgvv_resume100to150_caa2e30`；macro101
+准确从`task_visit=100`恢复，K1--K4各6、`64.218s`、finite。
+
+macro100 K1 strict400 root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0100_trainr3_evalr5_99c2323_gpu02_20260813`
+
+- clean frozen evaluator仍是`99c2323`；validation8×50、correct K1、without-replacement seed7、B8不变；
+- gpu02物理`1,2,3,4,6`，5个Writer generators、15个persistent workers；启动preflight仍为1--4约350MiB/0%
+  util、GPU6约4.9GiB/0% util，预计新增`535,986,176` bytes；
+- tmux=`ember_tgvv_correct400_m100_99c2323`；已封存macro100 adapter/run contract并开始生成400-entry cache，尚无
+  closed-loop结果。
+
+macro100结果后继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best
+崩落>15，才续到400。
 
 完整曲线后继续：真实结果 -> 相邻checkpoint churn与接口分析 -> 一个主要因果变量 -> authority -> canonical实现/
 机制/吞吐 -> fresh训练 -> single-checkpoint strict评测。memory token、rank8和Dynamic-K都是方法变量，不是Goal。

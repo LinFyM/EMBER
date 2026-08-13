@@ -132,6 +132,60 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
         module._positive_int("0")
 
 
+def test_resume_validation_preserves_dynamic_k_evaluation_cardinality(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = _launcher_module()
+    normalization = tmp_path / "normalization.json"
+    normalization.write_text("{}", encoding="utf-8")
+    model = {
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "checkpoint"),
+    }
+    tokenizer = {"path": str(tmp_path / "tokenizer.model")}
+    adapter = {
+        "kind": module.DYNAMIC_K_WRITER_KIND,
+        "config": {"path": str(tmp_path / "writer.json")},
+        "writer_asset": {"checkpoint": str(tmp_path / "writer-checkpoint")},
+        "video_data": {"root": str(tmp_path / "videos")},
+        "video_condition": "correct",
+        "video_schedule": {"seed": 7, "sampling_mode": "without_replacement"},
+        "information_wall": {"evaluation_k": 4},
+    }
+    contract = {
+        "authorities": {"config_path": str(tmp_path / "evaluation.json")},
+        "git": {"commit": "sealed-commit"},
+        "mode": "formal",
+        "role": "validation",
+        "model": model,
+        "tokenizer": tokenizer,
+        "normalization": {
+            "path": str(normalization),
+            "bytes": normalization.stat().st_size,
+        },
+        "adapter": adapter,
+        "tasks": [{"suite": "libero_spatial", "task_id": 1}],
+    }
+    observed_k: list[int] = []
+
+    monkeypatch.setattr(module, "load_evaluation_authorities", lambda *args: object())
+    monkeypatch.setattr(
+        module,
+        "git_state",
+        lambda path: {"commit": "sealed-commit", "dirty_paths": []},
+    )
+    monkeypatch.setattr(module, "inspect_source_checkpoint", lambda *args, **kwargs: model)
+    monkeypatch.setattr(module, "inspect_tokenizer", lambda *args, **kwargs: tokenizer)
+
+    def inspect_dynamic_k(**kwargs):
+        observed_k.append(kwargs["evaluation_k"])
+        return adapter
+
+    monkeypatch.setattr(module, "_inspect_dynamic_k_writer_adapter", inspect_dynamic_k)
+    module._validate_resume_inputs(contract)
+    assert observed_k == [4]
+
+
 def _registered_reward_credit_args(
     tmp_path: Path, *, macro: int, condition: str = "correct"
 ) -> tuple[argparse.Namespace, Path]:

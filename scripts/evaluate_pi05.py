@@ -329,6 +329,9 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 video_seed=int(adapter["video_schedule"]["seed"]),
                 video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
                 require_formal=contract["mode"] != "smoke",
+                evaluation_k=int(
+                    adapter.get("information_wall", {}).get("evaluation_k", 1)
+                ),
             )
         else:
             raise Pi05EvaluationError("evaluation adapter kind changed after prepare")

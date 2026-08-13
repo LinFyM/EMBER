@@ -35,9 +35,18 @@
   的信息来源，但不支持“旧Program完全丢失任务/顺序”。
 - [x] clean `05299b4` world5 full24 B20 discarded profile通过：K1--K4各6，macro=`39.2367s`，相对旧world6
   `1.196x<1.20x`，峰值reserved`45.414GB`，loss/consistency/gradient与checkpoint完整。
-- [ ] 封存profile authority后从新的clean frozen commit fresh`0→50`，随后立即strict paired correct400。
+- [x] semantic-address clean`9e70b81` world5 fresh`0→50`与clean`3f630da` strict paired400完成：`101/400`、
+  breadth6、per-task=`2/1/40/18/0/37/3/0`；相对old134 lost52，按`<120`门终局non-pass，不resume或补controls。
 - [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高
   实测吞吐选择并锁定B8；正式correct400只允许B8。
+- [x] 完成validation8×4 ordinals逐接口probe：M2P/final/shared-project task offdiag=`.492/.529/.530`，
+  family-hidden/dynamic-B/effective-BA=`.634/.779/.779`；最早新增common-direction在family hidden/GELU。
+- [x] 历史审计确认保留shared projector、只删family hidden/GELU并direct写B未被精确测试；Target-Owned、
+  Target-Spectral、Lane、Atom、SFB与K4 direct payload不构成同一反事实。
+- [x] 封存fresh direct-family-B design authority；唯一变量是四个跨layer/rank共享的zero-init direct B linears，
+  其余memory/dynamic-K/M2P/fixed-A/rank8/B20全不变。
+- [ ] 原位实现fresh schema，完成targeted/full CPU门与旧checkpoint fail-closed；不保留旧mapper并行path。
+- [ ] 完成live full24 B20与真实generation profile，再fresh`0→50`并立即strict paired correct400。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。
 - [x] uniform pivot-rank14 online Gate B=`128/400`，相对 old134 lost21，未过门。

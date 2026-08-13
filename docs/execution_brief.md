@@ -2,27 +2,21 @@
 
 ## 0. Current operation
 
-Dynamic-K backbone-memory rank-8 Writer首轮已经完成：clean`5319022` world6 fresh`0→50`的functional loss
-稳定下降，但clean`b541785` macro50 strict paired correct400只有`100/400`、breadth4、per-task=
-`0/0/42/18/0/36/4/0`。相对old134严格配对为`82 retained/18 gained/52 lost`，相对v6-fast143低43分；不续
-`50→100`。它的LoRA总norm并不小，却只有约`1.00` stable rank、相对old134 effective cosine约`.01--.02`，
-八个task mean BA方向off-diagonal cosine均值`.702`；functional surrogate与held closed-loop再次明确错位。
+Dynamic-K semantic-address rank-8 Writer已经完成全部预注册工作并终局non-pass。clean`9e70b81` world5
+fresh`0→50`用`1953.93s`结束；clean`3f630da` macro50 strict paired correct400只有`101/400`、breadth6、
+per-task=`2/1/40/18/0/37/3/0`。相对Dynamic-K v1 100为`84 retained/17 gained/16 lost`，相对old134为
+`82/19/52`，相对compiler138为`80/21/58`，相对online128为`83/18/45`；比v6-fast143低42。BA总norm
+`152.34`不是identity，但task-mean offdiag cosine从v1的`.702`恶化到`.776`，故不resume、不补controls。
 
-当前active operation是封存并实现单变量Dynamic-K semantic-address successor。现有backbone memory已经在真实
-图像+exact language+50 Action probes的联合forward中正确更新，但Program只消费相邻/终点差分，完全不用absolute
-`task_hidden/probe_hidden`，等价于在有向Procedure前删除对象、关系与目标Semantic Core。successor只让每条video
-的absolute mean memory经一条bias-free投影只进入temporal Query route；D/G仍是唯一Key/Value content，set、M2P、rank8
-shared mapper、B20 objective、dynamic K和recipe均不变。constant/static与language-only因此仍保持identity。
-先过zero/order/set/gradient/吞吐机制门，再fresh`0→50`立即strict paired correct400；本轮不同时改mapper，若
-M2P语义已经健康而family head后才坍缩，下一轮才单独做layer-direct readout。
-完整公式、边界与快速否决门见`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
-canonical implementation已在clean `96e7cf6`完成并push，完整CPU`372 passed`。frozen macro50的8-task逐接口
-probe显示mean-Z same-task相对差`.0272`、wrong`.1071`且8/8 same<wrong；旧final Program对same/wrong/
-shuffle/reverse仍有`.358/.981/1.242/2.213`差异。该证据支持absolute memory提供稳定语义address，也警告旧
-Procedure本身并未失明；若新closed-loop仍差，下一接口应是mapper/credit，而不是继续堆前端。当前下一操作是
-clean frozen commit的full24 B20 discarded live profile。该profile现已在clean `05299b4`、gpu02物理0--4
-world5完成：K1--K4各6，macro=`39.2367s`，相对旧world6=`1.196x<1.20x`，峰值allocated/reserved=
-`39.155/45.414GB`，全链路finite、checkpoint/completion完整、exit0。formal fresh`0→50`开放。
+当前active operation是封存并实现单变量direct-family-B successor。validation8×4 ordinals×五臂真实raw-frame
+probe显示，correct task-mean offdiag cosine在M2P/final/shared project为`.492/.529/.530`，到family hidden升为
+`.634`，dynamic B/effective BA升为`.779/.779`；final到project的task-pair Spearman仍`.979`，B后为`.794`。
+因此保留真实图文+Action-probe backbone、8 memory tokens、semantic Query address、dynamic K、temporal/set/M2P、
+shared`256→1024`projector、fixed A、rank8和B20，只删除四个family hidden/GELU与无效dynamic-A heads，让四个
+bias-free zero-init family B linears直接读取projected Program并跨layer/rank共享。它不是target-owned独立heads，
+也不改成34-token/direct flat payload。完整公式、历史边界和formal门见
+`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。当前下一操作是fresh-incompatible
+canonical实现、CPU门、live full24 B20 profile、真实generation profile，再fresh`0→50`立即strict paired400。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

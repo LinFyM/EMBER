@@ -6,13 +6,29 @@
 
 - 长期Goal未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
+- Dynamic-K semantic-address rank-8 Writer已经完成并终局non-pass。clean `9e70b81` world5 fresh`0→50`
+  用`1953.93s`结束；clean `3f630da` macro50 strict paired correct400=`101/400`、breadth6、per-task（Spatial1/3,
+  Object1/3, Goal3/6, Long1/2）=`2/1/40/18/0/37/3/0`、per-suite=`3/58/37/3`。相对Dynamic-K v1 100为
+  `84 retained/17 gained/16 lost`，相对old134为`82/19/52`，相对compiler138为`80/21/58`，相对online128为
+  `83/18/45`；低于v6-fast143共42。按`<120`门不resume、不补controls、不扫semantic-address参数。
+- 最新32-point逐接口证据把最早新增失真定位到Program后的nonlinear family mapper：correct task-mean offdiag
+  cosine从M2P/final/shared-project的`.492/.529/.530`，经family hidden升到`.634`，dynamic B/effective BA再到
+  `.779/.779`；final到project的task-pair Spearman仍`.979`，B后降到`.794`。五臂真实raw-frame forward中
+  same/wrong/shuffle/reverse relative-L2从final`.301/.984/1.355/2.162`压到B的
+  `.190/.753/1.040/1.781`，所有stage仍8/8 same<wrong。完整artifact为strict root下
+  `semantic_mapper_stage_localization.json`。
+- 当前唯一active successor是Dynamic-K semantic-address direct-family-B Writer：保留全部输入、8个真实memory
+  tokens、dynamic K、有向Procedure、set、M2P、shared`256→1024`projector、fixed A、rank8与B20 recipe；只删除
+  四个family `1024→1024` hidden/GELU和无效dynamic-A heads，改为四个bias-free、zero-init、跨layer/rank共享的
+  direct B linears。它不同于已失败的Target-Owned独立heads与K4 direct payload。fresh authority见
+  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`；当前尚未实现或launch。
 - Dynamic-K backbone-memory rank-8 Writer的首轮正式裁决已经完成并终局non-pass。clean `5319022`、world6
   fresh`0→50`用`1810.10s`完成，functional loss首/末5宏从`.15307`降到`.12095`，23/24 train tasks斜率为负；
   但macro50 single-checkpoint strict paired correct400只有`100/400`、breadth4，per-task（Spatial1/3,
   Object1/3, Goal3/6, Long1/2）=`0/0/42/18/0/36/4/0`，per-suite=`0/60/36/4`，前三task占96%成功。
   相对old134严格配对为`82 retained/18 gained/52 lost`；相对compiler138为`81/19/57`，相对online128为
   `80/20/48`；相对v6-fast143 aggregate低43且breadth少2。故不exact-resume`50→100`。
-- 当前唯一active successor判断是Dynamic-K semantic-address backbone-memory rank-8 Writer：保留真实图文+
+- 已退役successor是Dynamic-K semantic-address backbone-memory rank-8 Writer：保留真实图文+
   Action-probe backbone memory、动态K、有向D/G value、set、M2P、rank8 mapper和训练recipe，只恢复一个更早的
   结构接口——逐video absolute memory均值只进入temporal Query地址，D/G仍是唯一Key/Value content，因此constant-video
   与language/static-only仍不能写LoRA。先完成fresh-incompatible authority和canonical实现，再过机制/吞吐门并
@@ -25,7 +41,7 @@
   Procedure，而不是声称旧Program完全没有视频/顺序信号。clean `05299b4` world5 full24 B20 live profile已
   通过：K1--K4各6，macro=`39.2367s`，相对matched旧world6=`1.196x<1.20x`，峰值allocated/reserved=
   `39.155/45.414GB`，loss/consistency/gradient finite，checkpoint与completion完整、exit0。formal fresh
-  `0→50`现已开放。
+  `0→50`随后已经按上述结果完成并终局non-pass。
 - K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
   0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
   profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。

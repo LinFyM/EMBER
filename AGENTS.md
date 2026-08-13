@@ -8,12 +8,17 @@
 指挥文件。历史设计、旧日志、formal artifact与Git快照中的“当前/下一步/active/暂停”都只表示当时状态，
 不能自行恢复执行。若owner最新明确表达与旧文档叙事冲突，以最新表达及同步后的current requirements为准。
 
-2026-08-12当前真相：
+2026-08-13当前真相：
 
 - 长期目标未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
   `150/400`，并继续提高absolute、task breadth、稳定积累和teacher-video时序因果性。
 - 历史最好single checkpoint仍是v6-fast macro400：
   `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+- Dynamic-K backbone-memory与semantic-address rank8 macro50 strict分别为`100/400`和`101/400`，均已终局
+  non-pass。semantic-address相对old134为`82 retained/19 gained/52 lost`；32-point probe把M2P/final/shared
+  projector后的第一个明显common-direction增长定位到family hidden/GELU。当前唯一active design是保留全部上游
+  与shared projector、只换成四个跨layer/rank共享direct-family-B linears；尚未实现或launch，authority见
+  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
 - MGCI-JC已完成fresh formal`0→5`与macro5 strict paired400并终局non-pass：`134/400`、breadth6、per-task=
   `1/5/46/30/0/34/18/0`，相对old134为`114 retained/20 gained/20 lost`、churn40。除breadth外全部macro5门
   失败；不resume、不补controls、不小扫。该次“暂停讨论”只属当时状态；owner现已授权围绕新的dynamic-K

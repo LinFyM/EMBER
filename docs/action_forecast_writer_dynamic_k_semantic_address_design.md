@@ -1,7 +1,6 @@
 # Dynamic-K Semantic-Address Backbone-Memory Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible canonical implementation、训练live profile与部署generation profile完成；formal与closed-loop
-均未完成。
+日期：2026-08-13。状态：formal macro50与strict paired400已完成，终局non-pass；不resume，不再作为active runtime。
 
 ## 1. 要解决的最早失效接口
 
@@ -172,3 +171,20 @@ churn。functional loss、consistency、rank、norm或cosine均不能单独选�
 成功只支持“absolute Semantic Core作为有向Procedure的address，是Dynamic-K backbone-memory中缺失的必要接口”。
 失败只淘汰这一具体Q/K-address formulation；不淘汰dynamic K、few-shot、true backbone memory、rank8或所有
 Semantic Core/Procedure fusion。尤其不能因本轮失败直接跳回language-only、平均LoRA或专家路由。
+
+## 11. Formal结果与终局裁决
+
+clean `9e70b81`、world5 fresh `0→50`完整结束，训练root为
+`runs/outputs/pi05_dynamic_k_semantic_address_rank8_formal_fresh0to50_r5_b20_9e70b81_20260813`；50宏wall
+`1953.93s`，functional loss首末趋势下降，checkpoint与completion完整。clean `3f630da`的strict retry root为
+`runs/outputs/pi05_dynamic_k_semantic_address_rank8_correct400_noreplacement_seed7_macro0050_3f630da_gpu01_retry1_20260813`；
+400/400 rows、18/18 workers exit0，结果`101/400`、breadth6、per-task=`2/1/40/18/0/37/3/0`、per-suite=
+`3/58/37/3`，top3占`95/101`。相对Dynamic-K v1 100为`84 retained/17 gained/16 lost`，相对old134为
+`82/19/52`，相对compiler138为`80/21/58`，相对online128为`83/18/45`；比v6-fast143低42。
+
+candidate BA norm均值`152.34`，不是identity；但task-mean offdiag cosine从Dynamic-K v1的`.70203`恶化到
+`.77568`，action-target norm仅`.5074`。32-point逐接口probe进一步定位：final Program、shared projector、
+family hidden、dynamic B、effective BA的task-mean offdiag依次为`.52901/.52986/.63406/.77900/.77922`；
+projector健康，最早新增common-direction在family hidden/GELU。故本设计按`<120`门终局non-pass，不resume到100、
+不补controls、不扫address参数。后继只允许改变Program后family readout，authority见
+`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。

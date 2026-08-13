@@ -25,20 +25,28 @@ effective BA总norm均值`135.64`说明不是identity，然而action-target norm
 相对old134 effective cosine仅`.01--.02`；八task mean BA方向off-diagonal cosine均值`.702`。video方差反而比
 old134大，故它不是没看视频，而是删除Semantic Core后把不同视频的变化写入高度共同、错误的policy方向。
 
-当前successor只改变这个最早结构接口：每video absolute mean memory作为temporal Query semantic address，D/G仍是
-唯一Key/Value content。这样语义只能决定“从有向变化里读什么”，不能独立成为LoRA value；constant/static和
-language-only仍保持identity。set、M2P、rank8 mapper、B20与dynamic-K recipe保持不变，以便closed-loop结果能
-裁决Semantic Core address，而不是把representation与mapper改动混在一起。
+semantic-address successor只改变这个更早结构接口：每video absolute mean memory作为temporal Query semantic
+address，D/G仍是唯一Key/Value content。它现已完成fresh`0→50`与strict paired400，结果`101/400`、breadth6、
+per-task=`2/1/40/18/0/37/3/0`；相对Dynamic-K v1 100只净`+1`且有33次换手，相对old134 lost52。故query-only
+Semantic Core并未修正policy方向，本具体formulation终局non-pass。
 实现前的8-task逐接口probe给出更精确边界：mean-Z的same/wrong relative L2为`.0272/.1071`，8/8 tasks均
 same<wrong，说明absolute memory确有跨video task语义；旧video/final Program和effective BA仍保留强wrong与
 order差异，故100分不能写成“D/G完全删除了语义或顺序”。当前可证伪假设是：把稳定absolute Core只作为Query
 address，能否让已有Procedure沿task-correct policy方向工作；若不能，最早接口应推进到mapper或functional credit。
 clean world5 full24 B20 live profile用`39.2367s`完成，相对旧world6 matched为`1.196x`，在`1.20x`门内；峰值
-reserved`45.414GB`，K分布、loss、consistency、gradient、checkpoint均健康。因此successor当前没有新的工程/
-吞吐阻断，下一裁决必须是真实fresh训练与strict400。
+reserved`45.414GB`，K分布、loss、consistency、gradient、checkpoint均健康。正式结果因此是有效科学non-pass，
+不是工程未接通。
 同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved
 约`13.4GB`，因此吞吐authority选择B8并锁定formal evaluator。该结果只解决评测效率和首次live执行风险，
 不改变任何科学结论。
+
+macro50 validation8×4 ordinals逐接口probe把下一断点定位得更窄：correct task-mean offdiag cosine从M2P/final/
+shared-project的`.492/.529/.530`，经family hidden升到`.634`，dynamic B/effective BA再升到`.779/.779`；
+final到project的task-pair distance Spearman为`.979`，B后为`.794`。five-arm relative-L2也从final的
+same/wrong/shuffle/reverse=`.301/.984/1.355/2.162`压到B的`.190/.753/1.040/1.781`。因此shared projector
+不是断点；第一个新增common-direction发生在无独立依据的family hidden/GELU。当前direct-family-B successor只
+删除这层非线性和未启用A heads，保留四family跨layer/rank共享与fixed-A完整LoRA。历史Target-Owned独立heads、
+SFB/store routing和K4 direct payload均未精确测试这个窄变量。
 
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |

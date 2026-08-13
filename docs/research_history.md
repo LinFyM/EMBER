@@ -5,10 +5,11 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-12，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成；PVJFC与
-CGIK-JC的唯一macro0 profile分别因condition=`597.861/270.188>200` non-pass。MGCI-JC把condition进一步修到
-`174.813`并通过profile，但formal macro5 strict只有`134/400`、breadth6，old134→MGCI=`114/20/20`、churn40。
-因此当前没有active successor；等待owner讨论，本文不提供启动命令。
+2026-08-13，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。最新Dynamic-K
+backbone-memory与semantic-address macro50 strict分别为`100/400`和`101/400`；semantic-address相对old134为
+`82 retained/19 gained/52 lost`，终局non-pass。32-point逐接口probe把最早新增common-direction定位到shared
+projector之后的family hidden/GELU与B readout；当前只记录新的direct-family-B design authority，不在本文提供
+启动命令。
 
 ## 1. Stable problem definition
 
@@ -87,6 +88,9 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Negative-Preserving Candidate Guard | `135/400`, breadth5 | actual candidate与negative response可在同一affine correction中闭合 | old134→NPCG=`117/18/17`；point guard未保护held occupancy，约束健康不等于共同积累 |
 | Cross-Video Equivariant Candidate Guard | directional `131/400`, breadth6 | single companion E与negative/guard可数值闭合 | K2 outcome经hard equality放大低位差异；hard E又使NPCG→CVEG=`114/17/21`，稳定性与absolute均non-pass |
 | Magnitude-Gated Causal Interaction Joint Credit | `134/400`, breadth6 | full96 condition修到`174.813`，paired video、negative与Program→BA→action全链路闭合 | old134→MGCI=`114/20/20`；key谱修复未改变blind offline credit的held task换手 |
+| Dynamic-K Backbone-Memory rank8 | `100/400`, breadth4 | 真实图文+Action probes中8 memory tokens、动态K与完整rank8 LoRA图可训练部署 | 删除absolute Semantic Core后任务集中；task mean BA offdiag`.702`，不resume |
+| Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
+| Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
 
 ## 4. Final rank14 adjudication
 

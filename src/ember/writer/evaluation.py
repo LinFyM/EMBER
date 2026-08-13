@@ -57,6 +57,16 @@ DYNAMIC_K_GENERATION_PROFILES = {
         ),
         "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
     },
+    4: {
+        "schema": "ember_pi05_writer_generation_profile_v2",
+        "path": (
+            "runs/outputs/"
+            "pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_writer_"
+            "generation_profile_val8x4_correct_gpu01p2_9c5cec2_retry2_20260813/"
+            "writer_generation_profile.json"
+        ),
+        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+    },
 }
 
 

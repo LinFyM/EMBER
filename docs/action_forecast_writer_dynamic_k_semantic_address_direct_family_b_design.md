@@ -249,3 +249,10 @@ without-replacement seed7 schedule采用同一task/state permutation的nested pr
 episode与cache-key合同逐字段保留；K>1使用独立video-set pairing/evidence identity，避免把K1 cache误作few-shot。
 K2--K4在完成单A40 B8/B16/B32真实generation profile前只能做smoke，formal fail closed。第一项正式实验固定K4
 strict correct400；它只回答当前cross-video set是否产生真实few-shot增益，不救援或改写K1 non-pass。
+
+clean detached `9c5cec2`在gpu01物理2完成K4 validation 8 tasks×4 states、固定32-request longest-first profile。
+B8/B16/B32吞吐分别为`.51618/.51298/.51056 LoRA/s`，两次repeat均稳定、无OOM/nonfinite；peak reserved约
+`13.40/13.43/14.59GB`，因此按最高实测吞吐锁B8。formal K4只接受该batch。profile root为
+`runs/outputs/pi05_dynamic_k_semantic_address_direct_family_b_rank8_k4_writer_generation_profile_val8x4_correct_gpu01p2_9c5cec2_retry2_20260813`。
+gpu02物理0的首次尝试被其它用户中途占满而OOM；物理1 retry1又被外部进程临时共享导致B8/B16计时污染，二者均不
+作为authority，不能据其异常数值选择batch。

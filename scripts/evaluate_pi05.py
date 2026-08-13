@@ -22,6 +22,7 @@ from ember.pi05_eval.reward_credit_gate import (
 )
 from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
 from ember.pi05_eval.launcher import (
+    evaluator_gpus_are_eligible as _evaluator_gpus_are_eligible,
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
     terminate_owned_workers as _terminate_owned_workers,
@@ -573,9 +574,10 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
         )
     )
     preflight = _gpu_preflight(physical_gpu_ids)
-    if preflight.get("compute_applications") != []:
+    if not _evaluator_gpus_are_eligible(preflight):
         raise Pi05EvaluationError(
-            "PI05 evaluation requires every selected physical GPU to be idle"
+            "PI05 evaluation requires every selected GPU to have low utilization "
+            "and sufficient free memory"
         )
     if preflight.get("device_names") != ["NVIDIA A40"] * len(physical_gpu_ids):
         raise Pi05EvaluationError(

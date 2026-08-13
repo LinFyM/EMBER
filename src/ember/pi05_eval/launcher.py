@@ -15,6 +15,11 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.eval_adapters import WRITER_ADAPTER_KINDS
 
 
+MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
+MAX_COSCHEDULED_GPU_MEMORY_USED_MIB = 8 * 1024
+MIN_EVALUATOR_GPU_FREE_MEMORY_MIB = 32 * 1024
+
+
 def _storage_root() -> Path:
     """Return the host-local root used for the personal storage cap."""
 
@@ -67,13 +72,22 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
     gpu_by_index: dict[int, str] = {}
     uuid_by_index: dict[int, str] = {}
     name_by_index: dict[int, str] = {}
+    telemetry_by_index: dict[int, dict[str, int | str]] = {}
     for row in gpu_query:
         fields = [value.strip() for value in row.split(",")]
-        if len(fields) < 3 or not fields[0].isdigit():
+        if len(fields) != 8 or not fields[0].isdigit():
             raise Pi05EvaluationError(f"invalid nvidia-smi GPU row: {row}")
-        gpu_by_index[int(fields[0])] = row
-        uuid_by_index[int(fields[0])] = fields[1]
-        name_by_index[int(fields[0])] = fields[2]
+        index = int(fields[0])
+        gpu_by_index[index] = row
+        uuid_by_index[index] = fields[1]
+        name_by_index[index] = fields[2]
+        telemetry_by_index[index] = {
+            "physical_gpu": index,
+            "uuid": fields[1],
+            "memory_used_mib": int(fields[3]),
+            "memory_total_mib": int(fields[4]),
+            "utilization_percent": int(fields[5]),
+        }
     missing = sorted(set(physical_gpu_ids) - set(gpu_by_index))
     if missing:
         raise Pi05EvaluationError(
@@ -115,9 +129,16 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
         "unix": time.time(),
         "physical_gpu_ids": list(physical_gpu_ids),
         "gpus": [gpu_by_index[index] for index in physical_gpu_ids],
+        "gpu_telemetry": [
+            telemetry_by_index[index] for index in physical_gpu_ids
+        ],
         "device_names": [name_by_index[index] for index in physical_gpu_ids],
         "compute_applications": owned_applications,
-        "idle_device_required": True,
+        "gpu_admission_policy": {
+            "max_utilization_percent": MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+            "max_memory_used_mib": MAX_COSCHEDULED_GPU_MEMORY_USED_MIB,
+            "min_free_memory_mib": MIN_EVALUATOR_GPU_FREE_MEMORY_MIB,
+        },
         "python": sys.version,
         "torch": torch.__version__,
         "cuda_runtime": torch.version.cuda,
@@ -131,6 +152,20 @@ def gpu_preflight(physical_gpu_ids: Sequence[int]) -> dict[str, Any]:
             "mount": data_capacity[4],
         },
     }
+
+
+def evaluator_gpus_are_eligible(preflight: Mapping[str, Any]) -> bool:
+    telemetry = preflight.get("gpu_telemetry", ())
+    expected = preflight.get("physical_gpu_ids", ())
+    return len(telemetry) == len(expected) and all(
+        int(row["utilization_percent"])
+        <= MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT
+        and int(row["memory_used_mib"])
+        <= MAX_COSCHEDULED_GPU_MEMORY_USED_MIB
+        and int(row["memory_total_mib"]) - int(row["memory_used_mib"])
+        >= MIN_EVALUATOR_GPU_FREE_MEMORY_MIB
+        for row in telemetry
+    )
 
 
 def terminate_owned_workers(

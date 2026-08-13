@@ -102,12 +102,38 @@ def test_gpu_preflight_queries_only_explicit_devices(
     )
     assert observed["physical_gpu_ids"] == [4, 7]
     assert observed["device_names"] == ["NVIDIA A40", "NVIDIA A40"]
+    assert runtime_launcher.evaluator_gpus_are_eligible(observed)
     assert len(gpu_calls) == 2
     assert all(call[1:3] == ["-i", "4,7"] for call in gpu_calls)
     assert not any(call[0] == "du" for call in calls)
     assert any(
         call[0] == "df" and call[-1] == str(tmp_path.resolve()) for call in calls
     )
+
+
+@pytest.mark.parametrize(
+    ("memory_used_mib", "utilization_percent", "eligible"),
+    ((349, 0, True), (4_939, 0, True), (8_193, 0, False), (349, 11, False)),
+)
+def test_evaluator_gpu_admission_allows_only_safe_low_load_coscheduling(
+    memory_used_mib: int,
+    utilization_percent: int,
+    eligible: bool,
+) -> None:
+    preflight = {
+        "physical_gpu_ids": [1],
+        "gpu_telemetry": [
+            {
+                "physical_gpu": 1,
+                "uuid": "GPU-one",
+                "memory_used_mib": memory_used_mib,
+                "memory_total_mib": 46_068,
+                "utilization_percent": utilization_percent,
+            }
+        ],
+        "compute_applications": ["GPU-one, 123, python, 262, owner=other"],
+    }
+    assert runtime_launcher.evaluator_gpus_are_eligible(preflight) is eligible
 
 
 def test_storage_root_requires_explicit_host_configuration(

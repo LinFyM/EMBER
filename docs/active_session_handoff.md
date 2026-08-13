@@ -15,9 +15,9 @@
   `73/23/65`。晚期净增仍高度集中，不是shared capability共同积累；
 - 当前active implementation：Dynamic-K Task-Grounded Full-Factor Rank-8 Writer；只在同一projected Program上
   新增四个zero-init direct family-A residual readouts，其他输入、前端、Program、rank8和B20均不变；
-- active design=`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`；全量CPU=`383 passed`，
-  Writer trainable参数`12,728,576`，新增A heads=`3,178,496`；尚无GPU profile或closed-loop结果；
-- 当前没有EMBER GPU训练或评测进程；下一步是clean pushed commit上的双节点live选择与full24 B20 profile；
+- active design=`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`；全量CPU=`383 passed`；
+  live full24 B20 world4 profile=`47.4409s/macro`、峰值reserved=`45.563GB`、K1--K4各6，已通过并封存；
+- 当前下一步是从clean pushed commit fresh formal macro0→50；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -358,5 +358,13 @@ exact language + dynamic K ordered videos
 
 所有A/B heads zero-init，step0仍exact identity；首次effective-BA credit只打开B，B非零后A与上游获得真实
 functional gradient。未改变数据、K schedule、frame budget、objective、optimizer、rank或source policy。canonical
-config=`configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_rank8_v1.json`，当前状态为
-`unsealed_pending_live_profile`。CPU=`383 passed`，结构扫描无新增hard违规；等待live profile。
+config=`configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_rank8_v1.json`。live profile root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_full_factor_rank8_profile_r4_b20_d58e3f8_gpu01_20260814`
+
+- gpu01物理`1,4,5,6`，world4，完整full24 B20 macro1=`47.440897s`；
+- K1--K4各6，functional/consistency=`.156107822/.009484296`，gradient norm=`.068287469`；
+- peak allocated/reserved=`39,332,965,888/45,562,724,352` bytes，无OOM/nonfinite，completion macro1；
+- 与fixed-A matched world4的`49.0775s`相比没有吞吐回退；首macro三项数值完全一致，符合zero-init staged
+  full-factor合同；
+- formal config已seal，下一步从新的clean pushed commit做fresh macro0→50，不加载profile checkpoint。

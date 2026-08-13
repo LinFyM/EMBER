@@ -23,9 +23,9 @@ zero-init，step0仍`A=A_template,B=0`；第一步functional credit只打开B，
 没有额外backbone forward、prediction/negative loss、expert、reward、rank变化或language-only Value。完整公式与
 门见`action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`。
 
-Full-Factor当前CPU与机制验证完成：全量`383 passed`，Writer trainable参数`12,728,576`，其中新增A heads
-`3,178,496`；没有第二套实现。尚无GPU profile或closed-loop结果。精确host、devices、paths与artifact只取
-`active_session_handoff.md`。
+Full-Factor当前CPU与机制验证完成：全量`383 passed`；live world4 full24 B20 profile=`47.4409s/macro`、peak
+reserved=`45.563GB`、K1--K4各6、无OOM/nonfinite，已seal formal。没有第二套实现，尚无closed-loop结果。精确
+host、devices、paths与artifact只取`active_session_handoff.md`。
 
 ## 2. Why this experiment is valid
 
@@ -108,7 +108,7 @@ policy-effective的任务知识。
 
 active design为`action_forecast_writer_dynamic_k_task_grounded_full_factor_design.md`。唯一变化是同一projected
 Program增加四个zero-init direct family-A residual readouts，和原有四个B readouts共同生成完整LoRA。实现已原位
-替换canonical mapper，CPU=`383 passed`；当前等待live full24 B20 profile。若best不能达到125，不做mapper/
+替换canonical mapper，CPU=`383 passed`且live profile通过；当前启动fresh formal。若best不能达到125，不做mapper/
 rank/scale小修，转向v6-fast性能骨架的受控桥接。
 
 每轮strict结果完成后，按以下顺序分析：

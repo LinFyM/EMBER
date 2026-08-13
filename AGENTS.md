@@ -61,7 +61,8 @@ authority为`docs/action_forecast_writer_dynamic_k_task_grounded_full_factor_des
 Visual-Value macro200 strict=`96/400`、breadth6、per-task=`1/0/37/2/0/42/13/1`；150→200仍churn40，完整
 曲线没有达到125门。当前Full-Factor只让同一20x8 Program生成`A_template + dynamic residual A`和dynamic B；
 其余joint multimodal evidence、ordered visual D/G、causal temporal、dynamic-K set、rank8和B20全部不变。
-全部A/B heads zero-init，step0严格identity；当前CPU=`383 passed`，尚无GPU profile或closed-loop结果。
+全部A/B heads zero-init，step0严格identity；当前CPU=`383 passed`，live world4 full24 B20 profile=
+`47.4409s/macro`且峰值reserved=`45.563GB`，已seal formal，尚无closed-loop结果。
 
 当前另有一个只作后续定位的fixed-A reachable-subspace结果：对old134 validation LoRA，rank8逐样本最优可保留
 `99.9999%` effective-BA能量，而当前固定随机A行空间只保留`1.95%`；对24个step2000 task experts分别为

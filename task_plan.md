@@ -65,9 +65,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Active iteration: Task-Grounded Full-Factor Rank-8
 
-- [ ] 在clean pushed commit上完成双节点live GPU选择、quota检查与full24 B20 profile；
-- [ ] profile通过后fresh训练macro0→100，checkpoint every25；
-- [ ] 完成macro50/100 single-checkpoint K1 strict paired correct400与逐task/churn比较；
+- [x] 双节点live检查后用gpu01物理1/4/5/6 world4完成full24 B20 profile：`47.4409s/macro`、
+  peak reserved `45.563GB`、K1--K4各6、无OOM/nonfinite；
+- [x] 将live profile seal进formal config；
+- [ ] 从clean pushed commit fresh训练macro0→50，checkpoint every25；
+- [ ] 完成macro50 single-checkpoint K1 strict paired correct400与逐task比较；若通过续训门，再评macro100并分析churn；
 - [ ] 只有相对fixed-A96出现实质改善或可信上升趋势才续到150/200；最晚macro200以best≥125、breadth≥6裁决；
 - [ ] 若Full-Factor仍失败，终止当前前端的A/B mapper小修，转以v6-fast为性能骨架做受控机制移植。
 

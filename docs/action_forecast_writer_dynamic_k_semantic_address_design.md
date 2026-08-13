@@ -1,6 +1,6 @@
 # Dynamic-K Semantic-Address Backbone-Memory Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible canonical implementation与live profile完成；formal与closed-loop
+日期：2026-08-13。状态：fresh-incompatible canonical implementation、训练live profile与部署generation profile完成；formal与closed-loop
 均未完成。
 
 ## 1. 要解决的最早失效接口
@@ -134,6 +134,11 @@ clean `05299b4` frozen worktree已在gpu02物理0--4完成world5 full24 B20 disc
 macro=`39.2367s`，相对旧world6 matched `32.8066s`为`1.196x`，刚好低于预注册`1.20x`上限；峰值allocated/
 reserved=`39.155/45.414GB`，functional loss`.156108`、consistency`.009859`、gradient norm`.01985`均finite，
 checkpoint与completion完整、exit0。五卡随后均释放为0MiB。故机制/吞吐门通过，formal fresh`0→50`开放。
+
+clean `3d74757` frozen worktree又在gpu01物理7用同一semantic-address部署图完成validation 8 tasks×4 states、
+correct K1、longest-first固定32-request panel的generation profile。B8/B16/B32均无OOM/nonfinite且稳定，吞吐
+分别为`0.9815/0.9707/0.9678 LoRA/s`，peak reserved约`13.38/13.38/13.40GB`；因此正式评测锁定实测最优B8。
+profile root为`runs/outputs/pi05_dynamic_k_semantic_address_writer_generation_profile_val8x4_correct_gpu01p7_3d74757_20260813`。
 
 ## 8. Formal训练与真实性能门
 

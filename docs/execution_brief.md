@@ -20,6 +20,10 @@ update，说明当前B20 surrogate不能约束有用factor allocation。该证�
 参数，warm start只作机制开发，若成功仍需从零训练。完整合同见
 `action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。
 
+canonical实现与GPU机制门已通过：K1的76个LoRA tensors逐元素等于native v6，只有197120个Slot-Set参数可训练，
+v6/source无梯度，真实video倒序明显改变Program；全量CPU=`370 passed`。K2/K4换位只产生BF16 batched-forward
+低位差异，不为此拆分forward或降低吞吐。当前待完成full24 B20 profile并seal正式训练合同。
+
 ## 2. Single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、compiler、rank16 topology和factor heads全部
@@ -42,8 +46,6 @@ shuffled/reversed/no-video controls；机制成功后再授权同架构fresh训�
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
 
 ## 4. Continuous adjudication loop
-
-每轮strict结果完成后，按以下顺序分析：
 
 每轮strict结果完成后，按以下顺序分析：
 

@@ -34,10 +34,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_eval_adapter_v1"
+    "ember_pi05_v6_dynamic_slot_set_bridge_eval_adapter_v1"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_episode_v1"
+    "ember_pi05_v6_dynamic_slot_set_bridge_episode_v1"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -46,18 +46,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
 DYNAMIC_K_GENERATION_BATCH_SIZE = 8
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
-    1: {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_dynamic_k_task_grounded_full_factor_rank8_k1_writer_"
-            "generation_profile_val8x4_correct_gpu02p1_0d6cda7_macro0025_"
-            "20260814/writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    }
-}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:
@@ -100,7 +89,7 @@ def _writer_state_record(path: Path, lora: Any) -> dict[str, Any]:
         shapes = {name: tuple(handle.get_slice(name).get_shape()) for name in names}
         dtypes = {name: str(handle.get_slice(name).get_dtype()) for name in names}
     template_keys = tuple(
-        sorted(name for name in names if name.startswith("lora_mapper.template_"))
+        sorted(name for name in names if name.startswith("base_writer.template_"))
     )
     lora_names = _template_lora_names(lora)
     if len(template_keys) != len(lora_names):
@@ -408,13 +397,13 @@ def inspect_dynamic_k_writer_evaluation(
     reference = (
         f"{AS_WRITER_CONFIG_SCHEMA}:{DYNAMIC_K_CHECKPOINT_KIND}:"
         f"m{writer_asset['method_macro']}:"
-        f"{writer_asset['writer_state']['bytes']}bytes:rank8"
+        f"{writer_asset['writer_state']['bytes']}bytes:rank16"
     )
     return {
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
-            "dynamic_k_task_grounded_full_factor_rank8_" f"{video_condition}"
+            "v6_dynamic_slot_set_bridge_" f"{video_condition}"
         ),
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {

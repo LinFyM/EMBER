@@ -11,7 +11,7 @@ from ember.pi05_assets import Pi05EvaluationError
 STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-DYNAMIC_K_WRITER_KIND = "dynamic_k_backbone_memory_writer"
+DYNAMIC_K_WRITER_KIND = "v6_dynamic_slot_set_writer"
 WRITER_ADAPTER_KINDS = frozenset(
     {EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND}
 )

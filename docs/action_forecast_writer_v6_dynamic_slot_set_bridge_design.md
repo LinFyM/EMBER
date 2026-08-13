@@ -1,8 +1,9 @@
 # V6 Dynamic Slot-Set Bridge
 
-状态：2026-08-14 active controlled bridge authority。本文授权以历史v6-fast macro400为冻结性能底座，只新增一个
-K=1严格恒等、K>1置换不变的跨视频Program-slot集合层。它是机制开发实验；若成功，仍需在同一train24信息墙内
-完成从零训练，warm start不能成为最终论文方法的隐含前提。
+状态：2026-08-14 active controlled bridge authority，canonical实现和真实GPU机制门已通过，等待full24吞吐profile。
+本文授权以历史v6-fast macro400为冻结性能底座，只新增一个K=1严格恒等、K>1置换不变的跨视频Program-slot
+集合层。它是机制开发实验；若成功，仍需在同一train24信息墙内完成从零训练，warm start不能成为最终论文方法
+的隐含前提。
 
 ## 1. 为什么现在回到v6边界
 
@@ -100,3 +101,20 @@ profile后只做短段训练并尽快评K4 strict paired correct400；K1由严�
   runtime flag或并行canonical config；
 - trainer、task/video schedule、functional B20、checkpoint与dynamic evaluator只做该新合同所需的原位切换；
 - 正式run仍需clean pushed/frozen commit、live双节点GPU检查、quota与profile seal。
+
+## 7. 实现与机制门证据
+
+canonical实现只新增`src/ember/writer/slot_set.py`，复用checkpoint-compatible native v6 owner；同时删除退役的
+rank8 backbone-memory、memory-program和LoRA-mapper三个active modules及其专属tests，净减少约2100行active
+source，不保留runtime双路径。全量CPU=`370 passed`。
+
+gpu01物理GPU4上的真实source-policy smoke给出：
+
+- K1 native-v6与bridge的76个LoRA tensors逐元素完全相等；
+- trainable=`197120`，frozen v6/source均无梯度，Slot-Set output grad norm=`1.92e-5`；
+- K2交换video后Program/LoRA max abs=`.02656/.001953`，K4 Program max abs=`.01373`；这是同一BF16
+  batched backbone在样本换位时的正常kernel/reduction低位差异，不为逐元素一致拆成K次forward；
+- 同一K1真实视频倒序使Program mean abs变化=`.21703`，显著大于换序低位差异，内部时序路径保持有效；
+- peak allocated/reserved=`18.75/19.27GB`，未发生OOM或nonfinite。
+
+这些结果只通过机制门，不是closed-loop成绩。下一步仍是full24 B20 profile、seal config，然后fresh macro0→25。

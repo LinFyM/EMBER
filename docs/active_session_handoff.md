@@ -15,8 +15,8 @@
   `-43/-47/-37`，相对v6-fast逐task差=`+4/-2/-8/-37/0/+1/-9/-1`；
 - 当前active design：V6 Dynamic Slot-Set Bridge；冻结历史v6-fast macro400，只训练K1恒等、K>1置换不变的
   per-policy-slot集合层，原生v6 factor heads只解码一次；
-- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；当前下一步是canonical实现与
-  K1/set/gradient机制验证；
+- active authority=`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`；canonical实现与GPU机制验证已
+  完成，当前下一步是full24 B20 profile并seal formal合同；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -403,4 +403,9 @@ matched first4 states/task的factor定位：Full-Factor vs fixed-A raw A cosine/
 active successor是`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。它以v6-fast为baseline：每条
 video独立形成原生Core/Procedure和320 slots，只沿K轴新增mean-backbone + selected-centered-residual集合层；K1
 结构上严格等于原v6，K>1才训练，最后原生factor heads只运行一次。首轮warm start只作机制开发，成功后仍需
-fresh recipe。当前无EMBER GPU进程。
+fresh recipe。
+
+canonical实现已完成：复用native v6 owner，只新增约197k参数的`PolicySlotSetFusion`，并删除退役rank8
+backbone-memory/memory-program/LoRA-mapper active路径。全量CPU=`370 passed`；真实GPU smoke中K1的76个LoRA
+tensors逐元素等于native v6，base无梯度，K2/K4 video换位最终LoRA/Program只出现正常BF16低位差异，真实video
+倒序Program mean abs变化=`.21703`，峰值reserved=`19.27GB`。当前无EMBER GPU进程，下一步直接做full24 profile。

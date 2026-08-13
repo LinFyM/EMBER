@@ -1,23 +1,24 @@
 {
-  "schema_version": "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_v1",
-  "status": "active_formal_ready_from_live_profile",
+  "schema_version": "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_v1",
+  "status": "active_pending_live_profile",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
     "evaluation_config": {"path": "configs/pi05_target_evaluation_v1.json"},
-    "lora_contract": {"path": "configs/pi05_lora_rank8_writer_v1.json"},
+    "lora_contract": {"path": "configs/pi05_lora_v1.json"},
     "source_base_config": {"path": "configs/pi05_source_base_v1.json"},
     "tokenizer_manifest": {"path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json"}
   },
   "method": {
-    "name": "dynamic_k_task_grounded_full_factor_rank8_writer",
+    "name": "v6_dynamic_slot_set_bridge",
     "writer_input": "exact task language plus one to four action-hidden same-task teacher videos",
-    "deployment_output": "one complete 38-target rank8 task-conditioned LoRA",
-    "source_policy": "frozen_pi05_libero_source_policy"
+    "deployment_output": "one complete 38-target rank16 task-conditioned LoRA",
+    "source_policy": "frozen_pi05_libero_source_policy",
+    "development_initialization": "frozen_historical_v6_fast_macro400"
   },
   "information_wall": {
-    "writer_dynamic_values": "task-grounded ordered RGB teacher video transitions and terminal goal residual only",
-    "language_role": "joint_backbone_task_query_and_semantic_address_without_static_lora_value_bypass",
+    "writer_dynamic_values": "ordered RGB teacher videos through native v6 Core and Procedure",
+    "language_role": "native_v6_task_query_and_semantic_core_without_language_only_lora_bypass",
     "writer_forbidden_inputs": [
       "action", "proprio", "state", "reward", "terminal", "task_id",
       "filename", "object_pose", "hidden_normalization", "policy_outcome"
@@ -29,30 +30,40 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_dynamic_k_task_grounded_full_factor_rank8_v1",
-    "generated_adapter": "complete_pi05_task_specific_rank8_lora",
+    "architecture": "pi05_v6_dynamic_slot_set_bridge_v1",
+    "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
     "frame_stride": 5,
     "include_final_frame": true,
-    "backbone_total_frames_per_condition": 64,
+    "backbone_total_frames_per_condition": 420,
+    "maximum_stride5_frames_per_video": 105,
     "max_frames_per_encoder_call": 32,
-    "native_action_probe_tokens": 50,
-    "backbone_memory_tokens": 8,
-    "backbone_layers": 18,
-    "backbone_width": 1024,
+    "per_video_encoder": "native_v6_language_axial_core_procedure",
     "program_width": 256,
-    "mapper_width": 1024,
-    "mapper_project": "shared_bias_free_256_to_1024",
-    "lora_a_readout": "four_bias_free_zero_initialized_direct_shape_family_residual_linears_shared_across_layers_and_rank",
-    "lora_b_readout": "four_bias_free_zero_initialized_direct_shape_family_linears_shared_across_layers_and_rank",
-    "temporal_semantic_address": "per_video_absolute_mean_memory_to_temporal_query_only",
-    "task_grounded_visual_evidence": "same_joint_forward_task_query_to_raw_patch_value_then_ordered_difference_and_terminal_goal",
-    "visual_cell_readout": "semantic_address_plus_layer_rank_route_query_with_raw_visual_value",
+    "policy_slot_count": 320,
+    "slot_set_fusion": "permutation_invariant_mean_backbone_plus_selected_centered_residual",
+    "slot_set_qk": "shared_bias_free_pre_rms_256_to_256",
+    "slot_set_value": "raw_centered_per_video_slot_no_value_projection",
+    "slot_set_output": "shared_bias_free_zero_initialized_256_to_256",
+    "k1_contract": "exact_native_v6_identity_for_all_slot_set_parameters",
+    "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
+    "v6_fast_warm_start_checkpoint": "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400",
+    "image_width": 2048,
+    "expert_width": 1024,
+    "text_meta_lora_rank": 4,
+    "vl_meta_lora_rank": 4,
     "action_meta_lora_rank": 4,
-    "temporal_blocks": 2,
-    "set_blocks": 2,
-    "m2p_blocks": 2,
+    "patch_grounding_heads": 8,
+    "action_horizon": 50,
+    "padded_action_dim": 32,
+    "semantic_core_heads": 8,
+    "semantic_core_blocks": 2,
+    "procedure_heads": 8,
+    "procedure_blocks": 2,
+    "visual_transition_heads": 8,
+    "fusion_heads": 8,
+    "factor_hidden_width": 256,
     "initialization_seed": 7,
     "activation_checkpointing": true
   },
@@ -73,7 +84,7 @@
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "dynamic_k_task_grounded_full_factor_correct_video_functional_as",
+    "method": "v6_dynamic_slot_set_correct_video_functional_as",
     "update_topology": "one_complete_full24_equal_task_mean_per_macro",
     "global_tasks_per_optimizer_update": 24,
     "task_assignment": "cost_balanced_long_first_dynamic_uneven",
@@ -83,9 +94,8 @@
     "policy_flow_noise_sampling_scheme": "task_logical_batch_keyed_independent_gaussian_v2",
     "functional_loss_weight": 1.0,
     "singleton_to_full_consistency": {
-      "kind": "smooth_l1_singleton_program_to_stopgrad_full_set_program",
-      "weight": 0.05,
-      "singleton_selection": "sealed_first_selected_video",
+      "kind": "exact_zero_no_auxiliary_loss",
+      "weight": 0.0,
       "K1_value": 0.0
     },
     "checkpoint_boundary": "complete_full24_macro_only"
@@ -129,29 +139,12 @@
     "stop_after_macro": 1
   },
   "formal_run": {
-    "status": "sealed",
-    "profile_evidence": {
-      "source_commit": "d58e3f8fbbe63c6b554e5f47d7f749abce1618ef",
-      "run_root": "runs/outputs/pi05_dynamic_k_task_grounded_full_factor_rank8_profile_r4_b20_d58e3f8_gpu01_20260814",
-      "host": "gpu01",
-      "physical_gpu_ids": [1, 4, 5, 6],
-      "world_size": 4,
-      "completion_macro": 1,
-      "macro_seconds": 47.440897137043066,
-      "global_mean_functional_loss": 0.15610782212267318,
-      "global_mean_consistency_loss": 0.009484296043713888,
-      "gradient_norm_before_clip": 0.06828746944665909,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "max_cuda_allocated_bytes": 39332965888,
-      "max_cuda_reserved_bytes": 45562724352,
-      "oom_count": 0,
-      "nonfinite_count": 0
-    },
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 400,
     "per_task_action_batch_size": 20,
     "checkpoint_macros": "every:25",
-    "stage_stop_macros": [50, 100, 150, 200, 250, 300, 350, 400],
-    "first_strict_paired400_macro": 50
+    "stage_stop_macros": [25, 50],
+    "first_strict_paired400_macro": 25
   }
 }

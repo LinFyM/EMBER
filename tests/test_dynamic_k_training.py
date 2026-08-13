@@ -62,33 +62,21 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_rank8_task_grounded_full_factor_config_is_mechanical_and_loadable() -> None:
+def test_v6_dynamic_slot_set_config_is_mechanical_and_loadable() -> None:
     config = load_writer_config(
-        REPO_ROOT
-        / (
-            "configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_"
-            "rank8_v1.json"
-        )
+        REPO_ROOT / "configs/pi05_as_writer_v6_dynamic_slot_set_bridge_v1.json"
     )
     lora = load_pi05_lora_contract(
-        REPO_ROOT / "configs/pi05_lora_rank8_writer_v1.json"
+        REPO_ROOT / "configs/pi05_lora_v1.json"
     )
-    assert (lora.rank, lora.alpha, lora.parameter_count) == (8, 8, 643_584)
+    assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
-    assert config["writer"]["temporal_semantic_address"] == (
-        "per_video_absolute_mean_memory_to_temporal_query_only"
+    assert config["writer"]["k1_contract"].startswith("exact_native_v6_identity")
+    assert config["writer"]["slot_set_fusion"].endswith(
+        "selected_centered_residual"
     )
-    assert config["writer"]["task_grounded_visual_evidence"].startswith(
-        "same_joint_forward_task_query_to_raw_patch_value"
-    )
-    assert config["writer"]["lora_a_readout"] == (
-        "four_bias_free_zero_initialized_direct_shape_family_residual_linears_"
-        "shared_across_layers_and_rank"
-    )
-    assert config["writer"]["lora_b_readout"].startswith(
-        "four_bias_free_zero_initialized_direct_shape_family_linears"
-    )
+    assert config["writer"]["policy_slot_count"] == 320
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,
@@ -283,7 +271,10 @@ def test_task_gradient_skips_fixed_template_a_outputs(
             "conditioning_training": {
                 "policy_flow_time_sampling_scheme": None,
                 "policy_flow_noise_sampling_scheme": None,
-                "singleton_to_full_consistency": {"weight": 0.05},
+                "singleton_to_full_consistency": {
+                    "weight": 0.05,
+                    "kind": "smooth_l1",
+                },
             },
             "optimization": {"functional_policy_microbatch_size": 2},
         },
@@ -331,7 +322,7 @@ def test_ragged_offsets_remain_cpu_long_while_frames_follow_device() -> None:
     runtime = SimpleNamespace(
         video_store=_Store(),
         context=SimpleNamespace(device=torch.device("cpu")),
-        config={"writer": {"backbone_total_frames_per_condition": 64}},
+        config={"writer": {"backbone_total_frames_per_condition": 420}},
         language_tokens={
             7: (
                 torch.ones((1, 3), dtype=torch.long),
@@ -582,7 +573,7 @@ def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:
     assert adapter_requests(args) == (DYNAMIC_K_WRITER_KIND, False)
 
 
-def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
+def test_evaluator_resolves_the_v6_slot_set_rank16_lora_authority() -> None:
     import importlib
 
     from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
@@ -592,13 +583,7 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
         "ember.pi05_eval.run_contract"
     )._writer_lora_contract
 
-    config = (
-        REPO_ROOT
-        / (
-            "configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_"
-            "rank8_v1.json"
-        )
-    )
+    config = REPO_ROOT / "configs/pi05_as_writer_v6_dynamic_slot_set_bridge_v1.json"
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),
         {
@@ -606,33 +591,24 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
             "config": {"path": str(config)},
             "lora_contract": {
                 "reference": (
-                    "configs/pi05_lora_rank8_writer_v1.json:"
-                    "76tensors:643584parameters"
+                    "configs/pi05_lora_v1.json:"
+                    "76tensors:1287168parameters"
                 )
             },
         },
     )
     assert (lora.rank, lora.parameter_count, lora.state_tensor_count) == (
-        8,
-        643_584,
+        16,
+        1_287_168,
         76,
     )
 
 
-def test_task_grounded_full_factor_k1_deployment_profile_is_sealed() -> None:
+def test_v6_slot_set_deployment_profile_awaits_live_measurement() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
     )
 
-    assert set(DYNAMIC_K_GENERATION_PROFILES) == {1}
-    assert DYNAMIC_K_GENERATION_PROFILES[1] == {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_dynamic_k_task_grounded_full_factor_rank8_k1_writer_"
-            "generation_profile_val8x4_correct_gpu02p1_0d6cda7_macro0025_"
-            "20260814/writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    }
+    assert DYNAMIC_K_GENERATION_BATCH_SIZE > 1
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

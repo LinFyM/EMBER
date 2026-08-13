@@ -347,24 +347,23 @@ WRITER_FAMILIES = {
             400,
         ),
     },
-    "dynamic_k_task_grounded_full_factor_rank8_v1": {
+    "v6_dynamic_slot_set_bridge_v1": {
         "adapter_schema": (
-            "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_"
-            "eval_adapter_v1"
+            "ember_pi05_v6_dynamic_slot_set_bridge_eval_adapter_v1"
         ),
         "episode_schema": (
-            "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_episode_v1"
+            "ember_pi05_v6_dynamic_slot_set_bridge_episode_v1"
         ),
         "config_schema": (
-            "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_v1"
+            "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_v1"
         ),
-        "writer_kind": "dynamic_k_backbone_memory_writer",
-        "arm_prefix": "dynamic_k_task_grounded_full_factor_rank8_",
+        "writer_kind": "v6_dynamic_slot_set_writer",
+        "arm_prefix": "v6_dynamic_slot_set_bridge_",
         "trained_checkpoint_kind": (
-            "dynamic_k_task_grounded_full_factor_rank8_macro_checkpoint"
+            "v6_dynamic_slot_set_bridge_macro_checkpoint"
         ),
         "formal_statuses": ("sealed",),
-        "lora_rank": 8,
+        "lora_rank": 16,
         "lora_target_count": 38,
         "videos_per_condition": 1,
         "supported_videos_per_condition": (1, 2, 3, 4),
@@ -378,14 +377,8 @@ WRITER_FAMILIES = {
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (
+            25,
             50,
-            100,
-            150,
-            200,
-            250,
-            300,
-            350,
-            400,
         ),
     },
 }

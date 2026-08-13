@@ -112,9 +112,9 @@ owner明确提出：完整LoRA即使是adapter仍然高维，当前Writer可能�
 输出架构应具有规模可扩展性：基础policy更大、LoRA targets或参数更多时，Writer可通过共享层对应解码、参数
 复用或结构化生成扩展，而不是为每个target增加一个彼此独立的巨大wide head。
 
-## 6. 当前架构中memory token的准确含义
+## 6. 昨晚Dynamic-K架构中memory token的准确含义
 
-memory token是owner对当前架构的重要设计要求/启发，但不是EMBER的最终goal。不能再偷换概念。当前
+memory token是owner对昨晚Dynamic-K架构的重要设计要求/启发，但不是EMBER的最终goal。不能再偷换概念。当时
 Dynamic-K Writer已经把这一要求落实为8个真实memory tokens：它们与每帧真实图像、exact language和50个固定
 Action probes共同进入π0.5 joint backbone，并保留其经过18个Action Expert层后的逐层状态。这个具体实现正在
 接受formal closed-loop检验；若失败，应定位最早失效接口，而不是把“使用memory token”本身写成不可修改目标。
@@ -165,9 +165,9 @@ memory不能替代视频理解。设计仍需清楚区分：
 不要求在时间、video、policy layer和LoRA parameter四个轴上到处做attention。应选择最少但足以表达必要关系的
 交互，并用完整数据流解释。
 
-## 7. 当前完整架构判断、成熟Hypernetwork参照与历史继承
+## 7. 昨晚完整架构判断、成熟Hypernetwork参照与历史继承
 
-昨晚讨论形成、当前已经实现的完整数据流是：
+昨晚讨论形成、随后已经实现并完成裁决的完整数据流是：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
@@ -295,6 +295,11 @@ Dynamic-K Semantic-Address Direct-Family-B是昨晚完整推导后最新完成�
 checkpoint K1/K4=`102/98`均已终局non-pass。K4把same-task effective-BA相对方差约降`6.3x`却没有解锁task，
 所以保留的是已经证明工作的动态K/set nuisance reduction，而不是继续增加K或修mapper。下一fresh架构应把
 最早失效接口前移到set之前的task-grounded高层视觉Value与有向Procedure。
+
+后续Visual-Value与Full-Factor分别终局于best`96`和`91`，说明昨晚方法里的memory/rank8/mapper整套组合没有恢复
+v6的强closed-loop几何，但这不否定语言+视频、逐video保序、跨video集合聚合和one-LoRA输出等原则。当前受控
+V6 Dynamic Slot-Set Bridge因此恢复已证明143的v6 Core/Procedure/compiler/factor底座，只把动态K集合层隔离为
+单一新变量；memory token和rank8继续作为已检验过的方法选择保留在历史中，不再冒充当前目标或强制约束。
 
 后续迭代遵循以下边界：
 

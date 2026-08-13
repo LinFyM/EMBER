@@ -1,13 +1,11 @@
-"""Shared rank-8 Dynamic-K Writer fixtures."""
+"""Shared fixtures for the v6 Dynamic Slot-Set Writer."""
 
 from __future__ import annotations
 
-from types import SimpleNamespace
+from dataclasses import dataclass
 
 import torch
 
-from ember.writer.backbone_memory import BackboneMemoryOutput
-from ember.writer.lora_mapper import build_lora_tensor_specs
 from ember.writer.model import CompleteLoRAWriter
 
 
@@ -21,76 +19,104 @@ def _template() -> dict[str, torch.Tensor]:
         )
         for projection, output_width in (("q_proj", 2048), ("v_proj", 256)):
             state[prefix + projection + ".lora_A.default.weight"] = torch.randn(
-                8, 1024, generator=generator
+                16, 1024, generator=generator
             )
             state[prefix + projection + ".lora_B.default.weight"] = torch.zeros(
-                output_width, 8
+                output_width, 16
             )
     for module, input_width, output_width in (
         ("model.action_in_proj", 32, 1024),
         ("model.action_out_proj", 1024, 32),
     ):
         state[module + ".lora_A.default.weight"] = torch.randn(
-            8, input_width, generator=generator
+            16, input_width, generator=generator
         )
-        state[module + ".lora_B.default.weight"] = torch.zeros(output_width, 8)
+        state[module + ".lora_B.default.weight"] = torch.zeros(output_width, 16)
     return state
 
 
-class _FakeBackboneMemory(torch.nn.Module):
-    def forward(
+@dataclass(frozen=True)
+class _Evidence:
+    frames: torch.Tensor
+    offsets: tuple[int, ...]
+    language_tokens: torch.Tensor
+
+
+@dataclass(frozen=True)
+class _Memories:
+    evidence: _Evidence
+    frame_indices: torch.Tensor
+
+
+class _FakeV6Base(torch.nn.Module):
+    program_width = 256
+    PUBLIC_LORA_RANK = 16
+
+    def __init__(self, template: dict[str, torch.Tensor]) -> None:
+        super().__init__()
+        self._template = template
+        self.factor = torch.nn.Linear(256, 1, bias=False)
+        torch.nn.init.normal_(self.factor.weight, std=0.01)
+
+    def template_state(self) -> dict[str, torch.Tensor]:
+        return self._template
+
+    def encode_video_evidence(
         self,
         _policy: torch.nn.Module,
         frames: torch.Tensor,
-        frame_condition_ids: torch.Tensor,
+        video_offsets: torch.Tensor,
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
-        task_span_mask: torch.Tensor,
-    ) -> BackboneMemoryOutput:
-        language = language_tokens.float().mean(dim=1)
-        frame = frames.float().mean(dim=(1, 2, 3))
-        content = frame + language.index_select(0, frame_condition_ids)
-        layer = torch.arange(18, device=frames.device).float()[None, :, None, None]
-        rank = torch.arange(8, device=frames.device).float()[None, None, :, None]
-        memory = content[:, None, None, None] + 0.01 * layer + 0.001 * rank
-        memory = memory.expand(-1, -1, -1, 1024).clone()
-        maximum = int(task_span_mask.sum(dim=1).max())
-        valid = torch.arange(maximum, device=frames.device)[None] < task_span_mask.sum(
-            dim=1
-        ).index_select(0, frame_condition_ids)[:, None]
-        visual = content[:, None, None].expand(-1, maximum, 256).clone()
-        return BackboneMemoryOutput(
-            layer_memory=memory,
-            probe_hidden=memory.new_zeros(frames.shape[0], 50, 1024),
-            task_hidden=memory.new_zeros(frames.shape[0], maximum, 2048),
-            visual_evidence=visual,
-            valid_task_tokens=valid,
+        _task_span_mask: torch.Tensor,
+    ) -> _Evidence:
+        return _Evidence(
+            frames=frames,
+            offsets=tuple(int(value) for value in video_offsets.tolist()),
+            language_tokens=language_tokens,
         )
+
+    @staticmethod
+    def build_memories(
+        evidence: _Evidence, frame_indices: torch.Tensor
+    ) -> _Memories:
+        return _Memories(evidence=evidence, frame_indices=frame_indices)
+
+    def compile_slots(self, memories: _Memories) -> torch.Tensor:
+        rows = []
+        slot = torch.arange(320, device=memories.frame_indices.device).float()
+        width = torch.arange(256, device=memories.frame_indices.device).float()
+        for video, (left, right) in enumerate(
+            zip(memories.evidence.offsets, memories.evidence.offsets[1:])
+        ):
+            frame_value = memories.evidence.frames[left:right].float().mean(
+                dim=(1, 2, 3)
+            )
+            ordinal = torch.arange(
+                1, right - left + 1, device=frame_value.device
+            ).float()
+            ordered = (frame_value * ordinal).sum() / ordinal.sum()
+            language = memories.evidence.language_tokens[video].float().mean()
+            rows.append(
+                ordered
+                + language
+                + slot[:, None] * 1e-3
+                + width[None] * 1e-4
+            )
+        return torch.stack(rows)
+
+    def decode_slots(self, slots: torch.Tensor) -> dict[str, torch.Tensor]:
+        scalars = self.factor(slots[:, :76]).squeeze(-1)
+        result = {}
+        for index, (name, template) in enumerate(self._template.items()):
+            value = template[None] + scalars[:, index, None, None]
+            result[name] = value[0] if slots.shape[0] == 1 else value
+        return result
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
-    bridge = SimpleNamespace(
-        paligemma=SimpleNamespace(
-            model=SimpleNamespace(language_model=SimpleNamespace(layers=[None] * 18))
-        ),
-        gemma_expert=SimpleNamespace(model=SimpleNamespace(layers=[None] * 18)),
-    )
-    model = CompleteLoRAWriter.__new__(CompleteLoRAWriter)
-    torch.nn.Module.__init__(model)
-    model.tensor_specs = build_lora_tensor_specs(template)
-    model.backbone_memory = _FakeBackboneMemory()
-    from ember.writer.memory_program import DynamicKMemoryProgram
-    from ember.writer.lora_mapper import CompleteLoRAMapper
-
-    model.memory_program = DynamicKMemoryProgram()
-    model.lora_mapper = CompleteLoRAMapper(
-        model.tensor_specs,
-        template_state=template,
-        program_width=256,
-        mapper_width=1024,
-    )
-    return model, template
+    return CompleteLoRAWriter(_FakeV6Base(template)), template
 
 
 def _inputs() -> tuple[torch.Tensor, ...]:

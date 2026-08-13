@@ -10,7 +10,6 @@ import torch
 import torch.distributed as dist
 
 from ember.writer.errors import WriterModelError
-from ember.writer.frame_budget import apply_condition_frame_budget
 from ember.writer.functional import (
     TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
     functional_lora_loss_gradient,
@@ -146,10 +145,7 @@ def _pack_condition(
     demos: Sequence[int],
 ) -> tuple[tuple[torch.Tensor, ...], dict[str, Any]]:
     available_videos = [runtime.video_store.load(task_id, demo) for demo in demos]
-    videos = apply_condition_frame_budget(
-        available_videos,
-        int(runtime.config["writer"]["backbone_total_frames_per_condition"]),
-    )
+    videos = tuple(available_videos)
     frames = torch.cat([torch.from_numpy(video.frames) for video in videos]).to(
         runtime.context.device, non_blocking=True
     )
@@ -260,14 +256,21 @@ def _task_gradient(
     video_count = int(packed[3][-1])
     if video_count == 1 and float(consistency.detach()) != 0.0:
         raise WriterModelError("K1 dynamic-K consistency loss must be exact zero")
-    if video_count > 1 and not consistency.requires_grad:
+    consistency_kind = runtime.config["conditioning_training"][
+        "singleton_to_full_consistency"
+    ]["kind"]
+    if (
+        video_count > 1
+        and consistency_kind != "exact_zero_no_auxiliary_loss"
+        and not consistency.requires_grad
+    ):
         raise WriterModelError("K>1 dynamic-K consistency lost its training graph")
     active_names = tuple(name for name in names if generated[name].requires_grad)
     if not active_names:
         raise WriterModelError("dynamic-K generated LoRA lost every trainable output")
     outputs = tuple(generated[name] for name in active_names)
     grad_outputs = tuple(lora_gradients[name] for name in active_names)
-    if consistency.requires_grad:
+    if consistency.requires_grad and weight:
         outputs = (*outputs, consistency)
         grad_outputs = (*grad_outputs, torch.ones_like(consistency) * weight)
     before = tuple(item.parameter.grad for item in runtime.gradient_layout)

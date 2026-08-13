@@ -199,6 +199,10 @@ cosine`.735`且norm`1.376x`，B却只有`.062x`，effective BA只有`.245x`且co
 严格恒等，K>1用mean backbone加task-conditioned centered residual，最后只运行一次原生factor heads。这样既
 保留v6的143性能几何，又把昨晚“逐video保序、video间置换不变、不平均最终LoRA”的要求隔离成唯一变量。
 
+该bridge的真实GPU机制门已经接通：K1的76个LoRA tensors逐元素保持native v6，只有197120个集合参数可训练，
+base无梯度；K2/K4换位只产生BF16 batched-forward低位差异，而真实video倒序的Program mean abs变化为`.21703`。
+因此接下来的full24/closed-loop失败若发生，不能归因于K1底座被代码改坏或Procedure完全忽略顺序。
+
 ## 11. 连续历史认知
 
 1. v4暴露错误absolute-time/action-phase shortcut；

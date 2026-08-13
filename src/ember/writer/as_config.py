@@ -1,4 +1,4 @@
-"""Configuration authority for the task-grounded full-factor Writer."""
+"""Configuration authority for the v6 Dynamic Slot-Set bridge."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_v1"
+    "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_dynamic_k_task_grounded_full_factor_rank8_as_writer_launch_v1"
+    "ember_pi05_v6_dynamic_slot_set_bridge_as_writer_launch_v1"
 )
 
 
@@ -64,12 +64,12 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
             raise WriterModelError(f"missing dynamic-K Writer authority: {name}")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     if (
-        lora.rank != 8
-        or lora.alpha != 8
-        or lora.parameter_count != 643_584
+        lora.rank != 16
+        or lora.alpha != 16
+        or lora.parameter_count != 1_287_168
         or lora.state_tensor_count != 76
     ):
-        raise WriterModelError("dynamic-K Writer rank-8 LoRA contract changed")
+        raise WriterModelError("v6 Slot-Set rank-16 LoRA contract changed")
 
 
 def _validate_method(config: Mapping[str, Any]) -> None:
@@ -78,42 +78,44 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_dynamic_k_task_grounded_full_factor_rank8_v1",
-        "generated_adapter": "complete_pi05_task_specific_rank8_lora",
+        "architecture": "pi05_v6_dynamic_slot_set_bridge_v1",
+        "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
         "frame_stride": 5,
         "include_final_frame": True,
-        "backbone_total_frames_per_condition": 64,
-        "native_action_probe_tokens": 50,
-        "backbone_memory_tokens": 8,
-        "backbone_layers": 18,
-        "backbone_width": 1024,
+        "backbone_total_frames_per_condition": 420,
+        "maximum_stride5_frames_per_video": 105,
+        "per_video_encoder": "native_v6_language_axial_core_procedure",
         "program_width": 256,
-        "mapper_width": 1024,
-        "mapper_project": "shared_bias_free_256_to_1024",
-        "lora_a_readout": (
-            "four_bias_free_zero_initialized_direct_shape_family_residual_"
-            "linears_shared_across_layers_and_rank"
+        "policy_slot_count": 320,
+        "slot_set_fusion": (
+            "permutation_invariant_mean_backbone_plus_selected_centered_residual"
         ),
-        "lora_b_readout": (
-            "four_bias_free_zero_initialized_direct_shape_family_linears_"
-            "shared_across_layers_and_rank"
+        "slot_set_qk": "shared_bias_free_pre_rms_256_to_256",
+        "slot_set_value": "raw_centered_per_video_slot_no_value_projection",
+        "slot_set_output": "shared_bias_free_zero_initialized_256_to_256",
+        "k1_contract": "exact_native_v6_identity_for_all_slot_set_parameters",
+        "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
+        "v6_fast_warm_start_checkpoint": (
+            "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_"
+            "seed7_s2400_4efa737_20260729/checkpoints/step_00000400"
         ),
-        "temporal_semantic_address": (
-            "per_video_absolute_mean_memory_to_temporal_query_only"
-        ),
-        "task_grounded_visual_evidence": (
-            "same_joint_forward_task_query_to_raw_patch_value_then_ordered_"
-            "difference_and_terminal_goal"
-        ),
-        "visual_cell_readout": (
-            "semantic_address_plus_layer_rank_route_query_with_raw_visual_value"
-        ),
+        "image_width": 2048,
+        "expert_width": 1024,
+        "text_meta_lora_rank": 4,
+        "vl_meta_lora_rank": 4,
         "action_meta_lora_rank": 4,
-        "temporal_blocks": 2,
-        "set_blocks": 2,
-        "m2p_blocks": 2,
+        "patch_grounding_heads": 8,
+        "action_horizon": 50,
+        "padded_action_dim": 32,
+        "semantic_core_heads": 8,
+        "semantic_core_blocks": 2,
+        "procedure_heads": 8,
+        "procedure_blocks": 2,
+        "visual_transition_heads": 8,
+        "fusion_heads": 8,
+        "factor_hidden_width": 256,
         "initialization_seed": 7,
         "activation_checkpointing": True,
     }
@@ -150,9 +152,9 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
         or any(data.get(key) != value for key, value in expected_data.items())
         or any(training.get(key) != value for key, value in expected_training.items())
-        or consistency.get("weight") != 0.05
+        or consistency.get("weight") != 0.0
         or consistency.get("kind")
-        != "smooth_l1_singleton_program_to_stopgrad_full_set_program"
+        != "exact_zero_no_auxiliary_loss"
         or any(
             distributed.get(key) != value
             for key, value in expected_distributed.items()

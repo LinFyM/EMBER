@@ -1,95 +1,52 @@
-"""Canonical Dynamic-K Backbone-Memory PI05 Writer."""
+"""Canonical dynamic-K bridge over the frozen native v6 Writer."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Mapping
 
 import torch
 
-from ember.writer.backbone_memory import (
-    BackboneMemoryOutput,
-    Pi05BackboneMemoryEncoder,
+from ember.expert_manifold.legacy_v6_architecture import (
+    LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
 )
+from ember.expert_manifold.legacy_v6_model import (
+    CompleteLoRAWriter as NativeV6Writer,
+)
+from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
+from ember.expert_manifold.v6_prior import load_v6_prior_warm_start_
 from ember.writer.errors import WriterModelError
-from ember.writer.lora_mapper import (
-    CompleteLoRAMapper,
-    LoraTensorSpec,
-    build_lora_tensor_specs,
-)
-from ember.writer.memory_program import (
-    DynamicKMemoryProgram,
-    MemoryProgramDiagnostics,
-)
+from ember.writer.slot_set import PolicySlotSetFusion, SlotSetDiagnostics
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 @dataclass(frozen=True)
 class WriterProgramOutput:
-    """Representation chain retained for mechanism diagnostics and training."""
+    """Frozen per-video v6 slots and their trainable set aggregation."""
 
-    backbone: BackboneMemoryOutput
     program: torch.Tensor
-    diagnostics: MemoryProgramDiagnostics
+    diagnostics: SlotSetDiagnostics
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Generate one complete rank-8 LoRA from language and one-to-four videos."""
+    """Generate one rank-16 LoRA from one-to-four ordered teaching videos."""
 
-    PUBLIC_LORA_RANK = 8
-    EXPERT_LAYERS = 18
+    PUBLIC_LORA_RANK = 16
     PROGRAM_WIDTH = 256
-    MAPPER_WIDTH = 1024
+    POLICY_SLOTS = 320
 
-    def __init__(
-        self,
-        tensor_specs: tuple[LoraTensorSpec, ...],
-        *,
-        template_state: Mapping[str, torch.Tensor],
-        bridge: torch.nn.Module,
-        image_width: int = 2048,
-        expert_width: int = 1024,
-        program_width: int = PROGRAM_WIDTH,
-        mapper_width: int = MAPPER_WIDTH,
-        action_meta_lora_rank: int = 4,
-        temporal_heads: int = 8,
-        max_frames_per_encoder_call: int = 32,
-        action_horizon: int = 50,
-        padded_action_dim: int = 32,
-        initialization_seed: int = 7,
-        activation_checkpointing: bool = True,
-    ) -> None:
+    def __init__(self, base_writer: NativeV6Writer) -> None:
         super().__init__()
         if (
-            not tensor_specs
-            or {item.rank for item in tensor_specs} != {self.PUBLIC_LORA_RANK}
-            or program_width != self.PROGRAM_WIDTH
-            or mapper_width != self.MAPPER_WIDTH
-            or image_width != 2048
-            or expert_width != 1024
-            or temporal_heads != 8
+            int(base_writer.program_width) != self.PROGRAM_WIDTH
+            or base_writer.PUBLIC_LORA_RANK != self.PUBLIC_LORA_RANK
         ):
-            raise WriterModelError("invalid Dynamic-K Writer topology")
-        self.tensor_specs = tensor_specs
-        self.backbone_memory = Pi05BackboneMemoryEncoder(
-            bridge=bridge,
-            image_width=image_width,
-            expert_width=expert_width,
-            program_width=program_width,
-            evidence_heads=temporal_heads,
-            max_frames_per_encoder_call=max_frames_per_encoder_call,
-            action_horizon=action_horizon,
-            padded_action_dim=padded_action_dim,
-            initialization_seed=initialization_seed,
-            action_meta_lora_rank=action_meta_lora_rank,
-            activation_checkpointing=activation_checkpointing,
-        )
-        self.memory_program = DynamicKMemoryProgram(heads=temporal_heads)
-        self.lora_mapper = CompleteLoRAMapper(
-            tensor_specs,
-            template_state=template_state,
-            program_width=program_width,
-            mapper_width=mapper_width,
-        )
+            raise WriterModelError("native v6 Writer topology changed")
+        self.base_writer = base_writer.requires_grad_(False).eval()
+        self.slot_set = PolicySlotSetFusion(width=self.PROGRAM_WIDTH)
 
     @classmethod
     def from_policy(
@@ -99,37 +56,37 @@ class CompleteLoRAWriter(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
         writer_config: Mapping[str, Any],
     ) -> CompleteLoRAWriter:
-        """Construct from the frozen policy that owns the real joint backbone."""
+        """Construct and strictly load the frozen v6-fast performance base."""
 
         bridge = getattr(
             getattr(policy, "model", None), "paligemma_with_expert", None
         )
         if bridge is None:
             raise WriterModelError("PI05 policy lost its joint backbone")
-        allowed = {
-            "image_width",
-            "expert_width",
-            "program_width",
-            "mapper_width",
-            "action_meta_lora_rank",
-            "temporal_heads",
-            "max_frames_per_encoder_call",
-            "action_horizon",
-            "padded_action_dim",
-            "initialization_seed",
-            "activation_checkpointing",
-        }
         arguments = {
             name: writer_config[name]
-            for name in allowed
+            for name in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS
             if name in writer_config
         }
-        return cls(
+        base = NativeV6Writer(
             build_lora_tensor_specs(template_state),
             template_state=template_state,
-            bridge=bridge,
+            paligemma_model=bridge.paligemma.model.language_model,
+            expert_model=bridge.gemma_expert.model,
             **arguments,
         )
+        checkpoint = (
+            REPO_ROOT / str(writer_config["v6_fast_warm_start_checkpoint"])
+        ).resolve()
+        load_v6_prior_warm_start_(base, checkpoint)
+        return cls(base)
+
+    def train(self, mode: bool = True) -> CompleteLoRAWriter:
+        """Train only Slot-Set while the loaded v6 base remains in eval mode."""
+
+        super().train(mode)
+        self.base_writer.eval()
+        return self
 
     @staticmethod
     def _offsets(
@@ -140,8 +97,8 @@ class CompleteLoRAWriter(torch.nn.Module):
     ) -> tuple[int, ...]:
         if (
             value.device.type != "cpu"
-            or value.ndim != 1
             or value.dtype != torch.long
+            or value.ndim != 1
         ):
             raise WriterModelError(f"{name} must be a CPU long tensor")
         offsets = tuple(int(item) for item in value.tolist())
@@ -155,7 +112,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         return offsets
 
     def template_state(self) -> dict[str, torch.Tensor]:
-        return self.lora_mapper.template_state()
+        return self.base_writer.template_state()
 
     def encode_program(
         self,
@@ -170,8 +127,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
         singleton_video_index: int = 0,
     ) -> WriterProgramOutput:
-        """Run the one physical frame pass and compile its directed set program."""
+        """Compile each video independently, then aggregate aligned v6 slots."""
 
+        del singleton_video_index
         video_bounds = self._offsets(
             video_offsets, final=frames.shape[0], name="video offsets"
         )
@@ -180,58 +138,58 @@ class CompleteLoRAWriter(torch.nn.Module):
             final=len(video_bounds) - 1,
             name="condition video offsets",
         )
+        cardinalities = tuple(
+            right - left
+            for left, right in zip(condition_bounds, condition_bounds[1:])
+        )
+        condition_counts = torch.tensor(
+            cardinalities,
+            dtype=torch.long,
+            device=language_tokens.device,
+        )
         if (
             frame_indices.shape != (frames.shape[0],)
             or frame_indices.dtype != torch.long
             or frame_indices.device != frames.device
             or language_tokens.ndim != 2
-            or len(condition_bounds) - 1 != language_tokens.shape[0]
+            or language_tokens.shape[0] != len(condition_bounds) - 1
             or language_mask.shape != language_tokens.shape
             or task_span_mask.shape != language_tokens.shape
+            or any(count not in range(1, 5) for count in cardinalities)
         ):
-            raise WriterModelError("invalid Dynamic-K Writer batch")
-        video_counts = torch.tensor(
-            [right - left for left, right in zip(video_bounds, video_bounds[1:])],
-            dtype=torch.long,
-            device=frames.device,
-        )
-        condition_video_counts = torch.tensor(
-            [
-                right - left
-                for left, right in zip(condition_bounds, condition_bounds[1:])
-            ],
-            dtype=torch.long,
-            device=frames.device,
-        )
+            raise WriterModelError("invalid v6 Dynamic Slot-Set batch")
         video_condition_ids = torch.repeat_interleave(
-            torch.arange(len(condition_bounds) - 1, device=frames.device),
-            condition_video_counts,
+            torch.arange(
+                len(condition_bounds) - 1,
+                dtype=torch.long,
+                device=language_tokens.device,
+            ),
+            condition_counts,
         )
-        frame_condition_ids = torch.repeat_interleave(
-            video_condition_ids,
-            video_counts,
+        with torch.no_grad():
+            evidence = self.base_writer.encode_video_evidence(
+                policy,
+                frames,
+                video_offsets,
+                language_tokens.index_select(0, video_condition_ids),
+                language_mask.index_select(0, video_condition_ids),
+                task_span_mask.index_select(0, video_condition_ids),
+            )
+            memories = self.base_writer.build_memories(evidence, frame_indices)
+            per_video_slots = self.base_writer.compile_slots(memories)
+        if per_video_slots.shape != (
+            len(video_bounds) - 1,
+            self.POLICY_SLOTS,
+            self.PROGRAM_WIDTH,
+        ):
+            raise WriterModelError("native v6 per-video slot topology changed")
+        shared, diagnostics = self.slot_set(
+            per_video_slots.detach(), condition_video_offsets
         )
-        backbone = self.backbone_memory(
-            policy,
-            frames,
-            frame_condition_ids,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-        )
-        program, diagnostics = self.memory_program(
-            backbone.layer_memory,
-            backbone.visual_evidence,
-            backbone.valid_task_tokens,
-            frame_indices,
-            video_offsets,
-            condition_video_offsets,
-            singleton_video_index=singleton_video_index,
-        )
-        return WriterProgramOutput(backbone, program, diagnostics)
+        return WriterProgramOutput(shared, diagnostics)
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:
-        return self.lora_mapper(program)
+        return self.base_writer.decode_slots(program)
 
     def forward_training(
         self,
@@ -257,10 +215,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             policy=policy,
             singleton_video_index=singleton_video_index,
         )
-        return (
-            self.decode_program(encoded.program),
-            encoded.diagnostics.consistency_loss,
-        )
+        return self.decode_program(encoded.program), encoded.diagnostics.auxiliary_loss
 
     def forward(
         self,

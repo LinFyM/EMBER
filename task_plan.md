@@ -69,6 +69,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   peak reserved `45.563GB`、K1--K4各6、无OOM/nonfinite；
 - [x] 将live profile seal进formal config；
 - [ ] 从clean pushed commit fresh训练macro0→50，checkpoint every25；
+- [x] 用macro25 checkpoint完成K1部署定标：B8/B16/B32=`.979553/.975323/.972106 LoRA/s`，锁B8；
 - [ ] 完成macro50 single-checkpoint K1 strict paired correct400与逐task比较；若通过续训门，再评macro100并分析churn；
 - [ ] 只有相对fixed-A96出现实质改善或可信上升趋势才续到150/200；最晚macro200以best≥125、breadth≥6裁决；
 - [ ] 若Full-Factor仍失败，终止当前前端的A/B mapper小修，转以v6-fast为性能骨架做受控机制移植。

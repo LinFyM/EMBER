@@ -368,3 +368,11 @@ config=`configs/pi05_as_writer_dynamic_k_task_grounded_full_factor_rank8_v1.json
 - 与fixed-A matched world4的`49.0775s`相比没有吞吐回退；首macro三项数值完全一致，符合zero-init staged
   full-factor合同；
 - formal config已seal，下一步从新的clean pushed commit做fresh macro0→50，不加载profile checkpoint。
+
+macro25 checkpoint完整写出后，用clean frozen `0d6cda7`在gpu02物理GPU1完成K1部署定标：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_full_factor_rank8_k1_writer_generation_profile_val8x4_correct_gpu02p1_0d6cda7_macro0025_20260814`
+
+- B8/B16/B32 LoRA/s=`.979553/.975323/.972106`，三者均stable、最长64帧、0 OOM/nonfinite；
+- 按highest-throughput规则锁B8；peak reserved分别=`12.973/13.453/13.474GB`；
+- profile只决定同一Writer graph的evaluation batch，不选择checkpoint或读取closed-loop outcome；formal训练继续到50。

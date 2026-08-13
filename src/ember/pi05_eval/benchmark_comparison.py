@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import copy
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_eval_queue import publish_json_exclusive
@@ -91,7 +91,27 @@ def _benchmark_contract_projection(result: Mapping[str, Any]) -> dict[str, Any]:
     projection.pop("git", None)
     projection.pop("parallel", None)
     projection.pop("writer", None)
+    normalization = projection.get("normalization", {})
+    if isinstance(normalization, dict) and isinstance(normalization.get("path"), str):
+        normalization["path"] = _config_authority_location(normalization["path"])
+    tokenizer = projection.get("tokenizer", {})
+    if isinstance(tokenizer, dict) and isinstance(
+        tokenizer.get("manifest_path"), str
+    ):
+        tokenizer["manifest_path"] = _config_authority_location(
+            tokenizer["manifest_path"]
+        )
     return projection
+
+
+def _config_authority_location(value: str) -> str:
+    """Ignore only the frozen-worktree prefix of repository config authorities."""
+
+    parts = PurePosixPath(value).parts
+    indices = [index for index, part in enumerate(parts) if part == "configs"]
+    if not indices:
+        return value
+    return PurePosixPath(*parts[indices[-1] :]).as_posix()
 
 
 def _per_task_reference(

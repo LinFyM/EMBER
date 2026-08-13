@@ -178,6 +178,52 @@ def test_benchmark_comparison_rejects_false_count_only_pairing_claim() -> None:
         )
 
 
+def test_benchmark_comparison_canonicalizes_only_worktree_config_prefixes() -> None:
+    reference = _result(0, "correct", set(), family="legacy")
+    candidate = _result(10, "correct", set(), family="ecp")
+    for value, worktree in ((reference, "old-wt"), (candidate, "new-wt")):
+        paired = value["paired_control"]
+        paired["normalization"] = {
+            "path": (
+                f"/data1/x/worktrees/{worktree}/configs/pi05_source_corpus_v1/"
+                "source_normalization.json"
+            ),
+            "bytes": 5759,
+        }
+        paired["tokenizer"] = {
+            "path": "/data1/x/tokenizer.model",
+            "bytes": 4264023,
+            "manifest_path": (
+                f"/data1/x/worktrees/{worktree}/configs/libero_24_8_8_v1/"
+                "pi05_tokenizer_manifest.json"
+            ),
+        }
+
+    benchmark_reference_comparison(
+        candidate,
+        strict_references={"old": reference},
+    )
+
+    config_drift = copy.deepcopy(candidate)
+    config_drift["paired_control"]["normalization"]["path"] = (
+        "/data1/x/worktrees/new-wt/configs/pi05_source_corpus_v2/"
+        "source_normalization.json"
+    )
+    with pytest.raises(Pi05EvaluationError, match="shared policy contract"):
+        benchmark_reference_comparison(
+            config_drift,
+            strict_references={"old": reference},
+        )
+
+    content_drift = copy.deepcopy(candidate)
+    content_drift["paired_control"]["normalization"]["bytes"] += 1
+    with pytest.raises(Pi05EvaluationError, match="shared policy contract"):
+        benchmark_reference_comparison(
+            content_drift,
+            strict_references={"old": reference},
+        )
+
+
 def test_benchmark_comparison_reaggregates_and_publishes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

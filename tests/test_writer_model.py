@@ -60,6 +60,8 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
     assert model.lora_mapper.families["q"].a.weight.grad is None
     assert model.memory_program.dynamic_projection.weight.grad is not None
     assert not model.memory_program.dynamic_projection.weight.grad.count_nonzero()
+    assert model.memory_program.semantic_address_projection.weight.grad is not None
+    assert not model.memory_program.semantic_address_projection.weight.grad.count_nonzero()
 
     model.zero_grad(set_to_none=True)
     torch.nn.init.normal_(model.lora_mapper.families["q"].b.weight, std=0.01)
@@ -70,6 +72,8 @@ def test_dynamic_k_writer_training_consistency_and_mapper_gradient_staging() -> 
     (sum(value.float().sum() for value in generated.values()) + consistency).backward()
     assert model.memory_program.dynamic_projection.weight.grad is not None
     assert model.memory_program.dynamic_projection.weight.grad.abs().sum() > 0
+    assert model.memory_program.semantic_address_projection.weight.grad is not None
+    assert model.memory_program.semantic_address_projection.weight.grad.abs().sum() > 0
 
 
 def test_k1_uses_same_graph_and_has_exact_zero_consistency() -> None:

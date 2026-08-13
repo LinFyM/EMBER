@@ -33,8 +33,8 @@ from ember.writer.checkpoint import (
 from ember.writer.errors import WriterModelError
 
 
-DYNAMIC_K_ADAPTER_SCHEMA = "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1"
-DYNAMIC_K_EPISODE_SCHEMA = "ember_pi05_dynamic_k_backbone_memory_rank8_episode_v1"
+DYNAMIC_K_ADAPTER_SCHEMA = "ember_pi05_dynamic_k_semantic_address_rank8_eval_adapter_v1"
+DYNAMIC_K_EPISODE_SCHEMA = "ember_pi05_dynamic_k_semantic_address_rank8_episode_v1"
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
@@ -43,8 +43,8 @@ DYNAMIC_K_GENERATION_PROFILE = {
     "schema": "ember_pi05_writer_generation_profile_v2",
     "path": (
         "runs/outputs/"
-        "pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_"
-        "6288fbb_20260813/writer_generation_profile.json"
+        "pi05_dynamic_k_semantic_address_writer_generation_profile_pending/"
+        "writer_generation_profile.json"
     ),
     "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
 }
@@ -325,7 +325,7 @@ def inspect_dynamic_k_writer_evaluation(
     return {
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
-        "arm": f"dynamic_k_backbone_memory_rank8_{video_condition}",
+        "arm": f"dynamic_k_semantic_address_rank8_{video_condition}",
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {
             "path": str(config_path),

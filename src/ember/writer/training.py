@@ -445,7 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json",
+        / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

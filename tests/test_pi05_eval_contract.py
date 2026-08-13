@@ -469,15 +469,17 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     shared_writer = inputs[4]
     shared_writer.update(
         schema_version=(
-            "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1"
+            "ember_pi05_dynamic_k_semantic_address_rank8_eval_adapter_v1"
         ),
         kind="dynamic_k_backbone_memory_writer",
     )
     shared_writer["config"] = {
         "path": str(
-            ROOT / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json"
+            ROOT / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json"
         ),
-        "schema": "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1",
+        "schema": (
+            "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_as_writer_v1"
+        ),
     }
     shared_writer["lora_contract"] = {
         "reference": (
@@ -510,7 +512,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         _build_writer_contract(
             inputs=tuple(inputs),
             output_dir=tmp_path / "out-b16",
-            arm="dynamic_k_backbone_memory_rank8_correct",
+            arm="dynamic_k_semantic_address_rank8_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=16,
@@ -518,7 +520,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     exact = _build_writer_contract(
         inputs=tuple(inputs),
         output_dir=tmp_path / "out-b8",
-        arm="dynamic_k_backbone_memory_rank8_correct",
+        arm="dynamic_k_semantic_address_rank8_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=8,

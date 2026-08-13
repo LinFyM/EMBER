@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"
+    "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_launch_v1"
+    "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_as_writer_launch_v1"
 )
 
 
@@ -77,58 +77,71 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     data = config.get("data", {})
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
-    if (
-        writer.get("architecture") != "pi05_dynamic_k_backbone_memory_rank8_v1"
-        or writer.get("generated_adapter")
-        != "complete_pi05_task_specific_rank8_lora"
-        or writer.get("camera_dataset") != "obs/agentview_rgb"
-        or writer.get("camera_transform")
-        != "libero_opengl_rotate_180_chw_uint8"
-        or int(writer.get("frame_stride", 0)) != 5
-        or writer.get("include_final_frame") is not True
-        or int(writer.get("backbone_total_frames_per_condition", 0)) != 64
+    expected_writer = {
+        "architecture": "pi05_dynamic_k_semantic_address_backbone_memory_rank8_v1",
+        "generated_adapter": "complete_pi05_task_specific_rank8_lora",
+        "camera_dataset": "obs/agentview_rgb",
+        "camera_transform": "libero_opengl_rotate_180_chw_uint8",
+        "frame_stride": 5,
+        "include_final_frame": True,
+        "backbone_total_frames_per_condition": 64,
+        "native_action_probe_tokens": 50,
+        "backbone_memory_tokens": 8,
+        "backbone_layers": 18,
+        "backbone_width": 1024,
+        "program_width": 256,
+        "temporal_semantic_address": (
+            "per_video_absolute_mean_memory_to_temporal_query_only"
+        ),
+        "action_meta_lora_rank": 4,
+        "temporal_blocks": 2,
+        "set_blocks": 2,
+        "m2p_blocks": 2,
+        "initialization_seed": 7,
+        "activation_checkpointing": True,
+    }
+    expected_data = {
+        "task_count": 24,
+        "episodes_per_task": 50,
+        "demo_indices": [0, 49],
+        "action_chunk_size": 50,
+        "action_queries_per_task": 20,
+        "dynamic_k_max": 4,
+        "dynamic_k_schedule": (
+            "K(task,macro)=1+((sealed_task_permutation_position(task)+macro)%4)"
+        ),
+        "dynamic_k_balance": "exactly_six_tasks_at_each_K_per_macro",
+    }
+    expected_training = {
+        "global_tasks_per_optimizer_update": 24,
+        "update_topology": "one_complete_full24_equal_task_mean_per_macro",
+        "task_assignment": "cost_balanced_long_first_dynamic_uneven",
+        "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
+    }
+    expected_distributed = {
+        "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
+        "exact_resume_world_topology_locked": True,
+        "gradient_communication": (
+            "one_flat_writer_gradient_sum_all_reduce_per_macro_then_divide_by_24"
+        ),
+        "nccl_p2p_disable": "1",
+        "deferred_process_group": True,
+    }
+    consistency = training.get("singleton_to_full_consistency", {})
+    changed = (
+        any(writer.get(key) != value for key, value in expected_writer.items())
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
-        or int(writer.get("native_action_probe_tokens", 0)) != 50
-        or int(writer.get("backbone_memory_tokens", 0)) != 8
-        or int(writer.get("backbone_layers", 0)) != 18
-        or int(writer.get("backbone_width", 0)) != 1024
-        or int(writer.get("program_width", 0)) != 256
-        or int(writer.get("action_meta_lora_rank", 0)) != 4
-        or int(writer.get("temporal_blocks", 0)) != 2
-        or int(writer.get("set_blocks", 0)) != 2
-        or int(writer.get("m2p_blocks", 0)) != 2
-        or int(writer.get("initialization_seed", -1)) != 7
-        or writer.get("activation_checkpointing") is not True
-        or int(data.get("task_count", 0)) != 24
-        or int(data.get("episodes_per_task", 0)) != 50
-        or data.get("demo_indices") != [0, 49]
-        or int(data.get("action_chunk_size", 0)) != 50
-        or int(data.get("action_queries_per_task", 0)) != 20
-        or int(data.get("dynamic_k_max", 0)) != 4
-        or data.get("dynamic_k_schedule")
-        != "K(task,macro)=1+((sealed_task_permutation_position(task)+macro)%4)"
-        or data.get("dynamic_k_balance")
-        != "exactly_six_tasks_at_each_K_per_macro"
-        or training.get("global_tasks_per_optimizer_update") != 24
-        or training.get("update_topology")
-        != "one_complete_full24_equal_task_mean_per_macro"
-        or training.get("task_assignment")
-        != "cost_balanced_long_first_dynamic_uneven"
-        or training.get("pair_loss_reduction")
-        != "mean_within_task_then_equal_mean_over_24_tasks"
-        or float(
-            training.get("singleton_to_full_consistency", {}).get("weight", -1)
-        )
-        != 0.05
-        or training.get("singleton_to_full_consistency", {}).get("kind")
+        or any(data.get(key) != value for key, value in expected_data.items())
+        or any(training.get(key) != value for key, value in expected_training.items())
+        or consistency.get("weight") != 0.05
+        or consistency.get("kind")
         != "smooth_l1_singleton_program_to_stopgrad_full_set_program"
-        or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
-        or distributed.get("exact_resume_world_topology_locked") is not True
-        or distributed.get("gradient_communication")
-        != "one_flat_writer_gradient_sum_all_reduce_per_macro_then_divide_by_24"
-        or distributed.get("nccl_p2p_disable") != "1"
-        or distributed.get("deferred_process_group") is not True
-    ):
+        or any(
+            distributed.get(key) != value
+            for key, value in expected_distributed.items()
+        )
+    )
+    if changed:
         raise WriterModelError("dynamic-K Writer scientific contract changed")
 
 

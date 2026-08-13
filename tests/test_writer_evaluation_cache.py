@@ -384,10 +384,11 @@ def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
         {
             "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
             "kind": DYNAMIC_K_WRITER_KIND,
-            "arm": "dynamic_k_backbone_memory_rank8_correct",
+            "arm": "dynamic_k_semantic_address_rank8_correct",
             "config": {
                 "schema": (
-                    "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"
+                    "ember_pi05_dynamic_k_semantic_address_backbone_memory_"
+                    "rank8_as_writer_v1"
                 )
             },
             "writer_asset": {

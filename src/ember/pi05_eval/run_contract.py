@@ -230,6 +230,9 @@ def _validate_build_request(
             "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
+            "ember_pi05_dynamic_k_semantic_address_rank8_eval_adapter_v1": (
+                "highest_measured_batch_throughput_with_device_memory_headroom"
+            ),
         }
         expected_throughput_policy = throughput_by_schema.get(
             str(adapter.get("schema_version"))

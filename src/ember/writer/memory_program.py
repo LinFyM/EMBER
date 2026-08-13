@@ -19,6 +19,7 @@ class MemoryProgramError(ValueError):
 class MemoryProgramDiagnostics:
     """Live intermediate states for representation-to-mapper diagnostics."""
 
+    semantic_addresses: torch.Tensor
     video_programs: torch.Tensor
     shared_program: torch.Tensor
     singleton_program: torch.Tensor
@@ -79,9 +80,17 @@ class _ZeroPreservingSelfAttention(torch.nn.Module):
         content: torch.Tensor,
         route: torch.Tensor,
         positions: torch.Tensor | None = None,
+        query_address: torch.Tensor | None = None,
     ) -> torch.Tensor:
         addressed = self.qk_norm(content) + route
-        query = _split_heads(self.query(addressed), self.heads)
+        if query_address is not None and query_address.shape != content.shape:
+            raise MemoryProgramError("query address changed shape")
+        query = _split_heads(
+            self.query(
+                addressed if query_address is None else addressed + query_address
+            ),
+            self.heads,
+        )
         key = _split_heads(self.key(addressed), self.heads)
         if self.rotary:
             if positions is None or positions.shape != content.shape[:2]:
@@ -145,6 +154,10 @@ class DynamicKMemoryProgram(torch.nn.Module):
         if heads <= 0 or self.PROGRAM_WIDTH % heads:
             raise MemoryProgramError("invalid memory-program attention heads")
         self.dynamic_projection = torch.nn.Linear(
+            self.MEMORY_WIDTH, self.PROGRAM_WIDTH, bias=False
+        )
+        self.semantic_address_norm = RMSNorm(self.MEMORY_WIDTH)
+        self.semantic_address_projection = torch.nn.Linear(
             self.MEMORY_WIDTH, self.PROGRAM_WIDTH, bias=False
         )
         self.goal_fusion = torch.nn.Linear(
@@ -228,12 +241,15 @@ class DynamicKMemoryProgram(torch.nn.Module):
 
     def _encode_video(
         self, memory: torch.Tensor, positions: torch.Tensor
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         adjacent = torch.zeros_like(memory)
         adjacent[1:] = memory[1:] - memory[:-1]
         goal = memory - memory[:1]
         transition = self.dynamic_projection(adjacent)
         terminal_goal = self.dynamic_projection(goal[-1])
+        semantic_address = self.semantic_address_projection(
+            self.semantic_address_norm(memory.mean(dim=0))
+        )
         frames = memory.shape[0]
         content = transition.permute(1, 2, 0, 3).reshape(
             self.EXPERT_LAYERS * self.RANK_TOKENS,
@@ -241,13 +257,26 @@ class DynamicKMemoryProgram(torch.nn.Module):
             self.PROGRAM_WIDTH,
         )
         route = self._cell_route()[:, None]
+        query_address = semantic_address.reshape(
+            self.EXPERT_LAYERS * self.RANK_TOKENS,
+            1,
+            self.PROGRAM_WIDTH,
+        ).expand(-1, frames, -1)
         ordinals = positions[None].expand(content.shape[0], -1)
         for block in self.temporal_blocks:
-            content = block(content, route, ordinals)
+            content = block(
+                content,
+                route,
+                ordinals,
+                query_address=query_address,
+            )
         terminal = content[:, -1].reshape(
             self.EXPERT_LAYERS, self.RANK_TOKENS, self.PROGRAM_WIDTH
         )
-        return self.goal_fusion(torch.cat((terminal, terminal_goal), dim=-1))
+        return (
+            self.goal_fusion(torch.cat((terminal, terminal_goal), dim=-1)),
+            semantic_address,
+        )
 
     def _aggregate_set(self, programs: torch.Tensor) -> torch.Tensor:
         shots = programs.shape[0]
@@ -385,14 +414,12 @@ class DynamicKMemoryProgram(torch.nn.Module):
                 "each video's frame indices must start at zero and increase"
             )
         positions = frame_indices.to(device=memory_states.device)
-        video_programs = torch.stack(
-            tuple(
-                self._encode_video(
-                    memory_states[start:stop], positions[start:stop]
-                )
-                for start, stop in zip(video_bounds, video_bounds[1:])
-            )
+        encoded_videos = tuple(
+            self._encode_video(memory_states[start:stop], positions[start:stop])
+            for start, stop in zip(video_bounds, video_bounds[1:])
         )
+        video_programs = torch.stack(tuple(item[0] for item in encoded_videos))
+        semantic_addresses = torch.stack(tuple(item[1] for item in encoded_videos))
         shared_programs = []
         singleton_programs = []
         multi_condition = []
@@ -422,6 +449,7 @@ class DynamicKMemoryProgram(torch.nn.Module):
             consistency_loss = singleton_program.sum() * 0.0
         output, m2p_input, layer_program = self._m2p(shared_program)
         diagnostics = MemoryProgramDiagnostics(
+            semantic_addresses=semantic_addresses,
             video_programs=video_programs,
             shared_program=shared_program,
             singleton_program=singleton_program,

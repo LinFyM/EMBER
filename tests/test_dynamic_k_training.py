@@ -58,10 +58,10 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_rank8_dynamic_k_config_is_mechanical_and_loadable() -> None:
+def test_rank8_dynamic_k_semantic_address_config_is_mechanical_and_loadable() -> None:
     config = load_writer_config(
         REPO_ROOT
-        / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json"
+        / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json"
     )
     lora = load_pi05_lora_contract(
         REPO_ROOT / "configs/pi05_lora_rank8_writer_v1.json"
@@ -69,6 +69,9 @@ def test_rank8_dynamic_k_config_is_mechanical_and_loadable() -> None:
     assert (lora.rank, lora.alpha, lora.parameter_count) == (8, 8, 643_584)
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
+    assert config["writer"]["temporal_semantic_address"] == (
+        "per_video_absolute_mean_memory_to_temporal_query_only"
+    )
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,
@@ -497,7 +500,7 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
 
     config = (
         REPO_ROOT
-        / "configs/pi05_as_writer_dynamic_k_backbone_memory_rank8_v1.json"
+        / "configs/pi05_as_writer_dynamic_k_semantic_address_rank8_v1.json"
     )
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),

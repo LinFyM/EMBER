@@ -33,7 +33,7 @@ WRITER_DIMENSION_CONTRACT = {
 }
 
 _STATIC_WRITER_CONTRACT: dict[str, Any] = {
-    "architecture": "pi05_dynamic_k_backbone_memory_rank8_v1",
+    "architecture": "pi05_dynamic_k_semantic_address_backbone_memory_rank8_v1",
     "generated_adapter": "complete_pi05_task_specific_rank8_lora",
     "input": "exact_task_language_plus_one_to_four_action_hidden_videos",
     "frame_stride": 5,
@@ -43,6 +43,9 @@ _STATIC_WRITER_CONTRACT: dict[str, Any] = {
     "backbone_layers": 18,
     "backbone_width": 1024,
     "program_width": 256,
+    "temporal_semantic_address": (
+        "per_video_absolute_mean_memory_to_temporal_query_only"
+    ),
     "mapper_width": 1024,
     "action_meta_lora_rank": 4,
     "temporal_heads": 8,

@@ -25,6 +25,8 @@ def test_memory_program_is_zero_preserving_and_k1_uses_the_set_path() -> None:
     )
 
     assert output.shape == (1, 20, 8, 256)
+    assert diagnostics.semantic_addresses.shape == (1, 18, 8, 256)
+    assert diagnostics.semantic_addresses.abs().sum().item() > 0.0
     assert diagnostics.video_programs.shape == (1, 18, 8, 256)
     assert torch.equal(output, torch.zeros_like(output))
     assert torch.equal(
@@ -37,6 +39,43 @@ def test_memory_program_is_zero_preserving_and_k1_uses_the_set_path() -> None:
         for layer in module.modules()
         if isinstance(layer, torch.nn.Linear)
     )
+
+
+def test_absolute_memory_only_addresses_dynamic_procedure_queries() -> None:
+    torch.manual_seed(9)
+    module = DynamicKMemoryProgram().eval()
+    memory = torch.randn(4, 18, 8, 1024)
+    indices = torch.tensor([0, 5, 10, 15])
+    video_offsets = _offsets((4,))
+    condition_offsets = _offsets((1,))
+    natural, diagnostics = module(
+        memory, indices, video_offsets, condition_offsets
+    )
+    shifted, shifted_diagnostics = module(
+        memory + 3.0, indices, video_offsets, condition_offsets
+    )
+
+    assert not torch.allclose(
+        diagnostics.semantic_addresses,
+        shifted_diagnostics.semantic_addresses,
+    )
+    assert not torch.allclose(natural, shifted)
+
+    with torch.no_grad():
+        module.semantic_address_projection.weight.zero_()
+    unaddressed, _ = module(memory, indices, video_offsets, condition_offsets)
+    shifted_unaddressed, _ = module(
+        memory + 3.0, indices, video_offsets, condition_offsets
+    )
+    torch.testing.assert_close(unaddressed, shifted_unaddressed)
+
+    with torch.no_grad():
+        module.dynamic_projection.weight.zero_()
+    static_only, static_diagnostics = module(
+        memory, indices, video_offsets, condition_offsets
+    )
+    assert static_diagnostics.semantic_addresses.abs().sum().item() == 0.0
+    assert torch.equal(static_only, torch.zeros_like(static_only))
 
 
 def test_memory_program_is_invariant_to_video_permutation() -> None:
@@ -97,6 +136,7 @@ def test_memory_program_reads_order_and_backpropagates_through_all_axes() -> Non
     assert memory.grad is not None and memory.grad.abs().sum().item() > 0.0
     for parameter in (
         module.dynamic_projection.weight,
+        module.semantic_address_projection.weight,
         module.temporal_blocks[0].value.weight,
         module.set_blocks[0].value.weight,
         module.endpoint_reader.value.weight,

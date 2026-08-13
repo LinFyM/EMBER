@@ -9,7 +9,8 @@
 backbone-memory与semantic-address macro50 strict分别为`100/400`和`101/400`；semantic-address相对old134为
 `82 retained/19 gained/52 lost`，终局non-pass。32-point逐接口probe把最早新增common-direction定位到shared
 projector之后的family hidden/GELU与B readout；当前只记录新的direct-family-B design authority，不在本文提供
-启动命令。其canonical实现已完成并通过`372 passed` CPU门，尚无GPU profile、训练或rollout结论。
+启动命令。其canonical实现已完成并通过`372 passed` CPU门；world5 training profile=`39.4234s`，deployment
+B8/16/32 LoRA/s=`.97732/.96489/.96513`并锁B8。尚无formal训练或rollout结论。
 
 ## 1. Stable problem definition
 

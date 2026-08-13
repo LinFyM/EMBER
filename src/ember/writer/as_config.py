@@ -172,7 +172,9 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
     if config["formal_run"].get("status") == "sealed":
         evidence = config["formal_run"].get("profile_evidence", {})
         if (
-            int(evidence.get("world_size", 0)) not in {1, 2, 3, 4, 5, 6}
+            evidence.get("source_commit")
+            != "3866f50ab72439a4b522ead0c1a86fb7d30aa60b"
+            or int(evidence.get("world_size", 0)) != 5
             or int(evidence.get("completion_macro", 0)) != 1
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0

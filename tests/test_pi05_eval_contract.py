@@ -462,7 +462,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     assert batched["parallel"]["writer_generation_batch_size"] == 16
 
 
-def test_pending_dynamic_k_writer_accepts_generation_profile_candidates(
+def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     tmp_path: Path,
 ) -> None:
     inputs = list(_writer_contract_inputs(tmp_path))
@@ -502,23 +502,34 @@ def test_pending_dynamic_k_writer_accepts_generation_profile_candidates(
         "F32": 16_896,
     }
     shared_writer["evaluation_authority"] = {
-        "formal_status": "deployment_profile_pending",
+        "formal_status": "sealed",
         "throughput_policy": (
             "highest_measured_batch_throughput_with_device_memory_headroom"
         ),
-        "minimum_smoke_writer_model_batch_size": 1,
-        "online_smoke_evidence": None,
+        "minimum_smoke_writer_model_batch_size": 8,
+        "online_smoke_evidence": {
+            "selected_writer_model_batch_size": 8,
+        },
     }
     correct_mapping = inputs[5]
-    candidate = _build_writer_contract(
+    with pytest.raises(Pi05EvaluationError, match="selected Writer batch"):
+        _build_writer_contract(
+            inputs=tuple(inputs),
+            output_dir=tmp_path / "out-b16",
+            arm="dynamic_k_semantic_address_direct_family_b_rank8_correct",
+            condition="correct",
+            mapping=correct_mapping,
+            writer_generation_batch_size=16,
+        )
+    exact = _build_writer_contract(
         inputs=tuple(inputs),
-        output_dir=tmp_path / "out-b32",
+        output_dir=tmp_path / "out-b8",
         arm="dynamic_k_semantic_address_direct_family_b_rank8_correct",
         condition="correct",
         mapping=correct_mapping,
-        writer_generation_batch_size=32,
+        writer_generation_batch_size=8,
     )
-    assert candidate["parallel"]["writer_generation_batch_size"] == 32
+    assert exact["parallel"]["writer_generation_batch_size"] == 8
 
 
 def test_reward_credit_seal_locks_the_measured_writer_batch8(

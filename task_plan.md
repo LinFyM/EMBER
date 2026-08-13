@@ -48,7 +48,9 @@
 - [x] 原位实现fresh schema并完成CPU门：mapper仅含shared projector+四个direct B readouts，参数`3,702,784`；
   删除旧ShapeFamilyMapper、dynamic-A heads和失联architecture双authority；fresh config/checkpoint/eval identity
   隔离，正式LIBERO assets环境下完整CPU=`372 passed`。
-- [ ] 完成live full24 B20与真实generation profile，再fresh`0→50`并立即strict paired correct400。
+- [x] clean`3866f50`完成live full24 B20 profile：world5=`39.4234s`、相对semantic=`1.00476x`、K1--K4各6、
+  finite且checkpoint完整；真实generation B8/16/32 LoRA/s=`.97732/.96489/.96513`，全stable并锁定B8。
+- [ ] 从fresh macro0训练`0→50`，随后立即strict paired correct400；不得从profile或旧semantic state继续。
 
 - [x] 历史最好 single checkpoint 仍是 v6-fast macro400：`143/400`。
 - [x] uniform pivot-rank14 online Gate B=`128/400`，相对 old134 lost21，未过门。

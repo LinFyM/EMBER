@@ -17,8 +17,9 @@
 - Dynamic-K backbone-memory与semantic-address rank8 macro50 strict分别为`100/400`和`101/400`，均已终局
   non-pass。semantic-address相对old134为`82 retained/19 gained/52 lost`；32-point probe把M2P/final/shared
   projector后的第一个明显common-direction增长定位到family hidden/GELU。当前唯一active design是保留全部上游
-  与shared projector、只换成四个跨layer/rank共享direct-family-B linears；尚未实现或launch，authority见
-  `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
+  与shared projector、只换成四个跨layer/rank共享direct-family-B linears。canonical实现与两项live profile均
+  已通过：world5 full24 B20=`39.4234s`，部署B8/16/32 LoRA/s=`.9773/.9649/.9651`并锁B8。当前已授权从fresh
+  macro0正式训练到50；authority见`docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。
 - MGCI-JC已完成fresh formal`0→5`与macro5 strict paired400并终局non-pass：`134/400`、breadth6、per-task=
   `1/5/46/30/0/34/18/0`，相对old134为`114 retained/20 gained/20 lost`、churn40。除breadth外全部macro5门
   失败；不resume、不补controls、不小扫。该次“暂停讨论”只属当时状态；owner现已授权围绕新的dynamic-K

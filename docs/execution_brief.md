@@ -20,7 +20,9 @@ bias-free zero-init family B linears直接读取projected Program并跨layer/ran
 trainable参数；无hidden/GELU、dynamic-A或parallel fallback。旧失联`writer/architecture.py`已删除，fresh
 config/checkpoint/eval schema fail-closed，evaluation先处于deployment-profile pending。完整CPU回归在正式
 LIBERO assets环境下为`372 passed`。当前下一操作是clean commit/push、live full24 B20 profile、真实generation
-profile，再fresh`0→50`立即strict paired400。
+profile均已通过：world5 full24 B20=`39.4234s`，相对semantic同world=`1.00476x`；deployment B8/16/32
+LoRA/s=`.97732/.96489/.96513`且全stable，锁定B8。当前下一操作是从fresh macro0正式训练`0→50`并立即
+strict paired400；两个profile checkpoint都只作profile evidence，不得作为formal初始化。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

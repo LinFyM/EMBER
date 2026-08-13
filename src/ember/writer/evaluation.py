@@ -42,7 +42,18 @@ DYNAMIC_K_EPISODE_SCHEMA = (
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
-DYNAMIC_K_EVALUATION_STATUS = "deployment_profile_pending"
+DYNAMIC_K_EVALUATION_STATUS = "sealed"
+DYNAMIC_K_GENERATION_BATCH_SIZE = 8
+DYNAMIC_K_GENERATION_PROFILE = {
+    "schema": "ember_pi05_writer_generation_profile_v2",
+    "path": (
+        "runs/outputs/"
+        "pi05_dynamic_k_semantic_address_direct_family_b_writer_generation_"
+        "profile_val8x4_correct_gpu01p1_3866f50_20260813/"
+        "writer_generation_profile.json"
+    ),
+    "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+}
 
 
 def _target_rows(config: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
@@ -341,8 +352,10 @@ def inspect_dynamic_k_writer_evaluation(
             "throughput_policy": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
-            "minimum_smoke_writer_model_batch_size": 1,
-            "online_smoke_evidence": None,
+            "minimum_smoke_writer_model_batch_size": (
+                DYNAMIC_K_GENERATION_BATCH_SIZE
+            ),
+            "online_smoke_evidence": dict(DYNAMIC_K_GENERATION_PROFILE),
         },
         "video_data": video_data,
         "video_condition": video_condition,

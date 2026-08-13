@@ -54,6 +54,10 @@ zero-init direct B linears；A只读取固定template buffer。canonical mapper�
 identity，第一步只打开B，B打开后梯度能回到projector与视频上游；完整CPU`372 passed`。这些只证明机制闭合，
 不预测closed-loop性能。
 
+clean`3866f50`的真实执行证据排除了该简化带来的工程退化：同world5 full24 B20 macro为`39.4234s`，仅是旧
+semantic graph的`1.00476x`，K1--K4各6且峰值allocated略低；固定32-request K1 deployment panel中B8/16/32
+LoRA/s=`.97732/.96489/.96513`且全稳定，故正式评测锁B8。下一有信息量证据只能是fresh macro50 strict400。
+
 | method | correct | same | wrong | shuffled | reversed | interpretation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频特异性强，absolute不足 |

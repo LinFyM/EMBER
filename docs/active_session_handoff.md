@@ -24,8 +24,11 @@
   `docs/action_forecast_writer_dynamic_k_semantic_address_direct_family_b_design.md`。canonical实现现已原位完成：mapper
   只含shared projector与四个direct B readouts，共`3,702,784`个trainable参数/5个trainable tensors；旧
   `ShapeFamilyMapper`和失联的第二份architecture contract已删除。fresh config/checkpoint/eval identity全部隔离，
-  evaluation处于`deployment_profile_pending`。加载LIBERO assets authority后的完整CPU回归=`372 passed`；
-  当前下一步是clean commit/push后的live full24 B20 profile，不得从旧semantic checkpoint迁移任何state。
+  加载LIBERO assets authority后的完整CPU回归=`372 passed`。clean`3866f50` world5 full24 B20 profile=
+  `39.4234s`，相对semantic同world5为`1.00476x`，K1--K4各6、loss/gradient finite、checkpoint完整，峰值
+  allocated/reserved=`39.093/45.445GB`。单A40固定validation8×4 deployment profile的B8/16/32 LoRA/s=
+  `.97732/.96489/.96513`，全stable、0 OOM，按最高吞吐锁定B8。当前下一步是从fresh macro0正式训练到50，
+  不得从旧semantic或profile checkpoint迁移任何state。
 - Dynamic-K backbone-memory rank-8 Writer的首轮正式裁决已经完成并终局non-pass。clean `5319022`、world6
   fresh`0→50`用`1810.10s`完成，functional loss首/末5宏从`.15307`降到`.12095`，23/24 train tasks斜率为负；
   但macro50 single-checkpoint strict paired correct400只有`100/400`、breadth4，per-task（Spatial1/3,

@@ -57,14 +57,15 @@ hidden/GELU；因此当前Direct-Family-B只删除这个已定位接口，不重
 解锁task；因此当前方法只新增同一次joint forward中的task-grounded raw visual goal/transition Value，不改
 dynamic K、set、M2P、direct mapper、rank8或B20 recipe。完整active design见
 [`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`](docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md)。
-该方法从clean `caa2e30` fresh完成macro0→150；macro50/100 K1 strict分别为`88/86`、breadth`5/6`，macro100
-per-task=`1/3/34/0/0/35/12/1`。两点严格同episode比较为`62 retained/24 gained/26 lost`、churn50，success
-union=`112`而single best只有88。同期effective BA平均cosine`.809`、relative-L2`.696`，action norm几乎不变但
-方向cosine仅`.739`。因此当前最早断点仍是visual evidence经B20 functional credit得到的policy方向缺少held
-on-policy usefulness，而且训练在继续task-specific重写能力；不是视频未读、K-set失效、近identity或整体scale。
+该方法从clean `caa2e30` fresh完成macro0→150；macro50/100/150 K1 strict为`88/86/86`、breadth`5/6/6`，
+macro150 per-task=`1/0/36/1/1/40/7/0`。100→150严格同episode为`62 retained/24 gained/24 lost`、churn48；
+三点success union=`125`、single best仅88、共同成功仅53。同期100→150 effective BA平均cosine`.878`、
+relative-L2`.528`，action cosine`.859`、relative-L2`.621`。因此当前最早断点仍是visual evidence经B20
+functional credit得到的policy方向缺少held on-policy usefulness，而且训练在继续task-specific重写能力；不是
+视频未读、K-set失效、近identity或整体scale。
 
 这两个早期点不提前终止预注册曲线。同一root正从完整macro150 checkpoint以相同world3 topology exact-resume
-到200；macro150 strict400已并行启动。完成150/200的absolute、breadth和相邻checkpoint换手后，再决定下一
+到200；macro150 strict400已完整结束。完成macro200的absolute、breadth和相邻checkpoint换手后，再决定下一
 单变量。fixed-A只读诊断同时发现，old134有效BA的逐样本最优rank8可保留`.999999`能量，当前随机固定A只可达
 `.01950`；它只预注册“完整曲线non-pass后动态生成A”的窄候选，不提前改变当前方法或把几何当性能。
 实时run identity和下一裁决只取

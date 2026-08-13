@@ -52,7 +52,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成macro100 K1 strict=`86/400`、breadth6以及macro50→100的严格churn与effective-BA方向分析；
 - [x] 完成macro100→150 exact-resume与完整world3 macro150 checkpoint，并启动macro150 K1 strict400；
 - [x] 完成fixed-A reachable-subspace分析，区分rank8容量与固定随机A可达行空间，并否定单一train24静态A作为held解；
-- [ ] 完成macro150 strict400、150→200 exact-resume、macro200 strict400与完整相邻checkpoint共同积累裁决。
+- [x] 完成macro150 strict=`86/400`、100→150 churn48、三点union/intersection与effective-BA方向分析；
+- [ ] 完成150→200 exact-resume、macro200 strict400与完整相邻checkpoint共同积累裁决。
 
 ## Continuous loop after this result
 

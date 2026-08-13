@@ -82,8 +82,12 @@ macro100同一panel=`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。macro5
 relative-L2`.69630`、norm ratio`1.17376`；action norm ratio`.98674`但方向cosine`.73896`。因此不是整体scale
 变化，而是task-specific方向继续重写；Object1在总数34不变时仍有7 gain/7 lost尤其说明aggregate掩盖漂移。
 
-历史v6-fast早期也弱于后期，design已预注册macro50/100不作终局门。macro150完整checkpoint已封存，当前
-world3 exact-resume 150→200且macro150 strict400并行运行；只有完整曲线best≥125、
+macro150仍为`86/400`、breadth6、per-task=`1/0/36/1/1/40/7/0`。100→150为`62/24/24` retained/gained/lost、
+churn48、net0；50/100/150 union125而single-best88、intersection53。BA cosine/relative-L2=`.878/.528`，
+action=`.859/.621`，说明相同aggregate下仍在实质重写方向和episode能力。
+
+历史v6-fast早期也弱于后期，design已预注册macro50/100不作终局门。macro150完整checkpoint与strict结果已封存，
+当前world3 exact-resume 150→200；只有完整曲线best≥125、
 breadth≥6且macro200未相对best崩落>15，才resume 200→400。
 
 额外fixed-A诊断表明：old134有效BA的逐样本最优rank8保留`.999999`能量，当前随机固定A只可达`.01950`；
@@ -109,7 +113,7 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
 100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
-锁B8。formal已完整到macro150，macro100 strict400已结束、macro150 strict400运行中，同拓扑150→200
+锁B8。formal已完整到macro150，macro100/150 strict400已结束，同拓扑150→200
 exact-resume继续运行。精确活动root
 与状态只取`active_session_handoff.md`；profile和内部几何不冒充性能结果。
 

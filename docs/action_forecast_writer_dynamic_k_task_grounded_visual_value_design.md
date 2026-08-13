@@ -1,8 +1,8 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
 状态：2026-08-13 active design authority；canonical实现、matched训练profile、K1部署profile和fresh macro0→100
-已完成。macro50/100 K1 strict=`88/86`；同一run已完成macro150 checkpoint并按预注册合同exact-resume 150→200，
-macro150 strict运行中，尚未终局。
+已完成。macro50/100/150 K1 strict=`88/86/86`；同一run已完成macro150 checkpoint并按预注册合同exact-resume
+150→200，尚未终局。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
@@ -283,3 +283,15 @@ causal temporal、permutation-invariant set、20×8 M2P、rank8、direct mapper�
 增加四个bias-free direct family-A readouts；A residual与B均保持step0 functional identity。不得恢复旧family
 hidden/GELU、提高rank、引入expert target或同时改objective。若完整曲线通过，则本诊断只保留为机制解释，不触发
 successor。
+
+## 17. Macro150 intermediate evidence
+
+macro150 K1 strict仍为`86/400`、breadth6、per-task=`1/0/36/1/1/40/7/0`。相对macro100严格同episode为
+`62 retained/24 gained/24 lost`、churn48、net0、Jaccard`.56364`；Goal6净`+5`与Long1净`-5`互换，Object1
+净`+2`时仍有8 gain/6 loss。50/100/150三点success union=`125`而single best仅88、共同成功仅53；Long1三点
+为`7/12/7`、union22但intersection为0。因此“86保持不变”不是共同能力已经稳定。
+
+同期first4×8 effective-BA平均cosine`.87843`、relative-L2`.52839`、norm ratio`1.08149`；action为
+`.85946/.62125/1.14658`。参数方向改写虽比50→100稍缓，仍远大于低位或整体scale变化，而且per-task BA变化与
+净得失没有单调关系。该节点继续支持“当前B20 credit持续旋转LoRA但没有积累held闭环能力”，不单独提前终止
+预注册macro200终点。

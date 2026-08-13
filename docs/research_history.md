@@ -97,7 +97,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Dynamic-K Semantic-Address rank8 | `101/400`, breadth6 | absolute Core只作temporal Query address，constant/static bypass仍为零 | old134→semantic=`82/19/52`；query address不足，task mean BA更同向到`.776` |
 | Semantic mapper stage probe | no rollout; 32 correct + 128 controls | M2P/final/shared-project task offdiag`.492/.529/.530`，视频与顺序结构健康 | family hidden/B升到`.634/.779`；下一可证伪接口是nonlinear family readout，不是继续堆前端 |
 | Dynamic-K Direct-Family-B rank8 | K1/K4=`102/98`, breadth5 | direct readout与nested动态K可稳定部署；K4把same-task方差约降`6.3x` | K1→K4=`80/18/22`且无新task，set稳定错误task mean；mapper/K/set小修全部退役 |
-| Task-Grounded Visual-Value rank8 | macro50/100=`88/86`, breadth5/6；macro150 checkpoint完成、strict运行中 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | 50→100=`62/24/26` retained/gained/lost、churn50；aggregate近稳但能力继续换手，当前visual Value + B20 credit未对准on-policy方向；继续150/200 |
+| Task-Grounded Visual-Value rank8 | macro50/100/150=`88/86/86`, breadth5/6/6 | exact language查询raw patch Value能进入有向D/G；action norm恢复到old134约`.98x` | 100→150=`62/24/24` retained/gained/lost、churn48；三点union125、best88、intersection53，aggregate近稳但能力继续换手；继续200终点 |
 | Fixed-A reachable-subspace diagnostic | no rollout；old134 fixed/optimal rank8=`.01950/.999999` | rank8容量足够表示已知强BA，但当前随机固定A只开放极窄右子空间 | train24最优共享A在experts保留`.94063`、到old134 held仅`.06811`；只支持后续task/video-conditioned A候选，不支持静态expert basis或性能claim |
 
 ## 4. Final rank14 adjudication

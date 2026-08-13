@@ -59,14 +59,14 @@ task mean。退役设计见`docs/action_forecast_writer_dynamic_k_semantic_addre
 authority为`docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
 当前方法从clean `caa2e30`在gpu01物理`4,5,6`以world3 fresh完成macro0→150，K1--K4全程各6；K1 strict
-correct400在macro50/100分别为`88/86`，breadth为`5/6`，macro100 per-task=
-`1/3/34/0/0/35/12/1`。macro50→100严格同episode为`62 retained/24 gained/26 lost`、churn50；两点success
-union=`112`、single-best gap=`24`，说明aggregate近似不变但能力仍明显换手。effective BA同期平均cosine
-`.809`、relative-L2`.696`、norm ratio`1.174`，action部分cosine`.739`且norm ratio`.987`；这不是整体scale
-漂移，而是task-specific policy方向持续重写。
+correct400在macro50/100/150为`88/86/86`，breadth为`5/6/6`，macro150 per-task=
+`1/0/36/1/1/40/7/0`。macro100→150严格同episode为`62 retained/24 gained/24 lost`、churn48；三点success
+union=`125`、single-best gap=`37`、共同成功仅`53`，说明aggregate近似不变但能力仍明显换手。effective BA同期
+平均cosine`.878`、relative-L2`.528`、norm ratio`1.081`，action部分cosine`.859`、relative-L2`.621`；这不是
+整体scale漂移或固定成功集合上的平台，而是task-specific policy方向持续重写。
 
 macro50/100都不是终局门：历史v6-fast也从较弱早期继续上升。同一root已从完整macro150 checkpoint锁定world3
-topology exact-resume 150→200；macro150 K1 strict400也已并行启动。按预注册合同完成macro150/200，再以absolute、
+topology exact-resume 150→200；macro150 K1 strict400已完整结束。按预注册合同完成macro200，再以absolute、
 breadth与相邻checkpoint共同积累决定是否终止或进入下一单变量successor。
 
 当前另有一个只作后续定位的fixed-A reachable-subspace结果：对old134 validation LoRA，rank8逐样本最优可保留

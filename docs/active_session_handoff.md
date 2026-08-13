@@ -273,15 +273,28 @@ macro100→150随后以相同world3 topology正常完成：metrics共150条连�
 `writer.safetensors`、`trainer_state.pt`和3个rank state，`completion.completed_macro=150`。当前从该checkpoint
 exact-resume 150→200，macro151准确从`task_visit=150`恢复，K1--K4各6、`64.127s`、finite。
 
-macro150 K1 strict400已在clean frozen evaluator `99c2323`并行启动：
+macro150 K1 strict400已在clean frozen evaluator `99c2323`完整结束：
 
 `runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_correct400_noreplacement_seed7_macro0150_trainr3_evalr5_99c2323_gpu02_20260813`
 
 启动前双节点live检查后，gpu02仍只有物理`1,2,3,4,6`五张合适卡：1--4约350MiB/0% util，6约4.9GiB/0%；
 GPU0已占36.6GiB，GPU5占30.7GiB且100% util，GPU7占19.7GiB且91% util，均不适合约13.5GiB峰值的Writer
-生成；不跨节点拼gpu01单卡。400/400 LoRA已由5个generators写出并切换为15个persistent rollout workers。
+生成；不跨节点拼gpu01单卡。400/400 LoRA由5个generators写出，随后15个persistent rollout workers完成
+60/60 shards、400/400 rows且全部exit0；wall=`1034.173s`。
 
-当前继续同topology训练/评测macro150/200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，
+- strict=`86/400`、breadth6、per-task=`1/0/36/1/1/40/7/0`、per-suite=`1/37/41/7`，top3=
+  `83/86=96.51%`；
+- macro100→150严格同episode为`62 retained/24 gained/24 lost`、churn48、net0、Jaccard`.56364`；Goal6净`+5`
+  与Long1净`-5`互换，Object1虽净`+2`仍有8 gain/6 loss；
+- macro50/100/150 success union=`125`，single-best仅88、gap37，三点共同成功仅53；Long1为`7→12→7`、
+  union22但三点intersection为0，不能解释为稳定平台；
+- 相对Direct-Family-B102为`68 retained/18 gained/34 lost`、churn52、net`-16`；相对old134/compiler138/
+  online128净`-48/-52/-42`；相对v6-fast143逐task差=`+1/-3/-10/-36/+1/+4/-13/-1`；
+- macro100→150 first4×8 implicit effective-BA cosine`.87843`、relative-L2`.52839`、norm ratio`1.08149`；
+  action为`.85946/.62125/1.14658`。正式artifact为同root下`benchmark_comparison.json`、
+  `checkpoint_transition_geometry_macro0100_to0150.json`与`checkpoint_curve_success_sets_macro0050_0100_0150.json`。
+
+当前继续同topology训练并评测macro200。只有完整初段best≥125、breadth≥6且macro200未相对best崩落>15，
 才续到400。
 
 ## 10. Fixed-A reachable-subspace diagnostic

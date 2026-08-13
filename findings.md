@@ -190,6 +190,8 @@ conditioned Program动态生成A，同时保留现有rank8、direct readout及�
 12. Dynamic-K 100与semantic-address 101把断点推进到Program→mapper→policy direction；
 13. Visual-Value macro50/100进一步证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy
     有用方向，且aggregate稳定时仍可发生显著checkpoint churn。
+14. Visual-Value macro150仍为86；50/100/150 union125、best88、intersection53，100→150 BA relative-L2`.528`，
+    证明近似平坦aggregate持续掩盖episode和policy方向换手。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

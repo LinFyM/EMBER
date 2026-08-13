@@ -22,7 +22,10 @@
   launch schema与新增参数不能resume。8-task frozen macro50逐接口probe中mean-Z same/wrong relative L2为
   `.0272/.1071`且8/8 same<wrong，证明absolute memory具有稳定task语义；旧final Program仍保留same/wrong/
   shuffle/reverse差异`.358/.981/1.242/2.213`，所以该successor检验的是Semantic Core能否更好地选择已有
-  Procedure，而不是声称旧Program完全没有视频/顺序信号。下一步是live full24 B20 profile。
+  Procedure，而不是声称旧Program完全没有视频/顺序信号。clean `05299b4` world5 full24 B20 live profile已
+  通过：K1--K4各6，macro=`39.2367s`，相对matched旧world6=`1.196x<1.20x`，峰值allocated/reserved=
+  `39.155/45.414GB`，loss/consistency/gradient finite，checkpoint与completion完整、exit0。formal fresh
+  `0→50`现已开放。
 - K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
   0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
   profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。

@@ -1,7 +1,7 @@
 # Dynamic-K Semantic-Address Backbone-Memory Rank-8 Writer
 
-日期：2026-08-13。状态：fresh-incompatible canonical implementation完成；CPU门通过，live profile、formal和
-closed-loop均未完成。
+日期：2026-08-13。状态：fresh-incompatible canonical implementation与live profile完成；formal与closed-loop
+均未完成。
 
 ## 1. 要解决的最早失效接口
 
@@ -129,6 +129,11 @@ CPU与单GPU机制必须同时满足：
 7. fresh checkpoint不能误载旧Dynamic-K v1，exact resume仍锁world/topology。
 
 任一失败先修明确工程合同；若修复需要改变scientific variable，则本设计直接退役。
+
+clean `05299b4` frozen worktree已在gpu02物理0--4完成world5 full24 B20 discarded profile：K1--K4各6 tasks，
+macro=`39.2367s`，相对旧world6 matched `32.8066s`为`1.196x`，刚好低于预注册`1.20x`上限；峰值allocated/
+reserved=`39.155/45.414GB`，functional loss`.156108`、consistency`.009859`、gradient norm`.01985`均finite，
+checkpoint与completion完整、exit0。五卡随后均释放为0MiB。故机制/吞吐门通过，formal fresh`0→50`开放。
 
 ## 8. Formal训练与真实性能门
 

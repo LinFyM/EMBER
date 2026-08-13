@@ -20,7 +20,9 @@ canonical implementation已在clean `96e7cf6`完成并push，完整CPU`372 passe
 probe显示mean-Z same-task相对差`.0272`、wrong`.1071`且8/8 same<wrong；旧final Program对same/wrong/
 shuffle/reverse仍有`.358/.981/1.242/2.213`差异。该证据支持absolute memory提供稳定语义address，也警告旧
 Procedure本身并未失明；若新closed-loop仍差，下一接口应是mapper/credit，而不是继续堆前端。当前下一操作是
-clean frozen commit的full24 B20 discarded live profile。
+clean frozen commit的full24 B20 discarded live profile。该profile现已在clean `05299b4`、gpu02物理0--4
+world5完成：K1--K4各6，macro=`39.2367s`，相对旧world6=`1.196x<1.20x`，峰值allocated/reserved=
+`39.155/45.414GB`，全链路finite、checkpoint/completion完整、exit0。formal fresh`0→50`开放。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

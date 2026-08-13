@@ -33,6 +33,9 @@ language-only仍保持identity。set、M2P、rank8 mapper、B20与dynamic-K reci
 same<wrong，说明absolute memory确有跨video task语义；旧video/final Program和effective BA仍保留强wrong与
 order差异，故100分不能写成“D/G完全删除了语义或顺序”。当前可证伪假设是：把稳定absolute Core只作为Query
 address，能否让已有Procedure沿task-correct policy方向工作；若不能，最早接口应推进到mapper或functional credit。
+clean world5 full24 B20 live profile用`39.2367s`完成，相对旧world6 matched为`1.196x`，在`1.20x`门内；峰值
+reserved`45.414GB`，K分布、loss、consistency、gradient、checkpoint均健康。因此successor当前没有新的工程/
+吞吐阻断，下一裁决必须是真实fresh训练与strict400。
 同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved
 约`13.4GB`，因此吞吐authority选择B8并锁定formal evaluator。该结果只解决评测效率和首次live执行风险，
 不改变任何科学结论。

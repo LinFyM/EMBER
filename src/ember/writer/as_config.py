@@ -166,8 +166,8 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
         evidence = config["formal_run"].get("profile_evidence", {})
         if (
             evidence.get("source_commit")
-            != "2dacfd478a3ab03d6921a72b0632bb52b94be063"
-            or int(evidence.get("world_size", 0)) != 6
+            != "05299b4d35f288cd5e0bbabfb61ccd132aeacdf9"
+            or int(evidence.get("world_size", 0)) != 5
             or int(evidence.get("completion_macro", 0)) != 1
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0

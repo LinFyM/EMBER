@@ -33,8 +33,9 @@
 - [x] frozen macro50 8-task逐接口probe：absolute mean-Z的same/wrong relative L2=`.0272/.1071`且8/8
   same<wrong；旧final Program仍有same/wrong/shuffle/reverse=`.358/.981/1.242/2.213`。这支持semantic address
   的信息来源，但不支持“旧Program完全丢失任务/顺序”。
-- [ ] 从clean frozen implementation做full24 B20 discarded live profile；通过后封存profile authority并fresh
-  `0→50`。
+- [x] clean `05299b4` world5 full24 B20 discarded profile通过：K1--K4各6，macro=`39.2367s`，相对旧world6
+  `1.196x<1.20x`，峰值reserved`45.414GB`，loss/consistency/gradient与checkpoint完整。
+- [ ] 封存profile authority后从新的clean frozen commit fresh`0→50`，随后立即strict paired correct400。
 - [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高
   实测吞吐选择并锁定B8；正式correct400只允许B8。
 

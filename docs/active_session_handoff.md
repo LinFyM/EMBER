@@ -14,7 +14,8 @@
 - K4已正式证明cross-video set会显著过滤same-task demo nuisance，但不会自动产生更有用的task mean；下一fresh
   successor只前移到per-video高层视觉语义Value/Procedure接口，不继续修改K、set、mapper或LoRA几何；
 - active implementation：Dynamic-K Task-Grounded Visual-Value Rank-8 Writer；design、canonical实现、CPU机制与
-  matched world4 profile已通过，正式fresh 0→50待从sealed clean commit启动；尚无新closed-loop成绩；
+  matched world4 profile已通过；正式fresh 0→50已从sealed clean commit启动并完成首个健康macro；尚无新
+  closed-loop成绩；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -189,7 +190,20 @@ direct family-B与完整rank8 LoRA；只改变set之前的evidence owner：让�
 正式公式、机制门、吞吐门和macro0→200裁决见
 `docs/action_forecast_writer_dynamic_k_task_grounded_visual_value_design.md`。
 
-下一步从新的clean pushed seal fresh macro0→50，checkpoint25/50；绝不加载profile或Direct-Family-B state。
+正式fresh root：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_formal_fresh0to50_r3_b20_caa2e30_gpu01_20260813`
+
+- frozen worktree：`/data1/user/ymdai/worktrees/EMBER-tgvv-formal-caa2e30`，clean detached
+  `caa2e3045fee7d4a5a2bbcfcc126fad9ec61832f`且commit已push；
+- host/devices：gpu01物理GPU`4,5,6`，world3；launch前双节点live检查后，这三张卡是同节点当时真正适合且
+  稳定的设备，不等待凑6卡；
+- fresh macro0、B20、stop-after50、checkpoint25/50、num_workers0；不加载profile或Direct-Family-B state；
+- `NCCL_P2P_DISABLE=1`，三rank均映射到physical GPUs 4--6对应的NUMA1；
+- 首个macro为`65.1458s`，K1--K4各6，functional/consistency=`.156108/.009484`、gradient norm=
+  `.068287`，三卡约100%利用率且峰值allocated/reserved=`39.298/45.546GB`；只证明正式合同已健康运行；
+- tmux：gpu01 `ember_tgvv_formal_caa2e30`；精确命令与环境以该root的`run_contract.json`为准。
+
 macro50完成后立即做K1 strict paired correct400。历史v6-fast macro50也只有106，因此不以单个50点低于120提前
 杀死整个0→200裁决；按design继续100/150/200并分析相邻checkpoint共同积累。
 

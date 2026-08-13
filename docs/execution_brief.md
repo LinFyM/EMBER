@@ -87,8 +87,9 @@ active design为`action_forecast_writer_dynamic_k_task_grounded_visual_value_des
 forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value；不加prediction loss、negative loss、
 额外forward或并行Writer。canonical实现为`9d43e82`，`690dea5`只做数学等价吞吐优化；完整CPU=`378 passed`。
 同gpu02物理0--3、world4、B20 matched profile为Direct-Family-B `46.2242s`、successor `49.0775s`，比例
-`1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。下一步fresh macro0→50并做K1
-strict correct400，再按design继续100/150/200；profile不冒充性能结果。
+`1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
+`caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
+100/150/200。精确活动root与运行状态只取`active_session_handoff.md`；profile不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 

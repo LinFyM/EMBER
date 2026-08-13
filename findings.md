@@ -7,18 +7,28 @@
 
 长期目标是同一 shared method、同一 single checkpoint 的 strict paired correct 严格`>150/400`。目前未达到：
 
-2026-08-13新的active架构判断是Dynamic-K backbone-memory rank-8 Writer。它不是从旧rank16 checkpoint压缩，
-而是针对same-task不同video correction近正交与post-backbone compiler衰减，从真实图文+Action Expert联合forward
-直接形成逐层memory grid；只让有符号视频变化进入dynamic value，再由跨video共识和共享layer/rank mapper写出
-fresh完整LoRA。它继承v6的task-grounded address、真实frame ordinal与causal Procedure，但不继承旧K4的固定
-四基/DCT16/phase-wise mean，也不继承已退役Program residual/guard/solver。
+2026-08-13 Dynamic-K backbone-memory rank-8 Writer已完成首轮正式裁决。它不是从旧rank16 checkpoint压缩，
+而是从真实图文+Action Expert联合forward直接形成逐层memory grid；只让有符号视频变化进入dynamic value，再由
+跨video共识和共享layer/rank mapper写出fresh完整LoRA。它继承了真实frame ordinal与causal Procedure，但实际
+实现没有继承v6最关键的task-grounded Semantic Core address：`task_hidden/probe_hidden`未被消费，memory进入
+Program前只保留相邻差分和终点差分。
 
 实现与live机制门已经闭合。无frame预算的真实A40 profile在micro10 OOM；micro8虽然不OOM，但完整K-set的
 joint backbone一宏超过16分钟并触发480秒NCCL heartbeat，故该执行图不可用。唯一工程修正是在stride5候选后、
 joint backbone前给每condition固定64个真实有序frames，并对K条video使用相同`floor(64/K)` cap和含首尾均匀
 索引。budget64 world6 full24 B20 profile一宏`32.8066s`，K1/2/3/4各6 tasks，functional loss`.15611`、
 consistency`.009984`、gradient norm`.02361`均finite，峰值allocated/reserved约`39.15/45.41GB`；checkpoint完整。
-这只证明执行图、动态K和梯度链路可训练，不证明closed-loop有效，下一裁决是fresh macro50 strict paired400。
+formal fresh`0→50`用`1810.10s`完成，functional loss首/末5宏`.15307→.12095`、23/24 task趋势下降，但macro50
+strict paired correct400只有`100/400`、breadth4、per-task=`0/0/42/18/0/36/4/0`；相对old134为
+`82 retained/18 gained/52 lost`，相对v6-fast143低43。因此动态K首轮终局non-pass，不resume`50→100`。
+effective BA总norm均值`135.64`说明不是identity，然而action-target norm均值仅`.513`、stable rank约`1.00`、
+相对old134 effective cosine仅`.01--.02`；八task mean BA方向off-diagonal cosine均值`.702`。video方差反而比
+old134大，故它不是没看视频，而是删除Semantic Core后把不同视频的变化写入高度共同、错误的policy方向。
+
+当前successor只改变这个最早结构接口：每video absolute mean memory作为temporal Q/K semantic address，D/G仍是
+唯一V/content。这样语义只能决定“从有向变化里读什么”，不能独立成为LoRA value；constant/static和
+language-only仍保持identity。set、M2P、rank8 mapper、B20与dynamic-K recipe保持不变，以便closed-loop结果能
+裁决Semantic Core address，而不是把representation与mapper改动混在一起。
 同一budget64部署图的单A40真实K1 profile中B8/16/32均stable，LoRA/s=`.97433/.96463/.96598`且峰值reserved
 约`13.4GB`，因此吞吐authority选择B8并锁定formal evaluator。该结果只解决评测效率和首次live执行风险，
 不改变任何科学结论。

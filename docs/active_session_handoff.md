@@ -6,17 +6,28 @@
 
 - 长期Goal未完成：同一shared method、同一single checkpoint的strict paired correct必须严格超过
   `150/400`，并继续提高absolute、breadth、稳定共同积累和teacher-video时序因果性。
-- 当前active successor是Dynamic-K backbone-memory rank-8 Writer，不再是“无active successor”。它接受K1--K4
-  action-hidden videos与exact language，在真实图像+语言+50 Action probes的18层联合forward中更新8 memory
-  tokens；每video独立有向编码、跨video置换不变聚合，再由共享layer/rank mapper写一套完整38-target rank8 LoRA。
-  CPU完整回归`364 passed`。无budget micro10 OOM；无budget micro8虽无OOM却超过16分钟/宏并触发NCCL
-  heartbeat。唯一工程修正budget64已在clean `2dacfd4`上通过world6 full24 B20 profile：`32.8066s/宏`，K1--K4
-  各6 tasks，峰值allocated/reserved `39.15/45.41GB`，loss/consistency/gradient有限且checkpoint完整。
-  当前下一步是从新的clean frozen commit fresh训练`0→50`并立刻strict paired correct400；profile checkpoint
-  不是训练输入。
+- Dynamic-K backbone-memory rank-8 Writer的首轮正式裁决已经完成并终局non-pass。clean `5319022`、world6
+  fresh`0→50`用`1810.10s`完成，functional loss首/末5宏从`.15307`降到`.12095`，23/24 train tasks斜率为负；
+  但macro50 single-checkpoint strict paired correct400只有`100/400`、breadth4，per-task（Spatial1/3,
+  Object1/3, Goal3/6, Long1/2）=`0/0/42/18/0/36/4/0`，per-suite=`0/60/36/4`，前三task占96%成功。
+  相对old134严格配对为`82 retained/18 gained/52 lost`；相对compiler138为`81/19/57`，相对online128为
+  `80/20/48`；相对v6-fast143 aggregate低43且breadth少2。故不exact-resume`50→100`。
+- 当前唯一active successor判断是Dynamic-K semantic-address backbone-memory rank-8 Writer：保留真实图文+
+  Action-probe backbone memory、动态K、有向D/G value、set、M2P、rank8 mapper和训练recipe，只恢复一个更早的
+  结构接口——逐video absolute memory均值只进入temporal Q/K地址，D/G仍是唯一V/content，因此constant-video
+  与language/static-only仍不能写LoRA。先完成fresh-incompatible authority和canonical实现，再过机制/吞吐门并
+  fresh`0→50`立即strict paired correct400；本轮不同时修改shared mapper。
+  fresh-incompatible authority为`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
 - K1 deployment generation profile已在gpu02物理0完成：固定32-request validation panel的B8/16/32全部stable、
   0 OOM，LoRA/s=`.97433/.96463/.96598`，选择B8；峰值reserved均约`13.4GB`。formal evaluator现锁定精确B8，
   profile root为`runs/outputs/pi05_dynamic_k_writer_generation_profile_val8x4_correct_gpu02p0_6288fbb_20260813`。
+- macro50 strict root为
+  `runs/outputs/pi05_dynamic_k_backbone_memory_rank8_correct400_noreplacement_seed7_macro0050_b541785_gpu02_20260813`。
+  effective-BA不是identity：candidate总norm均值`135.64`，但action-target norm均值仅`.513`，相对old134的
+  effective cosine约`.01--.02`、stable rank约`1.00`；同task视频方差明显大于old134，而八个task mean BA的
+  off-diagonal cosine均值`.702`。模型读到video并写出大LoRA，却把不同任务编译到高度共同、错误的policy
+  geometry。代码层最早可见失配在其之前：backbone的absolute `task_hidden/probe_hidden`完全未用，memory又被
+  强制只取相邻差分和终点差分，使“对象/关系/目标是什么”的Semantic Core在Procedure之前被删除。
 - MGCI-JC fresh formal`0→5`与macro5 strict paired400已经完成并终局non-pass：`134/400`、breadth6、per-task
   （Spatial1/3, Object1/3, Goal3/6, Long1/2）=`1/5/46/30/0/34/18/0`，per-suite=`6/76/34/18`。
   相对immutable old134严格配对为`114 retained/20 gained/20 lost`、churn40；suite净值=`+1/-6/-1/+6`。

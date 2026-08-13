@@ -20,8 +20,16 @@
 - [x] identity/order/set/gradient/world6机制门与A40吞吐profile通过。完整stride5 K-set一宏超过16分钟并触发
   NCCL heartbeat；固定每condition 64个真实有序frame预算后，full24 B20 micro8 world6一宏`32.8066s`，
   K1--K4各6 tasks，functional/consistency/gradient均finite，峰值allocated/reserved `39.15/45.41GB`。
-- [ ] 从clean frozen commit fresh训练`0→50`，随后立即做single-checkpoint strict paired correct400；首个主要
-  失效接口仍是“同task不同video的有向memory程序能否在shared Writer中形成共同credit”。
+- [x] clean`5319022` world6 fresh训练`0→50`完成；functional loss稳定下降，macro50 strict paired correct400
+  只有`100/400`、breadth4、per-task=`0/0/42/18/0/36/4/0`。相对old134为`82 retained/18 gained/52 lost`，
+  相对v6-fast143低43；终局non-pass，不resume`50→100`。
+- [x] 完成macro50 effective-BA定位：总norm不小，但stable rank约1、action-target能量低、相对old方向近正交，
+  task mean BA高度同向；video variance更大，排除“完全没读video”。代码中最早失配是absolute Semantic Core在
+  Program前被差分删除，`task_hidden/probe_hidden`完全未用。
+- [ ] 实现唯一semantic-address successor：每video absolute mean memory只进入temporal Q/K，D/G仍为唯一
+  dynamic V/content；其余dynamic K、set、M2P、rank8 mapper、B20和recipe不变。过CPU/机制/吞吐门后fresh
+  `0→50`并立刻strict paired correct400。fresh authority已封存为
+  `docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
 - [x] 完成真实K1 Writer部署profile：B8/16/32均stable且无OOM，LoRA/s=`.97433/.96463/.96598`，按最高
   实测吞吐选择并锁定B8；正式correct400只允许B8。
 

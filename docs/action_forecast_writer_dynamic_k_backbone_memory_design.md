@@ -322,3 +322,25 @@ LoRA/s分别为`.97433/.96463/.96598`，峰值reserved约`13.38/13.38/13.40GB`�
   https://arxiv.org/abs/2602.06358 ，https://github.com/MuLabPKU/SHINE
 - Doc-to-LoRA：每rank latent加layer/module-aware shared heads，支持本设计的rank-token/shape-family mapper；
   https://github.com/SakanaAI/Doc-to-LoRA
+
+## 11. Formal macro50 terminal verdict
+
+clean`5319022` world6 fresh`0→50`已完整结束，训练root为
+`runs/outputs/pi05_dynamic_k_backbone_memory_rank8_budget64_formal_fresh0to50_r6_b20_micro8_5319022_20260813`。
+functional loss首/末5宏`.15307→.12095`，23/24 train tasks为负斜率，说明优化执行图稳定。
+
+macro50 single-checkpoint strict paired correct400 root为
+`runs/outputs/pi05_dynamic_k_backbone_memory_rank8_correct400_noreplacement_seed7_macro0050_b541785_gpu02_20260813`：
+`100/400`、breadth4、per-task=`0/0/42/18/0/36/4/0`、per-suite=`0/60/36/4`。相对old134严格配对为
+`82 retained/18 gained/52 lost`，相对compiler138为`81/19/57`，相对online128为`80/20/48`；相对
+v6-fast143低43且breadth少2。该结果否决当前完整架构与recipe的absolute价值，禁止exact-resume`50→100`。
+
+effective-BA诊断显示candidate总norm均值`135.64`，因此不是近identity；但action-target norm均值仅`.513`，
+stable rank约`1.00`，相对old134 effective cosine仅约`.01--.02`，八个task mean BA方向的off-diagonal cosine
+均值`.702`。同task视频方差明显高于old134，说明Writer确实读到video，却把差异编译到错误且跨task高度共同的
+policy geometry。
+
+最早代码级失配出现在mapper之前：backbone输出的absolute `task_hidden`与`probe_hidden`没有任何消费者，
+`layer_memory`又在`_encode_video`入口被严格转换为相邻差分与终点差分。因而架构保留“怎么变化”的Procedure，
+却在有向编码前删除了“哪些对象、关系与目标”的Semantic Core。下一authority只恢复absolute memory作为temporal
+Q/K address；D/G继续作为唯一V/content。本设计由Git和上述formal artifacts封存，不再是active实现。

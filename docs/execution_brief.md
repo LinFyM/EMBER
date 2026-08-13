@@ -2,14 +2,20 @@
 
 ## 0. Current operation
 
-当前active operation已切换到Dynamic-K backbone-memory rank-8 Writer。它用exact language与K1--K4 action-hidden
-videos，在真实图文+Action Expert联合forward中逐层更新8 memory tokens；视频内保序、视频间集合聚合，最后
-一次写完整38-target rank8 LoRA。budget64 world6 full24 B20 live profile已通过：一宏`32.8066s`、K1--K4各
-6 tasks、峰值allocated/reserved `39.15/45.41GB`、loss与梯度finite、checkpoint完整。无budget执行图已由
-micro10 OOM和micro8超过16分钟/NCCL heartbeat否决。下一步从clean frozen commit fresh`0→50`，随后立即
-single-checkpoint strict paired correct400；正式选择仍只认真实closed-loop，profile checkpoint不作为训练输入。
-同构K1 deployment profile的B8/16/32均stable且0 OOM，LoRA/s=`.97433/.96463/.96598`，已按最高实测吞吐
-选择并锁定B8；该profile不是性能证据。
+Dynamic-K backbone-memory rank-8 Writer首轮已经完成：clean`5319022` world6 fresh`0→50`的functional loss
+稳定下降，但clean`b541785` macro50 strict paired correct400只有`100/400`、breadth4、per-task=
+`0/0/42/18/0/36/4/0`。相对old134严格配对为`82 retained/18 gained/52 lost`，相对v6-fast143低43分；不续
+`50→100`。它的LoRA总norm并不小，却只有约`1.00` stable rank、相对old134 effective cosine约`.01--.02`，
+八个task mean BA方向off-diagonal cosine均值`.702`；functional surrogate与held closed-loop再次明确错位。
+
+当前active operation是封存并实现单变量Dynamic-K semantic-address successor。现有backbone memory已经在真实
+图像+exact language+50 Action probes的联合forward中正确更新，但Program只消费相邻/终点差分，完全不用absolute
+`task_hidden/probe_hidden`，等价于在有向Procedure前删除对象、关系与目标Semantic Core。successor只让每条video
+的absolute mean memory经一条bias-free投影进入temporal Q/K route；D/G仍是唯一V/content，set、M2P、rank8
+shared mapper、B20 objective、dynamic K和recipe均不变。constant/static与language-only因此仍保持identity。
+先过zero/order/set/gradient/吞吐机制门，再fresh`0→50`立即strict paired correct400；本轮不同时改mapper，若
+M2P语义已经健康而family head后才坍缩，下一轮才单独做layer-direct readout。
+完整公式、边界与快速否决门见`docs/action_forecast_writer_dynamic_k_semantic_address_design.md`。
 
 MGCI-JC已经完成全部授权工作并终局non-pass。clean`e4c3331` world4 fresh formal`0→5`的五宏rank均48、
 negative/correct motion约`.020--.030`且无OOM/nonfinite；随后gpu02四卡12 persistent workers完成48/48 shards、

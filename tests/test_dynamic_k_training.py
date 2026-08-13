@@ -616,3 +616,22 @@ def test_evaluator_resolves_the_dynamic_k_rank8_lora_authority() -> None:
         643_584,
         76,
     )
+
+
+def test_task_grounded_visual_value_k1_deployment_profile_is_sealed() -> None:
+    from ember.writer.evaluation import (
+        DYNAMIC_K_GENERATION_BATCH_SIZE,
+        DYNAMIC_K_GENERATION_PROFILES,
+    )
+
+    assert set(DYNAMIC_K_GENERATION_PROFILES) == {1}
+    assert DYNAMIC_K_GENERATION_PROFILES[1] == {
+        "schema": "ember_pi05_writer_generation_profile_v2",
+        "path": (
+            "runs/outputs/"
+            "pi05_dynamic_k_task_grounded_visual_value_rank8_k1_writer_"
+            "generation_profile_val8x4_correct_gpu02p1_caa2e30_macro0025_"
+            "retry1_20260813/writer_generation_profile.json"
+        ),
+        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+    }

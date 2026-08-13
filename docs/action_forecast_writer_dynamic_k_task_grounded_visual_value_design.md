@@ -1,6 +1,7 @@
 # Dynamic-K Task-Grounded Visual-Value Writer
 
-状态：2026-08-13 active successor design authority；canonical实现与matched profile已通过，fresh formal待启动。
+状态：2026-08-13 active successor design authority；canonical实现、matched训练profile与K1部署profile已通过，
+fresh formal正在运行。
 它不加载或resume任何Direct-Family-B/profile Writer checkpoint。长期目标、信息墙、GPU与评测边界仍由
 `AGENTS.md`和`docs/current_owner_requirements.md`定义。
 
@@ -204,6 +205,11 @@ Value、固定batch1或扩dtype规避。
 backward、合并bias-free evidence projection GEMM、把transition与goal拼batch共享一次visual reader。
 `690dea5`复测为`49.0775s`、matched比`1.061727x`，通过门；K1--K4各6、loss/gradient finite，峰值
 allocated/reserved=`39.303/45.561GB`，无OOM。完整CPU=`378 passed`。
+
+正式fresh训练的完整macro25 checkpoint上另做K1 fixed validation8×4、longest-first B8/B16/B32部署定标：
+LoRA/s=`.984266/.976097/.971736`，三者都stable、包含最长64帧且0 OOM，peak reserved约
+`12.973/13.451/13.455GB`。按预注册最高吞吐规则锁B8。checkpoint数值不改变生成图shape；该定标只裁决部署
+batch，不读取closed-loop结果，也不用于选择训练checkpoint。
 
 ## 12. Fresh训练与closed-loop裁决
 

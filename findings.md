@@ -168,6 +168,10 @@ matched吞吐为`1.2603x`；截断frozen prefix无用反向图并合并projectio
 loss逐位一致，科学主变量不变。这只证明机制与效率合同健康，不能证明视频知识更有用或task drift改善；后者只认
 fresh single-checkpoint strict closed-loop。
 
+同一生成图在正式macro25 checkpoint上的K1 B8/B16/B32 deployment LoRA/s为
+`.984266/.976097/.971736`，均stable、最长视频覆盖且0 OOM，按规则锁B8。它与Direct-Family-B B8 `.977325`
+接近，只支持新增视觉Value没有造成deployment吞吐退化；不能推断closed-loop更强。
+
 - 不用loss、small panel、union、norm、rank、cosine或内部margin选择最终checkpoint；
 - 不靠rank/scale/seed/dtype/temperature小扫救失败checkpoint；
 - 不恢复language-only LoRA bypass、平均LoRA、checkpoint融合或held expert route；

@@ -46,7 +46,18 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
 DYNAMIC_K_GENERATION_BATCH_SIZE = 8
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
+    1: {
+        "schema": "ember_pi05_writer_generation_profile_v2",
+        "path": (
+            "runs/outputs/"
+            "pi05_dynamic_k_task_grounded_visual_value_rank8_k1_writer_"
+            "generation_profile_val8x4_correct_gpu02p1_caa2e30_macro0025_"
+            "retry1_20260813/writer_generation_profile.json"
+        ),
+        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+    }
+}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:

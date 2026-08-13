@@ -89,7 +89,8 @@ forward中压缩task/patch hidden，并用raw visual D/G作为memory-cell Value�
 同gpu02物理0--3、world4、B20 matched profile为Direct-Family-B `46.2242s`、successor `49.0775s`，比例
 `1.061727x`，通过`1.15x`门；峰值allocated/reserved=`39.303/45.561GB`。正式fresh 0→50已从clean pushed
 `caa2e30`在gpu01物理`4,5,6`以world3启动，首个macro健康；完成后做K1 strict correct400，再按design继续
-100/150/200。精确活动root与运行状态只取`active_session_handoff.md`；profile不冒充性能结果。
+100/150/200。macro25 checkpoint上的K1部署定标为B8/B16/B32 `.984266/.976097/.971736 LoRA/s`，全部稳定并
+锁B8。精确活动root与运行状态只取`active_session_handoff.md`；profile不冒充性能结果。
 
 每轮strict结果完成后，按以下顺序分析：
 

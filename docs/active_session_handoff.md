@@ -204,6 +204,17 @@ direct family-B与完整rank8 LoRA；只改变set之前的evidence owner：让�
   `.068287`，三卡约100%利用率且峰值allocated/reserved=`39.298/45.546GB`；只证明正式合同已健康运行；
 - tmux：gpu01 `ember_tgvv_formal_caa2e30`；精确命令与环境以该root的`run_contract.json`为准。
 
+macro25 checkpoint已完整写出且训练继续。用该checkpoint在gpu02物理GPU1完成K1部署定标：
+
+`runs/outputs/pi05_dynamic_k_task_grounded_visual_value_rank8_k1_writer_generation_profile_val8x4_correct_gpu02p1_caa2e30_macro0025_retry1_20260813`
+
+- fixed validation8×4、longest-first B8/B16/B32 LoRA/s=`.984266/.976097/.971736`；三者均stable、包含最长64帧、
+  0 OOM，peak reserved=`12.973/13.451/13.455GB`；按规则锁B8；
+- profile使用clean frozen `caa2e30`和同一正式macro25 checkpoint，只决定相同生成图的deployment batch；不读取
+  closed-loop结果、不选择checkpoint；
+- 第一份无`retry1` root在任何GPU forward前因误传LIBERO assets旧路径fail-closed；没有profile结果，不得冒充
+  方法失败或正式定标。
+
 macro50完成后立即做K1 strict paired correct400。历史v6-fast macro50也只有106，因此不以单个50点低于120提前
 杀死整个0→200裁决；按design继续100/150/200并分析相邻checkpoint共同积累。
 

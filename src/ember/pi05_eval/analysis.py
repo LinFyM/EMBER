@@ -62,6 +62,7 @@ def _writer_family(adapter: Mapping[str, Any]) -> tuple[str, Mapping[str, Any]]:
         if (
             adapter.get("schema_version") == family["adapter_schema"]
             and adapter.get("config", {}).get("schema") == family["config_schema"]
+            and str(adapter.get("arm", "")).startswith(family["arm_prefix"])
         ):
             return name, family
     _fail("Writer result is not a sealed supported method family")

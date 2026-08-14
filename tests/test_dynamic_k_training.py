@@ -82,8 +82,13 @@ def test_v6_shared_core_procedure_common_value_config_is_loadable() -> None:
     )
     assert config["writer"]["procedure_set_value"].startswith("raw_attention")
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
-    assert "profile_evidence" not in config["formal_run"]
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["source_commit"] == (
+        "50a3c36d46ce82e0b17cbf2d5cee78a50fbae691"
+    )
+    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
+    assert evidence["longest_condition_total_sampled_frames"] == 323
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,

@@ -148,7 +148,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   common ordered Procedure；
 - [x] 原位替换canonical schema/config/runtime并完成K1、step0、set、顺序、raw-Value与gradient CPU门；full CPU=
   `374 passed`；
-- [ ] 真实source-policy机制smoke与full24 B20吞吐profile；
+- [x] 真实source-policy机制smoke与full24 B20 profile通过：macro1/2=`26.112/22.543s`，q/k展开、K各6、最长
+  323帧、0 OOM/nonfinite，formal config已seal；
 - [ ] clean fresh macro0->25与K4 strict paired400；
 - [ ] 逐task、train-seen/held、Procedure->BA->rollout分析并按门裁决。
 

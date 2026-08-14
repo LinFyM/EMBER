@@ -129,3 +129,16 @@ config/schema/checkpoint/evaluator由Git与formal artifacts保存，不留runtim
 Program；zero-init逐tensor等于parameter-free Shared-Core graph；uniform q/k与identity output得到raw Procedure
 mean；首步只有output获梯度、output非零后q/k展开，v6 base始终无梯度。正确LIBERO assets下full CPU=
 `374 passed`。active source净缩减，architecture guard只有既存大函数review信号、无新增hard violation。
+
+真实source-policy smoke在gpu01物理7通过：K1在zero/nonzero output下均与native v6的76 tensors严格相等，
+video倒序Program mean abs=`.217034`，trainable=`197120`、base无梯度、peak allocated/reserved=
+`18.749/19.241GB`。K2/K4集合换位Program max abs=`.03986/.03672`、LoRA max abs=`.001953`，属于与历史
+相同的BF16 batched-forward低位差异，不为此重复single forward。
+
+clean detached `50a3c36`随后在gpu01物理`0/1/2/4/5/6`完成full24 B20 macro1/2 profile：wall=
+`26.1116/22.5427s`，K1--K4各6，functional=`.10118184/.09571959`，gradient=`.00032664/.00036634`；最长
+condition 323帧全部保留，peak allocated/reserved=`36.495/40.758GB`，0 OOM/nonfinite。macro1->2 q/k delta=
+`.00011578/.00011831`，output norm=`.004367->.009275`，证明raw ordered Procedure Value消除了旧centered
+Procedure的credit相消并在首步后展开完整attention。profile root=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_profile_r6_b20_50a3c36_gpu01_20260814`；formal config
+现已seal，profile checkpoint不进入formal训练。

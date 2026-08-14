@@ -59,7 +59,8 @@ train-seen output-zero反事实为trained/zero=`63/59`，说明少量task-local 
 当前active successor是
 [`V6 Shared-Core Ordered-Procedure Common-Value Bridge`](docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md)：
 恢复matched139的shared-Core边界，只让可训练raw common Value读取有向Procedure，冻结其余v6、rank16、B20和
-dynamic-K合同。canonical CPU实现已完成并通过`374`项回归；新config尚待真实GPU profile seal。
+dynamic-K合同。canonical CPU=`374 passed`；gpu01 world6 full24 B20 profile=`26.112/22.543s`，q/k展开、最长
+323帧、0 OOM/nonfinite，formal config已seal，下一步是fresh macro0->25。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

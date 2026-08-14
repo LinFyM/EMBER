@@ -21,9 +21,11 @@ rank16、冻结v6与部署图全部不变；macro25只作短AS cold start，新�
 sub-ULP Program写入不恢复；新gradient由Adam累积到FP32 Procedure参数，并必须在effective BA和strict400中
 证明真实作用。
 
-实现与真实smoke已完成：正确assets下full CPU=`395 passed`；gpu02物理1的task4为`1/4` mixed，Writer gradient=
-`.0008012`，effective-BA/fixed-action response=`.0001815/.0055719`，peak reserved=`40.775GB`、exit0。task0 homogeneous
-面板严格zero-CFM/zero-gradient。formal contract已seal；现在只启动一次full24 cycle1，不再做discarded full24 profile。
+实现与真实smoke已完成：正确assets下full CPU=`395 passed`；task4为`1/4` mixed，Writer gradient=`.0008012`，
+effective-BA/fixed-action response=`.0001815/.0055719`。首个world5 formal在最慢rank把compiler graph跨Nmc4 replay
+保留时OOM、无checkpoint，不构成科学结果；修复后同一B8 task4的全部科学量逐位不变，peak reserved=
+`40.712GB`、exit0。task0 homogeneous面板严格zero-CFM/zero-gradient。formal contract以clean `fa53ce4`重新seal；
+现在fresh启动full24 cycle1，不从失败root恢复，也不改变B8/Nmc4/样本或objective。
 
 ## 2. Active single changed variable and training semantics
 

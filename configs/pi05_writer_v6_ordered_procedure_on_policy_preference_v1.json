@@ -79,10 +79,10 @@
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
     "live_smoke_evidence": {
-      "source_commit": "e06a14b3f593536a7c5889bb4ce776876f43c76f",
-      "run_root": "runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_task4_live_smoke_gpu02g1_20260814",
-      "host": "gpu02",
-      "physical_device": 1,
+      "source_commit": "fa53ce43c92915229ca4c49fe47d2aa6f16bef0c",
+      "run_root": "runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_task4_graph_release_smoke_fa53ce4_gpu01g2_20260814",
+      "host": "gpu01",
+      "physical_device": 2,
       "global_task_id": 4,
       "successes": 1,
       "rollouts": 4,
@@ -90,8 +90,8 @@
       "writer_gradient_norm_before_clip": 0.0008011921891011298,
       "effective_ba_response_rms": 0.0001814553568222147,
       "fixed_action_response_rms": 0.005571932997554541,
-      "cycle_seconds": 146.29522368614562,
-      "max_cuda_reserved_bytes": 40774926336,
+      "cycle_seconds": 146.38285287795588,
+      "max_cuda_reserved_bytes": 40712011776,
       "exit_code": 0
     }
   }

@@ -25,13 +25,18 @@
   macro25只作短AS cold start；新阶段关闭target action入口，以train24真实闭环success/failure preference只优化
   shared Procedure q/k/output。authority=
   `docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`；
-- reward实现commit=`e06a14b3f593536a7c5889bb4ce776876f43c76f`已push；独立config=
+- reward graph-release实现commit=`fa53ce43c92915229ca4c49fe47d2aa6f16bef0c`已push；独立config=
   `configs/pi05_writer_v6_ordered_procedure_on_policy_preference_v1.json`，reward checkpoint/evaluator明确使用cycle schema，
   不冒充AS exact-resume；正确LIBERO assets下full CPU=`395 passed`；
-- gpu02物理1的task4真实mixed smoke完整exit0：`1/4` success、157 chunks、80次functional forwards，reward LoRA
+- 首个world5 full24 attempt root=
+  `runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_formal_cycle0to1_r5_k4_nmc4_b8_039cbbf_gpu01_20260814`；
+  最慢rank在完整CFM中一次242MiB申请OOM，等待rank随后600秒watchdog，exit1、无metrics/checkpoint/completion。
+  根因是可训练compiler graph跨Nmc4 policy replay存活；这是工程graph-lifetime错误，不是科学non-pass；
+- `fa53ce4`在gpu01物理2对同一task4 B8真实mixed smoke完整exit0：`1/4` success、157 chunks、80次functional forwards，reward LoRA
   gradient RMS=`1.3138e-5`、Writer grad norm=`8.0119e-4`；q/k/output均更新，effective-BA/fixed-action response=
-  `.00018146/.00557193`，peak reserved=`40.775GB`、wall=`146.295s`。task0 homogeneous面板严格zero forward/gradient
-  并按门硬停；formal config现已seal，下一步是clean pushed commit上的full24 cycle1；
+  `.00018146/.00557193`，与修复前逐位相同；peak reserved=`40.712GB`、wall=`146.383s`。task0 homogeneous面板严格
+  zero forward/gradient并按门硬停；reward专用collective timeout为30分钟，formal config现已重新seal，下一步是
+  clean pushed commit上的fresh full24 cycle1；
 - gpu01物理7真实smoke通过K1、倒序、freeze与梯度门；clean detached `50a3c36`在gpu01物理`0/1/2/4/5/6`
   完成full24 B20 macro1/2 profile：`26.112/22.543s`，gradient=`.0003266/.0003663`，q/k delta=
   `.0001158/.0001183`，K各6、最长323帧完整、peak reserved=`40.758GB`、0 OOM/nonfinite；root=

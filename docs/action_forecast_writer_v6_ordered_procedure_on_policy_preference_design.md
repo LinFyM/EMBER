@@ -1,7 +1,8 @@
 # V6 Ordered-Procedure On-Policy Preference Writer
 
-状态：2026-08-14 active design authority，尚未实现或产生GPU结果。该设计只改变Shared-Core Ordered-Procedure
-Common-Value Writer的训练credit；输入、表示、compiler、LoRA topology与部署图全部保持不变。
+状态：2026-08-14 active implemented authority；CPU与单task真实GPU smoke已通过，等待formal cycle1与strict400。
+该设计只改变Shared-Core Ordered-Procedure Common-Value Writer的训练credit；输入、表示、compiler、LoRA
+topology与部署图全部保持不变。
 
 ## 1. Decision
 
@@ -160,6 +161,13 @@ train outcomes和24-task gradient cosine/冲突；这些只解释closed-loop，�
 5. source/teacher/validation/test action与reward forbidden reads为零；
 6. reward optimizer step后LoRA、effective BA和fixed-action response均发生非零可部署变化；
 7. queue interleaving不改变task/video/env/policy/flow identities；0 OOM/nonfinite。
+
+实现commit=`e06a14b3f593536a7c5889bb4ce776876f43c76f`，正确LIBERO assets下full CPU=`395 passed`。gpu02物理1
+的task4真实smoke为`1/4` success、157 replay chunks、80次B8×Nmc4 functional forwards；reward LoRA gradient
+RMS=`1.3138e-5`、Writer grad norm=`8.0119e-4`，q/k/output均产生约`1e-4`量级FP32更新。更新后的LoRA factor、
+effective BA与同query/noise fixed action response RMS分别非零，其中BA=`1.8146e-4`、action=`5.5719e-3`；peak
+reserved=`40.775GB`、wall=`146.295s`、exit0。此前task0四条rollout同质并严格走zero-CFM/zero-gradient硬停，证明
+homogeneous skip有效；task4是预先由历史同seed reward面板判定的mixed smoke，不是参数或结果sweep。
 
 ### 9.2 First complete cycle
 

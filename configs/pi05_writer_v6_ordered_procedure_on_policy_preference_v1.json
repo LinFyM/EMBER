@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_ordered_procedure_on_policy_preference_v1",
-  "status": "pending_live_smoke",
+  "status": "active_formal_ready",
   "base_as_config": "configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -71,12 +71,27 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "pending_live_smoke",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
-    "live_smoke_evidence": null
+    "live_smoke_evidence": {
+      "source_commit": "e06a14b3f593536a7c5889bb4ce776876f43c76f",
+      "run_root": "runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_task4_live_smoke_gpu02g1_20260814",
+      "host": "gpu02",
+      "physical_device": 1,
+      "global_task_id": 4,
+      "successes": 1,
+      "rollouts": 4,
+      "functional_policy_forwards": 80,
+      "writer_gradient_norm_before_clip": 0.0008011921891011298,
+      "effective_ba_response_rms": 0.0001814553568222147,
+      "fixed_action_response_rms": 0.005571932997554541,
+      "cycle_seconds": 146.29522368614562,
+      "max_cuda_reserved_bytes": 40774926336,
+      "exit_code": 0
+    }
   }
 }

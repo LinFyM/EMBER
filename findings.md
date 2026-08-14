@@ -273,6 +273,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     output-zero在train-seen也为trained/zero=`64/64`、`4 gained / 4 lost`。因此当前B20 credit不是“task-local
     有效、只没泛化”，而是在train与held真实occupancy上都只有方向换手；下一接口必须改变credit来源，不能继续
     调Value幅度、rank、attention、compiler或训练长度。
+23. Ordered-Procedure On-Policy Preference的真实task4 smoke首次把binary reward经executed-prefix CFM、native
+    compiler与Adam传到同一19.7万FP32 Writer参数：LoRA gradient/Writer gradient=`1.3138e-5/.0008012`，更新后
+    effective-BA/fixed-action response=`.00018146/.00557193`。这明确越过历史Reward-Credit的sub-ULP接口，但只
+    证明credit可部署，不证明full24共存或held closed-loop改善；cycle1 strict400仍是唯一方法裁决。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

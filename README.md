@@ -45,6 +45,9 @@ held on-policy上都只制造能力换手；继续放大Value、改rank或移动
 完整保留K4有序视频、shared Core、Procedure Common-Value、native rank16 compiler和强139底座，把macro25作为
 短AS cold start，随后关闭target action入口，用train24真实闭环success/failure preference只优化同一个shared
 Writer的19.7万FP32 Procedure参数。部署仍是一次语言+视频生成初始LoRA，不是生成LoRA后的task-local RL。
+该reward链已完成full CPU=`395 passed`和真实mixed task smoke：Writer gradient、q/k/output、effective BA与fixed action
+均产生明确非零响应，跨过历史Reward-Credit的sub-ULP写出断点；这仍只是机制证据，下一正式裁决是full24 cycle1
+后的single-checkpoint K4 strict paired400。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

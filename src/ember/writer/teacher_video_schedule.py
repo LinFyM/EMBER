@@ -107,6 +107,33 @@ class TeacherVideoSchedule:
         ).permutation(candidates)
         return tuple(int(value) for value in order[:count])
 
+    def cross_video_credit_demos_for_task_visit(
+        self,
+        task_id: int,
+        task_visit: int,
+        anchor_demos: Sequence[int],
+        *,
+        view_count: int = 4,
+    ) -> tuple[tuple[int, ...], ...]:
+        """Return one anchor plus three disjoint same-task K4 credit sets."""
+
+        first = tuple(int(value) for value in anchor_demos)
+        if view_count != 4 or len(first) != 4 or len(set(first)) != 4:
+            raise WriterModelError("CV-CSD anchor condition is not one unique K4 set")
+        views = [first]
+        excluded = list(first)
+        for offset in range(1, view_count):
+            demos = self.demos_for_task_visit(
+                task_id, task_visit + offset, excluded=excluded
+            )
+            if len(demos) != 4:
+                raise WriterModelError("CV-CSD support condition is not K4")
+            views.append(tuple(demos))
+            excluded.extend(demos)
+        if len(set(excluded)) != 4 * view_count:
+            raise WriterModelError("CV-CSD credit conditions are not disjoint")
+        return tuple(views)
+
     def companion_demos_for_task_visit(
         self,
         task_id: int,

@@ -79,6 +79,12 @@ paired success经单一shared query commitment没有形成跨task/video可保留
 数量和信息墙不变；不平均videos/features/LoRAs，不加negative、memory、rank或scale变量。首次约145且retention过门
 才续相邻checkpoint与五臂/no-video controls；单点>150也不能跳过稳定性和视频因果裁决。
 
+CV-CSD canonical runtime已原位实现，旧PCSD config/schema由Git保存而不保留mode开关。CPU相关合同`21 passed`、
+正确assets下全量=`382 passed / 7个历史Reward-Credit临时路径失败`；gpu01物理5的task4 live smoke为4 rollouts、
+4 credit conditions、16 unique demos、64 functional forwards，query/effective-BA/action response均非零，peak reserved=
+`40.752GB`、cycle=`145.526s`、0 forbidden read/OOM/nonfinite。当前formal config已seal；下一步从clean pushed commit
+做fresh full24 cycle1，不能resume该smoke或PCSD checkpoint。
+
 ## 4. Long-term objective and decision rule
 
 EMBER研究能否从generic`lerobot/pi05_base`建立的冻结π0.5-LIBERO source policy出发，把目标task的语言和

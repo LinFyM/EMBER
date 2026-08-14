@@ -201,3 +201,17 @@ shortcut，方法仍non-pass。
 few-shot、memory token、其它policy-aligned credit或生成LoRA本身。memory token的下一触发证据将是：正确的跨video
 reward objective已经给出，但当前query commitment仍无法把它表达成一致且policy-effective的layer-aligned写出。
 
+## 11. Implementation and live-smoke evidence
+
+canonical reward path已原位替换PCSD config/schema/runtime，没有新增runner、mode开关或并行Writer。实现只在active
+task生成三个额外condition；selected replay只collate一次，四view用相同task/cycle seed重建完全相同的Beta time/
+Gaussian noise panel，分别取得flat query gradient后task内mean。`reward_cycle.py`保持单一orchestrator且低于800行；
+旧PCSD由Git与formal roots保存。
+
+CPU相关合同`21 passed`；正确LIBERO assets下full suite=`382 passed / 7个既有Reward-Credit临时路径失败`。gpu01
+物理5的task4 live smoke完整exit0：2 paired states、4 rollouts、1 active trajectory、29 replay chunks；四个K4 sets
+共16 unique demos，各自64/4=`16`次functional forward/backward，LoRA cotangent RMS=`4.77--4.81e-5`。合并后
+Writer gradient RMS=`3.465e-8`、query parameter delta RMS=`.00018514`、effective-BA/fixed-action response=
+`1.4455e-5/.002743`；cycle=`145.526s`、credit=`83.557s`、peak reserved=`40.752GB`，0 forbidden read/OOM/
+nonfinite。该smoke只证明机制与初步吞吐，不是closed-loop方法成绩；full24 cycle1兼正式吞吐裁决必须来自clean
+pushed commit的fresh root。

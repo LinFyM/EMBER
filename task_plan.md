@@ -254,10 +254,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 - [x] 写CV-CSD可证伪authority：anchor K4只负责产生唯一成功trajectory；同一trajectory在四个互不重叠的
   same-task correct K4 conditions下分别形成exact functional gradient，task内等权汇合；
-- [ ] 原位替换PCSD runtime/config/schema，完成schedule、shared replay/time/noise、view permutation、duplicate-view
+- [x] 原位替换PCSD runtime/config/schema，完成schedule、shared replay/time/noise、view permutation、duplicate-view
   degeneration、freeze与step0合同；
-- [ ] 完成最小CPU/真实active-task smoke和full24吞吐profile；support views不得增加rollout，wall目标不超过PCSD
-  `837.694s`的`1.75x`；
+- [x] 完成CPU与task4真实active smoke：4 rollouts/4 credit views/16 unique demos，query/BA/action均非零，
+  `145.526s`、peak reserved`40.752GB`、0 OOM/nonfinite/禁读；
+- [ ] 完成fresh full24 cycle1兼吞吐profile；support views不得增加rollout，wall目标不超过PCSD `837.694s`的
+  `1.75x`；
 - [ ] 从同一LPCP macro25、fresh optimizer训练cycle1并立即做K4 strict paired correct400；
 - [ ] 完成逐task/per-suite/breadth、相对LPCP/AS139/v6-fast/old/compiler/online的retained/gained/lost、全400
   effective-BA及跨video correction分析；

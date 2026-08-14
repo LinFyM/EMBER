@@ -341,8 +341,8 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": "formal_paired_causal_success_distillation",
-        "training_stage": "on_policy_selected_success_query_commitment",
+        "training_mode": "formal_cross_video_causal_success_distillation",
+        "training_stage": "on_policy_cross_video_selected_success_query_commitment",
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest": {
@@ -541,7 +541,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_paired_causal_success_distillation_"
+                "v6_lpcp_cross_video_causal_success_distillation_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

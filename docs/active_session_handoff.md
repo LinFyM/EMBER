@@ -71,8 +71,15 @@
   产生AS139/LPCP唯一成功trajectory；若task active，同一trajectory分别在四个互不重叠、原序、same-task correct
   K4 conditions下经独立Writer→LoRA→functional CFM反传，四view只在`query_delta.weight`梯度处等权汇合。四view
   共用replay、flow time/noise panel；task总权重仍为1；support views不增加rollout。LPCP部署图、动态K、AS139/
-  rank16 tail、optimizer和信息墙不变，不加入memory/rank/negative/scale。当前无EMBER GPU进程，下一步是原位实现、
-  CPU/mechanism gate和真实full24吞吐profile；
+  rank16 tail、optimizer和信息墙不变，不加入memory/rank/negative/scale；
+- CV-CSD现已原位实现并通过首个真实active-task smoke：gpu01物理5、task4、world1完整exit0；仍为2 paired states/
+  4 rollouts，4个credit K4 conditions共16个unique demos，四view各16次functional forward/backward且LoRA cotangent
+  RMS=`4.77--4.81e-5`；合并后Writer gradient RMS=`3.465e-8`、query-delta parameter delta RMS=`.00018514`、
+  effective-BA/fixed-action response=`1.4455e-5/.002743`。cycle=`145.526s`、credit=`83.557s`、peak reserved=
+  `40.752GB`，0 forbidden read/OOM/nonfinite；support views没有增加rollout。相关CPU=`21 passed`，正确assets全量=
+  `382 passed / 7个既有Reward-Credit临时路径失败`。formal config已seal，下一步从clean pushed commit做fresh full24
+  cycle1；smoke root=
+  `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_task4_live_smoke_b8_worktree_gpu01p5_20260815`；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

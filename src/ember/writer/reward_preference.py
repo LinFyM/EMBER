@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import torch
 from lerobot.utils.constants import ACTION
@@ -24,6 +24,19 @@ class PairedSuccessCreditSummary:
     functional_policy_forwards: int
     functional_policy_backwards: int
     lora_gradient_rms: float
+
+
+def mean_cross_video_task_gradient(
+    gradients: Sequence[torch.Tensor],
+) -> torch.Tensor:
+    """Keep one task's total weight at one while averaging four view gradients."""
+
+    if len(gradients) != 4 or any(
+        value.shape != gradients[0].shape or value.dtype != torch.float32
+        for value in gradients
+    ):
+        raise RewardProtocolError("CV-CSD view gradient panel changed")
+    return torch.stack(tuple(gradients)).mean(dim=0)
 
 
 def selected_trajectory_chunk_weights(

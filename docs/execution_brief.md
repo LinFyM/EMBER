@@ -30,6 +30,10 @@ functional CFM，复用相同replay/time/noise，只在共享`query_delta.weight
 AS139 tail、optimizer、rollout数量和信息墙全部不变；不平均输入或LoRA，不混入memory、negative或rank变量。
 精确合同见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
 
+canonical实现已通过task4 live smoke：4 rollouts不变，4个K4 credit views共16 unique demos，四view LoRA/query
+credit与最终BA/action response均非零；cycle=`145.526s`、peak reserved=`40.752GB`，无OOM/nonfinite/禁读。
+formal config已seal；下一动作是clean pushed commit上的fresh full24 cycle1，不resume PCSD或smoke。
+
 ## 2. Completed PCSD variable and training semantics
 
 - 冻结完整LPCP carrier、AS139 Semantic Core/Procedure/K-set/fusion/compiler与38-target rank16 FactorHeads；

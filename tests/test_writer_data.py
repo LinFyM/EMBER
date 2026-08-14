@@ -206,6 +206,19 @@ def test_k4_teacher_schedule_is_unique_exclusion_safe_and_resumable() -> None:
     assert identity["unique_demo_indices"] == tuple(range(8))
 
 
+def test_cross_video_credit_schedule_keeps_anchor_and_uses_16_unique_demos() -> None:
+    schedule = TeacherVideoSchedule(
+        task_ids=(10,), demo_indices=range(50), seed=19, videos_per_visit=4
+    )
+    anchor = schedule.demos_for_task_visit(10, 3)
+    views = schedule.cross_video_credit_demos_for_task_visit(10, 3, anchor)
+    assert views[0] == anchor
+    assert len(views) == 4
+    assert all(len(view) == 4 and len(set(view)) == 4 for view in views)
+    assert len({demo for view in views for demo in view}) == 16
+    assert views == schedule.cross_video_credit_demos_for_task_visit(10, 3, anchor)
+
+
 def test_one_shot_schedule_covers_all_videos_and_excludes_action_queries() -> None:
     dataset, _ = _dataset(task_ids=(10,), demos=50, rows_per_demo=20)
     schedule = TeacherVideoSchedule(

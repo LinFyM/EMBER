@@ -1,4 +1,4 @@
-"""One paired causal success-distillation cycle for the shared V6-LPCP Writer."""
+"""One cross-video causal success-distillation cycle for V6-LPCP."""
 
 from __future__ import annotations
 
@@ -32,6 +32,7 @@ from ember.writer.reward_preference import (
     PairedSuccessCreditSummary,
     backpropagate_lora_cotangent,
     functional_selected_success_lora_gradient,
+    mean_cross_video_task_gradient,
 )
 
 if TYPE_CHECKING:
@@ -83,18 +84,14 @@ def _trajectory_row(value: RewardTrajectory) -> dict[str, Any]:
     }
 
 
-def _encode_pair(
-    runtime: RewardRuntime, task: RewardTask, cycle: int
+def _encode_candidate_condition(
+    runtime: RewardRuntime, task: RewardTask, demos: Sequence[int]
 ) -> tuple[
-    int,
     tuple[Any, ...],
     Mapping[str, Any],
     WriterConditioningState,
     Mapping[str, torch.Tensor],
-    Mapping[str, torch.Tensor],
 ]:
-    visit = cycle - 1
-    demos = runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
     packed, video_metrics = pack_teacher_condition(
         runtime.video_store,
         task_id=task.global_task_id,
@@ -113,17 +110,44 @@ def _encode_pair(
         state = runtime.writer.encode_conditioning_state(
             *packed, policy=runtime.policy
         )
-        reference = runtime.writer.decode_program(
-            runtime.writer.compile_conditioning_state(
-                state, packed[3], use_query_delta=False
-            ).program
-        )
         candidate = runtime.writer.decode_program(
             runtime.writer.compile_conditioning_state(
                 state, packed[3], use_query_delta=True
             ).program
         )
-    return visit, packed, video_metrics, state, reference, candidate
+    return packed, video_metrics, state, candidate
+
+
+def _encode_pair(
+    runtime: RewardRuntime, task: RewardTask, cycle: int
+) -> tuple[
+    int,
+    tuple[int, ...],
+    tuple[Any, ...],
+    Mapping[str, Any],
+    WriterConditioningState,
+    Mapping[str, torch.Tensor],
+    Mapping[str, torch.Tensor],
+]:
+    visit = cycle - 1
+    demos = runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
+    packed, video_metrics, state, candidate = _encode_candidate_condition(
+        runtime, task, demos
+    )
+    with (
+        torch.no_grad(),
+        torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ),
+    ):
+        reference = runtime.writer.decode_program(
+            runtime.writer.compile_conditioning_state(
+                state, packed[3], use_query_delta=False
+            ).program
+        )
+    return visit, tuple(demos), packed, video_metrics, state, reference, candidate
 
 
 def _collect_arm(
@@ -222,12 +246,12 @@ def select_unique_success_trajectories(
     """Select the successful trajectory only when the two exact arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
-        raise WriterModelError("PCSD requires two paired reset states")
+        raise WriterModelError("CV-CSD requires two paired reset states")
     selected: list[RewardTrajectory] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
-            raise WriterModelError("PCSD arm pairing changed reset or policy RNG")
+            raise WriterModelError("CV-CSD arm pairing changed reset or policy RNG")
         if candidate_row.success and not reference_row.success:
             selected.append(candidate_row)
             labels.append("candidate")
@@ -241,20 +265,17 @@ def select_unique_success_trajectories(
     return tuple(selected), tuple(labels)
 
 
-def _differentiate_task_credit(
+def _differentiate_credit_view(
     runtime: RewardRuntime,
     task: RewardTask,
     cycle: int,
     packed: tuple[Any, ...],
     state: WriterConditioningState,
     candidate_lora: Mapping[str, torch.Tensor],
-    selected: Sequence[RewardTrajectory],
-    gradient_sum: torch.Tensor,
-) -> tuple[PairedSuccessCreditSummary, float]:
-    started = time.monotonic()
-    batch, trajectory_ids = complete_selected_trajectory_batch(
-        selected, torch.device("cpu")
-    )
+    batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
+    gradient_template: torch.Tensor,
+) -> tuple[torch.Tensor, PairedSuccessCreditSummary]:
     with torch.autocast(
         device_type=runtime.context.device.type,
         dtype=torch.bfloat16,
@@ -280,11 +301,89 @@ def _differentiate_task_credit(
         )
         generated = runtime.writer.decode_program(recompiled.program)
         backpropagate_lora_cotangent(generated, lora_gradient)
+    flat = torch.zeros_like(gradient_template)
     gradients = tuple(item.parameter.grad for item in runtime.gradient_layout)
-    accumulate_flat_gradient(gradient_sum, gradients, runtime.gradient_layout)
+    accumulate_flat_gradient(flat, gradients, runtime.gradient_layout)
     for item in runtime.gradient_layout:
         item.parameter.grad = None
-    return summary, time.monotonic() - started
+    return flat, summary
+
+
+def _differentiate_task_credit(
+    runtime: RewardRuntime,
+    task: RewardTask,
+    cycle: int,
+    visit: int,
+    anchor_demos: Sequence[int],
+    packed: tuple[Any, ...],
+    state: WriterConditioningState,
+    candidate_lora: Mapping[str, torch.Tensor],
+    selected: Sequence[RewardTrajectory],
+    gradient_sum: torch.Tensor,
+) -> tuple[dict[str, Any], float]:
+    started = time.monotonic()
+    batch, trajectory_ids = complete_selected_trajectory_batch(
+        selected, torch.device("cpu")
+    )
+    demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
+        task.global_task_id,
+        visit,
+        anchor_demos,
+        view_count=int(runtime.config["data"]["credit_views_per_active_task"]),
+    )
+    view_gradients, view_rows = [], []
+    for view_index, demos in enumerate(demo_sets):
+        if view_index == 0:
+            view_packed, view_state, view_lora = packed, state, candidate_lora
+            view_metrics: Mapping[str, Any] = {}
+        else:
+            view_packed, view_metrics, view_state, view_lora = (
+                _encode_candidate_condition(runtime, task, demos)
+            )
+        flat, summary = _differentiate_credit_view(
+            runtime,
+            task,
+            cycle,
+            view_packed,
+            view_state,
+            view_lora,
+            batch,
+            trajectory_ids,
+            gradient_sum,
+        )
+        view_gradients.append(flat)
+        view_rows.append(
+            {
+                "view_index": view_index,
+                "demo_indices": list(demos),
+                "query_gradient_rms": float(flat.square().mean().sqrt()),
+                **asdict(summary),
+                **view_metrics,
+            }
+        )
+    gradient_sum.add_(mean_cross_video_task_gradient(view_gradients))
+    first = view_rows[0]
+    return {
+        "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
+        "target_trajectories": int(first["target_trajectories"]),
+        "replay_chunks": int(first["replay_chunks"]),
+        "executed_action_steps": int(first["executed_action_steps"]),
+        "functional_policy_forwards": sum(
+            int(row["functional_policy_forwards"]) for row in view_rows
+        ),
+        "functional_policy_backwards": sum(
+            int(row["functional_policy_backwards"]) for row in view_rows
+        ),
+        "lora_gradient_rms": math.fsum(
+            float(row["lora_gradient_rms"]) for row in view_rows
+        )
+        / 4,
+        "credit_conditions": 4,
+        "credit_unique_video_count": len(
+            {demo for demos in demo_sets for demo in demos}
+        ),
+        "credit_view_records": view_rows,
+    }, time.monotonic() - started
 
 
 def _make_probe(
@@ -324,6 +423,9 @@ def _empty_credit() -> dict[str, Any]:
         "functional_policy_forwards": 0,
         "functional_policy_backwards": 0,
         "lora_gradient_rms": 0.0,
+        "credit_conditions": 0,
+        "credit_unique_video_count": 0,
+        "credit_view_records": [],
     }
 
 
@@ -334,7 +436,7 @@ def _task_gradient(
     gradient_sum: torch.Tensor,
     probe: RewardProbe | None,
 ) -> tuple[dict[str, Any], RewardProbe | None, int]:
-    visit, packed, video_metrics, state, reference_lora, candidate_lora = (
+    visit, anchor_demos, packed, video_metrics, state, reference_lora, candidate_lora = (
         _encode_pair(runtime, task, cycle)
     )
     reference, candidate, reference_seconds, candidate_seconds = (
@@ -351,17 +453,18 @@ def _task_gradient(
     credit_seconds = 0.0
     active = int(bool(selected))
     if selected:
-        summary, credit_seconds = _differentiate_task_credit(
+        credit, credit_seconds = _differentiate_task_credit(
             runtime,
             task,
             cycle,
+            visit,
+            anchor_demos,
             packed,
             state,
             candidate_lora,
             selected,
             gradient_sum,
         )
-        credit = asdict(summary)
         if probe is None:
             probe = _make_probe(
                 task,
@@ -373,6 +476,7 @@ def _task_gradient(
             )
     row = {
         "task_id": task.global_task_id,
+        "rank": runtime.context.rank,
         "suite": task.suite,
         "local_task_id": task.task_id,
         "cycle": cycle,
@@ -386,6 +490,7 @@ def _task_gradient(
         "both_failure": labels.count("both_failure"),
         **credit,
         **video_metrics,
+        "anchor_demo_indices": list(anchor_demos),
         "paired_states": 2,
         "rollouts": 4,
         "reference_trajectory_rows": [
@@ -463,12 +568,12 @@ def _apply_step(
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
-        raise WriterModelError("PCSD cycle produced no discordant successful arm")
+        raise WriterModelError("CV-CSD cycle produced no discordant successful arm")
     gradient_sum.div_(active_tasks)
     if not bool(torch.isfinite(gradient_sum).all()) or not bool(
         torch.count_nonzero(gradient_sum)
     ):
-        raise WriterModelError("PCSD cycle produced an invalid shared gradient")
+        raise WriterModelError("CV-CSD cycle produced an invalid shared gradient")
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
@@ -610,9 +715,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_paired_causal_success_distillation"
+            "one_complete_train24_cross_video_causal_success_distillation"
             if runtime.args.mode == "formal"
-            else "one_task_paired_causal_success_distillation_live_smoke"
+            else "one_task_cross_video_causal_success_distillation_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -635,6 +740,12 @@ def _cycle_metrics(
         "active_suites": sorted({row["suite"] for row in active_records}),
         "selected_trajectories": sum(
             int(row["target_trajectories"]) for row in records
+        ),
+        "credit_conditions": sum(
+            int(row["credit_conditions"]) for row in records
+        ),
+        "credit_unique_video_count": sum(
+            int(row["credit_unique_video_count"]) for row in records
         ),
         "replay_chunks": sum(int(row["replay_chunks"]) for row in records),
         "executed_action_steps": sum(

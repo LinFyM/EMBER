@@ -22,6 +22,7 @@ from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import _apply_step, select_unique_success_trajectories
 from ember.writer.reward_preference import (
     functional_selected_success_lora_gradient,
+    mean_cross_video_task_gradient,
     selected_trajectory_chunk_weights,
 )
 
@@ -34,6 +35,22 @@ def test_selected_success_weights_make_each_target_trajectory_equal() -> None:
     )
     torch.testing.assert_close(
         per_trajectory, torch.tensor([0.5, 0.5]), rtol=0, atol=0
+    )
+
+
+def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() -> None:
+    gradients = tuple(
+        torch.tensor([float(index), float(index + 2)], dtype=torch.float32)
+        for index in range(4)
+    )
+    expected = torch.tensor([1.5, 3.5], dtype=torch.float32)
+    torch.testing.assert_close(mean_cross_video_task_gradient(gradients), expected)
+    torch.testing.assert_close(
+        mean_cross_video_task_gradient(tuple(reversed(gradients))), expected
+    )
+    duplicate = torch.tensor([0.125, -3.0], dtype=torch.float32)
+    assert torch.equal(
+        mean_cross_video_task_gradient((duplicate,) * 4), duplicate
     )
 
 

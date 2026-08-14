@@ -62,10 +62,10 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_v6_shared_core_procedure_common_value_config_is_loadable() -> None:
+def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     config = load_writer_config(
         REPO_ROOT
-        / "configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json"
+        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
     )
     lora = load_pi05_lora_contract(
         REPO_ROOT / "configs/pi05_lora_v1.json"
@@ -73,22 +73,15 @@ def test_v6_shared_core_procedure_common_value_config_is_loadable() -> None:
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
-    assert config["writer"]["k1_contract"].startswith(
-        "explicit_exact_native_v6_bypass"
-    )
+    assert config["writer"]["step0_contract"].startswith("exact_as139")
+    assert config["writer"]["layer_probe_source"].startswith("same_joint_forward")
     assert config["writer"]["core_set_fusion"].startswith("parameter_free")
     assert config["writer"]["procedure_set_fusion"].startswith(
         "permutation_invariant"
     )
     assert config["writer"]["procedure_set_value"].startswith("raw_attention")
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "sealed"
-    evidence = config["formal_run"]["profile_evidence"]
-    assert evidence["source_commit"] == (
-        "50a3c36d46ce82e0b17cbf2d5cee78a50fbae691"
-    )
-    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
-    assert evidence["longest_condition_total_sampled_frames"] == 323
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,
@@ -97,9 +90,7 @@ def test_v6_shared_core_procedure_common_value_config_is_loadable() -> None:
         5,
         6,
     ]
-    assert parse_macro_boundaries("every:25", 400) == tuple(
-        range(25, 401, 25)
-    )
+    assert parse_macro_boundaries([25, 50], 50) == (25, 50)
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
@@ -635,7 +626,7 @@ def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:
     assert adapter_requests(args) == (DYNAMIC_K_WRITER_KIND, False)
 
 
-def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
+def test_evaluator_resolves_the_v6_layerwise_rank16_lora_authority() -> None:
     import importlib
 
     from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
@@ -647,7 +638,7 @@ def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
 
     config = (
         REPO_ROOT
-        / "configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json"
+        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
     )
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),
@@ -669,22 +660,11 @@ def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
     )
 
 
-def test_v6_shared_core_procedure_common_value_k4_profile_is_sealed() -> None:
+def test_v6_layerwise_probe_generation_profile_starts_unsealed() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
     )
 
     assert DYNAMIC_K_GENERATION_BATCH_SIZE == 8
-    assert DYNAMIC_K_GENERATION_PROFILES == {
-        4: {
-            "schema": "ember_pi05_writer_generation_profile_v2",
-            "path": (
-                "runs/outputs/"
-                "pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_"
-                "generation_profile_val8x4_correct_gpu01p2_d316623_"
-                "macro0025_retry1_20260814/writer_generation_profile.json"
-            ),
-            "selected_writer_model_batch_size": 8,
-        }
-    }
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

@@ -1,6 +1,7 @@
 # V6 Layerwise Action-Probe Conditioned Procedure Reader
 
-状态：2026-08-14 design authority；尚未实现或启动GPU。简称只用于文件/配置identity：`V6-LPCP`。
+状态：2026-08-14 design authority；canonical CPU实现与机制测试完成，尚未启动GPU。简称只用于文件/配置
+identity：`V6-LPCP`。
 
 ## 1. Decision
 
@@ -104,9 +105,12 @@ D[0,l,r] = 0
 D[t,l,r] = R[t,l,r] - R[t-1,l,r]
 ```
 
-固定`(l,r)`后，沿video时间轴使用一套共享、带真实sampled-frame ordinal RoPE的causal temporal block；取最后一个
-valid位置形成该video的expert-layer conditioners。action-in的16个slots读取layer0结果，action-out的16个slots
-读取layer17结果，并加入各自endpoint identity，最终得到：
+先在`(l,r)`轴求mean，沿video时间轴只运行一次共享、带真实sampled-frame ordinal RoPE的causal temporal block；
+最后一个valid状态作为该video的有向过程context，再按每个`(l,r)` delta与该context的匹配度沿frame轴加权汇聚，
+形成该video的expert-layer conditioners。这样layer/rank Value保持独立，但不会为288个slots重复运行重型时序网络。
+action-in的16个slots读取layer0结果，action-out的16个slots
+读取layer17结果；已有native routing继续区分expert、action-in与action-out ownership，不给新增动态Value混入
+静态endpoint identity，最终得到：
 
 ```text
 C_video in R^(320 x 256)

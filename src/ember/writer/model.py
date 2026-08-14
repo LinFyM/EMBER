@@ -1,12 +1,14 @@
-"""Canonical shared-Core ordered-Procedure common-Value bridge over v6."""
+"""Canonical V6 layerwise Action-probe conditioned Procedure Writer."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
+import weakref
 
 import torch
+from safetensors.torch import load_file
 
 from ember.expert_manifold.legacy_v6_architecture import (
     LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS,
@@ -15,39 +17,51 @@ from ember.expert_manifold.legacy_v6_model import (
     CompleteLoRAWriter as NativeV6Writer,
 )
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
-from ember.expert_manifold.v6_prior import load_v6_prior_warm_start_
 from ember.writer.errors import WriterModelError
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
+from ember.writer.temporal import LayerwiseProbeProcedureConditioner
+from ember.writer.video_program import LayerwiseActionProbeReader
 
 
 @dataclass(frozen=True)
 class WriterProgramDiagnostics:
-    """Memory-level evidence retained for mechanism analysis."""
+    """Layerwise query and native V6 readouts retained for analysis."""
 
     shared_core_slots: torch.Tensor
     per_video_procedure_slots: torch.Tensor
     shared_procedure_slots: torch.Tensor
     shared_procedure_corrections: torch.Tensor
+    per_video_query_conditioners: torch.Tensor
+    per_video_query_deltas: torch.Tensor
     attention: tuple[torch.Tensor, ...]
     auxiliary_loss: torch.Tensor
 
 
 @dataclass(frozen=True)
 class WriterProgramOutput:
-    """Frozen v6 memory readouts and trainable ordered-Procedure common Value."""
+    """Frozen V6 program conditioned by trainable layerwise probe changes."""
 
     program: torch.Tensor
     diagnostics: WriterProgramDiagnostics
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Compile shared Core and common ordered Procedure from one-to-four videos."""
+    """Condition the strong V6 Procedure reader with layer/rank probe evidence."""
 
     PUBLIC_LORA_RANK = 16
     PROGRAM_WIDTH = 256
     POLICY_SLOTS = 320
 
-    def __init__(self, base_writer: NativeV6Writer) -> None:
+    def __init__(
+        self,
+        base_writer: NativeV6Writer,
+        procedure_set: PolicyProcedureCommonValueFusion,
+        layer_probe_reader: LayerwiseActionProbeReader,
+        *,
+        expert_model: torch.nn.Module,
+        conditioner_heads: int = 8,
+        conditioner_blocks: int = 1,
+    ) -> None:
         super().__init__()
         if (
             int(base_writer.program_width) != self.PROGRAM_WIDTH
@@ -55,7 +69,19 @@ class CompleteLoRAWriter(torch.nn.Module):
         ):
             raise WriterModelError("native v6 Writer topology changed")
         self.base_writer = base_writer.requires_grad_(False).eval()
-        self.procedure_set = PolicyProcedureCommonValueFusion(width=self.PROGRAM_WIDTH)
+        self.procedure_set = procedure_set.requires_grad_(False).eval()
+        self.layer_probe_reader = layer_probe_reader
+        self.probe_conditioner = LayerwiseProbeProcedureConditioner(
+            heads=conditioner_heads,
+            blocks=conditioner_blocks,
+        )
+        self.query_delta = torch.nn.Linear(
+            self.PROGRAM_WIDTH,
+            self.PROGRAM_WIDTH,
+            bias=False,
+        )
+        torch.nn.init.zeros_(self.query_delta.weight)
+        object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
 
     @classmethod
     def from_policy(
@@ -64,9 +90,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
         template_state: Mapping[str, torch.Tensor],
         writer_config: Mapping[str, Any],
-        warm_start_checkpoint: Path,
+        as139_warm_start_checkpoint: Path,
     ) -> CompleteLoRAWriter:
-        """Construct and strictly load the frozen v6-fast performance base."""
+        """Load the frozen AS139 graph and initialize only its query conditioner."""
 
         bridge = getattr(getattr(policy, "model", None), "paligemma_with_expert", None)
         if bridge is None:
@@ -83,14 +109,65 @@ class CompleteLoRAWriter(torch.nn.Module):
             expert_model=bridge.gemma_expert.model,
             **arguments,
         )
-        load_v6_prior_warm_start_(base, warm_start_checkpoint)
-        return cls(base)
+        procedure_set = PolicyProcedureCommonValueFusion(width=cls.PROGRAM_WIDTH)
+        cls._load_as139_state_(
+            base,
+            procedure_set,
+            as139_warm_start_checkpoint.resolve(),
+        )
+        layer_probe_reader = LayerwiseActionProbeReader(
+            heads=int(writer_config["layer_probe_heads"]),
+            initialization_seed=int(writer_config["initialization_seed"]),
+        )
+        return cls(
+            base,
+            procedure_set,
+            layer_probe_reader,
+            expert_model=bridge.gemma_expert.model,
+            conditioner_heads=int(writer_config["conditioner_heads"]),
+            conditioner_blocks=int(writer_config["conditioner_blocks"]),
+        )
+
+    @staticmethod
+    def _load_as139_state_(
+        base_writer: NativeV6Writer,
+        procedure_set: PolicyProcedureCommonValueFusion,
+        checkpoint: Path,
+    ) -> None:
+        if not checkpoint.is_file() or checkpoint.name != "writer.safetensors":
+            raise WriterModelError("missing AS139 Writer warm start")
+        state = load_file(str(checkpoint), device="cpu")
+        base_prefix = "base_writer."
+        set_prefix = "procedure_set."
+        expected = {
+            *(base_prefix + name for name in base_writer.state_dict()),
+            *(set_prefix + name for name in procedure_set.state_dict()),
+        }
+        if set(state) != expected:
+            raise WriterModelError("AS139 Writer warm-start topology changed")
+        base_writer.load_state_dict(
+            {
+                name.removeprefix(base_prefix): value
+                for name, value in state.items()
+                if name.startswith(base_prefix)
+            },
+            strict=True,
+        )
+        procedure_set.load_state_dict(
+            {
+                name.removeprefix(set_prefix): value
+                for name, value in state.items()
+                if name.startswith(set_prefix)
+            },
+            strict=True,
+        )
 
     def train(self, mode: bool = True) -> CompleteLoRAWriter:
-        """Train only Procedure common Value while v6 remains in eval mode."""
+        """Train only the layerwise conditioner while AS139 remains frozen."""
 
         super().train(mode)
         self.base_writer.eval()
+        self.procedure_set.eval()
         return self
 
     @staticmethod
@@ -120,13 +197,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         shared_core: torch.Tensor,
         per_video_procedure: torch.Tensor,
         condition_video_offsets: torch.Tensor,
+        *,
+        per_video_query_conditioners: torch.Tensor | None = None,
+        per_video_query_deltas: torch.Tensor | None = None,
     ) -> WriterProgramOutput:
-        """Compile cached frozen-v6 readouts through the trainable Procedure set.
-
-        Reward training uses this narrow boundary to avoid repeating the video
-        backbone after the on-policy rollouts.  The cached tensors are evidence,
-        not trainable state; only ``procedure_set`` receives gradients.
-        """
+        """Aggregate conditioned readouts through the frozen AS139 tail."""
 
         condition_bounds = self._offsets(
             condition_video_offsets,
@@ -144,8 +219,19 @@ class CompleteLoRAWriter(torch.nn.Module):
             )
         ):
             raise WriterModelError("invalid cached ordered-Procedure readouts")
-        shared_core = shared_core.detach()
-        per_video_procedure = per_video_procedure.detach()
+        if per_video_query_conditioners is None:
+            per_video_query_conditioners = per_video_procedure.new_zeros(
+                per_video_procedure.shape
+            )
+        if per_video_query_deltas is None:
+            per_video_query_deltas = per_video_procedure.new_zeros(
+                per_video_procedure.shape
+            )
+        if (
+            per_video_query_conditioners.shape != per_video_procedure.shape
+            or per_video_query_deltas.shape != per_video_procedure.shape
+        ):
+            raise WriterModelError("invalid layerwise Procedure query diagnostics")
         shared_procedure, set_diagnostics = self.procedure_set(
             per_video_procedure, condition_video_offsets
         )
@@ -162,6 +248,8 @@ class CompleteLoRAWriter(torch.nn.Module):
                 per_video_procedure_slots=per_video_procedure,
                 shared_procedure_slots=shared_procedure,
                 shared_procedure_corrections=set_diagnostics.shared_corrections,
+                per_video_query_conditioners=per_video_query_conditioners,
+                per_video_query_deltas=per_video_query_deltas,
                 attention=set_diagnostics.attention,
                 auxiliary_loss=set_diagnostics.auxiliary_loss,
             ),
@@ -218,15 +306,28 @@ class CompleteLoRAWriter(torch.nn.Module):
             ),
             condition_counts,
         )
+        expert_model = self._expert_model_ref()
+        if expert_model is None:
+            raise WriterModelError("Action Expert owner was released")
+        with self.layer_probe_reader.capture(expert_model) as probe_capture:
+            with torch.no_grad():
+                evidence = self.base_writer.encode_video_evidence(
+                    policy,
+                    frames,
+                    video_offsets,
+                    language_tokens.index_select(0, video_condition_ids),
+                    language_mask.index_select(0, video_condition_ids),
+                    task_span_mask.index_select(0, video_condition_ids),
+                )
+        layer_rank_probe = probe_capture.result(frames.shape[0])
+        query_conditioners = self.probe_conditioner(
+            layer_rank_probe,
+            frame_indices,
+            video_bounds,
+        )
+        query_deltas = self.query_delta(query_conditioners)
+
         with torch.no_grad():
-            evidence = self.base_writer.encode_video_evidence(
-                policy,
-                frames,
-                video_offsets,
-                language_tokens.index_select(0, video_condition_ids),
-                language_mask.index_select(0, video_condition_ids),
-                task_span_mask.index_select(0, video_condition_ids),
-            )
             memories = self.base_writer.build_memories(evidence, frame_indices)
             compiler = self.base_writer.compiler
             shared_core_slots: list[torch.Tensor | None] = [None] * len(cardinalities)
@@ -266,14 +367,15 @@ class CompleteLoRAWriter(torch.nn.Module):
             shared_core = torch.stack(
                 [value for value in shared_core_slots if value is not None]
             )
-            procedure_routing = compiler.routing(len(video_bounds) - 1)
-            per_video_procedure, _ = compiler.read_procedure_slots(
-                procedure_routing,
-                shared_core.index_select(0, video_condition_ids),
-                memories.procedure,
-                memories.positions,
-                memories.valid_procedure,
-            )
+        procedure_routing = compiler.routing(len(video_bounds) - 1)
+        per_video_procedure, _ = compiler.read_procedure_slots(
+            procedure_routing,
+            shared_core.index_select(0, video_condition_ids),
+            memories.procedure,
+            memories.positions,
+            memories.valid_procedure,
+            query_condition=query_deltas,
+        )
         if shared_core.shape != (
             len(condition_bounds) - 1,
             self.POLICY_SLOTS,
@@ -288,6 +390,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             shared_core,
             per_video_procedure,
             condition_video_offsets,
+            per_video_query_conditioners=query_conditioners,
+            per_video_query_deltas=query_deltas,
         )
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:

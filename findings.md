@@ -316,6 +316,12 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     Procedure-query conditioner。它在step0保留V6 LoRA geometry，也把literal memory变成可干净替换carrier的
     后继反事实：只有native probes在correct/reverse/static之前就缺少material差异，才授权加memory；若差异在
     compiler/action后才失效，memory不会自动修复shared credit。
+32. V6-LPCP canonical实现证明该假设无需第二次backbone forward或显式memory token即可接线：18层tap只旁读
+    现有joint forward，zero-init时完整退化AS139，base与trained K-set冻结，首步打开query projection、第二步
+    credit进入probe reader与causal controller。最初“每个layer/rank slot独立跑temporal Transformer”的实现草稿
+    会在K4最长条件形成1152条长序列，已在GPU前因效率不合格被否决；当前改为每video一次shared causal
+    controller，再轻量汇聚288个slot deltas。该工程/机制通过不提供closed-loop收益证据，仍须真实profile和
+    strict400裁决。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

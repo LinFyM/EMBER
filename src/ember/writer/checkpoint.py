@@ -23,10 +23,10 @@ from ember.writer.reward_checkpoint import REWARD_DEPLOYMENT_KIND
 
 
 CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_checkpoint_v1"
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_checkpoint_v1"
 )
 DEPLOYMENT_CHECKPOINT_KIND = (
-    "v6_shared_core_procedure_common_value_bridge_macro_checkpoint"
+    "v6_layerwise_probe_conditioned_procedure_macro_checkpoint"
 )
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 

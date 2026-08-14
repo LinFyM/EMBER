@@ -70,7 +70,7 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
     assert torch.equal(diagnostics["fused_slots"], fused)
 
 
-def test_v6_procedure_common_value_k1_is_exact_native_v6() -> None:
+def test_v6_layerwise_conditioner_step0_k1_is_exact_native_v6() -> None:
     model, _ = _model()
     frames, indices, _, _, tokens, masks, spans = _inputs()
     inputs = (
@@ -97,9 +97,9 @@ def test_v6_procedure_common_value_k1_is_exact_native_v6() -> None:
     bridged = model(*inputs, policy=torch.nn.Identity())
     assert all(torch.equal(bridged[name], native[name]) for name in native)
 
-    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
+    torch.nn.init.normal_(model.query_delta.weight, std=1.0)
     bridged_after = model(*inputs, policy=torch.nn.Identity())
-    assert all(torch.equal(bridged_after[name], native[name]) for name in native)
+    assert any(not torch.equal(bridged_after[name], native[name]) for name in native)
 
 
 def test_v6_procedure_common_value_is_set_invariant_and_order_sensitive() -> None:
@@ -136,44 +136,56 @@ def test_v6_procedure_common_value_is_set_invariant_and_order_sensitive() -> Non
     assert not torch.allclose(natural.program, reversed_program.program)
 
 
-def test_v6_procedure_common_value_gradient_staging_and_freeze_boundary() -> None:
+def test_v6_layerwise_conditioner_gradient_staging_and_freeze_boundary() -> None:
     model, _ = _model()
     generated, auxiliary = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
     )
     assert auxiliary.item() == 0.0
     _sum(generated).backward()
-    assert model.procedure_set.output.weight.grad is not None
-    assert model.procedure_set.output.weight.grad.abs().sum() > 0
-    assert model.procedure_set.query.weight.grad is not None
-    assert not model.procedure_set.query.weight.grad.count_nonzero()
+    assert model.query_delta.weight.grad is not None
+    assert model.query_delta.weight.grad.abs().sum() > 0
+    assert all(
+        parameter.grad is None or not parameter.grad.count_nonzero()
+        for parameter in model.probe_conditioner.parameters()
+    )
     assert all(parameter.grad is None for parameter in model.base_writer.parameters())
+    assert all(parameter.grad is None for parameter in model.procedure_set.parameters())
+
+    model.zero_grad(set_to_none=True)
+    with torch.no_grad():
+        model.query_delta.weight.normal_(std=0.01)
+    generated, _ = model.forward_training(*_inputs(), policy=torch.nn.Identity())
+    _sum(generated).backward()
+    assert any(
+        parameter.grad is not None and parameter.grad.abs().sum() > 0
+        for parameter in model.probe_conditioner.parameters()
+    )
+    assert any(
+        parameter.grad is not None and parameter.grad.abs().sum() > 0
+        for parameter in model.layer_probe_reader.parameters()
+    )
 
 
 def test_cached_readouts_recompile_exactly_without_video_backbone() -> None:
     model, _ = _model()
-    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
+    torch.nn.init.normal_(model.query_delta.weight, std=0.01)
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
     cached = model.compile_readouts(
         encoded.diagnostics.shared_core_slots,
         encoded.diagnostics.per_video_procedure_slots,
         _inputs()[3],
+        per_video_query_conditioners=(
+            encoded.diagnostics.per_video_query_conditioners
+        ),
+        per_video_query_deltas=encoded.diagnostics.per_video_query_deltas,
     )
     torch.testing.assert_close(cached.program, encoded.program, rtol=0, atol=0)
     _sum(model.decode_program(cached.program)).backward()
-    assert model.procedure_set.output.weight.grad is not None
-    assert model.procedure_set.output.weight.grad.abs().sum() > 0
+    assert model.query_delta.weight.grad is not None
+    assert model.query_delta.weight.grad.abs().sum() > 0
     assert all(parameter.grad is None for parameter in model.base_writer.parameters())
-
-    model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
-    generated, _ = model.forward_training(*_inputs(), policy=torch.nn.Identity())
-    _sum(generated).backward()
-    assert model.procedure_set.query.weight.grad is not None
-    assert model.procedure_set.query.weight.grad.abs().sum() > 0
-    assert model.procedure_set.key.weight.grad is not None
-    assert model.procedure_set.key.weight.grad.abs().sum() > 0
-    assert all(parameter.grad is None for parameter in model.base_writer.parameters())
+    assert all(parameter.grad is None for parameter in model.procedure_set.parameters())
 
 
 def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
@@ -196,7 +208,7 @@ def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
     )
 
 
-def test_procedure_common_value_step0_is_shared_core_zero_graph() -> None:
+def test_layerwise_conditioner_step0_is_as139_graph() -> None:
     model, _ = _model()
     inputs = _inputs()
     actual = model.encode_program(*inputs, policy=torch.nn.Identity()).program
@@ -243,3 +255,20 @@ def test_procedure_common_value_step0_is_shared_core_zero_graph() -> None:
         compiler.routing(len(shared_core)), shared_core, mean_procedure
     )[0]
     assert torch.equal(actual, expected)
+
+
+def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
+    model, _ = _model()
+    frames, indices, offsets, condition_offsets, tokens, masks, spans = _inputs()
+    frames[:] = frames[0]
+    encoded = model.encode_program(
+        frames,
+        indices,
+        offsets,
+        condition_offsets,
+        tokens,
+        masks,
+        spans,
+        policy=torch.nn.Identity(),
+    )
+    assert not encoded.diagnostics.per_video_query_conditioners.count_nonzero()

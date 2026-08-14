@@ -40,10 +40,10 @@ from ember.writer.reward_config import REWARD_LAUNCH_SCHEMA, load_reward_config
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_eval_adapter_v1"
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_episode_v1"
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -52,18 +52,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
 DYNAMIC_K_GENERATION_BATCH_SIZE = 8
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
-    4: {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_"
-            "generation_profile_val8x4_correct_gpu01p2_d316623_"
-            "macro0025_retry1_20260814/writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    }
-}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:
@@ -524,7 +513,7 @@ def inspect_dynamic_k_writer_evaluation(
             (
                 "v6_ordered_procedure_final_shared_support_projection_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
-                else "v6_shared_core_procedure_common_value_bridge_"
+                else "v6_layerwise_probe_conditioned_procedure_"
             )
             + video_condition
         ),

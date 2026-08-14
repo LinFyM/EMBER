@@ -317,6 +317,11 @@ causal delta形成zero-init、layer/rank-aligned Procedure-query conditioner。�
 接口把carrier单独换成真实memory tokens。精确authority见
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。
 
+该方案现已按上述边界完成canonical CPU实现，没有增加第二次backbone forward，也没有把memory token偷偷变成
+目标。吞吐审计进一步把逐288-slot的重型temporal展开收敛为每video一次shared causal controller与轻量
+layer/rank delta汇聚；这是效率实现选择，不改变“真实分层evidence只条件化native Procedure query”这一主要变量。
+CPU identity/order/gradient/freeze合同已通过，closed-loop价值仍未知，必须由后续真实profile与strict400决定。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

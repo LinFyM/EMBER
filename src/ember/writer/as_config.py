@@ -1,4 +1,4 @@
-"""Configuration authority for shared-Core Procedure common-Value."""
+"""Configuration authority for V6 layerwise probe conditioning."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_as_writer_v1"
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_as_writer_launch_v1"
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_launch_v1"
 )
 
 
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_v6_shared_core_procedure_common_value_bridge_v1",
+        "architecture": "pi05_v6_layerwise_probe_conditioned_procedure_v1",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -105,14 +105,28 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "procedure_set_output": (
             "shared_bias_free_zero_initialized_256_to_256_shared_correction"
         ),
-        "k1_contract": (
-            "explicit_exact_native_v6_bypass_for_all_procedure_common_value_"
-            "parameters"
+        "layer_probe_source": (
+            "same_joint_forward_18_action_expert_layer_outputs_50_native_probes"
         ),
+        "layer_probe_reader": (
+            "shared_rank16_queries_cross_attention_over_native_probe_axis"
+        ),
+        "layer_probe_heads": 8,
+        "conditioner_temporal_value": (
+            "adjacent_frame_delta_shared_video_causal_rope_context_"
+            "layer_rank_pool"
+        ),
+        "conditioner_heads": 8,
+        "conditioner_blocks": 1,
+        "procedure_query_injection": (
+            "bias_free_zero_initialized_256_to_256_added_only_to_native_query"
+        ),
+        "step0_contract": "exact_as139_k1_to_k4_program_and_rank16_lora",
         "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
-        "v6_fast_warm_start_checkpoint": (
-            "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_"
-            "seed7_s2400_4efa737_20260729/checkpoints/step_00000400"
+        "as139_warm_start_checkpoint": (
+            "runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_"
+            "formal_fresh0to25_r5_b20_d316623_gpu01_20260814/checkpoints/"
+            "macro_00000025/writer.safetensors"
         ),
         "image_width": 2048,
         "expert_width": 1024,
@@ -203,8 +217,12 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             or int(evidence.get("completion_macro", 0)) != 2
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
-            or float(evidence.get("macro1_to_macro2_query_delta_norm", 0)) <= 0
-            or float(evidence.get("macro1_to_macro2_key_delta_norm", 0)) <= 0
+            or float(
+                evidence.get("macro1_to_macro2_query_delta_weight_delta_norm", 0)
+            )
+            <= 0
+            or float(evidence.get("macro2_layer_probe_reader_gradient_norm", 0))
+            <= 0
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
         ):

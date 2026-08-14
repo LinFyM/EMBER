@@ -67,6 +67,9 @@ _WRITER_THROUGHPUT_BY_SCHEMA = {
     "ember_pi05_v6_shared_core_procedure_common_value_bridge_eval_adapter_v1": (
         _BATCH_THROUGHPUT_POLICY
     ),
+    "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1": (
+        _BATCH_THROUGHPUT_POLICY
+    ),
 }
 
 

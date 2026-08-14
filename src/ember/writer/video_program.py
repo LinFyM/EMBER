@@ -88,6 +88,129 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
+class _LayerProbeCapture:
+    """Collect compact per-layer readouts across frame microbatches."""
+
+    def __init__(self, layers: int) -> None:
+        self.rows: list[list[torch.Tensor]] = [[] for _ in range(layers)]
+
+    def append(self, layer: int, value: torch.Tensor) -> None:
+        self.rows[layer].append(value)
+
+    def result(self, expected_frames: int) -> torch.Tensor:
+        if expected_frames <= 0 or any(not rows for rows in self.rows):
+            raise VideoProgramError("layerwise Action-probe capture is incomplete")
+        layers = [torch.cat(rows, dim=0) for rows in self.rows]
+        if any(value.shape[0] != expected_frames for value in layers):
+            raise VideoProgramError("layerwise Action-probe frame count changed")
+        return torch.stack(layers, dim=1)
+
+
+class LayerwiseActionProbeReader(torch.nn.Module):
+    """Read every native Action-Expert layer with shared LoRA-rank queries."""
+
+    LAYERS = 18
+    ACTION_HORIZON = 50
+    EXPERT_WIDTH = 1024
+    PUBLIC_RANK = 16
+    PROGRAM_WIDTH = 256
+
+    def __init__(self, *, heads: int = 8, initialization_seed: int = 7) -> None:
+        super().__init__()
+        if heads <= 0 or self.PROGRAM_WIDTH % heads:
+            raise VideoProgramError("invalid layerwise Action-probe reader")
+        self.heads = int(heads)
+        self.head_width = self.PROGRAM_WIDTH // self.heads
+        self.probe_norm = RMSNorm(self.EXPERT_WIDTH)
+        self.query_norm = RMSNorm(self.PROGRAM_WIDTH)
+        self.query = torch.nn.Linear(self.PROGRAM_WIDTH, self.PROGRAM_WIDTH, bias=False)
+        self.key = torch.nn.Linear(self.EXPERT_WIDTH, self.PROGRAM_WIDTH, bias=False)
+        self.value = torch.nn.Linear(self.EXPERT_WIDTH, self.PROGRAM_WIDTH, bias=False)
+        self.output = torch.nn.Linear(self.PROGRAM_WIDTH, self.PROGRAM_WIDTH, bias=False)
+        generator = torch.Generator(device="cpu").manual_seed(
+            int(initialization_seed) + 0x4C50
+        )
+        rank_identity = torch.empty(self.PUBLIC_RANK, self.PROGRAM_WIDTH)
+        layer_identity = torch.empty(self.LAYERS, self.PROGRAM_WIDTH)
+        rank_identity.normal_(mean=0.0, std=0.02, generator=generator)
+        layer_identity.normal_(mean=0.0, std=0.02, generator=generator)
+        self.rank_identity = torch.nn.Parameter(rank_identity)
+        self.layer_identity = torch.nn.Parameter(layer_identity)
+
+    def _read_layer(self, hidden: torch.Tensor, layer: int) -> torch.Tensor:
+        if (
+            hidden.ndim != 3
+            or hidden.shape[1:] != (self.ACTION_HORIZON, self.EXPERT_WIDTH)
+            or layer not in range(self.LAYERS)
+        ):
+            raise VideoProgramError("native Action-probe hidden layout changed")
+        dtype = self.key.weight.dtype
+        probe = self.probe_norm(hidden.to(dtype))
+        query_input = self.rank_identity + self.layer_identity[layer]
+        query = self.query(self.query_norm(query_input))[None].expand(
+            hidden.shape[0], -1, -1
+        )
+        key = self.key(probe)
+        value = self.value(probe)
+        query = query.reshape(
+            hidden.shape[0], self.PUBLIC_RANK, self.heads, self.head_width
+        ).transpose(1, 2)
+        key = key.reshape(
+            hidden.shape[0], self.ACTION_HORIZON, self.heads, self.head_width
+        ).transpose(1, 2)
+        value = value.reshape(
+            hidden.shape[0], self.ACTION_HORIZON, self.heads, self.head_width
+        ).transpose(1, 2)
+        attended = F.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        return self.output(
+            attended.transpose(1, 2).reshape(
+                hidden.shape[0], self.PUBLIC_RANK, self.PROGRAM_WIDTH
+            )
+        )
+
+    @contextmanager
+    def capture(self, expert_model: torch.nn.Module) -> Iterator[_LayerProbeCapture]:
+        """Tap one existing joint forward without changing its token sequence."""
+
+        layers = getattr(expert_model, "layers", ())
+        final_norm = getattr(expert_model, "norm", None)
+        if len(layers) != self.LAYERS or final_norm is None:
+            raise VideoProgramError("Action Expert topology changed")
+        capture = _LayerProbeCapture(self.LAYERS)
+        handles = []
+
+        def install(target: torch.nn.Module, layer: int) -> None:
+            def hook(
+                _module: torch.nn.Module,
+                inputs: tuple[torch.Tensor, ...],
+                *,
+                layer_index: int = layer,
+            ) -> None:
+                if not inputs:
+                    raise VideoProgramError("Action-probe tap received no hidden state")
+                hidden = inputs[0].detach()
+                context = torch.enable_grad() if self.training else torch.no_grad()
+                with context:
+                    capture.append(layer_index, self._read_layer(hidden, layer_index))
+
+            handles.append(target.register_forward_pre_hook(hook))
+
+        for layer in range(self.LAYERS - 1):
+            install(layers[layer + 1].input_layernorm, layer)
+        install(final_norm, self.LAYERS - 1)
+        try:
+            yield capture
+        finally:
+            for handle in handles:
+                handle.remove()
+
+
 class TaskQueriedPatchGrounding(torch.nn.Module):
     """Read per-frame image-position content with task-token queries."""
 

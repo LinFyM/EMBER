@@ -7,6 +7,8 @@ from dataclasses import dataclass
 import torch
 
 from ember.writer.model import CompleteLoRAWriter
+from ember.writer.slot_set import PolicyProcedureCommonValueFusion
+from ember.writer.video_program import LayerwiseActionProbeReader
 
 
 def _template() -> dict[str, torch.Tensor]:
@@ -78,11 +80,15 @@ class _FakeCompiler(torch.nn.Module):
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
+        query_condition: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         weights = (positions + 1).to(procedure.dtype) * valid_procedure
         summary = (procedure * weights[..., None]).sum(1)
         summary = summary / weights.sum(1, keepdim=True).clamp_min(1)
-        return routing + normalized_core + summary[:, None], procedure
+        query = routing + normalized_core
+        if query_condition is not None:
+            query = query + query_condition
+        return query + summary[:, None], procedure
 
     @staticmethod
     def fuse_readouts(
@@ -94,13 +100,36 @@ class _FakeCompiler(torch.nn.Module):
         return normalized_core + procedure_slots, zeros, zeros
 
 
+class _FakeExpertLayer(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.input_layernorm = torch.nn.Identity()
+
+
+class _FakeExpertModel(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.layers = torch.nn.ModuleList(_FakeExpertLayer() for _ in range(18))
+        self.norm = torch.nn.Identity()
+
+    def emit(self, hidden: torch.Tensor) -> None:
+        for layer in range(1, 18):
+            self.layers[layer].input_layernorm(hidden + layer * 1e-3)
+        self.norm(hidden + 18e-3)
+
+
 class _FakeV6Base(torch.nn.Module):
     program_width = 256
     PUBLIC_LORA_RANK = 16
 
-    def __init__(self, template: dict[str, torch.Tensor]) -> None:
+    def __init__(
+        self,
+        template: dict[str, torch.Tensor],
+        expert_model: _FakeExpertModel,
+    ) -> None:
         super().__init__()
         self._template = template
+        self.expert_model = expert_model
         self.factor = torch.nn.Linear(256, 1, bias=False)
         torch.nn.init.normal_(self.factor.weight, std=0.01)
         self.compiler = _FakeCompiler()
@@ -117,6 +146,10 @@ class _FakeV6Base(torch.nn.Module):
         _language_mask: torch.Tensor,
         _task_span_mask: torch.Tensor,
     ) -> _Evidence:
+        signal = frames.float().mean(dim=(1, 2, 3))[:, None, None]
+        horizon = torch.arange(50, dtype=torch.float32)[None, :, None] * 1e-3
+        width = torch.arange(1024, dtype=torch.float32)[None, None, :] * 1e-5
+        self.expert_model.emit(signal + horizon + width)
         return _Evidence(
             frames=frames,
             offsets=tuple(int(value) for value in video_offsets.tolist()),
@@ -178,7 +211,18 @@ class _FakeV6Base(torch.nn.Module):
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
-    return CompleteLoRAWriter(_FakeV6Base(template)), template
+    expert_model = _FakeExpertModel()
+    return (
+        CompleteLoRAWriter(
+            _FakeV6Base(template, expert_model),
+            PolicyProcedureCommonValueFusion(width=256),
+            LayerwiseActionProbeReader(heads=8, initialization_seed=7),
+            expert_model=expert_model,
+            conditioner_heads=8,
+            conditioner_blocks=1,
+        ),
+        template,
+    )
 
 
 def _inputs() -> tuple[torch.Tensor, ...]:

@@ -106,9 +106,9 @@ def build_writer(
         policy=policy,
         template_state=template,
         writer_config=config["writer"],
-        warm_start_checkpoint=(
+        as139_warm_start_checkpoint=(
             asset_root
-            / str(config["writer"]["v6_fast_warm_start_checkpoint"])
+            / str(config["writer"]["as139_warm_start_checkpoint"])
         ).resolve(),
     )
     if not callable(getattr(writer, "forward_training", None)):
@@ -411,7 +411,10 @@ def run_macros(runtime: WriterRuntime) -> None:
         write_json_atomic(
             runtime.args.output_dir / "completion.json",
             {
-                "schema_version": "ember_pi05_dynamic_k_writer_completion_v1",
+                "schema_version": (
+                    "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
+                    "completion_v1"
+                ),
                 "completed_macro": runtime.args.stop_after_macro,
                 "elapsed_seconds": time.monotonic() - started,
             },
@@ -457,7 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=REPO_ROOT
         / (
-            "configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json"
+            "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
         ),
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

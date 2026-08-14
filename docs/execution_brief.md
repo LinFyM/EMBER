@@ -24,6 +24,12 @@ Procedure Reader。它不原样恢复低分memory架构，而是冻结AS139完�
 conditioner；rank16、factor heads、B20与dynamic-K recipe均不变。literal memory token只在native probe carrier
 被机制证据否决后，作为同一下游接口的下一单变量。
 
+canonical实现与fresh schema/config现已完成，CPU机制测试和全量CPU suite=`402 passed`。实现没有增加backbone forward；
+18层tap在现有joint forward中旁读，step0退化为AS139，首步只训练zero-init query projection、第二步梯度进入
+probe reader与causal controller，base/K-set始终冻结。吞吐审计否决了“288个slot各跑一条重型时序网络”，当前
+每video只跑一次共享causal controller，再按有向context汇聚各layer/rank delta。当前仍没有GPU run；下一动作是
+clean pushed commit上的真实机制smoke与full24 B20 profile。
+
 ## 2. Completed changed variable and training semantics
 
 - v6 evidence、shared Core、有向Procedure、Common-Value operator、native compiler与rank16全部沿用macro25；

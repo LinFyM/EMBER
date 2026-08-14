@@ -204,7 +204,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   evidence尚未与对应policy layer/rank直接对齐；
 - [x] 写单变量authority：冻结AS139全部强路径与rank16，从同一次joint forward旁读layer probes，经rank-query、
   video内causal delta形成zero-init Procedure-query conditioner；literal memory只作有证据触发的后继carrier；
-- [ ] 原位实现唯一canonical Writer、fresh schema/config与最小机制测试；
+- [x] 原位实现唯一canonical Writer、fresh schema/config与最小机制测试；同一次forward tap、step0 AS139、
+  K-set换位不变、video倒序敏感、constant-frame zero、两步梯度展开及base/K-set冻结均通过；全量CPU=`402 passed`；
+- [x] 吞吐前审计并移除逐288-slot重型temporal展开：改为每video一次shared causal controller，再轻量汇聚
+  layer/rank deltas；科学变量与injection接口不变；
 - [ ] 完成真实one-forward identity/order/gradient smoke和full24 longest-video吞吐profile；
 - [ ] 从clean pushed commit训练到macro25并立即做K4 strict paired400；
 - [ ] 按absolute/breadth/paired retention和最早接口裁决是否续到50、触发literal memory反事实或转向其它接口。
@@ -233,7 +236,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前active successor为
-V6 Layerwise Action-Probe Conditioned Procedure Reader，尚未实现且没有GPU进程。memory token保留为native
-probe carrier被机制证据否决后才触发的同接口后继，不是强制变量；生成LoRA后的task-local RL仍是初始Writer
-达成强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前V6 Layerwise
+Action-Probe Conditioned Procedure Reader已完成canonical CPU实现但尚无GPU进程，下一步是真实one-forward
+identity/order/gradient smoke与full24 B20 profile。memory token保留为native probe carrier被机制证据否决后才
+触发的同接口后继，不是强制变量；生成LoRA后的task-local RL仍是初始Writer达成强zero-interaction起点之后的
+独立实验。

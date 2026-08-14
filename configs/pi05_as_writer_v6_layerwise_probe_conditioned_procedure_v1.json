@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_pi05_v6_shared_core_procedure_common_value_bridge_as_writer_v1",
-  "status": "active_formal_ready",
+  "schema_version": "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1",
+  "status": "active_profile_pending",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -10,14 +10,14 @@
     "tokenizer_manifest": {"path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json"}
   },
   "method": {
-    "name": "v6_shared_core_procedure_common_value_bridge",
+    "name": "v6_layerwise_probe_conditioned_procedure",
     "writer_input": "exact task language plus one to four action-hidden same-task teacher videos",
     "deployment_output": "one complete 38-target rank16 task-conditioned LoRA",
     "source_policy": "frozen_pi05_libero_source_policy",
-    "development_initialization": "frozen_historical_v6_fast_macro400"
+    "development_initialization": "frozen_as139_macro25_writer_weights"
   },
   "information_wall": {
-    "writer_dynamic_values": "ordered RGB teacher videos through native v6 Core and Procedure",
+    "writer_dynamic_values": "ordered RGB teacher videos through native v6 Core and Procedure plus same-forward layerwise Action-probe deltas",
     "language_role": "native_v6_task_query_and_semantic_core_without_language_only_lora_bypass",
     "writer_forbidden_inputs": [
       "action", "proprio", "state", "reward", "terminal", "task_id",
@@ -30,7 +30,7 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_v6_shared_core_procedure_common_value_bridge_v1",
+    "architecture": "pi05_v6_layerwise_probe_conditioned_procedure_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -47,9 +47,16 @@
     "procedure_set_qk": "shared_bias_free_pre_rms_256_to_256",
     "procedure_set_value": "raw_attention_pooled_per_video_ordered_procedure_slot_no_value_projection",
     "procedure_set_output": "shared_bias_free_zero_initialized_256_to_256_shared_correction",
-    "k1_contract": "explicit_exact_native_v6_bypass_for_all_procedure_common_value_parameters",
+    "layer_probe_source": "same_joint_forward_18_action_expert_layer_outputs_50_native_probes",
+    "layer_probe_reader": "shared_rank16_queries_cross_attention_over_native_probe_axis",
+    "layer_probe_heads": 8,
+    "conditioner_temporal_value": "adjacent_frame_delta_shared_video_causal_rope_context_layer_rank_pool",
+    "conditioner_heads": 8,
+    "conditioner_blocks": 1,
+    "procedure_query_injection": "bias_free_zero_initialized_256_to_256_added_only_to_native_query",
+    "step0_contract": "exact_as139_k1_to_k4_program_and_rank16_lora",
     "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
-    "v6_fast_warm_start_checkpoint": "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400",
+    "as139_warm_start_checkpoint": "runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_formal_fresh0to25_r5_b20_d316623_gpu01_20260814/checkpoints/macro_00000025/writer.safetensors",
     "image_width": 2048,
     "expert_width": 1024,
     "text_meta_lora_rank": 4,
@@ -85,7 +92,7 @@
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "v6_shared_core_procedure_common_value_correct_video_functional_as",
+    "method": "v6_layerwise_probe_conditioned_procedure_correct_video_functional_as",
     "update_topology": "one_complete_full24_equal_task_mean_per_macro",
     "global_tasks_per_optimizer_update": 24,
     "task_assignment": "cost_balanced_long_first_dynamic_uneven",
@@ -140,33 +147,11 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "sealed",
-    "profile_evidence": {
-      "source_commit": "50a3c36d46ce82e0b17cbf2d5cee78a50fbae691",
-      "run_root": "runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_profile_r6_b20_50a3c36_gpu01_20260814",
-      "host": "gpu01",
-      "physical_devices": [0, 1, 2, 4, 5, 6],
-      "world_size": 6,
-      "completion_macro": 2,
-      "macro_seconds": 22.542723921942525,
-      "macro1_seconds": 26.111624537035823,
-      "max_cuda_allocated_bytes": 36495013888,
-      "max_cuda_reserved_bytes": 40758149120,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "global_mean_functional_loss": 0.09571959171444178,
-      "global_mean_consistency_loss": 0.0,
-      "gradient_norm_before_clip": 0.00036633937270380557,
-      "macro1_to_macro2_query_delta_norm": 0.00011577873374335468,
-      "macro1_to_macro2_key_delta_norm": 0.00011831402662210166,
-      "longest_condition_total_sampled_frames": 323,
-      "all_sampled_frames_equal_available": true,
-      "oom_count": 0,
-      "nonfinite_count": 0
-    },
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
-    "total_macros": 400,
+    "total_macros": 50,
     "per_task_action_batch_size": 20,
-    "checkpoint_macros": "every:25",
+    "checkpoint_macros": [25, 50],
     "stage_stop_macros": [25, 50],
     "first_strict_paired400_macro": 25
   }

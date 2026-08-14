@@ -48,7 +48,11 @@ Core、有向Procedure、K-set、native compiler、factor heads与rank16，只�
 joint forward旁读18层probe states，形成layer/rank-aligned causal query conditioner；zero-init时K1--K4严格恢复
 AS139。首轮不追加memory tokens；只有native probes在carrier层缺少必要分层证据时，下一轮才在相同下游接口单独
 替换为真实memory tokens。authority=
-`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`；尚未实现或启动GPU。
+`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。canonical实现、fresh schema/config与
+CPU机制合同已完成：同一次forward旁读、step0 AS139 identity、K-set不变性、顺序敏感、两步梯度展开及冻结边界
+通过；全量CPU=`402 passed`。为避免288条重型时序序列，conditioner使用每video一次shared causal controller再
+轻量汇聚layer/rank deltas。
+当前尚未启动GPU，下一步是真实one-forward smoke与full24 B20吞吐profile。
 
 ## 4. Long-term objective and decision rule
 

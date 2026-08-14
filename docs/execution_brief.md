@@ -3,28 +3,25 @@
 更新时间：2026-08-14。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Latest completed experiment and active successor
+## 1. Latest completed experiment and next decision boundary
 
-V6 Ordered-Procedure On-Policy Preference已完成一次fresh reward cycle和K4 strict paired correct400：`138/400`、
-breadth7、per-task=`2/5/46/33/0/36/15/1`、per-suite=`7/79/36/16`。相对同schedule AS139严格配对=
-`120 retained / 18 gained / 19 lost`、churn37；Spatial净`+4`，Object净`+1`，Goal净0，Long净`-6`，其中
-Long1=`3 gained / 10 lost`。按`<144`、lost`>10`且gained不超过lost三项门终局，不运行cycle2、不补controls、
-不扫参。
+V6 Actual-Delta Success-Support Projection已完成fresh full24与K4 strict paired correct400：`138/400`、breadth7、
+per-task=`3/2/45/30/0/36/21/1`、per-suite=`5/75/36/22`。相对同schedule AS139严格配对=
+`116 retained / 22 gained / 23 lost`、churn45；相对raw reward138=`117/21/21`、churn42。按absolute`<144`、
+lost`>10`且gained不超过lost三项门终局，不运行cycle2、不补controls、不调约束/scale/LR/rank。
 
-这不是reward无效或写出断路：cycle1的24 tasks/96 rollouts得到64 successes、14 mixed tasks和四suite完整credit，
-q/k/output均更新，5个deployment probes的BA/action响应非零；AS→reward effective-BA mean relative-L2仅
-`.003323`、cosine`.999995`、norm ratio`1.000762`，却翻转37条闭环结果。最早失效接口是同一个shared Adam
-candidate合并异质task方向后没有保住已有support，而不是幅度、rank、LoRA健康度、Procedure或compiler。
+这不是projection没运行：clean `ad2e1be` formal的22条support constraints中raw违反6条，投影激活6项并得到0
+final violation；preference descent与delta energy分别保留`.963787/.980958`，BA/action响应非零，wall=
+`1033.501s`、0 forbidden read/OOM/nonfinite。strict使用5卡15 persistent workers完成400 rows，wall=
+`1306.681s`、exit0。
 
-active successor为`action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只改变
-最终shared update：保留同一K4视频输入、rank16 V6 Writer、19.7万FP32参数、LOO reward proposal和完整部署图；
-对task汇合后的actual parameter delta施加train24成功executed-prefix loss的一阶非增约束。它不是继续cycle2，
-也不是恢复旧Program bank/guard路线。实现、fresh schema、完整CPU=`401 passed`与task4真实mixed smoke已经完成；
-smoke保持raw BA/action response逐位一致，support路径非零，cycle wall仅为raw的`1.077x`且peak reserved=
-`36.774GB`。首次formal暴露并已修复旧replay builder的all-success summary-only边界；失败发生在任何
-metric/checkpoint前，不resume。config保持sealed，下一步从修复后的clean pushed commit与新root fresh full24。
+projection把raw的Long1从15恢复到21，却由Spatial/Object净`-2/-4`支付；AS→ADSP effective-BA relative-L2=
+`.002976`，比AS→raw的`.003323`更小，但held churn反而从37升到45。最早失效接口因此不再是“raw shared update
+没有任何support约束”，而是**train24成功prefix的一阶局部support不能代表held闭环support，且更近的LoRA几何
+不能保证能力共存**。当前没有active successor或GPU run；下一轮先讨论架构级接口。memory token可作为
+layer-aligned LoRA生成候选，但不是强制形式，也不能原样恢复历史低分memory架构。
 
-## 2. Active single changed variable and training semantics
+## 2. Completed changed variable and training semantics
 
 - v6 evidence、shared Core、有向Procedure、Common-Value operator、native compiler与rank16全部沿用macro25；
 - 只训练Procedure q/k/output；source policy与v6底座trainable参数为0；
@@ -34,13 +31,13 @@ metric/checkpoint前，不resume。config保持sealed，下一步从修复后的
 - 每个至少一条成功rollout的train task额外形成一个task-equal success-support tangent；只有最终actual parameter
   delta被投影到全部support half-spaces，video/representation/compiler/optimizer proposal均不变；
 - dynamic work queue只改变physical owner，task/video/env/policy/flow seeds不含rank；
-- fresh constrained cycle通过机制门后立即strict paired400，reward objective和train80不选择checkpoint。
+- fresh constrained cycle通过机制门后已立即完成strict paired400，reward objective和train80未选择checkpoint。
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139与raw reward138均已终局且不得resume。新的support-constrained cycle仍只认同schedule K4
-strict paired400：`<144`、breadth<7、相对139 lost>10或gained不超过lost即终局；首次达到`144..150`且
-retention/三suite趋势过门，才讨论同合同续训；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
+Ordered-Procedure AS139、raw reward138与ADSP138均已终局且不得resume。ADSP已触发`<144`、相对139 lost>10、
+gained不超过lost三项终局门；不得用cycle2或小扫救回。下一successor必须先以新的design authority说明其修改的
+架构级最早接口；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

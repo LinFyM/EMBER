@@ -9,33 +9,33 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Ordered-Procedure On-Policy Preference cycle1 K4 strict=`138/400`、breadth7，
-  per-task=`2/5/46/33/0/36/15/1`、per-suite=`7/79/36/16`、top3=`115/138=.83333`；按预注册门终局
-  non-pass，不运行cycle2、不补controls、不扫LR/scale/rank；
-- 相对同schedule Ordered-Procedure AS139严格配对=`120 retained / 18 gained / 19 lost`、net`-1`、churn37、
-  p=1；suite net=`+4/+1/0/-6`。Spatial两task均净增，但Long1=`3 gained / 10 lost`、净`-7`，说明reward
-  acquisition真实有效却没有让不同task support在最终shared update中共存；
-- count-only相对v6-fast143/old134/compiler138/online128分别=`-5/+4/0/+10`；Goal3仍为0，Long2从matched0到1；
-- first4同video/state几何显示AS139→reward138只是局部移动：effective-BA all relative-L2 mean/median=
-  `.003323/.003417`、cosine mean=`.99999505`、norm ratio mean=`1.000762`；action BA relative-L2=`.004293`。
-  Long1 task-mean移动最大=`.004255`且净丢7，因此失败不是更新能量过大、LoRA失活或需要再降scale；
-- reward cycle1共24 tasks/96 rollouts/64 successes，14 mixed tasks覆盖四suite；只有mixed tasks产生preference
-  gradient，9个all-success与1个all-failure task为exact zero。最终Writer gradient=`9.0937e-5`，q/k/output
-  均产生FP32更新，5个deployment probes的BA/action响应均非零；最早失效接口是task汇合后的shared update
-  support preservation，而不是video readout、Procedure、compiler或native precision；
-- 当前raw reward design已终局；active successor为V6 Ordered-Procedure Final Shared Support Projection：保留
-  同一K4/rank16/V6 Writer与同一reward proposal，只在task汇合后的actual Writer parameter delta上加入train24
-  成功executed-prefix一阶support约束。authority=
-  `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`；
-- ADSP canonical实现与fresh schema已完成，完整CPU=`401 passed`、compileall/diff check和架构hard gate通过；task4
-  真实mixed smoke在gpu02物理1完整exit0，同raw均为`1/4` success、157 chunks、80次policy forward，preference
-  gradient与BA/action response逐位一致；support gradient RMS=`5.00225e-5`、16次额外backward。raw candidate已满足
-  该task的1条constraint，identity fallback、final violation=0、descent/energy ratio均1；cycle=`157.599s`为raw
-  `1.077x`，peak reserved=`36.774GB`。config已seal，下一步是clean pushed commit上的fresh full24 cycle；
+- 最新完成closed-loop：V6 Actual-Delta Success-Support Projection cycle1 K4 strict=`138/400`、breadth7，
+  per-task=`3/2/45/30/0/36/21/1`、per-suite=`5/75/36/22`、top3=`111/138=.80435`；按预注册门终局
+  non-pass，不运行cycle2、不补controls、不扫LR/scale/rank/constraint；
+- 相对同schedule Ordered-Procedure AS139严格配对=`116 retained / 22 gained / 23 lost / 239 both-fail`、net`-1`、
+  churn45、p=1；suite net=`+2/-3/0/0`。Long1=`9 gained / 10 lost`仍净`-1`，Goal3仍为0；lost>10且gained
+  不超过lost，support preservation门明确失败；
+- 相对raw reward138严格配对=`117 retained / 21 gained / 21 lost / 241 both-fail`、churn42；ADSP把Long1从15
+  恢复到21、Long净`+6`，却由Spatial/Object净`-2/-4`支付。它改变了能力分配但没有共同积累；
+- count-only相对v6-fast143/old134/compiler138/online128分别=`-5/+4/0/+10`；breadth7，没有超过任何143级
+  absolute边界；
+- ADSP formal在clean pushed `ad2e1be`、gpu02物理`1/2/3/4` world4完整exit0：24 tasks/96 rollouts/
+  63 successes、13 mixed、9 all-success、2 all-failure，wall=`1033.501s`。22条support constraints中raw违反6条，
+  投影激活6项并把final violation降为0；preference descent/energy保留=`.963787/.980958`，raw/projected cosine=
+  `.990433`，BA/action响应非零，0 OOM/nonfinite/watchdog/forbidden read；
+- strict评测同commit、gpu02物理`1/2/3/4/6`、15 persistent workers完成400/400 LoRAs、60/60 jobs、400 rows，
+  wall=`1306.681s`、exit0；物理6安全共驻4.6GB低util进程，峰值总占约43.5GB；root=
+  `runs/outputs/pi05_v6_actual_delta_success_support_projection_cycle1_k4_correct400_noreplacement_seed7_trainr4_evalr5_ad2e1be_gpu02_20260814`；
+  同root封存`actual_delta_support_projection_strict_adjudication.json`与first4 geometry；
+- first4同video/state几何显示AS139→ADSP effective-BA all relative-L2 mean=`.002976`，比AS→raw的`.003323`
+  更近；raw138→ADSP仅`.001272`、cosine=`.99999919`，却翻转42条episode。更接近AS的LoRA并未减少held
+  churn，train24局部success tangent与held closed-loop support不等价；
+- ADSP已终局，当前没有active successor或GPU进程。下一轮停止V6 constraint小修，先讨论架构级接口；memory
+  token保留为可能改善layer-aligned LoRA生成的候选机制，不是强制形式，也不能原样恢复历史91--102分memory路线；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成
-  回归后full CPU=`401 passed`。失败root只作工程证据、不resume；新commit后fresh重跑；
+  回归后full CPU=`401 passed`。失败root只作工程证据、不resume；随后`ad2e1be` fresh formal与strict结果见上；
 - reward graph-release实现commit=`fa53ce43c92915229ca4c49fe47d2aa6f16bef0c`已push；独立config=
   `configs/pi05_writer_v6_ordered_procedure_on_policy_preference_v1.json`，reward checkpoint/evaluator明确使用cycle schema，
   不冒充AS exact-resume；正确LIBERO assets下full CPU=`395 passed`；

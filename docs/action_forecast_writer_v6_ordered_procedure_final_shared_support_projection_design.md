@@ -1,7 +1,12 @@
 # V6 Ordered-Procedure Actual-Delta Success-Support Projection
 
-状态：2026-08-14 sealed active design authority；简称ADSP。实现、完整CPU门和真实GPU smoke均已通过；下一步
-从同一个AS macro25 checkpoint fresh启动formal，不resume已经终局的raw reward cycle1。
+状态：2026-08-14 terminal scientific non-pass；简称ADSP。实现、完整CPU门、真实GPU smoke、fresh full24
+formal与single-checkpoint K4 strict400均已封存；不得cycle2、调约束、扫参或补因果controls。
+
+最终strict=`138/400`、breadth7、per-task=`3/2/45/30/0/36/21/1`、per-suite=`5/75/36/22`。相对同
+schedule AS139严格配对=`116 retained / 22 gained / 23 lost / 239 both-fail`、churn45；相对raw reward138=
+`117/21/21/241`、churn42。投影真实active且满足全部内部门，却没有提高absolute或保住held support，因此本轮
+否决“train24成功executed-prefix的一阶非增半空间足以解决held shared-update换手”，不否决V6或memory token。
 
 ## 1. Decision
 
@@ -168,8 +173,7 @@ preference梯度与effective-BA/action response逐位一致；新增support LoRA
 backward。该task的raw proposal已可行，故1条constraint严格identity fallback，final violation=0、descent/energy
 ratio均为1。cycle=`157.599s`，相对raw `146.383s`为`1.077x`；peak reserved=`36.774GB`，0 OOM/nonfinite。
 
-smoke证据已seal进config。formal从同一个AS139 macro25 Writer weights和fresh optimizer启动一个full24 cycle，
-并必须满足：
+smoke证据已seal进config。formal从同一个AS139 macro25 Writer weights和fresh optimizer启动一个full24 cycle。
 formal必须满足：
 
 - 24 tasks、96 rollouts、四suite完整，preference/support task rows与outcomes一致；
@@ -186,6 +190,17 @@ all-success task因此缺少action batch。修复只把summary-only条件收窄�
 replay，mixed与all-failure语义均不变。新增replay-builder集成回归后full CPU=`401 passed`。失败root没有
 scientific result，不resume；修复后从新clean commit与fresh root重跑完整full24。
 
+修复后formal使用clean pushed `ad2e1be`、gpu02物理`1/2/3/4`、world4完整exit0：24 tasks、96 rollouts、
+63 successes、13 mixed、9 all-success、2 all-failure，wall=`1033.501s`。22条support constraints秩22；raw
+delta违反6条，small dual激活6项，最终0 violation。projected preference descent ratio=`.9637875`、
+projected/raw energy ratio=`.9809582`、raw/projected cosine=`.9904333`，BA/action probes全非零，peak
+reserved=`40.767GB`，0 OOM/nonfinite/watchdog/forbidden read。相对raw formal唯一outcome差异是Long task38
+从`1/4`变`0/4`，来自允许的world4/world5 BF16并行低位差异，不作为方法收益或损失。
+
+cycle1 strict使用同commit与同一checkpoint，在gpu02物理`1/2/3/4/6`、15 persistent workers完成400/400
+LoRAs、60/60 jobs与400 rows，exit0、wall=`1306.681s`。物理6在launch时已有4.6GB、0% util，峰值总占用
+约43.5GB且无干扰/OOM；这是owner允许的安全低util共驻。
+
 未过机制门不做strict评测。通过后立即运行同schedule K4 strict paired correct400。
 
 ## 11. Closed-loop adjudication
@@ -200,3 +215,10 @@ scientific result，不resume；修复后从新clean commit与fresh root重跑�
 若ADSP projection active、内部约束全过而closed-loop仍失败，说明train24成功prefix的一阶support不能代表held
 support，或当前19.7万Procedure-set参数没有共同改善空间。届时停止V6 constraint小修，下一轮转向V6强
 Core/Procedure/factor compiler与layer-aligned memory结合的架构级接口。
+
+正式结果正落在该失败分支。相对AS139的suite净变化为Spatial`+2`、Object`-3`、Goal`0`、Long`0`；Long1
+仍为`9 gained / 10 lost`，Goal3仍为0。相对raw138，ADSP把Long1从15恢复到21、Long suite净`+6`，但同时
+Spatial/Object净`-2/-4`，只是重新分配能力。first4 effective-BA中，AS→ADSP all relative-L2 mean=
+`.002976`，小于AS→raw的`.003323`；raw→ADSP仅`.001272`、cosine=`.99999919`，仍翻转42条episode。
+因此更接近AS的LoRA几何并没有减少held churn；局部train occupancy约束、LoRA距离和closed-loop support再次
+明确错位。本轮终局后没有active GPU successor，下一架构须先讨论并写新的架构级authority。

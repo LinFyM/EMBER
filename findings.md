@@ -296,6 +296,19 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     all-failure都只返回summary，因为旧reward会跳过所有homogeneous；新方法却需要all-success产生support-only
     tangent。最窄修复是只让all-failure保持summary-only，all-success完整collate replay。该错误解释task4 mixed
     smoke为何通过，也证明失败不是world6/GPU/NCCL或scientific non-pass；新增data-boundary回归后full CPU=`401 passed`。
+28. 修复后的ADSP full24证明actual-delta support projection在真实规模并非identity：22条成功task rows秩22，raw
+    AdamW delta违反6条；small dual激活6项后final violation=0，同时保留`.963787` preference descent与`.980958`
+    delta energy，raw/projected cosine=`.990433`，BA/action响应非零。它以`1033.501s`、raw的`1.5333x`完成，说明
+    该机制在数值、吞吐和部署链上都成立，后续闭环失败不能归因于“约束未生效”或“更新被机械归零”。
+29. ADSP strict仍为`138/400`、breadth7、per-task=`3/2/45/30/0/36/21/1`；相对AS139严格=
+    `116 retained / 22 gained / 23 lost`、churn45，三项终局门失败。相对raw138=`117/21/21`：Long1从15恢复
+    到21、Long净`+6`，但Spatial/Object净`-2/-4`。因此support projection只把能力换手重新分配到另一suite，
+    没有形成同一checkpoint共同积累；不能再靠同类constraint、margin、阈值或cycle2小修。
+30. first4 AS→ADSP effective-BA relative-L2均值`.002976`，比AS→raw的`.003323`更小；raw→ADSP仅`.001272`、
+    cosine`.99999919`，仍翻转42条episode。更接近AS的LoRA不但没有减少held churn，反而从raw的37升到45。
+    这直接否决“LoRA距离更小或train24成功prefix一阶loss不增即可代表held support”；下一轮应考虑改变
+    representation/compiler的架构级共存接口。memory token可服务layer-aligned LoRA生成，但它不是自动解法，
+    历史91--102分memory路线仍要求继承V6的absolute Core、有向Procedure与policy-effective compiler优势。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

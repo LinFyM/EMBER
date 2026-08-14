@@ -125,7 +125,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成trained-output归零与Core尺度分析：BA改写`.001763`，原始Core correction仅`1.8275e-5`，attention
   entropy/log4=`.999885`，把最早失败定位到centered Value相消而非compiler衰减。
 
-## Active iteration: Semantic-Core Common-Value Set Bridge
+## Completed iteration: Semantic-Core Common-Value Set Bridge
 
 - [x] 写单变量authority：只把set Value从weighted centered residual改为weighted raw common Core；
 - [x] 原位更新canonical schema/config/runtime；K1、step0、raw-mean Value、set、顺序、gradient门与full CPU=
@@ -178,7 +178,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成cycle1 K4 strict paired400：`138/400`、breadth7、per-task=`2/5/46/33/0/36/15/1`；相对AS139=
   `120 retained / 18 gained / 19 lost`，按门终局，不运行cycle2。
 
-## Active iteration: V6 Actual-Delta Success-Support Projection
+## Completed iteration: V6 Actual-Delta Success-Support Projection
 
 - [x] 结合owner最新澄清，明确memory token是重要候选机制而非强制形式；比较后确认V6当前最早断点是
   shared reward update的support preservation，不是LoRA生成健康度；
@@ -189,10 +189,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   BA/action与显存/吞吐门通过；all-success/all-failure语义由CPU直接覆盖，config已seal；
 - [x] 首次world6 formal在metric/checkpoint前定位旧raw replay的all-success summary-only工程边界；收窄为仅
   all-failure summary-only并加入完整collation回归，失败root不resume；
-- [ ] 从clean pushed commit和fresh AS139启动一个full24 cycle并按mechanism gate裁决；
-- [ ] 立即完成同schedule K4 strict paired400，相对AS139/raw reward138逐task裁决；
-- [ ] 若projection active但仍`<144`、breadth<7或lost>10，本V6 constraint方向终局，转向V6强机制加
-  layer-aligned memory的架构级后继，不做LR/scale/rank/constraint小扫。
+- [x] 从clean pushed `ad2e1be`和fresh AS139完成world4 full24 cycle：22条support rows中raw违反6条，投影
+  激活并得到0 violation，descent/energy保留`.963787/.980958`，wall=`1033.501s`、exit0；
+- [x] 完成同schedule K4 strict paired400：`138/400`、breadth7、per-task=`3/2/45/30/0/36/21/1`；相对
+  AS139=`116/22/23`、相对raw138=`117/21/21`，逐task/suite与first4 geometry均已封存；
+- [x] projection active但仍`<144`、lost23且gained不超过lost，本V6 constraint方向终局；不做cycle2、
+  LR/scale/rank/constraint小扫。下一轮先与owner讨论架构级接口，layer-aligned memory只是候选而非既定答案。
 
 ## Continuous loop after this result
 
@@ -218,6 +220,6 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139与raw reward138均已按门终局；当前active successor只改变raw reward
-之后的actual shared parameter delta可行域。memory token保留为有证据触发的架构候选，不是本轮强制变量；
-生成LoRA后的task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前没有active successor或
+GPU进程，按owner要求在完整分析与封存后停下讨论。memory token保留为有证据触发的layer-aligned LoRA生成候选，
+不是强制变量；生成LoRA后的task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验。

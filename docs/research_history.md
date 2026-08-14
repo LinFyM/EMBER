@@ -14,8 +14,9 @@ effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删
 few-shot nuisance reduction已工作但没有修正高层任务方向。该arm终局non-pass。Task-Grounded Visual-Value完整
 曲线=`88/86/86/96`，macro200 breadth6、top3=`92/96`；150→200仍churn40，相对old134丢66只得28。Full-Factor
 随后macro50=`91`，只比matched fixed-A净增3，并形成tiny-B/weak-near-orthogonal BA，终局non-pass。V6 Dynamic
-Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。当前
-successor只把同一set边界前移到shared Core与最终Core/Procedure fusion之间。
+Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。Shared-Core
+Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
+`116/22/23`且churn45。当前没有active successor，下一轮需先讨论架构级共存接口。
 
 ## 1. Stable problem definition
 
@@ -108,11 +109,12 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Semantic-Core Common-Value Set Bridge | K4 `133/400`, breadth6 | Core correction/effective-BA改写打开到`.065856/.053648`；train-seen trained/zero=`63/59` | 相对135=`118/15/17`、相对139=`119/14/20`；少量task-local credit未形成held可组合程序，Long净丢7 |
 | V6 Shared-Core Ordered-Procedure Common-Value | K4 `139/400`, breadth6 | 有向Procedure correction/effective-BA打开到`.09601/.01397`，保持matched139 absolute | 相对matched=`120/19/19`；train-seen trained/zero=`64/64`、`4/4`换手，B20 credit在train/held均无净on-policy收益 |
 | V6 Ordered-Procedure On-Policy Preference | K4 `138/400`, breadth7 | train24 reward形成18条paired新success，q/k/output、BA与action全链路非零 | 相对同schedule AS139=`120/18/19`、churn37；Spatial净+4但Long1净-7，最终shared update未保住support |
+| V6 Actual-Delta Success-Support Projection | K4 `138/400`, breadth7 | 22条train24成功task约束中raw违反6条；投影后0 violation并保留`.964/.981` descent/energy | 相对AS139=`116/22/23`、churn45；相对raw138=`117/21/21`，Long净+6由Spatial/Object净-6支付，一阶local support不代表held共存 |
 
-active successor为V6 Ordered-Procedure Final Shared Support Projection。它只在raw reward之后改变task汇合后的
-actual parameter update：保留同一K4架构、rank16、部署图与LOO reward proposal，以train24成功executed-prefix
-task-mean tangent约束最终shared delta。authority=
-`docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`；raw reward不得cycle2。
+ADSP已按预注册门终局；authority与完整机制/strict证据见
+`docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只否决实际检验的
+train24 success-prefix一阶约束，不否决V6、memory token或其它架构级policy-aligned生成方式。下一轮不得继续
+constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
 
 ## 4. Final rank14 adjudication
 

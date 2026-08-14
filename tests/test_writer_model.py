@@ -70,6 +70,29 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
     assert torch.equal(diagnostics["fused_slots"], fused)
 
 
+def test_native_factor_hidden_residual_keeps_family_and_slot_ownership() -> None:
+    model, _ = _legacy_v6_model()
+    generator = torch.Generator(device="cpu").manual_seed(31)
+    with torch.no_grad():
+        for head in model.factor_heads.values():
+            head.network[-1].weight.normal_(std=0.01, generator=generator)
+    slots = torch.randn(1, 320, 256, generator=generator)
+    baseline = model.decode_slots(slots)
+    residuals = {
+        family: torch.zeros_like(slots) for family in model.factor_heads
+    }
+    exact = model.decode_slots(slots, factor_hidden_residuals=residuals)
+    assert all(torch.equal(exact[name], baseline[name]) for name in baseline)
+
+    residuals["q_a"][:, :16] = 0.1
+    changed = model.decode_slots(slots, factor_hidden_residuals=residuals)
+    for name in baseline:
+        is_first_layer_q_a = (
+            ".layers.0.self_attn.q_proj.lora_A." in name
+        )
+        assert (not torch.equal(changed[name], baseline[name])) == is_first_layer_q_a
+
+
 def test_v6_layerwise_conditioner_step0_k1_is_exact_native_v6() -> None:
     model, _ = _model()
     frames, indices, _, _, tokens, masks, spans = _inputs()
@@ -272,3 +295,104 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
         policy=torch.nn.Identity(),
     )
     assert not encoded.diagnostics.per_video_query_conditioners.count_nonzero()
+    assert encoded.factor_memory is not None
+    assert not encoded.factor_memory.count_nonzero()
+
+
+def test_sfmc_zero_init_is_exact_lpcp_and_has_expected_parameter_count() -> None:
+    model, _ = _model()
+    with torch.no_grad():
+        model.query_delta.weight.normal_(std=0.01)
+        encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+        lpcp = model.decode_program(encoded.program)
+        committed = model.decode_output(encoded)
+    assert sum(
+        parameter.numel()
+        for parameter in model.factor_commitment.parameters()
+    ) == 2_164_224
+    assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
+    assert all(
+        not value.count_nonzero()
+        for value in model.factor_commitment.family_maps.values()
+    )
+
+
+def test_sfmc_factor_memory_and_language_address_are_k_set_invariant() -> None:
+    model, _ = _model()
+    with torch.no_grad():
+        model.query_delta.weight.normal_(std=0.01)
+        natural = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+        frames, _, _, condition_offsets, tokens, masks, spans = _inputs()
+        order = torch.tensor([3, 4, 0, 1, 2, 5, 6, 7])
+        permuted = model.encode_program(
+            frames[order],
+            torch.tensor([0, 5, 0, 5, 10, 0, 5, 10]),
+            torch.tensor([0, 2, 5, 8]),
+            condition_offsets,
+            tokens,
+            masks,
+            spans,
+            policy=torch.nn.Identity(),
+        )
+    assert natural.factor_memory is not None
+    assert permuted.factor_memory is not None
+    torch.testing.assert_close(natural.factor_memory, permuted.factor_memory)
+    torch.testing.assert_close(natural.language_slots, permuted.language_slots)
+    torch.testing.assert_close(
+        natural.semantic_basis_weights, permuted.semantic_basis_weights
+    )
+
+
+def test_sfmc_gradient_stages_maps_before_semantic_router() -> None:
+    model, _ = _model()
+    commitment = model.factor_commitment.requires_grad_(True)
+    generator = torch.Generator(device="cpu").manual_seed(43)
+    memory = torch.randn(2, 7, 256, generator=generator)
+    language = torch.randn(2, 7, 256, generator=generator)
+    residuals, _ = commitment(memory, language)
+    sum(value.sum() for value in residuals.values()).backward()
+    assert all(
+        value.grad is not None and value.grad.count_nonzero()
+        for value in commitment.family_maps.values()
+    )
+    assert commitment.semantic_query.weight.grad is not None
+    assert not commitment.semantic_query.weight.grad.count_nonzero()
+    assert commitment.basis_keys.grad is not None
+    assert not commitment.basis_keys.grad.count_nonzero()
+
+    commitment.zero_grad(set_to_none=True)
+    with torch.no_grad():
+        for value in commitment.family_maps.values():
+            value.normal_(std=1e-3)
+    residuals, _ = commitment(memory, language)
+    sum(value.sum() for value in residuals.values()).backward()
+    assert commitment.semantic_query.weight.grad is not None
+    assert commitment.semantic_query.weight.grad.count_nonzero()
+    assert commitment.basis_keys.grad is not None
+    assert commitment.basis_keys.grad.count_nonzero()
+
+
+def test_sfmc_lpcp_loader_rejects_partial_new_topology() -> None:
+    source, _ = _model()
+    old = {
+        name: value
+        for name, value in source.state_dict().items()
+        if not name.startswith("factor_commitment.")
+    }
+    loaded, _ = _model()
+    loaded.load_lpcp_state_(old)
+    assert all(
+        torch.equal(loaded.state_dict()[name], value)
+        for name, value in old.items()
+    )
+    partial = dict(old)
+    partial["factor_commitment.basis_keys"] = source.state_dict()[
+        "factor_commitment.basis_keys"
+    ]
+    with torch.no_grad():
+        try:
+            loaded.load_lpcp_state_(partial)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("partial SFMC topology was accepted")

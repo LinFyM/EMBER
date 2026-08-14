@@ -35,7 +35,7 @@ def mean_cross_video_task_gradient(
         value.shape != gradients[0].shape or value.dtype != torch.float32
         for value in gradients
     ):
-        raise RewardProtocolError("CV-CSD view gradient panel changed")
+        raise RewardProtocolError("cross-video view gradient panel changed")
     return torch.stack(tuple(gradients)).mean(dim=0)
 
 

@@ -279,8 +279,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 写单变量authority：从同一cached condition计算LPCP/AS139 K-set Procedure差作为innovation memory，exact
   language只作四basis语义address，在factor-family hidden owner内zero-init residual，step0 exact LPCP143；
 - [x] 预注册cycle1 strict门、cycle1/2约145稳定门、相邻churn/Jaccard和same/wrong/shuffled/reversed/no-video六臂；
-- [ ] 原位实现唯一canonical Writer/reward/evaluator schema，旧CV-CSD可执行状态只由Git/artifacts保存；
-- [ ] 完成聚焦CPU机制门、architecture guard与真实GPU one-task/full24吞吐profile；
+- [x] 原位实现唯一canonical Writer/reward/evaluator schema，旧CV-CSD可执行状态只由Git/artifacts保存；
+- [x] 完成聚焦CPU机制门与architecture guard：真实参数2,164,224、zero-init exact LPCP、memory/ownership/gradient/
+  checkpoint合同通过，聚焦72 passed；
+- [ ] 完成真实GPU one-task机制/显存门与full24吞吐profile；
 - [ ] 从clean pushed/frozen commit做full24 cycle1、strict paired400与完整逐task/BA/跨video分析；过门才cycle2和六臂。
 
 ## Non-negotiable boundaries
@@ -299,6 +301,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已按门终局。
 CV-CSD证明跨video exact成功credit可以高效、完整地形成，但query-only commitment仍把它部署成same-task跨video
-近正交局部方向，held strict=`134`。SFMC design已冻结，当前无EMBER GPU进程；下一步原位实现该唯一commitment
-变量，不恢复旧memory路线、不添加更多views，也不做query/LR/rank/scale小扫。生成LoRA后的task-local RL仍是
+近正交局部方向，held strict=`134`。SFMC design与canonical CPU实现已冻结，当前无EMBER GPU进程；下一步从clean
+pushed/frozen commit做真实one-task机制/显存门，再按相同合同full24 cycle1，不恢复旧memory路线、不添加更多views，
+也不做query/LR/rank/scale小扫。生成LoRA后的task-local RL仍是
 初始Writer达到强zero-interaction起点之后的独立实验。

@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_cross_video_causal_success_distillation_v1",
-  "status": "sealed",
+  "schema_version": "ember_pi05_v6_lpcp_semantic_factor_memory_commitment_v1",
+  "status": "ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "current_v6_lpcp_query_delta"
+    "candidate_arm": "frozen_v6_lpcp_plus_semantic_factor_memory_commitment"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -65,7 +65,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "query_delta_weight_only_65536_parameters",
+    "trainable": "semantic_factor_memory_commitment_only_2164224_parameters",
     "reward_replay_chunk_batch_size": 8,
     "optimizer": {
       "name": "AdamW",
@@ -78,7 +78,7 @@
     "distributed": {
       "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
       "exact_resume_world_topology_locked": true,
-      "gradient_communication": "one_query_delta_gradient_vector_plus_one_active_task_count_all_reduce",
+      "gradient_communication": "one_factor_commitment_gradient_vector_plus_one_active_task_count_all_reduce",
       "nccl_p2p_disable": "1",
       "deferred_process_group": true,
       "collective_timeout_minutes": 30
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "ready",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -105,25 +105,7 @@
       "same_task_other_video_relative_minimum": 0.9,
       "correct_control_margin_minimum": 8
     },
-    "live_task4_smoke_evidence": {
-      "run_root": "runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_task4_live_smoke_b8_worktree_gpu01p5_20260815",
-      "host": "gpu01",
-      "physical_gpu_id": 5,
-      "tasks": 1,
-      "paired_states": 2,
-      "rollouts": 4,
-      "active_tasks": 1,
-      "credit_conditions": 4,
-      "unique_credit_videos": 16,
-      "functional_policy_forwards": 64,
-      "cycle_seconds": 145.52555755199865,
-      "max_cuda_reserved_bytes": 40751857664,
-      "writer_gradient_rms": 3.4651925773232506e-08,
-      "query_delta_parameter_delta_rms": 0.0001851428096415475,
-      "fixed_action_response_rms": 0.0027431445196270943,
-      "forbidden_reads": 0,
-      "oom_or_nonfinite": 0
-    },
+    "live_task4_smoke_evidence": null,
     "full24_cycle1_evidence": null
   }
 }

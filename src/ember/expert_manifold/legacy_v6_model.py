@@ -132,10 +132,18 @@ class FactorHead(torch.nn.Module):
         )
         torch.nn.init.zeros_(self.network[-1].weight)
 
-    def forward(self, value: torch.Tensor) -> torch.Tensor:
+    def hidden(self, value: torch.Tensor) -> torch.Tensor:
         if value.ndim < 3:
             raise WriterModelError("factor head lost its rank-slot dimension")
-        return self.network(value)
+        return self.network[1](self.network[0](value))
+
+    def decode_hidden(self, hidden: torch.Tensor) -> torch.Tensor:
+        if hidden.ndim < 3 or hidden.shape[-1] != self.network[2].in_features:
+            raise WriterModelError("factor head hidden state changed shape")
+        return self.network[2](hidden)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.decode_hidden(self.hidden(value))
 
 
 class CompleteLoRAWriter(torch.nn.Module):
@@ -643,6 +651,8 @@ class CompleteLoRAWriter(torch.nn.Module):
     def decode_slots(
         self,
         slots: torch.Tensor,
+        *,
+        factor_hidden_residuals: Mapping[str, torch.Tensor] | None = None,
     ) -> dict[str, torch.Tensor]:
         """Decode one fused policy-slot program into the single public LoRA."""
 
@@ -664,18 +674,51 @@ class CompleteLoRAWriter(torch.nn.Module):
             :, expert_stop : expert_stop + self.PUBLIC_LORA_RANK
         ]
         action_out = slots[:, -self.PUBLIC_LORA_RANK :]
+        if factor_hidden_residuals is not None and set(factor_hidden_residuals) != set(
+            self.factor_heads
+        ):
+            raise WriterModelError("factor hidden residual families changed")
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, layer = self._decoding[item.name]
             if key.startswith("action_in_"):
                 source = action_in
+                residual_source = (
+                    factor_hidden_residuals[key][
+                        :, expert_stop : expert_stop + self.PUBLIC_LORA_RANK
+                    ]
+                    if factor_hidden_residuals is not None
+                    else None
+                )
             elif key.startswith("action_out_"):
                 source = action_out
+                residual_source = (
+                    factor_hidden_residuals[key][:, -self.PUBLIC_LORA_RANK :]
+                    if factor_hidden_residuals is not None
+                    else None
+                )
             else:
                 if layer is None:
                     raise WriterModelError("expert LoRA output lost its layer")
                 source = expert[:, layer]
-            rows = self.factor_heads[key](source)
+                residual_source = (
+                    factor_hidden_residuals[key]
+                    .reshape(
+                        slots.shape[0],
+                        -1,
+                        self.PUBLIC_LORA_RANK,
+                        self.program_width,
+                    )[:, layer]
+                    if factor_hidden_residuals is not None
+                    else None
+                )
+            head = self.factor_heads[key]
+            hidden = head.hidden(source)
+            if residual_source is not None:
+                if residual_source.shape != hidden.shape:
+                    raise WriterModelError("factor hidden residual lost slot ownership")
+                hidden = hidden + residual_source
+            rows = head.decode_hidden(hidden)
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]

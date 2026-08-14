@@ -380,7 +380,13 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     它是K-set之后、layer/rank对齐、query-disabled/constant近零的Procedure innovation，不是literal backbone token、
     raw feature平均或第二套LoRA。exact language只选择四个连续semantic bases；八factor families把innovation写到
     冻结V6 `W2` output basis之前。这样step0 exact LPCP143，并同时继承SFB已证明的软语义分工、LPCP已证明的
-    有序carrier和CV-CSD已证明可高效运行的cross-video success credit。它尚无实现或性能证据。
+    有序carrier和CV-CSD已证明可高效运行的cross-video success credit；这是设计推导，性能仍待真实closed-loop。
+42. SFMC已原位实现到唯一Writer/reward/evaluator graph，而不是新增平行Writer：旧V6 FactorHead只拆出同一
+    `W1→GELU` hidden与`W2` output边界，八family的4-way memory maps在hidden处提交。真实枚举trainable恰为
+    `2,164,224`；所有maps zero-init使step0逐tensor exact LPCP，language只作soft Q/K address，`M=0`不能产生
+    residual。CPU已验证K-set permutation、constant-memory zero、factor family/layer/rank ownership、cycle1先开maps/
+    后续router才得梯度，以及历史LPCP checkpoint只完整缺失新增12 tensors。architecture guard无hard violation；
+    这些只证明实现合同，不提供closed-loop结论。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

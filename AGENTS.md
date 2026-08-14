@@ -90,7 +90,10 @@ conditions的增量pairwise cosine=`.000205`、mean/sample energy=`.250155`，�
 selected-success与rank16强图，冻结query path；从同一cached condition计算K-set LPCP/AS139 Procedure差形成
 layer/rank innovation memory，以exact-language作Q/K-only四basis语义地址，在八个真实factor-family的冻结V6
 output basis前写zero-init hidden residual。它不增加literal memory token、不重复backbone forward、不直接写raw
-A/B。当前尚未实现、profile或训练；不得把design当成结果，也不得同时改rank/view/LR/scale。
+A/B。canonical实现与CPU机制门已完成：真实枚举trainable=`2,164,224`，zero-init step0 exact LPCP、K-set
+permutation、constant-memory zero、factor-family/slot ownership、两阶段gradient与pre-SFMC checkpoint加载均通过；
+architecture guard无hard violation。当前尚未GPU profile或训练，不得把机制通过当成性能结果，也不得同时改
+rank/view/LR/scale。active config=`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`。
 
 ## 4. Long-term objective and decision rule
 

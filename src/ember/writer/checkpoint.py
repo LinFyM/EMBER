@@ -40,6 +40,16 @@ def checkpoint_macro(path: Path | None) -> int:
     return int(match.group(1))
 
 
+def _load_lpcp_state_(
+    writer: torch.nn.Module, state: Mapping[str, torch.Tensor]
+) -> None:
+    loader = getattr(writer, "load_lpcp_state_", None)
+    if callable(loader):
+        loader(state)
+    else:
+        writer.load_state_dict(state, strict=True)
+
+
 def save_writer_checkpoint(
     *,
     output_dir: Path,
@@ -150,10 +160,10 @@ def load_writer_checkpoint(
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(record["bytes"]):
             raise WriterModelError(f"dynamic-K checkpoint file changed: {name}")
-    writer.load_state_dict(
+    _load_lpcp_state_(
+        writer,
         load_file(
-            str(checkpoint / "writer.safetensors"),
-            device=str(context.device),
+            str(checkpoint / "writer.safetensors"), device=str(context.device)
         )
     )
     trainer = torch.load(
@@ -204,7 +214,10 @@ def load_writer_deployment_state_(
         raise WriterModelError("dynamic-K deployment Writer state changed")
     state = load_file(str(path), device=str(device))
     try:
-        writer.load_state_dict(state, strict=True)
+        if writer_asset["kind"] == DEPLOYMENT_CHECKPOINT_KIND:
+            _load_lpcp_state_(writer, state)
+        else:
+            writer.load_state_dict(state, strict=True)
     except RuntimeError as error:
         raise WriterModelError(
             "dynamic-K deployment Writer topology changed"

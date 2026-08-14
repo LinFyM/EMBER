@@ -119,7 +119,7 @@ class TeacherVideoSchedule:
 
         first = tuple(int(value) for value in anchor_demos)
         if view_count != 4 or len(first) != 4 or len(set(first)) != 4:
-            raise WriterModelError("CV-CSD anchor condition is not one unique K4 set")
+            raise WriterModelError("cross-video anchor is not one unique K4 set")
         views = [first]
         excluded = list(first)
         for offset in range(1, view_count):
@@ -127,11 +127,11 @@ class TeacherVideoSchedule:
                 task_id, task_visit + offset, excluded=excluded
             )
             if len(demos) != 4:
-                raise WriterModelError("CV-CSD support condition is not K4")
+                raise WriterModelError("cross-video support condition is not K4")
             views.append(tuple(demos))
             excluded.extend(demos)
         if len(set(excluded)) != 4 * view_count:
-            raise WriterModelError("CV-CSD credit conditions are not disjoint")
+            raise WriterModelError("cross-video credit conditions are not disjoint")
         return tuple(views)
 
     def companion_demos_for_task_visit(

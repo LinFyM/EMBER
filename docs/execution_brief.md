@@ -31,8 +31,14 @@ mean/median=`.00068370/.00067774`，gained/lost均约`.000679`。FP64 first4中�
 同一cached condition的LPCP/AS139 Procedure-set差形成layer/rank innovation memory；exact language只选择四个
 shared semantic bases；八个factor families把memory写到冻结V6 factor output basis之前。step0 exact LPCP143，
 cross-video selected-success、rank16和K4不变；没有literal memory token、第二次backbone或raw A/B residual。
-精确authority=`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。当前只完成设计，
-尚未实现或启动GPU。
+精确authority=`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。canonical实现已原位接入
+唯一Writer/reward/evaluator：trainable真实枚举=`2,164,224`，zero-init step0 exact LPCP、K-set permutation、
+constant-memory zero、factor-family/slot ownership、map→semantic-router两阶段gradient与旧LPCP完整缺失新tensor的
+加载合同均通过；architecture guard无hard violation。聚焦Writer/训练/部署测试=`72 passed`；完整CPU=`388 passed /
+7个既有Reward-Credit注册门失败`，后七项与本轮无关且基线已存在。当前尚未GPU profile或训练。
+
+active config=`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`，status=`ready`；必须从clean pushed/
+frozen commit做真实one-task机制/显存门，成功后才seal并启动full24 cycle1。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；

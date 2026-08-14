@@ -42,6 +42,8 @@ class _Evidence:
     frames: torch.Tensor
     offsets: tuple[int, ...]
     language_tokens: torch.Tensor
+    text_queries: torch.Tensor
+    valid_task_tokens: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -154,6 +156,14 @@ class _FakeV6Base(torch.nn.Module):
             frames=frames,
             offsets=tuple(int(value) for value in video_offsets.tolist()),
             language_tokens=language_tokens,
+            text_queries=(
+                language_tokens.float().mean(dim=1)[:, None, None]
+                + torch.arange(2).float()[None, :, None]
+                + torch.arange(256).float()[None, None, :] * 1e-4
+            ),
+            valid_task_tokens=torch.ones(
+                language_tokens.shape[0], 2, dtype=torch.bool
+            ),
         )
 
     @staticmethod
@@ -200,8 +210,15 @@ class _FakeV6Base(torch.nn.Module):
         )
         return self.compiler.fuse_readouts(routing, normalized, procedure)[0]
 
-    def decode_slots(self, slots: torch.Tensor) -> dict[str, torch.Tensor]:
+    def decode_slots(
+        self,
+        slots: torch.Tensor,
+        *,
+        factor_hidden_residuals: dict[str, torch.Tensor] | None = None,
+    ) -> dict[str, torch.Tensor]:
         scalars = self.factor(slots[:, :76]).squeeze(-1)
+        if factor_hidden_residuals is not None:
+            scalars = scalars + factor_hidden_residuals["q_a"][:, :76].mean(-1)
         result = {}
         for index, (name, template) in enumerate(self._template.items()):
             value = template[None] + scalars[:, index, None, None]
@@ -218,6 +235,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
             PolicyProcedureCommonValueFusion(width=256),
             LayerwiseActionProbeReader(heads=8, initialization_seed=7),
             expert_model=expert_model,
+            initialization_seed=7,
             conditioner_heads=8,
             conditioner_blocks=1,
         ),

@@ -1,4 +1,4 @@
-"""One cross-video causal success-distillation cycle for V6-LPCP."""
+"""One cross-video success-credit cycle for semantic factor commitment."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from ember.writer.as_step import (
 )
 from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
-from ember.writer.model import WriterConditioningState
+from ember.writer.model import WriterConditioningState, WriterProgramOutput
 from ember.writer.reward_preference import (
     PairedSuccessCreditSummary,
     backpropagate_lora_cotangent,
@@ -90,6 +90,7 @@ def _encode_candidate_condition(
     tuple[Any, ...],
     Mapping[str, Any],
     WriterConditioningState,
+    WriterProgramOutput,
     Mapping[str, torch.Tensor],
 ]:
     packed, video_metrics = pack_teacher_condition(
@@ -110,12 +111,11 @@ def _encode_candidate_condition(
         state = runtime.writer.encode_conditioning_state(
             *packed, policy=runtime.policy
         )
-        candidate = runtime.writer.decode_program(
-            runtime.writer.compile_conditioning_state(
-                state, packed[3], use_query_delta=True
-            ).program
+        encoded = runtime.writer.compile_conditioning_state(
+            state, packed[3], use_query_delta=True
         )
-    return packed, video_metrics, state, candidate
+        candidate = runtime.writer.decode_output(encoded)
+    return packed, video_metrics, state, encoded, candidate
 
 
 def _encode_pair(
@@ -131,7 +131,7 @@ def _encode_pair(
 ]:
     visit = cycle - 1
     demos = runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
-    packed, video_metrics, state, candidate = _encode_candidate_condition(
+    packed, video_metrics, state, encoded, candidate = _encode_candidate_condition(
         runtime, task, demos
     )
     with (
@@ -142,11 +142,9 @@ def _encode_pair(
             enabled=runtime.context.device.type == "cuda",
         ),
     ):
-        reference = runtime.writer.decode_program(
-            runtime.writer.compile_conditioning_state(
-                state, packed[3], use_query_delta=False
-            ).program
-        )
+        if encoded.reference_program is None:
+            raise WriterModelError("SFMC candidate lost its exact AS139 reference")
+        reference = runtime.writer.decode_program(encoded.reference_program)
     return visit, tuple(demos), packed, video_metrics, state, reference, candidate
 
 
@@ -246,12 +244,12 @@ def select_unique_success_trajectories(
     """Select the successful trajectory only when the two exact arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
-        raise WriterModelError("CV-CSD requires two paired reset states")
+        raise WriterModelError("SFMC requires two paired reset states")
     selected: list[RewardTrajectory] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
-            raise WriterModelError("CV-CSD arm pairing changed reset or policy RNG")
+            raise WriterModelError("SFMC arm pairing changed reset or policy RNG")
         if candidate_row.success and not reference_row.success:
             selected.append(candidate_row)
             labels.append("candidate")
@@ -299,7 +297,7 @@ def _differentiate_credit_view(
         recompiled = runtime.writer.compile_conditioning_state(
             state, packed[3], use_query_delta=True
         )
-        generated = runtime.writer.decode_program(recompiled.program)
+        generated = runtime.writer.decode_output(recompiled)
         backpropagate_lora_cotangent(generated, lora_gradient)
     flat = torch.zeros_like(gradient_template)
     gradients = tuple(item.parameter.grad for item in runtime.gradient_layout)
@@ -337,7 +335,7 @@ def _differentiate_task_credit(
             view_packed, view_state, view_lora = packed, state, candidate_lora
             view_metrics: Mapping[str, Any] = {}
         else:
-            view_packed, view_metrics, view_state, view_lora = (
+            view_packed, view_metrics, view_state, _, view_lora = (
                 _encode_candidate_condition(runtime, task, demos)
             )
         flat, summary = _differentiate_credit_view(
@@ -356,7 +354,9 @@ def _differentiate_task_credit(
             {
                 "view_index": view_index,
                 "demo_indices": list(demos),
-                "query_gradient_rms": float(flat.square().mean().sqrt()),
+                "factor_commitment_gradient_rms": float(
+                    flat.square().mean().sqrt()
+                ),
                 **asdict(summary),
                 **view_metrics,
             }
@@ -568,12 +568,12 @@ def _apply_step(
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
-        raise WriterModelError("CV-CSD cycle produced no discordant successful arm")
+        raise WriterModelError("SFMC cycle produced no discordant successful arm")
     gradient_sum.div_(active_tasks)
     if not bool(torch.isfinite(gradient_sum).all()) or not bool(
         torch.count_nonzero(gradient_sum)
     ):
-        raise WriterModelError("CV-CSD cycle produced an invalid shared gradient")
+        raise WriterModelError("SFMC cycle produced an invalid shared gradient")
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
@@ -632,7 +632,7 @@ def _probe_after_update(
             probe.condition_video_offsets,
             use_query_delta=True,
         )
-        after = runtime.writer.decode_program(encoded.program)
+        after = runtime.writer.decode_output(encoded)
     response = _lora_response(probe.before_lora, after)
     try:
         copy_task_lora_state_(runtime.policy, after, runtime.lora_contract)
@@ -715,9 +715,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_cross_video_causal_success_distillation"
+            "one_complete_train24_semantic_factor_memory_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_cross_video_causal_success_distillation_live_smoke"
+            else "one_task_semantic_factor_memory_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

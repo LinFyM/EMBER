@@ -37,6 +37,7 @@ from ember.writer.live_adapter import (
     FrozenDynamicKTaskAdapter,
     condition_video_offsets,
 )
+from ember.writer.reward_config import REWARD_CONFIG, load_reward_config
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -98,6 +99,27 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     ]
     assert parse_macro_boundaries([25, 50], 50) == (25, 50)
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
+
+
+def test_sfmc_reward_config_freezes_only_the_commitment_variable() -> None:
+    config, base = load_reward_config(REWARD_CONFIG)
+    assert config["status"] == "ready"
+    assert config["formal_run"]["status"] == "ready"
+    assert config["initialization"]["as_macro"] == 25
+    assert config["data"]["videos_per_task"] == 4
+    assert config["optimization"]["trainable"] == (
+        "semantic_factor_memory_commitment_only_2164224_parameters"
+    )
+    assert config["formal_run"]["stable_qualification"] == {
+        "cycle1_and_cycle2_correct_minimum": 144,
+        "two_cycle_correct_mean_minimum": 145,
+        "breadth_minimum": 7,
+        "adjacent_checkpoint_churn_maximum": 20,
+        "adjacent_success_set_jaccard_minimum": 0.85,
+        "same_task_other_video_relative_minimum": 0.9,
+        "correct_control_margin_minimum": 8,
+    }
+    assert base["writer"]["policy_slot_count"] == 320
 
 
 def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:

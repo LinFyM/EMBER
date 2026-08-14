@@ -153,5 +153,21 @@ query/key参数delta norm分别为`7.859e-7/7.736e-7`，证明zero-init output�
 GPU机制smoke同时验证K1恒等、source/v6 base冻结、倒序敏感及5个trainable tensors全部获得梯度。profile root：
 `runs/outputs/pi05_v6_semantic_core_set_bridge_profile_r6_b20_7883fa6_gpu01_20260814`。
 
-这些只证明实现、机制与吞吐合同成立；不能提前写成有效方法。formal现已seal，下一裁决仍是clean fresh
-macro0→25后的K4 strict paired correct400。
+这些只证明实现、机制与吞吐合同成立；不能提前写成有效方法。formal现已seal。
+
+clean detached `884e55e18fad84c4266e3d857754a9538c59d20a`随后在同一gpu01物理`0/1/2/4/5/6`
+world6完成fresh macro0→25：25/25 metrics、macro25完整checkpoint、completion与exit0齐全；总耗时
+`619.319s`，每macro K1--K4严格各6，macro wall min/mean/max=`22.573/24.744/26.390s`，loss first/last=
+`.10118184/.09564428`，gradient范围=`2.4225e-6..3.4199e-6`，peak reserved=`40.758GB`，0 OOM/nonfinite。
+相对同种子profile macro2，macro25的query/key继续移动`.003205/.003040`，output norm到`.141576`；这些仍只是
+credit到达trainable Core-set的证据。formal root：
+`runs/outputs/pi05_v6_semantic_core_set_bridge_formal_fresh0to25_r6_b20_884e55e_gpu01_20260814`。
+
+同一macro25随后在gpu01物理4完成固定validation8×4 correct最长优先面板的K4 deployment profile：
+B8/B16/B32=`.2231465/.2231839/.2232875 LoRA/s`，repeat wall分别约`143.40/143.38/143.31s`；三者stable、
+0 OOM/nonfinite，峰值reserved=`12.952/12.975/13.011GB`且仍有约`34.69GB`headroom。按预注册最高实测吞吐锁
+B32。profile wall=`1288.857s`，root：
+`runs/outputs/pi05_v6_semantic_core_set_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p4_884e55e_macro0025_20260814`。
+
+profile只裁决部署batch，不是性能证据。下一裁决是从profile-sealed clean commit立刻做同一macro25的K4 strict
+paired correct400。

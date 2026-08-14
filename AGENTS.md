@@ -59,7 +59,8 @@ exact language + K=1..4 same-task action-hidden ordered videos
 聚合改为无参数mean；不得继续训练/放大当前Procedure-Set，也不得同时修改rank、recipe、底座或mapper。authority=
 `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，精确状态只取`docs/active_session_handoff.md`。
 canonical实现已原位替换旧schema/config/runtime，full CPU=`372 passed`；GPU机制与gpu01 world6 full24 B20
-profile已通过并seal formal，下一裁决是clean fresh macro0→25后的K4 strict paired400。
+profile已通过并seal formal；clean fresh macro0→25与K4 B8/B16/B32部署定标也已完成，按最高实测吞吐锁B32，
+下一裁决是同一macro25 checkpoint的K4 strict paired400。
 
 ## 4. Long-term objective and decision rule
 

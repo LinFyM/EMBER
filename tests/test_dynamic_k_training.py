@@ -613,11 +613,22 @@ def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
     )
 
 
-def test_v6_semantic_core_set_deployment_profile_awaits_live_measurement() -> None:
+def test_v6_semantic_core_set_k4_deployment_profile_is_sealed() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
     )
 
-    assert DYNAMIC_K_GENERATION_BATCH_SIZE == 8
-    assert DYNAMIC_K_GENERATION_PROFILES == {}
+    assert DYNAMIC_K_GENERATION_BATCH_SIZE == 32
+    assert DYNAMIC_K_GENERATION_PROFILES == {
+        4: {
+            "schema": "ember_pi05_writer_generation_profile_v2",
+            "path": (
+                "runs/outputs/"
+                "pi05_v6_semantic_core_set_bridge_k4_writer_generation_profile_"
+                "val8x4_correct_gpu01p4_884e55e_macro0025_20260814/"
+                "writer_generation_profile.json"
+            ),
+            "selected_writer_model_batch_size": 32,
+        }
+    }

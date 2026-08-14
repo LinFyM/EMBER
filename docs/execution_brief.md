@@ -33,8 +33,10 @@ matched去混淆把Procedure-Set output归零后，训练残差相对当前LoRA�
 该V6 Semantic-Core Set Bridge的预注册authority与canonical实现已完成：同预算197120参数set对语言对齐Core
 生成shared correction，step0严格保留139路径的output-zero数据流；旧Procedure-Set executable schema已删除。
 full CPU=`372 passed`。GPU机制门和gpu01 world6 full24 B20 profile已通过：macro1/2=`27.214/24.277s`、peak
-reserved=`40.758GB`、K各6、最长323帧无截断、q/k第二步非零更新、0 OOM/nonfinite；formal合同已seal，下一步
-clean fresh macro0→25。
+reserved=`40.758GB`、K各6、最长323帧无截断、q/k第二步非零更新、0 OOM/nonfinite；formal合同已seal。clean
+detached `884e55e` fresh macro0→25已完整结束：25/25 metrics、checkpoint/completion/exit0齐全，总耗时
+`619.319s`，loss `.101182→.095644`。同一checkpoint K4 deployment profile的B8/B16/B32=
+`.223147/.223184/.223287 LoRA/s`，三者stable，按最高吞吐锁B32；下一步strict paired400。
 
 ## 2. Single changed variable and training semantics
 

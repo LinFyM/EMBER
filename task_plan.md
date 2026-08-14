@@ -115,7 +115,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换唯一canonical实现/schema/config，完成step0/K1/置换/顺序/梯度门和full CPU=`372 passed`；
 - [x] 完成真实GPU视频机制smoke与gpu01 world6 full24 B20 profile并seal：macro1/2=`27.214/24.277s`、
   reserved`40.758GB`、K各6、最长323帧、q/k第二步非零更新；
-- [ ] fresh训练至预注册节点，尽快做K4 strict paired correct400。
+- [x] 从clean detached `884e55e`完成fresh macro0→25：25/25 metrics、完整world6 checkpoint、completion与
+  exit0，loss first/last=`.101182/.095644`，0 OOM/nonfinite；
+- [x] 完成macro25 K4 B8/B16/B32 deployment profile：`.223147/.223184/.223287 LoRA/s`，三者stable、
+  0 OOM/nonfinite，按最高吞吐锁B32；
+- [ ] 从profile-sealed clean commit做K4 strict paired correct400并完成逐task裁决。
 
 ## Continuous loop after this result
 
@@ -141,5 +145,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；Semantic-Core Set机制/profile已seal。
-下一步从clean sealed commit fresh训练到macro25并尽快做K4 strict400。
+无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；Semantic-Core Set机制、fresh macro25训练
+和K4 deployment profile均已完成。下一步从profile-sealed clean commit立即做strict400。

@@ -57,8 +57,8 @@ canonical实现、全量`371 passed`、world6训练和strict400均完整。去�
 Semantic Core tokens，后端Procedure只做无参数集合归约；底座、rank16、B20与动态K不变。完整预注册authority见
 [`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md)，
 canonical实现已原位替换旧Procedure-Set路径，step0严格保留139的output-zero数据流，full CPU=`372 passed`；
-GPU机制与gpu01 world6 full24 B20 profile已通过并seal formal，当前待clean fresh macro0→25及K4 strict400，尚无
-新性能claim。
+GPU机制与gpu01 world6 full24 B20 profile已通过并seal formal；clean fresh macro0→25和K4 B8/B16/B32部署定标
+也已完成，按最高实测吞吐锁B32，当前待K4 strict400，尚无新性能claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

@@ -24,7 +24,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     base_path = (REPO_ROOT / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
-    cold_start = (REPO_ROOT / str(initialization.get("as_checkpoint", ""))).resolve()
+    cold_start = str(initialization.get("as_checkpoint", ""))
     data = config.get("data", {})
     environment = config.get("environment", {})
     objective = config.get("objective", {})
@@ -34,7 +34,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if (
         initialization.get("kind") != "writer_weights_only_fresh_reward_optimizer"
         or int(initialization.get("as_macro", -1)) != 25
-        or not (cold_start / "writer.safetensors").is_file()
+        or not cold_start.startswith("runs/outputs/")
         or data.get("task_count") != 24
         or data.get("videos_per_task") != 4
         or data.get("demo_indices") != [0, 49]
@@ -51,7 +51,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     ):
         raise WriterModelError("reward preference scientific contract changed")
     config["resolved_base_as_config"] = str(base_path)
-    config["resolved_cold_start"] = str(cold_start)
+    config["cold_start_relative"] = cold_start
     return config, base
 
 

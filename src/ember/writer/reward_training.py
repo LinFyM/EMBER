@@ -282,6 +282,12 @@ def prepare_runtime(
             raise WriterModelError("formal reward training requires clean pushed Git")
     seed_everything(int(config["rng"]["optimizer_seed"]), context)
     authorities, source, _ = load_run_authorities(args, base_config)
+    cold_start = (
+        args.source_run.resolve().parents[2] / config["cold_start_relative"]
+    ).resolve()
+    if not (cold_start / "writer.safetensors").is_file():
+        raise WriterModelError("reward AS cold-start checkpoint is missing")
+    config["resolved_cold_start"] = str(cold_start)
     policy = load_policy(
         Path(source["model_path"]), authorities.source_base_config, context.device
     )
@@ -293,7 +299,7 @@ def prepare_runtime(
     writer.to(context.device)
     writer.load_state_dict(
         load_file(
-            str(Path(config["resolved_cold_start"]) / "writer.safetensors"),
+            str(cold_start / "writer.safetensors"),
             device=str(context.device),
         ),
         strict=True,

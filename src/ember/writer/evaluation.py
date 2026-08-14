@@ -302,8 +302,9 @@ def _reward_writer_asset(
         or run.get("writer") != config["writer"]
         or run.get("information_wall") != reward_config["information_wall"]
         or run.get("objective") != reward_config["objective"]
-        or run.get("initialization", {}).get("checkpoint")
-        != reward_config["resolved_cold_start"]
+        or run.get("initialization", {}).get("as_checkpoint")
+        != reward_config["initialization"]["as_checkpoint"]
+        or not Path(str(run.get("initialization", {}).get("checkpoint", ""))).is_dir()
     ):
         raise WriterModelError("reward training authority changed")
     if require_formal and (

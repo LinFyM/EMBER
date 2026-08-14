@@ -17,8 +17,11 @@ entropy/log4=`.999885`。native compiler实际把微小Core差放大为BA churn�
 
 当前active方法是V6 Semantic-Core Common-Value Set Bridge：位置、参数量、底座、rank16、B20、动态K与后端均
 不变，只把Value改为`sum alpha C_k`，让跨video共有Semantic Core本身可训练；K1显式旁路保持任意参数下native
-v6恒等。canonical实现已原位切换fresh schema；定向机制门和full CPU=`373 passed`，当前待GPU机制/full24
-profile。完整预注册authority见`action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
+v6恒等。canonical实现已原位切换fresh schema；正式环境full CPU=`374 passed`。gpu01 world6 full24 B20
+profile已完成：macro1/2=`25.930/22.530s`、K各6、最长323帧无截断、reserved`40.758GB`、0 OOM/nonfinite；
+gradient norm=`.002698/.002795`，较centered路径约`.00000325`打开约三阶，macro1→2 q/k均非零更新。formal
+config已seal，当前立即fresh macro0→25。完整authority见
+`action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
 
 ## 2. Single changed variable and training semantics
 
@@ -34,7 +37,7 @@ profile。完整预注册authority见`action_forecast_writer_v6_semantic_core_co
 
 ## 3. Closed-loop adjudication
 
-先完成Common-Value的K1/step0/set/order/gradient门和full24 profile，再fresh macro0→25并做K4 strict paired400。
+Common-Value的K1/step0/set/order/gradient门和full24 profile已通过；下一步fresh macro0→25并做K4 strict paired400。
 K4若低于140或breadth低于7即终止；140..150只有相对matched139净增、至少3 suites不下降并解锁Goal3/Long2才
 resume；超过150后补K1--K4 scaling及correct/same/wrong/shuffled/reversed/no-video controls。
 

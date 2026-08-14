@@ -52,7 +52,9 @@ exact language + K=1..4 same-task ordered action-hidden videos
 successor **V6 Semantic-Core Common-Value Set Bridge**只把Value改为weighted raw Core，让多视频共有高层语义
 可训练；K1、位置、参数量、rank16、B20和有向Procedure全部不变。authority见
 [`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md)，
-canonical实现已原位切换，full CPU=`373 passed`，当前待GPU profile，尚无新性能claim。
+canonical实现已原位切换，正式环境full CPU=`374 passed`；gpu01 world6 full24 B20 profile已通过，raw
+Common-Value梯度较centered路径打开约三阶且q/k获得非零credit。formal config已seal，当前待fresh macro0→25，
+尚无新closed-loop性能claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

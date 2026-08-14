@@ -84,8 +84,13 @@ def test_v6_semantic_core_common_value_set_config_is_loadable() -> None:
         "native_adaln_fusion"
     )
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
-    assert "profile_evidence" not in config["formal_run"]
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["source_commit"] == (
+        "2eb9da9efae0cead6e0d936172eed7165ea6b8bf"
+    )
+    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
+    assert evidence["longest_condition_total_sampled_frames"] == 323
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,

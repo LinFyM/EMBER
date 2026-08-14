@@ -59,8 +59,9 @@ trained-output归零显示effective BA只改变`.001763`；原始Core correction
 **V6 Semantic-Core Common-Value Set Bridge**：只把同位置、同预算set的Value从weighted centered residual改为
 weighted raw common Core；K1显式旁路，底座、rank16、B20、动态K和后端均不变。authority=
 `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`，精确状态只取
-`docs/active_session_handoff.md`。canonical实现已原位切换fresh schema，full CPU=`373 passed`；当前待GPU
-机制/full24 profile，尚未训练。
+`docs/active_session_handoff.md`。canonical实现已原位切换fresh schema，正式环境full CPU=`374 passed`；gpu01
+world6 full24 B20 profile已通过，raw Common-Value梯度约比centered路径打开三阶，formal config已seal；当前待
+fresh macro0→25，尚无新closed-loop结果。
 
 ## 4. Long-term objective and decision rule
 

@@ -129,8 +129,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 - [x] 写单变量authority：只把set Value从weighted centered residual改为weighted raw common Core；
 - [x] 原位更新canonical schema/config/runtime；K1、step0、raw-mean Value、set、顺序、gradient门与full CPU=
-  `373 passed`；
-- [ ] 做真实world profile，从clean seal fresh训练到macro25并尽快K4 strict paired400。
+  `374 passed`；
+- [x] 修正显式K1旁路的零导数训练语义；world6 full24 B20 profile通过：macro1/2=`25.930/22.530s`、
+  K各6、最长323帧无截断、0 OOM/nonfinite，gradient约比centered路径打开三阶，formal config已seal；
+- [ ] 从clean sealed commit fresh训练到macro25并尽快K4 strict paired400。
 
 ## Continuous loop after this result
 
@@ -156,5 +158,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Semantic-Core Set已在135/breadth7按门终局；下一步原位实现Common-Value单变量并进入
-机制/profile→fresh macro25→strict400。
+无权限或资产阻塞。Semantic-Core Set已在135/breadth7按门终局；Common-Value实现与profile已通过，下一步
+fresh macro25→K4 B32确认→strict400。

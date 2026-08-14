@@ -109,4 +109,18 @@ correction仍近零，则应重新设计set的optimization/parameterization，�
 旧checkpoint/evaluator/config schema与旧formal profile seal均由Git/artifact保存，不保留runtime flag。新增精确门
 证明uniform q/k + identity output时K>1 correction逐元素等于raw Core mean，而K1在同样非零output下correction
 严格为零；既有step0、K集合换位、video内倒序、gradient staging、base freeze与native compiler等价门全部通过。
-fresh config当前为`unsealed_pending_live_profile`；full CPU suite=`373 passed`。这些只证明实现合同，不是性能证据。
+首次world6 profile在首个K1 task被训练器拒绝，因为显式K1旁路正确地产生零导数，而通用训练门把“零导数”误判
+成“图断裂”；没有完成macro或产生可用checkpoint。修复只允许`K1 + exact_zero_no_auxiliary_loss + weight=0`返回
+数学上的零bridge梯度；K1 functional loss仍记录、full24仍除以24，K>1无图仍fail-closed。定向回归与正式环境
+full CPU suite=`374 passed`。
+
+clean detached `2eb9da9efae0cead6e0d936172eed7165ea6b8bf`随后在gpu01物理`0/1/2/4/5/6`
+完成world6 full24 B20 macro1/2 profile：`25.930/22.530s`，K1--K4各6，最长condition 323个stride-5
+frames且逐video无截断，peak allocated/reserved=`36.495/40.758GB`，0 OOM/nonfinite。gradient norm分别为
+`.002698/.002795`；macro1→2 query/key delta=`6.552e-6/6.480e-6`，output norm从`.004492`增至
+`.009649`。相对上一centered路径约`3.25e-6`的同图profile梯度，raw Common-Value已把可训练credit打开约三阶。
+profile root：
+`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_profile_r6_b20_2eb9da9_gpu01_20260814`。
+
+这些只证明设计所针对的Value抵消已消除、真实训练图和吞吐合同成立，不是closed-loop性能证据。formal config现已
+seal；下一步必须fresh macro0→25，不加载profile或旧Semantic-Core Set optimizer/checkpoint。

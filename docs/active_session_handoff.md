@@ -20,19 +20,25 @@
   common Semantic Core；K1显式旁路继续严格等于native v6；
 - 当前active design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
-  Value与旧schema，full CPU=`373 passed`，当前待clean GPU机制/full24 profile；尚无新性能claim；
-- profile commit=`7883fa6b71c361a28722ef9ce5047043b2966ebc`，macro1/2=`27.214/24.277s`，peak
+  Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；
+- 当前Common-Value profile commit=`2eb9da9efae0cead6e0d936172eed7165ea6b8bf`，gpu01 world6
+  macro1/2=`25.930/22.530s`，peak allocated/reserved=`36.495/40.758GB`，K各6、最长323帧无截断、
+  0 OOM/nonfinite；gradient norm=`.002698/.002795`，较centered路径约`.00000325`打开约三阶，macro1→2
+  q/k delta=`6.552e-6/6.480e-6`；formal config已seal，当前待clean fresh macro0→25，尚无新closed-loop claim；
+  root=`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_profile_r6_b20_2eb9da9_gpu01_20260814`；
+- 上一轮Semantic-Core Set profile commit=`7883fa6b71c361a28722ef9ce5047043b2966ebc`，macro1/2=
+  `27.214/24.277s`，peak
   allocated/reserved=`36.495/40.758GB`，K各6、最长condition 323 stride-5 frames且无截断、0 OOM/nonfinite；
   macro1→2 q/k delta=`7.859e-7/7.736e-7`；root=
   `runs/outputs/pi05_v6_semantic_core_set_bridge_profile_r6_b20_7883fa6_gpu01_20260814`；
-- formal commit=`884e55e18fad84c4266e3d857754a9538c59d20a`，gpu01 world6 macro0→25共
+- 上一轮Semantic-Core Set formal commit=`884e55e18fad84c4266e3d857754a9538c59d20a`，gpu01 world6 macro0→25共
   `619.319s`，25/25 metrics、checkpoint、completion与exit0完整；loss first/last=`.10118184/.09564428`，
   q/k相对macro2继续移动`.003205/.003040`，0 OOM/nonfinite；root=
   `runs/outputs/pi05_v6_semantic_core_set_bridge_formal_fresh0to25_r6_b20_884e55e_gpu01_20260814`；
-- K4 profile在gpu01物理4测得B8/B16/B32=`.2231465/.2231839/.2232875 LoRA/s`，三者stable、
+- 上一轮Semantic-Core Set K4 profile在gpu01物理4测得B8/B16/B32=`.2231465/.2231839/.2232875 LoRA/s`，三者stable、
   0 OOM/nonfinite，按最高吞吐锁B32；root=
   `runs/outputs/pi05_v6_semantic_core_set_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p4_884e55e_macro0025_20260814`；
-- strict evaluation commit=`850bd38fb40ed5ec5c9c813aaa65380f1ec6de53`，400 LoRAs、72 jobs、18 workers
+- 上一轮Semantic-Core Set strict evaluation commit=`850bd38fb40ed5ec5c9c813aaa65380f1ec6de53`，400 LoRAs、72 jobs、18 workers
   全部完整exit0，wall=`1222.766s`、rollout-only=`682.032s`；root=
   `runs/outputs/pi05_v6_semantic_core_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_850bd38_gpu01_20260814`；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
@@ -547,5 +553,5 @@ strict K4 root：
   relative-L2 mean=`.0009181`、task-mean=`.0005745`；K1→zero为`.0396742/.0169820`。所以训练层几乎没有贡献，
   无参数shared-Core union才是本轮增益来源。
 
-当前无EMBER GPU进程。Semantic-Core Set authority与canonical CPU实现已完成；下一步用一张合适GPU做真实视频
-机制smoke，再按live双节点状态选择最多6卡做full24 B20 profile。不得resume旧checkpoint或并行保留两套runtime。
+以上是Semantic-Core Set实现完成时的历史状态；其后续profile、formal、strict135与Common-Value successor状态只取
+本文§1，不得从这段历史“下一步”恢复执行。

@@ -296,6 +296,56 @@ def test_task_gradient_skips_fixed_template_a_outputs(
     assert parameter.grad is None
 
 
+def test_task_gradient_accepts_exact_k1_bypass_as_zero_derivative(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameter = torch.nn.Parameter(torch.tensor(2.0))
+
+    class _Writer:
+        @staticmethod
+        def forward_training(*_args: object, **_kwargs: object):
+            return {"frozen": torch.ones(2)}, torch.zeros(())
+
+    monkeypatch.setattr(
+        "ember.writer.as_step.functional_lora_loss_gradient",
+        lambda *_args, **_kwargs: (
+            torch.tensor(1.0),
+            {"evidence": "retained"},
+            {"frozen": torch.full((2,), 3.0)},
+        ),
+    )
+    runtime = SimpleNamespace(
+        writer=_Writer(),
+        policy=torch.nn.Identity(),
+        lora_contract=object(),
+        context=SimpleNamespace(device=torch.device("cpu")),
+        config={
+            "conditioning_training": {
+                "policy_flow_time_sampling_scheme": None,
+                "policy_flow_noise_sampling_scheme": None,
+                "singleton_to_full_consistency": {
+                    "weight": 0.0,
+                    "kind": "exact_zero_no_auxiliary_loss",
+                },
+            },
+            "optimization": {"functional_policy_microbatch_size": 2},
+        },
+        gradient_layout=(SimpleNamespace(parameter=parameter, start=0, stop=1),),
+    )
+    flat = torch.zeros(1)
+    packed = (None, None, None, torch.tensor([0, 1]), None, None, None)
+
+    functional, consistency, detail = _task_gradient(
+        runtime, packed, {}, 7, flat
+    )
+
+    assert functional.item() == 1.0
+    assert consistency.item() == 0.0
+    assert detail == {"evidence": "retained"}
+    assert flat.item() == 0.0
+    assert parameter.grad is None
+
+
 def test_scheduler_applies_warmup_lr_before_first_optimizer_step() -> None:
     parameter = torch.nn.Parameter(torch.zeros(()))
     optimizer = torch.optim.AdamW([parameter], lr=3e-4)

@@ -267,6 +267,12 @@ def _task_gradient(
         raise WriterModelError("K>1 dynamic-K consistency lost its training graph")
     active_names = tuple(name for name in names if generated[name].requires_grad)
     if not active_names:
+        if (
+            video_count == 1
+            and consistency_kind == "exact_zero_no_auxiliary_loss"
+            and weight == 0.0
+        ):
+            return functional_loss, consistency.detach(), detail
         raise WriterModelError("dynamic-K generated LoRA lost every trainable output")
     outputs = tuple(generated[name] for name in active_names)
     grad_outputs = tuple(lora_gradients[name] for name in active_names)

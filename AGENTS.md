@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`
+   `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -69,7 +69,15 @@ PCSD cycle1 K4 strict paired400已终局为`135/400`、breadth6、per-task=
 FP64 first4显示同task四个不同K4 video sets的增量pairwise cosine平均`-.00187`、mean/sample energy ratio=
 `.24860`，即几乎正交且平均后只剩约四分之一能量。reward credit有内容且LoRA→action链路工作，但稀疏
 paired success经单一shared query commitment没有形成跨task/video可保留方向。PCSD按四项门终局non-pass，
-不得cycle2、补controls或参数小扫；下一设计只针对这个最早失效接口，memory token仍是候选机制而非预设答案。
+不得cycle2、补controls或参数小扫。
+
+当前active successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），精确authority=
+`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。它只改变success credit覆盖：
+每个active task仍由一个anchor K4做相同AS139/LPCP paired rollouts并选唯一成功trajectory，再让同一trajectory
+分别监督四个互不重叠的same-task correct K4 conditions；每个condition独立Writer→完整LoRA→functional CFM，
+只在共享`query_delta.weight`梯度处task内等权汇合。部署图、动态K carrier、AS139/rank16 tail、optimizer、rollout
+数量和信息墙不变；不平均videos/features/LoRAs，不加negative、memory、rank或scale变量。首次约145且retention过门
+才续相邻checkpoint与五臂/no-video controls；单点>150也不能跳过稳定性和视频因果裁决。
 
 ## 4. Long-term objective and decision rule
 

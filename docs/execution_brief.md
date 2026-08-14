@@ -24,6 +24,12 @@ pairwise cosine跨8 tasks平均`-.00187`，task-mean/sample energy ratio=`.24860
 video-set-specific局部方向，未被合并成跨video、跨task可保留的高层程序**。下一设计只改变reward credit如何
 跨same-task video sets形成共同方向；不重做已通过的LPCP carrier，也不预设literal memory或rank变化为答案。
 
+当前active design是CV-CSD：每个active task仍只用anchor K4产生paired唯一成功trajectory，但让同一trajectory
+分别监督四个互不重叠的same-task correct K4 conditions。每个view独立完成Writer→完整LoRA→selected-success
+functional CFM，复用相同replay/time/noise，只在共享`query_delta.weight`梯度处等权汇合。deployment、rank16、
+AS139 tail、optimizer、rollout数量和信息墙全部不变；不平均输入或LoRA，不混入memory、negative或rank变量。
+精确合同见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
+
 ## 2. Completed PCSD variable and training semantics
 
 - 冻结完整LPCP carrier、AS139 Semantic Core/Procedure/K-set/fusion/compiler与38-target rank16 FactorHeads；
@@ -41,6 +47,11 @@ reversed/no-video的明确优势共同认证。单点145或151都不算完成。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
+
+CV-CSD cycle1只有在correct`>=144`、breadth`>=7`、相对LPCP lost`<=10`、gained>lost且至少3 suites不降时才
+进入cycle2。稳定资格要求两个相邻single checkpoints均`>=144`、均值`>=145`、breadth均`>=7`、相邻churn
+`<=20`、Jaccard`>=.85`；随后才做same/wrong/shuffled/reversed/no-video，要求same/correct至少`.9`且correct
+对每个negative/no-video至少高8。单点145或151都不能跳过这些门。
 
 ## 4. Continuous adjudication loop
 

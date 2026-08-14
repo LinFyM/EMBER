@@ -340,6 +340,14 @@ paired causal success distillation：同初态对跑zero-query AS139 reference�
 `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。这仍是初始Writer的共享训练阶段，
 不是生成LoRA后的task-local RL。
 
+PCSD已完成并终局为`135/400`、breadth6；相对LPCP143为`121 retained / 14 gained / 22 lost`。它证明paired
+success可产生连续LoRA/action credit，但FP64分析显示同task四个不同K4 conditions的更新pairwise cosine约
+`-.00187`、均值只保留约四分之一能量。因此当前active CV-CSD只把同一真实成功trajectory的exact functional
+credit覆盖到四个互不重叠same-task correct K4 conditions，并在共享query gradient处等权汇合；部署架构、rank16、
+optimizer与rollout数量均不变。该选择不是放弃memory，而是先检验现有证据直接指出的cross-video credit接口；若
+正确cross-video objective仍无法形成一致的policy-effective commitment，才由此触发layer-aligned memory设计。
+精确authority见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

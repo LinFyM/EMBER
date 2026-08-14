@@ -18,6 +18,12 @@ success可形成连续Writer credit。但cycle1 strict只有`135/400`、breadth6
 这把最早缺口从“reward是否有信号”推进到：**一次成功轨迹经过shared query commitment后仍形成随video set
 变化的近正交局部方向，而不是跨video共享的高层任务程序**。PCSD只否定当前query-only一轮positive CFM组合。
 
+因此当前CV-CSD不重做已通过的LPCP video carrier，也不把memory token或rank变化混进同轮。它只检验一个窄
+假设：若同一真实成功trajectory在四个互不重叠的same-task correct K4 conditions下各自通过完整
+Writer→LoRA→policy图形成exact CFM gradient，shared query map能否把demo-specific局部更新变成跨video可保留
+方向。它不要求四个LoRA相等，也不平均LoRA；若该目标仍得到近零跨video correction coherence，才构成把
+commitment前移到layer-aligned memory机制的直接触发证据。
+
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频内容特异性强，但absolute不足 |

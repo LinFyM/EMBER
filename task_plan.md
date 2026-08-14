@@ -230,7 +230,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 6. fresh训练到预注册节点，尽快做single-checkpoint strict paired400；
 7. 深入分析后进入下一轮，直到长期Goal真正达成。
 
-## Active iteration: V6-LPCP Paired Causal Success Distillation
+## Completed iteration: V6-LPCP Paired Causal Success Distillation
 
 - [x] 纠正口径：LPCP143只追平历史v6-fast，对AS139净`+4`且`p=.643969`，不是突然变强；
 - [x] 审计SHINE/Doc-to-LoRA原则、V6已有layer/module/rank slots，以及Target-Owned/Policy-Lane/Target-Spectral/
@@ -248,8 +248,22 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成全400 effective-BA与FP64跨video分析：PCSD/LPCP relative-L2 mean=`.0006834`，gained/lost幅度
   不可分；同task四个K4 video-set增量pairwise cosine平均`-.00187`、mean/sample energy=`.24860`；
 - [x] 按四项门终局PCSD：correct、breadth、lost与net全部失败，不续cycle2、不补controls、不参数小扫；
-- [ ] 写下一单变量authority，只改变成功credit如何跨same-task不同video sets合并；首次约145且retention过门
-  才补视频因果controls并运行相邻checkpoint，单点>150也不能跳过稳定性裁决。
+- [x] 从FP64近正交证据选择下一单变量：只改变成功credit如何跨same-task不同video sets合并。
+
+## Active iteration: V6-LPCP Cross-Video Causal Success Distillation
+
+- [x] 写CV-CSD可证伪authority：anchor K4只负责产生唯一成功trajectory；同一trajectory在四个互不重叠的
+  same-task correct K4 conditions下分别形成exact functional gradient，task内等权汇合；
+- [ ] 原位替换PCSD runtime/config/schema，完成schedule、shared replay/time/noise、view permutation、duplicate-view
+  degeneration、freeze与step0合同；
+- [ ] 完成最小CPU/真实active-task smoke和full24吞吐profile；support views不得增加rollout，wall目标不超过PCSD
+  `837.694s`的`1.75x`；
+- [ ] 从同一LPCP macro25、fresh optimizer训练cycle1并立即做K4 strict paired correct400；
+- [ ] 完成逐task/per-suite/breadth、相对LPCP/AS139/v6-fast/old/compiler/online的retained/gained/lost、全400
+  effective-BA及跨video correction分析；
+- [ ] 仅在cycle1五项门通过时exact-resume cycle2并评相邻稳定性；仅在稳定门通过时补same/wrong/shuffled/
+  reversed/no-video；单点>150也不能跳过；
+- [ ] 无论pass/non-pass，完成最早失效接口裁决并更新authority；不靠view数、LR、rank、scale或seed小扫救结果。
 
 ## Non-negotiable boundaries
 
@@ -267,6 +281,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP AS与PCSD均已按门终局。
 PCSD证明paired success可形成连续Writer credit，但shared query commitment把它外推成same-task跨video近正交的
-局部方向，held strict降到135。当前无EMBER GPU进程；下一步先写只针对跨video credit consolidation的单变量
-authority。literal memory保留为有证据时可选的commitment/carrier机制，不与credit变量无依据混合。生成LoRA后的
-task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+局部方向，held strict降到135。CV-CSD authority已冻结，只在active reward credit中增加四个互不重叠same-task
+K4 views的exact functional mean；当前无EMBER GPU进程，下一步原位实现并profile。literal memory保留为有证据时
+可选的commitment/carrier机制，不与credit变量无依据混合。生成LoRA后的task-local RL仍是初始Writer达到强
+zero-interaction起点之后的独立实验。

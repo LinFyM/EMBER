@@ -65,8 +65,14 @@
   的局部成功方向合并为可保留的共同程序**，而不是reward无信号、carrier没读视频或LoRA/action没变化；
 - 终局artifact均在PCSD strict root：`pcsd_cycle1_benchmark_comparison.json`、
   `as139_to_pcsd_cycle1_paired_transition.json`、`pcsd_cycle1_effective_ba_analysis.json`、
-  `pcsd_cycle1_first4_correction_fp64.json`、`pcsd_cycle1_terminal_adjudication.json`。当前无EMBER GPU进程；
-  下一步先据此写只改变跨video credit consolidation的可证伪design，再实现/profile/训练；
+  `pcsd_cycle1_first4_correction_fp64.json`、`pcsd_cycle1_terminal_adjudication.json`；
+- 当前active successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），authority=
+  `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。唯一新增变量是：anchor K4仍负责
+  产生AS139/LPCP唯一成功trajectory；若task active，同一trajectory分别在四个互不重叠、原序、same-task correct
+  K4 conditions下经独立Writer→LoRA→functional CFM反传，四view只在`query_delta.weight`梯度处等权汇合。四view
+  共用replay、flow time/noise panel；task总权重仍为1；support views不增加rollout。LPCP部署图、动态K、AS139/
+  rank16 tail、optimizer和信息墙不变，不加入memory/rank/negative/scale。当前无EMBER GPU进程，下一步是原位实现、
+  CPU/mechanism gate和真实full24吞吐profile；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

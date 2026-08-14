@@ -45,6 +45,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         != "exact_zero_without_reward_cfm_forward"
         or optimization.get("reward_replay_chunk_batch_size") != 8
         or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
+        or distributed.get("collective_timeout_minutes") != 30
         or formal.get("allowed_world_sizes") != [1, 2, 3, 4, 5, 6]
         or formal.get("checkpoint_cycles") != [1, 2]
         or formal.get("stage_stop_cycles") != [1, 2]

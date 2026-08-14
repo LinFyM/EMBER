@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -70,6 +71,7 @@ def initialize_deferred_process_group(
     context: DistributedContext,
     *,
     rendezvous_root: Path,
+    collective_timeout: timedelta | None = None,
 ) -> None:
     """Rendezvous outside NCCL, then start NCCL at collective-ready state."""
 
@@ -81,8 +83,6 @@ def initialize_deferred_process_group(
         )
     import os
     import re
-    from datetime import timedelta
-
     run_id = os.environ.get("TORCHELASTIC_RUN_ID", "")
     master_port = os.environ.get("MASTER_PORT", "")
     if not run_id or not master_port:
@@ -99,7 +99,10 @@ def initialize_deferred_process_group(
         [f"rank-{rank}" for rank in range(context.world_size)],
         timedelta(minutes=30),
     )
-    dist.init_process_group(backend="nccl")
+    if collective_timeout is None:
+        dist.init_process_group(backend="nccl")
+    else:
+        dist.init_process_group(backend="nccl", timeout=collective_timeout)
     dist.barrier(device_ids=[context.local_rank])
     del store
     if context.is_main:

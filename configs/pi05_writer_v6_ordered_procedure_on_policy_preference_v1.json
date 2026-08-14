@@ -63,7 +63,8 @@
       "exact_resume_world_topology_locked": true,
       "gradient_communication": "one_flat_writer_gradient_sum_all_reduce_then_divide_by_24",
       "nccl_p2p_disable": "1",
-      "deferred_process_group": true
+      "deferred_process_group": true,
+      "collective_timeout_minutes": 30
     }
   },
   "smoke_run": {

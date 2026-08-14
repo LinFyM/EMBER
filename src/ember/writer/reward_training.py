@@ -10,6 +10,7 @@ import os
 import socket
 import time
 from dataclasses import asdict, dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -308,7 +309,17 @@ def prepare_runtime(
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = "ordered_procedure_reward_preference_writer_only"
     optimizer = _optimizer(writer, config)
-    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+    initialize_deferred_process_group(
+        context,
+        rendezvous_root=args.output_dir.parent,
+        collective_timeout=timedelta(
+            minutes=int(
+                config["optimization"]["distributed"][
+                    "collective_timeout_minutes"
+                ]
+            )
+        ),
+    )
     contract = _contract(
         args=args,
         context=context,
@@ -518,15 +529,9 @@ def _task_gradient(
             dtype=torch.bfloat16,
             enabled=runtime.context.device.type == "cuda",
         ):
-            recompiled = runtime.writer.compile_readouts(
-                encoded.diagnostics.shared_core_slots,
-                encoded.diagnostics.per_video_procedure_slots,
-                packed[3],
-            )
-            generated = runtime.writer.decode_program(recompiled.program)
             lora_gradients, summary = functional_reward_lora_gradient(
                 runtime.policy,
-                generated,
+                rollout_lora,
                 runtime.lora_contract,
                 batch,
                 episode_ids,
@@ -540,6 +545,12 @@ def _task_gradient(
                 global_task_id=task.global_task_id,
                 device=runtime.context.device,
             )
+            recompiled = runtime.writer.compile_readouts(
+                encoded.diagnostics.shared_core_slots,
+                encoded.diagnostics.per_video_procedure_slots,
+                packed[3],
+            )
+            generated = runtime.writer.decode_program(recompiled.program)
             backpropagate_reward_preference(generated, lora_gradients)
         gradients = tuple(item.parameter.grad for item in runtime.gradient_layout)
         accumulate_flat_gradient(flat, gradients, runtime.gradient_layout)
@@ -555,7 +566,8 @@ def _task_gradient(
                 per_video_procedure=encoded.diagnostics.per_video_procedure_slots.detach(),
                 condition_video_offsets=packed[3],
                 before_lora={
-                    name: value.detach().clone() for name, value in generated.items()
+                    name: value.detach().clone()
+                    for name, value in rollout_lora.items()
                 },
                 query={
                     name: value.clone() for name, value in first.observations[0].items()

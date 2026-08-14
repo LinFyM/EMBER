@@ -100,6 +100,13 @@ forward，不能伪造没有比较证据的方向。
 flow time/noise沿用exact Beta(1.5,1)与task-keyed Gaussian、Nmc4、完整logical panel先生成再按physical B8切片；
 正常BF16/TF32和batch低位差异被接受，不固定batch1、不重复forward、不扩dtype。
 
+首次world5 formal暴露了一个不改变上述数学定义的graph-lifetime错误：实现先重解可训练compiler，再把该graph
+跨完整Nmc4 policy replay保留；最慢rank在一次242MiB申请时以约44.3GB物理占用OOM，其余rank随后触发默认
+600秒collective watchdog。历史SRTP已经验证过同类错误的正确执行图，因此修复不是缩小B8或改变estimator：
+CFM先在rollout实际使用的detached LoRA上形成cotangent，policy replay graph释放后，再从缓存的video readout
+重解一次同一compiler并反传。reward-stage collective timeout单独设为30分钟以覆盖合法长task尾部；其它训练路径
+和NCCL语义不变。
+
 首版optimizer继承AS的AdamW语义与当前约`3e-4`学习率、betas、eps、weight decay、clip1，但使用fresh moments。
 不扫learning rate、advantage scale、Nmc、K、rollout数或temperature。
 
@@ -162,7 +169,7 @@ train outcomes和24-task gradient cosine/冲突；这些只解释closed-loop，�
 6. reward optimizer step后LoRA、effective BA和fixed-action response均发生非零可部署变化；
 7. queue interleaving不改变task/video/env/policy/flow identities；0 OOM/nonfinite。
 
-实现commit=`e06a14b3f593536a7c5889bb4ce776876f43c76f`，正确LIBERO assets下full CPU=`395 passed`。gpu02物理1
+首版实现commit=`e06a14b3f593536a7c5889bb4ce776876f43c76f`，正确LIBERO assets下full CPU=`395 passed`。gpu02物理1
 的task4真实smoke为`1/4` success、157 replay chunks、80次B8×Nmc4 functional forwards；reward LoRA gradient
 RMS=`1.3138e-5`、Writer grad norm=`8.0119e-4`，q/k/output均产生约`1e-4`量级FP32更新。更新后的LoRA factor、
 effective BA与同query/noise fixed action response RMS分别非零，其中BA=`1.8146e-4`、action=`5.5719e-3`；peak

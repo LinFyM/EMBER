@@ -670,7 +670,7 @@ def complete_trajectory_batch(
     )
     if bool((valid <= 0).any()):
         raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
-    if bool((successes == successes[0]).all()):
+    if not bool(successes.any()):
         return {"executed_action_steps": valid}, episode_ids, successes
     keys = set(chunks[0][1])
     if any(set(observation) != keys for _, observation, _, _ in chunks):

@@ -27,11 +27,15 @@
   同一K4/rank16/V6 Writer与同一reward proposal，只在task汇合后的actual Writer parameter delta上加入train24
   成功executed-prefix一阶support约束。authority=
   `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`；
-- ADSP canonical实现与fresh schema已完成，完整CPU=`400 passed`、compileall/diff check和架构hard gate通过；task4
+- ADSP canonical实现与fresh schema已完成，完整CPU=`401 passed`、compileall/diff check和架构hard gate通过；task4
   真实mixed smoke在gpu02物理1完整exit0，同raw均为`1/4` success、157 chunks、80次policy forward，preference
   gradient与BA/action response逐位一致；support gradient RMS=`5.00225e-5`、16次额外backward。raw candidate已满足
   该task的1条constraint，identity fallback、final violation=0、descent/energy ratio均1；cycle=`157.599s`为raw
   `1.077x`，peak reserved=`36.774GB`。config已seal，下一步是clean pushed commit上的fresh full24 cycle；
+- 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
+  builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
+  boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成
+  回归后full CPU=`401 passed`。失败root只作工程证据、不resume；新commit后fresh重跑；
 - reward graph-release实现commit=`fa53ce43c92915229ca4c49fe47d2aa6f16bef0c`已push；独立config=
   `configs/pi05_writer_v6_ordered_procedure_on_policy_preference_v1.json`，reward checkpoint/evaluator明确使用cycle schema，
   不冒充AS exact-resume；正确LIBERO assets下full CPU=`395 passed`；

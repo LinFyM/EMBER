@@ -292,6 +292,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     forward，只新增16次support backward，preference gradient与BA/action response逐位一致；cycle墙钟仅
     `1.077x`、peak reserved降至`36.774GB`。该单task raw delta本来就满足自己的support，solver按合同严格identity
     fallback；因此smoke只封存实现/效率，不提供“projection能改善多task”的科学证据，后者必须由full24裁决。
+27. 首次ADSP full24在任何metric/checkpoint前暴露了旧raw replay builder的真实兼容边界：它对all-success与
+    all-failure都只返回summary，因为旧reward会跳过所有homogeneous；新方法却需要all-success产生support-only
+    tangent。最窄修复是只让all-failure保持summary-only，all-success完整collate replay。该错误解释task4 mixed
+    smoke为何通过，也证明失败不是world6/GPU/NCCL或scientific non-pass；新增data-boundary回归后full CPU=`401 passed`。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

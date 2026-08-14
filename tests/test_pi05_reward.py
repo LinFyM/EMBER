@@ -319,13 +319,23 @@ def _trajectory(*, success: bool) -> RewardTrajectory:
     )
 
 
-def test_homogeneous_k4_replay_skips_observation_concatenation() -> None:
+def test_all_failure_k4_replay_skips_observation_concatenation() -> None:
     batch, episode_ids, successes = complete_trajectory_batch(
         tuple(_trajectory(success=False) for _ in range(4)), torch.device("cpu")
     )
     assert set(batch) == {"executed_action_steps"}
     assert episode_ids.tolist() == [0, 1, 2, 3]
     assert successes.tolist() == [0.0] * 4
+
+
+def test_all_success_k4_replay_retains_the_support_batch() -> None:
+    batch, episode_ids, successes = complete_trajectory_batch(
+        tuple(_trajectory(success=True) for _ in range(4)), torch.device("cpu")
+    )
+    assert batch[ACTION].shape == (4, 50, 7)
+    assert batch["executed_action_steps"].tolist() == [5, 5, 5, 5]
+    assert episode_ids.tolist() == [0, 1, 2, 3]
+    assert successes.tolist() == [1.0] * 4
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:

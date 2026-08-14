@@ -185,8 +185,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 写单变量authority：保留同一K4/rank16/V6 Writer、raw LOO reward proposal、optimizer与部署图，只约束
   task汇合后的actual AdamW parameter delta不增加train24成功executed-prefix task-mean loss；
 - [x] 原位替换唯一reward runtime，完成success-support cotangent、small-dual projection、fresh schema与必要CPU门；
-- [x] 完整CPU=`400 passed`；task4真实mixed smoke保持raw proposal逐位一致，support路径非零、identity fallback、
+- [x] 完整CPU=`401 passed`；task4真实mixed smoke保持raw proposal逐位一致，support路径非零、identity fallback、
   BA/action与显存/吞吐门通过；all-success/all-failure语义由CPU直接覆盖，config已seal；
+- [x] 首次world6 formal在metric/checkpoint前定位旧raw replay的all-success summary-only工程边界；收窄为仅
+  all-failure summary-only并加入完整collation回归，失败root不resume；
 - [ ] 从clean pushed commit和fresh AS139启动一个full24 cycle并按mechanism gate裁决；
 - [ ] 立即完成同schedule K4 strict paired400，相对AS139/raw reward138逐task裁决；
 - [ ] 若projection active但仍`<144`、breadth<7或lost>10，本V6 constraint方向终局，转向V6强机制加

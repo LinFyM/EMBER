@@ -154,7 +154,7 @@ cycle2若被授权时仍有明确exact-resume语义，同时本轮实际部署�
 7. fresh checkpoint不能误载raw reward cycle，evaluation只接受新deployment kind；
 8. 一个canonical reward path，完整CPU回归、compileall和diff check通过。
 
-完整CPU回归为`400 passed`，compileall与diff check通过；架构门禁无hard violation。以上只证明方法被真实实现，
+完整CPU回归现为`401 passed`，compileall与diff check通过；架构门禁无hard violation。以上只证明方法被真实实现，
 不预测closed-loop。
 
 ## 10. Live smoke and formal gate
@@ -178,6 +178,13 @@ formal必须满足：
 - projected/raw delta energy ratio至少0.10，避免约束把更新机械归零；
 - q/k/output、effective BA与fixed action response非零；
 - 0 OOM/nonfinite/watchdog/forbidden read，cycle wall不超过raw reward matched wall的2.0倍。
+
+首次clean `b38a644` world6 formal在产生任何metric/checkpoint前触发工程contract failure。根因经代码与
+deterministic workload共同确认：旧raw-reward replay builder会对所有homogeneous panel只返回
+`executed_action_steps`，因为旧方法全部跳过homogeneous；ADSP需要all-success进入support-only credit，第一个
+all-success task因此缺少action batch。修复只把summary-only条件收窄为all-failure；all-success完整collate原始
+replay，mixed与all-failure语义均不变。新增replay-builder集成回归后full CPU=`401 passed`。失败root没有
+scientific result，不resume；修复后从新clean commit与fresh root重跑完整full24。
 
 未过机制门不做strict评测。通过后立即运行同schedule K4 strict paired correct400。
 

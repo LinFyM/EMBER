@@ -19,9 +19,10 @@ candidate合并异质task方向后没有保住已有support，而不是幅度、
 active successor为`action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只改变
 最终shared update：保留同一K4视频输入、rank16 V6 Writer、19.7万FP32参数、LOO reward proposal和完整部署图；
 对task汇合后的actual parameter delta施加train24成功executed-prefix loss的一阶非增约束。它不是继续cycle2，
-也不是恢复旧Program bank/guard路线。实现、fresh schema、完整CPU=`400 passed`与task4真实mixed smoke已经完成；
+也不是恢复旧Program bank/guard路线。实现、fresh schema、完整CPU=`401 passed`与task4真实mixed smoke已经完成；
 smoke保持raw BA/action response逐位一致，support路径非零，cycle wall仅为raw的`1.077x`且peak reserved=
-`36.774GB`。config已seal，下一步从clean pushed commit正式fresh full24 cycle。
+`36.774GB`。首次formal暴露并已修复旧replay builder的all-success summary-only边界；失败发生在任何
+metric/checkpoint前，不resume。config保持sealed，下一步从修复后的clean pushed commit与新root fresh full24。
 
 ## 2. Active single changed variable and training semantics
 

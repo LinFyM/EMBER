@@ -12,10 +12,10 @@ from ember.writer.errors import WriterModelError
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_v6_semantic_core_set_bridge_as_writer_v1"
+    "ember_pi05_v6_semantic_core_common_value_set_bridge_as_writer_v1"
 )
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_semantic_core_set_bridge_as_writer_launch_v1"
+    "ember_pi05_v6_semantic_core_common_value_set_bridge_as_writer_launch_v1"
 )
 
 
@@ -78,7 +78,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_v6_semantic_core_set_bridge_v1",
+        "architecture": "pi05_v6_semantic_core_common_value_set_bridge_v1",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "camera_dataset": "obs/agentview_rgb",
         "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -90,12 +90,12 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "program_width": 256,
         "policy_slot_count": 320,
         "semantic_core_set_fusion": (
-            "permutation_invariant_language_token_aligned_mean_backbone_plus_"
-            "selected_centered_residual_before_native_core_reader"
+            "permutation_invariant_language_token_aligned_attention_pooled_"
+            "raw_common_value_before_native_core_reader"
         ),
         "semantic_core_set_qk": "shared_bias_free_pre_rms_256_to_256",
         "semantic_core_set_value": (
-            "raw_centered_per_video_language_token_no_value_projection"
+            "raw_attention_pooled_per_video_language_token_no_value_projection"
         ),
         "semantic_core_set_output": (
             "shared_bias_free_zero_initialized_256_to_256_shared_correction"
@@ -109,7 +109,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
             "readouts_before_native_adaln_fusion"
         ),
         "k1_contract": (
-            "exact_native_v6_identity_for_all_semantic_core_set_parameters"
+            "explicit_exact_native_v6_bypass_for_all_common_value_set_parameters"
         ),
         "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
         "v6_fast_warm_start_checkpoint": (

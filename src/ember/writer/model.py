@@ -1,4 +1,4 @@
-"""Canonical dynamic-K Semantic-Core set bridge over native v6."""
+"""Canonical dynamic-K Semantic-Core common-Value bridge over native v6."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class WriterProgramOutput:
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Compile a trainably shared semantic Core and native ordered Procedure."""
+    """Compile trainable common Core Value and native ordered Procedure."""
 
     PUBLIC_LORA_RANK = 16
     PROGRAM_WIDTH = 256

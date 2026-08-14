@@ -1,4 +1,4 @@
-"""Permutation-invariant fusion of language-aligned per-video Semantic Core."""
+"""Permutation-invariant raw common Value over per-video Semantic Core."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ class SemanticCoreSetDiagnostics:
 
 
 class SemanticCoreSetFusion(torch.nn.Module):
-    """Write one selected centered video-set residual into every aligned Core."""
+    """Write one attention-pooled common video Value into every aligned Core."""
 
     def __init__(self, *, width: int = 256) -> None:
         super().__init__()
@@ -60,15 +60,20 @@ class SemanticCoreSetFusion(torch.nn.Module):
         core: torch.Tensor,
         valid_core: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if core.shape[0] == 1:
+            correction = torch.zeros_like(core[0])
+            attention = torch.ones(
+                core.shape[:2], dtype=core.dtype, device=core.device
+            ).masked_fill(~valid_core, 0.0)
+            return core, correction, attention
         mean = core.mean(dim=0)
-        centered = core - mean[None]
         query = self.query(self.query_norm(mean))
         key = self.key(self.evidence_norm(core))
         logits = (key * query[None]).sum(dim=-1) * (self.width**-0.5)
         attention = torch.softmax(logits.to(torch.float32), dim=0).to(logits.dtype)
-        residual = (attention[..., None] * centered).sum(dim=0)
+        common_value = (attention[..., None] * core).sum(dim=0)
         valid = valid_core[0]
-        correction = self.output(residual).masked_fill(~valid[..., None], 0.0)
+        correction = self.output(common_value).masked_fill(~valid[..., None], 0.0)
         attention = attention.masked_fill(~valid[None], 0.0)
         return core + correction[None], correction, attention
 

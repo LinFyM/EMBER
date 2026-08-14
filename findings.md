@@ -252,6 +252,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 18. Semantic-Core Set的真实world6 profile表明该边界移动没有引入吞吐或显存阻塞：steady`24.277s/macro`、
     reserved`40.758GB`、最长K4 323帧无截断；zero-init output打开后q/k在macro1→2均发生非零更新。它只证明
     functional credit可达该层，是否形成有用task mean仍必须由macro25 strict400裁决。
+19. Semantic-Core Set macro25 K4 strict=`135/400`、breadth7，per-task=`1/2/46/30/0/35/20/1`；相对matched
+    Shared-Core139为`120/15/19`净`-4`、churn34。归零trained output只改变`.001763` BA，而原始Core correction
+    只有`1.8275e-5`、attention entropy/log4=`.999885`。所以不是compiler衰减，而是centered Value在近均匀
+    attention下先相消；下一单变量应让共有Semantic Core成为trainable Value，同时保留K1恒等与有向Procedure。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -37,30 +37,30 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**V6 Shared-Core Procedure-Set Bridge**：macro25 K4 strict=`139/400`、breadth6、per-task=
-`1/4/46/34/0/36/18/0`。相对K1 old134为`118/21/16` retained/gained/lost，净`+5`；相对matched
-post-compiler130净`+9`，但增益集中Long1，Goal3/Long2仍为0。它按breadth门终局non-pass，不resume或扫参。
+最新完成closed-loop是**V6 Semantic-Core Set Bridge**：macro25 K4 strict=`135/400`、breadth7、per-task=
+`1/2/46/30/0/35/20/1`。相对matched K4 Shared-Core139为`120/15/19` retained/gained/lost，净`-4`；Long2
+从0到1但Goal3仍为0。它按`<140`门终局non-pass，不resume或扫参。
 
 已完成的数据流是：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
     -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> native Core reader jointly reads the unordered union of per-video Core
+    -> trainable language-token-aligned Semantic-Core set correction
+    -> native Core reader jointly reads the unordered union of corrected Core
     -> each ordered Procedure is read against the same shared Core state
-    -> permutation-invariant Procedure-set aggregation
+    -> parameter-free mean of per-video ordered Procedure readouts
     -> native AdaLN/post-fusion/factor heads run once
     -> one complete 38-target rank-16 task LoRA
 ```
 
-该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层。matched去混淆显示，训练残差对effective BA只改变
-`.000918`，而shared-Core路径相对K1改变`.039674`；139几乎全部来自无参数Core union。当前active design是
-**V6 Semantic-Core Set Bridge**：只把同预算可学习set前移到语言对齐Semantic Core tokens，并把后端Procedure
-聚合改为无参数mean；不得继续训练/放大当前Procedure-Set，也不得同时修改rank、recipe、底座或mapper。authority=
-`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，精确状态只取`docs/active_session_handoff.md`。
-canonical实现已原位替换旧schema/config/runtime，full CPU=`372 passed`；GPU机制与gpu01 world6 full24 B20
-profile已通过并seal formal；clean fresh macro0→25与K4 B8/B16/B32部署定标也已完成，按最高实测吞吐锁B32，
-下一裁决是同一macro25 checkpoint的K4 strict paired400。
+trained-output归零显示effective BA只改变`.001763`；原始Core correction仅`1.8275e-5`且attention entropy/log4=
+`.999885`，说明centered Value在近均匀attention下先相消，compiler反而放大该小差异。当前active design是
+**V6 Semantic-Core Common-Value Set Bridge**：只把同位置、同预算set的Value从weighted centered residual改为
+weighted raw common Core；K1显式旁路，底座、rank16、B20、动态K和后端均不变。authority=
+`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`，精确状态只取
+`docs/active_session_handoff.md`。canonical实现已原位切换fresh schema，full CPU=`373 passed`；当前待GPU
+机制/full24 profile，尚未训练。
 
 ## 4. Long-term objective and decision rule
 

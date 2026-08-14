@@ -4,10 +4,32 @@ import torch
 
 from fixtures.legacy_v6_writer import _model as _legacy_v6_model
 from fixtures.writer_model import _inputs, _model
+from ember.writer.slot_set import SemanticCoreSetFusion
 
 
 def _sum(state: dict[str, torch.Tensor]) -> torch.Tensor:
     return sum(value.float().sum() for value in state.values())
+
+
+def test_semantic_core_common_value_is_raw_mean_under_uniform_attention() -> None:
+    fusion = SemanticCoreSetFusion(width=4)
+    with torch.no_grad():
+        fusion.query.weight.zero_()
+        fusion.key.weight.zero_()
+        fusion.output.weight.copy_(torch.eye(4))
+    core = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4)
+    valid = torch.ones(2, 3, dtype=torch.bool)
+    corrected, diagnostics = fusion(core, valid, torch.tensor([0, 2]))
+    common = core.mean(dim=0)
+    torch.testing.assert_close(diagnostics.shared_corrections[0], common)
+    torch.testing.assert_close(corrected, core + common[None])
+    torch.testing.assert_close(diagnostics.attention[0], torch.full((2, 3), 0.5))
+
+    singleton, singleton_diagnostics = fusion(
+        core[:1], valid[:1], torch.tensor([0, 1])
+    )
+    assert torch.equal(singleton, core[:1])
+    assert not singleton_diagnostics.shared_corrections.count_nonzero()
 
 
 def test_native_compiler_public_stages_are_exact_old_graph() -> None:
@@ -53,7 +75,7 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
     assert torch.equal(diagnostics["fused_slots"], fused)
 
 
-def test_v6_semantic_core_set_k1_is_exact_native_v6_for_any_set_weights() -> None:
+def test_v6_semantic_core_common_value_k1_is_exact_native_v6() -> None:
     model, _ = _model()
     frames, indices, _, _, tokens, masks, spans = _inputs()
     inputs = (
@@ -85,7 +107,7 @@ def test_v6_semantic_core_set_k1_is_exact_native_v6_for_any_set_weights() -> Non
     assert all(torch.equal(bridged_after[name], native[name]) for name in native)
 
 
-def test_v6_semantic_core_set_is_video_invariant_and_order_sensitive() -> None:
+def test_v6_semantic_core_common_value_is_set_invariant_and_order_sensitive() -> None:
     model, _ = _model()
     inputs = _inputs()
     natural = model.encode_program(*inputs, policy=torch.nn.Identity())
@@ -119,7 +141,7 @@ def test_v6_semantic_core_set_is_video_invariant_and_order_sensitive() -> None:
     assert not torch.allclose(natural.program, reversed_program.program)
 
 
-def test_v6_semantic_core_set_gradient_staging_and_freeze_boundary() -> None:
+def test_v6_semantic_core_common_value_gradient_staging_and_freeze_boundary() -> None:
     model, _ = _model()
     generated, auxiliary = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
@@ -160,7 +182,7 @@ def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
     assert all(value.shape == model.template_state()[name].shape for name, value in generated.items())
 
 
-def test_semantic_core_set_step0_is_previous_zero_procedure_set_graph() -> None:
+def test_semantic_core_common_value_step0_is_previous_zero_graph() -> None:
     model, _ = _model()
     inputs = _inputs()
     actual = model.encode_program(*inputs, policy=torch.nn.Identity()).program

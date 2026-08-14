@@ -30,35 +30,29 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的**V6 Shared-Core Procedure-Set Bridge**在macro25 K4 strict为`139/400`、breadth6、per-task=
-`1/4/46/34/0/36/18/0`。相对K1严格恒等的old134为`118 retained / 21 gained / 16 lost`，净`+5`；相对matched
-post-compiler K4 130净`+9`。它说明把多视频集合边界前移到Core读出之前确实改善closed-loop，但增益集中在Long1，
-Goal3/Long2仍为0，没有增加breadth，按门终局non-pass。
+最新完成的**V6 Semantic-Core Set Bridge**在macro25 K4 strict为`135/400`、breadth7、per-task=
+`1/2/46/30/0/35/20/1`。相对matched K4 Shared-Core139为`120 retained / 15 gained / 19 lost`、净`-4`；Long2
+从0到1但Goal3仍为0，按`<140`门终局non-pass。
 
 完成的数据流是：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
     -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> native Core reader jointly reads the unordered union of video Core memories
+    -> trainable language-token-aligned Semantic-Core set correction
+    -> native Core reader jointly reads the unordered union of corrected Core memories
     -> each ordered Procedure is read against that one shared Core state
-    -> permutation-invariant Procedure-set aggregation before native AdaLN fusion
+    -> parameter-free mean of per-video ordered Procedure readouts
     -> native compiler remainder and factor heads run once
     -> complete 38-target rank-16 LoRA
 ```
 
-它只把同一个约197k集合层从完整compiler之后前移到shared Core与最终Core/Procedure fusion之间，不做frame拼接、
-phase alignment或LoRA平均。K=1仍严格恒等于原v6；K>1先形成共同高层语义，再比较各video内部有序过程。完整
-authority见
-[`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
-canonical实现、全量`371 passed`、world6训练和strict400均完整。去混淆进一步发现：训练后的Procedure-Set残差
-只改变约`.000918` effective BA；K4相对K1约`.03967`的变化几乎全部来自无参数shared-Core union。因此下一单变量
-方向不是续训后端set，而是**V6 Semantic-Core Set Bridge**：把同预算可学习集合共识再前移到语言对齐的
-Semantic Core tokens，后端Procedure只做无参数集合归约；底座、rank16、B20与动态K不变。完整预注册authority见
-[`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md)，
-canonical实现已原位替换旧Procedure-Set路径，step0严格保留139的output-zero数据流，full CPU=`372 passed`；
-GPU机制与gpu01 world6 full24 B20 profile已通过并seal formal；clean fresh macro0→25和K4 B8/B16/B32部署定标
-也已完成，按最高实测吞吐锁B32，当前待K4 strict400，尚无新性能claim。
+归零诊断发现训练层只改变`.001763` effective BA；更早Core correction仅`1.8275e-5`且attention entropy/log4=
+`.999885`。原因是当前trainable Value只读取`C_k-mean(C)`，近均匀attention时共有内容被构造性消掉。当前active
+successor **V6 Semantic-Core Common-Value Set Bridge**只把Value改为weighted raw Core，让多视频共有高层语义
+可训练；K1、位置、参数量、rank16、B20和有向Procedure全部不变。authority见
+[`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md)，
+canonical实现已原位切换，full CPU=`373 passed`，当前待GPU profile，尚无新性能claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

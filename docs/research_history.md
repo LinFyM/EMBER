@@ -104,6 +104,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Task-Grounded Full-Factor rank8 | `91/400`, breadth5 | 完整dynamic A/B可训练且相对matched fixed-A净增3 | B norm仅`.062x`、BA norm`.245x`且近正交；offline loss接受弱重参数化，当前前端/mapper组合终局non-pass |
 | V6 Dynamic Slot-Set Bridge | K4 `130/400`, breadth6 | same-task BA方差降约`9.26x`且基本保留old134支持 | post-compiler set使task mean K1→K4 cosine`.999832`，只稳定nuisance；不续训/调K |
 | V6 Shared-Core Procedure-Set Bridge | K4 `139/400`, breadth6 | 相对post-compiler130净`+9`；更早Core union改善absolute且same-task方差降约`9.69x` | 相对old134只净`+5`且增益集中Long1；trained Procedure-Set仅`.000918` BA改写，Goal3/Long2仍0，按门终止 |
+| V6 Semantic-Core Set Bridge | K4 `135/400`, breadth7 | Long2从0到1；trainable set从语言对齐Core进入native policy拓扑 | 相对matched139=`120/15/19`净`-4`；attention entropy`.999885`、Core correction仅`1.83e-5`，centered Value近均匀时相消，按门终止 |
 
 ## 4. Final rank14 adjudication
 

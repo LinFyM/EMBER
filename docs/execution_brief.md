@@ -5,58 +5,38 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and active method
 
-V6 Shared-Core Procedure-Set Bridge已完成macro25 K4 strict paired correct400：`139/400`、breadth6、per-task=
-`1/4/46/34/0/36/18/0`、per-suite=`5/80/36/18`，top3占`116/139=83.45%`。相对K1 old134为
-`118 retained / 21 gained / 16 lost`、净`+5`、churn37；相对matched post-compiler K4 130为`118/21/12`、
-净`+9`。增益主要来自Long1净`+7`，Goal3/Long2仍为0；breadth低于7，按门终局non-pass。
+V6 Semantic-Core Set Bridge已完成macro25 K4 strict paired correct400：`135/400`、breadth7，per-task=
+`1/2/46/30/0/35/20/1`、per-suite=`3/76/35/21`。相对matched K4 Shared-Core139为
+`120 retained / 15 gained / 19 lost`、net`-4`、churn34、suite net=`-2/-4/-1/+3`；Long2从0到1但Goal3仍0。
+相对old134净`+1`、v6-fast143净`-8`。400 LoRAs、72 jobs、18 workers均完整exit0；按`<140`门终局non-pass。
 
-该方法保留冻结v6-fast的language-axial evidence、Semantic
-Core、有向Procedure、native compiler remainder、factor heads和rank16 topology，只把同一个约197k set层从完整
-compiler之后前移到shared Core读出与最终Core/Procedure fusion之间：原生Core reader先联合读取无序Core union；
-每条有序Procedure再以同一shared Core解释；Procedure-set置换不变聚合后，原生AdaLN/post-fusion/factor heads只
-运行一次。完整合同见`action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。
+关键接口分析否定了“只要把trainable set前移到Semantic Core就能学习共有内容”：trained output归零只改变
+`.001763` effective BA，task-mean`.001472`；原始Core correction相对完整Core仅`1.8275e-5`，K4 attention
+entropy/log4=`.999885`。native compiler实际把微小Core差放大为BA churn；最早失效发生在set内部，因为当前Value=
+`sum alpha(C_k-mean C)`，attention近均匀时按构造相消。无参数shared Core union仍贡献K1→K4约`.039675` BA变化。
 
-canonical实现已完成。64项定向门验证native compiler阶段化前后逐tensor相等、K1在任意set参数下严格等于native
-v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set参数获得梯度；全量CPU=`371 passed`。
-真实gpu01 world6 full24 B20 profile的macro1/2=`26.011/24.249s`、peak reserved=`40.758GB`、K1--K4各6、最长
-323帧且0 OOM/nonfinite；macro1→2 q/k delta非零，完整set credit已打开。clean detached `502618b` fresh
-macro0→25也已完整结束：25/25 metrics、completion与checkpoint齐全，总耗时`662.730s`，loss first/last=
-`.101182/.095655`，0 OOM/nonfinite。macro25 K4 B8/B16/B32 deployment profile分别为
-`.223358/.223313/.223323 LoRA/s`，三者stable且峰值reserved约`13.01GB`，按最高吞吐锁B8。
-
-matched去混淆把Procedure-Set output归零后，训练残差相对当前LoRA的effective-BA relative-L2 mean只有
-`.000918`、task-mean只有`.000574`；无参数shared-Core union + Procedure mean相对K1则为`.039674/.016982`。
-所以closed-loop净增主要由更早数据流产生，后端训练层几乎没有学到可用改写。下一单变量是把同一个集合算子
-前移到语言token对齐的per-video Semantic Core上，后端Procedure只做无参数mean；其它底座、rank16、B20、动态K
-和训练recipe保持不变。
-
-该V6 Semantic-Core Set Bridge的预注册authority与canonical实现已完成：同预算197120参数set对语言对齐Core
-生成shared correction，step0严格保留139路径的output-zero数据流；旧Procedure-Set executable schema已删除。
-full CPU=`372 passed`。GPU机制门和gpu01 world6 full24 B20 profile已通过：macro1/2=`27.214/24.277s`、peak
-reserved=`40.758GB`、K各6、最长323帧无截断、q/k第二步非零更新、0 OOM/nonfinite；formal合同已seal。clean
-detached `884e55e` fresh macro0→25已完整结束：25/25 metrics、checkpoint/completion/exit0齐全，总耗时
-`619.319s`，loss `.101182→.095644`。同一checkpoint K4 deployment profile的B8/B16/B32=
-`.223147/.223184/.223287 LoRA/s`，三者stable，按最高吞吐锁B32；下一步strict paired400。
+当前active方法是V6 Semantic-Core Common-Value Set Bridge：位置、参数量、底座、rank16、B20、动态K与后端均
+不变，只把Value改为`sum alpha C_k`，让跨video共有Semantic Core本身可训练；K1显式旁路保持任意参数下native
+v6恒等。canonical实现已原位切换fresh schema；定向机制门和full CPU=`373 passed`，当前待GPU机制/full24
+profile。完整预注册authority见`action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
 
 ## 2. Single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology
   和factor heads全部加载macro400并冻结；
-- 已完成方法唯一新增/训练的是跨video Procedure-Set层；下一迭代把同预算训练层移动到Semantic Core并移除后端
-  trainable set，不加memory、rank变化、negative、
-  expert、reward或新LoRA mapper；
+- 当前唯一变量是Semantic-Core set的Value由centered residual改为raw common Core；不改位置、参数预算、
+  memory、rank、negative、expert、reward或LoRA mapper；
 - 24 train tasks构成一个完整macro，task内B20 mean后24-task等权；
 - 每macro K1/K2/K3/K4各6，各task每四个macro覆盖全部K；
 - K条video同task、action-hidden、互不重复且与action episodes错开，每条video保留stride-5完整序列；
-- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Procedure-Set functional gradient；
+- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Common-Value set functional gradient；
 - profile只裁决真实wall/显存/batch，训练loss不选择checkpoint。
 
 ## 3. Closed-loop adjudication
 
-K1逐tensor等价、K轴置换不变、video内顺序敏感、gradient/freeze和full24 profile均已完成；现fresh macro0→25并做K4
-strict paired correct400。K1复用严格等价的old134 paired基线；K4若没有明确超过134或breadth低于7即终止，不扫
-K/LR/temperature/seed。若K4超过150，封存single-checkpoint结果并补K1--K4 scaling及correct/same/wrong/
-shuffled/reversed/no-video controls；机制成功后再建立同架构fresh训练recipe。
+先完成Common-Value的K1/step0/set/order/gradient门和full24 profile，再fresh macro0→25并做K4 strict paired400。
+K4若低于140或breadth低于7即终止；140..150只有相对matched139净增、至少3 suites不下降并解锁Goal3/Long2才
+resume；超过150后补K1--K4 scaling及correct/same/wrong/shuffled/reversed/no-video controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

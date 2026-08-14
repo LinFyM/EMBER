@@ -171,3 +171,24 @@ B32。profile wall=`1288.857s`，root：
 
 profile只裁决部署batch，不是性能证据。下一裁决是从profile-sealed clean commit立刻做同一macro25的K4 strict
 paired correct400。
+
+## 11. Strict结果与终局裁决
+
+clean detached evaluation commit `850bd38fb40ed5ec5c9c813aaa65380f1ec6de53`在gpu01物理
+`0/1/2/4/5/6`完成400/400 LoRAs、72/72 jobs和18/18 workers，全部exit0；总wall=`1222.766s`，rollout-only=
+`682.032s`。strict=`135/400`、breadth7，per-task=`1/2/46/30/0/35/20/1`、per-suite=`3/76/35/21`、
+top3=`111/135=82.22%`。root：
+`runs/outputs/pi05_v6_semantic_core_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_850bd38_gpu01_20260814`。
+
+相对matched K4 Shared-Core Procedure-Set139为`120 retained / 15 gained / 19 lost / 246 both-fail`，net`-4`、
+churn34、McNemar p=`.60759`；suite net=`-2/-4/-1/+3`。Long2从0到1使breadth到7，但Goal3仍0，Object3净
+损失4。相对old134=`115/20/19`净`+1`，相对v6-fast143=`119/16/24`净`-8`；与compiler138/online128的净差
+分别`-3/+7`。所有panel episode keys、state/env/policy seed及共同noise prefix一致，两个K4 matched reference的
+四条video schedule也逐episode一致。
+
+trained-output归零进一步给出：当前→zero effective-BA relative-L2 mean/task-mean=`.001763/.001472`，action=
+`.003618`；matched139→当前=`.001746/.001439`。原始Core correction相对完整Core只有`1.8275e-5`，K4 attention
+entropy/log(4)=`.999885`；而K1→无参数K4 zero路径仍为`.039675/.016982`。因此compiler实际放大而非压弱这个
+微小修正，最早失败是centered Value在近均匀attention下按构造相消。该架构按`<140`门终局non-pass：不resume、
+不补controls、不扫超参。下一单变量只让trainable set读取raw common Semantic Core Value，authority见
+`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。

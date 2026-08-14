@@ -108,7 +108,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `.000918` effective-BA改写，139主要来自无参数shared Core数据流；
 - [x] breadth仍6且Goal3/Long2仍0，按门终局non-pass；不resume、不补controls、不扫K/LR/seed/temperature。
 
-## Active iteration: Semantic-Core Set Bridge
+## Completed iteration: Semantic-Core Set Bridge
 
 - [x] 写单变量authority：将同预算可学习集合共识从Procedure readout前移到语言对齐Semantic Core tokens；
 - [x] 后端per-video Procedure只作无参数mean，保留v6底座、rank16、B20、动态K与K1严格恒等；
@@ -119,7 +119,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   exit0，loss first/last=`.101182/.095644`，0 OOM/nonfinite；
 - [x] 完成macro25 K4 B8/B16/B32 deployment profile：`.223147/.223184/.223287 LoRA/s`，三者stable、
   0 OOM/nonfinite，按最高吞吐锁B32；
-- [ ] 从profile-sealed clean commit做K4 strict paired correct400并完成逐task裁决。
+- [x] 从profile-sealed clean commit完成K4 strict paired correct400：`135/400`、breadth7、per-task=
+  `1/2/46/30/0/35/20/1`；
+- [x] 相对matched139=`120/15/19`净`-4`；按`<140`门终局，不resume、不扫参；
+- [x] 完成trained-output归零与Core尺度分析：BA改写`.001763`，原始Core correction仅`1.8275e-5`，attention
+  entropy/log4=`.999885`，把最早失败定位到centered Value相消而非compiler衰减。
+
+## Active iteration: Semantic-Core Common-Value Set Bridge
+
+- [x] 写单变量authority：只把set Value从weighted centered residual改为weighted raw common Core；
+- [x] 原位更新canonical schema/config/runtime；K1、step0、raw-mean Value、set、顺序、gradient门与full CPU=
+  `373 passed`；
+- [ ] 做真实world profile，从clean seal fresh训练到macro25并尽快K4 strict paired400。
 
 ## Continuous loop after this result
 
@@ -145,5 +156,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；Semantic-Core Set机制、fresh macro25训练
-和K4 deployment profile均已完成。下一步从profile-sealed clean commit立即做strict400。
+无权限或资产阻塞。Semantic-Core Set已在135/breadth7按门终局；下一步原位实现Common-Value单变量并进入
+机制/profile→fresh macro25→strict400。

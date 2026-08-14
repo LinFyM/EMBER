@@ -385,13 +385,13 @@ def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
         {
             "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
             "kind": DYNAMIC_K_WRITER_KIND,
-            "arm": "v6_semantic_core_set_bridge_correct",
+            "arm": "v6_semantic_core_common_value_set_bridge_correct",
             "config": {
-                "schema": "ember_pi05_v6_semantic_core_set_bridge_as_writer_v1"
+                "schema": "ember_pi05_v6_semantic_core_common_value_set_bridge_as_writer_v1"
             },
             "writer_asset": {
                 "reference": "dynamic-k:m25:rank16",
-                "kind": "v6_semantic_core_set_bridge_macro_checkpoint",
+                "kind": "v6_semantic_core_common_value_set_bridge_macro_checkpoint",
                 "method_macro": 50,
                 "writer_parameter_count": 123,
                 "generated_lora_tensor_count": 2,
@@ -448,7 +448,7 @@ def test_dynamic_k_cache_dispatches_nested_k4_video_sets(tmp_path: Path) -> None
             "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
             "kind": DYNAMIC_K_WRITER_KIND,
             "config": {
-                "schema": "ember_pi05_v6_semantic_core_set_bridge_as_writer_v1"
+                "schema": "ember_pi05_v6_semantic_core_common_value_set_bridge_as_writer_v1"
             },
             "information_wall": {"evaluation_k": 4},
         }

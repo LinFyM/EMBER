@@ -36,9 +36,7 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
     core = torch.randn(2, 4, 256, generator=generator)
     procedure = torch.randn(2, 5, 256, generator=generator)
     valid_core = torch.tensor([[True, True, True, False], [True] * 4])
-    valid_procedure = torch.tensor(
-        [[True, True, True, False, False], [True] * 5]
-    )
+    valid_procedure = torch.tensor([[True, True, True, False, False], [True] * 5])
     positions = torch.arange(5).expand(2, -1)
 
     routing = compiler.routing_norm(compiler._routing())[None].expand(2, -1, -1)
@@ -50,9 +48,9 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
         positions,
         valid_procedure,
     )
-    gamma, beta = compiler.modulation(
-        compiler.procedure_norm(procedure_slots)
-    ).chunk(2, dim=-1)
+    gamma, beta = compiler.modulation(compiler.procedure_norm(procedure_slots)).chunk(
+        2, dim=-1
+    )
     fused = (1.0 + gamma) * normalized_core + beta
     expected = compiler.post_fusion(fused, routing)
 
@@ -151,6 +149,22 @@ def test_v6_procedure_common_value_gradient_staging_and_freeze_boundary() -> Non
     assert not model.procedure_set.query.weight.grad.count_nonzero()
     assert all(parameter.grad is None for parameter in model.base_writer.parameters())
 
+
+def test_cached_readouts_recompile_exactly_without_video_backbone() -> None:
+    model, _ = _model()
+    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
+    encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+    cached = model.compile_readouts(
+        encoded.diagnostics.shared_core_slots,
+        encoded.diagnostics.per_video_procedure_slots,
+        _inputs()[3],
+    )
+    torch.testing.assert_close(cached.program, encoded.program, rtol=0, atol=0)
+    _sum(model.decode_program(cached.program)).backward()
+    assert model.procedure_set.output.weight.grad is not None
+    assert model.procedure_set.output.weight.grad.abs().sum() > 0
+    assert all(parameter.grad is None for parameter in model.base_writer.parameters())
+
     model.zero_grad(set_to_none=True)
     torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
     generated, _ = model.forward_training(*_inputs(), policy=torch.nn.Identity())
@@ -176,7 +190,10 @@ def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
         policy=torch.nn.Identity(),
     )
     assert auxiliary.item() == 0.0
-    assert all(value.shape == model.template_state()[name].shape for name, value in generated.items())
+    assert all(
+        value.shape == model.template_state()[name].shape
+        for name, value in generated.items()
+    )
 
 
 def test_procedure_common_value_step0_is_shared_core_zero_graph() -> None:

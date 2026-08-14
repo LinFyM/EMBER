@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Mapping, Sequence
 import torch
 import torch.distributed as dist
 
+from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
 from ember.writer.functional import (
     TASK_LOGICAL_BATCH_POLICY_RNG_SCHEME,
@@ -74,9 +75,11 @@ def assign_flat_gradient(
     if not layout or gradient.numel() != layout[-1].stop:
         raise WriterModelError("dynamic-K optimizer gradient layout changed")
     for item in layout:
-        item.parameter.grad = gradient[item.start : item.stop].view_as(
-            item.parameter
-        ).to(dtype=item.parameter.dtype)
+        item.parameter.grad = (
+            gradient[item.start : item.stop]
+            .view_as(item.parameter)
+            .to(dtype=item.parameter.dtype)
+        )
 
 
 def gather_full24_records(
@@ -144,49 +147,13 @@ def _pack_condition(
     task_id: int,
     demos: Sequence[int],
 ) -> tuple[tuple[torch.Tensor, ...], dict[str, Any]]:
-    available_videos = [runtime.video_store.load(task_id, demo) for demo in demos]
-    videos = tuple(available_videos)
-    frames = torch.cat([torch.from_numpy(video.frames) for video in videos]).to(
-        runtime.context.device, non_blocking=True
+    return pack_teacher_condition(
+        runtime.video_store,
+        task_id=task_id,
+        demos=demos,
+        language=runtime.language_tokens[task_id],
+        device=runtime.context.device,
     )
-    indices = torch.cat(
-        [torch.from_numpy(video.frame_indices) for video in videos]
-    ).to(runtime.context.device, non_blocking=True)
-    counts = torch.tensor(
-        [video.frames.shape[0] for video in videos],
-        dtype=torch.long,
-    )
-    video_offsets = torch.cat(
-        (
-            torch.zeros(1, dtype=torch.long),
-            counts.cumsum(0),
-        )
-    )
-    condition_video_offsets = torch.tensor(
-        [0, len(videos)],
-        dtype=torch.long,
-    )
-    tokens, mask, task_span = runtime.language_tokens[task_id]
-    return (
-        frames,
-        indices,
-        video_offsets,
-        condition_video_offsets,
-        tokens,
-        mask,
-        task_span,
-    ), {
-        "K": len(videos),
-        "teacher_demo_indices": list(demos),
-        "available_stride5_frames": [
-            int(len(video.frame_indices)) for video in available_videos
-        ],
-        "sampled_frames": [int(value) for value in counts.tolist()],
-        "total_available_stride5_frames": sum(
-            int(len(video.frame_indices)) for video in available_videos
-        ),
-        "total_sampled_frames": int(counts.sum()),
-    }
 
 
 def _policy_seed(
@@ -325,7 +292,9 @@ def run_writer_step(
             policy_seed,
             flat,
         )
-        if not bool(torch.isfinite(functional)) or not bool(torch.isfinite(consistency)):
+        if not bool(torch.isfinite(functional)) or not bool(
+            torch.isfinite(consistency)
+        ):
             raise WriterModelError(f"non-finite dynamic-K loss at macro {macro}")
         records.append(
             {

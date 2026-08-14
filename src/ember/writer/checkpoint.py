@@ -19,6 +19,7 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.writer.errors import WriterModelError
+from ember.writer.reward_checkpoint import REWARD_DEPLOYMENT_KIND
 
 
 CHECKPOINT_SCHEMA = (
@@ -155,7 +156,9 @@ def load_writer_checkpoint(
             device=str(context.device),
         )
     )
-    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="cpu", weights_only=False)
+    trainer = torch.load(
+        checkpoint / "trainer_state.pt", map_location="cpu", weights_only=False
+    )
     rank_state = torch.load(
         checkpoint / f"rank_{context.rank:02d}_state.pt",
         map_location="cpu",
@@ -192,7 +195,8 @@ def load_writer_deployment_state_(
     state_record = writer_asset.get("writer_state", {})
     path = Path(str(state_record.get("path", "")))
     if (
-        writer_asset.get("kind") != DEPLOYMENT_CHECKPOINT_KIND
+        writer_asset.get("kind")
+        not in {DEPLOYMENT_CHECKPOINT_KIND, REWARD_DEPLOYMENT_KIND}
         or not path.is_file()
         or path.name != "writer.safetensors"
         or path.stat().st_size != int(state_record.get("bytes", -1))

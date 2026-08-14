@@ -31,6 +31,12 @@ from ember.writer.checkpoint import (
     checkpoint_macro,
 )
 from ember.writer.errors import WriterModelError
+from ember.writer.reward_checkpoint import (
+    REWARD_CHECKPOINT_SCHEMA,
+    REWARD_DEPLOYMENT_KIND,
+    checkpoint_cycle,
+)
+from ember.writer.reward_config import REWARD_LAUNCH_SCHEMA, load_reward_config
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
@@ -150,9 +156,18 @@ def _writer_asset(
     require_formal: bool,
 ) -> dict[str, Any]:
     checkpoint = checkpoint.resolve()
-    macro = checkpoint_macro(checkpoint)
     manifest_path = checkpoint / "checkpoint_manifest.json"
     manifest = read_json(manifest_path)
+    if manifest.get("schema_version") == REWARD_CHECKPOINT_SCHEMA:
+        return _reward_writer_asset(
+            config=config,
+            checkpoint=checkpoint,
+            manifest=manifest,
+            manifest_path=manifest_path,
+            source=source,
+            require_formal=require_formal,
+        )
+    macro = checkpoint_macro(checkpoint)
     world_size = int(manifest.get("world_size", -1))
     expected_files = {
         "writer.safetensors",
@@ -229,6 +244,97 @@ def _writer_asset(
             "path": str(run_path.resolve()),
             "bytes": run_path.stat().st_size,
             "schema": AS_WRITER_LAUNCH_SCHEMA,
+        },
+        "writer_parameter_count": writer_parameters,
+        "deployment_trainable_parameter_count": 0,
+        "writer_state": writer_state,
+    }
+
+
+def _reward_writer_asset(
+    *,
+    config: Mapping[str, Any],
+    checkpoint: Path,
+    manifest: Mapping[str, Any],
+    manifest_path: Path,
+    source: Mapping[str, Any],
+    require_formal: bool,
+) -> dict[str, Any]:
+    """Inspect a reward-stage checkpoint without calling it an AS resume."""
+
+    cycle = checkpoint_cycle(checkpoint)
+    world_size = int(manifest.get("world_size", -1))
+    expected_files = {
+        "writer.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+    }
+    if (
+        world_size <= 0
+        or int(manifest.get("next_cycle", -1)) != cycle
+        or manifest.get("run_contract_schema") != REWARD_LAUNCH_SCHEMA
+        or set(manifest.get("files", {})) != expected_files
+    ):
+        raise WriterModelError("reward deployment checkpoint changed")
+    for name, record in manifest["files"].items():
+        path = checkpoint / name
+        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
+            raise WriterModelError(f"reward checkpoint file changed: {name}")
+    run_path = checkpoint.parent.parent / "run_contract.json"
+    run = read_json(run_path)
+    reward_config_path = Path(str(run.get("config_path", ""))).resolve()
+    reward_config, base = load_reward_config(reward_config_path)
+    expected_source = {
+        key: str(Path(str(source[key])).resolve())
+        for key in ("source_run", "checkpoint", "model_path")
+    }
+    observed_source = {
+        key: str(Path(str(run.get("source", {}).get(key, ""))).resolve())
+        for key in expected_source
+    }
+    if (
+        run.get("schema_version") != REWARD_LAUNCH_SCHEMA
+        or run.get("mode") != "formal"
+        or observed_source != expected_source
+        or Path(str(run.get("base_as_config_path", ""))).resolve()
+        != Path(str(reward_config["resolved_base_as_config"])).resolve()
+        or base["writer"] != config["writer"]
+        or run.get("writer") != config["writer"]
+        or run.get("information_wall") != reward_config["information_wall"]
+        or run.get("objective") != reward_config["objective"]
+        or run.get("initialization", {}).get("checkpoint")
+        != reward_config["resolved_cold_start"]
+    ):
+        raise WriterModelError("reward training authority changed")
+    if require_formal and (
+        reward_config["formal_run"]["status"] != "sealed"
+        or cycle not in reward_config["formal_run"]["checkpoint_cycles"]
+    ):
+        raise WriterModelError("formal reward evaluation requires a sealed checkpoint")
+    writer_state = _writer_state_record(
+        checkpoint / "writer.safetensors",
+        load_pi05_lora_contract(authority_path(config, "lora_contract")),
+    )
+    trainable = run.get("trainable", {})
+    writer_parameters = int(trainable.get("writer_parameter_count", -1))
+    if writer_parameters <= 0:
+        raise WriterModelError("reward Writer parameter contract changed")
+    return {
+        "kind": REWARD_DEPLOYMENT_KIND,
+        "training_mode": "formal_reward_preference",
+        "training_stage": "on_policy_preference",
+        "method_macro": cycle,
+        "checkpoint": str(checkpoint),
+        "checkpoint_manifest": {
+            "path": str(manifest_path.resolve()),
+            "bytes": manifest_path.stat().st_size,
+            "schema": REWARD_CHECKPOINT_SCHEMA,
+            "world_size": world_size,
+        },
+        "training_run_contract": {
+            "path": str(run_path.resolve()),
+            "bytes": run_path.stat().st_size,
+            "schema": REWARD_LAUNCH_SCHEMA,
         },
         "writer_parameter_count": writer_parameters,
         "deployment_trainable_parameter_count": 0,
@@ -414,7 +520,12 @@ def inspect_dynamic_k_writer_evaluation(
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
-            "v6_shared_core_procedure_common_value_bridge_" f"{video_condition}"
+            (
+                "v6_ordered_procedure_on_policy_preference_"
+                if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
+                else "v6_shared_core_procedure_common_value_bridge_"
+            )
+            + video_condition
         ),
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {
@@ -433,9 +544,7 @@ def inspect_dynamic_k_writer_evaluation(
             "throughput_policy": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
-            "minimum_smoke_writer_model_batch_size": (
-                DYNAMIC_K_GENERATION_BATCH_SIZE
-            ),
+            "minimum_smoke_writer_model_batch_size": (DYNAMIC_K_GENERATION_BATCH_SIZE),
             "online_smoke_evidence": None if profile is None else dict(profile),
         },
         "video_data": video_data,

@@ -5,7 +5,11 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
-from lerobot.utils.constants import OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
+from lerobot.utils.constants import (
+    ACTION,
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+)
 
 from ember.pi05_processing import libero_policy_input
 from ember.reward.protocol import (
@@ -20,7 +24,10 @@ from ember.reward.protocol import (
 )
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
+    RewardTrajectory,
     collect_paired_reward_arm_outcomes,
+    collect_randomized_reward_trajectories,
+    complete_trajectory_batch,
 )
 
 
@@ -65,12 +72,12 @@ def test_random_reset_pool_keeps_counterfactual_lanes_independent(
         return value
 
     monkeypatch.setattr(pool, "_new_environment", create)
-    lanes = tuple(pool.get(task, lane=lane) for lane in range(2))
-    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(2))
-    assert len({id(value) for value in lanes}) == 2
-    assert len(created) == 2
+    lanes = tuple(pool.get(task, lane=lane) for lane in range(4))
+    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(4))
+    assert len({id(value) for value in lanes}) == 4
+    assert len(created) == 4
     with pytest.raises(RewardProtocolError, match="lane"):
-        pool.get(task, lane=2)
+        pool.get(task, lane=4)
     pool.close()
     assert all(value.closed for value in created)
 
@@ -111,7 +118,12 @@ class _FakeEnvironment:
         self.policy_steps += 1
         self.events.append(("policy", action.copy()))
         success = self.policy_steps == self.success_after_policy_steps
-        return _observation(self.marker + self.policy_steps), float(success), success, {}
+        return (
+            _observation(self.marker + self.policy_steps),
+            float(success),
+            success,
+            {},
+        )
 
 
 class _FakePolicy(torch.nn.Module):
@@ -150,7 +162,9 @@ def test_policy_input_rotates_both_images_and_keeps_right_wrist_absent() -> None
     obs = _observation()
     value = libero_policy_input(obs, "do the task")
     assert "observation.images.right_wrist_0_rgb" not in value
-    expected = torch.from_numpy(np.ascontiguousarray(obs["agentview_image"][::-1, ::-1]))
+    expected = torch.from_numpy(
+        np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])
+    )
     expected = expected.permute(2, 0, 1).float().div(255)
     torch.testing.assert_close(value["observation.images.base_0_rgb"], expected)
     torch.testing.assert_close(
@@ -214,9 +228,7 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
     assert policy.reset_count == 1
     for lane, (outcome, env) in enumerate(zip(outcomes, envs, strict=True)):
         expected_seeds = tuple(
-            reward_credit_policy_noise_seed(
-                43, "libero_spatial", 6, 23, lane, replan
-            )
+            reward_credit_policy_noise_seed(43, "libero_spatial", 6, 23, lane, replan)
             for replan in range(len(outcome.policy_noise_seeds))
         )
         assert outcome.policy_noise_seeds == expected_seeds
@@ -238,6 +250,82 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
             "policy_noise_seeds",
             "initial_normalized_action_chunk",
         }
+
+
+def test_k4_rollout_retains_executed_prefixes_for_mixed_reward() -> None:
+    envs = tuple(
+        _FakeEnvironment(success_after_policy_steps=value, marker=lane * 20)
+        for lane, value in enumerate((1, 6, None, 11))
+    )
+    policy = _FakePolicy()
+    trajectories = collect_randomized_reward_trajectories(
+        envs=envs,
+        policy=policy,
+        preprocess=_preprocess,
+        postprocess=lambda value: value,
+        suite="libero_spatial",
+        task_id=6,
+        global_task_id=6,
+        language="put the bowl on the tray",
+        adaptation_seed=23,
+        rollout_cursors=(0, 1, 2, 3),
+        env_seeds=(29, 31, 37, 41),
+        policy_seed_root=43,
+        device=torch.device("cpu"),
+        max_horizon=12,
+        dummy_settling_steps=10,
+        dummy_action=[0, 0, 0, 0, 0, 0, -1],
+        action_execution_horizon=5,
+        num_inference_steps=10,
+    )
+    assert [value.success for value in trajectories] == [True, True, False, True]
+    assert [value.valid_action_steps for value in trajectories] == [
+        (1,),
+        (5, 1),
+        (5, 5, 2),
+        (5, 5, 1),
+    ]
+    assert [noise.shape[0] for noise in policy.noises] == [4, 3, 2]
+    batch, episode_ids, successes = complete_trajectory_batch(
+        trajectories, torch.device("cpu")
+    )
+    assert batch[ACTION].shape == (9, 50, 7)
+    assert episode_ids.tolist() == [0, 1, 1, 2, 2, 2, 3, 3, 3]
+    assert successes.tolist() == [1.0, 1.0, 0.0, 1.0]
+
+
+def _trajectory(*, success: bool) -> RewardTrajectory:
+    observation = {
+        OBS_LANGUAGE_TOKENS: torch.ones((1, 2), dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones((1, 2), dtype=torch.bool),
+        "observation.images.base_0_rgb": torch.zeros((1, 3, 2, 2)),
+    }
+    return RewardTrajectory(
+        suite="libero_goal",
+        task_id=4,
+        global_task_id=24,
+        adaptation_seed=3,
+        rollout_cursor=5,
+        env_seed=7,
+        policy_seed_root=11,
+        success=success,
+        steps=5,
+        reward_sum=float(success),
+        dummy_settling_steps=10,
+        policy_noise_seeds=(13,),
+        observations=(observation,),
+        action_chunks=(torch.zeros((1, 50, 7)),),
+        valid_action_steps=(5,),
+    )
+
+
+def test_homogeneous_k4_replay_skips_observation_concatenation() -> None:
+    batch, episode_ids, successes = complete_trajectory_batch(
+        tuple(_trajectory(success=False) for _ in range(4)), torch.device("cpu")
+    )
+    assert set(batch) == {"executed_action_steps"}
+    assert episode_ids.tolist() == [0, 1, 2, 3]
+    assert successes.tolist() == [0.0] * 4
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:

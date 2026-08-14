@@ -101,9 +101,7 @@ def mixed_seed(tag: str, *components: int | str) -> int:
     state = _SEED_TAGS[tag]
     for ordinal, component in enumerate(components):
         identity = _component_id(component)
-        state = _splitmix64(
-            state ^ _splitmix64(identity + ordinal * 0x9E3779B9)
-        )
+        state = _splitmix64(state ^ _splitmix64(identity + ordinal * 0x9E3779B9))
     return state & ((1 << 63) - 1)
 
 
@@ -123,9 +121,7 @@ def _historical_seed(tag: str, *components: Any) -> int:
         separators=(",", ":"),
         ensure_ascii=False,
     ).encode("utf-8")
-    return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") & (
-        (1 << 63) - 1
-    )
+    return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") & ((1 << 63) - 1)
 
 
 def environment_seed(
@@ -169,6 +165,7 @@ def policy_noise_seed(
         replan_index,
     )
 
+
 def update_seed(
     root_seed: int,
     suite: str,
@@ -197,12 +194,15 @@ def task_local_video_demo(
 
     if demo_count <= 0:
         raise RewardProtocolError("task-local video schedule has no demonstrations")
-    return _historical_seed(
-        "ember_pi05_task_local_video_v1",
-        root_seed,
-        global_task_id,
-        adaptation_seed,
-    ) % demo_count
+    return (
+        _historical_seed(
+            "ember_pi05_task_local_video_v1",
+            root_seed,
+            global_task_id,
+            adaptation_seed,
+        )
+        % demo_count
+    )
 
 
 def reward_credit_environment_seed(
@@ -242,4 +242,22 @@ def reward_credit_policy_noise_seed(
         adaptation_seed,
         rollout_cursor,
         replan_index,
+    )
+
+
+def reward_preference_flow_seed(
+    root_seed: int,
+    *,
+    cycle: int,
+    global_task_id: int,
+    mc_index: int,
+) -> int:
+    """Key one reward-CFM sample by scientific identity, never rank or order."""
+
+    return mixed_seed(
+        "update",
+        root_seed,
+        cycle,
+        global_task_id,
+        mc_index,
     )

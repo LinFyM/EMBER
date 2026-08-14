@@ -124,9 +124,7 @@ class RawTeacherVideoStore:
         if task_id in self._handles:
             self._handles.move_to_end(task_id)
         else:
-            self._handles[task_id] = h5py.File(
-                self.authorities[task_id].path, "r"
-            )
+            self._handles[task_id] = h5py.File(self.authorities[task_id].path, "r")
             while len(self._handles) > self.max_open_files:
                 _, stale = self._handles.popitem(last=False)
                 stale.close()
@@ -164,9 +162,7 @@ class RawTeacherVideoStore:
 
         if demo_index < 0:
             raise WriterModelError("teaching video demo index must be non-negative")
-        pixels = self._handle(task_id).get(
-            f"data/demo_{demo_index}/obs/agentview_rgb"
-        )
+        pixels = self._handle(task_id).get(f"data/demo_{demo_index}/obs/agentview_rgb")
         if (
             not isinstance(pixels, h5py.Dataset)
             or pixels.ndim != 4
@@ -185,6 +181,47 @@ class RawTeacherVideoStore:
         for handle in self._handles.values():
             handle.close()
         self._handles.clear()
+
+
+def pack_teacher_condition(
+    store: RawTeacherVideoStore,
+    *,
+    task_id: int,
+    demos: Sequence[int],
+    language: tuple[Any, Any, Any],
+    device: Any,
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Pack one K-video Writer condition without reading privileged fields."""
+
+    import torch
+
+    videos = tuple(store.load(task_id, demo) for demo in demos)
+    if not videos or len(videos) > 4 or len(set(demos)) != len(demos):
+        raise WriterModelError("Writer condition requires one to four unique videos")
+    frames = torch.cat([torch.from_numpy(video.frames) for video in videos]).to(
+        device=device, non_blocking=True
+    )
+    indices = torch.cat([torch.from_numpy(video.frame_indices) for video in videos]).to(
+        device=device, non_blocking=True
+    )
+    counts = torch.tensor([video.frames.shape[0] for video in videos], dtype=torch.long)
+    packed = (
+        frames,
+        indices,
+        torch.cat((torch.zeros(1, dtype=torch.long), counts.cumsum(0))),
+        torch.tensor([0, len(videos)], dtype=torch.long),
+        *language,
+    )
+    return packed, {
+        "K": len(videos),
+        "teacher_demo_indices": list(demos),
+        "available_stride5_frames": [int(len(video.frame_indices)) for video in videos],
+        "sampled_frames": [int(value) for value in counts.tolist()],
+        "total_available_stride5_frames": sum(
+            int(len(video.frame_indices)) for video in videos
+        ),
+        "total_sampled_frames": int(counts.sum()),
+    }
 
 
 class FunctionalQueryDataset:
@@ -252,10 +289,7 @@ class FunctionalQueryDataset:
     @property
     def task_episode_rows(self) -> dict[int, dict[int, tuple[int, ...]]]:
         return {
-            task_id: {
-                demo_index: tuple(rows)
-                for demo_index, rows in episodes.items()
-            }
+            task_id: {demo_index: tuple(rows) for demo_index, rows in episodes.items()}
             for task_id, episodes in self._task_episode_rows.items()
         }
 
@@ -282,9 +316,7 @@ class FunctionalQueryDataset:
         actions_ds = demo["actions"]
         stop = min(frame_index + self.action_chunk_size, actions_ds.shape[0])
         valid = stop - frame_index
-        valid_actions = np.asarray(
-            actions_ds[frame_index:stop], dtype=np.float32
-        )
+        valid_actions = np.asarray(actions_ds[frame_index:stop], dtype=np.float32)
         actions = np.repeat(valid_actions[-1:], self.action_chunk_size, axis=0)
         actions[:valid] = valid_actions
         action_is_pad = np.ones(self.action_chunk_size, dtype=np.bool_)

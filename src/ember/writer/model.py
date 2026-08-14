@@ -55,9 +55,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         ):
             raise WriterModelError("native v6 Writer topology changed")
         self.base_writer = base_writer.requires_grad_(False).eval()
-        self.procedure_set = PolicyProcedureCommonValueFusion(
-            width=self.PROGRAM_WIDTH
-        )
+        self.procedure_set = PolicyProcedureCommonValueFusion(width=self.PROGRAM_WIDTH)
 
     @classmethod
     def from_policy(
@@ -70,9 +68,7 @@ class CompleteLoRAWriter(torch.nn.Module):
     ) -> CompleteLoRAWriter:
         """Construct and strictly load the frozen v6-fast performance base."""
 
-        bridge = getattr(
-            getattr(policy, "model", None), "paligemma_with_expert", None
-        )
+        bridge = getattr(getattr(policy, "model", None), "paligemma_with_expert", None)
         if bridge is None:
             raise WriterModelError("PI05 policy lost its joint backbone")
         arguments = {
@@ -104,11 +100,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         final: int,
         name: str,
     ) -> tuple[int, ...]:
-        if (
-            value.device.type != "cpu"
-            or value.dtype != torch.long
-            or value.ndim != 1
-        ):
+        if value.device.type != "cpu" or value.dtype != torch.long or value.ndim != 1:
             raise WriterModelError(f"{name} must be a CPU long tensor")
         offsets = tuple(int(item) for item in value.tolist())
         if (
@@ -122,6 +114,58 @@ class CompleteLoRAWriter(torch.nn.Module):
 
     def template_state(self) -> dict[str, torch.Tensor]:
         return self.base_writer.template_state()
+
+    def compile_readouts(
+        self,
+        shared_core: torch.Tensor,
+        per_video_procedure: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+    ) -> WriterProgramOutput:
+        """Compile cached frozen-v6 readouts through the trainable Procedure set.
+
+        Reward training uses this narrow boundary to avoid repeating the video
+        backbone after the on-policy rollouts.  The cached tensors are evidence,
+        not trainable state; only ``procedure_set`` receives gradients.
+        """
+
+        condition_bounds = self._offsets(
+            condition_video_offsets,
+            final=per_video_procedure.shape[0],
+            name="condition video offsets",
+        )
+        condition_count = len(condition_bounds) - 1
+        if (
+            shared_core.shape
+            != (condition_count, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
+            or per_video_procedure.shape[1:] != (self.POLICY_SLOTS, self.PROGRAM_WIDTH)
+            or any(
+                right - left not in range(1, 5)
+                for left, right in zip(condition_bounds, condition_bounds[1:])
+            )
+        ):
+            raise WriterModelError("invalid cached ordered-Procedure readouts")
+        shared_core = shared_core.detach()
+        per_video_procedure = per_video_procedure.detach()
+        shared_procedure, set_diagnostics = self.procedure_set(
+            per_video_procedure, condition_video_offsets
+        )
+        routing = self.base_writer.compiler.routing(condition_count)
+        program, _, _ = self.base_writer.compiler.fuse_readouts(
+            routing,
+            shared_core,
+            shared_procedure,
+        )
+        return WriterProgramOutput(
+            program,
+            WriterProgramDiagnostics(
+                shared_core_slots=shared_core,
+                per_video_procedure_slots=per_video_procedure,
+                shared_procedure_slots=shared_procedure,
+                shared_procedure_corrections=set_diagnostics.shared_corrections,
+                attention=set_diagnostics.attention,
+                auxiliary_loss=set_diagnostics.auxiliary_loss,
+            ),
+        )
 
     def encode_program(
         self,
@@ -148,8 +192,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             name="condition video offsets",
         )
         cardinalities = tuple(
-            right - left
-            for left, right in zip(condition_bounds, condition_bounds[1:])
+            right - left for left, right in zip(condition_bounds, condition_bounds[1:])
         )
         condition_counts = torch.tensor(
             cardinalities,
@@ -186,9 +229,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             )
             memories = self.base_writer.build_memories(evidence, frame_indices)
             compiler = self.base_writer.compiler
-            shared_core_slots: list[torch.Tensor | None] = [
-                None
-            ] * len(cardinalities)
+            shared_core_slots: list[torch.Tensor | None] = [None] * len(cardinalities)
             for video_count in range(1, 5):
                 condition_ids = [
                     condition_id
@@ -212,9 +253,9 @@ class CompleteLoRAWriter(torch.nn.Module):
                 core = memories.core.index_select(0, video_ids).reshape(
                     len(condition_ids), -1, self.PROGRAM_WIDTH
                 )
-                valid_core = memories.valid_core.index_select(
-                    0, video_ids
-                ).reshape(len(condition_ids), -1)
+                valid_core = memories.valid_core.index_select(0, video_ids).reshape(
+                    len(condition_ids), -1
+                )
                 routing = compiler.routing(len(condition_ids))
                 core_slots = compiler.read_core_slots(routing, core, valid_core)
                 normalized_core = compiler.normalize_core_slots(core_slots)
@@ -233,32 +274,20 @@ class CompleteLoRAWriter(torch.nn.Module):
                 memories.positions,
                 memories.valid_procedure,
             )
-        if (
-            shared_core.shape
-            != (len(condition_bounds) - 1, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
-            or per_video_procedure.shape
-            != (len(video_bounds) - 1, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
+        if shared_core.shape != (
+            len(condition_bounds) - 1,
+            self.POLICY_SLOTS,
+            self.PROGRAM_WIDTH,
+        ) or per_video_procedure.shape != (
+            len(video_bounds) - 1,
+            self.POLICY_SLOTS,
+            self.PROGRAM_WIDTH,
         ):
             raise WriterModelError("native v6 memory readout topology changed")
-        shared_procedure, set_diagnostics = self.procedure_set(
-            per_video_procedure.detach(), condition_video_offsets
-        )
-        routing = self.base_writer.compiler.routing(shared_core.shape[0])
-        program, _, _ = self.base_writer.compiler.fuse_readouts(
-            routing,
+        return self.compile_readouts(
             shared_core,
-            shared_procedure,
-        )
-        return WriterProgramOutput(
-            program,
-            WriterProgramDiagnostics(
-                shared_core_slots=shared_core,
-                per_video_procedure_slots=per_video_procedure,
-                shared_procedure_slots=shared_procedure,
-                shared_procedure_corrections=set_diagnostics.shared_corrections,
-                attention=set_diagnostics.attention,
-                auxiliary_loss=set_diagnostics.auxiliary_loss,
-            ),
+            per_video_procedure,
+            condition_video_offsets,
         )
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:

@@ -209,11 +209,21 @@ relative BA改变量约`.047`。所以few-shot set不是无效；它成功过滤
 完整compiler之后，只能稳定已有错误或不足的task mean，不能为held occupancy增加有用方向。下一轮不能放大这个
 residual或调K，而应让多video在compiler承诺最终policy方向之前形成shared semantic Core并比较有序Procedure。
 
-当前Shared-Core Procedure-Set只前移这一边界：每条video仍独立形成v6 Core与有向Procedure；原生Core reader对
+Shared-Core Procedure-Set只前移这一边界：每条video仍独立形成v6 Core与有向Procedure；原生Core reader对
 无序Core union联合读出一个shared Core；每条Procedure在该shared Core下独立解释；同一197120参数set只聚合这些
 Procedure readouts，之后原生AdaLN/post-fusion/factor heads一次完成LoRA。它避免历史K4 phase alignment，也不把
-不同demo的Procedure拼成虚假物理序列。其CPU实现已证明K1严格保留v6和集合/顺序合同，但尚无GPU或closed-loop
-证据，不能提前写成有效方法。
+不同demo的Procedure拼成虚假物理序列。其CPU实现先证明K1严格保留v6和集合/顺序合同，随后完成下述GPU与
+closed-loop裁决。
+
+Shared-Core Procedure-Set随后得到K4 strict=`139/400`、breadth6，per-task=`1/4/46/34/0/36/18/0`。它相对
+post-compiler K4 130净增9、相对K1 old134净增5，证明“在native compiler最终承诺前共享Core”不是无效讨论；
+但四个suite净变化只有`0/-2/+1/+6`，Long1贡献净7，Goal3/Long2仍为0，因此没有解决共同breadth。
+
+决定下一接口的关键不是aggregate，而是matched归零：在同一macro25 checkpoint和first4×8 K4输入上把
+Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化`.000574`；相对K1的`.039674/.016982`
+几乎完全由无参数Core union和Procedure mean产生。训练25 macros没有把B20 credit通过后端set变成有用修正。
+这淘汰继续训练/放大Procedure-Set，也说明下一步应把可学习集合比较前移到语言token对齐的Semantic Core：先让
+多视频共同语义本身可学习，再交给native Core reader；后端有向Procedure只作对称mean，避免同时改变两个接口。
 
 ## 11. 连续历史认知
 
@@ -237,6 +247,8 @@ Procedure readouts，之后原生AdaLN/post-fusion/factor heads一次完成LoRA�
     mapper，而应在v6强底座上隔离检验跨video Program aggregation。
 16. V6 Dynamic Slot-Set K4=`130`且same-task方差降`9.26x`，说明post-compiler few-shot nuisance reduction有效，
     但task mean几乎锁死；下一最早接口是compiler之前的shared Core/Procedure解释边界。
+17. Shared-Core Procedure-Set K4=`139`证明边界前移有9分matched收益，但trained set只贡献`.000918` BA变化；
+    下一最早接口是native Core reader之前的语言对齐Semantic Core共识，而非继续调后端set。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

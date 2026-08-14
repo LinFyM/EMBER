@@ -300,8 +300,10 @@ checkpoint K1/K4=`102/98`均已终局non-pass。K4把same-task effective-BA相�
 v6的强closed-loop几何，但这不否定语言+视频、逐video保序、跨video集合聚合和one-LoRA输出等原则。当前受控
 V6 Dynamic Slot-Set Bridge因此恢复已证明143的v6 Core/Procedure/compiler/factor底座，只把动态K集合层隔离为
 单一新变量。它随后K4终局`130`：same-task方差约降`9.26x`但task mean几乎不变，说明集合原则有效、完整compiler
-之后才聚合过晚。当前Shared-Core Procedure-Set只把该边界前移到shared Core与最终fusion之间；memory token和
-rank8继续作为已检验过的方法选择保留在历史中，不再冒充当前目标或强制约束。
+之后才聚合过晚。Shared-Core Procedure-Set把该边界前移到shared Core与最终fusion之间，K4得到`139/400`、
+breadth6，相对post-compiler130净增9；但matched归零表明trained Procedure-Set只贡献`.000918` BA改写，增益
+几乎来自无参数Core union。下一单变量因此是把可学习集合共识再前移到语言对齐Semantic Core tokens；memory
+token和rank8继续作为已检验过的方法选择保留在历史中，不再冒充当前目标或强制约束。
 
 后续迭代遵循以下边界：
 

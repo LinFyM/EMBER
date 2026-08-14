@@ -9,16 +9,15 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Dynamic Slot-Set Bridge macro25 K4 strict=`130/400`、breadth6、per-task=
-  `1/2/48/32/0/34/13/0`，未超过old134且breadth<7，终局non-pass；
-- 相对K1 old134为`117 retained / 13 gained / 17 lost`、净`-4`、churn30；relative BA约`.047`而same-task方差降
-  `9.26x`，证明post-compiler set稳定了demo nuisance但没有修正task mean；
-- 当前active design：V6 Shared-Core Procedure-Set Bridge；冻结历史v6-fast，只把约197k集合层从完整compiler后
-  前移到shared Core读出与最终Core/Procedure fusion之间；
-- active authority=`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项
-  定向门、全量CPU=`371 passed`和真实world6机制/profile均通过；clean detached fresh macro0→25已完整结束；
-- macro25 K4 B8/B16/B32 live生成吞吐=`.223358/.223313/.223323 LoRA/s`，三者stable且0 OOM，按规则锁B8；
-- 当前下一步是从profile-sealed clean commit做K4 strict paired correct400；
+- 最新完成closed-loop：V6 Shared-Core Procedure-Set Bridge macro25 K4 strict=`139/400`、breadth6、per-task=
+  `1/4/46/34/0/36/18/0`，按breadth门终局non-pass；
+- 相对K1 old134为`118 retained / 21 gained / 16 lost`、净`+5`、churn37；相对matched post-compiler K4 130为
+  `118/21/12`、净`+9`；增益集中Long1，Goal3与Long2仍为0；
+- matched trained-output归零显示后端Procedure-Set只贡献`.000918` effective-BA relative-L2，shared-Core数据流
+  相对K1贡献`.039674`；139几乎全部来自更早Core union，不来自可学习后端set；
+- 当前下一单变量：把同预算trainable set前移到语言对齐的per-video Semantic Core tokens，后端Procedure只作
+  无参数mean；v6底座、rank16、B20、动态K和K1严格恒等保持不变；
+- 当前active design authority待以该精确边界写入；在此之前不得把构想冒充已实现方法；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -437,7 +436,7 @@ K4 generation profile root：
 
 - fixed validation8x4 correct panel，B8/B16/B32=`.224364/.224185/.224350 LoRA/s`，全部stable、0 OOM；
 - peak reserved约`12.95/12.97/13.01GB`，最长condition=`226` frames，按最高实测吞吐锁B8；
-- 当前无EMBER GPU进程；下一步从新的clean pushed evaluator authority做macro25 K4 strict400。
+- 该历史run随后strict130并终局，详见本节后续；这里的“下一步”只属于当时时点。
 
 ## 13. V6 Dynamic Slot-Set terminal result and Shared-Core Procedure-Set successor
 
@@ -507,5 +506,29 @@ macro25 K4 deployment profile root：
 - 三者stable、0 OOM，峰值reserved约`12.95/12.97/13.01GB`；按最高吞吐锁B8；
 - profile只裁决deployment batch，不提供closed-loop方法证据。
 
-当前无EMBER GPU进程。下一步把profile封存进clean pushed evaluator authority后立即做macro25 K4 strict paired
-correct400，并按`134/breadth7`预注册门裁决。
+strict K4 root：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_64c91a4_gpu01_20260814`
+
+- clean detached `64c91a4`；gpu01物理`0,1,2,4,5,6`，6 generators + 18 persistent workers；400/400 LoRAs、
+  72/72 shards、400 rows、18/18 workers exit0；wall=`1165.9373s`、rollout-only=`674.9167s`；
+- strict=`139/400`、breadth6、per-task=`1/4/46/34/0/36/18/0`、per-suite=`5/80/36/18`、top3=
+  `116/139=83.45%`；
+- vs old134 strict paired=`118 retained / 21 gained / 16 lost / 245 both-fail`，net`+5`、churn37、
+  Jaccard`.76129`、McNemar p=`.511376`；per-suite net=`0/-2/+1/+6`；
+- vs matched post-compiler K4 130 strict paired=`118/21/12/249`，net`+9`、churn33、p=`.162756`；
+- count-only vs v6-fast143/compiler138/online128分别=`-4/+1/+11`；breadth低于7，终局停止。
+
+同root封存三份分析：
+
+- `k1_old134_to_k4_shared_core_procedure_set_nested_dose_analysis.json`：全400 K4/K1 BA cosine mean=`.9985641`、
+  relative-L2=`.0477494`、norm ratio=`1.002122`；first4/task variance `.00228114→.00023539`约`9.69x`，
+  task-mean cosine=`.9998256`；
+- `postcompiler130_to_sharedcore139_paired_analysis.json`：严格episode/video/RNG一致；当前相对上一K4只需
+  `.010965` BA变化便净增9，证明边界位置有效；
+- `trained_vs_zero_procedure_set_first4_analysis.json`：只归零trained `Procedure-Set.output`，当前→zero BA
+  relative-L2 mean=`.0009181`、task-mean=`.0005745`；K1→zero为`.0396742/.0169820`。所以训练层几乎没有贡献，
+  无参数shared-Core union才是本轮增益来源。
+
+当前无EMBER GPU进程。下一步先写Semantic-Core Set单变量authority并原位实现；不得resume当前checkpoint或并行
+保留两套runtime。

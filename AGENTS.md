@@ -37,11 +37,11 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**V6 Dynamic Slot-Set Bridge**：macro25 K4 strict=`130/400`、breadth6、per-task=
-`1/2/48/32/0/34/13/0`。相对结构恒等的K1 old134为`117/13/17` retained/gained/lost，净`-4`；same-task
-方差约降`9.26x`而task mean几乎不变。它终局non-pass，不resume或扫K/LR/seed/temperature。
+最新完成closed-loop是**V6 Shared-Core Procedure-Set Bridge**：macro25 K4 strict=`139/400`、breadth6、per-task=
+`1/4/46/34/0/36/18/0`。相对K1 old134为`118/21/16` retained/gained/lost，净`+5`；相对matched
+post-compiler130净`+9`，但增益集中Long1，Goal3/Long2仍为0。它按breadth门终局non-pass，不resume或扫参。
 
-当前active design是**V6 Shared-Core Procedure-Set Bridge**：
+已完成的数据流是：
 
 ```text
 exact language + K=1..4 same-task action-hidden ordered videos
@@ -53,13 +53,10 @@ exact language + K=1..4 same-task action-hidden ordered videos
     -> one complete 38-target rank-16 task LoRA
 ```
 
-该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层；唯一主变量是把集合聚合从完整compiler之后前移到
-共同Core读出与最终Core/Procedure fusion之间。它不拼接Procedure、不做phase alignment、LoRA平均、negative、
-expert或RL。K=1严格等于原v6；warm start若成功仍需同一train24信息墙下建立从零recipe。当前authority为
-`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`；canonical实现、64项定向门、全量CPU
-`371 passed`和真实world6机制/profile已通过，steady macro=`24.2495s`、peak reserved=`40.758GB`；clean detached
-fresh macro0→25已完成，K4 B8/B16/B32 live生成吞吐=`.223358/.223313/.223323 LoRA/s`并锁B8。当前下一裁决是
-profile-sealed clean commit的strict paired correct400，精确run状态只取`docs/active_session_handoff.md`。
+该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层。matched去混淆显示，训练残差对effective BA只改变
+`.000918`，而shared-Core路径相对K1改变`.039674`；139几乎全部来自无参数Core union。下一迭代只允许把同预算
+可学习set前移到语言对齐Semantic Core tokens，并把后端Procedure聚合改为无参数mean；不得继续训练/放大当前
+Procedure-Set，也不得同时修改rank、recipe、底座或mapper。精确状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

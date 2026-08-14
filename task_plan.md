@@ -89,7 +89,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成nested-dose分析：same-task方差降`9.26x`但task mean K1→K4 cosine`.999832`，定位post-compiler
   aggregation只能稳定nuisance、不能修正高层task mean。
 
-## Active iteration: V6 Shared-Core Procedure-Set Bridge
+## Completed iteration: V6 Shared-Core Procedure-Set Bridge
 
 - [x] 写单变量authority：保留v6全部强路径，只把set从完整compiler后前移到shared Core与最终fusion之间；
 - [x] 原位替换canonical实现/schema/config，删除旧post-compiler runtime path；
@@ -102,7 +102,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   总耗时`662.730s`，0 OOM/nonfinite；
 - [x] macro25 K4 deployment profile：B8/B16/B32=`.223358/.223313/.223323 LoRA/s`，三者stable，
   按最高吞吐锁B8；
-- [ ] 从profile-sealed clean commit做K4 strict paired correct400；按134/breadth7门立即裁决。
+- [x] 从profile-sealed clean commit完成K4 strict paired correct400：`139/400`、breadth6、per-task=
+  `1/4/46/34/0/36/18/0`；相对old134净`+5`、相对post-compiler130净`+9`；
+- [x] 完成nested K1/K4、matched K4和trained-output归零分析：same-task方差降`9.69x`，但训练set只贡献
+  `.000918` effective-BA改写，139主要来自无参数shared Core数据流；
+- [x] breadth仍6且Goal3/Long2仍0，按门终局non-pass；不resume、不补controls、不扫K/LR/seed/temperature。
+
+## Active iteration: Semantic-Core Set Bridge
+
+- [ ] 写单变量authority：将同预算可学习集合共识从Procedure readout前移到语言对齐Semantic Core tokens；
+- [ ] 后端per-video Procedure只作无参数mean，保留v6底座、rank16、B20、动态K与K1严格恒等；
+- [ ] 原位替换唯一canonical实现并完成最小CPU/GPU机制与吞吐门；
+- [ ] fresh训练至预注册节点，尽快做K4 strict paired correct400。
 
 ## Continuous loop after this result
 
@@ -128,5 +139,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Shared-Core Procedure-Set fresh macro0→25及K4 live deployment profile完整；当前无活动
-EMBER GPU进程，下一步从profile-sealed clean commit做K4 strict paired correct400。
+无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；当前无活动EMBER GPU进程。下一步原位实现
+Semantic-Core Set单变量successor，完成机制/profile后fresh训练并尽快strict400。

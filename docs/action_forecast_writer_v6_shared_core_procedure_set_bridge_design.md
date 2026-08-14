@@ -1,6 +1,7 @@
 # V6 Shared-Core Procedure-Set Bridge
 
-状态：2026-08-14 canonical implementation、GPU mechanism/profile complete且formal seal ready的active design authority。上一轮V6 Dynamic Slot-Set Bridge已在macro25 K4 strict paired
+状态：2026-08-14 macro25 K4 strict paired correct400=`139/400`、breadth6，按预注册门终局non-pass。canonical实现、
+训练、profile、raw rows和机制分析均已封存；不得resume或通过K/LR/seed/temperature sweep救援。上一轮V6 Dynamic Slot-Set Bridge已在macro25 K4 strict paired
 correct400得到`130/400`、breadth6，按预注册门终局non-pass；其实现和checkpoint只由Git与formal artifacts保存，
 不得继续训练或通过K/LR/seed/temperature sweep救援。
 
@@ -176,3 +177,33 @@ macro25 checkpoint、completion与exit0齐全，总耗时`662.7296s`，每macro 
 gpu01物理4的K4 correct val8×4固定最长优先面板上完成deployment profile：B8/B16/B32=
 `.2233579/.2233132/.2233235 LoRA/s`，全部stable、0 OOM，峰值reserved约`12.95/12.97/13.01GB`；按预注册
 最高吞吐规则锁B8。该profile只封存正式evaluator batch，不作方法有效性证据。
+
+## 9. Strict结果与终局裁决
+
+profile-sealed clean detached `64c91a4`在gpu01物理`0,1,2,4,5,6`完成K4 correct strict paired400：
+
+`runs/outputs/pi05_v6_shared_core_procedure_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_64c91a4_gpu01_20260814`
+
+- 400/400 LoRA、72/72 queue shards、400 raw rows、18/18 persistent workers均完整exit0；总wall=`1165.937s`，
+  rollout-only=`674.917s`；
+- strict=`139/400`、breadth6；per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+  `1/4/46/34/0/36/18/0`，per-suite=`5/80/36/18`，top3=`116/139=83.45%`；
+- 相对K1严格恒等的old134为`118 retained / 21 gained / 16 lost / 245 both-fail`，net`+5`、churn37、
+  McNemar p=`.511376`；四suite净变化=`0/-2/+1/+6`，其中Long1单task净增7，Goal3与Long2仍为0；
+- 相对matched K4 post-compiler130为`118/21/12/249`，net`+9`、churn33、p=`.162756`；相对v6-fast143、
+  compiler138和online128的aggregate分别为`-4/+1/+11`。
+
+matched K1→K4 effective-BA全400 cosine mean=`.998564`、relative-L2 mean=`.047749`、norm ratio=`1.002122`；
+first4/task的same-task centered variance从`.00228114`降至`.00023539`，约`9.69x`，但task-mean cosine仍为
+`.9998256`。因此边界前移确实比post-compiler set多获得9个closed-loop净分，却没有形成新breadth或稳定的多task
+共同提升。
+
+进一步把同一checkpoint的Procedure-Set `output`归零，在canonical validation8×first4 K4条件重生成LoRA：训练
+残差对完整effective BA的relative-L2 mean仅`.0009181`，task-mean仅`.0005745`；相反，保留的无参数
+`shared-Core union + per-video Procedure mean`相对K1分别改变`.0396742/.0169820`。所以139几乎全部来自更早的
+shared-Core数据流，而不是可学习的后端Procedure-Set。它否定继续训练或放大该后端set，并把下一最早可检验接口
+定位到语言对齐的per-video Semantic Core本身：学习跨video共同高层语义必须发生在native Core reader之前。
+
+由于breadth=`6<7`，本设计按门终止；不resume50、不补五臂、不扫K/LR/seed/temperature。负结果只否定当前
+`parameter-free Core union + trainable post-readout Procedure set`组合，不否定动态K、逐video保序、Semantic
+Core/Procedure分解或在更早高层语义token处学习集合共识。

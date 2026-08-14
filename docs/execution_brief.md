@@ -5,17 +5,12 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and active method
 
-V6 Dynamic Slot-Set Bridge已完成macro25 K4 strict paired correct400：`130/400`、breadth6、per-task=
-`1/2/48/32/0/34/13/0`、per-suite=`3/80/34/13`，top3占`114/130=87.69%`。相对K1严格恒等的old134为
-`117 retained / 13 gained / 17 lost`、净`-4`、churn30；四个suite净变化=`-2/-2/-1/+1`。它没有超过134且
-breadth低于7，按预注册门终局non-pass，不resume、不补controls或扫K/LR/seed/temperature。
+V6 Shared-Core Procedure-Set Bridge已完成macro25 K4 strict paired correct400：`139/400`、breadth6、per-task=
+`1/4/46/34/0/36/18/0`、per-suite=`5/80/36/18`，top3占`116/139=83.45%`。相对K1 old134为
+`118 retained / 21 gained / 16 lost`、净`+5`、churn37；相对matched post-compiler K4 130为`118/21/12`、
+净`+9`。增益主要来自Long1净`+7`，Goal3/Long2仍为0；breadth低于7，按门终局non-pass。
 
-matched 8 tasks×first4 states中，K4相对K1 effective-BA cosine mean/median=`.998690/.999275`、relative-L2=
-`.046910/.040562`、norm ratio mean=`.998592`。same-task centered variance/sample从`.002281`降到`.000246`，约
-`9.26x`，但task mean K1→K4 cosine=`.999832`，跨task mean offdiag只从`.49935`到`.49749`。因此set确实读取并
-稳定了多条视频；失败不是“没有set”或破坏旧支持，而是完整compiler之后的集合层只能产生old134邻域小修。
-
-当前active方法是V6 Shared-Core Procedure-Set Bridge。它保留冻结v6-fast的language-axial evidence、Semantic
+该方法保留冻结v6-fast的language-axial evidence、Semantic
 Core、有向Procedure、native compiler remainder、factor heads和rank16 topology，只把同一个约197k set层从完整
 compiler之后前移到shared Core读出与最终Core/Procedure fusion之间：原生Core reader先联合读取无序Core union；
 每条有序Procedure再以同一shared Core解释；Procedure-set置换不变聚合后，原生AdaLN/post-fusion/factor heads只
@@ -27,14 +22,20 @@ v6、K>1集合换位不变而video内倒序敏感、只有197120个Procedure-Set
 323帧且0 OOM/nonfinite；macro1→2 q/k delta非零，完整set credit已打开。clean detached `502618b` fresh
 macro0→25也已完整结束：25/25 metrics、completion与checkpoint齐全，总耗时`662.730s`，loss first/last=
 `.101182/.095655`，0 OOM/nonfinite。macro25 K4 B8/B16/B32 deployment profile分别为
-`.223358/.223313/.223323 LoRA/s`，三者stable且峰值reserved约`13.01GB`，按最高吞吐锁B8；下一步直接做
-strict paired correct400。
+`.223358/.223313/.223323 LoRA/s`，三者stable且峰值reserved约`13.01GB`，按最高吞吐锁B8。
+
+matched去混淆把Procedure-Set output归零后，训练残差相对当前LoRA的effective-BA relative-L2 mean只有
+`.000918`、task-mean只有`.000574`；无参数shared-Core union + Procedure mean相对K1则为`.039674/.016982`。
+所以closed-loop净增主要由更早数据流产生，后端训练层几乎没有学到可用改写。下一单变量是把同一个集合算子
+前移到语言token对齐的per-video Semantic Core上，后端Procedure只做无参数mean；其它底座、rank16、B20、动态K
+和训练recipe保持不变。
 
 ## 2. Single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology
   和factor heads全部加载macro400并冻结；
-- 唯一新增/训练的是跨video Procedure-Set层，唯一架构变量是集合边界前移；不加memory、rank变化、negative、
+- 已完成方法唯一新增/训练的是跨video Procedure-Set层；下一迭代把同预算训练层移动到Semantic Core并移除后端
+  trainable set，不加memory、rank变化、negative、
   expert、reward或新LoRA mapper；
 - 24 train tasks构成一个完整macro，task内B20 mean后24-task等权；
 - 每macro K1/K2/K3/K4各6，各task每四个macro覆盖全部K；

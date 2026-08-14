@@ -30,12 +30,12 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的**V6 Dynamic Slot-Set Bridge**在macro25 K4 strict为`130/400`、breadth6、per-task=
-`1/2/48/32/0/34/13/0`。相对其K1严格恒等的old134为`117 retained / 13 gained / 17 lost`，净`-4`；K4把
-same-task LoRA方差约降`9.26x`，但task mean几乎不变。它证明多视频集合确实稳定了demo nuisance，也证明在每条
-video都已独立完成compiler之后再聚合过晚；按门终局non-pass，不resume或扫K/LR/seed。
+最新完成的**V6 Shared-Core Procedure-Set Bridge**在macro25 K4 strict为`139/400`、breadth6、per-task=
+`1/4/46/34/0/36/18/0`。相对K1严格恒等的old134为`118 retained / 21 gained / 16 lost`，净`+5`；相对matched
+post-compiler K4 130净`+9`。它说明把多视频集合边界前移到Core读出之前确实改善closed-loop，但增益集中在Long1，
+Goal3/Long2仍为0，没有增加breadth，按门终局non-pass。
 
-当前active successor是**V6 Shared-Core Procedure-Set Bridge**：
+完成的数据流是：
 
 ```text
 exact language + K=1..4 same-task ordered action-hidden videos
@@ -51,10 +51,10 @@ exact language + K=1..4 same-task ordered action-hidden videos
 phase alignment或LoRA平均。K=1仍严格恒等于原v6；K>1先形成共同高层语义，再比较各video内部有序过程。完整
 authority见
 [`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
-canonical实现、64项定向门、全量`371 passed`和真实GPU机制/profile均通过：world6 steady macro为`24.25s`，
-峰值reserved约`40.76GB`，K1--K4各6且最长323帧完整。clean detached fresh macro0→25已完整结束；macro25 K4
-B8/B16/B32生成吞吐=`.223358/.223313/.223323 LoRA/s`，锁B8。当前等待profile-sealed clean commit的strict
-paired correct400，尚无新closed-loop claim。
+canonical实现、全量`371 passed`、world6训练和strict400均完整。去混淆进一步发现：训练后的Procedure-Set残差
+只改变约`.000918` effective BA；K4相对K1约`.03967`的变化几乎全部来自无参数shared-Core union。因此下一单变量
+方向不是续训后端set，而是把同预算可学习集合共识再前移到语言对齐的Semantic Core tokens，后端Procedure只做
+无参数集合归约。该successor在完成独立design authority与实现封存前不宣称active结果。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

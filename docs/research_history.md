@@ -23,7 +23,7 @@ EMBER研究：给定exact task language与一条或多条action-hidden teacher v
 task adaptation；该adaptation挂到同一个frozen π0.5-LIBERO source policy后，应在未见初始化上闭环完成任务。
 视频是唯一dynamic value，不允许language-only LoRA bypass、teacher action/reward/proprio读取、task ID、
 文件名、object pose、多个独立LoRA/checkpoint平均或held oracle。rank8、rank14、rank16均是具体实验合同，不是
-长期问题定义；当前Shared-Core Procedure-Set使用历史v6的完整rank16 topology作机制开发。
+长期问题定义；最近Shared-Core Procedure-Set使用历史v6的完整rank16 topology完成了受控机制开发。
 
 最终方法必须由同一single checkpoint的strict paired closed-loop裁决，并同时满足高absolute、task breadth、
 低checkpoint换手、same-task鲁棒和correct优于wrong/shuffled/reversed/no-video。训练loss、functional loss、
@@ -103,7 +103,7 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | Fixed-A reachable-subspace diagnostic | no rollout；old134 fixed/optimal rank8=`.01950/.999999` | rank8容量足够表示已知强BA，但当前随机固定A只开放极窄右子空间 | train24最优共享A在experts保留`.94063`、到old134 held仅`.06811`；只支持后续task/video-conditioned A候选，不支持静态expert basis或性能claim |
 | Task-Grounded Full-Factor rank8 | `91/400`, breadth5 | 完整dynamic A/B可训练且相对matched fixed-A净增3 | B norm仅`.062x`、BA norm`.245x`且近正交；offline loss接受弱重参数化，当前前端/mapper组合终局non-pass |
 | V6 Dynamic Slot-Set Bridge | K4 `130/400`, breadth6 | same-task BA方差降约`9.26x`且基本保留old134支持 | post-compiler set使task mean K1→K4 cosine`.999832`，只稳定nuisance；不续训/调K |
-| V6 Shared-Core Procedure-Set Bridge | active，strict待评 | K1严格保留v6；在compiler最终承诺前联合Core并聚合per-video ordered Procedure；fresh macro25与K4 live profile完整 | 尚无closed-loop结果；warm start不冒充最终fresh方法 |
+| V6 Shared-Core Procedure-Set Bridge | K4 `139/400`, breadth6 | 相对post-compiler130净`+9`；更早Core union改善absolute且same-task方差降约`9.69x` | 相对old134只净`+5`且增益集中Long1；trained Procedure-Set仅`.000918` BA改写，Goal3/Long2仍0，按门终止 |
 
 ## 4. Final rank14 adjudication
 

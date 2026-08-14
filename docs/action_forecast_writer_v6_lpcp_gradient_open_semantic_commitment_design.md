@@ -1,0 +1,199 @@
+# V6-LPCP Gradient-Open Semantic Commitment
+
+状态：2026-08-15 active design authority。本文建立在SFMC cycle1终局之后，只改变semantic factor
+commitment的零输出参数化。LPCP视频载体、AS139强底座、K4 cross-video selected-success credit、rank16
+public LoRA、八factor families、优化器和全部信息墙保持不变。
+
+## 1. Decision
+
+SFMC的设计意图没有被closed-loop结果整体否定，但其具体初始化存在一阶梯度断路：
+
+```text
+R_f(M,L) = sum_b alpha_b(L) V_f,b M
+V_f,b = 0 at initialization
+```
+
+这保证step0严格等于LPCP，却同时使`dR/dalpha=0`。因此cycle1只更新family maps，semantic query与basis
+keys几乎不动；随后很小的continuous hidden residual又大多没有跨过native public LoRA的局部量化边界。
+
+本轮把它替换为一个**严格零输出、但首步梯度打开**的anchored commitment：
+
+```text
+exact language + K4 ordered action-hidden videos
+  -> frozen LPCP evidence / Core / Procedure / K-set
+  -> K-set innovation memory M
+  -> zero-init semantic query + nonzero semantic keys
+  -> trainable zero-init family delta maps
+     + frozen V6-W1 policy-aligned address anchors
+  -> frozen V6 factor W2
+  -> one complete 38-target rank16 LoRA
+```
+
+唯一主要变量是commitment的初始化与等价函数形式。不是续训失败SFMC checkpoint，也不改变credit views、
+rank、LR、dtype、basis数或视频数量。
+
+## 2. Evidence selecting this interface
+
+SFMC full24 cycle1完成24 tasks、32 credit conditions与128 unique videos，八family maps全部更新，wall仅为
+CV-CSD的`1.0662x`；因此GPU负载、reward credit、video carrier和训练图都不是失败源。strict=`144/400`，
+但相对LPCP143为`128 retained / 16 gained / 15 lost`、churn31，只是高换手邻域重排。
+
+稳定FP64差分进一步给出：
+
+- all400 effective-BA relative-L2 mean/median=`2.899e-7/1.066e-9`；
+- q/v/action非零样本=`249/16/1`；
+- semantic query/basis-key参数delta约`1.7e-9`；
+- first4同task correction cosine约0，mean/sample energy约`.25`。
+
+所以最早失败接口是`continuous hidden residual -> frozen W2 -> native public LoRA`，并且该接口前还有明确的
+zero-init router staging。当前证据不支持重做已通过的LPCP carrier，也不支持增加view、继续cycle2或做
+LR/scale/dtype小扫。
+
+## 3. Retained graph and information wall
+
+本轮完整保留：
+
+- exact task language与K4 same-task、action-hidden、内部有序teacher videos；
+- frame stride5、逐video causal encoding、video间置换不变K-set；
+- V6 Semantic Core、有向Procedure、LPCP 18-layer Action-probe conditioner及其macro25权重；
+- `M = FrozenSet(P_LPCP) - FrozenSet(P_AS139)`的layer/rank aligned innovation memory；
+- AS139/V6 fusion、38 targets、八factor families与完整rank16 public topology；
+- train24两组paired states、AS139/LPCP两臂、四个disjoint correct K4 credit views、selected-success replay；
+- AdamW、LR `3e-4`、Nmc4、B8、task equal aggregation、source policy和official rollout。
+
+language只提供semantic address；所有新增factor Value仍乘以video-derived `M`。`M=0`时新增LoRA residual严格
+为0，不存在language-only输出。reference只在训练中产生paired success trajectory，不进入部署。
+
+## 4. Exact gradient-open parameterization
+
+对每个condition的320个policy slots，semantic address为：
+
+```text
+q_s       = W_q RMSNorm(L_s)
+alpha_s,b = softmax(q_s dot RMSNorm(K_b) / sqrt(256)), b=1..4
+```
+
+本轮将`W_q` exact-zero初始化，`K_b`沿用确定性nonzero初始化。因此step0的`alpha`逐slot严格为`1/4`。
+
+每个factor family保留四个trainable delta maps `D_f,b`，全部exact-zero初始化。另从对应冻结V6 factor head的
+第一层`W1_f`构造四个不训练、无额外scale的policy-aligned anchor operators：
+
+```text
+A_f,0(M) =  W1_f M
+A_f,1(M) = -W1_f M
+A_f,2(M) =  W1_f (S M)
+A_f,3(M) = -W1_f (S M)
+```
+
+`S`是固定的balanced signed diagonal，operator norm为1；它只提供与identity分支不同的第二个坐标保持方向，
+不增加可调幅度、随机seed或新expert bank。anchors使用已经共同产生LPCP143的冻结V6 `W1_f`，而不是任意wide
+decoder或raw A/B residual。
+
+最终hidden residual为：
+
+```text
+Delta-h_f = sum_b alpha_b D_f,b M
+          + sum_b (alpha_b - 1/4) A_f,b(M)
+```
+
+step0时两项分别严格为0，不依赖正负大数的浮点抵消：第一项因`D=0`为0，第二项因
+`alpha-1/4=0`为0。因此candidate逐tensor等于LPCP。
+
+但首步导数已经打开：
+
+```text
+d Delta-h_f / d D_f,b = (1/4) M                    != 0
+d Delta-h_f / d W_q   = d alpha/dW_q * A_f,b(M)   != 0
+```
+
+basis keys与两个RMSNorm可在query打开后的下一cycle继续学习；本轮关键是cycle1结束时semantic query本身已经
+material更新，而不是像SFMC一样等到失败cycle之后才开始获得有效梯度。
+
+## 5. Why this is the narrow successor
+
+- **不是续训SFMC**：从sealed LPCP macro25重新fresh初始化commitment与optimizer，不加载SFMC cycle1 state。
+- **不是量化补丁**：不改BF16/TF32、不扩dtype、不dither、不重复forward；修复的是训练函数的一阶可学习性。
+- **不是scale sweep**：anchor幅度由冻结V6 `W1_f`和norm-1 signed transform确定，没有新增scalar gate。
+- **不是新视频前端**：LPCP carrier、Core、Procedure、K-set和four-view credit全部冻结。
+- **不是raw factor bank**：residual仍进入真实factor hidden owner，再经冻结W2生成唯一public LoRA。
+- **不是language bypass**：anchors、delta maps和semantic address没有`M`都不能输出任何新增Value。
+- **不是漂亮几何目标**：coherence、rank和norm只验证接口，方法仍由strict closed-loop裁决。
+
+该设计保留SFMC正确的layer/rank/family对应和连续semantic routing，只修复其已由真实结果证实的zero-init
+staging与sub-ULP writeout接口。
+
+## 6. Expected coexistence and video behavior
+
+首步family delta提供shared、video-dependent更新；同一步semantic query利用exact language选择四个冻结
+policy-aligned anchors。因同task不同correct videos共享language address，而Value仍来自各自有序`M`，模型可学习
+共同task direction，同时保留每条视频的过程证据。不同tasks通过连续address组合共享bases，不需要task ID或
+hard expert route。
+
+正确顺序仍在结构中必要：`M`来自每video causal Procedure和K-set后的LPCP/AS139差；shuffle/reverse必须重排
+真实frames并重新生成`M`。本设计不把negative LoRA人为推坏，correct是否沿有用方向获益只由最终六臂闭环判断。
+
+## 7. Implementation ownership and lifecycle
+
+现有`src/ember/writer/factor_commitment.py`继续拥有唯一commitment实现；不新增第二个Writer模块。当前SFMC
+schema/config/runtime由Git commit`8994180`和formal artifacts保存，active schema原位替换为本设计，避免并行
+可执行路径。
+
+实现只需要：
+
+1. 将semantic query改为zero-init；
+2. 把现有family maps解释为zero-init delta maps；
+3. 在同一`hidden_residuals`中加入冻结V6-W1 anchored address term；
+4. 更新fresh-incompatible config/checkpoint/evaluator schema和聚焦机制测试。
+
+不增加backbone forward。anchor只增加小型factor hidden projection，full24 reward cycle必须保持在SFMC matched
+wall的`1.25x`以内。
+
+## 8. Mechanism and efficiency gates
+
+进入formal前必须证明：
+
+1. sealed LPCP state完整加载；新commitment state全部fresh，SFMC cycle1不能被误载；
+2. step0 public LoRA、effective BA与fixed action在正常native dtype下严格等于LPCP；
+3. `M=0`、query-disabled/constant输入不能产生新增residual；K-set仍置换不变，natural/reversed仍material不同；
+4. 第一次真实selected-success update中八family delta maps和semantic query均finite/nonzero更新；
+5. post-update q、v、action public factors都发生非稀疏变化，effective BA与fixed-action response均非零；
+6. source policy、LPCP、set/fusion、W1/W2和全部非commitment参数保持frozen；
+7. 不重复backbone forward，0 forbidden read/OOM/nonfinite/watchdog；
+8. task4 wall和full24 wall均不超过matched SFMC的`1.25x`，多卡仍按真实task cost动态平衡。
+
+跨video correction cosine与mean/sample energy必须报告，并与SFMC的约`0/.25`比较；它们只判断新接口是否真的
+打开，不选择checkpoint。若query仍近零或action family仍只有孤立ULP crossing，则本设计在formal前即失败。
+
+## 9. Closed-loop and stability adjudication
+
+full24 cycle1完成后立即做同一K4 single-checkpoint strict paired correct400。cycle1只有同时满足以下条件才允许
+exact cycle2：
+
+- correct至少144、breadth至少7；
+- 相对LPCP143 lost不超过10且gained大于lost；
+- 至少3个suite不下降。
+
+稳定约145资格继续使用owner最新标准：
+
+- cycle1与cycle2各至少144，两点均值至少145，breadth各至少7；
+- 相邻checkpoint churn不超过20、success-set Jaccard至少`.85`；
+- 末端checkpoint按预注册规则使用，不按最高分挑选；
+- 增益不能由单一task或suite掩盖其它能力丢失。
+
+达到稳定资格后，对同一final checkpoint做strict paired六臂：correct、same-task-other、cross-suite wrong、
+shuffled、reversed、no-video。same/correct至少`.9`；correct相对每个control至少`+8/400`，并报告paired
+correct-only/control-only、McNemar、per-task和per-suite。
+
+稳定145且视频因果资格完整，可视为有价值成立结果；单点150以上但高churn或没有video specificity仍不合格。
+
+## 10. Fast falsifiers and negative-result boundary
+
+- step0不再exact LPCP：anchored参数化实现错误；
+- family maps有梯度但semantic query仍为零：gradient-open核心假设失败；
+- continuous residual非零但v/action public factor仍不动：W1-anchor到W2/native factor接口仍不足；
+- cycle1 correct低于144、breadth低于7或lost大于10：不续cycle2、不改scale/LR/rank/anchor seed；
+- cycle1/2仍高churn：梯度打开没有解决shared checkpoint共存；
+- correct与wrong/shuffle/reverse/no-video同步：video Value没有沿正确过程产生有用方向。
+
+负结果只淘汰“LPCP innovation memory + W1-aligned anchored gradient-open commitment + one/two CV selected-success
+cycles”这一组合；不否定memory token、few-shot、rank8、生成LoRA或未来从零训练recipe。

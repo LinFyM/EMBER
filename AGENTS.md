@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 最新completed design（当前无active successor）：
-   `docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -99,10 +99,13 @@ action仅1。first4同task修正pairwise cosine约`-8.10e-6`、mean/sample energ
 semantic route。最早失败接口是**SFMC continuous hidden residual -> frozen W2 -> native public LoRA**，不是
 carrier未读视频、GPU负载或训练图未工作。
 
-当前没有active successor或GPU工作；本轮按owner要求完成全部分析后停下讨论。SFMC没有六臂结果，因此不得
-宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory + 4-way language route +
-zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory token、rank8、few-shot或
-生成LoRA本身。
+当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC checkpoint，只把
+zero-init staged commitment改成step0严格等于LPCP、但family delta maps与semantic query首步同时有梯度的
+V6-W1 anchored参数化；LPCP carrier、K4 four-view credit、rank16、optimizer与信息墙不变。当前尚未启动GPU。
+SFMC没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
++ 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
+token、rank8、few-shot或生成LoRA本身。
 
 ## 4. Long-term objective and decision rule
 

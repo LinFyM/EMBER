@@ -16,7 +16,8 @@ exact task language + one or more action-hidden correct teaching videos
 
 ## Scientific target
 
-当前底线是同一shared method、同一single checkpoint的strict paired correct严格`>150/400`，并继续提高：
+性能继续追求同一shared method、同一single checkpoint的strict paired correct严格`>150/400`并继续提高；
+约145若由相邻checkpoints稳定保持、低换手、跨同任务视频鲁棒且视频因果性明确，也属于有价值的成立结果：
 
 - absolute closed-loop success与task breadth；
 - 多task能力在同一checkpoint共同积累，而非checkpoint之间换手；
@@ -30,26 +31,17 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的**V6 Shared-Core Ordered-Procedure Common-Value Bridge**在macro25 K4 strict为`139/400`、breadth6、
-per-task=`1/2/46/32/0/36/22/0`。相对matched parameter-free Shared-Core139严格配对为
-`120 retained / 19 gained / 19 lost`，Long1净`+4`完全由Spatial/Object各净`-2`支付；Goal3与Long2仍为0，
-按`<140`与breadth`<7`双门终局non-pass。
-
-该负结果不是“Procedure没写进去”：raw ordered Procedure correction relative-L2=`.09601`，effective-BA改写=
-`.01397`，q/k/output全部训练且action响应改变。但同一checkpoint在train-seen 8 tasks×10 states上的严格
-output-zero反事实也是trained/zero=`64/64`、`4 gained / 4 lost`。因此full24 B20 functional credit在train和
-held on-policy上都只制造能力换手；继续放大Value、改rank或移动compiler没有证据。
+最新完成的**V6-LPCP Semantic Factor-Memory Commitment**在cycle1 K4 strict为`144/400`、breadth7、
+per-task=`1/3/47/36/0/38/18/1`。相对LPCP143严格为`128 retained / 16 gained / 15 lost`、churn31、
+net`+1`；lost门失败，故没有续cycle2或六臂。稳定FP64证明它相对LPCP的effective-BA改写仅
+`2.899e-7` relative-L2，semantic router几乎未学习，v/action写出大多没有跨过native factor量化边界；单点144
+不是稳定145或视频因果资格。
 
 当前active successor是
-[`V6 Ordered-Procedure On-Policy Preference Writer`](docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md)：
-完整保留K4有序视频、shared Core、Procedure Common-Value、native rank16 compiler和强139底座，把macro25作为
-短AS cold start，随后关闭target action入口，用train24真实闭环success/failure preference只优化同一个shared
-Writer的19.7万FP32 Procedure参数。部署仍是一次语言+视频生成初始LoRA，不是生成LoRA后的task-local RL。
-该reward链已完成full CPU=`395 passed`和真实mixed task smoke：Writer gradient、q/k/output、effective BA与fixed action
-均产生明确非零响应，跨过历史Reward-Credit的sub-ULP写出断点。首个world5 formal先因合法长task超过默认600秒
-collective timeout失败，PG失败后最慢rank才报告OOM；已把reward timeout改为30分钟，并按历史SRTP移除CFM期间
-不必要的compiler graph。同一task4复测全部科学量逐位不变、B8 exit0。这仍只是机制证据，下一正式裁决是fresh
-full24 cycle1后的single-checkpoint K4 strict paired400。
+[`V6-LPCP Gradient-Open Semantic Commitment`](docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md)：
+完整保留LPCP有序视频carrier、K4 cross-video selected-success credit、V6 rank16 factor topology和强143底座，
+只把SFMC的zero-init staged commitment改成step0严格identity、但family delta maps与semantic query首步同时有
+梯度的V6-W1 anchored参数化。当前尚未启动GPU；下一步先完成机制与吞吐门，再做fresh cycle1和strict400。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

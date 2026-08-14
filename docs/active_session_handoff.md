@@ -99,8 +99,12 @@
   q/v/action=`249/16/1`；first4 pairwise cosine=`-8.10e-6`、mean/sample energy=`.249995`。semantic query/
   basis-key delta约`1.7e-9`，连续hidden residual主要被native factor量化为稀疏q-family ULP crossing，未形成
   learned semantic route或跨video共同方向；
-- 当前无active successor和GPU工作。本轮已完成逐task、success-set、负载/吞吐、稳定BA与跨video归因并按owner
-  要求停下讨论；same/wrong/shuffled/reversed/no-video未获门控授权，不能宣称鲁棒性或视频特异性；
+- 当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+  `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它从sealed LPCP macro25 fresh
+  初始化commitment与optimizer，只把SFMC的zero-init staged函数改成step0严格identity、但family delta maps与
+  semantic query首步同时有梯度的V6-W1 anchored参数化；其余carrier、K4 four-view credit、rank16与训练合同
+  全部冻结。当前尚未启动GPU；SFMC的same/wrong/shuffled/reversed/no-video仍未获门控授权，不能宣称鲁棒性或
+  视频特异性；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成
@@ -746,5 +750,6 @@ SFMC formal训练来自clean pushed/frozen `899418087aee9f7dd5c51045aa190ac7481d
 终局最早失败接口是**continuous SFMC hidden residual -> frozen factor W2 -> native public LoRA**：family maps
 确实获得reward credit，但cycle1语义router尚未形成，输出又大多低于原生factor局部ULP，只产生稀疏q-family
 crossing。144因此是LPCP边界附近的高churn阈值重排，不是稳定145，也不能证明same-task-video鲁棒或视频特异性。
-完整终局artifact为`sfmc_cycle1_terminal_analysis.json`；当前无active successor，等待owner讨论后再立下一份
-单变量design authority。
+完整终局artifact为`sfmc_cycle1_terminal_analysis.json`。owner讨论后已立
+`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`作为下一单变量authority；
+这里的SFMC终局不得恢复或续训。

@@ -27,9 +27,12 @@ pairwise cosine=`-8.10e-6`、mean/sample energy=`.249995`，没有形成跨video
 最早失败接口是**continuous factor-memory residual经冻结W2写成native public LoRA时被压到稀疏q-family ULP
 crossing**，且learned semantic router尚未形成，而不是memory未算、reward无梯度、GPU负载或LoRA链路未接通。
 
-当前无active successor和GPU工作。本轮已经完成逐task、paired success-set、吞吐/负载、稳定effective-BA、
-跨video coherence与失败接口分析，按owner要求停下讨论。因cycle1未过稳定门，same/wrong/shuffled/reversed/
-no-video没有启动；因此不能宣称视频鲁棒性或特异性。
+当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC cycle1，只从sealed
+LPCP macro25 fresh初始化，在同一factor commitment中加入冻结V6-W1 policy-aligned anchors，使step0仍严格
+identity，同时让family delta maps和semantic query在第一次selected-success update中都有梯度。carrier、K4
+four-view credit、rank16、optimizer与信息墙不变；当前尚未启动GPU。SFMC因cycle1未过稳定门而没有启动
+same/wrong/shuffled/reversed/no-video，因此不能宣称视频鲁棒性或特异性。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；

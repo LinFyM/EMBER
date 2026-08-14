@@ -292,6 +292,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 终局定位最早失效接口：continuous SFMC hidden residual在冻结W2与native public factor处被量化成稀疏
   q-family ULP crossing，cycle1 semantic router尚未形成；不把单点144误报成稳定145或视频因果资格。
 
+## Active iteration: V6-LPCP Gradient-Open Semantic Commitment
+
+- [x] 根据SFMC终局定位单一变量：zero-init family maps在首个backward关闭semantic router，随后hidden residual
+  又低于native factor局部量化边界；不续失败checkpoint、不改carrier/rank/LR/dtype/view数；
+- [x] 写active authority：family maps作为zero-init delta，semantic query zero-init，冻结V6-W1提供balanced
+  policy-aligned anchors；step0严格LPCP identity，但maps与query首步同时有梯度；
+- [ ] 原位替换唯一canonical commitment与fresh-incompatible schema/config，删除SFMC active runtime语义；
+- [ ] 完成step0 identity、首步maps/query梯度、q/v/action native写出、顺序/set/freeze与checkpoint机制门；
+- [ ] 通过机制门后做真实task4 smoke、full24吞吐profile与fresh cycle1；
+- [ ] 完成cycle1 K4 strict paired correct400；过retention门才允许cycle2稳定性与六臂因果评测；
+- [ ] 按约145稳定资格报告相邻checkpoint churn/Jaccard、same-task-other与correct对negative/no-video差异。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；
@@ -307,7 +319,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已按门
-终局。SFMC正确分恢复到144，但相对LPCP仍有31条换手、lost15，部署改写又被压到q-dominant native ULP边界，
-所以既不是稳定145，也没有same/negative六臂资格。当前无active successor；按owner要求完成本轮全部分析后停下
-讨论，不resume、不补controls、不扫query/LR/rank/scale。生成LoRA后的task-local RL仍是初始Writer达到强
-zero-interaction起点之后的独立实验。
+终局；它们都不得resume或参数小扫。当前active successor已立项但尚未实现或启动GPU。生成LoRA后的task-local
+RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

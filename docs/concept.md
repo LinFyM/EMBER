@@ -85,6 +85,8 @@ no-video，且same-task-other保持接近，才能支持视频因果claim。
 
 ## Success criterion
 
-当前底线是同一shared method、同一single checkpoint strict paired correct严格`>150/400`，并继续提高absolute、
-breadth、共同积累和视频因果性。LoRA能量、rank、cosine、reconstruction、functional loss和内部margin只用于
-解释，不能替代真实闭环。
+性能继续追求同一shared method、同一single checkpoint strict paired correct严格`>150/400`，并继续提高
+absolute、breadth、共同积累和视频因果性。约145若由相邻checkpoints共同保持、成功集合低换手、same-task不同
+视频鲁棒且correct相对wrong/shuffled/reversed/no-video有明确优势，也构成有价值的成立结果；单点151若高波动或
+无视频因果性仍不合格。LoRA能量、rank、cosine、reconstruction、functional loss和内部margin只用于解释，不能
+替代真实闭环。

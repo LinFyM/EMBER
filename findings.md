@@ -23,6 +23,14 @@ Jacobian仍写成近正交局部BA方向，无法在实际policy layer/rank/targ
 CV-CSD只否定query-only四view exact mean这一组合，不否定multi-video、memory、reward、rank16或完整LoRA生成。
 下一轮可以使用layer-aligned memory，但它必须直接解决commitment，而不是替换已通过的视频carrier或单纯加容量。
 
+最新SFMC随后把commitment前移到八factor-family hidden owners并恢复correct到144，但稳定FP64证明部署改写只有
+`2.899e-7` relative-L2，semantic query/basis-key delta约`1.7e-9`，q/v/action非零样本=`249/16/1`。其全零
+family maps虽然保证step0 identity，却使semantic route在首个backward严格无梯度。当前active successor只修复
+这一参数化：family maps改作zero-init delta，semantic query zero-init，并用冻结V6-W1构造不训练的balanced
+address anchors，使step0两项分别严格为零，但maps与query首步同时获得梯度。它不改变LPCP carrier、K4 credit、
+rank16、LR或dtype；完整可证伪合同见
+`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。
+
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频内容特异性强，但absolute不足 |

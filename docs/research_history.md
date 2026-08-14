@@ -17,7 +17,8 @@ few-shot nuisance reduction已工作但没有修正高层任务方向。该arm�
 随后macro50=`91`，只比matched fixed-A净增3，并形成tiny-B/weak-near-orthogonal BA，终局non-pass。V6 Dynamic
 Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。Shared-Core
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
-`116/22/23`且churn45。当前没有active successor，下一轮需先讨论架构级共存接口。
+`116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD与SFMC已继续把接口推进到factor commitment；当前active
+successor只改SFMC的zero-init gradient staging，精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
 

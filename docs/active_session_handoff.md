@@ -17,7 +17,8 @@
   相对K1贡献`.039674`；139几乎全部来自更早Core union，不来自可学习后端set；
 - 当前下一单变量：把同预算trainable set前移到语言对齐的per-video Semantic Core tokens，后端Procedure只作
   无参数mean；v6底座、rank16、B20、动态K和K1严格恒等保持不变；
-- 当前active design authority待以该精确边界写入；在此之前不得把构想冒充已实现方法；
+- 当前active design是V6 Semantic-Core Set Bridge；authority=
+  `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，尚未实现或产生性能claim；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture

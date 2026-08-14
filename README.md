@@ -53,8 +53,10 @@ authority见
 [`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`](docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md)。
 canonical实现、全量`371 passed`、world6训练和strict400均完整。去混淆进一步发现：训练后的Procedure-Set残差
 只改变约`.000918` effective BA；K4相对K1约`.03967`的变化几乎全部来自无参数shared-Core union。因此下一单变量
-方向不是续训后端set，而是把同预算可学习集合共识再前移到语言对齐的Semantic Core tokens，后端Procedure只做
-无参数集合归约。该successor在完成独立design authority与实现封存前不宣称active结果。
+方向不是续训后端set，而是**V6 Semantic-Core Set Bridge**：把同预算可学习集合共识再前移到语言对齐的
+Semantic Core tokens，后端Procedure只做无参数集合归约；底座、rank16、B20与动态K不变。完整预注册authority见
+[`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md)，
+当前尚无实现或新性能claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

@@ -54,9 +54,10 @@ exact language + K=1..4 same-task action-hidden ordered videos
 ```
 
 该bridge冻结历史v6-fast，只训练约197k参数的Procedure-Set层。matched去混淆显示，训练残差对effective BA只改变
-`.000918`，而shared-Core路径相对K1改变`.039674`；139几乎全部来自无参数Core union。下一迭代只允许把同预算
-可学习set前移到语言对齐Semantic Core tokens，并把后端Procedure聚合改为无参数mean；不得继续训练/放大当前
-Procedure-Set，也不得同时修改rank、recipe、底座或mapper。精确状态只取`docs/active_session_handoff.md`。
+`.000918`，而shared-Core路径相对K1改变`.039674`；139几乎全部来自无参数Core union。当前active design是
+**V6 Semantic-Core Set Bridge**：只把同预算可学习set前移到语言对齐Semantic Core tokens，并把后端Procedure
+聚合改为无参数mean；不得继续训练/放大当前Procedure-Set，也不得同时修改rank、recipe、底座或mapper。authority=
+`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，精确状态只取`docs/active_session_handoff.md`。
 
 ## 4. Long-term objective and decision rule
 

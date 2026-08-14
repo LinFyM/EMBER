@@ -376,6 +376,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     energy ratio=`.250155`，CV-CSD/PCSD也为`-.001908/.248578`。cross-video监督没有让部署修正形成共向程序，
     所以最早接口已从credit coverage推进到query-only commitment。下一架构应把task/video Program直接提交到
     layer/rank/target-owned写出槽；memory若使用，只是实现这一接口的手段，不能成为static bypass或旧低分路线复刻。
+41. 新SFMC authority把本轮memory精确定义为同一cached condition的`FrozenSet(P_LPCP)-FrozenSet(P_AS139)`：
+    它是K-set之后、layer/rank对齐、query-disabled/constant近零的Procedure innovation，不是literal backbone token、
+    raw feature平均或第二套LoRA。exact language只选择四个连续semantic bases；八factor families把innovation写到
+    冻结V6 `W2` output basis之前。这样step0 exact LPCP143，并同时继承SFB已证明的软语义分工、LPCP已证明的
+    有序carrier和CV-CSD已证明可高效运行的cross-video success credit。它尚无实现或性能证据。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

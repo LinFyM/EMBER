@@ -25,9 +25,14 @@ mean/median=`.00068370/.00067774`，gained/lost均约`.000679`。FP64 first4中�
 仍经video-specific Jacobian变成近正交局部BA修正。
 
 最早失效接口因此是**Program/evidence到policy topology的query-only commitment**，不是LPCP没有读视频、reward
-没有内容、LoRA坍缩或多卡负载错误。当前没有active successor；下一authority要在保留V6/LPCP强absolute carrier、
-rank16完整LoRA和cross-video成功信用的前提下，只改变layer/rank/target-aligned commitment接口。memory token是有
-证据触发的候选机制，但不是项目目标，也不能只是替换已通过的carrier。
+没有内容、LoRA坍缩或多卡负载错误。
+
+当前active successor是**V6-LPCP Semantic Factor-Memory Commitment**。它只把trainable commitment移到K-set之后：
+同一cached condition的LPCP/AS139 Procedure-set差形成layer/rank innovation memory；exact language只选择四个
+shared semantic bases；八个factor families把memory写到冻结V6 factor output basis之前。step0 exact LPCP143，
+cross-video selected-success、rank16和K4不变；没有literal memory token、第二次backbone或raw A/B residual。
+精确authority=`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。当前只完成设计，
+尚未实现或启动GPU。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；

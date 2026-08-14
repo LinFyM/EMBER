@@ -87,9 +87,12 @@
   `.000679265/.000679434`。FP64 first4同task四correct K4增量pairwise cosine=`.00020542`、mean/sample
   energy=`.25015457`；相对PCSD也为`-.00190786/.24857794`。跨video exact成功信用仍经video-specific Jacobian
   落成近正交局部BA方向；最早失效接口是shared query-only commitment，而非video/reward/LoRA链路；
-- 当前没有active successor或EMBER GPU进程。下一轮先写新的单变量authority：保留V6/LPCP absolute carrier、
-  cross-video selected-success credit与完整rank16 LoRA，只把commitment移到policy layer/rank/target ownership附近。
-  layer-aligned memory是由本轮证据触发的候选，不得误写成项目goal，也不得用更多views或query/LR/rank/scale小扫；
+- 当前active successor是**V6-LPCP Semantic Factor-Memory Commitment**，authority=
+  `docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。它保留V6/LPCP absolute carrier、
+  cross-video selected-success与完整rank16 LoRA，只把trainable commitment移到K-set之后：同一cached condition的
+  LPCP/AS139 Procedure-set差形成layer/rank innovation memory，exact language只作四basis Q/K address，八个
+  factor families在冻结V6 output basis前写zero-init hidden residual。step0 exact LPCP143；没有literal memory
+  token、重复backbone、raw A/B residual或第二套LoRA。当前只完成design，尚未实现/profile/训练，EMBER GPU进程为0；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

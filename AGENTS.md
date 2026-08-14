@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 最新完成design（当前没有active successor）：
-   `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -83,9 +83,14 @@ CV-CSD K4 strict paired400终局=`134/400`、breadth7、per-task=`1/2/47/32/0/36
 
 全400 CV-CSD/LPCP effective-BA relative-L2 mean=`.00068370`，gained/lost约相同；FP64同task四K4 correct
 conditions的增量pairwise cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也为`-.001908/.248578`。
-所以四个正确视频下的exact成功credit经过shared `query_delta`均值后仍落成近正交局部方向。当前没有active
-successor；下一design必须保留V6/LPCP强carrier与cross-video reward证据，只改变Program/evidence到policy
-layer/rank/target topology的commitment。memory是候选机制而非目标，不得加更多views或继续query/LR/rank/scale小修。
+所以四个正确视频下的exact成功credit经过shared `query_delta`均值后仍落成近正交局部方向。
+
+当前active successor是**V6-LPCP Semantic Factor-Memory Commitment**，authority=
+`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。它保留LPCP143、cross-video
+selected-success与rank16强图，冻结query path；从同一cached condition计算K-set LPCP/AS139 Procedure差形成
+layer/rank innovation memory，以exact-language作Q/K-only四basis语义地址，在八个真实factor-family的冻结V6
+output basis前写zero-init hidden residual。它不增加literal memory token、不重复backbone forward、不直接写raw
+A/B。当前尚未实现、profile或训练；不得把design当成结果，也不得同时改rank/view/LR/scale。
 
 ## 4. Long-term objective and decision rule
 

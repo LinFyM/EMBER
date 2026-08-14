@@ -270,14 +270,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 终局定位最早失效接口：cross-video exact credit已成立，但shared query-only commitment仍经video-specific
   Jacobian写成近正交局部BA方向；不靠view数、LR、rank、scale或seed小扫。
 
-## Active iteration: derive policy-topology-aligned commitment
+## Active iteration: V6-LPCP Semantic Factor-Memory Commitment
 
-- [ ] 检查canonical V6/LPCP的Program、fusion/compiler、320 policy slots与38-target FactorHeads真实owner；
-- [ ] 写单变量、可证伪design：保留V6/LPCP carrier、cross-video success credit、rank16和完整LoRA，只改变
-  Program/evidence到policy layer/rank/target ownership的commitment接口；
-- [ ] 若采用memory，必须读取同一次真实language+ordered-video context并直接服务对应层/秩写出；不得无prefix空跑、
-  不得成为static bypass、第二套LoRA或无依据的大token grid；
-- [ ] 预注册step0退化、跨video方向一致性、吞吐和strict400门后再原位实现；当前不启动GPU。
+- [x] 检查canonical V6/LPCP的Procedure query、K-set、fusion、320 policy slots、八factor families与38-target
+  FactorHeads真实owner；确认q/v及主要action frozen output bases保留其允许的完整hidden span；
+- [x] 对齐SHINE/Doc-to-LoRA的layer/module/rank结构化生成原则，并排除literal-memory旧低分路线、generic Program
+  residual、Target-Owned/Policy-Lane、raw A/B与SFB原样恢复；
+- [x] 写单变量authority：从同一cached condition计算LPCP/AS139 K-set Procedure差作为innovation memory，exact
+  language只作四basis语义address，在factor-family hidden owner内zero-init residual，step0 exact LPCP143；
+- [x] 预注册cycle1 strict门、cycle1/2约145稳定门、相邻churn/Jaccard和same/wrong/shuffled/reversed/no-video六臂；
+- [ ] 原位实现唯一canonical Writer/reward/evaluator schema，旧CV-CSD可执行状态只由Git/artifacts保存；
+- [ ] 完成聚焦CPU机制门、architecture guard与真实GPU one-task/full24吞吐profile；
+- [ ] 从clean pushed/frozen commit做full24 cycle1、strict paired400与完整逐task/BA/跨video分析；过门才cycle2和六臂。
 
 ## Non-negotiable boundaries
 
@@ -295,6 +299,6 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已按门终局。
 CV-CSD证明跨video exact成功credit可以高效、完整地形成，但query-only commitment仍把它部署成same-task跨video
-近正交局部方向，held strict=`134`。当前无active successor或EMBER GPU进程；下一步先冻结policy-topology-aligned
-commitment design，不恢复旧memory路线、不添加更多views，也不做query/LR/rank/scale小扫。生成LoRA后的task-local
-RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+近正交局部方向，held strict=`134`。SFMC design已冻结，当前无EMBER GPU进程；下一步原位实现该唯一commitment
+变量，不恢复旧memory路线、不添加更多views，也不做query/LR/rank/scale小扫。生成LoRA后的task-local RL仍是
+初始Writer达到强zero-interaction起点之后的独立实验。

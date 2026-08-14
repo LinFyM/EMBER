@@ -171,6 +171,13 @@ first4×8 K4机制反事实进一步否定“信号仍太小”：
 把能力从Long换给Spatial/Object，而不是让同一checkpoint共同积累。按`<140`与breadth`<7`双门，本组合终局
 non-pass：不resume macro50、不补controls、不扫scale/LR/K/seed/temperature。
 
+补充的train-seen 8-task×10 states严格output-zero反事实进一步细化credit判断：同一macro25 trained=`63/80`，
+只把`semantic_core_set.output.weight`归零后=`59/80`；zero→trained paired=`57 retained / 6 gained / 2 lost /
+15 both-fail`、net`+4`、churn8、McNemar `p=.2891`。增益集中在Object5 `+3`，Long9反而`-1`，样本量也不足以
+宣称显著；但它排除了“B20 Common-Value在train on-policy上完全无用”的过强结论。更准确的是task-local credit
+存在，却没有形成held可组合程序。
+
 该负结果只淘汰“raw common Semantic Core Value + 当前同预算位置 + unchanged full24 B20 recipe”组合；不淘汰
-dynamic K、few-shot、Semantic Core/Procedure、memory-token Hypernetwork或未来reward credit。当前没有active
-successor；先停下与owner讨论，下一authority不得把本结果误写成“视频没读到”或“LoRA太小”。
+dynamic K、few-shot、Semantic Core/Procedure、memory-token Hypernetwork或未来reward credit。owner随后授权
+继续推进；active successor改为`action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`，
+不得把本结果误写成“视频没读到”或“LoRA太小”。

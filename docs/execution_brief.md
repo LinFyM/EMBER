@@ -3,7 +3,7 @@
 更新时间：2026-08-14。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Latest completed experiment and current pause
+## 1. Latest completed experiment and active successor
 
 V6 Semantic-Core Common-Value Set Bridge已完成macro25 K4 strict paired correct400：`133/400`、breadth6，
 per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`85.71%`。相对Semantic-Core135严格
@@ -14,20 +14,24 @@ per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`85.71%`。相对
 机制假设本身成功接通但没有转成有效policy方向：raw Common-Value把Core correction从centered路径的
 `1.8275e-5`打开到`.065856`，current→zero effective-BA从`.001763`打开到`.053648`，task-mean同样
 `.053633`；attention entropy/log4仍为`.999885`。所以失败不再是Value相消或compiler衰减，而是offline B20
-functional credit把强common-mean修正对到了held on-policy无效且相互换手的方向。当前没有active successor；按
-owner要求在完整分析和封存后停下讨论。完整authority见
-`action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
+functional credit把强common-mean修正对到了held on-policy无效且相互换手的方向。补充train-seen output-zero
+反事实为trained/zero=`63/59`、paired net`+4`，说明task-local on-policy credit不是完全没有，但未外推到held。
 
-## 2. Single changed variable and training semantics
+owner已授权继续。active successor为V6 Shared-Core Ordered-Procedure Common-Value：恢复matched139的冻结
+shared-Core边界，只把原Procedure-Set的Value由centered residual改成raw common ordered Procedure；trainable
+Value因此必须来自有向video过程，不能只由静态语言产生。完整authority见
+`action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`。
+
+## 2. Active single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology
   和factor heads全部加载macro400并冻结；
-- 当前唯一变量是Semantic-Core set的Value由centered residual改为raw common Core；不改位置、参数预算、
-  memory、rank、negative、expert、reward或LoRA mapper；
+- 当前唯一变量相对matched Shared-Core139，是Procedure-Set Value由weighted centered residual改为weighted raw
+  ordered Procedure；不改位置、query/key、参数预算、memory、rank、negative、expert、reward或LoRA mapper；
 - 24 train tasks构成一个完整macro，task内B20 mean后24-task等权；
 - 每macro K1/K2/K3/K4各6，各task每四个macro覆盖全部K；
 - K条video同task、action-hidden、互不重复且与action episodes错开，每条video保留stride-5完整序列；
-- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Common-Value set functional gradient；
+- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Procedure Common-Value functional gradient；
 - profile只裁决真实wall/显存/batch，训练loss不选择checkpoint。
 
 ## 3. Closed-loop adjudication

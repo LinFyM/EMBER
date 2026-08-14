@@ -19,8 +19,13 @@
 - first4机制分析显示raw Common-Value确实彻底打开：Core correction relative-L2 mean=`.065856`，上一centered
   仅`1.8275e-5`；current→zero effective-BA mean/task-mean=`.053648/.053633`，上一仅
   `.001763/.001472`。但attention entropy/log4仍=`.999885`，强写入沿近均匀common mean造成task换手；
-- 因此最早剩余接口不是Value可达性、注入位置、rank16容量或compiler衰减，而是offline B20 functional credit
-  与held on-policy occupancy的方向对齐。当前没有active successor；按owner要求完成分析后停下讨论；
+- 补充train-seen 8-task×10 states output-zero反事实：trained/zero=`63/59`，zero→trained paired=
+  `57 retained / 6 gained / 2 lost`、net`+4`、p=`.2891`；held相对Semantic135仍net`-2`。因此B20能形成少量
+  task-local on-policy credit，但静态Semantic common mean没有形成held可组合程序；
+- owner已授权继续推进。active successor是V6 Shared-Core Ordered-Procedure Common-Value：恢复matched139的
+  shared-Core边界，只把Procedure-Set Value从centered residual改为raw common ordered Procedure；冻结其余v6、
+  rank16、B20与dynamic-K合同。authority=
+  `docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`；
 - 本轮terminal design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
   Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；

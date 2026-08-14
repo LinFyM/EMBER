@@ -263,6 +263,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     相对135净丢7。first4 Core correction/effective-BA改写=`.065856/.053648`，远大于上一轮，而attention
     entropy仍`.999885`。因此它不是“没写进去”，而是offline B20把强common-mean修正写向held on-policy无效且
     task间换手的方向；下一接口应是credit/occupancy对齐，不是继续放大Value、加容量或移动compiler。
+21. 同一Common-Value macro25在train-seen 8-task×10 states上的严格output-zero反事实为trained/zero=
+    `63/59`，zero→trained=`57 retained / 6 gained / 2 lost`、net`+4`，而held相对Semantic135为net`-2`。
+    这把“offline credit完全错误”修正为“task-local credit可形成，但静态Semantic common mean没有形成held可组合
+    程序”。下一窄假设应让trainable Value只来自有向Procedure，同时保留冻结shared Core锚点；若仍呈现seen增益/
+    held失败，才把最早接口进一步推进到on-policy/generalization credit。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

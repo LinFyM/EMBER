@@ -138,7 +138,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] macro25 K4 strict paired400完整：`133/400`、breadth6、per-task=`2/3/48/31/0/35/14/0`；按双门终局；
 - [x] 完成配对与first4机制分析：相对135=`118/15/17`、相对139=`119/14/20`；Core/BA改写已打开到
   `.065856/.053648`但Long能力换手，最早剩余接口定位为offline credit与held occupancy对齐；
-- [ ] 当前停下讨论；没有active successor，不自动开始下一架构。
+- [x] 补做train-seen output-zero严格反事实：trained/zero=`63/59`，paired net`+4`但held net`-2`，把结论收敛为
+  task-local credit存在而held可组合程序失败；
+- [x] owner授权继续推进；冻结下一单变量authority，不从失败checkpoint续训。
+
+## Active iteration: Shared-Core Ordered-Procedure Common-Value Bridge
+
+- [x] 写单变量authority：恢复matched139的shared-Core边界，只把Procedure-Set Value从centered residual改为raw
+  common ordered Procedure；
+- [ ] 原位替换canonical schema/config/runtime并完成K1、step0、set、顺序、raw-Value与gradient CPU门；
+- [ ] 真实source-policy机制smoke与full24 B20吞吐profile；
+- [ ] clean fresh macro0->25与K4 strict paired400；
+- [ ] 逐task、train-seen/held、Procedure->BA->rollout分析并按门裁决。
 
 ## Continuous loop after this result
 
@@ -164,5 +175,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Common-Value全链路实验已在133/breadth6按门终局并完成分析；当前按owner要求停下讨论，
-不是技术blocked，也不恢复历史路线。
+无权限或资产阻塞。Common-Value全链路实验已在133/breadth6按门终局；owner已授权继续。当前active successor只
+改变ordered Procedure Value，不恢复整条历史路线。

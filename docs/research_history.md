@@ -105,7 +105,11 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Dynamic Slot-Set Bridge | K4 `130/400`, breadth6 | same-task BA方差降约`9.26x`且基本保留old134支持 | post-compiler set使task mean K1→K4 cosine`.999832`，只稳定nuisance；不续训/调K |
 | V6 Shared-Core Procedure-Set Bridge | K4 `139/400`, breadth6 | 相对post-compiler130净`+9`；更早Core union改善absolute且same-task方差降约`9.69x` | 相对old134只净`+5`且增益集中Long1；trained Procedure-Set仅`.000918` BA改写，Goal3/Long2仍0，按门终止 |
 | V6 Semantic-Core Set Bridge | K4 `135/400`, breadth7 | Long2从0到1；trainable set从语言对齐Core进入native policy拓扑 | 相对matched139=`120/15/19`净`-4`；attention entropy`.999885`、Core correction仅`1.83e-5`，centered Value近均匀时相消，按门终止 |
-| V6 Semantic-Core Common-Value Set Bridge | K4 `133/400`, breadth6 | Core correction/effective-BA改写打开到`.065856/.053648`，证明raw common Value与compiler链路均接通 | 相对135=`118/15/17`、相对139=`119/14/20`；attention仍近均匀，Long净丢7，强offline common-mean credit继续task换手 |
+| V6 Semantic-Core Common-Value Set Bridge | K4 `133/400`, breadth6 | Core correction/effective-BA改写打开到`.065856/.053648`；train-seen trained/zero=`63/59` | 相对135=`118/15/17`、相对139=`119/14/20`；少量task-local credit未形成held可组合程序，Long净丢7 |
+
+active successor为V6 Shared-Core Ordered-Procedure Common-Value。它不是恢复整条旧架构：以matched139为baseline，
+只把原Procedure-Set的centered Value改为raw common ordered Procedure，使trainable Value必须来自有向video过程；
+完整预注册合同只取对应design authority。
 
 ## 4. Final rank14 adjudication
 

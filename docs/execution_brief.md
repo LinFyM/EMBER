@@ -5,54 +5,37 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and active successor
 
-V6 Semantic-Core Common-Value Set Bridge已完成macro25 K4 strict paired correct400：`133/400`、breadth6，
-per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`85.71%`。相对Semantic-Core135严格
-配对=`118/15/17` retained/gained/lost、net`-2`；相对Shared-Core139=`119/14/20`、net`-6`；Long suite
-相对135净丢7，未形成共同积累。400 LoRAs、72 jobs、400 rows、18 workers全部exit0；按`<140`且breadth`<7`
-双门终局，不resume、不补controls、不扫参。
+V6 Shared-Core Ordered-Procedure Common-Value已完成macro25 K4 strict paired correct400：`139/400`、breadth6，
+per-task=`1/2/46/32/0/36/22/0`、per-suite=`3/78/36/22`。相对matched Shared-Core139严格配对=
+`120 retained / 19 gained / 19 lost`、churn38；suite net=`-2/-2/0/+4`，Long1净增完全由Spatial/Object损失
+支付。400 LoRAs、60 jobs、400 rows、15 workers全部exit0；按`<140`且breadth`<7`双门终局，不resume、
+不补controls、不扫参。
 
-机制假设本身成功接通但没有转成有效policy方向：raw Common-Value把Core correction从centered路径的
-`1.8275e-5`打开到`.065856`，current→zero effective-BA从`.001763`打开到`.053648`，task-mean同样
-`.053633`；attention entropy/log4仍为`.999885`。所以失败不再是Value相消或compiler衰减，而是offline B20
-functional credit把强common-mean修正对到了held on-policy无效且相互换手的方向。补充train-seen output-zero
-反事实为trained/zero=`63/59`、paired net`+4`，说明task-local on-policy credit不是完全没有，但未外推到held。
+机制已接通但credit无效：Procedure correction=`.09601`，effective-BA mean/task-mean=`.01397/.01392`，q/k/output
+全部训练并改变action；train-seen 8×10 output-zero严格反事实却为trained/zero=`64/64`、`4 gained/4 lost`。
+所以失败不是held-only泛化，也不是写出太小，而是B20 functional credit在train和held on-policy都只造成换手。
 
-owner已授权继续。active successor为V6 Shared-Core Ordered-Procedure Common-Value：恢复matched139的冻结
-shared-Core边界，只把原Procedure-Set的Value由centered residual改成raw common ordered Procedure；trainable
-Value因此必须来自有向video过程，不能只由静态语言产生。完整authority见
-`action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`。
-
-canonical schema/config/runtime已原位替换，旧Semantic-Core Common-Value只由Git与formal artifacts保存。
-K1/step0/set/order/raw-Value/gradient门与full CPU=`374 passed`。clean `50a3c36`的gpu01 world6 full24 B20
-macro1/2 profile=`26.112/22.543s`，q/k delta=`.0001158/.0001183`，K各6、最长323帧、0 OOM/nonfinite；formal
-config已seal。clean `d316623`随后在gpu01物理`2/4/5/6/7`以fresh world5完成macro0->25：25/25 metrics、完整
-checkpoint/completion/exit0，总elapsed=`745.622s`，macro mean=`29.790s`，loss `.10118184->.09564162`，
-gradient范围`.00025272--.00046269`，K各6、最长359帧完整、0 OOM/nonfinite。macro2->25 q/k继续变化
-`.08636/.08605`，output norm增至`.277774`。
-
-first4 output-zero机制反事实显示Procedure correction relative-L2=`.09601`、entropy/log4=`.99443`，但
-current->zero effective-BA mean/task-mean=`.01397/.01392`、action=`.00989`。因此本算子不是没训练，也比旧
-centered Procedure-Set的`.000918`写入更强；但Program到policy方向仍有明显衰减。macro25正式K4 deployment
-profile已完成：B8/B16/B32=`.2250164/.2247286/.2247036 LoRA/s`，三者stable、0 OOM/nonfinite，按最高吞吐锁
-B8。当前从clean pushed evaluator立即strict paired400；profile与内部几何不选择方法。
+active successor为`action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`。架构、K4视频、
+rank16、冻结v6与部署图全部不变；macro25只作短AS cold start，新阶段关闭target action入口，以train24四初始化
+真实success/failure的LOO executed-prefix preference优化同一19.7万参数shared Writer。旧Reward-Credit的一次
+sub-ULP Program写入不恢复；新gradient由Adam累积到FP32 Procedure参数，并必须在effective BA和strict400中
+证明真实作用。
 
 ## 2. Active single changed variable and training semantics
 
-- v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology
-  和factor heads全部加载macro400并冻结；
-- 当前唯一变量相对matched Shared-Core139，是Procedure-Set Value由weighted centered residual改为weighted raw
-  ordered Procedure；不改位置、query/key、参数预算、memory、rank、negative、expert、reward或LoRA mapper；
-- 24 train tasks构成一个完整macro，task内B20 mean后24-task等权；
-- 每macro K1/K2/K3/K4各6，各task每四个macro覆盖全部K；
-- K条video同task、action-hidden、互不重复且与action episodes错开，每条video保留stride-5完整序列；
-- source policy与v6底座trainable参数为0；K1严格保留、K2--K4提供Procedure Common-Value functional gradient；
-- profile只裁决真实wall/显存/batch，训练loss不选择checkpoint。
+- v6 evidence、shared Core、有向Procedure、Common-Value operator、native compiler与rank16全部沿用macro25；
+- 只训练Procedure q/k/output；source policy与v6底座trainable参数为0；
+- 每个train task由K4 videos生成一套LoRA，在四个random resets闭环执行；video仍action-hidden；
+- reward阶段source/teacher/validation/test action reads为0，只保留当前policy真实executed prefixes；
+- LOO binary advantage、episode/task等权、Nmc4 executed-prefix CFM，24 tasks后一次shared AdamW update；
+- dynamic work queue只改变physical owner，task/video/env/policy/flow seeds不含rank；
+- cycle1后立即strict paired400，reward objective和train80不选择checkpoint。
 
 ## 3. Closed-loop adjudication
 
-上一Common-Value strict133/breadth6已触发终止门且没有resume或补controls。当前Ordered-Procedure方法只认
-macro25 K4 strict paired400：`<140`或breadth<7即终局；`140..150`还必须相对matched139 gained>lost、至少3 suites
-不下降并解锁Goal3或Long2，才可exact-resume50；`>150`才补K scaling与五臂因果controls。
+Ordered-Procedure AS strict139/breadth6已触发终止门且没有resume或补controls。reward cycle1只认同schedule K4
+strict paired400：`<144`、breadth<7、相对139 lost>10或gained不超过lost即终局；`144..150`且retention/三suite
+趋势过门只允许cycle2；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

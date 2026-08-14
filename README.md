@@ -30,37 +30,21 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的**V6 Semantic-Core Set Bridge**在macro25 K4 strict为`135/400`、breadth7、per-task=
-`1/2/46/30/0/35/20/1`。相对matched K4 Shared-Core139为`120 retained / 15 gained / 19 lost`、净`-4`；Long2
-从0到1但Goal3仍为0，按`<140`门终局non-pass。
+最新完成的**V6 Shared-Core Ordered-Procedure Common-Value Bridge**在macro25 K4 strict为`139/400`、breadth6、
+per-task=`1/2/46/32/0/36/22/0`。相对matched parameter-free Shared-Core139严格配对为
+`120 retained / 19 gained / 19 lost`，Long1净`+4`完全由Spatial/Object各净`-2`支付；Goal3与Long2仍为0，
+按`<140`与breadth`<7`双门终局non-pass。
 
-完成的数据流是：
-
-```text
-exact language + K=1..4 same-task ordered action-hidden videos
-    -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> trainable language-token-aligned Semantic-Core set correction
-    -> native Core reader jointly reads the unordered union of corrected Core memories
-    -> each ordered Procedure is read against that one shared Core state
-    -> parameter-free mean of per-video ordered Procedure readouts
-    -> native compiler remainder and factor heads run once
-    -> complete 38-target rank-16 LoRA
-```
-
-centered Value归零诊断曾发现Core correction仅`1.8275e-5`；terminal successor
-**V6 Semantic-Core Common-Value Set Bridge**只把Value改为weighted raw Core。它把Core correction打开到
-`.065856`、effective-BA改写打开到`.053648`，但macro25 K4 strict仅`133/400`、breadth6，per-task=
-`2/3/48/31/0/35/14/0`，相对135净`-2`、相对139净`-6`，仍发生task换手。attention entropy仍`.999885`，
-说明强common mean被写入但offline B20 credit没有对齐held on-policy方向。authority见
-[`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md)，
-实现、profile、fresh macro25、B32确认、strict400与first4机制分析均完整封存；该组合终局non-pass。补充
-train-seen output-zero反事实为trained/zero=`63/59`，说明少量task-local credit没有外推到held。
+该负结果不是“Procedure没写进去”：raw ordered Procedure correction relative-L2=`.09601`，effective-BA改写=
+`.01397`，q/k/output全部训练且action响应改变。但同一checkpoint在train-seen 8 tasks×10 states上的严格
+output-zero反事实也是trained/zero=`64/64`、`4 gained / 4 lost`。因此full24 B20 functional credit在train和
+held on-policy上都只制造能力换手；继续放大Value、改rank或移动compiler没有证据。
 
 当前active successor是
-[`V6 Shared-Core Ordered-Procedure Common-Value Bridge`](docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md)：
-恢复matched139的shared-Core边界，只让可训练raw common Value读取有向Procedure，冻结其余v6、rank16、B20和
-dynamic-K合同。canonical CPU=`374 passed`；gpu01 world6 full24 B20 profile=`26.112/22.543s`，q/k展开、最长
-323帧、0 OOM/nonfinite，formal config已seal，下一步是fresh macro0->25。
+[`V6 Ordered-Procedure On-Policy Preference Writer`](docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md)：
+完整保留K4有序视频、shared Core、Procedure Common-Value、native rank16 compiler和强139底座，把macro25作为
+短AS cold start，随后关闭target action入口，用train24真实闭环success/failure preference只优化同一个shared
+Writer的19.7万FP32 Procedure参数。部署仍是一次语言+视频生成初始LoRA，不是生成LoRA后的task-local RL。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

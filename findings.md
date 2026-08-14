@@ -268,6 +268,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     这把“offline credit完全错误”修正为“task-local credit可形成，但静态Semantic common mean没有形成held可组合
     程序”。下一窄假设应让trainable Value只来自有向Procedure，同时保留冻结shared Core锚点；若仍呈现seen增益/
     held失败，才把最早接口进一步推进到on-policy/generalization credit。
+22. Shared-Core Ordered-Procedure Common-Value把有向Procedure correction/effective-BA打开到`.09601/.01397`，但
+    K4 strict仍为`139/400`、breadth6，相对matched139=`120 retained / 19 gained / 19 lost`。更关键的是同一
+    output-zero在train-seen也为trained/zero=`64/64`、`4 gained / 4 lost`。因此当前B20 credit不是“task-local
+    有效、只没泛化”，而是在train与held真实occupancy上都只有方向换手；下一接口必须改变credit来源，不能继续
+    调Value幅度、rank、attention、compiler或训练长度。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -9,23 +9,22 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Semantic-Core Common-Value Set Bridge macro25 K4 strict=`133/400`、breadth6，
-  per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`114/133=85.71%`；按`<140`且
-  breadth`<7`双门终局non-pass，不resume、不补controls、不扫参；
-- 相对immediate predecessor Semantic-Core135严格配对=`118 retained / 15 gained / 17 lost`、net`-2`、
-  churn32；相对matched Shared-Core139=`119/14/20`、net`-6`、churn34；相对post-compiler130=
-  `121/12/9`、net`+3`。相对Semantic135 suite net=`+2/+3/0/-7`，Long能力换给Spatial/Object而非共同积累；
-- count-only相对v6-fast143/old134/compiler138/online128分别=`-10/-1/-5/+5`；Goal3与Long2仍为0；
-- first4机制分析显示raw Common-Value确实彻底打开：Core correction relative-L2 mean=`.065856`，上一centered
-  仅`1.8275e-5`；current→zero effective-BA mean/task-mean=`.053648/.053633`，上一仅
-  `.001763/.001472`。但attention entropy/log4仍=`.999885`，强写入沿近均匀common mean造成task换手；
-- 补充train-seen 8-task×10 states output-zero反事实：trained/zero=`63/59`，zero→trained paired=
-  `57 retained / 6 gained / 2 lost`、net`+4`、p=`.2891`；held相对Semantic135仍net`-2`。因此B20能形成少量
-  task-local on-policy credit，但静态Semantic common mean没有形成held可组合程序；
-- owner已授权继续推进。active successor是V6 Shared-Core Ordered-Procedure Common-Value：恢复matched139的
-  shared-Core边界，只把Procedure-Set Value从centered residual改为raw common ordered Procedure；冻结其余v6、
-  rank16、B20与dynamic-K合同。authority=
-  `docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`；
+- 最新完成closed-loop：V6 Shared-Core Ordered-Procedure Common-Value macro25 K4 strict=`139/400`、breadth6，
+  per-task=`1/2/46/32/0/36/22/0`、per-suite=`3/78/36/22`、top3=`114/139=.82014`；按`<140`且breadth`<7`
+  双门终局non-pass，不resume、不补controls、不扫参；
+- 相对matched Shared-Core139严格配对=`120 retained / 19 gained / 19 lost`、net0、churn38、p=1；suite net=
+  `-2/-2/0/+4`，Long1净增4完全由Spatial/Object损失支付。相对Semantic-Core135=`119/20/16`、net+4但
+  breadth`7→6`并丢失Long2唯一success；
+- count-only相对v6-fast143/old134/compiler138/online128分别=`-4/+5/+1/+11`；Goal3与Long2仍为0；
+- first4机制显示raw ordered Procedure路径确实打开：correction relative-L2=`.09601`，attention entropy/log4=
+  `.99443`，current→zero effective-BA mean/task-mean=`.01397/.01392`、action=`.00989`；
+- 同一macro25的train-seen 8-task×10 states output-zero反事实为trained/zero=`64/64`，zero→trained paired=
+  `60 retained / 4 gained / 4 lost`、net0、churn8、p=1；suite net=`-1/+1/0/0`。B20在train和held on-policy
+  都只造成换手，不再只是held泛化失败；
+- active successor是V6 Ordered-Procedure On-Policy Preference Writer：保留当前K4架构、rank16、冻结v6与部署图，
+  macro25只作短AS cold start；新阶段关闭target action入口，以train24真实闭环success/failure preference只优化
+  shared Procedure q/k/output。authority=
+  `docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`；
 - canonical实现已原位替换旧Semantic-Core Common-Value schema/runtime，不保留parallel active path；新config=
   `configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json`，formal profile现已seal；
 - K1 native-v6、K集合换位、video内倒序、Shared-Core step0、uniform raw Procedure mean、gradient staging、base
@@ -46,7 +45,13 @@
 - macro25 live K4 deployment profile在gpu01物理2完成：B8/B16/B32=
   `.2250164/.2247286/.2247036 LoRA/s`，三者stable、0 OOM/nonfinite，peak reserved约
   `12.952/12.973/13.011GB`，最长226帧，按最高吞吐锁B8；root=
-  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_d316623_macro0025_retry1_20260814`；下一步从clean pushed evaluator立即strict paired400；
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_d316623_macro0025_retry1_20260814`；
+- strict evaluation commit=`c7e6666e807a3dfab97ae31684640ccfc5e09c79`，400/400 LoRAs、60/60 jobs、
+  400 rows、15 workers全部exit0，wall=`1302.949s`、rollout-only=`765.171s`；root=
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr5_evalr5_c7e6666_gpu01_20260814`；
+- train-seen trained root=
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_train_seen8x10_trained_macro0025_k4_screen_c7e6666_gpu01_20260814`，output-zero root=
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_train_seen8x10_outputzero_macro0025_k4_screen_c7e6666_gpu02_20260814`；两者exit0且adjudication已写入trained root；
 - 本轮terminal design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
   Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；

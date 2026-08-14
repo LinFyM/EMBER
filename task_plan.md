@@ -142,7 +142,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   task-local credit存在而held可组合程序失败；
 - [x] owner授权继续推进；冻结下一单变量authority，不从失败checkpoint续训。
 
-## Active iteration: Shared-Core Ordered-Procedure Common-Value Bridge
+## Completed iteration: Shared-Core Ordered-Procedure Common-Value Bridge
 
 - [x] 写单变量authority：恢复matched139的shared-Core边界，只把Procedure-Set Value从centered residual改为raw
   common ordered Procedure；
@@ -156,8 +156,21 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `.01397/.01392`；credit已打开但compiler后的policy改写仍较小；
 - [x] 完成macro25 live K4 deployment profile：B8/B16/B32=`.225016/.224729/.224704 LoRA/s`，三者stable、
   0 OOM/nonfinite，锁B8并seal evaluator；
-- [ ] 完成同一macro25 K4 strict paired400；
-- [ ] 逐task、train-seen/held、Procedure->BA->rollout分析并按门裁决。
+- [x] 完成同一macro25 K4 strict paired400：`139/400`、breadth6、per-task=`1/2/46/32/0/36/22/0`；
+- [x] 相对matched139严格配对=`120/19/19`，Long1净+4由Spatial/Object各净-2支付，双门终局non-pass；
+- [x] 完成train-seen output-zero严格反事实：trained/zero=`64/64`、paired=`60/4/4`、net0，确认B20在train和
+  held on-policy都只造成换手；
+- [x] 将最早接口推进到训练credit本身，不续训、不改Value/rank/compiler、不扫参。
+
+## Active iteration: Ordered-Procedure On-Policy Preference Writer
+
+- [x] 写单变量authority：保留macro25 K4完整架构与部署图，只把短AS cold start后的credit从B20 source-action
+  functional loss改为train24真实success/failure executed-prefix preference；
+- [ ] 原位接通detached readout recompile、K4 replay、full24 task-equal reward gradient、fresh reward checkpoint与
+  evaluator contract；
+- [ ] 完成CPU机制门与一个task真实GPU smoke；
+- [ ] 从clean pushed commit完成first full24 reward cycle与mechanism/profile封存；
+- [ ] 立即完成cycle1 K4 strict paired400并按`144/breadth7/retention`门裁决。
 
 ## Continuous loop after this result
 
@@ -183,5 +196,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Common-Value全链路实验已在133/breadth6按门终局；owner已授权继续。当前active successor只
-改变ordered Procedure Value，不恢复整条历史路线。
+无权限或资产阻塞。Ordered-Procedure AS已在139/breadth6按门终局；当前active successor只改变训练credit，
+不恢复退役Program-memory Reward trainer，也不是生成LoRA后的task-local RL。

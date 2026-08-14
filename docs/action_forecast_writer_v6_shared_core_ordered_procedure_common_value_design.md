@@ -1,6 +1,7 @@
 # V6 Shared-Core Ordered-Procedure Common-Value Bridge
 
-状态：2026-08-14 active design authority；formal fresh macro0->25已完成，deployment profile与strict400进行中。
+状态：2026-08-14 terminal scientific non-pass。formal fresh macro0->25、deployment profile、strict paired400与
+train-seen output-zero反事实均已完成；不resume、不补controls、不做K/LR/seed/rank sweep。
 本文授权在唯一canonical Writer path中，以历史v6-fast macro400为冻结底座，恢复已严格得到`139/400`的
 Shared-Core边界，并只把跨视频Procedure-Set的Value从centered residual改为raw common ordered Procedure。
 不得从Common-Value、Semantic-Core Set或旧Procedure-Set checkpoint续训。
@@ -169,4 +170,29 @@ policy方向。artifact=
 `12.952/12.973/13.011GB`，最长视频226帧；按预注册最高实测吞吐规则锁B8。root=
 `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_d316623_macro0025_retry1_20260814`。
 第一次试图只测B8在任何计时forward前被正式profile合同拒绝，因为合同要求同panel完整覆盖B8/B16/B32和两次实测；
-随后未绕过合同而完整重跑。当前evaluator仅seal K4/B8，下一步从clean pushed commit立即做strict paired400。
+随后未绕过合同而完整重跑。当前evaluator仅seal K4/B8。
+
+## 11. Strict400、train-seen反事实与终局裁决
+
+clean pushed `c7e6666`在gpu01物理`2/4/5/6/7`完成macro25 K4 strict paired correct400：`139/400`、
+breadth6，per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为`1/2/46/32/0/36/22/0`，per-suite=
+`3/78/36/22`，top3=`114/139=.82014`。400 LoRAs、60/60 dynamic jobs、400 rows和15 workers全部完整，
+wall=`1302.949s`、rollout-only=`765.171s`。root=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr5_evalr5_c7e6666_gpu01_20260814`。
+
+相对matched Shared-Core139严格配对=`120 retained / 19 gained / 19 lost`、churn38、McNemar `p=1.0`；suite
+net=`-2/-2/0/+4`，Long1净`+4`完全由Spatial/Object损失支付。相对Semantic-Core135为`119/20/16`、net`+4`，
+但breadth反而`7→6`且Long2的唯一success丢失。count-only相对v6-fast143/old134/compiler138/online128为
+`-4/+5/+1/+11`；Goal3与Long2仍为0。它同时触发`<140`和breadth`<7`两个hard gate。
+
+同一checkpoint把唯一trainable `procedure_set.output.weight`精确归零，并在train-seen 8 tasks×10 states、相同
+K4 video/state/policy RNG上严格配对：trained/zero=`64/64`，`60 retained / 4 gained / 4 lost / 12 both-fail`，
+net0、churn8、McNemar `p=1.0`。suite net=`-1/+1/0/0`；没有task-local净收益。artifact=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_train_seen8x10_trained_macro0025_k4_screen_c7e6666_gpu01_20260814/procedure_common_value_train_seen_outputzero_adjudication.json`。
+
+因此本轮实际淘汰的是“冻结shared Core锚点 + raw common ordered Procedure Value + full24 B20 functional credit”。
+视频Procedure被读取、q/k/output全部训练、Program/BA/action均material变化，但offline B20在train和held on-policy上
+都只造成能力换手。最早接口明确转为训练credit本身，不再是held-only泛化；下一authority为
+`docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`，保留本架构与K4部署图，只把短AS
+cold start后的credit改为train24真实on-policy preference。该结论不否定few-shot、rank16、memory-token
+Hypernetwork或所有Writer-RL。

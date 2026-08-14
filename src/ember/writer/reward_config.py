@@ -20,10 +20,12 @@ REWARD_CONFIG = REPO_ROOT / (
 
 
 def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
         raise WriterModelError("unsupported PCSD config")
-    base_path = (REPO_ROOT / str(config.get("base_as_config", ""))).resolve()
+    config_repo_root = path.parent.parent
+    base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))

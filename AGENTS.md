@@ -37,33 +37,18 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**V6 Semantic-Core Common-Value Set Bridge**：macro25 K4 strict=`133/400`、breadth6、
-per-task=`2/3/48/31/0/35/14/0`。相对Semantic-Core135严格配对=`118/15/17`，相对Shared-Core139=
-`119/14/20`；它按`<140`且breadth`<7`双门终局non-pass，不resume、补controls或扫参。
+最新完成closed-loop是**V6 Actual-Delta Success-Support Projection**：cycle1 K4 strict=`138/400`、breadth7、
+per-task=`3/2/45/30/0/36/21/1`。22条train24 success-support约束把raw violation从6降到0且保留
+`.963787/.980958` preference descent/delta energy，但相对AS139仍为`116 retained / 22 gained / 23 lost`、
+churn45；它按`<144`、lost>10且gained不超过lost终局non-pass，不cycle2、不补controls或扫约束/LR/scale/rank。
 
-已完成的数据流是：
-
-```text
-exact language + K=1..4 same-task action-hidden ordered videos
-    -> each video independently runs frozen native v6 evidence/Core/Procedure
-    -> trainable language-token-aligned Semantic-Core set correction
-    -> native Core reader jointly reads the unordered union of corrected Core
-    -> each ordered Procedure is read against the same shared Core state
-    -> parameter-free mean of per-video ordered Procedure readouts
-    -> native AdaLN/post-fusion/factor heads run once
-    -> one complete 38-target rank-16 task LoRA
-```
-
-Common-Value把Core correction从centered路径的`1.8275e-5`打开到`.065856`，current→zero effective BA=
-`.053648`，但attention entropy/log4仍`.999885`且Long suite相对135净丢7。最早剩余接口是offline B20
-functional credit与held on-policy occupancy的方向对齐，不是Value可达性、capacity或compiler。补充train-seen
-output-zero反事实为trained/zero=`63/59`、paired net`+4`，说明task-local credit存在但没有形成held可组合程序。
-
-owner已授权继续。当前active successor为**V6 Shared-Core Ordered-Procedure Common-Value Bridge**：恢复matched139
-的shared-Core边界，只把Procedure-Set Value从centered residual改为raw common ordered Procedure，使trainable
-Value必须来自有向video过程。authority=
-`docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`；精确状态只取
-`docs/active_session_handoff.md`，不得从旧checkpoint续训或恢复整条历史路线。
+该结果否决train24成功prefix的一阶局部support足以代表held support，不否决V6或memory。当前停止V6 optimizer
+constraint小修。active successor是**V6 Layerwise Action-Probe Conditioned Procedure Reader**：冻结AS139的
+Core、有向Procedure、K-set、native compiler、factor heads与rank16，只从同一次真实图像+语言+50 Action probes
+joint forward旁读18层probe states，形成layer/rank-aligned causal query conditioner；zero-init时K1--K4严格恢复
+AS139。首轮不追加memory tokens；只有native probes在carrier层缺少必要分层证据时，下一轮才在相同下游接口单独
+替换为真实memory tokens。authority=
+`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`；尚未实现或启动GPU。
 
 ## 4. Long-term objective and decision rule
 

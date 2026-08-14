@@ -309,6 +309,14 @@ LoRA健康度。该轮只在同一raw on-policy reward AdamW candidate之后，�
 constraint小修；下一架构候选是保留V6的absolute Core、有向Procedure与健康factor compiler，再把真实
 layer-aligned memory作为视频到policy slot的接口，而不是原样恢复91分Full-Factor或把memory本身当答案。
 
+该裁决现已完成：projection把6条raw violation降到0，strict仍为`138/400`且相对AS139 lost23/gained22，故
+constraint方向终止。结合owner进一步澄清，active架构不先强加literal memory token，而先冻结AS139强路径，从
+同一次真实image/language/50 Action-probe forward旁读18层native probe states，经shared rank-query与video内
+causal delta形成zero-init、layer/rank-aligned Procedure-query conditioner。这样先检验分层读取本身，且不同时
+改变rank16、factor heads或B20；只有native probes在carrier层缺少正确顺序/material差异时，下一轮才在相同下游
+接口把carrier单独换成真实memory tokens。精确authority见
+`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

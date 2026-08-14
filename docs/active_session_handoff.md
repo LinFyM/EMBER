@@ -30,8 +30,12 @@
 - first4同video/state几何显示AS139→ADSP effective-BA all relative-L2 mean=`.002976`，比AS→raw的`.003323`
   更近；raw138→ADSP仅`.001272`、cosine=`.99999919`，却翻转42条episode。更接近AS的LoRA并未减少held
   churn，train24局部success tangent与held closed-loop support不等价；
-- ADSP已终局，当前没有active successor或GPU进程。下一轮停止V6 constraint小修，先讨论架构级接口；memory
-  token保留为可能改善layer-aligned LoRA生成的候选机制，不是强制形式，也不能原样恢复历史91--102分memory路线；
+- ADSP已终局，当前没有GPU进程。active successor已冻结为**V6 Layerwise Action-Probe Conditioned Procedure
+  Reader**，authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`，尚未实现：冻结
+  AS139的Core/ordered Procedure/K-set/native compiler/factor heads/rank16，只在同一次真实图像+语言+50 Action
+  probes forward旁读18层hidden，用shared rank queries与video内causal deltas生成zero-init Procedure-query
+  conditioner；step0 K1--K4严格恢复AS139。首轮不加memory token，只有native probes在carrier层缺少material
+  分层/顺序证据时才在相同下游接口单独替换为真实memory tokens；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

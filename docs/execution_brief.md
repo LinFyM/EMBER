@@ -18,8 +18,11 @@ final violation；preference descent与delta energy分别保留`.963787/.980958`
 projection把raw的Long1从15恢复到21，却由Spatial/Object净`-2/-4`支付；AS→ADSP effective-BA relative-L2=
 `.002976`，比AS→raw的`.003323`更小，但held churn反而从37升到45。最早失效接口因此不再是“raw shared update
 没有任何support约束”，而是**train24成功prefix的一阶局部support不能代表held闭环support，且更近的LoRA几何
-不能保证能力共存**。当前没有active successor或GPU run；下一轮先讨论架构级接口。memory token可作为
-layer-aligned LoRA生成候选，但不是强制形式，也不能原样恢复历史低分memory架构。
+不能保证能力共存**。当前没有GPU run；active successor已经冻结为V6 Layerwise Action-Probe Conditioned
+Procedure Reader。它不原样恢复低分memory架构，而是冻结AS139完整强路径，在同一次真实context forward旁读
+18层native Action-probe states，以shared rank-query和video内causal delta形成zero-init Procedure-query
+conditioner；rank16、factor heads、B20与dynamic-K recipe均不变。literal memory token只在native probe carrier
+被机制证据否决后，作为同一下游接口的下一单变量。
 
 ## 2. Completed changed variable and training semantics
 
@@ -36,8 +39,10 @@ layer-aligned LoRA生成候选，但不是强制形式，也不能原样恢复�
 ## 3. Closed-loop adjudication
 
 Ordered-Procedure AS139、raw reward138与ADSP138均已终局且不得resume。ADSP已触发`<144`、相对139 lost>10、
-gained不超过lost三项终局门；不得用cycle2或小扫救回。下一successor必须先以新的design authority说明其修改的
-架构级最早接口；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
+gained不超过lost三项终局门；不得用cycle2或小扫救回。新design authority为
+`action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`；先实现one-forward tap、zero-AS139
+identity与full24 profile，macro25立即做strict400。首次>=144才讨论续到50，最终成功仍要求strict>150与健康
+video controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

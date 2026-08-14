@@ -196,6 +196,19 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] projection active但仍`<144`、lost23且gained不超过lost，本V6 constraint方向终局；不做cycle2、
   LR/scale/rank/constraint小扫。下一轮先与owner讨论架构级接口，layer-aligned memory只是候选而非既定答案。
 
+## Active iteration: V6 Layerwise Action-Probe Conditioned Procedure Reader
+
+- [x] 对齐owner最新边界：memory token是可能改善layer-aligned LoRA生成的机制，不是强制形式；V6与memory不是
+  二选一标签；
+- [x] 对比V6、Dynamic-K memory、ADSP以及SHINE/Doc-to-LoRA，定位未被强V6检验的接口：18层真实Action-probe
+  evidence尚未与对应policy layer/rank直接对齐；
+- [x] 写单变量authority：冻结AS139全部强路径与rank16，从同一次joint forward旁读layer probes，经rank-query、
+  video内causal delta形成zero-init Procedure-query conditioner；literal memory只作有证据触发的后继carrier；
+- [ ] 原位实现唯一canonical Writer、fresh schema/config与最小机制测试；
+- [ ] 完成真实one-forward identity/order/gradient smoke和full24 longest-video吞吐profile；
+- [ ] 从clean pushed commit训练到macro25并立即做K4 strict paired400；
+- [ ] 按absolute/breadth/paired retention和最早接口裁决是否续到50、触发literal memory反事实或转向其它接口。
+
 ## Continuous loop after this result
 
 1. 从strict closed-loop和逐task成功集合确定最早失效接口；
@@ -220,6 +233,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前没有active successor或
-GPU进程，按owner要求在完整分析与封存后停下讨论。memory token保留为有证据触发的layer-aligned LoRA生成候选，
-不是强制变量；生成LoRA后的task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前active successor为
+V6 Layerwise Action-Probe Conditioned Procedure Reader，尚未实现且没有GPU进程。memory token保留为native
+probe carrier被机制证据否决后才触发的同接口后继，不是强制变量；生成LoRA后的task-local RL仍是初始Writer
+达成强zero-interaction起点之后的独立实验。

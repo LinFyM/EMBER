@@ -309,6 +309,13 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     这直接否决“LoRA距离更小或train24成功prefix一阶loss不增即可代表held support”；下一轮应考虑改变
     representation/compiler的架构级共存接口。memory token可服务layer-aligned LoRA生成，但它不是自动解法，
     历史91--102分memory路线仍要求继承V6的absolute Core、有向Procedure与policy-effective compiler优势。
+31. 对V6真实执行图与SHINE/Doc-to-LoRA的逐层机制对齐后，下一未检验接口不是“有没有memory token”，而是
+    **真实context中的分层证据是否直接条件化对应policy layer/rank的Procedure readout**。V6现有320 slots只有
+    learned layer/rank routing identity；每帧Action Expert内容仍只取最终层50 probes的mean。首轮因此冻结AS139
+    全部强路径，从同一次forward旁读18层native probes，经shared rank-query与video内causal delta形成zero-init
+    Procedure-query conditioner。它在step0保留V6 LoRA geometry，也把literal memory变成可干净替换carrier的
+    后继反事实：只有native probes在correct/reverse/static之前就缺少material差异，才授权加memory；若差异在
+    compiler/action后才失效，memory不会自动修复shared credit。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

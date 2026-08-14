@@ -322,8 +322,8 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": "formal_reward_preference",
-        "training_stage": "on_policy_preference",
+        "training_mode": "formal_reward_support_projection",
+        "training_stage": "on_policy_preference_with_actual_delta_support_projection",
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest": {
@@ -522,7 +522,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_ordered_procedure_on_policy_preference_"
+                "v6_ordered_procedure_final_shared_support_projection_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_shared_core_procedure_common_value_bridge_"
             )

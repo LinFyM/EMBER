@@ -5,28 +5,23 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and active successor
 
-V6 Shared-Core Ordered-Procedure Common-Value已完成macro25 K4 strict paired correct400：`139/400`、breadth6，
-per-task=`1/2/46/32/0/36/22/0`、per-suite=`3/78/36/22`。相对matched Shared-Core139严格配对=
-`120 retained / 19 gained / 19 lost`、churn38；suite net=`-2/-2/0/+4`，Long1净增完全由Spatial/Object损失
-支付。400 LoRAs、60 jobs、400 rows、15 workers全部exit0；按`<140`且breadth`<7`双门终局，不resume、
-不补controls、不扫参。
+V6 Ordered-Procedure On-Policy Preference已完成一次fresh reward cycle和K4 strict paired correct400：`138/400`、
+breadth7、per-task=`2/5/46/33/0/36/15/1`、per-suite=`7/79/36/16`。相对同schedule AS139严格配对=
+`120 retained / 18 gained / 19 lost`、churn37；Spatial净`+4`，Object净`+1`，Goal净0，Long净`-6`，其中
+Long1=`3 gained / 10 lost`。按`<144`、lost`>10`且gained不超过lost三项门终局，不运行cycle2、不补controls、
+不扫参。
 
-机制已接通但credit无效：Procedure correction=`.09601`，effective-BA mean/task-mean=`.01397/.01392`，q/k/output
-全部训练并改变action；train-seen 8×10 output-zero严格反事实却为trained/zero=`64/64`、`4 gained/4 lost`。
-所以失败不是held-only泛化，也不是写出太小，而是B20 functional credit在train和held on-policy都只造成换手。
+这不是reward无效或写出断路：cycle1的24 tasks/96 rollouts得到64 successes、14 mixed tasks和四suite完整credit，
+q/k/output均更新，5个deployment probes的BA/action响应非零；AS→reward effective-BA mean relative-L2仅
+`.003323`、cosine`.999995`、norm ratio`1.000762`，却翻转37条闭环结果。最早失效接口是同一个shared Adam
+candidate合并异质task方向后没有保住已有support，而不是幅度、rank、LoRA健康度、Procedure或compiler。
 
-active successor为`action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`。架构、K4视频、
-rank16、冻结v6与部署图全部不变；macro25只作短AS cold start，新阶段关闭target action入口，以train24四初始化
-真实success/failure的LOO executed-prefix preference优化同一19.7万参数shared Writer。旧Reward-Credit的一次
-sub-ULP Program写入不恢复；新gradient由Adam累积到FP32 Procedure参数，并必须在effective BA和strict400中
-证明真实作用。
-
-实现与真实smoke已完成：正确assets下full CPU=`395 passed`；task4为`1/4` mixed，Writer gradient=`.0008012`，
-effective-BA/fixed-action response=`.0001815/.0055719`。首个world5 formal先因合法长task超过默认600秒collective
-timeout失败，PG失败后最慢rank才报告OOM；无checkpoint，不构成科学结果。reward timeout已改30分钟，同时移除
-CFM期间不必要的compiler graph；同一B8 task4全部科学量逐位不变，peak reserved=`40.712GB`、exit0。task0
-homogeneous面板严格zero-CFM/zero-gradient。formal contract以clean `fa53ce4`重新seal；现在fresh启动full24
-cycle1，不从失败root恢复，也不改变B8/Nmc4/样本或objective。
+active successor为`action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只改变
+最终shared update：保留同一K4视频输入、rank16 V6 Writer、19.7万FP32参数、LOO reward proposal和完整部署图；
+对task汇合后的actual parameter delta施加train24成功executed-prefix loss的一阶非增约束。它不是继续cycle2，
+也不是恢复旧Program bank/guard路线。实现、fresh schema、完整CPU=`400 passed`与task4真实mixed smoke已经完成；
+smoke保持raw BA/action response逐位一致，support路径非零，cycle wall仅为raw的`1.077x`且peak reserved=
+`36.774GB`。config已seal，下一步从clean pushed commit正式fresh full24 cycle。
 
 ## 2. Active single changed variable and training semantics
 
@@ -34,15 +29,17 @@ cycle1，不从失败root恢复，也不改变B8/Nmc4/样本或objective。
 - 只训练Procedure q/k/output；source policy与v6底座trainable参数为0；
 - 每个train task由K4 videos生成一套LoRA，在四个random resets闭环执行；video仍action-hidden；
 - reward阶段source/teacher/validation/test action reads为0，只保留当前policy真实executed prefixes；
-- LOO binary advantage、episode/task等权、Nmc4 executed-prefix CFM，24 tasks后一次shared AdamW update；
+- LOO binary advantage、episode/task等权、Nmc4 executed-prefix CFM仍形成同一个raw shared AdamW candidate；
+- 每个至少一条成功rollout的train task额外形成一个task-equal success-support tangent；只有最终actual parameter
+  delta被投影到全部support half-spaces，video/representation/compiler/optimizer proposal均不变；
 - dynamic work queue只改变physical owner，task/video/env/policy/flow seeds不含rank；
-- cycle1后立即strict paired400，reward objective和train80不选择checkpoint。
+- fresh constrained cycle通过机制门后立即strict paired400，reward objective和train80不选择checkpoint。
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS strict139/breadth6已触发终止门且没有resume或补controls。reward cycle1只认同schedule K4
-strict paired400：`<144`、breadth<7、相对139 lost>10或gained不超过lost即终局；`144..150`且retention/三suite
-趋势过门只允许cycle2；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
+Ordered-Procedure AS139与raw reward138均已终局且不得resume。新的support-constrained cycle仍只认同schedule K4
+strict paired400：`<144`、breadth<7、相对139 lost>10或gained不超过lost即终局；首次达到`144..150`且
+retention/三suite趋势过门，才讨论同合同续训；首次>=144才补因果controls，最终成功仍要求strict>150与健康controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

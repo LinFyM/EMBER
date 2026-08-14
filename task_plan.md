@@ -162,7 +162,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   held on-policy都只造成换手；
 - [x] 将最早接口推进到训练credit本身，不续训、不改Value/rank/compiler、不扫参。
 
-## Active iteration: Ordered-Procedure On-Policy Preference Writer
+## Completed iteration: Ordered-Procedure On-Policy Preference Writer
 
 - [x] 写单变量authority：保留macro25 K4完整架构与部署图，只把短AS cold start后的credit从B20 source-action
   functional loss改为train24真实success/failure executed-prefix preference；
@@ -173,8 +173,24 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 首个world5 formal先因合法长task超过600秒collective timeout失败，PG失败后最慢rank才报告OOM；收窄历史
   已知的不必要compiler graph生命周期并设reward专用30分钟timeout，不降B8、不改Nmc4/objective；
 - [x] `fa53ce4`同一task4 B8复测exit0，科学量逐位不变，full CPU仍=`395 passed`，formal evidence重新seal；
-- [ ] 从clean pushed commit完成first full24 reward cycle与mechanism/profile封存；
-- [ ] 立即完成cycle1 K4 strict paired400并按`144/breadth7/retention`门裁决。
+- [x] 从clean frozen `9c26386`完成first full24 reward cycle：24 tasks/96 rollouts/64 successes、14 mixed、
+  wall=`674.031s`，q/k/output与BA/action response非零，0 OOM/nonfinite/watchdog/forbidden read；
+- [x] 完成cycle1 K4 strict paired400：`138/400`、breadth7、per-task=`2/5/46/33/0/36/15/1`；相对AS139=
+  `120 retained / 18 gained / 19 lost`，按门终局，不运行cycle2。
+
+## Active iteration: V6 Actual-Delta Success-Support Projection
+
+- [x] 结合owner最新澄清，明确memory token是重要候选机制而非强制形式；比较后确认V6当前最早断点是
+  shared reward update的support preservation，不是LoRA生成健康度；
+- [x] 写单变量authority：保留同一K4/rank16/V6 Writer、raw LOO reward proposal、optimizer与部署图，只约束
+  task汇合后的actual AdamW parameter delta不增加train24成功executed-prefix task-mean loss；
+- [x] 原位替换唯一reward runtime，完成success-support cotangent、small-dual projection、fresh schema与必要CPU门；
+- [x] 完整CPU=`400 passed`；task4真实mixed smoke保持raw proposal逐位一致，support路径非零、identity fallback、
+  BA/action与显存/吞吐门通过；all-success/all-failure语义由CPU直接覆盖，config已seal；
+- [ ] 从clean pushed commit和fresh AS139启动一个full24 cycle并按mechanism gate裁决；
+- [ ] 立即完成同schedule K4 strict paired400，相对AS139/raw reward138逐task裁决；
+- [ ] 若projection active但仍`<144`、breadth<7或lost>10，本V6 constraint方向终局，转向V6强机制加
+  layer-aligned memory的架构级后继，不做LR/scale/rank/constraint小扫。
 
 ## Continuous loop after this result
 
@@ -200,5 +216,6 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS已在139/breadth6按门终局；当前active successor只改变训练credit，
-不恢复退役Program-memory Reward trainer，也不是生成LoRA后的task-local RL。
+无权限或资产阻塞。Ordered-Procedure AS139与raw reward138均已按门终局；当前active successor只改变raw reward
+之后的actual shared parameter delta可行域。memory token保留为有证据触发的架构候选，不是本轮强制变量；
+生成LoRA后的task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验。

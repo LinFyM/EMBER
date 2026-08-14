@@ -1,4 +1,4 @@
-"""Authority for ordered-Procedure on-policy preference training."""
+"""Authority for actual-delta success-support Writer training."""
 
 from __future__ import annotations
 
@@ -10,10 +10,14 @@ from ember.writer.as_config import REPO_ROOT, load_writer_config
 from ember.writer.errors import WriterModelError
 
 
-REWARD_CONFIG_SCHEMA = "ember_pi05_v6_ordered_procedure_on_policy_preference_v1"
-REWARD_LAUNCH_SCHEMA = "ember_pi05_v6_ordered_procedure_on_policy_preference_launch_v1"
+REWARD_CONFIG_SCHEMA = (
+    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_v1"
+)
+REWARD_LAUNCH_SCHEMA = (
+    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_launch_v1"
+)
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_ordered_procedure_on_policy_preference_v1.json"
+    "configs/pi05_writer_v6_ordered_procedure_final_shared_support_projection_v1.json"
 )
 
 
@@ -40,9 +44,18 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         or data.get("demo_indices") != [0, 49]
         or environment.get("rollouts_per_task") != 4
         or environment.get("persistent_lanes_per_task") != 4
+        or objective.get("kind")
+        != "binary_leave_one_out_with_actual_delta_success_support_projection"
         or objective.get("flow_mc_samples") != 4
         or objective.get("homogeneous_task_credit")
-        != "exact_zero_without_reward_cfm_forward"
+        != "all_failure_zero_all_success_support_only"
+        or objective.get("support_constraint")
+        != (
+            "task_mean_success_gradient_dot_final_actual_parameter_delta_"
+            "nonpositive"
+        )
+        or objective.get("projection")
+        != "euclidean_nearest_actual_adamw_delta_small_dual_nnls"
         or optimization.get("reward_replay_chunk_batch_size") != 8
         or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
         or distributed.get("collective_timeout_minutes") != 30
@@ -50,7 +63,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         or formal.get("checkpoint_cycles") != [1, 2]
         or formal.get("stage_stop_cycles") != [1, 2]
     ):
-        raise WriterModelError("reward preference scientific contract changed")
+        raise WriterModelError("support-projected reward scientific contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -58,6 +71,6 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid reward preference mode")
+        raise WriterModelError("invalid support-projected reward mode")
     if mode == "formal" and config["formal_run"]["status"] != "sealed":
-        raise WriterModelError("formal reward preference awaits its live smoke seal")
+        raise WriterModelError("formal support projection awaits its live smoke seal")

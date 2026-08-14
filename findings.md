@@ -282,6 +282,16 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     Nmc4 replay存活是历史已知且无需保留的额外风险。改为detached LoRA先求cotangent、再从缓存readout单次重解
     compiler后，同一task4的objective、梯度、参数delta、BA/action response全部逐位不变且B8 exit0；正确修复是
     reward专用30分钟timeout加graph生命周期收窄，不是降batch或改变estimator。
+25. graph-release reward cycle1已完整证明on-policy credit可改变部署与闭环，但没有形成共同积累：formal为24
+    tasks/96 rollouts/64 successes、14 mixed、Writer gradient=`9.0937e-5`，strict=`138/400`、breadth7；相对
+    同schedule AS139严格=`120 retained / 18 gained / 19 lost`、churn37。Spatial净`+4`而Long1净`-7`，说明
+    proposal含有真实acquisition方向，但task汇合后的shared update覆盖已有support。AS→reward effective-BA只移动
+    `.003323` relative-L2、cosine`.999995`且norm ratio`1.000762`，故不能用降LR/scale/rank解释或修复；下一
+    可证伪接口是在同一actual Writer parameter delta上加入成功occupancy的一阶support约束。
+26. ADSP task4 live smoke证明success-support可以与raw preference共享同一次policy forward：相对raw仍是80次
+    forward，只新增16次support backward，preference gradient与BA/action response逐位一致；cycle墙钟仅
+    `1.077x`、peak reserved降至`36.774GB`。该单task raw delta本来就满足自己的support，solver按合同严格identity
+    fallback；因此smoke只封存实现/效率，不提供“projection能改善多task”的科学证据，后者必须由full24裁决。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

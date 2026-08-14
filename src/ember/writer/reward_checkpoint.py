@@ -22,9 +22,11 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_ordered_procedure_on_policy_preference_checkpoint_v1"
+    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_checkpoint_v1"
 )
-REWARD_DEPLOYMENT_KIND = "v6_ordered_procedure_on_policy_preference_cycle_checkpoint"
+REWARD_DEPLOYMENT_KIND = (
+    "v6_ordered_procedure_final_shared_support_projection_cycle_checkpoint"
+)
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 
 

@@ -107,10 +107,12 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Semantic-Core Set Bridge | K4 `135/400`, breadth7 | Long2从0到1；trainable set从语言对齐Core进入native policy拓扑 | 相对matched139=`120/15/19`净`-4`；attention entropy`.999885`、Core correction仅`1.83e-5`，centered Value近均匀时相消，按门终止 |
 | V6 Semantic-Core Common-Value Set Bridge | K4 `133/400`, breadth6 | Core correction/effective-BA改写打开到`.065856/.053648`；train-seen trained/zero=`63/59` | 相对135=`118/15/17`、相对139=`119/14/20`；少量task-local credit未形成held可组合程序，Long净丢7 |
 | V6 Shared-Core Ordered-Procedure Common-Value | K4 `139/400`, breadth6 | 有向Procedure correction/effective-BA打开到`.09601/.01397`，保持matched139 absolute | 相对matched=`120/19/19`；train-seen trained/zero=`64/64`、`4/4`换手，B20 credit在train/held均无净on-policy收益 |
+| V6 Ordered-Procedure On-Policy Preference | K4 `138/400`, breadth7 | train24 reward形成18条paired新success，q/k/output、BA与action全链路非零 | 相对同schedule AS139=`120/18/19`、churn37；Spatial净+4但Long1净-7，最终shared update未保住support |
 
-active successor为V6 Ordered-Procedure On-Policy Preference Writer。它完整保留当前K4架构、rank16与部署图，
-以macro25作短AS cold start，只把后续credit从B20 source-action functional loss改为train24真实闭环LOO
-executed-prefix preference；完整预注册合同只取对应design authority。
+active successor为V6 Ordered-Procedure Final Shared Support Projection。它只在raw reward之后改变task汇合后的
+actual parameter update：保留同一K4架构、rank16、部署图与LOO reward proposal，以train24成功executed-prefix
+task-mean tangent约束最终shared delta。authority=
+`docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`；raw reward不得cycle2。
 
 ## 4. Final rank14 adjudication
 

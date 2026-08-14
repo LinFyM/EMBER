@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import fcntl
 import json
-import math
 import os
 import socket
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Mapping
@@ -18,7 +16,6 @@ import torch
 import torch.distributed as dist
 from safetensors.torch import load_file
 
-from ember.lora import copy_task_lora_state_
 from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
     git_state,
@@ -39,32 +36,12 @@ from ember.pi05_source_setup import (
     load_stats,
     seed_everything,
 )
-from ember.reward.protocol import (
-    RewardTask,
-    SUITE_HORIZONS,
-    reward_credit_environment_seed,
-)
-from ember.reward.rollout import (
-    RandomResetEnvironmentPool,
-    RewardTrajectory,
-    collect_randomized_reward_trajectories,
-    complete_trajectory_batch,
-)
+from ember.reward.protocol import SUITE_HORIZONS, RewardTask
+from ember.reward.rollout import RandomResetEnvironmentPool
 from ember.writer.as_config import authority_path
 from ember.writer.as_contract import load_run_authorities, writer_trainable_contract
-from ember.writer.as_step import (
-    ParameterSlice,
-    accumulate_flat_gradient,
-    assign_flat_gradient,
-    gather_full24_records,
-    parameter_layout,
-    reduce_full24_gradient,
-)
-from ember.writer.data import (
-    RawTeacherVideoStore,
-    WriterTaskAuthority,
-    pack_teacher_condition,
-)
+from ember.writer.as_step import ParameterSlice, parameter_layout
+from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.errors import WriterModelError
 from ember.writer.reward_checkpoint import (
     checkpoint_cycle,
@@ -77,26 +54,9 @@ from ember.writer.reward_config import (
     load_reward_config,
     require_reward_mode,
 )
-from ember.writer.reward_preference import (
-    RewardPreferenceSummary,
-    backpropagate_reward_preference,
-    functional_reward_lora_gradient,
-)
+from ember.writer.reward_cycle import run_cycle
 from ember.writer.teacher_video_schedule import TeacherVideoSchedule
 from ember.writer.training import build_writer
-
-
-@dataclass(frozen=True)
-class RewardProbe:
-    global_task_id: int
-    suite: str
-    shared_core: torch.Tensor
-    per_video_procedure: torch.Tensor
-    condition_video_offsets: torch.Tensor
-    before_lora: Mapping[str, torch.Tensor]
-    query: Mapping[str, torch.Tensor]
-    before_action: torch.Tensor
-    policy_noise_seed: int
 
 
 @dataclass
@@ -307,7 +267,9 @@ def prepare_runtime(
     )
     writer.train()
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "ordered_procedure_reward_preference_writer_only"
+    trainable["object"] = (
+        "ordered_procedure_actual_delta_support_projection_writer_only"
+    )
     optimizer = _optimizer(writer, config)
     initialize_deferred_process_group(
         context,
@@ -413,361 +375,6 @@ def prepare_runtime(
     )
 
 
-def _claim_task(
-    runtime: RewardRuntime, queue: Path, ordered: tuple[RewardTask, ...]
-) -> RewardTask | None:
-    with queue.open("r+", encoding="utf-8") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX)
-        value = int(handle.read().strip())
-        if value >= len(ordered):
-            return None
-        handle.seek(0)
-        handle.truncate()
-        handle.write(str(value + 1))
-        handle.flush()
-    return ordered[value]
-
-
-def _task_order(runtime: RewardRuntime, cycle: int) -> tuple[RewardTask, ...]:
-    del cycle
-    return tuple(
-        sorted(runtime.tasks, key=lambda task: (-task.horizon, task.global_task_id))
-    )
-
-
-def _trajectory_row(value: RewardTrajectory) -> dict[str, Any]:
-    return {
-        "rollout_cursor": value.rollout_cursor,
-        "environment_seed": value.env_seed,
-        "success": value.success,
-        "steps": value.steps,
-        "reward_sum": value.reward_sum,
-        "replay_chunks": len(value.valid_action_steps),
-        "valid_action_steps": list(value.valid_action_steps),
-    }
-
-
-def _task_gradient(
-    runtime: RewardRuntime,
-    task: RewardTask,
-    cycle: int,
-    flat: torch.Tensor,
-    probe: RewardProbe | None,
-) -> tuple[dict[str, Any], RewardProbe | None]:
-    visit = cycle - 1
-    demos = runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
-    packed, video_metrics = pack_teacher_condition(
-        runtime.video_store,
-        task_id=task.global_task_id,
-        demos=demos,
-        language=runtime.language_tokens[task.global_task_id],
-        device=runtime.context.device,
-    )
-    with (
-        torch.no_grad(),
-        torch.autocast(
-            device_type=runtime.context.device.type,
-            dtype=torch.bfloat16,
-            enabled=runtime.context.device.type == "cuda",
-        ),
-    ):
-        encoded = runtime.writer.encode_program(*packed, policy=runtime.policy)
-        rollout_lora = runtime.writer.decode_program(encoded.program)
-    copy_task_lora_state_(runtime.policy, rollout_lora, runtime.lora_contract)
-    rollout_cursors = tuple(visit * 4 + lane for lane in range(4))
-    env_seeds = tuple(
-        reward_credit_environment_seed(
-            int(runtime.config["rng"]["environment_seed_root"]),
-            task.suite,
-            task.task_id,
-            int(runtime.config["rng"]["optimizer_seed"]),
-            cursor,
-        )
-        for cursor in rollout_cursors
-    )
-    started = time.monotonic()
-    environment = runtime.config["environment"]
-    trajectories = collect_randomized_reward_trajectories(
-        envs=tuple(runtime.env_pool.get(task, lane=lane) for lane in range(4)),
-        policy=runtime.policy,
-        preprocess=runtime.processor,
-        postprocess=runtime.processor.unnormalize_action,
-        suite=task.suite,
-        task_id=task.task_id,
-        global_task_id=task.global_task_id,
-        language=task.language,
-        adaptation_seed=int(runtime.config["rng"]["optimizer_seed"]),
-        rollout_cursors=rollout_cursors,
-        env_seeds=env_seeds,
-        policy_seed_root=int(runtime.config["rng"]["policy_noise_seed_root"]),
-        device=runtime.context.device,
-        max_horizon=task.horizon,
-        dummy_settling_steps=int(environment["dummy_settling_steps"]),
-        dummy_action=environment["dummy_action"],
-        action_execution_horizon=int(environment["action_execution_horizon"]),
-        num_inference_steps=int(environment["num_inference_steps"]),
-    )
-    rollout_seconds = time.monotonic() - started
-    batch, episode_ids, successes = complete_trajectory_batch(
-        trajectories, torch.device("cpu")
-    )
-    copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
-    mixed = not bool((successes == successes[0]).all())
-    summary = RewardPreferenceSummary(
-        objective=0.0,
-        successes=int(successes.sum()),
-        replay_chunks=int(episode_ids.numel()),
-        executed_action_steps=int(batch["executed_action_steps"].sum()),
-        functional_policy_forwards=0,
-        lora_gradient_rms=0.0,
-    )
-    credit_seconds = 0.0
-    if mixed:
-        credit_started = time.monotonic()
-        with torch.autocast(
-            device_type=runtime.context.device.type,
-            dtype=torch.bfloat16,
-            enabled=runtime.context.device.type == "cuda",
-        ):
-            lora_gradients, summary = functional_reward_lora_gradient(
-                runtime.policy,
-                rollout_lora,
-                runtime.lora_contract,
-                batch,
-                episode_ids,
-                successes,
-                mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-                physical_microbatch_size=int(
-                    runtime.config["optimization"]["reward_replay_chunk_batch_size"]
-                ),
-                flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-                cycle=cycle,
-                global_task_id=task.global_task_id,
-                device=runtime.context.device,
-            )
-            recompiled = runtime.writer.compile_readouts(
-                encoded.diagnostics.shared_core_slots,
-                encoded.diagnostics.per_video_procedure_slots,
-                packed[3],
-            )
-            generated = runtime.writer.decode_program(recompiled.program)
-            backpropagate_reward_preference(generated, lora_gradients)
-        gradients = tuple(item.parameter.grad for item in runtime.gradient_layout)
-        accumulate_flat_gradient(flat, gradients, runtime.gradient_layout)
-        for item in runtime.gradient_layout:
-            item.parameter.grad = None
-        credit_seconds = time.monotonic() - credit_started
-        if probe is None:
-            first = trajectories[0]
-            probe = RewardProbe(
-                global_task_id=task.global_task_id,
-                suite=task.suite,
-                shared_core=encoded.diagnostics.shared_core_slots.detach(),
-                per_video_procedure=encoded.diagnostics.per_video_procedure_slots.detach(),
-                condition_video_offsets=packed[3],
-                before_lora={
-                    name: value.detach().clone()
-                    for name, value in rollout_lora.items()
-                },
-                query={
-                    name: value.clone() for name, value in first.observations[0].items()
-                },
-                before_action=first.action_chunks[0].clone(),
-                policy_noise_seed=first.policy_noise_seeds[0],
-            )
-    row = {
-        "task_id": task.global_task_id,
-        "suite": task.suite,
-        "local_task_id": task.task_id,
-        "cycle": cycle,
-        "mixed": mixed,
-        **asdict(summary),
-        **video_metrics,
-        "rollouts": 4,
-        "trajectory_rows": [_trajectory_row(value) for value in trajectories],
-        "rollout_seconds": rollout_seconds,
-        "credit_seconds": credit_seconds,
-        "target_dataset_action_reads": 0,
-        "teacher_action_reads": 0,
-    }
-    return row, probe
-
-
-def _lora_response(
-    before: Mapping[str, torch.Tensor], after: Mapping[str, torch.Tensor]
-) -> dict[str, float]:
-    sums = {"lora_a": 0.0, "lora_b": 0.0, "effective_ba": 0.0}
-    counts = {name: 0 for name in sums}
-    for name, before_a in before.items():
-        if not name.endswith(".lora_A.default.weight"):
-            continue
-        b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
-        after_a, before_b, after_b = after[name], before[b_name], after[b_name]
-        values = {
-            "lora_a": after_a.float() - before_a.float(),
-            "lora_b": after_b.float() - before_b.float(),
-            "effective_ba": after_b.float() @ after_a.float()
-            - before_b.float() @ before_a.float(),
-        }
-        for key, value in values.items():
-            sums[key] += float(value.square().sum())
-            counts[key] += value.numel()
-    return {f"{key}_response_rms": math.sqrt(sums[key] / counts[key]) for key in sums}
-
-
-@torch.inference_mode()
-def _probe_after_update(
-    runtime: RewardRuntime, probe: RewardProbe | None
-) -> dict[str, Any] | None:
-    if probe is None:
-        return None
-    with torch.autocast(
-        device_type=runtime.context.device.type,
-        dtype=torch.bfloat16,
-        enabled=runtime.context.device.type == "cuda",
-    ):
-        encoded = runtime.writer.compile_readouts(
-            probe.shared_core,
-            probe.per_video_procedure,
-            probe.condition_video_offsets,
-        )
-        after = runtime.writer.decode_program(encoded.program)
-    response = _lora_response(probe.before_lora, after)
-    copy_task_lora_state_(runtime.policy, after, runtime.lora_contract)
-    generator = torch.Generator(device="cpu").manual_seed(probe.policy_noise_seed)
-    noise = torch.randn(
-        (
-            1,
-            int(runtime.policy.config.chunk_size),
-            int(runtime.policy.config.max_action_dim),
-        ),
-        generator=generator,
-    ).to(runtime.context.device)
-    query = {
-        name: value.to(runtime.context.device, non_blocking=True)
-        for name, value in probe.query.items()
-    }
-    with torch.autocast(
-        device_type=runtime.context.device.type,
-        dtype=torch.bfloat16,
-        enabled=runtime.context.device.type == "cuda",
-    ):
-        action = runtime.policy.predict_action_chunk(query, noise=noise, num_steps=10)
-    copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
-    response["fixed_action_response_rms"] = float(
-        (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
-    )
-    return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
-
-
-def _run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
-    started = time.monotonic()
-    runtime.optimizer.zero_grad(set_to_none=True)
-    flat = torch.zeros(
-        runtime.gradient_layout[-1].stop,
-        dtype=torch.float32,
-        device=runtime.context.device,
-    )
-    records, probe = [], None
-    if runtime.args.mode == "smoke":
-        task_id = int(
-            runtime.args.smoke_task_id or runtime.config["smoke_run"]["task_global_id"]
-        )
-        task = next(task for task in runtime.tasks if task.global_task_id == task_id)
-        row, probe = _task_gradient(runtime, task, cycle, flat, probe)
-        records.append(row)
-        divisor = 1
-    else:
-        ordered = _task_order(runtime, cycle)
-        queue = runtime.args.output_dir / f".cycle_{cycle:08d}_task_cursor"
-        if runtime.context.is_main:
-            queue.write_text("0", encoding="utf-8")
-        barrier(runtime.context)
-        while task := _claim_task(runtime, queue, ordered):
-            row, probe = _task_gradient(runtime, task, cycle, flat, probe)
-            records.append(row)
-        barrier(runtime.context)
-        if runtime.context.is_main:
-            queue.unlink(missing_ok=True)
-        divisor = 24
-    if runtime.context.world_size > 1:
-        dist.all_reduce(flat, op=dist.ReduceOp.SUM)
-    flat.div_(divisor)
-    if not bool(torch.count_nonzero(flat)):
-        raise WriterModelError("reward cycle produced zero shared gradient")
-    assign_flat_gradient(flat, runtime.gradient_layout)
-    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
-    grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
-    before = {
-        name: value.detach().clone()
-        for name, value in runtime.writer.procedure_set.named_parameters()
-    }
-    runtime.optimizer.step()
-    parameter_delta = {
-        name: float((value.detach() - before[name]).float().square().mean().sqrt())
-        for name, value in runtime.writer.procedure_set.named_parameters()
-    }
-    probe_row = _probe_after_update(runtime, probe)
-    if runtime.args.mode == "formal":
-        global_records = gather_full24_records(
-            records,
-            world_size=runtime.context.world_size,
-            task_ids=[task.global_task_id for task in runtime.tasks],
-        )
-    else:
-        global_records = records
-    probes: list[Any] = [None] * runtime.context.world_size
-    if runtime.context.world_size > 1:
-        dist.all_gather_object(probes, probe_row)
-    else:
-        probes[0] = probe_row
-    probes = [value for value in probes if value is not None]
-    torch.cuda.synchronize(runtime.context.device)
-    elapsed = torch.tensor(
-        time.monotonic() - started, dtype=torch.float64, device=runtime.context.device
-    )
-    if runtime.context.world_size > 1:
-        dist.all_reduce(elapsed, op=dist.ReduceOp.MAX)
-    return {
-        "cycle": cycle,
-        "cycle_semantics": (
-            "one_complete_train24_reward_preference_update"
-            if runtime.args.mode == "formal"
-            else "one_task_live_smoke"
-        ),
-        "tasks": len(global_records),
-        "rollouts": 4 * len(global_records),
-        "successes": sum(int(row["successes"]) for row in global_records),
-        "mixed_tasks": sum(bool(row["mixed"]) for row in global_records),
-        "mixed_suites": sorted(
-            {row["suite"] for row in global_records if row["mixed"]}
-        ),
-        "replay_chunks": sum(int(row["replay_chunks"]) for row in global_records),
-        "executed_action_steps": sum(
-            int(row["executed_action_steps"]) for row in global_records
-        ),
-        "reward_objective_mean": math.fsum(
-            float(row["objective"]) for row in global_records
-        )
-        / len(global_records),
-        "writer_gradient_norm_before_clip": float(grad_norm),
-        "parameter_delta_rms": parameter_delta,
-        "deployment_response_probes": probes,
-        "task_records": global_records,
-        "cycle_seconds": float(elapsed),
-        "max_cuda_allocated_bytes": torch.cuda.max_memory_allocated(
-            runtime.context.device
-        ),
-        "max_cuda_reserved_bytes": torch.cuda.max_memory_reserved(
-            runtime.context.device
-        ),
-        "target_dataset_action_reads": 0,
-        "teacher_action_reads": 0,
-        "validation_action_or_reward_reads": 0,
-        "test_action_or_reward_reads": 0,
-    }
-
-
 def train(args: argparse.Namespace) -> None:
     context = initialize_distributed(
         require_numa=args.mode == "formal", defer_process_group=True
@@ -791,7 +398,7 @@ def train(args: argparse.Namespace) -> None:
                 flush=True,
             )
         for cycle in range(runtime.start_cycle + 1, runtime.stop_cycle + 1):
-            row = _run_cycle(runtime, cycle)
+            row = run_cycle(runtime, cycle)
             if context.is_main:
                 append_jsonl(runtime.metrics_path, row)
                 print(json.dumps(row, sort_keys=True), flush=True)
@@ -809,7 +416,10 @@ def train(args: argparse.Namespace) -> None:
             write_json_atomic(
                 args.output_dir / "completion.json",
                 {
-                    "schema_version": "ember_pi05_v6_ordered_procedure_on_policy_preference_completion_v1",
+                    "schema_version": (
+                        "ember_pi05_v6_ordered_procedure_final_shared_"
+                        "support_projection_completion_v1"
+                    ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,
                     "strict400_required": args.mode == "formal",

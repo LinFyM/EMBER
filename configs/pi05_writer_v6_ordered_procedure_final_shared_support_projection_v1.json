@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_pi05_v6_ordered_procedure_on_policy_preference_v1",
-  "status": "formal_result_sealed",
+  "schema_version": "ember_pi05_v6_ordered_procedure_final_shared_support_projection_v1",
+  "status": "sealed",
   "base_as_config": "configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -33,10 +33,14 @@
     "persistent_lanes_per_task": 4
   },
   "objective": {
-    "kind": "binary_leave_one_out_executed_prefix_flow_preference",
+    "kind": "binary_leave_one_out_with_actual_delta_success_support_projection",
     "advantage": "A_e=(4*R_e-sum_j_R_j)/3",
-    "homogeneous_task_credit": "exact_zero_without_reward_cfm_forward",
+    "homogeneous_task_credit": "all_failure_zero_all_success_support_only",
     "episode_aggregation": "mean_replans_within_episode_then_equal_mean_over_four",
+    "support_aggregation": "mean_replans_within_success_then_equal_mean_over_successes_one_row_per_task",
+    "support_constraint": "task_mean_success_gradient_dot_final_actual_parameter_delta_nonpositive",
+    "projection": "euclidean_nearest_actual_adamw_delta_small_dual_nnls",
+    "optimizer_state_after_projection": "raw_preference_adamw_moments_with_projected_parameter_value",
     "flow_mc_samples": 4,
     "flow_time": "task_keyed_beta15_scaled_0999_offset_0001",
     "flow_noise": "task_keyed_independent_gaussian"
@@ -61,14 +65,14 @@
     "distributed": {
       "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
       "exact_resume_world_topology_locked": true,
-      "gradient_communication": "one_flat_writer_gradient_sum_all_reduce_then_divide_by_24",
+      "gradient_communication": "one_preference_vector_plus_one_train24_support_row_matrix_all_reduce",
       "nccl_p2p_disable": "1",
       "deferred_process_group": true,
       "collective_timeout_minutes": 30
     }
   },
   "smoke_run": {
-    "task_global_id": 0,
+    "task_global_id": 4,
     "cycle": 1
   },
   "formal_run": {
@@ -78,21 +82,33 @@
     "checkpoint_cycles": [1, 2],
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
+    "mechanism_gates": {
+      "minimum_projected_preference_descent_ratio": 0.25,
+      "minimum_projected_to_raw_delta_energy_ratio": 0.1,
+      "maximum_raw_reward_cycle_wall_ratio": 2.0
+    },
     "live_smoke_evidence": {
-      "source_commit": "fa53ce43c92915229ca4c49fe47d2aa6f16bef0c",
-      "run_root": "runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_task4_graph_release_smoke_fa53ce4_gpu01g2_20260814",
-      "host": "gpu01",
-      "physical_device": 2,
+      "source_commit": "ee3d1c729a627c04fb7411e9050136e85f03597b",
+      "source_worktree": "dirty_candidate_prior_to_formal_seal",
+      "host": "gpu02",
+      "physical_device": 1,
       "global_task_id": 4,
-      "successes": 1,
       "rollouts": 4,
+      "successes": 1,
       "functional_policy_forwards": 80,
-      "writer_gradient_norm_before_clip": 0.0008011921891011298,
+      "preference_policy_backwards": 80,
+      "support_policy_backwards": 16,
+      "support_constraints": 1,
+      "raw_violation_count": 0,
+      "final_violation_count": 0,
+      "projected_preference_descent_ratio": 1.0,
+      "projected_to_raw_delta_energy_ratio": 1.0,
       "effective_ba_response_rms": 0.0001814553568222147,
       "fixed_action_response_rms": 0.005571932997554541,
-      "cycle_seconds": 146.38285287795588,
-      "max_cuda_reserved_bytes": 40712011776,
-      "exit_code": 0
+      "cycle_seconds": 157.59945052699186,
+      "max_cuda_reserved_bytes": 36773560320,
+      "exit_code": 0,
+      "run_root": "runs/outputs/pi05_v6_actual_delta_success_support_projection_task4_live_smoke_dirty_gpu02g1_20260814"
     }
   }
 }

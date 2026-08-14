@@ -1,6 +1,6 @@
 # V6 Ordered-Procedure On-Policy Preference Writer
 
-状态：2026-08-14 active implemented authority；CPU与单task真实GPU smoke已通过，等待formal cycle1与strict400。
+状态：2026-08-14 formal终局non-pass；cycle1与strict400均完成，按门不得cycle2、补controls或扫参。
 该设计只改变Shared-Core Ordered-Procedure Common-Value Writer的训练credit；输入、表示、compiler、LoRA
 topology与部署图全部保持不变。
 
@@ -211,3 +211,23 @@ cycle1完整后立即运行与当前K4 139相同的single-checkpoint strict pair
 
 负结果只淘汰“当前K4 ordered-Procedure bridge + LOO executed-prefix preference + small shared Adam update”，不否定
 所有Writer-RL、few-shot、memory-token Hypernetwork或未来生成LoRA后的task-local RL。
+
+## 11. Formal outcome
+
+clean frozen commit=`9c2638658e71095525444efbcb5e9dd86c62926c`在gpu01物理`2/4/5/6/7`完成world5
+fresh cycle0→1。24 tasks、96 rollouts、64 successes、14 mixed tasks与四suite完整；wall=`674.031s`，peak
+reserved=`40.758GB`，0 forbidden read/OOM/nonfinite/watchdog。Writer gradient=`9.0937e-5`，q/k/output均有
+FP32 delta，5个deployment probes的effective-BA/fixed-action response均非零。formal root=
+`runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_formal_cycle0to1_r5_k4_nmc4_b8_graphrelease_9c26386_gpu01_20260814`。
+
+同checkpoint strict paired correct400=`138/400`、breadth7、per-task=`2/5/46/33/0/36/15/1`、per-suite=
+`7/79/36/16`。相对同schedule AS139严格配对=`120 retained / 18 gained / 19 lost`、net`-1`、churn37；
+Spatial/Object/Goal/Long suite net=`+4/+1/0/-6`，Long1=`3 gained / 10 lost`。`correct>=144`、lost`<=10`与
+gained>lost均失败，故decision=`terminal_non_pass_no_cycle2`。evaluation root=
+`runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_9c26386_gpu01_20260814`。
+
+同一K4/video/state first4几何中，AS→reward effective-BA relative-L2 mean/median=`.003323/.003417`、cosine
+mean=`.99999505`、norm ratio mean=`1.000762`；action BA relative-L2=`.004293`。Long1 task-mean移动最大=
+`.004255`且净丢7。由此不能把non-pass解释成LoRA过大、失活或reward没有穿过compiler；当前proposal确实获得
+18条新success，但最终shared Adam update没有保住19条旧support。后继只能针对这一task汇合后的support接口，
+不能继续cycle2或用LR/scale/rank小修。

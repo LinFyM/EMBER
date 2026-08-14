@@ -9,22 +9,29 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Shared-Core Ordered-Procedure Common-Value macro25 K4 strict=`139/400`、breadth6，
-  per-task=`1/2/46/32/0/36/22/0`、per-suite=`3/78/36/22`、top3=`114/139=.82014`；按`<140`且breadth`<7`
-  双门终局non-pass，不resume、不补controls、不扫参；
-- 相对matched Shared-Core139严格配对=`120 retained / 19 gained / 19 lost`、net0、churn38、p=1；suite net=
-  `-2/-2/0/+4`，Long1净增4完全由Spatial/Object损失支付。相对Semantic-Core135=`119/20/16`、net+4但
-  breadth`7→6`并丢失Long2唯一success；
-- count-only相对v6-fast143/old134/compiler138/online128分别=`-4/+5/+1/+11`；Goal3与Long2仍为0；
-- first4机制显示raw ordered Procedure路径确实打开：correction relative-L2=`.09601`，attention entropy/log4=
-  `.99443`，current→zero effective-BA mean/task-mean=`.01397/.01392`、action=`.00989`；
-- 同一macro25的train-seen 8-task×10 states output-zero反事实为trained/zero=`64/64`，zero→trained paired=
-  `60 retained / 4 gained / 4 lost`、net0、churn8、p=1；suite net=`-1/+1/0/0`。B20在train和held on-policy
-  都只造成换手，不再只是held泛化失败；
-- active successor是V6 Ordered-Procedure On-Policy Preference Writer：保留当前K4架构、rank16、冻结v6与部署图，
-  macro25只作短AS cold start；新阶段关闭target action入口，以train24真实闭环success/failure preference只优化
-  shared Procedure q/k/output。authority=
-  `docs/action_forecast_writer_v6_ordered_procedure_on_policy_preference_design.md`；
+- 最新完成closed-loop：V6 Ordered-Procedure On-Policy Preference cycle1 K4 strict=`138/400`、breadth7，
+  per-task=`2/5/46/33/0/36/15/1`、per-suite=`7/79/36/16`、top3=`115/138=.83333`；按预注册门终局
+  non-pass，不运行cycle2、不补controls、不扫LR/scale/rank；
+- 相对同schedule Ordered-Procedure AS139严格配对=`120 retained / 18 gained / 19 lost`、net`-1`、churn37、
+  p=1；suite net=`+4/+1/0/-6`。Spatial两task均净增，但Long1=`3 gained / 10 lost`、净`-7`，说明reward
+  acquisition真实有效却没有让不同task support在最终shared update中共存；
+- count-only相对v6-fast143/old134/compiler138/online128分别=`-5/+4/0/+10`；Goal3仍为0，Long2从matched0到1；
+- first4同video/state几何显示AS139→reward138只是局部移动：effective-BA all relative-L2 mean/median=
+  `.003323/.003417`、cosine mean=`.99999505`、norm ratio mean=`1.000762`；action BA relative-L2=`.004293`。
+  Long1 task-mean移动最大=`.004255`且净丢7，因此失败不是更新能量过大、LoRA失活或需要再降scale；
+- reward cycle1共24 tasks/96 rollouts/64 successes，14 mixed tasks覆盖四suite；只有mixed tasks产生preference
+  gradient，9个all-success与1个all-failure task为exact zero。最终Writer gradient=`9.0937e-5`，q/k/output
+  均产生FP32更新，5个deployment probes的BA/action响应均非零；最早失效接口是task汇合后的shared update
+  support preservation，而不是video readout、Procedure、compiler或native precision；
+- 当前raw reward design已终局；active successor为V6 Ordered-Procedure Final Shared Support Projection：保留
+  同一K4/rank16/V6 Writer与同一reward proposal，只在task汇合后的actual Writer parameter delta上加入train24
+  成功executed-prefix一阶support约束。authority=
+  `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`；
+- ADSP canonical实现与fresh schema已完成，完整CPU=`400 passed`、compileall/diff check和架构hard gate通过；task4
+  真实mixed smoke在gpu02物理1完整exit0，同raw均为`1/4` success、157 chunks、80次policy forward，preference
+  gradient与BA/action response逐位一致；support gradient RMS=`5.00225e-5`、16次额外backward。raw candidate已满足
+  该task的1条constraint，identity fallback、final violation=0、descent/energy ratio均1；cycle=`157.599s`为raw
+  `1.077x`，peak reserved=`36.774GB`。config已seal，下一步是clean pushed commit上的fresh full24 cycle；
 - reward graph-release实现commit=`fa53ce43c92915229ca4c49fe47d2aa6f16bef0c`已push；独立config=
   `configs/pi05_writer_v6_ordered_procedure_on_policy_preference_v1.json`，reward checkpoint/evaluator明确使用cycle schema，
   不冒充AS exact-resume；正确LIBERO assets下full CPU=`395 passed`；
@@ -36,8 +43,15 @@
 - `fa53ce4`在gpu01物理2对同一task4 B8真实mixed smoke完整exit0：`1/4` success、157 chunks、80次functional forwards，reward LoRA
   gradient RMS=`1.3138e-5`、Writer grad norm=`8.0119e-4`；q/k/output均更新，effective-BA/fixed-action response=
   `.00018146/.00557193`，与修复前逐位相同；peak reserved=`40.712GB`、wall=`146.383s`。task0 homogeneous面板严格
-  zero forward/gradient并按门硬停；reward专用collective timeout为30分钟，formal config现已重新seal，下一步是
-  clean pushed commit上的fresh full24 cycle1；
+  zero forward/gradient并按门硬停；reward专用collective timeout为30分钟；
+- graph-release正式cycle1使用clean frozen commit=`9c2638658e71095525444efbcb5e9dd86c62926c`、gpu01物理
+  `2/4/5/6/7`、world5完整exit0，总wall=`674.031s`、peak reserved=`40.758GB`、0 forbidden read/OOM/
+  nonfinite/watchdog；root=
+  `runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_formal_cycle0to1_r5_k4_nmc4_b8_graphrelease_9c26386_gpu01_20260814`；
+- cycle1 strict评测同commit、同5卡、15 persistent workers完成400/400 LoRAs、60/60 jobs与400 rows，wall=
+  `1340.128s`、rollout-only=`783.248s`；root=
+  `runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_9c26386_gpu01_20260814`；同root封存
+  `reward_preference_strict_adjudication.json`与`reward_preference_first4_geometry.json`；
 - gpu01物理7真实smoke通过K1、倒序、freeze与梯度门；clean detached `50a3c36`在gpu01物理`0/1/2/4/5/6`
   完成full24 B20 macro1/2 profile：`26.112/22.543s`，gradient=`.0003266/.0003663`，q/k delta=
   `.0001158/.0001183`，K各6、最长323帧完整、peak reserved=`40.758GB`、0 OOM/nonfinite；root=

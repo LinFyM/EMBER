@@ -291,19 +291,23 @@ GPU/工程要求：
 ## 12. 方法、原则和目标的边界
 
 当前长期goal保持第2--3节，不把memory token、rank-8、K值、LoRA decoder或某个optimizer写成项目goal。
-Dynamic-K Semantic-Address Direct-Family-B是昨晚完整推导后最新完成的可证伪架构，不是最终教条；其同一
-checkpoint K1/K4=`102/98`均已终局non-pass。K4把same-task effective-BA相对方差约降`6.3x`却没有解锁task，
-所以保留的是已经证明工作的动态K/set nuisance reduction，而不是继续增加K或修mapper。下一fresh架构应把
-最早失效接口前移到set之前的task-grounded高层视觉Value与有向Procedure。
+owner在2026-08-14进一步澄清：memory token是为“怎样让视频知识按policy层级进入Writer、怎样可扩展地生成
+合理LoRA”提出的候选机制，不是必须保留的形式；如果证据表明沿V6更接近突破，可以继续V6。此前未经说明便从
+Full-Factor切到V6/rank-16仍是错误的协作行为，但错误在于静默改变方法合同，不在于V6本身被禁止。后续每次
+选择必须比较最早失效接口、已有absolute与新增假设，不能因owner一句局部意见机械地全盘切换。
 
-后续Visual-Value与Full-Factor分别终局于best`96`和`91`，说明昨晚方法里的memory/rank8/mapper整套组合没有恢复
-v6的强closed-loop几何，但这不否定语言+视频、逐video保序、跨video集合聚合和one-LoRA输出等原则。当前受控
-V6 Dynamic Slot-Set Bridge因此恢复已证明143的v6 Core/Procedure/compiler/factor底座，只把动态K集合层隔离为
-单一新变量。它随后K4终局`130`：same-task方差约降`9.26x`但task mean几乎不变，说明集合原则有效、完整compiler
-之后才聚合过晚。Shared-Core Procedure-Set把该边界前移到shared Core与最终fusion之间，K4得到`139/400`、
-breadth6，相对post-compiler130净增9；但matched归零表明trained Procedure-Set只贡献`.000918` BA改写，增益
-几乎来自无参数Core union。下一单变量因此是把可学习集合共识再前移到语言对齐Semantic Core tokens；memory
-token和rank8继续作为已检验过的方法选择保留在历史中，不再冒充当前目标或强制约束。
+Dynamic-K Direct-Family-B的K1/K4=`102/98`证明set能把same-task effective-BA相对方差约降`6.3x`，但没有修正
+task mean；Visual-Value曲线`88/86/86/96`证明task-grounded视觉Value进入了LoRA，却未对齐held occupancy；
+Full-Factor=`91`进一步暴露了更具体的最早断点：独立生成A/B后A norm增至`1.376x`、B缩至`.062x`，effective BA
+仅`.245x`且与fixed-A近正交。逐样本最优rank-8仍保留约`.999999`强BA能量，所以该结果否定的是当前独立A/B
+factor credit/gauge allocation，不是否定rank-8容量、memory位置、动态K、逐video有序编码或跨video集合原则。
+
+当前证据优先选择V6 Actual-Delta Success-Support Projection：V6已经证明LoRA具备policy-effective几何，最新
+reward一步又真实获得18条held success，但同时丢19条；因此当前最早接口是task汇合后对已有support的覆盖，而非
+LoRA健康度。该轮只在同一raw on-policy reward AdamW candidate之后，用train24成功executed-prefix的一阶loss
+约束最终actual Writer parameter delta。若这一精确support实验仍不能改善retention/absolute，则不再继续V6
+constraint小修；下一架构候选是保留V6的absolute Core、有向Procedure与健康factor compiler，再把真实
+layer-aligned memory作为视频到policy slot的接口，而不是原样恢复91分Full-Factor或把memory本身当答案。
 
 后续迭代遵循以下边界：
 

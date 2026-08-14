@@ -113,15 +113,19 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Actual-Delta Success-Support Projection | K4 `138/400`, breadth7 | 22条train24成功task约束中raw违反6条；投影后0 violation并保留`.964/.981` descent/energy | 相对AS139=`116/22/23`、churn45；相对raw138=`117/21/21`，Long净+6由Spatial/Object净-6支付，一阶local support不代表held共存 |
 | V6 Layerwise Action-Probe Conditioned Procedure Reader | K4 `143/400`, breadth7 | 同一次真实context forward的18层probe carrier具有reverse/static差异；保留AS139强图并追平历史absolute | 相对AS139=`120/23/19`、churn42；BA只改`.002653`且Goal3高coherence仍0，冻结Procedure commitment加blind B20 credit只形成AS139邻域换手 |
 | V6-LPCP Paired Causal Success Distillation | K4 `135/400`, breadth6 | 48 paired states产生9条唯一成功轨迹，positive CFM使query、BA与action全链路非零 | 相对LPCP143=`121/14/22`、churn36；PCSD/LPCP BA只改`.0006834`，FP64同task跨K4 video-set增量cosine约0、mean energy仅`.2486`，稀疏reward credit未合并成共享程序 |
+| V6-LPCP Cross-Video Causal Success Distillation | K4 `134/400`, breadth7 | 同一成功trajectory在4个disjoint correct K4下完整反传，36/36 view gradients非零且仅`1.0307x` PCSD wall | 相对LPCP=`122/12/21`、四suite全降；FP64四view部署增量cosine`.000205`、energy`.250155`，exact cross-video credit仍未越过query-only commitment |
 
-ADSP、V6-LPCP与PCSD均已按各自预注册门终局。ADSP authority=
+ADSP、V6-LPCP、PCSD与CV-CSD均已按各自预注册门终局。ADSP authority=
 `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`，只否决实际检验的
 train24 success-prefix一阶约束。V6-LPCP authority=
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`：它证明layerwise有序carrier可以在
 不损伤V6 absolute的前提下接通，但只经冻结Procedure Query和blind functional credit时仍是23 gains/19 losses，
 没有越过150。PCSD authority=`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`：
-它只否定query-only一轮稀疏positive CFM足以合并same-task跨video credit。三者均不否定V6、memory token或其它
-架构级policy-aligned生成方式；下一轮不得继续constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
+它只否定query-only一轮稀疏positive CFM足以合并same-task跨video credit。CV-CSD authority=
+`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`：它进一步否定四个correct K4
+conditions的exact selected-success gradient mean足以越过同一query-only map。四者均不否定V6、memory token、
+few-shot、reward credit或其它架构级policy-aligned生成方式；下一轮不得继续加view、constraint/LR/scale/rank小修，
+也不得原样恢复历史低分memory路线。
 
 ## 4. Final rank14 adjudication
 

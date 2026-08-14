@@ -250,7 +250,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 按四项门终局PCSD：correct、breadth、lost与net全部失败，不续cycle2、不补controls、不参数小扫；
 - [x] 从FP64近正交证据选择下一单变量：只改变成功credit如何跨same-task不同video sets合并。
 
-## Active iteration: V6-LPCP Cross-Video Causal Success Distillation
+## Completed iteration: V6-LPCP Cross-Video Causal Success Distillation
 
 - [x] 写CV-CSD可证伪authority：anchor K4只负责产生唯一成功trajectory；同一trajectory在四个互不重叠的
   same-task correct K4 conditions下分别形成exact functional gradient，task内等权汇合；
@@ -258,14 +258,26 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   degeneration、freeze与step0合同；
 - [x] 完成CPU与task4真实active smoke：4 rollouts/4 credit views/16 unique demos，query/BA/action均非零，
   `145.526s`、peak reserved`40.752GB`、0 OOM/nonfinite/禁读；
-- [ ] 完成fresh full24 cycle1兼吞吐profile；support views不得增加rollout，wall目标不超过PCSD `837.694s`的
-  `1.75x`；
-- [ ] 从同一LPCP macro25、fresh optimizer训练cycle1并立即做K4 strict paired correct400；
-- [ ] 完成逐task/per-suite/breadth、相对LPCP/AS139/v6-fast/old/compiler/online的retained/gained/lost、全400
-  effective-BA及跨video correction分析；
-- [ ] 仅在cycle1五项门通过时exact-resume cycle2并评相邻稳定性；仅在稳定门通过时补same/wrong/shuffled/
-  reversed/no-video；单点>150也不能跳过；
-- [ ] 无论pass/non-pass，完成最早失效接口裁决并更新authority；不靠view数、LR、rank、scale或seed小扫救结果。
+- [x] 完成fresh full24 cycle1兼吞吐profile：24 tasks/48 pairs/96 rollouts，四view全梯度非零，wall=
+  `863.432s`=`1.0307x` PCSD；三rank各8 tasks/3 active tasks，负载max/min=`1.0828x`；
+- [x] 从同一LPCP macro25、fresh optimizer完成cycle1与K4 strict paired correct400：`134/400`、breadth7、
+  per-task=`1/2/47/32/0/36/15/1`、per-suite=`3/79/36/16`；
+- [x] 完成逐task/per-suite/breadth与严格success-set比较：相对LPCP=`122/12/21`、churn33、net`-9`；相对
+  AS139=`121/13/18`；相对PCSD=`115/19/20`；四suite相对LPCP全部下降；
+- [x] 完成全400 effective-BA及FP64跨video correction分析：CV-CSD/LPCP BA relative-L2 mean=
+  `.000683702`，gained/lost不可分；四correct K4增量cosine=`.000205`、energy ratio=`.250155`；
+- [x] cycle1五项门只有breadth通过，按预注册合同不做cycle2或same/wrong/shuffled/reversed/no-video；
+- [x] 终局定位最早失效接口：cross-video exact credit已成立，但shared query-only commitment仍经video-specific
+  Jacobian写成近正交局部BA方向；不靠view数、LR、rank、scale或seed小扫。
+
+## Active iteration: derive policy-topology-aligned commitment
+
+- [ ] 检查canonical V6/LPCP的Program、fusion/compiler、320 policy slots与38-target FactorHeads真实owner；
+- [ ] 写单变量、可证伪design：保留V6/LPCP carrier、cross-video success credit、rank16和完整LoRA，只改变
+  Program/evidence到policy layer/rank/target ownership的commitment接口；
+- [ ] 若采用memory，必须读取同一次真实language+ordered-video context并直接服务对应层/秩写出；不得无prefix空跑、
+  不得成为static bypass、第二套LoRA或无依据的大token grid；
+- [ ] 预注册step0退化、跨video方向一致性、吞吐和strict400门后再原位实现；当前不启动GPU。
 
 ## Non-negotiable boundaries
 
@@ -281,9 +293,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP AS与PCSD均已按门终局。
-PCSD证明paired success可形成连续Writer credit，但shared query commitment把它外推成same-task跨video近正交的
-局部方向，held strict降到135。CV-CSD authority已冻结，只在active reward credit中增加四个互不重叠same-task
-K4 views的exact functional mean；当前无EMBER GPU进程，下一步原位实现并profile。literal memory保留为有证据时
-可选的commitment/carrier机制，不与credit变量无依据混合。生成LoRA后的task-local RL仍是初始Writer达到强
-zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已按门终局。
+CV-CSD证明跨video exact成功credit可以高效、完整地形成，但query-only commitment仍把它部署成same-task跨video
+近正交局部方向，held strict=`134`。当前无active successor或EMBER GPU进程；下一步先冻结policy-topology-aligned
+commitment design，不恢复旧memory路线、不添加更多views，也不做query/LR/rank/scale小扫。生成LoRA后的task-local
+RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

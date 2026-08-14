@@ -342,11 +342,17 @@ paired causal success distillation：同初态对跑zero-query AS139 reference�
 
 PCSD已完成并终局为`135/400`、breadth6；相对LPCP143为`121 retained / 14 gained / 22 lost`。它证明paired
 success可产生连续LoRA/action credit，但FP64分析显示同task四个不同K4 conditions的更新pairwise cosine约
-`-.00187`、均值只保留约四分之一能量。因此当前active CV-CSD只把同一真实成功trajectory的exact functional
-credit覆盖到四个互不重叠same-task correct K4 conditions，并在共享query gradient处等权汇合；部署架构、rank16、
-optimizer与rollout数量均不变。该选择不是放弃memory，而是先检验现有证据直接指出的cross-video credit接口；若
-正确cross-video objective仍无法形成一致的policy-effective commitment，才由此触发layer-aligned memory设计。
-精确authority见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
+`-.00187`、均值只保留约四分之一能量。后继CV-CSD随后按约定把同一真实成功trajectory的exact functional credit
+覆盖到四个互不重叠same-task correct K4 conditions，并只在共享query gradient处等权汇合；部署架构、rank16、
+optimizer与rollout数量均不变。
+
+CV-CSD full24机制与吞吐合同通过，但strict只有`134/400`、breadth7；相对LPCP143严格=
+`122 retained / 12 gained / 21 lost`，四个suite全部下降。FP64中四correct K4 conditions的部署增量pairwise
+cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也仍约`0/.25`。因此“正确cross-video objective
+本身足以让现有query-only map形成一致policy-effective commitment”已被否定，按门不续cycle2或controls。
+这不是放弃memory、few-shot或LoRA生成；它把memory的合理用途进一步收窄为**在真实图文context与实际policy
+layer/rank/target topology之间建立可训练的commitment**，而不是替换已通过的视频carrier或增加静态token容量。
+精确终局见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
 
 后续迭代遵循以下边界：
 

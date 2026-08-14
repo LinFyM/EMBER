@@ -8,21 +8,20 @@
 长期继续追求同一shared Writer、同一single checkpoint的strict paired correct`>150/400`；owner也接受约145
 的稳定有效方法，但必须同时通过相邻checkpoint低换手、same-task-video鲁棒和correct视频因果性。目前尚未达到。
 
-最新PCSD给出完整负结果。full24的48 pairs有9次唯一成功分歧，candidate/reference gains=`5/4`；只蒸馏
-唯一成功轨迹确实产生非零query gradient、参数更新、effective BA与action response，证明paired on-policy
-success可形成连续Writer credit。但cycle1 strict只有`135/400`、breadth6；相对LPCP143=
-`121 retained / 14 gained / 22 lost`、churn36，说明它没有把reward evidence合并为稳定shared support。
+最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
+把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
+view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有
+信号”已被排除。
 
-全400 PCSD/LPCP effective-BA relative-L2 mean仅`.0006834`，gained/lost均约`.00068`；FP64 first4进一步
-显示同task四个不同K4 video sets的增量pairwise cosine跨task平均`-.00187`、mean/sample energy=`.24860`。
-这把最早缺口从“reward是否有信号”推进到：**一次成功轨迹经过shared query commitment后仍形成随video set
-变化的近正交局部方向，而不是跨video共享的高层任务程序**。PCSD只否定当前query-only一轮positive CFM组合。
+cycle1 strict只有`134/400`、breadth7；相对LPCP143=`122 retained / 12 gained / 21 lost`、churn33、四suite
+全降；相对PCSD135也有39条episode换手。全400 CV-CSD/LPCP effective-BA relative-L2 mean=`.000683702`，
+gained/lost均约`.000679`。FP64 first4进一步显示同task四个correct K4增量pairwise cosine=`.000205`、
+mean/sample energy=`.250155`；相对PCSD也为`-.001908/.248578`。
 
-因此当前CV-CSD不重做已通过的LPCP video carrier，也不把memory token或rank变化混进同轮。它只检验一个窄
-假设：若同一真实成功trajectory在四个互不重叠的same-task correct K4 conditions下各自通过完整
-Writer→LoRA→policy图形成exact CFM gradient，shared query map能否把demo-specific局部更新变成跨video可保留
-方向。它不要求四个LoRA相等，也不平均LoRA；若该目标仍得到近零跨video correction coherence，才构成把
-commitment前移到layer-aligned memory机制的直接触发证据。
+这把最早缺口推进到：**正确的cross-video成功objective已经存在，但全局shared query commitment经每个视频条件的
+Jacobian仍写成近正交局部BA方向，无法在实际policy layer/rank/target topology上形成共同且可保留的承诺。**
+CV-CSD只否定query-only四view exact mean这一组合，不否定multi-video、memory、reward、rank16或完整LoRA生成。
+下一轮可以使用layer-aligned memory，但它必须直接解决commitment，而不是替换已通过的视频carrier或单纯加容量。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -31,6 +30,7 @@ commitment前移到layer-aligned memory机制的直接触发证据。
 | v6 old | 121 | 122 | 111 | 84 | 47 | 顺序影响能进闭环，但absolute与稳定性不足 |
 | v6-fast task-complete | 143 | 135 | 125 | 128 | 129 | 历史最佳single checkpoint，仍未过150且视频margin弱 |
 | V6-LPCP PCSD cycle1 | 135 | — | — | — | — | reward/action链路通，但跨video credit近正交且相对LPCP净丢8 |
+| V6-LPCP CV-CSD cycle1 | 134 | — | — | — | — | 四correct K4 exact credit仍落成近正交BA，证明失效在query-only commitment |
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
@@ -366,6 +366,16 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     functional first5/last5也仅`.098880/.097109`，14 tasks改善而10 tasks变差。literal memory若只替换已经通过的
     carrier、仍进入同一Query与同一credit，不会针对该缺口；后继应改变Procedure-to-LoRA commitment或
     policy-aligned shared credit，同时保留V6 absolute与LPCP有序分层读取，不得把143中的继承能力误报成新学习。
+38. CV-CSD full24与PCSD使用完全相同的paired outcomes，却把每个active task的同一selected-success replay扩展到
+    4个disjoint correct K4 conditions；36/36 LoRA/query gradients非零，cycle wall仅`1.0307x`、三rank负载
+    max/min=`1.0828x`。因此134不能归因于额外view破坏rollout、rank分工失衡、某个view零梯度或吞吐妥协。
+39. CV-CSD strict=`134/400`、breadth7；相对LPCP=`122 retained / 12 gained / 21 lost`、churn33，四suite
+    `-2/-4/-2/-1`全部下降；相对PCSD=`115/19/20`、churn39。aggregate只差1仍有39条success-set翻转，进一步
+    证明单一总分接近不代表能力稳定，必须保留paired episode集合与逐suite分析。
+40. CV-CSD/LPCP全400 BA改写mean=`.000683702`且gained/lost不可分；FP64四correct-view增量cosine=`.000205`、
+    energy ratio=`.250155`，CV-CSD/PCSD也为`-.001908/.248578`。cross-video监督没有让部署修正形成共向程序，
+    所以最早接口已从credit coverage推进到query-only commitment。下一架构应把task/video Program直接提交到
+    layer/rank/target-owned写出槽；memory若使用，只是实现这一接口的手段，不能成为static bypass或旧低分路线复刻。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

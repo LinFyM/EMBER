@@ -10,7 +10,7 @@
 - v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好=
   `143/135/125/128/129`，LPCP只完成correct且breadth7；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
+- 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
   `121/143=.84615`；按`<144`和lost>10门终局，不resume50、不补controls或扫memory/rank/LR/scale/seed；
 - 同AS139逐项验证400个task/state、K4 teacher sets/order、env seed和policy RNG prefix后，严格配对=
@@ -33,7 +33,7 @@
 - 首次strict root因临时launcher误写旧`/data0` LIBERO assets，在400份LoRA生成后、首个环境创建前工程失败，
   没有任何rollout分数；旧contract封存错误路径，未resume为正式结果。新root先按同一contract真实创建8/8 validation
   环境再启动，失败只作工程证据；
-- owner已授权继续；最新完成successor是**V6-LPCP Paired Causal Success Distillation**（PCSD），authority=
+- 已完成predecessor **V6-LPCP Paired Causal Success Distillation**（PCSD），authority=
   `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。它不把memory token或rank变化
   预设为答案：冻结LPCP carrier与AS139/rank16 tail，只训练`query_delta.weight`；train24每task以K2严格同初态
   AS139-reference/LPCP-candidate arms产生唯一成功轨迹credit。AS139/LPCP validation union=`162`只作设计依据，
@@ -66,20 +66,30 @@
 - 终局artifact均在PCSD strict root：`pcsd_cycle1_benchmark_comparison.json`、
   `as139_to_pcsd_cycle1_paired_transition.json`、`pcsd_cycle1_effective_ba_analysis.json`、
   `pcsd_cycle1_first4_correction_fp64.json`、`pcsd_cycle1_terminal_adjudication.json`；
-- 当前active successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），authority=
-  `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。唯一新增变量是：anchor K4仍负责
-  产生AS139/LPCP唯一成功trajectory；若task active，同一trajectory分别在四个互不重叠、原序、same-task correct
-  K4 conditions下经独立Writer→LoRA→functional CFM反传，四view只在`query_delta.weight`梯度处等权汇合。四view
-  共用replay、flow time/noise panel；task总权重仍为1；support views不增加rollout。LPCP部署图、动态K、AS139/
-  rank16 tail、optimizer和信息墙不变，不加入memory/rank/negative/scale；
-- CV-CSD现已原位实现并通过首个真实active-task smoke：gpu01物理5、task4、world1完整exit0；仍为2 paired states/
-  4 rollouts，4个credit K4 conditions共16个unique demos，四view各16次functional forward/backward且LoRA cotangent
-  RMS=`4.77--4.81e-5`；合并后Writer gradient RMS=`3.465e-8`、query-delta parameter delta RMS=`.00018514`、
-  effective-BA/fixed-action response=`1.4455e-5/.002743`。cycle=`145.526s`、credit=`83.557s`、peak reserved=
-  `40.752GB`，0 forbidden read/OOM/nonfinite；support views没有增加rollout。相关CPU=`21 passed`，正确assets全量=
-  `382 passed / 7个既有Reward-Credit临时路径失败`。formal config已seal，下一步从clean pushed commit做fresh full24
-  cycle1；smoke root=
-  `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_task4_live_smoke_b8_worktree_gpu01p5_20260815`；
+- 最新完成successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），authority=
+  `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`，clean pushed/frozen commit=
+  `c1d8952819a0051b6b608f2caadb8568a415f502`。它只改变success credit覆盖：同一selected-success trajectory在四个
+  disjoint same-task correct K4 conditions下分别做完整Writer→LoRA→policy CFM，再平均`query_delta.weight`梯度；
+  deployment、rank16、AS139 tail、optimizer、rollout数和信息墙不变；
+- CV-CSD full24 cycle1在gpu01物理`5/6/7`、world3完整exit0：24 tasks/48 paired states/96 rollouts，reference/
+  candidate success=`33/34`、candidate/reference-only=`5/4`、9 active tasks/3 suites，与PCSD paired outcome逐项相同；
+  36个credit conditions全部LoRA/query gradient finite/nonzero。cycle=`863.432s`，仅为PCSD的`1.0307x`；rank0/1/2
+  各8 tasks/3 active tasks，recorded load max/min=`1.0828x`，所以没有rank分配失衡或吞吐违约；formal root=
+  `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；
+- cycle1 K4 strict paired400完成400/400 LoRAs、42/42 shards、400 rows、9/9 workers exit0：`134/400`、breadth7、
+  per-task=`1/2/47/32/0/36/15/1`、per-suite=`3/79/36/16`、top3=`115/134=.85821`。相对LPCP143严格=
+  `122 retained / 12 gained / 21 lost / 245 both-fail`、churn33、net`-9`、Jaccard`.78710`且四suite全降；
+  相对AS139=`121/13/18/248`、churn31、net`-5`；相对PCSD135=`115/19/20/246`、churn39、net`-1`；
+  count-only相对v6-fast143/old134/compiler138/online128=`-9/0/-4/+6`。五项门只有breadth通过，终局不续cycle2、
+  controls或小扫；strict root=
+  `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_c1d8952_gpu01_20260815`；
+- 全400 CV-CSD相对LPCP effective-BA relative-L2 mean/median=`.000683702/.000677739`，gained/lost=
+  `.000679265/.000679434`。FP64 first4同task四correct K4增量pairwise cosine=`.00020542`、mean/sample
+  energy=`.25015457`；相对PCSD也为`-.00190786/.24857794`。跨video exact成功信用仍经video-specific Jacobian
+  落成近正交局部BA方向；最早失效接口是shared query-only commitment，而非video/reward/LoRA链路；
+- 当前没有active successor或EMBER GPU进程。下一轮先写新的单变量authority：保留V6/LPCP absolute carrier、
+  cross-video selected-success credit与完整rank16 LoRA，只把commitment移到policy layer/rank/target ownership附近。
+  layer-aligned memory是由本轮证据触发的候选，不得误写成项目goal，也不得用更多views或query/LR/rank/scale小扫；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

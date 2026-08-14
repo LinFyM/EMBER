@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 最新完成design（当前没有active successor）：
    `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -38,7 +38,7 @@ EMBER上下文纠正理解。
 长期目标尚未完成。v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`，LPCP只完成correct且breadth7。
 
-最新完成closed-loop是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
+当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
 AS139严格=`120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、net`+4`、p=`.643969`；它
 count-only追平不同teacher schedule的历史v6-fast143并把breadth从6增到7，但按`<144`和lost>10两项门终局
@@ -71,19 +71,21 @@ FP64 first4显示同task四个不同K4 video sets的增量pairwise cosine平均`
 paired success经单一shared query commitment没有形成跨task/video可保留方向。PCSD按四项门终局non-pass，
 不得cycle2、补controls或参数小扫。
 
-当前active successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），精确authority=
-`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。它只改变success credit覆盖：
-每个active task仍由一个anchor K4做相同AS139/LPCP paired rollouts并选唯一成功trajectory，再让同一trajectory
-分别监督四个互不重叠的same-task correct K4 conditions；每个condition独立Writer→完整LoRA→functional CFM，
-只在共享`query_delta.weight`梯度处task内等权汇合。部署图、动态K carrier、AS139/rank16 tail、optimizer、rollout
-数量和信息墙不变；不平均videos/features/LoRAs，不加negative、memory、rank或scale变量。首次约145且retention过门
-才续相邻checkpoint与五臂/no-video controls；单点>150也不能跳过稳定性和视频因果裁决。
+最新完成successor是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD），精确authority=
+`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。clean `c1d8952` full24 cycle1完整：
+24 tasks/48 paired states/96 rollouts，33/34两臂成功、5/4单臂成功、9 active tasks；四view全部LoRA/query gradient
+非零，wall=`863.432s`=`1.0307x` PCSD，3 ranks各8 tasks/3 active tasks、负载max/min=`1.0828x`。
 
-CV-CSD canonical runtime已原位实现，旧PCSD config/schema由Git保存而不保留mode开关。CPU相关合同`21 passed`、
-正确assets下全量=`382 passed / 7个历史Reward-Credit临时路径失败`；gpu01物理5的task4 live smoke为4 rollouts、
-4 credit conditions、16 unique demos、64 functional forwards，query/effective-BA/action response均非零，peak reserved=
-`40.752GB`、cycle=`145.526s`、0 forbidden read/OOM/nonfinite。当前formal config已seal；下一步从clean pushed commit
-做fresh full24 cycle1，不能resume该smoke或PCSD checkpoint。
+CV-CSD K4 strict paired400终局=`134/400`、breadth7、per-task=`1/2/47/32/0/36/15/1`、per-suite=
+`3/79/36/16`。相对LPCP143严格=`122 retained / 12 gained / 21 lost / 245 both-fail`、churn33、net`-9`，
+四suite全降；相对AS139=`121/13/18/248`、相对PCSD135=`115/19/20/246`。correct、lost、net与suite四项门失败，
+不续cycle2、controls或小扫。
+
+全400 CV-CSD/LPCP effective-BA relative-L2 mean=`.00068370`，gained/lost约相同；FP64同task四K4 correct
+conditions的增量pairwise cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也为`-.001908/.248578`。
+所以四个正确视频下的exact成功credit经过shared `query_delta`均值后仍落成近正交局部方向。当前没有active
+successor；下一design必须保留V6/LPCP强carrier与cross-video reward证据，只改变Program/evidence到policy
+layer/rank/target topology的commitment。memory是候选机制而非目标，不得加更多views或继续query/LR/rank/scale小修。
 
 ## 4. Long-term objective and decision rule
 

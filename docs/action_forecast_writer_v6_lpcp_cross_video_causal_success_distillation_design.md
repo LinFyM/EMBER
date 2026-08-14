@@ -1,6 +1,6 @@
 # V6-LPCP Cross-Video Causal Success Distillation
 
-状态：2026-08-15 active design authority。本文在PCSD终局`135/400`及其FP64跨video分析之后，只改变
+状态：2026-08-15 terminal non-pass。本文在PCSD终局`135/400`及其FP64跨video分析之后，只改变
 success credit覆盖的same-task correct video conditions；V6-LPCP部署图、K4输入、65,536参数query commitment、
 AS139/rank16 tail、reference/candidate rollout语义与optimizer均保持不变。
 
@@ -215,3 +215,77 @@ Writer gradient RMS=`3.465e-8`、query parameter delta RMS=`.00018514`、effecti
 `1.4455e-5/.002743`；cycle=`145.526s`、credit=`83.557s`、peak reserved=`40.752GB`，0 forbidden read/OOM/
 nonfinite。该smoke只证明机制与初步吞吐，不是closed-loop方法成绩；full24 cycle1兼正式吞吐裁决必须来自clean
 pushed commit的fresh root。
+
+## 12. Formal cycle1 evidence
+
+clean pushed/frozen commit=`c1d8952819a0051b6b608f2caadb8568a415f502`。formal cycle1 root=
+`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`，
+在gpu01物理`5/6/7`、world3完整exit0：24 tasks、48 paired states、96 rollouts，AS139-reference/LPCP-candidate
+success=`33/34`，candidate/reference-only=`5/4`，both-success/failure=`29/10`。9个active tasks覆盖3个suite，
+产生36个credit conditions、144个unique-demo counts、319 replay chunks与1,582 executed steps；support views没有
+增加任何rollout。
+
+四个view全部得到finite/nonzero LoRA与query gradient。LoRA gradient RMS min/median/mean/max=
+`3.466e-5/4.6406e-5/4.6442e-5/6.9285e-5`，query gradient RMS=
+`2.487e-8/4.8646e-8/6.9289e-8/1.8526e-7`；合并后Writer gradient RMS=`2.7187e-8`、
+query parameter delta RMS=`.000176476`。三项deployment probe的effective-BA/fixed-action response均非零，
+0 forbidden read/OOM/nonfinite/watchdog。
+
+cycle wall=`863.432s`，仅为PCSD `837.694s`的`1.0307x`，远低于预注册`1.75x`上限。rank0/1/2各处理8 tasks，
+active task=`3/3/3`，recorded load=`803.965/754.076/742.462s`，max/min=`1.0828x`。因此这次失败不能归因于
+support views造成额外rollout、rank分配失衡、吞吐不可接受或某一view没有梯度。
+
+## 13. Strict paired400 result
+
+cycle1 strict root=
+`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_c1d8952_gpu01_20260815`。
+400/400 LoRAs、42/42 shards、400 raw rows和9/9 persistent workers全部完整，结果为：
+
+- correct=`134/400`、breadth7、per-task=`1/2/47/32/0/36/15/1`；
+- per-suite=`3/79/36/16`，top3=`115/134=.85821`；
+- 相对LPCP143严格=`122 retained / 12 gained / 21 lost / 245 both-fail`，churn33、net`-9`、
+  Jaccard=`.78710`；四个suite净变化=`-2/-4/-2/-1`，全部下降；
+- 相对AS139严格=`121/13/18/248`，churn31、net`-5`、Jaccard=`.79605`；Long1单task净丢7；
+- 相对PCSD135严格=`115/19/20/246`，churn39、net`-1`、Jaccard=`.74675`，说明即使aggregate近似，
+  success support仍大量换手；
+- count-only相对v6-fast143/old134/compiler138/online128=`-9/0/-4/+6`。
+
+cycle1的correct、LPCP lost、gained>lost和至少3 suites不降四项门失败，只有breadth通过。按预注册合同终局：
+不resume cycle2，不补same/wrong/shuffled/reversed/no-video，不做view数、LR、rank、scale或seed小扫。
+
+## 14. Effective-BA and cross-video adjudication
+
+全400 CV-CSD相对LPCP的effective-BA relative-L2 mean/median=`.000683702/.000677739`，cosine mean=
+`.9999997653`、norm ratio=`1.000000119`；q/v/action relative-L2 mean=
+`.000693637/.000653221/.002344411`。gained/lost样本的all-target改写mean=
+`.000679265/.000679434`，大小不能区分有益与有害方向。该幅度与PCSD相对LPCP的`.0006834`几乎相同，说明
+CV-CSD没有通过更大的LoRA扰动换分，也没有坍缩成identity之外的新异常。
+
+决定性证据来自validation8每task前4个K4 correct conditions的FP64 correction trace。CV-CSD相对LPCP的
+same-task pairwise cosine跨task平均=`.00020542`，task-mean/sample energy ratio=`.25015457`；q/v/action
+cosine分别=`.001039/-.001993/-.006748`，全部近零，能量比几乎精确为四个
+正交修正平均后的`1/4`。CV-CSD相对PCSD也为pairwise cosine=`-.00190786`、energy ratio=`.24857794`。
+
+因此预注册falsifier #2被直接触发：即使同一真实成功trajectory在四个互不重叠correct K4 conditions下分别经过
+完整Writer→LoRA→policy functional graph，训练梯度在`query_delta.weight`处等权平均，部署时不同视频条件仍经各自
+Jacobian落成近正交的局部BA方向。问题不是“没有读到多个视频”，而是**共享query-only commitment的位置与表达
+方式不能把跨视频共同信用固化为layer/rank-owned、policy-effective且可保留的写出方向**。
+
+## 15. Terminal decision and surviving boundary
+
+CV-CSD只淘汰：
+
+```text
+LPCP query-only map
++ four disjoint correct K4 exact selected-success functional gradients
++ shared query-gradient mean
+```
+
+它不淘汰dynamic K/few-shot、正确顺序、reward credit、memory token、rank16、V6/LPCP carrier或生成完整LoRA本身。
+V6/LPCP仍提供当前最强absolute carrier，paired reward仍提供真实on-policy成功信用，CV-CSD也证明跨video exact
+objective可以高效运行；失败发生在这些证据到policy topology的commitment接口。
+
+下一轮不得增加更多views或继续query-only小修。新authority应保留V6/LPCP强路径和本轮cross-video成功信用，
+只把trainable commitment从全局query变换移到实际LoRA layer/rank/target ownership附近；若采用memory，它必须
+读取真实language+ordered-video joint context并服务这一commitment，不得成为无prefix空跑、静态bias或为了
+“用memory”而新增的第二套backbone。完整拓扑、step0退化和快速否决门必须在新design中单独冻结。

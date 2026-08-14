@@ -5,57 +5,57 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-V6-LPCP PCSD cycle1已完成full24 paired reward training与K4 strict paired correct400。closed-loop=
-`135/400`、breadth6、per-task=`0/4/48/32/0/35/15/1`、per-suite=`4/80/35/16`、top3=
-`115/135=.85185`。相对直接底座LPCP143严格=`121 retained / 14 gained / 22 lost / 243 both-fail`、
-churn36、net`-8`、Jaccard`.77070`；相对AS139严格=`115/20/24/241`、churn44、net`-4`。count-only
-相对v6-fast143/old134/compiler138/online128=`-8/+1/-3/+7`。correct、breadth、support retention与净增四个
-预注册门全部失败，PCSD终局；不做cycle2、controls或参数小扫。
+最新完成实验是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD）。full24 cycle1与K4 strict paired
+correct400均来自clean frozen `c1d8952`：closed-loop=`134/400`、breadth7、per-task=
+`1/2/47/32/0/36/15/1`、per-suite=`3/79/36/16`、top3=`115/134=.85821`。
 
-失败不是reward没有信息，也不是LoRA/action链路断开。train24的48 paired states产生9条discordant成功轨迹，
-candidate/reference gains=`5/4`；positive CFM给出非零gradient、query-delta更新与fixed-action response RMS
-`.00215--.00407`。但全400 PCSD相对LPCP的effective-BA relative-L2 mean/median只有
-`.0006834/.0006767`，比LPCP相对AS139的`.002653`再小约3.9倍；gained/lost改写mean=
-`.0006873/.0006830`，幅度不能选择方向。
+相对LPCP143严格=`122 retained / 12 gained / 21 lost / 245 both-fail`、churn33、net`-9`、
+Jaccard`.78710`，四个suite全部下降；相对AS139严格=`121/13/18/248`、churn31、net`-5`；相对PCSD135
+严格=`115/19/20/246`、churn39、net`-1`。count-only相对v6-fast143/old134/compiler138/online128=
+`-9/0/-4/+6`。五项cycle1门中只有breadth通过，因此CV-CSD终局，不做cycle2、controls或小参数扫。
 
-更早且可解释的断点来自FP64 first4：同一validation task的四个不同K4 correct video sets所产生的PCSD增量，
-pairwise cosine跨8 tasks平均`-.00187`，task-mean/sample energy ratio=`.24860`，几乎正好是四个正交修正
-平均后的`1/4`。因此最早失效接口是**稀疏paired reward trajectories经一个shared query commitment后仍成为
-video-set-specific局部方向，未被合并成跨video、跨task可保留的高层程序**。下一设计只改变reward credit如何
-跨same-task video sets形成共同方向；不重做已通过的LPCP carrier，也不预设literal memory或rank变化为答案。
+训练合同本身完整且高效：24 tasks/48 paired states/96 rollouts仍产生与PCSD完全相同的33/34两臂成功、5/4
+单臂成功和9个active tasks；36个credit conditions的LoRA/query gradients全部finite/nonzero。cycle wall=
+`863.432s`，仅为PCSD的`1.0307x`；3 ranks各8 tasks/3 active tasks，记录负载max/min=`1.0828x`。
 
-当前active design是CV-CSD：每个active task仍只用anchor K4产生paired唯一成功trajectory，但让同一trajectory
-分别监督四个互不重叠的same-task correct K4 conditions。每个view独立完成Writer→完整LoRA→selected-success
-functional CFM，复用相同replay/time/noise，只在共享`query_delta.weight`梯度处等权汇合。deployment、rank16、
-AS139 tail、optimizer、rollout数量和信息墙全部不变；不平均输入或LoRA，不混入memory、negative或rank变量。
-精确合同见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
+决定性non-pass不是134这个单点，而是部署方向分析。全400 CV-CSD相对LPCP的effective-BA relative-L2
+mean/median=`.00068370/.00067774`，gained/lost均约`.000679`。FP64 first4中，同task四个K4 correct conditions
+的CV-CSD增量pairwise cosine平均=`.000205`、task-mean/sample energy=`.250155`；相对PCSD也为
+`-.001908/.248578`。即使同一真实成功trajectory在四个正确视频条件下各自完整反传，shared query-gradient mean
+仍经video-specific Jacobian变成近正交局部BA修正。
 
-canonical实现已通过task4 live smoke：4 rollouts不变，4个K4 credit views共16 unique demos，四view LoRA/query
-credit与最终BA/action response均非零；cycle=`145.526s`、peak reserved=`40.752GB`，无OOM/nonfinite/禁读。
-formal config已seal；下一动作是clean pushed commit上的fresh full24 cycle1，不resume PCSD或smoke。
+最早失效接口因此是**Program/evidence到policy topology的query-only commitment**，不是LPCP没有读视频、reward
+没有内容、LoRA坍缩或多卡负载错误。当前没有active successor；下一authority要在保留V6/LPCP强absolute carrier、
+rank16完整LoRA和cross-video成功信用的前提下，只改变layer/rank/target-aligned commitment接口。memory token是有
+证据触发的候选机制，但不是项目目标，也不能只是替换已通过的carrier。
 
-## 2. Completed PCSD variable and training semantics
+训练root=
+`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；
+strict与全部paired/BA/FP64分析root=
+`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_c1d8952_gpu01_20260815`。
 
-- 冻结完整LPCP carrier、AS139 Semantic Core/Procedure/K-set/fusion/compiler与38-target rank16 FactorHeads；
-- 同一K4 context只编码一次，reference把`query_delta`精确置零，candidate使用当前LPCP query；
-- train24每task两个同初态/同policy RNG arms，只对唯一成功arm的executed trajectory做positive CFM，ties为零；
-- 只训练65,536参数`query_delta.weight`，source policy、reader/controller与全部LoRA tail参数trainable为0；
-- Writer仍由exact language和action-hidden videos一次生成完整LoRA，rollout期间不反复观看视频。
+## 2. Completed CV-CSD variable and exact conclusion
+
+- 部署继续是exact language + dynamic K ordered action-hidden videos一次生成一套38-target rank16 LoRA；
+- anchor K4只产生AS139/LPCP paired唯一成功trajectory；同一trajectory在4个disjoint same-task correct K4
+  conditions下分别通过完整Writer→LoRA→policy CFM；
+- 四view只在65,536参数`query_delta.weight`梯度处等权汇合，不平均video、Program或LoRA；
+- 只训练query commitment，LPCP carrier、AS139 tail、source policy、optimizer与rollout数不变；
+- 结果只否定“query-only map + four-view exact selected-success mean”，不否定few-shot、memory、reward或生成LoRA。
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP AS与PCSD均已终局且不得resume或小扫。PCSD训练root、
-strict root、逐episode transitions、全400 BA与FP64跨video evidence均已封存。`>150`仍是更高性能追求；约145
+Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已终局且不得resume或小扫。CV-CSD
+训练root、strict root、逐episode transitions、全400 BA与FP64跨video evidence均已封存。`>150`仍是更高性能追求；约145
 也可成为有效结果，但必须由相邻single checkpoints低churn、same-task-other鲁棒和correct相对wrong/shuffled/
 reversed/no-video的明确优势共同认证。单点145或151都不算完成。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
 
-CV-CSD cycle1只有在correct`>=144`、breadth`>=7`、相对LPCP lost`<=10`、gained>lost且至少3 suites不降时才
-进入cycle2。稳定资格要求两个相邻single checkpoints均`>=144`、均值`>=145`、breadth均`>=7`、相邻churn
-`<=20`、Jaccard`>=.85`；随后才做same/wrong/shuffled/reversed/no-video，要求same/correct至少`.9`且correct
-对每个negative/no-video至少高8。单点145或151都不能跳过这些门。
+CV-CSD因cycle1未过门而没有相邻checkpoint与controls；这不是缺失分析，而是预注册停止规则。下一架构仍须先以
+cycle1 absolute/breadth/retention筛选；过门后必须评相邻checkpoint，再做same/wrong/shuffled/reversed/no-video。
+单点145或151都不能跳过稳定性与视频因果资格。
 
 ## 4. Continuous adjudication loop
 

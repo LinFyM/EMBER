@@ -140,5 +140,37 @@ gpu01物理4对新macro25做一次真实K4 B32 validation8×4 longest-panel forw
 profile的B32 `.2232875 LoRA/s`一致。confirmation root：
 `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_b32_confirmation_val8x4_correct_gpu01p4_12311bd_macro0025_20260814`。
 
-两者仍只证明训练和部署合同。下一步必须在profile-sealed clean descendant上做macro25 K4 strict paired
-correct400，并严格执行§5门。
+两者当时仍只证明训练和部署合同；按预注册，随后必须在profile-sealed clean descendant上做macro25 K4 strict
+paired correct400并执行§5门。终局结果见下一节。
+
+## 9. Strict结果、机制裁决与终局
+
+profile-sealed clean detached `0ead61e2c45f4a5cfe129ffbee3dfa51b2ddfb60`在gpu01物理
+`0/1/2/4/5/6`完成400/400 LoRAs、72/72 jobs、400 rows与18/18 workers，全部exit0；wall=
+`1225.323s`、rollout-only=`677.538s`。strict=`133/400`、breadth6，per-task=
+`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`114/133=85.71%`。root：
+`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_0ead61e_gpu01_20260814`。
+
+严格episode/video/RNG配对结果：相对Semantic-Core135=`118 retained / 15 gained / 17 lost`、net`-2`、
+churn32、p=`.86005`；相对Shared-Core139=`119/14/20`、net`-6`、churn34、p=`.39153`；相对
+post-compiler130=`121/12/9`、net`+3`。相对135 suite net=`+2/+3/0/-7`：前四个短task合计增5，Long1/2
+合计丢7；Goal3和Long2仍为0。count-only相对v6-fast143/old134/compiler138/online128=`-10/-1/-5/+5`。
+
+first4×8 K4机制反事实进一步否定“信号仍太小”：
+
+- trained Core correction relative-L2 mean=`.065856`、correction/mean Core=`.065936`、相对centered Core=
+  `1.42509`；上一centered架构分别只有`1.8275e-5`与`.000386`；
+- current→output-zero effective-BA relative-L2 mean/task-mean=`.053648/.053633`，上一轮只有
+  `.001763/.001472`；当前相对135与139的BA变化也均约`.0536--.0539`；
+- K1→parameter-free K4 zero仍为`.039751`，与历史`.039675`一致；
+- attention entropy/log4=`.9998848`，几乎与上一轮完全相同。q/k虽获得梯度，但没有形成明显video选择；raw
+  common mean本身经`Wo`强写入policy。
+
+所以本轮成功修复了Value构造性相消，也证明native compiler能传递约5.36%的BA改写；closed-loop反而降到133，
+说明最早剩余失效接口是offline B20 functional credit与held on-policy occupancy的方向对齐。强common-mean更新
+把能力从Long换给Spatial/Object，而不是让同一checkpoint共同积累。按`<140`与breadth`<7`双门，本组合终局
+non-pass：不resume macro50、不补controls、不扫scale/LR/K/seed/temperature。
+
+该负结果只淘汰“raw common Semantic Core Value + 当前同预算位置 + unchanged full24 B20 recipe”组合；不淘汰
+dynamic K、few-shot、Semantic Core/Procedure、memory-token Hypernetwork或未来reward credit。当前没有active
+successor；先停下与owner讨论，下一authority不得把本结果误写成“视频没读到”或“LoRA太小”。

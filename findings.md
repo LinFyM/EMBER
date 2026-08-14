@@ -259,7 +259,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 20. Common-Value world6真实profile在同预算同位置下把gradient norm从centered路径约`3.25e-6`打开到
     `.00270--.00280`，macro1→2 q/k delta=`6.55e-6/6.48e-6`且最长K4 323帧吞吐不退化。这验证“centered
     Value构造性相消”是可修复的最早机制断点；fresh macro25的gradient仍为`.00315`、output norm到`.26152`，
-    说明它没有在训练中重新关闭。但是否写入held on-policy有用方向仍只能由strict400裁决。
+    说明它没有在训练中重新关闭。strict却只有`133/400`、breadth6；相对135净`-2`、相对139净`-6`，Long
+    相对135净丢7。first4 Core correction/effective-BA改写=`.065856/.053648`，远大于上一轮，而attention
+    entropy仍`.999885`。因此它不是“没写进去”，而是offline B20把强common-mean修正写向held on-policy无效且
+    task间换手的方向；下一接口应是credit/occupancy对齐，不是继续放大Value、加容量或移动compiler。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

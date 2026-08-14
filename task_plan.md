@@ -135,7 +135,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 从clean sealed commit完成fresh macro0→25：25/25 metrics、完整checkpoint/completion/exit0，总耗时
   `614.636s`，gradient全程`.00250--.00325`；
 - [x] 实际K4 B32 longest-panel一次确认通过：`.225360 LoRA/s`、reserved`13.181GB`、0 OOM/nonfinite；
-- [ ] 从profile-sealed clean descendant立即做macro25 K4 strict paired400。
+- [x] macro25 K4 strict paired400完整：`133/400`、breadth6、per-task=`2/3/48/31/0/35/14/0`；按双门终局；
+- [x] 完成配对与first4机制分析：相对135=`118/15/17`、相对139=`119/14/20`；Core/BA改写已打开到
+  `.065856/.053648`但Long能力换手，最早剩余接口定位为offline credit与held occupancy对齐；
+- [ ] 当前停下讨论；没有active successor，不自动开始下一架构。
 
 ## Continuous loop after this result
 
@@ -161,5 +164,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Semantic-Core Set已在135/breadth7按门终局；Common-Value实现、profile、fresh macro25与
-K4 B32确认均已通过，下一步strict400。
+无权限或资产阻塞。Common-Value全链路实验已在133/breadth6按门终局并完成分析；当前按owner要求停下讨论，
+不是技术blocked，也不恢复历史路线。

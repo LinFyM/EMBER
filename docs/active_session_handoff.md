@@ -9,16 +9,19 @@
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
 - 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Semantic-Core Set Bridge macro25 K4 strict=`135/400`、breadth7、per-task=
-  `1/2/46/30/0/35/20/1`、per-suite=`3/76/35/21`，按`<140`门终局non-pass；
-- 相对matched K4 Shared-Core139为`120 retained / 15 gained / 19 lost`、净`-4`、churn34；suite net=
-  `-2/-4/-1/+3`。Long2从0到1但Goal3仍0；相对old134=`115/20/19`净`+1`，相对v6-fast143净`-8`；
-- trained Semantic-Core output归零只改变`.001763` effective BA，task-mean`.001472`；原始Core correction仅
-  `1.8275e-5`、K4 attention entropy/log4=`.999885`，而native compiler把它放大成BA churn。最早失败是
-  centered Value在近均匀attention下相消，不是video未读、Core/Procedure顺序失效或compiler衰减；
-- 当前下一单变量：保持同预算set位置和所有后端不变，只把Value从weighted centered residual改为weighted raw
-  common Semantic Core；K1显式旁路继续严格等于native v6；
-- 当前active design是V6 Semantic-Core Common-Value Set Bridge；authority=
+- 最新完成closed-loop：V6 Semantic-Core Common-Value Set Bridge macro25 K4 strict=`133/400`、breadth6，
+  per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`114/133=85.71%`；按`<140`且
+  breadth`<7`双门终局non-pass，不resume、不补controls、不扫参；
+- 相对immediate predecessor Semantic-Core135严格配对=`118 retained / 15 gained / 17 lost`、net`-2`、
+  churn32；相对matched Shared-Core139=`119/14/20`、net`-6`、churn34；相对post-compiler130=
+  `121/12/9`、net`+3`。相对Semantic135 suite net=`+2/+3/0/-7`，Long能力换给Spatial/Object而非共同积累；
+- count-only相对v6-fast143/old134/compiler138/online128分别=`-10/-1/-5/+5`；Goal3与Long2仍为0；
+- first4机制分析显示raw Common-Value确实彻底打开：Core correction relative-L2 mean=`.065856`，上一centered
+  仅`1.8275e-5`；current→zero effective-BA mean/task-mean=`.053648/.053633`，上一仅
+  `.001763/.001472`。但attention entropy/log4仍=`.999885`，强写入沿近均匀common mean造成task换手；
+- 因此最早剩余接口不是Value可达性、注入位置、rank16容量或compiler衰减，而是offline B20 functional credit
+  与held on-policy occupancy的方向对齐。当前没有active successor；按owner要求完成分析后停下讨论；
+- 本轮terminal design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
   Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；
 - 当前Common-Value profile commit=`2eb9da9efae0cead6e0d936172eed7165ea6b8bf`，gpu01 world6
@@ -35,8 +38,11 @@
   `.225360 LoRA/s`，peak allocated/reserved=`12.144/13.181GB`，最长视频226帧，0 OOM/nonfinite；B32选择继承
   同形predecessor完整B8/B16/B32 profile，不重复21分钟比较；root=
   `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_b32_confirmation_val8x4_correct_gpu01p4_12311bd_macro0025_20260814`；
-- 当前下一裁决是从profile-sealed clean descendant做macro25 K4 strict paired correct400；尚无Common-Value
-  closed-loop claim；
+- strict evaluation commit=`0ead61e2c45f4a5cfe129ffbee3dfa51b2ddfb60`，400/400 LoRAs、72/72 jobs、
+  400 rows与18/18 workers全部exit0，wall=`1225.323s`、rollout-only=`677.538s`；root=
+  `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_correct400_noreplacement_seed7_macro0025_trainr6_evalr6_0ead61e_gpu01_20260814`；
+- 同root保留`common_value_strict_adjudication.json`与`common_value_mechanism_first4.json`；机制runtime root=
+  `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_mechanism_first4_runtime_gpu01p5_0ead61e_macro0025_20260814`；
 - 上一轮Semantic-Core Set profile commit=`7883fa6b71c361a28722ef9ce5047043b2966ebc`，macro1/2=
   `27.214/24.277s`，peak
   allocated/reserved=`36.495/40.758GB`，K各6、最长condition 323 stride-5 frames且无截断、0 OOM/nonfinite；

@@ -3,26 +3,19 @@
 更新时间：2026-08-14。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
-## 1. Latest completed experiment and active method
+## 1. Latest completed experiment and current pause
 
-V6 Semantic-Core Set Bridge已完成macro25 K4 strict paired correct400：`135/400`、breadth7，per-task=
-`1/2/46/30/0/35/20/1`、per-suite=`3/76/35/21`。相对matched K4 Shared-Core139为
-`120 retained / 15 gained / 19 lost`、net`-4`、churn34、suite net=`-2/-4/-1/+3`；Long2从0到1但Goal3仍0。
-相对old134净`+1`、v6-fast143净`-8`。400 LoRAs、72 jobs、18 workers均完整exit0；按`<140`门终局non-pass。
+V6 Semantic-Core Common-Value Set Bridge已完成macro25 K4 strict paired correct400：`133/400`、breadth6，
+per-task=`2/3/48/31/0/35/14/0`、per-suite=`5/79/35/14`、top3=`85.71%`。相对Semantic-Core135严格
+配对=`118/15/17` retained/gained/lost、net`-2`；相对Shared-Core139=`119/14/20`、net`-6`；Long suite
+相对135净丢7，未形成共同积累。400 LoRAs、72 jobs、400 rows、18 workers全部exit0；按`<140`且breadth`<7`
+双门终局，不resume、不补controls、不扫参。
 
-关键接口分析否定了“只要把trainable set前移到Semantic Core就能学习共有内容”：trained output归零只改变
-`.001763` effective BA，task-mean`.001472`；原始Core correction相对完整Core仅`1.8275e-5`，K4 attention
-entropy/log4=`.999885`。native compiler实际把微小Core差放大为BA churn；最早失效发生在set内部，因为当前Value=
-`sum alpha(C_k-mean C)`，attention近均匀时按构造相消。无参数shared Core union仍贡献K1→K4约`.039675` BA变化。
-
-当前active方法是V6 Semantic-Core Common-Value Set Bridge：位置、参数量、底座、rank16、B20、动态K与后端均
-不变，只把Value改为`sum alpha C_k`，让跨video共有Semantic Core本身可训练；K1显式旁路保持任意参数下native
-v6恒等。canonical实现已原位切换fresh schema；正式环境full CPU=`374 passed`。gpu01 world6 full24 B20
-profile已完成：macro1/2=`25.930/22.530s`、K各6、最长323帧无截断、reserved`40.758GB`、0 OOM/nonfinite；
-gradient norm=`.002698/.002795`，较centered路径约`.00000325`打开约三阶，macro1→2 q/k均非零更新。formal
-config已seal。clean fresh macro0→25已在`614.636s`完整结束，loss `.10118→.09559`、gradient全程
-`.00250--.00325`，macro25完整checkpoint可用；实际K4 B32 longest-panel确认=`.225360 LoRA/s`、reserved
-`13.181GB`、0 OOM/nonfinite。当前立即做该single checkpoint的K4 strict paired400。完整authority见
+机制假设本身成功接通但没有转成有效policy方向：raw Common-Value把Core correction从centered路径的
+`1.8275e-5`打开到`.065856`，current→zero effective-BA从`.001763`打开到`.053648`，task-mean同样
+`.053633`；attention entropy/log4仍为`.999885`。所以失败不再是Value相消或compiler衰减，而是offline B20
+functional credit把强common-mean修正对到了held on-policy无效且相互换手的方向。当前没有active successor；按
+owner要求在完整分析和封存后停下讨论。完整authority见
 `action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
 
 ## 2. Single changed variable and training semantics
@@ -39,9 +32,9 @@ config已seal。clean fresh macro0→25已在`614.636s`完整结束，loss `.101
 
 ## 3. Closed-loop adjudication
 
-Common-Value的机制/profile、fresh macro0→25和K4 B32确认均已通过；下一步立即做K4 strict paired400。
-K4若低于140或breadth低于7即终止；140..150只有相对matched139净增、至少3 suites不下降并解锁Goal3/Long2才
-resume；超过150后补K1--K4 scaling及correct/same/wrong/shuffled/reversed/no-video controls。
+Common-Value strict133/breadth6已触发终止门。没有macro50 resume，也没有K scaling或correct/same/wrong/
+shuffled/reversed/no-video补测；这些controls只在absolute先过门后才有科学价值。下一轮必须先讨论并重新写单变量
+authority，不能从本checkpoint续训或用scale/LR/K/seed救援。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

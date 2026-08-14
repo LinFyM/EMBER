@@ -47,14 +47,14 @@ exact language + K=1..4 same-task ordered action-hidden videos
     -> complete 38-target rank-16 LoRA
 ```
 
-归零诊断发现训练层只改变`.001763` effective BA；更早Core correction仅`1.8275e-5`且attention entropy/log4=
-`.999885`。原因是当前trainable Value只读取`C_k-mean(C)`，近均匀attention时共有内容被构造性消掉。当前active
-successor **V6 Semantic-Core Common-Value Set Bridge**只把Value改为weighted raw Core，让多视频共有高层语义
-可训练；K1、位置、参数量、rank16、B20和有向Procedure全部不变。authority见
+centered Value归零诊断曾发现Core correction仅`1.8275e-5`；terminal successor
+**V6 Semantic-Core Common-Value Set Bridge**只把Value改为weighted raw Core。它把Core correction打开到
+`.065856`、effective-BA改写打开到`.053648`，但macro25 K4 strict仅`133/400`、breadth6，per-task=
+`2/3/48/31/0/35/14/0`，相对135净`-2`、相对139净`-6`，仍发生task换手。attention entropy仍`.999885`，
+说明强common mean被写入但offline B20 credit没有对齐held on-policy方向。authority见
 [`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md)，
-canonical实现已原位切换，正式环境full CPU=`374 passed`；gpu01 world6 full24 B20 profile已通过，raw
-Common-Value梯度较centered路径打开约三阶且q/k获得非零credit。clean fresh macro0→25与实际K4 B32最长面板
-确认均已完成，当前待macro25 K4 strict paired400，尚无新closed-loop性能claim。
+实现、profile、fresh macro25、B32确认、strict400与first4机制分析均完整封存；该组合终局non-pass，当前没有
+active successor，先停下讨论。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

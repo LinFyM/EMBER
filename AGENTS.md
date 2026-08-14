@@ -37,9 +37,9 @@ EMBER上下文纠正理解。
 长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
-最新完成closed-loop是**V6 Semantic-Core Set Bridge**：macro25 K4 strict=`135/400`、breadth7、per-task=
-`1/2/46/30/0/35/20/1`。相对matched K4 Shared-Core139为`120/15/19` retained/gained/lost，净`-4`；Long2
-从0到1但Goal3仍为0。它按`<140`门终局non-pass，不resume或扫参。
+最新完成closed-loop是**V6 Semantic-Core Common-Value Set Bridge**：macro25 K4 strict=`133/400`、breadth6、
+per-task=`2/3/48/31/0/35/14/0`。相对Semantic-Core135严格配对=`118/15/17`，相对Shared-Core139=
+`119/14/20`；它按`<140`且breadth`<7`双门终局non-pass，不resume、补controls或扫参。
 
 已完成的数据流是：
 
@@ -54,14 +54,11 @@ exact language + K=1..4 same-task action-hidden ordered videos
     -> one complete 38-target rank-16 task LoRA
 ```
 
-trained-output归零显示effective BA只改变`.001763`；原始Core correction仅`1.8275e-5`且attention entropy/log4=
-`.999885`，说明centered Value在近均匀attention下先相消，compiler反而放大该小差异。当前active design是
-**V6 Semantic-Core Common-Value Set Bridge**：只把同位置、同预算set的Value从weighted centered residual改为
-weighted raw common Core；K1显式旁路，底座、rank16、B20、动态K和后端均不变。authority=
+Common-Value把Core correction从centered路径的`1.8275e-5`打开到`.065856`，current→zero effective BA=
+`.053648`，但attention entropy/log4仍`.999885`且Long suite相对135净丢7。最早剩余接口是offline B20
+functional credit与held on-policy occupancy的方向对齐，不是Value可达性、capacity或compiler。terminal authority=
 `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`，精确状态只取
-`docs/active_session_handoff.md`。canonical实现已原位切换fresh schema，正式环境full CPU=`374 passed`；gpu01
-world6 full24 B20 profile已通过，raw Common-Value梯度约比centered路径打开三阶；clean fresh macro0→25和
-一次实际K4 B32 longest-panel确认均已完整通过，当前待macro25 K4 strict paired400，尚无新closed-loop结果。
+`docs/active_session_handoff.md`。当前没有active successor；先停下与owner讨论，不能自动恢复旧路线。
 
 ## 4. Long-term objective and decision rule
 

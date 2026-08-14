@@ -30,8 +30,9 @@
   不冒充AS exact-resume；正确LIBERO assets下full CPU=`395 passed`；
 - 首个world5 full24 attempt root=
   `runs/outputs/pi05_v6_ordered_procedure_on_policy_preference_formal_cycle0to1_r5_k4_nmc4_b8_039cbbf_gpu01_20260814`；
-  最慢rank在完整CFM中一次242MiB申请OOM，等待rank随后600秒watchdog，exit1、无metrics/checkpoint/completion。
-  根因是可训练compiler graph跨Nmc4 policy replay存活；这是工程graph-lifetime错误，不是科学non-pass；
+  四个已完成rank先在barrier等待600秒触发watchdog；约一分钟后、PG已经失败时，仍在CFM的最慢rank才在一次
+  242MiB申请中报告OOM。exit1、无metrics/checkpoint/completion；可证首因是合法长task尾部超过默认timeout，
+  不是科学non-pass。可训练compiler graph跨Nmc4 replay存活是历史已知且无需保留的额外显存风险，一并移除；
 - `fa53ce4`在gpu01物理2对同一task4 B8真实mixed smoke完整exit0：`1/4` success、157 chunks、80次functional forwards，reward LoRA
   gradient RMS=`1.3138e-5`、Writer grad norm=`8.0119e-4`；q/k/output均更新，effective-BA/fixed-action response=
   `.00018146/.00557193`，与修复前逐位相同；peak reserved=`40.712GB`、wall=`146.383s`。task0 homogeneous面板严格

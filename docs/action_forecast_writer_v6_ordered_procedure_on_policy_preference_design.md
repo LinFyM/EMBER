@@ -100,12 +100,12 @@ forward，不能伪造没有比较证据的方向。
 flow time/noise沿用exact Beta(1.5,1)与task-keyed Gaussian、Nmc4、完整logical panel先生成再按physical B8切片；
 正常BF16/TF32和batch低位差异被接受，不固定batch1、不重复forward、不扩dtype。
 
-首次world5 formal暴露了一个不改变上述数学定义的graph-lifetime错误：实现先重解可训练compiler，再把该graph
-跨完整Nmc4 policy replay保留；最慢rank在一次242MiB申请时以约44.3GB物理占用OOM，其余rank随后触发默认
-600秒collective watchdog。历史SRTP已经验证过同类错误的正确执行图，因此修复不是缩小B8或改变estimator：
-CFM先在rollout实际使用的detached LoRA上形成cotangent，policy replay graph释放后，再从缓存的video readout
-重解一次同一compiler并反传。reward-stage collective timeout单独设为30分钟以覆盖合法长task尾部；其它训练路径
-和NCCL语义不变。
+首次world5 formal先由四个已完成rank在barrier触发默认600秒collective watchdog；约一分钟后、process group
+已经失败时，仍在CFM的最慢rank才在一次242MiB申请中报告OOM。因此可证的首因是合法长task尾部超过默认timeout，
+不能反向把后发OOM写成watchdog原因。实现同时确实把可训练compiler graph跨完整Nmc4 replay保留；历史SRTP已证明
+该graph生命周期没有必要，所以修复不缩小B8也不改变estimator：CFM先在rollout实际使用的detached LoRA上形成
+cotangent，policy replay graph释放后，再从缓存video readout重解一次同一compiler并反传。reward-stage timeout
+单独设为30分钟；其它训练路径、batch、样本和NCCL语义不变。
 
 首版optimizer继承AS的AdamW语义与当前约`3e-4`学习率、betas、eps、weight decay、clip1，但使用fresh moments。
 不扫learning rate、advantage scale、Nmc、K、rollout数或temperature。

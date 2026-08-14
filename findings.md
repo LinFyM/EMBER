@@ -277,10 +277,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     compiler与Adam传到同一19.7万FP32 Writer参数：LoRA gradient/Writer gradient=`1.3138e-5/.0008012`，更新后
     effective-BA/fixed-action response=`.00018146/.00557193`。这明确越过历史Reward-Credit的sub-ULP接口，但只
     证明credit可部署，不证明full24共存或held closed-loop改善；cycle1 strict400仍是唯一方法裁决。
-24. 首个world5 reward formal的失败是历史已知graph-lifetime问题而非B8或方法裁决：可训练compiler graph跨完整
-    Nmc4 replay存活，最慢rank在约44.3GB物理占用时OOM，其余rank随后watchdog。先在rollout实际detached LoRA上
-    求cotangent、再从缓存readout单次重解compiler后，同一task4的objective、梯度、参数delta、BA/action response
-    全部逐位不变且B8 exit0；因此不能用降batch或改变estimator掩盖该工程错误。
+24. 首个world5 reward formal的时序证据是等待rank先触发600秒watchdog，PG失败约一分钟后最慢rank才报告OOM；
+    所以首因是合法长task尾部超过默认collective timeout，不能反向归因。与此同时，可训练compiler graph跨完整
+    Nmc4 replay存活是历史已知且无需保留的额外风险。改为detached LoRA先求cotangent、再从缓存readout单次重解
+    compiler后，同一task4的objective、梯度、参数delta、BA/action response全部逐位不变且B8 exit0；正确修复是
+    reward专用30分钟timeout加graph生命周期收窄，不是降batch或改变estimator。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

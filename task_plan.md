@@ -170,8 +170,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   evaluator contract；
 - [x] 完成CPU机制门与一个task真实GPU smoke：full CPU=`395 passed`；task4=`1/4` mixed，BA/action response=
   `.00018146/.00557193`，0 OOM/nonfinite；
-- [x] 首个world5 formal暴露compiler graph跨CFM存活导致OOM及600秒watchdog；按历史SRTP同类根因只修正graph
-  生命周期和reward专用collective timeout，不降B8、不改Nmc4/objective；
+- [x] 首个world5 formal先因合法长task超过600秒collective timeout失败，PG失败后最慢rank才报告OOM；收窄历史
+  已知的不必要compiler graph生命周期并设reward专用30分钟timeout，不降B8、不改Nmc4/objective；
 - [x] `fa53ce4`同一task4 B8复测exit0，科学量逐位不变，full CPU仍=`395 passed`，formal evidence重新seal；
 - [ ] 从clean pushed commit完成first full24 reward cycle与mechanism/profile封存；
 - [ ] 立即完成cycle1 K4 strict paired400并按`144/breadth7/retention`门裁决。

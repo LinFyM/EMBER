@@ -124,7 +124,7 @@ def _load_tasks(
     if len(reward_tasks) != 24 or [task.global_task_id for task in reward_tasks] != [
         task.task_id for task in writer_tasks
     ]:
-        raise WriterModelError("SFMC lost train24 task authority")
+        raise WriterModelError("gradient-open run lost train24 task authority")
     return tuple(reward_tasks), tuple(writer_tasks)
 
 
@@ -150,11 +150,13 @@ def _publish_contract(
             if runtime_args.output_dir.exists() and any(
                 runtime_args.output_dir.iterdir()
             ):
-                raise WriterModelError("fresh SFMC output is not empty")
+                raise WriterModelError("fresh gradient-open output is not empty")
             runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
         elif not path.is_file() or read_json(path) != dict(contract):
-            raise WriterModelError("SFMC exact-resume launch contract changed")
+            raise WriterModelError(
+                "gradient-open exact-resume launch contract changed"
+            )
         append_jsonl(
             runtime_args.output_dir / "invocations.jsonl",
             {
@@ -223,7 +225,7 @@ def _contract(
     }
 
 
-def _load_sfmc_models(
+def _load_gradient_open_models(
     *,
     args: argparse.Namespace,
     context: DistributedContext,
@@ -236,7 +238,7 @@ def _load_sfmc_models(
         args.source_run.resolve().parents[2] / config["cold_start_relative"]
     ).resolve()
     if not (cold_start / "writer.safetensors").is_file():
-        raise WriterModelError("SFMC LPCP cold-start checkpoint is missing")
+        raise WriterModelError("gradient-open LPCP cold start is missing")
     config["resolved_cold_start"] = str(cold_start)
     policy = load_policy(
         Path(source["model_path"]), source_base_config, context.device
@@ -268,10 +270,12 @@ def _load_sfmc_models(
         )
         != 2_164_224
     ):
-        raise WriterModelError("SFMC must train only its 2,164,224 parameters")
+        raise WriterModelError(
+            "gradient-open commitment must train only 2,164,224 parameters"
+        )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_semantic_factor_memory_cross_video_success_credit_only"
+        "v6_lpcp_gradient_open_semantic_cross_video_success_credit_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -333,20 +337,22 @@ def prepare_runtime(
     config, base_config = load_reward_config(args.config)
     require_reward_mode(config, args.mode)
     if args.mode == "smoke" and context.world_size != 1:
-        raise WriterModelError("SFMC smoke uses one GPU")
+        raise WriterModelError("gradient-open smoke uses one GPU")
     allowed = config["formal_run"]["allowed_world_sizes"]
     if context.world_size not in allowed:
-        raise WriterModelError("SFMC world size is outside 1--6")
+        raise WriterModelError("gradient-open world size is outside 1--6")
     if args.mode == "formal":
         state = git_state(Path(__file__).resolve().parents[3])
         if not git_state_is_clean_pushed_or_frozen_authority(state):
-            raise WriterModelError("formal SFMC training requires clean pushed Git")
+            raise WriterModelError(
+                "formal gradient-open training requires clean pushed Git"
+            )
     seed_everything(int(config["rng"]["optimizer_seed"]), context)
     authorities, source, _ = load_run_authorities(args, base_config)
     tasks, writer_tasks = _load_tasks(
         data_root=args.data_root, base_config=base_config
     )
-    policy, writer, lora, trainable, optimizer = _load_sfmc_models(
+    policy, writer, lora, trainable, optimizer = _load_gradient_open_models(
         args=args,
         context=context,
         config=config,
@@ -385,7 +391,7 @@ def prepare_runtime(
             contract=contract,
         )
         if loaded != start_cycle:
-            raise WriterModelError("SFMC resume cursor changed")
+            raise WriterModelError("gradient-open resume cursor changed")
     stop_cycle = (
         1
         if args.mode == "smoke"
@@ -395,7 +401,7 @@ def prepare_runtime(
         stop_cycle not in config["formal_run"]["stage_stop_cycles"]
         or not start_cycle < stop_cycle
     ):
-        raise WriterModelError("SFMC formal stop boundary changed")
+        raise WriterModelError("gradient-open formal stop boundary changed")
     source_config = authorities.source_base_config
     processor, store, language, schedule, env_pool = _condition_inputs(
         args=args,
@@ -479,7 +485,7 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_semantic_factor_memory_"
+                        "ember_pi05_v6_lpcp_gradient_open_semantic_"
                         "commitment_completion_v1"
                     ),
                     "mode": args.mode,

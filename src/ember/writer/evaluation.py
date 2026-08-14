@@ -341,7 +341,7 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": "formal_semantic_factor_memory_commitment",
+        "training_mode": "formal_gradient_open_semantic_commitment",
         "training_stage": (
             "on_policy_cross_video_selected_success_factor_commitment"
         ),
@@ -543,7 +543,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_semantic_factor_memory_commitment_"
+                "v6_lpcp_gradient_open_semantic_commitment_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

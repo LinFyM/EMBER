@@ -18,7 +18,10 @@ from ember.expert_manifold.legacy_v6_model import (
 )
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
-from ember.writer.factor_commitment import SemanticFactorMemoryCommitment
+from ember.writer.factor_commitment import (
+    FACTOR_FAMILIES,
+    GradientOpenSemanticCommitment,
+)
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
 from ember.writer.video_program import LayerwiseActionProbeReader
@@ -100,7 +103,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = SemanticFactorMemoryCommitment(
+        self.factor_commitment = GradientOpenSemanticCommitment(
             width=self.PROGRAM_WIDTH,
             basis_count=4,
             initialization_seed=initialization_seed,
@@ -196,7 +199,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         return self
 
     def load_lpcp_state_(self, state: Mapping[str, torch.Tensor]) -> None:
-        """Load a sealed LPCP state with either zero or all SFMC tensors absent."""
+        """Load sealed LPCP while forcing a fresh commitment initialization."""
 
         expected_missing = {
             f"factor_commitment.{name}"
@@ -204,7 +207,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         }
         incompatible = self.load_state_dict(state, strict=False)
         missing = set(incompatible.missing_keys)
-        if missing not in (set(), expected_missing) or incompatible.unexpected_keys:
+        if missing != expected_missing or incompatible.unexpected_keys:
             raise WriterModelError("LPCP checkpoint topology changed")
 
     @staticmethod
@@ -568,11 +571,30 @@ class CompleteLoRAWriter(torch.nn.Module):
             else semantic_basis_weights
         )
         residuals = self.factor_commitment.hidden_residuals(
-            factor_memory, weights
+            factor_memory,
+            weights,
+            anchor_input_weights=self._factor_anchor_input_weights(),
         )
         return self.base_writer.decode_slots(
             program, factor_hidden_residuals=residuals
         )
+
+    def _factor_anchor_input_weights(self) -> Mapping[str, torch.Tensor]:
+        """Expose the frozen V6 W1 maps that already own each factor family."""
+
+        heads = getattr(self.base_writer, "factor_heads", None)
+        if heads is None or set(heads) != set(FACTOR_FAMILIES):
+            raise WriterModelError("V6 factor families changed")
+        weights = {
+            family: heads[family].network[0].weight
+            for family in FACTOR_FAMILIES
+        }
+        if any(
+            value.shape != (self.PROGRAM_WIDTH, self.PROGRAM_WIDTH)
+            for value in weights.values()
+        ):
+            raise WriterModelError("V6 factor W1 topology changed")
+        return weights
 
     def decode_output(self, encoded: WriterProgramOutput) -> dict[str, torch.Tensor]:
         if encoded.factor_memory is None or encoded.language_slots is None:

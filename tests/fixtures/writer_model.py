@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import torch
 
+from ember.writer.factor_commitment import FACTOR_FAMILIES
 from ember.writer.model import CompleteLoRAWriter
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.video_program import LayerwiseActionProbeReader
@@ -134,6 +135,9 @@ class _FakeV6Base(torch.nn.Module):
         self.expert_model = expert_model
         self.factor = torch.nn.Linear(256, 1, bias=False)
         torch.nn.init.normal_(self.factor.weight, std=0.01)
+        self.factor_heads = torch.nn.ModuleDict(
+            {family: _FakeFactorHead() for family in FACTOR_FAMILIES}
+        )
         self.compiler = _FakeCompiler()
 
     def template_state(self) -> dict[str, torch.Tensor]:
@@ -224,6 +228,17 @@ class _FakeV6Base(torch.nn.Module):
             value = template[None] + scalars[:, index, None, None]
             result[name] = value[0] if slots.shape[0] == 1 else value
         return result
+
+
+class _FakeFactorHead(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.network = torch.nn.Sequential(
+            torch.nn.Linear(256, 256, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(256, 1, bias=False),
+        )
+        torch.nn.init.eye_(self.network[0].weight)
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:

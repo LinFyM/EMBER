@@ -1,4 +1,4 @@
-"""One cross-video success-credit cycle for semantic factor commitment."""
+"""One cross-video success-credit cycle for gradient-open commitment."""
 
 from __future__ import annotations
 
@@ -143,7 +143,7 @@ def _encode_pair(
         ),
     ):
         if encoded.reference_program is None:
-            raise WriterModelError("SFMC candidate lost its exact AS139 reference")
+            raise WriterModelError("gradient-open candidate lost AS139 reference")
         reference = runtime.writer.decode_program(encoded.reference_program)
     return visit, tuple(demos), packed, video_metrics, state, reference, candidate
 
@@ -244,12 +244,12 @@ def select_unique_success_trajectories(
     """Select the successful trajectory only when the two exact arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
-        raise WriterModelError("SFMC requires two paired reset states")
+        raise WriterModelError("gradient-open credit requires two paired states")
     selected: list[RewardTrajectory] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
-            raise WriterModelError("SFMC arm pairing changed reset or policy RNG")
+            raise WriterModelError("gradient-open arm pairing changed")
         if candidate_row.success and not reference_row.success:
             selected.append(candidate_row)
             labels.append("candidate")
@@ -568,12 +568,12 @@ def _apply_step(
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
-        raise WriterModelError("SFMC cycle produced no discordant successful arm")
+        raise WriterModelError("gradient-open cycle has no discordant success")
     gradient_sum.div_(active_tasks)
     if not bool(torch.isfinite(gradient_sum).all()) or not bool(
         torch.count_nonzero(gradient_sum)
     ):
-        raise WriterModelError("SFMC cycle produced an invalid shared gradient")
+        raise WriterModelError("gradient-open shared gradient is invalid")
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
@@ -715,9 +715,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_semantic_factor_memory_commitment"
+            "one_complete_train24_gradient_open_semantic_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_semantic_factor_memory_commitment_live_smoke"
+            else "one_task_gradient_open_semantic_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

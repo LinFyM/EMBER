@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.factor_memory.count_nonzero()
 
 
-def test_sfmc_zero_init_is_exact_lpcp_and_has_expected_parameter_count() -> None:
+def test_gradient_open_zero_init_is_exact_lpcp_and_has_expected_parameter_count() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -315,9 +315,10 @@ def test_sfmc_zero_init_is_exact_lpcp_and_has_expected_parameter_count() -> None
         not value.count_nonzero()
         for value in model.factor_commitment.family_maps.values()
     )
+    assert not model.factor_commitment.semantic_query.weight.count_nonzero()
 
 
-def test_sfmc_factor_memory_and_language_address_are_k_set_invariant() -> None:
+def test_gradient_open_memory_and_language_address_are_k_set_invariant() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -343,36 +344,29 @@ def test_sfmc_factor_memory_and_language_address_are_k_set_invariant() -> None:
     )
 
 
-def test_sfmc_gradient_stages_maps_before_semantic_router() -> None:
+def test_gradient_open_commitment_updates_maps_and_semantic_query_together() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
     memory = torch.randn(2, 7, 256, generator=generator)
     language = torch.randn(2, 7, 256, generator=generator)
-    residuals, _ = commitment(memory, language)
+    residuals, _ = commitment(
+        memory,
+        language,
+        anchor_input_weights=model._factor_anchor_input_weights(),
+    )
     sum(value.sum() for value in residuals.values()).backward()
     assert all(
         value.grad is not None and value.grad.count_nonzero()
         for value in commitment.family_maps.values()
     )
     assert commitment.semantic_query.weight.grad is not None
-    assert not commitment.semantic_query.weight.grad.count_nonzero()
+    assert commitment.semantic_query.weight.grad.count_nonzero()
     assert commitment.basis_keys.grad is not None
     assert not commitment.basis_keys.grad.count_nonzero()
 
-    commitment.zero_grad(set_to_none=True)
-    with torch.no_grad():
-        for value in commitment.family_maps.values():
-            value.normal_(std=1e-3)
-    residuals, _ = commitment(memory, language)
-    sum(value.sum() for value in residuals.values()).backward()
-    assert commitment.semantic_query.weight.grad is not None
-    assert commitment.semantic_query.weight.grad.count_nonzero()
-    assert commitment.basis_keys.grad is not None
-    assert commitment.basis_keys.grad.count_nonzero()
 
-
-def test_sfmc_lpcp_loader_rejects_partial_new_topology() -> None:
+def test_gradient_open_lpcp_loader_rejects_partial_new_topology() -> None:
     source, _ = _model()
     old = {
         name: value
@@ -395,4 +389,11 @@ def test_sfmc_lpcp_loader_rejects_partial_new_topology() -> None:
         except RuntimeError:
             pass
         else:
-            raise AssertionError("partial SFMC topology was accepted")
+            raise AssertionError("partial gradient-open topology was accepted")
+    with torch.no_grad():
+        try:
+            loaded.load_lpcp_state_(source.state_dict())
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("trained commitment was accepted as LPCP cold start")

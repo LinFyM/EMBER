@@ -101,17 +101,15 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_sfmc_reward_config_freezes_only_the_commitment_variable() -> None:
+def test_gradient_open_reward_config_freezes_only_commitment() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "sealed"
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["live_task4_smoke_evidence"][
-        "factor_family_maps_updated"
-    ] == 8
+    assert config["status"] == "development"
+    assert config["formal_run"]["status"] == "not_ready"
+    assert config["formal_run"]["live_task4_smoke_evidence"] is None
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "semantic_factor_memory_commitment_only_2164224_parameters"
+        "gradient_open_semantic_commitment_only_2164224_parameters"
     )
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 144,

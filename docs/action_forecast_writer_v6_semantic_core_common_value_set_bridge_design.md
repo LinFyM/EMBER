@@ -123,4 +123,22 @@ profile root：
 `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_profile_r6_b20_2eb9da9_gpu01_20260814`。
 
 这些只证明设计所针对的Value抵消已消除、真实训练图和吞吐合同成立，不是closed-loop性能证据。formal config现已
-seal；下一步必须fresh macro0→25，不加载profile或旧Semantic-Core Set optimizer/checkpoint。
+seal。
+
+## 8. Formal macro25与deployment确认
+
+clean detached `12311bd88a81847cf108598379b043f971fd6c85`在同一gpu01 world6从fresh macro0训练到25，
+没有加载profile或旧Semantic-Core Set state。25/25 metrics、macro25 checkpoint、6 rank states、completion和
+exit0齐全；总耗时`614.636s`，macro min/mean/max=`22.512/24.559/26.239s`，loss=
+`.10118184→.09558529`，gradient范围=`.002501--.003254`，peak reserved=`40.758GB`，0 OOM/nonfinite。
+macro25 output norm=`.261523`，相对macro2的`.009649`已明显打开，但这仍不能选择方法。formal root：
+`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_formal_fresh0to25_r6_b20_12311bd_gpu01_20260814`。
+
+tensor shape、kernel topology和此前完整deployment比较均未改变，因此没有重复B8/B16/B32三候选。按预注册只在
+gpu01物理4对新macro25做一次真实K4 B32 validation8×4 longest-panel forward：32 LoRAs / `141.995s`=
+`.225360 LoRA/s`，peak allocated/reserved=`12.144/13.181GB`，最长视频226帧，0 OOM/nonfinite；它与继承
+profile的B32 `.2232875 LoRA/s`一致。confirmation root：
+`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_b32_confirmation_val8x4_correct_gpu01p4_12311bd_macro0025_20260814`。
+
+两者仍只证明训练和部署合同。下一步必须在profile-sealed clean descendant上做macro25 K4 strict paired
+correct400，并严格执行§5门。

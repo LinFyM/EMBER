@@ -20,7 +20,9 @@ entropy/log4=`.999885`。native compiler实际把微小Core差放大为BA churn�
 v6恒等。canonical实现已原位切换fresh schema；正式环境full CPU=`374 passed`。gpu01 world6 full24 B20
 profile已完成：macro1/2=`25.930/22.530s`、K各6、最长323帧无截断、reserved`40.758GB`、0 OOM/nonfinite；
 gradient norm=`.002698/.002795`，较centered路径约`.00000325`打开约三阶，macro1→2 q/k均非零更新。formal
-config已seal，当前立即fresh macro0→25。完整authority见
+config已seal。clean fresh macro0→25已在`614.636s`完整结束，loss `.10118→.09559`、gradient全程
+`.00250--.00325`，macro25完整checkpoint可用；实际K4 B32 longest-panel确认=`.225360 LoRA/s`、reserved
+`13.181GB`、0 OOM/nonfinite。当前立即做该single checkpoint的K4 strict paired400。完整authority见
 `action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`。
 
 ## 2. Single changed variable and training semantics
@@ -37,7 +39,7 @@ config已seal，当前立即fresh macro0→25。完整authority见
 
 ## 3. Closed-loop adjudication
 
-Common-Value的K1/step0/set/order/gradient门和full24 profile已通过；下一步fresh macro0→25并做K4 strict paired400。
+Common-Value的机制/profile、fresh macro0→25和K4 B32确认均已通过；下一步立即做K4 strict paired400。
 K4若低于140或breadth低于7即终止；140..150只有相对matched139净增、至少3 suites不下降并解锁Goal3/Long2才
 resume；超过150后补K1--K4 scaling及correct/same/wrong/shuffled/reversed/no-video controls。
 

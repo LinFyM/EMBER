@@ -24,8 +24,19 @@
 - 当前Common-Value profile commit=`2eb9da9efae0cead6e0d936172eed7165ea6b8bf`，gpu01 world6
   macro1/2=`25.930/22.530s`，peak allocated/reserved=`36.495/40.758GB`，K各6、最长323帧无截断、
   0 OOM/nonfinite；gradient norm=`.002698/.002795`，较centered路径约`.00000325`打开约三阶，macro1→2
-  q/k delta=`6.552e-6/6.480e-6`；formal config已seal，当前待clean fresh macro0→25，尚无新closed-loop claim；
+  q/k delta=`6.552e-6/6.480e-6`；formal config已seal；
   root=`runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_profile_r6_b20_2eb9da9_gpu01_20260814`；
+- 当前Common-Value formal commit=`12311bd88a81847cf108598379b043f971fd6c85`，gpu01 world6 fresh
+  macro0→25完整：25/25 metrics、checkpoint、6 rank states、completion、exit0齐全，总耗时`614.636s`；macro
+  min/mean/max=`22.512/24.559/26.239s`，loss `.10118184→.09558529`，gradient范围
+  `.002501--.003254`，peak reserved=`40.758GB`，0 OOM/nonfinite；macro25 output norm=`.261523`；root=
+  `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_formal_fresh0to25_r6_b20_12311bd_gpu01_20260814`；
+- 同一macro25在gpu01物理4完成一次实际K4 B32 longest-panel确认：32 LoRAs / `141.995s`=
+  `.225360 LoRA/s`，peak allocated/reserved=`12.144/13.181GB`，最长视频226帧，0 OOM/nonfinite；B32选择继承
+  同形predecessor完整B8/B16/B32 profile，不重复21分钟比较；root=
+  `runs/outputs/pi05_v6_semantic_core_common_value_set_bridge_k4_b32_confirmation_val8x4_correct_gpu01p4_12311bd_macro0025_20260814`；
+- 当前下一裁决是从profile-sealed clean descendant做macro25 K4 strict paired correct400；尚无Common-Value
+  closed-loop claim；
 - 上一轮Semantic-Core Set profile commit=`7883fa6b71c361a28722ef9ce5047043b2966ebc`，macro1/2=
   `27.214/24.277s`，peak
   allocated/reserved=`36.495/40.758GB`，K各6、最长condition 323 stride-5 frames且无截断、0 OOM/nonfinite；

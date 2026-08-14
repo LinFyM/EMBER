@@ -32,7 +32,9 @@ matched去混淆把Procedure-Set output归零后，训练残差相对当前LoRA�
 
 该V6 Semantic-Core Set Bridge的预注册authority与canonical实现已完成：同预算197120参数set对语言对齐Core
 生成shared correction，step0严格保留139路径的output-zero数据流；旧Procedure-Set executable schema已删除。
-full CPU=`372 passed`。当前仅授权真实GPU机制与full24 B20 profile；profile seal前不启动formal训练。
+full CPU=`372 passed`。GPU机制门和gpu01 world6 full24 B20 profile已通过：macro1/2=`27.214/24.277s`、peak
+reserved=`40.758GB`、K各6、最长323帧无截断、q/k第二步非零更新、0 OOM/nonfinite；formal合同已seal，下一步
+clean fresh macro0→25。
 
 ## 2. Single changed variable and training semantics
 
@@ -49,7 +51,7 @@ full CPU=`372 passed`。当前仅授权真实GPU机制与full24 B20 profile；pr
 
 ## 3. Closed-loop adjudication
 
-完成K1逐tensor等价、K轴置换不变、video内顺序敏感、gradient/freeze和full24 profile后，fresh macro0→25并做K4
+K1逐tensor等价、K轴置换不变、video内顺序敏感、gradient/freeze和full24 profile均已完成；现fresh macro0→25并做K4
 strict paired correct400。K1复用严格等价的old134 paired基线；K4若没有明确超过134或breadth低于7即终止，不扫
 K/LR/temperature/seed。若K4超过150，封存single-checkpoint结果并补K1--K4 scaling及correct/same/wrong/
 shuffled/reversed/no-video controls；机制成功后再建立同架构fresh训练recipe。

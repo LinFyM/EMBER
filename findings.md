@@ -249,6 +249,9 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     但task mean几乎锁死；下一最早接口是compiler之前的shared Core/Procedure解释边界。
 17. Shared-Core Procedure-Set K4=`139`证明边界前移有9分matched收益，但trained set只贡献`.000918` BA变化；
     下一最早接口是native Core reader之前的语言对齐Semantic Core共识，而非继续调后端set。
+18. Semantic-Core Set的真实world6 profile表明该边界移动没有引入吞吐或显存阻塞：steady`24.277s/macro`、
+    reserved`40.758GB`、最长K4 323帧无截断；zero-init output打开后q/k在macro1→2均发生非零更新。它只证明
+    functional credit可达该层，是否形成有用task mean仍必须由macro25 strict400裁决。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

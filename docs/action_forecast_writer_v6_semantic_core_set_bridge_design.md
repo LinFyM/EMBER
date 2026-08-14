@@ -1,6 +1,7 @@
 # V6 Semantic-Core Set Bridge
 
-状态：2026-08-14 active single-variable design authority；尚未实现、profile或产生closed-loop结果。前一版
+状态：2026-08-14 active single-variable design authority；canonical实现、GPU机制门与full24 B20 profile已完成，
+尚无closed-loop结果。前一版
 V6 Shared-Core Procedure-Set在macro25 K4 strict=`139/400`、breadth6，按门终局non-pass；其代码由commit
 `64c91a4`、终局文档由`fdfc9d8`、训练与评测由formal artifacts保存，不得resume或并行保留runtime。
 
@@ -145,5 +146,12 @@ per-video ordered Procedure reader、无参数Procedure mean、AdaLN/post-fusion
 - v6 base全部无gradient，auxiliary严格为零；
 - full CPU suite=`372 passed`。
 
-这些只证明实现与单变量合同成立。尚未完成真实GPU视频smoke、full24 B20 profile或closed-loop，不能提前写成
-有效方法。
+真实gpu01物理`0/1/2/4/5/6` world6 full24 B20 profile在clean detached commit
+`7883fa6b71c361a28722ef9ce5047043b2966ebc`完成：macro1/2=`27.214/24.277s`，K1--K4各6，最长condition共323个
+stride-5 frames且逐video无截断，peak allocated/reserved=`36.495/40.758GB`，0 OOM/nonfinite。macro1→2
+query/key参数delta norm分别为`7.859e-7/7.736e-7`，证明zero-init output打开后完整q/k credit在真实训练图中接通。
+GPU机制smoke同时验证K1恒等、source/v6 base冻结、倒序敏感及5个trainable tensors全部获得梯度。profile root：
+`runs/outputs/pi05_v6_semantic_core_set_bridge_profile_r6_b20_7883fa6_gpu01_20260814`。
+
+这些只证明实现、机制与吞吐合同成立；不能提前写成有效方法。formal现已seal，下一裁决仍是clean fresh
+macro0→25后的K4 strict paired correct400。

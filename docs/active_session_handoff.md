@@ -19,7 +19,12 @@
   无参数mean；v6底座、rank16、B20、动态K和K1严格恒等保持不变；
 - 当前active design是V6 Semantic-Core Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`；canonical实现已原位替换旧路径，full CPU=
-  `372 passed`，下一步live GPU机制与full24 B20 profile；尚无新性能claim；
+  `372 passed`，GPU机制门与gpu01 world6 full24 B20 profile已通过并seal formal；下一步clean fresh macro0→25与
+  K4 strict paired400，尚无新性能claim；
+- profile commit=`7883fa6b71c361a28722ef9ce5047043b2966ebc`，macro1/2=`27.214/24.277s`，peak
+  allocated/reserved=`36.495/40.758GB`，K各6、最长condition 323 stride-5 frames且无截断、0 OOM/nonfinite；
+  macro1→2 q/k delta=`7.859e-7/7.736e-7`；root=
+  `runs/outputs/pi05_v6_semantic_core_set_bridge_profile_r6_b20_7883fa6_gpu01_20260814`；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture

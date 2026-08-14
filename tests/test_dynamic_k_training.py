@@ -81,7 +81,11 @@ def test_v6_semantic_core_set_config_is_loadable() -> None:
         "native_adaln_fusion"
     )
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["source_commit"] == "7883fa6b71c361a28722ef9ce5047043b2966ebc"
+    assert evidence["world_size"] == 6
+    assert evidence["completion_macro"] == 2
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,

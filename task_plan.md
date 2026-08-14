@@ -113,7 +113,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 写单变量authority：将同预算可学习集合共识从Procedure readout前移到语言对齐Semantic Core tokens；
 - [x] 后端per-video Procedure只作无参数mean，保留v6底座、rank16、B20、动态K与K1严格恒等；
 - [x] 原位替换唯一canonical实现/schema/config，完成step0/K1/置换/顺序/梯度门和full CPU=`372 passed`；
-- [ ] 完成真实GPU视频机制smoke与full24 B20吞吐profile并seal；
+- [x] 完成真实GPU视频机制smoke与gpu01 world6 full24 B20 profile并seal：macro1/2=`27.214/24.277s`、
+  reserved`40.758GB`、K各6、最长323帧、q/k第二步非零更新；
 - [ ] fresh训练至预注册节点，尽快做K4 strict paired correct400。
 
 ## Continuous loop after this result
@@ -140,5 +141,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；当前无活动EMBER GPU进程。下一步原位实现
-Semantic-Core Set单变量successor，完成机制/profile后fresh训练并尽快strict400。
+无权限或资产阻塞。Shared-Core Procedure-Set已在139/breadth6终局；Semantic-Core Set机制/profile已seal。
+下一步从clean sealed commit fresh训练到macro25并尽快做K4 strict400。

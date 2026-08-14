@@ -349,6 +349,7 @@ def _registered_evaluation_contract(
             "schema_version": (
                 "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
             ),
+            "arm": f"expert_manifold_v6_condition_residual_{condition}",
             "config": {"schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"},
             "writer_asset": {
                 "checkpoint": str(args.expert_manifold_checkpoint.resolve())

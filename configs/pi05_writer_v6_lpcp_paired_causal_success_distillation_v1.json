@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_paired_causal_success_distillation_v1",
-  "status": "ready",
+  "status": "sealed",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -82,7 +82,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "ready",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -97,6 +97,30 @@
       "adjacent_success_set_jaccard_minimum": 0.85,
       "same_task_other_video_relative_minimum": 0.9,
       "correct_control_margin_minimum": 8
+    },
+    "full24_cycle1_evidence": {
+      "authority_commit": "efc17bead8528f3ca731bd99ab0c44b9fe1c4a7b",
+      "run_root": "runs/outputs/pi05_v6_lpcp_paired_causal_success_distillation_formal_cycle0to1_r3_k4_nmc4_b8_efc17be_gpu01_20260815",
+      "host": "gpu01",
+      "physical_gpu_ids": [5, 6, 7],
+      "world_size": 3,
+      "tasks": 24,
+      "paired_states": 48,
+      "rollouts": 96,
+      "reference_successes": 33,
+      "candidate_successes": 34,
+      "candidate_gains": 5,
+      "reference_gains": 4,
+      "discordant_pairs": 9,
+      "active_tasks": 9,
+      "active_suites": ["libero_goal", "libero_object", "libero_spatial"],
+      "selected_trajectories": 9,
+      "replay_chunks": 319,
+      "writer_gradient_rms": 3.428820960493795e-08,
+      "query_delta_parameter_delta_rms": 0.00018965300114359707,
+      "cycle_seconds": 837.6939318008954,
+      "forbidden_reads": 0,
+      "oom_or_nonfinite": 0
     }
   }
 }

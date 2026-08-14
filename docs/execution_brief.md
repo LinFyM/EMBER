@@ -43,9 +43,11 @@ anti-imitation。部署架构、K4输入、rank16、reader/conditioner和frozen 
 ## 3. Closed-loop adjudication
 
 Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP AS阶段均已终局且不得resume或小扫。PCSD是
-fresh-incompatible reward-calibration stage，不是LPCP macro50续训；canonical实现与CPU门已完成，下一步做
-full24 paired cycle，只有机制门
-通过才立即strict400。`>150`仍是性能追求，但约145若要成立，必须由相邻checkpoint低churn、same-task-video
+fresh-incompatible reward-calibration stage，不是LPCP macro50续训。clean frozen `efc17be` world3 full24
+cycle1已完成：24 tasks/48 pairs/96 rollouts、candidate/reference success=`34/33`、gains=`5/4`、9个active tasks
+覆盖3 suites，gradient/delta/BA/action response非零，0 forbidden read/OOM/nonfinite，wall=`837.694s`。机制门
+通过，但净训练优势只有1，不能作为性能结论；下一步只做cycle1 K4 strict paired400。`>150`仍是性能追求，
+但约145若要成立，必须由相邻checkpoint低churn、same-task-video
 鲁棒和健康video controls共同认证；单点高分不能作为方法结论。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4

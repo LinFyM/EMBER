@@ -40,7 +40,16 @@
   不能冒充可部署分数。PCSD已在canonical reward path原位实现：共享一次detached conditioning state，顺序执行
   exact K2 reference/candidate arms，只collate唯一成功轨迹，active-task等权更新单一`query_delta.weight`；旧LOO、
   support projection、K4 replay和outcome-only active runtime均已移除。全量CPU=`387 passed`，architecture guard
-  无hard violation；当前尚无PCSD GPU或closed-loop结果，且没有EMBER GPU进程；
+  无hard violation；clean pushed/frozen commit=`efc17bead8528f3ca731bd99ab0c44b9fe1c4a7b`在gpu01物理
+  `5/6/7`、world3完成full24 cycle1，root=
+  `runs/outputs/pi05_v6_lpcp_paired_causal_success_distillation_formal_cycle0to1_r3_k4_nmc4_b8_efc17be_gpu01_20260815`；
+  24 tasks/48 paired states/96 rollouts完整，reference/candidate success=`33/34`、candidate/reference gains=
+  `5/4`、both-success/failure=`29/10`，9 discordant/active tasks覆盖Spatial/Object/Goal三suite，319 replay chunks、
+  1,582 executed steps。selected-success objective=`.101456`，Writer grad RMS=`3.4288e-8`，query-delta delta RMS=
+  `.000189653`，3项deployment probe的effective-BA/fixed-action response均非零；0 teacher/target/validation/test
+  action/reward read、OOM、nonfinite或watchdog，wall=`837.694s`。机制门通过但训练内净优势仅1，不能写成性能
+  提升；formal checkpoint=`checkpoints/cycle_00000001`已完整，当前唯一下一步是该单一checkpoint的K4 strict
+  paired400，未过门不得续cycle2；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

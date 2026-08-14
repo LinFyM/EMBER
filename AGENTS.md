@@ -57,7 +57,11 @@ B20 functional credit不能选择held on-policy有用方向；只替换已通过
 以同初态reference/candidate两臂的唯一成功轨迹只校准65,536参数`query_delta`。精确authority=
 `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。canonical实现已经原位替换旧ADSP
 runtime：同一K4 context只编码一次，K2两臂返回完整executed-prefix replay，ties为零，只训练
-`query_delta.weight`；全量CPU=`387 passed`、architecture guard无hard violation。尚无GPU或closed-loop结果。
+`query_delta.weight`；全量CPU=`387 passed`、architecture guard无hard violation。clean frozen `efc17be`在
+gpu01物理`5/6/7`以world3完成full24 cycle1：24 tasks、48 pairs、96 rollouts，candidate/reference=
+`34/33` successes、`5/4` gains、9 discordant/active tasks覆盖3 suites，gradient、parameter delta、BA/action
+response均非零，0 forbidden read/OOM/nonfinite，wall=`837.694s`。机制门通过但净优势只有1；当前只运行
+cycle1单一checkpoint K4 strict paired400，结果未过预注册门不得续cycle2。
 
 ## 4. Long-term objective and decision rule
 

@@ -36,7 +36,11 @@ from ember.writer.reward_checkpoint import (
     REWARD_DEPLOYMENT_KIND,
     checkpoint_cycle,
 )
-from ember.writer.reward_config import REWARD_LAUNCH_SCHEMA, load_reward_config
+from ember.writer.reward_config import (
+    REWARD_CONFIG,
+    REWARD_LAUNCH_SCHEMA,
+    load_reward_config,
+)
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
@@ -284,6 +288,7 @@ def _reward_writer_asset(
     run = read_json(run_path)
     reward_config_path = Path(str(run.get("config_path", ""))).resolve()
     reward_config, base = load_reward_config(reward_config_path)
+    sealed_config, _ = load_reward_config(REWARD_CONFIG)
     expected_source = {
         key: str(Path(str(source[key])).resolve())
         for key in ("source_run", "checkpoint", "model_path")
@@ -307,9 +312,23 @@ def _reward_writer_asset(
         or not Path(str(run.get("initialization", {}).get("checkpoint", ""))).is_dir()
     ):
         raise WriterModelError("reward training authority changed")
+    sealed_sections = (
+        "base_as_config",
+        "initialization",
+        "information_wall",
+        "data",
+        "environment",
+        "objective",
+        "rng",
+        "optimization",
+    )
+    if any(
+        sealed_config.get(key) != reward_config.get(key) for key in sealed_sections
+    ):
+        raise WriterModelError("sealed reward authority changed the training contract")
     if require_formal and (
-        reward_config["formal_run"]["status"] != "sealed"
-        or cycle not in reward_config["formal_run"]["checkpoint_cycles"]
+        sealed_config["formal_run"]["status"] != "sealed"
+        or cycle not in sealed_config["formal_run"]["checkpoint_cycles"]
     ):
         raise WriterModelError("formal reward evaluation requires a sealed checkpoint")
     writer_state = _writer_state_record(

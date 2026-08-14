@@ -3,7 +3,7 @@
 状态：2026-08-15 design authority。简称`V6-LPCP-PCSD`。本轮从已经封存的V6-LPCP macro25权重开始，
 冻结视频carrier、AS139底座和完整rank16 compiler，只用train24严格配对的AS139-reference/LPCP-candidate
 闭环结果校准现有`query_delta`。canonical实现已完成、全量CPU=`387 passed`且architecture guard无hard
-violation；尚无GPU或closed-loop结果，本文任何预期都不能写成性能结论。
+violation。full24 cycle1机制门现已通过，但尚无closed-loop结果，本文任何机制数值都不能写成性能结论。
 
 实现封存前状态（2026-08-15）：
 
@@ -212,6 +212,21 @@ CPU门通过后，从clean pushed commit运行一个full24 cycle并同时作为�
 - cycle wall不超过旧96-rollout reward matched topology的`1.35x`，因为不应重复backbone或保留大图。
 
 任一机制门失败即终止，不扫paired states、K、Nmc、LR、rank、dtype、seed或gradient scale。
+
+### 10.3 Full24 cycle1 result
+
+clean pushed/frozen `efc17bead8528f3ca731bd99ab0c44b9fe1c4a7b`在gpu01物理`5/6/7`、world3完成
+cycle1，正式root为
+`runs/outputs/pi05_v6_lpcp_paired_causal_success_distillation_formal_cycle0to1_r3_k4_nmc4_b8_efc17be_gpu01_20260815`。
+24 tasks、48 paired states、96 rollouts全部完成；reference/candidate success=`33/34`，candidate/reference
+gains=`5/4`，both-success/failure=`29/10`，9个discordant/active tasks覆盖Spatial、Object、Goal三suite。
+9条selected trajectories形成319 chunks、1,582 executed steps；objective=`.101456`，Writer gradient RMS=
+`3.4288e-8`，query-delta parameter delta RMS=`.000189653`，effective-BA与fixed-action probes均finite/nonzero。
+teacher/target dataset/validation/test action或reward reads全为0；无OOM、nonfinite或watchdog；wall=`837.694s`。
+
+因此机制门通过并允许一次cycle1 strict400，但`34 vs 33`与净gain 1不构成性能提升证据。Libero-10本轮没有
+discordant pair，虽不违反至少2 suites门，也使held Long能力保持成为strict分析重点。正式评测前的seal只增加
+上述既成证据，不改变训练scientific sections、Writer checkpoint、视频schedule或policy RNG。
 
 ## 11. Closed-loop and stability decision
 

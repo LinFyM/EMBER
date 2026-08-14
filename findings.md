@@ -1,12 +1,18 @@
 # EMBER Findings
 
-更新时间：2026-08-14。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
+更新时间：2026-08-15。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
 `docs/research_history.md`；当前run只取`docs/active_session_handoff.md`。
 
 ## 1. 当前经验边界
 
 长期目标是同一shared Writer、同一single checkpoint的strict paired correct严格`>150/400`，并同时保持
 视频因果性、task breadth和多任务共同积累。目前尚未达到。
+
+最新PCSD full24 cycle1提供了一个窄但真实的新边界：同初态、同policy RNG的AS139-reference与LPCP-candidate
+在48 pairs中有9次唯一成功分歧，且candidate/reference gains=`5/4`；只蒸馏唯一成功轨迹可以产生非零
+query-delta gradient、参数更新以及BA/action response，而无需teacher/target actions。因此paired on-policy
+success能形成连续Writer credit已经通过机制门。它尚未证明held性能提升：训练内净优势仅1、active evidence只
+覆盖3 suites，必须由cycle1 strict400裁决，不能用机制数值选择方法。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |

@@ -240,8 +240,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 写PCSD单变量authority：K4 V6-LPCP部署不变，只训练65,536参数query commitment map；
 - [x] 原位替换退役reward runtime，完成shared conditioning cache、K2 paired replay与selected-success CFM；
 - [x] 完成CPU/机制门：全量`387 passed`；architecture guard无hard violation；
-- [ ] review task-scoped diff，commit/push clean authority；
-- [ ] live双节点GPU/quota preflight后运行一个full24 paired cycle；
+- [x] review task-scoped diff并以`efc17be`commit/push clean authority；
+- [x] 双节点live GPU/quota preflight后在gpu01物理`5/6/7`完成world3 full24 cycle1：24 tasks/48 pairs/
+  96 rollouts，candidate/reference=`34/33`、gains=`5/4`、9 active tasks/3 suites，机制门通过；
 - [ ] 机制过门后立即single-checkpoint K4 strict paired400并做逐task/union-retention分析；
 - [ ] 首次约145且retention过门即补视频因果controls并运行相邻checkpoint；单点>150也不能跳过稳定性裁决。
 

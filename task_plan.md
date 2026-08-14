@@ -270,7 +270,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 终局定位最早失效接口：cross-video exact credit已成立，但shared query-only commitment仍经video-specific
   Jacobian写成近正交局部BA方向；不靠view数、LR、rank、scale或seed小扫。
 
-## Active iteration: V6-LPCP Semantic Factor-Memory Commitment
+## Completed iteration: V6-LPCP Semantic Factor-Memory Commitment
 
 - [x] 检查canonical V6/LPCP的Procedure query、K-set、fusion、320 policy slots、八factor families与38-target
   FactorHeads真实owner；确认q/v及主要action frozen output bases保留其允许的完整hidden span；
@@ -283,8 +283,14 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成聚焦CPU机制门与architecture guard：真实参数2,164,224、zero-init exact LPCP、memory/ownership/gradient/
   checkpoint合同通过，聚焦72 passed；
 - [x] 完成真实GPU one-task机制/显存门：task4四view、8/8 maps、BA/action响应通过，wall为CV-CSD`.958x`；
-- [ ] 完成full24 cycle1兼吞吐profile；
-- [ ] 从clean pushed/frozen commit做full24 cycle1、strict paired400与完整逐task/BA/跨video分析；过门才cycle2和六臂。
+- [x] 完成full24 cycle1兼吞吐profile：24 tasks/48 pairs/96 rollouts，8/8 family maps更新，cycle=
+  `920.555s`=`1.0662x` CV-CSD，三rank任务=`8/9/7`、负载max/min=`1.0653x`；
+- [x] 完成single-checkpoint strict paired400：`144/400`、breadth7、per-task=`1/3/47/36/0/38/18/1`；
+  相对LPCP=`128/16/15`、churn31、Jaccard`.805031`，因lost>10终局不续cycle2或六臂；
+- [x] 完成稳定FP64全400与跨video分析：effective-BA relative-L2 mean/median=`2.899e-7/1.066e-9`，
+  q/v/action非零样本=`249/16/1`；first4 cosine=`-8.10e-6`、energy ratio=`.249995`；
+- [x] 终局定位最早失效接口：continuous SFMC hidden residual在冻结W2与native public factor处被量化成稀疏
+  q-family ULP crossing，cycle1 semantic router尚未形成；不把单点144误报成稳定145或视频因果资格。
 
 ## Non-negotiable boundaries
 
@@ -300,9 +306,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已按门终局。
-CV-CSD证明跨video exact成功credit可以高效、完整地形成，但query-only commitment仍把它部署成same-task跨video
-近正交局部方向，held strict=`134`。SFMC design、canonical实现与task4 smoke已通过并seal；下一步从clean
-pushed/frozen seal commit按相同合同full24 cycle1，不恢复旧memory路线、不添加更多views，
-也不做query/LR/rank/scale小扫。生成LoRA后的task-local RL仍是
-初始Writer达到强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已按门
+终局。SFMC正确分恢复到144，但相对LPCP仍有31条换手、lost15，部署改写又被压到q-dominant native ULP边界，
+所以既不是稳定145，也没有same/negative六臂资格。当前无active successor；按owner要求完成本轮全部分析后停下
+讨论，不resume、不补controls、不扫query/LR/rank/scale。生成LoRA后的task-local RL仍是初始Writer达到强
+zero-interaction起点之后的独立实验。

@@ -262,3 +262,31 @@ SFMC是否改变了目标接口，不能替代strict或独立选择checkpoint。
 
 负结果只淘汰“frozen LPCP innovation memory + 4-way language semantic route + family-hidden residual + CV selected-
 success credit”这一组合；不否定生成LoRA、rank8、literal memory token、few-shot或未来生成LoRA后的task-local RL。
+
+## 13. Completed result and adjudication
+
+本设计已由clean frozen `8994180`完成full24 cycle1与同一single checkpoint strict paired correct400。
+
+训练为24 tasks/48 pairs/96 rollouts，reference/candidate success=`34/34`，8个active tasks、32个四view credit
+conditions与128个unique videos；8/8 family maps获得finite/nonzero更新。cycle=`920.555s`，为CV-CSD的
+`1.0662x`；三rank任务=`8/9/7`、记录时长max/min=`1.0653x`，没有吞吐、负载、禁读、OOM或nonfinite问题。
+但semantic query与basis-key delta仅约`1.7e-9`，zero-init staging使cycle1主要只打开family maps。
+
+strict=`144/400`、breadth7、per-task=`1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`。相对LPCP143严格=
+`128 retained / 16 gained / 15 lost / 241 both-fail`、churn31、net`+1`、Jaccard`.805031`、p=`1`；只有
+预注册的lost≤10门失败。该单点恢复了CV-CSD的absolute，但没有证明相邻checkpoint稳定积累。
+
+由于普通trace identity对该微小改写发生消去，终局采用FP64稳定低秩展开
+`Δ(BA)=B_candidate·ΔA+ΔB·A_reference`。相对LPCP的all400 effective-BA relative-L2 mean/median=
+`2.899e-7/1.066e-9`；q/v/action非零样本=`249/16/1`。first4同task修正pairwise cosine=
+`-8.10e-6`、mean/sample energy=`.249995`，没有形成跨video共同方向；candidate相对CV-CSD的几何又几乎
+复现CV-CSD到LPCP的历史距离。
+
+因此触发§12的“hidden residual存在但BA/action闭合”与“跨video correction仍近正交”否决分支。最早失败接口是
+**continuous SFMC hidden residual经冻结W2写成native public LoRA**：learned semantic router尚未形成，绝大多数
+factor residual又被压到原生BF16局部ULP以下，只留下稀疏q-family crossing。144是LPCP邻域的高churn阈值重排，
+不是稳定145。按§11终局不续cycle2，不做six-arm controls或参数扫；没有same/wrong/shuffled/reversed/no-video
+证据，故不得宣称视频鲁棒性或特异性。
+
+该负结果只否定本设计的完整受检验组合，不否定memory token、rank8、few-shot、SHINE式layer correspondence或
+生成LoRA本身。正式训练、strict与终局artifact root记录于`docs/active_session_handoff.md`§14。

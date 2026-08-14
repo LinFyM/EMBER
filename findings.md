@@ -391,6 +391,23 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     更新，Writer→LoRA→effective-BA→fixed-action响应非零；cycle=`139.420s`，是CV-CSD matched smoke的
     `.958048x`，peak reserved=`40.762GB`，禁读/OOM/nonfinite为0。新增2.16M commitment没有造成吞吐或显存门
     违约，可以seal full24；单task smoke仍不提供absolute、retention、稳定性或视频因果性能结论。
+44. SFMC full24 cycle1完整证明工程与训练图不是失败源：24 tasks/48 pairs/96 rollouts，reference/candidate=
+    `34/34` successes，8 active tasks、32 credit conditions、128 unique videos，8/8 family maps均更新；cycle=
+    `920.555s`=`1.0662x` CV-CSD。三rank任务=`8/9/7`、记录时长max/min=`1.0653x`，无禁读、OOM、nonfinite或
+    watchdog。semantic query/basis-key delta仅约`1.7e-9`，说明zero-init cycle1主要打开maps，尚未形成learned router。
+45. SFMC strict=`144/400`、breadth7、per-task=`1/3/47/36/0/38/18/1`；相对LPCP143严格=
+    `128 retained / 16 gained / 15 lost / 241 both-fail`、churn31、net`+1`、Jaccard`.805031`。相对CV-CSD134
+    虽净增10，相对真正强邻居LPCP却只净增1且丢15；这正是owner所说“单点接近145但训练/能力不稳定”不能算
+    合格方法的实例。lost≤10预注册门失败，故不续cycle2或六臂，不能声明same-video鲁棒或视频特异性。
+46. SFMC改写小到让旧FP64 trace公式也发生大数消去；用稳定展开
+    `Δ(BA)=B_candidate·ΔA+ΔB·A_reference`后，全400 effective-BA relative-L2 mean/median/max仅=
+    `2.899e-7/1.066e-9/4.428e-6`，q/v/action非零样本=`249/16/1`。first4 pairwise cosine=
+    `-8.10e-6`、mean/sample energy=`.249995`；不同video修正仍落在近正交/不相交的量化坐标，而不是共同程序。
+47. SFMC相对CV-CSD的BA relative-L2 mean/median=`.000675/.000669`、first4 cosine/energy=
+    `.000205/.250154`，几乎复现CV-CSD→LPCP距离；所以144主要是回到LPCP143邻域，而非memory commitment产生
+    新的强policy方向。最早失败接口精确到**continuous hidden residual -> frozen W2 -> native public factor**：
+    family maps有reward credit，但router未学成且大多数residual低于BF16局部ULP，只留下稀疏q-family crossing。
+    这只否定当前SFMC组合，不否定literal memory token、rank8、few-shot或生成LoRA本身。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

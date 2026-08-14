@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 最新completed design（当前无active successor）：
    `docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -35,8 +35,8 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好：
-`correct/same/wrong/shuffled/reversed=143/135/125/128/129`，LPCP只完成correct且breadth7。
+长期目标尚未完成。最新SFMC correct single checkpoint为144但未通过retention/stability门；v6-fast仍是有完整
+五臂的历史最好：`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -85,18 +85,24 @@ CV-CSD K4 strict paired400终局=`134/400`、breadth7、per-task=`1/2/47/32/0/36
 conditions的增量pairwise cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也为`-.001908/.248578`。
 所以四个正确视频下的exact成功credit经过shared `query_delta`均值后仍落成近正交局部方向。
 
-当前active successor是**V6-LPCP Semantic Factor-Memory Commitment**，authority=
-`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。它保留LPCP143、cross-video
-selected-success与rank16强图，冻结query path；从同一cached condition计算K-set LPCP/AS139 Procedure差形成
-layer/rank innovation memory，以exact-language作Q/K-only四basis语义地址，在八个真实factor-family的冻结V6
-output basis前写zero-init hidden residual。它不增加literal memory token、不重复backbone forward、不直接写raw
-A/B。canonical实现与CPU机制门已完成：真实枚举trainable=`2,164,224`，zero-init step0 exact LPCP、K-set
-permutation、constant-memory zero、factor-family/slot ownership、两阶段gradient与pre-SFMC checkpoint加载均通过；
-architecture guard无hard violation。clean frozen`cabf14f` task4 smoke完整：4 rollouts、4/4 credit views、8/8
-family maps更新、wall=`139.420s`=`.9580x` CV-CSD、peak reserved=`40.762GB`、fixed-action=`.002811`、
-effective-BA=`3.52e-8`，禁读/OOM/nonfinite为0；据此config已seal。当前尚未full24训练，不得把机制通过当成
-性能结果，也不得同时改rank/view/LR/scale。active config=
-`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`。
+最新完成架构是**V6-LPCP Semantic Factor-Memory Commitment**（SFMC），authority=
+`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`，clean frozen commit=`8994180`。
+full24 cycle1完成24 tasks/48 pairs/96 rollouts，8/8 family maps更新且wall=`920.555s`=`1.0662x` CV-CSD；
+strict correct400=`144/400`、breadth7、per-task=`1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`。
+相对LPCP143严格=`128 retained / 16 gained / 15 lost / 241 both-fail`、churn31、net`+1`、Jaccard
+`.805031`，只有lost≤10门失败，故仍是终局non-pass，不续cycle2或六臂controls。
+
+稳定FP64低秩差分证明训练时连续hidden residual没有有效写成部署LoRA：相对LPCP的all400 effective-BA
+relative-L2 mean/median仅=`2.899e-7/1.066e-9`；249/400样本只有q-family跨过native factor量化边界，v仅16，
+action仅1。first4同task修正pairwise cosine约`-8.10e-6`、mean/sample energy=`.249995`，仍是近正交且
+稀疏的video-local ULP crossing；semantic query/basis-key参数delta也仅约`1.7e-9`，cycle1没有形成学到的
+semantic route。最早失败接口是**SFMC continuous hidden residual -> frozen W2 -> native public LoRA**，不是
+carrier未读视频、GPU负载或训练图未工作。
+
+当前没有active successor或GPU工作；本轮按owner要求完成全部分析后停下讨论。SFMC没有六臂结果，因此不得
+宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory + 4-way language route +
+zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory token、rank8、few-shot或
+生成LoRA本身。
 
 ## 4. Long-term objective and decision rule
 

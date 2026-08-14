@@ -5,48 +5,36 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**V6-LPCP Cross-Video Causal Success Distillation**（CV-CSD）。full24 cycle1与K4 strict paired
-correct400均来自clean frozen `c1d8952`：closed-loop=`134/400`、breadth7、per-task=
-`1/2/47/32/0/36/15/1`、per-suite=`3/79/36/16`、top3=`115/134=.85821`。
+最新完成实验是**V6-LPCP Semantic Factor-Memory Commitment**（SFMC），full24 cycle1与K4 strict paired
+correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=
+`1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`、top3=`121/144=.84028`。
 
-相对LPCP143严格=`122 retained / 12 gained / 21 lost / 245 both-fail`、churn33、net`-9`、
-Jaccard`.78710`，四个suite全部下降；相对AS139严格=`121/13/18/248`、churn31、net`-5`；相对PCSD135
-严格=`115/19/20/246`、churn39、net`-1`。count-only相对v6-fast143/old134/compiler138/online128=
-`-9/0/-4/+6`。五项cycle1门中只有breadth通过，因此CV-CSD终局，不做cycle2、controls或小参数扫。
+相对LPCP143严格=`128 retained / 16 gained / 15 lost / 241 both-fail`、churn31、net`+1`、Jaccard
+`.805031`、McNemar `p=1`；suite net=`-1/0/0/+2`。相对AS139/PCSD135/CV-CSD134分别为
+`121/23/18`、`119/25/16`、`124/20/10`，count-only相对v6-fast143/old134/compiler138/online128=
+`+1/+10/+6/+16`。它恢复了CV-CSD丢失的absolute，但没有减少能力换手；预注册门只有LPCP lost≤10失败，
+因此不续cycle2或六臂controls。
 
-训练合同本身完整且高效：24 tasks/48 paired states/96 rollouts仍产生与PCSD完全相同的33/34两臂成功、5/4
-单臂成功和9个active tasks；36个credit conditions的LoRA/query gradients全部finite/nonzero。cycle wall=
-`863.432s`，仅为PCSD的`1.0307x`；3 ranks各8 tasks/3 active tasks，记录负载max/min=`1.0828x`。
+训练工程合同完整：24 tasks/48 paired states/96 rollouts、34/34两臂成功、8个active tasks、32个credit
+conditions与128个unique videos；8/8 family maps均更新。cycle wall=`920.555s`=`1.0662x` CV-CSD，三rank
+任务数=`8/9/7`、记录时长max/min=`1.0653x`，没有rank分配或吞吐问题。semantic query/basis-key delta仅约
+`1.7e-9`，zero-init staging在cycle1主要只打开family maps。
 
-决定性non-pass不是134这个单点，而是部署方向分析。全400 CV-CSD相对LPCP的effective-BA relative-L2
-mean/median=`.00068370/.00067774`，gained/lost均约`.000679`。FP64 first4中，同task四个K4 correct conditions
-的CV-CSD增量pairwise cosine平均=`.000205`、task-mean/sample energy=`.250155`；相对PCSD也为
-`-.001908/.248578`。即使同一真实成功trajectory在四个正确视频条件下各自完整反传，shared query-gradient mean
-仍经video-specific Jacobian变成近正交局部BA修正。
+稳定FP64差分把失效接口进一步推进：相对LPCP的effective-BA relative-L2 mean/median=
+`2.899e-7/1.066e-9`，255/400样本有任何非零变化；其中q为249、v为16、action仅1。first4修正
+pairwise cosine=`-8.10e-6`、mean/sample energy=`.249995`，没有形成跨video共同方向；SFMC相对CV-CSD的
+`.000675/.000669`和`.000205/.250154`则几乎复现CV-CSD→LPCP距离，说明candidate在部署上基本回到LPCP。
+最早失败接口是**continuous factor-memory residual经冻结W2写成native public LoRA时被压到稀疏q-family ULP
+crossing**，且learned semantic router尚未形成，而不是memory未算、reward无梯度、GPU负载或LoRA链路未接通。
 
-最早失效接口因此是**Program/evidence到policy topology的query-only commitment**，不是LPCP没有读视频、reward
-没有内容、LoRA坍缩或多卡负载错误。
-
-当前active successor是**V6-LPCP Semantic Factor-Memory Commitment**。它只把trainable commitment移到K-set之后：
-同一cached condition的LPCP/AS139 Procedure-set差形成layer/rank innovation memory；exact language只选择四个
-shared semantic bases；八个factor families把memory写到冻结V6 factor output basis之前。step0 exact LPCP143，
-cross-video selected-success、rank16和K4不变；没有literal memory token、第二次backbone或raw A/B residual。
-精确authority=`docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`。canonical实现已原位接入
-唯一Writer/reward/evaluator：trainable真实枚举=`2,164,224`，zero-init step0 exact LPCP、K-set permutation、
-constant-memory zero、factor-family/slot ownership、map→semantic-router两阶段gradient与旧LPCP完整缺失新tensor的
-加载合同均通过；architecture guard无hard violation。聚焦Writer/训练/部署测试=`72 passed`；完整CPU=`388 passed /
-7个既有Reward-Credit注册门失败`，后七项与本轮无关且基线已存在。当前尚未GPU profile或训练。
-
-task4 GPU smoke来自clean frozen`cabf14f`：4 rollouts、4/4 credit views、8/8 family maps更新，cycle=
-`139.420s`=`.958048x` CV-CSD matched smoke，peak allocated/reserved=`36.500/40.762GB`，fixed-action response=
-`.002811`、effective-BA response=`3.52e-8`，禁读/OOM/nonfinite为0。active config=
-`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`现已seal；下一步从新的clean pushed/frozen seal
-commit用gpu01物理5/6/7、world3做full24 cycle1。
+当前无active successor和GPU工作。本轮已经完成逐task、paired success-set、吞吐/负载、稳定effective-BA、
+跨video coherence与失败接口分析，按owner要求停下讨论。因cycle1未过稳定门，same/wrong/shuffled/reversed/
+no-video没有启动；因此不能宣称视频鲁棒性或特异性。
 
 训练root=
-`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；
-strict与全部paired/BA/FP64分析root=
-`runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_c1d8952_gpu01_20260815`。
+`runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；
+strict与终局分析root=
+`runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_8994180_gpu01_20260815`。
 
 ## 2. Completed CV-CSD variable and exact conclusion
 
@@ -59,15 +47,15 @@ strict与全部paired/BA/FP64分析root=
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD与CV-CSD均已终局且不得resume或小扫。CV-CSD
-训练root、strict root、逐episode transitions、全400 BA与FP64跨video evidence均已封存。`>150`仍是更高性能追求；约145
+Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已终局且不得resume或小扫。
+各自训练root、strict root、逐episode transitions和必要BA/跨video evidence均已封存。`>150`仍是更高性能追求；约145
 也可成为有效结果，但必须由相邻single checkpoints低churn、same-task-other鲁棒和correct相对wrong/shuffled/
 reversed/no-video的明确优势共同认证。单点145或151都不算完成。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
 
-CV-CSD因cycle1未过门而没有相邻checkpoint与controls；这不是缺失分析，而是预注册停止规则。下一架构仍须先以
+SFMC因cycle1 retention未过门而没有相邻checkpoint与controls；这不是缺失分析，而是预注册停止规则。下一架构仍须先以
 cycle1 absolute/breadth/retention筛选；过门后必须评相邻checkpoint，再做same/wrong/shuffled/reversed/no-video。
 单点145或151都不能跳过稳定性与视频因果资格。
 

@@ -212,7 +212,7 @@ def writer_trainable_contract(
     ):
         raise WriterModelError("dynamic-K Writer freeze boundary changed")
     return {
-        "object": "v6_semantic_core_common_value_set_bridge_writer_only",
+        "object": "v6_shared_core_procedure_common_value_bridge_writer_only",
         "writer_parameter_count": sum(value.numel() for value in writer.parameters()),
         "writer_trainable_parameter_count": sum(value.numel() for _, value in trainable),
         "writer_trainable_parameter_tensors": len(trainable),

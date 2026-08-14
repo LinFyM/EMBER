@@ -56,9 +56,14 @@ exact language + K=1..4 same-task action-hidden ordered videos
 
 Common-Value把Core correction从centered路径的`1.8275e-5`打开到`.065856`，current→zero effective BA=
 `.053648`，但attention entropy/log4仍`.999885`且Long suite相对135净丢7。最早剩余接口是offline B20
-functional credit与held on-policy occupancy的方向对齐，不是Value可达性、capacity或compiler。terminal authority=
-`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`，精确状态只取
-`docs/active_session_handoff.md`。当前没有active successor；先停下与owner讨论，不能自动恢复旧路线。
+functional credit与held on-policy occupancy的方向对齐，不是Value可达性、capacity或compiler。补充train-seen
+output-zero反事实为trained/zero=`63/59`、paired net`+4`，说明task-local credit存在但没有形成held可组合程序。
+
+owner已授权继续。当前active successor为**V6 Shared-Core Ordered-Procedure Common-Value Bridge**：恢复matched139
+的shared-Core边界，只把Procedure-Set Value从centered residual改为raw common ordered Procedure，使trainable
+Value必须来自有向video过程。authority=
+`docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`；精确状态只取
+`docs/active_session_handoff.md`，不得从旧checkpoint续训或恢复整条历史路线。
 
 ## 4. Long-term objective and decision rule
 

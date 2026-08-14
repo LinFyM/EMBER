@@ -22,6 +22,10 @@ shared-Core边界，只把原Procedure-Set的Value由centered residual改成raw 
 Value因此必须来自有向video过程，不能只由静态语言产生。完整authority见
 `action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`。
 
+canonical schema/config/runtime已原位替换，旧Semantic-Core Common-Value只由Git与formal artifacts保存。新config
+仍是`unsealed_pending_live_profile`；K1/step0/set/order/raw-Value/gradient门与full CPU=`374 passed`。下一动作是
+真实source-policy机制smoke与full24 B20 profile，不从任何旧checkpoint恢复。
+
 ## 2. Active single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology

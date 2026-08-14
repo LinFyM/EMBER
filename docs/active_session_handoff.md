@@ -26,6 +26,12 @@
   shared-Core边界，只把Procedure-Set Value从centered residual改为raw common ordered Procedure；冻结其余v6、
   rank16、B20与dynamic-K合同。authority=
   `docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md`；
+- canonical实现已原位替换旧Semantic-Core Common-Value schema/runtime，不保留parallel active path；新config=
+  `configs/pi05_as_writer_v6_shared_core_procedure_common_value_bridge_v1.json`，formal状态为
+  `unsealed_pending_live_profile`；
+- K1 native-v6、K集合换位、video内倒序、Shared-Core step0、uniform raw Procedure mean、gradient staging、base
+  freeze与schema/evaluator定向门均通过；正确LIBERO assets下full CPU=`374 passed`。active diff净缩减且architecture
+  guard无新增hard violation；下一步是真实source-policy机制smoke与full24 B20 profile；
 - 本轮terminal design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
   Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；

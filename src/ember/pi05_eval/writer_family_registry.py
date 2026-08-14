@@ -347,20 +347,20 @@ WRITER_FAMILIES = {
             400,
         ),
     },
-    "v6_semantic_core_common_value_set_bridge_v1": {
+    "v6_shared_core_procedure_common_value_bridge_v1": {
         "adapter_schema": (
-            "ember_pi05_v6_semantic_core_common_value_set_bridge_eval_adapter_v1"
+            "ember_pi05_v6_shared_core_procedure_common_value_bridge_eval_adapter_v1"
         ),
         "episode_schema": (
-            "ember_pi05_v6_semantic_core_common_value_set_bridge_episode_v1"
+            "ember_pi05_v6_shared_core_procedure_common_value_bridge_episode_v1"
         ),
         "config_schema": (
-            "ember_pi05_v6_semantic_core_common_value_set_bridge_as_writer_v1"
+            "ember_pi05_v6_shared_core_procedure_common_value_bridge_as_writer_v1"
         ),
-        "writer_kind": "v6_semantic_core_common_value_set_writer",
-        "arm_prefix": "v6_semantic_core_common_value_set_bridge_",
+        "writer_kind": "v6_shared_core_procedure_common_value_writer",
+        "arm_prefix": "v6_shared_core_procedure_common_value_bridge_",
         "trained_checkpoint_kind": (
-            "v6_semantic_core_common_value_set_bridge_macro_checkpoint"
+            "v6_shared_core_procedure_common_value_bridge_macro_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 16,

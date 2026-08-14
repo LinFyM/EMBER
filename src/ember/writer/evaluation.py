@@ -34,10 +34,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_semantic_core_common_value_set_bridge_eval_adapter_v1"
+    "ember_pi05_v6_shared_core_procedure_common_value_bridge_eval_adapter_v1"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_v6_semantic_core_common_value_set_bridge_episode_v1"
+    "ember_pi05_v6_shared_core_procedure_common_value_bridge_episode_v1"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -45,25 +45,8 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
     "ember_pi05_dynamic_k_nested_video_set_pairing_v1"
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
-DYNAMIC_K_GENERATION_BATCH_SIZE = 32
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
-    4: {
-        "schema": "ember_pi05_shape_equivalent_k4_b32_confirmation_v1",
-        "path": (
-            "runs/outputs/"
-            "pi05_v6_semantic_core_common_value_set_bridge_k4_b32_confirmation_"
-            "val8x4_correct_gpu01p4_12311bd_macro0025_20260814/"
-            "k4_b32_confirmation.json"
-        ),
-        "inherited_batch_selection_path": (
-            "runs/outputs/"
-            "pi05_v6_semantic_core_set_bridge_k4_writer_generation_profile_"
-            "val8x4_correct_gpu01p4_884e55e_macro0025_20260814/"
-            "writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-    }
-}
+DYNAMIC_K_GENERATION_BATCH_SIZE = 8
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:
@@ -420,7 +403,7 @@ def inspect_dynamic_k_writer_evaluation(
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
-            "v6_semantic_core_common_value_set_bridge_" f"{video_condition}"
+            "v6_shared_core_procedure_common_value_bridge_" f"{video_condition}"
         ),
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {

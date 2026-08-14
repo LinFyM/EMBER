@@ -117,3 +117,15 @@ paired correct400。
 失败只淘汰“shared Core锚点 + raw common ordered Procedure Value + unchanged B20”这一组合。若train-seen仍有
 增益而held不增，下一接口明确转向on-policy/generalization credit；若Procedure correction仍近零，则才是本算子
 optimization失败。不得把失败改写成“视频没被读取”“rank16太大”或“few-shot无效”。
+
+## 9. Canonical CPU implementation
+
+唯一active `CompleteLoRAWriter`已恢复shared-Core union与per-video ordered Procedure reader，并把旧centered
+`PolicyProcedureSetFusion`原位替换为raw `PolicyProcedureCommonValueFusion`。旧Semantic-Core Common-Value
+config/schema/checkpoint/evaluator由Git与formal artifacts保存，不留runtime flag或第二实现。新config处于
+`unsealed_pending_live_profile`，不继承旧profile或deployment batch seal。
+
+定向测试证明K1在任意nonzero output下仍与native v6的76 tensors严格相等；K>1集合换位不变、video内倒序改变
+Program；zero-init逐tensor等于parameter-free Shared-Core graph；uniform q/k与identity output得到raw Procedure
+mean；首步只有output获梯度、output非零后q/k展开，v6 base始终无梯度。正确LIBERO assets下full CPU=
+`374 passed`。active source净缩减，architecture guard只有既存大函数review信号、无新增hard violation。

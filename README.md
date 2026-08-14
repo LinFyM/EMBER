@@ -53,8 +53,13 @@ centered Value归零诊断曾发现Core correction仅`1.8275e-5`；terminal succ
 `2/3/48/31/0/35/14/0`，相对135净`-2`、相对139净`-6`，仍发生task换手。attention entropy仍`.999885`，
 说明强common mean被写入但offline B20 credit没有对齐held on-policy方向。authority见
 [`docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md)，
-实现、profile、fresh macro25、B32确认、strict400与first4机制分析均完整封存；该组合终局non-pass，当前没有
-active successor，先停下讨论。
+实现、profile、fresh macro25、B32确认、strict400与first4机制分析均完整封存；该组合终局non-pass。补充
+train-seen output-zero反事实为trained/zero=`63/59`，说明少量task-local credit没有外推到held。
+
+当前active successor是
+[`V6 Shared-Core Ordered-Procedure Common-Value Bridge`](docs/action_forecast_writer_v6_shared_core_ordered_procedure_common_value_design.md)：
+恢复matched139的shared-Core边界，只让可训练raw common Value读取有向Procedure，冻结其余v6、rank16、B20和
+dynamic-K合同。canonical CPU实现已完成并通过`374`项回归；新config尚待真实GPU profile seal。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

@@ -1,4 +1,4 @@
-"""Authority for actual-delta success-support Writer training."""
+"""Authority for V6-LPCP paired causal success distillation."""
 
 from __future__ import annotations
 
@@ -10,21 +10,19 @@ from ember.writer.as_config import REPO_ROOT, load_writer_config
 from ember.writer.errors import WriterModelError
 
 
-REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_v1"
-)
+REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_paired_causal_success_distillation_v1"
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_launch_v1"
+    "ember_pi05_v6_lpcp_paired_causal_success_distillation_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_ordered_procedure_final_shared_support_projection_v1.json"
+    "configs/pi05_writer_v6_lpcp_paired_causal_success_distillation_v1.json"
 )
 
 
 def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported reward preference config")
+        raise WriterModelError("unsupported PCSD config")
     base_path = (REPO_ROOT / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
@@ -36,26 +34,29 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     distributed = optimization.get("distributed", {})
     formal = config.get("formal_run", {})
     if (
-        initialization.get("kind") != "writer_weights_only_fresh_reward_optimizer"
+        initialization.get("kind")
+        != "writer_weights_only_fresh_reward_optimizer"
         or int(initialization.get("as_macro", -1)) != 25
+        or initialization.get("reference_arm")
+        != "same_cached_conditioning_with_query_delta_disabled_exact_as139"
+        or initialization.get("candidate_arm") != "current_v6_lpcp_query_delta"
         or not cold_start.startswith("runs/outputs/")
         or data.get("task_count") != 24
         or data.get("videos_per_task") != 4
         or data.get("demo_indices") != [0, 49]
+        or environment.get("paired_states_per_task") != 2
+        or environment.get("arms_per_state") != 2
         or environment.get("rollouts_per_task") != 4
-        or environment.get("persistent_lanes_per_task") != 4
+        or environment.get("persistent_lanes_per_task") != 2
         or objective.get("kind")
-        != "binary_leave_one_out_with_actual_delta_success_support_projection"
+        != "paired_causal_selected_success_flow_distillation"
+        or objective.get("discordant_credit")
+        != "imitate_only_the_uniquely_successful_arm"
+        or objective.get("tie_credit")
+        != "zero_for_both_success_and_both_failure"
         or objective.get("flow_mc_samples") != 4
-        or objective.get("homogeneous_task_credit")
-        != "all_failure_zero_all_success_support_only"
-        or objective.get("support_constraint")
-        != (
-            "task_mean_success_gradient_dot_final_actual_parameter_delta_"
-            "nonpositive"
-        )
-        or objective.get("projection")
-        != "euclidean_nearest_actual_adamw_delta_small_dual_nnls"
+        or optimization.get("trainable")
+        != "query_delta_weight_only_65536_parameters"
         or optimization.get("reward_replay_chunk_batch_size") != 8
         or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
         or distributed.get("collective_timeout_minutes") != 30
@@ -63,7 +64,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         or formal.get("checkpoint_cycles") != [1, 2]
         or formal.get("stage_stop_cycles") != [1, 2]
     ):
-        raise WriterModelError("support-projected reward scientific contract changed")
+        raise WriterModelError("PCSD scientific contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -71,6 +72,9 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid support-projected reward mode")
-    if mode == "formal" and config["formal_run"]["status"] != "sealed":
-        raise WriterModelError("formal support projection awaits its live smoke seal")
+        raise WriterModelError("invalid PCSD mode")
+    if mode == "formal" and config["formal_run"]["status"] not in {
+        "ready",
+        "sealed",
+    }:
+        raise WriterModelError("formal PCSD is not authorized")

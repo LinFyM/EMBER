@@ -1,4 +1,4 @@
-"""Cycle-boundary exact-resume checkpoints for reward-trained Writer state."""
+"""Cycle-boundary exact-resume checkpoints for PCSD Writer state."""
 
 from __future__ import annotations
 
@@ -22,11 +22,9 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_ordered_procedure_final_shared_support_projection_checkpoint_v1"
+    "ember_pi05_v6_lpcp_paired_causal_success_distillation_checkpoint_v1"
 )
-REWARD_DEPLOYMENT_KIND = (
-    "v6_ordered_procedure_final_shared_support_projection_cycle_checkpoint"
-)
+REWARD_DEPLOYMENT_KIND = "v6_lpcp_paired_causal_success_distillation_cycle_checkpoint"
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 
 
@@ -35,7 +33,7 @@ def checkpoint_cycle(path: Path | None) -> int:
         return 0
     match = _CYCLE_NAME.fullmatch(path.name)
     if match is None or path.parent.name != "checkpoints":
-        raise WriterModelError("reward resume path is not a cycle checkpoint")
+        raise WriterModelError("PCSD resume path is not a cycle checkpoint")
     return int(match.group(1))
 
 
@@ -55,7 +53,7 @@ def save_reward_checkpoint(
     if context.is_main:
         checkpoints.mkdir(parents=True, exist_ok=True)
         if partial.exists() or final.exists():
-            raise WriterModelError("reward checkpoint already exists")
+            raise WriterModelError("PCSD checkpoint already exists")
         partial.mkdir()
     barrier(context)
     torch.save(
@@ -126,7 +124,7 @@ def load_reward_checkpoint(
         or int(manifest.get("world_size", -1)) != context.world_size
         or manifest.get("run_contract_schema") != contract["schema_version"]
     ):
-        raise WriterModelError("reward checkpoint manifest changed")
+        raise WriterModelError("PCSD checkpoint manifest changed")
     writer.load_state_dict(
         load_file(str(checkpoint / "writer.safetensors"), device=str(context.device)),
         strict=True,
@@ -147,7 +145,7 @@ def load_reward_checkpoint(
         or int(rank.get("world_size", -1)) != context.world_size
         or int(rank.get("rank", -1)) != context.rank
     ):
-        raise WriterModelError("reward checkpoint cursor changed")
+        raise WriterModelError("PCSD checkpoint cursor changed")
     optimizer.load_state_dict(trainer["optimizer"])
     restore_rng(rank["rng"], context)
     return cycle, int(trainer["metrics_rows"])

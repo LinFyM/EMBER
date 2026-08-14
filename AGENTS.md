@@ -22,7 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -50,9 +51,13 @@ same-task correction coherence median`.56804`。Goal3虽有`.004224`改写和`.8
 `.001324`却净丢6。最早缺口是conditioned Procedure经冻结fusion/compiler承诺成AS139邻域小方向，以及blind
 B20 functional credit不能选择held on-policy有用方向；只替换已通过的carrier为literal memory不直接针对该缺口。
 
-authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。正式root、AS139严格配对和
-effective-BA artifact均已封存。当前没有active successor或GPU进程；按owner要求，本轮全部分析完成后停下讨论，
-不得自行启动下一训练。
+封存authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。正式root、AS139严格
+配对和effective-BA artifact均已保留。owner随后明确授权继续，并再次澄清memory token是候选机制而非必须形式。
+当前active successor是V6-LPCP Paired Causal Success Distillation（PCSD）：保留LPCP/AS139/rank16部署图，
+以同初态reference/candidate两臂的唯一成功轨迹只校准65,536参数`query_delta`。精确authority=
+`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。canonical实现已经原位替换旧ADSP
+runtime：同一K4 context只编码一次，K2两臂返回完整executed-prefix replay，ties为零，只训练
+`query_delta.weight`；全量CPU=`387 passed`、architecture guard无hard violation。尚无GPU或closed-loop结果。
 
 ## 4. Long-term objective and decision rule
 
@@ -60,10 +65,12 @@ EMBER研究能否从generic`lerobot/pi05_base`建立的冻结π0.5-LIBERO source
 action-hidden正确教学视频一次性编译为task-conditioned policy adaptation，使policy从未见初始化闭环完成任务。
 
 当前主目标是Writer初次生成的adaptation本身立即有效。生成LoRA后的task-local RL是之后独立实验，不能混入
-当前zero-interaction分数。长期成功要求同一shared method、同一single checkpoint：
+当前zero-interaction分数。性能继续追求`>150/400`并越高越好；owner最新明确补充，约`145`也可成为科学上
+有价值的稳定方法，前提是它不是训练波动中的单点winner。方法资格要求同一shared method的相邻single
+checkpoints同时具备：
 
-- strict paired correct严格`>150/400`并继续提高；
-- 高task breadth、相邻checkpoint低换手、多个tasks在同一checkpoint共同积累；
+- strict paired correct保持约`145+`或更高，而非只在一个checkpoint偶然出现；
+- 高task breadth、相邻checkpoint低换手/高success-set重合、多个tasks共同积累；
 - correct实质优于wrong、shuffled、reversed与no-video；
 - same-task不同teacher videos鲁棒；
 - 视频语义和有向过程经Program、LoRA、effective BA传到policy action；
@@ -126,7 +133,8 @@ few-shot哪一个最终成为论文设定只由真实性能决定，不为形式
 - evaluator使用cost-balanced dynamic queue、long-first和persistent workers，不静态task/GPU分配或dummy占卡；
 - 正式选择只认single-checkpoint 400 paired rows。80-row screen、checkpoint union与内部surrogate不能选择模型。
 
-达到`>150`后必须补视频因果controls，证明correct沿有用policy direction获益，而非仅破坏negative LoRA。
+任何首次达到约`145`且retention过门的checkpoint就必须补视频因果controls，并继续评测相邻checkpoint稳定性；
+不能等到`>150`才检查correct是否沿有用policy direction获益。
 
 ## 9. GPU, throughput and numerical policy
 

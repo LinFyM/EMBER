@@ -45,6 +45,18 @@ class WriterProgramOutput:
     diagnostics: WriterProgramDiagnostics
 
 
+@dataclass(frozen=True)
+class WriterConditioningState:
+    """Reusable video state before the final layerwise Procedure commitment."""
+
+    shared_core_slots: torch.Tensor
+    procedure_memory: torch.Tensor
+    procedure_positions: torch.Tensor
+    valid_procedure: torch.Tensor
+    video_condition_ids: torch.Tensor
+    per_video_query_conditioners: torch.Tensor
+
+
 class CompleteLoRAWriter(torch.nn.Module):
     """Condition the strong V6 Procedure reader with layer/rank probe evidence."""
 
@@ -255,7 +267,57 @@ class CompleteLoRAWriter(torch.nn.Module):
             ),
         )
 
-    def encode_program(
+    def compile_conditioning_state(
+        self,
+        state: WriterConditioningState,
+        condition_video_offsets: torch.Tensor,
+        *,
+        use_query_delta: bool,
+    ) -> WriterProgramOutput:
+        """Compile one cached context with either LPCP or exact AS139 queries."""
+
+        video_count = int(state.procedure_memory.shape[0])
+        expected_slots = (video_count, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
+        if (
+            state.shared_core_slots.ndim != 3
+            or state.shared_core_slots.shape[1:]
+            != (self.POLICY_SLOTS, self.PROGRAM_WIDTH)
+            or state.procedure_positions.shape != state.procedure_memory.shape[:2]
+            or state.valid_procedure.shape != state.procedure_memory.shape[:2]
+            or state.valid_procedure.dtype != torch.bool
+            or state.video_condition_ids.shape != (video_count,)
+            or state.video_condition_ids.dtype != torch.long
+            or state.per_video_query_conditioners.shape != expected_slots
+        ):
+            raise WriterModelError("invalid cached layerwise conditioning state")
+        compiler = self.base_writer.compiler
+        routing = compiler.routing(video_count)
+        normalized_core = state.shared_core_slots.index_select(
+            0, state.video_condition_ids
+        )
+        if use_query_delta:
+            query_deltas = self.query_delta(state.per_video_query_conditioners)
+            query_condition: torch.Tensor | None = query_deltas
+        else:
+            query_deltas = torch.zeros_like(state.per_video_query_conditioners)
+            query_condition = None
+        per_video_procedure, _ = compiler.read_procedure_slots(
+            routing,
+            normalized_core,
+            state.procedure_memory,
+            state.procedure_positions,
+            state.valid_procedure,
+            query_condition=query_condition,
+        )
+        return self.compile_readouts(
+            state.shared_core_slots,
+            per_video_procedure,
+            condition_video_offsets,
+            per_video_query_conditioners=state.per_video_query_conditioners,
+            per_video_query_deltas=query_deltas,
+        )
+
+    def encode_conditioning_state(
         self,
         frames: torch.Tensor,
         frame_indices: torch.Tensor,
@@ -266,11 +328,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         task_span_mask: torch.Tensor,
         *,
         policy: torch.nn.Module,
-        singleton_video_index: int = 0,
-    ) -> WriterProgramOutput:
-        """Share frozen Core, then aggregate raw ordered Procedure Value."""
+    ) -> WriterConditioningState:
+        """Read the joint context once and retain the final commitment inputs."""
 
-        del singleton_video_index
         video_bounds = self._offsets(
             video_offsets, final=frames.shape[0], name="video offsets"
         )
@@ -325,8 +385,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_indices,
             video_bounds,
         )
-        query_deltas = self.query_delta(query_conditioners)
-
         with torch.no_grad():
             memories = self.base_writer.build_memories(evidence, frame_indices)
             compiler = self.base_writer.compiler
@@ -367,31 +425,45 @@ class CompleteLoRAWriter(torch.nn.Module):
             shared_core = torch.stack(
                 [value for value in shared_core_slots if value is not None]
             )
-        procedure_routing = compiler.routing(len(video_bounds) - 1)
-        per_video_procedure, _ = compiler.read_procedure_slots(
-            procedure_routing,
-            shared_core.index_select(0, video_condition_ids),
-            memories.procedure,
-            memories.positions,
-            memories.valid_procedure,
-            query_condition=query_deltas,
-        )
-        if shared_core.shape != (
-            len(condition_bounds) - 1,
-            self.POLICY_SLOTS,
-            self.PROGRAM_WIDTH,
-        ) or per_video_procedure.shape != (
-            len(video_bounds) - 1,
-            self.POLICY_SLOTS,
-            self.PROGRAM_WIDTH,
-        ):
-            raise WriterModelError("native v6 memory readout topology changed")
-        return self.compile_readouts(
-            shared_core,
-            per_video_procedure,
-            condition_video_offsets,
+        return WriterConditioningState(
+            shared_core_slots=shared_core,
+            procedure_memory=memories.procedure,
+            procedure_positions=memories.positions,
+            valid_procedure=memories.valid_procedure,
+            video_condition_ids=video_condition_ids,
             per_video_query_conditioners=query_conditioners,
-            per_video_query_deltas=query_deltas,
+        )
+
+    def encode_program(
+        self,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        *,
+        policy: torch.nn.Module,
+        singleton_video_index: int = 0,
+    ) -> WriterProgramOutput:
+        """Share frozen Core, then aggregate raw ordered Procedure Value."""
+
+        del singleton_video_index
+        state = self.encode_conditioning_state(
+            frames,
+            frame_indices,
+            video_offsets,
+            condition_video_offsets,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+            policy=policy,
+        )
+        return self.compile_conditioning_state(
+            state,
+            condition_video_offsets,
+            use_query_delta=True,
         )
 
     def decode_program(self, program: torch.Tensor) -> dict[str, torch.Tensor]:

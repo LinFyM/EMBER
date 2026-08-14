@@ -25,9 +25,8 @@ from ember.reward.protocol import (
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
     RewardTrajectory,
-    collect_paired_reward_arm_outcomes,
-    collect_randomized_reward_trajectories,
-    complete_trajectory_batch,
+    collect_paired_reward_arm_trajectories,
+    complete_selected_trajectory_batch,
 )
 
 
@@ -72,12 +71,12 @@ def test_random_reset_pool_keeps_counterfactual_lanes_independent(
         return value
 
     monkeypatch.setattr(pool, "_new_environment", create)
-    lanes = tuple(pool.get(task, lane=lane) for lane in range(4))
-    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(4))
-    assert len({id(value) for value in lanes}) == 4
-    assert len(created) == 4
+    lanes = tuple(pool.get(task, lane=lane) for lane in range(2))
+    assert all(lanes[lane] is pool.get(task, lane=lane) for lane in range(2))
+    assert len({id(value) for value in lanes}) == 2
+    assert len(created) == 2
     with pytest.raises(RewardProtocolError, match="lane"):
-        pool.get(task, lane=4)
+        pool.get(task, lane=2)
     pool.close()
     assert all(value.closed for value in created)
 
@@ -200,7 +199,7 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
         for lane, value in enumerate((1, 6))
     )
     policy = _FakePolicy()
-    outcomes = collect_paired_reward_arm_outcomes(
+    trajectories = collect_paired_reward_arm_trajectories(
         envs=envs,
         policy=policy,
         preprocess=_preprocess,
@@ -220,22 +219,22 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
         action_execution_horizon=5,
         num_inference_steps=10,
     )
-    assert len(outcomes) == 2
-    assert [value.success for value in outcomes] == [True, True]
-    assert [value.steps for value in outcomes] == [1, 6]
-    assert [value.rollout_cursor for value in outcomes] == [0, 1]
+    assert len(trajectories) == 2
+    assert [value.success for value in trajectories] == [True, True]
+    assert [value.steps for value in trajectories] == [1, 6]
+    assert [value.rollout_cursor for value in trajectories] == [0, 1]
     assert [noise.shape[0] for noise in policy.noises] == [2, 1]
     assert policy.reset_count == 1
-    for lane, (outcome, env) in enumerate(zip(outcomes, envs, strict=True)):
+    for lane, (trajectory, env) in enumerate(zip(trajectories, envs, strict=True)):
         expected_seeds = tuple(
             reward_credit_policy_noise_seed(43, "libero_spatial", 6, 23, lane, replan)
-            for replan in range(len(outcome.policy_noise_seeds))
+            for replan in range(len(trajectory.policy_noise_seeds))
         )
-        assert outcome.policy_noise_seeds == expected_seeds
+        assert trajectory.policy_noise_seeds == expected_seeds
         environment_rows = [value for name, value in env.events if name == "policy"]
-        assert len(environment_rows) == outcome.steps
-        assert outcome.initial_normalized_action_chunk.shape == (1, 50, 7)
-        assert set(vars(outcome)) == {
+        assert len(environment_rows) == trajectory.steps
+        assert trajectory.action_chunks[0].shape == (1, 50, 7)
+        assert set(vars(trajectory)) == {
             "suite",
             "task_id",
             "global_task_id",
@@ -248,17 +247,19 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
             "reward_sum",
             "dummy_settling_steps",
             "policy_noise_seeds",
-            "initial_normalized_action_chunk",
+            "observations",
+            "action_chunks",
+            "valid_action_steps",
         }
 
 
-def test_k4_rollout_retains_executed_prefixes_for_mixed_reward() -> None:
+def test_paired_k2_rollout_retains_executed_prefixes_for_credit() -> None:
     envs = tuple(
         _FakeEnvironment(success_after_policy_steps=value, marker=lane * 20)
-        for lane, value in enumerate((1, 6, None, 11))
+        for lane, value in enumerate((1, None))
     )
     policy = _FakePolicy()
-    trajectories = collect_randomized_reward_trajectories(
+    trajectories = collect_paired_reward_arm_trajectories(
         envs=envs,
         policy=policy,
         preprocess=_preprocess,
@@ -268,8 +269,8 @@ def test_k4_rollout_retains_executed_prefixes_for_mixed_reward() -> None:
         global_task_id=6,
         language="put the bowl on the tray",
         adaptation_seed=23,
-        rollout_cursors=(0, 1, 2, 3),
-        env_seeds=(29, 31, 37, 41),
+        rollout_cursors=(0, 1),
+        env_seeds=(29, 31),
         policy_seed_root=43,
         device=torch.device("cpu"),
         max_horizon=12,
@@ -278,20 +279,17 @@ def test_k4_rollout_retains_executed_prefixes_for_mixed_reward() -> None:
         action_execution_horizon=5,
         num_inference_steps=10,
     )
-    assert [value.success for value in trajectories] == [True, True, False, True]
+    assert [value.success for value in trajectories] == [True, False]
     assert [value.valid_action_steps for value in trajectories] == [
         (1,),
-        (5, 1),
         (5, 5, 2),
-        (5, 5, 1),
     ]
-    assert [noise.shape[0] for noise in policy.noises] == [4, 3, 2]
-    batch, episode_ids, successes = complete_trajectory_batch(
-        trajectories, torch.device("cpu")
+    assert [noise.shape[0] for noise in policy.noises] == [2, 1, 1]
+    batch, target_ids = complete_selected_trajectory_batch(
+        trajectories[:1], torch.device("cpu")
     )
-    assert batch[ACTION].shape == (9, 50, 7)
-    assert episode_ids.tolist() == [0, 1, 1, 2, 2, 2, 3, 3, 3]
-    assert successes.tolist() == [1.0, 1.0, 0.0, 1.0]
+    assert batch[ACTION].shape == (1, 50, 7)
+    assert target_ids.tolist() == [0]
 
 
 def _trajectory(*, success: bool) -> RewardTrajectory:
@@ -319,28 +317,18 @@ def _trajectory(*, success: bool) -> RewardTrajectory:
     )
 
 
-def test_all_failure_k4_replay_skips_observation_concatenation() -> None:
-    batch, episode_ids, successes = complete_trajectory_batch(
-        tuple(_trajectory(success=False) for _ in range(4)), torch.device("cpu")
+def test_two_selected_successes_remain_separate_equal_targets() -> None:
+    batch, target_ids = complete_selected_trajectory_batch(
+        tuple(_trajectory(success=True) for _ in range(2)), torch.device("cpu")
     )
-    assert set(batch) == {"executed_action_steps"}
-    assert episode_ids.tolist() == [0, 1, 2, 3]
-    assert successes.tolist() == [0.0] * 4
-
-
-def test_all_success_k4_replay_retains_the_support_batch() -> None:
-    batch, episode_ids, successes = complete_trajectory_batch(
-        tuple(_trajectory(success=True) for _ in range(4)), torch.device("cpu")
-    )
-    assert batch[ACTION].shape == (4, 50, 7)
-    assert batch["executed_action_steps"].tolist() == [5, 5, 5, 5]
-    assert episode_ids.tolist() == [0, 1, 2, 3]
-    assert successes.tolist() == [1.0] * 4
+    assert batch[ACTION].shape == (2, 50, 7)
+    assert batch["executed_action_steps"].tolist() == [5, 5]
+    assert target_ids.tolist() == [0, 1]
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:
     def collect():
-        return collect_paired_reward_arm_outcomes(
+        return collect_paired_reward_arm_trajectories(
             envs=tuple(
                 _FakeEnvironment(success_after_policy_steps=None, marker=lane * 20)
                 for lane in range(2)
@@ -373,8 +361,8 @@ def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -
         assert left.env_seed == right.env_seed
         assert left.rollout_cursor == right.rollout_cursor
         torch.testing.assert_close(
-            left.initial_normalized_action_chunk,
-            right.initial_normalized_action_chunk,
+            left.action_chunks[0],
+            right.action_chunks[0],
             rtol=0,
             atol=0,
         )

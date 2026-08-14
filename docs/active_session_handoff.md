@@ -1,12 +1,12 @@
 # EMBER Active Session State
 
-更新时间：2026-08-14。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
+更新时间：2026-08-15。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
 表示当时时点。稳定目标与owner要求见`docs/current_owner_requirements.md`，历史结果见`docs/research_history.md`。
 
 ## 1. Current truth
 
-- 长期Goal处于active：同一shared Writer、同一single checkpoint的strict paired correct严格`>150/400`，同时
-  保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
+- 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
+  checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
 - v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好=
   `143/135/125/128/129`，LPCP只完成correct且breadth7；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
@@ -33,7 +33,14 @@
 - 首次strict root因临时launcher误写旧`/data0` LIBERO assets，在400份LoRA生成后、首个环境创建前工程失败，
   没有任何rollout分数；旧contract封存错误路径，未resume为正式结果。新root先按同一contract真实创建8/8 validation
   环境再启动，失败只作工程证据；
-- 当前没有active successor或GPU进程。按owner要求，本轮全部分析与文档封存后停下讨论；
+- owner已授权继续；当前active successor是**V6-LPCP Paired Causal Success Distillation**（PCSD），authority=
+  `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。它不把memory token或rank变化
+  预设为答案：冻结LPCP carrier与AS139/rank16 tail，只训练`query_delta.weight`；train24每task以K2严格同初态
+  AS139-reference/LPCP-candidate arms产生唯一成功轨迹credit。AS139/LPCP validation union=`162`只作设计依据，
+  不能冒充可部署分数。PCSD已在canonical reward path原位实现：共享一次detached conditioning state，顺序执行
+  exact K2 reference/candidate arms，只collate唯一成功轨迹，active-task等权更新单一`query_delta.weight`；旧LOO、
+  support projection、K4 replay和outcome-only active runtime均已移除。全量CPU=`387 passed`，architecture guard
+  无hard violation；当前尚无PCSD GPU或closed-loop结果，且没有EMBER GPU进程；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

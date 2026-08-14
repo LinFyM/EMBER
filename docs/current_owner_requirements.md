@@ -35,9 +35,11 @@ exact task language + one or more action-hidden correct teaching videos
 当前主要研究目标是让初次生成的adaptation本身立即有效。后续在该adaptation上做task-local RL，是独立的后续
 实验，不能拿来掩盖初始Writer性能不足。
 
-成功标准保持：同一shared method、同一single checkpoint的strict paired correct严格`>150/400`，并继续提高。
-历史最好v6-fast `143/400`是必须正面超过的起点，不是可以靠checkpoint union、挑task checkpoint或平均模型
-绕过的门。
+性能仍应尽可能超过`150/400`并继续提高，但owner于2026-08-15补充了更重要的科学资格：若同一shared method的
+连续相邻checkpoints都能稳定保持约`145+`、成功集合低换手，且same-task不同视频鲁棒、correct相对wrong/
+shuffled/reversed/no-video有明显特异性，那么即使尚未到151也可视为很有价值的成立结果。反之，单点151若来自
+波动winner、同任务换video即掉或没有视频因果性，也不算成功。历史v6-fast143仍需正面超过或在稳定性/因果性上
+实质改进，不能靠checkpoint union、挑task checkpoint或平均模型绕过。
 
 ## 3. 真正的核心科学问题
 
@@ -327,7 +329,16 @@ K4 generation锁B32。真实性能为`143/400`、breadth7、per-task=`1/4/48/35/
 `.56804`，Goal3高coherence仍0，Long1小改写却净丢6。因此本轮不支持“native probe carrier失败，立刻换literal
 memory”的分支；更早缺口是conditioned Procedure到冻结fusion/compiler的policy commitment，以及blind B20
 functional credit对held occupancy的方向选择。memory token仍可成为以后可扩展LoRA生成的一部分，但若只替换已
-通过的carrier并保留同一Query/credit，不是在检验当前证据指向的问题。当前按owner要求停下讨论下一单变量。
+通过的carrier并保留同一Query/credit，不是在检验当前证据指向的问题。
+
+owner随后授权继续，并再次说明并非要求memory token必须成为下一架构：若沿V6能更直接找到突破口，可以继续；
+memory的价值应由它是否解决真实LoRA生成接口来裁决。当前受控后继因此保留V6-LPCP完整部署图，利用AS139与
+LPCP在严格同schedule下`120 both / 23 LPCP-only / 19 AS139-only`、union=`162`的事实，新增一次train24
+paired causal success distillation：同初态对跑zero-query AS139 reference和当前LPCP candidate，只用两臂中唯一
+成功的policy-generated trajectory校准最后65,536参数`query_delta`，不反向推坏失败轨迹、不选择checkpoint或
+部署第二套LoRA。精确authority=
+`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。这仍是初始Writer的共享训练阶段，
+不是生成LoRA后的task-local RL。
 
 后续迭代遵循以下边界：
 

@@ -1,4 +1,4 @@
-"""Train the shared ordered-Procedure Writer from train24 on-policy reward."""
+"""Train V6-LPCP query commitment with paired causal success distillation."""
 
 from __future__ import annotations
 
@@ -124,7 +124,7 @@ def _load_tasks(
     if len(reward_tasks) != 24 or [task.global_task_id for task in reward_tasks] != [
         task.task_id for task in writer_tasks
     ]:
-        raise WriterModelError("reward preference lost train24 task authority")
+        raise WriterModelError("PCSD lost train24 task authority")
     return tuple(reward_tasks), tuple(writer_tasks)
 
 
@@ -150,11 +150,11 @@ def _publish_contract(
             if runtime_args.output_dir.exists() and any(
                 runtime_args.output_dir.iterdir()
             ):
-                raise WriterModelError("fresh reward output is not empty")
+                raise WriterModelError("fresh PCSD output is not empty")
             runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
         elif not path.is_file() or read_json(path) != dict(contract):
-            raise WriterModelError("reward exact-resume launch contract changed")
+            raise WriterModelError("PCSD exact-resume launch contract changed")
         append_jsonl(
             runtime_args.output_dir / "invocations.jsonl",
             {
@@ -176,6 +176,7 @@ def _contract(
     base_config: Mapping[str, Any],
     source: Mapping[str, Any],
     trainable: Mapping[str, Any],
+    tasks: tuple[RewardTask, ...],
 ) -> dict[str, Any]:
     local = {
         "rank": context.rank,
@@ -211,12 +212,7 @@ def _contract(
         "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
         "formal_run": dict(config["formal_run"]),
-        "task_ids": [
-            task.global_task_id
-            for task in _load_tasks(data_root=args.data_root, base_config=base_config)[
-                0
-            ]
-        ],
+        "task_ids": [task.global_task_id for task in tasks],
         "runtime": {
             "world_size": context.world_size,
             "rank_topology": topology,
@@ -227,30 +223,23 @@ def _contract(
     }
 
 
-def prepare_runtime(
-    args: argparse.Namespace, context: DistributedContext
-) -> RewardRuntime:
-    config, base_config = load_reward_config(args.config)
-    require_reward_mode(config, args.mode)
-    if args.mode == "smoke" and context.world_size != 1:
-        raise WriterModelError("reward smoke uses one GPU")
-    allowed = config["formal_run"]["allowed_world_sizes"]
-    if context.world_size not in allowed:
-        raise WriterModelError("reward world size is outside 1--6")
-    if args.mode == "formal":
-        state = git_state(Path(__file__).resolve().parents[3])
-        if not git_state_is_clean_pushed_or_frozen_authority(state):
-            raise WriterModelError("formal reward training requires clean pushed Git")
-    seed_everything(int(config["rng"]["optimizer_seed"]), context)
-    authorities, source, _ = load_run_authorities(args, base_config)
+def _load_pcsd_models(
+    *,
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: dict[str, Any],
+    base_config: Mapping[str, Any],
+    source: Mapping[str, Any],
+    source_base_config: Mapping[str, Any],
+) -> tuple[torch.nn.Module, torch.nn.Module, Any, dict[str, Any], torch.optim.Optimizer]:
     cold_start = (
         args.source_run.resolve().parents[2] / config["cold_start_relative"]
     ).resolve()
     if not (cold_start / "writer.safetensors").is_file():
-        raise WriterModelError("reward AS cold-start checkpoint is missing")
+        raise WriterModelError("PCSD AS cold-start checkpoint is missing")
     config["resolved_cold_start"] = str(cold_start)
     policy = load_policy(
-        Path(source["model_path"]), authorities.source_base_config, context.device
+        Path(source["model_path"]), source_base_config, context.device
     )
     writer, lora = build_writer(
         base_config,
@@ -259,61 +248,42 @@ def prepare_runtime(
     )
     writer.to(context.device)
     writer.load_state_dict(
-        load_file(
-            str(cold_start / "writer.safetensors"),
-            device=str(context.device),
-        ),
+        load_file(str(cold_start / "writer.safetensors"), device=str(context.device)),
         strict=True,
     )
-    writer.train()
-    trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = (
-        "ordered_procedure_actual_delta_support_projection_writer_only"
+    writer.requires_grad_(False)
+    writer.query_delta.weight.requires_grad_(True)
+    writer.eval()
+    trainable_names = tuple(
+        name for name, value in writer.named_parameters() if value.requires_grad
     )
-    optimizer = _optimizer(writer, config)
-    initialize_deferred_process_group(
-        context,
-        rendezvous_root=args.output_dir.parent,
-        collective_timeout=timedelta(
-            minutes=int(
-                config["optimization"]["distributed"][
-                    "collective_timeout_minutes"
-                ]
-            )
-        ),
-    )
-    contract = _contract(
-        args=args,
-        context=context,
-        config=config,
-        base_config=base_config,
-        source=source,
-        trainable=trainable,
-    )
-    _publish_contract(args, context, contract)
-    start_cycle = checkpoint_cycle(args.resume)
-    if args.resume is not None:
-        loaded, _ = load_reward_checkpoint(
-            checkpoint=args.resume,
-            context=context,
-            writer=writer,
-            optimizer=optimizer,
-            contract=contract,
-        )
-        if loaded != start_cycle:
-            raise WriterModelError("reward resume cursor changed")
-    stop_cycle = (
-        1
-        if args.mode == "smoke"
-        else int(args.stop_after_cycle or config["formal_run"]["stage_stop_cycles"][0])
-    )
-    if args.mode == "formal" and (
-        stop_cycle not in config["formal_run"]["stage_stop_cycles"]
-        or not start_cycle < stop_cycle
+    if (
+        trainable_names != ("query_delta.weight",)
+        or writer.query_delta.weight.numel() != 65_536
     ):
-        raise WriterModelError("reward formal stop boundary changed")
-    tasks, writer_tasks = _load_tasks(data_root=args.data_root, base_config=base_config)
-    source_config = authorities.source_base_config
+        raise WriterModelError("PCSD must train only the 65,536-value query map")
+    trainable = writer_trainable_contract(writer, policy, lora)
+    trainable["object"] = "v6_lpcp_query_delta_paired_success_credit_only"
+    trainable["writer_trainable_parameter_names"] = list(trainable_names)
+    return policy, writer, lora, trainable, _optimizer(writer, config)
+
+
+def _condition_inputs(
+    *,
+    args: argparse.Namespace,
+    context: DistributedContext,
+    config: Mapping[str, Any],
+    base_config: Mapping[str, Any],
+    source_config: Mapping[str, Any],
+    tasks: tuple[RewardTask, ...],
+    writer_tasks: tuple[WriterTaskAuthority, ...],
+) -> tuple[
+    Pi05LiberoProcessor,
+    RawTeacherVideoStore,
+    dict[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
+    TeacherVideoSchedule,
+    RandomResetEnvironmentPool,
+]:
     length = int(source_config["features"]["tokenizer_max_length"])
     processor = Pi05LiberoProcessor(
         load_stats(source_config, source_config["data"]["active_task_ids"]),
@@ -335,7 +305,7 @@ def prepare_runtime(
         task_ids=[task.global_task_id for task in tasks],
         demo_indices=range(first, last + 1),
         seed=int(config["data"]["teacher_video_seed"]),
-        videos_per_visit=4,
+        videos_per_visit=int(config["data"]["videos_per_task"]),
     )
     libero_paths = prepare_libero_config(
         args.output_dir / f".libero_config_rank_{context.rank:02d}"
@@ -345,7 +315,90 @@ def prepare_runtime(
         assets_root=Path(libero_paths["assets"]),
         render_resolution=int(config["environment"]["render_resolution"]),
     )
-    torch.cuda.reset_peak_memory_stats(context.device)
+    return processor, store, language, schedule, env_pool
+
+
+def prepare_runtime(
+    args: argparse.Namespace, context: DistributedContext
+) -> RewardRuntime:
+    config, base_config = load_reward_config(args.config)
+    require_reward_mode(config, args.mode)
+    if args.mode == "smoke" and context.world_size != 1:
+        raise WriterModelError("PCSD smoke uses one GPU")
+    allowed = config["formal_run"]["allowed_world_sizes"]
+    if context.world_size not in allowed:
+        raise WriterModelError("PCSD world size is outside 1--6")
+    if args.mode == "formal":
+        state = git_state(Path(__file__).resolve().parents[3])
+        if not git_state_is_clean_pushed_or_frozen_authority(state):
+            raise WriterModelError("formal PCSD training requires clean pushed Git")
+    seed_everything(int(config["rng"]["optimizer_seed"]), context)
+    authorities, source, _ = load_run_authorities(args, base_config)
+    tasks, writer_tasks = _load_tasks(
+        data_root=args.data_root, base_config=base_config
+    )
+    policy, writer, lora, trainable, optimizer = _load_pcsd_models(
+        args=args,
+        context=context,
+        config=config,
+        base_config=base_config,
+        source=source,
+        source_base_config=authorities.source_base_config,
+    )
+    initialize_deferred_process_group(
+        context,
+        rendezvous_root=args.output_dir.parent,
+        collective_timeout=timedelta(
+            minutes=int(
+                config["optimization"]["distributed"][
+                    "collective_timeout_minutes"
+                ]
+            )
+        ),
+    )
+    contract = _contract(
+        args=args,
+        context=context,
+        config=config,
+        base_config=base_config,
+        source=source,
+        trainable=trainable,
+        tasks=tasks,
+    )
+    _publish_contract(args, context, contract)
+    start_cycle = checkpoint_cycle(args.resume)
+    if args.resume is not None:
+        loaded, _ = load_reward_checkpoint(
+            checkpoint=args.resume,
+            context=context,
+            writer=writer,
+            optimizer=optimizer,
+            contract=contract,
+        )
+        if loaded != start_cycle:
+            raise WriterModelError("PCSD resume cursor changed")
+    stop_cycle = (
+        1
+        if args.mode == "smoke"
+        else int(args.stop_after_cycle or config["formal_run"]["stage_stop_cycles"][0])
+    )
+    if args.mode == "formal" and (
+        stop_cycle not in config["formal_run"]["stage_stop_cycles"]
+        or not start_cycle < stop_cycle
+    ):
+        raise WriterModelError("PCSD formal stop boundary changed")
+    source_config = authorities.source_base_config
+    processor, store, language, schedule, env_pool = _condition_inputs(
+        args=args,
+        context=context,
+        config=config,
+        base_config=base_config,
+        source_config=source_config,
+        tasks=tasks,
+        writer_tasks=writer_tasks,
+    )
+    if context.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(context.device)
     return RewardRuntime(
         args=args,
         context=context,
@@ -417,8 +470,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_ordered_procedure_final_shared_"
-                        "support_projection_completion_v1"
+                        "ember_pi05_v6_lpcp_paired_causal_success_"
+                        "distillation_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

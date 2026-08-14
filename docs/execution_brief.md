@@ -1,6 +1,6 @@
 # EMBER Execution Brief
 
-更新时间：2026-08-14。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
+更新时间：2026-08-15。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
 ## 1. Latest completed experiment and next decision boundary
@@ -22,7 +22,14 @@ first4同task correction coherence mean/median=`.61786/.56804`，所以本轮没
 `7 gains/13 losses`。train24 functional first5/last5仅`.098880/.097109`，14 tasks改善、10 tasks变差。
 最早失效接口因此是**conditioned Procedure经冻结fusion/compiler承诺成非常小的AS139邻域方向，blind B20
 functional credit又不能判断该方向是否覆盖held on-policy occupancy**。carrier本身已经通过门，故不直接触发
-literal-memory替换；下一轮需先讨论Procedure-to-LoRA commitment或policy-aligned shared credit中的单变量。
+literal-memory替换。
+
+当前已选择policy-aligned credit分支：同schedule AS139/LPCP的严格成功集合union=`162`，说明超过150所需support
+已分别存在于reference与candidate，但不是一个可部署checkpoint。PCSD用train24同初态K2两臂，只选择唯一成功
+arm的executed trajectory，在当前candidate LoRA下做positive CFM distillation；ties为zero，不对失败轨迹做
+anti-imitation。部署架构、K4输入、rank16、reader/conditioner和frozen compiler不变，只训练65,536参数
+`query_delta.weight`。authority=
+`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。
 
 ## 2. Completed changed variable and training semantics
 
@@ -35,10 +42,11 @@ literal-memory替换；下一轮需先讨论Procedure-to-LoRA commitment或polic
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP143均已终局且不得resume。LPCP虽追平历史143并扩到
-breadth7，但相对AS139 lost19且未过144门；不得用macro50、memory/rank/LR/scale/seed小扫救回。当前没有active
-successor或GPU进程；按owner要求，本轮分析和文档封存后停下讨论下一单变量。最终成功仍要求strict>150与健康
-video controls。
+Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP AS阶段均已终局且不得resume或小扫。PCSD是
+fresh-incompatible reward-calibration stage，不是LPCP macro50续训；canonical实现与CPU门已完成，下一步做
+full24 paired cycle，只有机制门
+通过才立即strict400。`>150`仍是性能追求，但约145若要成立，必须由相邻checkpoint低churn、same-task-video
+鲁棒和健康video controls共同认证；单点高分不能作为方法结论。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

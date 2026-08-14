@@ -1,6 +1,6 @@
 # EMBER Persistent Plan
 
-更新时间：2026-08-14。本文只记录长期Goal与当前迭代阶段；实时run状态见
+更新时间：2026-08-15。本文只记录长期Goal与当前迭代阶段；实时run状态见
 `docs/active_session_handoff.md`，历史实验见`docs/research_history.md`。
 
 ## Goal
@@ -13,8 +13,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Success evidence
 
-- single-checkpoint strict paired correct `>150/400`；
-- 高breadth、低checkpoint churn、per-suite不过度集中；
+- 性能继续追求single-checkpoint strict paired correct `>150/400`；约145若要成立，必须由相邻checkpoints共同保持；
+- 高breadth、低checkpoint churn、高相邻success-set重合、per-suite不过度集中；
 - correct materially优于wrong/shuffled/reversed/no-video，same-task-other接近correct；
 - Program、LoRA、effective BA与action证据能解释closed-loop，而非替代它；
 - 方法不依赖teacher actions、task ID、held expert bank、挑video、多LoRA/checkpoint融合或language-only shortcut；
@@ -230,6 +230,21 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 6. fresh训练到预注册节点，尽快做single-checkpoint strict paired400；
 7. 深入分析后进入下一轮，直到长期Goal真正达成。
 
+## Active iteration: V6-LPCP Paired Causal Success Distillation
+
+- [x] 纠正口径：LPCP143只追平历史v6-fast，对AS139净`+4`且`p=.643969`，不是突然变强；
+- [x] 审计SHINE/Doc-to-LoRA原则、V6已有layer/module/rank slots，以及Target-Owned/Policy-Lane/Target-Spectral/
+  Dynamic-K memory负结果；确认新增token、capacity或漂亮LoRA geometry不是当前最早变量；
+- [x] 审计旧LOO reward、ADSP与candidate guards；确认它们没有检验“严格reference/candidate两臂中只蒸馏唯一
+  成功trajectory”的continuous credit；
+- [x] 写PCSD单变量authority：K4 V6-LPCP部署不变，只训练65,536参数query commitment map；
+- [x] 原位替换退役reward runtime，完成shared conditioning cache、K2 paired replay与selected-success CFM；
+- [x] 完成CPU/机制门：全量`387 passed`；architecture guard无hard violation；
+- [ ] review task-scoped diff，commit/push clean authority；
+- [ ] live双节点GPU/quota preflight后运行一个full24 paired cycle；
+- [ ] 机制过门后立即single-checkpoint K4 strict paired400并做逐task/union-retention分析；
+- [ ] 首次约145且retention过门即补视频因果controls并运行相邻checkpoint；单点>150也不能跳过稳定性裁决。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；
@@ -244,8 +259,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP143均已按门终局，当前没有active
-successor或GPU进程。按owner要求，本轮实现、训练、strict400、paired outcome与effective-BA分析完成后在这里停下
-讨论，不自行启动下一轮。native probe已通过顺序/static/one-forward carrier门，因此失败不触发“只把carrier换成
-literal memory”的直接重跑；下一候选必须讨论是单变量改变Procedure-to-LoRA commitment，还是改变
-policy-aligned shared credit。生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP AS阶段均已按门终局。当前active
+PCSD选择policy-aligned shared credit：利用AS139/LPCP union162的retrospective证据训练一个single checkpoint，
+绝不在validation部署oracle selector。canonical实现与CPU门已完成，当前没有EMBER GPU进程；下一步按formal
+preflight封存并发射。literal
+memory保留为以后有触发证据的commitment/carrier变量，不与本轮credit混合。生成LoRA后的task-local RL仍是初始
+Writer达到强zero-interaction起点之后的独立实验。

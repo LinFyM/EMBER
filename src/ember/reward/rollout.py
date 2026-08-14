@@ -79,7 +79,7 @@ def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch
 
 
 class RandomResetEnvironmentPool:
-    """Retain four independent environment lanes per train task."""
+    """Retain the two paired reset lanes used by both PCSD policy arms."""
 
     def __init__(
         self, *, bddl_root: Path, assets_root: Path, render_resolution: int
@@ -107,8 +107,8 @@ class RandomResetEnvironmentPool:
         )
 
     def get(self, task: RewardTask, *, lane: int = 0) -> Any:
-        if not 0 <= lane < 4:
-            raise RewardProtocolError("random-reset lane must be in 0..3")
+        if not 0 <= lane < 2:
+            raise RewardProtocolError("random-reset lane must be in 0..1")
         key = (task.global_task_id, lane)
         if key in self._envs:
             return self._envs[key]
@@ -134,23 +134,6 @@ class RandomResetEnvironmentPool:
 
     def __exit__(self, *_: Any) -> None:
         self.close()
-
-
-@dataclass(frozen=True)
-class RewardRolloutOutcome:
-    suite: str
-    task_id: int
-    global_task_id: int
-    adaptation_seed: int
-    rollout_cursor: int
-    env_seed: int
-    policy_seed_root: int
-    success: bool
-    steps: int
-    reward_sum: float
-    dummy_settling_steps: int
-    policy_noise_seeds: tuple[int, ...]
-    initial_normalized_action_chunk: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -187,7 +170,6 @@ class _RewardLaneState:
     reward_sum: float = 0.0
     steps: int = 0
     success: bool = False
-    initial_action_chunk: torch.Tensor | None = None
 
     def is_active(self, max_horizon: int) -> bool:
         return not self.success and self.steps < max_horizon
@@ -244,22 +226,6 @@ def _random_reset_with_settling(
         if _success(done, reward, info):
             raise RewardProtocolError("LIBERO task succeeded during dummy settling")
     return observation
-
-
-def _validate_paired_arm_panel(
-    envs: Sequence[Any],
-    rollout_cursors: Sequence[int],
-    env_seeds: Sequence[int],
-) -> None:
-    if (
-        len(envs) != 2
-        or len(rollout_cursors) != 2
-        or len(env_seeds) != 2
-        or len(set(int(value) for value in rollout_cursors)) != 2
-        or len(set(int(value) for value in env_seeds)) != 2
-        or len({id(env) for env in envs}) != 2
-    ):
-        raise RewardProtocolError("PCUG rollout arm must be exact K2")
 
 
 def _initialize_lanes(
@@ -389,8 +355,6 @@ def _advance_lane(
     stored: dict[str, torch.Tensor] | None = None,
 ) -> None:
     lane.noise_seeds.append(noise_seed)
-    if lane.initial_action_chunk is None:
-        lane.initial_action_chunk = normalized_chunk.detach().clone()
     if stored is not None:
         lane.replay_observations.append(stored)
         lane.replay_actions.append(
@@ -407,142 +371,28 @@ def _advance_lane(
         if lane.success or lane.steps >= max_horizon:
             break
     if executed <= 0:
-        raise RewardProtocolError("PCUG reward lane executed no action")
+        raise RewardProtocolError("PCSD reward lane executed no action")
     if stored is not None:
         lane.valid_action_steps.append(executed)
 
 
-def _finalize_outcomes(
-    *,
-    lanes: Sequence[_RewardLaneState],
-    suite: str,
-    task_id: int,
-    global_task_id: int,
-    adaptation_seed: int,
-    policy_seed_root: int,
-    dummy_settling_steps: int,
-) -> tuple[RewardRolloutOutcome, ...]:
-    result = []
-    for lane in lanes:
-        if not lane.noise_seeds or lane.initial_action_chunk is None:
-            raise RewardProtocolError("PCUG reward lane made no policy observation")
-        result.append(
-            RewardRolloutOutcome(
-                suite=suite,
-                task_id=task_id,
-                global_task_id=global_task_id,
-                adaptation_seed=adaptation_seed,
-                rollout_cursor=lane.rollout_cursor,
-                env_seed=lane.env_seed,
-                policy_seed_root=policy_seed_root,
-                success=lane.success,
-                steps=lane.steps,
-                reward_sum=lane.reward_sum,
-                dummy_settling_steps=dummy_settling_steps,
-                policy_noise_seeds=tuple(lane.noise_seeds),
-                initial_normalized_action_chunk=lane.initial_action_chunk,
-            )
-        )
-    return tuple(result)
-
-
-def collect_paired_reward_arm_outcomes(
-    *,
-    envs: Sequence[Any],
-    policy: torch.nn.Module,
-    preprocess: Any,
-    postprocess: Any,
-    suite: str,
-    task_id: int,
-    global_task_id: int,
-    language: str,
-    adaptation_seed: int,
-    rollout_cursors: Sequence[int],
-    env_seeds: Sequence[int],
-    policy_seed_root: int,
-    device: torch.device,
-    max_horizon: int,
-    dummy_settling_steps: int,
-    dummy_action: Sequence[float],
-    action_execution_horizon: int,
-    num_inference_steps: int,
-    policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
-) -> tuple[RewardRolloutOutcome, ...]:
-    """Run one exact K2 arm; a second call with the same keys forms its pair."""
-
-    _validate_paired_arm_panel(envs, rollout_cursors, env_seeds)
-    lanes = _initialize_lanes(
-        envs=envs,
-        policy=policy,
-        task_id=task_id,
-        global_task_id=global_task_id,
-        adaptation_seed=adaptation_seed,
-        rollout_cursors=rollout_cursors,
-        env_seeds=env_seeds,
-        policy_seed_root=policy_seed_root,
-        max_horizon=max_horizon,
-        dummy_settling_steps=dummy_settling_steps,
-        action_execution_horizon=action_execution_horizon,
-        num_inference_steps=num_inference_steps,
-        dummy_action=dummy_action,
-    )
-    policy.reset()
-    while True:
-        active = [lane for lane in lanes if lane.is_active(max_horizon)]
-        if not active:
-            break
-        _, normalized, actions, seeds = _batched_policy_replan(
-            active=active,
-            policy=policy,
-            preprocess=preprocess,
-            postprocess=postprocess,
-            suite=suite,
-            task_id=task_id,
-            language=language,
-            adaptation_seed=adaptation_seed,
-            policy_seed_root=policy_seed_root,
-            device=device,
-            num_inference_steps=num_inference_steps,
-            policy_seed_fn=policy_seed_fn,
-            capture_replay=False,
-        )
-        for row, lane in enumerate(active):
-            _advance_lane(
-                lane=lane,
-                normalized_chunk=normalized[row : row + 1],
-                environment_actions=actions[row],
-                noise_seed=seeds[row],
-                action_execution_horizon=action_execution_horizon,
-                max_horizon=max_horizon,
-            )
-    return _finalize_outcomes(
-        lanes=lanes,
-        suite=suite,
-        task_id=task_id,
-        global_task_id=global_task_id,
-        adaptation_seed=adaptation_seed,
-        policy_seed_root=policy_seed_root,
-        dummy_settling_steps=dummy_settling_steps,
-    )
-
-
-def _validate_k4_panel(
+def _validate_trajectory_panel(
     envs: Sequence[Any],
     rollout_cursors: Sequence[int],
     env_seeds: Sequence[int],
 ) -> None:
     if (
-        len(envs) != 4
-        or len(rollout_cursors) != 4
-        or len(env_seeds) != 4
-        or len(set(int(value) for value in rollout_cursors)) != 4
-        or len(set(int(value) for value in env_seeds)) != 4
-        or len({id(env) for env in envs}) != 4
+        len(envs) != 2
+        or len(rollout_cursors) != 2
+        or len(env_seeds) != 2
+        or len(set(int(value) for value in rollout_cursors)) != 2
+        or len(set(int(value) for value in env_seeds)) != 2
+        or len({id(env) for env in envs}) != 2
     ):
-        raise RewardProtocolError("reward preference rollout panel must be exact K4")
+        raise RewardProtocolError("PCSD trajectory arm must be exact K2")
 
 
-def collect_randomized_reward_trajectories(
+def _collect_reward_trajectories(
     *,
     envs: Sequence[Any],
     policy: torch.nn.Module,
@@ -564,9 +414,9 @@ def collect_randomized_reward_trajectories(
     num_inference_steps: int,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
 ) -> tuple[RewardTrajectory, ...]:
-    """Collect one K4 panel and retain all successful and failed prefixes."""
+    """Collect one arm and retain all successful and failed prefixes."""
 
-    _validate_k4_panel(envs, rollout_cursors, env_seeds)
+    _validate_trajectory_panel(envs, rollout_cursors, env_seeds)
     lanes = _initialize_lanes(
         envs=envs,
         policy=policy,
@@ -635,21 +485,69 @@ def collect_randomized_reward_trajectories(
     )
 
 
-def complete_trajectory_batch(
-    trajectories: Sequence[RewardTrajectory], device: torch.device
-) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
-    """Collate K4 executed prefixes, keeping each episode equally weighted later."""
+def collect_paired_reward_arm_trajectories(
+    *,
+    envs: Sequence[Any],
+    policy: torch.nn.Module,
+    preprocess: Any,
+    postprocess: Any,
+    suite: str,
+    task_id: int,
+    global_task_id: int,
+    language: str,
+    adaptation_seed: int,
+    rollout_cursors: Sequence[int],
+    env_seeds: Sequence[int],
+    policy_seed_root: int,
+    device: torch.device,
+    max_horizon: int,
+    dummy_settling_steps: int,
+    dummy_action: Sequence[float],
+    action_execution_horizon: int,
+    num_inference_steps: int,
+    policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
+) -> tuple[RewardTrajectory, ...]:
+    """Run one exact K2 arm; a second call with the same keys forms its pair."""
 
-    if len(trajectories) != 4 or any(
-        not trajectory.observations
+    return _collect_reward_trajectories(
+        envs=envs,
+        policy=policy,
+        preprocess=preprocess,
+        postprocess=postprocess,
+        suite=suite,
+        task_id=task_id,
+        global_task_id=global_task_id,
+        language=language,
+        adaptation_seed=adaptation_seed,
+        rollout_cursors=rollout_cursors,
+        env_seeds=env_seeds,
+        policy_seed_root=policy_seed_root,
+        device=device,
+        max_horizon=max_horizon,
+        dummy_settling_steps=dummy_settling_steps,
+        dummy_action=dummy_action,
+        action_execution_horizon=action_execution_horizon,
+        num_inference_steps=num_inference_steps,
+        policy_seed_fn=policy_seed_fn,
+    )
+
+
+def complete_selected_trajectory_batch(
+    trajectories: Sequence[RewardTrajectory], device: torch.device
+) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    """Collate the one or two uniquely successful trajectories selected by pairing."""
+
+    if len(trajectories) not in {1, 2} or any(
+        not trajectory.success
+        or not trajectory.observations
         or len(trajectory.observations) != len(trajectory.action_chunks)
         or len(trajectory.observations) != len(trajectory.valid_action_steps)
         for trajectory in trajectories
     ):
-        raise RewardProtocolError("reward preference requires complete K4 replay")
+        raise RewardProtocolError("paired success requires one or two winners")
     chunks = [
-        (episode, observation, action, valid)
-        for episode, trajectory in enumerate(trajectories)
+        (target, observation, action, valid)
+        for target, trajectory in enumerate(trajectories)
         for observation, action, valid in zip(
             trajectory.observations,
             trajectory.action_chunks,
@@ -657,24 +555,15 @@ def complete_trajectory_batch(
             strict=True,
         )
     ]
+    keys = set(chunks[0][1])
+    if any(set(observation) != keys for _, observation, _, _ in chunks):
+        raise RewardProtocolError("paired success replay observation keys changed")
     valid = torch.tensor(
         [count for _, _, _, count in chunks], dtype=torch.long, device=device
     )
-    episode_ids = torch.tensor(
-        [episode for episode, _, _, _ in chunks], dtype=torch.long, device=device
+    target_ids = torch.tensor(
+        [target for target, _, _, _ in chunks], dtype=torch.long, device=device
     )
-    successes = torch.tensor(
-        [trajectory.success for trajectory in trajectories],
-        dtype=torch.float32,
-        device=device,
-    )
-    if bool((valid <= 0).any()):
-        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
-    if not bool(successes.any()):
-        return {"executed_action_steps": valid}, episode_ids, successes
-    keys = set(chunks[0][1])
-    if any(set(observation) != keys for _, observation, _, _ in chunks):
-        raise RewardProtocolError("PI05 reward replay observation keys changed")
     batch = {
         name: torch.cat([observation[name] for _, observation, _, _ in chunks]).to(
             device=device, non_blocking=True
@@ -684,11 +573,15 @@ def complete_trajectory_batch(
     actions = torch.cat([action for _, _, action, _ in chunks]).to(
         device=device, non_blocking=True
     )
-    if actions.ndim != 3 or bool((valid > actions.shape[1]).any()):
-        raise RewardProtocolError("PI05 reward replay executed prefix is invalid")
+    if (
+        actions.ndim != 3
+        or bool((valid <= 0).any())
+        or bool((valid > actions.shape[1]).any())
+    ):
+        raise RewardProtocolError("paired success executed prefix is invalid")
     batch[ACTION] = actions
     batch["executed_action_steps"] = valid
     batch["action_is_pad"] = (
         torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
-    return batch, episode_ids, successes
+    return batch, target_ids

@@ -1,4 +1,4 @@
-"""Canonical exact-paired closed-loop outcome mechanics for PCUG."""
+"""Canonical exact-paired closed-loop trajectory mechanics for PCSD."""
 
 from ember.reward.protocol import (
     RewardTask,
@@ -7,15 +7,17 @@ from ember.reward.protocol import (
 )
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
-    RewardRolloutOutcome,
-    collect_paired_reward_arm_outcomes,
+    RewardTrajectory,
+    collect_paired_reward_arm_trajectories,
+    complete_selected_trajectory_batch,
 )
 
 __all__ = [
     "RewardTask",
-    "RewardRolloutOutcome",
+    "RewardTrajectory",
     "RandomResetEnvironmentPool",
-    "collect_paired_reward_arm_outcomes",
+    "collect_paired_reward_arm_trajectories",
+    "complete_selected_trajectory_batch",
     "reward_credit_environment_seed",
     "reward_credit_policy_noise_seed",
 ]

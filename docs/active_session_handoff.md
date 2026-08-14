@@ -34,8 +34,19 @@
 - gpu01物理7真实smoke通过K1、倒序、freeze与梯度门；clean detached `50a3c36`在gpu01物理`0/1/2/4/5/6`
   完成full24 B20 macro1/2 profile：`26.112/22.543s`，gradient=`.0003266/.0003663`，q/k delta=
   `.0001158/.0001183`，K各6、最长323帧完整、peak reserved=`40.758GB`、0 OOM/nonfinite；root=
-  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_profile_r6_b20_50a3c36_gpu01_20260814`；下一步从
-  新clean pushed seal做fresh macro0->25，绝不加载profile state；
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_profile_r6_b20_50a3c36_gpu01_20260814`；
+- clean detached `d316623`已在gpu01物理`2/4/5/6/7`以fresh world5完成macro0->25，绝未加载profile state：
+  25/25 metrics、完整world5 checkpoint、completion与exit0，总elapsed=`745.622s`，macro mean=`29.790s`，
+  loss `.10118184->.09564162`，gradient范围`.00025272--.00046269`，K各6、最长359帧完整、peak reserved=
+  `40.758GB`；root=
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_formal_fresh0to25_r5_b20_d316623_gpu01_20260814`；
+- macro2->25 q/k delta=`.08636/.08605`，output norm `.009275->.277774`；first4 output-zero反事实中Procedure
+  correction=`.09601`，entropy/log4=`.99443`，但effective-BA mean/task-mean只改写`.01397/.01392`，action=
+  `.00989`。raw ordered Procedure已打开完整credit，但native compiler后的policy改写仍较小；
+- macro25 live K4 deployment profile在gpu01物理2完成：B8/B16/B32=
+  `.2250164/.2247286/.2247036 LoRA/s`，三者stable、0 OOM/nonfinite，peak reserved约
+  `12.952/12.973/13.011GB`，最长226帧，按最高吞吐锁B8；root=
+  `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_d316623_macro0025_retry1_20260814`；下一步从clean pushed evaluator立即strict paired400；
 - 本轮terminal design是V6 Semantic-Core Common-Value Set Bridge；authority=
   `docs/action_forecast_writer_v6_semantic_core_common_value_set_bridge_design.md`；canonical实现已原位替换centered
   Value与旧schema。显式K1旁路的零导数训练边界已修正，正式环境full CPU=`374 passed`；

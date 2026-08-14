@@ -1,8 +1,9 @@
 # V6 Shared-Core Ordered-Procedure Common-Value Bridge
 
-状态：2026-08-14 active design authority。本文授权在唯一canonical Writer path中，以历史v6-fast macro400为
-冻结底座，恢复已严格得到`139/400`的Shared-Core边界，并只把跨视频Procedure-Set的Value从centered residual
-改为raw common ordered Procedure。不得从Common-Value、Semantic-Core Set或旧Procedure-Set checkpoint续训。
+状态：2026-08-14 active design authority；formal fresh macro0->25已完成，deployment profile与strict400进行中。
+本文授权在唯一canonical Writer path中，以历史v6-fast macro400为冻结底座，恢复已严格得到`139/400`的
+Shared-Core边界，并只把跨视频Procedure-Set的Value从centered residual改为raw common ordered Procedure。
+不得从Common-Value、Semantic-Core Set或旧Procedure-Set checkpoint续训。
 
 ## 1. 为什么是这个接口
 
@@ -122,8 +123,9 @@ optimization失败。不得把失败改写成“视频没被读取”“rank16�
 
 唯一active `CompleteLoRAWriter`已恢复shared-Core union与per-video ordered Procedure reader，并把旧centered
 `PolicyProcedureSetFusion`原位替换为raw `PolicyProcedureCommonValueFusion`。旧Semantic-Core Common-Value
-config/schema/checkpoint/evaluator由Git与formal artifacts保存，不留runtime flag或第二实现。新config处于
-`unsealed_pending_live_profile`，不继承旧profile或deployment batch seal。
+config/schema/checkpoint/evaluator由Git与formal artifacts保存，不留runtime flag或第二实现。新config先以
+`unsealed_pending_live_profile`进入实测，且不继承旧profile或deployment batch seal；本节末的当前checkpoint
+live profile完成后才切换为`active_formal_ready`。
 
 定向测试证明K1在任意nonzero output下仍与native v6的76 tensors严格相等；K>1集合换位不变、video内倒序改变
 Program；zero-init逐tensor等于parameter-free Shared-Core graph；uniform q/k与identity output得到raw Procedure
@@ -142,3 +144,29 @@ condition 323帧全部保留，peak allocated/reserved=`36.495/40.758GB`，0 OOM
 Procedure的credit相消并在首步后展开完整attention。profile root=
 `runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_profile_r6_b20_50a3c36_gpu01_20260814`；formal config
 现已seal，profile checkpoint不进入formal训练。
+
+## 10. Formal macro25与first4机制证据
+
+clean detached `d316623`在gpu01物理`2/4/5/6/7`以fresh world5完成macro0->25；没有加载profile Writer或
+optimizer state。formal root=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_formal_fresh0to25_r5_b20_d316623_gpu01_20260814`。
+25/25 metrics、world5 rank states、trainer state、Writer、completion与exit0完整；总elapsed=`745.622s`，纯macro
+wall min/mean/max=`27.686/29.790/31.599s`。functional first/last=`.10118184/.09564162`，gradient范围=
+`.00025272--.00046269`，K1--K4每macro始终各6，最长condition=`359` frames且全部未截断，peak allocated/reserved=
+`36.501/40.758GB`，0 OOM/nonfinite。
+
+macro2->25的Procedure set没有重新关闭：query/key各继续变化`.08636/.08605`，output norm从`.009275`增长到
+`.277774`，三个矩阵的全部`65536`元素均发生更新。canonical validation8 first4 K4 output-zero反事实进一步显示：
+raw Procedure correction相对per-video Procedure全量mean=`.09601`，attention entropy/log4=`.99443`；但经过
+frozen native compiler后，current->zero effective-BA relative-L2 mean/task-mean仅=`.01397/.01392`，action
+targets为`.00989`。这比旧centered Procedure-Set的`.000918`明显打开，却仍把约9.6%的Program修正压成约1.4%的
+policy方向。artifact=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_formal_fresh0to25_r5_b20_d316623_gpu01_20260814/procedure_common_value_mechanism_first4.json`。
+该证据只解释接口，不提前选择方法；最终仍由同一macro25的K4 strict paired400裁决。
+
+同一macro25在gpu01物理2完成固定validation8x4 correct longest-panel的完整deployment profile：B8/B16/B32=
+`.2250164/.2247286/.2247036 LoRA/s`，三者stable、0 OOM/nonfinite，peak reserved=
+`12.952/12.973/13.011GB`，最长视频226帧；按预注册最高实测吞吐规则锁B8。root=
+`runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_k4_writer_generation_profile_val8x4_correct_gpu01p2_d316623_macro0025_retry1_20260814`。
+第一次试图只测B8在任何计时forward前被正式profile合同拒绝，因为合同要求同panel完整覆盖B8/B16/B32和两次实测；
+随后未绕过合同而完整重跑。当前evaluator仅seal K4/B8，下一步从clean pushed commit立即做strict paired400。

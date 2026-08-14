@@ -25,7 +25,16 @@ Value因此必须来自有向video过程，不能只由静态语言产生。完�
 canonical schema/config/runtime已原位替换，旧Semantic-Core Common-Value只由Git与formal artifacts保存。
 K1/step0/set/order/raw-Value/gradient门与full CPU=`374 passed`。clean `50a3c36`的gpu01 world6 full24 B20
 macro1/2 profile=`26.112/22.543s`，q/k delta=`.0001158/.0001183`，K各6、最长323帧、0 OOM/nonfinite；formal
-config已seal。下一动作是从新的clean pushed seal fresh macro0->25，不加载profile state。
+config已seal。clean `d316623`随后在gpu01物理`2/4/5/6/7`以fresh world5完成macro0->25：25/25 metrics、完整
+checkpoint/completion/exit0，总elapsed=`745.622s`，macro mean=`29.790s`，loss `.10118184->.09564162`，
+gradient范围`.00025272--.00046269`，K各6、最长359帧完整、0 OOM/nonfinite。macro2->25 q/k继续变化
+`.08636/.08605`，output norm增至`.277774`。
+
+first4 output-zero机制反事实显示Procedure correction relative-L2=`.09601`、entropy/log4=`.99443`，但
+current->zero effective-BA mean/task-mean=`.01397/.01392`、action=`.00989`。因此本算子不是没训练，也比旧
+centered Procedure-Set的`.000918`写入更强；但Program到policy方向仍有明显衰减。macro25正式K4 deployment
+profile已完成：B8/B16/B32=`.2250164/.2247286/.2247036 LoRA/s`，三者stable、0 OOM/nonfinite，按最高吞吐锁
+B8。当前从clean pushed evaluator立即strict paired400；profile与内部几何不选择方法。
 
 ## 2. Active single changed variable and training semantics
 
@@ -41,9 +50,9 @@ config已seal。下一动作是从新的clean pushed seal fresh macro0->25，不
 
 ## 3. Closed-loop adjudication
 
-Common-Value strict133/breadth6已触发终止门。没有macro50 resume，也没有K scaling或correct/same/wrong/
-shuffled/reversed/no-video补测；这些controls只在absolute先过门后才有科学价值。下一轮必须先讨论并重新写单变量
-authority，不能从本checkpoint续训或用scale/LR/K/seed救援。
+上一Common-Value strict133/breadth6已触发终止门且没有resume或补controls。当前Ordered-Procedure方法只认
+macro25 K4 strict paired400：`<140`或breadth<7即终局；`140..150`还必须相对matched139 gained>lost、至少3 suites
+不下降并解锁Goal3或Long2，才可exact-resume50；`>150`才补K scaling与五臂因果controls。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

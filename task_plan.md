@@ -150,7 +150,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `374 passed`；
 - [x] 真实source-policy机制smoke与full24 B20 profile通过：macro1/2=`26.112/22.543s`，q/k展开、K各6、最长
   323帧、0 OOM/nonfinite，formal config已seal；
-- [ ] clean fresh macro0->25与K4 strict paired400；
+- [x] clean detached `d316623`、gpu01 world5 fresh macro0->25完整：25/25 metrics、checkpoint/completion/exit0，
+  总elapsed=`745.622s`、K各6、最长359帧无截断、0 OOM/nonfinite；
+- [x] first4 trained-output归零机制分析：Procedure correction=`.09601`，effective-BA mean/task-mean=
+  `.01397/.01392`；credit已打开但compiler后的policy改写仍较小；
+- [x] 完成macro25 live K4 deployment profile：B8/B16/B32=`.225016/.224729/.224704 LoRA/s`，三者stable、
+  0 OOM/nonfinite，锁B8并seal evaluator；
+- [ ] 完成同一macro25 K4 strict paired400；
 - [ ] 逐task、train-seen/held、Procedure->BA->rollout分析并按门裁决。
 
 ## Continuous loop after this result

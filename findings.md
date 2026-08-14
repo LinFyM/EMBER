@@ -333,6 +333,22 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `.142632`，reader/controller相对macro1 delta=`.071824/.052637`。随后K4 generation B8/B16/B32=
     `.221225/.221402/.221500 LoRA/s`，均stable并锁B32，峰值reserved仅`22.628GB`。因此新增接口既持续获得credit，
     又没有明显牺牲部署吞吐；但两者仍都是机制证据，是否超过AS139/143及是否减少churn只认接下来的strict400。
+35. V6-LPCP macro25 K4 strict最终为`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=
+    `5/83/38/17`。相对同schedule AS139严格=`120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、
+    net`+4`、p=`.643969`；suite净变化=`+2/+5/+2/-5`，Long1以`7 gains/13 losses`净丢6，Goal3仍0，
+    Long2仅解锁1。它count-only追平不同schedule的历史v6-fast143且breadth`6->7`，但同时触发`<144`与lost>10门，
+    所以不是突破，不resume50、不补controls或小扫。
+36. 全400套AS139/LPCP cache的effective-BA relative-L2 mean/median仅`.002653/.001916`，cosine mean=
+    `.99999479`、norm ratio=`.99997391`；first4 LoRA norm、stable rank和q/v/action能量比例不变。first4同task
+    correction coherence mean/median=`.61786/.56804`，明显好于“同task corrections近正交”的历史失败形态；
+    但Goal3以第二大改写`.004224`和最高coherence`.88373`仍为0，Long1只改`.001324`却净丢6，gained/lost
+    改写幅度高度重叠。故LoRA健康与视频集合一致性都不是当前最早缺口。
+37. native probe carrier已由reverse/static/one-forward证据通过，conditioner也获得持续梯度；strict与BA联合证据把
+    失效接口推进到**conditioned Procedure经冻结fusion/compiler承诺为policy-effective方向，以及blind B20 credit
+    对held occupancy的选择**。Program顺序响应可达`.404` relative-L2，最终BA只移动约千分之几；train24
+    functional first5/last5也仅`.098880/.097109`，14 tasks改善而10 tasks变差。literal memory若只替换已经通过的
+    carrier、仍进入同一Query与同一credit，不会针对该缺口；后继应改变Procedure-to-LoRA commitment或
+    policy-aligned shared credit，同时保留V6 absolute与LPCP有序分层读取，不得把143中的继承能力误报成新学习。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

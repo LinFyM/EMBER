@@ -34,30 +34,25 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。历史最好single checkpoint是v6-fast macro400：
-`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+长期目标尚未完成。v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好：
+`correct/same/wrong/shuffled/reversed=143/135/125/128/129`，LPCP只完成correct且breadth7。
 
-最新完成closed-loop是**V6 Actual-Delta Success-Support Projection**：cycle1 K4 strict=`138/400`、breadth7、
-per-task=`3/2/45/30/0/36/21/1`。22条train24 success-support约束把raw violation从6降到0且保留
-`.963787/.980958` preference descent/delta energy，但相对AS139仍为`116 retained / 22 gained / 23 lost`、
-churn45；它按`<144`、lost>10且gained不超过lost终局non-pass，不cycle2、不补controls或扫约束/LR/scale/rank。
+最新完成closed-loop是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
+strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
+AS139严格=`120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、net`+4`、p=`.643969`；它
+count-only追平不同teacher schedule的历史v6-fast143并把breadth从6增到7，但按`<144`和lost>10两项门终局
+non-pass，不resume50、不补controls或扫memory/rank/LR/scale/seed。
 
-该结果否决train24成功prefix的一阶局部support足以代表held support，不否决V6或memory。当前停止V6 optimizer
-constraint小修。active successor是**V6 Layerwise Action-Probe Conditioned Procedure Reader**：冻结AS139的
-Core、有向Procedure、K-set、native compiler、factor heads与rank16，只从同一次真实图像+语言+50 Action probes
-joint forward旁读18层probe states，形成layer/rank-aligned causal query conditioner；zero-init时K1--K4严格恢复
-AS139。首轮不追加memory tokens；只有native probes在carrier层缺少必要分层证据时，下一轮才在相同下游接口单独
-替换为真实memory tokens。authority=
-`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。canonical实现、fresh schema/config与
-CPU机制合同已完成：同一次forward旁读、step0 AS139 identity、K-set不变性、顺序敏感、两步梯度展开及冻结边界
-通过；全量CPU=`402 passed`。为避免288条重型时序序列，conditioner使用每video一次shared causal controller再
-轻量汇聚layer/rank deltas。clean pushed `ffa06d4`已完成gpu02 world3 full24 B20 profile与真实carrier smoke：
-K1--K4各6、最长323帧完整、peak reserved=`41.385GB`、0 OOM/nonfinite；79帧joint forward=`4/4`，倒序使
-query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta max-abs=`3.38e-8`。这些只seal机制与
-吞吐。clean detached `515f91e`随后在gpu01 world6完成fresh macro0->25：25/25 metrics、完整checkpoint/
-completion/exit0，macro mean=`26.462s`、最长359帧完整、0 OOM/nonfinite。K4 generation B8/B16/B32=
-`.221225/.221402/.221500 LoRA/s`，三档stable并按最高吞吐锁B32。当前仍无新closed-loop成绩；下一步是同一
-macro25 single-checkpoint K4 strict400。
+该轮否决的不是layerwise视频carrier：同一次真实context forward的18层probe旁读满足one-forward，倒序使
+query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta近零；reader/controller也获得持续credit。
+全400 effective-BA相对AS139只改`.002653` relative-L2、cosine`.99999479`、norm ratio`.99997391`，而first4
+same-task correction coherence median`.56804`。Goal3虽有`.004224`改写和`.88373` coherence仍为0，Long1只改
+`.001324`却净丢6。最早缺口是conditioned Procedure经冻结fusion/compiler承诺成AS139邻域小方向，以及blind
+B20 functional credit不能选择held on-policy有用方向；只替换已通过的carrier为literal memory不直接针对该缺口。
+
+authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。正式root、AS139严格配对和
+effective-BA artifact均已封存。当前没有active successor或GPU进程；按owner要求，本轮全部分析完成后停下讨论，
+不得自行启动下一训练。
 
 ## 4. Long-term objective and decision rule
 

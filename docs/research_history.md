@@ -5,7 +5,8 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-14，历史最好single checkpoint仍是v6-fast的`143/400`，长期严格`>150/400`目标未完成。Dynamic-K
+2026-08-14，v6-fast与最新V6-LPCP的correct single checkpoint均为`143/400`；v6-fast仍是有完整五臂的历史最好，
+V6-LPCP breadth为7但未补controls。长期严格`>150/400`目标未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
 effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
@@ -110,11 +111,15 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Shared-Core Ordered-Procedure Common-Value | K4 `139/400`, breadth6 | 有向Procedure correction/effective-BA打开到`.09601/.01397`，保持matched139 absolute | 相对matched=`120/19/19`；train-seen trained/zero=`64/64`、`4/4`换手，B20 credit在train/held均无净on-policy收益 |
 | V6 Ordered-Procedure On-Policy Preference | K4 `138/400`, breadth7 | train24 reward形成18条paired新success，q/k/output、BA与action全链路非零 | 相对同schedule AS139=`120/18/19`、churn37；Spatial净+4但Long1净-7，最终shared update未保住support |
 | V6 Actual-Delta Success-Support Projection | K4 `138/400`, breadth7 | 22条train24成功task约束中raw违反6条；投影后0 violation并保留`.964/.981` descent/energy | 相对AS139=`116/22/23`、churn45；相对raw138=`117/21/21`，Long净+6由Spatial/Object净-6支付，一阶local support不代表held共存 |
+| V6 Layerwise Action-Probe Conditioned Procedure Reader | K4 `143/400`, breadth7 | 同一次真实context forward的18层probe carrier具有reverse/static差异；保留AS139强图并追平历史absolute | 相对AS139=`120/23/19`、churn42；BA只改`.002653`且Goal3高coherence仍0，冻结Procedure commitment加blind B20 credit只形成AS139邻域换手 |
 
-ADSP已按预注册门终局；authority与完整机制/strict证据见
+ADSP与V6-LPCP均已按各自预注册门终局；authority与完整机制/strict证据见
 `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只否决实际检验的
 train24 success-prefix一阶约束，不否决V6、memory token或其它架构级policy-aligned生成方式。下一轮不得继续
-constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
+constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。V6-LPCP authority为
+`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`：它证明layerwise有序carrier可以在
+不损伤V6 absolute的前提下接通，但只经冻结Procedure Query和blind functional credit时仍是23 gains/19 losses，
+没有越过150，也没有授权把literal memory token当作自动后继。
 
 ## 4. Final rank14 adjudication
 

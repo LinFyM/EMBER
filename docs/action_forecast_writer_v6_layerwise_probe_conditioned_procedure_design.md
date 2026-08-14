@@ -1,8 +1,7 @@
 # V6 Layerwise Action-Probe Conditioned Procedure Reader
 
-状态：2026-08-14 active strict-evaluation authority；canonical实现、CPU合同、真实载体smoke、full24 B20
-profile、fresh macro0->25及K4 generation profile均已通过，下一步是single-checkpoint strict400。简称只用于
-文件/配置identity：`V6-LPCP`。
+状态：2026-08-14 strict400已完成并按门终局non-pass：`143/400`、breadth7，相对AS139=
+`120 retained / 23 gained / 19 lost`；不resume50或补controls。简称只用于文件/配置identity：`V6-LPCP`。
 
 ## 1. Decision
 
@@ -205,7 +204,7 @@ OOM/nonfinite。macro25 query projection norm=`.142632`；相对macro1，reader/
 `.221225/.221402/.221500 LoRA/s`，三者stable、0 OOM/nonfinite，peak reserved=
 `14.470/17.195/22.628GB`，最长视频226帧。按最高实测吞吐规则锁B32；相对AS139约`.225 LoRA/s`仅慢约
 1.6%。root=`runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_k4_writer_generation_profile_val8x4_correct_gpu01p0_515f91e_macro0025_20260814`。
-profile只封存部署batch与成本；strict400仍是首个性能结果。
+profile只封存部署batch与成本；后续首个性能结果见10.1节。
 
 ## 10. Formal and falsification gates
 
@@ -228,6 +227,41 @@ profile只封存部署batch与成本；strict400仍是首个性能结果。
 
 本设计不否定memory token。它把memory的价值变成一个有明确触发条件的后继反事实，而不是在V6、rank、decoder、
 front-end同时变化时无法解释的架构标签。
+
+### 10.1 Strict400 result and terminal adjudication
+
+clean detached `07ec4d8`的正确资产合同root完成72/72 jobs、400/400 rows与exit0：K4 correct strict=
+`143/400`、breadth7，逐task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
+`1/4/48/35/0/38/16/1`，逐suite=`5/83/38/17`，top3=`121/143=.84615`。rollout-only wall=
+`671.501s`、`.595680 episode/s`；完整root为
+`runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_macro0025_k4_correct400_noreplacement_seed7_trainr6_evalr6_assetfix_07ec4d8_gpu01_20260814`。
+
+同AS139的400个task/state、K4 teacher sets/order、env seed、policy RNG prefix逐项相同。跨版本分别用各自native
+commit重聚合后，严格配对为`120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、net`+4`、
+McNemar `p=.643969`；suite net=`+2/+5/+2/-5`。Long1单task为`7 gained / 13 lost`，Goal3仍`0/50`，仅
+Long2由0解锁1。它与不同teacher schedule的历史v6-fast同为143，但只能count-only比较；逐task差=
+`+1/+1/+2/-2/0/+2/-4/0`，breadth由历史6增到7。该结果同时触发`<144`和相对AS139 lost`>10`，本轮终局
+non-pass：不exact-resume到50，不补video controls，不扫memory/rank/LR/width/scale/seed。
+
+gauge-invariant全400 cache对照显示LPCP只在AS139邻域产生小改写：effective-BA relative-L2 mean/median=
+`.002653/.001916`，cosine mean=`.99999479`，norm ratio mean=`.99997391`；first4 LoRA norm、stable rank和
+q/v/action能量比例几乎不变。first4同task correction coherence mean/median=`.61786/.56804`，所以不是
+same-task视频修正再次近正交。反而Goal3的relative-L2=`.004224`且coherence=`.88373`仍为0，Long1只改
+`.001324`却净丢6；gained/lost幅度也高度重叠。train24 functional first5/last5仅
+`.098880/.097109`，14 tasks改善、10 tasks变差。
+
+因此本轮保留的结论是：native layer probes确实提供分层、有序、非静态载体，且新增路径可以稳定条件化task/video；
+被否定的是“把该carrier只作为冻结AS139 Procedure Query的小修，并继续用blind B20 functional credit，就能形成
+新的policy-effective共同能力”。最早可见衰减在conditioned Procedure到冻结fusion/compiler/effective BA：
+Program有material顺序响应，最终BA却只移动约千分之几；随后offline functional方向在held occupancy上表现为
+23 gains/19 losses。这个结果**不触发只替换carrier的literal-memory反事实**，因为carrier门已经通过；下一设计若
+保留LPCP证据，应单变量改变Procedure-to-LoRA commitment或policy-aligned shared credit，而不是给同一Query入口
+再加memory token，也不能把LoRA几何做得更“健康”当作答案。
+
+首次strict attempt误把已迁移资产根写成旧`/data0/.../.cache/libero/assets`，在400份LoRA生成后、首个环境创建前
+工程失败；旧run contract封存了错误路径，故没有resume为正式结果。新root准备后用同一contract逐一真实创建
+8/8 validation环境再启动。失败root只作工程证据，不含closed-loop分数；该事故没有改变checkpoint、video schedule
+或科学合同。
 
 ## 11. Canonical ownership
 

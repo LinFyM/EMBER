@@ -7,47 +7,33 @@
 
 - 长期Goal处于active：同一shared Writer、同一single checkpoint的strict paired correct严格`>150/400`，同时
   保持高breadth、低能力换手和正确教学视频的内容/顺序因果性；
-- 历史最好仍是v6-fast macro400：`143/135/125/128/129`；
+- v6-fast与最新V6-LPCP的correct single checkpoint同为143；v6-fast仍是有完整五臂的历史最好=
+  `143/135/125/128/129`，LPCP只完成correct且breadth7；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
-- 最新完成closed-loop：V6 Actual-Delta Success-Support Projection cycle1 K4 strict=`138/400`、breadth7，
-  per-task=`3/2/45/30/0/36/21/1`、per-suite=`5/75/36/22`、top3=`111/138=.80435`；按预注册门终局
-  non-pass，不运行cycle2、不补controls、不扫LR/scale/rank/constraint；
-- 相对同schedule Ordered-Procedure AS139严格配对=`116 retained / 22 gained / 23 lost / 239 both-fail`、net`-1`、
-  churn45、p=1；suite net=`+2/-3/0/0`。Long1=`9 gained / 10 lost`仍净`-1`，Goal3仍为0；lost>10且gained
-  不超过lost，support preservation门明确失败；
-- 相对raw reward138严格配对=`117 retained / 21 gained / 21 lost / 241 both-fail`、churn42；ADSP把Long1从15
-  恢复到21、Long净`+6`，却由Spatial/Object净`-2/-4`支付。它改变了能力分配但没有共同积累；
-- count-only相对v6-fast143/old134/compiler138/online128分别=`-5/+4/0/+10`；breadth7，没有超过任何143级
-  absolute边界；
-- ADSP formal在clean pushed `ad2e1be`、gpu02物理`1/2/3/4` world4完整exit0：24 tasks/96 rollouts/
-  63 successes、13 mixed、9 all-success、2 all-failure，wall=`1033.501s`。22条support constraints中raw违反6条，
-  投影激活6项并把final violation降为0；preference descent/energy保留=`.963787/.980958`，raw/projected cosine=
-  `.990433`，BA/action响应非零，0 OOM/nonfinite/watchdog/forbidden read；
-- strict评测同commit、gpu02物理`1/2/3/4/6`、15 persistent workers完成400/400 LoRAs、60/60 jobs、400 rows，
-  wall=`1306.681s`、exit0；物理6安全共驻4.6GB低util进程，峰值总占约43.5GB；root=
-  `runs/outputs/pi05_v6_actual_delta_success_support_projection_cycle1_k4_correct400_noreplacement_seed7_trainr4_evalr5_ad2e1be_gpu02_20260814`；
-  同root封存`actual_delta_support_projection_strict_adjudication.json`与first4 geometry；
-- first4同video/state几何显示AS139→ADSP effective-BA all relative-L2 mean=`.002976`，比AS→raw的`.003323`
-  更近；raw138→ADSP仅`.001272`、cosine=`.99999919`，却翻转42条episode。更接近AS的LoRA并未减少held
-  churn，train24局部success tangent与held closed-loop support不等价；
-- ADSP已终局，当前没有GPU进程。active successor已完成实现与live profile：**V6 Layerwise Action-Probe Conditioned Procedure
-  Reader**，authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。它冻结
-  AS139的Core/ordered Procedure/K-set/native compiler/factor heads/rank16，只在同一次真实图像+语言+50 Action
-  probes forward旁读18层hidden，用shared rank queries与video内causal deltas生成zero-init Procedure-query
-  conditioner；step0 K1--K4严格恢复AS139。首轮不加memory token，只有native probes在carrier层缺少material
-  分层/顺序证据时才在相同下游接口单独替换为真实memory tokens。canonical source、fresh-incompatible schema/config
-  与机制tests已接通；每video只运行一次shared causal controller，再轻量汇聚288个layer/rank deltas，避免逐slot
-  重复时序Transformer。full CPU=`402 passed`；clean pushed `ffa06d4`已在gpu02物理`2/3/4` world3完成full24
-  B20 macro1/2 profile：wall=`66.134/61.544s`、K各6、最长323帧完整、peak reserved=`41.385GB`、0
-  OOM/nonfinite。macro1->2 query projection/reader/controller都发生非零更新。task38/demo2真实载体smoke中
-  joint forward=`4`恰等于native预期；正序->倒序的query-delta/Program relative-L2=`2.0572/.40414`，常量视频
-  query-delta max-abs=`3.38e-8`。native probe carrier与效率门已通过，但没有任何新closed-loop分数。clean
-  detached `515f91e`已在gpu01物理`0/1/2/5/6/7` world6完成fresh macro0->25：25/25 metrics、完整world6
-  checkpoint/completion/exit0，elapsed=`662.608s`，macro mean=`26.462s`，loss `.10115173->.09563028`，
-  gradient范围`2.130e-6--6.085e-6`，K各6、最长359帧完整、0 OOM/nonfinite。macro25 query projection norm=
-  `.142632`，reader/controller相对macro1变化`.071824/.052637`；这只证明credit展开。同checkpoint的K4
-  generation profile B8/B16/B32=`.221225/.221402/.221500 LoRA/s`，三档stable、0 OOM/nonfinite，按最高
-  吞吐锁B32；下一步是该single macro25 checkpoint的K4 strict400；
+- 最新完成closed-loop：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
+  strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
+  `121/143=.84615`；按`<144`和lost>10门终局，不resume50、不补controls或扫memory/rank/LR/scale/seed；
+- 同AS139逐项验证400个task/state、K4 teacher sets/order、env seed和policy RNG prefix后，严格配对=
+  `120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、net`+4`、p=`.643969`；suite net=
+  `+2/+5/+2/-5`。Long1=`7 gained / 13 lost`净丢6，Goal3仍0，Long2只从0解锁1；
+- count-only相对不同teacher schedule的v6-fast143逐task差=`+1/+1/+2/-2/0/+2/-4/0`，aggregate追平且breadth
+  `6->7`，但没有超过150，也没有正确视频controls，因此不能称为有效视频教学突破；
+- 全400 AS139/LPCP cache的effective-BA relative-L2 mean/median=`.002653/.001916`，cosine mean=
+  `.99999479`、norm ratio=`.99997391`；first4 LoRA norm/rank/q-v-action结构不变，同task correction coherence
+  mean/median=`.61786/.56804`。Goal3改写`.004224`且coherence`.88373`仍`0/50`，Long1只改`.001324`却净丢6；
+- carrier并未失败：79帧真实视频仍是同一次joint forward，reverse query-delta/Program relative-L2=
+  `2.0572/.40414`，constant query-delta近零，reader/controller持续更新。失效接口在conditioned Procedure经冻结
+  fusion/compiler只形成AS139邻域小方向，以及blind B20 functional credit不能选择held occupancy有用方向；
+  因此本结果不直接触发只替换carrier的literal-memory重跑；
+- clean detached `515f91e` world6 formal完整exit0，macro mean=`26.462s`，K1--K4每macro各6、最长359帧完整；
+  generation B32=`.221500 LoRA/s`。正确资产合同strict root完成72/72 jobs、400/400 rows、exit0，rollout-only=
+  `671.501s`；root=
+  `runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_macro0025_k4_correct400_noreplacement_seed7_trainr6_evalr6_assetfix_07ec4d8_gpu01_20260814`；
+  同root封存`as139_to_v6_lpcp_macro0025_paired_transition.json`和`v6_lpcp_macro0025_effective_ba_analysis.json`；
+- 首次strict root因临时launcher误写旧`/data0` LIBERO assets，在400份LoRA生成后、首个环境创建前工程失败，
+  没有任何rollout分数；旧contract封存错误路径，未resume为正式结果。新root先按同一contract真实创建8/8 validation
+  环境再启动，失败只作工程证据；
+- 当前没有active successor或GPU进程。按owner要求，本轮全部分析与文档封存后停下讨论；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

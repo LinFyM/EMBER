@@ -317,14 +317,17 @@ causal delta形成zero-init、layer/rank-aligned Procedure-query conditioner。�
 接口把carrier单独换成真实memory tokens。精确authority见
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。
 
-该方案现已按上述边界完成canonical CPU实现，没有增加第二次backbone forward，也没有把memory token偷偷变成
-目标。吞吐审计进一步把逐288-slot的重型temporal展开收敛为每video一次shared causal controller与轻量
-layer/rank delta汇聚；这是效率实现选择，不改变“真实分层evidence只条件化native Procedure query”这一主要变量。
-CPU identity/order/gradient/freeze合同已通过；gpu02 world3 full24 B20 profile也已覆盖K1--K4各6、最长323帧且
-0 OOM/nonfinite。真实79帧carrier smoke中joint forward与native预期同为4，倒序使query-delta/Program出现
-material变化，常量视频query-delta近零，因此当前证据支持继续native probe而不是立刻换memory。closed-loop价值
-仍完全未知。fresh world6 macro0->25现已完整完成，K4 generation B8/B16/B32实测锁B32且0 OOM/nonfinite；
-下一且唯一性能裁决是该macro25 single checkpoint的strict400。
+该方案已按上述边界完成canonical实现、world6 fresh macro0->25和strict400。carrier/效率合同通过：没有第二次
+backbone forward，每video一次shared causal controller，倒序使query-delta/Program material变化，常量视频近零；
+K4 generation锁B32。真实性能为`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`；相对AS139严格=
+`120 retained / 23 gained / 19 lost`、churn42。它追平历史143但没有超过150，并触发`<144`与lost>10门，故
+不resume50或补controls。
+
+全400 effective-BA只相对AS139移动`.002653`，LoRA健康结构不变；first4 same-task correction coherence median
+`.56804`，Goal3高coherence仍0，Long1小改写却净丢6。因此本轮不支持“native probe carrier失败，立刻换literal
+memory”的分支；更早缺口是conditioned Procedure到冻结fusion/compiler的policy commitment，以及blind B20
+functional credit对held occupancy的方向选择。memory token仍可成为以后可扩展LoRA生成的一部分，但若只替换已
+通过的carrier并保留同一Query/credit，不是在检验当前证据指向的问题。当前按owner要求停下讨论下一单变量。
 
 后续迭代遵循以下边界：
 

@@ -5,14 +5,18 @@
 
 ## 1. 当前经验边界
 
-长期目标是同一shared Writer、同一single checkpoint的strict paired correct严格`>150/400`，并同时保持
-视频因果性、task breadth和多任务共同积累。目前尚未达到。
+长期继续追求同一shared Writer、同一single checkpoint的strict paired correct`>150/400`；owner也接受约145
+的稳定有效方法，但必须同时通过相邻checkpoint低换手、same-task-video鲁棒和correct视频因果性。目前尚未达到。
 
-最新PCSD full24 cycle1提供了一个窄但真实的新边界：同初态、同policy RNG的AS139-reference与LPCP-candidate
-在48 pairs中有9次唯一成功分歧，且candidate/reference gains=`5/4`；只蒸馏唯一成功轨迹可以产生非零
-query-delta gradient、参数更新以及BA/action response，而无需teacher/target actions。因此paired on-policy
-success能形成连续Writer credit已经通过机制门。它尚未证明held性能提升：训练内净优势仅1、active evidence只
-覆盖3 suites，必须由cycle1 strict400裁决，不能用机制数值选择方法。
+最新PCSD给出完整负结果。full24的48 pairs有9次唯一成功分歧，candidate/reference gains=`5/4`；只蒸馏
+唯一成功轨迹确实产生非零query gradient、参数更新、effective BA与action response，证明paired on-policy
+success可形成连续Writer credit。但cycle1 strict只有`135/400`、breadth6；相对LPCP143=
+`121 retained / 14 gained / 22 lost`、churn36，说明它没有把reward evidence合并为稳定shared support。
+
+全400 PCSD/LPCP effective-BA relative-L2 mean仅`.0006834`，gained/lost均约`.00068`；FP64 first4进一步
+显示同task四个不同K4 video sets的增量pairwise cosine跨task平均`-.00187`、mean/sample energy=`.24860`。
+这把最早缺口从“reward是否有信号”推进到：**一次成功轨迹经过shared query commitment后仍形成随video set
+变化的近正交局部方向，而不是跨video共享的高层任务程序**。PCSD只否定当前query-only一轮positive CFM组合。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -20,6 +24,7 @@ success能形成连续Writer credit已经通过机制门。它尚未证明held�
 | v5.2 task-complete | 120 | 109 | 107 | 111 | 124 | recipe削弱Procedure传递 |
 | v6 old | 121 | 122 | 111 | 84 | 47 | 顺序影响能进闭环，但absolute与稳定性不足 |
 | v6-fast task-complete | 143 | 135 | 125 | 128 | 129 | 历史最佳single checkpoint，仍未过150且视频margin弱 |
+| V6-LPCP PCSD cycle1 | 135 | — | — | — | — | reward/action链路通，但跨video credit近正交且相对LPCP净丢8 |
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |

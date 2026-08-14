@@ -112,14 +112,16 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6 Ordered-Procedure On-Policy Preference | K4 `138/400`, breadth7 | train24 reward形成18条paired新success，q/k/output、BA与action全链路非零 | 相对同schedule AS139=`120/18/19`、churn37；Spatial净+4但Long1净-7，最终shared update未保住support |
 | V6 Actual-Delta Success-Support Projection | K4 `138/400`, breadth7 | 22条train24成功task约束中raw违反6条；投影后0 violation并保留`.964/.981` descent/energy | 相对AS139=`116/22/23`、churn45；相对raw138=`117/21/21`，Long净+6由Spatial/Object净-6支付，一阶local support不代表held共存 |
 | V6 Layerwise Action-Probe Conditioned Procedure Reader | K4 `143/400`, breadth7 | 同一次真实context forward的18层probe carrier具有reverse/static差异；保留AS139强图并追平历史absolute | 相对AS139=`120/23/19`、churn42；BA只改`.002653`且Goal3高coherence仍0，冻结Procedure commitment加blind B20 credit只形成AS139邻域换手 |
+| V6-LPCP Paired Causal Success Distillation | K4 `135/400`, breadth6 | 48 paired states产生9条唯一成功轨迹，positive CFM使query、BA与action全链路非零 | 相对LPCP143=`121/14/22`、churn36；PCSD/LPCP BA只改`.0006834`，FP64同task跨K4 video-set增量cosine约0、mean energy仅`.2486`，稀疏reward credit未合并成共享程序 |
 
-ADSP与V6-LPCP均已按各自预注册门终局；authority与完整机制/strict证据见
-`docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`。它只否决实际检验的
-train24 success-prefix一阶约束，不否决V6、memory token或其它架构级policy-aligned生成方式。下一轮不得继续
-constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。V6-LPCP authority为
+ADSP、V6-LPCP与PCSD均已按各自预注册门终局。ADSP authority=
+`docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`，只否决实际检验的
+train24 success-prefix一阶约束。V6-LPCP authority=
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`：它证明layerwise有序carrier可以在
 不损伤V6 absolute的前提下接通，但只经冻结Procedure Query和blind functional credit时仍是23 gains/19 losses，
-没有越过150，也没有授权把literal memory token当作自动后继。
+没有越过150。PCSD authority=`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`：
+它只否定query-only一轮稀疏positive CFM足以合并same-task跨video credit。三者均不否定V6、memory token或其它
+架构级policy-aligned生成方式；下一轮不得继续constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
 
 ## 4. Final rank14 adjudication
 

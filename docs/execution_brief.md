@@ -5,50 +5,39 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-V6 Layerwise Action-Probe Conditioned Procedure Reader（V6-LPCP）已完成fresh macro0->25和K4 strict paired
-correct400：`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
-`121/143=.84615`。相对同schedule AS139严格配对=`120 retained / 23 gained / 19 lost / 238 both-fail`、
-churn42、net`+4`、p=`.643969`；suite net=`+2/+5/+2/-5`。它count-only追平不同teacher schedule的历史
-v6-fast143并把breadth从6提到7，但按`<144`和lost`>10`两项门终局，不resume50、不补controls或参数小扫。
+V6-LPCP PCSD cycle1已完成full24 paired reward training与K4 strict paired correct400。closed-loop=
+`135/400`、breadth6、per-task=`0/4/48/32/0/35/15/1`、per-suite=`4/80/35/16`、top3=
+`115/135=.85185`。相对直接底座LPCP143严格=`121 retained / 14 gained / 22 lost / 243 both-fail`、
+churn36、net`-8`、Jaccard`.77070`；相对AS139严格=`115/20/24/241`、churn44、net`-4`。count-only
+相对v6-fast143/old134/compiler138/online128=`-8/+1/-3/+7`。correct、breadth、support retention与净增四个
+预注册门全部失败，PCSD终局；不做cycle2、controls或参数小扫。
 
-这不是carrier没有运行：18层native Action-probe states在同一次真实context forward中旁读，倒序使
-query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta max-abs=`3.38e-8`；训练后query
-projection norm=`.142632`，reader/controller均有非零更新。部署B32=`.221500 LoRA/s`，相对AS139仅慢约1.6%。
-但全400 effective-BA只相对AS139移动mean/median `.002653/.001916`，cosine=`.99999479`、norm ratio=
-`.99997391`，LoRA norm/rank/q-v-action能量结构几乎不变。
+失败不是reward没有信息，也不是LoRA/action链路断开。train24的48 paired states产生9条discordant成功轨迹，
+candidate/reference gains=`5/4`；positive CFM给出非零gradient、query-delta更新与fixed-action response RMS
+`.00215--.00407`。但全400 PCSD相对LPCP的effective-BA relative-L2 mean/median只有
+`.0006834/.0006767`，比LPCP相对AS139的`.002653`再小约3.9倍；gained/lost改写mean=
+`.0006873/.0006830`，幅度不能选择方向。
 
-first4同task correction coherence mean/median=`.61786/.56804`，所以本轮没有复现“同task视频修正近正交”；
-更直接的反例是Goal3：BA改写`.004224`、coherence`.88373`仍`0/50`，而Long1只改`.001324`却
-`7 gains/13 losses`。train24 functional first5/last5仅`.098880/.097109`，14 tasks改善、10 tasks变差。
-最早失效接口因此是**conditioned Procedure经冻结fusion/compiler承诺成非常小的AS139邻域方向，blind B20
-functional credit又不能判断该方向是否覆盖held on-policy occupancy**。carrier本身已经通过门，故不直接触发
-literal-memory替换。
+更早且可解释的断点来自FP64 first4：同一validation task的四个不同K4 correct video sets所产生的PCSD增量，
+pairwise cosine跨8 tasks平均`-.00187`，task-mean/sample energy ratio=`.24860`，几乎正好是四个正交修正
+平均后的`1/4`。因此最早失效接口是**稀疏paired reward trajectories经一个shared query commitment后仍成为
+video-set-specific局部方向，未被合并成跨video、跨task可保留的高层程序**。下一设计只改变reward credit如何
+跨same-task video sets形成共同方向；不重做已通过的LPCP carrier，也不预设literal memory或rank变化为答案。
 
-当前已选择policy-aligned credit分支：同schedule AS139/LPCP的严格成功集合union=`162`，说明超过150所需support
-已分别存在于reference与candidate，但不是一个可部署checkpoint。PCSD用train24同初态K2两臂，只选择唯一成功
-arm的executed trajectory，在当前candidate LoRA下做positive CFM distillation；ties为zero，不对失败轨迹做
-anti-imitation。部署架构、K4输入、rank16、reader/conditioner和frozen compiler不变，只训练65,536参数
-`query_delta.weight`。authority=
-`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。
+## 2. Completed PCSD variable and training semantics
 
-## 2. Completed changed variable and training semantics
-
-- 冻结AS139的Semantic Core、有向Procedure Value、K-set、fusion/compiler、38-target rank16 FactorHeads；
-- 同一次真实图像+语言+50 Action-probe joint forward旁读18层hidden，不增加第二次backbone forward；
-- shared rank queries逐层读取，每video一次causal controller，再生成layer/rank-aligned Procedure Query delta；
-- 只训练reader/controller/zero-init query projection，source policy与AS139底座trainable参数为0；
-- train24 task-complete、B20同task跨episodefunctional queries、K1--K4每macro各6，其余objective/recipe不变；
+- 冻结完整LPCP carrier、AS139 Semantic Core/Procedure/K-set/fusion/compiler与38-target rank16 FactorHeads；
+- 同一K4 context只编码一次，reference把`query_delta`精确置零，candidate使用当前LPCP query；
+- train24每task两个同初态/同policy RNG arms，只对唯一成功arm的executed trajectory做positive CFM，ties为零；
+- 只训练65,536参数`query_delta.weight`，source policy、reader/controller与全部LoRA tail参数trainable为0；
 - Writer仍由exact language和action-hidden videos一次生成完整LoRA，rollout期间不反复观看视频。
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP AS阶段均已终局且不得resume或小扫。PCSD是
-fresh-incompatible reward-calibration stage，不是LPCP macro50续训。clean frozen `efc17be` world3 full24
-cycle1已完成：24 tasks/48 pairs/96 rollouts、candidate/reference success=`34/33`、gains=`5/4`、9个active tasks
-覆盖3 suites，gradient/delta/BA/action response非零，0 forbidden read/OOM/nonfinite，wall=`837.694s`。机制门
-通过，但净训练优势只有1，不能作为性能结论；下一步只做cycle1 K4 strict paired400。`>150`仍是性能追求，
-但约145若要成立，必须由相邻checkpoint低churn、same-task-video
-鲁棒和健康video controls共同认证；单点高分不能作为方法结论。
+Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP AS与PCSD均已终局且不得resume或小扫。PCSD训练root、
+strict root、逐episode transitions、全400 BA与FP64跨video evidence均已封存。`>150`仍是更高性能追求；约145
+也可成为有效结果，但必须由相邻single checkpoints低churn、same-task-other鲁棒和correct相对wrong/shuffled/
+reversed/no-video的明确优势共同认证。单点145或151都不算完成。
 
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。

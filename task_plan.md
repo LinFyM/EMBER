@@ -243,8 +243,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] review task-scoped diff并以`efc17be`commit/push clean authority；
 - [x] 双节点live GPU/quota preflight后在gpu01物理`5/6/7`完成world3 full24 cycle1：24 tasks/48 pairs/
   96 rollouts，candidate/reference=`34/33`、gains=`5/4`、9 active tasks/3 suites，机制门通过；
-- [ ] 机制过门后立即single-checkpoint K4 strict paired400并做逐task/union-retention分析；
-- [ ] 首次约145且retention过门即补视频因果controls并运行相邻checkpoint；单点>150也不能跳过稳定性裁决。
+- [x] 完成cycle1 K4 strict paired400：`135/400`、breadth6、per-task=`0/4/48/32/0/35/15/1`；相对
+  LPCP143=`121 retained / 14 gained / 22 lost`、churn36、net`-8`，相对AS139=`115/20/24`、churn44；
+- [x] 完成全400 effective-BA与FP64跨video分析：PCSD/LPCP relative-L2 mean=`.0006834`，gained/lost幅度
+  不可分；同task四个K4 video-set增量pairwise cosine平均`-.00187`、mean/sample energy=`.24860`；
+- [x] 按四项门终局PCSD：correct、breadth、lost与net全部失败，不续cycle2、不补controls、不参数小扫；
+- [ ] 写下一单变量authority，只改变成功credit如何跨same-task不同video sets合并；首次约145且retention过门
+  才补视频因果controls并运行相邻checkpoint，单点>150也不能跳过稳定性裁决。
 
 ## Non-negotiable boundaries
 
@@ -260,9 +265,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138与V6-LPCP AS阶段均已按门终局。当前active
-PCSD选择policy-aligned shared credit：利用AS139/LPCP union162的retrospective证据训练一个single checkpoint，
-绝不在validation部署oracle selector。canonical实现与CPU门已完成，当前没有EMBER GPU进程；下一步按formal
-preflight封存并发射。literal
-memory保留为以后有触发证据的commitment/carrier变量，不与本轮credit混合。生成LoRA后的task-local RL仍是初始
-Writer达到强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP AS与PCSD均已按门终局。
+PCSD证明paired success可形成连续Writer credit，但shared query commitment把它外推成same-task跨video近正交的
+局部方向，held strict降到135。当前无EMBER GPU进程；下一步先写只针对跨video credit consolidation的单变量
+authority。literal memory保留为有证据时可选的commitment/carrier机制，不与credit变量无依据混合。生成LoRA后的
+task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

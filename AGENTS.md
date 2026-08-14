@@ -53,15 +53,23 @@ B20 functional credit不能选择held on-policy有用方向；只替换已通过
 
 封存authority=`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。正式root、AS139严格
 配对和effective-BA artifact均已保留。owner随后明确授权继续，并再次澄清memory token是候选机制而非必须形式。
-当前active successor是V6-LPCP Paired Causal Success Distillation（PCSD）：保留LPCP/AS139/rank16部署图，
-以同初态reference/candidate两臂的唯一成功轨迹只校准65,536参数`query_delta`。精确authority=
+V6-LPCP Paired Causal Success Distillation（PCSD）保留LPCP/AS139/rank16部署图，以同初态
+reference/candidate两臂的唯一成功轨迹只校准65,536参数`query_delta`。精确authority=
 `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。canonical实现已经原位替换旧ADSP
 runtime：同一K4 context只编码一次，K2两臂返回完整executed-prefix replay，ties为零，只训练
 `query_delta.weight`；全量CPU=`387 passed`、architecture guard无hard violation。clean frozen `efc17be`在
 gpu01物理`5/6/7`以world3完成full24 cycle1：24 tasks、48 pairs、96 rollouts，candidate/reference=
 `34/33` successes、`5/4` gains、9 discordant/active tasks覆盖3 suites，gradient、parameter delta、BA/action
-response均非零，0 forbidden read/OOM/nonfinite，wall=`837.694s`。机制门通过但净优势只有1；当前只运行
-cycle1单一checkpoint K4 strict paired400，结果未过预注册门不得续cycle2。
+response均非零，0 forbidden read/OOM/nonfinite，wall=`837.694s`。
+
+PCSD cycle1 K4 strict paired400已终局为`135/400`、breadth6、per-task=
+`0/4/48/32/0/35/15/1`、per-suite=`4/80/35/16`。相对LPCP143严格=`121 retained / 14 gained /
+22 lost / 243 both-fail`、churn36、net`-8`；相对AS139严格=`115/20/24/241`、churn44、net`-4`。
+全400 PCSD相对LPCP effective-BA relative-L2 mean/median仅`.0006834/.0006767`，gained/lost幅度不可分；
+FP64 first4显示同task四个不同K4 video sets的增量pairwise cosine平均`-.00187`、mean/sample energy ratio=
+`.24860`，即几乎正交且平均后只剩约四分之一能量。reward credit有内容且LoRA→action链路工作，但稀疏
+paired success经单一shared query commitment没有形成跨task/video可保留方向。PCSD按四项门终局non-pass，
+不得cycle2、补controls或参数小扫；下一设计只针对这个最早失效接口，memory token仍是候选机制而非预设答案。
 
 ## 4. Long-term objective and decision rule
 

@@ -33,7 +33,7 @@
 - 首次strict root因临时launcher误写旧`/data0` LIBERO assets，在400份LoRA生成后、首个环境创建前工程失败，
   没有任何rollout分数；旧contract封存错误路径，未resume为正式结果。新root先按同一contract真实创建8/8 validation
   环境再启动，失败只作工程证据；
-- owner已授权继续；当前active successor是**V6-LPCP Paired Causal Success Distillation**（PCSD），authority=
+- owner已授权继续；最新完成successor是**V6-LPCP Paired Causal Success Distillation**（PCSD），authority=
   `docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。它不把memory token或rank变化
   预设为答案：冻结LPCP carrier与AS139/rank16 tail，只训练`query_delta.weight`；train24每task以K2严格同初态
   AS139-reference/LPCP-candidate arms产生唯一成功轨迹credit。AS139/LPCP validation union=`162`只作设计依据，
@@ -48,8 +48,25 @@
   1,582 executed steps。selected-success objective=`.101456`，Writer grad RMS=`3.4288e-8`，query-delta delta RMS=
   `.000189653`，3项deployment probe的effective-BA/fixed-action response均非零；0 teacher/target/validation/test
   action/reward read、OOM、nonfinite或watchdog，wall=`837.694s`。机制门通过但训练内净优势仅1，不能写成性能
-  提升；formal checkpoint=`checkpoints/cycle_00000001`已完整，当前唯一下一步是该单一checkpoint的K4 strict
-  paired400，未过门不得续cycle2；
+  提升；formal checkpoint=`checkpoints/cycle_00000001`完整；
+- PCSD cycle1 K4 correct strict paired400已完成400/400 LoRAs、42/42 shards、400 rows、9 workers exit0：
+  `135/400`、breadth6、per-task=`0/4/48/32/0/35/15/1`、per-suite=`4/80/35/16`、top3=
+  `115/135=.85185`。相对LPCP143严格=`121 retained / 14 gained / 22 lost / 243 both-fail`、churn36、
+  net`-8`、Jaccard`.77070`；相对AS139严格=`115/20/24/241`、churn44、net`-4`、Jaccard`.72327`。
+  count-only相对v6-fast143/old134/compiler138/online128分别=`-8/+1/-3/+7`；四项预注册失败条件全部触发，
+  因而不续cycle2、不补controls、不做query/LR/rank/scale小扫；
+- 全400 PCSD相对LPCP effective-BA relative-L2 mean/median=`.0006834/.0006767`、cosine=
+  `.999999765`、norm ratio=`.999998471`，比LPCP相对AS139的`.002653`又小约3.9倍；gained/lost的改写
+  mean=`.0006873/.0006830`，幅度不能区分好坏。训练时三项fixed-action response RMS=`.00215--.00407`，
+  说明LoRA→action链路没有断；
+- 对validation8每task前4个不同K4 correct video sets做FP64 trace，PCSD增量的同task pairwise cosine跨task
+  平均=`-.00187`，task-mean/sample energy ratio=`.24860`，几乎正好是四个相互正交修正平均后的`1/4`。
+  最早失效接口因此是**9条稀疏paired reward trajectories经一个shared query commitment不能把同task不同video
+  的局部成功方向合并为可保留的共同程序**，而不是reward无信号、carrier没读视频或LoRA/action没变化；
+- 终局artifact均在PCSD strict root：`pcsd_cycle1_benchmark_comparison.json`、
+  `as139_to_pcsd_cycle1_paired_transition.json`、`pcsd_cycle1_effective_ba_analysis.json`、
+  `pcsd_cycle1_first4_correction_fp64.json`、`pcsd_cycle1_terminal_adjudication.json`。当前无EMBER GPU进程；
+  下一步先据此写只改变跨video credit consolidation的可证伪design，再实现/profile/训练；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

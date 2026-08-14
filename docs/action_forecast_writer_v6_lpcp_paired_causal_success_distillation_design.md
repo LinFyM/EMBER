@@ -246,6 +246,36 @@ AS139、LPCP143、历史v6-fast143、old134/compiler138/online128：
 commitment + paired selected-success CFM”的当前组合，不否定所有on-policy credit、memory token、dynamic K、
 fresh rank8或生成LoRA后的未来task-local RL。
 
+### 11.1 Cycle1 strict result and terminal decision
+
+cycle1 K4 correct strict paired400完整完成：`135/400`、breadth6，per-task按Spatial1/3、Object1/3、Goal3/6、
+Long1/2为`0/4/48/32/0/35/15/1`，per-suite=`4/80/35/16`，top3=`115/135=.85185`。相对直接
+LPCP143严格=`121 retained / 14 gained / 22 lost / 243 both-fail`、churn36、net`-8`、Jaccard=
+`.77070`、McNemar `p=.242985`；相对AS139严格=`115/20/24/241`、churn44、net`-4`、Jaccard=
+`.72327`。count-only相对v6-fast143、old134、compiler138、online128分别为`-8/+1/-3/+7`。
+
+四项首轮失败条件全部触发：correct`<=143`、breadth`<7`、相对LPCP lost`22>10`、gained`14<=22`。
+因此本设计终局non-pass，不做cycle2、same/wrong/shuffled/reversed/no-video controls，也不扫query/LR/rank/scale/
+seed。strict root=
+`runs/outputs/pi05_v6_lpcp_paired_causal_success_distillation_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_1f9a7e2_gpu01_20260815`。
+
+### 11.2 Earliest failed interface
+
+训练机制证据仍成立：9条discordant成功轨迹产生非零gradient、query update、effective-BA与fixed-action response。
+但全400 PCSD相对LPCP effective-BA relative-L2 mean/median仅`.0006834/.0006767`、cosine=
+`.999999765`、norm ratio=`.999998471`；gained/lost改写mean=`.0006873/.0006830`，幅度不能区分有用方向。
+
+validation8每task前4个不同K4 correct video sets的FP64 trace给出更早断点：PCSD增量的同task pairwise cosine
+跨task平均`-.00187`，task-mean/sample energy ratio=`.24860`，几乎等于四个正交修正平均后的`1/4`。所以当前
+positive credit并没有把一次成功轨迹变成same-task跨video共享程序，而是通过shared query map外推为互相近正交的
+video-set-specific局部修正。被否定的精确假设是：**冻结LPCP carrier与tail后，只用一个shared query commitment
+吸收一轮稀疏unique-success CFM，足以形成稳定共同support**。这不否定layerwise carrier、dynamic K、rank16、
+所有on-policy credit或所有memory-token架构；下一单变量应直接改变跨same-task video sets的credit consolidation。
+
+终局artifact：`pcsd_cycle1_benchmark_comparison.json`、`as139_to_pcsd_cycle1_paired_transition.json`、
+`pcsd_cycle1_effective_ba_analysis.json`、`pcsd_cycle1_first4_correction_fp64.json`和
+`pcsd_cycle1_terminal_adjudication.json`。
+
 ## 12. External hypernetwork context
 
 本设计选择性继承两类成熟原则，而不引入其额外数据：SHINE把context中的少量memory states按layer/token双轴

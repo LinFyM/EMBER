@@ -81,7 +81,13 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     )
     assert config["writer"]["procedure_set_value"].startswith("raw_attention")
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["world_size"] == 3
+    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
+    assert evidence["joint_backbone_calls"] == evidence["expected_native_v6_calls"]
+    assert evidence["natural_to_reversed_query_delta_relative_l2"] > 0
+    assert evidence["constant_query_delta_max_abs"] < 1e-6
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,

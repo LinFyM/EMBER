@@ -1,7 +1,7 @@
 # V6 Layerwise Action-Probe Conditioned Procedure Reader
 
-状态：2026-08-14 design authority；canonical CPU实现与机制测试完成，尚未启动GPU。简称只用于文件/配置
-identity：`V6-LPCP`。
+状态：2026-08-14 active formal authority；canonical实现、CPU合同、真实载体smoke与full24 B20 profile均已
+通过，formal config已seal，下一步是fresh macro0->25。简称只用于文件/配置identity：`V6-LPCP`。
 
 ## 1. Decision
 
@@ -176,6 +176,20 @@ Procedure readouts，再运行冻结native fusion和factor heads一次。
 
 内部还报告full24 task-mean conditioner/gradient off-diagonal cosine、`Q_delta -> Procedure slots -> effective BA ->
 fixed action`传递，用于定位collapse；它们不能替代closed-loop选择。
+
+### 9.1 Sealed live evidence
+
+clean pushed `ffa06d4`在gpu02物理`2/3/4` world3完成full24 B20 macro1/2 profile：K1--K4每macro各6，
+functional=`.10115173/.09570472`，macro wall=`66.134/61.544s`，最长condition=`323`帧且全部未截断，peak
+allocated/reserved=`38.577/41.385GB`，0 OOM/nonfinite。macro1->2中zero-init query projection权重变化
+`.00268655`，layer reader与causal conditioner分别变化`7.2239e-5/5.0680e-5`，证明真实full24 credit已从
+projection展开到载体与时序控制器。
+
+macro2在task38/demo2的79帧真实视频上需要的joint backbone forward为`4`，与native V6按32帧microbatch的预期
+`4`完全一致。正序改为倒序时conditioner/query-delta/Program relative-L2分别为
+`1.9693/2.0572/.40414`；常量视频的query-delta max-abs=`3.38e-8`。因此native probe carrier已通过本设计的
+最早证据门，当前没有理由在formal前换成literal memory token。以上仍只是机制与吞吐证据，不构成任何
+closed-loop提升；唯一下一裁决是同一single macro25 checkpoint的K4 strict400。
 
 ## 10. Formal and falsification gates
 

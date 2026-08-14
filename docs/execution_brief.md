@@ -27,8 +27,11 @@ conditioner；rank16、factor heads、B20与dynamic-K recipe均不变。literal 
 canonical实现与fresh schema/config现已完成，CPU机制测试和全量CPU suite=`402 passed`。实现没有增加backbone forward；
 18层tap在现有joint forward中旁读，step0退化为AS139，首步只训练zero-init query projection、第二步梯度进入
 probe reader与causal controller，base/K-set始终冻结。吞吐审计否决了“288个slot各跑一条重型时序网络”，当前
-每video只跑一次共享causal controller，再按有向context汇聚各layer/rank delta。当前仍没有GPU run；下一动作是
-clean pushed commit上的真实机制smoke与full24 B20 profile。
+每video只跑一次共享causal controller，再按有向context汇聚各layer/rank delta。clean pushed `ffa06d4`的
+gpu02 world3 live profile已完成：macro wall=`66.134/61.544s`，K1--K4各6、最长323帧完整、peak reserved=
+`41.385GB`、0 OOM/nonfinite；真实79帧载体smoke的joint forward=`4`等于native预期，倒序使query-delta/
+Program relative-L2=`2.0572/.40414`，常量视频query-delta max-abs=`3.38e-8`。这些只seal机制与吞吐，尚无
+新closed-loop成绩。下一动作是clean frozen successor commit fresh macro0->25并立即K4 strict400。
 
 ## 2. Completed changed variable and training semantics
 

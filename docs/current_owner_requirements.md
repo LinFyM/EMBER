@@ -320,7 +320,10 @@ causal delta形成zero-init、layer/rank-aligned Procedure-query conditioner。�
 该方案现已按上述边界完成canonical CPU实现，没有增加第二次backbone forward，也没有把memory token偷偷变成
 目标。吞吐审计进一步把逐288-slot的重型temporal展开收敛为每video一次shared causal controller与轻量
 layer/rank delta汇聚；这是效率实现选择，不改变“真实分层evidence只条件化native Procedure query”这一主要变量。
-CPU identity/order/gradient/freeze合同已通过，closed-loop价值仍未知，必须由后续真实profile与strict400决定。
+CPU identity/order/gradient/freeze合同已通过；gpu02 world3 full24 B20 profile也已覆盖K1--K4各6、最长323帧且
+0 OOM/nonfinite。真实79帧carrier smoke中joint forward与native预期同为4，倒序使query-delta/Program出现
+material变化，常量视频query-delta近零，因此当前证据支持继续native probe而不是立刻换memory。closed-loop价值
+仍完全未知，必须由macro25 strict400决定。
 
 后续迭代遵循以下边界：
 

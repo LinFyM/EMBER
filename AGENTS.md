@@ -51,8 +51,10 @@ AS139。首轮不追加memory tokens；只有native probes在carrier层缺少必
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。canonical实现、fresh schema/config与
 CPU机制合同已完成：同一次forward旁读、step0 AS139 identity、K-set不变性、顺序敏感、两步梯度展开及冻结边界
 通过；全量CPU=`402 passed`。为避免288条重型时序序列，conditioner使用每video一次shared causal controller再
-轻量汇聚layer/rank deltas。
-当前尚未启动GPU，下一步是真实one-forward smoke与full24 B20吞吐profile。
+轻量汇聚layer/rank deltas。clean pushed `ffa06d4`已完成gpu02 world3 full24 B20 profile与真实carrier smoke：
+K1--K4各6、最长323帧完整、peak reserved=`41.385GB`、0 OOM/nonfinite；79帧joint forward=`4/4`，倒序使
+query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta max-abs=`3.38e-8`。这些只seal机制与
+吞吐，当前仍无新closed-loop成绩；下一步是fresh macro0->25与立即K4 strict400。
 
 ## 4. Long-term objective and decision rule
 

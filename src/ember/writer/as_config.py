@@ -221,8 +221,21 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
                 evidence.get("macro1_to_macro2_query_delta_weight_delta_norm", 0)
             )
             <= 0
-            or float(evidence.get("macro2_layer_probe_reader_gradient_norm", 0))
+            or float(
+                evidence.get("macro1_to_macro2_layer_probe_reader_delta_norm", 0)
+            )
             <= 0
+            or float(
+                evidence.get("macro1_to_macro2_probe_conditioner_delta_norm", 0)
+            )
+            <= 0
+            or int(evidence.get("joint_backbone_calls", 0))
+            != int(evidence.get("expected_native_v6_calls", -1))
+            or float(
+                evidence.get("natural_to_reversed_query_delta_relative_l2", 0)
+            )
+            <= 0
+            or float(evidence.get("constant_query_delta_max_abs", 1)) >= 1e-6
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
         ):

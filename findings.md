@@ -322,6 +322,12 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     会在K4最长条件形成1152条长序列，已在GPU前因效率不合格被否决；当前改为每video一次shared causal
     controller，再轻量汇聚288个slot deltas。该工程/机制通过不提供closed-loop收益证据，仍须真实profile和
     strict400裁决。
+33. V6-LPCP live profile进一步证明实现合同在真实full24 B20上成立：gpu02 world3两步macro wall=
+    `66.134/61.544s`，K1--K4各6，最长323帧完整，peak reserved=`41.385GB`，0 OOM/nonfinite；第二步reader与
+    controller已有非零参数变化。79帧真实载体需要的joint backbone forward=`4`，与native V6预期相同；倒序使
+    query-delta/Program relative-L2=`2.0572/.40414`，常量视频query-delta max-abs=`3.38e-8`。这否决了“native
+    probes没有任何有向载体证据”这一早期失败分支，因此formal前不换memory token；但它不提供closed-loop收益，
+    不能把继承的AS139底座或内部大relative-L2误报成新架构变强。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

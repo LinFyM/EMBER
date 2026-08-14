@@ -1,6 +1,6 @@
 # V6-LPCP Semantic Factor-Memory Commitment
 
-状态：2026-08-15 active design authority；canonical实现与CPU机制门已完成，尚未GPU profile或训练。本文在CV-CSD cycle1完整终局之后建立，
+状态：2026-08-15 active design authority；canonical实现、CPU门与task4 GPU smoke已完成并seal，尚未full24训练。本文在CV-CSD cycle1完整终局之后建立，
 只改变跨视频成功信用最终写入policy topology的位置与参数化。V6/LPCP视频载体、AS139强底座、K4部署、
 selected-success replay、rank16 public LoRA和frozen source policy保持不变。
 

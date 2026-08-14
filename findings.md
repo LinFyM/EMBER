@@ -387,6 +387,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     residual。CPU已验证K-set permutation、constant-memory zero、factor family/layer/rank ownership、cycle1先开maps/
     后续router才得梯度，以及历史LPCP checkpoint只完整缺失新增12 tensors。architecture guard无hard violation；
     这些只证明实现合同，不提供closed-loop结论。
+43. clean frozen`cabf14f` task4真实smoke完成4个paired rollouts与四个互斥K4 credit views：8/8 family maps均
+    更新，Writer→LoRA→effective-BA→fixed-action响应非零；cycle=`139.420s`，是CV-CSD matched smoke的
+    `.958048x`，peak reserved=`40.762GB`，禁读/OOM/nonfinite为0。新增2.16M commitment没有造成吞吐或显存门
+    违约，可以seal full24；单task smoke仍不提供absolute、retention、稳定性或视频因果性能结论。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

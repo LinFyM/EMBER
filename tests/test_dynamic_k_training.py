@@ -103,8 +103,11 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_sfmc_reward_config_freezes_only_the_commitment_variable() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "ready"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "sealed"
+    assert config["formal_run"]["status"] == "sealed"
+    assert config["formal_run"]["live_task4_smoke_evidence"][
+        "factor_family_maps_updated"
+    ] == 8
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (

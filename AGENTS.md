@@ -92,8 +92,11 @@ layer/rank innovation memory，以exact-language作Q/K-only四basis语义地址�
 output basis前写zero-init hidden residual。它不增加literal memory token、不重复backbone forward、不直接写raw
 A/B。canonical实现与CPU机制门已完成：真实枚举trainable=`2,164,224`，zero-init step0 exact LPCP、K-set
 permutation、constant-memory zero、factor-family/slot ownership、两阶段gradient与pre-SFMC checkpoint加载均通过；
-architecture guard无hard violation。当前尚未GPU profile或训练，不得把机制通过当成性能结果，也不得同时改
-rank/view/LR/scale。active config=`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`。
+architecture guard无hard violation。clean frozen`cabf14f` task4 smoke完整：4 rollouts、4/4 credit views、8/8
+family maps更新、wall=`139.420s`=`.9580x` CV-CSD、peak reserved=`40.762GB`、fixed-action=`.002811`、
+effective-BA=`3.52e-8`，禁读/OOM/nonfinite为0；据此config已seal。当前尚未full24训练，不得把机制通过当成
+性能结果，也不得同时改rank/view/LR/scale。active config=
+`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`。
 
 ## 4. Long-term objective and decision rule
 

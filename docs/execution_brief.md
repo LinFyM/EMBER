@@ -37,8 +37,11 @@ constant-memory zero、factor-family/slot ownership、map→semantic-router两�
 加载合同均通过；architecture guard无hard violation。聚焦Writer/训练/部署测试=`72 passed`；完整CPU=`388 passed /
 7个既有Reward-Credit注册门失败`，后七项与本轮无关且基线已存在。当前尚未GPU profile或训练。
 
-active config=`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`，status=`ready`；必须从clean pushed/
-frozen commit做真实one-task机制/显存门，成功后才seal并启动full24 cycle1。
+task4 GPU smoke来自clean frozen`cabf14f`：4 rollouts、4/4 credit views、8/8 family maps更新，cycle=
+`139.420s`=`.958048x` CV-CSD matched smoke，peak allocated/reserved=`36.500/40.762GB`，fixed-action response=
+`.002811`、effective-BA response=`3.52e-8`，禁读/OOM/nonfinite为0。active config=
+`configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`现已seal；下一步从新的clean pushed/frozen seal
+commit用gpu01物理5/6/7、world3做full24 cycle1。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_cross_video_causal_success_distillation_formal_cycle0to1_r3_k4_views4_nmc4_b8_c1d8952_gpu01_20260815`；

@@ -96,8 +96,10 @@
   module，原V6 factor decoder只暴露hidden/output边界；真实trainable=`2,164,224`，zero-init exact LPCP、memory
   set-invariance/constant-zero、family-slot ownership、gradient staging与旧checkpoint加载CPU门均通过。architecture guard
   无hard violation；聚焦测试72 passed，完整CPU为388 passed加7个既有Reward-Credit注册门失败。active config=
-  `configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`且status=`ready`；尚未GPU profile/训练，
-  EMBER GPU进程为0；
+  `configs/pi05_writer_v6_lpcp_semantic_factor_memory_commitment_v1.json`。clean frozen`cabf14f` task4 smoke完整：
+  4 rollouts、4/4 credit views、8/8 family maps更新，wall=`139.420s`=`.958048x` CV-CSD，peak reserved=
+  `40.762GB`，fixed-action=`.002811`、effective-BA=`3.52e-8`，禁读/OOM/nonfinite为0；据此config已seal，
+  尚未full24训练；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

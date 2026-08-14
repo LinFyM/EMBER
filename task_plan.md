@@ -211,7 +211,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成真实one-forward/order/static carrier smoke和full24 longest-video吞吐profile：world3 B20 macro wall=
   `66.134/61.544s`、K各6、最长323帧完整、peak reserved=`41.385GB`；79帧joint forward=`4/4`，reverse
   query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta max-abs=`3.38e-8`；
-- [ ] 从clean pushed commit训练到macro25并立即做K4 strict paired400；
+- [x] 从clean detached `515f91e` world6 fresh训练到macro25：25/25 metrics、完整checkpoint/completion/exit0，
+  macro mean=`26.462s`、最长359帧完整、0 OOM/nonfinite；K4 generation B8/B16/B32=
+  `.221225/.221402/.221500 LoRA/s`，锁B32；
+- [ ] 立即完成同一macro25 single-checkpoint K4 strict paired400；
 - [ ] 按absolute/breadth/paired retention和最早接口裁决是否续到50、触发literal memory反事实或转向其它接口。
 
 ## Continuous loop after this result
@@ -239,7 +242,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138与ADSP138均已按门终局；当前V6 Layerwise
-Action-Probe Conditioned Procedure Reader已完成canonical实现、真实carrier smoke与full24 B20 profile，formal
-config已seal，下一步是clean frozen commit fresh macro0->25与立即K4 strict400。native probe已通过顺序/static/
-one-forward carrier门，所以本轮不触发memory替换；生成LoRA后的task-local RL仍是初始Writer达成强
+Action-Probe Conditioned Procedure Reader已完成canonical实现、真实carrier/full24 profile、fresh macro0->25与
+K4 generation profile，当前锁B32，下一步是同一macro25 checkpoint的strict400。native probe已通过顺序/
+static/one-forward carrier门，所以本轮不触发memory替换；生成LoRA后的task-local RL仍是初始Writer达成强
 zero-interaction起点之后的独立实验。

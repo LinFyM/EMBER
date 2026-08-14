@@ -1,7 +1,8 @@
 # V6 Layerwise Action-Probe Conditioned Procedure Reader
 
-状态：2026-08-14 active formal authority；canonical实现、CPU合同、真实载体smoke与full24 B20 profile均已
-通过，formal config已seal，下一步是fresh macro0->25。简称只用于文件/配置identity：`V6-LPCP`。
+状态：2026-08-14 active strict-evaluation authority；canonical实现、CPU合同、真实载体smoke、full24 B20
+profile、fresh macro0->25及K4 generation profile均已通过，下一步是single-checkpoint strict400。简称只用于
+文件/配置identity：`V6-LPCP`。
 
 ## 1. Decision
 
@@ -190,6 +191,21 @@ macro2在task38/demo2的79帧真实视频上需要的joint backbone forward为`4
 `1.9693/2.0572/.40414`；常量视频的query-delta max-abs=`3.38e-8`。因此native probe carrier已通过本设计的
 最早证据门，当前没有理由在formal前换成literal memory token。以上仍只是机制与吞吐证据，不构成任何
 closed-loop提升；唯一下一裁决是同一single macro25 checkpoint的K4 strict400。
+
+### 9.2 Formal macro25 and deployment profile
+
+clean detached `515f91e`在gpu01物理`0/1/2/5/6/7` world6完成fresh macro0->25，绝未加载profile Writer或
+optimizer state。25/25 metrics、world6 rank states、trainer state、Writer、manifest、completion与exit0完整；
+elapsed=`662.608s`，macro wall min/mean/max=`24.395/26.462/30.654s`，functional first/last=
+`.10115173/.09563028`，gradient范围=`2.130e-6--6.085e-6`，K1--K4每macro各6，最长359帧全部未截断，0
+OOM/nonfinite。macro25 query projection norm=`.142632`；相对macro1，reader/controller delta=
+`.071824/.052637`。它证明新增接口持续获得credit，不证明credit有用。
+
+同一macro25的固定validation8x4 K4 correct generation profile在gpu01物理0完整覆盖B8/B16/B32：
+`.221225/.221402/.221500 LoRA/s`，三者stable、0 OOM/nonfinite，peak reserved=
+`14.470/17.195/22.628GB`，最长视频226帧。按最高实测吞吐规则锁B32；相对AS139约`.225 LoRA/s`仅慢约
+1.6%。root=`runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_k4_writer_generation_profile_val8x4_correct_gpu01p0_515f91e_macro0025_20260814`。
+profile只封存部署batch与成本；strict400仍是首个性能结果。
 
 ## 10. Formal and falsification gates
 

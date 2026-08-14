@@ -41,8 +41,13 @@
   B20 macro1/2 profile：wall=`66.134/61.544s`、K各6、最长323帧完整、peak reserved=`41.385GB`、0
   OOM/nonfinite。macro1->2 query projection/reader/controller都发生非零更新。task38/demo2真实载体smoke中
   joint forward=`4`恰等于native预期；正序->倒序的query-delta/Program relative-L2=`2.0572/.40414`，常量视频
-  query-delta max-abs=`3.38e-8`。native probe carrier与效率门已通过，但没有任何新closed-loop分数；formal
-  config现已seal，下一步从clean frozen successor commit fresh macro0->25并立即K4 strict400；
+  query-delta max-abs=`3.38e-8`。native probe carrier与效率门已通过，但没有任何新closed-loop分数。clean
+  detached `515f91e`已在gpu01物理`0/1/2/5/6/7` world6完成fresh macro0->25：25/25 metrics、完整world6
+  checkpoint/completion/exit0，elapsed=`662.608s`，macro mean=`26.462s`，loss `.10115173->.09563028`，
+  gradient范围`2.130e-6--6.085e-6`，K各6、最长359帧完整、0 OOM/nonfinite。macro25 query projection norm=
+  `.142632`，reader/controller相对macro1变化`.071824/.052637`；这只证明credit展开。同checkpoint的K4
+  generation profile B8/B16/B32=`.221225/.221402/.221500 LoRA/s`，三档stable、0 OOM/nonfinite，按最高
+  吞吐锁B32；下一步是该single macro25 checkpoint的K4 strict400；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

@@ -328,6 +328,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     query-delta/Program relative-L2=`2.0572/.40414`，常量视频query-delta max-abs=`3.38e-8`。这否决了“native
     probes没有任何有向载体证据”这一早期失败分支，因此formal前不换memory token；但它不提供closed-loop收益，
     不能把继承的AS139底座或内部大relative-L2误报成新架构变强。
+34. clean detached `515f91e`的world6 fresh macro0->25完整exit0，macro mean=`26.462s`，functional
+    `.10115173->.09563028`，K1--K4每macro各6、最长359帧完整、0 OOM/nonfinite；macro25 query projection norm=
+    `.142632`，reader/controller相对macro1 delta=`.071824/.052637`。随后K4 generation B8/B16/B32=
+    `.221225/.221402/.221500 LoRA/s`，均stable并锁B32，峰值reserved仅`22.628GB`。因此新增接口既持续获得credit，
+    又没有明显牺牲部署吞吐；但两者仍都是机制证据，是否超过AS139/143及是否减少churn只认接下来的strict400。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

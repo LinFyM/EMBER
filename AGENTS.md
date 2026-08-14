@@ -54,7 +54,10 @@ CPU机制合同已完成：同一次forward旁读、step0 AS139 identity、K-set
 轻量汇聚layer/rank deltas。clean pushed `ffa06d4`已完成gpu02 world3 full24 B20 profile与真实carrier smoke：
 K1--K4各6、最长323帧完整、peak reserved=`41.385GB`、0 OOM/nonfinite；79帧joint forward=`4/4`，倒序使
 query-delta/Program relative-L2=`2.0572/.40414`，constant query-delta max-abs=`3.38e-8`。这些只seal机制与
-吞吐，当前仍无新closed-loop成绩；下一步是fresh macro0->25与立即K4 strict400。
+吞吐。clean detached `515f91e`随后在gpu01 world6完成fresh macro0->25：25/25 metrics、完整checkpoint/
+completion/exit0，macro mean=`26.462s`、最长359帧完整、0 OOM/nonfinite。K4 generation B8/B16/B32=
+`.221225/.221402/.221500 LoRA/s`，三档stable并按最高吞吐锁B32。当前仍无新closed-loop成绩；下一步是同一
+macro25 single-checkpoint K4 strict400。
 
 ## 4. Long-term objective and decision rule
 

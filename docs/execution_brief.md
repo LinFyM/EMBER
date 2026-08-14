@@ -18,7 +18,7 @@ final violation；preference descent与delta energy分别保留`.963787/.980958`
 projection把raw的Long1从15恢复到21，却由Spatial/Object净`-2/-4`支付；AS→ADSP effective-BA relative-L2=
 `.002976`，比AS→raw的`.003323`更小，但held churn反而从37升到45。最早失效接口因此不再是“raw shared update
 没有任何support约束”，而是**train24成功prefix的一阶局部support不能代表held闭环support，且更近的LoRA几何
-不能保证能力共存**。当前没有GPU run；active successor已经冻结为V6 Layerwise Action-Probe Conditioned
+不能保证能力共存**。active successor已经冻结为V6 Layerwise Action-Probe Conditioned
 Procedure Reader。它不原样恢复低分memory架构，而是冻结AS139完整强路径，在同一次真实context forward旁读
 18层native Action-probe states，以shared rank-query和video内causal delta形成zero-init Procedure-query
 conditioner；rank16、factor heads、B20与dynamic-K recipe均不变。literal memory token只在native probe carrier
@@ -31,7 +31,10 @@ probe reader与causal controller，base/K-set始终冻结。吞吐审计否决�
 gpu02 world3 live profile已完成：macro wall=`66.134/61.544s`，K1--K4各6、最长323帧完整、peak reserved=
 `41.385GB`、0 OOM/nonfinite；真实79帧载体smoke的joint forward=`4`等于native预期，倒序使query-delta/
 Program relative-L2=`2.0572/.40414`，常量视频query-delta max-abs=`3.38e-8`。这些只seal机制与吞吐，尚无
-新closed-loop成绩。下一动作是clean frozen successor commit fresh macro0->25并立即K4 strict400。
+新closed-loop成绩。clean detached `515f91e` world6 fresh macro0->25已经完整exit0：25/25 metrics、完整
+checkpoint，macro mean=`26.462s`，loss `.10115173->.09563028`，K各6、最长359帧完整、0 OOM/nonfinite。
+K4 generation profile的B8/B16/B32=`.221225/.221402/.221500 LoRA/s`，三档稳定，按最高吞吐锁B32。下一动作
+是该single macro25 checkpoint的K4 strict400；内部参数展开与吞吐仍不能冒充性能。
 
 ## 2. Completed changed variable and training semantics
 

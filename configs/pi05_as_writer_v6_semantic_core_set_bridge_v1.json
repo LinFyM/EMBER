@@ -1,6 +1,6 @@
 {
-  "schema_version": "ember_pi05_v6_shared_core_procedure_set_bridge_as_writer_v1",
-  "status": "terminal_non_pass_139_breadth6",
+  "schema_version": "ember_pi05_v6_semantic_core_set_bridge_as_writer_v1",
+  "status": "active_pending_live_profile",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -10,7 +10,7 @@
     "tokenizer_manifest": {"path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json"}
   },
   "method": {
-    "name": "v6_shared_core_procedure_set_bridge",
+    "name": "v6_semantic_core_set_bridge",
     "writer_input": "exact task language plus one to four action-hidden same-task teacher videos",
     "deployment_output": "one complete 38-target rank16 task-conditioned LoRA",
     "source_policy": "frozen_pi05_libero_source_policy",
@@ -30,7 +30,7 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_v6_shared_core_procedure_set_bridge_v1",
+    "architecture": "pi05_v6_semantic_core_set_bridge_v1",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -42,12 +42,13 @@
     "per_video_encoder": "native_v6_language_axial_core_procedure",
     "program_width": 256,
     "policy_slot_count": 320,
-    "core_set_fusion": "native_core_reader_over_unordered_union_of_per_video_language_aligned_core_tokens",
-    "procedure_set_fusion": "permutation_invariant_mean_backbone_plus_selected_centered_residual_before_native_adaln_fusion",
-    "procedure_set_qk": "shared_bias_free_pre_rms_256_to_256",
-    "procedure_set_value": "raw_centered_per_video_slot_no_value_projection",
-    "procedure_set_output": "shared_bias_free_zero_initialized_256_to_256",
-    "k1_contract": "exact_native_v6_identity_for_all_procedure_set_parameters",
+    "semantic_core_set_fusion": "permutation_invariant_language_token_aligned_mean_backbone_plus_selected_centered_residual_before_native_core_reader",
+    "semantic_core_set_qk": "shared_bias_free_pre_rms_256_to_256",
+    "semantic_core_set_value": "raw_centered_per_video_language_token_no_value_projection",
+    "semantic_core_set_output": "shared_bias_free_zero_initialized_256_to_256_shared_correction",
+    "core_set_fusion": "semantic_core_set_correction_then_native_core_reader_over_unordered_union",
+    "procedure_set_fusion": "parameter_free_mean_of_per_video_policy_aligned_procedure_readouts_before_native_adaln_fusion",
+    "k1_contract": "exact_native_v6_identity_for_all_semantic_core_set_parameters",
     "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
     "v6_fast_warm_start_checkpoint": "runs/outputs/pi05_as_writer_v6_decay400_taskcomplete_dev_r4_b20_seed7_s2400_4efa737_20260729/checkpoints/step_00000400",
     "image_width": 2048,
@@ -85,7 +86,7 @@
     "video_open_files_per_rank": 2
   },
   "conditioning_training": {
-    "method": "v6_shared_core_procedure_set_correct_video_functional_as",
+    "method": "v6_semantic_core_set_correct_video_functional_as",
     "update_topology": "one_complete_full24_equal_task_mean_per_macro",
     "global_tasks_per_optimizer_update": 24,
     "task_assignment": "cost_balanced_long_first_dynamic_uneven",
@@ -140,29 +141,7 @@
     "stop_after_macro": 1
   },
   "formal_run": {
-    "status": "sealed",
-    "profile_evidence": {
-      "source_commit": "97c0de2fc36d5566f7086bfe5ba3ba3563dd58c4",
-      "run_root": "runs/outputs/pi05_v6_shared_core_procedure_set_bridge_profile_r6_b20_97c0de2_gpu01_20260814",
-      "host": "gpu01",
-      "physical_gpu_ids": [0, 1, 2, 4, 5, 6],
-      "world_size": 6,
-      "completion_macro": 2,
-      "first_macro_seconds": 26.01095342996996,
-      "macro_seconds": 24.249484056024812,
-      "global_mean_functional_loss": 0.09570903827746709,
-      "global_mean_consistency_loss": 0.0,
-      "gradient_norm_before_clip": 6.296289939200506e-6,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "longest_total_sampled_frames": 323,
-      "all_selected_videos_untruncated": true,
-      "max_cuda_allocated_bytes": 36495013888,
-      "max_cuda_reserved_bytes": 40758149120,
-      "macro1_to_macro2_query_delta_norm": 4.1364557546330616e-5,
-      "macro1_to_macro2_key_delta_norm": 3.990528057329357e-5,
-      "oom_count": 0,
-      "nonfinite_count": 0
-    },
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 400,
     "per_task_action_batch_size": 20,

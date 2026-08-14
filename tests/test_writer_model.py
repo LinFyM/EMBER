@@ -53,7 +53,7 @@ def test_native_compiler_public_stages_are_exact_old_graph() -> None:
     assert torch.equal(diagnostics["fused_slots"], fused)
 
 
-def test_v6_memory_set_k1_is_exact_native_v6_before_and_after_training() -> None:
+def test_v6_semantic_core_set_k1_is_exact_native_v6_for_any_set_weights() -> None:
     model, _ = _model()
     frames, indices, _, _, tokens, masks, spans = _inputs()
     inputs = (
@@ -80,12 +80,12 @@ def test_v6_memory_set_k1_is_exact_native_v6_before_and_after_training() -> None
     bridged = model(*inputs, policy=torch.nn.Identity())
     assert all(torch.equal(bridged[name], native[name]) for name in native)
 
-    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
+    torch.nn.init.normal_(model.semantic_core_set.output.weight, std=0.01)
     bridged_after = model(*inputs, policy=torch.nn.Identity())
     assert all(torch.equal(bridged_after[name], native[name]) for name in native)
 
 
-def test_v6_memory_set_is_video_invariant_and_order_sensitive() -> None:
+def test_v6_semantic_core_set_is_video_invariant_and_order_sensitive() -> None:
     model, _ = _model()
     inputs = _inputs()
     natural = model.encode_program(*inputs, policy=torch.nn.Identity())
@@ -119,27 +119,27 @@ def test_v6_memory_set_is_video_invariant_and_order_sensitive() -> None:
     assert not torch.allclose(natural.program, reversed_program.program)
 
 
-def test_v6_memory_set_gradient_staging_and_freeze_boundary() -> None:
+def test_v6_semantic_core_set_gradient_staging_and_freeze_boundary() -> None:
     model, _ = _model()
     generated, auxiliary = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
     )
     assert auxiliary.item() == 0.0
     _sum(generated).backward()
-    assert model.procedure_set.output.weight.grad is not None
-    assert model.procedure_set.output.weight.grad.abs().sum() > 0
-    assert model.procedure_set.query.weight.grad is not None
-    assert not model.procedure_set.query.weight.grad.count_nonzero()
+    assert model.semantic_core_set.output.weight.grad is not None
+    assert model.semantic_core_set.output.weight.grad.abs().sum() > 0
+    assert model.semantic_core_set.query.weight.grad is not None
+    assert not model.semantic_core_set.query.weight.grad.count_nonzero()
     assert all(parameter.grad is None for parameter in model.base_writer.parameters())
 
     model.zero_grad(set_to_none=True)
-    torch.nn.init.normal_(model.procedure_set.output.weight, std=0.01)
+    torch.nn.init.normal_(model.semantic_core_set.output.weight, std=0.01)
     generated, _ = model.forward_training(*_inputs(), policy=torch.nn.Identity())
     _sum(generated).backward()
-    assert model.procedure_set.query.weight.grad is not None
-    assert model.procedure_set.query.weight.grad.abs().sum() > 0
-    assert model.procedure_set.key.weight.grad is not None
-    assert model.procedure_set.key.weight.grad.abs().sum() > 0
+    assert model.semantic_core_set.query.weight.grad is not None
+    assert model.semantic_core_set.query.weight.grad.abs().sum() > 0
+    assert model.semantic_core_set.key.weight.grad is not None
+    assert model.semantic_core_set.key.weight.grad.abs().sum() > 0
     assert all(parameter.grad is None for parameter in model.base_writer.parameters())
 
 
@@ -158,3 +158,52 @@ def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
     )
     assert auxiliary.item() == 0.0
     assert all(value.shape == model.template_state()[name].shape for name, value in generated.items())
+
+
+def test_semantic_core_set_step0_is_previous_zero_procedure_set_graph() -> None:
+    model, _ = _model()
+    inputs = _inputs()
+    actual = model.encode_program(*inputs, policy=torch.nn.Identity()).program
+    frames, indices, video_offsets, condition_offsets, tokens, masks, spans = inputs
+    video_bounds = tuple(int(value) for value in video_offsets.tolist())
+    condition_bounds = tuple(int(value) for value in condition_offsets.tolist())
+    counts = torch.tensor(
+        [right - left for left, right in zip(condition_bounds, condition_bounds[1:])]
+    )
+    condition_ids = torch.repeat_interleave(torch.arange(len(counts)), counts)
+    evidence = model.base_writer.encode_video_evidence(
+        torch.nn.Identity(),
+        frames,
+        video_offsets,
+        tokens.index_select(0, condition_ids),
+        masks.index_select(0, condition_ids),
+        spans.index_select(0, condition_ids),
+    )
+    memories = model.base_writer.build_memories(evidence, indices)
+    compiler = model.base_writer.compiler
+    shared_core = []
+    for left, right in zip(condition_bounds, condition_bounds[1:]):
+        core = memories.core[left:right].reshape(1, -1, 256)
+        valid = memories.valid_core[left:right].reshape(1, -1)
+        routing = compiler.routing(1)
+        slots = compiler.read_core_slots(routing, core, valid)
+        shared_core.append(compiler.normalize_core_slots(slots)[0])
+    shared_core = torch.stack(shared_core)
+    routing = compiler.routing(len(video_bounds) - 1)
+    procedure, _ = compiler.read_procedure_slots(
+        routing,
+        shared_core.index_select(0, condition_ids),
+        memories.procedure,
+        memories.positions,
+        memories.valid_procedure,
+    )
+    mean_procedure = torch.stack(
+        [
+            procedure[left:right].mean(dim=0)
+            for left, right in zip(condition_bounds, condition_bounds[1:])
+        ]
+    )
+    expected = compiler.fuse_readouts(
+        compiler.routing(len(shared_core)), shared_core, mean_procedure
+    )[0]
+    assert torch.equal(actual, expected)

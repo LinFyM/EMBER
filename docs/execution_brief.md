@@ -30,6 +30,10 @@ matched去混淆把Procedure-Set output归零后，训练残差相对当前LoRA�
 前移到语言token对齐的per-video Semantic Core上，后端Procedure只做无参数mean；其它底座、rank16、B20、动态K
 和训练recipe保持不变。
 
+该V6 Semantic-Core Set Bridge的预注册authority与canonical实现已完成：同预算197120参数set对语言对齐Core
+生成shared correction，step0严格保留139路径的output-zero数据流；旧Procedure-Set executable schema已删除。
+full CPU=`372 passed`。当前仅授权真实GPU机制与full24 B20 profile；profile seal前不启动formal训练。
+
 ## 2. Single changed variable and training semantics
 
 - v6的language-conditioned evidence、Semantic Core、有向Procedure、native compiler remainder、rank16 topology

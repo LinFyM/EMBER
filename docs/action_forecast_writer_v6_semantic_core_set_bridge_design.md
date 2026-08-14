@@ -128,3 +128,22 @@ warm start若过门，只证明该架构边界值得保留；最终论文方法�
 旧`PolicyProcedureSetFusion`被原位替换，不保留flag或第二类。旧schema/config/runtime由commit`64c91a4`和formal
 artifacts恢复；新checkpoint fresh-incompatible。`legacy_v6_model.py`与`temporal.py`不再扩展，因为现有分段
 native compiler接口足够。实现完成后更新本文件的机制/profile证据，不修改上述预注册裁决。
+
+## 10. Canonical implementation与CPU机制证据
+
+实现已原位替换唯一Writer/config/checkpoint/evaluator schema：`SemanticCoreSetFusion`拥有与前版相同的两个
+RMSNorm和三个bias-free `256x256`矩阵，总计5 tensors / `197120`参数；它对每个语言token从K条Core中选择
+centered residual，经zero-init output形成一份shared correction并写回各video Core。native Core union reader、
+per-video ordered Procedure reader、无参数Procedure mean、AdaLN/post-fusion和FactorHeads依次运行一次。
+
+退役Procedure-Set class、schema、config和evaluator family均已删除，不保留runtime flag。新增CPU精确门证明：
+
+- step0 K>1 Program逐元素等于前版`Procedure-Set output=0`图；
+- K1在zero/nonzero Semantic-Core Set output下逐tensor等于native v6；
+- K集合换位不变、video内部倒序敏感；
+- zero-output首步output gradient非零而q/k gradient为零，nonzero output后q/k gradient非零；
+- v6 base全部无gradient，auxiliary严格为零；
+- full CPU suite=`372 passed`。
+
+这些只证明实现与单变量合同成立。尚未完成真实GPU视频smoke、full24 B20 profile或closed-loop，不能提前写成
+有效方法。

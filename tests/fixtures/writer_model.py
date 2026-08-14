@@ -1,4 +1,4 @@
-"""Shared fixtures for the v6 shared-Core Procedure-set Writer."""
+"""Shared fixtures for the v6 Semantic-Core set Writer."""
 
 from __future__ import annotations
 

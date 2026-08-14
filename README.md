@@ -56,7 +56,8 @@ canonical实现、全量`371 passed`、world6训练和strict400均完整。去�
 方向不是续训后端set，而是**V6 Semantic-Core Set Bridge**：把同预算可学习集合共识再前移到语言对齐的
 Semantic Core tokens，后端Procedure只做无参数集合归约；底座、rank16、B20与动态K不变。完整预注册authority见
 [`docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`](docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md)，
-当前尚无实现或新性能claim。
+canonical实现已原位替换旧Procedure-Set路径，step0严格保留139的output-zero数据流，full CPU=`372 passed`；
+当前待真实GPU机制与full24 B20 profile，尚无新性能claim。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

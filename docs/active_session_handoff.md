@@ -18,7 +18,8 @@
 - 当前下一单变量：把同预算trainable set前移到语言对齐的per-video Semantic Core tokens，后端Procedure只作
   无参数mean；v6底座、rank16、B20、动态K和K1严格恒等保持不变；
 - 当前active design是V6 Semantic-Core Set Bridge；authority=
-  `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，尚未实现或产生性能claim；
+  `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`；canonical实现已原位替换旧路径，full CPU=
+  `372 passed`，下一步live GPU机制与full24 B20 profile；尚无新性能claim；
 - 当前暂不使用subagents；实现、训练、评测和分析由当前主任务持续完成；
 
 ## 2. Latest completed architecture
@@ -531,5 +532,5 @@ strict K4 root：
   relative-L2 mean=`.0009181`、task-mean=`.0005745`；K1→zero为`.0396742/.0169820`。所以训练层几乎没有贡献，
   无参数shared-Core union才是本轮增益来源。
 
-当前无EMBER GPU进程。下一步先写Semantic-Core Set单变量authority并原位实现；不得resume当前checkpoint或并行
-保留两套runtime。
+当前无EMBER GPU进程。Semantic-Core Set authority与canonical CPU实现已完成；下一步用一张合适GPU做真实视频
+机制smoke，再按live双节点状态选择最多6卡做full24 B20 profile。不得resume旧checkpoint或并行保留两套runtime。

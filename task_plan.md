@@ -111,8 +111,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Active iteration: Semantic-Core Set Bridge
 
 - [x] 写单变量authority：将同预算可学习集合共识从Procedure readout前移到语言对齐Semantic Core tokens；
-- [ ] 后端per-video Procedure只作无参数mean，保留v6底座、rank16、B20、动态K与K1严格恒等；
-- [ ] 原位替换唯一canonical实现并完成最小CPU/GPU机制与吞吐门；
+- [x] 后端per-video Procedure只作无参数mean，保留v6底座、rank16、B20、动态K与K1严格恒等；
+- [x] 原位替换唯一canonical实现/schema/config，完成step0/K1/置换/顺序/梯度门和full CPU=`372 passed`；
+- [ ] 完成真实GPU视频机制smoke与full24 B20吞吐profile并seal；
 - [ ] fresh训练至预注册节点，尽快做K4 strict paired correct400。
 
 ## Continuous loop after this result

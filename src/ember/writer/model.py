@@ -1,4 +1,4 @@
-"""Canonical dynamic-K shared-Core Procedure-set bridge over native v6."""
+"""Canonical dynamic-K Semantic-Core set bridge over native v6."""
 
 from __future__ import annotations
 
@@ -17,13 +17,16 @@ from ember.expert_manifold.legacy_v6_model import (
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.expert_manifold.v6_prior import load_v6_prior_warm_start_
 from ember.writer.errors import WriterModelError
-from ember.writer.slot_set import PolicyProcedureSetFusion
+from ember.writer.slot_set import SemanticCoreSetFusion
 
 
 @dataclass(frozen=True)
 class WriterProgramDiagnostics:
     """Memory-level evidence retained for mechanism analysis."""
 
+    per_video_core: torch.Tensor
+    corrected_per_video_core: torch.Tensor
+    shared_core_corrections: torch.Tensor
     shared_core_slots: torch.Tensor
     per_video_procedure_slots: torch.Tensor
     shared_procedure_slots: torch.Tensor
@@ -33,14 +36,14 @@ class WriterProgramDiagnostics:
 
 @dataclass(frozen=True)
 class WriterProgramOutput:
-    """Frozen v6 memory readouts and their trainable Procedure set."""
+    """Frozen v6 memory readouts and their trainable Semantic-Core set."""
 
     program: torch.Tensor
     diagnostics: WriterProgramDiagnostics
 
 
 class CompleteLoRAWriter(torch.nn.Module):
-    """Compile one shared v6 Core/Procedure program from one-to-four videos."""
+    """Compile a trainably shared semantic Core and native ordered Procedure."""
 
     PUBLIC_LORA_RANK = 16
     PROGRAM_WIDTH = 256
@@ -54,7 +57,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         ):
             raise WriterModelError("native v6 Writer topology changed")
         self.base_writer = base_writer.requires_grad_(False).eval()
-        self.procedure_set = PolicyProcedureSetFusion(width=self.PROGRAM_WIDTH)
+        self.semantic_core_set = SemanticCoreSetFusion(width=self.PROGRAM_WIDTH)
 
     @classmethod
     def from_policy(
@@ -88,7 +91,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         return cls(base)
 
     def train(self, mode: bool = True) -> CompleteLoRAWriter:
-        """Train only Procedure-Set while the loaded v6 base remains in eval mode."""
+        """Train only Semantic-Core Set while the v6 base remains in eval mode."""
 
         super().train(mode)
         self.base_writer.eval()
@@ -133,7 +136,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         policy: torch.nn.Module,
         singleton_video_index: int = 0,
     ) -> WriterProgramOutput:
-        """Build per-video memories, then share Core and aggregate Procedure."""
+        """Fuse aligned Semantic Core, then mean native ordered Procedure reads."""
 
         del singleton_video_index
         video_bounds = self._offsets(
@@ -163,7 +166,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or task_span_mask.shape != language_tokens.shape
             or any(count not in range(1, 5) for count in cardinalities)
         ):
-            raise WriterModelError("invalid v6 shared-Core Procedure-set batch")
+            raise WriterModelError("invalid v6 Semantic-Core set batch")
         video_condition_ids = torch.repeat_interleave(
             torch.arange(
                 len(condition_bounds) - 1,
@@ -182,54 +185,57 @@ class CompleteLoRAWriter(torch.nn.Module):
                 task_span_mask.index_select(0, video_condition_ids),
             )
             memories = self.base_writer.build_memories(evidence, frame_indices)
-            compiler = self.base_writer.compiler
-            shared_core_slots: list[torch.Tensor | None] = [
-                None
-            ] * len(cardinalities)
-            for video_count in range(1, 5):
-                condition_ids = [
-                    condition_id
-                    for condition_id, count in enumerate(cardinalities)
-                    if count == video_count
-                ]
-                if not condition_ids:
-                    continue
-                video_ids = torch.tensor(
-                    [
-                        video_id
-                        for condition_id in condition_ids
-                        for video_id in range(
-                            condition_bounds[condition_id],
-                            condition_bounds[condition_id + 1],
-                        )
-                    ],
-                    dtype=torch.long,
-                    device=memories.core.device,
-                )
-                core = memories.core.index_select(0, video_ids).reshape(
-                    len(condition_ids), -1, self.PROGRAM_WIDTH
-                )
-                valid_core = memories.valid_core.index_select(
-                    0, video_ids
-                ).reshape(len(condition_ids), -1)
-                routing = compiler.routing(len(condition_ids))
-                core_slots = compiler.read_core_slots(routing, core, valid_core)
-                normalized_core = compiler.normalize_core_slots(core_slots)
-                for row, condition_id in enumerate(condition_ids):
-                    shared_core_slots[condition_id] = normalized_core[row]
-            if any(value is None for value in shared_core_slots):
-                raise WriterModelError("missing shared Core condition")
-            shared_core = torch.stack(
-                [value for value in shared_core_slots if value is not None]
+        corrected_core, set_diagnostics = self.semantic_core_set(
+            memories.core.detach(),
+            memories.valid_core,
+            condition_video_offsets,
+        )
+        compiler = self.base_writer.compiler
+        shared_core_slots: list[torch.Tensor | None] = [None] * len(cardinalities)
+        for video_count in range(1, 5):
+            condition_ids = [
+                condition_id
+                for condition_id, count in enumerate(cardinalities)
+                if count == video_count
+            ]
+            if not condition_ids:
+                continue
+            video_ids = torch.tensor(
+                [
+                    video_id
+                    for condition_id in condition_ids
+                    for video_id in range(
+                        condition_bounds[condition_id],
+                        condition_bounds[condition_id + 1],
+                    )
+                ],
+                dtype=torch.long,
+                device=corrected_core.device,
             )
-            procedure_routing = compiler.routing(len(video_bounds) - 1)
-            per_video_procedure, _ = compiler.read_procedure_slots(
-                procedure_routing,
-                shared_core.index_select(0, video_condition_ids),
-                memories.procedure,
-                memories.positions,
-                memories.valid_procedure,
+            core = corrected_core.index_select(0, video_ids).reshape(
+                len(condition_ids), -1, self.PROGRAM_WIDTH
             )
+            valid_core = memories.valid_core.index_select(0, video_ids).reshape(
+                len(condition_ids), -1
+            )
+            routing = compiler.routing(len(condition_ids))
+            core_slots = compiler.read_core_slots(routing, core, valid_core)
+            normalized_core = compiler.normalize_core_slots(core_slots)
+            for row, condition_id in enumerate(condition_ids):
+                shared_core_slots[condition_id] = normalized_core[row]
+        if any(value is None for value in shared_core_slots):
+            raise WriterModelError("missing shared Core condition")
+        shared_core = torch.stack(
+            [value for value in shared_core_slots if value is not None]
+        )
+        procedure_routing = compiler.routing(len(video_bounds) - 1)
+        per_video_procedure, _ = compiler.read_procedure_slots(
+            procedure_routing,
+            shared_core.index_select(0, video_condition_ids),
+            memories.procedure.detach(),
+            memories.positions,
+            memories.valid_procedure,
+        )
         if (
             shared_core.shape
             != (len(condition_bounds) - 1, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
@@ -237,8 +243,11 @@ class CompleteLoRAWriter(torch.nn.Module):
             != (len(video_bounds) - 1, self.POLICY_SLOTS, self.PROGRAM_WIDTH)
         ):
             raise WriterModelError("native v6 memory readout topology changed")
-        shared_procedure, set_diagnostics = self.procedure_set(
-            per_video_procedure.detach(), condition_video_offsets
+        shared_procedure = torch.stack(
+            [
+                per_video_procedure[left:right].mean(dim=0)
+                for left, right in zip(condition_bounds, condition_bounds[1:])
+            ]
         )
         routing = self.base_writer.compiler.routing(shared_core.shape[0])
         program, _, _ = self.base_writer.compiler.fuse_readouts(
@@ -249,6 +258,9 @@ class CompleteLoRAWriter(torch.nn.Module):
         return WriterProgramOutput(
             program,
             WriterProgramDiagnostics(
+                per_video_core=set_diagnostics.per_video_core,
+                corrected_per_video_core=set_diagnostics.corrected_per_video_core,
+                shared_core_corrections=set_diagnostics.shared_corrections,
                 shared_core_slots=shared_core,
                 per_video_procedure_slots=per_video_procedure,
                 shared_procedure_slots=shared_procedure,

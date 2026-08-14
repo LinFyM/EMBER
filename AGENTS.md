@@ -58,6 +58,8 @@ exact language + K=1..4 same-task action-hidden ordered videos
 **V6 Semantic-Core Set Bridge**：只把同预算可学习set前移到语言对齐Semantic Core tokens，并把后端Procedure
 聚合改为无参数mean；不得继续训练/放大当前Procedure-Set，也不得同时修改rank、recipe、底座或mapper。authority=
 `docs/action_forecast_writer_v6_semantic_core_set_bridge_design.md`，精确状态只取`docs/active_session_handoff.md`。
+canonical实现已原位替换旧schema/config/runtime，full CPU=`372 passed`；下一裁决是live GPU机制与full24 B20
+profile，profile seal前不得启动formal训练。
 
 ## 4. Long-term objective and decision rule
 

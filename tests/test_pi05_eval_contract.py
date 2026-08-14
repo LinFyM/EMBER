@@ -468,14 +468,14 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     inputs = list(_writer_contract_inputs(tmp_path))
     shared_writer = inputs[4]
     shared_writer.update(
-        schema_version="ember_pi05_v6_shared_core_procedure_set_bridge_eval_adapter_v1",
-        kind="v6_shared_core_procedure_set_writer",
+        schema_version="ember_pi05_v6_semantic_core_set_bridge_eval_adapter_v1",
+        kind="v6_semantic_core_set_writer",
     )
     shared_writer["config"] = {
         "path": str(
-            ROOT / "configs/pi05_as_writer_v6_shared_core_procedure_set_bridge_v1.json"
+            ROOT / "configs/pi05_as_writer_v6_semantic_core_set_bridge_v1.json"
         ),
-        "schema": "ember_pi05_v6_shared_core_procedure_set_bridge_as_writer_v1",
+        "schema": "ember_pi05_v6_semantic_core_set_bridge_as_writer_v1",
     }
     shared_writer["lora_contract"] = {
         "reference": (
@@ -506,7 +506,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         _build_writer_contract(
             inputs=tuple(inputs),
             output_dir=tmp_path / "out-b16",
-            arm="v6_shared_core_procedure_set_bridge_correct",
+            arm="v6_semantic_core_set_bridge_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=16,
@@ -514,7 +514,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
     exact = _build_writer_contract(
         inputs=tuple(inputs),
         output_dir=tmp_path / "out-b8",
-        arm="v6_shared_core_procedure_set_bridge_correct",
+        arm="v6_semantic_core_set_bridge_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=8,

@@ -62,9 +62,9 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_v6_shared_core_procedure_set_config_is_loadable() -> None:
+def test_v6_semantic_core_set_config_is_loadable() -> None:
     config = load_writer_config(
-        REPO_ROOT / "configs/pi05_as_writer_v6_shared_core_procedure_set_bridge_v1.json"
+        REPO_ROOT / "configs/pi05_as_writer_v6_semantic_core_set_bridge_v1.json"
     )
     lora = load_pi05_lora_contract(
         REPO_ROOT / "configs/pi05_lora_v1.json"
@@ -73,14 +73,15 @@ def test_v6_shared_core_procedure_set_config_is_loadable() -> None:
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
     assert config["writer"]["k1_contract"].startswith("exact_native_v6_identity")
-    assert config["writer"]["core_set_fusion"].startswith("native_core_reader")
+    assert config["writer"]["semantic_core_set_fusion"].startswith(
+        "permutation_invariant"
+    )
+    assert config["writer"]["core_set_fusion"].startswith("semantic_core_set")
     assert config["writer"]["procedure_set_fusion"].endswith(
         "native_adaln_fusion"
     )
     assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "sealed"
-    assert config["formal_run"]["profile_evidence"]["world_size"] == 6
-    assert config["formal_run"]["profile_evidence"]["completion_macro"] == 2
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
         1,
         2,
@@ -587,7 +588,7 @@ def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
         "ember.pi05_eval.run_contract"
     )._writer_lora_contract
 
-    config = REPO_ROOT / "configs/pi05_as_writer_v6_shared_core_procedure_set_bridge_v1.json"
+    config = REPO_ROOT / "configs/pi05_as_writer_v6_semantic_core_set_bridge_v1.json"
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),
         {
@@ -608,22 +609,11 @@ def test_evaluator_resolves_the_v6_memory_set_rank16_lora_authority() -> None:
     )
 
 
-def test_v6_shared_core_procedure_set_k4_deployment_profile_is_sealed() -> None:
+def test_v6_semantic_core_set_deployment_profile_awaits_live_measurement() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
     )
 
     assert DYNAMIC_K_GENERATION_BATCH_SIZE == 8
-    assert DYNAMIC_K_GENERATION_PROFILES == {
-        4: {
-            "schema": "ember_pi05_writer_generation_profile_v2",
-            "path": (
-                "runs/outputs/"
-                "pi05_v6_shared_core_procedure_set_bridge_k4_writer_generation_"
-                "profile_val8x4_correct_gpu01p4_502618b_macro0025_20260814/"
-                "writer_generation_profile.json"
-            ),
-            "selected_writer_model_batch_size": 8,
-        }
-    }
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

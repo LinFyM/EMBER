@@ -44,12 +44,16 @@ rollout或forward。exact task4/task7均变为tie；task9/15/18分别有1/2/1个
 八head/q-v-action全通，但task9 held/train BA幅度仅`.105x`，task18 train跨video仅`.290/.428`，三个有效anchors
 只有task15全门通过。按门终局，不full24、strict或cycle2。
 
-当前active successor是**DF-SOCP**：保留LPCP/DJNFR全部生成与部署图，只沿winner成功occupancy的每个replan
+最新终局successor是**DF-SOCP**：保留LPCP/DJNFR全部生成与部署图，只沿winner成功occupancy的每个replan
 observation，用相同policy noise查询loser counterfactual action，再做逐状态paired flow preference。它复用DJNFR
 完整成功trajectory并补同状态negative，不增加env rollout；固定task9/15/18三anchor全部过门才允许full24。
 authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`；
-canonical实现与fresh schema已完成，全量CPU=`401 passed`、architecture guard无hard violation；下一步只在clean
-pushed commit上跑固定task9/15/18三anchor真实机制门，当前无GPU run或可resume checkpoint。
+clean `16cedb9`固定outcomes与26/65/44 replay均复现，三者train/held跨video、q/v/action及顺序门基本全过；但
+stored动态B2/B1 action与B8 loser requery在task9/15的数值差异是名义策略contrast的`1.086x/1.693x`，故action
+panel不是matched-batch因果比较。三项wall又为DF-PCSP的`3.083x/5.335x/3.887x`，完整轨迹functional credit占
+主要成本；task9 held/train BA仅`.118x`。按预注册门终局，不full24、strict、cycle2或小扫。下一步只应修复同B8
+双臂重查与时间分层informative occupancy压缩，不能改carrier、memory、rank或LoRA topology。当前无GPU run或可
+resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

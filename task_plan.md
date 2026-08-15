@@ -439,7 +439,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 保持pair内replans、pairs、四views、tasks逐级等权，并移除DF-PCSP executable/schema语义；
 - [x] 完成实现门：counterfactual actions按loser arm B8查询一次并跨四views复用；不等长trajectory等权、完整replay、
   microbatch语义与margin descent定向合同通过；全量CPU=`401 passed`、compileall与architecture hard gate通过；
-- [ ] 完成CPU、真实task9/15/18三anchor机制与吞吐门；三项全过才full24 cycle1及strict400。
+- [x] 完成真实task9/15/18三anchor机制与吞吐门：outcomes/replay、跨video、八head、q/v/action与顺序链基本通过；
+  但task9/15的B2/B1 stored action与B8 counterfactual差异超过名义策略contrast，三项wall=`3.083--5.335x`且
+  task9 held/train仅`.118x`，按门终局，不full24/strict/cycle2；
+- [ ] 下一单变量设计须在相同B8 observation/noise panel上重查两臂，并用预声明的时间分布规则从完整成功occupancy
+  只保留少量有策略分歧的states；先证明正负动作可比和wall有效，再重做固定三anchor门。
 
 ## Non-negotiable boundaries
 
@@ -456,9 +460,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR与DF-PCSP均已按门终局；它们都不得resume或参数小扫。
-当前active DF-SOCP实现与CPU门已完成，无GPU run或可resume checkpoint。下一步从clean pushed commit依次完成固定
-task9/15/18真实机制与吞吐门；三项任一失败即终局。
+Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP与DF-SOCP均已按门终局；它们都不得resume或参数小扫。
+DF-SOCP已按固定三anchor门终局，无GPU run或可resume checkpoint。当前没有active successor；下一轮只能针对
+matched-batch preference panel与完整轨迹functional-credit吞吐这两个已定位接口，不能用batch1、低位复现或参数小扫。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

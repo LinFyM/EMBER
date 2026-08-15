@@ -1,7 +1,7 @@
 # V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference
 
-状态：2026-08-16 active design authority，canonical implementation complete、preformal GPU pending。简称
-`DF-SOCP`。本轮从sealed LPCP fresh启动，
+状态：2026-08-16 terminal mechanism non-pass，不启动full24、strict或cycle2。简称`DF-SOCP`。本轮从sealed
+LPCP fresh启动，
 保留LPCP/DJNFR已经通过的视频carrier、K-set与direct native-factor LoRA生成图，只改变long-horizon reward怎样在
 exact shared observations上形成正负动作credit。
 
@@ -144,7 +144,33 @@ winner/counterfactual成对microbatch，trajectory IDs实现“每trajectory等�
 全量CPU=`401 passed`、compileall通过，architecture guard无hard violation。以上只关闭实现门，不提供GPU机制或
 closed-loop结论。
 
-## 9. Formal前机制门
+## 9. 固定三anchor真实结果与终局裁决
+
+clean pushed `16cedb93549e25d3b148547afbe91ba3587304b4`在gpu01物理0/1/2分别完成task9/15/18的world1
+真实机制轮，固定outcomes=`2/1`、`2/0`、`1/2`，完整counterfactual replay=`26/65/44` chunks。三者均有
+preference margin下降、八head更新、q/v/action native BA与fixed-action response非零，0禁读/OOM/nonfinite。
+post-update train four-view BA cosine/energy分别为`.825445/.837935`、`.721453/.757107`、
+`.769579/.757178`；validation8 aggregate分别为`.773437/.779948`、`.760993/.770578`、
+`.787461/.793594`且均8/8 tasks过门。reverse relative-L2约`1.043/.991/1.008`，constant/natural幅度仅
+`1.14e-5/6.36e-5/1.93e-5`。因此完整successful occupancy确实能形成比DF-PCSP更一致的同task跨video
+commitment；该机制不是本轮最早失败点。
+
+但固定门有两项硬失败：
+
+1. rollout时winner/loser action由动态B2/B1生成，counterfactual loser由B8重查。loser第一action的stored到B8
+   requery RMS=`.004147/.005952/.004404`，而winner到B8-loser的名义action RMS仅
+   `.003817/.003516/.020132`；task9/15的正常BF16 batch-shape差异已是名义contrast的`1.086x/1.693x`。
+   所以当前positive/negative不是matched-batch策略比较，漂亮coherence可能由共享数值混杂产生，不能作为继续
+   full24的科学依据。修复不能用batch1或低位逐元素复现，而应在同一B8 observation/noise panel上重查两臂。
+2. cycle wall=`202.733/421.171/311.149s`，相对matched DF-PCSP=`3.083x/5.335x/3.887x`，三项均超过
+   `2.5x`门。counterfactual action generation只占`2.793/6.670/4.472s`，真正瓶颈是四view×Nmc4的完整轨迹
+   functional flow credit=`135.092/319.866/221.234s`。扩大action-query batch不能解决这一瓶颈。
+
+此外task9 held/train effective-BA L2仅`.1181x<.30x`；task15/18为`.3949x/.7758x`。按“三项任一失败即
+终局”的预注册合同，本轮不启动full24、strict或任何小扫。精确artifact为task9 root下
+`dfsocp_terminal_adjudication.json`，另两个root及各自`dfsocp_mechanism_gate.json`由其中引用。
+
+## 10. 原预注册Formal前机制门
 
 固定使用已由exact pairing确认discordant的train task9/15/18，不再按结果挑anchor。三项都必须满足：
 
@@ -162,7 +188,7 @@ closed-loop结论。
 
 三项任一失败即终局，不用另一个task替代，不调trajectory采样数、margin、temperature、LR、Nmc、rank或scale。
 
-## 10. Full24与closed-loop裁决
+## 11. Full24与closed-loop裁决
 
 机制三项全过后，才从sealed LPCP fresh做一次full24 cycle1并立即K4 strict paired400。cycle1只有同时满足：
 
@@ -175,7 +201,7 @@ closed-loop结论。
 Jaccard至少`.85`、final相对LPCP lost不超过10且gained不少于lost。首次约145且retention过门立即补
 same-task-other/wrong/shuffled/reversed/no-video。
 
-## 11. 快速否决与负结果边界
+## 12. 快速否决与负结果边界
 
 - counterfactual first query不能复现loser行为到正常batch数值范围：query panel实现错误；
 - margin不下降：paired LoRA cotangent接口失败；
@@ -183,6 +209,8 @@ same-task-other/wrong/shuffled/reversed/no-video。
 - 三anchor机制稳定而full24 strict仍换手：shared multi-task aggregation/optimizer是下一接口；
 - absolute过门但correct不优于视频controls：视频教学claim仍失败。
 
-负结果只淘汰“LPCP/DJNFR生成图 + exact paired final success + successful-occupancy same-state loser counterfactual +
-four-view one-cycle shared update”组合；不否定memory token、rank8、few-shot、生成LoRA、真正state branching或未来
-生成LoRA后的task-local RL。
+负结果只淘汰“LPCP/DJNFR生成图 + stored动态batch winner action对B8 loser counterfactual + exhaustive
+successful-occupancy four-view Nmc4 credit”这一实际实现。它不否定matched-batch successful-occupancy credit、
+时间分层的informative occupancy panel、memory token、rank8、few-shot、生成LoRA、真正state branching或未来生成
+LoRA后的task-local RL。下一设计必须先让两臂在相同observation/noise/precision/physical batch下重查，再以预声明的
+时间分布规则只保留有策略分歧的少量occupancy，不能把batch数值差异当作negative，也不能继续穷举全部replans。

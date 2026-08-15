@@ -597,6 +597,18 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     trajectory ID权重令1或2条成功轨迹等权且各自内部replans等权，functional flow按完整pairs做microbatch。旧
     first-prefix config/checkpoint/evaluator schema已拒载；全量CPU=`401 passed`、compileall通过、architecture
     guard无hard violation。这只证明数学与运行图合同，固定task9/15/18真实GPU门尚未知。
+85. DF-SOCP固定task9/15/18真实outcomes=`2/1,2/0,1/2`、counterfactual chunks=`26/65/44`全部复现；三者
+    train four-view BA cosine/energy=`.825/.838,.721/.757,.770/.757`，held8=`.773/.780,.761/.771,
+    .787/.794`且均8/8过门，八head、q/v/action、preference descent、reverse与constant均健康。完整成功occupancy
+    因而确实能产生比DF-PCSP更一致的跨video commitment，但这些内部数值不能绕过更早的action-panel合同。
+86. rollout stored actions由动态B2/B1生成，而loser counterfactual由B8生成。task9/15/18的loser stored到B8首动作
+    RMS=`.004147/.005952/.004404`，winner到B8-loser名义contrast=`.003817/.003516/.020132`；前两项正常
+    BF16 batch-shape差异已是名义contrast的`1.086x/1.693x`。因此当前preference negative受批形混杂，不能用
+    batch1或逐位复现修补；必须在同一physical batch中重查winner与loser两臂。
+87. DF-SOCP三anchor wall相对DF-PCSP=`3.083x/5.335x/3.887x`全失败。counterfactual action query只占
+    `2.79/6.67/4.47s`，完整轨迹四view Nmc4 functional credit却占`135.09/319.87/221.23s`，所以扩大
+    action-query batch无效。下一可证伪变量应把同B8双臂可比性与时间分布的informative occupancy子集作为一个
+    causal panel合同；本轮不否定matched-batch successful occupancy、direct LoRA、memory或rank8。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

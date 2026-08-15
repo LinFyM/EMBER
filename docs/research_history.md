@@ -32,9 +32,11 @@ validation8 BA仍为`.790242/.785834`且8/8过门，但strict仅136，相对LPCP
 forward。最终exact task4/task7均为tie；task9/15/18均产生真实discordant credit与margin descent，但task9
 held/train BA仅`.105x`、task18 train跨video仅`.290/.428`，三个anchors只有task15全门通过。DF-PCSP因此在
 full24前终局。
-当前active DF-SOCP保留同一生成图，把exact preference扩展到winner成功occupancy全部replans，并在每个winner
-observation上查询loser counterfactual action；canonical实现与fresh schema已完成、全量CPU=`401 passed`，固定
-task9/15/18三anchor全过才允许full24。
+最新终局DF-SOCP保留同一生成图，把exact preference扩展到winner成功occupancy全部replans。固定task9/15/18均形成
+强train/held跨video共同方向，但stored winner actions来自动态B2/B1、loser counterfactual来自B8；task9/15的批形
+数值差异为名义策略contrast的`1.086x/1.693x`。三项wall又为DF-PCSP的`3.083x/5.335x/3.887x`，task9
+held/train仅`.118x`。按门未full24/strict；下一接口是matched-batch双臂action panel与时间分布的informative
+occupancy压缩，不是carrier或LoRA topology。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

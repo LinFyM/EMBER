@@ -173,13 +173,17 @@ controller/observables后恢复相同qpos/qvel，不增加rollout/forward。exac
 successor、GPU run或可resume checkpoint。最早失败接口是final success只归因给第一shared prefix后形成
 task-dependent update。memory token与rank8仍开放。
 
-当前active successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
+最新终局successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
 authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
 它不改LPCP/DJNFR生成图、rank16、K4或rollout数；对每个exact discordant pair沿winner全部replan observations，
 使用同一policy-noise批量查询loser arm的counterfactual actions，再逐状态做winner-vs-loser flow preference。
-pair内replans、pairs、四views与tasks逐级等权。preformal固定task9/15/18且三项必须全门通过，不能再挑单一
-anchor。canonical实现与fresh schema已完成，全量CPU=`401 passed`、architecture guard无hard violation；
-当前无GPU run或可resume checkpoint。
+固定task9/15/18 outcomes与26/65/44 chunks均复现，三者train/held跨video、八head、q/v/action、reverse与
+constant机制均健康；但task9/15的stored动态B2/B1 action到B8 requery差异分别是名义策略contrast的
+`1.086x/1.693x`，positive/negative存在batch-shape混杂。三项wall又分别为matched DF-PCSP的
+`3.083x/5.335x/3.887x`，瓶颈是完整轨迹四view functional credit而非counterfactual inference；task9
+held/train BA仅`.1181x`。按预注册门终局，不full24/strict/cycle2或小扫。最早失败接口是
+**stored动态batch winner action + B8 loser counterfactual -> 非matched-batch preference panel**；下一设计必须
+同B8重查两臂并预声明时间分布的informative occupancy子集。当前无active successor、GPU run或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

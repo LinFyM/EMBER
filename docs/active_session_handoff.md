@@ -57,13 +57,17 @@
   1/2/1个discordant pairs且preference margin均下降，八head及q/v/action链均非零。但task9 held/train BA幅度仅
   `.105x`，task18 train跨video cosine/energy仅`.290/.428`；三个有效anchors只有task15全门通过。不能挑单一通过
   task冒充shared方法，故终局不启动full24/strict/cycle2；
-- 当前active successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
+- 最新终局successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
   authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
   它只把first-prefix preference扩展为winner成功occupancy的全部replans，并在每个相同observation和policy noise上
   批量查询loser counterfactual action；不增加env rollout，不改carrier、direct heads、rank16、K4或optimizer。
-  canonical实现已原位完成，旧DF-PCSP executable/schema已移除；counterfactual按loser arm B8生成一次并跨四view
-  复用，pair内replan、pair、view、task逐级等权。全量CPU=`401 passed`、compileall通过且architecture guard无hard
-  violation。preformal固定task9/15/18且三项必须全过；当前无GPU run或可resume checkpoint；
+  canonical实现已原位完成，旧DF-PCSP executable/schema已移除；全量CPU=`401 passed`。clean `16cedb9`固定
+  task9/15/18 outcomes=`2/1,2/0,1/2`、replay=`26/65/44`均复现，三者train cosine/energy=
+  `.825/.838,.721/.757,.770/.757`，held8=`.773/.780,.761/.771,.787/.794`且均8/8过门。但stored
+  B2/B1 loser第一action到B8 requery RMS=`.00415/.00595/.00440`，相对名义winner/B8-loser contrast=
+  `1.086x/1.693x/.219x`；task9/15 negative受batch-shape混杂。wall相对DF-PCSP=`3.083x/5.335x/3.887x`，
+  task9 held/train又仅`.118x`。按门终局，不full24/strict/cycle2；当前无active successor、GPU run或可resume
+  checkpoint。下一设计必须同B8重查两臂，并用时间分布的少量informative occupancy替代穷举全部replans；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

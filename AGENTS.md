@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -146,12 +146,20 @@ Value、rank16与matched reward，只把zero-init common router换成reward upda
 并令八factor families各自用zero-init diagonal selectors选择native Value组件/符号；trainable=`16,384`。这直接
 检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。真实task4机制健康，但train24 address
 effective rank=`2.1575`，validation8 cosine/energy=`.1681/.3729`且仅3/8过门，故未启动full24或strict并终局。
-当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
-`docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它保留LPCP/NPVC carrier、native Value、
-rank16与matched reward，只把PAFS的fixed address和八套factor selectors替换为所有factor共享的512参数
-joint language-video diagonal gate。canonical实现已原位完成，完整CPU=`399 passed`且architecture guard无hard
-violation；下一裁决是task4到validation8机制门，尚无active GPU run。memory token和rank8仍开放，本轮不同时
-改变carrier或public rank。
+随后终局的是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
+`docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。clean `913d3d3` task4 smoke工程健康，
+train cosine/energy=`.47227/.59781`；但validation8仅`.20190/.39645`、2/8过门，action cosine=`.04299`，故不
+full24/strict。stage localization显示gate/continuous hidden cosine均约`.94`，经过冻结W2写成native raw factors后
+骤降为cosine/energy=`.02135/.26592`，action factor cosine=`.00267`。最早断点因此是coherent hidden residual
+到frozen W2/native public A/B，而不是carrier、顺序或joint gate未读视频。
+
+当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保留LPCP/NPVC carrier、K-set、
+rank16与matched reward，只把`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个factor-shape-matched zero-init
+heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`且step0/no-video exact LPCP。
+canonical实现、完整CPU=`399 passed`、compileall与architecture guard已通过，formal仍被task4到validation8真实
+机制门阻塞；当前无active GPU run或可resume checkpoint。literal memory与rank8仍开放，但不在本轮同时改变
+carrier/public rank。
 
 ## 4. Long-term objective and decision rule
 

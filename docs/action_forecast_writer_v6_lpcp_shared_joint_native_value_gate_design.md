@@ -1,6 +1,6 @@
 # V6-LPCP Shared Joint Native-Value Gate
 
-状态：2026-08-15 active mechanism-pending authority。简称 `SJNV-Gate`。本设计建立在 NPVC full24 终局和
+状态：2026-08-15 terminal mechanism non-pass，禁止full24、strict、resume或参数小扫。简称 `SJNV-Gate`。本设计建立在 NPVC full24 终局和
 PAFS-NV mechanism non-pass 之后。它保留 LPCP143 的完整视频 carrier、K-set、V6 compiler、38-target rank16
 LoRA、NPVC 已证明可跨 held compiler 的 ordered native probe Value，以及 matched selected-success reward；只替换
 `language/video evidence -> factor hidden residual` 的最后选择接口。
@@ -179,3 +179,26 @@ lost。单点145或151不能跳过稳定性与视频因果资格。
 
 负结果只淘汰“LPCP/NPVC native Value + shared 2x256 joint diagonal gate + frozen V6 axes + matched one-cycle
 selected-success credit”组合；不否定memory token、dynamic K、rank8、few-shot、reward learning或生成LoRA。
+
+## 11. Terminal evidence
+
+clean pushed `913d3d3`在gpu02物理6完成task4真实B8 smoke：candidate/reference=`2/1`、1个discordant pair、
+4个credit conditions/16条互斥videos，gate delta RMS=`2.99234e-4`，q/v/action与fixed-action响应均非零；cycle=
+`135.757s=.99775x` NPVC，0禁读/OOM/nonfinite。
+
+task4 four-view cosine/energy=`.472272/.597814`，刚过train门；validation8只有`.201903/.396448`、2/8 tasks过
+`.20/.40`，action cosine=`.042986`，held/train BA L2=`.452509x`，四项held门失败。相对NPVC，held
+cosine/energy/L2只保留`.44927x/.69370x/.16601x`；相对PAFS只小幅提高`1.2010x/1.0633x/1.1890x`，action
+甚至低于PAFS的`.053486`。
+
+stage localization把断点进一步锁定：validation8 gate与continuous hidden residual cosine分别为
+`.940337/.941165`，hidden energy ratio=`.923978`；经过冻结W2并写为native BF16 public factors后，raw factor
+delta cosine/energy骤降到`.021353/.265925`，action factor cosine仅`.002672`；effective BA只部分恢复到
+`.201903/.396448`。因此最早失败接口不是joint gate没读视频或hidden不共同，而是**coherent continuous hidden
+residual -> frozen W2 -> native BF16 public factor delta**。reverse BA relative-L2=`1.24491`且constant/natural=
+`0`，顺序/static门仍健康，但不能挽救held commitment。
+
+终局artifact为同一smoke root下的`sjnv_gate_mechanism_gate.json`、`sjnv_gate_stage_localization.json`与
+`sjnv_gate_terminal_analysis.json`。该结果说明PAFS失败不只来自factor ownership：学习一个低维joint projection
+本身会丢掉NPVC parameter-free native coefficient与video-dependent base-factor几何之间的必要协变。下一轮不得
+通过放大本gate、扫LR/scale/rank或直接resume来绕过此结论。

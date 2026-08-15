@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_shared_joint_gate_is_exact_lpcp_at_zero_init() -> None:
+def test_direct_joint_factor_residual_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -309,9 +309,12 @@ def test_shared_joint_gate_is_exact_lpcp_at_zero_init() -> None:
     assert sum(
         parameter.numel()
         for parameter in model.factor_commitment.parameters()
-    ) == 512
+    ) == 1_654_784
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
-    assert not model.factor_commitment.gate.weight.count_nonzero()
+    assert all(
+        not head.weight.count_nonzero()
+        for head in model.factor_commitment.heads.values()
+    )
 
 
 def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
@@ -340,62 +343,57 @@ def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
     torch.testing.assert_close(natural.language_slots, permuted.language_slots)
 
 
-def test_shared_joint_gate_changes_with_video_under_fixed_language() -> None:
+def test_direct_joint_value_changes_with_video_under_fixed_language() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(41)
-    language = torch.randn(2, 7, 256, generator=generator)
-    first_memory = torch.randn(2, 7, 256, generator=generator)
-    second_memory = torch.randn(2, 7, 256, generator=generator)
+    language = torch.randn(2, 320, 256, generator=generator)
+    first_memory = torch.randn(2, 320, 256, generator=generator)
+    second_memory = torch.randn(2, 320, 256, generator=generator)
     with torch.no_grad():
-        commitment.gate.weight.normal_(std=0.01, generator=generator)
-        first = commitment.gate_values(first_memory, language)
-        second = commitment.gate_values(second_memory, language)
-    assert first.shape == (2, 7, 2)
+        first = commitment.joint_value(first_memory, language)
+        second = commitment.joint_value(second_memory, language)
+    assert first.shape == (2, 320, 256)
     assert not torch.equal(first, second)
 
 
-def test_shared_joint_gate_opens_all_families_and_requires_video() -> None:
+def test_direct_joint_heads_open_all_families_and_require_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
-    memory = torch.randn(2, 7, 256, generator=generator)
-    language = torch.randn(2, 7, 256, generator=generator)
-    residuals, _ = commitment(
-        memory,
-        language,
-        anchor_input_weights=model._factor_anchor_input_weights(),
+    memory = torch.randn(2, 320, 256, generator=generator)
+    language = torch.randn(2, 320, 256, generator=generator)
+    rows, _ = commitment(memory, language)
+    sum(value.sum() for value in rows.values()).backward()
+    assert all(
+        head.weight.grad is not None and head.weight.grad.count_nonzero()
+        for head in commitment.heads.values()
     )
-    sum(value.sum() for value in residuals.values()).backward()
-    assert commitment.gate.weight.grad is not None
-    assert commitment.gate.weight.grad.count_nonzero()
 
     with torch.no_grad():
-        zero_residuals, _ = commitment(
-            torch.zeros_like(memory),
-            language,
-            anchor_input_weights=model._factor_anchor_input_weights(),
-        )
-    assert all(not value.count_nonzero() for value in zero_residuals.values())
+        zero_rows, joint = commitment(torch.zeros_like(memory), language)
+    assert not joint.count_nonzero()
+    assert all(not value.count_nonzero() for value in zero_rows.values())
 
 
-def test_shared_joint_gate_has_two_common_axes_for_all_families() -> None:
+def test_direct_joint_heads_emit_complete_factor_owned_rows() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
-    memory = torch.randn(5, 3, 256, generator=generator)
-    language = torch.randn(1, 3, 256, generator=generator).expand(5, -1, -1)
+    memory = torch.randn(2, 320, 256, generator=generator)
+    language = torch.randn(2, 320, 256, generator=generator)
     with torch.no_grad():
-        commitment.gate.weight.normal_(std=0.01, generator=generator)
-        residuals, coefficients = commitment(
-            memory,
-            language,
-            anchor_input_weights=model._factor_anchor_input_weights(),
-        )
-    assert coefficients.shape == (5, 3, 2)
-    for value in residuals.values():
-        for slot in range(value.shape[1]):
-            assert torch.linalg.matrix_rank(value[:, slot].float(), tol=1e-5) <= 2
+        for head in commitment.heads.values():
+            head.weight.normal_(std=0.01, generator=generator)
+        rows, joint = commitment(memory, language)
+        state = model._direct_factor_residual_state(rows, batch=2)
+    assert joint.shape == (2, 320, 256)
+    assert set(state) == set(model.template_state())
+    assert all(
+        state[name].shape == (2, *value.shape)
+        for name, value in model.template_state().items()
+    )
+    assert all(value.count_nonzero() for value in state.values())
 
 
 def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
@@ -412,8 +410,8 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["factor_commitment.gate.weight"] = source.state_dict()[
-        "factor_commitment.gate.weight"
+    partial["factor_commitment.heads.q_a.weight"] = source.state_dict()[
+        "factor_commitment.heads.q_a.weight"
     ]
     with torch.no_grad():
         try:

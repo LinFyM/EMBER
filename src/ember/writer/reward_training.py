@@ -1,4 +1,4 @@
-"""Train the shared joint native-Value gate with cross-video success credit."""
+"""Train direct joint native-factor heads with cross-video success credit."""
 
 from __future__ import annotations
 
@@ -124,7 +124,7 @@ def _load_tasks(
     if len(reward_tasks) != 24 or [task.global_task_id for task in reward_tasks] != [
         task.task_id for task in writer_tasks
     ]:
-        raise WriterModelError("shared-gate run lost train24 task authority")
+        raise WriterModelError("direct-factor run lost train24 task authority")
     return tuple(reward_tasks), tuple(writer_tasks)
 
 
@@ -150,12 +150,12 @@ def _publish_contract(
             if runtime_args.output_dir.exists() and any(
                 runtime_args.output_dir.iterdir()
             ):
-                raise WriterModelError("fresh shared-gate output is not empty")
+                raise WriterModelError("fresh direct-factor output is not empty")
             runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
         elif not path.is_file() or read_json(path) != dict(contract):
             raise WriterModelError(
-                "shared-gate exact-resume launch contract changed"
+                "direct-factor exact-resume launch contract changed"
             )
         append_jsonl(
             runtime_args.output_dir / "invocations.jsonl",
@@ -225,7 +225,7 @@ def _contract(
     }
 
 
-def _load_shared_gate_models(
+def _load_direct_factor_models(
     *,
     args: argparse.Namespace,
     context: DistributedContext,
@@ -238,7 +238,7 @@ def _load_shared_gate_models(
         args.source_run.resolve().parents[2] / config["cold_start_relative"]
     ).resolve()
     if not (cold_start / "writer.safetensors").is_file():
-        raise WriterModelError("shared-gate LPCP cold start is missing")
+        raise WriterModelError("direct-factor LPCP cold start is missing")
     config["resolved_cold_start"] = str(cold_start)
     policy = load_policy(
         Path(source["model_path"]), source_base_config, context.device
@@ -268,14 +268,14 @@ def _load_shared_gate_models(
             for value in writer.factor_commitment.parameters()
             if value.requires_grad
         )
-        != 512
+        != 1_654_784
     ):
         raise WriterModelError(
-            "shared native-Value commitment must train only 512 parameters"
+            "direct native-factor commitment must train only 1654784 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_shared_joint_native_value_gate_success_credit_only"
+        "v6_lpcp_direct_joint_native_factor_residual_success_credit_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -337,22 +337,22 @@ def prepare_runtime(
     config, base_config = load_reward_config(args.config)
     require_reward_mode(config, args.mode)
     if args.mode == "smoke" and context.world_size != 1:
-        raise WriterModelError("shared-gate smoke uses one GPU")
+        raise WriterModelError("direct-factor smoke uses one GPU")
     allowed = config["formal_run"]["allowed_world_sizes"]
     if context.world_size not in allowed:
-        raise WriterModelError("shared-gate world size is outside 1--6")
+        raise WriterModelError("direct-factor world size is outside 1--6")
     if args.mode == "formal":
         state = git_state(Path(__file__).resolve().parents[3])
         if not git_state_is_clean_pushed_or_frozen_authority(state):
             raise WriterModelError(
-                "formal shared-gate training requires clean pushed Git"
+                "formal direct-factor training requires clean pushed Git"
             )
     seed_everything(int(config["rng"]["optimizer_seed"]), context)
     authorities, source, _ = load_run_authorities(args, base_config)
     tasks, writer_tasks = _load_tasks(
         data_root=args.data_root, base_config=base_config
     )
-    policy, writer, lora, trainable, optimizer = _load_shared_gate_models(
+    policy, writer, lora, trainable, optimizer = _load_direct_factor_models(
         args=args,
         context=context,
         config=config,
@@ -391,7 +391,7 @@ def prepare_runtime(
             contract=contract,
         )
         if loaded != start_cycle:
-            raise WriterModelError("shared-gate resume cursor changed")
+            raise WriterModelError("direct-factor resume cursor changed")
     stop_cycle = (
         1
         if args.mode == "smoke"
@@ -401,7 +401,7 @@ def prepare_runtime(
         stop_cycle not in config["formal_run"]["stage_stop_cycles"]
         or not start_cycle < stop_cycle
     ):
-        raise WriterModelError("shared-gate formal stop boundary changed")
+        raise WriterModelError("direct-factor formal stop boundary changed")
     source_config = authorities.source_base_config
     processor, store, language, schedule, env_pool = _condition_inputs(
         args=args,
@@ -495,7 +495,7 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_shared_joint_native_value_gate_"
+                        "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_"
                         "completion_v1"
                     ),
                     "mode": args.mode,

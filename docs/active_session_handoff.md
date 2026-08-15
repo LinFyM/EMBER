@@ -41,13 +41,18 @@
   `.435164/.570296`；但train24 address effective rank=`2.15753<4`，validation8=`.168111/.372863`且仅3/8
   过门，相对NPVC held cosine/energy/L2只保留`.3741x/.6524x/.1396x`。机制门失败，未启动full24/strict并
   终局；
-- 当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
-  `docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它保留LPCP/NPVC carrier、ordered
-  native probe Value、rank16、冻结V6 W1/W2与matched reward；唯一用所有八factor共享的`2x256` zero-init
-  joint `M elementwise_mul L` gate替换PAFS fixed address/family selectors。总trainable=`512`，step0/no-video exact
-  LPCP，task差异来自真实language-video joint feature而非固定lane或task ID。canonical实现已原位完成，旧PAFS
-  executable semantics已退役；定向CPU=`76 passed`、完整CPU=`399 passed`、compileall通过，architecture guard无
-  hard violation。当前等待task4到validation8真实机制门，尚无GPU run或可resume checkpoint；
+- SJNV-Gate已终局：clean `913d3d3` task4 cycle=`135.757s`，train four-view cosine/energy=
+  `.472272/.597814`且reward/q-v-action/reverse/static链健康；validation8仅`.201903/.396448`、2/8 tasks过门，
+  action cosine=`.042986`、held/train BA L2=`.452509x`，未启动full24/strict。stage localization显示gate/continuous
+  hidden cosine约`.94`，但冻结W2后的raw factor cosine/energy=`.021353/.265925`、action factor cosine=`.002672`；
+  最早断点是coherent hidden到native public A/B；
+- 当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保留LPCP/NPVC carrier、ordered
+  Value、K-set、rank16和matched reward，只令`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个zero-init、
+  factor-shape-matched heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`，
+  step0/no-video exact LPCP。canonical runtime/config/checkpoint/evaluator schema已原位切换，定向CPU=`60 passed`、
+  完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。真实GPU机制门尚未完成；当前无
+  active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

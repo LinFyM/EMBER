@@ -1,4 +1,4 @@
-"""Aggregate shared-gate reward gradients and measure task coexistence."""
+"""Aggregate direct-factor reward gradients and measure task coexistence."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def _coexistence(
         if keep
     ]
     if rows.shape[0] == 0 or bool((active > 1).any()):
-        raise WriterModelError("shared-gate task gradients lost unique ownership")
+        raise WriterModelError("direct-factor task gradients lost unique ownership")
 
     row_norms = torch.linalg.vector_norm(rows, dim=1)
     mean_norm = torch.linalg.vector_norm(shared_mean)
@@ -135,12 +135,12 @@ def apply_reward_step(
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
-        raise WriterModelError("shared-gate cycle has no discordant success")
+        raise WriterModelError("direct-factor cycle has no discordant success")
     gradient_sum.div_(active_tasks)
     if not bool(torch.isfinite(gradient_sum).all()) or not bool(
         torch.count_nonzero(gradient_sum)
     ):
-        raise WriterModelError("shared-gate gradient is invalid")
+        raise WriterModelError("direct-factor gradient is invalid")
     coexistence = _coexistence(runtime, task_gradients, gradient_sum)
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])

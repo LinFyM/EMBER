@@ -20,7 +20,7 @@ from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
     FACTOR_FAMILIES,
-    SharedJointNativeValueGate,
+    DirectJointNativeFactorResidual,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -103,7 +103,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = SharedJointNativeValueGate(
+        self.factor_commitment = DirectJointNativeFactorResidual(
             width=self.PROGRAM_WIDTH,
         ).requires_grad_(False)
         object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
@@ -564,37 +564,49 @@ class CompleteLoRAWriter(torch.nn.Module):
         probe_value_memory: torch.Tensor | None = None,
         language_slots: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
+        baseline = self.base_writer.decode_slots(program)
         if probe_value_memory is None:
             if language_slots is not None:
                 raise WriterModelError("incomplete shared native-Value decode")
-            return self.base_writer.decode_slots(program)
+            return baseline
         if language_slots is None:
             raise WriterModelError("shared native Value lost its language condition")
-        residuals = self.factor_commitment.hidden_residuals(
+        rows, _ = self.factor_commitment(
             probe_value_memory,
             language_slots,
-            anchor_input_weights=self._factor_anchor_input_weights(),
         )
-        return self.base_writer.decode_slots(
-            program, factor_hidden_residuals=residuals
-        )
-
-    def _factor_anchor_input_weights(self) -> Mapping[str, torch.Tensor]:
-        """Expose the frozen V6 W1 maps that already own each factor family."""
-
-        heads = getattr(self.base_writer, "factor_heads", None)
-        if heads is None or set(heads) != set(FACTOR_FAMILIES):
-            raise WriterModelError("V6 factor families changed")
-        weights = {
-            family: heads[family].network[0].weight
-            for family in FACTOR_FAMILIES
+        residuals = self._direct_factor_residual_state(rows, program.shape[0])
+        if set(residuals) != set(baseline):
+            raise WriterModelError("direct native-factor state changed")
+        return {
+            name: value + residuals[name].to(value.dtype)
+            for name, value in baseline.items()
         }
-        if any(
-            value.shape != (self.PROGRAM_WIDTH, self.PROGRAM_WIDTH)
-            for value in weights.values()
-        ):
-            raise WriterModelError("V6 factor W1 topology changed")
-        return weights
+
+    def _direct_factor_residual_state(
+        self,
+        rows: Mapping[str, torch.Tensor],
+        batch: int,
+    ) -> dict[str, torch.Tensor]:
+        """Map direct family rows back to the sealed 76-tensor public schema."""
+
+        if set(rows) != set(FACTOR_FAMILIES):
+            raise WriterModelError("direct native-factor families changed")
+        decoding = getattr(self.base_writer, "_decoding", None)
+        tensor_specs = getattr(self.base_writer, "tensor_specs", None)
+        if not isinstance(decoding, dict) or tensor_specs is None:
+            raise WriterModelError("native V6 factor ownership changed")
+        result: dict[str, torch.Tensor] = {}
+        for item in tensor_specs:
+            family, layer = decoding[item.name]
+            source = rows[family]
+            if family.startswith(("q_", "v_")):
+                if layer is None:
+                    raise WriterModelError("expert factor lost its layer")
+                source = source[:, layer]
+            generated = source.transpose(-1, -2) if item.transpose_output else source
+            result[item.name] = generated[0] if batch == 1 else generated
+        return result
 
     def decode_output(self, encoded: WriterProgramOutput) -> dict[str, torch.Tensor]:
         if encoded.probe_value_memory is None or encoded.language_slots is None:

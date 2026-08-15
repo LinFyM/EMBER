@@ -135,7 +135,7 @@ def _encode_pair(
         ),
     ):
         if encoded.reference_program is None:
-            raise WriterModelError("shared-gate candidate lost AS139 reference")
+            raise WriterModelError("direct-factor candidate lost AS139 reference")
         reference = runtime.writer.decode_program(encoded.reference_program)
     return visit, tuple(demos), packed, video_metrics, state, reference, candidate
 
@@ -236,12 +236,12 @@ def select_unique_success_trajectories(
     """Select the successful trajectory only when the two exact arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
-        raise WriterModelError("shared-gate credit requires two paired states")
+        raise WriterModelError("direct-factor credit requires two paired states")
     selected: list[RewardTrajectory] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
-            raise WriterModelError("shared-gate arm pairing changed")
+            raise WriterModelError("direct-factor arm pairing changed")
         if candidate_row.success and not reference_row.success:
             selected.append(candidate_row)
             labels.append("candidate")
@@ -708,9 +708,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_shared_joint_native_value_gate"
+            "one_complete_train24_direct_joint_native_factor_residual"
             if runtime.args.mode == "formal"
-            else "one_task_shared_joint_native_value_gate_live_smoke"
+            else "one_task_direct_joint_native_factor_residual_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

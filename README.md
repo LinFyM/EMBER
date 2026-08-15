@@ -48,16 +48,18 @@ full24后train task4的four-view cosine/energy从`.5929/.6792`漂到`.0569/.2951
 Writer checkpoint中共存**。下一设计不会只加scale、capacity、coherence或support guard。memory token、rank8
 和其它可扩展hypernetwork形式仍开放，但只有直接针对这个接口才值得引入。
 
-最新裁决的是
-[`V6-LPCP Pre-Addressed Factor-Selective Native Value`](docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md)：
-保留LPCP143、NPVC native Value和rank16，只把所有tasks/q-v-action共享的zero-init router替换为固定语言
-pre-address下的factor-owned zero-init selectors。真实task4写出、顺序与吞吐健康，但train24 address effective
-rank仅`2.1575`，validation8跨视频共同方向仅`.1681/.3729`、3/8过门，显著低于NPVC，故在full24前终局且没有
-strict结果。当前active successor是
-[`V6-LPCP Shared Joint Native-Value Gate`](docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md)：
-保留NPVC native Value与LPCP/rank16强路径，只用所有factor共享的512参数joint language-video gate替换固定地址
-和family selectors；canonical实现与完整CPU合同已通过，当前无GPU run，下一步先做task4到validation8的真实
-机制门。实时run identity和下一裁决只取
+PAFS-NV用fixed language address预分流native Value，但validation8跨视频共同方向仅`.1681/.3729`、3/8过门；
+后继SJNV-Gate改用共享joint language-video gate，continuous hidden虽达到`.9412/.9240`，经过冻结W2与native
+BF16 public factors后却降至raw factor `.0214/.2659`、effective BA `.2019/.3964`。两者均在full24前终局，
+没有strict结果。
+
+当前active successor是
+[`V6-LPCP Direct Joint Native-Factor Residual`](docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md)：
+完整保留LPCP carrier、K4集合聚合、rank16、baseline LoRA与matched reward，只绕过已经被定位为最早断点的
+frozen W1/GELU/W2尾部。它将同一个有序视频native Value与exact-language Core的joint evidence按既有
+layer/rank/target ownership直接投影为八类A/B residual；step0严格等于LPCP且无视频时residual为零。canonical
+实现已完成，下一裁决是task4到validation8的真实机制门；只有跨视频raw factor与effective BA共同写出过门，
+才启动full24。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

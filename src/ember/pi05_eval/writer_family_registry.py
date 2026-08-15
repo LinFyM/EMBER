@@ -477,7 +477,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_shared_joint_native_value_gate_v1": {
+    "v6_lpcp_direct_joint_native_factor_residual_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
             "eval_adapter_v1"
@@ -489,9 +489,9 @@ WRITER_FAMILIES = {
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
-        "arm_prefix": "v6_lpcp_shared_joint_native_value_gate_",
+        "arm_prefix": "v6_lpcp_direct_joint_native_factor_residual_",
         "trained_checkpoint_kind": (
-            "v6_lpcp_shared_joint_native_value_gate_cycle_checkpoint"
+            "v6_lpcp_direct_joint_native_factor_residual_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 16,
@@ -500,11 +500,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the shared joint native-Value gate graph"
+            "the direct joint native-factor residual graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the shared joint native-Value gate graph"
+            "through the direct joint native-factor residual graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

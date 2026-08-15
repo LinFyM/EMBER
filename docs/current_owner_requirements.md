@@ -150,9 +150,11 @@ zero image、无prefix、memory-only或凭空构造的action query来“为了�
 image tokens与exact language。视频时间轴只在逐video causal encoder中交互，K轴只在set aggregator中交互，
 policy-group/rank轴只在M2P中交互；不能因为policy有20个层级，就在每个阶段把所有维度混在一起attention。
 
-memory token数量应少而有依据。此前随意提出约70个tokens没有依据；当前8个tokens与fresh rank-8 LoRA坐标
-对齐，并已通过最长视频吞吐与显存profile。这个对应关系是当前可证伪假设，不是“rank永远必须等于token数”的
-普遍定律。
+memory token数量应有输出合同依据。此前讨论中约70个tokens被提出时没有给出推导，因此owner当时质疑是正确的；
+后续对SHINE公式和EMBER真实shape的审计给出了一个不同、可验证的数字：rank16下每个Action Expert layer的q/v
+A/B共有69,632个payload值，hidden width=1024，若采用SHINE式“memory元素数至少覆盖LoRA参数”直写，则需要
+`ceil(69632/1024)=68` tokens；rank8对应34。该公式只为未来capacity-matched direct reshape提供候选依据，不表示
+当前必须改用68 tokens，也不推翻历史8-token/rank8实验的具体合同。
 
 ### 6.3 与视频处理的关系
 
@@ -355,6 +357,17 @@ cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也仍约`0/.25`。�
 这不是放弃memory、few-shot或LoRA生成；它把memory的合理用途进一步收窄为**在真实图文context与实际policy
 layer/rank/target topology之间建立可训练的commitment**，而不是替换已通过的视频carrier或增加静态token容量。
 精确终局见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
+
+此后NPVC证明ordered native probe Value能关闭held compiler消失，但full24 strict仅136并使train task4共同方向
+坍塌；PAFS fixed address在validation8只得`.1681/.3729`；SJNV shared joint gate虽在continuous hidden中达到约
+`.94`跨视频cosine，经过冻结W2后raw factor cosine/energy却降到`.02135/.26592`，故formal前终局。该连续证据
+首次把最早断点精确锁定为**coherent video-language hidden -> frozen W2 -> native public A/B**。
+
+当前DJNFR据此保留LPCP/NPVC输入、时序、K-set与rank16，只令`M*RMSNorm(L)/sqrt(256)`经八个zero-init、
+factor-shape-matched heads直接写同一public A/B residual。它不是因为owner提到memory便机械加token，也不是放弃
+memory：先以最小变量检验绕过W2是否足够；只有slot payload共同而direct factors仍失败，才升级到上述68-token
+capacity-matched memory grid/M2P。精确authority见
+`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。
 
 后续迭代遵循以下边界：
 

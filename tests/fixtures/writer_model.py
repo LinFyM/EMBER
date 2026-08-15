@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import torch
 
+from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.factor_commitment import FACTOR_FAMILIES
 from ember.writer.model import CompleteLoRAWriter
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
@@ -138,6 +139,19 @@ class _FakeV6Base(torch.nn.Module):
         self.factor_heads = torch.nn.ModuleDict(
             {family: _FakeFactorHead() for family in FACTOR_FAMILIES}
         )
+        self.tensor_specs = build_lora_tensor_specs(template)
+        self._decoding = {}
+        for item in self.tensor_specs:
+            factor = "a" if item.factor_index == 0 else "b"
+            if item.module.endswith("action_in_proj"):
+                owner = (f"action_in_{factor}", None)
+            elif item.module.endswith("action_out_proj"):
+                owner = (f"action_out_{factor}", None)
+            else:
+                layer = int(item.module.split(".layers.", 1)[1].split(".", 1)[0])
+                projection = item.module.rsplit(".", 1)[-1][0]
+                owner = (f"{projection}_{factor}", layer)
+            self._decoding[item.name] = owner
         self.compiler = _FakeCompiler()
 
     def template_state(self) -> dict[str, torch.Tensor]:
@@ -175,7 +189,10 @@ class _FakeV6Base(torch.nn.Module):
         evidence: _Evidence, frame_indices: torch.Tensor
     ) -> _Memories:
         videos = len(evidence.offsets) - 1
-        lengths = [right - left for left, right in zip(evidence.offsets, evidence.offsets[1:])]
+        lengths = [
+            right - left
+            for left, right in zip(evidence.offsets, evidence.offsets[1:])
+        ]
         maximum = max(lengths)
         core = torch.zeros(videos, 2, 256)
         procedure = torch.zeros(videos, maximum, 256)

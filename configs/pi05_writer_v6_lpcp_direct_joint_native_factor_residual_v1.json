@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_shared_joint_native_value_gate_v1",
-  "status": "terminal_mechanism_non_pass",
+  "schema_version": "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_v1",
+  "status": "active_mechanism_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_shared_joint_native_value_gate"
+    "candidate_arm": "frozen_v6_lpcp_plus_direct_joint_native_factor_residual"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -65,7 +65,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "shared_joint_native_value_gate_only_512_parameters",
+    "trainable": "eight_zero_init_direct_native_factor_heads_1654784_parameters",
     "reward_replay_chunk_batch_size": 8,
     "optimizer": {
       "name": "AdamW",
@@ -78,7 +78,7 @@
     "distributed": {
       "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
       "exact_resume_world_topology_locked": true,
-      "gradient_communication": "one_512_parameter_shared_gate_vector_plus_active_task_gradient_rows_and_count",
+      "gradient_communication": "one_1654784_parameter_direct_factor_vector_plus_active_task_gradient_rows_and_count",
       "nccl_p2p_disable": "1",
       "deferred_process_group": true,
       "collective_timeout_minutes": 30
@@ -89,13 +89,13 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "blocked_terminal_mechanism_non_pass",
+    "status": "blocked_mechanism_pending",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
-    "continuation_trigger": "cycle1_correct_at_least_142_breadth_at_least_7_lpcp_losses_at_most_15_and_held_shared_gate_pass",
+    "continuation_trigger": "cycle1_correct_at_least_142_breadth_at_least_7_lpcp_losses_at_most_15_and_held_direct_factor_gate_pass",
     "stable_qualification": {
       "cycle1_and_cycle2_correct_minimum": 142,
       "two_cycle_correct_mean_minimum": 145,
@@ -109,43 +109,25 @@
     },
     "mechanism_gate": {
       "step0_exact_lpcp": true,
-      "trainable_parameter_count": 512,
-      "first_update_shared_gate_nonzero": true,
+      "trainable_parameter_count": 1654784,
+      "first_update_all_eight_factor_heads_nonzero": true,
       "post_update_q_v_action_native_factors_nonzero": true,
-      "cross_video_correction_cosine_minimum": 0.45,
-      "cross_video_mean_energy_ratio_minimum": 0.58,
+      "train_cross_video_correction_cosine_minimum": 0.4,
+      "train_cross_video_mean_energy_ratio_minimum": 0.55,
       "held_validation_tasks": 8,
       "held_tasks_passing_minimum": 6,
-      "held_per_task_cosine_minimum": 0.2,
+      "held_per_task_cosine_minimum": 0.15,
       "held_per_task_energy_ratio_minimum": 0.4,
-      "held_aggregate_cosine_minimum": 0.4,
-      "held_aggregate_energy_ratio_minimum": 0.52,
-      "held_action_cosine_minimum": 0.2,
-      "held_to_train_effective_ba_l2_ratio_minimum": 0.5,
+      "held_aggregate_cosine_minimum": 0.3,
+      "held_aggregate_energy_ratio_minimum": 0.48,
+      "held_raw_factor_delta_cosine_minimum": 0.3,
+      "held_action_cosine_minimum": 0.15,
+      "held_to_train_effective_ba_l2_ratio_minimum": 0.3,
       "held_natural_to_reversed_relative_l2_minimum": 0.5,
       "constant_effective_ba_natural_ratio_maximum": 0.005,
-      "natural_reversed_gate_and_lora_materially_different": true,
+      "natural_reversed_joint_value_and_lora_materially_different": true,
       "no_repeated_backbone_forward": true,
-      "matched_npvc_wall_ratio_maximum": 1.1
-    },
-    "mechanism_evidence": {
-      "result": "terminal_non_pass_no_full24",
-      "authority_commit": "913d3d348efd9ae0732f56f784e74170615fecfc",
-      "training_cycle_seconds": 135.75711649097502,
-      "matched_npvc_wall_ratio": 0.9977507594883951,
-      "train_cross_video_cosine": 0.4722722743311288,
-      "train_cross_video_energy_ratio": 0.5978140603050599,
-      "validation8_cross_video_cosine": 0.20190302695123077,
-      "validation8_cross_video_energy_ratio": 0.3964475001418258,
-      "validation8_passing_tasks": 2,
-      "validation8_action_cosine": 0.042985893970861465,
-      "held_to_train_effective_ba_l2_ratio": 0.4525092048711289,
-      "validation8_hidden_cosine": 0.9411647054308133,
-      "validation8_raw_factor_delta_cosine": 0.021352996847704555,
-      "validation8_raw_factor_delta_energy_ratio": 0.26592466923871655,
-      "validation8_raw_action_factor_delta_cosine": 0.0026718037093978004,
-      "natural_to_reversed_effective_ba_relative_l2": 1.2449093089147814,
-      "constant_to_natural_effective_ba_l2_ratio": 0.0
+      "matched_sjnv_wall_ratio_maximum": 1.1
     }
   }
 }

@@ -21,8 +21,9 @@ Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎�
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
 commitment；CCT证明held residual在native BF16 factor/compiler处消失，NPVC随后关闭了该断裂，但strict降至136。
-最新证据把缺口后移到reward-useful Value组件/符号选择与full24多task共存；active PAFS-NV只改变该选择接口，
-尚无实现或GPU结果。
+PAFS fixed address与SJNV shared joint gate均在formal前held机制门终局；SJNV进一步证明continuous hidden可有约`.94`
+跨视频cosine，却在冻结W2后变成raw factor`.02135/.26592`。当前DJNFR只绕过这个最早W2/public-factor断点，
+尚无GPU机制或closed-loop结果。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
@@ -123,6 +124,9 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6-LPCP Semantic Factor-Memory Commitment | K4 `144/400`, breadth7 | K-set后layer/rank innovation memory可在8个factor families的冻结V6 output basis前获得四view reward credit；8/8 maps更新且cycle仅`1.0662x` CV-CSD | 相对LPCP=`128/16/15`、churn31；稳定FP64 BA改写仅`2.899e-7`且q/v/action非零样本=`249/16/1`，router未学成、native ULP crossing未形成跨video共同方向 |
 | V6-LPCP Gradient-Open Semantic Commitment | K4 `141/400`, breadth7 | W1 anchors使semantic router首步打开，BA改写较SFMC放大`33.3x`且q/v/action非零覆盖=`400/399/368` | 相对LPCP=`128/13/15`、churn28，suite=`-1/-6/-2/+7`；first4增量cosine`.000144`、energy`.250124`，写出打开后仍是跨video近正交与task换手 |
 | V6-LPCP Causal Coefficient Transport | K4 `142/400`, breadth6 | train-seen task4纯CCT增量被限制到共同方向，corrected cosine/energy=`.575776/.681821`；formal工程完整 | 相对LPCP=`125/17/18`、churn35；held first4约`0/.25`，hidden只缩小1.7x而BA缩小249.92x，held native compiler commitment失败 |
+| V6-LPCP Native Probe-Value Commitment | K4 `136/400`, breadth6 | validation8 preformal cosine/energy=`.44940/.57150`且held/train BA L2=`.7525x`，关闭CCT held compiler消失 | 相对LPCP=`120/16/23`、churn39；full24后task4从`.5929/.6792`坍塌到`.0569/.2951`，gained/lost改写不可分 |
+| V6-LPCP Pre-Addressed Factor-Selective Native Value | no strict; mechanism stop | task4八family/q-v-action/reverse/wall健康，factor可独立选择native Value | train24 address effective rank=`2.1575`，validation8仅`.1681/.3729`、3/8过门，未full24 |
+| V6-LPCP Shared Joint Native-Value Gate | no strict; mechanism stop | task4 `.47227/.59781`，reverse/static与reward链健康；gate/hidden held cosine约`.94` | frozen W2后raw factor仅`.02135/.26592`、action`.00267`，validation8 BA `.20190/.39645`、2/8过门，未full24 |
 
 ADSP、V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT均已按各自预注册门终局。ADSP authority=
 `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`，只否决实际检验的

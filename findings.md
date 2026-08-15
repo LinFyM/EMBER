@@ -542,6 +542,24 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     LPCP，`M=0`时新增LoRA严格为零，同一K-set置换不变且非零video Value可改变gate；fresh config/checkpoint/
     evaluator schema拒绝旧state。定向CPU=`76 passed`、完整CPU=`399 passed`、compileall通过，architecture guard
     无hard violation。这只证明canonical图和工程合同，task4、held geometry与closed-loop尚未知。
+74. SJNV真实task4 smoke在clean`913d3d3`上完成：cycle=`135.757s=.99775x` NPVC，train four-view cosine/energy=
+    `.472272/.597814`，reward、八family、q/v/action BA与fixed-action链均非零；但validation8 aggregate仅
+    `.201903/.396448`、2/8 tasks过门，action cosine=`.042986`、held/train BA L2=`.452509x`，按门不启动
+    full24/strict。reverse BA relative-L2=`1.24491`且constant/natural=`0`，所以失败不是忽略顺序或static bypass。
+75. SJNV stage localization进一步移动最早断点：validation8 shared gate与continuous hidden residual cosine=
+    `.940337/.941165`、hidden energy=`.923978`；经过冻结W2与native BF16 public cast后，raw factor delta
+    cosine/energy骤降为`.021353/.265925`，action factor cosine=`.002672`，BA只恢复到`.201903/.396448`。这否定
+    “共享2x256 joint gate能经冻结V6 emission保住NPVC held geometry”，也说明PAFS失败不只来自factor ownership。
+76. SHINE/Doc-to-LoRA复核给出两类可扩展输出：Doc-to-LoRA以rank latents和factor heads输出A/B；SHINE令每层
+    memory payload元素数至少覆盖该层全部LoRA参数，再经layer/token M2P直接reshape。EMBER rank16单个Action
+    Expert layer的q/v A/B共69,632值，对1024 hidden对应68 memory tokens；历史8-token/rank8 Dynamic-K并非该
+    capacity-matched合同。当前DJNFR先以最小变量绕过W2：保留LPCP/NPVC上游，将
+    `X=M*RMSNorm(L)/sqrt(256)`经八个zero-init factor-shape heads直接写同一public A/B residual，trainable=
+    `1,654,784`。若X共同而direct factors仍失败，才有证据升级到68-token memory grid，而不是现在同时换五个接口。
+77. DJNFR canonical实现已完整接通且未扩张并行路径：八个heads按既有18层×16 rank及action in/out ownership
+    直接补到同一76个public tensors，step0/no-video exact LPCP；fresh config、checkpoint和evaluator拒绝SJNV
+    state。完整CPU=`399 passed`、compileall通过，architecture guard无hard violation，active source diff净增仅8行。
+    这只关闭工程门，不能预判direct factors能否保住跨视频共同方向或提高closed-loop。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

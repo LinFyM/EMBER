@@ -29,18 +29,21 @@ cosine/energy又从preformal`.5929/.6792`降到`.0569/.2951`。所以最早失�
 选择native Value中改善held on-policy occupancy的组件和符号，以及异质task方向如何在一个full24 Writer中
 共存**，而不是carrier、LoRA幅度、量化或单纯跨视频coherence。
 
-随后裁决的**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV）保留LPCP、
-NPVC native Value、rank16与matched reward，只把所有tasks/families共享的zero-init router换成fixed four-way
-language pre-address + 八family-owned zero-init diagonal selectors，总trainable=`16,384`。它使task分流在第一次
-full24 reward update前存在，并让q/v/action独立选择Value组件/符号；不是scale、task expert或support-only
-guard。真实task4机制健康，但train24 address effective rank=`2.15753`，validation8 cosine/energy=
-`.168111/.372863`且仅3/8过门；相对NPVC held L2只余`.1396x`。因此机制门前置终局，没有full24或strict结果。
-当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
-`docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它不重跑memory carrier或改变rank，
-只以所有factor共享的512参数joint language-video diagonal gate替换PAFS fixed address/family selectors，直接检验
-能否保留NPVC held geometry并使reward-useful组件/符号在full24共存。唯一runtime与fresh schema已原位实现，
-定向CPU=`76 passed`、完整CPU=`399 passed`且architecture guard无hard violation；当前无GPU run，下一裁决是
-task4 selected-success到validation8 held video-only机制门。memory token、rank8与dynamic K仍开放。
+PAFS-NV随后因validation8仅`.168111/.372863`、3/8过门在formal前终局。SJNV-Gate进一步把固定地址换成共享
+joint gate；clean `913d3d3` task4达到`.472272/.597814`，但validation8只有`.201903/.396448`、2/8过门，action
+cosine=`.042986`，同样没有full24/strict。关键新证据是stage localization：joint gate/continuous hidden cosine
+约`.94`，冻结W2后的raw factor delta却只有`.021353/.265925`，action factor cosine=`.002672`。因此最早断点已
+锁定为**coherent video-language hidden -> frozen W2 -> native public A/B**，不是carrier、时序或joint input。
+
+当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保持LPCP/NPVC上游和rank16，
+只把`X=M*RMSNorm(L)/sqrt(256)`经八个zero-init factor-shape heads直接写同一public A/B residual，trainable=
+`1,654,784`，step0/no-video exact LPCP。该单变量绕过已定位的W1/W2断点；不是generic capacity sweep，也没有同时
+增加literal memory tokens。canonical实现、fresh runtime/config/checkpoint/evaluator schema和定向CPU=`60 passed`
+已完成；完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。当前无GPU run；下一裁决是
+冻结clean pushed commit后做task4 selected-success到validation8只读视频机制门。若`X`共同而direct factors仍
+失败，才升级到有精确payload依据的SHINE式memory grid。memory token、rank8
+与dynamic K仍开放。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

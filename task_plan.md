@@ -387,7 +387,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [ ] 后继若达到约145，必须继续用相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对
   wrong/shuffled/reversed/no-video的明确paired优势认证。
 
-## Active iteration: V6-LPCP Shared Joint Native-Value Gate
+## Completed iteration: V6-LPCP Shared Joint Native-Value Gate
 
 - [x] 从NPVC与PAFS联合证据锁定单变量：保留NPVC shared native Value与冻结V6 geometry，去掉低有效维fixed
   address和八套factor selectors；
@@ -396,9 +396,24 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换唯一commitment/runtime/schema并退役PAFS executable semantics；
 - [x] 完成step0、video-required、K-set、shared gate gradient、checkpoint与CPU机制门：定向`76 passed`、完整
   `399 passed`、compileall通过，architecture guard无hard violation；
-- [ ] 完成matched task4 selected-success及validation8 held video-only机制/吞吐裁决；
-- [ ] 若held门通过，fresh full24 cycle1后立即做single-checkpoint strict paired400与逐task分析；
-- [ ] 只有cycle1 absolute/breadth/retention/held共同过门才续cycle2和稳定性/六臂资格。
+- [x] clean `913d3d3`完成matched task4 selected-success：cycle=`135.757s=.99775x` NPVC，train four-view
+  cosine/energy=`.47227/.59781`，gate/q-v-action/BA/action response均非零；
+- [x] validation8机制门终局：aggregate=`.20190/.39645`、仅2/8 tasks过门，action cosine=`.04299`，held/train
+  BA L2=`.45251x`；未启动full24/strict；
+- [x] stage localization确认gate/continuous hidden cosine约`.94`，但frozen W2后的raw factor cosine/energy=
+  `.02135/.26592`、action factor cosine=`.00267`；最早断点为continuous hidden到native public A/B。
+
+## Active iteration: V6-LPCP Direct Joint Native-Factor Residual
+
+- [x] 以SJNV最早断点选择单变量：保留LPCP/NPVC carrier、K-set、rank16与reward，只绕过冻结W1/W2；
+- [x] 写DJNFR authority：`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个zero-init factor-shape heads直接
+  写public A/B residual，总trainable=`1,654,784`，step0/no-video exact LPCP；
+- [x] 原位替换canonical commitment/runtime/checkpoint/evaluator schema，定向CPU合同`60 passed`；
+- [x] 完整CPU=`399 passed`、compileall通过，architecture guard无hard violation；
+- [ ] 冻结clean pushed mechanism authority；
+- [ ] 双节点live GPU选择后完成matched task4 selected-success与validation8 held video-only机制/吞吐裁决；
+- [ ] 仅在raw factor、BA、action、held/train、reverse/static与wall全部过门后启动fresh full24 cycle1；
+- [ ] cycle1后立即strict paired400与逐task/接口分析；只有absolute/breadth/retention/held共同过门才续cycle2和六臂。
 
 ## Non-negotiable boundaries
 
@@ -415,8 +430,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC与PAFS-NV均已按门终局；它们都不得resume或参数小扫。当前active SJNV-Gate已建立
-design authority且canonical实现/CPU门已完成；没有active GPU run或可resume checkpoint。下一步完成最小
-机制否决，只有held门通过才做full24。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
+Gradient-Open、CCT、NPVC、PAFS-NV与SJNV-Gate均已按门终局；它们都不得resume或参数小扫。当前active DJNFR
+已建立design authority并通过完整工程门；没有active GPU run或可resume checkpoint。下一步冻结clean pushed
+mechanism authority，再做task4到validation8最小机制否决，只有held门通过才做full24。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

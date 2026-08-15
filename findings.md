@@ -23,13 +23,21 @@ Jacobian仍写成近正交局部BA方向，无法在实际policy layer/rank/targ
 CV-CSD只否定query-only四view exact mean这一组合，不否定multi-video、memory、reward、rank16或完整LoRA生成。
 下一轮可以使用layer-aligned memory，但它必须直接解决commitment，而不是替换已通过的视频carrier或单纯加容量。
 
-最新SFMC随后把commitment前移到八factor-family hidden owners并恢复correct到144，但稳定FP64证明部署改写只有
+SFMC随后把commitment前移到八factor-family hidden owners并恢复correct到144，但稳定FP64证明部署改写只有
 `2.899e-7` relative-L2，semantic query/basis-key delta约`1.7e-9`，q/v/action非零样本=`249/16/1`。其全零
-family maps虽然保证step0 identity，却使semantic route在首个backward严格无梯度。当前active successor只修复
+family maps虽然保证step0 identity，却使semantic route在首个backward严格无梯度。Gradient-Open终局实验只修复
 这一参数化：family maps改作zero-init delta，semantic query zero-init，并用冻结V6-W1构造不训练的balanced
 address anchors，使step0两项分别严格为零，但maps与query首步同时获得梯度。它不改变LPCP carrier、K4 credit、
-rank16、LR或dtype；完整可证伪合同见
+rank16、LR或dtype；完整合同与终局见
 `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。
+
+Gradient-Open确实跨过了SFMC的梯度与native factor写出断点：cycle1 q/v/action非零样本增至
+`400/399/368`，effective-BA relative-L2 mean=`9.6632e-6`、约为SFMC的`33.3x`。但strict只有
+`141/400`；相对LPCP143为`128 retained / 13 gained / 15 lost`、churn28，并把Spatial/Object/Goal能力换成
+Long1净增。更关键的是，同task四个disjoint correct K4条件的增量cosine仍只有`.0001442`、平均后能量仍约
+`.250124`。因此本轮修复是真实但非充分的：最早缺口已后移到**共享semantic address与cross-video reward
+credit如何先形成跨video可复现的causal task Program，再写成共同policy-effective方向**。当前没有active
+checkpoint或已选successor；下一轮必须先在这个接口上形成新的单变量design authority。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -39,6 +47,8 @@ rank16、LR或dtype；完整可证伪合同见
 | v6-fast task-complete | 143 | 135 | 125 | 128 | 129 | 历史最佳single checkpoint，仍未过150且视频margin弱 |
 | V6-LPCP PCSD cycle1 | 135 | — | — | — | — | reward/action链路通，但跨video credit近正交且相对LPCP净丢8 |
 | V6-LPCP CV-CSD cycle1 | 134 | — | — | — | — | 四correct K4 exact credit仍落成近正交BA，证明失效在query-only commitment |
+| V6-LPCP SFMC cycle1 | 144 | — | — | — | — | 单点恢复但lost15/churn31；写出近identity且video-local ULP crossing |
+| V6-LPCP Gradient-Open cycle1 | 141 | — | — | — | — | 打开全family真实写出，但跨video方向仍近正交并发生suite换手 |
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
@@ -431,6 +441,17 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     full24重新关闭，但action写出仍不均匀。cycle=`581.924s`，rank任务=`3/5/2/5/9`而recorded wall max/min=
     `1.2121x`，动态队列按cost而非task count平衡；相对SFMC world3约95%理想扩展效率。完整world5 checkpoint/
     completion、0禁读/OOM/nonfinite/watchdog均通过。跨world训练outcome不作严格性能比较，必须由strict400裁决。
+51. Gradient-Open cycle1 K4 strict=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`。相对LPCP143
+    严格=`128 retained / 13 gained / 15 lost / 244 both-fail`、churn28、net`-2`、Jaccard`.82051`；suite
+    净变化=`-1/-6/-2/+7`。Long1净增7正好由Object3净丢6、Goal6净丢2和Spatial3净丢1抵消，Goal3仍0，
+    所以breadth不变且没有共同积累。相对SFMC144为`124/17/20`、churn37。correct、lost、net与suite四项门
+    失败，不续cycle2或六臂，不能以141或训练内33/31声明稳定性、same-video鲁棒或视频特异性。
+52. 本轮确实修复了SFMC的机制断点：相对LPCP all400 effective-BA relative-L2 mean=`9.6632e-6`，约为
+    SFMC的`33.3x`，q/v/action非零样本从`249/16/1`增至`400/399/368`。但gained/lost改写mean=
+    `8.7461e-6/9.2809e-6`仍不可分；first4同task四correct K4增量pairwise cosine=`.0001442`、
+    mean/sample energy=`.250124`，仍是近正交video-local方向。这证明“梯度/写出打开”是必要但不充分条件；
+    最早失败接口已后移到shared semantic address与success credit如何经video-conditioned Jacobian形成跨video
+    可复现的policy-effective task Program。下一设计不能继续放大anchor或扫cycle/LR/rank/scale。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

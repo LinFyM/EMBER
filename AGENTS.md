@@ -35,8 +35,9 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新SFMC correct single checkpoint为144但未通过retention/stability门；v6-fast仍是有完整
-五臂的历史最好：`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+长期目标尚未完成。最新Gradient-Open cycle1 strict=`141/400`、breadth7，相对LPCP143为
+`128 retained / 13 gained / 15 lost`、churn28，已按门终局；SFMC单点144也未通过retention/stability门。
+v6-fast仍是有完整五臂的历史最好：`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -99,15 +100,19 @@ action仅1。first4同task修正pairwise cosine约`-8.10e-6`、mean/sample energ
 semantic route。最早失败接口是**SFMC continuous hidden residual -> frozen W2 -> native public LoRA**，不是
 carrier未读视频、GPU负载或训练图未工作。
 
-当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+最新终局successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
 `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC checkpoint，只把
 zero-init staged commitment改成step0严格等于LPCP、但family delta maps与semantic query首步同时有梯度的
 V6-W1 anchored参数化；LPCP carrier、K4 four-view credit、rank16、optimizer与信息墙不变。task4真实smoke已
 通过：semantic query delta=`1.1979e-4`，q/v/action native effective-BA response均非零，cycle wall为SFMC
 `.9501x`。fresh world5 full24 cycle1已由clean detached `eb543d3`完整exit0：24 tasks/48 pairs/96 rollouts，10 active tasks
 覆盖四suite，semantic query delta=`6.9499e-5`，5/5 probes的q/v与3/5的action native BA非零，cycle=
-`581.924s`，完整world5 checkpoint/completion已保留；下一步是同checkpoint K4 strict400，训练内证据不能预告分数。
-SFMC没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
+`581.924s`，完整world5 checkpoint/completion已保留。随后同checkpoint K4 strict=`141/400`、breadth7、
+per-task=`1/3/48/29/0/36/23/1`；相对LPCP为`128/13/15`、churn28、Jaccard`.82051`，suite净变化=
+`-1/-6/-2/+7`。稳定FP64显示BA改写较SFMC放大约`33.3x`且q/v/action几乎全样本非零，但同task four-view
+增量cosine仍`.000144`、energy ratio`.250124`。因此梯度与native写出已打开，最早缺口后移到跨video共同
+causal Program；不续cycle2或六臂，当前没有可resume的active checkpoint。
+SFMC和Gradient-Open都没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
 + 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
 token、rank8、few-shot或生成LoRA本身。
 

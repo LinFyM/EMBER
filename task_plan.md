@@ -292,7 +292,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 终局定位最早失效接口：continuous SFMC hidden residual在冻结W2与native public factor处被量化成稀疏
   q-family ULP crossing，cycle1 semantic router尚未形成；不把单点144误报成稳定145或视频因果资格。
 
-## Active iteration: V6-LPCP Gradient-Open Semantic Commitment
+## Completed iteration: V6-LPCP Gradient-Open Semantic Commitment
 
 - [x] 根据SFMC终局定位单一变量：zero-init family maps在首个backward关闭semantic router，随后hidden residual
   又低于native factor局部量化边界；不续失败checkpoint、不改carrier/rank/LR/dtype/view数；
@@ -303,8 +303,16 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] task4真实smoke通过：query delta较SFMC提高约6.8万倍，q/v/action BA均非零，wall=`.9501x`；
 - [x] fresh world5 full24 cycle1完整exit0：24 tasks、10 active、四suite、cycle=`581.924s`，
   5 rank recorded wall max/min=`1.2121x`，完整checkpoint/completion；
-- [ ] 完成cycle1 K4 strict paired correct400；过retention门才允许cycle2稳定性与六臂因果评测；
-- [ ] 按约145稳定资格报告相邻checkpoint churn/Jaccard、same-task-other与correct对negative/no-video差异。
+- [x] 完成cycle1 K4 strict paired correct400：`141/400`、breadth7、per-task=
+  `1/3/48/29/0/36/23/1`、per-suite=`4/77/36/24`；
+- [x] 完成严格换手分析：相对LPCP=`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`，
+  suite净变化=`-1/-6/-2/+7`；相对SFMC=`124/17/20`、churn37；
+- [x] 完成稳定FP64全400与跨video分析：BA relative-L2 mean=`9.6632e-6`、为SFMC约`33.3x`，
+  q/v/action非零样本=`400/399/368`，但first4 cosine=`.0001442`、energy ratio=`.250124`；
+- [x] 按预注册门终局：correct、lost、net和suite四项失败，不续cycle2或六臂；因此没有same-task-other或
+  negative/no-video资格，不能声明稳定145或视频特异性；
+- [x] 最早失效接口后移到shared semantic address/cross-video reward credit经video-conditioned Jacobian写成
+  近正交effective-BA方向；下一变量必须直接形成跨video可复现的causal task Program。
 
 ### Pre-registered fresh cycle1 launch contract
 
@@ -339,6 +347,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已按门
-终局；它们都不得resume或参数小扫。当前active successor的机制门与fresh full24 cycle1已完成，下一步是
-cycle1 K4 strict paired400；生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与
+Gradient-Open均已按门终局；它们都不得resume或参数小扫。当前没有active run、可resume checkpoint或已选
+successor。下一步先从Gradient-Open已经修复的梯度/native写出接口继续向前，针对“同task不同correct视频条件
+如何形成可复现的causal task Program，再由同一compiler写成共同policy-effective方向”建立新的单变量、可证伪
+design authority；约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对wrong/shuffled/
+reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后
+的独立实验。

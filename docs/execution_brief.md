@@ -5,7 +5,20 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**V6-LPCP Semantic Factor-Memory Commitment**（SFMC），full24 cycle1与K4 strict paired
+最新完成实验是**V6-LPCP Gradient-Open Semantic Commitment**。同一clean `eb543d3` cycle1 checkpoint的
+K4 strict paired correct400=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`、per-suite=
+`4/77/36/24`。相对LPCP143严格=`128 retained / 13 gained / 15 lost / 244 both-fail`、churn28、net`-2`、
+Jaccard`.82051`；suite net=`-1/-6/-2/+7`。相对SFMC144=`124/17/20`、churn37。预注册的absolute、lost、
+net和suite四项门失败，因此本架构终局，不续cycle2或六臂controls。
+
+稳定FP64证明gradient-open解决了真实但非充分的接口：相对LPCP all400 effective-BA relative-L2 mean=
+`9.6632e-6`，约为SFMC的`33.3x`，q/v/action非零样本=`400/399/368`；但gained/lost幅度仍不可分，first4
+同task四个disjoint correct K4增量cosine=`.0001442`、mean/sample energy=`.250124`。所以最早失败接口已从
+SFMC的sub-ULP writeout后移到**shared semantic address/cross-video success credit经video-conditioned
+Jacobian仍写成近正交policy directions**。下一变量必须直接形成跨video可复现的causal task Program，不能继续
+放大anchor、增加cycle或扫LR/rank/scale。
+
+直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=
 `1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`、top3=`121/144=.84028`。
 
@@ -27,7 +40,7 @@ pairwise cosine=`-8.10e-6`、mean/sample energy=`.249995`，没有形成跨video
 最早失败接口是**continuous factor-memory residual经冻结W2写成native public LoRA时被压到稀疏q-family ULP
 crossing**，且learned semantic router尚未形成，而不是memory未算、reward无梯度、GPU负载或LoRA链路未接通。
 
-当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+随后检验的successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
 `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC cycle1，只从sealed
 LPCP macro25 fresh初始化，在同一factor commitment中加入冻结V6-W1 policy-aligned anchors，使step0仍严格
 identity，同时让family delta maps和semantic query在第一次selected-success update中都有梯度。carrier、K4
@@ -43,12 +56,17 @@ semantic query delta=`6.9499e-5`，为SFMC约3.96万倍；5/5 probes的q/v、3/5
 router与v-family写出在full24仍打开，但action写出尚不均匀。cycle=`581.924s`；rank任务数虽为`3/5/2/5/9`，
 recorded wall只有`462.083--560.082s`、max/min=`1.2121x`，动态队列按成本而非数量平衡。world5相对SFMC
 world3 wall=`.6321x`，约95%理想扩展效率；完整checkpoint/completion已保留。训练outcome跨world不作严格架构
-比较，下一裁决只认同checkpoint K4 strict paired400。
+比较。其strict终局结果与接口定位见本节开头；当前没有可resume的active checkpoint。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；
 strict与终局分析root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr3_evalr3_8994180_gpu01_20260815`。
+
+Gradient-Open训练root=
+`runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_formal_cycle0to1_r5_k4_views4_nmc4_b8_eb543d3_gpu01_20260815`；
+strict与终局分析root=
+`runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_eb543d3_gpu01_20260815`。
 
 ## 2. Completed CV-CSD variable and exact conclusion
 
@@ -61,7 +79,8 @@ strict与终局分析root=
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已终局且不得resume或小扫。
+Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与Gradient-Open均已终局且
+不得resume或小扫。
 各自训练root、strict root、逐episode transitions和必要BA/跨video evidence均已封存。`>150`仍是更高性能追求；约145
 也可成为有效结果，但必须由相邻single checkpoints低churn、same-task-other鲁棒和correct相对wrong/shuffled/
 reversed/no-video的明确优势共同认证。单点145或151都不算完成。

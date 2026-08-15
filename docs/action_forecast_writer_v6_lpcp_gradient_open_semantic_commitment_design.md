@@ -1,6 +1,6 @@
 # V6-LPCP Gradient-Open Semantic Commitment
 
-状态：2026-08-15 active design authority。本文建立在SFMC cycle1终局之后，只改变semantic factor
+状态：2026-08-15 terminal non-pass authority。本文建立在SFMC cycle1终局之后，只改变semantic factor
 commitment的零输出参数化。LPCP视频载体、AS139强底座、K4 cross-video selected-success credit、rank16
 public LoRA、八factor families、优化器和全部信息墙保持不变。
 
@@ -215,6 +215,38 @@ shuffled、reversed、no-video。same/correct至少`.9`；correct相对每个con
 correct-only/control-only、McNemar、per-task和per-suite。
 
 稳定145且视频因果资格完整，可视为有价值成立结果；单点150以上但高churn或没有video specificity仍不合格。
+
+### 9.1 Cycle1 strict result and terminal interpretation
+
+同一clean `eb543d3` cycle1 checkpoint的K4 strict paired correct400完整完成：400套LoRA、60/60 queue jobs、
+400 raw rows与15/15 worker exit0；wall=`1405.667s`、effective=`.28456 rollout/s`。结果为
+`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`、per-suite=`4/77/36/24`、top3 share=
+`.80142`。
+
+相对直接初始化邻居LPCP143严格为`128 retained / 13 gained / 15 lost / 244 both-fail`，churn28、net`-2`、
+Jaccard=`.82051`、McNemar `p=.85055`。suite净变化=`-1/-6/-2/+7`：Long1以`12 gains / 5 losses`
+净增7，但Object3以`1/7`净丢6、Goal6净丢2、Spatial3净丢1；breadth没有增加，Goal3仍为0。相对SFMC144
+则为`124/17/20`、churn37、Jaccard=`.77019`。因此这不是多task共同积累，而是更明确的Object/Goal/Spatial
+能力向Long1换手。cycle1的absolute、lost、net与suite四项续训门均失败，不运行cycle2或六臂controls。
+
+稳定FP64低秩差分同时证明本轮确实修复了SFMC的写出断点，而非再次回到identity：相对LPCP的all400
+effective-BA relative-L2 mean=`9.6632e-6`，约为SFMC的`33.3x`；effective-BA RMS mean=`1.6261e-7`，
+q/v/action非零样本=`400/399/368`。但gained/lost relative-L2 mean仅=`8.7461e-6/9.2809e-6`，幅度仍不能
+区分有用与有害改写。8 tasks各取前4个disjoint correct K4 sets后，增量pairwise cosine mean=
+`.0001442`、mean/sample energy=`.250124`，仍等同四个近正交video-local方向。
+
+所以第6节“共享language address足以把不同正确视频的Value提交为共同task direction”的核心假设被真实证据
+否定。最早失败接口现已从`hidden residual -> native factor ULP`后移到：
+
+```text
+shared semantic address + cross-video selected-success credit
+  -> video-conditioned factor Value / effective BA direction
+```
+
+gradient、router、q/v/action public写出都已打开，但每个video condition的Jacobian仍把同一成功credit编译为
+近正交局部修正；shared checkpoint因此只在tasks之间重新分配边界成功。下一设计必须直接形成跨video可复现的
+causal task Program，再进入policy-aligned compiler；不能继续放大anchor、增加cycle、扫LR/rank/scale，或只用
+loss/coherence选择方法。
 
 ## 10. Fast falsifiers and negative-result boundary
 

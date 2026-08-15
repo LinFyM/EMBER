@@ -7,8 +7,10 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- SFMC cycle1 correct single checkpoint=`144/400`、breadth7，是当前最高correct单点，但相对LPCP143仍
-  lost15/churn31，未获稳定或视频因果资格；v6-fast仍是有完整五臂的历史最好=`143/135/125/128/129`；
+- 最新Gradient-Open cycle1 strict=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`；相对LPCP143
+  为`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`，已按门终局。SFMC单点144仍是最高
+  correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的历史最好=
+  `143/135/125/128/129`；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
@@ -99,7 +101,7 @@
   q/v/action=`249/16/1`；first4 pairwise cosine=`-8.10e-6`、mean/sample energy=`.249995`。semantic query/
   basis-key delta约`1.7e-9`，连续hidden residual主要被native factor量化为稀疏q-family ULP crossing，未形成
   learned semantic route或跨video共同方向；
-- 当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
+- 最新终局successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
   `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它从sealed LPCP macro25 fresh
   初始化commitment与optimizer，只把SFMC的zero-init staged函数改成step0严格identity、但family delta maps与
   semantic query首步同时有梯度的V6-W1 anchored参数化；其余carrier、K4 four-view credit、rank16与训练合同
@@ -111,8 +113,12 @@
   `33/31`、gains=`6/4`、10 active tasks覆盖四suite、40 credit views/160 unique videos；semantic query
   delta=`6.9499e-5`（SFMC的约3.96万倍），5/5 probes的q/v与3/5的action native BA非零。cycle=
   `581.924s`，5 rank任务=`3/5/2/5/9`但recorded wall max/min仅`1.2121x`，world5 checkpoint/completion
-  完整exit0；下一步是同checkpoint K4 strict400。训练paired outcome跨world存在正常低位轨迹差异，不能以
-  `33/31`预告held性能；SFMC的same/wrong/shuffled/reversed/no-video仍未获门控授权；
+  完整exit0。随后同checkpoint K4 strict完成400/400 LoRAs、60/60 jobs、400 rows、15/15 workers exit0：
+  `141/400`、breadth7、per-suite=`4/77/36/24`、top3 share`.80142`；相对LPCP=`128/13/15`、churn28、
+  net`-2`，suite净变化=`-1/-6/-2/+7`，相对SFMC=`124/17/20`、churn37。BA relative-L2 mean=
+  `9.6632e-6`、为SFMC约`33.3x`，q/v/action非零样本=`400/399/368`；但first4 cross-video cosine=
+  `.0001442`、energy ratio=`.250124`。训练paired outcome跨world存在正常低位轨迹差异，不能以`33/31`
+  预告held性能；strict已证实能力换手，四项门失败，不续cycle2或六臂。当前没有可resume的active checkpoint；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成
@@ -758,6 +764,30 @@ SFMC formal训练来自clean pushed/frozen `899418087aee9f7dd5c51045aa190ac7481d
 终局最早失败接口是**continuous SFMC hidden residual -> frozen factor W2 -> native public LoRA**：family maps
 确实获得reward credit，但cycle1语义router尚未形成，输出又大多低于原生factor局部ULP，只产生稀疏q-family
 crossing。144因此是LPCP边界附近的高churn阈值重排，不是稳定145，也不能证明same-task-video鲁棒或视频特异性。
-完整终局artifact为`sfmc_cycle1_terminal_analysis.json`。owner讨论后已立
-`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`作为下一单变量authority；
-这里的SFMC终局不得恢复或续训。
+完整终局artifact为`sfmc_cycle1_terminal_analysis.json`；这里的SFMC终局不得恢复或续训。
+
+## Gradient-Open terminal evidence
+
+训练root：
+
+`runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_formal_cycle0to1_r5_k4_views4_nmc4_b8_eb543d3_gpu01_20260815`
+
+strict与终局分析root：
+
+`runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_eb543d3_gpu01_20260815`
+
+- train24 cycle1为24 tasks/48 pairs/96 rollouts，candidate/reference=`33/31`、10 active tasks覆盖四suite，
+  semantic query delta=`6.9499e-5`，5/5 q/v与3/5 action probes非零，cycle=`581.924s`；
+- strict完整400 cache entries、60 jobs、400 rows、15 workers exit0，wall=`1405.667s`、`.28456 rollout/s`；
+- correct=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`、per-suite=`4/77/36/24`；
+- 相对LPCP143严格=`128 retained / 13 gained / 15 lost / 244 both-fail`、churn28、net`-2`、Jaccard
+  `.82051`；相对SFMC144=`124/17/20`、churn37；
+- suite相对LPCP为`-1/-6/-2/+7`，Long1 gain由Object3/Goal6/Spatial3 loss换得，breadth与持续失败task均未改善；
+- FP64 BA relative-L2 mean=`9.6632e-6`、为SFMC约`33.3x`，q/v/action非零=`400/399/368`；first4
+  cross-video cosine=`.0001442`、energy ratio=`.250124`，证明写出打开但共同方向没有形成；
+- terminal artifacts为`gosc_cycle1_strict_adjudication.json`、`gosc_cycle1_stable_effective_ba_analysis.json`、
+  `gosc_vs_sfmc_stable_effective_ba_analysis.json`和`gosc_cycle1_terminal_analysis.json`。
+
+本架构按correct、lost、net与suite四项失败终局，不resume cycle2、不做六臂或小扫。当前没有active GPU run或
+可resume checkpoint；下一design authority只能针对**跨video causal task Program在进入policy-aligned compiler前
+形成可复现共同方向**，并保留已通过的LPCP carrier、gradient-open/native写出与single-LoRA信息墙。

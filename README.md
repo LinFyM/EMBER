@@ -31,21 +31,17 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and active successor
 
-最新完成的**V6-LPCP Semantic Factor-Memory Commitment**在cycle1 K4 strict为`144/400`、breadth7、
-per-task=`1/3/47/36/0/38/18/1`。相对LPCP143严格为`128 retained / 16 gained / 15 lost`、churn31、
-net`+1`；lost门失败，故没有续cycle2或六臂。稳定FP64证明它相对LPCP的effective-BA改写仅
-`2.899e-7` relative-L2，semantic router几乎未学习，v/action写出大多没有跨过native factor量化边界；单点144
-不是稳定145或视频因果资格。
+最新完成的
+[`V6-LPCP Gradient-Open Semantic Commitment`](docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md)
+在cycle1 K4 strict为`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`。相对LPCP143严格为
+`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`；suite净变化=`-1/-6/-2/+7`，表现为
+Object/Goal/Spatial能力换到Long1，而非共同积累。correct、retention、net和suite门失败，故不续cycle2或六臂。
 
-当前active successor是
-[`V6-LPCP Gradient-Open Semantic Commitment`](docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md)：
-完整保留LPCP有序视频carrier、K4 cross-video selected-success credit、V6 rank16 factor topology和强143底座，
-只把SFMC的zero-init staged commitment改成step0严格identity、但family delta maps与semantic query首步同时有
-梯度的V6-W1 anchored参数化。task4真实smoke已证明semantic query更新较SFMC提高约6.8万倍，q/v/action三组
-native effective-BA均非零，wall为SFMC的`.9501x`。fresh world5 full24 cycle1随后完整exit0：24 tasks中10个
-获得discordant success credit并覆盖四suite，semantic
-query delta仍较SFMC高约3.96万倍，5/5 probes的q/v与3/5的action native BA非零；下一裁决是同checkpoint
-K4 strict400，这些训练内证据不预告分数。
+这轮得到的有效结论不是“memory/LoRA生成无用”：gradient-open使相对LPCP的effective-BA改写较SFMC放大约
+`33.3x`，q/v/action在`400/399/368`个样本非零，证明router与native写出断点确实修复；但四组同task正确K4
+增量仍近正交（cosine`.000144`、energy ratio`.250124`），闭环也继续换手。当前没有可resume的active
+checkpoint；下一设计只允许针对“跨视频causal task Program如何在进入compiler前形成可复现共同方向”这一最早
+接口，不继续放大anchor或扫cycle/LR/rank/scale。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

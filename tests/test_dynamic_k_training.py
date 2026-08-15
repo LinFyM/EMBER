@@ -101,16 +101,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_preaddressed_factor_selector_config_is_mechanism_only() -> None:
+def test_shared_joint_native_value_gate_config_is_mechanism_pending() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "terminal_mechanism_non_pass"
-    assert config["formal_run"]["status"] == (
-        "blocked_terminal_mechanism_non_pass"
-    )
+    assert config["status"] == "active_mechanism_pending"
+    assert config["formal_run"]["status"] == "blocked_mechanism_pending"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "preaddressed_factor_selectors_only_16384_parameters"
+        "shared_joint_native_value_gate_only_512_parameters"
     )
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 142,
@@ -126,13 +124,11 @@ def test_preaddressed_factor_selector_config_is_mechanism_only() -> None:
     gate = config["formal_run"]["mechanism_gate"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
-    assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.1
+    assert gate["trainable_parameter_count"] == 512
+    assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.5
+    assert gate["held_action_cosine_minimum"] == 0.2
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
-    assert gate["fixed_language_address_effective_rank_minimum"] == 4
-    assert gate["full24_shared_mean_descent_coverage_minimum"] == 0.75
-    evidence = config["formal_run"]["mechanism_evidence"]
-    assert evidence["result"] == "terminal_non_pass_no_full24"
-    assert evidence["validation8_passing_tasks"] == 3
+    assert "mechanism_evidence" not in config["formal_run"]
     assert base["writer"]["policy_slot_count"] == 320
 
 

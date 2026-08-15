@@ -341,9 +341,9 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": "formal_preaddressed_factor_selective_native_value",
+        "training_mode": "formal_shared_joint_native_value_gate",
         "training_stage": (
-            "on_policy_cross_video_selected_success_factor_selection"
+            "on_policy_cross_video_selected_success_shared_gate"
         ),
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
@@ -543,7 +543,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_preaddressed_factor_selective_native_value_"
+                "v6_lpcp_shared_joint_native_value_gate_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

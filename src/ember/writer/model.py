@@ -20,7 +20,7 @@ from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
     FACTOR_FAMILIES,
-    PreAddressedFactorSelectiveNativeValue,
+    SharedJointNativeValueGate,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -51,7 +51,6 @@ class WriterProgramOutput:
     reference_program: torch.Tensor | None = None
     probe_value_memory: torch.Tensor | None = None
     language_slots: torch.Tensor | None = None
-    semantic_basis_weights: torch.Tensor | None = None
 
 
 @dataclass(frozen=True)
@@ -104,10 +103,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = PreAddressedFactorSelectiveNativeValue(
+        self.factor_commitment = SharedJointNativeValueGate(
             width=self.PROGRAM_WIDTH,
-            basis_count=4,
-            initialization_seed=initialization_seed,
         ).requires_grad_(False)
         object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
 
@@ -381,14 +378,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             condition_video_offsets,
             per_video_query_conditioners=state.per_video_query_conditioners,
         )
-        basis_weights = self.factor_commitment.basis_weights(state.language_slots)
         return WriterProgramOutput(
             program=compiled.program,
             diagnostics=compiled.diagnostics,
             reference_program=reference.program,
             probe_value_memory=compiled.diagnostics.shared_probe_value_slots,
             language_slots=state.language_slots,
-            semantic_basis_weights=basis_weights,
         )
 
     def _read_language_slots(
@@ -568,23 +563,16 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         probe_value_memory: torch.Tensor | None = None,
         language_slots: torch.Tensor | None = None,
-        semantic_basis_weights: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         if probe_value_memory is None:
-            if language_slots is not None or semantic_basis_weights is not None:
-                raise WriterModelError("incomplete semantic factor-memory decode")
+            if language_slots is not None:
+                raise WriterModelError("incomplete shared native-Value decode")
             return self.base_writer.decode_slots(program)
         if language_slots is None:
-            raise WriterModelError("semantic factor memory lost its language address")
-        weights = (
-            self.factor_commitment.basis_weights(language_slots)
-            if semantic_basis_weights is None
-            else semantic_basis_weights
-        )
+            raise WriterModelError("shared native Value lost its language condition")
         residuals = self.factor_commitment.hidden_residuals(
             probe_value_memory,
             language_slots,
-            weights,
             anchor_input_weights=self._factor_anchor_input_weights(),
         )
         return self.base_writer.decode_slots(
@@ -615,7 +603,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             encoded.program,
             probe_value_memory=encoded.probe_value_memory,
             language_slots=encoded.language_slots,
-            semantic_basis_weights=encoded.semantic_basis_weights,
         )
 
     def forward_training(

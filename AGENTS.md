@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`
+   `docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -146,7 +146,12 @@ Value、rank16与matched reward，只把zero-init common router换成reward upda
 并令八factor families各自用zero-init diagonal selectors选择native Value组件/符号；trainable=`16,384`。这直接
 检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。真实task4机制健康，但train24 address
 effective rank=`2.1575`，validation8 cosine/energy=`.1681/.3729`且仅3/8过门，故未启动full24或strict并终局。
-当前没有active successor或GPU run；memory token和rank8仍开放，PAFS失败不否定它们。
+当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
+`docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它保留LPCP/NPVC carrier、native Value、
+rank16与matched reward，只把PAFS的fixed address和八套factor selectors替换为所有factor共享的512参数
+joint language-video diagonal gate。canonical实现已原位完成，完整CPU=`399 passed`且architecture guard无hard
+violation；下一裁决是task4到validation8机制门，尚无active GPU run。memory token和rank8仍开放，本轮不同时
+改变carrier或public rank。
 
 ## 4. Long-term objective and decision rule
 
@@ -230,6 +235,8 @@ few-shot哪一个最终成为论文设定只由真实性能决定，不为形式
 - 每次GPU launch前同时live检查gpu01与gpu02，区分空闲、可共驻、忙碌与故障；
 - 单节点使用至多6张真正能提高吞吐的A40。有几张合适卡就用几张，不等待凑6卡、不跨节点拼碎片、不dummy占卡；
 - 少量显存占用或低利用率进程不自动排除设备，只要有足够峰值余量且不会明显干扰他人；
+- 若合适空卡不足，owner已明确允许与`ycliu`用户的进程安全共驻；仍须按实时显存峰值余量与利用率判断，不得
+  pause、kill、reset或明显干扰其任务。该授权不自动扩展到其他用户；
 - 不reset、kill、pause、抢占或干扰他人进程；设备ownership与telemetry始终按实时状态判断；
 - 多卡训练固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA mapping和deferred NCCL；独立evaluator不用NCCL；
 - 接受正常BF16/TF32、batch、kernel和reduction order低位差异；不为逐元素一致固定batch1、重复forward、扩dtype、

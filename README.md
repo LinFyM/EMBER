@@ -53,7 +53,11 @@ Writer checkpoint中共存**。下一设计不会只加scale、capacity、cohere
 保留LPCP143、NPVC native Value和rank16，只把所有tasks/q-v-action共享的zero-init router替换为固定语言
 pre-address下的factor-owned zero-init selectors。真实task4写出、顺序与吞吐健康，但train24 address effective
 rank仅`2.1575`，validation8跨视频共同方向仅`.1681/.3729`、3/8过门，显著低于NPVC，故在full24前终局且没有
-strict结果。当前没有active successor或GPU run。实时run identity和下一裁决只取
+strict结果。当前active successor是
+[`V6-LPCP Shared Joint Native-Value Gate`](docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md)：
+保留NPVC native Value与LPCP/rank16强路径，只用所有factor共享的512参数joint language-video gate替换固定地址
+和family selectors；canonical实现与完整CPU合同已通过，当前无GPU run，下一步先做task4到validation8的真实
+机制门。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_preaddressed_factor_selectors_are_exact_lpcp_at_zero_init() -> None:
+def test_shared_joint_gate_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -309,13 +309,9 @@ def test_preaddressed_factor_selectors_are_exact_lpcp_at_zero_init() -> None:
     assert sum(
         parameter.numel()
         for parameter in model.factor_commitment.parameters()
-    ) == 16_384
+    ) == 512
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
-    assert all(
-        not selector.count_nonzero()
-        for selector in model.factor_commitment.selectors.values()
-    )
-    assert not model.factor_commitment.basis_keys.requires_grad
+    assert not model.factor_commitment.gate.weight.count_nonzero()
 
 
 def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
@@ -342,25 +338,24 @@ def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
         natural.probe_value_memory, permuted.probe_value_memory
     )
     torch.testing.assert_close(natural.language_slots, permuted.language_slots)
-    torch.testing.assert_close(
-        natural.semantic_basis_weights, permuted.semantic_basis_weights
-    )
 
 
-def test_preaddress_is_fixed_video_independent_and_non_degenerate() -> None:
+def test_shared_joint_gate_changes_with_video_under_fixed_language() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(41)
-    language = torch.randn(8, 320, 256, generator=generator)
+    language = torch.randn(2, 7, 256, generator=generator)
+    first_memory = torch.randn(2, 7, 256, generator=generator)
+    second_memory = torch.randn(2, 7, 256, generator=generator)
     with torch.no_grad():
-        first = commitment.basis_weights(language)
-        second = commitment.basis_weights(language.clone())
-    torch.testing.assert_close(first, second, rtol=0, atol=0)
-    assert torch.linalg.matrix_rank(first.reshape(-1, 4).float()) == 4
-    assert not commitment.basis_keys.requires_grad
+        commitment.gate.weight.normal_(std=0.01, generator=generator)
+        first = commitment.gate_values(first_memory, language)
+        second = commitment.gate_values(second_memory, language)
+    assert first.shape == (2, 7, 2)
+    assert not torch.equal(first, second)
 
 
-def test_preaddressed_factor_selectors_open_all_families_and_require_video() -> None:
+def test_shared_joint_gate_opens_all_families_and_requires_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -372,11 +367,8 @@ def test_preaddressed_factor_selectors_open_all_families_and_require_video() -> 
         anchor_input_weights=model._factor_anchor_input_weights(),
     )
     sum(value.sum() for value in residuals.values()).backward()
-    assert all(
-        selector.grad is not None and selector.grad.count_nonzero()
-        for selector in commitment.selectors.values()
-    )
-    assert commitment.basis_keys.grad is None
+    assert commitment.gate.weight.grad is not None
+    assert commitment.gate.weight.grad.count_nonzero()
 
     with torch.no_grad():
         zero_residuals, _ = commitment(
@@ -387,20 +379,20 @@ def test_preaddressed_factor_selectors_open_all_families_and_require_video() -> 
     assert all(not value.count_nonzero() for value in zero_residuals.values())
 
 
-def test_preaddressed_factor_selectors_have_two_axes_per_family() -> None:
+def test_shared_joint_gate_has_two_common_axes_for_all_families() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
     memory = torch.randn(5, 3, 256, generator=generator)
     language = torch.randn(1, 3, 256, generator=generator).expand(5, -1, -1)
     with torch.no_grad():
-        for selector in commitment.selectors.values():
-            selector.normal_(std=0.01, generator=generator)
-        residuals, _ = commitment(
+        commitment.gate.weight.normal_(std=0.01, generator=generator)
+        residuals, coefficients = commitment(
             memory,
             language,
             anchor_input_weights=model._factor_anchor_input_weights(),
         )
+    assert coefficients.shape == (5, 3, 2)
     for value in residuals.values():
         for slot in range(value.shape[1]):
             assert torch.linalg.matrix_rank(value[:, slot].float(), tol=1e-5) <= 2
@@ -420,8 +412,8 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["factor_commitment.selectors.q_a"] = source.state_dict()[
-        "factor_commitment.selectors.q_a"
+    partial["factor_commitment.gate.weight"] = source.state_dict()[
+        "factor_commitment.gate.weight"
     ]
     with torch.no_grad():
         try:

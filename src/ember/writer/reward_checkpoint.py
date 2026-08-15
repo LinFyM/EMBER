@@ -1,4 +1,4 @@
-"""Cycle checkpoints for pre-addressed factor-selective native Value."""
+"""Cycle checkpoints for the shared joint native-Value gate."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_preaddressed_factor_selective_native_value_checkpoint_v1"
+    "ember_pi05_v6_lpcp_shared_joint_native_value_gate_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_preaddressed_factor_selective_native_value_cycle_checkpoint"
+    "v6_lpcp_shared_joint_native_value_gate_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 
@@ -36,7 +36,7 @@ def checkpoint_cycle(path: Path | None) -> int:
     match = _CYCLE_NAME.fullmatch(path.name)
     if match is None or path.parent.name != "checkpoints":
         raise WriterModelError(
-            "pre-addressed selector resume path is not a cycle checkpoint"
+            "shared-gate resume path is not a cycle checkpoint"
         )
     return int(match.group(1))
 
@@ -57,7 +57,7 @@ def save_reward_checkpoint(
     if context.is_main:
         checkpoints.mkdir(parents=True, exist_ok=True)
         if partial.exists() or final.exists():
-            raise WriterModelError("pre-addressed selector checkpoint already exists")
+            raise WriterModelError("shared-gate checkpoint already exists")
         partial.mkdir()
     barrier(context)
     torch.save(
@@ -128,7 +128,7 @@ def load_reward_checkpoint(
         or int(manifest.get("world_size", -1)) != context.world_size
         or manifest.get("run_contract_schema") != contract["schema_version"]
     ):
-        raise WriterModelError("pre-addressed selector checkpoint manifest changed")
+        raise WriterModelError("shared-gate checkpoint manifest changed")
     writer.load_state_dict(
         load_file(str(checkpoint / "writer.safetensors"), device=str(context.device)),
         strict=True,
@@ -149,7 +149,7 @@ def load_reward_checkpoint(
         or int(rank.get("world_size", -1)) != context.world_size
         or int(rank.get("rank", -1)) != context.rank
     ):
-        raise WriterModelError("pre-addressed selector checkpoint cursor changed")
+        raise WriterModelError("shared-gate checkpoint cursor changed")
     optimizer.load_state_dict(trainer["optimizer"])
     restore_rng(rank["rng"], context)
     return cycle, int(trainer["metrics_rows"])

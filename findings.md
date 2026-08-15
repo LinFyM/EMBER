@@ -533,6 +533,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     held cosine/energy/L2只保留`.3741x/.6524x/.1396x`，action held cosine从`.3472`降至`.0535`。因此
     factor-owned selection在full24前已破坏shared held geometry，按门终局且不做strict；这不否定memory token、
     rank8或生成LoRA，只否定本次fixed-address/factor-selector组合。
+72. PAFS与NPVC的联合边界授权SJNV-Gate：保留NPVC已通过的shared native Value和冻结V6 axes，不再用固定
+    language lanes或family-owned选择。唯一trainable `W_gate[2,256]`直接读取`M elementwise_mul RMSNorm(L)`，
+    为全部q/v/action A/B families产生同一direct/signed系数。它把task分离放在真实joint input而非参数owner中，
+    同时保持`M=0`严格不能写LoRA。该结构是否保住NPVC held geometry与full24共存仍须机制门/strict裁决；当前
+    只是可证伪设计，不是memory token或低参数量优越性的结论。
+73. SJNV-Gate已原位替换PAFS active path：唯一trainable tensor为共享`gate.weight[2,256]`，step0逐tensor exact
+    LPCP，`M=0`时新增LoRA严格为零，同一K-set置换不变且非零video Value可改变gate；fresh config/checkpoint/
+    evaluator schema拒绝旧state。定向CPU=`76 passed`、完整CPU=`399 passed`、compileall通过，architecture guard
+    无hard violation。这只证明canonical图和工程合同，task4、held geometry与closed-loop尚未知。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

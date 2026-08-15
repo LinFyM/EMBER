@@ -40,7 +40,14 @@
   dynamic Value。真实task4 smoke八family/q-v-action/reverse/wall均健康，task4 cosine/energy=
   `.435164/.570296`；但train24 address effective rank=`2.15753<4`，validation8=`.168111/.372863`且仅3/8
   过门，相对NPVC held cosine/energy/L2只保留`.3741x/.6524x/.1396x`。机制门失败，未启动full24/strict并
-  终局；当前没有active successor、GPU run或可resume checkpoint；
+  终局；
+- 当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
+  `docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它保留LPCP/NPVC carrier、ordered
+  native probe Value、rank16、冻结V6 W1/W2与matched reward；唯一用所有八factor共享的`2x256` zero-init
+  joint `M elementwise_mul L` gate替换PAFS fixed address/family selectors。总trainable=`512`，step0/no-video exact
+  LPCP，task差异来自真实language-video joint feature而非固定lane或task ID。canonical实现已原位完成，旧PAFS
+  executable semantics已退役；定向CPU=`76 passed`、完整CPU=`399 passed`、compileall通过，architecture guard无
+  hard violation。当前等待task4到validation8真实机制门，尚无GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

@@ -35,7 +35,12 @@ language pre-address + 八family-owned zero-init diagonal selectors，总trainab
 full24 reward update前存在，并让q/v/action独立选择Value组件/符号；不是scale、task expert或support-only
 guard。真实task4机制健康，但train24 address effective rank=`2.15753`，validation8 cosine/energy=
 `.168111/.372863`且仅3/8过门；相对NPVC held L2只余`.1396x`。因此机制门前置终局，没有full24或strict结果。
-当前没有active successor或GPU run；memory token、rank8与dynamic K仍开放。
+当前active successor是**V6-LPCP Shared Joint Native-Value Gate**（SJNV-Gate），authority=
+`docs/action_forecast_writer_v6_lpcp_shared_joint_native_value_gate_design.md`。它不重跑memory carrier或改变rank，
+只以所有factor共享的512参数joint language-video diagonal gate替换PAFS fixed address/family selectors，直接检验
+能否保留NPVC held geometry并使reward-useful组件/符号在full24共存。唯一runtime与fresh schema已原位实现，
+定向CPU=`76 passed`、完整CPU=`399 passed`且architecture guard无hard violation；当前无GPU run，下一裁决是
+task4 selected-success到validation8 held video-only机制门。memory token、rank8与dynamic K仍开放。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

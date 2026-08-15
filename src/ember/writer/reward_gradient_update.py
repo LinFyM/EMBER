@@ -1,4 +1,4 @@
-"""Aggregate reward gradients and measure multi-task coexistence."""
+"""Aggregate shared-gate reward gradients and measure task coexistence."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def _coexistence(
         if keep
     ]
     if rows.shape[0] == 0 or bool((active > 1).any()):
-        raise WriterModelError("factor-selector task gradients lost unique ownership")
+        raise WriterModelError("shared-gate task gradients lost unique ownership")
 
     row_norms = torch.linalg.vector_norm(rows, dim=1)
     mean_norm = torch.linalg.vector_norm(shared_mean)
@@ -81,7 +81,7 @@ def _coexistence(
     else:
         pairwise_summary = {"mean": 1.0, "minimum": 1.0, "maximum": 1.0}
 
-    family_energy = {}
+    parameter_energy = {}
     for (name, _), item in zip(
         _trainable_named(runtime), runtime.gradient_layout, strict=True
     ):
@@ -93,8 +93,7 @@ def _coexistence(
                 mean_values.square().mean().sqrt(),
             )
         ).cpu().tolist()
-        family = name.removeprefix("factor_commitment.selectors.")
-        family_energy[family] = {
+        parameter_energy[name] = {
             "task_gradient_rms_mean": task_rms,
             "shared_mean_gradient_rms": shared_rms,
         }
@@ -118,7 +117,7 @@ def _coexistence(
             }
             for task_id, values in zip(selected_ids, task_values, strict=True)
         ],
-        "per_family": family_energy,
+        "per_parameter": parameter_energy,
     }
 
 
@@ -136,12 +135,12 @@ def apply_reward_step(
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
-        raise WriterModelError("factor-selector cycle has no discordant success")
+        raise WriterModelError("shared-gate cycle has no discordant success")
     gradient_sum.div_(active_tasks)
     if not bool(torch.isfinite(gradient_sum).all()) or not bool(
         torch.count_nonzero(gradient_sum)
     ):
-        raise WriterModelError("factor-selector shared gradient is invalid")
+        raise WriterModelError("shared-gate gradient is invalid")
     coexistence = _coexistence(runtime, task_gradients, gradient_sum)
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])

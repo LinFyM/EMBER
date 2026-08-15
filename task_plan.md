@@ -387,6 +387,19 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [ ] 后继若达到约145，必须继续用相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对
   wrong/shuffled/reversed/no-video的明确paired优势认证。
 
+## Active iteration: V6-LPCP Shared Joint Native-Value Gate
+
+- [x] 从NPVC与PAFS联合证据锁定单变量：保留NPVC shared native Value与冻结V6 geometry，去掉低有效维fixed
+  address和八套factor selectors；
+- [x] 写SJNV-Gate authority：以共享zero-init `2x256` joint `M elementwise_mul L` gate产生所有factor共用的
+  direct/signed coefficients，总trainable=`512`；
+- [x] 原位替换唯一commitment/runtime/schema并退役PAFS executable semantics；
+- [x] 完成step0、video-required、K-set、shared gate gradient、checkpoint与CPU机制门：定向`76 passed`、完整
+  `399 passed`、compileall通过，architecture guard无hard violation；
+- [ ] 完成matched task4 selected-success及validation8 held video-only机制/吞吐裁决；
+- [ ] 若held门通过，fresh full24 cycle1后立即做single-checkpoint strict paired400与逐task分析；
+- [ ] 只有cycle1 absolute/breadth/retention/held共同过门才续cycle2和稳定性/六臂资格。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；
@@ -402,8 +415,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT与NPVC均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run、可resume
-checkpoint或已授权后继架构。下一步先建立只改变reward-useful direction/content selection与多task共存接口的
-design authority，再做最小机制否决。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
+Gradient-Open、CCT、NPVC与PAFS-NV均已按门终局；它们都不得resume或参数小扫。当前active SJNV-Gate已建立
+design authority且canonical实现/CPU门已完成；没有active GPU run或可resume checkpoint。下一步完成最小
+机制否决，只有held门通过才做full24。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

@@ -103,8 +103,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_causal_coefficient_reward_config_freezes_only_transport() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_mechanism_pending"
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["status"] == "active_formal_cycle1_ready"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
@@ -121,6 +121,15 @@ def test_causal_coefficient_reward_config_freezes_only_transport() -> None:
         "same_task_other_video_maximum_drop": 8,
         "correct_each_negative_margin_minimum": 10,
     }
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["mechanism_gate_pass"] is True
+    assert evidence["cross_video_cct_effective_ba"][
+        "all_pairwise_cosine_mean"
+    ] >= 0.15
+    assert evidence["cross_video_cct_effective_ba"][
+        "all_mean_energy_over_sample_energy"
+    ] >= 0.4
+    assert evidence["natural_to_constant_transport_coefficient_norm_ratio"] < 1e-3
     assert base["writer"]["policy_slot_count"] == 320
 
 

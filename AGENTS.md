@@ -122,8 +122,10 @@ ordered Procedure、four-view selected-success、V6 factor compiler与rank16 pub
 `factor_memory`从256维hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；exact
 language经冻结V6 W1/GELU提供同task共享的family-specific output axes。zero-init language router保证step0 exact
 LPCP，新增residual又必须乘video coefficient，不增加language-only Value。canonical实现与完整CPU`397 passed`
-已完成，但尚无GPU/profile或性能结果；formal前必须先证明跨video correction离开GOSC的约`0/.25`、顺序响应和
-q/v/action链路非零且吞吐合格。
+已完成。task4真实GPU门中q/v/action与fixed-action链路非零，four-view CCT-only BA cosine/energy=
+`.563803/.672852`，natural→reversed修正cosine=`.014842`，静态首帧使transport coefficient norm降到
+`2.74e-5x`；cycle为GOSC`.9870x`。aggregate机制门已过并只授权fresh full24 cycle1；action family单独只有
+`.079285/.309455`，是必须追踪的风险。当前尚无CCT formal closed-loop结果。
 
 ## 4. Long-term objective and decision rule
 

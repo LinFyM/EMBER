@@ -457,7 +457,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     投影成两个causal coefficients；同task exact language经冻结V6 W1/GELU定义共享family directions。它在
     step0 exact LPCP且没有新增language-only Value，同时保留dynamic K、有序Procedure和selected-success。
     这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫。canonical实现已把trainable
-    从`2,164,224`降为`67,072`，完整CPU=`397 passed`；尚无GPU机制或性能证据。
+    从`2,164,224`降为`67,072`，完整CPU=`397 passed`。
+54. task4 post-update four-view FP64验证了结构假设：CCT-only effective-BA aggregate cosine/energy=
+    `.563803/.672852`，相对GOSC的`.000144/.250124`是明显共同方向改善；q/v为
+    `.580886/.685664`与`.518110/.638505`。但action仅`.079285/.309455`，说明“二维共享span”对主要q/v写出
+    成立、对低能量action写出仍弱；该分族风险必须由full24与closed-loop判断，不能靠再加轴或单独action scale救。
+55. CCT没有以忽略视频换取coherence：natural→reversed修正cosine=`.014842`、relative-L2=`1.15358`；逐video
+    常量首帧使factor memory/transport coefficient norm降到natural的`2.42e-5/2.74e-5`。同时q/v/action
+    native BA与fixed-action均非零，wall=`.9870x` GOSC。因此机制门只授权fresh full24 cycle1，不支持提前声称
+    absolute、稳定性、same-task-other鲁棒或correct优于negative。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

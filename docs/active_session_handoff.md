@@ -13,10 +13,13 @@
   `143/135/125/128/129`；
 - 当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
   `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。canonical实现与完整CPU
-  `397 passed`已完成但尚未运行GPU；唯一变量是让
+  `397 passed`及task4真实GPU机制/profile均通过；唯一变量是让
   video-derived factor memory只提供320 slots各两个causal coefficients，由exact language与冻结V6 W1/GELU
   提供同task共享的policy-aligned directions，从结构上阻止不同正确视频任意旋转高维LoRA correction；active
-  trainable=`67,072`，旧GOSC runtime schema已退役；
+  trainable=`67,072`，旧GOSC runtime schema已退役。four-view CCT-only BA cosine/energy=
+  `.563803/.672852`，natural→reversed修正cosine=`.014842`，静态首帧transport coefficient norm仅natural的
+  `2.74e-5`；q/v/action与action响应均非零，cycle为GOSC`.9870x`。aggregate门已过，只授权fresh full24
+  cycle1；action family的`.079285/.309455`偏低必须在formal中追踪；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
@@ -797,3 +800,22 @@ strict与终局分析root：
 本架构按correct、lost、net与suite四项失败终局，不resume cycle2、不做六臂或小扫。当前没有active GPU run或
 可resume checkpoint。后继CCT authority已经建立：保留LPCP carrier与single-LoRA信息墙，把video memory从
 高维Value direction改为language/policy-aligned causal coefficients；其实现与结果必须fresh，不能写回本段历史。
+
+## Causal Coefficient Transport live mechanism evidence
+
+task4 post-update smoke root：
+
+`runs/outputs/pi05_v6_lpcp_causal_coefficient_transport_task4_mechanism_state_b8_3b55feb_gpu02p1_20260815`
+
+- clean pushed `3b55feb`、gpu02物理1、B8，四个互斥K4 conditions共16条视频和64次CFM forward/backward；
+- candidate/reference successes=`2/1`，semantic query delta=`1.460305e-4`，q/v/action effective-BA=
+  `4.45616e-7/8.76854e-7/2.01053e-8`，fixed-action=`.00267335`；
+- cycle=`130.7366s`=`.9870x` GOSC，peak reserved=`40,751,857,664` bytes，无禁读、OOM、nonfinite；
+- 稳定FP64 four-view CCT-only effective-BA aggregate cosine/energy=`.563803/.672852`；q=
+  `.580886/.685664`、v=`.518110/.638505`，均越过formal门；action=`.079285/.309455`未过同门但只占很小
+  correction能量，记录为formal风险而不改写预注册aggregate gate；
+- natural→reversed CCT修正cosine=`.014842`、relative-L2=`1.15358`；逐video常量首帧使factor memory与
+  transported coefficient norm分别降到natural的`2.42e-5/2.74e-5`。当前结构读取了有向过程，静态输入不能
+  伪造同一新增响应；
+- `mechanism_analysis.json`与`natural_constant_analysis.json`保留上述完整分族证据。该门只授权从LPCP
+  macro25 fresh训练full24 cycle1；当前没有CCT formal checkpoint、strict400或可resume状态。

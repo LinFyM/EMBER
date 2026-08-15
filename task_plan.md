@@ -342,9 +342,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   W1/GELU提供共享policy directions；
 - [x] 原位替换canonical commitment，建立fresh-incompatible config/checkpoint；聚焦68项及完整CPU
   `397 passed`；
-- [ ] 完成task4 four-view真实机制/吞吐门：step0 identity、首步gradient、q/v/action、顺序响应及跨video
-  correction cosine/energy；
-- [ ] 机制门通过后live选择GPU，fresh full24 cycle1并做K4 strict paired correct400；
+- [x] 完成task4 four-view真实机制/吞吐门：q/v/action和fixed-action非零；aggregate CCT-only BA
+  cosine/energy=`.563803/.672852`，倒序cosine=`.014842`，静态首帧coefficient norm=`2.74e-5x`，wall=
+  `.9870x` GOSC；action family `.079285/.309455`记录为formal风险；
+- [ ] live选择GPU，从sealed LPCP fresh full24 cycle1并做K4 strict paired correct400；
 - [ ] 只有cycle1 absolute/retention/共同方向门通过才exact-resume cycle2，完成相邻checkpoint稳定性裁决；
 - [ ] 只有稳定约145资格通过才做same/wrong/shuffled/reversed/no-video六臂并封存完整因果分析。
 
@@ -364,7 +365,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与
 Gradient-Open均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run或可resume checkpoint；
-active CCT的canonical实现与CPU合同已完成。下一步按其机制门先检验跨video共同方向、顺序响应、
-q/v/action写出和吞吐；约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对wrong/shuffled/
+active CCT的canonical实现、CPU合同与task4 GPU机制门均完成，下一步只从LPCP fresh启动full24 cycle1并立即做
+strict400；约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对wrong/shuffled/
 reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后
 的独立实验。

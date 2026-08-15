@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_causal_coefficient_transport_v1",
-  "status": "active_mechanism_pending",
+  "status": "active_formal_cycle1_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "unsealed_pending_live_profile",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -116,6 +116,43 @@
       "natural_reversed_coefficients_and_lora_materially_different": true,
       "no_repeated_backbone_forward": true,
       "matched_gradient_open_wall_ratio_maximum": 1.1
+    },
+    "profile_evidence": {
+      "git_commit": "3b55feb82909941c24a07d627f7f50f7c0cd3a87",
+      "host": "gpu02",
+      "physical_gpu": 1,
+      "world_size": 1,
+      "task_global_id": 4,
+      "credit_conditions": 4,
+      "unique_credit_videos": 16,
+      "cycle_seconds": 130.73655127291568,
+      "matched_gradient_open_wall_ratio": 0.9870038145896486,
+      "max_cuda_reserved_bytes": 40751857664,
+      "semantic_query_delta_rms": 0.00014603050658479333,
+      "effective_ba_response_rms_by_kind": {
+        "q": 4.456160632519401e-07,
+        "v": 8.768537365675519e-07,
+        "action": 2.010532270902989e-08
+      },
+      "fixed_action_response_rms": 0.0026733495760709047,
+      "cross_video_cct_effective_ba": {
+        "all_pairwise_cosine_mean": 0.5638034745756194,
+        "all_mean_energy_over_sample_energy": 0.6728520090262526,
+        "q_pairwise_cosine_mean": 0.5808858062753989,
+        "q_mean_energy_over_sample_energy": 0.6856640734618941,
+        "v_pairwise_cosine_mean": 0.5181100503690692,
+        "v_mean_energy_over_sample_energy": 0.6385051080496255,
+        "action_pairwise_cosine_mean": 0.07928474483909262,
+        "action_mean_energy_over_sample_energy": 0.3094551962590621
+      },
+      "natural_to_reversed_cct_effective_ba": {
+        "cosine": 0.014841864304680378,
+        "relative_l2": 1.1535763500116853,
+        "right_over_left_l2": 0.5901319443880425
+      },
+      "natural_to_constant_transport_coefficient_norm_ratio": 2.737097689670194e-05,
+      "mechanism_gate_pass": true,
+      "risk": "action-family cross-video coherence remains below the aggregate gate and must be tracked in full24"
     }
   }
 }

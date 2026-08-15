@@ -23,8 +23,12 @@ Jacobian仍写成近正交policy directions**。下一变量必须直接形成�
 video `factor_memory`从hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；同task
 exact language经冻结V6 W1/GELU定义共享的family-specific output axes。它保持step0 exact LPCP、四view
 selected-success和完整rank16 compiler，不加入coherence loss、memory token、rank变化或第二数据源。canonical
-实现已原位替换旧commitment，trainable=`67,072`且完整CPU=`397 passed`；尚未启动GPU。先过跨video span、
-顺序、q/v/action response与吞吐机制门，再决定是否fresh full24。
+实现已原位替换旧commitment，trainable=`67,072`且完整CPU=`397 passed`。task4真实GPU门中four-view
+CCT-only effective-BA aggregate cosine/energy=`.563803/.672852`，natural→reversed cosine=`.014842`，静态
+首帧使transported coefficient norm降到natural的`2.74e-5`；q/v/action和fixed-action response均非零，wall为
+GOSC`.9870x`。aggregate机制门已过，formal config只授权fresh full24 cycle1；action family单独只有
+`.079285/.309455`，必须作为风险跟踪。cycle1后立即做K4 strict paired400，按`140/breadth7/lost15`与共同方向门
+裁决是否exact-resume cycle2。
 
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=

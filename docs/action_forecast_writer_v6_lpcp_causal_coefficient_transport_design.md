@@ -1,6 +1,7 @@
 # V6-LPCP Causal Coefficient Transport
 
-状态：2026-08-15 canonical实现与CPU合同完成，等待真实GPU机制/profile；尚无closed-loop结果。前一轮
+状态：2026-08-15 canonical实现、CPU合同与真实GPU机制/profile均通过，已封fresh full24 cycle1；尚无formal
+closed-loop结果。前一轮
 Gradient-Open已经按门终局，不得resume或用本设计解释其`141/400`。本轮从sealed LPCP checkpoint fresh建立
 不兼容commitment，只改变**video-conditioned factor memory怎样成为policy hidden residual**。
 
@@ -146,7 +147,19 @@ reconstruction、negative-margin、B20 blind functional或task ID loss。
 canonical实现已原位替换旧GOSC commitment：没有保留并行class或runtime schema；trainable从`2,164,224`
 降为`67,072`，旧GOSC config只作历史artifact且active loader拒绝。聚焦68项与设置真实LIBERO assets后的完整
 CPU suite=`397 passed`；step0 identity、参数边界、video-zero、set invariance、二维shared span、checkpoint
-fresh incompatibility和reward/evaluator合同均通过。它们只授权真实GPU机制门。
+fresh incompatibility和reward/evaluator合同均通过。
+
+clean pushed `3b55feb`在gpu02物理1完成task4 B8真实机制门。四个互斥K4条件共16条正确视频、64次CFM
+forward/backward；candidate/reference为`2/1` successes，semantic query delta=`1.4603e-4`，q/v/action native
+effective-BA response=`4.4562e-7/8.7685e-7/2.0105e-8`，fixed-action=`.00267335`。cycle=`130.737s`，为
+matched GOSC的`.9870x`，peak reserved=`40,751,857,664` bytes，无禁读、OOM或nonfinite。
+
+同一post-update state的稳定FP64低秩分析给出CCT-only effective-BA four-view aggregate cosine=`.563803`、
+mean/sample energy=`.672852`，显著超过`.15/.40`并离开GOSC的`.000144/.250124`。q与v分别为
+`.580886/.685664`和`.518110/.638505`；action仅`.079285/.309455`，虽因能量很小没有阻断aggregate门，仍是
+formal必须追踪的预注册风险。natural→reversed使CCT修正cosine=`.014842`、relative-L2=`1.15358`；把每条视频
+全部帧替换为首帧时，factor memory与transported coefficient norm降到natural的`2.42e-5/2.74e-5`，不能伪造
+相同有向过程。机制门因此只授权fresh full24 cycle1，不预告closed-loop收益。
 
 ## 8. cycle1、稳定性与视频因果裁决
 

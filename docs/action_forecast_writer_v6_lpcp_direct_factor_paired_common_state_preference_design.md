@@ -1,8 +1,8 @@
 # V6-LPCP Direct-Factor Paired Common-State Preference
 
-状态：2026-08-16 active mechanism-ready authority。简称 `DF-PCSP`。本轮从sealed LPCP fresh启动，完整保留
-DJNFR的视频carrier与direct native-factor生成图，只替换reward credit；canonical实现、严格初态恢复修正与CPU门
-已通过，但尚未授权full24、strict或cycle2。
+状态：2026-08-16 terminal mechanism non-pass authority。简称 `DF-PCSP`。本轮从sealed LPCP fresh启动，完整保留
+DJNFR的视频carrier与direct native-factor生成图，只替换reward credit；exact paired-state工程合同已修正并获得真实
+reward/gradient证据，但跨train anchor不稳定，未授权full24、strict或cycle2。
 
 ## 1. 决策与最早失效接口
 
@@ -166,3 +166,32 @@ same-task-other/wrong/shuffled/reversed/no-video。
 负结果只淘汰“LPCP/DJNFR生成图 + paired AS139/LPCP最终success标签 + 分叉前共同初态首段flow preference +
 four-view one-cycle shared update”组合；不否定memory token、rank8、few-shot、生成LoRA、其它reward credit或未来
 生成LoRA后的task-local RL。
+
+## 11. 终局机制结果
+
+exact pairing修正后，预注册task4与随后task7都成为tie，说明旧hard-reset合同中的部分discordance来自初态混杂，
+不能当作causal reward。按固定task顺序筛到的三个真实discordant anchors均能使preference margin下降，八个heads、
+q/v/action BA与fixed-action response也全部非零：
+
+| train anchor | candidate/reference | pairs | margin delta | train cosine/energy | held cosine/energy | held/train L2 | 结论 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| task9 | 2/1 | 1 | `-2.679e-4` | `.840/.844` | `.778/.782` | `.105x` | held幅度门失败 |
+| task15 | 2/0 | 2 | `-1.262e-4` | `.658/.682` | `.765/.774` | `.404x` | 全门通过 |
+| task18 | 1/2 | 1 | `-1.880e-4` | `.290/.428` | `.712/.721` | `.787x` | train跨video门失败 |
+
+因此不能挑唯一通过的task15冒充shared方法通过：三个有效anchors只有1/3满足完整门，task9把更新局部放大在train
+condition，task18则让同task不同正确视频写出不一致。任务依赖性发生在真实preference descent之后、full24之前。
+
+更深的原因是final sparse success只告诉我们整条闭环哪一臂最终成功，并不能证明两臂分叉前**第一段**约`6.6e-4--
+7.4e-4` RMS的动作差异导致了数百步后的胜负。DF-PCSP虽然消除了首状态混杂，却仍把长时结果全部归因给第一个
+prefix，credit assignment依然不可识别。最早失败接口是：
+
+```text
+exact paired final success
+ -> winner/loser first shared prefix preference
+ -> task-dependent direct-head update
+ -> inconsistent same-task-video or held magnitude commitment
+```
+
+按预注册停止规则，本轮终局，不做full24、strict、cycle2、阈值放宽或参数小扫。精确raw evidence分别保存在
+task9/15/18 smoke roots及task9 root的`dfpcsp_terminal_adjudication.json`。

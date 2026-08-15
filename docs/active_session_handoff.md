@@ -45,7 +45,7 @@
   action cosine=`.042986`、held/train BA L2=`.452509x`，未启动full24/strict。stage localization显示gate/continuous
   hidden cosine约`.94`，但冻结W2后的raw factor cosine/energy=`.021353/.265925`、action factor cosine=`.002672`；
   最早断点是coherent hidden到native public A/B；
-- 当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+- 最新终局successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
   `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，
   完整保留DJNFR输入、时序、K-set、rank16与八个direct factor heads；唯一把selected-success整轨迹正蒸馏改为
   paired AS139/LPCP两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。四个disjoint correct K4
@@ -53,8 +53,10 @@
   task4 smoke在credit前发现相同seed的顺序reset不能保证两臂首观测逐元素相同，按工程合同exit1且没有科学结果；
   `07b764b`虽恢复相同flattened state，hard reset仍令两相机分别21,423/27,429个像素值不同，而language/state tokens
   完全相同。canonical现每lane只做一次hard reset+settling；每臂在同一model上deterministic soft reset以清空
-  controller/observables，再恢复相同qpos/qvel，不增加rollout或forward。修正后针对性CPU=`26 passed`、完整CPU=
-  `399 passed`、compileall与architecture hard gate通过；尚无GPU机制结果、active GPU run或可resume checkpoint；
+  controller/observables，再恢复相同qpos/qvel，不增加rollout或forward。exact task4/task7均为tie；task9/15/18产生
+  1/2/1个discordant pairs且preference margin均下降，八head及q/v/action链均非零。但task9 held/train BA幅度仅
+  `.105x`，task18 train跨video cosine/energy仅`.290/.428`；三个有效anchors只有task15全门通过。不能挑单一通过
+  task冒充shared方法，故终局不启动full24/strict/cycle2。当前没有active successor、GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

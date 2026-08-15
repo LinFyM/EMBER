@@ -417,7 +417,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] strict=`136/400`、breadth7，相对LPCP=`120 retained / 16 gained / 23 lost`，按门终局；
 - [x] post-train held8 BA=`.79024/.78583`且8/8过门；生成端已通，最早失败接口后移到reward-useful direction。
 
-## Active iteration: V6-LPCP Direct-Factor Paired Common-State Preference
+## Completed iteration: V6-LPCP Direct-Factor Paired Common-State Preference
 
 - [x] 写DF-PCSP authority：完整保留DJNFR输入、carrier、K-set、rank16与direct heads，只改变reward credit；
 - [x] 原位把selected-success整轨迹正蒸馏替换为discordant pair同一初态winner-vs-loser首段flow preference；
@@ -425,9 +425,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   flattened-state后再次hard reset都不能保持exact图像；现每lane只hard reset一次，每臂deterministic soft reset
   controller/observables后恢复同一qpos/qvel。修正后定向CPU=`26 passed`、完整CPU=`399 passed`、compileall与
   architecture hard gate通过；
-- [ ] 双节点live GPU选择后运行task4 B8真实机制门，验证共同观测、margin descent、八head/q-v-action、held8、
-  reverse/static和wall；
-- [ ] 机制全过才冻结formal authority并启动full24 cycle1；随后立即strict400和逐task/接口分析。
+- [x] exact task4/task7均为tie；task9/15/18分别产生1/2/1个discordant pairs，三者margin均下降且八head、
+  q/v/action、reverse/static、wall均健康；
+- [x] 完成三个有效anchor的train→held机制分析：task9 held/train仅`.105x`，task18 train跨video仅
+  `.290/.428`，只有task15全门通过；按shared-method门终局，不full24、strict或cycle2；
+- [ ] 下一单变量设计须把final success credit放到成功occupancy上的多个exact shared query states，不能继续把
+  数百步后的胜负全部归因给第一prefix。
 
 ## Non-negotiable boundaries
 
@@ -444,8 +447,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate与DJNFR均已按门终局；它们都不得resume或参数小扫。当前active
-DF-PCSP已完成canonical实现与CPU门，尚无active GPU run或可resume checkpoint。下一步做task4真实机制门。
+Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR与DF-PCSP均已按门终局；它们都不得resume或参数小扫。
+当前没有active successor、GPU run或可resume checkpoint。下一步针对DF-PCSP的第一prefix长期credit错配建立
+新的单变量authority。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

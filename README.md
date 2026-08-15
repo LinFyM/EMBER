@@ -54,11 +54,12 @@ BF16 public factors后却降至raw factor `.0214/.2659`、effective BA `.2019/.3
 没有strict结果。
 
 DJNFR已证明ordered video-language Value可以稳定直接写成native LoRA，post-full24 held8 BA仍为
-`.790242/.785834`且8/8过门；但strict只有136，相对LPCP lost23，故终局。当前active successor是
+`.790242/.785834`且8/8过门；但strict只有136，相对LPCP lost23，故终局。最新终局successor是
 [`V6-LPCP Direct-Factor Paired Common-State Preference`](docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md)：
 完整保留DJNFR carrier、K4集合聚合、rank16与八个direct factor heads，只把selected-success整轨迹正蒸馏改为
-candidate/reference两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。它不同时更改memory、rank、
-scale或rollout；下一裁决是task4真实机制门。实时run identity和下一裁决只取
+candidate/reference两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。exact pairing后task9/15/18
+均有真实margin descent，但三个anchors只有task15全门通过，故没有full24/strict。当前无active successor；实时
+run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

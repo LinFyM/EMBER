@@ -160,16 +160,18 @@ full24/strict。stage localization显示gate/continuous hidden cosine均约`.94`
 16 gained / 23 lost`，churn39、net`-7`。gained/lost/retained-failure BA改写依次=`4.522e-5/7.248e-5/
 8.987e-5`，说明生成端已通但selected-success credit不选择held reward-useful方向；不续cycle2或controls。
 
-当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+最新终局successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，完整
 保留DJNFR carrier、K4、rank16和八个direct factor heads，唯一把成功整轨迹正蒸馏改为candidate/reference discordant
 pair在分叉前同一初始观测处的winner-vs-loser首段flow preference；四个disjoint correct K4 views等权。首次clean
 `de6c812` task4 smoke在credit前证明相同seed顺序reset不能保证首观测逐元素一致；`07b764b`进一步证明flattened state
 恢复后，hard reset仍改变未被state覆盖的model pose：差异只在两相机，language/state tokens完全相同。两次均为
 工程exit1且无科学结果。canonical现每lane只做一次hard reset+settling，每臂以deterministic soft reset清空
-controller/observables后恢复相同qpos/qvel，不增加rollout/forward。修正后针对性CPU=`26 passed`、完整CPU=
-`399 passed`与architecture guard通过；尚未完成GPU机制门，无active GPU run或可resume checkpoint。memory token
-与rank8仍开放，但不与本轮reward变量同时改变。
+controller/observables后恢复相同qpos/qvel，不增加rollout/forward。exact task4/task7均为tie；task9/15/18分别有
+1/2/1个discordant pairs且margin均下降、八head/q-v-action均非零，但task9 held/train BA仅`.105x`，task18 train
+跨video仅`.290/.428`，三个有效anchors只有task15全门通过。按门终局，不full24/strict/cycle2；当前无active
+successor、GPU run或可resume checkpoint。最早失败接口是final success只归因给第一shared prefix后形成
+task-dependent update。memory token与rank8仍开放。
 
 ## 4. Long-term objective and decision rule
 

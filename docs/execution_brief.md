@@ -31,18 +31,19 @@ cosine=`.042986`，同样没有full24/strict。关键新证据是stage localizat
 约`.94`，冻结W2后的raw factor delta却只有`.021353/.265925`，action factor cosine=`.002672`。因此最早断点已
 锁定为**coherent video-language hidden -> frozen W2 -> native public A/B**，不是carrier、时序或joint input。
 
-当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+最新终局successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh并
 完整保留DJNFR生成图，唯一把成功整轨迹正蒸馏改为candidate/reference discordant pair在分叉前同一初始观测处的
 winner-vs-loser首段flow preference。两臂共享flow time/noise，只比较共同执行长度；四个disjoint correct K4
-views等权。它与历史OPPP的不同是状态严格配对且不比较分叉后的occupancy。下一裁决先是task4真实机制门；只有
-common-state、preference descent、q/v/action、held跨视频和效率同时过门才授权full24。memory token、rank8与
-dynamic K仍开放，但不与本轮reward变量同时改变。首次clean `de6c812` task4 smoke在credit前确认重复相同seed/reset
+views等权。它与历史OPPP的不同是状态严格配对且不比较分叉后的occupancy。memory token、rank8与dynamic K仍
+开放，但本轮没有同时改变。首次clean `de6c812` task4 smoke在credit前确认重复相同seed/reset
 不能保证两臂首观测逐元素相同；`07b764b`又确认flattened state恢复后，hard reset仍改变未被state覆盖的model pose，
 差异只出现在两相机，language/state tokens完全相同。两次都只是工程失败、没有科学结果。canonical现每lane只做
 一次hard reset+settling，每臂以deterministic soft reset清空controller/observables后恢复相同qpos/qvel；不增加
-rollout或forward。修正后针对性CPU=`26 passed`、完整CPU=`399 passed`、compileall及architecture hard gate通过，
-下一步从新clean commit重跑task4。
+rollout或forward。exact task4/task7均变为tie；task9/15/18分别有1/2/1个discordant pairs，margin均真实下降且
+八head/q-v-action全通，但task9 held/train BA幅度仅`.105x`，task18 train跨video仅`.290/.428`，三个有效anchors
+只有task15全门通过。按门终局，不full24、strict或cycle2。当前没有active successor；下一步必须针对“final
+success被错误归因给第一prefix而形成task-dependent update”建立新的单变量authority。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

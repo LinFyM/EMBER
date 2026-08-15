@@ -29,7 +29,9 @@ validation8 BA仍为`.790242/.785834`且8/8过门，但strict仅136，相对LPCP
 确认同seed顺序reset并不保证两臂首观测逐元素相同；`07b764b`又确认flattened state后再次hard reset仍令两相机
 分别21,423/27,429个像素值不同，而language/state tokens完全相同。两次均在credit前工程终止。canonical现每lane
 只hard reset一次，每臂deterministic soft reset controller/observables后恢复同一qpos/qvel；不增加rollout或
-forward，真实GPU机制门仍待重跑。
+forward。最终exact task4/task7均为tie；task9/15/18均产生真实discordant credit与margin descent，但task9
+held/train BA仅`.105x`、task18 train跨video仅`.290/.428`，三个anchors只有task15全门通过。DF-PCSP因此在
+full24前终局，当前无active successor。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

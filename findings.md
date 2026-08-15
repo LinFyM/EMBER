@@ -581,7 +581,13 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     差分证明language/state tokens完全相同，而base/wrist图像分别21,423/27,429个像素值不同，根因是hard reset改变
     未包含在flattened state中的fixture/model pose。canonical现每lane只hard reset一次，每臂用deterministic soft
     reset清空controller/observables后恢复同一qpos/qvel；不增加rollout/forward。修正后针对性CPU=`26 passed`、
-    完整CPU=`399 passed`、architecture guard无hard violation。它尚未给出GPU或closed-loop证据。
+    完整CPU=`399 passed`、architecture guard无hard violation。
+82. exact task4/task7最终均为tie；task9/15/18分别产生1/2/1个真实discordant pairs，三者preference margin均
+    下降且八head、q/v/action、reverse/static链全部接通。task9 train/held跨video均强，但held/train BA L2仅
+    `.105x`；task15全部门通过；task18 held健康但train同task四view仅`.290/.428`。三个有效anchors只有1/3全过，
+    不能挑task15冒充shared方法。因此DF-PCSP在full24前终局。exact state只消除了初态混杂，却没有使“数百步后
+    final success全部归因给第一prefix”变得可识别；最早失败接口是long-horizon outcome到第一shared action的
+    task-dependent credit assignment，而不是carrier、direct LoRA写出或margin optimization。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -375,9 +375,11 @@ DJNFR随后在clean`e756fa1`真实机制门中强通过：task4 BA=`.813895/.794
 且8/8过门，证明绕过W2真正修复了SJNV最早断点；但strict仅136，相对LPCP lost23，持续失败样本反而获得最大
 BA改写。最早失败接口因此后移到selected-success-only credit如何形成held reward-useful shared direction。
 
-当前DF-PCSP据此完整保留DJNFR生成图，只把reward改为candidate/reference discordant pair在两臂分叉前同一初始
+DF-PCSP据此完整保留DJNFR生成图，只把reward改为candidate/reference discordant pair在两臂分叉前同一初始
 观测处的winner-vs-loser首段flow preference；不比较后来不同occupancy，不同时改memory、rank、scale或rollout。
-精确authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。
+exact state修正后虽有真实margin descent，三个有效train anchors却只有一个通过完整跨video/held门，故在full24前
+终局。最早失败接口是final long-horizon success被全部归因给第一shared prefix后形成task-dependent update。精确
+authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。
 
 后续迭代遵循以下边界：
 

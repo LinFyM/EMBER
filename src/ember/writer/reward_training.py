@@ -1,4 +1,4 @@
-"""Train semantic factor-memory commitment with cross-video success credit."""
+"""Train causal coefficient transport with cross-video success credit."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from typing import Any, Mapping
 
 import torch
 import torch.distributed as dist
-from safetensors.torch import load_file
+from safetensors.torch import load_file, save_file
 
 from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import (
@@ -479,6 +479,16 @@ def train(args: argparse.Namespace) -> None:
                     optimizer=runtime.optimizer,
                     contract=runtime.contract,
                     metrics_rows=cycle,
+                )
+            elif context.is_main:
+                save_file(
+                    {
+                        name: value.detach().cpu().contiguous()
+                        for name, value in (
+                            runtime.writer.factor_commitment.state_dict().items()
+                        )
+                    },
+                    str(args.output_dir / "factor_commitment.safetensors"),
                 )
         if context.is_main:
             write_json_atomic(

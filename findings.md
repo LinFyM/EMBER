@@ -456,7 +456,8 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 53. active CCT不再用共享router去gate 256维video-local Value，而把每个320 policy/rank slot的video memory
     投影成两个causal coefficients；同task exact language经冻结V6 W1/GELU定义共享family directions。它在
     step0 exact LPCP且没有新增language-only Value，同时保留dynamic K、有序Procedure和selected-success。
-    这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫；尚无实现或性能证据。
+    这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫。canonical实现已把trainable
+    从`2,164,224`降为`67,072`，完整CPU=`397 passed`；尚无GPU机制或性能证据。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

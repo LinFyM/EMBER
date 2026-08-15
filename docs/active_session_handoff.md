@@ -12,9 +12,11 @@
   correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的历史最好=
   `143/135/125/128/129`；
 - 当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
-  `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。它尚未实现或运行；唯一变量是让
+  `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。canonical实现与完整CPU
+  `397 passed`已完成但尚未运行GPU；唯一变量是让
   video-derived factor memory只提供320 slots各两个causal coefficients，由exact language与冻结V6 W1/GELU
-  提供同task共享的policy-aligned directions，从结构上阻止不同正确视频任意旋转高维LoRA correction；
+  提供同task共享的policy-aligned directions，从结构上阻止不同正确视频任意旋转高维LoRA correction；active
+  trainable=`67,072`，旧GOSC runtime schema已退役；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

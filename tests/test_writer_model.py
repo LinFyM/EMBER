@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.factor_memory.count_nonzero()
 
 
-def test_gradient_open_zero_init_is_exact_lpcp_and_has_expected_parameter_count() -> None:
+def test_causal_coefficient_transport_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -309,16 +309,12 @@ def test_gradient_open_zero_init_is_exact_lpcp_and_has_expected_parameter_count(
     assert sum(
         parameter.numel()
         for parameter in model.factor_commitment.parameters()
-    ) == 2_164_224
+    ) == 67_072
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
-    assert all(
-        not value.count_nonzero()
-        for value in model.factor_commitment.family_maps.values()
-    )
     assert not model.factor_commitment.semantic_query.weight.count_nonzero()
 
 
-def test_gradient_open_memory_and_language_address_are_k_set_invariant() -> None:
+def test_causal_coefficient_memory_and_language_are_k_set_invariant() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -344,7 +340,7 @@ def test_gradient_open_memory_and_language_address_are_k_set_invariant() -> None
     )
 
 
-def test_gradient_open_commitment_updates_maps_and_semantic_query_together() -> None:
+def test_causal_coefficient_transport_opens_query_and_requires_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -356,17 +352,39 @@ def test_gradient_open_commitment_updates_maps_and_semantic_query_together() -> 
         anchor_input_weights=model._factor_anchor_input_weights(),
     )
     sum(value.sum() for value in residuals.values()).backward()
-    assert all(
-        value.grad is not None and value.grad.count_nonzero()
-        for value in commitment.family_maps.values()
-    )
     assert commitment.semantic_query.weight.grad is not None
     assert commitment.semantic_query.weight.grad.count_nonzero()
     assert commitment.basis_keys.grad is not None
     assert not commitment.basis_keys.grad.count_nonzero()
 
+    with torch.no_grad():
+        zero_residuals, _ = commitment(
+            torch.zeros_like(memory),
+            language,
+            anchor_input_weights=model._factor_anchor_input_weights(),
+        )
+    assert all(not value.count_nonzero() for value in zero_residuals.values())
 
-def test_gradient_open_lpcp_loader_rejects_partial_new_topology() -> None:
+
+def test_causal_coefficient_transport_has_two_shared_axes_per_family() -> None:
+    model, _ = _model()
+    commitment = model.factor_commitment
+    generator = torch.Generator(device="cpu").manual_seed(47)
+    memory = torch.randn(5, 3, 256, generator=generator)
+    language = torch.randn(1, 3, 256, generator=generator).expand(5, -1, -1)
+    with torch.no_grad():
+        commitment.semantic_query.weight.normal_(std=0.01, generator=generator)
+        residuals, _ = commitment(
+            memory,
+            language,
+            anchor_input_weights=model._factor_anchor_input_weights(),
+        )
+    for value in residuals.values():
+        for slot in range(value.shape[1]):
+            assert torch.linalg.matrix_rank(value[:, slot].float(), tol=1e-5) <= 2
+
+
+def test_causal_coefficient_lpcp_loader_rejects_partial_new_topology() -> None:
     source, _ = _model()
     old = {
         name: value
@@ -389,7 +407,7 @@ def test_gradient_open_lpcp_loader_rejects_partial_new_topology() -> None:
         except RuntimeError:
             pass
         else:
-            raise AssertionError("partial gradient-open topology was accepted")
+            raise AssertionError("partial causal-coefficient topology was accepted")
     with torch.no_grad():
         try:
             loaded.load_lpcp_state_(source.state_dict())

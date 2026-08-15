@@ -340,7 +340,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成历史去重与design authority：保留LPCP、dynamic K、有序Procedure、four-view selected-success、
   V6 compiler和rank16，只把video memory改为320 slots各两个causal coefficients；exact language经冻结V6
   W1/GELU提供共享policy directions；
-- [ ] 原位替换canonical commitment，建立fresh-incompatible config/checkpoint与聚焦CPU合同；
+- [x] 原位替换canonical commitment，建立fresh-incompatible config/checkpoint；聚焦68项及完整CPU
+  `397 passed`；
 - [ ] 完成task4 four-view真实机制/吞吐门：step0 identity、首步gradient、q/v/action、顺序响应及跨video
   correction cosine/energy；
 - [ ] 机制门通过后live选择GPU，fresh full24 cycle1并做K4 strict paired correct400；
@@ -363,7 +364,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与
 Gradient-Open均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run或可resume checkpoint；
-active CCT已有design authority但尚未实现。下一步按其机制门原位实现并先检验跨video共同方向、顺序响应、
+active CCT的canonical实现与CPU合同已完成。下一步按其机制门先检验跨video共同方向、顺序响应、
 q/v/action写出和吞吐；约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对wrong/shuffled/
 reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后
 的独立实验。

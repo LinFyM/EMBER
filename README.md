@@ -45,7 +45,8 @@ Object/Goal/Spatial能力换到Long1，而非共同积累。correct、retention�
 [`V6-LPCP Causal Coefficient Transport`](docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md)：
 保留LPCP强底座、动态K、有序视频与完整V6 LoRA compiler，只把视频Program从“任意256维输出方向”改成每个
 policy/rank slot的两个有向系数；exact language提供同task共享、policy-aligned的输出轴。它直接限制同task换视频
-时的LoRA方向旋转，同时没有新增language-only Value。目前只有design authority，尚无实现或结果。
+时的LoRA方向旋转，同时没有新增language-only Value。canonical实现与完整CPU`397 passed`已完成，尚无GPU
+机制或closed-loop结果。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

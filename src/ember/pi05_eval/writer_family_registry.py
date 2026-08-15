@@ -445,7 +445,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_gradient_open_semantic_commitment_v1": {
+    "v6_lpcp_causal_coefficient_transport_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
             "eval_adapter_v1"
@@ -457,9 +457,9 @@ WRITER_FAMILIES = {
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
-        "arm_prefix": "v6_lpcp_gradient_open_semantic_commitment_",
+        "arm_prefix": "v6_lpcp_causal_coefficient_transport_",
         "trained_checkpoint_kind": (
-            "v6_lpcp_gradient_open_semantic_commitment_cycle_checkpoint"
+            "v6_lpcp_causal_coefficient_transport_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 16,
@@ -468,11 +468,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the gradient-open semantic commitment graph"
+            "the causal coefficient transport graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the gradient-open semantic commitment graph"
+            "through the causal coefficient transport graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

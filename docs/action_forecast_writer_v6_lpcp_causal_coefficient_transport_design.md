@@ -1,6 +1,6 @@
 # V6-LPCP Causal Coefficient Transport
 
-状态：2026-08-15 active design authority；尚未实现、profile或产生closed-loop结果。前一轮
+状态：2026-08-15 canonical实现与CPU合同完成，等待真实GPU机制/profile；尚无closed-loop结果。前一轮
 Gradient-Open已经按门终局，不得resume或用本设计解释其`141/400`。本轮从sealed LPCP checkpoint fresh建立
 不兼容commitment，只改变**video-conditioned factor memory怎样成为policy hidden residual**。
 
@@ -142,6 +142,11 @@ reconstruction、negative-margin、B20 blind functional或task ID loss。
 5. longest-video真实吞吐不慢于GOSC`1.10x`，无OOM/nonfinite，动态队列按wall而非task数量判断均衡。
 
 第3项只授权formal，不选择方法；若结构连共同低维方向都没有形成，就不烧full24。
+
+canonical实现已原位替换旧GOSC commitment：没有保留并行class或runtime schema；trainable从`2,164,224`
+降为`67,072`，旧GOSC config只作历史artifact且active loader拒绝。聚焦68项与设置真实LIBERO assets后的完整
+CPU suite=`397 passed`；step0 identity、参数边界、video-zero、set invariance、二维shared span、checkpoint
+fresh incompatibility和reward/evaluator合同均通过。它们只授权真实GPU机制门。
 
 ## 8. cycle1、稳定性与视频因果裁决
 

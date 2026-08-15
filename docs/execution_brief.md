@@ -22,8 +22,9 @@ Jacobian仍写成近正交policy directions**。下一变量必须直接形成�
 `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。唯一主变量是把K-set后的256维
 video `factor_memory`从hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；同task
 exact language经冻结V6 W1/GELU定义共享的family-specific output axes。它保持step0 exact LPCP、四view
-selected-success和完整rank16 compiler，不加入coherence loss、memory token、rank变化或第二数据源。当前尚未
-实现或启动GPU；先过跨video span、顺序、q/v/action response与吞吐机制门，再决定是否fresh full24。
+selected-success和完整rank16 compiler，不加入coherence loss、memory token、rank变化或第二数据源。canonical
+实现已原位替换旧commitment，trainable=`67,072`且完整CPU=`397 passed`；尚未启动GPU。先过跨video span、
+顺序、q/v/action response与吞吐机制门，再决定是否fresh full24。
 
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=

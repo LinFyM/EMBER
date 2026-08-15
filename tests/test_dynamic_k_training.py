@@ -101,30 +101,25 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_gradient_open_reward_config_freezes_only_commitment() -> None:
+def test_causal_coefficient_reward_config_freezes_only_transport() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "sealed"
-    assert config["formal_run"]["status"] == "sealed"
-    evidence = config["formal_run"]["live_task4_smoke_evidence"]
-    assert evidence["factor_family_maps_updated"] == 8
-    assert evidence["semantic_query_delta_rms"] > 1e-4
-    assert all(
-        evidence["effective_ba_response_rms_by_kind"][kind] > 0
-        for kind in ("q", "v", "action")
-    )
+    assert config["status"] == "active_mechanism_pending"
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "gradient_open_semantic_commitment_only_2164224_parameters"
+        "causal_coefficient_transport_only_67072_parameters"
     )
     assert config["formal_run"]["stable_qualification"] == {
-        "cycle1_and_cycle2_correct_minimum": 144,
+        "cycle1_and_cycle2_correct_minimum": 142,
         "two_cycle_correct_mean_minimum": 145,
         "breadth_minimum": 7,
         "adjacent_checkpoint_churn_maximum": 20,
         "adjacent_success_set_jaccard_minimum": 0.85,
-        "same_task_other_video_relative_minimum": 0.9,
-        "correct_control_margin_minimum": 8,
+        "final_lpcp_losses_maximum": 10,
+        "final_lpcp_gains_at_least_losses": True,
+        "same_task_other_video_maximum_drop": 8,
+        "correct_each_negative_margin_minimum": 10,
     }
     assert base["writer"]["policy_slot_count"] == 320
 

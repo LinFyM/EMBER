@@ -121,8 +121,9 @@ token、rank8、few-shot或生成LoRA本身。
 ordered Procedure、four-view selected-success、V6 factor compiler与rank16 public topology，只把video-derived
 `factor_memory`从256维hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；exact
 language经冻结V6 W1/GELU提供同task共享的family-specific output axes。zero-init language router保证step0 exact
-LPCP，新增residual又必须乘video coefficient，不增加language-only Value。它尚未实现或产生任何性能结果；formal
-前必须先证明跨video correction离开GOSC的约`0/.25`、顺序响应和q/v/action链路非零且吞吐合格。
+LPCP，新增residual又必须乘video coefficient，不增加language-only Value。canonical实现与完整CPU`397 passed`
+已完成，但尚无GPU/profile或性能结果；formal前必须先证明跨video correction离开GOSC的约`0/.25`、顺序响应和
+q/v/action链路非零且吞吐合格。
 
 ## 4. Long-term objective and decision rule
 

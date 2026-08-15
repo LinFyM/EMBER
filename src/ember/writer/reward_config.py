@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP gradient-open semantic commitment."""
+"""Authority for V6-LPCP causal coefficient transport."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_gradient_open_semantic_commitment_v1"
+    "ember_pi05_v6_lpcp_causal_coefficient_transport_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_gradient_open_semantic_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_causal_coefficient_transport_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_gradient_open_semantic_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_causal_coefficient_transport_v1.json"
 )
 
 
@@ -29,7 +29,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported gradient-open commitment config")
+        raise WriterModelError("unsupported causal coefficient transport config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
@@ -51,7 +51,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                     "same_cached_conditioning_with_query_delta_disabled_exact_as139"
                 ),
                 "candidate_arm": (
-                    "frozen_v6_lpcp_plus_gradient_open_semantic_commitment"
+                    "frozen_v6_lpcp_plus_causal_coefficient_transport"
                 ),
             },
         ),
@@ -103,7 +103,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             optimization,
             {
                 "trainable": (
-                    "gradient_open_semantic_commitment_only_2164224_parameters"
+                    "causal_coefficient_transport_only_67072_parameters"
                 ),
                 "reward_replay_chunk_batch_size": 8,
             },
@@ -125,7 +125,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         ),
     )
     if not all(valid):
-        raise WriterModelError("gradient-open scientific contract changed")
+        raise WriterModelError("causal coefficient scientific contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -133,9 +133,9 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid gradient-open commitment mode")
+        raise WriterModelError("invalid causal coefficient transport mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
-        raise WriterModelError("formal gradient-open commitment is not authorized")
+        raise WriterModelError("formal causal coefficient transport is not authorized")

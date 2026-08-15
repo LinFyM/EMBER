@@ -20,7 +20,7 @@ from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
     FACTOR_FAMILIES,
-    GradientOpenSemanticCommitment,
+    CausalCoefficientTransport,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -103,7 +103,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = GradientOpenSemanticCommitment(
+        self.factor_commitment = CausalCoefficientTransport(
             width=self.PROGRAM_WIDTH,
             basis_count=4,
             initialization_seed=initialization_seed,
@@ -572,6 +572,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         residuals = self.factor_commitment.hidden_residuals(
             factor_memory,
+            language_slots,
             weights,
             anchor_input_weights=self._factor_anchor_input_weights(),
         )

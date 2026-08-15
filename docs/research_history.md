@@ -33,7 +33,8 @@ forward。最终exact task4/task7均为tie；task9/15/18均产生真实discordan
 held/train BA仅`.105x`、task18 train跨video仅`.290/.428`，三个anchors只有task15全门通过。DF-PCSP因此在
 full24前终局。
 当前active DF-SOCP保留同一生成图，把exact preference扩展到winner成功occupancy全部replans，并在每个winner
-observation上查询loser counterfactual action；固定task9/15/18三anchor全过才允许full24。
+observation上查询loser counterfactual action；canonical实现与fresh schema已完成、全量CPU=`401 passed`，固定
+task9/15/18三anchor全过才允许full24。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

@@ -1,4 +1,4 @@
-"""Common-state winner/loser flow credit for paired AS139/LPCP arms."""
+"""Successful-occupancy counterfactual flow credit for paired AS139/LPCP arms."""
 
 from __future__ import annotations
 
@@ -15,17 +15,18 @@ from ember.reward.protocol import RewardProtocolError, reward_preference_flow_se
 
 
 @dataclass(frozen=True)
-class PairedCommonStateCreditSummary:
-    """One view's preference credit from exact common-state arm pairs."""
+class SuccessfulOccupancyCreditSummary:
+    """One view's preference credit over complete successful occupancy."""
 
     objective: float
     preference_margin: float
     winner_flow_loss: float
     loser_flow_loss: float
-    discordant_pairs: int
+    discordant_trajectories: int
+    counterfactual_replay_pairs: int
     replay_rows: int
-    common_action_steps: int
-    winner_loser_action_rms: float
+    successful_action_steps: int
+    winner_counterfactual_action_rms: float
     functional_policy_forwards: int
     functional_policy_backwards: int
     lora_gradient_rms: float
@@ -56,7 +57,7 @@ def _flow_sample_panel(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     model_config = getattr(getattr(policy, "model", None), "config", None)
     if (
-        pair_count not in {1, 2}
+        pair_count <= 0
         or mc_samples != 4
         or model_config is None
         or float(model_config.time_sampling_beta_alpha) != 1.5
@@ -64,7 +65,7 @@ def _flow_sample_panel(
         or float(model_config.time_sampling_scale) != 0.999
         or float(model_config.time_sampling_offset) != 0.001
     ):
-        raise RewardProtocolError("common-state flow panel changed")
+        raise RewardProtocolError("successful-occupancy flow panel changed")
     shape = (
         pair_count,
         int(policy.config.chunk_size),
@@ -95,9 +96,32 @@ def _gradient_rms(gradients: Mapping[str, torch.Tensor]) -> torch.Tensor:
     )
 
 
-def _common_state_batch_contract(
-    batch: Mapping[str, torch.Tensor], physical_microbatch_size: int
-) -> tuple[torch.Tensor, torch.Tensor, int, float]:
+def successful_occupancy_pair_weights(
+    trajectory_ids: torch.Tensor,
+) -> torch.Tensor:
+    """Give each successful trajectory equal mass and divide it over replans."""
+
+    ids = trajectory_ids.to(dtype=torch.long)
+    if ids.ndim != 1 or ids.numel() == 0 or bool((ids < 0).any()):
+        raise RewardProtocolError("successful-occupancy replay has no trajectory IDs")
+    target_count = int(ids.max()) + 1
+    counts = torch.bincount(ids, minlength=target_count)
+    if (
+        target_count not in {1, 2}
+        or counts.shape != (target_count,)
+        or bool((counts <= 0).any())
+    ):
+        raise RewardProtocolError("successful-occupancy trajectory IDs changed")
+    return 1.0 / (
+        target_count * counts.index_select(0, ids).to(dtype=torch.float32)
+    )
+
+
+def _successful_occupancy_batch_contract(
+    batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
+    physical_microbatch_size: int,
+) -> tuple[torch.Tensor, torch.Tensor, int, float, torch.Tensor]:
     action = batch.get(ACTION)
     valid = batch.get("executed_action_steps")
     if (
@@ -106,12 +130,16 @@ def _common_state_batch_contract(
         or not isinstance(valid, torch.Tensor)
         or valid.ndim != 1
         or valid.shape[0] != action.shape[0]
-        or action.shape[0] not in {2, 4}
+        or action.shape[0] <= 0
+        or action.shape[0] % 2
         or physical_microbatch_size < 2
         or not torch.equal(valid[0::2], valid[1::2])
     ):
-        raise RewardProtocolError("common-state preference batch changed")
+        raise RewardProtocolError("successful-occupancy preference batch changed")
     pair_count = int(action.shape[0] // 2)
+    weights = successful_occupancy_pair_weights(trajectory_ids)
+    if weights.shape != (pair_count,):
+        raise RewardProtocolError("successful-occupancy replay weights changed")
     steps = torch.arange(action.shape[1], device=action.device)[None]
     mask = steps < valid[0::2, None]
     difference = action[0::2].float() - action[1::2].float()
@@ -119,15 +147,16 @@ def _common_state_batch_contract(
     denominator = valid[0::2].sum() * action.shape[2]
     action_rms = float((squared / denominator).sqrt())
     if not bool(torch.isfinite(torch.tensor(action_rms))) or action_rms <= 0:
-        raise RewardProtocolError("winner and loser first actions are identical")
-    return action, valid, pair_count, action_rms
+        raise RewardProtocolError("winner and counterfactual actions are identical")
+    return action, valid, pair_count, action_rms, weights
 
 
-def functional_paired_common_state_lora_gradient(
+def functional_successful_occupancy_counterfactual_lora_gradient(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
     *,
     mc_samples: int,
     physical_microbatch_size: int,
@@ -135,11 +164,13 @@ def functional_paired_common_state_lora_gradient(
     cycle: int,
     global_task_id: int,
     device: torch.device,
-) -> tuple[dict[str, torch.Tensor], PairedCommonStateCreditSummary]:
-    """Differentiate softplus(winner loss - loser loss) through LoRA leaves."""
+) -> tuple[dict[str, torch.Tensor], SuccessfulOccupancyCreditSummary]:
+    """Differentiate full-winner versus failed-arm counterfactual preference."""
 
-    action, valid, pair_count, action_rms = _common_state_batch_contract(
-        batch, physical_microbatch_size
+    action, valid, pair_count, action_rms, weights = (
+        _successful_occupancy_batch_contract(
+            batch, trajectory_ids, physical_microbatch_size
+        )
     )
     noises, times = _flow_sample_panel(
         policy,
@@ -166,6 +197,9 @@ def functional_paired_common_state_lora_gradient(
     for pair_start in range(0, pair_count, pairs_per_batch):
         pair_stop = min(pair_start + pairs_per_batch, pair_count)
         start, stop = 2 * pair_start, 2 * pair_stop
+        pair_weights = weights[pair_start:pair_stop].to(
+            device=device, non_blocking=True
+        )
         sliced = {
             name: value[start:stop].to(device=device, non_blocking=True)
             for name, value in batch.items()
@@ -183,30 +217,33 @@ def functional_paired_common_state_lora_gradient(
             )
             pair_losses = per_chunk.float().reshape(-1, 2)
             winners, losers = pair_losses[:, 0], pair_losses[:, 1]
-            scalar = F.softplus(winners - losers).sum() / (
-                pair_count * mc_samples
-            )
+            scalar = (F.softplus(winners - losers) * pair_weights).sum() / mc_samples
             values = torch.autograd.grad(scalar, tuple(leaves[name] for name in names))
             objective.add_(scalar.detach())
-            winner_total.add_(winners.detach().sum() / (pair_count * mc_samples))
-            loser_total.add_(losers.detach().sum() / (pair_count * mc_samples))
+            winner_total.add_(
+                (winners.detach() * pair_weights).sum() / mc_samples
+            )
+            loser_total.add_((losers.detach() * pair_weights).sum() / mc_samples)
             for name, gradient in zip(names, values, strict=True):
                 gradients[name].add_(gradient.float())
             forwards += 1
             backwards += 1
     rms = _gradient_rms(gradients)
     if not bool(torch.isfinite(rms)) or float(rms) <= 0:
-        raise RewardProtocolError("common-state preference produced invalid LoRA credit")
+        raise RewardProtocolError(
+            "successful-occupancy preference produced invalid LoRA credit"
+        )
     margin = winner_total - loser_total
-    return gradients, PairedCommonStateCreditSummary(
+    return gradients, SuccessfulOccupancyCreditSummary(
         objective=float(objective),
         preference_margin=float(margin),
         winner_flow_loss=float(winner_total),
         loser_flow_loss=float(loser_total),
-        discordant_pairs=pair_count,
+        discordant_trajectories=int(trajectory_ids.max()) + 1,
+        counterfactual_replay_pairs=pair_count,
         replay_rows=2 * pair_count,
-        common_action_steps=int(valid[0::2].sum()),
-        winner_loser_action_rms=action_rms,
+        successful_action_steps=int(valid[0::2].sum()),
+        winner_counterfactual_action_rms=action_rms,
         functional_policy_forwards=forwards,
         functional_policy_backwards=backwards,
         lora_gradient_rms=float(rms),
@@ -214,21 +251,25 @@ def functional_paired_common_state_lora_gradient(
 
 
 @torch.no_grad()
-def functional_paired_common_state_margin(
+def functional_successful_occupancy_counterfactual_margin(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
     *,
     mc_samples: int,
+    physical_microbatch_size: int,
     flow_seed_root: int,
     cycle: int,
     global_task_id: int,
     device: torch.device,
 ) -> dict[str, float]:
-    """Evaluate the exact paired panel without constructing a Writer graph."""
+    """Evaluate the retained occupancy panel without constructing a Writer graph."""
 
-    _, _, pair_count, _ = _common_state_batch_contract(batch, 2)
+    _, _, pair_count, _, weights = _successful_occupancy_batch_contract(
+        batch, trajectory_ids, physical_microbatch_size
+    )
     noises, times = _flow_sample_panel(
         policy,
         pair_count=pair_count,
@@ -238,24 +279,37 @@ def functional_paired_common_state_margin(
         global_task_id=global_task_id,
         device=device,
     )
-    prepared = {
-        name: value.to(device=device, non_blocking=True) for name, value in batch.items()
-    }
     winner = loser = objective = 0.0
-    for mc_index in range(mc_samples):
-        losses = functional_executed_prefix_flow_loss(
-            policy,
-            state,
-            contract,
-            prepared,
-            noise=noises[mc_index].repeat_interleave(2, dim=0),
-            time=times[mc_index].repeat_interleave(2),
-        ).float().reshape(-1, 2)
-        winner += float(losses[:, 0].mean()) / mc_samples
-        loser += float(losses[:, 1].mean()) / mc_samples
-        objective += float(
-            F.softplus(losses[:, 0] - losses[:, 1]).mean()
-        ) / mc_samples
+    pairs_per_batch = max(1, physical_microbatch_size // 2)
+    for pair_start in range(0, pair_count, pairs_per_batch):
+        pair_stop = min(pair_start + pairs_per_batch, pair_count)
+        start, stop = 2 * pair_start, 2 * pair_stop
+        prepared = {
+            name: value[start:stop].to(device=device, non_blocking=True)
+            for name, value in batch.items()
+        }
+        pair_weights = weights[pair_start:pair_stop].to(
+            device=device, non_blocking=True
+        )
+        for mc_index in range(mc_samples):
+            losses = functional_executed_prefix_flow_loss(
+                policy,
+                state,
+                contract,
+                prepared,
+                noise=noises[mc_index, pair_start:pair_stop].repeat_interleave(
+                    2, dim=0
+                ),
+                time=times[mc_index, pair_start:pair_stop].repeat_interleave(2),
+            ).float().reshape(-1, 2)
+            winner += float((losses[:, 0] * pair_weights).sum()) / mc_samples
+            loser += float((losses[:, 1] * pair_weights).sum()) / mc_samples
+            objective += float(
+                (
+                    F.softplus(losses[:, 0] - losses[:, 1])
+                    * pair_weights
+                ).sum()
+            ) / mc_samples
     margin = winner - loser
     return {
         "winner_flow_loss": winner,
@@ -273,7 +327,7 @@ def backpropagate_lora_cotangent(
 
     active = tuple(name for name, value in generated.items() if value.requires_grad)
     if not active or set(lora_gradients) != set(generated):
-        raise RewardProtocolError("common-state Writer graph lost LoRA outputs")
+        raise RewardProtocolError("successful-occupancy Writer graph lost LoRA outputs")
     torch.autograd.backward(
         tuple(generated[name] for name in active),
         grad_tensors=tuple(lora_gradients[name] for name in active),

@@ -1,6 +1,7 @@
 # V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference
 
-状态：2026-08-16 active design authority，implementation pending。简称`DF-SOCP`。本轮从sealed LPCP fresh启动，
+状态：2026-08-16 active design authority，canonical implementation complete、preformal GPU pending。简称
+`DF-SOCP`。本轮从sealed LPCP fresh启动，
 保留LPCP/DJNFR已经通过的视频carrier、K-set与direct native-factor LoRA生成图，只改变long-horizon reward怎样在
 exact shared observations上形成正负动作credit。
 
@@ -135,6 +136,13 @@ checkpoint strict closed-loop、retained/gained/lost和task churn。
 - 每pair所有replans先等权，再pair、view、task等权；
 - fresh-incompatible config/checkpoint/evaluator schema；旧DF-PCSP由Git与artifacts保存；
 - 不新增逐tensor扫描、hash、重复video backbone、额外env step或防御性fallback。
+
+canonical实现已原位完成：旧first-prefix batch/objective/config/evaluator schema已被successful-occupancy
+counterfactual合同替换；loser-arm actions按arm分组后B8生成一次并跨四个K4 views复用，functional replay保持
+winner/counterfactual成对microbatch，trajectory IDs实现“每trajectory等权、内部replan等权”。新增定向合同覆盖
+不等长1/3 replans权重、任意replay pair数、完整counterfactual query、同observation配对与preference descent。
+全量CPU=`401 passed`、compileall通过，architecture guard无hard violation。以上只关闭实现门，不提供GPU机制或
+closed-loop结论。
 
 ## 9. Formal前机制门
 

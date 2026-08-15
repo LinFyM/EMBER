@@ -13,7 +13,9 @@ from ember.lora import copy_task_lora_state_
 from ember.writer.as_step import assign_flat_gradient
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState
-from ember.writer.reward_preference import functional_paired_common_state_margin
+from ember.writer.reward_preference import (
+    functional_successful_occupancy_counterfactual_margin,
+)
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
@@ -40,6 +42,7 @@ class RewardProbe:
     policy_noise_seed: int
     cycle: int
     preference_batch: Mapping[str, torch.Tensor]
+    preference_trajectory_ids: torch.Tensor
     before_preference_margin: float
 
 
@@ -128,12 +131,16 @@ def probe_after_update(
         (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
     )
     if runtime.args.mode == "smoke":
-        preference = functional_paired_common_state_margin(
+        preference = functional_successful_occupancy_counterfactual_margin(
             runtime.policy,
             after,
             runtime.lora_contract,
             probe.preference_batch,
+            probe.preference_trajectory_ids,
             mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
+            physical_microbatch_size=int(
+                runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+            ),
             flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
             cycle=probe.cycle,
             global_task_id=probe.global_task_id,

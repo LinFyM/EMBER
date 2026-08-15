@@ -1,4 +1,4 @@
-"""One paired common-state preference cycle for direct native-factor heads."""
+"""One successful-occupancy counterfactual cycle for direct factor heads."""
 
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ from ember.reward.rollout import (
     RewardTrajectory,
     capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
-    complete_paired_common_state_batch,
+    complete_successful_occupancy_counterfactual_batch,
+    query_counterfactual_loser_actions,
 )
 from ember.writer.as_step import (
     accumulate_flat_gradient,
@@ -29,9 +30,9 @@ from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState, WriterProgramOutput
 from ember.writer.reward_preference import (
-    PairedCommonStateCreditSummary,
+    SuccessfulOccupancyCreditSummary,
     backpropagate_lora_cotangent,
-    functional_paired_common_state_lora_gradient,
+    functional_successful_occupancy_counterfactual_lora_gradient,
     mean_cross_video_task_gradient,
 )
 from ember.writer.reward_gradient_update import (
@@ -281,26 +282,30 @@ def _differentiate_credit_view(
     state: WriterConditioningState,
     candidate_lora: Mapping[str, torch.Tensor],
     batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
     gradient_template: torch.Tensor,
-) -> tuple[torch.Tensor, PairedCommonStateCreditSummary]:
+) -> tuple[torch.Tensor, SuccessfulOccupancyCreditSummary]:
     with torch.autocast(
         device_type=runtime.context.device.type,
         dtype=torch.bfloat16,
         enabled=runtime.context.device.type == "cuda",
     ):
-        lora_gradient, summary = functional_paired_common_state_lora_gradient(
-            runtime.policy,
-            candidate_lora,
-            runtime.lora_contract,
-            batch,
-            mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-            physical_microbatch_size=int(
-                runtime.config["optimization"]["reward_replay_chunk_batch_size"]
-            ),
-            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-            cycle=cycle,
-            global_task_id=task.global_task_id,
-            device=runtime.context.device,
+        lora_gradient, summary = (
+            functional_successful_occupancy_counterfactual_lora_gradient(
+                runtime.policy,
+                candidate_lora,
+                runtime.lora_contract,
+                batch,
+                trajectory_ids,
+                mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
+                physical_microbatch_size=int(
+                    runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+                ),
+                flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
+                cycle=cycle,
+                global_task_id=task.global_task_id,
+                device=runtime.context.device,
+            )
         )
         recompiled = runtime.writer.compile_conditioning_state(
             state, packed[3], use_query_delta=True
@@ -324,11 +329,37 @@ def _differentiate_task_credit(
     packed: tuple[Any, ...],
     state: WriterConditioningState,
     candidate_lora: Mapping[str, torch.Tensor],
+    reference_lora: Mapping[str, torch.Tensor],
     pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
+    active_labels: Sequence[str],
     gradient_sum: torch.Tensor,
-) -> tuple[dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor]]:
+) -> tuple[
+    dict[str, Any],
+    float,
+    torch.Tensor,
+    Mapping[str, torch.Tensor],
+    torch.Tensor,
+]:
     started = time.monotonic()
-    batch = complete_paired_common_state_batch(pairs, torch.device("cpu"))
+    counterfactual_actions, counterfactual_metrics = query_counterfactual_loser_actions(
+        policy=runtime.policy,
+        lora_contract=runtime.lora_contract,
+        identity_state=runtime.identity_state,
+        pairs=pairs,
+        active_labels=active_labels,
+        reference_lora=reference_lora,
+        candidate_lora=candidate_lora,
+        device=runtime.context.device,
+        microbatch_size=int(
+            runtime.config["optimization"]["counterfactual_action_batch_size"]
+        ),
+        num_inference_steps=int(
+            runtime.config["environment"]["num_inference_steps"]
+        ),
+    )
+    batch, trajectory_ids = complete_successful_occupancy_counterfactual_batch(
+        pairs, counterfactual_actions, torch.device("cpu")
+    )
     demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
         task.global_task_id,
         visit,
@@ -352,6 +383,7 @@ def _differentiate_task_credit(
             view_state,
             view_lora,
             batch,
+            trajectory_ids,
             gradient_sum,
         )
         view_gradients.append(flat)
@@ -383,10 +415,13 @@ def _differentiate_task_credit(
             float(row["loser_flow_loss"]) for row in view_rows
         )
         / 4,
-        "discordant_pairs": int(first["discordant_pairs"]),
+        "discordant_trajectories": int(first["discordant_trajectories"]),
+        "counterfactual_replay_pairs": int(first["counterfactual_replay_pairs"]),
         "replay_rows": int(first["replay_rows"]),
-        "common_action_steps": int(first["common_action_steps"]),
-        "winner_loser_action_rms": float(first["winner_loser_action_rms"]),
+        "successful_action_steps": int(first["successful_action_steps"]),
+        "winner_counterfactual_action_rms": float(
+            first["winner_counterfactual_action_rms"]
+        ),
         "functional_policy_forwards": sum(
             int(row["functional_policy_forwards"]) for row in view_rows
         ),
@@ -402,7 +437,8 @@ def _differentiate_task_credit(
             {demo for demos in demo_sets for demo in demos}
         ),
         "credit_view_records": view_rows,
-    }, time.monotonic() - started, task_gradient, batch
+        **counterfactual_metrics,
+    }, time.monotonic() - started, task_gradient, batch, trajectory_ids
 
 
 def _make_probe(
@@ -414,6 +450,7 @@ def _make_probe(
     labels: Sequence[str],
     cycle: int,
     preference_batch: Mapping[str, torch.Tensor],
+    preference_trajectory_ids: torch.Tensor,
     before_preference_margin: float,
 ) -> RewardProbe:
     index = next(
@@ -435,6 +472,7 @@ def _make_probe(
         policy_noise_seed=trajectory.policy_noise_seeds[0],
         cycle=cycle,
         preference_batch=preference_batch,
+        preference_trajectory_ids=preference_trajectory_ids,
         before_preference_margin=before_preference_margin,
     )
 
@@ -445,10 +483,15 @@ def _empty_credit() -> dict[str, Any]:
         "preference_margin": 0.0,
         "winner_flow_loss": 0.0,
         "loser_flow_loss": 0.0,
-        "discordant_pairs": 0,
+        "discordant_trajectories": 0,
+        "counterfactual_replay_pairs": 0,
         "replay_rows": 0,
-        "common_action_steps": 0,
-        "winner_loser_action_rms": 0.0,
+        "successful_action_steps": 0,
+        "winner_counterfactual_action_rms": 0.0,
+        "counterfactual_replay_chunks": 0,
+        "counterfactual_policy_forwards": 0,
+        "counterfactual_first_action_replay_rms": 0.0,
+        "counterfactual_seconds": 0.0,
         "functional_policy_forwards": 0,
         "functional_policy_backwards": 0,
         "lora_gradient_rms": 0.0,
@@ -483,7 +526,16 @@ def _task_gradient(
     task_gradient = None
     active = int(bool(pairs))
     if pairs:
-        credit, credit_seconds, task_gradient, preference_batch = _differentiate_task_credit(
+        active_labels = tuple(
+            label for label in labels if label in {"candidate", "reference"}
+        )
+        (
+            credit,
+            credit_seconds,
+            task_gradient,
+            preference_batch,
+            preference_trajectory_ids,
+        ) = _differentiate_task_credit(
             runtime,
             task,
             cycle,
@@ -492,7 +544,9 @@ def _task_gradient(
             packed,
             state,
             candidate_lora,
+            reference_lora,
             pairs,
+            active_labels,
             gradient_sum,
         )
         if probe is None:
@@ -505,6 +559,7 @@ def _task_gradient(
                 labels,
                 cycle,
                 preference_batch,
+                preference_trajectory_ids,
                 float(credit["credit_view_records"][0]["preference_margin"]),
             )
     row = {
@@ -635,9 +690,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_paired_common_state_preference"
+            "one_complete_train24_direct_factor_successful_occupancy_counterfactual_preference"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_paired_common_state_preference_live_smoke"
+            else "one_task_direct_factor_successful_occupancy_counterfactual_preference_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -658,8 +713,22 @@ def _cycle_metrics(
         ),
         "active_tasks": step.active_tasks,
         "active_suites": sorted({row["suite"] for row in active_records}),
-        "discordant_preference_pairs": sum(
-            int(row["discordant_pairs"]) for row in records
+        "discordant_preference_trajectories": sum(
+            int(row["discordant_trajectories"]) for row in records
+        ),
+        "counterfactual_replay_pairs": sum(
+            int(row["counterfactual_replay_pairs"]) for row in records
+        ),
+        "counterfactual_policy_forwards": sum(
+            int(row["counterfactual_policy_forwards"]) for row in records
+        ),
+        "counterfactual_first_action_replay_rms_mean": math.fsum(
+            float(row["counterfactual_first_action_replay_rms"])
+            for row in active_records
+        )
+        / len(active_records),
+        "counterfactual_seconds": math.fsum(
+            float(row["counterfactual_seconds"]) for row in records
         ),
         "credit_conditions": sum(
             int(row["credit_conditions"]) for row in records
@@ -668,14 +737,14 @@ def _cycle_metrics(
             int(row["credit_unique_video_count"]) for row in records
         ),
         "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
-        "common_action_steps": sum(
-            int(row["common_action_steps"]) for row in records
+        "successful_action_steps": sum(
+            int(row["successful_action_steps"]) for row in records
         ),
-        "paired_common_state_objective_mean": math.fsum(
+        "successful_occupancy_objective_mean": math.fsum(
             float(row["objective"]) for row in active_records
         )
         / len(active_records),
-        "paired_common_state_margin_mean": math.fsum(
+        "successful_occupancy_margin_mean": math.fsum(
             float(row["preference_margin"]) for row in active_records
         )
         / len(active_records),

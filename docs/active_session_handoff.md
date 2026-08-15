@@ -61,7 +61,9 @@
   authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
   它只把first-prefix preference扩展为winner成功occupancy的全部replans，并在每个相同observation和policy noise上
   批量查询loser counterfactual action；不增加env rollout，不改carrier、direct heads、rank16、K4或optimizer。
-  preformal固定task9/15/18且三项必须全过；当前implementation pending，无GPU run或可resume checkpoint；
+  canonical实现已原位完成，旧DF-PCSP executable/schema已移除；counterfactual按loser arm B8生成一次并跨四view
+  复用，pair内replan、pair、view、task逐级等权。全量CPU=`401 passed`、compileall通过且architecture guard无hard
+  violation。preformal固定task9/15/18且三项必须全过；当前无GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

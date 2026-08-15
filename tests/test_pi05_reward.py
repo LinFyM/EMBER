@@ -28,7 +28,7 @@ from ember.reward.rollout import (
     RewardTrajectory,
     capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
-    complete_paired_common_state_batch,
+    complete_successful_occupancy_counterfactual_batch,
 )
 
 
@@ -314,18 +314,20 @@ def _trajectory(*, success: bool, marker: float) -> RewardTrajectory:
     )
 
 
-def test_common_state_pair_collates_winner_then_loser_with_shared_prefix() -> None:
-    batch = complete_paired_common_state_batch(
+def test_successful_occupancy_pairs_winner_and_counterfactual_at_same_state() -> None:
+    batch, trajectory_ids = complete_successful_occupancy_counterfactual_batch(
         ((
             _trajectory(success=True, marker=2.0),
             _trajectory(success=False, marker=3.0),
         ),),
+        ((torch.full((1, 50, 7), 4.0),),),
         torch.device("cpu"),
     )
     assert batch[ACTION].shape == (2, 50, 7)
     assert batch["executed_action_steps"].tolist() == [5, 5]
     assert torch.equal(batch[ACTION][0], torch.full((50, 7), 2.0))
-    assert torch.equal(batch[ACTION][1], torch.full((50, 7), 3.0))
+    assert torch.equal(batch[ACTION][1], torch.full((50, 7), 4.0))
+    assert trajectory_ids.tolist() == [0]
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:
@@ -439,7 +441,8 @@ def test_paired_arms_restore_one_captured_post_settling_state() -> None:
         assert sum(name == "dummy" for name, _ in env.events) == 10
         assert sum(name == "restore" for name, _ in env.events) == 2
         assert env.reset_generation == 1
-    complete_paired_common_state_batch(
+    complete_successful_occupancy_counterfactual_batch(
         ((replace(reference[0], success=True), candidate[0]),),
+        ((candidate[0].action_chunks[0],),),
         torch.device("cpu"),
     )

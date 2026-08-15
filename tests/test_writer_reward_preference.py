@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -17,14 +18,18 @@ from ember.lora import (
     expected_lora_state_shapes,
     inject_task_lora,
 )
-from ember.reward.rollout import RewardTrajectory
+from ember.reward.rollout import (
+    RewardTrajectory,
+    query_counterfactual_loser_actions,
+)
 from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import select_discordant_trajectory_pairs
 from ember.writer.reward_gradient_update import apply_reward_step, lora_response
 from ember.writer.reward_preference import (
-    functional_paired_common_state_lora_gradient,
-    functional_paired_common_state_margin,
+    functional_successful_occupancy_counterfactual_lora_gradient,
+    functional_successful_occupancy_counterfactual_margin,
     mean_cross_video_task_gradient,
+    successful_occupancy_pair_weights,
 )
 
 
@@ -102,7 +107,7 @@ class _Policy(torch.nn.Module):
         return batch[ACTION]
 
 
-def test_common_state_preference_lora_credit_is_microbatch_semantic() -> None:
+def test_successful_occupancy_preference_is_microbatch_semantic() -> None:
     policy = _Policy()
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("model.projection", 7, 7),),
@@ -118,64 +123,81 @@ def test_common_state_preference_lora_credit_is_microbatch_semantic() -> None:
         for name, shape in expected_lora_state_shapes(contract).items()
     }
     actions = torch.stack(
-        tuple(torch.full((50, 7), value) for value in (0.0, 0.01, 0.02, 0.03))
+        tuple(
+            torch.full((50, 7), value)
+            for value in (0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07)
+        )
     )
     batch = {
         ACTION: actions,
-        "executed_action_steps": torch.tensor([5, 5, 3, 3]),
-        "action_is_pad": torch.zeros((4, 50), dtype=torch.bool),
-        OBS_LANGUAGE_TOKENS: torch.ones((4, 2), dtype=torch.long),
-        OBS_LANGUAGE_ATTENTION_MASK: torch.ones((4, 2), dtype=torch.bool),
+        "executed_action_steps": torch.tensor([5, 5, 3, 3, 4, 4, 2, 2]),
+        "action_is_pad": torch.zeros((8, 50), dtype=torch.bool),
+        OBS_LANGUAGE_TOKENS: torch.ones((8, 2), dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones((8, 2), dtype=torch.bool),
     }
+    trajectory_ids = torch.tensor([0, 1, 1, 1])
     kwargs = dict(
         policy=policy,
         state=state,
         contract=contract,
         batch=batch,
+        trajectory_ids=trajectory_ids,
         mc_samples=4,
         flow_seed_root=31,
         cycle=1,
         global_task_id=4,
         device=torch.device("cpu"),
     )
-    first, first_summary = functional_paired_common_state_lora_gradient(
+    first, first_summary = functional_successful_occupancy_counterfactual_lora_gradient(
         **kwargs, physical_microbatch_size=2
     )
-    second, second_summary = functional_paired_common_state_lora_gradient(
+    second, second_summary = functional_successful_occupancy_counterfactual_lora_gradient(
         **kwargs, physical_microbatch_size=8
     )
-    assert first_summary.functional_policy_forwards == 8
+    assert first_summary.functional_policy_forwards == 16
     assert second_summary.functional_policy_forwards == 4
-    assert first_summary.discordant_pairs == 2
-    assert first_summary.winner_loser_action_rms > 0
+    assert first_summary.discordant_trajectories == 2
+    assert first_summary.counterfactual_replay_pairs == 4
+    assert first_summary.winner_counterfactual_action_rms > 0
     for name in state:
         torch.testing.assert_close(first[name], second[name], rtol=2e-6, atol=2e-6)
     assert any(bool(torch.count_nonzero(value)) for value in first.values())
     assert all(parameter.grad is None for parameter in policy.parameters())
-    before = functional_paired_common_state_margin(
+    before = functional_successful_occupancy_counterfactual_margin(
         policy,
         state,
         contract,
         batch,
+        trajectory_ids,
         mc_samples=4,
+        physical_microbatch_size=8,
         flow_seed_root=31,
         cycle=1,
         global_task_id=4,
         device=torch.device("cpu"),
     )
     updated = {name: state[name] - 1e-3 * first[name] for name in state}
-    after = functional_paired_common_state_margin(
+    after = functional_successful_occupancy_counterfactual_margin(
         policy,
         updated,
         contract,
         batch,
+        trajectory_ids,
         mc_samples=4,
+        physical_microbatch_size=8,
         flow_seed_root=31,
         cycle=1,
         global_task_id=4,
         device=torch.device("cpu"),
     )
     assert after["preference_margin"] < before["preference_margin"]
+
+
+def test_successful_occupancy_weights_equalize_unequal_trajectory_lengths() -> None:
+    ids = torch.tensor([0, 1, 1, 1], dtype=torch.long)
+    weights = successful_occupancy_pair_weights(ids)
+    torch.testing.assert_close(weights, torch.tensor([0.5, 1 / 6, 1 / 6, 1 / 6]))
+    torch.testing.assert_close(weights[ids == 0].sum(), weights[ids == 1].sum())
 
 
 def _trajectory(*, cursor: int, success: bool, marker: float) -> RewardTrajectory:
@@ -215,6 +237,84 @@ def test_pair_selection_orders_the_unique_winner_before_the_loser() -> None:
     assert labels == ("candidate", "reference")
     assert pairs[0] == (candidate[0], reference[0])
     assert pairs[1] == (reference[1], candidate[1])
+
+
+def test_counterfactual_queries_failed_arm_at_every_successful_replan(
+    monkeypatch,
+) -> None:
+    class CounterfactualPolicy(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.config = SimpleNamespace(chunk_size=50, max_action_dim=32)
+            self.arm_value = -1.0
+            self.batch_sizes: list[int] = []
+
+        def reset(self) -> None:
+            pass
+
+        def predict_action_chunk(self, batch, *, noise, num_steps):
+            assert num_steps == 10
+            size = batch[OBS_LANGUAGE_TOKENS].shape[0]
+            self.batch_sizes.append(size)
+            value = self.arm_value + noise[:, 0, 0].float().mul(1e-3)
+            return value[:, None, None].expand(size, 50, 7).contiguous()
+
+    def with_chunks(value: RewardTrajectory, count: int) -> RewardTrajectory:
+        return replace(
+            value,
+            policy_noise_seeds=tuple(100 + index for index in range(count)),
+            observations=value.observations * count,
+            action_chunks=value.action_chunks * count,
+            valid_action_steps=tuple(5 for _ in range(count)),
+        )
+
+    candidate_winner = with_chunks(
+        _trajectory(cursor=0, success=True, marker=2.0), 2
+    )
+    reference_loser = _trajectory(cursor=0, success=False, marker=0.0)
+    reference_winner = with_chunks(
+        _trajectory(cursor=1, success=True, marker=1.0), 3
+    )
+    candidate_loser = _trajectory(cursor=1, success=False, marker=3.0)
+    policy = CounterfactualPolicy()
+
+    def install(target, state, _contract):
+        target.arm_value = float(state["arm"])
+
+    monkeypatch.setattr("ember.reward.rollout.copy_task_lora_state_", install)
+    runtime = SimpleNamespace(
+        policy=policy,
+        lora_contract=object(),
+        identity_state={"arm": torch.tensor(-1.0)},
+        context=SimpleNamespace(device=torch.device("cpu")),
+        config={
+            "optimization": {"counterfactual_action_batch_size": 2},
+            "environment": {"num_inference_steps": 10},
+        },
+    )
+    actions, metrics = query_counterfactual_loser_actions(
+        policy=runtime.policy,
+        lora_contract=runtime.lora_contract,
+        identity_state=runtime.identity_state,
+        pairs=(
+            (candidate_winner, reference_loser),
+            (reference_winner, candidate_loser),
+        ),
+        active_labels=("candidate", "reference"),
+        reference_lora={"arm": torch.tensor(10.0)},
+        candidate_lora={"arm": torch.tensor(20.0)},
+        device=runtime.context.device,
+        microbatch_size=2,
+        num_inference_steps=10,
+    )
+    assert [len(value) for value in actions] == [2, 3]
+    assert all(float(value.mean()) < 11 for value in actions[0])
+    assert all(float(value.mean()) > 19 for value in actions[1])
+    assert policy.batch_sizes == [2, 2, 1]
+    assert policy.arm_value == -1.0
+    assert metrics["counterfactual_replay_chunks"] == 5
+    assert metrics["counterfactual_policy_forwards"] == 3
+    assert metrics["counterfactual_first_action_replay_rms"] > 0
 
 
 def _single_condition_inputs(k: int) -> tuple[torch.Tensor, ...]:

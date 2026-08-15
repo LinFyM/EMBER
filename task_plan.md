@@ -429,14 +429,16 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   q/v/action、reverse/static、wall均健康；
 - [x] 完成三个有效anchor的train→held机制分析：task9 held/train仅`.105x`，task18 train跨video仅
   `.290/.428`，只有task15全门通过；按shared-method门终局，不full24、strict或cycle2；
-- [ ] 下一单变量设计须把final success credit放到成功occupancy上的多个exact shared query states，不能继续把
+- [x] 下一单变量设计须把final success credit放到成功occupancy上的多个exact shared query states，不能继续把
   数百步后的胜负全部归因给第一prefix。
 
 ## Active iteration: V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference
 
 - [x] 写DF-SOCP authority：保留LPCP/DJNFR、rank16、K4、八direct heads与exact paired rollouts；
-- [ ] 原位把first-prefix batch替换为winner全部replan observations上的loser-policy counterfactual action batch；
-- [ ] 保持pair内replans、pairs、四views、tasks逐级等权，并移除DF-PCSP executable/schema语义；
+- [x] 原位把first-prefix batch替换为winner全部replan observations上的loser-policy counterfactual action batch；
+- [x] 保持pair内replans、pairs、四views、tasks逐级等权，并移除DF-PCSP executable/schema语义；
+- [x] 完成实现门：counterfactual actions按loser arm B8查询一次并跨四views复用；不等长trajectory等权、完整replay、
+  microbatch语义与margin descent定向合同通过；全量CPU=`401 passed`、compileall与architecture hard gate通过；
 - [ ] 完成CPU、真实task9/15/18三anchor机制与吞吐门；三项全过才full24 cycle1及strict400。
 
 ## Non-negotiable boundaries
@@ -455,8 +457,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR与DF-PCSP均已按门终局；它们都不得resume或参数小扫。
-当前active DF-SOCP处于implementation pending，无GPU run或可resume checkpoint。下一步原位实现successful-
-occupancy counterfactual preference并完成CPU门。
+当前active DF-SOCP实现与CPU门已完成，无GPU run或可resume checkpoint。下一步从clean pushed commit依次完成固定
+task9/15/18真实机制与吞吐门；三项任一失败即终局。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

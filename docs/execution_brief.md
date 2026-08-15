@@ -48,7 +48,8 @@ rollout或forward。exact task4/task7均变为tie；task9/15/18分别有1/2/1个
 observation，用相同policy noise查询loser counterfactual action，再做逐状态paired flow preference。它复用DJNFR
 完整成功trajectory并补同状态negative，不增加env rollout；固定task9/15/18三anchor全部过门才允许full24。
 authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`；
-implementation pending，当前无GPU run或可resume checkpoint。
+canonical实现与fresh schema已完成，全量CPU=`401 passed`、architecture guard无hard violation；下一步只在clean
+pushed commit上跑固定task9/15/18三anchor真实机制门，当前无GPU run或可resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

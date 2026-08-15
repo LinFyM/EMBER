@@ -592,6 +592,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     observation与policy-noise相同，失败轨迹后来occupancy不进入objective，且不增加env rollout。它相对DJNFR只补
     negative，相对DF-PCSP只把exact preference从第一prefix扩展到完整成功occupancy；不用任意8/16阶段抽样，也不做
     数千次state branching。preformal固定task9/15/18三项全过，直接检验是否消除anchor-dependent credit。
+84. DF-SOCP canonical实现已原位替换DF-PCSP：每个successful replan复制同一observation形成winner/counterfactual
+    两行；loser LoRA按arm安装后B8、相同stored policy-noise生成一次detached actions并跨四个correct K4 views复用。
+    trajectory ID权重令1或2条成功轨迹等权且各自内部replans等权，functional flow按完整pairs做microbatch。旧
+    first-prefix config/checkpoint/evaluator schema已拒载；全量CPU=`401 passed`、compileall通过、architecture
+    guard无hard violation。这只证明数学与运行图合同，固定task9/15/18真实GPU门尚未知。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

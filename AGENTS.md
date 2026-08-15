@@ -177,8 +177,9 @@ task-dependent update。memory token与rank8仍开放。
 authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
 它不改LPCP/DJNFR生成图、rank16、K4或rollout数；对每个exact discordant pair沿winner全部replan observations，
 使用同一policy-noise批量查询loser arm的counterfactual actions，再逐状态做winner-vs-loser flow preference。
-pair内replans、pairs、四views与tasks逐级等权。实现尚未开始；preformal固定task9/15/18且三项必须全门通过，不能
-再挑单一anchor。当前无GPU run或可resume checkpoint。
+pair内replans、pairs、四views与tasks逐级等权。preformal固定task9/15/18且三项必须全门通过，不能再挑单一
+anchor。canonical实现与fresh schema已完成，全量CPU=`401 passed`、architecture guard无hard violation；
+当前无GPU run或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
@@ -10,6 +11,7 @@ import numpy as np
 import torch
 from lerobot.utils.constants import ACTION
 
+from ember.lora import copy_task_lora_state_
 from ember.pi05_assets import configure_libero_runtime_assets
 from ember.pi05_processing import libero_policy_input
 from ember.reward.protocol import (
@@ -68,7 +70,9 @@ def _cpu_tensor_rows(
     )
 
 
-def _flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch.Tensor:
+def policy_flow_noise_cpu(*, seed: int, chunk_size: int, max_action_dim: int) -> torch.Tensor:
+    """Recreate one PI05 action-sampling noise tensor from its retained seed."""
+
     generator = torch.Generator(device="cpu").manual_seed(seed)
     return torch.randn(
         (1, chunk_size, max_action_dim),
@@ -378,7 +382,7 @@ def _batched_policy_replan(
     )
     noise = torch.cat(
         [
-            _flow_noise_cpu(
+            policy_flow_noise_cpu(
                 seed=seed,
                 chunk_size=int(policy.config.chunk_size),
                 max_action_dim=int(policy.config.max_action_dim),
@@ -592,44 +596,182 @@ def collect_paired_reward_arm_trajectories(
     )
 
 
-def complete_paired_common_state_batch(
-    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
-    device: torch.device,
-) -> dict[str, torch.Tensor]:
-    """Collate winner/loser first chunks at their exact shared initial state."""
+_CounterfactualRecord = tuple[int, int, Mapping[str, torch.Tensor], int]
 
-    if len(pairs) not in {1, 2}:
-        raise RewardProtocolError("common-state credit requires one or two pairs")
+
+def _counterfactual_records(
+    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
+    active_labels: Sequence[str],
+) -> dict[str, list[_CounterfactualRecord]]:
+    grouped: dict[str, list[_CounterfactualRecord]] = {arm: [] for arm in ("reference", "candidate")}
+    if len(pairs) not in {1, 2} or len(active_labels) != len(pairs):
+        raise RewardProtocolError("successful-occupancy counterfactual panel changed")
+    for pair_index, ((winner, loser), winner_arm) in enumerate(
+        zip(pairs, active_labels, strict=True)
+    ):
+        if winner_arm not in grouped or not winner.success or loser.success:
+            raise RewardProtocolError("discordant winner arm changed")
+        if len(winner.observations) != len(winner.policy_noise_seeds):
+            raise RewardProtocolError("successful trajectory lost policy replay seeds")
+        loser_arm = "reference" if winner_arm == "candidate" else "candidate"
+        grouped[loser_arm].extend(
+            (pair_index, replan, observation, seed)
+            for replan, (observation, seed) in enumerate(
+                zip(winner.observations, winner.policy_noise_seeds, strict=True)
+            )
+        )
+    return grouped
+
+
+def _counterfactual_policy_batch(
+    *,
+    policy: torch.nn.Module,
+    panel: Sequence[_CounterfactualRecord],
+    device: torch.device,
+    num_inference_steps: int,
+) -> torch.Tensor:
+    keys = set(panel[0][2])
+    if any(set(observation) != keys for _, _, observation, _ in panel):
+        raise RewardProtocolError("counterfactual replay observation keys changed")
+    batch = {
+        name: torch.cat([observation[name] for _, _, observation, _ in panel]).to(
+            device, non_blocking=True
+        )
+        for name in sorted(keys)
+    }
+    noise = torch.cat(
+        [
+            policy_flow_noise_cpu(
+                seed=seed,
+                chunk_size=int(policy.config.chunk_size),
+                max_action_dim=int(policy.config.max_action_dim),
+            )
+            for _, _, _, seed in panel
+        ]
+    ).to(device, non_blocking=True)
+    with (
+        torch.inference_mode(),
+        torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=device.type == "cuda",
+        ),
+    ):
+        actions = policy.predict_action_chunk(
+            batch, noise=noise, num_steps=num_inference_steps
+        )
+    if actions.shape != (len(panel), int(policy.config.chunk_size), 7):
+        raise RewardProtocolError("counterfactual policy returned an invalid action chunk")
+    return actions.detach().to(device="cpu").contiguous()
+
+
+def query_counterfactual_loser_actions(
+    *,
+    policy: torch.nn.Module,
+    lora_contract: Any,
+    identity_state: Mapping[str, torch.Tensor],
+    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
+    active_labels: Sequence[str],
+    reference_lora: Mapping[str, torch.Tensor],
+    candidate_lora: Mapping[str, torch.Tensor],
+    device: torch.device,
+    microbatch_size: int,
+    num_inference_steps: int,
+) -> tuple[tuple[tuple[torch.Tensor, ...], ...], dict[str, Any]]:
+    """Query the failed arm once at every retained successful-arm state."""
+
+    if microbatch_size <= 0:
+        raise RewardProtocolError("counterfactual action batch size changed")
+    grouped = _counterfactual_records(pairs, active_labels)
+    outputs: dict[tuple[int, int], torch.Tensor] = {}
+    forwards = 0
+    started = time.monotonic()
+    try:
+        for loser_arm, records in grouped.items():
+            if not records:
+                continue
+            lora = reference_lora if loser_arm == "reference" else candidate_lora
+            copy_task_lora_state_(policy, lora, lora_contract)
+            policy.reset()
+            for start in range(0, len(records), microbatch_size):
+                panel = records[start : start + microbatch_size]
+                actions = _counterfactual_policy_batch(
+                    policy=policy,
+                    panel=panel,
+                    device=device,
+                    num_inference_steps=num_inference_steps,
+                )
+                for row, (pair_index, replan, _, _) in enumerate(panel):
+                    outputs[(pair_index, replan)] = actions[row : row + 1]
+                forwards += 1
+    finally:
+        copy_task_lora_state_(policy, identity_state, lora_contract)
+    nested = tuple(
+        tuple(outputs[(pair_index, replan)] for replan in range(len(winner.observations)))
+        for pair_index, (winner, _) in enumerate(pairs)
+    )
+    replay_chunks = sum(len(value) for value in nested)
+    if replay_chunks != len(outputs):
+        raise RewardProtocolError("counterfactual action replay lost an output")
+    first_differences = [
+        (actions[0].float() - loser.action_chunks[0].float()).flatten()
+        for actions, (_, loser) in zip(nested, pairs, strict=True)
+    ]
+    first_replay_rms = torch.cat(first_differences).square().mean().sqrt()
+    return nested, {
+        "counterfactual_replay_chunks": replay_chunks,
+        "counterfactual_policy_forwards": forwards,
+        "counterfactual_first_action_replay_rms": float(first_replay_rms),
+        "counterfactual_seconds": time.monotonic() - started,
+    }
+
+
+def complete_successful_occupancy_counterfactual_batch(
+    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
+    counterfactual_actions: Sequence[Sequence[torch.Tensor]],
+    device: torch.device,
+) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    """Pair every successful replan with the failed arm at the identical state."""
+
+    if len(pairs) not in {1, 2} or len(counterfactual_actions) != len(pairs):
+        raise RewardProtocolError(
+            "successful-occupancy credit requires one or two discordant pairs"
+        )
     rows: list[tuple[dict[str, torch.Tensor], torch.Tensor, int]] = []
-    for winner, loser in pairs:
+    trajectory_ids: list[int] = []
+    for trajectory_id, ((winner, loser), counterfactual) in enumerate(
+        zip(pairs, counterfactual_actions, strict=True)
+    ):
+        chunk_count = len(winner.observations)
         if (
             not winner.success
             or loser.success
-            or not winner.observations
-            or not loser.observations
-            or not winner.action_chunks
-            or not loser.action_chunks
-            or not winner.valid_action_steps
-            or not loser.valid_action_steps
+            or chunk_count <= 0
+            or len(winner.action_chunks) != chunk_count
+            or len(winner.valid_action_steps) != chunk_count
+            or len(winner.policy_noise_seeds) != chunk_count
+            or len(counterfactual) != chunk_count
         ):
-            raise RewardProtocolError("common-state pair lost winner or loser")
-        winner_observation = winner.observations[0]
-        loser_observation = loser.observations[0]
-        if set(winner_observation) != set(loser_observation) or any(
-            not torch.equal(winner_observation[name], loser_observation[name])
-            for name in winner_observation
-        ):
-            raise RewardProtocolError("paired arms do not share the initial observation")
-        shared_steps = min(winner.valid_action_steps[0], loser.valid_action_steps[0])
-        rows.extend(
-            (
-                (winner_observation, winner.action_chunks[0], shared_steps),
-                (winner_observation, loser.action_chunks[0], shared_steps),
+            raise RewardProtocolError(
+                "successful-occupancy pair lost its complete winner replay"
             )
-        )
+        for observation, winner_action, loser_action, valid in zip(
+            winner.observations,
+            winner.action_chunks,
+            counterfactual,
+            winner.valid_action_steps,
+            strict=True,
+        ):
+            rows.extend(
+                (
+                    (observation, winner_action, valid),
+                    (observation, loser_action, valid),
+                )
+            )
+            trajectory_ids.append(trajectory_id)
     keys = set(rows[0][0])
     if any(set(observation) != keys for observation, _, _ in rows):
-        raise RewardProtocolError("common-state observation keys changed")
+        raise RewardProtocolError("successful-occupancy observation keys changed")
     valid = torch.tensor(
         [count for _, _, count in rows], dtype=torch.long, device=device
     )
@@ -638,11 +780,12 @@ def complete_paired_common_state_batch(
     )
     if (
         actions.ndim != 3
+        or valid.shape != (actions.shape[0],)
         or bool((valid <= 0).any())
         or bool((valid > actions.shape[1]).any())
         or not torch.equal(valid[0::2], valid[1::2])
     ):
-        raise RewardProtocolError("common-state executed prefix is invalid")
+        raise RewardProtocolError("successful-occupancy executed prefix is invalid")
     batch = {
         name: torch.cat([observation[name] for observation, _, _ in rows]).to(
             device=device, non_blocking=True
@@ -654,4 +797,4 @@ def complete_paired_common_state_batch(
     batch["action_is_pad"] = (
         torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
-    return batch
+    return batch, torch.tensor(trajectory_ids, dtype=torch.long, device=device)

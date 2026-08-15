@@ -41,7 +41,8 @@ resume。CCT随后把video memory从高维Value direction改为language/policy-a
 但formal只得`142/400`、breadth6；相对LPCP=`125/17/18`、churn35。它在train-seen task4形成
 `.575776/.681821`的共同增量，held first4却回到约`0/.25`。live loader排除漏载后，train→held hidden只缩小
 约1.7倍而effective BA缩小249.92倍，把最早缺口进一步定位到held residual穿过native factor/compiler的
-policy-effective commitment。CCT已终局，当前没有active successor。
+policy-effective commitment。CCT已终局；active NPVC据此只替换factor Value来源，先在formal前检验native
+probe Value能否把同一train/held断裂关闭。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -487,6 +488,13 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 60. CCT负结果只否定当前“两系数transport + frozen-W1 language axes + 一轮four-view selected-success”组合。
     V6/LPCP、literal memory token、rank8、few-shot、reward credit与生成LoRA仍开放。memory token若使用，必须
     直接改善held policy-effective commitment和相邻checkpoint共存，不能只替换已通过的carrier或恢复历史低分图。
+61. NPVC在三条后继分叉中选择最小因果变量：literal-memory rank8会同时改变carrier/decoder/rank，rank18 residual
+    lane会改变public adapter与capacity；NPVC则保持LPCP、rank16、FactorHeads、CCT axes、objective与参数量，
+    只用Procedure-set attention把已有ordered native probe deltas聚合成factor Value。它直接检验tiny
+    LPCP-AS139差分是否是held compiler断裂的必要原因。
+62. NPVC把held mechanism gate前置：一次train task4 update后必须在validation8每task四个disjoint K4上只读
+    视频验证cross-video direction与BA幅度，不读held actions/reward。若held仍约`0/.25`、held/train BA低于`.10x`
+    或constant产生新增Value，则formal前终局。这能避免再次用train-seen漂亮几何烧完一轮才发现不泛化。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

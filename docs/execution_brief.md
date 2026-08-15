@@ -28,8 +28,12 @@ disjoint correct K4增量的cosine/mean-energy约=`0/.25`，没有形成共同ta
 effective-BA却缩小`249.92x`。最早失败接口因此是**held language/Program方向经native BF16 factor/compiler时
 没有形成policy-effective commitment**，不是视频未读、参数未加载、训练图未工作或单纯coherence不足。
 
-当前没有active successor或可resume checkpoint。下一轮先从该最早接口建立新的单变量design authority；
-memory token、rank8和few-shot都仍是开放机制，但只有直接针对held commitment与多task共存时才采用。
+当前active successor是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
+`docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、CCT
+transport与matched reward recipe，只把factor Value从tiny LPCP-AS139 readout差分换成已有320 slots的ordered
+native Action-probe delta，并复用同一Procedure-set attention聚合K videos。formal前先做train task4 update后
+validation8×4 K4的只读视频held gate；不读取held actions/reward。held若仍约`0/.25`或BA train→held低于`.10x`，
+直接终局，不烧full24。
 
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=

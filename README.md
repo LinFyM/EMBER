@@ -47,9 +47,13 @@ BA cosine/energy仍为`.575776/.681821`。但held validation first4的对应值�
 这只否定本轮“两系数CCT + 一轮稀疏selected-success”组合，不否定V6/LPCP、memory token、rank8、few-shot、
 reward credit或生成LoRA。
 
-当前没有active successor或可resume checkpoint。下一设计必须直接解决held条件下policy-effective commitment与
-多task共存；literal memory token仍是候选机制，但只有在它针对这个失效接口时才使用，不作为形式要求。实时run
-identity和下一裁决只取[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
+当前active successor是
+[`V6-LPCP Native Probe-Value Commitment`](docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md)：
+保留LPCP143、rank16、CCT transport与全部训练合同，只把factor Value从微小的LPCP-AS139 readout差分换成已有
+320个layer/rank slots的有序native Action-probe delta，并复用同一Procedure-set attention跨video聚合。新设计
+先做train→held只读视频机制门；held若仍约`0/.25`或BA保持`1/250`断裂，就在formal前终止。literal memory仍是
+后继候选，不是本轮强制形式。实时run identity和下一裁决只取
+[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall
 

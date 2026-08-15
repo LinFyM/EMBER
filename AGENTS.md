@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design（若已建立）；当前无active successor，最近终局设计为
-   `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -126,8 +126,12 @@ checkpoint/completion与0禁读/OOM/nonfinite均通过。strict结果如本节�
 局部门仍成立。held first4则约为`0/.25`；live loader确认semantic query逐元素精确加载。train→held transported
 coefficients、pre-W2 hidden residual与effective-BA L2分别缩小`1.63x/1.70x/249.92x`。最早失败接口是held
 Program经native BF16 factor/compiler时未形成policy-effective commitment，而不是carrier、loader或reward链路。
-当前无active successor和可resume checkpoint；下一变量必须直接针对held commitment与多task共存。memory token
-是开放候选，不是必须形式，也不能原样恢复历史低分memory路线。
+当前active successor是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
+`docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、native
+FactorHeads、CCT language-policy axes与matched selected-success合同，唯一把factor Value从微小
+`Procedure_LPCP-Procedure_AS139`差分换成已有320 slots的ordered native Action-probe delta，并用同一
+Procedure-set attention做K轴聚合。trainable仍为67,072，不加memory token、rank变化、scale、normalization或
+额外loss。formal前必须先过train→held只读视频门；held若再现约`0/.25`或BA `1/250`断裂，立即终局。
 
 ## 4. Long-term objective and decision rule
 

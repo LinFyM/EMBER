@@ -355,14 +355,20 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `1.63x/1.70x/249.92x`，最早断点定位为held residual经native BF16 factor/compiler未形成policy-effective BA；
 - [x] breadth、retention与held共同方向门失败，按预注册合同终局；不做cycle2、六臂或axis/scale/rank/LR/seed小扫。
 
-## Next iteration: design boundary
+## Active iteration: V6-LPCP Native Probe-Value Commitment
 
-- [ ] 从CCT终局与完整历史重新选择一个最早失效接口，先写单变量、可证伪design authority；
-- [ ] 新设计必须保留V6/LPCP已有absolute、有序carrier与single-LoRA优势，并直接解决held policy-effective
-  commitment及相邻checkpoint多task共存；
-- [ ] memory token、rank8与few-shot均可作为实现机制，但不是目标或强制形式；不得原样恢复历史低分路线；
-- [ ] 预注册稳定资格：约145可接受，但必须由相邻checkpoint低churn/high-overlap、same-task-other鲁棒及
-  correct相对wrong/shuffled/reversed/no-video的明确paired优势共同认证。
+- [x] 从CCT终局与完整历史选择最早接口：train/held pre-W2 hidden只差`1.70x`而BA差`249.92x`，tiny
+  LPCP-AS139差分不是可靠held Value；
+- [x] 比较literal-memory rank8、rank18 residual lane与direct native probe Value；选择只替换factor Value来源，
+  避免同时改变carrier/decoder/rank；
+- [x] 写单变量、可证伪design authority：保留LPCP143、rank16、FactorHeads、CCT transport与objective，复用
+  Procedure-set attention聚合已有320-slot ordered probe deltas；
+- [ ] 原位实现fresh-incompatible NPVC，完成定向CPU合同与完整CPU suite；
+- [ ] 真实task4 selected-success smoke后，用同一state完成validation8×4 K4只读视频held gate、reverse/constant与
+  longest-video吞吐；任一held门失败即终局，不烧full24；
+- [ ] 机制门通过才fresh full24 cycle1与strict400；只有absolute/breadth/retention/held geometry过门才cycle2；
+- [ ] 稳定约145资格必须由相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对wrong/
+  shuffled/reversed/no-video的明确paired优势共同认证。
 
 ## Non-negotiable boundaries
 
@@ -379,7 +385,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open与CCT均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run、active successor或
-可resume checkpoint；下一步是完成新的单变量design authority后再实施。约145只有在相邻checkpoint低换手、
+Gradient-Open与CCT均已按门终局；它们都不得resume或参数小扫。当前active successor为NPVC，尚未实现，且没有
+active GPU run或可resume checkpoint；下一步是原位实现并先做train→held机制门。约145只有在相邻checkpoint低换手、
 same-task-other鲁棒且correct相对wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local
 RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

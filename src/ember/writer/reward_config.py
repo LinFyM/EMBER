@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP native probe-Value commitment."""
+"""Authority for V6-LPCP pre-addressed factor-selective native Value."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_native_probe_value_commitment_v1"
+    "ember_pi05_v6_lpcp_preaddressed_factor_selective_native_value_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_native_probe_value_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_preaddressed_factor_selective_native_value_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_native_probe_value_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_preaddressed_factor_selective_native_value_v1.json"
 )
 
 
@@ -29,7 +29,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported native probe-Value commitment config")
+        raise WriterModelError("unsupported pre-addressed factor selector config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
@@ -51,7 +51,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                     "same_cached_conditioning_with_query_delta_disabled_exact_as139"
                 ),
                 "candidate_arm": (
-                    "frozen_v6_lpcp_plus_native_probe_value_commitment"
+                    "frozen_v6_lpcp_plus_preaddressed_factor_selective_native_value"
                 ),
             },
         ),
@@ -103,7 +103,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             optimization,
             {
                 "trainable": (
-                    "native_probe_value_commitment_only_67072_parameters"
+                    "preaddressed_factor_selectors_only_16384_parameters"
                 ),
                 "reward_replay_chunk_batch_size": 8,
             },
@@ -125,7 +125,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         ),
     )
     if not all(valid):
-        raise WriterModelError("native probe-Value scientific contract changed")
+        raise WriterModelError("pre-addressed factor selector contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -133,11 +133,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid native probe-Value commitment mode")
+        raise WriterModelError("invalid pre-addressed factor selector mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal native probe-Value commitment is not authorized"
+            "formal pre-addressed factor selector is not authorized"
         )

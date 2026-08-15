@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_native_probe_value_commitment_v1",
-  "status": "active_formal_cycle1_ready",
+  "schema_version": "ember_pi05_v6_lpcp_preaddressed_factor_selective_native_value_v1",
+  "status": "active_mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_native_probe_value_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_preaddressed_factor_selective_native_value"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -65,7 +65,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "native_probe_value_commitment_only_67072_parameters",
+    "trainable": "preaddressed_factor_selectors_only_16384_parameters",
     "reward_replay_chunk_batch_size": 8,
     "optimizer": {
       "name": "AdamW",
@@ -78,7 +78,7 @@
     "distributed": {
       "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
       "exact_resume_world_topology_locked": true,
-      "gradient_communication": "one_native_probe_value_commitment_parameter_vector_plus_one_active_task_count_all_reduce",
+      "gradient_communication": "one_preaddressed_factor_selector_vector_plus_active_task_gradient_rows_and_count",
       "nccl_p2p_disable": "1",
       "deferred_process_group": true,
       "collective_timeout_minutes": 30
@@ -89,13 +89,13 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "blocked_pending_mechanism",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
-    "continuation_trigger": "cycle1_correct_at_least_140_breadth_at_least_7_lpcp_losses_at_most_15_and_held_native_probe_value_gate_pass",
+    "continuation_trigger": "cycle1_correct_at_least_142_breadth_at_least_7_lpcp_losses_at_most_15_and_held_preaddressed_selector_gate_pass",
     "stable_qualification": {
       "cycle1_and_cycle2_correct_minimum": 142,
       "two_cycle_correct_mean_minimum": 145,
@@ -109,7 +109,9 @@
     },
     "mechanism_gate": {
       "step0_exact_lpcp": true,
-      "first_update_semantic_query_nonzero": true,
+      "fixed_language_address_effective_rank_minimum": 4,
+      "fixed_language_address_offdiagonal_cosine_maximum": 0.98,
+      "first_update_all_factor_selectors_nonzero": true,
       "post_update_q_v_action_native_factors_nonzero": true,
       "cross_video_correction_cosine_minimum": 0.15,
       "cross_video_mean_energy_ratio_minimum": 0.4,
@@ -121,63 +123,11 @@
       "held_aggregate_energy_ratio_minimum": 0.4,
       "held_to_train_effective_ba_l2_ratio_minimum": 0.1,
       "held_natural_to_reversed_relative_l2_minimum": 0.0001,
-      "constant_probe_value_natural_ratio_maximum": 0.001,
+      "constant_effective_ba_natural_ratio_maximum": 0.005,
       "natural_reversed_coefficients_and_lora_materially_different": true,
       "no_repeated_backbone_forward": true,
-      "matched_gradient_open_wall_ratio_maximum": 1.1
-    },
-    "mechanism_evidence": {
-      "git_commit": "9113c5b46394859fa8a943a7da0288833976c58c",
-      "host": "gpu01",
-      "physical_gpu": 4,
-      "root": "runs/outputs/pi05_v6_lpcp_native_probe_value_commitment_task4_mechanism_state_b8_9113c5b_gpu01p4_20260815",
-      "task_global_id": 4,
-      "candidate_successes": 2,
-      "reference_successes": 1,
-      "cycle_seconds": 136.0631552519044,
-      "matched_cct_wall_ratio": 1.0407430357243346,
-      "max_cuda_reserved_bytes": 40751857664,
-      "semantic_query_delta_rms": 0.0002753525914158672,
-      "deployment_effective_ba_response_rms": 0.0000162491440015288,
-      "deployment_effective_ba_response_rms_by_kind": {
-        "q": 0.000015763626435565667,
-        "v": 0.000019798578974913815,
-        "action": 0.0000020782646365239662
-      },
-      "train_task4_four_view_effective_ba": {
-        "pairwise_cosine_mean": 0.5929153431582949,
-        "mean_energy_over_sample_energy": 0.6791762419102904,
-        "mean_relative_l2": 0.0010855686987615934,
-        "mean_view_l2": 0.13511102776125575
-      },
-      "held_validation8_four_view_effective_ba": {
-        "passing_tasks": 6,
-        "pairwise_cosine_mean": 0.44939822180684746,
-        "mean_energy_over_sample_energy": 0.5714965342971653,
-        "mean_relative_l2": 0.0009040376007773951,
-        "mean_view_l2": 0.10167388400002929,
-        "held_to_train_l2_ratio": 0.7525209872556765
-      },
-      "held_per_task_cosine_energy": {
-        "1": [0.897073661401675, 0.9079484044689891],
-        "3": [0.9021785346852117, 0.8920812266302565],
-        "11": [0.5778638858934217, 0.6270401356114607],
-        "13": [0.35081858999206467, 0.5121049753470407],
-        "23": [0.19112687540428622, 0.37935356736713266],
-        "26": [0.5866816041723152, 0.6883317602944563],
-        "31": [0.012626886857647663, 0.2560230346994923],
-        "32": [0.07681573604815777, 0.30908916995849395]
-      },
-      "natural_to_reversed": {
-        "probe_value_relative_l2": 1.840836359887228,
-        "npvc_effective_ba_relative_l2": 1.3748518513306156
-      },
-      "constant_to_natural_norm_ratio": {
-        "probe_value": 0.0009167407379082765,
-        "npvc_effective_ba": 0.000012673679344611273
-      },
-      "mechanism_gate_pass": true,
-      "risk": "validation tasks 31 and 32 remain near orthogonal one-over-four energy and closed-loop direction is untested"
+      "matched_npvc_wall_ratio_maximum": 1.1,
+      "full24_shared_mean_descent_coverage_minimum": 0.75
     }
   }
 }

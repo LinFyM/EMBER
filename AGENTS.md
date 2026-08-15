@@ -144,7 +144,8 @@ train task4共同方向在full24后从`.5929/.6792`漂到`.0569/.2951`。最早�
 `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`。它保留LPCP、NPVC native
 Value、rank16与matched reward，只把zero-init common router换成reward update前已存在的fixed language address，
 并令八factor families各自用zero-init diagonal selectors选择native Value组件/符号；trainable=`16,384`。这直接
-检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。尚未实现或运行GPU；memory token和rank8
+检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。canonical实现与完整CPU `399 passed`已
+完成，尚未运行GPU机制门或formal；memory token和rank8
 仍开放，但本轮不同时更换已通过的carrier或public topology。
 
 ## 4. Long-term objective and decision rule

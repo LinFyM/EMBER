@@ -379,7 +379,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `npvc_cycle1_runtime_balance.json`；
 - [x] 审计reward-direction、support-preservation与Dynamic-K memory历史；选择PAFS-NV单变量：保留NPVC native
   Value和LPCP143，把common zero-init router换成fixed language pre-address + factor-owned zero-init selectors；
-- [ ] 原位实现fresh-incompatible PAFS-NV、16,384参数合同、per-task gradient coexistence evidence与CPU门；
+- [x] 原位实现fresh-incompatible PAFS-NV、16,384参数合同、per-task gradient coexistence evidence与CPU门；
+  NPVC executable path已退役，完整CPU=`399 passed`，架构门无block；
 - [ ] 通过task4→validation8机制/吞吐门后才fresh full24 cycle1与strict400；未过不扫basis/scale/rank/LR/seed；
 - [ ] 后继若达到约145，必须继续用相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对
   wrong/shuffled/reversed/no-video的明确paired优势认证。

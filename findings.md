@@ -523,6 +523,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     zero-init selectors。总trainable=`16,384`，step0/no-video exact LPCP。该单变量直接检验“第一次full24
     update前的task/family分流”能否同时修复reward组件/符号选择与task4坍塌；若per-task gradients仍冲突，才把
     最早接口推进到显式shared-update coordination。
+70. PAFS-NV已原位替换NPVC executable path：fixed address是persistent frozen buffer，八family selectors总计
+    `16,384`且zero-init；fresh config/checkpoint/eval schema拒绝旧checkpoint，full24会保留每个active task的
+    小梯度行并在raw mean前报告共存证据。canonical LIBERO assets下完整CPU=`399 passed`，架构门无block。
+    这些只封住step0、梯度、schema与单路径工程合同；GPU task4→validation8机制门和closed-loop仍未知。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

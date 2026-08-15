@@ -53,7 +53,7 @@ Writer checkpoint中共存**。下一设计不会只加scale、capacity、cohere
 保留LPCP143、NPVC native Value和rank16，只把所有tasks/q-v-action共享的zero-init router替换为固定语言
 pre-address下的factor-owned zero-init selectors。它让task分流在第一次full24 reward update前存在，同时让不同
 policy families独立选择视频Value组件与符号；step0/no-video仍exact LPCP。当前只有design authority，尚未有
-实现或性能结果。实时run identity和下一裁决只取
+GPU机制或性能结果；canonical实现与完整CPU `399 passed`已经完成。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

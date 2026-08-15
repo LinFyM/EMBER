@@ -1,4 +1,4 @@
-"""One cross-video success-credit cycle for native probe-Value commitment."""
+"""One cross-video success-credit cycle for pre-addressed factor selectors."""
 
 from __future__ import annotations
 
@@ -22,7 +22,6 @@ from ember.reward.rollout import (
 )
 from ember.writer.as_step import (
     accumulate_flat_gradient,
-    assign_flat_gradient,
     gather_full24_records,
 )
 from ember.writer.data import pack_teacher_condition
@@ -34,6 +33,7 @@ from ember.writer.reward_preference import (
     functional_selected_success_lora_gradient,
     mean_cross_video_task_gradient,
 )
+from ember.writer.reward_gradient_update import AppliedStep, apply_reward_step
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
@@ -49,14 +49,6 @@ class RewardProbe:
     query: Mapping[str, torch.Tensor]
     before_action: torch.Tensor
     policy_noise_seed: int
-
-
-@dataclass(frozen=True)
-class AppliedStep:
-    active_tasks: int
-    gradient_norm: float
-    gradient_rms: float
-    parameter_delta_rms: Mapping[str, float]
 
 
 def _claim_task(queue: Path, ordered: tuple[RewardTask, ...]) -> RewardTask | None:
@@ -143,7 +135,7 @@ def _encode_pair(
         ),
     ):
         if encoded.reference_program is None:
-            raise WriterModelError("native probe-Value candidate lost AS139 reference")
+            raise WriterModelError("factor-selector candidate lost AS139 reference")
         reference = runtime.writer.decode_program(encoded.reference_program)
     return visit, tuple(demos), packed, video_metrics, state, reference, candidate
 
@@ -244,12 +236,12 @@ def select_unique_success_trajectories(
     """Select the successful trajectory only when the two exact arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
-        raise WriterModelError("native probe-Value credit requires two paired states")
+        raise WriterModelError("factor-selector credit requires two paired states")
     selected: list[RewardTrajectory] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
-            raise WriterModelError("native probe-Value arm pairing changed")
+            raise WriterModelError("factor-selector arm pairing changed")
         if candidate_row.success and not reference_row.success:
             selected.append(candidate_row)
             labels.append("candidate")
@@ -318,7 +310,7 @@ def _differentiate_task_credit(
     candidate_lora: Mapping[str, torch.Tensor],
     selected: Sequence[RewardTrajectory],
     gradient_sum: torch.Tensor,
-) -> tuple[dict[str, Any], float]:
+) -> tuple[dict[str, Any], float, torch.Tensor]:
     started = time.monotonic()
     batch, trajectory_ids = complete_selected_trajectory_batch(
         selected, torch.device("cpu")
@@ -361,7 +353,8 @@ def _differentiate_task_credit(
                 **view_metrics,
             }
         )
-    gradient_sum.add_(mean_cross_video_task_gradient(view_gradients))
+    task_gradient = mean_cross_video_task_gradient(view_gradients)
+    gradient_sum.add_(task_gradient)
     first = view_rows[0]
     return {
         "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
@@ -383,7 +376,7 @@ def _differentiate_task_credit(
             {demo for demos in demo_sets for demo in demos}
         ),
         "credit_view_records": view_rows,
-    }, time.monotonic() - started
+    }, time.monotonic() - started, task_gradient
 
 
 def _make_probe(
@@ -435,7 +428,7 @@ def _task_gradient(
     cycle: int,
     gradient_sum: torch.Tensor,
     probe: RewardProbe | None,
-) -> tuple[dict[str, Any], RewardProbe | None, int]:
+) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
     visit, anchor_demos, packed, video_metrics, state, reference_lora, candidate_lora = (
         _encode_pair(runtime, task, cycle)
     )
@@ -451,9 +444,10 @@ def _task_gradient(
     selected, labels = select_unique_success_trajectories(reference, candidate)
     credit = _empty_credit()
     credit_seconds = 0.0
+    task_gradient = None
     active = int(bool(selected))
     if selected:
-        credit, credit_seconds = _differentiate_task_credit(
+        credit, credit_seconds, task_gradient = _differentiate_task_credit(
             runtime,
             task,
             cycle,
@@ -505,24 +499,34 @@ def _task_gradient(
         "target_dataset_action_reads": 0,
         "teacher_action_reads": 0,
     }
-    return row, probe, active
+    return row, probe, active, task_gradient
 
 
 def _collect_cycle_tasks(
     runtime: RewardRuntime,
     cycle: int,
     gradient_sum: torch.Tensor,
-) -> tuple[list[dict[str, Any]], RewardProbe | None, int]:
+) -> tuple[
+    list[dict[str, Any]],
+    RewardProbe | None,
+    int,
+    dict[int, torch.Tensor],
+]:
     if runtime.args.mode == "smoke":
         task_id = int(
             runtime.args.smoke_task_id
             or runtime.config["smoke_run"]["task_global_id"]
         )
         task = next(task for task in runtime.tasks if task.global_task_id == task_id)
-        row, probe, active = _task_gradient(
+        row, probe, active, task_gradient = _task_gradient(
             runtime, task, cycle, gradient_sum, None
         )
-        return [row], probe, active
+        gradients = (
+            {task.global_task_id: task_gradient}
+            if task_gradient is not None
+            else {}
+        )
+        return [row], probe, active, gradients
     ordered = tuple(
         sorted(runtime.tasks, key=lambda task: (-task.horizon, task.global_task_id))
     )
@@ -531,65 +535,21 @@ def _collect_cycle_tasks(
         queue.write_text("0", encoding="utf-8")
     barrier(runtime.context)
     records: list[dict[str, Any]] = []
+    task_gradients: dict[int, torch.Tensor] = {}
     probe = None
     active = 0
     while task := _claim_task(queue, ordered):
-        row, probe, task_active = _task_gradient(
+        row, probe, task_active, task_gradient = _task_gradient(
             runtime, task, cycle, gradient_sum, probe
         )
         records.append(row)
         active += task_active
+        if task_gradient is not None:
+            task_gradients[task.global_task_id] = task_gradient
     barrier(runtime.context)
     if runtime.context.is_main:
         queue.unlink(missing_ok=True)
-    return records, probe, active
-
-
-def _trainable_named(
-    runtime: RewardRuntime,
-) -> tuple[tuple[str, torch.nn.Parameter], ...]:
-    return tuple(
-        (name, value)
-        for name, value in runtime.writer.named_parameters()
-        if value.requires_grad
-    )
-
-
-def _apply_step(
-    runtime: RewardRuntime,
-    gradient_sum: torch.Tensor,
-    local_active_tasks: int,
-) -> AppliedStep:
-    active = torch.tensor(
-        local_active_tasks, dtype=torch.long, device=runtime.context.device
-    )
-    if runtime.context.world_size > 1:
-        dist.all_reduce(gradient_sum, op=dist.ReduceOp.SUM)
-        dist.all_reduce(active, op=dist.ReduceOp.SUM)
-    active_tasks = int(active)
-    if active_tasks <= 0:
-        raise WriterModelError("native probe-Value cycle has no discordant success")
-    gradient_sum.div_(active_tasks)
-    if not bool(torch.isfinite(gradient_sum).all()) or not bool(
-        torch.count_nonzero(gradient_sum)
-    ):
-        raise WriterModelError("native probe-Value shared gradient is invalid")
-    assign_flat_gradient(gradient_sum, runtime.gradient_layout)
-    clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
-    grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
-    named = _trainable_named(runtime)
-    before = {name: value.detach().clone() for name, value in named}
-    runtime.optimizer.step()
-    delta = {
-        name: float((value.detach() - before[name]).float().square().mean().sqrt())
-        for name, value in named
-    }
-    return AppliedStep(
-        active_tasks=active_tasks,
-        gradient_norm=float(grad_norm),
-        gradient_rms=float(gradient_sum.square().mean().sqrt()),
-        parameter_delta_rms=delta,
-    )
+    return records, probe, active, task_gradients
 
 
 def _lora_response(
@@ -748,9 +708,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_native_probe_value_commitment"
+            "one_complete_train24_preaddressed_factor_selectors"
             if runtime.args.mode == "formal"
-            else "one_task_native_probe_value_commitment_live_smoke"
+            else "one_task_preaddressed_factor_selectors_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -790,6 +750,7 @@ def _cycle_metrics(
         / len(active_records),
         "writer_gradient_norm_before_clip": step.gradient_norm,
         "writer_gradient_rms": step.gradient_rms,
+        "gradient_coexistence": step.gradient_coexistence,
         "parameter_delta_rms": step.parameter_delta_rms,
         "deployment_response_probes": probes,
         "task_records": records,
@@ -819,10 +780,10 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
         dtype=torch.float32,
         device=runtime.context.device,
     )
-    records, probe, local_active = _collect_cycle_tasks(
+    records, probe, local_active, task_gradients = _collect_cycle_tasks(
         runtime, cycle, gradient_sum
     )
-    step = _apply_step(runtime, gradient_sum, local_active)
+    step = apply_reward_step(runtime, gradient_sum, local_active, task_gradients)
     records, probes, elapsed = _gather_cycle_evidence(
         runtime, records, probe, started
     )

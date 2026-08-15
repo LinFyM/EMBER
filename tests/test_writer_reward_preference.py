@@ -20,10 +20,10 @@ from ember.lora import (
 from ember.reward.rollout import RewardTrajectory
 from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import (
-    _apply_step,
     _lora_response,
     select_unique_success_trajectories,
 )
+from ember.writer.reward_gradient_update import apply_reward_step
 from ember.writer.reward_preference import (
     functional_selected_success_lora_gradient,
     mean_cross_video_task_gradient,
@@ -284,10 +284,14 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     class _Writer(torch.nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.query_delta = torch.nn.Linear(2, 1, bias=False)
+            self.factor_commitment = torch.nn.Module()
+            self.factor_commitment.selectors = torch.nn.ParameterDict(
+                {"q_a": torch.nn.Parameter(torch.zeros(2))}
+            )
 
     writer = _Writer()
-    writer.query_delta.weight.data.copy_(torch.tensor([[0.5, -0.25]]))
+    selector = writer.factor_commitment.selectors["q_a"]
+    selector.data.copy_(torch.tensor([0.5, -0.25]))
     optimizer = torch.optim.AdamW(
         writer.parameters(),
         lr=0.1,
@@ -302,13 +306,20 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         optimizer=optimizer,
         trainable_parameters=tuple(writer.parameters()),
         gradient_layout=parameter_layout(writer),
+        tasks=(SimpleNamespace(global_task_id=0), SimpleNamespace(global_task_id=1)),
     )
-    step = _apply_step(runtime, torch.tensor([-1.0, 0.0]), 2)
+    step = apply_reward_step(
+        runtime,
+        torch.tensor([-1.0, 0.0]),
+        2,
+        {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
+    )
     assert step.active_tasks == 2
     torch.testing.assert_close(
-        optimizer.state[writer.query_delta.weight]["exp_avg"],
-        torch.tensor([[-0.05, 0.0]]),
+        optimizer.state[selector]["exp_avg"],
+        torch.tensor([-0.05, 0.0]),
         rtol=0,
         atol=1e-7,
     )
-    assert step.parameter_delta_rms["query_delta.weight"] > 0
+    assert step.parameter_delta_rms["factor_commitment.selectors.q_a"] > 0
+    assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0

@@ -1,6 +1,6 @@
 # V6-LPCP Pre-Addressed Factor-Selective Native Value
 
-状态：2026-08-15 active design authority。简称`PAFS-NV`。本设计建立在NPVC cycle1完整终局之后，只替换
+状态：2026-08-15 mechanism implementation ready，formal仍由第8节机制门阻断。简称`PAFS-NV`。本设计建立在NPVC cycle1完整终局之后，只替换
 `native probe Value -> factor hidden direction`的选择接口；LPCP143 carrier、K4 ordered set、38-target rank16
 public LoRA、paired selected-success reward、frozen source policy、split与评测合同全部保持不变。
 
@@ -116,6 +116,10 @@ gradient energy。该矩阵每cycle至多约`24 x 16,384` FP32，远小于LoRA/b
 4. reward cycle在已有per-task four-view mean处暂存小gradient row，global mean后只汇总必要scalar/matrix evidence；
 5. 新config/checkpoint/evaluator schema fresh-incompatible；NPVC checkpoint即使shape局部相似也不得加载；
 6. evaluator和LoRA cache仍使用同一个canonical deployment path，不新增baseline forward或第二套adapter。
+
+截至`36e30fd`之后的实现基线，NPVC executable schema/config已原位退役，PAFS-NV fresh-incompatible路径已接通；
+selector与fixed address合同、reward checkpoint/eval schema、per-task gradient coexistence evidence均已实现。
+canonical LIBERO assets环境下完整CPU为`399 passed`，架构门无block；这些只证明实现合同，不是机制或性能结果。
 
 ## 8. Fast mechanism and efficiency falsifiers
 

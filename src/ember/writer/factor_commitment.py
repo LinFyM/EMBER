@@ -1,4 +1,4 @@
-"""Commit native Action-probe Value along V6 policy-aligned directions."""
+"""Select native Action-probe Value through fixed language pre-addresses."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import torch
 import torch.nn.functional as F
 
 from ember.writer.errors import WriterModelError
-from ember.writer.temporal import RMSNorm
 
 
 FACTOR_FAMILIES = (
@@ -23,8 +22,8 @@ FACTOR_FAMILIES = (
 )
 
 
-class NativeProbeValueCommitment(torch.nn.Module):
-    """Use native probe Value as coefficients over language-policy axes."""
+class PreAddressedFactorSelectiveNativeValue(torch.nn.Module):
+    """Let each factor family select video Value under a fixed text address."""
 
     def __init__(
         self,
@@ -38,28 +37,40 @@ class NativeProbeValueCommitment(torch.nn.Module):
             raise WriterModelError("invalid semantic factor-memory topology")
         self.width = int(width)
         self.basis_count = int(basis_count)
-        self.language_norm = RMSNorm(width)
-        self.basis_norm = RMSNorm(width)
-        self.semantic_query = torch.nn.Linear(width, width, bias=False)
-        self.basis_keys = torch.nn.Parameter(torch.empty(basis_count, width))
+        self.selectors = torch.nn.ParameterDict(
+            {
+                family: torch.nn.Parameter(
+                    torch.zeros(basis_count, 2, width)
+                )
+                for family in FACTOR_FAMILIES
+            }
+        )
+        basis_keys = torch.empty(basis_count, width)
         generator = torch.Generator(device="cpu").manual_seed(
             int(initialization_seed) + 0x53464D43
         )
-        torch.nn.init.zeros_(self.semantic_query.weight)
-        self.basis_keys.data.normal_(mean=0.0, std=0.02, generator=generator)
+        basis_keys.normal_(mean=0.0, std=0.02, generator=generator)
+        self.register_buffer("basis_keys", basis_keys)
         self.register_buffer(
             "anchor_input_sign",
             torch.where(torch.arange(width) % 2 == 0, 1, -1).to(torch.int8),
             persistent=False,
         )
 
+    @staticmethod
+    def _rms_norm(value: torch.Tensor) -> torch.Tensor:
+        scale = torch.rsqrt(
+            value.to(torch.float32).square().mean(dim=-1, keepdim=True) + 1e-6
+        ).to(value.dtype)
+        return value * scale
+
     def basis_weights(self, language_slots: torch.Tensor) -> torch.Tensor:
-        """Return the language-only soft address for every policy slot."""
+        """Return a frozen language-only pre-address for every policy slot."""
 
         if language_slots.ndim != 3 or language_slots.shape[-1] != self.width:
             raise WriterModelError("semantic address lost its policy-slot layout")
-        query = self.semantic_query(self.language_norm(language_slots))
-        keys = self.basis_norm(self.basis_keys)
+        query = self._rms_norm(language_slots)
+        keys = self._rms_norm(self.basis_keys)
         logits = torch.einsum("bsi,ki->bsk", query, keys) * self.width**-0.5
         return torch.softmax(logits.to(torch.float32), dim=-1).to(logits.dtype)
 
@@ -71,7 +82,7 @@ class NativeProbeValueCommitment(torch.nn.Module):
         *,
         anchor_input_weights: Mapping[str, torch.Tensor],
     ) -> Mapping[str, torch.Tensor]:
-        """Transport two video coefficients along task-shared hidden axes."""
+        """Select two video coefficients independently for every factor family."""
 
         if (
             probe_value_memory.ndim != 3
@@ -80,24 +91,12 @@ class NativeProbeValueCommitment(torch.nn.Module):
             or basis_weights.shape
             != (*probe_value_memory.shape[:2], self.basis_count)
         ):
-            raise WriterModelError("invalid native probe-Value commitment")
+            raise WriterModelError("invalid pre-addressed factor-selective Value")
         if set(anchor_input_weights) != set(FACTOR_FAMILIES):
             raise WriterModelError("factor anchor families changed")
-        language = self.language_norm(language_slots)
+        language = self._rms_norm(language_slots)
         signed_language = language * self.anchor_input_sign
-        scale = self.width**-0.5
-        direct_coefficient = (
-            probe_value_memory * language
-        ).sum(dim=-1, keepdim=True) * scale
-        signed_coefficient = (
-            probe_value_memory * signed_language
-        ).sum(dim=-1, keepdim=True) * scale
-        direct_route = (
-            basis_weights[..., 0] - basis_weights[..., 1]
-        ).unsqueeze(-1)
-        signed_route = (
-            basis_weights[..., 2] - basis_weights[..., 3]
-        ).unsqueeze(-1)
+        selector_input = probe_value_memory * language
         result: dict[str, torch.Tensor] = {}
         for family in FACTOR_FAMILIES:
             anchor_weight = anchor_input_weights[family]
@@ -109,9 +108,15 @@ class NativeProbeValueCommitment(torch.nn.Module):
             signed_axis = F.gelu(
                 torch.einsum("bsj,ij->bsi", signed_language, anchor_weight)
             )
+            per_basis = torch.einsum(
+                "bsj,koj->bsko", selector_input, self.selectors[family]
+            )
+            coefficients = (
+                basis_weights[..., None] * per_basis
+            ).sum(dim=-2)
             result[family] = (
-                direct_route * direct_coefficient * direct_axis
-                + signed_route * signed_coefficient * signed_axis
+                coefficients[..., :1] * direct_axis
+                + coefficients[..., 1:] * signed_axis
             )
         return result
 

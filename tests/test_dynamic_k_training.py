@@ -101,14 +101,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_native_probe_value_reward_config_freezes_only_commitment() -> None:
+def test_preaddressed_factor_selector_config_is_mechanism_only() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_ready"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["status"] == "active_mechanism_ready"
+    assert config["formal_run"]["status"] == "blocked_pending_mechanism"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "native_probe_value_commitment_only_67072_parameters"
+        "preaddressed_factor_selectors_only_16384_parameters"
     )
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 142,
@@ -125,16 +125,10 @@ def test_native_probe_value_reward_config_freezes_only_commitment() -> None:
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.1
-    assert gate["constant_probe_value_natural_ratio_maximum"] == 0.001
-    evidence = config["formal_run"]["mechanism_evidence"]
-    assert evidence["mechanism_gate_pass"] is True
-    assert evidence["held_validation8_four_view_effective_ba"][
-        "passing_tasks"
-    ] == 6
-    assert evidence["held_validation8_four_view_effective_ba"][
-        "held_to_train_l2_ratio"
-    ] >= 0.1
-    assert evidence["constant_to_natural_norm_ratio"]["probe_value"] <= 0.001
+    assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
+    assert gate["fixed_language_address_effective_rank_minimum"] == 4
+    assert gate["full24_shared_mean_descent_coverage_minimum"] == 0.75
+    assert "mechanism_evidence" not in config["formal_run"]
     assert base["writer"]["policy_slot_count"] == 320
 
 

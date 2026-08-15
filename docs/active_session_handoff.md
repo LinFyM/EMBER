@@ -37,7 +37,8 @@
   native Value、rank16、FactorHeads与matched selected-success reward；唯一把common zero-init semantic router
   换成reward前已存在的fixed four-way language address，并给八factor families各自四basis×两轴的zero-init
   diagonal selectors，总trainable=`16,384`。step0/no-video exact LPCP；同task跨video地址相同，video仍是唯一
-  dynamic Value。当前仅有design authority，尚未实现、测试或启动GPU；
+  dynamic Value。canonical实现已原位替换NPVC executable path，fresh config/checkpoint/eval schema与per-task
+  gradient coexistence evidence已接通；完整CPU=`399 passed`、架构门无block。当前尚未运行GPU机制门或formal；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

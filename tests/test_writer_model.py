@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_native_probe_value_commitment_is_exact_lpcp_at_zero_init() -> None:
+def test_preaddressed_factor_selectors_are_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -309,9 +309,13 @@ def test_native_probe_value_commitment_is_exact_lpcp_at_zero_init() -> None:
     assert sum(
         parameter.numel()
         for parameter in model.factor_commitment.parameters()
-    ) == 67_072
+    ) == 16_384
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
-    assert not model.factor_commitment.semantic_query.weight.count_nonzero()
+    assert all(
+        not selector.count_nonzero()
+        for selector in model.factor_commitment.selectors.values()
+    )
+    assert not model.factor_commitment.basis_keys.requires_grad
 
 
 def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
@@ -343,7 +347,20 @@ def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
     )
 
 
-def test_native_probe_value_commitment_opens_query_and_requires_video() -> None:
+def test_preaddress_is_fixed_video_independent_and_non_degenerate() -> None:
+    model, _ = _model()
+    commitment = model.factor_commitment
+    generator = torch.Generator(device="cpu").manual_seed(41)
+    language = torch.randn(8, 320, 256, generator=generator)
+    with torch.no_grad():
+        first = commitment.basis_weights(language)
+        second = commitment.basis_weights(language.clone())
+    torch.testing.assert_close(first, second, rtol=0, atol=0)
+    assert torch.linalg.matrix_rank(first.reshape(-1, 4).float()) == 4
+    assert not commitment.basis_keys.requires_grad
+
+
+def test_preaddressed_factor_selectors_open_all_families_and_require_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -355,10 +372,11 @@ def test_native_probe_value_commitment_opens_query_and_requires_video() -> None:
         anchor_input_weights=model._factor_anchor_input_weights(),
     )
     sum(value.sum() for value in residuals.values()).backward()
-    assert commitment.semantic_query.weight.grad is not None
-    assert commitment.semantic_query.weight.grad.count_nonzero()
-    assert commitment.basis_keys.grad is not None
-    assert not commitment.basis_keys.grad.count_nonzero()
+    assert all(
+        selector.grad is not None and selector.grad.count_nonzero()
+        for selector in commitment.selectors.values()
+    )
+    assert commitment.basis_keys.grad is None
 
     with torch.no_grad():
         zero_residuals, _ = commitment(
@@ -369,14 +387,15 @@ def test_native_probe_value_commitment_opens_query_and_requires_video() -> None:
     assert all(not value.count_nonzero() for value in zero_residuals.values())
 
 
-def test_native_probe_value_commitment_has_two_shared_axes_per_family() -> None:
+def test_preaddressed_factor_selectors_have_two_axes_per_family() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
     memory = torch.randn(5, 3, 256, generator=generator)
     language = torch.randn(1, 3, 256, generator=generator).expand(5, -1, -1)
     with torch.no_grad():
-        commitment.semantic_query.weight.normal_(std=0.01, generator=generator)
+        for selector in commitment.selectors.values():
+            selector.normal_(std=0.01, generator=generator)
         residuals, _ = commitment(
             memory,
             language,
@@ -401,8 +420,8 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["factor_commitment.basis_keys"] = source.state_dict()[
-        "factor_commitment.basis_keys"
+    partial["factor_commitment.selectors.q_a"] = source.state_dict()[
+        "factor_commitment.selectors.q_a"
     ]
     with torch.no_grad():
         try:

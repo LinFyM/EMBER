@@ -36,8 +36,9 @@ Gradient-Open确实跨过了SFMC的梯度与native factor写出断点：cycle1 q
 `141/400`；相对LPCP143为`128 retained / 13 gained / 15 lost`、churn28，并把Spatial/Object/Goal能力换成
 Long1净增。更关键的是，同task四个disjoint correct K4条件的增量cosine仍只有`.0001442`、平均后能量仍约
 `.250124`。因此本轮修复是真实但非充分的：最早缺口已后移到**共享semantic address与cross-video reward
-credit如何先形成跨video可复现的causal task Program，再写成共同policy-effective方向**。当前没有active
-checkpoint或已选successor；下一轮必须先在这个接口上形成新的单变量design authority。
+credit如何先形成跨video可复现的causal task Program，再写成共同policy-effective方向**。旧checkpoint均不可
+resume；active CCT据此只把video memory从高维Value direction改为language/policy-aligned per-slot causal
+coefficients，尚未实现或产生结果。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -452,6 +453,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     mean/sample energy=`.250124`，仍是近正交video-local方向。这证明“梯度/写出打开”是必要但不充分条件；
     最早失败接口已后移到shared semantic address与success credit如何经video-conditioned Jacobian形成跨video
     可复现的policy-effective task Program。下一设计不能继续放大anchor或扫cycle/LR/rank/scale。
+53. active CCT不再用共享router去gate 256维video-local Value，而把每个320 policy/rank slot的video memory
+    投影成两个causal coefficients；同task exact language经冻结V6 W1/GELU定义共享family directions。它在
+    step0 exact LPCP且没有新增language-only Value，同时保留dynamic K、有序Procedure和selected-success。
+    这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫；尚无实现或性能证据。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

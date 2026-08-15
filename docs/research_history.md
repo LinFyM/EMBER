@@ -18,7 +18,8 @@ few-shot nuisance reduction已工作但没有修正高层任务方向。该arm�
 Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。Shared-Core
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC与Gradient-Open继续把接口推进到factor commitment；
-最新证据已把断点推进到跨video causal Program形成共同policy direction，精确状态取`docs/active_session_handoff.md`。
+最新证据已把断点推进到跨video causal Program形成共同policy direction。当前active CCT只把video Value改为
+language/policy-aligned per-slot causal coefficients，尚无结果；精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
 

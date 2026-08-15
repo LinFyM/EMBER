@@ -18,6 +18,13 @@ SFMC的sub-ULP writeout后移到**shared semantic address/cross-video success cr
 Jacobian仍写成近正交policy directions**。下一变量必须直接形成跨video可复现的causal task Program，不能继续
 放大anchor、增加cycle或扫LR/rank/scale。
 
+当前active successor是**V6-LPCP Causal Coefficient Transport**，authority=
+`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。唯一主变量是把K-set后的256维
+video `factor_memory`从hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；同task
+exact language经冻结V6 W1/GELU定义共享的family-specific output axes。它保持step0 exact LPCP、四view
+selected-success和完整rank16 compiler，不加入coherence loss、memory token、rank变化或第二数据源。当前尚未
+实现或启动GPU；先过跨video span、顺序、q/v/action response与吞吐机制门，再决定是否fresh full24。
+
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=
 `1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`、top3=`121/144=.84028`。
@@ -56,7 +63,7 @@ semantic query delta=`6.9499e-5`，为SFMC约3.96万倍；5/5 probes的q/v、3/5
 router与v-family写出在full24仍打开，但action写出尚不均匀。cycle=`581.924s`；rank任务数虽为`3/5/2/5/9`，
 recorded wall只有`462.083--560.082s`、max/min=`1.2121x`，动态队列按成本而非数量平衡。world5相对SFMC
 world3 wall=`.6321x`，约95%理想扩展效率；完整checkpoint/completion已保留。训练outcome跨world不作严格架构
-比较。其strict终局结果与接口定位见本节开头；当前没有可resume的active checkpoint。
+比较。其strict终局结果与接口定位见本节开头；当前没有可resume的旧checkpoint，CCT必须fresh。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；

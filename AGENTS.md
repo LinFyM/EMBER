@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -115,6 +115,14 @@ causal Program；不续cycle2或六臂，当前没有可resume的active checkpoi
 SFMC和Gradient-Open都没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
 + 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
 token、rank8、few-shot或生成LoRA本身。
+
+当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
+`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。它保留sealed LPCP、dynamic K、
+ordered Procedure、four-view selected-success、V6 factor compiler与rank16 public topology，只把video-derived
+`factor_memory`从256维hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；exact
+language经冻结V6 W1/GELU提供同task共享的family-specific output axes。zero-init language router保证step0 exact
+LPCP，新增residual又必须乘video coefficient，不增加language-only Value。它尚未实现或产生任何性能结果；formal
+前必须先证明跨video correction离开GOSC的约`0/.25`、顺序响应和q/v/action链路非零且吞吐合格。
 
 ## 4. Long-term objective and decision rule
 

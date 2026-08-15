@@ -39,9 +39,13 @@ Object/Goal/Spatial能力换到Long1，而非共同积累。correct、retention�
 
 这轮得到的有效结论不是“memory/LoRA生成无用”：gradient-open使相对LPCP的effective-BA改写较SFMC放大约
 `33.3x`，q/v/action在`400/399/368`个样本非零，证明router与native写出断点确实修复；但四组同task正确K4
-增量仍近正交（cosine`.000144`、energy ratio`.250124`），闭环也继续换手。当前没有可resume的active
-checkpoint；下一设计只允许针对“跨视频causal task Program如何在进入compiler前形成可复现共同方向”这一最早
-接口，不继续放大anchor或扫cycle/LR/rank/scale。
+增量仍近正交（cosine`.000144`、energy ratio`.250124`），闭环也继续换手。该checkpoint不可resume。
+
+当前active successor是
+[`V6-LPCP Causal Coefficient Transport`](docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md)：
+保留LPCP强底座、动态K、有序视频与完整V6 LoRA compiler，只把视频Program从“任意256维输出方向”改成每个
+policy/rank slot的两个有向系数；exact language提供同task共享、policy-aligned的输出轴。它直接限制同task换视频
+时的LoRA方向旋转，同时没有新增language-only Value。目前只有design authority，尚无实现或结果。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

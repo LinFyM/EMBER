@@ -11,6 +11,10 @@
   为`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`，已按门终局。SFMC单点144仍是最高
   correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的历史最好=
   `143/135/125/128/129`；
+- 当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
+  `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。它尚未实现或运行；唯一变量是让
+  video-derived factor memory只提供320 slots各两个causal coefficients，由exact language与冻结V6 W1/GELU
+  提供同task共享的policy-aligned directions，从结构上阻止不同正确视频任意旋转高维LoRA correction；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
@@ -789,5 +793,5 @@ strict与终局分析root：
   `gosc_vs_sfmc_stable_effective_ba_analysis.json`和`gosc_cycle1_terminal_analysis.json`。
 
 本架构按correct、lost、net与suite四项失败终局，不resume cycle2、不做六臂或小扫。当前没有active GPU run或
-可resume checkpoint；下一design authority只能针对**跨video causal task Program在进入policy-aligned compiler前
-形成可复现共同方向**，并保留已通过的LPCP carrier、gradient-open/native写出与single-LoRA信息墙。
+可resume checkpoint。后继CCT authority已经建立：保留LPCP carrier与single-LoRA信息墙，把video memory从
+高维Value direction改为language/policy-aligned causal coefficients；其实现与结果必须fresh，不能写回本段历史。

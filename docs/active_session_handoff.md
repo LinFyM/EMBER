@@ -25,8 +25,9 @@
 - 当前active successor是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
   `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、CCT
   transport与matched reward recipe，只把factor Value换成已有320 slots的ordered native Action-probe delta，
-  并复用同一Procedure-set attention聚合K videos；formal前新增validation8×4 K4只读视频held gate。当前没有
-  active GPU run或可resume checkpoint；
+  并复用同一Procedure-set attention聚合K videos；canonical实现、fresh-incompatible config/checkpoint/eval
+  schema和聚合合同已完成，定向CPU=`43 passed`、完整CPU在canonical LIBERO assets环境=`398 passed`；formal前
+  新增validation8×4 K4只读视频held gate。当前没有active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

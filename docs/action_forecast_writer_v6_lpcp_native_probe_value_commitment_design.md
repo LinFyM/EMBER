@@ -171,6 +171,12 @@ factor family/slot ownership、reference/candidate语义与reward/evaluator一�
 任一held项失败即终局，不启动full24。门只证明结构没有在train→held接口立即失效，不提供absolute、稳定性或
 视频因果closed-loop结论。
 
+实现状态（2026-08-15）：canonical Writer已原位切换为fresh-incompatible NPVC schema。`compile_readouts`用
+Procedure-set返回的同一attention对`per_video_query_conditioners`做slotwise K轴加权，所得
+`shared_probe_value_slots`直接进入原factor commitment；LPCP/AS139 reference差分不再充当Value。constant-video
+zero、natural非零、K-set permutation、attention逐项等式、step0 exact LPCP与cold-start拒载合同均已覆盖；
+定向CPU=`43 passed`，完整CPU在canonical LIBERO assets环境=`398 passed`。尚无GPU机制或性能结果。
+
 ## 9. 训练、strict与稳定资格
 
 机制门通过后，从sealed LPCP macro25 fresh进行与CCT完全matched的full24 cycle1：每task两组paired states，

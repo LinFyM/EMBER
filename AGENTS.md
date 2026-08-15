@@ -131,7 +131,9 @@ Program经native BF16 factor/compiler时未形成policy-effective commitment，�
 FactorHeads、CCT language-policy axes与matched selected-success合同，唯一把factor Value从微小
 `Procedure_LPCP-Procedure_AS139`差分换成已有320 slots的ordered native Action-probe delta，并用同一
 Procedure-set attention做K轴聚合。trainable仍为67,072，不加memory token、rank变化、scale、normalization或
-额外loss。formal前必须先过train→held只读视频门；held若再现约`0/.25`或BA `1/250`断裂，立即终局。
+额外loss。canonical实现与fresh-incompatible config/checkpoint/eval schema已完成；定向CPU合同`43 passed`、
+完整CPU在`.env.local`的LIBERO assets环境下`398 passed`。formal前必须先过train→held只读视频门；held若再现
+约`0/.25`或BA `1/250`断裂，立即终局。当前没有active GPU run或可resume NPVC checkpoint。
 
 ## 4. Long-term objective and decision rule
 

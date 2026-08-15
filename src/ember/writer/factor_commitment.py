@@ -1,4 +1,4 @@
-"""Transport video-causal coefficients along V6 policy-aligned directions."""
+"""Commit native Action-probe Value along V6 policy-aligned directions."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ FACTOR_FAMILIES = (
 )
 
 
-class CausalCoefficientTransport(torch.nn.Module):
-    """Use video memory as coefficients over shared language-policy axes."""
+class NativeProbeValueCommitment(torch.nn.Module):
+    """Use native probe Value as coefficients over language-policy axes."""
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class CausalCoefficientTransport(torch.nn.Module):
 
     def hidden_residuals(
         self,
-        factor_memory: torch.Tensor,
+        probe_value_memory: torch.Tensor,
         language_slots: torch.Tensor,
         basis_weights: torch.Tensor,
         *,
@@ -74,23 +74,23 @@ class CausalCoefficientTransport(torch.nn.Module):
         """Transport two video coefficients along task-shared hidden axes."""
 
         if (
-            factor_memory.ndim != 3
-            or factor_memory.shape[-1] != self.width
-            or language_slots.shape != factor_memory.shape
+            probe_value_memory.ndim != 3
+            or probe_value_memory.shape[-1] != self.width
+            or language_slots.shape != probe_value_memory.shape
             or basis_weights.shape
-            != (*factor_memory.shape[:2], self.basis_count)
+            != (*probe_value_memory.shape[:2], self.basis_count)
         ):
-            raise WriterModelError("invalid causal coefficient transport")
+            raise WriterModelError("invalid native probe-Value commitment")
         if set(anchor_input_weights) != set(FACTOR_FAMILIES):
             raise WriterModelError("factor anchor families changed")
         language = self.language_norm(language_slots)
         signed_language = language * self.anchor_input_sign
         scale = self.width**-0.5
         direct_coefficient = (
-            factor_memory * language
+            probe_value_memory * language
         ).sum(dim=-1, keepdim=True) * scale
         signed_coefficient = (
-            factor_memory * signed_language
+            probe_value_memory * signed_language
         ).sum(dim=-1, keepdim=True) * scale
         direct_route = (
             basis_weights[..., 0] - basis_weights[..., 1]
@@ -117,7 +117,7 @@ class CausalCoefficientTransport(torch.nn.Module):
 
     def forward(
         self,
-        factor_memory: torch.Tensor,
+        probe_value_memory: torch.Tensor,
         language_slots: torch.Tensor,
         *,
         anchor_input_weights: Mapping[str, torch.Tensor],
@@ -125,7 +125,7 @@ class CausalCoefficientTransport(torch.nn.Module):
         weights = self.basis_weights(language_slots)
         return (
             self.hidden_residuals(
-                factor_memory,
+                probe_value_memory,
                 language_slots,
                 weights,
                 anchor_input_weights=anchor_input_weights,

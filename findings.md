@@ -495,6 +495,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 62. NPVC把held mechanism gate前置：一次train task4 update后必须在validation8每task四个disjoint K4上只读
     视频验证cross-video direction与BA幅度，不读held actions/reward。若held仍约`0/.25`、held/train BA低于`.10x`
     或constant产生新增Value，则formal前终局。这能避免再次用train-seen漂亮几何烧完一轮才发现不泛化。
+63. NPVC的canonical实现只改Value来源：同一Procedure-set attention逐slot聚合已有ordered native probe deltas，
+    不再使用LPCP-AS139的tiny Procedure差值；LPCP、rank16、FactorHeads、language-policy axes、reward recipe和
+    67,072 trainable参数保持不变。定向CPU`43 passed`、canonical LIBERO assets环境完整CPU`398 passed`；这只
+    证明实现合同，不预告held机制、closed-loop、稳定性或视频因果结果。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

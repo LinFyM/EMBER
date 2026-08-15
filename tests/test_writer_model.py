@@ -295,11 +295,11 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
         policy=torch.nn.Identity(),
     )
     assert not encoded.diagnostics.per_video_query_conditioners.count_nonzero()
-    assert encoded.factor_memory is not None
-    assert not encoded.factor_memory.count_nonzero()
+    assert encoded.probe_value_memory is not None
+    assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_causal_coefficient_transport_is_exact_lpcp_at_zero_init() -> None:
+def test_native_probe_value_commitment_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -314,7 +314,7 @@ def test_causal_coefficient_transport_is_exact_lpcp_at_zero_init() -> None:
     assert not model.factor_commitment.semantic_query.weight.count_nonzero()
 
 
-def test_causal_coefficient_memory_and_language_are_k_set_invariant() -> None:
+def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -331,16 +331,19 @@ def test_causal_coefficient_memory_and_language_are_k_set_invariant() -> None:
             spans,
             policy=torch.nn.Identity(),
         )
-    assert natural.factor_memory is not None
-    assert permuted.factor_memory is not None
-    torch.testing.assert_close(natural.factor_memory, permuted.factor_memory)
+    assert natural.probe_value_memory is not None
+    assert permuted.probe_value_memory is not None
+    assert natural.probe_value_memory.count_nonzero()
+    torch.testing.assert_close(
+        natural.probe_value_memory, permuted.probe_value_memory
+    )
     torch.testing.assert_close(natural.language_slots, permuted.language_slots)
     torch.testing.assert_close(
         natural.semantic_basis_weights, permuted.semantic_basis_weights
     )
 
 
-def test_causal_coefficient_transport_opens_query_and_requires_video() -> None:
+def test_native_probe_value_commitment_opens_query_and_requires_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -366,7 +369,7 @@ def test_causal_coefficient_transport_opens_query_and_requires_video() -> None:
     assert all(not value.count_nonzero() for value in zero_residuals.values())
 
 
-def test_causal_coefficient_transport_has_two_shared_axes_per_family() -> None:
+def test_native_probe_value_commitment_has_two_shared_axes_per_family() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
@@ -384,7 +387,7 @@ def test_causal_coefficient_transport_has_two_shared_axes_per_family() -> None:
             assert torch.linalg.matrix_rank(value[:, slot].float(), tol=1e-5) <= 2
 
 
-def test_causal_coefficient_lpcp_loader_rejects_partial_new_topology() -> None:
+def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
     source, _ = _model()
     old = {
         name: value
@@ -407,7 +410,7 @@ def test_causal_coefficient_lpcp_loader_rejects_partial_new_topology() -> None:
         except RuntimeError:
             pass
         else:
-            raise AssertionError("partial causal-coefficient topology was accepted")
+            raise AssertionError("partial probe-Value topology was accepted")
     with torch.no_grad():
         try:
             loaded.load_lpcp_state_(source.state_dict())
@@ -415,3 +418,20 @@ def test_causal_coefficient_lpcp_loader_rejects_partial_new_topology() -> None:
             pass
         else:
             raise AssertionError("trained commitment was accepted as LPCP cold start")
+
+
+def test_native_probe_value_reuses_exact_procedure_set_attention() -> None:
+    model, _ = _model()
+    with torch.no_grad():
+        encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+    values = encoded.diagnostics.per_video_query_conditioners
+    expected = torch.stack(
+        [
+            (encoded.diagnostics.attention[0][..., None] * values[:2]).sum(0),
+            (encoded.diagnostics.attention[1][..., None] * values[2:3]).sum(0),
+        ]
+    )
+    torch.testing.assert_close(
+        encoded.diagnostics.shared_probe_value_slots, expected
+    )
+    torch.testing.assert_close(encoded.probe_value_memory, expected)

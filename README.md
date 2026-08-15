@@ -51,8 +51,9 @@ reward credit或生成LoRA。
 [`V6-LPCP Native Probe-Value Commitment`](docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md)：
 保留LPCP143、rank16、CCT transport与全部训练合同，只把factor Value从微小的LPCP-AS139 readout差分换成已有
 320个layer/rank slots的有序native Action-probe delta，并复用同一Procedure-set attention跨video聚合。新设计
-先做train→held只读视频机制门；held若仍约`0/.25`或BA保持`1/250`断裂，就在formal前终止。literal memory仍是
-后继候选，不是本轮强制形式。实时run identity和下一裁决只取
+已原位实现为fresh-incompatible schema；定向合同`43 passed`、完整CPU在正确LIBERO assets环境下`398 passed`。
+下一步只做train→held只读视频机制门；held若仍约`0/.25`或BA保持`1/250`断裂，就在formal前终止。literal memory仍是
+后继候选，不是本轮强制形式；当前没有active GPU run。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

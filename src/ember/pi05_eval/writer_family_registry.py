@@ -477,6 +477,38 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
+    "v6_lpcp_native_probe_value_commitment_v1": {
+        "adapter_schema": (
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
+            "eval_adapter_v1"
+        ),
+        "episode_schema": (
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
+        ),
+        "config_schema": (
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
+        ),
+        "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
+        "arm_prefix": "v6_lpcp_native_probe_value_commitment_",
+        "trained_checkpoint_kind": (
+            "v6_lpcp_native_probe_value_commitment_cycle_checkpoint"
+        ),
+        "formal_statuses": ("sealed",),
+        "lora_rank": 16,
+        "lora_target_count": 38,
+        "videos_per_condition": 4,
+        "supported_videos_per_condition": (1, 2, 3, 4),
+        "writer_input": (
+            "exact task language plus four action-hidden teacher videos through "
+            "the native probe-Value commitment graph"
+        ),
+        "multi_video_writer_input_template": (
+            "exact task language plus {evaluation_k} action-hidden teacher videos "
+            "through the native probe-Value commitment graph"
+        ),
+        "episode_validator": "dynamic_k",
+        "checkpoint_curve_allowed_macros": (1, 2),
+    },
 }
 
 PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(

@@ -101,14 +101,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_causal_coefficient_reward_config_freezes_only_transport() -> None:
+def test_native_probe_value_reward_config_freezes_only_commitment() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_ready"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["status"] == "active_mechanism_gate_pending"
+    assert config["formal_run"]["status"] == "mechanism_gate_pending"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "causal_coefficient_transport_only_67072_parameters"
+        "native_probe_value_commitment_only_67072_parameters"
     )
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 142,
@@ -121,15 +121,12 @@ def test_causal_coefficient_reward_config_freezes_only_transport() -> None:
         "same_task_other_video_maximum_drop": 8,
         "correct_each_negative_margin_minimum": 10,
     }
-    evidence = config["formal_run"]["profile_evidence"]
-    assert evidence["mechanism_gate_pass"] is True
-    assert evidence["cross_video_cct_effective_ba"][
-        "all_pairwise_cosine_mean"
-    ] >= 0.15
-    assert evidence["cross_video_cct_effective_ba"][
-        "all_mean_energy_over_sample_energy"
-    ] >= 0.4
-    assert evidence["natural_to_constant_transport_coefficient_norm_ratio"] < 1e-3
+    gate = config["formal_run"]["mechanism_gate"]
+    assert gate["held_validation_tasks"] == 8
+    assert gate["held_tasks_passing_minimum"] == 6
+    assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.1
+    assert gate["constant_probe_value_natural_ratio_maximum"] == 0.001
+    assert config["formal_run"]["mechanism_evidence"] is None
     assert base["writer"]["policy_slot_count"] == 320
 
 

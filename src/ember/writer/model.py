@@ -20,7 +20,7 @@ from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
     FACTOR_FAMILIES,
-    CausalCoefficientTransport,
+    NativeProbeValueCommitment,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -37,6 +37,7 @@ class WriterProgramDiagnostics:
     shared_procedure_corrections: torch.Tensor
     per_video_query_conditioners: torch.Tensor
     per_video_query_deltas: torch.Tensor
+    shared_probe_value_slots: torch.Tensor
     attention: tuple[torch.Tensor, ...]
     auxiliary_loss: torch.Tensor
 
@@ -48,7 +49,7 @@ class WriterProgramOutput:
     program: torch.Tensor
     diagnostics: WriterProgramDiagnostics
     reference_program: torch.Tensor | None = None
-    factor_memory: torch.Tensor | None = None
+    probe_value_memory: torch.Tensor | None = None
     language_slots: torch.Tensor | None = None
     semantic_basis_weights: torch.Tensor | None = None
 
@@ -103,7 +104,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = CausalCoefficientTransport(
+        self.factor_commitment = NativeProbeValueCommitment(
             width=self.PROGRAM_WIDTH,
             basis_count=4,
             initialization_seed=initialization_seed,
@@ -275,6 +276,19 @@ class CompleteLoRAWriter(torch.nn.Module):
         shared_procedure, set_diagnostics = self.procedure_set(
             per_video_procedure, condition_video_offsets
         )
+        shared_probe_value = torch.stack(
+            [
+                (
+                    attention[..., None]
+                    * per_video_query_conditioners[left:right]
+                ).sum(dim=0)
+                for (left, right), attention in zip(
+                    zip(condition_bounds, condition_bounds[1:]),
+                    set_diagnostics.attention,
+                    strict=True,
+                )
+            ]
+        )
         routing = self.base_writer.compiler.routing(condition_count)
         program, _, _ = self.base_writer.compiler.fuse_readouts(
             routing,
@@ -290,6 +304,7 @@ class CompleteLoRAWriter(torch.nn.Module):
                 shared_procedure_corrections=set_diagnostics.shared_corrections,
                 per_video_query_conditioners=per_video_query_conditioners,
                 per_video_query_deltas=per_video_query_deltas,
+                shared_probe_value_slots=shared_probe_value,
                 attention=set_diagnostics.attention,
                 auxiliary_loss=set_diagnostics.auxiliary_loss,
             ),
@@ -366,16 +381,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             condition_video_offsets,
             per_video_query_conditioners=state.per_video_query_conditioners,
         )
-        factor_memory = (
-            compiled.diagnostics.shared_procedure_slots
-            - reference.diagnostics.shared_procedure_slots
-        )
         basis_weights = self.factor_commitment.basis_weights(state.language_slots)
         return WriterProgramOutput(
             program=compiled.program,
             diagnostics=compiled.diagnostics,
             reference_program=reference.program,
-            factor_memory=factor_memory,
+            probe_value_memory=compiled.diagnostics.shared_probe_value_slots,
             language_slots=state.language_slots,
             semantic_basis_weights=basis_weights,
         )
@@ -555,11 +566,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         self,
         program: torch.Tensor,
         *,
-        factor_memory: torch.Tensor | None = None,
+        probe_value_memory: torch.Tensor | None = None,
         language_slots: torch.Tensor | None = None,
         semantic_basis_weights: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
-        if factor_memory is None:
+        if probe_value_memory is None:
             if language_slots is not None or semantic_basis_weights is not None:
                 raise WriterModelError("incomplete semantic factor-memory decode")
             return self.base_writer.decode_slots(program)
@@ -571,7 +582,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             else semantic_basis_weights
         )
         residuals = self.factor_commitment.hidden_residuals(
-            factor_memory,
+            probe_value_memory,
             language_slots,
             weights,
             anchor_input_weights=self._factor_anchor_input_weights(),
@@ -598,11 +609,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         return weights
 
     def decode_output(self, encoded: WriterProgramOutput) -> dict[str, torch.Tensor]:
-        if encoded.factor_memory is None or encoded.language_slots is None:
+        if encoded.probe_value_memory is None or encoded.language_slots is None:
             return self.decode_program(encoded.program)
         return self.decode_program(
             encoded.program,
-            factor_memory=encoded.factor_memory,
+            probe_value_memory=encoded.probe_value_memory,
             language_slots=encoded.language_slots,
             semantic_basis_weights=encoded.semantic_basis_weights,
         )

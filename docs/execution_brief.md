@@ -33,7 +33,9 @@ effective-BA却缩小`249.92x`。最早失败接口因此是**held language/Prog
 transport与matched reward recipe，只把factor Value从tiny LPCP-AS139 readout差分换成已有320 slots的ordered
 native Action-probe delta，并复用同一Procedure-set attention聚合K videos。formal前先做train task4 update后
 validation8×4 K4的只读视频held gate；不读取held actions/reward。held若仍约`0/.25`或BA train→held低于`.10x`，
-直接终局，不烧full24。
+直接终局，不烧full24。当前canonical实现已完成：CCT tiny readout差值字段被fresh-incompatible原生probe Value
+字段替换，跨video严格复用Procedure-set attention；定向CPU=`43 passed`、完整CPU在canonical assets环境=
+`398 passed`。当前没有active GPU run，下一动作仅是live task4 update与held gate，不是full24 launch。
 
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=

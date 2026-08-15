@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_preaddressed_factor_selective_native_value_v1",
-  "status": "active_mechanism_ready",
+  "status": "terminal_mechanism_non_pass",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "blocked_pending_mechanism",
+    "status": "blocked_terminal_mechanism_non_pass",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -128,6 +128,20 @@
       "no_repeated_backbone_forward": true,
       "matched_npvc_wall_ratio_maximum": 1.1,
       "full24_shared_mean_descent_coverage_minimum": 0.75
+    },
+    "mechanism_evidence": {
+      "commit": "0136af493ae9e19c6de66847040e80f10f4e0c59",
+      "result": "terminal_non_pass_no_full24",
+      "train24_address_entropy_effective_rank": 2.1575329303741455,
+      "train24_address_offdiagonal_cosine_mean": 0.781934916973114,
+      "task4_cross_video_cosine": 0.4351639516107744,
+      "task4_cross_video_energy": 0.5702956976859287,
+      "validation8_cross_video_cosine": 0.1681112526899125,
+      "validation8_cross_video_energy": 0.3728627551586432,
+      "validation8_passing_tasks": 3,
+      "held_to_train_effective_ba_l2_ratio": 0.44440485815538067,
+      "matched_npvc_wall_ratio": 1.0180723691609743,
+      "artifact": "runs/outputs/pi05_v6_lpcp_preaddressed_factor_selective_native_value_task4_mechanism_state_b8_0136af4_gpu02p2_20260815/pafs_nv_terminal_analysis.json"
     }
   }
 }

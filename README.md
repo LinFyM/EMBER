@@ -48,12 +48,12 @@ full24后train task4的four-view cosine/energy从`.5929/.6792`漂到`.0569/.2951
 Writer checkpoint中共存**。下一设计不会只加scale、capacity、coherence或support guard。memory token、rank8
 和其它可扩展hypernetwork形式仍开放，但只有直接针对这个接口才值得引入。
 
-当前active successor是
+最新裁决的是
 [`V6-LPCP Pre-Addressed Factor-Selective Native Value`](docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md)：
 保留LPCP143、NPVC native Value和rank16，只把所有tasks/q-v-action共享的zero-init router替换为固定语言
-pre-address下的factor-owned zero-init selectors。它让task分流在第一次full24 reward update前存在，同时让不同
-policy families独立选择视频Value组件与符号；step0/no-video仍exact LPCP。当前只有design authority，尚未有
-GPU机制或性能结果；canonical实现与完整CPU `399 passed`已经完成。实时run identity和下一裁决只取
+pre-address下的factor-owned zero-init selectors。真实task4写出、顺序与吞吐健康，但train24 address effective
+rank仅`2.1575`，validation8跨视频共同方向仅`.1681/.3729`、3/8过门，显著低于NPVC，故在full24前终局且没有
+strict结果。当前没有active successor或GPU run。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

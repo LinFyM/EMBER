@@ -1,6 +1,6 @@
 # V6-LPCP Pre-Addressed Factor-Selective Native Value
 
-状态：2026-08-15 mechanism implementation ready，formal仍由第8节机制门阻断。简称`PAFS-NV`。本设计建立在NPVC cycle1完整终局之后，只替换
+状态：2026-08-15 terminal mechanism non-pass；未启动full24或strict评测。简称`PAFS-NV`。本设计建立在NPVC cycle1完整终局之后，只替换
 `native probe Value -> factor hidden direction`的选择接口；LPCP143 carrier、K4 ordered set、38-target rank16
 public LoRA、paired selected-success reward、frozen source policy、split与评测合同全部保持不变。
 
@@ -176,3 +176,21 @@ lost。单点145或151不跳过稳定性与视频因果资格。
 
 负结果只淘汰“LPCP native probe Value + fixed four-way language pre-address + factor-owned diagonal selectors +
 matched selected-success reward”组合；不否定memory token、dynamic K、rank8、reward学习或生成LoRA。
+
+## 11. Terminal mechanism result
+
+clean pushed `0136af4`的task4真实selected-success smoke完整结束：candidate/reference success=`2/1`，一个
+discordant candidate gain与matched NPVC一致；八family selectors全部更新，q/v/action BA与fixed-action response
+非零，cycle=`138.522s=1.01807x` NPVC，禁读与显存合同通过。train task4四个disjoint correct K4的pure-PAFS
+cosine/energy=`.435164/.570296`，natural→reversed probe/BA relative-L2=`1.84084/1.24080`，constant BA严格为零。
+
+决定性non-pass发生在reward训练扩展前：train24固定地址虽algebraic rank=24、mean off-diagonal cosine=`.781935`，
+但entropy effective rank仅`2.15753<4`，maximum pair cosine=`.994582`；它没有形成预期的四个有效task lanes。
+validation8 four-view cosine/energy仅`.168111/.372863`、`3/8` tasks过门，held/train BA L2=`.444405x`。相比
+matched NPVC的`.449398/.571497`、`6/8`和`.752521x`，PAFS held cosine/energy/L2只保留
+`.3741x/.6524x/.1396x`。q/v/action held cosine分别从NPVC `.4503/.4402/.3472`降到
+`.1744/.1082/.0535`，说明factor ownership尤其破坏action family的跨视频共同方向；不是写出消失或无顺序内容。
+
+因此第8节机制门失败并终局：不启动full24、不做strict400、不扫basis、temperature、rank、LR或seed。最早失效
+接口是**低有效维的fixed address + factor-owned bilinear selection在held language/video上破坏NPVC已经具备的
+shared cross-video geometry**。full24 task-gradient coexistence、稳定性和six-arm从未被检验，不能据此评价。

@@ -103,8 +103,10 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_preaddressed_factor_selector_config_is_mechanism_only() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_mechanism_ready"
-    assert config["formal_run"]["status"] == "blocked_pending_mechanism"
+    assert config["status"] == "terminal_mechanism_non_pass"
+    assert config["formal_run"]["status"] == (
+        "blocked_terminal_mechanism_non_pass"
+    )
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
@@ -128,7 +130,9 @@ def test_preaddressed_factor_selector_config_is_mechanism_only() -> None:
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["fixed_language_address_effective_rank_minimum"] == 4
     assert gate["full24_shared_mean_descent_coverage_minimum"] == 0.75
-    assert "mechanism_evidence" not in config["formal_run"]
+    evidence = config["formal_run"]["mechanism_evidence"]
+    assert evidence["result"] == "terminal_non_pass_no_full24"
+    assert evidence["validation8_passing_tasks"] == 3
     assert base["writer"]["policy_slot_count"] == 320
 
 

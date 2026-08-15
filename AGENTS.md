@@ -140,13 +140,13 @@ mean=`.0004683`，说明CCT的held compiler断裂已经解决；然而gained/los
 train task4共同方向在full24后从`.5929/.6792`漂到`.0569/.2951`。最早失败接口是reward-useful Value组件/符号
 选择与多task共存，不是video carrier或LoRA量化。
 
-当前active successor是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
+最新终局的是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
 `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`。它保留LPCP、NPVC native
 Value、rank16与matched reward，只把zero-init common router换成reward update前已存在的fixed language address，
 并令八factor families各自用zero-init diagonal selectors选择native Value组件/符号；trainable=`16,384`。这直接
-检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。canonical实现与完整CPU `399 passed`已
-完成，尚未运行GPU机制门或formal；memory token和rank8
-仍开放，但本轮不同时更换已通过的carrier或public topology。
+检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。真实task4机制健康，但train24 address
+effective rank=`2.1575`，validation8 cosine/energy=`.1681/.3729`且仅3/8过门，故未启动full24或strict并终局。
+当前没有active successor或GPU run；memory token和rank8仍开放，PAFS失败不否定它们。
 
 ## 4. Long-term objective and decision rule
 

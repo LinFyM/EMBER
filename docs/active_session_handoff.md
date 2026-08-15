@@ -32,13 +32,15 @@
   probe/BA relative-L2=`1.84084/1.37485`，constant norm ratio=`9.167e-4/1.267e-5`，cycle wall=
   `136.063s=1.04074x CCT`。这些preformal门后来没有转化为strict增益，证明内部coherence不能选方法；
   当前没有active GPU run或可resume checkpoint；
-- 当前active successor是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
+- 最新终局的是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
   `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`。它保留LPCP143、NPVC
   native Value、rank16、FactorHeads与matched selected-success reward；唯一把common zero-init semantic router
   换成reward前已存在的fixed four-way language address，并给八factor families各自四basis×两轴的zero-init
   diagonal selectors，总trainable=`16,384`。step0/no-video exact LPCP；同task跨video地址相同，video仍是唯一
-  dynamic Value。canonical实现已原位替换NPVC executable path，fresh config/checkpoint/eval schema与per-task
-  gradient coexistence evidence已接通；完整CPU=`399 passed`、架构门无block。当前尚未运行GPU机制门或formal；
+  dynamic Value。真实task4 smoke八family/q-v-action/reverse/wall均健康，task4 cosine/energy=
+  `.435164/.570296`；但train24 address effective rank=`2.15753<4`，validation8=`.168111/.372863`且仅3/8
+  过门，相对NPVC held cosine/energy/L2只保留`.3741x/.6524x/.1396x`。机制门失败，未启动full24/strict并
+  终局；当前没有active successor、GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

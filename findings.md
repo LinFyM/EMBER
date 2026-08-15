@@ -527,6 +527,12 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `16,384`且zero-init；fresh config/checkpoint/eval schema拒绝旧checkpoint，full24会保留每个active task的
     小梯度行并在raw mean前报告共存证据。canonical LIBERO assets下完整CPU=`399 passed`，架构门无block。
     这些只封住step0、梯度、schema与单路径工程合同；GPU task4→validation8机制门和closed-loop仍未知。
+71. PAFS-NV真实smoke的reward链与工程健康：八family全更新、q/v/action BA和fixed-action非零，task4
+    cosine/energy=`.435164/.570296`，reverse BA relative-L2=`1.24080`，cycle=`138.522s=1.01807x` NPVC。
+    但train24 address entropy effective rank仅`2.15753`，validation8仅`.168111/.372863`、3/8过门；相对NPVC
+    held cosine/energy/L2只保留`.3741x/.6524x/.1396x`，action held cosine从`.3472`降至`.0535`。因此
+    factor-owned selection在full24前已破坏shared held geometry，按门终局且不做strict；这不否定memory token、
+    rank8或生成LoRA，只否定本次fixed-address/factor-selector组合。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

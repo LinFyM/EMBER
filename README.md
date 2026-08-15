@@ -29,28 +29,27 @@ exact task language + one or more action-hidden correct teaching videos
 `correct/same/wrong/shuffled/reversed=143/135/125/128/129`。训练loss、functional loss、LoRA norm/rank/cosine、
 reconstruction与内部margin只作诊断，正式选择只认严格配对的single-checkpoint closed-loop结果。
 
-## Latest result and active successor
+## Latest result and current boundary
 
 最新完成的
-[`V6-LPCP Gradient-Open Semantic Commitment`](docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md)
-在cycle1 K4 strict为`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`。相对LPCP143严格为
-`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`；suite净变化=`-1/-6/-2/+7`，表现为
-Object/Goal/Spatial能力换到Long1，而非共同积累。correct、retention、net和suite门失败，故不续cycle2或六臂。
+[`V6-LPCP Causal Coefficient Transport`](docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md)
+在cycle1 K4 strict为`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=`3/79/37/23`。
+相对直接底座LPCP143严格为`125 retained / 17 gained / 18 lost / 240 both-fail`、churn35、
+Jaccard`.78125`；相对SFMC144为`127/15/17`、churn32。它没有形成稳定净积累，并触发breadth、retention及
+cross-video geometry三项预注册失败门，因此不续cycle2，也不以这个checkpoint补same/wrong/shuffled/reversed/
+no-video controls。
 
-这轮得到的有效结论不是“memory/LoRA生成无用”：gradient-open使相对LPCP的effective-BA改写较SFMC放大约
-`33.3x`，q/v/action在`400/399/368`个样本非零，证明router与native写出断点确实修复；但四组同task正确K4
-增量仍近正交（cosine`.000144`、energy ratio`.250124`），闭环也继续换手。该checkpoint不可resume。
+CCT的局部机制假设在train-seen task4上确实成立：修正错误counterfactual标签后，真实CCT-only four-view
+BA cosine/energy仍为`.575776/.681821`。但held validation first4的对应值只有约`0/.25`。evaluator live loader
+已逐元素确认CCT参数完整加载；train→held的transported coefficients与pre-W2 hidden residual只缩小
+`1.63x/1.70x`，最终effective-BA却缩小`249.92x`。因此最早失败接口不是“视频没读到”或“参数没加载”，而是
+**train-seen language/Program方向能穿过native factor compiler，held方向却在同一BF16 factor边界退回LPCP邻域**。
+这只否定本轮“两系数CCT + 一轮稀疏selected-success”组合，不否定V6/LPCP、memory token、rank8、few-shot、
+reward credit或生成LoRA。
 
-当前active successor是
-[`V6-LPCP Causal Coefficient Transport`](docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md)：
-保留LPCP强底座、动态K、有序视频与完整V6 LoRA compiler，只把视频Program从“任意256维输出方向”改成每个
-policy/rank slot的两个有向系数；exact language提供同task共享、policy-aligned的输出轴。它直接限制同task换视频
-时的LoRA方向旋转，同时没有新增language-only Value。canonical实现与完整CPU`397 passed`已完成；task4真实
-GPU four-view门得到CCT-only BA cosine/energy=`.563803/.672852`，倒序修正cosine=`.014842`，静态首帧不能
-伪造过程，q/v/action与fixed-action链路均非零，吞吐为GOSC`.9870x`。因此只授权fresh full24 cycle1；目前尚无
-CCT formal closed-loop结果，且action-family coherence偏低仍是明确风险。
-实时run identity和下一裁决只取
-[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
+当前没有active successor或可resume checkpoint。下一设计必须直接解决held条件下policy-effective commitment与
+多task共存；literal memory token仍是候选机制，但只有在它针对这个失效接口时才使用，不作为形式要求。实时run
+identity和下一裁决只取[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall
 

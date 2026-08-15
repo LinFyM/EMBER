@@ -7,19 +7,23 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 最新Gradient-Open cycle1 strict=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`；相对LPCP143
-  为`128 retained / 13 gained / 15 lost`、churn28、Jaccard`.82051`，已按门终局。SFMC单点144仍是最高
-  correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的历史最好=
-  `143/135/125/128/129`；
-- 当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
-  `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。canonical实现与完整CPU
-  `397 passed`及task4真实GPU机制/profile均通过；唯一变量是让
-  video-derived factor memory只提供320 slots各两个causal coefficients，由exact language与冻结V6 W1/GELU
-  提供同task共享的policy-aligned directions，从结构上阻止不同正确视频任意旋转高维LoRA correction；active
-  trainable=`67,072`，旧GOSC runtime schema已退役。four-view CCT-only BA cosine/energy=
-  `.563803/.672852`，natural→reversed修正cosine=`.014842`，静态首帧transport coefficient norm仅natural的
-  `2.74e-5`；q/v/action与action响应均非零，cycle为GOSC`.9870x`。aggregate门已过，只授权fresh full24
-  cycle1；action family的`.079285/.309455`偏低必须在formal中追踪；
+- 最新CCT cycle1 strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=
+  `3/79/37/23`；相对LPCP143为`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth、
+  retention与held cross-video geometry门失败，已终局且不resume cycle2或补六臂；
+- SFMC144仍是最高correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的
+  历史最好=`143/135/125/128/129`；
+- CCT formal训练完整：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`、9 active tasks覆盖四suite、
+  36 credit conditions/144 unique videos，cycle=`577.729s`，world5 checkpoint/completion完整，0禁读/OOM/
+  nonfinite；
+- CCT task4旧机制记录存在counterfactual标签错误：旧`.563803/.672852`比较的是LPCP+CCT与AS139，不是纯
+  CCT。按exact same-state LPCP重算后，train-seen task4纯CCT four-view cosine/energy仍为
+  `.575776/.681821`，因此局部机制结论保留；
+- held first4纯CCT增量约为`0/.25`。evaluator live loader逐元素确认semantic query完整加载；train→held的
+  transported coefficients、pre-W2 hidden residual和effective-BA L2分别缩小`1.63x/1.70x/249.92x`。最早
+  失败接口是held Program经native BF16 factor/compiler时没有形成policy-effective commitment，而不是carrier、
+  checkpoint loader、reward credit或训练图失效；
+- 当前没有active successor、active GPU run或可resume checkpoint。下一轮须先建立直接针对held commitment与
+  多task共存的单变量design authority；memory token是候选机制而非必须形式；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=
@@ -811,11 +815,55 @@ task4 post-update smoke root：
 - candidate/reference successes=`2/1`，semantic query delta=`1.460305e-4`，q/v/action effective-BA=
   `4.45616e-7/8.76854e-7/2.01053e-8`，fixed-action=`.00267335`；
 - cycle=`130.7366s`=`.9870x` GOSC，peak reserved=`40,751,857,664` bytes，无禁读、OOM、nonfinite；
-- 稳定FP64 four-view CCT-only effective-BA aggregate cosine/energy=`.563803/.672852`；q=
-  `.580886/.685664`、v=`.518110/.638505`，均越过formal门；action=`.079285/.309455`未过同门但只占很小
-  correction能量，记录为formal风险而不改写预注册aggregate gate；
+- 旧分析把LPCP+CCT减AS139误标成CCT-only；该v1标签已失效。按exact same-state LPCP重算后的纯CCT
+  effective-BA aggregate cosine/energy=`.575776/.681821`；q=`.593590/.695181`、v=`.528289/.646104`、
+  action=`.081102/.310853`。修正后仍越过formal aggregate门，故原formal授权结论不变；
 - natural→reversed CCT修正cosine=`.014842`、relative-L2=`1.15358`；逐video常量首帧使factor memory与
   transported coefficient norm分别降到natural的`2.42e-5/2.74e-5`。当前结构读取了有向过程，静态输入不能
   伪造同一新增响应；
-- `mechanism_analysis.json`与`natural_constant_analysis.json`保留上述完整分族证据。该门只授权从LPCP
-  macro25 fresh训练full24 cycle1；当前没有CCT formal checkpoint、strict400或可resume状态。
+- `mechanism_analysis.json`只保留错误标签的provenance；正式机制数值取`mechanism_analysis_corrected.json`。
+  `natural_constant_analysis.json`仍有效。以上只关闭了train-seen机制否决条件；其后formal与held证据见下节。
+
+## 15. CCT formal result, corrected audit and terminal boundary
+
+formal训练来自clean pushed/frozen `18bd3632cb49174e1fe589d0e8caf9cfc322c954`，gpu01物理
+`2/4/5/6/7`、world5：
+
+`runs/outputs/pi05_v6_lpcp_causal_coefficient_transport_formal_cycle0to1_r5_k4_views4_nmc4_b8_18bd363_gpu01_20260815`
+
+- 24 tasks/48 paired states/96 rollouts，candidate/reference=`33/32`、candidate/reference-only=`5/4`，
+  9 active tasks覆盖四suite；36 credit conditions、144 unique videos；
+- semantic query delta RMS=`6.08551e-5`，q/v probes `4/4`非零、action `2/4`非零、fixed-action `4/4`非零；
+- cycle=`577.7288s`，max allocated/reserved=`36.46/40.756GB`，checkpoint/completion完整且0禁读、OOM、
+  nonfinite或watchdog；CCT之外624个writer state keys与LPCP macro25逐元素完全相同。
+
+strict root：
+
+`runs/outputs/pi05_v6_lpcp_causal_coefficient_transport_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_18bd363_gpu01_20260815`
+
+- K4 correct400=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=`3/79/37/23`、
+  top3=`116/142=.81690`；
+- 相对LPCP143严格=`125 retained / 17 gained / 18 lost / 240 both-fail`、churn35、net`-1`、
+  Jaccard`.78125`；相对GOSC141=`121/21/20`，相对SFMC144=`127/15/17`；
+- 相对v6-fast143逐task count差=`+1/-1/+2/-6/0/+1/+3/-1`；相对old134为`+8`、compiler138为`+4`、
+  online128为`+14`；
+- breadth6<7、LPCP lost18>15及held four-view cosine/energy门失败。按预注册合同终局：不resume cycle2，
+  不做same/wrong/shuffled/reversed/no-video，也不扫axis count、scale、rank、LR或seed。
+
+稳定FP64与loader postmortem：
+
+- all400 CCT/LPCP effective-BA relative-L2 mean/median=`4.665401e-6/4.221081e-6`；gained/lost=
+  `3.174026e-6/5.319738e-6`，改写幅度不选择有用方向；
+- held first4 pure-CCT aggregate cosine/energy=`7.75e-8/.249999`，q、v、action也都约`0/.25`；
+- exact evaluator worker在validation Spatial1 state0逐元素加载全部65,536个非零semantic-query元素，L2=
+  `.015578908`，排除checkpoint loader或旧schema遗漏；
+- train task4与held state0 transported coefficient RMS=`5.24818e-6/3.21672e-6`，pre-W2 hidden RMS=
+  `2.56037e-6/1.50327e-6`，只差`1.63x/1.70x`；pure-CCT BA L2却为`.164125/.000656710`，相差
+  `249.92x`。因此CCT强烈拟合train task-language/compiler response，held residual在native BF16 factor边界
+  退回LPCP邻域。
+
+终局artifact为`cct_cycle1_terminal_analysis.json`、`cct_cycle1_strict_adjudication.json`、
+`cct_cycle1_stable_effective_ba_analysis.json`、`cct_cycle1_trainseen_task4_hidden_postmortem.json`与
+`cct_cycle1_validation_state0_live_load_probe_v2.json`。旧`mechanism_analysis.json`只保留provenance，正式机制
+结论取`mechanism_analysis_corrected.json`。本轮只否定当前两系数CCT与一轮稀疏selected-success组合；不否定
+V6/LPCP、literal memory token、rank8、few-shot、reward credit或生成LoRA。

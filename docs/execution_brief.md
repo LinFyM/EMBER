@@ -5,30 +5,31 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**V6-LPCP Gradient-Open Semantic Commitment**。同一clean `eb543d3` cycle1 checkpoint的
-K4 strict paired correct400=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`、per-suite=
-`4/77/36/24`。相对LPCP143严格=`128 retained / 13 gained / 15 lost / 244 both-fail`、churn28、net`-2`、
-Jaccard`.82051`；suite net=`-1/-6/-2/+7`。相对SFMC144=`124/17/20`、churn37。预注册的absolute、lost、
-net和suite四项门失败，因此本架构终局，不续cycle2或六臂controls。
+最新完成实验是**V6-LPCP Causal Coefficient Transport**（CCT），authority=
+`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。clean detached `18bd363`从sealed
+LPCP fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`33/32`、gains=`5/4`，
+9 active tasks覆盖四suite，36 credit conditions/144 unique videos，cycle=`577.729s`；完整world5 checkpoint、
+completion与禁读/数值门均通过。
 
-稳定FP64证明gradient-open解决了真实但非充分的接口：相对LPCP all400 effective-BA relative-L2 mean=
-`9.6632e-6`，约为SFMC的`33.3x`，q/v/action非零样本=`400/399/368`；但gained/lost幅度仍不可分，first4
-同task四个disjoint correct K4增量cosine=`.0001442`、mean/sample energy=`.250124`。所以最早失败接口已从
-SFMC的sub-ULP writeout后移到**shared semantic address/cross-video success credit经video-conditioned
-Jacobian仍写成近正交policy directions**。下一变量必须直接形成跨video可复现的causal task Program，不能继续
-放大anchor、增加cycle或扫LR/rank/scale。
+同一cycle1 checkpoint的K4 strict paired correct400=`142/400`、breadth6、per-task=
+`1/2/48/31/0/37/23/0`、per-suite=`3/79/37/23`。相对LPCP143严格=`125 retained / 17 gained / 18 lost /
+240 both-fail`、churn35、net`-1`、Jaccard`.78125`；相对GOSC141=`121/21/20`，相对SFMC144=
+`127/15/17`。count-only相对v6-fast143/old134/compiler138/online128=`-1/+8/+4/+14`。breadth6<7、相对LPCP
+lost18>15，故预注册探索门失败；不resume cycle2，不补same/wrong/shuffled/reversed/no-video。
 
-当前active successor是**V6-LPCP Causal Coefficient Transport**，authority=
-`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。唯一主变量是把K-set后的256维
-video `factor_memory`从hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；同task
-exact language经冻结V6 W1/GELU定义共享的family-specific output axes。它保持step0 exact LPCP、四view
-selected-success和完整rank16 compiler，不加入coherence loss、memory token、rank变化或第二数据源。canonical
-实现已原位替换旧commitment，trainable=`67,072`且完整CPU=`397 passed`。task4真实GPU门中four-view
-CCT-only effective-BA aggregate cosine/energy=`.563803/.672852`，natural→reversed cosine=`.014842`，静态
-首帧使transported coefficient norm降到natural的`2.74e-5`；q/v/action和fixed-action response均非零，wall为
-GOSC`.9870x`。aggregate机制门已过，formal config只授权fresh full24 cycle1；action family单独只有
-`.079285/.309455`，必须作为风险跟踪。cycle1后立即做K4 strict paired400，按`140/breadth7/lost15`与共同方向门
-裁决是否exact-resume cycle2。
+稳定FP64 all400显示CCT相对LPCP effective-BA relative-L2 mean/median仅
+`4.6654e-6/4.2211e-6`；lost样本改写mean=`5.3197e-6`，反而高于gained的`3.1740e-6`。held first4四个
+disjoint correct K4增量的cosine/mean-energy约=`0/.25`，没有形成共同task direction。
+
+局部机制记录还纠正了一个重要分析错误：旧`mechanism_analysis.json`把LPCP+CCT减AS139误标为“CCT-only”。
+按exact same-state LPCP重算后，train-seen task4纯CCT cosine/energy仍为`.575776/.681821`，所以结构在该task
+局部确实成立；但held evaluator live loader逐元素确认参数完整加载后，validation state0的CCT BA L2只有
+`.00065671`。train→held transported coefficients与pre-W2 hidden residual只分别缩小`1.63x/1.70x`，最终
+effective-BA却缩小`249.92x`。最早失败接口因此是**held language/Program方向经native BF16 factor/compiler时
+没有形成policy-effective commitment**，不是视频未读、参数未加载、训练图未工作或单纯coherence不足。
+
+当前没有active successor或可resume checkpoint。下一轮先从该最早接口建立新的单变量design authority；
+memory token、rank8和few-shot都仍是开放机制，但只有直接针对held commitment与多task共存时才采用。
 
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=
@@ -80,6 +81,11 @@ Gradient-Open训练root=
 strict与终局分析root=
 `runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_eb543d3_gpu01_20260815`。
 
+CCT训练root=
+`runs/outputs/pi05_v6_lpcp_causal_coefficient_transport_formal_cycle0to1_r5_k4_views4_nmc4_b8_18bd363_gpu01_20260815`；
+strict与终局分析root=
+`runs/outputs/pi05_v6_lpcp_causal_coefficient_transport_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_18bd363_gpu01_20260815`。
+
 ## 2. Completed CV-CSD variable and exact conclusion
 
 - 部署继续是exact language + dynamic K ordered action-hidden videos一次生成一套38-target rank16 LoRA；
@@ -91,7 +97,7 @@ strict与终局分析root=
 
 ## 3. Closed-loop adjudication
 
-Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与Gradient-Open均已终局且
+Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT均已终局且
 不得resume或小扫。
 各自训练root、strict root、逐episode transitions和必要BA/跨video evidence均已封存。`>150`仍是更高性能追求；约145
 也可成为有效结果，但必须由相邻single checkpoints低churn、same-task-other鲁棒和correct相对wrong/shuffled/
@@ -100,7 +106,7 @@ reversed/no-video的明确优势共同认证。单点145或151都不算完成。
 报告aggregate、8项per-task、4 suite totals、breadth、retained/gained/lost、top-task concentration和K1→K4
 success-set变化。不能用K1/K4 union、LoRA norm或functional loss冒充同一condition的能力。
 
-SFMC因cycle1 retention未过门而没有相邻checkpoint与controls；这不是缺失分析，而是预注册停止规则。下一架构仍须先以
+SFMC与CCT均因cycle1预注册门失败而没有相邻checkpoint与controls；这不是缺失分析，而是预注册停止规则。下一架构仍须先以
 cycle1 absolute/breadth/retention筛选；过门后必须评相邻checkpoint，再做same/wrong/shuffled/reversed/no-video。
 单点145或151都不能跳过稳定性与视频因果资格。
 

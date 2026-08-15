@@ -333,7 +333,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - cycle1 checkpoint按预注册K4 correct400评测，并与LPCP143、SFMC144、v6-fast143及old134/compiler138/
   online128逐task比较；只有correct≥144、breadth≥7、相对LPCP lost≤10、gained>lost且至少3 suites不降才续cycle2。
 
-## Active iteration: V6-LPCP Causal Coefficient Transport
+## Completed iteration: V6-LPCP Causal Coefficient Transport
 
 - [x] 从GOSC终局确定单一变量：梯度/native写出已经打开，但256维video memory仍作为condition-local Value
   direction，导致four-view LoRA增量约`0/.25`且suite换手；
@@ -343,11 +343,26 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换canonical commitment，建立fresh-incompatible config/checkpoint；聚焦68项及完整CPU
   `397 passed`；
 - [x] 完成task4 four-view真实机制/吞吐门：q/v/action和fixed-action非零；aggregate CCT-only BA
-  cosine/energy=`.563803/.672852`，倒序cosine=`.014842`，静态首帧coefficient norm=`2.74e-5x`，wall=
-  `.9870x` GOSC；action family `.079285/.309455`记录为formal风险；
-- [ ] live选择GPU，从sealed LPCP fresh full24 cycle1并做K4 strict paired correct400；
-- [ ] 只有cycle1 absolute/retention/共同方向门通过才exact-resume cycle2，完成相邻checkpoint稳定性裁决；
-- [ ] 只有稳定约145资格通过才做same/wrong/shuffled/reversed/no-video六臂并封存完整因果分析。
+  corrected cosine/energy=`.575776/.681821`，倒序cosine=`.014842`，静态首帧coefficient norm=`2.74e-5x`，wall=
+  `.9870x` GOSC；corrected action family `.081102/.310853`记录为formal风险；
+- [x] gpu01物理`2/4/5/6/7` world5从sealed LPCP fresh完成full24 cycle1：24 tasks/48 pairs/96 rollouts，
+  candidate/reference=`33/32`、9 active tasks覆盖四suite、cycle=`577.729s`，checkpoint/completion完整；
+- [x] 完成K4 strict paired correct400：`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对
+  LPCP143=`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`；
+- [x] 修正task4机制分析的counterfactual标签：纯CCT train-seen four-view cosine/energy仍为
+  `.575776/.681821`，但held first4约为`0/.25`；旧v1只保留provenance；
+- [x] exact live loader排除checkpoint遗漏；train→held transported coefficient、pre-W2 hidden与BA L2分别缩小
+  `1.63x/1.70x/249.92x`，最早断点定位为held residual经native BF16 factor/compiler未形成policy-effective BA；
+- [x] breadth、retention与held共同方向门失败，按预注册合同终局；不做cycle2、六臂或axis/scale/rank/LR/seed小扫。
+
+## Next iteration: design boundary
+
+- [ ] 从CCT终局与完整历史重新选择一个最早失效接口，先写单变量、可证伪design authority；
+- [ ] 新设计必须保留V6/LPCP已有absolute、有序carrier与single-LoRA优势，并直接解决held policy-effective
+  commitment及相邻checkpoint多task共存；
+- [ ] memory token、rank8与few-shot均可作为实现机制，但不是目标或强制形式；不得原样恢复历史低分路线；
+- [ ] 预注册稳定资格：约145可接受，但必须由相邻checkpoint低churn/high-overlap、same-task-other鲁棒及
+  correct相对wrong/shuffled/reversed/no-video的明确paired优势共同认证。
 
 ## Non-negotiable boundaries
 
@@ -363,9 +378,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Current blockers
 
-无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC与
-Gradient-Open均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run或可resume checkpoint；
-active CCT的canonical实现、CPU合同与task4 GPU机制门均完成，下一步只从LPCP fresh启动full24 cycle1并立即做
-strict400；约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对wrong/shuffled/
-reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后
-的独立实验。
+无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
+Gradient-Open与CCT均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run、active successor或
+可resume checkpoint；下一步是完成新的单变量design authority后再实施。约145只有在相邻checkpoint低换手、
+same-task-other鲁棒且correct相对wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local
+RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

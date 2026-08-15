@@ -37,8 +37,11 @@ Gradient-Open确实跨过了SFMC的梯度与native factor写出断点：cycle1 q
 Long1净增。更关键的是，同task四个disjoint correct K4条件的增量cosine仍只有`.0001442`、平均后能量仍约
 `.250124`。因此本轮修复是真实但非充分的：最早缺口已后移到**共享semantic address与cross-video reward
 credit如何先形成跨video可复现的causal task Program，再写成共同policy-effective方向**。旧checkpoint均不可
-resume；active CCT据此只把video memory从高维Value direction改为language/policy-aligned per-slot causal
-coefficients，尚未实现或产生结果。
+resume。CCT随后把video memory从高维Value direction改为language/policy-aligned per-slot causal coefficients，
+但formal只得`142/400`、breadth6；相对LPCP=`125/17/18`、churn35。它在train-seen task4形成
+`.575776/.681821`的共同增量，held first4却回到约`0/.25`。live loader排除漏载后，train→held hidden只缩小
+约1.7倍而effective BA缩小249.92倍，把最早缺口进一步定位到held residual穿过native factor/compiler的
+policy-effective commitment。CCT已终局，当前没有active successor。
 
 | 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -50,6 +53,7 @@ coefficients，尚未实现或产生结果。
 | V6-LPCP CV-CSD cycle1 | 134 | — | — | — | — | 四correct K4 exact credit仍落成近正交BA，证明失效在query-only commitment |
 | V6-LPCP SFMC cycle1 | 144 | — | — | — | — | 单点恢复但lost15/churn31；写出近identity且video-local ULP crossing |
 | V6-LPCP Gradient-Open cycle1 | 141 | — | — | — | — | 打开全family真实写出，但跨video方向仍近正交并发生suite换手 |
+| V6-LPCP CCT cycle1 | 142 | — | — | — | — | train-seen两系数共同方向成立，held compiler commitment消失；breadth6、lost18、churn35 |
 | Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
 | Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
 | Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
@@ -453,19 +457,36 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     mean/sample energy=`.250124`，仍是近正交video-local方向。这证明“梯度/写出打开”是必要但不充分条件；
     最早失败接口已后移到shared semantic address与success credit如何经video-conditioned Jacobian形成跨video
     可复现的policy-effective task Program。下一设计不能继续放大anchor或扫cycle/LR/rank/scale。
-53. active CCT不再用共享router去gate 256维video-local Value，而把每个320 policy/rank slot的video memory
+53. CCT设计不再用共享router去gate 256维video-local Value，而把每个320 policy/rank slot的video memory
     投影成两个causal coefficients；同task exact language经冻结V6 W1/GELU定义共享family directions。它在
     step0 exact LPCP且没有新增language-only Value，同时保留dynamic K、有序Procedure和selected-success。
     这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫。canonical实现已把trainable
     从`2,164,224`降为`67,072`，完整CPU=`397 passed`。
-54. task4 post-update four-view FP64验证了结构假设：CCT-only effective-BA aggregate cosine/energy=
-    `.563803/.672852`，相对GOSC的`.000144/.250124`是明显共同方向改善；q/v为
-    `.580886/.685664`与`.518110/.638505`。但action仅`.079285/.309455`，说明“二维共享span”对主要q/v写出
-    成立、对低能量action写出仍弱；该分族风险必须由full24与closed-loop判断，不能靠再加轴或单独action scale救。
+54. task4 post-update four-view FP64按corrected exact-LPCP counterfactual验证了train-seen结构假设：CCT-only
+    effective-BA aggregate cosine/energy=`.575776/.681821`，相对GOSC的`.000144/.250124`是明显共同方向改善；
+    q/v为`.593590/.695181`与`.528289/.646104`。action仅`.081102/.310853`；该局部证据后来没有迁移到held，
+    不能用来替代full24与closed-loop。
 55. CCT没有以忽略视频换取coherence：natural→reversed修正cosine=`.014842`、relative-L2=`1.15358`；逐video
     常量首帧使factor memory/transport coefficient norm降到natural的`2.42e-5/2.74e-5`。同时q/v/action
     native BA与fixed-action均非零，wall=`.9870x` GOSC。因此机制门只授权fresh full24 cycle1，不支持提前声称
     absolute、稳定性、same-task-other鲁棒或correct优于negative。
+56. CCT formal cycle1完整且工程健康：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`，9 active
+    tasks覆盖四suite，cycle=`577.729s`。strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对
+    LPCP143=`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth与retention门失败，故
+    不续cycle2或六臂；142不能被解释成稳定145或视频因果资格。
+57. task4机制分析发现并修正了counterfactual标签错误：旧`.563803/.672852`是LPCP+CCT相对AS139，不是纯CCT。
+    按exact same-state LPCP重算后纯CCT为`.575776/.681821`，所以旧标签错误没有推翻train-seen结构门；正式
+    数值必须取`mechanism_analysis_corrected.json`，不能沿用v1。
+58. CCT/LPCP all400 effective-BA relative-L2 mean/median=`4.6654e-6/4.2211e-6`；gained/lost=
+    `3.1740e-6/5.3197e-6`，改写幅度不能选择有用方向。held first4纯CCT cosine/energy约=`0/.25`，说明
+    train-seen共同span没有跨task泛化。
+59. evaluator live worker逐元素确认全部65,536个semantic-query元素正确加载。train task4与held state0的
+    coefficient、pre-W2 hidden只差`1.63x/1.70x`，pure-CCT BA L2却差`249.92x`。最早失效接口因此是
+    **held nonzero residual -> native BF16 factor/compiler -> stable effective BA**，而不是视频读取、loader、
+    reward或梯度链路。后继不能只加轴、放大scale或多训一轮。
+60. CCT负结果只否定当前“两系数transport + frozen-W1 language axes + 一轮four-view selected-success”组合。
+    V6/LPCP、literal memory token、rank8、few-shot、reward credit与生成LoRA仍开放。memory token若使用，必须
+    直接改善held policy-effective commitment和相邻checkpoint共存，不能只替换已通过的carrier或恢复历史低分图。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

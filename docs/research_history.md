@@ -5,8 +5,8 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-15，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新Gradient-Open为141且相对LPCP143
-lost15/churn28。v6-fast仍是有完整五臂的历史最好，长期严格`>150/400`目标及稳定约145资格均未完成。Dynamic-K
+2026-08-15，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新CCT为142、breadth6且相对LPCP143
+为`125/17/18`、churn35。v6-fast仍是有完整五臂的历史最好，长期严格`>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
 effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
@@ -17,9 +17,9 @@ few-shot nuisance reduction已工作但没有修正高层任务方向。该arm�
 随后macro50=`91`，只比matched fixed-A净增3，并形成tiny-B/weak-near-orthogonal BA，终局non-pass。V6 Dynamic
 Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。Shared-Core
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
-`116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC与Gradient-Open继续把接口推进到factor commitment；
-最新证据已把断点推进到跨video causal Program形成共同policy direction。当前active CCT只把video Value改为
-language/policy-aligned per-slot causal coefficients，尚无结果；精确状态取`docs/active_session_handoff.md`。
+`116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
+commitment；最新证据表明train-seen共同方向可形成，但held nonzero residual经native BF16 factor/compiler时
+退回LPCP邻域。当前没有active successor；精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
 
@@ -118,8 +118,9 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6-LPCP Cross-Video Causal Success Distillation | K4 `134/400`, breadth7 | 同一成功trajectory在4个disjoint correct K4下完整反传，36/36 view gradients非零且仅`1.0307x` PCSD wall | 相对LPCP=`122/12/21`、四suite全降；FP64四view部署增量cosine`.000205`、energy`.250155`，exact cross-video credit仍未越过query-only commitment |
 | V6-LPCP Semantic Factor-Memory Commitment | K4 `144/400`, breadth7 | K-set后layer/rank innovation memory可在8个factor families的冻结V6 output basis前获得四view reward credit；8/8 maps更新且cycle仅`1.0662x` CV-CSD | 相对LPCP=`128/16/15`、churn31；稳定FP64 BA改写仅`2.899e-7`且q/v/action非零样本=`249/16/1`，router未学成、native ULP crossing未形成跨video共同方向 |
 | V6-LPCP Gradient-Open Semantic Commitment | K4 `141/400`, breadth7 | W1 anchors使semantic router首步打开，BA改写较SFMC放大`33.3x`且q/v/action非零覆盖=`400/399/368` | 相对LPCP=`128/13/15`、churn28，suite=`-1/-6/-2/+7`；first4增量cosine`.000144`、energy`.250124`，写出打开后仍是跨video近正交与task换手 |
+| V6-LPCP Causal Coefficient Transport | K4 `142/400`, breadth6 | train-seen task4纯CCT增量被限制到共同方向，corrected cosine/energy=`.575776/.681821`；formal工程完整 | 相对LPCP=`125/17/18`、churn35；held first4约`0/.25`，hidden只缩小1.7x而BA缩小249.92x，held native compiler commitment失败 |
 
-ADSP、V6-LPCP、PCSD、CV-CSD、SFMC与Gradient-Open均已按各自预注册门终局。ADSP authority=
+ADSP、V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT均已按各自预注册门终局。ADSP authority=
 `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`，只否决实际检验的
 train24 success-prefix一阶约束。V6-LPCP authority=
 `docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`：它证明layerwise有序carrier可以在
@@ -129,7 +130,7 @@ train24 success-prefix一阶约束。V6-LPCP authority=
 `docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`：它进一步否定四个correct K4
 conditions的exact selected-success gradient mean足以越过同一query-only map。SFMC authority=
 `docs/action_forecast_writer_v6_lpcp_semantic_factor_memory_commitment_design.md`：它进一步否定当前zero-init
-family-hidden memory residual在单cycle内足以跨过native factor量化边界并形成learned semantic route。五者均不
+family-hidden memory residual在单cycle内足以跨过native factor量化边界并形成learned semantic route。这些路线均不
 否定V6、literal memory token、few-shot、rank8或其它架构级policy-aligned生成方式；下一轮不得继续加view、
 constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
 
@@ -153,6 +154,20 @@ reference=`33/31`不能跨world严格比较或预告held结果，后续结论只
 `.250124`且gained/lost幅度不可分。故本轮终局否定“共享language address + W1 anchors足以把不同正确视频的
 success credit编译为共同task direction”，不否定memory token、few-shot、rank8或生成LoRA。下一变量必须在
 compiler前直接形成跨video可复现的causal task Program，而不是继续放大当前residual或扫训练超参。
+
+CCT随后只改变Program的自由度：每个policy/rank slot的视频memory不再决定任意256维Value，而只产生两个
+coefficients，exact language与冻结V6-W1/GELU提供共享policy axes。clean `18bd363` world5 formal cycle1完整：
+24 tasks/48 pairs/96 rollouts、candidate/reference=`33/32`、9 active tasks、cycle=`577.729s`。strict=
+`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对LPCP143严格=`125 retained / 17 gained /
+18 lost`、churn35、Jaccard`.78125`。breadth与retention门失败，故不续cycle2或六臂。
+
+机制审计修正了旧v1 counterfactual标签：train task4纯CCT相对exact LPCP的four-view cosine/energy实际为
+`.575776/.681821`，而不是旧文件中LPCP+CCT相对AS139的`.563803/.672852`；修正后局部门仍成立。但held
+first4纯CCT增量约为`0/.25`。exact evaluator worker确认65,536个semantic-query元素逐元素完整加载。train→held
+transported coefficient和pre-W2 hidden只缩小`1.63x/1.70x`，pure-CCT effective-BA L2却缩小`249.92x`。
+所以CCT的最早失败接口是**held nonzero Program residual经native BF16 factor/compiler没有成为稳定BA**，不是
+carrier、loader、reward或梯度。该结果只否定当前两系数CCT与一轮four-view selected-success，不否定V6/LPCP、
+literal memory token、rank8、few-shot、reward credit或生成LoRA。
 
 ## 4. Final rank14 adjudication
 

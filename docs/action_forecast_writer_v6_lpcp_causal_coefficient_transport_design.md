@@ -1,7 +1,7 @@
 # V6-LPCP Causal Coefficient Transport
 
-状态：2026-08-15 canonical实现、CPU合同与真实GPU机制/profile均通过，已封fresh full24 cycle1；尚无formal
-closed-loop结果。前一轮
+状态：2026-08-15终局non-pass。canonical实现、CPU合同、真实GPU机制、full24 cycle1、strict400与完整
+postmortem均已封存；breadth、retention及held cross-video geometry门失败，不resume cycle2或补六臂。前一轮
 Gradient-Open已经按门终局，不得resume或用本设计解释其`141/400`。本轮从sealed LPCP checkpoint fresh建立
 不兼容commitment，只改变**video-conditioned factor memory怎样成为policy hidden residual**。
 
@@ -154,10 +154,12 @@ forward/backward；candidate/reference为`2/1` successes，semantic query delta=
 effective-BA response=`4.4562e-7/8.7685e-7/2.0105e-8`，fixed-action=`.00267335`。cycle=`130.737s`，为
 matched GOSC的`.9870x`，peak reserved=`40,751,857,664` bytes，无禁读、OOM或nonfinite。
 
-同一post-update state的稳定FP64低秩分析给出CCT-only effective-BA four-view aggregate cosine=`.563803`、
-mean/sample energy=`.672852`，显著超过`.15/.40`并离开GOSC的`.000144/.250124`。q与v分别为
-`.580886/.685664`和`.518110/.638505`；action仅`.079285/.309455`，虽因能量很小没有阻断aggregate门，仍是
-formal必须追踪的预注册风险。natural→reversed使CCT修正cosine=`.014842`、relative-L2=`1.15358`；把每条视频
+旧`mechanism_analysis.json`使用了错误counterfactual：它把LPCP+CCT减AS139误标为“CCT-only”，所以其中
+`.563803/.672852`及分族值不再作为正式机制数值。按exact same-state LPCP重算的
+`mechanism_analysis_corrected.json`给出纯CCT four-view aggregate cosine/energy=`.575776/.681821`，仍显著
+超过`.15/.40`并离开GOSC的`.000144/.250124`。q、v、action分别为`.593590/.695181`、
+`.528289/.646104`与`.081102/.310853`。因此分析标签错误没有逆转train-seen formal授权。natural→reversed使
+CCT修正cosine=`.014842`、relative-L2=`1.15358`；把每条视频
 全部帧替换为首帧时，factor memory与transported coefficient norm降到natural的`2.42e-5/2.74e-5`，不能伪造
 相同有向过程。机制门因此只授权fresh full24 cycle1，不预告closed-loop收益。
 
@@ -187,6 +189,41 @@ paired gained>lost在至少三个suites成立。最终报告paired transitions�
 单点150以上但高churn或没有video specificity仍不合格；稳定约145且跨video/因果门完整，可以成为有价值成立
 结果并进入后续从零recipe复验。
 
+### 8.1 Formal cycle1 and strict400
+
+clean detached `18bd3632cb49174e1fe589d0e8caf9cfc322c954`在gpu01物理`2/4/5/6/7`、world5从sealed
+LPCP fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`33/32`、gains=
+`5/4`，9 active tasks覆盖四suite，36 credit conditions/144 unique videos；cycle=`577.7288s`。semantic query
+delta RMS=`6.08551e-5`，q/v probes `4/4`、action `2/4`、fixed-action `4/4`非零。checkpoint/completion完整，
+0禁读、OOM、nonfinite或watchdog；除CCT commitment外624个writer state keys与LPCP macro25逐元素相同。
+
+同一checkpoint K4 strict correct400=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=
+`3/79/37/23`。相对LPCP143严格=`125 retained / 17 gained / 18 lost / 240 both-fail`、churn35、net`-1`、
+Jaccard`.78125`；相对GOSC141=`121/21/20`，相对SFMC144=`127/15/17`。score140门通过，但breadth6<7、
+LPCP lost18>15，故探索门失败。
+
+### 8.2 Held commitment postmortem
+
+all400 CCT/LPCP effective-BA relative-L2 mean/median=`4.665401e-6/4.221081e-6`；gained/lost改写=
+`3.174026e-6/5.319738e-6`，较大变化反而更常对应lost。held first4纯CCT增量的aggregate pairwise cosine=
+`7.75207e-8`、mean/sample energy=`.24999896`；q、v、action也都约`0/.25`，与train task4的
+`.575776/.681821`形成明确train→held断裂。
+
+exact evaluator worker在validation Spatial1 state0逐元素加载全部65,536个非零semantic-query元素，L2=
+`.015578908`，排除checkpoint/schema遗漏。train task4与held state0的transported coefficient RMS分别为
+`5.24818e-6/3.21672e-6`，pre-W2 hidden residual RMS为`2.56037e-6/1.50327e-6`，只相差
+`1.63x/1.70x`；pure-CCT BA L2却为`.164125/.000656710`，相差`249.92x`。因此最早失败接口是：
+
+```text
+held ordered-video Program + held exact language
+    -> nonzero transported coefficient / pre-W2 residual
+    -> native BF16 factor compiler threshold
+    -> almost no stable effective BA; fallback to LPCP neighborhood
+```
+
+这不是carrier未读视频、semantic query未加载、reward无内容或训练图没有更新。CCT学到的train task-language/
+compiler response没有跨到held task；局部hidden只缩小约1.7倍，却在factor写出端产生约250倍不连续衰减。
+
 ## 9. 负结果边界
 
 - 机制门不提高cross-video span：否定当前两轴`<M,L>` coefficient transport，不否定其它causal bottleneck；
@@ -195,4 +232,10 @@ paired gained>lost在至少三个suites成立。最终报告paired transitions�
 - stable correct通过但六臂无margin：说明方法仍主要依赖base/language shortcut，不具EMBER视频学习资格；
 - 任何失败都不外推否定memory token、rank8、few-shot、V6 carrier或生成LoRA本身。
 
-本轮完成前不命名下一个successor，不做参数sweep。
+本轮实际触发第2类（coherence只在train-seen成立、held closed-loop不增）并同时触发breadth/retention门，现已终局：
+不resume cycle2，不补same/wrong/shuffled/reversed/no-video，不做轴数、scale、rank、LR或seed小扫。正式终局artifact
+为strict root内`cct_cycle1_terminal_analysis.json`；旧错误标签机制文件只保留provenance。
+
+本结果只淘汰“每slot两系数CCT + exact-language frozen-W1 axes + 一轮稀疏four-view selected-success”组合。
+它不否定V6/LPCP强底座、literal memory token、rank8、few-shot、reward credit或生成LoRA。下一设计必须直接改变
+held Program成为policy-effective adaptation的边界，同时解释如何让多task能力在相邻checkpoints共同保留。

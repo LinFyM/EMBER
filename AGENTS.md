@@ -8,7 +8,7 @@
 2. `docs/current_owner_requirements.md`：owner目标、昨晚讨论形成的原则、方法/目标边界与协作要求；
 3. 本文件：科学合同、信息墙、评测、GPU、存储、Git与工程边界；
 4. `docs/active_session_handoff.md`：唯一当前实验状态、run identity和下一裁决点；
-5. 当前active design；
+5. 当前active design（若已建立）；
 6. `docs/research_history.md`与Git/artifacts：历史证据和负结果边界。
 
 旧design、Git快照、formal artifact、日志和历史文档中的“当前/下一步/active/暂停”只表示当时时点，不得覆盖
@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 当前active design（若已建立）；当前无active successor，最近终局设计为
    `docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -35,9 +35,10 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新Gradient-Open cycle1 strict=`141/400`、breadth7，相对LPCP143为
-`128 retained / 13 gained / 15 lost`、churn28，已按门终局；SFMC单点144也未通过retention/stability门。
-v6-fast仍是有完整五臂的历史最好：`correct/same/wrong/shuffled/reversed=143/135/125/128/129`。
+长期目标尚未完成。最新CCT cycle1 strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对
+LPCP143为`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth、retention及held
+cross-video geometry三项门失败，已终局且不得resume cycle2或补六臂。SFMC144仍是最高correct单点但
+lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -116,16 +117,17 @@ SFMC和Gradient-Open都没有六臂结果，因此不得宣称same-task-video鲁
 + 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
 token、rank8、few-shot或生成LoRA本身。
 
-当前active design是**V6-LPCP Causal Coefficient Transport**，authority=
-`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。它保留sealed LPCP、dynamic K、
-ordered Procedure、four-view selected-success、V6 factor compiler与rank16 public topology，只把video-derived
-`factor_memory`从256维hidden Value direction改为每个320 policy/rank slot的两个causal coefficients；exact
-language经冻结V6 W1/GELU提供同task共享的family-specific output axes。zero-init language router保证step0 exact
-LPCP，新增residual又必须乘video coefficient，不增加language-only Value。canonical实现与完整CPU`397 passed`
-已完成。task4真实GPU门中q/v/action与fixed-action链路非零，four-view CCT-only BA cosine/energy=
-`.563803/.672852`，natural→reversed修正cosine=`.014842`，静态首帧使transport coefficient norm降到
-`2.74e-5x`；cycle为GOSC`.9870x`。aggregate机制门已过并只授权fresh full24 cycle1；action family单独只有
-`.079285/.309455`，是必须追踪的风险。当前尚无CCT formal closed-loop结果。
+CCT authority=`docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md`。formal full24 cycle1完整：
+24 tasks/48 pairs/96 rollouts、candidate/reference=`33/32`、9 active tasks覆盖四suite，cycle=`577.729s`，完整
+checkpoint/completion与0禁读/OOM/nonfinite均通过。strict结果如本节开头，故没有cycle2或六臂。
+
+机制记录已纠正一个分析counterfactual错误：旧`.563803/.672852`实际混入AS139 reference，不是纯CCT增量；
+同一task4 post-update state相对exact LPCP的正确CCT-only cosine/energy仍为`.575776/.681821`，所以train-seen
+局部门仍成立。held first4则约为`0/.25`；live loader确认semantic query逐元素精确加载。train→held transported
+coefficients、pre-W2 hidden residual与effective-BA L2分别缩小`1.63x/1.70x/249.92x`。最早失败接口是held
+Program经native BF16 factor/compiler时未形成policy-effective commitment，而不是carrier、loader或reward链路。
+当前无active successor和可resume checkpoint；下一变量必须直接针对held commitment与多task共存。memory token
+是开放候选，不是必须形式，也不能原样恢复历史低分memory路线。
 
 ## 4. Long-term objective and decision rule
 

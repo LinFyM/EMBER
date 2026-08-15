@@ -26,7 +26,7 @@ from ember.reward.rollout import (
     RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_paired_reward_arm_trajectories,
-    complete_selected_trajectory_batch,
+    complete_paired_common_state_batch,
 )
 
 
@@ -285,14 +285,9 @@ def test_paired_k2_rollout_retains_executed_prefixes_for_credit() -> None:
         (5, 5, 2),
     ]
     assert [noise.shape[0] for noise in policy.noises] == [2, 1, 1]
-    batch, target_ids = complete_selected_trajectory_batch(
-        trajectories[:1], torch.device("cpu")
-    )
-    assert batch[ACTION].shape == (1, 50, 7)
-    assert target_ids.tolist() == [0]
 
 
-def _trajectory(*, success: bool) -> RewardTrajectory:
+def _trajectory(*, success: bool, marker: float) -> RewardTrajectory:
     observation = {
         OBS_LANGUAGE_TOKENS: torch.ones((1, 2), dtype=torch.long),
         OBS_LANGUAGE_ATTENTION_MASK: torch.ones((1, 2), dtype=torch.bool),
@@ -312,18 +307,23 @@ def _trajectory(*, success: bool) -> RewardTrajectory:
         dummy_settling_steps=10,
         policy_noise_seeds=(13,),
         observations=(observation,),
-        action_chunks=(torch.zeros((1, 50, 7)),),
+        action_chunks=(torch.full((1, 50, 7), marker),),
         valid_action_steps=(5,),
     )
 
 
-def test_two_selected_successes_remain_separate_equal_targets() -> None:
-    batch, target_ids = complete_selected_trajectory_batch(
-        tuple(_trajectory(success=True) for _ in range(2)), torch.device("cpu")
+def test_common_state_pair_collates_winner_then_loser_with_shared_prefix() -> None:
+    batch = complete_paired_common_state_batch(
+        ((
+            _trajectory(success=True, marker=2.0),
+            _trajectory(success=False, marker=3.0),
+        ),),
+        torch.device("cpu"),
     )
     assert batch[ACTION].shape == (2, 50, 7)
     assert batch["executed_action_steps"].tolist() == [5, 5]
-    assert target_ids.tolist() == [0, 1]
+    assert torch.equal(batch[ACTION][0], torch.full((50, 7), 2.0))
+    assert torch.equal(batch[ACTION][1], torch.full((50, 7), 3.0))
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:

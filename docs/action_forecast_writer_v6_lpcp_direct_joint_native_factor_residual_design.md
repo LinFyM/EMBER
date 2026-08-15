@@ -1,7 +1,7 @@
 # V6-LPCP Direct Joint Native-Factor Residual
 
-状态：2026-08-15 active formal-cycle1-ready authority。简称 `DJNFR`。task4 -> validation8机制门已强通过，
-仅授权从sealed LPCP macro25 fresh启动full24 cycle1；不续SJNV、PAFS或NPVC checkpoint，也尚未授权cycle2。
+状态：2026-08-16 formal终局non-pass。简称 `DJNFR`。task4 -> validation8机制门与full24后的生成端共同方向均通过，
+但cycle1 strict=`136/400`且相对LPCP lost23，按门不续cycle2、不补controls或扫参。
 
 ## 1. 决策与最早失效接口
 
@@ -226,3 +226,28 @@ shuffled、reversed、no-video六臂，不能等到150。
 负结果只淘汰“LPCP/NPVC carrier + joint `M*L/sqrt(256)` + 八个shared zero-init direct factor heads + matched
 one-cycle selected-success credit”组合；不否定memory token、capacity-matched M2P、rank8、few-shot、reward credit
 或生成LoRA。
+
+## 12. Formal终局结果
+
+clean frozen `49a4129`在gpu02物理`1/2/3/4`完成world4 full24 cycle1：24 tasks、48 paired states、96 rollouts，
+candidate/reference=`34/33` successes、`5/4` gains、9 active tasks，cycle=`717.940s`；八head全部更新，0禁读/OOM/
+nonfinite，完整checkpoint与completion均保留。strict由sealed `bbfa377`在gpu01六张空卡完成400/400 rows：
+
+- correct=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=`3/79/35/19`；
+- 相对LPCP143严格=`120 retained / 16 gained / 23 lost / 241 both-fail`，churn39、net`-7`、Jaccard=`.754717`；
+- suite net=`-2/-4/-3/+2`，只有Long上升；相对AS139为`116/20/23/241`、net`-3`；
+- correct至少142与lost至多15两门失败，故cycle2与六臂均未授权。
+
+这不是direct LoRA写出再次失败。post-train task4 four-view BA cosine/energy=`.802835/.800444`；validation8=
+`.790242/.785834`且8/8过门，raw factor/action cosine=`.677321/.686125`，held/train BA L2=`1.08903x`，reverse=
+`1.316782`、constant=`5.561e-6`。all400相对LPCP effective-BA relative-L2 mean/median=`7.773e-5/5.080e-5`，
+q/v/action均非零；first4跨视频修正仍为`.784618/.789128`。
+
+但改写不具reward选择性：gained/lost/retained-failure mean relative-L2分别=`4.522e-5/7.248e-5/8.987e-5`，
+持续失败样本最大。Spatial3获得全task最大改写`2.604e-4`且four-view cosine=`.933584`，成功反从4降至2。
+active-task gradient pairwise cosine mean仅`.002470`；独立task4-only与full24 head update cosine=`.162317`，full24
+几乎保持相同global head norm却旋转离开task4方向。
+
+因此最早失败接口后移到**sparse paired selected-success credit -> one shared direct-factor update -> held on-policy
+reward-useful direction**。后继`DF-PCSP`保留本轮已经通过的carrier与direct factor commitment，只把reward改为
+同一初态共同观测处的winner-vs-loser首段动作preference。

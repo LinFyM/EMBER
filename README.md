@@ -53,14 +53,12 @@ PAFS-NV用fixed language address预分流native Value，但validation8跨视频�
 BF16 public factors后却降至raw factor `.0214/.2659`、effective BA `.2019/.3964`。两者均在full24前终局，
 没有strict结果。
 
-当前active successor是
-[`V6-LPCP Direct Joint Native-Factor Residual`](docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md)：
-完整保留LPCP carrier、K4集合聚合、rank16、baseline LoRA与matched reward，只绕过已经被定位为最早断点的
-frozen W1/GELU/W2尾部。它将同一个有序视频native Value与exact-language Core的joint evidence按既有
-layer/rank/target ownership直接投影为八类A/B residual；step0严格等于LPCP且无视频时residual为零。clean
-`e756fa1`已在task4与validation8机制门得到BA=`.776695/.768990`、8/8 tasks，raw factor cosine=`.644605`、
-action cosine=`.557652`，且reverse/static与吞吐全部过门。下一裁决是fresh full24 cycle1后立即strict paired400；
-内部强通过仍不能替代closed-loop。实时run identity和下一裁决只取
+DJNFR已证明ordered video-language Value可以稳定直接写成native LoRA，post-full24 held8 BA仍为
+`.790242/.785834`且8/8过门；但strict只有136，相对LPCP lost23，故终局。当前active successor是
+[`V6-LPCP Direct-Factor Paired Common-State Preference`](docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md)：
+完整保留DJNFR carrier、K4集合聚合、rank16与八个direct factor heads，只把selected-success整轨迹正蒸馏改为
+candidate/reference两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。它不同时更改memory、rank、
+scale或rollout；下一裁决是task4真实机制门。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

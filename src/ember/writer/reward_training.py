@@ -1,4 +1,4 @@
-"""Train direct joint native-factor heads with cross-video success credit."""
+"""Train direct native-factor heads with paired common-state preference."""
 
 from __future__ import annotations
 
@@ -275,7 +275,7 @@ def _load_direct_factor_models(
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_direct_joint_native_factor_residual_success_credit_only"
+        "v6_lpcp_direct_factor_paired_common_state_preference_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -495,7 +495,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_"
+                        "ember_pi05_v6_lpcp_direct_factor_paired_common_state_"
+                        "preference_"
                         "completion_v1"
                     ),
                     "mode": args.mode,

@@ -9,7 +9,7 @@ from ember.reward.rollout import (
     RandomResetEnvironmentPool,
     RewardTrajectory,
     collect_paired_reward_arm_trajectories,
-    complete_selected_trajectory_batch,
+    complete_paired_common_state_batch,
 )
 
 __all__ = [
@@ -17,7 +17,7 @@ __all__ = [
     "RewardTrajectory",
     "RandomResetEnvironmentPool",
     "collect_paired_reward_arm_trajectories",
-    "complete_selected_trajectory_batch",
+    "complete_paired_common_state_batch",
     "reward_credit_environment_seed",
     "reward_credit_policy_noise_seed",
 ]

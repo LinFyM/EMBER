@@ -532,56 +532,66 @@ def collect_paired_reward_arm_trajectories(
     )
 
 
-def complete_selected_trajectory_batch(
-    trajectories: Sequence[RewardTrajectory], device: torch.device
-) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
-    """Collate the one or two uniquely successful trajectories selected by pairing."""
+def complete_paired_common_state_batch(
+    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
+    device: torch.device,
+) -> dict[str, torch.Tensor]:
+    """Collate winner/loser first chunks at their exact shared initial state."""
 
-    if len(trajectories) not in {1, 2} or any(
-        not trajectory.success
-        or not trajectory.observations
-        or len(trajectory.observations) != len(trajectory.action_chunks)
-        or len(trajectory.observations) != len(trajectory.valid_action_steps)
-        for trajectory in trajectories
-    ):
-        raise RewardProtocolError("paired success requires one or two winners")
-    chunks = [
-        (target, observation, action, valid)
-        for target, trajectory in enumerate(trajectories)
-        for observation, action, valid in zip(
-            trajectory.observations,
-            trajectory.action_chunks,
-            trajectory.valid_action_steps,
-            strict=True,
+    if len(pairs) not in {1, 2}:
+        raise RewardProtocolError("common-state credit requires one or two pairs")
+    rows: list[tuple[dict[str, torch.Tensor], torch.Tensor, int]] = []
+    for winner, loser in pairs:
+        if (
+            not winner.success
+            or loser.success
+            or not winner.observations
+            or not loser.observations
+            or not winner.action_chunks
+            or not loser.action_chunks
+            or not winner.valid_action_steps
+            or not loser.valid_action_steps
+        ):
+            raise RewardProtocolError("common-state pair lost winner or loser")
+        winner_observation = winner.observations[0]
+        loser_observation = loser.observations[0]
+        if set(winner_observation) != set(loser_observation) or any(
+            not torch.equal(winner_observation[name], loser_observation[name])
+            for name in winner_observation
+        ):
+            raise RewardProtocolError("paired arms do not share the initial observation")
+        shared_steps = min(winner.valid_action_steps[0], loser.valid_action_steps[0])
+        rows.extend(
+            (
+                (winner_observation, winner.action_chunks[0], shared_steps),
+                (winner_observation, loser.action_chunks[0], shared_steps),
+            )
         )
-    ]
-    keys = set(chunks[0][1])
-    if any(set(observation) != keys for _, observation, _, _ in chunks):
-        raise RewardProtocolError("paired success replay observation keys changed")
+    keys = set(rows[0][0])
+    if any(set(observation) != keys for observation, _, _ in rows):
+        raise RewardProtocolError("common-state observation keys changed")
     valid = torch.tensor(
-        [count for _, _, _, count in chunks], dtype=torch.long, device=device
+        [count for _, _, count in rows], dtype=torch.long, device=device
     )
-    target_ids = torch.tensor(
-        [target for target, _, _, _ in chunks], dtype=torch.long, device=device
-    )
-    batch = {
-        name: torch.cat([observation[name] for _, observation, _, _ in chunks]).to(
-            device=device, non_blocking=True
-        )
-        for name in sorted(keys)
-    }
-    actions = torch.cat([action for _, _, action, _ in chunks]).to(
+    actions = torch.cat([action for _, action, _ in rows]).to(
         device=device, non_blocking=True
     )
     if (
         actions.ndim != 3
         or bool((valid <= 0).any())
         or bool((valid > actions.shape[1]).any())
+        or not torch.equal(valid[0::2], valid[1::2])
     ):
-        raise RewardProtocolError("paired success executed prefix is invalid")
+        raise RewardProtocolError("common-state executed prefix is invalid")
+    batch = {
+        name: torch.cat([observation[name] for observation, _, _ in rows]).to(
+            device=device, non_blocking=True
+        )
+        for name in sorted(keys)
+    }
     batch[ACTION] = actions
     batch["executed_action_steps"] = valid
     batch["action_is_pad"] = (
         torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
-    return batch, target_ids
+    return batch

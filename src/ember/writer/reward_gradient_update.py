@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Mapping
 
 import torch
 import torch.distributed as dist
 
+from ember.lora import copy_task_lora_state_
 from ember.writer.as_step import assign_flat_gradient
 from ember.writer.errors import WriterModelError
+from ember.writer.model import WriterConditioningState
+from ember.writer.reward_preference import functional_paired_common_state_margin
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
@@ -22,6 +26,128 @@ class AppliedStep:
     gradient_rms: float
     parameter_delta_rms: Mapping[str, float]
     gradient_coexistence: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class RewardProbe:
+    global_task_id: int
+    suite: str
+    conditioning_state: WriterConditioningState
+    condition_video_offsets: torch.Tensor
+    before_lora: Mapping[str, torch.Tensor]
+    query: Mapping[str, torch.Tensor]
+    before_action: torch.Tensor
+    policy_noise_seed: int
+    cycle: int
+    preference_batch: Mapping[str, torch.Tensor]
+    before_preference_margin: float
+
+
+def lora_response(
+    before: Mapping[str, torch.Tensor], after: Mapping[str, torch.Tensor]
+) -> dict[str, Any]:
+    sums: dict[str, torch.Tensor | None] = dict.fromkeys(
+        ("lora_a", "lora_b", "effective_ba")
+    )
+    counts = {name: 0 for name in sums}
+    by_kind: dict[str, torch.Tensor | None] = dict.fromkeys(("q", "v", "action"))
+    kind_counts = {name: 0 for name in by_kind}
+    for name, before_a in before.items():
+        if not name.endswith(".lora_A.default.weight"):
+            continue
+        module = name.removesuffix(".lora_A.default.weight")
+        kind = "q" if module.endswith("q_proj") else "v" if module.endswith("v_proj") else "action"
+        b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
+        after_a, before_b, after_b = after[name], before[b_name], after[b_name]
+        values = {
+            "lora_a": after_a.float() - before_a.float(),
+            "lora_b": after_b.float() - before_b.float(),
+            "effective_ba": after_b.float() @ after_a.float()
+            - before_b.float() @ before_a.float(),
+        }
+        for key, value in values.items():
+            squared = value.square().sum()
+            sums[key] = squared if sums[key] is None else sums[key] + squared
+            counts[key] += value.numel()
+            if key == "effective_ba":
+                by_kind[kind] = squared if by_kind[kind] is None else by_kind[kind] + squared
+                kind_counts[kind] += value.numel()
+    response = {
+        f"{key}_response_rms": math.sqrt(float(value) / counts[key])
+        for key, value in sums.items()
+        if value is not None and counts[key]
+    }
+    response["effective_ba_response_rms_by_kind"] = {
+        kind: math.sqrt(float(value) / kind_counts[kind])
+        for kind, value in by_kind.items()
+        if value is not None and kind_counts[kind]
+    }
+    return response
+
+
+@torch.inference_mode()
+def probe_after_update(
+    runtime: RewardRuntime, probe: RewardProbe | None
+) -> dict[str, Any] | None:
+    if probe is None:
+        return None
+    with torch.autocast(
+        device_type=runtime.context.device.type,
+        dtype=torch.bfloat16,
+        enabled=runtime.context.device.type == "cuda",
+    ):
+        encoded = runtime.writer.compile_conditioning_state(
+            probe.conditioning_state, probe.condition_video_offsets, use_query_delta=True
+        )
+        after = runtime.writer.decode_output(encoded)
+    response = lora_response(probe.before_lora, after)
+    try:
+        copy_task_lora_state_(runtime.policy, after, runtime.lora_contract)
+        generator = torch.Generator(device="cpu").manual_seed(probe.policy_noise_seed)
+        noise = torch.randn(
+            (1, int(runtime.policy.config.chunk_size), int(runtime.policy.config.max_action_dim)),
+            generator=generator,
+        ).to(runtime.context.device)
+        query = {
+            name: value.to(runtime.context.device, non_blocking=True)
+            for name, value in probe.query.items()
+        }
+        with torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ):
+            action = runtime.policy.predict_action_chunk(
+                query,
+                noise=noise,
+                num_steps=int(runtime.config["environment"]["num_inference_steps"]),
+            )
+    finally:
+        copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
+    response["fixed_action_response_rms"] = float(
+        (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
+    )
+    if runtime.args.mode == "smoke":
+        preference = functional_paired_common_state_margin(
+            runtime.policy,
+            after,
+            runtime.lora_contract,
+            probe.preference_batch,
+            mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
+            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
+            cycle=probe.cycle,
+            global_task_id=probe.global_task_id,
+            device=runtime.context.device,
+        )
+        response.update(
+            before_preference_margin=probe.before_preference_margin,
+            after_preference_margin=preference["preference_margin"],
+            preference_margin_delta=(
+                preference["preference_margin"] - probe.before_preference_margin
+            ),
+            after_preference_objective=preference["preference_objective"],
+        )
+    return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
 
 
 def _trainable_named(

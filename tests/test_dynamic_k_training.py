@@ -101,17 +101,21 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_direct_joint_native_factor_config_seals_completed_cycle1() -> None:
+def test_paired_common_state_config_requires_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_completed_strict_pending"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["status"] == "active_mechanism_ready"
+    assert config["formal_run"]["status"] == "mechanism_gate_required"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "eight_zero_init_direct_native_factor_heads_1654784_parameters"
     )
-    assert config["formal_run"]["cycle1_evidence"]["rollouts"] == 96
-    assert config["formal_run"]["cycle1_evidence"]["active_tasks"] == 9
+    assert config["objective"]["kind"] == (
+        "cross_video_paired_common_state_flow_preference"
+    )
+    assert config["formal_run"]["mechanism_gate"][
+        "post_update_preference_margin_must_decrease"
+    ]
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 142,
         "two_cycle_correct_mean_minimum": 145,
@@ -131,10 +135,6 @@ def test_direct_joint_native_factor_config_seals_completed_cycle1() -> None:
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
-    evidence = config["formal_run"]["mechanism_evidence"]
-    assert evidence["result"] == "pass_formal_cycle1_authorized"
-    assert evidence["validation8_passing_tasks"] == 8
-    assert evidence["validation8_raw_factor_delta_cosine"] > 0.6
     assert base["writer"]["policy_slot_count"] == 320
 
 

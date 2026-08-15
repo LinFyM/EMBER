@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP direct joint native-factor residual."""
+"""Authority for V6-LPCP direct-factor paired common-state preference."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_v1"
+    "ember_pi05_v6_lpcp_direct_factor_paired_common_state_preference_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_launch_v1"
+    "ember_pi05_v6_lpcp_direct_factor_paired_common_state_preference_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_direct_joint_native_factor_residual_v1.json"
+    "configs/pi05_writer_v6_lpcp_direct_factor_paired_common_state_preference_v1.json"
 )
 
 
@@ -29,7 +29,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported direct native-factor config")
+        raise WriterModelError("unsupported paired common-state config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
@@ -51,7 +51,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                     "same_cached_conditioning_with_query_delta_disabled_exact_as139"
                 ),
                 "candidate_arm": (
-                    "frozen_v6_lpcp_plus_direct_joint_native_factor_residual"
+                    "frozen_v6_lpcp_plus_direct_factor_paired_common_state_preference"
                 ),
             },
         ),
@@ -83,18 +83,23 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         _contains(
             objective,
             {
-                "kind": "cross_video_causal_selected_success_flow_distillation",
-                "discordant_credit": "imitate_only_the_uniquely_successful_arm",
+                "kind": "cross_video_paired_common_state_flow_preference",
+                "discordant_credit": (
+                    "softplus_winner_minus_loser_flow_loss_at_shared_initial_observation"
+                ),
                 "tie_credit": "zero_for_both_success_and_both_failure",
+                "replay_scope": (
+                    "first_policy_query_only_with_minimum_shared_executed_prefix_length"
+                ),
+                "winner_loser_flow_panel": (
+                    "identical_beta_times_and_gaussian_noises_within_each_pair"
+                ),
                 "cross_video_credit": (
-                    "same_selected_success_replay_exact_gradient_in_four_"
+                    "same_common_state_pairwise_replay_exact_gradient_in_four_"
                     "disjoint_correct_k4_conditions"
                 ),
                 "view_aggregation": (
                     "equal_mean_of_four_view_writer_gradients_with_unit_task_weight"
-                ),
-                "flow_panel_across_views": (
-                    "identical_replay_beta_times_and_gaussian_noises"
                 ),
                 "flow_mc_samples": 4,
             },
@@ -126,7 +131,7 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         ),
     )
     if not all(valid):
-        raise WriterModelError("direct native-factor contract changed")
+        raise WriterModelError("paired common-state contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -134,11 +139,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid direct native-factor mode")
+        raise WriterModelError("invalid paired common-state mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal direct native-factor training is not authorized"
+            "formal paired common-state training is not authorized"
         )

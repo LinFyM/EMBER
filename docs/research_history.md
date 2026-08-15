@@ -22,9 +22,10 @@ Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条tr
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
 commitment；CCT证明held residual在native BF16 factor/compiler处消失，NPVC随后关闭了该断裂，但strict降至136。
 PAFS fixed address与SJNV shared joint gate均在formal前held机制门终局；SJNV进一步证明continuous hidden可有约`.94`
-跨视频cosine，却在冻结W2后变成raw factor`.02135/.26592`。当前DJNFR只绕过这个最早W2/public-factor断点；
-clean`e756fa1`机制已强通过，validation8 BA=`.776695/.768990`且8/8 tasks、raw-factor cosine=`.644605`、action=
-`.557652`，正式cycle1已授权但尚无full24或closed-loop结果。
+跨视频cosine，却在冻结W2后变成raw factor`.02135/.26592`。DJNFR以八个direct heads绕过W2，post-full24
+validation8 BA仍为`.790242/.785834`且8/8过门，但strict仅136，相对LPCP为`120/16/23`；persistent failures
+获得最大改写。最早断点由生成端后移到selected-success-only credit的held reward方向。当前DF-PCSP只把credit
+改成同一初态共同观测处的winner-vs-loser首段preference，DJNFR carrier/direct LoRA图完全不变。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

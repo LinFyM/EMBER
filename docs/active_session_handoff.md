@@ -1,27 +1,26 @@
 # EMBER Active Session State
 
-更新时间：2026-08-15。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
+更新时间：2026-08-16。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
 表示当时时点。稳定目标与owner要求见`docs/current_owner_requirements.md`，历史结果见`docs/research_history.md`。
 
 ## 1. Current truth
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 最新NPVC cycle1 strict=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`、per-suite=
-  `3/81/34/18`；相对LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct、
-  breadth与retention三门失败，已终局且不resume cycle2、补六臂或做参数小扫；
+- 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
+  `3/79/35/19`；相对LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct与
+  retention两门失败，已终局且不resume cycle2、补六臂或做参数小扫；
 - SFMC144仍是最高correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的
   历史最好=`143/135/125/128/129`；
-- NPVC formal训练完整：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`、9 active tasks覆盖四suite、
-  36 credit conditions/144 unique videos，cycle=`584.053s`，world5 checkpoint/completion完整，0禁读/OOM/
-  nonfinite；
-- NPVC all400相对LPCP effective-BA relative-L2 mean/median=`.0004683/.0003708`、absolute L2 mean=
-  `.05234`，q/v/action均material；post-train validation8 first4 four-view cosine/energy=`.40870/.54227`、7/8
-  tasks过门，reverse使probe/BA relative-L2=`1.84084/1.60518`。因此前序CCT的held native-compiler断裂已解决，
-  video evidence、顺序与LoRA写出链路不是当前最早断点；
-- NPVC相对LPCP的gained/lost BA relative-L2 mean=`.000412/.000436`，retained-failure更大至`.000549`；
-  full24后train task4 cross-video cosine/energy从preformal`.5929/.6792`降到`.0569/.2951`。最早失败接口是
-  selected-success credit对native Value组件/符号的reward-useful选择与full24多task共存；
+- DJNFR formal训练完整：24 tasks/48 pairs/96 rollouts，candidate/reference=`34/33`、9 active tasks，cycle=
+  `717.940s`，world4 checkpoint/completion完整，八head全部更新且0禁读/OOM/nonfinite；
+- DJNFR post-train task4/validation8 four-view BA cosine/energy=`.802835/.800444`与`.790242/.785834`，held8
+  8/8过门；raw factor/action cosine=`.677321/.686125`、held/train=`1.08903x`、reverse=`1.316782`。因此SJNV的
+  hidden->W2/native-factor断裂已被真正关闭，video evidence、顺序、direct LoRA写出和跨视频共同方向不是当前
+  最早断点；
+- DJNFR all400相对LPCP effective-BA relative-L2 mean/median=`7.773e-5/5.080e-5`，但gained/lost/
+  retained-failure分别=`4.522e-5/7.248e-5/8.987e-5`；persistent failure改写最大。最早失败接口是
+  selected-success-only credit经一个shared direct-factor update不能形成held reward-useful方向；
 - 最新完成design是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
   `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、CCT
   transport与matched reward recipe，只把factor Value换成已有320 slots的ordered native Action-probe delta，
@@ -46,16 +45,13 @@
   action cosine=`.042986`、held/train BA L2=`.452509x`，未启动full24/strict。stage localization显示gate/continuous
   hidden cosine约`.94`，但冻结W2后的raw factor cosine/energy=`.021353/.265925`、action factor cosine=`.002672`；
   最早断点是coherent hidden到native public A/B；
-- 当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
-  `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保留LPCP/NPVC carrier、ordered
-  Value、K-set、rank16和matched reward，只令`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个zero-init、
-  factor-shape-matched heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`，
-  step0/no-video exact LPCP。canonical runtime/config/checkpoint/evaluator schema已原位切换，定向CPU=`60 passed`、
-  完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。clean `e756fa1` task4真实smoke
-  八head/q-v-action全部更新，cycle=`139.069s=1.02439x` SJNV；validation8 BA=`.776695/.768990`且8/8过门，
-  joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=`.557652`、held/train=`.469796x`、reverse=
-  `1.222871`、constant=`1.762e-6`。所有机制门通过，formal cycle1已授权；当前尚无active GPU run或可resume
-  checkpoint；
+- 当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，
+  完整保留DJNFR输入、时序、K-set、rank16与八个direct factor heads；唯一把selected-success整轨迹正蒸馏改为
+  paired AS139/LPCP两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。四个disjoint correct K4
+  views仍只在shared Writer gradient处等权；不加memory、rank、scale、rollout或第二adapter。canonical实现、
+  fresh schema、定向CPU=`44 passed`、完整CPU=`398 passed`与architecture guard已通过；尚无GPU机制结果、
+  active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

@@ -371,8 +371,13 @@ capacity-matched memory grid/M2P。精确authority见
 
 DJNFR随后在clean`e756fa1`真实机制门中强通过：task4 BA=`.813895/.794975`；validation8=
 `.776695/.768990`且8/8 tasks过门，joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=
-`.557652`、held/train=`.469796x`，reverse/static与wall也全部通过。这证明绕过W2修复了SJNV最早断点，但尚不
-证明full24 reward方向有用或多task稳定共存；当前只授权fresh cycle1并要求随后立即strict400。
+`.557652`、held/train=`.469796x`，reverse/static与wall也全部通过。full24后validation8仍为`.790242/.785834`
+且8/8过门，证明绕过W2真正修复了SJNV最早断点；但strict仅136，相对LPCP lost23，持续失败样本反而获得最大
+BA改写。最早失败接口因此后移到selected-success-only credit如何形成held reward-useful shared direction。
+
+当前DF-PCSP据此完整保留DJNFR生成图，只把reward改为candidate/reference discordant pair在两臂分叉前同一初始
+观测处的winner-vs-loser首段flow preference；不比较后来不同occupancy，不同时改memory、rank、scale或rollout。
+精确authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。
 
 后续迭代遵循以下边界：
 

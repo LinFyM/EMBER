@@ -1,33 +1,29 @@
 # EMBER Execution Brief
 
-更新时间：2026-08-15。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
+更新时间：2026-08-16。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
-`docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。clean pushed/frozen `606ac76`从sealed
-LPCP fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`33/32`、gains=`5/4`，
-9 active tasks覆盖四suite，36 credit conditions/144 unique videos，cycle=`584.053s`；完整world5 checkpoint、
-completion与0禁读/OOM/nonfinite均保留。
+最新完成实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP
+fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`34/33`、gains=`5/4`、9 active
+tasks，cycle=`717.940s`；完整world4 checkpoint、completion与0禁读/OOM/nonfinite均保留。
 
-同一cycle1 checkpoint的K4 strict paired correct400=`136/400`、breadth6、per-task=
-`1/2/48/33/0/34/18/0`、per-suite=`3/81/34/18`。相对LPCP143严格=`120 retained / 16 gained / 23 lost /
-241 both-fail`、churn39、net`-7`、Jaccard`.754717`；相对GOSC141/SFMC144/CCT142净为`-5/-8/-6`，count-only
-相对v6-fast143/old134/compiler138/online128=`-7/+2/-2/+8`。correct≥140、breadth≥7、lost≤15三门失败，按
-authority终局：不resume cycle2，不补same/wrong/shuffled/reversed/no-video，不做scale/rank/axis/LR/seed小扫。
+同一cycle1 checkpoint的K4 strict paired correct400=`136/400`、breadth7、per-task=
+`1/2/44/35/0/35/18/1`、per-suite=`3/79/35/19`。相对LPCP143严格=`120 retained / 16 gained / 23 lost /
+241 both-fail`、churn39、net`-7`、Jaccard`.754717`；suite net=`-2/-4/-3/+2`。correct≥142与lost≤15两门失败，
+按authority终局：不resume cycle2，不补same/wrong/shuffled/reversed/no-video，不做参数小扫。
 
-本轮真正推进了因果定位。稳定FP64 all400显示NPVC相对LPCP effective-BA relative-L2 mean/median=
-`.0004683/.0003708`、absolute L2 mean=`.05234`，q/v/action均为原生尺度非零。post-train validation8每task四个
-不同correct K4的pure-NPVC cosine/energy平均=`.40870/.54227`、7/8 tasks过原几何门；natural→reversed的
-probe/BA relative-L2=`1.84084/1.60518`。因此CCT的held compiler消失已被关闭，video evidence、顺序与
-policy-effective写出均工作。
+本轮真正推进了因果定位。post-train task4与validation8 four-view BA cosine/energy=`.802835/.800444`和
+`.790242/.785834`，held8 8/8过门；raw factor/action cosine=`.677321/.686125`，held/train BA L2=`1.08903x`。
+all400相对LPCP effective-BA relative-L2 mean/median=`7.773e-5/5.080e-5`且q/v/action均非零。因此SJNV的
+coherent hidden到frozen W2/native public LoRA断裂已被关闭，carrier、视频顺序、direct写出与跨视频共同方向工作。
 
-但写入内容与reward不对齐：相对LPCP的retained/gained/lost/retained-failure BA relative-L2 mean=
-`.000320/.000412/.000436/.000549`，lost略大于gained，持续失败样本最大。full24后train task4的four-view
-cosine/energy又从preformal`.5929/.6792`降到`.0569/.2951`。所以最早失败接口是**selected-success credit如何
-选择native Value中改善held on-policy occupancy的组件和符号，以及异质task方向如何在一个full24 Writer中
-共存**，而不是carrier、LoRA幅度、量化或单纯跨视频coherence。
+但写入内容与reward不对齐：gained/lost/retained-failure BA relative-L2 mean=`4.522e-5/7.248e-5/8.987e-5`，
+持续失败样本最大。active-task gradient pairwise cosine mean仅`.002470`。所以最早失败接口是**selected-success
+only credit怎样在一个shared direct-factor update中形成held on-policy reward-useful方向**，而不是carrier、LoRA
+幅度、量化、W2或跨视频coherence。
 
 PAFS-NV随后因validation8仅`.168111/.372863`、3/8过门在formal前终局。SJNV-Gate进一步把固定地址换成共享
 joint gate；clean `913d3d3` task4达到`.472272/.597814`，但validation8只有`.201903/.396448`、2/8过门，action
@@ -35,24 +31,21 @@ cosine=`.042986`，同样没有full24/strict。关键新证据是stage localizat
 约`.94`，冻结W2后的raw factor delta却只有`.021353/.265925`，action factor cosine=`.002672`。因此最早断点已
 锁定为**coherent video-language hidden -> frozen W2 -> native public A/B**，不是carrier、时序或joint input。
 
-当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
-`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保持LPCP/NPVC上游和rank16，
-只把`X=M*RMSNorm(L)/sqrt(256)`经八个zero-init factor-shape heads直接写同一public A/B residual，trainable=
-`1,654,784`，step0/no-video exact LPCP。该单变量绕过已定位的W1/W2断点；不是generic capacity sweep，也没有同时
-增加literal memory tokens。canonical实现、fresh runtime/config/checkpoint/evaluator schema和定向CPU=`60 passed`
-已完成；完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。clean `e756fa1`的task4
-smoke与validation8只读视频机制门已强通过：BA=`.776695/.768990`且8/8 tasks，joint/direct/raw-factor cosine=
-`.803616/.933698/.644605`、action=`.557652`、held/train=`.469796x`、reverse=`1.222871`、constant=`1.762e-6`，
-wall=`1.02439x` SJNV。因此当前下一裁决是fresh full24 cycle1后立即strict paired400；若full24后共同方向坍塌，
-转向多task共存接口，不能用本次机制数字替代closed-loop。memory token、rank8
-与dynamic K仍开放。
+当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh并
+完整保留DJNFR生成图，唯一把成功整轨迹正蒸馏改为candidate/reference discordant pair在分叉前同一初始观测处的
+winner-vs-loser首段flow preference。两臂共享flow time/noise，只比较共同执行长度；四个disjoint correct K4
+views等权。它与历史OPPP的不同是状态严格配对且不比较分叉后的occupancy。下一裁决先是task4真实机制门；只有
+common-state、preference descent、q/v/action、held跨视频和效率同时过门才授权full24。memory token、rank8与
+dynamic K仍开放，但不与本轮reward变量同时改变。canonical实现与fresh schema已完成，定向CPU=`44 passed`、
+完整CPU=`398 passed`、compileall及architecture hard gate通过。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 
-NPVC训练root=
-`runs/outputs/pi05_v6_lpcp_native_probe_value_commitment_formal_cycle0to1_r5_k4_views4_nmc4_b8_606ac76_gpu01_20260815`；
+DJNFR训练root=
+`runs/outputs/pi05_v6_lpcp_direct_joint_native_factor_residual_formal_cycle0to1_r4_k4_views4_nmc4_b8_49a4129_gpu02_20260815`；
 strict与终局分析root=
-`runs/outputs/pi05_v6_lpcp_native_probe_value_commitment_cycle1_k4_correct400_noreplacement_seed7_trainr5_evalr5_606ac76_gpu01_20260815`。
+`runs/outputs/pi05_v6_lpcp_direct_joint_native_factor_residual_cycle1_k4_correct400_noreplacement_seed7_trainr4_evalr6_49a4129_gpu01_20260816`。
 
 ## 2. Completed CV-CSD variable and exact conclusion
 

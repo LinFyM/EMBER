@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_checkpoint_v1"
+    "ember_pi05_v6_lpcp_direct_factor_paired_common_state_preference_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_direct_joint_native_factor_residual_cycle_checkpoint"
+    "v6_lpcp_direct_factor_paired_common_state_preference_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

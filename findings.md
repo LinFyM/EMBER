@@ -565,6 +565,19 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     raw factor=`.644605/.697686`、action cosine=`.557652`，held/train L2=`.469796x`；reverse BA relative-L2=
     `1.222871`、constant/natural=`1.762e-6`。cycle=`139.069s=1.02439x` SJNV。由此可确认直接factor emission修复
     了SJNV的hidden->W2断裂并授权full24 cycle1，但closed-loop方向和多task共存仍完全未知。
+79. DJNFR full24并未破坏生成端：post-train task4/validation8 four-view BA cosine/energy=
+    `.802835/.800444`与`.790242/.785834`，held8 8/8过门，raw-factor/action cosine=`.677321/.686125`。但strict
+    只有`136/400`、breadth7，相对LPCP=`120 retained / 16 gained / 23 lost`；gained/lost/retained-failure BA改写
+    为`4.522e-5/7.248e-5/8.987e-5`。所以“direct factor健康且跨video共同”不等于reward-useful，最早接口后移到
+    selected-success-only credit。
+80. DJNFR active-task gradient pairwise cosine mean仅`.002470`；独立fresh task4-only与full24 head update cosine=
+    `.162317`，后者保持`.97335x`global norm却旋转离开task4方向。这不是相邻checkpoint drift证据，但说明长成功
+    轨迹正蒸馏产生异质cotangent。DF-PCSP因此只在candidate/reference共同初态比较winner/loser首段动作，删除分叉后
+    occupancy混杂；memory、rank与direct生成图均保持不变。
+81. DF-PCSP canonical实现没有新增Writer或rollout分支：discordant pair按`winner, loser`相邻排列，共享初始
+    observation、共同执行长度与同一flow time/noise；四view与task等权保持。smoke-only probe在真实step后复算
+    同一margin。fresh config/checkpoint/evaluator拒载DJNFR state；定向CPU=`44 passed`、完整CPU=`398 passed`，
+    architecture guard无hard violation。它尚未给出GPU或closed-loop证据。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

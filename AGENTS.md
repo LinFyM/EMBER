@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -153,15 +153,19 @@ full24/strict。stage localization显示gate/continuous hidden cosine均约`.94`
 骤降为cosine/energy=`.02135/.26592`，action factor cosine=`.00267`。最早断点因此是coherent hidden residual
 到frozen W2/native public A/B，而不是carrier、顺序或joint gate未读视频。
 
-当前active successor是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
-`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保留LPCP/NPVC carrier、K-set、
-rank16与matched reward，只把`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个factor-shape-matched zero-init
-heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`且step0/no-video exact LPCP。
-canonical实现、完整CPU=`399 passed`、compileall与architecture guard已通过。clean `e756fa1` task4与validation8
-机制强通过：BA=`.776695/.768990`且8/8 tasks，joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=
-`.557652`、held/train=`.469796x`、reverse=`1.222871`、constant=`1.762e-6`、wall=`1.02439x` SJNV；formal cycle1
-已授权但尚未启动。当前无active GPU run或可resume checkpoint。literal memory与rank8仍开放，本轮不同时改变
-carrier/public rank。
+最新终局的是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它已证明有序视频与语言joint Value可
+绕过冻结W2直接稳定写成native public LoRA：post-full24 validation8 BA cosine/energy=`.790242/.785834`、8/8过门。
+但cycle1 strict仅`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`；相对LPCP143为`120 retained /
+16 gained / 23 lost`，churn39、net`-7`。gained/lost/retained-failure BA改写依次=`4.522e-5/7.248e-5/
+8.987e-5`，说明生成端已通但selected-success credit不选择held reward-useful方向；不续cycle2或controls。
+
+当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，完整
+保留DJNFR carrier、K4、rank16和八个direct factor heads，唯一把成功整轨迹正蒸馏改为candidate/reference discordant
+pair在分叉前同一初始观测处的winner-vs-loser首段flow preference；四个disjoint correct K4 views等权。canonical
+实现、fresh schema、定向CPU=`44 passed`、完整CPU=`398 passed`与architecture guard已通过；尚未完成GPU机制门，
+无active GPU run或可resume checkpoint。memory token与rank8仍开放，但不与本轮reward变量同时改变。
 
 ## 4. Long-term objective and decision rule
 

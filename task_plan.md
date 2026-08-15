@@ -403,7 +403,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] stage localization确认gate/continuous hidden cosine约`.94`，但frozen W2后的raw factor cosine/energy=
   `.02135/.26592`、action factor cosine=`.00267`；最早断点为continuous hidden到native public A/B。
 
-## Active iteration: V6-LPCP Direct Joint Native-Factor Residual
+## Completed iteration: V6-LPCP Direct Joint Native-Factor Residual
 
 - [x] 以SJNV最早断点选择单变量：保留LPCP/NPVC carrier、K-set、rank16与reward，只绕过冻结W1/W2；
 - [x] 写DJNFR authority：`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个zero-init factor-shape heads直接
@@ -413,9 +413,19 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] clean pushed `e756fa1`完成matched task4：八head/q-v-action均更新，cycle=`139.069s=1.02439x` SJNV；
 - [x] validation8机制强通过：BA=`.77670/.76899`、8/8 tasks，raw factor=`.64461/.69769`、action cosine=
   `.55765`、held/train=`.46980x`、reverse=`1.22287`、constant=`1.76e-6`；
-- [ ] 冻结formal-cycle1-ready clean pushed authority并记录正式launch contract；
-- [ ] 按双节点live GPU与quota状态启动fresh full24 cycle1；
-- [ ] cycle1后立即strict paired400与逐task/接口分析；只有absolute/breadth/retention/held共同过门才续cycle2和六臂。
+- [x] clean `49a4129` world4 full24 cycle1完成：24 tasks/96 rollouts、9 active tasks、八head均更新；
+- [x] strict=`136/400`、breadth7，相对LPCP=`120 retained / 16 gained / 23 lost`，按门终局；
+- [x] post-train held8 BA=`.79024/.78583`且8/8过门；生成端已通，最早失败接口后移到reward-useful direction。
+
+## Active iteration: V6-LPCP Direct-Factor Paired Common-State Preference
+
+- [x] 写DF-PCSP authority：完整保留DJNFR输入、carrier、K-set、rank16与direct heads，只改变reward credit；
+- [x] 原位把selected-success整轨迹正蒸馏替换为discordant pair同一初态winner-vs-loser首段flow preference；
+- [x] 更新fresh-incompatible config/checkpoint/evaluator schema；定向CPU=`44 passed`、完整CPU=`398 passed`、
+  compileall与architecture hard gate通过；
+- [ ] 双节点live GPU选择后运行task4 B8真实机制门，验证共同观测、margin descent、八head/q-v-action、held8、
+  reverse/static和wall；
+- [ ] 机制全过才冻结formal authority并启动full24 cycle1；随后立即strict400和逐task/接口分析。
 
 ## Non-negotiable boundaries
 
@@ -432,8 +442,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC、PAFS-NV与SJNV-Gate均已按门终局；它们都不得resume或参数小扫。当前active DJNFR
-已建立design authority并强通过task4到validation8机制门；没有active GPU run或可resume checkpoint。下一步
-冻结formal-ready authority并启动fresh full24 cycle1。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
+Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate与DJNFR均已按门终局；它们都不得resume或参数小扫。当前active
+DF-PCSP已完成canonical实现与CPU门，尚无active GPU run或可resume checkpoint。下一步做task4真实机制门。
+约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

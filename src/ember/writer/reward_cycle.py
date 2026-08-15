@@ -1,11 +1,11 @@
-"""One cross-video success-credit cycle for the shared native-Value gate."""
+"""One paired common-state preference cycle for direct native-factor heads."""
 
 from __future__ import annotations
 
 import fcntl
 import math
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
@@ -18,7 +18,7 @@ from ember.reward.protocol import RewardTask, reward_credit_environment_seed
 from ember.reward.rollout import (
     RewardTrajectory,
     collect_paired_reward_arm_trajectories,
-    complete_selected_trajectory_batch,
+    complete_paired_common_state_batch,
 )
 from ember.writer.as_step import (
     accumulate_flat_gradient,
@@ -28,27 +28,20 @@ from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState, WriterProgramOutput
 from ember.writer.reward_preference import (
-    PairedSuccessCreditSummary,
+    PairedCommonStateCreditSummary,
     backpropagate_lora_cotangent,
-    functional_selected_success_lora_gradient,
+    functional_paired_common_state_lora_gradient,
     mean_cross_video_task_gradient,
 )
-from ember.writer.reward_gradient_update import AppliedStep, apply_reward_step
+from ember.writer.reward_gradient_update import (
+    AppliedStep,
+    RewardProbe,
+    apply_reward_step,
+    probe_after_update,
+)
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
-
-
-@dataclass(frozen=True)
-class RewardProbe:
-    global_task_id: int
-    suite: str
-    conditioning_state: WriterConditioningState
-    condition_video_offsets: torch.Tensor
-    before_lora: Mapping[str, torch.Tensor]
-    query: Mapping[str, torch.Tensor]
-    before_action: torch.Tensor
-    policy_noise_seed: int
 
 
 def _claim_task(queue: Path, ordered: tuple[RewardTask, ...]) -> RewardTask | None:
@@ -229,30 +222,32 @@ def _same_pair_identifiers(
     )
 
 
-def select_unique_success_trajectories(
+def select_discordant_trajectory_pairs(
     reference: Sequence[RewardTrajectory],
     candidate: Sequence[RewardTrajectory],
-) -> tuple[tuple[RewardTrajectory, ...], tuple[str, ...]]:
-    """Select the successful trajectory only when the two exact arms disagree."""
+) -> tuple[
+    tuple[tuple[RewardTrajectory, RewardTrajectory], ...], tuple[str, ...]
+]:
+    """Return winner/loser pairs only when the exact two arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
         raise WriterModelError("direct-factor credit requires two paired states")
-    selected: list[RewardTrajectory] = []
+    pairs: list[tuple[RewardTrajectory, RewardTrajectory]] = []
     labels: list[str] = []
     for reference_row, candidate_row in zip(reference, candidate, strict=True):
         if not _same_pair_identifiers(reference_row, candidate_row):
             raise WriterModelError("direct-factor arm pairing changed")
         if candidate_row.success and not reference_row.success:
-            selected.append(candidate_row)
+            pairs.append((candidate_row, reference_row))
             labels.append("candidate")
         elif reference_row.success and not candidate_row.success:
-            selected.append(reference_row)
+            pairs.append((reference_row, candidate_row))
             labels.append("reference")
         elif reference_row.success:
             labels.append("both_success")
         else:
             labels.append("both_failure")
-    return tuple(selected), tuple(labels)
+    return tuple(pairs), tuple(labels)
 
 
 def _differentiate_credit_view(
@@ -263,20 +258,18 @@ def _differentiate_credit_view(
     state: WriterConditioningState,
     candidate_lora: Mapping[str, torch.Tensor],
     batch: Mapping[str, torch.Tensor],
-    trajectory_ids: torch.Tensor,
     gradient_template: torch.Tensor,
-) -> tuple[torch.Tensor, PairedSuccessCreditSummary]:
+) -> tuple[torch.Tensor, PairedCommonStateCreditSummary]:
     with torch.autocast(
         device_type=runtime.context.device.type,
         dtype=torch.bfloat16,
         enabled=runtime.context.device.type == "cuda",
     ):
-        lora_gradient, summary = functional_selected_success_lora_gradient(
+        lora_gradient, summary = functional_paired_common_state_lora_gradient(
             runtime.policy,
             candidate_lora,
             runtime.lora_contract,
             batch,
-            trajectory_ids,
             mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
             physical_microbatch_size=int(
                 runtime.config["optimization"]["reward_replay_chunk_batch_size"]
@@ -308,13 +301,11 @@ def _differentiate_task_credit(
     packed: tuple[Any, ...],
     state: WriterConditioningState,
     candidate_lora: Mapping[str, torch.Tensor],
-    selected: Sequence[RewardTrajectory],
+    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
     gradient_sum: torch.Tensor,
-) -> tuple[dict[str, Any], float, torch.Tensor]:
+) -> tuple[dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor]]:
     started = time.monotonic()
-    batch, trajectory_ids = complete_selected_trajectory_batch(
-        selected, torch.device("cpu")
-    )
+    batch = complete_paired_common_state_batch(pairs, torch.device("cpu"))
     demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
         task.global_task_id,
         visit,
@@ -338,7 +329,6 @@ def _differentiate_task_credit(
             view_state,
             view_lora,
             batch,
-            trajectory_ids,
             gradient_sum,
         )
         view_gradients.append(flat)
@@ -358,9 +348,22 @@ def _differentiate_task_credit(
     first = view_rows[0]
     return {
         "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
-        "target_trajectories": int(first["target_trajectories"]),
-        "replay_chunks": int(first["replay_chunks"]),
-        "executed_action_steps": int(first["executed_action_steps"]),
+        "preference_margin": math.fsum(
+            float(row["preference_margin"]) for row in view_rows
+        )
+        / 4,
+        "winner_flow_loss": math.fsum(
+            float(row["winner_flow_loss"]) for row in view_rows
+        )
+        / 4,
+        "loser_flow_loss": math.fsum(
+            float(row["loser_flow_loss"]) for row in view_rows
+        )
+        / 4,
+        "discordant_pairs": int(first["discordant_pairs"]),
+        "replay_rows": int(first["replay_rows"]),
+        "common_action_steps": int(first["common_action_steps"]),
+        "winner_loser_action_rms": float(first["winner_loser_action_rms"]),
         "functional_policy_forwards": sum(
             int(row["functional_policy_forwards"]) for row in view_rows
         ),
@@ -376,7 +379,7 @@ def _differentiate_task_credit(
             {demo for demos in demo_sets for demo in demos}
         ),
         "credit_view_records": view_rows,
-    }, time.monotonic() - started, task_gradient
+    }, time.monotonic() - started, task_gradient, batch
 
 
 def _make_probe(
@@ -386,6 +389,9 @@ def _make_probe(
     candidate_lora: Mapping[str, torch.Tensor],
     candidate: Sequence[RewardTrajectory],
     labels: Sequence[str],
+    cycle: int,
+    preference_batch: Mapping[str, torch.Tensor],
+    before_preference_margin: float,
 ) -> RewardProbe:
     index = next(
         index
@@ -404,15 +410,22 @@ def _make_probe(
         query={name: value.clone() for name, value in trajectory.observations[0].items()},
         before_action=trajectory.action_chunks[0].clone(),
         policy_noise_seed=trajectory.policy_noise_seeds[0],
+        cycle=cycle,
+        preference_batch=preference_batch,
+        before_preference_margin=before_preference_margin,
     )
 
 
 def _empty_credit() -> dict[str, Any]:
     return {
         "objective": 0.0,
-        "target_trajectories": 0,
-        "replay_chunks": 0,
-        "executed_action_steps": 0,
+        "preference_margin": 0.0,
+        "winner_flow_loss": 0.0,
+        "loser_flow_loss": 0.0,
+        "discordant_pairs": 0,
+        "replay_rows": 0,
+        "common_action_steps": 0,
+        "winner_loser_action_rms": 0.0,
         "functional_policy_forwards": 0,
         "functional_policy_backwards": 0,
         "lora_gradient_rms": 0.0,
@@ -441,13 +454,13 @@ def _task_gradient(
             candidate_lora,
         )
     )
-    selected, labels = select_unique_success_trajectories(reference, candidate)
+    pairs, labels = select_discordant_trajectory_pairs(reference, candidate)
     credit = _empty_credit()
     credit_seconds = 0.0
     task_gradient = None
-    active = int(bool(selected))
-    if selected:
-        credit, credit_seconds, task_gradient = _differentiate_task_credit(
+    active = int(bool(pairs))
+    if pairs:
+        credit, credit_seconds, task_gradient, preference_batch = _differentiate_task_credit(
             runtime,
             task,
             cycle,
@@ -456,7 +469,7 @@ def _task_gradient(
             packed,
             state,
             candidate_lora,
-            selected,
+            pairs,
             gradient_sum,
         )
         if probe is None:
@@ -467,6 +480,9 @@ def _task_gradient(
                 candidate_lora,
                 candidate,
                 labels,
+                cycle,
+                preference_batch,
+                float(credit["credit_view_records"][0]["preference_margin"]),
             )
     row = {
         "task_id": task.global_task_id,
@@ -552,118 +568,6 @@ def _collect_cycle_tasks(
     return records, probe, active, task_gradients
 
 
-def _lora_response(
-    before: Mapping[str, torch.Tensor], after: Mapping[str, torch.Tensor]
-) -> dict[str, Any]:
-    sums: dict[str, torch.Tensor | None] = {
-        "lora_a": None,
-        "lora_b": None,
-        "effective_ba": None,
-    }
-    counts = {name: 0 for name in sums}
-    effective_by_kind: dict[str, torch.Tensor | None] = {
-        "q": None,
-        "v": None,
-        "action": None,
-    }
-    effective_counts = {name: 0 for name in effective_by_kind}
-    for name, before_a in before.items():
-        if not name.endswith(".lora_A.default.weight"):
-            continue
-        module = name.removesuffix(".lora_A.default.weight")
-        kind = (
-            "q"
-            if module.endswith("q_proj")
-            else "v"
-            if module.endswith("v_proj")
-            else "action"
-        )
-        b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
-        after_a, before_b, after_b = after[name], before[b_name], after[b_name]
-        values = {
-            "lora_a": after_a.float() - before_a.float(),
-            "lora_b": after_b.float() - before_b.float(),
-            "effective_ba": after_b.float() @ after_a.float()
-            - before_b.float() @ before_a.float(),
-        }
-        for key, value in values.items():
-            squared = value.square().sum()
-            sums[key] = squared if sums[key] is None else sums[key] + squared
-            counts[key] += value.numel()
-            if key == "effective_ba":
-                current = effective_by_kind[kind]
-                effective_by_kind[kind] = (
-                    squared if current is None else current + squared
-                )
-                effective_counts[kind] += value.numel()
-    response = {
-        f"{key}_response_rms": math.sqrt(float(sums[key]) / counts[key])
-        for key in sums
-        if sums[key] is not None and counts[key]
-    }
-    response["effective_ba_response_rms_by_kind"] = {
-        kind: math.sqrt(float(value) / effective_counts[kind])
-        for kind, value in effective_by_kind.items()
-        if value is not None and effective_counts[kind]
-    }
-    return response
-
-
-@torch.inference_mode()
-def _probe_after_update(
-    runtime: RewardRuntime, probe: RewardProbe | None
-) -> dict[str, Any] | None:
-    if probe is None:
-        return None
-    with torch.autocast(
-        device_type=runtime.context.device.type,
-        dtype=torch.bfloat16,
-        enabled=runtime.context.device.type == "cuda",
-    ):
-        encoded = runtime.writer.compile_conditioning_state(
-            probe.conditioning_state,
-            probe.condition_video_offsets,
-            use_query_delta=True,
-        )
-        after = runtime.writer.decode_output(encoded)
-    response = _lora_response(probe.before_lora, after)
-    try:
-        copy_task_lora_state_(runtime.policy, after, runtime.lora_contract)
-        generator = torch.Generator(device="cpu").manual_seed(
-            probe.policy_noise_seed
-        )
-        noise = torch.randn(
-            (
-                1,
-                int(runtime.policy.config.chunk_size),
-                int(runtime.policy.config.max_action_dim),
-            ),
-            generator=generator,
-        ).to(runtime.context.device)
-        query = {
-            name: value.to(runtime.context.device, non_blocking=True)
-            for name, value in probe.query.items()
-        }
-        with torch.autocast(
-            device_type=runtime.context.device.type,
-            dtype=torch.bfloat16,
-            enabled=runtime.context.device.type == "cuda",
-        ):
-            action = runtime.policy.predict_action_chunk(
-                query,
-                noise=noise,
-                num_steps=int(runtime.config["environment"]["num_inference_steps"]),
-            )
-    finally:
-        copy_task_lora_state_(
-            runtime.policy, runtime.identity_state, runtime.lora_contract
-        )
-    response["fixed_action_response_rms"] = float(
-        (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
-    )
-    return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
-
-
 def _gather_cycle_evidence(
     runtime: RewardRuntime,
     records: list[dict[str, Any]],
@@ -678,7 +582,7 @@ def _gather_cycle_evidence(
         )
     else:
         global_records = records
-    probe_row = _probe_after_update(runtime, probe)
+    probe_row = probe_after_update(runtime, probe)
     probes: list[Any] = [None] * runtime.context.world_size
     if runtime.context.world_size > 1:
         dist.all_gather_object(probes, probe_row)
@@ -708,9 +612,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_joint_native_factor_residual"
+            "one_complete_train24_direct_factor_paired_common_state_preference"
             if runtime.args.mode == "formal"
-            else "one_task_direct_joint_native_factor_residual_live_smoke"
+            else "one_task_direct_factor_paired_common_state_preference_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -731,8 +635,8 @@ def _cycle_metrics(
         ),
         "active_tasks": step.active_tasks,
         "active_suites": sorted({row["suite"] for row in active_records}),
-        "selected_trajectories": sum(
-            int(row["target_trajectories"]) for row in records
+        "discordant_preference_pairs": sum(
+            int(row["discordant_pairs"]) for row in records
         ),
         "credit_conditions": sum(
             int(row["credit_conditions"]) for row in records
@@ -740,12 +644,16 @@ def _cycle_metrics(
         "credit_unique_video_count": sum(
             int(row["credit_unique_video_count"]) for row in records
         ),
-        "replay_chunks": sum(int(row["replay_chunks"]) for row in records),
-        "executed_action_steps": sum(
-            int(row["executed_action_steps"]) for row in records
+        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
+        "common_action_steps": sum(
+            int(row["common_action_steps"]) for row in records
         ),
-        "selected_success_objective_mean": math.fsum(
+        "paired_common_state_objective_mean": math.fsum(
             float(row["objective"]) for row in active_records
+        )
+        / len(active_records),
+        "paired_common_state_margin_mean": math.fsum(
+            float(row["preference_margin"]) for row in active_records
         )
         / len(active_records),
         "writer_gradient_norm_before_clip": step.gradient_norm,

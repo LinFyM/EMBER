@@ -19,27 +19,13 @@ from ember.lora import (
 )
 from ember.reward.rollout import RewardTrajectory
 from ember.writer.as_step import parameter_layout
-from ember.writer.reward_cycle import (
-    _lora_response,
-    select_unique_success_trajectories,
-)
-from ember.writer.reward_gradient_update import apply_reward_step
+from ember.writer.reward_cycle import select_discordant_trajectory_pairs
+from ember.writer.reward_gradient_update import apply_reward_step, lora_response
 from ember.writer.reward_preference import (
-    functional_selected_success_lora_gradient,
+    functional_paired_common_state_lora_gradient,
+    functional_paired_common_state_margin,
     mean_cross_video_task_gradient,
-    selected_trajectory_chunk_weights,
 )
-
-
-def test_selected_success_weights_make_each_target_trajectory_equal() -> None:
-    trajectory_ids = torch.tensor([0, 1, 1, 1])
-    weights = selected_trajectory_chunk_weights(trajectory_ids)
-    per_trajectory = torch.stack(
-        [weights[trajectory_ids == target].sum() for target in range(2)]
-    )
-    torch.testing.assert_close(
-        per_trajectory, torch.tensor([0.5, 0.5]), rtol=0, atol=0
-    )
 
 
 def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() -> None:
@@ -72,7 +58,7 @@ def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
         before[b_name] = torch.zeros(4, 2)
         after[a_name] = torch.full((2, 3), float(index))
         after[b_name] = torch.full((4, 2), float(index))
-    response = _lora_response(before, after)
+    response = lora_response(before, after)
     assert response["effective_ba_response_rms"] > 0
     assert all(
         response["effective_ba_response_rms_by_kind"][kind] > 0
@@ -116,7 +102,7 @@ class _Policy(torch.nn.Module):
         return batch[ACTION]
 
 
-def test_selected_success_lora_credit_is_microbatch_semantic() -> None:
+def test_common_state_preference_lora_credit_is_microbatch_semantic() -> None:
     policy = _Policy()
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("model.projection", 7, 7),),
@@ -131,10 +117,12 @@ def test_selected_success_lora_credit_is_microbatch_semantic() -> None:
         name: torch.randn(shape, generator=torch.Generator().manual_seed(17))
         for name, shape in expected_lora_state_shapes(contract).items()
     }
-    trajectory_ids = torch.tensor([0, 1, 1, 1])
+    actions = torch.stack(
+        tuple(torch.full((50, 7), value) for value in (0.0, 0.01, 0.02, 0.03))
+    )
     batch = {
-        ACTION: torch.ones((4, 50, 7)),
-        "executed_action_steps": torch.tensor([5, 5, 3, 4]),
+        ACTION: actions,
+        "executed_action_steps": torch.tensor([5, 5, 3, 3]),
         "action_is_pad": torch.zeros((4, 50), dtype=torch.bool),
         OBS_LANGUAGE_TOKENS: torch.ones((4, 2), dtype=torch.long),
         OBS_LANGUAGE_ATTENTION_MASK: torch.ones((4, 2), dtype=torch.bool),
@@ -144,26 +132,50 @@ def test_selected_success_lora_credit_is_microbatch_semantic() -> None:
         state=state,
         contract=contract,
         batch=batch,
-        trajectory_ids=trajectory_ids,
         mc_samples=4,
         flow_seed_root=31,
         cycle=1,
         global_task_id=4,
         device=torch.device("cpu"),
     )
-    first, first_summary = functional_selected_success_lora_gradient(
+    first, first_summary = functional_paired_common_state_lora_gradient(
         **kwargs, physical_microbatch_size=2
     )
-    second, second_summary = functional_selected_success_lora_gradient(
+    second, second_summary = functional_paired_common_state_lora_gradient(
         **kwargs, physical_microbatch_size=8
     )
     assert first_summary.functional_policy_forwards == 8
     assert second_summary.functional_policy_forwards == 4
-    assert first_summary.target_trajectories == 2
+    assert first_summary.discordant_pairs == 2
+    assert first_summary.winner_loser_action_rms > 0
     for name in state:
         torch.testing.assert_close(first[name], second[name], rtol=2e-6, atol=2e-6)
     assert any(bool(torch.count_nonzero(value)) for value in first.values())
     assert all(parameter.grad is None for parameter in policy.parameters())
+    before = functional_paired_common_state_margin(
+        policy,
+        state,
+        contract,
+        batch,
+        mc_samples=4,
+        flow_seed_root=31,
+        cycle=1,
+        global_task_id=4,
+        device=torch.device("cpu"),
+    )
+    updated = {name: state[name] - 1e-3 * first[name] for name in state}
+    after = functional_paired_common_state_margin(
+        policy,
+        updated,
+        contract,
+        batch,
+        mc_samples=4,
+        flow_seed_root=31,
+        cycle=1,
+        global_task_id=4,
+        device=torch.device("cpu"),
+    )
+    assert after["preference_margin"] < before["preference_margin"]
 
 
 def _trajectory(*, cursor: int, success: bool, marker: float) -> RewardTrajectory:
@@ -190,7 +202,7 @@ def _trajectory(*, cursor: int, success: bool, marker: float) -> RewardTrajector
     )
 
 
-def test_pair_selection_uses_only_the_uniquely_successful_arm() -> None:
+def test_pair_selection_orders_the_unique_winner_before_the_loser() -> None:
     reference = (
         _trajectory(cursor=0, success=False, marker=0.0),
         _trajectory(cursor=1, success=True, marker=1.0),
@@ -199,10 +211,10 @@ def test_pair_selection_uses_only_the_uniquely_successful_arm() -> None:
         _trajectory(cursor=0, success=True, marker=2.0),
         _trajectory(cursor=1, success=False, marker=3.0),
     )
-    selected, labels = select_unique_success_trajectories(reference, candidate)
+    pairs, labels = select_discordant_trajectory_pairs(reference, candidate)
     assert labels == ("candidate", "reference")
-    assert selected[0] is candidate[0]
-    assert selected[1] is reference[1]
+    assert pairs[0] == (candidate[0], reference[0])
+    assert pairs[1] == (reference[1], candidate[1])
 
 
 def _single_condition_inputs(k: int) -> tuple[torch.Tensor, ...]:

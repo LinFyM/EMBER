@@ -305,6 +305,25 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [ ] 完成cycle1 K4 strict paired correct400；过retention门才允许cycle2稳定性与六臂因果评测；
 - [ ] 按约145稳定资格报告相邻checkpoint churn/Jaccard、same-task-other与correct对negative/no-video差异。
 
+### Pre-registered fresh cycle1 launch contract
+
+- frozen workspace=`/data1/user/ymdai/worktrees/EMBER-gradient-open-formal-eb543d3`，detached clean commit=
+  `eb543d3fbc1148501fc67299c6af53047fd474f3`，且由`origin/codex/bci-continuation`包含；
+- fresh output=`runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_formal_cycle0to1_r5_k4_views4_nmc4_b8_eb543d3_gpu01_20260815`；
+  不覆盖、不resume任何SFMC或smoke root；
+- gpu01 physical=`2/4/5/6/7`，world5 DDP，UUID尾分别=`ef13/f288/9218/34f/0915`；自动GPU-local
+  NUMA，`NCCL_P2P_DISABLE=1`、deferred NCCL；选择world5是因为该节点只有这5张满足约40.762GB/rank峰值，
+  其余三张分别高util或只余约4GB，不跨节点也不冒险共驻；
+- command=`torchrun --standalone --nproc-per-node=5 scripts/train_reward_writer.py`，使用sealed gradient-open
+  config、formal mode、canonical source step1000、LPCP macro25、canonical tokenizer/target HDF5，
+  `--stop-after-cycle 1`；精确argv由run root的`invocations.jsonl`保存；
+- scale=`24 tasks / 48 paired states / 96 rollouts`，每个active task四个互斥correct K4 credit views，B8 replay，
+  完成条件是cycle1 metric、world5完整checkpoint与completion均存在且进程exit0；
+- `/data1` quota snapshot=`537805228/1073741824 KiB`，matched formal root约79MB，本run加临时log估计
+  `<0.2GiB`；后续strict400 matched root约1.1GB，均远低于独立余量；
+- cycle1 checkpoint按预注册K4 correct400评测，并与LPCP143、SFMC144、v6-fast143及old134/compiler138/
+  online128逐task比较；只有correct≥144、breadth≥7、相对LPCP lost≤10、gained>lost且至少3 suites不降才续cycle2。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；

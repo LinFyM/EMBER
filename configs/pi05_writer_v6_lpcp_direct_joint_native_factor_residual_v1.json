@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_v1",
-  "status": "active_formal_cycle1_ready",
+  "status": "active_formal_cycle1_completed_strict_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "ready",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -148,6 +148,22 @@
       "held_to_train_effective_ba_l2_ratio": 0.4697964326633145,
       "natural_to_reversed_effective_ba_relative_l2": 1.2228713547846828,
       "constant_to_natural_effective_ba_l2_ratio": 1.761783504619833e-06
+    },
+    "cycle1_evidence": {
+      "result": "complete_strict400_required",
+      "authority_commit": "49a4129a549af07461044edc027d72e89d115c72",
+      "training_root": "runs/outputs/pi05_v6_lpcp_direct_joint_native_factor_residual_formal_cycle0to1_r4_k4_views4_nmc4_b8_49a4129_gpu02_20260815",
+      "world_size": 4,
+      "tasks": 24,
+      "paired_states": 48,
+      "rollouts": 96,
+      "candidate_successes": 34,
+      "reference_successes": 33,
+      "active_tasks": 9,
+      "cycle_seconds": 717.9397106,
+      "all_eight_factor_heads_nonzero": true,
+      "forbidden_reads": 0,
+      "oom_or_nonfinite": 0
     }
   }
 }

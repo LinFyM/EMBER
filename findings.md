@@ -588,6 +588,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     不能挑task15冒充shared方法。因此DF-PCSP在full24前终局。exact state只消除了初态混杂，却没有使“数百步后
     final success全部归因给第一prefix”变得可识别；最早失败接口是long-horizon outcome到第一shared action的
     task-dependent credit assignment，而不是carrier、direct LoRA写出或margin optimization。
+83. DF-SOCP选择保留DJNFR完整winner replay并给每个winner observation补一个loser-policy counterfactual action：
+    observation与policy-noise相同，失败轨迹后来occupancy不进入objective，且不增加env rollout。它相对DJNFR只补
+    negative，相对DF-PCSP只把exact preference从第一prefix扩展到完整成功occupancy；不用任意8/16阶段抽样，也不做
+    数千次state branching。preformal固定task9/15/18三项全过，直接检验是否消除anchor-dependent credit。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

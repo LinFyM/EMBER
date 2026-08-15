@@ -42,8 +42,13 @@ views等权。它与历史OPPP的不同是状态严格配对且不比较分叉�
 一次hard reset+settling，每臂以deterministic soft reset清空controller/observables后恢复相同qpos/qvel；不增加
 rollout或forward。exact task4/task7均变为tie；task9/15/18分别有1/2/1个discordant pairs，margin均真实下降且
 八head/q-v-action全通，但task9 held/train BA幅度仅`.105x`，task18 train跨video仅`.290/.428`，三个有效anchors
-只有task15全门通过。按门终局，不full24、strict或cycle2。当前没有active successor；下一步必须针对“final
-success被错误归因给第一prefix而形成task-dependent update”建立新的单变量authority。
+只有task15全门通过。按门终局，不full24、strict或cycle2。
+
+当前active successor是**DF-SOCP**：保留LPCP/DJNFR全部生成与部署图，只沿winner成功occupancy的每个replan
+observation，用相同policy noise查询loser counterfactual action，再做逐状态paired flow preference。它复用DJNFR
+完整成功trajectory并补同状态negative，不增加env rollout；固定task9/15/18三anchor全部过门才允许full24。
+authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`；
+implementation pending，当前无GPU run或可resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

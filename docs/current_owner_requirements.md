@@ -381,6 +381,12 @@ exact state修正后虽有真实margin descent，三个有效train anchors却只
 终局。最早失败接口是final long-horizon success被全部归因给第一shared prefix后形成task-dependent update。精确
 authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。
 
+当前DF-SOCP只针对该最早接口：不改LPCP/DJNFR生成图，而是在winner成功occupancy的全部replan observations上，
+使用相同policy noise查询loser-policy counterfactual actions并逐状态比较；不增加environment rollouts。它必须在
+固定task9/15/18三个exact-discordant anchors上全部保持train/held跨video commitment，不能再挑单一通过task。
+精确authority见
+`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

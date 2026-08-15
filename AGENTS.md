@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -172,6 +172,13 @@ controller/observables后恢复相同qpos/qvel，不增加rollout/forward。exac
 跨video仅`.290/.428`，三个有效anchors只有task15全门通过。按门终局，不full24/strict/cycle2；当前无active
 successor、GPU run或可resume checkpoint。最早失败接口是final success只归因给第一shared prefix后形成
 task-dependent update。memory token与rank8仍开放。
+
+当前active successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
+authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
+它不改LPCP/DJNFR生成图、rank16、K4或rollout数；对每个exact discordant pair沿winner全部replan observations，
+使用同一policy-noise批量查询loser arm的counterfactual actions，再逐状态做winner-vs-loser flow preference。
+pair内replans、pairs、四views与tasks逐级等权。实现尚未开始；preformal固定task9/15/18且三项必须全门通过，不能
+再挑单一anchor。当前无GPU run或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

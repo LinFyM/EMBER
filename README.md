@@ -58,8 +58,10 @@ DJNFR已证明ordered video-language Value可以稳定直接写成native LoRA，
 [`V6-LPCP Direct-Factor Paired Common-State Preference`](docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md)：
 完整保留DJNFR carrier、K4集合聚合、rank16与八个direct factor heads，只把selected-success整轨迹正蒸馏改为
 candidate/reference两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。exact pairing后task9/15/18
-均有真实margin descent，但三个anchors只有task15全门通过，故没有full24/strict。当前无active successor；实时
-run identity和下一裁决只取
+均有真实margin descent，但三个anchors只有task15全门通过，故没有full24/strict。当前active successor是
+[`DF-SOCP`](docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md)：
+在winner成功occupancy的每个replan observation上查询loser counterfactual action，不改已通过的生成图。实时run
+identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

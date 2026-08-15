@@ -432,6 +432,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [ ] 下一单变量设计须把final success credit放到成功occupancy上的多个exact shared query states，不能继续把
   数百步后的胜负全部归因给第一prefix。
 
+## Active iteration: V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference
+
+- [x] 写DF-SOCP authority：保留LPCP/DJNFR、rank16、K4、八direct heads与exact paired rollouts；
+- [ ] 原位把first-prefix batch替换为winner全部replan observations上的loser-policy counterfactual action batch；
+- [ ] 保持pair内replans、pairs、四views、tasks逐级等权，并移除DF-PCSP executable/schema语义；
+- [ ] 完成CPU、真实task9/15/18三anchor机制与吞吐门；三项全过才full24 cycle1及strict400。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；
@@ -448,8 +455,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR与DF-PCSP均已按门终局；它们都不得resume或参数小扫。
-当前没有active successor、GPU run或可resume checkpoint。下一步针对DF-PCSP的第一prefix长期credit错配建立
-新的单变量authority。
+当前active DF-SOCP处于implementation pending，无GPU run或可resume checkpoint。下一步原位实现successful-
+occupancy counterfactual preference并完成CPU门。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

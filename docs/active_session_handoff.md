@@ -56,7 +56,12 @@
   controller/observables，再恢复相同qpos/qvel，不增加rollout或forward。exact task4/task7均为tie；task9/15/18产生
   1/2/1个discordant pairs且preference margin均下降，八head及q/v/action链均非零。但task9 held/train BA幅度仅
   `.105x`，task18 train跨video cosine/energy仅`.290/.428`；三个有效anchors只有task15全门通过。不能挑单一通过
-  task冒充shared方法，故终局不启动full24/strict/cycle2。当前没有active successor、GPU run或可resume checkpoint；
+  task冒充shared方法，故终局不启动full24/strict/cycle2；
+- 当前active successor是**V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference**（DF-SOCP），
+  authority=`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
+  它只把first-prefix preference扩展为winner成功occupancy的全部replans，并在每个相同observation和policy noise上
+  批量查询loser counterfactual action；不增加env rollout，不改carrier、direct heads、rank16、K4或optimizer。
+  preformal固定task9/15/18且三项必须全过；当前implementation pending，无GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

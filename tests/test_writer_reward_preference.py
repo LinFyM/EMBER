@@ -19,7 +19,11 @@ from ember.lora import (
 )
 from ember.reward.rollout import RewardTrajectory
 from ember.writer.as_step import parameter_layout
-from ember.writer.reward_cycle import _apply_step, select_unique_success_trajectories
+from ember.writer.reward_cycle import (
+    _apply_step,
+    _lora_response,
+    select_unique_success_trajectories,
+)
 from ember.writer.reward_preference import (
     functional_selected_success_lora_gradient,
     mean_cross_video_task_gradient,
@@ -51,6 +55,28 @@ def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() ->
     duplicate = torch.tensor([0.125, -3.0], dtype=torch.float32)
     assert torch.equal(
         mean_cross_video_task_gradient((duplicate,) * 4), duplicate
+    )
+
+
+def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
+    before, after = {}, {}
+    modules = (
+        "model.gemma_expert.model.layers.0.self_attn.q_proj",
+        "model.gemma_expert.model.layers.0.self_attn.v_proj",
+        "model.action_in_proj",
+    )
+    for index, module in enumerate(modules, start=1):
+        a_name = f"{module}.lora_A.default.weight"
+        b_name = f"{module}.lora_B.default.weight"
+        before[a_name] = torch.zeros(2, 3)
+        before[b_name] = torch.zeros(4, 2)
+        after[a_name] = torch.full((2, 3), float(index))
+        after[b_name] = torch.full((4, 2), float(index))
+    response = _lora_response(before, after)
+    assert response["effective_ba_response_rms"] > 0
+    assert all(
+        response["effective_ba_response_rms_by_kind"][kind] > 0
+        for kind in ("q", "v", "action")
     )
 
 

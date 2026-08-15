@@ -594,12 +594,30 @@ def _apply_step(
 
 def _lora_response(
     before: Mapping[str, torch.Tensor], after: Mapping[str, torch.Tensor]
-) -> dict[str, float]:
-    sums = {"lora_a": 0.0, "lora_b": 0.0, "effective_ba": 0.0}
+) -> dict[str, Any]:
+    sums: dict[str, torch.Tensor | None] = {
+        "lora_a": None,
+        "lora_b": None,
+        "effective_ba": None,
+    }
     counts = {name: 0 for name in sums}
+    effective_by_kind: dict[str, torch.Tensor | None] = {
+        "q": None,
+        "v": None,
+        "action": None,
+    }
+    effective_counts = {name: 0 for name in effective_by_kind}
     for name, before_a in before.items():
         if not name.endswith(".lora_A.default.weight"):
             continue
+        module = name.removesuffix(".lora_A.default.weight")
+        kind = (
+            "q"
+            if module.endswith("q_proj")
+            else "v"
+            if module.endswith("v_proj")
+            else "action"
+        )
         b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
         after_a, before_b, after_b = after[name], before[b_name], after[b_name]
         values = {
@@ -609,11 +627,26 @@ def _lora_response(
             - before_b.float() @ before_a.float(),
         }
         for key, value in values.items():
-            sums[key] += float(value.square().sum())
+            squared = value.square().sum()
+            sums[key] = squared if sums[key] is None else sums[key] + squared
             counts[key] += value.numel()
-    return {
-        f"{key}_response_rms": math.sqrt(sums[key] / counts[key]) for key in sums
+            if key == "effective_ba":
+                current = effective_by_kind[kind]
+                effective_by_kind[kind] = (
+                    squared if current is None else current + squared
+                )
+                effective_counts[kind] += value.numel()
+    response = {
+        f"{key}_response_rms": math.sqrt(float(sums[key]) / counts[key])
+        for key in sums
+        if sums[key] is not None and counts[key]
     }
+    response["effective_ba_response_rms_by_kind"] = {
+        kind: math.sqrt(float(value) / effective_counts[kind])
+        for kind, value in effective_by_kind.items()
+        if value is not None and effective_counts[kind]
+    }
+    return response
 
 
 @torch.inference_mode()

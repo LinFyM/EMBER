@@ -157,8 +157,10 @@ full24/strict。stage localization显示gate/continuous hidden cosine均约`.94`
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。它保留LPCP/NPVC carrier、K-set、
 rank16与matched reward，只把`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个factor-shape-matched zero-init
 heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`且step0/no-video exact LPCP。
-canonical实现、完整CPU=`399 passed`、compileall与architecture guard已通过，formal仍被task4到validation8真实
-机制门阻塞；当前无active GPU run或可resume checkpoint。literal memory与rank8仍开放，但不在本轮同时改变
+canonical实现、完整CPU=`399 passed`、compileall与architecture guard已通过。clean `e756fa1` task4与validation8
+机制强通过：BA=`.776695/.768990`且8/8 tasks，joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=
+`.557652`、held/train=`.469796x`、reverse=`1.222871`、constant=`1.762e-6`、wall=`1.02439x` SJNV；formal cycle1
+已授权但尚未启动。当前无active GPU run或可resume checkpoint。literal memory与rank8仍开放，本轮不同时改变
 carrier/public rank。
 
 ## 4. Long-term objective and decision rule

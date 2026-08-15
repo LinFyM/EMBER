@@ -1,8 +1,7 @@
 # V6-LPCP Direct Joint Native-Factor Residual
 
-状态：2026-08-15 active mechanism-pending authority。简称 `DJNFR`。formal full24、strict400与resume在真实
-task4 -> validation8机制门前全部禁止。本设计从sealed LPCP macro25 fresh建立，不续SJNV、PAFS或NPVC
-checkpoint。
+状态：2026-08-15 active formal-cycle1-ready authority。简称 `DJNFR`。task4 -> validation8机制门已强通过，
+仅授权从sealed LPCP macro25 fresh启动full24 cycle1；不续SJNV、PAFS或NPVC checkpoint，也尚未授权cycle2。
 
 ## 1. 决策与最早失效接口
 
@@ -185,6 +184,23 @@ validation8每task四个disjoint correct K4 conditions；held不读actions/rewar
 8. cycle wall不超过SJNV`1.10x`，无OOM/nonfinite/禁读，仍只有一次context forward。
 
 任一held、action、raw-factor或效率门失败即终局，不full24、不strict、不扫LR/scale/head width/rank。
+
+### 9.1 真实结果
+
+clean pushed `e756fa1`在gpu01物理5完成task4 B8 smoke：candidate/reference=`2/1`，1个discordant pair；八head
+梯度与参数delta、q/v/action native BA和fixed-action response全部非零，cycle=`139.069s=1.02439x` SJNV，峰值
+allocated/reserved=`36.488/40.756GB`，0禁读/OOM/nonfinite。
+
+同一checkpoint只读task4与validation8的四个互斥correct K4 sets：
+
+- task4 effective-BA cosine/energy=`.813895/.794975`；
+- validation8 effective-BA=`.776695/.768990`，8/8 tasks过门；
+- joint Value=`.803616/.831027`，continuous direct rows=`.933698/.918759`；
+- native public raw factor=`.644605/.697686`，action BA cosine=`.557652`；
+- held/train BA L2=`.469796x`；reversed BA relative-L2=`1.222871`；constant/natural=`1.762e-6`。
+
+所有预注册门同时通过。SJNV的最早断点确实被绕过：共同方向从joint payload连续传到direct rows、native public
+factors与effective BA，而不是只在hidden中变漂亮。因此formal cycle1已解锁；这些内部证据仍不替代strict400。
 
 ## 10. full24与closed-loop裁决
 

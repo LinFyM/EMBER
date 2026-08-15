@@ -40,9 +40,11 @@ cosine=`.042986`，同样没有full24/strict。关键新证据是stage localizat
 只把`X=M*RMSNorm(L)/sqrt(256)`经八个zero-init factor-shape heads直接写同一public A/B residual，trainable=
 `1,654,784`，step0/no-video exact LPCP。该单变量绕过已定位的W1/W2断点；不是generic capacity sweep，也没有同时
 增加literal memory tokens。canonical实现、fresh runtime/config/checkpoint/evaluator schema和定向CPU=`60 passed`
-已完成；完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。当前无GPU run；下一裁决是
-冻结clean pushed commit后做task4 selected-success到validation8只读视频机制门。若`X`共同而direct factors仍
-失败，才升级到有精确payload依据的SHINE式memory grid。memory token、rank8
+已完成；完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。clean `e756fa1`的task4
+smoke与validation8只读视频机制门已强通过：BA=`.776695/.768990`且8/8 tasks，joint/direct/raw-factor cosine=
+`.803616/.933698/.644605`、action=`.557652`、held/train=`.469796x`、reverse=`1.222871`、constant=`1.762e-6`，
+wall=`1.02439x` SJNV。因此当前下一裁决是fresh full24 cycle1后立即strict paired400；若full24后共同方向坍塌，
+转向多task共存接口，不能用本次机制数字替代closed-loop。memory token、rank8
 与dynamic K仍开放。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。

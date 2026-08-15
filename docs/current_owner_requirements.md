@@ -369,6 +369,11 @@ memory：先以最小变量检验绕过W2是否足够；只有slot payload共同
 capacity-matched memory grid/M2P。精确authority见
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。
 
+DJNFR随后在clean`e756fa1`真实机制门中强通过：task4 BA=`.813895/.794975`；validation8=
+`.776695/.768990`且8/8 tasks过门，joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=
+`.557652`、held/train=`.469796x`，reverse/static与wall也全部通过。这证明绕过W2修复了SJNV最早断点，但尚不
+证明full24 reward方向有用或多task稳定共存；当前只授权fresh cycle1并要求随后立即strict400。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

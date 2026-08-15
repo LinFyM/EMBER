@@ -101,10 +101,10 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_direct_joint_native_factor_config_is_mechanism_pending() -> None:
+def test_direct_joint_native_factor_config_is_formal_cycle1_ready() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_mechanism_pending"
-    assert config["formal_run"]["status"] == "blocked_mechanism_pending"
+    assert config["status"] == "active_formal_cycle1_ready"
+    assert config["formal_run"]["status"] == "ready"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
@@ -129,7 +129,10 @@ def test_direct_joint_native_factor_config_is_mechanism_pending() -> None:
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
-    assert "mechanism_evidence" not in config["formal_run"]
+    evidence = config["formal_run"]["mechanism_evidence"]
+    assert evidence["result"] == "pass_formal_cycle1_authorized"
+    assert evidence["validation8_passing_tasks"] == 8
+    assert evidence["validation8_raw_factor_delta_cosine"] > 0.6
     assert base["writer"]["policy_slot_count"] == 320
 
 

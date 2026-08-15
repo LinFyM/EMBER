@@ -51,8 +51,11 @@
   Value、K-set、rank16和matched reward，只令`X=(M elementwise_mul RMSNorm(L))/sqrt(256)`经八个zero-init、
   factor-shape-matched heads直接写public A/B residual，绕过已定位的冻结W1/W2断点；trainable=`1,654,784`，
   step0/no-video exact LPCP。canonical runtime/config/checkpoint/evaluator schema已原位切换，定向CPU=`60 passed`、
-  完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。真实GPU机制门尚未完成；当前无
-  active GPU run或可resume checkpoint；
+  完整CPU=`399 passed`、compileall通过且architecture guard无hard violation。clean `e756fa1` task4真实smoke
+  八head/q-v-action全部更新，cycle=`139.069s=1.02439x` SJNV；validation8 BA=`.776695/.768990`且8/8过门，
+  joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=`.557652`、held/train=`.469796x`、reverse=
+  `1.222871`、constant=`1.762e-6`。所有机制门通过，formal cycle1已授权；当前尚无active GPU run或可resume
+  checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

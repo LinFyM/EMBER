@@ -410,9 +410,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   写public A/B residual，总trainable=`1,654,784`，step0/no-video exact LPCP；
 - [x] 原位替换canonical commitment/runtime/checkpoint/evaluator schema，定向CPU合同`60 passed`；
 - [x] 完整CPU=`399 passed`、compileall通过，architecture guard无hard violation；
-- [ ] 冻结clean pushed mechanism authority；
-- [ ] 双节点live GPU选择后完成matched task4 selected-success与validation8 held video-only机制/吞吐裁决；
-- [ ] 仅在raw factor、BA、action、held/train、reverse/static与wall全部过门后启动fresh full24 cycle1；
+- [x] clean pushed `e756fa1`完成matched task4：八head/q-v-action均更新，cycle=`139.069s=1.02439x` SJNV；
+- [x] validation8机制强通过：BA=`.77670/.76899`、8/8 tasks，raw factor=`.64461/.69769`、action cosine=
+  `.55765`、held/train=`.46980x`、reverse=`1.22287`、constant=`1.76e-6`；
+- [ ] 冻结formal-cycle1-ready clean pushed authority并记录正式launch contract；
+- [ ] 按双节点live GPU与quota状态启动fresh full24 cycle1；
 - [ ] cycle1后立即strict paired400与逐task/接口分析；只有absolute/breadth/retention/held共同过门才续cycle2和六臂。
 
 ## Non-negotiable boundaries
@@ -431,7 +433,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV与SJNV-Gate均已按门终局；它们都不得resume或参数小扫。当前active DJNFR
-已建立design authority并通过完整工程门；没有active GPU run或可resume checkpoint。下一步冻结clean pushed
-mechanism authority，再做task4到validation8最小机制否决，只有held门通过才做full24。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
+已建立design authority并强通过task4到validation8机制门；没有active GPU run或可resume checkpoint。下一步
+冻结formal-ready authority并启动fresh full24 cycle1。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

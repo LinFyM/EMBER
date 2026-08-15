@@ -560,6 +560,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     直接补到同一76个public tensors，step0/no-video exact LPCP；fresh config、checkpoint和evaluator拒绝SJNV
     state。完整CPU=`399 passed`、compileall通过，architecture guard无hard violation，active source diff净增仅8行。
     这只关闭工程门，不能预判direct factors能否保住跨视频共同方向或提高closed-loop。
+78. DJNFR clean`e756fa1`真实机制强通过：task4 BA cosine/energy=`.813895/.794975`；validation8=
+    `.776695/.768990`且8/8 tasks过门。joint Value=`.803616/.831027`、continuous rows=`.933698/.918759`、native
+    raw factor=`.644605/.697686`、action cosine=`.557652`，held/train L2=`.469796x`；reverse BA relative-L2=
+    `1.222871`、constant/natural=`1.762e-6`。cycle=`139.069s=1.02439x` SJNV。由此可确认直接factor emission修复
+    了SJNV的hidden->W2断裂并授权full24 cycle1，但closed-loop方向和多task共存仍完全未知。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

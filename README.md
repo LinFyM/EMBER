@@ -57,9 +57,10 @@ BF16 public factors后却降至raw factor `.0214/.2659`、effective BA `.2019/.3
 [`V6-LPCP Direct Joint Native-Factor Residual`](docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md)：
 完整保留LPCP carrier、K4集合聚合、rank16、baseline LoRA与matched reward，只绕过已经被定位为最早断点的
 frozen W1/GELU/W2尾部。它将同一个有序视频native Value与exact-language Core的joint evidence按既有
-layer/rank/target ownership直接投影为八类A/B residual；step0严格等于LPCP且无视频时residual为零。canonical
-实现已完成，下一裁决是task4到validation8的真实机制门；只有跨视频raw factor与effective BA共同写出过门，
-才启动full24。实时run identity和下一裁决只取
+layer/rank/target ownership直接投影为八类A/B residual；step0严格等于LPCP且无视频时residual为零。clean
+`e756fa1`已在task4与validation8机制门得到BA=`.776695/.768990`、8/8 tasks，raw factor cosine=`.644605`、
+action cosine=`.557652`，且reverse/static与吞吐全部过门。下一裁决是fresh full24 cycle1后立即strict paired400；
+内部强通过仍不能替代closed-loop。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_direct_joint_native_factor_residual_v1",
-  "status": "active_mechanism_pending",
+  "status": "active_formal_cycle1_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "blocked_mechanism_pending",
+    "status": "ready",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -128,6 +128,26 @@
       "natural_reversed_joint_value_and_lora_materially_different": true,
       "no_repeated_backbone_forward": true,
       "matched_sjnv_wall_ratio_maximum": 1.1
+    },
+    "mechanism_evidence": {
+      "result": "pass_formal_cycle1_authorized",
+      "authority_commit": "e756fa11356ec285d32dcf8d1fd58b05bdf81123",
+      "training_root": "runs/outputs/pi05_v6_lpcp_direct_joint_native_factor_residual_task4_mechanism_state_b8_e756fa1_gpu01p5_20260815",
+      "training_cycle_seconds": 139.0685664290795,
+      "matched_sjnv_wall_ratio": 1.0243924592956763,
+      "train_cross_video_cosine": 0.8138952556530845,
+      "train_cross_video_energy_ratio": 0.7949750758576252,
+      "validation8_passing_tasks": 8,
+      "validation8_cross_video_cosine": 0.7766951517473343,
+      "validation8_cross_video_energy_ratio": 0.7689898462269963,
+      "validation8_joint_value_cosine": 0.8036158443404974,
+      "validation8_continuous_direct_rows_cosine": 0.9336980452457077,
+      "validation8_raw_factor_delta_cosine": 0.6446053644682443,
+      "validation8_raw_factor_delta_energy_ratio": 0.6976856568863343,
+      "validation8_action_cosine": 0.5576522439827301,
+      "held_to_train_effective_ba_l2_ratio": 0.4697964326633145,
+      "natural_to_reversed_effective_ba_relative_l2": 1.2228713547846828,
+      "constant_to_natural_effective_ba_l2_ratio": 1.761783504619833e-06
     }
   }
 }

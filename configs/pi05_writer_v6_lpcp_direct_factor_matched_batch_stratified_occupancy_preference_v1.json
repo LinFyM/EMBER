@@ -1,18 +1,18 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_v1",
-  "status": "terminal_mechanism_non_pass",
+  "schema_version": "ember_pi05_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_v1",
+  "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_successful_occupancy_counterfactual_preference"
+    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_matched_batch_stratified_occupancy_preference"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
     "training_reward_scope": "development_train24_on_policy_binary_reward_only",
-    "training_action_scope": "every_executed_prefix_from_the_unique_successful_arm_plus_failed_arm_counterfactual_actions_queried_at_the_identical_retained_observation_and_policy_noise_reused_across_four_same_task_correct_video_conditions",
+    "training_action_scope": "reference_and_candidate_actions_requeried_with_identical_physical_batches_at_every_successful_arm_observation_then_one_maximum_disagreement_state_selected_per_equal_progress_stratum_and_reused_across_four_same_task_correct_video_conditions",
     "reference_scope": "training_only_same_writer_graph_with_query_delta_disabled",
     "deployment_reference_or_selector": false,
     "target_dataset_action_reads": 0,
@@ -43,16 +43,18 @@
     "persistent_lanes_per_task": 2
   },
   "objective": {
-    "kind": "cross_video_successful_occupancy_counterfactual_flow_preference",
+    "kind": "cross_video_matched_batch_stratified_occupancy_flow_preference",
     "pairing": "one_hard_reset_captured_model_and_state_then_deterministic_soft_reset_and_shared_policy_rng_prefix",
-    "discordant_credit": "softplus_successful_action_minus_failed_arm_counterfactual_action_flow_loss_at_every_successful_replan_observation",
+    "discordant_credit": "softplus_matched_batch_winner_action_minus_loser_action_flow_loss_at_one_maximum_disagreement_state_per_equal_progress_stratum",
     "tie_credit": "zero_for_both_success_and_both_failure",
-    "replay_scope": "complete_successful_trajectory_with_equal_weight_per_replan_inside_each_equal_weight_discordant_trajectory",
-    "winner_loser_flow_panel": "identical_beta_times_and_gaussian_noises_within_each_pair",
-    "cross_video_credit": "same_successful_occupancy_counterfactual_panel_exact_gradient_in_four_disjoint_correct_k4_conditions",
+    "replay_scope": "eight_equal_progress_strata_per_successful_trajectory_with_one_maximum_matched_action_disagreement_state_per_stratum_and_equal_weight_inside_each_equal_weight_discordant_trajectory",
+    "winner_loser_action_panel": "both_arms_requeried_in_identical_observation_noise_precision_order_and_physical_batch_shape",
+    "winner_loser_flow_panel": "identical_beta_times_and_gaussian_noises_within_each_selected_pair",
+    "cross_video_credit": "same_matched_batch_stratified_occupancy_panel_exact_gradient_in_four_disjoint_correct_k4_conditions",
     "view_aggregation": "equal_mean_of_four_view_writer_gradients_with_unit_task_weight",
     "task_aggregation": "equal_mean_over_tasks_with_at_least_one_discordant_pair",
     "flow_mc_samples": 4,
+    "occupancy_strata_per_trajectory": 8,
     "flow_time": "task_keyed_beta15_scaled_0999_offset_0001",
     "flow_noise": "task_keyed_independent_gaussian"
   },
@@ -65,7 +67,7 @@
   "optimization": {
     "precision": "bfloat16",
     "trainable": "eight_zero_init_direct_native_factor_heads_1654784_parameters",
-    "counterfactual_action_batch_size": 8,
+    "matched_action_batch_size": 8,
     "reward_replay_chunk_batch_size": 8,
     "optimizer": {
       "name": "AdamW",
@@ -94,14 +96,19 @@
       "15": "candidate_2_reference_0",
       "18": "candidate_1_reference_2"
     },
-    "required_successful_replay_chunks": {
+    "required_complete_occupancy_chunks": {
       "9": 26,
       "15": 65,
       "18": 44
+    },
+    "required_selected_credit_pairs": {
+      "9": 8,
+      "15": 16,
+      "18": 8
     }
   },
   "formal_run": {
-    "status": "terminal_no_full24_or_strict",
+    "status": "blocked_until_all_three_fixed_anchor_mechanism_gates_pass",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -123,8 +130,12 @@
       "step0_exact_lpcp": true,
       "trainable_parameter_count": 1654784,
       "exact_paired_rollout_initial_observation": true,
-      "successful_occupancy_replay_chunks_must_match_fixed_anchor_counts": true,
-      "winner_counterfactual_actions_must_differ": true,
+      "complete_occupancy_chunks_must_match_fixed_anchor_counts": true,
+      "reference_and_candidate_action_query_batch_sequences_must_match": true,
+      "stored_rollout_actions_in_functional_preference": false,
+      "selected_credit_pairs_must_match_fixed_anchor_counts": true,
+      "one_maximum_disagreement_state_per_equal_progress_stratum": true,
+      "matched_winner_loser_actions_must_differ": true,
       "post_update_preference_margin_must_decrease": true,
       "first_update_all_eight_factor_heads_nonzero": true,
       "post_update_q_v_action_native_factors_nonzero": true,
@@ -142,7 +153,7 @@
       "held_natural_to_reversed_relative_l2_minimum": 0.5,
       "constant_effective_ba_natural_ratio_maximum": 0.005,
       "no_extra_environment_step_or_video_backbone_forward": true,
-      "counterfactual_action_batch_size": 8,
+      "matched_action_batch_size": 8,
       "matching_dfpcsp_smoke_wall_ratio_maximum": 2.5
     }
   }

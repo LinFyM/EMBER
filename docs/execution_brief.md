@@ -54,6 +54,14 @@ panel不是matched-batch因果比较。三项wall又为DF-PCSP的`3.083x/5.335x/
 主要成本；task9 held/train BA仅`.118x`。按预注册门终局，不full24、strict、cycle2或小扫。下一步只应修复同B8
 双臂重查与时间分层informative occupancy压缩，不能改carrier、memory、rank或LoRA topology。当前无GPU run或可
 resume checkpoint。
+
+当前active successor是**MB-SOP**：在winner全部occupancy上用相同B8 observation/noise顺序分别重查reference与
+candidate，然后把每条成功轨迹等分8个进度strata，每区只保留matched action RMS最大的一项。它把task9/15/18
+functional pairs预定从`26/65/44`降为`8/16/8`，同时消除B2/B1-vs-B8混杂并覆盖整条有向过程。LPCP/DJNFR、
+rank16、K4、八direct heads、Nmc4、四views、optimizer与rollout数全部不变。authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`；canonical实现与
+fresh schemas已完成，全量CPU=`402 passed`、architecture guard无hard violation。当前无GPU run或可resume
+checkpoint；下一步固定task9/15/18真实机制与吞吐门。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

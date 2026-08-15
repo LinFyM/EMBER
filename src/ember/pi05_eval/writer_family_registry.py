@@ -477,7 +477,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_v1": {
+    "v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
             "eval_adapter_v1"
@@ -490,11 +490,11 @@ WRITER_FAMILIES = {
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
         "arm_prefix": (
-            "v6_lpcp_direct_factor_successful_occupancy_"
-            "counterfactual_preference_"
+            "v6_lpcp_direct_factor_matched_batch_stratified_occupancy_"
+            "preference_"
         ),
         "trained_checkpoint_kind": (
-            "v6_lpcp_direct_factor_successful_occupancy_counterfactual_"
+            "v6_lpcp_direct_factor_matched_batch_stratified_occupancy_"
             "preference_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
@@ -504,11 +504,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the direct-factor successful-occupancy counterfactual graph"
+            "the direct-factor matched-batch stratified occupancy graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the direct-factor successful-occupancy counterfactual graph"
+            "through the direct-factor matched-batch stratified occupancy graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

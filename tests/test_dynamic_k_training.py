@@ -101,23 +101,31 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_successful_occupancy_config_records_terminal_mechanism_gate() -> None:
+def test_matched_stratified_occupancy_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "terminal_mechanism_non_pass"
-    assert config["formal_run"]["status"] == "terminal_no_full24_or_strict"
+    assert config["status"] == "mechanism_ready"
+    assert config["formal_run"]["status"] == (
+        "blocked_until_all_three_fixed_anchor_mechanism_gates_pass"
+    )
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "eight_zero_init_direct_native_factor_heads_1654784_parameters"
     )
     assert config["objective"]["kind"] == (
-        "cross_video_successful_occupancy_counterfactual_flow_preference"
+        "cross_video_matched_batch_stratified_occupancy_flow_preference"
     )
-    assert config["optimization"]["counterfactual_action_batch_size"] == 8
-    assert config["smoke_run"]["required_successful_replay_chunks"] == {
+    assert config["optimization"]["matched_action_batch_size"] == 8
+    assert config["objective"]["occupancy_strata_per_trajectory"] == 8
+    assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
         "9": 26,
         "15": 65,
         "18": 44,
+    }
+    assert config["smoke_run"]["required_selected_credit_pairs"] == {
+        "9": 8,
+        "15": 16,
+        "18": 8,
     }
     assert config["formal_run"]["mechanism_gate"][
         "post_update_preference_margin_must_decrease"

@@ -13,9 +13,7 @@ from ember.lora import copy_task_lora_state_
 from ember.writer.as_step import assign_flat_gradient
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState
-from ember.writer.reward_preference import (
-    functional_successful_occupancy_counterfactual_margin,
-)
+from ember.writer.reward_preference import functional_matched_stratified_occupancy_margin
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
@@ -131,7 +129,7 @@ def probe_after_update(
         (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
     )
     if runtime.args.mode == "smoke":
-        preference = functional_successful_occupancy_counterfactual_margin(
+        preference = functional_matched_stratified_occupancy_margin(
             runtime.policy,
             after,
             runtime.lora_contract,

@@ -66,6 +66,12 @@ loser action存在足以淹没task9/15策略contrast的批形混杂，完整轨�
 identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
+当前active successor是
+[`MB-SOP`](docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md)：
+同B8重查两臂后，每条成功轨迹在8个等进度区间各选择action分歧最大的一项；只改变credit panel，不改已通过的
+video-language carrier或direct LoRA生成图。
+canonical实现与fresh schema已完成，全量CPU=`402 passed`；等待固定task9/15/18真实机制与吞吐门。
+
 ## Information wall
 
 Writer可读取exact language与同task action-hidden videos。它不能读取teacher action、proprio/state、reward、

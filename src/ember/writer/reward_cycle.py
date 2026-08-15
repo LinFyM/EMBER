@@ -1,4 +1,4 @@
-"""One successful-occupancy counterfactual cycle for direct factor heads."""
+"""One matched-batch stratified occupancy cycle for direct factor heads."""
 
 from __future__ import annotations
 
@@ -15,12 +15,15 @@ import torch.distributed as dist
 from ember.lora import copy_task_lora_state_
 from ember.pi05_source_checkpoint import barrier
 from ember.reward.protocol import RewardTask, reward_credit_environment_seed
+from ember.reward.occupancy_panel import (
+    complete_matched_stratified_occupancy_batch,
+    empty_matched_occupancy_credit,
+)
 from ember.reward.rollout import (
     RewardTrajectory,
     capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
-    complete_successful_occupancy_counterfactual_batch,
-    query_counterfactual_loser_actions,
+    query_matched_occupancy_actions,
 )
 from ember.writer.as_step import (
     accumulate_flat_gradient,
@@ -30,9 +33,9 @@ from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState, WriterProgramOutput
 from ember.writer.reward_preference import (
-    SuccessfulOccupancyCreditSummary,
+    MatchedStratifiedOccupancyCreditSummary,
     backpropagate_lora_cotangent,
-    functional_successful_occupancy_counterfactual_lora_gradient,
+    functional_matched_stratified_occupancy_lora_gradient,
     mean_cross_video_task_gradient,
 )
 from ember.writer.reward_gradient_update import (
@@ -44,6 +47,10 @@ from ember.writer.reward_gradient_update import (
 
 if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
+
+TaskCreditResult = tuple[
+    dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor], torch.Tensor
+]
 
 
 def _claim_task(queue: Path, ordered: tuple[RewardTask, ...]) -> RewardTask | None:
@@ -284,14 +291,14 @@ def _differentiate_credit_view(
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
     gradient_template: torch.Tensor,
-) -> tuple[torch.Tensor, SuccessfulOccupancyCreditSummary]:
+) -> tuple[torch.Tensor, MatchedStratifiedOccupancyCreditSummary]:
     with torch.autocast(
         device_type=runtime.context.device.type,
         dtype=torch.bfloat16,
         enabled=runtime.context.device.type == "cuda",
     ):
         lora_gradient, summary = (
-            functional_successful_occupancy_counterfactual_lora_gradient(
+            functional_matched_stratified_occupancy_lora_gradient(
                 runtime.policy,
                 candidate_lora,
                 runtime.lora_contract,
@@ -333,15 +340,9 @@ def _differentiate_task_credit(
     pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
     active_labels: Sequence[str],
     gradient_sum: torch.Tensor,
-) -> tuple[
-    dict[str, Any],
-    float,
-    torch.Tensor,
-    Mapping[str, torch.Tensor],
-    torch.Tensor,
-]:
+) -> TaskCreditResult:
     started = time.monotonic()
-    counterfactual_actions, counterfactual_metrics = query_counterfactual_loser_actions(
+    actions_by_arm, action_metrics = query_matched_occupancy_actions(
         policy=runtime.policy,
         lora_contract=runtime.lora_contract,
         identity_state=runtime.identity_state,
@@ -351,14 +352,20 @@ def _differentiate_task_credit(
         candidate_lora=candidate_lora,
         device=runtime.context.device,
         microbatch_size=int(
-            runtime.config["optimization"]["counterfactual_action_batch_size"]
+            runtime.config["optimization"]["matched_action_batch_size"]
         ),
         num_inference_steps=int(
             runtime.config["environment"]["num_inference_steps"]
         ),
     )
-    batch, trajectory_ids = complete_successful_occupancy_counterfactual_batch(
-        pairs, counterfactual_actions, torch.device("cpu")
+    batch, trajectory_ids, selection_metrics = complete_matched_stratified_occupancy_batch(
+        pairs,
+        active_labels,
+        actions_by_arm,
+        strata_per_trajectory=int(
+            runtime.config["objective"]["occupancy_strata_per_trajectory"]
+        ),
+        device=torch.device("cpu"),
     )
     demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
         task.global_task_id,
@@ -416,11 +423,11 @@ def _differentiate_task_credit(
         )
         / 4,
         "discordant_trajectories": int(first["discordant_trajectories"]),
-        "counterfactual_replay_pairs": int(first["counterfactual_replay_pairs"]),
+        "selected_credit_pairs": int(first["selected_credit_pairs"]),
         "replay_rows": int(first["replay_rows"]),
         "successful_action_steps": int(first["successful_action_steps"]),
-        "winner_counterfactual_action_rms": float(
-            first["winner_counterfactual_action_rms"]
+        "matched_winner_loser_action_rms": float(
+            first["matched_winner_loser_action_rms"]
         ),
         "functional_policy_forwards": sum(
             int(row["functional_policy_forwards"]) for row in view_rows
@@ -437,7 +444,8 @@ def _differentiate_task_credit(
             {demo for demos in demo_sets for demo in demos}
         ),
         "credit_view_records": view_rows,
-        **counterfactual_metrics,
+        **action_metrics,
+        **selection_metrics,
     }, time.monotonic() - started, task_gradient, batch, trajectory_ids
 
 
@@ -477,30 +485,6 @@ def _make_probe(
     )
 
 
-def _empty_credit() -> dict[str, Any]:
-    return {
-        "objective": 0.0,
-        "preference_margin": 0.0,
-        "winner_flow_loss": 0.0,
-        "loser_flow_loss": 0.0,
-        "discordant_trajectories": 0,
-        "counterfactual_replay_pairs": 0,
-        "replay_rows": 0,
-        "successful_action_steps": 0,
-        "winner_counterfactual_action_rms": 0.0,
-        "counterfactual_replay_chunks": 0,
-        "counterfactual_policy_forwards": 0,
-        "counterfactual_first_action_replay_rms": 0.0,
-        "counterfactual_seconds": 0.0,
-        "functional_policy_forwards": 0,
-        "functional_policy_backwards": 0,
-        "lora_gradient_rms": 0.0,
-        "credit_conditions": 0,
-        "credit_unique_video_count": 0,
-        "credit_view_records": [],
-    }
-
-
 def _task_gradient(
     runtime: RewardRuntime,
     task: RewardTask,
@@ -521,7 +505,7 @@ def _task_gradient(
         )
     )
     pairs, labels = select_discordant_trajectory_pairs(reference, candidate)
-    credit = _empty_credit()
+    credit = empty_matched_occupancy_credit()
     credit_seconds = 0.0
     task_gradient = None
     active = int(bool(pairs))
@@ -678,6 +662,53 @@ def _gather_cycle_evidence(
     return global_records, [value for value in probes if value is not None], float(elapsed)
 
 
+def _occupancy_cycle_metrics(
+    records: Sequence[Mapping[str, Any]],
+    active_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "discordant_preference_trajectories": sum(
+            int(row["discordant_trajectories"]) for row in records
+        ),
+        "selected_credit_pairs": sum(int(row["selected_credit_pairs"]) for row in records),
+        "complete_occupancy_chunks": sum(
+            int(row["complete_occupancy_chunks"]) for row in records
+        ),
+        "matched_policy_forwards": sum(
+            int(row["matched_policy_forwards"]) for row in records
+        ),
+        "stored_winner_to_matched_requery_rms_mean": math.fsum(
+            float(row["stored_winner_to_matched_requery_rms"])
+            for row in active_records
+        )
+        / len(active_records),
+        "stored_loser_to_matched_first_requery_rms_mean": math.fsum(
+            float(row["stored_loser_to_matched_first_requery_rms"])
+            for row in active_records
+        )
+        / len(active_records),
+        "matched_action_seconds": math.fsum(
+            float(row["matched_action_seconds"]) for row in records
+        ),
+        "credit_conditions": sum(int(row["credit_conditions"]) for row in records),
+        "credit_unique_video_count": sum(
+            int(row["credit_unique_video_count"]) for row in records
+        ),
+        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
+        "successful_action_steps": sum(
+            int(row["successful_action_steps"]) for row in records
+        ),
+        "matched_stratified_occupancy_objective_mean": math.fsum(
+            float(row["objective"]) for row in active_records
+        )
+        / len(active_records),
+        "matched_stratified_occupancy_margin_mean": math.fsum(
+            float(row["preference_margin"]) for row in active_records
+        )
+        / len(active_records),
+    }
+
+
 def _cycle_metrics(
     runtime: RewardRuntime,
     cycle: int,
@@ -690,9 +721,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_successful_occupancy_counterfactual_preference"
+            "one_complete_train24_direct_factor_matched_batch_stratified_occupancy_preference"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_successful_occupancy_counterfactual_preference_live_smoke"
+            else "one_task_direct_factor_matched_batch_stratified_occupancy_preference_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -713,41 +744,7 @@ def _cycle_metrics(
         ),
         "active_tasks": step.active_tasks,
         "active_suites": sorted({row["suite"] for row in active_records}),
-        "discordant_preference_trajectories": sum(
-            int(row["discordant_trajectories"]) for row in records
-        ),
-        "counterfactual_replay_pairs": sum(
-            int(row["counterfactual_replay_pairs"]) for row in records
-        ),
-        "counterfactual_policy_forwards": sum(
-            int(row["counterfactual_policy_forwards"]) for row in records
-        ),
-        "counterfactual_first_action_replay_rms_mean": math.fsum(
-            float(row["counterfactual_first_action_replay_rms"])
-            for row in active_records
-        )
-        / len(active_records),
-        "counterfactual_seconds": math.fsum(
-            float(row["counterfactual_seconds"]) for row in records
-        ),
-        "credit_conditions": sum(
-            int(row["credit_conditions"]) for row in records
-        ),
-        "credit_unique_video_count": sum(
-            int(row["credit_unique_video_count"]) for row in records
-        ),
-        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
-        "successful_action_steps": sum(
-            int(row["successful_action_steps"]) for row in records
-        ),
-        "successful_occupancy_objective_mean": math.fsum(
-            float(row["objective"]) for row in active_records
-        )
-        / len(active_records),
-        "successful_occupancy_margin_mean": math.fsum(
-            float(row["preference_margin"]) for row in active_records
-        )
-        / len(active_records),
+        **_occupancy_cycle_metrics(records, active_records),
         "writer_gradient_norm_before_clip": step.gradient_norm,
         "writer_gradient_rms": step.gradient_rms,
         "gradient_coexistence": step.gradient_coexistence,

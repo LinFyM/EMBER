@@ -609,6 +609,14 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `2.79/6.67/4.47s`，完整轨迹四view Nmc4 functional credit却占`135.09/319.87/221.23s`，所以扩大
     action-query batch无效。下一可证伪变量应把同B8双臂可比性与时间分布的informative occupancy子集作为一个
     causal panel合同；本轮不否定matched-batch successful occupancy、direct LoRA、memory或rank8。
+88. MB-SOP把“修复batch可比性”和“削减穷举CFM成本”统一为一个credit-panel变量：reference/candidate在winner
+    全部occupancy上以相同B8 observation/noise/batch序列重查；每条轨迹等分8个进度strata，每区只选择matched
+    action RMS最大的一项。相对只做uniform-8，它不浪费credit在两臂相同行为；相对global top-8，它不把所有states
+    挤到单一局部阶段。task9/15/18 functional pairs预定为`8/16/8`，而完整26/65/44 states仅做便宜inference。
+89. MB-SOP canonical实现已原位替换DF-SOCP runtime/schema：stored rollout action不进入functional batch，双臂query
+    batch-size序列逐项相同，strata/max-disagreement/组batch由单一panel owner负责。定向CPU=`48 passed`、完整CPU=
+    `402 passed`、compileall通过且architecture guard无hard violation。该证据只关闭工程门；真实三anchor的
+    outcomes、selected counts、margin、跨video geometry与wall仍未知。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

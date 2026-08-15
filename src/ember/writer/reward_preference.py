@@ -1,4 +1,4 @@
-"""Successful-occupancy counterfactual flow credit for paired AS139/LPCP arms."""
+"""Matched-batch stratified occupancy flow credit for paired AS139/LPCP arms."""
 
 from __future__ import annotations
 
@@ -15,18 +15,18 @@ from ember.reward.protocol import RewardProtocolError, reward_preference_flow_se
 
 
 @dataclass(frozen=True)
-class SuccessfulOccupancyCreditSummary:
-    """One view's preference credit over complete successful occupancy."""
+class MatchedStratifiedOccupancyCreditSummary:
+    """One view's preference credit over a stratified successful occupancy."""
 
     objective: float
     preference_margin: float
     winner_flow_loss: float
     loser_flow_loss: float
     discordant_trajectories: int
-    counterfactual_replay_pairs: int
+    selected_credit_pairs: int
     replay_rows: int
     successful_action_steps: int
-    winner_counterfactual_action_rms: float
+    matched_winner_loser_action_rms: float
     functional_policy_forwards: int
     functional_policy_backwards: int
     lora_gradient_rms: float
@@ -65,7 +65,7 @@ def _flow_sample_panel(
         or float(model_config.time_sampling_scale) != 0.999
         or float(model_config.time_sampling_offset) != 0.001
     ):
-        raise RewardProtocolError("successful-occupancy flow panel changed")
+        raise RewardProtocolError("matched occupancy flow panel changed")
     shape = (
         pair_count,
         int(policy.config.chunk_size),
@@ -96,14 +96,14 @@ def _gradient_rms(gradients: Mapping[str, torch.Tensor]) -> torch.Tensor:
     )
 
 
-def successful_occupancy_pair_weights(
+def stratified_occupancy_pair_weights(
     trajectory_ids: torch.Tensor,
 ) -> torch.Tensor:
     """Give each successful trajectory equal mass and divide it over replans."""
 
     ids = trajectory_ids.to(dtype=torch.long)
     if ids.ndim != 1 or ids.numel() == 0 or bool((ids < 0).any()):
-        raise RewardProtocolError("successful-occupancy replay has no trajectory IDs")
+        raise RewardProtocolError("stratified occupancy replay has no trajectory IDs")
     target_count = int(ids.max()) + 1
     counts = torch.bincount(ids, minlength=target_count)
     if (
@@ -111,13 +111,13 @@ def successful_occupancy_pair_weights(
         or counts.shape != (target_count,)
         or bool((counts <= 0).any())
     ):
-        raise RewardProtocolError("successful-occupancy trajectory IDs changed")
+        raise RewardProtocolError("stratified occupancy trajectory IDs changed")
     return 1.0 / (
         target_count * counts.index_select(0, ids).to(dtype=torch.float32)
     )
 
 
-def _successful_occupancy_batch_contract(
+def _matched_occupancy_batch_contract(
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
     physical_microbatch_size: int,
@@ -135,11 +135,11 @@ def _successful_occupancy_batch_contract(
         or physical_microbatch_size < 2
         or not torch.equal(valid[0::2], valid[1::2])
     ):
-        raise RewardProtocolError("successful-occupancy preference batch changed")
+        raise RewardProtocolError("matched occupancy preference batch changed")
     pair_count = int(action.shape[0] // 2)
-    weights = successful_occupancy_pair_weights(trajectory_ids)
+    weights = stratified_occupancy_pair_weights(trajectory_ids)
     if weights.shape != (pair_count,):
-        raise RewardProtocolError("successful-occupancy replay weights changed")
+        raise RewardProtocolError("stratified occupancy replay weights changed")
     steps = torch.arange(action.shape[1], device=action.device)[None]
     mask = steps < valid[0::2, None]
     difference = action[0::2].float() - action[1::2].float()
@@ -147,11 +147,11 @@ def _successful_occupancy_batch_contract(
     denominator = valid[0::2].sum() * action.shape[2]
     action_rms = float((squared / denominator).sqrt())
     if not bool(torch.isfinite(torch.tensor(action_rms))) or action_rms <= 0:
-        raise RewardProtocolError("winner and counterfactual actions are identical")
+        raise RewardProtocolError("matched winner and loser actions are identical")
     return action, valid, pair_count, action_rms, weights
 
 
-def functional_successful_occupancy_counterfactual_lora_gradient(
+def functional_matched_stratified_occupancy_lora_gradient(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
@@ -164,11 +164,11 @@ def functional_successful_occupancy_counterfactual_lora_gradient(
     cycle: int,
     global_task_id: int,
     device: torch.device,
-) -> tuple[dict[str, torch.Tensor], SuccessfulOccupancyCreditSummary]:
-    """Differentiate full-winner versus failed-arm counterfactual preference."""
+) -> tuple[dict[str, torch.Tensor], MatchedStratifiedOccupancyCreditSummary]:
+    """Differentiate matched winner versus loser preference over selected strata."""
 
     action, valid, pair_count, action_rms, weights = (
-        _successful_occupancy_batch_contract(
+        _matched_occupancy_batch_contract(
             batch, trajectory_ids, physical_microbatch_size
         )
     )
@@ -231,19 +231,19 @@ def functional_successful_occupancy_counterfactual_lora_gradient(
     rms = _gradient_rms(gradients)
     if not bool(torch.isfinite(rms)) or float(rms) <= 0:
         raise RewardProtocolError(
-            "successful-occupancy preference produced invalid LoRA credit"
+            "matched occupancy preference produced invalid LoRA credit"
         )
     margin = winner_total - loser_total
-    return gradients, SuccessfulOccupancyCreditSummary(
+    return gradients, MatchedStratifiedOccupancyCreditSummary(
         objective=float(objective),
         preference_margin=float(margin),
         winner_flow_loss=float(winner_total),
         loser_flow_loss=float(loser_total),
         discordant_trajectories=int(trajectory_ids.max()) + 1,
-        counterfactual_replay_pairs=pair_count,
+        selected_credit_pairs=pair_count,
         replay_rows=2 * pair_count,
         successful_action_steps=int(valid[0::2].sum()),
-        winner_counterfactual_action_rms=action_rms,
+        matched_winner_loser_action_rms=action_rms,
         functional_policy_forwards=forwards,
         functional_policy_backwards=backwards,
         lora_gradient_rms=float(rms),
@@ -251,7 +251,7 @@ def functional_successful_occupancy_counterfactual_lora_gradient(
 
 
 @torch.no_grad()
-def functional_successful_occupancy_counterfactual_margin(
+def functional_matched_stratified_occupancy_margin(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
@@ -267,7 +267,7 @@ def functional_successful_occupancy_counterfactual_margin(
 ) -> dict[str, float]:
     """Evaluate the retained occupancy panel without constructing a Writer graph."""
 
-    _, _, pair_count, _, weights = _successful_occupancy_batch_contract(
+    _, _, pair_count, _, weights = _matched_occupancy_batch_contract(
         batch, trajectory_ids, physical_microbatch_size
     )
     noises, times = _flow_sample_panel(
@@ -327,7 +327,7 @@ def backpropagate_lora_cotangent(
 
     active = tuple(name for name, value in generated.items() if value.requires_grad)
     if not active or set(lora_gradients) != set(generated):
-        raise RewardProtocolError("successful-occupancy Writer graph lost LoRA outputs")
+        raise RewardProtocolError("matched occupancy Writer graph lost LoRA outputs")
     torch.autograd.backward(
         tuple(generated[name] for name in active),
         grad_tensors=tuple(lora_gradients[name] for name in active),

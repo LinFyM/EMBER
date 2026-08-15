@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -184,6 +184,14 @@ constant机制均健康；但task9/15的stored动态B2/B1 action到B8 requery差
 held/train BA仅`.1181x`。按预注册门终局，不full24/strict/cycle2或小扫。最早失败接口是
 **stored动态batch winner action + B8 loser counterfactual -> 非matched-batch preference panel**；下一设计必须
 同B8重查两臂并预声明时间分布的informative occupancy子集。当前无active successor、GPU run或可resume checkpoint。
+
+当前active successor是**V6-LPCP Direct-Factor Matched-Batch Stratified Occupancy Preference**（MB-SOP），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`。它保留LPCP/DJNFR
+carrier、K4、rank16、八direct heads、exact outcomes与四view，只替换successful-occupancy credit panel：在winner
+完整occupancy上以相同B8 observation/noise顺序分别重查reference和candidate；每条成功轨迹等分8个进度strata，
+每区只保留matched action RMS最大的一项。task9/15/18 functional pairs预定从`26/65/44`降为`8/16/8`；
+trajectory、strata、views与tasks等权。canonical实现与fresh schemas已完成，全量CPU=`402 passed`、architecture
+guard无hard violation；当前无GPU run或可resume checkpoint，下一步固定task9/15/18三anchor真实机制与吞吐门。
 
 ## 4. Long-term objective and decision rule
 

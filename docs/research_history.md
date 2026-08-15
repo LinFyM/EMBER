@@ -37,6 +37,9 @@ full24前终局。
 数值差异为名义策略contrast的`1.086x/1.693x`。三项wall又为DF-PCSP的`3.083x/5.335x/3.887x`，task9
 held/train仅`.118x`。按门未full24/strict；下一接口是matched-batch双臂action panel与时间分布的informative
 occupancy压缩，不是carrier或LoRA topology。
+当前active MB-SOP只改变这一panel：同B8重查两臂后，每条成功轨迹8个等进度strata各选action分歧最大的一项，
+task9/15/18预定从`26/65/44`降为`8/16/8`个functional pairs；LPCP/DJNFR、rank16、K4、Nmc4与四views不变。
+canonical实现与fresh schema已完成、全量CPU=`402 passed`，等待固定三anchor真实GPU门。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

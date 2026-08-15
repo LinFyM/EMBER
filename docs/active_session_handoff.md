@@ -68,6 +68,12 @@
   `1.086x/1.693x/.219x`；task9/15 negative受batch-shape混杂。wall相对DF-PCSP=`3.083x/5.335x/3.887x`，
   task9 held/train又仅`.118x`。按门终局，不full24/strict/cycle2；当前无active successor、GPU run或可resume
   checkpoint。下一设计必须同B8重查两臂，并用时间分布的少量informative occupancy替代穷举全部replans；
+- 当前active successor是**MB-SOP**，authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`。它不改
+  LPCP/DJNFR生成图，只把credit panel改成同B8双臂requery，并在每条winner trajectory的8个等进度strata各选
+  matched action分歧最大的一项；固定task9/15/18 pairs=`8/16/8`，四views共享同一panel。canonical实现已原位
+  完成，旧DF-SOCP executable/schema已移除；全量CPU=`402 passed`、compileall与architecture hard gate通过。当前
+  无GPU run或可resume checkpoint；下一步从clean pushed commit并行跑固定三anchor真实机制与吞吐门；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

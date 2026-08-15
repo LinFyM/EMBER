@@ -1,4 +1,4 @@
-"""Cycle checkpoints for the direct joint native-factor residual."""
+"""Cycle checkpoints for matched-batch stratified occupancy preference."""
 
 from __future__ import annotations
 
@@ -22,11 +22,11 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_successful_occupancy_"
-    "counterfactual_preference_checkpoint_v1"
+    "ember_pi05_v6_lpcp_direct_factor_matched_batch_stratified_"
+    "occupancy_preference_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_direct_factor_successful_occupancy_counterfactual_"
+    "v6_lpcp_direct_factor_matched_batch_stratified_occupancy_"
     "preference_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")

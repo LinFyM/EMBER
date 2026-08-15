@@ -20,16 +20,16 @@ from ember.lora import (
 )
 from ember.reward.rollout import (
     RewardTrajectory,
-    query_counterfactual_loser_actions,
+    query_matched_occupancy_actions,
 )
 from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import select_discordant_trajectory_pairs
 from ember.writer.reward_gradient_update import apply_reward_step, lora_response
 from ember.writer.reward_preference import (
-    functional_successful_occupancy_counterfactual_lora_gradient,
-    functional_successful_occupancy_counterfactual_margin,
+    functional_matched_stratified_occupancy_lora_gradient,
+    functional_matched_stratified_occupancy_margin,
     mean_cross_video_task_gradient,
-    successful_occupancy_pair_weights,
+    stratified_occupancy_pair_weights,
 )
 
 
@@ -107,7 +107,7 @@ class _Policy(torch.nn.Module):
         return batch[ACTION]
 
 
-def test_successful_occupancy_preference_is_microbatch_semantic() -> None:
+def test_matched_stratified_occupancy_preference_is_microbatch_semantic() -> None:
     policy = _Policy()
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("model.projection", 7, 7),),
@@ -148,22 +148,22 @@ def test_successful_occupancy_preference_is_microbatch_semantic() -> None:
         global_task_id=4,
         device=torch.device("cpu"),
     )
-    first, first_summary = functional_successful_occupancy_counterfactual_lora_gradient(
+    first, first_summary = functional_matched_stratified_occupancy_lora_gradient(
         **kwargs, physical_microbatch_size=2
     )
-    second, second_summary = functional_successful_occupancy_counterfactual_lora_gradient(
+    second, second_summary = functional_matched_stratified_occupancy_lora_gradient(
         **kwargs, physical_microbatch_size=8
     )
     assert first_summary.functional_policy_forwards == 16
     assert second_summary.functional_policy_forwards == 4
     assert first_summary.discordant_trajectories == 2
-    assert first_summary.counterfactual_replay_pairs == 4
-    assert first_summary.winner_counterfactual_action_rms > 0
+    assert first_summary.selected_credit_pairs == 4
+    assert first_summary.matched_winner_loser_action_rms > 0
     for name in state:
         torch.testing.assert_close(first[name], second[name], rtol=2e-6, atol=2e-6)
     assert any(bool(torch.count_nonzero(value)) for value in first.values())
     assert all(parameter.grad is None for parameter in policy.parameters())
-    before = functional_successful_occupancy_counterfactual_margin(
+    before = functional_matched_stratified_occupancy_margin(
         policy,
         state,
         contract,
@@ -177,7 +177,7 @@ def test_successful_occupancy_preference_is_microbatch_semantic() -> None:
         device=torch.device("cpu"),
     )
     updated = {name: state[name] - 1e-3 * first[name] for name in state}
-    after = functional_successful_occupancy_counterfactual_margin(
+    after = functional_matched_stratified_occupancy_margin(
         policy,
         updated,
         contract,
@@ -193,9 +193,9 @@ def test_successful_occupancy_preference_is_microbatch_semantic() -> None:
     assert after["preference_margin"] < before["preference_margin"]
 
 
-def test_successful_occupancy_weights_equalize_unequal_trajectory_lengths() -> None:
+def test_stratified_occupancy_weights_equalize_unequal_trajectory_lengths() -> None:
     ids = torch.tensor([0, 1, 1, 1], dtype=torch.long)
-    weights = successful_occupancy_pair_weights(ids)
+    weights = stratified_occupancy_pair_weights(ids)
     torch.testing.assert_close(weights, torch.tensor([0.5, 1 / 6, 1 / 6, 1 / 6]))
     torch.testing.assert_close(weights[ids == 0].sum(), weights[ids == 1].sum())
 
@@ -239,7 +239,7 @@ def test_pair_selection_orders_the_unique_winner_before_the_loser() -> None:
     assert pairs[1] == (reference[1], candidate[1])
 
 
-def test_counterfactual_queries_failed_arm_at_every_successful_replan(
+def test_matched_occupancy_queries_both_arms_with_identical_batches(
     monkeypatch,
 ) -> None:
     class CounterfactualPolicy(torch.nn.Module):
@@ -292,7 +292,7 @@ def test_counterfactual_queries_failed_arm_at_every_successful_replan(
             "environment": {"num_inference_steps": 10},
         },
     )
-    actions, metrics = query_counterfactual_loser_actions(
+    actions, metrics = query_matched_occupancy_actions(
         policy=runtime.policy,
         lora_contract=runtime.lora_contract,
         identity_state=runtime.identity_state,
@@ -307,14 +307,17 @@ def test_counterfactual_queries_failed_arm_at_every_successful_replan(
         microbatch_size=2,
         num_inference_steps=10,
     )
-    assert [len(value) for value in actions] == [2, 3]
-    assert all(float(value.mean()) < 11 for value in actions[0])
-    assert all(float(value.mean()) > 19 for value in actions[1])
-    assert policy.batch_sizes == [2, 2, 1]
+    assert [len(value) for value in actions["reference"]] == [2, 3]
+    assert [len(value) for value in actions["candidate"]] == [2, 3]
+    assert all(float(value.mean()) < 11 for pair in actions["reference"] for value in pair)
+    assert all(float(value.mean()) > 19 for pair in actions["candidate"] for value in pair)
+    assert policy.batch_sizes == [2, 2, 1, 2, 2, 1]
     assert policy.arm_value == -1.0
-    assert metrics["counterfactual_replay_chunks"] == 5
-    assert metrics["counterfactual_policy_forwards"] == 3
-    assert metrics["counterfactual_first_action_replay_rms"] > 0
+    assert metrics["complete_occupancy_chunks"] == 5
+    assert metrics["matched_policy_forwards"] == 6
+    assert metrics["matched_query_batch_sizes"] == [2, 2, 1]
+    assert metrics["stored_winner_to_matched_requery_rms"] > 0
+    assert metrics["stored_loser_to_matched_first_requery_rms"] > 0
 
 
 def _single_condition_inputs(k: int) -> tuple[torch.Tensor, ...]:

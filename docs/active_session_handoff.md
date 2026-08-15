@@ -7,22 +7,22 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 最新CCT cycle1 strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=
-  `3/79/37/23`；相对LPCP143为`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth、
-  retention与held cross-video geometry门失败，已终局且不resume cycle2或补六臂；
+- 最新NPVC cycle1 strict=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`、per-suite=
+  `3/81/34/18`；相对LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct、
+  breadth与retention三门失败，已终局且不resume cycle2、补六臂或做参数小扫；
 - SFMC144仍是最高correct单点但lost15/churn31，同样未获稳定或视频因果资格；v6-fast仍是有完整五臂的
   历史最好=`143/135/125/128/129`；
-- CCT formal训练完整：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`、9 active tasks覆盖四suite、
-  36 credit conditions/144 unique videos，cycle=`577.729s`，world5 checkpoint/completion完整，0禁读/OOM/
+- NPVC formal训练完整：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`、9 active tasks覆盖四suite、
+  36 credit conditions/144 unique videos，cycle=`584.053s`，world5 checkpoint/completion完整，0禁读/OOM/
   nonfinite；
-- CCT task4旧机制记录存在counterfactual标签错误：旧`.563803/.672852`比较的是LPCP+CCT与AS139，不是纯
-  CCT。按exact same-state LPCP重算后，train-seen task4纯CCT four-view cosine/energy仍为
-  `.575776/.681821`，因此局部机制结论保留；
-- held first4纯CCT增量约为`0/.25`。evaluator live loader逐元素确认semantic query完整加载；train→held的
-  transported coefficients、pre-W2 hidden residual和effective-BA L2分别缩小`1.63x/1.70x/249.92x`。最早
-  失败接口是held Program经native BF16 factor/compiler时没有形成policy-effective commitment，而不是carrier、
-  checkpoint loader、reward credit或训练图失效；
-- 当前active successor是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
+- NPVC all400相对LPCP effective-BA relative-L2 mean/median=`.0004683/.0003708`、absolute L2 mean=
+  `.05234`，q/v/action均material；post-train validation8 first4 four-view cosine/energy=`.40870/.54227`、7/8
+  tasks过门，reverse使probe/BA relative-L2=`1.84084/1.60518`。因此前序CCT的held native-compiler断裂已解决，
+  video evidence、顺序与LoRA写出链路不是当前最早断点；
+- NPVC相对LPCP的gained/lost BA relative-L2 mean=`.000412/.000436`，retained-failure更大至`.000549`；
+  full24后train task4 cross-video cosine/energy从preformal`.5929/.6792`降到`.0569/.2951`。最早失败接口是
+  selected-success credit对native Value组件/符号的reward-useful选择与full24多task共存；
+- 最新完成design是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
   `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、CCT
   transport与matched reward recipe，只把factor Value换成已有320 slots的ordered native Action-probe delta，
   并复用同一Procedure-set attention聚合K videos；canonical实现、fresh-incompatible config/checkpoint/eval
@@ -30,8 +30,9 @@
   validation8×4 K4只读视频held gate已通过：train task4 cosine/energy=`.592915/.679176`，held8平均=
   `.449398/.571497`、6/8 tasks过门，held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`；reverse的
   probe/BA relative-L2=`1.84084/1.37485`，constant norm ratio=`9.167e-4/1.267e-5`，cycle wall=
-  `136.063s=1.04074x CCT`。task31/32仍约`.0126/.2560`与`.0768/.3091`，是formal风险。该门只授权fresh
-  full24 cycle1；当前没有active GPU run或可resume checkpoint；
+  `136.063s=1.04074x CCT`。这些preformal门后来没有转化为strict增益，证明内部coherence不能选方法；
+  当前没有active successor、GPU run或可resume checkpoint。下一步先建立只改变reward direction/content
+  selection与共存接口的authority；memory token和rank8仍开放，但不是无条件答案；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

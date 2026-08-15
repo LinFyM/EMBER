@@ -218,3 +218,37 @@ gained>lost覆盖至少3 suites。单点145或151都不能跳过相邻稳定性�
 
 任何失败只淘汰本轮“frozen LPCP native probe Value + existing Procedure attention + CCT transport + one-cycle
 selected-success”组合，不否定V6/LPCP、literal memory token、rank8、few-shot、reward credit或生成LoRA。
+
+## 11. Formal terminal result（2026-08-15）
+
+clean pushed/frozen `606ac76`在gpu01物理`2/4/5/6/7`、world5完成fresh full24 cycle1：24 tasks、48 paired
+states、96 rollouts，candidate/reference successes=`33/32`、candidate/reference-only=`5/4`，9 active tasks覆盖
+四suite；36个credit conditions使用144条unique videos。cycle=`584.053s`，完整checkpoint/completion、0禁读、
+OOM或nonfinite。该工程成功只说明合同健康。
+
+同一cycle1 checkpoint的K4 strict paired correct400完整结束：
+
+- correct=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`、per-suite=`3/81/34/18`；
+- 相对LPCP143严格=`120 retained / 16 gained / 23 lost / 241 both-fail`、churn39、Jaccard`.754717`、net`-7`；
+- 相对GOSC141/SFMC144/CCT142分别净`-5/-8/-6`；count-only相对v6-fast143为`-7`；
+- correct≥140、breadth≥7、lost≤15三项预注册门均失败，因此不resume cycle2、不补六臂、不做scale/rank/
+  axis/LR/seed小扫。
+
+稳定FP64 all400差分证明NPVC确实关闭了CCT的held native-compiler消失：NPVC/LPCP effective-BA relative-L2
+mean/median=`.0004683/.0003708`、absolute L2 mean=`.05234`，q/v/action mean=`.0005042/.0003639/.0001163`。
+validation8每task四个不同correct K4的post-train pure-NPVC cosine/energy平均=`.40870/.54227`、7/8 tasks过原
+几何门；natural→reversed的probe/BA relative-L2=`1.84084/1.60518`。carrier、时序读取与policy-effective写出均
+不是本轮最早断点。
+
+但这些健康指标没有选择成功方向：相对LPCP的retained/gained/lost/retained-failure BA relative-L2 mean=
+`.000320/.000412/.000436/.000549`，lost略大于gained，持续失败样本反而改写最大。跨8 tasks的coherence与
+absolute success呈强负相关只是N=8、难度混杂的描述性证据，但至少明确排除了“更coherent即可选择赢家”。此外，
+full24后train task4的four-view cosine/energy从preformal`.5929/.6792`跌到`.0569/.2951`，直接显示shared update
+会移走已建立的task-specific映射。
+
+终局最早失败接口是**selected-success reward credit对native probe Value的组件/符号选择，以及异质task
+reward-useful directions在同一个full24 Writer中的共存**。NPVC只否定“raw native probe Value + 现有四条冻结
+language-policy axes + 一轮selected-success full24”组合；不否定memory token、dynamic K、rank8、reward学习、
+native probe或生成LoRA本身。正式证据为`npvc_cycle1_strict_adjudication.json`、
+`npvc_cycle1_stable_effective_ba_analysis.json`、`npvc_cycle1_posttrain_mechanism_analysis.json`、
+`npvc_cycle1_runtime_balance.json`与`npvc_cycle1_terminal_analysis.json`。

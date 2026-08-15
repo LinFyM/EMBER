@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 最新完成design（后继authority建立前）：
    `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -35,10 +35,10 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新CCT cycle1 strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对
-LPCP143为`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth、retention及held
-cross-video geometry三项门失败，已终局且不得resume cycle2或补六臂。SFMC144仍是最高correct单点但
-lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
+长期目标尚未完成。最新NPVC cycle1 strict=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`；相对
+LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct、breadth与retention三门
+失败，已终局且不得resume cycle2或补六臂。SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；
+v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -126,7 +126,7 @@ checkpoint/completion与0禁读/OOM/nonfinite均通过。strict结果如本节�
 局部门仍成立。held first4则约为`0/.25`；live loader确认semantic query逐元素精确加载。train→held transported
 coefficients、pre-W2 hidden residual与effective-BA L2分别缩小`1.63x/1.70x/249.92x`。最早失败接口是held
 Program经native BF16 factor/compiler时未形成policy-effective commitment，而不是carrier、loader或reward链路。
-当前active successor是**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
+最新完成的**V6-LPCP Native Probe-Value Commitment**（NPVC），authority=
 `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`。它保留LPCP143、rank16、native
 FactorHeads、CCT language-policy axes与matched selected-success合同，唯一把factor Value从微小
 `Procedure_LPCP-Procedure_AS139`差分换成已有320 slots的ordered native Action-probe delta，并用同一
@@ -134,8 +134,11 @@ Procedure-set attention做K轴聚合。trainable仍为67,072，不加memory toke
 额外loss。canonical实现与fresh-incompatible config/checkpoint/eval schema已完成；定向CPU合同`43 passed`、
 完整CPU在`.env.local`的LIBERO assets环境下`398 passed`。formal前必须先过train→held只读视频门；held若再现
 约`0/.25`或BA `1/250`断裂，立即终局。该门现已通过：train task4 cosine/energy=`.5929/.6792`，validation8
-平均=`.4494/.5715`、6/8 tasks过门，held/train BA L2=`.7525x`；reverse、constant与wall也过门。只授权fresh
-full24 cycle1，不预告closed-loop；task31/32仍为风险。当前没有active GPU run或可resume NPVC checkpoint。
+平均=`.4494/.5715`、6/8 tasks过门，held/train BA L2=`.7525x`；reverse、constant与wall也过门。full24
+cycle1随后完整完成，但strict仅136。post-train held8仍有`.40870/.54227`的跨视频共同写出，all400 BA改写
+mean=`.0004683`，说明CCT的held compiler断裂已经解决；然而gained/lost改写不可分，持续失败样本改写最大，且
+train task4共同方向在full24后从`.5929/.6792`漂到`.0569/.2951`。最早失败接口是reward-useful Value组件/符号
+选择与多task共存，不是video carrier或LoRA量化。当前没有active successor、GPU run或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

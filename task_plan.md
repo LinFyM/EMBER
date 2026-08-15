@@ -367,9 +367,20 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   LPCP-AS139 Value差分；定向CPU`43 passed`、canonical assets下完整CPU`398 passed`；
 - [x] 完成task4 selected-success与validation8×4 K4只读视频held gate：train=`.5929/.6792`，held8=
   `.4494/.5715`、6/8过门，held/train BA L2=`.7525x`；reverse/constant/wall均通过，task31/32登记风险；
-- [ ] 机制门通过才fresh full24 cycle1与strict400；只有absolute/breadth/retention/held geometry过门才cycle2；
-- [ ] 稳定约145资格必须由相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对wrong/
-  shuffled/reversed/no-video的明确paired优势共同认证。
+- [x] fresh full24 cycle1完整结束：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`、9 active tasks
+  覆盖四suite，cycle=`584.053s`；checkpoint/completion、禁读、数值与显存合同完整；
+- [x] K4 strict paired correct400=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`；相对LPCP143=
+  `120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`；correct、breadth与lost三门失败；
+- [x] 完成all400 stable-FP64与post-train held分析：NPVC/LPCP BA relative-L2 mean=`.0004683`，held8
+  four-view cosine/energy=`.40870/.54227`，但lost改写大于gained、retained-failure最大；full24后train task4
+  从`.5929/.6792`漂到`.0569/.2951`；
+- [x] 按预注册合同终局，不续cycle2、不做六臂或参数小扫；稳定约145资格未获得。完整终局artifact为
+  `npvc_cycle1_terminal_analysis.json`、`npvc_cycle1_posttrain_mechanism_analysis.json`与
+  `npvc_cycle1_runtime_balance.json`；
+- [ ] 审计reward-direction与support-preservation历史，只针对“reward有用方向选择 + full24共存”建立下一
+  单变量authority；memory token、rank8与native probe均保持开放，但不能作为无因果针对性的形式要求；
+- [ ] 后继若达到约145，必须继续用相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对
+  wrong/shuffled/reversed/no-video的明确paired优势认证。
 
 ## Non-negotiable boundaries
 
@@ -386,7 +397,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open与CCT均已按门终局；它们都不得resume或参数小扫。当前active successor NPVC已完成CPU实现，但没有
-active GPU run或可resume checkpoint；机制门已通过，下一步是fresh full24 cycle1与strict400。约145只有在相邻checkpoint低换手、
-same-task-other鲁棒且correct相对wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local
-RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+Gradient-Open、CCT与NPVC均已按门终局；它们都不得resume或参数小扫。当前没有active GPU run、可resume
+checkpoint或已授权后继架构。下一步先建立只改变reward-useful direction/content selection与多task共存接口的
+design authority，再做最小机制否决。约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
+wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
+zero-interaction起点之后的独立实验。

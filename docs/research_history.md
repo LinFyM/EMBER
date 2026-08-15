@@ -5,8 +5,10 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-15，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新CCT为142、breadth6且相对LPCP143
-为`125/17/18`、churn35。v6-fast仍是有完整五臂的历史最好，长期严格`>150/400`追求及稳定约145资格均未完成。Dynamic-K
+2026-08-15，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新NPVC为136、breadth6且相对LPCP143
+为`120/16/23`、churn39。它虽形成held跨视频coherent、时序敏感、native-scale写入，但写入幅度/一致性与
+closed-loop增益错位，full24还使train task4共同方向坍塌。v6-fast仍是有完整五臂的历史最好，长期严格
+`>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
 effective-BA cosine虽从`.77947`降到`.74895`，closed-loop只增1，证明删除family hidden/GELU只轻微改善几何，
@@ -18,9 +20,8 @@ few-shot nuisance reduction已工作但没有修正高层任务方向。该arm�
 Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎不变，终局non-pass。Shared-Core
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
-commitment；最新证据表明train-seen共同方向可形成，但held nonzero residual经native BF16 factor/compiler时
-退回LPCP邻域。当前active NPVC只把factor Value换成已有ordered native probe deltas，并把held mechanism gate
-前置；其canonical实现与CPU合同已完成，task4→validation8机制门也已通过，但尚无full24或closed-loop结果。
+commitment；CCT证明held residual在native BF16 factor/compiler处消失，NPVC随后关闭了该断裂，但strict降至136。
+最新证据把缺口后移到reward-useful Value组件/符号选择与full24多task共存；当前没有active successor或GPU run。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

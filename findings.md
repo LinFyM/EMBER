@@ -503,6 +503,21 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     平均=`.449398/.571497`且6/8 tasks过门；held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`，不再是
     CCT约`1/250`。reverse的probe/BA relative-L2=`1.84084/1.37485`，constant norm仅`9.167e-4/1.267e-5`，
     wall=`1.04074x CCT`。task31/32仍近`0/.25`，所以该证据只授权fresh full24 cycle1，不能替代strict结果。
+65. NPVC full24 cycle1完整且工程健康：24 tasks/48 pairs/96 rollouts、candidate/reference=`33/32`、gains=`5/4`、
+    9 active tasks覆盖四suite，36 credit conditions/144 unique videos；cycle=`584.053s`、world5、0禁读/OOM/
+    nonfinite。formal训练成功不能掩盖随后的科学non-pass。
+66. NPVC strict correct400=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`。相对LPCP143严格=
+    `120 retained / 16 gained / 23 lost / 241 both-fail`、churn39、Jaccard`.754717`、net`-7`；相对
+    GOSC141/SFMC144/CCT142净为`-5/-8/-6`。correct、breadth、lost三门失败，终局不续cycle2或六臂。
+67. all400 NPVC/LPCP effective-BA relative-L2 mean/median=`.0004683/.0003708`、绝对L2 mean=`.05234`，已不再
+    是CCT的native量化消失。held8 first4 cosine/energy=`.40870/.54227`、7/8过几何门，reverse使probe/BA
+    relative-L2=`1.84084/1.60518`；所以video evidence、顺序与compiler传递均已工作。但gained/lost改写=
+    `.000412/.000436`，retained-failure更大至`.000549`；写得大且跨video一致仍不能选择有用policy方向。
+68. full24后train task4的four-view cosine/energy从preformal`.5929/.6792`降到`.0569/.2951`，而held tasks仍有
+    material写出；说明shared更新不只是缺少幅度，还会重排task-specific mapping。当前最早失败接口是
+    **selected-success reward credit -> native Value components/signs -> reward-useful factor direction，以及这些
+    task directions在同一full24 checkpoint中的共存**。下一步不能只加scale/capacity/coherence/support guard；
+    memory token只有在提供可被reward选择且跨task可共存的layer-aligned Value方向时才针对该缺口。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

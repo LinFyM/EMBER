@@ -32,30 +32,21 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 ## Latest result and current boundary
 
 最新完成的
-[`V6-LPCP Causal Coefficient Transport`](docs/action_forecast_writer_v6_lpcp_causal_coefficient_transport_design.md)
-在cycle1 K4 strict为`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`、per-suite=`3/79/37/23`。
-相对直接底座LPCP143严格为`125 retained / 17 gained / 18 lost / 240 both-fail`、churn35、
-Jaccard`.78125`；相对SFMC144为`127/15/17`、churn32。它没有形成稳定净积累，并触发breadth、retention及
-cross-video geometry三项预注册失败门，因此不续cycle2，也不以这个checkpoint补same/wrong/shuffled/reversed/
-no-video controls。
+[`V6-LPCP Native Probe-Value Commitment`](docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md)
+在cycle1 K4 strict paired correct400为`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`、per-suite=
+`3/81/34/18`。相对直接底座LPCP143严格为`120 retained / 16 gained / 23 lost / 241 both-fail`、churn39、
+Jaccard`.754717`；correct、breadth与retention三项预注册门失败，因此终局不续cycle2，也不补六臂或参数小扫。
 
-CCT的局部机制假设在train-seen task4上确实成立：修正错误counterfactual标签后，真实CCT-only four-view
-BA cosine/energy仍为`.575776/.681821`。但held validation first4的对应值只有约`0/.25`。evaluator live loader
-已逐元素确认CCT参数完整加载；train→held的transported coefficients与pre-W2 hidden residual只缩小
-`1.63x/1.70x`，最终effective-BA却缩小`249.92x`。因此最早失败接口不是“视频没读到”或“参数没加载”，而是
-**train-seen language/Program方向能穿过native factor compiler，held方向却在同一BF16 factor边界退回LPCP邻域**。
-这只否定本轮“两系数CCT + 一轮稀疏selected-success”组合，不否定V6/LPCP、memory token、rank8、few-shot、
-reward credit或生成LoRA。
+NPVC解决了前序CCT在held native compiler处消失的问题：all400 NPVC/LPCP effective-BA relative-L2 mean=
+`.0004683`，validation8每task四个不同correct K4的pure-NPVC cosine/energy平均=`.40870/.54227`，natural→
+reversed的probe/BA relative-L2=`1.84084/1.60518`。这证明有向视频证据已形成跨视频较一致、原生尺度且能穿过
+compiler的LoRA写入。
 
-当前active successor是
-[`V6-LPCP Native Probe-Value Commitment`](docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md)：
-保留LPCP143、rank16、CCT transport与全部训练合同，只把factor Value从微小的LPCP-AS139 readout差分换成已有
-320个layer/rank slots的有序native Action-probe delta，并复用同一Procedure-set attention跨video聚合。新设计
-已原位实现为fresh-incompatible schema；定向合同`43 passed`、完整CPU在正确LIBERO assets环境下`398 passed`。
-task4→validation8只读视频机制门已通过：train cosine/energy=`.5929/.6792`，held8平均=`.4494/.5715`、
-6/8 tasks过门，held/train BA L2=`.7525x`，关闭了CCT约`1/250`断裂；reverse/constant与吞吐门也通过。
-这只授权matched full24 cycle1，不是closed-loop结论；task31/32仍是明确风险。literal memory仍是后继候选，
-不是本轮强制形式；当前没有active GPU run。实时run identity和下一裁决只取
+但健康写入没有变成闭环增益：gained/lost改写mean=`.000412/.000436`，持续失败样本反而最大至`.000549`；
+full24后train task4的four-view cosine/energy从`.5929/.6792`漂到`.0569/.2951`。最早缺口因此已后移到
+**reward credit如何选择native Value中真正改善held occupancy的组件与符号，以及这些异质task方向如何在同一个
+Writer checkpoint中共存**。下一设计不会只加scale、capacity、coherence或support guard。memory token、rank8
+和其它可扩展hypernetwork形式仍开放，但只有直接针对这个接口才值得引入。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

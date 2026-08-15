@@ -46,7 +46,14 @@ compiler的LoRA写入。
 full24后train task4的four-view cosine/energy从`.5929/.6792`漂到`.0569/.2951`。最早缺口因此已后移到
 **reward credit如何选择native Value中真正改善held occupancy的组件与符号，以及这些异质task方向如何在同一个
 Writer checkpoint中共存**。下一设计不会只加scale、capacity、coherence或support guard。memory token、rank8
-和其它可扩展hypernetwork形式仍开放，但只有直接针对这个接口才值得引入。实时run identity和下一裁决只取
+和其它可扩展hypernetwork形式仍开放，但只有直接针对这个接口才值得引入。
+
+当前active successor是
+[`V6-LPCP Pre-Addressed Factor-Selective Native Value`](docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md)：
+保留LPCP143、NPVC native Value和rank16，只把所有tasks/q-v-action共享的zero-init router替换为固定语言
+pre-address下的factor-owned zero-init selectors。它让task分流在第一次full24 reward update前存在，同时让不同
+policy families独立选择视频Value组件与符号；step0/no-video仍exact LPCP。当前只有design authority，尚未有
+实现或性能结果。实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall

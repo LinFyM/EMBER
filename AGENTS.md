@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 最新完成design（后继authority建立前）：
-   `docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -138,7 +138,14 @@ Procedure-set attention做K轴聚合。trainable仍为67,072，不加memory toke
 cycle1随后完整完成，但strict仅136。post-train held8仍有`.40870/.54227`的跨视频共同写出，all400 BA改写
 mean=`.0004683`，说明CCT的held compiler断裂已经解决；然而gained/lost改写不可分，持续失败样本改写最大，且
 train task4共同方向在full24后从`.5929/.6792`漂到`.0569/.2951`。最早失败接口是reward-useful Value组件/符号
-选择与多task共存，不是video carrier或LoRA量化。当前没有active successor、GPU run或可resume checkpoint。
+选择与多task共存，不是video carrier或LoRA量化。
+
+当前active successor是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
+`docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`。它保留LPCP、NPVC native
+Value、rank16与matched reward，只把zero-init common router换成reward update前已存在的fixed language address，
+并令八factor families各自用zero-init diagonal selectors选择native Value组件/符号；trainable=`16,384`。这直接
+检验task/family在第一次full24 update前分流能否避免NPVC task4坍塌。尚未实现或运行GPU；memory token和rank8
+仍开放，但本轮不同时更换已通过的carrier或public topology。
 
 ## 4. Long-term objective and decision rule
 

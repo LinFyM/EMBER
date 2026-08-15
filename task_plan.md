@@ -377,8 +377,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 按预注册合同终局，不续cycle2、不做六臂或参数小扫；稳定约145资格未获得。完整终局artifact为
   `npvc_cycle1_terminal_analysis.json`、`npvc_cycle1_posttrain_mechanism_analysis.json`与
   `npvc_cycle1_runtime_balance.json`；
-- [ ] 审计reward-direction与support-preservation历史，只针对“reward有用方向选择 + full24共存”建立下一
-  单变量authority；memory token、rank8与native probe均保持开放，但不能作为无因果针对性的形式要求；
+- [x] 审计reward-direction、support-preservation与Dynamic-K memory历史；选择PAFS-NV单变量：保留NPVC native
+  Value和LPCP143，把common zero-init router换成fixed language pre-address + factor-owned zero-init selectors；
+- [ ] 原位实现fresh-incompatible PAFS-NV、16,384参数合同、per-task gradient coexistence evidence与CPU门；
+- [ ] 通过task4→validation8机制/吞吐门后才fresh full24 cycle1与strict400；未过不扫basis/scale/rank/LR/seed；
 - [ ] 后继若达到约145，必须继续用相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对
   wrong/shuffled/reversed/no-video的明确paired优势认证。
 

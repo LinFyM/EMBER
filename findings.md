@@ -518,6 +518,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     **selected-success reward credit -> native Value components/signs -> reward-useful factor direction，以及这些
     task directions在同一full24 checkpoint中的共存**。下一步不能只加scale/capacity/coherence/support guard；
     memory token只有在提供可被reward选择且跨task可共存的layer-aligned Value方向时才针对该缺口。
+69. 后继选择PAFS-NV而非memory重跑、support guard或PCGrad：保留NPVC已经验证的native Value与V6-W1/W2
+    geometry，把任务分流前移为fixed four-way language pre-address，并给八factor families各自`4x2x256`
+    zero-init selectors。总trainable=`16,384`，step0/no-video exact LPCP。该单变量直接检验“第一次full24
+    update前的task/family分流”能否同时修复reward组件/符号选择与task4坍塌；若per-task gradients仍冲突，才把
+    最早接口推进到显式shared-update coordination。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -29,9 +29,12 @@ cosine/energy又从preformal`.5929/.6792`降到`.0569/.2951`。所以最早失�
 选择native Value中改善held on-policy occupancy的组件和符号，以及异质task方向如何在一个full24 Writer中
 共存**，而不是carrier、LoRA幅度、量化或单纯跨视频coherence。
 
-下一design authority尚未建立。它必须只针对reward-useful direction/content selection与多task共存，不能只
-加scale、capacity、coherence或support-only guard。memory token、rank8、dynamic K与其它可扩展hypernetwork
-形式仍开放；只有当它们提供layer-aligned、可被reward选择且可跨task共存的Value方向时才构成因果干预。
+下一design authority已经建立为**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV）：保留LPCP、
+NPVC native Value、rank16与matched reward，只把所有tasks/families共享的zero-init router换成fixed four-way
+language pre-address + 八family-owned zero-init diagonal selectors，总trainable=`16,384`。它使task分流在第一次
+full24 reward update前存在，并让q/v/action独立选择Value组件/符号；不是scale、task expert或support-only
+guard。当前尚未实现或运行GPU。memory token、rank8与dynamic K仍开放；只有当现有native Value被证明缺少
+可学内容时才更换已通过的carrier。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

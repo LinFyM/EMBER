@@ -31,8 +31,13 @@
   `.449398/.571497`、6/8 tasks过门，held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`；reverse的
   probe/BA relative-L2=`1.84084/1.37485`，constant norm ratio=`9.167e-4/1.267e-5`，cycle wall=
   `136.063s=1.04074x CCT`。这些preformal门后来没有转化为strict增益，证明内部coherence不能选方法；
-  当前没有active successor、GPU run或可resume checkpoint。下一步先建立只改变reward direction/content
-  selection与共存接口的authority；memory token和rank8仍开放，但不是无条件答案；
+  当前没有active GPU run或可resume checkpoint；
+- 当前active successor是**V6-LPCP Pre-Addressed Factor-Selective Native Value**（PAFS-NV），authority=
+  `docs/action_forecast_writer_v6_lpcp_preaddressed_factor_selective_native_value_design.md`。它保留LPCP143、NPVC
+  native Value、rank16、FactorHeads与matched selected-success reward；唯一把common zero-init semantic router
+  换成reward前已存在的fixed four-way language address，并给八factor families各自四basis×两轴的zero-init
+  diagonal selectors，总trainable=`16,384`。step0/no-video exact LPCP；同task跨video地址相同，video仍是唯一
+  dynamic Value。当前仅有design authority，尚未实现、测试或启动GPU；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

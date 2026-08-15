@@ -21,7 +21,8 @@ Slot-Set随后K4=`130`、breadth6，same-task方差降`9.26x`而task mean几乎�
 Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条train24 support violations，相对AS仍为
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
 commitment；CCT证明held residual在native BF16 factor/compiler处消失，NPVC随后关闭了该断裂，但strict降至136。
-最新证据把缺口后移到reward-useful Value组件/符号选择与full24多task共存；当前没有active successor或GPU run。
+最新证据把缺口后移到reward-useful Value组件/符号选择与full24多task共存；active PAFS-NV只改变该选择接口，
+尚无实现或GPU结果。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

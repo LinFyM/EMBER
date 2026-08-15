@@ -250,10 +250,18 @@ def capture_paired_initial_states(
 
 
 def _restore_initial_state(
-    env: Any, *, env_seed: int, initial_state: np.ndarray
+    env: Any, *, initial_state: np.ndarray
 ) -> Mapping[str, Any]:
-    env.seed(env_seed)
-    env.reset()
+    # A LIBERO hard reset resamples fixture model poses that are absent from the
+    # flattened simulator state. Soft deterministic reset clears controllers and
+    # observables while retaining that captured model, then restores qpos/qvel.
+    control_env = env.env
+    deterministic_reset = bool(control_env.deterministic_reset)
+    control_env.deterministic_reset = True
+    try:
+        env.reset()
+    finally:
+        control_env.deterministic_reset = deterministic_reset
     observation = env.set_init_state(initial_state)
     if not isinstance(observation, Mapping):
         raise RewardProtocolError("LIBERO state restore returned no observation")
@@ -314,7 +322,6 @@ def _initialize_lanes(
                 if initial_state is None
                 else _restore_initial_state(
                     env,
-                    env_seed=int(env_seed),
                     initial_state=initial_state,
                 )
             ),

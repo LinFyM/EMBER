@@ -374,14 +374,18 @@ def test_paired_arms_restore_one_captured_post_settling_state() -> None:
     class StatefulEnvironment(_FakeEnvironment):
         def __init__(self, *, marker: int) -> None:
             super().__init__(success_after_policy_steps=None, marker=marker)
+            self.env = self
+            self.deterministic_reset = False
             self.reset_generation = 0
+            self.model_marker = 0
 
         def reset(self) -> dict[str, np.ndarray]:
             self.events.append(("reset", None))
             self.policy_steps = 0
-            self.reset_generation += 1
-            self.marker += self.reset_generation
-            return _observation(self.marker)
+            if not self.deterministic_reset:
+                self.reset_generation += 1
+                self.model_marker += self.reset_generation
+            return _observation(self.marker + self.model_marker)
 
         def get_sim_state(self) -> np.ndarray:
             return np.array([self.marker, self.policy_steps], dtype=np.float64)
@@ -390,7 +394,7 @@ def test_paired_arms_restore_one_captured_post_settling_state() -> None:
             self.events.append(("restore", None))
             self.marker = int(state[0])
             self.policy_steps = int(state[1])
-            return _observation(self.marker)
+            return _observation(self.marker + self.model_marker)
 
     envs = tuple(StatefulEnvironment(marker=lane * 20) for lane in range(2))
     env_seeds = (29, 31)
@@ -434,6 +438,7 @@ def test_paired_arms_restore_one_captured_post_settling_state() -> None:
         )
         assert sum(name == "dummy" for name, _ in env.events) == 10
         assert sum(name == "restore" for name, _ in env.events) == 2
+        assert env.reset_generation == 1
     complete_paired_common_state_batch(
         ((replace(reference[0], success=True), candidate[0]),),
         torch.device("cpu"),

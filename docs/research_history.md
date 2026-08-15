@@ -26,8 +26,10 @@ PAFS fixed address与SJNV shared joint gate均在formal前held机制门终局；
 validation8 BA仍为`.790242/.785834`且8/8过门，但strict仅136，相对LPCP为`120/16/23`；persistent failures
 获得最大改写。最早断点由生成端后移到selected-success-only credit的held reward方向。当前DF-PCSP只把credit
 改成同一初态共同观测处的winner-vs-loser首段preference，DJNFR carrier/direct LoRA图完全不变。首次clean smoke
-确认同seed顺序reset并不保证两臂首观测逐元素相同，已在credit前工程终止；canonical路径现只抓一次post-settling
-MuJoCo state供两臂exact恢复，不增加rollout或forward，真实GPU机制门仍待重跑。
+确认同seed顺序reset并不保证两臂首观测逐元素相同；`07b764b`又确认flattened state后再次hard reset仍令两相机
+分别21,423/27,429个像素值不同，而language/state tokens完全相同。两次均在credit前工程终止。canonical现每lane
+只hard reset一次，每臂deterministic soft reset controller/observables后恢复同一qpos/qvel；不增加rollout或
+forward，真实GPU机制门仍待重跑。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

@@ -38,9 +38,11 @@ winner-vs-loser首段flow preference。两臂共享flow time/noise，只比较�
 views等权。它与历史OPPP的不同是状态严格配对且不比较分叉后的occupancy。下一裁决先是task4真实机制门；只有
 common-state、preference descent、q/v/action、held跨视频和效率同时过门才授权full24。memory token、rank8与
 dynamic K仍开放，但不与本轮reward变量同时改变。首次clean `de6c812` task4 smoke在credit前确认重复相同seed/reset
-不能保证两臂首观测逐元素相同，已作为工程合同失败终止且没有科学结果。canonical实现现在每lane只抓一次
-post-settling MuJoCo state并供reference/candidate exact恢复，不增加rollout或forward；修正后针对性CPU=
-`26 passed`、完整CPU=`399 passed`、compileall及architecture hard gate通过，下一步从新clean commit重跑task4。
+不能保证两臂首观测逐元素相同；`07b764b`又确认flattened state恢复后，hard reset仍改变未被state覆盖的model pose，
+差异只出现在两相机，language/state tokens完全相同。两次都只是工程失败、没有科学结果。canonical现每lane只做
+一次hard reset+settling，每臂以deterministic soft reset清空controller/observables后恢复相同qpos/qvel；不增加
+rollout或forward。修正后针对性CPU=`26 passed`、完整CPU=`399 passed`、compileall及architecture hard gate通过，
+下一步从新clean commit重跑task4。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

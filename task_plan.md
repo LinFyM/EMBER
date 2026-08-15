@@ -421,9 +421,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 - [x] 写DF-PCSP authority：完整保留DJNFR输入、carrier、K-set、rank16与direct heads，只改变reward credit；
 - [x] 原位把selected-success整轨迹正蒸馏替换为discordant pair同一初态winner-vs-loser首段flow preference；
-- [x] 更新fresh-incompatible config/checkpoint/evaluator schema；首次clean task4 smoke暴露同seed顺序reset不保证
-  exact首观测，已在credit前按工程失败终止；现以一次post-settling simulator-state抓取供两臂恢复，修正后定向
-  CPU=`26 passed`、完整CPU=`399 passed`、compileall与architecture hard gate通过；
+- [x] 更新fresh-incompatible config/checkpoint/evaluator schema；两次clean task4工程smoke定位同seed hard reset以及
+  flattened-state后再次hard reset都不能保持exact图像；现每lane只hard reset一次，每臂deterministic soft reset
+  controller/observables后恢复同一qpos/qvel。修正后定向CPU=`26 passed`、完整CPU=`399 passed`、compileall与
+  architecture hard gate通过；
 - [ ] 双节点live GPU选择后运行task4 B8真实机制门，验证共同观测、margin descent、八head/q-v-action、held8、
   reverse/static和wall；
 - [ ] 机制全过才冻结formal authority并启动full24 cycle1；随后立即strict400和逐task/接口分析。

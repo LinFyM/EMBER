@@ -51,9 +51,10 @@
   paired AS139/LPCP两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。四个disjoint correct K4
   views仍只在shared Writer gradient处等权；不加memory、rank、scale、rollout或第二adapter。首次clean `de6c812`
   task4 smoke在credit前发现相同seed的顺序reset不能保证两臂首观测逐元素相同，按工程合同exit1且没有科学结果；
-  canonical rollout现改为每lane只抓取一次post-settling MuJoCo state并供两臂exact恢复，不增加rollout或forward。
-  修正后针对性CPU=`26 passed`、完整CPU=`399 passed`、compileall与architecture hard gate通过；尚无GPU机制结果、
-  active GPU run或可resume checkpoint；
+  `07b764b`虽恢复相同flattened state，hard reset仍令两相机分别21,423/27,429个像素值不同，而language/state tokens
+  完全相同。canonical现每lane只做一次hard reset+settling；每臂在同一model上deterministic soft reset以清空
+  controller/observables，再恢复相同qpos/qvel，不增加rollout或forward。修正后针对性CPU=`26 passed`、完整CPU=
+  `399 passed`、compileall与architecture hard gate通过；尚无GPU机制结果、active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

@@ -118,10 +118,12 @@ cotangents；尽管shared mean对每个train row都是局部下降方向，held 
 实现已原位完成：paired rollout只保留winner/loser共同初态首段，flow panel按pair共享且physical microbatch不拆
 pair；smoke-only probe会在真实Adam step后复算同一panel margin。config/checkpoint/evaluator均fresh-incompatible。
 首次clean `de6c812` task4 smoke在进入credit前发现，仅重复相同seed/reset并不能保证LIBERO渲染观测逐元素一致，
-因此作为工程合同失败终止，没有产生科学结果。修正只在每个lane捕获一次post-settling simulator state并供两臂
-恢复；不改变Writer、objective、rollout数或backbone forward。针对性CPU=`26 passed`、完整CPU=`399 passed`、
-compileall通过；architecture guard无hard violation且没有新增active并行模块。以上只关闭工程门，不替代GPU机制
-或closed-loop证据。
+因此作为工程合同失败终止，没有产生科学结果。`07b764b`进一步抓取flattened MuJoCo state，但两臂之间仍做hard
+reset；真实差分显示language/state tokens逐元素相同，base/wrist图像分别有21,423/27,429个像素值不同，证明hard
+reset重采样了不在flattened state中的fixture/model pose。canonical修正现每lane只做一次hard reset+settling；每臂
+先在同一model上做deterministic soft reset以清空controller/observable状态，再恢复同一qpos/qvel state。不改变
+Writer、objective、rollout数或backbone forward。针对性CPU=`26 passed`、完整CPU=`399 passed`、compileall通过；
+architecture guard无hard violation且没有新增active并行模块。以上只关闭工程门，不替代GPU机制或closed-loop证据。
 
 ## 8. formal前机制门
 

@@ -211,6 +211,7 @@ def _contract(
         "data": dict(config["data"]),
         "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
+        "commitment": dict(config["commitment"]),
         "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
         "formal_run": dict(config["formal_run"]),
@@ -275,8 +276,7 @@ def _load_direct_factor_models(
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_direct_factor_matched_batch_stratified_"
-        "occupancy_preference_only"
+        "v6_lpcp_direct_factor_adam_radius_euclidean_commitment_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -496,8 +496,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_direct_factor_matched_batch_stratified_"
-                        "occupancy_preference_completion_v1"
+                        "ember_pi05_v6_lpcp_direct_factor_adam_radius_euclidean_"
+                        "commitment_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

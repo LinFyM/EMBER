@@ -55,13 +55,17 @@ panel不是matched-batch因果比较。三项wall又为DF-PCSP的`3.083x/5.335x/
 双臂重查与时间分层informative occupancy压缩，不能改carrier、memory、rank或LoRA topology。当前无GPU run或可
 resume checkpoint。
 
-当前active successor是**MB-SOP**：在winner全部occupancy上用相同B8 observation/noise顺序分别重查reference与
-candidate，然后把每条成功轨迹等分8个进度strata，每区只保留matched action RMS最大的一项。它把task9/15/18
-functional pairs预定从`26/65/44`降为`8/16/8`，同时消除B2/B1-vs-B8混杂并覆盖整条有向过程。LPCP/DJNFR、
-rank16、K4、八direct heads、Nmc4、四views、optimizer与rollout数全部不变。authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`；canonical实现与
-fresh schemas已完成，全量CPU=`402 passed`、architecture guard无hard violation。当前无GPU run或可resume
-checkpoint；下一步固定task9/15/18真实机制与吞吐门。
+MB-SOP已用同B8 action panel与8段max-disagreement occupancy解决批形混杂和成本门：task9/15/18 wall仅为DF-PCSP
+`1.655/2.119/1.542x`，train/held四video BA健康。但task15/18真实AdamW后同一panel margin反而增加，task9
+held/train仅`.1096x`，故未full24/strict。额外四view flat gradients证明三任务raw等权均值均为`4/4`共同下降；
+最早接口是raw functional gradient到coordinate-preconditioned finite parameter delta。
+
+当前active successor是**AR-EC**：完整保留MB-SOP matched panel、四video等权、LPCP/DJNFR、rank16与八heads，
+唯一先照常生成AdamW候选并更新moments，再保留候选全局L2半径、把最终delta写回负raw shared gradient方向。
+无新增scale、solver或LR变化。smoke须在同一panel/noise上四个view margin全部下降，且train/held/reverse/constant与
+吞吐门全过，才允许full24。authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`；canonical实现与fresh
+schemas已完成，CPU=`404 passed`、architecture guard无hard violation。当前无GPU run或可resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

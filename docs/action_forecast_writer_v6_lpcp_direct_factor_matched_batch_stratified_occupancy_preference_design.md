@@ -1,7 +1,6 @@
 # V6-LPCP Direct-Factor Matched-Batch Stratified Occupancy Preference
 
-状态：2026-08-16 active design authority，canonical implementation complete、preformal GPU pending。简称
-`MB-SOP`。本轮从sealed LPCP
+状态：2026-08-16 terminal mechanism non-pass；不得full24、strict、cycle2或小扫。简称`MB-SOP`。本轮从sealed LPCP
 fresh启动，完整保留LPCP/DJNFR已经通过的video-language carrier、K-set、八direct native-factor heads与rank16
 LoRA部署图，只替换successful-occupancy credit panel的构造。
 
@@ -158,3 +157,37 @@ wrong、shuffled、reversed与no-video。
 本轮只检验“LPCP/DJNFR direct LoRA + exact final-success pair + matched-batch dual-arm actions + eight-stratum
 max-disagreement occupancy panel + four-view one-cycle update”。负结果不否定memory token、rank8、few-shot、生成LoRA、
 完整matched occupancy、真正state branching或未来生成LoRA后的task-local RL。
+
+## 12. 固定三anchor终局结果
+
+clean commit=`ad65347ddcdcc23b745548ad043d3d14c42582d2`在gpu01物理`0/1/2`并行完成task9/15/18。
+三任务outcomes、完整occupancy与selected pairs均精确复现为`2/1,26,8`、`2/0,65,16`、`1/2,44,8`；两臂
+query batch序列逐项相同，0 stored rollout action进入functional preference，八head及q/v/action native写出全部非零，
+0 forbidden read/OOM/nonfinite。
+
+| task | wall / DF-PCSP | selected / complete action RMS mean | margin before -> after | train BA cos/energy | held8 BA cos/energy | held/train L2 |
+|---|---:|---:|---:|---:|---:|---:|
+| 9 | `1.6555x` | `.001635/.001309` | `-.0001479 -> -.0001779` | `.8520/.8540` | `.7818/.7808` | `.1096x` |
+| 15 | `2.1190x` | `.001599/.001236` | `-.0003242 -> +.0000303` | `.6937/.6943` | `.7704/.7810` | `.3525x` |
+| 18 | `1.5423x` | `.005170/.001880` | `-.0022745 -> -.0018652` | `.6988/.7227` | `.7747/.7826` | `.8381x` |
+
+因此matched panel与时间分层同时解决了DF-SOCP的批形混杂和`3--5.3x`成本：三个wall都低于`2.5x`，selected
+states比完整occupancy均值更可辨，且跨video/native写出健康。但task15/18的同一retained panel、同一flow noise、
+同一view0在真实AdamW step后margin反而增加；task9虽下降，held/train又只有`.1096x`。按预注册门终局，不启动
+full24或strict。
+
+为区分视频梯度冲突与更新器失真，只增加一次无额外forward的四view flat-gradient几何诊断。task9/15/18的
+pairwise cosine mean/min分别为`.423/.291`、`.339/.169`、`.343/-.173`，但每个view与等权均值的cosine minimum仍为
+`.695/.629/.601`，三任务共同下降覆盖率均为`4/4`。所以原始等权均值本身已是所有正确视频条件的一阶下降方向；
+最早缺口不是缺少共同梯度，而是：
+
+```text
+four correct-video functional gradients
+ -> equal raw mean is common descent for 4/4 views
+ -> coordinate-preconditioned finite AdamW parameter step
+ -> task15/task18 retained functional margin ascends
+```
+
+下一变量应只检验descent-preserving parameter commitment，在保持Adam候选步全局半径的同时保留raw shared gradient
+方向；不能借此回改carrier、K-set、memory、rank、FactorHeads或matched credit panel。精确终局artifact为task9 run root下
+`mbsop_terminal_adjudication.json`。

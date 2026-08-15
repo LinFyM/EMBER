@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -183,15 +183,26 @@ constant机制均健康；但task9/15的stored动态B2/B1 action到B8 requery差
 `3.083x/5.335x/3.887x`，瓶颈是完整轨迹四view functional credit而非counterfactual inference；task9
 held/train BA仅`.1181x`。按预注册门终局，不full24/strict/cycle2或小扫。最早失败接口是
 **stored动态batch winner action + B8 loser counterfactual -> 非matched-batch preference panel**；下一设计必须
-同B8重查两臂并预声明时间分布的informative occupancy子集。当前无active successor、GPU run或可resume checkpoint。
+同B8重查两臂并预声明时间分布的informative occupancy子集；该接口随后由MB-SOP实际检验。
 
-当前active successor是**V6-LPCP Direct-Factor Matched-Batch Stratified Occupancy Preference**（MB-SOP），authority=
+最新终局successor是**V6-LPCP Direct-Factor Matched-Batch Stratified Occupancy Preference**（MB-SOP），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`。它保留LPCP/DJNFR
 carrier、K4、rank16、八direct heads、exact outcomes与四view，只替换successful-occupancy credit panel：在winner
 完整occupancy上以相同B8 observation/noise顺序分别重查reference和candidate；每条成功轨迹等分8个进度strata，
 每区只保留matched action RMS最大的一项。task9/15/18 functional pairs预定从`26/65/44`降为`8/16/8`；
-trajectory、strata、views与tasks等权。canonical实现与fresh schemas已完成，全量CPU=`402 passed`、architecture
-guard无hard violation；当前无GPU run或可resume checkpoint，下一步固定task9/15/18三anchor真实机制与吞吐门。
+trajectory、strata、views与tasks等权。clean `ad65347`三anchor复现全部outcomes/counts，wall相对DF-PCSP仅
+`1.655/2.119/1.542x`，train四video BA cosine/energy=`.852/.854,.694/.694,.699/.723`，held8也约
+`.77--.78/.78`。但task15/18同一panel margin在AdamW后分别增加`+.0003545/+.0004093`，task9 held/train仅
+`.1096x`，故按门终局，不full24/strict/cycle2。
+
+额外flat-gradient诊断显示三anchor四个view到raw等权均值的最小cosine=`.695/.629/.601`且下降覆盖均为`4/4`；
+所以最早失败接口是**已正确汇合的functional gradient -> coordinate-preconditioned finite AdamW delta**，不是carrier、
+memory、rank、video聚合或LoRA写出。当前active successor是**V6-LPCP Direct-Factor Adam-Radius Euclidean
+Commitment**（AR-EC），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`。它唯一保留AdamW候选delta
+的全局L2半径与optimizer moments，但把最终delta严格放回负raw shared gradient方向；四view post-margin全部下降才
+允许full24。canonical实现已完成，CPU=`404 passed`且architecture guard无hard violation；尚无GPU结果或可resume
+checkpoint。
 
 ## 4. Long-term objective and decision rule
 

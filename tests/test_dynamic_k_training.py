@@ -101,7 +101,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_matched_stratified_occupancy_config_records_fresh_mechanism_gate() -> None:
+def test_adam_radius_commitment_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -117,6 +117,10 @@ def test_matched_stratified_occupancy_config_records_fresh_mechanism_gate() -> N
     )
     assert config["optimization"]["matched_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
+    assert config["commitment"]["kind"] == (
+        "adam_candidate_global_l2_radius_with_negative_raw_shared_gradient_direction"
+    )
+    assert config["commitment"]["new_scale_or_solver"] is False
     assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
         "9": 26,
         "15": 65,

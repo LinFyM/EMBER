@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_v1",
+  "schema_version": "ember_pi05_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,7 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_matched_batch_stratified_occupancy_preference"
+    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_adam_radius_euclidean_commitment"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -86,6 +86,17 @@
       "collective_timeout_minutes": 30
     }
   },
+  "commitment": {
+    "kind": "adam_candidate_global_l2_radius_with_negative_raw_shared_gradient_direction",
+    "adam_candidate": "same_raw_gradient_optimizer_state_lr_betas_eps_weight_decay_and_clip",
+    "final_delta": "negative_raw_shared_gradient_rescaled_to_exact_adam_candidate_global_l2",
+    "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
+    "task_weighting": "equal_mean_over_active_tasks_before_commitment",
+    "view_weighting": "equal_mean_over_four_correct_video_gradients_before_commitment",
+    "new_scale_or_solver": false,
+    "smoke_post_update_probe": "same_selected_panel_and_flow_noise_for_all_four_correct_video_views",
+    "formal_post_update_probe": "first_active_view_ba_and_action_only"
+  },
   "smoke_run": {
     "cycle": 1,
     "original_task_global_id": 4,
@@ -137,6 +148,10 @@
       "one_maximum_disagreement_state_per_equal_progress_stratum": true,
       "matched_winner_loser_actions_must_differ": true,
       "post_update_preference_margin_must_decrease": true,
+      "post_update_all_four_view_margins_must_decrease": true,
+      "raw_four_view_shared_mean_descent_coverage": 1.0,
+      "adam_and_final_delta_l2_relative_error_maximum": 1e-06,
+      "final_delta_to_negative_raw_gradient_cosine_minimum": 0.999999,
       "first_update_all_eight_factor_heads_nonzero": true,
       "post_update_q_v_action_native_factors_nonzero": true,
       "train_cross_video_correction_cosine_minimum": 0.4,
@@ -154,7 +169,8 @@
       "constant_effective_ba_natural_ratio_maximum": 0.005,
       "no_extra_environment_step_or_video_backbone_forward": true,
       "matched_action_batch_size": 8,
-      "matching_dfpcsp_smoke_wall_ratio_maximum": 2.5
+      "matching_dfpcsp_smoke_wall_ratio_maximum": 3.0,
+      "core_cycle_wall_over_matching_mbsop_maximum": 1.1
     }
   }
 }

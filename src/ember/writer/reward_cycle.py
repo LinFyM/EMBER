@@ -18,6 +18,7 @@ from ember.reward.protocol import RewardTask, reward_credit_environment_seed
 from ember.reward.occupancy_panel import (
     complete_matched_stratified_occupancy_batch,
     empty_matched_occupancy_credit,
+    occupancy_cycle_metrics,
 )
 from ember.reward.rollout import (
     RewardTrajectory,
@@ -25,21 +26,20 @@ from ember.reward.rollout import (
     collect_paired_reward_arm_trajectories,
     query_matched_occupancy_actions,
 )
-from ember.writer.as_step import (
-    accumulate_flat_gradient,
-    gather_full24_records,
-)
+from ember.writer.as_step import accumulate_flat_gradient, gather_full24_records
 from ember.writer.data import pack_teacher_condition
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState, WriterProgramOutput
 from ember.writer.reward_preference import (
     MatchedStratifiedOccupancyCreditSummary,
     backpropagate_lora_cotangent,
+    cross_video_gradient_geometry,
     functional_matched_stratified_occupancy_lora_gradient,
     mean_cross_video_task_gradient,
 )
 from ember.writer.reward_gradient_update import (
     AppliedStep,
+    RewardPreferenceView,
     RewardProbe,
     apply_reward_step,
     probe_after_update,
@@ -49,7 +49,8 @@ if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
 
 TaskCreditResult = tuple[
-    dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor], torch.Tensor
+    dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor], torch.Tensor,
+    tuple[RewardPreferenceView, ...],
 ]
 
 
@@ -327,6 +328,71 @@ def _differentiate_credit_view(
     return flat, summary
 
 
+def _differentiate_credit_views(
+    runtime: RewardRuntime,
+    task: RewardTask,
+    cycle: int,
+    visit: int,
+    anchor_demos: Sequence[int],
+    packed: tuple[Any, ...],
+    state: WriterConditioningState,
+    candidate_lora: Mapping[str, torch.Tensor],
+    batch: Mapping[str, torch.Tensor],
+    trajectory_ids: torch.Tensor,
+    gradient_template: torch.Tensor,
+) -> tuple[
+    list[torch.Tensor], list[dict[str, Any]], tuple[RewardPreferenceView, ...],
+    tuple[tuple[int, ...], ...],
+]:
+    demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
+        task.global_task_id,
+        visit,
+        anchor_demos,
+        view_count=int(runtime.config["data"]["credit_views_per_active_task"]),
+    )
+    view_gradients, view_rows, preference_views = [], [], []
+    for view_index, demos in enumerate(demo_sets):
+        if view_index == 0:
+            view_packed, view_state, view_lora = packed, state, candidate_lora
+            view_metrics: Mapping[str, Any] = {}
+        else:
+            view_packed, view_metrics, view_state, _, view_lora = (
+                _encode_candidate_condition(runtime, task, demos)
+            )
+        flat, summary = _differentiate_credit_view(
+            runtime,
+            task,
+            cycle,
+            view_packed,
+            view_state,
+            view_lora,
+            batch,
+            trajectory_ids,
+            gradient_template,
+        )
+        view_gradients.append(flat)
+        if runtime.args.mode == "smoke" or view_index == 0:
+            preference_views.append(
+                RewardPreferenceView(
+                    conditioning_state=view_state,
+                    condition_video_offsets=view_packed[3],
+                    before_preference_margin=summary.preference_margin,
+                )
+            )
+        view_rows.append(
+            {
+                "view_index": view_index,
+                "demo_indices": list(demos),
+                "factor_commitment_gradient_rms": float(
+                    flat.square().mean().sqrt()
+                ),
+                **asdict(summary),
+                **view_metrics,
+            }
+        )
+    return view_gradients, view_rows, tuple(preference_views), demo_sets
+
+
 def _differentiate_task_credit(
     runtime: RewardRuntime,
     task: RewardTask,
@@ -367,48 +433,26 @@ def _differentiate_task_credit(
         ),
         device=torch.device("cpu"),
     )
-    demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
-        task.global_task_id,
-        visit,
-        anchor_demos,
-        view_count=int(runtime.config["data"]["credit_views_per_active_task"]),
-    )
-    view_gradients, view_rows = [], []
-    for view_index, demos in enumerate(demo_sets):
-        if view_index == 0:
-            view_packed, view_state, view_lora = packed, state, candidate_lora
-            view_metrics: Mapping[str, Any] = {}
-        else:
-            view_packed, view_metrics, view_state, _, view_lora = (
-                _encode_candidate_condition(runtime, task, demos)
-            )
-        flat, summary = _differentiate_credit_view(
+    view_gradients, view_rows, preference_views, demo_sets = (
+        _differentiate_credit_views(
             runtime,
             task,
             cycle,
-            view_packed,
-            view_state,
-            view_lora,
+            visit,
+            anchor_demos,
+            packed,
+            state,
+            candidate_lora,
             batch,
             trajectory_ids,
             gradient_sum,
         )
-        view_gradients.append(flat)
-        view_rows.append(
-            {
-                "view_index": view_index,
-                "demo_indices": list(demos),
-                "factor_commitment_gradient_rms": float(
-                    flat.square().mean().sqrt()
-                ),
-                **asdict(summary),
-                **view_metrics,
-            }
-        )
+    )
+    view_gradient_geometry = cross_video_gradient_geometry(view_gradients)
     task_gradient = mean_cross_video_task_gradient(view_gradients)
     gradient_sum.add_(task_gradient)
     first = view_rows[0]
-    return {
+    result = {
         "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
         "preference_margin": math.fsum(
             float(row["preference_margin"]) for row in view_rows
@@ -444,9 +488,18 @@ def _differentiate_task_credit(
             {demo for demos in demo_sets for demo in demos}
         ),
         "credit_view_records": view_rows,
+        "cross_video_gradient_geometry": view_gradient_geometry,
         **action_metrics,
         **selection_metrics,
-    }, time.monotonic() - started, task_gradient, batch, trajectory_ids
+    }
+    return (
+        result,
+        time.monotonic() - started,
+        task_gradient,
+        batch,
+        trajectory_ids,
+        tuple(preference_views),
+    )
 
 
 def _make_probe(
@@ -460,6 +513,7 @@ def _make_probe(
     preference_batch: Mapping[str, torch.Tensor],
     preference_trajectory_ids: torch.Tensor,
     before_preference_margin: float,
+    preference_views: tuple[RewardPreferenceView, ...],
 ) -> RewardProbe:
     index = next(
         index
@@ -482,6 +536,7 @@ def _make_probe(
         preference_batch=preference_batch,
         preference_trajectory_ids=preference_trajectory_ids,
         before_preference_margin=before_preference_margin,
+        preference_views=preference_views,
     )
 
 
@@ -519,6 +574,7 @@ def _task_gradient(
             task_gradient,
             preference_batch,
             preference_trajectory_ids,
+            preference_views,
         ) = _differentiate_task_credit(
             runtime,
             task,
@@ -545,6 +601,7 @@ def _task_gradient(
                 preference_batch,
                 preference_trajectory_ids,
                 float(credit["credit_view_records"][0]["preference_margin"]),
+                preference_views,
             )
     row = {
         "task_id": task.global_task_id,
@@ -662,53 +719,6 @@ def _gather_cycle_evidence(
     return global_records, [value for value in probes if value is not None], float(elapsed)
 
 
-def _occupancy_cycle_metrics(
-    records: Sequence[Mapping[str, Any]],
-    active_records: Sequence[Mapping[str, Any]],
-) -> dict[str, Any]:
-    return {
-        "discordant_preference_trajectories": sum(
-            int(row["discordant_trajectories"]) for row in records
-        ),
-        "selected_credit_pairs": sum(int(row["selected_credit_pairs"]) for row in records),
-        "complete_occupancy_chunks": sum(
-            int(row["complete_occupancy_chunks"]) for row in records
-        ),
-        "matched_policy_forwards": sum(
-            int(row["matched_policy_forwards"]) for row in records
-        ),
-        "stored_winner_to_matched_requery_rms_mean": math.fsum(
-            float(row["stored_winner_to_matched_requery_rms"])
-            for row in active_records
-        )
-        / len(active_records),
-        "stored_loser_to_matched_first_requery_rms_mean": math.fsum(
-            float(row["stored_loser_to_matched_first_requery_rms"])
-            for row in active_records
-        )
-        / len(active_records),
-        "matched_action_seconds": math.fsum(
-            float(row["matched_action_seconds"]) for row in records
-        ),
-        "credit_conditions": sum(int(row["credit_conditions"]) for row in records),
-        "credit_unique_video_count": sum(
-            int(row["credit_unique_video_count"]) for row in records
-        ),
-        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
-        "successful_action_steps": sum(
-            int(row["successful_action_steps"]) for row in records
-        ),
-        "matched_stratified_occupancy_objective_mean": math.fsum(
-            float(row["objective"]) for row in active_records
-        )
-        / len(active_records),
-        "matched_stratified_occupancy_margin_mean": math.fsum(
-            float(row["preference_margin"]) for row in active_records
-        )
-        / len(active_records),
-    }
-
-
 def _cycle_metrics(
     runtime: RewardRuntime,
     cycle: int,
@@ -721,9 +731,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_matched_batch_stratified_occupancy_preference"
+            "one_complete_train24_direct_factor_adam_radius_euclidean_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_matched_batch_stratified_occupancy_preference_live_smoke"
+            else "one_task_direct_factor_adam_radius_euclidean_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -744,10 +754,11 @@ def _cycle_metrics(
         ),
         "active_tasks": step.active_tasks,
         "active_suites": sorted({row["suite"] for row in active_records}),
-        **_occupancy_cycle_metrics(records, active_records),
+        **occupancy_cycle_metrics(records, active_records),
         "writer_gradient_norm_before_clip": step.gradient_norm,
         "writer_gradient_rms": step.gradient_rms,
         "gradient_coexistence": step.gradient_coexistence,
+        "commitment_geometry": step.commitment_geometry,
         "parameter_delta_rms": step.parameter_delta_rms,
         "deployment_response_probes": probes,
         "task_records": records,

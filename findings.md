@@ -617,6 +617,22 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     batch-size序列逐项相同，strata/max-disagreement/组batch由单一panel owner负责。定向CPU=`48 passed`、完整CPU=
     `402 passed`、compileall通过且architecture guard无hard violation。该证据只关闭工程门；真实三anchor的
     outcomes、selected counts、margin、跨video geometry与wall仍未知。
+90. MB-SOP clean`ad65347`固定task9/15/18复现outcomes=`2/1,2/0,1/2`、complete chunks=`26/65/44`与selected
+    pairs=`8/16/8`；selected action RMS mean相对完整occupancy mean为`1.249x/1.294x/2.751x`，wall相对DF-PCSP=
+    `1.655x/2.119x/1.542x`。因此同B8 action panel和时间分层max-disagreement确实同时修复了DF-SOCP批形混杂与
+    `3--5.3x`成本，不应在下一轮撤销。
+91. MB-SOP post train four-view BA cosine/energy=`.852/.854,.694/.694,.699/.723`，held8 aggregate=
+    `.782/.781,.770/.781,.775/.783`且均8/8过门；八head、q/v/action、reverse/constant与信息墙也健康。但task15
+    margin从`-.0003242`升到`+.0000303`，task18从`-.0022745`升到`-.0018652`；task9虽下降，held/train仅
+    `.1096x`。因此健康跨video LoRA写出仍不保证当前optimizer step沿reward-useful方向。
+92. 四view flat-gradient复跑没有增加forward：task9/15/18 gradient pairwise cosine mean/min=
+    `.423/.291,.339/.169,.343/-.173`，但每个view到等权mean的cosine minimum仍为`.695/.629/.601`，三者raw
+    shared mean下降覆盖均为`4/4`。所以PCGrad、重加权video或再改K-set不针对当前断点；共同一阶方向已经存在，
+    最早缺口是per-coordinate AdamW preconditioning/finite step对实际parameter delta的旋转或曲率放大。
+93. AR-EC用AdamW候选自身的global L2作为无新增超参半径，同时令final delta严格等于负raw shared gradient的
+    同半径向量；Adam moments照常保留。它与旧ADSP不同：不保护offline/train-prefix support，也不解小dual，只
+    检验同一matched reward panel已证实的共同下降方向能否被正确commit。若同半径raw方向仍使四view margin上升，
+    才能把最早接口进一步定位到finite-step trust radius，而不能靠LR小扫解释。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

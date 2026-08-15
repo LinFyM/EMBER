@@ -255,6 +255,42 @@ def _writer_asset(
     }
 
 
+def _validate_reward_run_contract(
+    run: Mapping[str, Any],
+    reward_config: Mapping[str, Any],
+    base: Mapping[str, Any],
+    config: Mapping[str, Any],
+    source: Mapping[str, Any],
+) -> None:
+    expected_source = {
+        key: str(Path(str(source[key])).resolve())
+        for key in ("source_run", "checkpoint", "model_path")
+    }
+    observed_source = {
+        key: str(Path(str(run.get("source", {}).get(key, ""))).resolve())
+        for key in expected_source
+    }
+    changed = (
+        run.get("schema_version") != REWARD_LAUNCH_SCHEMA
+        or run.get("mode") != "formal"
+        or observed_source != expected_source
+        or Path(str(run.get("base_as_config_path", ""))).resolve()
+        != Path(str(reward_config["resolved_base_as_config"])).resolve()
+        or base["writer"] != config["writer"]
+        or run.get("writer") != config["writer"]
+        or run.get("information_wall") != reward_config["information_wall"]
+        or run.get("objective") != reward_config["objective"]
+        or run.get("commitment") != reward_config["commitment"]
+        or run.get("initialization", {}).get("as_checkpoint")
+        != reward_config["initialization"]["as_checkpoint"]
+        or not Path(
+            str(run.get("initialization", {}).get("checkpoint", ""))
+        ).is_dir()
+    )
+    if changed:
+        raise WriterModelError("reward training authority changed")
+
+
 def _reward_writer_asset(
     *,
     config: Mapping[str, Any],
@@ -289,29 +325,7 @@ def _reward_writer_asset(
     reward_config_path = Path(str(run.get("config_path", ""))).resolve()
     reward_config, base = load_reward_config(reward_config_path)
     sealed_config, _ = load_reward_config(REWARD_CONFIG)
-    expected_source = {
-        key: str(Path(str(source[key])).resolve())
-        for key in ("source_run", "checkpoint", "model_path")
-    }
-    observed_source = {
-        key: str(Path(str(run.get("source", {}).get(key, ""))).resolve())
-        for key in expected_source
-    }
-    if (
-        run.get("schema_version") != REWARD_LAUNCH_SCHEMA
-        or run.get("mode") != "formal"
-        or observed_source != expected_source
-        or Path(str(run.get("base_as_config_path", ""))).resolve()
-        != Path(str(reward_config["resolved_base_as_config"])).resolve()
-        or base["writer"] != config["writer"]
-        or run.get("writer") != config["writer"]
-        or run.get("information_wall") != reward_config["information_wall"]
-        or run.get("objective") != reward_config["objective"]
-        or run.get("initialization", {}).get("as_checkpoint")
-        != reward_config["initialization"]["as_checkpoint"]
-        or not Path(str(run.get("initialization", {}).get("checkpoint", ""))).is_dir()
-    ):
-        raise WriterModelError("reward training authority changed")
+    _validate_reward_run_contract(run, reward_config, base, config, source)
     sealed_sections = (
         "base_as_config",
         "initialization",
@@ -319,6 +333,7 @@ def _reward_writer_asset(
         "data",
         "environment",
         "objective",
+        "commitment",
         "rng",
         "optimization",
     )
@@ -342,10 +357,10 @@ def _reward_writer_asset(
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
         "training_mode": (
-            "formal_direct_factor_matched_batch_stratified_occupancy_preference"
+            "formal_direct_factor_adam_radius_euclidean_commitment"
         ),
         "training_stage": (
-            "on_policy_cross_video_matched_batch_stratified_occupancy_direct_factor"
+            "on_policy_cross_video_adam_radius_euclidean_direct_factor"
         ),
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
@@ -545,8 +560,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_direct_factor_matched_batch_stratified_"
-                "occupancy_preference_"
+                "v6_lpcp_direct_factor_adam_radius_euclidean_commitment_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

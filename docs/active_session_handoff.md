@@ -66,14 +66,23 @@
   `.825/.838,.721/.757,.770/.757`，held8=`.773/.780,.761/.771,.787/.794`且均8/8过门。但stored
   B2/B1 loser第一action到B8 requery RMS=`.00415/.00595/.00440`，相对名义winner/B8-loser contrast=
   `1.086x/1.693x/.219x`；task9/15 negative受batch-shape混杂。wall相对DF-PCSP=`3.083x/5.335x/3.887x`，
-  task9 held/train又仅`.118x`。按门终局，不full24/strict/cycle2；当前无active successor、GPU run或可resume
-  checkpoint。下一设计必须同B8重查两臂，并用时间分布的少量informative occupancy替代穷举全部replans；
-- 当前active successor是**MB-SOP**，authority=
+  task9 held/train又仅`.118x`。按门终局，不full24/strict/cycle2；下一接口随后由MB-SOP的同B8双臂重查与
+  时间分层informative occupancy实际检验；
+- 最新终局successor是**MB-SOP**，authority=
   `docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md`。它不改
   LPCP/DJNFR生成图，只把credit panel改成同B8双臂requery，并在每条winner trajectory的8个等进度strata各选
-  matched action分歧最大的一项；固定task9/15/18 pairs=`8/16/8`，四views共享同一panel。canonical实现已原位
-  完成，旧DF-SOCP executable/schema已移除；全量CPU=`402 passed`、compileall与architecture hard gate通过。当前
-  无GPU run或可resume checkpoint；下一步从clean pushed commit并行跑固定三anchor真实机制与吞吐门；
+  matched action分歧最大的一项。clean `ad65347`固定task9/15/18复现outcomes=`2/1,2/0,1/2`、complete=
+  `26/65/44`与selected=`8/16/8`；wall=`1.655/2.119/1.542x` DF-PCSP，所有matched/info-wall/native门健康。
+  post train/held四video BA也健康，但task15/18同一view0 panel margin分别增加`+.0003545/+.0004093`，task9
+  held/train仅`.1096x`，故按门终局，不full24/strict/cycle2。额外无forward flat-gradient复跑显示三任务
+  view-to-mean cosine minimum=`.695/.629/.601`且raw mean下降覆盖均为`4/4`；最早缺口是raw shared gradient经
+  coordinate-preconditioned finite AdamW delta后的方向承诺；
+- 当前active successor是**AR-EC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`。唯一保留旧AdamW候选
+  的全局L2半径和moments，但把最终parameter delta严格写成负raw shared gradient方向；MB-SOP matched panel、
+  四video等权、八heads、rank16与所有部署输入不变。smoke会在同一panel/noise上复算四个view的post-margin；
+  三anchor全部下降且held门过后才允许full24。canonical实现与fresh schema已完成，CPU=`404 passed`、architecture
+  guard无hard violation；当前无GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

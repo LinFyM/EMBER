@@ -1,4 +1,4 @@
-"""Cycle checkpoints for matched-batch stratified occupancy preference."""
+"""Cycle checkpoints for Adam-radius Euclidean commitment."""
 
 from __future__ import annotations
 
@@ -22,12 +22,12 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_matched_batch_stratified_"
-    "occupancy_preference_checkpoint_v1"
+    "ember_pi05_v6_lpcp_direct_factor_adam_radius_euclidean_"
+    "commitment_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_direct_factor_matched_batch_stratified_occupancy_"
-    "preference_cycle_checkpoint"
+    "v6_lpcp_direct_factor_adam_radius_euclidean_"
+    "commitment_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

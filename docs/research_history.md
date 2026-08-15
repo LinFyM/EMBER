@@ -35,11 +35,15 @@ full24前终局。
 最新终局DF-SOCP保留同一生成图，把exact preference扩展到winner成功occupancy全部replans。固定task9/15/18均形成
 强train/held跨video共同方向，但stored winner actions来自动态B2/B1、loser counterfactual来自B8；task9/15的批形
 数值差异为名义策略contrast的`1.086x/1.693x`。三项wall又为DF-PCSP的`3.083x/5.335x/3.887x`，task9
-held/train仅`.118x`。按门未full24/strict；下一接口是matched-batch双臂action panel与时间分布的informative
-occupancy压缩，不是carrier或LoRA topology。
-当前active MB-SOP只改变这一panel：同B8重查两臂后，每条成功轨迹8个等进度strata各选action分歧最大的一项，
-task9/15/18预定从`26/65/44`降为`8/16/8`个functional pairs；LPCP/DJNFR、rank16、K4、Nmc4与四views不变。
-canonical实现与fresh schema已完成、全量CPU=`402 passed`，等待固定三anchor真实GPU门。
+held/train仅`.118x`。按门未full24/strict；后继MB-SOP用同B8重查两臂，并把每条成功轨迹压成8个等进度
+max-disagreement states。clean `ad65347`三anchor全部复现固定outcomes/counts，wall降到DF-PCSP的
+`1.655/2.119/1.542x`，train/held跨video BA均健康；但task15/18同一panel在AdamW后margin增加，task9
+held/train仅`.1096x`，故仍未full24/strict。额外四view flat-gradient测得三anchor raw mean对4/4 views均为下降，
+view-to-mean cosine minimum仍有`.695/.629/.601`。因此最早接口后移到raw functional gradient如何形成实际finite
+parameter delta，而不是matched panel、carrier、video aggregation或LoRA topology。
+当前active AR-EC保留MB-SOP全部科学图，唯一保留AdamW候选global L2 radius与moments，把final delta严格放回负
+raw shared gradient方向；无新增scale/solver/LR。canonical实现与fresh schema已完成、全量CPU=`404 passed`，
+等待固定三anchor四view post-margin与held机制门。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

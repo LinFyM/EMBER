@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping, Sequence
 
 import torch
@@ -202,4 +203,55 @@ def empty_matched_occupancy_credit() -> dict[str, Any]:
         "credit_conditions": 0,
         "credit_unique_video_count": 0,
         "credit_view_records": [],
+    }
+
+
+def occupancy_cycle_metrics(
+    records: Sequence[Mapping[str, Any]],
+    active_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Aggregate the canonical matched-occupancy evidence for one cycle."""
+
+    return {
+        "discordant_preference_trajectories": sum(
+            int(row["discordant_trajectories"]) for row in records
+        ),
+        "selected_credit_pairs": sum(
+            int(row["selected_credit_pairs"]) for row in records
+        ),
+        "complete_occupancy_chunks": sum(
+            int(row["complete_occupancy_chunks"]) for row in records
+        ),
+        "matched_policy_forwards": sum(
+            int(row["matched_policy_forwards"]) for row in records
+        ),
+        "stored_winner_to_matched_requery_rms_mean": math.fsum(
+            float(row["stored_winner_to_matched_requery_rms"])
+            for row in active_records
+        )
+        / len(active_records),
+        "stored_loser_to_matched_first_requery_rms_mean": math.fsum(
+            float(row["stored_loser_to_matched_first_requery_rms"])
+            for row in active_records
+        )
+        / len(active_records),
+        "matched_action_seconds": math.fsum(
+            float(row["matched_action_seconds"]) for row in records
+        ),
+        "credit_conditions": sum(int(row["credit_conditions"]) for row in records),
+        "credit_unique_video_count": sum(
+            int(row["credit_unique_video_count"]) for row in records
+        ),
+        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
+        "successful_action_steps": sum(
+            int(row["successful_action_steps"]) for row in records
+        ),
+        "matched_stratified_occupancy_objective_mean": math.fsum(
+            float(row["objective"]) for row in active_records
+        )
+        / len(active_records),
+        "matched_stratified_occupancy_margin_mean": math.fsum(
+            float(row["preference_margin"]) for row in active_records
+        )
+        / len(active_records),
     }

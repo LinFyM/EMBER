@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Mapping
 
@@ -26,6 +27,14 @@ class AppliedStep:
     gradient_rms: float
     parameter_delta_rms: Mapping[str, float]
     gradient_coexistence: Mapping[str, Any]
+    commitment_geometry: Mapping[str, float]
+
+
+@dataclass(frozen=True)
+class RewardPreferenceView:
+    conditioning_state: WriterConditioningState
+    condition_video_offsets: torch.Tensor
+    before_preference_margin: float
 
 
 @dataclass(frozen=True)
@@ -42,6 +51,7 @@ class RewardProbe:
     preference_batch: Mapping[str, torch.Tensor]
     preference_trajectory_ids: torch.Tensor
     before_preference_margin: float
+    preference_views: tuple[RewardPreferenceView, ...]
 
 
 def lora_response(
@@ -92,6 +102,7 @@ def probe_after_update(
 ) -> dict[str, Any] | None:
     if probe is None:
         return None
+    started = time.monotonic()
     with torch.autocast(
         device_type=runtime.context.device.type,
         dtype=torch.bfloat16,
@@ -129,29 +140,64 @@ def probe_after_update(
         (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
     )
     if runtime.args.mode == "smoke":
-        preference = functional_matched_stratified_occupancy_margin(
-            runtime.policy,
-            after,
-            runtime.lora_contract,
-            probe.preference_batch,
-            probe.preference_trajectory_ids,
-            mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-            physical_microbatch_size=int(
-                runtime.config["optimization"]["reward_replay_chunk_batch_size"]
-            ),
-            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-            cycle=probe.cycle,
-            global_task_id=probe.global_task_id,
-            device=runtime.context.device,
-        )
+        if len(probe.preference_views) != 4:
+            raise WriterModelError("smoke preference probe lost four video views")
+        view_rows = []
+        for index, view in enumerate(probe.preference_views):
+            if index == 0:
+                view_lora = after
+            else:
+                with torch.autocast(
+                    device_type=runtime.context.device.type,
+                    dtype=torch.bfloat16,
+                    enabled=runtime.context.device.type == "cuda",
+                ):
+                    view_encoded = runtime.writer.compile_conditioning_state(
+                        view.conditioning_state,
+                        view.condition_video_offsets,
+                        use_query_delta=True,
+                    )
+                    view_lora = runtime.writer.decode_output(view_encoded)
+            preference = functional_matched_stratified_occupancy_margin(
+                runtime.policy,
+                view_lora,
+                runtime.lora_contract,
+                probe.preference_batch,
+                probe.preference_trajectory_ids,
+                mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
+                physical_microbatch_size=int(
+                    runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+                ),
+                flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
+                cycle=probe.cycle,
+                global_task_id=probe.global_task_id,
+                device=runtime.context.device,
+            )
+            delta = preference["preference_margin"] - view.before_preference_margin
+            view_rows.append(
+                {
+                    "view_index": index,
+                    "before_preference_margin": view.before_preference_margin,
+                    "after_preference_margin": preference["preference_margin"],
+                    "preference_margin_delta": delta,
+                    "after_preference_objective": preference[
+                        "preference_objective"
+                    ],
+                    "preference_descent": delta < 0,
+                }
+            )
+        first = view_rows[0]
         response.update(
-            before_preference_margin=probe.before_preference_margin,
-            after_preference_margin=preference["preference_margin"],
-            preference_margin_delta=(
-                preference["preference_margin"] - probe.before_preference_margin
+            before_preference_margin=first["before_preference_margin"],
+            after_preference_margin=first["after_preference_margin"],
+            preference_margin_delta=first["preference_margin_delta"],
+            after_preference_objective=first["after_preference_objective"],
+            view_preference_probes=view_rows,
+            all_view_preference_descent=all(
+                row["preference_descent"] for row in view_rows
             ),
-            after_preference_objective=preference["preference_objective"],
         )
+    response["probe_seconds"] = time.monotonic() - started
     return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
 
 
@@ -169,6 +215,7 @@ def _coexistence(
     runtime: RewardRuntime,
     task_gradients: Mapping[int, torch.Tensor],
     shared_mean: torch.Tensor,
+    final_delta: torch.Tensor,
 ) -> dict[str, Any]:
     task_ids = tuple(task.global_task_id for task in runtime.tasks)
     task_index = {task_id: index for index, task_id in enumerate(task_ids)}
@@ -229,15 +276,32 @@ def _coexistence(
             "shared_mean_gradient_rms": shared_rms,
         }
 
-    task_values = torch.stack((row_norms, dots, cosines), dim=1).cpu().tolist()
+    delta_norm = torch.linalg.vector_norm(final_delta)
+    descent_dots = -(rows @ final_delta)
+    descent_cosines = descent_dots / (
+        row_norms * delta_norm
+    ).clamp_min(1e-30)
+    task_values = torch.stack(
+        (row_norms, dots, cosines, descent_dots, descent_cosines), dim=1
+    ).cpu().tolist()
     coverage, cosine_mean, cosine_minimum = torch.stack(
         ((dots > 0).float().mean(), cosines.mean(), cosines.min())
+    ).cpu().tolist()
+    final_coverage, final_cosine_mean, final_cosine_minimum = torch.stack(
+        (
+            (descent_dots > 0).float().mean(),
+            descent_cosines.mean(),
+            descent_cosines.min(),
+        )
     ).cpu().tolist()
     return {
         "active_task_ids": selected_ids,
         "shared_mean_descent_coverage": coverage,
         "task_to_shared_cosine_mean": cosine_mean,
         "task_to_shared_cosine_minimum": cosine_minimum,
+        "final_delta_descent_coverage": final_coverage,
+        "task_to_final_descent_cosine_mean": final_cosine_mean,
+        "task_to_final_descent_cosine_minimum": final_cosine_minimum,
         "pairwise_task_gradient_cosine": pairwise_summary,
         "per_task": [
             {
@@ -245,10 +309,64 @@ def _coexistence(
                 "gradient_norm": values[0],
                 "dot_shared_mean": values[1],
                 "cosine_shared_mean": values[2],
+                "dot_final_descent": values[3],
+                "cosine_final_descent": values[4],
             }
             for task_id, values in zip(selected_ids, task_values, strict=True)
         ],
         "per_parameter": parameter_energy,
+    }
+
+
+def adam_radius_euclidean_commitment(
+    raw_gradient: torch.Tensor,
+    adam_candidate_delta: torch.Tensor,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    """Keep Adam's global radius while committing along raw Euclidean descent."""
+
+    if (
+        raw_gradient.ndim != 1
+        or adam_candidate_delta.shape != raw_gradient.shape
+        or raw_gradient.dtype != torch.float32
+        or adam_candidate_delta.dtype != torch.float32
+        or not bool(torch.isfinite(raw_gradient).all())
+        or not bool(torch.isfinite(adam_candidate_delta).all())
+    ):
+        raise WriterModelError("Adam-radius commitment inputs changed")
+    gradient_norm = torch.linalg.vector_norm(raw_gradient)
+    candidate_norm = torch.linalg.vector_norm(adam_candidate_delta)
+    if float(gradient_norm) <= 0 or float(candidate_norm) <= 0:
+        raise WriterModelError("Adam-radius commitment lost a nonzero direction")
+    final_delta = -raw_gradient * (candidate_norm / gradient_norm)
+    final_norm = torch.linalg.vector_norm(final_delta)
+    denominator = candidate_norm * final_norm
+    negative_gradient = -raw_gradient
+    negative_gradient_norm = gradient_norm
+    values = torch.stack(
+        (
+            gradient_norm,
+            candidate_norm,
+            final_norm,
+            torch.dot(adam_candidate_delta, negative_gradient)
+            / (candidate_norm * negative_gradient_norm),
+            torch.dot(final_delta, negative_gradient)
+            / (final_norm * negative_gradient_norm),
+            torch.dot(adam_candidate_delta, final_delta) / denominator,
+            (final_norm - candidate_norm).abs() / candidate_norm,
+        )
+    ).cpu().tolist()
+    count = raw_gradient.numel()
+    return final_delta, {
+        "raw_gradient_l2": values[0],
+        "raw_gradient_rms": values[0] / math.sqrt(count),
+        "adam_candidate_delta_l2": values[1],
+        "adam_candidate_delta_rms": values[1] / math.sqrt(count),
+        "final_delta_l2": values[2],
+        "final_delta_rms": values[2] / math.sqrt(count),
+        "adam_candidate_to_negative_raw_gradient_cosine": values[3],
+        "final_to_negative_raw_gradient_cosine": values[4],
+        "adam_candidate_to_final_cosine": values[5],
+        "radius_relative_error": values[6],
     }
 
 
@@ -272,21 +390,47 @@ def apply_reward_step(
         torch.count_nonzero(gradient_sum)
     ):
         raise WriterModelError("direct-factor gradient is invalid")
-    coexistence = _coexistence(runtime, task_gradients, gradient_sum)
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
     named = _trainable_named(runtime)
     before = {name: value.detach().clone() for name, value in named}
+    committed_gradient = torch.empty_like(gradient_sum)
+    for item in runtime.gradient_layout:
+        if item.parameter.grad is None:
+            raise WriterModelError("Adam-radius commitment lost a parameter gradient")
+        committed_gradient[item.start : item.stop].copy_(
+            item.parameter.grad.detach().reshape(-1).float()
+        )
     runtime.optimizer.step()
+    candidate_delta = torch.empty_like(gradient_sum)
+    for (name, value), item in zip(named, runtime.gradient_layout, strict=True):
+        candidate_delta[item.start : item.stop].copy_(
+            (value.detach() - before[name]).reshape(-1).float()
+        )
+    final_delta, commitment = adam_radius_euclidean_commitment(
+        committed_gradient, candidate_delta
+    )
+    with torch.no_grad():
+        for (name, value), item in zip(named, runtime.gradient_layout, strict=True):
+            value.copy_(
+                before[name]
+                + final_delta[item.start : item.stop]
+                .view_as(value)
+                .to(dtype=value.dtype)
+            )
     delta = {
         name: float((value.detach() - before[name]).float().square().mean().sqrt())
         for name, value in named
     }
+    coexistence = _coexistence(
+        runtime, task_gradients, committed_gradient, final_delta
+    )
     return AppliedStep(
         active_tasks=active_tasks,
         gradient_norm=float(grad_norm),
         gradient_rms=float(gradient_sum.square().mean().sqrt()),
         parameter_delta_rms=delta,
         gradient_coexistence=coexistence,
+        commitment_geometry=commitment,
     )

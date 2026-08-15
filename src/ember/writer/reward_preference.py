@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import torch
 import torch.nn.functional as F
@@ -43,6 +43,61 @@ def mean_cross_video_task_gradient(
     ):
         raise RewardProtocolError("cross-video view gradient panel changed")
     return torch.stack(tuple(gradients)).mean(dim=0)
+
+
+def cross_video_gradient_geometry(
+    gradients: Sequence[torch.Tensor],
+) -> dict[str, Any]:
+    """Measure whether the shared four-view update descends every view objective."""
+
+    mean = mean_cross_video_task_gradient(gradients)
+    rows = torch.stack(tuple(gradients))
+    norms = torch.linalg.vector_norm(rows, dim=1)
+    mean_norm = torch.linalg.vector_norm(mean)
+    dots = rows @ mean
+    view_cosines = dots / (norms * mean_norm).clamp_min(1e-30)
+    units = rows / norms[:, None].clamp_min(1e-30)
+    pairwise = units @ units.T
+    offdiag = pairwise[
+        ~torch.eye(4, dtype=torch.bool, device=pairwise.device)
+    ]
+    sample_energy = rows.square().sum(dim=1).mean()
+    values = torch.stack(
+        (
+            offdiag.mean(),
+            offdiag.min(),
+            offdiag.max(),
+            (dots > 0).float().mean(),
+            view_cosines.mean(),
+            view_cosines.min(),
+            mean.square().sum() / sample_energy.clamp_min(1e-30),
+        )
+    ).cpu().tolist()
+    return {
+        "pairwise_cosine_mean": values[0],
+        "pairwise_cosine_minimum": values[1],
+        "pairwise_cosine_maximum": values[2],
+        "shared_mean_descent_coverage": values[3],
+        "view_to_shared_mean_cosine_mean": values[4],
+        "view_to_shared_mean_cosine_minimum": values[5],
+        "shared_mean_energy_over_view_energy": values[6],
+        "per_view": [
+            {
+                "view_index": index,
+                "gradient_norm": float(norm),
+                "dot_shared_mean": float(dot),
+                "cosine_shared_mean": float(cosine),
+            }
+            for index, (norm, dot, cosine) in enumerate(
+                zip(
+                    norms.cpu().tolist(),
+                    dots.cpu().tolist(),
+                    view_cosines.cpu().tolist(),
+                    strict=True,
+                )
+            )
+        ],
+    }
 
 
 def _flow_sample_panel(

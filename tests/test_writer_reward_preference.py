@@ -24,8 +24,13 @@ from ember.reward.rollout import (
 )
 from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import select_discordant_trajectory_pairs
-from ember.writer.reward_gradient_update import apply_reward_step, lora_response
+from ember.writer.reward_gradient_update import (
+    adam_radius_euclidean_commitment,
+    apply_reward_step,
+    lora_response,
+)
 from ember.writer.reward_preference import (
+    cross_video_gradient_geometry,
     functional_matched_stratified_occupancy_lora_gradient,
     functional_matched_stratified_occupancy_margin,
     mean_cross_video_task_gradient,
@@ -47,6 +52,37 @@ def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() ->
     assert torch.equal(
         mean_cross_video_task_gradient((duplicate,) * 4), duplicate
     )
+
+
+def test_cross_video_gradient_geometry_reports_shared_descent() -> None:
+    geometry = cross_video_gradient_geometry(
+        (
+            torch.tensor([1.0, 0.0]),
+            torch.tensor([1.0, 0.0]),
+            torch.tensor([0.0, 1.0]),
+            torch.tensor([0.0, 1.0]),
+        )
+    )
+    assert geometry["pairwise_cosine_mean"] == pytest.approx(1.0 / 3.0)
+    assert geometry["pairwise_cosine_minimum"] == 0.0
+    assert geometry["pairwise_cosine_maximum"] == 1.0
+    assert geometry["shared_mean_descent_coverage"] == 1.0
+    assert geometry["view_to_shared_mean_cosine_minimum"] == pytest.approx(
+        2.0**-0.5
+    )
+    assert geometry["shared_mean_energy_over_view_energy"] == pytest.approx(0.5)
+
+
+def test_adam_radius_commitment_preserves_radius_and_raw_direction() -> None:
+    gradient = torch.tensor([1.0, 0.1], dtype=torch.float32)
+    adam_delta = torch.tensor([-0.2, -0.2], dtype=torch.float32)
+    final, geometry = adam_radius_euclidean_commitment(gradient, adam_delta)
+    torch.testing.assert_close(
+        torch.linalg.vector_norm(final), torch.linalg.vector_norm(adam_delta)
+    )
+    assert geometry["final_to_negative_raw_gradient_cosine"] == pytest.approx(1.0)
+    assert geometry["radius_relative_error"] <= 1e-6
+    assert geometry["adam_candidate_to_final_cosine"] < 0.8
 
 
 def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
@@ -438,3 +474,8 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     )
     assert step.parameter_delta_rms["factor_commitment.heads.q_a.weight"] > 0
     assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0
+    assert step.gradient_coexistence["final_delta_descent_coverage"] == 1.0
+    assert step.commitment_geometry[
+        "final_to_negative_raw_gradient_cosine"
+    ] == pytest.approx(1.0)
+    assert step.commitment_geometry["radius_relative_error"] <= 1e-6

@@ -66,11 +66,15 @@ loser action存在足以淹没task9/15策略contrast的批形混杂，完整轨�
 identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
+[`MB-SOP`](docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md)
+已用同B8重查两臂并把完整occupancy压成每轨迹8个时间分层states，三anchor wall降至DF-PCSP的
+`1.54--2.12x`且跨video LoRA写出健康。但task15/18在同一panel上的真实AdamW step后margin反而增加；进一步
+测得四个view的raw等权均值对三anchor均是`4/4`共同下降方向。故MB-SOP终局，未full24/strict。
+
 当前active successor是
-[`MB-SOP`](docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md)：
-同B8重查两臂后，每条成功轨迹在8个等进度区间各选择action分歧最大的一项；只改变credit panel，不改已通过的
-video-language carrier或direct LoRA生成图。
-canonical实现与fresh schema已完成，全量CPU=`402 passed`；等待固定task9/15/18真实机制与吞吐门。
+[`AR-EC`](docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md)：完整保留MB-SOP
+输入、credit与LoRA生成，只保留AdamW候选delta的全局L2半径和moments，把最终delta放回负raw shared gradient
+方向。它直接检验当前最早的optimizer commitment接口，不改memory、rank或video aggregation。
 
 ## Information wall
 

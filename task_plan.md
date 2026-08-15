@@ -432,7 +432,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 下一单变量设计须把final success credit放到成功occupancy上的多个exact shared query states，不能继续把
   数百步后的胜负全部归因给第一prefix。
 
-## Active iteration: V6-LPCP Direct-Factor Successful-Occupancy Counterfactual Preference
+## Completed iterations: successful-occupancy credit through MB-SOP
 
 - [x] 写DF-SOCP authority：保留LPCP/DJNFR、rank16、K4、八direct heads与exact paired rollouts；
 - [x] 原位把first-prefix batch替换为winner全部replan observations上的loser-policy counterfactual action batch；
@@ -447,7 +447,21 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位实现MB-SOP action panel、fresh schemas与定向合同，预定task9/15/18 credit pairs=`8/16/8`；旧DF-SOCP
   executable family已移除；
 - [x] 完成全量CPU=`402 passed`、compileall与architecture guard 0 hard violation；
-- [ ] 从clean pushed commit完成固定task9/15/18 GPU机制与吞吐门；三项全过才full24/strict400。
+- [x] 从clean `ad65347`完成固定task9/15/18 GPU机制与吞吐门：outcomes/counts、匹配action panel、吞吐、跨video
+  BA均健康，但task15/18 post-margin上升且task9 held/train仅`.1096x`，按门终局，不full24/strict400；
+- [x] 补四view flat-gradient几何：三anchor raw等权均值对4/4 views均为下降，最小view-to-mean cosine仍
+  `.695/.629/.601`；将最早接口定位到AdamW实际delta而非视频梯度汇合。
+
+## Active iteration: V6-LPCP Direct-Factor Adam-Radius Euclidean Commitment
+
+- [x] 建立AR-EC authority：保持MB-SOP全部输入、credit、四view、direct heads与rank16，只改变parameter
+  commitment；
+- [x] 实现same-radius commitment：AdamW候选照常更新moments，最终delta严格为负raw shared gradient方向且全局
+  L2半径逐步相等；
+- [x] 增加已有四view flat gradients的Gram诊断和smoke-only四view同panel/noise post-margin，不增加训练forward；
+- [x] 完成fresh schemas、定向CPU、全量CPU=`404 passed`、compileall与architecture guard 0 hard violation；
+- [ ] 冻结clean pushed commit并完成task9/15/18三anchor；只有四view margin、held geometry与吞吐全部过门才
+  full24/strict400。
 
 ## Non-negotiable boundaries
 
@@ -464,10 +478,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP与DF-SOCP均已按门终局；它们都不得resume或参数小扫。
-DF-SOCP已按固定三anchor门终局，无GPU run或可resume checkpoint。当前active MB-SOP canonical实现与CPU门已完成；
-下一步固定三anchor GPU门。只能针对matched-batch preference panel与时间分层informative occupancy，不能用batch1、
-低位复现或参数小扫。
+Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP与MB-SOP均已按门终局；它们都不得resume
+或参数小扫。当前active AR-EC canonical实现与CPU门已完成；下一步固定三anchor GPU门。只能检验same-radius raw
+Euclidean commitment，不能改LR/radius、carrier、memory、rank、matched panel或video aggregation。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

@@ -37,6 +37,13 @@ validation8×4 K4的只读视频held gate；不读取held actions/reward。held�
 字段替换，跨video严格复用Procedure-set attention；定向CPU=`43 passed`、完整CPU在canonical assets环境=
 `398 passed`。当前没有active GPU run，下一动作仅是live task4 update与held gate，不是full24 launch。
 
+该机制门现已完整结束并通过。task4 selected-success update保持exact paired outcome candidate/reference=`2/1`，
+cycle=`136.063s=1.04074x CCT`，q/v/action native BA均非零。post-update train task4 four-view cosine/energy=
+`.592915/.679176`；validation8平均=`.449398/.571497`、6/8 tasks逐项过门，held/train BA L2=`.752521x`、
+held relative-L2=`9.040e-4`。reverse使probe/NPVC BA relative-L2=`1.84084/1.37485`，constant只余natural norm的
+`9.167e-4/1.267e-5`。task31/32仍接近orthogonal one-quarter energy，必须在strict逐task跟踪。authority因此只
+seal fresh full24 cycle1；尚无absolute、稳定性或视频因果closed-loop结论。
+
 直接前序**V6-LPCP Semantic Factor-Memory Commitment**（SFMC）的full24 cycle1与K4 strict paired
 correct400均来自clean frozen `8994180`。closed-loop=`144/400`、breadth7、per-task=
 `1/3/47/36/0/38/18/1`、per-suite=`4/83/38/19`、top3=`121/144=.84028`。

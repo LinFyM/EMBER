@@ -103,8 +103,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_native_probe_value_reward_config_freezes_only_commitment() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_mechanism_gate_pending"
-    assert config["formal_run"]["status"] == "mechanism_gate_pending"
+    assert config["status"] == "active_formal_cycle1_ready"
+    assert config["formal_run"]["status"] == "sealed"
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
@@ -126,7 +126,15 @@ def test_native_probe_value_reward_config_freezes_only_commitment() -> None:
     assert gate["held_tasks_passing_minimum"] == 6
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.1
     assert gate["constant_probe_value_natural_ratio_maximum"] == 0.001
-    assert config["formal_run"]["mechanism_evidence"] is None
+    evidence = config["formal_run"]["mechanism_evidence"]
+    assert evidence["mechanism_gate_pass"] is True
+    assert evidence["held_validation8_four_view_effective_ba"][
+        "passing_tasks"
+    ] == 6
+    assert evidence["held_validation8_four_view_effective_ba"][
+        "held_to_train_l2_ratio"
+    ] >= 0.1
+    assert evidence["constant_to_natural_norm_ratio"]["probe_value"] <= 0.001
     assert base["writer"]["policy_slot_count"] == 320
 
 

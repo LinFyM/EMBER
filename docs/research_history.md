@@ -20,7 +20,8 @@ Ordered-Procedure AS达到139，raw reward与ADSP均为138；ADSP虽修正6条tr
 `116/22/23`且churn45。其后V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT继续把接口推进到factor
 commitment；最新证据表明train-seen共同方向可形成，但held nonzero residual经native BF16 factor/compiler时
 退回LPCP邻域。当前active NPVC只把factor Value换成已有ordered native probe deltas，并把held mechanism gate
-前置；其canonical实现与CPU合同已完成，但尚无GPU机制或性能结果。精确状态取`docs/active_session_handoff.md`。
+前置；其canonical实现与CPU合同已完成，task4→validation8机制门也已通过，但尚无full24或closed-loop结果。
+精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
 

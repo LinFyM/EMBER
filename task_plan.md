@@ -365,8 +365,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   Procedure-set attention聚合已有320-slot ordered probe deltas；
 - [x] 原位实现fresh-incompatible NPVC：复用Procedure-set attention聚合native probe Value，移除tiny
   LPCP-AS139 Value差分；定向CPU`43 passed`、canonical assets下完整CPU`398 passed`；
-- [ ] 真实task4 selected-success smoke后，用同一state完成validation8×4 K4只读视频held gate、reverse/constant与
-  longest-video吞吐；任一held门失败即终局，不烧full24；
+- [x] 完成task4 selected-success与validation8×4 K4只读视频held gate：train=`.5929/.6792`，held8=
+  `.4494/.5715`、6/8过门，held/train BA L2=`.7525x`；reverse/constant/wall均通过，task31/32登记风险；
 - [ ] 机制门通过才fresh full24 cycle1与strict400；只有absolute/breadth/retention/held geometry过门才cycle2；
 - [ ] 稳定约145资格必须由相邻checkpoint低churn/high-overlap、same-task-other鲁棒及correct相对wrong/
   shuffled/reversed/no-video的明确paired优势共同认证。
@@ -387,6 +387,6 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open与CCT均已按门终局；它们都不得resume或参数小扫。当前active successor NPVC已完成CPU实现，但没有
-active GPU run或可resume checkpoint；下一步只做train task4 update与validation8只读视频held机制门。约145只有在相邻checkpoint低换手、
+active GPU run或可resume checkpoint；机制门已通过，下一步是fresh full24 cycle1与strict400。约145只有在相邻checkpoint低换手、
 same-task-other鲁棒且correct相对wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local
 RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

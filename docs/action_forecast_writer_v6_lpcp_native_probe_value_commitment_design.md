@@ -177,6 +177,12 @@ Procedure-set返回的同一attention对`per_video_query_conditioners`做slotwis
 zero、natural非零、K-set permutation、attention逐项等式、step0 exact LPCP与cold-start拒载合同均已覆盖；
 定向CPU=`43 passed`，完整CPU在canonical LIBERO assets环境=`398 passed`。尚无GPU机制或性能结果。
 
+机制结果（2026-08-15）：clean pushed`9113c5b`在gpu01物理4完成task4真实selected-success update，paired
+candidate/reference=`2/1`，cycle=`136.063s=1.04074x CCT`，q/v/action写出均非零。train four-view
+cosine/energy=`.592915/.679176`；validation8平均=`.449398/.571497`、6/8 tasks过门，held/train BA L2=
+`.752521x`、held relative-L2=`9.040e-4`。reverse与constant均过门。task31/32分别只有
+`.012627/.256023`与`.076816/.309089`，因此只授权matched full24 cycle1，不预告closed-loop或稳定性。
+
 ## 9. 训练、strict与稳定资格
 
 机制门通过后，从sealed LPCP macro25 fresh进行与CCT完全matched的full24 cycle1：每task两组paired states，

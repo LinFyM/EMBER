@@ -133,7 +133,9 @@ FactorHeads、CCT language-policy axes与matched selected-success合同，唯一
 Procedure-set attention做K轴聚合。trainable仍为67,072，不加memory token、rank变化、scale、normalization或
 额外loss。canonical实现与fresh-incompatible config/checkpoint/eval schema已完成；定向CPU合同`43 passed`、
 完整CPU在`.env.local`的LIBERO assets环境下`398 passed`。formal前必须先过train→held只读视频门；held若再现
-约`0/.25`或BA `1/250`断裂，立即终局。当前没有active GPU run或可resume NPVC checkpoint。
+约`0/.25`或BA `1/250`断裂，立即终局。该门现已通过：train task4 cosine/energy=`.5929/.6792`，validation8
+平均=`.4494/.5715`、6/8 tasks过门，held/train BA L2=`.7525x`；reverse、constant与wall也过门。只授权fresh
+full24 cycle1，不预告closed-loop；task31/32仍为风险。当前没有active GPU run或可resume NPVC checkpoint。
 
 ## 4. Long-term objective and decision rule
 

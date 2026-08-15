@@ -27,7 +27,11 @@
   transport与matched reward recipe，只把factor Value换成已有320 slots的ordered native Action-probe delta，
   并复用同一Procedure-set attention聚合K videos；canonical实现、fresh-incompatible config/checkpoint/eval
   schema和聚合合同已完成，定向CPU=`43 passed`、完整CPU在canonical LIBERO assets环境=`398 passed`；formal前
-  新增validation8×4 K4只读视频held gate。当前没有active GPU run或可resume checkpoint；
+  validation8×4 K4只读视频held gate已通过：train task4 cosine/energy=`.592915/.679176`，held8平均=
+  `.449398/.571497`、6/8 tasks过门，held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`；reverse的
+  probe/BA relative-L2=`1.84084/1.37485`，constant norm ratio=`9.167e-4/1.267e-5`，cycle wall=
+  `136.063s=1.04074x CCT`。task31/32仍约`.0126/.2560`与`.0768/.3091`，是formal风险。该门只授权fresh
+  full24 cycle1；当前没有active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

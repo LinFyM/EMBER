@@ -499,6 +499,10 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     不再使用LPCP-AS139的tiny Procedure差值；LPCP、rank16、FactorHeads、language-policy axes、reward recipe和
     67,072 trainable参数保持不变。定向CPU`43 passed`、canonical LIBERO assets环境完整CPU`398 passed`；这只
     证明实现合同，不预告held机制、closed-loop、稳定性或视频因果结果。
+64. NPVC首次在formal前关闭CCT的train→held断裂：task4 four-view cosine/energy=`.592915/.679176`，validation8
+    平均=`.449398/.571497`且6/8 tasks过门；held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`，不再是
+    CCT约`1/250`。reverse的probe/BA relative-L2=`1.84084/1.37485`，constant norm仅`9.167e-4/1.267e-5`，
+    wall=`1.04074x CCT`。task31/32仍近`0/.25`，所以该证据只授权fresh full24 cycle1，不能替代strict结果。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

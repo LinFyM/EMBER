@@ -179,6 +179,21 @@ action制造内部增益。cycle=`132.458s`，为SFMC `139.420s`的`.950062x`，
 `40.762GB`。因此第8节机制与效率门通过，可以启动fresh full24 cycle1；这些证据不提供absolute、retention、
 checkpoint稳定性或视频因果性能结论。
 
+### 8.2 Fresh full24 cycle1 evidence
+
+clean detached `eb543d3`在gpu01物理`2/4/5/6/7`以world5 fresh完成：24 tasks/48 paired states/96
+rollouts，candidate/reference successes=`33/31`、candidate/reference-only=`6/4`、10 active tasks覆盖四suite，
+40 credit views、160 unique correct videos、387 replay chunks、1,918 executed action steps。8/8 family maps
+更新，semantic query delta=`6.9499e-5`，仍为SFMC约3.96万倍。
+
+5个post-update deployment probes的effective-BA全部非零；q/v为`5/5`，action为`3/5`。BA RMS mean=
+`1.4991e-7`。这证明gradient-open route与v写出在full24仍成立，但action写出尚不均匀，不能由机制指标推断
+closed-loop。cycle=`581.924s`；rank任务数=`3/5/2/5/9`是cost queue结果，其recorded wall=
+`485.314/560.082/462.083/482.851/538.237s`，max/min=`1.2121x`。相对SFMC world3 wall=`.6321x`，约
+95%理想扩展效率；峰值reserved=`40.764GB`，禁读/OOM/nonfinite/watchdog为0，world5 checkpoint与completion
+完整。由于step0相同但world size/GPU reduction会造成正常低位轨迹分叉，`33/31`与SFMC `34/34`不是严格性能
+比较；下一步必须做同checkpoint strict400。
+
 ## 9. Closed-loop and stability adjudication
 
 full24 cycle1完成后立即做同一K4 single-checkpoint strict paired correct400。cycle1只有同时满足以下条件才允许

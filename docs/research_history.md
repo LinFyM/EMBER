@@ -138,6 +138,12 @@ effective-BA response=`6.6169e-7/9.1517e-7/4.8908e-8`，总BA为SFMC的`19.7x`�
 `.0027033`。cycle=`132.458s`=`.9501x` SFMC。它关闭两个机制快速否决条件并获fresh full24 cycle1授权，
 但在strict400前没有absolute、稳定性或视频因果结论。
 
+fresh full24 cycle1随后由clean detached `eb543d3`在gpu01 world5完成：24 tasks/48 pairs/96 rollouts，10个
+active tasks覆盖四suite；semantic query delta=`6.9499e-5`，5/5 probes的q/v、3/5的action native BA非零。
+cycle=`581.924s`，完整world5 checkpoint/completion、禁读与数值门均通过。rank task count虽为
+`3/5/2/5/9`，recorded wall max/min仅`1.2121x`，再次说明动态队列按cost而非数量平衡。训练内candidate/
+reference=`33/31`不能跨world严格比较或预告held结果，后续结论只取同checkpoint strict400。
+
 ## 4. Final rank14 adjudication
 
 immutable old full-rank macro0为`134/400`，per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为

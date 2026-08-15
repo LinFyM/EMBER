@@ -42,7 +42,10 @@ net`+1`；lost门失败，故没有续cycle2或六臂。稳定FP64证明它相�
 完整保留LPCP有序视频carrier、K4 cross-video selected-success credit、V6 rank16 factor topology和强143底座，
 只把SFMC的zero-init staged commitment改成step0严格identity、但family delta maps与semantic query首步同时有
 梯度的V6-W1 anchored参数化。task4真实smoke已证明semantic query更新较SFMC提高约6.8万倍，q/v/action三组
-native effective-BA均非零，wall为SFMC的`.9501x`；机制与效率门已过，下一步是fresh full24 cycle1和strict400。
+native effective-BA均非零，wall为SFMC的`.9501x`。fresh world5 full24 cycle1随后完整exit0：24 tasks中10个
+获得discordant success credit并覆盖四suite，semantic
+query delta仍较SFMC高约3.96万倍，5/5 probes的q/v与3/5的action native BA非零；下一裁决是同checkpoint
+K4 strict400，这些训练内证据不预告分数。
 实时run identity和下一裁决只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 

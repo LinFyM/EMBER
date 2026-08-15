@@ -301,7 +301,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位替换唯一canonical commitment与fresh-incompatible schema/config，删除SFMC active runtime语义；
 - [x] 完成step0 identity、首步maps/query梯度、q/v/action native写出、顺序/set/freeze与checkpoint机制门；
 - [x] task4真实smoke通过：query delta较SFMC提高约6.8万倍，q/v/action BA均非零，wall=`.9501x`；
-- [ ] fresh full24 cycle1同时给出真实吞吐profile；不另跑重复的full24 profile；
+- [x] fresh world5 full24 cycle1完整exit0：24 tasks、10 active、四suite、cycle=`581.924s`，
+  5 rank recorded wall max/min=`1.2121x`，完整checkpoint/completion；
 - [ ] 完成cycle1 K4 strict paired correct400；过retention门才允许cycle2稳定性与六臂因果评测；
 - [ ] 按约145稳定资格报告相邻checkpoint churn/Jaccard、same-task-other与correct对negative/no-video差异。
 
@@ -339,5 +340,5 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD与SFMC均已按门
-终局；它们都不得resume或参数小扫。当前active successor的实现与task4机制门已完成，下一步是fresh full24
-cycle1；生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。
+终局；它们都不得resume或参数小扫。当前active successor的机制门与fresh full24 cycle1已完成，下一步是
+cycle1 K4 strict paired400；生成LoRA后的task-local RL仍是初始Writer达到强zero-interaction起点之后的独立实验。

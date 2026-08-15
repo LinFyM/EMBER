@@ -104,7 +104,9 @@ carrier未读视频、GPU负载或训练图未工作。
 zero-init staged commitment改成step0严格等于LPCP、但family delta maps与semantic query首步同时有梯度的
 V6-W1 anchored参数化；LPCP carrier、K4 four-view credit、rank16、optimizer与信息墙不变。task4真实smoke已
 通过：semantic query delta=`1.1979e-4`，q/v/action native effective-BA response均非零，cycle wall为SFMC
-`.9501x`；full24 cycle1已获机制门授权但尚未启动。
+`.9501x`。fresh world5 full24 cycle1已由clean detached `eb543d3`完整exit0：24 tasks/48 pairs/96 rollouts，10 active tasks
+覆盖四suite，semantic query delta=`6.9499e-5`，5/5 probes的q/v与3/5的action native BA非零，cycle=
+`581.924s`，完整world5 checkpoint/completion已保留；下一步是同checkpoint K4 strict400，训练内证据不能预告分数。
 SFMC没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
 + 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
 token、rank8、few-shot或生成LoRA本身。

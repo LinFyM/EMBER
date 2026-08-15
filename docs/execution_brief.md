@@ -34,8 +34,16 @@ identity，同时让family delta maps和semantic query在第一次selected-succe
 four-view credit、rank16、optimizer与信息墙不变。clean pushed `5b14c89` task4真实smoke中8/8 maps更新，
 semantic query delta=`1.1979e-4`（SFMC为`1.7564e-9`），q/v/action effective-BA response=
 `6.6169e-7/9.1517e-7/4.8908e-8`，总BA=`6.9391e-7`（SFMC的`19.7x`），fixed-action=`.0027033`；
-cycle=`132.458s`=`.9501x` SFMC。机制/效率门已过，fresh full24 cycle1可启动；这些仍不是性能证据。
+cycle=`132.458s`=`.9501x` SFMC。该机制/效率证据只授权full24，并不提供性能结论。
 SFMC因cycle1未过稳定门而没有启动same/wrong/shuffled/reversed/no-video，因此不能宣称视频鲁棒性或特异性。
+
+fresh full24 cycle1已由clean detached `eb543d3`在gpu01 world5完整exit0：24 tasks/48 pairs/96 rollouts，
+candidate/reference=`33/31`、gains=`6/4`、10 active tasks覆盖四suite、40 credit views/160 unique videos。
+semantic query delta=`6.9499e-5`，为SFMC约3.96万倍；5/5 probes的q/v、3/5的action native BA非零，说明
+router与v-family写出在full24仍打开，但action写出尚不均匀。cycle=`581.924s`；rank任务数虽为`3/5/2/5/9`，
+recorded wall只有`462.083--560.082s`、max/min=`1.2121x`，动态队列按成本而非数量平衡。world5相对SFMC
+world3 wall=`.6321x`，约95%理想扩展效率；完整checkpoint/completion已保留。训练outcome跨world不作严格架构
+比较，下一裁决只认同checkpoint K4 strict paired400。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；

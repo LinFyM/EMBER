@@ -425,6 +425,12 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `6.6169e-7/9.1517e-7/4.8908e-8`，总BA为SFMC的`19.7x`，fixed-action仍为`.0027033`。cycle=
     `132.458s`=`.9501x` SFMC，peak reserved相同。故router与public factor写出两个最早机制缺口均被打开，
     且无吞吐代价；这只授权fresh full24 cycle1，不能预告closed-loop、稳定性或视频因果结果。
+50. clean detached `eb543d3` world5 full24 cycle1完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=
+    `33/31`、gains=`6/4`，10 active tasks覆盖四suite，40 credit views/160 unique videos。semantic query delta=
+    `6.9499e-5`，仍为SFMC约3.96万倍；5/5 probes的q/v与3/5的action native BA非零，说明router与v写出没有在
+    full24重新关闭，但action写出仍不均匀。cycle=`581.924s`，rank任务=`3/5/2/5/9`而recorded wall max/min=
+    `1.2121x`，动态队列按cost而非task count平衡；相对SFMC world3约95%理想扩展效率。完整world5 checkpoint/
+    completion、0禁读/OOM/nonfinite/watchdog均通过。跨world训练outcome不作严格性能比较，必须由strict400裁决。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

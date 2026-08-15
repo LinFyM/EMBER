@@ -102,7 +102,9 @@ carrier未读视频、GPU负载或训练图未工作。
 当前active successor是**V6-LPCP Gradient-Open Semantic Commitment**，authority=
 `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC checkpoint，只把
 zero-init staged commitment改成step0严格等于LPCP、但family delta maps与semantic query首步同时有梯度的
-V6-W1 anchored参数化；LPCP carrier、K4 four-view credit、rank16、optimizer与信息墙不变。当前尚未启动GPU。
+V6-W1 anchored参数化；LPCP carrier、K4 four-view credit、rank16、optimizer与信息墙不变。task4真实smoke已
+通过：semantic query delta=`1.1979e-4`，q/v/action native effective-BA response均非零，cycle wall为SFMC
+`.9501x`；full24 cycle1已获机制门授权但尚未启动。
 SFMC没有六臂结果，因此不得宣称same-task-video鲁棒或视频特异性。该负结果只淘汰本轮`LPCP innovation memory
 + 4-way language route + zero-init family-hidden residual + one CV selected-success cycle`组合，不否定memory
 token、rank8、few-shot或生成LoRA本身。

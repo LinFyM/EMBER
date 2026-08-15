@@ -31,8 +31,11 @@ crossing**，且learned semantic router尚未形成，而不是memory未算、re
 `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它不续SFMC cycle1，只从sealed
 LPCP macro25 fresh初始化，在同一factor commitment中加入冻结V6-W1 policy-aligned anchors，使step0仍严格
 identity，同时让family delta maps和semantic query在第一次selected-success update中都有梯度。carrier、K4
-four-view credit、rank16、optimizer与信息墙不变；当前尚未启动GPU。SFMC因cycle1未过稳定门而没有启动
-same/wrong/shuffled/reversed/no-video，因此不能宣称视频鲁棒性或特异性。
+four-view credit、rank16、optimizer与信息墙不变。clean pushed `5b14c89` task4真实smoke中8/8 maps更新，
+semantic query delta=`1.1979e-4`（SFMC为`1.7564e-9`），q/v/action effective-BA response=
+`6.6169e-7/9.1517e-7/4.8908e-8`，总BA=`6.9391e-7`（SFMC的`19.7x`），fixed-action=`.0027033`；
+cycle=`132.458s`=`.9501x` SFMC。机制/效率门已过，fresh full24 cycle1可启动；这些仍不是性能证据。
+SFMC因cycle1未过稳定门而没有启动same/wrong/shuffled/reversed/no-video，因此不能宣称视频鲁棒性或特异性。
 
 训练root=
 `runs/outputs/pi05_v6_lpcp_semantic_factor_memory_commitment_formal_cycle0to1_r3_k4_views4_nmc4_b8_8994180_gpu01_20260815`；

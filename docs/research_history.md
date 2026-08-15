@@ -131,6 +131,13 @@ family-hidden memory residual在单cycle内足以跨过native factor量化边界
 否定V6、literal memory token、few-shot、rank8或其它架构级policy-aligned生成方式；下一轮不得继续加view、
 constraint/LR/scale/rank小修，也不得原样恢复历史低分memory路线。
 
+active Gradient-Open successor随后只改变上述最早接口：用balanced冻结V6-W1 anchors让zero-init family maps与
+semantic query首步同时获得credit。实现与分族response统计由`5b14c89`封存，full CPU=`396 passed`；task4 B8
+真实smoke中semantic query delta=`1.1979e-4`（SFMC=`1.7564e-9`），8/8 maps更新，q/v/action native
+effective-BA response=`6.6169e-7/9.1517e-7/4.8908e-8`，总BA为SFMC的`19.7x`，fixed-action仍为
+`.0027033`。cycle=`132.458s`=`.9501x` SFMC。它关闭两个机制快速否决条件并获fresh full24 cycle1授权，
+但在strict400前没有absolute、稳定性或视频因果结论。
+
 ## 4. Final rank14 adjudication
 
 immutable old full-rank macro0为`134/400`，per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为

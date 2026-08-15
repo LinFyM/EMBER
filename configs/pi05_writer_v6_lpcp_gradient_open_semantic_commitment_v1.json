@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_gradient_open_semantic_commitment_v1",
-  "status": "development",
+  "status": "sealed",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -89,7 +89,7 @@
     "cycle": 1
   },
   "formal_run": {
-    "status": "not_ready",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -113,7 +113,38 @@
       "no_repeated_backbone_forward": true,
       "matched_sfmc_wall_ratio_maximum": 1.25
     },
-    "live_task4_smoke_evidence": null,
+    "live_task4_smoke_evidence": {
+      "run_root": "runs/outputs/pi05_v6_lpcp_gradient_open_semantic_commitment_task4_native_family_smoke_b8_5b14c89_gpu02p1_20260815",
+      "source_commit": "5b14c892f7a3addfed0ce17faa4f1d00c2d73e56",
+      "host": "gpu02",
+      "physical_gpu_id": 1,
+      "tasks": 1,
+      "paired_states": 2,
+      "rollouts": 4,
+      "active_tasks": 1,
+      "credit_conditions": 4,
+      "unique_credit_videos": 16,
+      "functional_policy_forwards": 64,
+      "functional_policy_backwards": 64,
+      "trainable_parameters": 2164224,
+      "factor_family_maps_updated": 8,
+      "semantic_query_delta_rms": 0.00011978574912063777,
+      "sfmc_semantic_query_delta_rms": 1.7564392162938702e-09,
+      "cycle_seconds": 132.4579981220886,
+      "matched_sfmc_wall_ratio": 0.9500617702983845,
+      "max_cuda_allocated_bytes": 36500078592,
+      "max_cuda_reserved_bytes": 40762343424,
+      "effective_ba_response_rms": 6.939059276639368e-07,
+      "effective_ba_response_rms_by_kind": {
+        "q": 6.616899244071004e-07,
+        "v": 9.151695405970219e-07,
+        "action": 4.890830732456197e-08
+      },
+      "fixed_action_response_rms": 0.002703265519812703,
+      "forbidden_reads": 0,
+      "oom_or_nonfinite": 0,
+      "full_cpu_tests": "396 passed"
+    },
     "full24_cycle1_evidence": null
   }
 }

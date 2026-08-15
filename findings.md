@@ -416,6 +416,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     新的强policy方向。最早失败接口精确到**continuous hidden residual -> frozen W2 -> native public factor**：
     family maps有reward credit，但router未学成且大多数residual低于BF16局部ULP，只留下稀疏q-family crossing。
     这只否定当前SFMC组合，不否定literal memory token、rank8、few-shot或生成LoRA本身。
+48. Gradient-Open successor已原位替换唯一commitment，不增加backbone forward，不改变LPCP carrier、K4
+    four-view reward credit、rank16、optimizer、dtype或信息墙。step0逐tensor exact LPCP；zero-init semantic query
+    配合balanced `+/-FrozenV6-W1` anchors，使family delta maps与semantic query在首个backward同时有梯度；旧SFMC
+    full state不能伪装成fresh LPCP cold start。full CPU=`396 passed`。
+49. clean pushed `5b14c89` task4 B8真实smoke中semantic query delta=`1.1979e-4`，较SFMC `1.7564e-9`
+    提高约6.8万倍；8/8 maps更新，q/v/action native effective-BA response=
+    `6.6169e-7/9.1517e-7/4.8908e-8`，总BA为SFMC的`19.7x`，fixed-action仍为`.0027033`。cycle=
+    `132.458s`=`.9501x` SFMC，peak reserved相同。故router与public factor写出两个最早机制缺口均被打开，
+    且无吞吐代价；这只授权fresh full24 cycle1，不能预告closed-loop、稳定性或视频因果结果。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

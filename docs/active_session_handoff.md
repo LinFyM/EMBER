@@ -103,8 +103,11 @@
   `docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。它从sealed LPCP macro25 fresh
   初始化commitment与optimizer，只把SFMC的zero-init staged函数改成step0严格identity、但family delta maps与
   semantic query首步同时有梯度的V6-W1 anchored参数化；其余carrier、K4 four-view credit、rank16与训练合同
-  全部冻结。当前尚未启动GPU；SFMC的same/wrong/shuffled/reversed/no-video仍未获门控授权，不能宣称鲁棒性或
-  视频特异性；
+  全部冻结。实现与分族response统计已push到`5b14c89`，full CPU=`396 passed`；gpu02物理1 task4真实smoke
+  完整exit0，8/8 maps更新，semantic query delta=`1.1979e-4`（SFMC为`1.7564e-9`），q/v/action native
+  effective-BA=`6.6169e-7/9.1517e-7/4.8908e-8`，总BA=`6.9391e-7`、fixed-action=`.0027033`，
+  cycle=`132.458s`=`.9501x` SFMC，机制/效率门已过；fresh full24 cycle1尚未启动。SFMC的same/wrong/
+  shuffled/reversed/no-video仍未获门控授权，不能宣称鲁棒性或视频特异性；
 - 首次ADSP formal commit=`b38a644`、world6物理`1/2/4/5/6/7`在任何metric/checkpoint前工程失败：旧raw replay
   builder对all-success homogeneous panel只返回summary，而ADSP首次需要其完整support batch。根因已在最早data
   boundary修复为“仅all-failure summary-only，all-success完整collate”；mixed与task4 smoke语义不变，新增集成

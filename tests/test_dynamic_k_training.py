@@ -103,9 +103,15 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_gradient_open_reward_config_freezes_only_commitment() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "development"
-    assert config["formal_run"]["status"] == "not_ready"
-    assert config["formal_run"]["live_task4_smoke_evidence"] is None
+    assert config["status"] == "sealed"
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["live_task4_smoke_evidence"]
+    assert evidence["factor_family_maps_updated"] == 8
+    assert evidence["semantic_query_delta_rms"] > 1e-4
+    assert all(
+        evidence["effective_ba_response_rms_by_kind"][kind] > 0
+        for kind in ("q", "v", "action")
+    )
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (

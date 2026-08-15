@@ -164,6 +164,21 @@ wall的`1.25x`以内。
 跨video correction cosine与mean/sample energy必须报告，并与SFMC的约`0/.25`比较；它们只判断新接口是否真的
 打开，不选择checkpoint。若query仍近零或action family仍只有孤立ULP crossing，则本设计在formal前即失败。
 
+### 8.1 Sealed implementation and live mechanism evidence
+
+唯一canonical commitment已原位替换，fresh-incompatible config/checkpoint/deployment schema与实现由
+`5b14c89`封存；正确LIBERO assets下full CPU=`396 passed`。gpu02物理1的task4 B8真实smoke完整exit0：
+4 rollouts、1个active task、4个互斥K4 credit views、16 unique videos、64次functional forward/backward，
+8/8 family maps更新。semantic query parameter-delta RMS=`1.1978575e-4`，而matched SFMC只有
+`1.7564392e-9`，所以首步router不再关闭。
+
+同一次post-update decode给出native effective-BA response：q=`6.616899e-7`、v=`9.151695e-7`、
+action=`4.890831e-8`，三组全部跨过public BF16 factor边界；总BA=`6.939059e-7`，为SFMC
+`3.521205e-8`的`19.7x`。fixed-action response=`.00270327`，与SFMC `.00281061`同量级，没有以破坏
+action制造内部增益。cycle=`132.458s`，为SFMC `139.420s`的`.950062x`，peak reserved相同为
+`40.762GB`。因此第8节机制与效率门通过，可以启动fresh full24 cycle1；这些证据不提供absolute、retention、
+checkpoint稳定性或视频因果性能结论。
+
 ## 9. Closed-loop and stability adjudication
 
 full24 cycle1完成后立即做同一K4 single-checkpoint strict paired correct400。cycle1只有同时满足以下条件才允许

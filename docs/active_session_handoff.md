@@ -49,8 +49,10 @@
   `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，
   完整保留DJNFR输入、时序、K-set、rank16与八个direct factor heads；唯一把selected-success整轨迹正蒸馏改为
   paired AS139/LPCP两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。四个disjoint correct K4
-  views仍只在shared Writer gradient处等权；不加memory、rank、scale、rollout或第二adapter。canonical实现、
-  fresh schema、定向CPU=`44 passed`、完整CPU=`398 passed`与architecture guard已通过；尚无GPU机制结果、
+  views仍只在shared Writer gradient处等权；不加memory、rank、scale、rollout或第二adapter。首次clean `de6c812`
+  task4 smoke在credit前发现相同seed的顺序reset不能保证两臂首观测逐元素相同，按工程合同exit1且没有科学结果；
+  canonical rollout现改为每lane只抓取一次post-settling MuJoCo state并供两臂exact恢复，不增加rollout或forward。
+  修正后针对性CPU=`26 passed`、完整CPU=`399 passed`、compileall与architecture hard gate通过；尚无GPU机制结果、
   active GPU run或可resume checkpoint；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4

@@ -1,8 +1,8 @@
 # V6-LPCP Direct-Factor Paired Common-State Preference
 
 状态：2026-08-16 active mechanism-ready authority。简称 `DF-PCSP`。本轮从sealed LPCP fresh启动，完整保留
-DJNFR的视频carrier与direct native-factor生成图，只替换reward credit；canonical实现与CPU门已通过，但尚未
-授权full24、strict或cycle2。
+DJNFR的视频carrier与direct native-factor生成图，只替换reward credit；canonical实现、严格初态恢复修正与CPU门
+已通过，但尚未授权full24、strict或cycle2。
 
 ## 1. 决策与最早失效接口
 
@@ -40,8 +40,9 @@ cycle1 checkpoint不续训；从sealed LPCP重新fresh，使step0和optimizer st
 
 ## 3. Paired common-state objective
 
-对task的两个paired states分别以完全相同的env seed、reset、dummy settling与policy-noise seed运行reference和
-candidate。若最终binary success相同，该pair credit严格为0。若只有一臂成功，记成功臂为`+`、失败臂为`-`。
+对task的两个paired states分别只执行一次seeded reset与10步dummy settling，并立即抓取post-settling MuJoCo
+simulator state；reference和candidate随后都恢复这份exact state，并使用完全相同的policy-noise seed。若最终
+binary success相同，该pair credit严格为0。若只有一臂成功，记成功臂为`+`、失败臂为`-`。
 
 两臂只有第一次policy query的观测尚未受各自动作影响，因此只取：
 
@@ -116,8 +117,11 @@ cotangents；尽管shared mean对每个train row都是局部下降方向，held 
 
 实现已原位完成：paired rollout只保留winner/loser共同初态首段，flow panel按pair共享且physical microbatch不拆
 pair；smoke-only probe会在真实Adam step后复算同一panel margin。config/checkpoint/evaluator均fresh-incompatible。
-定向CPU=`44 passed`、完整CPU=`398 passed`、compileall通过；architecture guard无hard violation，reward cycle
-owner由790行缩至698行且没有新增active并行模块。以上只关闭工程门，不替代GPU机制或closed-loop证据。
+首次clean `de6c812` task4 smoke在进入credit前发现，仅重复相同seed/reset并不能保证LIBERO渲染观测逐元素一致，
+因此作为工程合同失败终止，没有产生科学结果。修正只在每个lane捕获一次post-settling simulator state并供两臂
+恢复；不改变Writer、objective、rollout数或backbone forward。针对性CPU=`26 passed`、完整CPU=`399 passed`、
+compileall通过；architecture guard无hard violation且没有新增active并行模块。以上只关闭工程门，不替代GPU机制
+或closed-loop证据。
 
 ## 8. formal前机制门
 

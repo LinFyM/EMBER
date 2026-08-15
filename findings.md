@@ -576,7 +576,9 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     occupancy混杂；memory、rank与direct生成图均保持不变。
 81. DF-PCSP canonical实现没有新增Writer或rollout分支：discordant pair按`winner, loser`相邻排列，共享初始
     observation、共同执行长度与同一flow time/noise；四view与task等权保持。smoke-only probe在真实step后复算
-    同一margin。fresh config/checkpoint/evaluator拒载DJNFR state；定向CPU=`44 passed`、完整CPU=`398 passed`，
+    同一margin。fresh config/checkpoint/evaluator拒载DJNFR state。首次clean task4 smoke证明相同seed的顺序reset
+    不足以保证LIBERO首观测逐元素相同，因而在credit前按工程合同失败；修正为每lane只抓一次post-settling MuJoCo
+    state并供两臂exact恢复，不增加rollout/forward。修正后针对性CPU=`26 passed`、完整CPU=`399 passed`、
     architecture guard无hard violation。它尚未给出GPU或closed-loop证据。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。

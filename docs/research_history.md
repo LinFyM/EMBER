@@ -5,7 +5,7 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-15，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新NPVC为136、breadth6且相对LPCP143
+2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新NPVC为136、breadth6且相对LPCP143
 为`120/16/23`、churn39。它虽形成held跨视频coherent、时序敏感、native-scale写入，但写入幅度/一致性与
 closed-loop增益错位，full24还使train task4共同方向坍塌。v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
@@ -25,7 +25,9 @@ PAFS fixed address与SJNV shared joint gate均在formal前held机制门终局；
 跨视频cosine，却在冻结W2后变成raw factor`.02135/.26592`。DJNFR以八个direct heads绕过W2，post-full24
 validation8 BA仍为`.790242/.785834`且8/8过门，但strict仅136，相对LPCP为`120/16/23`；persistent failures
 获得最大改写。最早断点由生成端后移到selected-success-only credit的held reward方向。当前DF-PCSP只把credit
-改成同一初态共同观测处的winner-vs-loser首段preference，DJNFR carrier/direct LoRA图完全不变。
+改成同一初态共同观测处的winner-vs-loser首段preference，DJNFR carrier/direct LoRA图完全不变。首次clean smoke
+确认同seed顺序reset并不保证两臂首观测逐元素相同，已在credit前工程终止；canonical路径现只抓一次post-settling
+MuJoCo state供两臂exact恢复，不增加rollout或forward，真实GPU机制门仍待重跑。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

@@ -17,6 +17,7 @@ from ember.pi05_source_checkpoint import barrier
 from ember.reward.protocol import RewardTask, reward_credit_environment_seed
 from ember.reward.rollout import (
     RewardTrajectory,
+    capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
     complete_paired_common_state_batch,
 )
@@ -134,7 +135,10 @@ def _encode_pair(
 
 
 def _collect_arm(
-    runtime: RewardRuntime, task: RewardTask, visit: int
+    runtime: RewardRuntime,
+    task: RewardTask,
+    visit: int,
+    initial_states: Sequence[Any],
 ) -> tuple[RewardTrajectory, ...]:
     rollout_cursors = tuple(visit * 2 + lane for lane in range(2))
     env_seeds = tuple(
@@ -167,6 +171,7 @@ def _collect_arm(
         dummy_action=environment["dummy_action"],
         action_execution_horizon=int(environment["action_execution_horizon"]),
         num_inference_steps=int(environment["num_inference_steps"]),
+        initial_states=initial_states,
     )
 
 
@@ -177,18 +182,36 @@ def _collect_paired_arms(
     reference_lora: Mapping[str, torch.Tensor],
     candidate_lora: Mapping[str, torch.Tensor],
 ) -> tuple[tuple[RewardTrajectory, ...], tuple[RewardTrajectory, ...], float, float]:
+    rollout_cursors = tuple(visit * 2 + lane for lane in range(2))
+    env_seeds = tuple(
+        reward_credit_environment_seed(
+            int(runtime.config["rng"]["environment_seed_root"]),
+            task.suite,
+            task.task_id,
+            int(runtime.config["rng"]["optimizer_seed"]),
+            cursor,
+        )
+        for cursor in rollout_cursors
+    )
+    environment = runtime.config["environment"]
+    initial_states = capture_paired_initial_states(
+        tuple(runtime.env_pool.get(task, lane=lane) for lane in range(2)),
+        env_seeds,
+        dummy_action=environment["dummy_action"],
+        dummy_settling_steps=int(environment["dummy_settling_steps"]),
+    )
     reference_started = time.monotonic()
     try:
         copy_task_lora_state_(
             runtime.policy, reference_lora, runtime.lora_contract
         )
-        reference = _collect_arm(runtime, task, visit)
+        reference = _collect_arm(runtime, task, visit, initial_states)
         reference_seconds = time.monotonic() - reference_started
         candidate_started = time.monotonic()
         copy_task_lora_state_(
             runtime.policy, candidate_lora, runtime.lora_contract
         )
-        candidate = _collect_arm(runtime, task, visit)
+        candidate = _collect_arm(runtime, task, visit, initial_states)
         candidate_seconds = time.monotonic() - candidate_started
     finally:
         copy_task_lora_state_(

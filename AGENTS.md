@@ -163,9 +163,11 @@ full24/strict。stage localization显示gate/continuous hidden cosine均约`.94`
 当前active successor是**V6-LPCP Direct-Factor Paired Common-State Preference**（DF-PCSP），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。它从sealed LPCP fresh，完整
 保留DJNFR carrier、K4、rank16和八个direct factor heads，唯一把成功整轨迹正蒸馏改为candidate/reference discordant
-pair在分叉前同一初始观测处的winner-vs-loser首段flow preference；四个disjoint correct K4 views等权。canonical
-实现、fresh schema、定向CPU=`44 passed`、完整CPU=`398 passed`与architecture guard已通过；尚未完成GPU机制门，
-无active GPU run或可resume checkpoint。memory token与rank8仍开放，但不与本轮reward变量同时改变。
+pair在分叉前同一初始观测处的winner-vs-loser首段flow preference；四个disjoint correct K4 views等权。首次clean
+`de6c812` task4 smoke在credit前证明相同seed顺序reset不能保证首观测逐元素一致，按工程合同exit1且无科学结果；
+canonical rollout现每lane只抓一次post-settling MuJoCo state供两臂exact恢复，不增加rollout/forward。修正后针对性
+CPU=`26 passed`、完整CPU=`399 passed`与architecture guard通过；尚未完成GPU机制门，无active GPU run或可resume
+checkpoint。memory token与rank8仍开放，但不与本轮reward变量同时改变。
 
 ## 4. Long-term objective and decision rule
 

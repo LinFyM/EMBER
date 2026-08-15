@@ -228,6 +228,38 @@ def _random_reset_with_settling(
     return observation
 
 
+def capture_paired_initial_states(
+    envs: Sequence[Any],
+    env_seeds: Sequence[int],
+    *,
+    dummy_action: Sequence[float],
+    dummy_settling_steps: int,
+) -> tuple[np.ndarray, ...]:
+    """Capture the two post-settling simulator states once for both policy arms."""
+
+    if len(envs) != 2 or len(env_seeds) != 2 or dummy_settling_steps != 10:
+        raise RewardProtocolError("paired initial-state panel changed")
+    dummy = np.asarray(dummy_action, dtype=np.float32)
+    states = []
+    for env, env_seed in zip(envs, env_seeds, strict=True):
+        _random_reset_with_settling(
+            env, env_seed=int(env_seed), dummy=dummy, steps=dummy_settling_steps
+        )
+        states.append(np.asarray(env.get_sim_state()).copy())
+    return tuple(states)
+
+
+def _restore_initial_state(
+    env: Any, *, env_seed: int, initial_state: np.ndarray
+) -> Mapping[str, Any]:
+    env.seed(env_seed)
+    env.reset()
+    observation = env.set_init_state(initial_state)
+    if not isinstance(observation, Mapping):
+        raise RewardProtocolError("LIBERO state restore returned no observation")
+    return observation
+
+
 def _initialize_lanes(
     *,
     envs: Sequence[Any],
@@ -243,6 +275,7 @@ def _initialize_lanes(
     action_execution_horizon: int,
     num_inference_steps: int,
     dummy_action: Sequence[float],
+    initial_states: Sequence[np.ndarray] | None,
 ) -> list[_RewardLaneState]:
     dummies = [
         _validate_rollout_contract(
@@ -261,18 +294,34 @@ def _initialize_lanes(
         )
         for cursor, env_seed in zip(rollout_cursors, env_seeds, strict=True)
     ]
+    if initial_states is not None and len(initial_states) != len(envs):
+        raise RewardProtocolError("paired initial-state count changed")
+    states: Sequence[np.ndarray | None] = (
+        (None,) * len(envs) if initial_states is None else initial_states
+    )
     return [
         _RewardLaneState(
             env=env,
             rollout_cursor=int(cursor),
             env_seed=int(env_seed),
-            observation=_random_reset_with_settling(
-                env, env_seed=int(env_seed), dummy=dummy, steps=dummy_settling_steps
+            observation=(
+                _random_reset_with_settling(
+                    env,
+                    env_seed=int(env_seed),
+                    dummy=dummy,
+                    steps=dummy_settling_steps,
+                )
+                if initial_state is None
+                else _restore_initial_state(
+                    env,
+                    env_seed=int(env_seed),
+                    initial_state=initial_state,
+                )
             ),
             noise_seeds=[],
         )
-        for env, cursor, env_seed, dummy in zip(
-            envs, rollout_cursors, env_seeds, dummies, strict=True
+        for env, cursor, env_seed, dummy, initial_state in zip(
+            envs, rollout_cursors, env_seeds, dummies, states, strict=True
         )
     ]
 
@@ -412,6 +461,7 @@ def _collect_reward_trajectories(
     dummy_action: Sequence[float],
     action_execution_horizon: int,
     num_inference_steps: int,
+    initial_states: Sequence[np.ndarray] | None = None,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
 ) -> tuple[RewardTrajectory, ...]:
     """Collect one arm and retain all successful and failed prefixes."""
@@ -431,6 +481,7 @@ def _collect_reward_trajectories(
         action_execution_horizon=action_execution_horizon,
         num_inference_steps=num_inference_steps,
         dummy_action=dummy_action,
+        initial_states=initial_states,
     )
     policy.reset()
     while True:
@@ -505,6 +556,7 @@ def collect_paired_reward_arm_trajectories(
     dummy_action: Sequence[float],
     action_execution_horizon: int,
     num_inference_steps: int,
+    initial_states: Sequence[np.ndarray] | None = None,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
 ) -> tuple[RewardTrajectory, ...]:
     """Run one exact K2 arm; a second call with the same keys forms its pair."""
@@ -528,6 +580,7 @@ def collect_paired_reward_arm_trajectories(
         dummy_action=dummy_action,
         action_execution_horizon=action_execution_horizon,
         num_inference_steps=num_inference_steps,
+        initial_states=initial_states,
         policy_seed_fn=policy_seed_fn,
     )
 

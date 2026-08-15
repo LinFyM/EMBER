@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -25,6 +26,7 @@ from ember.reward.protocol import (
 from ember.reward.rollout import (
     RandomResetEnvironmentPool,
     RewardTrajectory,
+    capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
     complete_paired_common_state_batch,
 )
@@ -366,3 +368,73 @@ def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -
             rtol=0,
             atol=0,
         )
+
+
+def test_paired_arms_restore_one_captured_post_settling_state() -> None:
+    class StatefulEnvironment(_FakeEnvironment):
+        def __init__(self, *, marker: int) -> None:
+            super().__init__(success_after_policy_steps=None, marker=marker)
+            self.reset_generation = 0
+
+        def reset(self) -> dict[str, np.ndarray]:
+            self.events.append(("reset", None))
+            self.policy_steps = 0
+            self.reset_generation += 1
+            self.marker += self.reset_generation
+            return _observation(self.marker)
+
+        def get_sim_state(self) -> np.ndarray:
+            return np.array([self.marker, self.policy_steps], dtype=np.float64)
+
+        def set_init_state(self, state: np.ndarray) -> dict[str, np.ndarray]:
+            self.events.append(("restore", None))
+            self.marker = int(state[0])
+            self.policy_steps = int(state[1])
+            return _observation(self.marker)
+
+    envs = tuple(StatefulEnvironment(marker=lane * 20) for lane in range(2))
+    env_seeds = (29, 31)
+    dummy_action = [0, 0, 0, 0, 0, 0, -1]
+    initial_states = capture_paired_initial_states(
+        envs,
+        env_seeds,
+        dummy_action=dummy_action,
+        dummy_settling_steps=10,
+    )
+
+    def collect():
+        return collect_paired_reward_arm_trajectories(
+            envs=envs,
+            policy=_FakePolicy(),
+            preprocess=_preprocess,
+            postprocess=lambda value: value,
+            suite="libero_goal",
+            task_id=2,
+            global_task_id=22,
+            language="do the task",
+            adaptation_seed=23,
+            rollout_cursors=(0, 1),
+            env_seeds=env_seeds,
+            policy_seed_root=43,
+            device=torch.device("cpu"),
+            max_horizon=5,
+            dummy_settling_steps=10,
+            dummy_action=dummy_action,
+            action_execution_horizon=5,
+            num_inference_steps=10,
+            initial_states=initial_states,
+        )
+
+    reference = collect()
+    candidate = collect()
+    for left, right, env in zip(reference, candidate, envs, strict=True):
+        assert all(
+            torch.equal(left.observations[0][key], right.observations[0][key])
+            for key in left.observations[0]
+        )
+        assert sum(name == "dummy" for name, _ in env.events) == 10
+        assert sum(name == "restore" for name, _ in env.events) == 2
+    complete_paired_common_state_batch(
+        ((replace(reference[0], success=True), candidate[0]),),
+        torch.device("cpu"),
+    )

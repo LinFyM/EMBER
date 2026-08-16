@@ -149,7 +149,7 @@ def _writer_lora_contract(
         authority_path as expert_authority_path,
         load_v6_prior_config,
     )
-    from ember.pi05_lora import load_pi05_lora_contract
+    from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 
     config_path = Path(adapter["config"]["path"])
     if adapter["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
@@ -163,6 +163,12 @@ def _writer_lora_contract(
     else:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
     result = load_pi05_lora_contract(path)
+    if adapter["kind"] == DYNAMIC_K_WRITER_KIND:
+        observed_rank = int(
+            adapter.get("lora_contract", {}).get("rank", result.rank)
+        )
+        if observed_rank != result.rank:
+            result = derive_pi05_lora_rank(result, rank=observed_rank)
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
         f"{result.state_tensor_count}tensors:{result.parameter_count}parameters"

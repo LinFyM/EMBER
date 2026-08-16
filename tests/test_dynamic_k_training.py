@@ -778,6 +778,41 @@ def test_evaluator_resolves_the_v6_layerwise_rank16_lora_authority() -> None:
     )
 
 
+def test_evaluator_derives_the_reward_rank32_lora_authority() -> None:
+    import importlib
+
+    from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
+
+    importlib.import_module("ember.pi05_eval_contract")
+    writer_lora_contract = importlib.import_module(
+        "ember.pi05_eval.run_contract"
+    )._writer_lora_contract
+
+    config = (
+        REPO_ROOT
+        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
+    )
+    lora = writer_lora_contract(
+        SimpleNamespace(repo_root=REPO_ROOT),
+        {
+            "kind": DYNAMIC_K_WRITER_KIND,
+            "config": {"path": str(config)},
+            "lora_contract": {
+                "reference": (
+                    "configs/pi05_lora_v1.json:" "76tensors:2574336parameters"
+                ),
+                "rank": 32,
+            },
+        },
+    )
+    assert (lora.rank, lora.alpha, lora.parameter_count, lora.state_tensor_count) == (
+        32,
+        32,
+        2_574_336,
+        76,
+    )
+
+
 def test_v6_layerwise_probe_generation_profile_is_sealed() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,

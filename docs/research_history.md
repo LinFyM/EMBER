@@ -56,9 +56,10 @@ commitment。MMCD clean `fc3bdd7`保留全部science graph，唯一从已有四v
 direction。task9/15/18 continuous worst margin提高`1.216/1.334/1.356x`，但native分别为j0大步且held/train
 `.160558x`、j0--10仍no-op、j6且全门通过；只有1/3 anchors通过，未full24/strict。它证明更好的continuous
 first-order direction不稳定等价于native BF16 finite-step或held policy-effective commitment。
-当前PAV-BC保留同一science graph，唯一把final ray换成实际AdamW candidate delta并做同路径all-view backtracking；
-这是MB-SOP full Adam与AV-MBC raw-ray backtracking之间尚未检验的交叉项。若固定task9/15/18任一失败，parameter-space
-trust-ray路线即终止，下一步转LoRA输出/BA参数化。
+PAV-BC clean `581140c`保留同一science graph，唯一把final ray换成实际AdamW candidate delta并做同路径all-view
+backtracking。task9在j5接受但held/train仅`.109466x`，几乎复现MB-SOP的`.109639x`；task15与task18到j10均无
+共同candidate并exact no-op，0/3 anchors通过。至此raw equal-mean、raw maximum-margin和Adam-preconditioned三类
+parameter rays均不能形成跨task稳定native commitment；下一步转LoRA输出/effective-BA参数化。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

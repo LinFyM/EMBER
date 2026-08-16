@@ -84,12 +84,12 @@ j0--10全拒绝并exact no-op、j6且全门通过；只有1/3 anchors通过。fo
 resume或solver/rank/LR/scale sweep。当前没有active GPU run；下一设计必须直接针对native finite-step metric与held
 amplitude，不能继续只优化continuous gradient geometry。
 
-当前active successor是**PAV-BC**：完整保留LPCP/MB-SOP/AdamW与同路径all-view acceptance，唯一把final ray从
+最新终局successor是**PAV-BC**：完整保留LPCP/MB-SOP/AdamW与同路径all-view acceptance，唯一把final ray从
 raw/MMCD direction换成实际Adam candidate delta并固定减半。MB-SOP只测过该ray的full step，AV-MBC只回退raw ray；
-该组合未被检验且不增加forward/参数。固定task9/15/18必须全部过门；任一失败即终止parameter-space ray系列并
-转向LoRA输出/BA参数化。authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。canonical实现、
-fresh schema与CPU合同已完成：完整CPU=`404 passed`、architecture guard 0 hard；尚未运行GPU。
+clean `581140c`结果为task9 j5但held/train`.109466x`，task15/18到j10仍无共同candidate并exact no-op；0/3过门。
+PAV-BC终局，不full24/strict/resume。raw equal mean、raw maximum margin与Adam preconditioned rays均已否决；下一变量
+必须转LoRA输出/effective-BA参数化。authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

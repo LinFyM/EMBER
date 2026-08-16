@@ -659,6 +659,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     变成j6，仍全门通过；task15到j10的view3仍是同一个`+6.376e-6` plateau并恢复exact no-op。只有1/3 anchors
     通过，故不full24/strict。最早接口不再是如何改善raw first-order共同方向，而是该方向经过native BF16
     FactorHeads/compiler后的有限步metric与held policy-effective幅度；继续换parameter-space gradient solver不针对它。
+100. PAV-BC把实际AdamW candidate ray与同路径all-view backtracking组合：task9在j5接受，但held/train
+     `.109466x`几乎精确复现MB-SOP full Adam的`.109639x`；task15和task18到j10均无共同candidate并exact no-op，
+     0/3过门。task18尤其表明preconditioning会把raw/MMCD可解task变为空集。raw equal-mean、raw maximum-margin、
+     Adam-preconditioned三类parameter rays因此全部终止；下一最早变量必须是LoRA输出/effective-BA参数化中的
+     native-safe线性Value路径，而不是ray mixture、scale或另一个parameter-space solver。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

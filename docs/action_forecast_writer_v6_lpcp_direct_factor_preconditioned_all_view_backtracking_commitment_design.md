@@ -1,7 +1,7 @@
 # V6-LPCP Direct-Factor Preconditioned All-View Backtracking Commitment
 
-状态：2026-08-16 active single-variable design authority，简称`PAV-BC`；canonical实现、fresh schema与CPU合同已完成，
-尚未运行GPU。本轮从sealed LPCP
+状态：2026-08-16 terminal non-pass single-variable authority，简称`PAV-BC`；clean `581140c`三anchor、完整机制分析
+与terminal adjudication均已完成，未进入full24/strict。本轮从sealed LPCP
 fresh启动，完整保留MB-SOP matched successful-occupancy credit、AdamW optimizer、AV-MBC同路径native acceptance、
 八个direct FactorHeads与rank16部署图，唯一把final commitment ray换成实际AdamW candidate delta。
 
@@ -109,3 +109,44 @@ commitment direction与第二个165万维distributed vector；AdamW candidate生
 science graph不变。定向合同确认j0等于optimizer candidate、accepted delta只按`2^-j`缩放；完整CPU=`404 passed`，
 compileall/diff check通过，architecture guard=`0 hard violations`，active source相对MMCD净减少156行。formal仍
 blocked；当前只允许从clean pushed commit分别运行task9/15/18三个world1锚点。
+
+## 9. 三anchor终局结果
+
+clean pushed `581140c`在gpu02物理`1/2/3`完整复现固定outcomes=`2/1,2/0,1/2`、complete=`26/65/44`、
+selected=`8/16/8`与0禁读。实际Adam candidate到负raw gradient cosine分别为`.733415/.798882/.697401`，native
+结果为：
+
+```text
+task9 : j=5接受，final L2=.00378558；四margin delta=
+        [-2.228e-4,-2.858e-6,-5.328e-5,-9.625e-6]；
+        train BA cosine/energy/L2=.580922/.667924/7.984e-5；
+        held8=.425213/.549139/8.740e-6、6/8，但held/train=.109466x，失败。
+
+task15: j=0..10全拒绝；j10=
+        [+3.49e-10,-2.21e-9,-2.572e-6,+6.380e-6]；
+        view3与raw/MMCD两轮相同plateau，最终BA/action exact zero，失败。
+
+task18: j=0..10全拒绝；j10=
+        [-3.26e-9,-2.794e-6,-9.31e-10,+1.578e-6]；
+        最终BA/action exact zero；而raw/MMCD rays此前均能通过该task，失败。
+```
+
+cycle wall=`247.970/651.760/367.789s`，相对AV-MBC=`.6953/.9875/1.3922x`；task18还因11次搜索失败吞吐门。
+三项机制门为`0/3`，formal未解锁；不full24/strict/resume，不混合raw/MMCD/Adam rays或扫参数。canonical artifact=
+`runs/outputs/pi05_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_task9_mechanism_b8_581140c_gpu02p1_20260816/pavbc_terminal_adjudication.json`。
+
+## 10. 最早失败接口与路线裁决
+
+task9的held/train `.109466x`几乎精确复现MB-SOP full Adam的`.109639x`，说明沿同一Adam ray缩放只改变native ULP
+crossing与局部coherence，没有修复跨task幅度传递。task15仍卡同一个BF16 view3 plateau；task18则显示Adam
+preconditioning会把raw/MMCD可解task变成空集。因此：
+
+**raw equal-mean、raw maximum-margin与Adam-preconditioned三类parameter-space rays都不能形成跨固定tasks稳定的
+native commitment rule。**
+
+最早接口是`shared parameter gradient ray -> native BF16 factor/compiler finite step -> held policy-effective
+amplitude`。后继必须改变LoRA输出/effective-BA参数化，使task value通过显式native-safe线性路径写出；不得继续
+设计gradient ray、ray mixture或trust scale。
+
+本轮只否定`MB-SOP credit + actual Adam candidate ray + AV-MBC backtracking + one fresh cycle`，不否定LPCP、
+memory token、rank8、few-shot、生成LoRA、one-sided anchored/reserved lanes、其它显式BA参数化或未来task-local RL。

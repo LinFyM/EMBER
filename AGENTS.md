@@ -225,13 +225,13 @@ task9/15/18的continuous worst margin均提高`1.216/1.334/1.356x`，但native�
 native finite-step/held commitment，MMCD终局，不full24/strict/resume或小扫。当前没有active GPU run或可resume
 checkpoint；下一变量必须针对native metric/finite-step接口，不能退回改已通过的carrier或继续换raw-gradient solver。
 
-当前active successor是**V6-LPCP Direct-Factor Preconditioned All-View Backtracking Commitment**（PAV-BC），authority=
+最新终局successor是**V6-LPCP Direct-Factor Preconditioned All-View Backtracking Commitment**（PAV-BC），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。它保留MMCD前的
 全部science graph与同路径acceptance，删除raw-gradient solver，唯一沿实际AdamW candidate delta依次检验
-`1,1/2,...,1/1024`。MB-SOP只测过Adam full step、AV-MBC只backtrack raw ray，因此该组合未被检验；它直接测试
-per-coordinate preconditioning能否跨native factor resolution、backtracking能否限制曲率。首轮仍只允许固定
-task9/15/18；任一失败就终止整条parameter-space trust-ray路线，转向LoRA输出/BA参数化，不做ray混合或小扫。
-canonical实现与fresh schema已完成，完整CPU=`404 passed`、architecture guard 0 hard，尚未运行GPU。
+`1,1/2,...,1/1024`。clean `581140c`结果为task9 j5但held/train仅`.109466x`，task15/18到j10均无共同candidate
+并exact no-op；0/3 anchors通过。raw equal-mean、raw maximum-margin与Adam-preconditioned三类parameter rays至此
+均被固定anchors否决，PAV-BC终局，不full24/strict/resume或ray混合。当前没有active GPU run或可resume checkpoint；
+下一变量必须转到LoRA输出/effective-BA参数化的native-safe线性Value路径，不能继续改gradient ray或trust scale。
 
 ## 4. Long-term objective and decision rule
 

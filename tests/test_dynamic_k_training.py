@@ -99,10 +99,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "world3_functional_pass_held_pending"
-    assert config["formal_run"]["status"] == (
-        "blocked_until_held_video_only_gate_passes"
-    )
+    assert config["status"] == "held_pass_full24_ready"
+    assert config["formal_run"]["status"] == "ready"
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
@@ -189,6 +187,10 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 318.749
+    held = config["formal_run"]["held_gate_evidence"]
+    assert held["passing_tasks"] == 8
+    assert held["held_to_train_effective_ba_l2_ratio"] > 0.9
+    assert held["reverse_and_constant_pass"]
     assert base["writer"]["policy_slot_count"] == 320
 
 

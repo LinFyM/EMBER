@@ -1,7 +1,7 @@
 # V6-LPCP Capacity-Matched Backbone-Memory Grid
 
-状态：2026-08-16 carrier-exact修正版已完成fixed world3并通过功能共存门，等待validation8/reverse/constant
-held视频机制门。简称**CMBG**。CAPG已经
+状态：2026-08-16 carrier-exact修正版已通过fixed world3与validation8/reverse/constant held视频门，已解锁
+fresh full24 cycle1。简称**CMBG**。CAPG已经
 终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。历史8-memory Dynamic-K只选择性
 复用了其已验证的layer-matched memory语义，没有整条恢复。
 
@@ -242,12 +242,14 @@ effective-BA和fixed-action response三task均非零，0禁读/OOM/nonfinite。�
 - payload gate以外的memory/temporal/set/M2P在gate-open follow-up backward中非零；
 - 0禁读、OOM、nonfinite，cycle wall<=`318.749s`。
 
-以上功能项已全部通过。下一步只做validation8 held same-task four-view、held/train amplitude、reverse/constant门；
-仍沿CAPG阈值要求至少6/8 tasks通过和held/train effective-BA L2>=`.30`。全部通过才允许fresh full24 cycle1。
+以上功能项已全部通过。validation8 held same-task four-view也已完成：8/8 tasks过门，effective-BA cosine/energy=
+`.983541/.985926`，raw-factor/action cosine=`.982788/.986590`，held/train effective-BA L2=`.960650x`。三个train
+anchors的reverse相对L2=`1.99829/1.94271/1.97400`，constant/natural norm ratio=`.002687/.003419/.004703`，
+信息墙和吞吐均通过。精确artifact=`cmbg_held_video_gate.json`；因此fresh full24 cycle1已获授权。
 
 ## 12. full24与真实性能裁决
 
-若preformal全过，full24仍只训练一个shared checkpoint。cycle1后立即strict paired correct400；继续cycle2的门
+preformal已全过。full24仍只训练一个shared checkpoint。cycle1后立即strict paired correct400；继续cycle2的门
 保持correct>=142、breadth>=7、相对LPCP lost<=15且gains>=losses。任何约145 checkpoint立即补same-task-other、
 wrong、shuffled、reversed和no-video controls，并评相邻checkpoint稳定性。最终资格仍要求约145+的相邻single
 checkpoints、低churn/high Jaccard、高breadth和correct对各negative的明确paired优势；单点高分不够。

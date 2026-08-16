@@ -37,7 +37,8 @@ EMBER上下文纠正理解。
 
 长期目标尚未完成。CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、native最多
 10/12并exact no-op。当前active CMBG carrier-exact clean`2aecece` fixed world3已通过：cross-task gradient cosine
-mean=`+.09842`、shared raw/final=`3/3`、native=`12/12`且最终LoRA非零；等待validation8/reverse/constant held门。SFMC144
+mean=`+.09842`、shared raw/final=`3/3`、native=`12/12`且最终LoRA非零；validation8 held又以8/8、BA cosine/energy=
+`.983541/.985926`、held/train=`.960650x`通过，已解锁fresh full24 cycle1。SFMC144
 仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
@@ -308,8 +309,9 @@ native best到11/12，却令task15固定`2/0,65,16`漂成`1/2,47,8`，故不能�
 加one-way layer observer；真实task15 130帧的text/frame/grounded/interactions和18层Action states相对LPCP全部
 max-abs0，task9完整梯度链与A40门通过。随后clean`2aecece` fixed world3完整通过：task9/15/18=
 `1/0,2/0,1/2`，selected pairs=`8/16/8`，cross-task cosine mean=`+.09842`，raw/final=`3/3`、native=`12/12`，
-accepted delta L2=`.168481`且q/v/action均非零。occupancy chunk数与跨运行逐元素差异只作诊断。下一步是held门；
-通过后直接fresh full24 cycle1与strict paired400。rank8、完整A/B和Dynamic-K仍是独立开放变量。
+accepted delta L2=`.168481`且q/v/action均非零。occupancy chunk数与跨运行逐元素差异只作诊断。validation8 held
+8/8通过，BA cosine/energy=`.983541/.985926`、held/train=`.960650x`；下一步直接fresh full24 cycle1与strict
+paired400。rank8、完整A/B和Dynamic-K仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

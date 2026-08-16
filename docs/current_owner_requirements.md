@@ -428,6 +428,10 @@ cosine mean=`+.09842`且最终LoRA非零。owner再次明确：跨设备、batch
 低位差异以及由此产生的少量occupancy chunk变化不是科学门，不得用固定batch1、重复forward、扩dtype或逐tensor
 校验追逐；后续以held视频机制和真实closed-loop性能裁决。
 
+CMBG held视频门已通过：validation8为8/8，effective-BA cosine/energy=`.983541/.985926`、raw/action cosine=
+`.982788/.986590`、held/train幅度=`.960650x`，reverse/constant三anchor全过。该结果只授权fresh full24与随后
+strict paired400，不预先声称closed-loop更强；正式选择仍只认single-checkpoint真实rollout。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

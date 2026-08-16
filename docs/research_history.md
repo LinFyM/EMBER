@@ -9,7 +9,8 @@
 same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
 当前active CMBG把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory；
 carrier-exact clean`2aecece` fixed world3已把cross-task cosine mean从`-.13938`提高到`+.09842`，shared raw/final
-coverage=`3/3`、native=`12/12`并写出非零LoRA，等待held视频门。
+coverage=`3/3`、native=`12/12`并写出非零LoRA；validation8 held门又以8/8、BA cosine/energy=
+`.983541/.985926`、held/train=`.960650x`通过，已解锁fresh full24。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

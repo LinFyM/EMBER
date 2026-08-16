@@ -10,7 +10,9 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 `.968/.748,.857/.864,.979/.977`；cross-task gradient cosine mean由CAPG的`-.13938`变为`+.09842`，shared
 raw/final coverage=`3/3`、native=`12/12`，j0 actual Adam被接受并写出非零q/v/action LoRA response。world3功能
 共存门因此通过。task15 occupancy chunks=`70`而历史65只作诊断；跨运行BF16/TF32、batch/kernel/reduction低位差异
-不再作为门。下一步是validation8/reverse/constant held视频门；通过后直接fresh full24 cycle1和strict paired400。
+不再作为门。validation8/reverse/constant held门随后全过：8/8 tasks，effective-BA cosine/energy=
+`.983541/.985926`，raw/action cosine=`.982788/.986590`，held/train L2=`.960650x`。下一步直接fresh full24 cycle1，
+完成后立即strict paired400。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=

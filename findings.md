@@ -767,6 +767,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 118. task15 complete occupancy chunks为70而历史fixed run为65，但成功关系、16个selected credit pairs、全部
      functional descent和closed-loop rollout合同均成立。该差异属于设备/batch/kernel低位轨迹诊断，不再作为门；
      不为跨运行逐元素一致固定batch1、重复forward、扩dtype或扫描全部tensor。
+119. CMBG post-world3 validation8 held视频门强通过而非擦线：8/8 tasks满足门，effective-BA four-view
+     cosine/energy=`.983541/.985926`，raw-factor/action cosine=`.982788/.986590`，held/train BA L2=`.960650x`。
+     最低单task BA cosine仍为`.967814`；三个train anchors reverse相对L2约`1.94--2.00`，constant/natural norm
+     ratio约`.00269--.00470`。因此memory grid在未读held action/reward时同时保持跨视频方向、幅度和有向时序，
+     最早未决接口已后移到full24 reward update后的真实closed-loop usefulness与多task长期共存。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

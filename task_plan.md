@@ -634,8 +634,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完整CPU与architecture gate通过，并在clean`2aecece` fixed world3完成task9/15/18：成功关系=
   `1/0,2/0,1/2`、selected=`8/16/8`，cross-task cosine mean=`+.09842`，raw/final=`3/3`、native=`12/12`，
   j0写出非零delta；历史chunk数只作诊断；
-- [ ] 完成validation8 four-view、reverse、constant、held/train幅度与throughput门；
-- [ ] 仅在held门通过后运行fresh full24 cycle1并立即strict paired400。
+- [x] 完成validation8 four-view、reverse、constant、held/train幅度与throughput门：8/8 tasks，BA cosine/energy=
+  `.983541/.985926`、raw/action=`.982788/.986590`、held/train=`.960650x`，全门通过；
+- [ ] 运行fresh full24 cycle1并立即strict paired400。
 
 ## Non-negotiable boundaries
 
@@ -657,7 +658,7 @@ Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、M
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
 最新CAPG world3已终局：它显著修复same-task跨video coherence并把native覆盖提高到10/12，但跨task raw仍只有
 2/3，最终exact no-op。CMBG clean`2aecece`已把该接口推进到cross-task正一致、raw/final3/3与native12/12；当前
-下一唯一动作是held视频泛化门，通过后立即full24/strict。不得回退CFM、继续
+held视频泛化门已8/8通过；下一唯一动作是fresh full24/strict。不得回退CFM、继续
 parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强

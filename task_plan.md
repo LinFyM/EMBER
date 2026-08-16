@@ -571,6 +571,23 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   task×4 endpoint margins全局共同下降才接受一个rank-synchronized candidate；
 - [x] 原位实现probe list、global preference-row collective、统一scale/参数delta及world3固定anchor mode；
 - [x] 完成定向`41 passed`、完整CPU`405 passed`、compileall、diff check与architecture guard 0 hard；
+- [x] 记录唯一world3 launch contract：clean pushed code commit=`9ed6a082af20cd1d3668713f592753da6c2825a7`，
+  detached frozen worktree=`/data1/user/ymdai/worktrees/EMBER-tcec-shared3-9ed6a08`，fresh root=
+  `runs/outputs/pi05_v6_lpcp_task_complete_endpoint_coexistence_shared3_task9_15_18_b8_9ed6a08_gpu02p123_20260816`；
+  2026-08-16 live双节点检查后选择gpu02物理`1/2/3`，UUID分别为
+  `GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4`、`GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb`、
+  `GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae`，三卡均0 MiB/0%且健康。gpu02另有两张空卡，但本门固定
+  task9/15/18一task一rank的world3；使用6卡会改变科学拓扑或产生dummy rank，不是资源不足。`/data1` quota实时为
+  542,436,820 KiB used / 1,073,741,824 KiB quota / 1,084,227,584 KiB limit，预计训练、日志与analysis峰值新增
+  `<1 GiB`。复用canonical source step1000、tokenizer、target HDF5与LIBERO assets；fresh-only，不resume、不覆盖。
+  exact command=`CUDA_VISIBLE_DEVICES=1,2,3 PYTHONPATH=<frozen>/src MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
+  NCCL_P2P_DISABLE=1 <canonical>/.venv/bin/torchrun --standalone --nproc-per-node=3 scripts/train_reward_writer.py
+  --config configs/pi05_writer_v6_lpcp_task_complete_endpoint_coexistence_v1.json --mode smoke --source-run
+  <canonical>/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  <source-run>/checkpoints/step_00001000 --tokenizer-path <canonical>/models/tokenizers/openpi/paligemma_tokenizer.model
+  --data-root <canonical>/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir <fresh-root>
+  --smoke-task-ids 9,15,18`；三卡共同产生唯一delta，首门严格按authority的outcome/count、12/12、3/3、held8、
+  temporal、rank-bank、wall与0禁读/OOM/nonfinite裁决；任一失败即终局，不补task、拆rank winner或参数小扫；
 - [ ] clean frozen world3共同运行task9/15/18，完整分析12/12、跨task gradient、held8、时序、wall与rank一致性；
 - [ ] 三anchor shared gate全过才full24 cycle1与strict paired400。
 

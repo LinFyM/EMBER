@@ -1,6 +1,6 @@
 # V6-LPCP Native Endpoint Action-Preference Credit
 
-状态：2026-08-16 active preformal mechanism implementation，canonical CPU合同已通过、task9 GPU首门待运行，
+状态：2026-08-16 terminal preformal non-pass，canonical task9已完成并按held/train幅度门终局，
 简称`NEAP-C`。本轮从sealed LPCP fresh启动，完整保留
 LPCP视频carrier、MB-SOP同状态matched action panel、四个disjoint correct K4 views、NZRB-C的一套rank32
 native-zero residual LoRA与PAV first-all-view native acceptance。唯一变量是：reward credit不再优化随机flow
@@ -162,5 +162,23 @@ native-zero bank与860,160个B-head参数不变；新增实现只负责一次fun
 steps、executed-prefix endpoint距离及同metric inference acceptance。CPU compileall通过，定向机制合同
 `50 passed`、完整回归`405 passed`，architecture guard为0 hard violation且active source净`-16`行。
 
-这些只证明实现与信息墙合同接通。当前尚无NEAP-C GPU run或checkpoint；下一裁决仍严格是task9 physical B8，
-不能用CPU结果预判显存、吞吐、finite candidate、held或temporal证据。
+这些在launch前只证明实现与信息墙合同接通，不能用CPU结果预判显存、吞吐、finite candidate、held或temporal
+证据；随后完成的task9真实裁决见下一节。
+
+## 12. Task9 result and terminal boundary
+
+clean pushed `33f69fd`在gpu02物理1完成task9：candidate/reference=`1/0`、complete/selected=`25/8`，physical
+B8完整10步endpoint的四view forward/backward全部finite；cycle=`97.107s`，max reserved=`19.367GB`。相对同
+outcome NZRB task9，gradient cosine/energy从`.286028/.448222`提高到`.846183/.865229`，并从11个candidate
+全部拒绝变为原始Adam candidate `j0`一次接受；q/v/action BA与fixed-action均非零。故endpoint metric确实关闭了
+CFM到真实部署action的主要错位，而且更快、更省显存。
+
+held/temporal稳定FP64分析中26/27门通过：validation8全部过`.15/.40`，BA cosine/energy=`.952537/.932938`，
+raw-B cosine=`.954789`，action cosine=`.485498`；reverse effective-BA relative-L2=`1.218588`，constant/natural=
+`.00015964`；rank-bank五项误差均精确0。唯一失败是held/train BA L2=`.234042<.30`，因此按第8节不得运行
+task15/18、full24或strict，也不放宽门、扫scale或补normalization。
+
+stage localization显示held/train probe与joint Value幅度仍为`.671059/.664719`，但direct factor rows骤降到
+`.222730`，BA随后为`.234042`。最早失败接口是**task9 joint condition -> one-task shared direct-B-head update
+的跨task幅度**；不是carrier、视频顺序、endpoint differentiation、native-zero bank或compiler。精确artifact为
+`neap_c_mechanism_gate.json`与`neap_c_terminal_adjudication.json`。

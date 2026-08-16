@@ -530,7 +530,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 按2/3与吞吐门失败终局，不实现distributed evaluator/full24，不改变reserved bank宽度、side、ray、scale或
   dtype。
 
-## Active iteration: V6-LPCP Native Endpoint Action-Preference Credit
+## Terminal iteration: V6-LPCP Native Endpoint Action-Preference Credit
 
 - [x] 从NZRB与完整ray历史定位单一变量：accepted residual的native/held写出已通，但CFM surrogate不能保证真实
   10步action endpoint存在跨video finite step；不再换ray solver、bank、rank或scale；
@@ -556,8 +556,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   <source-run>/checkpoints/step_00001000 --tokenizer-path <canonical>/models/tokenizers/openpi/paligemma_tokenizer.model
   --data-root <canonical>/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir <fresh-root>
   --smoke-task-id 9`；`<frozen>`、`<canonical>`、`<source-run>`和`<fresh-root>`分别严格展开为本条已记录路径；
-- [ ] 先跑task9机制/显存/吞吐/held/temporal快速否决；只有task9全过才跑task15/18；
-- [ ] 三anchor全过才实现distributed formal并启动full24 cycle1与strict paired400。
+- [x] clean `33f69fd`完成task9：outcome/count=`1/0,25/8`、physical B8、cycle=`97.107s`、reserved=
+  `19.367GB`；gradient cosine/energy=`.846/.865`，j0一次接受，q/v/action、reverse/constant、rank-bank全通；
+- [x] held8为8/8且BA/raw-B/action cosine=`.953/.955/.485`，但held/train BA L2=`.234<.30`；26/27门通过仍按
+  authority终局，不跑task15/18、full24/strict或小扫；stage localization为probe/joint=`.671/.665x`到direct
+  rows=`.223x`，最早缺口是one-task joint condition写入shared direct-B head的跨task幅度；
+- [ ] 从该终局证据建立下一份单变量authority；不得放宽NEAP门或把task15/18补跑冒充通过。
 
 ## Non-negotiable boundaries
 
@@ -576,9 +580,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV与NZRB-C均已终局；当前NEAP-C处于实现阶段，尚无GPU run
-或可resume checkpoint。NZRB证明native-zero bank能修复accepted update的held factor/BA coherence，但task9仍无
-finite all-view step；NEAP-C只检验CFM surrogate到真实10步action endpoint这一接口，不能同时改memory、video
-carrier、rank、LR、matched panel或trust scale。
+或可resume checkpoint。NEAP-C已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但因
+held/train幅度`.234<.30`在preformal终局；当前没有active successor或GPU run。下一变量必须针对task-local
+condition到shared direct-head的跨task幅度/共同commitment，不能回退CFM、放宽门或同时改memory、video carrier、
+rank、LR、matched panel与trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

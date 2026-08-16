@@ -227,7 +227,18 @@ transported coefficient和pre-W2 hidden只缩小`1.63x/1.70x`，pure-CCT effecti
 carrier、loader、reward或梯度。该结果只否定当前两系数CCT与一轮four-view selected-success，不否定V6/LPCP、
 literal memory token、rank8、few-shot、reward credit或生成LoRA。
 
-## 4. Final rank14 adjudication
+## 4. NEAP-C endpoint credit boundary
+
+NEAP-C只把NZRB的随机flow-time CFM credit换成同noise完整10步部署action endpoint preference。clean`33f69fd`
+task9复现`candidate1/reference0`与25/8 panel；gradient cosine/energy从NZRB`.286028/.448222`升到
+`.846183/.865229`，raw Adam candidate `j0`一次接受，cycle=`97.107s`、reserved=`19.367GB`，q/v/action和
+rank-bank均健康。validation8全部过同视频门，BA/raw-B/action cosine=`.952537/.954790/.485498`，reverse=
+`1.218588`、constant/natural=`.00015964`。唯一失败是held/train BA L2=`.234042<.30`。probe/joint幅度仍为
+`.671059/.664719x`，direct rows降到`.222730x`，故最早缺口是one-task condition到shared direct-B head的跨task
+幅度。按预注册26/27仍终局，不跑task15/18/full24/strict；这不否定endpoint preference、memory、rank8、few-shot
+或生成LoRA。
+
+## 5. Final rank14 adjudication
 
 immutable old full-rank macro0为`134/400`，per-task按Spatial1/3、Object1/3、Goal3/6、Long1/2为
 `0/5/48/34/0/35/11/1`。
@@ -250,7 +261,7 @@ Long1净`+11`掩盖Spatial/Object净`-3/-4`；aggregate提高不是稳定共同�
 `retroactively_changes_original_gate_b=false`、`authorizes_cycle1=false`。不能恢复Gate C、cycle1、
 controls或rank14训练，也不能把该结果外推成“视频/Reward/continuous tangent整体无效”。
 
-## 5. Task experts and few-shot
+## 6. Task experts and few-shot
 
 正式task-expert root：
 
@@ -267,7 +278,7 @@ credit retention、正确顺序的policy-effective方向和single-checkpoint漂�
 最强设定报告one-shot、few-shot或scaling claim，不因K4失败否定多视频，也不靠增加K、挑video或平均LoRA制造
 增益；优先修正被聚合的per-video高层证据与policy credit。
 
-## 6. Stable cross-experiment cognition
+## 7. Stable cross-experiment cognition
 
 1. **视频被使用不等于被正确使用。** hidden/LoRA/action对视频敏感仍可让wrong/shuffle/reverse更好。
 2. **正常顺序有因果含义。** shuffled/reversed真实破坏展示顺序，模型不能靠原时间戳恢复；correct必须沿有效
@@ -289,7 +300,7 @@ credit retention、正确顺序的policy-effective方向和single-checkpoint漂�
 11. **train success不是held support坐标。** 对单条train video完整LoRA做hard zero-motion仍可能在held video与
     initialization上lost13；support表示必须跨video/occupancy成立，blind nullspace写入本身不提供改善方向。
 
-## 7. Do-not-repeat registry
+## 8. Do-not-repeat registry
 
 - 不续任何已封存non-pass checkpoint，不扫仅为挽救单点的scale、seed、rank、dtype、dither或ULP参数。
 - 不恢复language-only LoRA bypass、multi-video/LoRA/checkpoint平均、validation-task expert routing或held oracle。
@@ -301,7 +312,7 @@ credit retention、正确顺序的policy-effective方向和single-checkpoint漂�
 - 不按held task得失选择mixed topology。pivot15+1或mixed `{16+0,14+2}`只可作为未来未授权问题；其中
   rank1 tangent capture历史仅约`.9185`，不能因多保留一列就直接授权Reward cycle1。
 
-## 8. Historical detail retrieval
+## 9. Historical detail retrieval
 
 精确旧设计可通过下式读取，而不需要在active tree保留几十个互相矛盾的文件：
 

@@ -133,20 +133,19 @@
   candidate并exact no-op。三anchor wall/ALB=`1.16565x>1.15x`，故2/3与吞吐两门失败，不full24/strict/resume或
   bank/rank/scale小扫。初版约`1e-3`结构报警是跨autocast重算carrier的analysis错误，三条
   `nzrb_stable_rank_bank_contract.json`已纠正；
-- 当前active successor是**NEAP-C**，authority=
+- 最新终局successor是**NEAP-C**，authority=
   `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`。它保留LPCP、NZRB rank32 zero-bank、
   MB-SOP同B8 panel、四correct K4 views与PAV acceptance，唯一把随机flow-time CFM preference改为完整10步
   PI05部署action endpoint preference。generated action只运行一次并同时比较winner/loser executed-prefix距离；
   gradient与native backtracking用同一个endpoint metric。canonical已原位实现，定向CPU=`50 passed`、完整CPU=
-  `405 passed`、compileall与architecture guard 0 hard，active source净`-16`行且没有平行runner。先以task9
-  physical B8验证显存、wall、4/4 continuous
-  descent、finite candidate及held/temporal链；task9全过才运行task15/18，三anchor全过才解锁formal/full24。
-  task9已预注册为clean pushed `33f69fd`、detached
-  `/data1/user/ymdai/worktrees/EMBER-neap-c-task9-33f69fd`、gpu02物理1单进程，fresh output=
+  `405 passed`、compileall与architecture guard 0 hard，active source净`-16`行且没有平行runner。clean pushed
+  `33f69fd`、gpu02物理1完成task9，root=
   `runs/outputs/pi05_v6_lpcp_native_endpoint_action_preference_task9_mechanism_b8_33f69fd_gpu02p1_20260816`。
-  scale为两paired states/四rollouts、预期`candidate1/reference0`、25 complete chunks、8 selected pairs、四K4
-  views；physical endpoint B8、wall上限633.810s，任一机制/held/temporal门失败即终局，不跑task15/18。当前尚未
-  launch且无可resume checkpoint；
+  outcome/count=`1/0,25/8`，physical B8，cycle=`97.107s`、reserved=`19.367GB`；gradient cosine/energy=
+  `.846/.865`且j0一次接受。held8为8/8，BA/raw-B/action cosine=`.953/.955/.485`，reverse/constant与rank-bank
+  全通；但held/train BA L2=`.234<.30`，26/27门仍按authority终局，不跑task15/18、full24/strict或小扫。
+  probe/joint幅度为`.671/.665x`，direct rows骤降`.223x`，最早缺口是one-task condition到shared direct-head的
+  跨task幅度。当前没有active successor、GPU run或可resume checkpoint；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

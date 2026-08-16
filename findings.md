@@ -692,6 +692,12 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      winner/loser targets，只让public B leaves承接cotangent并回传四个native-zero B heads。归一化action空间、
      rollout policy-noise seed、executed-prefix mask和inference acceptance均共用同一合同。定向CPU=`50 passed`、
      完整CPU=`405 passed`、architecture guard 0 hard且active source净减16行；尚无GPU科学结果。
+105. NEAP-C clean`33f69fd`把task9从NZRB的gradient cosine/energy=`.286/.448`、11点no-op改成`.846/.865`且
+     raw Adam `j0`一次接受；cycle从`362.177s`降到`97.107s`、reserved从`40.769GB`降到`19.367GB`，q/v/action、
+     reverse/constant和native rank-bank均健康。这证明full 10-step endpoint preference比随机CFM更接近真实
+     policy credit。held8又有8/8、BA/raw-B/action cosine=`.953/.955/.485`，但held/train BA L2仅`.234<.30`，
+     26/27门仍终局。probe/joint Value的held/train幅度为`.671/.665`，到direct rows骤降`.223`，因此最早缺口
+     已后移到one-task joint condition经shared direct-B head的跨task幅度，而非视频读取、endpoint或LoRA写出。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

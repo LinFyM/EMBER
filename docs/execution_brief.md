@@ -111,12 +111,14 @@ task9 paired outcome漂为`1/0,25`且11步仍no-op。总wall/ALB=`1.16565x>1.15x
 不full24/strict/resume。zero bank解决accepted update的native/held coherence，但没有解决reward方向是否存在
 all-view finite policy step；不再改factor origin。初版结构假报警由稳定rank-bank artifact纠正。
 
-当前active是**NEAP-C**：完整保留LPCP/NZRB/MB-SOP与native backtracking，只把CFM surrogate credit替换为冻结
+最新终局是**NEAP-C**：完整保留LPCP/NZRB/MB-SOP与native backtracking，只把CFM surrogate credit替换为冻结
 PI05完整10步求解后的deployed-action endpoint preference。每个selected共同observation用同一noise生成一次
 condition action，同时比较reward winner/loser的executed-prefix距离；四views/tasks继续等权。先只跑task9的
-physical-B8显存/吞吐、all-view finite step与held/temporal门，过门后才跑task15/18；三anchor全过才full24。
-authority=`docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`；canonical实现已通过定向
-CPU=`50 passed`、完整CPU=`405 passed`、compileall与architecture guard 0 hard；当前无GPU run/checkpoint。
+clean`33f69fd` task9的gradient cosine/energy从NZRB`.286/.448`提高到`.846/.865`，j0一次接受，cycle=
+`97.107s`、reserved=`19.367GB`；held8为8/8，BA/raw-B/action cosine=`.953/.955/.485`，时序与rank-bank均健康。
+但held/train BA L2=`.234<.30`，故26/27门仍终局，不跑task15/18/full24。probe/joint幅度保持`.671/.665x`，
+direct rows仅`.223x`，最早缺口是one-task condition到shared direct-head的跨task幅度。authority=
+`docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`；当前无active successor/GPU/checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

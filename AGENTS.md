@@ -260,13 +260,17 @@ paired outcome由预定`2/1,26 chunks`漂为`1/0,25 chunks`。三anchor合计wal
 重算carrier，已由每anchor的
 `nzrb_stable_rank_bank_contract.json`纠正，不是模型结构失败。
 
-当前active successor是**V6-LPCP Native Endpoint Action-Preference Credit**（NEAP-C），authority=
+最新完成successor是**V6-LPCP Native Endpoint Action-Preference Credit**（NEAP-C），authority=
 `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`。它不改LPCP/NZRB carrier、rank32
 public LoRA、MB-SOP同B8 action panel、四correct K4 views、optimizer或native backtracking，唯一把随机flow-time
 CFM preference替换为冻结source policy完整10步部署求解后的action-endpoint preference。新objective直接比较
 generated endpoint到reward-labeled winner/loser action的executed-prefix距离，gradient与acceptance使用同一个
-deployment metric，不再换parameter ray。先只做task9 physical-B8真实显存/吞吐与finite all-view gate；task9全过
-才运行task15/18，三anchor全过才实现formal/full24。当前没有GPU run或可resume checkpoint。
+deployment metric，不再换parameter ray。clean`33f69fd` task9 outcome/count=`1/0,25/8`，gradient
+cosine/energy=`.846/.865`且j0一次接受，cycle=`97.107s`、reserved=`19.367GB`；held8全部通过且BA/raw-B/action
+cosine=`.953/.955/.485`，reverse/constant与rank-bank健康。但held/train BA L2=`.234<.30`，26/27门仍按authority
+终局，不运行task15/18、full24/strict或小扫。stage localization为probe/joint幅度`.671/.665x`到direct rows
+`.223x`，最早缺口是one-task condition经shared direct-B head的跨task幅度。当前没有active successor、GPU run或
+可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

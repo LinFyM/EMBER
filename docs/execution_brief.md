@@ -39,8 +39,11 @@ module只拥有train24 expert加载与rank16→32 zero padding。定向/完整CP
 与architecture guard hard gate通过，24个expert adapters实读成功。clean pushed `08c5edc`在gpu02物理
 `1/2/3/4`完成anchors `2/12/21/35` world4真实smoke：8/8 expert trajectories成功、64 selected states，
 16/16 task-view post-update distances下降；四task four-view gradient cosine mean=
-`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，cycle=`87.094s`。formal已seal，
-下一动作是fresh full24 cycle1及其single-checkpoint strict400。
+`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，cycle=`87.094s`。formal已seal。
+首次frozen `3a5aa95` world6 formal在rollout前暴露artifact-root工程错误：相对expert bank路径落到detached
+worktree，实际canonical bank仍为6/6 workers；该run无contract/rollout/checkpoint，不是科学结果。loader已最小
+修正为以source-run project root解析retained bank，同一frozen config直接复现6/6，完整CPU仍为`416 passed`。
+下一动作是从新clean commit和fresh root重启full24 cycle1，完成后做single-checkpoint strict400。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

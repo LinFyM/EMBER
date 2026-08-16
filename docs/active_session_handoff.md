@@ -72,8 +72,11 @@
   24个adapters实读成功。clean pushed `08c5edc` gpu02物理`1/2/3/4` world4真实smoke已exit0：四suite
   8/8 expert trajectories成功、64 selected states、16/16 task-view post-update distances下降；四task
   four-view gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，
-  cycle=`87.094s`、peak reserved=`19,369,295,872` bytes。formal现已seal；当前无GPU run，下一步是从sealed
-  LPCP fresh启动full24 cycle1；
+  cycle=`87.094s`、peak reserved=`19,369,295,872` bytes。formal现已seal。首次frozen `3a5aa95` world6 launch
+  在rollout前因expert bank相对路径解析到detached worktree而exit1；实际canonical bank始终完整6/6 workers，且
+  没有run contract、rollout或checkpoint，不是科学结果。canonical fix改为相对source-run project artifact root
+  解析，同一frozen config已读到6/6 workers，定向/完整CPU=`56/416 passed`；当前无GPU run，下一次使用新clean
+  commit与fresh root从sealed LPCP启动full24 cycle1；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

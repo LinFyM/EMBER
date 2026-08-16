@@ -63,7 +63,10 @@ median-cap/Adam继续复用；唯一新source owner只负责expert bank加载与
 architecture guard无hard violation，24个expert adapters实读成功。clean pushed `08c5edc`在gpu02物理`1/2/3/4`
 完成world4机制smoke：8/8 expert trajectories成功，16/16 task-view post-update distances下降，四task four-view
 gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response均非零，cycle=
-`87.094s`。formal已seal，当前无GPU run或formal checkpoint；下一步fresh full24 cycle1。
+`87.094s`。formal已seal。首次frozen `3a5aa95` world6 launch在rollout前因相对expert-bank路径落到detached
+worktree而exit1；canonical bank实际6/6完整，无run contract/rollout/checkpoint，故不是科学结果。loader已改用
+source-run project artifact root，同一frozen config直读6/6且完整CPU=`416 passed`。当前无GPU run或formal
+checkpoint；下一步从新clean commit和fresh root启动full24 cycle1。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

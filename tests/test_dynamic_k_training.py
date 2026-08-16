@@ -11,6 +11,7 @@ import torch
 from safetensors.torch import save_file
 
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.reward.expert_teacher import resolve_task_expert_bank_root
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
 from ember.writer.as_contract import publish_contract
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
@@ -128,7 +129,11 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
         16,
         False,
     )
-    assert Path(config["resolved_task_expert_bank_root"]).is_dir()
+    canonical_source_run = REPO_ROOT / "runs/outputs/source-run"
+    assert resolve_task_expert_bank_root(
+        source={"source_run": str(canonical_source_run)},
+        relative_root=teacher["bank_root"],
+    ) == (REPO_ROOT / teacher["bank_root"]).resolve()
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "content_first_backbone_memory_grid_2828928_parameters"

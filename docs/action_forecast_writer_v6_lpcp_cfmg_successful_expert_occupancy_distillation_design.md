@@ -140,3 +140,9 @@ post-update 16/16 task-view expert distances下降。q/v/action effective-BA RMS
 非零，final delta L2=`.236847`；cycle=`87.094s`、peak reserved=`19,369,295,872` bytes，0 OOM/nonfinite/
 forbidden read，exit0。constant/reverse与step0 identity由未改动的sealed carrier/memory路径继承；本轮新credit没有
 改变该前向图。该smoke只证明SEOD可进入formal，不提供absolute、retention或视频因果性能结论。
+
+首次frozen-worktree world6 formal在rollout前终止：expert bank相对路径被错误解析到detached worktree而非canonical
+artifact root，因而报告0而非实际6个workers；没有run contract、rollout、gradient或checkpoint，不能作为科学
+结果。根因已由主工作树/冻结worktree路径反事实验证。canonical loader现以source-run所在project artifact root解析
+retained bank；同一frozen config直接复现为6/6 workers，定向/完整CPU仍为`56/416 passed`。该修正只改变训练资产
+定位，不改变SEOD数据、目标、参数、随机性或topology；下一次必须使用新clean commit和fresh root。

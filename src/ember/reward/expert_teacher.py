@@ -19,6 +19,18 @@ from ember.reward.protocol import RewardTask
 from ember.writer.errors import WriterModelError
 
 
+def resolve_task_expert_bank_root(
+    *, source: Mapping[str, Any], relative_root: str
+) -> Path:
+    """Resolve retained experts beside the canonical source-run artifact tree."""
+
+    configured = Path(relative_root)
+    if configured.is_absolute():
+        raise WriterModelError("successful expert bank root must be repository-relative")
+    asset_root = Path(str(source["source_run"])).resolve().parents[2]
+    return (asset_root / configured).resolve()
+
+
 def pad_expert_lora_to_public_rank(
     state: Mapping[str, torch.Tensor],
     *,
@@ -58,7 +70,9 @@ def load_successful_expert_bank(
 
     teacher = config["privileged_teacher"]
     config_path = Path(str(config["resolved_task_expert_config"]))
-    bank_root = Path(str(config["resolved_task_expert_bank_root"]))
+    bank_root = resolve_task_expert_bank_root(
+        source=source, relative_root=str(teacher["bank_root"])
+    )
     step = int(teacher["step"])
     evidence = inspect_task_expert_bank(
         config_path=config_path,

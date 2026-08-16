@@ -130,6 +130,11 @@ post-update view distances下降；q/v/action BA与fixed-action response均非�
 吞吐。该证据不能替代full24 strict，也未证明correct优于negative或多checkpoint稳定；最早未决接口是full24
 共享更新能否把这种train-local一致方向变成held closed-loop增益并保留多task support。
 
+SEOD首次frozen formal的`worker count incomplete`不是world6不兼容或bank损坏。只读反事实证明canonical project
+root始终6/6 workers，而detached worktree下为0/6；旧loader恰好按config所在worktree解析相对artifact路径，主工作树
+smoke因此未暴露。以source-run所在project root作为retained bank owner后，同一frozen config恢复6/6且`416 passed`。
+失败发生在run contract发布和任何rollout之前，只淘汰旧artifact定位实现，不提供SEOD科学正负证据。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

@@ -733,6 +733,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   adapters实读与rank16→32 padding通过；
 - [x] clean pushed `08c5edc`完成gpu02物理`1/2/3/4` world4 smoke：8/8 expert成功、16/16 task-view
   distance下降、four-view cosine mean=`.987/.776/.954/.971`、cycle=`87.094s`，并seal formal；
+- [x] 定位首次frozen `3a5aa95` world6 formal的pre-rollout工程退出：相对expert bank路径错误落到detached
+  worktree；canonical bank实际6/6完整且无scientific state产生。最小改为source-run artifact-root解析，同一frozen
+  config直读6/6，定向/完整CPU=`56/416 passed`；不得复用旧root；
 - [ ] live双节点GPU与/data1 quota检查后，以最多6张合适同节点A40启动fresh full24 cycle1；按authority最多连续
   三cycles并逐checkpoint strict400，分析absolute/breadth、逐task/suite、retained/gained/lost/churn/Jaccard；
 - [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若

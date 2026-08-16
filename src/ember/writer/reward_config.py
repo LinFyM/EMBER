@@ -188,9 +188,6 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     config["resolved_task_expert_config"] = str(
         (config_repo_root / str(teacher["config"])).resolve()
     )
-    config["resolved_task_expert_bank_root"] = str(
-        (config_repo_root / str(teacher["bank_root"])).resolve()
-    )
     return config, base
 
 

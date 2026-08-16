@@ -12,6 +12,7 @@ from lerobot.utils.constants import (
 )
 
 from fixtures.writer_model import _inputs, _model as _writer_model
+import ember.writer.reward_cycle as reward_cycle
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -30,12 +31,87 @@ from ember.writer.reward_gradient_update import (
     preconditioned_candidate_commitment,
 )
 from ember.writer.reward_preference import (
+    MatchedStratifiedOccupancyCreditSummary,
     cross_video_gradient_geometry,
     functional_matched_stratified_occupancy_endpoint_gradient,
     functional_matched_stratified_occupancy_endpoint_margin,
     mean_cross_video_task_gradient,
     stratified_occupancy_pair_weights,
 )
+
+
+def test_formal_credit_retains_all_four_views_for_global_commitment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    demo_sets = ((0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11), (12, 13, 14, 15))
+    runtime = SimpleNamespace(
+        args=SimpleNamespace(mode="formal"),
+        config={"data": {"credit_views_per_active_task": 4}},
+        video_schedule=SimpleNamespace(
+            cross_video_credit_demos_for_task_visit=lambda *args, **kwargs: demo_sets
+        ),
+    )
+    task = SimpleNamespace(global_task_id=9)
+    states = tuple(object() for _ in range(4))
+    offsets = tuple(torch.tensor([index, index + 1]) for index in range(4))
+    packed = (None, None, None, offsets[0])
+
+    encoded_index = iter(range(1, 4))
+
+    def encode_condition(*args: object, **kwargs: object) -> tuple[object, ...]:
+        index = next(encoded_index)
+        return (None, None, None, offsets[index]), {}, states[index], None, {}
+
+    differentiated_index = iter(range(4))
+
+    def differentiate_view(
+        *args: object, **kwargs: object
+    ) -> tuple[torch.Tensor, object]:
+        index = next(differentiated_index)
+        return torch.tensor(
+            [float(index + 1)]
+        ), MatchedStratifiedOccupancyCreditSummary(
+            objective=float(index),
+            preference_margin=float(index + 1),
+            winner_action_distance=0.0,
+            loser_action_distance=1.0,
+            discordant_trajectories=1,
+            selected_credit_pairs=8,
+            replay_rows=8,
+            successful_action_steps=8,
+            matched_winner_loser_action_rms=1.0,
+            functional_policy_forwards=1,
+            functional_policy_backwards=1,
+            lora_gradient_rms=1.0,
+        )
+
+    monkeypatch.setattr(reward_cycle, "_encode_candidate_condition", encode_condition)
+    monkeypatch.setattr(reward_cycle, "_differentiate_credit_view", differentiate_view)
+    gradients, rows, views, observed_demos = reward_cycle._differentiate_credit_views(
+        runtime,
+        task,
+        1,
+        0,
+        demo_sets[0],
+        packed,
+        states[0],
+        {},
+        {},
+        torch.tensor([0]),
+        torch.zeros(1),
+    )
+
+    assert len(gradients) == len(rows) == len(views) == 4
+    assert observed_demos == demo_sets
+    assert tuple(view.conditioning_state for view in views) == states
+    assert tuple(view.before_preference_margin for view in views) == (
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+    )
+    for view, expected_offsets in zip(views, offsets, strict=True):
+        assert torch.equal(view.condition_video_offsets, expected_offsets)
 
 
 def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() -> None:

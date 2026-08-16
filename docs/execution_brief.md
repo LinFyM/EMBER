@@ -12,7 +12,10 @@ raw/final coverage=`3/3`、native=`12/12`，j0 actual Adam被接受并写出非�
 共存门因此通过。task15 occupancy chunks=`70`而历史65只作诊断；跨运行BF16/TF32、batch/kernel/reduction低位差异
 不再作为门。validation8/reverse/constant held门随后全过：8/8 tasks，effective-BA cosine/energy=
 `.983541/.985926`，raw/action cosine=`.982788/.986590`，held/train L2=`.960650x`。下一步直接fresh full24 cycle1，
-完成后立即strict paired400。
+完成后立即strict paired400。clean`a62348e`首次full24暴露的是单一工程合同缺口：formal仍只保留
+view0，与global four-view commitment冲突，最终exit1且无checkpoint/completion。canonical现保留已计算的
+全四视图conditioning states，不新增forward或科学变量；全量CPU=`411 passed`，待新clean commit fresh
+重跑。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=

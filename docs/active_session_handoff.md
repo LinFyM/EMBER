@@ -9,8 +9,10 @@
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
 - 当前active authority是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
-  raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；下一步是validation8/reverse/
-  constant held视频门也已8/8通过，已解锁fresh full24 cycle1。当前没有active GPU run或可resume checkpoint；
+  raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
+  held视频门也已8/8通过。clean`a62348e`首次full24因formal只保留view0的工程错误exit1且无
+  checkpoint/completion；canonical已最小修正并通过全量CPU=`411 passed`。当前无active GPU run或可resume
+  checkpoint，下一步是从新clean pushed commit fresh重跑full24；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -202,6 +204,13 @@
 - CMBG validation8 held门完整通过：effective-BA cosine/energy=`.983541/.985926`、raw/action=
   `.982788/.986590`、held/train L2=`.960650x`，8/8 tasks过门；reverse和constant三anchor全过。下一步直接fresh
   full24 cycle1并立即strict paired400，不再做浮点parity追逐或额外小型机制补丁；
+- clean`a62348e`首次full24在所有24 tasks已完成rollout/credit后以exit1结束，不是科学non-pass。旧
+  `_differentiate_credit_views`为formal只保留view0，而新global commitment必须重评每个active task的4个
+  views；rank0/4立即报`backtracking commitment lost four video views`，其余ranks停在同all-gather并在30分钟
+  watchdog后结束。该root无metrics/checkpoint/completion，不得作CMBG结果；
+- canonical最小修正只是formal也保留已在credit backward中算出的4个`RewardPreferenceView`，不重算video/
+  environment，不增forward，不改data/objective/optimizer/commitment。focused regression与相关测试`42 passed`，
+  全量CPU=`411 passed`；下一步从该修正的clean pushed commit fresh重跑full24；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

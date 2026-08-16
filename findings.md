@@ -772,6 +772,13 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      最低单task BA cosine仍为`.967814`；三个train anchors reverse相对L2约`1.94--2.00`，constant/natural norm
      ratio约`.00269--.00470`。因此memory grid在未读held action/reward时同时保持跨视频方向、幅度和有向时序，
      最早未决接口已后移到full24 reward update后的真实closed-loop usefulness与多task长期共存。
+120. clean`a62348e`首次CMBG full24的24 tasks已走完rollout/credit，但旧formal runtime只在
+     `view_index==0`时保留`RewardPreferenceView`；global commitment需要每个active task的4 views。rank0/4因此
+     立即失败，其余ranks在all-gather等待30分钟后watchdog，最终exit1且无metrics/checkpoint/completion。
+     这是被traceback和source条件共同确认的工程合同错误，不是memory或CMBG的科学负结果。
+121. 最小修正只使formal保留credit backward已算出的4个conditioning states，没有重算video/
+     environment、新增forward或改变科学合同。focused regression在旧路径会返回1 view，修正后返回4；
+     相关测试`42 passed`、全量CPU=`411 passed`。因首次run无checkpoint，下次必须从新clean commit fresh重跑。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

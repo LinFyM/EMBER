@@ -636,7 +636,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   j0写出非零delta；历史chunk数只作诊断；
 - [x] 完成validation8 four-view、reverse、constant、held/train幅度与throughput门：8/8 tasks，BA cosine/energy=
   `.983541/.985926`、raw/action=`.982788/.986590`、held/train=`.960650x`，全门通过；
-- [ ] 运行fresh full24 cycle1并立即strict paired400。
+- [x] 定位clean`a62348e`首次full24的工程失败：formal只保留view0，与global four-view commitment冲突，
+  无checkpoint/completion或科学结果；最小修正为保留已计算的4 views，focused/related=`42 passed`、
+  full CPU=`411 passed`；
+- [ ] 从修正后clean pushed commit fresh重跑full24 cycle1并立即strict paired400。
 
 ## Non-negotiable boundaries
 

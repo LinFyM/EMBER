@@ -365,14 +365,13 @@ def _differentiate_credit_views(
             gradient_template,
         )
         view_gradients.append(flat)
-        if runtime.args.mode == "smoke" or view_index == 0:
-            preference_views.append(
-                RewardPreferenceView(
-                    conditioning_state=view_state,
-                    condition_video_offsets=view_packed[3],
-                    before_preference_margin=summary.preference_margin,
-                )
+        preference_views.append(
+            RewardPreferenceView(
+                conditioning_state=view_state,
+                condition_video_offsets=view_packed[3],
+                before_preference_margin=summary.preference_margin,
             )
+        )
         view_rows.append(
             {
                 "view_index": view_index,

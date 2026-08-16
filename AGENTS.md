@@ -311,7 +311,11 @@ max-abs0，task9完整梯度链与A40门通过。随后clean`2aecece` fixed worl
 `1/0,2/0,1/2`，selected pairs=`8/16/8`，cross-task cosine mean=`+.09842`，raw/final=`3/3`、native=`12/12`，
 accepted delta L2=`.168481`且q/v/action均非零。occupancy chunk数与跨运行逐元素差异只作诊断。validation8 held
 8/8通过，BA cosine/energy=`.983541/.985926`、held/train=`.960650x`；下一步直接fresh full24 cycle1与strict
-paired400。rank8、完整A/B和Dynamic-K仍是独立开放变量。
+paired400。clean`a62348e`首次full24只是工程失败：旧formal路径只保留view0，与全局四视图
+commitment合同冲突，rank0/4报`lost four video views`，其余ranks在all-gather等待后触发30分钟
+watchdog；无checkpoint/completion或科学结果。canonical已最小修正为formal active task保留已算出的
+4个conditioning states，不新增forward或改变科学合同；全量CPU=`411 passed`，待从新clean commit
+fresh重跑。rank8、完整A/B和Dynamic-K仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

@@ -247,6 +247,16 @@ effective-BA和fixed-action response三task均非零，0禁读/OOM/nonfinite。�
 anchors的reverse相对L2=`1.99829/1.94271/1.97400`，constant/natural norm ratio=`.002687/.003419/.004703`，
 信息墙和吞吐均通过。精确artifact=`cmbg_held_video_gate.json`；因此fresh full24 cycle1已获授权。
 
+首次full24从clean`a62348e`启动，24 tasks均已完成rollout/credit，但在global commitment的baseline
+重评前暴露旧runtime合同缺口：`_differentiate_credit_views`只在smoke保留4 views，formal只保留
+view0。rank0/4因此报`backtracking commitment lost four video views`，其余ranks在同all-gather等待后触发
+30分钟NCCL watchdog。run以exit1结束，没有metrics、checkpoint或completion，所以这不是CMBG科学结果。
+
+canonical修正只去掉该mode条件，使formal active task也保留credit backward已算出的4个
+`RewardPreferenceView`。它不重算video/environment、不新增forward，不改变data、reward、optimizer、
+commitment或CMBG架构。新focused regression在旧代码下会稳定得到`len(views)=1`，修正后为4；
+相关测试`42 passed`、全量CPU=`411 passed`。修正后必须fresh重跑，不存在可resume checkpoint。
+
 ## 12. full24与真实性能裁决
 
 preformal已全过。full24仍只训练一个shared checkpoint。cycle1后立即strict paired correct400；继续cycle2的门

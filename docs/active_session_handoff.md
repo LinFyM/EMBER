@@ -155,7 +155,13 @@
   cosine/energy=`.846/.865,.596/.645,.448/.557`且均4/4下降；但task间cosine mean=`-.14513`，task15 norm为
   task9/task18的`41.45x/10.43x`，global raw mean仅1/3 task下降。11个native scales最多8/12 margins下降，
   全部拒绝，最终860,160个B-head参数逐元素全零。按门不full24/strict/held controls或小扫；终局artifact位于
-  fresh root的`tcec_shared3_terminal_adjudication.json`。当前无active successor、GPU run或可resume checkpoint；
+  fresh root的`tcec_shared3_terminal_adjudication.json`。TCEC无可resume checkpoint；
+- 当前active design是**CAPG**，authority=
+  `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32与同一
+  joint forward，只把shared wide B heads替换为`18x37x1024`capacity-matched Action-probe parameter grid，经过
+  per-video causal、K-set、layer/token M2P后直接reshape native-zero B；trainable branch减去冻结step0 anchor，
+  保持exact LPCP并首步gradient-open。37是post-backbone parameter latents而非memory tokens；当前尚未实现或启动
+  GPU，固定world3 task9/15/18为首个preformal gate；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

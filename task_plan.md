@@ -604,6 +604,20 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   GPU forward；终局artifact已封存；
 - [x] 按预注册门终局，不full24、strict paired400、held controls、cycle2、task权重/normalization/solver或scale小扫。
 
+## Active iteration: V6-LPCP Capacity-Matched Action-Probe Grid
+
+- [x] 从TCEC最早断点选择单一架构变量：删除shared wide B heads，保持LPCP carrier、NEAP endpoint、K4、rank32、
+  equal-task mean与native acceptance不变；
+- [x] 完成CAPG design authority：同一forward保留18层raw Action-probe states，37个post-backbone parameter latents
+  由rank16 B-only payload精确推导；逐video causal、K-set、layer/token M2P后direct reshape native-zero B；
+- [ ] 原位实现CAPG与fresh-incompatible config/checkpoint/eval schema，退休TCEC active runtime；
+- [ ] 完成step0 exact、gradient-open、constant-zero、K-set、direct reshape、信息墙和one-forward CPU/机制验证；
+- [ ] live检查双节点GPU与`/data1`quota，建立clean pushed frozen world3 launch contract；空卡不足时可在实时余量
+  充足且低util的`ycliu`设备上安全共驻；
+- [ ] 固定task9/15/18运行preformal shared gate并完整分析same-task、cross-task gradient、12-view native step、
+  held/temporal/throughput；任一预注册门失败即终局；
+- [ ] 仅在preformal全门通过后运行full24 cycle1、strict paired400及逐task/retention/churn分析。
+
 ## Non-negotiable boundaries
 
 - exact language与正确action-hidden video共同构成任务知识；不能去掉任何一方或允许language独立写LoRA；
@@ -623,9 +637,9 @@ Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、M
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
 最新TCEC world3已终局：同task四video endpoint gradients有共同方向，但跨task raw shared mean仅1/3为下降，
-11个native scales最多覆盖8/12 margins，最终exact no-op。当前没有active successor、GPU run或可resume checkpoint。
-下一设计必须针对**task-local coherent Program/credit如何在一个shared Writer中形成可共存的condition-to-LoRA映射**，
-不能回退CFM、继续parameter ray/scale/normalization/PCGrad小修，或无证据替换已通过的视频carrier与endpoint credit。
+11个native scales最多覆盖8/12 margins，最终exact no-op。当前CAPG authority已冻结、尚未实现或启动GPU；它直接
+针对task-local coherent Program/credit如何在一个shared Writer中形成可共存的condition-to-LoRA映射。不得回退
+CFM、继续parameter ray/scale/normalization/PCGrad小修，或把CAPG的post-backbone latents误称literal memory。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

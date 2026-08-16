@@ -398,12 +398,22 @@ BA幅度只有`.234<.30`，虽held8方向、raw-B/action与时序全健康仍按
 one-task condition经shared direct-B head的跨task幅度，而不是CFM、carrier、rank-bank或compiler；后继不能靠放宽
 held门、补task15/18或scale/normalization小扫救本轮。
 
-当前TCEC据此不改视频输入、LoRA或endpoint objective，只把三个固定anchors从三次task-local update改为一次
-world3 shared update：task gradients继续等权，唯一Adam candidate必须让三个tasks共12个correct-view endpoint
-margins全局共同下降，所有ranks接受同一scale。它直接检验task diversity与严格shared commitment能否把held/train
-幅度从`.234`提升到`.30+`并避免rank-local能力分叉；若仍失败，下一步才有证据转向capacity-matched memory/M2P
-等condition-to-LoRA共享映射，而不是现在因owner曾提到memory便机械加入。
-memory token、rank8、dynamic-K/few-shot仍是候选方法，不是强制形式，也没有被该负结果否定。
+TCEC随后在同一world3 shared update中终局：task9/15/18各自四video endpoint gradients仍全为共同下降，但三task
+mean gradient norm相差至`41.45x`、pairwise cosine mean/min=`-.145/-.337`，未经norm重权的equal-task mean只对
+task15下降；11个native scales最多覆盖`8/12` margins，最终四个B heads、effective BA与action correction精确为零。
+这把最早接口推进到**显式task/condition结构的shared representation与LoRA output mapping**，不授权用gradient
+normalization、PCGrad、task权重或parameter-ray小扫补TCEC。
+
+当前CAPG据此保留LPCP/NEAP/K4/rank32，只把`320x256 -> four shared wide B heads`替换为capacity-matched
+`18x37x1024`Action-probe parameter grid：37来自rank16 B-only payload精确容量；逐video adjacent/goal causal
+Program、K-set、layer/token M2P后直接reshape native-zero B。它采用Doc-to-LoRA式per-layer activation queries与
+SHINE式capacity-matched direct mapping，但37个slots位于backbone之后，明确不是memory token；同一forward与
+LPCP carrier完全保留。精确authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。
+
+literal memory token、rank8、dynamic-K/few-shot仍是开放候选而非强制形式。若CAPG的现有Action-probe activations
+不能形成跨task可共存的parameter grid，下一反事实才是在真实image/language/action prefix中加入真正逐层更新的
+capacity-matched memory；不得把CAPG负结果误写成memory失败。
 
 后续迭代遵循以下边界：
 

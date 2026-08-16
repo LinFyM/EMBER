@@ -129,8 +129,13 @@ active-probe list和global scalar-row backtracking；定向=`41 passed`、完整
 clean `9ed6a08` world3随后完整复现三anchor并在`182.142s`结束。每个task内部四video credit均为4/4共同下降，
 但task间gradient cosine mean=`-.14513`，task15 norm比task9/task18大`41.45x/10.43x`，所以global shared mean
 只对1/3 task下降。11个scale最多覆盖8/12 margins并全部拒绝，最终B-head state 860,160参数全零。TCEC在held前
-终局，不full24/strict/controls。当前没有active successor；下一设计必须处理task-local coherent Program/credit在
-shared condition-to-LoRA映射中的结构化共存，不能继续parameter ray、scale、normalization或PCGrad小修。
+终局，不full24/strict/controls。
+
+当前active design是**CAPG**：保留LPCP/NEAP/K4/rank32与同一真实joint forward，删除四个shared wide B heads；
+从18层50个Action-probe states用37个capacity-matched post-backbone parameter latents读取context，经video内
+adjacent/goal causal reducer、K-set和layer/token M2P直接reshape native-zero B。trainable branch减冻结step0
+anchor，故初始化exact LPCP且全链gradient-open。37不是memory token；literal memory与rank8仍开放。首个world3
+task9/15/18门必须达到shared continuous 3/3和native 12/12，否则不进入full24。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

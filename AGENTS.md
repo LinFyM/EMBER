@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 最新终局design（当前无active successor）：
-   `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -281,9 +281,15 @@ outcome/count，cycle=`182.142s`且0禁读/OOM/nonfinite。三task各自four-vie
 task9/task18的`41.45x/10.43x`，故global raw mean只对task15下降。11个native scales最多覆盖8/12 margins，
 全部拒绝并恢复exact step0；保存的860,160个B-head参数逐元素全零。TCEC按continuous 3/3与native 12/12两门
 终局，不full24/strict/held controls或小扫。最早失败接口是task-local coherent endpoint credit汇成单一shared
-direct-B commitment，而不是carrier、reward、global rank同步或held compiler。当前没有active successor、GPU run
-或可resume checkpoint；下一设计必须针对显式task/condition结构的共享表示与LoRA输出映射，不继续ray/scale/
-normalization/PCGrad补丁。
+direct-B commitment，而不是carrier、reward、global rank同步或held compiler。TCEC没有可resume checkpoint。
+
+当前active successor是**V6-LPCP Capacity-Matched Action-Probe Grid**（CAPG），authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32和同一
+真实joint forward，唯一把`320x256 -> four shared wide B heads`换成逐层Action-probe activations读取的
+`18x37x1024`parameter grid；37由rank16 B-only payload精确推导。逐video adjacent/goal causal Program、K-set、
+layer/token M2P后直接reshape native-zero B，trainable branch减去冻结step0 anchor以保持exact LPCP且首步gradient
+开放。37个slots位于backbone之后，不是memory tokens；literal memory与rank8仍开放。当前尚未实现或启动GPU，首门
+固定world3 task9/15/18，必须把TCEC continuous coverage从1/3变成3/3并找到12/12共同native step，否则终局。
 
 ## 4. Long-term objective and decision rule
 

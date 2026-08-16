@@ -698,10 +698,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   同时复用于optimizer和coexistence，避免重复大collective；定向CPU=`65 passed`；
 - [x] 完成定向/完整CPU=`47/416 passed`、compileall、diff check与architecture guard 0 hard；无新module、entrypoint
   或平行runtime；
-- [ ] 冻结并push唯一formal commit；
-- [ ] 从sealed LPCP fresh完成full24 cycle1，记录raw/capped norms、median/scales、rank负载、j0、q/v/action与
-  task-view margins；
-- [ ] 若candidate nonzero，立即做同一checkpoint K4 strict400并与LPCP143、USDC138、v6-fast143逐task分析；
+- [x] 冻结并push唯一formal commit=`1a0700f`；
+- [x] 从sealed LPCP fresh完成gpu01 world6 full24 cycle1：24 tasks/48 states/96 rollouts、`33/32` successes、
+  `3/2` gains，5 active tasks覆盖四suite，cycle=`388.239s`；raw norms=
+  `.147608/.022184/.047038/.124794/1.133739`、median=`.124794`，只截断task4/38且小task scales为1；
+  shared/final coverage=`5/5`，j0 L2=`.236963`，q/v/action全非零；
+- [x] 完成rank负载、信息墙与checkpoint完整性分析并按post-training合同seal；0禁读/OOM/nonfinite；
+- [ ] 立即做同一checkpoint K4 strict400并与LPCP143、USDC138、v6-fast143逐task分析；
 - [ ] 若cycle1显示接近强baseline且breadth/retention可信，锁原world topology exact-resume cycle2，必要时cycle3，
   每个checkpoint分别strict400；最终以相邻checkpoint低churn、高Jaccard和共同积累判断稳定性，而非单点winner；
 - [ ] 若cycle1像USDC一样同时损失correct、breadth与retention，则终局，不靠盲目增加训练量、cap小扫或optimizer

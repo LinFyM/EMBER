@@ -35,7 +35,11 @@
   panel中高于norm中位数的tangents截到中位数，小task不放大、方向不旋转、无可扫系数；memory、K4、rank32、
   unit-secant、96 rollouts与一次Adam j0全部不变。canonical代码已改为一次task-panel all-reduce同时服务optimizer与
   coexistence，避免重复通信；定向CPU=`47 passed`、完整CPU=`416 passed`、compileall/diff check通过、architecture
-  guard 0 hard，尚无MCTC GPU run；
+  guard 0 hard。clean`1a0700f` gpu01 world6 fresh cycle1完整exit0：24 tasks/48 states/96 rollouts，candidate/
+  reference=`33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`388.239s`。raw norms=
+  `.147608/.022184/.047038/.124794/1.133739`、median=`.124794`；只截断task4/38至median，小task scales严格为1，
+  shared/final coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零，0禁读/OOM/nonfinite。checkpoint已seal；下一
+  裁决是同一checkpoint K4 strict400，当前无GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

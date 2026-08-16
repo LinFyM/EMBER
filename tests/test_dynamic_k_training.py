@@ -103,8 +103,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_pending"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "active_formal_cycle1_completed_strict_pending"
+    assert config["formal_run"]["status"] == "sealed"
     predecessor = config["formal_run"]["predecessor_evidence"]
     assert predecessor["task38_to_next_gradient_norm_ratio"] > 6
     assert (
@@ -212,12 +212,12 @@ def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None
     assert gate["single_exact_adam_candidate_required"]
     assert gate["repeated_step0_baseline_forward"] is False
     assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
-    assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.3
-    assert gate["held_action_cosine_minimum"] == 0.15
-    assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
-    assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
+    cycle1 = config["formal_run"]["cycle1_evidence"]
+    assert cycle1["authority_commit"].startswith("1a0700f")
+    assert cycle1["median_task_gradient_norm"] == pytest.approx(0.12479368)
+    assert cycle1["shared_and_final_task_descent_coverage"] == 1.0
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 

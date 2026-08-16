@@ -81,7 +81,10 @@ shared update前抑制异常大task tangent，不能回头重做carrier或用sur
 MCTC已把该反事实原位实现为parameter-free median upper cap：每task仍先等权平均四video gradients，只截断高于
 active-panel中位数的norm，小task保持原幅度且方向不旋转；一次distributed task-panel all-reduce同时服务optimizer
 和coexistence，未增加forward。定向/完整CPU=`47/416 passed`且architecture guard 0 hard。以上只关闭实现门，
-尚不提供GPU或closed-loop结论。
+clean`1a0700f` world6 cycle1现证明机制也真实接通：五task raw norms=
+`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`，task38缩至`.110073x`、task4缩至
+`.845440x`，其余scales为1；shared/final descent coverage由USDC的4/6变为5/5，j0 L2=`.236963`且q/v/action
+全非零。该证据仍不提供closed-loop结论，下一步只认同一checkpoint strict400。
 
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个

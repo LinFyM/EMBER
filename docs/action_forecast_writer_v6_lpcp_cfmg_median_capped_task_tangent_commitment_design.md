@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Median-Capped Task-Tangent Commitment
 
-状态：2026-08-17 active design authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
+状态：2026-08-17 cycle1完成、strict400 pending的active formal authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
 USDC已经形成跨视频共同LoRA坐标的memory/content-grid/rank32图、K4 unit-secant reward和一次自然Adam commitment，
 唯一改变active-task gradients进入shared mean之前的幅度聚合。
 
@@ -90,3 +90,13 @@ held-useful shared commitment”。下一接口应转向sparse selected-success 
 并复用原coexistence所需的global task matrix作为optimizer输入，删除旧shared-gradient额外all-reduce；没有新增forward、
 module、entrypoint或并行runtime。集成测试直接验证不等幅task gradients的cap、无小task放大以及Adam一阶矩；定向/
 完整CPU=`47/416 passed`，compileall与diff check通过，architecture guard 0 hard。当前尚无GPU机制或closed-loop结果。
+
+## 8. Cycle1 execution state
+
+clean`1a0700f`在gpu01 physical`0/2/4/5/6/7` world6完成fresh full24：24 tasks/48 states/96 rollouts，
+candidate/reference=`33/32`、gains=`3/2`，active tasks=`4/19/25/34/38`覆盖四suite，cycle=`388.239s`。
+五个raw norms=`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`；只对task4/38应用
+`.845440/.110073` scale，其余三个严格为1。shared与final descent coverage均为5/5，保存j0 L2=`.236963`；
+5/5 probes的q/v/action BA与fixed-action response全部非零，0禁读/OOM/nonfinite。14/20 local margins下降只作
+诊断，不选择checkpoint。checkpoint现已按标准post-training合同sealed；下一裁决是同一single checkpoint的K4
+strict paired400，尚无closed-loop结果。

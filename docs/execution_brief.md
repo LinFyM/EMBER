@@ -24,7 +24,12 @@ USDC全部memory/K4/rank32/unit-secant/reward/Adam图，只把高于active-task 
 等权平均；不放大小task、不旋转方向、没有可扫cap系数。cycle1仍只有一次full24，因此其职责是发现可信方向：若
 接近强baseline并保住breadth/retention，则锁原topology exact-resume cycle2，必要时cycle3；最终稳定资格由相邻
 strict400的低churn与共同积累判断。像USDC那样correct、breadth、retention同时显著下降的cycle1则不盲续。当前
-canonical实现定向/完整CPU=`47/416 passed`、compileall/diff check通过、architecture guard 0 hard，尚无GPU run。
+canonical实现定向/完整CPU=`47/416 passed`、compileall/diff check通过、architecture guard 0 hard。clean
+`1a0700f` gpu01 world6 fresh cycle1已经完成24 tasks/48 states/96 rollouts：candidate/reference=`33/32`、
+gains=`3/2`，5 active tasks覆盖四suite，cycle=`388.239s`。五task raw norms=
+`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`；只截断task4/38，小task不放大，shared/final
+coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。checkpoint已seal，下一步是同一single checkpoint K4
+strict400；当前无GPU run。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

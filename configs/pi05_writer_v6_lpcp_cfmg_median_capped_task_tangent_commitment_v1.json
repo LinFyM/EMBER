@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_commitment_v1",
-  "status": "active_formal_pending",
+  "status": "active_formal_cycle1_completed_strict_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -134,7 +134,7 @@
     }
   },
   "formal_run": {
-    "status": "ready",
+    "status": "sealed",
     "predecessor_evidence": {
       "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_seed7_trainr6_evalr6_539e0e5_evalc20b5be_gpu01p024567_b16_retry3_20260817/usdc_cycle1_strict_adjudication.json",
       "active_task_ids": [4, 19, 20, 25, 34, 38],
@@ -235,6 +235,33 @@
       "search_trial_count_maximum": 1,
       "shared_anchor_cycle_seconds_maximum": 210.0,
       "shared_anchor_train_task_count": 3
+    },
+    "cycle1_evidence": {
+      "result": "complete_strict400_required",
+      "authority_commit": "1a0700f2e04b646627be5124a629c8f0fd37b740",
+      "training_root": "runs/outputs/pi05_v6_lpcp_cfmg_mctc_formal_cycle0to1_r6_k4_views4_nmc4_b8_1a0700f_gpu01p024567_20260817",
+      "world_size": 6,
+      "tasks": 24,
+      "paired_states": 48,
+      "rollouts": 96,
+      "candidate_successes": 33,
+      "reference_successes": 32,
+      "candidate_gains": 3,
+      "reference_gains": 2,
+      "active_tasks": 5,
+      "active_task_ids": [4, 19, 25, 34, 38],
+      "active_suites": ["libero_10", "libero_goal", "libero_object", "libero_spatial"],
+      "cycle_seconds": 388.23911145189777,
+      "exact_adam_delta_l2": 0.23696264624595642,
+      "descending_task_views": 14,
+      "total_task_views": 20,
+      "raw_task_gradient_norms": [0.14760799705982208, 0.02218388207256794, 0.047037843614816666, 0.12479367852210999, 1.1337391138076782],
+      "median_task_gradient_norm": 0.12479367852210999,
+      "task_gradient_scales": [0.8454397916793823, 1.0, 1.0, 1.0, 0.11007265746593475],
+      "shared_and_final_task_descent_coverage": 1.0,
+      "all_q_v_action_native_responses_nonzero": true,
+      "forbidden_reads": 0,
+      "oom_or_nonfinite": 0
     }
   }
 }

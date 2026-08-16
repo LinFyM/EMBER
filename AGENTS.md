@@ -48,8 +48,11 @@ correction cosine/energy=`.555--.953/.663--.965`，说明literal memory、K-set/
 `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它从sealed LPCP fresh，保留
 USDC的全部memory/K4/rank32/unit-secant/reward/Adam图，唯一在四view task gradient形成后，以active panel norm
 中位数只截断上方outliers，再等权平均；小task不放大、task方向不旋转、无cap系数或quantile sweep。USDC checkpoint
-不得resume。canonical原位实现完整CPU=`416 passed`、compileall/diff check通过、architecture guard 0 hard；当前尚无
-MCTC GPU结果或active run。
+不得resume。canonical原位实现完整CPU=`416 passed`、architecture guard 0 hard。clean`1a0700f` gpu01 world6
+cycle1完整：24 tasks/48 states/96 rollouts，`33/32` successes、`3/2` gains，5 active tasks覆盖四suite，cycle=
+`388.239s`。raw norms=`.147608/.022184/.047038/.124794/1.133739`、median=`.124794`；只截断task4/38，
+其余scales为1，shared/final coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。checkpoint已seal，下一裁决是
+同一checkpoint K4 strict400；当前无GPU run。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

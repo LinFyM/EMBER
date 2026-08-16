@@ -60,7 +60,10 @@ LPCP fixed-A只读诊断对step2000 expert BA的可达能量/cosine为`.381712/.
 factor重建。当前authority已冻结，MCTC checkpoint不得resume。
 canonical runtime现已原位替换旧binary arm credit：每task仅两条expert rollouts，matched B8/8-strata/four-view/
 median-cap/Adam继续复用；唯一新source owner只负责expert bank加载与rank padding。定向/完整CPU=`56/416 passed`、
-architecture guard无hard violation，24个expert adapters实读成功；当前GPU smoke待运行，尚无formal checkpoint。
+architecture guard无hard violation，24个expert adapters实读成功。clean pushed `08c5edc`在gpu02物理`1/2/3/4`
+完成world4机制smoke：8/8 expert trajectories成功，16/16 task-view post-update distances下降，四task four-view
+gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response均非零，cycle=
+`87.094s`。formal已seal，当前无GPU run或formal checkpoint；下一步fresh full24 cycle1。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

@@ -103,8 +103,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_successful_expert_distillation_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "mechanism_smoke_pending"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "active_formal_cycle1_ready"
+    assert config["formal_run"]["status"] == "sealed"
+    smoke = config["formal_run"]["mechanism_smoke_evidence"]
+    assert smoke["world_size"] == 4
+    assert (smoke["expert_successes"], smoke["expert_failures"]) == (8, 0)
+    assert smoke["descending_task_views"] == smoke["task_views"] == 16
+    assert min(smoke["cross_video_pairwise_cosine_by_task"]) > 0.5
+    assert smoke["cycle_seconds"] < 180.0
     predecessor = config["formal_run"]["predecessor_evidence"]
     assert predecessor["strict_curve"] == [142, 142, 136]
     assert predecessor["adjacent_churn"] == [36, 34]

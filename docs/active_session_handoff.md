@@ -69,7 +69,11 @@
   `.381712/.617828`，故明确不做expert factor重建。authority已冻结；canonical旧binary arm路径已原位退休，
   新runtime每task只跑两条expert trajectories并复用matched B8/8-strata/four-view/median-cap/Adam。唯一新source
   owner为expert bank加载与rank padding；定向/完整CPU=`56/416 passed`、architecture guard无hard violation，
-  24个adapters实读成功。当前无GPU run，下一步是四suite world4真实mechanism smoke；
+  24个adapters实读成功。clean pushed `08c5edc` gpu02物理`1/2/3/4` world4真实smoke已exit0：四suite
+  8/8 expert trajectories成功、64 selected states、16/16 task-view post-update distances下降；四task
+  four-view gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，
+  cycle=`87.094s`、peak reserved=`19,369,295,872` bytes。formal现已seal；当前无GPU run，下一步是从sealed
+  LPCP fresh启动full24 cycle1；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

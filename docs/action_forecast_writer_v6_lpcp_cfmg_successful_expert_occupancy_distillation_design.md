@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
-状态：2026-08-17 canonical实现与CPU合同完成、真实GPU机制门待运行的active authority。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
+状态：2026-08-17 canonical实现、CPU合同与真实GPU机制门均通过，已seal fresh formal cycle1。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
 不resume MCTC checkpoint；保留已经验证的视频carrier、literal memory、K4集合、rank32 native LoRA写出、
 four-view共享与median-capped natural Adam，只替换训练credit的来源。
 
@@ -131,4 +131,12 @@ teacher或生成LoRA本身。
 `reward/expert_teacher.py`，只负责sealed train24 bank inspection和rank16→rank32 zero padding；没有新entrypoint、
 平行runtime或deployment fallback。active source相对authority commit净减少221行，architecture guard无hard
 violation；定向/完整CPU=`56/416 passed`，compileall和diff check通过。24个step2000 adapters已在CPU实读并全部
-成功pad为rank32。下一步只运行四suite真实GPU smoke，不以CPU objective代替机制与闭环证据。
+成功pad为rank32。
+
+clean pushed `08c5edc`在gpu02物理`1/2/3/4`完成四suite world4真实smoke：8/8 expert trajectories成功，
+64个selected states、16个互斥K4 credit conditions和64条unique videos均按合同产生；四task的four-view gradient
+pairwise cosine mean分别为`.987182/.775646/.953631/.971174`，shared与actual Adam descent覆盖均为4/4，
+post-update 16/16 task-view expert distances下降。q/v/action effective-BA RMS与fixed-action response在四task均
+非零，final delta L2=`.236847`；cycle=`87.094s`、peak reserved=`19,369,295,872` bytes，0 OOM/nonfinite/
+forbidden read，exit0。constant/reverse与step0 identity由未改动的sealed carrier/memory路径继承；本轮新credit没有
+改变该前向图。该smoke只证明SEOD可进入formal，不提供absolute、retention或视频因果性能结论。

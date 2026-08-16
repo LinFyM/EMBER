@@ -36,8 +36,11 @@ expert target经四个disjoint correct K4 conditions回传Writer。CFMG memory�
 视频因果controls。
 canonical实现现已完成：旧binary arm credit被原位替换，没有平行runtime；每task rollout数从4降到2，唯一新增
 module只拥有train24 expert加载与rank16→32 zero padding。定向/完整CPU=`56/416 passed`、compileall/diff check
-与architecture guard hard gate通过，24个expert adapters实读成功。当前无GPU run；下一动作是固定四suite anchors
-`2/12/21/35`的world4真实smoke，然后才可seal formal。
+与architecture guard hard gate通过，24个expert adapters实读成功。clean pushed `08c5edc`在gpu02物理
+`1/2/3/4`完成anchors `2/12/21/35` world4真实smoke：8/8 expert trajectories成功、64 selected states，
+16/16 task-view post-update distances下降；四task four-view gradient cosine mean=
+`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，cycle=`87.094s`。formal已seal，
+下一动作是fresh full24 cycle1及其single-checkpoint strict400。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

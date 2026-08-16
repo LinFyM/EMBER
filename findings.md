@@ -123,6 +123,13 @@ SEOD改为只使用expert**自身成功closed-loop occupancy**：train24每task/
 也不同于expert bank held routing。该设计直接检验“成功策略真实访问的状态上，稠密behavior target能否替代稀疏
 binary discordance，形成held-useful且多task可保留的shared direction”。
 
+SEOD clean`08c5edc`四suite world4 smoke关闭了pre-formal机制门：8/8 expert trajectories成功，四task的same-task
+four-view gradient cosine mean=`.987182/.775646/.953631/.971174`，shared/final task descent=`4/4`且16/16
+post-update view distances下降；q/v/action BA与fixed-action response均非零。cycle=`87.094s`，只有8条rollouts却
+产生64个selected occupancy states和64条unique correct videos，说明稠密成功行为target同时改善了credit内容与
+吞吐。该证据不能替代full24 strict，也未证明correct优于negative或多checkpoint稳定；最早未决接口是full24
+共享更新能否把这种train-local一致方向变成held closed-loop增益并保留多task support。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

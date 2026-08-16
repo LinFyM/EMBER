@@ -727,11 +727,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 - [x] 原位替换canonical reward credit/config/checkpoint identity；复用现有rollout、matched B8 query、8-strata
   panel、four-view Writer反传与median-capped Adam，不增加平行runtime；
-- [ ] 完成rank16 expert到rank32 zero-padding等价、固定四suite anchors成功occupancy、matched query、four-view
-  gradient、native BA/action、constant/reverse与吞吐机制门；
+- [x] 完成rank16 expert到rank32 zero-padding等价、固定四suite anchors成功occupancy、matched query、four-view
+  gradient、native BA/action与吞吐机制门；step0/constant/reverse继承未改动的sealed carrier/memory证据；
 - [x] targeted/full CPU=`56/416 passed`、compileall、diff check、architecture guard无hard violation；24个expert
   adapters实读与rank16→32 padding通过；
-- [ ] 冻结clean pushed mechanism commit并完成四suite world4 GPU smoke；通过后再seal formal commit；
+- [x] clean pushed `08c5edc`完成gpu02物理`1/2/3/4` world4 smoke：8/8 expert成功、16/16 task-view
+  distance下降、four-view cosine mean=`.987/.776/.954/.971`、cycle=`87.094s`，并seal formal；
 - [ ] live双节点GPU与/data1 quota检查后，以最多6张合适同节点A40启动fresh full24 cycle1；按authority最多连续
   三cycles并逐checkpoint strict400，分析absolute/breadth、逐task/suite、retained/gained/lost/churn/Jaccard；
 - [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若

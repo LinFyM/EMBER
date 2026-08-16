@@ -73,6 +73,18 @@ LPCP carrier不压缩。三anchor stable rank-bank合同五项误差均精确0�
 all-view candidate并exact no-op，且rank32正常BF16 compute shape令固定outcome从`2/1,26`漂为`1/0,25`；三anchor
 wall/ALB=`1.16565x>1.15x`。纠正后2/3 anchors与吞吐门失败，故未启动full24/strict。该轮否定继续改变factor
 origin，不否定memory、rank8、few-shot或生成LoRA；最早缺口转为reward-useful Value/acceptance的finite跨video/task
+共同方向。NEAP-C随后只把随机CFM preference换成真实10步deployed-action endpoint preference；clean `33f69fd`
+task9把four-view gradient cosine/energy从NZRB的`.286/.448`提高到`.846/.865`并在j0接受，held8 BA/raw-B/action
+也达到`.953/.955/.485`，证明endpoint credit比CFM更接近真实policy direction。但held/train BA L2仅`.234x`，
+stage localization把断点定位在joint Value`.665x`到one-task direct rows`.223x`。
+
+TCEC clean `9ed6a08`据此首次把task9/15/18 endpoint credits放进同一个world3 shared commitment。三个task内部
+four-view gradient仍各自4/4下降，cosine/energy=`.846/.865,.596/.645,.448/.557`；但task mean pairwise cosine
+mean/min=`-.145/-.337`，gradient norm相差至`41.45x`，未经norm重权的equal-task arithmetic mean只对task15
+下降。全局Adam ray的11个scale最多让8/12 task-view margins下降，最终exact no-op，保存的860,160个B-head参数
+全零。它在full24前否定了“raw equal-task mean + one synchronized direct-B commitment”，并把最早接口推进到
+显式task/condition结构的shared representation与LoRA output mapping；不否定NEAP endpoint、memory token、rank8、
+Dynamic-K、few-shot或生成LoRA。
 policy step。
 精确状态取`docs/active_session_handoff.md`。
 

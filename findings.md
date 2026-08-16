@@ -708,6 +708,17 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      gradient与candidate tensor不all-gather。CPU反例已证明某一task下降但另一task上升时不会误接受。定向
      `41 passed`、完整`405 passed`、architecture guard 0 hard；这些证据只说明shared update实现正确，world3
      task9/15/18仍是首个科学门。
+108. TCEC clean`9ed6a08` world3完整复现task9/15/18 outcome/count并在`182.142s`内得到12个四video endpoint
+     gradients。三个task各自的four-view cosine/energy=`.846/.865,.596/.645,.448/.557`且均4/4下降，证明NEAP
+     endpoint credit的same-task video汇合不是task9偶例。但task mean之间pairwise cosine mean/min=`-.145/-.337`，
+     gradient norm=`7.288e-6/3.021e-4/2.897e-5`；未经norm重权的equal-task arithmetic mean被task15幅度主导，
+     只对task15下降，对task9/18 cosine=`-.085/-.248`。因此最早冲突发生在task-local coherent credit汇成一个
+     shared update时，而不是held compiler之后。
+109. TCEC全局native backtracking进一步确认冲突不是一个漏掉的半径：`j0`的task9/15/18下降view数为
+     `2/4,4/4,0/4`，最佳`j1/j3`也只有8/12，`j10`仍为`2/4,2/4,0/4`；11个scale全部拒绝。fallback保存的
+     860,160个B-head参数逐元素全零，故任何train/held condition都与step0 LPCP完全相同，额外GPU held分析没有
+     信息增量。该结果否定raw equal-task mean加单一direct-B Adam/native commitment，不授权task weights、
+     normalization、PCGrad或ray sweep；下一变量必须进入显式task/condition结构的共享表示与LoRA输出映射。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

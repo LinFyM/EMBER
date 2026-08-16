@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 最新终局design（当前无active successor）：
    `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -271,14 +271,19 @@ cosine=`.953/.955/.485`，reverse/constant与rank-bank健康。但held/train BA 
 终局，不运行task15/18、full24/strict或小扫。stage localization为probe/joint幅度`.671/.665x`到direct rows
 `.223x`，最早缺口是one-task condition经shared direct-B head的跨task幅度。NEAP无可resume checkpoint。
 
-当前active successor是**V6-LPCP Task-Complete Endpoint Coexistence**（TCEC），authority=
+最新终局successor是**V6-LPCP Task-Complete Endpoint Coexistence**（TCEC），authority=
 `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。它不改NEAP endpoint objective、
 LPCP/NZRB生成图、rank32、K4、MB-SOP、Adam或backtracking ray；唯一把commitment单位改为全部active tasks。
 每task四view gradient先等权，active tasks再等权形成同一Adam candidate；所有ranks聚合每个active task×view的
-endpoint margin，只接受全局全部严格下降的同一个首个scale。先以task9/15/18 world3做一次共同update，检验
-12/12 margins、rank间参数一致与held/train幅度；三anchor全过才full24。canonical实现已完成：probe list、global
-scalar-row collective、统一scale、world3固定anchor合同均已接通；完整CPU=`405 passed`、architecture guard 0 hard。
-当前尚未启动GPU。
+endpoint margin，只接受全局全部严格下降的同一个首个scale。clean `9ed6a08` world3完整复现task9/15/18
+outcome/count，cycle=`182.142s`且0禁读/OOM/nonfinite。三task各自four-view cosine/energy=
+`.846/.865,.596/.645,.448/.557`且均4/4下降；但task间gradient cosine mean=`-.14513`，task15 norm分别是
+task9/task18的`41.45x/10.43x`，故global raw mean只对task15下降。11个native scales最多覆盖8/12 margins，
+全部拒绝并恢复exact step0；保存的860,160个B-head参数逐元素全零。TCEC按continuous 3/3与native 12/12两门
+终局，不full24/strict/held controls或小扫。最早失败接口是task-local coherent endpoint credit汇成单一shared
+direct-B commitment，而不是carrier、reward、global rank同步或held compiler。当前没有active successor、GPU run
+或可resume checkpoint；下一设计必须针对显式task/condition结构的共享表示与LoRA输出映射，不继续ray/scale/
+normalization/PCGrad补丁。
 
 ## 4. Long-term objective and decision rule
 

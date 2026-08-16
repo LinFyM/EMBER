@@ -146,13 +146,16 @@
   全通；但held/train BA L2=`.234<.30`，26/27门仍按authority终局，不跑task15/18、full24/strict或小扫。
   probe/joint幅度为`.671/.665x`，direct rows骤降`.223x`，最早缺口是one-task condition到shared direct-head的
   跨task幅度。NEAP没有可resume checkpoint；
-- 当前active successor是**TCEC**，authority=
+- 最新终局successor是**TCEC**，authority=
   `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。它完整保留NEAP/NZRB/LPCP，唯一
   把commitment单位从一个task-local probe改成所有active tasks：task9/15/18先在world3 fresh共享一个等权mean
-  Adam candidate，只有三个task共12个correct K4 endpoint margins全部下降才由所有ranks接受同一个scale。该共同
-  update的held/train BA幅度必须从NEAP`.234`越过`.30`；否则终局，不拆task winners或换solver。canonical实现
-  已接通active-probe list、global scalar-row collective、统一scale与world3固定anchor；完整CPU=`405 passed`、
-  architecture guard 0 hard。当前无GPU run；
+  Adam candidate，只有三个task共12个correct K4 endpoint margins全部下降才由所有ranks接受同一个scale。
+  clean frozen `9ed6a08`在gpu02物理`1/2/3`完整exit0：task9/15/18预定outcome/count全部复现，总计6 paired states、
+  12 rollouts、134 chunks、32 selected pairs与48条correct videos，cycle=`182.142s`。每task内部four-view
+  cosine/energy=`.846/.865,.596/.645,.448/.557`且均4/4下降；但task间cosine mean=`-.14513`，task15 norm为
+  task9/task18的`41.45x/10.43x`，global raw mean仅1/3 task下降。11个native scales最多8/12 margins下降，
+  全部拒绝，最终860,160个B-head参数逐元素全零。按门不full24/strict/held controls或小扫；终局artifact位于
+  fresh root的`tcec_shared3_terminal_adjudication.json`。当前无active successor、GPU run或可resume checkpoint；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

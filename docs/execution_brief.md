@@ -120,13 +120,17 @@ clean`33f69fd` task9的gradient cosine/energy从NZRB`.286/.448`提高到`.846/.8
 direct rows仅`.223x`，最早缺口是one-task condition到shared direct-head的跨task幅度。authority=
 `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`；NEAP无可resume checkpoint。
 
-当前active successor是**TCEC**：不改NEAP endpoint、LPCP/NZRB、rank32、K4、MB-SOP、Adam或native ray，只把
+最新终局successor是**TCEC**：不改NEAP endpoint、LPCP/NZRB、rank32、K4、MB-SOP、Adam或native ray，只把
 commitment从一个task-local probe升级为所有active tasks全局共同裁决。固定task9/15/18将在world3中共享一次
 equal-task-mean update；12个correct-view endpoint margins必须全部严格下降且三个ranks接受相同scale。随后用三个
 train anchors的平均幅度重新裁决validation8 held/train>=`.30`。authority=
 `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。canonical已原位实现world3固定anchor、
 active-probe list和global scalar-row backtracking；定向=`41 passed`、完整CPU=`405 passed`、architecture guard 0 hard。
-尚未GPU启动。
+clean `9ed6a08` world3随后完整复现三anchor并在`182.142s`结束。每个task内部四video credit均为4/4共同下降，
+但task间gradient cosine mean=`-.14513`，task15 norm比task9/task18大`41.45x/10.43x`，所以global shared mean
+只对1/3 task下降。11个scale最多覆盖8/12 margins并全部拒绝，最终B-head state 860,160参数全零。TCEC在held前
+终局，不full24/strict/controls。当前没有active successor；下一设计必须处理task-local coherent Program/credit在
+shared condition-to-LoRA映射中的结构化共存，不能继续parameter ray、scale、normalization或PCGrad小修。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

@@ -563,7 +563,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   rows=`.223x`，最早缺口是one-task joint condition写入shared direct-B head的跨task幅度；
 - [x] 从该终局证据建立下一份单变量authority；不得放宽NEAP门或把task15/18补跑冒充通过。
 
-## Active iteration: V6-LPCP Task-Complete Endpoint Coexistence
+## Terminal iteration: V6-LPCP Task-Complete Endpoint Coexistence
 
 - [x] 定位单一变量：NEAP endpoint/same-task/native链已通，held幅度在joint Value`.665x`到one-task direct rows
   `.223x`之间丢失；下一步先检验多个task credits能否在同一shared head update中覆盖condition manifold；
@@ -595,8 +595,14 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   既有`.env.local`并把fresh root更新为
   `runs/outputs/pi05_v6_lpcp_task_complete_endpoint_coexistence_shared3_task9_15_18_b8_9ed6a08_gpu02p123_retry1_20260816`；
   exact training command其余不变，环境前缀增加`source <canonical>/.env.local`；
-- [ ] clean frozen world3共同运行task9/15/18，完整分析12/12、跨task gradient、held8、时序、wall与rank一致性；
-- [ ] 三anchor shared gate全过才full24 cycle1与strict paired400。
+- [x] clean frozen `9ed6a08` world3共同运行task9/15/18：预定outcome/count与三rank ownership全部复现，
+  cycle=`182.142s`、max reserved=`19.367GB`、0禁读/OOM/nonfinite；
+- [x] 完整分析跨task gradient与12-view native panel：三task内部四video coherence均健康，但task15 gradient norm
+  为task9/task18的`41.45x/10.43x`，task间cosine mean=`-.14513`，global raw mean仅1/3 task下降；11个scale
+  最多8/12 margins下降，最终exact no-op；
+- [x] 验证保存的四B heads共860,160参数逐元素全零，因此held8、时序与deployment correction必然为零，不重复
+  GPU forward；终局artifact已封存；
+- [x] 按预注册门终局，不full24、strict paired400、held controls、cycle2、task权重/normalization/solver或scale小扫。
 
 ## Non-negotiable boundaries
 
@@ -616,8 +622,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-当前active TCEC实现已通过CPU门、尚无GPU run；下一裁决是world3 task9/15/18同一次shared commitment，不能回退
-CFM、放宽门或同时改memory、video carrier、rank、LR、matched panel与trust scale。
+最新TCEC world3已终局：同task四video endpoint gradients有共同方向，但跨task raw shared mean仅1/3为下降，
+11个native scales最多覆盖8/12 margins，最终exact no-op。当前没有active successor、GPU run或可resume checkpoint。
+下一设计必须针对**task-local coherent Program/credit如何在一个shared Writer中形成可共存的condition-to-LoRA映射**，
+不能回退CFM、继续parameter ray/scale/normalization/PCGrad小修，或无证据替换已通过的视频carrier与endpoint credit。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

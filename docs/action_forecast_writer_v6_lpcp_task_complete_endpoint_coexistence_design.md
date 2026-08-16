@@ -1,6 +1,6 @@
 # V6-LPCP Task-Complete Endpoint Coexistence
 
-状态：2026-08-16 implementation-ready / preformal，简称`TCEC`。本轮从sealed LPCP fresh启动，完整保留NEAP-C已经验证的
+状态：2026-08-16 terminal preformal non-pass，简称`TCEC`。本轮从sealed LPCP fresh启动，完整保留NEAP-C已经验证的
 10步deployment endpoint credit与NZRB native-zero rank32 LoRA。唯一变量是把reward update的承诺单位从一个
 task-local probe改成**同一shared Writer update覆盖的全部active tasks**；task gradients仍等权，不增加
 parameter-ray solver、task router、memory、rank、scale或第二套adapter。
@@ -131,3 +131,31 @@ canonical runtime已经原位替换NEAP active schema，没有保留平行runner
 - accepted rows按task还原到各自deployment response probe；smoke和formal task records都按固定task集合全局汇总；
 - 定向回归=`41 passed`，完整CPU=`405 passed`，compileall与diff check通过；architecture guard=`0 hard
   violations`，没有新增module/entrypoint，active source净`+141`行。以上只关闭实现门，不提供GPU机制结果。
+
+## 8. World3终局结果
+
+clean pushed/frozen code=`9ed6a082af20cd1d3668713f592753da6c2825a7`。gpu02物理`1/2/3`的world3 fresh run完整
+exit0：task9/15/18分别由rank0/1/2拥有，预定outcome/count全部复现；总计6 paired states、12 rollouts、
+candidate/reference=`4/2`、gains=`3/1`、134 complete chunks、32 selected pairs、12 credit conditions、48条互异
+correct videos。cycle=`182.142s`，max allocated/reserved=`11.721/19.367GB`，0 teacher/target/validation/test
+action或reward读取。
+
+每个task内部的四video endpoint gradients仍有真实共同方向：task9/15/18的pairwise cosine=`.84618/.59587/.44786`，
+mean/sample energy=`.86523/.64531/.55705`，各自continuous descent coverage均为4/4。但三个task mean之间的
+pairwise cosine mean/min/max=`-.14513/-.33704/.00905`；其gradient norm为
+`7.288e-6/3.021e-4/2.897e-5`，task15分别是task9/task18的`41.45x/10.43x`。因此未经norm重权的equal-task
+arithmetic mean只对task15为下降方向，对task9/task18的cosine为`-.08499/-.24849`，预注册3/3 continuous门实际
+只有1/3。
+
+同一个Adam candidate继续按全局12-view panel测试`j=0..10`。没有任何scale通过；单个scale最多只让8/12 margins
+下降。`j0`为task9/15/18=`2/4,4/4,0/4`，`j3`为`4/4,1/4,3/4`，到`j10`仍为`2/4,2/4,0/4`。
+因此搜索按合同恢复step0，最终delta L2/RMS均为0；保存的四个B heads共860,160参数逐元素全零，三个deployment
+response的effective-BA/action correction也全零。这个代数事实使额外held8 GPU forward没有信息增量，故未浪费
+GPU重复验证零修正。
+
+TCEC最早失败接口是**task-local coherent endpoint gradients -> shared equal-task direct-B commitment**：reward、
+四video credit、global rank同步与信息墙都工作，但异质task gradients在进入单一shared update时已幅度失衡且方向
+冲突；之后的Adam/native finite ray也没有12/12交集。这不是“再找一个scale”或“再换一条parameter ray”的问题。
+按预注册门终局，不运行full24、strict400、held controls、cycle2或参数小扫。正式run root=
+`runs/outputs/pi05_v6_lpcp_task_complete_endpoint_coexistence_shared3_task9_15_18_b8_9ed6a08_gpu02p123_retry1_20260816`，
+终局artifact=`tcec_shared3_terminal_adjudication.json`。

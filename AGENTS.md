@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -35,12 +35,18 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。当前active successor是**V6-LPCP CFMG Unit-Secant Finite Commitment**（USFC），authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。它从sealed LPCP fresh开始，
-逐项保留USEP的CFMG memory/content grid、rank32、K4、unit-secant objective、Adam与global commitment；唯一把
-raw four-view infinitesimal coverage降为diagnostic，仍以同一个actual finite candidate让全部active task×view
-deployed margins严格下降作为硬门。fresh identity已切换，下一步是CPU合同后直接full24 cycle1；若产生nonzero
-checkpoint立即strict paired400。
+长期目标尚未完成。当前active successor是**V6-LPCP CFMG Unit-Secant Direct Commitment**（USDC），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。它从sealed LPCP fresh开始，逐项
+保留USFC的CFMG memory/content grid、rank32、K4、unit-secant objective、四view/active-task等权梯度与Adam；唯一
+删除all-task/all-view monotone backtracking保存硬门，只提交一次未经缩放的exact Adam `j0`。20/20仍完整记录为
+诊断，不再阻止strict400；也不重复step0 baseline forward、不扫scale或挑checkpoint。cycle1后立即strict400，若有
+正信号则exact-resume cycle2/3并逐checkpoint判断稳定共同积累。
+
+USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
+`33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个
+task×view margins下降`17/20`；task4/25/34/38均4/4，只有task19为1/4且mean harm=`2.249e-5`。其余10个scale
+没有达到20/20，原合同恢复exact LPCP，saved delta=0并跳过strict。USFC终局且不得resume；该结果只否定20/20作为
+绝对保存前置条件，不否定unit-secant、memory或`j0`的closed-loop潜力。
 
 USEP clean`6033330` fixed task4/34/38 world3完整exit0：既有outcome/count复现，task38相对次大梯度支配从
 CFMG的`58.73x`降到`6.1538x`，三task pairwise cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual

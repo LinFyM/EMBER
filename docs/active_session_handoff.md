@@ -1,6 +1,6 @@
 # EMBER Active Session State
 
-更新时间：2026-08-16。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
+更新时间：2026-08-17。本文是唯一实时实验状态入口；旧文档、Git快照与formal artifacts中的“当前/下一步”只
 表示当时时点。稳定目标与owner要求见`docs/current_owner_requirements.md`，历史结果见`docs/research_history.md`。
 
 ## 1. Current truth
@@ -16,11 +16,17 @@
   temporal、K-set、layer/token M2P与content grid pairwise cosine=`.984--.986`、energy约`.987--.988`，carrier
   A/B/BA及content residual BA也约`.99`一致；因此raw冲突最早出现在共同BA经condition-local policy/action
   Jacobian回传，不是video Program或LoRA Value分裂；
-- 当前active successor是**USFC**，authority=
-  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。模型、memory、rank32、K4、
-  unit-secant loss、Adam与global commitment逐项不变；唯一把raw four-view coverage降为diagnostic，仍要求同一个
-  actual finite candidate让全部active task×view deployed margins严格下降。fresh config/checkpoint/eval identity
-  已切换；下一裁决点是CPU合同后fresh full24 cycle1，nonzero checkpoint立即strict400；当前无GPU run；
+- USFC clean`db7ab24` gpu02 world6 full24 cycle1已终局：24 tasks/48 paired states/96 rollouts，candidate/reference=
+  `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，使
+  `17/20` task×view margins下降；task4/25/34/38均4/4，只有task19为1/4且mean/max harm=
+  `2.249e-5/9.637e-5`。原20/20硬门拒绝全部11 scales并恢复exact LPCP，saved delta=0，故没有strict400；精确
+  artifact为run root下`usfc_full24_terminal_adjudication.json`，USFC不得resume；
+- 当前active successor是**USDC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。模型、memory、rank32、K4、
+  unit-secant与等task梯度逐项不变；唯一提交未经缩放的exact Adam `j0`，把20/20降为诊断并删除重复step0 baseline
+  forward。canonical实现已完成，完整CPU=`413 passed`、compileall/diff check与architecture guard 0 hard；下一裁决点
+  是clean frozen full24 cycle1，再立即strict400。
+  若cycle1有正信号则同world exact-resume cycle2/3，每个checkpoint独立strict以判断训练量与稳定性；当前无GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

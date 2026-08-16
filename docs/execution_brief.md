@@ -1,11 +1,26 @@
 # EMBER Execution Brief
 
-更新时间：2026-08-16。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
+更新时间：2026-08-17。本文只定义当前实验与持续迭代的执行语义；实时进度见`active_session_handoff.md`，稳定
 owner原则见`current_owner_requirements.md`，历史负结果见`research_history.md`。
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新执行的是**CMBG full24 cycle1**：修正formal four-view retention后的clean`b4dbf84`在world5完整
+最新完成的是**USFC full24 cycle1**：clean`db7ab24`在gpu02 world6完整exit0，24 tasks/48 paired states/
+96 rollouts，candidate/reference=`33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam
+`j0` delta L2=`.242816`，20个task×view margins下降17个；task4/25/34/38均4/4，只有task19为1/4且平均harm
+`2.249e-5`。11个scale没有一个达到原合同20/20，最终恢复exact LPCP、saved delta=0并跳过strict400。USFC按其
+原authority终局，不得resume。
+
+owner明确指出20/20是有价值的理想诊断，但可能本身不可达，不能永久替代closed-loop目标。当前active是
+**USDC**，authority=`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`：逐项保留
+USFC模型、memory、rank32、K4、unit-secant和等task梯度，只提交一次未经缩放的exact Adam `j0`；不backtrack、
+不挑阈值、不重复step0 baseline forward。CPU/architecture gate后立即fresh full24 cycle1和strict400。一次cycle
+只有48 states/96 rollouts且只有discordant tasks有gradient，所以好结果必须继续同world exact-resume cycle2，必要时
+cycle3，并逐checkpoint strict评估稳定积累；明显坏的cycle1不靠盲目加训练量挽救。
+
+以下保留通往USFC/USDC的紧邻因果链。
+
+此前执行的**CMBG full24 cycle1**：修正formal four-view retention后的clean`b4dbf84`在world5完整
 exit0，24 tasks/48 paired states/96 rollouts，candidate/reference=`32/32`、gains=`3/3`，6 active tasks覆盖四suite，
 cycle=`527.605s`，checkpoint/completion完整且0禁读/OOM/nonfinite。其preformal基础为clean`2aecece`：task9/15/18=
 `1/0,2/0,1/2`、selected pairs=`8/16/8`，cycle=`114.732s`。三task four-view cosine/energy=
@@ -45,11 +60,8 @@ cosine/energy=`-.05217/.33803`，所以USEP依预注册门终局，不held/full2
 
 只读stage localization随后证明task34四组K4从endpoint到content grid均约`.984--.986`一致，carrier A/B/BA和
 `content delta-B A0`也约`.99`一致；冲突位于共同BA经condition-local policy/action Jacobian回传，而非视频
-Program、K聚合或LoRA Value。当前active successor是**USFC**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。它不改模型、loss、rank、memory、
-optimizer或数据，只把raw局部coverage降为diagnostic，actual finite all-task/all-view deployed margin descent仍为
-硬门。fresh identity完成CPU合同后直接从sealed LPCP跑full24 cycle1；nonzero checkpoint立即strict400，失败不做
-gradient solver、PCGrad、scale/rank/seed或其它小扫。
+Program、K聚合或LoRA Value。其fresh successor USFC随后只把raw局部coverage降为diagnostic，并已得到上文
+`17/20`但被硬门恢复step0的终局结果。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP

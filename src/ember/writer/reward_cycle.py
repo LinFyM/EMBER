@@ -41,7 +41,7 @@ from ember.writer.reward_gradient_update import (
     AppliedStep,
     RewardPreferenceView,
     RewardProbe,
-    apply_monotone_reward_step,
+    apply_direct_reward_step,
     make_reward_probe,
     probes_after_update,
 )
@@ -747,7 +747,7 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
     records, local_probes, local_active, task_gradients = _collect_cycle_tasks(
         runtime, cycle, gradient_sum
     )
-    step = apply_monotone_reward_step(
+    step = apply_direct_reward_step(
         runtime,
         gradient_sum,
         local_active,

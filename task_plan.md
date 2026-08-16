@@ -1,6 +1,6 @@
 # EMBER Persistent Plan
 
-更新时间：2026-08-16。本文只记录长期Goal与当前迭代阶段；实时run状态见
+更新时间：2026-08-17。本文只记录长期Goal与当前迭代阶段；实时run状态见
 `docs/active_session_handoff.md`，历史实验见`docs/research_history.md`。
 
 ## Goal
@@ -668,7 +668,16 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `.98--.99`跨K4一致，最早冲突后移到condition-local policy/action Jacobian；
 - [x] 建立USFC fresh successor：模型/目标/训练逐项不变，只让raw coverage降为diagnostic并保留actual finite
   all-view deployed descent硬门；切换fresh config/checkpoint/eval identity；
-- [ ] 完成USFC CPU合同、clean push与fresh full24 cycle1；若nonzero立即strict400并充分逐task分析。
+- [x] 完成USFC CPU合同、clean`db7ab24` push与gpu02 world6 fresh full24 cycle1：24 tasks/48 states/96 rollouts、
+  5 active tasks、cycle=`480.284s`；exact Adam `j0`使`17/20` margins下降，但20/20硬门拒绝全部11 scales，
+  saved delta0并跳过strict；完成逐task、rank负载与CFMG对比artifact，USFC终局；
+- [x] 根据owner裁决建立USDC单变量authority：不把20/20换成另一个人为阈值，只提交一次未经缩放的exact Adam
+  `j0`，20/20降为诊断，删除重复step0 baseline forward；保留unit-secant、四view与等task raw gradient；
+- [x] 完成USDC canonical identity与单次j0路径；完整CPU=`413 passed`、compileall/diff check通过、architecture
+  guard 0 hard violation，active source净减88行且没有新module/parallel path；
+- [ ] 完成clean push与frozen full24 cycle1，随后立即strict400；
+- [ ] 若cycle1有closed-loop正信号，锁定world topology exact-resume cycle2，必要时cycle3；每个checkpoint分别
+  strict400并分析相邻churn/Jaccard，不能以偶然winner替代稳定共同积累。
 
 ## Non-negotiable boundaries
 
@@ -688,9 +697,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新USEP world3已终局：它把task38幅度支配降到`6.1538x`并使actual native update达到12/12，但未过task34 raw
-2/4门。当前active USFC只fresh检验这个finite shared update能否扩展到full24/strict；不得resume USEP、回退CFM、
-继续parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
+最新USFC full24已终局：exact `j0`达到17/20但被原20/20硬门恢复step0。当前active USDC只检验这个唯一自然
+optimizer candidate的真实strict与连续训练稳定性；不得resume USFC/USEP、回退CFM、扫parameter ray/scale/
+normalization/PCGrad，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

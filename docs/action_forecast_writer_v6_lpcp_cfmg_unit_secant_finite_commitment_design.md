@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Unit-Secant Finite Commitment
 
-状态：2026-08-17 active formal-cycle1 authority。简称 **USFC**。本轮从sealed LPCP fresh开始，不resume USEP；模型、
+状态：2026-08-17 terminal scientific non-pass。简称 **USFC**。本轮从sealed LPCP fresh开始，不resume USEP；模型、
 输入、LoRA、loss、optimizer和训练数据逐项保持USEP不变，唯一改变科研裁决中raw infinitesimal gradient门与
 actual finite deployed commitment门的主从关系。
 
@@ -110,3 +110,17 @@ BA/action最早分裂接口设计condition-specific functional transport，而�
 
 任何失败都不否定memory token、dynamic K/few-shot、rank8、完整A/B LoRA生成、正确视频因果目标或未来独立的
 task-local RL。
+
+## 8. Terminal result
+
+clean `db7ab24`在gpu02 world6完成full24 cycle1：24 tasks、48 paired states、96 rollouts，candidate/reference
+success=`33/32`，gains=`3/2`，5个active tasks覆盖四suite，cycle=`480.284s`，0禁读/OOM/nonfinite。unit-secant
+把task38相对次大task的梯度支配保持在`7.6807x`；active tasks pairwise gradient cosine mean=`-.00834`。
+
+exact Adam `j0`的delta L2=`.242816`，让20个task×view margins中的17个下降。task4/25/34/38均为4/4；只有task19
+为1/4，mean/max harm=`2.249e-5/9.637e-5`。其余10个缩放候选没有改善为20/20，最终按本设计原始硬门恢复exact
+LPCP，saved delta=0，故strict400没有运行。精确artifact为run root下`usfc_full24_terminal_adjudication.json`。
+
+该结果终局否定本设计的“all-view monotone是保存更新的绝对前置条件”，但不否定unit-secant、CFMG memory、
+direct Adam候选或其潜在closed-loop效果。owner随后明确：20/20应保留为理想诊断，不能让未验证过的endpoint
+surrogate永久阻止真实闭环裁决。USFC不得resume；fresh successor USDC只改变commitment acceptance。

@@ -456,7 +456,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_cfmg_unit_secant_finite_commitment_v1": {
+    "v6_lpcp_cfmg_unit_secant_direct_commitment_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
@@ -467,9 +467,9 @@ WRITER_FAMILIES = {
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
-        "arm_prefix": "v6_lpcp_cfmg_unit_secant_finite_commitment_",
+        "arm_prefix": "v6_lpcp_cfmg_unit_secant_direct_commitment_",
         "trained_checkpoint_kind": (
-            "v6_lpcp_cfmg_unit_secant_finite_commitment_cycle_checkpoint"
+            "v6_lpcp_cfmg_unit_secant_direct_commitment_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 32,
@@ -478,14 +478,14 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the CFMG unit-secant finite-commitment writer"
+            "the CFMG unit-secant direct-commitment writer"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the CFMG unit-secant finite-commitment writer"
+            "through the CFMG unit-secant direct-commitment writer"
         ),
         "episode_validator": "dynamic_k",
-        "checkpoint_curve_allowed_macros": (1, 2),
+        "checkpoint_curve_allowed_macros": (1, 2, 3),
     },
 }
 

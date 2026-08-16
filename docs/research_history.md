@@ -5,7 +5,7 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格。CAPG在strict前终局：它把固定三task的
+2026-08-17，最高correct单点SFMC144因lost15/churn31不具稳定资格。CAPG在strict前终局：它把固定三task的
 same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
 随后CMBG把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory；
 carrier-exact clean`2aecece` fixed world3已把cross-task cosine mean从`-.13938`提高到`+.09842`，shared raw/final
@@ -33,7 +33,12 @@ gradient norm、不改变task/view权重，也不采用MSE反比放大小secant�
 q/v/action response；但task34 raw four-view仍2/4、cosine/energy=`-.05217/.33803`，故USEP依预注册门终局。
 只读stage localization显示task34四组K4从endpoint到content grid及content residual BA均约`.98--.99`一致，
 raw冲突后移到condition-local policy/action Jacobian。fresh successor USFC不改模型、loss或训练，只把raw
-coverage降为diagnostic并以actual finite all-view commitment作为硬门，后续结果仍须full24/strict裁决。
+coverage降为diagnostic并以actual finite all-view commitment作为硬门。clean`db7ab24` gpu02 world6 full24完整：
+24 tasks/48 states/96 rollouts，5 active tasks，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`并使
+`17/20` margins下降；task4/25/34/38均4/4，task19仅1/4且mean harm=`2.249e-5`。其余10 scales也未达到
+20/20，原合同恢复exact LPCP、saved delta0并跳过strict400。USFC终局，不得resume。该结果只否定20/20 surrogate
+作为保存更新的绝对前置条件，未检验`j0`的closed-loop价值。fresh successor USDC只提交一次exact `j0`，把20/20
+保留为诊断并立即strict400；若cycle1有正信号则exact-resume cycle2/3逐checkpoint评估训练量和稳定性。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

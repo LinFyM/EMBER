@@ -101,7 +101,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
+def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "active_formal"
     assert config["formal_run"]["status"] == "ready"
@@ -109,7 +109,8 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
     assert predecessor["task38_to_next_gradient_norm_ratio"] < 15
     assert predecessor["equal_selected_credit_pairs_per_active_task"] == 8
     assert predecessor["task34_raw_four_view_coverage"] == 0.5
-    assert predecessor["finite_deployed_margin_descent_coverage"] == 1.0
+    assert predecessor["best_finite_deployed_margin_descent_coverage"] == 0.85
+    assert predecessor["exact_adam_candidate_delta_l2"] > 0
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -134,13 +135,12 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
     assert config["optimization"]["endpoint_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "actual_adam_candidate_first_global_task_complete_all_view_monotone_"
-        "power_of_two_backtracking"
+        "actual_adam_candidate_direct_single_step_with_all_view_diagnostic"
     )
     assert config["commitment"]["direction"] == (
         "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
     )
-    assert config["commitment"]["max_backtracks"] == 10
+    assert config["commitment"]["max_backtracks"] == 0
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
     assert config["smoke_run"]["shared_anchor_task_ids"] == [4, 34, 38]
     assert config["smoke_run"]["required_world_size"] == 3
@@ -155,7 +155,7 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
         "38": 8,
     }
     assert config["formal_run"]["mechanism_gate"][
-        "post_update_preference_margin_must_decrease"
+        "post_update_preference_margin_is_diagnostic"
     ]
     assert config["formal_run"]["stable_qualification"] == {
         "cycle1_and_cycle2_correct_minimum": 142,
@@ -169,8 +169,10 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
         "correct_each_negative_margin_minimum": 10,
     }
     gate = config["formal_run"]["mechanism_gate"]
-    assert gate["global_anchor_view_count"] == 12
-    assert gate["rank_accepted_scale_and_parameter_delta_identical"]
+    assert gate["global_anchor_view_count"] == (
+        "four_times_observed_active_task_count"
+    )
+    assert gate["rank_parameter_delta_identical"]
     assert gate["public_rank"] == 32
     assert gate["carrier_first_bank_tensors_unchanged"]
     assert gate["single_native_context_backbone_forward"]
@@ -193,7 +195,8 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
     assert gate["raw_four_view_shared_mean_descent_coverage_role"] == (
         "diagnostic_only"
     )
-    assert gate["finite_deployed_all_view_commitment_is_primary"]
+    assert gate["all_view_monotone_coverage_role"] == "diagnostic_only"
+    assert gate["direct_actual_adam_commitment_is_primary"]
     assert gate["task_gradient_norm_or_task_id_reweighting"] is False
     assert gate["mse_inverse_secant_amplification"] is False
     assert gate["task38_to_next_gradient_norm_ratio_maximum"] == 15.0
@@ -202,13 +205,15 @@ def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
     assert gate["first_update_all_four_native_b_families_nonzero"]
     assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
-    assert gate["backtrack_zero_is_exact_adam_candidate"]
+    assert gate["single_exact_adam_candidate_required"]
+    assert gate["repeated_step0_baseline_forward"] is False
     assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.3
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
+    assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 

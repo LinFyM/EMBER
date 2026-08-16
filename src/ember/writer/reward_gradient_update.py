@@ -198,7 +198,7 @@ def evaluate_preference_views(
     """Re-evaluate the exact four-view matched panel at current Writer parameters."""
 
     if len(probe.preference_views) != 4:
-        raise WriterModelError("backtracking commitment lost four video views")
+        raise WriterModelError("direct commitment lost four video views")
     rows = []
     for index, view in enumerate(probe.preference_views):
         with torch.autocast(
@@ -273,7 +273,7 @@ def probe_after_update(
     if len(preference_rows) != 4 or {
         int(row["task_id"]) for row in preference_rows
     } != {probe.global_task_id}:
-        raise WriterModelError("backtracking commitment lost accepted view evidence")
+        raise WriterModelError("direct commitment lost task-view evidence")
     first = preference_rows[0]
     response.update(
         before_preference_margin=first["before_preference_margin"],
@@ -443,7 +443,7 @@ def preconditioned_candidate_commitment(
     optimizer_gradient: torch.Tensor,
     adam_candidate_delta: torch.Tensor,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Commit along the actual AdamW candidate ray before native backtracking."""
+    """Return the exact finite, nonzero AdamW candidate and its geometry."""
 
     if (
         optimizer_gradient.ndim != 1
@@ -497,66 +497,6 @@ def _write_parameter_delta(
             )
 
 
-def _baseline_preference_rows(
-    rows: Sequence[Mapping[str, Any]],
-) -> tuple[Mapping[str, Any], ...]:
-    return tuple(
-        {
-            "task_id": int(row["task_id"]),
-            "suite": str(row["suite"]),
-            "view_index": int(row["view_index"]),
-            "before_preference_margin": float(row["after_preference_margin"]),
-            "after_preference_margin": float(row["after_preference_margin"]),
-            "preference_margin_delta": 0.0,
-            "after_preference_objective": float(row["after_preference_objective"]),
-            "preference_descent": False,
-            "gradient_path_before_preference_margin": float(
-                row["before_preference_margin"]
-            ),
-            "gradient_path_to_inference_baseline_margin_delta": float(
-                row["after_preference_margin"] - row["before_preference_margin"]
-            ),
-        }
-        for row in rows
-    )
-
-
-def _rebase_preference_rows(
-    rows: Sequence[Mapping[str, Any]],
-    baseline: Sequence[Mapping[str, Any]],
-) -> tuple[Mapping[str, Any], ...]:
-    if not rows or len(rows) != len(baseline) or len(rows) % 4:
-        raise WriterModelError("monotone backtracking lost task-view margins")
-    rebased = []
-    for row, base in zip(rows, baseline, strict=True):
-        key = (int(row["task_id"]), int(row["view_index"]))
-        base_key = (int(base["task_id"]), int(base["view_index"]))
-        if key != base_key:
-            raise WriterModelError("monotone backtracking task-view order changed")
-        before_margin = float(base["after_preference_margin"])
-        after_margin = float(row["after_preference_margin"])
-        delta = after_margin - before_margin
-        rebased.append(
-            {
-                "task_id": key[0],
-                "suite": str(row["suite"]),
-                "view_index": int(row["view_index"]),
-                "before_preference_margin": before_margin,
-                "after_preference_margin": after_margin,
-                "preference_margin_delta": delta,
-                "after_preference_objective": float(row["after_preference_objective"]),
-                "preference_descent": delta < 0,
-                "gradient_path_before_preference_margin": float(
-                    base["before_preference_margin"]
-                ),
-                "gradient_path_to_inference_baseline_margin_delta": float(
-                    base["after_preference_margin"] - base["before_preference_margin"]
-                ),
-            }
-        )
-    return tuple(rebased)
-
-
 def _gather_global_preference_rows(
     runtime: RewardRuntime,
     local_rows: Sequence[Mapping[str, Any]],
@@ -588,7 +528,7 @@ def _gather_global_preference_rows(
     )
 
 
-def _monotone_backtracking_commitment(
+def _direct_adam_commitment(
     *,
     runtime: RewardRuntime,
     named: Sequence[tuple[str, torch.nn.Parameter]],
@@ -597,98 +537,59 @@ def _monotone_backtracking_commitment(
     full_delta: torch.Tensor,
     base_geometry: Mapping[str, float],
     evaluator: Callable[[float], Sequence[Mapping[str, Any]]],
-    max_backtracks: int,
     expected_task_count: int,
 ) -> tuple[torch.Tensor, tuple[Mapping[str, Any], ...], dict[str, Any]]:
-    if max_backtracks < 0:
-        raise WriterModelError("monotone backtracking count changed")
     started = time.monotonic()
-    accepted_scale = 0.0
-    accepted_index: int | None = None
-    accepted_rows: tuple[Mapping[str, Any], ...] = ()
-    trials = []
-    zero_delta = torch.zeros_like(full_delta)
-    _write_parameter_delta(named, layout, before, zero_delta)
-    baseline_rows = _gather_global_preference_rows(
-        runtime, evaluator(0.0), expected_task_count=expected_task_count
+    final_delta = full_delta
+    _write_parameter_delta(named, layout, before, final_delta)
+    accepted_rows = _gather_global_preference_rows(
+        runtime, evaluator(1.0), expected_task_count=expected_task_count
     )
-    baseline_offsets = [
-        float(row["after_preference_margin"] - row["before_preference_margin"])
-        for row in baseline_rows
+    margin_deltas = [
+        float(row["preference_margin_delta"]) for row in accepted_rows
     ]
-    if not all(math.isfinite(value) for value in baseline_offsets):
-        raise WriterModelError("monotone backtracking baseline margin is nonfinite")
-    for index in range(max_backtracks + 1):
-        scale = 2.0**-index
-        trial_delta = full_delta * scale
-        _write_parameter_delta(named, layout, before, trial_delta)
-        rows = _rebase_preference_rows(
-            _gather_global_preference_rows(
-                runtime, evaluator(scale), expected_task_count=expected_task_count
-            ),
-            baseline_rows,
-        )
-        margin_deltas = [float(row["preference_margin_delta"]) for row in rows]
-        if not all(math.isfinite(value) for value in margin_deltas):
-            raise WriterModelError("monotone backtracking margin is nonfinite")
-        accepted = all(value < 0 for value in margin_deltas)
-        trials.append(
-            {
-                "backtrack_index": index,
-                "radius_scale": scale,
-                "global_task_view_preference_margin_deltas": [
-                    {
-                        "task_id": int(row["task_id"]),
-                        "view_index": int(row["view_index"]),
-                        "delta": float(row["preference_margin_delta"]),
-                    }
-                    for row in rows
-                ],
-                "all_active_task_view_preference_descent": accepted,
-            }
-        )
-        if accepted:
-            accepted_scale = scale
-            accepted_index = index
-            accepted_rows = rows
-            break
-    if accepted_index is None:
-        final_delta = torch.zeros_like(full_delta)
-        _write_parameter_delta(named, layout, before, final_delta)
-        accepted_rows = _baseline_preference_rows(baseline_rows)
-    else:
-        final_delta = full_delta * accepted_scale
+    if not all(math.isfinite(value) for value in margin_deltas):
+        raise WriterModelError("direct Adam diagnostic margin is nonfinite")
+    all_view_descent = all(value < 0 for value in margin_deltas)
+    trials = [
+        {
+            "backtrack_index": 0,
+            "radius_scale": 1.0,
+            "global_task_view_preference_margin_deltas": [
+                {
+                    "task_id": int(row["task_id"]),
+                    "view_index": int(row["view_index"]),
+                    "delta": float(row["preference_margin_delta"]),
+                }
+                for row in accepted_rows
+            ],
+            "all_active_task_view_preference_descent": all_view_descent,
+        }
+    ]
     final_norm = torch.linalg.vector_norm(final_delta)
     candidate_norm = float(base_geometry["adam_candidate_delta_l2"])
-    expected_norm = candidate_norm * accepted_scale
+    expected_norm = candidate_norm
     final_norm_value = float(final_norm)
-    if accepted_index is None:
-        final_to_candidate_cosine = 0.0
-        final_to_gradient_cosine = 0.0
-        radius_error = 0.0
-    else:
-        final_to_candidate_cosine = float(
-            base_geometry["full_candidate_to_adam_candidate_cosine"]
-        )
-        final_to_gradient_cosine = float(
-            base_geometry["adam_candidate_to_negative_optimizer_gradient_cosine"]
-        )
-        radius_error = abs(final_norm_value - expected_norm) / expected_norm
+    final_to_candidate_cosine = float(
+        base_geometry["full_candidate_to_adam_candidate_cosine"]
+    )
+    final_to_gradient_cosine = float(
+        base_geometry["adam_candidate_to_negative_optimizer_gradient_cosine"]
+    )
+    radius_error = abs(final_norm_value - expected_norm) / expected_norm
     count = full_delta.numel()
     geometry = {
         **base_geometry,
-        "search_kind": (
-            "first_global_task_complete_all_view_monotone_power_of_two_backtracking"
-        ),
+        "search_kind": "direct_actual_adam_candidate_with_all_view_diagnostic",
         "global_active_task_ids": sorted(
-            {int(row["task_id"]) for row in baseline_rows}
+            {int(row["task_id"]) for row in accepted_rows}
         ),
         "global_active_task_count": expected_task_count,
-        "global_task_view_count": len(baseline_rows),
-        "max_backtracks": max_backtracks,
-        "search_accepted": accepted_index is not None,
-        "accepted_backtrack_index": accepted_index,
-        "accepted_radius_scale": accepted_scale,
+        "global_task_view_count": len(accepted_rows),
+        "max_backtracks": 0,
+        "search_accepted": True,
+        "accepted_backtrack_index": 0,
+        "accepted_radius_scale": 1.0,
         "accepted_expected_delta_l2": expected_norm,
         "final_delta_l2": final_norm_value,
         "final_delta_rms": final_norm_value / math.sqrt(count),
@@ -697,10 +598,10 @@ def _monotone_backtracking_commitment(
         "radius_relative_error": radius_error,
         "search_trials": trials,
         "search_trial_count": len(trials),
-        "inference_baseline_preference_margins": [
-            float(row["after_preference_margin"]) for row in baseline_rows
-        ],
-        "gradient_path_to_inference_baseline_margin_deltas": baseline_offsets,
+        "all_active_task_view_preference_descent_diagnostic": all_view_descent,
+        "descending_task_view_count": sum(value < 0 for value in margin_deltas),
+        "diagnostic_reference": "stored_gradient_path_preupdate_margin",
+        "repeated_step0_baseline_forward": False,
         "search_seconds": time.monotonic() - started,
     }
     return final_delta, accepted_rows, geometry
@@ -736,7 +637,7 @@ def apply_reward_step(
     for item in runtime.gradient_layout:
         if item.parameter.grad is None:
             raise WriterModelError(
-                "monotone backtracking commitment lost a parameter gradient"
+                "direct Adam commitment lost a parameter gradient"
             )
         committed_gradient[item.start : item.stop].copy_(
             item.parameter.grad.detach().reshape(-1).float()
@@ -750,7 +651,7 @@ def apply_reward_step(
     full_delta, base_commitment = preconditioned_candidate_commitment(
         committed_gradient, candidate_delta
     )
-    final_delta, preference_rows, commitment = _monotone_backtracking_commitment(
+    final_delta, preference_rows, commitment = _direct_adam_commitment(
         runtime=runtime,
         named=named,
         layout=runtime.gradient_layout,
@@ -758,7 +659,6 @@ def apply_reward_step(
         full_delta=full_delta,
         base_geometry=base_commitment,
         evaluator=commitment_evaluator,
-        max_backtracks=int(runtime.config["commitment"]["max_backtracks"]),
         expected_task_count=active_tasks,
     )
     delta = {
@@ -777,7 +677,7 @@ def apply_reward_step(
     )
 
 
-def apply_monotone_reward_step(
+def apply_direct_reward_step(
     runtime: RewardRuntime,
     gradient_sum: torch.Tensor,
     local_active_tasks: int,
@@ -785,7 +685,7 @@ def apply_monotone_reward_step(
     probes: Sequence[RewardProbe],
 ) -> AppliedStep:
     if len(probes) != local_active_tasks:
-        raise WriterModelError("monotone backtracking lost local active-task probes")
+        raise WriterModelError("direct commitment lost local active-task probes")
     return apply_reward_step(
         runtime,
         gradient_sum,

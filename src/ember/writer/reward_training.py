@@ -1,4 +1,4 @@
-"""Train CFMG with task-complete unit-secant finite commitment."""
+"""Train CFMG with a direct task-complete unit-secant commitment."""
 
 from __future__ import annotations
 
@@ -274,10 +274,10 @@ def _load_direct_factor_models(
         != 2_828_928
     ):
         raise WriterModelError(
-            "USFC endpoint must train only 2828928 parameters"
+            "USDC endpoint must train only 2828928 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "v6_lpcp_cfmg_unit_secant_finite_commitment_only"
+    trainable["object"] = "v6_lpcp_cfmg_unit_secant_direct_commitment_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -499,12 +499,16 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_"
+                        "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_"
                         "completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,
-                    "strict400_required": args.mode == "formal",
+                    "strict400_required": bool(
+                        args.mode == "formal"
+                        and row["commitment_geometry"]["search_accepted"]
+                        and row["commitment_geometry"]["final_delta_l2"] > 0
+                    ),
                 },
             )
     finally:

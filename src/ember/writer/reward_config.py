@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP CFMG unit-secant finite commitment."""
+"""Authority for the V6-LPCP CFMG unit-secant direct commitment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,20 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_v1"
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_cfmg_unit_secant_finite_commitment"
+        "frozen_v6_lpcp_plus_cfmg_unit_secant_direct_commitment"
     ),
 }
 _DEPLOYMENT_CONTRACT = {
@@ -85,35 +85,27 @@ _OBJECTIVE_CONTRACT = {
     "endpoint_action_scope": "executed_prefix_only",
 }
 _COMMITMENT_CONTRACT = {
-    "kind": (
-        "actual_adam_candidate_first_global_task_complete_all_view_monotone_"
-        "power_of_two_backtracking"
-    ),
+    "kind": "actual_adam_candidate_direct_single_step_with_all_view_diagnostic",
     "direction": (
         "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
     ),
     "direction_preconditioning": (
         "same_adamw_lr_betas_eps_weight_decay_clip_and_optimizer_state"
     ),
-    "radius_schedule": (
-        "actual_adam_candidate_times_two_to_the_negative_backtrack_index"
-    ),
+    "radius_schedule": "exact_actual_adam_candidate_only",
     "acceptance": (
-        "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_every_"
-        "active_task_and_all_four_correct_video_views_on_the_same_panels_and_"
-        "policy_noises_globally_synchronized_across_ranks"
+        "finite_nonzero_rank_synchronized_actual_adam_candidate_with_all_active_"
+        "task_view_margins_recorded_as_diagnostic"
     ),
-    "max_backtracks": 10,
-    "failure_action": "restore_step0_parameters_and_terminal_non_pass",
+    "max_backtracks": 0,
+    "failure_action": "terminal_only_on_nonfinite_zero_or_rank_inconsistent_update",
     "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
     "task_weighting": "equal_mean_over_active_tasks_before_commitment",
     "view_weighting": ("equal_mean_over_four_correct_video_gradients_before_optimizer"),
     "fixed_scale_or_checkpoint_selection": False,
     "video_or_environment_recompute": False,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
-    "rank_state_contract": (
-        "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
-    ),
+    "rank_state_contract": "one_identical_parameter_delta_on_every_rank",
     "formal_extension_status": "formal_cycle1_ready",
 }
 _SMOKE_CONTRACT = {
@@ -169,8 +161,8 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                 config.get("formal_run", {}),
                 {
                     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
-                    "checkpoint_cycles": [1, 2],
-                    "stage_stop_cycles": [1, 2],
+                    "checkpoint_cycles": [1, 2, 3],
+                    "stage_stop_cycles": [1, 2, 3],
                 },
             ),
         )

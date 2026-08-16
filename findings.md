@@ -1,6 +1,6 @@
 # EMBER Findings
 
-更新时间：2026-08-16。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
+更新时间：2026-08-17。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
 `docs/research_history.md`；当前run只取`docs/active_session_handoff.md`。
 
 ## 1. 当前经验边界
@@ -56,6 +56,13 @@ carrier factors/BA及content residual BA也约`.99`一致。故raw Writer gradie
 已经分裂，而是共同BA通过condition-local policy/action Jacobian后的cotangent差异。内部raw 4/4不是finite
 deployed 12/12的必要条件，也不能越权替代closed-loop。USFC据此保持全部模型和训练不变，只fresh检验实际finite
 full24 commitment与strict400；USEP历史门和终局不被改写。
+
+USFC full24进一步表明finite all-view硬门也不能无条件替代closed-loop。exact Adam `j0`在五个active tasks上达到
+`17/20`，四个tasks全部4/4；唯一task19平均harm仅`2.249e-5`。缩小半径没有单调改善，11 scales均未20/20，
+最终saved delta0。这只能证明当前单一scalar ray不能满足全部局部endpoint不等式，不能证明唯一自然optimizer
+candidate在held rollout有害。把门改成17/20同样缺乏依据。USDC因此不选阈值或scale，只提交exact `j0`并以
+strict400裁决；20/20继续完整记录为诊断。由于每cycle只有少量discordant tasks给gradient，任何好分还必须由
+cycle2/3相邻checkpoint的低churn与共同积累确认。
 
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个

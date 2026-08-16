@@ -563,9 +563,7 @@ def _global_test_preference_rows(
             before, after = 0.0, 0.0 if scale == 0 else 0.25
         else:
             before = 1.0
-            after = (
-                1.5 if scale == 0 else 1.75 if scale == 1.0 and task_id == 1 else 1.25
-            )
+            after = 0.75 if task_id == 0 else 1.25
         for view_index in range(4):
             rows.append(
                 {
@@ -605,7 +603,7 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         context=SimpleNamespace(world_size=1, device=torch.device("cpu")),
         config={
             "optimization": {"optimizer": {"gradient_clip_norm": 10.0}},
-            "commitment": {"max_backtracks": 3},
+            "commitment": {"max_backtracks": 0},
         },
         writer=writer,
         optimizer=optimizer,
@@ -642,23 +640,29 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         1.0
     )
     assert step.commitment_geometry["radius_relative_error"] <= 1e-6
-    assert evaluated_scales == [0.0, 1.0, 0.5]
+    assert evaluated_scales == [1.0]
     assert step.commitment_geometry["search_accepted"] is True
-    assert step.commitment_geometry["accepted_backtrack_index"] == 1
-    assert step.commitment_geometry["accepted_radius_scale"] == 0.5
+    assert step.commitment_geometry["accepted_backtrack_index"] == 0
+    assert step.commitment_geometry["accepted_radius_scale"] == 1.0
+    assert step.commitment_geometry["search_trial_count"] == 1
+    assert step.commitment_geometry["descending_task_view_count"] == 4
     assert (
-        step.commitment_geometry["gradient_path_to_inference_baseline_margin_deltas"]
-        == [0.5] * 8
+        step.commitment_geometry[
+            "all_active_task_view_preference_descent_diagnostic"
+        ]
+        is False
     )
+    assert step.commitment_geometry["repeated_step0_baseline_forward"] is False
     assert step.commitment_geometry["global_active_task_ids"] == [0, 1]
     assert step.commitment_geometry["global_task_view_count"] == 8
     assert all(
-        row["before_preference_margin"] == 1.5
-        and row["after_preference_margin"] == 1.25
-        and row["preference_margin_delta"] == -0.25
+        row["before_preference_margin"] == 1.0
         for row in step.commitment_preference_rows
     )
-    assert all(row["preference_descent"] for row in step.commitment_preference_rows)
+    assert sum(
+        bool(row["preference_descent"])
+        for row in step.commitment_preference_rows
+    ) == 4
 
     accepted_parameters = head.detach().clone()
     failed = apply_reward_step(
@@ -668,11 +672,18 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
         lambda scale: _global_test_preference_rows(scale, all_fail=True),
     )
-    torch.testing.assert_close(head, accepted_parameters)
-    assert failed.commitment_geometry["search_accepted"] is False
-    assert failed.commitment_geometry["search_trial_count"] == 4
-    assert failed.commitment_geometry["accepted_radius_scale"] == 0.0
+    assert not torch.equal(head, accepted_parameters)
+    assert failed.commitment_geometry["search_accepted"] is True
+    assert failed.commitment_geometry["search_trial_count"] == 1
+    assert failed.commitment_geometry["accepted_radius_scale"] == 1.0
+    assert failed.commitment_geometry["final_delta_l2"] > 0
+    assert (
+        failed.commitment_geometry[
+            "all_active_task_view_preference_descent_diagnostic"
+        ]
+        is False
+    )
     assert all(
-        row["preference_margin_delta"] == 0.0
+        row["preference_margin_delta"] == 0.25
         for row in failed.commitment_preference_rows
     )

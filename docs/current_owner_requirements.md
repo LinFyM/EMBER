@@ -1,6 +1,6 @@
 # EMBER Current Owner Requirements
 
-状态：2026-08-13 owner当前需求authority。本文不是handoff、实验设计或启动授权；它记录当前session已经
+状态：2026-08-17 owner当前需求authority。本文不是handoff、实验设计或启动授权；它记录当前session已经
 明确的目标、方法要求、设计偏好、开放变量和协作方式。后续工作不能再用旧handoff、历史design或某次实验的
 “当前/下一步”覆盖本文。若owner之后明确改变要求，以最新明确表达为准，并同步更新本文。
 
@@ -442,10 +442,14 @@ clean`6033330` fixed task4/34/38 world3把dominance降到`6.1538x`、cross-task 
 
 后续只读stage localization证明task34的四组K4在endpoint、temporal、K-set、M2P、content grid、carrier factors
 及content residual effective BA上均约`.98--.99`一致；raw冲突发生在共同BA经过condition-local policy/action
-Jacobian回传时。owner要求closed-loop absolute优先于内部surrogate，因此当前USFC不改写USEP历史、也不新搭
-视频或LoRA架构，只以fresh identity把raw four-view coverage降为diagnostic，仍要求同一个actual finite candidate
-使全部active task×view deployed margins严格下降。它将直接做一次fresh full24 cycle1，nonzero才strict400；
-精确authority=`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。
+Jacobian回传时。USFC据此把raw four-view coverage降为diagnostic，但full24 exact Adam `j0`虽达到`17/20`，仍因
+20/20硬门恢复step0而未获得closed-loop裁决。
+
+owner最新明确：20/20是理想诊断，不应成为可能永远不可达的absolute gate；不能简单另设17/20之类人为阈值，
+应保存冻结recipe唯一产生的exact Adam候选并让strict paired400裁决。一次cycle训练量很小；若cycle1有真实正信号，
+必须exact-resume更多cycle并逐checkpoint评测稳定性，而不是把单点好分当结论，也不能先闷头训练到终点掩盖task
+drift。当前USDC只落实这一acceptance变量，不做task gradient normalization或架构重写；精确authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。
 
 后续迭代遵循以下边界：
 

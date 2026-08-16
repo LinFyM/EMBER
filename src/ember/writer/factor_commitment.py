@@ -1,4 +1,4 @@
-"""Direct video-required native-factor residuals for the LPCP Writer."""
+"""Video-required fixed-A native-B residuals for the LPCP Writer."""
 
 from __future__ import annotations
 
@@ -21,10 +21,14 @@ FACTOR_WIDTHS = {
     "action_out_b": 32,
 }
 FACTOR_FAMILIES = tuple(FACTOR_WIDTHS)
+NATIVE_B_WIDTHS = {
+    family: width for family, width in FACTOR_WIDTHS.items() if family.endswith("_b")
+}
+NATIVE_B_FAMILIES = tuple(NATIVE_B_WIDTHS)
 
 
-class DirectJointNativeFactorResidual(torch.nn.Module):
-    """Write slot-aligned joint video-language evidence directly into A/B."""
+class AnchoredLinearNativeBResidual(torch.nn.Module):
+    """Write joint video-language Value only into the LPCP-anchored B side."""
 
     EXPERT_SLOTS = 18 * 16
     ACTION_SLOTS = 16
@@ -32,12 +36,12 @@ class DirectJointNativeFactorResidual(torch.nn.Module):
     def __init__(self, *, width: int = 256) -> None:
         super().__init__()
         if width <= 0:
-            raise WriterModelError("invalid direct native-factor topology")
+            raise WriterModelError("invalid anchored native-B topology")
         self.width = int(width)
         self.heads = torch.nn.ModuleDict(
             {
                 family: torch.nn.Linear(width, output_width, bias=False)
-                for family, output_width in FACTOR_WIDTHS.items()
+                for family, output_width in NATIVE_B_WIDTHS.items()
             }
         )
         for head in self.heads.values():
@@ -72,7 +76,7 @@ class DirectJointNativeFactorResidual(torch.nn.Module):
         probe_value_memory: torch.Tensor,
         language_slots: torch.Tensor,
     ) -> tuple[Mapping[str, torch.Tensor], torch.Tensor]:
-        """Emit layer/rank-owned raw factor rows without a frozen W1/W2 tail."""
+        """Emit layer/rank-owned B rows while the LPCP A side stays fixed."""
 
         joint = self.joint_value(probe_value_memory, language_slots)
         expert = joint[:, : self.EXPERT_SLOTS].reshape(
@@ -83,13 +87,9 @@ class DirectJointNativeFactorResidual(torch.nn.Module):
         ]
         action_out = joint[:, -self.ACTION_SLOTS :]
         rows = {
-            "q_a": self.heads["q_a"](expert),
             "q_b": self.heads["q_b"](expert),
-            "v_a": self.heads["v_a"](expert),
             "v_b": self.heads["v_b"](expert),
-            "action_in_a": self.heads["action_in_a"](action_in),
             "action_in_b": self.heads["action_in_b"](action_in),
-            "action_out_a": self.heads["action_out_a"](action_out),
             "action_out_b": self.heads["action_out_b"](action_out),
         }
         return rows, joint

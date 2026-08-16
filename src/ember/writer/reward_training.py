@@ -1,4 +1,4 @@
-"""Train direct factor heads with matched-batch stratified occupancy credit."""
+"""Train anchored native-B heads with matched-batch occupancy credit."""
 
 from __future__ import annotations
 
@@ -269,14 +269,14 @@ def _load_direct_factor_models(
             for value in writer.factor_commitment.parameters()
             if value.requires_grad
         )
-        != 1_654_784
+        != 860_160
     ):
         raise WriterModelError(
-            "direct native-factor commitment must train only 1654784 parameters"
+            "anchored native-B commitment must train only 860160 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_only"
+        "v6_lpcp_anchored_linear_b_native_value_commitment_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -496,8 +496,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_direct_factor_preconditioned_"
-                        "all_view_backtracking_commitment_completion_v1"
+                        "ember_pi05_v6_lpcp_anchored_linear_b_native_value_"
+                        "commitment_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

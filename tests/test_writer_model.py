@@ -299,7 +299,7 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_direct_joint_factor_residual_is_exact_lpcp_at_zero_init() -> None:
+def test_anchored_linear_b_residual_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -309,7 +309,7 @@ def test_direct_joint_factor_residual_is_exact_lpcp_at_zero_init() -> None:
     assert sum(
         parameter.numel()
         for parameter in model.factor_commitment.parameters()
-    ) == 1_654_784
+    ) == 860_160
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
     assert all(
         not head.weight.count_nonzero()
@@ -357,7 +357,7 @@ def test_direct_joint_value_changes_with_video_under_fixed_language() -> None:
     assert not torch.equal(first, second)
 
 
-def test_direct_joint_heads_open_all_families_and_require_video() -> None:
+def test_anchored_linear_b_heads_open_all_families_and_require_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -376,7 +376,7 @@ def test_direct_joint_heads_open_all_families_and_require_video() -> None:
     assert all(not value.count_nonzero() for value in zero_rows.values())
 
 
-def test_direct_joint_heads_emit_complete_factor_owned_rows() -> None:
+def test_anchored_linear_b_heads_emit_only_public_b_rows() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
@@ -386,14 +386,33 @@ def test_direct_joint_heads_emit_complete_factor_owned_rows() -> None:
         for head in commitment.heads.values():
             head.weight.normal_(std=0.01, generator=generator)
         rows, joint = commitment(memory, language)
-        state = model._direct_factor_residual_state(rows, batch=2)
+        state = model._direct_b_residual_state(rows, batch=2)
     assert joint.shape == (2, 320, 256)
-    assert set(state) == set(model.template_state())
+    assert len(state) == 38
+    assert all(name.endswith(".lora_B.default.weight") for name in state)
     assert all(
         state[name].shape == (2, *value.shape)
         for name, value in model.template_state().items()
+        if name in state
     )
     assert all(value.count_nonzero() for value in state.values())
+
+    with torch.no_grad():
+        for head in commitment.heads.values():
+            head.weight.mul_(1_000_000)
+        encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+        baseline = model.decode_program(encoded.program)
+        committed = model.decode_output(encoded)
+    assert all(
+        torch.equal(committed[name], value)
+        for name, value in baseline.items()
+        if name.endswith(".lora_A.default.weight")
+    )
+    assert any(
+        not torch.equal(committed[name], value)
+        for name, value in baseline.items()
+        if name.endswith(".lora_B.default.weight")
+    )
 
 
 def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
@@ -410,8 +429,8 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["factor_commitment.heads.q_a.weight"] = source.state_dict()[
-        "factor_commitment.heads.q_a.weight"
+    partial["factor_commitment.heads.q_b.weight"] = source.state_dict()[
+        "factor_commitment.heads.q_b.weight"
     ]
     with torch.no_grad():
         try:

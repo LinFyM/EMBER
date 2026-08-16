@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_v1",
+  "schema_version": "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,7 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_preconditioned_all_view_backtracking_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_anchored_linear_b_native_value_commitment"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -66,7 +66,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "eight_zero_init_direct_native_factor_heads_1654784_parameters",
+    "trainable": "four_zero_init_direct_native_b_heads_860160_parameters",
     "matched_action_batch_size": 8,
     "reward_replay_chunk_batch_size": 8,
     "optimizer": {
@@ -143,7 +143,7 @@
     },
     "mechanism_gate": {
       "step0_exact_lpcp": true,
-      "trainable_parameter_count": 1654784,
+      "trainable_parameter_count": 860160,
       "exact_paired_rollout_initial_observation": true,
       "complete_occupancy_chunks_must_match_fixed_anchor_counts": true,
       "reference_and_candidate_action_query_batch_sequences_must_match": true,
@@ -159,7 +159,8 @@
       "backtrack_zero_is_exact_adam_candidate": true,
       "accepted_and_expected_delta_l2_relative_error_maximum": 1e-06,
       "final_delta_to_adam_candidate_cosine_minimum": 0.999999,
-      "first_update_all_eight_factor_heads_nonzero": true,
+      "first_update_all_four_native_b_heads_nonzero": true,
+      "lpcp_a_tensors_unchanged": true,
       "post_update_q_v_action_native_factors_nonzero": true,
       "train_cross_video_correction_cosine_minimum": 0.4,
       "train_cross_video_mean_energy_ratio_minimum": 0.55,

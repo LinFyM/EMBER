@@ -59,7 +59,9 @@ first-order direction不稳定等价于native BF16 finite-step或held policy-eff
 PAV-BC clean `581140c`保留同一science graph，唯一把final ray换成实际AdamW candidate delta并做同路径all-view
 backtracking。task9在j5接受但held/train仅`.109466x`，几乎复现MB-SOP的`.109639x`；task15与task18到j10均无
 共同candidate并exact no-op，0/3 anchors通过。至此raw equal-mean、raw maximum-margin和Adam-preconditioned三类
-parameter rays均不能形成跨task稳定native commitment；下一步转LoRA输出/effective-BA参数化。
+parameter rays均不能形成跨task稳定native commitment。当前ALB-NV只改变输出参数化：固定LPCP A、删除A residual
+heads，只用四个B heads令新增effective-BA严格为`delta-B A0`；固定correct400 factor geometry显示该side在四类target
+均不比A侧弱。GPU结果尚未产生。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

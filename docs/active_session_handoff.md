@@ -111,6 +111,14 @@
   0/3 anchors通过，终局不full24/strict/resume；
 - 当前没有active GPU run或可resume checkpoint。raw/MMCD/Adam三类parameter ray均已否决；下一设计必须转LoRA
   输出/effective-BA参数化的native-safe线性Value路径，不能继续做ray mixture、trust scale或替换已通过的carrier；
+- 当前active successor是**ALB-NV**，authority=
+  `docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`。它只把八个A/B residual heads
+  改为四个fixed-A B-only heads，使新增`delta-BA=delta-B A0`严格线性；rank16、LPCP、MB-SOP与PAV acceptance不变。
+  correct400固定几何给出B-side相对A-side灵敏度q/v/action-in/action-out=
+  `1.049/1.411/2.594/8.258x`，故不是按anchor或held选择side。canonical实现已完成：定向CPU=`58 passed`、
+  完整CPU=`404 passed`、compileall与architecture guard 0 hard；尚未GPU；
+- owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
+  进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

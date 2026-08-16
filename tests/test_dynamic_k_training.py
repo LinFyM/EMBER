@@ -101,7 +101,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_preconditioned_backtracking_config_records_fresh_mechanism_gate() -> None:
+def test_anchored_linear_b_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -110,7 +110,7 @@ def test_preconditioned_backtracking_config_records_fresh_mechanism_gate() -> No
     assert config["initialization"]["as_macro"] == 25
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "eight_zero_init_direct_native_factor_heads_1654784_parameters"
+        "four_zero_init_direct_native_b_heads_860160_parameters"
     )
     assert config["objective"]["kind"] == (
         "cross_video_matched_batch_stratified_occupancy_flow_preference"
@@ -152,7 +152,9 @@ def test_preconditioned_backtracking_config_records_fresh_mechanism_gate() -> No
     gate = config["formal_run"]["mechanism_gate"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
-    assert gate["trainable_parameter_count"] == 1_654_784
+    assert gate["trainable_parameter_count"] == 860_160
+    assert gate["first_update_all_four_native_b_heads_nonzero"]
+    assert gate["lpcp_a_tensors_unchanged"]
     assert gate["backtrack_zero_is_exact_adam_candidate"]
     assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.3

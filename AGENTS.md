@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -232,6 +232,14 @@ checkpoint；下一变量必须针对native metric/finite-step接口，不能退
 并exact no-op；0/3 anchors通过。raw equal-mean、raw maximum-margin与Adam-preconditioned三类parameter rays至此
 均被固定anchors否决，PAV-BC终局，不full24/strict/resume或ray混合。当前没有active GPU run或可resume checkpoint；
 下一变量必须转到LoRA输出/effective-BA参数化的native-safe线性Value路径，不能继续改gradient ray或trust scale。
+
+当前active successor是**V6-LPCP Anchored Linear-B Native Value Commitment**（ALB-NV），authority=
+`docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`。LPCP143、MB-SOP四view credit、
+rank16与PAV acceptance全部不变；唯一删除四个A residual heads，只训练四个zero-init B heads（860,160参数），使
+`BA=B0A0+delta-B A0`对joint video Value严格线性且完整保留baseline项。选择B side来自LPCP correct400固定几何：
+B侧单位增量的BA灵敏度相对A侧为q/v/action-in/action-out=`1.049/1.411/2.594/8.258x`，q/v native ULP不更差。
+canonical实现已原位完成：定向CPU=`58 passed`、完整CPU=`404 passed`、compileall与architecture guard 0 hard；GPU
+仍只允许固定task9/15/18，三项全过才可full24。
 
 ## 4. Long-term objective and decision rule
 

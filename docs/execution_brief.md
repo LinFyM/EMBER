@@ -90,6 +90,13 @@ clean `581140c`结果为task9 j5但held/train`.109466x`，task15/18到j10仍无�
 PAV-BC终局，不full24/strict/resume。raw equal mean、raw maximum margin与Adam preconditioned rays均已否决；下一变量
 必须转LoRA输出/effective-BA参数化。authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。
+
+当前active是**ALB-NV**：保留LPCP143、MB-SOP、PAV acceptance与rank16，唯一固定LPCP A并只训练四个B residual
+heads（860,160参数），令新增`BA=delta-B A0`严格线性、step0 exact LPCP。B side由LPCP correct400固定factor
+geometry选择，不按task/held切换。authority=
+`docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`；CPU门已关闭，GPU只跑
+固定task9/15/18，全部过门才可full24。canonical定向CPU=`58 passed`、完整CPU=`404 passed`、architecture guard
+无hard violation。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

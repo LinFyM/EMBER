@@ -19,8 +19,8 @@ from ember.expert_manifold.legacy_v6_model import (
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
-    FACTOR_FAMILIES,
-    DirectJointNativeFactorResidual,
+    NATIVE_B_FAMILIES,
+    AnchoredLinearNativeBResidual,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -103,7 +103,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = DirectJointNativeFactorResidual(
+        self.factor_commitment = AnchoredLinearNativeBResidual(
             width=self.PROGRAM_WIDTH,
         ).requires_grad_(False)
         object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
@@ -575,23 +575,25 @@ class CompleteLoRAWriter(torch.nn.Module):
             probe_value_memory,
             language_slots,
         )
-        residuals = self._direct_factor_residual_state(rows, program.shape[0])
-        if set(residuals) != set(baseline):
-            raise WriterModelError("direct native-factor state changed")
+        residuals = self._direct_b_residual_state(rows, program.shape[0])
         return {
-            name: value + residuals[name].to(value.dtype)
+            name: (
+                value + residuals[name].to(value.dtype)
+                if name in residuals
+                else value
+            )
             for name, value in baseline.items()
         }
 
-    def _direct_factor_residual_state(
+    def _direct_b_residual_state(
         self,
         rows: Mapping[str, torch.Tensor],
         batch: int,
     ) -> dict[str, torch.Tensor]:
-        """Map direct family rows back to the sealed 76-tensor public schema."""
+        """Map direct B-family rows onto the 38 anchored public B tensors."""
 
-        if set(rows) != set(FACTOR_FAMILIES):
-            raise WriterModelError("direct native-factor families changed")
+        if set(rows) != set(NATIVE_B_FAMILIES):
+            raise WriterModelError("anchored native-B families changed")
         decoding = getattr(self.base_writer, "_decoding", None)
         tensor_specs = getattr(self.base_writer, "tensor_specs", None)
         if not isinstance(decoding, dict) or tensor_specs is None:
@@ -599,6 +601,8 @@ class CompleteLoRAWriter(torch.nn.Module):
         result: dict[str, torch.Tensor] = {}
         for item in tensor_specs:
             family, layer = decoding[item.name]
+            if not family.endswith("_b"):
+                continue
             source = rows[family]
             if family.startswith(("q_", "v_")):
                 if layer is None:
@@ -606,6 +610,10 @@ class CompleteLoRAWriter(torch.nn.Module):
                 source = source[:, layer]
             generated = source.transpose(-1, -2) if item.transpose_output else source
             result[item.name] = generated[0] if batch == 1 else generated
+        if len(result) != 38 or any(
+            not name.endswith(".lora_B.default.weight") for name in result
+        ):
+            raise WriterModelError("anchored native-B ownership changed")
         return result
 
     def decode_output(self, encoded: WriterProgramOutput) -> dict[str, torch.Tensor]:

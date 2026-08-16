@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP preconditioned all-view backtracking commitment."""
+"""Authority for V6-LPCP anchored linear-B native Value commitment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,20 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_v1"
+    "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_anchored_linear_b_native_value_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_direct_factor_preconditioned_all_view_backtracking_commitment"
+        "frozen_v6_lpcp_plus_anchored_linear_b_native_value_commitment"
     ),
 }
 _DATA_CONTRACT = {
@@ -122,7 +122,7 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                 optimization,
                 {
                     "trainable": (
-                        "eight_zero_init_direct_native_factor_heads_1654784_parameters"
+                        "four_zero_init_direct_native_b_heads_860160_parameters"
                     ),
                     "matched_action_batch_size": 8,
                     "reward_replay_chunk_batch_size": 8,
@@ -152,14 +152,14 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported preconditioned commitment config")
+        raise WriterModelError("unsupported anchored linear-B commitment config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))
     if not _contract_is_valid(config, cold_start):
-        raise WriterModelError("preconditioned commitment contract changed")
+        raise WriterModelError("anchored linear-B commitment contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -167,11 +167,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid preconditioned commitment mode")
+        raise WriterModelError("invalid anchored linear-B commitment mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal preconditioned commitment training is not authorized"
+            "formal anchored linear-B commitment training is not authorized"
         )

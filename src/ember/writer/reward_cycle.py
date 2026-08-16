@@ -696,9 +696,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_preconditioned_all_view_backtracking_commitment"
+            "one_complete_train24_anchored_linear_b_native_value_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_preconditioned_all_view_backtracking_commitment_live_smoke"
+            else "one_task_anchored_linear_b_native_value_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

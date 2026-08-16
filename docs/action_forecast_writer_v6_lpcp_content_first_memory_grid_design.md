@@ -160,6 +160,23 @@ per-suite、breadth、retained/gained/lost/churn，与LPCP143、v6-fast143、SFM
 稳定；首次达到约145且retention过门立即补correct/same-task-other/wrong/shuffled/reversed/no-video六臂。
 correct必须沿有用policy direction显著优于controls，不能只让内部geometry更漂亮。
 
+### 8.1 Formal cycle1 terminal result
+
+clean`bb5341e` world5 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
+`32/32`、gains=`3/3`，active task IDs=`4/19/20/25/34/38`覆盖四suite，cycle=`467.783s`，0 forbidden
+read/OOM/nonfinite。相对matched CMBG，六task gradient norms只统一放大`1.78--1.92x`；pairwise task cosine
+mean/min=`.00923/-.20641`，task34 four-view cosine/energy=`-.09228/.33697`，task38 gradient norm为次大的
+`58.73x`。因此content-first并未形成task-selective coordinates或幅度平衡。
+
+11个global candidates最多只让`14/24` deployed task-view margins下降，低于CMBG的`17/24`；search rejected，
+exact step0 restored，final parameter delta、q/v/action effective BA与fixed-action response全为0。strict400只会
+重测LPCP143而跳过。精确终局artifact=
+`runs/outputs/pi05_v6_lpcp_cfmg_formal_cycle0to1_r5_k4_views4_nmc4_b8_bb5341e_gpu02p12347_20260816/cfmg_full24_terminal_adjudication.json`。
+
+最早失败接口是`content-conditioned random Program -> balanced multitask first public commitment`：首cycle只有
+payload gate有gradient；global gate update被拒绝后，temporal/K-set/layer-token M2P从未获得后续学习。CFMG
+终局，不cycle2、strict、controls、resume或参数小扫。
+
 ## 9. Fast falsifiers and negative boundary
 
 - content-first gate gradient仍由单task以数量级主导，shared raw不能覆盖全部active tasks：本接口没有形成跨task

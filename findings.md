@@ -24,6 +24,16 @@ CFMG原始held artifact的`constant_zero`仍为false：task18 effective-BA const
 重复图像按32-frame microbatch运行，故该残差属于既有政策接受的batch/kernel BF16低位差异，而不是static Value
 route。原始布尔值不可改写，numerical adjudication只授权full24，不可当作closed-loop或六臂因果证据。
 
+CFMG full24给出了比held门更强的否定证据。相对完全matched CMBG，六个相同active tasks的梯度范数分别只被
+`1.780/1.795/1.822/1.883/1.790/1.920x`近似统一放大；cross-task cosine mean/min仅从
+`.00681/-.21022`变成`.00923/-.20641`，task34 same-task four-view仍为`-.0923/.3370`，task38相对次大梯度
+从`54.45x`恶化到`58.73x`。11 candidates最好下降view数也从`17/24`降至`14/24`并exact no-op。
+所以content-first random features“存在且held一致”不等于它们提供task-selective、reward-useful coordinates；
+本轮主要产生共同幅度缩放，而没有重排task cotangents。由于step0 gate严格为0，首cycle仍只有gate有梯度；gate
+未被共同接受时，temporal/K-set/M2P永远得不到第二步学习。下一接口不是继续移动gate，而是让Program在保持
+public step0 identity的同时，能在shared public commitment被接受前获得有任务结构的学习信号，并显式避免单task
+幅度控制公共更新；这不自动等价于gradient normalization或PCGrad。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

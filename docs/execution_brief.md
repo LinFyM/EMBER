@@ -33,8 +33,11 @@ schema已原位完成，完整CPU=`411 passed`、architecture guard无hard viola
 raw/final=`3/3`、native=`12/12`且j0接受。validation8 held四view又以8/8、BA cosine/energy=
 `.982412/.985173`、raw/action=`.981593/.987546`、held/train=`.960548x`通过。原始constant门保留
 `.005144>.005`的单项false；exact constant-hidden为0且实际public残差仅`.514%`，按既有数值政策另存透明
-adjudication后授权一个fresh full24 cycle1。下一动作是clean seal并正式训练；不得resume smoke或用归一化、
-PCGrad、rank/scale小扫补救。
+adjudication后授权了一个fresh full24 cycle1。clean`bb5341e` world5 full24完整exit0：24 tasks/48 pairs/
+96 rollouts、candidate/reference=`32/32`、6 active tasks，cycle=`467.783s`。所有11 candidates最好仅`14/24`
+task-view margins下降，final delta及q/v/action response均为0；task38相对次大梯度=`58.73x`，task34跨video
+cosine=`-.0923`。所以CFMG按合同终局并跳过只会重测LPCP的strict400；当前没有active successor或GPU run。
+下一轮必须针对可学习Program bootstrap与多task幅度共存，不得resume或用归一化、PCGrad、rank/scale小扫补救。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP

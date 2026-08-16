@@ -103,8 +103,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "held_scientific_pass_full24_ready"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "terminal_non_pass_exact_step0_restored"
+    assert config["formal_run"]["status"] == "terminal_non_pass"
     held = config["formal_run"]["held_gate_evidence"]
     assert held["validation_tasks"] == held["passing_tasks"] == 8
     assert held["raw_pre_registered_gate_pass"] is False
@@ -199,8 +199,12 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 143.416
-    assert "formal_result_evidence" not in config["formal_run"]
-    require_reward_mode(config, "formal")
+    result = config["formal_run"]["formal_result_evidence"]
+    assert result["search_accepted"] is False
+    assert result["best_descending_task_views"] == 14
+    assert result["final_delta_l2"] == 0
+    with pytest.raises(WriterModelError, match="training is not authorized"):
+        require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

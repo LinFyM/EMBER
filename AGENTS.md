@@ -35,18 +35,17 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。当前active successor是**V6-LPCP Content-First Memory Grid**（CFMG）：保留CMBG全部输入、
-37个layerwise memory tokens、K4、rank32、reward与参数量，只把同一个zero payload gate从temporal/K-set/M2P之前
-移到完整content grid之后。clean`010487b` fixed task9/15/18 world3完整：预注册成功关系与selected pairs保持
-`1/0,2/0,1/2`和`8/16/8`，三task four-view cosine/energy=`.9669/.7476,.8755/.8713,.9720/.9698`，
-cross-task gradient cosine mean/min=`.09215/.02107`，raw/final coverage=`3/3`、native=`12/12`且j0接受。
-validation8 held四view为8/8，effective-BA cosine/energy=`.982412/.985173`、raw/action cosine=
-`.981593/.987546`、held/train L2=`.960548x`，reverse为约`1.95--2.01` relative-L2。原始12门中
-`constant_zero`因task18 public BA=`.005144`略超`.005`而记录为false；exact constant hidden结构测试严格为0，
-重复图像跨32-frame microbatch的最坏public residual仅natural的`.514%`。原artifact不改，按既有
-batch/kernel低位差异政策另存透明numerical adjudication并只授权fresh full24 cycle1。CFMG尚无closed-loop成绩。
-SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：
-`143/135/125/128/129`。
+长期目标尚未完成。最新终局架构是**V6-LPCP Content-First Memory Grid**（CFMG）：clean`bb5341e` world5
+full24 cycle1完整exit0，24 tasks/48 paired states/96 rollouts，candidate/reference=`32/32`、gains=`3/3`，6个
+active tasks覆盖四suite，cycle=`467.783s`且0禁读/OOM/nonfinite。它保持validation8 held四view的
+BA cosine/energy=`.982412/.985173`，但full24的11个global candidates最好仅`14/24` task-view margins下降，
+最终恢复exact LPCP step0；parameter delta、q/v/action BA与fixed-action response全为0，故strict400按authority
+跳过。相对CMBG，六task梯度只近似统一放大`1.78--1.92x`，cross-task cosine mean/min仍为
+`.00923/-.20641`，task34 same-task cosine仍`-.0923`，task38相对次大梯度的支配由`54.45x`增至`58.73x`。
+最早失败接口是content-conditioned random Program到幅度平衡、多task可共存的第一次public commitment；因gate
+被拒绝，temporal/set/M2P从未获得下一步学习。CFMG终局，不cycle2、strict、controls或小扫；当前没有active
+successor或GPU run。SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的
+历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -317,8 +316,8 @@ native best到11/12，却令task15固定`2/0,65,16`漂成`1/2,47,8`，故不能�
 max-abs0，task9完整梯度链与A40门通过。随后clean`2aecece` fixed world3完整通过：task9/15/18=
 `1/0,2/0,1/2`，selected pairs=`8/16/8`，cross-task cosine mean=`+.09842`，raw/final=`3/3`、native=`12/12`，
 accepted delta L2=`.168481`且q/v/action均非零。occupancy chunk数与跨运行逐元素差异只作诊断。validation8 held
-8/8通过，BA cosine/energy=`.983541/.985926`、held/train=`.960650x`；下一步直接fresh full24 cycle1与strict
-paired400。clean`a62348e`首次full24只是工程失败：旧formal路径只保留view0，与全局四视图
+8/8通过，BA cosine/energy=`.983541/.985926`、held/train=`.960650x`；该证据随后授权fresh full24 cycle1。
+clean`a62348e`首次full24只是工程失败：旧formal路径只保留view0，与全局四视图
 commitment合同冲突，rank0/4报`lost four video views`，其余ranks在all-gather等待后触发30分钟
 watchdog；无checkpoint/completion或科学结果。canonical已最小修正为formal active task保留已算出的
 4个conditioning states，不新增forward或改变科学合同；全量CPU=`411 passed`，待从新clean commit

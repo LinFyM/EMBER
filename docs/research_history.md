@@ -20,6 +20,11 @@ exact no-op并在strict前终局。
 held四view为8/8，BA cosine/energy=`.982412/.985173`、held/train=`.960548x`。原始constant门因task18
 `.005144>.005`保留false；exact constant-hidden严格为0且运行残差仅natural`.514%`，故另存不改写raw artifact的
 numerical adjudication并授权fresh full24。以上仍只是机制证据，不是closed-loop性能结果。
+clean`bb5341e` world5 full24随后完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=`32/32`、
+gains=`3/3`、6 active tasks覆盖四suite，cycle=`467.783s`。六task梯度相对CMBG只近似统一放大
+`1.78--1.92x`；cross-task cosine mean/min=`.00923/-.20641`，task34跨video=`-.0923/.3370`，task38相对
+次大梯度=`58.73x`。11 candidates最好仅`14/24` margins下降，最终恢复exact LPCP，所有parameter delta、
+q/v/action BA与fixed action response为0；strict400跳过。CFMG终局，不cycle2、controls、resume或小扫。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

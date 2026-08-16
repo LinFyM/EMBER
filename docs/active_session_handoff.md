@@ -21,8 +21,11 @@
   8/8通过主要科学项：BA cosine/energy=`.982412/.985173`、raw/action cosine=`.981593/.987546`、held/train=
   `.960548x`、reverse约2x。原始`constant_zero`仅因task18 BA ratio=`.005144>.005`而false；结构exact-constant
   测试严格为0，实际重复帧按32-frame microbatch前向的最坏public残差仅natural`.514%`。原artifact保留false，
-  numerical adjudication单独记录并依据预先存在的batch/kernel低位差异政策授权fresh full24 cycle1；当前无active
-  GPU run或可resume checkpoint，下一动作是seal clean commit后启动full24；
+  numerical adjudication单独记录并依据预先存在的batch/kernel低位差异政策授权了fresh full24 cycle1。clean
+  `bb5341e` world5 full24随后完整exit0：24 tasks/48 pairs/96 rollouts、candidate/reference=`32/32`、6 active
+  tasks覆盖四suite，cycle=`467.783s`。11 candidates最好仅`14/24` task-view margins下降，最终exact no-op；
+  六task梯度相对CMBG只统一放大`1.78--1.92x`，task38支配增至`58.73x`，task34 same-task cosine仍`-.0923`。
+  strict400只会重测LPCP而跳过；CFMG终局且当前没有active successor、GPU run或可resume checkpoint；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -230,10 +233,10 @@
 - 最终parameter delta、q/v/action effective-BA与fixed-action response全为0，因此strict400只会重测LPCP
   carrier，不能表示CMBG学习，按authority跳过。CMBG终局，不cycle2、controls或小扫；精确artifact=
   `runs/outputs/pi05_v6_lpcp_cmbg_formal_cycle0to1_r5_k4_views4_nmc4_b8_b4dbf84_gpu02p12347_20260816/cmbg_full24_terminal_adjudication.json`；
-- 当前CFMG只移动同一个gate：`H -> temporal -> K-set -> layer/token M2P -> zero gate -> direct B`。step0、
-  public rank与trainable count不变，不加semantic route、normalization、PCGrad、rank或第二forward。CPU、真实
-  world3与held8均已完成；formal只允许从sealed LPCP fresh启动cycle1，smoke参数不得resume。cycle1若global
-  all-view commitment失败即exact no-op终局；若产生非零checkpoint则立即strict paired400；
+- CFMG的单变量裁决已完成：`H -> temporal -> K-set -> layer/token M2P -> zero gate -> direct B`没有改变
+  full24梯度的相对task结构，只把各task幅度近似共同放大；zero gate拒绝后更深Program模块没有获得学习机会。
+  该实现、smoke和formal checkpoint均不得resume；下一设计必须直接解决shared Program的可学习bootstrap与
+  task38式幅度支配，不能回退到gate位置、scale、normalization、PCGrad或rank小扫；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

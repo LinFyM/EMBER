@@ -101,38 +101,40 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None:
+def test_successful_expert_distillation_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_completed_strict_pending"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["status"] == "mechanism_smoke_pending"
+    assert config["formal_run"]["status"] == "ready"
     predecessor = config["formal_run"]["predecessor_evidence"]
-    assert predecessor["task38_to_next_gradient_norm_ratio"] > 6
-    assert (
-        predecessor["equal_selected_credit_pairs_per_active_task"],
-        predecessor["strict_correct"],
-        predecessor["strict_breadth"],
-        predecessor["lpcp_retained_gained_lost"],
-    ) == (8, 138, 6, [120, 18, 23])
-    assert predecessor["exact_adam_candidate_delta_l2"] > 0
+    assert predecessor["strict_curve"] == [142, 142, 136]
+    assert predecessor["adjacent_churn"] == [36, 34]
+    assert predecessor["exact_current_lpcp_expert_ba_reachable_energy"] < 0.4
     assert config["initialization"]["as_macro"] == 25
     deployment = config["deployment"]
     assert (deployment["carrier_rank"], deployment["residual_bank_rank"]) == (16, 16)
     assert (deployment["public_rank"], deployment["alpha"]) == (32, 32)
     assert deployment["carrier_compression"] is False
     assert deployment["second_adapter"] is False
+    assert deployment["task_expert_at_deployment"] is False
+    teacher = config["privileged_teacher"]
+    assert (teacher["step"], teacher["rank"], teacher["deployment"]) == (
+        2000,
+        16,
+        False,
+    )
+    assert Path(config["resolved_task_expert_bank_root"]).is_dir()
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "content_first_backbone_memory_grid_2828928_parameters"
     )
     assert config["objective"]["kind"] == (
-        "cross_video_matched_batch_stratified_occupancy_unit_secant_endpoint_"
-        "action_preference"
+        "cross_video_successful_expert_occupancy_unit_residual_distillation"
     )
     assert config["optimization"]["matched_action_batch_size"] == 8
     assert config["optimization"]["endpoint_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "median_capped_task_tangent_actual_adam_single_step_with_all_view_diagnostic"
+        "median_capped_successful_expert_task_tangent_actual_adam_single_step"
     )
     assert config["commitment"]["direction"] == (
         "actual_adamw_candidate_delta_from_equal_view_then_median_upper_norm_"
@@ -140,31 +142,22 @@ def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None
     )
     assert config["commitment"]["max_backtracks"] == 0
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
-    assert config["smoke_run"]["shared_anchor_task_ids"] == [4, 34, 38]
-    assert config["smoke_run"]["required_world_size"] == 3
+    assert config["smoke_run"]["shared_anchor_task_ids"] == [2, 12, 21, 35]
+    assert config["smoke_run"]["required_world_size"] == 4
     smoke = config["smoke_run"]
-    assert tuple(smoke["historical_complete_occupancy_chunks_diagnostic"].values()) == (
-        25, 43, 100
-    )
-    assert set(smoke["required_selected_credit_pairs"].values()) == {8}
-    assert config["formal_run"]["mechanism_gate"][
-        "post_update_preference_margin_is_diagnostic"
-    ]
+    assert smoke["anchor_expert_direct_successes_of_50"] == [41, 46, 47, 40]
+    assert smoke["required_selected_states_per_successful_trajectory"] == 8
     assert config["formal_run"]["stable_qualification"] == {
-        "cycle1_and_cycle2_correct_minimum": 142,
-        "two_cycle_correct_mean_minimum": 145,
+        "target_correct": 150,
+        "scientifically_valuable_stable_correct": 145,
         "breadth_minimum": 7,
-        "adjacent_checkpoint_churn_maximum": 20,
-        "adjacent_success_set_jaccard_minimum": 0.85,
-        "final_lpcp_losses_maximum": 10,
-        "final_lpcp_gains_at_least_losses": True,
+        "adjacent_checkpoint_churn_target_maximum": 20,
+        "adjacent_success_set_jaccard_target_minimum": 0.85,
+        "final_lpcp_losses_target_maximum": 10,
         "same_task_other_video_maximum_drop": 8,
         "correct_each_negative_margin_minimum": 10,
     }
     gate = config["formal_run"]["mechanism_gate"]
-    assert gate["global_anchor_view_count"] == (
-        "four_times_observed_active_task_count"
-    )
     assert gate["public_rank"] == 32
     assert all(
         gate[key]
@@ -174,50 +167,25 @@ def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None
             "single_native_context_backbone_forward",
             "one_way_layer_matched_memory_observer",
             "content_processing_precedes_zero_gate",
-            "pregate_content_grid_nonzero",
             "residual_second_b_step0_zero",
+            "expert_rank16_to_rank32_effective_ba_equivalent",
+            "expert_not_checkpointed_or_deployed",
+            "matched_expert_student_query_batch_sequences_identical",
+            "stored_expert_actions_not_used_as_functional_targets",
+            "one_maximum_disagreement_state_per_equal_progress_stratum",
+            "four_disjoint_correct_k4_credit_views",
+            "failed_expert_trajectory_has_zero_credit",
         )
     )
-    assert gate["held_validation_tasks"] == 8
-    assert gate["held_tasks_passing_minimum"] == 6
     assert gate["trainable_parameter_count"] == 2_828_928
-    assert gate["capacity_grid_shape"] == [18, 37, 1024]
-    assert gate["native_b_payload_values"] == 680_448
-    assert gate["unused_payload_values"] == 1_536
-    assert gate["step0_native_payload_gate_exact_zero"]
-    assert gate["first_step_payload_gate_gradient_nonzero"]
-    assert gate["post_gate_step_memory_temporal_set_m2p_gradients_nonzero"]
-    assert gate["unit_secant_denominator"] == (
-        "per_selected_state_detached_winner_loser_action_rms"
-    )
-    assert gate["raw_four_view_shared_mean_descent_coverage_role"] == (
-        "diagnostic_only"
-    )
-    assert gate["all_view_monotone_coverage_role"] == "diagnostic_only"
-    assert gate["direct_actual_adam_commitment_is_primary"]
     assert gate["task_gradient_balance"] == (
         "cap_only_above_active_panel_median_without_small_task_amplification"
     )
-    assert gate["task_gradient_cap_multiplier"] == 1.0
-    assert gate["task_gradient_cap_quantile_sweep"] is False
-    assert gate["task_gradient_direction_rotation"] is False
-    assert gate["mse_inverse_secant_amplification"] is False
-    assert gate["capped_task_gradient_norm_maximum_to_median"] == 1.000001
-    assert gate["small_task_gradient_amplification_allowed"] is False
-    assert gate["complete_occupancy_chunks_are_diagnostic"]
+    assert gate["fallback_objective"] is False
     assert gate["cross_run_elementwise_parity_required"] is False
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
-    assert gate["first_update_all_four_native_b_families_nonzero"]
-    assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
-    assert gate["single_exact_adam_candidate_required"]
-    assert gate["repeated_step0_baseline_forward"] is False
-    assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
-    assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
+    assert gate["shared_anchor_cycle_seconds_maximum"] == 180.0
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
-    cycle1 = config["formal_run"]["cycle1_evidence"]
-    assert cycle1["authority_commit"].startswith("1a0700f")
-    assert cycle1["median_task_gradient_norm"] == pytest.approx(0.12479368)
-    assert cycle1["shared_and_final_task_descent_coverage"] == 1.0
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 

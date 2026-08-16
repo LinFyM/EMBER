@@ -1,4 +1,4 @@
-"""Matched-batch deployed-action credit for paired AS139/LPCP arms."""
+"""Successful-expert deployed-action credit for the shared Writer."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 import torch
-import torch.nn.functional as F
 from lerobot.utils.constants import ACTION
 
 from ember.lora import LoRAContract
@@ -16,18 +15,16 @@ from ember.reward.rollout import policy_flow_noise_cpu
 
 
 @dataclass(frozen=True)
-class MatchedStratifiedOccupancyCreditSummary:
-    """One view's preference credit over a stratified successful occupancy."""
+class SuccessfulExpertOccupancyCreditSummary:
+    """One video view's credit on successful expert occupancy."""
 
     objective: float
-    preference_margin: float
-    winner_action_distance: float
-    loser_action_distance: float
-    discordant_trajectories: int
-    selected_credit_pairs: int
+    expert_action_distance: float
+    successful_trajectories: int
+    selected_credit_states: int
     replay_rows: int
     successful_action_steps: int
-    matched_winner_loser_action_rms: float
+    matched_expert_student_action_rms: float
     functional_policy_forwards: int
     functional_policy_backwards: int
     lora_gradient_rms: float
@@ -103,23 +100,12 @@ def cross_video_gradient_geometry(
     }
 
 
-def _gradient_rms(gradients: Mapping[str, torch.Tensor]) -> torch.Tensor:
-    return (
-        torch.cat([value.flatten() for value in gradients.values()])
-        .square()
-        .mean()
-        .sqrt()
-    )
-
-
-def stratified_occupancy_pair_weights(
-    trajectory_ids: torch.Tensor,
-) -> torch.Tensor:
-    """Give each successful trajectory equal mass and divide it over replans."""
+def stratified_occupancy_weights(trajectory_ids: torch.Tensor) -> torch.Tensor:
+    """Give each successful trajectory equal mass, divided over its states."""
 
     ids = trajectory_ids.to(dtype=torch.long)
     if ids.ndim != 1 or ids.numel() == 0 or bool((ids < 0).any()):
-        raise RewardProtocolError("stratified occupancy replay has no trajectory IDs")
+        raise RewardProtocolError("successful expert replay has no trajectory IDs")
     target_count = int(ids.max()) + 1
     counts = torch.bincount(ids, minlength=target_count)
     if (
@@ -127,15 +113,15 @@ def stratified_occupancy_pair_weights(
         or counts.shape != (target_count,)
         or bool((counts <= 0).any())
     ):
-        raise RewardProtocolError("stratified occupancy trajectory IDs changed")
-    return 1.0 / (target_count * counts.index_select(0, ids).to(dtype=torch.float32))
+        raise RewardProtocolError("successful expert trajectory IDs changed")
+    return 1.0 / (target_count * counts.index_select(0, ids).to(torch.float32))
 
 
-def _matched_occupancy_batch_contract(
+def _successful_expert_batch_contract(
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
     endpoint_action_batch_size: int,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, float, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, torch.Tensor]:
     action = batch.get(ACTION)
     valid = batch.get("executed_action_steps")
     noise_seed = batch.get("policy_noise_seed")
@@ -148,45 +134,24 @@ def _matched_occupancy_batch_contract(
         or not isinstance(noise_seed, torch.Tensor)
         or noise_seed.shape != valid.shape
         or action.shape[0] <= 0
-        or action.shape[0] % 2
         or endpoint_action_batch_size != 8
-        or not torch.equal(valid[0::2], valid[1::2])
-        or not torch.equal(noise_seed[0::2], noise_seed[1::2])
     ):
-        raise RewardProtocolError("endpoint action preference batch changed")
-    pair_count = int(action.shape[0] // 2)
-    weights = stratified_occupancy_pair_weights(trajectory_ids)
-    if weights.shape != (pair_count,):
-        raise RewardProtocolError("stratified occupancy replay weights changed")
-    steps = torch.arange(action.shape[1], device=action.device)[None]
-    mask = steps < valid[0::2, None]
-    difference = action[0::2].float() - action[1::2].float()
-    pair_squared = (difference.square() * mask[:, :, None]).sum(dim=(1, 2))
-    pair_denominator = valid[0::2] * action.shape[2]
-    pair_rms = (pair_squared / pair_denominator).sqrt()
-    action_rms = float(
-        (pair_squared.sum() / pair_denominator.sum()).sqrt()
-    )
-    if (
-        not bool(torch.isfinite(pair_rms).all())
-        or bool((pair_rms <= 0).any())
-    ):
-        raise RewardProtocolError(
-            "matched winner and loser action secants must be finite and nonzero"
-        )
-    return action, valid, noise_seed, pair_count, action_rms, weights
+        raise RewardProtocolError("successful expert endpoint batch changed")
+    weights = stratified_occupancy_weights(trajectory_ids)
+    if weights.shape != valid.shape:
+        raise RewardProtocolError("successful expert replay weights changed")
+    return action, valid, noise_seed, int(action.shape[0]), weights
 
 
 def _endpoint_observation_batch(
     batch: Mapping[str, torch.Tensor],
-    pair_start: int,
-    pair_stop: int,
+    start: int,
+    stop: int,
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     excluded = {ACTION, "action_is_pad", "executed_action_steps", "policy_noise_seed"}
-    rows = slice(2 * pair_start, 2 * pair_stop, 2)
     return {
-        name: value[rows].to(device=device, non_blocking=True)
+        name: value[start:stop].to(device=device, non_blocking=True)
         for name, value in batch.items()
         if name not in excluded
     }
@@ -209,37 +174,38 @@ def _endpoint_noise(
     ).to(device=device, non_blocking=True)
 
 
-def unit_secant_endpoint_preference(
+def unit_residual_endpoint_distillation(
     predicted: torch.Tensor,
-    targets: torch.Tensor,
+    target: torch.Tensor,
     valid: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Return raw endpoint distances and a per-state unit-secant margin."""
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return per-state MSE and its detached-RMS-normalized objective."""
 
-    targets = targets.detach()
-    action_dim = predicted.shape[-1]
+    if predicted.shape != target.shape or valid.shape != predicted.shape[:1]:
+        raise RewardProtocolError("successful expert prediction shape changed")
     mask = (
-        torch.arange(predicted.shape[1], device=predicted.device)[None] < valid[:, None]
+        torch.arange(predicted.shape[1], device=predicted.device)[None]
+        < valid[:, None]
     )
-    denominator = (valid * action_dim).to(dtype=torch.float32)
-    winner = (
-        (predicted.float() - targets[:, 0].float()).square() * mask[:, :, None]
+    denominator = (valid * predicted.shape[-1]).to(torch.float32)
+    squared = (
+        (predicted.float() - target.detach().float()).square() * mask[:, :, None]
     ).sum(dim=(1, 2)) / denominator
-    loser = (
-        (predicted.float() - targets[:, 1].float()).square() * mask[:, :, None]
-    ).sum(dim=(1, 2)) / denominator
-    secant_rms = (
-        (
-            (targets[:, 0].float() - targets[:, 1].float()).square()
-            * mask[:, :, None]
-        ).sum(dim=(1, 2))
-        / denominator
-    ).sqrt()
-    margin = (winner - loser) / secant_rms
-    return winner, loser, secant_rms, margin
+    rms = squared.sqrt()
+    normalized = squared / rms.detach().clamp_min(1e-6)
+    return rms, normalized
 
 
-def functional_matched_stratified_occupancy_endpoint_gradient(
+def _gradient_rms(gradients: Mapping[str, torch.Tensor]) -> torch.Tensor:
+    return (
+        torch.cat([value.flatten() for value in gradients.values()])
+        .square()
+        .mean()
+        .sqrt()
+    )
+
+
+def functional_successful_expert_occupancy_gradient(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
@@ -249,11 +215,11 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
     endpoint_action_batch_size: int,
     num_inference_steps: int,
     device: torch.device,
-) -> tuple[dict[str, torch.Tensor], MatchedStratifiedOccupancyCreditSummary]:
-    """Differentiate the deployed endpoint toward reward-winning actions."""
+) -> tuple[dict[str, torch.Tensor], SuccessfulExpertOccupancyCreditSummary]:
+    """Differentiate the deployed endpoint toward successful expert actions."""
 
-    action, valid, noise_seed, pair_count, action_rms, weights = (
-        _matched_occupancy_batch_contract(
+    action, valid, noise_seed, state_count, weights = (
+        _successful_expert_batch_contract(
             batch, trajectory_ids, endpoint_action_batch_size
         )
     )
@@ -267,19 +233,13 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
         for name, value in leaves.items()
     }
     objective = torch.zeros((), dtype=torch.float32, device=device)
-    winner_total = torch.zeros_like(objective)
-    loser_total = torch.zeros_like(objective)
-    margin_total = torch.zeros_like(objective)
+    distance = torch.zeros_like(objective)
     forwards = backwards = 0
-    for pair_start in range(0, pair_count, endpoint_action_batch_size):
-        pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
-        pair_weights = weights[pair_start:pair_stop].to(
-            device=device, non_blocking=True
-        )
-        prepared = _endpoint_observation_batch(batch, pair_start, pair_stop, device)
-        noise = _endpoint_noise(
-            policy, noise_seed[2 * pair_start : 2 * pair_stop : 2], device
-        )
+    for start in range(0, state_count, endpoint_action_batch_size):
+        stop = min(start + endpoint_action_batch_size, state_count)
+        row_weights = weights[start:stop].to(device=device, non_blocking=True)
+        prepared = _endpoint_observation_batch(batch, start, stop, device)
+        noise = _endpoint_noise(policy, noise_seed[start:stop], device)
         predicted = functional_executed_prefix_endpoint_action(
             policy,
             leaves,
@@ -288,50 +248,39 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
             noise=noise,
             num_steps=num_inference_steps,
         )
-        targets = (
-            action[2 * pair_start : 2 * pair_stop]
-            .reshape(pair_stop - pair_start, 2, action.shape[1], action.shape[2])
-            .to(device=device, non_blocking=True)
+        target = action[start:stop].to(device=device, non_blocking=True)
+        valid_rows = valid[start:stop].to(device=device, non_blocking=True)
+        rms, normalized = unit_residual_endpoint_distillation(
+            predicted, target, valid_rows
         )
-        valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
-            device=device, non_blocking=True
-        )
-        winners, losers, _, margins = unit_secant_endpoint_preference(
-            predicted, targets, valid_rows
-        )
-        scalar = (F.softplus(margins) * pair_weights).sum()
+        scalar = (normalized * row_weights).sum()
         values = torch.autograd.grad(scalar, tuple(leaves[name] for name in names))
         objective.add_(scalar.detach())
-        winner_total.add_((winners.detach() * pair_weights).sum())
-        loser_total.add_((losers.detach() * pair_weights).sum())
-        margin_total.add_((margins.detach() * pair_weights).sum())
+        distance.add_((rms.detach() * row_weights).sum())
         for name, gradient in zip(names, values, strict=True):
             gradients[name].add_(gradient.float())
         forwards += 1
         backwards += 1
-    rms = _gradient_rms(gradients)
-    if not bool(torch.isfinite(rms)) or float(rms) <= 0:
-        raise RewardProtocolError(
-            "matched occupancy preference produced invalid LoRA credit"
-        )
-    return gradients, MatchedStratifiedOccupancyCreditSummary(
+    gradient_rms = _gradient_rms(gradients)
+    if not bool(torch.isfinite(gradient_rms)) or float(gradient_rms) <= 0:
+        raise RewardProtocolError("successful expert credit produced invalid LoRA gradient")
+    trajectory_count = int(trajectory_ids.max()) + 1
+    return gradients, SuccessfulExpertOccupancyCreditSummary(
         objective=float(objective),
-        preference_margin=float(margin_total),
-        winner_action_distance=float(winner_total),
-        loser_action_distance=float(loser_total),
-        discordant_trajectories=int(trajectory_ids.max()) + 1,
-        selected_credit_pairs=pair_count,
-        replay_rows=2 * pair_count,
-        successful_action_steps=int(valid[0::2].sum()),
-        matched_winner_loser_action_rms=action_rms,
+        expert_action_distance=float(distance),
+        successful_trajectories=trajectory_count,
+        selected_credit_states=state_count,
+        replay_rows=state_count,
+        successful_action_steps=int(valid.sum()),
+        matched_expert_student_action_rms=float(distance),
         functional_policy_forwards=forwards,
         functional_policy_backwards=backwards,
-        lora_gradient_rms=float(rms),
+        lora_gradient_rms=float(gradient_rms),
     )
 
 
 @torch.no_grad()
-def functional_matched_stratified_occupancy_endpoint_margin(
+def functional_successful_expert_occupancy_objective(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
@@ -342,23 +291,19 @@ def functional_matched_stratified_occupancy_endpoint_margin(
     num_inference_steps: int,
     device: torch.device,
 ) -> dict[str, float]:
-    """Evaluate the exact deployed endpoint preference without a Writer graph."""
+    """Evaluate the exact deployed successful-expert objective."""
 
-    action, valid, noise_seed, pair_count, _, weights = (
-        _matched_occupancy_batch_contract(
+    action, valid, noise_seed, state_count, weights = (
+        _successful_expert_batch_contract(
             batch, trajectory_ids, endpoint_action_batch_size
         )
     )
-    winner = loser = margin = objective = 0.0
-    for pair_start in range(0, pair_count, endpoint_action_batch_size):
-        pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
-        prepared = _endpoint_observation_batch(batch, pair_start, pair_stop, device)
-        pair_weights = weights[pair_start:pair_stop].to(
-            device=device, non_blocking=True
-        )
-        noise = _endpoint_noise(
-            policy, noise_seed[2 * pair_start : 2 * pair_stop : 2], device
-        )
+    objective = distance = 0.0
+    for start in range(0, state_count, endpoint_action_batch_size):
+        stop = min(start + endpoint_action_batch_size, state_count)
+        prepared = _endpoint_observation_batch(batch, start, stop, device)
+        row_weights = weights[start:stop].to(device=device, non_blocking=True)
+        noise = _endpoint_noise(policy, noise_seed[start:stop], device)
         predicted = functional_executed_prefix_endpoint_action(
             policy,
             state,
@@ -367,26 +312,16 @@ def functional_matched_stratified_occupancy_endpoint_margin(
             noise=noise,
             num_steps=num_inference_steps,
         )
-        targets = (
-            action[2 * pair_start : 2 * pair_stop]
-            .reshape(pair_stop - pair_start, 2, action.shape[1], action.shape[2])
-            .to(device=device, non_blocking=True)
+        target = action[start:stop].to(device=device, non_blocking=True)
+        valid_rows = valid[start:stop].to(device=device, non_blocking=True)
+        rms, normalized = unit_residual_endpoint_distillation(
+            predicted, target, valid_rows
         )
-        valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
-            device=device, non_blocking=True
-        )
-        winners, losers, _, margins = unit_secant_endpoint_preference(
-            predicted, targets, valid_rows
-        )
-        winner += float((winners * pair_weights).sum())
-        loser += float((losers * pair_weights).sum())
-        margin += float((margins * pair_weights).sum())
-        objective += float((F.softplus(margins) * pair_weights).sum())
+        objective += float((normalized * row_weights).sum())
+        distance += float((rms * row_weights).sum())
     return {
-        "winner_action_distance": winner,
-        "loser_action_distance": loser,
-        "preference_margin": margin,
-        "preference_objective": objective,
+        "expert_action_distance": distance,
+        "expert_distillation_objective": objective,
     }
 
 
@@ -398,7 +333,7 @@ def backpropagate_lora_cotangent(
 
     active = tuple(name for name, value in generated.items() if value.requires_grad)
     if not active or set(lora_gradients) != set(generated):
-        raise RewardProtocolError("matched occupancy Writer graph lost LoRA outputs")
+        raise RewardProtocolError("successful expert Writer graph lost LoRA outputs")
     torch.autograd.backward(
         tuple(generated[name] for name in active),
         grad_tensors=tuple(lora_gradients[name] for name in active),

@@ -33,7 +33,11 @@ credit：每个train task在两个随机states上运行其step2000 expert，只�
 observation/noise/B8顺序重查expert和Writer actions，每轨迹8个progress strata选最大disagreement state，再把同一
 expert target经四个disjoint correct K4 conditions回传Writer。CFMG memory、rank32、median cap、natural Adam和
 部署信息墙均不变；expert不进held部署。最多三个cycles，逐checkpoint strict400检验训练曲线，约145时立即补
-视频因果controls。当前为pre-implementation，无GPU run。
+视频因果controls。
+canonical实现现已完成：旧binary arm credit被原位替换，没有平行runtime；每task rollout数从4降到2，唯一新增
+module只拥有train24 expert加载与rank16→32 zero padding。定向/完整CPU=`56/416 passed`、compileall/diff check
+与architecture guard hard gate通过，24个expert adapters实读成功。当前无GPU run；下一动作是固定四suite anchors
+`2/12/21/35`的world4真实smoke，然后才可seal formal。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

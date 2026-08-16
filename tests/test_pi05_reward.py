@@ -29,7 +29,7 @@ from ember.reward.rollout import (
     capture_paired_initial_states,
     collect_paired_reward_arm_trajectories,
 )
-from ember.reward.occupancy_panel import complete_matched_stratified_occupancy_batch
+from ember.reward.occupancy_panel import complete_successful_expert_occupancy_batch
 
 
 def test_random_reset_pool_keeps_counterfactual_lanes_independent(
@@ -314,58 +314,49 @@ def _trajectory(*, success: bool, marker: float) -> RewardTrajectory:
     )
 
 
-def test_matched_stratified_occupancy_excludes_stored_winner_action() -> None:
-    pair = (
-        (
-            _trajectory(success=True, marker=2.0),
-            _trajectory(success=False, marker=3.0),
-        ),
-    )
-    batch, trajectory_ids, metrics = complete_matched_stratified_occupancy_batch(
-        pair,
-        ("candidate",),
+def test_successful_expert_occupancy_uses_matched_requery_not_stored_action() -> None:
+    trajectory = _trajectory(success=True, marker=2.0)
+    batch, trajectory_ids, metrics = complete_successful_expert_occupancy_batch(
+        (trajectory,),
         {
-            "reference": ((torch.full((1, 50, 7), 4.0),),),
-            "candidate": ((torch.full((1, 50, 7), 5.0),),),
+            "expert": ((torch.full((1, 50, 7), 5.0),),),
+            "student": ((torch.full((1, 50, 7), 4.0),),),
         },
         strata_per_trajectory=8,
         device=torch.device("cpu"),
     )
-    assert batch[ACTION].shape == (2, 50, 7)
-    assert batch["executed_action_steps"].tolist() == [5, 5]
-    assert batch["policy_noise_seed"].tolist() == [13, 13]
+    assert batch[ACTION].shape == (1, 50, 7)
+    assert batch["executed_action_steps"].tolist() == [5]
+    assert batch["policy_noise_seed"].tolist() == [13]
     assert torch.equal(batch[ACTION][0], torch.full((50, 7), 5.0))
-    assert torch.equal(batch[ACTION][1], torch.full((50, 7), 4.0))
     assert trajectory_ids.tolist() == [0]
     assert metrics["selected_replan_indices"] == [[0]]
 
 
-def test_matched_stratified_occupancy_selects_maximum_in_each_progress_bin() -> None:
+def test_successful_expert_occupancy_selects_maximum_in_each_progress_bin() -> None:
     base = _trajectory(success=True, marker=-1.0)
     count = 17
-    winner = replace(
+    trajectory = replace(
         base,
         observations=base.observations * count,
         action_chunks=base.action_chunks * count,
         valid_action_steps=(5,) * count,
         policy_noise_seeds=tuple(range(count)),
     )
-    loser = _trajectory(success=False, marker=-2.0)
-    reference = tuple(torch.zeros((1, 50, 7)) for _ in range(count))
-    candidate = tuple(
+    student = tuple(torch.zeros((1, 50, 7)) for _ in range(count))
+    expert = tuple(
         torch.full((1, 50, 7), float(index + 1)) for index in range(count)
     )
-    batch, trajectory_ids, metrics = complete_matched_stratified_occupancy_batch(
-        ((winner, loser),),
-        ("candidate",),
-        {"reference": (reference,), "candidate": (candidate,)},
+    batch, trajectory_ids, metrics = complete_successful_expert_occupancy_batch(
+        (trajectory,),
+        {"expert": (expert,), "student": (student,)},
         strata_per_trajectory=8,
         device=torch.device("cpu"),
     )
     assert metrics["selected_replan_indices"] == [[1, 3, 5, 7, 9, 11, 13, 16]]
-    assert metrics["selected_credit_pairs"] == 8
+    assert metrics["selected_credit_states"] == 8
     assert trajectory_ids.tolist() == [0] * 8
-    assert batch["policy_noise_seed"][0::2].tolist() == [
+    assert batch["policy_noise_seed"].tolist() == [
         1,
         3,
         5,
@@ -375,8 +366,7 @@ def test_matched_stratified_occupancy_selects_maximum_in_each_progress_bin() -> 
         13,
         16,
     ]
-    assert batch[ACTION][0::2, 0, 0].tolist() == [2, 4, 6, 8, 10, 12, 14, 17]
-    assert batch[ACTION][1::2].count_nonzero() == 0
+    assert batch[ACTION][:, 0, 0].tolist() == [2, 4, 6, 8, 10, 12, 14, 17]
 
 
 def test_repeated_k2_arms_with_same_keys_reproduce_noise_and_initial_actions() -> None:
@@ -491,12 +481,11 @@ def test_paired_arms_restore_one_captured_post_settling_state() -> None:
         assert sum(name == "restore" for name, _ in env.events) == 2
         assert env.reset_generation == 1
     winner = replace(reference[0], success=True)
-    complete_matched_stratified_occupancy_batch(
-        ((winner, candidate[0]),),
-        ("reference",),
+    complete_successful_expert_occupancy_batch(
+        (winner,),
         {
-            "reference": ((winner.action_chunks[0],),),
-            "candidate": ((candidate[0].action_chunks[0],),),
+            "expert": ((winner.action_chunks[0],),),
+            "student": ((candidate[0].action_chunks[0],),),
         },
         strata_per_trajectory=8,
         device=torch.device("cpu"),

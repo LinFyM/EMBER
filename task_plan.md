@@ -725,11 +725,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 ## Active iteration: V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
-- [ ] 原位替换canonical reward credit/config/checkpoint identity；复用现有rollout、matched B8 query、8-strata
+- [x] 原位替换canonical reward credit/config/checkpoint identity；复用现有rollout、matched B8 query、8-strata
   panel、four-view Writer反传与median-capped Adam，不增加平行runtime；
 - [ ] 完成rank16 expert到rank32 zero-padding等价、固定四suite anchors成功occupancy、matched query、four-view
   gradient、native BA/action、constant/reverse与吞吐机制门；
-- [ ] targeted/full CPU、compileall、architecture guard通过后冻结clean pushed formal commit；
+- [x] targeted/full CPU=`56/416 passed`、compileall、diff check、architecture guard无hard violation；24个expert
+  adapters实读与rank16→32 padding通过；
+- [ ] 冻结clean pushed mechanism commit并完成四suite world4 GPU smoke；通过后再seal formal commit；
 - [ ] live双节点GPU与/data1 quota检查后，以最多6张合适同节点A40启动fresh full24 cycle1；按authority最多连续
   三cycles并逐checkpoint strict400，分析absolute/breadth、逐task/suite、retained/gained/lost/churn/Jaccard；
 - [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若

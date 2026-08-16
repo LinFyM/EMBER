@@ -1,4 +1,4 @@
-"""Cycle checkpoints for CFMG median-capped task commitment."""
+"""Cycle checkpoints for CFMG successful-expert distillation."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_commitment_checkpoint_v1"
+    "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_distillation_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_cfmg_median_capped_task_tangent_commitment_cycle_checkpoint"
+    "v6_lpcp_cfmg_successful_expert_occupancy_distillation_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

@@ -596,31 +596,31 @@ def collect_paired_reward_arm_trajectories(
     )
 
 
-_MatchedOccupancyRecord = tuple[int, int, Mapping[str, torch.Tensor], int]
+_SuccessfulOccupancyRecord = tuple[int, int, Mapping[str, torch.Tensor], int]
 
 
-def _matched_occupancy_records(
-    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
-    active_labels: Sequence[str],
-) -> list[_MatchedOccupancyRecord]:
-    if len(pairs) not in {1, 2} or len(active_labels) != len(pairs):
-        raise RewardProtocolError("matched occupancy panel changed")
-    records: list[_MatchedOccupancyRecord] = []
-    for pair_index, ((winner, loser), winner_arm) in enumerate(
-        zip(pairs, active_labels, strict=True)
-    ):
-        if winner_arm not in {"reference", "candidate"} or not winner.success or loser.success:
-            raise RewardProtocolError("discordant winner arm changed")
+def _successful_occupancy_records(
+    trajectories: Sequence[RewardTrajectory],
+) -> list[_SuccessfulOccupancyRecord]:
+    if len(trajectories) not in {1, 2}:
+        raise RewardProtocolError("successful expert occupancy panel changed")
+    records: list[_SuccessfulOccupancyRecord] = []
+    for trajectory_index, trajectory in enumerate(trajectories):
         if (
-            len(winner.observations) != len(winner.policy_noise_seeds)
-            or len(winner.action_chunks) != len(winner.observations)
-            or len(winner.valid_action_steps) != len(winner.observations)
+            not trajectory.success
+            or len(trajectory.observations) != len(trajectory.policy_noise_seeds)
+            or len(trajectory.action_chunks) != len(trajectory.observations)
+            or len(trajectory.valid_action_steps) != len(trajectory.observations)
         ):
-            raise RewardProtocolError("successful trajectory lost policy replay seeds")
+            raise RewardProtocolError("successful expert trajectory lost replay")
         records.extend(
-            (pair_index, replan, observation, seed)
+            (trajectory_index, replan, observation, seed)
             for replan, (observation, seed) in enumerate(
-                zip(winner.observations, winner.policy_noise_seeds, strict=True)
+                zip(
+                    trajectory.observations,
+                    trajectory.policy_noise_seeds,
+                    strict=True,
+                )
             )
         )
     return records
@@ -629,7 +629,7 @@ def _matched_occupancy_records(
 def _matched_occupancy_policy_batch(
     *,
     policy: torch.nn.Module,
-    panel: Sequence[_MatchedOccupancyRecord],
+    panel: Sequence[_SuccessfulOccupancyRecord],
     device: torch.device,
     num_inference_steps: int,
 ) -> torch.Tensor:
@@ -668,32 +668,31 @@ def _matched_occupancy_policy_batch(
     return actions.detach().to(device="cpu").contiguous()
 
 
-def query_matched_occupancy_actions(
+def query_successful_expert_occupancy_actions(
     *,
     policy: torch.nn.Module,
     lora_contract: Any,
     identity_state: Mapping[str, torch.Tensor],
-    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
-    active_labels: Sequence[str],
-    reference_lora: Mapping[str, torch.Tensor],
-    candidate_lora: Mapping[str, torch.Tensor],
+    trajectories: Sequence[RewardTrajectory],
+    expert_lora: Mapping[str, torch.Tensor],
+    student_lora: Mapping[str, torch.Tensor],
     device: torch.device,
     microbatch_size: int,
     num_inference_steps: int,
 ) -> tuple[dict[str, tuple[tuple[torch.Tensor, ...], ...]], dict[str, Any]]:
-    """Query both policy arms with identical batches over successful occupancy."""
+    """Re-query expert and Writer with identical successful-occupancy batches."""
 
     if microbatch_size <= 0:
-        raise RewardProtocolError("matched action batch size changed")
-    records = _matched_occupancy_records(pairs, active_labels)
+        raise RewardProtocolError("successful expert action batch size changed")
+    records = _successful_occupancy_records(trajectories)
     outputs: dict[str, dict[tuple[int, int], torch.Tensor]] = {
-        "reference": {},
-        "candidate": {},
+        "expert": {},
+        "student": {},
     }
-    batch_sizes: dict[str, list[int]] = {"reference": [], "candidate": []}
+    batch_sizes: dict[str, list[int]] = {"expert": [], "student": []}
     started = time.monotonic()
     try:
-        for arm, lora in (("reference", reference_lora), ("candidate", candidate_lora)):
+        for arm, lora in (("expert", expert_lora), ("student", student_lora)):
             copy_task_lora_state_(policy, lora, lora_contract)
             policy.reset()
             for start in range(0, len(records), microbatch_size):
@@ -704,48 +703,44 @@ def query_matched_occupancy_actions(
                     device=device,
                     num_inference_steps=num_inference_steps,
                 )
-                for row, (pair_index, replan, _, _) in enumerate(panel):
-                    outputs[arm][(pair_index, replan)] = actions[row : row + 1]
+                for row, (trajectory_index, replan, _, _) in enumerate(panel):
+                    outputs[arm][(trajectory_index, replan)] = actions[row : row + 1]
                 batch_sizes[arm].append(len(panel))
     finally:
         copy_task_lora_state_(policy, identity_state, lora_contract)
     nested = {
         arm: tuple(
             tuple(
-                outputs[arm][(pair_index, replan)]
-                for replan in range(len(winner.observations))
+                outputs[arm][(trajectory_index, replan)]
+                for replan in range(len(trajectory.observations))
             )
-            for pair_index, (winner, _) in enumerate(pairs)
+            for trajectory_index, trajectory in enumerate(trajectories)
         )
-        for arm in ("reference", "candidate")
+        for arm in ("expert", "student")
     }
-    complete_chunks = sum(len(winner.observations) for winner, _ in pairs)
+    complete_chunks = sum(len(trajectory.observations) for trajectory in trajectories)
     if (
-        batch_sizes["reference"] != batch_sizes["candidate"]
+        batch_sizes["expert"] != batch_sizes["student"]
         or any(len(outputs[arm]) != complete_chunks for arm in outputs)
     ):
-        raise RewardProtocolError("matched occupancy action query lost batch identity")
-    stored_winner, matched_winner, stored_loser_first, matched_loser_first = [], [], [], []
-    for pair_index, ((winner, loser), winner_arm) in enumerate(
-        zip(pairs, active_labels, strict=True)
-    ):
-        loser_arm = "reference" if winner_arm == "candidate" else "candidate"
-        for replan, valid in enumerate(winner.valid_action_steps):
-            stored_winner.append(winner.action_chunks[replan].float()[:, :valid])
-            matched_winner.append(nested[winner_arm][pair_index][replan].float()[:, :valid])
-        stored_loser_first.append(loser.action_chunks[0].float())
-        matched_loser_first.append(nested[loser_arm][pair_index][0].float())
-    winner_requery_rms = torch.cat(
-        [(left - right).flatten() for left, right in zip(stored_winner, matched_winner, strict=True)]
-    ).square().mean().sqrt()
-    loser_first_requery_rms = torch.cat(
-        [(left - right).flatten() for left, right in zip(stored_loser_first, matched_loser_first, strict=True)]
+        raise RewardProtocolError("successful expert action query lost batch identity")
+    stored, matched = [], []
+    for trajectory_index, trajectory in enumerate(trajectories):
+        for replan, valid in enumerate(trajectory.valid_action_steps):
+            stored.append(trajectory.action_chunks[replan].float()[:, :valid])
+            matched.append(
+                nested["expert"][trajectory_index][replan].float()[:, :valid]
+            )
+    expert_requery_rms = torch.cat(
+        [
+            (left - right).flatten()
+            for left, right in zip(stored, matched, strict=True)
+        ]
     ).square().mean().sqrt()
     return nested, {
         "complete_occupancy_chunks": complete_chunks,
-        "matched_policy_forwards": 2 * len(batch_sizes["reference"]),
-        "matched_query_batch_sizes": batch_sizes["reference"],
-        "stored_winner_to_matched_requery_rms": float(winner_requery_rms),
-        "stored_loser_to_matched_first_requery_rms": float(loser_first_requery_rms),
+        "matched_policy_forwards": 2 * len(batch_sizes["expert"]),
+        "matched_query_batch_sizes": batch_sizes["expert"],
+        "stored_expert_to_matched_requery_rms": float(expert_requery_rms),
         "matched_action_seconds": time.monotonic() - started,
     }

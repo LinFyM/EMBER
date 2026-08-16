@@ -318,6 +318,7 @@ def _validate_reward_run_contract(
         or run.get("writer") != config["writer"]
         or run.get("information_wall") != reward_config["information_wall"]
         or run.get("objective") != reward_config["objective"]
+        or {key: run.get("privileged_teacher", {}).get(key) for key in reward_config["privileged_teacher"]} != reward_config["privileged_teacher"]
         or run.get("deployment") != reward_config["deployment"]
         or run.get("commitment") != reward_config["commitment"]
         or run.get("initialization", {}).get("as_checkpoint")
@@ -370,6 +371,7 @@ def _reward_writer_asset(
         "data",
         "environment",
         "objective",
+        "privileged_teacher",
         "deployment",
         "commitment",
         "rng",
@@ -393,7 +395,7 @@ def _reward_writer_asset(
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
         "training_mode": "formal_content_first_backbone_memory_grid",
-        "training_stage": "on_policy_cross_video_cfmg_endpoint_commitment",
+        "training_stage": "successful_expert_occupancy_cross_video_cfmg_distillation",
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest": {
@@ -598,7 +600,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_cfmg_median_capped_task_tangent_commitment_"
+                "v6_lpcp_cfmg_successful_expert_occupancy_distillation_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

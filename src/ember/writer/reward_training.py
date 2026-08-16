@@ -38,6 +38,7 @@ from ember.pi05_source_setup import (
 )
 from ember.reward.protocol import SUITE_HORIZONS, RewardTask
 from ember.reward.rollout import RandomResetEnvironmentPool
+from ember.reward.expert_teacher import load_successful_expert_bank
 from ember.writer.as_config import authority_path
 from ember.writer.as_contract import load_run_authorities, writer_trainable_contract
 from ember.writer.as_step import ParameterSlice, parameter_layout
@@ -76,6 +77,8 @@ class RewardRuntime:
     policy: torch.nn.Module
     writer: torch.nn.Module
     identity_state: Mapping[str, torch.Tensor]
+    expert_loras: Mapping[int, Mapping[str, torch.Tensor]]
+    expert_evidence: Mapping[str, Any]
     lora_contract: Any
     optimizer: torch.optim.Optimizer
     trainable_parameters: tuple[torch.nn.Parameter, ...]
@@ -177,6 +180,7 @@ def _contract(
     source: Mapping[str, Any],
     trainable: Mapping[str, Any],
     tasks: tuple[RewardTask, ...],
+    expert_evidence: Mapping[str, Any],
 ) -> dict[str, Any]:
     local = {
         "rank": context.rank,
@@ -209,6 +213,10 @@ def _contract(
         "data": dict(config["data"]),
         "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
+        "privileged_teacher": {
+            **dict(config["privileged_teacher"]),
+            "bank_evidence": dict(expert_evidence),
+        },
         "deployment": dict(config["deployment"]),
         "commitment": dict(config["commitment"]),
         "rng": dict(config["rng"]),
@@ -274,11 +282,11 @@ def _load_direct_factor_models(
         != 2_828_928
     ):
         raise WriterModelError(
-            "MCTC endpoint must train only 2828928 parameters"
+            "SEOD endpoint must train only 2828928 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_cfmg_median_capped_task_tangent_commitment_only"
+        "v6_lpcp_cfmg_successful_expert_occupancy_distillation_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -334,9 +342,7 @@ def _condition_inputs(
     return processor, store, language, schedule, env_pool
 
 
-def prepare_runtime(
-    args: argparse.Namespace, context: DistributedContext
-) -> RewardRuntime:
+def prepare_runtime(args: argparse.Namespace, context: DistributedContext) -> RewardRuntime:
     config, base_config = load_reward_config(args.config)
     require_reward_mode(config, args.mode)
     if args.mode == "smoke":
@@ -345,7 +351,7 @@ def prepare_runtime(
         )
         required_world_size = int(config["smoke_run"]["required_world_size"])
         if context.world_size != required_world_size:
-            raise WriterModelError("task-complete smoke requires world3")
+            raise WriterModelError("task-complete smoke requires world4")
         if args.smoke_task_ids != expected_ids:
             raise WriterModelError(
                 "task-complete smoke requires exact shared anchor task order"
@@ -370,6 +376,9 @@ def prepare_runtime(
         source=source,
         source_base_config=authorities.source_base_config,
     )
+    expert_evidence, expert_loras = load_successful_expert_bank(
+        config=config, source=source, tasks=tasks, public_contract=lora
+    )
     initialize_deferred_process_group(
         context,
         rendezvous_root=args.output_dir.parent,
@@ -387,6 +396,7 @@ def prepare_runtime(
         source=source,
         trainable=trainable,
         tasks=tasks,
+        expert_evidence=expert_evidence,
     )
     _publish_contract(args, context, contract)
     start_cycle = checkpoint_cycle(args.resume)
@@ -438,6 +448,8 @@ def prepare_runtime(
         policy=policy,
         writer=writer,
         identity_state=writer.template_state(),
+        expert_loras=expert_loras,
+        expert_evidence=expert_evidence,
         lora_contract=lora,
         optimizer=optimizer,
         trainable_parameters=tuple(
@@ -501,9 +513,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_"
-                        "commitment_"
-                        "completion_v1"
+                        "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_"
+                        "distillation_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

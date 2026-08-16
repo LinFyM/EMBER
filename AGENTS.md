@@ -57,7 +57,10 @@ effective-BA relative-L2 mean/median=`.001199/.001157`，first4同task更新cosi
 candidate/reference binary discordance换成train24 step2000 expert自身成功closed-loop occupancy上的matched B8
 action distillation；expert失败trajectory为零credit，expert不进入Writer输入、checkpoint或held部署。exact current
 LPCP fixed-A只读诊断对step2000 expert BA的可达能量/cosine为`.381712/.617828`，所以本轮不做不可达的expert
-factor重建。当前authority已冻结，尚未实现或启动GPU；MCTC checkpoint不得resume。
+factor重建。当前authority已冻结，MCTC checkpoint不得resume。
+canonical runtime现已原位替换旧binary arm credit：每task仅两条expert rollouts，matched B8/8-strata/four-view/
+median-cap/Adam继续复用；唯一新source owner只负责expert bank加载与rank padding。定向/完整CPU=`56/416 passed`、
+architecture guard无hard violation，24个expert adapters实读成功；当前GPU smoke待运行，尚无formal checkpoint。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

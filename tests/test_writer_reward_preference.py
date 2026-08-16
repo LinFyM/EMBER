@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 import torch
-import torch.nn.functional as F
 from lerobot.utils.constants import (
     ACTION,
     OBS_LANGUAGE_ATTENTION_MASK,
@@ -14,6 +13,7 @@ from lerobot.utils.constants import (
 
 from fixtures.writer_model import _inputs, _model as _writer_model
 import ember.writer.reward_cycle as reward_cycle
+from ember.reward.expert_teacher import pad_expert_lora_to_public_rank
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -22,10 +22,9 @@ from ember.lora import (
 )
 from ember.reward.rollout import (
     RewardTrajectory,
-    query_matched_occupancy_actions,
+    query_successful_expert_occupancy_actions,
 )
 from ember.writer.as_step import parameter_layout
-from ember.writer.reward_cycle import select_discordant_trajectory_pairs
 from ember.writer.reward_gradient_update import (
     apply_reward_step,
     lora_response,
@@ -33,13 +32,13 @@ from ember.writer.reward_gradient_update import (
     preconditioned_candidate_commitment,
 )
 from ember.writer.reward_preference import (
-    MatchedStratifiedOccupancyCreditSummary,
+    SuccessfulExpertOccupancyCreditSummary,
     cross_video_gradient_geometry,
-    functional_matched_stratified_occupancy_endpoint_gradient,
-    functional_matched_stratified_occupancy_endpoint_margin,
+    functional_successful_expert_occupancy_gradient,
+    functional_successful_expert_occupancy_objective,
     mean_cross_video_task_gradient,
-    stratified_occupancy_pair_weights,
-    unit_secant_endpoint_preference,
+    stratified_occupancy_weights,
+    unit_residual_endpoint_distillation,
 )
 
 
@@ -63,7 +62,7 @@ def test_formal_credit_retains_all_four_views_for_global_commitment(
 
     def encode_condition(*args: object, **kwargs: object) -> tuple[object, ...]:
         index = next(encoded_index)
-        return (None, None, None, offsets[index]), {}, states[index], None, {}
+        return (None, None, None, offsets[index]), {}, states[index], {}
 
     differentiated_index = iter(range(4))
 
@@ -73,16 +72,14 @@ def test_formal_credit_retains_all_four_views_for_global_commitment(
         index = next(differentiated_index)
         return torch.tensor(
             [float(index + 1)]
-        ), MatchedStratifiedOccupancyCreditSummary(
+        ), SuccessfulExpertOccupancyCreditSummary(
             objective=float(index),
-            preference_margin=float(index + 1),
-            winner_action_distance=0.0,
-            loser_action_distance=1.0,
-            discordant_trajectories=1,
-            selected_credit_pairs=8,
+            expert_action_distance=float(index + 1),
+            successful_trajectories=1,
+            selected_credit_states=8,
             replay_rows=8,
             successful_action_steps=8,
-            matched_winner_loser_action_rms=1.0,
+            matched_expert_student_action_rms=1.0,
             functional_policy_forwards=1,
             functional_policy_backwards=1,
             lora_gradient_rms=1.0,
@@ -93,7 +90,6 @@ def test_formal_credit_retains_all_four_views_for_global_commitment(
     gradients, rows, views, observed_demos = reward_cycle._differentiate_credit_views(
         runtime,
         task,
-        1,
         0,
         demo_sets[0],
         packed,
@@ -107,12 +103,7 @@ def test_formal_credit_retains_all_four_views_for_global_commitment(
     assert len(gradients) == len(rows) == len(views) == 4
     assert observed_demos == demo_sets
     assert tuple(view.conditioning_state for view in views) == states
-    assert tuple(view.before_preference_margin for view in views) == (
-        1.0,
-        2.0,
-        3.0,
-        4.0,
-    )
+    assert tuple(view.before_credit_objective for view in views) == (0.0, 1.0, 2.0, 3.0)
     for view, expected_offsets in zip(views, offsets, strict=True):
         assert torch.equal(view.condition_video_offsets, expected_offsets)
 
@@ -180,6 +171,31 @@ def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
     )
 
 
+def test_expert_rank_padding_preserves_effective_ba() -> None:
+    target = LoRATarget("model.projection", 3, 4)
+    expert = SmolVLALoRAContract(
+        targets=(target,), rank=2, alpha=2, dropout=0.0, identity_seed=7
+    )
+    public = SmolVLALoRAContract(
+        targets=(target,), rank=4, alpha=4, dropout=0.0, identity_seed=7
+    )
+    state = {
+        "model.projection.lora_A.default.weight": torch.randn(2, 3),
+        "model.projection.lora_B.default.weight": torch.randn(4, 2),
+    }
+    padded = pad_expert_lora_to_public_rank(
+        state, expert_contract=expert, public_contract=public
+    )
+    torch.testing.assert_close(
+        padded["model.projection.lora_B.default.weight"]
+        @ padded["model.projection.lora_A.default.weight"],
+        state["model.projection.lora_B.default.weight"]
+        @ state["model.projection.lora_A.default.weight"],
+    )
+    assert padded["model.projection.lora_A.default.weight"].shape == (4, 3)
+    assert padded["model.projection.lora_B.default.weight"].shape == (4, 4)
+
+
 class _PrefixOwner(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -236,7 +252,7 @@ class _Policy(torch.nn.Module):
         return [torch.zeros((size, 3, 2, 2))], [torch.ones(size, dtype=torch.bool)]
 
 
-def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
+def test_successful_expert_endpoint_uses_one_prediction_and_descends() -> None:
     policy = _Policy()
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("model.projection", 7, 7),),
@@ -259,16 +275,16 @@ def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
     actions = torch.stack(
         tuple(
             torch.full((50, 7), value)
-            for value in (0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07)
+            for value in (0.01, 0.03, 0.05, 0.07)
         )
     )
     batch = {
         ACTION: actions,
-        "executed_action_steps": torch.tensor([5, 5, 3, 3, 4, 4, 2, 2]),
-        "action_is_pad": torch.zeros((8, 50), dtype=torch.bool),
-        "policy_noise_seed": torch.tensor([101, 101, 103, 103, 107, 107, 109, 109]),
-        OBS_LANGUAGE_TOKENS: torch.ones((8, 2), dtype=torch.long),
-        OBS_LANGUAGE_ATTENTION_MASK: torch.ones((8, 2), dtype=torch.bool),
+        "executed_action_steps": torch.tensor([5, 3, 4, 2]),
+        "action_is_pad": torch.zeros((4, 50), dtype=torch.bool),
+        "policy_noise_seed": torch.tensor([101, 103, 107, 109]),
+        OBS_LANGUAGE_TOKENS: torch.ones((4, 2), dtype=torch.long),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones((4, 2), dtype=torch.bool),
     }
     trajectory_ids = torch.tensor([0, 1, 1, 1])
     kwargs = dict(
@@ -281,14 +297,12 @@ def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
         num_inference_steps=10,
         device=torch.device("cpu"),
     )
-    gradient, summary = functional_matched_stratified_occupancy_endpoint_gradient(
-        **kwargs
-    )
+    gradient, summary = functional_successful_expert_occupancy_gradient(**kwargs)
     assert summary.functional_policy_forwards == 1
     assert summary.functional_policy_backwards == 1
-    assert summary.discordant_trajectories == 2
-    assert summary.selected_credit_pairs == 4
-    assert summary.matched_winner_loser_action_rms > 0
+    assert summary.successful_trajectories == 2
+    assert summary.selected_credit_states == 4
+    assert summary.matched_expert_student_action_rms > 0
     assert any(bool(torch.count_nonzero(value)) for value in gradient.values())
     assert all(
         not bool(torch.count_nonzero(value))
@@ -296,63 +310,40 @@ def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
         if name.endswith(".lora_A.default.weight")
     )
     assert all(parameter.grad is None for parameter in policy.parameters())
-    before = functional_matched_stratified_occupancy_endpoint_margin(**kwargs)
+    before = functional_successful_expert_occupancy_objective(**kwargs)
     gradient_norm = torch.cat([value.flatten() for value in gradient.values()]).norm()
     updated = {
         name: state[name] - (1e-2 / gradient_norm) * gradient[name] for name in state
     }
-    after = functional_matched_stratified_occupancy_endpoint_margin(
+    after = functional_successful_expert_occupancy_objective(
         **{**kwargs, "state": updated}
     )
-    assert after["preference_margin"] < before["preference_margin"]
+    assert after["expert_distillation_objective"] < before["expert_distillation_objective"]
 
 
-def test_unit_secant_endpoint_preference_geometry_and_mask() -> None:
+def test_unit_residual_endpoint_geometry_and_mask() -> None:
     targets = torch.tensor(
-        [
-            [
-                [[0.0, 0.0], [2.0, 0.0], [99.0, 99.0]],
-                [[2.0, 0.0], [0.0, 0.0], [-99.0, -99.0]],
-            ],
-            [
-                [[1.0, -1.0], [77.0, 77.0], [77.0, 77.0]],
-                [[3.0, -1.0], [-77.0, -77.0], [-77.0, -77.0]],
-            ],
-        ],
+        [[[0.0, 0.0], [2.0, 0.0], [99.0, 99.0]], [[1.0, -1.0], [77.0, 77.0], [77.0, 77.0]]],
         requires_grad=True,
     )
     valid = torch.tensor([2, 1])
-    midpoint = (targets[:, 0].detach() + targets[:, 1].detach()) / 2
-    winner, loser, secant, margin = unit_secant_endpoint_preference(
-        midpoint, targets, valid
-    )
-    torch.testing.assert_close(winner, loser)
-    torch.testing.assert_close(margin, torch.zeros_like(margin), atol=0, rtol=0)
-    torch.testing.assert_close(secant, torch.tensor([2.0**0.5, 2.0**0.5]))
-
-    _, _, winner_secant, winner_margin = unit_secant_endpoint_preference(
-        targets[:, 0].detach(), targets, valid
-    )
-    _, _, loser_secant, loser_margin = unit_secant_endpoint_preference(
-        targets[:, 1].detach(), targets, valid
-    )
-    torch.testing.assert_close(winner_margin, -winner_secant)
-    torch.testing.assert_close(loser_margin, loser_secant)
+    predicted = torch.zeros_like(targets).detach().requires_grad_()
+    rms, normalized = unit_residual_endpoint_distillation(predicted, targets, valid)
+    torch.testing.assert_close(rms, torch.tensor([1.0, 1.0]))
+    torch.testing.assert_close(normalized, torch.tensor([1.0, 1.0]), rtol=1e-5, atol=1e-6)
     assert targets.grad is None
 
 
-def test_unit_secant_softplus_midpoint_gradient_is_scale_invariant() -> None:
-    base_targets = torch.tensor(
-        [[[[0.0, 0.0], [1.0, -1.0]], [[2.0, 0.0], [-1.0, 1.0]]]]
-    )
+def test_unit_residual_gradient_is_scale_invariant() -> None:
+    base_targets = torch.tensor([[[2.0, 0.0], [-1.0, 1.0]]])
     gradients = []
     for scale in (0.25, 8.0):
         targets = (base_targets * scale).requires_grad_()
-        predicted = targets.detach().mean(dim=1).requires_grad_()
-        _, _, _, margin = unit_secant_endpoint_preference(
+        predicted = torch.zeros_like(targets).requires_grad_()
+        _, normalized = unit_residual_endpoint_distillation(
             predicted, targets, torch.tensor([2])
         )
-        F.softplus(margin).sum().backward()
+        normalized.sum().backward()
         gradients.append(predicted.grad.detach().clone())
         assert targets.grad is None
     torch.testing.assert_close(gradients[0], gradients[1], rtol=1e-6, atol=1e-7)
@@ -360,7 +351,7 @@ def test_unit_secant_softplus_midpoint_gradient_is_scale_invariant() -> None:
 
 def test_stratified_occupancy_weights_equalize_unequal_trajectory_lengths() -> None:
     ids = torch.tensor([0, 1, 1, 1], dtype=torch.long)
-    weights = stratified_occupancy_pair_weights(ids)
+    weights = stratified_occupancy_weights(ids)
     torch.testing.assert_close(weights, torch.tensor([0.5, 1 / 6, 1 / 6, 1 / 6]))
     torch.testing.assert_close(weights[ids == 0].sum(), weights[ids == 1].sum())
 
@@ -389,22 +380,7 @@ def _trajectory(*, cursor: int, success: bool, marker: float) -> RewardTrajector
     )
 
 
-def test_pair_selection_orders_the_unique_winner_before_the_loser() -> None:
-    reference = (
-        _trajectory(cursor=0, success=False, marker=0.0),
-        _trajectory(cursor=1, success=True, marker=1.0),
-    )
-    candidate = (
-        _trajectory(cursor=0, success=True, marker=2.0),
-        _trajectory(cursor=1, success=False, marker=3.0),
-    )
-    pairs, labels = select_discordant_trajectory_pairs(reference, candidate)
-    assert labels == ("candidate", "reference")
-    assert pairs[0] == (candidate[0], reference[0])
-    assert pairs[1] == (reference[1], candidate[1])
-
-
-def test_matched_occupancy_queries_both_arms_with_identical_batches(
+def test_successful_occupancy_queries_expert_and_student_with_identical_batches(
     monkeypatch,
 ) -> None:
     class CounterfactualPolicy(torch.nn.Module):
@@ -433,10 +409,8 @@ def test_matched_occupancy_queries_both_arms_with_identical_batches(
             valid_action_steps=tuple(5 for _ in range(count)),
         )
 
-    candidate_winner = with_chunks(_trajectory(cursor=0, success=True, marker=2.0), 2)
-    reference_loser = _trajectory(cursor=0, success=False, marker=0.0)
-    reference_winner = with_chunks(_trajectory(cursor=1, success=True, marker=1.0), 3)
-    candidate_loser = _trajectory(cursor=1, success=False, marker=3.0)
+    first = with_chunks(_trajectory(cursor=0, success=True, marker=2.0), 2)
+    second = with_chunks(_trajectory(cursor=1, success=True, marker=1.0), 3)
     policy = CounterfactualPolicy()
 
     def install(target, state, _contract):
@@ -453,36 +427,31 @@ def test_matched_occupancy_queries_both_arms_with_identical_batches(
             "environment": {"num_inference_steps": 10},
         },
     )
-    actions, metrics = query_matched_occupancy_actions(
+    actions, metrics = query_successful_expert_occupancy_actions(
         policy=runtime.policy,
         lora_contract=runtime.lora_contract,
         identity_state=runtime.identity_state,
-        pairs=(
-            (candidate_winner, reference_loser),
-            (reference_winner, candidate_loser),
-        ),
-        active_labels=("candidate", "reference"),
-        reference_lora={"arm": torch.tensor(10.0)},
-        candidate_lora={"arm": torch.tensor(20.0)},
+        trajectories=(first, second),
+        expert_lora={"arm": torch.tensor(10.0)},
+        student_lora={"arm": torch.tensor(20.0)},
         device=runtime.context.device,
         microbatch_size=2,
         num_inference_steps=10,
     )
-    assert [len(value) for value in actions["reference"]] == [2, 3]
-    assert [len(value) for value in actions["candidate"]] == [2, 3]
+    assert [len(value) for value in actions["expert"]] == [2, 3]
+    assert [len(value) for value in actions["student"]] == [2, 3]
     assert all(
-        float(value.mean()) < 11 for pair in actions["reference"] for value in pair
+        float(value.mean()) < 11 for trajectory in actions["expert"] for value in trajectory
     )
     assert all(
-        float(value.mean()) > 19 for pair in actions["candidate"] for value in pair
+        float(value.mean()) > 19 for trajectory in actions["student"] for value in trajectory
     )
     assert policy.batch_sizes == [2, 2, 1, 2, 2, 1]
     assert policy.arm_value == -1.0
     assert metrics["complete_occupancy_chunks"] == 5
     assert metrics["matched_policy_forwards"] == 6
     assert metrics["matched_query_batch_sizes"] == [2, 2, 1]
-    assert metrics["stored_winner_to_matched_requery_rms"] > 0
-    assert metrics["stored_loser_to_matched_first_requery_rms"] > 0
+    assert metrics["stored_expert_to_matched_requery_rms"] > 0
 
 
 def _single_condition_inputs(k: int) -> tuple[torch.Tensor, ...]:
@@ -555,7 +524,7 @@ def test_cached_candidate_recompiles_query_only_without_another_backbone() -> No
     )
 
 
-def _global_test_preference_rows(
+def _global_test_credit_rows(
     scale: float, *, all_fail: bool = False
 ) -> tuple[dict[str, object], ...]:
     rows = []
@@ -571,11 +540,11 @@ def _global_test_preference_rows(
                     "task_id": task_id,
                     "suite": f"suite_{task_id}",
                     "view_index": view_index,
-                    "before_preference_margin": before,
-                    "after_preference_margin": after,
-                    "preference_margin_delta": after - before,
-                    "after_preference_objective": 2.0 + after,
-                    "preference_descent": after < before,
+                    "before_credit_objective": before,
+                    "after_credit_objective": after,
+                    "credit_objective_delta": after - before,
+                    "after_expert_action_distance": 2.0 + after,
+                    "credit_descent": after < before,
                 }
             )
     return tuple(rows)
@@ -627,7 +596,7 @@ def test_optimizer_uses_median_capped_active_task_mean() -> None:
 
     def evaluate(scale: float) -> tuple[dict[str, object], ...]:
         evaluated_scales.append(scale)
-        return _global_test_preference_rows(scale)
+        return _global_test_credit_rows(scale)
 
     task_gradients = {
         0: torch.tensor([-1.0, 0.0]),
@@ -672,7 +641,7 @@ def test_optimizer_uses_median_capped_active_task_mean() -> None:
     assert step.commitment_geometry["descending_task_view_count"] == 4
     assert (
         step.commitment_geometry[
-            "all_active_task_view_preference_descent_diagnostic"
+            "all_active_task_view_credit_descent_diagnostic"
         ]
         is False
     )
@@ -680,12 +649,12 @@ def test_optimizer_uses_median_capped_active_task_mean() -> None:
     assert step.commitment_geometry["global_active_task_ids"] == [0, 1]
     assert step.commitment_geometry["global_task_view_count"] == 8
     assert all(
-        row["before_preference_margin"] == 1.0
-        for row in step.commitment_preference_rows
+        row["before_credit_objective"] == 1.0
+        for row in step.commitment_credit_rows
     )
     assert sum(
-        bool(row["preference_descent"])
-        for row in step.commitment_preference_rows
+        bool(row["credit_descent"])
+        for row in step.commitment_credit_rows
     ) == 4
 
     accepted_parameters = head.detach().clone()
@@ -693,7 +662,7 @@ def test_optimizer_uses_median_capped_active_task_mean() -> None:
         runtime,
         2,
         task_gradients,
-        lambda scale: _global_test_preference_rows(scale, all_fail=True),
+        lambda scale: _global_test_credit_rows(scale, all_fail=True),
     )
     assert not torch.equal(head, accepted_parameters)
     assert failed.commitment_geometry["search_accepted"] is True
@@ -702,11 +671,11 @@ def test_optimizer_uses_median_capped_active_task_mean() -> None:
     assert failed.commitment_geometry["final_delta_l2"] > 0
     assert (
         failed.commitment_geometry[
-            "all_active_task_view_preference_descent_diagnostic"
+            "all_active_task_view_credit_descent_diagnostic"
         ]
         is False
     )
     assert all(
-        row["preference_margin_delta"] == 0.25
-        for row in failed.commitment_preference_rows
+        row["credit_objective_delta"] == 0.25
+        for row in failed.commitment_credit_rows
     )

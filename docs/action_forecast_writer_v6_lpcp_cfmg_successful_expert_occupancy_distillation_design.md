@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
-状态：2026-08-17 pre-implementation active authority。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
+状态：2026-08-17 canonical实现与CPU合同完成、真实GPU机制门待运行的active authority。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
 不resume MCTC checkpoint；保留已经验证的视频carrier、literal memory、K4集合、rank32 native LoRA写出、
 four-view共享与median-capped natural Adam，只替换训练credit的来源。
 
@@ -68,7 +68,7 @@ step2000 expert direct评测为0/50；若本轮随机rollout也无成功，它�
 
 ```text
 d2 = mean_valid((a_w - stopgrad(a_e))^2)
-L_state = d2 / stopgrad(sqrt(d2) + eps)
+L_state = d2 / stopgrad(max(sqrt(d2), eps))
 ```
 
 它与MCTC unit-secant一样把当前action discrepancy的尺度从gradient幅度中剥离，但没有人工loser或负方向。
@@ -123,3 +123,12 @@ same-task-video鲁棒和视频因果性同时成立时才有资格。不得cycle
 distance，SEOD在full24前终局。若机制通过但strict仍低、lost多或连续换手，则否定的是当前successful-expert
 occupancy + CFMG B-only commitment组合，不否定memory token、rank8、few-shot、task expert作为其它privileged
 teacher或生成LoRA本身。
+
+## 10. Canonical implementation state
+
+旧binary candidate/reference arm credit已原位退休；canonical runtime现在每task只运行两条expert trajectories，并
+复用matched B8 query、8-strata、four-view Writer cotangent、median cap与exact Adam。新增的唯一source owner是
+`reward/expert_teacher.py`，只负责sealed train24 bank inspection和rank16→rank32 zero padding；没有新entrypoint、
+平行runtime或deployment fallback。active source相对authority commit净减少221行，architecture guard无hard
+violation；定向/完整CPU=`56/416 passed`，compileall和diff check通过。24个step2000 adapters已在CPU实读并全部
+成功pad为rank32。下一步只运行四suite真实GPU smoke，不以CPU objective代替机制与闭环证据。

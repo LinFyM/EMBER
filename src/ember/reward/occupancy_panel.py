@@ -1,4 +1,4 @@
-"""Matched-batch temporal stratification for successful-occupancy credit."""
+"""Temporal stratification for successful task-expert occupancy credit."""
 
 from __future__ import annotations
 
@@ -13,22 +13,25 @@ from ember.reward.rollout import RewardTrajectory
 
 
 def _action_disagreement(
-    winner: torch.Tensor,
-    loser: torch.Tensor,
+    expert: torch.Tensor,
+    student: torch.Tensor,
     valid: int,
 ) -> float:
     if (
-        winner.shape != loser.shape
-        or winner.ndim != 3
-        or winner.shape[0] != 1
-        or not 0 < valid <= winner.shape[1]
+        expert.shape != student.shape
+        or expert.ndim != 3
+        or expert.shape[0] != 1
+        or not 0 < valid <= expert.shape[1]
     ):
-        raise RewardProtocolError("matched occupancy action shape changed")
+        raise RewardProtocolError("successful expert action shape changed")
     value = (
-        (winner[:, :valid].float() - loser[:, :valid].float()).square().mean().sqrt()
+        (expert[:, :valid].float() - student[:, :valid].float())
+        .square()
+        .mean()
+        .sqrt()
     )
     if not bool(torch.isfinite(value)):
-        raise RewardProtocolError("matched occupancy action disagreement is nonfinite")
+        raise RewardProtocolError("successful expert action disagreement is nonfinite")
     return float(value)
 
 
@@ -36,64 +39,57 @@ def _stratified_indices(scores: Sequence[float], strata: int) -> tuple[int, ...]
     count = len(scores)
     selected_count = min(strata, count)
     if strata != 8 or selected_count <= 0:
-        raise RewardProtocolError("matched occupancy stratum contract changed")
+        raise RewardProtocolError("successful expert occupancy strata changed")
     selected = []
     for index in range(selected_count):
         start = index * count // selected_count
         stop = (index + 1) * count // selected_count
         selected.append(max(range(start, stop), key=lambda row: (scores[row], -row)))
     if selected != sorted(set(selected)):
-        raise RewardProtocolError("matched occupancy strata lost temporal order")
+        raise RewardProtocolError("successful expert strata lost temporal order")
     return tuple(selected)
 
 
 def _trajectory_selection(
     trajectory_id: int,
-    pair: tuple[RewardTrajectory, RewardTrajectory],
-    winner_arm: str,
-    actions_by_arm: Mapping[str, Sequence[Sequence[torch.Tensor]]],
+    trajectory: RewardTrajectory,
+    actions_by_policy: Mapping[str, Sequence[Sequence[torch.Tensor]]],
     strata_per_trajectory: int,
 ) -> tuple[
     list[tuple[dict[str, torch.Tensor], torch.Tensor, int, int]],
     tuple[int, ...],
     tuple[float, ...],
 ]:
-    winner, loser = pair
-    loser_arm = "reference" if winner_arm == "candidate" else "candidate"
-    count = len(winner.observations)
-    winner_actions = actions_by_arm[winner_arm][trajectory_id]
-    loser_actions = actions_by_arm[loser_arm][trajectory_id]
+    count = len(trajectory.observations)
+    expert_actions = actions_by_policy["expert"][trajectory_id]
+    student_actions = actions_by_policy["student"][trajectory_id]
     if (
-        winner_arm not in {"reference", "candidate"}
-        or not winner.success
-        or loser.success
+        not trajectory.success
         or count <= 0
-        or len(winner.valid_action_steps) != count
-        or len(winner_actions) != count
-        or len(loser_actions) != count
+        or len(trajectory.valid_action_steps) != count
+        or len(expert_actions) != count
+        or len(student_actions) != count
     ):
-        raise RewardProtocolError("matched occupancy trajectory contract changed")
+        raise RewardProtocolError("successful expert trajectory contract changed")
     scores = tuple(
-        _action_disagreement(winner_action, loser_action, valid)
-        for winner_action, loser_action, valid in zip(
-            winner_actions,
-            loser_actions,
-            winner.valid_action_steps,
+        _action_disagreement(expert, student, valid)
+        for expert, student, valid in zip(
+            expert_actions,
+            student_actions,
+            trajectory.valid_action_steps,
             strict=True,
         )
     )
     indices = _stratified_indices(scores, strata_per_trajectory)
-    rows = []
-    for index in indices:
-        observation = winner.observations[index]
-        valid = winner.valid_action_steps[index]
-        noise_seed = winner.policy_noise_seeds[index]
-        rows.extend(
-            (
-                (observation, winner_actions[index], valid, noise_seed),
-                (observation, loser_actions[index], valid, noise_seed),
-            )
+    rows = [
+        (
+            trajectory.observations[index],
+            expert_actions[index],
+            trajectory.valid_action_steps[index],
+            trajectory.policy_noise_seeds[index],
         )
+        for index in indices
+    ]
     return rows, indices, scores
 
 
@@ -103,7 +99,7 @@ def _occupancy_batch(
 ) -> dict[str, torch.Tensor]:
     keys = set(rows[0][0])
     if any(set(observation) != keys for observation, _, _, _ in rows):
-        raise RewardProtocolError("matched occupancy observation keys changed")
+        raise RewardProtocolError("successful expert observation keys changed")
     valid = torch.tensor(
         [count for _, _, count, _ in rows], dtype=torch.long, device=device
     )
@@ -118,10 +114,8 @@ def _occupancy_batch(
         or valid.shape != (actions.shape[0],)
         or bool((valid <= 0).any())
         or bool((valid > actions.shape[1]).any())
-        or not torch.equal(valid[0::2], valid[1::2])
-        or not torch.equal(noise_seeds[0::2], noise_seeds[1::2])
     ):
-        raise RewardProtocolError("matched occupancy executed prefix is invalid")
+        raise RewardProtocolError("successful expert executed prefix is invalid")
     batch = {
         name: torch.cat([observation[name] for observation, _, _, _ in rows]).to(
             device=device, non_blocking=True
@@ -137,35 +131,32 @@ def _occupancy_batch(
     return batch
 
 
-def complete_matched_stratified_occupancy_batch(
-    pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
-    active_labels: Sequence[str],
-    actions_by_arm: Mapping[str, Sequence[Sequence[torch.Tensor]]],
+def complete_successful_expert_occupancy_batch(
+    trajectories: Sequence[RewardTrajectory],
+    actions_by_policy: Mapping[str, Sequence[Sequence[torch.Tensor]]],
     *,
     strata_per_trajectory: int,
     device: torch.device,
 ) -> tuple[dict[str, torch.Tensor], torch.Tensor, dict[str, Any]]:
-    """Select one maximum-disagreement state per temporal stratum and pair actions."""
+    """Select one maximum expert/student disagreement per progress stratum."""
 
     if (
-        len(pairs) not in {1, 2}
-        or len(active_labels) != len(pairs)
-        or any(label not in {"reference", "candidate"} for label in active_labels)
-        or set(actions_by_arm) != {"reference", "candidate"}
-        or any(len(actions_by_arm[arm]) != len(pairs) for arm in actions_by_arm)
+        len(trajectories) not in {1, 2}
+        or set(actions_by_policy) != {"expert", "student"}
+        or any(
+            len(actions_by_policy[arm]) != len(trajectories)
+            for arm in actions_by_policy
+        )
     ):
-        raise RewardProtocolError("matched stratified occupancy panel changed")
+        raise RewardProtocolError("successful expert occupancy panel changed")
     rows: list[tuple[dict[str, torch.Tensor], torch.Tensor, int, int]] = []
     trajectory_ids: list[int] = []
     selected_indices, selected_scores, all_scores = [], [], []
-    for trajectory_id, (pair, winner_arm) in enumerate(
-        zip(pairs, active_labels, strict=True)
-    ):
+    for trajectory_id, trajectory in enumerate(trajectories):
         trajectory_rows, indices, scores = _trajectory_selection(
             trajectory_id,
-            pair,
-            winner_arm,
-            actions_by_arm,
+            trajectory,
+            actions_by_policy,
             strata_per_trajectory,
         )
         rows.extend(trajectory_rows)
@@ -179,34 +170,32 @@ def complete_matched_stratified_occupancy_batch(
         batch,
         torch.tensor(trajectory_ids, dtype=torch.long, device=device),
         {
-            "selected_credit_pairs": len(trajectory_ids),
+            "selected_credit_states": len(trajectory_ids),
             "selected_replan_indices": selected_indices,
             "selected_action_disagreement_rms_mean": sum(flat_selected)
             / len(flat_selected),
             "selected_action_disagreement_rms_minimum": min(flat_selected),
-            "complete_action_disagreement_rms_mean": sum(all_scores) / len(all_scores),
+            "complete_action_disagreement_rms_mean": sum(all_scores)
+            / len(all_scores),
         },
     )
 
 
-def empty_matched_occupancy_credit() -> dict[str, Any]:
-    """Return the inactive-task metric row for the canonical occupancy panel."""
+def empty_successful_expert_occupancy_credit() -> dict[str, Any]:
+    """Return the inactive-task metric row for successful expert credit."""
 
     return {
         "objective": 0.0,
-        "preference_margin": 0.0,
-        "winner_action_distance": 0.0,
-        "loser_action_distance": 0.0,
-        "discordant_trajectories": 0,
-        "selected_credit_pairs": 0,
+        "expert_action_distance": 0.0,
+        "successful_trajectories": 0,
+        "selected_credit_states": 0,
         "replay_rows": 0,
         "successful_action_steps": 0,
-        "matched_winner_loser_action_rms": 0.0,
+        "matched_expert_student_action_rms": 0.0,
         "complete_occupancy_chunks": 0,
         "matched_policy_forwards": 0,
         "matched_query_batch_sizes": [],
-        "stored_winner_to_matched_requery_rms": 0.0,
-        "stored_loser_to_matched_first_requery_rms": 0.0,
+        "stored_expert_to_matched_requery_rms": 0.0,
         "matched_action_seconds": 0.0,
         "selected_replan_indices": [],
         "selected_action_disagreement_rms_mean": 0.0,
@@ -221,18 +210,18 @@ def empty_matched_occupancy_credit() -> dict[str, Any]:
     }
 
 
-def occupancy_cycle_metrics(
+def successful_expert_occupancy_cycle_metrics(
     records: Sequence[Mapping[str, Any]],
     active_records: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Aggregate the canonical matched-occupancy evidence for one cycle."""
+    """Aggregate successful-expert evidence for one full task cycle."""
 
     return {
-        "discordant_preference_trajectories": sum(
-            int(row["discordant_trajectories"]) for row in records
+        "successful_expert_trajectories": sum(
+            int(row["successful_trajectories"]) for row in records
         ),
-        "selected_credit_pairs": sum(
-            int(row["selected_credit_pairs"]) for row in records
+        "selected_credit_states": sum(
+            int(row["selected_credit_states"]) for row in records
         ),
         "complete_occupancy_chunks": sum(
             int(row["complete_occupancy_chunks"]) for row in records
@@ -240,12 +229,8 @@ def occupancy_cycle_metrics(
         "matched_policy_forwards": sum(
             int(row["matched_policy_forwards"]) for row in records
         ),
-        "stored_winner_to_matched_requery_rms_mean": math.fsum(
-            float(row["stored_winner_to_matched_requery_rms"]) for row in active_records
-        )
-        / len(active_records),
-        "stored_loser_to_matched_first_requery_rms_mean": math.fsum(
-            float(row["stored_loser_to_matched_first_requery_rms"])
+        "stored_expert_to_matched_requery_rms_mean": math.fsum(
+            float(row["stored_expert_to_matched_requery_rms"])
             for row in active_records
         )
         / len(active_records),
@@ -256,16 +241,16 @@ def occupancy_cycle_metrics(
         "credit_unique_video_count": sum(
             int(row["credit_unique_video_count"]) for row in records
         ),
-        "preference_replay_rows": sum(int(row["replay_rows"]) for row in records),
+        "expert_replay_rows": sum(int(row["replay_rows"]) for row in records),
         "successful_action_steps": sum(
             int(row["successful_action_steps"]) for row in records
         ),
-        "matched_stratified_occupancy_objective_mean": math.fsum(
+        "successful_expert_objective_mean": math.fsum(
             float(row["objective"]) for row in active_records
         )
         / len(active_records),
-        "matched_stratified_occupancy_margin_mean": math.fsum(
-            float(row["preference_margin"]) for row in active_records
+        "expert_action_distance_mean": math.fsum(
+            float(row["expert_action_distance"]) for row in active_records
         )
         / len(active_records),
     }

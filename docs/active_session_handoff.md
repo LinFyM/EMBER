@@ -66,7 +66,10 @@
   替换成train24 step2000 expert自身成功on-policy occupancy上的matched action distillation。expert仅为训练期
   privileged teacher，失败trajectory零credit，不进入Writer输入、checkpoint或held部署；formal每task/cycle两条
   expert rollouts，最多48 rollouts。exact current LPCP fixed-A对expert BA的只读可达能量/cosine=
-  `.381712/.617828`，故明确不做expert factor重建。authority已冻结，canonical实现与GPU机制尚未开始；
+  `.381712/.617828`，故明确不做expert factor重建。authority已冻结；canonical旧binary arm路径已原位退休，
+  新runtime每task只跑两条expert trajectories并复用matched B8/8-strata/four-view/median-cap/Adam。唯一新source
+  owner为expert bank加载与rank padding；定向/完整CPU=`56/416 passed`、architecture guard无hard violation，
+  24个adapters实读成功。当前无GPU run，下一步是四suite world4真实mechanism smoke；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

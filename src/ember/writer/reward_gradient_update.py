@@ -15,7 +15,7 @@ from ember.writer.as_step import ParameterSlice, assign_flat_gradient
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState
 from ember.writer.reward_preference import (
-    functional_matched_stratified_occupancy_endpoint_margin,
+    functional_successful_expert_occupancy_objective,
 )
 
 if TYPE_CHECKING:
@@ -32,14 +32,14 @@ class AppliedStep:
     parameter_delta_rms: Mapping[str, float]
     gradient_coexistence: Mapping[str, Any]
     commitment_geometry: Mapping[str, Any]
-    commitment_preference_rows: tuple[Mapping[str, Any], ...]
+    commitment_credit_rows: tuple[Mapping[str, Any], ...]
 
 
 @dataclass(frozen=True)
-class RewardPreferenceView:
+class RewardCreditView:
     conditioning_state: WriterConditioningState
     condition_video_offsets: torch.Tensor
-    before_preference_margin: float
+    before_credit_objective: float
 
 
 @dataclass(frozen=True)
@@ -52,10 +52,10 @@ class RewardProbe:
     query: Mapping[str, torch.Tensor]
     before_action: torch.Tensor
     policy_noise_seed: int
-    preference_batch: Mapping[str, torch.Tensor]
-    preference_trajectory_ids: torch.Tensor
-    before_preference_margin: float
-    preference_views: tuple[RewardPreferenceView, ...]
+    credit_batch: Mapping[str, torch.Tensor]
+    credit_trajectory_ids: torch.Tensor
+    before_credit_objective: float
+    credit_views: tuple[RewardCreditView, ...]
 
 
 @torch.inference_mode()
@@ -106,19 +106,13 @@ def make_reward_probe(
     conditioning_state: WriterConditioningState,
     condition_video_offsets: torch.Tensor,
     candidate_lora: Mapping[str, torch.Tensor],
-    candidate: Sequence[RewardTrajectory],
-    labels: Sequence[str],
-    preference_batch: Mapping[str, torch.Tensor],
-    preference_trajectory_ids: torch.Tensor,
-    before_preference_margin: float,
-    preference_views: tuple[RewardPreferenceView, ...],
+    expert: Sequence[RewardTrajectory],
+    credit_batch: Mapping[str, torch.Tensor],
+    credit_trajectory_ids: torch.Tensor,
+    before_credit_objective: float,
+    credit_views: tuple[RewardCreditView, ...],
 ) -> RewardProbe:
-    index = next(
-        index
-        for index, label in enumerate(labels)
-        if label in {"candidate", "reference"}
-    )
-    trajectory = candidate[index]
+    trajectory = expert[0]
     query = {name: value.clone() for name, value in trajectory.observations[0].items()}
     return RewardProbe(
         global_task_id=task.global_task_id,
@@ -136,10 +130,10 @@ def make_reward_probe(
             policy_noise_seed=trajectory.policy_noise_seeds[0],
         ),
         policy_noise_seed=trajectory.policy_noise_seeds[0],
-        preference_batch=preference_batch,
-        preference_trajectory_ids=preference_trajectory_ids,
-        before_preference_margin=before_preference_margin,
-        preference_views=preference_views,
+        credit_batch=credit_batch,
+        credit_trajectory_ids=credit_trajectory_ids,
+        before_credit_objective=before_credit_objective,
+        credit_views=credit_views,
     )
 
 
@@ -192,15 +186,15 @@ def lora_response(
 
 
 @torch.inference_mode()
-def evaluate_preference_views(
+def evaluate_credit_views(
     runtime: RewardRuntime, probe: RewardProbe
 ) -> tuple[Mapping[str, Any], ...]:
-    """Re-evaluate the exact four-view matched panel at current Writer parameters."""
+    """Re-evaluate the exact four-view expert panel at current Writer parameters."""
 
-    if len(probe.preference_views) != 4:
+    if len(probe.credit_views) != 4:
         raise WriterModelError("direct commitment lost four video views")
     rows = []
-    for index, view in enumerate(probe.preference_views):
+    for index, view in enumerate(probe.credit_views):
         with torch.autocast(
             device_type=runtime.context.device.type,
             dtype=torch.bfloat16,
@@ -212,12 +206,12 @@ def evaluate_preference_views(
                 use_query_delta=True,
             )
             lora = runtime.writer.decode_output(encoded)
-        preference = functional_matched_stratified_occupancy_endpoint_margin(
+        credit = functional_successful_expert_occupancy_objective(
             runtime.policy,
             lora,
             runtime.lora_contract,
-            probe.preference_batch,
-            probe.preference_trajectory_ids,
+            probe.credit_batch,
+            probe.credit_trajectory_ids,
             endpoint_action_batch_size=int(
                 runtime.config["optimization"]["endpoint_action_batch_size"]
             ),
@@ -226,17 +220,20 @@ def evaluate_preference_views(
             ),
             device=runtime.context.device,
         )
-        delta = preference["preference_margin"] - view.before_preference_margin
+        delta = (
+            credit["expert_distillation_objective"]
+            - view.before_credit_objective
+        )
         rows.append(
             {
                 "task_id": probe.global_task_id,
                 "suite": probe.suite,
                 "view_index": index,
-                "before_preference_margin": view.before_preference_margin,
-                "after_preference_margin": preference["preference_margin"],
-                "preference_margin_delta": delta,
-                "after_preference_objective": preference["preference_objective"],
-                "preference_descent": delta < 0,
+                "before_credit_objective": view.before_credit_objective,
+                "after_credit_objective": credit["expert_distillation_objective"],
+                "credit_objective_delta": delta,
+                "after_expert_action_distance": credit["expert_action_distance"],
+                "credit_descent": delta < 0,
             }
         )
     return tuple(rows)
@@ -246,7 +243,7 @@ def evaluate_preference_views(
 def probe_after_update(
     runtime: RewardRuntime,
     probe: RewardProbe,
-    preference_rows: Sequence[Mapping[str, Any]],
+    credit_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     started = time.monotonic()
     with torch.autocast(
@@ -270,19 +267,19 @@ def probe_after_update(
     response["fixed_action_response_rms"] = float(
         (action.float() - probe.before_action.float()).square().mean().sqrt()
     )
-    if len(preference_rows) != 4 or {
-        int(row["task_id"]) for row in preference_rows
+    if len(credit_rows) != 4 or {
+        int(row["task_id"]) for row in credit_rows
     } != {probe.global_task_id}:
         raise WriterModelError("direct commitment lost task-view evidence")
-    first = preference_rows[0]
+    first = credit_rows[0]
     response.update(
-        before_preference_margin=first["before_preference_margin"],
-        after_preference_margin=first["after_preference_margin"],
-        preference_margin_delta=first["preference_margin_delta"],
-        after_preference_objective=first["after_preference_objective"],
-        view_preference_probes=list(preference_rows),
-        all_view_preference_descent=all(
-            bool(row["preference_descent"]) for row in preference_rows
+        before_credit_objective=first["before_credit_objective"],
+        after_credit_objective=first["after_credit_objective"],
+        credit_objective_delta=first["credit_objective_delta"],
+        after_expert_action_distance=first["after_expert_action_distance"],
+        view_credit_probes=list(credit_rows),
+        all_view_credit_descent=all(
+            bool(row["credit_descent"]) for row in credit_rows
         ),
     )
     response["probe_seconds"] = time.monotonic() - started
@@ -293,7 +290,7 @@ def probe_after_update(
 def probes_after_update(
     runtime: RewardRuntime,
     probes: Sequence[RewardProbe],
-    preference_rows: Sequence[Mapping[str, Any]],
+    credit_rows: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     return [
         probe_after_update(
@@ -301,7 +298,7 @@ def probes_after_update(
             probe,
             tuple(
                 row
-                for row in preference_rows
+                for row in credit_rows
                 if int(row["task_id"]) == probe.global_task_id
             ),
         )
@@ -548,7 +545,7 @@ def _write_parameter_delta(
             )
 
 
-def _gather_global_preference_rows(
+def _gather_global_credit_rows(
     runtime: RewardRuntime,
     local_rows: Sequence[Mapping[str, Any]],
     *,
@@ -593,28 +590,28 @@ def _direct_adam_commitment(
     started = time.monotonic()
     final_delta = full_delta
     _write_parameter_delta(named, layout, before, final_delta)
-    accepted_rows = _gather_global_preference_rows(
+    accepted_rows = _gather_global_credit_rows(
         runtime, evaluator(1.0), expected_task_count=expected_task_count
     )
-    margin_deltas = [
-        float(row["preference_margin_delta"]) for row in accepted_rows
+    objective_deltas = [
+        float(row["credit_objective_delta"]) for row in accepted_rows
     ]
-    if not all(math.isfinite(value) for value in margin_deltas):
-        raise WriterModelError("direct Adam diagnostic margin is nonfinite")
-    all_view_descent = all(value < 0 for value in margin_deltas)
+    if not all(math.isfinite(value) for value in objective_deltas):
+        raise WriterModelError("direct Adam diagnostic objective is nonfinite")
+    all_view_descent = all(value < 0 for value in objective_deltas)
     trials = [
         {
             "backtrack_index": 0,
             "radius_scale": 1.0,
-            "global_task_view_preference_margin_deltas": [
+            "global_task_view_credit_objective_deltas": [
                 {
                     "task_id": int(row["task_id"]),
                     "view_index": int(row["view_index"]),
-                    "delta": float(row["preference_margin_delta"]),
+                    "delta": float(row["credit_objective_delta"]),
                 }
                 for row in accepted_rows
             ],
-            "all_active_task_view_preference_descent": all_view_descent,
+            "all_active_task_view_credit_descent": all_view_descent,
         }
     ]
     final_norm = torch.linalg.vector_norm(final_delta)
@@ -649,9 +646,9 @@ def _direct_adam_commitment(
         "radius_relative_error": radius_error,
         "search_trials": trials,
         "search_trial_count": len(trials),
-        "all_active_task_view_preference_descent_diagnostic": all_view_descent,
-        "descending_task_view_count": sum(value < 0 for value in margin_deltas),
-        "diagnostic_reference": "stored_gradient_path_preupdate_margin",
+        "all_active_task_view_credit_descent_diagnostic": all_view_descent,
+        "descending_task_view_count": sum(value < 0 for value in objective_deltas),
+        "diagnostic_reference": "stored_gradient_path_preupdate_expert_objective",
         "repeated_step0_baseline_forward": False,
         "search_seconds": time.monotonic() - started,
     }
@@ -694,7 +691,7 @@ def apply_reward_step(
     full_delta, base_commitment = preconditioned_candidate_commitment(
         committed_gradient, candidate_delta
     )
-    final_delta, preference_rows, commitment = _direct_adam_commitment(
+    final_delta, credit_rows, commitment = _direct_adam_commitment(
         runtime=runtime,
         named=named,
         layout=runtime.gradient_layout,
@@ -723,7 +720,7 @@ def apply_reward_step(
         parameter_delta_rms=delta,
         gradient_coexistence=coexistence,
         commitment_geometry=commitment,
-        commitment_preference_rows=preference_rows,
+        commitment_credit_rows=credit_rows,
     )
 
 
@@ -740,6 +737,6 @@ def apply_direct_reward_step(
         local_active_tasks,
         task_gradients,
         lambda _scale: tuple(
-            row for probe in probes for row in evaluate_preference_views(runtime, probe)
+            row for probe in probes for row in evaluate_credit_views(runtime, probe)
         ),
     )

@@ -161,11 +161,19 @@ def _matched_occupancy_batch_contract(
     steps = torch.arange(action.shape[1], device=action.device)[None]
     mask = steps < valid[0::2, None]
     difference = action[0::2].float() - action[1::2].float()
-    squared = (difference.square() * mask[:, :, None]).sum()
-    denominator = valid[0::2].sum() * action.shape[2]
-    action_rms = float((squared / denominator).sqrt())
-    if not bool(torch.isfinite(torch.tensor(action_rms))) or action_rms <= 0:
-        raise RewardProtocolError("matched winner and loser actions are identical")
+    pair_squared = (difference.square() * mask[:, :, None]).sum(dim=(1, 2))
+    pair_denominator = valid[0::2] * action.shape[2]
+    pair_rms = (pair_squared / pair_denominator).sqrt()
+    action_rms = float(
+        (pair_squared.sum() / pair_denominator.sum()).sqrt()
+    )
+    if (
+        not bool(torch.isfinite(pair_rms).all())
+        or bool((pair_rms <= 0).any())
+    ):
+        raise RewardProtocolError(
+            "matched winner and loser action secants must be finite and nonzero"
+        )
     return action, valid, noise_seed, pair_count, action_rms, weights
 
 
@@ -201,11 +209,14 @@ def _endpoint_noise(
     ).to(device=device, non_blocking=True)
 
 
-def _endpoint_distances(
+def unit_secant_endpoint_preference(
     predicted: torch.Tensor,
     targets: torch.Tensor,
     valid: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return raw endpoint distances and a per-state unit-secant margin."""
+
+    targets = targets.detach()
     action_dim = predicted.shape[-1]
     mask = (
         torch.arange(predicted.shape[1], device=predicted.device)[None] < valid[:, None]
@@ -217,7 +228,15 @@ def _endpoint_distances(
     loser = (
         (predicted.float() - targets[:, 1].float()).square() * mask[:, :, None]
     ).sum(dim=(1, 2)) / denominator
-    return winner, loser
+    secant_rms = (
+        (
+            (targets[:, 0].float() - targets[:, 1].float()).square()
+            * mask[:, :, None]
+        ).sum(dim=(1, 2))
+        / denominator
+    ).sqrt()
+    margin = (winner - loser) / secant_rms
+    return winner, loser, secant_rms, margin
 
 
 def functional_matched_stratified_occupancy_endpoint_gradient(
@@ -250,6 +269,7 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
     objective = torch.zeros((), dtype=torch.float32, device=device)
     winner_total = torch.zeros_like(objective)
     loser_total = torch.zeros_like(objective)
+    margin_total = torch.zeros_like(objective)
     forwards = backwards = 0
     for pair_start in range(0, pair_count, endpoint_action_batch_size):
         pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
@@ -276,12 +296,15 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
         valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
             device=device, non_blocking=True
         )
-        winners, losers = _endpoint_distances(predicted, targets, valid_rows)
-        scalar = (F.softplus(winners - losers) * pair_weights).sum()
+        winners, losers, _, margins = unit_secant_endpoint_preference(
+            predicted, targets, valid_rows
+        )
+        scalar = (F.softplus(margins) * pair_weights).sum()
         values = torch.autograd.grad(scalar, tuple(leaves[name] for name in names))
         objective.add_(scalar.detach())
         winner_total.add_((winners.detach() * pair_weights).sum())
         loser_total.add_((losers.detach() * pair_weights).sum())
+        margin_total.add_((margins.detach() * pair_weights).sum())
         for name, gradient in zip(names, values, strict=True):
             gradients[name].add_(gradient.float())
         forwards += 1
@@ -291,10 +314,9 @@ def functional_matched_stratified_occupancy_endpoint_gradient(
         raise RewardProtocolError(
             "matched occupancy preference produced invalid LoRA credit"
         )
-    margin = winner_total - loser_total
     return gradients, MatchedStratifiedOccupancyCreditSummary(
         objective=float(objective),
-        preference_margin=float(margin),
+        preference_margin=float(margin_total),
         winner_action_distance=float(winner_total),
         loser_action_distance=float(loser_total),
         discordant_trajectories=int(trajectory_ids.max()) + 1,
@@ -327,7 +349,7 @@ def functional_matched_stratified_occupancy_endpoint_margin(
             batch, trajectory_ids, endpoint_action_batch_size
         )
     )
-    winner = loser = objective = 0.0
+    winner = loser = margin = objective = 0.0
     for pair_start in range(0, pair_count, endpoint_action_batch_size):
         pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
         prepared = _endpoint_observation_batch(batch, pair_start, pair_stop, device)
@@ -353,11 +375,13 @@ def functional_matched_stratified_occupancy_endpoint_margin(
         valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
             device=device, non_blocking=True
         )
-        winners, losers = _endpoint_distances(predicted, targets, valid_rows)
+        winners, losers, _, margins = unit_secant_endpoint_preference(
+            predicted, targets, valid_rows
+        )
         winner += float((winners * pair_weights).sum())
         loser += float((losers * pair_weights).sum())
-        objective += float((F.softplus(winners - losers) * pair_weights).sum())
-    margin = winner - loser
+        margin += float((margins * pair_weights).sum())
+        objective += float((F.softplus(margins) * pair_weights).sum())
     return {
         "winner_action_distance": winner,
         "loser_action_distance": loser,

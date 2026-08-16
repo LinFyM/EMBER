@@ -656,8 +656,15 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 从clean`bb5341e` fresh完成CFMG full24 cycle1：24 tasks/48 pairs/96 rollouts、6 active tasks、cycle=
   `467.783s`，但11 candidates最好仅`14/24` margins下降，final delta与q/v/action response全为0；
 - [x] 按exact no-op终局CFMG并跳过只会重测LPCP的strict400；不cycle2、controls、resume或小扫；
-- [ ] 从“content-first只统一放大梯度且gate拒绝使Program永远不学习”的最早断点，选择一个新的单变量、可证伪
-  successor；不得预设memory token、rank8或回到旧版本为答案。
+- [x] 从CFMG full24行级证据定位raw endpoint action secant尺度：六active tasks selected pair数相同，但task38
+  action RMS为其它tasks的`4.5--5.9x`且Writer gradient支配达`58.73x`；
+- [x] 建立USEP单变量authority：保留CFMG全部模型/数据/commitment，只按每个matched state的winner/loser RMS
+  把endpoint cotangent变成unit secant；不读task ID/gradient norm，不改变task权重，不用MSE反比放大小pair；
+- [x] 原位实现唯一loss owner与fresh config/checkpoint/eval identity；相关CPU=`143 passed`、完整CPU=`413 passed`、
+  compileall/diff check与architecture guard 0 hard，且未增加forward、参数、module或并行runtime；
+- [ ] fixed task4/34/38 world3验证既有outcome/count、dominance`<=15x`、raw shared`3/3`、task34 views`4/4`和
+  native`12/12`；
+- [ ] 若world3与held门通过，fresh full24 cycle1；只有nonzero checkpoint才做strict400并充分逐task分析。
 
 ## Non-negotiable boundaries
 

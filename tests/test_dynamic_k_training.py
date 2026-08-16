@@ -101,16 +101,13 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
+def test_unit_secant_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "terminal_non_pass_exact_step0_restored"
-    assert config["formal_run"]["status"] == "terminal_non_pass"
-    held = config["formal_run"]["held_gate_evidence"]
-    assert held["validation_tasks"] == held["passing_tasks"] == 8
-    assert held["raw_pre_registered_gate_pass"] is False
-    assert held["raw_failed_gate"] == "constant_zero"
-    assert held["maximum_constant_effective_ba_over_natural"] < 0.006
-    assert held["structural_exact_constant_hidden_identity"]
+    assert config["status"] == "active_preformal"
+    assert config["formal_run"]["status"] == "not_started"
+    predecessor = config["formal_run"]["predecessor_evidence"]
+    assert predecessor["task38_to_next_gradient_norm_ratio"] > 58
+    assert predecessor["equal_selected_credit_pairs_per_active_task"] == 8
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -128,7 +125,8 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
         "content_first_backbone_memory_grid_2828928_parameters"
     )
     assert config["objective"]["kind"] == (
-        "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
+        "cross_video_matched_batch_stratified_occupancy_unit_secant_endpoint_"
+        "action_preference"
     )
     assert config["optimization"]["matched_action_batch_size"] == 8
     assert config["optimization"]["endpoint_action_batch_size"] == 8
@@ -142,17 +140,17 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     )
     assert config["commitment"]["max_backtracks"] == 10
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
-    assert config["smoke_run"]["shared_anchor_task_ids"] == [9, 15, 18]
+    assert config["smoke_run"]["shared_anchor_task_ids"] == [4, 34, 38]
     assert config["smoke_run"]["required_world_size"] == 3
     assert config["smoke_run"]["historical_complete_occupancy_chunks_diagnostic"] == {
-        "9": 25,
-        "15": 65,
-        "18": 44,
+        "4": 25,
+        "34": 43,
+        "38": 100,
     }
     assert config["smoke_run"]["required_selected_credit_pairs"] == {
-        "9": 8,
-        "15": 16,
-        "18": 8,
+        "4": 8,
+        "34": 8,
+        "38": 8,
     }
     assert config["formal_run"]["mechanism_gate"][
         "post_update_preference_margin_must_decrease"
@@ -187,6 +185,12 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["step0_native_payload_gate_exact_zero"]
     assert gate["first_step_payload_gate_gradient_nonzero"]
     assert gate["post_gate_step_memory_temporal_set_m2p_gradients_nonzero"]
+    assert gate["unit_secant_denominator"] == (
+        "per_selected_state_detached_winner_loser_action_rms"
+    )
+    assert gate["task_gradient_norm_or_task_id_reweighting"] is False
+    assert gate["mse_inverse_secant_amplification"] is False
+    assert gate["task38_to_next_gradient_norm_ratio_maximum"] == 15.0
     assert gate["complete_occupancy_chunks_are_diagnostic"]
     assert gate["cross_run_elementwise_parity_required"] is False
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
@@ -198,11 +202,7 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
-    assert gate["shared_anchor_cycle_seconds_maximum"] == 143.416
-    result = config["formal_run"]["formal_result_evidence"]
-    assert result["search_accepted"] is False
-    assert result["best_descending_task_views"] == 14
-    assert result["final_delta_l2"] == 0
+    assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
     with pytest.raises(WriterModelError, match="training is not authorized"):
         require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320

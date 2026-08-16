@@ -36,8 +36,18 @@ raw/final=`3/3`、native=`12/12`且j0接受。validation8 held四view又以8/8�
 adjudication后授权了一个fresh full24 cycle1。clean`bb5341e` world5 full24完整exit0：24 tasks/48 pairs/
 96 rollouts、candidate/reference=`32/32`、6 active tasks，cycle=`467.783s`。所有11 candidates最好仅`14/24`
 task-view margins下降，final delta及q/v/action response均为0；task38相对次大梯度=`58.73x`，task34跨video
-cosine=`-.0923`。所以CFMG按合同终局并跳过只会重测LPCP的strict400；当前没有active successor或GPU run。
-下一轮必须针对可学习Program bootstrap与多task幅度共存，不得resume或用归一化、PCGrad、rank/scale小扫补救。
+cosine=`-.0923`。所以CFMG按合同终局并跳过只会重测LPCP的strict400，不得resume。
+
+当前active successor是**USEP**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。CFMG full24六个active tasks的
+selected pair数完全相同，但task38 winner/loser action RMS=`.007816`，约为其它tasks的`4.5--5.9x`；raw
+`softplus(Dwinner-Dloser)`的action cotangent正比于该secant，最终Writer gradient支配达`58.73x`。USEP唯一把
+每个state的margin除以自身winner/loser action RMS，使action gradient只保留unit secant；它不是按task最终
+gradient norm重权，也不采用会反比放大小secant的MSE分母。下一步先实现公式与fresh identity，再用固定
+task4/34/38 world3直接检验幅度、task34跨view和12/12 native共同承诺；当前没有GPU run。
+canonical实现已让gradient与commitment evaluation复用同一unit-secant helper，CFMG模型参数/forward不变；fresh
+config/checkpoint/eval identity已切换。相关CPU=`143 passed`、完整CPU=`413 passed`，compileall/diff check通过，
+architecture guard 0 hard且没有新module或并行runtime。下一步为clean pushed world3，不得从CFMG checkpoint resume。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP

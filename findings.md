@@ -34,6 +34,17 @@ CFMG full24给出了比held门更强的否定证据。相对完全matched CMBG�
 public step0 identity的同时，能在shared public commitment被接受前获得有任务结构的学习信号，并显式避免单task
 幅度控制公共更新；这不自动等价于gradient normalization或PCGrad。
 
+USEP的新增因果判断：CFMG六个active tasks各有相同8个selected pairs/16个replay rows，task38的matched
+winner/loser action RMS却为`.007816`，其它tasks仅`.001330--.001743`；现有`Dwinner-Dloser`对生成动作的梯度
+正比于该action secant。所以下一单变量在每个真实matched state内除以winner/loser RMS，使cotangent沿unit
+secant进入Writer。它不同于按task最终gradient norm重权，也不同于视频feature secant归一化；选择RMS而非MSE
+避免让小动作差异获得反比放大。该推导只授权task4/34/38机制门，不能替代full24或closed-loop。
+
+USEP canonical实现保持CFMG model/forward/2,828,928参数逐项不变，只在唯一loss owner中让gradient与commitment
+evaluation复用同一个unit-secant helper；fresh config/checkpoint/eval identity拒绝CFMG resume。公式与全链CPU=
+`143/413 passed`，compileall/diff check通过、architecture guard 0 hard。该证据只说明计算图和authority一致，
+不能说明task38 dominance已经下降。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

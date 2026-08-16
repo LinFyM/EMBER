@@ -433,6 +433,12 @@ CMBG held视频门曾以validation8 8/8通过，但随后full24被task38以`54.4
 参数量，只把zero gate移到完整temporal/K-set/M2P content grid之后；这不是owner要求memory形式，而是针对已定位
 首步零点Jacobian接口的单变量反事实。正式选择仍只认single-checkpoint真实rollout。
 
+CFMG full24随后同样exact no-op，且task38相对次大task的gradient dominance增至`58.73x`。当前USEP保留CFMG
+全部模型与训练图，只把每个matched state的endpoint margin除以自身winner/loser action RMS，使action cotangent
+沿unit secant进入Writer。它不是按task最终gradient norm重权或PCGrad，也不采用会反比放大小secant的MSE分母；
+固定task4/34/38机制门通过前不启动full24。精确authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

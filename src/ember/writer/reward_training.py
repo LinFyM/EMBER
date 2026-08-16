@@ -1,4 +1,4 @@
-"""Train the CFMG shared parameter map with task-complete endpoint credit."""
+"""Train CFMG with task-complete unit-secant endpoint preference."""
 
 from __future__ import annotations
 
@@ -274,10 +274,10 @@ def _load_direct_factor_models(
         != 2_828_928
     ):
         raise WriterModelError(
-            "CFMG endpoint must train only 2828928 parameters"
+            "USEP endpoint must train only 2828928 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "v6_lpcp_content_first_memory_grid_only"
+    trainable["object"] = "v6_lpcp_cfmg_unit_secant_endpoint_preference_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -499,7 +499,7 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_content_first_memory_grid_"
+                        "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_"
                         "completion_v1"
                     ),
                     "mode": args.mode,

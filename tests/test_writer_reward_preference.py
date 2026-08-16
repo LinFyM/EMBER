@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+import torch.nn.functional as F
 from lerobot.utils.constants import (
     ACTION,
     OBS_LANGUAGE_ATTENTION_MASK,
@@ -37,6 +38,7 @@ from ember.writer.reward_preference import (
     functional_matched_stratified_occupancy_endpoint_margin,
     mean_cross_video_task_gradient,
     stratified_occupancy_pair_weights,
+    unit_secant_endpoint_preference,
 )
 
 
@@ -302,6 +304,57 @@ def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
         **{**kwargs, "state": updated}
     )
     assert after["preference_margin"] < before["preference_margin"]
+
+
+def test_unit_secant_endpoint_preference_geometry_and_mask() -> None:
+    targets = torch.tensor(
+        [
+            [
+                [[0.0, 0.0], [2.0, 0.0], [99.0, 99.0]],
+                [[2.0, 0.0], [0.0, 0.0], [-99.0, -99.0]],
+            ],
+            [
+                [[1.0, -1.0], [77.0, 77.0], [77.0, 77.0]],
+                [[3.0, -1.0], [-77.0, -77.0], [-77.0, -77.0]],
+            ],
+        ],
+        requires_grad=True,
+    )
+    valid = torch.tensor([2, 1])
+    midpoint = (targets[:, 0].detach() + targets[:, 1].detach()) / 2
+    winner, loser, secant, margin = unit_secant_endpoint_preference(
+        midpoint, targets, valid
+    )
+    torch.testing.assert_close(winner, loser)
+    torch.testing.assert_close(margin, torch.zeros_like(margin), atol=0, rtol=0)
+    torch.testing.assert_close(secant, torch.tensor([2.0**0.5, 2.0**0.5]))
+
+    _, _, winner_secant, winner_margin = unit_secant_endpoint_preference(
+        targets[:, 0].detach(), targets, valid
+    )
+    _, _, loser_secant, loser_margin = unit_secant_endpoint_preference(
+        targets[:, 1].detach(), targets, valid
+    )
+    torch.testing.assert_close(winner_margin, -winner_secant)
+    torch.testing.assert_close(loser_margin, loser_secant)
+    assert targets.grad is None
+
+
+def test_unit_secant_softplus_midpoint_gradient_is_scale_invariant() -> None:
+    base_targets = torch.tensor(
+        [[[[0.0, 0.0], [1.0, -1.0]], [[2.0, 0.0], [-1.0, 1.0]]]]
+    )
+    gradients = []
+    for scale in (0.25, 8.0):
+        targets = (base_targets * scale).requires_grad_()
+        predicted = targets.detach().mean(dim=1).requires_grad_()
+        _, _, _, margin = unit_secant_endpoint_preference(
+            predicted, targets, torch.tensor([2])
+        )
+        F.softplus(margin).sum().backward()
+        gradients.append(predicted.grad.detach().clone())
+        assert targets.grad is None
+    torch.testing.assert_close(gradients[0], gradients[1], rtol=1e-6, atol=1e-7)
 
 
 def test_stratified_occupancy_weights_equalize_unequal_trajectory_lengths() -> None:

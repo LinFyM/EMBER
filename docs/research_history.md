@@ -25,6 +25,10 @@ gains=`3/3`、6 active tasks覆盖四suite，cycle=`467.783s`。六task梯度相
 `1.78--1.92x`；cross-task cosine mean/min=`.00923/-.20641`，task34跨video=`-.0923/.3370`，task38相对
 次大梯度=`58.73x`。11 candidates最好仅`14/24` margins下降，最终恢复exact LPCP，所有parameter delta、
 q/v/action BA与fixed action response为0；strict400跳过。CFMG终局，不cycle2、controls、resume或小扫。
+当前active USEP保留CFMG全部memory/content-grid/rank32/K4/global commitment，只把每个matched state的raw
+endpoint margin除以自身winner/loser action RMS，使action cotangent沿unit secant进入Writer；不读task ID或
+gradient norm、不改变task/view权重，也不采用MSE反比放大小secant。canonical实现与fresh identity已完成，
+完整CPU=`413 passed`且architecture guard 0 hard；尚无GPU或closed-loop结果。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

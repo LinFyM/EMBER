@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_content_first_memory_grid_v1",
-  "status": "terminal_non_pass_exact_step0_restored",
+  "schema_version": "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1",
+  "status": "active_preformal",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_content_first_memory_grid"
+    "candidate_arm": "frozen_v6_lpcp_plus_cfmg_unit_secant_endpoint_preference"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -54,9 +54,9 @@
     "persistent_lanes_per_task": 2
   },
   "objective": {
-    "kind": "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference",
+    "kind": "cross_video_matched_batch_stratified_occupancy_unit_secant_endpoint_action_preference",
     "pairing": "one_hard_reset_captured_model_and_state_then_deterministic_soft_reset_and_shared_policy_rng_prefix",
-    "discordant_credit": "softplus_deployed_endpoint_winner_distance_minus_loser_distance_at_one_maximum_disagreement_state_per_equal_progress_stratum",
+    "discordant_credit": "softplus_deployed_endpoint_winner_distance_minus_loser_distance_divided_by_detached_winner_loser_action_rms_at_one_maximum_disagreement_state_per_equal_progress_stratum",
     "tie_credit": "zero_for_both_success_and_both_failure",
     "replay_scope": "eight_equal_progress_strata_per_successful_trajectory_with_one_maximum_matched_action_disagreement_state_per_stratum_and_equal_weight_inside_each_equal_weight_discordant_trajectory",
     "winner_loser_action_panel": "both_arms_requeried_in_identical_observation_noise_precision_order_and_physical_batch_shape",
@@ -110,62 +110,39 @@
     "video_or_environment_recompute": false,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
     "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
-    "formal_extension_status": "cycle1_global_commitment_rejected_terminal_non_pass"
+    "formal_extension_status": "preformal_not_started"
   },
   "smoke_run": {
     "cycle": 1,
-    "shared_anchor_task_ids": [9, 15, 18],
+    "shared_anchor_task_ids": [4, 34, 38],
     "required_world_size": 3,
     "assignment": "one_fixed_anchor_per_local_rank_in_list_order",
     "required_anchor_outcomes": {
-      "9": "candidate_1_reference_0",
-      "15": "candidate_2_reference_0",
-      "18": "candidate_1_reference_2"
+      "4": "candidate_0_reference_1",
+      "34": "candidate_1_reference_2",
+      "38": "candidate_1_reference_0"
     },
     "historical_complete_occupancy_chunks_diagnostic": {
-      "9": 25,
-      "15": 65,
-      "18": 44
+      "4": 25,
+      "34": 43,
+      "38": 100
     },
     "required_selected_credit_pairs": {
-      "9": 8,
-      "15": 16,
-      "18": 8
+      "4": 8,
+      "34": 8,
+      "38": 8
     }
   },
   "formal_run": {
-    "status": "terminal_non_pass",
-    "held_gate_evidence": {
-      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_shared3_task9_15_18_b8_010487b_gpu02p123_20260816/cfmg_held_video_gate.json",
-      "adjudication_artifact": "runs/outputs/pi05_v6_lpcp_cfmg_shared3_task9_15_18_b8_010487b_gpu02p123_20260816/cfmg_held_video_numerical_adjudication.json",
-      "validation_tasks": 8,
-      "passing_tasks": 8,
-      "effective_ba_cosine": 0.9824117888021651,
-      "effective_ba_energy_ratio": 0.9851731969270334,
-      "raw_factor_cosine": 0.9815932634116497,
-      "action_cosine": 0.9875455815404621,
-      "held_to_train_effective_ba_l2_ratio": 0.9605483960422018,
-      "reverse_material_all_train_anchors": true,
-      "raw_pre_registered_gate_pass": false,
-      "raw_failed_gate": "constant_zero",
-      "maximum_constant_effective_ba_over_natural": 0.00514355500886859,
-      "structural_exact_constant_hidden_identity": true,
-      "numerical_adjudication": "full24_authorized_under_preexisting_batch_shape_kernel_reduction_low_bit_variation_policy"
-    },
-    "formal_result_evidence": {
+    "status": "not_started",
+    "predecessor_evidence": {
       "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_formal_cycle0to1_r5_k4_views4_nmc4_b8_bb5341e_gpu02p12347_20260816/cfmg_full24_terminal_adjudication.json",
-      "completed_cycle": 1,
-      "tasks": 24,
-      "paired_states": 48,
-      "rollouts": 96,
-      "candidate_successes": 32,
-      "reference_successes": 32,
-      "active_tasks": 6,
-      "search_accepted": false,
-      "best_descending_task_views": 14,
-      "required_descending_task_views": 24,
-      "final_delta_l2": 0.0,
-      "strict400": "skipped_exact_lpcp_carrier"
+      "active_task_ids": [4, 19, 20, 25, 34, 38],
+      "equal_selected_credit_pairs_per_active_task": 8,
+      "task38_to_next_gradient_norm_ratio": 58.725814,
+      "task34_four_view_cosine": -0.092275,
+      "shared_task_descent_coverage": 0.666667,
+      "final_delta_l2": 0.0
     },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
@@ -209,6 +186,9 @@
       "selected_credit_pairs_must_match_fixed_anchor_counts": true,
       "one_maximum_disagreement_state_per_equal_progress_stratum": true,
       "matched_winner_loser_actions_must_differ": true,
+      "unit_secant_denominator": "per_selected_state_detached_winner_loser_action_rms",
+      "task_gradient_norm_or_task_id_reweighting": false,
+      "mse_inverse_secant_amplification": false,
       "post_update_preference_margin_must_decrease": true,
       "post_update_all_four_view_margins_must_decrease": true,
       "global_active_task_view_margins_must_decrease": true,
@@ -216,6 +196,7 @@
       "rank_accepted_scale_and_parameter_delta_identical": true,
       "shared_anchor_task_gradient_descent_coverage": 1.0,
       "raw_four_view_shared_mean_descent_coverage": 1.0,
+      "task38_to_next_gradient_norm_ratio_maximum": 15.0,
       "search_max_backtracks": 10,
       "first_global_task_complete_all_view_monotone_candidate_required": true,
       "backtrack_zero_is_exact_adam_candidate": true,
@@ -241,7 +222,7 @@
       "matched_action_batch_size": 8,
       "endpoint_action_batch_size": 8,
       "search_trial_count_maximum": 11,
-      "shared_anchor_cycle_seconds_maximum": 143.416,
+      "shared_anchor_cycle_seconds_maximum": 210.0,
       "shared_anchor_train_task_count": 3
     }
   }

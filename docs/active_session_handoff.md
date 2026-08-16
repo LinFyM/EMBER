@@ -7,6 +7,14 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
+- 当前active successor是**USEP**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。它不改CFMG Writer、memory、
+  rank32、K4或commitment，只把每个matched state的raw endpoint margin除以该winner/loser action RMS，使
+  action cotangent沿unit secant传入Writer。它不读取task ID/gradient norm、不改变task权重，也不采用会反比
+  放大小secant的MSE分母。下一裁决点是fixed task4/34/38 world3：必须保持既有outcome/count，同时把task38
+  gradient dominance从`58.73x`降至`<=15x`、raw shared=`3/3`、task34 view coverage=`4/4`、native=`12/12`；
+  canonical loss/fresh identity已完成，相关CPU=`143 passed`、完整CPU=`413 passed`、compileall/diff check通过且
+  architecture guard 0 hard；当前尚无USEP clean commit或GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
@@ -25,7 +33,7 @@
   `bb5341e` world5 full24随后完整exit0：24 tasks/48 pairs/96 rollouts、candidate/reference=`32/32`、6 active
   tasks覆盖四suite，cycle=`467.783s`。11 candidates最好仅`14/24` task-view margins下降，最终exact no-op；
   六task梯度相对CMBG只统一放大`1.78--1.92x`，task38支配增至`58.73x`，task34 same-task cosine仍`-.0923`。
-  strict400只会重测LPCP而跳过；CFMG终局且当前没有active successor、GPU run或可resume checkpoint；
+  strict400只会重测LPCP而跳过；CFMG终局且不得resume；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=

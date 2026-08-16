@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP content-first backbone-memory grid."""
+"""Authority for the V6-LPCP CFMG unit-secant endpoint preference."""
 
 from __future__ import annotations
 
@@ -10,18 +10,22 @@ from ember.writer.as_config import REPO_ROOT, load_writer_config
 from ember.writer.errors import WriterModelError
 
 
-REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_content_first_memory_grid_v1"
+REWARD_CONFIG_SCHEMA = (
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1"
+)
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_content_first_memory_grid_launch_v1"
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_content_first_memory_grid_v1.json"
+    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_content_first_memory_grid",
+    "candidate_arm": (
+        "frozen_v6_lpcp_plus_cfmg_unit_secant_endpoint_preference"
+    ),
 }
 _DEPLOYMENT_CONTRACT = {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -47,11 +51,13 @@ _DATA_CONTRACT = {
 }
 _OBJECTIVE_CONTRACT = {
     "kind": (
-        "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
+        "cross_video_matched_batch_stratified_occupancy_unit_secant_endpoint_"
+        "action_preference"
     ),
     "discordant_credit": (
-        "softplus_deployed_endpoint_winner_distance_minus_loser_distance_at_"
-        "one_maximum_disagreement_state_per_equal_progress_stratum"
+        "softplus_deployed_endpoint_winner_distance_minus_loser_distance_"
+        "divided_by_detached_winner_loser_action_rms_at_one_maximum_"
+        "disagreement_state_per_equal_progress_stratum"
     ),
     "tie_credit": "zero_for_both_success_and_both_failure",
     "replay_scope": (
@@ -108,11 +114,11 @@ _COMMITMENT_CONTRACT = {
     "rank_state_contract": (
         "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
     ),
-    "formal_extension_status": "cycle1_global_commitment_rejected_terminal_non_pass",
+    "formal_extension_status": "preformal_not_started",
 }
 _SMOKE_CONTRACT = {
     "cycle": 1,
-    "shared_anchor_task_ids": [9, 15, 18],
+    "shared_anchor_task_ids": [4, 34, 38],
     "required_world_size": 3,
     "assignment": "one_fixed_anchor_per_local_rank_in_list_order",
 }

@@ -287,9 +287,12 @@ direct-B commitment，而不是carrier、reward、global rank同步或held compi
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32和同一
 真实joint forward，唯一把`320x256 -> four shared wide B heads`换成逐层Action-probe activations读取的
 `18x37x1024`parameter grid；37由rank16 B-only payload精确推导。逐video adjacent/goal causal Program、K-set、
-layer/token M2P后直接reshape native-zero B，trainable branch减去冻结step0 anchor以保持exact LPCP且首步gradient
-开放。37个slots位于backbone之后，不是memory tokens；literal memory与rank8仍开放。当前尚未实现或启动GPU，首门
-固定world3 task9/15/18，必须把TCEC continuous coverage从1/3变成3/3并找到12/12共同native step，否则终局。
+layer/token M2P后直接reshape native-zero B；`18x37x1024`zero-init elementwise payload gate使step0 exact LPCP、
+首步gate gradient开放且不做大数相减。37个slots位于backbone之后，不是memory tokens；literal memory与rank8仍
+开放。canonical实现已原位退休TCEC wide heads/config/schema：trainable=`3,008,384`，同一hook保留raw layer states，
+step0/constant exact zero、gate-open全链gradient与K-set/direct-reshape合同通过；定向CPU=`79 passed`、完整CPU=
+`405 passed`、architecture guard无hard violation。当前尚未启动GPU；首门固定world3 task9/15/18，必须把TCEC
+continuous coverage从1/3变成3/3并找到12/12共同native step，否则终局。
 
 ## 4. Long-term objective and decision rule
 

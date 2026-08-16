@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_task_complete_endpoint_coexistence_v1",
+  "schema_version": "ember_pi05_v6_lpcp_capacity_matched_action_probe_grid_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,10 +7,10 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_task_complete_endpoint_coexistence"
+    "candidate_arm": "frozen_v6_lpcp_plus_capacity_matched_action_probe_grid"
   },
   "deployment": {
-    "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
+    "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
     "carrier_rank": 16,
     "residual_bank_rank": 16,
     "public_rank": 32,
@@ -75,7 +75,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "four_zero_init_direct_native_b_heads_860160_parameters",
+    "trainable": "capacity_matched_action_probe_grid_3008384_parameters",
     "matched_action_batch_size": 8,
     "endpoint_action_batch_size": 8,
     "optimizer": {
@@ -157,7 +157,14 @@
       "step0_fp64_effective_ba_relative_l2_maximum": 1e-12,
       "carrier_first_bank_tensors_unchanged": true,
       "residual_second_b_step0_zero": true,
-      "trainable_parameter_count": 860160,
+      "trainable_parameter_count": 3008384,
+      "capacity_grid_shape": [18, 37, 1024],
+      "native_b_payload_values": 680448,
+      "unused_payload_values": 1536,
+      "single_joint_backbone_forward": true,
+      "step0_native_payload_gate_exact_zero": true,
+      "first_step_payload_gate_gradient_nonzero": true,
+      "post_gate_step_context_temporal_set_m2p_gradients_nonzero": true,
       "exact_paired_rollout_initial_observation": true,
       "complete_occupancy_chunks_must_match_fixed_anchor_counts": true,
       "reference_and_candidate_action_query_batch_sequences_must_match": true,
@@ -177,7 +184,7 @@
       "backtrack_zero_is_exact_adam_candidate": true,
       "accepted_and_expected_delta_l2_relative_error_maximum": 1e-06,
       "final_delta_to_adam_candidate_cosine_minimum": 0.999999,
-      "first_update_all_four_native_b_heads_nonzero": true,
+      "first_update_all_four_native_b_families_nonzero": true,
       "continuous_delta_ba_equivalence_relative_l2_maximum": 1e-06,
       "post_update_q_v_action_native_factors_nonzero": true,
       "train_cross_video_correction_cosine_minimum": 0.4,
@@ -197,7 +204,7 @@
       "matched_action_batch_size": 8,
       "endpoint_action_batch_size": 8,
       "search_trial_count_maximum": 11,
-      "shared_anchor_cycle_seconds_maximum": 660.343,
+      "shared_anchor_cycle_seconds_maximum": 318.749,
       "shared_anchor_train_task_count": 3
     }
   }

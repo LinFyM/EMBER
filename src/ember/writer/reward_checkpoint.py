@@ -1,4 +1,4 @@
-"""Cycle checkpoints for task-complete endpoint coexistence."""
+"""Cycle checkpoints for the capacity-matched Action-probe grid."""
 
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_task_complete_endpoint_coexistence_checkpoint_v1"
+    "ember_pi05_v6_lpcp_capacity_matched_action_probe_grid_checkpoint_v1"
 )
-REWARD_DEPLOYMENT_KIND = "v6_lpcp_task_complete_endpoint_coexistence_cycle_checkpoint"
+REWARD_DEPLOYMENT_KIND = (
+    "v6_lpcp_capacity_matched_action_probe_grid_cycle_checkpoint"
+)
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 
 

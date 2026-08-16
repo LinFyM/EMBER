@@ -97,7 +97,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
+def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -105,7 +105,7 @@ def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
     )
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
-        "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
+        "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
         "carrier_rank": 16,
         "residual_bank_rank": 16,
         "public_rank": 32,
@@ -117,7 +117,7 @@ def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
     }
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "four_zero_init_direct_native_b_heads_860160_parameters"
+        "capacity_matched_action_probe_grid_3008384_parameters"
     )
     assert config["objective"]["kind"] == (
         "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
@@ -168,8 +168,14 @@ def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
     assert gate["residual_second_b_step0_zero"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
-    assert gate["trainable_parameter_count"] == 860_160
-    assert gate["first_update_all_four_native_b_heads_nonzero"]
+    assert gate["trainable_parameter_count"] == 3_008_384
+    assert gate["capacity_grid_shape"] == [18, 37, 1024]
+    assert gate["native_b_payload_values"] == 680_448
+    assert gate["unused_payload_values"] == 1_536
+    assert gate["step0_native_payload_gate_exact_zero"]
+    assert gate["first_step_payload_gate_gradient_nonzero"]
+    assert gate["post_gate_step_context_temporal_set_m2p_gradients_nonzero"]
+    assert gate["first_update_all_four_native_b_families_nonzero"]
     assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
     assert gate["backtrack_zero_is_exact_adam_candidate"]
     assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
@@ -177,6 +183,7 @@ def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
+    assert gate["shared_anchor_cycle_seconds_maximum"] == 318.749
     assert base["writer"]["policy_slot_count"] == 320
 
 

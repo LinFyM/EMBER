@@ -89,13 +89,17 @@ class MetaLoRAStack(torch.nn.Module):
 
 
 class _LayerProbeCapture:
-    """Collect compact per-layer readouts across frame microbatches."""
+    """Collect compact and raw Action states across frame microbatches."""
 
     def __init__(self, layers: int) -> None:
         self.rows: list[list[torch.Tensor]] = [[] for _ in range(layers)]
+        self.raw_rows: list[list[torch.Tensor]] = [[] for _ in range(layers)]
 
-    def append(self, layer: int, value: torch.Tensor) -> None:
+    def append(
+        self, layer: int, value: torch.Tensor, raw_hidden: torch.Tensor
+    ) -> None:
         self.rows[layer].append(value)
+        self.raw_rows[layer].append(raw_hidden)
 
     def result(self, expected_frames: int) -> torch.Tensor:
         if expected_frames <= 0 or any(not rows for rows in self.rows):
@@ -103,6 +107,14 @@ class _LayerProbeCapture:
         layers = [torch.cat(rows, dim=0) for rows in self.rows]
         if any(value.shape[0] != expected_frames for value in layers):
             raise VideoProgramError("layerwise Action-probe frame count changed")
+        return torch.stack(layers, dim=1)
+
+    def raw_result(self, expected_frames: int) -> torch.Tensor:
+        if expected_frames <= 0 or any(not rows for rows in self.raw_rows):
+            raise VideoProgramError("raw Action-probe capture is incomplete")
+        layers = [torch.cat(rows, dim=0) for rows in self.raw_rows]
+        if any(value.shape[0] != expected_frames for value in layers):
+            raise VideoProgramError("raw Action-probe frame count changed")
         return torch.stack(layers, dim=1)
 
 
@@ -197,7 +209,11 @@ class LayerwiseActionProbeReader(torch.nn.Module):
                 hidden = inputs[0].detach()
                 context = torch.enable_grad() if self.training else torch.no_grad()
                 with context:
-                    capture.append(layer_index, self._read_layer(hidden, layer_index))
+                    capture.append(
+                        layer_index,
+                        self._read_layer(hidden, layer_index),
+                        hidden,
+                    )
 
             handles.append(target.register_forward_pre_hook(hook))
 

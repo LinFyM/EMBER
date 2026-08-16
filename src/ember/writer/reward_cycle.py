@@ -377,7 +377,7 @@ def _differentiate_credit_views(
             {
                 "view_index": view_index,
                 "demo_indices": list(demos),
-                "factor_commitment_gradient_rms": float(flat.square().mean().sqrt()),
+                "parameter_grid_gradient_rms": float(flat.square().mean().sqrt()),
                 **asdict(summary),
                 **view_metrics,
             }
@@ -693,9 +693,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_task_complete_endpoint_coexistence"
+            "one_complete_train24_capacity_matched_action_probe_grid"
             if runtime.args.mode == "formal"
-            else "three_task_shared_endpoint_coexistence_live_smoke"
+            else "three_task_shared_capg_endpoint_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

@@ -308,11 +308,13 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
         policy=torch.nn.Identity(),
     )
     assert not encoded.diagnostics.per_video_query_conditioners.count_nonzero()
-    assert encoded.probe_value_memory is not None
-    assert not encoded.probe_value_memory.count_nonzero()
+    assert encoded.parameter_grid is not None
+    assert not encoded.parameter_grid.count_nonzero()
+    assert encoded.residual_b_rows is not None
+    assert all(not value.count_nonzero() for value in encoded.residual_b_rows.values())
 
 
-def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
+def test_capacity_grid_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
@@ -323,8 +325,8 @@ def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
         committed = model.decode_output(encoded)
     assert sum(
         parameter.numel()
-        for parameter in model.factor_commitment.parameters()
-    ) == 860_160
+        for parameter in model.parameter_grid.branch.parameters()
+    ) == 3_008_384
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
     for name, value in model.base_writer.template_state().items():
         if name.endswith(".lora_A.default.weight"):
@@ -351,16 +353,14 @@ def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
             lpcp[b_name].double(), lpcp[name].double()
         )
         torch.testing.assert_close(actual_ba, expected_ba, rtol=0, atol=0)
-    assert all(
-        not head.weight.count_nonzero()
-        for head in model.factor_commitment.heads.values()
-    )
+    assert not model.parameter_grid.branch.context.payload_gate.count_nonzero()
 
 
-def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
+def test_capacity_grid_is_k_set_invariant() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
+        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
         natural = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         frames, _, _, condition_offsets, tokens, masks, spans = _inputs()
         order = torch.tensor([3, 4, 0, 1, 2, 5, 6, 7])
@@ -374,60 +374,78 @@ def test_native_probe_value_memory_and_language_are_k_set_invariant() -> None:
             spans,
             policy=torch.nn.Identity(),
         )
-    assert natural.probe_value_memory is not None
-    assert permuted.probe_value_memory is not None
-    assert natural.probe_value_memory.count_nonzero()
-    torch.testing.assert_close(
-        natural.probe_value_memory, permuted.probe_value_memory
-    )
-    torch.testing.assert_close(natural.language_slots, permuted.language_slots)
+    assert natural.parameter_grid is not None
+    assert permuted.parameter_grid is not None
+    assert natural.parameter_grid.count_nonzero()
+    torch.testing.assert_close(natural.parameter_grid, permuted.parameter_grid)
 
 
-def test_direct_joint_value_changes_with_video_under_fixed_language() -> None:
+def test_capacity_grid_changes_with_video_under_fixed_language() -> None:
     model, _ = _model()
-    commitment = model.factor_commitment
-    generator = torch.Generator(device="cpu").manual_seed(41)
-    language = torch.randn(2, 320, 256, generator=generator)
-    first_memory = torch.randn(2, 320, 256, generator=generator)
-    second_memory = torch.randn(2, 320, 256, generator=generator)
     with torch.no_grad():
-        first = commitment.joint_value(first_memory, language)
-        second = commitment.joint_value(second_memory, language)
-    assert first.shape == (2, 320, 256)
-    assert not torch.equal(first, second)
+        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
+        first = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+        inputs = list(_inputs())
+        inputs[0] = inputs[0].roll(1, dims=0)
+        second = model.encode_program(*inputs, policy=torch.nn.Identity())
+    assert first.parameter_grid is not None
+    assert second.parameter_grid is not None
+    assert first.parameter_grid.shape == (2, 18, 37, 1024)
+    assert not torch.equal(first.parameter_grid, second.parameter_grid)
 
 
-def test_native_zero_b_heads_open_all_families_and_require_video() -> None:
+def test_capacity_grid_is_gradient_open_and_requires_video() -> None:
     model, _ = _model()
-    commitment = model.factor_commitment.requires_grad_(True)
-    generator = torch.Generator(device="cpu").manual_seed(43)
-    memory = torch.randn(2, 320, 256, generator=generator)
-    language = torch.randn(2, 320, 256, generator=generator)
-    rows, _ = commitment(memory, language)
-    sum(value.sum() for value in rows.values()).backward()
+    grid = model.parameter_grid.requires_grad_(True)
+    state = model.encode_conditioning_state(*_inputs(), policy=torch.nn.Identity())
+    rows, value = grid(
+        state.raw_action_states,
+        state.frame_indices,
+        state.video_bounds,
+        (0, 2, 3),
+    )
+    assert not value.count_nonzero()
+    sum(item.float().sum() for item in rows.values()).backward()
+    gate = grid.branch.context.payload_gate
+    assert gate.grad is not None and gate.grad.count_nonzero()
+    with torch.no_grad():
+        gate.normal_(std=1e-3)
+    grid.zero_grad(set_to_none=True)
+    rows, _ = grid(
+        state.raw_action_states,
+        state.frame_indices,
+        state.video_bounds,
+        (0, 2, 3),
+    )
+    sum(item.float().sum() for item in rows.values()).backward()
     assert all(
-        head.weight.grad is not None and head.weight.grad.count_nonzero()
-        for head in commitment.heads.values()
+        parameter.grad is not None and parameter.grad.count_nonzero()
+        for parameter in grid.branch.parameters()
     )
 
+    constant = state.raw_action_states[:1].expand(4, -1, -1, -1).clone()
     with torch.no_grad():
-        zero_rows, joint = commitment(torch.zeros_like(memory), language)
-    assert not joint.count_nonzero()
-    assert all(not value.count_nonzero() for value in zero_rows.values())
+        zero_rows, zero_grid = grid(
+            constant,
+            torch.tensor([0, 5, 10, 15]),
+            (0, 4),
+            (0, 1),
+        )
+    assert not zero_grid.count_nonzero()
+    assert all(not item.count_nonzero() for item in zero_rows.values())
 
 
-def test_native_zero_b_heads_emit_only_residual_bank_rows() -> None:
+def test_capacity_grid_emits_only_residual_bank_rows() -> None:
     model, _ = _model()
-    commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
-    memory = torch.randn(2, 320, 256, generator=generator)
-    language = torch.randn(2, 320, 256, generator=generator)
+    grid = torch.randn(2, 18, 37, 1024, generator=generator)
     with torch.no_grad():
-        for head in commitment.heads.values():
-            head.weight.normal_(std=0.01, generator=generator)
-        rows, joint = commitment(memory, language)
+        rows = model.parameter_grid.rows(grid)
         state = model._direct_b_residual_state(rows, batch=2)
-    assert joint.shape == (2, 320, 256)
+    assert rows["q_b"].shape == (2, 18, 16, 2048)
+    assert rows["v_b"].shape == (2, 18, 16, 256)
+    assert rows["action_in_b"].shape == (2, 16, 1024)
+    assert rows["action_out_b"].shape == (2, 16, 32)
     assert len(state) == 38
     assert all(name.endswith(".lora_B.default.weight") for name in state)
     assert all(
@@ -438,8 +456,7 @@ def test_native_zero_b_heads_emit_only_residual_bank_rows() -> None:
     assert all(value.count_nonzero() for value in state.values())
 
     with torch.no_grad():
-        for head in commitment.heads.values():
-            head.weight.mul_(1_000_000)
+        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
         encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         baseline = model.decode_program(encoded.program)
         committed = model.decode_output(encoded)
@@ -458,12 +475,12 @@ def test_native_zero_b_heads_emit_only_residual_bank_rows() -> None:
             assert torch.equal(committed[name][..., :16], value[..., :16])
 
 
-def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
+def test_capacity_grid_lpcp_loader_rejects_partial_new_topology() -> None:
     source, _ = _model()
     old = {
         name: value
         for name, value in source.state_dict().items()
-        if not name.startswith("factor_commitment.")
+        if not name.startswith("parameter_grid.")
     }
     loaded, _ = _model()
     loaded.load_lpcp_state_(old)
@@ -472,8 +489,8 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["factor_commitment.heads.q_b.weight"] = source.state_dict()[
-        "factor_commitment.heads.q_b.weight"
+    partial["parameter_grid.branch.context.payload_gate"] = source.state_dict()[
+        "parameter_grid.branch.context.payload_gate"
     ]
     with torch.no_grad():
         try:
@@ -481,28 +498,24 @@ def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:
         except RuntimeError:
             pass
         else:
-            raise AssertionError("partial probe-Value topology was accepted")
+            raise AssertionError("partial parameter-grid topology was accepted")
     with torch.no_grad():
         try:
             loaded.load_lpcp_state_(source.state_dict())
         except RuntimeError:
             pass
         else:
-            raise AssertionError("trained commitment was accepted as LPCP cold start")
+            raise AssertionError("trained parameter grid was accepted as LPCP cold start")
 
 
-def test_native_probe_value_reuses_exact_procedure_set_attention() -> None:
+def test_capacity_grid_records_raw_layer_context_in_the_same_forward() -> None:
     model, _ = _model()
     with torch.no_grad():
-        encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
-    values = encoded.diagnostics.per_video_query_conditioners
-    expected = torch.stack(
-        [
-            (encoded.diagnostics.attention[0][..., None] * values[:2]).sum(0),
-            (encoded.diagnostics.attention[1][..., None] * values[2:3]).sum(0),
-        ]
+        state = model.encode_conditioning_state(
+            *_inputs(), policy=torch.nn.Identity()
+        )
+    assert state.raw_action_states.shape == (8, 18, 50, 1024)
+    assert state.raw_action_states.data_ptr() != (
+        state.per_video_query_conditioners.data_ptr()
     )
-    torch.testing.assert_close(
-        encoded.diagnostics.shared_probe_value_slots, expected
-    )
-    torch.testing.assert_close(encoded.probe_value_memory, expected)
+    assert state.video_bounds == (0, 3, 5, 8)

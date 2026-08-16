@@ -159,9 +159,11 @@
 - 当前active design是**CAPG**，authority=
   `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32与同一
   joint forward，只把shared wide B heads替换为`18x37x1024`capacity-matched Action-probe parameter grid，经过
-  per-video causal、K-set、layer/token M2P后直接reshape native-zero B；trainable branch减去冻结step0 anchor，
-  保持exact LPCP并首步gradient-open。37是post-backbone parameter latents而非memory tokens；当前尚未实现或启动
-  GPU，固定world3 task9/15/18为首个preformal gate；
+  per-video causal、K-set、layer/token M2P后直接reshape native-zero B；681,984个zero-init coordinate payload
+  gates保持exact LPCP且首步gradient-open，不做近等大数相减。37是post-backbone parameter latents而非memory tokens；
+  canonical实现已原位完成并退休TCEC wide-head/config/schema：trainable=`3,008,384`，定向CPU=`79 passed`、完整
+  CPU=`405 passed`、architecture guard无hard violation；当前尚未启动GPU，固定world3 task9/15/18为首个
+  preformal gate；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

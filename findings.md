@@ -723,9 +723,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      Dynamic-K整条恢复。rank16 B-only residual共680,448 payload；`18x37x1024`提供681,984容量、仅1536 padding。
      前36 slots逐层直写q/v B，第37 slot沿层轴直写action-in/out。37个slots在现有一次joint forward之后读取逐层
      Action states，明确不是memory tokens；per-video adjacent/goal、K-set与layer/token M2P后direct reshape，删除
-     四个shared wide heads。trainable分支减冻结step0 anchor同时给出exact LPCP与首步全链gradient。首门仍用
+     四个shared wide heads。681,984个zero-init coordinate gates乘非零context Value，避免anchor大数相减，
+     同时给出exact LPCP与首步gate gradient；accepted gate update后其余链路打开。首门仍用
      task9/15/18等权shared credit，必须从TCEC的continuous 1/3提升到3/3并找到native 12/12；失败不否定literal
      memory或rank8。
+111. CAPG canonical实现没有用数值阈值或双branch subtraction冒充exact identity：681,984个coordinate gates从
+     native zero乘非零context payload，step0与constant grid逐元素为零；首步gate gradient非零，gate-open后
+     context/temporal/set/M2P全有gradient。raw 18层Action states与LPCP compact probes来自同一hook/forward；旧
+     factor commitment owner和TCEC config/schema已退休。trainable=`3,008,384`，定向/完整CPU=`79/405 passed`，
+     architecture guard无hard violation。该证据仅关闭实现门，尚无GPU task-coexistence或closed-loop结论。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

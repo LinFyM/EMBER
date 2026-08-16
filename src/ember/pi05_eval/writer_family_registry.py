@@ -456,7 +456,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_task_complete_endpoint_coexistence_v1": {
+    "v6_lpcp_capacity_matched_action_probe_grid_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
@@ -467,9 +467,9 @@ WRITER_FAMILIES = {
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
-        "arm_prefix": ("v6_lpcp_task_complete_endpoint_coexistence_"),
+        "arm_prefix": ("v6_lpcp_capacity_matched_action_probe_grid_"),
         "trained_checkpoint_kind": (
-            "v6_lpcp_task_complete_endpoint_coexistence_cycle_checkpoint"
+            "v6_lpcp_capacity_matched_action_probe_grid_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 32,
@@ -478,11 +478,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the task-complete endpoint coexistence graph"
+            "the capacity-matched Action-probe grid"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the task-complete endpoint coexistence graph"
+            "through the capacity-matched Action-probe grid"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

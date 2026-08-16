@@ -1,4 +1,4 @@
-"""Train shared native-zero B heads with task-complete endpoint credit."""
+"""Train the CAPG shared parameter map with task-complete endpoint credit."""
 
 from __future__ import annotations
 
@@ -255,26 +255,29 @@ def _load_direct_factor_models(
         load_file(str(cold_start / "writer.safetensors"), device=str(context.device))
     )
     writer.requires_grad_(False)
-    writer.factor_commitment.requires_grad_(True)
+    writer.parameter_grid.branch.requires_grad_(True)
     writer.eval()
     trainable_names = tuple(
         name for name, value in writer.named_parameters() if value.requires_grad
     )
     if (
         not trainable_names
-        or any(not name.startswith("factor_commitment.") for name in trainable_names)
+        or any(
+            not name.startswith("parameter_grid.branch.")
+            for name in trainable_names
+        )
         or sum(
             value.numel()
-            for value in writer.factor_commitment.parameters()
+            for value in writer.parameter_grid.branch.parameters()
             if value.requires_grad
         )
-        != 860_160
+        != 3_008_384
     ):
         raise WriterModelError(
-            "task-complete endpoint must train only 860160 parameters"
+            "CAPG endpoint must train only 3008384 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "v6_lpcp_task_complete_endpoint_coexistence_only"
+    trainable["object"] = "v6_lpcp_capacity_matched_action_probe_grid_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -486,18 +489,18 @@ def train(args: argparse.Namespace) -> None:
                     {
                         name: value.detach().cpu().contiguous()
                         for name, value in (
-                            runtime.writer.factor_commitment.state_dict().items()
+                            runtime.writer.parameter_grid.state_dict().items()
                         )
                     },
-                    str(args.output_dir / "factor_commitment.safetensors"),
+                    str(args.output_dir / "parameter_grid.safetensors"),
                 )
         if context.is_main:
             write_json_atomic(
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_task_complete_endpoint_"
-                        "coexistence_completion_v1"
+                        "ember_pi05_v6_lpcp_capacity_matched_action_probe_"
+                        "grid_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

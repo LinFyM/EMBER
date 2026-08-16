@@ -7,10 +7,21 @@ from dataclasses import dataclass
 import torch
 
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
-from ember.writer.factor_commitment import FACTOR_FAMILIES
 from ember.writer.model import CompleteLoRAWriter
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.video_program import LayerwiseActionProbeReader
+
+
+FACTOR_FAMILIES = (
+    "q_a",
+    "q_b",
+    "v_a",
+    "v_b",
+    "action_in_a",
+    "action_in_b",
+    "action_out_a",
+    "action_out_b",
+)
 
 
 def _template() -> dict[str, torch.Tensor]:

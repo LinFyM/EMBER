@@ -121,22 +121,26 @@ ordinal。它保留payload宽度并避免1024宽FFN或四个独立wide factor he
 这采用SHINE中“layer/token交替通信后按容量直接映射LoRA”的可扩展原则：policy层数或LoRA payload增长时，状态网格
 线性增长，而共享Q/K controller参数不为每个target另建巨大head。
 
-## 7. Step0 exact carrier与gradient-open anchor
+## 7. Step0 exact carrier与native-zero payload gate
 
-CAPG保留一份初始化相同、永久冻结的轻量readout/temporal/set/M2P anchor `F0`，trainable branch为`Ftheta`；两者
-读取同一份detached Action-probe H，不重复backbone forward：
+直接相减两个独立anchor branches会在正常并行reduction下留下约`3e-8`数值残差；用阈值、单线程、重复forward或
+扩dtype消除它既不满足exact identity，也违背效率原则。CAPG因此不用大数相减，而给每个capacity-grid坐标一个
+zero-init elementwise payload gate `S`：
 
 ```text
-delta_grid(c) = (Ftheta(H(c)) - F0(H(c))) / sqrt(1024)
-delta_B(c)    = deterministic_reshape(delta_grid(c)).
+context[f,l,m,:] = Attention(Q[l,m], K(H[f,l,:,:]), V=H[f,l,:,:])
+Z[f,l,m,:]       = context[f,l,m,:] * S[l,m,:]
+delta_grid(c)    = M2P(Set(Causal_DG(Z))) / sqrt(1024)
+delta_B(c)       = deterministic_reshape(delta_grid(c)).
 ```
 
-所有模块无dropout。初始化时两分支逐元素相同，故任意condition的delta-B为exact zero，deployment逐元素退化LPCP；
-同时gradient只经过Ftheta，latent queries、temporal、set和M2P首步均可获得非零credit。冻结anchor不是第二套部署
-LoRA或第二backbone，它只是一个轻量zero-origin parameterization；部署仍输出一套adapter。
+`S`恰为`18x37x1024=681,984`参数，没有跨coordinate dense mixing。初始化`S=0`使任意condition的delta-B代数
+exact zero，deployment逐元素退化LPCP；由于context非零，首个backward直接给S非零梯度，不会发生SFMC式
+zero-init wide output阻断。第一次accepted update后Z非零，context query/key、temporal、set和M2P在下一次backward
+自然获得gradient。这里没有第二branch、第二adapter或第二backbone forward。
 
-constant video在任意训练阶段均因D=G=0而产生零residual。若实现不能同时满足step0 exact identity、首步全链gradient
-非零与constant zero，工程门直接失败。
+constant video在任意训练阶段均因D=G=0而产生零residual。若实现不能同时满足step0 exact identity、首步payload-gate
+gradient非零、gate打开后其余链路gradient非零与constant zero，工程门直接失败。
 
 ## 8. 为什么它可能让多task共存
 
@@ -157,7 +161,8 @@ gradient与closed-loop裁决。
 
 必须同时满足：
 
-- step0 carrier tensor exact、factor/BA/action counterfactual为零；anchor全冻结，只有Ftheta可训练；
+- step0 carrier tensor exact、factor/BA/action counterfactual为零；payload gate为零且首步gradient非零，synthetic
+  gate-open后context/temporal/set/M2P均有gradient；
 - 每task four-view gradients均4/4 continuous descent，same-task pairwise cosine/energy不低于`.35/.50`；
 - 不做norm重权的三task arithmetic mean对三个task均为descent，即TCEC的`1/3`提升为`3/3`；记录task-gradient
   norm ratios与pairwise cosines，但不以几何本身选方法；
@@ -165,8 +170,8 @@ gradient与closed-loop裁决。
 - accepted后train三anchor与validation8的four-view BA、raw-B、action、held/train、reverse/constant门沿用TCEC阈值：
   train至少`.40/.55`，validation aggregate至少`.30/.48`且6/8过`.15/.40`，raw-B cosine`.30+`、action
   cosine`.15+`、held/train BA L2`.30x+`、reverse`.50+`、constant/natural不超过`.005`；
-- world3 wall不超过TCEC`182.142s`的`1.75x=318.749s`，峰值低于A40容量，0 OOM/nonfinite/禁读。anchor只重复
-  轻量post-backbone path，不能造成第二次joint forward。
+- world3 wall不超过TCEC`182.142s`的`1.75x=318.749s`，峰值低于A40容量，0 OOM/nonfinite/禁读；不能造成
+  第二次joint或post-backbone forward。
 
 连续shared mean若仍非3/3，说明per-layer activation parameter grid没有解决task coexistence，立即终局；不加
 normalization/PCGrad/task router。continuous通过而native失败，则direct grid仍没有共同finite policy step；不扫scale。
@@ -184,8 +189,23 @@ cycle。首次达到约145且retention过门立即补same-task-other/wrong/shuff
 ## 11. 负结果边界
 
 本轮只淘汰实际检验的组合：`sealed LPCP Action-probe activations + capacity-matched post-backbone parameter latents +
-causal/set/axis M2P + anchored direct native-B reshape + NEAP endpoint credit`。
+causal/set/axis M2P + native-zero coordinate gate/direct native-B reshape + NEAP endpoint credit`。
 
 它不否定literal memory token、rank8、Dynamic-K/few-shot、生成完整A/B、LoRA本身或未来task-local RL。特别是，CAPG
 中的37个post-backbone latents若失败，不能被描述为“memory token失败”；真正让memory在Action Expert层内逐层读取
 context的反事实仍未执行。
+
+## 12. Canonical implementation evidence
+
+canonical runtime已原位退休TCEC wide-head实现与旧config/schema，没有保留平行runner：
+
+- 同一个LPCP hook现在同时返回原`18x16x256`compact probes和raw`18x50x1024`Action states；图像、语言、VLM与
+  Action Expert仍只forward一次；
+- `src/ember/writer/parameter_grid.py`集中拥有context readout、single causal reducer、permutation-invariant K-set、
+  layer/token axis mixers与确定性B reshape；旧`factor_commitment.py`已删除；
+- trainable branch=`3,008,384`参数，其中payload gates=`681,984`；step0 grid逐元素exact zero，synthetic gate-open后
+  context/temporal/set/M2P全部有非零gradient，constant video始终exact zero，K-set换位不变；
+- q/v/action-in/action-out payload shape、680,448 consumed values、1,536 padding、rank32 first-bank retention和LPCP
+  cold-start rejection均有稳定CPU合同；
+- 定向训练/评测回归=`79 passed`，完整CPU=`405 passed`，compileall/diff check通过；architecture guard无hard
+  violation，新增一个298行cohesive owner并删除旧95行wide-head owner。以上只关闭实现门，不提供GPU或性能结果。

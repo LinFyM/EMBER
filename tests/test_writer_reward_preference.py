@@ -457,13 +457,13 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     class _Writer(torch.nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.factor_commitment = torch.nn.Module()
-            self.factor_commitment.heads = torch.nn.ModuleDict(
-                {"q_b": torch.nn.Linear(1, 2, bias=False)}
+            self.parameter_grid = torch.nn.Module()
+            self.parameter_grid.branch = torch.nn.ModuleDict(
+                {"payload": torch.nn.Linear(1, 2, bias=False)}
             )
 
     writer = _Writer()
-    head = writer.factor_commitment.heads["q_b"].weight
+    head = writer.parameter_grid.branch["payload"].weight
     head.data.copy_(torch.tensor([[0.5], [-0.25]]))
     optimizer = torch.optim.AdamW(
         writer.parameters(),
@@ -504,7 +504,9 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         rtol=0,
         atol=1e-7,
     )
-    assert step.parameter_delta_rms["factor_commitment.heads.q_b.weight"] > 0
+    assert step.parameter_delta_rms[
+        "parameter_grid.branch.payload.weight"
+    ] > 0
     assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0
     assert step.gradient_coexistence["final_delta_descent_coverage"] == 1.0
     assert step.commitment_geometry["final_to_adam_candidate_cosine"] == pytest.approx(

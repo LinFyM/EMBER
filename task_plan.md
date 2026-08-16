@@ -610,8 +610,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   equal-task mean与native acceptance不变；
 - [x] 完成CAPG design authority：同一forward保留18层raw Action-probe states，37个post-backbone parameter latents
   由rank16 B-only payload精确推导；逐video causal、K-set、layer/token M2P后direct reshape native-zero B；
-- [ ] 原位实现CAPG与fresh-incompatible config/checkpoint/eval schema，退休TCEC active runtime；
-- [ ] 完成step0 exact、gradient-open、constant-zero、K-set、direct reshape、信息墙和one-forward CPU/机制验证；
+- [x] 原位实现CAPG与fresh-incompatible config/checkpoint/eval schema，退休TCEC active runtime；
+- [x] 完成step0 exact、payload-gate首步gradient、gate-open全链gradient、constant-zero、K-set、direct reshape、
+  信息墙和one-forward CPU/机制验证；
 - [ ] live检查双节点GPU与`/data1`quota，建立clean pushed frozen world3 launch contract；空卡不足时可在实时余量
   充足且低util的`ycliu`设备上安全共驻；
 - [ ] 固定task9/15/18运行preformal shared gate并完整分析same-task、cross-task gradient、12-view native step、
@@ -637,7 +638,7 @@ Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、M
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
 最新TCEC world3已终局：同task四video endpoint gradients有共同方向，但跨task raw shared mean仅1/3为下降，
-11个native scales最多覆盖8/12 margins，最终exact no-op。当前CAPG authority已冻结、尚未实现或启动GPU；它直接
+11个native scales最多覆盖8/12 margins，最终exact no-op。当前CAPG authority与canonical实现已完成、尚未启动GPU；它直接
 针对task-local coherent Program/credit如何在一个shared Writer中形成可共存的condition-to-LoRA映射。不得回退
 CFM、继续parameter ray/scale/normalization/PCGrad小修，或把CAPG的post-backbone latents误称literal memory。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对

@@ -15,7 +15,7 @@ coverage=`3/3`、native=`12/12`并写出非零LoRA；validation8 held门又以8/
 合同错误，不是CMBG科学结果。修正后clean`b4dbf84` full24完整，但cross-task gradient被task38以
 `54.45x`幅度主导、task34的same-task视图又内冲突；11 scales最好只有`17/24` margins下降，最终
 exact no-op并在strict前终局。
-当前active CFMG保留CMBG全部图，只把zero gate从temporal/K-set/M2P之前移到完整content grid之后。clean
+CFMG保留CMBG全部图，只把zero gate从temporal/K-set/M2P之前移到完整content grid之后。clean
 `010487b` fixed world3已通过raw/final=`3/3`、native=`12/12`与全正cross-task gradient cosine；validation8
 held四view为8/8，BA cosine/energy=`.982412/.985173`、held/train=`.960548x`。原始constant门因task18
 `.005144>.005`保留false；exact constant-hidden严格为0且运行残差仅natural`.514%`，故另存不改写raw artifact的
@@ -25,10 +25,15 @@ gains=`3/3`、6 active tasks覆盖四suite，cycle=`467.783s`。六task梯度相
 `1.78--1.92x`；cross-task cosine mean/min=`.00923/-.20641`，task34跨video=`-.0923/.3370`，task38相对
 次大梯度=`58.73x`。11 candidates最好仅`14/24` margins下降，最终恢复exact LPCP，所有parameter delta、
 q/v/action BA与fixed action response为0；strict400跳过。CFMG终局，不cycle2、controls、resume或小扫。
-当前active USEP保留CFMG全部memory/content-grid/rank32/K4/global commitment，只把每个matched state的raw
+USEP保留CFMG全部memory/content-grid/rank32/K4/global commitment，只把每个matched state的raw
 endpoint margin除以自身winner/loser action RMS，使action cotangent沿unit secant进入Writer；不读task ID或
 gradient norm、不改变task/view权重，也不采用MSE反比放大小secant。canonical实现与fresh identity已完成，
-完整CPU=`413 passed`且architecture guard 0 hard；尚无GPU或closed-loop结果。
+完整CPU=`413 passed`且architecture guard 0 hard。clean`6033330` fixed task4/34/38 world3把task38 dominance从
+`58.73x`降到`6.1538x`、cross-task raw变为3/3，actual Adam j0使12/12 deployed margins下降并写出非零
+q/v/action response；但task34 raw four-view仍2/4、cosine/energy=`-.05217/.33803`，故USEP依预注册门终局。
+只读stage localization显示task34四组K4从endpoint到content grid及content residual BA均约`.98--.99`一致，
+raw冲突后移到condition-local policy/action Jacobian。fresh successor USFC不改模型、loss或训练，只把raw
+coverage降为diagnostic并以actual finite all-view commitment作为硬门，后续结果仍须full24/strict裁决。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

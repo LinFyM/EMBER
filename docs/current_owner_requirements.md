@@ -433,11 +433,19 @@ CMBG held视频门曾以validation8 8/8通过，但随后full24被task38以`54.4
 参数量，只把zero gate移到完整temporal/K-set/M2P content grid之后；这不是owner要求memory形式，而是针对已定位
 首步零点Jacobian接口的单变量反事实。正式选择仍只认single-checkpoint真实rollout。
 
-CFMG full24随后同样exact no-op，且task38相对次大task的gradient dominance增至`58.73x`。当前USEP保留CFMG
+CFMG full24随后同样exact no-op，且task38相对次大task的gradient dominance增至`58.73x`。USEP保留CFMG
 全部模型与训练图，只把每个matched state的endpoint margin除以自身winner/loser action RMS，使action cotangent
-沿unit secant进入Writer。它不是按task最终gradient norm重权或PCGrad，也不采用会反比放大小secant的MSE分母；
-固定task4/34/38机制门通过前不启动full24。精确authority=
+沿unit secant进入Writer。它不是按task最终gradient norm重权或PCGrad，也不采用会反比放大小secant的MSE分母。
+clean`6033330` fixed task4/34/38 world3把dominance降到`6.1538x`、cross-task raw变为3/3且actual Adam j0使
+12/12 deployed margins下降，但task34 raw four-view仍2/4，故依预注册门终局且不得resume。精确authority=
 `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。
+
+后续只读stage localization证明task34的四组K4在endpoint、temporal、K-set、M2P、content grid、carrier factors
+及content residual effective BA上均约`.98--.99`一致；raw冲突发生在共同BA经过condition-local policy/action
+Jacobian回传时。owner要求closed-loop absolute优先于内部surrogate，因此当前USFC不改写USEP历史、也不新搭
+视频或LoRA架构，只以fresh identity把raw four-view coverage降为diagnostic，仍要求同一个actual finite candidate
+使全部active task×view deployed margins严格下降。它将直接做一次fresh full24 cycle1，nonzero才strict400；
+精确authority=`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。
 
 后续迭代遵循以下边界：
 

@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Unit-Secant Endpoint Preference
 
-状态：2026-08-16 active preformal authority。简称 **USEP**。本轮从sealed LPCP fresh开始，完整保留
+状态：2026-08-16 fixed world3因预注册task34 raw four-view门失败而终局，不held/full24/strict。简称 **USEP**。本轮从sealed LPCP fresh开始，完整保留
 CFMG的输入、backbone memory、content-first grid、rank32 LoRA和global commitment；唯一改变每个matched
 winner/loser action pair如何定义endpoint preference。
 
@@ -112,6 +112,25 @@ config从active tree退休且checkpoint不能resume。新增公式测试覆盖ma
 action缩放下的中点softplus gradient不变；相关合同=`143 passed`，完整CPU=`413 passed`，compileall与diff check
 通过。architecture guard为0 hard violation、无新module/entrypoint/并行version；review项仅为既存大文件/函数。
 这些结果只关闭实现门，不提供真实task共存、视频held或closed-loop证据。
+
+### 6.2 Fixed world3 terminal result
+
+clean `6033330`在gpu02物理`1/2/3`完整exit0：task4/34/38的candidate/reference严格复现
+`0/1,1/2,1/0`，每task 8 selected pairs；cycle=`200.655s`，0禁读/OOM/nonfinite。unit secant把task38相对
+次大task的gradient dominance从CFMG的`58.73x`降到`6.1538x`，三task pairwise cosine mean/min变为
+`.16247/.08040`，raw shared coverage=`3/3`。实际Adam `j0`使12/12 normalized deployed margins严格下降，
+parameter delta L2=`.244074`且q/v/action BA与fixed-action response全部非零。
+
+唯一硬失败是task34：four-view gradient cosine/energy=`-.05217/.33803`，view-to-task-mean cosine=
+`[-.51488,.99477,.99357,-.53478]`，raw coverage仍为`2/4`而不是预注册`4/4`。因此本authority按原门终局，
+不得用已经看到的结果修改USEP门或resume其checkpoint；精确artifact为run root下
+`usep_world3_terminal_adjudication.json`。
+
+随后只读action-hidden视频和stage localization进一步表明：16条示范基本保持同一子任务顺序；四个K4条件从
+endpoint、temporal、K-set、layer/token M2P到pre-gate content grid的pairwise cosine均约`.984--.986`，
+content residual effective BA也约`.99`一致。故raw冲突不来自视频聚合或LoRA Value本身，而出现在共同BA经各
+condition局部policy/action Jacobian回传的接口。该后验定位不能改写本轮失败，但可为fresh successor建立新的、
+以实际finite deployed commitment为硬门的authority。
 
 ## 7. Full24 and strict decision
 

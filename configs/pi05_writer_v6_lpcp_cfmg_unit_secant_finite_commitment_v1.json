@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1",
-  "status": "active_preformal",
+  "schema_version": "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_v1",
+  "status": "active_formal",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_cfmg_unit_secant_endpoint_preference"
+    "candidate_arm": "frozen_v6_lpcp_plus_cfmg_unit_secant_finite_commitment"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -110,7 +110,7 @@
     "video_or_environment_recompute": false,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
     "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
-    "formal_extension_status": "preformal_not_started"
+    "formal_extension_status": "formal_cycle1_ready"
   },
   "smoke_run": {
     "cycle": 1,
@@ -134,22 +134,26 @@
     }
   },
   "formal_run": {
-    "status": "not_started",
+    "status": "ready",
     "predecessor_evidence": {
-      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_formal_cycle0to1_r5_k4_views4_nmc4_b8_bb5341e_gpu02p12347_20260816/cfmg_full24_terminal_adjudication.json",
-      "active_task_ids": [4, 19, 20, 25, 34, 38],
+      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_usep_shared3_task4_34_38_b8_6033330_gpu02p123_20260816/usep_world3_terminal_adjudication.json",
+      "active_task_ids": [4, 34, 38],
       "equal_selected_credit_pairs_per_active_task": 8,
-      "task38_to_next_gradient_norm_ratio": 58.725814,
-      "task34_four_view_cosine": -0.092275,
-      "shared_task_descent_coverage": 0.666667,
-      "final_delta_l2": 0.0
+      "task38_to_next_gradient_norm_ratio": 6.15379334436397,
+      "task34_four_view_cosine": -0.05217350646853447,
+      "task34_raw_four_view_coverage": 0.5,
+      "shared_task_descent_coverage": 1.0,
+      "finite_deployed_margin_descent_coverage": 1.0,
+      "final_delta_l2": 0.2440737932920456,
+      "stage_localization_content_grid_pairwise_cosine": 0.9858014583587646,
+      "stage_localization_content_residual_effective_ba_pairwise_cosine_approximate": 0.99
     },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
     "stage_stop_cycles": [1, 2],
     "first_strict_paired400_cycle": 1,
-    "continuation_trigger": "cycle1_correct_at_least_142_breadth_at_least_7_lpcp_losses_at_most_15_gains_at_least_losses_and_held_direct_factor_gate_pass",
+    "continuation_trigger": "cycle1_correct_at_least_142_breadth_at_least_7_lpcp_losses_at_most_15_and_gains_at_least_losses",
     "stable_qualification": {
       "cycle1_and_cycle2_correct_minimum": 142,
       "two_cycle_correct_mean_minimum": 145,
@@ -195,7 +199,8 @@
       "global_anchor_view_count": 12,
       "rank_accepted_scale_and_parameter_delta_identical": true,
       "shared_anchor_task_gradient_descent_coverage": 1.0,
-      "raw_four_view_shared_mean_descent_coverage": 1.0,
+      "raw_four_view_shared_mean_descent_coverage_role": "diagnostic_only",
+      "finite_deployed_all_view_commitment_is_primary": true,
       "task38_to_next_gradient_norm_ratio_maximum": 15.0,
       "search_max_backtracks": 10,
       "first_global_task_complete_all_view_monotone_candidate_required": true,

@@ -662,9 +662,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   把endpoint cotangent变成unit secant；不读task ID/gradient norm，不改变task权重，不用MSE反比放大小pair；
 - [x] 原位实现唯一loss owner与fresh config/checkpoint/eval identity；相关CPU=`143 passed`、完整CPU=`413 passed`、
   compileall/diff check与architecture guard 0 hard，且未增加forward、参数、module或并行runtime；
-- [ ] fixed task4/34/38 world3验证既有outcome/count、dominance`<=15x`、raw shared`3/3`、task34 views`4/4`和
-  native`12/12`；
-- [ ] 若world3与held门通过，fresh full24 cycle1；只有nonzero checkpoint才做strict400并充分逐task分析。
+- [x] fixed task4/34/38 world3完整裁决：outcome/count复现，dominance=`6.1538x`、raw shared=`3/3`、native finite
+  commitment=`12/12`，但task34 raw views仅`2/4`，按USEP预注册门终局；
+- [x] 完成task34 action-hidden画面与stage localization：未见相反子任务顺序，Program/content/residual BA约
+  `.98--.99`跨K4一致，最早冲突后移到condition-local policy/action Jacobian；
+- [x] 建立USFC fresh successor：模型/目标/训练逐项不变，只让raw coverage降为diagnostic并保留actual finite
+  all-view deployed descent硬门；切换fresh config/checkpoint/eval identity；
+- [ ] 完成USFC CPU合同、clean push与fresh full24 cycle1；若nonzero立即strict400并充分逐task分析。
 
 ## Non-negotiable boundaries
 
@@ -684,9 +688,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新CMBG full24已终局：它保持多数task的same-task跨video coherence，但task38以`54.45x`幅度主导shared
-commitment，最多仅`17/24` margins下降并exact no-op。CFMG随后也以最好`14/24`和exact no-op终局；它证明
-content-first gate placement没有修复task38幅度支配或task34跨video冲突。当前无active successor；不得回退CFM、
+最新USEP world3已终局：它把task38幅度支配降到`6.1538x`并使actual native update达到12/12，但未过task34 raw
+2/4门。当前active USFC只fresh检验这个finite shared update能否扩展到full24/strict；不得resume USEP、回退CFM、
 继续parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强

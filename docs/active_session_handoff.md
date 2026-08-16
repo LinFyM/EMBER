@@ -7,14 +7,20 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 当前active successor是**USEP**，authority=
-  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。它不改CFMG Writer、memory、
-  rank32、K4或commitment，只把每个matched state的raw endpoint margin除以该winner/loser action RMS，使
-  action cotangent沿unit secant传入Writer。它不读取task ID/gradient norm、不改变task权重，也不采用会反比
-  放大小secant的MSE分母。下一裁决点是fixed task4/34/38 world3：必须保持既有outcome/count，同时把task38
-  gradient dominance从`58.73x`降至`<=15x`、raw shared=`3/3`、task34 view coverage=`4/4`、native=`12/12`；
-  canonical loss/fresh identity已完成，相关CPU=`143 passed`、完整CPU=`413 passed`、compileall/diff check通过且
-  architecture guard 0 hard；当前尚无USEP clean commit或GPU run；
+- USEP clean`6033330` fixed task4/34/38 world3已完整exit0：outcome/count复现，task38/次大gradient=
+  `6.1538x`、cross-task cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual Adam j0使12/12 normalized
+  deployed margins下降且q/v/action/fixed-action response非零。task34 raw four-view仍2/4、cosine/energy=
+  `-.05217/.33803`，故USEP依预注册门终局，不held/full24/strict或resume；精确artifact为run root下
+  `usep_world3_terminal_adjudication.json`；
+- action-hidden画面核对未发现task34存在两种相反子任务顺序。只读stage localization显示四组K4的endpoint、
+  temporal、K-set、layer/token M2P与content grid pairwise cosine=`.984--.986`、energy约`.987--.988`，carrier
+  A/B/BA及content residual BA也约`.99`一致；因此raw冲突最早出现在共同BA经condition-local policy/action
+  Jacobian回传，不是video Program或LoRA Value分裂；
+- 当前active successor是**USFC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。模型、memory、rank32、K4、
+  unit-secant loss、Adam与global commitment逐项不变；唯一把raw four-view coverage降为diagnostic，仍要求同一个
+  actual finite candidate让全部active task×view deployed margins严格下降。fresh config/checkpoint/eval identity
+  已切换；下一裁决点是CPU合同后fresh full24 cycle1，nonzero checkpoint立即strict400；当前无GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

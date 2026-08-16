@@ -45,6 +45,18 @@ evaluation复用同一个unit-secant helper；fresh config/checkpoint/eval ident
 `143/413 passed`，compileall/diff check通过、architecture guard 0 hard。该证据只说明计算图和authority一致，
 不能说明task38 dominance已经下降。
 
+clean`6033330` fixed world3随后证明unit secant真实解决了幅度接口：task38/次大gradient从`58.73x`降到
+`6.1538x`，三task pairwise cosine mean/min=`.16247/.08040`且raw shared=`3/3`；actual Adam j0使12/12
+normalized deployed margins下降并写出非零q/v/action response。USEP仍依预注册task34 raw门终局，因为其
+four-view cosine/energy=`-.05217/.33803`、coverage仅2/4。
+
+后续stage localization避免了错误架构转向。task34 action-hidden画面基本采用相同子任务顺序；四组K4的endpoint、
+temporal、K-set、layer/token M2P和pre-gate content grid pairwise cosine均`.984--.986`，energy约`.987--.988`，
+carrier factors/BA及content residual BA也约`.99`一致。故raw Writer gradient冲突不是视频Program或LoRA Value
+已经分裂，而是共同BA通过condition-local policy/action Jacobian后的cotangent差异。内部raw 4/4不是finite
+deployed 12/12的必要条件，也不能越权替代closed-loop。USFC据此保持全部模型和训练不变，只fresh检验实际finite
+full24 commitment与strict400；USEP历史门和终局不被改写。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

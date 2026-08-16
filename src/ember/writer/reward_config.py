@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP CFMG unit-secant endpoint preference."""
+"""Authority for the V6-LPCP CFMG unit-secant finite commitment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,20 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1"
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_endpoint_preference_launch_v1"
+    "ember_pi05_v6_lpcp_cfmg_unit_secant_finite_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_v1.json"
+    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_cfmg_unit_secant_endpoint_preference"
+        "frozen_v6_lpcp_plus_cfmg_unit_secant_finite_commitment"
     ),
 }
 _DEPLOYMENT_CONTRACT = {
@@ -114,7 +114,7 @@ _COMMITMENT_CONTRACT = {
     "rank_state_contract": (
         "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
     ),
-    "formal_extension_status": "preformal_not_started",
+    "formal_extension_status": "formal_cycle1_ready",
 }
 _SMOKE_CONTRACT = {
     "cycle": 1,

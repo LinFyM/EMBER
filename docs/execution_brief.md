@@ -38,16 +38,18 @@ adjudication后授权了一个fresh full24 cycle1。clean`bb5341e` world5 full24
 task-view margins下降，final delta及q/v/action response均为0；task38相对次大梯度=`58.73x`，task34跨video
 cosine=`-.0923`。所以CFMG按合同终局并跳过只会重测LPCP的strict400，不得resume。
 
-当前active successor是**USEP**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。CFMG full24六个active tasks的
-selected pair数完全相同，但task38 winner/loser action RMS=`.007816`，约为其它tasks的`4.5--5.9x`；raw
-`softplus(Dwinner-Dloser)`的action cotangent正比于该secant，最终Writer gradient支配达`58.73x`。USEP唯一把
-每个state的margin除以自身winner/loser action RMS，使action gradient只保留unit secant；它不是按task最终
-gradient norm重权，也不采用会反比放大小secant的MSE分母。下一步先实现公式与fresh identity，再用固定
-task4/34/38 world3直接检验幅度、task34跨view和12/12 native共同承诺；当前没有GPU run。
-canonical实现已让gradient与commitment evaluation复用同一unit-secant helper，CFMG模型参数/forward不变；fresh
-config/checkpoint/eval identity已切换。相关CPU=`143 passed`、完整CPU=`413 passed`，compileall/diff check通过，
-architecture guard 0 hard且没有新module或并行runtime。下一步为clean pushed world3，不得从CFMG checkpoint resume。
+USEP clean`6033330` fixed task4/34/38 world3已经完整裁决：既有outcome/count复现，task38 gradient dominance从
+`58.73x`降到`6.1538x`，cross-task cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual Adam j0使
+12/12 normalized deployed margins下降并写出非零q/v/action response。task34 raw four-view仍只有`2/4`、
+cosine/energy=`-.05217/.33803`，所以USEP依预注册门终局，不held/full24/strict且不得resume。
+
+只读stage localization随后证明task34四组K4从endpoint到content grid均约`.984--.986`一致，carrier A/B/BA和
+`content delta-B A0`也约`.99`一致；冲突位于共同BA经condition-local policy/action Jacobian回传，而非视频
+Program、K聚合或LoRA Value。当前active successor是**USFC**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。它不改模型、loss、rank、memory、
+optimizer或数据，只把raw局部coverage降为diagnostic，actual finite all-task/all-view deployed margin descent仍为
+硬门。fresh identity完成CPU合同后直接从sealed LPCP跑full24 cycle1；nonzero checkpoint立即strict400，失败不做
+gradient solver、PCGrad、scale/rank/seed或其它小扫。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP

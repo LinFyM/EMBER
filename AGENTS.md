@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`
+   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -35,14 +35,20 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。当前active successor是**V6-LPCP CFMG Unit-Secant Endpoint Preference**（USEP），authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。它从sealed LPCP fresh开始，
-完整保留CFMG memory/content grid、rank32、K4与global commitment，只把每个matched state的raw
-`softplus(Dwinner-Dloser)`改为除以该winner/loser action RMS后的unit-secant preference。该pair-local公式不读
-task ID或gradient norm，不改变task/view权重，也不做MSE反比放大。固定task4/34/38 world3将直接检验task38
-支配能否从`58.73x`降至`<=15x`、raw shared能否3/3、task34能否4/4及native能否12/12；当前尚无USEP GPU结果。
-canonical实现与fresh identity已原位完成，相关CPU=`143 passed`、完整CPU=`413 passed`、architecture guard无hard
-violation，且没有增加forward、参数、模块或部署分支。
+长期目标尚未完成。当前active successor是**V6-LPCP CFMG Unit-Secant Finite Commitment**（USFC），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_finite_commitment_design.md`。它从sealed LPCP fresh开始，
+逐项保留USEP的CFMG memory/content grid、rank32、K4、unit-secant objective、Adam与global commitment；唯一把
+raw four-view infinitesimal coverage降为diagnostic，仍以同一个actual finite candidate让全部active task×view
+deployed margins严格下降作为硬门。fresh identity已切换，下一步是CPU合同后直接full24 cycle1；若产生nonzero
+checkpoint立即strict paired400。
+
+USEP clean`6033330` fixed task4/34/38 world3完整exit0：既有outcome/count复现，task38相对次大梯度支配从
+CFMG的`58.73x`降到`6.1538x`，三task pairwise cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual
+Adam `j0`使12/12 normalized deployed margins下降且q/v/action response非零。但task34 raw four-view仍为
+`2/4`、cosine/energy=`-.05217/.33803`，故USEP依预注册门终局且不得resume。后续只读stage localization显示
+task34四组K4的endpoint、temporal、K-set、M2P、content grid与content residual BA均约`.98--.99`一致，raw冲突
+发生在共同BA经condition-local policy/action Jacobian回传，而非video Program或LoRA Value分裂。USFC不能改写
+USEP历史，只fresh检验finite full24/closed-loop是否有效。
 
 最新终局predecessor是**V6-LPCP Content-First Memory Grid**（CFMG）：clean`bb5341e` world5
 full24 cycle1完整exit0，24 tasks/48 paired states/96 rollouts，candidate/reference=`32/32`、gains=`3/3`，6个
@@ -52,8 +58,7 @@ BA cosine/energy=`.982412/.985173`，但full24的11个global candidates最好仅
 跳过。相对CMBG，六task梯度只近似统一放大`1.78--1.92x`，cross-task cosine mean/min仍为
 `.00923/-.20641`，task34 same-task cosine仍`-.0923`，task38相对次大梯度的支配由`54.45x`增至`58.73x`。
 最早失败接口是content-conditioned random Program到幅度平衡、多task可共存的第一次public commitment；因gate
-被拒绝，temporal/set/M2P从未获得下一步学习。CFMG终局，不cycle2、strict、controls或小扫；当前没有active
-successor或GPU run。SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的
+被拒绝，temporal/set/M2P从未获得下一步学习。CFMG终局，不cycle2、strict、controls或小扫。SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的
 历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4

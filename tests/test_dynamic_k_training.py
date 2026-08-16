@@ -101,13 +101,15 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_unit_secant_config_records_shared_mechanism_gate() -> None:
+def test_unit_secant_finite_commitment_config_records_shared_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_preformal"
-    assert config["formal_run"]["status"] == "not_started"
+    assert config["status"] == "active_formal"
+    assert config["formal_run"]["status"] == "ready"
     predecessor = config["formal_run"]["predecessor_evidence"]
-    assert predecessor["task38_to_next_gradient_norm_ratio"] > 58
+    assert predecessor["task38_to_next_gradient_norm_ratio"] < 15
     assert predecessor["equal_selected_credit_pairs_per_active_task"] == 8
+    assert predecessor["task34_raw_four_view_coverage"] == 0.5
+    assert predecessor["finite_deployed_margin_descent_coverage"] == 1.0
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -188,6 +190,10 @@ def test_unit_secant_config_records_shared_mechanism_gate() -> None:
     assert gate["unit_secant_denominator"] == (
         "per_selected_state_detached_winner_loser_action_rms"
     )
+    assert gate["raw_four_view_shared_mean_descent_coverage_role"] == (
+        "diagnostic_only"
+    )
+    assert gate["finite_deployed_all_view_commitment_is_primary"]
     assert gate["task_gradient_norm_or_task_id_reweighting"] is False
     assert gate["mse_inverse_secant_amplification"] is False
     assert gate["task38_to_next_gradient_norm_ratio_maximum"] == 15.0
@@ -203,8 +209,7 @@ def test_unit_secant_config_records_shared_mechanism_gate() -> None:
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
-    with pytest.raises(WriterModelError, match="training is not authorized"):
-        require_reward_mode(config, "formal")
+    require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

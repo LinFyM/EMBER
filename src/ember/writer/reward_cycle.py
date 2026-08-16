@@ -42,6 +42,7 @@ from ember.writer.reward_gradient_update import (
     RewardPreferenceView,
     RewardProbe,
     apply_monotone_reward_step,
+    make_reward_probe,
     probe_after_update,
 )
 
@@ -502,44 +503,6 @@ def _differentiate_task_credit(
     )
 
 
-def _make_probe(
-    task: RewardTask,
-    packed: tuple[Any, ...],
-    state: WriterConditioningState,
-    candidate_lora: Mapping[str, torch.Tensor],
-    candidate: Sequence[RewardTrajectory],
-    labels: Sequence[str],
-    cycle: int,
-    preference_batch: Mapping[str, torch.Tensor],
-    preference_trajectory_ids: torch.Tensor,
-    before_preference_margin: float,
-    preference_views: tuple[RewardPreferenceView, ...],
-) -> RewardProbe:
-    index = next(
-        index
-        for index, label in enumerate(labels)
-        if label in {"candidate", "reference"}
-    )
-    trajectory = candidate[index]
-    return RewardProbe(
-        global_task_id=task.global_task_id,
-        suite=task.suite,
-        conditioning_state=state,
-        condition_video_offsets=packed[3],
-        before_lora={
-            name: value.detach().clone() for name, value in candidate_lora.items()
-        },
-        query={name: value.clone() for name, value in trajectory.observations[0].items()},
-        before_action=trajectory.action_chunks[0].clone(),
-        policy_noise_seed=trajectory.policy_noise_seeds[0],
-        cycle=cycle,
-        preference_batch=preference_batch,
-        preference_trajectory_ids=preference_trajectory_ids,
-        before_preference_margin=before_preference_margin,
-        preference_views=preference_views,
-    )
-
-
 def _task_gradient(
     runtime: RewardRuntime,
     task: RewardTask,
@@ -590,10 +553,11 @@ def _task_gradient(
             gradient_sum,
         )
         if probe is None:
-            probe = _make_probe(
+            probe = make_reward_probe(
+                runtime,
                 task,
-                packed,
                 state,
+                packed[3],
                 candidate_lora,
                 candidate,
                 labels,

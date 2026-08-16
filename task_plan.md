@@ -468,7 +468,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 建立AV-MBC authority：保留MB-SOP/AR-EC全部输入、credit、direction、optimizer state、八heads与rank16；
   唯一把full Adam radius改成first-all-view-monotone backtracking；
 - [x] 原位实现fresh schema与`j=0..10`确定性回退；全量CPU=`404 passed`、compileall与architecture guard 0 hard；
-- [ ] 冻结clean pushed commit；
+- [x] 冻结clean pushed `aa819f2`并完成首次三anchor；三者完整exit0但暴露gradient/inference margin baseline与
+  rollout/batch1 action baseline混比，故只作工程证据、不作科学裁决；
+- [x] 修正为同一个inference evaluator的step0/candidate比较，并让fixed-action前后走同一batch1路径；全量CPU
+  仍为`404 passed`、architecture guard 0 hard；
+- [ ] 冻结修正版clean pushed commit；
 - [ ] 完成task9/15/18三anchor及train/held/reverse/constant/吞吐分析；任一门失败即终局；
 - [ ] 只有三anchor全过才实现distributed active-task acceptance并启动fresh full24/strict400。
 

@@ -17,6 +17,8 @@ from ember.writer.model import WriterConditioningState
 from ember.writer.reward_preference import functional_matched_stratified_occupancy_margin
 
 if TYPE_CHECKING:
+    from ember.reward.protocol import RewardTask
+    from ember.reward.rollout import RewardTrajectory
     from ember.writer.reward_training import RewardRuntime
 
 
@@ -53,6 +55,95 @@ class RewardProbe:
     preference_trajectory_ids: torch.Tensor
     before_preference_margin: float
     preference_views: tuple[RewardPreferenceView, ...]
+
+
+@torch.inference_mode()
+def fixed_action_for_lora(
+    runtime: RewardRuntime,
+    query: Mapping[str, torch.Tensor],
+    lora: Mapping[str, torch.Tensor],
+    *,
+    policy_noise_seed: int,
+) -> torch.Tensor:
+    """Evaluate one retained query through the fixed batch-one action path."""
+
+    try:
+        copy_task_lora_state_(runtime.policy, lora, runtime.lora_contract)
+        generator = torch.Generator(device="cpu").manual_seed(policy_noise_seed)
+        noise = torch.randn(
+            (
+                1,
+                int(runtime.policy.config.chunk_size),
+                int(runtime.policy.config.max_action_dim),
+            ),
+            generator=generator,
+        ).to(runtime.context.device)
+        device_query = {
+            name: value.to(runtime.context.device, non_blocking=True)
+            for name, value in query.items()
+        }
+        with torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ):
+            action = runtime.policy.predict_action_chunk(
+                device_query,
+                noise=noise,
+                num_steps=int(runtime.config["environment"]["num_inference_steps"]),
+            )
+        return action.detach().cpu()
+    finally:
+        copy_task_lora_state_(
+            runtime.policy, runtime.identity_state, runtime.lora_contract
+        )
+
+
+def make_reward_probe(
+    runtime: RewardRuntime,
+    task: RewardTask,
+    conditioning_state: WriterConditioningState,
+    condition_video_offsets: torch.Tensor,
+    candidate_lora: Mapping[str, torch.Tensor],
+    candidate: Sequence[RewardTrajectory],
+    labels: Sequence[str],
+    cycle: int,
+    preference_batch: Mapping[str, torch.Tensor],
+    preference_trajectory_ids: torch.Tensor,
+    before_preference_margin: float,
+    preference_views: tuple[RewardPreferenceView, ...],
+) -> RewardProbe:
+    index = next(
+        index
+        for index, label in enumerate(labels)
+        if label in {"candidate", "reference"}
+    )
+    trajectory = candidate[index]
+    query = {
+        name: value.clone() for name, value in trajectory.observations[0].items()
+    }
+    return RewardProbe(
+        global_task_id=task.global_task_id,
+        suite=task.suite,
+        conditioning_state=conditioning_state,
+        condition_video_offsets=condition_video_offsets,
+        before_lora={
+            name: value.detach().clone() for name, value in candidate_lora.items()
+        },
+        query=query,
+        before_action=fixed_action_for_lora(
+            runtime,
+            query,
+            candidate_lora,
+            policy_noise_seed=trajectory.policy_noise_seeds[0],
+        ),
+        policy_noise_seed=trajectory.policy_noise_seeds[0],
+        cycle=cycle,
+        preference_batch=preference_batch,
+        preference_trajectory_ids=preference_trajectory_ids,
+        before_preference_margin=before_preference_margin,
+        preference_views=preference_views,
+    )
 
 
 def lora_response(
@@ -166,31 +257,14 @@ def probe_after_update(
         )
         after = runtime.writer.decode_output(encoded)
     response = lora_response(probe.before_lora, after)
-    try:
-        copy_task_lora_state_(runtime.policy, after, runtime.lora_contract)
-        generator = torch.Generator(device="cpu").manual_seed(probe.policy_noise_seed)
-        noise = torch.randn(
-            (1, int(runtime.policy.config.chunk_size), int(runtime.policy.config.max_action_dim)),
-            generator=generator,
-        ).to(runtime.context.device)
-        query = {
-            name: value.to(runtime.context.device, non_blocking=True)
-            for name, value in probe.query.items()
-        }
-        with torch.autocast(
-            device_type=runtime.context.device.type,
-            dtype=torch.bfloat16,
-            enabled=runtime.context.device.type == "cuda",
-        ):
-            action = runtime.policy.predict_action_chunk(
-                query,
-                noise=noise,
-                num_steps=int(runtime.config["environment"]["num_inference_steps"]),
-            )
-    finally:
-        copy_task_lora_state_(runtime.policy, runtime.identity_state, runtime.lora_contract)
+    action = fixed_action_for_lora(
+        runtime,
+        probe.query,
+        after,
+        policy_noise_seed=probe.policy_noise_seed,
+    )
     response["fixed_action_response_rms"] = float(
-        (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
+        (action.float() - probe.before_action.float()).square().mean().sqrt()
     )
     if len(preference_rows) != 4:
         raise WriterModelError("backtracking commitment lost accepted view evidence")
@@ -398,14 +472,55 @@ def _baseline_preference_rows(
     return tuple(
         {
             "view_index": int(row["view_index"]),
-            "before_preference_margin": float(row["before_preference_margin"]),
-            "after_preference_margin": float(row["before_preference_margin"]),
+            "before_preference_margin": float(row["after_preference_margin"]),
+            "after_preference_margin": float(row["after_preference_margin"]),
             "preference_margin_delta": 0.0,
-            "after_preference_objective": None,
+            "after_preference_objective": float(row["after_preference_objective"]),
             "preference_descent": False,
+            "gradient_path_before_preference_margin": float(
+                row["before_preference_margin"]
+            ),
+            "gradient_path_to_inference_baseline_margin_delta": float(
+                row["after_preference_margin"] - row["before_preference_margin"]
+            ),
         }
         for row in rows
     )
+
+
+def _rebase_preference_rows(
+    rows: Sequence[Mapping[str, Any]],
+    baseline: Sequence[Mapping[str, Any]],
+) -> tuple[Mapping[str, Any], ...]:
+    if len(rows) != 4 or len(baseline) != 4:
+        raise WriterModelError("monotone backtracking lost four view margins")
+    rebased = []
+    for row, base in zip(rows, baseline, strict=True):
+        if int(row["view_index"]) != int(base["view_index"]):
+            raise WriterModelError("monotone backtracking view order changed")
+        before_margin = float(base["after_preference_margin"])
+        after_margin = float(row["after_preference_margin"])
+        delta = after_margin - before_margin
+        rebased.append(
+            {
+                "view_index": int(row["view_index"]),
+                "before_preference_margin": before_margin,
+                "after_preference_margin": after_margin,
+                "preference_margin_delta": delta,
+                "after_preference_objective": float(
+                    row["after_preference_objective"]
+                ),
+                "preference_descent": delta < 0,
+                "gradient_path_before_preference_margin": float(
+                    base["before_preference_margin"]
+                ),
+                "gradient_path_to_inference_baseline_margin_delta": float(
+                    base["after_preference_margin"]
+                    - base["before_preference_margin"]
+                ),
+            }
+        )
+    return tuple(rebased)
 
 
 def _monotone_backtracking_commitment(
@@ -424,15 +539,23 @@ def _monotone_backtracking_commitment(
     accepted_scale = 0.0
     accepted_index: int | None = None
     accepted_rows: tuple[Mapping[str, Any], ...] = ()
-    last_rows: tuple[Mapping[str, Any], ...] = ()
     trials = []
+    zero_delta = torch.zeros_like(full_delta)
+    _write_parameter_delta(named, layout, before, zero_delta)
+    baseline_rows = tuple(evaluator(0.0))
+    if len(baseline_rows) != 4:
+        raise WriterModelError("monotone backtracking lost four baseline margins")
+    baseline_offsets = [
+        float(row["after_preference_margin"] - row["before_preference_margin"])
+        for row in baseline_rows
+    ]
+    if not all(math.isfinite(value) for value in baseline_offsets):
+        raise WriterModelError("monotone backtracking baseline margin is nonfinite")
     for index in range(max_backtracks + 1):
         scale = 2.0**-index
         trial_delta = full_delta * scale
         _write_parameter_delta(named, layout, before, trial_delta)
-        rows = tuple(evaluator(scale))
-        if len(rows) != 4:
-            raise WriterModelError("monotone backtracking lost four view margins")
+        rows = _rebase_preference_rows(tuple(evaluator(scale)), baseline_rows)
         margin_deltas = [float(row["preference_margin_delta"]) for row in rows]
         if not all(math.isfinite(value) for value in margin_deltas):
             raise WriterModelError("monotone backtracking margin is nonfinite")
@@ -445,7 +568,6 @@ def _monotone_backtracking_commitment(
                 "all_view_preference_descent": accepted,
             }
         )
-        last_rows = rows
         if accepted:
             accepted_scale = scale
             accepted_index = index
@@ -454,7 +576,7 @@ def _monotone_backtracking_commitment(
     if accepted_index is None:
         final_delta = torch.zeros_like(full_delta)
         _write_parameter_delta(named, layout, before, final_delta)
-        accepted_rows = _baseline_preference_rows(last_rows)
+        accepted_rows = _baseline_preference_rows(baseline_rows)
     else:
         final_delta = full_delta * accepted_scale
     final_norm = torch.linalg.vector_norm(final_delta)
@@ -488,6 +610,10 @@ def _monotone_backtracking_commitment(
         "radius_relative_error": radius_error,
         "search_trials": trials,
         "search_trial_count": len(trials),
+        "inference_baseline_preference_margins": [
+            float(row["after_preference_margin"]) for row in baseline_rows
+        ],
+        "gradient_path_to_inference_baseline_margin_deltas": baseline_offsets,
         "search_seconds": time.monotonic() - started,
     }
     return final_delta, accepted_rows, geometry

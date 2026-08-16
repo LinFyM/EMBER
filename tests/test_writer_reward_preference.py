@@ -466,15 +466,15 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
 
     def evaluate(scale: float) -> tuple[dict[str, float | int | bool], ...]:
         evaluated_scales.append(scale)
-        delta = -0.25 if scale <= 0.5 else 0.25
+        after = 1.5 if scale == 0 else 1.25 if scale <= 0.5 else 1.75
         return tuple(
             {
                 "view_index": index,
-                "before_preference_margin": 0.0,
-                "after_preference_margin": delta,
-                "preference_margin_delta": delta,
-                "after_preference_objective": 1.0 + delta,
-                "preference_descent": delta < 0,
+                "before_preference_margin": 1.0,
+                "after_preference_margin": after,
+                "preference_margin_delta": after - 1.0,
+                "after_preference_objective": 2.0 + after,
+                "preference_descent": after < 1.0,
             }
             for index in range(4)
         )
@@ -500,10 +500,19 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         "final_to_negative_raw_gradient_cosine"
     ] == pytest.approx(1.0)
     assert step.commitment_geometry["radius_relative_error"] <= 1e-6
-    assert evaluated_scales == [1.0, 0.5]
+    assert evaluated_scales == [0.0, 1.0, 0.5]
     assert step.commitment_geometry["search_accepted"] is True
     assert step.commitment_geometry["accepted_backtrack_index"] == 1
     assert step.commitment_geometry["accepted_radius_scale"] == 0.5
+    assert step.commitment_geometry[
+        "gradient_path_to_inference_baseline_margin_deltas"
+    ] == [0.5] * 4
+    assert all(
+        row["before_preference_margin"] == 1.5
+        and row["after_preference_margin"] == 1.25
+        and row["preference_margin_delta"] == -0.25
+        for row in step.commitment_preference_rows
+    )
     assert all(row["preference_descent"] for row in step.commitment_preference_rows)
 
     accepted_parameters = head.detach().clone()
@@ -512,13 +521,13 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         torch.tensor([-1.0, 0.0]),
         2,
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
-        lambda _scale: tuple(
+        lambda scale: tuple(
             {
                 "view_index": index,
                 "before_preference_margin": 0.0,
-                "after_preference_margin": 0.25,
-                "preference_margin_delta": 0.25,
-                "after_preference_objective": 1.25,
+                "after_preference_margin": 0.0 if scale == 0 else 0.25,
+                "preference_margin_delta": 0.0 if scale == 0 else 0.25,
+                "after_preference_objective": 1.0 if scale == 0 else 1.25,
                 "preference_descent": False,
             }
             for index in range(4)

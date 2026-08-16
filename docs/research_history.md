@@ -46,7 +46,10 @@ radius与moments。clean `b578d56`三anchor raw coverage均为`4/4`、final cosi
 post margins下降；Adam radius为raw gradient L2的`6333/7988/4294x`。train/held BA coherence、q/v/action、时序和
 core wall均健康，证明方向旋转不是最早问题，full radius已经越过共同局部下降区间。AR-EC未full24/strict。
 当前active AV-MBC只把该upper radius改成固定顺序的all-view monotone backtracking，接受第一个四view全下降
-candidate；不改credit、carrier、rank、video aggregation或direction。
+candidate；不改credit、carrier、rank、video aggregation或direction。其clean `aa819f2`首次三anchor完整exit0，
+但搜索把gradient-enabled before margin与inference-only candidate margin混比，恢复step0后的action probe也混合
+rollout batch与batch1路径，故该轮仅是工程诊断而非科学non-pass。canonical已改为同inference evaluator的exact
+step0 baseline与candidate比较，并统一fixed-action batch1路径，等待fresh三anchor。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

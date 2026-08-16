@@ -67,9 +67,12 @@ q/v/action、reverse/constant与core wall都健康，故不full24/strict，最�
 当前active successor是**AV-MBC**：完整保留MB-SOP/AR-EC matched panel、四video等权、direction、LPCP/DJNFR、
 rank16与八heads，只沿`-g`从Adam upper radius确定性减半，接受第一个四view同panel/noise margin全部下降的candidate。
 不挑最佳scale、不产生多checkpoint。authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`；canonical world1
-实现与fresh schema已完成，CPU=`404 passed`、architecture guard无hard violation。首轮仅授权task9/15/18机制门，
-formal blocked；当前无GPU run或可resume checkpoint。
+`docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。clean `aa819f2`
+三anchor都完整exit0，但训练前gradient CFM margin与candidate inference CFM margin不是同一执行路径，导致小scale
+不收敛到零；恢复step0后fixed-action仍有约`.0021--.0030` RMS，又暴露rollout batch与batch1 probe混比。因此
+`aa819f2`只作工程证据，不能裁决AV-MBC。canonical已只修测量合同：同inference evaluator先测step0再比较candidate，
+fixed-action前后使用相同batch1 query/noise；CPU=`404 passed`、architecture guard无hard violation。首轮仍只授权
+fresh task9/15/18，formal blocked；当前无GPU run或可resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

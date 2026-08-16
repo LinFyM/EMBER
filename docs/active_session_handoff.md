@@ -87,8 +87,12 @@
 - 当前active successor是**AV-MBC**，authority=
   `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。保留AR-EC方向、
   optimizer state与全部科学图，只从Adam upper radius沿`-g`依次检验`1,1/2,...,1/1024`，接受同一panel/noise下
-  四个views全部严格下降的第一个candidate。canonical world1实现与fresh schema已完成，全量CPU=`404 passed`、
-  architecture guard无hard violation；尚未运行GPU，formal blocked；
+  四个views全部严格下降的第一个candidate。clean `aa819f2` task9/15/18均完整exit0并复现固定outcomes/counts，
+  但三者11个scale全拒绝不是有效科学结果：candidate margins相对gradient-enabled baseline计算，而非同一个
+  inference evaluator的step0 baseline；恢复零参数后fixed-action仍分别有`.002624/.002081/.002964` RMS，又证明
+  stored rollout B2/B1 action与batch1重算action混比。该轮只作为工程诊断保留。canonical现已改为先用同一
+  inference evaluator测step0再rebase全部candidate，并让fixed-action前后都走相同batch1路径；CPU仍为
+  `404 passed`、architecture guard无hard violation。等待新的clean pushed commit与fresh三anchor，formal blocked；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

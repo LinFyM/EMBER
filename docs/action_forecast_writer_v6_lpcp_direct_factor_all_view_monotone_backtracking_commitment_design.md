@@ -1,8 +1,11 @@
 # V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment
 
-状态：2026-08-16 active single-variable design authority；canonical world1 mechanism实现、fresh schema、全量CPU
-`404 passed`与architecture guard 0 hard violation已完成，尚未运行GPU。简称`AV-MBC`。本轮从sealed LPCP fresh
-启动，完整保留MB-SOP/AR-EC的video-language carrier、matched successful-occupancy panel、四个
+状态：2026-08-16 active single-variable design authority。clean `aa819f2`首次world1三anchor均完整exit0，但暴露
+baseline measurement contract错误，不能作为科学pass/non-pass：训练前margin来自gradient-enabled CFM路径，candidate
+margin来自inference CFM路径；恢复step0后fixed-action probe又把rollout B2/B1 action与batch1重算action比较。修正版只
+统一这两个测量路径，不改科学变量；全量CPU=`404 passed`、architecture guard 0 hard violation，等待fresh冻结复跑。
+简称`AV-MBC`。本轮从sealed LPCP fresh启动，完整保留MB-SOP/AR-EC的video-language carrier、matched
+successful-occupancy panel、四个
 correct K4 views、八个direct native-factor heads与rank16部署图，只替换raw shared gradient的有限步半径选择。
 
 ## 1. 选择依据与最早失败接口
@@ -46,8 +49,10 @@ d_j = -2^(-j) * r_0 * g / ||g||_2,  j = 0, 1, ..., 10
 ```
 
 每个candidate都从相同`theta_0`写入；复用训练时已经选定的occupancy batch、trajectory IDs、四个conditioning
-states与完全相同的flow times/noises，得到四个post margins。选择**第一个**满足
-`margin_after_i < margin_before_i` for all four views的`j`。不看哪个scale closed-loop更好，不选最低loss，不平均
+states与完全相同的flow times/noises。先以同一个inference-only CFM evaluator在`theta_0`计算四个exact baseline
+margins；所有candidate也只用该evaluator，选择**第一个**满足
+`margin_candidate_i < margin_inference_baseline_i` for all four views的`j`。gradient-enabled forward的原始margin
+只保留为路径差诊断，绝不参与acceptance。不看哪个scale closed-loop更好，不选最低loss，不平均
 多个candidate，也不产生多个checkpoint，所以这是一条确定性optimizer acceptance rule，不是固定scale sweep。
 
 最多10次回退是预注册成本边界：AR-EC的方向导数与full-radius曲率反事实预计转折落在约`1/64--1/256`，
@@ -55,6 +60,8 @@ states与完全相同的flow times/noises，得到四个post margins。选择**�
 若accepted step在native q/v/action或fixed-action response上消失，也按门终局。
 
 回退不增加environment step，不重新运行video backbone，不重选occupancy，只增加冻结policy的CFM margin forwards。
+fixed-action response的step0与post都使用同一retained query、noise、batch1和policy forward；不再把动态rollout
+batch的stored action作为baseline。它只增加一次必要的batch1 policy forward。
 每个trial及其四个margin、wall、accepted index和实际native response都必须记录，后续依据真实耗时决定formal实现是否
 需要等价的batch/kernel优化；不能删减四view acceptance来换吞吐。
 
@@ -64,6 +71,8 @@ states与完全相同的flow times/noises，得到四个post margins。选择**�
 - `reward_gradient_update.py`唯一拥有Adam upper radius、candidate写入、first-acceptable backtracking和最终parameter
   commitment；
 - `reward_cycle.py`只提供已经存在的四view conditioning/panel，并把accepted evidence写入cycle metrics；
+- `aa819f2`三run roots完整保留为工程诊断，禁止resume或据其search rejection裁决科学假设；修复后必须从新的
+  clean pushed commit与fresh roots运行；
 - 首轮只授权world1 task9/15/18机制实现；formal保持blocked。三anchor全过后才把同一acceptance扩展为对每个
   active task×4 views共同成立的distributed full24合同；不能只检查每rank首个probe；
 - fresh incompatible，不加载AR-EC heads或optimizer；AR-EC由Git、三run roots和terminal artifact保存。
@@ -74,10 +83,11 @@ task9/15/18全部满足才允许实现formal full24：
 
 1. outcomes=`2/1,2/0,1/2`，complete=`26/65/44`，selected=`8/16/8`，matched B8与0禁读不变；
 2. raw four-view shared descent coverage=`4/4`，每个dot positive/finite；
-3. search严格按`j=0..10`，candidate都从同一`theta_0`写入，只接受first all-view-monotone candidate；
+3. 先以同一inference evaluator测一次`theta_0`，再严格按`j=0..10`搜索；candidate都从同一`theta_0`写入，只
+   接受first all-view-monotone candidate，并记录gradient-path到inference-baseline的四项offset；
 4. 三任务都在不超过10次回退内accepted，四个margin均严格下降；
 5. Adam moments保留，final到`-g` cosine至少`.999999`，实际radius等于`2^-j r_0`、relative error不超过`1e-6`；
-6. 八head、q/v/action native BA与fixed-action response非零；
+6. 八head、q/v/action native BA与同batch1路径的fixed-action response非零；若恢复step0，二者都必须严格为零；
 7. train four-view BA cosine/energy至少`.40/.55`；validation8 aggregate至少`.30/.48`、6/8 tasks过`.15/.40`，
    raw factor cosine至少`.30`、action cosine至少`.15`、held/train L2至少`.30x`；
 8. reversed BA relative-L2至少`.50`，constant/natural不超过`.005`；

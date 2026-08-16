@@ -641,6 +641,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `.782/.779,.829/.811,.817/.811`，task15/18反而比MB-SOP更coherent；q/v/action、reverse/constant及core wall
     也全健康。这再次证明更漂亮LoRA几何不能替代functional/closed-loop。AV-MBC下一步只用固定顺序减半并接受
     第一个四view全下降candidate；它是单一optimizer acceptance rule，不是按结果挑固定scale。
+96. AV-MBC clean`aa819f2`三anchor虽均exit0，但不能把11次拒绝解释成“共同下降区间不存在”：候选使用
+    inference-only CFM evaluator，名义before却来自gradient-enabled evaluator；到`1/1024`时margin delta仍停在
+    `1e-4`量级而不趋零。恢复step0后native BA严格为零，fixed-action却仍有`.002624/.002081/.002964` RMS，进一步
+    证明它把动态rollout B2/B1 action与batch1 probe混比。最小正确修复是同inference evaluator先测step0并rebase
+    所有candidate，同时固定action前后走同一batch1路径；这不是改变AV-MBC科学变量或增加防御性检查。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -199,6 +199,12 @@ def _attach_writer_cache(
         if writer_cache_root is not None
         else output_dir.resolve() / "writer_lora_cache"
     )
+    writer_asset = adapter["writer_asset"]
+    lora_storage = (
+        writer_asset["generated_lora_storage"]
+        if adapter["kind"] == DYNAMIC_K_WRITER_KIND
+        else writer_asset["writer_state"]["template_lora_storage"]
+    )
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
         contract,
         root=root,
@@ -206,9 +212,7 @@ def _attach_writer_cache(
         generation_batch_size=writer_generation_batch_size,
         lora_parameter_count=lora.parameter_count,
         lora_tensor_count=lora.state_tensor_count,
-        lora_storage_per_entry=adapter["writer_asset"]["writer_state"][
-            "template_lora_storage"
-        ],
+        lora_storage_per_entry=lora_storage,
     )
 
 

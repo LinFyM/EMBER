@@ -813,6 +813,40 @@ def test_evaluator_derives_the_reward_rank32_lora_authority() -> None:
     )
 
 
+def test_reward_rank32_cache_storage_is_derived_from_native_template_dtypes() -> None:
+    from ember.pi05_lora import derive_pi05_lora_rank
+    from ember.writer.evaluation import _generated_lora_storage_record
+
+    carrier = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
+    public = derive_pi05_lora_rank(carrier, rank=32)
+    storage = _generated_lora_storage_record(
+        {
+            "tensor_count": 76,
+            "parameter_count": 1_287_168,
+            "tensor_bytes": 2_641_920,
+            "dtype_tensor_counts": {"BF16": 72, "F32": 4},
+            "dtype_parameter_counts": {"BF16": 1_253_376, "F32": 33_792},
+            "dtype_by_name": {
+                f"{target.name}.lora_{factor}.default.weight": (
+                    "F32"
+                    if target.name in {"model.action_in_proj", "model.action_out_proj"}
+                    else "BF16"
+                )
+                for target in carrier.targets
+                for factor in ("A", "B")
+            },
+        },
+        public,
+    )
+    assert storage["parameter_count"] == 2_574_336
+    assert storage["tensor_bytes"] == 5_283_840
+    assert storage["dtype_tensor_counts"] == {"BF16": 72, "F32": 4}
+    assert storage["dtype_parameter_counts"] == {
+        "BF16": 2_506_752,
+        "F32": 67_584,
+    }
+
+
 def test_v6_layerwise_probe_generation_profile_is_sealed() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,

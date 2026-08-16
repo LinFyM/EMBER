@@ -152,6 +152,33 @@ def _writer_state_record(path: Path, lora: Any) -> dict[str, Any]:
     }
 
 
+def _generated_lora_storage_record(
+    template_storage: Mapping[str, Any],
+    lora: Any,
+) -> dict[str, Any]:
+    """Describe a rank-derived public LoRA using the native template dtypes."""
+
+    template_parameters = int(template_storage["parameter_count"])
+    if (
+        template_parameters <= 0
+        or lora.parameter_count % template_parameters
+        or int(template_storage["tensor_count"]) != lora.state_tensor_count
+    ):
+        raise WriterModelError("generated LoRA storage topology changed")
+    rank_multiplier = lora.parameter_count // template_parameters
+    return {
+        "tensor_count": int(template_storage["tensor_count"]),
+        "parameter_count": int(lora.parameter_count),
+        "tensor_bytes": int(template_storage["tensor_bytes"]) * rank_multiplier,
+        "dtype_tensor_counts": dict(template_storage["dtype_tensor_counts"]),
+        "dtype_parameter_counts": {
+            str(name): int(value) * rank_multiplier
+            for name, value in template_storage["dtype_parameter_counts"].items()
+        },
+        "dtype_by_name": dict(template_storage["dtype_by_name"]),
+    }
+
+
 def _writer_asset(
     *,
     config: Mapping[str, Any],
@@ -546,6 +573,10 @@ def inspect_dynamic_k_writer_evaluation(
     lora = load_pi05_lora_contract(lora_path)
     if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND:
         lora = derive_pi05_lora_rank(lora, rank=32)
+    generated_lora_storage = _generated_lora_storage_record(
+        writer_asset["writer_state"]["template_lora_storage"],
+        lora,
+    )
     reference = (
         f"{AS_WRITER_CONFIG_SCHEMA}:{DYNAMIC_K_CHECKPOINT_KIND}:"
         f"m{writer_asset['method_macro']}:"
@@ -572,6 +603,7 @@ def inspect_dynamic_k_writer_evaluation(
             "reference": reference,
             "architecture": str(config["writer"]["architecture"]),
             "generated_lora_tensor_count": lora.state_tensor_count,
+            "generated_lora_storage": generated_lora_storage,
             **writer_asset,
         },
         "evaluation_authority": {

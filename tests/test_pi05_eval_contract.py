@@ -492,6 +492,7 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         "BF16": 1_253_376,
         "F32": 33_792,
     }
+    shared_writer["writer_asset"]["generated_lora_storage"] = copy.deepcopy(storage)
     shared_writer["evaluation_authority"] = {
         "formal_status": "sealed",
         "throughput_policy": (

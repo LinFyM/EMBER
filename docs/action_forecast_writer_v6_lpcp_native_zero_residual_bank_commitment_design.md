@@ -1,6 +1,6 @@
 # V6-LPCP Native-Zero Residual Bank Commitment
 
-状态：2026-08-16 active single-variable design authority，简称`NZRB-C`。本轮从sealed LPCP fresh启动，完整保留
+状态：2026-08-16 terminal scientific non-pass，简称`NZRB-C`。本轮从sealed LPCP fresh启动，完整保留
 LPCP视频carrier、MB-SOP matched successful-occupancy credit、四个disjoint correct K4 views、PAV native acceptance
 与ALB-NV的fixed-A/B-only reward参数化。唯一变量是：不再把`delta-B`加到非零`B0`上，而是在同一套public LoRA中
 追加一个从native zero开始的rank16 residual bank。
@@ -158,4 +158,35 @@ assembly在同一次decode中复制A0并把四head B rows放入第二bank，不�
 fresh reward config/checkpoint/completion/evaluator identity已切换到NZRB-C；historical rank16 base Writer仍通过显式
 deployment rank使用同一canonical builder。定向CPU=`50 passed`，完整CPU在`.env.local` LIBERO assets合同下=
 `405 passed`，compileall与diff check通过；architecture guard无hard violation，active source diff净增长165行，
-无新module/entrypoint。以上只证明rank32 factor、fresh边界与CPU机制正确，尚无GPU anchor结果。
+无新module/entrypoint。GPU使用clean frozen `d4fc92e`完成固定三anchor；结果与终局见下节。
+
+## 11. 终局结果
+
+task9/15/18训练及held8分析全部exit0。首次`d3c4d5d`启动在任何metrics/parameter update前因identity restore仍为
+rank16而工程失败；`d4fc92e`只令identity走同一rank32 public assembly，定向50与全量405项CPU测试后fresh重跑，
+没有改变科学变量。
+
+稳定结构审计在三条run上都得到五项精确0：first carrier bank未改、second-B step0为zero、step0 effective BA等于
+LPCP、accepted residual的部署增量等于`delta-B A0`、residual state无误。初版分析曾在BF16 public baseline之外
+以FP32重新decode carrier，再把两次precision path相减，产生约`1e-3`假误差；该counterfactual只污染旧JSON的三项
+结构gate，不影响held/action/reward/temporal结果，权威纠正文件为每条run的
+`nzrb_stable_rank_bank_contract.json`。
+
+- task9实际outcome=`1/0`、complete25，而非预注册`2/1`、26；continuous four-view gradient cosine/energy=
+  `.28603/.44822`，j0--10仍无all-view native candidate并exact no-op。native-zero origin没有消除空集；rank32
+  matmul shape在FP64 BA精确等价下仍通过正常BF16 kernel差异改变了敏感closed-loop outcome；不为逐位复现关闭
+  高效kernel或扩dtype；
+- task15在j7接受，train BA=`.86118/.86559`；held8 BA=`.95235/.93984`、raw-B=`.95322/.94073`、action=
+  `.53636/.57455`、8/8、held/train=`.56251x`。相对ALB的held BA `.37488/.51329`、raw-B `.10058/.32327`和5/8
+  是实质改善，但可接受步从j5缩至j7；
+- task18在j3接受，train BA=`.79465/.81031`；held8 BA=`.93418/.92186`、raw-B=`.93272/.92047`、action=
+  `.56719/.63022`、8/8、held/train=`.93175x`。相对ALB的BA/raw-B更一致，但可接受步由j0缩至j3且action
+  coherence略降；
+- 三anchor cycle合计`1111.763s`，相对ALB `953.773s`为`1.16565x`，超过`1.15x`门；峰值allocated/reserved=
+  `36.504/40.771 GB`，无OOM/nonfinite/禁读。
+
+纠正结构counterfactual后task15/18通过、task9失败，实际为2/3 anchors；吞吐门也失败。因此本架构终局，不启动
+full24、strict400、cycle2、controls或bank-width/rank/scale/side小扫。正结果是native-zero residual bank确实修复了
+**已接受更新**的native可见性与跨video factor/BA一致性；负结果把最早缺口推进到**reward-useful Value/acceptance
+能否产生跨正确视频和task都存在的finite policy-effective step**。不再继续改变factor native origin。精确终局artifact=
+`runs/outputs/pi05_v6_lpcp_native_zero_residual_bank_commitment_task9_mechanism_b8_d4fc92e_gpu02p1_20260816/nzrb_terminal_adjudication.json`。

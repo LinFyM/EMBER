@@ -123,12 +123,17 @@
   continuous B-only共同reward方向仍不能在不同task上稳定变为native finite-step：可能exact no-op，也可能在小j
   下先丢raw-B/held task coverage。当前没有active GPU run或可resume checkpoint；下一输出设计必须让残差从
   native-zero坐标可见，同时完整保留LPCP rank16 carrier，不能压缩baseline或回到parameter ray；
-- 当前active successor是**NZRB-C**，authority=
+- 最新终局successor是**NZRB-C**，authority=
   `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。唯一把ALB public factor表示改为
   rank32单adapter：`A=[A0;A0]`、`B=[B0,delta-B]`，令数学上相同的`delta-B A0`从zero-B bank进入native BA；
-  `alpha=rank=32`保持scale1，原rank16 carrier逐元素保留，四head 860,160 trainable与上游全部不变。先只实现
-  fixed task9/15/18训练/机制接口，3/3后才启动formal/full24；canonical实现已完成，定向CPU=`50 passed`、完整
-  CPU=`405 passed`、architecture guard 0 hard，尚无GPU run；
+  `alpha=rank=32`保持scale1，原rank16 carrier逐元素保留，四head 860,160 trainable与上游全部不变。clean
+  `d4fc92e` fixed task9/15/18完整exit0；稳定结构五项误差均精确0。task15/18纠正后全门通过，held BA=
+  `.95235/.93984,.93418/.92186`、raw-B=`.95322/.94073,.93272/.92047`且均8/8，证明zero bank修复accepted
+  update的native可见性与跨video factor coherence；task9 outcome由预定`2/1,26`漂为`1/0,25`，j0--10仍无
+  candidate并exact no-op。三anchor wall/ALB=`1.16565x>1.15x`，故2/3与吞吐两门失败，不full24/strict/resume或
+  bank/rank/scale小扫。初版约`1e-3`结构报警是跨autocast重算carrier的analysis错误，三条
+  `nzrb_stable_rank_bank_contract.json`已纠正；当前没有active successor、GPU run或可resume checkpoint。下一
+  变量必须针对reward-useful Value/acceptance的finite跨video/task policy step，不再改factor native origin；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

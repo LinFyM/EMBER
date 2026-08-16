@@ -525,8 +525,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `A=[A0;A0], B=[B0,delta-B]`，alpha/rank=1；
 - [x] 原位实现rank32训练/机制路径、fresh schema/config与CPU合同；第一rank16 bank逐元素保留LPCP，second-B
   step0精确zero；定向CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；
-- [ ] clean push后并行运行固定task9/15/18并完整分析native acceptance、FP64 BA等价、held8、temporal、wall与显存；
-- [ ] 3/3后才实现distributed/evaluator/full24；任一失败终局，不改变reserved bank宽度、side、ray、scale或dtype。
+- [x] clean `d4fc92e`并行完成固定task9/15/18、held8、temporal、稳定FP64 bank合同、wall与显存分析；task15/18
+  纠正后过门，task9 outcome漂移且11步no-op；总wall/ALB=`1.16565x`；
+- [x] 按2/3与吞吐门失败终局，不实现distributed evaluator/full24，不改变reserved bank宽度、side、ray、scale或
+  dtype；下一轮讨论前不建立active successor。
 
 ## Non-negotiable boundaries
 
@@ -544,8 +546,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC、MMCD、PAV-BC与ALB-NV均已终局；当前active NZRB-C只改变residual的native
-origin，尚无GPU run或可resume checkpoint。不能同时改memory、video carrier、gradient ray、LR、matched panel
+不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV与NZRB-C均已终局；当前无active successor、GPU run或
+可resume checkpoint。NZRB证明native-zero bank能修复accepted update的held factor/BA coherence，但task9仍无
+finite all-view step；下一变量不得继续改factor origin，也不能同时改memory、video carrier、LR、matched panel
 或trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强

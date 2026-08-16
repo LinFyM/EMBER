@@ -673,6 +673,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      但向非零condition-specific B0追加小残差仍会在不同task上表现为exact空集或小步下raw-B/coverage崩塌。
      下一输出变量必须让小共同方向从native-zero坐标可见，同时完整保留LPCP rank16 support；不能据此回退carrier、
      混A/B side、压缩rank或继续扫ray/scale。
+102. NZRB-C以一套rank32 adapter无压缩保留LPCP first bank，并把同一`delta-B A0`放入second-B native-zero bank。
+     clean `d4fc92e`三anchor的stable contract五项误差均精确0；初版约`1e-3`结构报警来自BF16 public baseline与
+     FP32重算carrier相减，未污染held/action证据。task15/18纠正后全门通过：held BA从ALB的
+     `.375/.513,.774/.785`提高到`.952/.940,.934/.922`，raw-B提高到`.953/.941,.933/.920`且均8/8，证明
+     native-zero origin真正解决了accepted residual的可见性与跨video factor coherence。task9却从预定
+     `2/1,26 chunks`漂为`1/0,25`，continuous gradient仅`.286/.448`且j0--10仍全部拒绝；rank32虽FP64 BA等价，
+     正常BF16 compute-shape差异已足以改变该敏感closed-loop。总wall/ALB=`1.16565x>1.15x`。故NZRB为2/3且
+     吞吐门失败，不full24/strict。下一接口是reward-useful Value/acceptance能否给出跨correct videos/tasks共同
+     存在的finite policy step，不再继续改变factor native origin；memory、rank8、dynamic-K与LoRA生成未被否定。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

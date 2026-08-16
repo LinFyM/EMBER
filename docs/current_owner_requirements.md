@@ -387,6 +387,15 @@ authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_sta
 精确authority见
 `docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
 
+后续MB-SOP、AR-EC、AV-MBC、MMCD与PAV-BC依次排除了batch-shape混杂、单纯半径过大、raw common direction与
+Adam-preconditioned parameter ray；ALB-NV固定A后证明线性`delta-B A0`能救活部分任务，但向非零B0追加小residual
+仍不稳定。NZRB-C进一步用一套rank32 adapter完整保留LPCP first bank，并让second-B从native zero写同一residual。
+clean `d4fc92e`的task15/18 held factor/BA coherence与8/8 coverage显著改善，证明该LoRA写出机制有价值；task9仍
+j0--10无finite all-view step并因rank32正常BF16 compute-shape差异改变固定outcome，总wall也略超门。NZRB因此
+2/3终局且不full24。当前没有active successor；下一设计必须针对reward-useful Value/acceptance如何形成跨正确
+视频和task都有效的finite policy step，不能再沿factor origin、bank宽度、rank或scale小扫。memory token、rank8、
+dynamic-K/few-shot仍是候选方法，不是强制形式，也没有被该负结果否定。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

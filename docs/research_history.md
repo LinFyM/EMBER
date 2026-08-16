@@ -65,6 +65,15 @@ parameter rays均不能形成跨task稳定native commitment。ALB-NV clean `0899
 coherence失败；task18从no-op变成j0并以held BA `.774/.785`、8/8、held/train`1.030x`全门通过。故fixed-A
 线性化确实消除了部分gauge/cross-term问题，却未使向非零B0追加的小residual跨task稳定native-safe；未启动
 full24/strict。
+
+NZRB-C clean `d4fc92e`随后只把ALB residual移入同一rank32 adapter的native-zero second-B bank，first rank16
+LPCP carrier不压缩。三anchor stable rank-bank合同五项误差均精确0；初版结构gate约`1e-3`失败是跨autocast
+重算carrier的analysis counterfactual错误。task15/18 held BA分别达到`.952/.940`与`.934/.922`，raw-B=
+`.953/.941,.933/.920`且均8/8，说明zero origin修复accepted update的native/held coherence。task9仍无任何
+all-view candidate并exact no-op，且rank32正常BF16 compute shape令固定outcome从`2/1,26`漂为`1/0,25`；三anchor
+wall/ALB=`1.16565x>1.15x`。纠正后2/3 anchors与吞吐门失败，故未启动full24/strict。该轮否定继续改变factor
+origin，不否定memory、rank8、few-shot或生成LoRA；最早缺口转为reward-useful Value/acceptance的finite跨video/task
+policy step。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

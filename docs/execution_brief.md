@@ -101,12 +101,16 @@ held/train`1.030x`。因此fixed-A线性化有效但不稳定，终局不full24/
 GPU run或可resume checkpoint；下一变量必须使共同Value从native-zero residual坐标写入且完整保留LPCP rank16
 support，不能压缩baseline、重新混合A/B或继续parameter-ray路线。
 
-当前active是**NZRB-C**：不改ALB continuous方向，只把一套public LoRA写成rank32
+最新终局是**NZRB-C**：不改ALB continuous方向，只把一套public LoRA写成rank32
 `A=[A0;A0], B=[B0,delta-B]`。第二B bank从native zero开始，第一rank16 bank逐元素保留LPCP；alpha/rank仍为1，
 四heads与trainable仍860,160。它是“同一`delta-B A0`、不同native origin”的严格反事实，不是两套LoRA、
-compression或capacity sweep。先完成训练/机制接口并只跑固定task9/15/18，三项全过才实现formal evaluator/full24。
-authority=`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。canonical实现已完成：定向
-CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；下一步是clean commit后的三anchor GPU门。
+compression或capacity sweep。authority=
+`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。clean `d4fc92e`三anchor完整：稳定
+结构五项精确0；task15/18 held BA=`.952/.940,.934/.922`、raw-B=`.953/.941,.933/.920`且均8/8，纠正后通过；
+task9 paired outcome漂为`1/0,25`且11步仍no-op。总wall/ALB=`1.16565x>1.15x`，所以2/3门与吞吐门失败，终局
+不full24/strict/resume。zero bank解决accepted update的native/held coherence，但没有解决reward方向是否存在
+all-view finite policy step；当前无active successor/GPU/checkpoint，不再改factor origin。初版结构假报警由稳定
+rank-bank artifact纠正。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

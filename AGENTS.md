@@ -246,13 +246,20 @@ held/train=`1.030x`。所以fixed-A删除gauge/cross term确有价值，但向co
 GPU run或可resume checkpoint；下一变量必须让小的共同reward方向从native-zero坐标进入effective BA且完整保留
 LPCP rank16 carrier，不能压缩baseline或回到parameter-ray sweep。
 
-当前active successor是**V6-LPCP Native-Zero Residual Bank Commitment**（NZRB-C），authority=
+最新终局successor是**V6-LPCP Native-Zero Residual Bank Commitment**（NZRB-C），authority=
 `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。它保留ALB的上游、四B heads、
 reward、optimizer与continuous新增`delta-B A0`，唯一把public LoRA从rank16 additive `B0+delta-B`改为一套rank32
 state：`A=[A0;A0]`、`B=[B0,delta-B]`，其中第二B bank从native zero开始。`alpha=rank=32`故scale仍为1；原LPCP
-rank16逐元素保留，无compression、SVD、第二adapter或新增trainable。先只实现训练/机制接口并跑同一task9/15/18；
-canonical实现已原位完成，定向CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；先只跑同一
-task9/15/18，三项全过后才启动formal/full24。
+rank16逐元素保留，无compression、SVD、第二adapter或新增trainable。clean `d4fc92e`固定task9/15/18训练与完整
+held8分析均exit0；稳定结构审计证明carrier、second-B step0、base BA、连续`delta-B A0`等价与residual state五项
+误差均精确0。task15/18纠正后全门通过：held BA分别`.95235/.93984`与`.93418/.92186`，raw-B分别
+`.95322/.94073`与`.93272/.92047`，均8/8 held tasks；说明native-zero bank真正修复了ALB的小残差可见性与
+跨video factor coherence。task9仍在j0--10无all-view candidate并exact no-op，且rank32计算shape虽FP64 BA等价，
+paired outcome由预定`2/1,26 chunks`漂为`1/0,25 chunks`。三anchor合计wall/ALB=`1.16565x>1.15x`；故2/3门与
+吞吐门失败，NZRB-C不full24/strict/resume或bank/rank/scale小扫。当前没有active successor、GPU run或可resume
+checkpoint；下一变量不能继续改factor native origin，必须针对reward-useful Value/acceptance如何形成跨video/task
+都有效的finite policy step。初次analysis的约`1e-3`结构报警来自跨autocast重算carrier，已由每anchor的
+`nzrb_stable_rank_bank_contract.json`纠正，不是模型结构失败。
 
 ## 4. Long-term objective and decision rule
 

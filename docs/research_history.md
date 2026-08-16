@@ -7,7 +7,8 @@
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新完成的CAPG在strict前终局：它把固定三
 task的same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
-当前active CMBG只把这些post-backbone latents换成真实prefix内逐层更新的capacity-matched memory，尚未实现。
+当前active CMBG只把这些post-backbone latents换成真实prefix内逐层更新的capacity-matched memory；canonical实现
+与真实K4 CUDA机制门已通过，等待固定world3，尚无科学结果。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

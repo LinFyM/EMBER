@@ -387,14 +387,14 @@ def test_cached_candidate_recompiles_query_only_without_another_backbone() -> No
     writer, _ = _writer_model()
     inputs = _inputs()
     calls = 0
-    original = writer.base_writer.encode_video_evidence
+    original = writer.backbone_memory_encoder.forward
 
     def counted(*args, **kwargs):
         nonlocal calls
         calls += 1
         return original(*args, **kwargs)
 
-    writer.base_writer.encode_video_evidence = counted
+    writer.backbone_memory_encoder.forward = counted
     with torch.no_grad():
         writer.query_delta.weight.normal_(std=1.0)
         state = writer.encode_conditioning_state(*inputs, policy=torch.nn.Identity())

@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_capacity_matched_action_probe_grid_v1",
-  "status": "mechanism_ready",
+  "schema_version": "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_v1",
+  "status": "world3_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_capacity_matched_action_probe_grid"
+    "candidate_arm": "frozen_v6_lpcp_plus_capacity_matched_backbone_memory_grid"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
@@ -75,7 +75,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "capacity_matched_action_probe_grid_3008384_parameters",
+    "trainable": "capacity_matched_backbone_memory_grid_2828928_parameters",
     "matched_action_batch_size": 8,
     "endpoint_action_batch_size": 8,
     "optimizer": {
@@ -157,14 +157,14 @@
       "step0_fp64_effective_ba_relative_l2_maximum": 1e-12,
       "carrier_first_bank_tensors_unchanged": true,
       "residual_second_b_step0_zero": true,
-      "trainable_parameter_count": 3008384,
+      "trainable_parameter_count": 2828928,
       "capacity_grid_shape": [18, 37, 1024],
       "native_b_payload_values": 680448,
       "unused_payload_values": 1536,
       "single_joint_backbone_forward": true,
       "step0_native_payload_gate_exact_zero": true,
       "first_step_payload_gate_gradient_nonzero": true,
-      "post_gate_step_context_temporal_set_m2p_gradients_nonzero": true,
+      "post_gate_step_memory_temporal_set_m2p_gradients_nonzero": true,
       "exact_paired_rollout_initial_observation": true,
       "complete_occupancy_chunks_must_match_fixed_anchor_counts": true,
       "reference_and_candidate_action_query_batch_sequences_must_match": true,

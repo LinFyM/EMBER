@@ -99,7 +99,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "mechanism_ready"
+    assert config["status"] == "world3_ready"
     assert config["formal_run"]["status"] == (
         "blocked_until_world3_shared_anchor_mechanism_gate_passes"
     )
@@ -117,7 +117,7 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     }
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "capacity_matched_action_probe_grid_3008384_parameters"
+        "capacity_matched_backbone_memory_grid_2828928_parameters"
     )
     assert config["objective"]["kind"] == (
         "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
@@ -168,13 +168,13 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["residual_second_b_step0_zero"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
-    assert gate["trainable_parameter_count"] == 3_008_384
+    assert gate["trainable_parameter_count"] == 2_828_928
     assert gate["capacity_grid_shape"] == [18, 37, 1024]
     assert gate["native_b_payload_values"] == 680_448
     assert gate["unused_payload_values"] == 1_536
     assert gate["step0_native_payload_gate_exact_zero"]
     assert gate["first_step_payload_gate_gradient_nonzero"]
-    assert gate["post_gate_step_context_temporal_set_m2p_gradients_nonzero"]
+    assert gate["post_gate_step_memory_temporal_set_m2p_gradients_nonzero"]
     assert gate["first_update_all_four_native_b_families_nonzero"]
     assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
     assert gate["backtrack_zero_is_exact_adam_candidate"]

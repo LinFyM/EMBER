@@ -1,4 +1,4 @@
-"""Capacity-matched Action-probe grid for native-zero LoRA-B residuals."""
+"""Capacity-matched backbone-memory grid for native-zero LoRA-B residuals."""
 
 from __future__ import annotations
 
@@ -12,41 +12,6 @@ from ember.writer.temporal import CausalProcedureEncoder, RMSNorm
 
 
 NATIVE_B_FAMILIES = ("q_b", "v_b", "action_in_b", "action_out_b")
-
-
-class _LayerContextReadout(torch.nn.Module):
-    """Read 37 native-width parameter latents from each Action Expert layer."""
-
-    LAYERS = 18
-    ACTION_TOKENS = 50
-    PAYLOAD_TOKENS = 37
-    WIDTH = 1024
-    ROUTE_WIDTH = 128
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.norm = RMSNorm(self.WIDTH)
-        self.key = torch.nn.Linear(self.WIDTH, self.ROUTE_WIDTH, bias=False)
-        queries = torch.empty(
-            self.LAYERS, self.PAYLOAD_TOKENS, self.ROUTE_WIDTH
-        )
-        torch.nn.init.normal_(queries, mean=0.0, std=0.02)
-        self.queries = torch.nn.Parameter(queries)
-        self.payload_gate = torch.nn.Parameter(
-            torch.zeros(self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
-        )
-
-    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
-        expected = (self.LAYERS, self.ACTION_TOKENS, self.WIDTH)
-        if hidden.ndim != 4 or hidden.shape[1:] != expected:
-            raise WriterModelError("Action-probe parameter context changed shape")
-        value = hidden
-        key = self.key(self.norm(hidden))
-        logits = torch.einsum("flar,lmr->flma", key, self.queries)
-        logits = logits * (self.ROUTE_WIDTH**-0.5)
-        weights = torch.softmax(logits.to(torch.float32), dim=-1).to(value.dtype)
-        context = torch.einsum("flma,flae->flme", weights, value)
-        return context * self.payload_gate
 
 
 class _CausalGridReducer(torch.nn.Module):
@@ -172,7 +137,7 @@ class _VideoSetMixer(torch.nn.Module):
             or value.shape[-1] != self.WIDTH
             or value.shape[1] not in range(1, 5)
         ):
-            raise WriterModelError("invalid CAPG video set")
+            raise WriterModelError("invalid CMBG video set")
         normalized = self.norm(value)
         query = self.query(normalized)
         key = self.key(normalized)
@@ -184,7 +149,7 @@ class _VideoSetMixer(torch.nn.Module):
 
 
 class _ParameterGridBranch(torch.nn.Module):
-    """Context readout, directed video pooling, set fusion, and two-axis M2P."""
+    """Zero-gated memory, directed video pooling, set fusion, and M2P."""
 
     LAYERS = 18
     PAYLOAD_TOKENS = 37
@@ -192,7 +157,12 @@ class _ParameterGridBranch(torch.nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.context = _LayerContextReadout()
+        memory = torch.empty(self.PAYLOAD_TOKENS, self.WIDTH)
+        torch.nn.init.normal_(memory, mean=0.0, std=self.WIDTH**-0.5)
+        self.memory_tokens = torch.nn.Parameter(memory)
+        self.payload_gate = torch.nn.Parameter(
+            torch.zeros(self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
+        )
         self.temporal = _CausalGridReducer()
         self.video_set = _VideoSetMixer()
         self.layer_axis = _PayloadAxisMixer(self.LAYERS)
@@ -201,7 +171,7 @@ class _ParameterGridBranch(torch.nn.Module):
     def _aggregate_condition(self, videos: torch.Tensor) -> torch.Tensor:
         shots = videos.shape[0]
         if shots not in range(1, 5):
-            raise WriterModelError("CAPG supports one to four videos")
+            raise WriterModelError("CMBG supports one to four videos")
         cells = videos.permute(1, 2, 0, 3).reshape(
             self.LAYERS * self.PAYLOAD_TOKENS, shots, self.WIDTH
         )
@@ -211,12 +181,15 @@ class _ParameterGridBranch(torch.nn.Module):
 
     def forward(
         self,
-        hidden: torch.Tensor,
+        layer_memory: torch.Tensor,
         frame_indices: torch.Tensor,
         video_bounds: tuple[int, ...],
         condition_bounds: tuple[int, ...],
     ) -> torch.Tensor:
-        frame_grid = self.context(hidden)
+        expected = (self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
+        if layer_memory.ndim != 4 or layer_memory.shape[1:] != expected:
+            raise WriterModelError("backbone-memory parameter grid changed shape")
+        frame_grid = layer_memory * self.payload_gate
         video_grid = self.temporal(frame_grid, frame_indices, video_bounds)
         if (
             len(condition_bounds) < 2
@@ -229,7 +202,7 @@ class _ParameterGridBranch(torch.nn.Module):
                 )
             )
         ):
-            raise WriterModelError("invalid CAPG condition offsets")
+            raise WriterModelError("invalid CMBG condition offsets")
         shared = torch.stack(
             [
                 self._aggregate_condition(video_grid[left:right])
@@ -252,8 +225,8 @@ class _ParameterGridBranch(torch.nn.Module):
         ).reshape(batch, self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
 
 
-class CapacityMatchedActionProbeGrid(torch.nn.Module):
-    """Emit one context-conditioned native-zero B residual bank."""
+class CapacityMatchedBackboneMemoryGrid(torch.nn.Module):
+    """Emit one backbone-conditioned native-zero B residual bank."""
 
     LAYERS = 18
     PAYLOAD_TOKENS = 37

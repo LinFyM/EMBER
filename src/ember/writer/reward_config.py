@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP capacity-matched Action-probe grid."""
+"""Authority for the V6-LPCP capacity-matched backbone-memory grid."""
 
 from __future__ import annotations
 
@@ -10,18 +10,18 @@ from ember.writer.as_config import REPO_ROOT, load_writer_config
 from ember.writer.errors import WriterModelError
 
 
-REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_capacity_matched_action_probe_grid_v1"
+REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_v1"
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_capacity_matched_action_probe_grid_launch_v1"
+    "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_capacity_matched_action_probe_grid_v1.json"
+    "configs/pi05_writer_v6_lpcp_capacity_matched_backbone_memory_grid_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": ("frozen_v6_lpcp_plus_capacity_matched_action_probe_grid"),
+    "candidate_arm": ("frozen_v6_lpcp_plus_capacity_matched_backbone_memory_grid"),
 }
 _DEPLOYMENT_CONTRACT = {
     "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
@@ -144,7 +144,7 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                 optimization,
                 {
                     "trainable": (
-                        "capacity_matched_action_probe_grid_3008384_parameters"
+                        "capacity_matched_backbone_memory_grid_2828928_parameters"
                     ),
                     "matched_action_batch_size": 8,
                     "endpoint_action_batch_size": 8,

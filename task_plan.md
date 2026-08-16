@@ -626,8 +626,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   global gate，只把post-backbone 37-query latents换成真实prefix内逐层更新的37个one-way memory tokens；
 - [x] 冻结CMBG authority：37由rank16 B-only payload精确推导，Action不能看memory，memory能看真实
   image/language/Action/memory；不恢复旧8-token Dynamic-K整条路线；
-- [ ] 原位实现single joint-loop memory，退休CAPG post-backbone context owner，并通过carrier identity、exact-zero、
-  gate-open、时序/K-set、信息墙、one-forward和完整CPU合同；
+- [x] 原位实现single joint-loop memory并退休CAPG hook/context owner；完整CPU=`409 passed`、architecture guard
+  无hard violation。真实task9 K4/112-frame CUDA门得到`[112,18,37,1024]`memory，step0 grid exact zero、gate
+  gradient非零，gate-open后memory/temporal/K-set/layer-token M2P全部非零，policy零gradient，peak reserved=
+  `21,794 MiB`；
 - [ ] clean pushed/frozen后固定world3 task9/15/18运行同一preformal，必须达到raw shared 3/3与native 12/12；
 - [ ] 仅在preformal、held与throughput全门通过后运行full24 cycle1和strict paired400。
 
@@ -650,8 +652,9 @@ Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、M
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
 最新CAPG world3已终局：它显著修复same-task跨video coherence并把native覆盖提高到10/12，但跨task raw仍只有
-2/3，最终exact no-op。当前CMBG authority已冻结、尚未实现；它只把CAPG的post-backbone Value source升级为真实
-joint-prefix内逐层memory，直接检验task-conditioned values能否在同一gate前形成可分流坐标。不得回退CFM、继续
+2/3，最终exact no-op。当前CMBG实现与GPU前机制门已通过，下一唯一动作是clean frozen固定world3；它只把CAPG的
+post-backbone Value source升级为真实joint-prefix内逐层memory，直接检验task-conditioned values能否在同一gate
+前形成可分流坐标。不得回退CFM、继续
 parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强

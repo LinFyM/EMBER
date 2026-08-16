@@ -1,8 +1,8 @@
 # V6-LPCP Capacity-Matched Backbone-Memory Grid
 
-状态：2026-08-16 active single-variable successor authority。简称**CMBG**。本轮只能实现和检验本文这一条canonical
-路径；CAPG已经终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。历史8-memory
-Dynamic-K只可选择性复用其已验证的three-block mask和joint-layer语义，不得整条恢复。
+状态：2026-08-16 canonical实现与GPU前机制门已通过，等待固定world3裁决。简称**CMBG**。本轮只能检验本文
+这一条canonical路径；CAPG已经终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。
+历史8-memory Dynamic-K只选择性复用了其已验证的three-block mask和joint-layer语义，没有整条恢复。
 
 ## 1. 决策
 
@@ -188,6 +188,20 @@ CPU/synthetic和一次真实CUDA mechanism必须证明：
 8. 原50 Action probes、LPCP first bank和正常prefix不因memory内容改变；public step0 effective-BA与fixed action保持
    正常BF16容差且固定task outcomes不漂；
 9. 不发生第二次video backbone forward、重复inference、dtype扩展或逐tensor扫描。
+
+### 10.1 Canonical implementation and real CUDA evidence
+
+canonical实现已原位退休CAPG hook/context readout：`backbone_memory.py`拥有唯一three-block mask和18层joint loop，
+同一次真实context forward同时返回原50个Action layer states与37个memory layer states；`parameter_grid.py`只保留
+memory input、exact-zero payload gate、原causal/K-set/M2P和direct B reshape。实际trainable精确为`2,828,928`。
+
+完整CPU=`409 passed`、compileall与diff check通过；architecture guard无hard violation。gpu02物理1上的真实task9
+K4 mechanism使用demo`0/1/2/3`共112个stride-5 frames，得到layer-memory shape=`[112,18,37,1024]`：step0
+parameter grid非零元素为0、public second-B与LPCP carrier逐元素exact，payload-gate gradient RMS=
+`2.22273e-7`，其余branch gradient为0。人工打开gate后grid L2=`.1260001`，memory/temporal/K-set/layer-M2P/
+token-M2P gradient RMS分别为`5.90875e-10/2.64457e-10/1.90166e-10/1.48802e-9/1.58528e-9`，source policy
+gradient tensor数为0。两种有区别的forward/backward总wall=`131.823s`，peak allocated/reserved=
+`17,854.6/21,794.0 MiB`，0 OOM/nonfinite。该检查只关闭实现与显存门，不是task-coexistence或closed-loop证据。
 
 ## 11. world3快速否决门
 

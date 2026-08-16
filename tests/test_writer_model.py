@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import torch
 
+from ember.writer.backbone_memory import (
+    Pi05CapacityMatchedBackboneMemory,
+    make_backbone_memory_mask,
+)
 from fixtures.legacy_v6_writer import _model as _legacy_v6_model
 from fixtures.writer_model import _inputs, _model
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
+from ember.writer.video_program import MetaLoRAStack
 
 
 def _sum(state: dict[str, torch.Tensor]) -> torch.Tensor:
@@ -326,7 +333,7 @@ def test_capacity_grid_is_exact_lpcp_at_zero_init() -> None:
     assert sum(
         parameter.numel()
         for parameter in model.parameter_grid.branch.parameters()
-    ) == 3_008_384
+    ) == 2_828_928
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
     for name, value in model.base_writer.template_state().items():
         if name.endswith(".lora_A.default.weight"):
@@ -353,14 +360,14 @@ def test_capacity_grid_is_exact_lpcp_at_zero_init() -> None:
             lpcp[b_name].double(), lpcp[name].double()
         )
         torch.testing.assert_close(actual_ba, expected_ba, rtol=0, atol=0)
-    assert not model.parameter_grid.branch.context.payload_gate.count_nonzero()
+    assert not model.parameter_grid.branch.payload_gate.count_nonzero()
 
 
 def test_capacity_grid_is_k_set_invariant() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
-        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
+        model.parameter_grid.branch.payload_gate.normal_(std=1e-3)
         natural = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         frames, _, _, condition_offsets, tokens, masks, spans = _inputs()
         order = torch.tensor([3, 4, 0, 1, 2, 5, 6, 7])
@@ -383,7 +390,7 @@ def test_capacity_grid_is_k_set_invariant() -> None:
 def test_capacity_grid_changes_with_video_under_fixed_language() -> None:
     model, _ = _model()
     with torch.no_grad():
-        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
+        model.parameter_grid.branch.payload_gate.normal_(std=1e-3)
         first = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         inputs = list(_inputs())
         inputs[0] = inputs[0].roll(1, dims=0)
@@ -399,20 +406,23 @@ def test_capacity_grid_is_gradient_open_and_requires_video() -> None:
     grid = model.parameter_grid.requires_grad_(True)
     state = model.encode_conditioning_state(*_inputs(), policy=torch.nn.Identity())
     rows, value = grid(
-        state.raw_action_states,
+        state.layer_memory_states,
         state.frame_indices,
         state.video_bounds,
         (0, 2, 3),
     )
     assert not value.count_nonzero()
     sum(item.float().sum() for item in rows.values()).backward()
-    gate = grid.branch.context.payload_gate
+    gate = grid.branch.payload_gate
     assert gate.grad is not None and gate.grad.count_nonzero()
+    assert grid.branch.memory_tokens.grad is not None
+    assert not grid.branch.memory_tokens.grad.count_nonzero()
     with torch.no_grad():
         gate.normal_(std=1e-3)
     grid.zero_grad(set_to_none=True)
+    state = model.encode_conditioning_state(*_inputs(), policy=torch.nn.Identity())
     rows, _ = grid(
-        state.raw_action_states,
+        state.layer_memory_states,
         state.frame_indices,
         state.video_bounds,
         (0, 2, 3),
@@ -423,7 +433,7 @@ def test_capacity_grid_is_gradient_open_and_requires_video() -> None:
         for parameter in grid.branch.parameters()
     )
 
-    constant = state.raw_action_states[:1].expand(4, -1, -1, -1).clone()
+    constant = state.layer_memory_states[:1].expand(4, -1, -1, -1).clone()
     with torch.no_grad():
         zero_rows, zero_grid = grid(
             constant,
@@ -456,7 +466,7 @@ def test_capacity_grid_emits_only_residual_bank_rows() -> None:
     assert all(value.count_nonzero() for value in state.values())
 
     with torch.no_grad():
-        model.parameter_grid.branch.context.payload_gate.normal_(std=1e-3)
+        model.parameter_grid.branch.payload_gate.normal_(std=1e-3)
         encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         baseline = model.decode_program(encoded.program)
         committed = model.decode_output(encoded)
@@ -489,8 +499,8 @@ def test_capacity_grid_lpcp_loader_rejects_partial_new_topology() -> None:
         for name, value in old.items()
     )
     partial = dict(old)
-    partial["parameter_grid.branch.context.payload_gate"] = source.state_dict()[
-        "parameter_grid.branch.context.payload_gate"
+    partial["parameter_grid.branch.payload_gate"] = source.state_dict()[
+        "parameter_grid.branch.payload_gate"
     ]
     with torch.no_grad():
         try:
@@ -508,14 +518,192 @@ def test_capacity_grid_lpcp_loader_rejects_partial_new_topology() -> None:
             raise AssertionError("trained parameter grid was accepted as LPCP cold start")
 
 
-def test_capacity_grid_records_raw_layer_context_in_the_same_forward() -> None:
+def test_capacity_grid_records_backbone_memory_in_the_same_forward() -> None:
     model, _ = _model()
     with torch.no_grad():
         state = model.encode_conditioning_state(
             *_inputs(), policy=torch.nn.Identity()
         )
-    assert state.raw_action_states.shape == (8, 18, 50, 1024)
-    assert state.raw_action_states.data_ptr() != (
+    assert state.layer_memory_states.shape == (8, 18, 37, 1024)
+    assert state.layer_memory_states.data_ptr() != (
         state.per_video_query_conditioners.data_ptr()
     )
     assert state.video_bounds == (0, 3, 5, 8)
+
+
+class _MemoryNorm(torch.nn.Module):
+    def forward(
+        self, value: torch.Tensor, cond: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, None]:
+        del cond
+        return value, None
+
+
+class _MemoryMlp(torch.nn.Module):
+    def __init__(self, width: int, scale: float) -> None:
+        super().__init__()
+        self.up_proj = torch.nn.Linear(width, width, bias=False)
+        with torch.no_grad():
+            self.up_proj.weight.copy_(torch.eye(width))
+        self.scale = float(scale)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.up_proj(value) * self.scale
+
+
+class _MemoryAttention(torch.nn.Module):
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.head_dim = 2
+        self.num_key_value_groups = 8
+        self.scaling = self.head_dim**-0.5
+        self.q_proj = torch.nn.Linear(width, 16, bias=False)
+        self.k_proj = torch.nn.Linear(width, 2, bias=False)
+        self.v_proj = torch.nn.Linear(width, 2, bias=False)
+        self.o_proj = torch.nn.Linear(16, width, bias=False)
+
+
+class _MemoryLayer(torch.nn.Module):
+    def __init__(self, width: int, index: int) -> None:
+        super().__init__()
+        self.input_layernorm = _MemoryNorm()
+        self.self_attn = _MemoryAttention(width)
+        self.post_attention_layernorm = _MemoryNorm()
+        self.mlp = _MemoryMlp(width, 0.01 * (index + 1))
+
+
+class _MemoryRotary(torch.nn.Module):
+    def forward(
+        self, value: torch.Tensor, _positions: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return torch.ones_like(value), torch.zeros_like(value)
+
+
+class _MemoryBackbone(torch.nn.Module):
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.layers = torch.nn.ModuleList(
+            _MemoryLayer(width, index)
+            for index in range(Pi05CapacityMatchedBackboneMemory.LAYERS)
+        )
+        self.norm = _MemoryNorm()
+        self.rotary_emb = _MemoryRotary()
+
+
+class _MemoryCore(torch.nn.Module):
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.paligemma_with_expert = SimpleNamespace(
+            paligemma=SimpleNamespace(
+                model=SimpleNamespace(language_model=_MemoryBackbone(width))
+            ),
+            gemma_expert=SimpleNamespace(model=_MemoryBackbone(width)),
+        )
+
+    @staticmethod
+    def _prepare_attention_masks_4d(mask: torch.Tensor) -> torch.Tensor:
+        return torch.where(mask[:, None], 0.0, -2.0e9)
+
+
+def _memory_inputs(width: int = 4) -> tuple[torch.Tensor, ...]:
+    prefix = torch.randn(2, 5, width)
+    prefix_padding = torch.tensor(
+        [[True, True, True, True, False], [True, True, True, True, True]]
+    )
+    action = torch.randn(2, 50, width)
+    action_padding = torch.ones(2, 50, dtype=torch.bool)
+    action_markers = torch.zeros_like(action_padding)
+    action_markers[:, 0] = True
+    adarms = torch.randn(2, width)
+    memory = torch.nn.Parameter(torch.randn(37, width))
+    return (
+        prefix,
+        prefix_padding,
+        action,
+        action_padding,
+        action_markers,
+        adarms,
+        memory,
+    )
+
+
+def _memory_loop(core: _MemoryCore, *, checkpointing: bool = False):
+    language = core.paligemma_with_expert.paligemma.model.language_model
+    expert = core.paligemma_with_expert.gemma_expert.model
+    return (
+        Pi05CapacityMatchedBackboneMemory(
+            image_width=4,
+            expert_width=4,
+            activation_checkpointing=checkpointing,
+        ),
+        MetaLoRAStack(language.layers, rank=1),
+        MetaLoRAStack(expert.layers, rank=1),
+    )
+
+
+def test_three_block_memory_mask_is_one_way() -> None:
+    padding = torch.tensor([[True, True, False]])
+    mask = make_backbone_memory_mask(
+        padding, action_horizon=50, memory_tokens=37
+    )[0]
+    action = 3
+    memory = 53
+    assert mask.shape == (90, 90)
+    assert mask[0, :3].tolist() == [True, True, False]
+    assert not mask[0, action:].any()
+    assert mask[action, :memory].sum().item() == 52
+    assert not mask[action, memory:].any()
+    assert mask[memory, :].sum().item() == 89
+    assert not mask[2].any()
+    assert not mask[:, 2].any()
+
+
+def test_joint_loop_captures_all_action_and_memory_layers() -> None:
+    torch.manual_seed(5)
+    core = _MemoryCore(4)
+    loop, vl, action = _memory_loop(core)
+    output = loop(core, *_memory_inputs(), vl, action)
+    assert output.prefix_hidden.shape == (2, 5, 4)
+    assert output.action_hidden.shape == (2, 50, 4)
+    assert output.action_layer_states.shape == (2, 18, 50, 4)
+    assert output.layer_memory.shape == (2, 18, 37, 4)
+    assert not torch.equal(output.layer_memory[:, 0], output.layer_memory[:, -1])
+
+
+def test_memory_values_cannot_change_prefix_or_action() -> None:
+    torch.manual_seed(7)
+    core = _MemoryCore(4)
+    loop, vl, action = _memory_loop(core)
+    inputs = list(_memory_inputs())
+    with torch.no_grad():
+        first = loop(core, *inputs, vl, action)
+        inputs[-1].add_(100.0)
+        second = loop(core, *inputs, vl, action)
+    valid_prefix = inputs[1]
+    torch.testing.assert_close(
+        first.prefix_hidden[valid_prefix],
+        second.prefix_hidden[valid_prefix],
+        rtol=0,
+        atol=0,
+    )
+    torch.testing.assert_close(first.action_hidden, second.action_hidden, rtol=0, atol=0)
+    torch.testing.assert_close(
+        first.action_layer_states, second.action_layer_states, rtol=0, atol=0
+    )
+    assert not torch.equal(first.layer_memory, second.layer_memory)
+
+
+def test_checkpointed_joint_loop_reaches_memory_tokens_only() -> None:
+    torch.manual_seed(11)
+    core = _MemoryCore(4).requires_grad_(False)
+    loop, vl, action = _memory_loop(core, checkpointing=True)
+    vl.requires_grad_(False)
+    action.requires_grad_(False)
+    inputs = _memory_inputs()
+    output = loop(core, *inputs, vl, action)
+    output.layer_memory.float().square().mean().backward()
+    memory = inputs[-1]
+    assert memory.grad is not None and memory.grad.count_nonzero()
+    assert all(parameter.grad is None for parameter in core.parameters())
+    assert all(parameter.grad is None for parameter in vl.parameters())
+    assert all(parameter.grad is None for parameter in action.parameters())

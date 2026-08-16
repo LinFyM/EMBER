@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
-import weakref
 
 import torch
 from safetensors.torch import load_file
@@ -15,11 +14,13 @@ from ember.expert_manifold.legacy_v6_architecture import (
 )
 from ember.expert_manifold.legacy_v6_model import (
     CompleteLoRAWriter as NativeV6Writer,
+    WriterVideoEvidence,
 )
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
+from ember.writer.backbone_memory import CapacityMatchedBackboneMemoryEncoder
 from ember.writer.parameter_grid import (
-    CapacityMatchedActionProbeGrid,
+    CapacityMatchedBackboneMemoryGrid,
     NATIVE_B_FAMILIES,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
@@ -62,7 +63,7 @@ class WriterConditioningState:
     valid_procedure: torch.Tensor
     video_condition_ids: torch.Tensor
     per_video_query_conditioners: torch.Tensor
-    raw_action_states: torch.Tensor
+    layer_memory_states: torch.Tensor
     frame_indices: torch.Tensor
     video_bounds: tuple[int, ...]
 
@@ -82,7 +83,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_set: PolicyProcedureCommonValueFusion,
         layer_probe_reader: LayerwiseActionProbeReader,
         *,
-        expert_model: torch.nn.Module,
         initialization_seed: int,
         conditioner_heads: int = 8,
         conditioner_blocks: int = 1,
@@ -113,10 +113,15 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.parameter_grid = CapacityMatchedActionProbeGrid(
+        self.parameter_grid = CapacityMatchedBackboneMemoryGrid(
             initialization_seed=initialization_seed,
         ).requires_grad_(False)
-        object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
+        semantic = base_writer.semantic_encoder
+        self.backbone_memory_encoder = CapacityMatchedBackboneMemoryEncoder(
+            image_width=int(semantic.image_width),
+            expert_width=int(semantic.expert_width),
+            activation_checkpointing=bool(semantic.activation_checkpointing),
+        )
 
     @classmethod
     def from_policy(
@@ -159,7 +164,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             base,
             procedure_set,
             layer_probe_reader,
-            expert_model=bridge.gemma_expert.model,
             initialization_seed=int(writer_config["initialization_seed"]),
             conditioner_heads=int(writer_config["conditioner_heads"]),
             conditioner_blocks=int(writer_config["conditioner_blocks"]),
@@ -328,9 +332,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             or state.video_condition_ids.shape != (video_count,)
             or state.video_condition_ids.dtype != torch.long
             or state.per_video_query_conditioners.shape != expected_slots
-            or state.raw_action_states.ndim != 4
-            or state.raw_action_states.shape[1:] != (18, 50, 1024)
-            or state.frame_indices.shape != state.raw_action_states.shape[:1]
+            or state.layer_memory_states.ndim != 4
+            or state.layer_memory_states.shape[1:] != (18, 37, 1024)
+            or state.frame_indices.shape != state.layer_memory_states.shape[:1]
         ):
             raise WriterModelError("invalid cached layerwise conditioning state")
         compiler = self.base_writer.compiler
@@ -376,7 +380,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             per_video_query_conditioners=state.per_video_query_conditioners,
         )
         rows, parameter_grid = self.parameter_grid(
-            state.raw_action_states,
+            state.layer_memory_states,
             state.frame_indices,
             state.video_bounds,
             self._offsets(
@@ -392,6 +396,49 @@ class CompleteLoRAWriter(torch.nn.Module):
             residual_b_rows=rows,
             parameter_grid=parameter_grid,
         )
+
+    def _encode_backbone_evidence(
+        self,
+        frames: torch.Tensor,
+        video_bounds: tuple[int, ...],
+        video_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        policy: torch.nn.Module,
+    ) -> tuple[WriterVideoEvidence, torch.Tensor, torch.Tensor]:
+        video_lengths = torch.tensor(
+            [right - left for left, right in zip(video_bounds, video_bounds[1:])],
+            dtype=torch.long,
+            device=frames.device,
+        )
+        frame_video_ids = torch.repeat_interleave(
+            torch.arange(
+                len(video_bounds) - 1,
+                dtype=torch.long,
+                device=frames.device,
+            ),
+            video_lengths,
+        )
+        encoding = self.backbone_memory_encoder(
+            self.base_writer.semantic_encoder,
+            policy,
+            frames,
+            frame_video_ids,
+            language_tokens.index_select(0, video_condition_ids),
+            language_mask.index_select(0, video_condition_ids),
+            task_span_mask.index_select(0, video_condition_ids),
+            self.parameter_grid.branch.memory_tokens,
+        )
+        evidence = WriterVideoEvidence(
+            text_queries=encoding.text_queries,
+            frame_evidence=encoding.frame_evidence,
+            grounded_evidence=encoding.grounded_evidence,
+            interactions=encoding.interactions,
+            valid_task_tokens=encoding.valid_task_tokens,
+            offsets=video_bounds,
+        )
+        return evidence, encoding.action_layer_states, encoding.layer_memory
 
     def encode_conditioning_state(
         self,
@@ -442,21 +489,18 @@ class CompleteLoRAWriter(torch.nn.Module):
             ),
             condition_counts,
         )
-        expert_model = self._expert_model_ref()
-        if expert_model is None:
-            raise WriterModelError("Action Expert owner was released")
-        with self.layer_probe_reader.capture(expert_model) as probe_capture:
-            with torch.no_grad():
-                evidence = self.base_writer.encode_video_evidence(
-                    policy,
-                    frames,
-                    video_offsets,
-                    language_tokens.index_select(0, video_condition_ids),
-                    language_mask.index_select(0, video_condition_ids),
-                    task_span_mask.index_select(0, video_condition_ids),
-                )
-        layer_rank_probe = probe_capture.result(frames.shape[0])
-        raw_action_states = probe_capture.raw_result(frames.shape[0])
+        evidence, action_layer_states, layer_memory_states = (
+            self._encode_backbone_evidence(
+                frames,
+                video_bounds,
+                video_condition_ids,
+                language_tokens,
+                language_mask,
+                task_span_mask,
+                policy,
+            )
+        )
+        layer_rank_probe = self.layer_probe_reader(action_layer_states)
         query_conditioners = self.probe_conditioner(
             layer_rank_probe,
             frame_indices,
@@ -509,7 +553,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_procedure=memories.valid_procedure,
             video_condition_ids=video_condition_ids,
             per_video_query_conditioners=query_conditioners,
-            raw_action_states=raw_action_states,
+            layer_memory_states=layer_memory_states,
             frame_indices=frame_indices,
             video_bounds=video_bounds,
         )

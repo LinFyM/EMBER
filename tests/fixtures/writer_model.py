@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import SimpleNamespace
 
 import torch
 
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
+from ember.writer.backbone_memory import CapacityMatchedVideoEncoding
 from ember.writer.model import CompleteLoRAWriter
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.video_program import LayerwiseActionProbeReader
@@ -164,6 +166,11 @@ class _FakeV6Base(torch.nn.Module):
                 owner = (f"{projection}_{factor}", layer)
             self._decoding[item.name] = owner
         self.compiler = _FakeCompiler()
+        self.semantic_encoder = SimpleNamespace(
+            image_width=2048,
+            expert_width=1024,
+            activation_checkpointing=False,
+        )
 
     def template_state(self) -> dict[str, torch.Tensor]:
         return self._template
@@ -213,8 +220,12 @@ class _FakeV6Base(torch.nn.Module):
         for video, (left, right) in enumerate(
             zip(evidence.offsets, evidence.offsets[1:])
         ):
-            values = evidence.frames[left:right].float().mean(dim=(1, 2, 3))
-            language = evidence.language_tokens[video].float().mean()
+            if hasattr(evidence, "frames"):
+                values = evidence.frames[left:right].float().mean(dim=(1, 2, 3))
+                language = evidence.language_tokens[video].float().mean()
+            else:
+                values = evidence.frame_evidence[left:right, 0, 0].float()
+                language = evidence.text_queries[video, 0, 0].float()
             core[video] = values.mean() + language + width
             procedure[video, : right - left] = values[:, None] + width
             positions[video, : right - left] = frame_indices[left:right]
@@ -269,22 +280,59 @@ class _FakeFactorHead(torch.nn.Module):
         torch.nn.init.eye_(self.network[0].weight)
 
 
+class _FakeBackboneMemoryEncoder(torch.nn.Module):
+    def forward(
+        self,
+        _semantic: object,
+        _policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_video_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        _language_mask: torch.Tensor,
+        _task_span_mask: torch.Tensor,
+        memory_tokens: torch.Tensor,
+    ) -> CapacityMatchedVideoEncoding:
+        frame_signal = frames.float().mean(dim=(1, 2, 3))
+        language_signal = language_tokens.float().mean(dim=1).index_select(
+            0, frame_video_ids
+        )
+        frame_evidence = frame_signal[:, None, None].expand(-1, 2, 256)
+        layer = torch.arange(18, dtype=torch.float32)[None, :, None, None] * 1e-3
+        horizon = torch.arange(50, dtype=torch.float32)[None, None, :, None] * 1e-3
+        width = torch.arange(1024, dtype=torch.float32)[None, None, None, :] * 1e-5
+        action_states = frame_signal[:, None, None, None] + layer + horizon + width
+        context = 1.0 + frame_signal[:, None, None, None] * 1e-3
+        context = context + language_signal[:, None, None, None] * 1e-4 + layer * 0.1
+        layer_memory = memory_tokens[None, None] * context
+        text_queries = language_tokens.float().mean(dim=1)[:, None, None]
+        text_queries = text_queries.expand(-1, 2, 256)
+        return CapacityMatchedVideoEncoding(
+            text_queries=text_queries,
+            frame_evidence=frame_evidence,
+            grounded_evidence=torch.zeros_like(frame_evidence),
+            interactions=frame_signal[:, None].expand(-1, 256),
+            valid_task_tokens=torch.ones(
+                language_tokens.shape[0], 2, dtype=torch.bool
+            ),
+            action_layer_states=action_states,
+            layer_memory=layer_memory,
+        )
+
+
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
     expert_model = _FakeExpertModel()
-    return (
-        CompleteLoRAWriter(
+    model = CompleteLoRAWriter(
             _FakeV6Base(template, expert_model),
             PolicyProcedureCommonValueFusion(width=256),
             LayerwiseActionProbeReader(heads=8, initialization_seed=7),
-            expert_model=expert_model,
             initialization_seed=7,
             conditioner_heads=8,
             conditioner_blocks=1,
             deployment_rank=32,
-        ),
-        template,
-    )
+        )
+    model.backbone_memory_encoder = _FakeBackboneMemoryEncoder()
+    return model, template
 
 
 def _inputs() -> tuple[torch.Tensor, ...]:

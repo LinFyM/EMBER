@@ -8,7 +8,8 @@
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
 - 当前active authority是CMBG：只把CAPG post-backbone 37-latent Value source换成真实joint prefix内逐层更新的
-  37个one-way memory tokens，尚未实现或启动GPU；没有active/resumable checkpoint；
+  37个one-way memory tokens；canonical实现和真实task9 K4 CUDA机制门已通过，等待clean frozen world3；没有
+  active/resumable checkpoint；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -183,7 +184,10 @@
   `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它只把CAPG的post-backbone
   37-query latent source换成同一真实image/language/50 Action-probe prefix内逐层更新的37个one-way memory tokens；
   Action不能看memory，memory能看prefix/Action/memory。temporal、K-set、M2P、direct B、zero gate、NEAP、K4、
-  rank32和world3 global commitment全部不变。预计trainable=`2,828,928`；当前authority已冻结但尚未实现或启动GPU；
+  rank32和world3 global commitment全部不变。canonical实现实际trainable=`2,828,928`，完整CPU=`409 passed`且
+  architecture guard无hard violation；gpu02物理1的task9 K4/112-frame机制门得到`[112,18,37,1024]`memory，
+  step0 exact zero/gate gradient-open，人工开gate后memory/temporal/K-set/layer-token M2P梯度全非零，policy零梯度，
+  peak reserved=`21,794 MiB`。当前尚未启动world3；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

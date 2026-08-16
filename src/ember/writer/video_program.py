@@ -88,36 +88,6 @@ class MetaLoRAStack(torch.nn.Module):
                 handle.remove()
 
 
-class _LayerProbeCapture:
-    """Collect compact and raw Action states across frame microbatches."""
-
-    def __init__(self, layers: int) -> None:
-        self.rows: list[list[torch.Tensor]] = [[] for _ in range(layers)]
-        self.raw_rows: list[list[torch.Tensor]] = [[] for _ in range(layers)]
-
-    def append(
-        self, layer: int, value: torch.Tensor, raw_hidden: torch.Tensor
-    ) -> None:
-        self.rows[layer].append(value)
-        self.raw_rows[layer].append(raw_hidden)
-
-    def result(self, expected_frames: int) -> torch.Tensor:
-        if expected_frames <= 0 or any(not rows for rows in self.rows):
-            raise VideoProgramError("layerwise Action-probe capture is incomplete")
-        layers = [torch.cat(rows, dim=0) for rows in self.rows]
-        if any(value.shape[0] != expected_frames for value in layers):
-            raise VideoProgramError("layerwise Action-probe frame count changed")
-        return torch.stack(layers, dim=1)
-
-    def raw_result(self, expected_frames: int) -> torch.Tensor:
-        if expected_frames <= 0 or any(not rows for rows in self.raw_rows):
-            raise VideoProgramError("raw Action-probe capture is incomplete")
-        layers = [torch.cat(rows, dim=0) for rows in self.raw_rows]
-        if any(value.shape[0] != expected_frames for value in layers):
-            raise VideoProgramError("raw Action-probe frame count changed")
-        return torch.stack(layers, dim=1)
-
-
 class LayerwiseActionProbeReader(torch.nn.Module):
     """Read every native Action-Expert layer with shared LoRA-rank queries."""
 
@@ -186,45 +156,19 @@ class LayerwiseActionProbeReader(torch.nn.Module):
             )
         )
 
-    @contextmanager
-    def capture(self, expert_model: torch.nn.Module) -> Iterator[_LayerProbeCapture]:
-        """Tap one existing joint forward without changing its token sequence."""
+    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
+        """Read post-layer Action states returned by the one joint loop."""
 
-        layers = getattr(expert_model, "layers", ())
-        final_norm = getattr(expert_model, "norm", None)
-        if len(layers) != self.LAYERS or final_norm is None:
-            raise VideoProgramError("Action Expert topology changed")
-        capture = _LayerProbeCapture(self.LAYERS)
-        handles = []
-
-        def install(target: torch.nn.Module, layer: int) -> None:
-            def hook(
-                _module: torch.nn.Module,
-                inputs: tuple[torch.Tensor, ...],
-                *,
-                layer_index: int = layer,
-            ) -> None:
-                if not inputs:
-                    raise VideoProgramError("Action-probe tap received no hidden state")
-                hidden = inputs[0].detach()
-                context = torch.enable_grad() if self.training else torch.no_grad()
-                with context:
-                    capture.append(
-                        layer_index,
-                        self._read_layer(hidden, layer_index),
-                        hidden,
-                    )
-
-            handles.append(target.register_forward_pre_hook(hook))
-
-        for layer in range(self.LAYERS - 1):
-            install(layers[layer + 1].input_layernorm, layer)
-        install(final_norm, self.LAYERS - 1)
-        try:
-            yield capture
-        finally:
-            for handle in handles:
-                handle.remove()
+        if (
+            hidden.ndim != 4
+            or hidden.shape[1:]
+            != (self.LAYERS, self.ACTION_HORIZON, self.EXPERT_WIDTH)
+        ):
+            raise VideoProgramError("layerwise Action-probe state layout changed")
+        return torch.stack(
+            [self._read_layer(hidden[:, layer], layer) for layer in range(self.LAYERS)],
+            dim=1,
+        )
 
 
 class TaskQueriedPatchGrounding(torch.nn.Module):
@@ -580,6 +524,24 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         ):
             raise VideoProgramError("PI05 semantic hidden layout changed")
 
+        return self._project_joint_evidence(
+            prefix_hidden,
+            suffix_hidden,
+            task_span_mask,
+            text_queries,
+            valid_task_tokens,
+            maximum_task_tokens,
+        )
+
+    def _project_joint_evidence(
+        self,
+        prefix_hidden: torch.Tensor,
+        action_hidden: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        text_queries: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+        maximum_task_tokens: int,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         language_hidden = prefix_hidden[:, self.NATIVE_IMAGE_TOKENS :]
         packed_language = self._pack_hidden(
             language_hidden,
@@ -596,7 +558,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             valid_task_tokens,
         )
         evidence = multimodal_evidence + patch_evidence
-        interaction = self.interaction_projection(suffix_hidden.mean(dim=1))
+        interaction = self.interaction_projection(action_hidden.mean(dim=1))
         return evidence, patch_evidence, interaction
 
     def _validate_forward_batch(

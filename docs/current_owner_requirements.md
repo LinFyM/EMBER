@@ -423,6 +423,11 @@ gate。首版扩张joint attention矩阵造成task15 carrier漂移，已按工�
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。memory token仍是当前方法变量，
 不是长期goal；rank8、完整A/B和dynamic-K/few-shot仍是独立开放候选。CAPG负结果不得误写成memory失败。
 
+carrier-exact clean`2aecece` fixed world3已通过：三task shared raw/final=`3/3`、native=`12/12`，跨task gradient
+cosine mean=`+.09842`且最终LoRA非零。owner再次明确：跨设备、batch shape、BF16/TF32、kernel与reduction的普通
+低位差异以及由此产生的少量occupancy chunk变化不是科学门，不得用固定batch1、重复forward、扩dtype或逐tensor
+校验追逐；后续以held视频机制和真实closed-loop性能裁决。
+
 后续迭代遵循以下边界：
 
 - 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->

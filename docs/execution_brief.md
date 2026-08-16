@@ -5,12 +5,12 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新执行的是**CMBG首版world3 preformal**：clean`38f7fc7`完整exit0，但task15固定carrier outcome/count从预注册
-`2/0,65 chunks,16 pairs`漂为`1/2,47,8`，故属于工程违约而非科学non-pass。其same-task
-cosine/energy=`.983/.984,.930/.937,.857/.498`、global raw2/3、native11/12与exact no-op仅作诊断。carrier-exact
-修正版保持同一CMBG科学变量，改为一次原生context forward加逐层one-way Action-Expert memory observer；真实task15
-K4的全部carrier tensors相对LPCP逐元素exact，task9 K4梯度/显存门通过。下一步是fresh clean frozen重跑同一
-world3，尚无可接受的CMBG科学结果或checkpoint。
+最新执行的是**CMBG carrier-exact world3 preformal**：clean`2aecece`完整exit0，task9/15/18成功关系=
+`1/0,2/0,1/2`、selected pairs=`8/16/8`，cycle=`114.732s`。三task four-view cosine/energy=
+`.968/.748,.857/.864,.979/.977`；cross-task gradient cosine mean由CAPG的`-.13938`变为`+.09842`，shared
+raw/final coverage=`3/3`、native=`12/12`，j0 actual Adam被接受并写出非零q/v/action LoRA response。world3功能
+共存门因此通过。task15 occupancy chunks=`70`而历史65只作诊断；跨运行BF16/TF32、batch/kernel/reduction低位差异
+不再作为门。下一步是validation8/reverse/constant held视频门；通过后直接fresh full24 cycle1和strict paired400。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=

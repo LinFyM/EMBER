@@ -1,7 +1,7 @@
 # V6-LPCP Capacity-Matched Backbone-Memory Grid
 
-状态：2026-08-16首版world3暴露carrier parity工程违约，不能作为CMBG科学裁决；carrier-exact修正版已通过真实
-task15逐tensor parity与task9梯度/显存门，等待从fresh clean commit重跑同一固定world3。简称**CMBG**。CAPG已经
+状态：2026-08-16 carrier-exact修正版已完成fixed world3并通过功能共存门，等待validation8/reverse/constant
+held视频机制门。简称**CMBG**。CAPG已经
 终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。历史8-memory Dynamic-K只选择性
 复用了其已验证的layer-matched memory语义，没有整条恢复。
 
@@ -105,9 +105,9 @@ Z_frame in R[18,37,1024]
 实现只运行一次原生context backbone forward；不得另算no-video baseline、重复vision/language/Action context或
 修改site-package。observer保存每层原生context输入，重算该层冻结K/V供37个memory queries读取，不重算context
 queries、attention、MLP或最终输出。首版把memory直接追加到joint矩阵，虽有three-block mask，仍因attention矩阵
-shape改变使task15固定outcome从`2/0`漂成`1/2`，故属于工程违约而非可接受BF16低位差异。修正版必须先在真实K4
-上证明所有carrier tensors逐元素exact，再由fixed world3复现outcome/count；不为一致性退化到batch1、FP64或第二
-次context forward。
+shape改变使task15固定outcome从`2/0`漂成`1/2`，故属于工程违约。修正版已经用原生shape与fixed world3关闭这个
+结构问题。跨运行正常BF16/TF32、batch shape、kernel和reduction低位差异不作为门；不会为逐元素一致退化到
+batch1、FP64或第二次context forward。
 
 ## 6. 视频顺序和多视频共识
 
@@ -189,8 +189,8 @@ CPU/synthetic和一次真实CUDA mechanism必须证明：
 5. payload gate首步gradient非零；人工打开gate后memory/temporal/set/M2P全部获得非零gradient；
 6. K1--K4走同一ragged图，K置换不变，video内reverse/shuffle改变grid；
 7. source policy零trainable，teacher/target/held信息墙不变；
-8. 原50 Action probes、18层Action states、text/frame/grounded/interactions及LPCP first bank逐元素保持native
-   carrier；固定task outcomes/count不漂；
+8. 原50 Action probes、18层Action states、text/frame/grounded/interactions及LPCP first bank在同一原生执行图内
+   不受memory反向影响；固定task成功关系与selected credit保持功能锚点，occupancy chunk数只作诊断；
 9. 不发生第二次context backbone forward、重复inference、dtype扩展或逐tensor扫描。
 
 ### 10.1 首版engineering-invalid world3
@@ -214,14 +214,26 @@ evidence、interactions和`[130,18,50,1024]`Action states全部max-abs=`0`、rel
 RMS=`2.22420e-7`且其余branch为0；打开gate后grid L2=`.126103`，memory/temporal/K-set/layer-M2P/token-M2P
 gradient RMS=`5.90365e-10/2.68898e-10/1.86177e-10/1.48842e-9/1.58698e-9`，policy gradient tensor数0。
 两次forward/backward wall=`121.251s`，peak allocated/reserved=`17,854.6/18,848.0 MiB`，优于首版且0
-OOM/nonfinite。当前只缺fresh clean commit上的同一world3重跑；未获其结果前不得做held/full24/strict。
+OOM/nonfinite。
+
+### 10.3 Carrier-exact world3 functional pass
+
+clean`2aecece`在gpu02物理`1/2/3`完成fixed world3：3 tasks、6 paired states、12 rollouts，candidate/reference=
+`4/2`，task9/15/18分别=`1/0,2/0,1/2`，selected pairs=`8/16/8`；cycle=`114.732s`。task15实际完整occupancy为
+70而历史同条件为65，这属于批形/低位轨迹差异，只作诊断，不改变成功关系或credit内容。
+
+三task同task four-view gradient cosine/energy分别=`.96838/.74782,.85666/.86361,.97881/.97660`；跨task
+gradient cosine mean由CAPG的`-.13938`变为`+.09842`，equal-task shared mean与最终Adam delta均覆盖`3/3`，
+12/12 inference-path margins严格下降并接受原始Adam candidate`j0`。最终parameter delta L2=`.168481`，q/v/action
+effective-BA和fixed-action response三task均非零，0禁读/OOM/nonfinite。精确artifact为run root下
+`cmbg_world3_functional_adjudication.json`。因此world3功能门通过，最早待决接口已后移到held task/video泛化。
 
 ## 11. world3快速否决门
 
-首个GPU实验仍固定task9/15/18、world3、一task一rank，不先跑单task挑好结果。必须复现：
+首个GPU实验固定task9/15/18、world3、一task一rank且已经完成。裁决结果为：
 
 - outcomes：task9=`1/0`、task15=`2/0`、task18=`1/2`；
-- occupancy chunks=`25/65/44`，selected pairs=`8/16/8`，共12 rollouts、48 correct videos；
+- occupancy chunks=`25/70/44`仅作诊断；selected pairs=`8/16/8`，共12 rollouts、48 correct videos；
 - 三task各自four-view raw descent=`4/4`，cross-video cosine/energy至少`.40/.55`；
 - global raw shared-mean descent coverage=`3/3`；
 - 11个scale中至少一个真实达到native `12/12`并被所有ranks一致接受；
@@ -230,9 +242,8 @@ OOM/nonfinite。当前只缺fresh clean commit上的同一world3重跑；未获�
 - payload gate以外的memory/temporal/set/M2P在gate-open follow-up backward中非零；
 - 0禁读、OOM、nonfinite，cycle wall<=`318.749s`。
 
-任一项失败即终局，不跑validation8、full24、strict、rank/token/LR/scale/seed sweep。通过后才做validation8 held
-same-task four-view、held/train amplitude、reverse/constant门；仍沿CAPG阈值要求至少6/8 tasks通过和held/train
-effective-BA L2>=`.30`。全部通过才允许fresh full24 cycle1。
+以上功能项已全部通过。下一步只做validation8 held same-task four-view、held/train amplitude、reverse/constant门；
+仍沿CAPG阈值要求至少6/8 tasks通过和held/train effective-BA L2>=`.30`。全部通过才允许fresh full24 cycle1。
 
 ## 12. full24与真实性能裁决
 

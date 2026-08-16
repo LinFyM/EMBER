@@ -7,10 +7,10 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 当前active authority是CMBG：只把CAPG post-backbone Value换成逐层读取真实prefix/Action context的37个
-  one-way memory tokens。首版clean`38f7fc7` world3因task15固定carrier outcome漂移属于工程违约，不能作科学
-  裁决；carrier-exact修正版已通过真实task15 K4所有carrier tensors逐元素exact parity和task9 CUDA梯度/显存门，
-  等待fresh clean frozen world3重跑；没有active/resumable checkpoint；
+- 当前active authority是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
+  `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
+  raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；下一步是validation8/reverse/
+  constant held视频门。当前没有active GPU run或可resume checkpoint；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -193,8 +193,14 @@
   memory读取，不重跑context attention/MLP。真实task15 K4 130帧的text/frame/grounded/interactions与
   `[130,18,50,1024]`Action states相对封存LPCP全部max-abs/relative-L2=`0/0`。task9 112帧仍得到
   `[112,18,37,1024]`memory并通过zero staging和全链gradient，wall=`121.251s`、peak reserved=`18,848 MiB`、
-  policy零gradient；完整CPU=`410 passed`且architecture guard无hard violation。下一唯一动作是fresh clean commit
-  上的同一world3重跑，未通过不得held/full24/strict；
+  policy零gradient；完整CPU=`410 passed`且architecture guard无hard violation；
+- clean`2aecece` carrier-exact world3在gpu02物理`1/2/3`完整exit0：cycle=`114.732s`，candidate/reference=
+  `4/2`，三task four-view cosine/energy=`.968/.748,.857/.864,.979/.977`，cross-task cosine mean=`+.09842`，
+  shared gradient和最终delta均3/3，12/12 margins下降，q/v/action BA与fixed-action三task均非零。task15 occupancy
+  chunks=`70`而历史为65只作数值/轨迹诊断；不再要求跨运行逐元素或chunk精确复现。正式artifact=
+  `runs/outputs/pi05_v6_lpcp_cmbg_carrier_exact_shared3_task9_15_18_b8_2aecece_gpu02p123_20260816/cmbg_world3_functional_adjudication.json`；
+- CMBG formal仍被validation8 held门阻塞；held过门后直接fresh full24 cycle1并立即strict paired400，不再做浮点
+  parity追逐或额外小型机制补丁；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

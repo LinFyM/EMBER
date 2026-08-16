@@ -5,11 +5,11 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新完成的CAPG在strict前终局：它把固定三
-task的same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
-当前active CMBG只把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory。
-首版clean`38f7fc7` world3因task15 fixed carrier outcome漂移属于engineering-invalid；carrier-exact修正版已通过
-真实K4逐tensor parity与CUDA机制门，等待fresh固定world3重跑，尚无可接受科学结果。
+2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格。CAPG在strict前终局：它把固定三task的
+same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
+当前active CMBG把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory；
+carrier-exact clean`2aecece` fixed world3已把cross-task cosine mean从`-.13938`提高到`+.09842`，shared raw/final
+coverage=`3/3`、native=`12/12`并写出非零LoRA，等待held视频门。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

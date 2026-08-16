@@ -36,8 +36,8 @@ EMBER上下文纠正理解。
 ## 3. Current operation
 
 长期目标尚未完成。CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、native最多
-10/12并exact no-op。当前active CMBG首版world3因task15 carrier outcome/count漂移属于engineering-invalid；
-carrier-exact修正版已通过真实task15 K4逐tensor parity与task9 CUDA机制门，等待fresh固定world3重跑。SFMC144
+10/12并exact no-op。当前active CMBG carrier-exact clean`2aecece` fixed world3已通过：cross-task gradient cosine
+mean=`+.09842`、shared raw/final=`3/3`、native=`12/12`且最终LoRA非零；等待validation8/reverse/constant held门。SFMC144
 仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
@@ -306,8 +306,10 @@ temporal/K-set/M2P/direct-B、NEAP、K4、rank32和global gate，只把backbone�
 coordinate gate开放，trainable=`2,828,928`。首版clean`38f7fc7`虽把cross-task cosine mean提高到`+.03865`、
 native best到11/12，却令task15固定`2/0,65,16`漂成`1/2,47,8`，故不能科学裁决。修正版一次原生context forward
 加one-way layer observer；真实task15 130帧的text/frame/grounded/interactions和18层Action states相对LPCP全部
-max-abs0，task9完整梯度链与A40门通过。下一步只允许fresh clean fixed world3；先复现outcome/count，再要求raw
-3/3与native12/12，否则终局。未通过前不得held/full24/strict；rank8、完整A/B和Dynamic-K仍是独立开放变量。
+max-abs0，task9完整梯度链与A40门通过。随后clean`2aecece` fixed world3完整通过：task9/15/18=
+`1/0,2/0,1/2`，selected pairs=`8/16/8`，cross-task cosine mean=`+.09842`，raw/final=`3/3`、native=`12/12`，
+accepted delta L2=`.168481`且q/v/action均非零。occupancy chunk数与跨运行逐元素差异只作诊断。下一步是held门；
+通过后直接fresh full24 cycle1与strict paired400。rank8、完整A/B和Dynamic-K仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

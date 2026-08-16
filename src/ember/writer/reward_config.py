@@ -108,7 +108,7 @@ _COMMITMENT_CONTRACT = {
     "rank_state_contract": (
         "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
     ),
-    "formal_extension_status": "blocked_until_world3_shared_anchor_gate_passes",
+    "formal_extension_status": "blocked_until_held_video_only_gate_passes",
 }
 _SMOKE_CONTRACT = {
     "cycle": 1,

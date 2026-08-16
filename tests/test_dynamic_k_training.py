@@ -99,9 +99,9 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "carrier_exact_world3_rerun_ready"
+    assert config["status"] == "world3_functional_pass_held_pending"
     assert config["formal_run"]["status"] == (
-        "blocked_until_world3_shared_anchor_mechanism_gate_passes"
+        "blocked_until_held_video_only_gate_passes"
     )
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
@@ -136,7 +136,7 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
     assert config["smoke_run"]["shared_anchor_task_ids"] == [9, 15, 18]
     assert config["smoke_run"]["required_world_size"] == 3
-    assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
+    assert config["smoke_run"]["historical_complete_occupancy_chunks_diagnostic"] == {
         "9": 25,
         "15": 65,
         "18": 44,
@@ -177,6 +177,9 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["step0_native_payload_gate_exact_zero"]
     assert gate["first_step_payload_gate_gradient_nonzero"]
     assert gate["post_gate_step_memory_temporal_set_m2p_gradients_nonzero"]
+    assert gate["complete_occupancy_chunks_are_diagnostic"]
+    assert gate["cross_run_elementwise_parity_required"] is False
+    assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
     assert gate["first_update_all_four_native_b_families_nonzero"]
     assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
     assert gate["backtrack_zero_is_exact_adam_candidate"]

@@ -759,6 +759,14 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      max-abs/relative-L2=`0/0`。task9 112帧仍有`[112,18,37,1024]`live memory和完整gate-open梯度，wall从
      `131.823s`降到`121.251s`，reserved从`21,794`降到`18,848 MiB`。因此下一步可解释的实验是fresh重跑同一
      world3，而不是基于首版诊断改optimizer、rank或放弃memory。
+117. clean`2aecece` carrier-exact CMBG fixed world3完成3 tasks/6 paired states/12 rollouts，task9/15/18=
+     `1/0,2/0,1/2`、selected=`8/16/8`。same-task four-view cosine/energy=`.968/.748,.857/.864,.979/.977`，
+     cross-task gradient cosine mean从CAPG的`-.13938`变为`+.09842`；shared raw mean与actual Adam final delta均
+     `3/3`下降，12/12 native margins下降并在j0接受，delta L2=`.168481`，q/v/action链均非零。CMBG因此实际
+     解决了CAPG在首个shared commitment处的局部跨task冲突；是否能外推到held videos/tasks仍未解决。
+118. task15 complete occupancy chunks为70而历史fixed run为65，但成功关系、16个selected credit pairs、全部
+     functional descent和closed-loop rollout合同均成立。该差异属于设备/batch/kernel低位轨迹诊断，不再作为门；
+     不为跨运行逐元素一致固定batch1、重复forward、扩dtype或扫描全部tensor。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

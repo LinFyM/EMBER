@@ -17,7 +17,7 @@ from ember.eval_adapters import (
     reinspect_writer_adapter,
     validate_writer_episode,
 )
-from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.writer.evaluation_cache import (
     WriterCacheGenerationBatch,
     WriterCacheRequest,
@@ -80,6 +80,9 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
         else:
             raise WriterModelError("cached Writer kind changed")
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+        observed_rank = int(observed["lora_contract"]["rank"])
+        if observed_rank != lora.rank:
+            lora = derive_pi05_lora_rank(lora, rank=observed_rank)
         template = prepare_frozen_writer_policy(policy, lora)
         self._initialize_rollout(
             policy=policy,

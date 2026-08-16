@@ -20,7 +20,7 @@ from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
 from ember.writer.errors import WriterModelError
 from ember.writer.factor_commitment import (
     NATIVE_B_FAMILIES,
-    AnchoredLinearNativeBResidual,
+    NativeZeroResidualBank,
 )
 from ember.writer.slot_set import PolicyProcedureCommonValueFusion
 from ember.writer.temporal import LayerwiseProbeProcedureConditioner
@@ -69,7 +69,9 @@ class WriterConditioningState:
 class CompleteLoRAWriter(torch.nn.Module):
     """Condition the strong V6 Procedure reader with layer/rank probe evidence."""
 
-    PUBLIC_LORA_RANK = 16
+    CARRIER_LORA_RANK = 16
+    RESIDUAL_BANK_RANK = 16
+    PUBLIC_LORA_RANK = CARRIER_LORA_RANK
     PROGRAM_WIDTH = 256
     POLICY_SLOTS = 320
 
@@ -83,13 +85,20 @@ class CompleteLoRAWriter(torch.nn.Module):
         initialization_seed: int,
         conditioner_heads: int = 8,
         conditioner_blocks: int = 1,
+        deployment_rank: int = CARRIER_LORA_RANK,
     ) -> None:
         super().__init__()
         if (
             int(base_writer.program_width) != self.PROGRAM_WIDTH
-            or base_writer.PUBLIC_LORA_RANK != self.PUBLIC_LORA_RANK
+            or base_writer.PUBLIC_LORA_RANK != self.CARRIER_LORA_RANK
+            or deployment_rank
+            not in {
+                self.CARRIER_LORA_RANK,
+                self.CARRIER_LORA_RANK + self.RESIDUAL_BANK_RANK,
+            }
         ):
             raise WriterModelError("native v6 Writer topology changed")
+        self.deployment_rank = int(deployment_rank)
         self.base_writer = base_writer.requires_grad_(False).eval()
         self.procedure_set = procedure_set.requires_grad_(False).eval()
         self.layer_probe_reader = layer_probe_reader
@@ -103,7 +112,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             bias=False,
         )
         torch.nn.init.zeros_(self.query_delta.weight)
-        self.factor_commitment = AnchoredLinearNativeBResidual(
+        self.factor_commitment = NativeZeroResidualBank(
             width=self.PROGRAM_WIDTH,
         ).requires_grad_(False)
         object.__setattr__(self, "_expert_model_ref", weakref.ref(expert_model))
@@ -116,6 +125,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         template_state: Mapping[str, torch.Tensor],
         writer_config: Mapping[str, Any],
         as139_warm_start_checkpoint: Path,
+        deployment_rank: int = CARRIER_LORA_RANK,
     ) -> CompleteLoRAWriter:
         """Load the frozen AS139 graph and initialize only its query conditioner."""
 
@@ -152,6 +162,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             initialization_seed=int(writer_config["initialization_seed"]),
             conditioner_heads=int(writer_config["conditioner_heads"]),
             conditioner_blocks=int(writer_config["conditioner_blocks"]),
+            deployment_rank=deployment_rank,
         )
 
     @staticmethod
@@ -568,7 +579,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         if probe_value_memory is None:
             if language_slots is not None:
                 raise WriterModelError("incomplete shared native-Value decode")
-            return baseline
+            return self._public_residual_bank_state(baseline, None)
         if language_slots is None:
             raise WriterModelError("shared native Value lost its language condition")
         rows, _ = self.factor_commitment(
@@ -576,14 +587,45 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_slots,
         )
         residuals = self._direct_b_residual_state(rows, program.shape[0])
-        return {
-            name: (
-                value + residuals[name].to(value.dtype)
-                if name in residuals
-                else value
+        return self._public_residual_bank_state(baseline, residuals)
+
+    def _public_residual_bank_state(
+        self,
+        baseline: Mapping[str, torch.Tensor],
+        residuals: Mapping[str, torch.Tensor] | None,
+    ) -> dict[str, torch.Tensor]:
+        """Keep rank16 carrier intact and place B residuals at native zero."""
+
+        if self.deployment_rank == self.CARRIER_LORA_RANK:
+            return {
+                name: (
+                    value + residuals[name].to(value.dtype)
+                    if residuals is not None and name in residuals
+                    else value
+                )
+                for name, value in baseline.items()
+            }
+        if self.deployment_rank != self.CARRIER_LORA_RANK + self.RESIDUAL_BANK_RANK:
+            raise WriterModelError("native-zero public rank changed")
+        if residuals is not None and (
+            len(residuals) != 38
+            or any(name not in baseline for name in residuals)
+        ):
+            raise WriterModelError("native-zero residual ownership changed")
+        result: dict[str, torch.Tensor] = {}
+        for name, value in baseline.items():
+            if name.endswith(".lora_A.default.weight"):
+                result[name] = torch.cat((value, value), dim=-2)
+                continue
+            if not name.endswith(".lora_B.default.weight"):
+                raise WriterModelError("native-zero public state contains non-LoRA tensor")
+            residual = (
+                torch.zeros_like(value)
+                if residuals is None
+                else residuals[name].to(value.dtype)
             )
-            for name, value in baseline.items()
-        }
+            result[name] = torch.cat((value, residual), dim=-1)
+        return result
 
     def _direct_b_residual_state(
         self,
@@ -593,7 +635,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         """Map direct B-family rows onto the 38 anchored public B tensors."""
 
         if set(rows) != set(NATIVE_B_FAMILIES):
-            raise WriterModelError("anchored native-B families changed")
+            raise WriterModelError("native-zero B families changed")
         decoding = getattr(self.base_writer, "_decoding", None)
         tensor_specs = getattr(self.base_writer, "tensor_specs", None)
         if not isinstance(decoding, dict) or tensor_specs is None:
@@ -613,7 +655,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         if len(result) != 38 or any(
             not name.endswith(".lora_B.default.weight") for name in result
         ):
-            raise WriterModelError("anchored native-B ownership changed")
+            raise WriterModelError("native-zero B ownership changed")
         return result
 
     def decode_output(self, encoded: WriterProgramOutput) -> dict[str, torch.Tensor]:

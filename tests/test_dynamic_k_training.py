@@ -101,13 +101,24 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_anchored_linear_b_config_records_fresh_mechanism_gate() -> None:
+def test_native_zero_residual_bank_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
         "blocked_until_all_three_fixed_anchor_mechanism_gates_pass"
     )
     assert config["initialization"]["as_macro"] == 25
+    assert config["deployment"] == {
+        "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
+        "carrier_rank": 16,
+        "residual_bank_rank": 16,
+        "public_rank": 32,
+        "alpha": 32,
+        "scale": 1.0,
+        "factorization": "A_concat_A0_A0_and_B_concat_B0_deltaB",
+        "carrier_compression": False,
+        "second_adapter": False,
+    }
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "four_zero_init_direct_native_b_heads_860160_parameters"
@@ -150,11 +161,14 @@ def test_anchored_linear_b_config_records_fresh_mechanism_gate() -> None:
         "correct_each_negative_margin_minimum": 10,
     }
     gate = config["formal_run"]["mechanism_gate"]
+    assert gate["public_rank"] == 32
+    assert gate["carrier_first_bank_tensors_unchanged"]
+    assert gate["residual_second_b_step0_zero"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
     assert gate["trainable_parameter_count"] == 860_160
     assert gate["first_update_all_four_native_b_heads_nonzero"]
-    assert gate["lpcp_a_tensors_unchanged"]
+    assert gate["continuous_delta_ba_equivalence_relative_l2_maximum"] == 1e-6
     assert gate["backtrack_zero_is_exact_adam_candidate"]
     assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.3

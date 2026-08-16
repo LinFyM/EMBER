@@ -13,7 +13,7 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import DataLoader
 
-from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import DistributedContext, barrier
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
@@ -90,13 +90,30 @@ def build_writer(
     policy: torch.nn.Module,
     *,
     asset_root: Path,
+    deployment_rank: int | None = None,
 ) -> tuple[torch.nn.Module, Any]:
     """Construct through the dynamic-K model's stable policy-owned factory."""
 
     from ember.writer.model import CompleteLoRAWriter
 
-    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    carrier_lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    lora = (
+        carrier_lora
+        if deployment_rank is None
+        else derive_pi05_lora_rank(carrier_lora, rank=deployment_rank)
+    )
     template = prepare_frozen_writer_policy(policy, lora)
+    if lora.rank != carrier_lora.rank:
+        if lora.rank != 2 * carrier_lora.rank:
+            raise WriterModelError("native-zero deployment rank changed")
+        template = {
+            name: (
+                value[: carrier_lora.rank]
+                if name.endswith(".lora_A.default.weight")
+                else value[:, : carrier_lora.rank]
+            ).contiguous()
+            for name, value in template.items()
+        }
     factory = getattr(CompleteLoRAWriter, "from_policy", None)
     if not callable(factory):
         raise WriterModelError(
@@ -110,6 +127,7 @@ def build_writer(
             asset_root
             / str(config["writer"]["as139_warm_start_checkpoint"])
         ).resolve(),
+        deployment_rank=lora.rank,
     )
     if not callable(getattr(writer, "forward_training", None)):
         raise WriterModelError(

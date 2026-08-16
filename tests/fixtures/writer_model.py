@@ -270,6 +270,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
             initialization_seed=7,
             conditioner_heads=8,
             conditioner_blocks=1,
+            deployment_rank=32,
         ),
         template,
     )

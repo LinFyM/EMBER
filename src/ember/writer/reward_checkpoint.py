@@ -1,4 +1,4 @@
-"""Cycle checkpoints for anchored linear-B native Value commitment."""
+"""Cycle checkpoints for native-zero residual bank commitment."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_checkpoint_v1"
+    "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_anchored_linear_b_native_value_commitment_cycle_checkpoint"
+    "v6_lpcp_native_zero_residual_bank_commitment_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

@@ -118,7 +118,15 @@ def test_v6_layerwise_conditioner_step0_k1_is_exact_native_v6() -> None:
     memories = model.base_writer.build_memories(evidence, indices1)
     native = model.base_writer.decode_slots(model.base_writer.compile_slots(memories))
     bridged = model(*inputs, policy=torch.nn.Identity())
-    assert all(torch.equal(bridged[name], native[name]) for name in native)
+    for name, value in native.items():
+        if not name.endswith(".lora_A.default.weight"):
+            continue
+        b_name = name.replace(".lora_A.", ".lora_B.")
+        expected_ba = torch.matmul(native[b_name].double(), value.double())
+        actual_ba = torch.matmul(
+            bridged[b_name].double(), bridged[name].double()
+        )
+        torch.testing.assert_close(actual_ba, expected_ba, rtol=0, atol=0)
 
     torch.nn.init.normal_(model.query_delta.weight, std=1.0)
     bridged_after = model(*inputs, policy=torch.nn.Identity())
@@ -226,7 +234,12 @@ def test_k1_uses_same_graph_and_has_exact_zero_auxiliary() -> None:
     )
     assert auxiliary.item() == 0.0
     assert all(
-        value.shape == model.template_state()[name].shape
+        value.shape
+        == (
+            (32, model.template_state()[name].shape[1])
+            if name.endswith(".lora_A.default.weight")
+            else (model.template_state()[name].shape[0], 32)
+        )
         for name, value in generated.items()
     )
 
@@ -299,11 +312,12 @@ def test_layerwise_conditioner_constant_video_has_zero_dynamic_value() -> None:
     assert not encoded.probe_value_memory.count_nonzero()
 
 
-def test_anchored_linear_b_residual_is_exact_lpcp_at_zero_init() -> None:
+def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
     model, _ = _model()
     with torch.no_grad():
         model.query_delta.weight.normal_(std=0.01)
         encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+        carrier = model.base_writer.decode_slots(encoded.program)
         lpcp = model.decode_program(encoded.program)
         committed = model.decode_output(encoded)
     assert sum(
@@ -311,6 +325,24 @@ def test_anchored_linear_b_residual_is_exact_lpcp_at_zero_init() -> None:
         for parameter in model.factor_commitment.parameters()
     ) == 860_160
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
+    for name, value in carrier.items():
+        if name.endswith(".lora_A.default.weight"):
+            assert torch.equal(lpcp[name][..., :16, :], value)
+            assert torch.equal(lpcp[name][..., 16:, :], value)
+        else:
+            assert torch.equal(lpcp[name][..., :16], value)
+            assert not lpcp[name][..., 16:].count_nonzero()
+    for name, value in carrier.items():
+        if not name.endswith(".lora_A.default.weight"):
+            continue
+        b_name = name.replace(".lora_A.", ".lora_B.")
+        expected_ba = torch.matmul(
+            carrier[b_name].double(), value.double()
+        )
+        actual_ba = torch.matmul(
+            lpcp[b_name].double(), lpcp[name].double()
+        )
+        torch.testing.assert_close(actual_ba, expected_ba, rtol=0, atol=0)
     assert all(
         not head.weight.count_nonzero()
         for head in model.factor_commitment.heads.values()
@@ -357,7 +389,7 @@ def test_direct_joint_value_changes_with_video_under_fixed_language() -> None:
     assert not torch.equal(first, second)
 
 
-def test_anchored_linear_b_heads_open_all_families_and_require_video() -> None:
+def test_native_zero_b_heads_open_all_families_and_require_video() -> None:
     model, _ = _model()
     commitment = model.factor_commitment.requires_grad_(True)
     generator = torch.Generator(device="cpu").manual_seed(43)
@@ -376,7 +408,7 @@ def test_anchored_linear_b_heads_open_all_families_and_require_video() -> None:
     assert all(not value.count_nonzero() for value in zero_rows.values())
 
 
-def test_anchored_linear_b_heads_emit_only_public_b_rows() -> None:
+def test_native_zero_b_heads_emit_only_residual_bank_rows() -> None:
     model, _ = _model()
     commitment = model.factor_commitment
     generator = torch.Generator(device="cpu").manual_seed(47)
@@ -413,6 +445,9 @@ def test_anchored_linear_b_heads_emit_only_public_b_rows() -> None:
         for name, value in baseline.items()
         if name.endswith(".lora_B.default.weight")
     )
+    for name, value in baseline.items():
+        if name.endswith(".lora_B.default.weight"):
+            assert torch.equal(committed[name][..., :16], value[..., :16])
 
 
 def test_native_probe_value_lpcp_loader_rejects_partial_new_topology() -> None:

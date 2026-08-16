@@ -127,7 +127,8 @@
   `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。唯一把ALB public factor表示改为
   rank32单adapter：`A=[A0;A0]`、`B=[B0,delta-B]`，令数学上相同的`delta-B A0`从zero-B bank进入native BA；
   `alpha=rank=32`保持scale1，原rank16 carrier逐元素保留，四head 860,160 trainable与上游全部不变。先只实现
-  fixed task9/15/18训练/机制接口，3/3后才扩展formal evaluator/full24；
+  fixed task9/15/18训练/机制接口，3/3后才启动formal/full24；canonical实现已完成，定向CPU=`50 passed`、完整
+  CPU=`405 passed`、architecture guard 0 hard，尚无GPU run；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

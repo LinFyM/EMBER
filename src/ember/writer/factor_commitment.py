@@ -1,4 +1,4 @@
-"""Video-required fixed-A native-B residuals for the LPCP Writer."""
+"""Video-required B rows for the LPCP native-zero residual rank bank."""
 
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ NATIVE_B_WIDTHS = {
 NATIVE_B_FAMILIES = tuple(NATIVE_B_WIDTHS)
 
 
-class AnchoredLinearNativeBResidual(torch.nn.Module):
-    """Write joint video-language Value only into the LPCP-anchored B side."""
+class NativeZeroResidualBank(torch.nn.Module):
+    """Write joint video-language Value into the zero-origin B rank bank."""
 
     EXPERT_SLOTS = 18 * 16
     ACTION_SLOTS = 16
@@ -36,7 +36,7 @@ class AnchoredLinearNativeBResidual(torch.nn.Module):
     def __init__(self, *, width: int = 256) -> None:
         super().__init__()
         if width <= 0:
-            raise WriterModelError("invalid anchored native-B topology")
+            raise WriterModelError("invalid native-zero residual bank topology")
         self.width = int(width)
         self.heads = torch.nn.ModuleDict(
             {

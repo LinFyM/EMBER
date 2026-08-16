@@ -251,7 +251,8 @@ LPCP rank16 carrier，不能压缩baseline或回到parameter-ray sweep。
 reward、optimizer与continuous新增`delta-B A0`，唯一把public LoRA从rank16 additive `B0+delta-B`改为一套rank32
 state：`A=[A0;A0]`、`B=[B0,delta-B]`，其中第二B bank从native zero开始。`alpha=rank=32`故scale仍为1；原LPCP
 rank16逐元素保留，无compression、SVD、第二adapter或新增trainable。先只实现训练/机制接口并跑同一task9/15/18；
-三项全过后才实现formal evaluator/full24。
+canonical实现已原位完成，定向CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；先只跑同一
+task9/15/18，三项全过后才启动formal/full24。
 
 ## 4. Long-term objective and decision rule
 

@@ -477,7 +477,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_anchored_linear_b_native_value_commitment_v1": {
+    "v6_lpcp_native_zero_residual_bank_commitment_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
             "eval_adapter_v1"
@@ -490,23 +490,23 @@ WRITER_FAMILIES = {
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
         "arm_prefix": (
-            "v6_lpcp_anchored_linear_b_native_value_commitment_"
+            "v6_lpcp_native_zero_residual_bank_commitment_"
         ),
         "trained_checkpoint_kind": (
-            "v6_lpcp_anchored_linear_b_native_value_commitment_cycle_checkpoint"
+            "v6_lpcp_native_zero_residual_bank_commitment_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
-        "lora_rank": 16,
+        "lora_rank": 32,
         "lora_target_count": 38,
         "videos_per_condition": 4,
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the anchored linear-B native Value commitment graph"
+            "the native-zero residual bank commitment graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the anchored linear-B native Value commitment graph"
+            "through the native-zero residual bank commitment graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

@@ -105,7 +105,8 @@ support，不能压缩baseline、重新混合A/B或继续parameter-ray路线。
 `A=[A0;A0], B=[B0,delta-B]`。第二B bank从native zero开始，第一rank16 bank逐元素保留LPCP；alpha/rank仍为1，
 四heads与trainable仍860,160。它是“同一`delta-B A0`、不同native origin”的严格反事实，不是两套LoRA、
 compression或capacity sweep。先完成训练/机制接口并只跑固定task9/15/18，三项全过才实现formal evaluator/full24。
-authority=`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。
+authority=`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。canonical实现已完成：定向
+CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；下一步是clean commit后的三anchor GPU门。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

@@ -146,3 +146,16 @@ rank32若closed-loop更强，后续是否压缩为rank8/16是独立效率实验�
 
 负结果只淘汰`LPCP rank16 carrier + duplicated-A native-zero rank16 residual bank + ALB four-head Value + one reward
 cycle`。不否定memory token、rank8、few-shot、生成LoRA或未来task-local RL。
+
+## 10. Canonical实现状态
+
+canonical active config为
+`configs/pi05_writer_v6_lpcp_native_zero_residual_bank_commitment_v1.json`，旧ALB executable config已从active tree
+移除。policy由sealed PI05 contract只派生rank32/alpha32，foundation、38 targets、identity seed与其余authority不变；
+rank32 identity的前16 lanes逐元素等于rank16 identity。Native V6 Writer仍只解码原320 slots/rank16 carrier，public
+assembly在同一次decode中复制A0并把四head B rows放入第二bank，不增加encoder/compiler forward。
+
+fresh reward config/checkpoint/completion/evaluator identity已切换到NZRB-C；historical rank16 base Writer仍通过显式
+deployment rank使用同一canonical builder。定向CPU=`50 passed`，完整CPU在`.env.local` LIBERO assets合同下=
+`405 passed`，compileall与diff check通过；architecture guard无hard violation，active source diff净增长165行，
+无新module/entrypoint。以上只证明rank32 factor、fresh边界与CPU机制正确，尚无GPU anchor结果。

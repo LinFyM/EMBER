@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -87,6 +87,18 @@ class Pi05LoRAContract:
                 for target in self.targets
             ],
         }
+
+
+def derive_pi05_lora_rank(
+    contract: Pi05LoRAContract,
+    *,
+    rank: int,
+) -> Pi05LoRAContract:
+    """Change only the method-owned LoRA rank while preserving scale one."""
+
+    if rank <= 0:
+        raise LoRAContractError("derived PI05 LoRA rank must be positive")
+    return replace(contract, rank=int(rank), alpha=int(rank))
 
 
 def _require_sha256(value: Any, label: str) -> str:

@@ -16,7 +16,7 @@ from ember.expert_manifold.video_schedule import (
     video_schedule_contract,
     video_selection_seed,
 )
-from ember.pi05_lora import load_pi05_lora_contract
+from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.as_config import (
     AS_WRITER_CONFIG_SCHEMA,
@@ -280,6 +280,7 @@ def _validate_reward_run_contract(
         or run.get("writer") != config["writer"]
         or run.get("information_wall") != reward_config["information_wall"]
         or run.get("objective") != reward_config["objective"]
+        or run.get("deployment") != reward_config["deployment"]
         or run.get("commitment") != reward_config["commitment"]
         or run.get("initialization", {}).get("as_checkpoint")
         != reward_config["initialization"]["as_checkpoint"]
@@ -333,6 +334,7 @@ def _reward_writer_asset(
         "data",
         "environment",
         "objective",
+        "deployment",
         "commitment",
         "rng",
         "optimization",
@@ -357,10 +359,10 @@ def _reward_writer_asset(
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
         "training_mode": (
-            "formal_anchored_linear_b_native_value_commitment"
+            "formal_native_zero_residual_bank_commitment"
         ),
         "training_stage": (
-            "on_policy_cross_video_anchored_linear_b_native_value"
+            "on_policy_cross_video_native_zero_residual_bank"
         ),
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
@@ -550,17 +552,19 @@ def inspect_dynamic_k_writer_evaluation(
     )
     lora_path = authority_path(config, "lora_contract")
     lora = load_pi05_lora_contract(lora_path)
+    if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND:
+        lora = derive_pi05_lora_rank(lora, rank=32)
     reference = (
         f"{AS_WRITER_CONFIG_SCHEMA}:{DYNAMIC_K_CHECKPOINT_KIND}:"
         f"m{writer_asset['method_macro']}:"
-        f"{writer_asset['writer_state']['bytes']}bytes:rank16"
+        f"{writer_asset['writer_state']['bytes']}bytes:rank{lora.rank}"
     )
     return {
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_anchored_linear_b_native_value_commitment_"
+                "v6_lpcp_native_zero_residual_bank_commitment_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

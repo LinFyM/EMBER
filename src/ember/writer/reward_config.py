@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP anchored linear-B native Value commitment."""
+"""Authority for V6-LPCP native-zero residual bank commitment."""
 
 from __future__ import annotations
 
@@ -11,21 +11,32 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_v1"
+    "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_anchored_linear_b_native_value_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_native_zero_residual_bank_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_anchored_linear_b_native_value_commitment"
+        "frozen_v6_lpcp_plus_native_zero_residual_bank_commitment"
     ),
+}
+_DEPLOYMENT_CONTRACT = {
+    "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
+    "carrier_rank": 16,
+    "residual_bank_rank": 16,
+    "public_rank": 32,
+    "alpha": 32,
+    "scale": 1.0,
+    "factorization": "A_concat_A0_A0_and_B_concat_B0_deltaB",
+    "carrier_compression": False,
+    "second_adapter": False,
 }
 _DATA_CONTRACT = {
     "task_count": 24,
@@ -107,6 +118,7 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
         (
             _contains(config.get("initialization", {}), _INITIALIZATION_CONTRACT),
             cold_start.startswith("runs/outputs/"),
+            _contains(config.get("deployment", {}), _DEPLOYMENT_CONTRACT),
             _contains(config.get("data", {}), _DATA_CONTRACT),
             _contains(
                 config.get("environment", {}),
@@ -152,14 +164,14 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported anchored linear-B commitment config")
+        raise WriterModelError("unsupported native-zero residual bank config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))
     if not _contract_is_valid(config, cold_start):
-        raise WriterModelError("anchored linear-B commitment contract changed")
+        raise WriterModelError("native-zero residual bank contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -167,11 +179,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid anchored linear-B commitment mode")
+        raise WriterModelError("invalid native-zero residual bank mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal anchored linear-B commitment training is not authorized"
+            "formal native-zero residual bank training is not authorized"
         )

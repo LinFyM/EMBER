@@ -13,9 +13,11 @@ from ember.lora import (
     canonical_contract_sha256,
     copy_task_lora_state_,
     functional_lora_call,
+    identity_lora_state,
 )
 from ember.pi05_lora import (
     Pi05LoRAContract,
+    derive_pi05_lora_rank,
     derive_pi05_targets,
     load_pi05_lora_contract,
     pi05_target_names,
@@ -25,6 +27,25 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_rank32_contract_preserves_scale_and_rank16_identity_prefix() -> None:
+    carrier = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
+    deployment = derive_pi05_lora_rank(carrier, rank=32)
+    carrier_state = identity_lora_state(carrier)
+    deployment_state = identity_lora_state(deployment)
+    assert (deployment.rank, deployment.alpha, deployment.parameter_count) == (
+        32,
+        32,
+        2_574_336,
+    )
+    for name, value in carrier_state.items():
+        observed = deployment_state[name]
+        if name.endswith(".lora_A.default.weight"):
+            assert torch.equal(observed[:16], value)
+        else:
+            assert torch.equal(observed[:, :16], value)
+            assert not observed[:, 16:].count_nonzero()
 
 
 class _Attention(torch.nn.Module):

@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_anchored_linear_b_native_value_commitment_v1",
+  "schema_version": "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,18 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_anchored_linear_b_native_value_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_native_zero_residual_bank_commitment"
+  },
+  "deployment": {
+    "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
+    "carrier_rank": 16,
+    "residual_bank_rank": 16,
+    "public_rank": 32,
+    "alpha": 32,
+    "scale": 1.0,
+    "factorization": "A_concat_A0_A0_and_B_concat_B0_deltaB",
+    "carrier_compression": false,
+    "second_adapter": false
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -142,7 +153,10 @@
       "correct_each_negative_margin_minimum": 10
     },
     "mechanism_gate": {
-      "step0_exact_lpcp": true,
+      "public_rank": 32,
+      "step0_fp64_effective_ba_relative_l2_maximum": 1e-12,
+      "carrier_first_bank_tensors_unchanged": true,
+      "residual_second_b_step0_zero": true,
       "trainable_parameter_count": 860160,
       "exact_paired_rollout_initial_observation": true,
       "complete_occupancy_chunks_must_match_fixed_anchor_counts": true,
@@ -160,7 +174,7 @@
       "accepted_and_expected_delta_l2_relative_error_maximum": 1e-06,
       "final_delta_to_adam_candidate_cosine_minimum": 0.999999,
       "first_update_all_four_native_b_heads_nonzero": true,
-      "lpcp_a_tensors_unchanged": true,
+      "continuous_delta_ba_equivalence_relative_l2_maximum": 1e-06,
       "post_update_q_v_action_native_factors_nonzero": true,
       "train_cross_video_correction_cosine_minimum": 0.4,
       "train_cross_video_mean_energy_ratio_minimum": 0.55,
@@ -177,7 +191,8 @@
       "constant_effective_ba_natural_ratio_maximum": 0.005,
       "no_extra_environment_step_or_video_backbone_forward": true,
       "matched_action_batch_size": 8,
-      "search_trial_count_maximum": 11
+      "search_trial_count_maximum": 11,
+      "three_anchor_total_cycle_over_albnv_maximum": 1.15
     }
   }
 }

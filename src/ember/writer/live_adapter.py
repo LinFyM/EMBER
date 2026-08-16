@@ -114,6 +114,7 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             config,
             policy,
             asset_root=Path(str(source["source_run"])).resolve().parents[2],
+            deployment_rank=int(observed["lora_contract"]["rank"]),
         )
         self.writer.to(device)
         load_writer_deployment_state_(

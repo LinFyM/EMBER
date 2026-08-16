@@ -1,4 +1,4 @@
-"""Train anchored native-B heads with matched-batch occupancy credit."""
+"""Train the native-zero residual B bank with matched occupancy credit."""
 
 from __future__ import annotations
 
@@ -211,6 +211,7 @@ def _contract(
         "data": dict(config["data"]),
         "environment": dict(config["environment"]),
         "objective": dict(config["objective"]),
+        "deployment": dict(config["deployment"]),
         "commitment": dict(config["commitment"]),
         "rng": dict(config["rng"]),
         "optimization": dict(config["optimization"]),
@@ -248,6 +249,7 @@ def _load_direct_factor_models(
         base_config,
         policy,
         asset_root=args.source_run.resolve().parents[2],
+        deployment_rank=int(config["deployment"]["public_rank"]),
     )
     writer.to(context.device)
     writer.load_lpcp_state_(
@@ -272,11 +274,11 @@ def _load_direct_factor_models(
         != 860_160
     ):
         raise WriterModelError(
-            "anchored native-B commitment must train only 860160 parameters"
+            "native-zero residual bank must train only 860160 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_anchored_linear_b_native_value_commitment_only"
+        "v6_lpcp_native_zero_residual_bank_commitment_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -496,7 +498,7 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_anchored_linear_b_native_value_"
+                        "ember_pi05_v6_lpcp_native_zero_residual_bank_"
                         "commitment_completion_v1"
                     ),
                     "mode": args.mode,

@@ -523,8 +523,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 - [x] 固定严格反事实：连续新增BA仍为`delta-B A0`，public state唯一改为rank32
   `A=[A0;A0], B=[B0,delta-B]`，alpha/rank=1；
-- [ ] 原位实现rank32训练/机制路径、fresh schema/config与CPU合同；第一rank16 bank必须逐元素保留LPCP，second-B
-  step0精确zero；
+- [x] 原位实现rank32训练/机制路径、fresh schema/config与CPU合同；第一rank16 bank逐元素保留LPCP，second-B
+  step0精确zero；定向CPU=`50 passed`、完整CPU=`405 passed`、architecture guard 0 hard；
 - [ ] clean push后并行运行固定task9/15/18并完整分析native acceptance、FP64 BA等价、held8、temporal、wall与显存；
 - [ ] 3/3后才实现distributed/evaluator/full24；任一失败终局，不改变reserved bank宽度、side、ray、scale或dtype。
 

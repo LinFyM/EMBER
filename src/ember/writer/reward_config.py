@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP all-view monotone backtracking commitment."""
+"""Authority for V6-LPCP maximum-margin common-descent commitment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,20 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_v1"
+    "ember_pi05_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_direct_factor_all_view_monotone_backtracking_commitment"
+        "frozen_v6_lpcp_plus_direct_factor_maximum_margin_common_descent_commitment"
     ),
 }
 _DATA_CONTRACT = {
@@ -62,19 +62,30 @@ _OBJECTIVE_CONTRACT = {
         "disjoint_correct_k4_conditions"
     ),
     "view_aggregation": (
-        "equal_mean_of_four_view_writer_gradients_with_unit_task_weight"
+        "symmetric_four_view_maximum_margin_common_descent_direction_"
+        "rescaled_to_equal_mean_l2"
     ),
     "flow_mc_samples": 4,
     "occupancy_strata_per_trajectory": 8,
 }
 _COMMITMENT_CONTRACT = {
     "kind": (
-        "first_all_view_monotone_power_of_two_backtracking_from_adam_upper_radius"
+        "maximum_margin_direction_first_all_view_monotone_power_of_two_"
+        "backtracking_from_adam_upper_radius"
     ),
     "adam_upper_radius": (
         "same_raw_gradient_optimizer_state_lr_betas_eps_weight_decay_and_clip"
     ),
-    "direction": "negative_raw_shared_gradient",
+    "direction": (
+        "negative_task_equal_mean_of_per_task_four_view_maximum_margin_directions"
+    ),
+    "direction_solver": (
+        "exact_four_view_minimum_norm_simplex_active_set_on_4x4_gram"
+    ),
+    "direction_scale": (
+        "each_task_maximum_margin_direction_rescaled_to_its_equal_view_mean_l2"
+    ),
+    "optimizer_direction": "original_equal_view_then_equal_task_mean_gradient",
     "radius_schedule": (
         "adam_upper_radius_times_two_to_the_negative_backtrack_index"
     ),
@@ -87,7 +98,7 @@ _COMMITMENT_CONTRACT = {
     "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
     "task_weighting": "equal_mean_over_active_tasks_before_commitment",
     "view_weighting": (
-        "equal_mean_over_four_correct_video_gradients_before_commitment"
+        "four_correct_video_gradients_are_symmetric_maximum_margin_constraints"
     ),
     "fixed_scale_or_checkpoint_selection": False,
     "video_or_environment_recompute": False,
@@ -150,14 +161,14 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported monotone backtracking commitment config")
+        raise WriterModelError("unsupported maximum-margin commitment config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))
     if not _contract_is_valid(config, cold_start):
-        raise WriterModelError("monotone backtracking commitment contract changed")
+        raise WriterModelError("maximum-margin commitment contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -165,11 +176,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid monotone backtracking commitment mode")
+        raise WriterModelError("invalid maximum-margin commitment mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal monotone backtracking commitment training is not authorized"
+            "formal maximum-margin commitment training is not authorized"
         )

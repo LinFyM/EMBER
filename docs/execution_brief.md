@@ -64,15 +64,23 @@ AR-EC clean `b578d56`已终局：三anchor raw gradient均为`4/4`共同下降�
 后每个任务仅`1/4` post margins下降；radius/raw-gradient L2=`6333/7988/4294x`。train/held BA coherence、
 q/v/action、reverse/constant与core wall都健康，故不full24/strict，最早接口是finite trust radius。
 
-当前active successor是**AV-MBC**：完整保留MB-SOP/AR-EC matched panel、四video等权、direction、LPCP/DJNFR、
+最新终局successor是**AV-MBC**：完整保留MB-SOP/AR-EC matched panel、四video等权、direction、LPCP/DJNFR、
 rank16与八heads，只沿`-g`从Adam upper radius确定性减半，接受第一个四view同panel/noise margin全部下降的candidate。
 不挑最佳scale、不产生多checkpoint。authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。clean `aa819f2`
 三anchor都完整exit0，但训练前gradient CFM margin与candidate inference CFM margin不是同一执行路径，导致小scale
 不收敛到零；恢复step0后fixed-action仍有约`.0021--.0030` RMS，又暴露rollout batch与batch1 probe混比。因此
 `aa819f2`只作工程证据，不能裁决AV-MBC。canonical已只修测量合同：同inference evaluator先测step0再比较candidate，
-fixed-action前后使用相同batch1 query/noise；CPU=`404 passed`、architecture guard无hard violation。首轮仍只授权
-fresh task9/15/18，formal blocked；当前无GPU run或可resume checkpoint。
+fixed-action前后使用相同batch1 query/noise；CPU=`404 passed`、architecture guard无hard violation。clean
+`202a64d`真实结果为task9 `j10`但held4/8与held/train`.184x`失败，task15全部11个candidate拒绝并恢复exact no-op，
+task18 `j5`全门通过。一个scalar radius因此无法成为shared稳定commitment，AV-MBC终局且无full24/strict。
+
+当前active successor是**MMCD**：不改video-language、reward、FactorHeads、Adam半径或backtracking，只把每task四
+view raw mean方向换成对四个raw gradients具有最大worst-view一阶下降余量的共同方向；方向再缩放回原mean norm，
+formal跨task仍等权。该方向由已有gradients的`4x4` Gram确定性求解，不增加forward或模型参数。authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。canonical实现、fresh
+schema与CPU合同已完成：完整CPU=`405 passed`、architecture guard 0 hard；formal仍blocked。首门仍是固定
+task9/15/18：必须让task15出现native共同步且修复task9 held门，否则立即终局。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

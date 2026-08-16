@@ -1,6 +1,6 @@
 # EMBER Findings
 
-更新时间：2026-08-15。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
+更新时间：2026-08-16。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
 `docs/research_history.md`；当前run只取`docs/active_session_handoff.md`。
 
 ## 1. 当前经验边界
@@ -646,6 +646,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     `1e-4`量级而不趋零。恢复step0后native BA严格为零，fixed-action却仍有`.002624/.002081/.002964` RMS，进一步
     证明它把动态rollout B2/B1 action与batch1 probe混比。最小正确修复是同inference evaluator先测step0并rebase
     所有candidate，同时固定action前后走同一batch1路径；这不是改变AV-MBC科学变量或增加防御性检查。
+97. 修正版AV-MBC clean`202a64d`给出可裁决结果：task18在`j=5`通过全部门；task9只在`j=10`接受且train BA
+    L2仅`2.385e-6`、held/train`.18446x`、held4/8；task15到`j=10`仍有view3 `+6.377e-6`且无共同step，恢复
+    BA/action精确零。故task间可用半径不是一个稳定scalar：表现为有效、near-identity和空集。下一变量应最大化
+    四个已有gradient的worst-view一阶下降余量并改变共同方向；不能继续缩半径、扫LR或扩dtype。
+98. MMCD已把这一个变量原位实现：每task只在已有四个view gradients的`4x4` Gram上求minimum-norm simplex
+    combination，得到maximum-margin common-descent direction并缩放回原equal-mean norm；AdamW仍只提供原
+    optimizer state与global L2 upper radius，native all-view backtracking不变。新schema明确分离optimizer
+    gradient与commitment direction，完整CPU=`405 passed`、architecture guard 0 hard，未增加模型参数或forward。
+    这些仍只是工程合同；task9/15/18真实锚点未完成前不能声称修复。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

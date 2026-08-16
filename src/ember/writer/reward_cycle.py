@@ -35,6 +35,7 @@ from ember.writer.reward_preference import (
     backpropagate_lora_cotangent,
     cross_video_gradient_geometry,
     functional_matched_stratified_occupancy_lora_gradient,
+    maximum_margin_common_descent_gradient,
     mean_cross_video_task_gradient,
 )
 from ember.writer.reward_gradient_update import (
@@ -407,6 +408,7 @@ def _differentiate_task_credit(
     pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
     active_labels: Sequence[str],
     gradient_sum: torch.Tensor,
+    commitment_direction_sum: torch.Tensor,
 ) -> TaskCreditResult:
     started = time.monotonic()
     actions_by_arm, action_metrics = query_matched_occupancy_actions(
@@ -451,7 +453,11 @@ def _differentiate_task_credit(
     )
     view_gradient_geometry = cross_video_gradient_geometry(view_gradients)
     task_gradient = mean_cross_video_task_gradient(view_gradients)
+    commitment_direction, commitment_direction_geometry = (
+        maximum_margin_common_descent_gradient(view_gradients)
+    )
     gradient_sum.add_(task_gradient)
+    commitment_direction_sum.add_(commitment_direction)
     first = view_rows[0]
     result = {
         "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
@@ -490,6 +496,7 @@ def _differentiate_task_credit(
         ),
         "credit_view_records": view_rows,
         "cross_video_gradient_geometry": view_gradient_geometry,
+        "maximum_margin_commitment_geometry": commitment_direction_geometry,
         **action_metrics,
         **selection_metrics,
     }
@@ -508,6 +515,7 @@ def _task_gradient(
     task: RewardTask,
     cycle: int,
     gradient_sum: torch.Tensor,
+    commitment_direction_sum: torch.Tensor,
     probe: RewardProbe | None,
 ) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
     visit, anchor_demos, packed, video_metrics, state, reference_lora, candidate_lora = (
@@ -551,6 +559,7 @@ def _task_gradient(
             pairs,
             active_labels,
             gradient_sum,
+            commitment_direction_sum,
         )
         if probe is None:
             probe = make_reward_probe(
@@ -605,6 +614,7 @@ def _collect_cycle_tasks(
     runtime: RewardRuntime,
     cycle: int,
     gradient_sum: torch.Tensor,
+    commitment_direction_sum: torch.Tensor,
 ) -> tuple[
     list[dict[str, Any]],
     RewardProbe | None,
@@ -618,7 +628,7 @@ def _collect_cycle_tasks(
         )
         task = next(task for task in runtime.tasks if task.global_task_id == task_id)
         row, probe, active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum, None
+            runtime, task, cycle, gradient_sum, commitment_direction_sum, None
         )
         gradients = (
             {task.global_task_id: task_gradient}
@@ -639,7 +649,7 @@ def _collect_cycle_tasks(
     active = 0
     while task := _claim_task(queue, ordered):
         row, probe, task_active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum, probe
+            runtime, task, cycle, gradient_sum, commitment_direction_sum, probe
         )
         records.append(row)
         active += task_active
@@ -696,9 +706,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_all_view_monotone_backtracking_commitment"
+            "one_complete_train24_direct_factor_maximum_margin_common_descent_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_all_view_monotone_backtracking_commitment_live_smoke"
+            else "one_task_direct_factor_maximum_margin_common_descent_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -753,10 +763,18 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
         dtype=torch.float32,
         device=runtime.context.device,
     )
+    commitment_direction_sum = torch.zeros_like(gradient_sum)
     records, probe, local_active, task_gradients = _collect_cycle_tasks(
-        runtime, cycle, gradient_sum
+        runtime, cycle, gradient_sum, commitment_direction_sum
     )
-    step = apply_monotone_reward_step(runtime, gradient_sum, local_active, task_gradients, probe)
+    step = apply_monotone_reward_step(
+        runtime,
+        gradient_sum,
+        commitment_direction_sum,
+        local_active,
+        task_gradients,
+        probe,
+    )
     records, probes, elapsed = _gather_cycle_evidence(
         runtime, records, probe, step.commitment_preference_rows, started
     )

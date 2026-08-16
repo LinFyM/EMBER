@@ -45,11 +45,14 @@ AR-EC保留MB-SOP全部科学图，把final delta严格放回负raw shared gradi
 radius与moments。clean `b578d56`三anchor raw coverage均为`4/4`、final cosine均为1，但每个任务都只有`1/4`
 post margins下降；Adam radius为raw gradient L2的`6333/7988/4294x`。train/held BA coherence、q/v/action、时序和
 core wall均健康，证明方向旋转不是最早问题，full radius已经越过共同局部下降区间。AR-EC未full24/strict。
-当前active AV-MBC只把该upper radius改成固定顺序的all-view monotone backtracking，接受第一个四view全下降
+AV-MBC随后只把该upper radius改成固定顺序的all-view monotone backtracking，接受第一个四view全下降
 candidate；不改credit、carrier、rank、video aggregation或direction。其clean `aa819f2`首次三anchor完整exit0，
 但搜索把gradient-enabled before margin与inference-only candidate margin混比，恢复step0后的action probe也混合
 rollout batch与batch1路径，故该轮仅是工程诊断而非科学non-pass。canonical已改为同inference evaluator的exact
-step0 baseline与candidate比较，并统一fixed-action batch1路径，等待fresh三anchor。
+step0 baseline与candidate比较，并统一fixed-action batch1路径。修正版clean `202a64d`终局：task18在1/32半径
+全门通过；task9仅在1/1024接受且held4/8、held/train`.18446x`；task15到1/1024仍无all-view step并恢复exact
+no-op。AV-MBC因此没有full24/strict。它只否定固定raw-mean ray上的scalar radius，不否定direction-changing
+commitment。当前MMCD保留全部science graph，唯一从已有四view gradients确定性求maximum-margin direction。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

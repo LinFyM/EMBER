@@ -276,7 +276,7 @@ def _load_direct_factor_models(
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_only"
+        "v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -496,8 +496,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_direct_factor_all_view_monotone_"
-                        "backtracking_commitment_completion_v1"
+                        "ember_pi05_v6_lpcp_direct_factor_maximum_margin_"
+                        "common_descent_commitment_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

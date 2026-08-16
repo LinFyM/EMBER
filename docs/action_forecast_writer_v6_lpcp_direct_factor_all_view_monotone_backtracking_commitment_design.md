@@ -1,9 +1,12 @@
 # V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment
 
-状态：2026-08-16 active single-variable design authority。clean `aa819f2`首次world1三anchor均完整exit0，但暴露
+状态：2026-08-16 terminal non-pass，禁止full24、strict、resume、扩大backtrack或参数小扫。clean `aa819f2`首次
+world1三anchor均完整exit0，但暴露
 baseline measurement contract错误，不能作为科学pass/non-pass：训练前margin来自gradient-enabled CFM路径，candidate
 margin来自inference CFM路径；恢复step0后fixed-action probe又把rollout B2/B1 action与batch1重算action比较。修正版只
-统一这两个测量路径，不改科学变量；全量CPU=`404 passed`、architecture guard 0 hard violation，等待fresh冻结复跑。
+统一这两个测量路径，不改科学变量；全量CPU=`404 passed`、architecture guard 0 hard violation。clean `202a64d`
+随后完成全部三anchor与train/held/时序分析：task18在`j=5`全门通过；task9到`j=10`才接受但held仅4/8、
+held/train`.18446x`；task15到`j=10`仍无共同下降candidate并正确恢复step0。故本轮科学假设终局。
 简称`AV-MBC`。本轮从sealed LPCP fresh启动，完整保留MB-SOP/AR-EC的video-language carrier、matched
 successful-occupancy panel、四个
 correct K4 views、八个direct native-factor heads与rank16部署图，只替换raw shared gradient的有限步半径选择。

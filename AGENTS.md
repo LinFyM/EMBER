@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -208,12 +208,20 @@ Adam候选global L2但把final delta精确放回`-raw mean`。task9/15/18的raw 
 coherence、q/v/action、reverse/constant和core wall全部健康，且task15/18 coherence较MB-SOP更高；因此最早缺口
 进一步定位为**全Adam半径超出四view共同局部下降区间**。AR-EC不full24/strict/cycle2或固定scale sweep。
 
-当前active successor是**V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment**（AV-MBC），authority=
+最新终局successor是**V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment**（AV-MBC），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。它保留AR-EC全部
 方向、optimizer state和科学图，只从Adam upper radius沿同一`-g`方向依次检验`1,1/2,...,1/1024`，接受同一panel/
 noise下四个correct-video views全部严格下降的第一个candidate；不是挑最佳scale或多checkpoint sweep。首轮仅实现
-固定三anchor机制门，formal保持blocked。canonical world1机制实现与fresh schema已完成，全量CPU=`404 passed`、
-architecture guard无hard violation；尚无GPU结果或可resume checkpoint。
+固定三anchor机制门。修正版clean `202a64d`结果为：task18在`j=5`通过全部门；task9只在`j=10`接受但held4/8、
+held/train`.18446x`；task15到`j=10`仍无共同candidate并恢复exact no-op。故scalar radius对task呈有效、
+near-identity和空集三种状态，AV-MBC终局，不full24/strict/resume。
+
+当前active successor是**V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment**（MMCD），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。它保留AV-MBC全部
+carrier、matched reward、Adam upper radius、native backtracking、rank16与八heads，唯一从已有四view gradients的
+`4x4` Gram确定性求maximum-margin direction，再保持原task mean norm与跨task等权。canonical实现与fresh schema已完成，
+完整CPU=`405 passed`、architecture guard 0 hard，尚未运行GPU；
+首轮仍只授权task9/15/18，必须修复task15 no-op与task9 held门才允许full24。
 
 ## 4. Long-term objective and decision rule
 

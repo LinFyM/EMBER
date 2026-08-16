@@ -103,8 +103,8 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "active_formal_cycle1_completed_strict_pending"
+    assert config["formal_run"]["status"] == "sealed"
     predecessor = config["formal_run"]["predecessor_evidence"]
     assert predecessor["task38_to_next_gradient_norm_ratio"] < 15
     assert predecessor["equal_selected_credit_pairs_per_active_task"] == 8
@@ -214,6 +214,11 @@ def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
+    cycle1 = config["formal_run"]["cycle1_evidence"]
+    assert cycle1["authority_commit"].startswith("539e0e5")
+    assert cycle1["exact_adam_delta_l2"] > 0
+    assert cycle1["descending_task_views"] == 17
+    assert cycle1["total_task_views"] == 24
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 

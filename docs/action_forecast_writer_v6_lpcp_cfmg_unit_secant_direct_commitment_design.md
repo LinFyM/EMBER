@@ -74,3 +74,10 @@ carrier或随意扫scale。若cycle1好而cycle2换手严重，说明问题是�
 checkpoint稳定，再测试视频因果性。
 
 任何负结果都不否定memory token、dynamic K/few-shot、rank8、生成完整LoRA或未来独立的task-local RL。
+
+## 6. Cycle1 execution state
+
+clean`539e0e5`在gpu01 world6完成cycle1：24 tasks/48 states/96 rollouts，6 active tasks覆盖四suite，arm successes=
+`32/32`、gains=`3/3`，cycle=`335.189s`。唯一j0 L2=`.242098`，17/24 task-view margins下降，q/v/action与
+fixed-action response均非零，0禁读/OOM/nonfinite。checkpoint已按标准post-training流程sealed；以上不是strict
+结果，下一裁决仍是同一single checkpoint的paired400。

@@ -24,9 +24,11 @@
 - 当前active successor是**USDC**，authority=
   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。模型、memory、rank32、K4、
   unit-secant与等task梯度逐项不变；唯一提交未经缩放的exact Adam `j0`，把20/20降为诊断并删除重复step0 baseline
-  forward。canonical实现已完成，完整CPU=`413 passed`、compileall/diff check与architecture guard 0 hard；下一裁决点
-  是clean frozen full24 cycle1，再立即strict400。
-  若cycle1有正信号则同world exact-resume cycle2/3，每个checkpoint独立strict以判断训练量与稳定性；当前无GPU run；
+  forward。canonical实现完整CPU=`413 passed`、architecture guard 0 hard。clean`539e0e5` gpu01 world6 full24
+  cycle1已完整exit0：24 tasks/48 states/96 rollouts、6 active tasks、candidate/reference=`32/32`、gains=`3/3`、
+  cycle=`335.189s`；saved j0 L2=`.242098`，17/24 margins下降且q/v/action response非零，0禁读/OOM/nonfinite。
+  首次strict准备因config尚未post-training seal而在0 rollout处退出，不是科学结果；当前已按标准合同seal checkpoint，
+  下一裁决是同一checkpoint strict400。若有正信号则同world exact-resume cycle2/3；当前无GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

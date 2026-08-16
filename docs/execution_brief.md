@@ -14,9 +14,11 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 owner明确指出20/20是有价值的理想诊断，但可能本身不可达，不能永久替代closed-loop目标。当前active是
 **USDC**，authority=`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`：逐项保留
 USFC模型、memory、rank32、K4、unit-secant和等task梯度，只提交一次未经缩放的exact Adam `j0`；不backtrack、
-不挑阈值、不重复step0 baseline forward。CPU/architecture gate后立即fresh full24 cycle1和strict400。一次cycle
-只有48 states/96 rollouts且只有discordant tasks有gradient，所以好结果必须继续同world exact-resume cycle2，必要时
-cycle3，并逐checkpoint strict评估稳定积累；明显坏的cycle1不靠盲目加训练量挽救。
+不挑阈值、不重复step0 baseline forward。clean`539e0e5` gpu01 world6 fresh cycle1已完整exit0：24 tasks/48 states/
+96 rollouts、6 active tasks、`32/32` arm successes、`3/3` gains，cycle=`335.189s`；唯一j0 L2=`.242098`并写出
+非零q/v/action，17/24 margins下降。首次strict准备在0 rollout处正确拒绝尚未post-training seal的config；现已按
+标准流程seal，下一步重跑同一checkpoint strict400。一次cycle只有少量discordant tasks有gradient，所以好结果必须
+继续同world exact-resume cycle2，必要时cycle3，并逐checkpoint strict评估稳定积累；明显坏的cycle1不盲目延长。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

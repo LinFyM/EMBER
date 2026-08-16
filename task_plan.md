@@ -675,7 +675,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `j0`，20/20降为诊断，删除重复step0 baseline forward；保留unit-secant、四view与等task raw gradient；
 - [x] 完成USDC canonical identity与单次j0路径；完整CPU=`413 passed`、compileall/diff check通过、architecture
   guard 0 hard violation，active source净减88行且没有新module/parallel path；
-- [ ] 完成clean push与frozen full24 cycle1，随后立即strict400；
+- [x] clean`539e0e5` gpu01 world6完成frozen full24 cycle1：24 tasks/48 states/96 rollouts、6 active tasks，
+  candidate/reference=`32/32`、gains=`3/3`、cycle=`335.189s`；saved j0 L2=`.242098`、17/24 margins下降、
+  q/v/action非零且0禁读/OOM/nonfinite；
+- [x] 定位首次strict 0-rollout工程退出为标准post-training seal尚未执行；不改checkpoint或训练结果，只将formal
+  status seal并记录cycle1 evidence；
+- [ ] 由sealed commit重跑同一cycle1 checkpoint strict400并完成逐task配对分析；
 - [ ] 若cycle1有closed-loop正信号，锁定world topology exact-resume cycle2，必要时cycle3；每个checkpoint分别
   strict400并分析相邻churn/Jaccard，不能以偶然winner替代稳定共同积累。
 

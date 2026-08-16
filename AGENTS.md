@@ -39,8 +39,10 @@ EMBER上下文纠正理解。
 `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。它从sealed LPCP fresh开始，逐项
 保留USFC的CFMG memory/content grid、rank32、K4、unit-secant objective、四view/active-task等权梯度与Adam；唯一
 删除all-task/all-view monotone backtracking保存硬门，只提交一次未经缩放的exact Adam `j0`。20/20仍完整记录为
-诊断，不再阻止strict400；也不重复step0 baseline forward、不扫scale或挑checkpoint。cycle1后立即strict400，若有
-正信号则exact-resume cycle2/3并逐checkpoint判断稳定共同积累。
+诊断，不再阻止strict400；也不重复step0 baseline forward、不扫scale或挑checkpoint。clean`539e0e5` gpu01 world6
+cycle1已完整exit0：24 tasks/48 states/96 rollouts、6 active tasks覆盖四suite，candidate/reference=`32/32`、
+gains=`3/3`，cycle=`335.189s`；saved j0 L2=`.242098`，17/24 margins下降且q/v/action非零，0禁读/OOM/nonfinite。
+checkpoint已按post-training合同sealed；下一裁决是同一checkpoint strict400，若有正信号则exact-resume cycle2/3。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

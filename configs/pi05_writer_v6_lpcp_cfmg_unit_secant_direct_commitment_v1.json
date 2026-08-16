@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_v1",
-  "status": "active_formal",
+  "status": "active_formal_cycle1_completed_strict_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -134,7 +134,7 @@
     }
   },
   "formal_run": {
-    "status": "ready",
+    "status": "sealed",
     "predecessor_evidence": {
       "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_usfc_formal_cycle0to1_r6_k4_views4_nmc4_b8_db7ab24_gpu02p123467_20260817/usfc_full24_terminal_adjudication.json",
       "active_task_ids": [4, 19, 25, 34, 38],
@@ -232,6 +232,25 @@
       "search_trial_count_maximum": 1,
       "shared_anchor_cycle_seconds_maximum": 210.0,
       "shared_anchor_train_task_count": 3
+    },
+    "cycle1_evidence": {
+      "result": "complete_strict400_required",
+      "authority_commit": "539e0e5a343c1c8aae4918585126e15a981334c9",
+      "training_root": "runs/outputs/pi05_v6_lpcp_cfmg_usdc_formal_cycle0to1_r6_k4_views4_nmc4_b8_539e0e5_gpu01p024567_20260817",
+      "world_size": 6,
+      "tasks": 24,
+      "paired_states": 48,
+      "rollouts": 96,
+      "candidate_successes": 32,
+      "reference_successes": 32,
+      "active_tasks": 6,
+      "active_suites": ["libero_10", "libero_goal", "libero_object", "libero_spatial"],
+      "cycle_seconds": 335.18949277396314,
+      "exact_adam_delta_l2": 0.2420979142189026,
+      "descending_task_views": 17,
+      "total_task_views": 24,
+      "forbidden_reads": 0,
+      "oom_or_nonfinite": 0
     }
   }
 }

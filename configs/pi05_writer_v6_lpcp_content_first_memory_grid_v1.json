@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_content_first_memory_grid_v1",
-  "status": "preformal_mechanism_pending",
+  "status": "held_scientific_pass_full24_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -110,7 +110,7 @@
     "video_or_environment_recompute": false,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
     "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
-    "formal_extension_status": "preformal_mechanism_pending"
+    "formal_extension_status": "held_scientific_pass_full24_authorized_with_recorded_numerical_exception"
   },
   "smoke_run": {
     "cycle": 1,
@@ -134,7 +134,24 @@
     }
   },
   "formal_run": {
-    "status": "blocked_preformal_mechanism",
+    "status": "ready",
+    "held_gate_evidence": {
+      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_shared3_task9_15_18_b8_010487b_gpu02p123_20260816/cfmg_held_video_gate.json",
+      "adjudication_artifact": "runs/outputs/pi05_v6_lpcp_cfmg_shared3_task9_15_18_b8_010487b_gpu02p123_20260816/cfmg_held_video_numerical_adjudication.json",
+      "validation_tasks": 8,
+      "passing_tasks": 8,
+      "effective_ba_cosine": 0.9824117888021651,
+      "effective_ba_energy_ratio": 0.9851731969270334,
+      "raw_factor_cosine": 0.9815932634116497,
+      "action_cosine": 0.9875455815404621,
+      "held_to_train_effective_ba_l2_ratio": 0.9605483960422018,
+      "reverse_material_all_train_anchors": true,
+      "raw_pre_registered_gate_pass": false,
+      "raw_failed_gate": "constant_zero",
+      "maximum_constant_effective_ba_over_natural": 0.00514355500886859,
+      "structural_exact_constant_hidden_identity": true,
+      "numerical_adjudication": "full24_authorized_under_preexisting_batch_shape_kernel_reduction_low_bit_variation_policy"
+    },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],

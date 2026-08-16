@@ -648,8 +648,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   gate从temporal/K-set/M2P之前移到完整content grid之后，使首步gate gradient读取真实内容依赖程序；
 - [x] 原位完成唯一canonical实现与fresh-incompatible config/checkpoint/eval schema；focused与完整CPU=
   `5/411 passed`，compileall/diff check通过，architecture guard无hard violation；
-- [ ] 运行真实task9 mechanism与fixed task9/15/18 world3；只有raw3/3、native12/12、跨video和wall门全过，
-  才运行validation8 held门与fresh full24 cycle1。
+- [x] 完成fixed task9/15/18 world3：成功关系与selected pairs保持，三task跨video均过门，cross-task gradient
+  cosine全正、raw/final=`3/3`、native=`12/12`、j0接受，cycle=`114.216s`；
+- [x] 完成validation8 held四view：8/8 tasks、BA cosine/energy=`.982412/.985173`、raw/action=
+  `.981593/.987546`、held/train=`.960548x`、reverse约2x；保留原始constant门单项false，并以exact constant-hidden
+  为0和最坏public residual仅`.514%`作透明numerical adjudication；
+- [ ] seal CFMG full24 authority并从LPCP fresh运行cycle1；若产生非零checkpoint立即strict paired400，否则按
+  exact no-op终局。
 
 ## Non-negotiable boundaries
 
@@ -670,8 +675,9 @@ Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、M
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
 最新CMBG full24已终局：它保持多数task的same-task跨video coherence，但task38以`54.45x`幅度主导shared
-commitment，最多仅`17/24` margins下降并exact no-op。当前CFMG实现/CPU门已完成，下一唯一动作是task9真实机制与
-fixed world3；不得回退CFM、继续parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
+commitment，最多仅`17/24` margins下降并exact no-op。当前CFMG的CPU、world3与held8均已完成，下一唯一动作是
+fresh full24 cycle1；不得回退CFM、继续parameter ray/scale/normalization/PCGrad小修，也不得把旧100分
+Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

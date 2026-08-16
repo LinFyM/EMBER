@@ -103,8 +103,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "preformal_mechanism_pending"
-    assert config["formal_run"]["status"] == "blocked_preformal_mechanism"
+    assert config["status"] == "held_scientific_pass_full24_ready"
+    assert config["formal_run"]["status"] == "ready"
+    held = config["formal_run"]["held_gate_evidence"]
+    assert held["validation_tasks"] == held["passing_tasks"] == 8
+    assert held["raw_pre_registered_gate_pass"] is False
+    assert held["raw_failed_gate"] == "constant_zero"
+    assert held["maximum_constant_effective_ba_over_natural"] < 0.006
+    assert held["structural_exact_constant_hidden_identity"]
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -193,10 +199,8 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 143.416
-    assert "held_gate_evidence" not in config["formal_run"]
     assert "formal_result_evidence" not in config["formal_run"]
-    with pytest.raises(WriterModelError, match="training is not authorized"):
-        require_reward_mode(config, "formal")
+    require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

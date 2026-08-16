@@ -35,14 +35,18 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。CMBG clean`b4dbf84` full24 cycle1完整，但task38梯度范数为次大task的`54.45x`，11个
-commitment scales最好仅`17/24` active task-view margins下降，最终exact no-op并在strict前终局。它仍证明
-5/6 active tasks的same-task four-view gradients约`.99`一致，故literal memory与跨video共同坐标没有被整体否定。
-当前active successor是**V6-LPCP Content-First Memory Grid**（CFMG）：保留CMBG全部输入、memory、rank32、reward
-与参数量，只把同一个zero payload gate从temporal/K-set/M2P之前移到完整content grid之后；step0仍exact LPCP，
-但首步gate gradient读取真实内容依赖的有序video/set/parameter表征。canonical实现和fresh schema已完成，完整CPU=
-`411 passed`、architecture guard无hard violation；真实GPU mechanism/world3尚未运行。SFMC144仍是最高correct单点但
-lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
+长期目标尚未完成。当前active successor是**V6-LPCP Content-First Memory Grid**（CFMG）：保留CMBG全部输入、
+37个layerwise memory tokens、K4、rank32、reward与参数量，只把同一个zero payload gate从temporal/K-set/M2P之前
+移到完整content grid之后。clean`010487b` fixed task9/15/18 world3完整：预注册成功关系与selected pairs保持
+`1/0,2/0,1/2`和`8/16/8`，三task four-view cosine/energy=`.9669/.7476,.8755/.8713,.9720/.9698`，
+cross-task gradient cosine mean/min=`.09215/.02107`，raw/final coverage=`3/3`、native=`12/12`且j0接受。
+validation8 held四view为8/8，effective-BA cosine/energy=`.982412/.985173`、raw/action cosine=
+`.981593/.987546`、held/train L2=`.960548x`，reverse为约`1.95--2.01` relative-L2。原始12门中
+`constant_zero`因task18 public BA=`.005144`略超`.005`而记录为false；exact constant hidden结构测试严格为0，
+重复图像跨32-frame microbatch的最坏public residual仅natural的`.514%`。原artifact不改，按既有
+batch/kernel低位差异政策另存透明numerical adjudication并只授权fresh full24 cycle1。CFMG尚无closed-loop成绩。
+SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：
+`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule

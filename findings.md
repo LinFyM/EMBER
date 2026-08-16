@@ -12,9 +12,17 @@ CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的
 一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
 scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于
 temporal、K-set和layer/token M2P之前：step0时这些模块看到全零，只能通过零点固定Jacobian回传，实际没有先
-运行其内容依赖的有序video/set/parameter选择。当前CFMG只把同一gate移到完整grid之后；step0、rank、参数量、
-reward与信息墙不变。这个变量检验content-first random feature coordinates能否解决首次shared commitment，
-不是task-gradient normalization、PCGrad或scale sweep。
+运行其内容依赖的有序video/set/parameter选择。CFMG只把同一gate移到完整grid之后；step0、rank、参数量、
+reward与信息墙不变。fixed world3显示三task same-video coherence全部通过、cross-task gradient cosine从CMBG
+`+.09842`保持为全正`.021--.141`，raw/final=`3/3`且native=`12/12`；validation8进一步得到8/8、BA
+cosine/energy=`.982412/.985173`、held/train=`.960548x`。因此content-first确实把CMBG的“多数task coherent但
+首步程序未执行”推进为held可共用的video-conditioned parameter coordinates。它尚未证明full24 shared update
+能抵抗task38式幅度支配，更未证明closed-loop增益；这个变量不是task-gradient normalization、PCGrad或scale sweep。
+
+CFMG原始held artifact的`constant_zero`仍为false：task18 effective-BA constant/natural=`.005144`，比`.005`
+阈值多`.000144`，其余两task为`.00258/.00370`。精确相同layer memory的动态branch结构上严格输出0；实际测试把
+重复图像按32-frame microbatch运行，故该残差属于既有政策接受的batch/kernel BF16低位差异，而不是static Value
+route。原始布尔值不可改写，numerical adjudication只授权full24，不可当作closed-loop或六臂因果证据。
 
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个

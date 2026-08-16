@@ -108,7 +108,9 @@ _COMMITMENT_CONTRACT = {
     "rank_state_contract": (
         "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
     ),
-    "formal_extension_status": "preformal_mechanism_pending",
+    "formal_extension_status": (
+        "held_scientific_pass_full24_authorized_with_recorded_numerical_exception"
+    ),
 }
 _SMOKE_CONTRACT = {
     "cycle": 1,

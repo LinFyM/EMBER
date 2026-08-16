@@ -15,8 +15,11 @@ coverage=`3/3`、native=`12/12`并写出非零LoRA；validation8 held门又以8/
 合同错误，不是CMBG科学结果。修正后clean`b4dbf84` full24完整，但cross-task gradient被task38以
 `54.45x`幅度主导、task34的same-task视图又内冲突；11 scales最好只有`17/24` margins下降，最终
 exact no-op并在strict前终局。
-当前active CFMG保留CMBG全部图，只把zero gate从temporal/K-set/M2P之前移到完整content grid之后；该设计尚在
-preformal机制阶段，不得把CPU通过写成性能结果。
+当前active CFMG保留CMBG全部图，只把zero gate从temporal/K-set/M2P之前移到完整content grid之后。clean
+`010487b` fixed world3已通过raw/final=`3/3`、native=`12/12`与全正cross-task gradient cosine；validation8
+held四view为8/8，BA cosine/energy=`.982412/.985173`、held/train=`.960548x`。原始constant门因task18
+`.005144>.005`保留false；exact constant-hidden严格为0且运行残差仅natural`.514%`，故另存不改写raw artifact的
+numerical adjudication并授权fresh full24。以上仍只是机制证据，不是closed-loop性能结果。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

@@ -128,6 +128,24 @@ LPCP identity仍通过。focused=`5 passed`、完整CPU=`411 passed`，compileal
 guard无hard violation、active source净减少2行且没有新module或并行version。以上只关闭CPU实现门，不提供
 真实backbone、reward、throughput或closed-loop证据。
 
+### 7.2 Real world3 and held-video adjudication
+
+clean`010487b` fixed task9/15/18 world3完整exit0：成功关系=`1/0,2/0,1/2`、selected pairs=`8/16/8`，
+三task four-view cosine/energy=`.966885/.747588,.875539/.871250,.971962/.969798`；cross-task gradient
+cosine mean/min=`.092145/.021066`，raw/final coverage=`3/3`、native=`12/12`，j0 actual Adam被接受且
+cycle=`114.216s`。0 forbidden read/OOM/nonfinite，故功能、共存与吞吐门通过。
+
+同一checkpoint的validation8 held四view得到8/8 tasks，effective-BA cosine/energy=
+`.9824118/.9851732`、raw/action cosine=`.9815933/.9875456`、held/train L2=`.9605484x`；三个train anchors
+的reverse effective-BA relative-L2=`1.9549--2.0118`。原始12门中`constant_zero`因task18
+constant/natural public BA=`.0051436`略超预注册`.005`而保持false；task9/15分别仅`.002580/.003696`。
+结构测试证明exact constant layer memory严格输出0，实际counterfactual把重复图像经过32-frame BF16
+microbatches，故该`.514%`最坏残差按设计中已预先声明的batch/kernel/reduction低位差异政策判为数值近零。
+
+不得修改原始`cfmg_held_video_gate.json`或声称其12/12通过；独立
+`cfmg_held_video_numerical_adjudication.json`透明记录例外。该裁决只授权一个从sealed LPCP fresh开始的full24
+cycle1，不提供closed-loop成绩，也不放宽global all-view commitment、strict400或后续稳定/六臂资格门。
+
 ## 8. Full24 and closed-loop adjudication
 
 preformal全过后，从sealed LPCP和fresh CFMG branch运行一个完整train24 cycle1。保留CMBG的两paired states、

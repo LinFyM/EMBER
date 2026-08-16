@@ -28,8 +28,13 @@ task4则为`-.16081`。所有11 scales都无法使24个active task-view deployed
 temporal/K-set/M2P之前，因此首步这些模块只贡献零输入处的固定Jacobian，而没有先形成内容依赖的有序程序。
 CFMG只把同一个gate移到完整grid之后：参数量、rank32、K4、reward、全局commitment和step0=LPCP全部不变；
 language仍只提供context/address，新增B Value必须经过视频动态。canonical实现与fresh config/checkpoint/eval
-schema已原位完成，完整CPU=`411 passed`、architecture guard无hard violation。当前无GPU run；下一步是task9
-真实mechanism，再按门运行fixed task9/15/18 world3，失败即终局，不能用归一化、PCGrad或scale小扫补救。
+schema已原位完成，完整CPU=`411 passed`、architecture guard无hard violation。clean`010487b` fixed world3
+保持task9/15/18成功关系=`1/0,2/0,1/2`与selected pairs=`8/16/8`，cross-task gradient cosine全正、
+raw/final=`3/3`、native=`12/12`且j0接受。validation8 held四view又以8/8、BA cosine/energy=
+`.982412/.985173`、raw/action=`.981593/.987546`、held/train=`.960548x`通过。原始constant门保留
+`.005144>.005`的单项false；exact constant-hidden为0且实际public残差仅`.514%`，按既有数值政策另存透明
+adjudication后授权一个fresh full24 cycle1。下一动作是clean seal并正式训练；不得resume smoke或用归一化、
+PCGrad、rank/scale小扫补救。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP

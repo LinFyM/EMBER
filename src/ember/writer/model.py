@@ -239,7 +239,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         return offsets
 
     def template_state(self) -> dict[str, torch.Tensor]:
-        return self.base_writer.template_state()
+        return self._public_residual_bank_state(
+            self.base_writer.template_state(),
+            None,
+        )
 
     def compile_readouts(
         self,

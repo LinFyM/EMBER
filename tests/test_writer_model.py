@@ -318,6 +318,7 @@ def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
         model.query_delta.weight.normal_(std=0.01)
         encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
         carrier = model.base_writer.decode_slots(encoded.program)
+        public_template = model.template_state()
         lpcp = model.decode_program(encoded.program)
         committed = model.decode_output(encoded)
     assert sum(
@@ -325,6 +326,13 @@ def test_native_zero_residual_bank_is_exact_lpcp_at_zero_init() -> None:
         for parameter in model.factor_commitment.parameters()
     ) == 860_160
     assert all(torch.equal(committed[name], lpcp[name]) for name in lpcp)
+    for name, value in model.base_writer.template_state().items():
+        if name.endswith(".lora_A.default.weight"):
+            assert torch.equal(public_template[name][..., :16, :], value)
+            assert torch.equal(public_template[name][..., 16:, :], value)
+        else:
+            assert torch.equal(public_template[name][..., :16], value)
+            assert not public_template[name][..., 16:].count_nonzero()
     for name, value in carrier.items():
         if name.endswith(".lora_A.default.weight"):
             assert torch.equal(lpcp[name][..., :16, :], value)
@@ -424,7 +432,7 @@ def test_native_zero_b_heads_emit_only_residual_bank_rows() -> None:
     assert all(name.endswith(".lora_B.default.weight") for name in state)
     assert all(
         state[name].shape == (2, *value.shape)
-        for name, value in model.template_state().items()
+        for name, value in model.base_writer.template_state().items()
         if name in state
     )
     assert all(value.count_nonzero() for value in state.values())

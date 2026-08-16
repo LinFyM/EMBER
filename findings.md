@@ -92,8 +92,24 @@ cycle1每个full24只有一次shared Adam step，实际只有payload gate 1/25�
 明确好结果应继续训练后再判断，故142/breadth7这个近baseline信号被透明授权锁原topology exact-resume cycle2；
 这不是事后宣布原lost≤15门通过。cycle2完整得到12 active tasks，12个task norms中6个被cap到median`.391010`；
 temporal、video-set、layer/token M2P等24/25参数组首次获得非零gradient，shared/final task descent=
-`11/12,10/12`，12/12部署响应非零。现在最关键证据是cycle2 closed-loop及cycle1↔cycle2 success-set重合：只有
-它能判断“更多训练让完整memory Program开始共同积累”还是“内容模块打开后继续能力换手”。
+`11/12,10/12`，12/12部署响应非零。cycle2 strict仍为`142/400`却breadth降到6；cycle1→2严格=
+`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`。所以相同aggregate已经掩盖了显著能力换手。
+
+为避免把“cycle2只是content第一次更新”误判为终局，本轮在结果后没有无限续训，而是预先限定一个最终cycle3。
+cycle3同样完整24 tasks/48 states/96 rollouts，10 active tasks、24/25参数组有gradient；raw task norms中5个截到
+median`.281640`，shared/final task descent=`10/10,10/10`，33/40 views下降。训练内four-view gradient
+cosine/energy=`.949481/.911623`，10/10部署响应非零。训练图、memory内容与跨视频共同credit均持续工作。
+
+但cycle3 strict降到`136/400`、breadth7、per-task=`2/3/48/32/0/34/16/1`。三轮score/breadth=
+`142/7 -> 142/6 -> 136/7`；cycle2→3=`122 retained / 14 gained / 20 lost`、churn34、net`-6`、
+Jaccard`.782051`。Object3与Long1各净丢4，只有Spatial suite净增。相对LPCP143为`122/14/21`，故增加训练没有
+形成共同积累，反而使absolute和retention继续下降。
+
+FP64 cycle2→3 all400 effective-BA relative-L2 mean/median=`.001199/.001157`，400/400均跨过native写出；
+first4同task不同K4 correction cosine/energy=`.988724/.990306`。gained/lost/retained-failure改写均值却为
+`.001074/.000931/.001251`，持续失败样本最大。这把最早缺口明确推进到：**跨视频共同Program已经形成、native
+LoRA已经写出，但shared reward update不能选择held on-policy有用方向，也不能在连续多task更新中保留support**。
+MCTC只否定当前median-cap natural-Adam组合；不否定memory token、few-shot、rank8/32或生成LoRA。
 
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个

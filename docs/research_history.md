@@ -44,6 +44,16 @@ cosine/energy=`.555--.953/.663--.965`，证明memory-conditioned rank32写出没
 但gained/lost改写幅度不可分，Goal3最大改写仍0，Long净丢4。unit-secant后train task38仍以`6.274x`范数与
 `.977239` shared cosine支配更新。USDC按correct/breadth/retention门终局，不cycle2/3；它否定当前未约束
 task-tangent幅度的一次shared Adam commitment，不否定memory或few-shot。
+MCTC随后只在task panel进入shared mean前做parameter-free median upper cap，小task不放大、方向不旋转；
+literal memory/K4/rank32/unit-secant与natural Adam均保持。clean`1a0700f` world6从sealed LPCP fresh完成三次
+full24 exact-resume，每个checkpoint均独立strict400。cycle1/2/3 score/breadth=
+`142/7 -> 142/6 -> 136/7`，per-task最终=`2/3/48/32/0/34/16/1`。cycle1→2严格=
+`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`；cycle2→3=`122/14/20`、churn34、net`-6`、
+Jaccard`.782051`。cycle2/3已有24/25 content参数组gradient，cycle3训练内four-view cosine/energy=
+`.949481/.911623`且10/10 active-task q/v/action响应非零。cycle2→3 FP64 all400 BA relative-L2 mean/median=
+`.001199/.001157`、first4同task更新cosine/energy=`.988724/.990306`；persistent failures的改写幅度反而最大。
+因此“好结果多训练”被完整执行后，证据否定了训练轮数不足：cap解决幅度outlier并维持跨视频共同native写出，
+却没有解决held reward-useful方向和多task support共存。MCTC终局，不cycle4/六臂/小扫；不否定memory或few-shot。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

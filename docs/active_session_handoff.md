@@ -30,7 +30,7 @@
   cosine/energy=`.555--.953/.663--.965`，说明memory-conditioned LoRA写出与跨视频共同坐标均真实存在；但
   gained/lost幅度不可分、Goal3仍0、Long净丢4。train task38在unit-secant后仍以`6.274x`范数和`.977239`
   shared cosine支配更新。correct/breadth/retention四门均失败，USDC终局，不cycle2/3或补六臂；
-- 当前active successor是**MCTC**，authority=
+- 最新终局successor是**MCTC**，authority=
   `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它只把active-task gradient
   panel中高于norm中位数的tangents截到中位数，小task不放大、方向不旋转、无可扫系数；memory、K4、rank32、
   unit-secant、96 rollouts与一次Adam j0全部不变。canonical代码已改为一次task-panel all-reduce同时服务optimizer与
@@ -43,10 +43,23 @@
   `125 retained / 17 gained / 18 lost`、churn35、net`-1`、Jaccard`.78125`，相对USDC138净`+4`。原数值门的
   lost≤15与gained≥lost未通过，但owner在结果前明确好结果应多训，且current authority要求可信近baseline信号
   exact-resume；cycle1也只有gate获得梯度，故没有宣称合格，而是锁原gpu01 physical`0/2/4/5/6/7` world6继续。
-  cycle2现已exit0：24 tasks/48 states/96 rollouts、candidate/reference=`29/31`、12 active tasks，cycle=
-  `428.966s`；12 task gradients中6个截到median`.391010`，cycle2已有24/25参数组获得非零梯度，shared/final=
-  `11/12,10/12`且12/12 q/v/action响应非零。checkpoint2完整；同口径K4 strict400正在gpu01六卡运行，当前先生成
-  400个rank32 LoRA cache，完成后必须计算cycle1↔cycle2 exact churn/Jaccard；
+  cycle2完整得到12 active tasks、24/25参数组梯度和`142/400`，但breadth6，cycle1→2严格=
+  `124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`。因为cycle2才首次真正更新content modules，
+  cycle3被预先限定为最后一个有信息量节点：它完整得到10 active tasks、24/25参数组梯度和训练内four-view
+  cosine/energy=`.949481/.911623`，但strict降至`136/400`、breadth7、per-task=
+  `2/3/48/32/0/34/16/1`、per-suite=`5/80/34/17`。cycle2→3为`122/14/20`、churn34、net`-6`、
+  Jaccard`.782051`；三轮score/breadth=`142/7 -> 142/6 -> 136/7`，不是稳定积累。cycle2→3 all400
+  BA relative-L2 mean/median=`.001199/.001157`，first4同task增量cosine/energy=`.988724/.990306`，而
+  gained/lost/retained-failure幅度=`.001074/.000931/.001251`。所以memory/content/native写出均工作，最早
+  缺口是共同reward update不能选择held on-policy有用方向并保留多task support。MCTC终局，不cycle4、六臂或
+  cap/LR/rank/scale小扫；当前没有active GPU run或可resume checkpoint；
+- MCTC formal training root=`runs/outputs/pi05_v6_lpcp_cfmg_mctc_formal_cycle0to1_r6_k4_views4_nmc4_b8_1a0700f_gpu01p024567_20260817`；
+  cycle1/2/3 strict roots分别为
+  `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle1_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`、
+  `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle2_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`与
+  `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle3_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`；cycle3
+  root下保留`mctc_cycle3_strict_adjudication.json`与`mctc_cycle2_to_cycle3_effective_ba.json`。训练、三个
+  checkpoints、1200 raw paired rows、400-entry LoRA caches和completion均完整；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
@@ -631,7 +644,7 @@ checkpoint、schedule或科学panel。
 - split：`configs/libero_24_8_8_v1/`；
 - LIBERO assets：`.env.local`中的`EMBER_LIBERO_ASSETS_ROOT`；
 - task experts：`runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807`中的统一step2000；
-- historical config由commit与formal root保存；当前active config与状态见§13；
+- historical config由commit与formal root保存；当前无active config，实时状态只取§1；
 - historical exact roots与逐方法negative boundaries：`docs/research_history.md`和retained formal artifacts。
 
 ## 9. Completed Visual-Value formal curve

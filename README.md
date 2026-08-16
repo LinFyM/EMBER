@@ -31,7 +31,7 @@ reconstruction与内部margin只作诊断，正式选择只认严格配对的sin
 
 ## Latest result and current boundary
 
-最新完成的
+紧邻MCTC之前，
 [`V6-LPCP Native Probe-Value Commitment`](docs/action_forecast_writer_v6_lpcp_native_probe_value_commitment_design.md)
 在cycle1 K4 strict paired correct400为`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`、per-suite=
 `3/81/34/18`。相对直接底座LPCP143严格为`120 retained / 16 gained / 23 lost / 241 both-fail`、churn39、
@@ -53,40 +53,20 @@ PAFS-NV用fixed language address预分流native Value，但validation8跨视频�
 BF16 public factors后却降至raw factor `.0214/.2659`、effective BA `.2019/.3964`。两者均在full24前终局，
 没有strict结果。
 
-DJNFR已证明ordered video-language Value可以稳定直接写成native LoRA，post-full24 held8 BA仍为
-`.790242/.785834`且8/8过门；但strict只有136，相对LPCP lost23，故终局。最新终局successor是
-[`V6-LPCP Direct-Factor Paired Common-State Preference`](docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md)：
-完整保留DJNFR carrier、K4集合聚合、rank16与八个direct factor heads，只把selected-success整轨迹正蒸馏改为
-candidate/reference两臂分叉前同一初始观测处的winner-vs-loser首段flow preference。exact pairing后task9/15/18
-均有真实margin descent，但三个anchors只有task15全门通过，故没有full24/strict。最新终局successor是
-[`DF-SOCP`](docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md)：
-它在winner完整成功occupancy查询loser counterfactual且形成强跨video共同方向，但stored B2/B1 winner action与B8
-loser action存在足以淹没task9/15策略contrast的批形混杂，完整轨迹functional credit又使wall达到DF-PCSP的
-`3.08--5.33x`；故未full24/strict。下一接口是同B8双臂重查与时间分布的informative occupancy panel。实时run
-identity和下一裁决只取
-[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
-
-[`MB-SOP`](docs/action_forecast_writer_v6_lpcp_direct_factor_matched_batch_stratified_occupancy_preference_design.md)
-已用同B8重查两臂并把完整occupancy压成每轨迹8个时间分层states，三anchor wall降至DF-PCSP的
-`1.54--2.12x`且跨video LoRA写出健康。但task15/18在同一panel上的真实AdamW step后margin反而增加；进一步
-测得四个view的raw等权均值对三anchor均是`4/4`共同下降方向。故MB-SOP终局，未full24/strict。
-
-[`AR-EC`](docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md)已终局：三anchor
-raw gradient均对`4/4` views一阶下降，final delta也与`-g`精确同向，但同Adam全局半径后每个任务都只有`1/4`
-真实post-margin下降；train/held LoRA coherence、q/v/action和吞吐反而健康。故最早缺口是有限步半径，不是
-gradient方向或LoRA写出。
-
-最新CAPG world3已终局：capacity-matched post-backbone grid把固定三task的same-task four-view cosine提高到
-`.983/.898/.982`，但global raw只`2/3`、native最多`10/12`并exact no-op。当前active successor是
-[`CMBG`](docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md)：保留CAPG已通过的有向
-video/K-set/M2P/direct-B与V6-LPCP/NEAP/rank32，只把37个post-backbone latents换成真实图文/Action prefix内逐层
-更新的37个one-way memory tokens。当前authority已冻结，尚未实现或启动GPU。
+最新完成的[`MCTC`](docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md)保留
+carrier-exact V6-LPCP、37个逐层one-way memory tokens、K4集合、rank32 LoRA和unit-secant reward，只在shared
+update前把高于active-task norm中位数的tangents截到中位数。从sealed LPCP fresh连续训练三个exact-resume
+cycles并逐checkpoint跑strict400，score/breadth=`142/7 -> 142/6 -> 136/7`；相邻churn=`36/34`，未形成稳定
+共同积累。cycle2→3仍有all400 BA relative-L2 `.001199`和first4同task更新cosine/energy
+`.988724/.990306`，证明memory、跨视频共同Program和native写出都在工作；但持续失败样本改写最大。最早缺口已
+定位为shared reward update不能选择held on-policy有用方向并保留多task support。MCTC终局，不cycle4或参数小扫；
+实时run identity和下一裁决只取[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall
 
 Writer可读取exact language与同task action-hidden videos。它不能读取teacher action、proprio/state、reward、
-terminal、task ID、filename、object pose、hidden normalization或policy outcome。训练action只进入冻结source
-policy的train24 functional loss；validation/test actions或reward不产生梯度。
+terminal、task ID、filename、object pose、hidden normalization或policy outcome。任何获授权的train24
+functional/reward信号都与teacher video信息墙分离；validation/test actions或reward不产生梯度。
 
 每个condition只生成一套完整task LoRA。不挑video，不平均frames、raw features、分别生成的LoRAs或checkpoints，
 不使用held expert dictionary。视频与action query同task但跨episode采样，要求生成的LoRA跨初始化有效，而不是

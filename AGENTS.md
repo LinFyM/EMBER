@@ -22,7 +22,7 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 当前active design：
+4. 最新design authority（当前无active successor时即最新终局design）：
    `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
@@ -35,24 +35,21 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新终局是**V6-LPCP CFMG Unit-Secant Direct Commitment**（USDC），authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。clean`539e0e5` gpu01 world6 cycle1
-完整：24 tasks/48 states/96 rollouts、6 active tasks、candidate/reference=`32/32`、gains=`3/3`、cycle=`335.189s`；
-saved j0 L2=`.242098`并写出非零q/v/action。最终K4 strict400=`138/400`、breadth6、per-task=
-`1/4/48/34/0/38/13/0`、per-suite=`5/82/38/13`；相对LPCP143=`120 retained / 18 gained / 23 lost`、
-churn41、net`-5`、Jaccard`.745342`。all400 BA relative-L2 mean/median=`.003236/.002806`，同task first4
-correction cosine/energy=`.555--.953/.663--.965`，说明literal memory、K-set/M2P与rank32 LoRA写出真实形成
-跨视频共同坐标；但gained/lost幅度不可分、Goal3仍0、Long净丢4。train task38在unit-secant后仍以`6.274x`
-梯度范数和`.977239` shared cosine支配更新。correct、breadth与retention门全部失败，USDC不得cycle2/3或补六臂。
-当前active successor是**MCTC**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它从sealed LPCP fresh，保留
-USDC的全部memory/K4/rank32/unit-secant/reward/Adam图，唯一在四view task gradient形成后，以active panel norm
-中位数只截断上方outliers，再等权平均；小task不放大、task方向不旋转、无cap系数或quantile sweep。USDC checkpoint
-不得resume。canonical原位实现完整CPU=`416 passed`、architecture guard 0 hard。clean`1a0700f` gpu01 world6
-cycle1完整：24 tasks/48 states/96 rollouts，`33/32` successes、`3/2` gains，5 active tasks覆盖四suite，cycle=
-`388.239s`。raw norms=`.147608/.022184/.047038/.124794/1.133739`、median=`.124794`；只截断task4/38，
-其余scales为1，shared/final coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。checkpoint已seal，下一裁决是
-同一checkpoint K4 strict400；当前无GPU run。
+长期目标尚未完成。最新终局是**V6-LPCP CFMG Median-Capped Task-Tangent Commitment**（MCTC），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它保留USDC的literal
+memory、K4、rank32、unit-secant、四view reward与natural Adam，只把高于active-task norm中位数的tangents截到
+中位数；小task不放大、方向不旋转、无cap/LR/rank/scale sweep。clean`1a0700f` gpu01 world6从sealed LPCP
+fresh完成cycle1并锁原topology exact-resume到cycle3；三个cycles均为24 tasks/48 states/96 rollouts，active tasks=
+`5/12/10`，wall=`388.239/428.966/416.742s`。owner在cycle1结果出现前明确可信近好结果必须多训练再判断，且
+cycle2才首次让24/25 content参数组获得gradient，故三个checkpoints均独立完成同口径strict400。
+
+MCTC score/breadth轨迹=`142/7 -> 142/6 -> 136/7`，per-task最终=`2/3/48/32/0/34/16/1`、per-suite=
+`5/80/34/17`。cycle1→2严格=`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`；cycle2→3=
+`122/14/20`、churn34、net`-6`、Jaccard`.782051`；相对LPCP143最终=`122/14/21`。cycle3训练内four-view
+gradient cosine/energy=`.949481/.911623`、10/10 active tasks的q/v/action响应非零；cycle2→3 all400
+effective-BA relative-L2 mean/median=`.001199/.001157`，first4同task更新cosine/energy=`.988724/.990306`。
+所以memory/content/native写出已经工作；最早缺口是共同reward update不能选择held on-policy有用方向并连续保留
+多task support。MCTC终局，不cycle4、不补六臂、不扫训练长度或参数；当前没有active GPU run或可resume checkpoint。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

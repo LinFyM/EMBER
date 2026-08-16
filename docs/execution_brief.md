@@ -5,35 +5,26 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成的是**USDC cycle1及strict400**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。owner此前指出20/20局部margin是有价值
-诊断但不能永久替代closed-loop，因此USDC保留USFC模型、memory、rank32、K4、unit-secant与等task梯度，只提交一次
-未经缩放的exact Adam `j0`。clean`539e0e5` gpu01 world6完成24 tasks/48 states/96 rollouts、6 active tasks、
-`32/32` arm successes、`3/3` gains，cycle=`335.189s`；j0 L2=`.242098`，17/24 margins下降且q/v/action非零。
+最新完成的是**MCTC三轮训练及三个strict400**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它保留USDC的literal
+memory、K4、rank32、unit-secant、四view reward和自然Adam，只把高于active-task norm中位数的task tangents截到
+中位数；小task不放大、方向不旋转、无cap系数。clean`1a0700f` gpu01 world6从sealed LPCP fresh训练，cycle1/2/3
+均完整为24 tasks/48 states/96 rollouts，wall=`388.239/428.966/416.742s`，active tasks=`5/12/10`。
 
-同一checkpoint最终K4 strict=`138/400`、breadth6、per-task=`1/4/48/34/0/38/13/0`、per-suite=
-`5/82/38/13`。相对exact LPCP143为`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
-Jaccard`.745342`；Long suite净`-4`。all400 BA relative-L2 mean/median=`.003236/.002806`、action mean=
-`.006333`，first4同task correction cosine/energy=`.555--.953/.663--.965`，所以memory-conditioned rank32 LoRA
-确实跨视频共同写出，但没有形成held reward-useful方向。train task38仍以次大`6.274x`范数和`.977239` cosine
-控制shared mean。correct、breadth、lost、gained>=lost四门全失败；USDC终局，不cycle2/3或补controls。
+cycle1只有payload gate 1/25参数组获得梯度；cycle2/3已有24/25 content参数组非零。owner在cycle1结果前明确近好
+结果应多训练再判断，故本轮透明地锁原topology exact-resume到cycle3，并让每个checkpoint分别接受同口径strict400。
+score/breadth轨迹=`142/7 -> 142/6 -> 136/7`；per-task轨迹最终为`2/3/48/32/0/34/16/1`。cycle1→2严格=
+`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`；cycle2→3=`122/14/20`、churn34、net`-6`、
+Jaccard`.782051`。相对LPCP143，cycle3为`122/14/21`、net`-7`。所以前两轮aggregate相同不是稳定能力，第三轮
+进一步退化；MCTC终局，不cycle4或补六臂。
 
-当前active是**MCTC**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它从sealed LPCP fresh，保留
-USDC全部memory/K4/rank32/unit-secant/reward/Adam图，只把高于active-task norm中位数的tangents截到中位数后再
-等权平均；不放大小task、不旋转方向、没有可扫cap系数。cycle1仍只有一次full24，因此其职责是发现可信方向：若
-接近强baseline并保住breadth/retention，则锁原topology exact-resume cycle2，必要时cycle3；最终稳定资格由相邻
-strict400的低churn与共同积累判断。像USDC那样correct、breadth、retention同时显著下降的cycle1则不盲续。当前
-canonical实现定向/完整CPU=`47/416 passed`、compileall/diff check通过、architecture guard 0 hard。clean
-`1a0700f` gpu01 world6 fresh cycle1已经完成24 tasks/48 states/96 rollouts：candidate/reference=`33/32`、
-gains=`3/2`，5 active tasks覆盖四suite，cycle=`388.239s`。五task raw norms=
-`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`；只截断task4/38，小task不放大，shared/final
-coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。cycle1 strict=`142/400`、breadth7、per-task=
-`1/3/47/34/0/36/20/1`；相对LPCP143=`125/17/18`、churn35、net`-1`，相对USDC138净`+4`。这不是稳定资格，
-但它属于owner在结果前授权继续的可信近baseline信号；cycle1也只有payload gate获得梯度。因此锁原world6/topology
-exact-resume的cycle2已完整exit0：24 tasks/48 states/96 rollouts、12 active tasks、cycle=`428.966s`，24/25参数组
-开始获得梯度，shared/final task coverage=`11/12,10/12`且部署响应全非零。checkpoint2的K4 strict400当前正在
-gpu01 physical`0/2/4/5/6/7`运行；裁决重点是cycle1↔cycle2 exact churn/Jaccard与共同积累，不以内部margin代替。
+这不是memory/LoRA失效。cycle3训练内四view gradient cosine/energy=`.949481/.911623`，10/10 active-task
+shared/final descent且q/v/action全非零；cycle2→3 all400 effective-BA relative-L2 mean/median=
+`.001199/.001157`，first4同task不同K4更新cosine/energy=`.988724/.990306`。但gained/lost/retained-failure
+改写均值=`.001074/.000931/.001251`，持续失败样本最大。最早失败接口是**跨视频一致并写入native LoRA的shared
+reward update不能选择held on-policy有用方向，也不能连续保留多task support**。下一单变量不能再扫训练长度、
+cap、LR、rank、scale或重做已通过的carrier；必须直接改变reward-useful direction或真实support coexistence。
+当前没有active GPU run或可resume checkpoint。
 
 以下保留通往USFC/USDC的紧邻因果链。
 
@@ -222,8 +213,8 @@ post-backbone 37-query latents换成逐层读取真实image/language/50 Action c
 gate开放，trainable=`2,828,928`。真实task15 130-frame carrier parity的五组输出均max-abs=`0`；task9 112-frame
 CUDA检查确认exact-zero、gate-open全链gradient、wall=`121.251s`、peak reserved=`18,848 MiB`。fresh world3仍必须
 复现固定outcome/count并达到raw3/3、native12/12；authority=
-`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。该轮full24已按上文终局；当前
-active CFMG只移动zero gate到完整content grid之后，精确authority见上文。当前没有active GPU run。
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。该轮full24及其后继CFMG、USDC、
+MCTC均已按上文终局；当前没有active GPU run。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Median-Capped Task-Tangent Commitment
 
-状态：2026-08-17 cycle2 exact-resume完成、cycle2 strict400运行中的active formal authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
+状态：2026-08-17 三个exact-resume cycles及各自strict400全部完成后的terminal authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
 USDC已经形成跨视频共同LoRA坐标的memory/content-grid/rank32图、K4 unit-secant reward和一次自然Adam commitment，
 唯一改变active-task gradients进入shared mean之前的幅度聚合。
 
@@ -91,7 +91,7 @@ held-useful shared commitment”。下一接口应转向sparse selected-success 
 module、entrypoint或并行runtime。集成测试直接验证不等幅task gradients的cap、无小task放大以及Adam一阶矩；定向/
 完整CPU=`47/416 passed`，compileall与diff check通过，architecture guard 0 hard。当前尚无GPU机制或closed-loop结果。
 
-## 8. Cycle1 execution state
+## 8. Formal execution and terminal adjudication
 
 clean`1a0700f`在gpu01 physical`0/2/4/5/6/7` world6完成fresh full24：24 tasks/48 states/96 rollouts，
 candidate/reference=`33/32`、gains=`3/2`，active tasks=`4/19/25/34/38`覆盖四suite，cycle=`388.239s`。
@@ -110,5 +110,30 @@ cycle2已完整exit0：24 tasks/48 states/96 rollouts，candidate/reference=`29/
 cycle=`428.966s`。12个raw task norms中6个被cap到median`.391010`，小task未放大；shared/final task descent=
 `11/12`与`10/12`，36/48 view margins下降。cycle1仅1/25参数组有梯度，cycle2已有24/25（除literal
 `memory_tokens`外的temporal、video-set、layer/token M2P及gate）获得非零梯度；12/12 q/v/action BA与
-fixed-action response非零，0禁读/OOM/nonfinite。checkpoint2完整，当前正在做同口径K4 strict400；最终只以
-cycle1↔cycle2 exact paired churn/Jaccard、absolute/breadth与逐task共同积累裁决稳定性。
+fixed-action response非零，0禁读/OOM/nonfinite。cycle2 strict仍为`142/400`，但breadth从7降到6，per-task=
+`1/3/47/36/0/35/20/0`、per-suite=`4/83/35/20`。相对cycle1严格为`124 retained / 18 gained / 18 lost`、
+churn36、Jaccard`.775`；相对LPCP143仍为`125/17/18`。所以aggregate相同不等于能力稳定。
+
+owner在cycle1结果出现前已经明确“好结果应多训练后判断”；同时cycle2才是content modules首次真实更新，故本轮
+预先把cycle3设为最后一个有信息量的节点，而不是在看到cycle2后无限续训。cycle3 exact-resume同样完整：24 tasks/
+48 states/96 rollouts，candidate/reference=`29/34`、10 active tasks覆盖四suite，cycle=`416.742s`。10个raw
+task norms中5个截到median`.281640`，shared/final task descent均为10/10，33/40 view margins下降；24/25
+content参数组继续有gradient，10/10 q/v/action与fixed-action response非零。训练内四view gradient pairwise
+cosine/共享能量均值=`.949481/.911623`，0禁读/OOM/nonfinite。
+
+cycle3 K4 strict终局为`136/400`、breadth7、per-task=`2/3/48/32/0/34/16/1`、per-suite=`5/80/34/17`。
+三轮score/breadth轨迹=`142/7 -> 142/6 -> 136/7`，均值140、range6；cycle2→3严格为
+`122 retained / 14 gained / 20 lost`、churn34、Jaccard`.782051`、net`-6`，cycle1→3为`124/12/18`、
+churn30。相对LPCP143为`122/14/21`、net`-7`；Object3与Long1各净丢4，四suite只有Spatial净增。
+
+FP64稳定低秩分析排除了“第三轮没有写进LoRA”：cycle2→3 all400 effective-BA relative-L2 mean/median=
+`.00119912/.00115730`，400/400发生native写出；first4同task不同K4条件的增量pairwise cosine/mean-energy=
+`.988724/.990306`。但gained/lost/retained-failure改写均值=`.001074/.000931/.001251`，持续失败样本反而最大。
+因此MCTC的最早失败接口是**已经跨视频一致且写入native LoRA的shared reward update，不能选择held on-policy
+有用方向，也不能在连续多task updates中稳定保留support**。训练轮数不足、memory未读、content未开梯度和
+compiler未写出均被排除。
+
+MCTC终局，不cycle4、不补六臂、不扫cap/LR/rank/scale/seed。它只否定当前unit-secant four-view tangents经过
+median upper cap和自然Adam连续提交能够稳定积累；不否定literal memory、few-shot、rank8/32、生成完整LoRA或
+未来独立task-local RL。由于三轮稳定资格失败，本架构不能声明same-task-other鲁棒或correct优于wrong/shuffled/
+reversed/no-video。

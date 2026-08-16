@@ -708,11 +708,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   LPCP143=`125 retained / 17 gained / 18 lost`、churn35、net`-1`、Jaccard`.78125`，相对USDC138净`+4`；
 - [x] 按owner结果前“好结果应多训”裁决与cycle1只开gate的机制事实，锁原world6/topology exact-resume cycle2；
   完成24 tasks/48 states/96 rollouts、12 active tasks，cycle=`428.966s`，24/25参数组开始获得梯度且checkpoint完整；
-- [ ] 完成cycle2 K4 strict400；与cycle1做exact retained/gained/lost/churn/Jaccard并和LPCP143、USDC138、
-  v6-fast143逐task分析；必要时cycle3，每个checkpoint分别strict400；最终以相邻checkpoint低churn、高Jaccard和
-  共同积累判断稳定性，而非单点winner；
-- [ ] 若cycle1像USDC一样同时损失correct、breadth与retention，则终局，不靠盲目增加训练量、cap小扫或optimizer
-  小改救方向。
+- [x] 完成cycle2 K4 strict400=`142/400`、breadth6；相对cycle1=`124 retained / 18 gained / 18 lost`、
+  churn36、Jaccard`.775`。aggregate未降但success set明显换手，不能称为稳定；
+- [x] 因cycle2才首次真实更新24/25 content参数组，按owner“好结果应多训”要求把cycle3预先限定为最终节点；
+  完成同topology exact-resume与第三次strict400=`136/400`、breadth7、per-task=`2/3/48/32/0/34/16/1`；
+- [x] 完成三checkpoint稳定性裁决：score/breadth=`142/7 -> 142/6 -> 136/7`，cycle2→3=
+  `122/14/20`、churn34、Jaccard`.782051`，相对LPCP143=`122/14/21`；不再以训练量小解释；
+- [x] 完成cycle2→3 FP64 effective-BA：relative-L2 mean/median=`.001199/.001157`，first4同task更新
+  cosine/energy=`.988724/.990306`，但persistent failure改写最大；确认最早缺口是held reward-useful direction与
+  multi-task support coexistence，不是memory/content/native写出；
+- [x] MCTC按稳定性、absolute与retention终局；不cycle4、不补六臂、不扫cap/LR/rank/scale/seed；
+- [ ] 从该最早接口建立新的单变量authority：保留已通过的video-memory/跨视频共同LoRA/native写出，只直接检验
+  reward-useful方向或真实on-policy support共存；不得机械恢复旧offline RLS或高开销OSG-PC graph。
 
 ## Non-negotiable boundaries
 
@@ -732,9 +739,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新USDC cycle1 strict=`138/400`、breadth6，相对LPCP净`-5`且lost23，已经终局；不得resume USDC/USFC/USEP、
-回退CFM、扫parameter ray/scale或把旧100分Dynamic-K整条恢复。下一设计只可针对unit-secant后task38仍以
-`6.274x`梯度范数支配shared update的跨task tangent幅度接口，并继续以真实strict而非局部margin选方法。
+最新MCTC三轮strict=`142/142/136`、breadth=`7/6/7`，相邻churn=`36/34`，已经终局；不得resume MCTC/USDC/
+USFC/USEP、回退CFM、扫parameter ray/scale/training length或把旧100分Dynamic-K整条恢复。MCTC已消除单一幅度
+outlier并形成`.99`级held同task更新一致性，下一设计只可针对**shared reward update的held usefulness和真实support
+共存**，继续以真实strict而非局部margin选方法。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

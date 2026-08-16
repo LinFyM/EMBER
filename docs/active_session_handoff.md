@@ -38,8 +38,15 @@
   guard 0 hard。clean`1a0700f` gpu01 world6 fresh cycle1完整exit0：24 tasks/48 states/96 rollouts，candidate/
   reference=`33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`388.239s`。raw norms=
   `.147608/.022184/.047038/.124794/1.133739`、median=`.124794`；只截断task4/38至median，小task scales严格为1，
-  shared/final coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零，0禁读/OOM/nonfinite。checkpoint已seal；下一
-  裁决是同一checkpoint K4 strict400，当前无GPU run；
+  shared/final coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零，0禁读/OOM/nonfinite。cycle1 K4 strict=
+  `142/400`、breadth7、per-task=`1/3/47/34/0/36/20/1`、per-suite=`4/81/36/21`；相对LPCP143为
+  `125 retained / 17 gained / 18 lost`、churn35、net`-1`、Jaccard`.78125`，相对USDC138净`+4`。原数值门的
+  lost≤15与gained≥lost未通过，但owner在结果前明确好结果应多训，且current authority要求可信近baseline信号
+  exact-resume；cycle1也只有gate获得梯度，故没有宣称合格，而是锁原gpu01 physical`0/2/4/5/6/7` world6继续。
+  cycle2现已exit0：24 tasks/48 states/96 rollouts、candidate/reference=`29/31`、12 active tasks，cycle=
+  `428.966s`；12 task gradients中6个截到median`.391010`，cycle2已有24/25参数组获得非零梯度，shared/final=
+  `11/12,10/12`且12/12 q/v/action响应非零。checkpoint2完整；同口径K4 strict400正在gpu01六卡运行，当前先生成
+  400个rank32 LoRA cache，完成后必须计算cycle1↔cycle2 exact churn/Jaccard；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

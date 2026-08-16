@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Median-Capped Task-Tangent Commitment
 
-状态：2026-08-17 cycle1完成、strict400 pending的active formal authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
+状态：2026-08-17 cycle2 exact-resume完成、cycle2 strict400运行中的active formal authority。简称 **MCTC**。本轮从sealed LPCP fresh开始，不resume USDC；完整保留
 USDC已经形成跨视频共同LoRA坐标的memory/content-grid/rank32图、K4 unit-secant reward和一次自然Adam commitment，
 唯一改变active-task gradients进入shared mean之前的幅度聚合。
 
@@ -98,5 +98,17 @@ candidate/reference=`33/32`、gains=`3/2`，active tasks=`4/19/25/34/38`覆盖�
 五个raw norms=`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`；只对task4/38应用
 `.845440/.110073` scale，其余三个严格为1。shared与final descent coverage均为5/5，保存j0 L2=`.236963`；
 5/5 probes的q/v/action BA与fixed-action response全部非零，0禁读/OOM/nonfinite。14/20 local margins下降只作
-诊断，不选择checkpoint。checkpoint现已按标准post-training合同sealed；下一裁决是同一single checkpoint的K4
-strict paired400，尚无closed-loop结果。
+诊断，不选择checkpoint。checkpoint按标准post-training合同sealed。cycle1 K4 strict=`142/400`、breadth7、
+per-task=`1/3/47/34/0/36/20/1`、per-suite=`4/81/36/21`；相对LPCP143为
+`125 retained / 17 gained / 18 lost`、churn35、net`-1`、Jaccard`.78125`，相对USDC138净`+4`。原数值
+trigger中的lost≤15与gained≥lost没有通过，该事实不改写。owner在结果落盘前再次明确cycle1训练量很小，好结果
+应继续训练后再判断；当前owner authority也要求可信近baseline信号exact-resume，而非机械卡单个整数。结合cycle1
+只有一次shared Adam step、只让payload gate获得梯度，故透明裁决为锁原world6/topology exact-resume cycle2，
+而非宣布cycle1合格。
+
+cycle2已完整exit0：24 tasks/48 states/96 rollouts，candidate/reference=`29/31`，12 active tasks覆盖四suite，
+cycle=`428.966s`。12个raw task norms中6个被cap到median`.391010`，小task未放大；shared/final task descent=
+`11/12`与`10/12`，36/48 view margins下降。cycle1仅1/25参数组有梯度，cycle2已有24/25（除literal
+`memory_tokens`外的temporal、video-set、layer/token M2P及gate）获得非零梯度；12/12 q/v/action BA与
+fixed-action response非零，0禁读/OOM/nonfinite。checkpoint2完整，当前正在做同口径K4 strict400；最终只以
+cycle1↔cycle2 exact paired churn/Jaccard、absolute/breadth与逐task共同积累裁决稳定性。

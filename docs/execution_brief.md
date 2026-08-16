@@ -28,8 +28,12 @@ canonical实现定向/完整CPU=`47/416 passed`、compileall/diff check通过、
 `1a0700f` gpu01 world6 fresh cycle1已经完成24 tasks/48 states/96 rollouts：candidate/reference=`33/32`、
 gains=`3/2`，5 active tasks覆盖四suite，cycle=`388.239s`。五task raw norms=
 `.147608/.022184/.047038/.124794/1.133739`，median=`.124794`；只截断task4/38，小task不放大，shared/final
-coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。checkpoint已seal，下一步是同一single checkpoint K4
-strict400；当前无GPU run。
+coverage=`5/5`，j0 L2=`.236963`且q/v/action全非零。cycle1 strict=`142/400`、breadth7、per-task=
+`1/3/47/34/0/36/20/1`；相对LPCP143=`125/17/18`、churn35、net`-1`，相对USDC138净`+4`。这不是稳定资格，
+但它属于owner在结果前授权继续的可信近baseline信号；cycle1也只有payload gate获得梯度。因此锁原world6/topology
+exact-resume的cycle2已完整exit0：24 tasks/48 states/96 rollouts、12 active tasks、cycle=`428.966s`，24/25参数组
+开始获得梯度，shared/final task coverage=`11/12,10/12`且部署响应全非零。checkpoint2的K4 strict400当前正在
+gpu01 physical`0/2/4/5/6/7`运行；裁决重点是cycle1↔cycle2 exact churn/Jaccard与共同积累，不以内部margin代替。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

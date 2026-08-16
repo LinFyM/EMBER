@@ -84,7 +84,16 @@ active-panel中位数的norm，小task保持原幅度且方向不旋转；一次
 clean`1a0700f` world6 cycle1现证明机制也真实接通：五task raw norms=
 `.147608/.022184/.047038/.124794/1.133739`，median=`.124794`，task38缩至`.110073x`、task4缩至
 `.845440x`，其余scales为1；shared/final descent coverage由USDC的4/6变为5/5，j0 L2=`.236963`且q/v/action
-全非零。该证据仍不提供closed-loop结论，下一步只认同一checkpoint strict400。
+全非零。cycle1 strict随后为`142/400`、breadth7、per-task=`1/3/47/34/0/36/20/1`；相对LPCP143=
+`125 retained / 17 gained / 18 lost`、churn35、net`-1`，相对USDC138净`+4`。因此cap恢复了breadth和大部分
+absolute，但没有在一次更新内减少到低churn，也不能称为稳定145。
+
+cycle1每个full24只有一次shared Adam step，实际只有payload gate 1/25参数组获得梯度。owner在cycle1结果落盘前
+明确好结果应继续训练后再判断，故142/breadth7这个近baseline信号被透明授权锁原topology exact-resume cycle2；
+这不是事后宣布原lost≤15门通过。cycle2完整得到12 active tasks，12个task norms中6个被cap到median`.391010`；
+temporal、video-set、layer/token M2P等24/25参数组首次获得非零gradient，shared/final task descent=
+`11/12,10/12`，12/12部署响应非零。现在最关键证据是cycle2 closed-loop及cycle1↔cycle2 success-set重合：只有
+它能判断“更多训练让完整memory Program开始共同积累”还是“内容模块打开后继续能力换手”。
 
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个

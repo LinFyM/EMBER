@@ -704,9 +704,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   `.147608/.022184/.047038/.124794/1.133739`、median=`.124794`，只截断task4/38且小task scales为1；
   shared/final coverage=`5/5`，j0 L2=`.236963`，q/v/action全非零；
 - [x] 完成rank负载、信息墙与checkpoint完整性分析并按post-training合同seal；0禁读/OOM/nonfinite；
-- [ ] 立即做同一checkpoint K4 strict400并与LPCP143、USDC138、v6-fast143逐task分析；
-- [ ] 若cycle1显示接近强baseline且breadth/retention可信，锁原world topology exact-resume cycle2，必要时cycle3，
-  每个checkpoint分别strict400；最终以相邻checkpoint低churn、高Jaccard和共同积累判断稳定性，而非单点winner；
+- [x] 完成cycle1 K4 strict400与逐task分析：`142/400`、breadth7、per-task=`1/3/47/34/0/36/20/1`；相对
+  LPCP143=`125 retained / 17 gained / 18 lost`、churn35、net`-1`、Jaccard`.78125`，相对USDC138净`+4`；
+- [x] 按owner结果前“好结果应多训”裁决与cycle1只开gate的机制事实，锁原world6/topology exact-resume cycle2；
+  完成24 tasks/48 states/96 rollouts、12 active tasks，cycle=`428.966s`，24/25参数组开始获得梯度且checkpoint完整；
+- [ ] 完成cycle2 K4 strict400；与cycle1做exact retained/gained/lost/churn/Jaccard并和LPCP143、USDC138、
+  v6-fast143逐task分析；必要时cycle3，每个checkpoint分别strict400；最终以相邻checkpoint低churn、高Jaccard和
+  共同积累判断稳定性，而非单点winner；
 - [ ] 若cycle1像USDC一样同时损失correct、breadth与retention，则终局，不靠盲目增加训练量、cap小扫或optimizer
   小改救方向。
 

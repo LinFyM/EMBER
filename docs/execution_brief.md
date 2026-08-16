@@ -5,11 +5,12 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**CAPG world3 preformal**：clean`878b5e4`完整复现task9/15/18固定outcomes/counts、12 rollouts与
-48 correct videos，cycle=`179.973s`。same-task cosine/energy达到`.983/.985,.898/.870,.982/.949`，但global
-raw shared仅2/3、native最多10/12，11 scales无12/12并exact no-op，故不full24/strict/held或小扫。当前CMBG
-只把post-backbone 37 latents换成真实joint-prefix内逐层更新的37 one-way memory tokens；canonical实现、完整
-`409 passed`与真实task9 K4 CUDA机制门已通过，下一步是clean frozen固定world3，尚无科学结果或checkpoint。
+最新执行的是**CMBG首版world3 preformal**：clean`38f7fc7`完整exit0，但task15固定carrier outcome/count从预注册
+`2/0,65 chunks,16 pairs`漂为`1/2,47,8`，故属于工程违约而非科学non-pass。其same-task
+cosine/energy=`.983/.984,.930/.937,.857/.498`、global raw2/3、native11/12与exact no-op仅作诊断。carrier-exact
+修正版保持同一CMBG科学变量，改为一次原生context forward加逐层one-way Action-Expert memory observer；真实task15
+K4的全部carrier tensors相对LPCP逐元素exact，task9 K4梯度/显存门通过。下一步是fresh clean frozen重跑同一
+world3，尚无可接受的CMBG科学结果或checkpoint。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
@@ -149,11 +150,12 @@ outcomes/counts与信息墙全通过，cycle=`179.973s`；三task same-task cosi
 到shared cosine=`-.1570`，没有12/12 scale，最终exact no-op；不full24/strict/held或小扫。
 
 当前active design是**CMBG**：严格保留CAPG的有向video/K-set/M2P/direct-B与NEAP/K4/rank32/global gate，唯一把
-post-backbone 37-query latents换成真实image/language/50 Action-probe prefix中的37个one-way memory tokens，逐层
-形成`18x37x1024`memory grid。Action不能看memory，memory能看prefix/Action/memory；step0仍只有coordinate gate
-开放，实际trainable=`2,828,928`。完整CPU=`409 passed`，真实112-frame CUDA检查确认step0 exact-zero与gate-open
-全链gradient，峰值reserved=`21,794 MiB`。world3仍必须达到raw shared 3/3和native 12/12；authority=
-`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。当前尚未启动world3。
+post-backbone 37-query latents换成逐层读取真实image/language/50 Action context的37个one-way memory tokens，形成
+`18x37x1024`grid。memory走真实Action Expert layer，carrier不看memory且保持原生执行shape；step0仍只有coordinate
+gate开放，trainable=`2,828,928`。真实task15 130-frame carrier parity的五组输出均max-abs=`0`；task9 112-frame
+CUDA检查确认exact-zero、gate-open全链gradient、wall=`121.251s`、peak reserved=`18,848 MiB`。fresh world3仍必须
+复现固定outcome/count并达到raw3/3、native12/12；authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。当前没有active GPU run。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

@@ -1,11 +1,14 @@
-"""One-way PI05 backbone memory for the capacity-matched Writer grid."""
+"""Carrier-exact one-way PI05 memory for the capacity-matched Writer grid."""
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial
+from typing import Iterator
 
 import torch
+from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 from lerobot.policies.pi_gemma import _gated_residual, layernorm_forward
 from torch.utils.checkpoint import checkpoint
 from transformers.models.gemma import modeling_gemma
@@ -79,7 +82,7 @@ def make_backbone_memory_mask(
 
 
 class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
-    """Run one real PI05 joint loop with 37 parameter-aligned memories."""
+    """Keep the native PI05 carrier exact and update 37 one-way memories."""
 
     LAYERS = 18
     ACTION_HORIZON = 50
@@ -111,19 +114,36 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
         adapter = adapters.adapters[f"{layer}_{name}"]
         return projected + adapter(value).to(projected.dtype)
 
-    def _stream_qkv(
+    def _stream_kv(
         self,
         layer_index: int,
         hidden: torch.Tensor,
         layer: torch.nn.Module,
         condition: torch.Tensor | None,
         adapters: torch.nn.Module,
-    ) -> tuple[
-        torch.Tensor | None,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        normed, _ = layernorm_forward(layer.input_layernorm, hidden, condition)
+        shape = (*normed.shape[:-1], -1, layer.self_attn.head_dim)
+        projected = []
+        for name in ("k_proj", "v_proj"):
+            value = self._project(
+                layer_index,
+                name,
+                getattr(layer.self_attn, name),
+                normed,
+                adapters,
+            )
+            projected.append(value.view(shape).transpose(1, 2))
+        return projected[0], projected[1]
+
+    def _memory_qkv(
+        self,
+        layer_index: int,
+        hidden: torch.Tensor,
+        layer: torch.nn.Module,
+        condition: torch.Tensor,
+        adapters: torch.nn.Module,
+    ) -> tuple[torch.Tensor | None, torch.Tensor, torch.Tensor, torch.Tensor]:
         normed, gate = layernorm_forward(
             layer.input_layernorm, hidden, condition
         )
@@ -139,39 +159,6 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             )
             projected.append(value.view(shape).transpose(1, 2))
         return gate, projected[0], projected[1], projected[2]
-
-    @staticmethod
-    def _attention(
-        query: torch.Tensor,
-        key: torch.Tensor,
-        value: torch.Tensor,
-        attention_mask: torch.Tensor,
-        position_ids: torch.Tensor,
-        layer: torch.nn.Module,
-        rotary_embedding: torch.nn.Module,
-    ) -> torch.Tensor:
-        rotary_input = torch.zeros(
-            query.shape[0],
-            query.shape[2],
-            query.shape[-1],
-            dtype=query.dtype,
-            device=query.device,
-        )
-        cosine, sine = rotary_embedding(rotary_input, position_ids)
-        query, key = modeling_gemma.apply_rotary_pos_emb(
-            query, key, cosine, sine, unsqueeze_dim=1
-        )
-        attention, _ = modeling_gemma.eager_attention_forward(
-            layer.self_attn,
-            query,
-            key,
-            value,
-            attention_mask,
-            layer.self_attn.scaling,
-        )
-        return attention.reshape(
-            query.shape[0], -1, query.shape[1] * query.shape[-1]
-        )
 
     def _finish_stream(
         self,
@@ -206,12 +193,22 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             raise BackboneMemoryError("PI05 MLP residual returned None")
         return output
 
+    @staticmethod
+    def _rotate(
+        value: torch.Tensor,
+        cosine: torch.Tensor,
+        sine: torch.Tensor,
+    ) -> torch.Tensor:
+        cosine = cosine.unsqueeze(1)
+        sine = sine.unsqueeze(1)
+        return value * cosine + modeling_gemma.rotate_half(value) * sine
 
-    def _joint_layer(
+    def _memory_layer(
         self,
         layer_index: int,
-        prefix: torch.Tensor,
-        suffix: torch.Tensor,
+        memory: torch.Tensor,
+        prefix_hidden: torch.Tensor,
+        action_hidden: torch.Tensor,
         *,
         attention_mask: torch.Tensor,
         position_ids: torch.Tensor,
@@ -221,40 +218,66 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
         rotary_embedding: torch.nn.Module,
         vl_adapters: torch.nn.Module,
         action_adapters: torch.nn.Module,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        stream_arguments = (
-            (prefix, prefix_layer, None, vl_adapters),
-            (suffix, suffix_layer, adarms_condition, action_adapters),
-        )
-        projected = [
-            self._stream_qkv(layer_index, *arguments)
-            for arguments in stream_arguments
-        ]
-        attention = self._attention(
-            *(torch.cat([row[index] for row in projected], dim=2) for index in range(1, 4)),
-            attention_mask,
-            position_ids,
+    ) -> torch.Tensor:
+        prefix_key, prefix_value = self._stream_kv(
+            layer_index,
+            prefix_hidden,
             prefix_layer,
-            rotary_embedding,
+            None,
+            vl_adapters,
         )
-        outputs = []
-        start = 0
-        for arguments, row in zip(stream_arguments, projected, strict=True):
-            hidden = arguments[0]
-            stop = start + hidden.shape[1]
-            outputs.append(
-                self._finish_stream(
-                    layer_index,
-                    hidden,
-                    attention[:, start:stop],
-                    arguments[1],
-                    arguments[2],
-                    row[0],
-                    arguments[3],
-                )
-            )
-            start = stop
-        return outputs[0], outputs[1]
+        action_key, action_value = self._stream_kv(
+            layer_index,
+            action_hidden,
+            suffix_layer,
+            adarms_condition,
+            action_adapters,
+        )
+        gate, query, memory_key, memory_value = self._memory_qkv(
+            layer_index,
+            memory,
+            suffix_layer,
+            adarms_condition,
+            action_adapters,
+        )
+        key = torch.cat((prefix_key, action_key, memory_key), dim=2)
+        value = torch.cat((prefix_value, action_value, memory_value), dim=2)
+        rotary_input = torch.zeros(
+            query.shape[0],
+            key.shape[2],
+            query.shape[-1],
+            dtype=query.dtype,
+            device=query.device,
+        )
+        cosine, sine = rotary_embedding(rotary_input, position_ids)
+        query = self._rotate(
+            query,
+            cosine[:, -self.MEMORY_TOKENS :],
+            sine[:, -self.MEMORY_TOKENS :],
+        )
+        key = self._rotate(key, cosine, sine)
+        attended, _ = modeling_gemma.eager_attention_forward(
+            prefix_layer.self_attn,
+            query,
+            key,
+            value,
+            attention_mask,
+            prefix_layer.self_attn.scaling,
+        )
+        attended = attended.reshape(
+            query.shape[0],
+            self.MEMORY_TOKENS,
+            query.shape[1] * query.shape[-1],
+        )
+        return self._finish_stream(
+            layer_index,
+            memory,
+            attended,
+            suffix_layer,
+            adarms_condition,
+            gate,
+            action_adapters,
+        )
 
     def _validate_inputs(
         self,
@@ -293,17 +316,38 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             raise BackboneMemoryError("PI05 backbone-memory topology changed")
         return language_model, expert_model, batch
 
-    def _prepare_streams(
+    def _prepare_native_context(
         self,
         core: torch.nn.Module,
         prefix: torch.Tensor,
         prefix_padding: torch.Tensor,
         action_suffix: torch.Tensor,
         action_padding: torch.Tensor,
-        memory_tokens: torch.Tensor,
+        action_markers: torch.Tensor,
         target_dtype: torch.dtype,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        batch = prefix.shape[0]
+        padding = torch.cat((prefix_padding, action_padding), dim=1)
+        markers = torch.cat(
+            (torch.zeros_like(prefix_padding), action_markers), dim=1
+        )
+        attention_mask = core._prepare_attention_masks_4d(
+            make_att_2d_masks(padding, markers)
+        )
+        position_ids = torch.cumsum(padding, dim=1) - 1
+        return (
+            prefix.to(target_dtype),
+            action_suffix.to(target_dtype),
+            attention_mask,
+            position_ids,
+        )
+
+    def _prepare_memory_attention(
+        self,
+        core: torch.nn.Module,
+        prefix_padding: torch.Tensor,
+        action_padding: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        batch = prefix_padding.shape[0]
         boolean_mask = make_backbone_memory_mask(
             prefix_padding,
             action_horizon=self.ACTION_HORIZON,
@@ -318,26 +362,75 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
                     batch,
                     self.MEMORY_TOKENS,
                     dtype=torch.bool,
-                    device=prefix.device,
+                    device=prefix_padding.device,
                 ),
             ),
             dim=1,
         )
         position_ids = torch.cumsum(total_padding, dim=1) - 1
-        memories = memory_tokens.to(device=prefix.device, dtype=target_dtype)
-        suffix = torch.cat(
-            (
-                action_suffix.to(target_dtype),
-                memories[None].expand(batch, -1, -1),
-            ),
-            dim=1,
+        return (
+            attention_mask[:, :, -self.MEMORY_TOKENS :, :],
+            position_ids,
         )
-        return prefix.to(target_dtype), suffix, attention_mask, position_ids
 
-    def _run_layers(
+    @contextmanager
+    def _capture_native_states(
         self,
         prefix: torch.Tensor,
-        suffix: torch.Tensor,
+        action: torch.Tensor,
+        language_model: torch.nn.Module,
+        expert_model: torch.nn.Module,
+    ) -> Iterator[dict[str, list[torch.Tensor | None]]]:
+        capture: dict[str, list[torch.Tensor | None]] = {
+            "prefix": [prefix.detach(), *([None] * self.LAYERS)],
+            "action": [action.detach(), *([None] * self.LAYERS)],
+        }
+        handles = []
+
+        def install(
+            target: torch.nn.Module,
+            stream: str,
+            output_layer: int,
+        ) -> None:
+            def hook(
+                _module: torch.nn.Module,
+                inputs: tuple[torch.Tensor, ...],
+                *,
+                selected_stream: str = stream,
+                selected_layer: int = output_layer,
+            ) -> None:
+                if (
+                    not inputs
+                    or capture[selected_stream][selected_layer + 1] is not None
+                ):
+                    raise BackboneMemoryError("native layer capture changed execution")
+                capture[selected_stream][selected_layer + 1] = inputs[0].detach()
+
+            handles.append(target.register_forward_pre_hook(hook))
+
+        for layer_index in range(self.LAYERS - 1):
+            install(
+                language_model.layers[layer_index + 1].input_layernorm,
+                "prefix",
+                layer_index,
+            )
+            install(
+                expert_model.layers[layer_index + 1].input_layernorm,
+                "action",
+                layer_index,
+            )
+        install(language_model.norm, "prefix", self.LAYERS - 1)
+        install(expert_model.norm, "action", self.LAYERS - 1)
+        try:
+            yield capture
+        finally:
+            for handle in handles:
+                handle.remove()
+
+    def _run_memory_layers(
+        self,
+        memory: torch.Tensor,
+        capture: dict[str, list[torch.Tensor | None]],
         attention_mask: torch.Tensor,
         position_ids: torch.Tensor,
         adarms_condition: torch.Tensor,
@@ -346,8 +439,9 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
         memory_tokens: torch.Tensor,
         vl_adapters: torch.nn.Module,
         action_adapters: torch.nn.Module,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        action_states: list[torch.Tensor] = []
+    ) -> torch.Tensor:
+        if any(value is None for values in capture.values() for value in values):
+            raise BackboneMemoryError("native PI05 layer capture is incomplete")
         layer_memories: list[torch.Tensor] = []
         should_checkpoint = (
             self.activation_checkpointing
@@ -358,7 +452,7 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             zip(language_model.layers, expert_model.layers, strict=True)
         ):
             layer_call = partial(
-                self._joint_layer,
+                self._memory_layer,
                 layer_index,
                 attention_mask=attention_mask,
                 position_ids=position_ids,
@@ -369,24 +463,23 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
                 vl_adapters=vl_adapters,
                 action_adapters=action_adapters,
             )
+            prefix_hidden = capture["prefix"][layer_index]
+            action_hidden = capture["action"][layer_index]
+            if prefix_hidden is None or action_hidden is None:
+                raise BackboneMemoryError("native PI05 layer input is missing")
             if should_checkpoint:
-                prefix, suffix = checkpoint(
+                memory = checkpoint(
                     layer_call,
-                    prefix,
-                    suffix,
+                    memory,
+                    prefix_hidden,
+                    action_hidden,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                prefix, suffix = layer_call(prefix, suffix)
-            action_states.append(suffix[:, : self.ACTION_HORIZON].detach())
-            layer_memories.append(suffix[:, self.ACTION_HORIZON :])
-        return (
-            prefix,
-            suffix,
-            torch.stack(action_states, dim=1),
-            torch.stack(layer_memories, dim=1),
-        )
+                memory = layer_call(memory, prefix_hidden, action_hidden)
+            layer_memories.append(memory)
+        return torch.stack(layer_memories, dim=1)
 
     def forward(
         self,
@@ -401,7 +494,7 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
         vl_adapters: torch.nn.Module,
         action_adapters: torch.nn.Module,
     ) -> BackboneMemoryOutput:
-        """Append memories and return all states from the single joint loop."""
+        """Run the exact native carrier once, then its one-way memory observer."""
 
         language_model, expert_model, batch = self._validate_inputs(
             core,
@@ -414,20 +507,49 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             memory_tokens,
         )
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        prefix, suffix, attention_mask, position_ids = self._prepare_streams(
-            core,
-            prefix,
-            prefix_padding,
-            action_suffix,
-            action_padding,
-            memory_tokens,
-            target_dtype,
+        prefix, action_suffix, attention_mask, position_ids = (
+            self._prepare_native_context(
+                core,
+                prefix,
+                prefix_padding,
+                action_suffix,
+                action_padding,
+                action_markers,
+                target_dtype,
+            )
         )
-        prefix, suffix, action_states, layer_memories = self._run_layers(
+        bridge = core.paligemma_with_expert
+        with self._capture_native_states(
             prefix,
-            suffix,
-            attention_mask,
-            position_ids,
+            action_suffix,
+            language_model,
+            expert_model,
+        ) as capture:
+            with (
+                torch.no_grad(),
+                vl_adapters.installed(language_model),
+                action_adapters.installed(expert_model),
+            ):
+                (prefix_hidden, action_hidden), _ = bridge.forward(
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_values=None,
+                    inputs_embeds=[prefix, action_suffix],
+                    use_cache=False,
+                    adarms_cond=[None, adarms_condition],
+                )
+        memory_attention, memory_positions = self._prepare_memory_attention(
+            core,
+            prefix_padding,
+            action_padding,
+        )
+        memory = memory_tokens.to(device=prefix.device, dtype=target_dtype)
+        memory = memory[None].expand(batch, -1, -1)
+        layer_memories = self._run_memory_layers(
+            memory,
+            capture,
+            memory_attention,
+            memory_positions,
             adarms_condition,
             language_model,
             expert_model,
@@ -435,13 +557,15 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             vl_adapters,
             action_adapters,
         )
-        prefix_hidden, _ = layernorm_forward(language_model.norm, prefix, None)
-        suffix_hidden, _ = layernorm_forward(
-            expert_model.norm, suffix, adarms_condition
+        action_outputs = capture["action"][1:]
+        if any(value is None for value in action_outputs):
+            raise BackboneMemoryError("native Action layer capture is incomplete")
+        action_states = torch.stack(
+            [value for value in action_outputs if value is not None], dim=1
         )
         output = BackboneMemoryOutput(
             prefix_hidden=prefix_hidden,
-            action_hidden=suffix_hidden[:, : self.ACTION_HORIZON],
+            action_hidden=action_hidden,
             action_layer_states=action_states,
             layer_memory=layer_memories,
         )
@@ -459,7 +583,7 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
 
 
 class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
-    """Embed real frames and run the single CMBG joint backbone path."""
+    """Embed frames, run the exact carrier, and update layerwise memories."""
 
     def __init__(
         self,

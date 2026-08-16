@@ -7,9 +7,10 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 当前active authority是CMBG：只把CAPG post-backbone 37-latent Value source换成真实joint prefix内逐层更新的
-  37个one-way memory tokens；canonical实现和真实task9 K4 CUDA机制门已通过，等待clean frozen world3；没有
-  active/resumable checkpoint；
+- 当前active authority是CMBG：只把CAPG post-backbone Value换成逐层读取真实prefix/Action context的37个
+  one-way memory tokens。首版clean`38f7fc7` world3因task15固定carrier outcome漂移属于工程违约，不能作科学
+  裁决；carrier-exact修正版已通过真实task15 K4所有carrier tensors逐元素exact parity和task9 CUDA梯度/显存门，
+  等待fresh clean frozen world3重跑；没有active/resumable checkpoint；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -182,12 +183,18 @@
   `capg_shared3_terminal_adjudication.json`；
 - 当前active design是**CMBG**，authority=
   `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它只把CAPG的post-backbone
-  37-query latent source换成同一真实image/language/50 Action-probe prefix内逐层更新的37个one-way memory tokens；
-  Action不能看memory，memory能看prefix/Action/memory。temporal、K-set、M2P、direct B、zero gate、NEAP、K4、
-  rank32和world3 global commitment全部不变。canonical实现实际trainable=`2,828,928`，完整CPU=`409 passed`且
-  architecture guard无hard violation；gpu02物理1的task9 K4/112-frame机制门得到`[112,18,37,1024]`memory，
-  step0 exact zero/gate gradient-open，人工开gate后memory/temporal/K-set/layer-token M2P梯度全非零，policy零梯度，
-  peak reserved=`21,794 MiB`。当前尚未启动world3；
+  37-query latent source换成逐层读取真实image/language/50 Action states的37个one-way memory tokens；memory走
+  对应Action Expert的AdaRMS/qkv/o/MLP，但原carrier执行图完全不含memory。temporal、K-set、M2P、direct B、zero
+  gate、NEAP、K4、rank32和world3 global commitment全部不变，trainable仍=`2,828,928`；
+- 首版clean`38f7fc7` world3完整exit0但task15预注册`2/0,65 chunks,16 pairs`漂为`1/2,47,8`，所以其raw2/3、
+  native11/12、cross-task cosine mean`+.03865`与exact no-op仅作诊断，不能接受或否定CMBG。artifact=
+  `runs/outputs/pi05_v6_lpcp_cmbg_shared3_task9_15_18_b8_38f7fc7_gpu02p123_20260816/cmbg_shared3_engineering_adjudication.json`；
+- 修正版只改carrier parity接口：原生context forward一次，保存18层context；one-way observer逐层重算冻结K/V供
+  memory读取，不重跑context attention/MLP。真实task15 K4 130帧的text/frame/grounded/interactions与
+  `[130,18,50,1024]`Action states相对封存LPCP全部max-abs/relative-L2=`0/0`。task9 112帧仍得到
+  `[112,18,37,1024]`memory并通过zero staging和全链gradient，wall=`121.251s`、peak reserved=`18,848 MiB`、
+  policy零gradient；完整CPU=`410 passed`且architecture guard无hard violation。下一唯一动作是fresh clean commit
+  上的同一world3重跑，未通过不得held/full24/strict；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

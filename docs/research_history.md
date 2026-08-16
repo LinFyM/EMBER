@@ -7,8 +7,9 @@
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
 2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新完成的CAPG在strict前终局：它把固定三
 task的same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
-当前active CMBG只把这些post-backbone latents换成真实prefix内逐层更新的capacity-matched memory；canonical实现
-与真实K4 CUDA机制门已通过，等待固定world3，尚无科学结果。
+当前active CMBG只把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory。
+首版clean`38f7fc7` world3因task15 fixed carrier outcome漂移属于engineering-invalid；carrier-exact修正版已通过
+真实K4逐tensor parity与CUDA机制门，等待fresh固定world3重跑，尚无可接受科学结果。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
@@ -93,8 +94,11 @@ B reshape。world3 outcome/count、wall和信息墙全通过；task9/15/18 same-
 `.846/.865,.596/.645,.448/.557`提高到`.983/.985,.898/.870,.982/.949`，raw shared coverage从1/3到2/3，
 native best从8/12到10/12。task15 norm仍为task9/task18的`36.29x/5.99x`，task18到shared mean=`-.1570`，
 11 scales无12/12，最终681,984 gate values exact zero。它证明capacity-matched coordinates能修复跨video credit，
-但post-backbone Value没有完成跨task first commitment；不否定literal memory。当前CMBG依预注册边界只把Value source
-升级为真实joint prefix内37个one-way memory tokens，保留下游全部已通过机制。
+但post-backbone Value没有完成跨task first commitment；不否定literal memory。CMBG依预注册边界只把Value source
+升级为37个逐层one-way memory tokens，保留下游全部已通过机制。首版把memory追加到joint attention matrix，虽使
+cross-task cosine mean升到`+.03865`、native best到11/12，却令task15固定outcome/count从`2/0,65,16`漂成
+`1/2,47,8`，因此不能科学裁决。修正版保持原生context execution逐元素exact，由memory observer读取同层K/V并走
+Action Expert update；真实task15 130帧五组carrier outputs全部max-abs0，等待同一world3 fresh重跑。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

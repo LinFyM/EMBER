@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_v1",
-  "status": "world3_ready",
+  "status": "carrier_exact_world3_rerun_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -161,7 +161,8 @@
       "capacity_grid_shape": [18, 37, 1024],
       "native_b_payload_values": 680448,
       "unused_payload_values": 1536,
-      "single_joint_backbone_forward": true,
+      "single_native_context_backbone_forward": true,
+      "one_way_layer_matched_memory_observer": true,
       "step0_native_payload_gate_exact_zero": true,
       "first_step_payload_gate_gradient_nonzero": true,
       "post_gate_step_memory_temporal_set_m2p_gradients_nonzero": true,

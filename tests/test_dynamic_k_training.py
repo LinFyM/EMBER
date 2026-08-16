@@ -99,7 +99,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "world3_ready"
+    assert config["status"] == "carrier_exact_world3_rerun_ready"
     assert config["formal_run"]["status"] == (
         "blocked_until_world3_shared_anchor_mechanism_gate_passes"
     )
@@ -165,6 +165,8 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["rank_accepted_scale_and_parameter_delta_identical"]
     assert gate["public_rank"] == 32
     assert gate["carrier_first_bank_tensors_unchanged"]
+    assert gate["single_native_context_backbone_forward"]
+    assert gate["one_way_layer_matched_memory_observer"]
     assert gate["residual_second_b_step0_zero"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6

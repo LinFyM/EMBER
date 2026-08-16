@@ -743,12 +743,22 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      retained gate update后才打开。因此本轮只否定post-backbone 37-latent Value加zero-gated first commitment，
      最早接口是task-local coherent grid到跨task可分流Value。CMBG按预注册边界只把Value source升级为真实prefix
      内逐层37-token memory，保留CAPG所有已通过下游机制；不恢复旧100分Dynamic-K整条路线。
-114. CMBG canonical实现已把37个parameter-aligned values真正放入real image/language/50 Action-probe joint
+114. CMBG首版实现把37个parameter-aligned values放入real image/language/50 Action-probe joint
      context，而非backbone后再造queries。真实task9 K4共112帧得到`[112,18,37,1024]`逐层memory；step0 grid与
      second-B exact zero且只有payload gate有梯度。人工打开gate后memory、temporal、K-set与layer/token M2P均
      获得非零gradient，policy仍为零gradient，peak reserved=`21,794 MiB`。完整CPU=`409 passed`且结构门0 hard。
-     这些只证明literal memory的数据流、staging和A40显存合同成立；是否解决CAPG的跨task 2/3与native 10/12只能
-     由固定world3裁决，不能用机制数值提前宣布有效。
+     这些当时只证明literal memory的数据流、staging和A40显存合同成立；其carrier parity漏洞及后续修正见115--116。
+115. clean`38f7fc7`首版CMBG world3不能作为科学结果。虽然完整exit0、cross-task gradient cosine mean从CAPG
+     `-.1394`升到`+.03865`、native best从10/12升到11/12，但task15固定carrier从预注册`2/0,65 chunks,16 pairs`
+     漂成`1/2,47,8`。原因不是memory内容穿过three-block mask，而是把37 tokens追加到同一attention矩阵改变了
+     frozen carrier的kernel shape；旧CUDA检查只比较“second bank为零”，没有比较新旧LPCP carrier。最终update
+     仍exact no-op，但这些几何数值只能作诊断，既不能接受也不能否定CMBG。
+116. carrier-exact修正没有删除memory变量：原生PI05 context保持一次、原shape forward；每层保存真实
+     prefix/Action states，37 memory tokens以单向observer读取同层K/V并走Action Expert的AdaRMS/qkv/o/MLP。
+     真实task15 K4 130帧的text/frame/grounded/interactions及`[130,18,50,1024]`Action states相对封存LPCP全部
+     max-abs/relative-L2=`0/0`。task9 112帧仍有`[112,18,37,1024]`live memory和完整gate-open梯度，wall从
+     `131.823s`降到`121.251s`，reserved从`21,794`降到`18,848 MiB`。因此下一步可解释的实验是fresh重跑同一
+     world3，而不是基于首版诊断改optimizer、rank或放弃memory。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

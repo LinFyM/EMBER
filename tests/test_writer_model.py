@@ -3,6 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import torch
+from lerobot.policies.pi05.modeling_pi05 import compute_layer_complete
+from lerobot.policies.pi_gemma import layernorm_forward
 
 from ember.writer.backbone_memory import (
     Pi05CapacityMatchedBackboneMemory,
@@ -590,15 +592,54 @@ class _MemoryBackbone(torch.nn.Module):
         self.rotary_emb = _MemoryRotary()
 
 
+class _MemoryBridge(torch.nn.Module):
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.paligemma = torch.nn.Module()
+        self.paligemma.model = torch.nn.Module()
+        self.paligemma.model.language_model = _MemoryBackbone(width)
+        self.gemma_expert = torch.nn.Module()
+        self.gemma_expert.model = _MemoryBackbone(width)
+
+    def forward(
+        self,
+        *,
+        attention_mask: torch.Tensor,
+        position_ids: torch.Tensor,
+        past_key_values: None,
+        inputs_embeds: list[torch.Tensor],
+        use_cache: bool,
+        adarms_cond: list[torch.Tensor | None],
+    ) -> tuple[list[torch.Tensor], None]:
+        assert past_key_values is None and not use_cache
+        language = self.paligemma.model.language_model
+        expert = self.gemma_expert.model
+        streams = inputs_embeds
+        for layers in zip(language.layers, expert.layers, strict=True):
+            streams = compute_layer_complete(
+                streams,
+                attention_mask,
+                position_ids,
+                adarms_cond,
+                layers,
+                language.rotary_emb,
+            )
+        outputs = []
+        for hidden, norm, condition in zip(
+            streams,
+            (language.norm, expert.norm),
+            adarms_cond,
+            strict=True,
+        ):
+            output, _ = layernorm_forward(norm, hidden, condition)
+            outputs.append(output)
+        return outputs, None
+
+
 class _MemoryCore(torch.nn.Module):
     def __init__(self, width: int) -> None:
         super().__init__()
-        self.paligemma_with_expert = SimpleNamespace(
-            paligemma=SimpleNamespace(
-                model=SimpleNamespace(language_model=_MemoryBackbone(width))
-            ),
-            gemma_expert=SimpleNamespace(model=_MemoryBackbone(width)),
-        )
+        self.paligemma_with_expert = _MemoryBridge(width)
 
     @staticmethod
     def _prepare_attention_masks_4d(mask: torch.Tensor) -> torch.Tensor:
@@ -668,6 +709,40 @@ def test_joint_loop_captures_all_action_and_memory_layers() -> None:
     assert output.action_layer_states.shape == (2, 18, 50, 4)
     assert output.layer_memory.shape == (2, 18, 37, 4)
     assert not torch.equal(output.layer_memory[:, 0], output.layer_memory[:, -1])
+
+
+def test_memory_wrapper_preserves_exact_native_carrier() -> None:
+    torch.manual_seed(6)
+    core = _MemoryCore(4)
+    loop, vl, action_adapters = _memory_loop(core)
+    inputs = _memory_inputs()
+    language = core.paligemma_with_expert.paligemma.model.language_model
+    expert = core.paligemma_with_expert.gemma_expert.model
+    prefix, suffix, mask, positions = loop._prepare_native_context(
+        core,
+        inputs[0],
+        inputs[1],
+        inputs[2],
+        inputs[3],
+        inputs[4],
+        language.layers[0].self_attn.q_proj.weight.dtype,
+    )
+    with (
+        torch.no_grad(),
+        vl.installed(language),
+        action_adapters.installed(expert),
+    ):
+        expected, _ = core.paligemma_with_expert.forward(
+            attention_mask=mask,
+            position_ids=positions,
+            past_key_values=None,
+            inputs_embeds=[prefix, suffix],
+            use_cache=False,
+            adarms_cond=[None, inputs[5]],
+        )
+    actual = loop(core, *inputs, vl, action_adapters)
+    torch.testing.assert_close(actual.prefix_hidden, expected[0], rtol=0, atol=0)
+    torch.testing.assert_close(actual.action_hidden, expected[1], rtol=0, atol=0)
 
 
 def test_memory_values_cannot_change_prefix_or_action() -> None:

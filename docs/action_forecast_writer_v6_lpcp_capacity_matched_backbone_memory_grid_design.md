@@ -1,8 +1,9 @@
 # V6-LPCP Capacity-Matched Backbone-Memory Grid
 
-状态：2026-08-16 canonical实现与GPU前机制门已通过，等待固定world3裁决。简称**CMBG**。本轮只能检验本文
-这一条canonical路径；CAPG已经终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。
-历史8-memory Dynamic-K只选择性复用了其已验证的three-block mask和joint-layer语义，没有整条恢复。
+状态：2026-08-16首版world3暴露carrier parity工程违约，不能作为CMBG科学裁决；carrier-exact修正版已通过真实
+task15逐tensor parity与task9梯度/显存门，等待从fresh clean commit重跑同一固定world3。简称**CMBG**。CAPG已经
+终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。历史8-memory Dynamic-K只选择性
+复用了其已验证的layer-matched memory语义，没有整条恢复。
 
 ## 1. 决策
 
@@ -17,13 +18,15 @@ world3共同裁决，以及CAPG已经证明有效的video内有向聚合、K-set
 替换为
 
 ```text
-真实image/language prefix + 50个Action probes + 37个one-way memory tokens
-    -> 同一次PI0.5 joint 18-layer forward
+真实image/language prefix + 50个Action probes
+    -> 一次逐元素保持LPCP的native PI0.5 joint 18-layer forward
+    -> 37个one-way memory tokens逐层读取同层prefix/Action K/V并走Action Expert update
     -> 每层37个contextual memory states
 ```
 
-这37个是真正进入Action Expert计算并逐层更新的memory tokens，不是视频结束后的latent slots。每个condition仍只
-生成一套完整38-target LoRA；Writer仍在rollout前运行一次。
+这37个逐层使用真实Action Expert的AdaRMS、q/k/v/o、attention、MLP与residual，不是视频结束后的latent slots；
+但它们是严格单向observer，不扩张原carrier的attention矩阵，因而不能通过数值shape副作用改变LPCP。每个condition
+仍只生成一套完整38-target LoRA；Writer仍在rollout前运行一次。
 
 ## 2. CAPG实际证明了什么
 
@@ -43,8 +46,8 @@ backbone内先完成task-conditioned读取，能否在到达同一个gate以前�
 ```text
 exact task language + K=4 action-hidden ordered teacher videos
   -> 每帧真实224图像、exact language、固定t=1的50个Action probes
-  -> 追加37个parameter-aligned memory tokens
-  -> 同一次18层PaliGemma/Action-Expert joint forward
+  -> 原生18层PaliGemma/Action-Expert context forward并只读每层context
+  -> 37个parameter-aligned memory tokens逐层读取同层context并走Action Expert
   -> 每帧18x37x1024 layer-memory grid
   -> exact-zero coordinate payload gate
   -> 每video adjacent transition + terminal goal causal reducer
@@ -78,18 +81,18 @@ memory count和closed-loop compute。CAPG最早失败在跨task first commitment
 
 ## 5. memory位于哪里、看见什么
 
-对每个真实frame，正常prefix和suffix为：
+对每个真实frame，carrier的正常prefix和suffix保持封存LPCP原样：
 
 ```text
 prefix = [256 real image tokens, exact language tokens]
-suffix = [50 native fixed Action probes, 37 learned memory tokens]
+suffix = [50 native fixed Action probes]
 ```
 
-使用三个attention blocks：
+每层另有37个learned memory queries。其可见关系等价于三个attention blocks，但实现为carrier与observer分离：
 
 1. prefix queries只看有效prefix；
-2. Action queries看prefix和完整50-token Action block，但不能看后置memory；
-3. memory queries看prefix、Action block和完整memory block。
+2. Action queries看prefix和完整50-token Action block，执行图与LPCP逐元素相同；
+3. memory queries看该层prefix、Action和memory K/V，memory自身经过对应Action Expert layer更新。
 
 所以memory处于有意义的真实图文/Action context中，不是blank image、memory-only forward或凭空Action query；同时
 memory不能反向改变原50个Action probes的可见集合。memory使用与固定`t=1` probes相同的AdaRMS condition，经过
@@ -99,10 +102,12 @@ memory不能反向改变原50个Action probes的可见集合。memory使用与�
 Z_frame in R[18,37,1024]
 ```
 
-实现只能运行一次joint layer loop；不得另算no-video baseline、重复原backbone或修改site-package。优先复用旧
-`100095d/f1e2fcd`中经过测试的three-block mask与joint-loop公式，但只恢复这个窄机制，并嵌入当前V6 encoder。原
-Action/prefix输出对memory值应结构不变；正常BF16 kernel低位差异用public LPCP effective-BA、fixed outcome和
-action-response实测裁决，不为逐元素相等退化到batch1、FP64或第二次forward。
+实现只运行一次原生context backbone forward；不得另算no-video baseline、重复vision/language/Action context或
+修改site-package。observer保存每层原生context输入，重算该层冻结K/V供37个memory queries读取，不重算context
+queries、attention、MLP或最终输出。首版把memory直接追加到joint矩阵，虽有three-block mask，仍因attention矩阵
+shape改变使task15固定outcome从`2/0`漂成`1/2`，故属于工程违约而非可接受BF16低位差异。修正版必须先在真实K4
+上证明所有carrier tensors逐元素exact，再由fixed world3复现outcome/count；不为一致性退化到batch1、FP64或第二
+次context forward。
 
 ## 6. 视频顺序和多视频共识
 
@@ -177,31 +182,39 @@ conditions在同一endpoint action panel上求梯度；view内等权、task间�
 
 CPU/synthetic和一次真实CUDA mechanism必须证明：
 
-1. 37 memory tokens与真实image/language/50 Action probes处于同一次joint forward；
-2. three-block mask中Action不能看memory，memory能看prefix/Action/memory；改变memory值不改变Action/prefix的
-   可见集合；
+1. 原生image/language/50 Action context只forward一次，37 memory tokens逐层读取同层真实context；
+2. Action/prefix执行图完全不含memory，memory能看prefix/Action/memory；改变memory值不能改变carrier；
 3. layer-memory shape=`[F,18,37,1024]`，每层状态真实变化；
 4. step0 second-B、parameter grid和constant-video output逐元素exact zero；
 5. payload gate首步gradient非零；人工打开gate后memory/temporal/set/M2P全部获得非零gradient；
 6. K1--K4走同一ragged图，K置换不变，video内reverse/shuffle改变grid；
 7. source policy零trainable，teacher/target/held信息墙不变；
-8. 原50 Action probes、LPCP first bank和正常prefix不因memory内容改变；public step0 effective-BA与fixed action保持
-   正常BF16容差且固定task outcomes不漂；
-9. 不发生第二次video backbone forward、重复inference、dtype扩展或逐tensor扫描。
+8. 原50 Action probes、18层Action states、text/frame/grounded/interactions及LPCP first bank逐元素保持native
+   carrier；固定task outcomes/count不漂；
+9. 不发生第二次context backbone forward、重复inference、dtype扩展或逐tensor扫描。
 
-### 10.1 Canonical implementation and real CUDA evidence
+### 10.1 首版engineering-invalid world3
 
-canonical实现已原位退休CAPG hook/context readout：`backbone_memory.py`拥有唯一three-block mask和18层joint loop，
-同一次真实context forward同时返回原50个Action layer states与37个memory layer states；`parameter_grid.py`只保留
-memory input、exact-zero payload gate、原causal/K-set/M2P和direct B reshape。实际trainable精确为`2,828,928`。
+clean`38f7fc7`首版完整exit0，但固定task15从预注册`candidate/reference=2/0, chunks=65, pairs=16`漂为
+`1/2,47,8`；task9/task18仍为`1/0,25,8`与`1/2,44,8`。因此它不能裁决memory科学假设。仅作诊断时，其same-task
+cosine/energy=`.983/.984,.930/.937,.857/.498`，cross-task gradient cosine mean=`+.03865`，raw仍`2/3`，native
+best=`11/12`，11 scales无12/12并exact no-op。该轮说明memory values可能改善CAPG的跨task几何，但不能把它写成
+CMBG通过或失败。精确artifact为同root的`cmbg_shared3_engineering_adjudication.json`。
 
-完整CPU=`409 passed`、compileall与diff check通过；architecture guard无hard violation。gpu02物理1上的真实task9
-K4 mechanism使用demo`0/1/2/3`共112个stride-5 frames，得到layer-memory shape=`[112,18,37,1024]`：step0
-parameter grid非零元素为0、public second-B与LPCP carrier逐元素exact，payload-gate gradient RMS=
-`2.22273e-7`，其余branch gradient为0。人工打开gate后grid L2=`.1260001`，memory/temporal/K-set/layer-M2P/
-token-M2P gradient RMS分别为`5.90875e-10/2.64457e-10/1.90166e-10/1.48802e-9/1.58528e-9`，source policy
-gradient tensor数为0。两种有区别的forward/backward总wall=`131.823s`，peak allocated/reserved=
-`17,854.6/21,794.0 MiB`，0 OOM/nonfinite。该检查只关闭实现与显存门，不是task-coexistence或closed-loop证据。
+### 10.2 Carrier-exact canonical correction and real CUDA evidence
+
+修正版保留同一科学变量与全部下游图，只把扩张joint attention矩阵改为原生carrier加one-way layer observer。
+完整CPU=`410 passed`、compileall/diff check通过，architecture guard无hard violation；review项仅为该cohesive
+owner既有的大文件/函数长度，没有新模块、并行版本或hard structural问题。
+真实task15、demos`49/5/23/45`共130帧的LPCP与CMBG独立编码逐元素比较：text queries、frame evidence、grounded
+evidence、interactions和`[130,18,50,1024]`Action states全部max-abs=`0`、relative-L2=`0`。这直接关闭旧检查只证明
+“second bank为零”却未比较carrier的漏洞。
+
+真实task9 K4 112帧机制再次通过：layer-memory=`[112,18,37,1024]`，step0 grid exact zero、payload-gate gradient
+RMS=`2.22420e-7`且其余branch为0；打开gate后grid L2=`.126103`，memory/temporal/K-set/layer-M2P/token-M2P
+gradient RMS=`5.90365e-10/2.68898e-10/1.86177e-10/1.48842e-9/1.58698e-9`，policy gradient tensor数0。
+两次forward/backward wall=`121.251s`，peak allocated/reserved=`17,854.6/18,848.0 MiB`，优于首版且0
+OOM/nonfinite。当前只缺fresh clean commit上的同一world3重跑；未获其结果前不得做held/full24/strict。
 
 ## 11. world3快速否决门
 
@@ -245,7 +258,7 @@ LoRA或后续task-local RL。
 
 ## 14. 工程所有权
 
-- 新cohesive owner只负责three-block joint memory和layer states；不得把旧Dynamic-K训练器、rank8 mapper或旧design
+- 新cohesive owner只负责native carrier capture、one-way layer memory和layer states；不得把旧Dynamic-K训练器、rank8 mapper或旧design
   恢复成平行runtime；
 - `parameter_grid.py`保留temporal/set/M2P/direct reshape，但用layer memory替换context readout；旧CAPG
   post-backbone query owner应删除而非保留fallback；

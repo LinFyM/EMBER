@@ -35,9 +35,10 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新完成的CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、
-native最多10/12并exact no-op。当前active CMBG尚未实现或启动GPU。SFMC144仍是最高correct单点但lost15/churn31，
-不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
+长期目标尚未完成。CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、native最多
+10/12并exact no-op。当前active CMBG首版world3因task15 carrier outcome/count漂移属于engineering-invalid；
+carrier-exact修正版已通过真实task15 K4逐tensor parity与task9 CUDA机制门，等待fresh固定world3重跑。SFMC144
+仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -299,11 +300,14 @@ cosine=`-.1570`，11 scales无12/12，最终681,984 gate参数exact zero。故�
 
 当前active successor是**V6-LPCP Capacity-Matched Backbone-Memory Grid**（CMBG），authority=
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它严格保留CAPG已通过的
-temporal/K-set/M2P/direct-B、NEAP、K4、rank32和global gate，只把backbone之后的37 query latents换成真实
-image/language/50 Action-probe prefix内逐层更新的37个one-way memory tokens。Action不能看memory，memory能看
-prefix/Action/memory；每层37 states直接形成同shape grid。37由B-only payload推导，不是阶段数。step0仍只有
-coordinate gate开放，预计trainable=`2,828,928`；world3必须把raw shared coverage提高到3/3并找到12/12 finite
-native step，否则终局。当前尚未实现或启动GPU；rank8、完整A/B和Dynamic-K仍是独立开放变量。
+temporal/K-set/M2P/direct-B、NEAP、K4、rank32和global gate，只把backbone之后的37 query latents换成逐层读取
+真实image/language/50 Action context的37个one-way memory tokens。memory走对应Action Expert update，原carrier
+执行图完全不含memory；每层37 states直接形成同shape grid。37由B-only payload推导，不是阶段数。step0仍只有
+coordinate gate开放，trainable=`2,828,928`。首版clean`38f7fc7`虽把cross-task cosine mean提高到`+.03865`、
+native best到11/12，却令task15固定`2/0,65,16`漂成`1/2,47,8`，故不能科学裁决。修正版一次原生context forward
+加one-way layer observer；真实task15 130帧的text/frame/grounded/interactions和18层Action states相对LPCP全部
+max-abs0，task9完整梯度链与A40门通过。下一步只允许fresh clean fixed world3；先复现outcome/count，再要求raw
+3/3与native12/12，否则终局。未通过前不得held/full24/strict；rank8、完整A/B和Dynamic-K仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

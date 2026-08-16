@@ -626,11 +626,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   global gate，只把post-backbone 37-query latents换成真实prefix内逐层更新的37个one-way memory tokens；
 - [x] 冻结CMBG authority：37由rank16 B-only payload精确推导，Action不能看memory，memory能看真实
   image/language/Action/memory；不恢复旧8-token Dynamic-K整条路线；
-- [x] 原位实现single joint-loop memory并退休CAPG hook/context owner；完整CPU=`409 passed`、architecture guard
-  无hard violation。真实task9 K4/112-frame CUDA门得到`[112,18,37,1024]`memory，step0 grid exact zero、gate
-  gradient非零，gate-open后memory/temporal/K-set/layer-token M2P全部非零，policy零gradient，peak reserved=
-  `21,794 MiB`；
-- [ ] clean pushed/frozen后固定world3 task9/15/18运行同一preformal，必须达到raw shared 3/3与native 12/12；
+- [x] 首版joint-matrix实现完成CPU/CUDA机制，但clean`38f7fc7` world3使task15固定outcome/count从`2/0,65,16`
+  漂为`1/2,47,8`；已封存engineering adjudication，明确该run不能作memory科学裁决；
+- [x] 在不改科学变量的前提下修正carrier接口：原生context forward一次，37 memory tokens作为one-way layer observer
+  走真实Action Expert update；真实task15 K4的text/frame/grounded/interactions与18层Action states相对LPCP逐元素
+  exact，task9 K4/112-frame zero staging、全链gradient、policy零gradient、wall/显存均通过；
+- [ ] 完整CPU与architecture gate通过、clean push/freeze后重跑固定world3 task9/15/18；先复现outcome/count，再要求
+  raw shared 3/3与native 12/12；
 - [ ] 仅在preformal、held与throughput全门通过后运行full24 cycle1和strict paired400。
 
 ## Non-negotiable boundaries

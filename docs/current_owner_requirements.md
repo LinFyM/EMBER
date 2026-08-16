@@ -416,9 +416,10 @@ CAPG clean`878b5e4`的world3结果把same-task four-view cosine/energy显著提�
 但task15仍比task9/task18大`36.29x/5.99x`，task18到shared mean为负，11 scales无12/12，最终gate exact zero。
 因此CAPG有价值地修复了跨video坐标，却没有让post-backbone values形成跨task first commitment；不full24或小扫。
 
-当前CMBG只把CAPG的post-backbone latent source换成真实image/language/action prefix内逐层更新的37个one-way
-memory tokens，完整保留已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与global gate。这执行了CAPG
-预先写明的下一反事实，而不是因结果临时转向；精确authority=
+当前CMBG只把CAPG的post-backbone latent source换成逐层读取真实image/language/action context并经Action Expert
+更新的37个one-way memory tokens，完整保留已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与global
+gate。首版扩张joint attention矩阵造成task15 carrier漂移，已按工程违约封存；修正版保持原生carrier逐元素exact，
+不删除memory科学变量。这执行了CAPG预先写明的下一反事实，而不是因结果临时转向；精确authority=
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。memory token仍是当前方法变量，
 不是长期goal；rank8、完整A/B和dynamic-K/few-shot仍是独立开放候选。CAPG负结果不得误写成memory失败。
 

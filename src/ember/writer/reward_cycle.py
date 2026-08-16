@@ -43,7 +43,7 @@ from ember.writer.reward_gradient_update import (
     RewardProbe,
     apply_monotone_reward_step,
     make_reward_probe,
-    probe_after_update,
+    probes_after_update,
 )
 
 if TYPE_CHECKING:
@@ -499,7 +499,6 @@ def _task_gradient(
     task: RewardTask,
     cycle: int,
     gradient_sum: torch.Tensor,
-    probe: RewardProbe | None,
 ) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
     (
         visit,
@@ -521,6 +520,7 @@ def _task_gradient(
     credit = empty_matched_occupancy_credit()
     credit_seconds = 0.0
     task_gradient = None
+    probe = None
     active = int(bool(pairs))
     if pairs:
         active_labels = tuple(
@@ -547,20 +547,19 @@ def _task_gradient(
             active_labels,
             gradient_sum,
         )
-        if probe is None:
-            probe = make_reward_probe(
-                runtime,
-                task,
-                state,
-                packed[3],
-                candidate_lora,
-                candidate,
-                labels,
-                preference_batch,
-                preference_trajectory_ids,
-                float(credit["credit_view_records"][0]["preference_margin"]),
-                preference_views,
-            )
+        probe = make_reward_probe(
+            runtime,
+            task,
+            state,
+            packed[3],
+            candidate_lora,
+            candidate,
+            labels,
+            preference_batch,
+            preference_trajectory_ids,
+            float(credit["credit_view_records"][0]["preference_margin"]),
+            preference_views,
+        )
     row = {
         "task_id": task.global_task_id,
         "rank": runtime.context.rank,
@@ -597,22 +596,20 @@ def _collect_cycle_tasks(
     gradient_sum: torch.Tensor,
 ) -> tuple[
     list[dict[str, Any]],
-    RewardProbe | None,
+    list[RewardProbe],
     int,
     dict[int, torch.Tensor],
 ]:
     if runtime.args.mode == "smoke":
-        task_id = int(
-            runtime.args.smoke_task_id or runtime.config["smoke_run"]["task_global_id"]
-        )
+        task_id = int(runtime.args.smoke_task_ids[runtime.context.local_rank])
         task = next(task for task in runtime.tasks if task.global_task_id == task_id)
         row, probe, active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum, None
+            runtime, task, cycle, gradient_sum
         )
         gradients = (
             {task.global_task_id: task_gradient} if task_gradient is not None else {}
         )
-        return [row], probe, active, gradients
+        return [row], [probe] if probe is not None else [], active, gradients
     ordered = tuple(
         sorted(runtime.tasks, key=lambda task: (-task.horizon, task.global_task_id))
     )
@@ -622,43 +619,52 @@ def _collect_cycle_tasks(
     barrier(runtime.context)
     records: list[dict[str, Any]] = []
     task_gradients: dict[int, torch.Tensor] = {}
-    probe = None
+    probes: list[RewardProbe] = []
     active = 0
     while task := _claim_task(queue, ordered):
-        row, probe, task_active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum, probe
+        row, task_probe, task_active, task_gradient = _task_gradient(
+            runtime, task, cycle, gradient_sum
         )
         records.append(row)
         active += task_active
+        if task_probe is not None:
+            probes.append(task_probe)
         if task_gradient is not None:
             task_gradients[task.global_task_id] = task_gradient
     barrier(runtime.context)
     if runtime.context.is_main:
         queue.unlink(missing_ok=True)
-    return records, probe, active, task_gradients
+    return records, probes, active, task_gradients
 
 
 def _gather_cycle_evidence(
     runtime: RewardRuntime,
     records: list[dict[str, Any]],
-    probe: RewardProbe | None,
+    local_probes: Sequence[RewardProbe],
     preference_rows: Sequence[Mapping[str, Any]],
     started: float,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], float]:
-    if runtime.args.mode == "formal":
-        global_records = gather_full24_records(
-            records,
-            world_size=runtime.context.world_size,
-            task_ids=[task.global_task_id for task in runtime.tasks],
-        )
-    else:
-        global_records = records
-    probe_row = probe_after_update(runtime, probe, preference_rows)
-    probes: list[Any] = [None] * runtime.context.world_size
+    expected_task_ids = (
+        [task.global_task_id for task in runtime.tasks]
+        if runtime.args.mode == "formal"
+        else list(runtime.args.smoke_task_ids)
+    )
+    global_records = gather_full24_records(
+        records,
+        world_size=runtime.context.world_size,
+        task_ids=expected_task_ids,
+        expected_count=len(expected_task_ids),
+    )
+    local_probe_rows = probes_after_update(runtime, local_probes, preference_rows)
+    probe_shards: list[Any] = [None] * runtime.context.world_size
     if runtime.context.world_size > 1:
-        dist.all_gather_object(probes, probe_row)
+        dist.all_gather_object(probe_shards, local_probe_rows)
     else:
-        probes[0] = probe_row
+        probe_shards[0] = local_probe_rows
+    probes = sorted(
+        (dict(value) for shard in probe_shards for value in shard),
+        key=lambda row: int(row["task_id"]),
+    )
     if runtime.context.device.type == "cuda":
         torch.cuda.synchronize(runtime.context.device)
     elapsed = torch.tensor(
@@ -670,7 +676,7 @@ def _gather_cycle_evidence(
         dist.all_reduce(elapsed, op=dist.ReduceOp.MAX)
     return (
         global_records,
-        [value for value in probes if value is not None],
+        probes,
         float(elapsed),
     )
 
@@ -687,9 +693,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_native_endpoint_action_preference"
+            "one_complete_train24_task_complete_endpoint_coexistence"
             if runtime.args.mode == "formal"
-            else "one_task_native_endpoint_action_preference_live_smoke"
+            else "three_task_shared_endpoint_coexistence_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -739,7 +745,7 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
         dtype=torch.float32,
         device=runtime.context.device,
     )
-    records, probe, local_active, task_gradients = _collect_cycle_tasks(
+    records, local_probes, local_active, task_gradients = _collect_cycle_tasks(
         runtime, cycle, gradient_sum
     )
     step = apply_monotone_reward_step(
@@ -747,9 +753,9 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
         gradient_sum,
         local_active,
         task_gradients,
-        probe,
+        local_probes,
     )
     records, probes, elapsed = _gather_cycle_evidence(
-        runtime, records, probe, step.commitment_preference_rows, started
+        runtime, records, local_probes, step.commitment_preference_rows, started
     )
     return _cycle_metrics(runtime, cycle, records, probes, step, elapsed)

@@ -118,7 +118,15 @@ clean`33f69fd` task9的gradient cosine/energy从NZRB`.286/.448`提高到`.846/.8
 `97.107s`、reserved=`19.367GB`；held8为8/8，BA/raw-B/action cosine=`.953/.955/.485`，时序与rank-bank均健康。
 但held/train BA L2=`.234<.30`，故26/27门仍终局，不跑task15/18/full24。probe/joint幅度保持`.671/.665x`，
 direct rows仅`.223x`，最早缺口是one-task condition到shared direct-head的跨task幅度。authority=
-`docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`；当前无active successor/GPU/checkpoint。
+`docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`；NEAP无可resume checkpoint。
+
+当前active successor是**TCEC**：不改NEAP endpoint、LPCP/NZRB、rank32、K4、MB-SOP、Adam或native ray，只把
+commitment从一个task-local probe升级为所有active tasks全局共同裁决。固定task9/15/18将在world3中共享一次
+equal-task-mean update；12个correct-view endpoint margins必须全部严格下降且三个ranks接受相同scale。随后用三个
+train anchors的平均幅度重新裁决validation8 held/train>=`.30`。authority=
+`docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。canonical已原位实现world3固定anchor、
+active-probe list和global scalar-row backtracking；定向=`41 passed`、完整CPU=`405 passed`、architecture guard 0 hard。
+尚未GPU启动。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

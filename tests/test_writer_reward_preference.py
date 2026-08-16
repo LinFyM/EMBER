@@ -425,6 +425,34 @@ def test_cached_candidate_recompiles_query_only_without_another_backbone() -> No
     )
 
 
+def _global_test_preference_rows(
+    scale: float, *, all_fail: bool = False
+) -> tuple[dict[str, object], ...]:
+    rows = []
+    for task_id in range(2):
+        if all_fail:
+            before, after = 0.0, 0.0 if scale == 0 else 0.25
+        else:
+            before = 1.0
+            after = (
+                1.5 if scale == 0 else 1.75 if scale == 1.0 and task_id == 1 else 1.25
+            )
+        for view_index in range(4):
+            rows.append(
+                {
+                    "task_id": task_id,
+                    "suite": f"suite_{task_id}",
+                    "view_index": view_index,
+                    "before_preference_margin": before,
+                    "after_preference_margin": after,
+                    "preference_margin_delta": after - before,
+                    "after_preference_objective": 2.0 + after,
+                    "preference_descent": after < before,
+                }
+            )
+    return tuple(rows)
+
+
 def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     class _Writer(torch.nn.Module):
         def __init__(self) -> None:
@@ -458,20 +486,9 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     )
     evaluated_scales = []
 
-    def evaluate(scale: float) -> tuple[dict[str, float | int | bool], ...]:
+    def evaluate(scale: float) -> tuple[dict[str, object], ...]:
         evaluated_scales.append(scale)
-        after = 1.5 if scale == 0 else 1.25 if scale <= 0.5 else 1.75
-        return tuple(
-            {
-                "view_index": index,
-                "before_preference_margin": 1.0,
-                "after_preference_margin": after,
-                "preference_margin_delta": after - 1.0,
-                "after_preference_objective": 2.0 + after,
-                "preference_descent": after < 1.0,
-            }
-            for index in range(4)
-        )
+        return _global_test_preference_rows(scale)
 
     step = apply_reward_step(
         runtime,
@@ -500,8 +517,10 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     assert step.commitment_geometry["accepted_radius_scale"] == 0.5
     assert (
         step.commitment_geometry["gradient_path_to_inference_baseline_margin_deltas"]
-        == [0.5] * 4
+        == [0.5] * 8
     )
+    assert step.commitment_geometry["global_active_task_ids"] == [0, 1]
+    assert step.commitment_geometry["global_task_view_count"] == 8
     assert all(
         row["before_preference_margin"] == 1.5
         and row["after_preference_margin"] == 1.25
@@ -516,17 +535,7 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         torch.tensor([-1.0, 0.0]),
         2,
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
-        lambda scale: tuple(
-            {
-                "view_index": index,
-                "before_preference_margin": 0.0,
-                "after_preference_margin": 0.0 if scale == 0 else 0.25,
-                "preference_margin_delta": 0.0 if scale == 0 else 0.25,
-                "after_preference_objective": 1.0 if scale == 0 else 1.25,
-                "preference_descent": False,
-            }
-            for index in range(4)
-        ),
+        lambda scale: _global_test_preference_rows(scale, all_fail=True),
     )
     torch.testing.assert_close(head, accepted_parameters)
     assert failed.commitment_geometry["search_accepted"] is False

@@ -145,7 +145,14 @@
   `.846/.865`且j0一次接受。held8为8/8，BA/raw-B/action cosine=`.953/.955/.485`，reverse/constant与rank-bank
   全通；但held/train BA L2=`.234<.30`，26/27门仍按authority终局，不跑task15/18、full24/strict或小扫。
   probe/joint幅度为`.671/.665x`，direct rows骤降`.223x`，最早缺口是one-task condition到shared direct-head的
-  跨task幅度。当前没有active successor、GPU run或可resume checkpoint；
+  跨task幅度。NEAP没有可resume checkpoint；
+- 当前active successor是**TCEC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。它完整保留NEAP/NZRB/LPCP，唯一
+  把commitment单位从一个task-local probe改成所有active tasks：task9/15/18先在world3 fresh共享一个等权mean
+  Adam candidate，只有三个task共12个correct K4 endpoint margins全部下降才由所有ranks接受同一个scale。该共同
+  update的held/train BA幅度必须从NEAP`.234`越过`.30`；否则终局，不拆task winners或换solver。canonical实现
+  已接通active-probe list、global scalar-row collective、统一scale与world3固定anchor；完整CPU=`405 passed`、
+  architecture guard 0 hard。当前无GPU run；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

@@ -561,7 +561,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] held8为8/8且BA/raw-B/action cosine=`.953/.955/.485`，但held/train BA L2=`.234<.30`；26/27门通过仍按
   authority终局，不跑task15/18、full24/strict或小扫；stage localization为probe/joint=`.671/.665x`到direct
   rows=`.223x`，最早缺口是one-task joint condition写入shared direct-B head的跨task幅度；
-- [ ] 从该终局证据建立下一份单变量authority；不得放宽NEAP门或把task15/18补跑冒充通过。
+- [x] 从该终局证据建立下一份单变量authority；不得放宽NEAP门或把task15/18补跑冒充通过。
+
+## Active iteration: V6-LPCP Task-Complete Endpoint Coexistence
+
+- [x] 定位单一变量：NEAP endpoint/same-task/native链已通，held幅度在joint Value`.665x`到one-task direct rows
+  `.223x`之间丢失；下一步先检验多个task credits能否在同一shared head update中覆盖condition manifold；
+- [x] 写TCEC authority：保留NEAP/NZRB/LPCP全部图与equal-task mean，不加solver/memory/rank/scale；所有active
+  task×4 endpoint margins全局共同下降才接受一个rank-synchronized candidate；
+- [x] 原位实现probe list、global preference-row collective、统一scale/参数delta及world3固定anchor mode；
+- [x] 完成定向`41 passed`、完整CPU`405 passed`、compileall、diff check与architecture guard 0 hard；
+- [ ] clean frozen world3共同运行task9/15/18，完整分析12/12、跨task gradient、held8、时序、wall与rank一致性；
+- [ ] 三anchor shared gate全过才full24 cycle1与strict paired400。
 
 ## Non-negotiable boundaries
 
@@ -579,11 +590,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV与NZRB-C均已终局；当前NEAP-C处于实现阶段，尚无GPU run
-或可resume checkpoint。NEAP-C已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但因
-held/train幅度`.234<.30`在preformal终局；当前没有active successor或GPU run。下一变量必须针对task-local
-condition到shared direct-head的跨task幅度/共同commitment，不能回退CFM、放宽门或同时改memory、video carrier、
-rank、LR、matched panel与trust scale。
+不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
+NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
+当前active TCEC实现已通过CPU门、尚无GPU run；下一裁决是world3 task9/15/18同一次shared commitment，不能回退
+CFM、放宽门或同时改memory、video carrier、rank、LR、matched panel与trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

@@ -1,4 +1,4 @@
-"""Authority for V6-LPCP native endpoint action-preference credit."""
+"""Authority for V6-LPCP task-complete endpoint coexistence."""
 
 from __future__ import annotations
 
@@ -10,16 +10,16 @@ from ember.writer.as_config import REPO_ROOT, load_writer_config
 from ember.writer.errors import WriterModelError
 
 
-REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_native_endpoint_action_preference_v1"
-REWARD_LAUNCH_SCHEMA = "ember_pi05_v6_lpcp_native_endpoint_action_preference_launch_v1"
+REWARD_CONFIG_SCHEMA = "ember_pi05_v6_lpcp_task_complete_endpoint_coexistence_v1"
+REWARD_LAUNCH_SCHEMA = "ember_pi05_v6_lpcp_task_complete_endpoint_coexistence_launch_v1"
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_native_endpoint_action_preference_v1.json"
+    "configs/pi05_writer_v6_lpcp_task_complete_endpoint_coexistence_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": ("frozen_v6_lpcp_plus_native_endpoint_action_preference"),
+    "candidate_arm": ("frozen_v6_lpcp_plus_task_complete_endpoint_coexistence"),
 }
 _DEPLOYMENT_CONTRACT = {
     "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
@@ -77,7 +77,10 @@ _OBJECTIVE_CONTRACT = {
     "endpoint_action_scope": "executed_prefix_only",
 }
 _COMMITMENT_CONTRACT = {
-    "kind": ("actual_adam_candidate_first_all_view_monotone_power_of_two_backtracking"),
+    "kind": (
+        "actual_adam_candidate_first_global_task_complete_all_view_monotone_"
+        "power_of_two_backtracking"
+    ),
     "direction": (
         "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
     ),
@@ -88,8 +91,9 @@ _COMMITMENT_CONTRACT = {
         "actual_adam_candidate_times_two_to_the_negative_backtrack_index"
     ),
     "acceptance": (
-        "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_all_"
-        "four_correct_video_views_on_the_same_panel_and_policy_noise"
+        "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_every_"
+        "active_task_and_all_four_correct_video_views_on_the_same_panels_and_"
+        "policy_noises_globally_synchronized_across_ranks"
     ),
     "max_backtracks": 10,
     "failure_action": "restore_step0_parameters_and_terminal_non_pass",
@@ -98,7 +102,17 @@ _COMMITMENT_CONTRACT = {
     "view_weighting": ("equal_mean_over_four_correct_video_gradients_before_optimizer"),
     "fixed_scale_or_checkpoint_selection": False,
     "video_or_environment_recompute": False,
-    "formal_extension_status": "blocked_until_all_three_world1_anchors_pass",
+    "global_preference_evidence": "all_active_task_view_scalar_rows_only",
+    "rank_state_contract": (
+        "one_identical_accepted_scale_and_parameter_delta_on_every_rank"
+    ),
+    "formal_extension_status": "blocked_until_world3_shared_anchor_gate_passes",
+}
+_SMOKE_CONTRACT = {
+    "cycle": 1,
+    "shared_anchor_task_ids": [9, 15, 18],
+    "required_world_size": 3,
+    "assignment": "one_fixed_anchor_per_local_rank_in_list_order",
 }
 
 
@@ -135,6 +149,7 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                 },
             ),
             _contains(config.get("commitment", {}), _COMMITMENT_CONTRACT),
+            _contains(config.get("smoke_run", {}), _SMOKE_CONTRACT),
             _contains(
                 optimization.get("distributed", {}),
                 {
@@ -158,14 +173,14 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported native endpoint preference config")
+        raise WriterModelError("unsupported task-complete endpoint config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))
     if not _contract_is_valid(config, cold_start):
-        raise WriterModelError("native endpoint preference contract changed")
+        raise WriterModelError("task-complete endpoint contract changed")
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
     return config, base
@@ -173,11 +188,11 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid native endpoint preference mode")
+        raise WriterModelError("invalid task-complete endpoint mode")
     if mode == "formal" and config["formal_run"]["status"] not in {
         "ready",
         "sealed",
     }:
         raise WriterModelError(
-            "formal native endpoint preference training is not authorized"
+            "formal task-complete endpoint training is not authorized"
         )

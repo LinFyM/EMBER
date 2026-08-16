@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_native_endpoint_action_preference_v1",
+  "schema_version": "ember_pi05_v6_lpcp_task_complete_endpoint_coexistence_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,7 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_native_endpoint_action_preference"
+    "candidate_arm": "frozen_v6_lpcp_plus_task_complete_endpoint_coexistence"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
@@ -96,11 +96,11 @@
     }
   },
   "commitment": {
-    "kind": "actual_adam_candidate_first_all_view_monotone_power_of_two_backtracking",
+    "kind": "actual_adam_candidate_first_global_task_complete_all_view_monotone_power_of_two_backtracking",
     "direction": "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient",
     "direction_preconditioning": "same_adamw_lr_betas_eps_weight_decay_clip_and_optimizer_state",
     "radius_schedule": "actual_adam_candidate_times_two_to_the_negative_backtrack_index",
-    "acceptance": "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_all_four_correct_video_views_on_the_same_panel_and_policy_noise",
+    "acceptance": "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_every_active_task_and_all_four_correct_video_views_on_the_same_panels_and_policy_noises_globally_synchronized_across_ranks",
     "max_backtracks": 10,
     "failure_action": "restore_step0_parameters_and_terminal_non_pass",
     "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
@@ -108,13 +108,15 @@
     "view_weighting": "equal_mean_over_four_correct_video_gradients_before_optimizer",
     "fixed_scale_or_checkpoint_selection": false,
     "video_or_environment_recompute": false,
-    "formal_extension_status": "blocked_until_all_three_world1_anchors_pass"
+    "global_preference_evidence": "all_active_task_view_scalar_rows_only",
+    "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
+    "formal_extension_status": "blocked_until_world3_shared_anchor_gate_passes"
   },
   "smoke_run": {
     "cycle": 1,
-    "original_task_global_id": 4,
-    "exact_pair_screen_task_ids": [4, 7, 9, 15, 18],
-    "discordant_task_ids": [9, 15, 18],
+    "shared_anchor_task_ids": [9, 15, 18],
+    "required_world_size": 3,
+    "assignment": "one_fixed_anchor_per_local_rank_in_list_order",
     "required_anchor_outcomes": {
       "9": "candidate_1_reference_0",
       "15": "candidate_2_reference_0",
@@ -132,7 +134,7 @@
     }
   },
   "formal_run": {
-    "status": "blocked_until_all_three_fixed_anchor_mechanism_gates_pass",
+    "status": "blocked_until_world3_shared_anchor_mechanism_gate_passes",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -165,9 +167,13 @@
       "matched_winner_loser_actions_must_differ": true,
       "post_update_preference_margin_must_decrease": true,
       "post_update_all_four_view_margins_must_decrease": true,
+      "global_active_task_view_margins_must_decrease": true,
+      "global_anchor_view_count": 12,
+      "rank_accepted_scale_and_parameter_delta_identical": true,
+      "shared_anchor_task_gradient_descent_coverage": 1.0,
       "raw_four_view_shared_mean_descent_coverage": 1.0,
       "search_max_backtracks": 10,
-      "first_all_view_monotone_candidate_required": true,
+      "first_global_task_complete_all_view_monotone_candidate_required": true,
       "backtrack_zero_is_exact_adam_candidate": true,
       "accepted_and_expected_delta_l2_relative_error_maximum": 1e-06,
       "final_delta_to_adam_candidate_cosine_minimum": 0.999999,
@@ -191,8 +197,8 @@
       "matched_action_batch_size": 8,
       "endpoint_action_batch_size": 8,
       "search_trial_count_maximum": 11,
-      "task9_cycle_over_nzrb_maximum": 1.75,
-      "three_anchor_total_cycle_over_nzrb_maximum": 1.75
+      "shared_anchor_cycle_seconds_maximum": 660.343,
+      "shared_anchor_train_task_count": 3
     }
   }
 }

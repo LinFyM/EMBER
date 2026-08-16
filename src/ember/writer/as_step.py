@@ -87,6 +87,7 @@ def gather_full24_records(
     *,
     world_size: int,
     task_ids: Sequence[int],
+    expected_count: int = 24,
 ) -> list[dict[str, Any]]:
     """Gather the small per-task evidence rows without touching tensor gradients."""
 
@@ -98,8 +99,14 @@ def gather_full24_records(
     records = [dict(row) for shard in shards for row in shard]
     expected = {int(task_id) for task_id in task_ids}
     observed = [int(row["task_id"]) for row in records]
-    if len(records) != 24 or len(set(observed)) != 24 or set(observed) != expected:
-        raise WriterModelError("dynamic-K per-task evidence lost full24 coverage")
+    if (
+        expected_count <= 0
+        or len(expected) != expected_count
+        or len(records) != expected_count
+        or len(set(observed)) != expected_count
+        or set(observed) != expected
+    ):
+        raise WriterModelError("dynamic-K per-task evidence lost required coverage")
     return sorted(records, key=lambda row: int(row["task_id"]))
 
 

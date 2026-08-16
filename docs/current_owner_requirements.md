@@ -397,6 +397,12 @@ task9 gradient coherence从`.286/.448`升到`.846/.865`并由no-op变为j0 accep
 BA幅度只有`.234<.30`，虽held8方向、raw-B/action与时序全健康仍按门终局。stage localization把下一缺口锁定为
 one-task condition经shared direct-B head的跨task幅度，而不是CFM、carrier、rank-bank或compiler；后继不能靠放宽
 held门、补task15/18或scale/normalization小扫救本轮。
+
+当前TCEC据此不改视频输入、LoRA或endpoint objective，只把三个固定anchors从三次task-local update改为一次
+world3 shared update：task gradients继续等权，唯一Adam candidate必须让三个tasks共12个correct-view endpoint
+margins全局共同下降，所有ranks接受同一scale。它直接检验task diversity与严格shared commitment能否把held/train
+幅度从`.234`提升到`.30+`并避免rank-local能力分叉；若仍失败，下一步才有证据转向capacity-matched memory/M2P
+等condition-to-LoRA共享映射，而不是现在因owner曾提到memory便机械加入。
 memory token、rank8、dynamic-K/few-shot仍是候选方法，不是强制形式，也没有被该负结果否定。
 
 后续迭代遵循以下边界：

@@ -698,6 +698,16 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      policy credit。held8又有8/8、BA/raw-B/action cosine=`.953/.955/.485`，但held/train BA L2仅`.234<.30`，
      26/27门仍终局。probe/joint Value的held/train幅度为`.671/.665`，到direct rows骤降`.223`，因此最早缺口
      已后移到one-task joint condition经shared direct-B head的跨task幅度，而非视频读取、endpoint或LoRA写出。
+106. TCEC选择task-complete endpoint commitment而不是memory重写、normalization或新ray solver：zero-init linear
+     head的一次task9 update天然只覆盖task9 condition kernel，最小反事实是让固定task9/15/18的endpoint gradients
+     在一次shared update中共同张成coverage。四view内与tasks间仍各自等权，Adam direction不变；唯一把acceptance
+     变为三个tasks共12个margins全局共同下降，并强制所有ranks选择同一scale。若这个shared update仍不能把held/train
+     从`.234`提到`.30`，才把最早接口推进到condition-to-LoRA representation并授权memory/M2P候选。
+107. TCEC canonical实现把旧rank-local单probe acceptance改成真正的global task-complete contract：每个active task
+     保留四view probe，所有ranks只collect `(task_id, view_id, endpoint margin)`标量并对同一有序全局panel裁决；
+     gradient与candidate tensor不all-gather。CPU反例已证明某一task下降但另一task上升时不会误接受。定向
+     `41 passed`、完整`405 passed`、architecture guard 0 hard；这些证据只说明shared update实现正确，world3
+     task9/15/18仍是首个科学门。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

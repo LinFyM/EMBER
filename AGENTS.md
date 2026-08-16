@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`
+   `docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -269,8 +269,16 @@ deployment metric，不再换parameter ray。clean`33f69fd` task9 outcome/count=
 cosine/energy=`.846/.865`且j0一次接受，cycle=`97.107s`、reserved=`19.367GB`；held8全部通过且BA/raw-B/action
 cosine=`.953/.955/.485`，reverse/constant与rank-bank健康。但held/train BA L2=`.234<.30`，26/27门仍按authority
 终局，不运行task15/18、full24/strict或小扫。stage localization为probe/joint幅度`.671/.665x`到direct rows
-`.223x`，最早缺口是one-task condition经shared direct-B head的跨task幅度。当前没有active successor、GPU run或
-可resume checkpoint。
+`.223x`，最早缺口是one-task condition经shared direct-B head的跨task幅度。NEAP无可resume checkpoint。
+
+当前active successor是**V6-LPCP Task-Complete Endpoint Coexistence**（TCEC），authority=
+`docs/action_forecast_writer_v6_lpcp_task_complete_endpoint_coexistence_design.md`。它不改NEAP endpoint objective、
+LPCP/NZRB生成图、rank32、K4、MB-SOP、Adam或backtracking ray；唯一把commitment单位改为全部active tasks。
+每task四view gradient先等权，active tasks再等权形成同一Adam candidate；所有ranks聚合每个active task×view的
+endpoint margin，只接受全局全部严格下降的同一个首个scale。先以task9/15/18 world3做一次共同update，检验
+12/12 margins、rank间参数一致与held/train幅度；三anchor全过才full24。canonical实现已完成：probe list、global
+scalar-row collective、统一scale、world3固定anchor合同均已接通；完整CPU=`405 passed`、architecture guard 0 hard。
+当前尚未启动GPU。
 
 ## 4. Long-term objective and decision rule
 

@@ -1,4 +1,4 @@
-"""Train the native-zero residual B bank with deployed-action credit."""
+"""Train shared native-zero B heads with task-complete endpoint credit."""
 
 from __future__ import annotations
 
@@ -220,6 +220,7 @@ def _contract(
             "rank_topology": topology,
             "total_cycles": int(config["formal_run"]["total_cycles"]),
             "task_assignment": config["data"]["task_queue"],
+            "smoke_task_ids": list(args.smoke_task_ids or ()),
         },
         "trainable": dict(trainable),
     }
@@ -270,10 +271,10 @@ def _load_direct_factor_models(
         != 860_160
     ):
         raise WriterModelError(
-            "native endpoint preference must train only 860160 parameters"
+            "task-complete endpoint must train only 860160 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "v6_lpcp_native_endpoint_action_preference_only"
+    trainable["object"] = "v6_lpcp_task_complete_endpoint_coexistence_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -333,16 +334,25 @@ def prepare_runtime(
 ) -> RewardRuntime:
     config, base_config = load_reward_config(args.config)
     require_reward_mode(config, args.mode)
-    if args.mode == "smoke" and context.world_size != 1:
-        raise WriterModelError("direct-factor smoke uses one GPU")
+    if args.mode == "smoke":
+        expected_ids = tuple(
+            int(value) for value in config["smoke_run"]["shared_anchor_task_ids"]
+        )
+        required_world_size = int(config["smoke_run"]["required_world_size"])
+        if context.world_size != required_world_size:
+            raise WriterModelError("task-complete smoke requires world3")
+        if args.smoke_task_ids != expected_ids:
+            raise WriterModelError(
+                "task-complete smoke requires exact shared anchor task order"
+            )
     allowed = config["formal_run"]["allowed_world_sizes"]
     if context.world_size not in allowed:
         raise WriterModelError("direct-factor world size is outside 1--6")
-    if args.mode == "formal":
+    if args.mode in {"smoke", "formal"}:
         state = git_state(Path(__file__).resolve().parents[3])
         if not git_state_is_clean_pushed_or_frozen_authority(state):
             raise WriterModelError(
-                "formal direct-factor training requires clean pushed Git"
+                "task-complete training requires clean pushed or frozen Git"
             )
     seed_everything(int(config["rng"]["optimizer_seed"]), context)
     authorities, source, _ = load_run_authorities(args, base_config)
@@ -437,9 +447,7 @@ def prepare_runtime(
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(
-        require_numa=args.mode == "formal", defer_process_group=True
-    )
+    context = initialize_distributed(require_numa=True, defer_process_group=True)
     runtime: RewardRuntime | None = None
     try:
         runtime = prepare_runtime(args, context)
@@ -488,8 +496,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_native_endpoint_action_"
-                        "preference_completion_v1"
+                        "ember_pi05_v6_lpcp_task_complete_endpoint_"
+                        "coexistence_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,
@@ -515,7 +523,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-cycle", type=int)
-    parser.add_argument("--smoke-task-id", type=int)
+    parser.add_argument(
+        "--smoke-task-ids",
+        type=lambda value: tuple(int(item) for item in value.split(",")),
+    )
     return parser
 
 
@@ -537,4 +548,8 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
             raise WriterModelError(
                 f"missing reward training path: {getattr(args, name)}"
             )
+    if args.mode == "smoke" and args.smoke_task_ids is None:
+        raise WriterModelError("task-complete smoke requires --smoke-task-ids")
+    if args.mode == "formal" and args.smoke_task_ids is not None:
+        raise WriterModelError("formal task-complete run cannot set smoke task ids")
     return args

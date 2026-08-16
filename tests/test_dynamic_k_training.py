@@ -97,11 +97,11 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_native_endpoint_preference_config_records_fresh_mechanism_gate() -> None:
+def test_task_complete_endpoint_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
-        "blocked_until_all_three_fixed_anchor_mechanism_gates_pass"
+        "blocked_until_world3_shared_anchor_mechanism_gate_passes"
     )
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
@@ -126,13 +126,16 @@ def test_native_endpoint_preference_config_records_fresh_mechanism_gate() -> Non
     assert config["optimization"]["endpoint_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "actual_adam_candidate_first_all_view_monotone_power_of_two_backtracking"
+        "actual_adam_candidate_first_global_task_complete_all_view_monotone_"
+        "power_of_two_backtracking"
     )
     assert config["commitment"]["direction"] == (
         "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
     )
     assert config["commitment"]["max_backtracks"] == 10
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
+    assert config["smoke_run"]["shared_anchor_task_ids"] == [9, 15, 18]
+    assert config["smoke_run"]["required_world_size"] == 3
     assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
         "9": 25,
         "15": 65,
@@ -158,6 +161,8 @@ def test_native_endpoint_preference_config_records_fresh_mechanism_gate() -> Non
         "correct_each_negative_margin_minimum": 10,
     }
     gate = config["formal_run"]["mechanism_gate"]
+    assert gate["global_anchor_view_count"] == 12
+    assert gate["rank_accepted_scale_and_parameter_delta_identical"]
     assert gate["public_rank"] == 32
     assert gate["carrier_first_bank_tensors_unchanged"]
     assert gate["residual_second_b_step0_zero"]

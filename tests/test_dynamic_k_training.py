@@ -851,9 +851,11 @@ def test_v6_layerwise_probe_generation_profile_is_sealed() -> None:
     from ember.writer.evaluation import (
         DYNAMIC_K_GENERATION_BATCH_SIZE,
         DYNAMIC_K_GENERATION_PROFILES,
+        DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE,
     )
 
     assert DYNAMIC_K_GENERATION_BATCH_SIZE == 32
+    assert DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE == 16
     assert DYNAMIC_K_GENERATION_PROFILES == {
         4: {
             "schema": "ember_pi05_writer_generation_profile_v2",
@@ -864,5 +866,12 @@ def test_v6_layerwise_probe_generation_profile_is_sealed() -> None:
                 "writer_generation_profile.json"
             ),
             "selected_writer_model_batch_size": 32,
+            "supported_writer_model_batch_sizes": [16, 32],
+            "rank32_longest_video_evidence": (
+                "runs/outputs/"
+                "pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_"
+                "seed7_trainr6_evalr6_539e0e5_evalda6c24f_gpu01p024567_"
+                "retry2_20260817/rank32_batch32_oom_adjudication.json"
+            ),
         }
     }

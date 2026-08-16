@@ -290,19 +290,36 @@ def _validate_build_request(
                 "sealed_from_live_mgci_full96_profile",
             }
         )
-        if (sealed_dynamic_k or sealed_expert_manifold) and (
-            not isinstance(smoke, Mapping)
-            or writer_generation_batch_size
-            != int(
+        if sealed_dynamic_k or sealed_expert_manifold:
+            if not isinstance(smoke, Mapping):
+                raise Pi05EvaluationError(
+                    "sealed Writer evaluation requires its selected Writer batch"
+                )
+            selected_batch = int(
                 smoke.get(
                     "selected_writer_model_batch_size",
                     smoke.get("writer_model_batch_size", -1),
                 )
             )
-        ):
-            raise Pi05EvaluationError(
-                "sealed Writer evaluation requires its selected Writer batch"
+            supported_raw = smoke.get(
+                "supported_writer_model_batch_sizes", [selected_batch]
             )
+            try:
+                supported_batches = tuple(int(value) for value in supported_raw)
+            except (TypeError, ValueError) as error:
+                raise Pi05EvaluationError(
+                    "sealed Writer evaluation requires its selected Writer batch"
+                ) from error
+            if (
+                not supported_batches
+                or selected_batch not in supported_batches
+                or len(set(supported_batches)) != len(supported_batches)
+                or min(supported_batches) < minimum_batch_size
+                or writer_generation_batch_size not in supported_batches
+            ):
+                raise Pi05EvaluationError(
+                    "sealed Writer evaluation requires its selected Writer batch"
+                )
     if not writer_adapter and writer_cache_root is not None:
         raise Pi05EvaluationError("a Writer LoRA cache was supplied without a Writer")
     return git, writer_adapter

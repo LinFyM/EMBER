@@ -56,6 +56,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 )
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
 DYNAMIC_K_GENERATION_BATCH_SIZE = 32
+DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE = 16
 DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
     4: {
         "schema": "ember_pi05_writer_generation_profile_v2",
@@ -66,6 +67,16 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
             "writer_generation_profile.json"
         ),
         "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
+        "supported_writer_model_batch_sizes": [
+            DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE,
+            DYNAMIC_K_GENERATION_BATCH_SIZE,
+        ],
+        "rank32_longest_video_evidence": (
+            "runs/outputs/"
+            "pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_seed7_"
+            "trainr6_evalr6_539e0e5_evalda6c24f_gpu01p024567_retry2_20260817/"
+            "rank32_batch32_oom_adjudication.json"
+        ),
     }
 }
 
@@ -611,7 +622,12 @@ def inspect_dynamic_k_writer_evaluation(
             "throughput_policy": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
-            "minimum_smoke_writer_model_batch_size": (DYNAMIC_K_GENERATION_BATCH_SIZE),
+            "minimum_smoke_writer_model_batch_size": min(
+                profile.get(
+                    "supported_writer_model_batch_sizes",
+                    [DYNAMIC_K_GENERATION_BATCH_SIZE],
+                )
+            ),
             "online_smoke_evidence": None if profile is None else dict(profile),
         },
         "video_data": video_data,

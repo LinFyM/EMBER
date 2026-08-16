@@ -462,7 +462,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     assert batched["parallel"]["writer_generation_batch_size"] == 16
 
 
-def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
+def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
     tmp_path: Path,
 ) -> None:
     inputs = list(_writer_contract_inputs(tmp_path))
@@ -498,9 +498,10 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
         "throughput_policy": (
             "highest_measured_batch_throughput_with_device_memory_headroom"
         ),
-        "minimum_smoke_writer_model_batch_size": 8,
+        "minimum_smoke_writer_model_batch_size": 4,
         "online_smoke_evidence": {
             "selected_writer_model_batch_size": 8,
+            "supported_writer_model_batch_sizes": [4, 8],
         },
     }
     correct_mapping = inputs[5]
@@ -513,15 +514,16 @@ def test_sealed_dynamic_k_writer_requires_profile_selected_batch(
             mapping=correct_mapping,
             writer_generation_batch_size=16,
         )
-    exact = _build_writer_contract(
-        inputs=tuple(inputs),
-        output_dir=tmp_path / "out-b8",
-        arm="v6_layerwise_probe_conditioned_procedure_correct",
-        condition="correct",
-        mapping=correct_mapping,
-        writer_generation_batch_size=8,
-    )
-    assert exact["parallel"]["writer_generation_batch_size"] == 8
+    for batch_size in (4, 8):
+        exact = _build_writer_contract(
+            inputs=tuple(inputs),
+            output_dir=tmp_path / f"out-b{batch_size}",
+            arm="v6_layerwise_probe_conditioned_procedure_correct",
+            condition="correct",
+            mapping=correct_mapping,
+            writer_generation_batch_size=batch_size,
+        )
+        assert exact["parallel"]["writer_generation_batch_size"] == batch_size
 
 
 def test_reward_credit_seal_locks_the_measured_writer_batch8(

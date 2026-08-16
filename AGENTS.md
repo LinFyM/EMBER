@@ -299,7 +299,7 @@ step0/constant exact zero、gate-open全链gradient与K-set/direct-reshape合同
 cosine=`-.1570`，11 scales无12/12，最终681,984 gate参数exact zero。故不full24/strict/held或小扫。最早失败
 接口是task-local coherent capacity grid credit到shared task-conditioned first native commitment。
 
-当前active successor是**V6-LPCP Capacity-Matched Backbone-Memory Grid**（CMBG），authority=
+最新终局successor是**V6-LPCP Capacity-Matched Backbone-Memory Grid**（CMBG），authority=
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它严格保留CAPG已通过的
 temporal/K-set/M2P/direct-B、NEAP、K4、rank32和global gate，只把backbone之后的37 query latents换成逐层读取
 真实image/language/50 Action context的37个one-way memory tokens。memory走对应Action Expert update，原carrier
@@ -315,7 +315,14 @@ paired400。clean`a62348e`首次full24只是工程失败：旧formal路径只保
 commitment合同冲突，rank0/4报`lost four video views`，其余ranks在all-gather等待后触发30分钟
 watchdog；无checkpoint/completion或科学结果。canonical已最小修正为formal active task保留已算出的
 4个conditioning states，不新增forward或改变科学合同；全量CPU=`411 passed`，待从新clean commit
-fresh重跑。rank8、完整A/B和Dynamic-K仍是独立开放变量。
+fresh重跑。修正后clean`b4dbf84` full24已完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=
+`32/32`，6 active tasks覆盖四suite，cycle=`527.605s`。五task的same-task four-view cosine/energy约
+`.988--.992/.956--.994`，但task34为`-.105/.339`；cross-task cosine mean/min=`.00681/-.21022`，task38
+gradient norm是次大的`54.45x`且与shared mean cosine=`.99978`，task4则为`-.16081`。11个scale最好仅
+`17/24` deployed margins下降，无候选被接受，final delta、q/v/action BA和fixed-action response全为0。按
+`restore_step0_parameters_and_terminal_non_pass`合同终局；不跑只会重测LPCP carrier的strict400，不cycle2/
+controls/小扫。精确artifact=`cmbg_full24_terminal_adjudication.json`。当前无active successor或GPU run；rank8、
+完整A/B、Dynamic-K和memory token一般仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

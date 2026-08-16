@@ -5,17 +5,22 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新执行的是**CMBG carrier-exact world3 preformal**：clean`2aecece`完整exit0，task9/15/18成功关系=
+最新执行的是**CMBG full24 cycle1**：修正formal four-view retention后的clean`b4dbf84`在world5完整
+exit0，24 tasks/48 paired states/96 rollouts，candidate/reference=`32/32`、gains=`3/3`，6 active tasks覆盖四suite，
+cycle=`527.605s`，checkpoint/completion完整且0禁读/OOM/nonfinite。其preformal基础为clean`2aecece`：task9/15/18=
 `1/0,2/0,1/2`、selected pairs=`8/16/8`，cycle=`114.732s`。三task four-view cosine/energy=
 `.968/.748,.857/.864,.979/.977`；cross-task gradient cosine mean由CAPG的`-.13938`变为`+.09842`，shared
 raw/final coverage=`3/3`、native=`12/12`，j0 actual Adam被接受并写出非零q/v/action LoRA response。world3功能
 共存门因此通过。task15 occupancy chunks=`70`而历史65只作诊断；跨运行BF16/TF32、batch/kernel/reduction低位差异
 不再作为门。validation8/reverse/constant held门随后全过：8/8 tasks，effective-BA cosine/energy=
-`.983541/.985926`，raw/action cosine=`.982788/.986590`，held/train L2=`.960650x`。下一步直接fresh full24 cycle1，
-完成后立即strict paired400。clean`a62348e`首次full24暴露的是单一工程合同缺口：formal仍只保留
-view0，与global four-view commitment冲突，最终exit1且无checkpoint/completion。canonical现保留已计算的
-全四视图conditioning states，不新增forward或科学变量；全量CPU=`411 passed`，待新clean commit fresh
-重跑。
+`.983541/.985926`，raw/action cosine=`.982788/.986590`，held/train L2=`.960650x`。
+
+full24中五task保持约`.99`的same-task four-view gradient cosine，但task34降到`-.105`；cross-task
+cosine mean/min=`.00681/-.21022`。task38 gradient norm是次大的`54.45x`并与shared mean cosine=`.99978`，
+task4则为`-.16081`。所有11 scales都无法使24个active task-view deployed margins同时下降，最好仅
+`17/24`；final delta、q/v/action BA和fixed-action response全为0。按预注册合同CMBG终局，跳过只会
+重测LPCP的strict400，不cycle2/controls/小扫。最早缺口是**task-local video-coherent memory credit不能
+在full24形成幅度平衡、跨task兼容的shared native commitment**，不是carrier、held video或LoRA写出未接通。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=

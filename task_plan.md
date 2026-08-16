@@ -639,7 +639,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 定位clean`a62348e`首次full24的工程失败：formal只保留view0，与global four-view commitment冲突，
   无checkpoint/completion或科学结果；最小修正为保留已计算的4 views，focused/related=`42 passed`、
   full CPU=`411 passed`；
-- [ ] 从修正后clean pushed commit fresh重跑full24 cycle1并立即strict paired400。
+- [x] 从clean`b4dbf84` fresh重跑full24 cycle1：24 tasks/48 pairs/96 rollouts、6 active tasks，cycle=
+  `527.605s`，checkpoint/completion完整；11 scales最好仅`17/24` task-view margins下降，final delta与
+  q/v/action/action-response全为0；
+- [x] 按`restore_step0_parameters_and_terminal_non_pass`终局CMBG；strict400只会重测LPCP carrier而跳过，
+  不cycle2、controls或小扫。
+- [ ] 从CMBG证明的最早缺口选择新单变量successor：保留已通过的carrier/video-coherent memory，
+  直接解决gradient magnitude domination、task34的video-local冲突与shared first commitment兼容性。
 
 ## Non-negotiable boundaries
 

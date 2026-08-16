@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_v1",
-  "status": "held_pass_full24_ready",
+  "status": "formal_cycle1_terminal_noop_nonpass",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -110,7 +110,7 @@
     "video_or_environment_recompute": false,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
     "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
-    "formal_extension_status": "held_video_only_gate_pass_full24_authorized"
+    "formal_extension_status": "full24_global_commitment_exact_noop_terminal_nonpass"
   },
   "smoke_run": {
     "cycle": 1,
@@ -145,7 +145,20 @@
     }
   },
   "formal_run": {
-    "status": "ready",
+    "status": "terminal_nonpass_global_commitment_exact_noop",
+    "formal_result_evidence": {
+      "commit": "b4dbf846c5ea2d6944d582e0350493fc3bbcdabf",
+      "run_root": "runs/outputs/pi05_v6_lpcp_cmbg_formal_cycle0to1_r5_k4_views4_nmc4_b8_b4dbf84_gpu02p12347_20260816",
+      "artifact": "cmbg_full24_terminal_adjudication.json",
+      "cycle_seconds": 527.6046417360194,
+      "active_tasks": 6,
+      "search_trials": 11,
+      "best_descending_views": 17,
+      "required_descending_views": 24,
+      "final_delta_l2": 0.0,
+      "strict400": "skipped_exact_step0_noop",
+      "cycle2": "forbidden"
+    },
     "held_gate_evidence": {
       "artifact": "runs/outputs/pi05_v6_lpcp_cmbg_carrier_exact_shared3_task9_15_18_b8_2aecece_gpu02p123_20260816/cmbg_held_video_gate.json",
       "validation_tasks": 8,

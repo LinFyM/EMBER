@@ -1,7 +1,7 @@
 # V6-LPCP Capacity-Matched Backbone-Memory Grid
 
-状态：2026-08-16 carrier-exact修正版已通过fixed world3与validation8/reverse/constant held视频门，已解锁
-fresh full24 cycle1。简称**CMBG**。CAPG已经
+状态：2026-08-16 full24 cycle1已因global commitment exact no-op终局，不strict400/cycle2/controls或小扫。
+简称**CMBG**。CAPG已经
 终局，不得resume、放宽其门或用normalization/PCGrad/task权重/scale小扫补救。历史8-memory Dynamic-K只选择性
 复用了其已验证的layer-matched memory语义，没有整条恢复。
 
@@ -257,10 +257,30 @@ canonical修正只去掉该mode条件，使formal active task也保留credit bac
 commitment或CMBG架构。新focused regression在旧代码下会稳定得到`len(views)=1`，修正后为4；
 相关测试`42 passed`、全量CPU=`411 passed`。修正后必须fresh重跑，不存在可resume checkpoint。
 
+### 11.1 full24 terminal result
+
+clean`b4dbf84`在gpu02物理`1/2/3/4/7`、world5完成fresh cycle0->1：24 tasks、48 paired states、96
+rollouts，candidate/reference=`32/32`、gains=`3/3`，6 active tasks=`4/19/20/25/34/38`覆盖四suite，
+cycle=`527.605s`。world5 checkpoint/completion完整，信息墙、OOM和nonfinite全过。
+
+task4/19/20/25/38的same-task four-view cosine/energy约`.988--.992/.956--.994`，证明literal memory对多数
+active tasks仍能形成video-coherent local credit；但task34=`-.105/.339`且仅`2/4` views对本task mean下降。
+跨task gradient cosine mean/min=`.006807/-.210223`，shared raw descent仅`5/6`。task38 gradient norm=`.010322`，
+是次大task4的`54.45x`，与shared mean cosine=`.999781`；task4与shared方向cosine=`-.160805`。Adam
+candidate与`-gradient` cosine也只有`.269384`。
+
+全11 scales中最好的`j2, scale=.25`仅让24/24中17个deployed endpoint margins下降；缩小scale没有
+形成单调共同下降区。search因此rejected，按authority恢复step0。最终所有parameter delta RMS、q/v/action
+effective-BA response和fixed-action response均为0。精确artifact=`cmbg_full24_terminal_adjudication.json`。
+
+因部署policy是exact step0 LPCP carrier，strict400只会重测carrier或捕获设备/批形低位差异，不能表示
+CMBG学习，故按`failure_action=restore_step0_parameters_and_terminal_non_pass`跳过。CMBG不resume cycle2、
+不补六臂或做参数小扫。
+
 ## 12. full24与真实性能裁决
 
-preformal已全过。full24仍只训练一个shared checkpoint。cycle1后立即strict paired correct400；继续cycle2的门
-保持correct>=142、breadth>=7、相对LPCP lost<=15且gains>=losses。任何约145 checkpoint立即补same-task-other、
+preformal已全过，但full24 global commitment exact no-op使本轮在strict前终局。原继续cycle2的门为
+correct>=142、breadth>=7、相对LPCP lost<=15且gains>=losses，本轮无部署改写而不具备进入该门的候选。任何约145 checkpoint立即补same-task-other、
 wrong、shuffled、reversed和no-video controls，并评相邻checkpoint稳定性。最终资格仍要求约145+的相邻single
 checkpoints、低churn/high Jaccard、高breadth和correct对各negative的明确paired优势；单点高分不够。
 

@@ -779,6 +779,17 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
 121. 最小修正只使formal保留credit backward已算出的4个conditioning states，没有重算video/
      environment、新增forward或改变科学合同。focused regression在旧路径会返回1 view，修正后返回4；
      相关测试`42 passed`、全量CPU=`411 passed`。因首次run无checkpoint，下次必须从新clean commit fresh重跑。
+122. clean`b4dbf84` CMBG full24完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=`32/32`、
+     gains=`3/3`，6 active tasks覆盖四suite，cycle=`527.605s`，world5 checkpoint/completion完整且0禁读/OOM/
+     nonfinite。因此上一轮的formal view retention工程缺口已被真实关闭。
+123. full24把CMBG的有效边界和失效边界分开了：task4/19/20/25/38的same-task four-view cosine/
+     energy约`.988--.992/.956--.994`，但task34=`-.105/.339`。跨task cosine mean/min=`.00681/-.21022`；
+     task38 gradient norm是次大的`54.45x`且几乎完全主导shared mean，task4与shared方向反向。所以
+     literal memory解决了多数task的video-local coordinate coherence，没解决全task幅度平衡和shared credit兼容。
+124. actual Adam candidate与`-gradient` cosine仅`.26938`；11 scales最好的`j2=.25`也只有`17/24`
+     deployed margins下降，小scale不单调改善。search rejected后合同恢复step0，最终parameter delta、
+     q/v/action BA和fixed-action response全为0。strict400因只会重测LPCP carrier而跳过；CMBG终局，
+     不cycle2/controls/小扫。该结果不否定memory token、rank8、完整A/B或few-shot一般。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

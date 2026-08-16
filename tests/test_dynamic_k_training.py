@@ -37,7 +37,11 @@ from ember.writer.live_adapter import (
     FrozenDynamicKTaskAdapter,
     condition_video_offsets,
 )
-from ember.writer.reward_config import REWARD_CONFIG, load_reward_config
+from ember.writer.reward_config import (
+    REWARD_CONFIG,
+    load_reward_config,
+    require_reward_mode,
+)
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -99,8 +103,10 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "held_pass_full24_ready"
-    assert config["formal_run"]["status"] == "ready"
+    assert config["status"] == "formal_cycle1_terminal_noop_nonpass"
+    assert config["formal_run"]["status"] == (
+        "terminal_nonpass_global_commitment_exact_noop"
+    )
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
         "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
@@ -191,6 +197,15 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert held["passing_tasks"] == 8
     assert held["held_to_train_effective_ba_l2_ratio"] > 0.9
     assert held["reverse_and_constant_pass"]
+    result = config["formal_run"]["formal_result_evidence"]
+    assert result["active_tasks"] == 6
+    assert result["best_descending_views"] == 17
+    assert result["required_descending_views"] == 24
+    assert result["final_delta_l2"] == 0.0
+    assert result["strict400"] == "skipped_exact_step0_noop"
+    assert result["cycle2"] == "forbidden"
+    with pytest.raises(WriterModelError, match="training is not authorized"):
+        require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

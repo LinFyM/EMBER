@@ -7,12 +7,13 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
-- 当前active authority是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
+- 最新终局authority是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
   held视频门也已8/8通过。clean`a62348e`首次full24因formal只保留view0的工程错误exit1且无
-  checkpoint/completion；canonical已最小修正并通过全量CPU=`411 passed`。当前无active GPU run或可resume
-  checkpoint，下一步是从新clean pushed commit fresh重跑full24；
+  checkpoint/completion；canonical最小修正后clean`b4dbf84` fresh full24已完整exit0。共6 active tasks，但
+  11 scales最好仅`17/24` task-view margins下降，最终exact no-op并按合同终局。当前无active GPU run、可resume
+  checkpoint或active successor；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -210,7 +211,16 @@
   watchdog后结束。该root无metrics/checkpoint/completion，不得作CMBG结果；
 - canonical最小修正只是formal也保留已在credit backward中算出的4个`RewardPreferenceView`，不重算video/
   environment，不增forward，不改data/objective/optimizer/commitment。focused regression与相关测试`42 passed`，
-  全量CPU=`411 passed`；下一步从该修正的clean pushed commit fresh重跑full24；
+  全量CPU=`411 passed`；
+- clean`b4dbf84` world5 full24完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
+  `32/32`、gains=`3/3`，6 active tasks覆盖四suite，cycle=`527.605s`，world5 checkpoint/completion完整，0禁读/
+  OOM/nonfinite。五task的same-task four-view cosine/energy均约`.99/.96--.99`，但task34=`-.105/.339`；
+  cross-task cosine mean/min=`.00681/-.21022`，task38 gradient norm是次大的`54.45x`并几乎完全主导shared
+  mean，task4与shared方向反向。Adam candidate与`-gradient` cosine仅`.26938`；11 scales的最好候选仅
+  `17/24` deployed margins下降，search rejected并恢复step0；
+- 最终parameter delta、q/v/action effective-BA与fixed-action response全为0，因此strict400只会重测LPCP
+  carrier，不能表示CMBG学习，按authority跳过。CMBG终局，不cycle2、controls或小扫；精确artifact=
+  `runs/outputs/pi05_v6_lpcp_cmbg_formal_cycle0to1_r5_k4_views4_nmc4_b8_b4dbf84_gpu02p12347_20260816/cmbg_full24_terminal_adjudication.json`；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

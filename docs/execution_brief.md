@@ -75,12 +75,14 @@ fixed-action前后使用相同batch1 query/noise；CPU=`404 passed`、architectu
 `202a64d`真实结果为task9 `j10`但held4/8与held/train`.184x`失败，task15全部11个candidate拒绝并恢复exact no-op，
 task18 `j5`全门通过。一个scalar radius因此无法成为shared稳定commitment，AV-MBC终局且无full24/strict。
 
-当前active successor是**MMCD**：不改video-language、reward、FactorHeads、Adam半径或backtracking，只把每task四
+最新终局successor是**MMCD**：不改video-language、reward、FactorHeads、Adam半径或backtracking，只把每task四
 view raw mean方向换成对四个raw gradients具有最大worst-view一阶下降余量的共同方向；方向再缩放回原mean norm，
 formal跨task仍等权。该方向由已有gradients的`4x4` Gram确定性求解，不增加forward或模型参数。authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。canonical实现、fresh
-schema与CPU合同已完成：完整CPU=`405 passed`、architecture guard 0 hard；formal仍blocked。首门仍是固定
-task9/15/18：必须让task15出现native共同步且修复task9 held门，否则立即终局。
+`docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。clean `fc3bdd7`
+固定task9/15/18的continuous worst margin提高`1.216/1.334/1.356x`，但native分别为j0且held/train`.160558x`、
+j0--10全拒绝并exact no-op、j6且全门通过；只有1/3 anchors通过。formal未解锁，MMCD终局，不full24/strict/
+resume或solver/rank/LR/scale sweep。当前没有active GPU run；下一设计必须直接针对native finite-step metric与held
+amplitude，不能继续只优化continuous gradient geometry。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

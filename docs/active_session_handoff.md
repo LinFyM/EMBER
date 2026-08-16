@@ -96,11 +96,14 @@
   radius通过全部门；task9只在`j=10`、1/1024接受，held仅4/8且held/train BA=`.184464x`；task15到`j=10`
   仍无共同下降candidate并精确恢复BA/action零响应。三项cycle=`356.624/659.982/264.169s`。因此scalar radius
   对不同task呈有效/near-identity/空集三种状态，full24共同交集必为空或近零；不启动full24/strict/resume；
-- 当前active successor是**MMCD**，authority=
+- 最新终局successor是**MMCD**，authority=
   `docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。它保留AV-MBC
   全部carrier、credit、Adam upper radius、native backtracking和rank16，只用已有四view gradients的`4x4` Gram
-  确定性求maximum-margin common-descent direction，并保持每task原mean norm与跨task等权。canonical实现、fresh
-  schema与CPU合同已完成：完整CPU=`405 passed`、architecture guard 0 hard；尚未运行GPU；
+  确定性求maximum-margin common-descent direction，并保持每task原mean norm与跨task等权。clean `fc3bdd7`
+  task9/15/18的continuous worst margin均提高，但native结果分别为j0大步且held/train`.160558x`、j0--10无共同
+  candidate并exact no-op、j6且全门通过；只有1/3 anchors过门。MMCD终局，不full24/strict/resume或小扫；
+- 当前没有active GPU run或可resume checkpoint。下一变量必须针对continuous direction到native BF16 finite-step及
+  held amplitude接口；不能退回替换已通过的LPCP carrier，也不能把memory/rank8等仍开放候选误判为已否决；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

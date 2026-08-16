@@ -52,7 +52,10 @@ rollout batch与batch1路径，故该轮仅是工程诊断而非科学non-pass�
 step0 baseline与candidate比较，并统一fixed-action batch1路径。修正版clean `202a64d`终局：task18在1/32半径
 全门通过；task9仅在1/1024接受且held4/8、held/train`.18446x`；task15到1/1024仍无all-view step并恢复exact
 no-op。AV-MBC因此没有full24/strict。它只否定固定raw-mean ray上的scalar radius，不否定direction-changing
-commitment。当前MMCD保留全部science graph，唯一从已有四view gradients确定性求maximum-margin direction。
+commitment。MMCD clean `fc3bdd7`保留全部science graph，唯一从已有四view gradients确定性求maximum-margin
+direction。task9/15/18 continuous worst margin提高`1.216/1.334/1.356x`，但native分别为j0大步且held/train
+`.160558x`、j0--10仍no-op、j6且全门通过；只有1/3 anchors通过，未full24/strict。它证明更好的continuous
+first-order direction不稳定等价于native BF16 finite-step或held policy-effective commitment。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

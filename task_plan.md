@@ -476,7 +476,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 完成task9/15/18三anchor及train/held/reverse/constant/吞吐分析：task18全门通过，task9 held两门失败，
   task15无accepted candidate；AV-MBC终局，不full24/strict；
 
-## Active iteration: V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment
+## Terminal iteration: V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment
 
 - [x] 从AV-MBC的有效/near-identity/空集三种radius结果定位下一接口：raw equal mean虽4/4连续下降，但没有足够
   worst-view余量穿过不同task的native BF16有限步；
@@ -484,8 +484,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   确定性求per-task maximum-margin direction，再保持task mean norm与跨task等权；
 - [x] 原位替换AV-MBC executable/config/checkpoint/eval schema，实现4x4 active-set solver、几何证据与CPU测试；
   完整CPU=`405 passed`、compileall/diff check通过、architecture guard 0 hard；
-- [ ] clean pushed commit后只跑task9/15/18；必须修复task15 no-op和task9 held门才允许full24；
-- [ ] 三anchor全过后才实现distributed所有active task×4 acceptance与fresh full24/strict400。
+- [x] clean pushed `fc3bdd7`后完成task9/15/18训练与完整机制分析；固定outcomes/counts、0禁读、geometry、native
+  BA/action、held8、reverse/constant与wall均已保留；
+- [x] 按预注册门终局：task9只失败held/train`.160558x`，task15仍exact no-op，task18全过，合计1/3；不实现
+  distributed formal acceptance、不full24/strict/resume或参数小扫；
+- [ ] 从native finite-step metric/held amplitude这一最早接口建立下一份单变量authority后再改实现或启动GPU。
 
 ## Non-negotiable boundaries
 
@@ -503,8 +506,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC也已因task9 held失败与task15无accepted step终局。当前active MMCD只改变四view
-共同方向，不能同时改LR、carrier、memory、rank、matched panel、半径或LoRA topology。
+不得resume或参数小扫。AV-MBC和MMCD也已因task9 held幅度与task15无accepted step终局。当前没有active
+successor或GPU run；下一设计不能同时改LR、carrier、memory、rank、matched panel、半径与LoRA topology。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

@@ -216,12 +216,14 @@ noise下四个correct-video views全部严格下降的第一个candidate；不�
 held/train`.18446x`；task15到`j=10`仍无共同candidate并恢复exact no-op。故scalar radius对task呈有效、
 near-identity和空集三种状态，AV-MBC终局，不full24/strict/resume。
 
-当前active successor是**V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment**（MMCD），authority=
+最新终局successor是**V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment**（MMCD），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`。它保留AV-MBC全部
 carrier、matched reward、Adam upper radius、native backtracking、rank16与八heads，唯一从已有四view gradients的
-`4x4` Gram确定性求maximum-margin direction，再保持原task mean norm与跨task等权。canonical实现与fresh schema已完成，
-完整CPU=`405 passed`、architecture guard 0 hard，尚未运行GPU；
-首轮仍只授权task9/15/18，必须修复task15 no-op与task9 held门才允许full24。
+`4x4` Gram确定性求maximum-margin direction，再保持原task mean norm与跨task等权。clean `fc3bdd7`固定
+task9/15/18的continuous worst margin均提高`1.216/1.334/1.356x`，但native结果分别为j0大步且held/train仅
+`.160558x`、到j10仍no-op、j6且全门通过；只有1/3 anchors通过。故first-order maximum margin不能稳定预测
+native finite-step/held commitment，MMCD终局，不full24/strict/resume或小扫。当前没有active GPU run或可resume
+checkpoint；下一变量必须针对native metric/finite-step接口，不能退回改已通过的carrier或继续换raw-gradient solver。
 
 ## 4. Long-term objective and decision rule
 

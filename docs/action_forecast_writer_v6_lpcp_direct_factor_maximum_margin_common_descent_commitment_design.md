@@ -1,7 +1,7 @@
 # V6-LPCP Direct-Factor Maximum-Margin Common-Descent Commitment
 
-状态：2026-08-16 active single-variable design authority，简称`MMCD`；canonical实现、fresh schema与CPU合同已完成，
-尚未运行GPU。本轮从sealed LPCP
+状态：2026-08-16 terminal non-pass single-variable authority，简称`MMCD`；clean `fc3bdd7`三anchor、完整机制分析与
+terminal adjudication均已完成，未进入full24/strict。本轮从sealed LPCP
 fresh启动，完整保留MB-SOP的matched successful-occupancy credit、AR-EC的Adam upper radius、AV-MBC的同路径
 all-view backtracking、八个direct native FactorHeads与rank16部署图，唯一改变finite-step方向怎样由已经计算出的
 四个correct-video gradients确定。
@@ -119,9 +119,53 @@ reward的对齐；不能再归因于video mean direction、scalar radius或nativ
 backtracking + one fresh cycle”。负结果不否定memory token、rank8、few-shot、生成LoRA、direct native heads、
 其它policy-space commitment或未来生成LoRA后的task-local RL。
 
-## 9. 实现与启动状态
+## 9. 实现与运行状态
 
 canonical executable、config/checkpoint/eval schema已原位从AV-MBC替换为MMCD；`4x4` active-set solver、
 optimizer-gradient与commitment-direction分离、simplex/permutation/worst-margin证据均有定向合同。完整CPU=
 `405 passed`，compileall与diff check通过，architecture guard=`0 hard violations`；未新增active module、并行runtime
-或额外forward。当前formal仍锁定，只允许从clean pushed commit分别运行task9/15/18三个world1锚点。
+或额外forward。clean pushed `fc3bdd7`在gpu02物理`1/2/3`分别完成task9/15/18三个world1锚点；固定outcomes=
+`2/1,2/0,1/2`、complete=`26/65/44`、selected=`8/16/8`和0禁读均复现。
+
+## 10. 三anchor终局结果
+
+三个任务的MMCD方向都严格提高了continuous worst-view一阶余量，但native有限步结果仍分裂：
+
+```text
+task9 : margin gain=1.21618, direction/mean cosine=.934329;
+        j=0直接接受，final L2=.121139，四margin delta全负；
+        train BA cosine/energy/L2=.861389/.864993/.0445740；
+        held8=.790374/.781962/.00715673、8/8过coherence门，
+        但held/train只有.160558x<.30，故失败。
+
+task15: margin gain=1.33407, direction/mean cosine=.851990;
+        j=0..10仍没有四view共同下降candidate；j10为
+        [+2.44e-9,-3.49e-9,-2.56e-6,+6.376e-6]，与AV-MBC相同的
+        view3 native plateau仍在；最终恢复BA/action精确零，故失败。
+
+task18: margin gain=1.35562, direction/mean cosine=.905076；
+        j=6接受、final L2=.00258141，反而比AV-MBC的j5再缩一档；
+        train=.830957/.791578，held=.544450/.633328、6/8、
+        held/train=.545833x，全部门通过。
+```
+
+cycle wall分别=`144.196/651.361/283.234s`，相对AV-MBC=`.4043/.9869/1.0722x`。task9因首个candidate
+即接受而显著加速；task15仍遍历全部11项；方向求解本身没有有意义的吞吐代价。三anchor只有`1/3`全过，按第6节
+固定门终局，不实现formal active-task×4 acceptance，不启动full24/strict，不resume或扫solver tolerance、
+backtrack、LR、rank、scale、seed、dtype。
+
+canonical adjudication：
+`runs/outputs/pi05_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_task9_mechanism_b8_fc3bdd7_gpu02p1_20260816/mmcd_terminal_adjudication.json`。
+
+## 11. 最早失败接口与负结果边界
+
+MMCD证明maximum-margin continuous direction是真实的：三任务worst-view derivative均提高`1.22--1.36x`。但它
+不能稳定预测native finite step：task9从near-identity跳到full radius却held幅度只保留`.1606x`，task18需要更小
+radius，task15在改变方向后仍落到同一BF16小步plateau。最早接口因此细化为：
+
+**continuous four-view common direction -> native BF16 FactorHeads/compiler finite step -> held policy-effective
+amplitude。**
+
+本轮只否定`MB-SOP credit + per-task raw-gradient maximum-margin direction + original Adam upper radius + AV-MBC
+native backtracking + one fresh cycle`。它不否定LPCP carrier、memory token、rank8、few-shot、生成LoRA、其它
+native-metric/policy-space commitment或未来生成LoRA后的task-local RL。

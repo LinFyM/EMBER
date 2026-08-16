@@ -654,7 +654,11 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     combination，得到maximum-margin common-descent direction并缩放回原equal-mean norm；AdamW仍只提供原
     optimizer state与global L2 upper radius，native all-view backtracking不变。新schema明确分离optimizer
     gradient与commitment direction，完整CPU=`405 passed`、architecture guard 0 hard，未增加模型参数或forward。
-    这些仍只是工程合同；task9/15/18真实锚点未完成前不能声称修复。
+99. MMCD clean`fc3bdd7`三anchor continuous worst margin均真实提高`1.216/1.334/1.356x`，但native结果不单调：
+    task9从AV-MBC j10跳到j0，train/held BA都显著放大且held 8/8，但held/train反降到`.160558x`；task18从j5
+    变成j6，仍全门通过；task15到j10的view3仍是同一个`+6.376e-6` plateau并恢复exact no-op。只有1/3 anchors
+    通过，故不full24/strict。最早接口不再是如何改善raw first-order共同方向，而是该方向经过native BF16
+    FactorHeads/compiler后的有限步metric与held policy-effective幅度；继续换parameter-space gradient solver不针对它。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

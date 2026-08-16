@@ -7,6 +7,10 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
+- 当前active authority是CMBG：只把CAPG post-backbone 37-latent Value source换成真实joint prefix内逐层更新的
+  37个one-way memory tokens，尚未实现或启动GPU；没有active/resumable checkpoint；
+- 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
+  best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
   `3/79/35/19`；相对LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct与
   retention两门失败，已终局且不resume cycle2、补六臂或做参数小扫；
@@ -156,22 +160,30 @@
   task9/task18的`41.45x/10.43x`，global raw mean仅1/3 task下降。11个native scales最多8/12 margins下降，
   全部拒绝，最终860,160个B-head参数逐元素全零。按门不full24/strict/held controls或小扫；终局artifact位于
   fresh root的`tcec_shared3_terminal_adjudication.json`。TCEC无可resume checkpoint；
-- 当前active design是**CAPG**，authority=
+- 最新终局design是**CAPG**，authority=
   `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32与同一
   joint forward，只把shared wide B heads替换为`18x37x1024`capacity-matched Action-probe parameter grid，经过
   per-video causal、K-set、layer/token M2P后直接reshape native-zero B；681,984个zero-init coordinate payload
   gates保持exact LPCP且首步gradient-open，不做近等大数相减。37是post-backbone parameter latents而非memory tokens；
   canonical实现已原位完成并退休TCEC wide-head/config/schema：trainable=`3,008,384`，定向CPU=`79 passed`、完整
-  CPU=`405 passed`、architecture guard无hard violation；当前尚未启动GPU，固定world3 task9/15/18为首个
-  preformal gate；
-- CAPG world3 preformal launch contract已冻结：code/config commit=`878b5e4dddc87c17b90989352138fdd7547b6dc9`，从
+  CPU=`405 passed`、architecture guard无hard violation；
+- CAPG world3 preformal由code/config commit=`878b5e4dddc87c17b90989352138fdd7547b6dc9`的
   detached worktree运行`smoke`，固定task=`9,15,18`、world=`3`、每rank一个task、physical GPU=
   `gpu02:1/2/3`、`NCCL_P2P_DISABLE=1`，source policy=`pi05_source_base_v1_seed7_1k_e2cc238_20260722/step_00001000`，
   K4/B8/trajectory/view/optimizer/backtrack和318.749秒wall门均严格沿CAPG authority；fresh output root=
   `runs/outputs/pi05_v6_lpcp_capg_shared3_task9_15_18_b8_878b5e4_gpu02p123_20260816`，不得覆盖或resume旧root。启动前
   `/data1` quota为`542,442,152/1,073,741,824` blocks、shared filesystem可用`85T`；preformal新artifact预计远低于
-  `.1GiB`且复用现有94G dataset、8.8G source checkpoint与tokenizer。18:22 live snapshot中三卡各约45.49GB free、
-  utilization=0；launch前仍需再次live确认，若状态变化则换同节点空卡，必要时才按owner许可与`ycliu`低负载卡共驻；
+  `.1GiB`且复用现有94G dataset、8.8G source checkpoint与tokenizer。运行完整exit0：outcomes/counts、12 rollouts、
+  48 correct videos与信息墙全通过，cycle=`179.973s`。task9/15/18 same-task cosine/energy达到
+  `.983/.985,.898/.870,.982/.949`；raw shared coverage由TCEC的1/3提高到2/3，native最佳由8/12提高到
+  10/12。但task15 norm仍为task9/task18的`36.29x/5.99x`，task18到shared cosine=`-.1570`，11 scales无
+  12/12，最终681,984 gate值exact zero。CAPG终局，不held/full24/strict/resume或小扫；精确artifact为同root的
+  `capg_shared3_terminal_adjudication.json`；
+- 当前active design是**CMBG**，authority=
+  `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它只把CAPG的post-backbone
+  37-query latent source换成同一真实image/language/50 Action-probe prefix内逐层更新的37个one-way memory tokens；
+  Action不能看memory，memory能看prefix/Action/memory。temporal、K-set、M2P、direct B、zero gate、NEAP、K4、
+  rank32和world3 global commitment全部不变。预计trainable=`2,828,928`；当前authority已冻结但尚未实现或启动GPU；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

@@ -732,6 +732,17 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      context/temporal/set/M2P全有gradient。raw 18层Action states与LPCP compact probes来自同一hook/forward；旧
      factor commitment owner和TCEC config/schema已退休。trainable=`3,008,384`，定向/完整CPU=`79/405 passed`，
      architecture guard无hard violation。该证据仅关闭实现门，尚无GPU task-coexistence或closed-loop结论。
+112. CAPG clean`878b5e4` world3完整exit0且不是无信息负结果。task9/15/18 same-task four-view cosine/energy从
+     TCEC的`.846/.865,.596/.645,.448/.557`提高到`.983/.985,.898/.870,.982/.949`，三task均4/4 raw
+     descent；equal-task raw coverage从1/3提高到2/3，native best从8/12提高到j0的10/12，cycle又仅
+     `179.973s=.9881x` TCEC。capacity-matched contextual coordinates因此真实修复了same-task不同视频credit
+     近正交，不能因最终no-op把它写成又一次完全无用的内部美化。
+113. CAPG仍在shared first commitment终局：task15 gradient norm是task9/task18的`36.29x/5.99x`，task18到
+     shared mean cosine=`-.1570`，task-gradient pairwise mean/min=`-.1394/-.3146`；11 scales无12/12，最终
+     681,984 gate values exact zero。step0只有coordinate gate有gradient，其余context/temporal/set/M2P必须在
+     retained gate update后才打开。因此本轮只否定post-backbone 37-latent Value加zero-gated first commitment，
+     最早接口是task-local coherent grid到跨task可分流Value。CMBG按预注册边界只把Value source升级为真实prefix
+     内逐层37-token memory，保留CAPG所有已通过下游机制；不恢复旧100分Dynamic-K整条路线。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

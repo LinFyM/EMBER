@@ -42,7 +42,8 @@ Writer不可读teacher action、proprio/state、reward、terminal、task ID、fi
 hidden normalization或held outcome。language可提供query/context/address，但video必须提供唯一dynamic value；
 不能有language-only LoRA bypass、held expert route、第二套adaptation或checkpoint融合。
 
-每个condition只生成一套完整task adaptation。当前主实现使用38-target rank-8 LoRA；rank、memory数量和decoder是
+每个condition只生成一套完整38-target task adaptation。当前受控机制实验保留LPCP rank16 carrier加rank16
+native-zero residual bank；rank、memory数量和decoder是
 方法变量，不是问题定义。无论具体rank如何，都不能靠挑video、平均分别生成的LoRAs或裁剪关键policy targets
 冒充完整任务学习。
 

@@ -76,11 +76,11 @@ raw gradient均对`4/4` views一阶下降，final delta也与`-g`精确同向，
 真实post-margin下降；train/held LoRA coherence、q/v/action和吞吐反而健康。故最早缺口是有限步半径，不是
 gradient方向或LoRA写出。
 
-当前active successor是
-[`AV-MBC`](docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md)：保持
-MB-SOP/AR-EC全部输入、credit、方向、rank16与LoRA生成，只沿同一`-g`从Adam upper radius确定性减半，接受四个
-correct-video views在同panel/noise上全部严格下降的第一个candidate；不挑最佳scale，不改memory、rank或video
-aggregation。canonical world1机制实现与fresh schema已完成，CPU=`404 passed`；formal仍blocked。
+最新CAPG world3已终局：capacity-matched post-backbone grid把固定三task的same-task four-view cosine提高到
+`.983/.898/.982`，但global raw只`2/3`、native最多`10/12`并exact no-op。当前active successor是
+[`CMBG`](docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md)：保留CAPG已通过的有向
+video/K-set/M2P/direct-B与V6-LPCP/NEAP/rank32，只把37个post-backbone latents换成真实图文/Action prefix内逐层
+更新的37个one-way memory tokens。当前authority已冻结，尚未实现或启动GPU。
 
 ## Information wall
 

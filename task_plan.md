@@ -604,7 +604,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   GPU forward；终局artifact已封存；
 - [x] 按预注册门终局，不full24、strict paired400、held controls、cycle2、task权重/normalization/solver或scale小扫。
 
-## Active iteration: V6-LPCP Capacity-Matched Action-Probe Grid
+## Terminal iteration: V6-LPCP Capacity-Matched Action-Probe Grid
 
 - [x] 从TCEC最早断点选择单一架构变量：删除shared wide B heads，保持LPCP carrier、NEAP endpoint、K4、rank32、
   equal-task mean与native acceptance不变；
@@ -613,11 +613,23 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位实现CAPG与fresh-incompatible config/checkpoint/eval schema，退休TCEC active runtime；
 - [x] 完成step0 exact、payload-gate首步gradient、gate-open全链gradient、constant-zero、K-set、direct reshape、
   信息墙和one-forward CPU/机制验证；
-- [ ] live检查双节点GPU与`/data1`quota，建立clean pushed frozen world3 launch contract；空卡不足时可在实时余量
+- [x] live检查双节点GPU与`/data1`quota，建立clean pushed frozen world3 launch contract；空卡不足时可在实时余量
   充足且低util的`ycliu`设备上安全共驻；
-- [ ] 固定task9/15/18运行preformal shared gate并完整分析same-task、cross-task gradient、12-view native step、
-  held/temporal/throughput；任一预注册门失败即终局；
-- [ ] 仅在preformal全门通过后运行full24 cycle1、strict paired400及逐task/retention/churn分析。
+- [x] clean frozen`878b5e4`固定task9/15/18完整运行preformal：outcomes/counts、wall、信息墙通过；same-task
+  cosine/energy提升到`.983/.985,.898/.870,.982/.949`，raw shared coverage从1/3到2/3，native best从8/12
+  到10/12；task15仍主导且task18反向，11 scales无12/12，最终exact no-op；
+- [x] 封存`capg_shared3_terminal_adjudication.json`并按门终局，不运行held/full24/strict/cycle2或小扫。
+
+## Active iteration: V6-LPCP Capacity-Matched Backbone-Memory Grid
+
+- [x] 从CAPG最早断点选择预注册的单变量：保留其已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与
+  global gate，只把post-backbone 37-query latents换成真实prefix内逐层更新的37个one-way memory tokens；
+- [x] 冻结CMBG authority：37由rank16 B-only payload精确推导，Action不能看memory，memory能看真实
+  image/language/Action/memory；不恢复旧8-token Dynamic-K整条路线；
+- [ ] 原位实现single joint-loop memory，退休CAPG post-backbone context owner，并通过carrier identity、exact-zero、
+  gate-open、时序/K-set、信息墙、one-forward和完整CPU合同；
+- [ ] clean pushed/frozen后固定world3 task9/15/18运行同一preformal，必须达到raw shared 3/3与native 12/12；
+- [ ] 仅在preformal、held与throughput全门通过后运行full24 cycle1和strict paired400。
 
 ## Non-negotiable boundaries
 
@@ -637,10 +649,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新TCEC world3已终局：同task四video endpoint gradients有共同方向，但跨task raw shared mean仅1/3为下降，
-11个native scales最多覆盖8/12 margins，最终exact no-op。当前CAPG authority与canonical实现已完成、尚未启动GPU；它直接
-针对task-local coherent Program/credit如何在一个shared Writer中形成可共存的condition-to-LoRA映射。不得回退
-CFM、继续parameter ray/scale/normalization/PCGrad小修，或把CAPG的post-backbone latents误称literal memory。
+最新CAPG world3已终局：它显著修复same-task跨video coherence并把native覆盖提高到10/12，但跨task raw仍只有
+2/3，最终exact no-op。当前CMBG authority已冻结、尚未实现；它只把CAPG的post-backbone Value source升级为真实
+joint-prefix内逐层memory，直接检验task-conditioned values能否在同一gate前形成可分流坐标。不得回退CFM、继续
+parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

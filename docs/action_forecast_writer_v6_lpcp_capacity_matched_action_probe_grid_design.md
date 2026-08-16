@@ -1,6 +1,6 @@
 # V6-LPCP Capacity-Matched Action-Probe Grid
 
-状态：2026-08-16 active design，简称`CAPG`。本轮从sealed LPCP fresh启动，完整保留其correct=`143/400`的
+状态：2026-08-16 terminal preformal non-pass，简称`CAPG`。本轮从sealed LPCP fresh启动，完整保留其correct=`143/400`的
 carrier、K4输入、一次真实图文joint forward、NEAP 10-step endpoint credit与native-zero residual bank。
 唯一主要变量是把TCEC中所有tasks共用的`320x256 -> four wide B heads`替换为**由逐层Action-probe context直接形成、
 容量与部署B payload匹配的参数网格**；不改reward、rank、scale、视频采样、optimizer或部署policy。
@@ -209,3 +209,21 @@ canonical runtime已原位退休TCEC wide-head实现与旧config/schema，没有
   cold-start rejection均有稳定CPU合同；
 - 定向训练/评测回归=`79 passed`，完整CPU=`405 passed`，compileall/diff check通过；architecture guard无hard
   violation，新增一个298行cohesive owner并删除旧95行wide-head owner。以上只关闭实现门，不提供GPU或性能结果。
+
+## 13. Terminal world3 result
+
+clean frozen`878b5e4`在gpu02物理`1/2/3`完整exit0：固定outcomes、134 occupancy chunks、32 selected pairs、
+12 rollouts和48 correct videos全部复现，cycle=`179.973s`、reserved=`20.162GB`，0 OOM/nonfinite/禁读。task9/15/18
+same-task four-view cosine/energy达到`.983/.985,.898/.870,.982/.949`，相对TCEC三项都显著提高；raw shared
+descent也由`1/3`提高到`2/3`，native最佳从`8/12`提高到j0的`10/12`。这证明CAPG的capacity-matched condition
+coordinates真实修复了same-task跨video credit，而不是无用内部指标。
+
+但task15 gradient仍比task9/task18大`36.29x/5.99x`，task18到shared mean cosine=`-.1570`，task-gradient
+pairwise mean/min=`-.1394/-.3146`。11个scale无一达到12/12，最终681,984个payload gate值逐元素全零；因此没有
+post-update BA/action、validation8、full24或strict。精确artifact=
+`runs/outputs/pi05_v6_lpcp_capg_shared3_task9_15_18_b8_878b5e4_gpu02p123_20260816/capg_shared3_terminal_adjudication.json`。
+
+最早失败接口是`task-local coherent capacity grid credit -> shared task-conditioned first native commitment`。
+CAPG不得resume或补optimizer小修。下一single-variable authority为
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`：只把post-backbone latent source
+换成真实prefix内逐层更新的37-token memory，保留本轮已经通过的下游图。

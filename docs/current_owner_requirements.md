@@ -404,16 +404,23 @@ task15下降；11个native scales最多覆盖`8/12` margins，最终四个B head
 这把最早接口推进到**显式task/condition结构的shared representation与LoRA output mapping**，不授权用gradient
 normalization、PCGrad、task权重或parameter-ray小扫补TCEC。
 
-当前CAPG据此保留LPCP/NEAP/K4/rank32，只把`320x256 -> four shared wide B heads`替换为capacity-matched
+CAPG据此保留LPCP/NEAP/K4/rank32，只把`320x256 -> four shared wide B heads`替换为capacity-matched
 `18x37x1024`Action-probe parameter grid：37来自rank16 B-only payload精确容量；逐video adjacent/goal causal
 Program、K-set、layer/token M2P后直接reshape native-zero B。它采用Doc-to-LoRA式per-layer activation queries与
 SHINE式capacity-matched direct mapping，但37个slots位于backbone之后，明确不是memory token；同一forward与
 LPCP carrier完全保留。精确authority=
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。
 
-literal memory token、rank8、dynamic-K/few-shot仍是开放候选而非强制形式。若CAPG的现有Action-probe activations
-不能形成跨task可共存的parameter grid，下一反事实才是在真实image/language/action prefix中加入真正逐层更新的
-capacity-matched memory；不得把CAPG负结果误写成memory失败。
+CAPG clean`878b5e4`的world3结果把same-task four-view cosine/energy显著提高到
+`.983/.985,.898/.870,.982/.949`，raw shared coverage从TCEC的1/3提高到2/3，native best从8/12提高到10/12；
+但task15仍比task9/task18大`36.29x/5.99x`，task18到shared mean为负，11 scales无12/12，最终gate exact zero。
+因此CAPG有价值地修复了跨video坐标，却没有让post-backbone values形成跨task first commitment；不full24或小扫。
+
+当前CMBG只把CAPG的post-backbone latent source换成真实image/language/action prefix内逐层更新的37个one-way
+memory tokens，完整保留已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与global gate。这执行了CAPG
+预先写明的下一反事实，而不是因结果临时转向；精确authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。memory token仍是当前方法变量，
+不是长期goal；rank8、完整A/B和dynamic-K/few-shot仍是独立开放候选。CAPG负结果不得误写成memory失败。
 
 后续迭代遵循以下边界：
 

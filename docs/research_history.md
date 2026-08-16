@@ -5,9 +5,10 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新NPVC为136、breadth6且相对LPCP143
-为`120/16/23`、churn39。它虽形成held跨视频coherent、时序敏感、native-scale写入，但写入幅度/一致性与
-closed-loop增益错位，full24还使train task4共同方向坍塌。v6-fast仍是有完整五臂的历史最好，长期严格
+2026-08-16，最高correct单点SFMC144因lost15/churn31不具稳定资格；最新完成的CAPG在strict前终局：它把固定三
+task的same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
+当前active CMBG只把这些post-backbone latents换成真实prefix内逐层更新的capacity-matched memory，尚未实现。
+v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B
 相对semantic101为`82 retained/20 gained/19 lost`，breadth从6降到5；相对old134为`80/22/54`。task-mean
@@ -85,7 +86,14 @@ mean/min=`-.145/-.337`，gradient norm相差至`41.45x`，未经norm重权的equ
 全零。它在full24前否定了“raw equal-task mean + one synchronized direct-B commitment”，并把最早接口推进到
 显式task/condition结构的shared representation与LoRA output mapping；不否定NEAP endpoint、memory token、rank8、
 Dynamic-K、few-shot或生成LoRA。
-policy step。
+
+CAPG clean`878b5e4`随后只把shared wide heads换成`18x37x1024`post-backbone Action-probe parameter grid和direct
+B reshape。world3 outcome/count、wall和信息墙全通过；task9/15/18 same-task cosine/energy从TCEC的
+`.846/.865,.596/.645,.448/.557`提高到`.983/.985,.898/.870,.982/.949`，raw shared coverage从1/3到2/3，
+native best从8/12到10/12。task15 norm仍为task9/task18的`36.29x/5.99x`，task18到shared mean=`-.1570`，
+11 scales无12/12，最终681,984 gate values exact zero。它证明capacity-matched coordinates能修复跨video credit，
+但post-backbone Value没有完成跨task first commitment；不否定literal memory。当前CMBG依预注册边界只把Value source
+升级为真实joint prefix内37个one-way memory tokens，保留下游全部已通过机制。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition
@@ -189,6 +197,8 @@ LoRA能量/秩/cosine、重建误差和漂亮内部margin都只能作机制证�
 | V6-LPCP Native Probe-Value Commitment | K4 `136/400`, breadth6 | validation8 preformal cosine/energy=`.44940/.57150`且held/train BA L2=`.7525x`，关闭CCT held compiler消失 | 相对LPCP=`120/16/23`、churn39；full24后task4从`.5929/.6792`坍塌到`.0569/.2951`，gained/lost改写不可分 |
 | V6-LPCP Pre-Addressed Factor-Selective Native Value | no strict; mechanism stop | task4八family/q-v-action/reverse/wall健康，factor可独立选择native Value | train24 address effective rank=`2.1575`，validation8仅`.1681/.3729`、3/8过门，未full24 |
 | V6-LPCP Shared Joint Native-Value Gate | no strict; mechanism stop | task4 `.47227/.59781`，reverse/static与reward链健康；gate/hidden held cosine约`.94` | frozen W2后raw factor仅`.02135/.26592`、action`.00267`，validation8 BA `.20190/.39645`、2/8过门，未full24 |
+| V6-LPCP Task-Complete Endpoint Coexistence | no strict; mechanism stop | 首次world3把三task四view endpoint gradients放进同一shared update | task norm差`41.45x`、pairwise mean`-.145`，raw只1/3且native best8/12，exact no-op |
+| V6-LPCP Capacity-Matched Action-Probe Grid | no strict; mechanism stop | same-task cosine/energy三项均大幅提高，raw从1/3到2/3、native从8/12到10/12 | task15仍主导且task18反向，0/11 scales达到12/12；只否定post-backbone zero-gated CAPG first commitment |
 
 ADSP、V6-LPCP、PCSD、CV-CSD、SFMC、Gradient-Open与CCT均已按各自预注册门终局。ADSP authority=
 `docs/action_forecast_writer_v6_ordered_procedure_final_shared_support_projection_design.md`，只否决实际检验的

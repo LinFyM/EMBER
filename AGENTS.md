@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`
+   `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -35,10 +35,9 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。最新NPVC cycle1 strict=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`；相对
-LPCP143为`120 retained / 16 gained / 23 lost`、churn39、Jaccard`.754717`。correct、breadth与retention三门
-失败，已终局且不得resume cycle2或补六臂。SFMC144仍是最高correct单点但lost15/churn31，不具稳定资格；
-v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
+长期目标尚未完成。最新完成的CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、
+native最多10/12并exact no-op。当前active CMBG尚未实现或启动GPU。SFMC144仍是最高correct单点但lost15/churn31，
+不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule
@@ -283,7 +282,7 @@ task9/task18的`41.45x/10.43x`，故global raw mean只对task15下降。11个nat
 终局，不full24/strict/held controls或小扫。最早失败接口是task-local coherent endpoint credit汇成单一shared
 direct-B commitment，而不是carrier、reward、global rank同步或held compiler。TCEC没有可resume checkpoint。
 
-当前active successor是**V6-LPCP Capacity-Matched Action-Probe Grid**（CAPG），authority=
+最新终局successor是**V6-LPCP Capacity-Matched Action-Probe Grid**（CAPG），authority=
 `docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。它保留LPCP/NEAP/K4/rank32和同一
 真实joint forward，唯一把`320x256 -> four shared wide B heads`换成逐层Action-probe activations读取的
 `18x37x1024`parameter grid；37由rank16 B-only payload精确推导。逐video adjacent/goal causal Program、K-set、
@@ -291,8 +290,20 @@ layer/token M2P后直接reshape native-zero B；`18x37x1024`zero-init elementwis
 首步gate gradient开放且不做大数相减。37个slots位于backbone之后，不是memory tokens；literal memory与rank8仍
 开放。canonical实现已原位退休TCEC wide heads/config/schema：trainable=`3,008,384`，同一hook保留raw layer states，
 step0/constant exact zero、gate-open全链gradient与K-set/direct-reshape合同通过；定向CPU=`79 passed`、完整CPU=
-`405 passed`、architecture guard无hard violation。当前尚未启动GPU；首门固定world3 task9/15/18，必须把TCEC
-continuous coverage从1/3变成3/3并找到12/12共同native step，否则终局。
+`405 passed`、architecture guard无hard violation。clean`878b5e4` world3完整复现固定outcomes/counts，cycle=
+`179.973s`、0禁读/OOM/nonfinite。task9/15/18 same-task cosine/energy从TCEC的
+`.846/.865,.596/.645,.448/.557`提高到`.983/.985,.898/.870,.982/.949`，raw shared coverage从1/3提高
+到2/3，native最佳从8/12提高到10/12；但task15 norm仍为task9/task18的`36.29x/5.99x`，task18到shared mean
+cosine=`-.1570`，11 scales无12/12，最终681,984 gate参数exact zero。故不full24/strict/held或小扫。最早失败
+接口是task-local coherent capacity grid credit到shared task-conditioned first native commitment。
+
+当前active successor是**V6-LPCP Capacity-Matched Backbone-Memory Grid**（CMBG），authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它严格保留CAPG已通过的
+temporal/K-set/M2P/direct-B、NEAP、K4、rank32和global gate，只把backbone之后的37 query latents换成真实
+image/language/50 Action-probe prefix内逐层更新的37个one-way memory tokens。Action不能看memory，memory能看
+prefix/Action/memory；每层37 states直接形成同shape grid。37由B-only payload推导，不是阶段数。step0仍只有
+coordinate gate开放，预计trainable=`2,828,928`；world3必须把raw shared coverage提高到3/3并找到12/12 finite
+native step，否则终局。当前尚未实现或启动GPU；rank8、完整A/B和Dynamic-K仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule
 

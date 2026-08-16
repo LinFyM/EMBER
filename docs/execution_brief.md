@@ -5,7 +5,13 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
+最新完成实验是**CAPG world3 preformal**：clean`878b5e4`完整复现task9/15/18固定outcomes/counts、12 rollouts与
+48 correct videos，cycle=`179.973s`。same-task cosine/energy达到`.983/.985,.898/.870,.982/.949`，但global
+raw shared仅2/3、native最多10/12，11 scales无12/12并exact no-op，故不full24/strict/held或小扫。当前CMBG
+authority只把post-backbone 37 latents换成真实joint-prefix内逐层更新的37 one-way memory tokens；尚未实现或启动
+GPU。精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
+
+最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP
 fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`34/33`、gains=`5/4`、9 active
 tasks，cycle=`717.940s`；完整world4 checkpoint、completion与0禁读/OOM/nonfinite均保留。
@@ -131,13 +137,21 @@ clean `9ed6a08` world3随后完整复现三anchor并在`182.142s`结束。每个
 只对1/3 task下降。11个scale最多覆盖8/12 margins并全部拒绝，最终B-head state 860,160参数全零。TCEC在held前
 终局，不full24/strict/controls。
 
-当前active design是**CAPG**：保留LPCP/NEAP/K4/rank32与同一真实joint forward，删除四个shared wide B heads；
+最新终局design是**CAPG**：保留LPCP/NEAP/K4/rank32与同一真实joint forward，删除四个shared wide B heads；
 从18层50个Action-probe states用37个capacity-matched post-backbone parameter latents读取context，经video内
 adjacent/goal causal reducer、K-set和layer/token M2P直接reshape native-zero B。`18x37x1024`zero-init
 coordinate payload gate使初始化exact LPCP、首步gate gradient-open，accepted update后其余链路打开；不做anchor
 大数相减。37不是memory token；literal memory与rank8仍开放。canonical实现已原位完成，trainable=
-`3,008,384`，定向/完整CPU=`79/405 passed`且architecture guard无hard violation。首个world3 task9/15/18门
-必须达到shared continuous 3/3和native 12/12，否则不进入full24。
+`3,008,384`，定向/完整CPU=`79/405 passed`且architecture guard无hard violation。clean`878b5e4` world3
+outcomes/counts与信息墙全通过，cycle=`179.973s`；三task same-task cosine/energy提升到
+`.983/.985,.898/.870,.982/.949`，raw shared coverage=`2/3`、native best=`10/12`。但task15仍主导且task18
+到shared cosine=`-.1570`，没有12/12 scale，最终exact no-op；不full24/strict/held或小扫。
+
+当前active design是**CMBG**：严格保留CAPG的有向video/K-set/M2P/direct-B与NEAP/K4/rank32/global gate，唯一把
+post-backbone 37-query latents换成真实image/language/50 Action-probe prefix中的37个one-way memory tokens，逐层
+形成`18x37x1024`memory grid。Action不能看memory，memory能看prefix/Action/memory；step0仍只有coordinate gate
+开放，预计trainable=`2,828,928`。world3仍必须达到raw shared 3/3和native 12/12；authority=
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。当前尚未实现或启动GPU。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

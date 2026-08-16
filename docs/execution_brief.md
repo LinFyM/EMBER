@@ -100,6 +100,12 @@ held BA aggregate/held-train/action，但仅5/8且raw-B `.101/.323`；task18 j0�
 held/train`1.030x`。因此fixed-A线性化有效但不稳定，终局不full24/strict/resume或side/scale小扫。当前没有active
 GPU run或可resume checkpoint；下一变量必须使共同Value从native-zero residual坐标写入且完整保留LPCP rank16
 support，不能压缩baseline、重新混合A/B或继续parameter-ray路线。
+
+当前active是**NZRB-C**：不改ALB continuous方向，只把一套public LoRA写成rank32
+`A=[A0;A0], B=[B0,delta-B]`。第二B bank从native zero开始，第一rank16 bank逐元素保留LPCP；alpha/rank仍为1，
+四heads与trainable仍860,160。它是“同一`delta-B A0`、不同native origin”的严格反事实，不是两套LoRA、
+compression或capacity sweep。先完成训练/机制接口并只跑固定task9/15/18，三项全过才实现formal evaluator/full24。
+authority=`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

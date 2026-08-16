@@ -516,8 +516,17 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   A-side completion、side mix或参数小扫；
 - [x] 封存terminal adjudication并定位最早缺口：fixed-A去除了gauge/cross term且能救活部分PAV no-op，但小的共同
   B-only方向仍不能跨task稳定进入native finite-step/held coverage；
-- [ ] 建立下一份单变量authority：残差必须从native-zero坐标写入effective BA，同时不压缩、不重生成LPCP
+- [x] 建立下一份单变量authority：残差必须从native-zero坐标写入effective BA，同时不压缩、不重生成LPCP
   rank16 carrier；先用同一task9/15/18 panel快速否决。
+
+## Active iteration: V6-LPCP Native-Zero Residual Bank Commitment
+
+- [x] 固定严格反事实：连续新增BA仍为`delta-B A0`，public state唯一改为rank32
+  `A=[A0;A0], B=[B0,delta-B]`，alpha/rank=1；
+- [ ] 原位实现rank32训练/机制路径、fresh schema/config与CPU合同；第一rank16 bank必须逐元素保留LPCP，second-B
+  step0精确zero；
+- [ ] clean push后并行运行固定task9/15/18并完整分析native acceptance、FP64 BA等价、held8、temporal、wall与显存；
+- [ ] 3/3后才实现distributed/evaluator/full24；任一失败终局，不改变reserved bank宽度、side、ray、scale或dtype。
 
 ## Non-negotiable boundaries
 
@@ -535,8 +544,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC、MMCD、PAV-BC与ALB-NV均已终局；当前没有active GPU run或可resume checkpoint。
-下一轮不能同时改memory、video carrier、gradient ray、LR、matched panel或trust scale。
+不得resume或参数小扫。AV-MBC、MMCD、PAV-BC与ALB-NV均已终局；当前active NZRB-C只改变residual的native
+origin，尚无GPU run或可resume checkpoint。不能同时改memory、video carrier、gradient ray、LR、matched panel
+或trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

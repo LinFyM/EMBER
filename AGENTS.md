@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -245,6 +245,13 @@ held/train=`1.030x`。所以fixed-A删除gauge/cross term确有价值，但向co
 稳定形成native-safe共同步长。ALB-NV终局，不full24/strict/resume、补A side、family mix或小扫。当前没有active
 GPU run或可resume checkpoint；下一变量必须让小的共同reward方向从native-zero坐标进入effective BA且完整保留
 LPCP rank16 carrier，不能压缩baseline或回到parameter-ray sweep。
+
+当前active successor是**V6-LPCP Native-Zero Residual Bank Commitment**（NZRB-C），authority=
+`docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。它保留ALB的上游、四B heads、
+reward、optimizer与continuous新增`delta-B A0`，唯一把public LoRA从rank16 additive `B0+delta-B`改为一套rank32
+state：`A=[A0;A0]`、`B=[B0,delta-B]`，其中第二B bank从native zero开始。`alpha=rank=32`故scale仍为1；原LPCP
+rank16逐元素保留，无compression、SVD、第二adapter或新增trainable。先只实现训练/机制接口并跑同一task9/15/18；
+三项全过后才实现formal evaluator/full24。
 
 ## 4. Long-term objective and decision rule
 

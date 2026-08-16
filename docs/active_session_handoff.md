@@ -123,6 +123,11 @@
   continuous B-only共同reward方向仍不能在不同task上稳定变为native finite-step：可能exact no-op，也可能在小j
   下先丢raw-B/held task coverage。当前没有active GPU run或可resume checkpoint；下一输出设计必须让残差从
   native-zero坐标可见，同时完整保留LPCP rank16 carrier，不能压缩baseline或回到parameter ray；
+- 当前active successor是**NZRB-C**，authority=
+  `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`。唯一把ALB public factor表示改为
+  rank32单adapter：`A=[A0;A0]`、`B=[B0,delta-B]`，令数学上相同的`delta-B A0`从zero-B bank进入native BA；
+  `alpha=rank=32`保持scale1，原rank16 carrier逐元素保留，四head 860,160 trainable与上游全部不变。先只实现
+  fixed task9/15/18训练/机制接口，3/3后才扩展formal evaluator/full24；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

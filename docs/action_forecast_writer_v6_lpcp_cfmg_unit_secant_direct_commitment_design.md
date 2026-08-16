@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Unit-Secant Direct Commitment
 
-状态：2026-08-17 active formal authority。简称 **USDC**。本轮从sealed LPCP fresh开始，不resume USFC；它完整保留
+状态：2026-08-17 cycle1 strict400已完成并终局non-pass。简称 **USDC**。本轮从sealed LPCP fresh开始，不resume USFC；它完整保留
 CFMG/USEP/USFC的输入、memory、rank32 LoRA、unit-secant reward、四视频梯度、active-task等权聚合和AdamW，唯一
 改变是：提交未经缩放的一次原生Adam候选，把task×view 20/20 endpoint下降从保存硬门降为完整诊断。
 
@@ -79,5 +79,38 @@ checkpoint稳定，再测试视频因果性。
 
 clean`539e0e5`在gpu01 world6完成cycle1：24 tasks/48 states/96 rollouts，6 active tasks覆盖四suite，arm successes=
 `32/32`、gains=`3/3`，cycle=`335.189s`。唯一j0 L2=`.242098`，17/24 task-view margins下降，q/v/action与
-fixed-action response均非零，0禁读/OOM/nonfinite。checkpoint已按标准post-training流程sealed；以上不是strict
-结果，下一裁决仍是同一single checkpoint的paired400。
+fixed-action response均非零，0禁读/OOM/nonfinite。checkpoint已按标准post-training流程sealed。
+
+## 7. Strict400 result and terminal analysis
+
+sealed cycle1 checkpoint的最终K4 correct strict paired400完整exit0：`138/400`、breadth6，逐task按
+Spatial1/3、Object1/3、Goal3/6、Long1/2为`1/4/48/34/0/38/13/0`，逐suite=`5/82/38/13`。
+相对exact LPCP143严格为`120 retained / 18 gained / 23 lost / 239 both-fail`，churn41、net`-5`、
+Jaccard`.745342`；suite net=`0/-1/0/-4`。相对matched AS139为`121/17/18`、net`-1`；相对SFMC144为
+`120/18/24`。与不同teacher schedule的v6-fast143只能count-only比较，逐task差=`+1/+1/+2/-3/0/+2/-7/-1`。
+correct、breadth、lost和gained>=lost四个cycle2门全部失败，因此不得exact-resume cycle2/3，也不补六臂或扫
+rank、scale、LR、seed、normalization。
+
+最终正式eval root为
+`runs/outputs/pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_seed7_trainr6_evalr6_539e0e5_evalc20b5be_gpu01p024567_b16_retry3_20260817`。
+前两次正式准备分别在0 rollout发现rank32 public adapter与rank16 carrier-template的rank/storage合同错误；修正
+evaluator后，batch32又在生成288/400 cache entries后于最长视频OOM，仍为0 rollout。保留该工程证据后，已由真实
+profile支持的batch16重新fresh生成400份LoRA，最长批次峰值约44.3GB，随后18个persistent workers完成400 rows。
+这些重试没有改变checkpoint、teacher schedule、policy RNG或科学变量。
+
+跨rank的稳定trace-identity分析表明新增second bank没有在native写出中消失：相对rank16 LPCP carrier的all400
+effective-BA relative-L2 mean/median=`.003236/.002806`，action mean=`.006333`。但gained/lost样本的改写均值为
+`.002941/.002739`，幅度不可分；最大改写的Goal3仍为0/50。first4同task四组K4条件的overall correction cosine
+范围`.55549--.95310`、mean/sample energy范围`.66274--.96477`，action范围也为`.41163--.93526`与
+`.55728--.95132`。所以literal memory、content-first temporal/K-set/M2P和rank32 direct-B已经形成明显的
+same-task跨视频共同LoRA坐标；本轮失败不能归因于video correction重新近正交或BF16 compiler消失。
+
+训练侧仍暴露更早的跨task提交问题。六个active-task gradient norms中task38=`.926067`，次大task4仅
+`.147608`，即unit-secant后仍相差`6.274x`；task38到shared mean cosine=`.977239`，raw shared descent仅覆盖
+4/6 tasks。最终Adam j0虽对六个task gradient的dot均为正，finite deployed margins仍只有17/24下降。与held
+Long suite净丢4相结合，最窄可证伪后继应只改变active-task tangents进入shared update前的幅度支配，不能回头替换
+已通过的memory/video carrier，也不能把cycle1坏分解释成单纯训练不足。
+
+本轮实际淘汰的是“当前CFMG memory/content grid + per-state unit-secant endpoint credit + 未做task-tangent幅度
+约束的一次shared Adam commitment”。它不否定memory token、dynamic K/few-shot、rank8、生成完整LoRA或未来
+独立task-local RL；也不授权盲目续训这个checkpoint。

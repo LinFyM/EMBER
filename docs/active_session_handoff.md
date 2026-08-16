@@ -21,20 +21,27 @@
   `17/20` task×view margins下降；task4/25/34/38均4/4，只有task19为1/4且mean/max harm=
   `2.249e-5/9.637e-5`。原20/20硬门拒绝全部11 scales并恢复exact LPCP，saved delta=0，故没有strict400；精确
   artifact为run root下`usfc_full24_terminal_adjudication.json`，USFC不得resume；
-- 当前active successor是**USDC**，authority=
-  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。模型、memory、rank32、K4、
-  unit-secant与等task梯度逐项不变；唯一提交未经缩放的exact Adam `j0`，把20/20降为诊断并删除重复step0 baseline
-  forward。canonical实现完整CPU=`413 passed`、architecture guard 0 hard。clean`539e0e5` gpu01 world6 full24
-  cycle1已完整exit0：24 tasks/48 states/96 rollouts、6 active tasks、candidate/reference=`32/32`、gains=`3/3`、
-  cycle=`335.189s`；saved j0 L2=`.242098`，17/24 margins下降且q/v/action response非零，0禁读/OOM/nonfinite。
-  首次strict准备因config尚未post-training seal而在0 rollout处退出，不是科学结果；当前已按标准合同seal checkpoint，
-  下一裁决是同一checkpoint strict400。若有正信号则同world exact-resume cycle2/3；当前无GPU run；
+- 最新完成的是**USDC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。clean`539e0e5` gpu01 world6 full24
+  cycle1为24 tasks/48 states/96 rollouts、6 active tasks、candidate/reference=`32/32`、gains=`3/3`、cycle=
+  `335.189s`；saved j0 L2=`.242098`并写出非零q/v/action。最终K4 strict400=`138/400`、breadth6、per-task=
+  `1/4/48/34/0/38/13/0`，相对LPCP143=`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
+  Jaccard`.745342`。rank32-vs-rank16 BA改写mean/median=`.003236/.002806`且同task first4 correction
+  cosine/energy=`.555--.953/.663--.965`，说明memory-conditioned LoRA写出与跨视频共同坐标均真实存在；但
+  gained/lost幅度不可分、Goal3仍0、Long净丢4。train task38在unit-secant后仍以`6.274x`范数和`.977239`
+  shared cosine支配更新。correct/breadth/retention四门均失败，USDC终局，不cycle2/3或补六臂；
+- 当前active successor是**MCTC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它只把active-task gradient
+  panel中高于norm中位数的tangents截到中位数，小task不放大、方向不旋转、无可扫系数；memory、K4、rank32、
+  unit-secant、96 rollouts与一次Adam j0全部不变。canonical代码已改为一次task-panel all-reduce同时服务optimizer与
+  coexistence，避免重复通信；定向CPU=`47 passed`、完整CPU=`416 passed`、compileall/diff check通过、architecture
+  guard 0 hard，尚无MCTC GPU run；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
   held视频门也已8/8通过。clean`a62348e`首次full24因formal只保留view0的工程错误exit1且无
   checkpoint/completion；canonical最小修正后clean`b4dbf84` fresh full24已完整exit0。共6 active tasks，但
-  11 scales最好仅`17/24` task-view margins下降，最终exact no-op并按合同终局。当前active successor为
+  11 scales最好仅`17/24` task-view margins下降，最终exact no-op并按合同终局。随后建立的successor为
   **CFMG**，authority=`docs/action_forecast_writer_v6_lpcp_content_first_memory_grid_design.md`：只把同一个zero
   payload gate从temporal/K-set/layer-token M2P之前移到完整content grid之后，保留CMBG的真实memory、K4、
   rank32、2,828,928参数、reward与全局commitment。clean`010487b` fixed world3已完整通过：三task four-view
@@ -835,7 +842,7 @@ matched first4 states/task的factor定位：Full-Factor vs fixed-A raw A cosine/
 `.248553/.062232`，effective BA=`.058529/.244792`。offline loss几乎相同而完整factor学成larger-A/tiny-B的弱更新，
 所以最早失败接口是functional surrogate下的factor credit/gauge allocation，不是训练时长或rank8理论容量。
 
-active successor是`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。它以v6-fast为baseline：每条
+该时点的successor是`docs/action_forecast_writer_v6_dynamic_slot_set_bridge_design.md`。它以v6-fast为baseline：每条
 video独立形成原生Core/Procedure和320 slots，只沿K轴新增mean-backbone + selected-centered-residual集合层；K1
 结构上严格等于原v6，K>1才训练，最后原生factor heads只运行一次。首轮warm start只作机制开发，成功后仍需
 fresh recipe。
@@ -901,7 +908,7 @@ matched nested-dose分析保存在同root的
 完整compiler之后，set只能形成约4.7%的邻域修正，无法改变高层task mean。最早可检验接口前移到“Core/Procedure
 何时跨video共享”，而不是继续改post-compiler set或放大修正。
 
-active successor为`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。唯一主变量是把相同
+该时点的successor为`docs/action_forecast_writer_v6_shared_core_procedure_set_bridge_design.md`。唯一主变量是把相同
 197120参数集合层前移：native Core reader先从无序per-video Core union产生一个shared Core；每条有序Procedure以
 该shared Core独立读出；Procedure-set再置换不变聚合；原生AdaLN/post-fusion/factor heads只运行一次。没有frame
 拼接、phase alignment、LoRA平均、rank变化、negative、expert或RL。

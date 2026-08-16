@@ -101,28 +101,25 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None:
+def test_median_capped_task_commitment_config_records_closed_loop_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_completed_strict_pending"
-    assert config["formal_run"]["status"] == "sealed"
+    assert config["status"] == "active_formal_pending"
+    assert config["formal_run"]["status"] == "ready"
     predecessor = config["formal_run"]["predecessor_evidence"]
-    assert predecessor["task38_to_next_gradient_norm_ratio"] < 15
-    assert predecessor["equal_selected_credit_pairs_per_active_task"] == 8
-    assert predecessor["task34_raw_four_view_coverage"] == 0.5
-    assert predecessor["best_finite_deployed_margin_descent_coverage"] == 0.85
+    assert predecessor["task38_to_next_gradient_norm_ratio"] > 6
+    assert (
+        predecessor["equal_selected_credit_pairs_per_active_task"],
+        predecessor["strict_correct"],
+        predecessor["strict_breadth"],
+        predecessor["lpcp_retained_gained_lost"],
+    ) == (8, 138, 6, [120, 18, 23])
     assert predecessor["exact_adam_candidate_delta_l2"] > 0
     assert config["initialization"]["as_macro"] == 25
-    assert config["deployment"] == {
-        "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
-        "carrier_rank": 16,
-        "residual_bank_rank": 16,
-        "public_rank": 32,
-        "alpha": 32,
-        "scale": 1.0,
-        "factorization": "A_concat_A0_A0_and_B_concat_B0_deltaB",
-        "carrier_compression": False,
-        "second_adapter": False,
-    }
+    deployment = config["deployment"]
+    assert (deployment["carrier_rank"], deployment["residual_bank_rank"]) == (16, 16)
+    assert (deployment["public_rank"], deployment["alpha"]) == (32, 32)
+    assert deployment["carrier_compression"] is False
+    assert deployment["second_adapter"] is False
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
         "content_first_backbone_memory_grid_2828928_parameters"
@@ -135,25 +132,21 @@ def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None
     assert config["optimization"]["endpoint_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "actual_adam_candidate_direct_single_step_with_all_view_diagnostic"
+        "median_capped_task_tangent_actual_adam_single_step_with_all_view_diagnostic"
     )
     assert config["commitment"]["direction"] == (
-        "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
+        "actual_adamw_candidate_delta_from_equal_view_then_median_upper_norm_"
+        "capped_task_mean_gradient"
     )
     assert config["commitment"]["max_backtracks"] == 0
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
     assert config["smoke_run"]["shared_anchor_task_ids"] == [4, 34, 38]
     assert config["smoke_run"]["required_world_size"] == 3
-    assert config["smoke_run"]["historical_complete_occupancy_chunks_diagnostic"] == {
-        "4": 25,
-        "34": 43,
-        "38": 100,
-    }
-    assert config["smoke_run"]["required_selected_credit_pairs"] == {
-        "4": 8,
-        "34": 8,
-        "38": 8,
-    }
+    smoke = config["smoke_run"]
+    assert tuple(smoke["historical_complete_occupancy_chunks_diagnostic"].values()) == (
+        25, 43, 100
+    )
+    assert set(smoke["required_selected_credit_pairs"].values()) == {8}
     assert config["formal_run"]["mechanism_gate"][
         "post_update_preference_margin_is_diagnostic"
     ]
@@ -172,14 +165,19 @@ def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None
     assert gate["global_anchor_view_count"] == (
         "four_times_observed_active_task_count"
     )
-    assert gate["rank_parameter_delta_identical"]
     assert gate["public_rank"] == 32
-    assert gate["carrier_first_bank_tensors_unchanged"]
-    assert gate["single_native_context_backbone_forward"]
-    assert gate["one_way_layer_matched_memory_observer"]
-    assert gate["content_processing_precedes_zero_gate"]
-    assert gate["pregate_content_grid_nonzero"]
-    assert gate["residual_second_b_step0_zero"]
+    assert all(
+        gate[key]
+        for key in (
+            "rank_parameter_delta_identical",
+            "carrier_first_bank_tensors_unchanged",
+            "single_native_context_backbone_forward",
+            "one_way_layer_matched_memory_observer",
+            "content_processing_precedes_zero_gate",
+            "pregate_content_grid_nonzero",
+            "residual_second_b_step0_zero",
+        )
+    )
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
     assert gate["trainable_parameter_count"] == 2_828_928
@@ -197,9 +195,15 @@ def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None
     )
     assert gate["all_view_monotone_coverage_role"] == "diagnostic_only"
     assert gate["direct_actual_adam_commitment_is_primary"]
-    assert gate["task_gradient_norm_or_task_id_reweighting"] is False
+    assert gate["task_gradient_balance"] == (
+        "cap_only_above_active_panel_median_without_small_task_amplification"
+    )
+    assert gate["task_gradient_cap_multiplier"] == 1.0
+    assert gate["task_gradient_cap_quantile_sweep"] is False
+    assert gate["task_gradient_direction_rotation"] is False
     assert gate["mse_inverse_secant_amplification"] is False
-    assert gate["task38_to_next_gradient_norm_ratio_maximum"] == 15.0
+    assert gate["capped_task_gradient_norm_maximum_to_median"] == 1.000001
+    assert gate["small_task_gradient_amplification_allowed"] is False
     assert gate["complete_occupancy_chunks_are_diagnostic"]
     assert gate["cross_run_elementwise_parity_required"] is False
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
@@ -214,11 +218,6 @@ def test_unit_secant_direct_commitment_config_records_closed_loop_gate() -> None
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
     assert gate["shared_anchor_cycle_seconds_maximum"] == 210.0
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
-    cycle1 = config["formal_run"]["cycle1_evidence"]
-    assert cycle1["authority_commit"].startswith("539e0e5")
-    assert cycle1["exact_adam_delta_l2"] > 0
-    assert cycle1["descending_task_views"] == 17
-    assert cycle1["total_task_views"] == 24
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 

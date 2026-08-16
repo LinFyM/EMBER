@@ -64,6 +64,25 @@ candidate在held rollout有害。把门改成17/20同样缺乏依据。USDC因�
 strict400裁决；20/20继续完整记录为诊断。由于每cycle只有少量discordant tasks给gradient，任何好分还必须由
 cycle2/3相邻checkpoint的低churn与共同积累确认。
 
+USDC现在给出了该缺口的真实closed-loop裁决。cycle1 strict=`138/400`、breadth6、per-task=
+`1/4/48/34/0/38/13/0`；相对exact LPCP143为`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
+Jaccard`.745342`，四个cycle2门全失败。Long suite净`-4`，其余suite为`0/-1/0`。所以“一轮训练量小”只说明
+好结果还需续训验证，不足以为一个correct、breadth、retention同时恶化的方向辩护；USDC不得cycle2/3。
+
+但USDC也保留了literal memory路线的实质进展。rank32 public LoRA相对rank16 LPCP的all400 effective-BA
+relative-L2 mean/median=`.003236/.002806`、action mean=`.006333`，不是native量化消失；8个held tasks的first4
+同task correction cosine/energy为`.555--.953/.663--.965`，远离此前reward correction近零/.25的正交状态。
+gained/lost改写幅度均值却为`.002941/.002739`，最大改写的Goal3仍为0。训练侧task38 gradient norm=
+`.926067`、次大仅`.147608`，并以`.977239` cosine控制shared mean；unit-secant虽然把旧`58.73x`降到
+`6.274x`，仍没有消除单task幅度支配。最早失败接口因此是**video-coherent parameter grid之后的跨task
+reward tangent幅度与held usefulness**，不是memory、K-set、M2P、rank32写出或训练量本身。下一反事实应只在
+shared update前抑制异常大task tangent，不能回头重做carrier或用surrogate挑checkpoint。
+
+MCTC已把该反事实原位实现为parameter-free median upper cap：每task仍先等权平均四video gradients，只截断高于
+active-panel中位数的norm，小task保持原幅度且方向不旋转；一次distributed task-panel all-reduce同时服务optimizer
+和coexistence，未增加forward。定向/完整CPU=`47/416 passed`且architecture guard 0 hard。以上只关闭实现门，
+尚不提供GPU或closed-loop结论。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

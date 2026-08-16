@@ -1,4 +1,4 @@
-"""Authority for the V6-LPCP CFMG unit-secant direct commitment."""
+"""Authority for the V6-LPCP CFMG median-capped task commitment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,20 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_v1"
+    "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_commitment_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_launch_v1"
+    "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_commitment_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_v1.json"
+    "configs/pi05_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
     "candidate_arm": (
-        "frozen_v6_lpcp_plus_cfmg_unit_secant_direct_commitment"
+        "frozen_v6_lpcp_plus_cfmg_median_capped_task_tangent_commitment"
     ),
 }
 _DEPLOYMENT_CONTRACT = {
@@ -85,9 +85,12 @@ _OBJECTIVE_CONTRACT = {
     "endpoint_action_scope": "executed_prefix_only",
 }
 _COMMITMENT_CONTRACT = {
-    "kind": "actual_adam_candidate_direct_single_step_with_all_view_diagnostic",
+    "kind": (
+        "median_capped_task_tangent_actual_adam_single_step_with_all_view_diagnostic"
+    ),
     "direction": (
-        "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
+        "actual_adamw_candidate_delta_from_equal_view_then_median_upper_norm_"
+        "capped_task_mean_gradient"
     ),
     "direction_preconditioning": (
         "same_adamw_lr_betas_eps_weight_decay_clip_and_optimizer_state"
@@ -99,8 +102,13 @@ _COMMITMENT_CONTRACT = {
     ),
     "max_backtracks": 0,
     "failure_action": "terminal_only_on_nonfinite_zero_or_rank_inconsistent_update",
-    "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
-    "task_weighting": "equal_mean_over_active_tasks_before_commitment",
+    "optimizer_state": (
+        "adam_moments_and_step_from_median_capped_shared_gradient_are_retained"
+    ),
+    "task_weighting": (
+        "same_rule_for_all_active_tasks_cap_only_norms_above_active_panel_median_"
+        "never_amplify_small_tasks_then_equal_mean"
+    ),
     "view_weighting": ("equal_mean_over_four_correct_video_gradients_before_optimizer"),
     "fixed_scale_or_checkpoint_selection": False,
     "video_or_environment_recompute": False,

@@ -29,6 +29,7 @@ from ember.writer.reward_cycle import select_discordant_trajectory_pairs
 from ember.writer.reward_gradient_update import (
     apply_reward_step,
     lora_response,
+    median_capped_task_mean,
     preconditioned_candidate_commitment,
 )
 from ember.writer.reward_preference import (
@@ -580,7 +581,18 @@ def _global_test_preference_rows(
     return tuple(rows)
 
 
-def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
+def test_median_task_cap_never_amplifies_small_tangents() -> None:
+    mean, detail = median_capped_task_mean(
+        torch.tensor([[3.0, 0.0], [0.0, 1.0], [2.0, 0.0], [0.0, 0.5]])
+    )
+    torch.testing.assert_close(mean, torch.tensor([0.75, 0.375]))
+    assert detail["median_task_gradient_norm"] == pytest.approx(1.5)
+    assert detail["task_gradient_scales"] == pytest.approx([0.5, 1.0, 0.75, 1.0])
+    assert detail["capped_task_count"] == 2
+    assert detail["small_task_amplification"] is False
+
+
+def test_optimizer_uses_median_capped_active_task_mean() -> None:
     class _Writer(torch.nn.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -617,17 +629,20 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         evaluated_scales.append(scale)
         return _global_test_preference_rows(scale)
 
+    task_gradients = {
+        0: torch.tensor([-1.0, 0.0]),
+        1: torch.tensor([-0.25, 0.0]),
+    }
     step = apply_reward_step(
         runtime,
-        torch.tensor([-1.0, 0.0]),
         2,
-        {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
+        task_gradients,
         evaluate,
     )
     assert step.active_tasks == 2
     torch.testing.assert_close(
         optimizer.state[head]["exp_avg"].reshape(-1),
-        torch.tensor([-0.05, 0.0]),
+        torch.tensor([-0.04375, 0.0]),
         rtol=0,
         atol=1e-7,
     )
@@ -636,6 +651,15 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     ] > 0
     assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0
     assert step.gradient_coexistence["final_delta_descent_coverage"] == 1.0
+    assert step.gradient_coexistence["task_tangent_balance"][
+        "capped_task_count"
+    ] == 1
+    assert step.gradient_coexistence["task_tangent_balance"][
+        "median_task_gradient_norm"
+    ] == pytest.approx(0.625)
+    assert step.gradient_coexistence["task_tangent_balance"][
+        "task_gradient_scales"
+    ] == pytest.approx([0.625, 1.0])
     assert step.commitment_geometry["final_to_adam_candidate_cosine"] == pytest.approx(
         1.0
     )
@@ -667,9 +691,8 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     accepted_parameters = head.detach().clone()
     failed = apply_reward_step(
         runtime,
-        torch.tensor([-1.0, 0.0]),
         2,
-        {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
+        task_gradients,
         lambda scale: _global_test_preference_rows(scale, all_fail=True),
     )
     assert not torch.equal(head, accepted_parameters)

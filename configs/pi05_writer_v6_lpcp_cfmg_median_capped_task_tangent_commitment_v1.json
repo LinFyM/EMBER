@@ -1,13 +1,13 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_cfmg_unit_secant_direct_commitment_v1",
-  "status": "active_formal_cycle1_completed_strict_pending",
+  "schema_version": "ember_pi05_v6_lpcp_cfmg_median_capped_task_tangent_commitment_v1",
+  "status": "active_formal_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_cfmg_unit_secant_direct_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_cfmg_median_capped_task_tangent_commitment"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -63,7 +63,7 @@
     "generated_endpoint_panel": "one_complete_ten_step_policy_action_per_selected_observation_and_condition_with_the_same_rollout_policy_noise_as_both_matched_targets",
     "cross_video_credit": "same_matched_batch_stratified_occupancy_endpoint_action_panel_exact_gradient_in_four_disjoint_correct_k4_conditions",
     "view_aggregation": "equal_mean_of_four_view_writer_gradients_with_unit_task_weight",
-    "task_aggregation": "equal_mean_over_tasks_with_at_least_one_discordant_pair",
+    "task_aggregation": "equal_mean_after_parameter_free_median_upper_norm_cap_without_small_task_amplification",
     "occupancy_strata_per_trajectory": 8,
     "endpoint_solver_steps": 10,
     "endpoint_action_scope": "executed_prefix_only"
@@ -89,22 +89,22 @@
     "distributed": {
       "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
       "exact_resume_world_topology_locked": true,
-      "gradient_communication": "one_equal_mean_optimizer_vector_plus_active_task_gradient_rows_and_count",
+      "gradient_communication": "one_active_task_gradient_panel_and_ownership_vector_all_reduce_reused_for_optimizer_and_diagnostics",
       "nccl_p2p_disable": "1",
       "deferred_process_group": true,
       "collective_timeout_minutes": 30
     }
   },
   "commitment": {
-    "kind": "actual_adam_candidate_direct_single_step_with_all_view_diagnostic",
-    "direction": "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient",
+    "kind": "median_capped_task_tangent_actual_adam_single_step_with_all_view_diagnostic",
+    "direction": "actual_adamw_candidate_delta_from_equal_view_then_median_upper_norm_capped_task_mean_gradient",
     "direction_preconditioning": "same_adamw_lr_betas_eps_weight_decay_clip_and_optimizer_state",
     "radius_schedule": "exact_actual_adam_candidate_only",
     "acceptance": "finite_nonzero_rank_synchronized_actual_adam_candidate_with_all_active_task_view_margins_recorded_as_diagnostic",
     "max_backtracks": 0,
     "failure_action": "terminal_only_on_nonfinite_zero_or_rank_inconsistent_update",
-    "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
-    "task_weighting": "equal_mean_over_active_tasks_before_commitment",
+    "optimizer_state": "adam_moments_and_step_from_median_capped_shared_gradient_are_retained",
+    "task_weighting": "same_rule_for_all_active_tasks_cap_only_norms_above_active_panel_median_never_amplify_small_tasks_then_equal_mean",
     "view_weighting": "equal_mean_over_four_correct_video_gradients_before_optimizer",
     "fixed_scale_or_checkpoint_selection": false,
     "video_or_environment_recompute": false,
@@ -134,22 +134,21 @@
     }
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "ready",
     "predecessor_evidence": {
-      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_usfc_formal_cycle0to1_r6_k4_views4_nmc4_b8_db7ab24_gpu02p123467_20260817/usfc_full24_terminal_adjudication.json",
-      "active_task_ids": [4, 19, 25, 34, 38],
+      "artifact": "runs/outputs/pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_seed7_trainr6_evalr6_539e0e5_evalc20b5be_gpu01p024567_b16_retry3_20260817/usdc_cycle1_strict_adjudication.json",
+      "active_task_ids": [4, 19, 20, 25, 34, 38],
       "equal_selected_credit_pairs_per_active_task": 8,
-      "task38_to_next_gradient_norm_ratio": 7.68074316019748,
-      "task34_four_view_cosine": -0.05217350646853447,
-      "task34_raw_four_view_coverage": 0.5,
-      "raw_shared_task_descent_coverage": 0.6,
-      "best_finite_deployed_margin_descent_coverage": 0.85,
-      "full_adam_task19_descending_views": 1,
-      "full_adam_task19_mean_margin_delta": 0.000022487336536869407,
-      "exact_adam_candidate_delta_l2": 0.24281634390354156,
-      "saved_final_delta_l2": 0.0,
-      "stage_localization_content_grid_pairwise_cosine": 0.9858014583587646,
-      "stage_localization_content_residual_effective_ba_pairwise_cosine_approximate": 0.99
+      "task38_to_next_gradient_norm_ratio": 6.274,
+      "task38_to_uncapped_shared_mean_cosine": 0.977239,
+      "raw_shared_task_descent_coverage": 0.6666667,
+      "exact_adam_candidate_delta_l2": 0.2420979142189026,
+      "strict_correct": 138,
+      "strict_breadth": 6,
+      "lpcp_retained_gained_lost": [120, 18, 23],
+      "held_long_suite_net": -4,
+      "all400_effective_ba_relative_l2_mean": 0.0032361946089535143,
+      "held_first4_correction_cosine_range": [0.5554895101731622, 0.9531000382766209]
     },
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 3,
@@ -194,7 +193,10 @@
       "one_maximum_disagreement_state_per_equal_progress_stratum": true,
       "matched_winner_loser_actions_must_differ": true,
       "unit_secant_denominator": "per_selected_state_detached_winner_loser_action_rms",
-      "task_gradient_norm_or_task_id_reweighting": false,
+      "task_gradient_balance": "cap_only_above_active_panel_median_without_small_task_amplification",
+      "task_gradient_cap_multiplier": 1.0,
+      "task_gradient_cap_quantile_sweep": false,
+      "task_gradient_direction_rotation": false,
       "mse_inverse_secant_amplification": false,
       "post_update_preference_margin_is_diagnostic": true,
       "post_update_all_four_view_margins_are_diagnostic": true,
@@ -204,7 +206,8 @@
       "raw_four_view_shared_mean_descent_coverage_role": "diagnostic_only",
       "all_view_monotone_coverage_role": "diagnostic_only",
       "direct_actual_adam_commitment_is_primary": true,
-      "task38_to_next_gradient_norm_ratio_maximum": 15.0,
+      "capped_task_gradient_norm_maximum_to_median": 1.000001,
+      "small_task_gradient_amplification_allowed": false,
       "search_max_backtracks": 0,
       "single_exact_adam_candidate_required": true,
       "repeated_step0_baseline_forward": false,
@@ -232,25 +235,6 @@
       "search_trial_count_maximum": 1,
       "shared_anchor_cycle_seconds_maximum": 210.0,
       "shared_anchor_train_task_count": 3
-    },
-    "cycle1_evidence": {
-      "result": "complete_strict400_required",
-      "authority_commit": "539e0e5a343c1c8aae4918585126e15a981334c9",
-      "training_root": "runs/outputs/pi05_v6_lpcp_cfmg_usdc_formal_cycle0to1_r6_k4_views4_nmc4_b8_539e0e5_gpu01p024567_20260817",
-      "world_size": 6,
-      "tasks": 24,
-      "paired_states": 48,
-      "rollouts": 96,
-      "candidate_successes": 32,
-      "reference_successes": 32,
-      "active_tasks": 6,
-      "active_suites": ["libero_10", "libero_goal", "libero_object", "libero_spatial"],
-      "cycle_seconds": 335.18949277396314,
-      "exact_adam_delta_l2": 0.2420979142189026,
-      "descending_task_views": 17,
-      "total_task_views": 24,
-      "forbidden_reads": 0,
-      "oom_or_nonfinite": 0
     }
   }
 }

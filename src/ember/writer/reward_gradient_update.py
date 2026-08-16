@@ -319,21 +319,21 @@ def _trainable_named(
     )
 
 
-def _coexistence(
+def _distributed_task_gradient_panel(
     runtime: RewardRuntime,
     task_gradients: Mapping[int, torch.Tensor],
-    shared_mean: torch.Tensor,
-    final_delta: torch.Tensor,
-) -> dict[str, Any]:
+) -> tuple[list[int], torch.Tensor]:
     task_ids = tuple(task.global_task_id for task in runtime.tasks)
     task_index = {task_id: index for index, task_id in enumerate(task_ids)}
     matrix = torch.zeros(
         len(task_ids),
-        shared_mean.numel(),
+        runtime.gradient_layout[-1].stop,
         dtype=torch.float32,
-        device=shared_mean.device,
+        device=runtime.context.device,
     )
-    active = torch.zeros(len(task_ids), dtype=torch.long, device=shared_mean.device)
+    active = torch.zeros(
+        len(task_ids), dtype=torch.long, device=runtime.context.device
+    )
     for task_id, gradient in task_gradients.items():
         index = task_index[int(task_id)]
         matrix[index].copy_(gradient)
@@ -350,6 +350,56 @@ def _coexistence(
     ]
     if rows.shape[0] == 0 or bool((active > 1).any()):
         raise WriterModelError("direct-factor task gradients lost unique ownership")
+    return selected_ids, rows
+
+
+def median_capped_task_mean(
+    rows: torch.Tensor,
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    """Cap only above-median task norms, without amplifying small tangents."""
+
+    if (
+        rows.ndim != 2
+        or rows.dtype != torch.float32
+        or rows.shape[0] == 0
+        or not bool(torch.isfinite(rows).all())
+    ):
+        raise WriterModelError("median-capped task tangent panel changed")
+    norms = torch.linalg.vector_norm(rows, dim=1)
+    if not bool((norms > 0).all()):
+        raise WriterModelError("median-capped task tangent lost a nonzero row")
+    ordered = norms.sort().values
+    middle = ordered.shape[0] // 2
+    median = (
+        ordered[middle]
+        if ordered.shape[0] % 2
+        else (ordered[middle - 1] + ordered[middle]) * 0.5
+    )
+    scales = torch.minimum(torch.ones_like(norms), median / norms)
+    capped = rows * scales[:, None]
+    capped_norms = torch.linalg.vector_norm(capped, dim=1)
+    shared = capped.mean(dim=0)
+    if not bool(torch.isfinite(shared).all()) or not bool(torch.count_nonzero(shared)):
+        raise WriterModelError("median-capped shared task tangent is invalid")
+    return shared, {
+        "kind": "median_upper_norm_cap_without_small_task_amplification",
+        "raw_task_gradient_norms": norms.cpu().tolist(),
+        "median_task_gradient_norm": float(median),
+        "task_gradient_scales": scales.cpu().tolist(),
+        "capped_task_gradient_norms": capped_norms.cpu().tolist(),
+        "capped_task_count": int((scales < 1).sum()),
+        "small_task_amplification": False,
+    }
+
+
+def _coexistence(
+    runtime: RewardRuntime,
+    selected_ids: Sequence[int],
+    rows: torch.Tensor,
+    shared_mean: torch.Tensor,
+    final_delta: torch.Tensor,
+    task_tangent_balance: Mapping[str, Any],
+) -> dict[str, Any]:
 
     row_norms = torch.linalg.vector_norm(rows, dim=1)
     mean_norm = torch.linalg.vector_norm(shared_mean)
@@ -416,7 +466,8 @@ def _coexistence(
         .tolist()
     )
     return {
-        "active_task_ids": selected_ids,
+        "active_task_ids": list(selected_ids),
+        "task_tangent_balance": dict(task_tangent_balance),
         "shared_mean_descent_coverage": coverage,
         "task_to_shared_cosine_mean": cosine_mean,
         "task_to_shared_cosine_minimum": cosine_minimum,
@@ -609,31 +660,23 @@ def _direct_adam_commitment(
 
 def apply_reward_step(
     runtime: RewardRuntime,
-    gradient_sum: torch.Tensor,
     local_active_tasks: int,
     task_gradients: Mapping[int, torch.Tensor],
     commitment_evaluator: Callable[[float], Sequence[Mapping[str, Any]]],
 ) -> AppliedStep:
-    active = torch.tensor(
-        local_active_tasks, dtype=torch.long, device=runtime.context.device
+    if local_active_tasks != len(task_gradients):
+        raise WriterModelError("median-capped local active-task panel changed")
+    selected_ids, task_rows = _distributed_task_gradient_panel(
+        runtime, task_gradients
     )
-    if runtime.context.world_size > 1:
-        dist.all_reduce(gradient_sum, op=dist.ReduceOp.SUM)
-        dist.all_reduce(active, op=dist.ReduceOp.SUM)
-    active_tasks = int(active)
-    if active_tasks <= 0:
-        raise WriterModelError("direct-factor cycle has no discordant success")
-    gradient_sum.div_(active_tasks)
-    if not bool(torch.isfinite(gradient_sum).all()) or not bool(
-        torch.count_nonzero(gradient_sum)
-    ):
-        raise WriterModelError("direct-factor gradient is invalid")
-    assign_flat_gradient(gradient_sum, runtime.gradient_layout)
+    active_tasks = len(selected_ids)
+    shared_gradient, task_tangent_balance = median_capped_task_mean(task_rows)
+    assign_flat_gradient(shared_gradient, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
     named = _trainable_named(runtime)
     before = {name: value.detach().clone() for name, value in named}
-    committed_gradient = torch.empty_like(gradient_sum)
+    committed_gradient = torch.empty_like(shared_gradient)
     for item in runtime.gradient_layout:
         if item.parameter.grad is None:
             raise WriterModelError(
@@ -643,7 +686,7 @@ def apply_reward_step(
             item.parameter.grad.detach().reshape(-1).float()
         )
     runtime.optimizer.step()
-    candidate_delta = torch.empty_like(gradient_sum)
+    candidate_delta = torch.empty_like(shared_gradient)
     for (name, value), item in zip(named, runtime.gradient_layout, strict=True):
         candidate_delta[item.start : item.stop].copy_(
             (value.detach() - before[name]).reshape(-1).float()
@@ -665,11 +708,18 @@ def apply_reward_step(
         name: float((value.detach() - before[name]).float().square().mean().sqrt())
         for name, value in named
     }
-    coexistence = _coexistence(runtime, task_gradients, committed_gradient, final_delta)
+    coexistence = _coexistence(
+        runtime,
+        selected_ids,
+        task_rows,
+        committed_gradient,
+        final_delta,
+        task_tangent_balance,
+    )
     return AppliedStep(
         active_tasks=active_tasks,
         gradient_norm=float(grad_norm),
-        gradient_rms=float(gradient_sum.square().mean().sqrt()),
+        gradient_rms=float(shared_gradient.square().mean().sqrt()),
         parameter_delta_rms=delta,
         gradient_coexistence=coexistence,
         commitment_geometry=commitment,
@@ -679,7 +729,6 @@ def apply_reward_step(
 
 def apply_direct_reward_step(
     runtime: RewardRuntime,
-    gradient_sum: torch.Tensor,
     local_active_tasks: int,
     task_gradients: Mapping[int, torch.Tensor],
     probes: Sequence[RewardProbe],
@@ -688,7 +737,6 @@ def apply_direct_reward_step(
         raise WriterModelError("direct commitment lost local active-task probes")
     return apply_reward_step(
         runtime,
-        gradient_sum,
         local_active_tasks,
         task_gradients,
         lambda _scale: tuple(

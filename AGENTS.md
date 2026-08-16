@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -35,14 +35,21 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。当前active successor是**V6-LPCP CFMG Unit-Secant Direct Commitment**（USDC），authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。它从sealed LPCP fresh开始，逐项
-保留USFC的CFMG memory/content grid、rank32、K4、unit-secant objective、四view/active-task等权梯度与Adam；唯一
-删除all-task/all-view monotone backtracking保存硬门，只提交一次未经缩放的exact Adam `j0`。20/20仍完整记录为
-诊断，不再阻止strict400；也不重复step0 baseline forward、不扫scale或挑checkpoint。clean`539e0e5` gpu01 world6
-cycle1已完整exit0：24 tasks/48 states/96 rollouts、6 active tasks覆盖四suite，candidate/reference=`32/32`、
-gains=`3/3`，cycle=`335.189s`；saved j0 L2=`.242098`，17/24 margins下降且q/v/action非零，0禁读/OOM/nonfinite。
-checkpoint已按post-training合同sealed；下一裁决是同一checkpoint strict400，若有正信号则exact-resume cycle2/3。
+长期目标尚未完成。最新终局是**V6-LPCP CFMG Unit-Secant Direct Commitment**（USDC），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。clean`539e0e5` gpu01 world6 cycle1
+完整：24 tasks/48 states/96 rollouts、6 active tasks、candidate/reference=`32/32`、gains=`3/3`、cycle=`335.189s`；
+saved j0 L2=`.242098`并写出非零q/v/action。最终K4 strict400=`138/400`、breadth6、per-task=
+`1/4/48/34/0/38/13/0`、per-suite=`5/82/38/13`；相对LPCP143=`120 retained / 18 gained / 23 lost`、
+churn41、net`-5`、Jaccard`.745342`。all400 BA relative-L2 mean/median=`.003236/.002806`，同task first4
+correction cosine/energy=`.555--.953/.663--.965`，说明literal memory、K-set/M2P与rank32 LoRA写出真实形成
+跨视频共同坐标；但gained/lost幅度不可分、Goal3仍0、Long净丢4。train task38在unit-secant后仍以`6.274x`
+梯度范数和`.977239` shared cosine支配更新。correct、breadth与retention门全部失败，USDC不得cycle2/3或补六臂。
+当前active successor是**MCTC**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它从sealed LPCP fresh，保留
+USDC的全部memory/K4/rank32/unit-secant/reward/Adam图，唯一在四view task gradient形成后，以active panel norm
+中位数只截断上方outliers，再等权平均；小task不放大、task方向不旋转、无cap系数或quantile sweep。USDC checkpoint
+不得resume。canonical原位实现完整CPU=`416 passed`、compileall/diff check通过、architecture guard 0 hard；当前尚无
+MCTC GPU结果或active run。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个
@@ -349,7 +356,7 @@ fresh重跑。修正后clean`b4dbf84` full24已完整exit0：24 tasks/48 pairs/9
 gradient norm是次大的`54.45x`且与shared mean cosine=`.99978`，task4则为`-.16081`。11个scale最好仅
 `17/24` deployed margins下降，无候选被接受，final delta、q/v/action BA和fixed-action response全为0。按
 `restore_step0_parameters_and_terminal_non_pass`合同终局；不跑只会重测LPCP carrier的strict400，不cycle2/
-controls/小扫。精确artifact=`cmbg_full24_terminal_adjudication.json`。当前无active successor或GPU run；rank8、
+controls/小扫。精确artifact=`cmbg_full24_terminal_adjudication.json`。该时点尚无successor或GPU run；rank8、
 完整A/B、Dynamic-K和memory token一般仍是独立开放变量。
 
 ## 4. Long-term objective and decision rule

@@ -620,7 +620,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   到10/12；task15仍主导且task18反向，11 scales无12/12，最终exact no-op；
 - [x] 封存`capg_shared3_terminal_adjudication.json`并按门终局，不运行held/full24/strict/cycle2或小扫。
 
-## Active iteration: V6-LPCP Capacity-Matched Backbone-Memory Grid
+## Terminal iteration: V6-LPCP Capacity-Matched Backbone-Memory Grid through USDC
 
 - [x] 从CAPG最早断点选择预注册的单变量：保留其已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与
   global gate，只把post-backbone 37-query latents换成真实prefix内逐层更新的37个one-way memory tokens；
@@ -680,9 +680,32 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   q/v/action非零且0禁读/OOM/nonfinite；
 - [x] 定位首次strict 0-rollout工程退出为标准post-training seal尚未执行；不改checkpoint或训练结果，只将formal
   status seal并记录cycle1 evidence；
-- [ ] 由sealed commit重跑同一cycle1 checkpoint strict400并完成逐task配对分析；
-- [ ] 若cycle1有closed-loop正信号，锁定world topology exact-resume cycle2，必要时cycle3；每个checkpoint分别
-  strict400并分析相邻churn/Jaccard，不能以偶然winner替代稳定共同积累。
+- [x] 完成sealed cycle1 checkpoint K4 strict400：`138/400`、breadth6、per-task=
+  `1/4/48/34/0/38/13/0`；相对LPCP143=`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
+  Jaccard`.745342`，四个cycle2门全部失败；
+- [x] 完成rank32-vs-rank16 all400 effective-BA与first4跨视频修正分析：BA relative-L2 mean/median=
+  `.003236/.002806`、action mean=`.006333`，gained/lost幅度不可分；8 tasks correction cosine/energy=
+  `.555--.953/.663--.965`，证明memory/content grid已形成共同LoRA坐标但没有选出held reward-useful方向；
+- [x] 按坏cycle1终局USDC，不exact-resume cycle2/3或补六臂；下一单变量只针对task38仍以`6.274x`支配
+  active-task shared tangent，保留memory、K4、rank32、unit-secant与reward数据图。
+
+## Active iteration: V6-LPCP CFMG Median-Capped Task-Tangent Commitment
+
+- [x] 建立MCTC单变量authority：从sealed LPCP fresh，保留USDC的memory、K4、rank32、unit-secant、四view
+  credit与一次Adam，只把高于active-task norm中位数的task tangents截到中位数；小task不放大、方向不旋转、
+  无cap multiplier或quantile sweep；
+- [x] 原位切换canonical config/checkpoint/evaluator identity，并将distributed active-task panel的一次all-reduce
+  同时复用于optimizer和coexistence，避免重复大collective；定向CPU=`65 passed`；
+- [x] 完成定向/完整CPU=`47/416 passed`、compileall、diff check与architecture guard 0 hard；无新module、entrypoint
+  或平行runtime；
+- [ ] 冻结并push唯一formal commit；
+- [ ] 从sealed LPCP fresh完成full24 cycle1，记录raw/capped norms、median/scales、rank负载、j0、q/v/action与
+  task-view margins；
+- [ ] 若candidate nonzero，立即做同一checkpoint K4 strict400并与LPCP143、USDC138、v6-fast143逐task分析；
+- [ ] 若cycle1显示接近强baseline且breadth/retention可信，锁原world topology exact-resume cycle2，必要时cycle3，
+  每个checkpoint分别strict400；最终以相邻checkpoint低churn、高Jaccard和共同积累判断稳定性，而非单点winner；
+- [ ] 若cycle1像USDC一样同时损失correct、breadth与retention，则终局，不靠盲目增加训练量、cap小扫或optimizer
+  小改救方向。
 
 ## Non-negotiable boundaries
 
@@ -702,9 +725,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新USFC full24已终局：exact `j0`达到17/20但被原20/20硬门恢复step0。当前active USDC只检验这个唯一自然
-optimizer candidate的真实strict与连续训练稳定性；不得resume USFC/USEP、回退CFM、扫parameter ray/scale/
-normalization/PCGrad，也不得把旧100分Dynamic-K整条恢复。
+最新USDC cycle1 strict=`138/400`、breadth6，相对LPCP净`-5`且lost23，已经终局；不得resume USDC/USFC/USEP、
+回退CFM、扫parameter ray/scale或把旧100分Dynamic-K整条恢复。下一设计只可针对unit-secant后task38仍以
+`6.274x`梯度范数支配shared update的跨task tangent幅度接口，并继续以真实strict而非局部margin选方法。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

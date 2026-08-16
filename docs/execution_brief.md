@@ -5,20 +5,26 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成的是**USFC full24 cycle1**：clean`db7ab24`在gpu02 world6完整exit0，24 tasks/48 paired states/
-96 rollouts，candidate/reference=`33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam
-`j0` delta L2=`.242816`，20个task×view margins下降17个；task4/25/34/38均4/4，只有task19为1/4且平均harm
-`2.249e-5`。11个scale没有一个达到原合同20/20，最终恢复exact LPCP、saved delta=0并跳过strict400。USFC按其
-原authority终局，不得resume。
+最新完成的是**USDC cycle1及strict400**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。owner此前指出20/20局部margin是有价值
+诊断但不能永久替代closed-loop，因此USDC保留USFC模型、memory、rank32、K4、unit-secant与等task梯度，只提交一次
+未经缩放的exact Adam `j0`。clean`539e0e5` gpu01 world6完成24 tasks/48 states/96 rollouts、6 active tasks、
+`32/32` arm successes、`3/3` gains，cycle=`335.189s`；j0 L2=`.242098`，17/24 margins下降且q/v/action非零。
 
-owner明确指出20/20是有价值的理想诊断，但可能本身不可达，不能永久替代closed-loop目标。当前active是
-**USDC**，authority=`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`：逐项保留
-USFC模型、memory、rank32、K4、unit-secant和等task梯度，只提交一次未经缩放的exact Adam `j0`；不backtrack、
-不挑阈值、不重复step0 baseline forward。clean`539e0e5` gpu01 world6 fresh cycle1已完整exit0：24 tasks/48 states/
-96 rollouts、6 active tasks、`32/32` arm successes、`3/3` gains，cycle=`335.189s`；唯一j0 L2=`.242098`并写出
-非零q/v/action，17/24 margins下降。首次strict准备在0 rollout处正确拒绝尚未post-training seal的config；现已按
-标准流程seal，下一步重跑同一checkpoint strict400。一次cycle只有少量discordant tasks有gradient，所以好结果必须
-继续同world exact-resume cycle2，必要时cycle3，并逐checkpoint strict评估稳定积累；明显坏的cycle1不盲目延长。
+同一checkpoint最终K4 strict=`138/400`、breadth6、per-task=`1/4/48/34/0/38/13/0`、per-suite=
+`5/82/38/13`。相对exact LPCP143为`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
+Jaccard`.745342`；Long suite净`-4`。all400 BA relative-L2 mean/median=`.003236/.002806`、action mean=
+`.006333`，first4同task correction cosine/energy=`.555--.953/.663--.965`，所以memory-conditioned rank32 LoRA
+确实跨视频共同写出，但没有形成held reward-useful方向。train task38仍以次大`6.274x`范数和`.977239` cosine
+控制shared mean。correct、breadth、lost、gained>=lost四门全失败；USDC终局，不cycle2/3或补controls。
+
+当前active是**MCTC**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它从sealed LPCP fresh，保留
+USDC全部memory/K4/rank32/unit-secant/reward/Adam图，只把高于active-task norm中位数的tangents截到中位数后再
+等权平均；不放大小task、不旋转方向、没有可扫cap系数。cycle1仍只有一次full24，因此其职责是发现可信方向：若
+接近强baseline并保住breadth/retention，则锁原topology exact-resume cycle2，必要时cycle3；最终稳定资格由相邻
+strict400的低churn与共同积累判断。像USDC那样correct、breadth、retention同时显著下降的cycle1则不盲续。当前
+canonical实现定向/完整CPU=`47/416 passed`、compileall/diff check通过、architecture guard 0 hard，尚无GPU run。
 
 以下保留通往USFC/USDC的紧邻因果链。
 
@@ -40,7 +46,7 @@ task4则为`-.16081`。所有11 scales都无法使24个active task-view deployed
 在full24形成幅度平衡、跨task兼容的shared native commitment**，不是carrier、held video或LoRA写出未接通。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
-当前active successor是**CFMG**，authority=
+随后建立的successor是**CFMG**，authority=
 `docs/action_forecast_writer_v6_lpcp_content_first_memory_grid_design.md`。代码定位发现CMBG的zero gate位于
 temporal/K-set/M2P之前，因此首步这些模块只贡献零输入处的固定Jacobian，而没有先形成内容依赖的有序程序。
 CFMG只把同一个gate移到完整grid之后：参数量、rank32、K4、reward、全局commitment和step0=LPCP全部不变；

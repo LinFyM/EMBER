@@ -37,8 +37,13 @@ coverage降为diagnostic并以actual finite all-view commitment作为硬门。cl
 24 tasks/48 states/96 rollouts，5 active tasks，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`并使
 `17/20` margins下降；task4/25/34/38均4/4，task19仅1/4且mean harm=`2.249e-5`。其余10 scales也未达到
 20/20，原合同恢复exact LPCP、saved delta0并跳过strict400。USFC终局，不得resume。该结果只否定20/20 surrogate
-作为保存更新的绝对前置条件，未检验`j0`的closed-loop价值。fresh successor USDC只提交一次exact `j0`，把20/20
-保留为诊断并立即strict400；若cycle1有正信号则exact-resume cycle2/3逐checkpoint评估训练量和稳定性。
+作为保存更新的绝对前置条件。fresh successor USDC只提交一次exact `j0`，把20/20保留为诊断并完成了真实
+strict400：`138/400`、breadth6、per-task=`1/4/48/34/0/38/13/0`；相对LPCP143为`120 retained / 18 gained /
+23 lost`、churn41、net`-5`。all400 BA relative-L2 mean/median=`.003236/.002806`且同task correction
+cosine/energy=`.555--.953/.663--.965`，证明memory-conditioned rank32写出没有消失、不同视频修正也不再近正交；
+但gained/lost改写幅度不可分，Goal3最大改写仍0，Long净丢4。unit-secant后train task38仍以`6.274x`范数与
+`.977239` shared cosine支配更新。USDC按correct/breadth/retention门终局，不cycle2/3；它否定当前未约束
+task-tangent幅度的一次shared Adam commitment，不否定memory或few-shot。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

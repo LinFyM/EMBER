@@ -396,7 +396,7 @@ def _differentiate_task_credit(
     reference_lora: Mapping[str, torch.Tensor],
     pairs: Sequence[tuple[RewardTrajectory, RewardTrajectory]],
     active_labels: Sequence[str],
-    gradient_sum: torch.Tensor,
+    gradient_template: torch.Tensor,
 ) -> TaskCreditResult:
     started = time.monotonic()
     actions_by_arm, action_metrics = query_matched_occupancy_actions(
@@ -436,12 +436,11 @@ def _differentiate_task_credit(
             candidate_lora,
             batch,
             trajectory_ids,
-            gradient_sum,
+            gradient_template,
         )
     )
     view_gradient_geometry = cross_video_gradient_geometry(view_gradients)
     task_gradient = mean_cross_video_task_gradient(view_gradients)
-    gradient_sum.add_(task_gradient)
     first = view_rows[0]
     result = {
         "objective": math.fsum(float(row["objective"]) for row in view_rows) / 4,
@@ -497,7 +496,7 @@ def _task_gradient(
     runtime: RewardRuntime,
     task: RewardTask,
     cycle: int,
-    gradient_sum: torch.Tensor,
+    gradient_template: torch.Tensor,
 ) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
     (
         visit,
@@ -544,7 +543,7 @@ def _task_gradient(
             reference_lora,
             pairs,
             active_labels,
-            gradient_sum,
+            gradient_template,
         )
         probe = make_reward_probe(
             runtime,
@@ -592,7 +591,7 @@ def _task_gradient(
 def _collect_cycle_tasks(
     runtime: RewardRuntime,
     cycle: int,
-    gradient_sum: torch.Tensor,
+    gradient_template: torch.Tensor,
 ) -> tuple[
     list[dict[str, Any]],
     list[RewardProbe],
@@ -603,7 +602,7 @@ def _collect_cycle_tasks(
         task_id = int(runtime.args.smoke_task_ids[runtime.context.local_rank])
         task = next(task for task in runtime.tasks if task.global_task_id == task_id)
         row, probe, active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum
+            runtime, task, cycle, gradient_template
         )
         gradients = (
             {task.global_task_id: task_gradient} if task_gradient is not None else {}
@@ -622,7 +621,7 @@ def _collect_cycle_tasks(
     active = 0
     while task := _claim_task(queue, ordered):
         row, task_probe, task_active, task_gradient = _task_gradient(
-            runtime, task, cycle, gradient_sum
+            runtime, task, cycle, gradient_template
         )
         records.append(row)
         active += task_active
@@ -739,17 +738,16 @@ def _cycle_metrics(
 def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
     started = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
-    gradient_sum = torch.zeros(
+    gradient_template = torch.zeros(
         runtime.gradient_layout[-1].stop,
         dtype=torch.float32,
         device=runtime.context.device,
     )
     records, local_probes, local_active, task_gradients = _collect_cycle_tasks(
-        runtime, cycle, gradient_sum
+        runtime, cycle, gradient_template
     )
     step = apply_direct_reward_step(
         runtime,
-        gradient_sum,
         local_active,
         task_gradients,
         local_probes,

@@ -22,8 +22,8 @@ EMBER上下文纠正理解。
 1. `docs/current_owner_requirements.md`
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
-4. 最新design authority（当前无active successor时即最新终局design）：
-   `docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`
+4. 当前active design：
+   `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -49,7 +49,15 @@ MCTC score/breadth轨迹=`142/7 -> 142/6 -> 136/7`，per-task最终=`2/3/48/32/0
 gradient cosine/energy=`.949481/.911623`、10/10 active tasks的q/v/action响应非零；cycle2→3 all400
 effective-BA relative-L2 mean/median=`.001199/.001157`，first4同task更新cosine/energy=`.988724/.990306`。
 所以memory/content/native写出已经工作；最早缺口是共同reward update不能选择held on-policy有用方向并连续保留
-多task support。MCTC终局，不cycle4、不补六臂、不扫训练长度或参数；当前没有active GPU run或可resume checkpoint。
+多task support。MCTC终局，不cycle4、不补六臂、不扫训练长度或参数。
+
+当前active successor是**V6-LPCP CFMG Successful-Expert Occupancy Distillation**（SEOD），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。它从sealed LPCP fresh，
+完整保留literal memory、K4、rank32 B-only residual、four-view mean、median cap与natural Adam，唯一把稀疏
+candidate/reference binary discordance换成train24 step2000 expert自身成功closed-loop occupancy上的matched B8
+action distillation；expert失败trajectory为零credit，expert不进入Writer输入、checkpoint或held部署。exact current
+LPCP fixed-A只读诊断对step2000 expert BA的可达能量/cosine为`.381712/.617828`，所以本轮不做不可达的expert
+factor重建。当前authority已冻结，尚未实现或启动GPU；MCTC checkpoint不得resume。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

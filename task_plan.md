@@ -718,8 +718,22 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   cosine/energy=`.988724/.990306`，但persistent failure改写最大；确认最早缺口是held reward-useful direction与
   multi-task support coexistence，不是memory/content/native写出；
 - [x] MCTC按稳定性、absolute与retention终局；不cycle4、不补六臂、不扫cap/LR/rank/scale/seed；
-- [ ] 从该最早接口建立新的单变量authority：保留已通过的video-memory/跨视频共同LoRA/native写出，只直接检验
-  reward-useful方向或真实on-policy support共存；不得机械恢复旧offline RLS或高开销OSG-PC graph。
+- [x] 以exact current LPCP对step2000 experts做只读fixed-A reachability：8 train tasks×4 K4 conditions的global
+  expert BA可达能量/cosine=`.381712/.617828`；确认不能把大部分不可达expert factor重建当作下一单变量；
+- [x] 建立SEOD单变量authority：保留已通过的video-memory/跨视频共同LoRA/native写出，只把稀疏binary arm
+  discordance替换为train24 expert真实成功on-policy occupancy的matched action distillation；expert不进部署；
+
+## Active iteration: V6-LPCP CFMG Successful-Expert Occupancy Distillation
+
+- [ ] 原位替换canonical reward credit/config/checkpoint identity；复用现有rollout、matched B8 query、8-strata
+  panel、four-view Writer反传与median-capped Adam，不增加平行runtime；
+- [ ] 完成rank16 expert到rank32 zero-padding等价、固定四suite anchors成功occupancy、matched query、four-view
+  gradient、native BA/action、constant/reverse与吞吐机制门；
+- [ ] targeted/full CPU、compileall、architecture guard通过后冻结clean pushed formal commit；
+- [ ] live双节点GPU与/data1 quota检查后，以最多6张合适同节点A40启动fresh full24 cycle1；按authority最多连续
+  三cycles并逐checkpoint strict400，分析absolute/breadth、逐task/suite、retained/gained/lost/churn/Jaccard；
+- [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若
+  失败，定位successful expert behavior到Writer Program、native BA、action与held rollout的最早断点。
 
 ## Non-negotiable boundaries
 

@@ -60,6 +60,13 @@
   `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle3_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`；cycle3
   root下保留`mctc_cycle3_strict_adjudication.json`与`mctc_cycle2_to_cycle3_effective_ba.json`。训练、三个
   checkpoints、1200 raw paired rows、400-entry LoRA caches和completion均完整；
+- 当前active successor是**SEOD**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。它不resume MCTC，而从
+  sealed LPCP fresh；保留CFMG memory/K4/rank32/four-view/median-cap/Adam部署图，只把稀疏binary arm discordance
+  替换成train24 step2000 expert自身成功on-policy occupancy上的matched action distillation。expert仅为训练期
+  privileged teacher，失败trajectory零credit，不进入Writer输入、checkpoint或held部署；formal每task/cycle两条
+  expert rollouts，最多48 rollouts。exact current LPCP fixed-A对expert BA的只读可达能量/cosine=
+  `.381712/.617828`，故明确不做expert factor重建。authority已冻结，canonical实现与GPU机制尚未开始；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

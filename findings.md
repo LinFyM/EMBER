@@ -111,6 +111,18 @@ first4同task不同K4 correction cosine/energy=`.988724/.990306`。gained/lost/r
 LoRA已经写出，但shared reward update不能选择held on-policy有用方向，也不能在连续多task更新中保留support**。
 MCTC只否定当前median-cap natural-Adam组合；不否定memory token、few-shot、rank8/32或生成LoRA。
 
+MCTC后的successor选择先排除了一个诱人的错误方向。对exact current LPCP/MCTC rank32输出取first16 carrier A，
+在8个train-seen tasks、每task四个K4 conditions上投影匹配step2000 expert effective BA，global weighted reachable
+energy/cosine仅`.381712/.617828`，per-task energy约`.307--.481`且跨video几乎不变。当前B-only branch若直接做
+expert factor/BA reconstruction，会把约62%不可达能量混入objective；此前expert reconstruction/manifold也已证明
+几何逼近不保证held support。因此下一轮不重建expert LoRA。
+
+SEOD改为只使用expert**自身成功closed-loop occupancy**：train24每task/cycle两条expert rollouts，只保留成功轨迹，
+同observation/noise/B8重查expert与Writer动作，每轨迹8个progress strata选最大disagreement，再将同一expert target
+经四个disjoint correct K4 views回传CFMG Writer。它不同于旧Expert-Flow Audit的离线B20 target-action flow loss，
+也不同于expert bank held routing。该设计直接检验“成功策略真实访问的状态上，稠密behavior target能否替代稀疏
+binary discordance，形成held-useful且多task可保留的shared direction”。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

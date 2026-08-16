@@ -26,6 +26,15 @@ reward update不能选择held on-policy有用方向，也不能连续保留多ta
 cap、LR、rank、scale或重做已通过的carrier；必须直接改变reward-useful direction或真实support coexistence。
 当前没有active GPU run或可resume checkpoint。
 
+当前active successor是**SEOD**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。固定-A只读诊断表明当前
+LPCP carrier对step2000 expert BA的可达能量仅`.381712`，因此不重复expert weight reconstruction。SEOD只替换
+credit：每个train task在两个随机states上运行其step2000 expert，只信任真实成功轨迹；在成功occupancy上以同一
+observation/noise/B8顺序重查expert和Writer actions，每轨迹8个progress strata选最大disagreement state，再把同一
+expert target经四个disjoint correct K4 conditions回传Writer。CFMG memory、rank32、median cap、natural Adam和
+部署信息墙均不变；expert不进held部署。最多三个cycles，逐checkpoint strict400检验训练曲线，约145时立即补
+视频因果controls。当前为pre-implementation，无GPU run。
+
 以下保留通往USFC/USDC的紧邻因果链。
 
 此前执行的**CMBG full24 cycle1**：修正formal four-view retention后的clean`b4dbf84`在world5完整

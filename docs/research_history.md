@@ -54,6 +54,10 @@ Jaccard`.782051`。cycle2/3已有24/25 content参数组gradient，cycle3训练�
 `.001199/.001157`、first4同task更新cosine/energy=`.988724/.990306`；persistent failures的改写幅度反而最大。
 因此“好结果多训练”被完整执行后，证据否定了训练轮数不足：cap解决幅度outlier并维持跨视频共同native写出，
 却没有解决held reward-useful方向和多task support共存。MCTC终局，不cycle4/六臂/小扫；不否定memory或few-shot。
+其后只读fixed-A诊断在8个train tasks×4 K4 conditions上得到step2000 expert BA reachable energy/cosine=
+`.381712/.617828`，排除了直接向当前B-only branch施加大部分不可达expert factor reconstruction。active successor
+SEOD因此只在train24使用task expert自身成功on-policy occupancy作behavior target，保留MCTC其余Writer/commitment
+图；它不恢复expert bank deployment，也不改变rank或carrier。
 v6-fast仍是有完整五臂的历史最好，长期严格
 `>150/400`追求及稳定约145资格均未完成。Dynamic-K
 backbone-memory、semantic-address与Direct-Family-B macro50 K1 strict分别为`100/101/102`。Direct-Family-B

@@ -503,7 +503,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 终止parameter-space trust-ray路线；不混合raw/MMCD/Adam rays或扫scale；
 - [x] 从LoRA输出/effective-BA参数化的native-safe线性Value接口建立下一份单变量authority。
 
-## Active iteration: V6-LPCP Anchored Linear-B Native Value Commitment
+## Terminal iteration: V6-LPCP Anchored Linear-B Native Value Commitment
 
 - [x] 审计LPCP correct400真实A/B geometry及三anchor gradients；以全局固定规则选择B side，不按task/family/held
   切换：BA灵敏度比q/v/action-in/action-out=`1.049/1.411/2.594/8.258x`；
@@ -511,9 +511,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   acceptance、rank16与信息墙不变；
 - [x] 原位完成fresh schema、四B-head 860,160参数实现；定向CPU=`58 passed`、完整CPU=`404 passed`、compileall与
   architecture guard 0 hard；
-- [ ] clean pushed commit后并行运行固定task9/15/18并完整分析native acceptance、A不变、q/v/action、held8、
-  reverse/constant与wall；
-- [ ] 三项全过才实现distributed acceptance/full24/strict；任一失败终局且不补A side、side mix或参数小扫。
+- [x] clean pushed `0899166`后在gpu02物理1/2/3并行完成固定task9/15/18及held8、temporal、A不变、wall分析；
+- [x] task9 exact no-op、task15 j5但held 5/8/raw-B失败、task18 j0全门通过，实际1/3；按门终局，不full24/strict、
+  A-side completion、side mix或参数小扫；
+- [x] 封存terminal adjudication并定位最早缺口：fixed-A去除了gauge/cross term且能救活部分PAV no-op，但小的共同
+  B-only方向仍不能跨task稳定进入native finite-step/held coverage；
+- [ ] 建立下一份单变量authority：残差必须从native-zero坐标写入effective BA，同时不压缩、不重生成LPCP
+  rank16 carrier；先用同一task9/15/18 panel快速否决。
 
 ## Non-negotiable boundaries
 
@@ -531,8 +535,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC、MMCD与PAV-BC均已终局；当前active ALB-NV只改变fixed-A/B-only输出参数化，
-尚无GPU run。不能同时改memory、rank、gradient ray、LR、matched panel或trust scale。
+不得resume或参数小扫。AV-MBC、MMCD、PAV-BC与ALB-NV均已终局；当前没有active GPU run或可resume checkpoint。
+下一轮不能同时改memory、video carrier、gradient ray、LR、matched panel或trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

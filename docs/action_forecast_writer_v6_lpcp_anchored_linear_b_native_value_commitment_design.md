@@ -1,6 +1,6 @@
 # V6-LPCP Anchored Linear-B Native Value Commitment
 
-状态：2026-08-16 active single-variable design authority，简称`ALB-NV`。本轮从sealed LPCP fresh启动，完整保留
+状态：2026-08-16 terminal non-pass single-variable design authority，简称`ALB-NV`。本轮从sealed LPCP fresh启动，完整保留
 MB-SOP matched successful-occupancy credit、四个disjoint correct K4 views、PAV同路径native acceptance和rank16
 部署图，唯一把八个joint A/B residual heads改成四个fixed-A、B-only residual heads。
 
@@ -152,7 +152,8 @@ no-video，不等到150。
 ## 9. 快速否决边界
 
 - task15仍无native candidate：非零B0的BF16 residual写入仍是断点，下一步才测试无压缩zero-B reserved lane；
-- task9 held/train仍低：断点在joint Value跨condition幅度，不靠side或scale修复；
+- task9 held/train仍低：断点在joint Value跨condition幅度，不靠side或scale修复；若更新在acceptance阶段已被
+  exact no-op，则不能把`held/train=0`误读为已测得的跨condition幅度结论；
 - anchors通过、full24换手：输出线性化成立但shared reward update不共存；
 - correct高而六臂无因果margin：方法仍不能形成有效教学视频claim。
 
@@ -161,9 +162,41 @@ rank8、few-shot、无压缩reserved lane、生成LoRA或未来task-local RL。
 
 ## 10. Canonical实现状态
 
-canonical实现已原位替换PAV的双边residual topology与fresh schema：active `factor_commitment`只含
+canonical实现已原位替换PAV的双边residual topology与fresh schema：该轮 `factor_commitment`只含
 `q_b/v_b/action_in_b/action_out_b`四个head；decode只向38个public B tensors加residual，38个A tensors直接返回
 LPCP值。旧PAV executable config、checkpoint/completion/evaluator identity已从active runtime移除，历史由Git、design
 与formal artifacts保留。定向CPU=`58 passed`，完整CPU在`.env.local` LIBERO assets合同下=`404 passed`，compileall
-与diff check通过；architecture guard无hard violation，active source净增长26行且无新module/entrypoint。以上只证明
-输出图与fresh边界正确，尚无GPU机制结果。
+与diff check通过；architecture guard无hard violation，active source净增长26行且无新module/entrypoint。
+
+## 11. 固定anchor结果与终局判断
+
+clean pushed commit=`08991664036e10371b361da07f07f38bcf528e5b`。gpu02物理1/2/3并行完成task9/15/18，三项
+训练和held8分析均exit0，0 teacher action、validation action/reward读取，所有public LPCP A tensor最大变化精确为0。
+
+| task | outcome | native step | train BA cos/energy | held BA cos/energy | held tasks | held/train L2 | wall/PAV | 结论 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 9 | `2/1` | none，exact no-op | `0/0` | `0/0` | `0/8` | `0` | `1.4148x` | fail |
+| 15 | `2/0` | `j=5` | `.6613/.7168` | `.3749/.5133` | `5/8` | `.3334x` | `.68195x` | fail |
+| 18 | `1/2` | `j=0` | `.6394/.6923` | `.7742/.7848` | `8/8` | `1.0295x` | `.43089x` | pass |
+
+task9的四view continuous gradient并未冲突：pairwise cosine=`.41501`、shared-mean energy=`.55861`且共同下降
+覆盖`4/4`。但实际Adam B-only ray从`j=0..10`没有一个native point让四view同时下降，故按合同恢复exact LPCP；
+失败在continuous B direction到native finite-step，而不是video carrier或gradient averaging。其11次完整回退也解释
+了单task wall超门；三anchor合计wall=`953.773s`，相对PAV `1267.518s`为`.75247x`，不存在架构性吞吐退化。
+
+task15首次把PAV exact no-op救成非零写出，train与held BA aggregate、action、held/train、reverse/constant均过门；
+但held raw-B coherence仅`.10058/.32327`，且validation只有5/8过逐task门。其continuous direct rows仍为
+`.94756/.93775`，说明小到`j=5`后，连续共同方向在写入非零native B0时先丢失raw factor一致性，再表现为held
+task coverage不足。
+
+task18全门通过，证明固定A删除gauge/cross term确有价值：它把PAV no-op变为`j=0`有效更新，并在8个held tasks
+得到BA `.77423/.78484`、action `.62527/.72674`与held/train `1.02954x`。因此本轮不是“B-only无效”，而是它
+不能在不同task的可接受native步长上稳定工作。
+
+固定门要求3/3，实际1/3，故ALB-NV终局：不启动full24、strict400、cycle2或六臂，不补A side、不做family-side
+mix、ray/LR/scale/rank/seed/dtype小扫。精确裁决artifact：
+`runs/outputs/pi05_v6_lpcp_anchored_linear_b_native_value_commitment_task9_mechanism_b8_0899166_gpu02p1_20260816/albnv_terminal_adjudication.json`。
+
+该结果只否定“向condition-specific非零`B0`追加rank16 B residual”这一写出接口。下一设计若继续输出侧，必须让
+小的共同reward方向在native BA中从零可见，同时完整保留LPCP rank16 carrier；它不能压缩baseline、重新混合A/B
+side或回到parameter-ray sweep。

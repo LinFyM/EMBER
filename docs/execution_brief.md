@@ -91,12 +91,15 @@ PAV-BC终局，不full24/strict/resume。raw equal mean、raw maximum margin与A
 必须转LoRA输出/effective-BA参数化。authority=
 `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。
 
-当前active是**ALB-NV**：保留LPCP143、MB-SOP、PAV acceptance与rank16，唯一固定LPCP A并只训练四个B residual
+最新终局是**ALB-NV**：保留LPCP143、MB-SOP、PAV acceptance与rank16，唯一固定LPCP A并只训练四个B residual
 heads（860,160参数），令新增`BA=delta-B A0`严格线性、step0 exact LPCP。B side由LPCP correct400固定factor
 geometry选择，不按task/held切换。authority=
-`docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`；CPU门已关闭，GPU只跑
-固定task9/15/18，全部过门才可full24。canonical定向CPU=`58 passed`、完整CPU=`404 passed`、architecture guard
-无hard violation。
+`docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`；clean `0899166`固定task9/15/18
+只1/3过门。task9连续梯度`.415/.559`但11个native steps均非四路共同下降，exact no-op；task15在j5写出并通过
+held BA aggregate/held-train/action，但仅5/8且raw-B `.101/.323`；task18 j0全门通过，held BA `.774/.785`、8/8、
+held/train`1.030x`。因此fixed-A线性化有效但不稳定，终局不full24/strict/resume或side/scale小扫。当前没有active
+GPU run或可resume checkpoint；下一变量必须使共同Value从native-zero residual坐标写入且完整保留LPCP rank16
+support，不能压缩baseline、重新混合A/B或继续parameter-ray路线。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

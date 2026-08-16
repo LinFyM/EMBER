@@ -664,6 +664,15 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      0/3过门。task18尤其表明preconditioning会把raw/MMCD可解task变为空集。raw equal-mean、raw maximum-margin、
      Adam-preconditioned三类parameter rays因此全部终止；下一最早变量必须是LoRA输出/effective-BA参数化中的
      native-safe线性Value路径，而不是ray mixture、scale或另一个parameter-space solver。
+101. ALB-NV固定LPCP A且只向B写joint-Value residual，把新增BA化为严格线性的`delta-B A0`。clean `0899166`
+     固定task9/15/18只1/3过门，但给出比“失败”更细的边界：task18从PAV exact no-op变成j0全门通过，held8 BA
+     cosine/energy=`.77423/.78484`、held/train=`1.02954x`；task15也从no-op变成j5，held aggregate
+     `.37488/.51329`与held/train`.33339x`过门，却只有5/8 tasks且raw-B仅`.10058/.32327`；task9虽有
+     `.41501/.55861`的连续four-view共同gradient，11个native点仍无四路共同下降并恢复exact LPCP。三项public A
+     tensor变化均0，合计wall/PAV=`.75247x`。所以删除A/B gauge和bilinear cross term确实改善native/held写出，
+     但向非零condition-specific B0追加小残差仍会在不同task上表现为exact空集或小步下raw-B/coverage崩塌。
+     下一输出变量必须让小共同方向从native-zero坐标可见，同时完整保留LPCP rank16 support；不能据此回退carrier、
+     混A/B side、压缩rank或继续扫ray/scale。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

@@ -233,13 +233,18 @@ checkpoint；下一变量必须针对native metric/finite-step接口，不能退
 均被固定anchors否决，PAV-BC终局，不full24/strict/resume或ray混合。当前没有active GPU run或可resume checkpoint；
 下一变量必须转到LoRA输出/effective-BA参数化的native-safe线性Value路径，不能继续改gradient ray或trust scale。
 
-当前active successor是**V6-LPCP Anchored Linear-B Native Value Commitment**（ALB-NV），authority=
+最新终局successor是**V6-LPCP Anchored Linear-B Native Value Commitment**（ALB-NV），authority=
 `docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`。LPCP143、MB-SOP四view credit、
 rank16与PAV acceptance全部不变；唯一删除四个A residual heads，只训练四个zero-init B heads（860,160参数），使
 `BA=B0A0+delta-B A0`对joint video Value严格线性且完整保留baseline项。选择B side来自LPCP correct400固定几何：
 B侧单位增量的BA灵敏度相对A侧为q/v/action-in/action-out=`1.049/1.411/2.594/8.258x`，q/v native ULP不更差。
-canonical实现已原位完成：定向CPU=`58 passed`、完整CPU=`404 passed`、compileall与architecture guard 0 hard；GPU
-仍只允许固定task9/15/18，三项全过才可full24。
+clean `0899166`固定task9/15/18结果仅1/3过门：task9的continuous four-view gradient为`.415/.559`且覆盖4/4，
+但`j0--10`无native共同下降并exact no-op；task15从PAV no-op改善为j5，held BA=`.375/.513`、held/train=`.333x`，
+但仅5/8 held tasks且raw-B=`.101/.323`；task18从PAV no-op改善为j0并全门通过，held BA=`.774/.785`、8/8、
+held/train=`1.030x`。所以fixed-A删除gauge/cross term确有价值，但向condition-specific非零B0追加residual仍不能
+稳定形成native-safe共同步长。ALB-NV终局，不full24/strict/resume、补A side、family mix或小扫。当前没有active
+GPU run或可resume checkpoint；下一变量必须让小的共同reward方向从native-zero坐标进入effective BA且完整保留
+LPCP rank16 carrier，不能压缩baseline或回到parameter-ray sweep。
 
 ## 4. Long-term objective and decision rule
 

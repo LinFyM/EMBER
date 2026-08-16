@@ -111,12 +111,18 @@
   0/3 anchors通过，终局不full24/strict/resume；
 - 当前没有active GPU run或可resume checkpoint。raw/MMCD/Adam三类parameter ray均已否决；下一设计必须转LoRA
   输出/effective-BA参数化的native-safe线性Value路径，不能继续做ray mixture、trust scale或替换已通过的carrier；
-- 当前active successor是**ALB-NV**，authority=
+- 最新终局successor是**ALB-NV**，authority=
   `docs/action_forecast_writer_v6_lpcp_anchored_linear_b_native_value_commitment_design.md`。它只把八个A/B residual heads
   改为四个fixed-A B-only heads，使新增`delta-BA=delta-B A0`严格线性；rank16、LPCP、MB-SOP与PAV acceptance不变。
   correct400固定几何给出B-side相对A-side灵敏度q/v/action-in/action-out=
-  `1.049/1.411/2.594/8.258x`，故不是按anchor或held选择side。canonical实现已完成：定向CPU=`58 passed`、
-  完整CPU=`404 passed`、compileall与architecture guard 0 hard；尚未GPU；
+  `1.049/1.411/2.594/8.258x`，故不是按anchor或held选择side。clean `0899166`三anchor训练/分析均exit0，但只
+  1/3过门：task9 `j0--10`无共同native下降并exact no-op；task15首次从PAV no-op变为j5，held BA
+  `.375/.513`、held/train`.333x`，却只有5/8 held tasks且raw-B `.101/.323`；task18从PAV no-op变为j0，held BA
+  `.774/.785`、8/8、held/train`1.030x`并全门通过。三项A tensor变化均精确0，合计wall/PAV=`.75247x`；
+- ALB-NV按固定3/3门终局，不full24/strict/resume、A-side completion、family-side mix或小扫。最早缺口是小的
+  continuous B-only共同reward方向仍不能在不同task上稳定变为native finite-step：可能exact no-op，也可能在小j
+  下先丢raw-B/held task coverage。当前没有active GPU run或可resume checkpoint；下一输出设计必须让残差从
+  native-zero坐标可见，同时完整保留LPCP rank16 carrier，不能压缩baseline或回到parameter ray；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

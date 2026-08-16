@@ -1,6 +1,6 @@
 # EMBER Persistent Plan
 
-更新时间：2026-08-15。本文只记录长期Goal与当前迭代阶段；实时run状态见
+更新时间：2026-08-16。本文只记录长期Goal与当前迭代阶段；实时run状态见
 `docs/active_session_handoff.md`，历史实验见`docs/research_history.md`。
 
 ## Goal
@@ -644,8 +644,12 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   q/v/action/action-response全为0；
 - [x] 按`restore_step0_parameters_and_terminal_non_pass`终局CMBG；strict400只会重测LPCP carrier而跳过，
   不cycle2、controls或小扫。
-- [ ] 从CMBG证明的最早缺口选择新单变量successor：保留已通过的carrier/video-coherent memory，
-  直接解决gradient magnitude domination、task34的video-local冲突与shared first commitment兼容性。
+- [x] 从CMBG证明的最早缺口选择单变量CFMG：保留已通过的carrier/video-coherent memory，只把zero payload
+  gate从temporal/K-set/M2P之前移到完整content grid之后，使首步gate gradient读取真实内容依赖程序；
+- [x] 原位完成唯一canonical实现与fresh-incompatible config/checkpoint/eval schema；focused与完整CPU=
+  `5/411 passed`，compileall/diff check通过，architecture guard无hard violation；
+- [ ] 运行真实task9 mechanism与fixed task9/15/18 world3；只有raw3/3、native12/12、跨video和wall门全过，
+  才运行validation8 held门与fresh full24 cycle1。
 
 ## Non-negotiable boundaries
 
@@ -665,10 +669,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新CAPG world3已终局：它显著修复same-task跨video coherence并把native覆盖提高到10/12，但跨task raw仍只有
-2/3，最终exact no-op。CMBG clean`2aecece`已把该接口推进到cross-task正一致、raw/final3/3与native12/12；当前
-held视频泛化门已8/8通过；下一唯一动作是fresh full24/strict。不得回退CFM、继续
-parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
+最新CMBG full24已终局：它保持多数task的same-task跨video coherence，但task38以`54.45x`幅度主导shared
+commitment，最多仅`17/24` margins下降并exact no-op。当前CFMG实现/CPU门已完成，下一唯一动作是task9真实机制与
+fixed world3；不得回退CFM、继续parameter ray/scale/normalization/PCGrad小修，也不得把旧100分Dynamic-K整条恢复。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

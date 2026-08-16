@@ -416,7 +416,7 @@ CAPG clean`878b5e4`的world3结果把same-task four-view cosine/energy显著提�
 但task15仍比task9/task18大`36.29x/5.99x`，task18到shared mean为负，11 scales无12/12，最终gate exact zero。
 因此CAPG有价值地修复了跨video坐标，却没有让post-backbone values形成跨task first commitment；不full24或小扫。
 
-当前CMBG只把CAPG的post-backbone latent source换成逐层读取真实image/language/action context并经Action Expert
+随后CMBG只把CAPG的post-backbone latent source换成逐层读取真实image/language/action context并经Action Expert
 更新的37个one-way memory tokens，完整保留已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与global
 gate。首版扩张joint attention矩阵造成task15 carrier漂移，已按工程违约封存；修正版保持原生carrier逐元素exact，
 不删除memory科学变量。这执行了CAPG预先写明的下一反事实，而不是因结果临时转向；精确authority=
@@ -428,9 +428,10 @@ cosine mean=`+.09842`且最终LoRA非零。owner再次明确：跨设备、batch
 低位差异以及由此产生的少量occupancy chunk变化不是科学门，不得用固定batch1、重复forward、扩dtype或逐tensor
 校验追逐；后续以held视频机制和真实closed-loop性能裁决。
 
-CMBG held视频门已通过：validation8为8/8，effective-BA cosine/energy=`.983541/.985926`、raw/action cosine=
-`.982788/.986590`、held/train幅度=`.960650x`，reverse/constant三anchor全过。该结果只授权fresh full24与随后
-strict paired400，不预先声称closed-loop更强；正式选择仍只认single-checkpoint真实rollout。
+CMBG held视频门曾以validation8 8/8通过，但随后full24被task38以`54.45x`梯度幅值主导，11 scales最好仅
+`17/24` margins下降并exact no-op，故已在strict前终局。当前CFMG保留CMBG的真实memory、K4、rank32、reward与
+参数量，只把zero gate移到完整temporal/K-set/M2P content grid之后；这不是owner要求memory形式，而是针对已定位
+首步零点Jacobian接口的单变量反事实。正式选择仍只认single-checkpoint真实rollout。
 
 后续迭代遵循以下边界：
 

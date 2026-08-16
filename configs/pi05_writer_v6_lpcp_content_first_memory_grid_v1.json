@@ -1,16 +1,16 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_v1",
-  "status": "formal_cycle1_terminal_noop_nonpass",
+  "schema_version": "ember_pi05_v6_lpcp_content_first_memory_grid_v1",
+  "status": "preformal_mechanism_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_capacity_matched_backbone_memory_grid"
+    "candidate_arm": "frozen_v6_lpcp_plus_content_first_memory_grid"
   },
   "deployment": {
-    "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
+    "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
     "carrier_rank": 16,
     "residual_bank_rank": 16,
     "public_rank": 32,
@@ -75,7 +75,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "capacity_matched_backbone_memory_grid_2828928_parameters",
+    "trainable": "content_first_backbone_memory_grid_2828928_parameters",
     "matched_action_batch_size": 8,
     "endpoint_action_batch_size": 8,
     "optimizer": {
@@ -110,7 +110,7 @@
     "video_or_environment_recompute": false,
     "global_preference_evidence": "all_active_task_view_scalar_rows_only",
     "rank_state_contract": "one_identical_accepted_scale_and_parameter_delta_on_every_rank",
-    "formal_extension_status": "full24_global_commitment_exact_noop_terminal_nonpass"
+    "formal_extension_status": "preformal_mechanism_pending"
   },
   "smoke_run": {
     "cycle": 1,
@@ -131,45 +131,10 @@
       "9": 8,
       "15": 16,
       "18": 8
-    },
-    "completed_evidence": {
-      "commit": "2aecece68850eceadf2bdd97f9b9ba79297d979a",
-      "run_root": "runs/outputs/pi05_v6_lpcp_cmbg_carrier_exact_shared3_task9_15_18_b8_2aecece_gpu02p123_20260816",
-      "cycle_seconds": 114.7324108,
-      "candidate_reference_successes": [4, 2],
-      "cross_task_gradient_cosine_mean": 0.0984159,
-      "shared_gradient_descent_coverage": "3/3",
-      "native_view_descent_coverage": "12/12",
-      "accepted_delta_l2": 0.1684809029,
-      "adjudication": "cmbg_world3_functional_adjudication.json"
     }
   },
   "formal_run": {
-    "status": "terminal_nonpass_global_commitment_exact_noop",
-    "formal_result_evidence": {
-      "commit": "b4dbf846c5ea2d6944d582e0350493fc3bbcdabf",
-      "run_root": "runs/outputs/pi05_v6_lpcp_cmbg_formal_cycle0to1_r5_k4_views4_nmc4_b8_b4dbf84_gpu02p12347_20260816",
-      "artifact": "cmbg_full24_terminal_adjudication.json",
-      "cycle_seconds": 527.6046417360194,
-      "active_tasks": 6,
-      "search_trials": 11,
-      "best_descending_views": 17,
-      "required_descending_views": 24,
-      "final_delta_l2": 0.0,
-      "strict400": "skipped_exact_step0_noop",
-      "cycle2": "forbidden"
-    },
-    "held_gate_evidence": {
-      "artifact": "runs/outputs/pi05_v6_lpcp_cmbg_carrier_exact_shared3_task9_15_18_b8_2aecece_gpu02p123_20260816/cmbg_held_video_gate.json",
-      "validation_tasks": 8,
-      "passing_tasks": 8,
-      "effective_ba_cosine": 0.9835413019511113,
-      "effective_ba_energy_ratio": 0.985926499385366,
-      "raw_factor_cosine": 0.9827879049757174,
-      "action_cosine": 0.9865899078952018,
-      "held_to_train_effective_ba_l2_ratio": 0.9606501460248132,
-      "reverse_and_constant_pass": true
-    },
+    "status": "blocked_preformal_mechanism",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 2,
     "checkpoint_cycles": [1, 2],
@@ -198,6 +163,8 @@
       "unused_payload_values": 1536,
       "single_native_context_backbone_forward": true,
       "one_way_layer_matched_memory_observer": true,
+      "content_processing_precedes_zero_gate": true,
+      "pregate_content_grid_nonzero": true,
       "step0_native_payload_gate_exact_zero": true,
       "first_step_payload_gate_gradient_nonzero": true,
       "post_gate_step_memory_temporal_set_m2p_gradients_nonzero": true,
@@ -231,8 +198,8 @@
       "held_tasks_passing_minimum": 6,
       "held_per_task_cosine_minimum": 0.15,
       "held_per_task_energy_ratio_minimum": 0.4,
-      "held_aggregate_cosine_minimum": 0.3,
-      "held_aggregate_energy_ratio_minimum": 0.48,
+      "held_aggregate_cosine_minimum": 0.4,
+      "held_aggregate_energy_ratio_minimum": 0.5,
       "held_raw_factor_delta_cosine_minimum": 0.3,
       "held_action_cosine_minimum": 0.15,
       "held_to_train_effective_ba_l2_ratio_minimum": 0.3,
@@ -242,7 +209,7 @@
       "matched_action_batch_size": 8,
       "endpoint_action_batch_size": 8,
       "search_trial_count_maximum": 11,
-      "shared_anchor_cycle_seconds_maximum": 318.749,
+      "shared_anchor_cycle_seconds_maximum": 143.416,
       "shared_anchor_train_task_count": 3
     }
   }

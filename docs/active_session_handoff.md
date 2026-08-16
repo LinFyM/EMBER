@@ -12,8 +12,12 @@
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant
   held视频门也已8/8通过。clean`a62348e`首次full24因formal只保留view0的工程错误exit1且无
   checkpoint/completion；canonical最小修正后clean`b4dbf84` fresh full24已完整exit0。共6 active tasks，但
-  11 scales最好仅`17/24` task-view margins下降，最终exact no-op并按合同终局。当前无active GPU run、可resume
-  checkpoint或active successor；
+  11 scales最好仅`17/24` task-view margins下降，最终exact no-op并按合同终局。当前active successor为
+  **CFMG**，authority=`docs/action_forecast_writer_v6_lpcp_content_first_memory_grid_design.md`：只把同一个zero
+  payload gate从temporal/K-set/layer-token M2P之前移到完整content grid之后，保留CMBG的真实memory、K4、
+  rank32、2,828,928参数、reward与全局commitment。canonical实现/fresh schema已完成，完整CPU=`411 passed`、
+  architecture guard无hard violation；当前无active GPU run或可resume checkpoint，下一裁决是task9真实机制与
+  fixed task9/15/18 world3快速否决；
 - 最新完成CAPG world3在strict前终局：same-task cosine/energy三task均显著改善，raw shared=`2/3`、native
   best=`10/12`，但无12/12 scale并exact no-op；不full24/strict/held或小扫；
 - 最新DJNFR cycle1 strict=`136/400`、breadth7、per-task=`1/2/44/35/0/35/18/1`、per-suite=
@@ -184,7 +188,7 @@
   10/12。但task15 norm仍为task9/task18的`36.29x/5.99x`，task18到shared cosine=`-.1570`，11 scales无
   12/12，最终681,984 gate值exact zero。CAPG终局，不held/full24/strict/resume或小扫；精确artifact为同root的
   `capg_shared3_terminal_adjudication.json`；
-- 当前active design是**CMBG**，authority=
+- 最近完成的memory design是**CMBG**，authority=
   `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。它只把CAPG的post-backbone
   37-query latent source换成逐层读取真实image/language/50 Action states的37个one-way memory tokens；memory走
   对应Action Expert的AdaRMS/qkv/o/MLP，但原carrier执行图完全不含memory。temporal、K-set、M2P、direct B、zero
@@ -203,8 +207,8 @@
   chunks=`70`而历史为65只作数值/轨迹诊断；不再要求跨运行逐元素或chunk精确复现。正式artifact=
   `runs/outputs/pi05_v6_lpcp_cmbg_carrier_exact_shared3_task9_15_18_b8_2aecece_gpu02p123_20260816/cmbg_world3_functional_adjudication.json`；
 - CMBG validation8 held门完整通过：effective-BA cosine/energy=`.983541/.985926`、raw/action=
-  `.982788/.986590`、held/train L2=`.960650x`，8/8 tasks过门；reverse和constant三anchor全过。下一步直接fresh
-  full24 cycle1并立即strict paired400，不再做浮点parity追逐或额外小型机制补丁；
+  `.982788/.986590`、held/train L2=`.960650x`，8/8 tasks过门；reverse和constant三anchor全过。该历史授权随后
+  已由本节记录的fresh full24执行并终局，不得从这里恢复；
 - clean`a62348e`首次full24在所有24 tasks已完成rollout/credit后以exit1结束，不是科学non-pass。旧
   `_differentiate_credit_views`为formal只保留view0，而新global commitment必须重评每个active task的4个
   views；rank0/4立即报`backtracking commitment lost four video views`，其余ranks停在同all-gather并在30分钟
@@ -221,6 +225,10 @@
 - 最终parameter delta、q/v/action effective-BA与fixed-action response全为0，因此strict400只会重测LPCP
   carrier，不能表示CMBG学习，按authority跳过。CMBG终局，不cycle2、controls或小扫；精确artifact=
   `runs/outputs/pi05_v6_lpcp_cmbg_formal_cycle0to1_r5_k4_views4_nmc4_b8_b4dbf84_gpu02p12347_20260816/cmbg_full24_terminal_adjudication.json`；
+- 当前CFMG只移动同一个gate：`H -> temporal -> K-set -> layer/token M2P -> zero gate -> direct B`。step0、
+  public rank与trainable count不变，不加semantic route、normalization、PCGrad、rank或第二forward。CPU已证明
+  gate前content grid非零、final grid exact zero、首步仅gate有gradient、gate打开后全链有gradient，下一步只按
+  新authority依次运行真实task9、fixed world3与held8；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

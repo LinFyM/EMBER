@@ -1,4 +1,4 @@
-"""Capacity-matched backbone-memory grid for native-zero LoRA-B residuals."""
+"""Content-first backbone-memory grid for native-zero LoRA-B residuals."""
 
 from __future__ import annotations
 
@@ -137,7 +137,7 @@ class _VideoSetMixer(torch.nn.Module):
             or value.shape[-1] != self.WIDTH
             or value.shape[1] not in range(1, 5)
         ):
-            raise WriterModelError("invalid CMBG video set")
+            raise WriterModelError("invalid CFMG video set")
         normalized = self.norm(value)
         query = self.query(normalized)
         key = self.key(normalized)
@@ -149,7 +149,7 @@ class _VideoSetMixer(torch.nn.Module):
 
 
 class _ParameterGridBranch(torch.nn.Module):
-    """Zero-gated memory, directed video pooling, set fusion, and M2P."""
+    """Process directed memory content before the exact-zero payload gate."""
 
     LAYERS = 18
     PAYLOAD_TOKENS = 37
@@ -171,7 +171,7 @@ class _ParameterGridBranch(torch.nn.Module):
     def _aggregate_condition(self, videos: torch.Tensor) -> torch.Tensor:
         shots = videos.shape[0]
         if shots not in range(1, 5):
-            raise WriterModelError("CMBG supports one to four videos")
+            raise WriterModelError("CFMG supports one to four videos")
         cells = videos.permute(1, 2, 0, 3).reshape(
             self.LAYERS * self.PAYLOAD_TOKENS, shots, self.WIDTH
         )
@@ -189,8 +189,7 @@ class _ParameterGridBranch(torch.nn.Module):
         expected = (self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
         if layer_memory.ndim != 4 or layer_memory.shape[1:] != expected:
             raise WriterModelError("backbone-memory parameter grid changed shape")
-        frame_grid = layer_memory * self.payload_gate
-        video_grid = self.temporal(frame_grid, frame_indices, video_bounds)
+        video_grid = self.temporal(layer_memory, frame_indices, video_bounds)
         if (
             len(condition_bounds) < 2
             or condition_bounds[0] != 0
@@ -202,7 +201,7 @@ class _ParameterGridBranch(torch.nn.Module):
                 )
             )
         ):
-            raise WriterModelError("invalid CMBG condition offsets")
+            raise WriterModelError("invalid CFMG condition offsets")
         shared = torch.stack(
             [
                 self._aggregate_condition(video_grid[left:right])
@@ -218,15 +217,16 @@ class _ParameterGridBranch(torch.nn.Module):
             )
         ).reshape(batch, self.PAYLOAD_TOKENS, self.LAYERS, self.WIDTH)
         layer_mixed = layer_mixed.permute(0, 2, 1, 3)
-        return self.token_axis(
+        content_grid = self.token_axis(
             layer_mixed.reshape(
                 batch * self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH
             )
         ).reshape(batch, self.LAYERS, self.PAYLOAD_TOKENS, self.WIDTH)
+        return content_grid * self.payload_gate
 
 
 class CapacityMatchedBackboneMemoryGrid(torch.nn.Module):
-    """Emit one backbone-conditioned native-zero B residual bank."""
+    """Emit one content-first, backbone-conditioned native-zero B residual bank."""
 
     LAYERS = 18
     PAYLOAD_TOKENS = 37

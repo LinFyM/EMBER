@@ -692,9 +692,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_capacity_matched_backbone_memory_grid"
+            "one_complete_train24_content_first_backbone_memory_grid"
             if runtime.args.mode == "formal"
-            else "three_task_shared_capg_endpoint_live_smoke"
+            else "three_task_shared_cfmg_endpoint_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),

@@ -8,6 +8,14 @@
 长期继续追求同一shared Writer、同一single checkpoint的strict paired correct`>150/400`；owner也接受约145
 的稳定有效方法，但必须同时通过相邻checkpoint低换手、same-task-video鲁棒和correct视频因果性。目前尚未达到。
 
+CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的same-task four-view gradients约`.99`
+一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
+scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于
+temporal、K-set和layer/token M2P之前：step0时这些模块看到全零，只能通过零点固定Jacobian回传，实际没有先
+运行其内容依赖的有序video/set/parameter选择。当前CFMG只把同一gate移到完整grid之后；step0、rank、参数量、
+reward与信息墙不变。这个变量检验content-first random feature coordinates能否解决首次shared commitment，
+不是task-gradient normalization、PCGrad或scale sweep。
+
 最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
 把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
 view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有

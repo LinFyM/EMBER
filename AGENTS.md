@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`
+   `docs/action_forecast_writer_v6_lpcp_content_first_memory_grid_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -35,11 +35,14 @@ EMBER上下文纠正理解。
 
 ## 3. Current operation
 
-长期目标尚未完成。CAPG在strict前终局：world3 same-task cross-video显著改善，但global raw仅2/3、native最多
-10/12并exact no-op。当前active CMBG carrier-exact clean`2aecece` fixed world3已通过：cross-task gradient cosine
-mean=`+.09842`、shared raw/final=`3/3`、native=`12/12`且最终LoRA非零；validation8 held又以8/8、BA cosine/energy=
-`.983541/.985926`、held/train=`.960650x`通过，已解锁fresh full24 cycle1。SFMC144
-仍是最高correct单点但lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
+长期目标尚未完成。CMBG clean`b4dbf84` full24 cycle1完整，但task38梯度范数为次大task的`54.45x`，11个
+commitment scales最好仅`17/24` active task-view margins下降，最终exact no-op并在strict前终局。它仍证明
+5/6 active tasks的same-task four-view gradients约`.99`一致，故literal memory与跨video共同坐标没有被整体否定。
+当前active successor是**V6-LPCP Content-First Memory Grid**（CFMG）：保留CMBG全部输入、memory、rank32、reward
+与参数量，只把同一个zero payload gate从temporal/K-set/M2P之前移到完整content grid之后；step0仍exact LPCP，
+但首步gate gradient读取真实内容依赖的有序video/set/parameter表征。canonical实现和fresh schema已完成，完整CPU=
+`411 passed`、architecture guard无hard violation；真实GPU mechanism/world3尚未运行。SFMC144仍是最高correct单点但
+lost15/churn31，不具稳定资格；v6-fast仍是有完整五臂的历史最好：`143/135/125/128/129`。
 
 当前最强zero-interaction carrier baseline是**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）：macro25 K4
 strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`。相对同schedule

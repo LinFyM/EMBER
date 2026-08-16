@@ -354,8 +354,8 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": ("formal_capacity_matched_backbone_memory_grid"),
-        "training_stage": ("on_policy_cross_video_capg_endpoint_commitment"),
+        "training_mode": "formal_content_first_backbone_memory_grid",
+        "training_stage": "on_policy_cross_video_cfmg_endpoint_commitment",
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest": {
@@ -556,7 +556,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_capacity_matched_backbone_memory_grid_"
+                "v6_lpcp_content_first_memory_grid_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

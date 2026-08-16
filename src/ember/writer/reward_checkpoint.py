@@ -1,4 +1,4 @@
-"""Cycle checkpoints for the capacity-matched backbone-memory grid."""
+"""Cycle checkpoints for the content-first backbone-memory grid."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_grid_checkpoint_v1"
+    "ember_pi05_v6_lpcp_content_first_memory_grid_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_capacity_matched_backbone_memory_grid_cycle_checkpoint"
+    "v6_lpcp_content_first_memory_grid_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

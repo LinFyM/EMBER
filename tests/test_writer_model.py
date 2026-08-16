@@ -407,12 +407,19 @@ def test_capacity_grid_is_gradient_open_and_requires_video() -> None:
     model, _ = _model()
     grid = model.parameter_grid.requires_grad_(True)
     state = model.encode_conditioning_state(*_inputs(), policy=torch.nn.Identity())
+    content_grids: list[torch.Tensor] = []
+    handle = grid.branch.token_axis.register_forward_hook(
+        lambda _module, _inputs, output: content_grids.append(output.detach())
+    )
     rows, value = grid(
         state.layer_memory_states,
         state.frame_indices,
         state.video_bounds,
         (0, 2, 3),
     )
+    handle.remove()
+    assert len(content_grids) == 1
+    assert content_grids[0].count_nonzero()
     assert not value.count_nonzero()
     sum(item.float().sum() for item in rows.values()).backward()
     gate = grid.branch.payload_gate

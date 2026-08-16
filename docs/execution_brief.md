@@ -23,6 +23,14 @@ task4则为`-.16081`。所有11 scales都无法使24个active task-view deployed
 在full24形成幅度平衡、跨task兼容的shared native commitment**，不是carrier、held video或LoRA写出未接通。
 精确authority=`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。
 
+当前active successor是**CFMG**，authority=
+`docs/action_forecast_writer_v6_lpcp_content_first_memory_grid_design.md`。代码定位发现CMBG的zero gate位于
+temporal/K-set/M2P之前，因此首步这些模块只贡献零输入处的固定Jacobian，而没有先形成内容依赖的有序程序。
+CFMG只把同一个gate移到完整grid之后：参数量、rank32、K4、reward、全局commitment和step0=LPCP全部不变；
+language仍只提供context/address，新增B Value必须经过视频动态。canonical实现与fresh config/checkpoint/eval
+schema已原位完成，完整CPU=`411 passed`、architecture guard无hard violation。当前无GPU run；下一步是task9
+真实mechanism，再按门运行fixed task9/15/18 world3，失败即终局，不能用归一化、PCGrad或scale小扫补救。
+
 最新完成closed-loop实验是**V6-LPCP Direct Joint Native-Factor Residual**（DJNFR），authority=
 `docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。clean frozen `49a4129`从sealed LPCP
 fresh完成full24 cycle1：24 tasks/48 paired states/96 rollouts，candidate/reference=`34/33`、gains=`5/4`、9 active
@@ -159,13 +167,14 @@ outcomes/counts与信息墙全通过，cycle=`179.973s`；三task same-task cosi
 `.983/.985,.898/.870,.982/.949`，raw shared coverage=`2/3`、native best=`10/12`。但task15仍主导且task18
 到shared cosine=`-.1570`，没有12/12 scale，最终exact no-op；不full24/strict/held或小扫。
 
-当前active design是**CMBG**：严格保留CAPG的有向video/K-set/M2P/direct-B与NEAP/K4/rank32/global gate，唯一把
+最近完成的CMBG严格保留CAPG的有向video/K-set/M2P/direct-B与NEAP/K4/rank32/global gate，唯一把
 post-backbone 37-query latents换成逐层读取真实image/language/50 Action context的37个one-way memory tokens，形成
 `18x37x1024`grid。memory走真实Action Expert layer，carrier不看memory且保持原生执行shape；step0仍只有coordinate
 gate开放，trainable=`2,828,928`。真实task15 130-frame carrier parity的五组输出均max-abs=`0`；task9 112-frame
 CUDA检查确认exact-zero、gate-open全链gradient、wall=`121.251s`、peak reserved=`18,848 MiB`。fresh world3仍必须
 复现固定outcome/count并达到raw3/3、native12/12；authority=
-`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。当前没有active GPU run。
+`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。该轮full24已按上文终局；当前
+active CFMG只移动zero gate到完整content grid之后，精确authority见上文。当前没有active GPU run。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

@@ -1,4 +1,4 @@
-"""Train the CMBG shared parameter map with task-complete endpoint credit."""
+"""Train the CFMG shared parameter map with task-complete endpoint credit."""
 
 from __future__ import annotations
 
@@ -274,10 +274,10 @@ def _load_direct_factor_models(
         != 2_828_928
     ):
         raise WriterModelError(
-            "CMBG endpoint must train only 2828928 parameters"
+            "CFMG endpoint must train only 2828928 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = "v6_lpcp_capacity_matched_backbone_memory_grid_only"
+    trainable["object"] = "v6_lpcp_content_first_memory_grid_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -499,8 +499,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_capacity_matched_backbone_memory_"
-                        "grid_completion_v1"
+                        "ember_pi05_v6_lpcp_content_first_memory_grid_"
+                        "completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

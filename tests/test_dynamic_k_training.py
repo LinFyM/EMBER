@@ -103,13 +103,11 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "formal_cycle1_terminal_noop_nonpass"
-    assert config["formal_run"]["status"] == (
-        "terminal_nonpass_global_commitment_exact_noop"
-    )
+    assert config["status"] == "preformal_mechanism_pending"
+    assert config["formal_run"]["status"] == "blocked_preformal_mechanism"
     assert config["initialization"]["as_macro"] == 25
     assert config["deployment"] == {
-        "kind": "one_complete_38_target_rank32_capacity_matched_grid_lora",
+        "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
         "carrier_rank": 16,
         "residual_bank_rank": 16,
         "public_rank": 32,
@@ -121,7 +119,7 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     }
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "capacity_matched_backbone_memory_grid_2828928_parameters"
+        "content_first_backbone_memory_grid_2828928_parameters"
     )
     assert config["objective"]["kind"] == (
         "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
@@ -171,6 +169,8 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["carrier_first_bank_tensors_unchanged"]
     assert gate["single_native_context_backbone_forward"]
     assert gate["one_way_layer_matched_memory_observer"]
+    assert gate["content_processing_precedes_zero_gate"]
+    assert gate["pregate_content_grid_nonzero"]
     assert gate["residual_second_b_step0_zero"]
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
@@ -192,18 +192,9 @@ def test_capacity_grid_config_records_shared_mechanism_gate() -> None:
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3
     assert gate["constant_effective_ba_natural_ratio_maximum"] == 0.005
-    assert gate["shared_anchor_cycle_seconds_maximum"] == 318.749
-    held = config["formal_run"]["held_gate_evidence"]
-    assert held["passing_tasks"] == 8
-    assert held["held_to_train_effective_ba_l2_ratio"] > 0.9
-    assert held["reverse_and_constant_pass"]
-    result = config["formal_run"]["formal_result_evidence"]
-    assert result["active_tasks"] == 6
-    assert result["best_descending_views"] == 17
-    assert result["required_descending_views"] == 24
-    assert result["final_delta_l2"] == 0.0
-    assert result["strict400"] == "skipped_exact_step0_noop"
-    assert result["cycle2"] == "forbidden"
+    assert gate["shared_anchor_cycle_seconds_maximum"] == 143.416
+    assert "held_gate_evidence" not in config["formal_run"]
+    assert "formal_result_evidence" not in config["formal_run"]
     with pytest.raises(WriterModelError, match="training is not authorized"):
         require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320

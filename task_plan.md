@@ -588,6 +588,13 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   --data-root <canonical>/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir <fresh-root>
   --smoke-task-ids 9,15,18`；三卡共同产生唯一delta，首门严格按authority的outcome/count、12/12、3/3、held8、
   temporal、rank-bank、wall与0禁读/OOM/nonfinite裁决；任一失败即终局，不补task、拆rank winner或参数小扫；
+- [x] 两次pre-rollout启动工程失败均独立保留且不构成科学run：首个detached one-liner未把`--smoke-task-ids`传给
+  workers，在创建root前CLI exit1；第二次已正确启动world3并写run contract，但launcher未source canonical
+  `.env.local`，模型加载后在环境创建前因LIBERO assets路径缺失exit1，0 rollout/update。该非空root与两份log均不
+  resume、不清空或冒充fresh。唯一修正版仍用同一code/scientific contract/GPU topology，只在launcher中source
+  既有`.env.local`并把fresh root更新为
+  `runs/outputs/pi05_v6_lpcp_task_complete_endpoint_coexistence_shared3_task9_15_18_b8_9ed6a08_gpu02p123_retry1_20260816`；
+  exact training command其余不变，环境前缀增加`source <canonical>/.env.local`；
 - [ ] clean frozen world3共同运行task9/15/18，完整分析12/12、跨task gradient、held8、时序、wall与rank一致性；
 - [ ] 三anchor shared gate全过才full24 cycle1与strict paired400。
 

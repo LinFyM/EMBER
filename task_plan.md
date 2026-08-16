@@ -540,6 +540,22 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   inference acceptance；
 - [x] 完成定向CPU=`50 passed`、完整CPU=`405 passed`、compileall与architecture guard 0 hard；active source
   `+616/-632`、净`-16`，没有新增平行实现；
+- [x] 记录task9唯一launch contract：clean pushed code commit=`33f69fd4591ee8534004cbf569724575055c3e9c`，
+  detached frozen worktree=`/data1/user/ymdai/worktrees/EMBER-neap-c-task9-33f69fd`；fresh root=
+  `runs/outputs/pi05_v6_lpcp_native_endpoint_action_preference_task9_mechanism_b8_33f69fd_gpu02p1_20260816`；
+  gpu02物理1=`GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4`，single process/physical B8。输入复用canonical
+  source step1000、tokenizer、target HDF5与LIBERO assets；规模为task9两initial states、四arms、预期25 complete
+  chunks、8 selected pairs和四个disjoint K4 credit views。`/data1` quota已用542,421,408 KiB/1 TiB，预计新增
+  `<1 GiB`且不建cache；fresh-only，不resume/覆盖非空root。唯一首门是completion、outcome=`1/0`、25/8、0 OOM/
+  nonfinite/禁读、physical B8、wall<=633.810s、4/4 endpoint descent、finite j<=10及全部held/temporal门；任一失败
+  即终局，不跑task15/18；
+  exact command=`CUDA_VISIBLE_DEVICES=1 PYTHONPATH=<frozen>/src MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
+  NCCL_P2P_DISABLE=1 <canonical>/.venv/bin/python scripts/train_reward_writer.py --config
+  configs/pi05_writer_v6_lpcp_native_endpoint_action_preference_v1.json --mode smoke --source-run
+  <canonical>/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722 --checkpoint
+  <source-run>/checkpoints/step_00001000 --tokenizer-path <canonical>/models/tokenizers/openpi/paligemma_tokenizer.model
+  --data-root <canonical>/data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a --output-dir <fresh-root>
+  --smoke-task-id 9`；`<frozen>`、`<canonical>`、`<source-run>`和`<fresh-root>`分别严格展开为本条已记录路径；
 - [ ] 先跑task9机制/显存/吞吐/held/temporal快速否决；只有task9全过才跑task15/18；
 - [ ] 三anchor全过才实现distributed formal并启动full24 cycle1与strict paired400。
 

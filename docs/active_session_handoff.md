@@ -141,7 +141,12 @@
   `405 passed`、compileall与architecture guard 0 hard，active source净`-16`行且没有平行runner。先以task9
   physical B8验证显存、wall、4/4 continuous
   descent、finite candidate及held/temporal链；task9全过才运行task15/18，三anchor全过才解锁formal/full24。
-  当前没有GPU run或可resume checkpoint；
+  task9已预注册为clean pushed `33f69fd`、detached
+  `/data1/user/ymdai/worktrees/EMBER-neap-c-task9-33f69fd`、gpu02物理1单进程，fresh output=
+  `runs/outputs/pi05_v6_lpcp_native_endpoint_action_preference_task9_mechanism_b8_33f69fd_gpu02p1_20260816`。
+  scale为两paired states/四rollouts、预期`candidate1/reference0`、25 complete chunks、8 selected pairs、四K4
+  views；physical endpoint B8、wall上限633.810s，任一机制/held/temporal门失败即终局，不跑task15/18。当前尚未
+  launch且无可resume checkpoint；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

@@ -164,6 +164,14 @@
   canonical实现已原位完成并退休TCEC wide-head/config/schema：trainable=`3,008,384`，定向CPU=`79 passed`、完整
   CPU=`405 passed`、architecture guard无hard violation；当前尚未启动GPU，固定world3 task9/15/18为首个
   preformal gate；
+- CAPG world3 preformal launch contract已冻结：code/config commit=`878b5e4dddc87c17b90989352138fdd7547b6dc9`，从
+  detached worktree运行`smoke`，固定task=`9,15,18`、world=`3`、每rank一个task、physical GPU=
+  `gpu02:1/2/3`、`NCCL_P2P_DISABLE=1`，source policy=`pi05_source_base_v1_seed7_1k_e2cc238_20260722/step_00001000`，
+  K4/B8/trajectory/view/optimizer/backtrack和318.749秒wall门均严格沿CAPG authority；fresh output root=
+  `runs/outputs/pi05_v6_lpcp_capg_shared3_task9_15_18_b8_878b5e4_gpu02p123_20260816`，不得覆盖或resume旧root。启动前
+  `/data1` quota为`542,442,152/1,073,741,824` blocks、shared filesystem可用`85T`；preformal新artifact预计远低于
+  `.1GiB`且复用现有94G dataset、8.8G source checkpoint与tokenizer。18:22 live snapshot中三卡各约45.49GB free、
+  utilization=0；launch前仍需再次live确认，若状态变化则换同节点空卡，必要时才按owner许可与`ycliu`低负载卡共驻；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

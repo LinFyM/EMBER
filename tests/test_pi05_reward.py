@@ -333,6 +333,7 @@ def test_matched_stratified_occupancy_excludes_stored_winner_action() -> None:
     )
     assert batch[ACTION].shape == (2, 50, 7)
     assert batch["executed_action_steps"].tolist() == [5, 5]
+    assert batch["policy_noise_seed"].tolist() == [13, 13]
     assert torch.equal(batch[ACTION][0], torch.full((50, 7), 5.0))
     assert torch.equal(batch[ACTION][1], torch.full((50, 7), 4.0))
     assert trajectory_ids.tolist() == [0]
@@ -364,6 +365,16 @@ def test_matched_stratified_occupancy_selects_maximum_in_each_progress_bin() -> 
     assert metrics["selected_replan_indices"] == [[1, 3, 5, 7, 9, 11, 13, 16]]
     assert metrics["selected_credit_pairs"] == 8
     assert trajectory_ids.tolist() == [0] * 8
+    assert batch["policy_noise_seed"][0::2].tolist() == [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        16,
+    ]
     assert batch[ACTION][0::2, 0, 0].tolist() == [2, 4, 6, 8, 10, 12, 14, 17]
     assert batch[ACTION][1::2].count_nonzero() == 0
 

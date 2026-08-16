@@ -14,7 +14,9 @@ from ember.lora import copy_task_lora_state_
 from ember.writer.as_step import ParameterSlice, assign_flat_gradient
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState
-from ember.writer.reward_preference import functional_matched_stratified_occupancy_margin
+from ember.writer.reward_preference import (
+    functional_matched_stratified_occupancy_endpoint_margin,
+)
 
 if TYPE_CHECKING:
     from ember.reward.protocol import RewardTask
@@ -50,7 +52,6 @@ class RewardProbe:
     query: Mapping[str, torch.Tensor]
     before_action: torch.Tensor
     policy_noise_seed: int
-    cycle: int
     preference_batch: Mapping[str, torch.Tensor]
     preference_trajectory_ids: torch.Tensor
     before_preference_margin: float
@@ -107,7 +108,6 @@ def make_reward_probe(
     candidate_lora: Mapping[str, torch.Tensor],
     candidate: Sequence[RewardTrajectory],
     labels: Sequence[str],
-    cycle: int,
     preference_batch: Mapping[str, torch.Tensor],
     preference_trajectory_ids: torch.Tensor,
     before_preference_margin: float,
@@ -119,9 +119,7 @@ def make_reward_probe(
         if label in {"candidate", "reference"}
     )
     trajectory = candidate[index]
-    query = {
-        name: value.clone() for name, value in trajectory.observations[0].items()
-    }
+    query = {name: value.clone() for name, value in trajectory.observations[0].items()}
     return RewardProbe(
         global_task_id=task.global_task_id,
         suite=task.suite,
@@ -138,7 +136,6 @@ def make_reward_probe(
             policy_noise_seed=trajectory.policy_noise_seeds[0],
         ),
         policy_noise_seed=trajectory.policy_noise_seeds[0],
-        cycle=cycle,
         preference_batch=preference_batch,
         preference_trajectory_ids=preference_trajectory_ids,
         before_preference_margin=before_preference_margin,
@@ -159,7 +156,11 @@ def lora_response(
         if not name.endswith(".lora_A.default.weight"):
             continue
         module = name.removesuffix(".lora_A.default.weight")
-        kind = "q" if module.endswith("q_proj") else "v" if module.endswith("v_proj") else "action"
+        kind = (
+            "q"
+            if module.endswith("q_proj")
+            else "v" if module.endswith("v_proj") else "action"
+        )
         b_name = name.replace(".lora_A.default.weight", ".lora_B.default.weight")
         after_a, before_b, after_b = after[name], before[b_name], after[b_name]
         values = {
@@ -173,7 +174,9 @@ def lora_response(
             sums[key] = squared if sums[key] is None else sums[key] + squared
             counts[key] += value.numel()
             if key == "effective_ba":
-                by_kind[kind] = squared if by_kind[kind] is None else by_kind[kind] + squared
+                by_kind[kind] = (
+                    squared if by_kind[kind] is None else by_kind[kind] + squared
+                )
                 kind_counts[kind] += value.numel()
     response = {
         f"{key}_response_rms": math.sqrt(float(value) / counts[key])
@@ -209,19 +212,18 @@ def evaluate_preference_views(
                 use_query_delta=True,
             )
             lora = runtime.writer.decode_output(encoded)
-        preference = functional_matched_stratified_occupancy_margin(
+        preference = functional_matched_stratified_occupancy_endpoint_margin(
             runtime.policy,
             lora,
             runtime.lora_contract,
             probe.preference_batch,
             probe.preference_trajectory_ids,
-            mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-            physical_microbatch_size=int(
-                runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+            endpoint_action_batch_size=int(
+                runtime.config["optimization"]["endpoint_action_batch_size"]
             ),
-            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-            cycle=probe.cycle,
-            global_task_id=probe.global_task_id,
+            num_inference_steps=int(
+                runtime.config["environment"]["num_inference_steps"]
+            ),
             device=runtime.context.device,
         )
         delta = preference["preference_margin"] - view.before_preference_margin
@@ -253,7 +255,9 @@ def probe_after_update(
         enabled=runtime.context.device.type == "cuda",
     ):
         encoded = runtime.writer.compile_conditioning_state(
-            probe.conditioning_state, probe.condition_video_offsets, use_query_delta=True
+            probe.conditioning_state,
+            probe.condition_video_offsets,
+            use_query_delta=True,
         )
         after = runtime.writer.decode_output(encoded)
     response = lora_response(probe.before_lora, after)
@@ -302,7 +306,10 @@ def _coexistence(
     task_ids = tuple(task.global_task_id for task in runtime.tasks)
     task_index = {task_id: index for index, task_id in enumerate(task_ids)}
     matrix = torch.zeros(
-        len(task_ids), shared_mean.numel(), dtype=torch.float32, device=shared_mean.device
+        len(task_ids),
+        shared_mean.numel(),
+        dtype=torch.float32,
+        device=shared_mean.device,
     )
     active = torch.zeros(len(task_ids), dtype=torch.long, device=shared_mean.device)
     for task_id, gradient in task_gradients.items():
@@ -332,9 +339,9 @@ def _coexistence(
         offdiag = pairwise[
             ~torch.eye(rows.shape[0], dtype=torch.bool, device=rows.device)
         ]
-        pairwise_values = torch.stack(
-            (offdiag.mean(), offdiag.min(), offdiag.max())
-        ).cpu().tolist()
+        pairwise_values = (
+            torch.stack((offdiag.mean(), offdiag.min(), offdiag.max())).cpu().tolist()
+        )
         pairwise_summary = dict(
             zip(("mean", "minimum", "maximum"), pairwise_values, strict=True)
         )
@@ -347,12 +354,16 @@ def _coexistence(
     ):
         values = rows[:, item.start : item.stop]
         mean_values = shared_mean[item.start : item.stop]
-        task_rms, shared_rms = torch.stack(
-            (
-                values.square().mean(dim=1).sqrt().mean(),
-                mean_values.square().mean().sqrt(),
+        task_rms, shared_rms = (
+            torch.stack(
+                (
+                    values.square().mean(dim=1).sqrt().mean(),
+                    mean_values.square().mean().sqrt(),
+                )
             )
-        ).cpu().tolist()
+            .cpu()
+            .tolist()
+        )
         parameter_energy[name] = {
             "task_gradient_rms_mean": task_rms,
             "shared_mean_gradient_rms": shared_rms,
@@ -360,22 +371,28 @@ def _coexistence(
 
     delta_norm = torch.linalg.vector_norm(final_delta)
     descent_dots = -(rows @ final_delta)
-    descent_cosines = descent_dots / (
-        row_norms * delta_norm
-    ).clamp_min(1e-30)
-    task_values = torch.stack(
-        (row_norms, dots, cosines, descent_dots, descent_cosines), dim=1
-    ).cpu().tolist()
-    coverage, cosine_mean, cosine_minimum = torch.stack(
-        ((dots > 0).float().mean(), cosines.mean(), cosines.min())
-    ).cpu().tolist()
-    final_coverage, final_cosine_mean, final_cosine_minimum = torch.stack(
-        (
-            (descent_dots > 0).float().mean(),
-            descent_cosines.mean(),
-            descent_cosines.min(),
+    descent_cosines = descent_dots / (row_norms * delta_norm).clamp_min(1e-30)
+    task_values = (
+        torch.stack((row_norms, dots, cosines, descent_dots, descent_cosines), dim=1)
+        .cpu()
+        .tolist()
+    )
+    coverage, cosine_mean, cosine_minimum = (
+        torch.stack(((dots > 0).float().mean(), cosines.mean(), cosines.min()))
+        .cpu()
+        .tolist()
+    )
+    final_coverage, final_cosine_mean, final_cosine_minimum = (
+        torch.stack(
+            (
+                (descent_dots > 0).float().mean(),
+                descent_cosines.mean(),
+                descent_cosines.min(),
+            )
         )
-    ).cpu().tolist()
+        .cpu()
+        .tolist()
+    )
     return {
         "active_task_ids": selected_ids,
         "shared_mean_descent_coverage": coverage,
@@ -420,14 +437,18 @@ def preconditioned_candidate_commitment(
     if float(gradient_norm) <= 0 or float(candidate_norm) <= 0:
         raise WriterModelError("preconditioned commitment lost a nonzero direction")
     negative_gradient = -optimizer_gradient
-    values = torch.stack(
-        (
-            gradient_norm,
-            candidate_norm,
-            torch.dot(adam_candidate_delta, negative_gradient)
-            / (candidate_norm * gradient_norm),
+    values = (
+        torch.stack(
+            (
+                gradient_norm,
+                candidate_norm,
+                torch.dot(adam_candidate_delta, negative_gradient)
+                / (candidate_norm * gradient_norm),
+            )
         )
-    ).cpu().tolist()
+        .cpu()
+        .tolist()
+    )
     count = optimizer_gradient.numel()
     return adam_candidate_delta, {
         "optimizer_gradient_l2": values[0],
@@ -495,16 +516,13 @@ def _rebase_preference_rows(
                 "before_preference_margin": before_margin,
                 "after_preference_margin": after_margin,
                 "preference_margin_delta": delta,
-                "after_preference_objective": float(
-                    row["after_preference_objective"]
-                ),
+                "after_preference_objective": float(row["after_preference_objective"]),
                 "preference_descent": delta < 0,
                 "gradient_path_before_preference_margin": float(
                     base["before_preference_margin"]
                 ),
                 "gradient_path_to_inference_baseline_margin_delta": float(
-                    base["after_preference_margin"]
-                    - base["before_preference_margin"]
+                    base["after_preference_margin"] - base["before_preference_margin"]
                 ),
             }
         )
@@ -665,9 +683,7 @@ def apply_reward_step(
         name: float((value.detach() - before[name]).float().square().mean().sqrt())
         for name, value in named
     }
-    coexistence = _coexistence(
-        runtime, task_gradients, committed_gradient, final_delta
-    )
+    coexistence = _coexistence(runtime, task_gradients, committed_gradient, final_delta)
     return AppliedStep(
         active_tasks=active_tasks,
         gradient_norm=float(grad_norm),

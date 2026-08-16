@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_native_zero_residual_bank_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -256,10 +256,17 @@ held8分析均exit0；稳定结构审计证明carrier、second-B step0、base BA
 `.95322/.94073`与`.93272/.92047`，均8/8 held tasks；说明native-zero bank真正修复了ALB的小残差可见性与
 跨video factor coherence。task9仍在j0--10无all-view candidate并exact no-op，且rank32计算shape虽FP64 BA等价，
 paired outcome由预定`2/1,26 chunks`漂为`1/0,25 chunks`。三anchor合计wall/ALB=`1.16565x>1.15x`；故2/3门与
-吞吐门失败，NZRB-C不full24/strict/resume或bank/rank/scale小扫。当前没有active successor、GPU run或可resume
-checkpoint；下一变量不能继续改factor native origin，必须针对reward-useful Value/acceptance如何形成跨video/task
-都有效的finite policy step。初次analysis的约`1e-3`结构报警来自跨autocast重算carrier，已由每anchor的
+吞吐门失败，NZRB-C不full24/strict/resume或bank/rank/scale小扫。初次analysis的约`1e-3`结构报警来自跨autocast
+重算carrier，已由每anchor的
 `nzrb_stable_rank_bank_contract.json`纠正，不是模型结构失败。
+
+当前active successor是**V6-LPCP Native Endpoint Action-Preference Credit**（NEAP-C），authority=
+`docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`。它不改LPCP/NZRB carrier、rank32
+public LoRA、MB-SOP同B8 action panel、四correct K4 views、optimizer或native backtracking，唯一把随机flow-time
+CFM preference替换为冻结source policy完整10步部署求解后的action-endpoint preference。新objective直接比较
+generated endpoint到reward-labeled winner/loser action的executed-prefix距离，gradient与acceptance使用同一个
+deployment metric，不再换parameter ray。先只做task9 physical-B8真实显存/吞吐与finite all-view gate；task9全过
+才运行task15/18，三anchor全过才实现formal/full24。当前没有GPU run或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

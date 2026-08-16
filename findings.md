@@ -682,6 +682,16 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
      正常BF16 compute-shape差异已足以改变该敏感closed-loop。总wall/ALB=`1.16565x>1.15x`。故NZRB为2/3且
      吞吐门失败，不full24/strict。下一接口是reward-useful Value/acceptance能否给出跨correct videos/tasks共同
      存在的finite policy step，不再继续改变factor native origin；memory、rank8、dynamic-K与LoRA生成未被否定。
+103. NZRB之后不能回到finite ray mixture：AV-MBC/MMCD/PAV已经覆盖raw mean、maximum-margin与Adam-preconditioned
+     rays。当前未检验的最早变量是reward functional metric本身。NEAP-C完整保留LPCP/NZRB/MB-SOP，只把随机
+     flow-time CFM preference改成同noise完整10步PI05部署action endpoint preference；generated action一次同时
+     比较winner/loser executed-prefix距离，gradient与native acceptance使用同一metric。它先以task9 physical B8
+     显存、wall、4/4 gradient descent、finite candidate与held/temporal链快速否决，不通过就不跑另外两anchor。
+104. NEAP-C canonical实现已原位退休NZRB-C active objective/schema：同一functional LoRA先生成一次视觉语言prefix
+     cache，再经10个checkpointed denoise steps得到真实部署endpoint；B8个generated actions各自同时比较matched
+     winner/loser targets，只让public B leaves承接cotangent并回传四个native-zero B heads。归一化action空间、
+     rollout policy-noise seed、executed-prefix mask和inference acceptance均共用同一合同。定向CPU=`50 passed`、
+     完整CPU=`405 passed`、architecture guard 0 hard且active source净减16行；尚无GPU科学结果。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

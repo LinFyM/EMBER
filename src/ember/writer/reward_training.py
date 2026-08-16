@@ -1,4 +1,4 @@
-"""Train the native-zero residual B bank with matched occupancy credit."""
+"""Train the native-zero residual B bank with deployed-action credit."""
 
 from __future__ import annotations
 
@@ -154,9 +154,7 @@ def _publish_contract(
             runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
         elif not path.is_file() or read_json(path) != dict(contract):
-            raise WriterModelError(
-                "direct-factor exact-resume launch contract changed"
-            )
+            raise WriterModelError("direct-factor exact-resume launch contract changed")
         append_jsonl(
             runtime_args.output_dir / "invocations.jsonl",
             {
@@ -235,16 +233,16 @@ def _load_direct_factor_models(
     base_config: Mapping[str, Any],
     source: Mapping[str, Any],
     source_base_config: Mapping[str, Any],
-) -> tuple[torch.nn.Module, torch.nn.Module, Any, dict[str, Any], torch.optim.Optimizer]:
+) -> tuple[
+    torch.nn.Module, torch.nn.Module, Any, dict[str, Any], torch.optim.Optimizer
+]:
     cold_start = (
         args.source_run.resolve().parents[2] / config["cold_start_relative"]
     ).resolve()
     if not (cold_start / "writer.safetensors").is_file():
         raise WriterModelError("direct-factor LPCP cold start is missing")
     config["resolved_cold_start"] = str(cold_start)
-    policy = load_policy(
-        Path(source["model_path"]), source_base_config, context.device
-    )
+    policy = load_policy(Path(source["model_path"]), source_base_config, context.device)
     writer, lora = build_writer(
         base_config,
         policy,
@@ -263,9 +261,7 @@ def _load_direct_factor_models(
     )
     if (
         not trainable_names
-        or any(
-            not name.startswith("factor_commitment.") for name in trainable_names
-        )
+        or any(not name.startswith("factor_commitment.") for name in trainable_names)
         or sum(
             value.numel()
             for value in writer.factor_commitment.parameters()
@@ -274,12 +270,10 @@ def _load_direct_factor_models(
         != 860_160
     ):
         raise WriterModelError(
-            "native-zero residual bank must train only 860160 parameters"
+            "native endpoint preference must train only 860160 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
-    trainable["object"] = (
-        "v6_lpcp_native_zero_residual_bank_commitment_only"
-    )
+    trainable["object"] = "v6_lpcp_native_endpoint_action_preference_only"
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
 
@@ -352,9 +346,7 @@ def prepare_runtime(
             )
     seed_everything(int(config["rng"]["optimizer_seed"]), context)
     authorities, source, _ = load_run_authorities(args, base_config)
-    tasks, writer_tasks = _load_tasks(
-        data_root=args.data_root, base_config=base_config
-    )
+    tasks, writer_tasks = _load_tasks(data_root=args.data_root, base_config=base_config)
     policy, writer, lora, trainable, optimizer = _load_direct_factor_models(
         args=args,
         context=context,
@@ -368,9 +360,7 @@ def prepare_runtime(
         rendezvous_root=args.output_dir.parent,
         collective_timeout=timedelta(
             minutes=int(
-                config["optimization"]["distributed"][
-                    "collective_timeout_minutes"
-                ]
+                config["optimization"]["distributed"]["collective_timeout_minutes"]
             )
         ),
     )
@@ -498,8 +488,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_native_zero_residual_bank_"
-                        "commitment_completion_v1"
+                        "ember_pi05_v6_lpcp_native_endpoint_action_"
+                        "preference_completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

@@ -24,7 +24,9 @@ def _action_disagreement(
         or not 0 < valid <= winner.shape[1]
     ):
         raise RewardProtocolError("matched occupancy action shape changed")
-    value = (winner[:, :valid].float() - loser[:, :valid].float()).square().mean().sqrt()
+    value = (
+        (winner[:, :valid].float() - loser[:, :valid].float()).square().mean().sqrt()
+    )
     if not bool(torch.isfinite(value)):
         raise RewardProtocolError("matched occupancy action disagreement is nonfinite")
     return float(value)
@@ -52,7 +54,7 @@ def _trajectory_selection(
     actions_by_arm: Mapping[str, Sequence[Sequence[torch.Tensor]]],
     strata_per_trajectory: int,
 ) -> tuple[
-    list[tuple[dict[str, torch.Tensor], torch.Tensor, int]],
+    list[tuple[dict[str, torch.Tensor], torch.Tensor, int, int]],
     tuple[int, ...],
     tuple[float, ...],
 ]:
@@ -85,24 +87,30 @@ def _trajectory_selection(
     for index in indices:
         observation = winner.observations[index]
         valid = winner.valid_action_steps[index]
+        noise_seed = winner.policy_noise_seeds[index]
         rows.extend(
             (
-                (observation, winner_actions[index], valid),
-                (observation, loser_actions[index], valid),
+                (observation, winner_actions[index], valid, noise_seed),
+                (observation, loser_actions[index], valid, noise_seed),
             )
         )
     return rows, indices, scores
 
 
 def _occupancy_batch(
-    rows: Sequence[tuple[dict[str, torch.Tensor], torch.Tensor, int]],
+    rows: Sequence[tuple[dict[str, torch.Tensor], torch.Tensor, int, int]],
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     keys = set(rows[0][0])
-    if any(set(observation) != keys for observation, _, _ in rows):
+    if any(set(observation) != keys for observation, _, _, _ in rows):
         raise RewardProtocolError("matched occupancy observation keys changed")
-    valid = torch.tensor([count for _, _, count in rows], dtype=torch.long, device=device)
-    actions = torch.cat([action for _, action, _ in rows]).to(
+    valid = torch.tensor(
+        [count for _, _, count, _ in rows], dtype=torch.long, device=device
+    )
+    noise_seeds = torch.tensor(
+        [seed for _, _, _, seed in rows], dtype=torch.long, device=device
+    )
+    actions = torch.cat([action for _, action, _, _ in rows]).to(
         device=device, non_blocking=True
     )
     if (
@@ -111,16 +119,18 @@ def _occupancy_batch(
         or bool((valid <= 0).any())
         or bool((valid > actions.shape[1]).any())
         or not torch.equal(valid[0::2], valid[1::2])
+        or not torch.equal(noise_seeds[0::2], noise_seeds[1::2])
     ):
         raise RewardProtocolError("matched occupancy executed prefix is invalid")
     batch = {
-        name: torch.cat([observation[name] for observation, _, _ in rows]).to(
+        name: torch.cat([observation[name] for observation, _, _, _ in rows]).to(
             device=device, non_blocking=True
         )
         for name in sorted(keys)
     }
     batch[ACTION] = actions
     batch["executed_action_steps"] = valid
+    batch["policy_noise_seed"] = noise_seeds
     batch["action_is_pad"] = (
         torch.arange(actions.shape[1], device=device)[None] >= valid[:, None]
     )
@@ -145,7 +155,7 @@ def complete_matched_stratified_occupancy_batch(
         or any(len(actions_by_arm[arm]) != len(pairs) for arm in actions_by_arm)
     ):
         raise RewardProtocolError("matched stratified occupancy panel changed")
-    rows: list[tuple[dict[str, torch.Tensor], torch.Tensor, int]] = []
+    rows: list[tuple[dict[str, torch.Tensor], torch.Tensor, int, int]] = []
     trajectory_ids: list[int] = []
     selected_indices, selected_scores, all_scores = [], [], []
     for trajectory_id, (pair, winner_arm) in enumerate(
@@ -165,13 +175,18 @@ def complete_matched_stratified_occupancy_batch(
         all_scores.extend(scores)
     batch = _occupancy_batch(rows, device)
     flat_selected = [score for values in selected_scores for score in values]
-    return batch, torch.tensor(trajectory_ids, dtype=torch.long, device=device), {
-        "selected_credit_pairs": len(trajectory_ids),
-        "selected_replan_indices": selected_indices,
-        "selected_action_disagreement_rms_mean": sum(flat_selected) / len(flat_selected),
-        "selected_action_disagreement_rms_minimum": min(flat_selected),
-        "complete_action_disagreement_rms_mean": sum(all_scores) / len(all_scores),
-    }
+    return (
+        batch,
+        torch.tensor(trajectory_ids, dtype=torch.long, device=device),
+        {
+            "selected_credit_pairs": len(trajectory_ids),
+            "selected_replan_indices": selected_indices,
+            "selected_action_disagreement_rms_mean": sum(flat_selected)
+            / len(flat_selected),
+            "selected_action_disagreement_rms_minimum": min(flat_selected),
+            "complete_action_disagreement_rms_mean": sum(all_scores) / len(all_scores),
+        },
+    )
 
 
 def empty_matched_occupancy_credit() -> dict[str, Any]:
@@ -180,8 +195,8 @@ def empty_matched_occupancy_credit() -> dict[str, Any]:
     return {
         "objective": 0.0,
         "preference_margin": 0.0,
-        "winner_flow_loss": 0.0,
-        "loser_flow_loss": 0.0,
+        "winner_action_distance": 0.0,
+        "loser_action_distance": 0.0,
         "discordant_trajectories": 0,
         "selected_credit_pairs": 0,
         "replay_rows": 0,
@@ -226,8 +241,7 @@ def occupancy_cycle_metrics(
             int(row["matched_policy_forwards"]) for row in records
         ),
         "stored_winner_to_matched_requery_rms_mean": math.fsum(
-            float(row["stored_winner_to_matched_requery_rms"])
-            for row in active_records
+            float(row["stored_winner_to_matched_requery_rms"]) for row in active_records
         )
         / len(active_records),
         "stored_loser_to_matched_first_requery_rms_mean": math.fsum(

@@ -284,9 +284,7 @@ def _validate_reward_run_contract(
         or run.get("commitment") != reward_config["commitment"]
         or run.get("initialization", {}).get("as_checkpoint")
         != reward_config["initialization"]["as_checkpoint"]
-        or not Path(
-            str(run.get("initialization", {}).get("checkpoint", ""))
-        ).is_dir()
+        or not Path(str(run.get("initialization", {}).get("checkpoint", ""))).is_dir()
     )
     if changed:
         raise WriterModelError("reward training authority changed")
@@ -339,9 +337,7 @@ def _reward_writer_asset(
         "rng",
         "optimization",
     )
-    if any(
-        sealed_config.get(key) != reward_config.get(key) for key in sealed_sections
-    ):
+    if any(sealed_config.get(key) != reward_config.get(key) for key in sealed_sections):
         raise WriterModelError("sealed reward authority changed the training contract")
     if require_formal and (
         sealed_config["formal_run"]["status"] != "sealed"
@@ -358,12 +354,8 @@ def _reward_writer_asset(
         raise WriterModelError("reward Writer parameter contract changed")
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": (
-            "formal_native_zero_residual_bank_commitment"
-        ),
-        "training_stage": (
-            "on_policy_cross_video_native_zero_residual_bank"
-        ),
+        "training_mode": ("formal_native_endpoint_action_preference"),
+        "training_stage": ("on_policy_cross_video_native_endpoint_action_preference"),
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
         "checkpoint_manifest": {
@@ -564,7 +556,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_native_zero_residual_bank_commitment_"
+                "v6_lpcp_native_endpoint_action_preference_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

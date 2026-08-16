@@ -243,21 +243,3 @@ def reward_credit_policy_noise_seed(
         rollout_cursor,
         replan_index,
     )
-
-
-def reward_preference_flow_seed(
-    root_seed: int,
-    *,
-    cycle: int,
-    global_task_id: int,
-    mc_index: int,
-) -> int:
-    """Key one reward-CFM sample by scientific identity, never rank or order."""
-
-    return mixed_seed(
-        "update",
-        root_seed,
-        cycle,
-        global_task_id,
-        mc_index,
-    )

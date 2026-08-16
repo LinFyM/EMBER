@@ -1,4 +1,4 @@
-"""Cycle checkpoints for native-zero residual bank commitment."""
+"""Cycle checkpoints for native endpoint action-preference credit."""
 
 from __future__ import annotations
 
@@ -22,11 +22,9 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_checkpoint_v1"
+    "ember_pi05_v6_lpcp_native_endpoint_action_preference_checkpoint_v1"
 )
-REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_native_zero_residual_bank_commitment_cycle_checkpoint"
-)
+REWARD_DEPLOYMENT_KIND = "v6_lpcp_native_endpoint_action_preference_cycle_checkpoint"
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 
 
@@ -35,9 +33,7 @@ def checkpoint_cycle(path: Path | None) -> int:
         return 0
     match = _CYCLE_NAME.fullmatch(path.name)
     if match is None or path.parent.name != "checkpoints":
-        raise WriterModelError(
-            "direct-factor resume path is not a cycle checkpoint"
-        )
+        raise WriterModelError("direct-factor resume path is not a cycle checkpoint")
     return int(match.group(1))
 
 

@@ -392,9 +392,10 @@ Adam-preconditioned parameter ray；ALB-NV固定A后证明线性`delta-B A0`能�
 仍不稳定。NZRB-C进一步用一套rank32 adapter完整保留LPCP first bank，并让second-B从native zero写同一residual。
 clean `d4fc92e`的task15/18 held factor/BA coherence与8/8 coverage显著改善，证明该LoRA写出机制有价值；task9仍
 j0--10无finite all-view step并因rank32正常BF16 compute-shape差异改变固定outcome，总wall也略超门。NZRB因此
-2/3终局且不full24。当前没有active successor；下一设计必须针对reward-useful Value/acceptance如何形成跨正确
-视频和task都有效的finite policy step，不能再沿factor origin、bank宽度、rank或scale小扫。memory token、rank8、
-dynamic-K/few-shot仍是候选方法，不是强制形式，也没有被该负结果否定。
+2/3终局且不full24。当前NEAP-C据此只把随机flow-time CFM credit替换为完整10步部署action endpoint
+preference；LPCP、NZRB、MB-SOP、rank与native acceptance不变。它先以task9检验同一个deployment metric能否同时
+产生gradient和finite all-view step，不再沿factor origin、bank宽度、rank、scale或parameter-ray求解器小扫。
+memory token、rank8、dynamic-K/few-shot仍是候选方法，不是强制形式，也没有被该负结果否定。
 
 后续迭代遵循以下边界：
 

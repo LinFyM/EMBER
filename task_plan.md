@@ -519,7 +519,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 建立下一份单变量authority：残差必须从native-zero坐标写入effective BA，同时不压缩、不重生成LPCP
   rank16 carrier；先用同一task9/15/18 panel快速否决。
 
-## Active iteration: V6-LPCP Native-Zero Residual Bank Commitment
+## Terminal iteration: V6-LPCP Native-Zero Residual Bank Commitment
 
 - [x] 固定严格反事实：连续新增BA仍为`delta-B A0`，public state唯一改为rank32
   `A=[A0;A0], B=[B0,delta-B]`，alpha/rank=1；
@@ -528,7 +528,20 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] clean `d4fc92e`并行完成固定task9/15/18、held8、temporal、稳定FP64 bank合同、wall与显存分析；task15/18
   纠正后过门，task9 outcome漂移且11步no-op；总wall/ALB=`1.16565x`；
 - [x] 按2/3与吞吐门失败终局，不实现distributed evaluator/full24，不改变reserved bank宽度、side、ray、scale或
-  dtype；下一轮讨论前不建立active successor。
+  dtype。
+
+## Active iteration: V6-LPCP Native Endpoint Action-Preference Credit
+
+- [x] 从NZRB与完整ray历史定位单一变量：accepted residual的native/held写出已通，但CFM surrogate不能保证真实
+  10步action endpoint存在跨video finite step；不再换ray solver、bank、rank或scale；
+- [x] 写NEAP-C authority：LPCP/NZRB/MB-SOP、四correct K4 views、optimizer和native backtracking全部保留，
+  只把CFM preference换成同noise完整10步endpoint action距离偏好；
+- [x] 原位替换canonical objective/schema，实现physical B8共享prefix、10步可微action endpoint与同metric
+  inference acceptance；
+- [x] 完成定向CPU=`50 passed`、完整CPU=`405 passed`、compileall与architecture guard 0 hard；active source
+  `+616/-632`、净`-16`，没有新增平行实现；
+- [ ] 先跑task9机制/显存/吞吐/held/temporal快速否决；只有task9全过才跑task15/18；
+- [ ] 三anchor全过才实现distributed formal并启动full24 cycle1与strict paired400。
 
 ## Non-negotiable boundaries
 
@@ -546,10 +559,10 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV与NZRB-C均已终局；当前无active successor、GPU run或
-可resume checkpoint。NZRB证明native-zero bank能修复accepted update的held factor/BA coherence，但task9仍无
-finite all-view step；下一变量不得继续改factor origin，也不能同时改memory、video carrier、LR、matched panel
-或trust scale。
+不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV与NZRB-C均已终局；当前NEAP-C处于实现阶段，尚无GPU run
+或可resume checkpoint。NZRB证明native-zero bank能修复accepted update的held factor/BA coherence，但task9仍无
+finite all-view step；NEAP-C只检验CFM surrogate到真实10步action endpoint这一接口，不能同时改memory、video
+carrier、rank、LR、matched panel或trust scale。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

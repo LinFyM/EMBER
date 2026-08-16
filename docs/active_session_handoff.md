@@ -132,8 +132,16 @@
   update的native可见性与跨video factor coherence；task9 outcome由预定`2/1,26`漂为`1/0,25`，j0--10仍无
   candidate并exact no-op。三anchor wall/ALB=`1.16565x>1.15x`，故2/3与吞吐两门失败，不full24/strict/resume或
   bank/rank/scale小扫。初版约`1e-3`结构报警是跨autocast重算carrier的analysis错误，三条
-  `nzrb_stable_rank_bank_contract.json`已纠正；当前没有active successor、GPU run或可resume checkpoint。下一
-  变量必须针对reward-useful Value/acceptance的finite跨video/task policy step，不再改factor native origin；
+  `nzrb_stable_rank_bank_contract.json`已纠正；
+- 当前active successor是**NEAP-C**，authority=
+  `docs/action_forecast_writer_v6_lpcp_native_endpoint_action_preference_design.md`。它保留LPCP、NZRB rank32 zero-bank、
+  MB-SOP同B8 panel、四correct K4 views与PAV acceptance，唯一把随机flow-time CFM preference改为完整10步
+  PI05部署action endpoint preference。generated action只运行一次并同时比较winner/loser executed-prefix距离；
+  gradient与native backtracking用同一个endpoint metric。canonical已原位实现，定向CPU=`50 passed`、完整CPU=
+  `405 passed`、compileall与architecture guard 0 hard，active source净`-16`行且没有平行runner。先以task9
+  physical B8验证显存、wall、4/4 continuous
+  descent、finite candidate及held/temporal链；task9全过才运行task15/18，三anchor全过才解锁formal/full24。
+  当前没有GPU run或可resume checkpoint；
 - owner已明确与`ycliu`沟通过共享设备；若没有足够空卡，可在实时显存余量充足、利用率低且不造成明显干扰时与其
   进程安全共驻。仍不reset/kill/pause他人进程，也不为凑卡等待或跨节点拼接；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；

@@ -34,7 +34,7 @@ from ember.writer.reward_preference import (
     MatchedStratifiedOccupancyCreditSummary,
     backpropagate_lora_cotangent,
     cross_video_gradient_geometry,
-    functional_matched_stratified_occupancy_lora_gradient,
+    functional_matched_stratified_occupancy_endpoint_gradient,
     mean_cross_video_task_gradient,
 )
 from ember.writer.reward_gradient_update import (
@@ -50,7 +50,11 @@ if TYPE_CHECKING:
     from ember.writer.reward_training import RewardRuntime
 
 TaskCreditResult = tuple[
-    dict[str, Any], float, torch.Tensor, Mapping[str, torch.Tensor], torch.Tensor,
+    dict[str, Any],
+    float,
+    torch.Tensor,
+    Mapping[str, torch.Tensor],
+    torch.Tensor,
     tuple[RewardPreferenceView, ...],
 ]
 
@@ -104,9 +108,7 @@ def _encode_candidate_condition(
             enabled=runtime.context.device.type == "cuda",
         ),
     ):
-        state = runtime.writer.encode_conditioning_state(
-            *packed, policy=runtime.policy
-        )
+        state = runtime.writer.encode_conditioning_state(*packed, policy=runtime.policy)
         encoded = runtime.writer.compile_conditioning_state(
             state, packed[3], use_query_delta=True
         )
@@ -114,9 +116,7 @@ def _encode_candidate_condition(
     return packed, video_metrics, state, encoded, candidate
 
 
-def _encode_pair(
-    runtime: RewardRuntime, task: RewardTask, cycle: int
-) -> tuple[
+def _encode_pair(runtime: RewardRuntime, task: RewardTask, cycle: int) -> tuple[
     int,
     tuple[int, ...],
     tuple[Any, ...],
@@ -212,15 +212,11 @@ def _collect_paired_arms(
     )
     reference_started = time.monotonic()
     try:
-        copy_task_lora_state_(
-            runtime.policy, reference_lora, runtime.lora_contract
-        )
+        copy_task_lora_state_(runtime.policy, reference_lora, runtime.lora_contract)
         reference = _collect_arm(runtime, task, visit, initial_states)
         reference_seconds = time.monotonic() - reference_started
         candidate_started = time.monotonic()
-        copy_task_lora_state_(
-            runtime.policy, candidate_lora, runtime.lora_contract
-        )
+        copy_task_lora_state_(runtime.policy, candidate_lora, runtime.lora_contract)
         candidate = _collect_arm(runtime, task, visit, initial_states)
         candidate_seconds = time.monotonic() - candidate_started
     finally:
@@ -245,9 +241,7 @@ def _same_pair_identifiers(
     )
     if any(getattr(reference, name) != getattr(candidate, name) for name in names):
         return False
-    shared = min(
-        len(reference.policy_noise_seeds), len(candidate.policy_noise_seeds)
-    )
+    shared = min(len(reference.policy_noise_seeds), len(candidate.policy_noise_seeds))
     return (
         shared > 0
         and reference.policy_noise_seeds[:shared]
@@ -258,9 +252,7 @@ def _same_pair_identifiers(
 def select_discordant_trajectory_pairs(
     reference: Sequence[RewardTrajectory],
     candidate: Sequence[RewardTrajectory],
-) -> tuple[
-    tuple[tuple[RewardTrajectory, RewardTrajectory], ...], tuple[str, ...]
-]:
+) -> tuple[tuple[tuple[RewardTrajectory, RewardTrajectory], ...], tuple[str, ...]]:
     """Return winner/loser pairs only when the exact two arms disagree."""
 
     if len(reference) != 2 or len(candidate) != 2:
@@ -300,19 +292,18 @@ def _differentiate_credit_view(
         enabled=runtime.context.device.type == "cuda",
     ):
         lora_gradient, summary = (
-            functional_matched_stratified_occupancy_lora_gradient(
+            functional_matched_stratified_occupancy_endpoint_gradient(
                 runtime.policy,
                 candidate_lora,
                 runtime.lora_contract,
                 batch,
                 trajectory_ids,
-                mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-                physical_microbatch_size=int(
-                    runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+                endpoint_action_batch_size=int(
+                    runtime.config["optimization"]["endpoint_action_batch_size"]
                 ),
-                flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-                cycle=cycle,
-                global_task_id=task.global_task_id,
+                num_inference_steps=int(
+                    runtime.config["environment"]["num_inference_steps"]
+                ),
                 device=runtime.context.device,
             )
         )
@@ -342,7 +333,9 @@ def _differentiate_credit_views(
     trajectory_ids: torch.Tensor,
     gradient_template: torch.Tensor,
 ) -> tuple[
-    list[torch.Tensor], list[dict[str, Any]], tuple[RewardPreferenceView, ...],
+    list[torch.Tensor],
+    list[dict[str, Any]],
+    tuple[RewardPreferenceView, ...],
     tuple[tuple[int, ...], ...],
 ]:
     demo_sets = runtime.video_schedule.cross_video_credit_demos_for_task_visit(
@@ -384,9 +377,7 @@ def _differentiate_credit_views(
             {
                 "view_index": view_index,
                 "demo_indices": list(demos),
-                "factor_commitment_gradient_rms": float(
-                    flat.square().mean().sqrt()
-                ),
+                "factor_commitment_gradient_rms": float(flat.square().mean().sqrt()),
                 **asdict(summary),
                 **view_metrics,
             }
@@ -421,18 +412,18 @@ def _differentiate_task_credit(
         microbatch_size=int(
             runtime.config["optimization"]["matched_action_batch_size"]
         ),
-        num_inference_steps=int(
-            runtime.config["environment"]["num_inference_steps"]
-        ),
+        num_inference_steps=int(runtime.config["environment"]["num_inference_steps"]),
     )
-    batch, trajectory_ids, selection_metrics = complete_matched_stratified_occupancy_batch(
-        pairs,
-        active_labels,
-        actions_by_arm,
-        strata_per_trajectory=int(
-            runtime.config["objective"]["occupancy_strata_per_trajectory"]
-        ),
-        device=torch.device("cpu"),
+    batch, trajectory_ids, selection_metrics = (
+        complete_matched_stratified_occupancy_batch(
+            pairs,
+            active_labels,
+            actions_by_arm,
+            strata_per_trajectory=int(
+                runtime.config["objective"]["occupancy_strata_per_trajectory"]
+            ),
+            device=torch.device("cpu"),
+        )
     )
     view_gradients, view_rows, preference_views, demo_sets = (
         _differentiate_credit_views(
@@ -459,12 +450,12 @@ def _differentiate_task_credit(
             float(row["preference_margin"]) for row in view_rows
         )
         / 4,
-        "winner_flow_loss": math.fsum(
-            float(row["winner_flow_loss"]) for row in view_rows
+        "winner_action_distance": math.fsum(
+            float(row["winner_action_distance"]) for row in view_rows
         )
         / 4,
-        "loser_flow_loss": math.fsum(
-            float(row["loser_flow_loss"]) for row in view_rows
+        "loser_action_distance": math.fsum(
+            float(row["loser_action_distance"]) for row in view_rows
         )
         / 4,
         "discordant_trajectories": int(first["discordant_trajectories"]),
@@ -510,17 +501,21 @@ def _task_gradient(
     gradient_sum: torch.Tensor,
     probe: RewardProbe | None,
 ) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
-    visit, anchor_demos, packed, video_metrics, state, reference_lora, candidate_lora = (
-        _encode_pair(runtime, task, cycle)
-    )
-    reference, candidate, reference_seconds, candidate_seconds = (
-        _collect_paired_arms(
-            runtime,
-            task,
-            visit,
-            reference_lora,
-            candidate_lora,
-        )
+    (
+        visit,
+        anchor_demos,
+        packed,
+        video_metrics,
+        state,
+        reference_lora,
+        candidate_lora,
+    ) = _encode_pair(runtime, task, cycle)
+    reference, candidate, reference_seconds, candidate_seconds = _collect_paired_arms(
+        runtime,
+        task,
+        visit,
+        reference_lora,
+        candidate_lora,
     )
     pairs, labels = select_discordant_trajectory_pairs(reference, candidate)
     credit = empty_matched_occupancy_credit()
@@ -561,7 +556,6 @@ def _task_gradient(
                 candidate_lora,
                 candidate,
                 labels,
-                cycle,
                 preference_batch,
                 preference_trajectory_ids,
                 float(credit["credit_view_records"][0]["preference_margin"]),
@@ -586,12 +580,8 @@ def _task_gradient(
         "anchor_demo_indices": list(anchor_demos),
         "paired_states": 2,
         "rollouts": 4,
-        "reference_trajectory_rows": [
-            _trajectory_row(value) for value in reference
-        ],
-        "candidate_trajectory_rows": [
-            _trajectory_row(value) for value in candidate
-        ],
+        "reference_trajectory_rows": [_trajectory_row(value) for value in reference],
+        "candidate_trajectory_rows": [_trajectory_row(value) for value in candidate],
         "reference_rollout_seconds": reference_seconds,
         "candidate_rollout_seconds": candidate_seconds,
         "credit_seconds": credit_seconds,
@@ -613,17 +603,14 @@ def _collect_cycle_tasks(
 ]:
     if runtime.args.mode == "smoke":
         task_id = int(
-            runtime.args.smoke_task_id
-            or runtime.config["smoke_run"]["task_global_id"]
+            runtime.args.smoke_task_id or runtime.config["smoke_run"]["task_global_id"]
         )
         task = next(task for task in runtime.tasks if task.global_task_id == task_id)
         row, probe, active, task_gradient = _task_gradient(
             runtime, task, cycle, gradient_sum, None
         )
         gradients = (
-            {task.global_task_id: task_gradient}
-            if task_gradient is not None
-            else {}
+            {task.global_task_id: task_gradient} if task_gradient is not None else {}
         )
         return [row], probe, active, gradients
     ordered = tuple(
@@ -681,7 +668,11 @@ def _gather_cycle_evidence(
     )
     if runtime.context.world_size > 1:
         dist.all_reduce(elapsed, op=dist.ReduceOp.MAX)
-    return global_records, [value for value in probes if value is not None], float(elapsed)
+    return (
+        global_records,
+        [value for value in probes if value is not None],
+        float(elapsed),
+    )
 
 
 def _cycle_metrics(
@@ -696,26 +687,21 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_native_zero_residual_bank_commitment"
+            "one_complete_train24_native_endpoint_action_preference"
             if runtime.args.mode == "formal"
-            else "one_task_native_zero_residual_bank_commitment_live_smoke"
+            else "one_task_native_endpoint_action_preference_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
         "rollouts": 4 * len(records),
-        "reference_successes": sum(
-            int(row["reference_successes"]) for row in records
-        ),
-        "candidate_successes": sum(
-            int(row["candidate_successes"]) for row in records
-        ),
+        "reference_successes": sum(int(row["reference_successes"]) for row in records),
+        "candidate_successes": sum(int(row["candidate_successes"]) for row in records),
         "candidate_gains": sum(int(row["candidate_gains"]) for row in records),
         "reference_gains": sum(int(row["reference_gains"]) for row in records),
         "both_success": sum(int(row["both_success"]) for row in records),
         "both_failure": sum(int(row["both_failure"]) for row in records),
         "discordant_pairs": sum(
-            int(row["candidate_gains"]) + int(row["reference_gains"])
-            for row in records
+            int(row["candidate_gains"]) + int(row["reference_gains"]) for row in records
         ),
         "active_tasks": step.active_tasks,
         "active_suites": sorted({row["suite"] for row in active_records}),

@@ -31,8 +31,8 @@ from ember.writer.reward_gradient_update import (
 )
 from ember.writer.reward_preference import (
     cross_video_gradient_geometry,
-    functional_matched_stratified_occupancy_lora_gradient,
-    functional_matched_stratified_occupancy_margin,
+    functional_matched_stratified_occupancy_endpoint_gradient,
+    functional_matched_stratified_occupancy_endpoint_margin,
     mean_cross_video_task_gradient,
     stratified_occupancy_pair_weights,
 )
@@ -49,9 +49,7 @@ def test_cross_video_gradient_mean_is_permutation_invariant_and_unit_weight() ->
         mean_cross_video_task_gradient(tuple(reversed(gradients))), expected
     )
     duplicate = torch.tensor([0.125, -3.0], dtype=torch.float32)
-    assert torch.equal(
-        mean_cross_video_task_gradient((duplicate,) * 4), duplicate
-    )
+    assert torch.equal(mean_cross_video_task_gradient((duplicate,) * 4), duplicate)
 
 
 def test_cross_video_gradient_geometry_reports_shared_descent() -> None:
@@ -67,9 +65,7 @@ def test_cross_video_gradient_geometry_reports_shared_descent() -> None:
     assert geometry["pairwise_cosine_minimum"] == 0.0
     assert geometry["pairwise_cosine_maximum"] == 1.0
     assert geometry["shared_mean_descent_coverage"] == 1.0
-    assert geometry["view_to_shared_mean_cosine_minimum"] == pytest.approx(
-        2.0**-0.5
-    )
+    assert geometry["view_to_shared_mean_cosine_minimum"] == pytest.approx(2.0**-0.5)
     assert geometry["shared_mean_energy_over_view_energy"] == pytest.approx(0.5)
 
 
@@ -105,21 +101,45 @@ def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
     )
 
 
+class _PrefixOwner(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        config = SimpleNamespace(_attn_implementation=None)
+        self.paligemma = SimpleNamespace(
+            model=SimpleNamespace(language_model=SimpleNamespace(config=config))
+        )
+
+    def forward(self, **_kwargs):
+        return None, ()
+
+
 class _Model(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.projection = torch.nn.Linear(7, 7, bias=False)
-        self.config = SimpleNamespace(
-            time_sampling_beta_alpha=1.5,
-            time_sampling_beta_beta=1.0,
-            time_sampling_scale=0.999,
-            time_sampling_offset=0.001,
+        self.projection.weight.data.zero_()
+        self.paligemma_with_expert = _PrefixOwner()
+
+    @staticmethod
+    def _rtc_enabled() -> bool:
+        return False
+
+    @staticmethod
+    def _prepare_attention_masks_4d(value):
+        return value
+
+    @staticmethod
+    def embed_prefix(_images, _image_masks, tokens, _masks):
+        size = tokens.shape[0]
+        return (
+            torch.zeros((size, 1, 7)),
+            torch.ones((size, 1), dtype=torch.bool),
+            torch.zeros((size, 1), dtype=torch.long),
         )
 
-    def forward(self, images, image_masks, tokens, masks, actions, noise, time):
-        del images, image_masks, tokens, masks
-        signal = actions + noise.mul(0.125) + time[:, None, None].mul(0.25)
-        return self.projection(signal).square()
+    def denoise_step(self, *, prefix_pad_masks, past_key_values, x_t, timestep):
+        del prefix_pad_masks, past_key_values, timestep
+        return self.projection(x_t)
 
 
 class _Policy(torch.nn.Module):
@@ -133,15 +153,11 @@ class _Policy(torch.nn.Module):
         )
 
     def _preprocess_images(self, batch):
-        size = batch[ACTION].shape[0]
+        size = batch[OBS_LANGUAGE_TOKENS].shape[0]
         return [torch.zeros((size, 3, 2, 2))], [torch.ones(size, dtype=torch.bool)]
 
-    @staticmethod
-    def prepare_action(batch):
-        return batch[ACTION]
 
-
-def test_matched_stratified_occupancy_preference_is_microbatch_semantic() -> None:
+def test_endpoint_action_preference_uses_one_prediction_and_descends() -> None:
     policy = _Policy()
     contract = SmolVLALoRAContract(
         targets=(LoRATarget("model.projection", 7, 7),),
@@ -152,8 +168,13 @@ def test_matched_stratified_occupancy_preference_is_microbatch_semantic() -> Non
     )
     inject_task_lora(policy, contract)
     policy.requires_grad_(False)
+    generator = torch.Generator().manual_seed(17)
     state = {
-        name: torch.randn(shape, generator=torch.Generator().manual_seed(17))
+        name: (
+            torch.zeros(shape)
+            if name.endswith(".lora_B.default.weight")
+            else torch.randn(shape, generator=generator).mul_(0.1)
+        )
         for name, shape in expected_lora_state_shapes(contract).items()
     }
     actions = torch.stack(
@@ -166,6 +187,7 @@ def test_matched_stratified_occupancy_preference_is_microbatch_semantic() -> Non
         ACTION: actions,
         "executed_action_steps": torch.tensor([5, 5, 3, 3, 4, 4, 2, 2]),
         "action_is_pad": torch.zeros((8, 50), dtype=torch.bool),
+        "policy_noise_seed": torch.tensor([101, 101, 103, 103, 107, 107, 109, 109]),
         OBS_LANGUAGE_TOKENS: torch.ones((8, 2), dtype=torch.long),
         OBS_LANGUAGE_ATTENTION_MASK: torch.ones((8, 2), dtype=torch.bool),
     }
@@ -176,53 +198,32 @@ def test_matched_stratified_occupancy_preference_is_microbatch_semantic() -> Non
         contract=contract,
         batch=batch,
         trajectory_ids=trajectory_ids,
-        mc_samples=4,
-        flow_seed_root=31,
-        cycle=1,
-        global_task_id=4,
+        endpoint_action_batch_size=8,
+        num_inference_steps=10,
         device=torch.device("cpu"),
     )
-    first, first_summary = functional_matched_stratified_occupancy_lora_gradient(
-        **kwargs, physical_microbatch_size=2
+    gradient, summary = functional_matched_stratified_occupancy_endpoint_gradient(
+        **kwargs
     )
-    second, second_summary = functional_matched_stratified_occupancy_lora_gradient(
-        **kwargs, physical_microbatch_size=8
+    assert summary.functional_policy_forwards == 1
+    assert summary.functional_policy_backwards == 1
+    assert summary.discordant_trajectories == 2
+    assert summary.selected_credit_pairs == 4
+    assert summary.matched_winner_loser_action_rms > 0
+    assert any(bool(torch.count_nonzero(value)) for value in gradient.values())
+    assert all(
+        not bool(torch.count_nonzero(value))
+        for name, value in gradient.items()
+        if name.endswith(".lora_A.default.weight")
     )
-    assert first_summary.functional_policy_forwards == 16
-    assert second_summary.functional_policy_forwards == 4
-    assert first_summary.discordant_trajectories == 2
-    assert first_summary.selected_credit_pairs == 4
-    assert first_summary.matched_winner_loser_action_rms > 0
-    for name in state:
-        torch.testing.assert_close(first[name], second[name], rtol=2e-6, atol=2e-6)
-    assert any(bool(torch.count_nonzero(value)) for value in first.values())
     assert all(parameter.grad is None for parameter in policy.parameters())
-    before = functional_matched_stratified_occupancy_margin(
-        policy,
-        state,
-        contract,
-        batch,
-        trajectory_ids,
-        mc_samples=4,
-        physical_microbatch_size=8,
-        flow_seed_root=31,
-        cycle=1,
-        global_task_id=4,
-        device=torch.device("cpu"),
-    )
-    updated = {name: state[name] - 1e-3 * first[name] for name in state}
-    after = functional_matched_stratified_occupancy_margin(
-        policy,
-        updated,
-        contract,
-        batch,
-        trajectory_ids,
-        mc_samples=4,
-        physical_microbatch_size=8,
-        flow_seed_root=31,
-        cycle=1,
-        global_task_id=4,
-        device=torch.device("cpu"),
+    before = functional_matched_stratified_occupancy_endpoint_margin(**kwargs)
+    gradient_norm = torch.cat([value.flatten() for value in gradient.values()]).norm()
+    updated = {
+        name: state[name] - (1e-2 / gradient_norm) * gradient[name] for name in state
+    }
+    after = functional_matched_stratified_occupancy_endpoint_margin(
+        **{**kwargs, "state": updated}
     )
     assert after["preference_margin"] < before["preference_margin"]
 
@@ -302,13 +303,9 @@ def test_matched_occupancy_queries_both_arms_with_identical_batches(
             valid_action_steps=tuple(5 for _ in range(count)),
         )
 
-    candidate_winner = with_chunks(
-        _trajectory(cursor=0, success=True, marker=2.0), 2
-    )
+    candidate_winner = with_chunks(_trajectory(cursor=0, success=True, marker=2.0), 2)
     reference_loser = _trajectory(cursor=0, success=False, marker=0.0)
-    reference_winner = with_chunks(
-        _trajectory(cursor=1, success=True, marker=1.0), 3
-    )
+    reference_winner = with_chunks(_trajectory(cursor=1, success=True, marker=1.0), 3)
     candidate_loser = _trajectory(cursor=1, success=False, marker=3.0)
     policy = CounterfactualPolicy()
 
@@ -343,8 +340,12 @@ def test_matched_occupancy_queries_both_arms_with_identical_batches(
     )
     assert [len(value) for value in actions["reference"]] == [2, 3]
     assert [len(value) for value in actions["candidate"]] == [2, 3]
-    assert all(float(value.mean()) < 11 for pair in actions["reference"] for value in pair)
-    assert all(float(value.mean()) > 19 for pair in actions["candidate"] for value in pair)
+    assert all(
+        float(value.mean()) < 11 for pair in actions["reference"] for value in pair
+    )
+    assert all(
+        float(value.mean()) > 19 for pair in actions["candidate"] for value in pair
+    )
     assert policy.batch_sizes == [2, 2, 1, 2, 2, 1]
     assert policy.arm_value == -1.0
     assert metrics["complete_occupancy_chunks"] == 5
@@ -355,9 +356,7 @@ def test_matched_occupancy_queries_both_arms_with_identical_batches(
 
 
 def _single_condition_inputs(k: int) -> tuple[torch.Tensor, ...]:
-    frames = torch.arange(k * 2 * 3 * 4 * 4, dtype=torch.uint8).reshape(
-        k * 2, 3, 4, 4
-    )
+    frames = torch.arange(k * 2 * 3 * 4 * 4, dtype=torch.uint8).reshape(k * 2, 3, 4, 4)
     indices = torch.tensor([0, 5] * k, dtype=torch.long)
     video_offsets = torch.arange(0, 2 * k + 1, 2, dtype=torch.long)
     condition_offsets = torch.tensor([0, k], dtype=torch.long)
@@ -373,17 +372,13 @@ def test_cached_reference_is_exact_as139_for_dynamic_k(k: int) -> None:
     inputs = _single_condition_inputs(k)
     with torch.no_grad():
         writer.query_delta.weight.normal_(std=1.0)
-        state = writer.encode_conditioning_state(
-            *inputs, policy=torch.nn.Identity()
-        )
+        state = writer.encode_conditioning_state(*inputs, policy=torch.nn.Identity())
         reference = writer.compile_conditioning_state(
             state, inputs[3], use_query_delta=False
         ).program
         saved = writer.query_delta.weight.detach().clone()
         writer.query_delta.weight.zero_()
-        exact = writer.encode_program(
-            *inputs, policy=torch.nn.Identity()
-        ).program
+        exact = writer.encode_program(*inputs, policy=torch.nn.Identity()).program
         writer.query_delta.weight.copy_(saved)
     torch.testing.assert_close(reference, exact, rtol=0, atol=0)
 
@@ -402,9 +397,7 @@ def test_cached_candidate_recompiles_query_only_without_another_backbone() -> No
     writer.base_writer.encode_video_evidence = counted
     with torch.no_grad():
         writer.query_delta.weight.normal_(std=1.0)
-        state = writer.encode_conditioning_state(
-            *inputs, policy=torch.nn.Identity()
-        )
+        state = writer.encode_conditioning_state(*inputs, policy=torch.nn.Identity())
         reference = writer.compile_conditioning_state(
             state, inputs[3], use_query_delta=False
         ).program
@@ -419,7 +412,10 @@ def test_cached_candidate_recompiles_query_only_without_another_backbone() -> No
     recompiled = writer.compile_conditioning_state(
         state, inputs[3], use_query_delta=True
     )
-    sum(value.float().sum() for value in writer.decode_program(recompiled.program).values()).backward()
+    sum(
+        value.float().sum()
+        for value in writer.decode_program(recompiled.program).values()
+    ).backward()
     assert writer.query_delta.weight.grad is not None
     assert writer.query_delta.weight.grad.abs().sum() > 0
     assert all(
@@ -494,17 +490,18 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     assert step.parameter_delta_rms["factor_commitment.heads.q_b.weight"] > 0
     assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0
     assert step.gradient_coexistence["final_delta_descent_coverage"] == 1.0
-    assert step.commitment_geometry[
-        "final_to_adam_candidate_cosine"
-    ] == pytest.approx(1.0)
+    assert step.commitment_geometry["final_to_adam_candidate_cosine"] == pytest.approx(
+        1.0
+    )
     assert step.commitment_geometry["radius_relative_error"] <= 1e-6
     assert evaluated_scales == [0.0, 1.0, 0.5]
     assert step.commitment_geometry["search_accepted"] is True
     assert step.commitment_geometry["accepted_backtrack_index"] == 1
     assert step.commitment_geometry["accepted_radius_scale"] == 0.5
-    assert step.commitment_geometry[
-        "gradient_path_to_inference_baseline_margin_deltas"
-    ] == [0.5] * 4
+    assert (
+        step.commitment_geometry["gradient_path_to_inference_baseline_margin_deltas"]
+        == [0.5] * 4
+    )
     assert all(
         row["before_preference_margin"] == 1.5
         and row["after_preference_margin"] == 1.25

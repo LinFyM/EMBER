@@ -1,4 +1,4 @@
-"""Matched-batch stratified occupancy flow credit for paired AS139/LPCP arms."""
+"""Matched-batch deployed-action credit for paired AS139/LPCP arms."""
 
 from __future__ import annotations
 
@@ -10,8 +10,9 @@ import torch.nn.functional as F
 from lerobot.utils.constants import ACTION
 
 from ember.lora import LoRAContract
-from ember.reward.loss import functional_executed_prefix_flow_loss
-from ember.reward.protocol import RewardProtocolError, reward_preference_flow_seed
+from ember.reward.loss import functional_executed_prefix_endpoint_action
+from ember.reward.protocol import RewardProtocolError
+from ember.reward.rollout import policy_flow_noise_cpu
 
 
 @dataclass(frozen=True)
@@ -20,8 +21,8 @@ class MatchedStratifiedOccupancyCreditSummary:
 
     objective: float
     preference_margin: float
-    winner_flow_loss: float
-    loser_flow_loss: float
+    winner_action_distance: float
+    loser_action_distance: float
     discordant_trajectories: int
     selected_credit_pairs: int
     replay_rows: int
@@ -58,21 +59,23 @@ def cross_video_gradient_geometry(
     view_cosines = dots / (norms * mean_norm).clamp_min(1e-30)
     units = rows / norms[:, None].clamp_min(1e-30)
     pairwise = units @ units.T
-    offdiag = pairwise[
-        ~torch.eye(4, dtype=torch.bool, device=pairwise.device)
-    ]
+    offdiag = pairwise[~torch.eye(4, dtype=torch.bool, device=pairwise.device)]
     sample_energy = rows.square().sum(dim=1).mean()
-    values = torch.stack(
-        (
-            offdiag.mean(),
-            offdiag.min(),
-            offdiag.max(),
-            (dots > 0).float().mean(),
-            view_cosines.mean(),
-            view_cosines.min(),
-            mean.square().sum() / sample_energy.clamp_min(1e-30),
+    values = (
+        torch.stack(
+            (
+                offdiag.mean(),
+                offdiag.min(),
+                offdiag.max(),
+                (dots > 0).float().mean(),
+                view_cosines.mean(),
+                view_cosines.min(),
+                mean.square().sum() / sample_energy.clamp_min(1e-30),
+            )
         )
-    ).cpu().tolist()
+        .cpu()
+        .tolist()
+    )
     return {
         "pairwise_cosine_mean": values[0],
         "pairwise_cosine_minimum": values[1],
@@ -100,48 +103,6 @@ def cross_video_gradient_geometry(
     }
 
 
-def _flow_sample_panel(
-    policy: torch.nn.Module,
-    *,
-    pair_count: int,
-    mc_samples: int,
-    seed_root: int,
-    cycle: int,
-    global_task_id: int,
-    device: torch.device,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    model_config = getattr(getattr(policy, "model", None), "config", None)
-    if (
-        pair_count <= 0
-        or mc_samples != 4
-        or model_config is None
-        or float(model_config.time_sampling_beta_alpha) != 1.5
-        or float(model_config.time_sampling_beta_beta) != 1.0
-        or float(model_config.time_sampling_scale) != 0.999
-        or float(model_config.time_sampling_offset) != 0.001
-    ):
-        raise RewardProtocolError("matched occupancy flow panel changed")
-    shape = (
-        pair_count,
-        int(policy.config.chunk_size),
-        int(policy.config.max_action_dim),
-    )
-    noises, times = [], []
-    for mc_index in range(mc_samples):
-        generator = torch.Generator(device=device).manual_seed(
-            reward_preference_flow_seed(
-                seed_root,
-                cycle=cycle,
-                global_task_id=global_task_id,
-                mc_index=mc_index,
-            )
-        )
-        noises.append(torch.randn(shape, generator=generator, device=device))
-        uniform = torch.rand(pair_count, generator=generator, device=device)
-        times.append(uniform.pow(2.0 / 3.0).mul_(0.999).add_(0.001))
-    return torch.stack(noises), torch.stack(times)
-
-
 def _gradient_rms(gradients: Mapping[str, torch.Tensor]) -> torch.Tensor:
     return (
         torch.cat([value.flatten() for value in gradients.values()])
@@ -167,30 +128,32 @@ def stratified_occupancy_pair_weights(
         or bool((counts <= 0).any())
     ):
         raise RewardProtocolError("stratified occupancy trajectory IDs changed")
-    return 1.0 / (
-        target_count * counts.index_select(0, ids).to(dtype=torch.float32)
-    )
+    return 1.0 / (target_count * counts.index_select(0, ids).to(dtype=torch.float32))
 
 
 def _matched_occupancy_batch_contract(
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
-    physical_microbatch_size: int,
-) -> tuple[torch.Tensor, torch.Tensor, int, float, torch.Tensor]:
+    endpoint_action_batch_size: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, float, torch.Tensor]:
     action = batch.get(ACTION)
     valid = batch.get("executed_action_steps")
+    noise_seed = batch.get("policy_noise_seed")
     if (
         not isinstance(action, torch.Tensor)
         or action.ndim != 3
         or not isinstance(valid, torch.Tensor)
         or valid.ndim != 1
         or valid.shape[0] != action.shape[0]
+        or not isinstance(noise_seed, torch.Tensor)
+        or noise_seed.shape != valid.shape
         or action.shape[0] <= 0
         or action.shape[0] % 2
-        or physical_microbatch_size < 2
+        or endpoint_action_batch_size != 8
         or not torch.equal(valid[0::2], valid[1::2])
+        or not torch.equal(noise_seed[0::2], noise_seed[1::2])
     ):
-        raise RewardProtocolError("matched occupancy preference batch changed")
+        raise RewardProtocolError("endpoint action preference batch changed")
     pair_count = int(action.shape[0] // 2)
     weights = stratified_occupancy_pair_weights(trajectory_ids)
     if weights.shape != (pair_count,):
@@ -203,43 +166,83 @@ def _matched_occupancy_batch_contract(
     action_rms = float((squared / denominator).sqrt())
     if not bool(torch.isfinite(torch.tensor(action_rms))) or action_rms <= 0:
         raise RewardProtocolError("matched winner and loser actions are identical")
-    return action, valid, pair_count, action_rms, weights
+    return action, valid, noise_seed, pair_count, action_rms, weights
 
 
-def functional_matched_stratified_occupancy_lora_gradient(
+def _endpoint_observation_batch(
+    batch: Mapping[str, torch.Tensor],
+    pair_start: int,
+    pair_stop: int,
+    device: torch.device,
+) -> dict[str, torch.Tensor]:
+    excluded = {ACTION, "action_is_pad", "executed_action_steps", "policy_noise_seed"}
+    rows = slice(2 * pair_start, 2 * pair_stop, 2)
+    return {
+        name: value[rows].to(device=device, non_blocking=True)
+        for name, value in batch.items()
+        if name not in excluded
+    }
+
+
+def _endpoint_noise(
+    policy: torch.nn.Module,
+    noise_seeds: torch.Tensor,
+    device: torch.device,
+) -> torch.Tensor:
+    return torch.cat(
+        [
+            policy_flow_noise_cpu(
+                seed=int(seed),
+                chunk_size=int(policy.config.chunk_size),
+                max_action_dim=int(policy.config.max_action_dim),
+            )
+            for seed in noise_seeds.cpu().tolist()
+        ]
+    ).to(device=device, non_blocking=True)
+
+
+def _endpoint_distances(
+    predicted: torch.Tensor,
+    targets: torch.Tensor,
+    valid: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    action_dim = predicted.shape[-1]
+    mask = (
+        torch.arange(predicted.shape[1], device=predicted.device)[None] < valid[:, None]
+    )
+    denominator = (valid * action_dim).to(dtype=torch.float32)
+    winner = (
+        (predicted.float() - targets[:, 0].float()).square() * mask[:, :, None]
+    ).sum(dim=(1, 2)) / denominator
+    loser = (
+        (predicted.float() - targets[:, 1].float()).square() * mask[:, :, None]
+    ).sum(dim=(1, 2)) / denominator
+    return winner, loser
+
+
+def functional_matched_stratified_occupancy_endpoint_gradient(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
     *,
-    mc_samples: int,
-    physical_microbatch_size: int,
-    flow_seed_root: int,
-    cycle: int,
-    global_task_id: int,
+    endpoint_action_batch_size: int,
+    num_inference_steps: int,
     device: torch.device,
 ) -> tuple[dict[str, torch.Tensor], MatchedStratifiedOccupancyCreditSummary]:
-    """Differentiate matched winner versus loser preference over selected strata."""
+    """Differentiate the deployed endpoint toward reward-winning actions."""
 
-    action, valid, pair_count, action_rms, weights = (
+    action, valid, noise_seed, pair_count, action_rms, weights = (
         _matched_occupancy_batch_contract(
-            batch, trajectory_ids, physical_microbatch_size
+            batch, trajectory_ids, endpoint_action_batch_size
         )
     )
-    noises, times = _flow_sample_panel(
-        policy,
-        pair_count=pair_count,
-        mc_samples=mc_samples,
-        seed_root=flow_seed_root,
-        cycle=cycle,
-        global_task_id=global_task_id,
-        device=device,
-    )
     leaves = {
-        name: value.detach().requires_grad_(True) for name, value in state.items()
+        name: value.detach().requires_grad_(name.endswith(".lora_B.default.weight"))
+        for name, value in state.items()
     }
-    names = tuple(leaves)
+    names = tuple(name for name, value in leaves.items() if value.requires_grad)
     gradients = {
         name: torch.zeros_like(value, dtype=torch.float32)
         for name, value in leaves.items()
@@ -248,41 +251,41 @@ def functional_matched_stratified_occupancy_lora_gradient(
     winner_total = torch.zeros_like(objective)
     loser_total = torch.zeros_like(objective)
     forwards = backwards = 0
-    pairs_per_batch = max(1, physical_microbatch_size // 2)
-    for pair_start in range(0, pair_count, pairs_per_batch):
-        pair_stop = min(pair_start + pairs_per_batch, pair_count)
-        start, stop = 2 * pair_start, 2 * pair_stop
+    for pair_start in range(0, pair_count, endpoint_action_batch_size):
+        pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
         pair_weights = weights[pair_start:pair_stop].to(
             device=device, non_blocking=True
         )
-        sliced = {
-            name: value[start:stop].to(device=device, non_blocking=True)
-            for name, value in batch.items()
-        }
-        for mc_index in range(mc_samples):
-            per_chunk = functional_executed_prefix_flow_loss(
-                policy,
-                leaves,
-                contract,
-                sliced,
-                noise=noises[mc_index, pair_start:pair_stop].repeat_interleave(
-                    2, dim=0
-                ),
-                time=times[mc_index, pair_start:pair_stop].repeat_interleave(2),
-            )
-            pair_losses = per_chunk.float().reshape(-1, 2)
-            winners, losers = pair_losses[:, 0], pair_losses[:, 1]
-            scalar = (F.softplus(winners - losers) * pair_weights).sum() / mc_samples
-            values = torch.autograd.grad(scalar, tuple(leaves[name] for name in names))
-            objective.add_(scalar.detach())
-            winner_total.add_(
-                (winners.detach() * pair_weights).sum() / mc_samples
-            )
-            loser_total.add_((losers.detach() * pair_weights).sum() / mc_samples)
-            for name, gradient in zip(names, values, strict=True):
-                gradients[name].add_(gradient.float())
-            forwards += 1
-            backwards += 1
+        prepared = _endpoint_observation_batch(batch, pair_start, pair_stop, device)
+        noise = _endpoint_noise(
+            policy, noise_seed[2 * pair_start : 2 * pair_stop : 2], device
+        )
+        predicted = functional_executed_prefix_endpoint_action(
+            policy,
+            leaves,
+            contract,
+            prepared,
+            noise=noise,
+            num_steps=num_inference_steps,
+        )
+        targets = (
+            action[2 * pair_start : 2 * pair_stop]
+            .reshape(pair_stop - pair_start, 2, action.shape[1], action.shape[2])
+            .to(device=device, non_blocking=True)
+        )
+        valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
+            device=device, non_blocking=True
+        )
+        winners, losers = _endpoint_distances(predicted, targets, valid_rows)
+        scalar = (F.softplus(winners - losers) * pair_weights).sum()
+        values = torch.autograd.grad(scalar, tuple(leaves[name] for name in names))
+        objective.add_(scalar.detach())
+        winner_total.add_((winners.detach() * pair_weights).sum())
+        loser_total.add_((losers.detach() * pair_weights).sum())
+        for name, gradient in zip(names, values, strict=True):
+            gradients[name].add_(gradient.float())
+        forwards += 1
+        backwards += 1
     rms = _gradient_rms(gradients)
     if not bool(torch.isfinite(rms)) or float(rms) <= 0:
         raise RewardProtocolError(
@@ -292,8 +295,8 @@ def functional_matched_stratified_occupancy_lora_gradient(
     return gradients, MatchedStratifiedOccupancyCreditSummary(
         objective=float(objective),
         preference_margin=float(margin),
-        winner_flow_loss=float(winner_total),
-        loser_flow_loss=float(loser_total),
+        winner_action_distance=float(winner_total),
+        loser_action_distance=float(loser_total),
         discordant_trajectories=int(trajectory_ids.max()) + 1,
         selected_credit_pairs=pair_count,
         replay_rows=2 * pair_count,
@@ -306,69 +309,58 @@ def functional_matched_stratified_occupancy_lora_gradient(
 
 
 @torch.no_grad()
-def functional_matched_stratified_occupancy_margin(
+def functional_matched_stratified_occupancy_endpoint_margin(
     policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     batch: Mapping[str, torch.Tensor],
     trajectory_ids: torch.Tensor,
     *,
-    mc_samples: int,
-    physical_microbatch_size: int,
-    flow_seed_root: int,
-    cycle: int,
-    global_task_id: int,
+    endpoint_action_batch_size: int,
+    num_inference_steps: int,
     device: torch.device,
 ) -> dict[str, float]:
-    """Evaluate the retained occupancy panel without constructing a Writer graph."""
+    """Evaluate the exact deployed endpoint preference without a Writer graph."""
 
-    _, _, pair_count, _, weights = _matched_occupancy_batch_contract(
-        batch, trajectory_ids, physical_microbatch_size
-    )
-    noises, times = _flow_sample_panel(
-        policy,
-        pair_count=pair_count,
-        mc_samples=mc_samples,
-        seed_root=flow_seed_root,
-        cycle=cycle,
-        global_task_id=global_task_id,
-        device=device,
+    action, valid, noise_seed, pair_count, _, weights = (
+        _matched_occupancy_batch_contract(
+            batch, trajectory_ids, endpoint_action_batch_size
+        )
     )
     winner = loser = objective = 0.0
-    pairs_per_batch = max(1, physical_microbatch_size // 2)
-    for pair_start in range(0, pair_count, pairs_per_batch):
-        pair_stop = min(pair_start + pairs_per_batch, pair_count)
-        start, stop = 2 * pair_start, 2 * pair_stop
-        prepared = {
-            name: value[start:stop].to(device=device, non_blocking=True)
-            for name, value in batch.items()
-        }
+    for pair_start in range(0, pair_count, endpoint_action_batch_size):
+        pair_stop = min(pair_start + endpoint_action_batch_size, pair_count)
+        prepared = _endpoint_observation_batch(batch, pair_start, pair_stop, device)
         pair_weights = weights[pair_start:pair_stop].to(
             device=device, non_blocking=True
         )
-        for mc_index in range(mc_samples):
-            losses = functional_executed_prefix_flow_loss(
-                policy,
-                state,
-                contract,
-                prepared,
-                noise=noises[mc_index, pair_start:pair_stop].repeat_interleave(
-                    2, dim=0
-                ),
-                time=times[mc_index, pair_start:pair_stop].repeat_interleave(2),
-            ).float().reshape(-1, 2)
-            winner += float((losses[:, 0] * pair_weights).sum()) / mc_samples
-            loser += float((losses[:, 1] * pair_weights).sum()) / mc_samples
-            objective += float(
-                (
-                    F.softplus(losses[:, 0] - losses[:, 1])
-                    * pair_weights
-                ).sum()
-            ) / mc_samples
+        noise = _endpoint_noise(
+            policy, noise_seed[2 * pair_start : 2 * pair_stop : 2], device
+        )
+        predicted = functional_executed_prefix_endpoint_action(
+            policy,
+            state,
+            contract,
+            prepared,
+            noise=noise,
+            num_steps=num_inference_steps,
+        )
+        targets = (
+            action[2 * pair_start : 2 * pair_stop]
+            .reshape(pair_stop - pair_start, 2, action.shape[1], action.shape[2])
+            .to(device=device, non_blocking=True)
+        )
+        valid_rows = valid[2 * pair_start : 2 * pair_stop : 2].to(
+            device=device, non_blocking=True
+        )
+        winners, losers = _endpoint_distances(predicted, targets, valid_rows)
+        winner += float((winners * pair_weights).sum())
+        loser += float((losers * pair_weights).sum())
+        objective += float((F.softplus(winners - losers) * pair_weights).sum())
     margin = winner - loser
     return {
-        "winner_flow_loss": winner,
-        "loser_flow_loss": loser,
+        "winner_action_distance": winner,
+        "loser_action_distance": loser,
         "preference_margin": margin,
         "preference_objective": objective,
     }

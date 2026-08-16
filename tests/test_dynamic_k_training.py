@@ -68,18 +68,14 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
         REPO_ROOT
         / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
     )
-    lora = load_pi05_lora_contract(
-        REPO_ROOT / "configs/pi05_lora_v1.json"
-    )
+    lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
     assert lora.state_tensor_count == 76
     assert config["data"]["dynamic_k_max"] == 4
     assert config["writer"]["step0_contract"].startswith("exact_as139")
     assert config["writer"]["layer_probe_source"].startswith("same_joint_forward")
     assert config["writer"]["core_set_fusion"].startswith("parameter_free")
-    assert config["writer"]["procedure_set_fusion"].startswith(
-        "permutation_invariant"
-    )
+    assert config["writer"]["procedure_set_fusion"].startswith("permutation_invariant")
     assert config["writer"]["procedure_set_value"].startswith("raw_attention")
     assert config["writer"]["policy_slot_count"] == 320
     assert config["formal_run"]["status"] == "sealed"
@@ -101,7 +97,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_native_zero_residual_bank_config_records_fresh_mechanism_gate() -> None:
+def test_native_endpoint_preference_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -124,9 +120,10 @@ def test_native_zero_residual_bank_config_records_fresh_mechanism_gate() -> None
         "four_zero_init_direct_native_b_heads_860160_parameters"
     )
     assert config["objective"]["kind"] == (
-        "cross_video_matched_batch_stratified_occupancy_flow_preference"
+        "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference"
     )
     assert config["optimization"]["matched_action_batch_size"] == 8
+    assert config["optimization"]["endpoint_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
         "actual_adam_candidate_first_all_view_monotone_power_of_two_backtracking"
@@ -137,7 +134,7 @@ def test_native_zero_residual_bank_config_records_fresh_mechanism_gate() -> None
     assert config["commitment"]["max_backtracks"] == 10
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
     assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
-        "9": 26,
+        "9": 25,
         "15": 65,
         "18": 44,
     }
@@ -189,8 +186,7 @@ def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:
     )
     for macro in range(9):
         counts = [
-            schedule.shot_count_for_task_visit(task_id, macro)
-            for task_id in task_ids
+            schedule.shot_count_for_task_visit(task_id, macro) for task_id in task_ids
         ]
         assert {k: counts.count(k) for k in range(1, 5)} == {
             1: 6,
@@ -200,8 +196,7 @@ def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:
         }
     for task_id in task_ids:
         assert {
-            schedule.shot_count_for_task_visit(task_id, macro)
-            for macro in range(4)
+            schedule.shot_count_for_task_visit(task_id, macro) for macro in range(4)
         } == {1, 2, 3, 4}
 
 
@@ -216,12 +211,8 @@ def test_dynamic_k_videos_are_unique_and_in_action_episode_complement() -> None:
     excluded = tuple(range(20))
     for task_id in schedule.task_ids:
         for macro in range(4):
-            selected = schedule.demos_for_task_visit(
-                task_id, macro, excluded=excluded
-            )
-            assert len(selected) == schedule.shot_count_for_task_visit(
-                task_id, macro
-            )
+            selected = schedule.demos_for_task_visit(task_id, macro, excluded=excluded)
+            assert len(selected) == schedule.shot_count_for_task_visit(task_id, macro)
             assert len(selected) == len(set(selected))
             assert not set(selected) & set(excluded)
 
@@ -266,9 +257,7 @@ def test_dynamic_k_sampler_covers_full24_with_uneven_world_sizes(
         assert max(map(len, shards)) - min(map(len, shards)) <= 1
         for sampler, shard in zip(samplers, shards, strict=True):
             for task_id in shard:
-                excluded = sampler.action_demo_indices_for_task_visit(
-                    task_id, macro
-                )
+                excluded = sampler.action_demo_indices_for_task_visit(task_id, macro)
                 selected = schedule.demos_for_task_visit(
                     task_id, macro, excluded=excluded
                 )
@@ -277,12 +266,8 @@ def test_dynamic_k_sampler_covers_full24_with_uneven_world_sizes(
         costs, _, _ = samplers[0]._cost_order_for_task_cycle(macro)
         task_id = task_ids[0]
         excluded = samplers[0].action_demo_indices_for_task_visit(task_id, macro)
-        videos = schedule.demos_for_task_visit(
-            task_id, macro, excluded=excluded
-        )
-        assert costs[task_id] == 20 + sum(
-            1 + task_id + demo for demo in videos
-        )
+        videos = schedule.demos_for_task_visit(task_id, macro, excluded=excluded)
+        assert costs[task_id] == 20 + sum(1 + task_id + demo for demo in videos)
 
 
 def test_flat_gradient_accumulates_tasks_then_divides_once_by_24() -> None:
@@ -413,9 +398,7 @@ def test_task_gradient_accepts_exact_k1_bypass_as_zero_derivative(
     flat = torch.zeros(1)
     packed = (None, None, None, torch.tensor([0, 1]), None, None, None)
 
-    functional, consistency, detail = _task_gradient(
-        runtime, packed, {}, 7, flat
-    )
+    functional, consistency, detail = _task_gradient(runtime, packed, {}, 7, flat)
 
     assert functional.item() == 1.0
     assert consistency.item() == 0.0
@@ -533,7 +516,9 @@ def test_hashless_checkpoint_restores_training_state(
 ) -> None:
     import ember.writer.checkpoint as checkpoint_module
 
-    monkeypatch.setattr(checkpoint_module, "capture_rng", lambda context: {"rank": context.rank})
+    monkeypatch.setattr(
+        checkpoint_module, "capture_rng", lambda context: {"rank": context.rank}
+    )
     monkeypatch.setattr(checkpoint_module, "restore_rng", lambda state, context: None)
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     writer = torch.nn.Linear(2, 1, bias=False)
@@ -683,7 +668,9 @@ def test_live_evaluator_supplies_k4_as_one_ragged_writer_call(
     assert [int(captured["frames"][index * 2, 0, 0, 0]) for index in range(8)] == list(
         range(8)
     )
-    assert [row["sampled_frames"] for row in adapter.last_generation_batch_profile()] == [
+    assert [
+        row["sampled_frames"] for row in adapter.last_generation_batch_profile()
+    ] == [
         8,
         8,
     ]
@@ -731,8 +718,7 @@ def test_evaluator_resolves_the_v6_layerwise_rank16_lora_authority() -> None:
             "config": {"path": str(config)},
             "lora_contract": {
                 "reference": (
-                    "configs/pi05_lora_v1.json:"
-                    "76tensors:1287168parameters"
+                    "configs/pi05_lora_v1.json:" "76tensors:1287168parameters"
                 )
             },
         },

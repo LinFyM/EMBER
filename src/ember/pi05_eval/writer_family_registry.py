@@ -100,9 +100,7 @@ WRITER_FAMILIES = {
     "v6_osg_pc_v1": {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v9",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v9",
-        "config_schema": (
-            "ember_pi05_v6_on_policy_success_guarded_program_credit_v1"
-        ),
+        "config_schema": ("ember_pi05_v6_on_policy_success_guarded_program_credit_v1"),
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
         "formal_statuses": ("sealed_from_live_osg_pc_deployment_smoke",),
@@ -129,9 +127,7 @@ WRITER_FAMILIES = {
     "v6_cveg_v1": {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v9",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v9",
-        "config_schema": (
-            "ember_pi05_v6_cross_video_equivariant_candidate_guard_v1"
-        ),
+        "config_schema": ("ember_pi05_v6_cross_video_equivariant_candidate_guard_v1"),
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
         "formal_statuses": ("sealed_from_live_cveg_deployment_smoke",),
@@ -140,14 +136,10 @@ WRITER_FAMILIES = {
     "v6_pvjfc_v1": {
         "adapter_schema": "ember_pi05_v6_condition_program_residual_eval_adapter_v9",
         "episode_schema": "ember_pi05_v6_condition_program_residual_episode_v9",
-        "config_schema": (
-            "ember_pi05_v6_paired_video_joint_functional_credit_v1"
-        ),
+        "config_schema": ("ember_pi05_v6_paired_video_joint_functional_credit_v1"),
         "arm_prefix": "expert_manifold_v6_condition_residual_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
-        "formal_statuses": (
-            "sealed_from_unchanged_v6_residual_deployment_graph",
-        ),
+        "formal_statuses": ("sealed_from_unchanged_v6_residual_deployment_graph",),
         "checkpoint_curve_macros": (0, 5, 10),
     },
     "v6_cgik_jc_v1": {
@@ -157,9 +149,7 @@ WRITER_FAMILIES = {
         "episode_schema": (
             "ember_pi05_v6_causal_goal_interaction_joint_credit_episode_v10"
         ),
-        "config_schema": (
-            "ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"
-        ),
+        "config_schema": ("ember_pi05_v6_causal_goal_interaction_key_joint_credit_v1"),
         "arm_prefix": "expert_manifold_v6_cgik_jc_",
         "trained_checkpoint_kind": "v6_condition_program_residual_checkpoint",
         "formal_statuses": ("sealed_from_live_cgik_full96_profile",),
@@ -200,12 +190,8 @@ WRITER_FAMILIES = {
         "adapter_schema": (
             "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1"
         ),
-        "episode_schema": (
-            "ember_pi05_dynamic_k_backbone_memory_rank8_episode_v1"
-        ),
-        "config_schema": (
-            "ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"
-        ),
+        "episode_schema": ("ember_pi05_dynamic_k_backbone_memory_rank8_episode_v1"),
+        "config_schema": ("ember_pi05_dynamic_k_backbone_memory_rank8_as_writer_v1"),
         "writer_kind": "dynamic_k_backbone_memory_writer",
         "arm_prefix": "dynamic_k_backbone_memory_rank8_",
         "trained_checkpoint_kind": "dynamic_k_writer_macro_checkpoint",
@@ -233,9 +219,7 @@ WRITER_FAMILIES = {
         "adapter_schema": (
             "ember_pi05_dynamic_k_semantic_address_rank8_eval_adapter_v1"
         ),
-        "episode_schema": (
-            "ember_pi05_dynamic_k_semantic_address_rank8_episode_v1"
-        ),
+        "episode_schema": ("ember_pi05_dynamic_k_semantic_address_rank8_episode_v1"),
         "config_schema": (
             "ember_pi05_dynamic_k_semantic_address_backbone_memory_rank8_"
             "as_writer_v1"
@@ -269,8 +253,7 @@ WRITER_FAMILIES = {
             "eval_adapter_v1"
         ),
         "episode_schema": (
-            "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
-            "episode_v1"
+            "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_" "episode_v1"
         ),
         "config_schema": (
             "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_"
@@ -308,8 +291,7 @@ WRITER_FAMILIES = {
     },
     "dynamic_k_task_grounded_visual_value_rank8_v1": {
         "adapter_schema": (
-            "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_"
-            "eval_adapter_v1"
+            "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_" "eval_adapter_v1"
         ),
         "episode_schema": (
             "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_episode_v1"
@@ -383,8 +365,7 @@ WRITER_FAMILIES = {
     },
     "v6_layerwise_probe_conditioned_procedure_v1": {
         "adapter_schema": (
-            "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
-            "eval_adapter_v1"
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
         "episode_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
@@ -415,8 +396,7 @@ WRITER_FAMILIES = {
     },
     "v6_lpcp_cross_video_causal_success_distillation_v1": {
         "adapter_schema": (
-            "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
-            "eval_adapter_v1"
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
         "episode_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
@@ -447,8 +427,7 @@ WRITER_FAMILIES = {
     },
     "v6_lpcp_causal_coefficient_transport_v1": {
         "adapter_schema": (
-            "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
-            "eval_adapter_v1"
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
         "episode_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
@@ -477,10 +456,9 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_native_zero_residual_bank_commitment_v1": {
+    "v6_lpcp_native_endpoint_action_preference_v1": {
         "adapter_schema": (
-            "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
-            "eval_adapter_v1"
+            "ember_pi05_v6_layerwise_probe_conditioned_procedure_" "eval_adapter_v1"
         ),
         "episode_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
@@ -489,11 +467,9 @@ WRITER_FAMILIES = {
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
-        "arm_prefix": (
-            "v6_lpcp_native_zero_residual_bank_commitment_"
-        ),
+        "arm_prefix": ("v6_lpcp_native_endpoint_action_preference_"),
         "trained_checkpoint_kind": (
-            "v6_lpcp_native_zero_residual_bank_commitment_cycle_checkpoint"
+            "v6_lpcp_native_endpoint_action_preference_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 32,
@@ -502,11 +478,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the native-zero residual bank commitment graph"
+            "the native endpoint action-preference graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the native-zero residual bank commitment graph"
+            "through the native endpoint action-preference graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),

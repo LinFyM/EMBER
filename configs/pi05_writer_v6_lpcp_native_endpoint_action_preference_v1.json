@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_native_zero_residual_bank_commitment_v1",
+  "schema_version": "ember_pi05_v6_lpcp_native_endpoint_action_preference_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,7 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_native_zero_residual_bank_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_native_endpoint_action_preference"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_native_zero_residual_bank_lora",
@@ -54,32 +54,30 @@
     "persistent_lanes_per_task": 2
   },
   "objective": {
-    "kind": "cross_video_matched_batch_stratified_occupancy_flow_preference",
+    "kind": "cross_video_matched_batch_stratified_occupancy_endpoint_action_preference",
     "pairing": "one_hard_reset_captured_model_and_state_then_deterministic_soft_reset_and_shared_policy_rng_prefix",
-    "discordant_credit": "softplus_matched_batch_winner_action_minus_loser_action_flow_loss_at_one_maximum_disagreement_state_per_equal_progress_stratum",
+    "discordant_credit": "softplus_deployed_endpoint_winner_distance_minus_loser_distance_at_one_maximum_disagreement_state_per_equal_progress_stratum",
     "tie_credit": "zero_for_both_success_and_both_failure",
     "replay_scope": "eight_equal_progress_strata_per_successful_trajectory_with_one_maximum_matched_action_disagreement_state_per_stratum_and_equal_weight_inside_each_equal_weight_discordant_trajectory",
     "winner_loser_action_panel": "both_arms_requeried_in_identical_observation_noise_precision_order_and_physical_batch_shape",
-    "winner_loser_flow_panel": "identical_beta_times_and_gaussian_noises_within_each_selected_pair",
-    "cross_video_credit": "same_matched_batch_stratified_occupancy_panel_exact_gradient_in_four_disjoint_correct_k4_conditions",
+    "generated_endpoint_panel": "one_complete_ten_step_policy_action_per_selected_observation_and_condition_with_the_same_rollout_policy_noise_as_both_matched_targets",
+    "cross_video_credit": "same_matched_batch_stratified_occupancy_endpoint_action_panel_exact_gradient_in_four_disjoint_correct_k4_conditions",
     "view_aggregation": "equal_mean_of_four_view_writer_gradients_with_unit_task_weight",
     "task_aggregation": "equal_mean_over_tasks_with_at_least_one_discordant_pair",
-    "flow_mc_samples": 4,
     "occupancy_strata_per_trajectory": 8,
-    "flow_time": "task_keyed_beta15_scaled_0999_offset_0001",
-    "flow_noise": "task_keyed_independent_gaussian"
+    "endpoint_solver_steps": 10,
+    "endpoint_action_scope": "executed_prefix_only"
   },
   "rng": {
     "environment_seed_root": 2026081101,
     "policy_noise_seed_root": 2026081102,
-    "flow_credit_seed_root": 2026081103,
     "optimizer_seed": 7
   },
   "optimization": {
     "precision": "bfloat16",
     "trainable": "four_zero_init_direct_native_b_heads_860160_parameters",
     "matched_action_batch_size": 8,
-    "reward_replay_chunk_batch_size": 8,
+    "endpoint_action_batch_size": 8,
     "optimizer": {
       "name": "AdamW",
       "lr": 0.0003,
@@ -102,7 +100,7 @@
     "direction": "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient",
     "direction_preconditioning": "same_adamw_lr_betas_eps_weight_decay_clip_and_optimizer_state",
     "radius_schedule": "actual_adam_candidate_times_two_to_the_negative_backtrack_index",
-    "acceptance": "first_candidate_with_strictly_lower_margin_for_all_four_correct_video_views_on_the_same_panel_and_flow_noise",
+    "acceptance": "first_candidate_with_strictly_lower_deployed_endpoint_margin_for_all_four_correct_video_views_on_the_same_panel_and_policy_noise",
     "max_backtracks": 10,
     "failure_action": "restore_step0_parameters_and_terminal_non_pass",
     "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
@@ -118,12 +116,12 @@
     "exact_pair_screen_task_ids": [4, 7, 9, 15, 18],
     "discordant_task_ids": [9, 15, 18],
     "required_anchor_outcomes": {
-      "9": "candidate_2_reference_1",
+      "9": "candidate_1_reference_0",
       "15": "candidate_2_reference_0",
       "18": "candidate_1_reference_2"
     },
     "required_complete_occupancy_chunks": {
-      "9": 26,
+      "9": 25,
       "15": 65,
       "18": 44
     },
@@ -191,8 +189,10 @@
       "constant_effective_ba_natural_ratio_maximum": 0.005,
       "no_extra_environment_step_or_video_backbone_forward": true,
       "matched_action_batch_size": 8,
+      "endpoint_action_batch_size": 8,
       "search_trial_count_maximum": 11,
-      "three_anchor_total_cycle_over_albnv_maximum": 1.15
+      "task9_cycle_over_nzrb_maximum": 1.75,
+      "three_anchor_total_cycle_over_nzrb_maximum": 1.75
     }
   }
 }

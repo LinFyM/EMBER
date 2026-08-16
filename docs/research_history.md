@@ -41,9 +41,12 @@ max-disagreement states。clean `ad65347`三anchor全部复现固定outcomes/cou
 held/train仅`.1096x`，故仍未full24/strict。额外四view flat-gradient测得三anchor raw mean对4/4 views均为下降，
 view-to-mean cosine minimum仍有`.695/.629/.601`。因此最早接口后移到raw functional gradient如何形成实际finite
 parameter delta，而不是matched panel、carrier、video aggregation或LoRA topology。
-当前active AR-EC保留MB-SOP全部科学图，唯一保留AdamW候选global L2 radius与moments，把final delta严格放回负
-raw shared gradient方向；无新增scale/solver/LR。canonical实现与fresh schema已完成、全量CPU=`404 passed`，
-等待固定三anchor四view post-margin与held机制门。
+AR-EC保留MB-SOP全部科学图，把final delta严格放回负raw shared gradient方向，同时保留AdamW候选global L2
+radius与moments。clean `b578d56`三anchor raw coverage均为`4/4`、final cosine均为1，但每个任务都只有`1/4`
+post margins下降；Adam radius为raw gradient L2的`6333/7988/4294x`。train/held BA coherence、q/v/action、时序和
+core wall均健康，证明方向旋转不是最早问题，full radius已经越过共同局部下降区间。AR-EC未full24/strict。
+当前active AV-MBC只把该upper radius改成固定顺序的all-view monotone backtracking，接受第一个四view全下降
+candidate；不改credit、carrier、rank、video aggregation或direction。
 精确状态取`docs/active_session_handoff.md`。
 
 ## 1. Stable problem definition

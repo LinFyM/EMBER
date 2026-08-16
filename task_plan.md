@@ -460,8 +460,17 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   L2半径逐步相等；
 - [x] 增加已有四view flat gradients的Gram诊断和smoke-only四view同panel/noise post-margin，不增加训练forward；
 - [x] 完成fresh schemas、定向CPU、全量CPU=`404 passed`、compileall与architecture guard 0 hard violation；
-- [ ] 冻结clean pushed commit并完成task9/15/18三anchor；只有四view margin、held geometry与吞吐全部过门才
-  full24/strict400。
+- [x] 冻结clean pushed `b578d56`并完成task9/15/18三anchor与完整post分析；raw/final方向门全过，但三任务各仅
+  `1/4` views真实下降，故终局，不full24/strict400。
+
+## Active iteration: V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment
+
+- [x] 建立AV-MBC authority：保留MB-SOP/AR-EC全部输入、credit、direction、optimizer state、八heads与rank16；
+  唯一把full Adam radius改成first-all-view-monotone backtracking；
+- [x] 原位实现fresh schema与`j=0..10`确定性回退；全量CPU=`404 passed`、compileall与architecture guard 0 hard；
+- [ ] 冻结clean pushed commit；
+- [ ] 完成task9/15/18三anchor及train/held/reverse/constant/吞吐分析；任一门失败即终局；
+- [ ] 只有三anchor全过才实现distributed active-task acceptance并启动fresh full24/strict400。
 
 ## Non-negotiable boundaries
 
@@ -478,9 +487,9 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 ## Current blockers
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
-Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP与MB-SOP均已按门终局；它们都不得resume
-或参数小扫。当前active AR-EC canonical实现与CPU门已完成；下一步固定三anchor GPU门。只能检验same-radius raw
-Euclidean commitment，不能改LR/radius、carrier、memory、rank、matched panel或video aggregation。
+Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
+不得resume或参数小扫。当前active AV-MBC world1机制实现与CPU门已完成；下一步冻结后只检验同一raw direction的
+first-all-view-monotone trust radius，不能改LR、carrier、memory、rank、matched panel或video aggregation。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

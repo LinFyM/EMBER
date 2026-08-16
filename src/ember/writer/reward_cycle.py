@@ -41,7 +41,7 @@ from ember.writer.reward_gradient_update import (
     AppliedStep,
     RewardPreferenceView,
     RewardProbe,
-    apply_reward_step,
+    apply_monotone_reward_step,
     probe_after_update,
 )
 
@@ -691,6 +691,7 @@ def _gather_cycle_evidence(
     runtime: RewardRuntime,
     records: list[dict[str, Any]],
     probe: RewardProbe | None,
+    preference_rows: Sequence[Mapping[str, Any]],
     started: float,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], float]:
     if runtime.args.mode == "formal":
@@ -701,7 +702,7 @@ def _gather_cycle_evidence(
         )
     else:
         global_records = records
-    probe_row = probe_after_update(runtime, probe)
+    probe_row = probe_after_update(runtime, probe, preference_rows)
     probes: list[Any] = [None] * runtime.context.world_size
     if runtime.context.world_size > 1:
         dist.all_gather_object(probes, probe_row)
@@ -731,9 +732,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_direct_factor_adam_radius_euclidean_commitment"
+            "one_complete_train24_direct_factor_all_view_monotone_backtracking_commitment"
             if runtime.args.mode == "formal"
-            else "one_task_direct_factor_adam_radius_euclidean_commitment_live_smoke"
+            else "one_task_direct_factor_all_view_monotone_backtracking_commitment_live_smoke"
         ),
         "tasks": len(records),
         "paired_states": 2 * len(records),
@@ -791,8 +792,8 @@ def run_cycle(runtime: RewardRuntime, cycle: int) -> dict[str, Any]:
     records, probe, local_active, task_gradients = _collect_cycle_tasks(
         runtime, cycle, gradient_sum
     )
-    step = apply_reward_step(runtime, gradient_sum, local_active, task_gradients)
+    step = apply_monotone_reward_step(runtime, gradient_sum, local_active, task_gradients, probe)
     records, probes, elapsed = _gather_cycle_evidence(
-        runtime, records, probe, started
+        runtime, records, probe, step.commitment_preference_rows, started
     )
     return _cycle_metrics(runtime, cycle, records, probes, step, elapsed)

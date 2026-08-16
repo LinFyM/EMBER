@@ -60,12 +60,16 @@ MB-SOP已用同B8 action panel与8段max-disagreement occupancy解决批形混�
 held/train仅`.1096x`，故未full24/strict。额外四view flat gradients证明三任务raw等权均值均为`4/4`共同下降；
 最早接口是raw functional gradient到coordinate-preconditioned finite parameter delta。
 
-当前active successor是**AR-EC**：完整保留MB-SOP matched panel、四video等权、LPCP/DJNFR、rank16与八heads，
-唯一先照常生成AdamW候选并更新moments，再保留候选全局L2半径、把最终delta写回负raw shared gradient方向。
-无新增scale、solver或LR变化。smoke须在同一panel/noise上四个view margin全部下降，且train/held/reverse/constant与
-吞吐门全过，才允许full24。authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`；canonical实现与fresh
-schemas已完成，CPU=`404 passed`、architecture guard无hard violation。当前无GPU run或可resume checkpoint。
+AR-EC clean `b578d56`已终局：三anchor raw gradient均为`4/4`共同下降且final到`-g` cosine1，但同Adam full radius
+后每个任务仅`1/4` post margins下降；radius/raw-gradient L2=`6333/7988/4294x`。train/held BA coherence、
+q/v/action、reverse/constant与core wall都健康，故不full24/strict，最早接口是finite trust radius。
+
+当前active successor是**AV-MBC**：完整保留MB-SOP/AR-EC matched panel、四video等权、direction、LPCP/DJNFR、
+rank16与八heads，只沿`-g`从Adam upper radius确定性减半，接受第一个四view同panel/noise margin全部下降的candidate。
+不挑最佳scale、不产生多checkpoint。authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`；canonical world1
+实现与fresh schema已完成，CPU=`404 passed`、architecture guard无hard violation。首轮仅授权task9/15/18机制门，
+formal blocked；当前无GPU run或可resume checkpoint。
 稳定约145资格高于单点分数：至少需要相邻single checkpoints低churn/high-overlap、same-task-other鲁棒，并在
 同一final checkpoint上证明correct相对wrong/shuffled/reversed/no-video的明确paired优势。
 

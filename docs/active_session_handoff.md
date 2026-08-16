@@ -77,12 +77,18 @@
   held/train仅`.1096x`，故按门终局，不full24/strict/cycle2。额外无forward flat-gradient复跑显示三任务
   view-to-mean cosine minimum=`.695/.629/.601`且raw mean下降覆盖均为`4/4`；最早缺口是raw shared gradient经
   coordinate-preconditioned finite AdamW delta后的方向承诺；
-- 当前active successor是**AR-EC**，authority=
-  `docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`。唯一保留旧AdamW候选
-  的全局L2半径和moments，但把最终parameter delta严格写成负raw shared gradient方向；MB-SOP matched panel、
-  四video等权、八heads、rank16与所有部署输入不变。smoke会在同一panel/noise上复算四个view的post-margin；
-  三anchor全部下降且held门过后才允许full24。canonical实现与fresh schema已完成，CPU=`404 passed`、architecture
-  guard无hard violation；当前无GPU run或可resume checkpoint；
+- 最新终局successor是**AR-EC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`，clean `b578d56`。
+  task9/15/18 fixed outcomes/counts均复现，raw four-view coverage均`4/4`、final到`-g` cosine均1；但post-margin每项
+  只有`1/4` views下降。Adam radius相对raw gradient L2=`6332.5/7988.2/4293.9x`。train BA cosine/energy=
+  `.867/.868,.765/.738,.863/.844`，held8=`.782/.779,.829/.811,.817/.811`；q/v/action、reverse/constant、
+  info-wall与core wall全部健康。故最早失败接口是全Adam半径越出共同局部下降区间，不是direction/carrier/LoRA。
+  按门不full24/strict/cycle2或固定scale sweep；
+- 当前active successor是**AV-MBC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。保留AR-EC方向、
+  optimizer state与全部科学图，只从Adam upper radius沿`-g`依次检验`1,1/2,...,1/1024`，接受同一panel/noise下
+  四个views全部严格下降的第一个candidate。canonical world1实现与fresh schema已完成，全量CPU=`404 passed`、
+  architecture guard无hard violation；尚未运行GPU，formal blocked；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

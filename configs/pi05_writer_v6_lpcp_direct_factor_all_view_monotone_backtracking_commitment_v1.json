@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_v1",
+  "schema_version": "ember_pi05_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_v1",
   "status": "mechanism_ready",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
@@ -7,7 +7,7 @@
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
     "reference_arm": "same_cached_conditioning_with_query_delta_disabled_exact_as139",
-    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_adam_radius_euclidean_commitment"
+    "candidate_arm": "frozen_v6_lpcp_plus_direct_factor_all_view_monotone_backtracking_commitment"
   },
   "information_wall": {
     "writer_input": "exact task language plus four action-hidden same-task teacher videos",
@@ -87,15 +87,19 @@
     }
   },
   "commitment": {
-    "kind": "adam_candidate_global_l2_radius_with_negative_raw_shared_gradient_direction",
-    "adam_candidate": "same_raw_gradient_optimizer_state_lr_betas_eps_weight_decay_and_clip",
-    "final_delta": "negative_raw_shared_gradient_rescaled_to_exact_adam_candidate_global_l2",
+    "kind": "first_all_view_monotone_power_of_two_backtracking_from_adam_upper_radius",
+    "adam_upper_radius": "same_raw_gradient_optimizer_state_lr_betas_eps_weight_decay_and_clip",
+    "direction": "negative_raw_shared_gradient",
+    "radius_schedule": "adam_upper_radius_times_two_to_the_negative_backtrack_index",
+    "acceptance": "first_candidate_with_strictly_lower_margin_for_all_four_correct_video_views_on_the_same_panel_and_flow_noise",
+    "max_backtracks": 10,
+    "failure_action": "restore_step0_parameters_and_terminal_non_pass",
     "optimizer_state": "adam_moments_and_step_from_raw_gradient_are_retained",
     "task_weighting": "equal_mean_over_active_tasks_before_commitment",
     "view_weighting": "equal_mean_over_four_correct_video_gradients_before_commitment",
-    "new_scale_or_solver": false,
-    "smoke_post_update_probe": "same_selected_panel_and_flow_noise_for_all_four_correct_video_views",
-    "formal_post_update_probe": "first_active_view_ba_and_action_only"
+    "fixed_scale_or_checkpoint_selection": false,
+    "video_or_environment_recompute": false,
+    "formal_extension_status": "blocked_until_all_three_world1_anchors_pass"
   },
   "smoke_run": {
     "cycle": 1,
@@ -150,7 +154,9 @@
       "post_update_preference_margin_must_decrease": true,
       "post_update_all_four_view_margins_must_decrease": true,
       "raw_four_view_shared_mean_descent_coverage": 1.0,
-      "adam_and_final_delta_l2_relative_error_maximum": 1e-06,
+      "search_max_backtracks": 10,
+      "first_all_view_monotone_candidate_required": true,
+      "accepted_and_expected_delta_l2_relative_error_maximum": 1e-06,
       "final_delta_to_negative_raw_gradient_cosine_minimum": 0.999999,
       "first_update_all_eight_factor_heads_nonzero": true,
       "post_update_q_v_action_native_factors_nonzero": true,
@@ -169,8 +175,7 @@
       "constant_effective_ba_natural_ratio_maximum": 0.005,
       "no_extra_environment_step_or_video_backbone_forward": true,
       "matched_action_batch_size": 8,
-      "matching_dfpcsp_smoke_wall_ratio_maximum": 3.0,
-      "core_cycle_wall_over_matching_mbsop_maximum": 1.1
+      "search_trial_count_maximum": 11
     }
   }
 }

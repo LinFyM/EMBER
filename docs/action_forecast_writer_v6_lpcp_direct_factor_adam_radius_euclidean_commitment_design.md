@@ -1,7 +1,7 @@
 # V6-LPCP Direct-Factor Adam-Radius Euclidean Commitment
 
-状态：2026-08-16 active single-variable design authority；canonical实现、fresh schema、CPU回归和结构门已完成，
-尚未运行GPU。简称`AR-EC`。本轮从sealed LPCP
+状态：2026-08-16 terminal non-pass；canonical实现、fresh schema、CPU回归、三anchor与完整post分析均已完成。
+简称`AR-EC`。本轮从sealed LPCP
 fresh启动，完整保留MB-SOP的video-language carrier、matched successful-occupancy panel、四个correct K4 views、
 八个direct native-factor heads与rank16部署图，只替换shared functional gradient到实际参数delta的commitment。
 
@@ -127,3 +127,32 @@ task-level coverage或strict仍换手，最早接口后移到跨task共同下降
 本轮只检验“MB-SOP matched functional credit + equal raw gradient direction + Adam candidate global radius + one fresh
 cycle”。负结果不否定memory token、rank8、few-shot、生成LoRA、matched successful occupancy、其它可信半径或未来
 生成LoRA后的task-local RL。
+
+## 10. 实际结果与终局裁决
+
+canonical clean pushed commit=`b578d5648bbb12722ea6d0be5b915b4841cfe2f6`。task9/15/18三run均exit0，固定
+candidate/reference outcomes=`2/1,2/0,1/2`、complete chunks=`26/65/44`、selected pairs=`8/16/8`全部复现；
+0禁读、OOM或nonfinite。三run roots分别为：
+
+- `runs/outputs/pi05_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_task9_mechanism_b8_b578d56_gpu01p0_20260816`
+- `runs/outputs/pi05_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_task15_mechanism_b8_b578d56_gpu01p1_20260816`
+- `runs/outputs/pi05_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_task18_mechanism_b8_b578d56_gpu01p2_20260816`
+
+raw four-view共同下降覆盖均为`4/4`，final到`-g` cosine均为1且radius relative error至多`9.02e-8`。但四view
+post-margin delta依次为：
+
+```text
+task9  -.00001710 / +.00000750 / +.00020203 / +.00006086
+task15 +.00027914 / +.00001779 / -.00001787 / +.00000334
+task18 +.00041723 / -.00028980 / +.00021348 / +.00021826
+```
+
+每个任务都只有`1/4` views下降。Adam upper radius相对raw gradient L2为`6332.5/7988.2/4293.9x`。AR-EC
+train BA cosine/energy=`.867/.868,.765/.738,.863/.844`，held8=`.782/.779,.829/.811,.817/.811`且三者均8/8
+held tasks过门；相比MB-SOP，task15/18的LoRA coherence反而明显提高。core wall为`103.04/156.61/118.52s`，仅
+MB-SOP的`.946/.936/.960x`；q/v/action、fixed action、reverse/constant均健康。故失败不能归因于吞吐、carrier、
+LoRA写出或跨video几何。
+
+预注册all-view margin门三项全失败，AR-EC终局：不启动full24、strict400、cycle2、controls或固定scale sweep。
+最早失败接口是**Adam候选全局半径超出四view共同局部下降区间**，不是raw gradient方向。下一轮只能另立
+finite-step trust-radius authority；本结果不否定其它trust commitment、memory、rank8、few-shot或生成LoRA。

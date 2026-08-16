@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -196,13 +196,24 @@ trajectory、strata、views与tasks等权。clean `ad65347`三anchor复现全部
 `.1096x`，故按门终局，不full24/strict/cycle2。
 
 额外flat-gradient诊断显示三anchor四个view到raw等权均值的最小cosine=`.695/.629/.601`且下降覆盖均为`4/4`；
-所以最早失败接口是**已正确汇合的functional gradient -> coordinate-preconditioned finite AdamW delta**，不是carrier、
-memory、rank、video聚合或LoRA写出。当前active successor是**V6-LPCP Direct-Factor Adam-Radius Euclidean
-Commitment**（AR-EC），authority=
-`docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`。它唯一保留AdamW候选delta
-的全局L2半径与optimizer moments，但把最终delta严格放回负raw shared gradient方向；四view post-margin全部下降才
-允许full24。canonical实现已完成，CPU=`404 passed`且architecture guard无hard violation；尚无GPU结果或可resume
-checkpoint。
+所以MB-SOP最早缺口是**已正确汇合的functional gradient -> coordinate-preconditioned finite AdamW delta**，不是
+carrier、memory、rank、video聚合或LoRA写出。
+
+最新终局successor是**V6-LPCP Direct-Factor Adam-Radius Euclidean Commitment**（AR-EC），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md`，clean `b578d56`。它保留
+Adam候选global L2但把final delta精确放回`-raw mean`。task9/15/18的raw coverage和final方向均为`4/4`/cosine1，
+但post-margin每个任务都只有`1/4` views下降；完整delta分别为
+`[-.000017,+.000007,+.000202,+.000061]`、`[+.000279,+.000018,-.000018,+.000003]`、
+`[+.000417,-.000290,+.000213,+.000218]`。Adam radius是raw gradient L2的`6333/7988/4294x`。train/held BA
+coherence、q/v/action、reverse/constant和core wall全部健康，且task15/18 coherence较MB-SOP更高；因此最早缺口
+进一步定位为**全Adam半径超出四view共同局部下降区间**。AR-EC不full24/strict/cycle2或固定scale sweep。
+
+当前active successor是**V6-LPCP Direct-Factor All-View Monotone Backtracking Commitment**（AV-MBC），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md`。它保留AR-EC全部
+方向、optimizer state和科学图，只从Adam upper radius沿同一`-g`方向依次检验`1,1/2,...,1/1024`，接受同一panel/
+noise下四个correct-video views全部严格下降的第一个candidate；不是挑最佳scale或多checkpoint sweep。首轮仅实现
+固定三anchor机制门，formal保持blocked。canonical world1机制实现与fresh schema已完成，全量CPU=`404 passed`、
+architecture guard无hard violation；尚无GPU结果或可resume checkpoint。
 
 ## 4. Long-term objective and decision rule
 

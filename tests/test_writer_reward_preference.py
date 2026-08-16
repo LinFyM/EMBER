@@ -452,18 +452,39 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     )
     runtime = SimpleNamespace(
         context=SimpleNamespace(world_size=1, device=torch.device("cpu")),
-        config={"optimization": {"optimizer": {"gradient_clip_norm": 10.0}}},
+        config={
+            "optimization": {"optimizer": {"gradient_clip_norm": 10.0}},
+            "commitment": {"max_backtracks": 3},
+        },
         writer=writer,
         optimizer=optimizer,
         trainable_parameters=tuple(writer.parameters()),
         gradient_layout=parameter_layout(writer),
         tasks=(SimpleNamespace(global_task_id=0), SimpleNamespace(global_task_id=1)),
     )
+    evaluated_scales = []
+
+    def evaluate(scale: float) -> tuple[dict[str, float | int | bool], ...]:
+        evaluated_scales.append(scale)
+        delta = -0.25 if scale <= 0.5 else 0.25
+        return tuple(
+            {
+                "view_index": index,
+                "before_preference_margin": 0.0,
+                "after_preference_margin": delta,
+                "preference_margin_delta": delta,
+                "after_preference_objective": 1.0 + delta,
+                "preference_descent": delta < 0,
+            }
+            for index in range(4)
+        )
+
     step = apply_reward_step(
         runtime,
         torch.tensor([-1.0, 0.0]),
         2,
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
+        evaluate,
     )
     assert step.active_tasks == 2
     torch.testing.assert_close(
@@ -479,3 +500,35 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
         "final_to_negative_raw_gradient_cosine"
     ] == pytest.approx(1.0)
     assert step.commitment_geometry["radius_relative_error"] <= 1e-6
+    assert evaluated_scales == [1.0, 0.5]
+    assert step.commitment_geometry["search_accepted"] is True
+    assert step.commitment_geometry["accepted_backtrack_index"] == 1
+    assert step.commitment_geometry["accepted_radius_scale"] == 0.5
+    assert all(row["preference_descent"] for row in step.commitment_preference_rows)
+
+    accepted_parameters = head.detach().clone()
+    failed = apply_reward_step(
+        runtime,
+        torch.tensor([-1.0, 0.0]),
+        2,
+        {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
+        lambda _scale: tuple(
+            {
+                "view_index": index,
+                "before_preference_margin": 0.0,
+                "after_preference_margin": 0.25,
+                "preference_margin_delta": 0.25,
+                "after_preference_objective": 1.25,
+                "preference_descent": False,
+            }
+            for index in range(4)
+        ),
+    )
+    torch.testing.assert_close(head, accepted_parameters)
+    assert failed.commitment_geometry["search_accepted"] is False
+    assert failed.commitment_geometry["search_trial_count"] == 4
+    assert failed.commitment_geometry["accepted_radius_scale"] == 0.0
+    assert all(
+        row["preference_margin_delta"] == 0.0
+        for row in failed.commitment_preference_rows
+    )

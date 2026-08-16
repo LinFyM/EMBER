@@ -357,10 +357,10 @@ def _reward_writer_asset(
     return {
         "kind": REWARD_DEPLOYMENT_KIND,
         "training_mode": (
-            "formal_direct_factor_adam_radius_euclidean_commitment"
+            "formal_direct_factor_all_view_monotone_backtracking_commitment"
         ),
         "training_stage": (
-            "on_policy_cross_video_adam_radius_euclidean_direct_factor"
+            "on_policy_cross_video_all_view_monotone_backtracking_direct_factor"
         ),
         "method_macro": cycle,
         "checkpoint": str(checkpoint),
@@ -560,7 +560,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_direct_factor_adam_radius_euclidean_commitment_"
+                "v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

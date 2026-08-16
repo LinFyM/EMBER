@@ -71,10 +71,16 @@ identity和下一裁决只取
 `1.54--2.12x`且跨video LoRA写出健康。但task15/18在同一panel上的真实AdamW step后margin反而增加；进一步
 测得四个view的raw等权均值对三anchor均是`4/4`共同下降方向。故MB-SOP终局，未full24/strict。
 
+[`AR-EC`](docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md)已终局：三anchor
+raw gradient均对`4/4` views一阶下降，final delta也与`-g`精确同向，但同Adam全局半径后每个任务都只有`1/4`
+真实post-margin下降；train/held LoRA coherence、q/v/action和吞吐反而健康。故最早缺口是有限步半径，不是
+gradient方向或LoRA写出。
+
 当前active successor是
-[`AR-EC`](docs/action_forecast_writer_v6_lpcp_direct_factor_adam_radius_euclidean_commitment_design.md)：完整保留MB-SOP
-输入、credit与LoRA生成，只保留AdamW候选delta的全局L2半径和moments，把最终delta放回负raw shared gradient
-方向。它直接检验当前最早的optimizer commitment接口，不改memory、rank或video aggregation。
+[`AV-MBC`](docs/action_forecast_writer_v6_lpcp_direct_factor_all_view_monotone_backtracking_commitment_design.md)：保持
+MB-SOP/AR-EC全部输入、credit、方向、rank16与LoRA生成，只沿同一`-g`从Adam upper radius确定性减半，接受四个
+correct-video views在同panel/noise上全部严格下降的第一个candidate；不挑最佳scale，不改memory、rank或video
+aggregation。canonical world1机制实现与fresh schema已完成，CPU=`404 passed`；formal仍blocked。
 
 ## Information wall
 

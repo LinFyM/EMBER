@@ -5,13 +5,13 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence
 
 import torch
 import torch.distributed as dist
 
 from ember.lora import copy_task_lora_state_
-from ember.writer.as_step import assign_flat_gradient
+from ember.writer.as_step import ParameterSlice, assign_flat_gradient
 from ember.writer.errors import WriterModelError
 from ember.writer.model import WriterConditioningState
 from ember.writer.reward_preference import functional_matched_stratified_occupancy_margin
@@ -27,7 +27,8 @@ class AppliedStep:
     gradient_rms: float
     parameter_delta_rms: Mapping[str, float]
     gradient_coexistence: Mapping[str, Any]
-    commitment_geometry: Mapping[str, float]
+    commitment_geometry: Mapping[str, Any]
+    commitment_preference_rows: tuple[Mapping[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -97,8 +98,60 @@ def lora_response(
 
 
 @torch.inference_mode()
+def evaluate_preference_views(
+    runtime: RewardRuntime, probe: RewardProbe
+) -> tuple[Mapping[str, Any], ...]:
+    """Re-evaluate the exact four-view matched panel at current Writer parameters."""
+
+    if len(probe.preference_views) != 4:
+        raise WriterModelError("backtracking commitment lost four video views")
+    rows = []
+    for index, view in enumerate(probe.preference_views):
+        with torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ):
+            encoded = runtime.writer.compile_conditioning_state(
+                view.conditioning_state,
+                view.condition_video_offsets,
+                use_query_delta=True,
+            )
+            lora = runtime.writer.decode_output(encoded)
+        preference = functional_matched_stratified_occupancy_margin(
+            runtime.policy,
+            lora,
+            runtime.lora_contract,
+            probe.preference_batch,
+            probe.preference_trajectory_ids,
+            mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
+            physical_microbatch_size=int(
+                runtime.config["optimization"]["reward_replay_chunk_batch_size"]
+            ),
+            flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
+            cycle=probe.cycle,
+            global_task_id=probe.global_task_id,
+            device=runtime.context.device,
+        )
+        delta = preference["preference_margin"] - view.before_preference_margin
+        rows.append(
+            {
+                "view_index": index,
+                "before_preference_margin": view.before_preference_margin,
+                "after_preference_margin": preference["preference_margin"],
+                "preference_margin_delta": delta,
+                "after_preference_objective": preference["preference_objective"],
+                "preference_descent": delta < 0,
+            }
+        )
+    return tuple(rows)
+
+
+@torch.inference_mode()
 def probe_after_update(
-    runtime: RewardRuntime, probe: RewardProbe | None
+    runtime: RewardRuntime,
+    probe: RewardProbe | None,
+    preference_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any] | None:
     if probe is None:
         return None
@@ -139,64 +192,19 @@ def probe_after_update(
     response["fixed_action_response_rms"] = float(
         (action.cpu().float() - probe.before_action.float()).square().mean().sqrt()
     )
-    if runtime.args.mode == "smoke":
-        if len(probe.preference_views) != 4:
-            raise WriterModelError("smoke preference probe lost four video views")
-        view_rows = []
-        for index, view in enumerate(probe.preference_views):
-            if index == 0:
-                view_lora = after
-            else:
-                with torch.autocast(
-                    device_type=runtime.context.device.type,
-                    dtype=torch.bfloat16,
-                    enabled=runtime.context.device.type == "cuda",
-                ):
-                    view_encoded = runtime.writer.compile_conditioning_state(
-                        view.conditioning_state,
-                        view.condition_video_offsets,
-                        use_query_delta=True,
-                    )
-                    view_lora = runtime.writer.decode_output(view_encoded)
-            preference = functional_matched_stratified_occupancy_margin(
-                runtime.policy,
-                view_lora,
-                runtime.lora_contract,
-                probe.preference_batch,
-                probe.preference_trajectory_ids,
-                mc_samples=int(runtime.config["objective"]["flow_mc_samples"]),
-                physical_microbatch_size=int(
-                    runtime.config["optimization"]["reward_replay_chunk_batch_size"]
-                ),
-                flow_seed_root=int(runtime.config["rng"]["flow_credit_seed_root"]),
-                cycle=probe.cycle,
-                global_task_id=probe.global_task_id,
-                device=runtime.context.device,
-            )
-            delta = preference["preference_margin"] - view.before_preference_margin
-            view_rows.append(
-                {
-                    "view_index": index,
-                    "before_preference_margin": view.before_preference_margin,
-                    "after_preference_margin": preference["preference_margin"],
-                    "preference_margin_delta": delta,
-                    "after_preference_objective": preference[
-                        "preference_objective"
-                    ],
-                    "preference_descent": delta < 0,
-                }
-            )
-        first = view_rows[0]
-        response.update(
-            before_preference_margin=first["before_preference_margin"],
-            after_preference_margin=first["after_preference_margin"],
-            preference_margin_delta=first["preference_margin_delta"],
-            after_preference_objective=first["after_preference_objective"],
-            view_preference_probes=view_rows,
-            all_view_preference_descent=all(
-                row["preference_descent"] for row in view_rows
-            ),
-        )
+    if len(preference_rows) != 4:
+        raise WriterModelError("backtracking commitment lost accepted view evidence")
+    first = preference_rows[0]
+    response.update(
+        before_preference_margin=first["before_preference_margin"],
+        after_preference_margin=first["after_preference_margin"],
+        preference_margin_delta=first["preference_margin_delta"],
+        after_preference_objective=first["after_preference_objective"],
+        view_preference_probes=list(preference_rows),
+        all_view_preference_descent=all(
+            bool(row["preference_descent"]) for row in preference_rows
+        ),
+    )
     response["probe_seconds"] = time.monotonic() - started
     return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
 
@@ -370,11 +378,127 @@ def adam_radius_euclidean_commitment(
     }
 
 
+def _write_parameter_delta(
+    named: Sequence[tuple[str, torch.nn.Parameter]],
+    layout: Sequence[ParameterSlice],
+    before: Mapping[str, torch.Tensor],
+    delta: torch.Tensor,
+) -> None:
+    with torch.no_grad():
+        for (name, value), item in zip(named, layout, strict=True):
+            value.copy_(
+                before[name]
+                + delta[item.start : item.stop].view_as(value).to(dtype=value.dtype)
+            )
+
+
+def _baseline_preference_rows(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[Mapping[str, Any], ...]:
+    return tuple(
+        {
+            "view_index": int(row["view_index"]),
+            "before_preference_margin": float(row["before_preference_margin"]),
+            "after_preference_margin": float(row["before_preference_margin"]),
+            "preference_margin_delta": 0.0,
+            "after_preference_objective": None,
+            "preference_descent": False,
+        }
+        for row in rows
+    )
+
+
+def _monotone_backtracking_commitment(
+    *,
+    named: Sequence[tuple[str, torch.nn.Parameter]],
+    layout: Sequence[ParameterSlice],
+    before: Mapping[str, torch.Tensor],
+    full_delta: torch.Tensor,
+    base_geometry: Mapping[str, float],
+    evaluator: Callable[[float], Sequence[Mapping[str, Any]]],
+    max_backtracks: int,
+) -> tuple[torch.Tensor, tuple[Mapping[str, Any], ...], dict[str, Any]]:
+    if max_backtracks < 0:
+        raise WriterModelError("monotone backtracking count changed")
+    started = time.monotonic()
+    accepted_scale = 0.0
+    accepted_index: int | None = None
+    accepted_rows: tuple[Mapping[str, Any], ...] = ()
+    last_rows: tuple[Mapping[str, Any], ...] = ()
+    trials = []
+    for index in range(max_backtracks + 1):
+        scale = 2.0**-index
+        trial_delta = full_delta * scale
+        _write_parameter_delta(named, layout, before, trial_delta)
+        rows = tuple(evaluator(scale))
+        if len(rows) != 4:
+            raise WriterModelError("monotone backtracking lost four view margins")
+        margin_deltas = [float(row["preference_margin_delta"]) for row in rows]
+        if not all(math.isfinite(value) for value in margin_deltas):
+            raise WriterModelError("monotone backtracking margin is nonfinite")
+        accepted = all(value < 0 for value in margin_deltas)
+        trials.append(
+            {
+                "backtrack_index": index,
+                "radius_scale": scale,
+                "view_preference_margin_deltas": margin_deltas,
+                "all_view_preference_descent": accepted,
+            }
+        )
+        last_rows = rows
+        if accepted:
+            accepted_scale = scale
+            accepted_index = index
+            accepted_rows = rows
+            break
+    if accepted_index is None:
+        final_delta = torch.zeros_like(full_delta)
+        _write_parameter_delta(named, layout, before, final_delta)
+        accepted_rows = _baseline_preference_rows(last_rows)
+    else:
+        final_delta = full_delta * accepted_scale
+    final_norm = torch.linalg.vector_norm(final_delta)
+    candidate_norm = float(base_geometry["adam_candidate_delta_l2"])
+    expected_norm = candidate_norm * accepted_scale
+    final_norm_value = float(final_norm)
+    if accepted_index is None:
+        final_cosine = 0.0
+        candidate_cosine = 0.0
+        radius_error = 0.0
+    else:
+        negative_gradient_cosine = float(
+            base_geometry["final_to_negative_raw_gradient_cosine"]
+        )
+        final_cosine = negative_gradient_cosine
+        candidate_cosine = float(base_geometry["adam_candidate_to_final_cosine"])
+        radius_error = abs(final_norm_value - expected_norm) / expected_norm
+    count = full_delta.numel()
+    geometry = {
+        **base_geometry,
+        "search_kind": "first_all_view_monotone_power_of_two_backtracking",
+        "max_backtracks": max_backtracks,
+        "search_accepted": accepted_index is not None,
+        "accepted_backtrack_index": accepted_index,
+        "accepted_radius_scale": accepted_scale,
+        "accepted_expected_delta_l2": expected_norm,
+        "final_delta_l2": final_norm_value,
+        "final_delta_rms": final_norm_value / math.sqrt(count),
+        "final_to_negative_raw_gradient_cosine": final_cosine,
+        "adam_candidate_to_final_cosine": candidate_cosine,
+        "radius_relative_error": radius_error,
+        "search_trials": trials,
+        "search_trial_count": len(trials),
+        "search_seconds": time.monotonic() - started,
+    }
+    return final_delta, accepted_rows, geometry
+
+
 def apply_reward_step(
     runtime: RewardRuntime,
     gradient_sum: torch.Tensor,
     local_active_tasks: int,
     task_gradients: Mapping[int, torch.Tensor],
+    commitment_evaluator: Callable[[float], Sequence[Mapping[str, Any]]],
 ) -> AppliedStep:
     active = torch.tensor(
         local_active_tasks, dtype=torch.long, device=runtime.context.device
@@ -398,7 +522,9 @@ def apply_reward_step(
     committed_gradient = torch.empty_like(gradient_sum)
     for item in runtime.gradient_layout:
         if item.parameter.grad is None:
-            raise WriterModelError("Adam-radius commitment lost a parameter gradient")
+            raise WriterModelError(
+                "monotone backtracking commitment lost a parameter gradient"
+            )
         committed_gradient[item.start : item.stop].copy_(
             item.parameter.grad.detach().reshape(-1).float()
         )
@@ -408,17 +534,18 @@ def apply_reward_step(
         candidate_delta[item.start : item.stop].copy_(
             (value.detach() - before[name]).reshape(-1).float()
         )
-    final_delta, commitment = adam_radius_euclidean_commitment(
+    full_delta, base_commitment = adam_radius_euclidean_commitment(
         committed_gradient, candidate_delta
     )
-    with torch.no_grad():
-        for (name, value), item in zip(named, runtime.gradient_layout, strict=True):
-            value.copy_(
-                before[name]
-                + final_delta[item.start : item.stop]
-                .view_as(value)
-                .to(dtype=value.dtype)
-            )
+    final_delta, preference_rows, commitment = _monotone_backtracking_commitment(
+        named=named,
+        layout=runtime.gradient_layout,
+        before=before,
+        full_delta=full_delta,
+        base_geometry=base_commitment,
+        evaluator=commitment_evaluator,
+        max_backtracks=int(runtime.config["commitment"]["max_backtracks"]),
+    )
     delta = {
         name: float((value.detach() - before[name]).float().square().mean().sqrt())
         for name, value in named
@@ -433,4 +560,23 @@ def apply_reward_step(
         parameter_delta_rms=delta,
         gradient_coexistence=coexistence,
         commitment_geometry=commitment,
+        commitment_preference_rows=preference_rows,
+    )
+
+
+def apply_monotone_reward_step(
+    runtime: RewardRuntime,
+    gradient_sum: torch.Tensor,
+    local_active_tasks: int,
+    task_gradients: Mapping[int, torch.Tensor],
+    probe: RewardProbe | None,
+) -> AppliedStep:
+    if probe is None:
+        raise WriterModelError("monotone backtracking has no active four-view probe")
+    return apply_reward_step(
+        runtime,
+        gradient_sum,
+        local_active_tasks,
+        task_gradients,
+        lambda _scale: evaluate_preference_views(runtime, probe),
     )

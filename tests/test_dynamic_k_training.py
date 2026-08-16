@@ -101,7 +101,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_adam_radius_commitment_config_records_fresh_mechanism_gate() -> None:
+def test_monotone_backtracking_commitment_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -118,9 +118,10 @@ def test_adam_radius_commitment_config_records_fresh_mechanism_gate() -> None:
     assert config["optimization"]["matched_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "adam_candidate_global_l2_radius_with_negative_raw_shared_gradient_direction"
+        "first_all_view_monotone_power_of_two_backtracking_from_adam_upper_radius"
     )
-    assert config["commitment"]["new_scale_or_solver"] is False
+    assert config["commitment"]["max_backtracks"] == 10
+    assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
     assert config["smoke_run"]["required_complete_occupancy_chunks"] == {
         "9": 26,
         "15": 65,

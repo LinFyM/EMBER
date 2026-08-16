@@ -633,6 +633,14 @@ Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化
     同半径向量；Adam moments照常保留。它与旧ADSP不同：不保护offline/train-prefix support，也不解小dual，只
     检验同一matched reward panel已证实的共同下降方向能否被正确commit。若同半径raw方向仍使四view margin上升，
     才能把最早接口进一步定位到finite-step trust radius，而不能靠LR小扫解释。
+94. AR-EC clean`b578d56`三anchor固定outcomes/counts、raw 4/4共同下降和final cosine1均通过，但四view真实margin
+    delta分别为`[-.000017,+.000007,+.000202,+.000061]`、`[+.000279,+.000018,-.000018,+.000003]`与
+    `[+.000417,-.000290,+.000213,+.000218]`，每task只有1/4下降。Adam radius为raw gradient L2的
+    `6333/7988/4294x`。因此Adam逐坐标旋转不是主因；full global radius已越过共同局部下降区间。
+95. AR-EC train/held BA cosine/energy=`.867/.868,.765/.738,.863/.844`与
+    `.782/.779,.829/.811,.817/.811`，task15/18反而比MB-SOP更coherent；q/v/action、reverse/constant及core wall
+    也全健康。这再次证明更漂亮LoRA几何不能替代functional/closed-loop。AV-MBC下一步只用固定顺序减半并接受
+    第一个四view全下降candidate；它是单一optimizer acceptance rule，不是按结果挑固定scale。
 
 负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
 

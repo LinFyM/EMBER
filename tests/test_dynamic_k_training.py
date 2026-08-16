@@ -101,7 +101,7 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_maximum_margin_commitment_config_records_fresh_mechanism_gate() -> None:
+def test_preconditioned_backtracking_config_records_fresh_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
     assert config["status"] == "mechanism_ready"
     assert config["formal_run"]["status"] == (
@@ -118,11 +118,10 @@ def test_maximum_margin_commitment_config_records_fresh_mechanism_gate() -> None
     assert config["optimization"]["matched_action_batch_size"] == 8
     assert config["objective"]["occupancy_strata_per_trajectory"] == 8
     assert config["commitment"]["kind"] == (
-        "maximum_margin_direction_first_all_view_monotone_power_of_two_"
-        "backtracking_from_adam_upper_radius"
+        "actual_adam_candidate_first_all_view_monotone_power_of_two_backtracking"
     )
-    assert config["commitment"]["direction_solver"] == (
-        "exact_four_view_minimum_norm_simplex_active_set_on_4x4_gram"
+    assert config["commitment"]["direction"] == (
+        "actual_adamw_candidate_delta_from_equal_view_then_equal_task_mean_gradient"
     )
     assert config["commitment"]["max_backtracks"] == 10
     assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
@@ -154,8 +153,8 @@ def test_maximum_margin_commitment_config_records_fresh_mechanism_gate() -> None
     assert gate["held_validation_tasks"] == 8
     assert gate["held_tasks_passing_minimum"] == 6
     assert gate["trainable_parameter_count"] == 1_654_784
-    assert gate["maximum_margin_simplex_weights_valid"]
-    assert gate["maximum_margin_direction_permutation_invariant"]
+    assert gate["backtrack_zero_is_exact_adam_candidate"]
+    assert gate["final_delta_to_adam_candidate_cosine_minimum"] == 0.999999
     assert gate["held_to_train_effective_ba_l2_ratio_minimum"] == 0.3
     assert gate["held_action_cosine_minimum"] == 0.15
     assert gate["held_raw_factor_delta_cosine_minimum"] == 0.3

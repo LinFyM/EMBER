@@ -400,54 +400,43 @@ def _coexistence(
     }
 
 
-def adam_radius_euclidean_commitment(
-    commitment_direction: torch.Tensor,
+def preconditioned_candidate_commitment(
+    optimizer_gradient: torch.Tensor,
     adam_candidate_delta: torch.Tensor,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Keep Adam's global radius while committing along one Euclidean direction."""
+    """Commit along the actual AdamW candidate ray before native backtracking."""
 
     if (
-        commitment_direction.ndim != 1
-        or adam_candidate_delta.shape != commitment_direction.shape
-        or commitment_direction.dtype != torch.float32
+        optimizer_gradient.ndim != 1
+        or adam_candidate_delta.shape != optimizer_gradient.shape
+        or optimizer_gradient.dtype != torch.float32
         or adam_candidate_delta.dtype != torch.float32
-        or not bool(torch.isfinite(commitment_direction).all())
+        or not bool(torch.isfinite(optimizer_gradient).all())
         or not bool(torch.isfinite(adam_candidate_delta).all())
     ):
-        raise WriterModelError("Adam-radius commitment inputs changed")
-    direction_norm = torch.linalg.vector_norm(commitment_direction)
+        raise WriterModelError("preconditioned commitment inputs changed")
+    gradient_norm = torch.linalg.vector_norm(optimizer_gradient)
     candidate_norm = torch.linalg.vector_norm(adam_candidate_delta)
-    if float(direction_norm) <= 0 or float(candidate_norm) <= 0:
-        raise WriterModelError("Adam-radius commitment lost a nonzero direction")
-    final_delta = -commitment_direction * (candidate_norm / direction_norm)
-    final_norm = torch.linalg.vector_norm(final_delta)
-    denominator = candidate_norm * final_norm
-    negative_direction = -commitment_direction
+    if float(gradient_norm) <= 0 or float(candidate_norm) <= 0:
+        raise WriterModelError("preconditioned commitment lost a nonzero direction")
+    negative_gradient = -optimizer_gradient
     values = torch.stack(
         (
-            direction_norm,
+            gradient_norm,
             candidate_norm,
-            final_norm,
-            torch.dot(adam_candidate_delta, negative_direction)
-            / (candidate_norm * direction_norm),
-            torch.dot(final_delta, negative_direction)
-            / (final_norm * direction_norm),
-            torch.dot(adam_candidate_delta, final_delta) / denominator,
-            (final_norm - candidate_norm).abs() / candidate_norm,
+            torch.dot(adam_candidate_delta, negative_gradient)
+            / (candidate_norm * gradient_norm),
         )
     ).cpu().tolist()
-    count = commitment_direction.numel()
-    return final_delta, {
-        "commitment_direction_l2": values[0],
-        "commitment_direction_rms": values[0] / math.sqrt(count),
+    count = optimizer_gradient.numel()
+    return adam_candidate_delta, {
+        "optimizer_gradient_l2": values[0],
+        "optimizer_gradient_rms": values[0] / math.sqrt(count),
         "adam_candidate_delta_l2": values[1],
         "adam_candidate_delta_rms": values[1] / math.sqrt(count),
-        "final_delta_l2": values[2],
-        "final_delta_rms": values[2] / math.sqrt(count),
-        "adam_candidate_to_negative_commitment_direction_cosine": values[3],
-        "final_to_negative_commitment_direction_cosine": values[4],
-        "adam_candidate_to_final_cosine": values[5],
-        "radius_relative_error": values[6],
+        "adam_candidate_to_negative_optimizer_gradient_cosine": values[2],
+        "full_candidate_to_adam_candidate_cosine": 1.0,
+        "radius_relative_error": 0.0,
     }
 
 
@@ -583,15 +572,16 @@ def _monotone_backtracking_commitment(
     expected_norm = candidate_norm * accepted_scale
     final_norm_value = float(final_norm)
     if accepted_index is None:
-        final_cosine = 0.0
-        candidate_cosine = 0.0
+        final_to_candidate_cosine = 0.0
+        final_to_gradient_cosine = 0.0
         radius_error = 0.0
     else:
-        negative_direction_cosine = float(
-            base_geometry["final_to_negative_commitment_direction_cosine"]
+        final_to_candidate_cosine = float(
+            base_geometry["full_candidate_to_adam_candidate_cosine"]
         )
-        final_cosine = negative_direction_cosine
-        candidate_cosine = float(base_geometry["adam_candidate_to_final_cosine"])
+        final_to_gradient_cosine = float(
+            base_geometry["adam_candidate_to_negative_optimizer_gradient_cosine"]
+        )
         radius_error = abs(final_norm_value - expected_norm) / expected_norm
     count = full_delta.numel()
     geometry = {
@@ -604,8 +594,8 @@ def _monotone_backtracking_commitment(
         "accepted_expected_delta_l2": expected_norm,
         "final_delta_l2": final_norm_value,
         "final_delta_rms": final_norm_value / math.sqrt(count),
-        "final_to_negative_commitment_direction_cosine": final_cosine,
-        "adam_candidate_to_final_cosine": candidate_cosine,
+        "final_to_adam_candidate_cosine": final_to_candidate_cosine,
+        "final_to_negative_optimizer_gradient_cosine": final_to_gradient_cosine,
         "radius_relative_error": radius_error,
         "search_trials": trials,
         "search_trial_count": len(trials),
@@ -621,7 +611,6 @@ def _monotone_backtracking_commitment(
 def apply_reward_step(
     runtime: RewardRuntime,
     gradient_sum: torch.Tensor,
-    commitment_direction_sum: torch.Tensor,
     local_active_tasks: int,
     task_gradients: Mapping[int, torch.Tensor],
     commitment_evaluator: Callable[[float], Sequence[Mapping[str, Any]]],
@@ -631,18 +620,13 @@ def apply_reward_step(
     )
     if runtime.context.world_size > 1:
         dist.all_reduce(gradient_sum, op=dist.ReduceOp.SUM)
-        dist.all_reduce(commitment_direction_sum, op=dist.ReduceOp.SUM)
         dist.all_reduce(active, op=dist.ReduceOp.SUM)
     active_tasks = int(active)
     if active_tasks <= 0:
         raise WriterModelError("direct-factor cycle has no discordant success")
     gradient_sum.div_(active_tasks)
-    commitment_direction_sum.div_(active_tasks)
-    if (
-        not bool(torch.isfinite(gradient_sum).all())
-        or not bool(torch.count_nonzero(gradient_sum))
-        or not bool(torch.isfinite(commitment_direction_sum).all())
-        or not bool(torch.count_nonzero(commitment_direction_sum))
+    if not bool(torch.isfinite(gradient_sum).all()) or not bool(
+        torch.count_nonzero(gradient_sum)
     ):
         raise WriterModelError("direct-factor gradient is invalid")
     assign_flat_gradient(gradient_sum, runtime.gradient_layout)
@@ -665,17 +649,8 @@ def apply_reward_step(
         candidate_delta[item.start : item.stop].copy_(
             (value.detach() - before[name]).reshape(-1).float()
         )
-    full_delta, base_commitment = adam_radius_euclidean_commitment(
-        commitment_direction_sum, candidate_delta
-    )
-    optimizer_norm = torch.linalg.vector_norm(committed_gradient)
-    direction_norm = torch.linalg.vector_norm(commitment_direction_sum)
-    base_commitment.update(
-        optimizer_gradient_l2=float(optimizer_norm),
-        optimizer_to_commitment_direction_cosine=float(
-            torch.dot(committed_gradient, commitment_direction_sum)
-            / (optimizer_norm * direction_norm)
-        ),
+    full_delta, base_commitment = preconditioned_candidate_commitment(
+        committed_gradient, candidate_delta
     )
     final_delta, preference_rows, commitment = _monotone_backtracking_commitment(
         named=named,
@@ -707,7 +682,6 @@ def apply_reward_step(
 def apply_monotone_reward_step(
     runtime: RewardRuntime,
     gradient_sum: torch.Tensor,
-    commitment_direction_sum: torch.Tensor,
     local_active_tasks: int,
     task_gradients: Mapping[int, torch.Tensor],
     probe: RewardProbe | None,
@@ -717,7 +691,6 @@ def apply_monotone_reward_step(
     return apply_reward_step(
         runtime,
         gradient_sum,
-        commitment_direction_sum,
         local_active_tasks,
         task_gradients,
         lambda _scale: evaluate_preference_views(runtime, probe),

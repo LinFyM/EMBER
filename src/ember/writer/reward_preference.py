@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import combinations
 from typing import Any, Mapping, Sequence
 
 import torch
@@ -44,82 +43,6 @@ def mean_cross_video_task_gradient(
     ):
         raise RewardProtocolError("cross-video view gradient panel changed")
     return torch.stack(tuple(gradients)).mean(dim=0)
-
-
-def maximum_margin_common_descent_gradient(
-    gradients: Sequence[torch.Tensor],
-) -> tuple[torch.Tensor, dict[str, Any]]:
-    """Return the symmetric max-min descent direction for four view gradients."""
-
-    if len(gradients) != 4 or any(
-        value.shape != gradients[0].shape or value.dtype != torch.float32
-        for value in gradients
-    ):
-        raise RewardProtocolError("maximum-margin view gradient panel changed")
-    rows = torch.stack(tuple(gradients))
-    gram = (rows @ rows.T).to(dtype=torch.float64)
-    scale = gram.diagonal().max().clamp_min(1e-30)
-    tolerance = scale * 1e-6
-    candidates, scores = [], []
-    for size in range(1, 5):
-        for support in combinations(range(4), size):
-            indices = torch.tensor(support, device=rows.device)
-            sub = gram.index_select(0, indices).index_select(1, indices)
-            ones = torch.ones(size, dtype=torch.float64, device=rows.device)
-            inverse_ones = torch.linalg.pinv(sub, hermitian=True) @ ones
-            denominator = torch.dot(ones, inverse_ones)
-            weights = torch.zeros(4, dtype=torch.float64, device=rows.device)
-            weights.index_copy_(0, indices, inverse_ones / denominator)
-            weights = weights.clamp_min(0)
-            weights.div_(weights.sum())
-            dots = gram @ weights
-            objective = torch.dot(weights, dots)
-            feasible = (dots >= objective - tolerance).all()
-            candidates.append(weights)
-            scores.append(
-                torch.where(
-                    feasible,
-                    objective,
-                    torch.full_like(objective, torch.inf),
-                )
-            )
-    score = torch.stack(scores)
-    if not bool(torch.isfinite(score).any()):
-        raise RewardProtocolError("maximum-margin simplex solve failed")
-    weights = torch.stack(candidates)[score.argmin()].to(dtype=torch.float32)
-    combination = weights @ rows
-    mean = rows.mean(dim=0)
-    mean_norm = torch.linalg.vector_norm(mean)
-    combination_norm = torch.linalg.vector_norm(combination)
-    if float(mean_norm) <= 0 or float(combination_norm) <= 0:
-        raise RewardProtocolError("maximum-margin common direction is empty")
-    direction = combination * (mean_norm / combination_norm)
-    mean_dots = rows @ (mean / mean_norm)
-    direction_dots = rows @ (direction / mean_norm)
-    values = torch.stack(
-        (
-            mean_norm,
-            combination_norm,
-            mean_dots.min(),
-            direction_dots.min(),
-            torch.dot(mean, direction) / mean_norm.square(),
-        )
-    ).cpu().tolist()
-    return direction, {
-        "kind": "four_view_maximum_margin_common_descent",
-        "simplex_weights": weights.cpu().tolist(),
-        "active_weight_count": int(torch.count_nonzero(weights > 1e-6)),
-        "equal_mean_l2": values[0],
-        "minimum_norm_combination_l2": values[1],
-        "equal_mean_worst_unit_directional_derivative": values[2],
-        "maximum_margin_worst_unit_directional_derivative": values[3],
-        "worst_directional_derivative_gain": values[3] / values[2],
-        "maximum_margin_to_equal_mean_cosine": values[4],
-        "per_view_equal_mean_unit_directional_derivative": mean_dots.cpu().tolist(),
-        "per_view_maximum_margin_unit_directional_derivative": (
-            direction_dots.cpu().tolist()
-        ),
-    }
 
 
 def cross_video_gradient_geometry(

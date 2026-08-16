@@ -25,15 +25,14 @@ from ember.reward.rollout import (
 from ember.writer.as_step import parameter_layout
 from ember.writer.reward_cycle import select_discordant_trajectory_pairs
 from ember.writer.reward_gradient_update import (
-    adam_radius_euclidean_commitment,
     apply_reward_step,
     lora_response,
+    preconditioned_candidate_commitment,
 )
 from ember.writer.reward_preference import (
     cross_video_gradient_geometry,
     functional_matched_stratified_occupancy_lora_gradient,
     functional_matched_stratified_occupancy_margin,
-    maximum_margin_common_descent_gradient,
     mean_cross_video_task_gradient,
     stratified_occupancy_pair_weights,
 )
@@ -74,38 +73,14 @@ def test_cross_video_gradient_geometry_reports_shared_descent() -> None:
     assert geometry["shared_mean_energy_over_view_energy"] == pytest.approx(0.5)
 
 
-def test_maximum_margin_direction_improves_worst_view_and_is_permutation_invariant() -> None:
-    gradients = (
-        torch.tensor([1.0, 0.0]),
-        torch.tensor([1.0, 0.0]),
-        torch.tensor([0.0, 2.0]),
-        torch.tensor([0.0, 2.0]),
-    )
-    direction, geometry = maximum_margin_common_descent_gradient(gradients)
-    expected = torch.tensor([1.0, 0.5])
-    torch.testing.assert_close(direction, expected, rtol=1e-5, atol=1e-6)
-    assert geometry["worst_directional_derivative_gain"] == pytest.approx(2.0)
-    assert geometry["maximum_margin_worst_unit_directional_derivative"] > geometry[
-        "equal_mean_worst_unit_directional_derivative"
-    ]
-    permuted, _ = maximum_margin_common_descent_gradient(
-        (gradients[2], gradients[0], gradients[3], gradients[1])
-    )
-    torch.testing.assert_close(permuted, direction, rtol=1e-5, atol=1e-6)
-
-
-def test_adam_radius_commitment_preserves_radius_and_commitment_direction() -> None:
+def test_preconditioned_commitment_preserves_actual_adam_candidate() -> None:
     gradient = torch.tensor([1.0, 0.1], dtype=torch.float32)
     adam_delta = torch.tensor([-0.2, -0.2], dtype=torch.float32)
-    final, geometry = adam_radius_euclidean_commitment(gradient, adam_delta)
-    torch.testing.assert_close(
-        torch.linalg.vector_norm(final), torch.linalg.vector_norm(adam_delta)
-    )
-    assert geometry[
-        "final_to_negative_commitment_direction_cosine"
-    ] == pytest.approx(1.0)
+    final, geometry = preconditioned_candidate_commitment(gradient, adam_delta)
+    torch.testing.assert_close(final, adam_delta)
+    assert geometry["full_candidate_to_adam_candidate_cosine"] == 1.0
     assert geometry["radius_relative_error"] <= 1e-6
-    assert geometry["adam_candidate_to_final_cosine"] < 0.8
+    assert geometry["adam_candidate_to_negative_optimizer_gradient_cosine"] < 0.8
 
 
 def test_lora_response_reports_native_q_v_and_action_writeout() -> None:
@@ -505,7 +480,6 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     step = apply_reward_step(
         runtime,
         torch.tensor([-1.0, 0.0]),
-        torch.tensor([-1.0, -1.0]),
         2,
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
         evaluate,
@@ -521,11 +495,8 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     assert step.gradient_coexistence["shared_mean_descent_coverage"] == 1.0
     assert step.gradient_coexistence["final_delta_descent_coverage"] == 1.0
     assert step.commitment_geometry[
-        "final_to_negative_commitment_direction_cosine"
+        "final_to_adam_candidate_cosine"
     ] == pytest.approx(1.0)
-    assert step.commitment_geometry[
-        "optimizer_to_commitment_direction_cosine"
-    ] == pytest.approx(2.0**-0.5)
     assert step.commitment_geometry["radius_relative_error"] <= 1e-6
     assert evaluated_scales == [0.0, 1.0, 0.5]
     assert step.commitment_geometry["search_accepted"] is True
@@ -546,7 +517,6 @@ def test_optimizer_uses_equal_mean_over_active_tasks() -> None:
     failed = apply_reward_step(
         runtime,
         torch.tensor([-1.0, 0.0]),
-        torch.tensor([-1.0, -1.0]),
         2,
         {0: torch.tensor([-0.5, 0.0]), 1: torch.tensor([-0.5, 0.0])},
         lambda scale: tuple(

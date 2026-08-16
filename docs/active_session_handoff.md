@@ -104,6 +104,12 @@
   candidate并exact no-op、j6且全门通过；只有1/3 anchors过门。MMCD终局，不full24/strict/resume或小扫；
 - 当前没有active GPU run或可resume checkpoint。下一变量必须针对continuous direction到native BF16 finite-step及
   held amplitude接口；不能退回替换已通过的LPCP carrier，也不能把memory/rank8等仍开放候选误判为已否决；
+- 当前active successor是**PAV-BC**，authority=
+  `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。它不改
+  carrier/credit/optimizer/rank/FactorHeads/acceptance，只把final ray换成实际AdamW candidate delta并沿
+  `1...1/1024`回退。首轮只跑task9/15/18；task15必须出现native共同步且task9必须修复held幅度，否则终止
+  parameter-space trust-ray路线，下一步转LoRA输出/BA参数化。canonical实现与fresh schema已完成：完整CPU=
+  `404 passed`、architecture guard 0 hard；尚未运行GPU；
 - 唯一主工作树：`/data1/user/ymdai/projects/EMBER`；唯一主写分支：`codex/bci-continuation`；
 - 当前最强zero-interaction carrier baseline：**V6 Layerwise Action-Probe Conditioned Procedure Reader**（V6-LPCP）macro25 K4
   strict=`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=`5/83/38/17`、top3=

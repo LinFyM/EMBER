@@ -477,7 +477,7 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2),
     },
-    "v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_v1": {
+    "v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_v1": {
         "adapter_schema": (
             "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
             "eval_adapter_v1"
@@ -490,11 +490,11 @@ WRITER_FAMILIES = {
         ),
         "writer_kind": "v6_layerwise_probe_conditioned_procedure_writer",
         "arm_prefix": (
-            "v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_"
+            "v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_"
         ),
         "trained_checkpoint_kind": (
-            "v6_lpcp_direct_factor_maximum_margin_"
-            "common_descent_commitment_cycle_checkpoint"
+            "v6_lpcp_direct_factor_preconditioned_"
+            "all_view_backtracking_commitment_cycle_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 16,

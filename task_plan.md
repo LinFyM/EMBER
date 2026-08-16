@@ -488,7 +488,18 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   BA/action、held8、reverse/constant与wall均已保留；
 - [x] 按预注册门终局：task9只失败held/train`.160558x`，task15仍exact no-op，task18全过，合计1/3；不实现
   distributed formal acceptance、不full24/strict/resume或参数小扫；
-- [ ] 从native finite-step metric/held amplitude这一最早接口建立下一份单变量authority后再改实现或启动GPU。
+- [x] 从native finite-step metric/held amplitude这一最早接口建立下一份单变量authority后再改实现或启动GPU。
+
+## Active iteration: V6-LPCP Direct-Factor Preconditioned All-View Backtracking Commitment
+
+- [x] 核对历史边界：MB-SOP只测Adam full step，AV-MBC只backtrack raw equal-mean ray，实际Adam candidate ray加
+  同路径all-view backtracking尚未检验；
+- [x] 建立PAV-BC authority：保留全部science graph，唯一沿`d_adam`固定减半；不新增metric、forward、参数或
+  部署分支；
+- [x] 原位替换MMCD solver/schema/evidence；完整CPU=`404 passed`、compileall/diff check通过、architecture guard
+  0 hard，active source净减少156行；
+- [ ] clean pushed commit后只跑task9/15/18并完整分析；必须修复task15 no-op和task9 held幅度才允许formal；
+- [ ] 任一anchor失败即终止parameter-space trust-ray路线；三项全过后才实现distributed acceptance/full24/strict。
 
 ## Non-negotiable boundaries
 
@@ -506,8 +517,8 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 
 无权限或资产阻塞。Ordered-Procedure AS139、raw reward138、ADSP138、V6-LPCP、PCSD、CV-CSD、SFMC、
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
-不得resume或参数小扫。AV-MBC和MMCD也已因task9 held幅度与task15无accepted step终局。当前没有active
-successor或GPU run；下一设计不能同时改LR、carrier、memory、rank、matched panel、半径与LoRA topology。
+不得resume或参数小扫。AV-MBC和MMCD也已因task9 held幅度与task15无accepted step终局。当前active PAV-BC
+只改变final commitment ray；不能同时改LR、carrier、memory、rank、matched panel、半径或LoRA topology。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

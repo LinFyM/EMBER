@@ -1,4 +1,4 @@
-"""Cycle checkpoints for maximum-margin common-descent commitment."""
+"""Cycle checkpoints for preconditioned all-view backtracking commitment."""
 
 from __future__ import annotations
 
@@ -22,12 +22,12 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_lpcp_direct_factor_maximum_margin_"
-    "common_descent_commitment_checkpoint_v1"
+    "ember_pi05_v6_lpcp_direct_factor_preconditioned_"
+    "all_view_backtracking_commitment_checkpoint_v1"
 )
 REWARD_DEPLOYMENT_KIND = (
-    "v6_lpcp_direct_factor_maximum_margin_"
-    "common_descent_commitment_cycle_checkpoint"
+    "v6_lpcp_direct_factor_preconditioned_"
+    "all_view_backtracking_commitment_cycle_checkpoint"
 )
 _CYCLE_NAME = re.compile(r"cycle_([0-9]{8})")
 

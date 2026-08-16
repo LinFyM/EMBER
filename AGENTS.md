@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_direct_factor_maximum_margin_common_descent_commitment_design.md`
+   `docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -224,6 +224,14 @@ task9/15/18的continuous worst margin均提高`1.216/1.334/1.356x`，但native�
 `.160558x`、到j10仍no-op、j6且全门通过；只有1/3 anchors通过。故first-order maximum margin不能稳定预测
 native finite-step/held commitment，MMCD终局，不full24/strict/resume或小扫。当前没有active GPU run或可resume
 checkpoint；下一变量必须针对native metric/finite-step接口，不能退回改已通过的carrier或继续换raw-gradient solver。
+
+当前active successor是**V6-LPCP Direct-Factor Preconditioned All-View Backtracking Commitment**（PAV-BC），authority=
+`docs/action_forecast_writer_v6_lpcp_direct_factor_preconditioned_all_view_backtracking_commitment_design.md`。它保留MMCD前的
+全部science graph与同路径acceptance，删除raw-gradient solver，唯一沿实际AdamW candidate delta依次检验
+`1,1/2,...,1/1024`。MB-SOP只测过Adam full step、AV-MBC只backtrack raw ray，因此该组合未被检验；它直接测试
+per-coordinate preconditioning能否跨native factor resolution、backtracking能否限制曲率。首轮仍只允许固定
+task9/15/18；任一失败就终止整条parameter-space trust-ray路线，转向LoRA输出/BA参数化，不做ray混合或小扫。
+canonical实现与fresh schema已完成，完整CPU=`404 passed`、architecture guard 0 hard，尚未运行GPU。
 
 ## 4. Long-term objective and decision rule
 

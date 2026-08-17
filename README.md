@@ -62,10 +62,16 @@ cycles并逐checkpoint跑strict400，score/breadth=`142/7 -> 142/6 -> 136/7`；�
 定位为shared reward update不能选择held on-policy有用方向并保留多task support。MCTC终局，不cycle4或参数小扫；
 实时run identity和下一裁决只取[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
-当前active successor是[`SEOD`](docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md)：
-保留上述memory/K4/rank32 Writer，只把稀疏binary reward差换成train24 task expert自身真实成功轨迹上的on-policy
-动作蒸馏。expert只在训练期提供“哪些状态与动作确实处于成功策略占用”，不重建expert LoRA、不作为held route或
-第二adapter。该轮最多连续训练三个checkpoints并分别做strict400，专门检验有用方向和多task稳定积累。
+最新终局是[`SEOD`](docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md)：
+它保留上述memory/K4/rank32 Writer，只把稀疏binary reward差换成train24 task expert自身真实成功轨迹上的
+on-policy动作蒸馏。四个相邻checkpoints的strict score/breadth=`129/6 -> 135/6 -> 143/5 -> 136/5`，相邻
+churn=`36/38/41`；多训后的cycle4证明143只是暂时峰值。same-task不同K4更新已高度一致，但cross-task gradient
+仍接近正交且held support继续换手，故SEOD不再续训或补六臂。
+
+终局审计还确认正式reward cache切断了输入`memory_tokens`的反向链：四轮该组gradient与Adam moments严格为0，
+实际训练的是固定随机memory queries之后的temporal/set/M2P/gate。这不否定已完成的closed-loop结果，也不能被
+表述为可学习SHINE式memory token失败。当前没有active GPU run；实时successor判断只取
+[`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
 ## Information wall
 

@@ -723,7 +723,7 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 建立SEOD单变量authority：保留已通过的video-memory/跨视频共同LoRA/native写出，只把稀疏binary arm
   discordance替换为train24 expert真实成功on-policy occupancy的matched action distillation；expert不进部署；
 
-## Active iteration: V6-LPCP CFMG Successful-Expert Occupancy Distillation
+## Completed iteration: V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
 - [x] 原位替换canonical reward credit/config/checkpoint identity；复用现有rollout、matched B8 query、8-strata
   panel、four-view Writer反传与median-capped Adam，不增加平行runtime；
@@ -742,10 +742,27 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   cosine/energy=`.993193/.992576`，gained/lost幅度仍不可分；
 - [x] 按owner“有好结果应增加训练量再判断”的最新澄清修订authority：原三轮止损不机械终局，只增加一个不改
   科学变量的exact-resume cycle4相邻稳定性节点，并预先写明cycle5/终止条件；
-- [ ] 锁原world6 topology完成cycle4训练和第四次strict400；若低于143、继续丢breadth或gained<lost则终局，
-  若至少143、breadth≥6且gained≥lost才可做最后cycle5；
-- [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若
-  最终失败，定位successful expert behavior到Writer Program、native BA、action与held rollout的最早断点。
+- [x] 以clean `b0edac2`建立不覆盖旧root的审计continuation，exact恢复Writer/optimizer/rank RNG/world6 topology；
+  完整CPU=`417 passed`，cycle4完成24 tasks/48 rollouts、29/19 expert success/failure、18 active tasks、
+  64/72 views下降，checkpoint/completion完整；
+- [x] 完成第四次K4 strict400=`136/400`、breadth5、per-task=`0/3/46/33/0/37/17/0`；cycle3→4=
+  `119 retained / 17 gained / 24 lost`、churn41、net`-7`。四轮score=`129 -> 135 -> 143 -> 136`，确认143为
+  暂时峰值而非稳定平台，按预注册条件终局，不cycle5或补六臂；
+- [x] 完成cycle3→4 all400 effective-BA与first4跨视频分析：relative-L2 mean/median=`.002809/.002518`，
+  same-task更新cosine/energy=`.994106/.992830`，gained/lost幅度仍不可分；最早科学缺口为跨task held support
+  共存，不是训练量、跨video相消或native写出；
+- [x] 交叉审计源码、metrics、四个checkpoints与Adam state，确认输入`memory_tokens`因no-grad cached state四轮
+  gradient/moments严格为0，仅有weight decay；把实际受检验假设收窄为fixed random memory queries，不能宣称
+  可学习memory token失败。
+
+## Active iteration: successor selection after SEOD
+
+- [ ] 判断只打开同一次context forward中memory observer到输入token的反向链，是否能从第一性原理直接改善
+  shared task representation/coexistence；不得把“漏训了参数”本身当成必然性能收益；
+- [ ] 若机制假设成立，写fresh单变量authority：sealed LPCP、SEOD credit/K4/rank32/信息墙不变，不从cycle4中途
+  打开，不增加重复context forward；先以真实anchor验证memory gradient、cross-task geometry、显存与吞吐；
+- [ ] 只有机制门显示 learned queries 提供了fixed queries没有的跨task共同结构，才启动full24；good checkpoint
+  按owner要求继续相邻训练，约145且retention合理立即补六臂因果controls。
 
 ## Non-negotiable boundaries
 
@@ -765,10 +782,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 Gradient-Open、CCT、NPVC、PAFS-NV、SJNV-Gate、DJNFR、DF-PCSP、DF-SOCP、MB-SOP与AR-EC均已按门终局；它们都
 不得resume或参数小扫。AV-MBC、MMCD、PAV-BC、ALB-NV、NZRB-C与NEAP-C均已终局且无可resume checkpoint。
 NEAP已证明真实10步endpoint能把task9从NZRB no-op变成高coherence j0 update，但held/train幅度`.234<.30`。
-最新MCTC三轮strict=`142/142/136`、breadth=`7/6/7`，相邻churn=`36/34`，已经终局；不得resume MCTC/USDC/
-USFC/USEP、回退CFM、扫parameter ray/scale/training length或把旧100分Dynamic-K整条恢复。MCTC已消除单一幅度
-outlier并形成`.99`级held同task更新一致性，下一设计只可针对**shared reward update的held usefulness和真实support
-共存**，继续以真实strict而非局部margin选方法。
+最新SEOD四轮strict=`129/135/143/136`、breadth=`6/6/5/5`，相邻churn=`36/38/41`，已经终局；不得resume
+SEOD/MCTC/USDC/USFC/USEP、回退CFM、扫parameter ray/scale/training length或把旧100分Dynamic-K整条恢复。
+SEOD已形成`.99`级held同task更新一致性并执行了“好结果后多训练”，下一设计只可针对**shared reward update的held
+usefulness和真实support共存**。memory-token反向链确有未检验合同缺口，但只有在它能解释并改善该接口时才可成为
+successor；继续以真实strict而非局部margin选方法。
 约145只有在相邻checkpoint低换手、same-task-other鲁棒且correct相对
 wrong/shuffled/reversed/no-video明确占优时才算成立。生成LoRA后的task-local RL仍是初始Writer达到强
 zero-interaction起点之后的独立实验。

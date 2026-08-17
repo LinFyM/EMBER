@@ -5,7 +5,19 @@
 `3a6f801d08facb3e855ab24f84e0b53cb8802e88`及其祖先，正式结果保存在`runs/outputs/`。
 
 当前真相只取`AGENTS.md`、`docs/active_session_handoff.md`和`docs/execution_brief.md`。截至
-2026-08-17，最高correct单点SFMC144因lost15/churn31不具稳定资格。CAPG在strict前终局：它把固定三task的
+2026-08-17，最高correct单点SFMC144因lost15/churn31不具稳定资格。最新SEOD从sealed LPCP fresh完成四个
+相邻full24 cycles与四次K4 strict400，score/breadth=`129/6 -> 135/6 -> 143/5 -> 136/5`。cycle3→4=
+`119 retained / 17 gained / 24 lost`、churn41、net`-7`；相对LPCP143=`117/19/26`。all400 BA更新
+relative-L2=`.002809`且first4同task更新cosine/energy=`.994106/.992830`，但cross-task gradient mean/min=
+`.053370/-.457658`。因此“好结果后多训练”已证明143是暂时峰值：successful-expert occupancy提供稠密且跨video
+一致的task-local credit，却不能稳定保留held multi-task support，SEOD终局且不cycle5/六臂/小扫。
+
+SEOD终局审计发现正式reward runtime在no-grad cached conditioning state上重编译，37个输入`memory_tokens`
+四轮gradient与Adam moments严格为0，仅有weight decay；payload gate及其余24/25 content groups真实训练。
+所以CMBG→SEOD闭环结果实际裁决固定随机memory queries，不裁决可学习SHINE式memory token。下一轮若打开该链
+必须fresh且证明它针对shared coexistence，不能从失败checkpoint续训或把漏训参数自动视为性能解释。
+
+CAPG在strict前终局：它把固定三task的
 same-task four-view cosine显著提高到`.983/.898/.982`，但global raw只2/3、native最多10/12并exact no-op。
 随后CMBG把这些post-backbone latents换成逐层读取真实prefix/Action context的capacity-matched memory；
 carrier-exact clean`2aecece` fixed world3已把cross-task cosine mean从`-.13938`提高到`+.09842`，shared raw/final

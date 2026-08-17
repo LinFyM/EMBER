@@ -1,7 +1,8 @@
 # V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
-状态：2026-08-17 canonical实现、CPU合同与真实GPU机制门均通过；fresh formal已完成cycle1--3及各自strict400，
-现按owner最新训练量澄清exact-resume一个有界cycle4稳定性节点。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
+状态：2026-08-17 **终局non-pass**。canonical实现、CPU合同与真实GPU机制门均通过；fresh formal与审计continuation
+已完成cycle1--4及四次strict400，第四个相邻节点证明cycle3的143是暂时峰值而非稳定积累。简称 **SEOD**。
+本轮从sealed V6-LPCP143 fresh开始，
 不resume MCTC checkpoint；保留已经验证的视频carrier、literal memory、K4集合、rank32 native LoRA写出、
 four-view共享与median-capped natural Adam，只替换训练credit的来源。
 
@@ -168,3 +169,34 @@ Jaccard`.759494`；相对LPCP143为`121/22/22`。cycle2到cycle3 all400 effectiv
 `.002354/.002020`，first4同task更新cosine/energy=`.993193/.992576`；gained/lost幅度=`.002439/.002350`
 仍不可分。训练内部跨video共同写出随训练保持健康，但跨task pairwise gradient cosine从cycle1的`.1380`降到
 cycle3的`.0554`。这些证据只授权上述cycle4稳定性扩展；尚未授权六臂或性能资格声明。
+
+## 11. Cycle4稳定性终局与训练图审计
+
+cycle4没有覆盖旧root。clean pushed `b0edac2`增加审计cross-root continuation：原cycle1--3 root保持不可变，
+新root显式记录parent checkpoint/run contract，并exact恢复Writer、Adam moments、rank RNG与world6 topology；
+科学配置只把总cycle从3扩为4。完整CPU=`417 passed`。gpu01物理`0/1/2/4/5/6`完成24 tasks、48 rollouts，
+expert success/failure=`29/19`，18 active tasks覆盖四suite，64/72 views下降，cycle=`390.977s`，
+0禁读/OOM/nonfinite，完整checkpoint/completion均保留。
+
+同一cycle4 checkpoint的K4 strict400=`136/400`、breadth5、per-task=`0/3/46/33/0/37/17/0`、per-suite=
+`3/79/37/17`。cycle3→4严格=`119 retained / 17 gained / 24 lost / 240 both-fail`、churn41、net`-7`、
+Jaccard`.74375`；相对LPCP143=`117/19/26`、churn45、net`-7`。四轮score/breadth=
+`129/6 -> 135/6 -> 143/5 -> 136/5`，所以owner要求的“有好结果应增加训练量再判断”已经完成并否定稳定平台；
+不cycle5、不补六臂、不扫训练量、LR、rank、scale或seed。
+
+cycle3→4 all400 effective-BA relative-L2 mean/median=`.00280905/.00251770`，first4同task不同K4更新
+cosine/energy=`.994106/.992830`；gained/lost幅度不可分。训练内same-task view gradient cosine仍`.945774`，
+但cross-task pairwise mean/min只有`.053370/-.457658`。成功expert occupancy已经提供跨video高度一致、native
+可写出的task-local credit，却没有形成held-useful的共同方向；更多相同训练只使support继续换手。
+
+终局后对25个名义trainable参数组做了源码、metrics、checkpoint与optimizer-state交叉审计。正式路径的
+`_encode_candidate_condition`在`torch.no_grad()`内调用`encode_conditioning_state`，之后的four-view backward
+只对缓存state执行下游recompile。因此`layer_memory_states`不再连接输入`memory_tokens`：四轮该组的
+per-task/shared gradient、Adam `exp_avg`与`exp_avg_sq`均严格为0，checkpoint间仅有与weight decay同向的
+`2.7435005e-9` RMS变化。payload gate及其余temporal/video-set/layer-token M2P参数真实更新。
+
+这不是浮点差异，也不改写已经完成的closed-loop事实；它收窄了实际受检验假设：SEOD检验的是**固定随机37-token
+memory observer + 可学习下游content grid**，没有检验本设计原本要求的gate打开后可学习memory inputs。因而本轮
+仍按closed-loop稳定性终局，不得从cycle4中途打开memory gradient；但不得据此宣称SHINE式memory token已失败。
+若下一轮选择该变量，必须从sealed LPCP fresh、只打开同一次context forward中memory observer到输入token的反向
+链，并先证明它比固定queries更直接改善跨task共同表示/held support，而不是仅增加自由度或重复forward。

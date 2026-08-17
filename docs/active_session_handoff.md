@@ -7,6 +7,21 @@
 
 - 长期Goal处于active：性能继续追求`>150/400`；owner最新接受约145的稳定方法，但必须由相邻single
   checkpoints低换手、same-task-video鲁棒和correct相对negative/no-video的明确因果性共同认证；
+- 最新终局是**SEOD cycle4稳定性扩展**。四个相邻single checkpoints的strict score/breadth=
+  `129/6 -> 135/6 -> 143/5 -> 136/5`。cycle4 per-task=`0/3/46/33/0/37/17/0`、per-suite=
+  `3/79/37/17`；cycle3→4=`119 retained / 17 gained / 24 lost / 240 both-fail`、churn41、net`-7`、
+  Jaccard`.74375`，相对LPCP143=`117/19/26`。owner要求的“好结果后多训练”已经完成：143是暂时峰值，
+  不是稳定积累；不cycle5、六臂或训练长度/参数小扫；
+- cycle4训练本身完整健康：24 tasks/48 expert rollouts、29/19 success/failure、18 active tasks覆盖四suite、
+  64/72 views下降、cycle=`390.977s`，完整world6 checkpoint/completion与0禁读/OOM/nonfinite均保留。
+  cycle3→4 all400 BA relative-L2 mean/median=`.002809/.002518`，first4同task更新cosine/energy=
+  `.994106/.992830`；same-task video credit高度一致，但cross-task gradient mean/min只有
+  `.053370/-.457658`，held gains/losses不能由改写幅度区分；
+- 终局后训练图审计确认名义trainable的37个输入`memory_tokens`实际没有收到reward gradient：正式路径在
+  `torch.no_grad()`内缓存conditioning state，四轮该组per-task/shared gradient和Adam一、二阶矩严格为0，
+  checkpoint间`2.7435e-9` RMS变化仅来自weight decay。其余24/25 content/gate组真实训练。因此SEOD结果有效
+  地裁决“固定随机memory queries + 可学习下游grid”，没有裁决可学习SHINE式memory tokens；当前没有active
+  GPU run或可resume checkpoint，下一步先判断是否以fresh单变量打开该反向链；
 - USEP clean`6033330` fixed task4/34/38 world3已完整exit0：outcome/count复现，task38/次大gradient=
   `6.1538x`、cross-task cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual Adam j0使12/12 normalized
   deployed margins下降且q/v/action/fixed-action response非零。task34 raw four-view仍2/4、cosine/energy=
@@ -60,7 +75,7 @@
   `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle3_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`；cycle3
   root下保留`mctc_cycle3_strict_adjudication.json`与`mctc_cycle2_to_cycle3_effective_ba.json`。训练、三个
   checkpoints、1200 raw paired rows、400-entry LoRA caches和completion均完整；
-- 当前active是**SEOD cycle4相邻稳定性扩展**，authority=
+- SEOD authority=
   `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。部署仍为CFMG literal
   memory、K4、rank32、four-view/median-cap/Adam；唯一训练credit来自train24 step2000 expert自身成功
   on-policy occupancy上的matched action distillation，expert不进入Writer输入、checkpoint或held部署。clean
@@ -69,11 +84,8 @@
   `120 retained / 23 gained / 15 lost`、churn38、net`+8`、Jaccard`.759494`；相对LPCP143为`121/22/22`。
   cycle2→3 all400 BA relative-L2 mean/median=`.002354/.002020`，first4同task更新cosine/energy=
   `.993193/.992576`，gained/lost幅度=`.002439/.002350`仍不可分。三轮active tasks=`19/17/16`、跨task
-  gradient cosine mean=`.1380/.1042/.0554`，所以跨video共同写出健康，但多task信号逐轮更冲突。owner最新明确
-  有好结果时应增加训练量再判断；鉴于aggregate连续`+6/+8`，原三轮止损上限不机械终局，但breadth5与lost15也
-  不允许宣称稳定。现只授权同topology exact-resume cycle4并完成第四次strict400：若低于143、继续丢breadth或
-  gained<lost则终局；若至少143、breadth恢复至少6且gained>=lost，才可做最后cycle5。约145且retention合理立即
-  补六臂；不得只选择cycle3峰值；
+  gradient cosine mean=`.1380/.1042/.0554`，所以前三轮已经显示跨video共同写出健康、多task信号逐轮更冲突；
+  cycle4及终局审计结果以上述最新条目为准；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

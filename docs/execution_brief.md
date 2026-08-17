@@ -5,27 +5,29 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-当前active是**SEOD cycle4相邻稳定性扩展**，authority=
+最新完成并终局的是**SEOD cycle4相邻稳定性扩展**，authority=
 `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。SEOD保留CFMG literal
 memory、K4、rank32、four-view/median-cap/Adam与部署信息墙，只把MCTC稀疏binary arm credit换成train24
 step2000 expert成功on-policy occupancy上的matched behavior distillation；expert不进入Writer输入、checkpoint或
-held部署。clean frozen `d2f765c`、gpu01 world6已完成cycle1--3，训练wall=`383.342/391.596/378.032s`、
-active tasks=`19/17/16`，且cycle2/3均有24/25 content/gate参数组gradient。
+held部署。clean frozen `d2f765c`完成cycle1--3，审计continuation `b0edac2`完成cycle4；四轮active tasks=
+`19/17/16/18`，cycle4 wall=`390.977s`，且cycle2--4均有24/25 content/gate参数组gradient。
 
-三个single checkpoints的strict score/breadth为`129/6 -> 135/6 -> 143/5`；cycle3 per-task=
-`0/4/47/35/0/36/21/0`、per-suite=`4/82/36/21`。cycle2→3严格=`120 retained / 23 gained / 15 lost`、churn38、
-net`+8`、Jaccard`.759494`；相对LPCP143=`121/22/22`、churn44、net0。count-only追平v6-fast143，但cycle3
-top3占`118/143`且三个tasks仍为0，所以不能把aggregate143称为稳定资格。
+四个single checkpoints的strict score/breadth为`129/6 -> 135/6 -> 143/5 -> 136/5`；cycle4 per-task=
+`0/3/46/33/0/37/17/0`、per-suite=`3/79/37/17`。cycle3→4严格=
+`119 retained / 17 gained / 24 lost / 240 both-fail`、churn41、net`-7`、Jaccard`.74375`；相对LPCP143=
+`117/19/26`、churn45、net`-7`。所以cycle3的aggregate143是暂时峰值，不是稳定资格。
 
-cycle2→3 FP64 all400 effective-BA relative-L2 mean/median=`.002354/.002020`，first4同task不同K4更新
-cosine/energy=`.993193/.992576`；gained/lost改写=`.002439/.002350`仍不可分。训练内跨task pairwise gradient
-cosine从cycle1的`.1380`降到cycle3的`.0554`。因此同任务不同视频的共同native写出已经稳定打开，当前未决的是
-继续训练能否形成更广的多task support，而非只把强task继续推高。
+cycle3→4 FP64 all400 effective-BA relative-L2 mean/median=`.002809/.002518`，first4同task不同K4更新
+cosine/energy=`.994106/.992830`；gained/lost改写仍不可分。cycle4 same-task gradient cosine=`.945774`，
+cross-task pairwise mean/min仅`.053370/-.457658`。因此同任务不同视频的共同native写出已经稳定打开，失败在
+多个task的方向不能在一个shared checkpoint中共同保留held support。
 
-owner最新明确有好结果时应增加训练量再判断；aggregate连续`+6/+8`使原三轮止损上限不再机械终局。现不改任何
-科学变量，只锁原world6 topology exact-resume cycle4并做第四次strict400。cycle4若低于143、继续丢breadth或
-相对cycle3 gained<lost则终局；若至少143、breadth恢复至少6且gained>=lost，才可做最后cycle5。首次约145且
-retention合理立即补视频因果controls；全部checkpoint都报告，不能挑cycle3峰值。
+owner关于“好结果后应多训练”的要求已经由cycle4执行，结果触发预注册终止条件；不得cycle5、补六臂或扫训练量。
+终局审计又确认37个输入`memory_tokens`在正式reward路径中被`torch.no_grad()`缓存切断：四轮gradient与Adam moments
+严格为0，仅有weight-decay变化；其余24/25参数组真实训练。因此SEOD实际检验固定随机memory queries，不是可学习
+SHINE式memory token。当前没有active GPU run或可resume checkpoint。下一裁决点是先从第一性原理判断只打开
+memory-token反向链是否直接针对shared coexistence；若建立successor，必须sealed LPCP fresh、单变量、one-forward，
+并先过真实梯度/显存/吞吐与跨task机制门，再决定formal。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

@@ -8,6 +8,24 @@
 长期继续追求同一shared Writer、同一single checkpoint的strict paired correct`>150/400`；owner也接受约145
 的稳定有效方法，但必须同时通过相邻checkpoint低换手、same-task-video鲁棒和correct视频因果性。目前尚未达到。
 
+SEOD把“训练量是否太少”完整裁决到第四个相邻节点。strict/breadth=
+`129/6 -> 135/6 -> 143/5 -> 136/5`，相邻churn=`36/38/41`；cycle3→4为`119 retained / 17 gained /
+24 lost`。因此一个晚期上升的143不足以证明共同积累，继续完全相同训练会回落并扩大换手。以后任何接近145的
+checkpoint仍应继续相邻训练，但一旦score、breadth、retention和churn共同反转，就不能再用“训练量少”无限续训。
+
+SEOD同时把video-local与task-global接口明确分开。cycle3→4 all400 BA relative-L2=`.002809`，first4同task
+不同K4更新cosine/energy=`.994106/.992830`，训练same-task gradient cosine也为`.945774`；correct views不再
+互相抵消。可是cycle4 cross-task gradient cosine mean/min只有`.053370/-.457658`，gained/lost改写幅度不可分。
+最早科学缺口因此是task-level credit怎样保留held support并在shared checkpoint共存，而不是video set、训练量、
+native BF16写出或LoRA更新幅度。
+
+正式CFMG/SEOD训练还有一个需严格限定的工程事实：reward runtime把`encode_conditioning_state`放在
+`torch.no_grad()`中缓存，四view backward只重编译下游grid。因而37个输入`memory_tokens`四轮的task/shared
+gradient和Adam moments严格为0，checkpoint间只有weight decay；实际被训练的是payload gate以及其余
+temporal/set/M2P参数。这意味着当前结果支持“固定随机memory queries能读取视频并形成高度一致的task-local
+LoRA”，不支持“learned SHINE式memory token无效”。打开该链是尚未检验的候选单变量，但它必须先解释为什么
+会改善跨task共存，不能因为发现漏训参数就机械重跑。
+
 CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的same-task four-view gradients约`.99`
 一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
 scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于

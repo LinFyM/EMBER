@@ -60,23 +60,20 @@
   `runs/outputs/pi05_v6_lpcp_cfmg_mctc_cycle3_k4_correct400_noreplacement_seed7_trainr6_evalr6_1a0700f_evale6b3a6b_gpu01p024567_b16_20260817`；cycle3
   root下保留`mctc_cycle3_strict_adjudication.json`与`mctc_cycle2_to_cycle3_effective_ba.json`。训练、三个
   checkpoints、1200 raw paired rows、400-entry LoRA caches和completion均完整；
-- 当前active successor是**SEOD**，authority=
-  `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。它不resume MCTC，而从
-  sealed LPCP fresh；保留CFMG memory/K4/rank32/four-view/median-cap/Adam部署图，只把稀疏binary arm discordance
-  替换成train24 step2000 expert自身成功on-policy occupancy上的matched action distillation。expert仅为训练期
-  privileged teacher，失败trajectory零credit，不进入Writer输入、checkpoint或held部署；formal每task/cycle两条
-  expert rollouts，最多48 rollouts。exact current LPCP fixed-A对expert BA的只读可达能量/cosine=
-  `.381712/.617828`，故明确不做expert factor重建。authority已冻结；canonical旧binary arm路径已原位退休，
-  新runtime每task只跑两条expert trajectories并复用matched B8/8-strata/four-view/median-cap/Adam。唯一新source
-  owner为expert bank加载与rank padding；定向/完整CPU=`56/416 passed`、architecture guard无hard violation，
-  24个adapters实读成功。clean pushed `08c5edc` gpu02物理`1/2/3/4` world4真实smoke已exit0：四suite
-  8/8 expert trajectories成功、64 selected states、16/16 task-view post-update distances下降；四task
-  four-view gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，
-  cycle=`87.094s`、peak reserved=`19,369,295,872` bytes。formal现已seal。首次frozen `3a5aa95` world6 launch
-  在rollout前因expert bank相对路径解析到detached worktree而exit1；实际canonical bank始终完整6/6 workers，且
-  没有run contract、rollout或checkpoint，不是科学结果。canonical fix改为相对source-run project artifact root
-  解析，同一frozen config已读到6/6 workers，定向/完整CPU=`56/416 passed`；当前无GPU run，下一次使用新clean
-  commit与fresh root从sealed LPCP启动full24 cycle1；
+- 当前active是**SEOD cycle4相邻稳定性扩展**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。部署仍为CFMG literal
+  memory、K4、rank32、four-view/median-cap/Adam；唯一训练credit来自train24 step2000 expert自身成功
+  on-policy occupancy上的matched action distillation，expert不进入Writer输入、checkpoint或held部署。clean
+  frozen `d2f765c`已在gpu01物理`0/1/2/4/5/6` world6完成cycle1--3和三次strict400。score/breadth轨迹=
+  `129/6 -> 135/6 -> 143/5`，per-task最终=`0/4/47/35/0/36/21/0`。cycle2→3严格=
+  `120 retained / 23 gained / 15 lost`、churn38、net`+8`、Jaccard`.759494`；相对LPCP143为`121/22/22`。
+  cycle2→3 all400 BA relative-L2 mean/median=`.002354/.002020`，first4同task更新cosine/energy=
+  `.993193/.992576`，gained/lost幅度=`.002439/.002350`仍不可分。三轮active tasks=`19/17/16`、跨task
+  gradient cosine mean=`.1380/.1042/.0554`，所以跨video共同写出健康，但多task信号逐轮更冲突。owner最新明确
+  有好结果时应增加训练量再判断；鉴于aggregate连续`+6/+8`，原三轮止损上限不机械终局，但breadth5与lost15也
+  不允许宣称稳定。现只授权同topology exact-resume cycle4并完成第四次strict400：若低于143、继续丢breadth或
+  gained<lost则终局；若至少143、breadth恢复至少6且gained>=lost，才可做最后cycle5。约145且retention合理立即
+  补六臂；不得只选择cycle3峰值；
 - 最新终局predecessor是CMBG：carrier-exact clean`2aecece` fixed world3已通过功能共存门。task9/15/18成功关系=
   `1/0,2/0,1/2`、selected pairs=`8/16/8`，跨task gradient cosine mean由CAPG的`-.13938`升到`+.09842`，shared
   raw/final coverage=`3/3`、native=`12/12`并接受j0，最终delta L2=`.168481`；validation8/reverse/constant

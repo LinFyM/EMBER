@@ -5,45 +5,27 @@ owner原则见`current_owner_requirements.md`，历史负结果见`research_hist
 
 ## 1. Latest completed experiment and next decision boundary
 
-最新完成的是**MCTC三轮训练及三个strict400**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_median_capped_task_tangent_commitment_design.md`。它保留USDC的literal
-memory、K4、rank32、unit-secant、四view reward和自然Adam，只把高于active-task norm中位数的task tangents截到
-中位数；小task不放大、方向不旋转、无cap系数。clean`1a0700f` gpu01 world6从sealed LPCP fresh训练，cycle1/2/3
-均完整为24 tasks/48 states/96 rollouts，wall=`388.239/428.966/416.742s`，active tasks=`5/12/10`。
+当前active是**SEOD cycle4相邻稳定性扩展**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。SEOD保留CFMG literal
+memory、K4、rank32、four-view/median-cap/Adam与部署信息墙，只把MCTC稀疏binary arm credit换成train24
+step2000 expert成功on-policy occupancy上的matched behavior distillation；expert不进入Writer输入、checkpoint或
+held部署。clean frozen `d2f765c`、gpu01 world6已完成cycle1--3，训练wall=`383.342/391.596/378.032s`、
+active tasks=`19/17/16`，且cycle2/3均有24/25 content/gate参数组gradient。
 
-cycle1只有payload gate 1/25参数组获得梯度；cycle2/3已有24/25 content参数组非零。owner在cycle1结果前明确近好
-结果应多训练再判断，故本轮透明地锁原topology exact-resume到cycle3，并让每个checkpoint分别接受同口径strict400。
-score/breadth轨迹=`142/7 -> 142/6 -> 136/7`；per-task轨迹最终为`2/3/48/32/0/34/16/1`。cycle1→2严格=
-`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`；cycle2→3=`122/14/20`、churn34、net`-6`、
-Jaccard`.782051`。相对LPCP143，cycle3为`122/14/21`、net`-7`。所以前两轮aggregate相同不是稳定能力，第三轮
-进一步退化；MCTC终局，不cycle4或补六臂。
+三个single checkpoints的strict score/breadth为`129/6 -> 135/6 -> 143/5`；cycle3 per-task=
+`0/4/47/35/0/36/21/0`、per-suite=`4/82/36/21`。cycle2→3严格=`120 retained / 23 gained / 15 lost`、churn38、
+net`+8`、Jaccard`.759494`；相对LPCP143=`121/22/22`、churn44、net0。count-only追平v6-fast143，但cycle3
+top3占`118/143`且三个tasks仍为0，所以不能把aggregate143称为稳定资格。
 
-这不是memory/LoRA失效。cycle3训练内四view gradient cosine/energy=`.949481/.911623`，10/10 active-task
-shared/final descent且q/v/action全非零；cycle2→3 all400 effective-BA relative-L2 mean/median=
-`.001199/.001157`，first4同task不同K4更新cosine/energy=`.988724/.990306`。但gained/lost/retained-failure
-改写均值=`.001074/.000931/.001251`，持续失败样本最大。最早失败接口是**跨视频一致并写入native LoRA的shared
-reward update不能选择held on-policy有用方向，也不能连续保留多task support**。下一单变量不能再扫训练长度、
-cap、LR、rank、scale或重做已通过的carrier；必须直接改变reward-useful direction或真实support coexistence。
-当前没有active GPU run或可resume checkpoint。
+cycle2→3 FP64 all400 effective-BA relative-L2 mean/median=`.002354/.002020`，first4同task不同K4更新
+cosine/energy=`.993193/.992576`；gained/lost改写=`.002439/.002350`仍不可分。训练内跨task pairwise gradient
+cosine从cycle1的`.1380`降到cycle3的`.0554`。因此同任务不同视频的共同native写出已经稳定打开，当前未决的是
+继续训练能否形成更广的多task support，而非只把强task继续推高。
 
-当前active successor是**SEOD**，authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`。固定-A只读诊断表明当前
-LPCP carrier对step2000 expert BA的可达能量仅`.381712`，因此不重复expert weight reconstruction。SEOD只替换
-credit：每个train task在两个随机states上运行其step2000 expert，只信任真实成功轨迹；在成功occupancy上以同一
-observation/noise/B8顺序重查expert和Writer actions，每轨迹8个progress strata选最大disagreement state，再把同一
-expert target经四个disjoint correct K4 conditions回传Writer。CFMG memory、rank32、median cap、natural Adam和
-部署信息墙均不变；expert不进held部署。最多三个cycles，逐checkpoint strict400检验训练曲线，约145时立即补
-视频因果controls。
-canonical实现现已完成：旧binary arm credit被原位替换，没有平行runtime；每task rollout数从4降到2，唯一新增
-module只拥有train24 expert加载与rank16→32 zero padding。定向/完整CPU=`56/416 passed`、compileall/diff check
-与architecture guard hard gate通过，24个expert adapters实读成功。clean pushed `08c5edc`在gpu02物理
-`1/2/3/4`完成anchors `2/12/21/35` world4真实smoke：8/8 expert trajectories成功、64 selected states，
-16/16 task-view post-update distances下降；四task four-view gradient cosine mean=
-`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response全非零，cycle=`87.094s`。formal已seal。
-首次frozen `3a5aa95` world6 formal在rollout前暴露artifact-root工程错误：相对expert bank路径落到detached
-worktree，实际canonical bank仍为6/6 workers；该run无contract/rollout/checkpoint，不是科学结果。loader已最小
-修正为以source-run project root解析retained bank，同一frozen config直接复现6/6，完整CPU仍为`416 passed`。
-下一动作是从新clean commit和fresh root重启full24 cycle1，完成后做single-checkpoint strict400。
+owner最新明确有好结果时应增加训练量再判断；aggregate连续`+6/+8`使原三轮止损上限不再机械终局。现不改任何
+科学变量，只锁原world6 topology exact-resume cycle4并做第四次strict400。cycle4若低于143、继续丢breadth或
+相对cycle3 gained<lost则终局；若至少143、breadth恢复至少6且gained>=lost，才可做最后cycle5。首次约145且
+retention合理立即补视频因果controls；全部checkpoint都报告，不能挑cycle3峰值。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

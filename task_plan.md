@@ -736,10 +736,16 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 定位首次frozen `3a5aa95` world6 formal的pre-rollout工程退出：相对expert bank路径错误落到detached
   worktree；canonical bank实际6/6完整且无scientific state产生。最小改为source-run artifact-root解析，同一frozen
   config直读6/6，定向/完整CPU=`56/416 passed`；不得复用旧root；
-- [ ] live双节点GPU与/data1 quota检查后，以最多6张合适同节点A40启动fresh full24 cycle1；按authority最多连续
-  三cycles并逐checkpoint strict400，分析absolute/breadth、逐task/suite、retained/gained/lost/churn/Jaccard；
+- [x] clean frozen `d2f765c`在gpu01物理`0/1/2/4/5/6` world6完成cycle1--3及三次strict400；score/breadth=
+  `129/6 -> 135/6 -> 143/5`，cycle2→3=`120 retained / 23 gained / 15 lost`、churn38、net`+8`；
+- [x] 完成cycle2→3 FP64相邻分析：all400 BA relative-L2 mean/median=`.002354/.002020`、first4同task更新
+  cosine/energy=`.993193/.992576`，gained/lost幅度仍不可分；
+- [x] 按owner“有好结果应增加训练量再判断”的最新澄清修订authority：原三轮止损不机械终局，只增加一个不改
+  科学变量的exact-resume cycle4相邻稳定性节点，并预先写明cycle5/终止条件；
+- [ ] 锁原world6 topology完成cycle4训练和第四次strict400；若低于143、继续丢breadth或gained<lost则终局，
+  若至少143、breadth≥6且gained≥lost才可做最后cycle5；
 - [ ] 首次约145且retention合理时立即补correct/same/wrong/shuffled/reversed/no-video并检查相邻checkpoint；若
-  失败，定位successful expert behavior到Writer Program、native BA、action与held rollout的最早断点。
+  最终失败，定位successful expert behavior到Writer Program、native BA、action与held rollout的最早断点。
 
 ## Non-negotiable boundaries
 

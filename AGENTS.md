@@ -65,8 +65,20 @@ architecture guard无hard violation，24个expert adapters实读成功。clean p
 gradient cosine mean=`.987182/.775646/.953631/.971174`，q/v/action与fixed-action response均非零，cycle=
 `87.094s`。formal已seal。首次frozen `3a5aa95` world6 launch在rollout前因相对expert-bank路径落到detached
 worktree而exit1；canonical bank实际6/6完整，无run contract/rollout/checkpoint，故不是科学结果。loader已改用
-source-run project artifact root，同一frozen config直读6/6且完整CPU=`416 passed`。当前无GPU run或formal
-checkpoint；下一步从新clean commit和fresh root启动full24 cycle1。
+source-run project artifact root，同一frozen config直读6/6且完整CPU=`416 passed`。
+
+clean frozen `d2f765c`随后在gpu01物理`0/1/2/4/5/6` world6完成cycle1--3并各自完成K4 strict400。cycle1只有
+payload gate得到gradient，strict=`129/400`、breadth6、per-task=`0/2/46/31/0/34/15/1`；相对LPCP143为
+`118 retained / 11 gained / 25 lost`。exact-resume cycle2首次使24/25 content/gate groups获得gradient，strict
+恢复到`135/400`、breadth6、per-task=`1/4/45/36/0/33/16/0`；相对cycle1为`114/21/15`、churn36、net`+6`，
+相对LPCP仍为`118/17/25`。cycle1→2 all400 BA relative-L2 mean/median=`.001987/.001733`，first4同task
+增量cosine/energy=`.99245/.99265`，但gained/lost幅度=`.001745/.001809`不可分。cycle3继续升至`143/400`但
+breadth降到5，per-task=`0/4/47/35/0/36/21/0`；相对cycle2=`120 retained / 23 gained / 15 lost`、churn38、
+net`+8`，相对LPCP143=`121/22/22`。cycle2→3 BA relative-L2 mean/median=`.002354/.002020`，first4同task
+更新cosine/energy=`.993193/.992576`，gained/lost幅度仍不可分。依据owner最新“有好结果应增加训练量再判断”
+澄清，原三轮止损上限不机械终局；现只授权同topology exact-resume cycle4并再做strict400。cycle4若低于143、
+继续丢breadth或gained<lost则终局；若保持至少143、breadth恢复到至少6且gained>=lost，才可再做最后cycle5。
+约145且retention合理立即触发六臂，但不得只选择单点峰值。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

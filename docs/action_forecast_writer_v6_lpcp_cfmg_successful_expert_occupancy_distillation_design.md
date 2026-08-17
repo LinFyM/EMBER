@@ -1,6 +1,7 @@
 # V6-LPCP CFMG Successful-Expert Occupancy Distillation
 
-状态：2026-08-17 canonical实现、CPU合同与真实GPU机制门均通过，已seal fresh formal cycle1。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
+状态：2026-08-17 canonical实现、CPU合同与真实GPU机制门均通过；fresh formal已完成cycle1--3及各自strict400，
+现按owner最新训练量澄清exact-resume一个有界cycle4稳定性节点。简称 **SEOD**。本轮从sealed V6-LPCP143 fresh开始，
 不resume MCTC checkpoint；保留已经验证的视频carrier、literal memory、K4集合、rank32 native LoRA写出、
 four-view共享与median-capped natural Adam，只替换训练credit的来源。
 
@@ -97,7 +98,7 @@ training signal，不能成为video内容、validation/test target或deployment 
 
 ## 8. 训练量与裁决
 
-fresh formal预注册最多三个full24 cycles，每cycle为24 tasks、每task两个expert states，最多48而不是96个rollouts。
+fresh formal原预注册最多三个full24 cycles，每cycle为24 tasks、每task两个expert states，最多48而不是96个rollouts。
 cycle1主要打开zero payload gate，cycle2才让temporal/set/M2P content modules得到梯度，因此：
 
 - cycle1完成机制分析和strict400；只有严重退化或机制失败才提前终局；
@@ -107,6 +108,20 @@ cycle1主要打开zero payload gate，cycle2才让temporal/set/M2P content modul
 
 门槛是科学裁决依据，不是为了过门补丁。目标仍优先追求`>150/400`；约145只有在breadth、低churn/high Jaccard、
 same-task-video鲁棒和视频因果性同时成立时才有资格。不得cycle后扫seed/LR/rank/scale或按task选择checkpoint。
+
+### 8.1 Owner澄清后的有界cycle4扩展
+
+cycle1/2/3 strict实际为`129/135/143`，而非提前回落；cycle2到cycle3严格为`120 retained / 23 gained /
+15 lost`、net`+8`。因此owner关于“有好结果时训练量可能不足，应多训练后再判断”的最新澄清使原三轮上限不再能
+机械充当终局。与此同时cycle3 breadth从6降到5、相对LPCP143仍为`121/22/22`，所以143也不能被宣称为稳定好结果。
+
+在不改变代码、数据、optimizer、LR、rank、scale、seed、world6 topology或任何科学变量的前提下，只增加一个
+exact-resume cycle4，并对它完成同一K4 strict400。cycle4是预先记录的相邻稳定性检验，不是按结果挑峰：
+
+- 若cycle4低于143、继续丢失breadth，或相对cycle3 gained<lost，则SEOD终局，不cycle5；
+- 若cycle4保持至少143、breadth恢复到至少6且gained>=lost，则可再做最后一个cycle5确认平台；
+- 任一checkpoint首次达到约145且retention合理，立即补六臂因果controls，同时仍需后续相邻checkpoint证明稳定；
+- 全部checkpoint与逐行transition都必须报告，不能只选择cycle3或cycle4。
 
 ## 9. Pre-formal falsification
 
@@ -145,4 +160,11 @@ forbidden read，exit0。constant/reverse与step0 identity由未改动的sealed 
 artifact root，因而报告0而非实际6个workers；没有run contract、rollout、gradient或checkpoint，不能作为科学
 结果。根因已由主工作树/冻结worktree路径反事实验证。canonical loader现以source-run所在project artifact root解析
 retained bank；同一frozen config直接复现为6/6 workers，定向/完整CPU仍为`56/416 passed`。该修正只改变训练资产
-定位，不改变SEOD数据、目标、参数、随机性或topology；下一次必须使用新clean commit和fresh root。
+定位，不改变SEOD数据、目标、参数、随机性或topology。
+
+clean frozen `d2f765c`随后在gpu01物理`0/1/2/4/5/6` world6完成cycle1--3。三轮训练active tasks=
+`19/17/16`，strict score/breadth=`129/6 -> 135/6 -> 143/5`。cycle3相对cycle2为`120/23/15`、churn38、
+Jaccard`.759494`；相对LPCP143为`121/22/22`。cycle2到cycle3 all400 effective-BA relative-L2 mean/median=
+`.002354/.002020`，first4同task更新cosine/energy=`.993193/.992576`；gained/lost幅度=`.002439/.002350`
+仍不可分。训练内部跨video共同写出随训练保持健康，但跨task pairwise gradient cosine从cycle1的`.1380`降到
+cycle3的`.0554`。这些证据只授权上述cycle4稳定性扩展；尚未授权六臂或性能资格声明。

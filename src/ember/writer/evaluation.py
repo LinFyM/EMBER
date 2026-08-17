@@ -48,7 +48,72 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset(VIDEO_CONDITIONS)
 DYNAMIC_K_GENERATION_BATCH_SIZE = 32
 DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE = 16
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
+    4: {
+        "schema_version": "ember_pi05_writer_generation_profile_v2",
+        "evidence_path": (
+            "runs/acceptance/"
+            "pi05_lmmpc_k4_generation_profile_77f45c9_macro2_"
+            "gpu01p2_20260817/writer_generation_profile.json"
+        ),
+        "evidence_bytes": 10774,
+        "authority_commit": "77f45c99c0c241e13d85ed152d2cff5e55895b76",
+        "device": "NVIDIA A40",
+        "profiled_writer_model_batch_sizes": [8, 16, 32],
+        "supported_writer_model_batch_sizes": [8, 16, 32],
+        "selected_writer_model_batch_size": 32,
+        "selection_rule": (
+            "highest_measured_fixed_panel_loras_per_second_with_stable_"
+            "longest_video_batch"
+        ),
+        "panel_entry_count": 32,
+        "panel_total_sampled_frames": 4438,
+        "longest_sampled_video_frames": 226,
+        "warmup_runs_per_batch": 1,
+        "measured_runs_per_batch": 2,
+        "writer_generation_measurements": [
+            {
+                "batch_size": 8,
+                "loras_per_second": 0.19655253615761045,
+                "repeat_wall_seconds": [
+                    162.87199536594562,
+                    162.74069450888783,
+                ],
+                "peak_reserved_bytes": 16873684992,
+                "memory_headroom_bytes": 30826037248,
+                "stable": True,
+            },
+            {
+                "batch_size": 16,
+                "loras_per_second": 0.19805086508070918,
+                "repeat_wall_seconds": [
+                    161.54325406299904,
+                    161.60605393885635,
+                ],
+                "peak_reserved_bytes": 20268974080,
+                "memory_headroom_bytes": 27430748160,
+                "stable": True,
+            },
+            {
+                "batch_size": 32,
+                "loras_per_second": 0.1994860904111841,
+                "repeat_wall_seconds": [
+                    160.4106404078193,
+                    160.41373320179991,
+                ],
+                "peak_reserved_bytes": 25557991424,
+                "memory_headroom_bytes": 22141730816,
+                "stable": True,
+            },
+        ],
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+    }
+}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:

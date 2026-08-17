@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为从micro5封存commit fresh重启formal macro0→25。
+状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为macro25 strict评测并与exact-resume 25→50并行。
 
 ## Goal
 
@@ -46,7 +46,8 @@
 - [x] 核对现有canonical runtime owner、删除/复用边界并形成最小实现diff。
 - [x] 实现LMMPC唯一运行面、fresh config/checkpoint schema和必要CPU合同。
 - [x] 完成全量CPU验证、clean-commit真实full24动态K吞吐profile、最长K4机制证据与正式recipe封存。
-- [ ] micro5最长schedule条件与clean profile已经通过；重新fresh train24到首个有信息量节点且不在未达峰值时过早终止。
+- [x] micro5最长schedule条件与clean profile已经通过；重新fresh train24到首个有信息量节点macro25并完整封存。
+- [x] 完成K4部署generation profile并封存batch32真实吞吐证据；macro25与macro50使用同一部署合同。
 - [ ] 执行strict paired400并完成逐task、逐suite、retention/churn及逐stage分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
@@ -60,5 +61,7 @@
 microbatch6下真实OOM，而非NCCL、架构负结果或训练峰值。microbatch5在B20下仍为4次policy forward，并已完整通过
 原故障五任务序列及100-macro封存schedule的真实最大task38/K4/371帧条件。clean `dd81b94` world5 full24 profile
 进一步完成两macro，耗时`39.22/36.22s`、functional `.15612→.15399`、Program matching `.36194→.30113`，无
-OOM/nonfinite，recipe已重新封存。失败run没有checkpoint且未被resume；clean `ca40d88` world5 fresh formal现已启动
-macro0→25，前3 macros与封存profile一致且无OOM/nonfinite。
+OOM/nonfinite，recipe已重新封存。失败run没有checkpoint且未被resume；clean `ca40d88` world5 fresh formal已完整
+完成macro25并exit0，functional为`.115512`、Program matching为`.021139`。former macro17故障条件在真实world5训练中
+通过，checkpoint包含五rank exact-resume状态。由于最近loss仍共同下降，当前保持相同gpu02物理`1/2/3/4/7`和world5
+exact-resume到macro50，同时为macro25准备首个strict paired400；loss仅决定继续观察，不决定科学成绩。

@@ -7,9 +7,9 @@
 
 - 当前goal为active：推进LMMPC从设计、实现、充分fresh训练和strict评测到局部迭代与终局裁决。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- 当前主分支与origin均包含`dd81b94`；失败formal训练冻结于clean pushed `de0b298`，micro5 profile来自`dd81b94`。
+- 当前主分支与origin均包含`77f45c9`；失败formal训练冻结于clean pushed `de0b298`，micro5 profile来自`dd81b94`。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为fresh formal macro0→25；clean `ca40d88`已在gpu02物理`1/2/3/4/7`以world5启动，失败run无状态复用。
+- 当前phase为macro25首轮strict评测与同一run exact-resume 25→50并行；失败run无状态复用。
 - 当前协作边界：不使用subagents。
 
 ## Active architecture decision
@@ -72,12 +72,21 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 - clean pushed `dd81b94`随后在gpu02物理`1/2/3/4/7`完成world5两macro profile：`39.22/36.22s`，functional
   `.15612→.15399`、Program matching `.36194→.30113`，K1--K4各6 tasks，无OOM/nonfinite，micro5正式recipe已
   重新sealed。部署生成还移除了matching-only shuffle分支，测试证明primary 76 tensors逐元素不变。
+- clean `ca40d88` world5 fresh formal现已完整完成macro1--25并exit0；former macro17断点在真实collective中通过。
+  functional从`.156120`降至`.115512`，Program matching从`.361939`降至`.021139`，25轮K1--K4均严格各6 tasks，
+  梯度持续finite。macro25完整保留Writer、trainer、optimizer/scheduler、五rank RNG与sampler cursor。由于近期趋势仍
+  在下降，它只是首个strict节点；同一run已按原gpu02物理`1/2/3/4/7`、world5和NUMA拓扑exact-resume到macro50。
+- clean `77f45c9` K4部署profile在单张A40的同一32-entry longest-first panel完成batch8/16/32各一次warmup和两次
+  实测；三档均稳定、无OOM/nonfinite，吞吐分别`.19655/.19805/.19949` LoRA/s。batch32两次为
+  `160.411/160.414s`，peak reserved=`25,557,991,424` bytes、headroom=`22,141,730,816` bytes，故按封存规则
+  选择batch32并进入正式evaluator合同。封存后全量CPU=`284 passed`，`compileall`/diff-check通过，architecture
+  guard无hard violation。
 
 ## Immediate next work
 
-1. 完成`pi05_lmmpc_formal_fresh_micro5_r5_b20_ca40d88_gpu02p12347_20260817`到macro25并核验完整world/topology checkpoint；
-2. 用独立空闲A40完成K4 generation profile，封存真实batch后启动首个strict paired400与完整逐接口分析；
-3. 若macro25仍在共同上升，exact-resume到macro50及相邻checkpoint，不在未见峰值时过早判死；
+1. 从包含profile证据的clean pushed commit启动macro25 strict paired400与完整逐接口分析；
+2. 继续同一run exact-resume到macro50；保留并比较macro25/50，不在未见峰值时过早判死；
+3. 根据strict结果报告逐task/suite、retention/churn并检查Core→Procedure→memory→M2P→BA→action最早断点；
 4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
 
 ## Training and decision boundary

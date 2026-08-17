@@ -183,6 +183,16 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             != int(evidence.get("expected_native_context_calls", -2))
             or float(evidence.get("procedure_stage_replacement_relative_l2", 0))
             <= 0
+            or not 0
+            < float(
+                evidence.get(
+                    "video_set_maximum_correction_over_anchor_rms", 0
+                )
+            )
+            < float(evidence.get("video_set_configured_maximum", 0))
+            or evidence.get("video_set_gate_and_branches_gradients_nonzero")
+            is not True
+            or evidence.get("m2p_gate_and_block_gradients_nonzero") is not True
             or float(evidence.get("constant_effective_ba_max_abs", 1)) >= 1e-6
         ):
             raise WriterModelError("sealed LMMPC live profile evidence changed")

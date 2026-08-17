@@ -111,13 +111,23 @@ matching loss、reverse训练臂、reward/RL、expert bank或其它新监督。
 
 - canonical runtime、config/checkpoint/eval schemas已升级为fresh-incompatible v4；v3 config原位退役。
 - K1继续exact identity；K>1的raw DeepSets proposal由fresh gate初始`.25`、结构上限`.5`绑定到per-video mean。
-- 定向模型/训练CPU除待写回真实generation-profile authority的两项seal断言外为`44 passed`；`compileall`与
-  `diff --check`通过。GPU机制、吞吐、最长视频和正式seal尚待clean detached commit验证。
+- clean `8c40a56`的world3两macro为`58.13/54.83s`，functional=`.156120→.153994`，K1--K4各6 tasks；peak
+  allocated/reserved=`35,550,641,664 / 37,971,034,112` bytes，零OOM/nonfinite/禁读。
+- 真实K4中raw K-set proposal仍改写mean `6.403x`，实际commitment仅`.250010x`；最大逐cell correction/anchor
+  RMS=`.250531<.5`，gate和全部set branches均有gradient。M2P也保持`.250005x`与全路径梯度。
+- repeated-last使parameter memory relative-L2=`.999913`、BA=`.933892`；reverse/shuffle完整重前向后的BA差异为
+  `.385271/.084918`。constant/template、K置换、deployment recompile均为0；source policy零梯度、VL Meta-LoRA缺席。
+- validation8×4分层门中，per-video mean→K-set的between-task cosine仅`.40147→.40572`、within-task
+  `.99100→.97952`，没有复现v3的`.65/.77→.90+`覆盖；order relative-L2为`.49115→.51687`，compiled/BA仍有
+  `.49489/.23376`响应。这只证明最早结构门关闭，不是closed-loop成绩。
+- 371-frame完整五任务序列完成，peak allocated/reserved=`41,987,913,216 / 44,920,995,840` bytes。正式训练
+  profile authority已经封存；K4 deployment generation profile仍在同一clean runtime上测量。
 
 ## Immediate next work
 
-1. 从clean detached v4 commit完成CPU、真实K4机制、world profile、371-frame与generation profile，写回唯一seal。
-2. fresh train24到macro25，执行strict paired400、validation8逐stage和逐task/suite/retention/churn分析；只有仍存在
+1. 提交/push v4 formal seal并从新的clean detached commit启动fresh train24；并行完成K4 deployment generation
+   profile，随后只写回evaluation throughput authority。
+2. 训练到macro25，执行strict paired400、validation8逐stage和逐task/suite/retention/churn分析；只有仍存在
    genuine shared上升证据时才按同一run exact-resume到macro50。
 3. 首次约145且retention合理时立即补六臂和same-task不同视频鲁棒性；否则依据最早失效接口只做LMMPC主链内的
    局部单变量改进。

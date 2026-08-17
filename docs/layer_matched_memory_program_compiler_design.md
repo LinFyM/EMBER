@@ -709,3 +709,24 @@ v4首轮可证伪门：
 4. fresh训练到macro25 strict400；若closed-loop与loss仍共同改善则继续macro50，若再次出现明确相邻回落则先定位；
 5. v4若保持Program但absolute仍弱，下一变量必须后移到Core fusion/factor/functional credit，不能放开两个已证实的
    bounded commitment或用小参数sweep救结果。
+
+### 19.1 v4 clean mechanism/profile seal
+
+clean detached `8c40a56cb352ddd57098e646a10d3a2d32ec1c35`在gpu02物理`1/3/7`完成fresh world3两macro：
+`58.13/54.83s`，functional=`.156120→.153994`，每轮K1--K4各6 tasks；peak allocated/reserved=
+`35,550,641,664 / 37,971,034,112` bytes，零OOM/nonfinite/禁读。371-frame完整五任务序列自然完成，peak=
+`41,987,913,216 / 44,920,995,840` bytes。
+
+macro2 task38真实K4显示raw K-set proposal相对per-video mean仍为`6.40298x`，说明v3定位的overwrite压力在fresh v4
+仍真实存在；mean-anchored commitment实际只改写`.250010x`，288个live cells最大correction/anchor RMS=
+`.250531<.5`，gate=`.249997`。set gate、phi/psi、reader、Core、M2P和八factor families均获得gradient。M2P raw
+proposal为`45.312x`，实际commitment同样只有`.250005x`。
+
+repeated-last使parameter memory relative-L2=`.999913`、effective BA=`.933892`；reverse/shuffle完整重前向的BA
+relative-L2=`.385271/.084918`。constant/template、K置换和deployment recompile max-abs均为0，source policy非零
+gradient tensor为0，VL Meta-LoRA参数为0。
+
+validation8×4 stage gate显示per-video mean→K-set的between-task cosine仅`.401466→.405721`、within-task cosine
+`.990996→.979517`，不再复现v3 macro25/50的`.654/.767→.903/.922`覆盖；correct/reverse relative-L2由
+`.491147→.516868`，Core-fused/compiled/effective BA仍为`.494697/.494893/.233755`。因此v4已经关闭预注册的最早
+结构断点，但这不证明correct沿有用closed-loop方向；formal train24与strict400仍是裁决。

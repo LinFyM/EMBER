@@ -67,7 +67,8 @@ LMMPC-v4的mean-anchored bounded K-set commitment。
   `102→60`、churn70，定位到unbounded K-set覆盖per-video mean。
 - [x] 用v3 macro25/50 hidden完成raw/mean/bounded K-set counterfactual，确认raw branch同时降低between-task
   separability和same-task coherence，而bounded branch保留部分order成分。
-- [ ] 完成v4唯一canonical实现、fresh schema、CPU/architecture合同、真实K4机制、吞吐、最长视频与formal seal。
+- [x] 完成v4唯一canonical实现、fresh schema、CPU/architecture合同、真实K4机制、吞吐、最长视频与formal seal。
+- [ ] 完成v4 K4 deployment generation profile并只写回evaluation throughput authority。
 - [ ] v4 fresh train24到macro25并完成strict paired400、逐task/suite/stage与retention/churn分析；有真实共同上升
   证据时继续同一run到macro50。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
@@ -83,5 +84,7 @@ Core-fused→compiled的改写限制在约`.25x`，但macro25/50 strict为`102�
 反而恢复task分离，bounded M2P只小幅改写，所以不能把回落继续归咎于M2P或训练量。
 
 v4唯一增加与M2P同形的mean-anchored逐cell K-set commitment：fresh gate初始`.25`、最大`.5`；不删除learned
-cross-video correction，也不改变Core/Procedure、memory、M2P、rank16、loss或recipe。当前CPU实现接通，下一步从clean
-pushed detached commit验证真实K4机制/资源并封存formal recipe；这些机制证据尚不是closed-loop成绩。
+cross-video correction，也不改变Core/Procedure、memory、M2P、rank16、loss或recipe。clean `8c40a56`的真实K4门
+显示raw proposal仍为`6.403x`，但commitment只有`.250010x`且全部分支有gradient；validation8中mean→K-set的
+between-task仅`.4015→.4057`、within-task`.9910→.9795`，order为`.4911→.5169`，371-frame与world3吞吐也通过。
+下一步从只写回formal seal的clean pushed commit启动fresh train24；这些机制证据尚不是closed-loop成绩。

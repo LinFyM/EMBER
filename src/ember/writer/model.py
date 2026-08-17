@@ -576,15 +576,25 @@ class CompleteLoRAWriter(torch.nn.Module):
             video_condition_ids=video_condition_ids,
         )
 
-    def _compile_context(self, context: EncodedContext) -> WriterProgramOutput:
+    def _compile_context(
+        self,
+        context: EncodedContext,
+        *,
+        include_matching: bool = True,
+    ) -> WriterProgramOutput | torch.Tensor:
         encoding = context.encoding
+        kinds = (
+            ("natural", "reverse", "shuffle")
+            if include_matching
+            else ("natural", "reverse")
+        )
         orders = {
             kind: self._frame_order(
                 context.video_bounds,
                 kind=kind,
                 device=context.frame_indices.device,
             )
-            for kind in ("natural", "reverse", "shuffle")
+            for kind in kinds
         }
         programs = {
             kind: self._build_program(
@@ -636,6 +646,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             encoding.valid_task_tokens,
             language_summary,
         )
+        if not include_matching:
+            return compiled
         summaries = {
             kind: self._last_valid(program.procedure, program.valid_procedure)
             for kind, program in programs.items()
@@ -766,7 +778,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
-        generated, _ = self.forward_training(
+        context = self._encode_context(
             frames,
             frame_indices,
             video_offsets,
@@ -774,6 +786,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             language_tokens,
             language_mask,
             task_span_mask,
-            policy=policy,
+            policy,
         )
-        return generated
+        return self.decode_program(
+            self._compile_context(context, include_matching=False)
+        )

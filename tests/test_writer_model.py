@@ -38,6 +38,33 @@ def test_fresh_lmmpc_step0_is_exact_source_identity() -> None:
     )
 
 
+def test_deployment_skips_matching_only_shuffle_without_changing_lora() -> None:
+    model, _ = _model()
+    _open_factor_heads(model)
+    calls = {"procedure": 0, "memory": 0}
+
+    def count_procedure(*_args: object) -> None:
+        calls["procedure"] += 1
+
+    def count_memory(*_args: object) -> None:
+        calls["memory"] += 1
+
+    procedure_handle = model.procedure.register_forward_hook(count_procedure)
+    memory_handle = model.memory_reader.register_forward_hook(count_memory)
+    try:
+        deployment = model(*_inputs(), policy=torch.nn.Identity())
+        assert calls == {"procedure": 2, "memory": 2}
+        calls.update(procedure=0, memory=0)
+        training, _ = model.forward_training(
+            *_inputs(), policy=torch.nn.Identity()
+        )
+        assert calls == {"procedure": 3, "memory": 3}
+    finally:
+        procedure_handle.remove()
+        memory_handle.remove()
+    assert all(torch.equal(deployment[name], training[name]) for name in deployment)
+
+
 def test_program_is_the_parameter_grid_without_a_second_slot_bank() -> None:
     model, _ = _model()
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())

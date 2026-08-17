@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为LMMPC fresh formal macro0→25训练。
+状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为修正LMMPC最长条件显存切片并重新封存profile。
 
 ## Goal
 
@@ -46,7 +46,7 @@
 - [x] 核对现有canonical runtime owner、删除/复用边界并形成最小实现diff。
 - [x] 实现LMMPC唯一运行面、fresh config/checkpoint schema和必要CPU合同。
 - [x] 完成全量CPU验证、clean-commit真实full24动态K吞吐profile、最长K4机制证据与正式recipe封存。
-- [ ] fresh train24已从clean pushed frozen commit启动；继续到首个有信息量节点且不在未达峰值时过早终止。
+- [ ] micro5最长schedule条件与clean profile通过后，重新fresh train24到首个有信息量节点且不在未达峰值时过早终止。
 - [ ] 执行strict paired400并完成逐task、逐suite、retention/churn及逐stage分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
@@ -55,9 +55,8 @@
 ## Current decision
 
 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。canonical实现、fresh schema与CPU合同已经
-落地；全量CPU=`281 passed`。worktree acceptance profile在microbatch6、world6下完成2个full24 macros，macro耗时
-`31.68/34.62s`、峰值allocated约`40.04GB`，K1--K4每轮各6 tasks，所有主要Writer模块在macro1到2均有非零更新。
-fixed-shape successor已在clean pushed `4b6316a`完成正式profile和最长K4机制门，formal recipe已封存。fresh formal
-run `pi05_lmmpc_formal_fresh_r5_b20_de0b298_gpu02p12347_20260817`正从detached `de0b298`以world5运行到macro25；
-前10 macros无OOM/nonfinite，functional由`.15609`总体降到`.13509`，Program matching由`.36194`降到`.19684`，
-尚无closed-loop结果或训练峰值证据。
+落地。clean `de0b298`的首个world5 formal在macro1--16保持有效下降：functional `.15609→.11888`、Program matching
+`.36194→.17621`；macro17的rank2没有进入唯一gradient collective，最终定位为task38/K4/359帧在functional
+microbatch6下真实OOM，而非NCCL、架构负结果或训练峰值。microbatch5在B20下仍为4次policy forward，并已完整通过
+原故障五任务序列及100-macro封存schedule的真实最大task38/K4/371帧条件。当前只等待clean micro5 full24 profile
+重新封存recipe；失败run没有checkpoint，不可resume，随后必须fresh重启。

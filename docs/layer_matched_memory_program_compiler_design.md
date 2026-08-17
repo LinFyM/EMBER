@@ -519,3 +519,15 @@ microbatch6、B20的两macro fresh profile：K1--K4每轮各6 tasks，macro=`32.
 29个zero padding rows全部切除；correct/reverse parameter-memory relative-L2=`1.999976`，correct effective-BA
 L2=`.564234`；constant从raw memory到compiled grid与effective BA均严格为0，K视频置换后的完整LoRA max-abs差严格
 为0。该证据只封存运行recipe和机制健康，不是closed-loop性能证据。
+
+### 17.1 Formal exposure correction pending reseal
+
+上述两macro profile没有覆盖100-macro schedule的真正最长条件。clean `de0b298` world5 formal在macro1--16的
+functional/Program matching从`.15609/.36194`下降到`.11888/.17621`，但macro17的rank2在task38、K4、359帧条件
+上未进入gradient all-reduce；单卡精确重放得到明确CUDA OOM，只差约96 MiB，因此其余rank的NCCL timeout是下游
+表象，不是架构性能结论。
+
+局部修正仅把functional B20 microbatch从6降为5。两者都执行4次policy forward，而micro5恰为`5×4`，不再为
+`6+6+6+2`固定shape路径计算额外padding；Writer、输入帧、loss、task权重和架构均不变。micro5已通过原359帧
+故障序列，并通过扫描完整100-macro schedule所得真实最大task38/K4/371帧条件。正式状态暂时unsealed，必须由
+clean micro5 full24 profile重新封存后才可fresh重启formal。

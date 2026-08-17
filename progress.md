@@ -7,9 +7,9 @@
 
 - 当前goal为active：推进LMMPC从设计、实现、充分fresh训练和strict评测到局部迭代与终局裁决。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- 当前主分支与origin均包含`c43e234`；formal训练冻结于clean pushed `de0b298`，评测profile入口冻结于`c43e234`。
+- 当前主分支与origin均包含`ce4bab2`；失败formal训练冻结于clean pushed `de0b298`，评测profile入口冻结于`c43e234`。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为fresh formal train24 macro0→25；gpu02物理`1/2/3/4/7`上的world5 run正在执行，尚未到首个checkpoint。
+- 当前phase为micro5重新profile；gpu02 world5 formal已在macro17因最长条件OOM终止，当前没有训练进程或可resume checkpoint。
 - 当前协作边界：不使用subagents。
 
 ## Active architecture decision
@@ -63,13 +63,20 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 - 修正后的clean pushed `4b6316a`已重新fresh完成world6两macro：`32.97/29.83s`，peak allocated=`40.52GB`，
   functional`.15609→.15395`、Program matching`.36194→.30113`，无OOM/nonfinite。该fresh macro2的最长K4机制
   复测仍为constant全链0、K置换0、correct BA L2=`.56423`、correct/reverse=`1.99998`，formal recipe因此封存。
+- clean `de0b298` world5 formal随后完成macro1--16，functional `.15609→.11888`、Program matching
+  `.36194→.17621`，说明尚无训练峰值或科学non-pass；macro17时四rank进入flat-gradient all-reduce而rank2未进入。
+  精确重放确认rank2首个task38/K4/359帧在microbatch6下单卡OOM，仅差约96 MiB，故NCCL timeout是下游表象。
+- 唯一recipe修正是functional microbatch `6→5`：B20仍恰为4次policy forward，且不改Writer、数据、K、loss或任何
+  视频帧。它已在同一物理A40完整通过原故障rank2五任务序列；进一步扫描100 macros后又通过真实schedule最大
+  task38/K4/371帧，峰值reserved=`45,283,803,136` bytes。formal重新置为pending，等待clean full24 profile。
 
 ## Immediate next work
 
-1. 完成当前fresh formal macro0→25并核验完整world5 checkpoint；
-2. 用独立空闲A40完成K4 generation profile，封存真实batch后启动首个strict paired400与完整逐接口分析；
-3. 若macro25仍在共同上升，按原world5/topology exact-resume到macro50及相邻checkpoint，不在未见峰值时过早判死；
-4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
+1. 从clean pushed micro5 commit完成full24 acceptance profile并重新封存正式recipe；
+2. 新建fresh formal root训练到macro25并核验完整world/topology checkpoint；
+3. 用独立空闲A40完成K4 generation profile，封存真实batch后启动首个strict paired400与完整逐接口分析；
+4. 若macro25仍在共同上升，exact-resume到macro50及相邻checkpoint，不在未见峰值时过早判死；
+5. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
 
 ## Training and decision boundary
 

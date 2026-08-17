@@ -508,3 +508,14 @@ goal仅在以下之一成立时完成：
 formal训练和评测必须来自clean pushed commit的detached frozen worktree，保留run contract、checkpoint、sampler/
 RNG/topology、raw paired rows、aggregate、completion和必要analysis。接受正常BF16/TF32、batch和kernel低位差异，
 以真实samples/s、LoRA/s、最长视频稳定性和closed-loop证据推进。
+
+## 17. Sealed profile evidence
+
+clean pushed `4b6316a7ed5ba6e8cbe74e2e0bac377c11ed8e22`在gpu01物理`0/1/2/4/5/6`完成world6、
+microbatch6、B20的两macro fresh profile：K1--K4每轮各6 tasks，macro=`32.97/29.83s`，peak allocated=
+`40.52GB`，functional=`.15609→.15395`，Program matching=`.36194→.30113`，无OOM/nonfinite。
+
+同一fresh macro2在task38、K4、323个有效frames的最长条件上通过机制门：每个有效frame只进入一次native context，
+29个zero padding rows全部切除；correct/reverse parameter-memory relative-L2=`1.999976`，correct effective-BA
+L2=`.564234`；constant从raw memory到compiled grid与effective BA均严格为0，K视频置换后的完整LoRA max-abs差严格
+为0。该证据只封存运行recipe和机制健康，不是closed-loop性能证据。

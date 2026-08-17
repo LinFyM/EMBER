@@ -9,7 +9,7 @@
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
 - 当前分支起点HEAD与origin均为`c30bf362f76ffe76c69b32c57092c68afef08a24`；LMMPC实现与文档修改待提交。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为正式训练前的clean-commit机制/profile封存；没有active GPU run或formal LMMPC checkpoint。
+- 当前phase为sealed formal fresh train24启动；没有active GPU run或formal LMMPC checkpoint。
 - 当前协作边界：不使用subagents。
 
 ## Active architecture decision
@@ -59,13 +59,15 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 - 唯一局部修正是用会被切掉的zero rows把尾microbatch补到固定32；有效frames仍各forward一次。用同一macro2
   checkpoint复测最长K4后，constant从raw memory到effective BA全链精确为0，K置换76 tensors最大差精确为0，
   同时correct effective-BA L2=`.56955`、correct/reverse memory relative-L2=`1.99998`，说明只移除了伪方向。
+- 修正后的clean pushed `4b6316a`已重新fresh完成world6两macro：`32.97/29.83s`，peak allocated=`40.52GB`，
+  functional`.15609→.15395`、Program matching`.36194→.30113`，无OOM/nonfinite。该fresh macro2的最长K4机制
+  复测仍为constant全链0、K置换0、correct BA L2=`.56423`、correct/reverse=`1.99998`，formal recipe因此封存。
 
 ## Immediate next work
 
-1. 提交并推送fixed-shape尾batch修正，从新clean commit复现正式所需的one-forward、correct/reverse和constant
-   identity机制证据；
-2. 用同一新clean commit重新fresh复现已校准microbatch6 profile并把证据写入sealed config；
-3. 按formal launch合同启动fresh train24到macro25，随后做首个strict paired400与完整逐接口分析；
+1. 提交并推送sealed profile authority；
+2. 按formal launch合同启动fresh train24到macro25，随后做首个strict paired400与完整逐接口分析；
+3. 若macro25仍在共同上升，继续macro50及相邻checkpoint，不在未见峰值时过早判死；
 4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
 
 ## Training and decision boundary

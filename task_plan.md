@@ -45,7 +45,7 @@
 - [x] 将修正后的完整流水线、fresh边界、充分训练和局部迭代合同写入active design authority。
 - [x] 核对现有canonical runtime owner、删除/复用边界并形成最小实现diff。
 - [x] 实现LMMPC唯一运行面、fresh config/checkpoint schema和必要CPU合同。
-- [x] 完成全量CPU验证与真实full24动态K吞吐profile；clean-commit机制证据与正式封存尚待完成。
+- [x] 完成全量CPU验证、clean-commit真实full24动态K吞吐profile、最长K4机制证据与正式recipe封存。
 - [ ] 从clean pushed frozen commit启动fresh train24，训练到首个有信息量节点且不在未达峰值时过早终止。
 - [ ] 执行strict paired400并完成逐task、逐suite、retention/churn及逐stage分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
@@ -57,5 +57,5 @@
 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。canonical实现、fresh schema与CPU合同已经
 落地；全量CPU=`281 passed`。worktree acceptance profile在microbatch6、world6下完成2个full24 macros，macro耗时
 `31.68/34.62s`、峰值allocated约`40.04GB`，K1--K4每轮各6 tasks，所有主要Writer模块在macro1到2均有非零更新。
-下一步从clean pushed commit复现机制/profile证据、封存formal recipe并启动fresh train24；当前没有formal LMMPC
-checkpoint或closed-loop性能结果。
+fixed-shape successor已在clean pushed `4b6316a`完成正式profile和最长K4机制门，formal recipe已封存。下一步从封存
+commit启动fresh train24到macro25；当前仍没有formal LMMPC checkpoint或closed-loop性能结果。

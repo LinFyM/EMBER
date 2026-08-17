@@ -43,6 +43,7 @@ from ember.writer.reward_config import (
     load_reward_config,
     require_reward_mode,
 )
+from ember.writer.reward_training import _continuation_contract_core
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -196,9 +197,54 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
     assert gate["cross_run_elementwise_parity_required"] is False
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
     assert gate["shared_anchor_cycle_seconds_maximum"] == 180.0
-    assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3]
+    assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3, 4]
+    extension = config["formal_run"]["owner_training_volume_extension"]
+    assert extension["parent_strict_curve"] == [129, 135, 143]
+    assert extension["scientific_variables_changed"] is False
     require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
+
+
+def test_reward_continuation_core_ignores_only_execution_authority() -> None:
+    shared = {
+        "schema_version": "launch-v1",
+        "mode": "formal",
+        "config_path": "/worktrees/parent/configs/reward.json",
+        "base_as_config_path": "/worktrees/parent/configs/base.json",
+        "privileged_teacher": {
+            "bank_evidence": {
+                "config": {"path": "/worktrees/parent/configs/expert.json"}
+            }
+        },
+        "objective": {"kind": "expert_occupancy"},
+        "runtime": {"world_size": 6, "total_cycles": 3},
+    }
+    parent = {
+        **shared,
+        "git": {"commit": "parent"},
+        "formal_run": {"total_cycles": 3},
+    }
+    continuation = {
+        **shared,
+        "config_path": "/worktrees/continuation/configs/reward.json",
+        "base_as_config_path": "/worktrees/continuation/configs/base.json",
+        "privileged_teacher": {
+            "bank_evidence": {
+                "config": {"path": "/worktrees/continuation/configs/expert.json"}
+            }
+        },
+        "git": {"commit": "continuation"},
+        "formal_run": {"total_cycles": 4},
+        "runtime": {"world_size": 6, "total_cycles": 4},
+        "continuation": {"parent_checkpoint": "cycle_00000003"},
+    }
+    assert _continuation_contract_core(parent) == _continuation_contract_core(
+        continuation
+    )
+    continuation["objective"] = {"kind": "changed"}
+    assert _continuation_contract_core(parent) != _continuation_contract_core(
+        continuation
+    )
 
 
 def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:

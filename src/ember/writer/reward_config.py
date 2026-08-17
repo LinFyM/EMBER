@@ -162,8 +162,19 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                 config.get("formal_run", {}),
                 {
                     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
-                    "checkpoint_cycles": [1, 2, 3],
-                    "stage_stop_cycles": [1, 2, 3],
+                    "total_cycles": 4,
+                    "checkpoint_cycles": [1, 2, 3, 4],
+                    "stage_stop_cycles": [1, 2, 3, 4],
+                    "strict_paired400_cycles": [1, 2, 3, 4],
+                    "owner_training_volume_extension": {
+                        "parent_cycle": 3,
+                        "parent_strict_curve": [129, 135, 143],
+                        "cycle3_breadth": 5,
+                        "cycle2_to_cycle3_retained_gained_lost": [120, 23, 15],
+                        "extension_cycle": 4,
+                        "scientific_variables_changed": False,
+                        "decision": "one_bounded_adjacent_stability_checkpoint",
+                    },
                 },
             ),
         )

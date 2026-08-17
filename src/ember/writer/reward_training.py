@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
+import shutil
 import socket
 import time
 from dataclasses import dataclass
@@ -156,6 +158,25 @@ def _publish_contract(
                 raise WriterModelError("fresh direct-factor output is not empty")
             runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
+        elif "continuation" in contract:
+            if runtime_args.output_dir.exists() and any(
+                runtime_args.output_dir.iterdir()
+            ):
+                raise WriterModelError("formal continuation output is not empty")
+            parent_contract_path = Path(
+                str(contract["continuation"]["parent_run_contract"])
+            )
+            parent_contract = read_json(parent_contract_path)
+            if _continuation_contract_core(parent_contract) != (
+                _continuation_contract_core(contract)
+            ):
+                raise WriterModelError("formal continuation changed science contract")
+            runtime_args.output_dir.mkdir(parents=True, exist_ok=True)
+            write_json_atomic(path, dict(contract))
+            shutil.copyfile(
+                parent_contract_path.parent / "metrics.jsonl",
+                runtime_args.output_dir / "metrics.jsonl",
+            )
         elif not path.is_file() or read_json(path) != dict(contract):
             raise WriterModelError("direct-factor exact-resume launch contract changed")
         append_jsonl(
@@ -169,6 +190,32 @@ def _publish_contract(
             },
         )
     barrier(context)
+
+
+def _continuation_contract_core(contract: Mapping[str, Any]) -> dict[str, Any]:
+    core = copy.deepcopy(
+        {
+            key: value
+            for key, value in contract.items()
+            if key not in {"git", "formal_run", "continuation"}
+        }
+    )
+    for key in ("config_path", "base_as_config_path"):
+        core[key] = _repo_config_path(core[key])
+    expert_config = core["privileged_teacher"]["bank_evidence"]["config"]
+    expert_config["path"] = _repo_config_path(expert_config["path"])
+    runtime = dict(core["runtime"])
+    runtime.pop("total_cycles", None)
+    core["runtime"] = runtime
+    return core
+
+
+def _repo_config_path(value: str) -> str:
+    marker = "/configs/"
+    value = str(value)
+    if marker not in value:
+        return value
+    return f"configs/{value.split(marker, 1)[1]}"
 
 
 def _contract(
@@ -196,7 +243,7 @@ def _contract(
     else:
         topology[0] = local
     state = git_state(Path(__file__).resolve().parents[3])
-    return {
+    contract = {
         "schema_version": REWARD_LAUNCH_SCHEMA,
         "mode": args.mode,
         "git": {"branch": state["branch"], "commit": state["commit"]},
@@ -232,6 +279,18 @@ def _contract(
         },
         "trainable": dict(trainable),
     }
+    if args.resume is not None:
+        parent_root = args.resume.resolve().parent.parent
+        if parent_root != args.output_dir.resolve():
+            parent_contract_path = parent_root / "run_contract.json"
+            parent_contract = read_json(parent_contract_path)
+            contract["continuation"] = {
+                "parent_checkpoint": str(args.resume.resolve()),
+                "parent_run_contract": str(parent_contract_path.resolve()),
+                "parent_git": dict(parent_contract["git"]),
+                "start_cycle": checkpoint_cycle(args.resume),
+            }
+    return contract
 
 
 def _load_direct_factor_models(

@@ -1,6 +1,6 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-17 **active LMMPC-v2 implementation authority**。LMMPC-v1已完成macro25/50 strict与逐接口诊断，
+状态：2026-08-17 **active LMMPC-v2 formal authority**。LMMPC-v1已完成macro25/50 strict与逐接口诊断，
 其terminal checkpoint只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成v2实现、fresh
 训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅
 改换路线。
@@ -556,12 +556,18 @@ macro50 held validation8的reader counterfactual进一步显示：另一task的�
 显示独立endpoint占输出`.9968`，attention只占`.0246`；reverse endpoint逐元素严格为负。macro25已有同一结构，且
 训练到macro50反而更依赖endpoint。因此旧trajectory即使继续提高loss/分数，也不能证明学会高层有向Procedure。
 
-v2 config/checkpoint/eval schema全部fresh-incompatible，当前仍为`unsealed_pending_live_profile`。当前worktree已经先行
+v2 config/checkpoint/eval schema全部fresh-incompatible。提交前worktree先行
 通过结构和资源否决门：全量CPU=`284 passed`；world5两macro=`39.02/36.05s`、peak reserved=`34.20GB`；真实
 task38/K4/323-frame中重复`P_last`或zero Procedure后parameter-memory仅剩正常norm的`.01390`且relative-L2约`1.0`；
 reverse不再硬反号，constant identity、K置换、八family与reader梯度、source zero-grad均通过。shuffle在最终BA上仍只改
 `.08864`，因此这里只证明结构能读取顺序，不能声称训练前已有正确时序优势。真实schedule最大371-frame及随后四任务
 完整结束，peak allocated/reserved=`41,987,227,136 / 44,912,607,232` bytes。
 
-这些是提交前worktree smoke，不进入formal config的sealed evidence。下一步必须从clean pushed detached commit原样重跑
-两macro与371-frame门，写回source commit/run root后再允许formal；不得把本节数值冒充closed-loop或视频因果成绩。
+随后clean pushed detached commit `61558f4550d732815f8e3f7b30504626e6deb577`原样复现全部seal门：world5两macro
+用时=`39.08/35.97s`，functional=`.156120→.153996`、gradient norm=`.032812→.039320`，每轮K1--K4各6 tasks，
+peak allocated/reserved=`31,714,849,792 / 31,889,293,312` bytes；clean 371-frame五任务序列peak为
+`41,854,451,712 / 42,335,207,424` bytes。clean macro2机制结果与上述数值一致，且training/deployment recompile
+LoRA max-abs为0。config现已`sealed`，允许从后继仅含seal authority的clean pushed commit启动fresh formal。
+
+这些证据只封存结构、梯度、吞吐和资源合同，不是closed-loop或视频因果成绩；尤其shuffle BA差异`.08864`仍须由训练
+后的strict controls裁决。

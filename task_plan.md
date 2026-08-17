@@ -56,7 +56,7 @@ LMMPC-v2的Procedure-active stage reader。
 - [x] 完成LMMPC-v2唯一canonical实现、fresh schema、全CPU合同和architecture gate。
 - [x] 在真实K4上验证完整Procedure阶段被使用、constant identity、非硬反号、八family梯度、native BA及最长
   video吞吐；worktree结构和资源门通过。
-- [ ] 从clean pushed detached commit复现两macro吞吐与371-frame门，并封存fresh formal recipe。
+- [x] 从clean pushed detached commit复现两macro吞吐、真实K4机制与371-frame门，并封存fresh formal recipe。
 - [ ] fresh train24到macro25/50等有信息量节点，执行strict paired400和完整stage/task分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
@@ -72,6 +72,6 @@ LMMPC-v2的Procedure-active stage reader。
 v2保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、axial M2P与native rank16，只把reader
 改为每个固定地址对完整`P[1:T]`做stage attention，Value为同地址centered native memory；删除独立endpoint、内部
 `correct-reverse`和无cross-task辨识力的matching heads。训练/部署都只走一次correct正序functional图，negative只在
-真实完整重前向评测中出现。fresh-incompatible v2已通过全量CPU、真实K4机制、world5两macro worktree profile和
-scheduled 371-frame完整序列；重复`P_last`不能复现H，constant/K置换/source zero-grad均通过。下一步仅把相同运行从
-clean pushed detached commit复现并seal，不把worktree smoke冒充formal，也尚未启动formal训练。
+真实完整重前向评测中出现。fresh-incompatible v2已由clean pushed detached `61558f4`通过全量CPU、真实K4机制、
+world5两macro profile和scheduled 371-frame完整序列；重复`P_last`不能复现H，constant/K置换/source zero-grad均通过，
+formal recipe已seal。下一步从只增加seal authority的clean pushed commit启动fresh train24；尚未产生formal成绩。

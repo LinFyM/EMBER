@@ -7,8 +7,8 @@
 
 - 持续研究goal为active；当前不使用subagents。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- 本轮开始时HEAD与origin均为`5b3ad390e440708934103beead743a378f43217e`；当前主工作树已实现并验证
-  fresh-incompatible LMMPC-v2，尚未commit/push，也没有EMBER GPU进程。
+- LMMPC-v2实现已由clean pushed commit `61558f4550d732815f8e3f7b30504626e6deb577`封存并完成clean profile；当前
+  主工作树只在写回seal authority，且没有EMBER GPU进程。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。
 - LMMPC-v1 macro25/50及其逐接口分析已经终局；旧checkpoint不得resume到75/100。
 
@@ -78,7 +78,7 @@ heads、rank16和optimizer recipe均保持。
 
 - stage-addressed centered-memory reader；若Procedure阶段全部重复，centered Value经均匀attention相消；
 - training/deployment统一为一次正序图，删除matching参数与三臂重复计算；
-- config/checkpoint/eval/launch family升级到fresh-incompatible v2，formal状态回到pending profile；
+- config/checkpoint/eval/launch family升级到fresh-incompatible v2，formal profile已seal；
 - 全量CPU=`284 passed`，compile、diff-check和architecture guard无hard violation；
 - world5 worktree profile两macro均严格K1--K4各6 tasks，macro=`39.02/36.05s`，functional=
   `.156120→.153996`，peak allocated/reserved=`31.80/34.20GB`，无OOM/nonfinite；
@@ -91,15 +91,16 @@ heads、rank16和optimizer recipe均保持。
 - 真实调度最大task38/K4/371-frame及随后四任务完整结束，peak allocated/reserved=
   `41,987,227,136 / 44,912,607,232` bytes，无OOM/nonfinite。
 
-上述GPU证据来自当前worktree，只用于在提交前否决结构/显存错误；formal profile仍须从clean pushed detached commit
-重跑并写回seal evidence，尚未启动formal训练。
+clean pushed detached `61558f4`已经原样复现：两macro=`39.08/35.97s`，loss和gradient norm与worktree完全一致，
+peak allocated/reserved=`31.71/31.89GB`；clean 371-frame完整五任务序列peak=`41.85/42.34GB`；clean macro2真实K4
+机制结果与上述stage/reverse/constant/K置换/梯度数值一致。config现已写回该source commit和run roots，尚未启动formal
+训练或产生closed-loop成绩。
 
 ## Immediate next work
 
-1. 审查task-scoped diff并提交/push当前pending-profile实现；
-2. 从该clean commit重跑world5两macro与371-frame条件，写回formal seal evidence，再次commit/push；
-3. 从最终clean pushed detached commit fresh train24到macro25/50有信息量节点；
-4. strict paired400报告逐task/suite、breadth、retained/gained/lost/churn，并沿Core→Procedure→H→K-set→M2P→BA→
+1. 验证seal config与CPU合同，commit/push仅含seal authority的diff；
+2. 从最终clean pushed detached commit fresh train24到macro25/50有信息量节点；
+3. strict paired400报告逐task/suite、breadth、retained/gained/lost/churn，并沿Core→Procedure→H→K-set→M2P→BA→
    action定位下一个接口；不在性能峰值和趋势未观察清楚时过早终止。
 
 ## Fixed scientific baselines

@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v2",
-  "status": "active_pending_live_profile",
+  "status": "active_formal_ready",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -142,12 +142,45 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "unsealed_pending_live_profile",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 100,
     "per_task_action_batch_size": 20,
     "checkpoint_macros": [25, 50, 75, 100],
     "stage_stop_macros": [25, 50, 75, 100],
-    "first_strict_paired400_macro": 25
+    "first_strict_paired400_macro": 25,
+    "profile_evidence": {
+      "source_commit": "61558f4550d732815f8e3f7b30504626e6deb577",
+      "run_root": "runs/acceptance/pi05_lmmpc_v2_profile_r5_b20_61558f4_gpu02p12347_20260817",
+      "host": "gpu02",
+      "physical_gpus": [1, 2, 3, 4, 7],
+      "world_size": 5,
+      "functional_policy_microbatch_size": 5,
+      "completion_macro": 2,
+      "macro_seconds": 35.9660324039869,
+      "max_cuda_allocated_bytes": 31714849792,
+      "max_cuda_reserved_bytes": 31889293312,
+      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
+      "scheduled_max_condition_frames": 371,
+      "scheduled_max_condition_peak_allocated_bytes": 41854451712,
+      "scheduled_max_condition_peak_reserved_bytes": 42335207424,
+      "scheduled_max_condition_result": "complete_five_task_local_sequence",
+      "mechanism_checkpoint_macro": 2,
+      "native_context_calls": 323,
+      "expected_native_context_calls": 323,
+      "native_encoder_rows_with_padding": 352,
+      "procedure_stage_replacement_relative_l2": 0.9999785423278809,
+      "procedure_stage_replacement_norm_ratio": 0.013903454877436161,
+      "reverse_parameter_memory_relative_l2": 0.8752194046974182,
+      "reverse_parameter_memory_negative_relative_l2": 1.5533424615859985,
+      "shuffle_effective_ba_relative_l2": 0.08864022487690358,
+      "correct_effective_ba_l2": 0.6388468554617789,
+      "constant_effective_ba_max_abs": 0.0,
+      "k_permutation_lora_max_abs": 0.0,
+      "deployment_recompile_lora_max_abs": 0.0,
+      "all_factor_family_gradients_nonzero": true,
+      "all_reader_path_gradients_nonzero": true,
+      "source_policy_nonzero_gradient_tensors": 0
+    }
   }
 }

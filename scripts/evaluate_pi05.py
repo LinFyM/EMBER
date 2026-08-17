@@ -56,6 +56,8 @@ from ember.pi05_eval_queue import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs/pi05_target_evaluation_v1.json"
+WRITER_PROFILE_PREFLIGHT = "writer_generation_preflight.json"
+WRITER_PROFILE_WORKER_LOG = "writer_generation_profile_worker.log"
 
 
 def _positive_int(value: str) -> int:
@@ -159,6 +161,37 @@ def parse_args() -> argparse.Namespace:
     _add_prepare_arguments(prepare)
     run = commands.add_parser("run")
     _add_prepare_arguments(run)
+    profile_writer = commands.add_parser("profile-writer-generation")
+    _add_prepare_arguments(profile_writer)
+    profile_writer.add_argument(
+        "--profile-batch-sizes",
+        default="8,16,32",
+        help="Ascending comma-separated actual Writer forward batches.",
+    )
+    profile_writer.add_argument(
+        "--profile-warmup-runs",
+        type=_positive_int,
+        default=1,
+    )
+    profile_writer.add_argument(
+        "--profile-measured-runs",
+        type=_positive_int,
+        default=2,
+    )
+    profile_worker = commands.add_parser("profile-writer-worker")
+    profile_worker.add_argument("--output-dir", type=Path, required=True)
+    profile_worker.add_argument("--worker-id", required=True)
+    profile_worker.add_argument("--profile-batch-sizes", required=True)
+    profile_worker.add_argument(
+        "--profile-warmup-runs",
+        type=_positive_int,
+        required=True,
+    )
+    profile_worker.add_argument(
+        "--profile-measured-runs",
+        type=_positive_int,
+        required=True,
+    )
     start = commands.add_parser("start")
     start.add_argument("--output-dir", type=Path, required=True)
     resume = commands.add_parser("resume")
@@ -203,6 +236,219 @@ def prepare_run(
     )
     print(json.dumps(summary, sort_keys=True))
     return summary
+
+
+def _profile_batch_sizes(value: str) -> tuple[int, ...]:
+    try:
+        result = tuple(int(item.strip()) for item in value.split(","))
+    except ValueError as error:
+        raise Pi05EvaluationError(
+            "Writer profile batch sizes must be comma-separated integers"
+        ) from error
+    if (
+        result != tuple(sorted(set(result)))
+        or len(result) < 3
+        or not {8, 16, 32}.issubset(result)
+        or any(item <= 0 for item in result)
+    ):
+        raise Pi05EvaluationError("Writer profile batch sizes are invalid")
+    return result
+
+
+def _profile_worker_launch(
+    *,
+    output_dir: Path,
+    contract: Mapping[str, Any],
+    physical_gpu: int,
+    batch_sizes: Sequence[int],
+    warmup_runs: int,
+    measured_runs: int,
+) -> tuple[list[str], dict[str, str]]:
+    replicas = int(contract["parallel"]["replicas_per_gpu"])
+    environment = os.environ.copy()
+    environment.update(
+        PYTHONPATH=str(REPO_ROOT / "src"),
+        CUDA_DEVICE_ORDER="PCI_BUS_ID",
+        CUDA_VISIBLE_DEVICES=str(physical_gpu),
+        OMP_NUM_THREADS=str(
+            contract["parallel"]["omp_threads_per_worker"][str(replicas)]
+        ),
+    )
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "profile-writer-worker",
+        "--output-dir",
+        str(output_dir.resolve()),
+        "--worker-id",
+        f"{physical_gpu}-r0",
+        "--profile-batch-sizes",
+        ",".join(str(value) for value in batch_sizes),
+        "--profile-warmup-runs",
+        str(warmup_runs),
+        "--profile-measured-runs",
+        str(measured_runs),
+    ]
+    return command, environment
+
+
+def _profile_gpu_identity(preflight: Mapping[str, Any]) -> tuple[str, ...]:
+    return tuple(str(row["uuid"]) for row in preflight.get("gpu_telemetry", ()))
+
+
+def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
+    output_dir = args.output_dir.resolve()
+    contract = load_run_contract(output_dir / "run_contract.json")
+    contract_git = contract.get("git", {})
+    live_git = git_state(REPO_ROOT)
+    physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
+    launcher_preflight, _ = read_json_with_size(
+        output_dir / WRITER_PROFILE_PREFLIGHT
+    )
+    live_preflight = _gpu_preflight(physical)
+    sizes = _profile_batch_sizes(args.profile_batch_sizes)
+    if (
+        len(physical) != 1
+        or not git_state_is_clean_pushed_or_frozen_authority(live_git)
+        or not git_state_is_clean_pushed_or_frozen_authority(contract_git)
+        or live_git.get("commit") != contract_git.get("commit")
+        or args.worker_id != f"{physical[0]}-r0"
+        or launcher_preflight.get("compute_applications") != []
+        or live_preflight.get("compute_applications") != []
+        or launcher_preflight.get("device_names") != ["NVIDIA A40"]
+        or live_preflight.get("device_names") != ["NVIDIA A40"]
+        or _profile_gpu_identity(live_preflight)
+        != _profile_gpu_identity(launcher_preflight)
+    ):
+        raise Pi05EvaluationError("Writer profile worker preflight changed")
+
+    from ember.pi05_evaluation import _initialize_worker
+    from ember.writer.generation_profile import profile_writer_generation
+
+    runtime = _initialize_worker(
+        output_dir,
+        args.worker_id,
+        writer_generation=True,
+    )
+    try:
+        result = profile_writer_generation(
+            runtime,
+            batch_sizes=sizes,
+            warmup_runs=int(args.profile_warmup_runs),
+            measured_runs=int(args.profile_measured_runs),
+            preflight=live_preflight,
+        )
+    finally:
+        runtime.pool.close()
+    print(
+        json.dumps(
+            {
+                "event": "writer_generation_profile_worker_complete",
+                "root": result["root"],
+                "physical_gpu": result["physical_gpu"],
+                "selected_writer_model_batch_size": result[
+                    "selected_writer_model_batch_size"
+                ],
+            },
+            sort_keys=True,
+        )
+    )
+    return result
+
+
+def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
+    sizes = _profile_batch_sizes(args.profile_batch_sizes)
+    writer_kind, source_sft_requested = _adapter_requests(args)
+    physical_args = _parse_gpu_indices(args.gpu_indices)
+    state = git_state(REPO_ROOT)
+    if (
+        args.mode != "smoke"
+        or args.role != "validation"
+        or args.state_count < (sizes[-1] + 7) // 8
+        or args.replicas_per_gpu != 1
+        or args.writer_generators_per_gpu != 1
+        or writer_kind != DYNAMIC_K_WRITER_KIND
+        or source_sft_requested
+        or args.dynamic_k_writer_video_condition != "correct"
+        or args.dynamic_k_writer_video_sampling != "without_replacement"
+        or physical_args is None
+        or len(physical_args) != 1
+        or int(args.profile_warmup_runs) < 1
+        or int(args.profile_measured_runs) < 2
+        or not git_state_is_clean_pushed_or_frozen_authority(state)
+    ):
+        raise Pi05EvaluationError(
+            "Writer generation profile requires a clean frozen validation/correct "
+            "single-A40 smoke contract"
+        )
+    args.writer_generation_batch_size = sizes[-1]
+    prepare_run(args, create_evaluation_queue=False)
+    contract = load_run_contract(args.output_dir.resolve() / "run_contract.json")
+    physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
+    preflight = _gpu_preflight(physical)
+    if (
+        len(physical) != 1
+        or preflight.get("compute_applications") != []
+        or preflight.get("device_names") != ["NVIDIA A40"]
+        or not _evaluator_gpus_are_eligible(preflight)
+    ):
+        raise Pi05EvaluationError(
+            "Writer generation profile requires one idle physical NVIDIA A40"
+        )
+    publish_json_exclusive(
+        args.output_dir.resolve() / WRITER_PROFILE_PREFLIGHT,
+        preflight,
+    )
+    command, environment = _profile_worker_launch(
+        output_dir=args.output_dir,
+        contract=contract,
+        physical_gpu=physical[0],
+        batch_sizes=sizes,
+        warmup_runs=int(args.profile_warmup_runs),
+        measured_runs=int(args.profile_measured_runs),
+    )
+    worker_log = args.output_dir.resolve() / WRITER_PROFILE_WORKER_LOG
+    with worker_log.open("ab") as log:
+        completed = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            env=environment,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    if completed.returncode != 0:
+        raise Pi05EvaluationError(
+            "Writer generation profile worker failed with return code "
+            f"{completed.returncode}; inspect {worker_log}"
+        )
+    result, _ = read_json_with_size(
+        args.output_dir.resolve() / "writer_generation_profile.json"
+    )
+    if (
+        result.get("root") != str(args.output_dir.resolve())
+        or int(result.get("physical_gpu", -1)) != physical[0]
+        or result.get("preflight", {}).get("compute_applications") != []
+        or _profile_gpu_identity(result.get("preflight", {}))
+        != _profile_gpu_identity(preflight)
+    ):
+        raise Pi05EvaluationError("Writer generation profile result changed")
+    print(
+        json.dumps(
+            {
+                "event": "writer_generation_profile_complete",
+                "root": result["root"],
+                "selected_writer_model_batch_size": result[
+                    "selected_writer_model_batch_size"
+                ],
+                "writer_generation_measurements": result[
+                    "writer_generation_measurements"
+                ],
+            },
+            sort_keys=True,
+        )
+    )
+    return result
 
 
 def _active_worker_pids(output_dir: Path) -> list[int]:
@@ -613,7 +859,11 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
 
 def main() -> int:
     args = parse_args()
-    if args.command in {"prepare", "run"}:
+    if args.command == "profile-writer-generation":
+        profile_writer_run(args)
+    elif args.command == "profile-writer-worker":
+        profile_writer_worker_run(args)
+    elif args.command in {"prepare", "run"}:
         prepare_run(args)
         if args.command == "run":
             start_workers(args.output_dir, resume=False)

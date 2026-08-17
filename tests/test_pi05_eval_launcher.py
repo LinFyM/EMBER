@@ -165,6 +165,15 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
         module._positive_int("0")
 
 
+def test_writer_profile_requires_real_8_16_32_forward_batches() -> None:
+    module = _launcher_module()
+    assert module._profile_batch_sizes("8,16,32") == (8, 16, 32)
+    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
+        module._profile_batch_sizes("8,8,32")
+    with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
+        module._profile_batch_sizes("4,8,16")
+
+
 def test_resume_validation_preserves_dynamic_k_evaluation_cardinality(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

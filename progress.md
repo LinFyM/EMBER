@@ -9,7 +9,7 @@
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
 - 当前主分支与origin均包含`dd81b94`；失败formal训练冻结于clean pushed `de0b298`，micro5 profile来自`dd81b94`。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为从重新sealed的micro5 commit fresh重启formal；失败run无可resume checkpoint，当前没有训练进程。
+- 当前phase为fresh formal macro0→25；clean `ca40d88`已在gpu02物理`1/2/3/4/7`以world5启动，失败run无状态复用。
 - 当前协作边界：不使用subagents。
 
 ## Active architecture decision
@@ -75,7 +75,7 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 
 ## Immediate next work
 
-1. 从重新sealed的clean pushed commit新建fresh formal root，训练到macro25并核验完整world/topology checkpoint；
+1. 完成`pi05_lmmpc_formal_fresh_micro5_r5_b20_ca40d88_gpu02p12347_20260817`到macro25并核验完整world/topology checkpoint；
 2. 用独立空闲A40完成K4 generation profile，封存真实batch后启动首个strict paired400与完整逐接口分析；
 3. 若macro25仍在共同上升，exact-resume到macro50及相邻checkpoint，不在未见峰值时过早判死；
 4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。

@@ -60,4 +60,5 @@
 microbatch6下真实OOM，而非NCCL、架构负结果或训练峰值。microbatch5在B20下仍为4次policy forward，并已完整通过
 原故障五任务序列及100-macro封存schedule的真实最大task38/K4/371帧条件。clean `dd81b94` world5 full24 profile
 进一步完成两macro，耗时`39.22/36.22s`、functional `.15612→.15399`、Program matching `.36194→.30113`，无
-OOM/nonfinite，recipe已重新封存。失败run没有checkpoint，不可resume，下一步从新sealed commit fresh重启。
+OOM/nonfinite，recipe已重新封存。失败run没有checkpoint且未被resume；clean `ca40d88` world5 fresh formal现已启动
+macro0→25，前3 macros与封存profile一致且无OOM/nonfinite。

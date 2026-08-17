@@ -79,6 +79,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "include_final_frame": True,
         "backbone_total_frames_per_condition": 420,
         "maximum_stride5_frames_per_video": 105,
+        "last_encoder_call": "zero_pad_to_fixed_shape_then_slice",
         "program_width": 256,
         "memory_token_count": 16,
         "memory_topology": "18_action_expert_layers_x_16_lora_rank_coordinates",

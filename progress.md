@@ -53,11 +53,18 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
   `.36196→.30070`，gradient norm`.16124→.16898`，无OOM/nonfinite。
 - macro1到2的checkpoint delta覆盖semantic encoder/Core、visual transition、Procedure、layer/rank memory reader、
   K-set、Core/M2P compiler及factor heads；template保持冻结，排除了“只有匹配头更新”的接线假象。
+- clean `bd2ee35`机制探针随后发现variable tail microbatch把正常BF16 batch-shape差异放大为伪Program：constant输入的
+  raw layer-memory max差为`4.0`，最终effective-BA L2为`.5097`，K置换LoRA max差为`6.37e-4`。最早断点明确在
+  native frame encoder的尾batch shape，不在Core/Procedure语义或M2P拓扑。
+- 唯一局部修正是用会被切掉的zero rows把尾microbatch补到固定32；有效frames仍各forward一次。用同一macro2
+  checkpoint复测最长K4后，constant从raw memory到effective BA全链精确为0，K置换76 tensors最大差精确为0，
+  同时correct effective-BA L2=`.56955`、correct/reverse memory relative-L2=`1.99998`，说明只移除了伪方向。
 
 ## Immediate next work
 
-1. 提交并推送当前唯一实现，从clean commit复现正式所需的one-forward、correct/reverse和constant identity机制证据；
-2. 用同一clean commit复现已校准microbatch6 profile并把证据写入sealed config；
+1. 提交并推送fixed-shape尾batch修正，从新clean commit复现正式所需的one-forward、correct/reverse和constant
+   identity机制证据；
+2. 用同一新clean commit重新fresh复现已校准microbatch6 profile并把证据写入sealed config；
 3. 按formal launch合同启动fresh train24到macro25，随后做首个strict paired400与完整逐接口分析；
 4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
 

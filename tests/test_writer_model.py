@@ -5,6 +5,7 @@ from lerobot.policies.pi05.modeling_pi05 import compute_layer_complete
 from lerobot.policies.pi_gemma import layernorm_forward
 
 from ember.writer.backbone_memory import (
+    LayerMatchedBackboneMemoryEncoder,
     Pi05LayerMatchedBackboneMemory,
     make_backbone_memory_mask,
 )
@@ -203,6 +204,65 @@ def test_writer_state_is_fresh_strictly_reloadable() -> None:
         torch.equal(target.state_dict()[name], value)
         for name, value in source.state_dict().items()
     )
+
+
+class _FixedShapeSemantic:
+    max_frames_per_encoder_call = 4
+    expert_width = 4
+
+    @staticmethod
+    def _validate_forward_batch(
+        _policy,
+        _frames,
+        _frame_condition_ids,
+        language_tokens,
+        _language_mask,
+        _task_span_mask,
+    ):
+        valid = torch.ones(language_tokens.shape[0], 2, dtype=torch.bool)
+        return torch.nn.Identity(), valid, torch.full((language_tokens.shape[0],), 2)
+
+    @staticmethod
+    def _encode_text(
+        _core, language_tokens, _task_span_mask, maximum_task_tokens
+    ) -> torch.Tensor:
+        return torch.zeros(language_tokens.shape[0], maximum_task_tokens, 256)
+
+
+class _FixedShapeRecordingEncoder(LayerMatchedBackboneMemoryEncoder):
+    def __init__(self) -> None:
+        super().__init__(
+            image_width=4, expert_width=4, activation_checkpointing=False
+        )
+        self.frame_calls: list[torch.Tensor] = []
+
+    def _encode_microbatch(self, _semantic, _core, frames, *_args):
+        self.frame_calls.append(frames.clone())
+        batch = frames.shape[0]
+        evidence = frames.float().mean(dim=(1, 2, 3))[:, None, None]
+        evidence = evidence.expand(batch, 2, 256)
+        interaction = evidence[:, 0]
+        memory = torch.zeros(batch, 18, 16, 4)
+        return evidence, evidence, interaction, memory
+
+
+def test_final_native_encoder_microbatch_uses_discarded_zero_padding() -> None:
+    encoder = _FixedShapeRecordingEncoder()
+    frames = torch.arange(5 * 3 * 2 * 2, dtype=torch.uint8).reshape(5, 3, 2, 2)
+    output = encoder(
+        _FixedShapeSemantic(),
+        torch.nn.Identity(),
+        frames,
+        torch.zeros(5, dtype=torch.long),
+        torch.ones(1, 3, dtype=torch.long),
+        torch.ones(1, 3, dtype=torch.bool),
+        torch.tensor([[False, True, True]]),
+        torch.zeros(16, 4),
+    )
+    assert [value.shape[0] for value in encoder.frame_calls] == [4, 4]
+    assert torch.equal(encoder.frame_calls[1][0], frames[4])
+    assert not encoder.frame_calls[1][1:].count_nonzero()
+    assert output.layer_memory.shape[0] == frames.shape[0]
 
 
 class _MemoryNorm(torch.nn.Module):

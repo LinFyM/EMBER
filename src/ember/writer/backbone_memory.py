@@ -689,11 +689,27 @@ class LayerMatchedBackboneMemoryEncoder(torch.nn.Module):
         for start in range(0, frames.shape[0], step):
             stop = min(start + step, frames.shape[0])
             rows = torch.arange(start, stop, device=frames.device)
+            actual = rows.numel()
+            frame_values = frames.index_select(0, rows)
             selected = frame_condition_ids.index_select(0, rows)
+            if actual < step:
+                padding = step - actual
+                frame_values = torch.cat(
+                    (
+                        frame_values,
+                        torch.zeros(
+                            padding,
+                            *frames.shape[1:],
+                            dtype=frames.dtype,
+                            device=frames.device,
+                        ),
+                    )
+                )
+                selected = torch.cat((selected, selected[-1:].expand(padding)))
             values = self._encode_microbatch(
                 semantic,
                 core,
-                frames.index_select(0, rows),
+                frame_values,
                 language_tokens.index_select(0, selected),
                 language_mask.index_select(0, selected),
                 task_span_mask.index_select(0, selected),
@@ -703,7 +719,7 @@ class LayerMatchedBackboneMemoryEncoder(torch.nn.Module):
                 maximum_task_tokens,
             )
             for column, value in zip(columns, values, strict=True):
-                column.append(value)
+                column.append(value[:actual])
         evidence, grounded, interactions, memories = (
             torch.cat(column, dim=0) for column in columns
         )

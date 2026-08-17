@@ -39,6 +39,7 @@
     "backbone_total_frames_per_condition": 420,
     "maximum_stride5_frames_per_video": 105,
     "max_frames_per_encoder_call": 32,
+    "last_encoder_call": "zero_pad_to_fixed_shape_then_slice",
     "per_frame_context": "one_native_image_language_action_forward_plus_one_way_memory_replay",
     "program_width": 256,
     "memory_token_count": 16,

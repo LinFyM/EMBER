@@ -394,6 +394,8 @@ rank/scale/seed sweep或额外target-task数据。若native BA/action已经mater
 - 复用38-target schema、A0/B0 template和factor output shapes，新heads fresh；
 - config/checkpoint/eval schema明确fresh-incompatible，不留legacy fallback；
 - reverse/shuffle只重排缓存frame evidence并重跑轻量Procedure/memory readout，不重复backbone forward；
+- 最后一个frame microbatch用丢弃的zero rows补到固定shape后切掉padding，防止video排列或尾batch形状把正常BF16
+  kernel差异放大成伪Procedure/memory方向；每个有效frame仍只forward一次，不使用batch1或重复有效frame；
 - 不增加batch1、重复single forward、FP64训练、逐tensorhash或防御性扫描。
 
 正式训练前必须通过：

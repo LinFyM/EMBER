@@ -57,7 +57,7 @@ EMBER/
 ├── src/ember/
 │   ├── source_sft/               # source adaptation baselines
 │   ├── expert_manifold/          # task-expert训练/评测；名称因artifact兼容保留
-│   ├── writer/                   # canonical Writer与terminal reward runtime
+│   ├── writer/                   # canonical LMMPC Writer训练与部署
 │   ├── reward/                   # train24 privileged reward utilities
 │   └── pi05_eval/                # paired evaluator、queue与历史分析
 └── tests/
@@ -70,8 +70,7 @@ EMBER/
 - `scripts/train_source_base.py`：过滤LIBERO-90 source policy训练；
 - `scripts/train_source_sft.py`：shared Source-SFT参考；
 - `scripts/train_task_experts.py`：train24 task-local expert参考；
-- `scripts/train_as_writer.py`：保留的V6-LPCP Dynamic-K Writer训练；
-- `scripts/train_reward_writer.py`：terminal GOMQ复现实装，config默认拒绝继续训练；
+- `scripts/train_as_writer.py`：LMMPC Dynamic-K Writer训练；
 - `scripts/evaluate_pi05.py`：source/expert/Writer strict paired评测；
 - `scripts/analyze_task_expert_bank.py`：task-expert诊断。
 

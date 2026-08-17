@@ -382,7 +382,7 @@ def test_dynamic_k_writer_prepare_arguments_are_all_or_none() -> None:
     complete.dynamic_k_writer_video_data_root = Path("videos")
     complete.dynamic_k_writer_video_condition = "correct"
     assert module._adapter_requests(complete) == (
-        "v6_layerwise_probe_conditioned_procedure_writer",
+        "layer_matched_memory_program_compiler_writer",
         False,
     )
 

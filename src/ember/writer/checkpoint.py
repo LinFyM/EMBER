@@ -19,15 +19,8 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.writer.errors import WriterModelError
-from ember.writer.reward_checkpoint import REWARD_DEPLOYMENT_KIND
-
-
-CHECKPOINT_SCHEMA = (
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_checkpoint_v1"
-)
-DEPLOYMENT_CHECKPOINT_KIND = (
-    "v6_layerwise_probe_conditioned_procedure_macro_checkpoint"
-)
+CHECKPOINT_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_checkpoint_v1"
+DEPLOYMENT_CHECKPOINT_KIND = "layer_matched_memory_program_compiler_macro_checkpoint"
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 
 
@@ -38,16 +31,6 @@ def checkpoint_macro(path: Path | None) -> int:
     if match is None or path.parent.name != "checkpoints":
         raise WriterModelError("dynamic-K resume path is not a macro checkpoint")
     return int(match.group(1))
-
-
-def _load_lpcp_state_(
-    writer: torch.nn.Module, state: Mapping[str, torch.Tensor]
-) -> None:
-    loader = getattr(writer, "load_lpcp_state_", None)
-    if callable(loader):
-        loader(state)
-    else:
-        writer.load_state_dict(state, strict=True)
 
 
 def save_writer_checkpoint(
@@ -160,11 +143,11 @@ def load_writer_checkpoint(
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(record["bytes"]):
             raise WriterModelError(f"dynamic-K checkpoint file changed: {name}")
-    _load_lpcp_state_(
-        writer,
+    writer.load_state_dict(
         load_file(
             str(checkpoint / "writer.safetensors"), device=str(context.device)
-        )
+        ),
+        strict=True,
     )
     trainer = torch.load(
         checkpoint / "trainer_state.pt", map_location="cpu", weights_only=False
@@ -205,8 +188,7 @@ def load_writer_deployment_state_(
     state_record = writer_asset.get("writer_state", {})
     path = Path(str(state_record.get("path", "")))
     if (
-        writer_asset.get("kind")
-        not in {DEPLOYMENT_CHECKPOINT_KIND, REWARD_DEPLOYMENT_KIND}
+        writer_asset.get("kind") != DEPLOYMENT_CHECKPOINT_KIND
         or not path.is_file()
         or path.name != "writer.safetensors"
         or path.stat().st_size != int(state_record.get("bytes", -1))
@@ -214,10 +196,7 @@ def load_writer_deployment_state_(
         raise WriterModelError("dynamic-K deployment Writer state changed")
     state = load_file(str(path), device=str(device))
     try:
-        if writer_asset["kind"] == DEPLOYMENT_CHECKPOINT_KIND:
-            _load_lpcp_state_(writer, state)
-        else:
-            writer.load_state_dict(state, strict=True)
+        writer.load_state_dict(state, strict=True)
     except RuntimeError as error:
         raise WriterModelError(
             "dynamic-K deployment Writer topology changed"

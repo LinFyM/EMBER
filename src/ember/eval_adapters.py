@@ -12,7 +12,7 @@ STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 # Retained only so CPU analysis can read immutable historical result rows.
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
-DYNAMIC_K_WRITER_KIND = "v6_layerwise_probe_conditioned_procedure_writer"
+DYNAMIC_K_WRITER_KIND = "layer_matched_memory_program_compiler_writer"
 WRITER_ADAPTER_KINDS = frozenset({DYNAMIC_K_WRITER_KIND})
 PAIRED_WRITER_KINDS = frozenset(
     {EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND}

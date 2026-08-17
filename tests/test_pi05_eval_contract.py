@@ -319,20 +319,20 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
     )
     shared_writer = {
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
-        "kind": "v6_layerwise_probe_conditioned_procedure_writer",
+        "kind": "layer_matched_memory_program_compiler_writer",
         "execution_backend": "online_frozen_dynamic_k_writer_then_episode_lora_cache",
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
+                / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
             ),
             "schema": (
-                "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
+                "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
             ),
         },
         "writer_asset": {
             "reference": "lpcp:macro25:rank16",
-            "kind": "v6_layerwise_probe_conditioned_procedure_macro_checkpoint",
+            "kind": "layer_matched_memory_program_compiler_macro_checkpoint",
             "method_macro": 25,
             "writer_parameter_count": 1_000_000,
             "generated_lora_tensor_count": 76,
@@ -429,14 +429,14 @@ def test_dynamic_k_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="v6_layerwise_probe_conditioned_procedure_correct",
+        arm="layer_matched_memory_program_compiler_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="v6_layerwise_probe_conditioned_procedure_cross_suite_wrong",
+        arm="layer_matched_memory_program_compiler_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -454,7 +454,7 @@ def test_writer_requires_throughput_oriented_generation_batch(
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
-            arm="v6_layerwise_probe_conditioned_procedure_correct",
+            arm="layer_matched_memory_program_compiler_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=1,
@@ -462,7 +462,7 @@ def test_writer_requires_throughput_oriented_generation_batch(
     batched = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "batched",
-        arm="v6_layerwise_probe_conditioned_procedure_correct",
+        arm="layer_matched_memory_program_compiler_correct",
         condition="correct",
         mapping=correct_mapping,
         writer_generation_batch_size=8,
@@ -476,15 +476,15 @@ def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
     inputs = list(_writer_contract_inputs(tmp_path))
     shared_writer = inputs[4]
     shared_writer.update(
-        schema_version="ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1",
-        kind="v6_layerwise_probe_conditioned_procedure_writer",
+        schema_version="ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v1",
+        kind="layer_matched_memory_program_compiler_writer",
     )
     shared_writer["config"] = {
         "path": str(
             ROOT
-            / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
+            / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
         ),
-        "schema": "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1",
+        "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v1",
     }
     shared_writer["lora_contract"] = {
         "reference": (
@@ -517,7 +517,7 @@ def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
         _build_writer_contract(
             inputs=tuple(inputs),
             output_dir=tmp_path / "out-b16",
-            arm="v6_layerwise_probe_conditioned_procedure_correct",
+            arm="layer_matched_memory_program_compiler_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=16,
@@ -526,7 +526,7 @@ def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
         exact = _build_writer_contract(
             inputs=tuple(inputs),
             output_dir=tmp_path / f"out-b{batch_size}",
-            arm="v6_layerwise_probe_conditioned_procedure_correct",
+            arm="layer_matched_memory_program_compiler_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=batch_size,

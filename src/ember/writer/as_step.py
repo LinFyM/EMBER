@@ -196,7 +196,7 @@ def _task_gradient(
         dtype=torch.bfloat16,
         enabled=device_type == "cuda",
     ):
-        generated, consistency = runtime.writer.forward_training(
+        generated, auxiliary = runtime.writer.forward_training(
             *packed,
             policy=runtime.policy,
             singleton_video_index=0,
@@ -219,40 +219,21 @@ def _task_gradient(
             ),
             collect_policy_details=False,
         )
-    if not isinstance(consistency, torch.Tensor) or consistency.ndim != 0:
-        raise WriterModelError("dynamic-K Writer consistency loss is not scalar")
+    if not isinstance(auxiliary, torch.Tensor) or auxiliary.ndim != 0:
+        raise WriterModelError("LMMPC Program-matching loss is not scalar")
     names = tuple(generated)
     weight = float(
-        runtime.config["conditioning_training"]["singleton_to_full_consistency"][
-            "weight"
-        ]
+        runtime.config["conditioning_training"]["program_matching"]["weight"]
     )
-    video_count = int(packed[3][-1])
-    if video_count == 1 and float(consistency.detach()) != 0.0:
-        raise WriterModelError("K1 dynamic-K consistency loss must be exact zero")
-    consistency_kind = runtime.config["conditioning_training"][
-        "singleton_to_full_consistency"
-    ]["kind"]
-    if (
-        video_count > 1
-        and consistency_kind != "exact_zero_no_auxiliary_loss"
-        and not consistency.requires_grad
-    ):
-        raise WriterModelError("K>1 dynamic-K consistency lost its training graph")
+    if weight <= 0 or not auxiliary.requires_grad:
+        raise WriterModelError("LMMPC Program matching lost its training graph")
     active_names = tuple(name for name in names if generated[name].requires_grad)
     if not active_names:
-        if (
-            video_count == 1
-            and consistency_kind == "exact_zero_no_auxiliary_loss"
-            and weight == 0.0
-        ):
-            return functional_loss, consistency.detach(), detail
         raise WriterModelError("dynamic-K generated LoRA lost every trainable output")
     outputs = tuple(generated[name] for name in active_names)
     grad_outputs = tuple(lora_gradients[name] for name in active_names)
-    if consistency.requires_grad and weight:
-        outputs = (*outputs, consistency)
-        grad_outputs = (*grad_outputs, torch.ones_like(consistency) * weight)
+    outputs = (*outputs, auxiliary)
+    grad_outputs = (*grad_outputs, torch.ones_like(auxiliary) * weight)
     before = tuple(item.parameter.grad for item in runtime.gradient_layout)
     if any(value is not None for value in before):
         raise WriterModelError("dynamic-K task gradient buffer was not cleared")
@@ -261,7 +242,7 @@ def _task_gradient(
     accumulate_flat_gradient(gradient_sum, gradients, runtime.gradient_layout)
     for item in runtime.gradient_layout:
         item.parameter.grad = None
-    return functional_loss, consistency.detach(), detail
+    return functional_loss, auxiliary.detach(), detail
 
 
 def run_writer_step(
@@ -292,23 +273,21 @@ def run_writer_step(
         )
         packed, video_metrics = _pack_condition(runtime, task_id, demos)
         policy_seed = _policy_seed(runtime, batch, task_id, task_visit)
-        functional, consistency, _ = _task_gradient(
+        functional, auxiliary, _ = _task_gradient(
             runtime,
             packed,
             runtime.processor.training_batch(batch),
             policy_seed,
             flat,
         )
-        if not bool(torch.isfinite(functional)) or not bool(
-            torch.isfinite(consistency)
-        ):
+        if not bool(torch.isfinite(functional)) or not bool(torch.isfinite(auxiliary)):
             raise WriterModelError(f"non-finite dynamic-K loss at macro {macro}")
         records.append(
             {
                 "task_id": task_id,
                 "task_visit": task_visit,
                 "functional_loss": float(functional),
-                "consistency_loss": float(consistency),
+                "program_matching_loss": float(auxiliary),
                 **video_metrics,
             }
         )
@@ -344,7 +323,9 @@ def run_writer_step(
         "local_task_ids": [row["task_id"] for row in records],
         "local_mean_functional_loss": sum(row["functional_loss"] for row in records)
         / len(records),
-        "local_mean_consistency_loss": sum(row["consistency_loss"] for row in records)
+        "local_mean_program_matching_loss": sum(
+            row["program_matching_loss"] for row in records
+        )
         / len(records),
         "local_k_histogram": {
             str(k): sum(row["K"] == k for row in records) for k in range(1, 5)
@@ -354,8 +335,8 @@ def run_writer_step(
             row["functional_loss"] for row in global_records
         )
         / len(global_records),
-        "global_mean_consistency_loss": sum(
-            row["consistency_loss"] for row in global_records
+        "global_mean_program_matching_loss": sum(
+            row["program_matching_loss"] for row in global_records
         )
         / len(global_records),
         "gradient_norm_before_clip": float(grad_norm),

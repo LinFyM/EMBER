@@ -487,6 +487,38 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2, 3, 4),
     },
+    "pi05_layer_matched_memory_program_compiler_v1": {
+        "adapter_schema": (
+            "ember_pi05_layer_matched_memory_program_compiler_"
+            "eval_adapter_v1"
+        ),
+        "episode_schema": (
+            "ember_pi05_layer_matched_memory_program_compiler_episode_v1"
+        ),
+        "config_schema": (
+            "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+        ),
+        "writer_kind": "layer_matched_memory_program_compiler_writer",
+        "arm_prefix": "layer_matched_memory_program_compiler_",
+        "trained_checkpoint_kind": (
+            "layer_matched_memory_program_compiler_macro_checkpoint"
+        ),
+        "formal_statuses": ("sealed",),
+        "lora_rank": 16,
+        "lora_target_count": 38,
+        "videos_per_condition": 4,
+        "supported_videos_per_condition": (1, 2, 3, 4),
+        "writer_input": (
+            "exact task language plus four action-hidden teacher videos through "
+            "the layer-matched memory program compiler"
+        ),
+        "multi_video_writer_input_template": (
+            "exact task language plus {evaluation_k} action-hidden teacher videos "
+            "through the layer-matched memory program compiler"
+        ),
+        "episode_validator": "dynamic_k",
+        "checkpoint_curve_allowed_macros": (25, 50, 75, 100),
+    },
 }
 
 PROGRAM_RESIDUAL_WRITER_FAMILIES = frozenset(

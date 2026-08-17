@@ -13,7 +13,7 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import DataLoader
 
-from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import DistributedContext, barrier
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
@@ -92,28 +92,15 @@ def build_writer(
     asset_root: Path,
     deployment_rank: int | None = None,
 ) -> tuple[torch.nn.Module, Any]:
-    """Construct through the dynamic-K model's stable policy-owned factory."""
+    """Construct the fresh rank16 LMMPC through its policy-owned factory."""
 
     from ember.writer.model import CompleteLoRAWriter
 
-    carrier_lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    lora = (
-        carrier_lora
-        if deployment_rank is None
-        else derive_pi05_lora_rank(carrier_lora, rank=deployment_rank)
-    )
+    del asset_root
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    if deployment_rank not in {None, lora.rank}:
+        raise WriterModelError("LMMPC deployment rank must remain rank16")
     template = prepare_frozen_writer_policy(policy, lora)
-    if lora.rank != carrier_lora.rank:
-        if lora.rank != 2 * carrier_lora.rank:
-            raise WriterModelError("native-zero deployment rank changed")
-        template = {
-            name: (
-                value[: carrier_lora.rank]
-                if name.endswith(".lora_A.default.weight")
-                else value[:, : carrier_lora.rank]
-            ).contiguous()
-            for name, value in template.items()
-        }
     factory = getattr(CompleteLoRAWriter, "from_policy", None)
     if not callable(factory):
         raise WriterModelError(
@@ -123,11 +110,6 @@ def build_writer(
         policy=policy,
         template_state=template,
         writer_config=config["writer"],
-        as139_warm_start_checkpoint=(
-            asset_root
-            / str(config["writer"]["as139_warm_start_checkpoint"])
-        ).resolve(),
-        deployment_rank=lora.rank,
     )
     if not callable(getattr(writer, "forward_training", None)):
         raise WriterModelError(
@@ -430,7 +412,7 @@ def run_macros(runtime: WriterRuntime) -> None:
             runtime.args.output_dir / "completion.json",
             {
                 "schema_version": (
-                    "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
+                    "ember_pi05_layer_matched_memory_program_compiler_"
                     "completion_v1"
                 ),
                 "completed_macro": runtime.args.stop_after_macro,
@@ -477,9 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / (
-            "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
-        ),
+        / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

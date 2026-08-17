@@ -168,8 +168,9 @@ negative上。
 - 冻结V6 tail保留强support，却把新Procedure压成千分之几的小修，hidden residual还可能被W2旋散；
 - independent direct-B tail让写出material，却脱离V6已验证的rank16 slot/family协同，并在连续shared update中换手。
 
-下一步应把memory-derived Program放入**已有policy layer/rank坐标**，再由一套可共同训练的native rank16 A/B compiler
-生成完整LoRA；既不只调旧Procedure Query，也不另开rank32 B-only bank。
+下一步应让V6已经形成的高层Procedure直接读取真实`layer × rank` memory，使Program在进入compiler之前就处于
+policy参数坐标；随后两级聚合严格保留该地址，并由共同训练的native rank16 A/B compiler生成完整LoRA。不能再先把
+Procedure压成global latent、再用另一套routing slots恢复地址；也不能只调旧Procedure Query或另开rank32 B-only bank。
 
 ### 9.3 Shared credit是第二个真实缺口，但不能与新compiler同时改
 
@@ -210,10 +211,11 @@ W2会破坏共同hidden方向。若仍只走同一Query入口，最可能重复�
 
 ### C. Layer-Matched Memory Program Compiler
 
-每条frame在真实image/language/Action context中由rank-matched memory queries读取18层状态；video内以
-`forward-minus-reverse`形成反转反对称Program，K轴再做保符号的置换不变集合聚合；language/Core只作Query，视频
-过程是唯一additive Value；最终进入V6的320个layer/rank policy slots，并由共同训练的native rank16 factor heads
-生成A/B。反对称约束止于Program/slot；输出端不硬编码negative LoRA，避免用结构人为制造control margin。
+每条frame在真实image/language/Action context中同时形成V6 task-grounded视觉证据、Action representation和18层
+rank-matched memory states。V6的Action-query visual-transition路径先形成高层causal Procedure；Procedure再读取每个
+固定`(layer,rank)`的memory时间序列。video内形成directed parameter memory，K轴只在相同`(layer,rank)`地址上做
+置换不变共识；聚合memory tensor自身进入group/rank axial M2P和共同训练的native rank16 factor heads，不再建立
+独立320-slot bank。Core由非零动态memory门控后提供对象/关系/目标语义，不能独立写LoRA。
 
 该分支同时保留GOMQ“learned memory有真实价值”和V6“rank16 policy topology有效”两条正证据，避免GOMQ flat
 direct-B与LPCP frozen-tail两个已测极端。它是当前推荐架构；完整数据流与实验合同单独写入
@@ -221,9 +223,9 @@ direct-B与LPCP frozen-tail两个已测极端。它是当前推荐架构；完�
 
 ## 11. 训练方式的结论
 
-最终方法必须可fresh训练；开发阶段允许sealed LPCP作为step0 anchor隔离接口，但不能把warm-start结果冒充最终
-recipe。第一轮不加入expert reconstruction、reward、LoRA negative margin、LoRA norm/rank、subset consistency或
-gradient solver。
+最终方法必须fresh训练。开发bring-up可短暂复用sealed V6 Core/Procedure activations检查memory→M2P→factor接线，
+但不训练成正式bridge、不做闭环选模，也不能把旧task能力冒充新方法。第一轮不加入expert reconstruction、reward、
+LoRA negative margin、LoRA norm/rank、subset consistency或gradient solver。
 
 但只用correct functional loss仍没有解决owner指出的positive-only不可识别性。因此统一recipe保留两个职责分开的
 信号：
@@ -241,22 +243,22 @@ same-task跨video一致性、between-task separability、Program→BA transmissi
 
 ## 12. 设计问题现在如何闭合
 
-1. **高层知识**：跨episode functional credit阻断轨迹复制；反对称动态Program消去static/order-even旁路；同task多video
-   是matching positives，K-set只聚合Program而非低层帧。
-2. **正确顺序**：`P(V)=0.5(F(V)-F(reverse(V)))`使reverse严格反号；shuffle必须重算相邻变化和causal state，不再只是
-   一个希望模型自行使用的输入维度。
-3. **language边界**：language/Core只进入Query、gate和route；factor slot的additive Value只能来自视频动态，缺少任一
-   输入均为identity；language—Program matching阻断generic video-presence gate。
-4. **多video**：每video独立形成反对称Program，K轴以mean、dispersion和odd centered correction置换不变聚合，不
-   平均frames/raw features/LoRA，也不挑video。
-5. **有效LoRA**：320个layer/rank slots和八个共同训练的native heads生成一套rank16 A/B，不经过冻结W2或flat
-   Direct-B第二bank；Program符号必须能传到factor/BA/action，但不强迫reverse LoRA等于correct的负数。
-6. **多task共存**：task-complete joint训练；cross-task matching先保持Program可分，condition-specific slot address再
-   分流到共享family heads，不让一个global B grid承担全部task。
-7. **历史继承**：保留V6 Core、native context、layer/rank topology、factor ownership和task-complete recipe；保留GOMQ learned
-   memory；删除旧generic Procedure、rank32 residual bank和首轮reward。
-8. **证伪**：先查Program→slot→factor→BA/action是否再次衰减；有信息量训练节点立即strict400，首次约145且retention
-   合理即补六臂，并继续相邻checkpoint判断稳定性。
+1. **高层知识**：跨episode functional credit阻断轨迹复制；V6 Core保留对象/关系/目标，V6 Procedure保留阶段演化；
+   Procedure读取memory而不是让memory独立重新理解任务。
+2. **正确顺序**：Action查询重算后的visual transition形成causal Procedure；Procedure→memory readout保留directed
+   channel，shuffle/reverse必须重排真实frames并重算全部轻量时序路径。
+3. **language边界**：language负责task grounding和必要gate；Core语义只能由非零动态memory Program打开，缺少任一
+   输入均为identity。
+4. **多video**：每video独立形成`H_video[layer,rank]`，K轴只在相同地址上置换不变聚合，不平均frames/raw features/
+   LoRA，也不挑video。
+5. **有效LoRA**：聚合memory tensor本身扩成`20×16`边界网格并直接进入axial M2P和八个joint native heads；不经过
+   独立320 routing slots、冻结W2或flat Direct-B第二bank。
+6. **多task共存**：task-complete joint训练；cross-task matching保持Program可分，condition-specific memory grid分流到
+   shared family heads，不让一个global B payload承担全部task。
+7. **历史继承**：保留V6 Core、Action-query Procedure、native context、rank16 ownership和task-complete recipe；保留
+   GOMQ learned one-way memory；删除后置重寻址、rank32 residual bank和首轮reward。
+8. **证伪**：依次查Procedure→per-video memory→K-set memory→M2P/factor→BA/action；有信息量节点strict400，未观察到
+   峰值且链路健康时继续训练，首次约145且retention合理即补六臂和相邻稳定性。
 
-这是一份已完成证据裁决的认知文档，不直接授权GPU。对应最终提案见
-`layer_matched_memory_program_compiler_design.md`；是否进入实现属于下一决策。
+这是一份已完成证据裁决的认知文档；当前active implementation authority与精确实验合同见
+`layer_matched_memory_program_compiler_design.md`。

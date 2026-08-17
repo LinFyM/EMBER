@@ -1,237 +1,333 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-17 **本轮设计goal最终提案，不自动授权实现或GPU实验**。简称暂定 **LMMPC**。本文是在仓库统一
-整理和stage-wise evidence裁决之后形成的完整架构判断；它不是已经取得结果的active method。
+状态：2026-08-17 **active implementation authority**。简称 **LMMPC**。owner已授权在EMBER稳定科学合同和本文
+架构思想内完成实现、fresh训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得
+在没有架构级证据时大幅改换路线。
 
 ## 1. 一句话决策
 
-LMMPC用exact language形成任务Query，用每条action-hidden有序video在真实π0.5 image/language/Action context中
-读出的逐层memory states形成唯一动态Value；每video先通过forward-minus-reverse编成反转反对称Program，多个videos
-再在Program层做置换不变且保符号聚合；最终把共同Program放进V6已经验证的`policy layer × LoRA rank`坐标，由
-一套共同训练的native rank16 factor compiler生成完整38-target A/B LoRA。训练同时用correct跨episodefunctional
-credit和language-directed Program matching，分别解决policy方向与positive-only不可识别性。
+LMMPC保留V6已经证明有效的task-grounded Semantic Core和Action-query Visual-Transition Procedure；同一次真实
+π0.5 image/language/Action forward再产生逐层、逐rank的one-way memory states。V6 Procedure不再经过一组后置
+routing identities恢复参数地址，而是直接读取每个`layer × rank`的memory时间序列；帧到video、video到K-set的
+两级聚合都严格保留layer/rank轴。聚合后的memory tensor本身进入SHINE式group/rank axial M2P，再由共同训练的
+native factor heads生成一套完整38-target rank16 A/B LoRA。
 
-它不是：
-
-- 在GOMQ后继续追加rank32 B-only residual；
-- 把memory仅作为LPCP旧Procedure Query的小修；
-- 复制SHINE的flat payload大小或四轴全注意力；
-- 让language/static Core直接提供LoRA Value；
-- 把生成LoRA后的task-local RL混进当前zero-interaction分数。
-
-## 2. 为什么选择这一接口
-
-现有证据把两个极端都测过：
-
-1. LPCP保留V6强support，但新layerwise Procedure经过冻结tail后相对AS139只改`.002653`，属于邻域小修；
-2. GOMQ绕过tail直接写rank32 B，第一次learned-memory update到151，却连续回落到135/131；
-3. Dynamic-K stage probe显示M2P/final Program跨task结构仍在，family hidden和B端首先明显变同向；
-4. SJNV显示同task hidden residual约`.99`一致，过冻结factor W2后raw-factor可跌到约`.05`；
-5. V6/v6-fast和task experts已经证明native rank16本身可以policy-effective，不能把输出维度或低stable rank当首因。
-
-因此下一架构要解决的不是“再读一次视频”，而是：
+完整职责链是：
 
 ```text
-ordered video evidence
-    -> layer/rank-matched Program
-    -> jointly learnable native A/B commitment
+language grounds visual evidence
+    -> Semantic Core: objects / relations / goal
+
+Action representation queries visual transitions
+    -> Causal Procedure: what stage and how the task progresses
+
+Procedure reads layer/rank memory sequences
+    -> parameter-aligned per-video task memory
+
+per-video order-preserving reduction
+    -> permutation-invariant K-set consensus
+    -> Procedure-gated Core fusion
+    -> axial M2P on the same memory grid
+    -> native rank16 A/B
 ```
 
-同时，GOMQ的reward梯度在不同task间低coherence且不能选择gained/lost；第一轮必须回到dense functional credit，
-避免把新compiler和新reward混成两个变量。
+本文明确删除两个讨论阶段的错误接口：
+
+- 不建立独立的320-slot bank或第二套parameter queries；数值上的`20×16=320`只是聚合memory tensor加两个边界行；
+- 不把Action state和memory state任意相加为一个共同视觉Query。Action先形成高层Procedure，Procedure再读取memory。
+
+## 2. 科学假设与历史继承
+
+本轮检验的主假设是：
+
+> V6已经能从语言、视频和source policy Action表征形成有用任务理解；其最早可改进接口是全局Procedure到具体
+> policy layer/rank参数的承诺。若让Procedure直接读取真实layer/rank memory，并在地址保持的T/K聚合后共同训练
+> native compiler，就可能同时保留V6 absolute、增强视频过程到LoRA的对应并避免冻结tail衰减。
+
+| 历史证据 | LMMPC保留 | LMMPC删除或替换 |
+| --- | --- | --- |
+| v5/v5.2 | Core负责“是什么”，Procedure负责“怎样推进” | 无职责的单一video embedding |
+| v6-fast143 | task-grounded视觉、Action查询transition、causal Procedure、rank16 A/B ownership | 全局Procedure经后置routing slots恢复layer/rank |
+| LPCP143 | 同一次真实context中的layerwise policy evidence | 只把evidence作为冻结Procedure Query小修 |
+| Dynamic-K/K4 | 每video先独立保序，K轴只聚合高层Program | frames/raw features/final LoRA平均或挑video |
+| GOMQ151→135→131 | learned one-way memory有真实增益 | 37-token flat payload、rank32 B-only第二bank、首轮reward |
+| SJNV/SFMC | hidden→factor必须逐stage检查 | 冻结W2把共同hidden方向旋散 |
+| Direct Native | native A/B heads能打开BA/action写出 | 无结构flat B tail |
+| SHINE/Doc-to-LoRA | layer-memory tensor自身进入结构化M2P | memory后再创建第二套参数地址 |
+| v4 | 原生context必须有真实图文和Action prefix | trainable VL Meta旁路、absolute-time/action-phase shortcut |
+
+这只说明设计针对了已知失败，不能替代实验。尚未解决的风险仍包括：memory时间变化可能偏向低层nuisance；K-set
+可能稳定错误task mean；axial M2P/factor heads可能再次衰减Program；shared functional credit仍可能造成task换手。
 
 ## 3. 完整部署数据流
 
 ```text
-exact task language
-+ K same-task action-hidden ordered videos, stride 5
-  (first claim: K in 1..4, training covers every K)
+exact language L
++ K same-task action-hidden ordered videos V_k, stride 5
+  (first claim: K in 1..4; training covers K1/K2/K3/K4)
 
-exact language -> Language_slot
-per-video order-invariant semantic summaries
-  -> permutation-invariant K-set readout
-  -> shared task-grounded Core (Query only)
+for each video k independently:
+  for each sampled frame t:
+    native image I[k,t] + exact language prefix
+      -> frozen VLM task-grounded evidence E[k,t,j]
 
-for each video independently:
-  for each sampled frame:
-    native image + exact language prefix
-    + 50 fixed π0.5 Action-probe states
+    same native prefix
+    + 50 fixed noise/time Action probes
     + 16 one-way learned rank-memory queries
-      -> one native context encoding
-      -> memory states from all 18 Action-Expert layers
-         H[k,t,l,r] in R^1024
-  ordered adjacent deltas + endpoint change
-      -> shared causal reduction on forward and reversed cached states
-      -> 0.5 * (forward - reverse)
-      -> P_video[k,l,r] in R^256
+      -> one Action-Expert context computation
+      -> Action representation A[k,t]
+      -> layer memory M[k,t,l,r], l=1..18, r=1..16
+
+  E over frames
+    -> V6 order-invariant Semantic Core C[k]
+
+  adjacent task-grounded visual transition D[k,t]
+  queried by A[k,t]
+    -> V6 causal Procedure sequence P[k,1:T]
+
+  P[k,1:T] reads M[k,1:T,l,r] at every fixed (l,r)
+    -> directed per-video parameter memory H[k,l,r]
 
 K videos:
-  language/Core-routed, permutation-invariant common-Value aggregation
-      -> P_set[l,r] in R^256
+  {C[k]} -> shared Semantic Core C_set
+  {P[k]} -> shared Procedure summary P_set
+  {H[k,l,r]} -> permutation-invariant consensus at each fixed (l,r)
+    -> H_set[l,r]
 
-policy topology:
-  18 x 16 expert slots
-  + 16 action-in slots from the layer-0 boundary
-  + 16 action-out slots from the layer-17 boundary
-      -> 320 video-Value policy slots
-  task-grounded Semantic Core supplies Query/gates only
-      -> one policy-slot mixer
-      -> eight jointly trained native factor-family heads
-      -> one complete 38-target rank16 LoRA
+H_set dynamically opens the relevant C_set content
+  -> Y[l,r], shape 18 x 16 x d
 
-frozen π0.5 source policy:
-  unseen initialization closed-loop rollout
+layer0/layer17 boundary projections
+  -> Y_group[p,r], p in {action-in, layers1..18, action-out}
+  -> shape 20 x 16 x d
+
+zero-preserving group/rank axial M2P on this same tensor
+  -> eight jointly trained native factor-family heads
+  -> one complete 38-target rank16 LoRA
+
+frozen source policy
+  -> unseen-initialization closed-loop rollout
 ```
 
-Writer在rollout前只运行一次。teacher actions、proprio/state、reward、terminal、task ID、filename、pose和hidden
-normalization均不进入部署Writer。
+Writer在rollout前只运行一次。teacher action、proprio/state、reward、terminal、task ID、filename、object pose、hidden
+normalization和policy outcome均不进入部署Writer。
 
-## 4. Native context与memory放置
+## 4. 每帧只做一次有意义的native context计算
 
-### 4.1 有意义的prefix
+### 4.1 Task-grounded视觉证据
 
-每帧仍使用π0.5原生语义：真实image、exact language和50个固定noise/time Action probes。Action probes不是teacher
-action；它们只问冻结policy“在这幅画面和任务语言下，动作层内部如何理解当前交互”。
+沿用V6的有效语义接口。exact language形成text task queries；每帧图像和语言经过冻结VLM，task queries读取真实
+image patches并形成`E[t,j]`。`j`沿language/task-token轴保存对象、属性、关系和目标证据。
 
-memory observer复用这一次prefix/Action计算的逐层K/V，不运行zero-image、blank-language或memory-only Action
-Expert。native prefix和Action states看不到memory，因而source carrier数值不被新token改变；memory block可以读取
-完整native context和同block的rank memories。
+fresh LMMPC不新增trainable VL Meta-LoRA。冻结VLM表征后只训练Writer-local投影和readout，避免重新打开v4的
+raw-image/VL-Meta bypass。
 
-### 4.2 为什么是16个memory queries
+### 4.2 Action representation
 
-16不是目标约束，也不是视频阶段数。当前public LoRA为rank16，V6 compiler已有每个Action-Expert layer的16个rank
-slots；因此使用16个共享rank queries，让第`l`层第`r`个memory state自然对应第`l,r`个policy slot。
+每帧在真实image/language prefix后加入50个固定noise/time Action probes。Action Expert使用一套zero-init、
+Writer-local Action Meta-LoRA形成probe states；source policy权重始终冻结。沿用V6最强、最清晰的readout：对最终
+Action层的50个probe states作有效位置均值并投影得到`A[t]`。
 
-若未来rank改变，query数随rank改变。它不同于GOMQ为flat B payload容量匹配得到的37个tokens，也不同于为38个
-targets各建一套独立token。参数跨层共享，layer identity和rank identity只作address。
+`A[t]`不是teacher action，也不直接生成LoRA。它只表示source policy在当前画面和任务语言下对“此刻怎样交互”的
+latent action hypothesis。
 
-### 4.3 一次context，不重复内容forward
+### 4.3 Layer/rank memory
 
-实现可沿用GOMQ已经通过的one-way observer：native prefix/Action context完整计算一次，逐层memory stream读取已捕获
-K/V。activation checkpoint只重算memory stream，不重复image/language/Action content forward，不让policy参数获得
-gradient。
-
-### 4.4 Backbone与Meta-LoRA权限
-
-冻结π0.5 source backbone始终没有gradient。bridge直接复用sealed LPCP的context计算并保持其VL/Action Meta状态
-冻结，避免把carrier变化混进Program→compiler裁决。
-
-最终fresh recipe不新增trainable VL Meta-LoRA：真实image/language prefix直接使用冻结VLM表示，避免重开v4曾暴露的
-raw-image/VL-Meta旁路。保留一套zero-init Writer-local Action Meta-LoRA，因为memory需要在原生Action Expert交互
-坐标中学习怎样提问；它只改变Writer内部Action/memory context，不直接输出LoRA，也不挂载到部署policy。若Action
-Meta被消融后无功能贡献，应删除而不是因形式保留。
-
-## 5. 每条video内部的反转反对称有向Program
-
-只让网络“有能力看到顺序”仍不够。若训练输入始终是correct、同task functional target又对所有videos相同，模型仍
-可忽略causal block，只把video当task identity。LMMPC因此不把普通causal Transformer输出直接交给compiler，而先
-构造一个对时间反转严格反对称的Program。
-
-先把memory state共享投影到256维，并在当前输入顺序内重算变化：
+同一native context中加入16个learned rank-memory queries。one-way mask保证native prefix和50个Action states看不到
+memory；memory stream可读取完整prefix/Action K/V以及同层其它rank memories。每层收集：
 
 ```text
-R[t,l,r] = W_memory(H[t,l,r])
-Delta[0,l,r] = 0
-Delta[t,l,r] = R[t,l,r] - R[t-1,l,r]
-Endpoint[l,r] = R[T,l,r] - R[0,l,r]
+M[t,l,r] in R^1024, l=1..18, r=1..16
 ```
 
-定义一个共享的方向读取器`F(sequence, Core)`：
+16对应当前生成LoRA的rank坐标，不是视频阶段数，也不为输出参数元素提供flat payload。第`l,r`个state只提供
+“第l层、第r个rank坐标下的native contextual evidence”，它仍需Procedure解释和M2P解码，不能直接当LoRA。
+
+内容forward每帧只执行一次；memory stream复用已捕获K/V。activation checkpoint只允许重算memory stream，不重复
+image/language/Action内容forward。
+
+## 5. 保留V6的任务理解前端
+
+### 5.1 Semantic Core
+
+对每条video独立构造V6式task-grounded Core：
 
 ```text
-Core/route Query在(l,r)轴汇聚每个t的Delta Value -> c[t]
-c[0:t] -> causal temporal block -> z[t]
-每个(l,r) Core/route Query从{z[t], Delta[t,l,r]}读取自己的有向变化
-+ zero-bias endpoint projection
--> F(sequence, Core)[l,r]
+M_sem[j] = Mean_t(E[t,j])
+centered[t,j] = E[t,j] - M_sem[j]
+text query读取centered frame evidence
+mean backbone + centered residual
+  -> C_video[j]
 ```
 
-causal位置只使用**重排后重新编号的序列位置**`0..T-1`；不输入原视频timestamp、原frame ordinal或normalized
-absolute phase。然后在已经缓存的同一组`R`上运行两次轻量方向读取器：
+它对该video的frame permutation严格不变，表达对象、关系、位置和目标；不承担动作顺序。K条video的Core只在各自
+形成后做permutation-invariant set readout，得到`C_set`。correct/reverse/shuffle应共享近似相同Core。
+
+### 5.2 Causal Procedure
+
+沿当前输入顺序重算task-grounded视觉变化：
 
 ```text
-P_video(V) = 0.5 * (F(V, Core) - F(reverse(V), Core))
+D[0,j] = 0
+D[t,j] = E[t,j] - E[t-1,j]
+R[t] = Attention(Q=A[t], K=D[t,:], V=D[t,:])
+Z[t] = A[t] + R[t]
+P[1:T] = CausalTemporal(Z[1:T])
 ```
 
-这不重复image/language/Action backbone forward，只重复远小于backbone的temporal reducer，并得到结构恒等式：
+Procedure表达接近、接触、抓取、携带、接近目标、释放/建立关系等阶段。shuffle/reverse必须先重排真实frames，再
+重算`E`顺序、`D`和causal positions；禁止重排已由correct顺序算好的transition。
+
+Action的职责止于“把视觉变化解释为policy-relevant任务过程”。它不直接连接factor heads，也不与memory随意相加。
+
+## 6. Procedure读取layer/rank memory
+
+旧V6先把Procedure压成全局表示，再让320个routing identities询问各参数位置。LMMPC改成先保留真实parameter
+address，再由Procedure读取对应memory序列。
+
+先共享投影memory并形成有向变化：
 
 ```text
-P_video(reverse(V)) = -P_video(V)
+R_m[t,l,r] = W_memory(M[t,l,r])
+Delta_m[0,l,r] = 0
+Delta_m[t,l,r] = R_m[t,l,r] - R_m[t-1,l,r]
+Endpoint_m[l,r] = R_m[T,l,r] - R_m[0,l,r]
 ```
 
-因此任何对frame集合、静态外观或video presence不变的分量都会被消去；constant或no-video严格给出零Value。shuffle
-必须先真实重排frames、重新计算Delta并重新编号，再计算自己的forward-minus-reverse Program，无法继承correct的
-transition。该结构不能保证correct闭环一定更好，但它阻断“完全忽略方向仍得到同一Program”的旁路；正确符号最终
-仍由functional loss和严格controls裁决。
-
-## 6. 多video集合聚合
-
-每条video先得到`P_video[k,18,16,256]`，之后才允许K轴通信。对每个layer/rank slot：
+对每个固定`(l,r)`使用同一组共享参数：
 
 ```text
-mu = Mean_k(P_video[k])
-centered[k] = P_video[k] - mu
-dispersion = Mean_k(centered[k] ** 2)
-even_gate = 1 + tanh(W_dispersion(dispersion)) * tanh(W_core(Core_slot))
-odd_correction = W_out Mean_k(tanh(W_centered(centered[k])))
-P_set = even_gate * mu + odd_correction
+Q[t,l,r] = Wq(P[t]) + E_layer[l] + E_rank[r]
+K[t,l,r] = Wk(R_m[t,l,r]) + E_time[t]
+V[t,l,r] = Delta_m[t,l,r]
+
+U[1:T,l,r] = CausalCrossAttention(Q[:,l,r], K[:,l,r], V[:,l,r])
+F(video)[l,r] = U[last_valid,l,r] + W_endpoint(Endpoint_m[l,r])
 ```
 
-性质：
+这里Procedure是Query，因为它说明当前需要寻找哪个动作阶段；memory是K/V，因为它提供该layer/rank在各帧的native
+状态及变化。这样继承V6的高层过程理解，又让memory真正成为LoRA生成的parameter-aligned内容，而非只改Query。
 
-- K顺序严格置换不变；
-- 所有映射zero-bias；K=1时`dispersion`和`odd_correction`为0，因此`P_set=P_video`；
-- mean只发生在已经保序编译的高层Program，不平均frames、raw backbone features或最终LoRA；
-- dispersion只调节共同Program的可信度，centered odd correction处理跨demo偏差；所有videos等权进入统计，不挑一条；
-- 若所有videos同时reverse，`dispersion`不变而`mu/correction`反号，因此`P_set`也严格反号；
-- Core说明关注对象和目标，但所有被聚合的additive Value仍来自video。
-
-首个训练合同真实覆盖K1/K2/K3/K4；架构数学上可以接受更大K，但在训练覆盖前不声称对未见cardinality泛化。
-
-聚合后建立320个policy slots：18×16 expert slots直接使用`P_set[l,r]`；16个action-in和16个action-out slots分别由
-layer0和layer17边界经zero-bias projection得到。这里不为action边界另外复制一套video encoder。
-
-## 7. Language/Core与video Value的融合
-
-保留V6 task-grounded Semantic Core，因为其对象、关系和目标语义是143架构的重要组成；删除它会重复Dynamic-K
-100附近的absolute损失。每条video先独立产生order-invariant semantic summary，K轴只在这些高层summary上作
-permutation-invariant set readout，再与exact-language summary形成shared Core；不跨video平均raw patches。因为该
-Core只看frame set，所以correct/reverse/shuffle共享同一Core。
-
-改变的是Core权限：它只生成320个slot Query、route和乘性gate，不提供additive factor content。另保留一份只由
-exact language形成的`Language_slot`，既控制language必要gate，也作为训练时language—Program matching的anchor，
-避免matching两端共同读取同一个video static identity。
-
-一种同时保持信息墙和方向性的实现是：
+第一版保留一个显式directed channel，在同一组缓存`E/A/M`上重排并运行轻量V6 Procedure和memory readout：
 
 ```text
-QK_slot = Norm(Core_slot + policy_route)
-language_gate = tanh(W_language(Language_slot))
-S0 = W_value(P_set_320) * language_gate
-A = Softmax(Q(QK_slot) K(QK_slot)^T)
-S1 = S0 + A V(S0)
-S = S1 + W2 tanh(W1 RMSNorm(S1))
+H_video(V) = 0.5 * (F(V) - F(reverse(V)))
 ```
 
-全部Value/FFN映射zero-bias。若video dynamic Value为0，或language被移除并显式得到零`Language_slot`，则`S=0`；
-language、route、静态Core或first frame不能独立写LoRA。Q/K只由对frame集合置换不变的Core与policy route决定，video
-只进入V；所以所有videos reverse时attention routing不变而`S`严格反号。
-
-policy轴只在这里通信一次。第一版复用V6已经验证的320-slot ownership和full-slot通信职责，但把旧standard block
-改为上述zero-preserving Query/Value分权形式；不同时引入SHINE式row/column M2P。
-若将来层数/rank扩大到full attention成本不可接受，再把同一职责机械替换为layer/rank axial block。
-
-## 8. Rank16 LoRA生成
-
-slot布局沿用V6：
+它不重复VLM/Action backbone forward，只重复远小于backbone的transition、causal Procedure和memory readout。得到：
 
 ```text
-expert:    18 layers x 16 ranks
-action-in: 16 ranks
-action-out:16 ranks
+H_video(reverse(V)) = -H_video(V)
 ```
 
-八个共享、zero-bias native factor heads分别生成：
+反号约束只到parameter memory，不硬编码到LoRA。若held video上该directed channel近零并伴随绝对性能损失，说明
+pure-odd readout删除了必要信息；允许在同一职责链内改为“directed additive channel + order-even gated semantic
+channel”，但不得因此抛弃Core/Procedure→memory→M2P主架构。
+
+## 7. 两级聚合严格保留layer/rank地址
+
+### 7.1 Frame到video
+
+第6节对每个固定`(l,r)`独立处理时间轴。实现上：
+
+```text
+[B,K,T,L,R,D]
+  -> [B*K*L*R,T,D]
+  -> shared temporal/cross-attention
+  -> [B,K,L,R,D]
+```
+
+不在此阶段对`l`或`r`求和、排序或做跨轴attention。因此第`l,r`个video memory按构造仍对应第`l,r`个LoRA地址。
+
+### 7.2 Video到K-set
+
+每条video独立得到：
+
+```text
+C_video[k]          semantic Core
+P_summary[k]        high-level Procedure summary
+H_video[k,l,r]      parameter-aligned directed memory
+```
+
+先由DeepSets形式得到`C_set`和`P_set`。再对每个固定`(l,r)`：
+
+```text
+mu[l,r] = Mean_k(H_video[k,l,r])
+centered[k,l,r] = H_video[k,l,r] - mu[l,r]
+context[k] = concat(C_video[k], P_summary[k])
+
+correction[l,r] = Mean_k(phi(centered[k,l,r], context[k], C_set, P_set))
+H_set[l,r] = mu[l,r] + psi(correction[l,r], C_set, P_set)
+```
+
+`phi/psi`共享、zero-bias；K=1时correction严格为0，`H_set=H_video`。mean只发生在已经保序理解、且已映射到相同
+layer/rank坐标的高层memory，不平均frames、raw features或LoRAs。所有videos等权进入mean和correction，不挑一条。
+
+实现reshape为：
+
+```text
+[B,K,L,R,D]
+  -> [B*L*R,K,D]
+  -> permutation-invariant set block
+  -> [B,L,R,D]
+```
+
+因此第二次聚合也不丢layer/rank correspondence。跨layer/rank通信只允许在所有T/K聚合完成后的M2P发生。
+
+## 8. Procedure-gated Core融合
+
+V6的高分依赖强Semantic Core，因此LMMPC不把Core降级成只改变attention权重；但Core也不能脱离视频动态独立写
+LoRA。对每个已有`H_set[l,r]`读取相关Core内容：
+
+```text
+C_addr[l,r] = CrossAttention(
+    Q = Norm(H_set[l,r] + E_layer[l] + E_rank[r]),
+    K = C_set,
+    V = C_set,
+)
+
+language_gate = tanh(W_language(Language_summary))
+Y[l,r] = language_gate * (
+    H_set[l,r]
+    + tanh(W_dynamic(H_set[l,r])) * W_core(C_addr[l,r])
+)
+```
+
+全部映射zero-bias。若动态video memory为0，则`H_set=0`且Core注入门为0；若language被移除，language gate为0。
+因此：
+
+- Core真实提供对象、关系和目标内容，继承V6 semantic backbone；
+- Procedure/memory动态路径是Core进入LoRA的必要门；
+- language-only、static Core、first-frame或video-presence不能独立写LoRA；
+- correct/reverse/shuffle的差异必须来自Procedure/memory时序，而非Core身份。
+
+## 9. Memory tensor直接进入axial M2P
+
+`Y[18,16,d]`已经是parameter-aligned memory grid，不再建立独立320 slots。两个边界行由现有grid产生：
+
+```text
+Y_in[r] = W_in(Y[layer0,r])
+Y_out[r] = W_out(Y[layer17,r])
+
+Y_group = concat(Y_in, Y_layers1..18, Y_out)
+shape = [20 parameter groups, 16 ranks, d]
+```
+
+`20×16=320`只描述tensor cells，不是320个输入tokens、routing identities或第二套memory。
+
+M2P交替执行：
+
+1. 固定rank，沿20个parameter groups做bidirectional group attention；
+2. 固定parameter group，沿16个rank coordinates做bidirectional rank attention；
+3. 重复少量blocks，并保持每个输出cell的group/rank index。
+
+group/rank position、Core route和Procedure summary只进入Q/K与gate；Value只来自动态`Y_group`。attention和FFN均
+zero-bias、zero-preserving，输入全零时输出严格为零。该结构允许深层memory反向帮助浅层LoRA并协调q/v/action，
+同时不让一个全局MLP重新学习全部参数地址。
+
+## 10. Native rank16 A/B生成
+
+最终20×16 cells按V6验证过的native ownership进入八个共同训练、bias-free factor heads：
 
 ```text
 q_A, q_B, v_A, v_B,
@@ -239,219 +335,174 @@ action_in_A, action_in_B,
 action_out_A, action_out_B
 ```
 
-每个slot生成对应rank row/column，按38 targets的native ownership组装一套完整rank16 LoRA：
+第`l,r`个layer cell分别生成该层q/v LoRA的第`r`行A和第`r`列B；两个boundary rows生成action-in/out。按38-target
+schema组装：
 
 ```text
-deltaA(S) = h_A(S)
-deltaB(S) = h_B(S)
-A(S) = A0 + deltaA(S)
-B(S) = deltaB(S)                                # B0=0
+A = A0 + deltaA(Y_group)
+B = deltaB(Y_group)            # B0 = 0
+DeltaW = B @ A
 ```
 
-`h_A/h_B`沿用V6各family的input/output ownership和bias-free MLP形状，但从新LMMPC分支共同训练，不加载冻结W2。
-无video时仍为正常随机`A0`和exact-zero `B0`，effective BA为identity；A由video/language共同生成而不是fixed-A，避免
-重走rank8 fixed-subspace路线。
+`A0`正常小随机、`B0`exact zero，constant/no-video保持source identity。heads沿用V6的family ownership和输出宽度，
+但与LMMPC共同fresh训练，不加载冻结W2，不生成rank32第二bank，不使用fixed-A rank8子空间。
 
-这里**不**强制`LoRA(reverse)=-LoRA(correct)`。反转反对称只约束Program，保证direction是compiler可见且不可被
-static旁路替代；correct LoRA由functional loss训练成有用方向，reverse/wrong/shuffle/no-video是否更差必须由真实
-paired controls证明，不能靠输出端硬编码破坏negative adapter。stage diagnostics会检查Program符号在factor/BA/action
-何处被抹掉，若joint head仍把`S`和`-S`映成近同一方向，则该compiler终局失败。
+## 11. 训练合同
 
-factor heads在最终fresh recipe中与memory/compiler共同训练，不把新Program塞进冻结W2，也不绕过为flat B rows。
-它们的作用是共享“同一类policy factor怎样由slot生成”，而不是让所有tasks共享同一LoRA Value。
+### 11.1 Fresh边界
 
-## 9. 为什么它不是失败的类SHINE复刻
+LMMPC改变了Procedure→memory、T/K聚合、Core融合和M2P/compiler，正式checkpoint与V6/LPCP/GOMQ均不兼容。正式
+train24必须从fresh Writer initialization开始，只复用冻结source policy、固定数据、normalization和公共LoRA schema。
 
-LMMPC继承成熟Hypernetwork的层对应和结构化生成原则，但没有照搬：
+开发bring-up可临时复用sealed V6 Core/Procedure activations检查memory→M2P→factor接线，但不训练成正式bridge、
+不做闭环选模，也不把旧task能力算入新架构。
 
-- 旧Dynamic-K Backbone-Memory去掉V6 absolute Core、使用rank8/flat mapper，strict约100；LMMPC保留V6 Core作Query、
-  native rank16 ownership和task-complete recipe；
-- GOMQ的37-token grid直接拥有680,448个B values，再追加rank16 bank；LMMPC的16 queries对应rank slots，最终只有
-  一套rank16 A/B；
-- [SHINE](https://arxiv.org/html/2602.06358v3)的M2P需要在layer/token轴重排足够大的flat payload；LMMPC已有V6的320 policy slots，只在一个明确policy
-  stage通信；
-- [Doc-to-LoRA](https://arxiv.org/html/2602.15902v1)逐层用rank latent queries生成A/B的原则更接近本接口，但EMBER额外加入video内有向过程和K-set聚合。
+### 11.2 数据与K
 
-## 10. 训练合同
+- development只用固定train24产生梯度，每macro 24 tasks等权；
+- video与action query同task跨episode；
+- 每条video独立保序，K轴只在第7节发生；
+- 训练真实覆盖K1/K2/K3/K4，连续完整宏周期内每task覆盖所有K；
+- 多卡按K、总frames和历史cost均衡负载，但不改变task权重。
 
-### 10.1 两个不可互相替代的训练信号
+### 11.3 Objective
 
-- development gradient只来自固定train24；
-- 每macro覆盖24 tasks且task等权；
-- K1--K4各6 tasks，连续四个macro内每task轮到每个K；
-- 每条video独立保序，video与action episode同task但跨episode；
-- source policy、normalization和split冻结；
-- 不加reward、expert reconstruction、LoRA geometry、subset consistency、gradient surgery或额外数据。
+首轮使用两类互补信号，不混入reward：
 
-第一个信号是现有dense functional objective。每task用冻结source policy处理B20个同task跨episode action queries，
-只在correct Program生成的LoRA上下降functional loss。它负责回答“这套LoRA是否沿policy-useful方向”，不能被
-representation loss替代。
+1. **dense functional B20**：correct condition生成的LoRA作用于冻结source policy，在同task跨episode action queries
+   上下降functional loss；它提供policy-useful方向；
+2. **language/directed-Program matching**：`P_summary`、`H_video`和`H_set`应匹配自己的exact language；same-task
+   videos为正样本，shuffle/reverse为Program级order negatives。negative arms不读取action/reward/outcome，也不规定
+   negative LoRA必须失败。
 
-第二个信号是**语言—有向视频匹配**，专门处理positive-only错开监督的不可识别性。对exact-language anchor `j`和
-当前task `i`的Program定义slot-wise匹配分数：
+matching系数只做一次初始量级校准，使首个完整macro的标量贡献约为functional的10%，随后冻结；不做lambda sweep。
+same-task variance、LoRA norm/rank/cosine和expert reconstruction只作诊断，不加入首轮loss。
+
+### 11.4 当前排除
+
+首轮不加入Writer RL、生成LoRA后的task-local RL、expert bank、checkpoint union、gradient surgery、LoRA geometry、
+rank/scale/seed sweep或额外target-task数据。若native BA/action已经material而held direction持续错误，reward/credit才
+可作为后继的单一主要变量。
+
+## 12. 实现与机制验证
+
+实现必须原位替换terminal GOMQ运行面，保持一个canonical Writer：
+
+- 复用现有one-way `backbone_memory` native context capture，37 capacity tokens原位替换为16 rank queries；
+- 复用V6 semantic Core、Action-query transition和causal Procedure的已验证owner，删除旧后置slot compiler调用；
+- 新增Procedure→memory causal readout、地址保持的K-set、dynamic Core gate和group/rank axial M2P；
+- 复用38-target schema、A0/B0 template和factor output shapes，新heads fresh；
+- config/checkpoint/eval schema明确fresh-incompatible，不留legacy fallback；
+- reverse/shuffle只重排缓存frame evidence并重跑轻量Procedure/memory readout，不重复backbone forward；
+- 不增加batch1、重复single forward、FP64训练、逐tensorhash或防御性扫描。
+
+正式训练前必须通过：
+
+1. 每帧内容forward计数为1，source policy参数0 gradient；
+2. Action states不受memory影响，memory可读完整native context；
+3. T/K aggregation不混layer/rank，K permutation只允许正常低位reduction差异；
+4. no-language、no-video和constant路径的fresh effective BA为identity；
+5. correct/reverse/shuffle重新计算且Procedure、memory、factor、BA/action均有material响应；
+6. q/v/action-in/action-out八family均有finite nonzero gradient和native response；
+7. longest-video K4无OOM/nonfinite，按真实samples/s选择batch；
+8. full CPU suite与architecture guard通过，无平行旧runtime。
+
+## 13. 充分训练、strict评测与性能峰值
+
+smoke只证明接线。fresh formal首先训练到与历史强Writer有可比信息量的预注册节点，初始采用macro25或等价完整
+task exposure，然后执行K4 strict paired400。该节点不是机械停止点：
+
+- 若stage链健康、training和closed-loop仍有共同上升趋势，继续训练并评测相邻有意义checkpoint；
+- 若首个结果一般但尚未形成峰值或平台，不因一次低分直接终止；
+- 若Program→memory→factor/BA已明确数量级断裂，则不靠无限训练掩盖结构失败；
+- 若约140+且retention/breadth改善，至少继续一个相邻节点；
+- 首次约145或更高且retention合理，立即封存并补六臂，同时继续相邻checkpoint；
+- 约145稳定、same-task鲁棒且视频controls合格，即使未超过150也可构成有价值结果；
+- 任何单点高分若随后持续回落和换手，不能作为方法结果。
+
+若好结果仍在积累，应训练到至少两个相邻有信息量checkpoint判断峰值和稳定性。若结果持续弱但未定位断点，先完成
+逐stage和逐task分析，再在第15节允许范围内局部改进；不使用绝对分数门替代证据判断。
+
+## 14. 全面分析合同
+
+每个正式checkpoint至少分析：
 
 ```text
-score(j | P_i) = Mean_slot cosine(Wq(Language_j[slot]), Wk(P_i[slot]))
+Semantic Core
+V6 Causal Procedure
+per-video Procedure-read memory H_video[l,r]
+K-set memory H_set[l,r]
+Core-fused grid Y[l,r]
+post-M2P grid
+native A/B and effective BA
+fixed-action response
+strict closed-loop
 ```
 
-`Wk`线性且无bias，所以reverse Program反号时匹配分数也反号。24条固定train language在每个rank一次性形成很小的
-anchor table；每个task/video仍可按现有task-complete顺序forward/backward，不保留其它video backbone计算图。loss由
-两部分组成：
+内部同时报告within-task跨video alignment、between-task separability、effective rank、train24/validation8 transport和
+correct/reverse/shuffle差异，但只作定位。
 
-- `L_task_match`：每条same-task correct `P_video`及`P_set`都应在24条language anchors中分类到自己的exact language，
-  其它23条language自然成为cross-task negatives；
-- `L_order_match`：对同一exact language，correct Program应高于从同一真实frame set重算的shuffle和reverse Program；
-- 不读取shuffle/reverse或wrong condition的action、reward、outcome，也不规定negative LoRA必须失败。
-
-这与历史“把negative adapter人为推坏”的margin不同：matching只要求exact language不能与任意video过程互换；真正
-有用的policy方向仍只由correct跨episodefunctional loss提供。因为Program已先去掉reversal-even/static分量，matching
-不能只靠first frame、原timestamp或video-presence token完成。
-
-总loss为`L_functional + lambda_match * L_match`。`lambda_match`不做sweep：在首个task-complete calibration macro用
-初始loss值把matching标量贡献固定为functional的10%，之后冻结并写入run contract。same-task Program/BA consistency
-仍只作诊断，不直接加variance loss；历史已经证明强推variance可能降低closed-loop。
-
-### 10.2 开发桥接与最终fresh的边界
-
-先做一个受控bridge，避免直接用大规模fresh run掩盖接口错误：
+strict paired400必须报告per-task、per-suite、breadth、相对V6-fast/LPCP143的retained/gained/lost、churn、Jaccard、
+持续保留/失败/换手tasks。首次强checkpoint补：
 
 ```text
-sealed LPCP143 rank16 factors (A_base, B_base)
-+ zero-forward LMMPC factor residuals (deltaA, deltaB)
--> A = A_base + deltaA, B = B_base + deltaB
--> one rank16 LoRA
+correct
+same-task-other
+cross-suite-wrong
+shuffled
+reversed
+no-video
 ```
 
-- 新分支完整包含rank-matched memory、temporal/K-set、policy-slot mixer和八个native rank16 residual factor heads，
-  不再经过LPCP旧Procedure Query或冻结W2；
-- residual heads前的单一zero-output gate保证第0步逐tensor等于LPCP143；constant/no-video新增residual恒为0；
-- Program matching从首步训练memory/temporal/K-set；functional gate首步打开，随后slot mixer与residual heads也获得
-  gradient；
-- LPCP底座完整冻结，只训练新增LMMPC分支，用相同B20 functional加上述matching；不追加rank32 bank；
-- bridge只能回答“新的Program→native rank16 compiler能否material且不破坏support”，不能作为最终
-  language-only/no-video或fresh recipe claim。
+六臂严格配对state、env/policy RNG和video ordinal。正式选择只认single checkpoint；不以80-row screen、loss、union、
+融合或挑task checkpoint选方法。
 
-bridge通过后，才建立fresh formal：相同LMMPC拓扑从random Writer initialization训练，Core、memory、slot compiler和
-factor heads共同学习；不依赖LPCP checkpoint、optimizer或task能力换手。bridge失败时先按stage定位，不用fresh为它
-辩护。
+最早失败接口按下列口径定位：
 
-### 10.3 Reward边界
+- Core/Procedure不再保留V6顺序和语义证据：前端继承失败；
+- Procedure有内容，H_video跨video近正交或低能：Procedure→memory readout失败；
+- H_video健康，K-set压平task mean：多video共识失败；
+- H_set健康，M2P/factor后断裂：compiler失败；
+- BA/action material，closed-loop gained/lost不可分：functional credit/held occupancy失败；
+- 早期高分后持续下降：shared retention/optimizer失败。
 
-若fresh joint训练达到强且相邻稳定的平台但仍明显低于目标，可另立Writer-RL authority。它仍输出同一套LoRA，
-保持信息墙和task balance。当前设计不包含reward，也不包含生成LoRA后的task-local RL。
+## 15. 允许的局部迭代与终局边界
 
-## 11. 机制门与stage diagnostics
-
-硬合同只覆盖真实工程/信息墙：
-
-1. native prefix/Action只编码一次；source policy参数0 gradient；
-2. step0 bridge与LPCP exact identity；final fresh的constant/no-video为identity；
-3. 去掉language或video任一方时新增fresh路径为零；不能只用language加generic video-presence gate；
-4. memory gate打开后，query、temporal、K-set、slot residual和八factor heads均有finite nonzero gradient；
-5. 在同一缓存memory上直接验证`P(reverse)=-P(correct)`、set/slot同样反号，并确认factor/BA/action没有把符号
-   完全抹成同一输出；不预设LoRA必须严格反号；
-6. shuffle从真实frames重排、Delta重算和位置重编号后material改变Program；
-7. K置换只允许正常BF16 reduction低位差异；
-8. q/v/action-in/action-out均有native BA和fixed-action response；
-9. longest-video与额外temporal shuffle arm无OOM/nonfinite，batch按真实samples/s选择。
-
-下面是科学定位，不设成僵硬20/20门：
-
-- per-video Program、K-set Program、fused slot、factor、BA、fixed action逐stage报告same-task alignment；
-- 同时报告validation8 between-task mean cosine/effective rank，不能只追求within-task高cosine；
-- 报告train24与validation8的language→correct Program retrieval，以及相对wrong/shuffle/reverse的匹配差；若只记住
-  train24而held塌缩，identifiability路径不成立；
-- 若Program健康而factor/BA再次出现数量级coherence或幅度断裂，立即否决当前compiler；
-- 若BA/action material而strict gained/lost仍不可分，问题后移到functional credit/held occupancy；
-- 若correct/reverse差异只在latent、不沿正向functional/closed-loop方向，不能称为视频因果学习。
-
-## 12. 训练量、strict与稳定性裁决
-
-bridge在完整full24机制通过后训练到预注册macro25，立即做同一single checkpoint K4 strict paired400。结果按证据
-解释，不用一个绝对硬门机械代替判断：
-
-- 明显低于强基线且Program→BA链路已坏：终止，不扫token/rank/LR/seed；
-- absolute一般但stage链健康：只允许一次有因果理由的后继，不用小补丁堆救；
-- 约140以上且retention/breadth有改善：继续一个相邻训练节点判断积累，不把早期峰值当答案；
-- 首次约145或更高且retention合理：立即封存并补correct/same-task-other/wrong/shuffled/reversed/no-video六臂，同时
-  继续相邻checkpoint；
-- 约145稳定、same-task鲁棒且correct controls合格，即使未超过150也可成为有价值结果。
-
-正式比较报告per-task、per-suite、breadth、retained/gained/lost、churn和success-set Jaccard，并对照V6/LPCP143、
-v6-fast五臂、old134/compiler138/online128。checkpoint union、挑task checkpoint或多checkpoint平均均无效。
-
-## 13. 快速否决与负结果边界
-
-当前LMMPC应在下列情形终止：
-
-- matching可被static identity/video presence解决，或constant/no-video不为零；
-- 反对称Program在held videos近零，说明去除even分量也去掉了policy需要的信息；
-- K聚合提高same-task一致却进一步压平between-task结构；
-- slot Program过factor head再次出现SJNV式断裂；
-- rank16 BA material但bridge显著破坏LPCP support且无breadth/gain；
-- joint task-complete训练仍复现151式单点峰值和相邻持续回落；
-- correct不优于wrong/shuffle/reverse/no-video，或same-task-other明显失稳。
-
-负结果只淘汰：
+owner要求本goal不自行大幅改换架构。允许的迭代必须保留以下主链：
 
 ```text
-16 rank-matched one-way memories
-+ forward-minus-reverse directed per-video Program
-+ permutation-invariant odd K-set aggregation
-+ Core-as-Query / video-as-Value slot fusion
-+ jointly trained native rank16 A/B factor compiler
-+ dense functional + language-directed Program matching
+V6 Core/Procedure
+-> Procedure reads layer/rank memory
+-> address-preserving T/K aggregation
+-> dynamic Core fusion
+-> axial M2P
+-> one native rank16 A/B LoRA
 ```
 
-它不否定memory token、其它rank、few-shot、LoRA生成或未来Writer-RL一般。
+在明确最早断点后，可单变量调整：
 
-## 14. 可扩展性
+- Procedure→memory的temporal readout、pool或directed/even channel分工；
+- K-set consensus而不改成video/LoRA选择；
+- Core的dynamic gate而不恢复language-only Value；
+- axial M2P的最小通信职责或factor head开放方式；
+- BA material后再调整functional/reward credit，但保持同一部署架构；
+- optimizer/retention机制，但不靠挑checkpoint或多bank融合。
 
-LMMPC不为每个LoRA标量创建token。若基础policy有`L`个被观察层、公共rank为`R`、factor families为`F`：
+不得在本goal内无证据切换到expert dictionary、完全不同hypernetwork、第二套LoRA、rank/seed sweep或生成后task-local
+RL。每次局部迭代都要充分训练、strict评测和逐接口分析，负结果只淘汰实际改动。
 
-- 每帧输入仍只有`R`个memory queries，逐层收集后得到`L×R` states；
-- policy slots随`L×R`线性增长，action边界只增加`O(R)`；
-- temporal与K-set模块跨layer/rank共享参数；
-- factor head按family共享，output width随对应原生module维度增长；
-- K只增加video集合轴，不生成K套LoRA，也不增加deployment adapter数量。
+goal仅在以下之一成立时完成：
 
-因此Writer可随backbone layers、target families和rank扩展，而不是像flat payload grid一样让token数直接追赶全部参数
-元素。若`L×R`使320-slot full attention成为瓶颈，只机械替换成layer/rank axial attention，信息职责和训练合同不变。
+1. 同一shared single-checkpoint方法达到稳定约145+或更高，具有合理breadth/retention、相邻checkpoint稳定、
+   same-task不同视频鲁棒且correct明显优于wrong/shuffle/reverse/no-video；或
+2. 当前主链经过多轮充分训练、全面定位和有因果依据的局部改进仍无法达到资格，并形成重复、接口明确的终局证据。
 
-## 15. 实现与效率边界
+## 16. 吞吐、GPU与正式运行
 
-若owner确认后进入实现：
+机制验证使用最小真实GPU；formal前按live状态同时检查gpu01/gpu02和`/data1`独立quota。单节点至多6张真正提高
+吞吐的A40，有几张合适就用几张；低util、少量显存占用的设备在峰值余量足够时可与ycliu共驻。多卡固定
+`NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL；独立evaluator使用persistent dynamic queue。
 
-- 原位替换terminal GOMQ runtime，保持一个canonical Writer，不保留第二套可执行版本；
-- `backbone_memory.py`现有observer已经真实返回prefix/action states与`[frame,18,37,1024]` layer memory；保留其
-  one-way mask、native context capture和deferred memory stream，但把hard-coded 37容量tokens原位替换为16个rank
-  queries，不保留37-token compatibility分支；
-- 复用V6 semantic encoder的per-video memories与320-slot ownership；新增的language-only slot anchor必须与
-  task-grounded visual Core分开，不能从同一个video summary复制；
-- `legacy_v6_model.py`已有38-target ownership、A0/B0 template和八种factor widths；复用schema与head形状，但新heads
-  属于LMMPC并共同训练，不加载LPCP冻结factor W2；
-- 删除37-token capacity grid、rank32 public bank和reward-only接线，不叠加compatibility fallback；
-- internal reverse与training shuffle只在缓存layer-memory上重复轻量temporal reducer，不重复image/language/Action
-  forward；八factor heads不再为`S/-S`重复运行；
-- 24条exact-language anchors每rank只编码一次；每个current Program直接做24-way匹配，不保留其它video计算图、不做
-  cross-rank Program all-gather，也不产生额外policy rollout；
-- 不增加重复forward、batch1、FP64训练、逐tensorhash或大规模防御性扫描；
-- 多卡按K、总frames和历史wall动态平衡，task权重不变；
-- GPU launch前另按live双节点、quota和formal launch合同执行。
-
-当前没有active successor、没有GPU授权，也没有需要resume的checkpoint。完成本文不等于授权下一阶段执行。
-
-## 16. 下一阶段需要裁决的三个核心点
-
-这些不是token数或小超参，而是会改变科学含义的选择：
-
-1. **Directed Program**：是否接受在缓存memory上显式计算`0.5*(forward-reverse)`，用结构消去static/order-even
-   bypass；我的判断是接受，但不把反号继续硬编码到LoRA输出。
-2. **Identifiability supervision**：是否接受language—Program matching只约束表示相符、negative arms不读
-   action/reward且不直接训练negative LoRA；我的判断是这是比“只输入correct”更完整、又不靠破坏controls的必要
-   训练信号。
-3. **Bridge到fresh**：是否先用sealed LPCP143+zero-forward rank16 residual branch裁决support，再以相同LMMPC拓扑
-   从fresh Writer训练最终方法；我的判断是需要bridge隔离接口，但论文方法与最终分数只认fresh recipe。
-
-这三点确认后，本文才从最终设计提案升级为active implementation authority；其它module width、head数和精确LR应在实现前按
-现有V6/GOMQ规模机械确定，不再作为架构讨论反复摇摆。
+formal训练和评测必须来自clean pushed commit的detached frozen worktree，保留run contract、checkpoint、sampler/
+RNG/topology、raw paired rows、aggregate、completion和必要analysis。接受正常BF16/TF32、batch和kernel低位差异，
+以真实samples/s、LoRA/s、最长视频稳定性和closed-loop证据推进。

@@ -1,57 +1,61 @@
 # EMBER Task Plan
 
-状态：2026-08-17完成。本文记录本轮仓库整理后认知重建与新架构设计goal；实现与GPU实验属于后续独立工作。
+状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为LMMPC正式训练前封存。
 
 ## Goal
 
-基于已经完成的仓库整理和统一历史证据，系统重建EMBER认知，逐步定位最早未解决接口，并形成一套符合owner原则、
-继承有效历史机制、具有明确数据流水线与可证伪实验合同的新架构设计。设计讨论完成前不启动GPU实验。
+在EMBER稳定科学合同、owner原则与当前LMMPC主架构思想内，把该方法从明确设计推进到唯一canonical实现、机制和吞吐
+验证、充分fresh训练、strict全面评测、逐接口问题定位与有证据的局部迭代。不得在尚未观察到性能峰值或训练仍有
+有效共同上升趋势时过早判定无效，也不得因单次反馈或负结果大幅改换架构路线。
 
 ## Done when
 
-- 不以“问题清单”冒充结论：对Program、compiler、reward direction与shared retention逐层作出证据裁决。
-- 明确哪些问题已解决、哪些仅局部接通、哪一个是下一架构应改变的最早接口。
-- 新设计给出从language/videos到一套完整LoRA的端到端数据流水线，并解释每个模块的必要性。
-- 动态K、每video内部时序、跨video共同信息、language/video分工和single-LoRA部署合同全部闭合。
-- 说明memory、V6/LPCP carrier、native rank16 compiler和历史reward机制哪些保留、哪些替换及原因。
-- 训练目标、fresh/warm-start边界、single-variable合同、快速否决门、strict paired400与六臂时点明确。
-- 设计不靠额外target-task数据、task ID、expert route、checkpoint union或生成后task-local RL提高当前分数。
-- owner看完后能判断完整pipeline和关键取舍，而不是继续追问各token/分支“到底在做什么”。
+满足下列之一：
 
-## Constraints
+1. 同一shared single-checkpoint方法稳定达到约145+或更高，同时具备合理breadth/retention、相邻checkpoint低churn、
+   same-task不同teacher videos鲁棒，以及correct明显优于wrong/shuffled/reversed/no-video；或
+2. LMMPC主链经过多轮充分训练、全面stage/closed-loop分析和针对最早断点的局部改进，仍重复无法达到资格，并形成
+   接口明确、足以终局否决当前路线的证据。
+
+## Fixed boundaries
 
 - 不使用subagents。
-- 设计讨论完成前不实现新架构、不启动GPU训练或评测。
-- memory token、rank、V6 compiler、MCPS和RL都只是候选方法，不预写进最终结论。
-- 优先复用现有formal artifacts做只读分析，不为分析增加大cache、防御性hash或复杂框架。
-- 一次只选择一个主要因果变量；负结果只淘汰实际检验的组合。
-- closed-loop absolute首先选择方法，稳定性、same-task video鲁棒和视频因果性决定方法资格。
+- 保持exact language + action-hidden ordered videos → one shared Writer → one complete LoRA → frozen source policy。
+- 正式架构保持`V6 Core/Procedure → Procedure reads layer/rank memory → address-preserving T/K aggregation → dynamic
+  Core fusion → axial M2P → one native rank16 A/B LoRA`主链。
+- 允许针对已定位断点局部调整temporal readout、K-set、Core gate、M2P/factor commitment和shared credit；不无证据
+  切换到完全不同hypernetwork、expert dictionary、第二LoRA、checkpoint融合或生成后task-local RL。
+- incompatible正式训练必须fresh。旧V6/LPCP activations只可做短机制接线诊断，不可成为最终方法或成绩。
+- 好结果训练到相邻checkpoint有稳定性信息；坏结果不靠rank/scale/seed/LR/dtype小扫或无限续训挽救。
+- closed-loop absolute首先选择方法，内部几何只作定位。
+
+## Evidence plan
+
+- 机制：one-forward、one-way memory、source zero-gradient、T/K不混layer/rank、identity路径、K permutation、
+  reverse/shuffle重算、八factor family梯度、native BA/action、longest-video吞吐。
+- 表示链：Core → Procedure → per-video memory → K-set memory → Core-fused grid → M2P → factor → BA → action。
+- 正式：single-checkpoint strict paired400；per-task/per-suite/breadth/retained/gained/lost/churn/Jaccard。
+- 强结果：correct/same-task-other/wrong/shuffled/reversed/no-video六臂与相邻checkpoint稳定性。
+- 每轮先定位最早失效接口，再决定一个主要局部变量。
 
 ## Work plan
 
-- [x] 完成仓库、文档、代码与历史证据的统一整理；clean commit `120eeec`已推送。
-- [x] 明确当前真正未决的架构分叉：Program形成、native compiler还是shared credit/retention。
-- [x] 建立V6/LPCP、Dynamic-K、GOMQ及关键reward路线的stage-wise证据矩阵。
-- [x] 判断GOMQ 151→135→131中，能力丢失首先发生在representation、compiler还是policy credit。
-- [x] 判断memory-derived Program与V6 native rank16 topology能否形成有原理依据的统一接口。
-- [x] 比较GOMQ Direct-B、memory-only LPCP Query和Layer-Matched Memory Program Compiler，给出决定性取舍。
-- [x] 写完整新design讨论稿：输入、表示、memory/Program、聚合、compiler、LoRA、训练和评测。
-- [x] 将完整设计、三项核心取舍与实现边界交付owner讨论；本轮保持无active GPU run。
+- [x] 根据owner讨论修正数据流：Action先形成V6 Procedure，Procedure再读取layer/rank memory。
+- [x] 删除独立320-slot重寻址；聚合memory tensor直接作为20×16 axial M2P grid。
+- [x] 将修正后的完整流水线、fresh边界、充分训练和局部迭代合同写入active design authority。
+- [x] 核对现有canonical runtime owner、删除/复用边界并形成最小实现diff。
+- [x] 实现LMMPC唯一运行面、fresh config/checkpoint schema和必要CPU合同。
+- [x] 完成全量CPU验证与真实full24动态K吞吐profile；clean-commit机制证据与正式封存尚待完成。
+- [ ] 从clean pushed frozen commit启动fresh train24，训练到首个有信息量节点且不在未达峰值时过早终止。
+- [ ] 执行strict paired400并完成逐task、逐suite、retention/churn及逐stage分析。
+- [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
+- [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
+- [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
 
-本轮最终设计提案为`docs/layer_matched_memory_program_compiler_design.md`。它完成了本goal要求的设计推理与实验合同；
-是否升级为active implementation authority、是否启动实现/GPU，属于下一决策，不由本goal自动授权。
+## Current decision
 
-## Evidence adjudication
-
-1. Dynamic-K的between-task结构在M2P/final Program仍约`.49/.53`，到family hidden/B才升为约`.63/.78`同向；最早
-   明显collapse在nonlinear compiler，不是raw carrier。
-2. GOMQ的`.993`说明相邻shared BA update没有被four-K4 video-set相消，但isolated memory-only coherence仅`.127`；
-   gained/lost改写幅度不可分，151回落首先支持shared reward/held retention失败，不能反推Program已经完善。
-3. LPCP证明layerwise carrier有效；其BA相对AS139仅改`.002653`又说明143大量来自旧baseline support。V6 native
-   rank16 topology可保留，但冻结Procedure Query→W2路径不可原样继续。
-4. 历史尚未把“可检测顺序”变成稳定有用方向。LMMPC用反对称Program与language matching阻断旁路，再由correct
-   functional loss和六臂闭环裁决，不把latent margin冒充答案。
-5. shared failure不是容量单因：GOMQ memory/downstream跨task gradient低coherence、持续失败样本改写大且held
-   gained/lost不可分。先修Program→native commitment；reward/optimizer另轮处理。
-6. sealed LPCP143加zero-forward、同rank16的LMMPC A/B residual branch提供step0 support；最终同拓扑必须fresh训练，
-   bridge不冒充成品。
+当前active design为`docs/layer_matched_memory_program_compiler_design.md`。canonical实现、fresh schema与CPU合同已经
+落地；全量CPU=`281 passed`。worktree acceptance profile在microbatch6、world6下完成2个full24 macros，macro耗时
+`31.68/34.62s`、峰值allocated约`40.04GB`，K1--K4每轮各6 tasks，所有主要Writer模块在macro1到2均有非零更新。
+下一步从clean pushed commit复现机制/profile证据、封存formal recipe并启动fresh train24；当前没有formal LMMPC
+checkpoint或closed-loop性能结果。

@@ -33,7 +33,7 @@ _BATCH_THROUGHPUT_POLICY = (
     "highest_measured_batch_throughput_with_device_memory_headroom"
 )
 _WRITER_THROUGHPUT_BY_SCHEMA = {
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1": (
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v1": (
         _BATCH_THROUGHPUT_POLICY
     ),
 }
@@ -111,7 +111,7 @@ def _writer_lora_contract(
     authorities: EvaluationAuthorities,
     adapter: Mapping[str, Any],
 ) -> Any:
-    from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+    from ember.pi05_lora import load_pi05_lora_contract
     from ember.writer.as_config import authority_path, load_writer_config
 
     config_path = Path(adapter["config"]["path"])
@@ -122,7 +122,10 @@ def _writer_lora_contract(
     result = load_pi05_lora_contract(path)
     observed_rank = int(adapter.get("lora_contract", {}).get("rank", result.rank))
     if observed_rank != result.rank:
-        result = derive_pi05_lora_rank(result, rank=observed_rank)
+        raise Pi05EvaluationError(
+            "Layer-Matched Memory Program Compiler deployment rank must match "
+            f"its native rank-{result.rank} contract, got rank-{observed_rank}"
+        )
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
         f"{result.state_tensor_count}tensors:{result.parameter_count}parameters"

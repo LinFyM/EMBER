@@ -1,28 +1,21 @@
-"""Shared fixtures for the v6 ordered-Procedure common-Value Writer."""
+"""Shared CPU fixtures for the Layer-Matched Memory Program Compiler."""
 
 from __future__ import annotations
-
-from dataclasses import dataclass
-from types import SimpleNamespace
 
 import torch
 
 from ember.expert_manifold.legacy_v6_model import build_lora_tensor_specs
-from ember.writer.backbone_memory import CapacityMatchedVideoEncoding
+from ember.writer.backbone_memory import LayerMatchedVideoEncoding
 from ember.writer.model import CompleteLoRAWriter
-from ember.writer.slot_set import PolicyProcedureCommonValueFusion
-from ember.writer.video_program import LayerwiseActionProbeReader
-
-
-FACTOR_FAMILIES = (
-    "q_a",
-    "q_b",
-    "v_a",
-    "v_b",
-    "action_in_a",
-    "action_in_b",
-    "action_out_a",
-    "action_out_b",
+from ember.writer.parameter_grid import (
+    AddressPreservingVideoSet,
+    LayerMatchedMemoryProgramCompiler,
+    LayerRankMemoryReader,
+)
+from ember.writer.temporal import (
+    CausalProcedureEncoder,
+    LanguageSemanticCore,
+    TaskGroundedVisualTransitionFusion,
 )
 
 
@@ -52,291 +45,86 @@ def _template() -> dict[str, torch.Tensor]:
     return state
 
 
-@dataclass(frozen=True)
-class _Evidence:
-    frames: torch.Tensor
-    offsets: tuple[int, ...]
-    language_tokens: torch.Tensor
-    text_queries: torch.Tensor
-    valid_task_tokens: torch.Tensor
-
-
-@dataclass(frozen=True)
-class _Memories:
-    core: torch.Tensor
-    valid_core: torch.Tensor
-    procedure: torch.Tensor
-    positions: torch.Tensor
-    valid_procedure: torch.Tensor
-
-
-class _FakeCompiler(torch.nn.Module):
-    def routing(self, batch: int) -> torch.Tensor:
-        slot = torch.arange(320).float()[:, None] * 1e-3
-        width = torch.arange(256).float()[None] * 1e-4
-        return (slot + width)[None].expand(batch, -1, -1)
-
-    @staticmethod
-    def read_core_slots(
-        routing: torch.Tensor,
-        core: torch.Tensor,
-        valid_core: torch.Tensor,
-    ) -> torch.Tensor:
-        mask = valid_core[..., None]
-        mean = core.masked_fill(~mask, 0).sum(1) / mask.sum(1).clamp_min(1)
-        return routing + mean[:, None]
-
-    @staticmethod
-    def normalize_core_slots(core_slots: torch.Tensor) -> torch.Tensor:
-        return core_slots
-
-    @staticmethod
-    def read_procedure_slots(
-        routing: torch.Tensor,
-        normalized_core: torch.Tensor,
-        procedure: torch.Tensor,
-        positions: torch.Tensor,
-        valid_procedure: torch.Tensor,
-        query_condition: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        weights = (positions + 1).to(procedure.dtype) * valid_procedure
-        summary = (procedure * weights[..., None]).sum(1)
-        summary = summary / weights.sum(1, keepdim=True).clamp_min(1)
-        query = routing + normalized_core
-        if query_condition is not None:
-            query = query + query_condition
-        return query + summary[:, None], procedure
-
-    @staticmethod
-    def fuse_readouts(
-        _routing: torch.Tensor,
-        normalized_core: torch.Tensor,
-        procedure_slots: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        zeros = torch.zeros_like(procedure_slots)
-        return normalized_core + procedure_slots, zeros, zeros
-
-
-class _FakeExpertLayer(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.input_layernorm = torch.nn.Identity()
-
-
-class _FakeExpertModel(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.layers = torch.nn.ModuleList(_FakeExpertLayer() for _ in range(18))
-        self.norm = torch.nn.Identity()
-
-    def emit(self, hidden: torch.Tensor) -> None:
-        for layer in range(1, 18):
-            self.layers[layer].input_layernorm(hidden + layer * 1e-3)
-        self.norm(hidden + 18e-3)
-
-
-class _FakeV6Base(torch.nn.Module):
-    program_width = 256
-    PUBLIC_LORA_RANK = 16
-
-    def __init__(
-        self,
-        template: dict[str, torch.Tensor],
-        expert_model: _FakeExpertModel,
-    ) -> None:
-        super().__init__()
-        self._template = template
-        self.expert_model = expert_model
-        self.factor = torch.nn.Linear(256, 1, bias=False)
-        torch.nn.init.normal_(self.factor.weight, std=0.01)
-        self.factor_heads = torch.nn.ModuleDict(
-            {family: _FakeFactorHead() for family in FACTOR_FAMILIES}
-        )
-        self.tensor_specs = build_lora_tensor_specs(template)
-        self._decoding = {}
-        for item in self.tensor_specs:
-            factor = "a" if item.factor_index == 0 else "b"
-            if item.module.endswith("action_in_proj"):
-                owner = (f"action_in_{factor}", None)
-            elif item.module.endswith("action_out_proj"):
-                owner = (f"action_out_{factor}", None)
-            else:
-                layer = int(item.module.split(".layers.", 1)[1].split(".", 1)[0])
-                projection = item.module.rsplit(".", 1)[-1][0]
-                owner = (f"{projection}_{factor}", layer)
-            self._decoding[item.name] = owner
-        self.compiler = _FakeCompiler()
-        self.semantic_encoder = SimpleNamespace(
-            image_width=2048,
-            expert_width=1024,
-            activation_checkpointing=False,
-        )
-
-    def template_state(self) -> dict[str, torch.Tensor]:
-        return self._template
-
-    def encode_video_evidence(
-        self,
-        _policy: torch.nn.Module,
-        frames: torch.Tensor,
-        video_offsets: torch.Tensor,
-        language_tokens: torch.Tensor,
-        _language_mask: torch.Tensor,
-        _task_span_mask: torch.Tensor,
-    ) -> _Evidence:
-        signal = frames.float().mean(dim=(1, 2, 3))[:, None, None]
-        horizon = torch.arange(50, dtype=torch.float32)[None, :, None] * 1e-3
-        width = torch.arange(1024, dtype=torch.float32)[None, None, :] * 1e-5
-        self.expert_model.emit(signal + horizon + width)
-        return _Evidence(
-            frames=frames,
-            offsets=tuple(int(value) for value in video_offsets.tolist()),
-            language_tokens=language_tokens,
-            text_queries=(
-                language_tokens.float().mean(dim=1)[:, None, None]
-                + torch.arange(2).float()[None, :, None]
-                + torch.arange(256).float()[None, None, :] * 1e-4
-            ),
-            valid_task_tokens=torch.ones(
-                language_tokens.shape[0], 2, dtype=torch.bool
-            ),
-        )
-
-    @staticmethod
-    def build_memories(
-        evidence: _Evidence, frame_indices: torch.Tensor
-    ) -> _Memories:
-        videos = len(evidence.offsets) - 1
-        lengths = [
-            right - left
-            for left, right in zip(evidence.offsets, evidence.offsets[1:])
-        ]
-        maximum = max(lengths)
-        core = torch.zeros(videos, 2, 256)
-        procedure = torch.zeros(videos, maximum, 256)
-        positions = torch.zeros(videos, maximum, dtype=torch.long)
-        valid = torch.zeros(videos, maximum, dtype=torch.bool)
-        width = torch.arange(256).float() * 1e-4
-        for video, (left, right) in enumerate(
-            zip(evidence.offsets, evidence.offsets[1:])
-        ):
-            if hasattr(evidence, "frames"):
-                values = evidence.frames[left:right].float().mean(dim=(1, 2, 3))
-                language = evidence.language_tokens[video].float().mean()
-            else:
-                values = evidence.frame_evidence[left:right, 0, 0].float()
-                language = evidence.text_queries[video, 0, 0].float()
-            core[video] = values.mean() + language + width
-            procedure[video, : right - left] = values[:, None] + width
-            positions[video, : right - left] = frame_indices[left:right]
-            valid[video, : right - left] = True
-        return _Memories(
-            core=core,
-            valid_core=torch.ones(videos, 2, dtype=torch.bool),
-            procedure=procedure,
-            positions=positions,
-            valid_procedure=valid,
-        )
-
-    def compile_slots(self, memories: _Memories) -> torch.Tensor:
-        routing = self.compiler.routing(memories.core.shape[0])
-        core = self.compiler.read_core_slots(
-            routing, memories.core, memories.valid_core
-        )
-        normalized = self.compiler.normalize_core_slots(core)
-        procedure, _ = self.compiler.read_procedure_slots(
-            routing,
-            normalized,
-            memories.procedure,
-            memories.positions,
-            memories.valid_procedure,
-        )
-        return self.compiler.fuse_readouts(routing, normalized, procedure)[0]
-
-    def decode_slots(
-        self,
-        slots: torch.Tensor,
-        *,
-        factor_hidden_residuals: dict[str, torch.Tensor] | None = None,
-    ) -> dict[str, torch.Tensor]:
-        scalars = self.factor(slots[:, :76]).squeeze(-1)
-        if factor_hidden_residuals is not None:
-            scalars = scalars + factor_hidden_residuals["q_a"][:, :76].mean(-1)
-        result = {}
-        for index, (name, template) in enumerate(self._template.items()):
-            value = template[None] + scalars[:, index, None, None]
-            result[name] = value[0] if slots.shape[0] == 1 else value
-        return result
-
-
-class _FakeFactorHead(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.network = torch.nn.Sequential(
-            torch.nn.Linear(256, 256, bias=False),
-            torch.nn.GELU(),
-            torch.nn.Linear(256, 1, bias=False),
-        )
-        torch.nn.init.eye_(self.network[0].weight)
+class _FakeSemanticEncoder(torch.nn.Module):
+    pass
 
 
 class _FakeBackboneMemoryEncoder(torch.nn.Module):
+    """Emit differentiable frame evidence and exact 18x16 addressed memories."""
+
     def forward(
         self,
-        _semantic: object,
+        _semantic: torch.nn.Module,
         _policy: torch.nn.Module,
         frames: torch.Tensor,
-        frame_video_ids: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         _language_mask: torch.Tensor,
         _task_span_mask: torch.Tensor,
         memory_tokens: torch.Tensor,
-    ) -> CapacityMatchedVideoEncoding:
-        frame_signal = frames.float().mean(dim=(1, 2, 3))
-        language_signal = language_tokens.float().mean(dim=1).index_select(
-            0, frame_video_ids
-        )
-        frame_evidence = frame_signal[:, None, None].expand(-1, 2, 256)
-        layer = torch.arange(18, dtype=torch.float32)[None, :, None, None] * 1e-3
-        horizon = torch.arange(50, dtype=torch.float32)[None, None, :, None] * 1e-3
-        width = torch.arange(1024, dtype=torch.float32)[None, None, None, :] * 1e-5
-        action_states = frame_signal[:, None, None, None] + layer + horizon + width
-        context = 1.0 + frame_signal[:, None, None, None] * 1e-3
-        context = context + language_signal[:, None, None, None] * 1e-4 + layer * 0.1
-        layer_memory = memory_tokens[None, None] * context
-        text_queries = language_tokens.float().mean(dim=1)[:, None, None]
-        text_queries = text_queries.expand(-1, 2, 256)
-        return CapacityMatchedVideoEncoding(
-            text_queries=text_queries,
-            frame_evidence=frame_evidence,
-            grounded_evidence=torch.zeros_like(frame_evidence),
-            interactions=frame_signal[:, None].expand(-1, 256),
+    ) -> LayerMatchedVideoEncoding:
+        frame = frames.float().mean(dim=(1, 2, 3)).div(255.0)
+        language = language_tokens.float().mean(dim=1).div(32.0)
+        frame_language = language.index_select(0, frame_condition_ids)
+        width = torch.arange(256, dtype=torch.float32)[None].mul_(1e-3)
+        token = torch.arange(2, dtype=torch.float32)[None, :, None].mul_(0.02)
+        text = language[:, None, None] + token + width[:, None]
+        evidence = frame[:, None, None] + frame_language[:, None, None]
+        evidence = evidence + token + width[:, None]
+        grounded = evidence + frame.square()[:, None, None] * 0.1
+        interaction = frame[:, None] * (1.0 + width)
+        interaction = interaction + frame_language[:, None] * 0.1
+        layer = torch.arange(18, dtype=torch.float32)[None, :, None, None]
+        layer = layer.mul_(0.01)
+        context = 1.0 + frame[:, None, None, None] * 0.2
+        context = context + frame_language[:, None, None, None] * 0.05 + layer
+        rank_memory = memory_tokens[None, None] * context
+        rank_address = torch.arange(16, dtype=torch.float32)[None, None, :, None]
+        rank_memory = rank_memory + rank_address * frame[:, None, None, None] * 1e-3
+        return LayerMatchedVideoEncoding(
+            text_queries=text,
+            frame_evidence=evidence,
+            grounded_evidence=grounded,
+            interactions=interaction,
             valid_task_tokens=torch.ones(
                 language_tokens.shape[0], 2, dtype=torch.bool
             ),
-            action_layer_states=action_states,
-            layer_memory=layer_memory,
+            layer_memory=rank_memory,
         )
 
 
 def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
     template = _template()
-    expert_model = _FakeExpertModel()
     model = CompleteLoRAWriter(
-            _FakeV6Base(template, expert_model),
-            PolicyProcedureCommonValueFusion(width=256),
-            LayerwiseActionProbeReader(heads=8, initialization_seed=7),
-            initialization_seed=7,
-            conditioner_heads=8,
-            conditioner_blocks=1,
-            deployment_rank=32,
-        )
-    model.backbone_memory_encoder = _FakeBackboneMemoryEncoder()
+        build_lora_tensor_specs(template),
+        template_state=template,
+        semantic_encoder=_FakeSemanticEncoder(),
+        semantic_core=LanguageSemanticCore(width=256, heads=8, blocks=1),
+        visual_transition=TaskGroundedVisualTransitionFusion(width=256, heads=8),
+        procedure=CausalProcedureEncoder(width=256, heads=8, blocks=1),
+        backbone_memory_encoder=_FakeBackboneMemoryEncoder(),
+        memory_reader=LayerRankMemoryReader(heads=8, initialization_seed=7),
+        video_set=AddressPreservingVideoSet(),
+        compiler=LayerMatchedMemoryProgramCompiler(
+            heads=8, blocks=1, initialization_seed=7
+        ),
+        factor_hidden_width=32,
+        initialization_seed=7,
+        matching_margin=0.2,
+    )
     return model, template
 
 
+def _open_factor_heads(model: CompleteLoRAWriter) -> None:
+    generator = torch.Generator(device="cpu").manual_seed(41)
+    with torch.no_grad():
+        for head in model.factor_heads.values():
+            head.network[-1].weight.normal_(std=0.01, generator=generator)
+
+
 def _inputs() -> tuple[torch.Tensor, ...]:
-    frames = torch.arange(8 * 3 * 4 * 4, dtype=torch.uint8).reshape(8, 3, 4, 4)
+    frames = torch.arange(8 * 3 * 4 * 4, dtype=torch.int64)
+    frames = frames.remainder(251).to(torch.uint8).reshape(8, 3, 4, 4)
     frame_indices = torch.tensor([0, 5, 10, 0, 5, 0, 5, 10])
     video_offsets = torch.tensor([0, 3, 5, 8], dtype=torch.long)
     condition_video_offsets = torch.tensor([0, 2, 3], dtype=torch.long)

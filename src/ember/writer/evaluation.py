@@ -17,7 +17,7 @@ from ember.expert_manifold.video_schedule import (
     video_schedule_contract,
     video_selection_seed,
 )
-from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.as_config import (
     AS_WRITER_CONFIG_SCHEMA,
@@ -32,23 +32,13 @@ from ember.writer.checkpoint import (
     checkpoint_macro,
 )
 from ember.writer.errors import WriterModelError
-from ember.writer.reward_checkpoint import (
-    REWARD_CHECKPOINT_SCHEMA,
-    REWARD_DEPLOYMENT_KIND,
-    checkpoint_cycle,
-)
-from ember.writer.reward_config import (
-    REWARD_CONFIG,
-    REWARD_LAUNCH_SCHEMA,
-    load_reward_config,
-)
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1"
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v1"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_episode_v1"
+    "ember_pi05_layer_matched_memory_program_compiler_episode_v1"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -58,28 +48,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset(VIDEO_CONDITIONS)
 DYNAMIC_K_GENERATION_BATCH_SIZE = 32
 DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE = 16
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
-    4: {
-        "schema": "ember_pi05_writer_generation_profile_v2",
-        "path": (
-            "runs/outputs/"
-            "pi05_v6_layerwise_probe_conditioned_procedure_k4_writer_generation_"
-            "profile_val8x4_correct_gpu01p0_515f91e_macro0025_20260814/"
-            "writer_generation_profile.json"
-        ),
-        "selected_writer_model_batch_size": DYNAMIC_K_GENERATION_BATCH_SIZE,
-        "supported_writer_model_batch_sizes": [
-            DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE,
-            DYNAMIC_K_GENERATION_BATCH_SIZE,
-        ],
-        "rank32_longest_video_evidence": (
-            "runs/outputs/"
-            "pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_seed7_"
-            "trainr6_evalr6_539e0e5_evalda6c24f_gpu01p024567_retry2_20260817/"
-            "rank32_batch32_oom_adjudication.json"
-        ),
-    }
-}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:
@@ -122,7 +91,7 @@ def _writer_state_record(path: Path, lora: Any) -> dict[str, Any]:
         shapes = {name: tuple(handle.get_slice(name).get_shape()) for name in names}
         dtypes = {name: str(handle.get_slice(name).get_dtype()) for name in names}
     template_keys = tuple(
-        sorted(name for name in names if name.startswith("base_writer.template_"))
+        sorted(name for name in names if name.startswith("template_"))
     )
     lora_names = _template_lora_names(lora)
     if len(template_keys) != len(lora_names):
@@ -201,15 +170,6 @@ def _writer_asset(
     checkpoint = checkpoint.resolve()
     manifest_path = checkpoint / "checkpoint_manifest.json"
     manifest = read_json(manifest_path)
-    if manifest.get("schema_version") == REWARD_CHECKPOINT_SCHEMA:
-        return _reward_writer_asset(
-            config=config,
-            checkpoint=checkpoint,
-            manifest=manifest,
-            manifest_path=manifest_path,
-            source=source,
-            require_formal=require_formal,
-        )
     macro = checkpoint_macro(checkpoint)
     world_size = int(manifest.get("world_size", -1))
     expected_files = {
@@ -287,128 +247,6 @@ def _writer_asset(
             "path": str(run_path.resolve()),
             "bytes": run_path.stat().st_size,
             "schema": AS_WRITER_LAUNCH_SCHEMA,
-        },
-        "writer_parameter_count": writer_parameters,
-        "deployment_trainable_parameter_count": 0,
-        "writer_state": writer_state,
-    }
-
-
-def _validate_reward_run_contract(
-    run: Mapping[str, Any],
-    reward_config: Mapping[str, Any],
-    base: Mapping[str, Any],
-    config: Mapping[str, Any],
-    source: Mapping[str, Any],
-) -> None:
-    expected_source = {
-        key: str(Path(str(source[key])).resolve())
-        for key in ("source_run", "checkpoint", "model_path")
-    }
-    observed_source = {
-        key: str(Path(str(run.get("source", {}).get(key, ""))).resolve())
-        for key in expected_source
-    }
-    changed = (
-        run.get("schema_version") != REWARD_LAUNCH_SCHEMA
-        or run.get("mode") != "formal"
-        or observed_source != expected_source
-        or Path(str(run.get("base_as_config_path", ""))).resolve()
-        != Path(str(reward_config["resolved_base_as_config"])).resolve()
-        or base["writer"] != config["writer"]
-        or run.get("writer") != config["writer"]
-        or run.get("information_wall") != reward_config["information_wall"]
-        or run.get("objective") != reward_config["objective"]
-        or {key: run.get("privileged_teacher", {}).get(key) for key in reward_config["privileged_teacher"]} != reward_config["privileged_teacher"]
-        or run.get("deployment") != reward_config["deployment"]
-        or run.get("commitment") != reward_config["commitment"]
-        or run.get("initialization", {}).get("as_checkpoint")
-        != reward_config["initialization"]["as_checkpoint"]
-        or not Path(str(run.get("initialization", {}).get("checkpoint", ""))).is_dir()
-    )
-    if changed:
-        raise WriterModelError("reward training authority changed")
-
-
-def _reward_writer_asset(
-    *,
-    config: Mapping[str, Any],
-    checkpoint: Path,
-    manifest: Mapping[str, Any],
-    manifest_path: Path,
-    source: Mapping[str, Any],
-    require_formal: bool,
-) -> dict[str, Any]:
-    """Inspect a reward-stage checkpoint without calling it an AS resume."""
-
-    cycle = checkpoint_cycle(checkpoint)
-    world_size = int(manifest.get("world_size", -1))
-    expected_files = {
-        "writer.safetensors",
-        "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
-    }
-    if (
-        world_size <= 0
-        or int(manifest.get("next_cycle", -1)) != cycle
-        or manifest.get("run_contract_schema") != REWARD_LAUNCH_SCHEMA
-        or set(manifest.get("files", {})) != expected_files
-    ):
-        raise WriterModelError("reward deployment checkpoint changed")
-    for name, record in manifest["files"].items():
-        path = checkpoint / name
-        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
-            raise WriterModelError(f"reward checkpoint file changed: {name}")
-    run_path = checkpoint.parent.parent / "run_contract.json"
-    run = read_json(run_path)
-    reward_config_path = Path(str(run.get("config_path", ""))).resolve()
-    reward_config, base = load_reward_config(reward_config_path)
-    sealed_config, _ = load_reward_config(REWARD_CONFIG)
-    _validate_reward_run_contract(run, reward_config, base, config, source)
-    sealed_sections = (
-        "base_as_config",
-        "initialization",
-        "information_wall",
-        "data",
-        "environment",
-        "objective",
-        "privileged_teacher",
-        "deployment",
-        "commitment",
-        "rng",
-        "optimization",
-    )
-    if any(sealed_config.get(key) != reward_config.get(key) for key in sealed_sections):
-        raise WriterModelError("sealed reward authority changed the training contract")
-    if require_formal and (
-        sealed_config["formal_run"]["status"] != "sealed"
-        or cycle not in sealed_config["formal_run"]["checkpoint_cycles"]
-    ):
-        raise WriterModelError("formal reward evaluation requires a sealed checkpoint")
-    writer_state = _writer_state_record(
-        checkpoint / "writer.safetensors",
-        load_pi05_lora_contract(authority_path(config, "lora_contract")),
-    )
-    trainable = run.get("trainable", {})
-    writer_parameters = int(trainable.get("writer_parameter_count", -1))
-    if writer_parameters <= 0:
-        raise WriterModelError("reward Writer parameter contract changed")
-    return {
-        "kind": REWARD_DEPLOYMENT_KIND,
-        "training_mode": "formal_content_first_backbone_memory_grid",
-        "training_stage": "successful_expert_occupancy_cross_video_cfmg_distillation",
-        "method_macro": cycle,
-        "checkpoint": str(checkpoint),
-        "checkpoint_manifest": {
-            "path": str(manifest_path.resolve()),
-            "bytes": manifest_path.stat().st_size,
-            "schema": REWARD_CHECKPOINT_SCHEMA,
-            "world_size": world_size,
-        },
-        "training_run_contract": {
-            "path": str(run_path.resolve()),
-            "bytes": run_path.stat().st_size,
-            "schema": REWARD_LAUNCH_SCHEMA,
         },
         "writer_parameter_count": writer_parameters,
         "deployment_trainable_parameter_count": 0,
@@ -587,8 +425,6 @@ def inspect_dynamic_k_writer_evaluation(
     )
     lora_path = authority_path(config, "lora_contract")
     lora = load_pi05_lora_contract(lora_path)
-    if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND:
-        lora = derive_pi05_lora_rank(lora, rank=32)
     generated_lora_storage = _generated_lora_storage_record(
         writer_asset["writer_state"]["template_lora_storage"],
         lora,
@@ -601,14 +437,7 @@ def inspect_dynamic_k_writer_evaluation(
     return {
         "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
         "kind": DYNAMIC_K_WRITER_KIND,
-        "arm": (
-            (
-                "v6_lpcp_cfmg_gradient_open_memory_query_"
-                if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
-                else "v6_layerwise_probe_conditioned_procedure_"
-            )
-            + video_condition
-        ),
+        "arm": "layer_matched_memory_program_compiler_" + video_condition,
         "execution_backend": ("online_frozen_dynamic_k_writer_then_episode_lora_cache"),
         "config": {
             "path": str(config_path),

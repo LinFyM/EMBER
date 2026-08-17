@@ -1,4 +1,4 @@
-"""Configuration authority for V6 layerwise probe conditioning."""
+"""Configuration authority for the Layer-Matched Memory Program Compiler."""
 
 from __future__ import annotations
 
@@ -11,11 +11,9 @@ from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = (
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
-)
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_launch_v1"
+    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v1"
 )
 
 
@@ -26,7 +24,7 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 def writer_stage(config: Mapping[str, Any]) -> str:
     stage = str(config.get("sealed_stage", ""))
     if stage != "development":
-        raise WriterModelError("dynamic-K Writer currently supports development train24 only")
+        raise WriterModelError("LMMPC currently supports development train24 only")
     return stage
 
 
@@ -58,10 +56,10 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         "tokenizer_manifest",
     }
     if set(config.get("authorities", {})) != required:
-        raise WriterModelError("dynamic-K Writer authority set changed")
+        raise WriterModelError("LMMPC authority set changed")
     for name in required:
         if not authority_path(config, name).is_file():
-            raise WriterModelError(f"missing dynamic-K Writer authority: {name}")
+            raise WriterModelError(f"missing LMMPC authority: {name}")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
     if (
         lora.rank != 16
@@ -69,69 +67,31 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
         or lora.parameter_count != 1_287_168
         or lora.state_tensor_count != 76
     ):
-        raise WriterModelError("v6 memory-set rank-16 LoRA contract changed")
+        raise WriterModelError("LMMPC rank16 LoRA contract changed")
 
 
 def _validate_method(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
-    data = config.get("data", {})
-    training = config.get("conditioning_training", {})
-    distributed = config.get("optimization", {}).get("distributed", {})
     expected_writer = {
-        "architecture": "pi05_v6_layerwise_probe_conditioned_procedure_v1",
+        "architecture": "pi05_layer_matched_memory_program_compiler_v1",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
-        "camera_dataset": "obs/agentview_rgb",
-        "camera_transform": "libero_opengl_rotate_180_chw_uint8",
         "frame_stride": 5,
         "include_final_frame": True,
         "backbone_total_frames_per_condition": 420,
         "maximum_stride5_frames_per_video": 105,
-        "per_video_encoder": "native_v6_language_axial_core_procedure",
         "program_width": 256,
-        "policy_slot_count": 320,
-        "core_set_fusion": (
-            "parameter_free_native_core_reader_over_unordered_per_video_"
-            "core_union"
-        ),
-        "procedure_set_fusion": (
-            "permutation_invariant_policy_slot_aligned_attention_pooled_raw_"
-            "common_ordered_procedure_before_native_adaln_fusion"
-        ),
-        "procedure_set_qk": "shared_bias_free_pre_rms_256_to_256",
-        "procedure_set_value": (
-            "raw_attention_pooled_per_video_ordered_procedure_slot_no_value_"
-            "projection"
-        ),
-        "procedure_set_output": (
-            "shared_bias_free_zero_initialized_256_to_256_shared_correction"
-        ),
-        "layer_probe_source": (
-            "same_joint_forward_18_action_expert_layer_outputs_50_native_probes"
-        ),
-        "layer_probe_reader": (
-            "shared_rank16_queries_cross_attention_over_native_probe_axis"
-        ),
-        "layer_probe_heads": 8,
-        "conditioner_temporal_value": (
-            "adjacent_frame_delta_shared_video_causal_rope_context_"
-            "layer_rank_pool"
-        ),
-        "conditioner_heads": 8,
-        "conditioner_blocks": 1,
-        "procedure_query_injection": (
-            "bias_free_zero_initialized_256_to_256_added_only_to_native_query"
-        ),
-        "step0_contract": "exact_as139_k1_to_k4_program_and_rank16_lora",
-        "factor_decoder": "frozen_native_v6_rank16_factor_heads_decode_once",
-        "as139_warm_start_checkpoint": (
-            "runs/outputs/pi05_v6_shared_core_procedure_common_value_bridge_"
-            "formal_fresh0to25_r5_b20_d316623_gpu01_20260814/checkpoints/"
-            "macro_00000025/writer.safetensors"
-        ),
+        "memory_token_count": 16,
+        "memory_topology": "18_action_expert_layers_x_16_lora_rank_coordinates",
+        "directed_channel": "half_natural_minus_reverse_parameter_memory",
+        "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
+        "m2p": "same_20x16_grid_two_block_group_rank_axial_attention",
+        "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
+        "step0_contract": "fresh_native_A0_B0_source_policy_identity",
         "image_width": 2048,
         "expert_width": 1024,
         "text_meta_lora_rank": 4,
         "vl_meta_lora_rank": 4,
+        "vl_meta_lora_trainable": False,
         "action_meta_lora_rank": 4,
         "patch_grounding_heads": 8,
         "action_horizon": 50,
@@ -141,54 +101,49 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "procedure_heads": 8,
         "procedure_blocks": 2,
         "visual_transition_heads": 8,
-        "fusion_heads": 8,
+        "memory_reader_heads": 8,
+        "m2p_heads": 8,
+        "m2p_blocks": 2,
         "factor_hidden_width": 256,
+        "matching_margin": 0.2,
         "initialization_seed": 7,
         "activation_checkpointing": True,
     }
-    expected_data = {
-        "task_count": 24,
-        "episodes_per_task": 50,
-        "demo_indices": [0, 49],
-        "action_chunk_size": 50,
-        "action_queries_per_task": 20,
-        "dynamic_k_max": 4,
-        "dynamic_k_schedule": (
-            "K(task,macro)=1+((sealed_task_permutation_position(task)+macro)%4)"
-        ),
-        "dynamic_k_balance": "exactly_six_tasks_at_each_K_per_macro",
-    }
-    expected_training = {
-        "global_tasks_per_optimizer_update": 24,
-        "update_topology": "one_complete_full24_equal_task_mean_per_macro",
-        "task_assignment": "cost_balanced_long_first_dynamic_uneven",
-        "pair_loss_reduction": "mean_within_task_then_equal_mean_over_24_tasks",
-    }
-    expected_distributed = {
-        "fresh_world_sizes": [1, 2, 3, 4, 5, 6],
-        "exact_resume_world_topology_locked": True,
-        "gradient_communication": (
-            "one_flat_writer_gradient_sum_all_reduce_per_macro_then_divide_by_24"
-        ),
-        "nccl_p2p_disable": "1",
-        "deferred_process_group": True,
-    }
-    consistency = training.get("singleton_to_full_consistency", {})
+    data = config.get("data", {})
+    training = config.get("conditioning_training", {})
+    distributed = config.get("optimization", {}).get("distributed", {})
+    matching = training.get("program_matching", {})
     changed = (
         any(writer.get(key) != value for key, value in expected_writer.items())
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
-        or any(data.get(key) != value for key, value in expected_data.items())
-        or any(training.get(key) != value for key, value in expected_training.items())
-        or consistency.get("weight") != 0.0
-        or consistency.get("kind")
-        != "exact_zero_no_auxiliary_loss"
-        or any(
-            distributed.get(key) != value
-            for key, value in expected_distributed.items()
+        or data.get("task_count") != 24
+        or data.get("episodes_per_task") != 50
+        or data.get("demo_indices") != [0, 49]
+        or data.get("action_chunk_size") != 50
+        or data.get("action_queries_per_task") != 20
+        or data.get("dynamic_k_max") != 4
+        or data.get("dynamic_k_balance")
+        != "exactly_six_tasks_at_each_K_per_macro"
+        or training.get("global_tasks_per_optimizer_update") != 24
+        or training.get("update_topology")
+        != "one_complete_full24_equal_task_mean_per_macro"
+        or training.get("task_assignment")
+        != "cost_balanced_long_first_dynamic_uneven"
+        or training.get("pair_loss_reduction")
+        != "mean_within_task_then_equal_mean_over_24_tasks"
+        or matching.get("kind")
+        != (
+            "exact_language_correct_vs_reverse_shuffle_margin_plus_"
+            "same_task_video_agreement"
         )
+        or float(matching.get("weight", 0.0)) <= 0
+        or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
+        or distributed.get("exact_resume_world_topology_locked") is not True
+        or distributed.get("nccl_p2p_disable") != "1"
+        or distributed.get("deferred_process_group") is not True
     )
     if changed:
-        raise WriterModelError("dynamic-K Writer scientific contract changed")
+        raise WriterModelError("LMMPC scientific contract changed")
 
 
 def _validate_runtime(config: Mapping[str, Any]) -> None:
@@ -201,15 +156,13 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             or total <= 0
             or batch != 20
         ):
-            raise WriterModelError("dynamic-K Writer runtime contract changed")
+            raise WriterModelError("LMMPC runtime contract changed")
         parse_macro_boundaries(cell["checkpoint_macros"], total)
-    if config["formal_run"].get("status") not in {
-        "unsealed_pending_live_profile",
-        "sealed",
-    }:
-        raise WriterModelError("dynamic-K Writer formal status changed")
-    if config["formal_run"].get("status") == "sealed":
-        evidence = config["formal_run"].get("profile_evidence", {})
+    formal = config["formal_run"]
+    if formal.get("status") not in {"unsealed_pending_live_profile", "sealed"}:
+        raise WriterModelError("LMMPC formal status changed")
+    if formal.get("status") == "sealed":
+        evidence = formal.get("profile_evidence", {})
         if (
             not isinstance(evidence.get("source_commit"), str)
             or len(evidence["source_commit"]) != 40
@@ -217,35 +170,22 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             or int(evidence.get("completion_macro", 0)) != 2
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
-            or float(
-                evidence.get("macro1_to_macro2_query_delta_weight_delta_norm", 0)
-            )
-            <= 0
-            or float(
-                evidence.get("macro1_to_macro2_layer_probe_reader_delta_norm", 0)
-            )
-            <= 0
-            or float(
-                evidence.get("macro1_to_macro2_probe_conditioner_delta_norm", 0)
-            )
-            <= 0
-            or int(evidence.get("joint_backbone_calls", 0))
-            != int(evidence.get("expected_native_v6_calls", -1))
-            or float(
-                evidence.get("natural_to_reversed_query_delta_relative_l2", 0)
-            )
-            <= 0
-            or float(evidence.get("constant_query_delta_max_abs", 1)) >= 1e-6
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
+            or float(evidence.get("program_matching_weight", 0)) <= 0
+            or int(evidence.get("native_context_calls", -1))
+            != int(evidence.get("expected_native_context_calls", -2))
+            or float(evidence.get("correct_reverse_directed_relative_l2", 0))
+            <= 0
+            or float(evidence.get("constant_effective_ba_max_abs", 1)) >= 1e-6
         ):
-            raise WriterModelError("sealed dynamic-K live profile evidence changed")
+            raise WriterModelError("sealed LMMPC live profile evidence changed")
 
 
 def load_writer_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if config.get("schema_version") != AS_WRITER_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported dynamic-K Writer config schema")
+        raise WriterModelError("unsupported LMMPC Writer config schema")
     writer_stage(config)
     _validate_authorities(config)
     _validate_method(config)
@@ -255,7 +195,7 @@ def load_writer_config(path: Path) -> dict[str, Any]:
 
 def resolve_mode_config(config: Mapping[str, Any], mode: str) -> dict[str, Any]:
     if mode not in {"profile", "formal"}:
-        raise WriterModelError("unsupported dynamic-K Writer runtime mode")
+        raise WriterModelError("unsupported LMMPC runtime mode")
     if mode == "formal" and config["formal_run"]["status"] != "sealed":
-        raise WriterModelError("formal dynamic-K training awaits a sealed live profile")
+        raise WriterModelError("formal LMMPC training awaits a sealed live profile")
     return dict(config)

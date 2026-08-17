@@ -1,4 +1,4 @@
-"""Carrier-exact one-way PI05 memory for the capacity-matched Writer grid."""
+"""Carrier-exact one-way PI05 memory for layer-matched rank queries."""
 
 from __future__ import annotations
 
@@ -20,24 +20,22 @@ class BackboneMemoryError(RuntimeError):
 
 @dataclass(frozen=True)
 class BackboneMemoryOutput:
-    """Joint outputs and all post-layer Action/memory states."""
+    """Joint outputs and the post-layer memory states."""
 
     prefix_hidden: torch.Tensor
     action_hidden: torch.Tensor
-    action_layer_states: torch.Tensor
     layer_memory: torch.Tensor
 
 
 @dataclass(frozen=True)
-class CapacityMatchedVideoEncoding:
-    """Frozen V6 evidence and live memory states from one frame batch."""
+class LayerMatchedVideoEncoding:
+    """V6 evidence and layer/rank memory states from one frame batch."""
 
     text_queries: torch.Tensor
     frame_evidence: torch.Tensor
     grounded_evidence: torch.Tensor
     interactions: torch.Tensor
     valid_task_tokens: torch.Tensor
-    action_layer_states: torch.Tensor
     layer_memory: torch.Tensor
 
 
@@ -81,12 +79,12 @@ def make_backbone_memory_mask(
     return block_visible & valid_pairs
 
 
-class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
-    """Keep the native PI05 carrier exact and update 37 one-way memories."""
+class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
+    """Keep the native PI05 carrier exact and update 16 one-way rank memories."""
 
     LAYERS = 18
     ACTION_HORIZON = 50
-    MEMORY_TOKENS = 37
+    MEMORY_TOKENS = 16
 
     def __init__(
         self,
@@ -557,24 +555,15 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
             vl_adapters,
             action_adapters,
         )
-        action_outputs = capture["action"][1:]
-        if any(value is None for value in action_outputs):
-            raise BackboneMemoryError("native Action layer capture is incomplete")
-        action_states = torch.stack(
-            [value for value in action_outputs if value is not None], dim=1
-        )
         output = BackboneMemoryOutput(
             prefix_hidden=prefix_hidden,
             action_hidden=action_hidden,
-            action_layer_states=action_states,
             layer_memory=layer_memories,
         )
         if (
             output.prefix_hidden.shape != prefix.shape
             or output.action_hidden.shape
             != (batch, self.ACTION_HORIZON, self.expert_width)
-            or output.action_layer_states.shape
-            != (batch, self.LAYERS, self.ACTION_HORIZON, self.expert_width)
             or output.layer_memory.shape
             != (batch, self.LAYERS, self.MEMORY_TOKENS, self.expert_width)
         ):
@@ -582,8 +571,8 @@ class Pi05CapacityMatchedBackboneMemory(torch.nn.Module):
         return output
 
 
-class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
-    """Embed frames, run the exact carrier, and update layerwise memories."""
+class LayerMatchedBackboneMemoryEncoder(torch.nn.Module):
+    """Embed frames, run the exact carrier, and update layer/rank memories."""
 
     def __init__(
         self,
@@ -593,7 +582,7 @@ class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
         activation_checkpointing: bool,
     ) -> None:
         super().__init__()
-        self.joint = Pi05CapacityMatchedBackboneMemory(
+        self.joint = Pi05LayerMatchedBackboneMemory(
             image_width=image_width,
             expert_width=expert_width,
             activation_checkpointing=activation_checkpointing,
@@ -659,7 +648,7 @@ class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
             valid_task_tokens,
             maximum_task_tokens,
         )
-        return (*evidence, backbone.action_layer_states, backbone.layer_memory)
+        return (*evidence, backbone.layer_memory)
 
     def forward(
         self,
@@ -671,8 +660,8 @@ class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
         memory_tokens: torch.Tensor,
-    ) -> CapacityMatchedVideoEncoding:
-        """Return frozen carrier evidence and live 18x37 memory states."""
+    ) -> LayerMatchedVideoEncoding:
+        """Return carrier evidence and live 18x16 layer/rank memory states."""
 
         core, valid_task_tokens, _ = semantic._validate_forward_batch(
             policy,
@@ -688,15 +677,14 @@ class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
         ):
             raise BackboneMemoryError("capacity-matched memory input changed shape")
         maximum_task_tokens = valid_task_tokens.shape[1]
-        with torch.no_grad():
-            text_queries = semantic._encode_text(
-                core,
-                language_tokens,
-                task_span_mask,
-                maximum_task_tokens,
-            )
+        text_queries = semantic._encode_text(
+            core,
+            language_tokens,
+            task_span_mask,
+            maximum_task_tokens,
+        )
 
-        columns: list[list[torch.Tensor]] = [[] for _ in range(5)]
+        columns: list[list[torch.Tensor]] = [[] for _ in range(4)]
         step = semantic.max_frames_per_encoder_call
         for start in range(0, frames.shape[0], step):
             stop = min(start + step, frames.shape[0])
@@ -716,15 +704,14 @@ class CapacityMatchedBackboneMemoryEncoder(torch.nn.Module):
             )
             for column, value in zip(columns, values, strict=True):
                 column.append(value)
-        evidence, grounded, interactions, action_states, memories = (
+        evidence, grounded, interactions, memories = (
             torch.cat(column, dim=0) for column in columns
         )
-        return CapacityMatchedVideoEncoding(
+        return LayerMatchedVideoEncoding(
             text_queries=text_queries,
             frame_evidence=evidence.detach(),
             grounded_evidence=grounded.detach(),
             interactions=interactions.detach(),
             valid_task_tokens=valid_task_tokens,
-            action_layer_states=action_states,
             layer_memory=memories,
         )

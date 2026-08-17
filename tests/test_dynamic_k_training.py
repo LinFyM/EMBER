@@ -11,7 +11,7 @@ import torch
 from safetensors.torch import save_file
 
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.reward.expert_teacher import resolve_task_expert_bank_root
+from ember.pi05_source_checkpoint import DistributedContext
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
 from ember.writer.as_contract import publish_contract
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
@@ -32,25 +32,15 @@ from ember.writer.checkpoint import (
 )
 from ember.writer.data import RawTeacherVideo
 from ember.writer.errors import WriterModelError
+from ember.writer.live_adapter import FrozenDynamicKTaskAdapter, condition_video_offsets
 from ember.writer.update_schedule import build_exposure_scheduler
 import ember.writer.live_adapter as live_adapter_module
-from ember.writer.live_adapter import (
-    FrozenDynamicKTaskAdapter,
-    condition_video_offsets,
-)
-from ember.writer.reward_config import (
-    REWARD_CONFIG,
-    load_reward_config,
-    require_reward_mode,
-)
-from ember.writer.reward_training import (
-    _continuation_contract_core,
-    finalize_args as finalize_reward_args,
-)
-from ember.pi05_source_checkpoint import DistributedContext
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+ACTIVE_CONFIG = (
+    REPO_ROOT / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
+)
 
 
 @dataclass
@@ -72,230 +62,23 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
-    config = load_writer_config(
-        REPO_ROOT
-        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
-    )
+def test_lmmpc_config_is_fresh_rank16_and_profile_pending() -> None:
+    config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
     assert lora.state_tensor_count == 76
+    assert config["method"]["development_initialization"] == "fresh_writer"
+    assert config["writer"]["memory_token_count"] == 16
+    assert config["writer"]["m2p"].startswith("same_20x16_grid")
+    assert config["writer"]["vl_meta_lora_trainable"] is False
     assert config["data"]["dynamic_k_max"] == 4
-    assert config["writer"]["step0_contract"].startswith("exact_as139")
-    assert config["writer"]["layer_probe_source"].startswith("same_joint_forward")
-    assert config["writer"]["core_set_fusion"].startswith("parameter_free")
-    assert config["writer"]["procedure_set_fusion"].startswith("permutation_invariant")
-    assert config["writer"]["procedure_set_value"].startswith("raw_attention")
-    assert config["writer"]["policy_slot_count"] == 320
-    assert config["formal_run"]["status"] == "sealed"
-    evidence = config["formal_run"]["profile_evidence"]
-    assert evidence["world_size"] == 3
-    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
-    assert evidence["joint_backbone_calls"] == evidence["expected_native_v6_calls"]
-    assert evidence["natural_to_reversed_query_delta_relative_l2"] > 0
-    assert evidence["constant_query_delta_max_abs"] < 1e-6
-    assert config["optimization"]["distributed"]["fresh_world_sizes"] == [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-    ]
-    assert parse_macro_boundaries([25, 50], 50) == (25, 50)
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
+    assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
+        range(1, 7)
+    )
+    assert parse_macro_boundaries([25, 50, 75, 100], 100) == (25, 50, 75, 100)
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
-
-
-def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
-    config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "terminal_nonpass"
-    assert config["formal_run"]["status"] == "sealed"
-    terminal = config["formal_run"]["terminal_result"]
-    assert terminal["strict_correct_curve"] == [151, 135, 131]
-    assert terminal["breadth_curve"] == [6, 6, 6]
-    assert terminal["cycle2_to_cycle4_net"] == -20
-    assert terminal["six_arm_video_causality"] == "not_evaluated"
-    smoke_evidence = config["formal_run"]["mechanism_smoke_evidence"]
-    assert smoke_evidence["world_size"] == 4
-    assert smoke_evidence["cycle_seconds"][1] < 180.0
-    assert smoke_evidence["cycle2_memory_token_shared_gradient_rms"] > 0
-    assert smoke_evidence["cycle2_memory_token_parameter_delta_rms"] > 1e-4
-    assert smoke_evidence["cycle2_memory_token_pairwise_task_cosine"][0] > 0
-    held_evidence = config["formal_run"]["held_memory_evidence"]
-    assert held_evidence["validation_tasks"] == 8
-    assert held_evidence["positive_pairwise_tasks"] == 8
-    assert held_evidence["pairwise_cosine_mean"] > 0
-    assert held_evidence["mean_energy_over_sample_energy"] > 0.25
-    assert held_evidence["teacher_or_held_action_reward_reads"] == 0
-    predecessor = config["formal_run"]["predecessor_evidence"]
-    assert predecessor["strict_curve"] == [129, 135, 143, 136]
-    assert predecessor["adjacent_churn"] == [36, 38, 41]
-    assert predecessor["memory_token_gradient_all_four_cycles"] == 0.0
-    assert predecessor["memory_token_optimizer_moments_after_cycle4"] == 0.0
-    assert config["initialization"]["as_macro"] == 25
-    deployment = config["deployment"]
-    assert (deployment["carrier_rank"], deployment["residual_bank_rank"]) == (16, 16)
-    assert (deployment["public_rank"], deployment["alpha"]) == (32, 32)
-    assert deployment["carrier_compression"] is False
-    assert deployment["second_adapter"] is False
-    assert deployment["task_expert_at_deployment"] is False
-    teacher = config["privileged_teacher"]
-    assert (teacher["step"], teacher["rank"], teacher["deployment"]) == (
-        2000,
-        16,
-        False,
-    )
-    canonical_source_run = REPO_ROOT / "runs/outputs/source-run"
-    assert resolve_task_expert_bank_root(
-        source={"source_run": str(canonical_source_run)},
-        relative_root=teacher["bank_root"],
-    ) == (REPO_ROOT / teacher["bank_root"]).resolve()
-    assert config["data"]["videos_per_task"] == 4
-    assert config["optimization"]["trainable"] == (
-        "gradient_open_content_first_backbone_memory_grid_2828928_parameters"
-    )
-    assert config["objective"]["kind"] == (
-        "cross_video_successful_expert_occupancy_unit_residual_distillation"
-    )
-    assert config["optimization"]["matched_action_batch_size"] == 8
-    assert config["optimization"]["endpoint_action_batch_size"] == 8
-    assert config["objective"]["occupancy_strata_per_trajectory"] == 8
-    assert config["commitment"]["kind"] == (
-        "median_capped_successful_expert_task_tangent_actual_adam_single_step"
-    )
-    assert config["commitment"]["direction"] == (
-        "actual_adamw_candidate_delta_from_equal_view_then_median_upper_norm_"
-        "capped_task_mean_gradient"
-    )
-    assert config["commitment"]["max_backtracks"] == 0
-    assert config["commitment"]["fixed_scale_or_checkpoint_selection"] is False
-    assert config["smoke_run"]["shared_anchor_task_ids"] == [2, 12, 21, 35]
-    assert config["smoke_run"]["required_world_size"] == 4
-    smoke = config["smoke_run"]
-    assert smoke["cycles"] == 2
-    assert smoke["anchor_expert_direct_successes_of_50"] == [41, 46, 47, 40]
-    assert smoke["required_selected_states_per_successful_trajectory"] == 8
-    assert config["formal_run"]["stable_qualification"] == {
-        "target_correct": 150,
-        "scientifically_valuable_stable_correct": 145,
-        "breadth_minimum": 7,
-        "adjacent_checkpoint_churn_target_maximum": 20,
-        "adjacent_success_set_jaccard_target_minimum": 0.85,
-        "final_lpcp_losses_target_maximum": 10,
-        "same_task_other_video_maximum_drop": 8,
-        "correct_each_negative_margin_minimum": 10,
-    }
-    gate = config["formal_run"]["mechanism_gate"]
-    assert gate["public_rank"] == 32
-    assert all(
-        gate[key]
-        for key in (
-            "rank_parameter_delta_identical",
-            "carrier_first_bank_tensors_unchanged",
-            "single_native_context_backbone_forward",
-            "one_way_layer_matched_memory_observer",
-            "cycle1_memory_token_gradient_zero_by_gate",
-            "cycle2_memory_token_gradient_required_nonzero",
-            "memory_token_pairwise_task_geometry_recorded",
-            "content_processing_precedes_zero_gate",
-            "residual_second_b_step0_zero",
-            "expert_rank16_to_rank32_effective_ba_equivalent",
-            "expert_not_checkpointed_or_deployed",
-            "matched_expert_student_query_batch_sequences_identical",
-            "stored_expert_actions_not_used_as_functional_targets",
-            "one_maximum_disagreement_state_per_equal_progress_stratum",
-            "four_disjoint_correct_k4_credit_views",
-            "failed_expert_trajectory_has_zero_credit",
-            "post_update_anchor_full_writer_reencode",
-        )
-    )
-    assert gate["trainable_parameter_count"] == 2_828_928
-    assert gate["task_gradient_balance"] == (
-        "cap_only_above_active_panel_median_without_small_task_amplification"
-    )
-    assert gate["fallback_objective"] is False
-    assert gate["cross_run_elementwise_parity_required"] is False
-    assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
-    assert gate["shared_anchor_cycle_seconds_maximum"] == 180.0
-    assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3, 4]
-    assert config["formal_run"]["stage_stop_cycles"] == [2, 3, 4]
-    assert config["formal_run"]["strict_paired400_cycles"] == [2, 3, 4]
-    volume = config["formal_run"]["training_volume_contract"]
-    assert volume["cycle1"] == "zero_gate_open_only"
-    assert volume["cycle2"] == (
-        "first_memory_query_update_and_first_strict400"
-    )
-    with pytest.raises(WriterModelError, match="terminal"):
-        require_reward_mode(config, "smoke")
-    with pytest.raises(WriterModelError, match="terminal"):
-        require_reward_mode(config, "formal")
-    assert base["writer"]["policy_slot_count"] == 320
-
-
-def test_terminal_reward_config_fails_before_training(tmp_path: Path) -> None:
-    source_run = tmp_path / "source"
-    checkpoint = tmp_path / "checkpoint"
-    data_root = tmp_path / "data"
-    tokenizer = tmp_path / "tokenizer.model"
-    for directory in (source_run, checkpoint, data_root):
-        directory.mkdir()
-    tokenizer.write_bytes(b"tokenizer")
-    args = argparse.Namespace(
-        config=REWARD_CONFIG,
-        mode="formal",
-        source_run=source_run,
-        checkpoint=checkpoint,
-        tokenizer_path=tokenizer,
-        data_root=data_root,
-        output_dir=tmp_path / "output",
-        resume=None,
-        stop_after_cycle=None,
-        smoke_task_ids=None,
-    )
-    with pytest.raises(WriterModelError, match="terminal"):
-        finalize_reward_args(args)
-
-
-def test_reward_continuation_core_ignores_only_execution_authority() -> None:
-    shared = {
-        "schema_version": "launch-v1",
-        "mode": "formal",
-        "config_path": "/worktrees/parent/configs/reward.json",
-        "base_as_config_path": "/worktrees/parent/configs/base.json",
-        "privileged_teacher": {
-            "bank_evidence": {
-                "config": {"path": "/worktrees/parent/configs/expert.json"}
-            }
-        },
-        "objective": {"kind": "expert_occupancy"},
-        "runtime": {"world_size": 6, "total_cycles": 3},
-    }
-    parent = {
-        **shared,
-        "git": {"commit": "parent"},
-        "formal_run": {"total_cycles": 3},
-    }
-    continuation = {
-        **shared,
-        "config_path": "/worktrees/continuation/configs/reward.json",
-        "base_as_config_path": "/worktrees/continuation/configs/base.json",
-        "privileged_teacher": {
-            "bank_evidence": {
-                "config": {"path": "/worktrees/continuation/configs/expert.json"}
-            }
-        },
-        "git": {"commit": "continuation"},
-        "formal_run": {"total_cycles": 4},
-        "runtime": {"world_size": 6, "total_cycles": 4},
-        "continuation": {"parent_checkpoint": "cycle_00000003"},
-    }
-    assert _continuation_contract_core(parent) == _continuation_contract_core(
-        continuation
-    )
-    continuation["objective"] = {"kind": "changed"}
-    assert _continuation_contract_core(parent) != _continuation_contract_core(
-        continuation
-    )
 
 
 def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:
@@ -323,7 +106,7 @@ def test_dynamic_k_schedule_balances_each_macro_and_each_task_cycle() -> None:
         } == {1, 2, 3, 4}
 
 
-def test_dynamic_k_videos_are_unique_and_in_action_episode_complement() -> None:
+def test_dynamic_k_videos_are_unique_and_cross_episode() -> None:
     schedule = TeacherVideoSchedule(
         task_ids=tuple(range(24)),
         demo_indices=range(50),
@@ -341,9 +124,7 @@ def test_dynamic_k_videos_are_unique_and_in_action_episode_complement() -> None:
 
 
 @pytest.mark.parametrize("world_size", range(1, 7))
-def test_dynamic_k_sampler_covers_full24_with_uneven_world_sizes(
-    world_size: int,
-) -> None:
+def test_sampler_covers_full24_with_uneven_world_sizes(world_size: int) -> None:
     dataset = _dataset_stub()
     task_ids = tuple(range(24))
     schedule = TeacherVideoSchedule(
@@ -378,19 +159,6 @@ def test_dynamic_k_sampler_covers_full24_with_uneven_world_sizes(
         assert {task for shard in shards for task in shard} == set(task_ids)
         assert sum(map(len, shards)) == 24
         assert max(map(len, shards)) - min(map(len, shards)) <= 1
-        for sampler, shard in zip(samplers, shards, strict=True):
-            for task_id in shard:
-                excluded = sampler.action_demo_indices_for_task_visit(task_id, macro)
-                selected = schedule.demos_for_task_visit(
-                    task_id, macro, excluded=excluded
-                )
-                assert len(excluded) == 20
-                assert not set(selected) & set(excluded)
-        costs, _, _ = samplers[0]._cost_order_for_task_cycle(macro)
-        task_id = task_ids[0]
-        excluded = samplers[0].action_demo_indices_for_task_visit(task_id, macro)
-        videos = schedule.demos_for_task_visit(task_id, macro, excluded=excluded)
-        assert costs[task_id] == 20 + sum(1 + task_id + demo for demo in videos)
 
 
 def test_flat_gradient_accumulates_tasks_then_divides_once_by_24() -> None:
@@ -428,15 +196,11 @@ def test_full24_task_evidence_is_gathered_and_sorted(
         shards[:] = [first, second]
 
     monkeypatch.setattr("ember.writer.as_step.dist.all_gather_object", gather)
-    records = gather_full24_records(
-        first,
-        world_size=2,
-        task_ids=tuple(range(24)),
-    )
+    records = gather_full24_records(first, world_size=2, task_ids=tuple(range(24)))
     assert [row["task_id"] for row in records] == list(range(24))
 
 
-def test_task_gradient_skips_fixed_template_a_outputs(
+def test_task_gradient_combines_functional_and_program_matching(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     parameter = torch.nn.Parameter(torch.tensor(2.0))
@@ -447,7 +211,7 @@ def test_task_gradient_skips_fixed_template_a_outputs(
             return {
                 "fixed_a": torch.ones(2),
                 "dynamic_b": parameter * torch.ones(2),
-            }, parameter * 0.0
+            }, parameter * 0.5
 
     monkeypatch.setattr(
         "ember.writer.as_step.functional_lora_loss_gradient",
@@ -466,23 +230,19 @@ def test_task_gradient_skips_fixed_template_a_outputs(
             "conditioning_training": {
                 "policy_flow_time_sampling_scheme": None,
                 "policy_flow_noise_sampling_scheme": None,
-                "singleton_to_full_consistency": {
-                    "weight": 0.05,
-                    "kind": "smooth_l1",
-                },
+                "program_matching": {"weight": 0.1},
             },
             "optimization": {"functional_policy_microbatch_size": 2},
         },
         gradient_layout=(SimpleNamespace(parameter=parameter, start=0, stop=1),),
     )
     flat = torch.zeros(1)
-    packed = (None, None, None, torch.tensor([0, 1]), None, None, None)
-    _task_gradient(runtime, packed, {}, 7, flat)
-    assert flat.item() == pytest.approx(6.0)
+    _task_gradient(runtime, (None,) * 7, {}, 7, flat)
+    assert flat.item() == pytest.approx(6.05)
     assert parameter.grad is None
 
 
-def test_task_gradient_accepts_exact_k1_bypass_as_zero_derivative(
+def test_task_gradient_rejects_a_detached_program_loss(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     parameter = torch.nn.Parameter(torch.tensor(2.0))
@@ -490,14 +250,14 @@ def test_task_gradient_accepts_exact_k1_bypass_as_zero_derivative(
     class _Writer:
         @staticmethod
         def forward_training(*_args: object, **_kwargs: object):
-            return {"frozen": torch.ones(2)}, torch.zeros(())
+            return {"dynamic": parameter * torch.ones(1)}, torch.zeros(())
 
     monkeypatch.setattr(
         "ember.writer.as_step.functional_lora_loss_gradient",
         lambda *_args, **_kwargs: (
             torch.tensor(1.0),
-            {"evidence": "retained"},
-            {"frozen": torch.full((2,), 3.0)},
+            {},
+            {"dynamic": torch.ones(1)},
         ),
     )
     runtime = SimpleNamespace(
@@ -509,25 +269,14 @@ def test_task_gradient_accepts_exact_k1_bypass_as_zero_derivative(
             "conditioning_training": {
                 "policy_flow_time_sampling_scheme": None,
                 "policy_flow_noise_sampling_scheme": None,
-                "singleton_to_full_consistency": {
-                    "weight": 0.0,
-                    "kind": "exact_zero_no_auxiliary_loss",
-                },
+                "program_matching": {"weight": 0.1},
             },
-            "optimization": {"functional_policy_microbatch_size": 2},
+            "optimization": {"functional_policy_microbatch_size": 1},
         },
         gradient_layout=(SimpleNamespace(parameter=parameter, start=0, stop=1),),
     )
-    flat = torch.zeros(1)
-    packed = (None, None, None, torch.tensor([0, 1]), None, None, None)
-
-    functional, consistency, detail = _task_gradient(runtime, packed, {}, 7, flat)
-
-    assert functional.item() == 1.0
-    assert consistency.item() == 0.0
-    assert detail == {"evidence": "retained"}
-    assert flat.item() == 0.0
-    assert parameter.grad is None
+    with pytest.raises(WriterModelError, match="Program matching"):
+        _task_gradient(runtime, (None,) * 7, {}, 7, torch.zeros(1))
 
 
 def test_scheduler_applies_warmup_lr_before_first_optimizer_step() -> None:
@@ -588,50 +337,13 @@ def test_publish_contract_accepts_only_exact_resume_contract(tmp_path: Path) -> 
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     contract = {"schema_version": "test", "runtime": {"world_size": 1}}
     args = argparse.Namespace(
-        output_dir=tmp_path / "run",
-        resume=None,
-        stop_after_macro=1,
+        output_dir=tmp_path / "run", resume=None, stop_after_macro=1
     )
     publish_contract(args, context, contract)
     args.resume = tmp_path / "run/checkpoints/macro_00000001"
     publish_contract(args, context, contract)
     with pytest.raises(WriterModelError, match="contract changed"):
         publish_contract(args, context, {**contract, "changed": True})
-
-
-def test_prepare_runtime_rejects_cross_run_resume(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from ember.writer.training import prepare_runtime
-
-    monkeypatch.setattr(
-        "ember.writer.training.load_writer_config",
-        lambda _path: {
-            "profile_defaults": {
-                "allowed_world_sizes": [1],
-                "total_macros": 2,
-                "per_task_action_batch_size": 20,
-                "checkpoint_macros": [2],
-                "stop_after_macro": 2,
-            }
-        },
-    )
-    monkeypatch.setattr(
-        "ember.writer.training.resolve_mode_config", lambda config, _mode: config
-    )
-    args = argparse.Namespace(
-        config=tmp_path / "config.json",
-        mode="profile",
-        total_macros=None,
-        batch_size=None,
-        checkpoint_macros=None,
-        stop_after_macro=None,
-        resume=tmp_path / "run_a/checkpoints/macro_00000001",
-        output_dir=tmp_path / "run_b",
-    )
-    context = DistributedContext(0, 0, 1, torch.device("cpu"))
-    with pytest.raises(WriterModelError, match="another run"):
-        prepare_runtime(args, context)
 
 
 def test_hashless_checkpoint_restores_training_state(
@@ -673,7 +385,7 @@ def test_hashless_checkpoint_restores_training_state(
     assert torch.equal(writer.weight, expected)
 
 
-def test_deployment_checkpoint_loads_only_writer_safetensors(
+def test_deployment_loads_only_writer_safetensors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import ember.writer.checkpoint as checkpoint_module
@@ -685,9 +397,6 @@ def test_deployment_checkpoint_loads_only_writer_safetensors(
         str(state_path),
     )
     observed = torch.nn.Linear(3, 2)
-    with torch.no_grad():
-        observed.weight.zero_()
-        observed.bias.zero_()
     monkeypatch.setattr(
         checkpoint_module.torch,
         "load",
@@ -699,10 +408,7 @@ def test_deployment_checkpoint_loads_only_writer_safetensors(
         writer=observed,
         writer_asset={
             "kind": DEPLOYMENT_CHECKPOINT_KIND,
-            "writer_state": {
-                "path": str(state_path),
-                "bytes": state_path.stat().st_size,
-            },
+            "writer_state": {"path": str(state_path), "bytes": state_path.stat().st_size},
         },
         device=torch.device("cpu"),
     )
@@ -774,75 +480,32 @@ def test_live_evaluator_supplies_k4_as_one_ragged_writer_call(
         *_args: object,
         **_kwargs: object,
     ) -> dict[str, torch.Tensor]:
-        captured.update(
-            frames=frames,
-            video_offsets=video_offsets,
-            ownership=ownership,
-        )
+        captured.update(frames=frames, video_offsets=video_offsets, ownership=ownership)
         return {"generated": torch.zeros((2, 1))}
 
     adapter.writer = writer
     monkeypatch.setattr(live_adapter_module, "validate_lora_state", lambda *_args: None)
     prepared = adapter.prepare_episodes(requests)
-
     assert len(prepared) == 2
     assert captured["video_offsets"].tolist() == list(range(0, 17, 2))
     assert captured["ownership"].tolist() == [0, 4, 8]
-    assert [int(captured["frames"][index * 2, 0, 0, 0]) for index in range(8)] == list(
-        range(8)
-    )
-    assert [
-        row["sampled_frames"] for row in adapter.last_generation_batch_profile()
-    ] == [
-        8,
-        8,
-    ]
 
 
-def test_dynamic_k_evaluation_request_is_not_the_legacy_writer() -> None:
-    from ember.eval_adapters import DYNAMIC_K_WRITER_KIND, adapter_requests
-
-    args = argparse.Namespace(
-        source_sft_config=None,
-        source_sft_checkpoint=None,
-        task_expert_config=None,
-        task_expert_bank_root=None,
-        task_expert_step=None,
-        expert_manifold_config=None,
-        expert_manifold_checkpoint=None,
-        expert_manifold_video_data_root=None,
-        expert_manifold_video_condition=None,
-        dynamic_k_writer_config=Path("config.json"),
-        dynamic_k_writer_checkpoint=Path("macro_00000050"),
-        dynamic_k_writer_video_data_root=Path("videos"),
-        dynamic_k_writer_video_condition="correct",
-    )
-    assert adapter_requests(args) == (DYNAMIC_K_WRITER_KIND, False)
-
-
-def test_evaluator_resolves_the_v6_layerwise_rank16_lora_authority() -> None:
+def test_evaluator_resolves_only_the_lmmpc_rank16_authority() -> None:
     import importlib
 
     from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
 
-    importlib.import_module("ember.pi05_eval_contract")
     writer_lora_contract = importlib.import_module(
         "ember.pi05_eval.run_contract"
     )._writer_lora_contract
-
-    config = (
-        REPO_ROOT
-        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
-    )
     lora = writer_lora_contract(
         SimpleNamespace(repo_root=REPO_ROOT),
         {
             "kind": DYNAMIC_K_WRITER_KIND,
-            "config": {"path": str(config)},
+            "config": {"path": str(ACTIVE_CONFIG)},
             "lora_contract": {
-                "reference": (
-                    "configs/pi05_lora_v1.json:" "76tensors:1287168parameters"
-                )
+                "reference": "configs/pi05_lora_v1.json:76tensors:1287168parameters"
             },
         },
     )
@@ -853,100 +516,7 @@ def test_evaluator_resolves_the_v6_layerwise_rank16_lora_authority() -> None:
     )
 
 
-def test_evaluator_derives_the_reward_rank32_lora_authority() -> None:
-    import importlib
+def test_generation_profile_is_unsealed_until_live_lmmpc_evidence() -> None:
+    from ember.writer.evaluation import DYNAMIC_K_GENERATION_PROFILES
 
-    from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
-
-    importlib.import_module("ember.pi05_eval_contract")
-    writer_lora_contract = importlib.import_module(
-        "ember.pi05_eval.run_contract"
-    )._writer_lora_contract
-
-    config = (
-        REPO_ROOT
-        / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
-    )
-    lora = writer_lora_contract(
-        SimpleNamespace(repo_root=REPO_ROOT),
-        {
-            "kind": DYNAMIC_K_WRITER_KIND,
-            "config": {"path": str(config)},
-            "lora_contract": {
-                "reference": (
-                    "configs/pi05_lora_v1.json:" "76tensors:2574336parameters"
-                ),
-                "rank": 32,
-            },
-        },
-    )
-    assert (lora.rank, lora.alpha, lora.parameter_count, lora.state_tensor_count) == (
-        32,
-        32,
-        2_574_336,
-        76,
-    )
-
-
-def test_reward_rank32_cache_storage_is_derived_from_native_template_dtypes() -> None:
-    from ember.pi05_lora import derive_pi05_lora_rank
-    from ember.writer.evaluation import _generated_lora_storage_record
-
-    carrier = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
-    public = derive_pi05_lora_rank(carrier, rank=32)
-    storage = _generated_lora_storage_record(
-        {
-            "tensor_count": 76,
-            "parameter_count": 1_287_168,
-            "tensor_bytes": 2_641_920,
-            "dtype_tensor_counts": {"BF16": 72, "F32": 4},
-            "dtype_parameter_counts": {"BF16": 1_253_376, "F32": 33_792},
-            "dtype_by_name": {
-                f"{target.name}.lora_{factor}.default.weight": (
-                    "F32"
-                    if target.name in {"model.action_in_proj", "model.action_out_proj"}
-                    else "BF16"
-                )
-                for target in carrier.targets
-                for factor in ("A", "B")
-            },
-        },
-        public,
-    )
-    assert storage["parameter_count"] == 2_574_336
-    assert storage["tensor_bytes"] == 5_283_840
-    assert storage["dtype_tensor_counts"] == {"BF16": 72, "F32": 4}
-    assert storage["dtype_parameter_counts"] == {
-        "BF16": 2_506_752,
-        "F32": 67_584,
-    }
-
-
-def test_v6_layerwise_probe_generation_profile_is_sealed() -> None:
-    from ember.writer.evaluation import (
-        DYNAMIC_K_GENERATION_BATCH_SIZE,
-        DYNAMIC_K_GENERATION_PROFILES,
-        DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE,
-    )
-
-    assert DYNAMIC_K_GENERATION_BATCH_SIZE == 32
-    assert DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE == 16
-    assert DYNAMIC_K_GENERATION_PROFILES == {
-        4: {
-            "schema": "ember_pi05_writer_generation_profile_v2",
-            "path": (
-                "runs/outputs/"
-                "pi05_v6_layerwise_probe_conditioned_procedure_k4_writer_generation_"
-                "profile_val8x4_correct_gpu01p0_515f91e_macro0025_20260814/"
-                "writer_generation_profile.json"
-            ),
-            "selected_writer_model_batch_size": 32,
-            "supported_writer_model_batch_sizes": [16, 32],
-            "rank32_longest_video_evidence": (
-                "runs/outputs/"
-                "pi05_v6_lpcp_cfmg_usdc_cycle1_k4_correct400_noreplacement_"
-                "seed7_trainr6_evalr6_539e0e5_evalda6c24f_gpu01p024567_"
-                "retry2_20260817/rank32_batch32_oom_adjudication.json"
-            ),
-        }
-    }
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

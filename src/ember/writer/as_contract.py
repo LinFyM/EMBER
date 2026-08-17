@@ -212,7 +212,7 @@ def writer_trainable_contract(
     ):
         raise WriterModelError("dynamic-K Writer freeze boundary changed")
     return {
-        "object": "v6_layerwise_probe_conditioned_procedure_writer_only",
+        "object": "layer_matched_memory_program_compiler_writer_only",
         "writer_parameter_count": sum(value.numel() for value in writer.parameters()),
         "writer_trainable_parameter_count": sum(value.numel() for _, value in trainable),
         "writer_trainable_parameter_tensors": len(trainable),

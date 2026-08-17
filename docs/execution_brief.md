@@ -25,9 +25,15 @@ cross-task pairwise mean/min仅`.053370/-.457658`。因此同任务不同视频�
 owner关于“好结果后应多训练”的要求已经由cycle4执行，结果触发预注册终止条件；不得cycle5、补六臂或扫训练量。
 终局审计又确认37个输入`memory_tokens`在正式reward路径中被`torch.no_grad()`缓存切断：四轮gradient与Adam moments
 严格为0，仅有weight-decay变化；其余24/25参数组真实训练。因此SEOD实际检验固定随机memory queries，不是可学习
-SHINE式memory token。当前没有active GPU run或可resume checkpoint。下一裁决点是先从第一性原理判断只打开
-memory-token反向链是否直接针对shared coexistence；若建立successor，必须sealed LPCP fresh、单变量、one-forward，
-并先过真实梯度/显存/吞吐与跨task机制门，再决定formal。
+SHINE式memory token。当前没有active GPU run或可resume checkpoint。
+
+当前active design是**GOMQ**，authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_gradient_open_memory_query_design.md`。它不改部署前向、K4、rank32、SEOD
+credit或optimizer，只打开同一次frozen native context中memory observer到37个input tokens的reward反向链；
+formal必须sealed LPCP fresh。canonical实现已完成，完整CPU=`418 passed`且architecture guard无hard violation。
+下一步执行four-suite two-cycle smoke：cycle1开gate，cycle2检验memory gradient/moments、
+memory-only跨task cosine、anchor完整re-forward的q/v/action、validation8 transport与最长视频吞吐。只有learned
+queries提供fixed queries没有的共同policy-aligned结构才启动full24；不因“旧参数漏训”本身自动重跑。
 
 以下保留通往USFC/USDC的紧邻因果链。
 

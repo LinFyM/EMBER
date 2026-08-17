@@ -26,6 +26,11 @@ temporal/set/M2P参数。这意味着当前结果支持“固定随机memory que
 LoRA”，不支持“learned SHINE式memory token无效”。打开该链是尚未检验的候选单变量，但它必须先解释为什么
 会改善跨task共存，不能因为发现漏训参数就机械重跑。
 
+当前选择GOMQ而不是继续改loss/solver或同时改rank：learned input query是唯一位于18层policy topology之前、
+同时跨task共享又能被各自图文context条件化的未训练参数，因此有明确机会学习共同读取基；credit、rank与输出
+同时变化则无法归因。反证同样明确：cycle2若memory-only gradients仍冲突、完整re-forward无新增响应或held
+transport崩溃，就在formal前关闭该方向。
+
 CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的same-task four-view gradients约`.99`
 一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
 scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于

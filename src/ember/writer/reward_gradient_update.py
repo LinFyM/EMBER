@@ -46,8 +46,7 @@ class RewardCreditView:
 class RewardProbe:
     global_task_id: int
     suite: str
-    conditioning_state: WriterConditioningState
-    condition_video_offsets: torch.Tensor
+    packed_condition: tuple[Any, ...]
     before_lora: Mapping[str, torch.Tensor]
     query: Mapping[str, torch.Tensor]
     before_action: torch.Tensor
@@ -103,8 +102,7 @@ def fixed_action_for_lora(
 def make_reward_probe(
     runtime: RewardRuntime,
     task: RewardTask,
-    conditioning_state: WriterConditioningState,
-    condition_video_offsets: torch.Tensor,
+    packed_condition: tuple[Any, ...],
     candidate_lora: Mapping[str, torch.Tensor],
     expert: Sequence[RewardTrajectory],
     credit_batch: Mapping[str, torch.Tensor],
@@ -117,8 +115,7 @@ def make_reward_probe(
     return RewardProbe(
         global_task_id=task.global_task_id,
         suite=task.suite,
-        conditioning_state=conditioning_state,
-        condition_video_offsets=condition_video_offsets,
+        packed_condition=packed_condition,
         before_lora={
             name: value.detach().clone() for name, value in candidate_lora.items()
         },
@@ -189,7 +186,7 @@ def lora_response(
 def evaluate_credit_views(
     runtime: RewardRuntime, probe: RewardProbe
 ) -> tuple[Mapping[str, Any], ...]:
-    """Re-evaluate the exact four-view expert panel at current Writer parameters."""
+    """Re-evaluate downstream parameters on the cached pre-update memory states."""
 
     if len(probe.credit_views) != 4:
         raise WriterModelError("direct commitment lost four video views")
@@ -234,6 +231,7 @@ def evaluate_credit_views(
                 "credit_objective_delta": delta,
                 "after_expert_action_distance": credit["expert_action_distance"],
                 "credit_descent": delta < 0,
+                "cached_layer_memory_downstream_only": True,
             }
         )
     return tuple(rows)
@@ -251,10 +249,9 @@ def probe_after_update(
         dtype=torch.bfloat16,
         enabled=runtime.context.device.type == "cuda",
     ):
-        encoded = runtime.writer.compile_conditioning_state(
-            probe.conditioning_state,
-            probe.condition_video_offsets,
-            use_query_delta=True,
+        encoded = runtime.writer.encode_program(
+            *probe.packed_condition,
+            policy=runtime.policy,
         )
         after = runtime.writer.decode_output(encoded)
     response = lora_response(probe.before_lora, after)
@@ -283,6 +280,7 @@ def probe_after_update(
         ),
     )
     response["probe_seconds"] = time.monotonic() - started
+    response["post_update_full_writer_reencode"] = True
     return {"task_id": probe.global_task_id, "suite": probe.suite, **response}
 
 
@@ -389,6 +387,29 @@ def median_capped_task_mean(
     }
 
 
+def _pairwise_gradient_cosine(rows: torch.Tensor) -> dict[str, Any]:
+    norms = torch.linalg.vector_norm(rows, dim=1)
+    active = norms > 0
+    values = rows[active]
+    if values.shape[0] > 1:
+        unit = values / norms[active, None]
+        pairwise = unit @ unit.T
+        offdiag = pairwise[
+            ~torch.eye(values.shape[0], dtype=torch.bool, device=rows.device)
+        ]
+        summary = torch.stack((offdiag.mean(), offdiag.min(), offdiag.max()))
+        mean, minimum, maximum = summary.cpu().tolist()
+    else:
+        mean = minimum = maximum = 1.0 if values.shape[0] == 1 else 0.0
+    return {
+        "mean": mean,
+        "minimum": minimum,
+        "maximum": maximum,
+        "nonzero_task_rows": int(active.sum()),
+        "zero_task_rows": int((~active).sum()),
+    }
+
+
 def _coexistence(
     runtime: RewardRuntime,
     selected_ids: Sequence[int],
@@ -402,22 +423,10 @@ def _coexistence(
     mean_norm = torch.linalg.vector_norm(shared_mean)
     dots = rows @ shared_mean
     cosines = dots / (row_norms * mean_norm).clamp_min(1e-30)
-    unit = rows / row_norms[:, None].clamp_min(1e-30)
-    pairwise = unit @ unit.T
-    if rows.shape[0] > 1:
-        offdiag = pairwise[
-            ~torch.eye(rows.shape[0], dtype=torch.bool, device=rows.device)
-        ]
-        pairwise_values = (
-            torch.stack((offdiag.mean(), offdiag.min(), offdiag.max())).cpu().tolist()
-        )
-        pairwise_summary = dict(
-            zip(("mean", "minimum", "maximum"), pairwise_values, strict=True)
-        )
-    else:
-        pairwise_summary = {"mean": 1.0, "minimum": 1.0, "maximum": 1.0}
+    pairwise_summary = _pairwise_gradient_cosine(rows)
 
     parameter_energy = {}
+    memory_slice: ParameterSlice | None = None
     for (name, _), item in zip(
         _trainable_named(runtime), runtime.gradient_layout, strict=True
     ):
@@ -436,6 +445,34 @@ def _coexistence(
         parameter_energy[name] = {
             "task_gradient_rms_mean": task_rms,
             "shared_mean_gradient_rms": shared_rms,
+        }
+        if name == "parameter_grid.branch.memory_tokens":
+            memory_slice = item
+
+    memory_geometry: dict[str, Any] | None = None
+    if memory_slice is not None:
+        memory_rows = rows[:, memory_slice.start : memory_slice.stop]
+        if memory_slice.start == 0:
+            downstream_rows = rows[:, memory_slice.stop :]
+        elif memory_slice.stop == rows.shape[1]:
+            downstream_rows = rows[:, : memory_slice.start]
+        else:
+            downstream_rows = torch.cat(
+                (rows[:, : memory_slice.start], rows[:, memory_slice.stop :]), dim=1
+            )
+        memory_geometry = {
+            "memory_token_pairwise_task_gradient_cosine": (
+                _pairwise_gradient_cosine(memory_rows)
+            ),
+            "downstream_pairwise_task_gradient_cosine": (
+                _pairwise_gradient_cosine(downstream_rows)
+            ),
+            "memory_token_shared_gradient_rms": float(
+                shared_mean[memory_slice.start : memory_slice.stop]
+                .square()
+                .mean()
+                .sqrt()
+            ),
         }
 
     delta_norm = torch.linalg.vector_norm(final_delta)
@@ -462,7 +499,7 @@ def _coexistence(
         .cpu()
         .tolist()
     )
-    return {
+    result = {
         "active_task_ids": list(selected_ids),
         "task_tangent_balance": dict(task_tangent_balance),
         "shared_mean_descent_coverage": coverage,
@@ -485,6 +522,9 @@ def _coexistence(
         ],
         "per_parameter": parameter_energy,
     }
+    if memory_geometry is not None:
+        result["gradient_open_memory_query"] = memory_geometry
+    return result
 
 
 def preconditioned_candidate_commitment(
@@ -648,7 +688,9 @@ def _direct_adam_commitment(
         "search_trial_count": len(trials),
         "all_active_task_view_credit_descent_diagnostic": all_view_descent,
         "descending_task_view_count": sum(value < 0 for value in objective_deltas),
-        "diagnostic_reference": "stored_gradient_path_preupdate_expert_objective",
+        "diagnostic_reference": (
+            "cached_preupdate_layer_memory_downstream_only_expert_objective"
+        ),
         "repeated_step0_baseline_forward": False,
         "search_seconds": time.monotonic() - started,
     }

@@ -755,12 +755,17 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
   gradient/moments严格为0，仅有weight decay；把实际受检验假设收窄为fixed random memory queries，不能宣称
   可学习memory token失败。
 
-## Active iteration: successor selection after SEOD
+## Active iteration: V6-LPCP CFMG Gradient-Open Memory Query
 
-- [ ] 判断只打开同一次context forward中memory observer到输入token的反向链，是否能从第一性原理直接改善
-  shared task representation/coexistence；不得把“漏训了参数”本身当成必然性能收益；
-- [ ] 若机制假设成立，写fresh单变量authority：sealed LPCP、SEOD credit/K4/rank32/信息墙不变，不从cycle4中途
-  打开，不增加重复context forward；先以真实anchor验证memory gradient、cross-task geometry、显存与吞吐；
+- [x] 比较继续改credit、同时改rank/full-factor与只打开memory query三条路线；选择最窄且直接作用于shared
+  policy-aligned representation的GOMQ，不把“漏训了参数”本身当成必然性能收益；
+- [x] 写fresh单变量authority：sealed LPCP、SEOD credit/K4/rank32/信息墙不变，不从cycle4中途打开，不增加第二次
+  native context forward；
+- [x] 原位实现live memory observer gradient、rollout前后图生命周期、memory-slice coexistence诊断与anchor
+  post-update full re-forward；切换fresh config/checkpoint/eval identity并退休旧active schema；
+- [x] 完成focused/full CPU和architecture gate：完整`418 passed`、compile/diff检查通过、无hard violation；
+- [ ] 完成真实four-suite two-cycle smoke；cycle1只开gate，cycle2必须得到非零
+  memory gradient/moments、跨task共同证据、held transport和可接受吞吐；
 - [ ] 只有机制门显示 learned queries 提供了fixed queries没有的跨task共同结构，才启动full24；good checkpoint
   按owner要求继续相邻训练，约145且retention合理立即补六臂因果controls。
 

@@ -103,20 +103,16 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
     assert parse_macro_boundaries("1,2,3", 3) == (1, 2, 3)
 
 
-def test_successful_expert_distillation_config_records_closed_loop_gate() -> None:
+def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle1_ready"
-    assert config["formal_run"]["status"] == "sealed"
-    smoke = config["formal_run"]["mechanism_smoke_evidence"]
-    assert smoke["world_size"] == 4
-    assert (smoke["expert_successes"], smoke["expert_failures"]) == (8, 0)
-    assert smoke["descending_task_views"] == smoke["task_views"] == 16
-    assert min(smoke["cross_video_pairwise_cosine_by_task"]) > 0.5
-    assert smoke["cycle_seconds"] < 180.0
+    assert config["status"] == "active_two_cycle_mechanism_smoke_pending"
+    assert config["formal_run"]["status"] == "mechanism_smoke_pending"
+    assert "mechanism_smoke_evidence" not in config["formal_run"]
     predecessor = config["formal_run"]["predecessor_evidence"]
-    assert predecessor["strict_curve"] == [142, 142, 136]
-    assert predecessor["adjacent_churn"] == [36, 34]
-    assert predecessor["exact_current_lpcp_expert_ba_reachable_energy"] < 0.4
+    assert predecessor["strict_curve"] == [129, 135, 143, 136]
+    assert predecessor["adjacent_churn"] == [36, 38, 41]
+    assert predecessor["memory_token_gradient_all_four_cycles"] == 0.0
+    assert predecessor["memory_token_optimizer_moments_after_cycle4"] == 0.0
     assert config["initialization"]["as_macro"] == 25
     deployment = config["deployment"]
     assert (deployment["carrier_rank"], deployment["residual_bank_rank"]) == (16, 16)
@@ -137,7 +133,7 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
     ) == (REPO_ROOT / teacher["bank_root"]).resolve()
     assert config["data"]["videos_per_task"] == 4
     assert config["optimization"]["trainable"] == (
-        "content_first_backbone_memory_grid_2828928_parameters"
+        "gradient_open_content_first_backbone_memory_grid_2828928_parameters"
     )
     assert config["objective"]["kind"] == (
         "cross_video_successful_expert_occupancy_unit_residual_distillation"
@@ -157,6 +153,7 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
     assert config["smoke_run"]["shared_anchor_task_ids"] == [2, 12, 21, 35]
     assert config["smoke_run"]["required_world_size"] == 4
     smoke = config["smoke_run"]
+    assert smoke["cycles"] == 2
     assert smoke["anchor_expert_direct_successes_of_50"] == [41, 46, 47, 40]
     assert smoke["required_selected_states_per_successful_trajectory"] == 8
     assert config["formal_run"]["stable_qualification"] == {
@@ -178,6 +175,9 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
             "carrier_first_bank_tensors_unchanged",
             "single_native_context_backbone_forward",
             "one_way_layer_matched_memory_observer",
+            "cycle1_memory_token_gradient_zero_by_gate",
+            "cycle2_memory_token_gradient_required_nonzero",
+            "memory_token_pairwise_task_geometry_recorded",
             "content_processing_precedes_zero_gate",
             "residual_second_b_step0_zero",
             "expert_rank16_to_rank32_effective_ba_equivalent",
@@ -187,6 +187,7 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
             "one_maximum_disagreement_state_per_equal_progress_stratum",
             "four_disjoint_correct_k4_credit_views",
             "failed_expert_trajectory_has_zero_credit",
+            "post_update_anchor_full_writer_reencode",
         )
     )
     assert gate["trainable_parameter_count"] == 2_828_928
@@ -198,10 +199,19 @@ def test_successful_expert_distillation_config_records_closed_loop_gate() -> Non
     assert gate["batch_shape_kernel_reduction_low_bit_variation_accepted"]
     assert gate["shared_anchor_cycle_seconds_maximum"] == 180.0
     assert config["formal_run"]["checkpoint_cycles"] == [1, 2, 3, 4]
-    extension = config["formal_run"]["owner_training_volume_extension"]
-    assert extension["parent_strict_curve"] == [129, 135, 143]
-    assert extension["scientific_variables_changed"] is False
-    require_reward_mode(config, "formal")
+    assert config["formal_run"]["stage_stop_cycles"] == [2, 3, 4]
+    assert config["formal_run"]["strict_paired400_cycles"] == [2, 3, 4]
+    volume = config["formal_run"]["training_volume_contract"]
+    assert volume["cycle1"] == "zero_gate_open_only"
+    assert volume["cycle2"] == (
+        "first_memory_query_update_and_first_strict400"
+    )
+    require_reward_mode(config, "smoke")
+    with pytest.raises(
+        WriterModelError,
+        match="formal gradient-open memory-query training is not authorized",
+    ):
+        require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

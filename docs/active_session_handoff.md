@@ -21,7 +21,14 @@
   `torch.no_grad()`内缓存conditioning state，四轮该组per-task/shared gradient和Adam一、二阶矩严格为0，
   checkpoint间`2.7435e-9` RMS变化仅来自weight decay。其余24/25 content/gate组真实训练。因此SEOD结果有效
   地裁决“固定随机memory queries + 可学习下游grid”，没有裁决可学习SHINE式memory tokens；当前没有active
-  GPU run或可resume checkpoint，下一步先判断是否以fresh单变量打开该反向链；
+  GPU run或可resume checkpoint；
+- 当前active design是**GOMQ**，authority=
+  `docs/action_forecast_writer_v6_lpcp_cfmg_gradient_open_memory_query_design.md`。canonical原位实现和fresh identity已完成，
+  focused/full CPU均通过（完整`418 passed`），architecture guard无hard violation，尚未启动GPU。它保持SEOD全部部署前向、
+  K4、rank32、credit和optimizer，只让同一次frozen native context中的37个input memory queries在gate打开后获得
+  reward gradient；cycle1仍只开gate，cycle2首次更新memory，formal必须fresh。四suite two-cycle smoke先比较
+  memory-only/downstream-only跨task geometry、完整anchor re-forward、validation8 transport和A40吞吐；只有证明
+  learned query提供fixed query没有的共同结构才进入full24；
 - USEP clean`6033330` fixed task4/34/38 world3已完整exit0：outcome/count复现，task38/次大gradient=
   `6.1538x`、cross-task cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual Adam j0使12/12 normalized
   deployed margins下降且q/v/action/fixed-action response非零。task34 raw four-view仍2/4、cosine/energy=

@@ -1,4 +1,4 @@
-"""Authority for CFMG successful-expert occupancy distillation."""
+"""Authority for the CFMG gradient-open memory-query successor."""
 
 from __future__ import annotations
 
@@ -11,18 +11,18 @@ from ember.writer.errors import WriterModelError
 
 
 REWARD_CONFIG_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_distillation_v1"
+    "ember_pi05_v6_lpcp_cfmg_gradient_open_memory_query_v1"
 )
 REWARD_LAUNCH_SCHEMA = (
-    "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_distillation_launch_v1"
+    "ember_pi05_v6_lpcp_cfmg_gradient_open_memory_query_launch_v1"
 )
 REWARD_CONFIG = REPO_ROOT / (
-    "configs/pi05_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_v1.json"
+    "configs/pi05_writer_v6_lpcp_cfmg_gradient_open_memory_query_v1.json"
 )
 _INITIALIZATION_CONTRACT = {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_macro": 25,
-    "writer": "frozen_v6_lpcp_plus_cfmg_successful_expert_distillation",
+    "writer": "frozen_v6_lpcp_plus_cfmg_gradient_open_memory_query",
 }
 _DEPLOYMENT_CONTRACT = {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -105,11 +105,12 @@ _COMMITMENT_CONTRACT = {
     ),
     "view_weighting": "equal_mean_over_four_correct_video_gradients_before_optimizer",
     "fixed_scale_or_checkpoint_selection": False,
-    "video_or_environment_recompute": False,
+    "four_view_finite_diagnostic": "cached_preupdate_layer_memory_downstream_only",
+    "post_update_anchor_writer_reencode": True,
     "rank_state_contract": "one_identical_parameter_delta_on_every_rank",
 }
 _SMOKE_CONTRACT = {
-    "cycle": 1,
+    "cycles": 2,
     "shared_anchor_task_ids": [2, 12, 21, 35],
     "required_world_size": 4,
     "assignment": "one_fixed_suite_anchor_per_local_rank_in_list_order",
@@ -144,7 +145,10 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
             _contains(
                 optimization,
                 {
-                    "trainable": "content_first_backbone_memory_grid_2828928_parameters",
+                    "trainable": (
+                        "gradient_open_content_first_backbone_memory_grid_"
+                        "2828928_parameters"
+                    ),
                     "matched_action_batch_size": 8,
                     "endpoint_action_batch_size": 8,
                 },
@@ -164,16 +168,13 @@ def _contract_is_valid(config: Mapping[str, Any], cold_start: str) -> bool:
                     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
                     "total_cycles": 4,
                     "checkpoint_cycles": [1, 2, 3, 4],
-                    "stage_stop_cycles": [1, 2, 3, 4],
-                    "strict_paired400_cycles": [1, 2, 3, 4],
-                    "owner_training_volume_extension": {
-                        "parent_cycle": 3,
-                        "parent_strict_curve": [129, 135, 143],
-                        "cycle3_breadth": 5,
-                        "cycle2_to_cycle3_retained_gained_lost": [120, 23, 15],
-                        "extension_cycle": 4,
-                        "scientific_variables_changed": False,
-                        "decision": "one_bounded_adjacent_stability_checkpoint",
+                    "stage_stop_cycles": [2, 3, 4],
+                    "strict_paired400_cycles": [2, 3, 4],
+                    "training_volume_contract": {
+                        "cycle1": "zero_gate_open_only",
+                        "cycle2": "first_memory_query_update_and_first_strict400",
+                        "cycle3": "second_memory_query_update_if_cycle2_not_severe",
+                        "cycle4": "adjacent_stability_only_if_cycle3_promising",
                     },
                 },
             ),
@@ -185,14 +186,14 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     path = path.resolve()
     config = read_json(path)
     if config.get("schema_version") != REWARD_CONFIG_SCHEMA:
-        raise WriterModelError("unsupported successful-expert endpoint config")
+        raise WriterModelError("unsupported gradient-open memory-query config")
     config_repo_root = path.parent.parent
     base_path = (config_repo_root / str(config.get("base_as_config", ""))).resolve()
     base = load_writer_config(base_path)
     initialization = config.get("initialization", {})
     cold_start = str(initialization.get("as_checkpoint", ""))
     if not _contract_is_valid(config, cold_start):
-        raise WriterModelError("successful-expert endpoint contract changed")
+        raise WriterModelError("gradient-open memory-query contract changed")
     teacher = config["privileged_teacher"]
     config["resolved_base_as_config"] = str(base_path)
     config["cold_start_relative"] = cold_start
@@ -204,6 +205,6 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
-        raise WriterModelError("invalid successful-expert endpoint mode")
+        raise WriterModelError("invalid gradient-open memory-query mode")
     if mode == "formal" and config["formal_run"]["status"] not in {"ready", "sealed"}:
-        raise WriterModelError("formal successful-expert training is not authorized")
+        raise WriterModelError("formal gradient-open memory-query training is not authorized")

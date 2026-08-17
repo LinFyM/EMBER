@@ -600,7 +600,7 @@ def inspect_dynamic_k_writer_evaluation(
         "kind": DYNAMIC_K_WRITER_KIND,
         "arm": (
             (
-                "v6_lpcp_cfmg_successful_expert_occupancy_distillation_"
+                "v6_lpcp_cfmg_gradient_open_memory_query_"
                 if writer_asset["kind"] == REWARD_DEPLOYMENT_KIND
                 else "v6_layerwise_probe_conditioned_procedure_"
             )

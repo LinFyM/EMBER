@@ -42,6 +42,35 @@ from ember.writer.reward_preference import (
 )
 
 
+def test_reward_condition_keeps_memory_graph_and_detaches_candidate_lora() -> None:
+    writer, _ = _writer_model()
+    writer.requires_grad_(False)
+    writer.parameter_grid.branch.requires_grad_(True)
+    with torch.no_grad():
+        writer.parameter_grid.branch.payload_gate.fill_(1e-3)
+    runtime = SimpleNamespace(
+        context=SimpleNamespace(device=torch.device("cpu")),
+        writer=writer,
+        policy=torch.nn.Identity(),
+    )
+    state, candidate = reward_cycle._encode_packed_candidate(runtime, _inputs())
+    assert state.layer_memory_states.requires_grad
+    assert all(not value.requires_grad for value in candidate.values())
+
+    encoded = writer.compile_conditioning_state(
+        state, _inputs()[3], use_query_delta=True
+    )
+    generated = writer.decode_output(encoded)
+    sum(
+        value.float().sum()
+        for name, value in generated.items()
+        if name.endswith(".lora_B.default.weight")
+    ).backward()
+    memory = writer.parameter_grid.branch.memory_tokens
+    assert memory.grad is not None and memory.grad.count_nonzero()
+    assert all(parameter.grad is None for parameter in writer.base_writer.parameters())
+
+
 def test_formal_credit_retains_all_four_views_for_global_commitment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

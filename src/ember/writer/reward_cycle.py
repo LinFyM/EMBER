@@ -82,6 +82,40 @@ def _trajectory_row(value: RewardTrajectory) -> dict[str, Any]:
     }
 
 
+def _pack_candidate_condition(
+    runtime: RewardRuntime, task: RewardTask, demos: Sequence[int]
+) -> tuple[tuple[Any, ...], Mapping[str, Any]]:
+    return pack_teacher_condition(
+        runtime.video_store,
+        task_id=task.global_task_id,
+        demos=demos,
+        language=runtime.language_tokens[task.global_task_id],
+        device=runtime.context.device,
+    )
+
+
+def _encode_packed_candidate(
+    runtime: RewardRuntime, packed: tuple[Any, ...]
+) -> tuple[WriterConditioningState, Mapping[str, torch.Tensor]]:
+    with torch.autocast(
+        device_type=runtime.context.device.type,
+        dtype=torch.bfloat16,
+        enabled=runtime.context.device.type == "cuda",
+    ):
+        state = runtime.writer.encode_conditioning_state(*packed, policy=runtime.policy)
+    with torch.no_grad():
+        with torch.autocast(
+            device_type=runtime.context.device.type,
+            dtype=torch.bfloat16,
+            enabled=runtime.context.device.type == "cuda",
+        ):
+            encoded = runtime.writer.compile_conditioning_state(
+                state, packed[3], use_query_delta=True
+            )
+            candidate = runtime.writer.decode_output(encoded)
+    return state, candidate
+
+
 def _encode_candidate_condition(
     runtime: RewardRuntime, task: RewardTask, demos: Sequence[int]
 ) -> tuple[
@@ -90,43 +124,9 @@ def _encode_candidate_condition(
     WriterConditioningState,
     Mapping[str, torch.Tensor],
 ]:
-    packed, video_metrics = pack_teacher_condition(
-        runtime.video_store,
-        task_id=task.global_task_id,
-        demos=demos,
-        language=runtime.language_tokens[task.global_task_id],
-        device=runtime.context.device,
-    )
-    with (
-        torch.no_grad(),
-        torch.autocast(
-            device_type=runtime.context.device.type,
-            dtype=torch.bfloat16,
-            enabled=runtime.context.device.type == "cuda",
-        ),
-    ):
-        state = runtime.writer.encode_conditioning_state(*packed, policy=runtime.policy)
-        encoded = runtime.writer.compile_conditioning_state(
-            state, packed[3], use_query_delta=True
-        )
-        candidate = runtime.writer.decode_output(encoded)
+    packed, video_metrics = _pack_candidate_condition(runtime, task, demos)
+    state, candidate = _encode_packed_candidate(runtime, packed)
     return packed, video_metrics, state, candidate
-
-
-def _encode_task(runtime: RewardRuntime, task: RewardTask, cycle: int) -> tuple[
-    int,
-    tuple[int, ...],
-    tuple[Any, ...],
-    Mapping[str, Any],
-    WriterConditioningState,
-    Mapping[str, torch.Tensor],
-]:
-    visit = cycle - 1
-    demos = runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
-    packed, video_metrics, state, candidate = _encode_candidate_condition(
-        runtime, task, demos
-    )
-    return visit, tuple(demos), packed, video_metrics, state, candidate
 
 
 def _collect_expert_trajectories(
@@ -379,17 +379,20 @@ def _task_gradient(
     cycle: int,
     gradient_template: torch.Tensor,
 ) -> tuple[dict[str, Any], RewardProbe | None, int, torch.Tensor | None]:
-    visit, anchor_demos, packed, video_metrics, state, candidate_lora = _encode_task(
-        runtime, task, cycle
+    visit = cycle - 1
+    anchor_demos = tuple(
+        runtime.video_schedule.demos_for_task_visit(task.global_task_id, visit)
     )
     expert, rollout_seconds = _collect_expert_trajectories(runtime, task, visit)
     successful = tuple(value for value in expert if value.success)
+    packed, video_metrics = _pack_candidate_condition(runtime, task, anchor_demos)
     credit = empty_successful_expert_occupancy_credit()
     credit_seconds = 0.0
     task_gradient = None
     probe = None
     active = int(bool(successful))
     if successful:
+        state, candidate_lora = _encode_packed_candidate(runtime, packed)
         (
             credit,
             credit_seconds,
@@ -411,8 +414,7 @@ def _task_gradient(
         probe = make_reward_probe(
             runtime,
             task,
-            state,
-            packed[3],
+            packed,
             candidate_lora,
             successful,
             credit_batch,
@@ -538,9 +540,9 @@ def _cycle_metrics(
     return {
         "cycle": cycle,
         "cycle_semantics": (
-            "one_complete_train24_successful_expert_occupancy_distillation"
+            "one_complete_train24_gradient_open_memory_query_distillation"
             if runtime.args.mode == "formal"
-            else "four_suite_successful_expert_occupancy_live_smoke"
+            else "four_suite_two_cycle_gradient_open_memory_query_live_smoke"
         ),
         "tasks": len(records),
         "expert_states": 2 * len(records),

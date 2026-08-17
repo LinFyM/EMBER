@@ -73,6 +73,11 @@ churn=`36/38/41`；多训后的cycle4证明143只是暂时峰值。same-task不�
 表述为可学习SHINE式memory token失败。当前没有active GPU run；实时successor判断只取
 [`docs/active_session_handoff.md`](docs/active_session_handoff.md)。
 
+当前设计authority是[`GOMQ`](docs/action_forecast_writer_v6_lpcp_cfmg_gradient_open_memory_query_design.md)：
+保持SEOD的部署前向、K4、rank32、expert-occupancy credit和optimizer，只打开同一次native context forward中
+37个input memory queries的反向链。它先做two-cycle机制门，证明learned queries确实形成跨task共同读取基并穿过
+完整Writer→LoRA→action，而不是因为发现旧参数漏训就直接宣称新架构有效。
+
 ## Information wall
 
 Writer可读取exact language与同task action-hidden videos。它不能读取teacher action、proprio/state、reward、

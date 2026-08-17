@@ -23,7 +23,7 @@ EMBER上下文纠正理解。
 2. `docs/active_session_handoff.md`
 3. `docs/execution_brief.md`
 4. 当前active design：
-   `docs/action_forecast_writer_v6_lpcp_cfmg_successful_expert_occupancy_distillation_design.md`
+   `docs/action_forecast_writer_v6_lpcp_cfmg_gradient_open_memory_query_design.md`
 5. `task_plan.md`
 6. `findings.md`
 7. `docs/concept.md`
@@ -60,9 +60,17 @@ cycle后机制审计还发现一个此前未被正确识别的实现边界：正
 `WriterConditioningState`，随后只重编译下游grid，因此37个输入`memory_tokens`四轮的per-task/shared gradient、
 Adam一阶矩和二阶矩均严格为0；逐轮`2.7435e-9` RMS变化仅为weight decay。其余24/25 content/gate参数组真实训练。
 所以这些closed-loop结果有效地检验了**固定随机memory queries + 可学习temporal/set/M2P/gate**，没有检验
-SHINE式可学习memory-token reader。该边界不允许把SEOD重命名为成功，也不允许宣称memory token失败；当前没有
-active GPU run或可resume checkpoint。下一successor必须先判断“打开memory-token反向图”是否真正针对shared
-coexistence，并以fresh、单变量authority验证，不能从cycle4中途打开。
+SHINE式可学习memory-token reader。该边界不允许把SEOD重命名为成功，也不允许宣称memory token失败。
+
+当前active design是**V6-LPCP CFMG Gradient-Open Memory Query**（GOMQ），authority=
+`docs/action_forecast_writer_v6_lpcp_cfmg_gradient_open_memory_query_design.md`。canonical原位实现已完成：reward
+rollout后才建立live memory graph，候选LoRA/policy保持断图，更新后anchor做一次完整Writer re-forward；fresh
+config/checkpoint/eval identity已替换旧active schema。完整CPU=`418 passed`，architecture guard无hard violation，尚未启动GPU。它不改变部署
+前向、K4、rank32、SEOD credit或optimizer，只打开同一次native context forward中memory observer到37个input
+tokens的反向链；cycle1仍只开gate，cycle2才首次更新memory。formal必须从sealed LPCP fresh，不能从cycle4中途
+打开。preformal先用四suite anchors连续两cycles检验memory slice的跨task共同方向、完整re-forward的LoRA/action
+响应、held video transport与A40吞吐；不能仅因发现旧参数漏训就自动授权formal。当前没有active GPU run或可resume
+checkpoint。
 
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个

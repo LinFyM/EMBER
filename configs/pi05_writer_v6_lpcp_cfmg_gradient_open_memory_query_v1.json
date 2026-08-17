@@ -1,12 +1,12 @@
 {
-  "schema_version": "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_distillation_v1",
-  "status": "active_formal_cycle1_ready",
+  "schema_version": "ember_pi05_v6_lpcp_cfmg_gradient_open_memory_query_v1",
+  "status": "active_two_cycle_mechanism_smoke_pending",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
     "as_checkpoint": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/checkpoints/macro_00000025",
     "as_macro": 25,
-    "writer": "frozen_v6_lpcp_plus_cfmg_successful_expert_distillation"
+    "writer": "frozen_v6_lpcp_plus_cfmg_gradient_open_memory_query"
   },
   "deployment": {
     "kind": "one_complete_38_target_rank32_content_first_memory_grid_lora",
@@ -86,7 +86,7 @@
   },
   "optimization": {
     "precision": "bfloat16",
-    "trainable": "content_first_backbone_memory_grid_2828928_parameters",
+    "trainable": "gradient_open_content_first_backbone_memory_grid_2828928_parameters",
     "matched_action_batch_size": 8,
     "endpoint_action_batch_size": 8,
     "optimizer": {
@@ -118,11 +118,12 @@
     "task_weighting": "cap_only_norms_above_active_panel_median_never_amplify_small_tasks_then_equal_mean",
     "view_weighting": "equal_mean_over_four_correct_video_gradients_before_optimizer",
     "fixed_scale_or_checkpoint_selection": false,
-    "video_or_environment_recompute": false,
+    "four_view_finite_diagnostic": "cached_preupdate_layer_memory_downstream_only",
+    "post_update_anchor_writer_reencode": true,
     "rank_state_contract": "one_identical_parameter_delta_on_every_rank"
   },
   "smoke_run": {
-    "cycle": 1,
+    "cycles": 2,
     "shared_anchor_task_ids": [2, 12, 21, 35],
     "required_world_size": 4,
     "assignment": "one_fixed_suite_anchor_per_local_rank_in_list_order",
@@ -131,43 +132,19 @@
     "required_selected_states_per_successful_trajectory": 8
   },
   "formal_run": {
-    "status": "sealed",
-    "mechanism_smoke_evidence": {
-      "root": "runs/outputs/pi05_v6_lpcp_cfmg_seod_smoke_tasks2_12_21_35_r4_k4_views4_b8_08c5edc_gpu02p1234_20260817",
-      "commit": "08c5edcc240a01eec525e2e86c1c340b1af760fe",
-      "node": "gpu02",
-      "physical_gpu_ids": [1, 2, 3, 4],
-      "world_size": 4,
-      "cycle_seconds": 87.09354748111218,
-      "expert_successes": 8,
-      "expert_failures": 0,
-      "active_suites": 4,
-      "descending_task_views": 16,
-      "task_views": 16,
-      "cross_video_pairwise_cosine_by_task": [
-        0.9871823191642761,
-        0.7756457328796387,
-        0.953630805015564,
-        0.9711743593215942
-      ],
-      "max_cuda_reserved_bytes": 19369295872,
-      "exit_code": 0
-    },
+    "status": "mechanism_smoke_pending",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_cycles": 4,
     "checkpoint_cycles": [1, 2, 3, 4],
-    "stage_stop_cycles": [1, 2, 3, 4],
-    "strict_paired400_cycles": [1, 2, 3, 4],
-    "owner_training_volume_extension": {
-      "parent_cycle": 3,
-      "parent_strict_curve": [129, 135, 143],
-      "cycle3_breadth": 5,
-      "cycle2_to_cycle3_retained_gained_lost": [120, 23, 15],
-      "extension_cycle": 4,
-      "scientific_variables_changed": false,
-      "decision": "one_bounded_adjacent_stability_checkpoint"
+    "stage_stop_cycles": [2, 3, 4],
+    "strict_paired400_cycles": [2, 3, 4],
+    "training_volume_contract": {
+      "cycle1": "zero_gate_open_only",
+      "cycle2": "first_memory_query_update_and_first_strict400",
+      "cycle3": "second_memory_query_update_if_cycle2_not_severe",
+      "cycle4": "adjacent_stability_only_if_cycle3_promising"
     },
-    "early_terminal": "only_on_mechanism_failure_or_severe_cycle1_closed_loop_regression",
+    "early_terminal": "mechanism_failure_or_severe_cycle2_closed_loop_regression",
     "stable_qualification": {
       "target_correct": 150,
       "scientifically_valuable_stable_correct": 145,
@@ -179,15 +156,16 @@
       "correct_each_negative_margin_minimum": 10
     },
     "predecessor_evidence": {
-      "method": "MCTC",
-      "strict_curve": [142, 142, 136],
-      "breadth_curve": [7, 6, 7],
-      "adjacent_churn": [36, 34],
-      "cycle3_lpcp_retained_gained_lost": [122, 14, 21],
-      "cycle2_to_cycle3_all400_effective_ba_relative_l2_mean": 0.00119912,
-      "cycle2_to_cycle3_first4_update_cosine_energy": [0.988724, 0.990306],
-      "exact_current_lpcp_expert_ba_reachable_energy": 0.3817118841,
-      "exact_current_lpcp_expert_ba_projection_cosine": 0.6178283614
+      "method": "SEOD_fixed_random_memory_queries",
+      "strict_curve": [129, 135, 143, 136],
+      "breadth_curve": [6, 6, 5, 5],
+      "adjacent_churn": [36, 38, 41],
+      "cycle3_to_cycle4_retained_gained_lost": [119, 17, 24],
+      "cycle3_to_cycle4_all400_effective_ba_relative_l2_mean": 0.00280905,
+      "cycle3_to_cycle4_first4_update_cosine_energy": [0.994106, 0.992830],
+      "cycle4_cross_task_gradient_cosine_mean": 0.053370,
+      "memory_token_gradient_all_four_cycles": 0.0,
+      "memory_token_optimizer_moments_after_cycle4": 0.0
     },
     "mechanism_gate": {
       "public_rank": 32,
@@ -196,6 +174,9 @@
       "residual_second_b_step0_zero": true,
       "single_native_context_backbone_forward": true,
       "one_way_layer_matched_memory_observer": true,
+      "cycle1_memory_token_gradient_zero_by_gate": true,
+      "cycle2_memory_token_gradient_required_nonzero": true,
+      "memory_token_pairwise_task_geometry_recorded": true,
       "content_processing_precedes_zero_gate": true,
       "expert_rank16_to_rank32_effective_ba_equivalent": true,
       "expert_not_checkpointed_or_deployed": true,
@@ -210,6 +191,7 @@
       "task_gradient_balance": "cap_only_above_active_panel_median_without_small_task_amplification",
       "rank_parameter_delta_identical": true,
       "post_update_all_view_credit_descent_is_diagnostic": true,
+      "post_update_anchor_full_writer_reencode": true,
       "post_update_q_v_action_native_factors_nonzero": true,
       "constant_dynamic_residual_near_zero": true,
       "reverse_material": true,

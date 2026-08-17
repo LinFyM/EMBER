@@ -341,11 +341,11 @@ def _load_direct_factor_models(
         != 2_828_928
     ):
         raise WriterModelError(
-            "SEOD endpoint must train only 2828928 parameters"
+            "GOMQ endpoint must train only 2828928 parameters"
         )
     trainable = writer_trainable_contract(writer, policy, lora)
     trainable["object"] = (
-        "v6_lpcp_cfmg_successful_expert_occupancy_distillation_only"
+        "v6_lpcp_cfmg_gradient_open_memory_query_only"
     )
     trainable["writer_trainable_parameter_names"] = list(trainable_names)
     return policy, writer, lora, trainable, _optimizer(writer, config)
@@ -470,7 +470,7 @@ def prepare_runtime(args: argparse.Namespace, context: DistributedContext) -> Re
         if loaded != start_cycle:
             raise WriterModelError("direct-factor resume cursor changed")
     stop_cycle = (
-        1
+        int(config["smoke_run"]["cycles"])
         if args.mode == "smoke"
         else int(args.stop_after_cycle or config["formal_run"]["stage_stop_cycles"][0])
     )
@@ -572,8 +572,8 @@ def train(args: argparse.Namespace) -> None:
                 args.output_dir / "completion.json",
                 {
                     "schema_version": (
-                        "ember_pi05_v6_lpcp_cfmg_successful_expert_occupancy_"
-                        "distillation_completion_v1"
+                        "ember_pi05_v6_lpcp_cfmg_gradient_open_memory_query_"
+                        "completion_v1"
                     ),
                     "mode": args.mode,
                     "completed_cycle": runtime.stop_cycle,

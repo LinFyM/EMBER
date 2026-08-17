@@ -78,6 +78,10 @@ churn=`36/38/41`；多训后的cycle4证明143只是暂时峰值。same-task不�
 37个input memory queries的反向链。它先做two-cycle机制门，证明learned queries确实形成跨task共同读取基并穿过
 完整Writer→LoRA→action，而不是因为发现旧参数漏训就直接宣称新架构有效。
 
+该机制门已通过：cycle2 memory update真实非零，train/validation learned-memory方向均为正，完整输出保持K4集合
+近似不变并保留倒序/静态差异；当前已授权从sealed LPCP fresh训练cycle0→2。这里仍没有新的closed-loop分数，
+最终判断继续只认single-checkpoint strict paired400。
+
 ## Information wall
 
 Writer可读取exact language与同task action-hidden videos。它不能读取teacher action、proprio/state、reward、

@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Gradient-Open Memory Query
 
-状态：2026-08-17 **canonical实现与CPU验证完成，GPU机制smoke待启动**。简称 **GOMQ**。本轮从sealed V6-LPCP143 fresh
+状态：2026-08-17 **preformal机制门通过，fresh cycle0→2 formal已sealed待启动**。简称 **GOMQ**。本轮从sealed V6-LPCP143 fresh
 开始，不resume SEOD cycle4。部署前向、K4输入、rank32输出、successful-expert occupancy credit、four-view
 task gradient、median upper cap和natural Adam全部保持；唯一主要变量是让37个真实backbone input memory tokens
 在payload gate打开后真正接收reward gradient。
@@ -164,3 +164,22 @@ rank8/full-factor、其它memory容量、dynamic-K/few-shot、生成LoRA或未�
 实现验证：以上改动已在唯一canonical runtime原位完成；候选LoRA保持detached、frozen policy无梯度、live
 `layer_memory_states`可把gate-open cotangent传到input `memory_tokens`，post-update anchor执行完整Writer re-forward。
 focused回归通过，完整CPU=`418 passed`，`compileall`与`diff --check`通过，architecture guard无hard violation。
+
+## 11. Pre-formal实测裁决
+
+clean`51e3d73`在gpu02物理`1/2/3/4`完成world4 two-cycle smoke并exit0。cycle1/2 wall=
+`96.0967/102.5570s`，expert successes=`8/6`、failures=`0/2`，peak reserved=`20.818GB`。cycle1 memory gradient按
+zero gate为0；cycle2四task均非零，shared gradient RMS=`8.0168e-8`、parameter delta RMS=`.0001537793`，由
+Adam更新方程可知一、二阶moment同时非零。memory-only/downstream task cosine mean/min=
+`.155845/-.280301`与`.412169/.296898`；四task same-task four-view cosine=`.974869--.993822`。四个post-update
+anchor完整重编码均产生非零q/v/action BA与fixed-action response。
+
+随后固定全部cycle2 downstream参数，只把37个memory queries恢复初始值，使用train anchors与validation8的四组
+action-hidden K4视频做反事实。validation8的memory-only contribution 8/8 pairwise cosine为正，aggregate
+cosine/energy=`.126548/.343180`、held/train L2=`1.11159x`。full residual的natural→reversed relative-L2=
+`1.95298`，constant/natural L2=`.002048`。K4视频集合换序的full residual cosine最低`.99994085`；其差异相对
+LPCP BA估算最大`3.687e-5`，符合允许的BF16 reduction-order低位差异。memory-only是两个近同BF16 forwards之差，
+其换序relative值被数值底噪放大，不能覆盖部署full output证据。
+
+因此第7节机制门通过，formal从sealed LPCP fresh cycle0→2；不得resume smoke parameter grid。该通过只说明
+learned query值得full24/strict检验，不是closed-loop性能结论。

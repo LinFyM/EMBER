@@ -72,6 +72,15 @@ tokens的反向链；cycle1仍只开gate，cycle2才首次更新memory。formal�
 响应、held video transport与A40吞吐；不能仅因发现旧参数漏训就自动授权formal。当前没有active GPU run或可resume
 checkpoint。
 
+GOMQ clean`51e3d73` four-suite world4 two-cycle smoke已完整exit0：cycle wall=`96.097/102.557s`，cycle1按结构
+memory gradient为0且gate非零；cycle2四task memory gradient全非零，shared RMS=`8.017e-8`、parameter delta RMS=
+`.000153779`，memory-only/downstream跨task cosine mean=`.155845/.412169`，四task same-task four-view cosine=
+`.974869--.993822`，完整re-forward的q/v/action BA与fixed action均非零，peak reserved=`20.818GB`。validation8
+action-hidden反事实显示learned-memory contribution 8/8 task cosine为正，mean cosine/energy=`.126548/.343180`、
+held/train L2=`1.11159x`；full residual reversed relative-L2=`1.95298`，constant/natural=`.002048`。K4集合换序
+full residual cosine最低`.99994085`，差异相对LPCP BA估算最大`3.69e-5`，按正常BF16归约差异裁决为通过，不能
+用memory-only两次近零差分放大值否决。preformal机制门已通过并封印fresh cycle0→2 formal；smoke参数不得续用。
+
 USFC clean`db7ab24` gpu02 world6 full24 cycle1完整exit0：24 tasks/48 paired states/96 rollouts，candidate/reference=
 `33/32`、gains=`3/2`，5 active tasks覆盖四suite，cycle=`480.284s`。exact Adam `j0` delta L2=`.242816`，20个
 task×view margins下降`17/20`；task4/25/34/38均4/4，只有task19为1/4且mean harm=`2.249e-5`。其余10个scale

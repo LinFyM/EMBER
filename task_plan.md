@@ -764,10 +764,11 @@ Goal不绑定Dynamic-K、memory token数量、LoRA rank、mapper形式或optimiz
 - [x] 原位实现live memory observer gradient、rollout前后图生命周期、memory-slice coexistence诊断与anchor
   post-update full re-forward；切换fresh config/checkpoint/eval identity并退休旧active schema；
 - [x] 完成focused/full CPU和architecture gate：完整`418 passed`、compile/diff检查通过、无hard violation；
-- [ ] 完成真实four-suite two-cycle smoke；cycle1只开gate，cycle2必须得到非零
-  memory gradient/moments、跨task共同证据、held transport和可接受吞吐；
-- [ ] 只有机制门显示 learned queries 提供了fixed queries没有的跨task共同结构，才启动full24；good checkpoint
-  按owner要求继续相邻训练，约145且retention合理立即补六臂因果controls。
+- [x] 完成clean`51e3d73`真实four-suite two-cycle smoke与validation8 action-hidden反事实：cycle2 memory
+  gradient/delta非零，memory-only/downstream cosine mean=`.155845/.412169`，held8 cosine/energy=
+  `.126548/.343180`且8/8为正，完整q/v/action响应、reverse/static/K-set与A40吞吐门通过；
+- [ ] 从sealed LPCP fresh启动full24 cycle0→2，随后立即做cycle2 strict400；若非灾难结果继续cycle3，good
+  checkpoint按owner要求做相邻稳定性训练，约145且retention合理立即补六臂因果controls。
 
 ## Non-negotiable boundaries
 

@@ -29,6 +29,12 @@
   reward gradient；cycle1仍只开gate，cycle2首次更新memory，formal必须fresh。四suite two-cycle smoke先比较
   memory-only/downstream-only跨task geometry、完整anchor re-forward、validation8 transport和A40吞吐；只有证明
   learned query提供fixed query没有的共同结构才进入full24；
+- GOMQ clean`51e3d73` two-cycle smoke和validation8门现已通过。cycle wall=`96.097/102.557s`；cycle2 memory
+  shared gradient/parameter delta RMS=`8.017e-8/.000153779`，memory-only/downstream task cosine mean=
+  `.155845/.412169`，四个anchor full re-forward的q/v/action/fixed-action response全非零。held8 learned-memory
+  cosine/energy=`.126548/.343180`、8/8 task为正、held/train L2=`1.11159x`；full reversed relative-L2=`1.95298`、
+  constant/natural=`.002048`。K4 permutation的full residual cosine最低`.99994085`，差异相对LPCP BA最大估算
+  `3.69e-5`，属于允许的BF16集合归约低位差异。fresh cycle0→2 formal已sealed，当前尚未发射；smoke state不续用；
 - USEP clean`6033330` fixed task4/34/38 world3已完整exit0：outcome/count复现，task38/次大gradient=
   `6.1538x`、cross-task cosine mean/min=`.16247/.08040`、raw shared=`3/3`，actual Adam j0使12/12 normalized
   deployed margins下降且q/v/action/fixed-action response非零。task34 raw four-view仍2/4、cosine/energy=

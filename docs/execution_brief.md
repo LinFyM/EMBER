@@ -35,6 +35,13 @@ formal必须sealed LPCP fresh。canonical实现已完成，完整CPU=`418 passed
 memory-only跨task cosine、anchor完整re-forward的q/v/action、validation8 transport与最长视频吞吐。只有learned
 queries提供fixed queries没有的共同policy-aligned结构才启动full24；不因“旧参数漏训”本身自动重跑。
 
+该门已由clean`51e3d73`关闭：cycle2 memory gradient/delta非零，memory-only/downstream跨task cosine mean=
+`.155845/.412169`，四task same-video coherence=`.974869--.993822`，完整re-forward的q/v/action/fixed action全非零；
+cycle wall=`96.097/102.557s`、peak reserved=`20.818GB`。validation8 action-hidden反事实为8/8正cosine，聚合
+cosine/energy=`.126548/.343180`、held/train L2=`1.11159x`；full reversed=`1.95298`、constant/natural=`.002048`。
+K4换序full residual最低cosine`.99994085`且相对LPCP BA差异最多约`3.69e-5`，按数值政策通过。下一执行点是
+sealed LPCP fresh cycle0→2 full24；不resume smoke或SEOD。
+
 以下保留通往USFC/USDC的紧邻因果链。
 
 此前执行的**CMBG full24 cycle1**：修正formal four-view retention后的clean`b4dbf84`在world5完整

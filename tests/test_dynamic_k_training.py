@@ -105,9 +105,20 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_two_cycle_mechanism_smoke_pending"
-    assert config["formal_run"]["status"] == "mechanism_smoke_pending"
-    assert "mechanism_smoke_evidence" not in config["formal_run"]
+    assert config["status"] == "active_formal_cycle0to2_ready"
+    assert config["formal_run"]["status"] == "sealed"
+    smoke_evidence = config["formal_run"]["mechanism_smoke_evidence"]
+    assert smoke_evidence["world_size"] == 4
+    assert smoke_evidence["cycle_seconds"][1] < 180.0
+    assert smoke_evidence["cycle2_memory_token_shared_gradient_rms"] > 0
+    assert smoke_evidence["cycle2_memory_token_parameter_delta_rms"] > 1e-4
+    assert smoke_evidence["cycle2_memory_token_pairwise_task_cosine"][0] > 0
+    held_evidence = config["formal_run"]["held_memory_evidence"]
+    assert held_evidence["validation_tasks"] == 8
+    assert held_evidence["positive_pairwise_tasks"] == 8
+    assert held_evidence["pairwise_cosine_mean"] > 0
+    assert held_evidence["mean_energy_over_sample_energy"] > 0.25
+    assert held_evidence["teacher_or_held_action_reward_reads"] == 0
     predecessor = config["formal_run"]["predecessor_evidence"]
     assert predecessor["strict_curve"] == [129, 135, 143, 136]
     assert predecessor["adjacent_churn"] == [36, 38, 41]
@@ -207,11 +218,7 @@ def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
         "first_memory_query_update_and_first_strict400"
     )
     require_reward_mode(config, "smoke")
-    with pytest.raises(
-        WriterModelError,
-        match="formal gradient-open memory-query training is not authorized",
-    ):
-        require_reward_mode(config, "formal")
+    require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
 
 

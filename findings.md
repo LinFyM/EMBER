@@ -31,6 +31,12 @@ LoRA”，不支持“learned SHINE式memory token无效”。打开该链是尚
 同时变化则无法归因。反证同样明确：cycle2若memory-only gradients仍冲突、完整re-forward无新增响应或held
 transport崩溃，就在formal前关闭该方向。
 
+GOMQ的two-cycle smoke把该未知变成了可检验证据。cycle2的memory-only task cosine mean/min=
+`.155845/-.280301`，downstream mean/min=`.412169/.296898`；不是每对task都同向，但shared读取基不再整体相消。
+validation8的learned-memory contribution 8/8 task cosine为正，aggregate cosine/energy=`.126548/.343180`，幅度为
+train anchors的`1.11159x`，说明不是只记住四个anchor；同时full LoRA保留倒序relative-L2=`1.95298`和static
+ratio=`.002048`。该证据只授权full24真实性能检验，不证明learned memory已经解决task drift。
+
 CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的same-task four-view gradients约`.99`
 一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
 scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于

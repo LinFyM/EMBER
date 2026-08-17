@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v1",
-  "status": "active_profile_pending",
+  "status": "active_formal_ready",
   "sealed_stage": "development",
   "authorities": {
     "target_data_manifest": {"path": "configs/pi05_target_data_v1/manifest.json"},
@@ -147,12 +147,37 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "unsealed_pending_live_profile",
+    "status": "sealed",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 100,
     "per_task_action_batch_size": 20,
     "checkpoint_macros": [25, 50, 75, 100],
     "stage_stop_macros": [25, 50, 75, 100],
-    "first_strict_paired400_macro": 25
+    "first_strict_paired400_macro": 25,
+    "profile_evidence": {
+      "source_commit": "dd81b94d15b5eae48ac5c26724d8181bf8a2d56d",
+      "run_root": "runs/acceptance/pi05_lmmpc_micro5_profile_r5_b20_dd81b94_gpu02p12347_20260817",
+      "host": "gpu02",
+      "physical_gpus": [1, 2, 3, 4, 7],
+      "world_size": 5,
+      "functional_policy_microbatch_size": 5,
+      "completion_macro": 2,
+      "macro_seconds": 36.21625816216692,
+      "max_cuda_allocated_bytes": 32757881856,
+      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
+      "program_matching_weight": 0.04,
+      "scheduled_max_condition_frames": 371,
+      "scheduled_max_condition_peak_reserved_bytes": 45283803136,
+      "scheduled_max_condition_result": "complete_five_task_local_sequence",
+      "mechanism_source_commit": "4b6316a7ed5ba6e8cbe74e2e0bac377c11ed8e22",
+      "native_context_calls": 323,
+      "expected_native_context_calls": 323,
+      "native_encoder_padding_rows": 29,
+      "correct_reverse_directed_relative_l2": 1.9999756813049316,
+      "correct_effective_ba_l2": 0.5642335932446646,
+      "constant_effective_ba_max_abs": 0.0,
+      "k_permutation_lora_max_abs": 0.0,
+      "deployment_training_primary_lora_max_abs": 0.0
+    }
   }
 }

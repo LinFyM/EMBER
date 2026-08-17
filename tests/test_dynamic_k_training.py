@@ -62,7 +62,7 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_lmmpc_config_is_fresh_rank16_and_awaits_reprofile() -> None:
+def test_lmmpc_config_is_fresh_rank16_and_profile_sealed() -> None:
     config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
@@ -73,7 +73,17 @@ def test_lmmpc_config_is_fresh_rank16_and_awaits_reprofile() -> None:
     assert config["writer"]["vl_meta_lora_trainable"] is False
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["completion_macro"] == 2
+    assert evidence["functional_policy_microbatch_size"] == 5
+    assert evidence["scheduled_max_condition_frames"] == 371
+    assert evidence["native_context_calls"] == evidence[
+        "expected_native_context_calls"
+    ]
+    assert evidence["constant_effective_ba_max_abs"] == 0.0
+    assert evidence["k_permutation_lora_max_abs"] == 0.0
+    assert evidence["deployment_training_primary_lora_max_abs"] == 0.0
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)

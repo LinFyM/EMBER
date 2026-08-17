@@ -520,7 +520,7 @@ microbatch6、B20的两macro fresh profile：K1--K4每轮各6 tasks，macro=`32.
 L2=`.564234`；constant从raw memory到compiled grid与effective BA均严格为0，K视频置换后的完整LoRA max-abs差严格
 为0。该证据只封存运行recipe和机制健康，不是closed-loop性能证据。
 
-### 17.1 Formal exposure correction pending reseal
+### 17.1 Formal exposure correction and micro5 reseal
 
 上述两macro profile没有覆盖100-macro schedule的真正最长条件。clean `de0b298` world5 formal在macro1--16的
 functional/Program matching从`.15609/.36194`下降到`.11888/.17621`，但macro17的rank2在task38、K4、359帧条件
@@ -529,5 +529,11 @@ functional/Program matching从`.15609/.36194`下降到`.11888/.17621`，但macro
 
 局部修正仅把functional B20 microbatch从6降为5。两者都执行4次policy forward，而micro5恰为`5×4`，不再为
 `6+6+6+2`固定shape路径计算额外padding；Writer、输入帧、loss、task权重和架构均不变。micro5已通过原359帧
-故障序列，并通过扫描完整100-macro schedule所得真实最大task38/K4/371帧条件。正式状态暂时unsealed，必须由
-clean micro5 full24 profile重新封存后才可fresh重启formal。
+故障序列，并通过扫描完整100-macro schedule所得真实最大task38/K4/371帧条件，完整五任务序列峰值reserved=
+`45,283,803,136` bytes。
+
+clean pushed `dd81b94`随后在gpu02物理`1/2/3/4/7`以world5完成两macro full24 micro5 profile：macro=
+`39.22/36.22s`，functional=`.15612→.15399`，Program matching=`.36194→.30113`，每轮K1--K4严格各6 tasks，
+无OOM/nonfinite。部署路径同时省去只服务matching loss的shuffle Procedure/memory计算，单元合同证明其76个primary
+LoRA tensors与训练路径逐元素相同。该profile与371帧证据共同重新封存formal recipe；原失败run无checkpoint，
+不得resume，后继必须fresh。

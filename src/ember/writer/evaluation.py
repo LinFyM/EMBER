@@ -456,10 +456,14 @@ def inspect_dynamic_k_writer_evaluation(
             "throughput_policy": (
                 "highest_measured_batch_throughput_with_device_memory_headroom"
             ),
-            "minimum_smoke_writer_model_batch_size": min(
-                profile.get(
-                    "supported_writer_model_batch_sizes",
-                    [DYNAMIC_K_GENERATION_BATCH_SIZE],
+            "minimum_smoke_writer_model_batch_size": (
+                DYNAMIC_K_GENERATION_BATCH_SIZE
+                if profile is None
+                else min(
+                    profile.get(
+                        "supported_writer_model_batch_sizes",
+                        [DYNAMIC_K_GENERATION_BATCH_SIZE],
+                    )
                 )
             ),
             "online_smoke_evidence": None if profile is None else dict(profile),

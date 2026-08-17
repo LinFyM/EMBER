@@ -100,6 +100,10 @@ held跨video坐标；GOMQ更直接证明learned memory query曾带来显著close
 但GOMQ随后连续回落，说明“memory读得好”不等于“shared LoRA tail写得稳”。被否决的是当前memory + independent
 rank32 direct-B tail + reward update组合，不是memory token一般。
 
+还需区分两种coherence：GOMQ相邻更新的完整BA在four-K4 conditions下约`.993`一致，但隔离memory-only contribution
+在held same-task videos上只有约`.127`。前者说明shared update没有被video-set相消，不能反推learned memory已经形成
+完整高层Program；151只证明memory query有真实增量价值。
+
 memory也不得为了形式而强塞入Action Expert。若调用原生backbone，必须保留有意义的图像、语言和原生prefix语义；
 不能运行zero-image或无context action query后把输出称为policy grounding。
 
@@ -196,6 +200,11 @@ task drift可能来自：
 - 一个shared checkpoint持续积累多个tasks；
 - 约145+相邻稳定且六臂合格的方法；
 - Program到LoRA的可扩展、material又support-preserving的统一compiler。
+
+整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构在Program端尚未消失，首先在nonlinear
+family/B readout明显变同向；LPCP冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，
+shared reward仍不能保留held support。因此下一统一架构应优先检验**layer/rank-matched Program到共同可训练native
+A/B compiler**，而不是再次只换carrier或同时重写reward。
 
 ## 14. 方法选择与实验原则
 

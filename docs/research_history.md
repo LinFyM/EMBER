@@ -194,6 +194,11 @@ cycle3=`135/400`，cycle2→3=`122/13/29`、churn42；cycle4=`131/400`，cycle3�
 cycle2→4净`-20`。三次相邻更新的same-task four-K4 BA cosine/energy持续约`.993/.993`，训练内多数views下降，
 因此回落不能归因于video-set相消、漏梯度或训练量不足。GOMQ没有运行六臂，不能宣称通过或失败视频因果资格。
 
+整理后的held memory gate进一步校正了一个容易过度解读的口径：learned memory本身的held/train L2 ratio为
+`1.1116`，但隔离出的memory-only same-task cosine/energy只有`.1266/.3432`；完整residual才是`.9829/.9854`。
+因此`.993`证明的是相邻shared BA update对four-K4 conditions高度一致，不证明isolated learned memory已经形成高
+coherence高层Program。memory的`+16`闭环贡献仍成立，但Program质量、旧residual support和reward credit必须分开。
+
 这一结果同时否定两个极端叙述：不能说memory token没用，也不能说151证明完整方法成功。被否决的是“learned
 one-way memory + 当前K4/reward + independent rank32 direct-B shared tail连续更新即可稳定积累”的组合。
 

@@ -1,56 +1,57 @@
 # EMBER Task Plan
 
+状态：2026-08-17完成。本文记录本轮仓库整理后认知重建与新架构设计goal；实现与GPU实验属于后续独立工作。
+
 ## Goal
 
-全面整理EMBER仓库并系统重建截至当前的项目认知，使代码、脚本、配置、文档与实验设计证据形成清晰、唯一、
-可追溯的权威结构；在此基础上从宏观目标和具体历史结果逐步推导后续架构方向。整理阶段不直接实现新架构或启动
-GPU实验。
+基于已经完成的仓库整理和统一历史证据，系统重建EMBER认知，逐步定位最早未解决接口，并形成一套符合owner原则、
+继承有效历史机制、具有明确数据流水线与可证伪实验合同的新架构设计。设计讨论完成前不启动GPU实验。
 
 ## Done when
 
-- active tree只有当前仍有owner的代码、脚本、配置和测试；退役路径由Git/formal artifacts保存。
-- `AGENTS.md`只包含稳定项目总览和原则。
-- owner目标与讨论共识、概念定义、历史架构账本和跨实验结论各有唯一canonical文档。
-- 不存在互相矛盾的“active/next/resume”文档，也不存在持久handoff。
-- 全部历史架构的假设、结果、实际否决边界和检索入口可从统一ledger找到。
-- 明确临时文件被清理，formal runs、checkpoints、data、evidence和所有权不清内容完整保留。
-- import/config/link扫描、compile、全量CPU测试和Git diff检查通过。
-- 形成由证据约束的设计推理顺序，但不抢先宣布未验证的新架构。
+- 不以“问题清单”冒充结论：对Program、compiler、reward direction与shared retention逐层作出证据裁决。
+- 明确哪些问题已解决、哪些仅局部接通、哪一个是下一架构应改变的最早接口。
+- 新设计给出从language/videos到一套完整LoRA的端到端数据流水线，并解释每个模块的必要性。
+- 动态K、每video内部时序、跨video共同信息、language/video分工和single-LoRA部署合同全部闭合。
+- 说明memory、V6/LPCP carrier、native rank16 compiler和历史reward机制哪些保留、哪些替换及原因。
+- 训练目标、fresh/warm-start边界、single-variable合同、快速否决门、strict paired400与六臂时点明确。
+- 设计不靠额外target-task数据、task ID、expert route、checkpoint union或生成后task-local RL提高当前分数。
+- owner看完后能判断完整pipeline和关键取舍，而不是继续追问各token/分支“到底在做什么”。
 
 ## Constraints
 
 - 不使用subagents。
-- 不启动GPU训练或评测。
-- 不删除formal evidence、唯一checkpoint、dataset或所有权不清内容。
-- 不为清理添加兼容fallback、防御性hash或新框架。
-- 不把memory token、rank或具体decoder写成goal；它们只是候选方法。
-- 历史文档和artifact中的旧“下一步”不得恢复执行。
+- 设计讨论完成前不实现新架构、不启动GPU训练或评测。
+- memory token、rank、V6 compiler、MCPS和RL都只是候选方法，不预写进最终结论。
+- 优先复用现有formal artifacts做只读分析，不为分析增加大cache、防御性hash或复杂框架。
+- 一次只选择一个主要因果变量；负结果只淘汰实际检验的组合。
+- closed-loop absolute首先选择方法，稳定性、same-task video鲁棒和视频因果性决定方法资格。
 
 ## Work plan
 
-- [x] 完整阅读authority与mandatory reading，确认Git、进程、quota和当前权限。
-- [x] 盘点tracked/untracked文件、引用关系、worktree、tmux、runtime资产和大目录。
-- [x] 移除103个历史worktrees与死tmux sessions；确认五个scratch branches已patch-equivalent后删除，保留正式资产。
-- [x] 删除退役Writer/v6-prior/reward-gate运行路径及其专属configs/tests。
-- [x] 收缩task-expert和evaluator运行面，封闭terminal GOMQ训练入口。
-- [x] 通过第一轮相关CPU测试（119 passed）。
-- [x] 将`AGENTS.md`收缩为稳定总览；恢复`task_plan/findings/progress`三文件工作状态结构。
-- [x] 重写README、owner requirements、concept、research history和findings。
-- [x] 建立“重新认知与设计推理”文档，区分已解决接口、未解决接口和待检验问题。
-- [x] 删除已合并进ledger的重复per-design docs、过期迁移文档和失效引用。
-- [x] 清理明确临时cache、bytecode、pytest cache、egg-info和`.codex/tmp`。
-- [x] 完成引用、config、import、compile、targeted/full CPU和Git最终验证。
-- [x] 更新`progress.md`与最终仓库地图，形成clean commit并按仓库Git合同交付。
+- [x] 完成仓库、文档、代码与历史证据的统一整理；clean commit `120eeec`已推送。
+- [x] 明确当前真正未决的架构分叉：Program形成、native compiler还是shared credit/retention。
+- [x] 建立V6/LPCP、Dynamic-K、GOMQ及关键reward路线的stage-wise证据矩阵。
+- [x] 判断GOMQ 151→135→131中，能力丢失首先发生在representation、compiler还是policy credit。
+- [x] 判断memory-derived Program与V6 native rank16 topology能否形成有原理依据的统一接口。
+- [x] 比较GOMQ Direct-B、memory-only LPCP Query和Layer-Matched Memory Program Compiler，给出决定性取舍。
+- [x] 写完整新design讨论稿：输入、表示、memory/Program、聚合、compiler、LoRA、训练和评测。
+- [x] 将完整设计、三项核心取舍与实现边界交付owner讨论；本轮保持无active GPU run。
 
-## Decision after cleanup
+本轮最终设计提案为`docs/layer_matched_memory_program_compiler_design.md`。它完成了本goal要求的设计推理与实验合同；
+是否升级为active implementation authority、是否启动实现/GPU，属于下一决策，不由本goal自动授权。
 
-整理完成后先回答以下问题，再决定是否建立active design：
+## Evidence adjudication
 
-1. EMBER的输入信息中，哪些是language query、video dynamic Value和有向过程证据？
-2. 历史上哪几个接口已经可靠接通，哪一个是最早仍未解决的接口？
-3. same-task跨video共同表示与cross-task可分表示是否同时存在于现有artifact？
-4. 失败主要发生在Program形成、native LoRA compiler、reward direction还是shared retention？
-5. 下一实验怎样只改变一个主要因果变量，并以最小机制证据快速否决？
-6. 何时必须做strict paired400、相邻checkpoint和六臂controls？
-
-在这些问题没有从整理后的证据中逐步闭合前，不把MCPS、memory token、V6 tail或任何其它候选提升为active design。
+1. Dynamic-K的between-task结构在M2P/final Program仍约`.49/.53`，到family hidden/B才升为约`.63/.78`同向；最早
+   明显collapse在nonlinear compiler，不是raw carrier。
+2. GOMQ的`.993`说明相邻shared BA update没有被four-K4 video-set相消，但isolated memory-only coherence仅`.127`；
+   gained/lost改写幅度不可分，151回落首先支持shared reward/held retention失败，不能反推Program已经完善。
+3. LPCP证明layerwise carrier有效；其BA相对AS139仅改`.002653`又说明143大量来自旧baseline support。V6 native
+   rank16 topology可保留，但冻结Procedure Query→W2路径不可原样继续。
+4. 历史尚未把“可检测顺序”变成稳定有用方向。LMMPC用反对称Program与language matching阻断旁路，再由correct
+   functional loss和六臂闭环裁决，不把latent margin冒充答案。
+5. shared failure不是容量单因：GOMQ memory/downstream跨task gradient低coherence、持续失败样本改写大且held
+   gained/lost不可分。先修Program→native commitment；reward/optimizer另轮处理。
+6. sealed LPCP143加zero-forward、同rank16的LMMPC A/B residual branch提供step0 support；最终同拓扑必须fresh训练，
+   bridge不冒充成品。

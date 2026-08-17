@@ -5,10 +5,11 @@
 
 ## Current state
 
-- 本轮“全面整理仓库并重建EMBER认知”goal已完成；本轮没有启动新架构或GPU实验。
+- 仓库整理、stage-wise证据裁决和完整新架构提案均已完成；本轮设计goal已结束。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
 - 整理起点HEAD为`8553b613de7791df50e0f3ef85678fcaca1cac0c`；交付状态以包含本文的当前分支tip为准。
-- 当前没有active design、GPU run或可resume successor checkpoint。
+- 当前有LMMPC最终设计提案，但没有active implementation authority、GPU run或可resume successor checkpoint；完成
+  设计goal不自动授权实现或GPU。
 - 当前协作边界：暂时不使用subagents。
 
 ## Completed in this cleanup
@@ -41,12 +42,19 @@
   data、evidence和models未删。
 - 验证重新生成的bytecode和pytest cache已再次清除；项目根不存在持久handoff。
 
-## Next decision boundary
+## Current design boundary
 
-当前停在“无active design、无active run、无可resume successor”的清晰边界。下一科研阶段先使用现有formal artifacts
-回答`docs/architecture_reasoning.md`登记的stage-wise证据问题，判断最早缺口究竟在Program形成、native compiler、
-reward direction还是shared retention；证据指向单一接口后，才建立新的单变量design authority。memory token、
-rank16、V6 compiler和MCPS都仍是候选部件，不是预设答案。
+stage-wise证据裁决已经写入`docs/architecture_reasoning.md`：视频和顺序可以进入表示，不能把问题简化成“carrier没
+读到”；冻结V6 tail会把新Procedure压成邻域小修，而GOMQ rank32 Direct-B虽打开写出却没有稳定保留shared support；
+successful-occupancy reward又不能选择held有用方向。下一主变量因此是Program到native LoRA的commitment，shared
+credit作为后续独立问题，不与它同时改变。
+
+完整设计提案为`docs/layer_matched_memory_program_compiler_design.md`。推荐LMMPC把真实native context中的learned
+memory先按video编成`forward-minus-reverse`反对称Program，在K轴置换不变且保符号聚合，再映射到V6的320个
+layer/rank policy slots；共同训练的rank16 A/B compiler读取方向，但不硬编码negative LoRA。训练同时使用correct
+跨episode dense functional credit和language—directed-Program matching：前者给policy方向，后者阻断positive-only task-identity/
+generic-video旁路，不续GOMQ reward。该稿已闭合数据流、训练、bridge/fresh边界、stage diagnostics、strict400和
+六臂时点。下一边界是owner是否把该提案升级为active implementation authority；在此之前不执行实现或GPU。
 
 ## Scientific boundary carried into cleanup
 

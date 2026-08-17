@@ -62,7 +62,8 @@ LMMPC-v3的identity-anchored bounded M2P commitment。
 - [x] 用v2 macro50 hidden完成逐block和bounded-counterfactual：当前两层把order`.2573→.0938`、between-task
   `.3381→.6560`；bounded initial/max保留到`.2479/.2308`与`.3608/.4056`。
 - [x] 完成v3唯一canonical实现、fresh schema、VL Meta-LoRA恒等路径清理、CPU/architecture合同。
-- [ ] 完成v3真实K4机制、吞吐、最长video、clean seal与fresh train24 macro25/50 strict paired400。
+- [x] 从clean pushed detached commit完成v3真实K4机制、world3两macro吞吐、371-frame门并封存formal recipe。
+- [ ] v3 fresh train24到macro25/50并完成strict paired400、逐task/suite/stage与retention/churn分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
@@ -78,4 +79,6 @@ output norm不是主因。因此v2不续macro75，最早断点已从reader后移
 v3保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、同一两层axial proposal和native rank16；
 唯一科学变量是把proposal限制为逐cell不超过anchor RMS `.5x`的residual，fresh gate初始为`.25x`。只读counterfactual
 在max gate仍保留order`.2308`和between-task`.4056`，same-task K4 cosine`.9939`。冻结、B=0的VL Meta-LoRA同步从
-fresh canonical runtime移除，作为行为等价工程清理。下一步完成schema/CPU/真实机制和吞吐seal，再fresh训练与strict。
+fresh canonical runtime移除，作为行为等价工程清理。clean `987d131`已经完成两macro、K4机制和371-frame门；
+bounded correction、完整Procedure、constant/K置换、八family/M2P梯度与VL清理均通过。下一步从只写回seal authority的
+clean pushed commit启动fresh train24；这些机制证据尚不是closed-loop成绩。

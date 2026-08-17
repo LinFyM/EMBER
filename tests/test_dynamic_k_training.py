@@ -62,7 +62,7 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_lmmpc_config_is_fresh_rank16_and_v3_profile_pending() -> None:
+def test_lmmpc_config_is_fresh_rank16_and_v3_profile_sealed() -> None:
     config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
@@ -74,8 +74,23 @@ def test_lmmpc_config_is_fresh_rank16_and_v3_profile_pending() -> None:
     assert config["writer"]["m2p_max_relative_correction"] == 0.5
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
-    assert "profile_evidence" not in config["formal_run"]
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["source_commit"] == (
+        "987d131be3817f30afdb8513678a8daf9b1044e1"
+    )
+    assert evidence["completion_macro"] == 2
+    assert evidence["world_size"] == 3
+    assert evidence["functional_policy_microbatch_size"] == 5
+    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
+    assert evidence["scheduled_max_condition_frames"] == 371
+    assert evidence["procedure_stage_replacement_relative_l2"] > 0.99
+    assert evidence["m2p_maximum_correction_over_anchor_rms"] < 0.5
+    assert evidence["m2p_gate_and_block_gradients_nonzero"] is True
+    assert evidence["constant_effective_ba_max_abs"] == 0.0
+    assert evidence["k_permutation_lora_max_abs"] == 0.0
+    assert evidence["vl_meta_lora_parameter_count"] == 0
+    assert evidence["source_policy_nonzero_gradient_tensors"] == 0
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)

@@ -621,3 +621,25 @@ v3的首轮可证伪门是：
 3. fresh训练仍到macro25并做strict400；若loss/closed-loop仍上升，继续macro50，不以首点判死；
 4. 若v3已保持Program但closed-loop仍远低于v1/LPCP，最早断点后移到factor/functional credit，再在同一主链内
    做下一次局部迭代；不得回头恢复unbounded M2P或用rank/LR/seed小扫。
+
+### 18.1 v3 clean mechanism/profile seal
+
+clean pushed detached `987d131be3817f30afdb8513678a8daf9b1044e1`在gpu02物理`1/3/7`以world3完成两次
+full24 macro：`58.55/55.32s`，functional=`.156120→.153991`，每轮K1--K4严格各6 tasks，profile peak
+allocated/reserved=`35,437,871,616 / 35,720,790,016` bytes。另在物理7完整重放schedule world5/rank0的
+macro44五任务序列，其中task38 K4为`82+105+92+92=371` frames；序列自然结束，peak allocated/reserved=
+`41,851,758,080 / 42,393,927,680` bytes，无OOM/nonfinite。
+
+同一macro2 checkpoint的task38真实K4机制探针显示：两层raw axial proposal相对Core-fused anchor的relative-L2高达
+`32.2288`，证明v2式overwrite风险在fresh v3仍真实存在；bounded commitment实际只改写`.250003`，320个live
+cells最大correction/anchor RMS=`.250395`，低于`.5`硬上限。gate=`.249998`，gate、两层M2P、memory/reader及八个
+factor families梯度全非零，source policy非零gradient tensor数为0。
+
+完整Procedure仍是必要路径：repeated-last使per-video parameter memory relative-L2=`.999716`、effective-BA=
+`.493903`。reverse/shuffle在重新排列raw frames并完整forward后，compiled relative-L2=`1.06281/.36850`，effective-BA=
+`.39081/.13498`；reverse不为架构硬反号。constant/template与K置换LoRA max-abs均为0，training/deployment
+recompile max-abs为0。fresh checkpoint不包含任何VL Meta-LoRA tensor或runtime owner；相对v2恰删除921,600个冻结
+参数并增加一个trainable scalar gate。
+
+以上只通过结构、梯度、资源和顺序响应门，不证明correct视频沿有用closed-loop方向优于controls。v3 formal config由
+这些clean artifacts封存；下一步必须fresh训练到macro25并做strict paired400，不能用机制距离代替性能裁决。

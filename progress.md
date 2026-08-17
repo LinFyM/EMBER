@@ -9,8 +9,8 @@
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。
 - LMMPC-v2已经完成fresh macro25/50、两次strict paired400和逐stage终局分析；旧checkpoint不得resume。
-- 当前主工作树从clean pushed `df3ae632fad644e7018887f5f0cea3dcd2ad0389`原位实现LMMPC-v3，尚未形成clean
-  commit或启动v3 GPU运行。
+- LMMPC-v3 canonical实现已由clean pushed `987d131be3817f30afdb8513678a8daf9b1044e1`封存；其clean detached
+  profile、真实K4机制和371-frame门均已完成。当前主工作树只写回seal authority，尚未启动v3 formal训练。
 - v3唯一科学变量是把已经定位会覆盖Core-fused Program的unbounded axial M2P改为逐cell identity-anchored
   bounded residual commitment；四流、V6 Core/Procedure、layer/rank memory、K-set、rank16 native A/B和训练合同不变。
 - fresh v3同步移除冻结、B=0、从不更新的VL Meta-LoRA及其hook；这是行为等价工程清理，不算第二个科学变量。
@@ -99,16 +99,23 @@ bank或其它新监督。
 - bounded commitment、可学习gate和零输入identity已实现。
 - fresh LMMPC不再实例化VL Meta-LoRA，legacy V6显式传rank4的路径仍保留。
 - 定向CPU=`76 passed`、全量CPU=`285 passed`、architecture guard无hard violation；当前diff-check通过。
-- v3 config仍为`unsealed_pending_live_profile`，不得在完成clean真实机制/吞吐门前启动formal训练。
+- clean world3两macro=`58.55/55.32s`，functional=`.156120→.153991`，每轮K1--K4各6 tasks；peak
+  allocated/reserved=`35,437,871,616 / 35,720,790,016` bytes，无OOM/nonfinite/forbidden read。
+- 371-frame完整五任务序列自然完成，peak allocated/reserved=`41,851,758,080 / 42,393,927,680` bytes。
+- macro2真实K4中，raw axial proposal相对anchor达`32.23x`，bounded commitment却只改写`.250003` relative-L2；
+  320个live cells最大correction/anchor RMS=`.250395`，低于结构上限`.5`。gate=`.249998`且gate/blocks均有梯度。
+- repeated-last使parameter memory relative-L2=`.999716`、BA=`.493903`；reverse/shuffle完整重前向后的compiled
+  relative-L2=`1.06281/.36850`，BA=`.39081/.13498`。这些只证明链路读取顺序，不是correct优于controls的成功证据。
+- constant/template和K置换max-abs均为0；八factor family和reader路径全有梯度；source policy非零gradient tensor为0；
+  checkpoint中VL Meta-LoRA参数为0，deployment recompile逐元素一致。
+- v3 config已经用上述clean evidence改为`sealed`，待CPU合同和clean pushed seal commit复验后允许formal fresh训练。
 
 ## Immediate next work
 
-1. 完成progress和窄合同收尾，重跑CPU/compile/diff/architecture检查，提交并push v3 mechanism candidate。
-2. 从clean pushed detached commit同时live检查两节点和quota，按实际可用A40运行真实K4机制、两macro吞吐和371-frame门。
-3. 验证VL Meta-LoRA参数/hook为0、source zero-grad、constant identity、K置换、repeated-Procedure响应、完整
-   correct/reverse/shuffle重前向、M2P correction bound/gate/blocks与八family梯度、native BA/action及无OOM/nonfinite。
-4. 用clean evidence封存v3 profile；重新profile K4 Writer generation batch，随后从fresh train24到macro25。
-5. 执行strict paired400和逐task/suite/stage/retention/churn分析；若链路和closed-loop仍在共同上升，继续macro50及相邻
+1. 验证seal config、全CPU/compile/diff/architecture合同，提交并push只含profile authority的clean commit。
+2. 从最终clean pushed detached commit启动fresh train24到macro25；同时完成K4 Writer generation batch profile并
+   把新profile authority写回evaluation runtime。
+3. 执行strict paired400和逐task/suite/stage/retention/churn分析；若链路和closed-loop仍在共同上升，继续macro50及相邻
    checkpoint，不在性能峰值前过早终止。首次约145且retention合理时立即补六臂和same-task不同视频鲁棒性。
 
 ## Fixed scientific baselines

@@ -35,10 +35,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v2"
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v3"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_episode_v2"
+    "ember_pi05_layer_matched_memory_program_compiler_episode_v3"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"

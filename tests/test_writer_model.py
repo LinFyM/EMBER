@@ -169,7 +169,10 @@ def test_constant_video_is_identity_even_after_factor_heads_open() -> None:
 
 def test_axial_m2p_is_strictly_zero_preserving() -> None:
     compiler = LayerMatchedMemoryProgramCompiler(
-        heads=8, blocks=2, initialization_seed=7
+        heads=8,
+        blocks=2,
+        max_relative_correction=0.5,
+        initialization_seed=7,
     )
     memory = torch.zeros(2, 18, 16, 256)
     core = torch.randn(2, 3, 256)
@@ -178,6 +181,29 @@ def test_axial_m2p_is_strictly_zero_preserving() -> None:
     fused, compiled = compiler(memory, core, valid, language)
     assert not fused.count_nonzero()
     assert not compiled.count_nonzero()
+
+
+def test_axial_m2p_commitment_is_cellwise_bounded_and_live() -> None:
+    compiler = LayerMatchedMemoryProgramCompiler(
+        heads=8,
+        blocks=2,
+        max_relative_correction=0.5,
+        initialization_seed=7,
+    )
+    anchor = torch.randn(2, 20, 16, 256, requires_grad=True)
+    proposal = anchor + 100.0 * torch.randn_like(anchor)
+    committed = compiler.bounded_commitment(anchor, proposal)
+    correction_rms = (committed - anchor).float().square().mean(-1).sqrt()
+    anchor_rms = anchor.float().square().mean(-1).sqrt()
+    torch.testing.assert_close(
+        correction_rms,
+        0.25 * anchor_rms,
+        rtol=2e-5,
+        atol=2e-6,
+    )
+    committed.square().mean().backward()
+    assert compiler.commitment_logit.grad is not None
+    assert compiler.commitment_logit.grad.count_nonzero()
 
 
 def test_video_set_does_not_mix_layer_or_rank_addresses() -> None:

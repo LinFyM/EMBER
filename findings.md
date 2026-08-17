@@ -99,6 +99,18 @@ reader输出约`2.75%/2.46%`，endpoint是它的`41.0x/45.7x`；把整条Procedu
 差异是否只是硬编码反号，以及这种差异是否最终沿有用closed-loop方向。正确结构应让固定policy地址读取完整阶段轴，
 并让dynamic Value在Procedure无阶段信息时不能独立通过；不能只报告correct/reverse latent距离。
 
+### 6.2 完整Procedure也可能被后置compiler重新抹平
+
+LMMPC-v2删除endpoint旁路并让每个layer/rank地址真正读取完整Procedure，机制门通过；但macro25/50 strict只有
+`71→73`。macro50 Core-fused grid仍有correct/reverse relative-L2`.2573`、between-task cosine`.3381`，同时
+same-task不同K4 set cosine`.9922`。两层unbounded axial M2P却把前两项改成`.0938/.6560`，最终BA order差异仅
+`.0862`；output RMSNorm单独几乎不改变这些指标。第一层输出相对输入改写`4.500x`，第二层再改写`1.753x`。
+
+这说明“结构化M2P”也不能默认获得覆盖parameter-aligned Program的权限。memory grid已经包含layer/rank地址时，跨层/
+rank通信应是受约束的refinement而不是新的主Value。只读bounded counterfactual表明，把每cell correction限制为anchor
+RMS的`.25/.5x`可分别保留order`.2479/.2308`、between-task`.3608/.4056`，且same-task K4仍为`.9928/.9939`。
+该证据只支持下一次局部实验，不替代fresh训练和closed-loop。
+
 ## 7. Memory token有真实价值，但不是目标
 
 SHINE/Doc2LoRA式memory的核心价值是内容处理和目标参数层之间的结构对应，而不是token数量本身。对EMBER，
@@ -210,6 +222,10 @@ task drift可能来自：
 - 一个shared checkpoint持续积累多个tasks；
 - 约145+相邻稳定且六臂合格的方法；
 - Program到LoRA的可扩展、material又support-preserving的统一compiler。
+
+LMMPC-v2还补充了一个明确负边界：完整stage reader、Dynamic-K与native rank16均接通，仍会被无上界后置M2P
+重新变成task-common、order-insensitive方向；因此当前最早修复接口是Program-preserving compiler commitment，而非
+继续增强Procedure loss、恢复negative训练或改变rank。
 
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held

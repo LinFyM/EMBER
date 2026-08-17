@@ -165,7 +165,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             expert_width=int(writer_config["expert_width"]),
             program_width=PROGRAM_WIDTH,
             text_meta_lora_rank=int(writer_config["text_meta_lora_rank"]),
-            vl_meta_lora_rank=int(writer_config["vl_meta_lora_rank"]),
+            vl_meta_lora_rank=0,
             action_meta_lora_rank=int(writer_config["action_meta_lora_rank"]),
             patch_grounding_heads=int(writer_config["patch_grounding_heads"]),
             max_frames_per_encoder_call=int(
@@ -178,7 +178,8 @@ class CompleteLoRAWriter(torch.nn.Module):
                 writer_config["activation_checkpointing"]
             ),
         )
-        semantic.vl_meta_lora.requires_grad_(False)
+        if semantic.vl_meta_lora is not None:
+            semantic.vl_meta_lora.requires_grad_(False)
         backbone = LayerMatchedBackboneMemoryEncoder(
             image_width=int(writer_config["image_width"]),
             expert_width=int(writer_config["expert_width"]),
@@ -213,6 +214,9 @@ class CompleteLoRAWriter(torch.nn.Module):
             compiler=LayerMatchedMemoryProgramCompiler(
                 heads=int(writer_config["m2p_heads"]),
                 blocks=int(writer_config["m2p_blocks"]),
+                max_relative_correction=float(
+                    writer_config["m2p_max_relative_correction"]
+                ),
                 initialization_seed=seed,
             ),
             factor_hidden_width=int(writer_config["factor_hidden_width"]),

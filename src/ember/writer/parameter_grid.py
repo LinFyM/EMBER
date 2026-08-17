@@ -399,18 +399,25 @@ class _AddressedAxialBlock(torch.nn.Module):
 
 
 class LayerMatchedMemoryProgramCompiler(torch.nn.Module):
-    """Fuse Core into the addressed memory grid and run SHINE-style axial M2P."""
+    """Fuse Core and commit a bounded axial correction to the addressed grid."""
 
     def __init__(
         self,
         *,
         heads: int,
         blocks: int,
+        max_relative_correction: float,
         initialization_seed: int,
     ) -> None:
         super().__init__()
-        if heads <= 0 or PROGRAM_WIDTH % heads or blocks <= 0:
+        if (
+            heads <= 0
+            or PROGRAM_WIDTH % heads
+            or blocks <= 0
+            or not 0.0 < max_relative_correction < 1.0
+        ):
             raise WriterModelError("invalid layer-matched M2P topology")
+        self.max_relative_correction = float(max_relative_correction)
         self.core_fusion = DynamicCoreFusion(
             heads=heads,
             initialization_seed=initialization_seed,
@@ -428,7 +435,28 @@ class LayerMatchedMemoryProgramCompiler(torch.nn.Module):
         self.blocks = torch.nn.ModuleList(
             _AddressedAxialBlock(heads=heads) for _ in range(blocks)
         )
+        self.commitment_logit = torch.nn.Parameter(torch.zeros(()))
         self.output_norm = RMSNorm(PROGRAM_WIDTH)
+
+    def bounded_commitment(
+        self,
+        anchor: torch.Tensor,
+        proposal: torch.Tensor,
+    ) -> torch.Tensor:
+        """Keep every addressed dynamic cell dominant over its M2P correction."""
+
+        if proposal.shape != anchor.shape:
+            raise WriterModelError("M2P proposal changed the addressed grid")
+        anchor32 = anchor.to(torch.float32)
+        delta32 = proposal.to(torch.float32) - anchor32
+        anchor_rms = anchor32.square().mean(dim=-1, keepdim=True).sqrt()
+        delta_rms = delta32.square().mean(dim=-1, keepdim=True).sqrt()
+        scale = (anchor_rms / delta_rms.clamp_min(1e-6)).clamp(max=1.0)
+        limited = delta32 * scale
+        gate = self.max_relative_correction * torch.sigmoid(
+            self.commitment_logit
+        )
+        return anchor + (gate * limited).to(anchor.dtype)
 
     def forward(
         self,
@@ -443,11 +471,12 @@ class LayerMatchedMemoryProgramCompiler(torch.nn.Module):
             valid_core,
             language_summary,
         )
-        compiled = fused
+        proposal = fused
         for block in self.blocks:
-            compiled = block(
-                compiled,
+            proposal = block(
+                proposal,
                 self.group_identity,
                 self.rank_identity,
             )
-        return fused, self.output_norm(compiled)
+        committed = self.bounded_commitment(fused, proposal)
+        return fused, self.output_norm(committed)

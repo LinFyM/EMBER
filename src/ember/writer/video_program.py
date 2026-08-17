@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Iterator, Sequence
 
 import torch
@@ -268,7 +268,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             expert_width,
             program_width,
             text_meta_lora_rank,
-            vl_meta_lora_rank,
             action_meta_lora_rank,
             patch_grounding_heads,
             max_frames_per_encoder_call,
@@ -277,6 +276,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         if (
             any(value <= 0 for value in dimensions)
+            or vl_meta_lora_rank < 0
             or action_horizon != 50
             or padded_action_dim != 32
         ):
@@ -306,9 +306,10 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             paligemma_model.layers,
             text_meta_lora_rank,
         )
-        self.vl_meta_lora = MetaLoRAStack(
-            paligemma_model.layers,
-            vl_meta_lora_rank,
+        self.vl_meta_lora = (
+            MetaLoRAStack(paligemma_model.layers, vl_meta_lora_rank)
+            if vl_meta_lora_rank
+            else None
         )
         self.action_meta_lora = MetaLoRAStack(
             expert_model.layers,
@@ -501,10 +502,12 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         positions = torch.cumsum(padding, dim=1) - 1
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        with (
-            self.vl_meta_lora.installed(language_model),
-            self.action_meta_lora.installed(expert_model),
-        ):
+        vl_context = (
+            self.vl_meta_lora.installed(language_model)
+            if self.vl_meta_lora is not None
+            else nullcontext()
+        )
+        with vl_context, self.action_meta_lora.installed(expert_model):
             (prefix_hidden, suffix_hidden), _ = bridge.forward(
                 attention_mask=mask,
                 position_ids=positions,

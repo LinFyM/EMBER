@@ -11,9 +11,9 @@ from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v3"
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v2"
+    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v3"
 )
 
 
@@ -73,7 +73,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _validate_method(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     expected_writer = {
-        "architecture": "pi05_layer_matched_memory_program_compiler_v2",
+        "architecture": "pi05_layer_matched_memory_program_compiler_v3",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "frame_stride": 5,
         "include_final_frame": True,
@@ -88,14 +88,12 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         ),
         "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
         "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
-        "m2p": "same_20x16_grid_two_block_group_rank_axial_attention",
+        "m2p": "same_20x16_grid_identity_anchored_bounded_axial_correction",
         "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
         "step0_contract": "fresh_native_A0_B0_source_policy_identity",
         "image_width": 2048,
         "expert_width": 1024,
         "text_meta_lora_rank": 4,
-        "vl_meta_lora_rank": 4,
-        "vl_meta_lora_trainable": False,
         "action_meta_lora_rank": 4,
         "patch_grounding_heads": 8,
         "action_horizon": 50,
@@ -108,6 +106,7 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "memory_reader_heads": 8,
         "m2p_heads": 8,
         "m2p_blocks": 2,
+        "m2p_max_relative_correction": 0.5,
         "factor_hidden_width": 256,
         "initialization_seed": 7,
         "activation_checkpointing": True,

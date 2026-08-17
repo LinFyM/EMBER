@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v1终局定位后，原位实现和验证
-LMMPC-v2的Procedure-active stage reader。
+状态：2026-08-18 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v2终局定位后，原位实现和验证
+LMMPC-v3的identity-anchored bounded M2P commitment。
 
 ## Goal
 
@@ -57,21 +57,25 @@ LMMPC-v2的Procedure-active stage reader。
 - [x] 在真实K4上验证完整Procedure阶段被使用、constant identity、非硬反号、八family梯度、native BA及最长
   video吞吐；worktree结构和资源门通过。
 - [x] 从clean pushed detached commit复现两macro吞吐、真实K4机制与371-frame门，并封存fresh formal recipe。
-- [ ] fresh train24到macro25/50等有信息量节点，执行strict paired400和完整stage/task分析。
+- [x] v2 fresh train24到macro25/50，执行strict paired400和完整stage/task分析；结果`71→73`、churn60，定位到
+  unbounded M2P覆盖Core-fused task/order Program。
+- [x] 用v2 macro50 hidden完成逐block和bounded-counterfactual：当前两层把order`.2573→.0938`、between-task
+  `.3381→.6560`；bounded initial/max保留到`.2479/.2308`与`.3608/.4056`。
+- [x] 完成v3唯一canonical实现、fresh schema、VL Meta-LoRA恒等路径清理、CPU/architecture合同。
+- [ ] 完成v3真实K4机制、吞吐、最长video、clean seal与fresh train24 macro25/50 strict paired400。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
 
 ## Current decision
 
-当前active design为`docs/layer_matched_memory_program_compiler_design.md`。LMMPC-v1 macro25/50 strict分别为
-`81/101`，虽有上升但相对LPCP143仍丢`60`条；25→50 churn=`46`。Procedure cross-task cosine从`.7899`恶化到
-`.9503`，而reader中独立endpoint是attention的`41.0x→45.7x`；把每个video的整条Procedure替换成重复`P_last`，H逐
-元素不变。故不再续v1 macro75/100。
+当前active design为`docs/layer_matched_memory_program_compiler_design.md`。v2完整stage reader通过，但macro25/50 strict
+只有`71/73`；25→50为`42 retained / 31 gained / 29 lost`，churn60、Jaccard`.4118`。macro50的Core-fused grid仍同时
+具备same-task K4 cosine`.9922`、between-task`.3381`和correct/reverse relative-L2`.2573`；两层unbounded M2P却把
+后两者破坏到`.6560/.0938`，最终BA order差异仅`.0862`。第一层自身改写anchor `4.500x`，第二层再改写`1.753x`，
+output norm不是主因。因此v2不续macro75，最早断点已从reader后移到M2P commitment。
 
-v2保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、axial M2P与native rank16，只把reader
-改为每个固定地址对完整`P[1:T]`做stage attention，Value为同地址centered native memory；删除独立endpoint、内部
-`correct-reverse`和无cross-task辨识力的matching heads。训练/部署都只走一次correct正序functional图，negative只在
-真实完整重前向评测中出现。fresh-incompatible v2已由clean pushed detached `61558f4`通过全量CPU、真实K4机制、
-world5两macro profile和scheduled 371-frame完整序列；重复`P_last`不能复现H，constant/K置换/source zero-grad均通过，
-formal recipe已seal。下一步从只增加seal authority的clean pushed commit启动fresh train24；尚未产生formal成绩。
+v3保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、同一两层axial proposal和native rank16；
+唯一科学变量是把proposal限制为逐cell不超过anchor RMS `.5x`的residual，fresh gate初始为`.25x`。只读counterfactual
+在max gate仍保留order`.2308`和between-task`.4056`，same-task K4 cosine`.9939`。冻结、B=0的VL Meta-LoRA同步从
+fresh canonical runtime移除，作为行为等价工程清理。下一步完成schema/CPU/真实机制和吞吐seal，再fresh训练与strict。

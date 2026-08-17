@@ -1,7 +1,7 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-17 **active LMMPC-v2 formal authority**。LMMPC-v1已完成macro25/50 strict与逐接口诊断，
-其terminal checkpoint只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成v2实现、fresh
+状态：2026-08-18 **active LMMPC-v3 implementation authority**。LMMPC-v1/v2均已完成macro25/50 strict与逐接口诊断，
+terminal checkpoints只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成v3实现、fresh
 训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅
 改换路线。
 
@@ -37,8 +37,11 @@ per-video order-preserving reduction
 - 不建立独立的320-slot bank或第二套parameter queries；数值上的`20×16=320`只是聚合memory tensor加两个边界行；
 - 不把Action state和memory state任意相加为一个共同视觉Query。Action先形成高层Procedure，Procedure再读取memory。
 
-v2只修正v1已经定位的最早断点：`Procedure -> layer/rank memory reader`。Core、Action/Procedure前端、one-way
-memory、动态K、Core fusion、axial M2P、native rank16 A/B与B20 functional合同均不改。
+v2只修正v1已经定位的`Procedure -> layer/rank memory reader`，并证明完整阶段确实进入parameter memory；但其
+macro25/50 strict仅`71→73`，且训练后两层unbounded M2P把已经分离的Core-fused task Program重新变成共同方向。
+v3只修正这个新的最早断点：Core、Action/Procedure前端、one-way memory、动态K、Core fusion、两层group/rank
+axial proposal、native rank16 A/B与B20 functional合同均不改；M2P从覆盖Program改为逐cell有上界的residual
+commitment。冻结恒等的VL Meta-LoRA同时从fresh runtime移除，它是行为等价的工程清理，不是第二个科学变量。
 
 ## 2. 科学假设与历史继承
 
@@ -60,6 +63,7 @@ memory、动态K、Core fusion、axial M2P、native rank16 A/B与B20 functional�
 | SHINE/Doc-to-LoRA | layer-memory tensor自身进入结构化M2P | memory后再创建第二套参数地址 |
 | v4 | 原生context必须有真实图文和Action prefix | trainable VL Meta旁路、absolute-time/action-phase shortcut |
 | LMMPC-v1 | memory、动态K、M2P和rank16链路均可训练，macro25/50为`81→101` | 返回单个last-query再加独立endpoint、correct-minus-reverse和matching shortcut |
+| LMMPC-v2 | 完整Procedure stage reader接通；macro25/50为`71→73` | unbounded M2P逐层放大并重写已形成的task/order signal |
 
 这只说明设计针对了已知失败，不能替代实验。尚未解决的风险仍包括：memory时间变化可能偏向低层nuisance；K-set
 可能稳定错误task mean；axial M2P/factor heads可能再次衰减Program；shared functional credit仍可能造成task换手。
@@ -305,7 +309,7 @@ Y[l,r] = language_gate * (
 - language-only、static Core、first-frame或video-presence不能独立写LoRA；
 - correct/reverse/shuffle的差异必须来自Procedure/memory时序，而非Core身份。
 
-## 9. Memory tensor直接进入axial M2P
+## 9. Memory tensor直接进入bounded axial M2P
 
 `Y[18,16,d]`已经是parameter-aligned memory grid，不再建立独立320 slots。两个边界行由现有grid产生：
 
@@ -319,15 +323,31 @@ shape = [20 parameter groups, 16 ranks, d]
 
 `20×16=320`只描述tensor cells，不是320个输入tokens、routing identities或第二套memory。
 
-M2P交替执行：
+M2P proposal交替执行：
 
 1. 固定rank，沿20个parameter groups做bidirectional group attention；
 2. 固定parameter group，沿16个rank coordinates做bidirectional rank attention；
 3. 重复少量blocks，并保持每个输出cell的group/rank index。
 
 group/rank position、Core route和Procedure summary只进入Q/K与gate；Value只来自动态`Y_group`。attention和FFN均
-zero-bias、zero-preserving，输入全零时输出严格为零。该结构允许深层memory反向帮助浅层LoRA并协调q/v/action，
-同时不让一个全局MLP重新学习全部参数地址。
+zero-bias、zero-preserving，输入全零时proposal严格为零。v2直接把两层proposal作为factor输入；macro50实测第一层
+相对anchor改写`4.500x`、第二层再改写`1.753x`，Core-fused的between-task cosine由`.3381`升到`.6560`，
+correct/reverse relative-L2由`.2573`降到`.0938`。
+
+v3保留相同两层axial proposal `Z`，但只允许它对每个固定`(group,rank)` cell作bounded refinement：
+
+```text
+delta = Z - Y_group
+delta_limited = delta * min(1, RMS(Y_group) / max(RMS(delta), 1e-6))
+gate = 0.5 * sigmoid(g)              # g fresh zero, initial gate = 0.25
+Y_committed = Y_group + gate * delta_limited
+Y_compiled = RMSNorm(Y_committed)
+```
+
+因此每个地址上的M2P correction始终不超过anchor RMS的`0.5x`，不能再覆盖该地址已经形成的视频动态Program；
+axial blocks仍能学习跨层、跨rank协调，最终RMSNorm继续提供factor-head稳定尺度。对v2 macro50 hidden作只读
+counterfactual，initial/max gate分别保持correct/reverse relative-L2=`.2479/.2308`、between-task cosine=
+`.3608/.4056`，而same-task不同K4 set cosine仍为`.9928/.9939`。这只验证结构针对断点，不替代fresh闭环结果。
 
 ## 10. Native rank16 A/B生成
 
@@ -355,7 +375,7 @@ DeltaW = B @ A
 
 ### 11.1 Fresh边界
 
-LMMPC改变了Procedure→memory、T/K聚合、Core融合和M2P/compiler，正式checkpoint与V6/LPCP/GOMQ均不兼容。正式
+LMMPC-v3改变了M2P commitment且删除冻结恒等VL Meta-LoRA，正式checkpoint与v2及V6/LPCP/GOMQ均不兼容。正式
 train24必须从fresh Writer initialization开始，只复用冻结source policy、固定数据、normalization和公共LoRA schema。
 
 开发bring-up可临时复用sealed V6 Core/Procedure activations检查memory→M2P→factor接线，但不训练成正式bridge、
@@ -371,7 +391,7 @@ train24必须从fresh Writer initialization开始，只复用冻结source policy
 
 ### 11.3 Objective
 
-v2首轮只使用**correct-order dense functional B20**：correct condition生成的LoRA作用于冻结source policy，在同task
+v2/v3首轮只使用**correct-order dense functional B20**：correct condition生成的LoRA作用于冻结source policy，在同task
 跨episode action queries上下降functional loss。它直接回答生成方向是否对source policy有用，不混入reward。
 
 v1的language/directed-Program matching从macro25的`.02114`降到macro50的`.001378`，同时Procedure cross-task cosine
@@ -571,3 +591,33 @@ LoRA max-abs为0。config现已`sealed`，允许从后继仅含seal authority的
 
 这些证据只封存结构、梯度、吞吐和资源合同，不是closed-loop或视频因果成绩；尤其shuffle BA差异`.08864`仍须由训练
 后的strict controls裁决。
+
+## 18. LMMPC-v2终局证据与v3可证伪门
+
+v2 fresh world5在同一run完成macro25和exact-resume macro50。strict K4 correct分别为：
+
+| checkpoint | correct | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `71/400` | 6 | `2/0/31/2/0/34/1/1` | `2/33/34/2` |
+| macro50 | `73/400` | 6 | `1/0/35/13/5/15/4/0` | `1/48/20/4` |
+
+25→50虽净增2，但只有`42 retained / 31 gained / 29 lost`，churn60、Jaccard`.4118`；Object净增15的同时Goal净丢14，
+Goal6单task净丢19。loss在macro41--50约`.112`平台，closed-loop几乎不增而task能力继续换手。macro50相对同K4
+LPCP143为`61 retained / 12 gained / 82 lost`、churn94；相对v1 macro50 101为`49/24/52`、churn76。故不续
+v2 macro75，不补六臂，也不以两分增量声称尚在共同积累。
+
+逐stage结果把否决边界限定在compiler而不是stage reader：macro50 Procedure correct/reverse relative-L2=`.8201`；
+H_set=`.3980`；Core-fused grid=`.2573`，且同task不同K4 set cosine=`.9922`、between-task cosine=`.3381`。第一层
+M2P已把order差异压到`.1502`并把between-task升到`.4943`；第二层进一步到`.0938/.6560`。最终effective BA的
+correct/reverse relative-L2只剩`.0862`，different-K4 cosine=`.9998`。output RMSNorm单独几乎不改变这些指标，
+所以最早破坏来自两层unbounded axial residual本身，而非Procedure趋同、K-set、factor量化或RMSNorm。
+
+v3的首轮可证伪门是：
+
+1. fresh机制门必须证明每cell correction在训练前后都满足`<=0.5x anchor RMS`，constant仍严格identity，VL
+   Meta-LoRA参数与hook为0，八factor和M2P gate/blocks获得gradient；
+2. validation8 stage门要求M2P后不再复现v2式task/order双重过度平滑；same-task正确K4鲁棒不能以correct/reverse
+   近同为代价；
+3. fresh训练仍到macro25并做strict400；若loss/closed-loop仍上升，继续macro50，不以首点判死；
+4. 若v3已保持Program但closed-loop仍远低于v1/LPCP，最早断点后移到factor/functional credit，再在同一主链内
+   做下一次局部迭代；不得回头恢复unbounded M2P或用rank/LR/seed小扫。

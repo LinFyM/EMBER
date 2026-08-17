@@ -106,7 +106,10 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         memory_reader=LayerRankMemoryReader(heads=8, initialization_seed=7),
         video_set=AddressPreservingVideoSet(),
         compiler=LayerMatchedMemoryProgramCompiler(
-            heads=8, blocks=1, initialization_seed=7
+            heads=8,
+            blocks=1,
+            max_relative_correction=0.5,
+            initialization_seed=7,
         ),
         factor_hidden_width=32,
         initialization_seed=7,

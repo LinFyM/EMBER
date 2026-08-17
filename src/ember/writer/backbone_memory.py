@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from functools import partial
 from typing import Iterator
@@ -106,9 +106,11 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         name: str,
         projection: torch.nn.Module,
         value: torch.Tensor,
-        adapters: torch.nn.Module,
+        adapters: torch.nn.Module | None,
     ) -> torch.Tensor:
         projected = projection(value)
+        if adapters is None:
+            return projected
         adapter = adapters.adapters[f"{layer}_{name}"]
         return projected + adapter(value).to(projected.dtype)
 
@@ -118,7 +120,7 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         hidden: torch.Tensor,
         layer: torch.nn.Module,
         condition: torch.Tensor | None,
-        adapters: torch.nn.Module,
+        adapters: torch.nn.Module | None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         normed, _ = layernorm_forward(layer.input_layernorm, hidden, condition)
         shape = (*normed.shape[:-1], -1, layer.self_attn.head_dim)
@@ -214,7 +216,7 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         prefix_layer: torch.nn.Module,
         suffix_layer: torch.nn.Module,
         rotary_embedding: torch.nn.Module,
-        vl_adapters: torch.nn.Module,
+        vl_adapters: torch.nn.Module | None,
         action_adapters: torch.nn.Module,
     ) -> torch.Tensor:
         prefix_key, prefix_value = self._stream_kv(
@@ -435,7 +437,7 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         language_model: torch.nn.Module,
         expert_model: torch.nn.Module,
         memory_tokens: torch.Tensor,
-        vl_adapters: torch.nn.Module,
+        vl_adapters: torch.nn.Module | None,
         action_adapters: torch.nn.Module,
     ) -> torch.Tensor:
         if any(value is None for values in capture.values() for value in values):
@@ -489,7 +491,7 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         action_markers: torch.Tensor,
         adarms_condition: torch.Tensor,
         memory_tokens: torch.Tensor,
-        vl_adapters: torch.nn.Module,
+        vl_adapters: torch.nn.Module | None,
         action_adapters: torch.nn.Module,
     ) -> BackboneMemoryOutput:
         """Run the exact native carrier once, then its one-way memory observer."""
@@ -517,6 +519,11 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
             )
         )
         bridge = core.paligemma_with_expert
+        vl_context = (
+            vl_adapters.installed(language_model)
+            if vl_adapters is not None
+            else nullcontext()
+        )
         with self._capture_native_states(
             prefix,
             action_suffix,
@@ -525,7 +532,7 @@ class Pi05LayerMatchedBackboneMemory(torch.nn.Module):
         ) as capture:
             with (
                 torch.no_grad(),
-                vl_adapters.installed(language_model),
+                vl_context,
                 action_adapters.installed(expert_model),
             ):
                 (prefix_hidden, action_hidden), _ = bridge.forward(

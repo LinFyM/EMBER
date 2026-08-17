@@ -1,107 +1,115 @@
 # EMBER Progress
 
-更新时间：2026-08-17。本文只记录当前可执行状态；目标计划见`task_plan.md`，跨实验认知见`findings.md`，历史精确
+更新时间：2026-08-18。本文只记录当前可执行状态；目标计划见`task_plan.md`，跨实验认知见`findings.md`，历史精确
 结果见`docs/research_history.md`。
 
 ## Current state
 
 - 持续研究goal为active；当前不使用subagents。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- LMMPC-v2实现已由clean pushed commit `61558f4550d732815f8e3f7b30504626e6deb577`封存并完成clean profile；当前
-  主工作树只在写回seal authority，且没有EMBER GPU进程。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。
-- LMMPC-v1 macro25/50及其逐接口分析已经终局；旧checkpoint不得resume到75/100。
+- LMMPC-v2已经完成fresh macro25/50、两次strict paired400和逐stage终局分析；旧checkpoint不得resume。
+- 当前主工作树从clean pushed `df3ae632fad644e7018887f5f0cea3dcd2ad0389`原位实现LMMPC-v3，尚未形成clean
+  commit或启动v3 GPU运行。
+- v3唯一科学变量是把已经定位会覆盖Core-fused Program的unbounded axial M2P改为逐cell identity-anchored
+  bounded residual commitment；四流、V6 Core/Procedure、layer/rank memory、K-set、rank16 native A/B和训练合同不变。
+- fresh v3同步移除冻结、B=0、从不更新的VL Meta-LoRA及其hook；这是行为等价工程清理，不算第二个科学变量。
 
-## LMMPC-v1 terminal result
+## LMMPC-v2 terminal evidence
 
-- macro25 K4 strict=`81/400`、breadth5、per-task=`2/0/32/3/0/39/5/0`。
-- macro50 K4 strict=`101/400`、breadth5、per-task=`3/1/48/0/3/46/0/0`。
-- 25→50=`68 retained / 33 gained / 13 lost`、churn46、net`+20`；能力仍明显换手。
-- macro50相对LPCP143=`83 retained / 18 gained / 60 lost / 239 both-fail`。
-- functional/matching从macro25的`.115512/.021139`降到macro50的`.105596/.001378`，但loss下降没有转化为
-  Procedure task separation或稳定closed-loop支持。
+同一fresh world5 run完成macro25和exact-resume macro50：
 
-逐stage cross-task cosine：
+| checkpoint | correct | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `71/400` | 6 | `2/0/31/2/0/34/1/1` | `2/33/34/2` |
+| macro50 | `73/400` | 6 | `1/0/35/13/5/15/4/0` | `1/48/20/4` |
 
-```text
-                         macro25    macro50
-Semantic Core             .92185     .84859
-Causal Procedure          .78993     .95031
-natural per-video memory  .71089     .73133
-Core-fused grid           .49402     .44842
-compiled grid             .68476     .75632
-final effective BA        .74886     .64307
-```
-
-same-task four-K4 final BA一致性很高（约`.974--.998`），所以K聚合并非最早断点；高一致性只是稳定了当前task mean。
-BA norm从macro25的`38.39`增至macro50的`61.56`，仍低于LPCP的`108.70`，但写出并非近identity。
+- 25→50=`42 retained / 31 gained / 29 lost`、churn60、net`+2`、Jaccard`.411765`；Object净增15而Goal
+  净丢14，属于task换手而非shared accumulation。
+- macro50相对LPCP143=`61 retained / 12 gained / 82 lost`、churn94、net`-70`；相对v1 macro50 101为
+  `49/24/52`、churn76、net`-28`。
+- macro41--50 loss约`.112`平台；25个额外macro没有形成共同closed-loop上升，因此v2不续macro75、不补六臂。
+- macro50 formal strict root：
+  `runs/outputs/pi05_lmmpc_v2_macro0050_k4_correct400_noreplacement_seed7_trainr5_evalr6_df3ae63_gpu01p01456_20260818`。
+- 初次六卡evaluation因另一用户随后在物理2启动高显存任务而单worker OOM；失败证据保留，未触碰外部进程。正式结果
+  来自重新live选取物理`0/1/4/5/6`的完整五卡panel，400 rows和60/60 jobs均完成。
 
 ## Earliest failure localization
 
-当前`Procedure -> layer/rank memory reader`存在结构旁路：
+v2确实解决了v1的Procedure-reader endpoint bypass：完整Procedure阶段进入每个固定layer/rank memory address，顺序信号
+在reader和Core fusion后仍然material。新的最早断点是后置M2P覆盖已经有用的Program：
 
-1. v1对每个时间步产生Procedure query，却只返回`attended[:, -1]`，所以仅`P_last`直接查询memory；
-2. reader再独立加入`R_memory[last]-R_memory[first]`，该endpoint完全绕过Procedure；
-3. macro25/50中attention/output norm仅`.02753/.02461`，endpoint/attention为`41.04x/45.73x`；
-4. 把每个video整条Procedure替换为重复`P_last`，direct H逐元素不变；
-5. macro50换成另一task完整Procedure时，direct H平均只改`.125%`，最终BA只改`6.23%`、cosine`.99769`；
-6. reverse endpoint逐元素严格为负，解释了旧`correct-reverse`通道近乎完美的反号响应；
-7. Procedure cross-task cosine训练到macro50反而升至`.95031`，matching接近0只学会了generic forward sign。
+| stage | between-task cosine | correct/reverse relative-L2 | same-task four-K4 cosine |
+| --- | ---: | ---: | ---: |
+| Core-fused grid | `.338088` | `.257271` | `.992207` |
+| M2P block0 | `.4943` | `.1502` | — |
+| M2P block1 | `.6560` | `.0938` | — |
+| final effective BA | — | `.086224` | `.999775` |
 
-因此不能把81→101归因于逐渐学会高层Procedure；增益主要来自Core、endpoint和compiler。继续旧训练可能继续改善
-某些任务，但不针对EMBER所需的有向阶段知识，故不启动macro75/100。
+- 第一层相对anchor改写`4.50034x`，第二层再相对输入改写`1.75311x`；两层共同把task分离和order差异压平。
+- output RMSNorm单独几乎不改变task/order指标，因而不是最早断点。
+- Procedure本身correct/reverse relative-L2=`.820147`，H_set=`.398023`；因此不能把v2低分重新归因于carrier没有
+  读取视频或完整stage reader未接通。
+- v2 macro50 hidden的只读bounded counterfactual：逐cell residual初始`.25x`/上限`.5x`时，between-task分别
+  `.360797/.405605`、order分别`.247873/.230772`、same-task K4分别`.992778/.993867`。这证明bounded设计直接
+  针对已定位接口，但不替代fresh训练和closed-loop结果。
 
-## Active LMMPC-v2 decision
+精确analysis artifacts：
 
-v2保留统一主链：
+- `runs/analysis/lmmpc_v2_macro50_strict_paired_comparison_df3ae63_20260818.json`
+- `runs/analysis/lmmpc_v2_macro50_validation8_stage_localization_df3ae63_20260818.json`
+- `runs/analysis/lmmpc_v2_macro50_m2p_block_localization_df3ae63_20260818.json`
+- `runs/analysis/lmmpc_v2_macro50_m2p_signal_localization_df3ae63_20260818.json`
+- `runs/analysis/lmmpc_v2_macro50_m2p_bounded_counterfactual_df3ae63_20260818.json`
+
+## Active LMMPC-v3 decision
+
+v3保持统一主链：
 
 ```text
 exact language + dynamic-K ordered action-hidden videos
   -> V6 task-grounded Semantic Core
   -> Action-query Visual-Transition Causal Procedure P[1:T]
   -> 16 one-way layer/rank memory states M[t,l,r]
-  -> each fixed (l,r) address reads all Procedure stages
-     keys = P[1:T], values = centered dynamic M[1:T,l,r]
+  -> every fixed (l,r) reads all Procedure stages
   -> address-preserving K-set consensus
-  -> dynamic Core fusion
-  -> the same 20x16 grid enters axial M2P
+  -> dynamic Core fusion gives anchor Y[group,rank]
+  -> same two axial blocks propose Z[group,rank]
+  -> cellwise bounded commitment Y + gate * limited(Z-Y)
   -> jointly trained native rank16 A/B
   -> one complete 38-target LoRA
 ```
 
-唯一主要修正是Procedure路径合同：删除独立endpoint、内部`0.5*(correct-reverse)`和language/order matching heads。
-训练与部署只运行一次正确正序的dense functional B20图；reverse/shuffle只在评测中重排raw frames并完整重前向。
-这三个删除属于同一个已证实shortcut，而非另换架构路线。Core、Action/Procedure、memory token、K-set、M2P、factor
-heads、rank16和optimizer recipe均保持。
+commitment合同：
 
-当前主工作树已完成：
+```text
+delta = Z - Y
+limited = delta * min(1, RMS(Y) / max(RMS(delta), 1e-6))
+gate = 0.5 * sigmoid(g)       # fresh g=0, initial gate=.25
+committed = Y + gate * limited
+```
 
-- stage-addressed centered-memory reader；若Procedure阶段全部重复，centered Value经均匀attention相消；
-- training/deployment统一为一次正序图，删除matching参数与三臂重复计算；
-- config/checkpoint/eval/launch family升级到fresh-incompatible v2，formal profile已seal；
-- 全量CPU=`284 passed`，compile、diff-check和architecture guard无hard violation；
-- world5 worktree profile两macro均严格K1--K4各6 tasks，macro=`39.02/36.05s`，functional=
-  `.156120→.153996`，peak allocated/reserved=`31.80/34.20GB`，无OOM/nonfinite；
-- 真实task38/K4/323-frame机制探针中，重复`P_last`后的per-video memory仅为正常norm的`.01390`，relative-L2=
-  `.99998`；zero Procedure得到相同消失结果，证明完整stage轴是必要路径；
-- reverse相对correct的parameter-memory relative-L2=`.87522`且negative-relative-L2=`1.55334`，不再是硬反号；
-  shuffle在最终BA上仍只改`.08864`，这是训练前待学习性质，不算视频因果门通过；
-- constant memory/template严格为0，K置换LoRA max-abs严格为0，8个factor family及reader query/key/address/value均有
-  非零梯度，source policy非零gradient tensor数为0；
-- 真实调度最大task38/K4/371-frame及随后四任务完整结束，peak allocated/reserved=
-  `41,987,227,136 / 44,912,607,232` bytes，无OOM/nonfinite。
+每个`group × rank`地址上的M2P correction始终不超过anchor RMS的`.5x`；axial blocks仍能跨层/跨rank协调，但不能
+再覆盖已有动态Program。rank保持16；不加入`H_correct-H_reverse`、matching loss、reverse训练臂、reward/RL、expert
+bank或其它新监督。
 
-clean pushed detached `61558f4`已经原样复现：两macro=`39.08/35.97s`，loss和gradient norm与worktree完全一致，
-peak allocated/reserved=`31.71/31.89GB`；clean 371-frame完整五任务序列peak=`41.85/42.34GB`；clean macro2真实K4
-机制结果与上述stage/reverse/constant/K置换/梯度数值一致。config现已写回该source commit和run roots，尚未启动formal
-训练或产生closed-loop成绩。
+当前实现状态：
+
+- canonical runtime、config/checkpoint/eval schemas已升级为fresh-incompatible v3；v2 config原位退役。
+- bounded commitment、可学习gate和零输入identity已实现。
+- fresh LMMPC不再实例化VL Meta-LoRA，legacy V6显式传rank4的路径仍保留。
+- 定向CPU=`76 passed`、全量CPU=`285 passed`、architecture guard无hard violation；当前diff-check通过。
+- v3 config仍为`unsealed_pending_live_profile`，不得在完成clean真实机制/吞吐门前启动formal训练。
 
 ## Immediate next work
 
-1. 验证seal config与CPU合同，commit/push仅含seal authority的diff；
-2. 从最终clean pushed detached commit fresh train24到macro25/50有信息量节点；
-3. strict paired400报告逐task/suite、breadth、retained/gained/lost/churn，并沿Core→Procedure→H→K-set→M2P→BA→
-   action定位下一个接口；不在性能峰值和趋势未观察清楚时过早终止。
+1. 完成progress和窄合同收尾，重跑CPU/compile/diff/architecture检查，提交并push v3 mechanism candidate。
+2. 从clean pushed detached commit同时live检查两节点和quota，按实际可用A40运行真实K4机制、两macro吞吐和371-frame门。
+3. 验证VL Meta-LoRA参数/hook为0、source zero-grad、constant identity、K置换、repeated-Procedure响应、完整
+   correct/reverse/shuffle重前向、M2P correction bound/gate/blocks与八family梯度、native BA/action及无OOM/nonfinite。
+4. 用clean evidence封存v3 profile；重新profile K4 Writer generation batch，随后从fresh train24到macro25。
+5. 执行strict paired400和逐task/suite/stage/retention/churn分析；若链路和closed-loop仍在共同上升，继续macro50及相邻
+   checkpoint，不在性能峰值前过早终止。首次约145且retention合理时立即补六臂和same-task不同视频鲁棒性。
 
 ## Fixed scientific baselines
 
@@ -109,7 +117,8 @@ peak allocated/reserved=`31.71/31.89GB`；clean 371-frame完整五任务序列pe
 - LPCP K4 correct：`143/400`、breadth7；
 - SFMC单点：`144/400`但lost15/churn31且无六臂；
 - GOMQ：`151→135→131`，证明learned memory有真实增益但旧rank32 direct-B/shared reward不稳定；
-- LMMPC-v1：`81→101`，证明fresh memory-grid Writer可学习，但当前Procedure reader被endpoint旁路。
+- LMMPC-v1：`81→101`，fresh memory-grid Writer可学习，但旧reader被endpoint旁路；
+- LMMPC-v2：`71→73`，完整stage reader接通，但unbounded M2P覆盖Core-fused Program。
 
 ## Storage and runtime note
 

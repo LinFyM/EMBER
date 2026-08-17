@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v2",
+  "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v3",
   "status": "active_formal_ready",
   "sealed_stage": "development",
   "authorities": {
@@ -30,7 +30,7 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_layer_matched_memory_program_compiler_v2",
+    "architecture": "pi05_layer_matched_memory_program_compiler_v3",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -50,14 +50,12 @@
     "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
     "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
     "core_fusion": "language_and_nonzero_dynamic_memory_gated_core_cross_attention",
-    "m2p": "same_20x16_grid_two_block_group_rank_axial_attention",
+    "m2p": "same_20x16_grid_identity_anchored_bounded_axial_correction",
     "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
     "step0_contract": "fresh_native_A0_B0_source_policy_identity",
     "image_width": 2048,
     "expert_width": 1024,
     "text_meta_lora_rank": 4,
-    "vl_meta_lora_rank": 4,
-    "vl_meta_lora_trainable": false,
     "action_meta_lora_rank": 4,
     "patch_grounding_heads": 8,
     "action_horizon": 50,
@@ -70,6 +68,7 @@
     "memory_reader_heads": 8,
     "m2p_heads": 8,
     "m2p_blocks": 2,
+    "m2p_max_relative_correction": 0.5,
     "factor_hidden_width": 256,
     "initialization_seed": 7,
     "activation_checkpointing": true
@@ -142,45 +141,12 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 100,
     "per_task_action_batch_size": 20,
     "checkpoint_macros": [25, 50, 75, 100],
     "stage_stop_macros": [25, 50, 75, 100],
-    "first_strict_paired400_macro": 25,
-    "profile_evidence": {
-      "source_commit": "61558f4550d732815f8e3f7b30504626e6deb577",
-      "run_root": "runs/acceptance/pi05_lmmpc_v2_profile_r5_b20_61558f4_gpu02p12347_20260817",
-      "host": "gpu02",
-      "physical_gpus": [1, 2, 3, 4, 7],
-      "world_size": 5,
-      "functional_policy_microbatch_size": 5,
-      "completion_macro": 2,
-      "macro_seconds": 35.9660324039869,
-      "max_cuda_allocated_bytes": 31714849792,
-      "max_cuda_reserved_bytes": 31889293312,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "scheduled_max_condition_frames": 371,
-      "scheduled_max_condition_peak_allocated_bytes": 41854451712,
-      "scheduled_max_condition_peak_reserved_bytes": 42335207424,
-      "scheduled_max_condition_result": "complete_five_task_local_sequence",
-      "mechanism_checkpoint_macro": 2,
-      "native_context_calls": 323,
-      "expected_native_context_calls": 323,
-      "native_encoder_rows_with_padding": 352,
-      "procedure_stage_replacement_relative_l2": 0.9999785423278809,
-      "procedure_stage_replacement_norm_ratio": 0.013903454877436161,
-      "reverse_parameter_memory_relative_l2": 0.8752194046974182,
-      "reverse_parameter_memory_negative_relative_l2": 1.5533424615859985,
-      "shuffle_effective_ba_relative_l2": 0.08864022487690358,
-      "correct_effective_ba_l2": 0.6388468554617789,
-      "constant_effective_ba_max_abs": 0.0,
-      "k_permutation_lora_max_abs": 0.0,
-      "deployment_recompile_lora_max_abs": 0.0,
-      "all_factor_family_gradients_nonzero": true,
-      "all_reader_path_gradients_nonzero": true,
-      "source_policy_nonzero_gradient_tensors": 0
-    }
+    "first_strict_paired400_macro": 25
   }
 }

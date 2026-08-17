@@ -230,6 +230,34 @@ matching”这一Procedure路径，不否定四流、memory token、dynamic-K、
 主链内改为固定layer/rank地址读取完整Procedure keys、centered dynamic memory Values，并回到correct-order dense
 functional-only训练。
 
+### 3.9 Layer-Matched Memory Program Compiler v2
+
+v2只替换v1最早失败的Procedure reader：每个固定layer/rank地址用task-level final Procedure和地址作Query，读取完整
+Procedure stage Keys与同地址centered native memory Values；删除独立endpoint、内部correct-minus-reverse和matching
+loss。机制确认重复`P_last`不再复现H，correct/reverse不是硬反号，constant/K置换/八family/source-zero-grad通过。
+
+同一fresh world5 run的正式结果为：
+
+| checkpoint | strict | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `71/400` | 6 | `2/0/31/2/0/34/1/1` | `2/33/34/2` |
+| macro50 | `73/400` | 6 | `1/0/35/13/5/15/4/0` | `1/48/20/4` |
+
+25→50=`42 retained / 31 gained / 29 lost`、churn60、Jaccard`.411765`、net`+2`；Object suite净增15而Goal净丢14，
+并非共同积累。macro50相对LPCP143=`61/12/82`、churn94；相对v1 macro50 101=`49/24/52`、churn76。训练loss在
+macro41--50约`.112`平台，故不续macro75或controls。
+
+validation8逐stage定位显示reader本身已经有内容：macro50 Procedure correct/reverse relative-L2=`.820147`，H_set=
+`.398023`，Core-fused=`.257271`；Core-fused同task不同K4 cosine=`.992207`、between-task=`.338088`。但unbounded M2P
+block0相对输入改写`4.50034x`，把order压到`.150168`、between-task升到`.494320`；block1再改写`1.75311x`，最终为
+`.093797/.655989`。effective BA order差异仅`.086224`、different-K4 cosine=`.999775`。output RMSNorm单独几乎不
+改变task/order指标，因此最早失败接口是axial M2P覆盖已经形成的parameter-aligned Program。
+
+只读counterfactual把最终proposal的逐cell correction限制为anchor RMS的`.25/.5x`，分别得到order=
+`.247873/.230772`、between-task=`.360797/.405605`、same-task K4=`.992778/.993867`。它支持active v3把M2P改成
+identity-anchored bounded refinement；不构成fresh closed-loop成绩。v2负结果不否定stage reader、memory token、
+Dynamic-K、rank16或axial通信本身，只否定unbounded proposal直接取代Core-fused grid。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

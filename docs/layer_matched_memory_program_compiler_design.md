@@ -643,3 +643,8 @@ recompile max-abs为0。fresh checkpoint不包含任何VL Meta-LoRA tensor或run
 
 以上只通过结构、梯度、资源和顺序响应门，不证明correct视频沿有用closed-loop方向优于controls。v3 formal config由
 这些clean artifacts封存；下一步必须fresh训练到macro25并做strict paired400，不能用机制距离代替性能裁决。
+
+同一v3 runtime随后完成validation8×4 K4 fixed-panel生成profile：batch8/16/32的LoRA/s为
+`.21314/.21489/.21627`，均覆盖226-frame最长样本且两次测量稳定；batch32 peak reserved=
+`20,231,225,344` bytes、headroom=`27,468,496,896` bytes，零OOM/nonfinite/禁读。因此正式evaluation使用
+batch32；这只封存部署吞吐，不参与科学选择。

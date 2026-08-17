@@ -538,6 +538,10 @@ def test_generation_profile_seals_live_k4_lmmpc_evidence() -> None:
     assert set(DYNAMIC_K_GENERATION_PROFILES) == {4}
     profile = DYNAMIC_K_GENERATION_PROFILES[4]
     assert profile["schema_version"] == "ember_pi05_writer_generation_profile_v2"
+    assert "lmmpc_v3_k4_generation_profile" in profile["evidence_path"]
+    assert profile["authority_commit"] == (
+        "af76558075315b6ea954e60feff44dfaac0637e3"
+    )
     assert profile["profiled_writer_model_batch_sizes"] == [8, 16, 32]
     assert profile["supported_writer_model_batch_sizes"] == [8, 16, 32]
     assert profile["selected_writer_model_batch_size"] == 32

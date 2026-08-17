@@ -53,11 +53,11 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
         "schema_version": "ember_pi05_writer_generation_profile_v2",
         "evidence_path": (
             "runs/acceptance/"
-            "pi05_lmmpc_k4_generation_profile_77f45c9_macro2_"
-            "gpu01p2_20260817/writer_generation_profile.json"
+            "pi05_lmmpc_v3_k4_generation_profile_af76558_macro2_"
+            "gpu01p5_20260818/writer_generation_profile.json"
         ),
-        "evidence_bytes": 10774,
-        "authority_commit": "77f45c99c0c241e13d85ed152d2cff5e55895b76",
+        "evidence_bytes": 10775,
+        "authority_commit": "af76558075315b6ea954e60feff44dfaac0637e3",
         "device": "NVIDIA A40",
         "profiled_writer_model_batch_sizes": [8, 16, 32],
         "supported_writer_model_batch_sizes": [8, 16, 32],
@@ -74,35 +74,35 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
         "writer_generation_measurements": [
             {
                 "batch_size": 8,
-                "loras_per_second": 0.19655253615761045,
+                "loras_per_second": 0.21313760166577092,
                 "repeat_wall_seconds": [
-                    162.87199536594562,
-                    162.74069450888783,
+                    150.1370779699646,
+                    150.13842245703563,
                 ],
-                "peak_reserved_bytes": 16873684992,
-                "memory_headroom_bytes": 30826037248,
+                "peak_reserved_bytes": 15858663424,
+                "memory_headroom_bytes": 31841058816,
                 "stable": True,
             },
             {
                 "batch_size": 16,
-                "loras_per_second": 0.19805086508070918,
+                "loras_per_second": 0.2148928695065741,
                 "repeat_wall_seconds": [
-                    161.54325406299904,
-                    161.60605393885635,
+                    148.97725695604458,
+                    148.84556120890193,
                 ],
-                "peak_reserved_bytes": 20268974080,
-                "memory_headroom_bytes": 27430748160,
+                "peak_reserved_bytes": 17563648000,
+                "memory_headroom_bytes": 30136074240,
                 "stable": True,
             },
             {
                 "batch_size": 32,
-                "loras_per_second": 0.1994860904111841,
+                "loras_per_second": 0.21627117777600335,
                 "repeat_wall_seconds": [
-                    160.4106404078193,
-                    160.41373320179991,
+                    148.0547324460931,
+                    147.87004430009983,
                 ],
-                "peak_reserved_bytes": 25557991424,
-                "memory_headroom_bytes": 22141730816,
+                "peak_reserved_bytes": 20231225344,
+                "memory_headroom_bytes": 27468496896,
                 "stable": True,
             },
         ],

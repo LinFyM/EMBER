@@ -324,10 +324,10 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         "config": {
             "path": str(
                 ROOT
-                / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
+                / "configs/pi05_writer_layer_matched_memory_program_compiler_v2.json"
             ),
             "schema": (
-                "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+                "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
             ),
         },
         "writer_asset": {
@@ -476,15 +476,15 @@ def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
     inputs = list(_writer_contract_inputs(tmp_path))
     shared_writer = inputs[4]
     shared_writer.update(
-        schema_version="ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v1",
+        schema_version="ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v2",
         kind="layer_matched_memory_program_compiler_writer",
     )
     shared_writer["config"] = {
         "path": str(
             ROOT
-            / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
+            / "configs/pi05_writer_layer_matched_memory_program_compiler_v2.json"
         ),
-        "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v1",
+        "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v2",
     }
     shared_writer["lora_contract"] = {
         "reference": (

@@ -1,8 +1,9 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-17 **active implementation authority**。简称 **LMMPC**。owner已授权在EMBER稳定科学合同和本文
-架构思想内完成实现、fresh训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得
-在没有架构级证据时大幅改换路线。
+状态：2026-08-17 **active LMMPC-v2 implementation authority**。LMMPC-v1已完成macro25/50 strict与逐接口诊断，
+其terminal checkpoint只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成v2实现、fresh
+训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅
+改换路线。
 
 ## 1. 一句话决策
 
@@ -21,7 +22,7 @@ language grounds visual evidence
 Action representation queries visual transitions
     -> Causal Procedure: what stage and how the task progresses
 
-Procedure reads layer/rank memory sequences
+each layer/rank address uses all Procedure stages to read its memory sequence
     -> parameter-aligned per-video task memory
 
 per-video order-preserving reduction
@@ -35,6 +36,9 @@ per-video order-preserving reduction
 
 - 不建立独立的320-slot bank或第二套parameter queries；数值上的`20×16=320`只是聚合memory tensor加两个边界行；
 - 不把Action state和memory state任意相加为一个共同视觉Query。Action先形成高层Procedure，Procedure再读取memory。
+
+v2只修正v1已经定位的最早断点：`Procedure -> layer/rank memory reader`。Core、Action/Procedure前端、one-way
+memory、动态K、Core fusion、axial M2P、native rank16 A/B与B20 functional合同均不改。
 
 ## 2. 科学假设与历史继承
 
@@ -55,6 +59,7 @@ per-video order-preserving reduction
 | Direct Native | native A/B heads能打开BA/action写出 | 无结构flat B tail |
 | SHINE/Doc-to-LoRA | layer-memory tensor自身进入结构化M2P | memory后再创建第二套参数地址 |
 | v4 | 原生context必须有真实图文和Action prefix | trainable VL Meta旁路、absolute-time/action-phase shortcut |
+| LMMPC-v1 | memory、动态K、M2P和rank16链路均可训练，macro25/50为`81→101` | 返回单个last-query再加独立endpoint、correct-minus-reverse和matching shortcut |
 
 这只说明设计针对了已知失败，不能替代实验。尚未解决的风险仍包括：memory时间变化可能偏向低层nuisance；K-set
 可能稳定错误task mean；axial M2P/factor heads可能再次衰减Program；shared functional credit仍可能造成task换手。
@@ -180,49 +185,48 @@ Procedure表达接近、接触、抓取、携带、接近目标、释放/建立�
 
 Action的职责止于“把视觉变化解释为policy-relevant任务过程”。它不直接连接factor heads，也不与memory随意相加。
 
-## 6. Procedure读取layer/rank memory
+## 6. Procedure按阶段读取layer/rank memory
 
-旧V6先把Procedure压成全局表示，再让320个routing identities询问各参数位置。LMMPC改成先保留真实parameter
-address，再由Procedure读取对应memory序列。
+旧V6让固定policy地址读取完整、centered、有序Procedure。LMMPC-v1原本声称逐阶段读取memory，但实现实际返回
+`attended[:, -1]`，所以只有`P_last`直接参与readout；随后又把不经过Procedure的`R_m[T]-R_m[0]`独立相加。
+macro25/50 held诊断中attention只占最终reader输出的`2.75%/2.46%`，endpoint是attention的`41.0x/45.7x`；把整条
+Procedure替换成重复`P_last`，输出逐元素不变。该接口必须原位替换。
 
-先共享投影memory并形成有向变化：
-
-```text
-R_m[t,l,r] = W_memory(M[t,l,r])
-Delta_m[0,l,r] = 0
-Delta_m[t,l,r] = R_m[t,l,r] - R_m[t-1,l,r]
-Endpoint_m[l,r] = R_m[T,l,r] - R_m[0,l,r]
-```
-
-对每个固定`(l,r)`使用同一组共享参数：
+v2先把每个固定地址的native memory变成只含动态内容的Value：
 
 ```text
-Q[t,l,r] = Wq(P[t]) + E_layer[l] + E_rank[r]
-K[t,l,r] = Wk(R_m[t,l,r]) + E_time[t]
-V[t,l,r] = Delta_m[t,l,r]
-
-U[1:T,l,r] = CausalCrossAttention(Q[:,l,r], K[:,l,r], V[:,l,r])
-F(video)[l,r] = U[last_valid,l,r] + W_endpoint(Endpoint_m[l,r])
+R_m[t,l,r] = W_memory(Norm(M[t,l,r]))
+X_m[t,l,r] = R_m[t,l,r] - R_m[0,l,r]
+V_m[t,l,r] = X_m[t,l,r] - Mean_s(X_m[s,l,r])
 ```
 
-这里Procedure是Query，因为它说明当前需要寻找哪个动作阶段；memory是K/V，因为它提供该layer/rank在各帧的native
-状态及变化。这样继承V6的高层过程理解，又让memory真正成为LoRA生成的parameter-aligned内容，而非只改Query。
-
-第一版保留一个显式directed channel，在同一组缓存`E/A/M`上重排并运行轻量V6 Procedure和memory readout：
+对每个固定`(l,r)`只产生一个地址查询，让它读取完整Procedure阶段轴：
 
 ```text
-H_video(V) = 0.5 * (F(V) - F(reverse(V)))
+S = P[last_valid]
+Q[l,r] = Wq(Norm(S)) + W_address(Norm(E_layer[l] + E_rank[r]))
+K[t] = Wk(Norm(P[t]))
+
+H_video[l,r] = Wout Attention(
+    Q[l,r],
+    K[1:T],
+    V_m[1:T,l,r]
+)
 ```
 
-它不重复VLM/Action backbone forward，只重复远小于backbone的transition、causal Procedure和memory readout。得到：
+职责是明确分开的：`P[t]`作为Key描述每一阶段是什么，固定layer/rank地址加task-level `S`决定该参数位置要读取哪些
+阶段，同地址的centered native memory是唯一Value。`P[t]`已经由带真实frame position的causal Procedure产生，reader
+不再添加第二个absolute-time clock。若内部Procedure退化为同一个向量，attention退化为均匀权重，而centered Value
+按构造相消；因此模型不能只靠`P_last`或独立endpoint旁路阶段变化。constant video从首帧相对化后严格为零。
+
+训练和部署都只运行正确正序一次：
 
 ```text
-H_video(reverse(V)) = -H_video(V)
+H_video(V) = StageRead(P(V), M(V))
 ```
 
-反号约束只到parameter memory，不硬编码到LoRA。若held video上该directed channel近零并伴随绝对性能损失，说明
-pure-odd readout删除了必要信息；允许在同一职责链内改为“directed additive channel + order-even gated semantic
-channel”，但不得因此抛弃Core/Procedure→memory→M2P主架构。
+不再内部构造`0.5 * (correct - reverse)`，也不硬编码`H(reverse)=-H(correct)`。reverse/shuffle控制必须先真实重排
+raw frames，再完整运行同一个Writer；差异只能来自重算后的视觉变化、causal Procedure与阶段对应。
 
 ## 7. 两级聚合严格保留layer/rank地址
 
@@ -246,7 +250,7 @@ channel”，但不得因此抛弃Core/Procedure→memory→M2P主架构。
 ```text
 C_video[k]          semantic Core
 P_summary[k]        high-level Procedure summary
-H_video[k,l,r]      parameter-aligned directed memory
+H_video[k,l,r]      positive-order, stage-addressed parameter memory
 ```
 
 先由DeepSets形式得到`C_set`和`P_set`。再对每个固定`(l,r)`：
@@ -367,16 +371,14 @@ train24必须从fresh Writer initialization开始，只复用冻结source policy
 
 ### 11.3 Objective
 
-首轮使用两类互补信号，不混入reward：
+v2首轮只使用**correct-order dense functional B20**：correct condition生成的LoRA作用于冻结source policy，在同task
+跨episode action queries上下降functional loss。它直接回答生成方向是否对source policy有用，不混入reward。
 
-1. **dense functional B20**：correct condition生成的LoRA作用于冻结source policy，在同task跨episode action queries
-   上下降functional loss；它提供policy-useful方向；
-2. **language/directed-Program matching**：`P_summary`、`H_video`和`H_set`应匹配自己的exact language；same-task
-   videos为正样本，shuffle/reverse为Program级order negatives。negative arms不读取action/reward/outcome，也不规定
-   negative LoRA必须失败。
-
-matching系数只做一次初始量级校准，使首个完整macro的标量贡献约为functional的10%，随后冻结；不做lambda sweep。
-same-task variance、LoRA norm/rank/cosine和expert reconstruction只作诊断，不加入首轮loss。
+v1的language/directed-Program matching从macro25的`.02114`降到macro50的`.001378`，同时Procedure cross-task cosine
+却从`.7899`恶化到`.9503`；该loss没有cross-task wrong约束，并与pure-odd endpoint路径共同奖励“所有任务都学会正序
+符号”。所以v2删除matching heads和reverse/shuffle训练臂，不把correct视频人为推成某个符号。same-task variance、
+LoRA norm/rank/cosine、reverse/shuffle margin与expert reconstruction只作诊断；视频因果性最终由完整重前向的六臂
+closed-loop裁决。
 
 ### 11.4 当前排除
 
@@ -390,10 +392,10 @@ rank/scale/seed sweep或额外target-task数据。若native BA/action已经mater
 
 - 复用现有one-way `backbone_memory` native context capture，37 capacity tokens原位替换为16 rank queries；
 - 复用V6 semantic Core、Action-query transition和causal Procedure的已验证owner，删除旧后置slot compiler调用；
-- 新增Procedure→memory causal readout、地址保持的K-set、dynamic Core gate和group/rank axial M2P；
+- 使用第6节stage-addressed centered-memory readout、地址保持的K-set、dynamic Core gate和group/rank axial M2P；
 - 复用38-target schema、A0/B0 template和factor output shapes，新heads fresh；
 - config/checkpoint/eval schema明确fresh-incompatible，不留legacy fallback；
-- reverse/shuffle只重排缓存frame evidence并重跑轻量Procedure/memory readout，不重复backbone forward；
+- 训练/部署只走一次correct正序；评测reverse/shuffle重排raw frames后完整重跑Writer，不在模型内部复用correct结果；
 - 最后一个frame microbatch用丢弃的zero rows补到固定shape后切掉padding，防止video排列或尾batch形状把正常BF16
   kernel差异放大成伪Procedure/memory方向；每个有效frame仍只forward一次，不使用batch1或重复有效frame；
 - 不增加batch1、重复single forward、FP64训练、逐tensorhash或防御性扫描。
@@ -404,7 +406,8 @@ rank/scale/seed sweep或额外target-task数据。若native BA/action已经mater
 2. Action states不受memory影响，memory可读完整native context；
 3. T/K aggregation不混layer/rank，K permutation只允许正常低位reduction差异；
 4. no-language、no-video和constant路径的fresh effective BA为identity；
-5. correct/reverse/shuffle重新计算且Procedure、memory、factor、BA/action均有material响应；
+5. 用repeated-last替换Procedure内部阶段必须material改变H；correct/reverse/shuffle完整重前向后Procedure、memory、
+   factor、BA/action均有material响应，且reverse不再是架构硬编码反号；
 6. q/v/action-in/action-out八family均有finite nonzero gradient和native response；
 7. longest-video K4无OOM/nonfinite，按真实samples/s选择batch；
 8. full CPU suite与architecture guard通过，无平行旧runtime。
@@ -509,7 +512,12 @@ formal训练和评测必须来自clean pushed commit的detached frozen worktree�
 RNG/topology、raw paired rows、aggregate、completion和必要analysis。接受正常BF16/TF32、batch和kernel低位差异，
 以真实samples/s、LoRA/s、最长视频稳定性和closed-loop证据推进。
 
-## 17. Sealed profile evidence
+## 17. LMMPC-v1终局证据与v2 profile状态
+
+LMMPC-v1同一fresh run的macro25 strict=`81/400`、breadth5、per-task=`2/0/32/3/0/39/5/0`；macro50 strict=
+`101/400`、breadth5、per-task=`3/1/48/0/3/46/0/0`。25→50为`68 retained / 33 gained / 13 lost`、churn46，说明尚在
+学习但能力明显换手；macro50相对LPCP143仅`83 retained / 18 gained / 60 lost`。本节以下profile仍是v1的历史运行
+证据，不授权resume，也不封存v2。
 
 clean pushed `4b6316a7ed5ba6e8cbe74e2e0bac377c11ed8e22`在gpu01物理`0/1/2/4/5/6`完成world6、
 microbatch6、B20的两macro fresh profile：K1--K4每轮各6 tasks，macro=`32.97/29.83s`，peak allocated=
@@ -537,3 +545,23 @@ clean pushed `dd81b94`随后在gpu02物理`1/2/3/4/7`以world5完成两macro ful
 无OOM/nonfinite。部署路径同时省去只服务matching loss的shuffle Procedure/memory计算，单元合同证明其76个primary
 LoRA tensors与训练路径逐元素相同。该profile与371帧证据共同重新封存formal recipe；原失败run无checkpoint，
 不得resume，后继必须fresh。
+
+### 17.2 Procedure-reader终局定位与v2门
+
+macro25→50的cross-task cosine为：Core`.9219→.8486`、Procedure`.7899→.9503`、K-set`.7109→.7313`、compiled
+`.6848→.7563`、final BA`.7489→.6431`。Core和final BA并非同步坍塌，最早异常正是Procedure及其memory承诺。
+
+macro50 held validation8的reader counterfactual进一步显示：另一task的完整Procedure只让direct per-video H改变
+`.125%`；zero Procedure虽然让shared stage改变`.501`，但主要是把后续K-set gate归零。reader component decomposition
+显示独立endpoint占输出`.9968`，attention只占`.0246`；reverse endpoint逐元素严格为负。macro25已有同一结构，且
+训练到macro50反而更依赖endpoint。因此旧trajectory即使继续提高loss/分数，也不能证明学会高层有向Procedure。
+
+v2 config/checkpoint/eval schema全部fresh-incompatible，当前仍为`unsealed_pending_live_profile`。当前worktree已经先行
+通过结构和资源否决门：全量CPU=`284 passed`；world5两macro=`39.02/36.05s`、peak reserved=`34.20GB`；真实
+task38/K4/323-frame中重复`P_last`或zero Procedure后parameter-memory仅剩正常norm的`.01390`且relative-L2约`1.0`；
+reverse不再硬反号，constant identity、K置换、八family与reader梯度、source zero-grad均通过。shuffle在最终BA上仍只改
+`.08864`，因此这里只证明结构能读取顺序，不能声称训练前已有正确时序优势。真实schedule最大371-frame及随后四任务
+完整结束，peak allocated/reserved=`41,987,227,136 / 44,912,607,232` bytes。
+
+这些是提交前worktree smoke，不进入formal config的sealed evidence。下一步必须从clean pushed detached commit原样重跑
+两macro与371-frame门，写回source commit/run root后再允许formal；不得把本节数值冒充closed-loop或视频因果成绩。

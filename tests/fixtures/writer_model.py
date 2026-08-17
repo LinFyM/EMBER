@@ -110,7 +110,6 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         ),
         factor_hidden_width=32,
         initialization_seed=7,
-        matching_margin=0.2,
     )
     return model, template
 

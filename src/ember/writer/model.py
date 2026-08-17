@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 import torch
-import torch.nn.functional as F
 
 from ember.expert_manifold.legacy_v6_model import (
     FactorHead,
@@ -54,17 +53,11 @@ class WriterProgramDiagnostics:
 
     per_video_core: torch.Tensor
     per_video_procedure: torch.Tensor
-    reverse_procedure: torch.Tensor
-    shuffled_procedure: torch.Tensor
-    natural_parameter_memory: torch.Tensor
-    reverse_parameter_memory: torch.Tensor
-    shuffled_parameter_memory: torch.Tensor
-    directed_parameter_memory: torch.Tensor
+    per_video_parameter_memory: torch.Tensor
     shared_parameter_memory: torch.Tensor
     shared_core: torch.Tensor
     core_fused_grid: torch.Tensor
     compiled_grid: torch.Tensor
-    auxiliary_loss: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -119,13 +112,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         compiler: LayerMatchedMemoryProgramCompiler,
         factor_hidden_width: int,
         initialization_seed: int,
-        matching_margin: float,
     ) -> None:
         super().__init__()
         if (
             not tensor_specs
             or factor_hidden_width <= 0
-            or matching_margin <= 0
             or {item.rank for item in tensor_specs} != {PUBLIC_RANK}
         ):
             raise WriterModelError("invalid LMMPC Writer topology")
@@ -138,7 +129,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.memory_reader = memory_reader
         self.video_set = video_set
         self.compiler = compiler
-        self.matching_margin = float(matching_margin)
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(int(initialization_seed) + 0x4D454D)
             memory = torch.empty(PUBLIC_RANK, MEMORY_WIDTH)
@@ -149,15 +139,6 @@ class CompleteLoRAWriter(torch.nn.Module):
                 name: FactorHead(PROGRAM_WIDTH, factor_hidden_width, width)
                 for name, width in self.FACTOR_WIDTHS.items()
             }
-        )
-        self.language_match = torch.nn.Linear(
-            PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
-        )
-        self.procedure_match = torch.nn.Linear(
-            PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
-        )
-        self.memory_match = torch.nn.Linear(
-            PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
         )
         self._register_template_state(template_state)
 
@@ -236,7 +217,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             ),
             factor_hidden_width=int(writer_config["factor_hidden_width"]),
             initialization_seed=seed,
-            matching_margin=float(writer_config["matching_margin"]),
         )
 
     @staticmethod
@@ -313,32 +293,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             for name, buffer in self._template_buffers.items()
         }
 
-    @staticmethod
-    def _frame_order(
-        video_bounds: tuple[int, ...],
-        *,
-        kind: str,
-        device: torch.device,
-    ) -> torch.Tensor:
-        rows = []
-        for left, right in zip(video_bounds[:-1], video_bounds[1:], strict=True):
-            length = right - left
-            if kind == "natural":
-                local = torch.arange(length, device=device)
-            elif kind == "reverse":
-                local = torch.arange(length - 1, -1, -1, device=device)
-            elif kind == "shuffle":
-                local = torch.cat(
-                    (
-                        torch.arange(0, length, 2, device=device),
-                        torch.arange(1, length, 2, device=device),
-                    )
-                )
-            else:
-                raise WriterModelError("unknown LMMPC frame order")
-            rows.append(local + left)
-        return torch.cat(rows)
-
     def _pack_video_program(
         self,
         frame_evidence: torch.Tensor,
@@ -346,7 +300,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         interactions: torch.Tensor,
         frame_indices: torch.Tensor,
         video_bounds: tuple[int, ...],
-        order: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         videos = len(video_bounds) - 1
         lengths = tuple(
@@ -368,16 +321,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         valid = torch.zeros(
             videos, maximum, dtype=torch.bool, device=frame_indices.device
         )
-        ordered_evidence = frame_evidence.index_select(0, order)
-        ordered_grounded = grounded_evidence.index_select(0, order)
-        ordered_action = interactions.index_select(0, order)
         for video, (left, right) in enumerate(
             zip(video_bounds[:-1], video_bounds[1:], strict=True)
         ):
             length = right - left
-            evidence[video, :length] = ordered_evidence[left:right]
-            grounded[video, :length] = ordered_grounded[left:right]
-            action[video, :length] = ordered_action[left:right]
+            evidence[video, :length] = frame_evidence[left:right]
+            grounded[video, :length] = grounded_evidence[left:right]
+            action[video, :length] = interactions[left:right]
             positions[video, :length] = frame_indices[left:right]
             valid[video, :length] = True
         return evidence, grounded, action, positions, valid
@@ -393,7 +343,6 @@ class CompleteLoRAWriter(torch.nn.Module):
         video_condition_ids: torch.Tensor,
         frame_indices: torch.Tensor,
         video_bounds: tuple[int, ...],
-        order: torch.Tensor,
     ) -> VideoProgram:
         evidence, grounded, action, positions, valid = self._pack_video_program(
             frame_evidence,
@@ -401,7 +350,6 @@ class CompleteLoRAWriter(torch.nn.Module):
             interactions,
             frame_indices,
             video_bounds,
-            order,
         )
         video_queries = text_queries.index_select(0, video_condition_ids)
         video_valid_tokens = valid_task_tokens.index_select(
@@ -454,59 +402,6 @@ class CompleteLoRAWriter(torch.nn.Module):
                 )
             ]
         )
-
-    def _matching_loss(
-        self,
-        *,
-        language_summary: torch.Tensor,
-        video_condition_ids: torch.Tensor,
-        condition_bounds: tuple[int, ...],
-        natural_procedure: torch.Tensor,
-        reverse_procedure: torch.Tensor,
-        shuffled_procedure: torch.Tensor,
-        natural_memory: torch.Tensor,
-        reverse_memory: torch.Tensor,
-        shuffled_memory: torch.Tensor,
-    ) -> torch.Tensor:
-        language = self.language_match(language_summary).index_select(
-            0, video_condition_ids
-        )
-
-        def representation(
-            procedure: torch.Tensor, memory: torch.Tensor
-        ) -> torch.Tensor:
-            return self.procedure_match(procedure) + self.memory_match(
-                memory.mean(dim=(1, 2))
-            )
-
-        natural = representation(natural_procedure, natural_memory)
-        reverse = representation(reverse_procedure, reverse_memory)
-        shuffled = representation(shuffled_procedure, shuffled_memory)
-        positive = F.cosine_similarity(language, natural, dim=-1)
-        reverse_score = F.cosine_similarity(language, reverse, dim=-1)
-        shuffled_score = F.cosine_similarity(language, shuffled, dim=-1)
-        ranking = F.relu(self.matching_margin - positive + reverse_score)
-        ranking = ranking + F.relu(
-            self.matching_margin - positive + shuffled_score
-        )
-        normalized = F.normalize(natural.to(torch.float32), dim=-1)
-        agreement = natural.new_zeros(())
-        multi_video = 0
-        for left, right in zip(
-            condition_bounds[:-1], condition_bounds[1:], strict=True
-        ):
-            if right - left <= 1:
-                continue
-            center = F.normalize(
-                normalized[left:right].mean(dim=0, keepdim=True), dim=-1
-            )
-            agreement = agreement + (
-                1.0 - (normalized[left:right] * center).sum(dim=-1)
-            ).mean().to(agreement.dtype)
-            multi_video += 1
-        if multi_video:
-            agreement = agreement / multi_video
-        return ranking.mean() + agreement
 
     def _encode_context(
         self,
@@ -579,63 +474,38 @@ class CompleteLoRAWriter(torch.nn.Module):
     def _compile_context(
         self,
         context: EncodedContext,
-        *,
-        include_matching: bool = True,
-    ) -> WriterProgramOutput | torch.Tensor:
+    ) -> WriterProgramOutput:
         encoding = context.encoding
-        kinds = (
-            ("natural", "reverse", "shuffle")
-            if include_matching
-            else ("natural", "reverse")
+        program = self._build_program(
+            text_queries=encoding.text_queries,
+            frame_evidence=encoding.frame_evidence,
+            grounded_evidence=encoding.grounded_evidence,
+            interactions=encoding.interactions,
+            valid_task_tokens=encoding.valid_task_tokens,
+            video_condition_ids=context.video_condition_ids,
+            frame_indices=context.frame_indices,
+            video_bounds=context.video_bounds,
         )
-        orders = {
-            kind: self._frame_order(
-                context.video_bounds,
-                kind=kind,
-                device=context.frame_indices.device,
-            )
-            for kind in kinds
-        }
-        programs = {
-            kind: self._build_program(
-                text_queries=encoding.text_queries,
-                frame_evidence=encoding.frame_evidence,
-                grounded_evidence=encoding.grounded_evidence,
-                interactions=encoding.interactions,
-                valid_task_tokens=encoding.valid_task_tokens,
-                video_condition_ids=context.video_condition_ids,
-                frame_indices=context.frame_indices,
-                video_bounds=context.video_bounds,
-                order=order,
-            )
-            for kind, order in orders.items()
-        }
-        parameter_memory = {
-            kind: self.memory_reader(
-                encoding.layer_memory.index_select(0, orders[kind]),
-                program.procedure,
-                program.valid_procedure,
-                context.video_bounds,
-            )
-            for kind, program in programs.items()
-        }
-        directed = 0.5 * (
-            parameter_memory["natural"] - parameter_memory["reverse"]
+        parameter_memory = self.memory_reader(
+            encoding.layer_memory,
+            program.procedure,
+            program.valid_procedure,
+            context.video_bounds,
         )
         core_summary = self._masked_mean(
-            programs["natural"].core, programs["natural"].valid_core
+            program.core, program.valid_core
         )
         procedure_summary = self._last_valid(
-            programs["natural"].procedure, programs["natural"].valid_procedure
+            program.procedure, program.valid_procedure
         )
         shared_memory = self.video_set(
-            directed,
+            parameter_memory,
             core_summary,
             procedure_summary,
             context.condition_bounds,
         )
         shared_core = self._condition_mean(
-            programs["natural"].core, context.condition_bounds
+            program.core, context.condition_bounds
         )
         language_summary = self._masked_mean(
             encoding.text_queries, encoding.valid_task_tokens
@@ -646,37 +516,14 @@ class CompleteLoRAWriter(torch.nn.Module):
             encoding.valid_task_tokens,
             language_summary,
         )
-        if not include_matching:
-            return compiled
-        summaries = {
-            kind: self._last_valid(program.procedure, program.valid_procedure)
-            for kind, program in programs.items()
-        }
-        auxiliary = self._matching_loss(
-            language_summary=language_summary,
-            video_condition_ids=context.video_condition_ids,
-            condition_bounds=context.condition_bounds,
-            natural_procedure=summaries["natural"],
-            reverse_procedure=summaries["reverse"],
-            shuffled_procedure=summaries["shuffle"],
-            natural_memory=parameter_memory["natural"],
-            reverse_memory=parameter_memory["reverse"],
-            shuffled_memory=parameter_memory["shuffle"],
-        )
         diagnostics = WriterProgramDiagnostics(
-            per_video_core=programs["natural"].core,
-            per_video_procedure=programs["natural"].procedure,
-            reverse_procedure=programs["reverse"].procedure,
-            shuffled_procedure=programs["shuffle"].procedure,
-            natural_parameter_memory=parameter_memory["natural"],
-            reverse_parameter_memory=parameter_memory["reverse"],
-            shuffled_parameter_memory=parameter_memory["shuffle"],
-            directed_parameter_memory=directed,
+            per_video_core=program.core,
+            per_video_procedure=program.procedure,
+            per_video_parameter_memory=parameter_memory,
             shared_parameter_memory=shared_memory,
             shared_core=shared_core,
             core_fused_grid=core_fused,
             compiled_grid=compiled,
-            auxiliary_loss=auxiliary,
         )
         return WriterProgramOutput(program=compiled, diagnostics=diagnostics)
 
@@ -752,7 +599,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         policy: torch.nn.Module,
         singleton_video_index: int = 0,
-    ) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         encoded = self.encode_program(
             frames,
             frame_indices,
@@ -764,7 +611,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             policy=policy,
             singleton_video_index=singleton_video_index,
         )
-        return self.decode_output(encoded), encoded.diagnostics.auxiliary_loss
+        return self.decode_output(encoded)
 
     def forward(
         self,
@@ -778,16 +625,16 @@ class CompleteLoRAWriter(torch.nn.Module):
         *,
         policy: torch.nn.Module,
     ) -> dict[str, torch.Tensor]:
-        context = self._encode_context(
-            frames,
-            frame_indices,
-            video_offsets,
-            condition_video_offsets,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-            policy,
+        encoded = self._compile_context(
+            self._encode_context(
+                frames,
+                frame_indices,
+                video_offsets,
+                condition_video_offsets,
+                language_tokens,
+                language_mask,
+                task_span_mask,
+                policy,
+            )
         )
-        return self.decode_program(
-            self._compile_context(context, include_matching=False)
-        )
+        return self.decode_output(encoded)

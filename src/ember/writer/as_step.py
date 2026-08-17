@@ -189,14 +189,14 @@ def _task_gradient(
     policy_batch: Mapping[str, Any],
     policy_seed: int,
     gradient_sum: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, Mapping[str, Any]]:
+) -> tuple[torch.Tensor, Mapping[str, Any]]:
     device_type = runtime.context.device.type
     with torch.autocast(
         device_type=device_type,
         dtype=torch.bfloat16,
         enabled=device_type == "cuda",
     ):
-        generated, auxiliary = runtime.writer.forward_training(
+        generated = runtime.writer.forward_training(
             *packed,
             policy=runtime.policy,
             singleton_video_index=0,
@@ -219,21 +219,12 @@ def _task_gradient(
             ),
             collect_policy_details=False,
         )
-    if not isinstance(auxiliary, torch.Tensor) or auxiliary.ndim != 0:
-        raise WriterModelError("LMMPC Program-matching loss is not scalar")
     names = tuple(generated)
-    weight = float(
-        runtime.config["conditioning_training"]["program_matching"]["weight"]
-    )
-    if weight <= 0 or not auxiliary.requires_grad:
-        raise WriterModelError("LMMPC Program matching lost its training graph")
     active_names = tuple(name for name in names if generated[name].requires_grad)
     if not active_names:
         raise WriterModelError("dynamic-K generated LoRA lost every trainable output")
     outputs = tuple(generated[name] for name in active_names)
     grad_outputs = tuple(lora_gradients[name] for name in active_names)
-    outputs = (*outputs, auxiliary)
-    grad_outputs = (*grad_outputs, torch.ones_like(auxiliary) * weight)
     before = tuple(item.parameter.grad for item in runtime.gradient_layout)
     if any(value is not None for value in before):
         raise WriterModelError("dynamic-K task gradient buffer was not cleared")
@@ -242,7 +233,7 @@ def _task_gradient(
     accumulate_flat_gradient(gradient_sum, gradients, runtime.gradient_layout)
     for item in runtime.gradient_layout:
         item.parameter.grad = None
-    return functional_loss, auxiliary.detach(), detail
+    return functional_loss, detail
 
 
 def run_writer_step(
@@ -273,21 +264,20 @@ def run_writer_step(
         )
         packed, video_metrics = _pack_condition(runtime, task_id, demos)
         policy_seed = _policy_seed(runtime, batch, task_id, task_visit)
-        functional, auxiliary, _ = _task_gradient(
+        functional, _ = _task_gradient(
             runtime,
             packed,
             runtime.processor.training_batch(batch),
             policy_seed,
             flat,
         )
-        if not bool(torch.isfinite(functional)) or not bool(torch.isfinite(auxiliary)):
+        if not bool(torch.isfinite(functional)):
             raise WriterModelError(f"non-finite dynamic-K loss at macro {macro}")
         records.append(
             {
                 "task_id": task_id,
                 "task_visit": task_visit,
                 "functional_loss": float(functional),
-                "program_matching_loss": float(auxiliary),
                 **video_metrics,
             }
         )
@@ -323,20 +313,12 @@ def run_writer_step(
         "local_task_ids": [row["task_id"] for row in records],
         "local_mean_functional_loss": sum(row["functional_loss"] for row in records)
         / len(records),
-        "local_mean_program_matching_loss": sum(
-            row["program_matching_loss"] for row in records
-        )
-        / len(records),
         "local_k_histogram": {
             str(k): sum(row["K"] == k for row in records) for k in range(1, 5)
         },
         "global_k_histogram": global_k_histogram,
         "global_mean_functional_loss": sum(
             row["functional_loss"] for row in global_records
-        )
-        / len(global_records),
-        "global_mean_program_matching_loss": sum(
-            row["program_matching_loss"] for row in global_records
         )
         / len(global_records),
         "gradient_norm_before_clip": float(grad_norm),

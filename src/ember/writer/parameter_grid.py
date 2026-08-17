@@ -31,7 +31,7 @@ def _merge_heads(value: torch.Tensor) -> torch.Tensor:
 
 
 class LayerRankMemoryReader(torch.nn.Module):
-    """Let a causal V6 Procedure read every fixed layer/rank memory sequence."""
+    """Let every fixed layer/rank address read the full ordered Procedure."""
 
     def __init__(self, *, heads: int, initialization_seed: int) -> None:
         super().__init__()
@@ -44,9 +44,12 @@ class LayerRankMemoryReader(torch.nn.Module):
         )
         self.procedure_norm = RMSNorm(PROGRAM_WIDTH)
         self.query = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
+        self.address_norm = RMSNorm(PROGRAM_WIDTH)
+        self.address_query = torch.nn.Linear(
+            PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
+        )
         self.key = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
         self.output = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
-        self.endpoint = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(int(initialization_seed) + 0x4D52)
             self.layer_identity = torch.nn.Parameter(
@@ -77,19 +80,18 @@ class LayerRankMemoryReader(torch.nn.Module):
         length = memory.shape[0]
         cells = EXPERT_LAYERS * PUBLIC_RANK
         projected = self.memory_projection(self.memory_norm(memory))
-        delta = torch.cat(
-            (torch.zeros_like(projected[:1]), projected[1:] - projected[:-1]),
-            dim=0,
-        )
+        relative = projected - projected[:1]
+        dynamic_value = relative - relative.mean(dim=0, keepdim=True)
         address = (
             self.layer_identity[:, None] + self.rank_identity[None]
         ).reshape(cells, PROGRAM_WIDTH)
-        query = self.query(self.procedure_norm(procedure))[None]
-        query = query.expand(cells, -1, -1) + address[:, None]
-        key = self.key(
-            projected.permute(1, 2, 0, 3).reshape(cells, length, PROGRAM_WIDTH)
+        query = self.query(self.procedure_norm(procedure[-1]))[None]
+        query = query + self.address_query(self.address_norm(address))
+        query = query[:, None]
+        key = self.key(self.procedure_norm(procedure))[None].expand(
+            cells, -1, -1
         )
-        value = delta.permute(1, 2, 0, 3).reshape(
+        value = dynamic_value.permute(1, 2, 0, 3).reshape(
             cells, length, PROGRAM_WIDTH
         )
         attended = F.scaled_dot_product_attention(
@@ -97,13 +99,10 @@ class LayerRankMemoryReader(torch.nn.Module):
             _split_heads(key, self.heads),
             _split_heads(value, self.heads),
             dropout_p=0.0,
-            is_causal=True,
+            is_causal=False,
         )
-        final = self.output(_merge_heads(attended)[:, -1])
-        endpoint = self.endpoint(
-            (projected[-1] - projected[0]).reshape(cells, PROGRAM_WIDTH)
-        )
-        return (final + endpoint).reshape(
+        final = self.output(_merge_heads(attended)[:, 0])
+        return final.reshape(
             EXPERT_LAYERS, PUBLIC_RANK, PROGRAM_WIDTH
         )
 

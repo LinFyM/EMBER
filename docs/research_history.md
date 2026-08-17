@@ -202,6 +202,34 @@ coherence高层Program。memory的`+16`闭环贡献仍成立，但Program质量�
 这一结果同时否定两个极端叙述：不能说memory token没用，也不能说151证明完整方法成功。被否决的是“learned
 one-way memory + 当前K4/reward + independent rank32 direct-B shared tail连续更新即可稳定积累”的组合。
 
+### 3.8 Layer-Matched Memory Program Compiler v1
+
+LMMPC-v1把V6 Core/Procedure、16个one-way layer/rank memory、地址保持dynamic-K、同一20x16 axial M2P与共同训练的
+native rank16 A/B接成fresh统一Writer。它证明这条完整工程图可在每macro等权train24、K1--K4平衡下稳定训练和部署，
+但absolute明显低于继承旧support的V6/LPCP：
+
+| checkpoint | strict | breadth | per-task | 相对LPCP143 retained/gained/lost |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `81/400` | 5 | `2/0/32/3/0/39/5/0` | `69/12/74` |
+| macro50 | `101/400` | 5 | `3/1/48/0/3/46/0/0` | `83/18/60` |
+
+macro25→50为`68 retained / 33 gained / 13 lost`、churn46、net`+20`；训练量尚能增分，但Object3和Long1等能力被换手。
+functional/matching从`.115512/.021139`降到`.105596/.001378`，loss不能选择闭环。
+
+逐stage held cross-task cosine在macro25→50分别为：Core`.92185→.84859`、Procedure`.78993→.95031`、per-video
+memory`.71089→.73133`、Core-fused`.49402→.44842`、compiled`.68476→.75632`、final BA`.74886→.64307`。同task
+four-K4 final BA约`.974--.998`一致，排除了K-set首先相消；Procedure却明显趋同。
+
+实现counterfactual最终定位到reader：它为每个`t`建立query却只取`attended[:, -1]`，所以只有`P_last`直接参与；随后
+独立相加的首尾memory endpoint又绕过Procedure。macro25/50 attention只占reader输出`.02753/.02461`，endpoint是它的
+`41.04x/45.73x`。重复`P_last`替换整条Procedure逐元素不改H；macro50换成另一task Procedure时direct H只改`.125%`。
+reverse endpoint严格为负，故旧`0.5*(correct-reverse)`的强时序响应主要是结构反号，不是高层阶段理解。
+
+因此LMMPC-v1不续macro75/100。该结果只否定“last-query + independent endpoint + pure-odd channel + language/order
+matching”这一Procedure路径，不否定四流、memory token、dynamic-K、axial M2P、rank16或生成LoRA。active v2在相同
+主链内改为固定layer/rank地址读取完整Procedure keys、centered dynamic memory Values，并回到correct-order dense
+functional-only训练。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

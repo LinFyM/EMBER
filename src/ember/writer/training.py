@@ -413,7 +413,7 @@ def run_macros(runtime: WriterRuntime) -> None:
             {
                 "schema_version": (
                     "ember_pi05_layer_matched_memory_program_compiler_"
-                    "completion_v1"
+                    "completion_v2"
                 ),
                 "completed_macro": runtime.args.stop_after_macro,
                 "elapsed_seconds": time.monotonic() - started,
@@ -459,7 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json",
+        / "configs/pi05_writer_layer_matched_memory_program_compiler_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

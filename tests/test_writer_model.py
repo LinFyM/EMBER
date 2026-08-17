@@ -28,6 +28,13 @@ def _reverse_inputs() -> tuple[torch.Tensor, ...]:
     return tuple(values)
 
 
+def _shuffle_inputs() -> tuple[torch.Tensor, ...]:
+    values = list(_inputs())
+    order = torch.tensor([0, 2, 1, 4, 3, 5, 7, 6])
+    values[0] = values[0].index_select(0, order)
+    return tuple(values)
+
+
 def test_fresh_lmmpc_step0_is_exact_source_identity() -> None:
     model, template = _model()
     generated = model(*_inputs(), policy=torch.nn.Identity())
@@ -38,7 +45,7 @@ def test_fresh_lmmpc_step0_is_exact_source_identity() -> None:
     )
 
 
-def test_deployment_skips_matching_only_shuffle_without_changing_lora() -> None:
+def test_training_and_deployment_share_one_positive_order_program() -> None:
     model, _ = _model()
     _open_factor_heads(model)
     calls = {"procedure": 0, "memory": 0}
@@ -53,12 +60,12 @@ def test_deployment_skips_matching_only_shuffle_without_changing_lora() -> None:
     memory_handle = model.memory_reader.register_forward_hook(count_memory)
     try:
         deployment = model(*_inputs(), policy=torch.nn.Identity())
-        assert calls == {"procedure": 2, "memory": 2}
+        assert calls == {"procedure": 1, "memory": 1}
         calls.update(procedure=0, memory=0)
-        training, _ = model.forward_training(
+        training = model.forward_training(
             *_inputs(), policy=torch.nn.Identity()
         )
-        assert calls == {"procedure": 3, "memory": 3}
+        assert calls == {"procedure": 1, "memory": 1}
     finally:
         procedure_handle.remove()
         memory_handle.remove()
@@ -69,24 +76,26 @@ def test_program_is_the_parameter_grid_without_a_second_slot_bank() -> None:
     model, _ = _model()
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
     assert encoded.program.shape == (2, 20, 16, 256)
-    assert encoded.diagnostics.directed_parameter_memory.shape == (3, 18, 16, 256)
+    assert encoded.diagnostics.per_video_parameter_memory.shape == (3, 18, 16, 256)
     assert encoded.diagnostics.shared_parameter_memory.shape == (2, 18, 16, 256)
     assert encoded.diagnostics.core_fused_grid.shape == encoded.program.shape
     names = tuple(name for name, _ in model.named_parameters())
     assert not any("slot" in name or "routing" in name for name in names)
 
 
-def test_reverse_flips_the_directed_per_video_memory() -> None:
+def test_reverse_recomputes_a_nontrivial_non_antisymmetric_program() -> None:
     model, _ = _model()
     natural = model.encode_program(*_inputs(), policy=torch.nn.Identity())
     reversed_video = model.encode_program(
         *_reverse_inputs(), policy=torch.nn.Identity()
     )
-    torch.testing.assert_close(
-        reversed_video.diagnostics.directed_parameter_memory,
-        -natural.diagnostics.directed_parameter_memory,
-        rtol=1e-5,
-        atol=1e-5,
+    assert not torch.allclose(
+        reversed_video.diagnostics.per_video_parameter_memory,
+        natural.diagnostics.per_video_parameter_memory,
+    )
+    assert not torch.allclose(
+        reversed_video.diagnostics.per_video_parameter_memory,
+        -natural.diagnostics.per_video_parameter_memory,
     )
     assert not torch.allclose(reversed_video.program, natural.program)
 
@@ -94,13 +103,14 @@ def test_reverse_flips_the_directed_per_video_memory() -> None:
 def test_shuffle_recomputes_procedure_and_parameter_memory() -> None:
     model, _ = _model()
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+    shuffled = model.encode_program(*_shuffle_inputs(), policy=torch.nn.Identity())
     assert not torch.allclose(
         encoded.diagnostics.per_video_procedure,
-        encoded.diagnostics.shuffled_procedure,
+        shuffled.diagnostics.per_video_procedure,
     )
     assert not torch.allclose(
-        encoded.diagnostics.natural_parameter_memory,
-        encoded.diagnostics.shuffled_parameter_memory,
+        encoded.diagnostics.per_video_parameter_memory,
+        shuffled.diagnostics.per_video_parameter_memory,
     )
 
 
@@ -134,7 +144,7 @@ def test_k1_video_set_is_exact_identity_at_each_address() -> None:
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
     torch.testing.assert_close(
         encoded.diagnostics.shared_parameter_memory[1],
-        encoded.diagnostics.directed_parameter_memory[2],
+        encoded.diagnostics.per_video_parameter_memory[2],
         rtol=0,
         atol=0,
     )
@@ -146,7 +156,7 @@ def test_constant_video_is_identity_even_after_factor_heads_open() -> None:
     values = list(_inputs())
     values[0][:] = values[0][0]
     encoded = model.encode_program(*values, policy=torch.nn.Identity())
-    assert not encoded.diagnostics.directed_parameter_memory.count_nonzero()
+    assert not encoded.diagnostics.per_video_parameter_memory.count_nonzero()
     assert not encoded.diagnostics.shared_parameter_memory.count_nonzero()
     assert not encoded.diagnostics.core_fused_grid.count_nonzero()
     assert not encoded.program.count_nonzero()
@@ -200,27 +210,49 @@ def test_factor_family_and_layer_ownership_is_native_rank16() -> None:
 
 def test_all_factor_families_and_dynamic_path_receive_gradients() -> None:
     model, _ = _model()
-    generated, auxiliary = model.forward_training(
+    _open_factor_heads(model)
+    generated = model.forward_training(
         *_inputs(), policy=torch.nn.Identity()
     )
-    (_sum(generated) + 0.01 * auxiliary).backward()
+    _sum(generated).backward()
     for head in model.factor_heads.values():
         gradient = head.network[-1].weight.grad
         assert gradient is not None and gradient.count_nonzero()
     assert model.memory_tokens.grad is not None
     assert model.memory_tokens.grad.count_nonzero()
-    assert model.language_match.weight.grad is not None
-    assert model.language_match.weight.grad.count_nonzero()
+    assert model.memory_reader.query.weight.grad is not None
+    assert model.memory_reader.query.weight.grad.count_nonzero()
+    assert model.memory_reader.key.weight.grad is not None
+    assert model.memory_reader.key.weight.grad.count_nonzero()
+    assert model.memory_reader.address_query.weight.grad is not None
+    assert model.memory_reader.address_query.weight.grad.count_nonzero()
 
 
-def test_program_matching_uses_language_order_negatives_and_same_task_k() -> None:
+def test_memory_reader_uses_internal_procedure_stages_not_only_the_last() -> None:
     model, _ = _model()
     encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
-    loss = encoded.diagnostics.auxiliary_loss
-    assert loss.ndim == 0 and torch.isfinite(loss) and float(loss.detach()) > 0
-    loss.backward()
-    assert model.procedure_match.weight.grad is not None
-    assert model.memory_match.weight.grad is not None
+    context = model._encode_context(*_inputs(), policy=torch.nn.Identity())
+    procedure = encoded.diagnostics.per_video_procedure
+    repeated_last = procedure.clone()
+    for video, (left, right) in enumerate(
+        zip(context.video_bounds[:-1], context.video_bounds[1:], strict=True)
+    ):
+        repeated_last[video, : right - left] = procedure[video, right - left - 1]
+    collapsed = model.memory_reader(
+        context.encoding.layer_memory,
+        repeated_last,
+        torch.arange(repeated_last.shape[1])[None]
+        < torch.tensor(
+            [right - left for left, right in zip(
+                context.video_bounds[:-1], context.video_bounds[1:], strict=True
+            )]
+        )[:, None],
+        context.video_bounds,
+    )
+    assert not torch.allclose(
+        encoded.diagnostics.per_video_parameter_memory,
+        collapsed,
+    )
 
 
 def test_writer_state_is_fresh_strictly_reloadable() -> None:

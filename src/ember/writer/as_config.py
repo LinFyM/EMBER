@@ -11,9 +11,9 @@ from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v1"
+    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v2"
 )
 
 
@@ -73,7 +73,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _validate_method(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     expected_writer = {
-        "architecture": "pi05_layer_matched_memory_program_compiler_v1",
+        "architecture": "pi05_layer_matched_memory_program_compiler_v2",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "frame_stride": 5,
         "include_final_frame": True,
@@ -83,7 +83,10 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "program_width": 256,
         "memory_token_count": 16,
         "memory_topology": "18_action_expert_layers_x_16_lora_rank_coordinates",
-        "directed_channel": "half_natural_minus_reverse_parameter_memory",
+        "procedure_memory_readout": (
+            "stage_addressed_attention_over_centered_layer_rank_memory"
+        ),
+        "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
         "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
         "m2p": "same_20x16_grid_two_block_group_rank_axial_attention",
         "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
@@ -106,14 +109,12 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "m2p_heads": 8,
         "m2p_blocks": 2,
         "factor_hidden_width": 256,
-        "matching_margin": 0.2,
         "initialization_seed": 7,
         "activation_checkpointing": True,
     }
     data = config.get("data", {})
     training = config.get("conditioning_training", {})
     distributed = config.get("optimization", {}).get("distributed", {})
-    matching = training.get("program_matching", {})
     changed = (
         any(writer.get(key) != value for key, value in expected_writer.items())
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
@@ -132,12 +133,14 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         != "cost_balanced_long_first_dynamic_uneven"
         or training.get("pair_loss_reduction")
         != "mean_within_task_then_equal_mean_over_24_tasks"
-        or matching.get("kind")
+        or training.get("method") != "lmmpc_positive_order_dense_functional_only"
+        or training.get("functional_loss_weight") != 1.0
+        or training.get("temporal_supervision")
         != (
-            "exact_language_correct_vs_reverse_shuffle_margin_plus_"
-            "same_task_video_agreement"
+            "correct_order_only_reverse_shuffle_reserved_for_full_"
+            "reforward_evaluation"
         )
-        or float(matching.get("weight", 0.0)) <= 0
+        or "program_matching" in training
         or distributed.get("fresh_world_sizes") != [1, 2, 3, 4, 5, 6]
         or distributed.get("exact_resume_world_topology_locked") is not True
         or distributed.get("nccl_p2p_disable") != "1"
@@ -173,10 +176,9 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
-            or float(evidence.get("program_matching_weight", 0)) <= 0
             or int(evidence.get("native_context_calls", -1))
             != int(evidence.get("expected_native_context_calls", -2))
-            or float(evidence.get("correct_reverse_directed_relative_l2", 0))
+            or float(evidence.get("procedure_stage_replacement_relative_l2", 0))
             <= 0
             or float(evidence.get("constant_effective_ba_max_abs", 1)) >= 1e-6
         ):

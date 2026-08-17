@@ -1,6 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为macro25 strict评测并与exact-resume 25→50并行。
+状态：2026-08-17 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v1终局定位后，原位实现和验证
+LMMPC-v2的Procedure-active stage reader。
 
 ## Goal
 
@@ -48,20 +49,29 @@
 - [x] 完成全量CPU验证、clean-commit真实full24动态K吞吐profile、最长K4机制证据与正式recipe封存。
 - [x] micro5最长schedule条件与clean profile已经通过；重新fresh train24到首个有信息量节点macro25并完整封存。
 - [x] 完成K4部署generation profile并封存batch32真实吞吐证据；macro25与macro50使用同一部署合同。
-- [ ] 执行strict paired400并完成逐task、逐suite、retention/churn及逐stage分析。
+- [x] 同一run exact-resume完成macro26--50，保留完整macro25和macro50相邻checkpoint。
+- [x] 完成macro25/50 strict paired400、逐task/suite、retention/churn及逐stage分析；定位到Procedure reader endpoint
+  bypass，而非训练量或K-set首先失效。
+- [x] 冻结v1负结果边界，明确v2仅修改Procedure→layer/rank memory接口和与同一shortcut绑定的训练合同。
+- [x] 完成LMMPC-v2唯一canonical实现、fresh schema、全CPU合同和architecture gate。
+- [x] 在真实K4上验证完整Procedure阶段被使用、constant identity、非硬反号、八family梯度、native BA及最长
+  video吞吐；worktree结构和资源门通过。
+- [ ] 从clean pushed detached commit复现两macro吞吐与371-frame门，并封存fresh formal recipe。
+- [ ] fresh train24到macro25/50等有信息量节点，执行strict paired400和完整stage/task分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
 
 ## Current decision
 
-当前active design为`docs/layer_matched_memory_program_compiler_design.md`。canonical实现、fresh schema与CPU合同已经
-落地。clean `de0b298`的首个world5 formal在macro1--16保持有效下降：functional `.15609→.11888`、Program matching
-`.36194→.17621`；macro17的rank2没有进入唯一gradient collective，最终定位为task38/K4/359帧在functional
-microbatch6下真实OOM，而非NCCL、架构负结果或训练峰值。microbatch5在B20下仍为4次policy forward，并已完整通过
-原故障五任务序列及100-macro封存schedule的真实最大task38/K4/371帧条件。clean `dd81b94` world5 full24 profile
-进一步完成两macro，耗时`39.22/36.22s`、functional `.15612→.15399`、Program matching `.36194→.30113`，无
-OOM/nonfinite，recipe已重新封存。失败run没有checkpoint且未被resume；clean `ca40d88` world5 fresh formal已完整
-完成macro25并exit0，functional为`.115512`、Program matching为`.021139`。former macro17故障条件在真实world5训练中
-通过，checkpoint包含五rank exact-resume状态。由于最近loss仍共同下降，当前保持相同gpu02物理`1/2/3/4/7`和world5
-exact-resume到macro50，同时为macro25准备首个strict paired400；loss仅决定继续观察，不决定科学成绩。
+当前active design为`docs/layer_matched_memory_program_compiler_design.md`。LMMPC-v1 macro25/50 strict分别为
+`81/101`，虽有上升但相对LPCP143仍丢`60`条；25→50 churn=`46`。Procedure cross-task cosine从`.7899`恶化到
+`.9503`，而reader中独立endpoint是attention的`41.0x→45.7x`；把每个video的整条Procedure替换成重复`P_last`，H逐
+元素不变。故不再续v1 macro75/100。
+
+v2保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、axial M2P与native rank16，只把reader
+改为每个固定地址对完整`P[1:T]`做stage attention，Value为同地址centered native memory；删除独立endpoint、内部
+`correct-reverse`和无cross-task辨识力的matching heads。训练/部署都只走一次correct正序functional图，negative只在
+真实完整重前向评测中出现。fresh-incompatible v2已通过全量CPU、真实K4机制、world5两macro worktree profile和
+scheduled 371-frame完整序列；重复`P_last`不能复现H，constant/K置换/source zero-grad均通过。下一步仅把相同运行从
+clean pushed detached commit复现并seal，不把worktree smoke冒充formal，也尚未启动formal训练。

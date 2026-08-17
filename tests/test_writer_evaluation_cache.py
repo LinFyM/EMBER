@@ -94,7 +94,7 @@ def _contract(
             "kind": DYNAMIC_K_WRITER_KIND,
             "config": {
                 "schema": (
-                    "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+                    "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
                 )
             },
             "arm": "layer_matched_memory_program_compiler_correct",
@@ -357,7 +357,7 @@ def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
             "kind": DYNAMIC_K_WRITER_KIND,
             "arm": "layer_matched_memory_program_compiler_correct",
             "config": {
-                "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+                "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
             },
             "writer_asset": {
                 "reference": "dynamic-k:m25:rank16",
@@ -418,7 +418,7 @@ def test_dynamic_k_cache_dispatches_nested_k4_video_sets(tmp_path: Path) -> None
             "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
             "kind": DYNAMIC_K_WRITER_KIND,
             "config": {
-                "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v1"
+                "schema": "ember_pi05_layer_matched_memory_program_compiler_writer_v2"
             },
             "information_wall": {"evaluation_k": 4},
         }

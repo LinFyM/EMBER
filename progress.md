@@ -5,109 +5,113 @@
 
 ## Current state
 
-- 当前goal为active：推进LMMPC从设计、实现、充分fresh训练和strict评测到局部迭代与终局裁决。
+- 持续研究goal为active；当前不使用subagents。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- 当前主分支与origin均包含`77f45c9`；失败formal训练冻结于clean pushed `de0b298`，micro5 profile来自`dd81b94`。
-- 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为macro25首轮strict评测与同一run exact-resume 25→50并行；失败run无状态复用。
-- 当前协作边界：不使用subagents。
+- 本轮开始时HEAD与origin均为`5b3ad390e440708934103beead743a378f43217e`；当前主工作树已实现并验证
+  fresh-incompatible LMMPC-v2，尚未commit/push，也没有EMBER GPU进程。
+- 当前active design为`docs/layer_matched_memory_program_compiler_design.md`。
+- LMMPC-v1 macro25/50及其逐接口分析已经终局；旧checkpoint不得resume到75/100。
 
-## Active architecture decision
+## LMMPC-v1 terminal result
 
-当前统一主链为：
+- macro25 K4 strict=`81/400`、breadth5、per-task=`2/0/32/3/0/39/5/0`。
+- macro50 K4 strict=`101/400`、breadth5、per-task=`3/1/48/0/3/46/0/0`。
+- 25→50=`68 retained / 33 gained / 13 lost`、churn46、net`+20`；能力仍明显换手。
+- macro50相对LPCP143=`83 retained / 18 gained / 60 lost / 239 both-fail`。
+- functional/matching从macro25的`.115512/.021139`降到macro50的`.105596/.001378`，但loss下降没有转化为
+  Procedure task separation或稳定closed-loop支持。
+
+逐stage cross-task cosine：
 
 ```text
-exact language + ordered action-hidden videos
+                         macro25    macro50
+Semantic Core             .92185     .84859
+Causal Procedure          .78993     .95031
+natural per-video memory  .71089     .73133
+Core-fused grid           .49402     .44842
+compiled grid             .68476     .75632
+final effective BA        .74886     .64307
+```
+
+same-task four-K4 final BA一致性很高（约`.974--.998`），所以K聚合并非最早断点；高一致性只是稳定了当前task mean。
+BA norm从macro25的`38.39`增至macro50的`61.56`，仍低于LPCP的`108.70`，但写出并非近identity。
+
+## Earliest failure localization
+
+当前`Procedure -> layer/rank memory reader`存在结构旁路：
+
+1. v1对每个时间步产生Procedure query，却只返回`attended[:, -1]`，所以仅`P_last`直接查询memory；
+2. reader再独立加入`R_memory[last]-R_memory[first]`，该endpoint完全绕过Procedure；
+3. macro25/50中attention/output norm仅`.02753/.02461`，endpoint/attention为`41.04x/45.73x`；
+4. 把每个video整条Procedure替换为重复`P_last`，direct H逐元素不变；
+5. macro50换成另一task完整Procedure时，direct H平均只改`.125%`，最终BA只改`6.23%`、cosine`.99769`；
+6. reverse endpoint逐元素严格为负，解释了旧`correct-reverse`通道近乎完美的反号响应；
+7. Procedure cross-task cosine训练到macro50反而升至`.95031`，matching接近0只学会了generic forward sign。
+
+因此不能把81→101归因于逐渐学会高层Procedure；增益主要来自Core、endpoint和compiler。继续旧训练可能继续改善
+某些任务，但不针对EMBER所需的有向阶段知识，故不启动macro75/100。
+
+## Active LMMPC-v2 decision
+
+v2保留统一主链：
+
+```text
+exact language + dynamic-K ordered action-hidden videos
   -> V6 task-grounded Semantic Core
-  -> Action-query Visual-Transition Causal Procedure
-  -> Procedure reads per-frame layer/rank one-way memory
-  -> frame-to-video reduction preserving layer/rank
-  -> permutation-invariant K-set consensus preserving layer/rank
-  -> dynamic-Procedure-gated Core fusion
-  -> the same 20x16 memory grid enters group/rank axial M2P
+  -> Action-query Visual-Transition Causal Procedure P[1:T]
+  -> 16 one-way layer/rank memory states M[t,l,r]
+  -> each fixed (l,r) address reads all Procedure stages
+     keys = P[1:T], values = centered dynamic M[1:T,l,r]
+  -> address-preserving K-set consensus
+  -> dynamic Core fusion
+  -> the same 20x16 grid enters axial M2P
   -> jointly trained native rank16 A/B
   -> one complete 38-target LoRA
 ```
 
-本轮讨论纠正了旧提案中的两个接口：
+唯一主要修正是Procedure路径合同：删除独立endpoint、内部`0.5*(correct-reverse)`和language/order matching heads。
+训练与部署只运行一次正确正序的dense functional B20图；reverse/shuffle只在评测中重排raw frames并完整重前向。
+这三个删除属于同一个已证实shortcut，而非另换架构路线。Core、Action/Procedure、memory token、K-set、M2P、factor
+heads、rank16和optimizer recipe均保持。
 
-1. memory states已经携带layer/rank地址，不再创建独立320 routing slots；`20×16=320`只描述最终memory-grid cells；
-2. Action state不与memory任意合成Query。Action沿V6已验证路径解释visual transition形成Procedure，Procedure再读取
-   memory时间序列，把高层过程落到参数坐标。
+当前主工作树已完成：
 
-Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Program打开；language/static Core不能独立写LoRA。
-正式训练必须fresh，旧V6/LPCP只允许短暂机制bring-up。
+- stage-addressed centered-memory reader；若Procedure阶段全部重复，centered Value经均匀attention相消；
+- training/deployment统一为一次正序图，删除matching参数与三臂重复计算；
+- config/checkpoint/eval/launch family升级到fresh-incompatible v2，formal状态回到pending profile；
+- 全量CPU=`284 passed`，compile、diff-check和architecture guard无hard violation；
+- world5 worktree profile两macro均严格K1--K4各6 tasks，macro=`39.02/36.05s`，functional=
+  `.156120→.153996`，peak allocated/reserved=`31.80/34.20GB`，无OOM/nonfinite；
+- 真实task38/K4/323-frame机制探针中，重复`P_last`后的per-video memory仅为正常norm的`.01390`，relative-L2=
+  `.99998`；zero Procedure得到相同消失结果，证明完整stage轴是必要路径；
+- reverse相对correct的parameter-memory relative-L2=`.87522`且negative-relative-L2=`1.55334`，不再是硬反号；
+  shuffle在最终BA上仍只改`.08864`，这是训练前待学习性质，不算视频因果门通过；
+- constant memory/template严格为0，K置换LoRA max-abs严格为0，8个factor family及reader query/key/address/value均有
+  非零梯度，source policy非零gradient tensor数为0；
+- 真实调度最大task38/K4/371-frame及随后四任务完整结束，peak allocated/reserved=
+  `41,987,227,136 / 44,912,607,232` bytes，无OOM/nonfinite。
 
-## Implementation and acceptance evidence
-
-- terminal reward/GOMQ executable runtime已经退役；历史设计、结果与Git证据保留。当前只有一个canonical LMMPC
-  Writer入口、config、checkpoint和eval schema。
-- LMMPC封存时全量CPU=`282 passed`；补回已有generation profile模块的canonical evaluator入口后全量CPU=`283 passed`，
-  `compileall`和`git diff --check`通过；architecture guard为`REVIEW`、无hard blocker，
-  active-source净减少约4468行。
-- 真实worktree profile首先在functional microbatch8复现空A40峰值OOM；这是运行时显存切片问题，未发生optimizer
-  update，不构成架构负结果。
-- microbatch4完成一个full24 macro，`36.69s`、rank0 peak allocated=`33.31GB`；随后按既定“matching标量约为
-  functional 10%”一次校准到weight=`0.04`，并将microbatch提高到6。
-- 最终acceptance profile用gpu01物理`0/1/2/4/5/6`、world6完成2 macros：`31.68/34.62s`，peak
-  allocated=`40.04GB`，每轮K1/K2/K3/K4严格各6 tasks；functional均值`.15609→.15395`，Program matching
-  `.36196→.30070`，gradient norm`.16124→.16898`，无OOM/nonfinite。
-- macro1到2的checkpoint delta覆盖semantic encoder/Core、visual transition、Procedure、layer/rank memory reader、
-  K-set、Core/M2P compiler及factor heads；template保持冻结，排除了“只有匹配头更新”的接线假象。
-- clean `bd2ee35`机制探针随后发现variable tail microbatch把正常BF16 batch-shape差异放大为伪Program：constant输入的
-  raw layer-memory max差为`4.0`，最终effective-BA L2为`.5097`，K置换LoRA max差为`6.37e-4`。最早断点明确在
-  native frame encoder的尾batch shape，不在Core/Procedure语义或M2P拓扑。
-- 唯一局部修正是用会被切掉的zero rows把尾microbatch补到固定32；有效frames仍各forward一次。用同一macro2
-  checkpoint复测最长K4后，constant从raw memory到effective BA全链精确为0，K置换76 tensors最大差精确为0，
-  同时correct effective-BA L2=`.56955`、correct/reverse memory relative-L2=`1.99998`，说明只移除了伪方向。
-- 修正后的clean pushed `4b6316a`已重新fresh完成world6两macro：`32.97/29.83s`，peak allocated=`40.52GB`，
-  functional`.15609→.15395`、Program matching`.36194→.30113`，无OOM/nonfinite。该fresh macro2的最长K4机制
-  复测仍为constant全链0、K置换0、correct BA L2=`.56423`、correct/reverse=`1.99998`，formal recipe因此封存。
-- clean `de0b298` world5 formal随后完成macro1--16，functional `.15609→.11888`、Program matching
-  `.36194→.17621`，说明尚无训练峰值或科学non-pass；macro17时四rank进入flat-gradient all-reduce而rank2未进入。
-  精确重放确认rank2首个task38/K4/359帧在microbatch6下单卡OOM，仅差约96 MiB，故NCCL timeout是下游表象。
-- 唯一recipe修正是functional microbatch `6→5`：B20仍恰为4次policy forward，且不改Writer、数据、K、loss或任何
-  视频帧。它已在同一物理A40完整通过原故障rank2五任务序列；进一步扫描100 macros后又通过真实schedule最大
-  task38/K4/371帧，峰值reserved=`45,283,803,136` bytes。formal当时退回pending，等待clean full24 profile。
-- clean pushed `dd81b94`随后在gpu02物理`1/2/3/4/7`完成world5两macro profile：`39.22/36.22s`，functional
-  `.15612→.15399`、Program matching `.36194→.30113`，K1--K4各6 tasks，无OOM/nonfinite，micro5正式recipe已
-  重新sealed。部署生成还移除了matching-only shuffle分支，测试证明primary 76 tensors逐元素不变。
-- clean `ca40d88` world5 fresh formal现已完整完成macro1--25并exit0；former macro17断点在真实collective中通过。
-  functional从`.156120`降至`.115512`，Program matching从`.361939`降至`.021139`，25轮K1--K4均严格各6 tasks，
-  梯度持续finite。macro25完整保留Writer、trainer、optimizer/scheduler、五rank RNG与sampler cursor。由于近期趋势仍
-  在下降，它只是首个strict节点；同一run已按原gpu02物理`1/2/3/4/7`、world5和NUMA拓扑exact-resume到macro50。
-- clean `77f45c9` K4部署profile在单张A40的同一32-entry longest-first panel完成batch8/16/32各一次warmup和两次
-  实测；三档均稳定、无OOM/nonfinite，吞吐分别`.19655/.19805/.19949` LoRA/s。batch32两次为
-  `160.411/160.414s`，peak reserved=`25,557,991,424` bytes、headroom=`22,141,730,816` bytes，故按封存规则
-  选择batch32并进入正式evaluator合同。封存后全量CPU=`284 passed`，`compileall`/diff-check通过，architecture
-  guard无hard violation。
+上述GPU证据来自当前worktree，只用于在提交前否决结构/显存错误；formal profile仍须从clean pushed detached commit
+重跑并写回seal evidence，尚未启动formal训练。
 
 ## Immediate next work
 
-1. 从包含profile证据的clean pushed commit启动macro25 strict paired400与完整逐接口分析；
-2. 继续同一run exact-resume到macro50；保留并比较macro25/50，不在未见峰值时过早判死；
-3. 根据strict结果报告逐task/suite、retention/churn并检查Core→Procedure→memory→M2P→BA→action最早断点；
-4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
-
-## Training and decision boundary
-
-- fresh train24真实覆盖K1--K4、task等权、video/action同task跨episode；首轮使用dense functional B20和轻量
-  language/directed-Program matching，不混入reward。
-- 首个strict节点为macro25或等价完整task exposure，但若stage与closed-loop仍共同上升，继续训练到相邻有意义节点，
-  不因尚未观察到峰值而终止。
-- 首次约145且retention合理立即补六臂并继续相邻checkpoint；稳定约145且视频因果合格也可构成有价值结果。
-- 每轮报告per-task/per-suite/breadth/retained/gained/lost/churn/Jaccard，并定位最早失效接口。
-- 局部迭代保持LMMPC主链，不做rank/scale/seed小扫、不挑checkpoint、不融合多LoRA。
+1. 审查task-scoped diff并提交/push当前pending-profile实现；
+2. 从该clean commit重跑world5两macro与371-frame条件，写回formal seal evidence，再次commit/push；
+3. 从最终clean pushed detached commit fresh train24到macro25/50有信息量节点；
+4. strict paired400报告逐task/suite、breadth、retained/gained/lost/churn，并沿Core→Procedure→H→K-set→M2P→BA→
+   action定位下一个接口；不在性能峰值和趋势未观察清楚时过早终止。
 
 ## Fixed scientific baselines
 
-- v6-fast五臂历史最好：`143/135/125/128/129`；
+- v6-fast五臂：`143/135/125/128/129`；
 - LPCP K4 correct：`143/400`、breadth7；
 - SFMC单点：`144/400`但lost15/churn31且无六臂；
-- GOMQ：`151→135→131`，证明learned memory有真实增量但当前rank32 direct-B/shared reward不稳定。
+- GOMQ：`151→135→131`，证明learned memory有真实增益但旧rank32 direct-B/shared reward不稳定；
+- LMMPC-v1：`81→101`，证明fresh memory-grid Writer可学习，但当前Procedure reader被endpoint旁路。
 
 ## Storage and runtime note
 
-整理时观测`/data1`个人用量约542.2 GiB / 1 TiB，但该值会漂移。任何formal training前必须重新在`strg01`检查
-独立quota、测实际用量并估计checkpoint/log峰值；GPU launch前同时live检查gpu01/gpu02，按实时余量使用单节点至多
-6张真正提高吞吐的A40，可在低util且显存余量足够时与ycliu共驻。
+历史整理时`/data1`个人用量约542.2 GiB / 1 TiB，该值会漂移。任何formal launch前重新在`strg01`检查独立quota、
+测实际用量并估计峰值；每次GPU launch前同时live检查gpu01/gpu02，按实时余量使用单节点至多6张真正提高吞吐的
+A40。低util、少量显存占用的设备在峰值余量足够时可与ycliu共驻。

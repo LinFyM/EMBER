@@ -39,7 +39,7 @@ import ember.writer.live_adapter as live_adapter_module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ACTIVE_CONFIG = (
-    REPO_ROOT / "configs/pi05_writer_layer_matched_memory_program_compiler_v1.json"
+    REPO_ROOT / "configs/pi05_writer_layer_matched_memory_program_compiler_v2.json"
 )
 
 
@@ -62,7 +62,7 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_lmmpc_config_is_fresh_rank16_and_profile_sealed() -> None:
+def test_lmmpc_config_is_fresh_rank16_and_awaits_v2_profile() -> None:
     config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
@@ -73,17 +73,8 @@ def test_lmmpc_config_is_fresh_rank16_and_profile_sealed() -> None:
     assert config["writer"]["vl_meta_lora_trainable"] is False
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "sealed"
-    evidence = config["formal_run"]["profile_evidence"]
-    assert evidence["completion_macro"] == 2
-    assert evidence["functional_policy_microbatch_size"] == 5
-    assert evidence["scheduled_max_condition_frames"] == 371
-    assert evidence["native_context_calls"] == evidence[
-        "expected_native_context_calls"
-    ]
-    assert evidence["constant_effective_ba_max_abs"] == 0.0
-    assert evidence["k_permutation_lora_max_abs"] == 0.0
-    assert evidence["deployment_training_primary_lora_max_abs"] == 0.0
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert "profile_evidence" not in config["formal_run"]
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)
@@ -211,7 +202,7 @@ def test_full24_task_evidence_is_gathered_and_sorted(
     assert [row["task_id"] for row in records] == list(range(24))
 
 
-def test_task_gradient_combines_functional_and_program_matching(
+def test_task_gradient_uses_functional_lora_cotangent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     parameter = torch.nn.Parameter(torch.tensor(2.0))
@@ -222,7 +213,7 @@ def test_task_gradient_combines_functional_and_program_matching(
             return {
                 "fixed_a": torch.ones(2),
                 "dynamic_b": parameter * torch.ones(2),
-            }, parameter * 0.5
+            }
 
     monkeypatch.setattr(
         "ember.writer.as_step.functional_lora_loss_gradient",
@@ -241,7 +232,6 @@ def test_task_gradient_combines_functional_and_program_matching(
             "conditioning_training": {
                 "policy_flow_time_sampling_scheme": None,
                 "policy_flow_noise_sampling_scheme": None,
-                "program_matching": {"weight": 0.1},
             },
             "optimization": {"functional_policy_microbatch_size": 2},
         },
@@ -249,11 +239,11 @@ def test_task_gradient_combines_functional_and_program_matching(
     )
     flat = torch.zeros(1)
     _task_gradient(runtime, (None,) * 7, {}, 7, flat)
-    assert flat.item() == pytest.approx(6.05)
+    assert flat.item() == pytest.approx(6.0)
     assert parameter.grad is None
 
 
-def test_task_gradient_rejects_a_detached_program_loss(
+def test_task_gradient_rejects_a_writer_without_trainable_lora_output(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     parameter = torch.nn.Parameter(torch.tensor(2.0))
@@ -261,7 +251,7 @@ def test_task_gradient_rejects_a_detached_program_loss(
     class _Writer:
         @staticmethod
         def forward_training(*_args: object, **_kwargs: object):
-            return {"dynamic": parameter * torch.ones(1)}, torch.zeros(())
+            return {"dynamic": torch.ones(1)}
 
     monkeypatch.setattr(
         "ember.writer.as_step.functional_lora_loss_gradient",
@@ -280,13 +270,12 @@ def test_task_gradient_rejects_a_detached_program_loss(
             "conditioning_training": {
                 "policy_flow_time_sampling_scheme": None,
                 "policy_flow_noise_sampling_scheme": None,
-                "program_matching": {"weight": 0.1},
             },
             "optimization": {"functional_policy_microbatch_size": 1},
         },
         gradient_layout=(SimpleNamespace(parameter=parameter, start=0, stop=1),),
     )
-    with pytest.raises(WriterModelError, match="Program matching"):
+    with pytest.raises(WriterModelError, match="trainable output"):
         _task_gradient(runtime, (None,) * 7, {}, 7, torch.zeros(1))
 
 

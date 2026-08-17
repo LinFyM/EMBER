@@ -89,6 +89,16 @@ LPCP又表明：在不破坏V6主图的情况下，用同一次真实context for
 所以未来既不应“回到v6什么都不改”，也不应因追求新颖性抛弃V6已经证明有效的native topology、factor ownership
 和强baseline。每次修改要明确继承了什么、替换了哪个最早失效接口。
 
+### 6.1 时序响应不等于使用了完整Procedure
+
+LMMPC-v1给出了新的实现级反例：correct/reverse的parameter memory几乎严格反号，表面看起来具有极强顺序响应；但
+reader只返回最后一个Procedure query的输出，并额外加入不经过Procedure的首尾memory差。macro25/50中attention只占
+reader输出约`2.75%/2.46%`，endpoint是它的`41.0x/45.7x`；把整条Procedure替换成重复`P_last`，输出逐元素不变。
+
+因此今后的有向过程门必须同时检查：内部阶段替换是否改变readout、是否存在endpoint/absolute-phase旁路、reverse
+差异是否只是硬编码反号，以及这种差异是否最终沿有用closed-loop方向。正确结构应让固定policy地址读取完整阶段轴，
+并让dynamic Value在Procedure无阶段信息时不能独立通过；不能只报告correct/reverse latent距离。
+
 ## 7. Memory token有真实价值，但不是目标
 
 SHINE/Doc2LoRA式memory的核心价值是内容处理和目标参数层之间的结构对应，而不是token数量本身。对EMBER，
@@ -201,10 +211,11 @@ task drift可能来自：
 - 约145+相邻稳定且六臂合格的方法；
 - Program到LoRA的可扩展、material又support-preserving的统一compiler。
 
-整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构在Program端尚未消失，首先在nonlinear
-family/B readout明显变同向；LPCP冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，
-shared reward仍不能保留held support。因此下一统一架构应优先检验**layer/rank-matched Program到共同可训练native
-A/B compiler**，而不是再次只换carrier或同时重写reward。
+整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
+冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
+support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint
+旁路。因此当前优先检验的是**完整高层Procedure能否按固定layer/rank地址读取dynamic native Value**；只有该接口通过
+后，才有资格判断K-set、M2P或shared credit是否是下一个断点。
 
 ## 14. 方法选择与实验原则
 

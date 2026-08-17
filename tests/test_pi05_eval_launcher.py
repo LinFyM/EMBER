@@ -13,7 +13,6 @@ from types import SimpleNamespace
 import pytest
 
 import ember.pi05_eval.preparation as preparation_module
-import ember.pi05_eval.reward_credit_gate as reward_gate_module
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval import launcher as runtime_launcher
 
@@ -62,12 +61,20 @@ def test_launcher_uses_the_contract_replica_profiles() -> None:
     assert 6 in action.choices
 
 
-def test_no_video_control_is_scoped_to_expert_manifold() -> None:
+def test_video_control_choices_cover_the_canonical_writer_backend() -> None:
     module = _launcher_module()
     parser = argparse.ArgumentParser()
     module._add_prepare_arguments(parser)
     choices = {action.dest: action.choices for action in parser._actions}
-    assert "no_video" in choices["expert_manifold_video_condition"]
+    assert set(choices["dynamic_k_writer_video_condition"]) == {
+        "correct",
+        "cross_suite_wrong",
+        "no_video",
+        "reversed",
+        "same_task_other",
+        "shuffled",
+        "shuffled_keep_first",
+    }
 
 
 def test_gpu_preflight_queries_only_explicit_devices(
@@ -212,316 +219,6 @@ def test_resume_validation_preserves_dynamic_k_evaluation_cardinality(
     assert observed_k == [4]
 
 
-def _registered_reward_credit_args(
-    tmp_path: Path, *, macro: int, condition: str = "correct"
-) -> tuple[argparse.Namespace, Path]:
-    module = _launcher_module()
-    config = tmp_path / "configs/reward-credit.json"
-    config.parent.mkdir()
-    registered_relative = f"registered-macro{macro}-{condition}"
-    control_roots = {
-        name: f"registered-macro{macro}-{name}"
-        for name in (
-            "same_task_other",
-            "cross_suite_wrong",
-            "shuffled",
-            "reversed",
-            "no_video",
-        )
-    }
-    decision = {}
-    for candidate_macro in (1, 2):
-        candidate_controls = {
-            name: f"registered-macro{candidate_macro}-{name}" for name in control_roots
-        }
-        decision[f"macro{candidate_macro}_registered_root"] = (
-            f"registered-macro{candidate_macro}-correct"
-        )
-        decision[f"macro{candidate_macro}_control_registered_roots"] = (
-            candidate_controls
-        )
-    config.write_text(
-        json.dumps(
-            {
-                "schema_version": module.V6_PRIOR_CONFIG_SCHEMA,
-                "initialization": {"checkpoint": "historical"},
-                "formal_run": {
-                    "registered_output_root": "formal",
-                    "decision_evaluation": decision,
-                    "decision_gates": {
-                        "first_full_six_arm_correct_min": 144,
-                        "goal_full_six_arm_correct_min": 151,
-                    },
-                },
-            }
-        ),
-        encoding="utf-8",
-    )
-    training_root = tmp_path / "formal"
-    checkpoint = training_root / f"checkpoints/macro_{macro:08d}"
-    checkpoint.mkdir(parents=True)
-    registered = tmp_path / registered_relative
-    commit = "a" * 40
-    run_decision = {
-        key: (
-            str(tmp_path / value)
-            if isinstance(value, str)
-            else {name: str(tmp_path / path) for name, path in value.items()}
-        )
-        for key, value in decision.items()
-    }
-    (training_root / "run_contract.json").write_text(
-        json.dumps(
-            {
-                "schema_version": module.V6_PRIOR_RUN_SCHEMA,
-                "mode": "formal",
-                "git": {"commit": commit},
-                "config": {"schema": module.V6_PRIOR_CONFIG_SCHEMA},
-                "decision_evaluation": run_decision,
-            }
-        ),
-        encoding="utf-8",
-    )
-    (checkpoint / "manifest.json").write_text(
-        json.dumps(
-            {
-                "schema_version": module.V6_PRIOR_CHECKPOINT_SCHEMA,
-                "next_macro": macro,
-                "metrics_rows": macro,
-                "checkpoint_contract": {
-                    "run_schema": module.V6_PRIOR_RUN_SCHEMA,
-                    "mode": "formal",
-                    "git_commit": commit,
-                    "config": {"schema": module.V6_PRIOR_CONFIG_SCHEMA},
-                },
-            }
-        ),
-        encoding="utf-8",
-    )
-    return (
-        argparse.Namespace(
-            mode="formal",
-            role="validation",
-            state_count=50,
-            expert_manifold_video_condition=condition,
-            expert_manifold_video_sampling="without_replacement",
-            expert_manifold_config=config,
-            expert_manifold_checkpoint=checkpoint,
-        ),
-        registered,
-    )
-
-
-def _registered_evaluation_contract(
-    args: argparse.Namespace,
-    output_dir: Path,
-) -> dict:
-    run = json.loads(
-        (args.expert_manifold_checkpoint.parent.parent / "run_contract.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    commit = run["git"]["commit"]
-    condition = args.expert_manifold_video_condition
-    return {
-        "mode": "formal",
-        "role": "validation",
-        "output_dir": str(output_dir.resolve()),
-        "arm": f"expert_manifold_v6_condition_residual_{condition}",
-        "git": {
-            "branch": "",
-            "commit": commit,
-            "upstream": None,
-            "authority_ref": "origin/codex/bci-continuation",
-            "authority_contains_commit": True,
-            "dirty_paths": [],
-        },
-        "tasks": [
-            {
-                "suite": f"suite-{index // 2}",
-                "task_id": index,
-                "split_role": "validation",
-                "init_state_ids": tuple(range(50)),
-            }
-            for index in range(8)
-        ],
-        "adapter": {
-            "schema_version": (
-                "ember_pi05_v6_condition_program_residual_eval_adapter_v8"
-            ),
-            "arm": f"expert_manifold_v6_condition_residual_{condition}",
-            "config": {"schema": "ember_pi05_v6_reward_credit_program_cotangent_v1"},
-            "writer_asset": {
-                "checkpoint": str(args.expert_manifold_checkpoint.resolve())
-            },
-            "video_condition": condition,
-            "video_schedule": {"sampling_mode": "without_replacement"},
-        },
-    }
-
-
-@pytest.mark.parametrize("macro", (1, 2))
-def test_reward_credit_evaluator_requires_its_training_registered_root(
-    tmp_path: Path, macro: int
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(tmp_path, macro=macro)
-    contract = _registered_evaluation_contract(args, registered)
-    module._validate_registered_reward_credit_output(
-        args, registered.resolve(), contract
-    )
-    wrong = tmp_path / f"unregistered-macro{macro}"
-    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_reward_credit_output(
-            args,
-            wrong.resolve(),
-            {**contract, "output_dir": str(wrong.resolve())},
-        )
-    assert not wrong.exists()
-
-
-@pytest.mark.parametrize(
-    "condition",
-    ("same_task_other", "cross_suite_wrong", "shuffled", "reversed", "no_video"),
-)
-def test_reward_credit_controls_require_their_canonical_registered_root(
-    tmp_path: Path, condition: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(
-        tmp_path, macro=1, condition=condition
-    )
-    monkeypatch.setattr(
-        reward_gate_module,
-        "load_reward_credit_control_trigger_evidence",
-        lambda **_kwargs: {"macro": 1, "correct": 144},
-    )
-    module._validate_registered_reward_credit_output(
-        args,
-        registered.resolve(),
-        _registered_evaluation_contract(args, registered),
-    )
-
-
-def test_reward_credit_gate_rejects_tampered_training_or_run_root(
-    tmp_path: Path,
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
-    run_path = args.expert_manifold_checkpoint.parent.parent / "run_contract.json"
-    run = json.loads(run_path.read_text(encoding="utf-8"))
-    run["decision_evaluation"]["macro1_registered_root"] = str(tmp_path / "tampered")
-    run_path.write_text(json.dumps(run), encoding="utf-8")
-    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_reward_credit_output(
-            args,
-            (tmp_path / "tampered").resolve(),
-            _registered_evaluation_contract(args, tmp_path / "tampered"),
-        )
-    run["decision_evaluation"]["macro1_registered_root"] = str(registered)
-    run_path.write_text(json.dumps(run), encoding="utf-8")
-    copied = tmp_path / "copied/checkpoints/macro_00000001"
-    copied.mkdir(parents=True)
-    (copied.parent.parent / "run_contract.json").write_text(
-        json.dumps(run), encoding="utf-8"
-    )
-    (copied / "manifest.json").write_bytes(
-        (args.expert_manifold_checkpoint / "manifest.json").read_bytes()
-    )
-    args.expert_manifold_checkpoint = copied
-    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_reward_credit_output(
-            args,
-            registered.resolve(),
-            _registered_evaluation_contract(args, registered),
-        )
-
-
-def test_reward_credit_gate_rejects_renamed_active_checkpoint(
-    tmp_path: Path,
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
-    renamed = args.expert_manifold_checkpoint.parent / "renamed-reward-cycle"
-    args.expert_manifold_checkpoint.rename(renamed)
-    args.expert_manifold_checkpoint = renamed
-    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_reward_credit_output(
-            args,
-            registered.resolve(),
-            _registered_evaluation_contract(args, registered),
-        )
-
-
-def test_reward_credit_registered_root_gate_is_scoped_to_formal_reward_cycles(
-    tmp_path: Path,
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
-    contract = _registered_evaluation_contract(args, registered)
-    args.mode = "smoke"
-    module._validate_registered_reward_credit_output(
-        args, registered.resolve(), contract
-    )
-    args.mode = "formal"
-    nonreward_config = tmp_path / "configs/nonreward.json"
-    nonreward_config.write_text(
-        json.dumps({"schema_version": "historical_writer_v1"}), encoding="utf-8"
-    )
-    args.expert_manifold_config = nonreward_config
-    module._validate_registered_reward_credit_output(
-        args, registered.resolve(), contract
-    )
-    args.expert_manifold_config = tmp_path / "configs/reward-credit.json"
-    args.expert_manifold_video_condition = "correct"
-    args.expert_manifold_checkpoint = tmp_path / "historical"
-    with pytest.raises(Pi05EvaluationError, match="registration is incomplete"):
-        module._validate_registered_reward_credit_output(
-            args, registered.resolve(), contract
-        )
-
-
-def test_formal_reward_credit_rejects_parser_registered_non_six_arm_condition(
-    tmp_path: Path,
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(
-        tmp_path, macro=1, condition="shuffled_keep_first"
-    )
-    assert "shuffled_keep_first" in module.VIDEO_CONDITIONS
-    with pytest.raises(Pi05EvaluationError, match="registered six-arm condition"):
-        module._validate_registered_reward_credit_output(
-            args,
-            registered.resolve(),
-            _registered_evaluation_contract(args, registered),
-        )
-
-
-@pytest.mark.parametrize(
-    "mutation",
-    ("role", "sampling", "commit", "tasks"),
-)
-def test_reward_credit_registration_binds_the_full_formal_invocation(
-    tmp_path: Path,
-    mutation: str,
-) -> None:
-    module = _launcher_module()
-    args, registered = _registered_reward_credit_args(tmp_path, macro=1)
-    contract = _registered_evaluation_contract(args, registered)
-    if mutation == "role":
-        contract["role"] = "test"
-    elif mutation == "sampling":
-        contract["adapter"]["video_schedule"]["sampling_mode"] = "with_replacement"
-    elif mutation == "commit":
-        contract["git"]["commit"] = "b" * 40
-    else:
-        contract["tasks"] = contract["tasks"][:-1]
-    with pytest.raises(Pi05EvaluationError, match="pre-registered root"):
-        module._validate_registered_reward_credit_output(
-            args, registered.resolve(), contract
-        )
-
-
 def test_prepare_failure_never_publishes_the_canonical_root(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -655,58 +352,48 @@ def test_partial_launch_cleanup_stops_only_owned_processes() -> None:
             process.wait()
 
 
-def test_expert_manifold_prepare_arguments_are_all_or_none() -> None:
-    module = _launcher_module()
-    empty = argparse.Namespace(
+def _empty_adapter_args() -> argparse.Namespace:
+    return argparse.Namespace(
         source_sft_config=None,
         source_sft_checkpoint=None,
         task_expert_config=None,
         task_expert_bank_root=None,
         task_expert_step=None,
-        expert_manifold_config=None,
-        expert_manifold_checkpoint=None,
-        expert_manifold_video_data_root=None,
-        expert_manifold_video_condition=None,
+        dynamic_k_writer_config=None,
+        dynamic_k_writer_checkpoint=None,
+        dynamic_k_writer_video_data_root=None,
+        dynamic_k_writer_video_condition=None,
     )
+
+
+def test_dynamic_k_writer_prepare_arguments_are_all_or_none() -> None:
+    module = _launcher_module()
+    empty = _empty_adapter_args()
     assert module._adapter_requests(empty) == (None, False)
     partial = argparse.Namespace(**vars(empty))
-    partial.expert_manifold_config = Path("config.json")
-    partial.expert_manifold_video_condition = "correct"
+    partial.dynamic_k_writer_config = Path("config.json")
+    partial.dynamic_k_writer_video_condition = "correct"
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
         module._adapter_requests(partial)
 
-
-def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
-    module = _launcher_module()
-    empty = argparse.Namespace(
-        source_sft_config=None,
-        source_sft_checkpoint=None,
-        task_expert_config=None,
-        task_expert_bank_root=None,
-        task_expert_step=None,
-        expert_manifold_config=None,
-        expert_manifold_checkpoint=None,
-        expert_manifold_video_data_root=None,
-        expert_manifold_video_condition=None,
+    complete = argparse.Namespace(**vars(empty))
+    complete.dynamic_k_writer_config = Path("config.json")
+    complete.dynamic_k_writer_checkpoint = Path("writer-checkpoint")
+    complete.dynamic_k_writer_video_data_root = Path("videos")
+    complete.dynamic_k_writer_video_condition = "correct"
+    assert module._adapter_requests(complete) == (
+        "v6_layerwise_probe_conditioned_procedure_writer",
+        False,
     )
-    assert module._adapter_requests(empty) == (None, False)
+
+
+def test_source_task_expert_and_writer_adapters_are_mutually_exclusive() -> None:
+    module = _launcher_module()
+    empty = _empty_adapter_args()
     partial = argparse.Namespace(**vars(empty))
     partial.source_sft_config = Path("source_sft.json")
     with pytest.raises(Pi05EvaluationError, match="requires all declared assets"):
         module._adapter_requests(partial)
-    both = argparse.Namespace(
-        source_sft_config=Path("source_sft.json"),
-        source_sft_checkpoint=Path("source-sft-step"),
-        task_expert_config=None,
-        task_expert_bank_root=None,
-        task_expert_step=None,
-        expert_manifold_config=Path("expert-manifold.json"),
-        expert_manifold_checkpoint=Path("writer-checkpoint"),
-        expert_manifold_video_data_root=Path("videos"),
-        expert_manifold_video_condition="correct",
-    )
-    with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
-        module._adapter_requests(both)
 
     expert = argparse.Namespace(**vars(empty))
     expert.task_expert_config = Path("expert.json")
@@ -717,32 +404,6 @@ def test_source_sft_arguments_are_all_or_none_and_mutually_exclusive() -> None:
     expert.source_sft_checkpoint = Path("source-sft-step")
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(expert)
-
-    manifold = argparse.Namespace(**vars(empty))
-    manifold.expert_manifold_config = Path("expert-manifold.json")
-    manifold.expert_manifold_checkpoint = Path("writer-checkpoint")
-    manifold.expert_manifold_video_data_root = Path("videos")
-    manifold.expert_manifold_video_condition = "correct"
-    assert module._adapter_requests(manifold) == ("expert_manifold_writer", False)
-
-
-def test_retired_expert_manifold_deployment_assets_fail_closed() -> None:
-    module = _launcher_module()
-    args = argparse.Namespace(
-        source_sft_config=None,
-        source_sft_checkpoint=None,
-        task_expert_config=None,
-        task_expert_bank_root=None,
-        task_expert_step=None,
-        expert_manifold_config=Path("expert-manifold.json"),
-        expert_manifold_checkpoint=Path("writer-checkpoint"),
-        expert_manifold_video_data_root=Path("videos"),
-        expert_manifold_video_condition="correct",
-        expert_manifold_expert_bank_root=Path("experts"),
-        expert_manifold_feature_cache_root=None,
-    )
-    with pytest.raises(Pi05EvaluationError, match="assets are retired"):
-        module._adapter_requests(args)
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

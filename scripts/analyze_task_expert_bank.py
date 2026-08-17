@@ -15,7 +15,7 @@ from safetensors.torch import load_file
 from ember.expert_manifold.contract import (
     REPO_ROOT,
     authority_path,
-    load_expert_manifold_config,
+    load_task_expert_config,
 )
 from ember.expert_manifold.evaluation import inspect_task_expert_bank
 from ember.pi05_eval_contract import (
@@ -208,7 +208,7 @@ def _step_analysis(
 
 def analyze(args: argparse.Namespace) -> dict[str, Any]:
     config_path = args.config.resolve()
-    config = load_expert_manifold_config(config_path)
+    config = load_task_expert_config(config_path)
     formal_steps = set(int(value) for value in config["task_experts"]["formal_run"]["checkpoint_steps"])
     if any(step not in formal_steps for step in args.steps):
         raise ValueError("analysis steps are outside the formal task-expert schedule")

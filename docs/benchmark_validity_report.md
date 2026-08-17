@@ -1,7 +1,7 @@
 # Historical Gate -1 and Gate 0 Evidence
 
-状态：历史证据摘要；不定义当前split、backbone、runner或Goal。当前合同与状态只取`AGENTS.md`、
-`docs/execution_brief.md`和`docs/active_session_handoff.md`；完整Writer演进见`docs/research_history.md`。
+状态：历史证据摘要；不定义当前split、backbone、runner或Goal。稳定合同取`AGENTS.md`，当前进度取根目录
+`task_plan.md`与`progress.md`；完整Writer演进见`docs/research_history.md`。
 
 ## Gate -1
 
@@ -47,6 +47,6 @@ authority。
 
 - 完整旧报告、configs、source 和 tests：Git commit `999df28`。
 - 外部 raw evidence：本机 `EMBER_OUTPUT_ROOT` 下对应 Gate -1/Gate 0 checksummed directories。
-- 当前活动合同：`docs/execution_brief.md`。
+- 当前工作状态：仓库根目录`progress.md`。
 
 不要从本报告启动旧实验。

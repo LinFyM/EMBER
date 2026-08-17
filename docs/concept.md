@@ -1,93 +1,91 @@
 # EMBER Concept
 
-状态：2026-08-13稳定问题定义。本文不绑定当前架构、LoRA rank或启动命令。
+## 一句话定义
 
-## One-sentence definition
+EMBER让一个shared Writer把“任务语言 + action-hidden正确教学视频”一次性编译为一套task-conditioned policy
+adaptation，使已有通用机器人能力的冻结source policy能从未见初始化完成新任务。
+
+## 人类学习类比
+
+一个会基本打乒乓球的人，看别人正确示范一次逆旋转发球后，通常不会逐帧复制对方的关节轨迹。他会提取更抽象的
+知识：球拍怎样接触球、运动方向怎样产生旋转、动作阶段如何衔接。这个理解先给他一个明显好于盲试的起点；之后
+根据真实击球结果继续练习，才逐渐熟练。
+
+EMBER要复制的是这种“从正确视觉示范获得可迁移技能起点”的能力，而不是把视频伪装成动作标注。
+
+## 问题合同
 
 ```text
-Writer(exact task language, one or more action-hidden correct teaching videos)
-    -> one complete task-conditioned policy adaptation
-    -> frozen source policy executes from unseen initializations
+exact task language
+    + one or more internally ordered, action-hidden teaching videos
+    -> shared Writer runs once
+    -> one complete task-conditioned LoRA
+    -> frozen π0.5-LIBERO source policy
+    -> closed-loop execution from unseen initialization
 ```
 
-## Why this problem matters
+语言告诉模型任务关注什么、目标是什么；视频告诉模型正确过程如何演化。两者联合应形成一个跨初始化成立的高层
+task Program：对象与关系、目标状态、必要阶段、阶段间因果顺序，以及可忽略的demo-specific nuisance。
 
-人看正确示范后，会结合任务名称理解对象、目标关系、动作阶段和先后因果，再把这种理解迁移到自己的身体、视角
-与初始状态；他不会逐像素、逐关节复制示范者的原轨迹。EMBER把这个过程转化为一次性参数编译：shared Writer
-在rollout前读语言与视频，生成一套task adaptation；policy执行期间不再反复观看示范。
+## 为什么视频不能等同于轨迹监督
 
-学习问题有三层：
+teacher video可以来自不同视角、速度、路径和抓取姿态，部署环境的初始状态也不同。合理模型不应复刻原demo的
+低层轨迹，而应使用冻结policy已有的视觉、语言和动作先验，在当前观测下重新实现同一目标。
 
-1. 从视频识别跨初始化仍成立的高层任务内容与有向过程；
-2. 将这些证据编译成policy-effective的完整adaptation；
-3. 让多task、多video能力在同一Writer checkpoint稳定共存并泛化。
+因此训练可让video episode与action query episode同task但错开。这阻断了逐帧动作复制捷径，却也使监督target对
+同task不同video可能恒定。架构和objective必须额外解决这个不可识别性：task identity正确不等于视频过程理解。
 
-## Shared foundation
+## One-shot、few-shot与动态K
 
-所有方法共享一个从generic`lerobot/pi05_base`出发、只在与目标40 specification-only去重后的LIBERO-90 source
-tasks上训练并冻结的π0.5-LIBERO policy。normalization只来自source并冻结；目标40固定24 train / 8 validation /
-8 test。不得使用已读过目标40 actions的`pi05_libero`。
+一条视频足以定义one-shot问题；多条视频则允许比较同task示范，过滤单demo的偶然细节。若采用多视频：
 
-source base提供通用视觉、语言、机器人控制和action-space能力，但不提供目标任务的专属完成方式。EMBER检验的是
-教学视频能否在这一共同起点上写出新的task能力。
+- 每条video内部必须有序编码；
+- videos之间必须置换不变聚合；
+- 聚合对象应是高层程序证据，不是raw frame、feature或最终LoRA的简单平均；
+- 训练必须覆盖声称支持的K；
+- K由真实性能选择，不由形式偏好决定。
 
-## Information wall
+多视频只是提供可识别性的机会，不会自动产生正确task Program。历史上K4确实降低过same-task LoRA方差，也曾只是
+更稳定地保留错误方向。
 
-部署时Writer可读：
+## 正确时序的因果意义
 
-- exact task language；
-- 一条或多条同task、自然顺序、action-hidden teaching videos。
+correct视频展示物理可行的初态→目标态过程；shuffled破坏阶段连续性；reversed颠倒有向因果关系。模型需要利用
+这种结构判断“先做什么、后做什么、为什么”，而不是仅对时间戳、动作phase或negative标签敏感。
 
-Writer不可读teacher action、proprio/state、reward、terminal、task ID、filename、episode identity、object pose、
-hidden normalization或held outcome。language可提供query/context/address，但video必须提供唯一dynamic value；
-不能有language-only LoRA bypass、held expert route、第二套adaptation或checkpoint融合。
+真正的证据是correct视频相对same-task-other、wrong、shuffled、reversed和no-video，沿有用policy方向提高闭环
+成功率。hidden或LoRA不同、negative变坏、内部margin变大都不是充分证明。
 
-每个condition只生成一套完整38-target task adaptation。当前受控机制实验保留LPCP rank16 carrier加rank16
-native-zero residual bank；rank、memory数量和decoder是
-方法变量，不是问题定义。无论具体rank如何，都不能靠挑video、平均分别生成的LoRAs或裁剪关键policy targets
-冒充完整任务学习。
+## 输出为什么仍是一套LoRA
 
-## Learning without low-level pairing
+LoRA提供一次性、可缓存、可挂载到冻结policy的task adaptation，并能自然成为未来task-local RL的起点。Writer
+生成LoRA不意味着必须直接回归每个A/B元素；合理实现可先形成与policy topology对齐的memory/Program，再由共享
+compiler生成完整LoRA。
 
-AS训练让video与action query来自同一task但不同episode。一组video生成一套LoRA，再由多条独立action queries
-共同约束，使它覆盖不同初态而非拟合teacher的单条路径。
+rank、memory token、parameter grid、FactorHead和decoder只是实现选择。LoRA是否“健康”最终看它能否产生合理
+effective BA、action response和closed-loop improvement，而不是强求高rank、正交或均匀能量。
 
-错开监督能阻断低层复制，却不能自动保证视频理解：同task不同videos共享task-level supervision，模型仍可能
-只学task identity或静态高频相关性。因此架构要保留视频动态过程，closed-loop controls要验证correct的内容和
-顺序确实有用。
+## 学习系统的四个接口
 
-## One-shot, few-shot and dynamic cardinality
+EMBER可以分成四个必须同时成立、但应分别诊断的接口：
 
-one-shot最直接检验“一次正确示范即可开始做对”，也最容易受单条demo的速度、路径、视角和偶然扰动影响。
-few-shot可以从多条同task示范中提取跨demo共同程序，但必须保持每条video内部顺序，并在video之间使用置换不变
-集合处理；简单平均frames、features或LoRAs并不满足要求。
+1. **Evidence extraction**：语言确定语义query，视频提供有向动态Value；
+2. **Program formation**：同task不同video形成可复现的高层表示，多task保持可分；
+3. **Policy compilation**：Program被写成native、policy-effective的一套LoRA，而非近identity或错误子空间；
+4. **Shared credit and retention**：训练更新在同一checkpoint中积累多个tasks，不轮流换手。
 
-方法可在训练中覆盖动态cardinality，并分别报告实际K下的能力。如果K1最好，就形成one-shot claim；如果K>1
-最好，就形成few-shot claim；若性能随视频数量稳定提升，可形成scaling claim。无需为了形式公平故意削减更强
-方法，但必须诚实报告视频数、总帧数、训练量、FLOPs、延迟和选择规则，且不能挑“最好视频”。
+“视频被读到”“LoRA非零”“reward gradient存在”“single checkpoint分数高”分别只关闭其中一个局部问题。
 
-## Correct order is causal evidence
+## 当前成功定义
 
-correct展示从初态到目标态的有效有向过程；shuffled破坏阶段连续性，reversed破坏正常物理与任务因果。正常顺序
-作为训练分布并不自动产生理解。只有correct在严格配对闭环中沿有用方向胜过wrong、shuffled、reversed和
-no-video，且same-task-other保持接近，才能支持视频因果claim。
+正式方法由single-checkpoint strict paired400选择。目标不仅是高correct，还包括：
 
-## Baselines and claim boundary
+- 高task breadth；
+- 相邻checkpoint稳定、低churn；
+- same-task不同视频鲁棒；
+- correct明显优于wrong/shuffled/reversed/no-video；
+- 能从Program追踪到LoRA、effective BA、action和闭环收益；
+- 不依赖language-only shortcut、挑video、expert dictionary或checkpoint union。
 
-- frozen source base：共同起点；
-- Source-SFT：读target actions的privileged shared-LoRA reference；
-- AS-Writer：核心zero-interaction方法，部署只读language+video；
-- 可选RL-Writer：后续关闭action入口、用train24 reward调整Writer；
-- 生成LoRA后的task-local RL：检验视频初始化是否提高交互学习效率的独立后半段；
-- direct target-action oracle：最终privileged ceiling，不是同信息墙baseline。
-
-核心claim首先是：正确教学视频生成的single-checkpoint zero-interaction adaptation带来高closed-loop性能，而且
-优势来自视频内容和顺序。reward adaptation与task-local RL不能掩盖初始Writer不足。
-
-## Success criterion
-
-性能继续追求同一shared method、同一single checkpoint strict paired correct严格`>150/400`，并继续提高
-absolute、breadth、共同积累和视频因果性。约145若由相邻checkpoints共同保持、成功集合低换手、same-task不同
-视频鲁棒且correct相对wrong/shuffled/reversed/no-video有明确优势，也构成有价值的成立结果；单点151若高波动或
-无视频因果性仍不合格。LoRA能量、rank、cosine、reconstruction、functional loss和内部margin只用于解释，不能
-替代真实闭环。
+zero-interaction Writer是当前研究对象。生成LoRA后的环境交互和task-local RL是合理的第二阶段，但必须单独评价，
+不能替代初始adaptation本身的能力。

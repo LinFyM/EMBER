@@ -15,20 +15,11 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_eval.reward_credit_gate import (
-    V6_PRIOR_CHECKPOINT_SCHEMA,
-    V6_PRIOR_CONFIG_SCHEMA,
-    V6_PRIOR_RUN_SCHEMA,
-)
-from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
 from ember.pi05_eval.launcher import (
     evaluator_gpus_are_eligible as _evaluator_gpus_are_eligible,
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
     terminate_owned_workers as _terminate_owned_workers,
-)
-from ember.pi05_eval.reward_credit_gate import (
-    validate_registered_reward_credit_output as _validate_registered_reward_credit_output,
 )
 from ember.pi05_eval.preparation import (
     parse_gpu_indices as _parse_gpu_indices,
@@ -41,7 +32,6 @@ from ember.eval_adapters import (
     inspect_dynamic_k_writer_adapter as _inspect_dynamic_k_writer_adapter,
     inspect_source_sft_adapter as _inspect_source_sft_adapter,
     inspect_task_expert_adapter as _inspect_task_expert_adapter,
-    inspect_expert_manifold_writer_adapter as _inspect_expert_manifold_writer_adapter,
 )
 from ember.writer.evaluation import DYNAMIC_K_VIDEO_CONDITIONS
 from ember.pi05_eval_contract import (
@@ -141,18 +131,6 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-config", type=Path)
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
-    parser.add_argument("--expert-manifold-config", type=Path)
-    parser.add_argument("--expert-manifold-checkpoint", type=Path)
-    parser.add_argument("--expert-manifold-video-data-root", type=Path)
-    parser.add_argument(
-        "--expert-manifold-video-condition",
-        choices=tuple(sorted(VIDEO_CONDITIONS)),
-    )
-    parser.add_argument(
-        "--expert-manifold-video-sampling",
-        choices=("with_replacement", "without_replacement"),
-        default="without_replacement",
-    )
     parser.add_argument("--dynamic-k-writer-config", type=Path)
     parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)
     parser.add_argument("--dynamic-k-writer-video-data-root", type=Path)
@@ -303,21 +281,6 @@ def _validate_resume_inputs(contract: dict[str, Any]) -> None:
                 tasks=tasks,
                 evaluation_role=str(contract["role"]),
                 require_formal=contract["mode"] != "smoke",
-            )
-        elif adapter.get("kind") == "expert_manifold_writer":
-            observed = _inspect_expert_manifold_writer_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
-                video_data_root=Path(adapter["video_data"]["root"]),
-                source=model,
-                tasks=tasks,
-                video_condition=str(adapter["video_condition"]),
-                video_seed=int(adapter["video_schedule"]["seed"]),
-                video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
-                require_formal=contract["mode"] != "smoke",
-                evaluation_k=int(
-                    adapter.get("information_wall", {}).get("evaluation_k", 1)
-                ),
             )
         elif adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
             observed = _inspect_dynamic_k_writer_adapter(

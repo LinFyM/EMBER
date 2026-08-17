@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the ordered-Procedure Writer from train24 on-policy reward."""
+"""Historical GOMQ trainer; the canonical terminal config fails closed."""
 
 from ember.writer.reward_training import build_parser, finalize_args, train
 

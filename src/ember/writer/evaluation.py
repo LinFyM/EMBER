@@ -10,8 +10,9 @@ from safetensors import safe_open
 
 from ember.eval_adapters import DYNAMIC_K_WRITER_KIND
 from ember.expert_manifold.video_schedule import (
+    VIDEO_CONDITIONS,
     frame_order_seed,
-    reference_demo_indices,
+    paired_condition_demo_indices,
     task_video_mapping,
     video_schedule_contract,
     video_selection_seed,
@@ -54,7 +55,7 @@ DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
 DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
     "ember_pi05_dynamic_k_nested_video_set_pairing_v1"
 )
-DYNAMIC_K_VIDEO_CONDITIONS = frozenset({"correct"})
+DYNAMIC_K_VIDEO_CONDITIONS = frozenset(VIDEO_CONDITIONS)
 DYNAMIC_K_GENERATION_BATCH_SIZE = 32
 DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE = 16
 DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
@@ -423,6 +424,7 @@ def _video_contract(
     video_seed: int,
     video_sampling_mode: str,
     evaluation_k: int,
+    video_condition: str,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     rows = _target_rows(config)
     by_key = {(str(row["suite"]), int(row["task_id"])): row for row in rows.values()}
@@ -434,7 +436,7 @@ def _video_contract(
     ):
         raise WriterModelError("dynamic-K evaluation task panel changed")
     roles = {key: str(by_key[key]["split_role"]) for key in normalized}
-    mapping = list(task_video_mapping(normalized, roles, "correct"))
+    mapping = list(task_video_mapping(normalized, roles, video_condition))
     root = video_data_root.resolve()
     records = []
     for global_task_id in sorted({int(row["video_global_task_id"]) for row in mapping}):
@@ -509,7 +511,7 @@ def _evaluation_contract(
     if not 1 <= evaluation_k <= int(config["data"]["dynamic_k_max"]):
         raise WriterModelError("dynamic-K evaluation K is outside training support")
     if video_condition not in DYNAMIC_K_VIDEO_CONDITIONS:
-        raise WriterModelError("dynamic-K evaluator currently supports correct only")
+        raise WriterModelError("dynamic-K video condition is unsupported")
     if evaluation_k > 1 and video_sampling_mode != "without_replacement":
         raise WriterModelError(
             "multi-video evaluation requires without-replacement video sampling"
@@ -523,12 +525,12 @@ def _evaluation_contract(
 
 
 def _evaluation_information_wall(
-    config: Mapping[str, Any], evaluation_k: int
+    config: Mapping[str, Any], evaluation_k: int, video_condition: str
 ) -> dict[str, Any]:
     return {
         "writer_input": dynamic_k_writer_input(evaluation_k),
         "video_is_only_dynamic_value": True,
-        "no_video_counterfactual": False,
+        "no_video_counterfactual": video_condition == "no_video",
         "teacher_action_reads": 0,
         "teacher_state_reads": 0,
         "reward_reads": 0,
@@ -581,6 +583,7 @@ def inspect_dynamic_k_writer_evaluation(
         video_seed=video_seed,
         video_sampling_mode=video_sampling_mode,
         evaluation_k=evaluation_k,
+        video_condition=video_condition,
     )
     lora_path = authority_path(config, "lora_contract")
     lora = load_pi05_lora_contract(lora_path)
@@ -657,7 +660,9 @@ def inspect_dynamic_k_writer_evaluation(
             key: str(Path(str(source[key])).resolve())
             for key in ("source_run", "checkpoint", "model_path")
         },
-        "information_wall": _evaluation_information_wall(config, evaluation_k),
+        "information_wall": _evaluation_information_wall(
+            config, evaluation_k, video_condition
+        ),
         "content_hash_policy": "disabled_by_owner",
     }
 
@@ -708,17 +713,12 @@ def expected_dynamic_k_episode_evidence(
     )
     if wall_evaluation_k != evaluation_k:
         raise WriterModelError("dynamic-K information wall K changed")
-    if int(schedule["videos_per_condition"]) != evaluation_k:
-        raise WriterModelError("dynamic-K adapter video count changed")
-    selected = reference_demo_indices(
-        seed,
-        suite,
-        task_id,
-        init_state_id,
-        demo_count=demo_count,
-        sampling_mode=mode,
-        video_count=evaluation_k,
+    selection = (str(adapter["video_condition"]), demo_count, mode, evaluation_k)
+    reference, selected = paired_condition_demo_indices(
+        seed, suite, task_id, init_state_id, *selection
     )
+    frames_used = adapter["video_condition"] != "no_video"
+    teacher_video_count = evaluation_k if frames_used else 0
     asset = adapter["writer_asset"]
     return {
         "schema_version": schema,
@@ -726,7 +726,7 @@ def expected_dynamic_k_episode_evidence(
         "method_arm": adapter["arm"],
         "condition": adapter["video_condition"],
         "evaluation_k": evaluation_k,
-        "condition_video_offsets": [0, evaluation_k],
+        "condition_video_offsets": [0, teacher_video_count],
         "backbone_total_frames_per_condition": int(
             schedule["backbone_total_frames_per_condition"]
         ),
@@ -740,8 +740,8 @@ def expected_dynamic_k_episode_evidence(
         "lora_reference": lora_reference,
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "teacher_video_kind": adapter["video_condition"],
-        "teacher_video_frames_used": True,
-        "teacher_video_count": evaluation_k,
+        "teacher_video_frames_used": frames_used,
+        "teacher_video_count": teacher_video_count,
         "teacher_video_seed_root": seed,
         "teacher_video_selection_seed": video_selection_seed(
             seed,
@@ -756,7 +756,7 @@ def expected_dynamic_k_episode_evidence(
         "video_global_task_id": int(mapping["video_global_task_id"]),
         "video_split_role": str(mapping["video_split_role"]),
         "teacher_demo_indices": list(selected),
-        "teacher_reference_demo_indices": list(selected),
+        "teacher_reference_demo_indices": list(reference),
         "task_video_mapping_reference": adapter["task_video_mapping_reference"],
         "pairing_reference": adapter["pairing_reference"],
         "writer_generation_seed_schedule": (
@@ -766,7 +766,7 @@ def expected_dynamic_k_episode_evidence(
         ),
         "teacher_video_order_seeds": [
             frame_order_seed(seed, suite, task_id, demo_index)
-            for demo_index in selected
+            for demo_index in reference
         ],
     }
 

@@ -1,6 +1,6 @@
 # V6-LPCP CFMG Gradient-Open Memory Query
 
-状态：2026-08-17 **preformal机制门通过，fresh cycle0→2 formal已sealed待启动**。简称 **GOMQ**。本轮从sealed V6-LPCP143 fresh
+状态：2026-08-17 **cycle4稳定性裁决完成，终局non-pass**。简称 **GOMQ**。本轮从sealed V6-LPCP143 fresh
 开始，不resume SEOD cycle4。部署前向、K4输入、rank32输出、successful-expert occupancy credit、four-view
 task gradient、median upper cap和natural Adam全部保持；唯一主要变量是让37个真实backbone input memory tokens
 在payload gate打开后真正接收reward gradient。
@@ -183,3 +183,66 @@ LPCP BA估算最大`3.687e-5`，符合允许的BF16 reduction-order低位差异�
 
 因此第7节机制门通过，formal从sealed LPCP fresh cycle0→2；不得resume smoke parameter grid。该通过只说明
 learned query值得full24/strict检验，不是closed-loop性能结论。
+
+## 12. Formal cycle2/cycle3结果与训练量裁决
+
+clean pushed/frozen `8553b61`在gpu02物理`1/2/3/4/6/7`、world6从sealed LPCP fresh完成cycle1--3；cycle1
+只打开payload gate，cycle2和cycle3才是input memory及其content链真正更新的前两步。三个cycle均为24 tasks、
+48 expert rollouts和一次shared Adam update；cycle2/3 active tasks=`17/16`，memory query gradient、Adam moments、
+parameter delta及q/v/action response均非零。
+
+cycle2 K4 strict paired400首次得到`151/400`、breadth6、per-task=`0/3/47/34/0/40/26/1`、per-suite=
+`3/81/40/27`。相对LPCP143严格=`126 retained / 25 gained / 17 lost`、churn42、net`+8`；相对完全matched的
+fixed-query SEOD cycle2=`135`严格为`122 retained / 29 gained / 13 lost`、net`+16`、McNemar
+`p=.0195205`。因此打开reward到input memory queries确实产生了closed-loop增益，不能把GOMQ写成只改善内部
+geometry。
+
+但cycle3 strict降到`135/400`、breadth6、per-task=`0/1/48/31/0/37/17/1`、per-suite=`1/79/37/18`。
+cycle2→3严格=`122 retained / 13 gained / 29 lost / 236 both-fail`、churn42、net`-16`、Jaccard
+`.743902`、`p=.0195205`；Long1净丢9，四个suite均不增。相对LPCP143为`119/16/24`，相对matched SEOD
+cycle3=`143`为`120/15/23`。所以151目前只是一个早期高点，不具稳定资格。
+
+FP64相邻checkpoint分析排除了“第二步又把同task不同视频写散”这一解释：cycle2→3 all400 effective-BA
+relative-L2 mean/median=`.00235810/.00202229`，first4同task四组K4增量cosine/energy=
+`.993160/.992606`。gained/lost的改写幅度=`.001999/.002154`，不能选择有用方向。cycle3训练侧仍有
+`54/64` cached-view objectives下降，memory/downstream跨taskgradient cosine mean=`.134870/.054144`，但
+held closed-loop显著下降。最早缺口是**连续shared reward commitment没有保留held on-policy support**，不是
+memory未获梯度、视频集合相消、native写出或训练图未工作。
+
+本节结果落盘后，owner进一步明确：当前每cycle训练量很小，出现好结果后应多训练再判断。该最新authority允许
+在不改代码、数据、optimizer、world topology或科学变量的前提下exact-resume cycle4，目的仅是刻画训练剂量和
+相邻稳定性，不是从曲线挑峰。若cycle4继续恶化则停止；若恢复，也不能把恢复点选成答案，必须继续至少一个相邻
+checkpoint并同时完成cycle2的same-task-other/wrong/shuffled/reversed/no-video因果controls。原第8节的
+“不得靠cycle4反复抽峰”仍成立；这次continuation只防止用两次真实memory update过早外推终局。
+
+## 13. Cycle4终局稳定性裁决
+
+相同clean frozen `8553b61`、world6与物理拓扑从cycle3 exact-resume到cycle4。训练完整完成24 tasks、48
+expert rollouts、`29/19` success/failure，18 active tasks覆盖四suite，72个four-view credit conditions使用288条
+不同视频；cycle=`412.952s`。memory-token shared gradient RMS=`4.031e-7`，memory/downstream跨task cosine mean=
+`.125322/.056180`，17/18 task final descent、65/72 cached-view objectives下降，q/v/action与完整Writer
+re-encode response均非零。训练图、memory gradient、native写出、吞吐和信息墙都没有工程失效。
+
+cycle4 K4 strict paired400完整72/72 shards、400 rows、18/18 workers exit0，结果为`131/400`、breadth6，
+per-task=`0/1/45/32/0/36/16/1`、per-suite=`1/77/36/17`。cycle3→4严格=
+`116 retained / 15 gained / 19 lost / 250 both-fail`、churn34、net`-4`、Jaccard`.773333`；相对cycle2高点为
+`121/10/30`、net`-20`、`p=.002221`，四suite全部不增。相对LPCP143为`117/14/26`、churn40、net`-12`。
+三个真实memory/content update的score因此为`151 -> 135 -> 131`，breadth始终6；151是早期峰值，不是稳定平台。
+
+FP64 cycle3→4 all400 effective-BA relative-L2 mean/median=`.00284989/.00255794`，比cycle2→3的`.00235810`
+更大；first4同task四K4增量cosine/energy仍为`.993372/.992705`，q/v/action分别都约`.993--.996`。
+gained/lost改写均值=`.002596/.002791`且大幅重叠。Spatial3得到全task最大改写`.005171`却仍只有`1/50`，
+Goal3改写`.002115`仍为0；训练局部credit广泛下降也没有转化为held成功。因此最早失败接口最终确定为：
+**video-coherent learned memory representation经独立direct-B共享尾部连续提交时，没有形成可保留的held
+policy support**。不是memory没有读取视频、同task不同视频再次正交、native LoRA不可见或训练量不足。
+
+GOMQ终局，不cycle5、不补cycle2六臂、不扫rank/LR/scale/seed或继续训练长度。六臂未运行，所以本轮不能宣称
+same-task-other鲁棒或correct相对wrong/shuffled/reversed/no-video的因果优势；这些资格是未知，不是失败。
+本轮只否定当前`LPCP + 37 learned one-way memory queries + temporal/K-set/grid + rank32 native-zero direct-B +
+successful-expert occupancy shared Adam`的连续稳定性，不否定memory token、V6 compiler、rank8、few-shot或生成
+LoRA。后继若保留memory，应改变memory Program到LoRA的commitment接口，而不是继续调整同一direct-B tail。
+
+正式root：
+`runs/outputs/pi05_v6_lpcp_cfmg_gomq_cycle4_k4_correct400_noreplacement_seed7_trainr6_evalr6_8553b61_gpu02p123467_b16_20260817`。
+同root封存`gomq_cycle2_cycle3_cycle4_strict_adjudication.json`与
+`gomq_cycle3_to_cycle4_effective_ba.json`。

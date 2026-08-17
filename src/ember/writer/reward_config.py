@@ -1,4 +1,4 @@
-"""Authority for the CFMG gradient-open memory-query successor."""
+"""Reproducibility authority for the terminal GOMQ experiment."""
 
 from __future__ import annotations
 
@@ -206,5 +206,9 @@ def load_reward_config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 def require_reward_mode(config: dict[str, Any], mode: str) -> None:
     if mode not in {"smoke", "formal"}:
         raise WriterModelError("invalid gradient-open memory-query mode")
+    if config.get("status") != "active":
+        raise WriterModelError(
+            "gradient-open memory-query training is terminal and not authorized"
+        )
     if mode == "formal" and config["formal_run"]["status"] not in {"ready", "sealed"}:
         raise WriterModelError("formal gradient-open memory-query training is not authorized")

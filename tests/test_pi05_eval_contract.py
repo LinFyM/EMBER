@@ -25,15 +25,8 @@ from ember.pi05_eval_contract import (
     resolve_role_task_keys,
     _validate_recipe,
 )
-from ember.expert_manifold.inference import (
-    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-    EXPERT_MANIFOLD_WRITER_KIND,
-)
-from ember.expert_manifold.v6_prior_contract import (
-    V6_PRIOR_CANONICAL_CONFIG,
-    V6_PRIOR_CONFIG_SCHEMA,
-)
 from ember.pi05_lora import pi05_target_names
+from ember.writer.evaluation import DYNAMIC_K_ADAPTER_SCHEMA
 from ember.expert_manifold.video_schedule import (
     task_video_mapping,
     video_schedule_contract,
@@ -325,21 +318,23 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
         sampling_mode="without_replacement",
     )
     shared_writer = {
-        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-        "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "execution_backend": (
-            "online_frozen_v6_condition_program_residual_then_episode_lora_cache"
-        ),
+        "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
+        "kind": "v6_layerwise_probe_conditioned_procedure_writer",
+        "execution_backend": "online_frozen_dynamic_k_writer_then_episode_lora_cache",
         "config": {
-            "path": str(V6_PRIOR_CANONICAL_CONFIG),
-            "schema": V6_PRIOR_CONFIG_SCHEMA,
+            "path": str(
+                ROOT
+                / "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json"
+            ),
+            "schema": (
+                "ember_pi05_v6_layerwise_probe_conditioned_procedure_as_writer_v1"
+            ),
         },
         "writer_asset": {
-            "reference": "v6-prior:historical-macro400",
-            "kind": "historical_v6_macro400_load_only",
-            "method_macro": 0,
-            "writer_parameter_count": 10_775_296,
-            "program_residual_value_count": 20_971_520,
+            "reference": "lpcp:macro25:rank16",
+            "kind": "v6_layerwise_probe_conditioned_procedure_macro_checkpoint",
+            "method_macro": 25,
+            "writer_parameter_count": 1_000_000,
             "generated_lora_tensor_count": 76,
             "checkpoint": "/writer/checkpoints/step_00000400",
             "writer_state": {
@@ -355,12 +350,25 @@ def _writer_contract_inputs(tmp_path: Path) -> tuple:
                     "dtype_by_name": _pi05_template_dtype_by_name(),
                 }
             },
+            "generated_lora_storage": {
+                "tensor_count": 76,
+                "parameter_count": 1_287_168,
+                "tensor_bytes": 2_641_920,
+                "dtype_tensor_counts": {"BF16": 72, "F32": 4},
+                "dtype_parameter_counts": {"BF16": 1_253_376, "F32": 33_792},
+                "dtype_by_name": _pi05_template_dtype_by_name(),
+            },
         },
         "evaluation_authority": {
-            "formal_status": "blocked_until_new_residual_deployment_graph_live_profile",
-            "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
-            "minimum_smoke_writer_model_batch_size": 8,
-            "online_smoke_evidence": None,
+            "formal_status": "sealed",
+            "throughput_policy": (
+                "highest_measured_batch_throughput_with_device_memory_headroom"
+            ),
+            "minimum_smoke_writer_model_batch_size": 4,
+            "online_smoke_evidence": {
+                "selected_writer_model_batch_size": 8,
+                "supported_writer_model_batch_sizes": [4, 8],
+            },
         },
         "video_data": {"root": "/videos"},
         "lora_contract": {
@@ -412,7 +420,7 @@ def _build_writer_contract(
     )
 
 
-def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
+def test_dynamic_k_writer_pairing_is_sealed(tmp_path: Path) -> None:
     inputs = _writer_contract_inputs(tmp_path)
     _, tasks, _, _, _, correct_mapping = inputs
     task_keys = tuple((task.suite, task.task_id) for task in tasks)
@@ -421,14 +429,14 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     correct = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "correct",
-        arm="expert_manifold_v6_condition_residual_correct",
+        arm="v6_layerwise_probe_conditioned_procedure_correct",
         condition="correct",
         mapping=correct_mapping,
     )
     wrong = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "wrong",
-        arm="expert_manifold_v6_condition_residual_cross_suite_wrong",
+        arm="v6_layerwise_probe_conditioned_procedure_cross_suite_wrong",
         condition="cross_suite_wrong",
         mapping=wrong_mapping,
     )
@@ -437,7 +445,7 @@ def test_expert_manifold_writer_pairing_is_sealed(tmp_path: Path) -> None:
     assert "writer_lora_execution" not in correct
 
 
-def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
+def test_writer_requires_throughput_oriented_generation_batch(
     tmp_path: Path,
 ) -> None:
     inputs = _writer_contract_inputs(tmp_path)
@@ -446,7 +454,7 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
         _build_writer_contract(
             inputs=inputs,
             output_dir=tmp_path / "batched",
-            arm="expert_manifold_v6_condition_residual_correct",
+            arm="v6_layerwise_probe_conditioned_procedure_correct",
             condition="correct",
             mapping=correct_mapping,
             writer_generation_batch_size=1,
@@ -454,12 +462,12 @@ def test_v6_prior_writer_requires_throughput_oriented_generation_batch(
     batched = _build_writer_contract(
         inputs=inputs,
         output_dir=tmp_path / "batched",
-        arm="expert_manifold_v6_condition_residual_correct",
+        arm="v6_layerwise_probe_conditioned_procedure_correct",
         condition="correct",
         mapping=correct_mapping,
-        writer_generation_batch_size=16,
+        writer_generation_batch_size=8,
     )
-    assert batched["parallel"]["writer_generation_batch_size"] == 16
+    assert batched["parallel"]["writer_generation_batch_size"] == 8
 
 
 def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
@@ -524,76 +532,6 @@ def test_sealed_dynamic_k_writer_requires_profile_supported_batch(
             writer_generation_batch_size=batch_size,
         )
         assert exact["parallel"]["writer_generation_batch_size"] == batch_size
-
-
-def test_reward_credit_seal_locks_the_measured_writer_batch8(
-    tmp_path: Path,
-) -> None:
-    inputs = list(_writer_contract_inputs(tmp_path))
-    shared_writer = inputs[4]
-    shared_writer["evaluation_authority"] = {
-        "formal_status": "sealed_from_unchanged_v6_residual_deployment_graph",
-        "throughput_policy": (
-            "highest_measured_batch_throughput_with_device_memory_headroom"
-        ),
-        "minimum_smoke_writer_model_batch_size": 8,
-        "online_smoke_evidence": {"writer_model_batch_size": 8},
-    }
-    correct_mapping = inputs[5]
-    exact = _build_writer_contract(
-        inputs=tuple(inputs),
-        output_dir=tmp_path / "batch8",
-        arm="expert_manifold_v6_condition_residual_correct",
-        condition="correct",
-        mapping=correct_mapping,
-        writer_generation_batch_size=8,
-    )
-    assert exact["parallel"]["writer_generation_batch_size"] == 8
-    for batch_size in (16, 32):
-        with pytest.raises(Pi05EvaluationError, match="selected Writer batch"):
-            _build_writer_contract(
-                inputs=tuple(inputs),
-                output_dir=tmp_path / f"batch{batch_size}",
-                arm="expert_manifold_v6_condition_residual_correct",
-                condition="correct",
-                mapping=correct_mapping,
-                writer_generation_batch_size=batch_size,
-            )
-
-
-def test_pick_gc_seal_locks_the_measured_writer_batch32(
-    tmp_path: Path,
-) -> None:
-    inputs = list(_writer_contract_inputs(tmp_path))
-    shared_writer = inputs[4]
-    shared_writer["evaluation_authority"] = {
-        "formal_status": "sealed_from_live_pick_gc_deployment_profile",
-        "throughput_policy": (
-            "highest_measured_batch_throughput_with_device_memory_headroom"
-        ),
-        "minimum_smoke_writer_model_batch_size": 8,
-        "online_smoke_evidence": {"writer_model_batch_size": 32},
-    }
-    correct_mapping = inputs[5]
-    exact = _build_writer_contract(
-        inputs=tuple(inputs),
-        output_dir=tmp_path / "batch32",
-        arm="expert_manifold_v6_condition_residual_correct",
-        condition="correct",
-        mapping=correct_mapping,
-        writer_generation_batch_size=32,
-    )
-    assert exact["parallel"]["writer_generation_batch_size"] == 32
-    for batch_size in (8, 16):
-        with pytest.raises(Pi05EvaluationError, match="selected Writer batch"):
-            _build_writer_contract(
-                inputs=tuple(inputs),
-                output_dir=tmp_path / f"batch{batch_size}",
-                arm="expert_manifold_v6_condition_residual_correct",
-                condition="correct",
-                mapping=correct_mapping,
-                writer_generation_batch_size=batch_size,
-            )
 
 
 def test_source_checkpoint_inspection_requires_generic_base_and_raw_policy_contract(

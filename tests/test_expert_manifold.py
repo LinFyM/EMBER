@@ -1,8 +1,5 @@
 from argparse import Namespace
-import copy
-import math
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 import torch
@@ -10,7 +7,7 @@ import torch
 from ember.expert_manifold.contract import (
     ExpertTask,
     ExpertManifoldError,
-    load_expert_manifold_config,
+    load_task_expert_config,
     parse_resume_task,
     parse_task_indices,
     resolve_runtime,
@@ -31,58 +28,25 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
-from ember.expert_manifold.model import (
-    TopologicalLoRAChunkLayout,
-    phase_centered_causal_memory,
-)
-from ember.writer.policy_innovation import (
-    FrozenPi05VideoInnovationEncoder,
-    phase_resample,
-)
-from ember.expert_manifold.feature_cache import _feature_contract, _feature_runtime
-from ember.expert_manifold.video_schedule import (
-    condition_demo_index,
-    reference_demo_index,
-)
-from ember.expert_manifold.inference import (
-    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-    EXPERT_MANIFOLD_EPISODE_SCHEMA,
-    EXPERT_MANIFOLD_WRITER_KIND,
-    expected_expert_manifold_episode_evidence,
-    validate_expert_manifold_episode_evidence,
-)
-from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
-from ember.eval_adapters import expected_writer_episode
-from ember.pi05_assets import Pi05EvaluationError
-from ember.lora import expected_lora_state_shapes, identity_lora_state
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
 
 
-def test_video_expert_manifold_config_keeps_video_as_dynamic_value() -> None:
-    config = load_expert_manifold_config(CONFIG)
-    assert config["method"]["language_only_lora_path"] is False
-    assert config["video_features"]["shots"] == 1
-    assert config["topological_writer"]["chunk_count"] == 168
-    assert config["topological_writer"]["valid_values"] == 1_287_168
-    assert config["topological_writer"]["video_value_path"] == (
-        "phase_centered_projected_video_sqrt_normalized_causal_prefix_integral_only"
-    )
-    assert config["video_features"]["feature_width"] == 3072
-    assert config["video_features"]["expert_hidden_width"] == 1024
+def test_task_expert_config_contains_only_the_retained_train24_authority() -> None:
+    config = load_task_expert_config(CONFIG)
+    assert config["status"] == "sealed_task_expert_reference"
+    assert config["task_experts"]["task_count"] == 24
+    assert config["task_experts"]["task_parameter_sharing"] == "none"
+    assert "topological_writer" not in config
+    assert "meta_training" not in config
     assert config["information_wall"]["validation_actions_read"] == 0
-    assert config["information_wall"]["writer_video_split_roles"] == [
-        "train",
-        "validation",
-        "test",
-    ]
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
-    config = load_expert_manifold_config(CONFIG)
+    config = load_task_expert_config(CONFIG)
     fresh = Namespace(mode="profile", batch_size=None, stop_after_step=1, resume=None)
     resumed = Namespace(
         mode="profile", batch_size=None, stop_after_step=3, resume=Path("x")
@@ -94,7 +58,7 @@ def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
 def test_formal_experts_use_the_sealed_live_profile(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config = load_expert_manifold_config(CONFIG)
+    config = load_task_expert_config(CONFIG)
     monkeypatch.setattr(
         "ember.expert_manifold.contract.git_state",
         lambda _root: {
@@ -285,7 +249,7 @@ def test_task_expert_runtime_uses_the_narrow_task_expert_loader(
 
 
 def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> None:
-    config = load_expert_manifold_config(CONFIG)
+    config = load_task_expert_config(CONFIG)
     manifest = read_json(
         REPO_ROOT / config["authorities"]["target_data_manifest"]["path"]
     )
@@ -395,300 +359,3 @@ def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> No
     assert observed["training_commit"] == "training-commit"
     assert len(observed["tasks"]) == 24
     assert observed["information_wall"]["validation_actions_read"] == 0
-
-
-def _synthetic_lora_states():
-    contract = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
-    template = {}
-    target = {}
-    for ordinal, (name, shape) in enumerate(
-        expected_lora_state_shapes(contract).items()
-    ):
-        base = torch.arange(math.prod(shape), dtype=torch.float32).reshape(shape)
-        base = base.mul(1e-7 * (ordinal + 1))
-        if name.endswith(".lora_B.default.weight"):
-            base.zero_()
-        template[name] = base
-        target[name] = base + torch.full_like(base, 0.001 * (ordinal + 1))
-    return contract, template, target
-
-
-def test_topological_lora_layout_round_trips_full_rank16_state() -> None:
-    contract, template, target = _synthetic_lora_states()
-    layout = TopologicalLoRAChunkLayout(contract, chunk_width=512)
-    assert layout.chunk_count == 168
-    assert layout.valid_values == 1_287_168
-    assert layout.padded_values == 1_376_256
-    values = layout.tokenize(target, template)
-    recovered = layout.detokenize(values, template)
-    assert all(torch.equal(recovered[name], value) for name, value in target.items())
-
-
-def test_identity_lora_state_matches_template_a_zero_b_contract() -> None:
-    contract, template, _ = _synthetic_lora_states()
-    identity = identity_lora_state(contract)
-    assert set(identity) == set(template)
-    assert all(
-        torch.count_nonzero(value) == 0
-        for name, value in identity.items()
-        if name.endswith(".lora_B.default.weight")
-    )
-    assert all(
-        torch.count_nonzero(value) > 0
-        for name, value in identity.items()
-        if name.endswith(".lora_A.default.weight")
-    )
-
-
-def test_causal_memory_forces_order_binding_without_static_value() -> None:
-    constant = torch.randn(2, 1, 8).expand(2, 4, 8).clone()
-    assert torch.count_nonzero(phase_centered_causal_memory(constant)) == 0
-    ordered = torch.randn(2, 4, 8)
-    forward = phase_centered_causal_memory(ordered)
-    reverse = phase_centered_causal_memory(ordered.flip(1))
-    assert not torch.allclose(forward, reverse)
-    assert not torch.allclose(forward.mean(dim=1), reverse.mean(dim=1))
-
-
-def test_phase_resample_preserves_video_endpoints_and_zero() -> None:
-    value = torch.tensor([[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]])
-    aligned = phase_resample(value, 5)
-    assert aligned.shape == (5, 2)
-    assert torch.equal(aligned[0], value[0])
-    assert torch.equal(aligned[-1], value[-1])
-    assert torch.count_nonzero(phase_resample(torch.zeros_like(value), 5)) == 0
-
-
-def test_video_encoder_retains_task_span_and_action_expert_widths() -> None:
-    encoder = FrozenPi05VideoInnovationEncoder(
-        image_width=2048,
-        expert_width=1024,
-        feature_width=3072,
-        phase_slots=16,
-        max_frames_per_encoder_call=4,
-        action_horizon=50,
-        padded_action_dim=32,
-        initialization_seed=7,
-    )
-    assert encoder.image_width == 2048
-    assert encoder.expert_width == 1024
-    assert encoder.feature_width == 3072
-
-
-def test_video_encoder_subtracts_one_baseline_and_encodes_each_frame_once(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    encoder = FrozenPi05VideoInnovationEncoder(
-        image_width=2048,
-        expert_width=1024,
-        feature_width=3072,
-        phase_slots=16,
-        max_frames_per_encoder_call=3,
-        action_horizon=50,
-        padded_action_dim=32,
-        initialization_seed=7,
-    )
-    calls: list[tuple[int, ...] | None] = []
-
-    def fake_encode(
-        owner: FrozenPi05VideoInnovationEncoder,
-        _core: torch.nn.Module,
-        frames: torch.Tensor | None,
-        language_tokens: torch.Tensor,
-        _language_mask: torch.Tensor,
-        _task_span_mask: torch.Tensor,
-    ) -> torch.Tensor:
-        if frames is None:
-            calls.append(None)
-            return torch.zeros(language_tokens.shape[0], owner.feature_width)
-        frame_ids = tuple(int(value) for value in frames[:, 0, 0, 0])
-        calls.append(frame_ids)
-        values = frames[:, 0, 0, 0].to(torch.float32)
-        return values[:, None].expand(-1, owner.feature_width)
-
-    monkeypatch.setattr(FrozenPi05VideoInnovationEncoder, "_encode", fake_encode)
-    frames = (
-        torch.arange(5, dtype=torch.uint8)
-        .reshape(5, 1, 1, 1)
-        .expand(-1, 3, 2, 2)
-    )
-    language_tokens = torch.tensor(((1, 2, 0), (1, 3, 0)), dtype=torch.long)
-    language_mask = torch.tensor(((True, True, False), (True, True, False)))
-    task_span_mask = torch.tensor(((False, True, False), (False, True, False)))
-    innovation, counts = encoder.frame_innovations(
-        SimpleNamespace(
-            model=SimpleNamespace(
-                config=SimpleNamespace(chunk_size=50, max_action_dim=32)
-            )
-        ),
-        frames,
-        torch.tensor((0, 0, 1, 1, 1), dtype=torch.long),
-        torch.tensor((0, 2, 5), dtype=torch.long),
-        language_tokens,
-        language_mask,
-        task_span_mask,
-    )
-
-    assert calls == [None, (0, 1, 2), (3, 4)]
-    assert torch.equal(counts, torch.tensor((2, 3), dtype=torch.long))
-    torch.testing.assert_close(innovation[:, 0], torch.arange(5, dtype=torch.float32))
-
-
-def test_one_shot_video_schedule_covers_fifty_states_without_replacement() -> None:
-    values = tuple(
-        reference_demo_index(
-            7,
-            "libero_goal",
-            3,
-            state,
-            demo_count=50,
-            sampling_mode="without_replacement",
-        )
-        for state in range(50)
-    )
-    assert len(set(values)) == 50
-    assert (
-        condition_demo_index(
-            7,
-            "libero_goal",
-            3,
-            0,
-            condition="same_task_other",
-            demo_count=50,
-            sampling_mode="without_replacement",
-        )
-        == (values[0] + 17) % 50
-    )
-    assert (
-        condition_demo_index(
-            7,
-            "libero_goal",
-            3,
-            0,
-            condition="no_video",
-            demo_count=50,
-            sampling_mode="without_replacement",
-        )
-        == values[0]
-    )
-
-
-def test_expert_manifold_episode_evidence_keeps_one_video_dynamic() -> None:
-    adapter = {
-        "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-        "kind": EXPERT_MANIFOLD_WRITER_KIND,
-        "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
-        "arm": "expert_manifold_v6_condition_residual_correct",
-        "video_condition": "correct",
-        "writer_asset": {
-            "reference": "v6-prior:historical-macro400",
-            "kind": "historical_v6_macro400_load_only",
-            "method_macro": 0,
-            "writer_parameter_count": 10_775_296,
-            "program_residual_value_count": 20_971_520,
-            "generated_lora_tensor_count": 76,
-        },
-        "lora_contract": {"reference": "lora:rank16"},
-        "video_schedule": {
-            "seed": 7,
-            "demo_count": 50,
-            "sampling_mode": "without_replacement",
-        },
-        "task_video_mapping": [
-            {
-                "suite": "libero_goal",
-                "task_id": 3,
-                "language_global_task_id": 13,
-                "video_suite": "libero_goal",
-                "video_task_id": 3,
-                "video_global_task_id": 13,
-                "video_split_role": "validation",
-            }
-        ],
-        "task_video_mapping_reference": "mapping",
-        "pairing_reference": "paired",
-    }
-    evidence = expected_expert_manifold_episode_evidence(
-        adapter,
-        suite="libero_goal",
-        task_id=3,
-        init_state_id=4,
-        lora_reference="generated",
-    )
-    assert (
-        expected_writer_episode(
-            adapter,
-            suite="libero_goal",
-            task_id=3,
-            init_state_id=4,
-            lora_reference="generated",
-            evidence_schema=EXPERT_MANIFOLD_EPISODE_SCHEMA,
-        )
-        == evidence
-    )
-    with pytest.raises(Pi05EvaluationError, match="evidence schema changed"):
-        expected_writer_episode(
-            adapter,
-            suite="libero_goal",
-            task_id=3,
-            init_state_id=4,
-            lora_reference="generated",
-            evidence_schema="wrong_schema",
-        )
-    assert len(evidence["teacher_demo_indices"]) == 1
-    assert evidence["language_global_task_id"] == 13
-    assert evidence["video_global_task_id"] == 13
-    assert validate_expert_manifold_episode_evidence(
-        adapter,
-        {**evidence, "writer_generation_seconds": 0.5},
-        suite="libero_goal",
-        task_id=3,
-        init_state_id=4,
-    )
-    no_video_adapter = {**adapter, "video_condition": "no_video"}
-    no_video = expected_expert_manifold_episode_evidence(
-        no_video_adapter,
-        suite="libero_goal",
-        task_id=3,
-        init_state_id=4,
-        lora_reference="identity",
-    )
-    assert (
-        no_video["teacher_demo_indices"] == no_video["teacher_reference_demo_indices"]
-    )
-    assert no_video["teacher_video_frames_used"] is False
-
-
-def test_video_feature_profile_seal_keeps_formal_input_semantics() -> None:
-    config = load_expert_manifold_config(CONFIG)
-    assert _feature_runtime(config, "profile") == (4, 4, (0, 1, 2, 3))
-    formal = config["video_features"]["formal_run"]
-    assert formal["status"] == "sealed"
-    assert formal["demo_count"] == 50
-    evidence = formal["profile_evidence"]
-    assert evidence["device"] == "NVIDIA A40"
-    assert evidence["demo_count"] == 4
-    assert evidence["feature_shape"] == [4, 16, 3072]
-    assert evidence["peak_reserved_bytes"] < 46_068 * 1024**2
-    assert all(
-        evidence[name] == 0
-        for name in (
-            "teacher_action_reads",
-            "teacher_state_reads",
-            "reward_reads",
-            "terminal_reads",
-            "oom_count",
-            "nonfinite_count",
-        )
-    )
-
-
-def test_video_feature_contract_ignores_writer_only_sealing() -> None:
-    config = load_expert_manifold_config(CONFIG)
-    changed = copy.deepcopy(config)
-    changed["meta_training"]["formal_run"]["selected_expert_step"] = 500
-    changed["meta_training"]["formal_run"]["status"] = "sealed"
-    assert _feature_contract(changed) == _feature_contract(config)
-
-    changed["video_features"]["phase_slots"] += 1
-    assert _feature_contract(changed) != _feature_contract(config)

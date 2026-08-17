@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_v6_lpcp_cfmg_gradient_open_memory_query_v1",
-  "status": "active_formal_cycle0to2_ready",
+  "status": "terminal_nonpass",
   "base_as_config": "configs/pi05_as_writer_v6_layerwise_probe_conditioned_procedure_v1.json",
   "initialization": {
     "kind": "writer_weights_only_fresh_reward_optimizer",
@@ -133,6 +133,19 @@
   },
   "formal_run": {
     "status": "sealed",
+    "terminal_result": {
+      "decision": "terminal_nonpass_no_resume_no_additional_controls_or_parameter_sweep",
+      "strict_correct_curve": [151, 135, 131],
+      "breadth_curve": [6, 6, 6],
+      "cycle2_per_task": [0, 3, 47, 34, 0, 40, 26, 1],
+      "cycle3_per_task": [0, 1, 48, 31, 0, 37, 17, 1],
+      "cycle4_per_task": [0, 1, 45, 32, 0, 36, 16, 1],
+      "cycle2_to_cycle3_retained_gained_lost": [122, 13, 29],
+      "cycle3_to_cycle4_retained_gained_lost": [116, 15, 19],
+      "cycle2_to_cycle4_net": -20,
+      "six_arm_video_causality": "not_evaluated",
+      "conclusion": "learned_memory_query_once_improved_closed_loop_but_repeated_shared_updates_did_not_retain_held_policy_support"
+    },
     "mechanism_smoke_evidence": {
       "root": "runs/outputs/pi05_v6_lpcp_cfmg_gomq_smoke_tasks2_12_21_35_cycles2_r4_k4_views4_b8_51e3d73_gpu02p1234_20260817",
       "commit": "51e3d73d72656ddc7257248133a3461bd3e43307",

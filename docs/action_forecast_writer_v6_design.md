@@ -3,8 +3,8 @@
 ## 1. 决策与版本定位
 
 owner 于 2026-07-28 确认采用本设计，并把原计划中的 v5.3 提升为 v6。
-v6实验现已完成，本文只作历史最好`143/400`架构的provenance；当前没有active successor，完整后继与
-裁决见[`research_history.md`](research_history.md)。精确v5.3/Recenter历史可由Git commit`3a6f801`读取。
+v6实验现已完成，本文只作历史最好`143/400`架构的provenance；完整后继与裁决见
+[`research_history.md`](research_history.md)。精确v5.3/Recenter历史可由Git commit`3a6f801`读取。
 2026-07-28 owner 又明确要求v6从step0直接采用task-complete多任务更新；
 因此本文早期曾记录的
 “首版沿用 v5.2 one-task-per-rank update”已经失效，不再作为对照约束。

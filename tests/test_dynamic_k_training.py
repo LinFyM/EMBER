@@ -43,7 +43,10 @@ from ember.writer.reward_config import (
     load_reward_config,
     require_reward_mode,
 )
-from ember.writer.reward_training import _continuation_contract_core
+from ember.writer.reward_training import (
+    _continuation_contract_core,
+    finalize_args as finalize_reward_args,
+)
 from ember.pi05_source_checkpoint import DistributedContext
 
 
@@ -105,8 +108,13 @@ def test_v6_layerwise_probe_conditioned_procedure_config_is_loadable() -> None:
 
 def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
     config, base = load_reward_config(REWARD_CONFIG)
-    assert config["status"] == "active_formal_cycle0to2_ready"
+    assert config["status"] == "terminal_nonpass"
     assert config["formal_run"]["status"] == "sealed"
+    terminal = config["formal_run"]["terminal_result"]
+    assert terminal["strict_correct_curve"] == [151, 135, 131]
+    assert terminal["breadth_curve"] == [6, 6, 6]
+    assert terminal["cycle2_to_cycle4_net"] == -20
+    assert terminal["six_arm_video_causality"] == "not_evaluated"
     smoke_evidence = config["formal_run"]["mechanism_smoke_evidence"]
     assert smoke_evidence["world_size"] == 4
     assert smoke_evidence["cycle_seconds"][1] < 180.0
@@ -217,9 +225,35 @@ def test_gradient_open_memory_query_config_records_mechanism_gate() -> None:
     assert volume["cycle2"] == (
         "first_memory_query_update_and_first_strict400"
     )
-    require_reward_mode(config, "smoke")
-    require_reward_mode(config, "formal")
+    with pytest.raises(WriterModelError, match="terminal"):
+        require_reward_mode(config, "smoke")
+    with pytest.raises(WriterModelError, match="terminal"):
+        require_reward_mode(config, "formal")
     assert base["writer"]["policy_slot_count"] == 320
+
+
+def test_terminal_reward_config_fails_before_training(tmp_path: Path) -> None:
+    source_run = tmp_path / "source"
+    checkpoint = tmp_path / "checkpoint"
+    data_root = tmp_path / "data"
+    tokenizer = tmp_path / "tokenizer.model"
+    for directory in (source_run, checkpoint, data_root):
+        directory.mkdir()
+    tokenizer.write_bytes(b"tokenizer")
+    args = argparse.Namespace(
+        config=REWARD_CONFIG,
+        mode="formal",
+        source_run=source_run,
+        checkpoint=checkpoint,
+        tokenizer_path=tokenizer,
+        data_root=data_root,
+        output_dir=tmp_path / "output",
+        resume=None,
+        stop_after_cycle=None,
+        smoke_task_ids=None,
+    )
+    with pytest.raises(WriterModelError, match="terminal"):
+        finalize_reward_args(args)
 
 
 def test_reward_continuation_core_ignores_only_execution_authority() -> None:

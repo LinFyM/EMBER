@@ -172,15 +172,6 @@ def test_pi05_topology_allows_method_owned_rank_with_unit_scale(
     assert contract.parameter_count == 10_297_344
 
 
-def test_rank128_capacity_contract_is_hashed() -> None:
-    path = REPO_ROOT / "configs/pi05_lora_rank128_capacity_v1.json"
-    contract = load_pi05_lora_contract(path)
-    assert contract.rank == 128
-    assert sha256_file(path) == (
-        REPO_ROOT / "configs/pi05_lora_rank128_capacity_v1.sha256"
-    ).read_text(encoding="utf-8").split()[0]
-
-
 def test_pi05_derivation_requires_all_exact_named_linears() -> None:
     policy = _Policy()
     contract = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")

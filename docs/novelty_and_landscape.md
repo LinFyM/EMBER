@@ -1,6 +1,6 @@
 # EMBER Novelty and Baseline Landscape
 
-状态：2026-08-13稳定研究定位。本文不授权当前run或绑定具体架构。
+状态：2026-08-17整理后的稳定研究定位。本文不授权当前run或绑定具体架构。
 
 ## Research position
 
@@ -37,7 +37,7 @@ EMBER新增的困难是视频内部有向过程、多个videos的集合结构、
 | generic π0.5 | language + observation | 未适配foundation下界；目标8曾为0/400 |
 | frozen source base | language + observation | 过滤source actions建立的共同起点；48/400 |
 | mixed-task Source-SFT | language + observation；训练读target actions | privileged shared-LoRA reference；109/400 |
-| EMBER AS-Writer | language + action-hidden video(s) | 核心zero-interaction方法；历史最好143/400 |
+| EMBER AS-Writer | language + action-hidden video(s) | 核心zero-interaction方法；完整五臂最好143，未稳定单点最高151 |
 | optional RL-Writer | 同上；训练期读source reward | 检验action-free practice能否改善Writer |
 | matched direct video policy | 每步language + video + observation | 可选比较一次编译与持续conditioning |
 | direct-action oracle | language + observation；训练读test actions | privileged ceiling，不是同信息墙baseline |
@@ -56,6 +56,8 @@ FLOPs来掩盖方法本身的取舍。
 - K4能改善部分集合稳定性，但旧实现没有解决strict performance或full24 credit retention；
 - rank14去混杂证明compression与online regeneration可独立破坏closed-loop support；
 - Dynamic-K 100和semantic-address 101说明真实memory、动态K与Query semantic address仍未自动形成正确policy方向。
+- GOMQ的learned memory query曾得到151，随后相邻checkpoint为135/131；memory有真实价值，但稳定shared retention
+  仍是必要claim条件。
 
 因此下一贡献不能只是换一个decoder名字。它必须说明有向视频证据如何落到有用policy direction，以及不同
 task/video能力为何能在同一checkpoint共存。

@@ -11,7 +11,6 @@ import torch
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
-    EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     expected_writer_episode,
     reinspect_writer_adapter,
@@ -64,21 +63,11 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             raise WriterModelError(
                 "PI05 Writer evaluation artifacts changed after prepare"
             )
-        if observed["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
-            from ember.expert_manifold.inference import (
-                load_expert_manifold_deployment_config,
-            )
-            from ember.expert_manifold.v6_prior_contract import authority_path
-
-            config = load_expert_manifold_deployment_config(
-                Path(observed["config"]["path"])
-            )
-        elif observed["kind"] == DYNAMIC_K_WRITER_KIND:
-            from ember.writer.as_config import authority_path, load_writer_config
-
-            config = load_writer_config(Path(observed["config"]["path"]))
-        else:
+        if observed["kind"] != DYNAMIC_K_WRITER_KIND:
             raise WriterModelError("cached Writer kind changed")
+        from ember.writer.as_config import authority_path, load_writer_config
+
+        config = load_writer_config(Path(observed["config"]["path"]))
         lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         observed_rank = int(observed["lora_contract"]["rank"])
         if observed_rank != lora.rank:

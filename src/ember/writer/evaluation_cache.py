@@ -15,7 +15,6 @@ from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
-    EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     validate_writer_episode,
     writer_episode_schema,
@@ -25,16 +24,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.errors import WriterModelError
 
 
-WRITER_LORA_CACHE_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_v3"
-WRITER_LORA_CACHE_ENTRY_SCHEMA = "ember_pi05_expert_manifold_writer_lora_cache_entry_v3"
-WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_cache_manifest_v3"
-)
-WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
-    "ember_pi05_expert_manifold_writer_lora_generator_marker_v3"
-)
 WRITER_LORA_REQUEST_ORDER = "sealed suite/task order then ascending init_state_id"
-WRITER_LORA_VIDEO_KEY_ALGORITHM = "one_entry_per_episode_one_shot_video_v1"
 DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA = "ember_pi05_dynamic_k_writer_lora_cache_v1"
 DYNAMIC_K_WRITER_LORA_CACHE_ENTRY_SCHEMA = (
     "ember_pi05_dynamic_k_writer_lora_cache_entry_v1"
@@ -67,14 +57,6 @@ _TORCH_DTYPE_NAMES = {
 
 def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
     kind = adapter.get("kind")
-    if kind == EXPERT_MANIFOLD_WRITER_KIND:
-        return {
-            "cache": WRITER_LORA_CACHE_SCHEMA,
-            "entry": WRITER_LORA_CACHE_ENTRY_SCHEMA,
-            "manifest": WRITER_LORA_CACHE_MANIFEST_SCHEMA,
-            "marker": WRITER_LORA_GENERATOR_MARKER_SCHEMA,
-            "key_algorithm": WRITER_LORA_VIDEO_KEY_ALGORITHM,
-        }
     if kind == DYNAMIC_K_WRITER_KIND:
         evaluation_k = int(
             adapter.get("information_wall", {}).get("evaluation_k", 1)

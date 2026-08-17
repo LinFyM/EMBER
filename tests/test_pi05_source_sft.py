@@ -31,11 +31,9 @@ from ember.source_sft.checkpoint import (
 from ember.source_sft.contract import (
     SOURCE_SFT_LAUNCH_SCHEMA,
     Pi05SourceSFTError,
-    _contract_stop_step,
     _target_tasks,
     load_source_sft_config,
     reconcile_resume_contract,
-    resolve_runtime as resolve_source_sft_runtime,
 )
 from ember.source_sft.inference import inspect_source_sft_evaluation
 from ember.source_sft.training import (
@@ -47,13 +45,6 @@ from ember.source_sft.training import (
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_source_sft_development_v1.json"
 FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
-RANK128_CONFIG = ROOT / "configs/pi05_source_sft_rank128_capacity_v1.json"
-MIXED_RANK128_CONFIG = (
-    ROOT / "configs/pi05_source_sft_rank128_mixed_v2.json"
-)
-MIXED8_RANK128_CONFIG = (
-    ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.json"
-)
 
 
 def test_development_config_selects_only_sealed_train_actions() -> None:
@@ -111,188 +102,10 @@ def test_development_formal_budget_is_independent_ceiling_search() -> None:
     assert formal["prior_matched_scale_result"]["optimizer_steps"] == 63
 
 
-def test_rank128_capacity_config_keeps_data_wall_and_changes_only_capacity() -> None:
-    baseline = load_source_sft_config(CONFIG)
-    capacity = load_source_sft_config(RANK128_CONFIG)
-    rank128 = load_pi05_lora_contract(
-        ROOT / capacity["authorities"]["lora_contract"]["path"]
-    )
-    assert capacity["sealed_stage"] == "development"
-    assert capacity["information_wall"] == baseline["information_wall"]
-    assert capacity["data"] == baseline["data"]
-    assert capacity["optimization"] == baseline["optimization"]
-    assert rank128.rank == rank128.alpha == 128
-    assert rank128.parameter_count == 10_297_344
-    assert (
-        capacity["stages"]["development"]["formal_run"]["status"]
-        == "sealed"
-    )
-    assert (
-        capacity["stages"]["development"]["formal_run"]["selected_stop_step"]
-        == 800
-    )
-    assert capacity["stages"]["development"]["formal_run"]["stage_stop_steps"] == [
-        800,
-        1100,
-        1400,
-        1700,
-        2000,
-        2300,
-        2400,
-    ]
-    assert capacity["profile_evidence"]["rank"] == 128
-    assert capacity["profile_defaults"]["expected_world_size"] == 4
-    assert capacity["profile_defaults"]["per_rank_batch_size"] == 128
-    assert sha256_file(RANK128_CONFIG) == (
-        ROOT / "configs/pi05_source_sft_rank128_capacity_v1.sha256"
-    ).read_text(encoding="utf-8").split()[0]
-
-
-def test_corrected_rank128_config_seals_hierarchical_mixed_profile() -> None:
-    baseline = load_source_sft_config(CONFIG)
-    mixed = load_source_sft_config(MIXED_RANK128_CONFIG)
-    rank128 = load_pi05_lora_contract(
-        ROOT / mixed["authorities"]["lora_contract"]["path"]
-    )
-    assert mixed["information_wall"] == baseline["information_wall"]
-    assert mixed["stages"]["development"]["task_count"] == 24
-    assert mixed["data"]["episodes_per_task"] == 50
-    assert mixed["training_recipe"]["kind"] == (
-        "hierarchical_task_episode_chunk_mixed_v1"
-    )
-    assert mixed["training_recipe"]["rank_task_binding"] == "none"
-    assert mixed["profile_contract"]["physical_gpu_indices"] == [4, 5, 6, 7]
-    assert mixed["profile_contract"]["candidates"] == [144, 120]
-    assert mixed["profile_defaults"]["expected_world_size"] == 4
-    assert mixed["profile_defaults"]["per_rank_batch_size"] == 144
-    assert mixed["data"]["max_open_files_per_worker"] == 24
-    assert 144 // 24 == 6
-    assert 120 // 24 == 5
-    profile = mixed["profile_contract"]["observed_profile"]
-    formal = mixed["stages"]["development"]["formal_run"]
-    assert mixed["profile_contract"]["selected_per_rank_batch_size"] == 144
-    assert profile["optimizer_steps"] == 3
-    assert profile["global_action_queries"] == 1728
-    assert formal["status"] == "sealed"
-    assert formal["per_rank_batch_size"] == 144
-    assert formal["selected_stop_step"] == 225
-    assert formal["checkpoint_steps"][:9] == list(range(25, 226, 25))
-    assert formal["stage_stop_steps"][:2] == [225, 450]
-    assert rank128.rank == rank128.alpha == 128
-    assert rank128.parameter_count == 10_297_344
-    assert sha256_file(MIXED_RANK128_CONFIG) == (
-        ROOT / "configs/pi05_source_sft_rank128_mixed_v2.sha256"
-    ).read_text(encoding="utf-8").split()[0]
-
-
-def test_training_rejects_legacy_rank_pure_config() -> None:
-    with pytest.raises(Pi05SourceSFTError, match="rank-pure"):
-        _validate_active_training_recipe(load_source_sft_config(RANK128_CONFIG))
-    with pytest.raises(Pi05SourceSFTError, match="rank-pure"):
-        _validate_active_training_recipe(
-            load_source_sft_config(MIXED_RANK128_CONFIG)
-        )
-    _validate_active_training_recipe(
-        load_source_sft_config(MIXED8_RANK128_CONFIG)
-    )
-
-
-def test_mixed8_rank128_config_preserves_sample_clock_and_complete_cycles() -> None:
-    full24 = load_source_sft_config(MIXED_RANK128_CONFIG)
-    mixed8 = load_source_sft_config(MIXED8_RANK128_CONFIG)
-    recipe = mixed8["training_recipe"]
-    formal = mixed8["stages"]["development"]["formal_run"]
-    assert mixed8["information_wall"] == full24["information_wall"]
-    assert mixed8["adapter"] == full24["adapter"]
-    assert mixed8["optimization"] == full24["optimization"]
-    assert recipe["kind"] == "cyclic_subset_hierarchical_mixed_v2"
-    assert recipe["rank_task_binding"] == "none"
-    assert recipe["tasks_per_rank_per_update"] == 2
-    assert recipe["global_tasks_per_update"] == 8
-    assert recipe["updates_per_complete_task_cycle"] == 3
-    assert mixed8["profile_defaults"]["per_rank_batch_size"] == 144
-    assert 144 // 2 == 72
-    assert 72 // 3 == 24
-    assert formal["status"] == "sealed"
-    assert formal["selected_stop_step"] == 240
-    profile = mixed8["profile_contract"]["observed_profile"]
-    assert mixed8["profile_contract"]["selected_per_rank_batch_size"] == 144
-    assert profile["optimizer_steps"] == 6
-    assert profile["complete_task_cycles"] == 2
-    assert profile["global_action_queries"] == 3456
-    assert profile["max_cuda_allocated_bytes"] < profile["max_cuda_reserved_bytes"]
-    assert all(step % 3 == 0 for step in formal["checkpoint_steps"])
-    assert all(step % 3 == 0 for step in formal["stage_stop_steps"])
-    assert formal["closed_loop_screen_steps"] == [
-        60,
-        120,
-        180,
-        240,
-        300,
-        360,
-        420,
-        480,
-    ]
-    assert set(formal["closed_loop_screen_steps"]) <= set(
-        formal["checkpoint_steps"]
-    )
-    assert sha256_file(MIXED8_RANK128_CONFIG) == (
-        ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.sha256"
-    ).read_text(encoding="utf-8").split()[0]
-
-
 def test_source_sft_batch_task_counts_preserve_mixed_identity() -> None:
     assert _batch_task_counts(
         {"task_id": torch.tensor([20, 10, 20, 30, 10, 30])}
     ) == {10: 2, 20: 2, 30: 2}
-
-
-def test_source_sft_declared_stage_stop_can_extend_without_schedule_change(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    config = load_source_sft_config(RANK128_CONFIG)
-    config["stages"]["development"]["formal_run"]["status"] = "sealed"
-    context = DistributedContext(
-        rank=0,
-        local_rank=0,
-        world_size=4,
-        device=torch.device("cpu"),
-        numa_node=0,
-        cpu_affinity=(0,),
-    )
-    monkeypatch.setattr(
-        "ember.source_sft.contract.git_state",
-        lambda _root: {"dirty_paths": [], "commit": "sealed", "origin_main": "sealed"},
-    )
-    args = SimpleNamespace(
-        stage="development",
-        mode="formal",
-        total_steps=None,
-        batch_size=None,
-        checkpoint_steps=None,
-        stop_after_step=1100,
-        resume=Path("/tmp/step_00000800"),
-        skip_data_sha=False,
-    )
-    assert resolve_source_sft_runtime(args, config, context) == (
-        2400,
-        128,
-        tuple(range(100, 2401, 100)),
-    )
-    assert args.stop_after_step == 1100
-    args.stop_after_step = 500
-    with pytest.raises(Pi05SourceSFTError, match="sealed profile"):
-        resolve_source_sft_runtime(args, config, context)
-
-
-def test_formal_stage_extension_does_not_change_source_sft_contract_stop() -> None:
-    config = load_source_sft_config(RANK128_CONFIG)
-    args = SimpleNamespace(
-        stage="development", mode="formal", stop_after_step=1100
-    )
-    assert _contract_stop_step(args, config, 2400) == 800
-    args.mode = "profile"
-    assert _contract_stop_step(args, config, 2400) == 1100
 
 
 def test_source_sft_code_compatible_resume_allows_only_commit_change(
@@ -677,9 +490,9 @@ def test_formal_development_validation_accepts_published_checkpoint_before_summa
 ) -> None:
     checkpoint, source = _static_adapter_fixture(
         tmp_path,
-        config_path=RANK128_CONFIG,
+        config_path=CONFIG,
         mode="formal",
-        world_size=4,
+        world_size=8,
         step=100,
     )
     validation_keys = (
@@ -693,7 +506,7 @@ def test_formal_development_validation_accepts_published_checkpoint_before_summa
         ("libero_10", 2),
     )
     adapter = inspect_source_sft_evaluation(
-        config_path=RANK128_CONFIG,
+        config_path=CONFIG,
         checkpoint=checkpoint,
         source=source,
         task_keys=validation_keys,
@@ -719,7 +532,7 @@ def test_formal_development_validation_accepts_published_checkpoint_before_summa
     )
     with pytest.raises(Pi05SourceSFTError, match="completed Source-SFT run summary"):
         inspect_source_sft_evaluation(
-            config_path=RANK128_CONFIG,
+            config_path=CONFIG,
             checkpoint=checkpoint,
             source=source,
             task_keys=seen_keys,

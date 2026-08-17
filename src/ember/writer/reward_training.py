@@ -632,4 +632,6 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         raise WriterModelError("task-complete smoke requires --smoke-task-ids")
     if args.mode == "formal" and args.smoke_task_ids is not None:
         raise WriterModelError("formal task-complete run cannot set smoke task ids")
+    config, _ = load_reward_config(args.config)
+    require_reward_mode(config, args.mode)
     return args

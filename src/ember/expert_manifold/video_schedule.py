@@ -230,6 +230,84 @@ def condition_demo_index(
     )
 
 
+def paired_condition_demo_indices(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    condition: str,
+    demo_count: int,
+    sampling_mode: str,
+    video_count: int,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Return the reference and selected ordered K-video sets.
+
+    K1 preserves the historical numeric demo offset.  For K>1, the
+    same-task-other arm shifts the start position in the same deterministic
+    task permutation, yielding a disjoint K-set without changing any other
+    condition's reference videos.
+    """
+
+    if condition not in VIDEO_CONDITIONS:
+        raise ExpertManifoldError("invalid video-set condition")
+    reference = reference_demo_indices(
+        root_seed,
+        suite,
+        task_id,
+        init_state_id,
+        demo_count=demo_count,
+        sampling_mode=sampling_mode,
+        video_count=video_count,
+    )
+    if condition != "same_task_other":
+        return reference, reference
+    if video_count == 1:
+        selected = ((reference[0] + SAME_TASK_OTHER_OFFSET) % demo_count,)
+        return reference, selected
+    if demo_count != 50 or sampling_mode != "without_replacement":
+        raise ExpertManifoldError(
+            "multi-video same-task-other requires the 50-video permutation schedule"
+        )
+    block, position = divmod(init_state_id, demo_count)
+    permutation = np.random.default_rng(
+        np.random.SeedSequence(
+            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+        )
+    ).permutation(demo_count)
+    selected = tuple(
+        int(permutation[(position + SAME_TASK_OTHER_OFFSET + offset) % demo_count])
+        for offset in range(video_count)
+    )
+    if len(set(selected)) != video_count or set(selected) & set(reference):
+        raise ExpertManifoldError("same-task-other video set is not disjoint")
+    return reference, selected
+
+
+def condition_demo_indices(
+    root_seed: int,
+    suite: str,
+    task_id: int,
+    init_state_id: int,
+    *,
+    condition: str,
+    demo_count: int,
+    sampling_mode: str,
+    video_count: int,
+) -> tuple[int, ...]:
+    """Return only the selected side of a paired K-video schedule."""
+
+    return paired_condition_demo_indices(
+        root_seed,
+        suite,
+        task_id,
+        init_state_id,
+        condition=condition,
+        demo_count=demo_count,
+        sampling_mode=sampling_mode,
+        video_count=video_count,
+    )[1]
+
+
 def frame_order_seed(
     root_seed: int,
     suite: str,

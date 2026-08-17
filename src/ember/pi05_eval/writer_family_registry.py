@@ -478,11 +478,11 @@ WRITER_FAMILIES = {
         "supported_videos_per_condition": (1, 2, 3, 4),
         "writer_input": (
             "exact task language plus four action-hidden teacher videos through "
-            "the CFMG gradient-open memory-query writer"
+            "the dynamic-K graph"
         ),
         "multi_video_writer_input_template": (
             "exact task language plus {evaluation_k} action-hidden teacher videos "
-            "through the CFMG gradient-open memory-query writer"
+            "through the dynamic-K graph"
         ),
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2, 3, 4),

@@ -13,7 +13,6 @@ from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
-    EXPERT_MANIFOLD_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     paired_writer_identity,
 )
@@ -34,39 +33,6 @@ _BATCH_THROUGHPUT_POLICY = (
     "highest_measured_batch_throughput_with_device_memory_headroom"
 )
 _WRITER_THROUGHPUT_BY_SCHEMA = {
-    "ember_pi05_v6_prior_eval_adapter_v5": (
-        "highest_measured_throughput_with_device_memory_headroom"
-    ),
-    "ember_pi05_v6_ecp_eval_adapter_v6": (
-        "highest_measured_throughput_with_device_memory_headroom"
-    ),
-    "ember_pi05_v6_tangent_tube_eval_adapter_v7": (
-        "highest_measured_throughput_with_device_memory_headroom"
-    ),
-    "ember_pi05_v6_condition_program_residual_eval_adapter_v8": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_v6_condition_program_residual_eval_adapter_v9": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_v6_causal_goal_interaction_joint_credit_eval_adapter_v10": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_v6_magnitude_gated_causal_interaction_joint_credit_eval_adapter_v11": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_dynamic_k_backbone_memory_rank8_eval_adapter_v1": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_dynamic_k_semantic_address_direct_family_b_rank8_eval_adapter_v1": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_dynamic_k_task_grounded_visual_value_rank8_eval_adapter_v1": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
-    "ember_pi05_v6_shared_core_procedure_common_value_bridge_eval_adapter_v1": (
-        _BATCH_THROUGHPUT_POLICY
-    ),
     "ember_pi05_v6_layerwise_probe_conditioned_procedure_eval_adapter_v1": (
         _BATCH_THROUGHPUT_POLICY
     ),
@@ -145,30 +111,18 @@ def _writer_lora_contract(
     authorities: EvaluationAuthorities,
     adapter: Mapping[str, Any],
 ) -> Any:
-    from ember.expert_manifold.v6_prior_contract import (
-        authority_path as expert_authority_path,
-        load_v6_prior_config,
-    )
     from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+    from ember.writer.as_config import authority_path, load_writer_config
 
     config_path = Path(adapter["config"]["path"])
-    if adapter["kind"] == EXPERT_MANIFOLD_WRITER_KIND:
-        config = load_v6_prior_config(config_path)
-        path = expert_authority_path(config, "lora_contract")
-    elif adapter["kind"] == DYNAMIC_K_WRITER_KIND:
-        from ember.writer.as_config import authority_path, load_writer_config
-
-        config = load_writer_config(config_path)
-        path = authority_path(config, "lora_contract")
-    else:
+    if adapter["kind"] != DYNAMIC_K_WRITER_KIND:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
+    config = load_writer_config(config_path)
+    path = authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
-    if adapter["kind"] == DYNAMIC_K_WRITER_KIND:
-        observed_rank = int(
-            adapter.get("lora_contract", {}).get("rank", result.rank)
-        )
-        if observed_rank != result.rank:
-            result = derive_pi05_lora_rank(result, rank=observed_rank)
+    observed_rank = int(adapter.get("lora_contract", {}).get("rank", result.rank))
+    if observed_rank != result.rank:
+        result = derive_pi05_lora_rank(result, rank=observed_rank)
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
         f"{result.state_tensor_count}tensors:{result.parameter_count}parameters"
@@ -200,11 +154,7 @@ def _attach_writer_cache(
         else output_dir.resolve() / "writer_lora_cache"
     )
     writer_asset = adapter["writer_asset"]
-    lora_storage = (
-        writer_asset["generated_lora_storage"]
-        if adapter["kind"] == DYNAMIC_K_WRITER_KIND
-        else writer_asset["writer_state"]["template_lora_storage"]
-    )
+    lora_storage = writer_asset["generated_lora_storage"]
     contract["writer_lora_cache"] = build_writer_lora_cache_descriptor(
         contract,
         root=root,
@@ -274,23 +224,7 @@ def _validate_build_request(
             adapter.get("kind") == DYNAMIC_K_WRITER_KIND
             and evaluation.get("formal_status") == "sealed"
         )
-        sealed_expert_manifold = (
-            adapter.get("kind") == EXPERT_MANIFOLD_WRITER_KIND
-            and evaluation.get("formal_status") in {
-                "sealed",
-                "sealed_from_unchanged_v6_deployment_graph",
-                "sealed_from_live_pick_gc_deployment_profile",
-                "sealed_from_live_residual_deployment_profile",
-                "sealed_from_unchanged_v6_residual_deployment_graph",
-                "sealed_from_live_osg_pc_deployment_smoke",
-                "sealed_from_live_sknc_deployment_smoke",
-                "sealed_from_live_srtp_deployment_smoke",
-                "sealed_from_live_cveg_deployment_smoke",
-                "sealed_from_live_cgik_full96_profile",
-                "sealed_from_live_mgci_full96_profile",
-            }
-        )
-        if sealed_dynamic_k or sealed_expert_manifold:
+        if sealed_dynamic_k:
             if not isinstance(smoke, Mapping):
                 raise Pi05EvaluationError(
                     "sealed Writer evaluation requires its selected Writer batch"

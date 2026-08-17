@@ -48,7 +48,7 @@ def v6_fast_143_reference(
         "provenance": {
             "label": "v6-fast task-complete macro400",
             "aggregate": 143,
-            "source": "docs/active_session_handoff.md",
+            "source": "docs/research_history.md",
         },
     }
 

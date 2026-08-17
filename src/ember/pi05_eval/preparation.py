@@ -12,14 +12,10 @@ from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
     adapter_requests,
     inspect_dynamic_k_writer_adapter,
-    inspect_expert_manifold_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
 )
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_eval.reward_credit_gate import (
-    validate_registered_reward_credit_output,
-)
 from ember.pi05_eval_contract import (
     build_run_contract,
     inspect_installed_target_tasks,
@@ -100,18 +96,6 @@ def _inspect_adapter(
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
         )
-    if writer_kind == "expert_manifold_writer":
-        return inspect_expert_manifold_writer_adapter(
-            config_path=args.expert_manifold_config.resolve(),
-            checkpoint=args.expert_manifold_checkpoint.resolve(),
-            video_data_root=args.expert_manifold_video_data_root.resolve(),
-            source=model,
-            tasks=tasks,
-            video_condition=str(args.expert_manifold_video_condition),
-            video_seed=int(authorities.config["rng"]["inference_seed"]),
-            video_sampling_mode=str(args.expert_manifold_video_sampling),
-            require_formal=args.mode != "smoke",
-        )
     if writer_kind == DYNAMIC_K_WRITER_KIND:
         return inspect_dynamic_k_writer_adapter(
             config_path=args.dynamic_k_writer_config.resolve(),
@@ -187,7 +171,6 @@ def _prepared_payload(
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
     )
-    validate_registered_reward_credit_output(args, output_dir, contract)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

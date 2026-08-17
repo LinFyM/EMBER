@@ -669,7 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_source_sft_rank128_mixed8_v3.json",
+        default=REPO_ROOT / "configs/pi05_source_sft_development_v1.json",
     )
     parser.add_argument("--stage", choices=("development", "final"), required=True)
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)

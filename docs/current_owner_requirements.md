@@ -1,462 +1,168 @@
 # EMBER Current Owner Requirements
 
-状态：2026-08-17 owner当前需求authority。本文不是handoff、实验设计或启动授权；它记录当前session已经
-明确的目标、方法要求、设计偏好、开放变量和协作方式。后续工作不能再用旧handoff、历史design或某次实验的
-“当前/下一步”覆盖本文。若owner之后明确改变要求，以最新明确表达为准，并同步更新本文。
+本文只记录owner的稳定目标、共识原则和协作边界，不记录逐轮实验状态或下一条架构。当前进度见仓库根目录
+`progress.md`，历史证据见`research_history.md`。
 
-## 1. Authority层级
+## 1. 项目的现实出发点
 
-1. owner最新明确表达；
-2. 本文对当前owner要求的综合记录；
-3. `AGENTS.md`中的安全、信息墙、Git、GPU、存储与正式评测合同；
-4. `docs/active_session_handoff.md`、`docs/execution_brief.md`、`docs/research_history.md`及旧design只提供
-   已完成实验、资产位置和负结果边界。
+EMBER源于人通过正确示范快速学习新技能的经验：一个已有基础运动能力的人，看一条第三人称教学视频后，虽然不
+会逐帧复刻示范者，也未得到手把手动作轨迹，仍能理解“这件事本质上怎么做”，立刻获得比盲试更好的起点；之后再
+根据环境反馈练习，才逐渐精通。
 
-旧文档中的“active”“current”“next”“等待交接”“暂停讨论”等只描述当时状态，不是当前命令。当前session
-已经持续工作，不处于重新接管或向另一个session交接的阶段。除非owner明确要求，不做机械handoff，也不把
-重复阅读或交接过程当作科研推进。
+对应机器人任务，教学介质首先是视频而不是动作序列。模型需要从正确视频提取跨初始化仍成立的任务知识：对象与
+关系、目标状态、必要阶段、阶段之间的有向因果顺序，以及哪些细节只是某条demo的速度、路径、视角、抓取角度或
+偶然扰动。部署目标不是复刻teacher原始低层轨迹，而是在自己的观测和初始化下完成同一任务。
 
-## 2. 最终目标与现实启发
-
-EMBER的现实启发是：人看一条正确教学视频后，并不会逐像素、逐关节复制示范者的轨迹；他会结合任务名称，
-理解示范在完成什么、关键动作阶段是什么、先后因果关系是什么，然后在自己的身体、视角和初始状态下尝试。
-初次尝试应已经明显优于完全不会；后续若允许与环境交互，还可以在这个起点上快速学好。
-
-对应的核心目标是：
+因此EMBER当前核心问题是：
 
 ```text
 exact task language + one or more action-hidden correct teaching videos
     -> one shared Writer
-    -> one task-conditioned policy adaptation produced before rollout
-    -> frozen pi0.5-LIBERO source policy
-    -> closed-loop task completion from unseen initializations
+    -> one complete task-conditioned LoRA
+    -> one frozen source policy
+    -> closed-loop success from unseen initialization
 ```
 
-当前主要研究目标是让初次生成的adaptation本身立即有效。后续在该adaptation上做task-local RL，是独立的后续
-实验，不能拿来掩盖初始Writer性能不足。
+## 2. 输入必须同时包含语言和视频
 
-性能仍应尽可能超过`150/400`并继续提高，但owner于2026-08-15补充了更重要的科学资格：若同一shared method的
-连续相邻checkpoints都能稳定保持约`145+`、成功集合低换手，且same-task不同视频鲁棒、correct相对wrong/
-shuffled/reversed/no-video有明显特异性，那么即使尚未到151也可视为很有价值的成立结果。反之，单点151若来自
-波动winner、同任务换video即掉或没有视频因果性，也不算成功。历史v6-fast143仍需正面超过或在稳定性/因果性上
-实质改进，不能靠checkpoint union、挑task checkpoint或平均模型绕过。
+语言不能删除：只看视频时，模型未必知道任务要求关注哪个对象、关系或结果。视频也不能删除：只看语言时，模型
+只知道“要做什么”，不知道一条正确示范所提供的“怎样完成”。合理分工是：
 
-## 3. 真正的核心科学问题
+- language提供task query、关注点、目标与语义地址；
+- video提供动态过程、状态变化、阶段顺序和正确做法的Value；
+- 两者联合形成task Program，任何一方都不能成为可删除装饰。
 
-以下问题是目标的组成部分，不是可有可无的诊断榜单：
+language-only路径不得独立写出有效LoRA。反过来，也不能为了阻断language shortcut而制造不自然的zero-image、
+空prefix或与π0.5原生计算无关的fake action query。
 
-1. **高层任务知识**：从视频提取跨初始化、视角、路径、速度、抓取角度和偶然扰动仍成立的对象、关系、目标
-   状态、必要阶段和有向顺序，而不是复刻单条demo的低层轨迹。
-2. **语言与视频缺一不可**：language说明“要完成什么”，video说明“正确完成方式是什么”。language可以作为
-   query/context/address，但不能独立生成任务LoRA；video不能被降格为无关装饰。
-3. **正确顺序具有结构作用**：correct应因展示有效的初态到目标态过程而有用；shuffled破坏阶段连续性，
-   reversed破坏有向因果。不能只靠人为把negative LoRA推坏制造margin。
-4. **policy-effective写出**：视频程序必须通过compiler/adaptation真实改变policy的有效方向；LoRA norm、rank、
-   cosine、reconstruction或functional loss只能解释，不能替代closed-loop。
-5. **共同积累而非能力换手**：多个tasks和多个videos的能力必须在同一个Writer checkpoint中共存，降低相邻
-   checkpoint churn，而不是optimizer轮流把能力从一个task搬到另一个task。
-6. **视频因果有效性**：correct最终必须实质优于wrong、shuffled、reversed和no-video；same-task其它视频应有
-   良好鲁棒性。只证明hidden、LoRA或action随视频变化不够。
+## 3. One-shot、few-shot和动态视频数量
 
-## 4. 输入合同与one-shot/few-shot立场
+one-shot仍是清晰且有价值的canonical问题，但方法不必先验锁死K=1。多条同task视频有合理优势：它们可帮助过滤
+单条demo的低层nuisance，提取跨video共同的高层程序。
 
-### 4.1 基本输入
+若声称支持动态K，则训练时必须真实覆盖不同cardinality，不能只训练K1/K4后口头外推。数据流应满足：
 
-- exact task language必须保留；
-- 所有teacher videos必须action-hidden，不读teacher action、proprio、reward、terminal、task ID、filename、
-  object pose或hidden normalization；
-- 每条视频内部按真实顺序处理，frame stride当前保持5；
-- Writer在rollout前运行一次，policy执行期间不反复观看teacher video。
+1. 每条视频独立保留内部顺序；
+2. 不同视频在集合维做置换不变聚合；
+3. 提取共同语义的同时保留每条视频的时序证据；
+4. 不平均frames、raw features或生成后的LoRAs；
+5. 不挑“最好视频”；
+6. 所有视频保持action-hidden。
 
-### 4.2 视频数量
+不要求为了论文形式做人为削弱的K1/K4公平对照。最终若K1最强就做one-shot claim，K4/K8最强就做few-shot，动态
+K都强才做video-scaling claim。选择依据是真实闭环性能与因果证据。
 
-owner希望方法从架构上认真支持一条或多条视频，最好可接受动态数量，而不是为K1和K4维护两套模型。多条视频
-的价值在于过滤demo-specific nuisance、提取同task demonstrations共有的高层程序。
+同一video生成的LoRA应对同task多种未见初始化和action queries有效。训练时video与action episode同task但
+跨episode错开，是阻断逐帧动作复制的重要手段；但它也造成“同task监督target对所有video恒定”的不可识别性，
+所以仅输入正确顺序或重建task expert并不能证明模型理解了视频过程。
 
-若声称支持动态K，训练时就必须实际覆盖动态cardinality，不能只训练K1/K4再宣称任意K。K的采样需要兼顾：
+## 4. 正确顺序必须有结构作用
 
-- 各K得到足够且均衡的训练曝光；
-- task仍等权；
-- 各GPU按真实帧数和计算量平衡负载，而非纯随机造成长尾。
+correct、shuffled和reversed不是人为negative：
 
-owner不要求为了论文形式强行做“同帧数、同FLOPs的K1对K4公平竞赛”。如果one-shot最好，就报告one-shot；
-如果K4/K5/K8最好，就诚实报告few-shot；如果动态数量越多越好，可以把scaling behavior作为卖点。必要的对照是
-确保结论真实，而不是让较强方案人为降配。
+- correct展示从初态到目标态的物理可行演化；
+- reversed产生违反正常因果方向的过程；
+- shuffled破坏阶段连续性和先后依赖。
 
-多视频方法必须：
+架构应在每条视频内部显式保留有向过程，而不是只把shuffle/reverse推远。最终需要证明correct沿有用policy direction
+提高成功率；仅让negative LoRA变坏不够。
 
-- 每条video内部保序；
-- video之间采用置换不变集合处理；
-- 提取共同高层知识，同时保留各自的时序证据；
-- 不简单平均frames、features或最终LoRAs；
-- 不挑“最好视频”；
-- 不把多个video分别生成的LoRA做平均或checkpoint融合。
+## 5. 输出是一个task adaptation；具体参数化是方法
 
-可以研究“多视频共同表示指导单视频表示”的一致性训练；它必须是同一Writer中的表征学习，而不是引入额外
-部署teacher、task ID或第二套LoRA。
+当前部署输出是一套完整38-target task-conditioned LoRA。Writer只在rollout前运行一次，policy闭环时不反复看
+teacher video。一个condition只能得到一套LoRA，不能按video分别生成再平均，也不能用checkpoint union、expert
+route或第二套adapter。
 
-## 5. 输出与adaptation形式
+LoRA rank、memory token数量、FactorHeads、A/B生成方式和decoder都属于可修改的方法变量，不应写成goal。
+owner当前认为rank16完全可以保留；此前建议rank8只是降低生成维度的一种思路，不是硬要求。
 
-当前主方向仍是Writer一次生成一套完整task-conditioned LoRA，并加到冻结source policy上。LoRA之所以重要，
-是它提供可保存、可部署、可在后续独立RL实验中继续优化的任务起点。
+LoRA健康度应参考正常task-local SFT的policy geometry：不能小到近identity，也不应无理由所有targets完全共线；
+但低stable rank、q-dominant和跨列coherent本身可能是正常expert结构。高rank、均匀能量、正交、更多atoms/lanes/
+experts均不是独立优化目标。
 
-但必须区分：
+优先分析effective `BA`、fixed-action response和closed-loop，而不是raw A/B gauge符号。
 
-- “生成policy-effective task adaptation”是核心要求；
-- “一定是rank-16 LoRA”不是长期goal；
-- memory数量、LoRA rank、factorization和decoder形式都是架构变量。
+## 6. Memory token和成熟Hypernetwork工作的准确启发
 
-owner明确提出：完整LoRA即使是adapter仍然高维，当前Writer可能因此难以生成，能量集中和rank坐标相似也可能
-与输出方式有关。下一版设计必须认真分析降低rank（例如rank-8）的方案，不能未经论证自动保留rank-16。
-同时也不能因为rank更小或几何更漂亮就假定更好；历史rank14 uniform compression损伤support，只否定那种
-具体compression/regeneration合同，不否定fresh rank-8 Writer。rank选择必须结合从零训练与closed-loop裁决。
+SHINE、Doc2LoRA等工作值得学习的不是表面“加token”，而是第一性原理对应关系：原backbone本来能处理输入内容，
+为目标参数层设置少量可学习memory tokens，让内容处理过程中形成与层/参数位置有对应的state，再把这些state解码为
+各层LoRA。
 
-输出架构应具有规模可扩展性：基础policy更大、LoRA targets或参数更多时，Writer可通过共享层对应解码、参数
-复用或结构化生成扩展，而不是为每个target增加一个彼此独立的巨大wide head。
+对EMBER，这带来三个有价值候选：
 
-## 6. 昨晚Dynamic-K架构中memory token的准确含义
+- memory可让视频/语言内容在policy topology中形成layer-matched坐标；
+- layer correspondence可能比一个扁平latent直接吐出百万参数更可扩展；
+- Writer规模、基础模型规模和LoRA target数量可通过同构token/grid扩展。
 
-memory token是owner对昨晚Dynamic-K架构的重要设计要求/启发，但不是EMBER的最终goal。不能再偷换概念。当时
-Dynamic-K Writer已经把这一要求落实为8个真实memory tokens：它们与每帧真实图像、exact language和50个固定
-Action probes共同进入π0.5 joint backbone，并保留其经过18个Action Expert层后的逐层状态。这个具体实现正在
-接受formal closed-loop检验；若失败，应定位最早失效接口，而不是把“使用memory token”本身写成不可修改目标。
+但memory token不是必须形式，也不能为了使用Action Expert而运行缺失其原生图像/文字prefix的无意义forward。
+π0.5的Gemma/VLM与Action Expert各自承担什么原生计算，必须先从真实backbone接口推导，再决定memory放置、读写方向
+和是否需要纵向/横向交互。
 
-### 6.1 什么才算memory token
+历史GOMQ已给出重要但有限的正证据：learned input memory query曾把strict correct从matched fixed-query的135
+提高到151，证明memory reader可能有用；之后135/131又证明“memory + 当前shared direct-B tail”没有稳定积累。
+因此不能宣称memory失败，也不能原样重复这条完整架构。
 
-真正的memory token应当：
+## 7. 训练和RL边界
 
-- 与真实task language和真实video evidence处于有意义的backbone上下文中；
-- 在backbone层内参与attention/状态更新，读取并整合输入信息；
-- 与policy层、target group或LoRA生成位置有清楚、可解释的对应；
-- 最后由共享、可扩展的mapper/readout生成相应LoRA参数。
+最终方法应有可从零复现的训练方式；允许开发阶段从强checkpoint做受控单变量实验，但成品不能依赖task轮换、挑
+checkpoint或能力换手。
 
-以下不应冒充memory token：
+当前目标是生成LoRA后、环境交互前的性能。Writer可在train24使用监督、functional credit、privileged task expert
+或on-policy reward，只要部署信息墙不被破坏；但生成LoRA后的task-local RL属于后续独立实验，当前不得把它混入
+初始分数。
 
-- 视频全部处理完以后才产生的普通latent slots；
-- 为了分块输出LoRA而建立的几千个parameter slots；
-- 没有真实图像/语言上下文、只把memory塞进Action Expert的空输入；
-- 任意固定数量的“phase tokens”，但没有解释它们与实际stride-5帧序列的关系。
-
-当前`20x8x256`后处理状态只能叫policy-group/rank-aligned Program：20对应action-in、18个Action Expert层和
-action-out，8对应LoRA rank coordinates。它们不是额外memory tokens；真正进入backbone的memory始终只有8个。
-
-### 6.2 memory放在哪里
-
-设计必须先尊重pi0.5的真实计算语义：Gemma/VLM负责视觉语言上下文，Action Expert根据有意义的视觉语言prefix、
-state/noise/time等预测动作。若使用Action Expert内部memory，它必须和正常有效prefix一起运行；不能用blank/
-zero image、无prefix、memory-only或凭空构造的action query来“为了使用Action Expert而使用Action Expert”。
-
-当前实现选择让memory位于Action Expert suffix，但它不是无prefix空跑：同一次joint forward的prefix包含真实
-image tokens与exact language。视频时间轴只在逐video causal encoder中交互，K轴只在set aggregator中交互，
-policy-group/rank轴只在M2P中交互；不能因为policy有20个层级，就在每个阶段把所有维度混在一起attention。
-
-memory token数量应有输出合同依据。此前讨论中约70个tokens被提出时没有给出推导，因此owner当时质疑是正确的；
-后续对SHINE公式和EMBER真实shape的审计给出了一个不同、可验证的数字：rank16下每个Action Expert layer的q/v
-A/B共有69,632个payload值，hidden width=1024，若采用SHINE式“memory元素数至少覆盖LoRA参数”直写，则需要
-`ceil(69632/1024)=68` tokens；rank8对应34。该公式只为未来capacity-matched direct reshape提供候选依据，不表示
-当前必须改用68 tokens，也不推翻历史8-token/rank8实验的具体合同。
-
-### 6.3 与视频处理的关系
-
-memory不能替代视频理解。设计仍需清楚区分：
-
-1. 逐帧/逐视频如何用语言关注任务相关内容；
-2. 如何保留单视频内部有向过程；
-3. 多视频时如何提取共同程序；
-4. memory如何把这些信息带入backbone层级计算；
-5. 如何由memory生成对应LoRA。
-
-不要求在时间、video、policy layer和LoRA parameter四个轴上到处做attention。应选择最少但足以表达必要关系的
-交互，并用完整数据流解释。
-
-## 7. 昨晚完整架构判断、成熟Hypernetwork参照与历史继承
-
-昨晚讨论形成、随后已经实现并完成裁决的完整数据流是：
-
-```text
-exact language + K=1..4 same-task action-hidden ordered videos
-    -> 每帧真实image/language/Action-probe joint backbone + 8 memory tokens
-    -> 每video有向transition D、terminal goal residual G和Query-only semantic address
-    -> causal temporal encoder（video内部保序）
-    -> permutation-invariant set attention（videos之间提取共同程序）
-    -> policy-group/rank M2P
-    -> shared projector + shape-family readout
-    -> one complete 38-target rank-8 task LoRA
-```
-
-当前架构同时吸收三类依据：
-
-1. owner的现实启发与需求：语言说明任务，正确视频展示完成方式；模型提取跨初始化成立的高层程序，而不是复制
-   teacher低层轨迹；同一Writer支持动态视频数量并一次生成task adaptation；
-2. SHINE、Doc2LoRA等成熟Hypernetwork研究：少量memory进入原生backbone上下文，保留layer-aligned状态，再用
-   共享、结构化mapper生成LoRA；这里学习其第一性原理与可扩展性，不照搬文本模型输入、token数或flat payload；
-3. EMBER历史证据：保留v5/v6的Semantic Core与有向Procedure思想、K4的逐video保序/跨video集合边界，以及
-   policy-effective完整LoRA；不继承已被否定的language-only bypass、简单平均、高rank/正交目标或独立wide heads。
-
-引用成熟工作只影响架构设计，不引入额外target-task训练数据。当前Writer仍只使用封存train24视频与action
-functional supervision，因此不会因为参考外部论文而改变与target-task LoRA基线的数据公平边界。
-
-- 设计必须准确描述pi0.5中的Gemma/VLM和Action Expert，不能用未解释的“Q层”“QV action”等占位说法。
-  38个LoRA targets的真实归属、shape和层对应必须从代码/合同给出。
-- Action Meta-LoRA目前有保留价值。VLM Meta-LoRA是否需要保留是开放变量：如果VLM本身已是通用视觉语言
-  backbone且部署不更新它，可以先不加；但应由兼容性与实验决定。
-- owner没有要求完整保留v5.2/v6前端。应继承它们被证实有效的机制，而不是为了“继承历史”机械复制一个可能与
-  memory架构不兼容的前端。
-- 同样，不能因为owner提到SHINE/Doc2LoRA就一比一照搬。需要研究这些工作为什么能从原生backbone上下文中的
-  memory生成LoRA、用了多少tokens、怎样做层对应和规模扩展，再选择适用于视频/policy的部分。
-- 必须对比现有FactorHeads、wide head和SHINE式共享mapper的作用与瓶颈，不能默认历史实现已经最好，也不能
-  因为新方法更“漂亮”就判定它有效。当前Direct-Family-B正是根据逐接口probe，只删除已定位造成common-direction
-  增长的family hidden/GELU；它保留此前已认可的整个输入、memory、temporal、set与M2P链，而不是另起炉灶。
-
-## 8. 训练要求与RL边界
-
-### 8.1 监督训练
-
-- video与action episode可以同task但跨episode错开；这是阻断低层逐帧复制、要求跨初始化泛化的关键训练方式；
-- 同task恒定target也产生不可识别性，Writer可能只学task identity。因此不能只依赖“输入正确顺序”就声称理解
-  视频；架构和controls必须让视频动态过程不可绕过；
-- task-complete训练必须保持task等权并分析per-task gradient/成功集合/换手；
-- 最终方法需要一套从零开始可复现的训练recipe。旧checkpoint可以用于机制诊断或开发，但不能成为论文方法
-  只能工作的隐含前提；
-- 不额外引入会破坏与target-task训练公平性的外部target数据。source policy已有预训练/源任务能力是所有方法
-  共享基础，不等于给新Writer额外开数据口子。
-
-### 8.2 Writer RL
-
-如果监督functional objective继续与closed-loop错位，可以研究在AS cold start后用train24环境reward调整Writer。
-这不是失败时随意换榜，而是针对credit alignment的候选训练阶段。它仍必须保持信息墙、task balance和single
-checkpoint，并由strict closed-loop裁决。
-
-### 8.3 生成LoRA后的task-local RL
-
-“先看视频生成一个好LoRA，再在这个LoRA上与环境交互快速学好”是EMBER长期故事的重要后半段，但当前不是
-`>150`初始性能实验的一部分。先证明Writer生成的LoRA在零交互时就是强起点；随后另做task-local RL sample
-efficiency实验，不能把两阶段成绩混成一个初始Writer分数。
-
-## 9. 历史实验应怎样被使用
-
-过去的大量实验不是互不相关的版本库，也不是必须恢复的执行列表。每次新设计要明确：继承哪条有效机制、针对
-哪个最早失效接口、哪个证据会快速否决。局部建议不能导致整套方案下一句话就180度翻转。
-
-必须保留的连续认识包括：
-
-- v5/v5.2证明语义与过程分离、视频特异性有价值，但正确时序可能在fusion/compiler后衰减；
-- v6-fast `143`证明某套architecture x task-complete recipe能产生强absolute，但仍存在后期漂移；
-- 更漂亮的内部时序、去DC、高rank、正交、更多atoms/lanes/experts并不自动改善closed-loop；
-- SFB union远高于single checkpoint直接证明task能力换手；
-- variance reduction、reconstruction和functional evidence都可能与closed-loop错位；
-- K4说明多视频可改善部分稳定性，但旧实现不代表few-shot本身无效；
-- experts证明task-local LoRA可policy-effective，但不能提供same-task视频差异、正确顺序或held support；
-- rank14只否定具体uniform compression/regeneration，不否定所有低rank或fresh rank-8设计；
-- 最新credit/guard路线把key、condition、Program-to-action链路做通后仍在closed-loop换手，说明不能只继续美化
-  内部surrogate或叠加point guards。
-
-旧版本失败只淘汰实际测试的组合。没有架构级证据，不得因一次负结果放弃其中未被否定的子机制；也不得恢复
-完全相同的退役架构换名字重跑。
-
-## 10. 实验裁决与效率要求
-
-- 真实closed-loop absolute优先；LoRA健康度、视频特异性、时序margin、loss、rank、norm和cosine只作诊断；
-- 正式选择只认single-checkpoint strict paired400；报告per-task/per-suite、breadth、retained/gained/lost、
-  churn和相邻checkpoint能力集合；
-- 及时评测，不让长时间surrogate训练替代真实性能；
-- 一次尽量改变一个主要因果变量，不靠大量rank/scale/seed/dtype/temperature小扫救失败checkpoint；
-- 如果新架构低于历史强方法，必须定位以前的优势在哪个接口丢失。
-
-GPU/工程要求：
-
-- GPU上限6张，不要求6张；有多少真正合适的同节点卡就用多少，不等待凑卡；
-- 少量显存占用或低利用率进程不自动排除设备，只要峰值余量足够且不会明显干扰他人；
-- 若空闲卡不足，owner已与`ycliu`沟通并授权在显存峰值余量充足时与其进程共驻；仍按实时util/显存选择且不
-  pause、kill、reset或明显干扰，授权不自动扩展到其他用户；
-- launch前同时live检查gpu01/gpu02，选择一个节点，不跨节点拼碎片；
-- 训练按K、视频帧数和真实任务wall做负载均衡；evaluator用动态队列和persistent workers；
-- 吞吐优先，接受正常BF16/TF32、batch和kernel低位差异；
-- 不为防御性安心增加重复forward、batch1、无意义zero/no-video baseline、逐tensor扫描、hash、大量校验、
-  dtype扩展或host/device小tensor往返；
-- 必要的信息墙、shape、finite、pairing、OOM、asset、checkpoint和resume检查保持，但不搭建与科学结论无关的
-  防御性体系。
-
-## 11. 协作与表达要求
-
-- owner主要使用语音输入。对明显同音词、术语识别和断句错误，要结合EMBER上下文主动纠正，不机械执行错词；
-- owner提出想法是给研究判断提供启发，不代表要求盲从。必须独立判断；不能owner说一个局部问题，就把此前
-  已认可的整套设计全部推翻；
-- 修改方案时保留已认可部分，只针对真正被质疑的接口修改，并明确变化原因；
-- 任何新架构先用通俗、完整、前后一致的数据流说明：输入是什么、每阶段处理什么、memory在哪里、怎样聚合
-  videos、怎样生成LoRA、怎样训练、为什么正确顺序必要；
-- 清楚区分最终goal、核心科学问题、当前方法合同、设计建议和实现细节；
-- 不用大量半成品术语、临时缩写或未定义token数量让owner反向猜设计；
-- 不播报“读到EOF”“正在交接”“正在检查第几份文档”等机械过程。只汇报会影响科研判断的证据、完成的实现、
-  实验进展、结果和真实阻塞；
-- 已授权自主持续推进；owner于2026-08-13最新要求暂时不使用subagents，后续实现、训练、评测和分析均由当前
-  主任务完成，直到owner再次明确改变；
-- 一个完整实验结束后，先完成全部逐task、因果和接口分析，再自主进入下一轮有因果依据的设计/实现/实验；
-  不拿半分析结果打扰owner。只有owner当时明确要求暂停、出现真正权限阻塞或需要改变核心目标时才停下讨论。
-
-## 12. 方法、原则和目标的边界
-
-当前长期goal保持第2--3节，不把memory token、rank-8、K值、LoRA decoder或某个optimizer写成项目goal。
-owner在2026-08-14进一步澄清：memory token是为“怎样让视频知识按policy层级进入Writer、怎样可扩展地生成
-合理LoRA”提出的候选机制，不是必须保留的形式；如果证据表明沿V6更接近突破，可以继续V6。此前未经说明便从
-Full-Factor切到V6/rank-16仍是错误的协作行为，但错误在于静默改变方法合同，不在于V6本身被禁止。后续每次
-选择必须比较最早失效接口、已有absolute与新增假设，不能因owner一句局部意见机械地全盘切换。
-
-Dynamic-K Direct-Family-B的K1/K4=`102/98`证明set能把same-task effective-BA相对方差约降`6.3x`，但没有修正
-task mean；Visual-Value曲线`88/86/86/96`证明task-grounded视觉Value进入了LoRA，却未对齐held occupancy；
-Full-Factor=`91`进一步暴露了更具体的最早断点：独立生成A/B后A norm增至`1.376x`、B缩至`.062x`，effective BA
-仅`.245x`且与fixed-A近正交。逐样本最优rank-8仍保留约`.999999`强BA能量，所以该结果否定的是当前独立A/B
-factor credit/gauge allocation，不是否定rank-8容量、memory位置、动态K、逐video有序编码或跨video集合原则。
-
-当前证据优先选择V6 Actual-Delta Success-Support Projection：V6已经证明LoRA具备policy-effective几何，最新
-reward一步又真实获得18条held success，但同时丢19条；因此当前最早接口是task汇合后对已有support的覆盖，而非
-LoRA健康度。该轮只在同一raw on-policy reward AdamW candidate之后，用train24成功executed-prefix的一阶loss
-约束最终actual Writer parameter delta。若这一精确support实验仍不能改善retention/absolute，则不再继续V6
-constraint小修；下一架构候选是保留V6的absolute Core、有向Procedure与健康factor compiler，再把真实
-layer-aligned memory作为视频到policy slot的接口，而不是原样恢复91分Full-Factor或把memory本身当答案。
-
-该裁决现已完成：projection把6条raw violation降到0，strict仍为`138/400`且相对AS139 lost23/gained22，故
-constraint方向终止。结合owner进一步澄清，active架构不先强加literal memory token，而先冻结AS139强路径，从
-同一次真实image/language/50 Action-probe forward旁读18层native probe states，经shared rank-query与video内
-causal delta形成zero-init、layer/rank-aligned Procedure-query conditioner。这样先检验分层读取本身，且不同时
-改变rank16、factor heads或B20；只有native probes在carrier层缺少正确顺序/material差异时，下一轮才在相同下游
-接口把carrier单独换成真实memory tokens。精确authority见
-`docs/action_forecast_writer_v6_layerwise_probe_conditioned_procedure_design.md`。
-
-该方案已按上述边界完成canonical实现、world6 fresh macro0->25和strict400。carrier/效率合同通过：没有第二次
-backbone forward，每video一次shared causal controller，倒序使query-delta/Program material变化，常量视频近零；
-K4 generation锁B32。真实性能为`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`；相对AS139严格=
-`120 retained / 23 gained / 19 lost`、churn42。它追平历史143但没有超过150，并触发`<144`与lost>10门，故
-不resume50或补controls。
-
-全400 effective-BA只相对AS139移动`.002653`，LoRA健康结构不变；first4 same-task correction coherence median
-`.56804`，Goal3高coherence仍0，Long1小改写却净丢6。因此本轮不支持“native probe carrier失败，立刻换literal
-memory”的分支；更早缺口是conditioned Procedure到冻结fusion/compiler的policy commitment，以及blind B20
-functional credit对held occupancy的方向选择。memory token仍可成为以后可扩展LoRA生成的一部分，但若只替换已
-通过的carrier并保留同一Query/credit，不是在检验当前证据指向的问题。
-
-owner随后授权继续，并再次说明并非要求memory token必须成为下一架构：若沿V6能更直接找到突破口，可以继续；
-memory的价值应由它是否解决真实LoRA生成接口来裁决。当前受控后继因此保留V6-LPCP完整部署图，利用AS139与
-LPCP在严格同schedule下`120 both / 23 LPCP-only / 19 AS139-only`、union=`162`的事实，新增一次train24
-paired causal success distillation：同初态对跑zero-query AS139 reference和当前LPCP candidate，只用两臂中唯一
-成功的policy-generated trajectory校准最后65,536参数`query_delta`，不反向推坏失败轨迹、不选择checkpoint或
-部署第二套LoRA。精确authority=
-`docs/action_forecast_writer_v6_lpcp_paired_causal_success_distillation_design.md`。这仍是初始Writer的共享训练阶段，
-不是生成LoRA后的task-local RL。
-
-PCSD已完成并终局为`135/400`、breadth6；相对LPCP143为`121 retained / 14 gained / 22 lost`。它证明paired
-success可产生连续LoRA/action credit，但FP64分析显示同task四个不同K4 conditions的更新pairwise cosine约
-`-.00187`、均值只保留约四分之一能量。后继CV-CSD随后按约定把同一真实成功trajectory的exact functional credit
-覆盖到四个互不重叠same-task correct K4 conditions，并只在共享query gradient处等权汇合；部署架构、rank16、
-optimizer与rollout数量均不变。
-
-CV-CSD full24机制与吞吐合同通过，但strict只有`134/400`、breadth7；相对LPCP143严格=
-`122 retained / 12 gained / 21 lost`，四个suite全部下降。FP64中四correct K4 conditions的部署增量pairwise
-cosine=`.000205`、mean/sample energy=`.250155`，相对PCSD也仍约`0/.25`。因此“正确cross-video objective
-本身足以让现有query-only map形成一致policy-effective commitment”已被否定，按门不续cycle2或controls。
-这不是放弃memory、few-shot或LoRA生成；它把memory的合理用途进一步收窄为**在真实图文context与实际policy
-layer/rank/target topology之间建立可训练的commitment**，而不是替换已通过的视频carrier或增加静态token容量。
-精确终局见`docs/action_forecast_writer_v6_lpcp_cross_video_causal_success_distillation_design.md`。
-
-此后NPVC证明ordered native probe Value能关闭held compiler消失，但full24 strict仅136并使train task4共同方向
-坍塌；PAFS fixed address在validation8只得`.1681/.3729`；SJNV shared joint gate虽在continuous hidden中达到约
-`.94`跨视频cosine，经过冻结W2后raw factor cosine/energy却降到`.02135/.26592`，故formal前终局。该连续证据
-首次把最早断点精确锁定为**coherent video-language hidden -> frozen W2 -> native public A/B**。
-
-当前DJNFR据此保留LPCP/NPVC输入、时序、K-set与rank16，只令`M*RMSNorm(L)/sqrt(256)`经八个zero-init、
-factor-shape-matched heads直接写同一public A/B residual。它不是因为owner提到memory便机械加token，也不是放弃
-memory：先以最小变量检验绕过W2是否足够；只有slot payload共同而direct factors仍失败，才升级到上述68-token
-capacity-matched memory grid/M2P。精确authority见
-`docs/action_forecast_writer_v6_lpcp_direct_joint_native_factor_residual_design.md`。
-
-DJNFR随后在clean`e756fa1`真实机制门中强通过：task4 BA=`.813895/.794975`；validation8=
-`.776695/.768990`且8/8 tasks过门，joint/direct/raw-factor cosine=`.803616/.933698/.644605`、action=
-`.557652`、held/train=`.469796x`，reverse/static与wall也全部通过。full24后validation8仍为`.790242/.785834`
-且8/8过门，证明绕过W2真正修复了SJNV最早断点；但strict仅136，相对LPCP lost23，持续失败样本反而获得最大
-BA改写。最早失败接口因此后移到selected-success-only credit如何形成held reward-useful shared direction。
-
-DF-PCSP据此完整保留DJNFR生成图，只把reward改为candidate/reference discordant pair在两臂分叉前同一初始
-观测处的winner-vs-loser首段flow preference；不比较后来不同occupancy，不同时改memory、rank、scale或rollout。
-exact state修正后虽有真实margin descent，三个有效train anchors却只有一个通过完整跨video/held门，故在full24前
-终局。最早失败接口是final long-horizon success被全部归因给第一shared prefix后形成task-dependent update。精确
-authority见`docs/action_forecast_writer_v6_lpcp_direct_factor_paired_common_state_preference_design.md`。
-
-当前DF-SOCP只针对该最早接口：不改LPCP/DJNFR生成图，而是在winner成功occupancy的全部replan observations上，
-使用相同policy noise查询loser-policy counterfactual actions并逐状态比较；不增加environment rollouts。它必须在
-固定task9/15/18三个exact-discordant anchors上全部保持train/held跨video commitment，不能再挑单一通过task。
-精确authority见
-`docs/action_forecast_writer_v6_lpcp_direct_factor_successful_occupancy_counterfactual_preference_design.md`。
-
-后续MB-SOP、AR-EC、AV-MBC、MMCD与PAV-BC依次排除了batch-shape混杂、单纯半径过大、raw common direction与
-Adam-preconditioned parameter ray；ALB-NV固定A后证明线性`delta-B A0`能救活部分任务，但向非零B0追加小residual
-仍不稳定。NZRB-C进一步用一套rank32 adapter完整保留LPCP first bank，并让second-B从native zero写同一residual。
-clean `d4fc92e`的task15/18 held factor/BA coherence与8/8 coverage显著改善，证明该LoRA写出机制有价值；task9仍
-j0--10无finite all-view step并因rank32正常BF16 compute-shape差异改变固定outcome，总wall也略超门。NZRB因此
-2/3终局且不full24。NEAP-C据此只把随机flow-time CFM credit替换为完整10步部署action endpoint preference；
-task9 gradient coherence从`.286/.448`升到`.846/.865`并由no-op变为j0 accepted，证明该替换有效。但held/train
-BA幅度只有`.234<.30`，虽held8方向、raw-B/action与时序全健康仍按门终局。stage localization把下一缺口锁定为
-one-task condition经shared direct-B head的跨task幅度，而不是CFM、carrier、rank-bank或compiler；后继不能靠放宽
-held门、补task15/18或scale/normalization小扫救本轮。
-
-TCEC随后在同一world3 shared update中终局：task9/15/18各自四video endpoint gradients仍全为共同下降，但三task
-mean gradient norm相差至`41.45x`、pairwise cosine mean/min=`-.145/-.337`，未经norm重权的equal-task mean只对
-task15下降；11个native scales最多覆盖`8/12` margins，最终四个B heads、effective BA与action correction精确为零。
-这把最早接口推进到**显式task/condition结构的shared representation与LoRA output mapping**，不授权用gradient
-normalization、PCGrad、task权重或parameter-ray小扫补TCEC。
-
-CAPG据此保留LPCP/NEAP/K4/rank32，只把`320x256 -> four shared wide B heads`替换为capacity-matched
-`18x37x1024`Action-probe parameter grid：37来自rank16 B-only payload精确容量；逐video adjacent/goal causal
-Program、K-set、layer/token M2P后直接reshape native-zero B。它采用Doc-to-LoRA式per-layer activation queries与
-SHINE式capacity-matched direct mapping，但37个slots位于backbone之后，明确不是memory token；同一forward与
-LPCP carrier完全保留。精确authority=
-`docs/action_forecast_writer_v6_lpcp_capacity_matched_action_probe_grid_design.md`。
-
-CAPG clean`878b5e4`的world3结果把same-task four-view cosine/energy显著提高到
-`.983/.985,.898/.870,.982/.949`，raw shared coverage从TCEC的1/3提高到2/3，native best从8/12提高到10/12；
-但task15仍比task9/task18大`36.29x/5.99x`，task18到shared mean为负，11 scales无12/12，最终gate exact zero。
-因此CAPG有价值地修复了跨video坐标，却没有让post-backbone values形成跨task first commitment；不full24或小扫。
-
-随后CMBG只把CAPG的post-backbone latent source换成逐层读取真实image/language/action context并经Action Expert
-更新的37个one-way memory tokens，完整保留已通过的temporal/K-set/M2P/direct-B、NEAP、K4、rank32与global
-gate。首版扩张joint attention矩阵造成task15 carrier漂移，已按工程违约封存；修正版保持原生carrier逐元素exact，
-不删除memory科学变量。这执行了CAPG预先写明的下一反事实，而不是因结果临时转向；精确authority=
-`docs/action_forecast_writer_v6_lpcp_capacity_matched_backbone_memory_grid_design.md`。memory token仍是当前方法变量，
-不是长期goal；rank8、完整A/B和dynamic-K/few-shot仍是独立开放候选。CAPG负结果不得误写成memory失败。
-
-carrier-exact clean`2aecece` fixed world3已通过：三task shared raw/final=`3/3`、native=`12/12`，跨task gradient
-cosine mean=`+.09842`且最终LoRA非零。owner再次明确：跨设备、batch shape、BF16/TF32、kernel与reduction的普通
-低位差异以及由此产生的少量occupancy chunk变化不是科学门，不得用固定batch1、重复forward、扩dtype或逐tensor
-校验追逐；后续以held视频机制和真实closed-loop性能裁决。
-
-CMBG held视频门曾以validation8 8/8通过，但随后full24被task38以`54.45x`梯度幅值主导，11 scales最好仅
-`17/24` margins下降并exact no-op，故已在strict前终局。当前CFMG保留CMBG的真实memory、K4、rank32、reward与
-参数量，只把zero gate移到完整temporal/K-set/M2P content grid之后；这不是owner要求memory形式，而是针对已定位
-首步零点Jacobian接口的单变量反事实。正式选择仍只认single-checkpoint真实rollout。
-
-CFMG full24随后同样exact no-op，且task38相对次大task的gradient dominance增至`58.73x`。USEP保留CFMG
-全部模型与训练图，只把每个matched state的endpoint margin除以自身winner/loser action RMS，使action cotangent
-沿unit secant进入Writer。它不是按task最终gradient norm重权或PCGrad，也不采用会反比放大小secant的MSE分母。
-clean`6033330` fixed task4/34/38 world3把dominance降到`6.1538x`、cross-task raw变为3/3且actual Adam j0使
-12/12 deployed margins下降，但task34 raw four-view仍2/4，故依预注册门终局且不得resume。精确authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_endpoint_preference_design.md`。
-
-后续只读stage localization证明task34的四组K4在endpoint、temporal、K-set、M2P、content grid、carrier factors
-及content residual effective BA上均约`.98--.99`一致；raw冲突发生在共同BA经过condition-local policy/action
-Jacobian回传时。USFC据此把raw four-view coverage降为diagnostic，但full24 exact Adam `j0`虽达到`17/20`，仍因
-20/20硬门恢复step0而未获得closed-loop裁决。
-
-owner最新明确：20/20是理想诊断，不应成为可能永远不可达的absolute gate；不能简单另设17/20之类人为阈值，
-应保存冻结recipe唯一产生的exact Adam候选并让strict paired400裁决。一次cycle训练量很小；若cycle1有真实正信号，
-必须exact-resume更多cycle并逐checkpoint评测稳定性，而不是把单点好分当结论，也不能先闷头训练到终点掩盖task
-drift。当前USDC只落实这一acceptance变量，不做task gradient normalization或架构重写；精确authority=
-`docs/action_forecast_writer_v6_lpcp_cfmg_unit_secant_direct_commitment_design.md`。
-
-后续迭代遵循以下边界：
-
-- 若结果失败，先按`input evidence -> per-video Program -> set -> M2P -> LoRA mapper -> effective BA -> action ->
-  closed loop`定位最早失效接口；
-- 已经被机制证据支持、且本轮没有被检验否定的上游不能因一个aggregate低分被整体推翻；
-- owner的局部建议只修改对应局部，不能触发无证据的整套180度重写；
-- 若证据最终否定当前memory位置、rank或LoRA形式，可以改方法，但必须保留“语言与正确视频共同提供高层任务
-  知识、一次生成policy-effective adaptation、单checkpoint多任务共存”的核心问题；
-- 后续task-local RL仍是初始Writer达成强zero-interaction起点之后的独立实验，不得提前混入当前分数。
+长期设想仍成立：生成LoRA应成为后续快速RL的良好起点，RL直接优化这套adaptation；但先把zero-interaction Writer
+做强、做稳、证明视频因果性，再单独评价后续交互收益。
+
+若纯监督长期无法提供policy-aligned credit，可以使用强化学习训练Writer。不能因为最初选择了监督就把RL排除，
+也不能因为一次reward实验失败就否定reward credit一般。
+
+## 8. 性能与科学有效性
+
+长期目标继续追求strict paired correct严格超过`150/400`并越高越好。owner进一步明确：稳定的约145也可以是好
+结果，前提是：
+
+- 不是高波动训练中的单个winner checkpoint；
+- 相邻single checkpoints保持接近性能、低churn和高success-set重合；
+- 高breadth，多tasks在同一checkpoint共同积累；
+- same-task不同teacher videos性能稳定；
+- correct明显优于wrong、shuffled、reversed和no-video；
+- 高分不是language-only shortcut、挑video、专家字典或checkpoint融合。
+
+absolute closed-loop性能优先，但视频因果性和训练稳定性是方法资格，不是可替代absolute的另一个排行榜。
+
+每个架构训练后必须充分分析per-task、per-suite、breadth、retained/gained/lost、churn、相邻checkpoint和最早失效
+接口。好结果应适当多训练确认稳定性；明显坏结果不靠无限训练或小参数sweep挽救。
+
+## 9. 如何使用过去的大量实验
+
+过去实验必须形成连续因果认知，而不是几十个互不相关版本：
+
+- v4证明视频与顺序能影响LoRA/action，但也暴露absolute-time/action-phase shortcut；
+- v5/v5.2证明Semantic Core与Procedure分离能增强视频内容辨识，但Procedure可在fusion/compiler衰减；
+- v6-fast达到143，说明特定architecture×recipe有效，同时后续checkpoint回落暴露能力不稳定；
+- v7/v8/v10、Loom/Core/Prior等证明更漂亮的内部结构不自动提高closed-loop；
+- rank/atom/lane/ownership实验否定把高rank、均匀能量或容量本身当目标；
+- checkpoint union与大量相邻评测证明task drift首先是共同积累问题；
+- K4/Dynamic-K证明多视频能降低same-task nuisance，却可能稳定错误task mean；
+- task experts证明task-local LoRA有效，但不提供视频特异性、顺序或held shared support；
+- reward/commitment路线逐步关闭carrier、gradient、native写出等局部断点，仍未解决held policy-useful shared direction；
+- GOMQ证明memory有真实正贡献，但当前tail连续更新不保留支持。
+
+任何负结果只淘汰实际测试的组合。rank14失败不否定所有rank reservation，Expert-Manifold失败不否定所有task-level
+manifold监督，K4失败不否定few-shot，GOMQ不稳定也不否定memory token。
+
+owner的局部建议是启发和约束，不应导致整套方案每次大改。新判断必须说明继承哪些已验证机制、针对哪个最早失败
+接口，以及什么证据能快速否决。
+
+## 10. 效率、GPU和协作
+
+- 训练/评测最多使用单节点6张A40，但不是必须6张；有多少合适卡就用多少。
+- 低util、只占少量显存的他人GPU可在峰值余量足够时共驻；owner已与ycliu沟通过可共驻。
+- 训练按K、帧数和历史cost平衡rank负载，不要求每rank进程数表面完全一致；第一个rank额外小控制进程应在不影响
+  实际推进时顺手简化。
+- 接受设备、batch和kernel导致的正常低位浮点差异；不为逐元素一致牺牲吞吐。
+- 不增加防御性hash、重复forward、逐tensor扫描和无必要校验。
+- 暂时不使用subagents。
+- owner提出疑问时应独立判断、给出证据和完整pipeline，不机械顺从，也不因一点反馈推翻全部设计。
+- goal应表达最终目标和原则，不把memory token、rank等细枝末节方法写成目标。

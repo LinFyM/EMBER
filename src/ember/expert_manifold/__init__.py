@@ -3,11 +3,11 @@
 from ember.expert_manifold.contract import (
     ExpertManifoldError,
     ExpertTask,
-    load_expert_manifold_config,
+    load_task_expert_config,
 )
 
 __all__ = [
     "ExpertManifoldError",
     "ExpertTask",
-    "load_expert_manifold_config",
+    "load_task_expert_config",
 ]

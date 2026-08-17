@@ -15,6 +15,7 @@ from ember.lora import (
     task_lora_state_dict,
     validate_lora_state,
 )
+from ember.expert_manifold.video_schedule import shuffled_frame_permutation
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.as_config import authority_path, load_writer_config
@@ -75,8 +76,29 @@ def _video_runtime(
     return store, {item.task_id: item.language for item in authorities}, tokenizer
 
 
+def _ordered_video_tensors(
+    video: RawTeacherVideo,
+    *,
+    condition: str,
+    order_seed: int,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    frames = torch.from_numpy(video.frames).to(device, non_blocking=True)
+    indices = torch.from_numpy(video.frame_indices).to(device, non_blocking=True)
+    if condition == "reversed":
+        frames = frames.flip(0)
+    elif condition in {"shuffled", "shuffled_keep_first"}:
+        permutation = shuffled_frame_permutation(
+            frames.shape[0],
+            order_seed,
+            keep_first=condition == "shuffled_keep_first",
+        ).to(device)
+        frames = frames.index_select(0, permutation)
+    return frames, indices
+
+
 class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
-    """Generate one complete rank-8 LoRA from a correct teaching-video set."""
+    """Generate one complete deployment LoRA from a paired video condition."""
 
     def __init__(
         self,
@@ -140,6 +162,11 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
         )
         self._last_generation_batch_profile: tuple[dict[str, Any], ...] = ()
 
+    def _video_condition(self) -> str:
+        return str(
+            getattr(self, "evaluation_adapter", {}).get("video_condition", "correct")
+        )
+
     def _episode_input(
         self, *, suite: str, task_id: int, init_state_id: int
     ) -> tuple[
@@ -156,6 +183,9 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             init_state_id=init_state_id,
             lora_reference=reference,
         )
+        if self._video_condition() == "no_video":
+            language = self.language_by_id[int(row["language_global_task_id"])]
+            return row, (), language, ()
         global_task_id = int(row["video_global_task_id"])
         available = tuple(
             self.store.load(global_task_id, int(demo_index))
@@ -170,6 +200,25 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
             videos,
             self.language_by_id[int(row["language_global_task_id"])],
             tuple(int(video.frames.shape[0]) for video in available),
+        )
+
+    def _identity_results(
+        self,
+        rows: Sequence[Mapping[str, Any]],
+        elapsed: float,
+    ) -> tuple[PreparedWriterLoRA, ...]:
+        return tuple(
+            PreparedWriterLoRA(
+                state={
+                    name: value.detach().to(device=self.device)
+                    for name, value in self.identity_state.items()
+                },
+                evidence={
+                    **dict(row),
+                    "writer_generation_seconds": elapsed / len(rows),
+                },
+            )
+            for row in rows
         )
 
     def generation_request_profiles(
@@ -191,13 +240,18 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
                 init_state_id=init_state_id,
                 lora_reference=reference,
             )
-            counts = tuple(
-                self.store.frame_counts(
-                    int(evidence["video_global_task_id"]), int(demo_index)
+            if self._video_condition() == "no_video":
+                counts: tuple[tuple[int, int], ...] = ()
+            else:
+                counts = tuple(
+                    self.store.frame_counts(
+                        int(evidence["video_global_task_id"]), int(demo_index)
+                    )
+                    for demo_index in evidence["teacher_demo_indices"]
                 )
-                for demo_index in evidence["teacher_demo_indices"]
+            per_video_budget = (
+                self.total_frame_budget // len(counts) if counts else 0
             )
-            per_video_budget = self.total_frame_budget // len(counts)
             rows.append(
                 {
                     "suite": suite,
@@ -219,6 +273,30 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
         if not self._last_generation_batch_profile:
             raise WriterModelError("dynamic-K generation profile is unavailable")
         return self._last_generation_batch_profile
+
+    def _conditioned_video_tensors(
+        self,
+        rows: Sequence[Mapping[str, Any]],
+        video_sets: Sequence[Sequence[RawTeacherVideo]],
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        if any(len(videos) != self.evaluation_k for videos in video_sets):
+            raise WriterModelError("video-conditioned dynamic-K episode lost frames")
+        flattened = tuple(video for videos in video_sets for video in videos)
+        order_seeds = tuple(
+            int(seed)
+            for row, videos in zip(rows, video_sets, strict=True)
+            for seed in row.get("teacher_video_order_seeds", (0,) * len(videos))
+        )
+        ordered = tuple(
+            _ordered_video_tensors(
+                video,
+                condition=self._video_condition(),
+                order_seed=seed,
+                device=self.device,
+            )
+            for video, seed in zip(flattened, order_seeds, strict=True)
+        )
+        return [value[0] for value in ordered], [value[1] for value in ordered]
 
     @torch.inference_mode()
     def prepare_episodes(
@@ -256,16 +334,13 @@ class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):
         if not self._physical_lora_is_identity:
             copy_task_lora_state_(self.policy, self.identity_state, self.lora_contract)
             self._physical_lora_is_identity = True
+        condition = self._video_condition()
+        if condition == "no_video":
+            if any(videos for videos in video_sets):
+                raise WriterModelError("no-video counterfactual read frames")
+            return self._identity_results(rows, time.monotonic() - started)
         tokens, masks, spans = self.tokenizer(list(languages))
-        flattened_videos = tuple(video for videos in video_sets for video in videos)
-        frames = [
-            torch.from_numpy(video.frames).to(self.device, non_blocking=True)
-            for video in flattened_videos
-        ]
-        indices = [
-            torch.from_numpy(video.frame_indices).to(self.device, non_blocking=True)
-            for video in flattened_videos
-        ]
+        frames, indices = self._conditioned_video_tensors(rows, video_sets)
         offsets = [0]
         for value in frames:
             offsets.append(offsets[-1] + int(value.shape[0]))

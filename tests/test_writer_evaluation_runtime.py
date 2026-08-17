@@ -3,17 +3,21 @@ from __future__ import annotations
 from itertools import count
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 import torch
 
 import ember.writer.evaluation_runtime as cache_runtime_module
 import ember.writer.generation_profile as runtime_module
+import ember.writer.live_adapter as live_adapter_module
+from ember.writer.data import RawTeacherVideo
 from ember.writer.evaluation_cache import (
     WriterCacheGenerationBatch,
     WriterCacheRequest,
 )
 from ember.writer.evaluation_runtime import run_writer_generation_phase
 from ember.writer.generation_profile import profile_writer_generation
+from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
 
 
 def test_profile_keeps_stable_candidates_when_larger_batch_ooms(
@@ -235,3 +239,55 @@ def test_canonical_generation_keeps_full_batch_on_partial_resume(
     assert result["batches"][0]["batch_ordinal"] == 7
     assert result["batches"][0]["batch_size"] == 8
     assert len(result["batches"][0]["entry_ids"]) == 8
+
+
+def test_dynamic_k_control_reorders_frames_but_preserves_time_indices() -> None:
+    frames = np.arange(4 * 3 * 2 * 2, dtype=np.uint8).reshape(4, 3, 2, 2)
+    indices = np.asarray((0, 5, 10, 15), dtype=np.int64)
+    video = RawTeacherVideo(
+        frames=frames.copy(),
+        frame_indices=indices.copy(),
+        raw_frame_count=16,
+    )
+    reversed_frames, reversed_indices = live_adapter_module._ordered_video_tensors(
+        video,
+        condition="reversed",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    shuffled_frames, shuffled_indices = live_adapter_module._ordered_video_tensors(
+        video,
+        condition="shuffled",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    assert torch.equal(reversed_frames, torch.from_numpy(frames).flip(0))
+    assert torch.equal(reversed_indices, torch.from_numpy(indices))
+    assert not torch.equal(shuffled_frames, torch.from_numpy(frames))
+    assert torch.equal(shuffled_indices, torch.from_numpy(indices))
+
+
+def test_dynamic_k_no_video_returns_identity_without_writer_forward() -> None:
+    adapter = FrozenDynamicKTaskAdapter.__new__(FrozenDynamicKTaskAdapter)
+    adapter.evaluation_k = 4
+    adapter.evaluation_adapter = {"video_condition": "no_video"}
+    adapter._physical_lora_is_identity = True
+    adapter.device = torch.device("cpu")
+    adapter.policy = object()
+    adapter.identity_state = {"generated": torch.ones(1)}
+    adapter.lora_contract = object()
+    adapter._episode_input = lambda **_identity: (
+        {"lora_reference": "identity"},
+        (),
+        "task",
+        (),
+    )
+    adapter.writer = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        AssertionError("no-video must not run the Writer")
+    )
+    prepared = adapter.prepare_episodes(
+        ({"suite": "libero_spatial", "task_id": 1, "init_state_id": 0},)
+    )
+    assert len(prepared) == 1
+    assert torch.equal(prepared[0].state["generated"], torch.ones(1))
+    assert adapter.last_generation_batch_profile()[0]["sampled_frames"] == 0

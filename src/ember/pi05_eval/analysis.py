@@ -779,21 +779,5 @@ def analyze_historical_baseline_transition(
 def audit_six_arms(roots: Sequence[Path], output_path: Path) -> dict[str, Any]:
     validated = _validated_roots(roots)
     result = six_arm_paired_analysis(validated)
-    if result["method_family"] == "v6_reward_credit_program_v1":
-        from ember.pi05_eval.reward_credit_gate import (
-            reward_credit_six_arm_evidence_from_config,
-        )
-
-        correct = next(
-            value
-            for value in validated.values()
-            if value["adapter"]["video_condition"] == "correct"
-        )
-        config = correct["adapter"]["config"]
-        result["reward_credit_goal"] = reward_credit_six_arm_evidence_from_config(
-            result,
-            config_path=Path(str(config["path"])),
-            expected_bytes=int(config["bytes"]),
-        )
     publish_json_exclusive(output_path.resolve(), result)
     return result

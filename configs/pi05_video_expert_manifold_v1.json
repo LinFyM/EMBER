@@ -1,5 +1,6 @@
 {
   "schema_version": "ember_pi05_video_expert_manifold_v1",
+  "status": "sealed_task_expert_reference",
   "authorities": {
     "target_data_manifest": {
       "path": "configs/pi05_target_data_v1/manifest.json"
@@ -14,38 +15,9 @@
       "path": "configs/pi05_source_base_v1.json"
     }
   },
-  "method": {
-    "name": "video_conditioned_expert_manifold_topological_writer",
-    "writer_input": "exact task language plus exactly one action-hidden teacher video",
-    "dynamic_value": "full_video_innovation_routes_phases_but_only_phase_centered_sqrt_normalized_causal_prefix_dynamics_supply_lora_values",
-    "language_only_lora_path": false,
-    "deployment_output": "one complete rank16 public LoRA",
-    "future_credit": [
-      "expert_weight_reconstruction",
-      "functional_action",
-      "official_binary_reward"
-    ]
-  },
   "information_wall": {
     "expert_action_split_roles": [
       "train"
-    ],
-    "writer_video_split_roles": [
-      "train",
-      "validation",
-      "test"
-    ],
-    "writer_forbidden_inputs": [
-      "action",
-      "proprio",
-      "state",
-      "reward",
-      "terminal",
-      "task_id",
-      "filename",
-      "object_pose",
-      "hidden_normalization",
-      "policy_outcome"
     ],
     "validation_experts_trained": 0,
     "test_experts_trained": 0,
@@ -80,7 +52,7 @@
         ],
         "eps": 1e-08,
         "weight_decay": 0.0001,
-        "gradient_clip_norm": 1.0
+        "gradient_clip_norm": 1
       },
       "scheduler": {
         "kind": "cosine_decay_with_warmup",
@@ -163,226 +135,6 @@
         "exact_resume_adapter_bytes_equal": true,
         "oom_count": 0,
         "nonfinite_count": 0
-      }
-    }
-  },
-  "video_features": {
-    "shots": 1,
-    "frame_stride": 5,
-    "phase_slots": 16,
-    "image_hidden_width": 2048,
-    "expert_hidden_width": 1024,
-    "feature_width": 3072,
-    "source_policy_trainable": false,
-    "cache_contains_actions_or_state": false,
-    "extraction": {
-      "max_frames_per_encoder_call": 16,
-      "videos_per_batch": 4,
-      "initialization_seed": 20260807,
-      "action_horizon": 50,
-      "padded_action_dim": 32,
-      "storage_dtype": "bfloat16",
-      "demo_indices": [
-        0,
-        49
-      ]
-    },
-    "profile_defaults": {
-      "task_count": 1,
-      "demo_count": 4
-    },
-    "formal_run": {
-      "status": "sealed",
-      "allowed_worker_count": 6,
-      "tasks_per_worker": 4,
-      "demo_count": 50,
-      "profile_evidence": {
-        "commit": "1362d15",
-        "host": "gpu02",
-        "physical_gpu": 4,
-        "device": "NVIDIA A40",
-        "profile_root": "runs/outputs/pi05_expert_manifold_feature_profile_task00_1362d15_20260808",
-        "task_ordinal": 0,
-        "demo_count": 4,
-        "videos_per_batch": 4,
-        "feature_shape": [
-          4,
-          16,
-          3072
-        ],
-        "task_wall_seconds": 4.372062814072706,
-        "raw_frame_count_min": 84,
-        "raw_frame_count_max": 98,
-        "sampled_frame_count_min": 18,
-        "sampled_frame_count_max": 21,
-        "peak_allocated_bytes": 10468548096,
-        "peak_reserved_bytes": 19232980992,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
-        "oom_count": 0,
-        "nonfinite_count": 0
-      }
-    }
-  },
-  "topological_writer": {
-    "chunk_width": 512,
-    "chunk_count": 168,
-    "public_rank": 16,
-    "valid_values": 1287168,
-    "padded_values": 1376256,
-    "memory_width": 512,
-    "attention_heads": 8,
-    "axial_blocks": 4,
-    "video_value_path": "phase_centered_projected_video_sqrt_normalized_causal_prefix_integral_only",
-    "routing_key_path": "full_projected_video_innovation_plus_phase_keys",
-    "topology_address_binding": "normalized_dynamic_times_normalized_chunk_plus_rank_address",
-    "output": "zero_initialized_address_bound_chunk_values_plus_per_chunk_scale",
-    "identity": "template-A plus zero-B"
-  },
-  "meta_training": {
-    "task_count": 24,
-    "videos_per_task_per_macro": 1,
-    "task_aggregation": "each_task_mean_then_train24_equal_mean",
-    "target": "one_global_step_task_expert_bank",
-    "objective": {
-      "raw_reconstruction_weight": 1.0,
-      "chunk_rank_direction_cosine_weight": 0.1,
-      "chunk_log_scale_weight": 0.1,
-      "effective_ba_monitor_only": true
-    },
-    "optimization": {
-      "precision": "bfloat16",
-      "optimizer": {
-        "name": "AdamW",
-        "peak_lr": 0.0001,
-        "betas": [
-          0.9,
-          0.999
-        ],
-        "eps": 1e-08,
-        "weight_decay": 0.0001,
-        "gradient_clip_norm": 1.0
-      },
-      "scheduler": {
-        "kind": "cosine_decay_with_warmup",
-        "warmup_macros": 25,
-        "decay_lr": 1e-07
-      },
-      "seed": 20260808,
-      "distributed_gradient_reduction": {
-        "kind": "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean",
-        "nccl_algo": "Ring",
-        "nccl_proto": "Simple"
-      }
-    },
-    "profile_defaults": {
-      "total_macros": 3,
-      "scheduler_total_macros": 800,
-      "physical_microbatch_per_rank": 1,
-      "checkpoint_macros": [
-        1,
-        3
-      ]
-    },
-    "formal_run": {
-      "status": "sealed",
-      "selected_expert_step": 2000,
-      "total_macros": 800,
-      "physical_microbatch_per_rank": 1,
-      "expected_world_size": 6,
-      "tasks_per_rank": 4,
-      "checkpoint_macros": [
-        50,
-        100,
-        200,
-        400,
-        600,
-        800
-      ],
-      "profile_evidence": {
-        "commit": "a3666ba4626c7ea1d1e3c78c404e1bca7321ee47",
-        "host": "gpu01",
-        "device": "NVIDIA A40",
-        "physical_gpus": [
-          0,
-          1,
-          2,
-          4,
-          5,
-          7
-        ],
-        "world_size": 6,
-        "profile_root": "runs/outputs/pi05_expert_manifold_writer_addressbind_profile_r6_step2000_cd95281_20260809",
-        "contiguous_reference_root": "runs/outputs/pi05_expert_manifold_writer_addressbind_profile_contiguous_r6_step2000_cd95281_20260809",
-        "fresh_stop_macro": 1,
-        "resume_stop_macro": 3,
-        "distributed_model_wrapper": "none",
-        "gradient_reduction": "single_flat_parameter_ordered_allreduce_mean_after_local_task_mean",
-        "nccl_p2p_disable": "1",
-        "nccl_algo": "Ring",
-        "nccl_proto": "Simple",
-        "topology_address_binding": "normalized_dynamic_times_normalized_chunk_plus_rank_address",
-        "exact_resume_scientific_metrics_equal": true,
-        "macro1_all_checkpoint_bytes_equal": true,
-        "exact_resume_writer_bytes_equal": true,
-        "exact_resume_rng_bytes_equal": true,
-        "trainer_raw_bytes_equal": false,
-        "exact_resume_optimizer_scheduler_semantic_equal": true,
-        "address_norm_exp_avg_max": 8.213173146032204e-07,
-        "address_norm_exp_avg_sq_max": 3.7368840525220035e-14,
-        "address_norm_weight_delta_macro1_to_3_max": 1.621246337890625e-05,
-        "peak_allocated_bytes": 761802752,
-        "peak_reserved_bytes": 897581056,
-        "oom_count": 0,
-        "nonfinite_count": 0
-      },
-      "online_smoke_evidence": {
-        "commit": "eb32f3f791eb1a6b5cca5277c377d2cdf0327ded",
-        "host": "gpu02",
-        "physical_gpu": 0,
-        "device": "NVIDIA A40",
-        "root": "runs/outputs/pi05_expert_manifold_writer_addressbind_macro0003_online_smoke_gpu02_cd95281_20260809",
-        "checkpoint_mode": "profile",
-        "checkpoint_macro": 3,
-        "validation_task_count": 8,
-        "state_count": 1,
-        "scientific_rows": 8,
-        "video_condition": "correct",
-        "video_sampling": "without_replacement",
-        "topology_address_binding": "normalized_dynamic_times_normalized_chunk_plus_rank_address",
-        "generator_worker_count": 1,
-        "rollout_worker_count": 3,
-        "generated_entries": 8,
-        "generated_batches": 2,
-        "generation_batch_size": 4,
-        "generation_wall_seconds": 9.73121269105468,
-        "cache_entries": 8,
-        "cache_precision": "bfloat16_compute_float32_lora_state",
-        "cache_tensor_bytes": 41189376,
-        "writer_modules_released": true,
-        "source_policy_reused_for_rollout": true,
-        "source_policy_reloaded": false,
-        "peak_allocated_bytes": 10576056320,
-        "peak_reserved_bytes": 11182014464,
-        "post_release_allocated_bytes": 9391467520,
-        "post_release_reserved_bytes": 9651093504,
-        "worker_return_codes": [
-          0,
-          0,
-          0
-        ],
-        "retry_count": 0,
-        "failure_count": 0,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
-        "oom_count": 0,
-        "nonfinite_count": 0,
-        "execution_successes": 1,
-        "success_interpretation": "execution_smoke_only_not_performance_evidence"
       }
     }
   },

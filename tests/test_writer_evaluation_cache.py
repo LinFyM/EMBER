@@ -34,13 +34,6 @@ from ember.writer.evaluation_cache import (
     writer_cache_manifest_is_ready,
     writer_cache_requests,
 )
-from ember.expert_manifold.inference import (
-    EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-    EXPERT_MANIFOLD_EPISODE_SCHEMA,
-    EXPERT_MANIFOLD_WRITER_KIND,
-    expected_expert_manifold_episode_evidence,
-)
-from ember.expert_manifold.v6_prior_contract import V6_PRIOR_CONFIG_SCHEMA
 from ember.writer.errors import WriterModelError
 from ember.writer.evaluation import (
     DYNAMIC_K_ADAPTER_SCHEMA,
@@ -97,17 +90,21 @@ def _contract(
     ]
     contract = {
         "adapter": {
-            "schema_version": EXPERT_MANIFOLD_ADAPTER_SCHEMA,
-            "kind": EXPERT_MANIFOLD_WRITER_KIND,
-            "config": {"schema": V6_PRIOR_CONFIG_SCHEMA},
-            "arm": "expert_manifold_v6_condition_residual_correct",
+            "schema_version": DYNAMIC_K_ADAPTER_SCHEMA,
+            "kind": DYNAMIC_K_WRITER_KIND,
+            "config": {
+                "schema": (
+                    "ember_pi05_v6_layerwise_probe_conditioned_procedure_"
+                    "as_writer_v1"
+                )
+            },
+            "arm": "v6_layerwise_probe_conditioned_procedure_correct",
             "video_condition": "correct",
             "writer_asset": {
-                "reference": "v6-prior:historical-macro400",
-                "kind": "historical_v6_macro400_load_only",
-                "method_macro": 0,
-                "writer_parameter_count": 10_775_296,
-                "program_residual_value_count": 20_971_520,
+                "reference": "dynamic-k:m25:rank16",
+                "kind": "v6_layerwise_probe_conditioned_procedure_macro_checkpoint",
+                "method_macro": 25,
+                "writer_parameter_count": 123,
                 "generated_lora_tensor_count": 2,
             },
             "lora_contract": {"reference": "test:2tensors:14parameters"},
@@ -116,10 +113,12 @@ def _contract(
                 "demo_count": 50,
                 "videos_per_condition": 1,
                 "sampling_mode": "without_replacement",
+                "backbone_total_frames_per_condition": 64,
             },
-            "task_video_mapping_reference": "identity_v1",
+            "information_wall": {"evaluation_k": 1},
+            "task_video_mapping_reference": "identity_k1_v1",
             "task_video_mapping": mapping,
-            "pairing_reference": "ember_pi05_expert_manifold_one_shot_pairing_v1",
+            "pairing_reference": "ember_pi05_dynamic_k_one_shot_pairing_v1",
         },
         "model": {"optimizer_step": 1000},
         "tokenizer": {"path": "/tokenizer.model"},
@@ -161,7 +160,7 @@ def _state(value: float) -> dict[str, torch.Tensor]:
 
 def _populate(contract: dict, lora: SmolVLALoRAContract) -> None:
     for request in writer_cache_requests(contract):
-        evidence = expected_expert_manifold_episode_evidence(
+        evidence = expected_writer_episode(
             contract["adapter"],
             suite=request.suite,
             task_id=request.task_id,
@@ -350,34 +349,6 @@ def test_cache_staging_rejects_nonfinite_batch_without_per_tensor_cuda_sync() ->
         stage_writer_lora_states_to_cpu((state,))
 
 
-def test_expert_manifold_cache_declares_one_shot_episode_evidence(
-    tmp_path: Path,
-) -> None:
-    contract = _contract(tmp_path / "cache")
-    lora = _lora_contract()
-    descriptor = build_writer_lora_cache_descriptor(
-        contract,
-        root=tmp_path / "manifold-cache",
-        generators_per_gpu=1,
-        generation_batch_size=2,
-        lora_parameter_count=lora.parameter_count,
-        lora_tensor_count=lora.state_tensor_count,
-        lora_storage_per_entry=_lora_storage(),
-    )
-    assert descriptor["generation_recipe"]["episode_evidence_schema"] == (
-        EXPERT_MANIFOLD_EPISODE_SCHEMA
-    )
-    assert descriptor["generation_recipe"]["cache_key_algorithm"] == (
-        "one_entry_per_episode_one_shot_video_v1"
-    )
-    assert descriptor["generation_recipe"]["precision"] == (
-        "bfloat16_compute_template_native_mixed_lora_state"
-    )
-    assert descriptor["estimated_tensor_bytes"] == (
-        descriptor["entry_count"] * _lora_storage()["tensor_bytes"]
-    )
-
-
 def test_dynamic_k_cache_dispatches_k1_episode_evidence(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "legacy")
     adapter = contract["adapter"]
@@ -497,7 +468,7 @@ def test_writer_cache_rejects_precision_widening(tmp_path: Path) -> None:
     contract = _contract(tmp_path / "cache")
     lora = _lora_contract()
     request = writer_cache_requests(contract)[0]
-    evidence = expected_expert_manifold_episode_evidence(
+    evidence = expected_writer_episode(
         contract["adapter"],
         suite=request.suite,
         task_id=request.task_id,
@@ -549,7 +520,7 @@ def test_partial_cache_entry_cannot_cross_video_conditions(tmp_path: Path) -> No
     correct = _contract(root, state_count=1)
     lora = _lora_contract()
     request = writer_cache_requests(correct)[0]
-    evidence = expected_expert_manifold_episode_evidence(
+    evidence = expected_writer_episode(
         correct["adapter"],
         suite=request.suite,
         task_id=request.task_id,

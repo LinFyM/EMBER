@@ -1,7 +1,7 @@
 # Video-Conditioned Expert-Manifold: Historical Evidence
 
 状态：2026-08-11归档摘要。本路线及其Reward后继均已完成裁决；本文不再是活动design，不包含可执行的下一步。
-当前状态见`docs/active_session_handoff.md`，完整方法谱系见`docs/research_history.md`。原2923行设计与逐步证据可由
+完整方法谱系见`docs/research_history.md`，当前工作状态见根目录`progress.md`。原2923行设计与逐步证据可由
 `git show 3a6f801:docs/action_forecast_writer_video_expert_manifold_design.md`读取。
 
 ## 1. Original hypothesis

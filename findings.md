@@ -1,970 +1,209 @@
 # EMBER Findings
 
-更新时间：2026-08-17。本文只保留跨架构仍成立、会约束下一轮判断的结论。逐方法严格结果和禁止重复项见
-`docs/research_history.md`；当前run只取`docs/active_session_handoff.md`。
+本文只记录跨实验仍成立的持久认知。精确分数与逐架构否决边界见`docs/research_history.md`，当前进度见
+`progress.md`。
 
-## 1. 当前经验边界
+## 1. EMBER真正要学什么
 
-长期继续追求同一shared Writer、同一single checkpoint的strict paired correct`>150/400`；owner也接受约145
-的稳定有效方法，但必须同时通过相邻checkpoint低换手、same-task-video鲁棒和correct视频因果性。目前尚未达到。
+teacher video应提供跨初始化成立的高层任务知识，而不是原demo低层轨迹：
 
-SEOD把“训练量是否太少”完整裁决到第四个相邻节点。strict/breadth=
-`129/6 -> 135/6 -> 143/5 -> 136/5`，相邻churn=`36/38/41`；cycle3→4为`119 retained / 17 gained /
-24 lost`。因此一个晚期上升的143不足以证明共同积累，继续完全相同训练会回落并扩大换手。以后任何接近145的
-checkpoint仍应继续相邻训练，但一旦score、breadth、retention和churn共同反转，就不能再用“训练量少”无限续训。
+- 任务涉及哪些对象、属性和关系；
+- 最终目标状态是什么；
+- 完成任务需要哪些动作阶段；
+- 阶段之间的有向因果顺序；
+- 哪些速度、路径、视角、抓取角度和扰动只是demo nuisance。
 
-SEOD同时把video-local与task-global接口明确分开。cycle3→4 all400 BA relative-L2=`.002809`，first4同task
-不同K4更新cosine/energy=`.994106/.992830`，训练same-task gradient cosine也为`.945774`；correct views不再
-互相抵消。可是cycle4 cross-task gradient cosine mean/min只有`.053370/-.457658`，gained/lost改写幅度不可分。
-最早科学缺口因此是task-level credit怎样保留held support并在shared checkpoint共存，而不是video set、训练量、
-native BF16写出或LoRA更新幅度。
+语言和视频的合理分工是Query与Value：语言规定关注点与目标，视频展示正确动态过程。language-only和video-only都
+不是完整问题。
 
-正式CFMG/SEOD训练还有一个需严格限定的工程事实：reward runtime把`encode_conditioning_state`放在
-`torch.no_grad()`中缓存，四view backward只重编译下游grid。因而37个输入`memory_tokens`四轮的task/shared
-gradient和Adam moments严格为0，checkpoint间只有weight decay；实际被训练的是payload gate以及其余
-temporal/set/M2P参数。这意味着当前结果支持“固定随机memory queries能读取视频并形成高度一致的task-local
-LoRA”，不支持“learned SHINE式memory token无效”。打开该链是尚未检验的候选单变量，但它必须先解释为什么
-会改善跨task共存，不能因为发现漏训参数就机械重跑。
+训练时video与action episode同task跨episode错开，可以阻断轨迹复制；但同task恒定target也会让模型仅学task
+identity。架构必须正面提供same-task跨video过程可识别性。
 
-当前选择GOMQ而不是继续改loss/solver或同时改rank：learned input query是唯一位于18层policy topology之前、
-同时跨task共享又能被各自图文context条件化的未训练参数，因此有明确机会学习共同读取基；credit、rank与输出
-同时变化则无法归因。反证同样明确：cycle2若memory-only gradients仍冲突、完整re-forward无新增响应或held
-transport崩溃，就在formal前关闭该方向。
-
-GOMQ的two-cycle smoke把该未知变成了可检验证据。cycle2的memory-only task cosine mean/min=
-`.155845/-.280301`，downstream mean/min=`.412169/.296898`；不是每对task都同向，但shared读取基不再整体相消。
-validation8的learned-memory contribution 8/8 task cosine为正，aggregate cosine/energy=`.126548/.343180`，幅度为
-train anchors的`1.11159x`，说明不是只记住四个anchor；同时full LoRA保留倒序relative-L2=`1.95298`和static
-ratio=`.002048`。该证据只授权full24真实性能检验，不证明learned memory已经解决task drift。
-
-CMBG full24把literal memory的有效与无效部分分开：5/6 active tasks的same-task four-view gradients约`.99`
-一致，说明真实prefix/Action-context memory能形成跨video共同坐标；但task38梯度范数是次大的`54.45x`，全11
-scales最多只让`17/24` deployed margins下降，最终exact no-op。代码进一步定位到CMBG的zero payload gate位于
-temporal、K-set和layer/token M2P之前：step0时这些模块看到全零，只能通过零点固定Jacobian回传，实际没有先
-运行其内容依赖的有序video/set/parameter选择。CFMG只把同一gate移到完整grid之后；step0、rank、参数量、
-reward与信息墙不变。fixed world3显示三task same-video coherence全部通过、cross-task gradient cosine从CMBG
-`+.09842`保持为全正`.021--.141`，raw/final=`3/3`且native=`12/12`；validation8进一步得到8/8、BA
-cosine/energy=`.982412/.985173`、held/train=`.960548x`。因此content-first确实把CMBG的“多数task coherent但
-首步程序未执行”推进为held可共用的video-conditioned parameter coordinates。它尚未证明full24 shared update
-能抵抗task38式幅度支配，更未证明closed-loop增益；这个变量不是task-gradient normalization、PCGrad或scale sweep。
-
-CFMG原始held artifact的`constant_zero`仍为false：task18 effective-BA constant/natural=`.005144`，比`.005`
-阈值多`.000144`，其余两task为`.00258/.00370`。精确相同layer memory的动态branch结构上严格输出0；实际测试把
-重复图像按32-frame microbatch运行，故该残差属于既有政策接受的batch/kernel BF16低位差异，而不是static Value
-route。原始布尔值不可改写，numerical adjudication只授权full24，不可当作closed-loop或六臂因果证据。
-
-CFMG full24给出了比held门更强的否定证据。相对完全matched CMBG，六个相同active tasks的梯度范数分别只被
-`1.780/1.795/1.822/1.883/1.790/1.920x`近似统一放大；cross-task cosine mean/min仅从
-`.00681/-.21022`变成`.00923/-.20641`，task34 same-task four-view仍为`-.0923/.3370`，task38相对次大梯度
-从`54.45x`恶化到`58.73x`。11 candidates最好下降view数也从`17/24`降至`14/24`并exact no-op。
-所以content-first random features“存在且held一致”不等于它们提供task-selective、reward-useful coordinates；
-本轮主要产生共同幅度缩放，而没有重排task cotangents。由于step0 gate严格为0，首cycle仍只有gate有梯度；gate
-未被共同接受时，temporal/K-set/M2P永远得不到第二步学习。下一接口不是继续移动gate，而是让Program在保持
-public step0 identity的同时，能在shared public commitment被接受前获得有任务结构的学习信号，并显式避免单task
-幅度控制公共更新；这不自动等价于gradient normalization或PCGrad。
-
-USEP的新增因果判断：CFMG六个active tasks各有相同8个selected pairs/16个replay rows，task38的matched
-winner/loser action RMS却为`.007816`，其它tasks仅`.001330--.001743`；现有`Dwinner-Dloser`对生成动作的梯度
-正比于该action secant。所以下一单变量在每个真实matched state内除以winner/loser RMS，使cotangent沿unit
-secant进入Writer。它不同于按task最终gradient norm重权，也不同于视频feature secant归一化；选择RMS而非MSE
-避免让小动作差异获得反比放大。该推导只授权task4/34/38机制门，不能替代full24或closed-loop。
-
-USEP canonical实现保持CFMG model/forward/2,828,928参数逐项不变，只在唯一loss owner中让gradient与commitment
-evaluation复用同一个unit-secant helper；fresh config/checkpoint/eval identity拒绝CFMG resume。公式与全链CPU=
-`143/413 passed`，compileall/diff check通过、architecture guard 0 hard。该证据只说明计算图和authority一致，
-不能说明task38 dominance已经下降。
-
-clean`6033330` fixed world3随后证明unit secant真实解决了幅度接口：task38/次大gradient从`58.73x`降到
-`6.1538x`，三task pairwise cosine mean/min=`.16247/.08040`且raw shared=`3/3`；actual Adam j0使12/12
-normalized deployed margins下降并写出非零q/v/action response。USEP仍依预注册task34 raw门终局，因为其
-four-view cosine/energy=`-.05217/.33803`、coverage仅2/4。
-
-后续stage localization避免了错误架构转向。task34 action-hidden画面基本采用相同子任务顺序；四组K4的endpoint、
-temporal、K-set、layer/token M2P和pre-gate content grid pairwise cosine均`.984--.986`，energy约`.987--.988`，
-carrier factors/BA及content residual BA也约`.99`一致。故raw Writer gradient冲突不是视频Program或LoRA Value
-已经分裂，而是共同BA通过condition-local policy/action Jacobian后的cotangent差异。内部raw 4/4不是finite
-deployed 12/12的必要条件，也不能越权替代closed-loop。USFC据此保持全部模型和训练不变，只fresh检验实际finite
-full24 commitment与strict400；USEP历史门和终局不被改写。
-
-USFC full24进一步表明finite all-view硬门也不能无条件替代closed-loop。exact Adam `j0`在五个active tasks上达到
-`17/20`，四个tasks全部4/4；唯一task19平均harm仅`2.249e-5`。缩小半径没有单调改善，11 scales均未20/20，
-最终saved delta0。这只能证明当前单一scalar ray不能满足全部局部endpoint不等式，不能证明唯一自然optimizer
-candidate在held rollout有害。把门改成17/20同样缺乏依据。USDC因此不选阈值或scale，只提交exact `j0`并以
-strict400裁决；20/20继续完整记录为诊断。由于每cycle只有少量discordant tasks给gradient，任何好分还必须由
-cycle2/3相邻checkpoint的低churn与共同积累确认。
-
-USDC现在给出了该缺口的真实closed-loop裁决。cycle1 strict=`138/400`、breadth6、per-task=
-`1/4/48/34/0/38/13/0`；相对exact LPCP143为`120 retained / 18 gained / 23 lost`、churn41、net`-5`、
-Jaccard`.745342`，四个cycle2门全失败。Long suite净`-4`，其余suite为`0/-1/0`。所以“一轮训练量小”只说明
-好结果还需续训验证，不足以为一个correct、breadth、retention同时恶化的方向辩护；USDC不得cycle2/3。
-
-但USDC也保留了literal memory路线的实质进展。rank32 public LoRA相对rank16 LPCP的all400 effective-BA
-relative-L2 mean/median=`.003236/.002806`、action mean=`.006333`，不是native量化消失；8个held tasks的first4
-同task correction cosine/energy为`.555--.953/.663--.965`，远离此前reward correction近零/.25的正交状态。
-gained/lost改写幅度均值却为`.002941/.002739`，最大改写的Goal3仍为0。训练侧task38 gradient norm=
-`.926067`、次大仅`.147608`，并以`.977239` cosine控制shared mean；unit-secant虽然把旧`58.73x`降到
-`6.274x`，仍没有消除单task幅度支配。最早失败接口因此是**video-coherent parameter grid之后的跨task
-reward tangent幅度与held usefulness**，不是memory、K-set、M2P、rank32写出或训练量本身。下一反事实应只在
-shared update前抑制异常大task tangent，不能回头重做carrier或用surrogate挑checkpoint。
-
-MCTC已把该反事实原位实现为parameter-free median upper cap：每task仍先等权平均四video gradients，只截断高于
-active-panel中位数的norm，小task保持原幅度且方向不旋转；一次distributed task-panel all-reduce同时服务optimizer
-和coexistence，未增加forward。定向/完整CPU=`47/416 passed`且architecture guard 0 hard。以上只关闭实现门，
-clean`1a0700f` world6 cycle1现证明机制也真实接通：五task raw norms=
-`.147608/.022184/.047038/.124794/1.133739`，median=`.124794`，task38缩至`.110073x`、task4缩至
-`.845440x`，其余scales为1；shared/final descent coverage由USDC的4/6变为5/5，j0 L2=`.236963`且q/v/action
-全非零。cycle1 strict随后为`142/400`、breadth7、per-task=`1/3/47/34/0/36/20/1`；相对LPCP143=
-`125 retained / 17 gained / 18 lost`、churn35、net`-1`，相对USDC138净`+4`。因此cap恢复了breadth和大部分
-absolute，但没有在一次更新内减少到低churn，也不能称为稳定145。
-
-cycle1每个full24只有一次shared Adam step，实际只有payload gate 1/25参数组获得梯度。owner在cycle1结果落盘前
-明确好结果应继续训练后再判断，故142/breadth7这个近baseline信号被透明授权锁原topology exact-resume cycle2；
-这不是事后宣布原lost≤15门通过。cycle2完整得到12 active tasks，12个task norms中6个被cap到median`.391010`；
-temporal、video-set、layer/token M2P等24/25参数组首次获得非零gradient，shared/final task descent=
-`11/12,10/12`，12/12部署响应非零。cycle2 strict仍为`142/400`却breadth降到6；cycle1→2严格=
-`124 retained / 18 gained / 18 lost`、churn36、Jaccard`.775`。所以相同aggregate已经掩盖了显著能力换手。
-
-为避免把“cycle2只是content第一次更新”误判为终局，本轮在结果后没有无限续训，而是预先限定一个最终cycle3。
-cycle3同样完整24 tasks/48 states/96 rollouts，10 active tasks、24/25参数组有gradient；raw task norms中5个截到
-median`.281640`，shared/final task descent=`10/10,10/10`，33/40 views下降。训练内four-view gradient
-cosine/energy=`.949481/.911623`，10/10部署响应非零。训练图、memory内容与跨视频共同credit均持续工作。
-
-但cycle3 strict降到`136/400`、breadth7、per-task=`2/3/48/32/0/34/16/1`。三轮score/breadth=
-`142/7 -> 142/6 -> 136/7`；cycle2→3=`122 retained / 14 gained / 20 lost`、churn34、net`-6`、
-Jaccard`.782051`。Object3与Long1各净丢4，只有Spatial suite净增。相对LPCP143为`122/14/21`，故增加训练没有
-形成共同积累，反而使absolute和retention继续下降。
-
-FP64 cycle2→3 all400 effective-BA relative-L2 mean/median=`.001199/.001157`，400/400均跨过native写出；
-first4同task不同K4 correction cosine/energy=`.988724/.990306`。gained/lost/retained-failure改写均值却为
-`.001074/.000931/.001251`，持续失败样本最大。这把最早缺口明确推进到：**跨视频共同Program已经形成、native
-LoRA已经写出，但shared reward update不能选择held on-policy有用方向，也不能在连续多task更新中保留support**。
-MCTC只否定当前median-cap natural-Adam组合；不否定memory token、few-shot、rank8/32或生成LoRA。
-
-MCTC后的successor选择先排除了一个诱人的错误方向。对exact current LPCP/MCTC rank32输出取first16 carrier A，
-在8个train-seen tasks、每task四个K4 conditions上投影匹配step2000 expert effective BA，global weighted reachable
-energy/cosine仅`.381712/.617828`，per-task energy约`.307--.481`且跨video几乎不变。当前B-only branch若直接做
-expert factor/BA reconstruction，会把约62%不可达能量混入objective；此前expert reconstruction/manifold也已证明
-几何逼近不保证held support。因此下一轮不重建expert LoRA。
-
-SEOD改为只使用expert**自身成功closed-loop occupancy**：train24每task/cycle两条expert rollouts，只保留成功轨迹，
-同observation/noise/B8重查expert与Writer动作，每轨迹8个progress strata选最大disagreement，再将同一expert target
-经四个disjoint correct K4 views回传CFMG Writer。它不同于旧Expert-Flow Audit的离线B20 target-action flow loss，
-也不同于expert bank held routing。该设计直接检验“成功策略真实访问的状态上，稠密behavior target能否替代稀疏
-binary discordance，形成held-useful且多task可保留的shared direction”。
-
-SEOD clean`08c5edc`四suite world4 smoke关闭了pre-formal机制门：8/8 expert trajectories成功，四task的same-task
-four-view gradient cosine mean=`.987182/.775646/.953631/.971174`，shared/final task descent=`4/4`且16/16
-post-update view distances下降；q/v/action BA与fixed-action response均非零。cycle=`87.094s`，只有8条rollouts却
-产生64个selected occupancy states和64条unique correct videos，说明稠密成功行为target同时改善了credit内容与
-吞吐。该证据不能替代full24 strict，也未证明correct优于negative或多checkpoint稳定；最早未决接口是full24
-共享更新能否把这种train-local一致方向变成held closed-loop增益并保留多task support。
-
-SEOD首次frozen formal的`worker count incomplete`不是world6不兼容或bank损坏。只读反事实证明canonical project
-root始终6/6 workers，而detached worktree下为0/6；旧loader恰好按config所在worktree解析相对artifact路径，主工作树
-smoke因此未暴露。以source-run所在project root作为retained bank owner后，同一frozen config恢复6/6且`416 passed`。
-失败发生在run contract发布和任何rollout之前，只淘汰旧artifact定位实现，不提供SEOD科学正负证据。
-
-最新CV-CSD给出完整负结果。它保持PCSD完全相同的48 pairs、9次唯一成功分歧与`5/4` candidate/reference gains，
-把同一成功trajectory分别放到4个disjoint same-task correct K4 conditions下计算完整functional gradient。36个
-view gradients全都finite/nonzero，full24 wall只为PCSD的`1.0307x`；所以“跨video成功credit无法工程化或没有
-信号”已被排除。
-
-cycle1 strict只有`134/400`、breadth7；相对LPCP143=`122 retained / 12 gained / 21 lost`、churn33、四suite
-全降；相对PCSD135也有39条episode换手。全400 CV-CSD/LPCP effective-BA relative-L2 mean=`.000683702`，
-gained/lost均约`.000679`。FP64 first4进一步显示同task四个correct K4增量pairwise cosine=`.000205`、
-mean/sample energy=`.250155`；相对PCSD也为`-.001908/.248578`。
-
-这把最早缺口推进到：**正确的cross-video成功objective已经存在，但全局shared query commitment经每个视频条件的
-Jacobian仍写成近正交局部BA方向，无法在实际policy layer/rank/target topology上形成共同且可保留的承诺。**
-CV-CSD只否定query-only四view exact mean这一组合，不否定multi-video、memory、reward、rank16或完整LoRA生成。
-下一轮可以使用layer-aligned memory，但它必须直接解决commitment，而不是替换已通过的视频carrier或单纯加容量。
-
-SFMC随后把commitment前移到八factor-family hidden owners并恢复correct到144，但稳定FP64证明部署改写只有
-`2.899e-7` relative-L2，semantic query/basis-key delta约`1.7e-9`，q/v/action非零样本=`249/16/1`。其全零
-family maps虽然保证step0 identity，却使semantic route在首个backward严格无梯度。Gradient-Open终局实验只修复
-这一参数化：family maps改作zero-init delta，semantic query zero-init，并用冻结V6-W1构造不训练的balanced
-address anchors，使step0两项分别严格为零，但maps与query首步同时获得梯度。它不改变LPCP carrier、K4 credit、
-rank16、LR或dtype；完整合同与终局见
-`docs/action_forecast_writer_v6_lpcp_gradient_open_semantic_commitment_design.md`。
-
-Gradient-Open确实跨过了SFMC的梯度与native factor写出断点：cycle1 q/v/action非零样本增至
-`400/399/368`，effective-BA relative-L2 mean=`9.6632e-6`、约为SFMC的`33.3x`。但strict只有
-`141/400`；相对LPCP143为`128 retained / 13 gained / 15 lost`、churn28，并把Spatial/Object/Goal能力换成
-Long1净增。更关键的是，同task四个disjoint correct K4条件的增量cosine仍只有`.0001442`、平均后能量仍约
-`.250124`。因此本轮修复是真实但非充分的：最早缺口已后移到**共享semantic address与cross-video reward
-credit如何先形成跨video可复现的causal task Program，再写成共同policy-effective方向**。旧checkpoint均不可
-resume。CCT随后把video memory从高维Value direction改为language/policy-aligned per-slot causal coefficients，
-但formal只得`142/400`、breadth6；相对LPCP=`125/17/18`、churn35。它在train-seen task4形成
-`.575776/.681821`的共同增量，held first4却回到约`0/.25`。live loader排除漏载后，train→held hidden只缩小
-约1.7倍而effective BA缩小249.92倍，把最早缺口进一步定位到held residual穿过native factor/compiler的
-policy-effective commitment。CCT已终局；active NPVC据此只替换factor Value来源，先在formal前检验native
-probe Value能否把同一train/held断裂关闭。
-
-| 方法 | correct | same | wrong | shuffled | reversed | 主要结论 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| v5.2 old | 132 | 138 | 74 | 82 | 83 | 视频内容特异性强，但absolute不足 |
-| v5.2 task-complete | 120 | 109 | 107 | 111 | 124 | recipe削弱Procedure传递 |
-| v6 old | 121 | 122 | 111 | 84 | 47 | 顺序影响能进闭环，但absolute与稳定性不足 |
-| v6-fast task-complete | 143 | 135 | 125 | 128 | 129 | 历史最佳single checkpoint，仍未过150且视频margin弱 |
-| V6-LPCP PCSD cycle1 | 135 | — | — | — | — | reward/action链路通，但跨video credit近正交且相对LPCP净丢8 |
-| V6-LPCP CV-CSD cycle1 | 134 | — | — | — | — | 四correct K4 exact credit仍落成近正交BA，证明失效在query-only commitment |
-| V6-LPCP SFMC cycle1 | 144 | — | — | — | — | 单点恢复但lost15/churn31；写出近identity且video-local ULP crossing |
-| V6-LPCP Gradient-Open cycle1 | 141 | — | — | — | — | 打开全family真实写出，但跨video方向仍近正交并发生suite换手 |
-| V6-LPCP CCT cycle1 | 142 | — | — | — | — | train-seen两系数共同方向成立，held compiler commitment消失；breadth6、lost18、churn35 |
-| Dynamic-K backbone-memory rank8 | 100 | — | — | — | — | 动态K与真实backbone memory可训练部署，但task方向高度集中 |
-| Dynamic-K semantic-address rank8 | 101 | — | — | — | — | absolute Core只作Query不足以修正policy方向 |
-| Dynamic-K Direct-Family-B rank8 | 102 | — | — | — | — | BA共线略降但breadth5，mapper简化未解决共同积累 |
-| Direct-Family-B K4 deployment | 98 | — | — | — | — | set把same-task方差降约6.3x，却稳定同一错误task mean |
-| Task-Grounded Visual-Value rank8 | 88/86/86/96 | — | — | — | — | 视觉Value分化BA，但四点都远低于门且持续换手 |
-
-Direct-Family-B只检验一个窄接口：保留semantic-address全部上游，删除family hidden/GELU，让shared projector
-直接生成四类B。macro50 K1 strict=`102/400`、breadth5、per-task=`0/1/40/11/0/43/7/0`。相对semantic101为
-`82 retained/20 gained/19 lost`，aggregate几乎不变却继续换手。task-mean effective-BA cosine
-`.77947→.74895`证明几何略改善，但真实性能没有改善；因此“common-direction主要由该hidden造成且删除即可提高
-policy effectiveness”被否决，不能继续靠mapper小修或内部几何选择方法。
-
-Task-Grounded Visual-Value在其预注册macro50节点得到`88/400`、breadth5、per-task=
-`4/0/34/2/0/41/7/0`。相对Direct-Family-B 102为`74 retained/14 gained/28 lost`，不是共同积累。它没有让LoRA
-变成identity或增加same-task噪声：task/video BA SNR `16.34→19.05`，task-mean offdiag cosine`.749→.707`；但
-BA相对前代平均cosine`.831`、relative-L2`.584`，说明视觉路径把LoRA显著旋向了对held rollout无用的方向。
-functional loss轨迹几乎不变进一步复现offline surrogate/on-policy outcome错位。macro50仍只是完整0→200曲线的
-首点，不能提前外推终局。
-
-按target kind拆开后，q/v norm仅为Direct-B的`.947/.952x`，但action-in/out effective norm从`.446`增至
-`1.545`、即`3.49x`。这不是简单能量爆炸：old134的action norm为`1.573`，新架构实际上恢复到`.98x old`；但
-相对old134的action effective-BA cosine只有`.031`，方向仍近正交。Object3的净损失最大而总体BA变化幅度反而
-最小之一，也排除“旋转越大越差”的标量解释。因此后续不得用全局scale、action scale或SFT能量匹配救该方法；
-需要解决视觉credit如何选择policy/occupancy有效方向。
-
-macro100进一步得到`86/400`、breadth6、per-task=`1/3/34/0/0/35/12/1`。相对macro50为
-`62 retained/24 gained/26 lost`、churn50，两点union=`112`而single best仅88。BA 50→100平均cosine`.809`、
-relative-L2`.696`；action norm ratio近1但方向cosine仅`.739`。尤其Object1总数同为34却7 gain/7 lost，证明
-“总分稳定”不是能力稳定；当前functional credit继续在task和episode decision boundary之间换手。
-
-完整终点macro150/200=`86/96`，macro200 per-task=`1/0/37/2/0/42/13/1`，top3占`92/96`。150→200虽为
-`71 retained/25 gained/15 lost`、净增10，仍有churn40且没有解锁持续失败的Spatial3/Goal3；相对old134为
-`68/28/66`，相对compiler138为`73/23/65`。因此四点`88/86/86/96`终局否决当前fixed-A组合；不能用晚期净增、
-union或继续训练为它辩护。
-
-## 2. 真正的学习问题
-
-EMBER不是从视频复刻动作轨迹。Writer要结合exact language和action-hidden正确示范，提取在新初始化下仍成立的：
-
-- 对象、关系和目标状态；
-- 必要动作阶段及其有向顺序；
-- 哪些信息是任务本质，哪些只是某条demo的速度、路径、视角、抓取角度或扰动。
-
-Writer在rollout前运行一次，生成一套完整task adaptation；frozen policy随后不再观看视频。语言说明“要做什么”，
-视频说明“正确过程是什么”，两者缺一不可。language可作query/context/address，但不能形成独立LoRA旁路；video
-必须提供写出的dynamic value。
-
-监督训练让video与action query同task、跨episode，能阻断逐帧动作复制并要求LoRA跨初始化有效。但这也造成
-不可识别性：同task不同videos面对近似相同的task-level target，普通functional loss仍可能只学习task identity。
-因此正确视频是否真正必要，必须由结构约束与闭环反事实共同证明。
-
-## 3. 当前完整架构判断来自三条证据
-
-当前Dynamic-K memory架构不是凭空替换历史，也不是机械复制外部Hypernetwork：
-
-1. owner的现实启发要求语言与正确视频共同形成高层任务程序，允许一条或多条视频；
-2. SHINE/Doc2LoRA类工作提供“少量memory进入原生context、保留layer-aligned状态、结构化生成LoRA”的成熟原则；
-3. EMBER历史要求保留v5/v6的Semantic Core和有向Procedure、K4的逐视频保序/跨视频集合边界，以及完整
-   policy-effective LoRA，同时避开language-only bypass、简单平均和无依据wide heads。
-
-当前数据流是：
+## 2. 四个接口必须分开诊断
 
 ```text
-exact language + K=1..4 ordered action-hidden videos
--> 每帧真实image/language/Action-probe context + 8 memory tokens
--> per-video adjacent transition D + terminal goal residual G
--> absolute memory mean只作temporal Query semantic address
--> causal temporal encoder（video内保序）
--> permutation-invariant set attention（video间聚合）
--> 20 policy groups x 8 rank coordinates M2P
--> shared projector + policy-shape-family readout
--> one complete 38-target rank-8 LoRA
+language/video evidence
+    -> high-level task Program
+    -> native policy-effective LoRA
+    -> policy action
+    -> stable multi-task closed-loop success
 ```
 
-8个backbone memory tokens与20×8 Program不是同一概念。前者在真实图文prefix下经过Action Expert层并读取输入；
-后者是后处理的policy-group/rank-aligned状态。外部论文只影响设计原则，没有带来额外target-task数据。
+历史反复说明，前一个箭头接通不代表后一个箭头成立：
 
-## 4. 视频被使用不等于被正确理解
+1. 视频可改变hidden/LoRA/action，但可能使用错误phase shortcut；
+2. same-task视频可形成共同表示，但compiler可能把它缩成identity或错误子空间；
+3. native BA/action可以material，reward方向仍可能伤害held occupancy；
+4. 一个checkpoint可以偶然高分，多一步更新又发生task换手。
 
-历史v4已经证明shuffled/reversed会改变hidden、LoRA和action，但`shuffled=148`反而高于`correct=109`。这说明
-模型可以读取视频，却利用absolute frame phase、平移轨迹等错误捷径。
+分析必须定位最早失效接口，不能用“视频没学到”“LoRA不健康”或“task drift”一词覆盖全部原因。
 
-需要区分四个命题：
+## 3. 视频被使用不等于被正确理解
 
-1. 视频改变representation；
-2. 视频改变effective LoRA；
-3. 视频改变policy action；
-4. correct的内容与顺序沿有用policy direction提高闭环成功率。
+v4、K4 Trace、Grounded-Video、LPCP和GOMQ都证明视频能进入Program、LoRA或action。与此同时，历史多次出现
+shuffled/reversed/wrong更好、correct无margin或同task更新稳定但held性能下降。
 
-只有第4项支持教学视频学习。shuffled/reversed必须对真实输入帧重排后完整forward，并与correct严格配对
-task、state、policy RNG和video ordinal。不能只把negative人为推坏制造漂亮margin；absolute性能仍是第一目标。
+因此以下证据都不充分：
 
-## 5. Dynamic-K与few-shot的准确边界
+- correct与negative的latent距离大；
+- reversal显著改变LoRA；
+- video route attention不为零；
+- same-task不同video correction cosine很高；
+- negative LoRA被人为推坏。
 
-多条同task视频有合理价值：跨demo共同部分更可能是高层程序，单条demo特有部分更可能是nuisance。有效架构应
-逐video保序、跨video置换不变聚合，不平均frames/features/final LoRAs，也不挑最好video。
+最终证据必须是严格配对closed-loop中，correct沿有用policy direction稳定优于wrong、shuffled、reversed和
+no-video，同时same-task-other不明显下降。
 
-历史K4改善了部分permutation、same-video和leave-one-out内部稳定性，但best strict只有108，且未解决full24
-credit retention、正确顺序或checkpoint drift。这只否定旧K4组合，不否定few-shot本身。
+## 4. Few-shot的价值与边界
 
-当前Writer训练时每macro让K1/K2/K3/K4各覆盖6个tasks，避免只见两个端点却宣称动态cardinality。同一checkpoint
-K1/K4 strict为`102/98`；nested K1→K4=`80/18/22` retained/gained/lost，breadth均5。K4把same-task
-effective-BA centered variance/sample从`.021674`降为`.003438`，task mean却保持cosine`.99604`且没有解锁
-新task。这是比“few-shot没涨分”更具体的结论：set确实提取了跨video共性，但当前共性主要是错误task mean。
-所以不能继续调K、挑video或平均LoRA；也不能由此否定few-shot。下一断点必须前移到per-video高层evidence及
-task-level functional credit如何识别正确过程。
+多视频的第一性原理价值是过滤单demo nuisance，并提供共同高层程序的可识别性。K4、Dynamic-K Direct-Family-B、
+V6 Slot-Set和GOMQ已经多次显著降低same-task表示或BA方差。
 
-## 6. Task drift是核心症状，不是单一病因
+但聚合只会稳定输入给它的东西。历史上K4也会把错误task mean稳定下来，甚至让closed-loop下降。因此：
 
-SFB八个checkpoint success union=`193`，single best只有127。能力在训练轨迹中出现过，却没有稳定共存于一个
-Writer checkpoint。已观察到的来源包括：
+- 每条video必须先独立保序；
+- set聚合必须发生在有语义的Program层，而不是frames/raw features/final LoRA平均；
+- 同时检查within-task alignment与between-task separability；
+- dynamic K若被声称支持，训练必须覆盖每个cardinality；
+- 不以增加K、挑video或平均LoRA救性能。
 
-- 不同task、query和flow的functional gradients冲突或近正交；
-- 同task不同video correction在effective LoRA空间近正交；
-- shared condition map或compiler把异质更新压成common direction；
-- offline action rows不覆盖held on-policy occupancy；
-- compression、factorization和online regeneration跨越闭环decision boundary；
-- optimizer轮流获得能力，而非形成共享可累积表示。
+few-shot仍是开放方向，历史K4失败没有否定它。
 
-因此不能用“训练更久”、checkpoint union、挑task checkpoint或多checkpoint融合解释成功。每轮都要报告
-per-task/per-suite、breadth、retained/gained/lost、相邻checkpoint churn与最早失效接口。
+## 5. 正确顺序是结构约束，不只是negative loss
 
-## 7. LoRA几何只用于定位
+correct展示从初态到目标态的物理可行过程；reversed颠倒因果，shuffled破坏阶段连续性。合理表示应在每条video
+内部保留有向过程，在video集合维保持置换不变。
 
-task-local SFT experts证明完整LoRA可以policy-effective，也提供正常能量、rank participation和target结构参考。
-但历史同时否定了两种机械规则：近identity、完全共线通常是异常；强制均匀谱、高rank、正交、更多atom/lane/
-expert或SFT量级norm也反复降低closed-loop。
+v5/v6证明Semantic Core与Procedure分离有价值：Core描述任务语义与目标，Procedure描述阶段演化。失败通常发生在
+Procedure经过fusion/compiler后衰减，或模型只读取absolute phase。后续设计应保留“语义query + 有序动态Value”
+这一分工，但不必机械复刻某个旧前端。
 
-优先分析effective `BA`、fixed-action response和closed-loop，不把raw A/B gauge符号当结论。当前fresh rank8不是从
-旧rank16压缩，因此历史uniform rank14的support损伤不能直接否定它；反过来，低rank更易生成也不能自动证明更好。
+## 6. V6不是神秘高山，但其有效机制要继承
 
-## 8. Functional objective与真实reward长期错位
+v6-fast达到143来自architecture×recipe的联合效果，不是单一模块：task-grounded Core、visual-transition
+Procedure、task-complete训练和高增益native compiler共同成立。后续很多架构改善内部指标却丢失其中某个接口。
 
-source-action SmoothL1、reconstruction、expert cosine、gradient consistency、MC variance、tube radius和offline
-row retention都曾改善而closed-loop下降。离线B20只覆盖局部功能切片，rollout会改变状态分布并跨越离散成功
-阈值；所以证据层级固定为：
+LPCP又表明：在不破坏V6主图的情况下，用同一次真实context forward中的layerwise Action probes读取有序视频，
+可以保持143并扩到breadth7。它验证了carrier，但其更新仍太接近AS139且高churn。
 
-1. shape/freeze/resume/finite：工程合同；
-2. representation→Program→LoRA→action：机制证据；
-3. strict paired400：方法裁决；
-4. same/wrong/shuffled/reversed/no-video：因果解释。
+所以未来既不应“回到v6什么都不改”，也不应因追求新颖性抛弃V6已经证明有效的native topology、factor ownership
+和强baseline。每次修改要明确继承了什么、替换了哪个最早失效接口。
 
-若监督Writer持续错位，可以在独立设计中用train24 reward微调Writer；但当前目标先让初次生成LoRA超过150。
-“在生成LoRA上做task-local RL”是更后的独立实验，不能混入zero-interaction分数。
+## 7. Memory token有真实价值，但不是目标
 
-## 9. Task experts的作用边界
+SHINE/Doc2LoRA式memory的核心价值是内容处理和目标参数层之间的结构对应，而不是token数量本身。对EMBER，
+layer-matched memory可能把language/video Program放入policy topology，再由共享compiler生成LoRA。
 
-24个task experts到step2000的direct-expert train成绩为`658/1200`，23/24 tasks非零，证明task-local target LoRA
-是有效policy方向。它们不携带same-task视频差异、correct/shuffled/reversed时序、held task泛化或shared Writer
-共同积累。soft/hard bank在held仅`15/80`与`3/80`，说明准确重建或正确routing也不能替代held support。
+历史Dynamic-K memory路线证明它可训练、可部署、支持动态K；CMBG/CFMG证明literal one-way layer memory可形成强
+held跨video坐标；GOMQ更直接证明learned memory query曾带来显著closed-loop增益。
 
-experts可作train24 privileged teacher或几何参照，不能在held部署成为task ID route、nearest bank或第二套LoRA。
+但GOMQ随后连续回落，说明“memory读得好”不等于“shared LoRA tail写得稳”。被否决的是当前memory + independent
+rank32 direct-B tail + reward update组合，不是memory token一般。
 
-## 10. Fixed random A is a reachable-subspace bottleneck, not a rank-8 capacity result
+memory也不得为了形式而强塞入Action Expert。若调用原生backbone，必须保留有意义的图像、语言和原生prefix语义；
+不能运行zero-image或无context action query后把输出称为policy grounding。
 
-已完成的Direct-Family-B及Visual-Value都只生成B，A固定为step0随机template。对`W=B@A`做低秩QR能量投影后，
-old134 validation的32套强LoRA中，逐样本最优rank8平均可保留`.99999946` effective-BA能量，当前固定随机A
-行空间只保留`.0195042`。24个step2000 task experts中对应为`.998094/.184501`。所以“rank8不够”与“任意
-task都只能写入同一随机输入行空间”是两个不同假设；证据支持后者是严重限制，不能用增加rank或追stable rank救。
+## 8. LoRA输出维度不是已证明的首因
 
-同样重要的是，一套在train24 experts上逐target最优的共享rank8 A虽然保留`.940630`训练能量，应用到old134 held
-LoRA只保留`.068108`。因此静态SFT/expert A basis并不是合理解法；若当前完整曲线失败，窄候选应由task/video
-conditioned Program动态生成A，同时保留现有rank8、direct readout及全部视频结构。该分析只证明可达空间限制，
-不证明动态A闭环有效；历史v6-fast完整动态A/B只提供可行性先例，不能替代新的单变量fresh实验。
+Writer生成上百万LoRA参数确实是困难的结构问题，但现有证据不支持“参数太多所以失败”的单因解释：
 
-old134同一task的四条独立视频还提供了关键区分：用其中三条联合拟合rank8 A行空间、对第四条leave-one-video-out，
-overall effective-BA能量保留`.9997255`，q/v/action=`.9997540/.9996504/.9992049`，逐task最低仍`.9991674`。
-所以强方法所需的A是跨same-task视频高度稳定的task-level functional input subspace；它既不是当前随机固定A，也不应
-成为不受约束的video-specific A。现有Dynamic-K的shared Program与singleton Program一致性正好可把这个归纳偏置传给
-同一Program上的dynamic-A readout，不需要另造expert bank、task ID route或额外一致性损失。
+- task-local rank16 experts有效；
+- v6/LPCP的native rank16 compiler达到143；
+- rank8 fixed-A失败主要是可达右子空间窄，不是rank8理论容量不足；
+- dynamic full A/B和rank32 zero bank也没有自动提高闭环；
+- uniform rank14 compression本身会损伤support。
 
-当前Full-Factor successor严格只开放这一接口：同一`20×8`Program经同一shared projector同时进入四个direct
-A residual heads与四个direct B heads；全部zero-init，故step0仍为`A=A_template,B=0`。它不是增加rank、expert
-basis或第二套LoRA，也不改变视频表示与训练objective。若它不能把absolute明显拉回至少125附近，就应停止当前
-前端的mapper修补，回到v6-fast骨架做受控桥接。
+合理方向是结构化生成：Program先进入与policy layer/target/rank坐标对齐的中间表示，再由共享compiler生成native
+LoRA。rank8、rank16或其它rank应由性能和可达性证据选择，不是先验目标。owner当前接受继续使用rank16。
 
-该裁决已经发生：Full-Factor macro50 K1 strict=`91/400`，相对matched fixed-A 88仅净增3。raw A虽与fixed-A
-cosine`.735`且norm`1.376x`，B却只有`.062x`，effective BA只有`.245x`且cosine`.0585`。因此“打开dynamic A”
-没有把已读到的视频证据写入强policy方向，而是让同一个B20 surrogate找到更弱的factor gauge。当前Program/mapper
-小修到此终止；这不否定rank8理论容量或memory/few-shot原则，只否定该完整组合。
+## 9. LoRA健康度只作定位
 
-当前最小桥接以v6-fast为baseline，只在每条video已经形成原生320个policy slots之后增加跨video集合层。K=1
-严格恒等，K>1用mean backbone加task-conditioned centered residual，最后只运行一次原生factor heads。这样既
-保留v6的143性能几何，又把昨晚“逐video保序、video间置换不变、不平均最终LoRA”的要求隔离成唯一变量。
+健康度可用于发现：
 
-该bridge的真实GPU机制门已经接通：K1的76个LoRA tensors逐元素保持native v6，只有197120个集合参数可训练，
-base无梯度；K2/K4换位只产生BF16 batched-forward低位差异，而真实video倒序的Program mean abs变化为`.21703`。
-因此接下来的full24/closed-loop失败若发生，不能归因于K1底座被代码改坏或Procedure完全忽略顺序。
+- 写出过小、近identity；
+- 所有targets完全共线；
+- native BF16量化后continuous residual消失；
+- A/B参数化开放错误子空间；
+- regeneration或compression破坏已有support。
 
-该bridge随后在macro25 K4 strict得到`130/400`、breadth6，相对old134为`117/13/17` retained/gained/lost。更关键的
-nested-dose证据是：same-task centered BA variance约降`9.26x`，但task mean K1→K4 cosine仍`.999832`，全400
-relative BA改变量约`.047`。所以few-shot set不是无效；它成功过滤了一部分demo-specific nuisance，却因为位于
-完整compiler之后，只能稳定已有错误或不足的task mean，不能为held occupancy增加有用方向。下一轮不能放大这个
-residual或调K，而应让多video在compiler承诺最终policy方向之前形成shared semantic Core并比较有序Procedure。
+但SFT experts本身常低stable-rank、q-dominant、跨列coherent。强制均匀能量、正交、高rank、更多atoms/lanes/
+experts多次降低closed-loop。优先分析effective BA、fixed-action response和真实rollout，而非raw A/B gauge。
 
-Shared-Core Procedure-Set只前移这一边界：每条video仍独立形成v6 Core与有向Procedure；原生Core reader对
-无序Core union联合读出一个shared Core；每条Procedure在该shared Core下独立解释；同一197120参数set只聚合这些
-Procedure readouts，之后原生AdaLN/post-fusion/factor heads一次完成LoRA。它避免历史K4 phase alignment，也不把
-不同demo的Procedure拼成虚假物理序列。其CPU实现先证明K1严格保留v6和集合/顺序合同，随后完成下述GPU与
-closed-loop裁决。
+## 10. Task experts的作用边界
 
-Shared-Core Procedure-Set随后得到K4 strict=`139/400`、breadth6，per-task=`1/4/46/34/0/36/18/0`。它相对
-post-compiler K4 130净增9、相对K1 old134净增5，证明“在native compiler最终承诺前共享Core”不是无效讨论；
-但四个suite净变化只有`0/-2/+1/+6`，Long1贡献净7，Goal3/Long2仍为0，因此没有解决共同breadth。
+24个task experts到step2000取得`658/1200` direct success，23/24 tasks非零，证明task-local LoRA是有效task-level
+target，也提供正常policy geometry和成功occupancy。
 
-决定下一接口的关键不是aggregate，而是matched归零：在同一macro25 checkpoint和first4×8 K4输入上把
-Procedure-Set output置零，effective-BA只变化`.000918`，task mean只变化`.000574`；相对K1的`.039674/.016982`
-几乎完全由无参数Core union和Procedure mean产生。训练25 macros没有把B20 credit通过后端set变成有用修正。
-这淘汰继续训练/放大Procedure-Set，也说明下一步应把可学习集合比较前移到语言token对齐的Semantic Core：先让
-多视频共同语义本身可学习，再交给native Core reader；后端有向Procedure只作对称mean，避免同时改变两个接口。
+但同一task expert对所有videos恒定，因此不包含：
 
-## 11. 连续历史认知
+- same-task视频差异；
+- correct与shuffle/reverse的时序证据；
+- held task泛化；
+- shared Writer多task共存。
 
-1. v4暴露错误absolute-time/action-phase shortcut；
-2. v5/v5.2分离Semantic Core与Procedure，但正确时序可在fusion/compiler后衰减；
-3. v6-fast达到143，证明强absolute可达，也暴露架构×recipe耦合和晚期换手；
-4. v7/v8/v10、Loom/Core/Prior说明漂亮内部时序或fusion不保证policy-effective方向；
-5. Target-Spectral、Lane、Atom、Owned-Factor说明高rank、均匀能量和更多capacity不是目标；
-6. SFB union193直接证明single-checkpoint共同积累失败；
-7. variance reduction证明functional estimator不是首因；
-8. K4和video routing证明视频可被读取，但不自动解决正确时序与shared credit；
-9. task experts证明task-level LoRA有效，但expert reconstruction/routing不提供held support；
-10. Balanced residual、RLS、Reward-Credit依次定位跨video正交、offline/on-policy错位和native-factor精度边界；
-11. uniform rank14证明compression和regeneration可分别破坏old support；
-12. Dynamic-K 100与semantic-address 101把断点推进到Program→mapper→policy direction；
-13. Visual-Value四点`88/86/86/96`证明video Value能分化effective BA，但当前B20 credit不能辨认held on-policy
-    有用方向，且aggregate近稳时仍可发生显著checkpoint churn；该组合终局non-pass。
-14. fixed-A能量投影与same-task video LOO把最早可隔离接口推进到task/video-conditioned A row space；它只授权
-    Full-Factor单变量实验，不证明动态A一定有效。
-15. Full-Factor `91`表明dynamic A在当前rank8 Program+B20下反而诱导tiny-B/weak-BA重参数化；下一轮不能再修
-    mapper，而应在v6强底座上隔离检验跨video Program aggregation。
-16. V6 Dynamic Slot-Set K4=`130`且same-task方差降`9.26x`，说明post-compiler few-shot nuisance reduction有效，
-    但task mean几乎锁死；下一最早接口是compiler之前的shared Core/Procedure解释边界。
-17. Shared-Core Procedure-Set K4=`139`证明边界前移有9分matched收益，但trained set只贡献`.000918` BA变化；
-    下一最早接口是native Core reader之前的语言对齐Semantic Core共识，而非继续调后端set。
-18. Semantic-Core Set的真实world6 profile表明该边界移动没有引入吞吐或显存阻塞：steady`24.277s/macro`、
-    reserved`40.758GB`、最长K4 323帧无截断；zero-init output打开后q/k在macro1→2均发生非零更新。它只证明
-    functional credit可达该层，是否形成有用task mean仍必须由macro25 strict400裁决。
-19. Semantic-Core Set macro25 K4 strict=`135/400`、breadth7，per-task=`1/2/46/30/0/35/20/1`；相对matched
-    Shared-Core139为`120/15/19`净`-4`、churn34。归零trained output只改变`.001763` BA，而原始Core correction
-    只有`1.8275e-5`、attention entropy/log4=`.999885`。所以不是compiler衰减，而是centered Value在近均匀
-    attention下先相消；下一单变量应让共有Semantic Core成为trainable Value，同时保留K1恒等与有向Procedure。
-20. Common-Value world6真实profile在同预算同位置下把gradient norm从centered路径约`3.25e-6`打开到
-    `.00270--.00280`，macro1→2 q/k delta=`6.55e-6/6.48e-6`且最长K4 323帧吞吐不退化。这验证“centered
-    Value构造性相消”是可修复的最早机制断点；fresh macro25的gradient仍为`.00315`、output norm到`.26152`，
-    说明它没有在训练中重新关闭。strict却只有`133/400`、breadth6；相对135净`-2`、相对139净`-6`，Long
-    相对135净丢7。first4 Core correction/effective-BA改写=`.065856/.053648`，远大于上一轮，而attention
-    entropy仍`.999885`。因此它不是“没写进去”，而是offline B20把强common-mean修正写向held on-policy无效且
-    task间换手的方向；下一接口应是credit/occupancy对齐，不是继续放大Value、加容量或移动compiler。
-21. 同一Common-Value macro25在train-seen 8-task×10 states上的严格output-zero反事实为trained/zero=
-    `63/59`，zero→trained=`57 retained / 6 gained / 2 lost`、net`+4`，而held相对Semantic135为net`-2`。
-    这把“offline credit完全错误”修正为“task-local credit可形成，但静态Semantic common mean没有形成held可组合
-    程序”。下一窄假设应让trainable Value只来自有向Procedure，同时保留冻结shared Core锚点；若仍呈现seen增益/
-    held失败，才把最早接口进一步推进到on-policy/generalization credit。
-22. Shared-Core Ordered-Procedure Common-Value把有向Procedure correction/effective-BA打开到`.09601/.01397`，但
-    K4 strict仍为`139/400`、breadth6，相对matched139=`120 retained / 19 gained / 19 lost`。更关键的是同一
-    output-zero在train-seen也为trained/zero=`64/64`、`4 gained / 4 lost`。因此当前B20 credit不是“task-local
-    有效、只没泛化”，而是在train与held真实occupancy上都只有方向换手；下一接口必须改变credit来源，不能继续
-    调Value幅度、rank、attention、compiler或训练长度。
-23. Ordered-Procedure On-Policy Preference的真实task4 smoke首次把binary reward经executed-prefix CFM、native
-    compiler与Adam传到同一19.7万FP32 Writer参数：LoRA gradient/Writer gradient=`1.3138e-5/.0008012`，更新后
-    effective-BA/fixed-action response=`.00018146/.00557193`。这明确越过历史Reward-Credit的sub-ULP接口，但只
-    证明credit可部署，不证明full24共存或held closed-loop改善；cycle1 strict400仍是唯一方法裁决。
-24. 首个world5 reward formal的时序证据是等待rank先触发600秒watchdog，PG失败约一分钟后最慢rank才报告OOM；
-    所以首因是合法长task尾部超过默认collective timeout，不能反向归因。与此同时，可训练compiler graph跨完整
-    Nmc4 replay存活是历史已知且无需保留的额外风险。改为detached LoRA先求cotangent、再从缓存readout单次重解
-    compiler后，同一task4的objective、梯度、参数delta、BA/action response全部逐位不变且B8 exit0；正确修复是
-    reward专用30分钟timeout加graph生命周期收窄，不是降batch或改变estimator。
-25. graph-release reward cycle1已完整证明on-policy credit可改变部署与闭环，但没有形成共同积累：formal为24
-    tasks/96 rollouts/64 successes、14 mixed、Writer gradient=`9.0937e-5`，strict=`138/400`、breadth7；相对
-    同schedule AS139严格=`120 retained / 18 gained / 19 lost`、churn37。Spatial净`+4`而Long1净`-7`，说明
-    proposal含有真实acquisition方向，但task汇合后的shared update覆盖已有support。AS→reward effective-BA只移动
-    `.003323` relative-L2、cosine`.999995`且norm ratio`1.000762`，故不能用降LR/scale/rank解释或修复；下一
-    可证伪接口是在同一actual Writer parameter delta上加入成功occupancy的一阶support约束。
-26. ADSP task4 live smoke证明success-support可以与raw preference共享同一次policy forward：相对raw仍是80次
-    forward，只新增16次support backward，preference gradient与BA/action response逐位一致；cycle墙钟仅
-    `1.077x`、peak reserved降至`36.774GB`。该单task raw delta本来就满足自己的support，solver按合同严格identity
-    fallback；因此smoke只封存实现/效率，不提供“projection能改善多task”的科学证据，后者必须由full24裁决。
-27. 首次ADSP full24在任何metric/checkpoint前暴露了旧raw replay builder的真实兼容边界：它对all-success与
-    all-failure都只返回summary，因为旧reward会跳过所有homogeneous；新方法却需要all-success产生support-only
-    tangent。最窄修复是只让all-failure保持summary-only，all-success完整collate replay。该错误解释task4 mixed
-    smoke为何通过，也证明失败不是world6/GPU/NCCL或scientific non-pass；新增data-boundary回归后full CPU=`401 passed`。
-28. 修复后的ADSP full24证明actual-delta support projection在真实规模并非identity：22条成功task rows秩22，raw
-    AdamW delta违反6条；small dual激活6项后final violation=0，同时保留`.963787` preference descent与`.980958`
-    delta energy，raw/projected cosine=`.990433`，BA/action响应非零。它以`1033.501s`、raw的`1.5333x`完成，说明
-    该机制在数值、吞吐和部署链上都成立，后续闭环失败不能归因于“约束未生效”或“更新被机械归零”。
-29. ADSP strict仍为`138/400`、breadth7、per-task=`3/2/45/30/0/36/21/1`；相对AS139严格=
-    `116 retained / 22 gained / 23 lost`、churn45，三项终局门失败。相对raw138=`117/21/21`：Long1从15恢复
-    到21、Long净`+6`，但Spatial/Object净`-2/-4`。因此support projection只把能力换手重新分配到另一suite，
-    没有形成同一checkpoint共同积累；不能再靠同类constraint、margin、阈值或cycle2小修。
-30. first4 AS→ADSP effective-BA relative-L2均值`.002976`，比AS→raw的`.003323`更小；raw→ADSP仅`.001272`、
-    cosine`.99999919`，仍翻转42条episode。更接近AS的LoRA不但没有减少held churn，反而从raw的37升到45。
-    这直接否决“LoRA距离更小或train24成功prefix一阶loss不增即可代表held support”；下一轮应考虑改变
-    representation/compiler的架构级共存接口。memory token可服务layer-aligned LoRA生成，但它不是自动解法，
-    历史91--102分memory路线仍要求继承V6的absolute Core、有向Procedure与policy-effective compiler优势。
-31. 对V6真实执行图与SHINE/Doc-to-LoRA的逐层机制对齐后，下一未检验接口不是“有没有memory token”，而是
-    **真实context中的分层证据是否直接条件化对应policy layer/rank的Procedure readout**。V6现有320 slots只有
-    learned layer/rank routing identity；每帧Action Expert内容仍只取最终层50 probes的mean。首轮因此冻结AS139
-    全部强路径，从同一次forward旁读18层native probes，经shared rank-query与video内causal delta形成zero-init
-    Procedure-query conditioner。它在step0保留V6 LoRA geometry，也把literal memory变成可干净替换carrier的
-    后继反事实：只有native probes在correct/reverse/static之前就缺少material差异，才授权加memory；若差异在
-    compiler/action后才失效，memory不会自动修复shared credit。
-32. V6-LPCP canonical实现证明该假设无需第二次backbone forward或显式memory token即可接线：18层tap只旁读
-    现有joint forward，zero-init时完整退化AS139，base与trained K-set冻结，首步打开query projection、第二步
-    credit进入probe reader与causal controller。最初“每个layer/rank slot独立跑temporal Transformer”的实现草稿
-    会在K4最长条件形成1152条长序列，已在GPU前因效率不合格被否决；当前改为每video一次shared causal
-    controller，再轻量汇聚288个slot deltas。该工程/机制通过不提供closed-loop收益证据，仍须真实profile和
-    strict400裁决。
-33. V6-LPCP live profile进一步证明实现合同在真实full24 B20上成立：gpu02 world3两步macro wall=
-    `66.134/61.544s`，K1--K4各6，最长323帧完整，peak reserved=`41.385GB`，0 OOM/nonfinite；第二步reader与
-    controller已有非零参数变化。79帧真实载体需要的joint backbone forward=`4`，与native V6预期相同；倒序使
-    query-delta/Program relative-L2=`2.0572/.40414`，常量视频query-delta max-abs=`3.38e-8`。这否决了“native
-    probes没有任何有向载体证据”这一早期失败分支，因此formal前不换memory token；但它不提供closed-loop收益，
-    不能把继承的AS139底座或内部大relative-L2误报成新架构变强。
-34. clean detached `515f91e`的world6 fresh macro0->25完整exit0，macro mean=`26.462s`，functional
-    `.10115173->.09563028`，K1--K4每macro各6、最长359帧完整、0 OOM/nonfinite；macro25 query projection norm=
-    `.142632`，reader/controller相对macro1 delta=`.071824/.052637`。随后K4 generation B8/B16/B32=
-    `.221225/.221402/.221500 LoRA/s`，均stable并锁B32，峰值reserved仅`22.628GB`。因此新增接口既持续获得credit，
-    又没有明显牺牲部署吞吐；但两者仍都是机制证据，是否超过AS139/143及是否减少churn只认接下来的strict400。
-35. V6-LPCP macro25 K4 strict最终为`143/400`、breadth7、per-task=`1/4/48/35/0/38/16/1`、per-suite=
-    `5/83/38/17`。相对同schedule AS139严格=`120 retained / 23 gained / 19 lost / 238 both-fail`、churn42、
-    net`+4`、p=`.643969`；suite净变化=`+2/+5/+2/-5`，Long1以`7 gains/13 losses`净丢6，Goal3仍0，
-    Long2仅解锁1。它count-only追平不同schedule的历史v6-fast143且breadth`6->7`，但同时触发`<144`与lost>10门，
-    所以不是突破，不resume50、不补controls或小扫。
-36. 全400套AS139/LPCP cache的effective-BA relative-L2 mean/median仅`.002653/.001916`，cosine mean=
-    `.99999479`、norm ratio=`.99997391`；first4 LoRA norm、stable rank和q/v/action能量比例不变。first4同task
-    correction coherence mean/median=`.61786/.56804`，明显好于“同task corrections近正交”的历史失败形态；
-    但Goal3以第二大改写`.004224`和最高coherence`.88373`仍为0，Long1只改`.001324`却净丢6，gained/lost
-    改写幅度高度重叠。故LoRA健康与视频集合一致性都不是当前最早缺口。
-37. native probe carrier已由reverse/static/one-forward证据通过，conditioner也获得持续梯度；strict与BA联合证据把
-    失效接口推进到**conditioned Procedure经冻结fusion/compiler承诺为policy-effective方向，以及blind B20 credit
-    对held occupancy的选择**。Program顺序响应可达`.404` relative-L2，最终BA只移动约千分之几；train24
-    functional first5/last5也仅`.098880/.097109`，14 tasks改善而10 tasks变差。literal memory若只替换已经通过的
-    carrier、仍进入同一Query与同一credit，不会针对该缺口；后继应改变Procedure-to-LoRA commitment或
-    policy-aligned shared credit，同时保留V6 absolute与LPCP有序分层读取，不得把143中的继承能力误报成新学习。
-38. CV-CSD full24与PCSD使用完全相同的paired outcomes，却把每个active task的同一selected-success replay扩展到
-    4个disjoint correct K4 conditions；36/36 LoRA/query gradients非零，cycle wall仅`1.0307x`、三rank负载
-    max/min=`1.0828x`。因此134不能归因于额外view破坏rollout、rank分工失衡、某个view零梯度或吞吐妥协。
-39. CV-CSD strict=`134/400`、breadth7；相对LPCP=`122 retained / 12 gained / 21 lost`、churn33，四suite
-    `-2/-4/-2/-1`全部下降；相对PCSD=`115/19/20`、churn39。aggregate只差1仍有39条success-set翻转，进一步
-    证明单一总分接近不代表能力稳定，必须保留paired episode集合与逐suite分析。
-40. CV-CSD/LPCP全400 BA改写mean=`.000683702`且gained/lost不可分；FP64四correct-view增量cosine=`.000205`、
-    energy ratio=`.250155`，CV-CSD/PCSD也为`-.001908/.248578`。cross-video监督没有让部署修正形成共向程序，
-    所以最早接口已从credit coverage推进到query-only commitment。下一架构应把task/video Program直接提交到
-    layer/rank/target-owned写出槽；memory若使用，只是实现这一接口的手段，不能成为static bypass或旧低分路线复刻。
-41. 新SFMC authority把本轮memory精确定义为同一cached condition的`FrozenSet(P_LPCP)-FrozenSet(P_AS139)`：
-    它是K-set之后、layer/rank对齐、query-disabled/constant近零的Procedure innovation，不是literal backbone token、
-    raw feature平均或第二套LoRA。exact language只选择四个连续semantic bases；八factor families把innovation写到
-    冻结V6 `W2` output basis之前。这样step0 exact LPCP143，并同时继承SFB已证明的软语义分工、LPCP已证明的
-    有序carrier和CV-CSD已证明可高效运行的cross-video success credit；这是设计推导，性能仍待真实closed-loop。
-42. SFMC已原位实现到唯一Writer/reward/evaluator graph，而不是新增平行Writer：旧V6 FactorHead只拆出同一
-    `W1→GELU` hidden与`W2` output边界，八family的4-way memory maps在hidden处提交。真实枚举trainable恰为
-    `2,164,224`；所有maps zero-init使step0逐tensor exact LPCP，language只作soft Q/K address，`M=0`不能产生
-    residual。CPU已验证K-set permutation、constant-memory zero、factor family/layer/rank ownership、cycle1先开maps/
-    后续router才得梯度，以及历史LPCP checkpoint只完整缺失新增12 tensors。architecture guard无hard violation；
-    这些只证明实现合同，不提供closed-loop结论。
-43. clean frozen`cabf14f` task4真实smoke完成4个paired rollouts与四个互斥K4 credit views：8/8 family maps均
-    更新，Writer→LoRA→effective-BA→fixed-action响应非零；cycle=`139.420s`，是CV-CSD matched smoke的
-    `.958048x`，peak reserved=`40.762GB`，禁读/OOM/nonfinite为0。新增2.16M commitment没有造成吞吐或显存门
-    违约，可以seal full24；单task smoke仍不提供absolute、retention、稳定性或视频因果性能结论。
-44. SFMC full24 cycle1完整证明工程与训练图不是失败源：24 tasks/48 pairs/96 rollouts，reference/candidate=
-    `34/34` successes，8 active tasks、32 credit conditions、128 unique videos，8/8 family maps均更新；cycle=
-    `920.555s`=`1.0662x` CV-CSD。三rank任务=`8/9/7`、记录时长max/min=`1.0653x`，无禁读、OOM、nonfinite或
-    watchdog。semantic query/basis-key delta仅约`1.7e-9`，说明zero-init cycle1主要打开maps，尚未形成learned router。
-45. SFMC strict=`144/400`、breadth7、per-task=`1/3/47/36/0/38/18/1`；相对LPCP143严格=
-    `128 retained / 16 gained / 15 lost / 241 both-fail`、churn31、net`+1`、Jaccard`.805031`。相对CV-CSD134
-    虽净增10，相对真正强邻居LPCP却只净增1且丢15；这正是owner所说“单点接近145但训练/能力不稳定”不能算
-    合格方法的实例。lost≤10预注册门失败，故不续cycle2或六臂，不能声明same-video鲁棒或视频特异性。
-46. SFMC改写小到让旧FP64 trace公式也发生大数消去；用稳定展开
-    `Δ(BA)=B_candidate·ΔA+ΔB·A_reference`后，全400 effective-BA relative-L2 mean/median/max仅=
-    `2.899e-7/1.066e-9/4.428e-6`，q/v/action非零样本=`249/16/1`。first4 pairwise cosine=
-    `-8.10e-6`、mean/sample energy=`.249995`；不同video修正仍落在近正交/不相交的量化坐标，而不是共同程序。
-47. SFMC相对CV-CSD的BA relative-L2 mean/median=`.000675/.000669`、first4 cosine/energy=
-    `.000205/.250154`，几乎复现CV-CSD→LPCP距离；所以144主要是回到LPCP143邻域，而非memory commitment产生
-    新的强policy方向。最早失败接口精确到**continuous hidden residual -> frozen W2 -> native public factor**：
-    family maps有reward credit，但router未学成且大多数residual低于BF16局部ULP，只留下稀疏q-family crossing。
-    这只否定当前SFMC组合，不否定literal memory token、rank8、few-shot或生成LoRA本身。
-48. Gradient-Open successor已原位替换唯一commitment，不增加backbone forward，不改变LPCP carrier、K4
-    four-view reward credit、rank16、optimizer、dtype或信息墙。step0逐tensor exact LPCP；zero-init semantic query
-    配合balanced `+/-FrozenV6-W1` anchors，使family delta maps与semantic query在首个backward同时有梯度；旧SFMC
-    full state不能伪装成fresh LPCP cold start。full CPU=`396 passed`。
-49. clean pushed `5b14c89` task4 B8真实smoke中semantic query delta=`1.1979e-4`，较SFMC `1.7564e-9`
-    提高约6.8万倍；8/8 maps更新，q/v/action native effective-BA response=
-    `6.6169e-7/9.1517e-7/4.8908e-8`，总BA为SFMC的`19.7x`，fixed-action仍为`.0027033`。cycle=
-    `132.458s`=`.9501x` SFMC，peak reserved相同。故router与public factor写出两个最早机制缺口均被打开，
-    且无吞吐代价；这只授权fresh full24 cycle1，不能预告closed-loop、稳定性或视频因果结果。
-50. clean detached `eb543d3` world5 full24 cycle1完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=
-    `33/31`、gains=`6/4`，10 active tasks覆盖四suite，40 credit views/160 unique videos。semantic query delta=
-    `6.9499e-5`，仍为SFMC约3.96万倍；5/5 probes的q/v与3/5的action native BA非零，说明router与v写出没有在
-    full24重新关闭，但action写出仍不均匀。cycle=`581.924s`，rank任务=`3/5/2/5/9`而recorded wall max/min=
-    `1.2121x`，动态队列按cost而非task count平衡；相对SFMC world3约95%理想扩展效率。完整world5 checkpoint/
-    completion、0禁读/OOM/nonfinite/watchdog均通过。跨world训练outcome不作严格性能比较，必须由strict400裁决。
-51. Gradient-Open cycle1 K4 strict=`141/400`、breadth7、per-task=`1/3/48/29/0/36/23/1`。相对LPCP143
-    严格=`128 retained / 13 gained / 15 lost / 244 both-fail`、churn28、net`-2`、Jaccard`.82051`；suite
-    净变化=`-1/-6/-2/+7`。Long1净增7正好由Object3净丢6、Goal6净丢2和Spatial3净丢1抵消，Goal3仍0，
-    所以breadth不变且没有共同积累。相对SFMC144为`124/17/20`、churn37。correct、lost、net与suite四项门
-    失败，不续cycle2或六臂，不能以141或训练内33/31声明稳定性、same-video鲁棒或视频特异性。
-52. 本轮确实修复了SFMC的机制断点：相对LPCP all400 effective-BA relative-L2 mean=`9.6632e-6`，约为
-    SFMC的`33.3x`，q/v/action非零样本从`249/16/1`增至`400/399/368`。但gained/lost改写mean=
-    `8.7461e-6/9.2809e-6`仍不可分；first4同task四correct K4增量pairwise cosine=`.0001442`、
-    mean/sample energy=`.250124`，仍是近正交video-local方向。这证明“梯度/写出打开”是必要但不充分条件；
-    最早失败接口已后移到shared semantic address与success credit如何经video-conditioned Jacobian形成跨video
-    可复现的policy-effective task Program。下一设计不能继续放大anchor或扫cycle/LR/rank/scale。
-53. CCT设计不再用共享router去gate 256维video-local Value，而把每个320 policy/rank slot的video memory
-    投影成两个causal coefficients；同task exact language经冻结V6 W1/GELU定义共享family directions。它在
-    step0 exact LPCP且没有新增language-only Value，同时保留dynamic K、有序Procedure和selected-success。
-    这是对`.000144/.250124`最早断点的结构性检验，不是memory/rank/scale小扫。canonical实现已把trainable
-    从`2,164,224`降为`67,072`，完整CPU=`397 passed`。
-54. task4 post-update four-view FP64按corrected exact-LPCP counterfactual验证了train-seen结构假设：CCT-only
-    effective-BA aggregate cosine/energy=`.575776/.681821`，相对GOSC的`.000144/.250124`是明显共同方向改善；
-    q/v为`.593590/.695181`与`.528289/.646104`。action仅`.081102/.310853`；该局部证据后来没有迁移到held，
-    不能用来替代full24与closed-loop。
-55. CCT没有以忽略视频换取coherence：natural→reversed修正cosine=`.014842`、relative-L2=`1.15358`；逐video
-    常量首帧使factor memory/transport coefficient norm降到natural的`2.42e-5/2.74e-5`。同时q/v/action
-    native BA与fixed-action均非零，wall=`.9870x` GOSC。因此机制门只授权fresh full24 cycle1，不支持提前声称
-    absolute、稳定性、same-task-other鲁棒或correct优于negative。
-56. CCT formal cycle1完整且工程健康：24 tasks/48 pairs/96 rollouts，candidate/reference=`33/32`，9 active
-    tasks覆盖四suite，cycle=`577.729s`。strict=`142/400`、breadth6、per-task=`1/2/48/31/0/37/23/0`；相对
-    LPCP143=`125 retained / 17 gained / 18 lost`、churn35、Jaccard`.78125`。breadth与retention门失败，故
-    不续cycle2或六臂；142不能被解释成稳定145或视频因果资格。
-57. task4机制分析发现并修正了counterfactual标签错误：旧`.563803/.672852`是LPCP+CCT相对AS139，不是纯CCT。
-    按exact same-state LPCP重算后纯CCT为`.575776/.681821`，所以旧标签错误没有推翻train-seen结构门；正式
-    数值必须取`mechanism_analysis_corrected.json`，不能沿用v1。
-58. CCT/LPCP all400 effective-BA relative-L2 mean/median=`4.6654e-6/4.2211e-6`；gained/lost=
-    `3.1740e-6/5.3197e-6`，改写幅度不能选择有用方向。held first4纯CCT cosine/energy约=`0/.25`，说明
-    train-seen共同span没有跨task泛化。
-59. evaluator live worker逐元素确认全部65,536个semantic-query元素正确加载。train task4与held state0的
-    coefficient、pre-W2 hidden只差`1.63x/1.70x`，pure-CCT BA L2却差`249.92x`。最早失效接口因此是
-    **held nonzero residual -> native BF16 factor/compiler -> stable effective BA**，而不是视频读取、loader、
-    reward或梯度链路。后继不能只加轴、放大scale或多训一轮。
-60. CCT负结果只否定当前“两系数transport + frozen-W1 language axes + 一轮four-view selected-success”组合。
-    V6/LPCP、literal memory token、rank8、few-shot、reward credit与生成LoRA仍开放。memory token若使用，必须
-    直接改善held policy-effective commitment和相邻checkpoint共存，不能只替换已通过的carrier或恢复历史低分图。
-61. NPVC在三条后继分叉中选择最小因果变量：literal-memory rank8会同时改变carrier/decoder/rank，rank18 residual
-    lane会改变public adapter与capacity；NPVC则保持LPCP、rank16、FactorHeads、CCT axes、objective与参数量，
-    只用Procedure-set attention把已有ordered native probe deltas聚合成factor Value。它直接检验tiny
-    LPCP-AS139差分是否是held compiler断裂的必要原因。
-62. NPVC把held mechanism gate前置：一次train task4 update后必须在validation8每task四个disjoint K4上只读
-    视频验证cross-video direction与BA幅度，不读held actions/reward。若held仍约`0/.25`、held/train BA低于`.10x`
-    或constant产生新增Value，则formal前终局。这能避免再次用train-seen漂亮几何烧完一轮才发现不泛化。
-63. NPVC的canonical实现只改Value来源：同一Procedure-set attention逐slot聚合已有ordered native probe deltas，
-    不再使用LPCP-AS139的tiny Procedure差值；LPCP、rank16、FactorHeads、language-policy axes、reward recipe和
-    67,072 trainable参数保持不变。定向CPU`43 passed`、canonical LIBERO assets环境完整CPU`398 passed`；这只
-    证明实现合同，不预告held机制、closed-loop、稳定性或视频因果结果。
-64. NPVC首次在formal前关闭CCT的train→held断裂：task4 four-view cosine/energy=`.592915/.679176`，validation8
-    平均=`.449398/.571497`且6/8 tasks过门；held/train BA L2=`.752521x`、held relative-L2=`9.040e-4`，不再是
-    CCT约`1/250`。reverse的probe/BA relative-L2=`1.84084/1.37485`，constant norm仅`9.167e-4/1.267e-5`，
-    wall=`1.04074x CCT`。task31/32仍近`0/.25`，所以该证据只授权fresh full24 cycle1，不能替代strict结果。
-65. NPVC full24 cycle1完整且工程健康：24 tasks/48 pairs/96 rollouts、candidate/reference=`33/32`、gains=`5/4`、
-    9 active tasks覆盖四suite，36 credit conditions/144 unique videos；cycle=`584.053s`、world5、0禁读/OOM/
-    nonfinite。formal训练成功不能掩盖随后的科学non-pass。
-66. NPVC strict correct400=`136/400`、breadth6、per-task=`1/2/48/33/0/34/18/0`。相对LPCP143严格=
-    `120 retained / 16 gained / 23 lost / 241 both-fail`、churn39、Jaccard`.754717`、net`-7`；相对
-    GOSC141/SFMC144/CCT142净为`-5/-8/-6`。correct、breadth、lost三门失败，终局不续cycle2或六臂。
-67. all400 NPVC/LPCP effective-BA relative-L2 mean/median=`.0004683/.0003708`、绝对L2 mean=`.05234`，已不再
-    是CCT的native量化消失。held8 first4 cosine/energy=`.40870/.54227`、7/8过几何门，reverse使probe/BA
-    relative-L2=`1.84084/1.60518`；所以video evidence、顺序与compiler传递均已工作。但gained/lost改写=
-    `.000412/.000436`，retained-failure更大至`.000549`；写得大且跨video一致仍不能选择有用policy方向。
-68. full24后train task4的four-view cosine/energy从preformal`.5929/.6792`降到`.0569/.2951`，而held tasks仍有
-    material写出；说明shared更新不只是缺少幅度，还会重排task-specific mapping。当前最早失败接口是
-    **selected-success reward credit -> native Value components/signs -> reward-useful factor direction，以及这些
-    task directions在同一full24 checkpoint中的共存**。下一步不能只加scale/capacity/coherence/support guard；
-    memory token只有在提供可被reward选择且跨task可共存的layer-aligned Value方向时才针对该缺口。
-69. 后继选择PAFS-NV而非memory重跑、support guard或PCGrad：保留NPVC已经验证的native Value与V6-W1/W2
-    geometry，把任务分流前移为fixed four-way language pre-address，并给八factor families各自`4x2x256`
-    zero-init selectors。总trainable=`16,384`，step0/no-video exact LPCP。该单变量直接检验“第一次full24
-    update前的task/family分流”能否同时修复reward组件/符号选择与task4坍塌；若per-task gradients仍冲突，才把
-    最早接口推进到显式shared-update coordination。
-70. PAFS-NV已原位替换NPVC executable path：fixed address是persistent frozen buffer，八family selectors总计
-    `16,384`且zero-init；fresh config/checkpoint/eval schema拒绝旧checkpoint，full24会保留每个active task的
-    小梯度行并在raw mean前报告共存证据。canonical LIBERO assets下完整CPU=`399 passed`，架构门无block。
-    这些只封住step0、梯度、schema与单路径工程合同；GPU task4→validation8机制门和closed-loop仍未知。
-71. PAFS-NV真实smoke的reward链与工程健康：八family全更新、q/v/action BA和fixed-action非零，task4
-    cosine/energy=`.435164/.570296`，reverse BA relative-L2=`1.24080`，cycle=`138.522s=1.01807x` NPVC。
-    但train24 address entropy effective rank仅`2.15753`，validation8仅`.168111/.372863`、3/8过门；相对NPVC
-    held cosine/energy/L2只保留`.3741x/.6524x/.1396x`，action held cosine从`.3472`降至`.0535`。因此
-    factor-owned selection在full24前已破坏shared held geometry，按门终局且不做strict；这不否定memory token、
-    rank8或生成LoRA，只否定本次fixed-address/factor-selector组合。
-72. PAFS与NPVC的联合边界授权SJNV-Gate：保留NPVC已通过的shared native Value和冻结V6 axes，不再用固定
-    language lanes或family-owned选择。唯一trainable `W_gate[2,256]`直接读取`M elementwise_mul RMSNorm(L)`，
-    为全部q/v/action A/B families产生同一direct/signed系数。它把task分离放在真实joint input而非参数owner中，
-    同时保持`M=0`严格不能写LoRA。该结构是否保住NPVC held geometry与full24共存仍须机制门/strict裁决；当前
-    只是可证伪设计，不是memory token或低参数量优越性的结论。
-73. SJNV-Gate已原位替换PAFS active path：唯一trainable tensor为共享`gate.weight[2,256]`，step0逐tensor exact
-    LPCP，`M=0`时新增LoRA严格为零，同一K-set置换不变且非零video Value可改变gate；fresh config/checkpoint/
-    evaluator schema拒绝旧state。定向CPU=`76 passed`、完整CPU=`399 passed`、compileall通过，architecture guard
-    无hard violation。这只证明canonical图和工程合同，task4、held geometry与closed-loop尚未知。
-74. SJNV真实task4 smoke在clean`913d3d3`上完成：cycle=`135.757s=.99775x` NPVC，train four-view cosine/energy=
-    `.472272/.597814`，reward、八family、q/v/action BA与fixed-action链均非零；但validation8 aggregate仅
-    `.201903/.396448`、2/8 tasks过门，action cosine=`.042986`、held/train BA L2=`.452509x`，按门不启动
-    full24/strict。reverse BA relative-L2=`1.24491`且constant/natural=`0`，所以失败不是忽略顺序或static bypass。
-75. SJNV stage localization进一步移动最早断点：validation8 shared gate与continuous hidden residual cosine=
-    `.940337/.941165`、hidden energy=`.923978`；经过冻结W2与native BF16 public cast后，raw factor delta
-    cosine/energy骤降为`.021353/.265925`，action factor cosine=`.002672`，BA只恢复到`.201903/.396448`。这否定
-    “共享2x256 joint gate能经冻结V6 emission保住NPVC held geometry”，也说明PAFS失败不只来自factor ownership。
-76. SHINE/Doc-to-LoRA复核给出两类可扩展输出：Doc-to-LoRA以rank latents和factor heads输出A/B；SHINE令每层
-    memory payload元素数至少覆盖该层全部LoRA参数，再经layer/token M2P直接reshape。EMBER rank16单个Action
-    Expert layer的q/v A/B共69,632值，对1024 hidden对应68 memory tokens；历史8-token/rank8 Dynamic-K并非该
-    capacity-matched合同。当前DJNFR先以最小变量绕过W2：保留LPCP/NPVC上游，将
-    `X=M*RMSNorm(L)/sqrt(256)`经八个zero-init factor-shape heads直接写同一public A/B residual，trainable=
-    `1,654,784`。若X共同而direct factors仍失败，才有证据升级到68-token memory grid，而不是现在同时换五个接口。
-77. DJNFR canonical实现已完整接通且未扩张并行路径：八个heads按既有18层×16 rank及action in/out ownership
-    直接补到同一76个public tensors，step0/no-video exact LPCP；fresh config、checkpoint和evaluator拒绝SJNV
-    state。完整CPU=`399 passed`、compileall通过，architecture guard无hard violation，active source diff净增仅8行。
-    这只关闭工程门，不能预判direct factors能否保住跨视频共同方向或提高closed-loop。
-78. DJNFR clean`e756fa1`真实机制强通过：task4 BA cosine/energy=`.813895/.794975`；validation8=
-    `.776695/.768990`且8/8 tasks过门。joint Value=`.803616/.831027`、continuous rows=`.933698/.918759`、native
-    raw factor=`.644605/.697686`、action cosine=`.557652`，held/train L2=`.469796x`；reverse BA relative-L2=
-    `1.222871`、constant/natural=`1.762e-6`。cycle=`139.069s=1.02439x` SJNV。由此可确认直接factor emission修复
-    了SJNV的hidden->W2断裂并授权full24 cycle1，但closed-loop方向和多task共存仍完全未知。
-79. DJNFR full24并未破坏生成端：post-train task4/validation8 four-view BA cosine/energy=
-    `.802835/.800444`与`.790242/.785834`，held8 8/8过门，raw-factor/action cosine=`.677321/.686125`。但strict
-    只有`136/400`、breadth7，相对LPCP=`120 retained / 16 gained / 23 lost`；gained/lost/retained-failure BA改写
-    为`4.522e-5/7.248e-5/8.987e-5`。所以“direct factor健康且跨video共同”不等于reward-useful，最早接口后移到
-    selected-success-only credit。
-80. DJNFR active-task gradient pairwise cosine mean仅`.002470`；独立fresh task4-only与full24 head update cosine=
-    `.162317`，后者保持`.97335x`global norm却旋转离开task4方向。这不是相邻checkpoint drift证据，但说明长成功
-    轨迹正蒸馏产生异质cotangent。DF-PCSP因此只在candidate/reference共同初态比较winner/loser首段动作，删除分叉后
-    occupancy混杂；memory、rank与direct生成图均保持不变。
-81. DF-PCSP canonical实现没有新增Writer或rollout分支：discordant pair按`winner, loser`相邻排列，共享初始
-    observation、共同执行长度与同一flow time/noise；四view与task等权保持。smoke-only probe在真实step后复算
-    同一margin。fresh config/checkpoint/evaluator拒载DJNFR state。首次clean task4 smoke证明相同seed的顺序reset
-    不足以保证LIBERO首观测逐元素相同，因而在credit前按工程合同失败。`07b764b`恢复相同flattened state仍失败；
-    差分证明language/state tokens完全相同，而base/wrist图像分别21,423/27,429个像素值不同，根因是hard reset改变
-    未包含在flattened state中的fixture/model pose。canonical现每lane只hard reset一次，每臂用deterministic soft
-    reset清空controller/observables后恢复同一qpos/qvel；不增加rollout/forward。修正后针对性CPU=`26 passed`、
-    完整CPU=`399 passed`、architecture guard无hard violation。
-82. exact task4/task7最终均为tie；task9/15/18分别产生1/2/1个真实discordant pairs，三者preference margin均
-    下降且八head、q/v/action、reverse/static链全部接通。task9 train/held跨video均强，但held/train BA L2仅
-    `.105x`；task15全部门通过；task18 held健康但train同task四view仅`.290/.428`。三个有效anchors只有1/3全过，
-    不能挑task15冒充shared方法。因此DF-PCSP在full24前终局。exact state只消除了初态混杂，却没有使“数百步后
-    final success全部归因给第一prefix”变得可识别；最早失败接口是long-horizon outcome到第一shared action的
-    task-dependent credit assignment，而不是carrier、direct LoRA写出或margin optimization。
-83. DF-SOCP选择保留DJNFR完整winner replay并给每个winner observation补一个loser-policy counterfactual action：
-    observation与policy-noise相同，失败轨迹后来occupancy不进入objective，且不增加env rollout。它相对DJNFR只补
-    negative，相对DF-PCSP只把exact preference从第一prefix扩展到完整成功occupancy；不用任意8/16阶段抽样，也不做
-    数千次state branching。preformal固定task9/15/18三项全过，直接检验是否消除anchor-dependent credit。
-84. DF-SOCP canonical实现已原位替换DF-PCSP：每个successful replan复制同一observation形成winner/counterfactual
-    两行；loser LoRA按arm安装后B8、相同stored policy-noise生成一次detached actions并跨四个correct K4 views复用。
-    trajectory ID权重令1或2条成功轨迹等权且各自内部replans等权，functional flow按完整pairs做microbatch。旧
-    first-prefix config/checkpoint/evaluator schema已拒载；全量CPU=`401 passed`、compileall通过、architecture
-    guard无hard violation。这只证明数学与运行图合同，固定task9/15/18真实GPU门尚未知。
-85. DF-SOCP固定task9/15/18真实outcomes=`2/1,2/0,1/2`、counterfactual chunks=`26/65/44`全部复现；三者
-    train four-view BA cosine/energy=`.825/.838,.721/.757,.770/.757`，held8=`.773/.780,.761/.771,
-    .787/.794`且均8/8过门，八head、q/v/action、preference descent、reverse与constant均健康。完整成功occupancy
-    因而确实能产生比DF-PCSP更一致的跨video commitment，但这些内部数值不能绕过更早的action-panel合同。
-86. rollout stored actions由动态B2/B1生成，而loser counterfactual由B8生成。task9/15/18的loser stored到B8首动作
-    RMS=`.004147/.005952/.004404`，winner到B8-loser名义contrast=`.003817/.003516/.020132`；前两项正常
-    BF16 batch-shape差异已是名义contrast的`1.086x/1.693x`。因此当前preference negative受批形混杂，不能用
-    batch1或逐位复现修补；必须在同一physical batch中重查winner与loser两臂。
-87. DF-SOCP三anchor wall相对DF-PCSP=`3.083x/5.335x/3.887x`全失败。counterfactual action query只占
-    `2.79/6.67/4.47s`，完整轨迹四view Nmc4 functional credit却占`135.09/319.87/221.23s`，所以扩大
-    action-query batch无效。下一可证伪变量应把同B8双臂可比性与时间分布的informative occupancy子集作为一个
-    causal panel合同；本轮不否定matched-batch successful occupancy、direct LoRA、memory或rank8。
-88. MB-SOP把“修复batch可比性”和“削减穷举CFM成本”统一为一个credit-panel变量：reference/candidate在winner
-    全部occupancy上以相同B8 observation/noise/batch序列重查；每条轨迹等分8个进度strata，每区只选择matched
-    action RMS最大的一项。相对只做uniform-8，它不浪费credit在两臂相同行为；相对global top-8，它不把所有states
-    挤到单一局部阶段。task9/15/18 functional pairs预定为`8/16/8`，而完整26/65/44 states仅做便宜inference。
-89. MB-SOP canonical实现已原位替换DF-SOCP runtime/schema：stored rollout action不进入functional batch，双臂query
-    batch-size序列逐项相同，strata/max-disagreement/组batch由单一panel owner负责。定向CPU=`48 passed`、完整CPU=
-    `402 passed`、compileall通过且architecture guard无hard violation。该证据只关闭工程门；真实三anchor的
-    outcomes、selected counts、margin、跨video geometry与wall仍未知。
-90. MB-SOP clean`ad65347`固定task9/15/18复现outcomes=`2/1,2/0,1/2`、complete chunks=`26/65/44`与selected
-    pairs=`8/16/8`；selected action RMS mean相对完整occupancy mean为`1.249x/1.294x/2.751x`，wall相对DF-PCSP=
-    `1.655x/2.119x/1.542x`。因此同B8 action panel和时间分层max-disagreement确实同时修复了DF-SOCP批形混杂与
-    `3--5.3x`成本，不应在下一轮撤销。
-91. MB-SOP post train four-view BA cosine/energy=`.852/.854,.694/.694,.699/.723`，held8 aggregate=
-    `.782/.781,.770/.781,.775/.783`且均8/8过门；八head、q/v/action、reverse/constant与信息墙也健康。但task15
-    margin从`-.0003242`升到`+.0000303`，task18从`-.0022745`升到`-.0018652`；task9虽下降，held/train仅
-    `.1096x`。因此健康跨video LoRA写出仍不保证当前optimizer step沿reward-useful方向。
-92. 四view flat-gradient复跑没有增加forward：task9/15/18 gradient pairwise cosine mean/min=
-    `.423/.291,.339/.169,.343/-.173`，但每个view到等权mean的cosine minimum仍为`.695/.629/.601`，三者raw
-    shared mean下降覆盖均为`4/4`。所以PCGrad、重加权video或再改K-set不针对当前断点；共同一阶方向已经存在，
-    最早缺口是per-coordinate AdamW preconditioning/finite step对实际parameter delta的旋转或曲率放大。
-93. AR-EC用AdamW候选自身的global L2作为无新增超参半径，同时令final delta严格等于负raw shared gradient的
-    同半径向量；Adam moments照常保留。它与旧ADSP不同：不保护offline/train-prefix support，也不解小dual，只
-    检验同一matched reward panel已证实的共同下降方向能否被正确commit。若同半径raw方向仍使四view margin上升，
-    才能把最早接口进一步定位到finite-step trust radius，而不能靠LR小扫解释。
-94. AR-EC clean`b578d56`三anchor固定outcomes/counts、raw 4/4共同下降和final cosine1均通过，但四view真实margin
-    delta分别为`[-.000017,+.000007,+.000202,+.000061]`、`[+.000279,+.000018,-.000018,+.000003]`与
-    `[+.000417,-.000290,+.000213,+.000218]`，每task只有1/4下降。Adam radius为raw gradient L2的
-    `6333/7988/4294x`。因此Adam逐坐标旋转不是主因；full global radius已越过共同局部下降区间。
-95. AR-EC train/held BA cosine/energy=`.867/.868,.765/.738,.863/.844`与
-    `.782/.779,.829/.811,.817/.811`，task15/18反而比MB-SOP更coherent；q/v/action、reverse/constant及core wall
-    也全健康。这再次证明更漂亮LoRA几何不能替代functional/closed-loop。AV-MBC下一步只用固定顺序减半并接受
-    第一个四view全下降candidate；它是单一optimizer acceptance rule，不是按结果挑固定scale。
-96. AV-MBC clean`aa819f2`三anchor虽均exit0，但不能把11次拒绝解释成“共同下降区间不存在”：候选使用
-    inference-only CFM evaluator，名义before却来自gradient-enabled evaluator；到`1/1024`时margin delta仍停在
-    `1e-4`量级而不趋零。恢复step0后native BA严格为零，fixed-action却仍有`.002624/.002081/.002964` RMS，进一步
-    证明它把动态rollout B2/B1 action与batch1 probe混比。最小正确修复是同inference evaluator先测step0并rebase
-    所有candidate，同时固定action前后走同一batch1路径；这不是改变AV-MBC科学变量或增加防御性检查。
-97. 修正版AV-MBC clean`202a64d`给出可裁决结果：task18在`j=5`通过全部门；task9只在`j=10`接受且train BA
-    L2仅`2.385e-6`、held/train`.18446x`、held4/8；task15到`j=10`仍有view3 `+6.377e-6`且无共同step，恢复
-    BA/action精确零。故task间可用半径不是一个稳定scalar：表现为有效、near-identity和空集。下一变量应最大化
-    四个已有gradient的worst-view一阶下降余量并改变共同方向；不能继续缩半径、扫LR或扩dtype。
-98. MMCD已把这一个变量原位实现：每task只在已有四个view gradients的`4x4` Gram上求minimum-norm simplex
-    combination，得到maximum-margin common-descent direction并缩放回原equal-mean norm；AdamW仍只提供原
-    optimizer state与global L2 upper radius，native all-view backtracking不变。新schema明确分离optimizer
-    gradient与commitment direction，完整CPU=`405 passed`、architecture guard 0 hard，未增加模型参数或forward。
-99. MMCD clean`fc3bdd7`三anchor continuous worst margin均真实提高`1.216/1.334/1.356x`，但native结果不单调：
-    task9从AV-MBC j10跳到j0，train/held BA都显著放大且held 8/8，但held/train反降到`.160558x`；task18从j5
-    变成j6，仍全门通过；task15到j10的view3仍是同一个`+6.376e-6` plateau并恢复exact no-op。只有1/3 anchors
-    通过，故不full24/strict。最早接口不再是如何改善raw first-order共同方向，而是该方向经过native BF16
-    FactorHeads/compiler后的有限步metric与held policy-effective幅度；继续换parameter-space gradient solver不针对它。
-100. PAV-BC把实际AdamW candidate ray与同路径all-view backtracking组合：task9在j5接受，但held/train
-     `.109466x`几乎精确复现MB-SOP full Adam的`.109639x`；task15和task18到j10均无共同candidate并exact no-op，
-     0/3过门。task18尤其表明preconditioning会把raw/MMCD可解task变为空集。raw equal-mean、raw maximum-margin、
-     Adam-preconditioned三类parameter rays因此全部终止；下一最早变量必须是LoRA输出/effective-BA参数化中的
-     native-safe线性Value路径，而不是ray mixture、scale或另一个parameter-space solver。
-101. ALB-NV固定LPCP A且只向B写joint-Value residual，把新增BA化为严格线性的`delta-B A0`。clean `0899166`
-     固定task9/15/18只1/3过门，但给出比“失败”更细的边界：task18从PAV exact no-op变成j0全门通过，held8 BA
-     cosine/energy=`.77423/.78484`、held/train=`1.02954x`；task15也从no-op变成j5，held aggregate
-     `.37488/.51329`与held/train`.33339x`过门，却只有5/8 tasks且raw-B仅`.10058/.32327`；task9虽有
-     `.41501/.55861`的连续four-view共同gradient，11个native点仍无四路共同下降并恢复exact LPCP。三项public A
-     tensor变化均0，合计wall/PAV=`.75247x`。所以删除A/B gauge和bilinear cross term确实改善native/held写出，
-     但向非零condition-specific B0追加小残差仍会在不同task上表现为exact空集或小步下raw-B/coverage崩塌。
-     下一输出变量必须让小共同方向从native-zero坐标可见，同时完整保留LPCP rank16 support；不能据此回退carrier、
-     混A/B side、压缩rank或继续扫ray/scale。
-102. NZRB-C以一套rank32 adapter无压缩保留LPCP first bank，并把同一`delta-B A0`放入second-B native-zero bank。
-     clean `d4fc92e`三anchor的stable contract五项误差均精确0；初版约`1e-3`结构报警来自BF16 public baseline与
-     FP32重算carrier相减，未污染held/action证据。task15/18纠正后全门通过：held BA从ALB的
-     `.375/.513,.774/.785`提高到`.952/.940,.934/.922`，raw-B提高到`.953/.941,.933/.920`且均8/8，证明
-     native-zero origin真正解决了accepted residual的可见性与跨video factor coherence。task9却从预定
-     `2/1,26 chunks`漂为`1/0,25`，continuous gradient仅`.286/.448`且j0--10仍全部拒绝；rank32虽FP64 BA等价，
-     正常BF16 compute-shape差异已足以改变该敏感closed-loop。总wall/ALB=`1.16565x>1.15x`。故NZRB为2/3且
-     吞吐门失败，不full24/strict。下一接口是reward-useful Value/acceptance能否给出跨correct videos/tasks共同
-     存在的finite policy step，不再继续改变factor native origin；memory、rank8、dynamic-K与LoRA生成未被否定。
-103. NZRB之后不能回到finite ray mixture：AV-MBC/MMCD/PAV已经覆盖raw mean、maximum-margin与Adam-preconditioned
-     rays。当前未检验的最早变量是reward functional metric本身。NEAP-C完整保留LPCP/NZRB/MB-SOP，只把随机
-     flow-time CFM preference改成同noise完整10步PI05部署action endpoint preference；generated action一次同时
-     比较winner/loser executed-prefix距离，gradient与native acceptance使用同一metric。它先以task9 physical B8
-     显存、wall、4/4 gradient descent、finite candidate与held/temporal链快速否决，不通过就不跑另外两anchor。
-104. NEAP-C canonical实现已原位退休NZRB-C active objective/schema：同一functional LoRA先生成一次视觉语言prefix
-     cache，再经10个checkpointed denoise steps得到真实部署endpoint；B8个generated actions各自同时比较matched
-     winner/loser targets，只让public B leaves承接cotangent并回传四个native-zero B heads。归一化action空间、
-     rollout policy-noise seed、executed-prefix mask和inference acceptance均共用同一合同。定向CPU=`50 passed`、
-     完整CPU=`405 passed`、architecture guard 0 hard且active source净减16行；尚无GPU科学结果。
-105. NEAP-C clean`33f69fd`把task9从NZRB的gradient cosine/energy=`.286/.448`、11点no-op改成`.846/.865`且
-     raw Adam `j0`一次接受；cycle从`362.177s`降到`97.107s`、reserved从`40.769GB`降到`19.367GB`，q/v/action、
-     reverse/constant和native rank-bank均健康。这证明full 10-step endpoint preference比随机CFM更接近真实
-     policy credit。held8又有8/8、BA/raw-B/action cosine=`.953/.955/.485`，但held/train BA L2仅`.234<.30`，
-     26/27门仍终局。probe/joint Value的held/train幅度为`.671/.665`，到direct rows骤降`.223`，因此最早缺口
-     已后移到one-task joint condition经shared direct-B head的跨task幅度，而非视频读取、endpoint或LoRA写出。
-106. TCEC选择task-complete endpoint commitment而不是memory重写、normalization或新ray solver：zero-init linear
-     head的一次task9 update天然只覆盖task9 condition kernel，最小反事实是让固定task9/15/18的endpoint gradients
-     在一次shared update中共同张成coverage。四view内与tasks间仍各自等权，Adam direction不变；唯一把acceptance
-     变为三个tasks共12个margins全局共同下降，并强制所有ranks选择同一scale。若这个shared update仍不能把held/train
-     从`.234`提到`.30`，才把最早接口推进到condition-to-LoRA representation并授权memory/M2P候选。
-107. TCEC canonical实现把旧rank-local单probe acceptance改成真正的global task-complete contract：每个active task
-     保留四view probe，所有ranks只collect `(task_id, view_id, endpoint margin)`标量并对同一有序全局panel裁决；
-     gradient与candidate tensor不all-gather。CPU反例已证明某一task下降但另一task上升时不会误接受。定向
-     `41 passed`、完整`405 passed`、architecture guard 0 hard；这些证据只说明shared update实现正确，world3
-     task9/15/18仍是首个科学门。
-108. TCEC clean`9ed6a08` world3完整复现task9/15/18 outcome/count并在`182.142s`内得到12个四video endpoint
-     gradients。三个task各自的four-view cosine/energy=`.846/.865,.596/.645,.448/.557`且均4/4下降，证明NEAP
-     endpoint credit的same-task video汇合不是task9偶例。但task mean之间pairwise cosine mean/min=`-.145/-.337`，
-     gradient norm=`7.288e-6/3.021e-4/2.897e-5`；未经norm重权的equal-task arithmetic mean被task15幅度主导，
-     只对task15下降，对task9/18 cosine=`-.085/-.248`。因此最早冲突发生在task-local coherent credit汇成一个
-     shared update时，而不是held compiler之后。
-109. TCEC全局native backtracking进一步确认冲突不是一个漏掉的半径：`j0`的task9/15/18下降view数为
-     `2/4,4/4,0/4`，最佳`j1/j3`也只有8/12，`j10`仍为`2/4,2/4,0/4`；11个scale全部拒绝。fallback保存的
-     860,160个B-head参数逐元素全零，故任何train/held condition都与step0 LPCP完全相同，额外GPU held分析没有
-     信息增量。该结果否定raw equal-task mean加单一direct-B Adam/native commitment，不授权task weights、
-     normalization、PCGrad或ray sweep；下一变量必须进入显式task/condition结构的共享表示与LoRA输出映射。
-110. CAPG把下一反事实冻结为capacity-matched Action-probe parameter grid，而不是TCEC optimizer补丁或旧8-token
-     Dynamic-K整条恢复。rank16 B-only residual共680,448 payload；`18x37x1024`提供681,984容量、仅1536 padding。
-     前36 slots逐层直写q/v B，第37 slot沿层轴直写action-in/out。37个slots在现有一次joint forward之后读取逐层
-     Action states，明确不是memory tokens；per-video adjacent/goal、K-set与layer/token M2P后direct reshape，删除
-     四个shared wide heads。681,984个zero-init coordinate gates乘非零context Value，避免anchor大数相减，
-     同时给出exact LPCP与首步gate gradient；accepted gate update后其余链路打开。首门仍用
-     task9/15/18等权shared credit，必须从TCEC的continuous 1/3提升到3/3并找到native 12/12；失败不否定literal
-     memory或rank8。
-111. CAPG canonical实现没有用数值阈值或双branch subtraction冒充exact identity：681,984个coordinate gates从
-     native zero乘非零context payload，step0与constant grid逐元素为零；首步gate gradient非零，gate-open后
-     context/temporal/set/M2P全有gradient。raw 18层Action states与LPCP compact probes来自同一hook/forward；旧
-     factor commitment owner和TCEC config/schema已退休。trainable=`3,008,384`，定向/完整CPU=`79/405 passed`，
-     architecture guard无hard violation。该证据仅关闭实现门，尚无GPU task-coexistence或closed-loop结论。
-112. CAPG clean`878b5e4` world3完整exit0且不是无信息负结果。task9/15/18 same-task four-view cosine/energy从
-     TCEC的`.846/.865,.596/.645,.448/.557`提高到`.983/.985,.898/.870,.982/.949`，三task均4/4 raw
-     descent；equal-task raw coverage从1/3提高到2/3，native best从8/12提高到j0的10/12，cycle又仅
-     `179.973s=.9881x` TCEC。capacity-matched contextual coordinates因此真实修复了same-task不同视频credit
-     近正交，不能因最终no-op把它写成又一次完全无用的内部美化。
-113. CAPG仍在shared first commitment终局：task15 gradient norm是task9/task18的`36.29x/5.99x`，task18到
-     shared mean cosine=`-.1570`，task-gradient pairwise mean/min=`-.1394/-.3146`；11 scales无12/12，最终
-     681,984 gate values exact zero。step0只有coordinate gate有gradient，其余context/temporal/set/M2P必须在
-     retained gate update后才打开。因此本轮只否定post-backbone 37-latent Value加zero-gated first commitment，
-     最早接口是task-local coherent grid到跨task可分流Value。CMBG按预注册边界只把Value source升级为真实prefix
-     内逐层37-token memory，保留CAPG所有已通过下游机制；不恢复旧100分Dynamic-K整条路线。
-114. CMBG首版实现把37个parameter-aligned values放入real image/language/50 Action-probe joint
-     context，而非backbone后再造queries。真实task9 K4共112帧得到`[112,18,37,1024]`逐层memory；step0 grid与
-     second-B exact zero且只有payload gate有梯度。人工打开gate后memory、temporal、K-set与layer/token M2P均
-     获得非零gradient，policy仍为零gradient，peak reserved=`21,794 MiB`。完整CPU=`409 passed`且结构门0 hard。
-     这些当时只证明literal memory的数据流、staging和A40显存合同成立；其carrier parity漏洞及后续修正见115--116。
-115. clean`38f7fc7`首版CMBG world3不能作为科学结果。虽然完整exit0、cross-task gradient cosine mean从CAPG
-     `-.1394`升到`+.03865`、native best从10/12升到11/12，但task15固定carrier从预注册`2/0,65 chunks,16 pairs`
-     漂成`1/2,47,8`。原因不是memory内容穿过three-block mask，而是把37 tokens追加到同一attention矩阵改变了
-     frozen carrier的kernel shape；旧CUDA检查只比较“second bank为零”，没有比较新旧LPCP carrier。最终update
-     仍exact no-op，但这些几何数值只能作诊断，既不能接受也不能否定CMBG。
-116. carrier-exact修正没有删除memory变量：原生PI05 context保持一次、原shape forward；每层保存真实
-     prefix/Action states，37 memory tokens以单向observer读取同层K/V并走Action Expert的AdaRMS/qkv/o/MLP。
-     真实task15 K4 130帧的text/frame/grounded/interactions及`[130,18,50,1024]`Action states相对封存LPCP全部
-     max-abs/relative-L2=`0/0`。task9 112帧仍有`[112,18,37,1024]`live memory和完整gate-open梯度，wall从
-     `131.823s`降到`121.251s`，reserved从`21,794`降到`18,848 MiB`。因此下一步可解释的实验是fresh重跑同一
-     world3，而不是基于首版诊断改optimizer、rank或放弃memory。
-117. clean`2aecece` carrier-exact CMBG fixed world3完成3 tasks/6 paired states/12 rollouts，task9/15/18=
-     `1/0,2/0,1/2`、selected=`8/16/8`。same-task four-view cosine/energy=`.968/.748,.857/.864,.979/.977`，
-     cross-task gradient cosine mean从CAPG的`-.13938`变为`+.09842`；shared raw mean与actual Adam final delta均
-     `3/3`下降，12/12 native margins下降并在j0接受，delta L2=`.168481`，q/v/action链均非零。CMBG因此实际
-     解决了CAPG在首个shared commitment处的局部跨task冲突；是否能外推到held videos/tasks仍未解决。
-118. task15 complete occupancy chunks为70而历史fixed run为65，但成功关系、16个selected credit pairs、全部
-     functional descent和closed-loop rollout合同均成立。该差异属于设备/batch/kernel低位轨迹诊断，不再作为门；
-     不为跨运行逐元素一致固定batch1、重复forward、扩dtype或扫描全部tensor。
-119. CMBG post-world3 validation8 held视频门强通过而非擦线：8/8 tasks满足门，effective-BA four-view
-     cosine/energy=`.983541/.985926`，raw-factor/action cosine=`.982788/.986590`，held/train BA L2=`.960650x`。
-     最低单task BA cosine仍为`.967814`；三个train anchors reverse相对L2约`1.94--2.00`，constant/natural norm
-     ratio约`.00269--.00470`。因此memory grid在未读held action/reward时同时保持跨视频方向、幅度和有向时序，
-     最早未决接口已后移到full24 reward update后的真实closed-loop usefulness与多task长期共存。
-120. clean`a62348e`首次CMBG full24的24 tasks已走完rollout/credit，但旧formal runtime只在
-     `view_index==0`时保留`RewardPreferenceView`；global commitment需要每个active task的4 views。rank0/4因此
-     立即失败，其余ranks在all-gather等待30分钟后watchdog，最终exit1且无metrics/checkpoint/completion。
-     这是被traceback和source条件共同确认的工程合同错误，不是memory或CMBG的科学负结果。
-121. 最小修正只使formal保留credit backward已算出的4个conditioning states，没有重算video/
-     environment、新增forward或改变科学合同。focused regression在旧路径会返回1 view，修正后返回4；
-     相关测试`42 passed`、全量CPU=`411 passed`。因首次run无checkpoint，下次必须从新clean commit fresh重跑。
-122. clean`b4dbf84` CMBG full24完整exit0：24 tasks/48 pairs/96 rollouts，candidate/reference=`32/32`、
-     gains=`3/3`，6 active tasks覆盖四suite，cycle=`527.605s`，world5 checkpoint/completion完整且0禁读/OOM/
-     nonfinite。因此上一轮的formal view retention工程缺口已被真实关闭。
-123. full24把CMBG的有效边界和失效边界分开了：task4/19/20/25/38的same-task four-view cosine/
-     energy约`.988--.992/.956--.994`，但task34=`-.105/.339`。跨task cosine mean/min=`.00681/-.21022`；
-     task38 gradient norm是次大的`54.45x`且几乎完全主导shared mean，task4与shared方向反向。所以
-     literal memory解决了多数task的video-local coordinate coherence，没解决全task幅度平衡和shared credit兼容。
-124. actual Adam candidate与`-gradient` cosine仅`.26938`；11 scales最好的`j2=.25`也只有`17/24`
-     deployed margins下降，小scale不单调改善。search rejected后合同恢复step0，最终parameter delta、
-     q/v/action BA和fixed-action response全为0。strict400因只会重测LPCP carrier而跳过；CMBG终局，
-     不cycle2/controls/小扫。该结果不否定memory token、rank8、完整A/B或few-shot一般。
+Expert-Manifold reconstruction、routing和hard expert复现均未转化为held performance。experts可以继续作为train24
+privileged teacher或geometry诊断，不能作为held dictionary、task-ID router或部署第二套LoRA。
 
-负结果只淘汰实际受检验的组合。新设计必须保留未被否定且已接通的机制，只改变有证据指向的最早接口。
+## 11. Functional和reward surrogate长期错位
 
-## 12. 选择方法与工程原则
+variance reduction、reconstruction、RLS row retention、success-key protection、negative guards、all-view margin、
+endpoint preference和expert occupancy都曾让局部objective更健康，但closed-loop gained/lost仍不可分。
 
-Task-Grounded Visual-Value实现与profile新增的边界：同一次joint forward中的task-conditioned raw patch Value可在
-不更新frozen policy、不增加第二次backbone forward的前提下接入visual D/G与完整LoRA梯度链。直接实现的
-matched吞吐为`1.2603x`；截断frozen prefix无用反向图并合并projection/reader后为`1.061727x`，functional
-loss逐位一致，科学主变量不变。这只证明机制与效率合同健康，不能证明视频知识更有用或task drift改善；后者只认
-fresh single-checkpoint strict closed-loop。
+Reward并非无效：它可以形成Program gradient、native BA/action response，GOMQ甚至产生过151。但当前训练credit在
+held on-policy occupancy上缺少可靠方向，并在shared update中受到cross-task conflict、norm dominance和policy
+Jacobian差异影响。
 
-同一生成图在正式macro25 checkpoint上的K1 B8/B16/B32 deployment LoRA/s为
-`.984266/.976097/.971736`，均stable、最长视频覆盖且0 OOM，按规则锁B8。它与Direct-Family-B B8 `.977325`
-接近，只支持新增视觉Value没有造成deployment吞吐退化；不能推断closed-loop更强。
+所以：
 
-- 不用loss、small panel、union、norm、rank、cosine或内部margin选择最终checkpoint；
-- 不靠rank/scale/seed/dtype/temperature小扫救失败checkpoint；
-- 不恢复language-only LoRA bypass、平均LoRA、checkpoint融合或held expert route；
-- 不为了逐元素低位一致固定batch1、重复forward、扩dtype、逐tensor扫描或内容hash；
-- GPU上限6张但不要求凑满；每次双节点live检查，在单节点用真正有益且不会明显干扰他人的设备；
-- profile/smoke只证明工程合同，formal结果必须保留checkpoint、raw rows、aggregate和completion；
-- 一次尽量只改一个主要因果变量，并尽快回到真实paired400。
+- 可以继续考虑RL训练Writer，但每个surrogate必须尽快接受paired400裁决；
+- 不用loss选择checkpoint；
+- 同task跨video gradient一致只是必要条件；
+- task-local descent不等于multi-task shared retention；
+- 生成LoRA后的task-local RL仍是后续独立阶段。
+
+## 12. Task drift是症状集合
+
+task drift可能来自：
+
+- 视频表示偏向nuisance或task identity；
+- 同task不同video correction正交；
+- 不同task functional/reward gradients冲突或幅度失衡；
+- shared condition map把异质cotangent压成common update；
+- Program到LoRA compiler丢失方向或量化为零；
+- factorization、compression或online regeneration破坏已有support；
+- offline query distribution与真实rollout occupancy错位。
+
+实验已分别观察到上述现象，因此不能把task drift归为单一“容量不够”。更大模型可能改善表达，但如果credit和
+坐标不对，只会更有容量地换手。
+
+## 13. 截至当前真正解决和未解决的问题
+
+已解决到足以复用：
+
+- fixed split/source policy/information wall与strict evaluator；
+- task-local effective LoRA参照；
+- action-hidden有序video carrier；
+- Dynamic-K和per-video/set数据流的工程可行性；
+- V6 native rank16高增益compiler基线；
+- literal/learned memory进入policy topology的可行性；
+- reward→gradient→native BA/action局部链路。
+
+尚未解决：
+
+- 可验证的高层task Program，而非identity或nuisance；
+- correct顺序沿有用方向形成稳定优势；
+- same-task鲁棒与cross-task separability同时成立；
+- 一个shared checkpoint持续积累多个tasks；
+- 约145+相邻稳定且六臂合格的方法；
+- Program到LoRA的可扩展、material又support-preserving的统一compiler。
+
+## 14. 方法选择与实验原则
+
+1. closed-loop absolute首先选方法，稳定性和视频因果性决定方法资格。
+2. 每轮只改变一个主要因果变量，先写可证伪门。
+3. 机制门回答“图是否接通”，paired400回答“方向是否有用”。
+4. 好结果多训练到相邻稳定性有信息；坏结果不靠无限训练和小扫。
+5. 报告per-task/per-suite/breadth/retained/gained/lost/churn，不只看aggregate。
+6. 不用union、融合、挑video或task checkpoint冒充shared method。
+7. 不为正常BF16/TF32、batch和kernel低位差异牺牲吞吐。
+8. 负结果只淘汰实际组合；局部建议不能触发无证据的整套摇摆。

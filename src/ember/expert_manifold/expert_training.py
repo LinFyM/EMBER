@@ -26,7 +26,7 @@ from ember.expert_manifold.contract import (
     authority_path,
     build_dataset,
     build_worker_contract,
-    load_expert_manifold_config,
+    load_task_expert_config,
     load_train_tasks,
     parse_resume_task,
     parse_task_indices,
@@ -320,7 +320,7 @@ def train(args: argparse.Namespace) -> None:
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise ExpertManifoldError("each task-expert worker requires exactly one visible CUDA device")
     torch.cuda.set_device(0)
-    config = load_expert_manifold_config(args.config.resolve())
+    config = load_task_expert_config(args.config.resolve())
     total_steps, batch_size, checkpoint_steps, stop_step = resolve_runtime(args, config)
     all_tasks = load_train_tasks(config, args.data_root.resolve())
     indices = parse_task_indices(args.task_indices, len(all_tasks))

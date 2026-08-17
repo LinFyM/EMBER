@@ -11,9 +11,9 @@ from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v3"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v4"
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v3"
+    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v4"
 )
 
 
@@ -73,7 +73,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _validate_method(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     expected_writer = {
-        "architecture": "pi05_layer_matched_memory_program_compiler_v3",
+        "architecture": "pi05_layer_matched_memory_program_compiler_v4",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "frame_stride": 5,
         "include_final_frame": True,
@@ -87,7 +87,11 @@ def _validate_method(config: Mapping[str, Any]) -> None:
             "stage_addressed_attention_over_centered_layer_rank_memory"
         ),
         "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
-        "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
+        "video_set": (
+            "address_preserving_mean_anchored_bounded_deepsets_consensus_"
+            "k1_exact_identity"
+        ),
+        "video_set_max_relative_correction": 0.5,
         "m2p": "same_20x16_grid_identity_anchored_bounded_axial_correction",
         "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
         "step0_contract": "fresh_native_A0_B0_source_policy_identity",

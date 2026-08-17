@@ -210,7 +210,11 @@ class CompleteLoRAWriter(torch.nn.Module):
                 heads=int(writer_config["memory_reader_heads"]),
                 initialization_seed=seed,
             ),
-            video_set=AddressPreservingVideoSet(),
+            video_set=AddressPreservingVideoSet(
+                max_relative_correction=float(
+                    writer_config["video_set_max_relative_correction"]
+                )
+            ),
             compiler=LayerMatchedMemoryProgramCompiler(
                 heads=int(writer_config["m2p_heads"]),
                 blocks=int(writer_config["m2p_blocks"]),

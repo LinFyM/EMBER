@@ -35,10 +35,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v3"
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v4"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_episode_v3"
+    "ember_pi05_layer_matched_memory_program_compiler_episode_v4"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -53,11 +53,11 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
         "schema_version": "ember_pi05_writer_generation_profile_v2",
         "evidence_path": (
             "runs/acceptance/"
-            "pi05_lmmpc_v3_k4_generation_profile_af76558_macro2_"
-            "gpu01p5_20260818/writer_generation_profile.json"
+            "pi05_lmmpc_v4_k4_generation_profile_pending/"
+            "writer_generation_profile.json"
         ),
-        "evidence_bytes": 10775,
-        "authority_commit": "af76558075315b6ea954e60feff44dfaac0637e3",
+        "evidence_bytes": 1,
+        "authority_commit": "0000000000000000000000000000000000000000",
         "device": "NVIDIA A40",
         "profiled_writer_model_batch_sizes": [8, 16, 32],
         "supported_writer_model_batch_sizes": [8, 16, 32],

@@ -104,7 +104,7 @@ def _model() -> tuple[CompleteLoRAWriter, dict[str, torch.Tensor]]:
         procedure=CausalProcedureEncoder(width=256, heads=8, blocks=1),
         backbone_memory_encoder=_FakeBackboneMemoryEncoder(),
         memory_reader=LayerRankMemoryReader(heads=8, initialization_seed=7),
-        video_set=AddressPreservingVideoSet(),
+        video_set=AddressPreservingVideoSet(max_relative_correction=0.5),
         compiler=LayerMatchedMemoryProgramCompiler(
             heads=8,
             blocks=1,

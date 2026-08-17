@@ -487,21 +487,21 @@ WRITER_FAMILIES = {
         "episode_validator": "dynamic_k",
         "checkpoint_curve_allowed_macros": (1, 2, 3, 4),
     },
-    "pi05_layer_matched_memory_program_compiler_v3": {
+    "pi05_layer_matched_memory_program_compiler_v4": {
         "adapter_schema": (
             "ember_pi05_layer_matched_memory_program_compiler_"
-            "eval_adapter_v3"
+            "eval_adapter_v4"
         ),
         "episode_schema": (
-            "ember_pi05_layer_matched_memory_program_compiler_episode_v3"
+            "ember_pi05_layer_matched_memory_program_compiler_episode_v4"
         ),
         "config_schema": (
-            "ember_pi05_layer_matched_memory_program_compiler_writer_v3"
+            "ember_pi05_layer_matched_memory_program_compiler_writer_v4"
         ),
         "writer_kind": "layer_matched_memory_program_compiler_writer",
         "arm_prefix": "layer_matched_memory_program_compiler_",
         "trained_checkpoint_kind": (
-            "layer_matched_memory_program_compiler_v3_macro_checkpoint"
+            "layer_matched_memory_program_compiler_v4_macro_checkpoint"
         ),
         "formal_statuses": ("sealed",),
         "lora_rank": 16,

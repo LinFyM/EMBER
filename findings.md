@@ -227,11 +227,17 @@ LMMPC-v2还补充了一个明确负边界：完整stage reader、Dynamic-K与nat
 重新变成task-common、order-insensitive方向；因此当前最早修复接口是Program-preserving compiler commitment，而非
 继续增强Procedure loss、恢复negative训练或改变rank。
 
+LMMPC-v3进一步表明，约束后置M2P不会自动解决上游集合表示：M2P改写已被限制到约`.25x`，macro25一度恢复到
+`102`，继续到macro50却降至`60`。更早的unbounded K-set correction相对per-video mean仍改写`5.8--10.2x`，把
+between-task cosine推到`.90+`且没有改善same-task coherence。Few-shot set模块必须以已经保序、已对齐地址的
+per-video Program为anchor；learned cross-video correction可以存在，但不能默认拥有覆盖anchor的权限。
+
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
 support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint
-旁路。因此当前优先检验的是**完整高层Procedure能否按固定layer/rank地址读取dynamic native Value**；只有该接口通过
-后，才有资格判断K-set、M2P或shared credit是否是下一个断点。
+旁路。v2/v3已经依次把判断推进到K-set、M2P与factor之前；当前优先检验的是**有界K-set能否同时保留per-video
+task结构、跨video共同信息与有向Procedure证据**。只有该接口通过后，才把下一个变量后移到Core fusion、factor或
+shared functional credit。
 
 ## 14. 方法选择与实验原则
 

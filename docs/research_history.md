@@ -258,6 +258,33 @@ block0相对输入改写`4.50034x`，把order压到`.150168`、between-task升�
 identity-anchored bounded refinement；不构成fresh closed-loop成绩。v2负结果不否定stage reader、memory token、
 Dynamic-K、rank16或axial通信本身，只否定unbounded proposal直接取代Core-fused grid。
 
+### 3.10 Layer-Matched Memory Program Compiler v3
+
+v3只把v2的unbounded axial M2P改成逐cell bounded commitment；Core/Procedure、stage reader、K-set、Core fusion、
+native rank16 A/B和B20 functional recipe不变。clean `af76558075315b6ea954e60feff44dfaac0637e3`的同一world3 run
+完成macro25与exact-resume macro50：
+
+| checkpoint | strict | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `102/400` | 5 | `2/0/47/8/0/37/8/0` | `2/55/37/8` |
+| macro50 | `60/400` | 6 | `2/0/24/2/1/26/5/0` | `2/26/27/5` |
+
+25→50=`46 retained / 14 gained / 56 lost / 284 both-fail`、churn70、net`-42`、Jaccard`.396552`；macro50相对
+LPCP143=`46/14/97`、churn111、net`-83`。这不是尚未充分训练的共同上升：继续25个macro后Object/Goal/Long均降，
+v3不续macro75或六臂。
+
+机制上v3确实关闭了v2断点。macro25/50 raw axial proposal相对Core-fused anchor仍为`15.29x/12.83x`，但实际
+commitment只有`.24979/.24953x`；Core-fused→compiled的order仅`.3338→.3208`与`.2904→.2714`。新的最早异常位于
+K-set：raw set output相对per-video mean的relative-L2为`10.188/5.831`，between-task cosine由`.6543/.7672`升到
+`.9025/.9218`，within-task condition cosine反而由`.9954/.9967`降到`.9649/.9804`。Core fusion随后把between-task
+恢复到`.6462/.6502`，因此不是更早断点。
+
+只读mean-only与bounded counterfactual均改善task分离和same-task coherence，但降低部分order幅度，说明raw branch
+含有有用有向成分而不应删除。active v4因此只把K-set correction变为per-video mean-anchored逐cell bounded
+commitment，fresh gate初始`.25`、最大`.5`；不改变rank、loss、时序监督或训练recipe。v3负结果只否定
+`bounded M2P + unbounded nonlinear K-set + 当前functional credit`组合，不否定memory、Dynamic-K、rank16或
+cross-video learned aggregation。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

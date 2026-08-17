@@ -1,17 +1,18 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-18 **active LMMPC-v3 implementation authority**。LMMPC-v1/v2均已完成macro25/50 strict与逐接口诊断，
-terminal checkpoints只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成v3实现、fresh
-训练、strict评测、逐接口分析与局部迭代；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅
-改换路线。
+状态：2026-08-18 **active LMMPC-v4 implementation authority**。LMMPC-v1/v2/v3均已完成macro25/50 strict与逐接口
+诊断，terminal checkpoints只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成局部迭代、
+fresh训练、strict评测与逐接口分析；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅改换
+路线。
 
 ## 1. 一句话决策
 
 LMMPC保留V6已经证明有效的task-grounded Semantic Core和Action-query Visual-Transition Procedure；同一次真实
 π0.5 image/language/Action forward再产生逐层、逐rank的one-way memory states。V6 Procedure不再经过一组后置
 routing identities恢复参数地址，而是直接读取每个`layer × rank`的memory时间序列；帧到video、video到K-set的
-两级聚合都严格保留layer/rank轴。聚合后的memory tensor本身进入SHINE式group/rank axial M2P，再由共同训练的
-native factor heads生成一套完整38-target rank16 A/B LoRA。
+两级聚合都严格保留layer/rank轴。K-set的learned consensus只能作为per-video mean的逐cell有界修正；聚合后的
+memory tensor本身进入同样受限的SHINE式group/rank axial M2P，再由共同训练的native factor heads生成一套完整
+38-target rank16 A/B LoRA。
 
 完整职责链是：
 
@@ -26,7 +27,7 @@ each layer/rank address uses all Procedure stages to read its memory sequence
     -> parameter-aligned per-video task memory
 
 per-video order-preserving reduction
-    -> permutation-invariant K-set consensus
+    -> permutation-invariant mean-anchored bounded K-set consensus
     -> Procedure-gated Core fusion
     -> axial M2P on the same memory grid
     -> native rank16 A/B
@@ -39,9 +40,11 @@ per-video order-preserving reduction
 
 v2只修正v1已经定位的`Procedure -> layer/rank memory reader`，并证明完整阶段确实进入parameter memory；但其
 macro25/50 strict仅`71→73`，且训练后两层unbounded M2P把已经分离的Core-fused task Program重新变成共同方向。
-v3只修正这个新的最早断点：Core、Action/Procedure前端、one-way memory、动态K、Core fusion、两层group/rank
-axial proposal、native rank16 A/B与B20 functional合同均不改；M2P从覆盖Program改为逐cell有上界的residual
-commitment。冻结恒等的VL Meta-LoRA同时从fresh runtime移除，它是行为等价的工程清理，不是第二个科学变量。
+v3把M2P改为逐cell有界residual，macro25恢复到`102`；但继续训练到macro50反而降到`60`。新的最早断点位于更上游：
+K-set nonlinear correction相对per-video mean改写`10.19x→5.83x`，把between-task cosine在macro25/50分别从
+`.6543/.7672`推到`.9025/.9218`。v4只把这一K-set correction改为mean-anchored逐cell bounded commitment；Core、
+Action/Procedure、one-way memory、动态K、Core fusion、v3 bounded M2P、native rank16 A/B与B20 functional合同均
+不改。
 
 ## 2. 科学假设与历史继承
 
@@ -64,6 +67,7 @@ commitment。冻结恒等的VL Meta-LoRA同时从fresh runtime移除，它是行
 | v4 | 原生context必须有真实图文和Action prefix | trainable VL Meta旁路、absolute-time/action-phase shortcut |
 | LMMPC-v1 | memory、动态K、M2P和rank16链路均可训练，macro25/50为`81→101` | 返回单个last-query再加独立endpoint、correct-minus-reverse和matching shortcut |
 | LMMPC-v2 | 完整Procedure stage reader接通；macro25/50为`71→73` | unbounded M2P逐层放大并重写已形成的task/order signal |
+| LMMPC-v3 | bounded M2P令macro25恢复到`102`，且compiler不再大幅覆盖Core-fused grid | K-set nonlinear correction无界覆盖per-video mean；继续训练到macro50降至`60` |
 
 这只说明设计针对了已知失败，不能替代实验。尚未解决的风险仍包括：memory时间变化可能偏向低层nuisance；K-set
 可能稳定错误task mean；axial M2P/factor heads可能再次衰减Program；shared functional credit仍可能造成task换手。
@@ -100,7 +104,7 @@ for each video k independently:
 K videos:
   {C[k]} -> shared Semantic Core C_set
   {P[k]} -> shared Procedure summary P_set
-  {H[k,l,r]} -> permutation-invariant consensus at each fixed (l,r)
+  {H[k,l,r]} -> permutation-invariant mean-anchored bounded consensus at each fixed (l,r)
     -> H_set[l,r]
 
 H_set dynamically opens the relevant C_set content
@@ -265,11 +269,25 @@ centered[k,l,r] = H_video[k,l,r] - mu[l,r]
 context[k] = concat(C_video[k], P_summary[k])
 
 correction[l,r] = Mean_k(phi(centered[k,l,r], context[k], C_set, P_set))
-H_set[l,r] = mu[l,r] + psi(correction[l,r], C_set, P_set)
+Z_set[l,r] = mu[l,r] + psi(correction[l,r], C_set, P_set)
+
+delta_set = Z_set - mu
+limited_set = delta_set * min(1, RMS(mu) / max(RMS(delta_set), 1e-6))
+gate_set = 0.5 * sigmoid(g_set)       # fresh g_set=0, initial gate=.25
+H_set = mu + gate_set * limited_set
 ```
 
-`phi/psi`共享、zero-bias；K=1时correction严格为0，`H_set=H_video`。mean只发生在已经保序理解、且已映射到相同
-layer/rank坐标的高层memory，不平均frames、raw features或LoRAs。所有videos等权进入mean和correction，不挑一条。
+`phi/psi`共享、zero-bias；K=1时直接返回`mu=H_video`。K>1时learned set branch仍可比较不同video并提取共同
+correction，但每个固定`(l,r)` cell上的实际修正始终不超过anchor `mu` RMS的`.5x`。mean只发生在已经保序理解、
+且已映射到相同layer/rank坐标的高层memory，不平均frames、raw features或LoRAs。所有videos等权进入mean和
+correction，不挑一条。
+
+v3没有最后四行的commitment。macro25/50中raw `Z_set`相对`mu`的global relative-L2分别为`10.188/5.831`，
+cosine仅`.245/.459`；between-task cosine由`mu`的`.654/.767`升到`.903/.922`，同时within-task condition cosine
+由`.995/.997`降到`.965/.980`。因此该branch不是在稳定common Program，而是在覆盖地址保持的per-video mean。
+只读`.25x` counterfactual把macro25/50的post-M2P between-task cosine从`.677/.692`降到`.521/.623`，并把
+within-task cosine从`.983/.995`升到`.995/.997`；它会降低部分correct/reverse幅度，所以v4保留learned correction
+并fresh共同训练，而不是删除branch或把counterfactual当成闭环成绩。
 
 实现reshape为：
 
@@ -309,7 +327,7 @@ Y[l,r] = language_gate * (
 - language-only、static Core、first-frame或video-presence不能独立写LoRA；
 - correct/reverse/shuffle的差异必须来自Procedure/memory时序，而非Core身份。
 
-## 9. Memory tensor直接进入bounded axial M2P
+## 9. Mean-anchored memory tensor直接进入bounded axial M2P
 
 `Y[18,16,d]`已经是parameter-aligned memory grid，不再建立独立320 slots。两个边界行由现有grid产生：
 
@@ -375,8 +393,8 @@ DeltaW = B @ A
 
 ### 11.1 Fresh边界
 
-LMMPC-v3改变了M2P commitment且删除冻结恒等VL Meta-LoRA，正式checkpoint与v2及V6/LPCP/GOMQ均不兼容。正式
-train24必须从fresh Writer initialization开始，只复用冻结source policy、固定数据、normalization和公共LoRA schema。
+LMMPC-v4改变了K-set commitment，正式checkpoint与v3/v2及V6/LPCP/GOMQ均不兼容。正式train24必须从fresh Writer
+initialization开始，只复用冻结source policy、固定数据、normalization和公共LoRA schema。
 
 开发bring-up可临时复用sealed V6 Core/Procedure activations检查memory→M2P→factor接线，但不训练成正式bridge、
 不做闭环选模，也不把旧task能力算入新架构。
@@ -412,7 +430,8 @@ rank/scale/seed sweep或额外target-task数据。若native BA/action已经mater
 
 - 复用现有one-way `backbone_memory` native context capture，37 capacity tokens原位替换为16 rank queries；
 - 复用V6 semantic Core、Action-query transition和causal Procedure的已验证owner，删除旧后置slot compiler调用；
-- 使用第6节stage-addressed centered-memory readout、地址保持的K-set、dynamic Core gate和group/rank axial M2P；
+- 使用第6节stage-addressed centered-memory readout、地址保持且mean-anchored bounded的K-set、dynamic Core gate和
+  group/rank axial M2P；
 - 复用38-target schema、A0/B0 template和factor output shapes，新heads fresh；
 - config/checkpoint/eval schema明确fresh-incompatible，不留legacy fallback；
 - 训练/部署只走一次correct正序；评测reverse/shuffle重排raw frames后完整重跑Writer，不在模型内部复用correct结果；
@@ -424,7 +443,8 @@ rank/scale/seed sweep或额外target-task数据。若native BA/action已经mater
 
 1. 每帧内容forward计数为1，source policy参数0 gradient；
 2. Action states不受memory影响，memory可读完整native context；
-3. T/K aggregation不混layer/rank，K permutation只允许正常低位reduction差异；
+3. T/K aggregation不混layer/rank，K permutation只允许正常低位reduction差异；K>1的每cell set correction始终
+   `<=.5x`对应per-video mean RMS，fresh gate和set branch均获得gradient；
 4. no-language、no-video和constant路径的fresh effective BA为identity；
 5. 用repeated-last替换Procedure内部阶段必须material改变H；correct/reverse/shuffle完整重前向后Procedure、memory、
    factor、BA/action均有material响应，且reverse不再是架构硬编码反号；
@@ -620,7 +640,7 @@ v3的首轮可证伪门是：
    近同为代价；
 3. fresh训练仍到macro25并做strict400；若loss/closed-loop仍上升，继续macro50，不以首点判死；
 4. 若v3已保持Program但closed-loop仍远低于v1/LPCP，最早断点后移到factor/functional credit，再在同一主链内
-   做下一次局部迭代；不得回头恢复unbounded M2P或用rank/LR/seed小扫。
+   做下一次局部迭代；不得回头恢复unbounded M2P/K-set或用rank/LR/seed小扫。
 
 ### 18.1 v3 clean mechanism/profile seal
 
@@ -648,3 +668,44 @@ recompile max-abs为0。fresh checkpoint不包含任何VL Meta-LoRA tensor或run
 `.21314/.21489/.21627`，均覆盖226-frame最长样本且两次测量稳定；batch32 peak reserved=
 `20,231,225,344` bytes、headroom=`27,468,496,896` bytes，零OOM/nonfinite/禁读。因此正式evaluation使用
 batch32；这只封存部署吞吐，不参与科学选择。
+
+## 19. LMMPC-v3终局证据与v4可证伪门
+
+v3 fresh world3同一run完成macro25与exact-resume macro50；两次K4 strict paired400均完整exit0：
+
+| checkpoint | correct | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `102/400` | 5 | `2/0/47/8/0/37/8/0` | `2/55/37/8` |
+| macro50 | `60/400` | 6 | `2/0/24/2/1/26/5/0` | `2/26/27/5` |
+
+25→50严格配对为`46 retained / 14 gained / 56 lost / 284 both-fail`，churn70、net`-42`、Jaccard`.396552`；
+四suite只有Spatial净0，其余为`-29/-10/-3`。macro50相对LPCP143为`46/14/97`、churn111、net`-83`。因此
+macro25不是仍在共同上升的早停点，而是随继续训练显著回落的单点；v3不得resume macro75或补六臂。
+
+v3解决了v2的直接断点：macro25/50的M2P实际commitment相对Core-fused anchor仅`.24979/.24953`，而raw proposal
+仍为`15.29x/12.83x`；Core-fused到compiled的correct/reverse只从`.3338→.3208`和`.2904→.2714`，不再出现v2
+`.2573→.0938`的覆盖。gate保持`.2498/.2495`且链路持续有gradient。故不能把新回落重新归因于v3 bounded M2P
+未生效。
+
+新的最早断点是K-set nonlinear correction：
+
+- macro25 per-video mean到raw K-set的relative-L2=`10.1880`、cosine=`.24493`、norm ratio=`10.3815x`；
+- macro50仍为`5.83145/.45941/6.21550x`；
+- between-task cosine在macro25由per-video mean`.65428`升到K-set`.90254`，macro50由`.76721`升到`.92178`；
+- within-task condition cosine反而由`.99536/.99670`降到`.96486/.98036`；
+- downstream Core fusion仍能把between-task降到`.64620/.65021`，bounded M2P仅小幅升到`.67674/.69152`，所以
+  Core和M2P都不是更早的task-common来源。
+
+只读mean-only与`.25/.5x` bound在两个checkpoint都恢复task分离和same-task coherence，但降低部分order/BA幅度。
+这说明raw set branch同时含有有用有向成分，不能直接删除；也说明允许其覆盖mean不是提取cross-video common
+Program的必要条件。v4因此只增加与M2P同形的逐cell mean-anchored bounded commitment，fresh gate初始`.25`、最大
+`.5`；不加入matching、reverse arm、额外loss、rank变化、Core/Procedure变化或训练recipe变化。
+
+v4首轮可证伪门：
+
+1. fresh与训练后每cell K-set correction均`<=.5x mu RMS`，K1 exact identity、constant identity和K permutation不变；
+2. set gate、phi/psi、reader、Core、M2P和八factor family均获得gradient，native BA/action material；
+3. validation8 stage不再复现`mu -> H_set`的task-common overwrite，同时不要求correct/reverse距离人为增大；
+4. fresh训练到macro25 strict400；若closed-loop与loss仍共同改善则继续macro50，若再次出现明确相邻回落则先定位；
+5. v4若保持Program但absolute仍弱，下一变量必须后移到Core fusion/factor/functional credit，不能放开两个已证实的
+   bounded commitment或用小参数sweep救结果。

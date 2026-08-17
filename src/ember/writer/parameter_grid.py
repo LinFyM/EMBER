@@ -148,10 +148,13 @@ class LayerRankMemoryReader(torch.nn.Module):
 
 
 class AddressPreservingVideoSet(torch.nn.Module):
-    """Build a permutation-invariant K-video consensus at every fixed address."""
+    """Bound a permutation-invariant K-video consensus around its mean."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, max_relative_correction: float) -> None:
         super().__init__()
+        if not 0.0 < max_relative_correction < 1.0:
+            raise WriterModelError("invalid K-video set commitment")
+        self.max_relative_correction = float(max_relative_correction)
         self.context_gate = torch.nn.Linear(
             2 * PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
         )
@@ -170,6 +173,27 @@ class AddressPreservingVideoSet(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(2 * PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False),
         )
+        self.commitment_logit = torch.nn.Parameter(torch.zeros(()))
+
+    def bounded_commitment(
+        self,
+        anchor: torch.Tensor,
+        proposal: torch.Tensor,
+    ) -> torch.Tensor:
+        """Keep every per-video mean cell dominant over the set correction."""
+
+        if proposal.shape != anchor.shape:
+            raise WriterModelError("K-video set proposal changed the addressed grid")
+        anchor32 = anchor.to(torch.float32)
+        delta32 = proposal.to(torch.float32) - anchor32
+        anchor_rms = anchor32.square().mean(dim=-1, keepdim=True).sqrt()
+        delta_rms = delta32.square().mean(dim=-1, keepdim=True).sqrt()
+        scale = (anchor_rms / delta_rms.clamp_min(1e-6)).clamp(max=1.0)
+        limited = delta32 * scale
+        gate = self.max_relative_correction * torch.sigmoid(
+            self.commitment_logit
+        )
+        return anchor + (gate * limited).to(anchor.dtype)
 
     def _condition(
         self,
@@ -189,7 +213,8 @@ class AddressPreservingVideoSet(torch.nn.Module):
             (core_summary.mean(dim=0), procedure_summary.mean(dim=0)), dim=-1
         )
         shared_gate = torch.tanh(self.shared_gate(shared))
-        return mean + correction + shared_gate * self.correction(correction)
+        proposal = mean + correction + shared_gate * self.correction(correction)
+        return self.bounded_commitment(mean, proposal)
 
     def forward(
         self,

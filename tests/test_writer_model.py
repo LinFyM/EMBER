@@ -207,7 +207,7 @@ def test_axial_m2p_commitment_is_cellwise_bounded_and_live() -> None:
 
 
 def test_video_set_does_not_mix_layer_or_rank_addresses() -> None:
-    fusion = AddressPreservingVideoSet()
+    fusion = AddressPreservingVideoSet(max_relative_correction=0.5)
     value = torch.zeros(1, 18, 16, 256)
     value[0, 7, 11] = 1.0
     output = fusion(
@@ -219,6 +219,24 @@ def test_video_set_does_not_mix_layer_or_rank_addresses() -> None:
     assert torch.equal(output[0], value[0])
     assert output[0, 7, 11].count_nonzero() == 256
     assert output.count_nonzero() == 256
+
+
+def test_video_set_commitment_is_cellwise_bounded_and_live() -> None:
+    fusion = AddressPreservingVideoSet(max_relative_correction=0.5)
+    anchor = torch.randn(2, 18, 16, 256, requires_grad=True)
+    proposal = anchor + 100.0 * torch.randn_like(anchor)
+    committed = fusion.bounded_commitment(anchor, proposal)
+    correction_rms = (committed - anchor).float().square().mean(-1).sqrt()
+    anchor_rms = anchor.float().square().mean(-1).sqrt()
+    torch.testing.assert_close(
+        correction_rms,
+        0.25 * anchor_rms,
+        rtol=2e-5,
+        atol=2e-6,
+    )
+    committed.square().mean().backward()
+    assert fusion.commitment_logit.grad is not None
+    assert fusion.commitment_logit.grad.count_nonzero()
 
 
 def test_factor_family_and_layer_ownership_is_native_rank16() -> None:
@@ -252,6 +270,10 @@ def test_all_factor_families_and_dynamic_path_receive_gradients() -> None:
     assert model.memory_reader.key.weight.grad.count_nonzero()
     assert model.memory_reader.address_query.weight.grad is not None
     assert model.memory_reader.address_query.weight.grad.count_nonzero()
+    assert model.video_set.commitment_logit.grad is not None
+    assert model.video_set.commitment_logit.grad.count_nonzero()
+    assert model.video_set.centered[-1].weight.grad is not None
+    assert model.video_set.centered[-1].weight.grad.count_nonzero()
 
 
 def test_memory_reader_uses_internal_procedure_stages_not_only_the_last() -> None:

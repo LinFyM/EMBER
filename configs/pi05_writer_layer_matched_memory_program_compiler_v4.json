@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v3",
+  "schema_version": "ember_pi05_layer_matched_memory_program_compiler_writer_v4",
   "status": "active_formal_ready",
   "sealed_stage": "development",
   "authorities": {
@@ -30,7 +30,7 @@
     "test_action_or_reward_reads": 0
   },
   "writer": {
-    "architecture": "pi05_layer_matched_memory_program_compiler_v3",
+    "architecture": "pi05_layer_matched_memory_program_compiler_v4",
     "generated_adapter": "complete_pi05_task_specific_rank16_lora",
     "camera_dataset": "obs/agentview_rgb",
     "camera_transform": "libero_opengl_rotate_180_chw_uint8",
@@ -48,7 +48,8 @@
     "causal_procedure": "v6_action_query_visual_transition_causal_rope",
     "procedure_memory_readout": "stage_addressed_attention_over_centered_layer_rank_memory",
     "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
-    "video_set": "address_preserving_deepsets_consensus_k1_exact_identity",
+    "video_set": "address_preserving_mean_anchored_bounded_deepsets_consensus_k1_exact_identity",
+    "video_set_max_relative_correction": 0.5,
     "core_fusion": "language_and_nonzero_dynamic_memory_gated_core_cross_attention",
     "m2p": "same_20x16_grid_identity_anchored_bounded_axial_correction",
     "factor_decoder": "eight_jointly_trained_native_rank16_factor_heads",
@@ -141,51 +142,13 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 100,
     "per_task_action_batch_size": 20,
     "checkpoint_macros": [25, 50, 75, 100],
     "stage_stop_macros": [25, 50, 75, 100],
     "first_strict_paired400_macro": 25,
-    "profile_evidence": {
-      "source_commit": "987d131be3817f30afdb8513678a8daf9b1044e1",
-      "run_root": "runs/acceptance/pi05_lmmpc_v3_profile_r3_b20_987d131_gpu02p137_20260818",
-      "host": "gpu02",
-      "physical_gpus": [1, 3, 7],
-      "world_size": 3,
-      "functional_policy_microbatch_size": 5,
-      "completion_macro": 2,
-      "macro_seconds": 55.32235730998218,
-      "max_cuda_allocated_bytes": 35437871616,
-      "max_cuda_reserved_bytes": 35720790016,
-      "global_k_histogram": {"1": 6, "2": 6, "3": 6, "4": 6},
-      "scheduled_max_condition_frames": 371,
-      "scheduled_max_condition_peak_allocated_bytes": 41851758080,
-      "scheduled_max_condition_peak_reserved_bytes": 42393927680,
-      "scheduled_max_condition_result": "complete_five_task_local_sequence",
-      "mechanism_checkpoint_macro": 2,
-      "native_context_calls": 323,
-      "expected_native_context_calls": 323,
-      "native_encoder_invocations": 11,
-      "native_encoder_rows_with_padding": 352,
-      "procedure_stage_replacement_relative_l2": 0.9997161030769348,
-      "procedure_stage_replacement_norm_ratio": 0.01624280773103237,
-      "reverse_parameter_memory_relative_l2": 0.7087026238441467,
-      "reverse_parameter_memory_negative_relative_l2": 1.8508429527282715,
-      "shuffle_effective_ba_relative_l2": 0.13497910216722284,
-      "correct_effective_ba_l2": 0.3992472729157738,
-      "constant_effective_ba_max_abs": 0.0,
-      "k_permutation_lora_max_abs": 0.0,
-      "deployment_recompile_lora_max_abs": 0.0,
-      "m2p_gate": 0.24999767541885376,
-      "m2p_maximum_correction_over_anchor_rms": 0.2503945529460907,
-      "m2p_configured_maximum": 0.5,
-      "m2p_gate_and_block_gradients_nonzero": true,
-      "all_factor_family_gradients_nonzero": true,
-      "all_reader_path_gradients_nonzero": true,
-      "vl_meta_lora_parameter_count": 0,
-      "source_policy_nonzero_gradient_tensors": 0
-    }
+    "profile_evidence": {}
   }
 }

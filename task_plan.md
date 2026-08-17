@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v2终局定位后，原位实现和验证
-LMMPC-v3的identity-anchored bounded M2P commitment。
+状态：2026-08-18 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v3终局定位后，原位实现和验证
+LMMPC-v4的mean-anchored bounded K-set commitment。
 
 ## Goal
 
@@ -63,22 +63,25 @@ LMMPC-v3的identity-anchored bounded M2P commitment。
   `.3381→.6560`；bounded initial/max保留到`.2479/.2308`与`.3608/.4056`。
 - [x] 完成v3唯一canonical实现、fresh schema、VL Meta-LoRA恒等路径清理、CPU/architecture合同。
 - [x] 从clean pushed detached commit完成v3真实K4机制、world3两macro吞吐、371-frame门并封存formal recipe。
-- [ ] v3 fresh train24到macro25/50并完成strict paired400、逐task/suite/stage与retention/churn分析。
+- [x] v3 fresh train24到macro25/50并完成strict paired400、逐task/suite/stage与retention/churn分析；结果
+  `102→60`、churn70，定位到unbounded K-set覆盖per-video mean。
+- [x] 用v3 macro25/50 hidden完成raw/mean/bounded K-set counterfactual，确认raw branch同时降低between-task
+  separability和same-task coherence，而bounded branch保留部分order成分。
+- [ ] 完成v4唯一canonical实现、fresh schema、CPU/architecture合同、真实K4机制、吞吐、最长视频与formal seal。
+- [ ] v4 fresh train24到macro25并完成strict paired400、逐task/suite/stage与retention/churn分析；有真实共同上升
+  证据时继续同一run到macro50。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
 
 ## Current decision
 
-当前active design为`docs/layer_matched_memory_program_compiler_design.md`。v2完整stage reader通过，但macro25/50 strict
-只有`71/73`；25→50为`42 retained / 31 gained / 29 lost`，churn60、Jaccard`.4118`。macro50的Core-fused grid仍同时
-具备same-task K4 cosine`.9922`、between-task`.3381`和correct/reverse relative-L2`.2573`；两层unbounded M2P却把
-后两者破坏到`.6560/.0938`，最终BA order差异仅`.0862`。第一层自身改写anchor `4.500x`，第二层再改写`1.753x`，
-output norm不是主因。因此v2不续macro75，最早断点已从reader后移到M2P commitment。
+当前active design为`docs/layer_matched_memory_program_compiler_design.md`。v3的bounded M2P确实把
+Core-fused→compiled的改写限制在约`.25x`，但macro25/50 strict为`102→60`；25→50=`46 retained / 14 gained /
+56 lost`、churn70、net`-42`。最早断点前移到K-set：raw nonlinear consensus相对per-video mean改写
+`10.188x/5.831x`，把between-task cosine由`.654/.767`破坏到`.903/.922`，并降低same-task coherence。下游Core fusion
+反而恢复task分离，bounded M2P只小幅改写，所以不能把回落继续归咎于M2P或训练量。
 
-v3保留四流、V6 Core/Procedure、16个layer/rank memory、动态K、Core fusion、同一两层axial proposal和native rank16；
-唯一科学变量是把proposal限制为逐cell不超过anchor RMS `.5x`的residual，fresh gate初始为`.25x`。只读counterfactual
-在max gate仍保留order`.2308`和between-task`.4056`，same-task K4 cosine`.9939`。冻结、B=0的VL Meta-LoRA同步从
-fresh canonical runtime移除，作为行为等价工程清理。clean `987d131`已经完成两macro、K4机制和371-frame门；
-bounded correction、完整Procedure、constant/K置换、八family/M2P梯度与VL清理均通过。下一步从只写回seal authority的
-clean pushed commit启动fresh train24；这些机制证据尚不是closed-loop成绩。
+v4唯一增加与M2P同形的mean-anchored逐cell K-set commitment：fresh gate初始`.25`、最大`.5`；不删除learned
+cross-video correction，也不改变Core/Procedure、memory、M2P、rank16、loss或recipe。当前CPU实现接通，下一步从clean
+pushed detached commit验证真实K4机制/资源并封存formal recipe；这些机制证据尚不是closed-loop成绩。

@@ -538,15 +538,22 @@ def test_evaluator_resolves_only_the_lmmpc_rank16_authority() -> None:
     )
 
 
-def test_generation_profile_is_explicitly_pending_v4_live_evidence() -> None:
+def test_generation_profile_is_sealed_from_v4_live_evidence() -> None:
     from ember.writer.evaluation import DYNAMIC_K_GENERATION_PROFILES
 
     assert set(DYNAMIC_K_GENERATION_PROFILES) == {4}
     profile = DYNAMIC_K_GENERATION_PROFILES[4]
     assert profile["schema_version"] == "ember_pi05_writer_generation_profile_v2"
-    assert "lmmpc_v4_k4_generation_profile_pending" in profile["evidence_path"]
-    assert profile["evidence_bytes"] == 1
-    assert profile["authority_commit"] == "0" * 40
+    assert (
+        profile["evidence_path"]
+        == "runs/acceptance/"
+        "pi05_lmmpc_v4_k4_generation_profile_8c40a56_macro2_gpu02p7_20260818/"
+        "writer_generation_profile.json"
+    )
+    assert profile["evidence_bytes"] == 10788
+    assert profile["authority_commit"] == (
+        "8c40a56cb352ddd57098e646a10d3a2d32ec1c35"
+    )
     assert profile["profiled_writer_model_batch_sizes"] == [8, 16, 32]
     assert profile["supported_writer_model_batch_sizes"] == [8, 16, 32]
     assert profile["selected_writer_model_batch_size"] == 32
@@ -558,5 +565,8 @@ def test_generation_profile_is_explicitly_pending_v4_live_evidence() -> None:
     ] == [8, 16, 32]
     assert all(
         row["stable"] for row in profile["writer_generation_measurements"]
+    )
+    assert profile["writer_generation_measurements"][2]["loras_per_second"] > (
+        profile["writer_generation_measurements"][0]["loras_per_second"]
     )
     assert profile["oom_count"] == profile["nonfinite_count"] == 0

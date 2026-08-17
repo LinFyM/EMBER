@@ -121,15 +121,17 @@ matching loss、reverse训练臂、reward/RL、expert bank或其它新监督。
   `.99100→.97952`，没有复现v3的`.65/.77→.90+`覆盖；order relative-L2为`.49115→.51687`，compiled/BA仍有
   `.49489/.23376`响应。这只证明最早结构门关闭，不是closed-loop成绩。
 - 371-frame完整五任务序列完成，peak allocated/reserved=`41,987,913,216 / 44,920,995,840` bytes。正式训练
-  profile authority已经封存；K4 deployment generation profile仍在同一clean runtime上测量。
+  profile authority已经封存。
+- 同一clean runtime的validation8×4固定panel完成K4 deployment generation profile：batch `8/16/32`分别为
+  `.212889/.214594/.216135 LoRA/s`，均覆盖最长226帧且稳定，selected batch=`32`；peak reserved仅
+  `20,231,225,344` bytes，零OOM/nonfinite/禁读，Writer modules在handoff前释放。
 
 ## Immediate next work
 
-1. 提交/push v4 formal seal并从新的clean detached commit启动fresh train24；并行完成K4 deployment generation
-   profile，随后只写回evaluation throughput authority。
-2. 训练到macro25，执行strict paired400、validation8逐stage和逐task/suite/retention/churn分析；只有仍存在
+1. fresh train24已从clean formal-seal commit启动；训练到macro25后执行strict paired400、validation8逐stage和
+   逐task/suite/retention/churn分析；只有仍存在
    genuine shared上升证据时才按同一run exact-resume到macro50。
-3. 首次约145且retention合理时立即补六臂和same-task不同视频鲁棒性；否则依据最早失效接口只做LMMPC主链内的
+2. 首次约145且retention合理时立即补六臂和same-task不同视频鲁棒性；否则依据最早失效接口只做LMMPC主链内的
    局部单变量改进。
 
 ## Fixed scientific baselines

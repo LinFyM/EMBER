@@ -68,7 +68,7 @@ LMMPC-v4的mean-anchored bounded K-set commitment。
 - [x] 用v3 macro25/50 hidden完成raw/mean/bounded K-set counterfactual，确认raw branch同时降低between-task
   separability和same-task coherence，而bounded branch保留部分order成分。
 - [x] 完成v4唯一canonical实现、fresh schema、CPU/architecture合同、真实K4机制、吞吐、最长视频与formal seal。
-- [ ] 完成v4 K4 deployment generation profile并只写回evaluation throughput authority。
+- [x] 完成v4 K4 deployment generation profile并只写回evaluation throughput authority。
 - [ ] v4 fresh train24到macro25并完成strict paired400、逐task/suite/stage与retention/churn分析；有真实共同上升
   证据时继续同一run到macro50。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。

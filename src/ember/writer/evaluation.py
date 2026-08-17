@@ -53,11 +53,11 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
         "schema_version": "ember_pi05_writer_generation_profile_v2",
         "evidence_path": (
             "runs/acceptance/"
-            "pi05_lmmpc_v4_k4_generation_profile_pending/"
+            "pi05_lmmpc_v4_k4_generation_profile_8c40a56_macro2_gpu02p7_20260818/"
             "writer_generation_profile.json"
         ),
-        "evidence_bytes": 1,
-        "authority_commit": "0000000000000000000000000000000000000000",
+        "evidence_bytes": 10788,
+        "authority_commit": "8c40a56cb352ddd57098e646a10d3a2d32ec1c35",
         "device": "NVIDIA A40",
         "profiled_writer_model_batch_sizes": [8, 16, 32],
         "supported_writer_model_batch_sizes": [8, 16, 32],
@@ -74,10 +74,10 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
         "writer_generation_measurements": [
             {
                 "batch_size": 8,
-                "loras_per_second": 0.21313760166577092,
+                "loras_per_second": 0.21288927786288742,
                 "repeat_wall_seconds": [
-                    150.1370779699646,
-                    150.13842245703563,
+                    150.31477597681805,
+                    150.3109795448836,
                 ],
                 "peak_reserved_bytes": 15858663424,
                 "memory_headroom_bytes": 31841058816,
@@ -85,10 +85,10 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
             },
             {
                 "batch_size": 16,
-                "loras_per_second": 0.2148928695065741,
+                "loras_per_second": 0.2145941135740891,
                 "repeat_wall_seconds": [
-                    148.97725695604458,
-                    148.84556120890193,
+                    149.0915017600637,
+                    149.14594256714918,
                 ],
                 "peak_reserved_bytes": 17563648000,
                 "memory_headroom_bytes": 30136074240,
@@ -96,10 +96,10 @@ DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
             },
             {
                 "batch_size": 32,
-                "loras_per_second": 0.21627117777600335,
+                "loras_per_second": 0.21613530720234214,
                 "repeat_wall_seconds": [
-                    148.0547324460931,
-                    147.87004430009983,
+                    148.0645026739221,
+                    148.04630323010497,
                 ],
                 "peak_reserved_bytes": 20231225344,
                 "memory_headroom_bytes": 27468496896,

@@ -730,3 +730,8 @@ validation8×4 stage gate显示per-video mean→K-set的between-task cosine仅`.
 `.990996→.979517`，不再复现v3 macro25/50的`.654/.767→.903/.922`覆盖；correct/reverse relative-L2由
 `.491147→.516868`，Core-fused/compiled/effective BA仍为`.494697/.494893/.233755`。因此v4已经关闭预注册的最早
 结构断点，但这不证明correct沿有用closed-loop方向；formal train24与strict400仍是裁决。
+
+同一clean checkpoint在validation8×4固定long-first panel完成deployment generation profile。batch `8/16/32`
+吞吐为`.212889/.214594/.216135 LoRA/s`，全部包含最长226-frame condition并稳定；batch32 peak reserved=
+`20,231,225,344` bytes，仍有`27,468,496,896` bytes headroom，故正式评测选择batch32。三类禁读、OOM、nonfinite
+均为0，Writer modules在rollout-scale handoff前释放。

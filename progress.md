@@ -7,9 +7,9 @@
 
 - 当前goal为active：推进LMMPC从设计、实现、充分fresh训练和strict评测到局部迭代与终局裁决。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`。
-- 当前分支起点HEAD与origin均为`c30bf362f76ffe76c69b32c57092c68afef08a24`；LMMPC实现与文档修改待提交。
+- 当前主分支与origin均包含`c43e234`；formal训练冻结于clean pushed `de0b298`，评测profile入口冻结于`c43e234`。
 - 当前active design为`docs/layer_matched_memory_program_compiler_design.md`，已升级为implementation authority。
-- 当前phase为sealed formal fresh train24启动；没有active GPU run或formal LMMPC checkpoint。
+- 当前phase为fresh formal train24 macro0→25；gpu02物理`1/2/3/4/7`上的world5 run正在执行，尚未到首个checkpoint。
 - 当前协作边界：不使用subagents。
 
 ## Active architecture decision
@@ -42,7 +42,8 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 
 - terminal reward/GOMQ executable runtime已经退役；历史设计、结果与Git证据保留。当前只有一个canonical LMMPC
   Writer入口、config、checkpoint和eval schema。
-- 全量CPU=`281 passed`，`compileall`和`git diff --check`通过；architecture guard为`REVIEW`、无hard blocker，
+- LMMPC封存时全量CPU=`282 passed`；补回已有generation profile模块的canonical evaluator入口后全量CPU=`283 passed`，
+  `compileall`和`git diff --check`通过；architecture guard为`REVIEW`、无hard blocker，
   active-source净减少约4468行。
 - 真实worktree profile首先在functional microbatch8复现空A40峰值OOM；这是运行时显存切片问题，未发生optimizer
   update，不构成架构负结果。
@@ -65,9 +66,9 @@ Core保留V6的强对象/关系/目标语义，但只能由非零动态memory Pr
 
 ## Immediate next work
 
-1. 提交并推送sealed profile authority；
-2. 按formal launch合同启动fresh train24到macro25，随后做首个strict paired400与完整逐接口分析；
-3. 若macro25仍在共同上升，继续macro50及相邻checkpoint，不在未见峰值时过早判死；
+1. 完成当前fresh formal macro0→25并核验完整world5 checkpoint；
+2. 用独立空闲A40完成K4 generation profile，封存真实batch后启动首个strict paired400与完整逐接口分析；
+3. 若macro25仍在共同上升，按原world5/topology exact-resume到macro50及相邻checkpoint，不在未见峰值时过早判死；
 4. 只在结果定位出明确断点后于LMMPC主链内做局部迭代。
 
 ## Training and decision boundary

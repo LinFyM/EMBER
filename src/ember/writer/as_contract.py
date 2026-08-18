@@ -152,7 +152,7 @@ def inspect_video_data(
                 sampled += 1
             per_demo[str(demo)] = sampled
         costs[str(task_id)] = per_demo
-    return {
+    contract = {
         "root": str(root),
         "task_ids": list(task_ids),
         "sampled_frame_counts_by_task": costs,
@@ -281,6 +281,18 @@ def build_contract(
         },
         "trainable": dict(trainable),
     }
+    fork = getattr(args, "diagnostic_fork_resume", None)
+    if fork is not None:
+        contract["diagnostic_intervention"] = {
+            "kind": "freeze_factor_heads_after_macro25",
+            "source_checkpoint": str(fork.resolve()),
+            "frozen_module": "factor_heads",
+            "unchanged_components": (
+                "Program Reader K-set M2P objective data optimizer scheduler and RNG"
+            ),
+            "deployment_method": False,
+        }
+    return contract
 
 
 def publish_contract(

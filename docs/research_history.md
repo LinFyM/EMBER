@@ -341,6 +341,38 @@ macro50是显著负点，但不再作为整条recipe终局：历史v5.2/v6均出
 retention责任。当前不改架构、不扫参数、不补六臂且不实现successor。已有负结果仍证明25→50未稳定共同积累；
 reader本身保留为正机制，memory token、Dynamic-K、Core/Procedure、rank16和EMBER-LMMPC主思想均未被否定。
 
+### 3.13 Core-Addressed Reader完整macro100轨迹与漂移归因
+
+同一formal run从macro50 exact-resume到macro100，保持world6、gpu01物理`1/2/4/5/6/7`、B20、optimizer、
+scheduler、sampler/RNG和架构不变。macro75/100 checkpoint及六rank state完整，0 OOM/nonfinite。四点strict
+paired400与breadth为`123/8 → 84/5 → 89/6 → 87/4`；per-task依次为
+`3/3/44/25/1/43/3/1`、`0/1/45/1/0/29/8/0`、`3/0/36/1/2/44/3/0`、
+`0/4/38/0/0/42/3/0`。macro50→75为`59 retained / 30 gained / 25 lost`、churn55、net`+5`；
+macro75→100为`70/17/19`、churn36、net`-2`。四点400 rows中49行始终成功、150行曾成功；25→50丢失52行
+只有22行在任一后续点恢复、15行到macro100恢复，新增13行只有6行到macro100仍成功。因此续训观察到了局部回升，
+但没有恢复macro25，更没有共同积累。
+
+固定K4+B20 train24 panel的mean loss为`.112124/.099353/.098427/.101337`；相邻改善/变差tasks为`19/5`、
+`14/10`、`11/13`。25→50 offline loss大幅改善同时held strict净丢39，75→100连固定support也开始忘记。
+Program×FactorHeads交叉解码中，相邻compiled Program relative-L2为`.770/.730/.710`；25→50 heads-only旧Program
+BA relative-L2=`1.320`、Program-only旧heads=`.582`，后两段分别为`.676/.583`和`.585/.575`。FactorHeads主导
+早期norm扩张，但Program始终material旋转，后期两者责任相当；只冻结heads或只约束Program都不能解释整条漂移。
+
+该recipe正式non-pass：best为macro25 `123/400`，无点达到145，最终breadth4，不做六臂controls、不再续训或小扫。
+负结果只否定`Core-Addressed Reader + bounded K-set/M2P + native rank16 FactorHeads + static cross-episode offline
+B20 credit`能够稳定积累held support；reader、memory、Dynamic-K、rank16和完整EMBER-LMMPC信息流仍可继承。
+最早失效接口最终定位为functional query occupancy到shared support-preserving credit。下一session可优先检验的单变量
+候选是保持架构和decoder不变，以train24 on-policy state replay替换静态B20 query distribution，并由冻结task-local
+experts提供action targets；该候选未在本轮实现，也不构成当前active design。
+
+正式证据：
+
+- train：`runs/outputs/pi05_lmmpc_v5_formal_fresh_r6_b20_aecbce5_gpu01p124567_20260818`；
+- macro75 strict：`runs/outputs/pi05_lmmpc_core_addressed_macro0075_k4_correct400_noreplacement_seed7_trainr6_evalr3_f42edfc_gpu02p237_20260818`；
+- macro100 strict：`runs/outputs/pi05_lmmpc_core_addressed_macro0100_k4_correct400_noreplacement_seed7_trainr6_evalr5_f42edfc_gpu01p12456_20260818`；
+- four-checkpoint rows：`runs/analysis/lmmpc_four_checkpoint_strict_trajectory_20260818.json`；
+- B20/Program/FactorHeads联合归因：`runs/analysis/lmmpc_macro25_50_75_100_drift_diagnosis_20260818.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

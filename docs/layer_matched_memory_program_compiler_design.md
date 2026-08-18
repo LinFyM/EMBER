@@ -906,7 +906,7 @@ v5只有macro25一个正式closed-loop点，且functional loss到该点仍下降
 churn分析。若macro50继续上升，保留同一路线；若持平或回落且BA继续换向，则v5终局，下一单变量才针对现有
 factor commitment所接收的functional credit，而不是回头修改已经通过的Procedure/reader。
 
-### 20.7 Core-Addressed Reader macro50负证据与待完成轨迹
+### 20.7 Core-Addressed Reader macro50负证据与当时待完成轨迹
 
 同一formal run严格保持world6和gpu01物理`1/2/4/5/6/7`，从macro25 exact-resume到macro50并完整exit0。
 macro26--50 recovery wall=`749.598s`，每macro仍为24 tasks等权且K1--K4各6 tasks；global functional loss从
@@ -948,6 +948,57 @@ functional-only credit`在25→50没有稳定共同积累。候选最早未解�
 **offline B20 functional cotangent -> task-specific native factor commitment -> held on-policy support retention**。
 现有证据更偏向credit/retention而非carrier、memory容量、rank16容量或“没有写出”，但尚不能完全拆开loss方向与
 FactorHeads可达坐标的责任。鉴于formal config原本预注册`25/50/75/100`，且历史v5.2/v6均有下降后回升，撤回
-“macro50终局、不得resume75”的过强裁决。当前保持原world6/topology、架构、B20 objective与optimizer状态，
-exact-resume到macro100并评测macro75/100；联合四checkpoint做Program、FactorHeads、B20 credit与shared retention
-归因后再终局。不得借此扫rank/scale/LR/seed或回头重做已通过reader；本轮不实现successor。
+“macro50终局、不得resume75”的过强裁决。当时决定保持原world6/topology、架构、B20 objective与optimizer状态，
+exact-resume到macro100并评测macro75/100；该计划的完成结果与终局归因见20.8。不得借此扫rank/scale/LR/seed或
+回头重做已通过reader；本轮不实现successor。
+
+### 20.8 Core-Addressed Reader完整轨迹、组件归因与终局
+
+同一clean detached `aecbce5b4301f98ecaafea650e099b6326c5c98d` formal run保持world6、gpu01物理
+`1/2/4/5/6/7`、optimizer、scheduler、sampler/RNG及B20 recipe不变，从macro50 exact-resume到macro100，
+macro75/100 checkpoint和六rank state均完整，0 OOM/nonfinite。macro21--25、46--50、71--75、96--100末5轮
+functional loss均值为`.116333/.109615/.105739/.105330`；仅凭训练曲线会把后半段误判成继续改善。
+
+四个同一K4 schedule、同一400 rows的strict结果为：
+
+| macro | strict | breadth | per-task | per-suite |
+| ---: | ---: | ---: | --- | --- |
+| 25 | 123/400 | 8 | `3/3/44/25/1/43/3/1` | `6/69/44/4` |
+| 50 | 84/400 | 5 | `0/1/45/1/0/29/8/0` | `1/46/29/8` |
+| 75 | 89/400 | 6 | `3/0/36/1/2/44/3/0` | `3/37/46/3` |
+| 100 | 87/400 | 4 | `0/4/38/0/0/42/3/0` | `4/38/42/3` |
+
+macro50→75为`59 retained / 30 gained / 25 lost`、churn55、net`+5`、Jaccard`.51754`；macro75→100为
+`70/17/19`、churn36、net`-2`、Jaccard`.66038`。后期churn下降只表示模型在较窄的task集合附近稳定，并不表示
+恢复共同能力。四点固定rows中，49行始终成功、150行至少成功一次、250行始终失败；macro25→50丢失的52行只有
+20行在macro75恢复、15行在macro100恢复、22行在任一后续点恢复。macro25→50新增的13行只有5/6行在
+macro75/100保留。Object3为`25→1→1→0`，Goal6为`43→29→44→42`，Object1为`44→45→36→38`，Long1为
+`3→8→3→3`。所以历史上可能存在的“下降后回升”在本run中被完整观察到了，但回升是suite/task循环换手，
+不是同一shared checkpoint的共同积累。
+
+固定train24、K4、B20 panel进一步把surrogate与闭环分开。四点mean loss为
+`.112124→.099353→.098427→.101337`；区间改善/变差task数为`19/5`、`14/10`、`11/13`。25→50固定panel显著
+改善时strict净丢39，已经证明offline functional support不是held occupancy的可靠代理；75→100则连固定support也
+开始忘记。实际checkpoint update与起点task gradients的mean cosine为`-.0317/-.0279/-.0223`，一阶预测分别让
+24/24、24/24、23/24 tasks下降，但有限长更新仍发生平台和反转，说明局部descent并未提供长程shared retention。
+
+Program×FactorHeads交叉解码排除了“只冻结一个组件即可解决”的简单解释。相邻compiled Program cosine/
+relative-L2为`.703/.770`、`.732/.730`、`.746/.710`，即loss平台后Program仍持续material旋转。25→50只换新
+FactorHeads、保持旧Program的BA relative-L2为`1.320`、norm ratio`1.780`；只换新Program、保持旧heads为`.582`、
+norm ratio`.999`，所以早期能量扩张主要由FactorHeads放大。50→75与75→100只换heads的relative-L2为
+`.676/.585`，只换Program为`.583/.575`，后期两者责任相当。原生macro25→100 BA cosine仅`.387`、
+relative-L2=`1.760`、norm ratio=`1.884`。FactorHeads因此是mismatched credit的放大器和载体，不是独立根因；
+Program也不是稳定不动而只被decoder误译。
+
+本recipe终局不通过：best仍是macro25的`123/400`，无checkpoint达到145，breadth从8最终降到4，故不补六臂
+controls，也不再续训或用rank/scale/LR/seed/dtype小扫。Core-Addressed Reader相对matched旧reader的闭环正收益、
+Dynamic-K、bounded K-set/M2P、layer/rank memory carrier和native rank16 FactorHeads仍是可继承机制；本结果只否定
+它们与**静态cross-episode offline B20 functional credit**的当前组合能够稳定积累shared held support。
+
+最早未解接口最终收敛为：`training functional query occupancy -> shared support-preserving credit -> Program and
+FactorHeads finite update -> held closed-loop occupancy`。下一session的首选单变量候选是保持Reader、Program、
+compiler和rank16输出全部不变，仅把functional query distribution从静态demo-state B20替换为train24 on-policy
+state replay，并由冻结task-local experts提供action targets。它直接检验occupancy-matched dense credit能否提高并
+保留breadth，不在held部署携带expert，也不是生成LoRA后的task-local RL。本节只登记候选和快速否决口径：若固定
+架构下train on-policy breadth与相邻strict400仍不共同改善，下一责任才后移到Program/decoder本身；当前没有active
+successor，未实施该变量。

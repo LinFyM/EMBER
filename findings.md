@@ -277,6 +277,25 @@ support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native
 正式后移到functional credit与held support retention。下一变量应先区分loss提供的cotangent方向是否错误，还是
 FactorHeads坐标系统性扭曲该方向；不能再回头增强已经通过的K-set、Procedure margin或memory容量。
 
+Core-Addressed Reader完成macro25/50/75/100后，strict=`123→84→89→87`、breadth=`8→5→6→4`，正式排除了
+“macro50只是下降谷底、续训会恢复共同能力”的解释。后期确有回升且churn由65降到55再到36，但400个固定rows中
+只有49行四点始终成功；macro25→50丢失的52行到macro100只恢复15行，13个新获得行也只保留6行。Object3、Goal6、
+Object1和Long1分别沿不同阶段轮流换手。这说明低churn必须与breadth、absolute和same-row retention一起解释；
+窄能力集合的稳定不能冒充shared accumulation。
+
+四点固定B20 loss=`.112124/.099353/.098427/.101337`，而25→50 loss显著改善时strict净丢39，75→100则固定
+support和held strict同时恶化。Program×FactorHeads交叉解码显示compiled Program每段relative-L2仍约
+`.71--.77`；FactorHeads主导25→50的norm膨胀，但后两段heads-only与Program-only BA变化已相当。因此当前不能把
+task drift简化成Procedure趋同、FactorHeads漂移或optimizer没有沿梯度更新：Program和decoder都在承载由静态
+offline occupancy定义的credit，且缺少对真实rollout旧support的保留约束。
+
+由此形成新的耐久结论：**同task跨video update coherent、Program有序且material、LoRA健康，都不足以推出shared
+held support会积累；functional query distribution本身是训练合同的一部分。** 下一最小可证伪变量应优先改变
+credit所覆盖的state occupancy，而不是再扩大memory、增加Procedure negative、冻结FactorHeads或改变rank。一个
+合规候选是仅在train24使用当前policy访问到的on-policy state replay，由冻结task-local experts提供dense action
+targets；部署仍只输入语言和action-hidden videos并一次生成LoRA。该候选尚未成为active design，后续session须先
+独立建立goal和formal合同。
+
 ## 14. 方法选择与实验原则
 
 1. closed-loop absolute首先选方法，稳定性和视频因果性决定方法资格。

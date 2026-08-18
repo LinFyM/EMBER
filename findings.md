@@ -206,95 +206,59 @@ task drift可能来自：
 
 已解决到足以复用：
 
-- fixed split/source policy/information wall与strict evaluator；
-- task-local effective LoRA参照；
+- fixed split、source policy、information wall与strict evaluator；
+- task-local effective rank16 LoRA参照；
 - action-hidden有序video carrier；
 - Dynamic-K和per-video/set数据流的工程可行性；
-- V6 native rank16高增益compiler基线；
-- literal/learned memory进入policy topology的可行性；
-- reward→gradient→native BA/action局部链路。
+- layer/rank memory进入真实native policy context的可行性；
+- bounded K-set/M2P避免后置模块无界覆盖上游Program；
+- Core-conditioned reader从弱Procedure差异中提取parameter-addressed Value的闭环正收益；
+- reward/functional gradient到native BA/action的局部链路。
 
 尚未解决：
 
-- 可验证的高层task Program，而非identity或nuisance；
-- correct顺序沿有用方向形成稳定优势；
-- same-task鲁棒与cross-task separability同时成立；
+- 可验证的高层task Program，而非task identity、static cue或demo nuisance；
+- correct顺序沿有用policy方向形成稳定优势；
+- same-task video鲁棒与cross-task能力共存；
 - 一个shared checkpoint持续积累多个tasks；
 - 约145+相邻稳定且六臂合格的方法；
-- Program到LoRA的可扩展、material又support-preserving的统一compiler。
+- Program到完整LoRA的material、policy-effective且support-preserving编译。
 
-LMMPC-v2还补充了一个明确负边界：完整stage reader、Dynamic-K与native rank16均接通，仍会被无上界后置M2P
-重新变成task-common、order-insensitive方向；因此当前最早修复接口是Program-preserving compiler commitment，而非
-继续增强Procedure loss、恢复negative训练或改变rank。
+### 13.1 当前架构已经解决的局部断点
 
-LMMPC-v3进一步表明，约束后置M2P不会自动解决上游集合表示：M2P改写已被限制到约`.25x`，macro25一度恢复到
-`102`，继续到macro50却降至`60`。更早的unbounded K-set correction相对per-video mean仍改写`5.8--10.2x`，把
-between-task cosine推到`.90+`且没有改善same-task coherence。Few-shot set模块必须以已经保序、已对齐地址的
-per-video Program为anchor；learned cross-video correction可以存在，但不能默认拥有覆盖anchor的权限。
+LMMPC历史revision依次暴露并关闭了三个明确结构问题：v1的Procedure endpoint旁路、v2的unbounded M2P覆盖、v3的
+unbounded K-set覆盖。v4关闭集合覆盖后仍只有`104→102`；Core-addressed reader随后把matched macro25从104提高到
+123，严格配对为`38 gained / 19 lost`，并把validation8 reader/raw correct-reverse relative-L2从约`.718x`提高到
+`1.819x`。因此当前reader是正机制，而不是只改善内部指标。
 
-LMMPC-v4证明bounded K-set确实关闭了上述表示覆盖，却没有带来闭环突破：macro25/50 strict=`104→102`，breadth均6，
-相邻checkpoint churn=`52`。25→50 effective-BA norm从`27.28`增到`49.08`且relative-L2=`1.44`，说明Writer并非没写，
-但新增能力主要在task间换手。逐stage最早异常位于Procedure reader：macro50 raw Procedure的correct/reverse差异为
-`.4350`，读出H_set只剩`.1844`；后续Core fusion/M2P/FactorHeads没有更早地制造该衰减。
+### 13.2 Absolute缺口和checkpoint漂移是两个问题
 
-与V6同口径比较排除了“Procedure趋同本身就是必须先修的根因”。V6 raw Procedure的between-task cosine反而高达
-`.9973`、correct/reverse relative-L2仅`.1093`，其policy-routed、Core-conditioned slot reader却把有向差异放大到
-约`1.30`；v4则只保留约`.43x`。因此下一局部变量不是增加reverse/matching/contrastive loss，而是让layer/rank地址
-先从Core获得task-conditioned Query，再用完整有位置的Procedure作Keys读取centered native memory Values。该判断
-已经在LMMPC-v5的clean macro2机制门得到支持：validation8 raw Procedure reverse差异几乎不变
-（`.72035→.71525`），H_set却由`.51687`升到`1.30135`，reader/raw由`.7175x`升到`1.8194x`；H_set
-within/between-task cosine仍为`.97045/.24495`。这只证明最早结构接口已修复，不证明方向对closed-loop有用；若
-fresh macro25 strict仍无提升，最早断点才后移到shared functional credit。
+当前完整轨迹为strict=`123→84→89→87`、breadth=`8→5→6→4`。后期回升没有恢复macro25：400个固定rows中只有
+49行始终成功，macro25到50丢失的52行到macro100仅恢复15行。能力轮换已经由逐行证据确认。
 
-LMMPC-v5进一步给出了闭环裁决：Core-conditioned layer/rank reader把validation8的reader/raw从v4的`.7175x`提高到
-`1.7627x--1.8194x`，macro25 strict也从matched v4的`104`提高到`123`；400行严格配对为`38 gained / 19 lost`。
-因此读取器修复是有效机制，而不是又一个只让内部指标变漂亮的改动。但v5相对LPCP143仍净丢20，成功的
-`91.1%`集中在三个task；all400 BA已相对v4显著换向，却无法用norm、cosine或relative-L2区分gained与lost。
-这把最早未解接口后移到`functional cotangent -> native FactorHeads -> held on-policy direction`。Procedure趋同仍可作
-诊断，但在该接口解决前不应成为新的contrastive/matching训练目标。
+但最佳点123本身也弱于同schedule LPCP143和GOMQ151。相对LPCP143，当前为
+`100 retained / 23 gained / 43 lost`；GOMQ151相对同一LPCP为`126/25/17`。两者新增成功数接近，当前差距主要来自
+更多旧success rows被替换。当前123相对GOMQ151为`100 retained / 23 gained / 51 lost`，28分缺口主要集中在Long
+（-23）和Object（-12），并非所有task均匀减弱。
 
-Core-Addressed Reader的macro50把上述判断升级为明确的相邻漂移证据。同一run继续训练使末5轮functional loss降到`.10962`、BA norm从
-`27.23→44.00`、effective targets从`16.88→19.50`，strict却从`123→84`；严格配对为`13 gained / 52 lost`，
-Object3和Goal6能力大幅流失而Long1增加。LoRA继续变强、变广并不等于共同积累。更关键的是，25→50 update在同一task
-四组K4 conditions间有`.980--.996`的task-mean/sample energy，却在task mean之间只有`.360` cosine：当前问题不是
-video-local correction正交或一个common update压过所有task，而是task-specific、cross-video coherent的functional
-方向没有保留held on-policy support。
+因此“task drift”不能同时代替两个概念：一是单checkpoint是否形成足够强且广的policy support，二是相邻训练更新
+是否保留该support。历史151仍有第二个问题；当前架构两个问题同时存在。
 
-raw Procedure在macro50确实进一步趋同（between-task cosine`.9717`、correct/reverse relative-L2`.4683`），但
-Core-conditioned reader把它放大到H_set=`1.0652`，compiled/effective-BA仍为`1.1619/.9515`；同task condition
-cosine保持约`.99`。因此Procedure趋同不是本轮123→84的最早断点。当前证据把首要责任压到
-`offline functional credit -> native factor coordinates -> held occupancy retention`；其中更像credit/retention问题，
-但尚不能完全排除FactorHeads可达坐标对该credit的系统性扭曲。reader正机制应继承，不能把该负结果扩写成
-memory token、Dynamic-K、rank16或EMBER-LMMPC整体失败。历史v5.2/v6存在先降后升，故macro25/50两点还不足以
-终局当前recipe；必须完成预注册macro75/100，判断后续回升究竟是same-row能力恢复、共同积累，还是循环task换手，
-并用Program×FactorHeads交叉解码把credit与decoder坐标责任进一步拆开。
+### 13.3 当前归因边界
 
-整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
-冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
-support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint
-旁路；v2/v3依次暴露M2P和K-set覆盖，v4用bounded commitments关闭这两处，v5再用Core-conditioned Query关闭reader
-衰减。当前表示链已经能把task-specific、有向、cross-video coherent的Program material地写成LoRA，最早未解处因此
-正式后移到functional credit与held support retention。下一变量应先区分loss提供的cotangent方向是否错误，还是
-FactorHeads坐标系统性扭曲该方向；不能再回头增强已经通过的K-set、Procedure margin或memory容量。
+固定B20 loss在四点为`.112124/.099353/.098427/.101337`，25到50显著改善时strict净丢39。相邻compiled Program
+relative-L2为`.770/.730/.710`；早期FactorHeads主导norm扩张，后期heads-only与Program-only BA变化已接近。
+same-task四K4 updates保持约`.98--.996`能量一致，LoRA也持续material增长。
 
-Core-Addressed Reader完成macro25/50/75/100后，strict=`123→84→89→87`、breadth=`8→5→6→4`，正式排除了
-“macro50只是下降谷底、续训会恢复共同能力”的解释。后期确有回升且churn由65降到55再到36，但400个固定rows中
-只有49行四点始终成功；macro25→50丢失的52行到macro100只恢复15行，13个新获得行也只保留6行。Object3、Goal6、
-Object1和Long1分别沿不同阶段轮流换手。这说明低churn必须与breadth、absolute和same-row retention一起解释；
-窄能力集合的稳定不能冒充shared accumulation。
+这些证据排除了“Writer没写出”“同task视频相消”“只需更多训练”“K-set/M2P仍无界覆盖”“单纯LoRA太小”作为
+完整解释，也不支持把Procedure趋同或FactorHeads单独漂移当成唯一根因。
 
-四点固定B20 loss=`.112124/.099353/.098427/.101337`，而25→50 loss显著改善时strict净丢39，75→100则固定
-support和held strict同时恶化。Program×FactorHeads交叉解码显示compiled Program每段relative-L2仍约
-`.71--.77`；FactorHeads主导25→50的norm膨胀，但后两段heads-only与Program-only BA变化已相当。因此当前不能把
-task drift简化成Procedure趋同、FactorHeads漂移或optimizer没有沿梯度更新：Program和decoder都在承载由静态
-offline occupancy定义的credit，且缺少对真实rollout旧support的保留约束。
+仍无法从现有实验唯一拆开的因素包括：静态B20 occupancy与真实rollout occupancy的错配、Program是否主要编码task
+identity、Program到native A/B坐标的可达性，以及shared optimizer对跨task support的保存。当前没有六臂数据，视频
+因果资格也保持未知。
 
-由此形成新的耐久结论：**同task跨video update coherent、Program有序且material、LoRA健康，都不足以推出shared
-held support会积累；functional query distribution本身是训练合同的一部分。** 下一最小可证伪变量应优先改变
-credit所覆盖的state occupancy，而不是再扩大memory、增加Procedure negative、冻结FactorHeads或改变rank。一个
-合规候选是仅在train24使用当前policy访问到的on-policy state replay，由冻结task-local experts提供dense action
-targets；部署仍只输入语言和action-hidden videos并一次生成LoRA。该候选尚未成为active design，后续session须先
-独立建立goal和formal合同。
+耐久结论是：**同task跨video update coherent、Program有序且material、LoRA健康，都不足以推出shared held support
+会积累；functional query distribution、compiler coordinates和optimizer必须作为相互作用的训练合同分析。**
 
 ## 14. 方法选择与实验原则
 

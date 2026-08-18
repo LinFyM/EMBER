@@ -49,7 +49,8 @@ EMBER/
 │   ├── concept.md                # 第一性原理问题定义
 │   ├── current_owner_requirements.md
 │   ├── research_history.md       # 唯一实验/架构ledger
-│   ├── architecture_reasoning.md # 从证据到未来设计约束的逐步推理
+│   ├── architecture_reasoning.md # 供独立复核的当前证据与未决归因综述
+│   ├── layer_matched_memory_program_compiler_design.md # 最新被测架构的封存事实
 │   ├── benchmark_validity_report.md
 │   └── novelty_and_landscape.md
 ├── configs/                      # 固定数据、source、LoRA与保留运行authority
@@ -58,7 +59,7 @@ EMBER/
 │   ├── source_sft/               # source adaptation baselines
 │   ├── expert_manifold/          # task-expert训练/评测；名称因artifact兼容保留
 │   ├── writer/                   # canonical LMMPC Writer训练与部署
-│   ├── reward/                   # train24 privileged reward utilities
+│   ├── reward/                   # 保留的train24 rollout/occupancy utilities
 │   └── pi05_eval/                # paired evaluator、queue与历史分析
 └── tests/
 ```
@@ -75,6 +76,9 @@ EMBER/
 - `scripts/analyze_task_expert_bank.py`：task-expert诊断。
 
 已退役架构没有平行可执行入口；精确旧代码和设计通过Git快照检索。
+
+当前最新被测Writer已经formal non-pass，且仓库没有active successor。远程独立复核应先读
+[current evidence synthesis](docs/architecture_reasoning.md)；该文档只陈述证据与未决问题，不预设下一步方案。
 
 ## Environment and tests
 

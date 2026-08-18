@@ -226,7 +226,7 @@ four-K4 final BA约`.974--.998`一致，排除了K-set首先相消；Procedure�
 reverse endpoint严格为负，故旧`0.5*(correct-reverse)`的强时序响应主要是结构反号，不是高层阶段理解。
 
 因此LMMPC-v1不续macro75/100。该结果只否定“last-query + independent endpoint + pure-odd channel + language/order
-matching”这一Procedure路径，不否定四流、memory token、dynamic-K、axial M2P、rank16或生成LoRA。active v2在相同
+matching”这一Procedure路径，不否定四流、memory token、dynamic-K、axial M2P、rank16或生成LoRA。后续v2在相同
 主链内改为固定layer/rank地址读取完整Procedure keys、centered dynamic memory Values，并回到correct-order dense
 functional-only训练。
 
@@ -254,7 +254,7 @@ block0相对输入改写`4.50034x`，把order压到`.150168`、between-task升�
 改变task/order指标，因此最早失败接口是axial M2P覆盖已经形成的parameter-aligned Program。
 
 只读counterfactual把最终proposal的逐cell correction限制为anchor RMS的`.25/.5x`，分别得到order=
-`.247873/.230772`、between-task=`.360797/.405605`、same-task K4=`.992778/.993867`。它支持active v3把M2P改成
+`.247873/.230772`、between-task=`.360797/.405605`、same-task K4=`.992778/.993867`。它支持后续v3把M2P改成
 identity-anchored bounded refinement；不构成fresh closed-loop成绩。v2负结果不否定stage reader、memory token、
 Dynamic-K、rank16或axial通信本身，只否定unbounded proposal直接取代Core-fused grid。
 
@@ -280,7 +280,7 @@ K-set：raw set output相对per-video mean的relative-L2为`10.188/5.831`，betw
 恢复到`.6462/.6502`，因此不是更早断点。
 
 只读mean-only与bounded counterfactual均改善task分离和same-task coherence，但降低部分order幅度，说明raw branch
-含有有用有向成分而不应删除。active v4因此只把K-set correction变为per-video mean-anchored逐cell bounded
+含有有用有向成分而不应删除。后续v4因此只把K-set correction变为per-video mean-anchored逐cell bounded
 commitment，fresh gate初始`.25`、最大`.5`；不改变rank、loss、时序监督或训练recipe。v3负结果只否定
 `bounded M2P + unbounded nonlinear K-set + 当前functional credit`组合，不否定memory、Dynamic-K、rank16或
 cross-video learned aggregation。
@@ -310,7 +310,7 @@ H_set为`.516868/.231996/.184355`，macro50 reader只保留约`.424x`。Core-fus
 BA仍约`.262/.263`。因此“让raw Procedure彼此更远”不是充分必要修复，v4最早失效是Core-unconditioned endpoint
 Query与Procedure Keys共漂后抵消memory Value差异。
 
-active v5只替换该reader：固定layer/rank address先查询Core得到task-conditioned Query；完整Procedure以真实采样帧
+后续v5只替换该reader：固定layer/rank address先查询Core得到task-conditioned Query；完整Procedure以真实采样帧
 position作Keys；同地址首帧中心化memory dynamic作唯一Values。K-set、Core fusion、M2P、rank16、loss和recipe不变，
 且必须fresh。该实验检验V6有效的“task-conditioned query读取微弱有向证据”原则能否在LMMPC四流中成立，不恢复
 V6 checkpoint、frozen compiler或旧slot实现，也不增加negative/matching loss。
@@ -352,6 +352,12 @@ macro75→100为`70/17/19`、churn36、net`-2`。四点400 rows中49行始终成
 只有22行在任一后续点恢复、15行到macro100恢复，新增13行只有6行到macro100仍成功。因此续训观察到了局部回升，
 但没有恢复macro25，更没有共同积累。
 
+同一schedule的额外严格配对把absolute缺口与相邻漂移分开。当前best123相对LPCP143为
+`100 retained / 23 gained / 43 lost`；相对GOMQ151为`100 / 23 / 51`、churn74、net`-28`。后者suite差为
+Spatial`+3`、Object`-12`、Goal`+4`、Long`-23`，最大单task缺口是Long1的`26→3`。作为对照，GOMQ151相对
+LPCP143为`126/25/17`。当前与GOMQ获得的新success rows数量接近，主要差异来自当前fresh完整Writer替换了更多旧
+support；该配对事实本身不能唯一归因到Program、FactorHeads、functional occupancy或optimizer。
+
 固定K4+B20 train24 panel的mean loss为`.112124/.099353/.098427/.101337`；相邻改善/变差tasks为`19/5`、
 `14/10`、`11/13`。25→50 offline loss大幅改善同时held strict净丢39，75→100连固定support也开始忘记。
 Program×FactorHeads交叉解码中，相邻compiled Program relative-L2为`.770/.730/.710`；25→50 heads-only旧Program
@@ -361,9 +367,8 @@ BA relative-L2=`1.320`、Program-only旧heads=`.582`，后两段分别为`.676/.
 该recipe正式non-pass：best为macro25 `123/400`，无点达到145，最终breadth4，不做六臂controls、不再续训或小扫。
 负结果只否定`Core-Addressed Reader + bounded K-set/M2P + native rank16 FactorHeads + static cross-episode offline
 B20 credit`能够稳定积累held support；reader、memory、Dynamic-K、rank16和完整EMBER-LMMPC信息流仍可继承。
-最早失效接口最终定位为functional query occupancy到shared support-preserving credit。下一session可优先检验的单变量
-候选是保持架构和decoder不变，以train24 on-policy state replay替换静态B20 query distribution，并由冻结task-local
-experts提供action targets；该候选未在本轮实现，也不构成当前active design。
+现有证据把未决接口限定在functional query occupancy、shared support-preserving credit、Program与FactorHeads有限长
+更新到held occupancy的组合，但尚不能唯一拆分这些因素。当前没有active design或预选successor。
 
 正式证据：
 
@@ -406,7 +411,7 @@ experts提供action targets；该候选未在本轮实现，也不构成当前ac
 
 ## 6. 保留的深结构锚点
 
-active tree只保留下列少数精确设计文档：
+tracked tree只保留下列少数精确历史设计文档：
 
 - `action_forecast_writer_v4_root_cause.md`：错误absolute-time/action-phase shortcut；
 - `action_forecast_writer_v6_design.md`：历史v6-fast143结构；

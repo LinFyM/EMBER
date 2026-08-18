@@ -1,264 +1,247 @@
-# EMBER Architecture Reasoning After Consolidation
+# EMBER Current Evidence Synthesis for Independent Review
 
-状态：2026-08-17认知重建与证据裁决已完成；本文不自动授权实现、训练或GPU实验。
+状态：2026-08-18远程复核版。本文只综合当前可证实事实、分析边界和仍未区分的问题；**不推荐下一步架构、
+objective或实验**，也不授权恢复任何历史执行路径。
 
-本文不从某个模块名出发，而从EMBER要传递的信息和历史最早失败接口逐步推理。任何具体架构只有在这里的分支问题
-被证据裁决后，才应单独建立design authority。
+外部reviewer只需读取远程仓库即可理解当前问题。大型checkpoint、raw rollout视频和`runs/`本地artifact没有提交；
+所有影响当前判断的aggregate、paired transition和stage结果在本文与`research_history.md`中重述。
 
-## 1. 先固定问题，不先固定方法
+## 1. 研究问题与资格标准
 
-输入：
-
-```text
-exact task language + K action-hidden correct videos
-```
-
-输出：
+EMBER研究以下映射：
 
 ```text
-one complete task-conditioned LoRA for one frozen source policy
+exact task language
++ one or more internally ordered, action-hidden teacher videos
+    -> one shared Writer runs once
+    -> one complete 38-target task-conditioned LoRA
+    -> one frozen PI0.5-LIBERO source policy
+    -> unseen-initialization closed-loop success
 ```
 
-部署：Writer运行一次，policy在未见初始化闭环执行。当前评价的是初始LoRA，不包含生成后的task-local RL。
+语言定义任务关注点和目标，视频必须提供正确动态过程。Writer不能读取teacher action、state、reward、task ID、
+filename或policy outcome。video与action监督episode同task但跨episode，避免逐帧轨迹复制。
 
-这里没有预先规定K、memory token、rank、Action Expert调用方式或decoder。它们必须由信息流和失败证据推导。
+方法资格不由单一峰值决定。长期目标是strict paired correct超过`150/400`；稳定约145也可构成有价值结果，但必须
+同时具有相邻checkpoint低churn、高breadth、same-task不同video鲁棒，以及correct相对wrong、shuffled、reversed和
+no-video的因果优势。当前最新方法未达到absolute门，因而未做六臂controls。
 
-## 2. 输入里真正存在的四类信息
+## 2. 当前被测架构：Core-Addressed Reader
 
-### 2.1 Language query
+当前代码实现和最新正式训练均属于EMBER-LMMPC Core-Addressed Reader。它是从fresh Writer初始化生成完整rank16
+LoRA的统一架构，不加载旧V6/LPCP/GOMQ Writer，也没有第二套adapter或checkpoint融合。
 
-语言确定任务对象、关系、关注点和目标。它适合提供语义query或address，不应独立成为LoRA Value。
-
-### 2.2 Static visual context
-
-单帧可识别对象、颜色、位置和场景，但无法单独确定“怎样从初态演化到目标态”。静态信息需要服务于语言query，
-不能成为language+first-frame shortcut。
-
-### 2.3 Directed process
-
-视频内部的状态变化、阶段边界、接触事件和先后依赖，是correct/shuffle/reverse区别的来源。每条video必须在这一维
-保序建模。
-
-### 2.4 Cross-video invariants
-
-多个同task videos之间共同保留的对象关系、目标和阶段结构，更可能是可迁移Program；不同的路径、速度和视角更
-可能是nuisance。聚合应发生在有语义的Program证据上，而非raw frames或最终LoRA。
-
-## 3. 输出端真正需要表达什么
-
-LoRA不是一串任意参数。38 targets位于不同policy layers和q/v/action families，具有不同输入/输出维度和功能。
-task-local experts和v6已经证明：native rank16、低stable rank、q-dominant与跨列coherent都可能policy-effective。
-
-因此输出问题更准确地写为：
+### 2.1 完整数据流水线
 
 ```text
-task Program
-    -> layer/family/target/rank-aware policy coordinates
-    -> native A/B factors
-    -> effective BA and action change
+exact language L + K same-task ordered videos, K in 1..4, frame stride 5
+
+for each video independently and each sampled frame:
+  native image/language context
+  + 50 fixed Action probes
+  + 16 one-way memory queries
+    -> frozen native VLM/Action context evidence
+    -> Action representation A[t]
+    -> layer/rank memory M[t, layer=18, rank=16]
+
+task-grounded visual evidence over frames
+    -> order-invariant Semantic Core C_video
+
+adjacent grounded visual transitions queried by A[t]
+    -> ordered causal Procedure P_video[t]
+
+for every fixed (layer, rank) address:
+  task Core supplies the Query
+  ordered Procedure supplies temporal Keys
+  centered native memory supplies Values
+    -> per-video parameter memory H_video[layer, rank]
+
+same-address K-video aggregation
+    -> mean-anchored bounded H_set[layer, rank]
+
+nonzero dynamic memory gates Semantic Core content
+    -> 18 x 16 addressed grid
+    -> add action-in/action-out boundary rows
+    -> bounded 20 x 16 group/rank axial M2P
+    -> eight native factor-family heads
+    -> one complete 38-target rank16 A/B LoRA
 ```
 
-直接回归百万参数不是唯一方式；但降低rank、增加atoms或追求正交也不是自动解法。关键是Program坐标与policy功能
-坐标是否对应，以及写出是否保留已有support。
+### 2.2 四条信息流的职责
 
-## 4. 历史证据对四个接口的裁决
-
-| 接口 | 已有正证据 | 尚未解决 |
+| 信息流 | 当前职责 | 被禁止的旁路 |
 | --- | --- | --- |
-| Evidence extraction | v5/v6、LPCP能读语义、动态和顺序 | correct过程是否被理解成可迁移因果Program |
-| Cross-video Program | K4、CMBG、GOMQ可形成高coherence同task表示 | 高coherence可能只是稳定错误mean；cross-task separability不稳 |
-| LoRA compilation | task experts、v6/LPCP rank16、direct native heads均可material | material更新是否沿held policy-useful方向并保留support |
-| Shared training | reward、endpoint和expert occupancy均可产生task-local下降 | 多task在相邻single checkpoints持续共同积累 |
+| language | task grounding、Core Query和必要gate | language-only直接写LoRA |
+| ordered video | 对象变化、阶段和有向Procedure | first-frame、absolute-time或video-presence shortcut |
+| Action representation | 让source policy先验解释当前视觉变化 | teacher action或fake/no-context Action forward |
+| memory states | 为每个Action-Expert layer与LoRA rank提供native contextual Value | flat payload或第二套parameter-address bank |
 
-这张表排除几种过度简化解释：
+memory token在这里解决的是layer/rank correspondence，不等价于保证对应地址上写出的LoRA方向正确。数值上的
+`20 x 16 = 320`只是最终parameter-grid cells，不是额外320个memory tokens。
 
-- 不能只说“视频没有被读取”；
-- 不能只说“LoRA参数太多”；
-- 不能只说“memory token失败”；
-- 不能只说“训练轮数不够”；
-- 不能只说“Writer容量不够”。
+### 2.3 聚合和decoder
 
-## 5. 为什么类SHINE路线既不能照搬，也不能简单否定
+- 每条video先独立形成有序Procedure和`18 x 16`parameter memory；
+- K轴仅在相同layer/rank地址上做置换不变聚合，K1严格返回单video表示；
+- learned K-set correction被限制在per-video mean每cell RMS的`.5x`以内；
+- M2P correction同样被限制在输入addressed grid每cell RMS的`.5x`以内；
+- Core只在非零动态memory和language gate共同存在时进入Value；
+- 八个bias-free FactorHeads分别生成q/v/action-in/action-out的A/B，最终仍是一套rank16 LoRA。
 
-过去Dynamic-K rank8 Backbone-Memory路线在真实图文/Action-probe context中加入memory并直接生成LoRA，工程上成立，
-但strict只有100左右。失败组合同时包含：弱化absolute Semantic Core、rank8 fixed-A/Direct-B tail、特定mapper和
-functional credit。因此它不能否定memory correspondence一般。
+当前实现位置：
 
-成熟Hypernetwork工作真正值得继承的是（结构参考分别见
-[SHINE](https://arxiv.org/html/2602.06358v3)与
-[Doc-to-LoRA](https://arxiv.org/html/2602.15902v1)）：
+- `src/ember/writer/model.py`：完整Writer和一次性encode/decode；
+- `src/ember/writer/backbone_memory.py`：真实native context与one-way layer memory；
+- `src/ember/writer/temporal.py`：Semantic Core和causal Procedure；
+- `src/ember/writer/parameter_grid.py`：Core-addressed reader、K-set、Core fusion和M2P；
+- `configs/pi05_writer_layer_matched_memory_program_compiler_v5.json`：正式冻结recipe。
 
-- 输入内容由一个本来就能理解该模态的backbone处理；
-- 少量memory states与目标层/参数有明确对应；
-- memory通过正常内容计算获得信息，而不是无context运行；
-- decoder随backbone层数/target数可扩展。
+config顶层`status=active_formal_ready`是该formal run启动时写入并随run冻结的历史字段，不表示当前仍有active run；
+当前authority是`progress.md`。
 
-EMBER不同于纯文本Doc2LoRA：π0.5的VLM/Gemma与Action Expert原生处理图像、语言、state和action denoising。任何
-memory设计都必须说明它在真实native context中读什么、写什么、是否改变原policy计算；不能为了模仿论文在缺失
-图像/文字prefix时空跑Action Expert。
+## 3. 当前训练与评测合同
 
-## 6. Memory token应被问成三个问题
+训练只用固定train24，每macro对24 tasks等权；K1/K2/K3/K4各覆盖6 tasks。每个condition使用同task跨episode的
+20个action queries，在冻结source policy上优化correct-order dense functional loss。没有matching、reverse/shuffle
+训练臂、reward、expert reconstruction或LoRA几何正则。
 
-不是先问“要不要memory”，而是：
+正式run从fresh Writer训练到macro100，在相同world6/topology下于macro25/50/75/100保存完整checkpoint。评测为同一
+K4 teacher schedule、同一400个task/state/RNG rows的strict closed-loop panel，因此四点之间可以逐行配对。
 
-1. **放置**：memory位于输入内容encoder、policy layer observer还是LoRA target grid？
-2. **通信**：它只读native context，还是双向改变原policy token？如果改变，step0 identity和source行为如何保证？
-3. **职责**：它承载per-video有序证据、cross-video共同Program，还是LoRA target address？一个token不应同时承担
-   四个未分离职责。
+## 4. 历史强结果与结构差异
 
-历史证据偏向一个约束：memory必须处于真实图文/Action context中，且最好有layer correspondence；但它是否作为
-encoder token、one-way observer或compiler query仍未裁决。
+| 方法 | strict轨迹 | 结构上与当前方法最重要的差异 |
+| --- | ---: | --- |
+| v6-fast | best`143`; 后续`131/130/132/126` | 历史Core/Procedure与native rank16 compiler；训练仍漂移 |
+| LPCP | `143`, breadth7 | 在强V6图上形成小幅layerwise Procedure改写；BA仍接近历史carrier |
+| GOMQ | `151 -> 135 -> 131`, breadth始终6 | 保留LPCP rank16载体，另加rank16 direct-B residual；不是fresh完整LoRA重建 |
+| 当前Core-Addressed Reader | `123 -> 84 -> 89 -> 87` | fresh统一生成全部rank16 LoRA；当前reader和decoder共同训练 |
 
-GOMQ证明learned input query有用；其151→135→131说明不能沿用当前independent rank32 Direct-B tail并期待稳定。
+历史151是有效的absolute证据，但不是合格稳定方法：它随后连续回落且没有六臂controls。其结构差异也意味着，不能
+把151直接解释成“同一fresh完整Writer比当前更强”；它证明的是learned memory residual曾在一个已有强support上
+产生真实增益。
 
-## 7. 多视频数据流应先分轴，再决定注意力
+## 5. 当前正式结果
 
-自然数据结构有四个不同轴：
+### 5.1 四checkpoint轨迹
+
+| macro | strict | breadth | per-task | per-suite Spatial/Object/Goal/Long |
+| ---: | ---: | ---: | --- | --- |
+| 25 | `123/400` | 8 | `3/3/44/25/1/43/3/1` | `6/69/44/4` |
+| 50 | `84/400` | 5 | `0/1/45/1/0/29/8/0` | `1/46/29/8` |
+| 75 | `89/400` | 6 | `3/0/36/1/2/44/3/0` | `3/37/46/3` |
+| 100 | `87/400` | 4 | `0/4/38/0/0/42/3/0` | `4/38/42/3` |
+
+相邻transition：
+
+| transition | retained | gained | lost | churn | net |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 25 -> 50 | 71 | 13 | 52 | 65 | -39 |
+| 50 -> 75 | 59 | 30 | 25 | 55 | +5 |
+| 75 -> 100 | 70 | 17 | 19 | 36 | -2 |
+
+400个固定rows中只有49行四点始终成功，150行至少成功一次。macro25到50丢失的52行，到macro100仅恢复15行；
+macro25到50新增的13行，到macro100只保留6行。后期churn下降发生在更窄的breadth上，不能解释为共同积累。
+
+macro25的breadth8也高估了有效覆盖：Object1、Object3和Goal6贡献`112/123=91.1%`的成功，其余五task各只有1到3次。
+
+### 5.2 当前123与两个同schedule强基线的严格配对
+
+| reference -> current123 | retained | current gained | current lost | net | churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| LPCP143 -> current123 | 100 | 23 | 43 | -20 | 66 |
+| GOMQ151 -> current123 | 100 | 23 | 51 | -28 | 74 |
+| GOMQ131 -> current123 | 92 | 31 | 39 | -8 | 70 |
+
+当前123相对GOMQ151的suite差为：Spatial `+3`、Object `-12`、Goal `+4`、Long `-23`。逐task最大缺口是Long1
+`26 -> 3`，其次Object3 `34 -> 25`。因此28分缺口并非所有task均匀变弱，而是长程/多阶段与部分Object support被
+明显换出，同时Spatial/Goal有少量新增。
+
+相对共同LPCP143基线，GOMQ151为`126 retained / 25 gained / 17 lost`；当前123为
+`100 retained / 23 gained / 43 lost`。两者新增成功数接近，差异主要来自当前完整Writer丢失了更多已有success rows。
+这项分解描述的是观测到的support replacement，不能单独确定责任位于Program、decoder、objective还是optimizer。
+
+## 6. 表示链与LoRA证据
+
+### 6.1 已经成立的正证据
+
+- 从旧reader到Core-addressed reader，只改变reader接口，macro25由`104`提高到`123`；严格配对为
+  `85 retained / 38 gained / 19 lost`。reader改动具有真实closed-loop收益。
+- validation8中raw Procedure的correct/reverse relative-L2约`.574`，reader后的H_set约`1.012`，compiled约
+  `1.133`；当前reader没有继续抹掉已存在的有向差异。
+- macro25同task四个K4 conditions在H_set/compiled/effective-BA上的cosine约`.989/.986/.993`；当前失败不是
+  same-task不同video updates彼此正交相消。
+- macro25到50的LoRA norm从`27.225`增至`43.999`，effective targets从`16.88`增至`19.50`，说明Writer仍在产生
+  material update，而非停在identity附近。
+- bounded K-set和bounded M2P关闭了早期revision中已经实测的representation overwrite。
+
+### 6.2 functional loss与closed-loop分离
+
+四点固定K4+B20 loss为：
 
 ```text
-video set K
-  × ordered time/stage within each video
-  × policy layer/family/target
-  × LoRA rank/factor coordinates
+macro25  .112124
+macro50  .099353
+macro75  .098427
+macro100 .101337
 ```
 
-这些轴不意味着每一对都要做全注意力。每个交互必须有职责：
+25到50期间19/24 train tasks的固定panel loss改善，strict却净丢39。75到100时固定panel和held strict才同时恶化。
+因此训练确实优化了当前functional objective，但该objective的改善不能选择held closed-loop checkpoint。
 
-- 时间轴：提取一条video的有向过程；
-- K轴：寻找same-task不变量，置换不变；
-- policy轴：把Program放入冻结policy可利用的层/功能坐标；
-- parameter轴：生成native LoRA factors。
+### 6.3 Program与FactorHeads都在移动
 
-横向/纵向attention只有在对应上述职责时才合理。无目的地让四个轴全互联会同时增加复杂度、数据需求和归因难度。
+相邻compiled Program relative-L2为`.770/.730/.710`。交叉解码结果：
 
-## 8. Stage-wise证据矩阵
+| transition | 仅换FactorHeads的BA rel-L2 | 仅换Program的BA rel-L2 |
+| --- | ---: | ---: |
+| 25 -> 50 | 1.320 | .582 |
+| 50 -> 75 | .676 | .583 |
+| 75 -> 100 | .585 | .575 |
 
-下面只使用已经封存的formal artifacts；几何指标用于定位，不用于选择checkpoint。
+早期norm扩张主要由FactorHeads放大；后两段Program和FactorHeads贡献接近。现有证据不支持“只冻结FactorHeads”或
+“只修Procedure”即可解释整条轨迹。
 
-| 路线 | ordered / K-set Program | compiler / effective BA | closed-loop裁决 | 最早失效接口 |
-| --- | --- | --- | --- | --- |
-| Dynamic-K Semantic-Address rank8 | validation8的video Program、M2P input、final Program跨task mean cosine分别约`.495/.492/.529`；same-task比wrong更近为8/8，reverse/shuffle在Program中material | family hidden升到`.634`，dynamic-B/effective-BA进一步升到约`.779` | strict约`101` | Program仍有中等task区分，nonlinear family readout首先把task means压得更同向；“能区分顺序”仍不等于有用方向 |
-| V6-LPCP | 同一native context的18层Action probes对reverse和constant都有material响应；same-task correction coherence均值`.618` | 相对AS139的all400 BA relative-L2仅`.002653`、cosine`.9999948` | `143`，相对AS139 gained/lost=`23/19`、churn42 | carrier通过；conditioned Procedure经过冻结fusion/compiler后只形成AS139邻域小修 |
-| SJNV / SFMC类hidden commitment | task4 four-view hidden residual cosine约`.991` | 同一信号经冻结factor W2后raw-factor cosine约`.054`；held仅2/8通过 | 未进入formal或单点不稳定 | frozen nonlinear factor head可以直接毁掉已经共同的hidden方向 |
-| Direct Joint Native-Factor residual | 绕过W2后validation8 BA 8/8健康 | native q/v/action写出material | `136`，相对LPCP lost23 | 生成端接通后，reward credit仍选择错误held方向 |
-| GOMQ | learned memory相对fixed query带来真实`+16`；但isolated held memory contribution的same-task cosine仅`.127`，高`.983`主要属于完整residual；不能用`.993`相邻BA增量单独证明高层Program | rank32 direct-B使BA/action material；cycle2→3、3→4更新的same-task four-K4 BA cosine均约`.993` | `151→135→131`；cycle2→3=`122/13/29`，cycle3→4=`116/15/19` | direct tail解决“写不出”，但shared successful-occupancy Adam不保留held support；memory有用，不等于当前Program/credit已解决 |
+### 6.4 Procedure趋同的准确边界
 
-证据路径分别落在：
+raw Procedure随训练确实趋同：between-task cosine从macro25约`.954`升到macro50约`.972`，temporal centered
+energy下降。但历史LPCP的raw Procedure更趋同（between-task cosine约`.997`）仍达到143；当前reader又把较小的
+correct/reverse差异放大到H_set/compiled。因此Procedure趋同是风险和视频因果性疑点，但不是当前123到84之间最早
+被观测到的task/order抹除接口。
 
-- `semantic_mapper_stage_localization.json`：Program到family/B的between-task collapse；
-- `v6_lpcp_macro0025_effective_ba_analysis.json`：LPCP到AS139邻域小改写；
-- `sjnv_gate_stage_localization.json`：hidden到冻结W2的coherence断裂；
-- GOMQ `metrics.jsonl`、相邻effective-BA和strict adjudication：direct写出后的shared retention失败。
+## 7. 当前证据支持、排除和未决的解释
 
-## 9. 对三个首因假设的裁决
+| 类型 | 结论 |
+| --- | --- |
+| 已确认 | 当前recipe绝对峰值只有123，且四点没有恢复到该峰值；它同时存在弱峰值和checkpoint漂移两个问题 |
+| 已确认 | reader是正机制；memory correspondence、Dynamic-K、bounded K-set/M2P和rank16完整输出均已工程接通 |
+| 已确认 | 当前123相对强基线获得约23个新success rows，但丢失43到51个旧success rows；主要缺口集中在Long和Object |
+| 已确认 | 继续优化静态B20 loss没有形成held多task共同积累；Program和FactorHeads都承载了有限长更新 |
+| 已排除为单因 | Writer没有写出、LoRA仅仅太小、同task视频相消、K-set/M2P仍无界覆盖、训练只是不够久 |
+| 已排除为单因 | raw Procedure趋同、FactorHeads单独漂移、rank16容量不足或LoRA norm不足 |
+| 未决 | 静态cross-episode B20 query occupancy与真实rollout occupancy的错配占多大责任 |
+| 未决 | 当前Program是否提取了高层过程，还是主要稳定了task identity/static cues |
+| 未决 | Program到native A/B坐标是否存在系统性可达性、条件数或高维输出先验问题 |
+| 未决 | shared optimizer如何在同一checkpoint保存跨task support，及其与objective/decoder的交互 |
+| 未决 | 当前方法的correct视频是否真实优于wrong/shuffle/reverse/no-video；因absolute不足尚无六臂数据 |
 
-### 9.1 “视频没有形成任何Program”不是当前首因
+## 8. “Task drift”不能覆盖全部现象
 
-它不成立为总解释。Dynamic-K在M2P/final Program仍保留中等between-task结构，LPCP能读layerwise顺序，GOMQ learned
-query还产生过显著closed-loop增益。视频、顺序和policy context都能进入表示。
+当前至少要区分两个时间尺度：
 
-但“高层Program已经解决”同样不能成立。GOMQ isolated memory的held same-task cosine只有`.127`，且历史多次出现
-reverse差异很大而correct不更好。因此Program质量仍需验证，只是不应再把下一轮主要变量放在换carrier或加更强
-negative上。
+1. **单checkpoint的support形成/替换**：最佳点123已经比143/151低，且配对分析显示新增量接近、丢失量更大；
+2. **跨checkpoint retention**：123之后继续训练跌到84/89/87，success rows和tasks持续轮换。
 
-### 9.2 Program到LoRA commitment是下一架构应改变的最早接口
+历史151也有第二种问题，但它通过保留已有rank16 carrier减轻了第一个问题。当前方法从fresh生成完整LoRA，因此它的
+绝对缺口不能仅用“后续漂移”解释。反过来，结构差异也不能证明旧carrier是正确答案：151仍不稳定、没有视频因果
+资格，并且owner明确禁止后续直接回退旧Writer。
 
-两种极端tail都已暴露问题：
+## 9. 独立复核边界
 
-- 冻结V6 tail保留强support，却把新Procedure压成千分之几的小修，hidden residual还可能被W2旋散；
-- independent direct-B tail让写出material，却脱离V6已验证的rank16 slot/family协同，并在连续shared update中换手。
+- 后续判断必须以当前Core-Addressed Reader架构为基础，不得把直接恢复V6/LPCP/GOMQ当作回答；
+- 历史checkpoint只作为comparison/provenance，不是当前参数、初始化或并行执行分支；
+- 本文没有写入preferred successor、推荐objective或实验顺序；
+- reviewer应独立判断上述未决项的因果优先级，并区分事实、推断和方法偏好。
 
-下一步应让V6已经形成的高层Procedure直接读取真实`layer × rank` memory，使Program在进入compiler之前就处于
-policy参数坐标；随后两级聚合严格保留该地址，并由共同训练的native rank16 A/B compiler生成完整LoRA。不能再先把
-Procedure压成global latent、再用另一套routing slots恢复地址；也不能只调旧Procedure Query或另开rank32 B-only bank。
-
-### 9.3 Shared credit是第二个真实缺口，但不能与新compiler同时改
-
-GOMQ cycle2--4的memory/downstream跨task gradient cosine约`.15→.13`与`.09→.05`，gained/lost BA幅度又不可分，
-说明successful-expert occupancy不是可靠shared selection rule。可是如果下一轮同时更换compiler、reward、optimizer和
-rank，结果无法归因。
-
-因此首轮不续GOMQ reward，而以v6已验证的dense、task-complete、cross-episode functional training提供policy credit；
-Program不可识别性另由下一节的结构与matching处理，不同时重写reward/optimizer。Writer reward仍开放，但只能在新
-架构先证明absolute和相邻稳定性后另立authority；生成LoRA后的task-local RL继续不属于当前目标。
-
-### 9.4 普通causal encoder仍没有解决positive-only不可识别性
-
-v4根因审计已经给出形式化结论：训练样本是同task但条件独立的`(video_d, action_e)`，所有video又始终correct；因此
-functional loss只规定task controller，不规定哪种video过程解释必须被使用。给输入加相邻差分、causal mask或位置
-编码，只是提供使用顺序的能力，模型仍可退化成task identity或generic video-presence gate。
-
-统一架构必须额外满足两点：
-
-1. video additive Value本身去掉order-even/static旁路；LMMPC用
-   `P(V)=0.5(F(V)-F(reverse(V)))`使reverse严格反号；
-2. exact language必须匹配对应的directed Program；同task correct videos为正对，cross-task/shuffle/reverse只在
-   Program matching中作为反例，不通过破坏negative LoRA制造闭环margin。
-
-dense functional credit仍不可删除，因为matching只能保证“内容相符”，不能保证LoRA沿policy成功方向。
-
-## 10. 三个可行分支与选择
-
-### A. 原样续GOMQ direct-B
-
-优点是曾到151且写出material；缺点是`151→135→131`已终局、rank32第二bank与低cross-task gradient coherence均未
-解决。继续训练或小改LR不是新假设，淘汰。
-
-### B. 只把memory加回LPCP Procedure Query
-
-它最保守、step0容易完全等于143；但LPCP已经证明Query差异经冻结tail只形成`.002653`邻域改写，SJNV又证明冻结
-W2会破坏共同hidden方向。若仍只走同一Query入口，最可能重复已定位的衰减，不推荐为主线。
-
-### C. Layer-Matched Memory Program Compiler
-
-每条frame在真实image/language/Action context中同时形成V6 task-grounded视觉证据、Action representation和18层
-rank-matched memory states。V6的Action-query visual-transition路径先形成高层causal Procedure；Procedure再读取每个
-固定`(layer,rank)`的memory时间序列。video内形成directed parameter memory，K轴只在相同`(layer,rank)`地址上做
-置换不变共识；聚合memory tensor自身进入group/rank axial M2P和共同训练的native rank16 factor heads，不再建立
-独立320-slot bank。Core由非零动态memory门控后提供对象/关系/目标语义，不能独立写LoRA。
-
-该分支同时保留GOMQ“learned memory有真实价值”和V6“rank16 policy topology有效”两条正证据，避免GOMQ flat
-direct-B与LPCP frozen-tail两个已测极端。它是当前推荐架构；完整数据流与实验合同单独写入
-`layer_matched_memory_program_compiler_design.md`。
-
-## 11. 训练方式的结论
-
-最终方法必须fresh训练。开发bring-up可短暂复用sealed V6 Core/Procedure activations检查memory→M2P→factor接线，
-但不训练成正式bridge、不做闭环选模，也不能把旧task能力冒充新方法。第一轮不加入expert reconstruction、reward、
-LoRA negative margin、LoRA norm/rank、subset consistency或gradient solver。
-
-但只用correct functional loss仍没有解决owner指出的positive-only不可识别性。因此统一recipe保留两个职责分开的
-信号：
-
-1. 固定train24、每macro task-complete等权；
-2. K1--K4真实均衡曝光，每video独立保序；
-3. video与action query同task跨episode；
-4. frozen source policy的dense functional loss只优化correct LoRA的policy方向；
-5. language—directed-Program multi-positive matching区分same-task correct、cross-task wrong和重算后的shuffle/reverse，
-   但不读取negative action/reward，也不规定negative LoRA必须失败；
-6. single-checkpoint strict paired400及时裁决。
-
-same-task跨video一致性、between-task separability、Program→BA transmission和correct/reverse差异先作stage diagnostics，
-不再用漂亮surrogate代替closed-loop。
-
-## 12. 设计问题现在如何闭合
-
-1. **高层知识**：跨episode functional credit阻断轨迹复制；V6 Core保留对象/关系/目标，V6 Procedure保留阶段演化；
-   Procedure读取memory而不是让memory独立重新理解任务。
-2. **正确顺序**：Action查询重算后的visual transition形成causal Procedure；Procedure→memory readout保留directed
-   channel，shuffle/reverse必须重排真实frames并重算全部轻量时序路径。
-3. **language边界**：language负责task grounding和必要gate；Core语义只能由非零动态memory Program打开，缺少任一
-   输入均为identity。
-4. **多video**：每video独立形成`H_video[layer,rank]`，K轴只在相同地址上置换不变聚合，不平均frames/raw features/
-   LoRA，也不挑video。
-5. **有效LoRA**：聚合memory tensor本身扩成`20×16`边界网格并直接进入axial M2P和八个joint native heads；不经过
-   独立320 routing slots、冻结W2或flat Direct-B第二bank。
-6. **多task共存**：task-complete joint训练；cross-task matching保持Program可分，condition-specific memory grid分流到
-   shared family heads，不让一个global B payload承担全部task。
-7. **历史继承**：保留V6 Core、Action-query Procedure、native context、rank16 ownership和task-complete recipe；保留
-   GOMQ learned one-way memory；删除后置重寻址、rank32 residual bank和首轮reward。
-8. **证伪**：依次查Procedure→per-video memory→K-set memory→M2P/factor→BA/action；有信息量节点strict400，未观察到
-   峰值且链路健康时继续训练，首次约145且retention合理即补六臂和相邻稳定性。
-
-这是一份已完成证据裁决的认知文档；当前active implementation authority与精确实验合同见
-`layer_matched_memory_program_compiler_design.md`。
+精确历史演进见`docs/research_history.md`；当前架构公式与formal事实见
+`docs/layer_matched_memory_program_compiler_design.md`；稳定目标见`docs/current_owner_requirements.md`。

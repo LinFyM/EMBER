@@ -1,4 +1,4 @@
-"""Language-aligned per-frame evidence for the canonical PI05 v6 Writer."""
+"""Language-aligned per-frame evidence for the canonical EMBER-LMMPC Writer."""
 
 from __future__ import annotations
 
@@ -86,89 +86,6 @@ class MetaLoRAStack(torch.nn.Module):
         finally:
             for handle in handles:
                 handle.remove()
-
-
-class LayerwiseActionProbeReader(torch.nn.Module):
-    """Read every native Action-Expert layer with shared LoRA-rank queries."""
-
-    LAYERS = 18
-    ACTION_HORIZON = 50
-    EXPERT_WIDTH = 1024
-    PUBLIC_RANK = 16
-    PROGRAM_WIDTH = 256
-
-    def __init__(self, *, heads: int = 8, initialization_seed: int = 7) -> None:
-        super().__init__()
-        if heads <= 0 or self.PROGRAM_WIDTH % heads:
-            raise VideoProgramError("invalid layerwise Action-probe reader")
-        self.heads = int(heads)
-        self.head_width = self.PROGRAM_WIDTH // self.heads
-        self.probe_norm = RMSNorm(self.EXPERT_WIDTH)
-        self.query_norm = RMSNorm(self.PROGRAM_WIDTH)
-        self.query = torch.nn.Linear(self.PROGRAM_WIDTH, self.PROGRAM_WIDTH, bias=False)
-        self.key = torch.nn.Linear(self.EXPERT_WIDTH, self.PROGRAM_WIDTH, bias=False)
-        self.value = torch.nn.Linear(self.EXPERT_WIDTH, self.PROGRAM_WIDTH, bias=False)
-        self.output = torch.nn.Linear(self.PROGRAM_WIDTH, self.PROGRAM_WIDTH, bias=False)
-        generator = torch.Generator(device="cpu").manual_seed(
-            int(initialization_seed) + 0x4C50
-        )
-        rank_identity = torch.empty(self.PUBLIC_RANK, self.PROGRAM_WIDTH)
-        layer_identity = torch.empty(self.LAYERS, self.PROGRAM_WIDTH)
-        rank_identity.normal_(mean=0.0, std=0.02, generator=generator)
-        layer_identity.normal_(mean=0.0, std=0.02, generator=generator)
-        self.rank_identity = torch.nn.Parameter(rank_identity)
-        self.layer_identity = torch.nn.Parameter(layer_identity)
-
-    def _read_layer(self, hidden: torch.Tensor, layer: int) -> torch.Tensor:
-        if (
-            hidden.ndim != 3
-            or hidden.shape[1:] != (self.ACTION_HORIZON, self.EXPERT_WIDTH)
-            or layer not in range(self.LAYERS)
-        ):
-            raise VideoProgramError("native Action-probe hidden layout changed")
-        dtype = self.key.weight.dtype
-        probe = self.probe_norm(hidden.to(dtype))
-        query_input = self.rank_identity + self.layer_identity[layer]
-        query = self.query(self.query_norm(query_input))[None].expand(
-            hidden.shape[0], -1, -1
-        )
-        key = self.key(probe)
-        value = self.value(probe)
-        query = query.reshape(
-            hidden.shape[0], self.PUBLIC_RANK, self.heads, self.head_width
-        ).transpose(1, 2)
-        key = key.reshape(
-            hidden.shape[0], self.ACTION_HORIZON, self.heads, self.head_width
-        ).transpose(1, 2)
-        value = value.reshape(
-            hidden.shape[0], self.ACTION_HORIZON, self.heads, self.head_width
-        ).transpose(1, 2)
-        attended = F.scaled_dot_product_attention(
-            query,
-            key,
-            value,
-            dropout_p=0.0,
-            is_causal=False,
-        )
-        return self.output(
-            attended.transpose(1, 2).reshape(
-                hidden.shape[0], self.PUBLIC_RANK, self.PROGRAM_WIDTH
-            )
-        )
-
-    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
-        """Read post-layer Action states returned by the one joint loop."""
-
-        if (
-            hidden.ndim != 4
-            or hidden.shape[1:]
-            != (self.LAYERS, self.ACTION_HORIZON, self.EXPERT_WIDTH)
-        ):
-            raise VideoProgramError("layerwise Action-probe state layout changed")
-        return torch.stack(
-            [self._read_layer(hidden[:, layer], layer) for layer in range(self.LAYERS)],
-            dim=1,
-        )
 
 
 class TaskQueriedPatchGrounding(torch.nn.Module):

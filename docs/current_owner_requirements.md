@@ -155,6 +155,11 @@ manifold监督，K4失败不否定few-shot，GOMQ不稳定也不否定memory tok
 owner的局部建议是启发和约束，不应导致整套方案每次大改。新判断必须说明继承哪些已验证机制、针对哪个最早失败
 接口，以及什么证据能快速否决。
 
+当前后续研究必须以仓库现有EMBER-LMMPC Core-Addressed Reader主链为出发点，不得直接回退到V6、LPCP或GOMQ，
+不得加载旧Writer作为carrier、增加旧Writer并行分支、恢复旧compiler，或把“旧LoRA加当前残差”包装成新方法。
+历史架构只提供事实基线、机制provenance和反事实证据；即使旧checkpoint分数更高，也不能取代当前架构内部的
+问题定位与迭代。
+
 ## 10. 效率、GPU和协作
 
 - 训练/评测最多使用单节点6张A40，但不是必须6张；有多少合适卡就用多少。

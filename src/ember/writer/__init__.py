@@ -1,4 +1,4 @@
-"""Shared execution utilities for the canonical Expert-Manifold Writer."""
+"""Canonical EMBER-LMMPC Writer package."""
 
 from ember.writer.errors import WriterModelError
 

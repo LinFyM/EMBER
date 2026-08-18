@@ -28,6 +28,22 @@
   评测commit与checkpoint manifest已导出到`docs/evidence/external_review_20260818/paired_evidence.json`。重算确认当前
   macro25/50/75/100的breadth@1/5/10分别为`8/3/3、5/3/2、6/2/2、4/2/2`；123→84仍是显著的
   `13 gained / 52 lost`，因此tracked摘要与原始事实一致。
+- F0a pre-fix真实gradient audit已完成：macro25除`patch_grounding`全组和`interaction_projection`外的所有intended
+  module groups均有nonzero finite functional gradient，前述两组是`gradient_present=0`；source policy为0。fresh点同时
+  验证FactorHead B-first冷启动。证据见`docs/evidence/external_review_20260818/gradient_audit_before_fix.json`。
+
+## Active F0b launch contract
+
+- science：只评测sealed current macro25，不修改Writer；新增same-task-other、cross-suite-wrong、shuffled、
+  shuffled-keep-first、reversed和no-video六个strict paired400，correct123复用原始rows；
+- pairing：validation8×50、seed7、K4 without replacement，task/state/env/policy RNG/video ordinal与correct逐行相同；
+- execution：计划三波并发，每波gpu01与gpu02各一个4-GPU independent evaluator，总EMBER同时8卡、每节点4卡；每GPU
+  3 persistent rollout workers和1 writer generator，dynamic cost queue；
+- provenance：从当前clean pushed commit启动，source step1000、macro25 checkpoint和dataset均复用canonical资产；
+- storage：`strg01` data1 quota=`1,073,741,824 KiB`、当前used=`587,496,340 KiB`；六panel预计新增约6.4GB，
+  远低于独立quota余量；
+- adjudication：完成后报告correct/control paired gains/losses、exact McNemar、suite方向、same-task retention和task
+  concentration；专家阈值只作advisory，不改变owner方法合同。
 
 ## Sealed scientific state
 

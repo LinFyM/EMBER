@@ -130,11 +130,11 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 
 | ID | 建议 | 类型 | 状态与完成条件 |
 | --- | --- | --- | --- |
-| F0a.01 | fresh canonical task step全模块gradient audit | unconditional diagnostic | `queued`；输出grad None/nonzero/finite/norm表 |
-| F0a.02 | macro25 canonical task step同样审计 | unconditional diagnostic | `queued` |
-| F0a.03 | 覆盖patch grounding q/k/out、interaction、language projection | coverage requirement | `queued` |
-| F0a.04 | 覆盖Text/Action Meta-LoRA、Core、Procedure、memory、Reader、K-set、M2P、8 heads | coverage requirement | `queued`；历史A含Text，新B/C无Text需分别注明 |
-| F0a.05 | source policy nonzero grad tensors必须为0 | safety/contract | `queued` |
+| F0a.01 | fresh canonical task step全模块gradient audit | unconditional diagnostic | `completed`；见`gradient_audit_before_fix.json` |
+| F0a.02 | macro25 canonical task step同样审计 | unconditional diagnostic | `completed`；同task/K/query/RNG matched |
+| F0a.03 | 覆盖patch grounding q/k/out、interaction、language projection | coverage requirement | `completed`；前两者在macro25均为no-gradient，language为nonzero |
+| F0a.04 | 覆盖Text/Action Meta-LoRA、Core、Procedure、memory、Reader、K-set、M2P、8 heads | coverage requirement | `completed for sealed A`；上述各组macro25均nonzero finite，新B/C后续分别复核 |
+| F0a.05 | source policy nonzero grad tensors必须为0 | safety/contract | `completed`；fresh/macro25均0 |
 | F0a.06 | 新增稳定regression，不能再以fake部分路径代表全路径 | code recommendation | `queued` |
 | F0b.01 | macro25 correct strict paired400 | unconditional diagnostic | `queued`；可复用已sealed raw rows但需核对provenance |
 | F0b.02 | same-task-other paired400 | unconditional diagnostic | `queued` |
@@ -173,7 +173,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | --- | --- | --- |
 | G1 | 四checkpoint、LPCP、GOMQ逐行paired400、video IDs、RNG reference | `completed`；见`docs/evidence/external_review_20260818/paired_evidence.json`及README |
 | G2 | current macro25全部video controls与不同K4 sets | `queued`；F0b产生remote-visible aggregate/raw-row evidence |
-| G3 | intended modules实际gradient表与首次非零macro | `queued`；F0a与新run checkpoints补齐 |
+| G3 | intended modules实际gradient表与首次非零macro | `partial`；fresh/macro25完整表与first-observed state已公开，新B/C和精确首次macro随训练补齐 |
 | G4 | 每个formal run的commit/dirty diff/source/config/checkpoint/metrics provenance | `completed for six reviewed panels`；training/eval commit差异、schema、manifest和contract均显式保留 |
 | G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `queued`；复核现有local artifact并导出小型JSON |
 | G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `queued`；F2 |

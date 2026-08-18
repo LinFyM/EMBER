@@ -34,11 +34,11 @@
 
 ## Phase 0 — Claim ledger与静态代码核验
 
-- [ ] 把专家报告逐项编号为code fact、experiment fact、hypothesis、recommendation或threshold；
-- [ ] 对detach、Text Meta-LoRA、Action-50-token mean、Reader时间中心化、多套address identity、M2P RMSNorm、
+- [x] 把专家报告逐项编号为code fact、experiment fact、hypothesis、recommendation或threshold；
+- [x] 对detach、Text Meta-LoRA、Action-50-token mean、Reader时间中心化、多套address identity、M2P RMSNorm、
   action-in/out派生、FactorHead子空间/B-first冷启动、信息墙和optimizer aggregation逐项建立代码证据；
-- [ ] 对每条代码事实补当前测试覆盖、未覆盖模块和是否需要新增稳定regression test；
-- [ ] 核对旧V6与当前路径的精确差异，但只作反事实provenance，不恢复执行。
+- [x] 对每条代码事实补当前测试覆盖、未覆盖模块和是否需要新增稳定regression test；
+- [x] 核对旧V6与当前路径的精确差异，但只作反事实provenance，不恢复执行。
 
 **Gate 0：** 每项必须区分“代码必然如此”与“因此导致性能下降”的额外推断；后者没有干预不得标记confirmed。
 
@@ -56,10 +56,10 @@
 
 ### 2A. 全模块gradient audit
 
-- [ ] 在fresh initialization和macro25各运行一个canonical task step；
-- [ ] 记录`patch_grounding`、`interaction_projection`、`language_projection`、Text/Action Meta-LoRA、Core、Procedure、
+- [x] 在fresh initialization和macro25各运行一个canonical task step；
+- [x] 记录`patch_grounding`、`interaction_projection`、`language_projection`、Text/Action Meta-LoRA、Core、Procedure、
   memory tokens、Reader、K-set、M2P和八个FactorHeads的grad `None/nonzero/finite`；
-- [ ] 同时确认source policy nonzero gradient tensors为0；
+- [x] 同时确认source policy nonzero gradient tensors为0；
 - [ ] 把intended-path梯度变成稳定测试，避免以后再用部分模块代表全路径。
 
 ### 2B. Current macro25视频因果面板

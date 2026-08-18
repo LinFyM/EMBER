@@ -63,3 +63,20 @@ evaluation commit。本文只确认可追溯性，不把跨commit差异假设为
 `paired_evidence.json.rows`逐行公开suite、task、initialization、env/policy seed reference、K4 teacher demo IDs、video
 order/selection seeds、每个panel的success bit和实际noise-seed count。完整逐步noise值未复制进Git；首个seed、root、
 common-prefix实算结果和sealed evaluation contract共同提供可复核RNG reference，避免为证据复制数十万无新增信息的整数。
+
+## Pre-fix functional gradient audit
+
+`gradient_audit_before_fix.json`来自clean commit `5242ee062884f3fb0c6f95310776c6ffa91dd5c5`，在同一canonical
+task39、K3 teacher demos `[37,24,40]`、B20 query和policy RNG上比较fresh state与sealed macro25。它执行真实source-policy
+functional loss和Writer backward，而不是只检查`requires_grad`：
+
+- source policy在两点均为0个nonzero gradient tensor；
+- fresh点只有q/v/action的B-family末层有非零gradient，A-family与所有upstream group均为0，验证B-first冷启动；
+- macro25时Action/Text Meta-LoRA、language projection、Core、visual transition、Procedure、memory tokens、Reader、
+  video-set、Core fusion、M2P和八个FactorHead family全部有nonzero finite gradient；
+- macro25时`patch_grounding.query/key/output`、两个grounding norm参数和`interaction_projection`仍为
+  `gradient_present_tensors=0`；不是小梯度或数值下溢，而是autograd图完全未连接；
+- 所有trainable参数均被分组，`unclassified_parameter_names=[]`。
+
+fresh只用来确认初始化信用顺序；不能用其upstream零梯度指控detach。真正区分证据是heads已经打开的macro25：除专家
+指出的fresh projection outputs外，后端每组均有信用。

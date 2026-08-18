@@ -112,7 +112,12 @@ def test_lmmpc_v5_config_is_fresh_rank16_without_text_or_vl_meta_lora() -> None:
     )
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["world_size"] == 6
+    assert evidence["text_meta_lora_parameter_count"] == 0
+    assert evidence["vl_meta_lora_parameter_count"] == 0
+    assert evidence["action_meta_lora_parameter_count"] == 626_688
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)

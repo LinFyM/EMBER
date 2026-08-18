@@ -18,6 +18,8 @@
   因而不能把它直接升级成123低上限或checkpoint漂移的唯一根因；
 - owner最新明确：后续canonical Writer移除Text Meta-LoRA；历史formal config的rank4事实保留，Action Meta-LoRA
   不随该决定自动删除。
+- 已建立外部复核逐项审计计划：先做claim ledger、raw evidence重建和current checkpoint零训练诊断，再按门控分别
+  裁决Text Meta-LoRA、fresh前端detach、occupancy、decoder和shared-gradient hypotheses；当前尚未启动这些步骤。
 
 ## Sealed scientific state
 

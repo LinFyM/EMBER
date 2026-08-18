@@ -732,9 +732,9 @@ class LayerMatchedBackboneMemoryEncoder(torch.nn.Module):
         )
         return LayerMatchedVideoEncoding(
             text_queries=text_queries,
-            frame_evidence=evidence.detach(),
-            grounded_evidence=grounded.detach(),
-            interactions=interactions.detach(),
+            frame_evidence=evidence,
+            grounded_evidence=grounded,
+            interactions=interactions,
             valid_task_tokens=valid_task_tokens,
             layer_memory=memories,
         )

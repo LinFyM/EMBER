@@ -385,12 +385,16 @@ class _FixedShapeRecordingEncoder(LayerMatchedBackboneMemoryEncoder):
         super().__init__(
             image_width=4, expert_width=4, activation_checkpointing=False
         )
+        self.projection_scale = torch.nn.Parameter(torch.tensor(1.0))
         self.frame_calls: list[torch.Tensor] = []
 
     def _encode_microbatch(self, _semantic, _core, frames, *_args):
         self.frame_calls.append(frames.clone())
         batch = frames.shape[0]
-        evidence = frames.float().mean(dim=(1, 2, 3))[:, None, None]
+        evidence = (
+            frames.float().mean(dim=(1, 2, 3))[:, None, None]
+            * self.projection_scale
+        )
         evidence = evidence.expand(batch, 2, 256)
         interaction = evidence[:, 0]
         memory = torch.zeros(batch, 18, 16, 4)
@@ -414,6 +418,30 @@ def test_final_native_encoder_microbatch_uses_discarded_zero_padding() -> None:
     assert torch.equal(encoder.frame_calls[1][0], frames[4])
     assert not encoder.frame_calls[1][1:].count_nonzero()
     assert output.layer_memory.shape[0] == frames.shape[0]
+
+
+def test_projected_frontend_outputs_preserve_local_gradient_credit() -> None:
+    encoder = _FixedShapeRecordingEncoder()
+    frames = torch.arange(5 * 3 * 2 * 2, dtype=torch.uint8).reshape(5, 3, 2, 2)
+    output = encoder(
+        _FixedShapeSemantic(),
+        torch.nn.Identity(),
+        frames,
+        torch.zeros(5, dtype=torch.long),
+        torch.ones(1, 3, dtype=torch.long),
+        torch.ones(1, 3, dtype=torch.bool),
+        torch.tensor([[False, True, True]]),
+        torch.zeros(16, 4),
+    )
+    loss = (
+        output.frame_evidence.square().mean()
+        + output.grounded_evidence.square().mean()
+        + output.interactions.square().mean()
+    )
+    loss.backward()
+    assert encoder.projection_scale.grad is not None
+    assert encoder.projection_scale.grad.isfinite()
+    assert encoder.projection_scale.grad.abs() > 0
 
 
 class _MemoryNorm(torch.nn.Module):

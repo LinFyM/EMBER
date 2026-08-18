@@ -149,6 +149,16 @@ C使用macro1是为了记录新路径的最早可观察信用，A/B使用macro25
 因此这里裁决的是graph connectivity，不比较跨schedule的gradient magnitude。稳定regression同时覆盖返回tensor局部
 gradient和frozen native memory replay不向source参数回传。
 
+`f1_credit_intervention_evidence.json`进一步公开A/B/C与LPCP143/GOMQ151的六面板逐行strict comparison：
+
+- A123→B104（只移除Text Meta-LoRA）为23 gained / 42 lost，`p=.024812`；
+- B104→C110（只恢复projected front-end credit）为25 gained / 19 lost，`p=.45138`；
+- C25 110→C50 101为24 gained / 33 lost，churn57、Jaccard `.57463`，breadth@1由6降到4；
+- C25相对LPCP143/GOMQ151分别净低33/41，差异均显著。
+
+因此no-Text清理本身损失真实support，credit修复仅回收非显著6分且没有恢复breadth；它接通了目标路径，但没有解决
+absolute上限或shared checkpoint稳定积累。
+
 ## F2 fixed-occupancy counterfactual
 
 `occupancy_evidence.json`公开原始paired400定义的52 lost、13 gained和71 retained rows在macro25及macro50两套真实

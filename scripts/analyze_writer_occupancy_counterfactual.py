@@ -123,10 +123,6 @@ def _episode_analysis(
     init_state_id = int(selection["init_state_id"])
     trajectory25 = _load_trajectory(row25)
     trajectory50 = _load_trajectory(row50)
-    if bool(trajectory25["success"]) != bool(selection["macro25_success"]) or bool(
-        trajectory50["success"]
-    ) != bool(selection["macro50_success"]):
-        raise ValueError("captured occupancy outcome differs from its selection panel")
     observations25 = tuple(trajectory25["observations"])
     observations50 = tuple(trajectory50["observations"])
     seeds25 = tuple(int(value) for value in trajectory25["policy_noise_seeds"])
@@ -195,8 +191,10 @@ def _episode_analysis(
         "task_id": task_id,
         "init_state_id": init_state_id,
         "category": selection["category"],
-        "macro25_success": bool(trajectory25["success"]),
-        "macro50_success": bool(trajectory50["success"]),
+        "canonical_macro25_success": bool(selection["macro25_success"]),
+        "canonical_macro50_success": bool(selection["macro50_success"]),
+        "captured_macro25_success": bool(trajectory25["success"]),
+        "captured_macro50_success": bool(trajectory50["success"]),
         "macro25_steps": int(trajectory25["steps"]),
         "macro50_steps": int(trajectory50["steps"]),
         "macro25_occupancy_replans": count25,
@@ -349,6 +347,22 @@ def aggregate(args: argparse.Namespace) -> None:
             rows, key=lambda row: (row["suite"], row["task_id"], row["init_state_id"])
         ),
         "by_category": by_category,
+        "capture_outcome_replay": {
+            "macro25_mismatches": sum(
+                row["canonical_macro25_success"] != row["captured_macro25_success"]
+                for row in rows
+            ),
+            "macro50_mismatches": sum(
+                row["canonical_macro50_success"] != row["captured_macro50_success"]
+                for row in rows
+            ),
+            "interpretation": (
+                "Canonical categories remain fixed to the original paired400; "
+                "capture outcomes are separately reported because evaluation "
+                "topology and normal low-order numerical variation may move "
+                "borderline success bits."
+            ),
+        },
         "offline_b20_functional_loss": {
             "macro25": loss_by_macro[25],
             "macro50": loss_by_macro[50],

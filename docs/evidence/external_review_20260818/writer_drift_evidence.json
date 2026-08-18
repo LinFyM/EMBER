@@ -1,0 +1,2092 @@
+{
+  "checkpoint_diagnostics": {
+    "100": {
+      "factor_cotangent": {
+        "mean_gradient_energy_over_sample_energy": 0.11232862660363939,
+        "mean_gradient_l2": 0.08986190760729025,
+        "mean_pairwise_cosine": 0.07972908600027635,
+        "negative_pair_fraction": 0.3115942028985507,
+        "task_gram_effective_rank": 6.662605334554293
+      },
+      "fixed_b20_mean_loss": 0.10133709944784641,
+      "strict": {
+        "nonzero_task_breadth": 4,
+        "overall": {
+          "episodes": 400,
+          "success_rate": 0.2175,
+          "successes": 87
+        },
+        "per_suite": [
+          {
+            "episodes": 100,
+            "success_rate": 0.04,
+            "successes": 4,
+            "suite": "libero_spatial"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.38,
+            "successes": 38,
+            "suite": "libero_object"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.42,
+            "successes": 42,
+            "suite": "libero_goal"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.03,
+            "successes": 3,
+            "suite": "libero_10"
+          }
+        ],
+        "per_task": [
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl next to the ramekin and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_spatial",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl on the cookie box and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.08,
+            "successes": 4,
+            "suite": "libero_spatial",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.76,
+            "successes": 38,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the bbq sauce and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_object",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "open the top drawer and put the bowl inside",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_goal",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.84,
+            "successes": 42,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "put both the cream cheese box and the butter in the basket",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_10",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "turn on the stove and put the moka pot on it",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_10",
+            "task_id": 2
+          }
+        ],
+        "top3_success_share": 0.9655172413793104,
+        "top3_successes": 84,
+        "top3_tasks": [
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.84,
+            "successes": 42,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.76,
+            "successes": 38,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl on the cookie box and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.08,
+            "successes": 4,
+            "suite": "libero_spatial",
+            "task_id": 3
+          }
+        ]
+      },
+      "writer_gradient": {
+        "mean_gradient_energy_over_sample_energy": 0.07764233144922669,
+        "mean_gradient_l2": 1.4506388761487141,
+        "mean_pairwise_cosine": 0.0346276797316261,
+        "negative_pair_fraction": 0.3079710144927536,
+        "task_gram_effective_rank": 8.397230095655692
+      },
+      "writer_gradient_by_module": {
+        "compiler": {
+          "mean_gradient_energy_over_sample_energy": 0.08072055247601714,
+          "mean_gradient_l2": 0.21349631388491108,
+          "mean_pairwise_cosine": 0.034946642013686885,
+          "negative_pair_fraction": 0.34782608695652173,
+          "task_gram_effective_rank": 7.074216995145879
+        },
+        "factor_heads": {
+          "mean_gradient_energy_over_sample_energy": 0.07712179843197982,
+          "mean_gradient_l2": 1.3883429589912433,
+          "mean_pairwise_cosine": 0.03483727040734204,
+          "negative_pair_fraction": 0.2971014492753623,
+          "task_gram_effective_rank": 8.529913807161678
+        },
+        "memory_reader": {
+          "mean_gradient_energy_over_sample_energy": 0.08907181896590828,
+          "mean_gradient_l2": 0.30787652543369726,
+          "mean_pairwise_cosine": 0.03425827478405535,
+          "negative_pair_fraction": 0.4166666666666667,
+          "task_gram_effective_rank": 6.180827551941768
+        },
+        "memory_tokens": {
+          "mean_gradient_energy_over_sample_energy": 0.0665350946519659,
+          "mean_gradient_l2": 0.0006805951745040029,
+          "mean_pairwise_cosine": 0.014931105983108373,
+          "negative_pair_fraction": 0.4891304347826087,
+          "task_gram_effective_rank": 5.359812993983041
+        },
+        "procedure": {
+          "mean_gradient_energy_over_sample_energy": 0.057845097914487456,
+          "mean_gradient_l2": 0.02333186591829448,
+          "mean_pairwise_cosine": 0.013196498844535848,
+          "negative_pair_fraction": 0.5253623188405797,
+          "task_gram_effective_rank": 6.38071761771488
+        },
+        "semantic_core": {
+          "mean_gradient_energy_over_sample_energy": 0.06945605151217857,
+          "mean_gradient_l2": 0.04409291484581129,
+          "mean_pairwise_cosine": 0.02156861360892141,
+          "negative_pair_fraction": 0.45652173913043476,
+          "task_gram_effective_rank": 6.890680943514876
+        },
+        "semantic_encoder": {
+          "mean_gradient_energy_over_sample_energy": 0.06430710157440489,
+          "mean_gradient_l2": 0.15826976537839654,
+          "mean_pairwise_cosine": 0.017921892227151025,
+          "negative_pair_fraction": 0.4673913043478261,
+          "task_gram_effective_rank": 8.044119341464853
+        },
+        "video_set": {
+          "mean_gradient_energy_over_sample_energy": 0.10007903195607996,
+          "mean_gradient_l2": 0.03307111512632819,
+          "mean_pairwise_cosine": 0.05130002017088661,
+          "negative_pair_fraction": 0.3695652173913043,
+          "task_gram_effective_rank": 6.254830189232973
+        },
+        "visual_transition": {
+          "mean_gradient_energy_over_sample_energy": 0.04558848830491332,
+          "mean_gradient_l2": 0.0013185159552258293,
+          "mean_pairwise_cosine": 0.0021276748347525865,
+          "negative_pair_fraction": 0.5289855072463768,
+          "task_gram_effective_rank": 4.810925757849059
+        }
+      }
+    },
+    "25": {
+      "factor_cotangent": {
+        "mean_gradient_energy_over_sample_energy": 0.05066665916552116,
+        "mean_gradient_l2": 0.10251820237865601,
+        "mean_pairwise_cosine": 0.011459392103109596,
+        "negative_pair_fraction": 0.47101449275362317,
+        "task_gram_effective_rank": 7.772792235467262
+      },
+      "fixed_b20_mean_loss": 0.11212403047829866,
+      "strict": {
+        "nonzero_task_breadth": 8,
+        "overall": {
+          "episodes": 400,
+          "success_rate": 0.3075,
+          "successes": 123
+        },
+        "per_suite": [
+          {
+            "episodes": 100,
+            "success_rate": 0.06,
+            "successes": 6,
+            "suite": "libero_spatial"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.69,
+            "successes": 69,
+            "suite": "libero_object"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.44,
+            "successes": 44,
+            "suite": "libero_goal"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.04,
+            "successes": 4,
+            "suite": "libero_10"
+          }
+        ],
+        "per_task": [
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl next to the ramekin and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_spatial",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl on the cookie box and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_spatial",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.88,
+            "successes": 44,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the bbq sauce and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.5,
+            "successes": 25,
+            "suite": "libero_object",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "open the top drawer and put the bowl inside",
+            "split_role": "validation",
+            "success_rate": 0.02,
+            "successes": 1,
+            "suite": "libero_goal",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.86,
+            "successes": 43,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "put both the cream cheese box and the butter in the basket",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_10",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "turn on the stove and put the moka pot on it",
+            "split_role": "validation",
+            "success_rate": 0.02,
+            "successes": 1,
+            "suite": "libero_10",
+            "task_id": 2
+          }
+        ],
+        "top3_success_share": 0.9105691056910569,
+        "top3_successes": 112,
+        "top3_tasks": [
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.88,
+            "successes": 44,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.86,
+            "successes": 43,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the bbq sauce and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.5,
+            "successes": 25,
+            "suite": "libero_object",
+            "task_id": 3
+          }
+        ]
+      },
+      "writer_gradient": {
+        "mean_gradient_energy_over_sample_energy": 0.046474151507485,
+        "mean_gradient_l2": 2.0949447666518393,
+        "mean_pairwise_cosine": 0.004458199026464715,
+        "negative_pair_fraction": 0.5181159420289855,
+        "next_update": {
+          "delta_l2": 2.965412852247802,
+          "mean_gradient_delta_cosine": -0.03173467210491481,
+          "predicted_improvement_task_fraction": 1.0
+        },
+        "task_gram_effective_rank": 6.805458648738693
+      },
+      "writer_gradient_by_module": {
+        "compiler": {
+          "mean_gradient_energy_over_sample_energy": 0.04405004252225893,
+          "mean_gradient_l2": 0.26599363787681435,
+          "mean_pairwise_cosine": 0.0016430747125519445,
+          "negative_pair_fraction": 0.5362318840579711,
+          "next_update": {
+            "delta_l2": 1.4754478958900947,
+            "mean_gradient_delta_cosine": -0.0401258142739541,
+            "predicted_improvement_task_fraction": 0.8333333333333334
+          },
+          "task_gram_effective_rank": 7.132382344217809
+        },
+        "factor_heads": {
+          "mean_gradient_energy_over_sample_energy": 0.04634536445185342,
+          "mean_gradient_l2": 2.016434565055619,
+          "mean_pairwise_cosine": 0.004561499879432141,
+          "negative_pair_fraction": 0.5181159420289855,
+          "next_update": {
+            "delta_l2": 1.4075705850417846,
+            "mean_gradient_delta_cosine": -0.04399869375066161,
+            "predicted_improvement_task_fraction": 1.0
+          },
+          "task_gram_effective_rank": 6.716515236737112
+        },
+        "memory_reader": {
+          "mean_gradient_energy_over_sample_energy": 0.05701907914127853,
+          "mean_gradient_l2": 0.37563752385440125,
+          "mean_pairwise_cosine": 0.008621488647290522,
+          "negative_pair_fraction": 0.4673913043478261,
+          "next_update": {
+            "delta_l2": 0.6717417511713338,
+            "mean_gradient_delta_cosine": -0.08932668425008575,
+            "predicted_improvement_task_fraction": 0.9166666666666666
+          },
+          "task_gram_effective_rank": 7.634342560971464
+        },
+        "memory_tokens": {
+          "mean_gradient_energy_over_sample_energy": 0.04940645253813642,
+          "mean_gradient_l2": 0.0007356929211934965,
+          "mean_pairwise_cosine": -0.0038954864635416015,
+          "negative_pair_fraction": 0.5434782608695652,
+          "next_update": {
+            "delta_l2": 0.15318736125886137,
+            "mean_gradient_delta_cosine": -0.053229195655350205,
+            "predicted_improvement_task_fraction": 0.625
+          },
+          "task_gram_effective_rank": 6.218443217410877
+        },
+        "procedure": {
+          "mean_gradient_energy_over_sample_energy": 0.051340928950705335,
+          "mean_gradient_l2": 0.06159600484225856,
+          "mean_pairwise_cosine": 0.0008505188964145056,
+          "negative_pair_fraction": 0.4963768115942029,
+          "next_update": {
+            "delta_l2": 0.7823410495974642,
+            "mean_gradient_delta_cosine": -0.03858061825962795,
+            "predicted_improvement_task_fraction": 0.625
+          },
+          "task_gram_effective_rank": 6.658787625598785
+        },
+        "semantic_core": {
+          "mean_gradient_energy_over_sample_energy": 0.03332359509822603,
+          "mean_gradient_l2": 0.10424021855170928,
+          "mean_pairwise_cosine": -0.012319302739194642,
+          "negative_pair_fraction": 0.5652173913043478,
+          "next_update": {
+            "delta_l2": 0.88774404222302,
+            "mean_gradient_delta_cosine": -0.12209642190973685,
+            "predicted_improvement_task_fraction": 0.7083333333333334
+          },
+          "task_gram_effective_rank": 7.152099990639396
+        },
+        "semantic_encoder": {
+          "mean_gradient_energy_over_sample_energy": 0.0374281582478,
+          "mean_gradient_l2": 0.2686488261163911,
+          "mean_pairwise_cosine": -0.005493732347257535,
+          "negative_pair_fraction": 0.5181159420289855,
+          "next_update": {
+            "delta_l2": 1.4327045328592574,
+            "mean_gradient_delta_cosine": -0.05121801346374762,
+            "predicted_improvement_task_fraction": 0.875
+          },
+          "task_gram_effective_rank": 5.956076821650418
+        },
+        "video_set": {
+          "mean_gradient_energy_over_sample_energy": 0.04770984234524725,
+          "mean_gradient_l2": 0.07335476558256906,
+          "mean_pairwise_cosine": 0.0007425999489611031,
+          "negative_pair_fraction": 0.48188405797101447,
+          "next_update": {
+            "delta_l2": 0.8067018862408598,
+            "mean_gradient_delta_cosine": -0.049382455515989514,
+            "predicted_improvement_task_fraction": 0.5833333333333334
+          },
+          "task_gram_effective_rank": 6.409011213206404
+        },
+        "visual_transition": {
+          "mean_gradient_energy_over_sample_energy": 0.048455495075627734,
+          "mean_gradient_l2": 0.002022581787325688,
+          "mean_pairwise_cosine": 0.0016431371143360452,
+          "negative_pair_fraction": 0.5036231884057971,
+          "next_update": {
+            "delta_l2": 0.23918899820823447,
+            "mean_gradient_delta_cosine": -0.030580742557297334,
+            "predicted_improvement_task_fraction": 0.7083333333333334
+          },
+          "task_gram_effective_rank": 6.63857199125011
+        }
+      }
+    },
+    "50": {
+      "factor_cotangent": {
+        "mean_gradient_energy_over_sample_energy": 0.06694365234535839,
+        "mean_gradient_l2": 0.07029202929924437,
+        "mean_pairwise_cosine": 0.044926952337567626,
+        "negative_pair_fraction": 0.391304347826087,
+        "task_gram_effective_rank": 11.167142971286193
+      },
+      "fixed_b20_mean_loss": 0.09935319392631452,
+      "strict": {
+        "nonzero_task_breadth": 5,
+        "overall": {
+          "episodes": 400,
+          "success_rate": 0.21,
+          "successes": 84
+        },
+        "per_suite": [
+          {
+            "episodes": 100,
+            "success_rate": 0.01,
+            "successes": 1,
+            "suite": "libero_spatial"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.46,
+            "successes": 46,
+            "suite": "libero_object"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.29,
+            "successes": 29,
+            "suite": "libero_goal"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.08,
+            "successes": 8,
+            "suite": "libero_10"
+          }
+        ],
+        "per_task": [
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl next to the ramekin and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_spatial",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl on the cookie box and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.02,
+            "successes": 1,
+            "suite": "libero_spatial",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.9,
+            "successes": 45,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the bbq sauce and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.02,
+            "successes": 1,
+            "suite": "libero_object",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "open the top drawer and put the bowl inside",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_goal",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.58,
+            "successes": 29,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "put both the cream cheese box and the butter in the basket",
+            "split_role": "validation",
+            "success_rate": 0.16,
+            "successes": 8,
+            "suite": "libero_10",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "turn on the stove and put the moka pot on it",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_10",
+            "task_id": 2
+          }
+        ],
+        "top3_success_share": 0.9761904761904762,
+        "top3_successes": 82,
+        "top3_tasks": [
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.9,
+            "successes": 45,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.58,
+            "successes": 29,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "put both the cream cheese box and the butter in the basket",
+            "split_role": "validation",
+            "success_rate": 0.16,
+            "successes": 8,
+            "suite": "libero_10",
+            "task_id": 1
+          }
+        ]
+      },
+      "writer_gradient": {
+        "mean_gradient_energy_over_sample_energy": 0.049581080791690976,
+        "mean_gradient_l2": 1.2242736962733702,
+        "mean_pairwise_cosine": 0.013639021240691648,
+        "negative_pair_fraction": 0.3804347826086957,
+        "next_update": {
+          "delta_l2": 2.3079351150530605,
+          "mean_gradient_delta_cosine": -0.02787875035709077,
+          "predicted_improvement_task_fraction": 1.0
+        },
+        "task_gram_effective_rank": 16.28366726005808
+      },
+      "writer_gradient_by_module": {
+        "compiler": {
+          "mean_gradient_energy_over_sample_energy": 0.05651093643054503,
+          "mean_gradient_l2": 0.1588811080020345,
+          "mean_pairwise_cosine": 0.01929328061913236,
+          "negative_pair_fraction": 0.42028985507246375,
+          "next_update": {
+            "delta_l2": 1.014784654862869,
+            "mean_gradient_delta_cosine": -0.04066803091048468,
+            "predicted_improvement_task_fraction": 0.75
+          },
+          "task_gram_effective_rank": 12.414350295275131
+        },
+        "factor_heads": {
+          "mean_gradient_energy_over_sample_energy": 0.04876123658081492,
+          "mean_gradient_l2": 1.1785010755210228,
+          "mean_pairwise_cosine": 0.013090132363433139,
+          "negative_pair_fraction": 0.3804347826086957,
+          "next_update": {
+            "delta_l2": 1.2535177766020682,
+            "mean_gradient_delta_cosine": -0.03682512062577699,
+            "predicted_improvement_task_fraction": 0.9583333333333334
+          },
+          "task_gram_effective_rank": 16.314732057094435
+        },
+        "memory_reader": {
+          "mean_gradient_energy_over_sample_energy": 0.052259248546756086,
+          "mean_gradient_l2": 0.2276976724616063,
+          "mean_pairwise_cosine": 0.01349501292078368,
+          "negative_pair_fraction": 0.4528985507246377,
+          "next_update": {
+            "delta_l2": 0.5726538805532694,
+            "mean_gradient_delta_cosine": -0.06982423820662804,
+            "predicted_improvement_task_fraction": 0.8333333333333334
+          },
+          "task_gram_effective_rank": 10.182203069712594
+        },
+        "memory_tokens": {
+          "mean_gradient_energy_over_sample_energy": 0.05301752664706905,
+          "mean_gradient_l2": 0.000583191538122226,
+          "mean_pairwise_cosine": 0.01048612670504876,
+          "negative_pair_fraction": 0.5036231884057971,
+          "next_update": {
+            "delta_l2": 0.12926439547720553,
+            "mean_gradient_delta_cosine": -0.2712569782669142,
+            "predicted_improvement_task_fraction": 0.625
+          },
+          "task_gram_effective_rank": 5.010106228380929
+        },
+        "procedure": {
+          "mean_gradient_energy_over_sample_energy": 0.04092975997672434,
+          "mean_gradient_l2": 0.022833508097189526,
+          "mean_pairwise_cosine": 0.009563570981036688,
+          "negative_pair_fraction": 0.47101449275362317,
+          "next_update": {
+            "delta_l2": 0.5790630894619978,
+            "mean_gradient_delta_cosine": -0.056956221421189314,
+            "predicted_improvement_task_fraction": 0.4583333333333333
+          },
+          "task_gram_effective_rank": 10.138870432389115
+        },
+        "semantic_core": {
+          "mean_gradient_energy_over_sample_energy": 0.06047459755453704,
+          "mean_gradient_l2": 0.03951813654640978,
+          "mean_pairwise_cosine": 0.02656929928973635,
+          "negative_pair_fraction": 0.40217391304347827,
+          "next_update": {
+            "delta_l2": 0.7178529358366308,
+            "mean_gradient_delta_cosine": -0.060357876295888374,
+            "predicted_improvement_task_fraction": 0.5833333333333334
+          },
+          "task_gram_effective_rank": 12.045447136579757
+        },
+        "semantic_encoder": {
+          "mean_gradient_energy_over_sample_energy": 0.08297224780453183,
+          "mean_gradient_l2": 0.1477182236886455,
+          "mean_pairwise_cosine": 0.0338376252367809,
+          "negative_pair_fraction": 0.38405797101449274,
+          "next_update": {
+            "delta_l2": 1.0720447723895716,
+            "mean_gradient_delta_cosine": -0.020142532362897824,
+            "predicted_improvement_task_fraction": 0.75
+          },
+          "task_gram_effective_rank": 8.775280749362986
+        },
+        "video_set": {
+          "mean_gradient_energy_over_sample_energy": 0.058984649267599054,
+          "mean_gradient_l2": 0.030205651217696344,
+          "mean_pairwise_cosine": 0.018807515582663047,
+          "negative_pair_fraction": 0.427536231884058,
+          "next_update": {
+            "delta_l2": 0.5895382726542954,
+            "mean_gradient_delta_cosine": -0.05083580497182515,
+            "predicted_improvement_task_fraction": 0.5833333333333334
+          },
+          "task_gram_effective_rank": 10.635380968231345
+        },
+        "visual_transition": {
+          "mean_gradient_energy_over_sample_energy": 0.03336045997078182,
+          "mean_gradient_l2": 0.0010139993627510653,
+          "mean_pairwise_cosine": -0.005911747632553173,
+          "negative_pair_fraction": 0.5108695652173914,
+          "next_update": {
+            "delta_l2": 0.18266298047479795,
+            "mean_gradient_delta_cosine": -0.06898161671141287,
+            "predicted_improvement_task_fraction": 0.625
+          },
+          "task_gram_effective_rank": 6.694429215744216
+        }
+      }
+    },
+    "75": {
+      "factor_cotangent": {
+        "mean_gradient_energy_over_sample_energy": 0.05782850218823758,
+        "mean_gradient_l2": 0.0779780146021293,
+        "mean_pairwise_cosine": 0.03402750987774763,
+        "negative_pair_fraction": 0.358695652173913,
+        "task_gram_effective_rank": 8.904399239749395
+      },
+      "fixed_b20_mean_loss": 0.09842711919918656,
+      "strict": {
+        "nonzero_task_breadth": 6,
+        "overall": {
+          "episodes": 400,
+          "success_rate": 0.2225,
+          "successes": 89
+        },
+        "per_suite": [
+          {
+            "episodes": 100,
+            "success_rate": 0.03,
+            "successes": 3,
+            "suite": "libero_spatial"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.37,
+            "successes": 37,
+            "suite": "libero_object"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.46,
+            "successes": 46,
+            "suite": "libero_goal"
+          },
+          {
+            "episodes": 100,
+            "success_rate": 0.03,
+            "successes": 3,
+            "suite": "libero_10"
+          }
+        ],
+        "per_task": [
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl next to the ramekin and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_spatial",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl on the cookie box and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_spatial",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.72,
+            "successes": 36,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the bbq sauce and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.02,
+            "successes": 1,
+            "suite": "libero_object",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "open the top drawer and put the bowl inside",
+            "split_role": "validation",
+            "success_rate": 0.04,
+            "successes": 2,
+            "suite": "libero_goal",
+            "task_id": 3
+          },
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.88,
+            "successes": 44,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "put both the cream cheese box and the butter in the basket",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_10",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "turn on the stove and put the moka pot on it",
+            "split_role": "validation",
+            "success_rate": 0.0,
+            "successes": 0,
+            "suite": "libero_10",
+            "task_id": 2
+          }
+        ],
+        "top3_success_share": 0.9325842696629213,
+        "top3_successes": 83,
+        "top3_tasks": [
+          {
+            "episodes": 50,
+            "language": "put the cream cheese in the bowl",
+            "split_role": "validation",
+            "success_rate": 0.88,
+            "successes": 44,
+            "suite": "libero_goal",
+            "task_id": 6
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the cream cheese and place it in the basket",
+            "split_role": "validation",
+            "success_rate": 0.72,
+            "successes": 36,
+            "suite": "libero_object",
+            "task_id": 1
+          },
+          {
+            "episodes": 50,
+            "language": "pick up the black bowl next to the ramekin and place it on the plate",
+            "split_role": "validation",
+            "success_rate": 0.06,
+            "successes": 3,
+            "suite": "libero_spatial",
+            "task_id": 1
+          }
+        ]
+      },
+      "writer_gradient": {
+        "mean_gradient_energy_over_sample_energy": 0.04789413336713693,
+        "mean_gradient_l2": 1.3285579103372507,
+        "mean_pairwise_cosine": 0.011265380824486238,
+        "negative_pair_fraction": 0.38405797101449274,
+        "next_update": {
+          "delta_l2": 2.3786092008245046,
+          "mean_gradient_delta_cosine": -0.022342802381467203,
+          "predicted_improvement_task_fraction": 0.9583333333333334
+        },
+        "task_gram_effective_rank": 9.892221277525088
+      },
+      "writer_gradient_by_module": {
+        "compiler": {
+          "mean_gradient_energy_over_sample_energy": 0.04871139285901736,
+          "mean_gradient_l2": 0.17131828779045874,
+          "mean_pairwise_cosine": 0.011702891558627021,
+          "negative_pair_fraction": 0.4384057971014493,
+          "next_update": {
+            "delta_l2": 1.069337457799992,
+            "mean_gradient_delta_cosine": -0.028741690276527274,
+            "predicted_improvement_task_fraction": 0.75
+          },
+          "task_gram_effective_rank": 10.98391838421377
+        },
+        "factor_heads": {
+          "mean_gradient_energy_over_sample_energy": 0.04815241300231609,
+          "mean_gradient_l2": 1.280684501491339,
+          "mean_pairwise_cosine": 0.011607113261440406,
+          "negative_pair_fraction": 0.39855072463768115,
+          "next_update": {
+            "delta_l2": 1.1966203960270154,
+            "mean_gradient_delta_cosine": -0.038772506426658956,
+            "predicted_improvement_task_fraction": 1.0
+          },
+          "task_gram_effective_rank": 9.73242696492747
+        },
+        "memory_reader": {
+          "mean_gradient_energy_over_sample_energy": 0.044888893700742415,
+          "mean_gradient_l2": 0.24718507661331476,
+          "mean_pairwise_cosine": 0.010307914686532318,
+          "negative_pair_fraction": 0.4384057971014493,
+          "next_update": {
+            "delta_l2": 0.6610541980375922,
+            "mean_gradient_delta_cosine": -0.009883542191510154,
+            "predicted_improvement_task_fraction": 0.5
+          },
+          "task_gram_effective_rank": 8.663477171154709
+        },
+        "memory_tokens": {
+          "mean_gradient_energy_over_sample_energy": 0.021913755885612878,
+          "mean_gradient_l2": 0.0006065085530981982,
+          "mean_pairwise_cosine": -0.01149705709109132,
+          "negative_pair_fraction": 0.5,
+          "next_update": {
+            "delta_l2": 0.10196875600023414,
+            "mean_gradient_delta_cosine": -0.13281205707689073,
+            "predicted_improvement_task_fraction": 0.625
+          },
+          "task_gram_effective_rank": 4.079479183052546
+        },
+        "procedure": {
+          "mean_gradient_energy_over_sample_energy": 0.06816572600770081,
+          "mean_gradient_l2": 0.021266104566017924,
+          "mean_pairwise_cosine": 0.030278675947469302,
+          "negative_pair_fraction": 0.4420289855072464,
+          "next_update": {
+            "delta_l2": 0.708673293635586,
+            "mean_gradient_delta_cosine": -0.0040681610147071485,
+            "predicted_improvement_task_fraction": 0.5
+          },
+          "task_gram_effective_rank": 9.481198138336834
+        },
+        "semantic_core": {
+          "mean_gradient_energy_over_sample_energy": 0.07209697068994048,
+          "mean_gradient_l2": 0.039226035463435845,
+          "mean_pairwise_cosine": 0.03079769712042494,
+          "negative_pair_fraction": 0.42028985507246375,
+          "next_update": {
+            "delta_l2": 0.8623994516639337,
+            "mean_gradient_delta_cosine": 0.05691494108032991,
+            "predicted_improvement_task_fraction": 0.375
+          },
+          "task_gram_effective_rank": 9.975273235551896
+        },
+        "semantic_encoder": {
+          "mean_gradient_energy_over_sample_energy": 0.03374585359175319,
+          "mean_gradient_l2": 0.1502806756466142,
+          "mean_pairwise_cosine": 0.0006632105817860644,
+          "negative_pair_fraction": 0.5,
+          "next_update": {
+            "delta_l2": 0.9867559088238371,
+            "mean_gradient_delta_cosine": -0.042859075678355334,
+            "predicted_improvement_task_fraction": 0.7083333333333334
+          },
+          "task_gram_effective_rank": 9.801389928342154
+        },
+        "video_set": {
+          "mean_gradient_energy_over_sample_energy": 0.05262830015043033,
+          "mean_gradient_l2": 0.02790729836789947,
+          "mean_pairwise_cosine": 0.019697422597195004,
+          "negative_pair_fraction": 0.43478260869565216,
+          "next_update": {
+            "delta_l2": 0.6046065752940919,
+            "mean_gradient_delta_cosine": -0.06054366365428939,
+            "predicted_improvement_task_fraction": 0.6666666666666666
+          },
+          "task_gram_effective_rank": 9.789671769055769
+        },
+        "visual_transition": {
+          "mean_gradient_energy_over_sample_energy": 0.0441008829323642,
+          "mean_gradient_l2": 0.001132618459593342,
+          "mean_pairwise_cosine": 0.0015458944893887905,
+          "negative_pair_fraction": 0.4963768115942029,
+          "next_update": {
+            "delta_l2": 0.2232072884627472,
+            "mean_gradient_delta_cosine": 0.14032007780064207,
+            "predicted_improvement_task_fraction": 0.4583333333333333
+          },
+          "task_gram_effective_rank": 5.747800462128836
+        }
+      }
+    }
+  },
+  "checkpoint_scores": {
+    "100": 87,
+    "25": 123,
+    "50": 84,
+    "75": 89
+  },
+  "conditions_per_task": 4,
+  "factor_decomposition": {
+    "25_to_50": {
+      "heads_effect_new_program": {
+        "candidate_ba_l2_mean": 44.18869147689111,
+        "candidate_over_reference_l2_mean": 1.6273575717574833,
+        "cosine_mean": 0.7219633506243178,
+        "cosine_median": 0.7147586293326572,
+        "count": 32,
+        "reference_ba_l2_mean": 27.296674335679874,
+        "relative_l2_mean": 1.1403678257675431,
+        "relative_l2_median": 1.1663359843200074
+      },
+      "heads_only_old_program": {
+        "candidate_ba_l2_mean": 48.53859763790312,
+        "candidate_over_reference_l2_mean": 1.7796744327317826,
+        "cosine_mean": 0.6814469587915035,
+        "cosine_median": 0.6739807085324092,
+        "count": 32,
+        "reference_ba_l2_mean": 27.388048515673958,
+        "relative_l2_mean": 1.3199914558881902,
+        "relative_l2_median": 1.3428198502365398
+      },
+      "program_effect_new_heads": {
+        "candidate_ba_l2_mean": 44.18869147689111,
+        "candidate_over_reference_l2_mean": 0.9117967389706196,
+        "cosine_mean": 0.8021085874251436,
+        "cosine_median": 0.796245894985026,
+        "count": 32,
+        "reference_ba_l2_mean": 48.53859763790312,
+        "relative_l2_mean": 0.6120121467575134,
+        "relative_l2_median": 0.6093014709936577
+      },
+      "program_only_old_heads": {
+        "candidate_ba_l2_mean": 27.296674335679874,
+        "candidate_over_reference_l2_mean": 0.9987379318578558,
+        "cosine_mean": 0.834646722429415,
+        "cosine_median": 0.830299774795644,
+        "count": 32,
+        "reference_ba_l2_mean": 27.388048515673958,
+        "relative_l2_mean": 0.5823407466020398,
+        "relative_l2_median": 0.586302969949444
+      },
+      "total_native": {
+        "candidate_ba_l2_mean": 44.18869147689111,
+        "candidate_over_reference_l2_mean": 1.624276332409147,
+        "cosine_mean": 0.5987190408861272,
+        "cosine_median": 0.5940940027424368,
+        "count": 32,
+        "reference_ba_l2_mean": 27.388048515673958,
+        "relative_l2_mean": 1.3057263241068737,
+        "relative_l2_median": 1.247048421745205
+      }
+    },
+    "50_to_75": {
+      "heads_effect_new_program": {
+        "candidate_ba_l2_mean": 49.57027351063208,
+        "candidate_over_reference_l2_mean": 1.178610353931489,
+        "cosine_mean": 0.850409807903469,
+        "cosine_median": 0.8486078563290025,
+        "count": 32,
+        "reference_ba_l2_mean": 42.157319724751545,
+        "relative_l2_mean": 0.6201977498210294,
+        "relative_l2_median": 0.6232332287987838
+      },
+      "heads_only_old_program": {
+        "candidate_ba_l2_mean": 52.76858285413557,
+        "candidate_over_reference_l2_mean": 1.1965993589207962,
+        "cosine_mean": 0.8253823435171426,
+        "cosine_median": 0.824828810167244,
+        "count": 32,
+        "reference_ba_l2_mean": 44.18869147689111,
+        "relative_l2_mean": 0.6757426310783806,
+        "relative_l2_median": 0.6749158818089123
+      },
+      "program_effect_new_heads": {
+        "candidate_ba_l2_mean": 49.57027351063208,
+        "candidate_over_reference_l2_mean": 0.9405957857146565,
+        "cosine_mean": 0.7974241001488926,
+        "cosine_median": 0.8169285127405659,
+        "count": 32,
+        "reference_ba_l2_mean": 52.76858285413557,
+        "relative_l2_mean": 0.6177884440004731,
+        "relative_l2_median": 0.5966237818858082
+      },
+      "program_only_old_heads": {
+        "candidate_ba_l2_mean": 42.157319724751545,
+        "candidate_over_reference_l2_mean": 0.9552262794724538,
+        "cosine_mean": 0.8217780161954672,
+        "cosine_median": 0.8383779382020707,
+        "count": 32,
+        "reference_ba_l2_mean": 44.18869147689111,
+        "relative_l2_mean": 0.5832418024023378,
+        "relative_l2_median": 0.5658669710425315
+      },
+      "total_native": {
+        "candidate_ba_l2_mean": 49.57027351063208,
+        "candidate_over_reference_l2_mean": 1.1251931672849058,
+        "cosine_mean": 0.6879066130521815,
+        "cosine_median": 0.7043528542150406,
+        "count": 32,
+        "reference_ba_l2_mean": 44.18869147689111,
+        "relative_l2_mean": 0.8475449150787522,
+        "relative_l2_median": 0.851845392725864
+      }
+    },
+    "75_to_100": {
+      "heads_effect_new_program": {
+        "candidate_ba_l2_mean": 51.207666969344245,
+        "candidate_over_reference_l2_mean": 1.139368088270398,
+        "cosine_mean": 0.8812685915584317,
+        "cosine_median": 0.8768336767375676,
+        "count": 32,
+        "reference_ba_l2_mean": 44.95546143751612,
+        "relative_l2_mean": 0.5388359578185,
+        "relative_l2_median": 0.5415809042999359
+      },
+      "heads_only_old_program": {
+        "candidate_ba_l2_mean": 56.58026870862918,
+        "candidate_over_reference_l2_mean": 1.1418805946457158,
+        "cosine_mean": 0.8590390568702861,
+        "cosine_median": 0.8530598290800144,
+        "count": 32,
+        "reference_ba_l2_mean": 49.57027351063208,
+        "relative_l2_mean": 0.5847249648465429,
+        "relative_l2_median": 0.6032302689453475
+      },
+      "program_effect_new_heads": {
+        "candidate_ba_l2_mean": 51.207666969344245,
+        "candidate_over_reference_l2_mean": 0.9082925583670571,
+        "cosine_mean": 0.8061277602917887,
+        "cosine_median": 0.8237255780346551,
+        "count": 32,
+        "reference_ba_l2_mean": 56.58026870862918,
+        "relative_l2_mean": 0.5987359624295013,
+        "relative_l2_median": 0.5719330038725938
+      },
+      "program_only_old_heads": {
+        "candidate_ba_l2_mean": 44.95546143751612,
+        "candidate_over_reference_l2_mean": 0.9104645370334592,
+        "cosine_mean": 0.8223932087433096,
+        "cosine_median": 0.8358276916994539,
+        "count": 32,
+        "reference_ba_l2_mean": 49.57027351063208,
+        "relative_l2_mean": 0.5753399422890425,
+        "relative_l2_median": 0.551146818947432
+      },
+      "total_native": {
+        "candidate_ba_l2_mean": 51.207666969344245,
+        "candidate_over_reference_l2_mean": 1.0368298121084811,
+        "cosine_mean": 0.7103425602643691,
+        "cosine_median": 0.7118935346621467,
+        "count": 32,
+        "reference_ba_l2_mean": 49.57027351063208,
+        "relative_l2_mean": 0.7765363878116813,
+        "relative_l2_median": 0.7576365749316204
+      }
+    }
+  },
+  "intervals": {
+    "25_to_50": {
+      "factor_decomposition": {
+        "heads_effect_new_program": {
+          "candidate_ba_l2_mean": 44.18869147689111,
+          "candidate_over_reference_l2_mean": 1.6273575717574833,
+          "cosine_mean": 0.7219633506243178,
+          "cosine_median": 0.7147586293326572,
+          "count": 32,
+          "reference_ba_l2_mean": 27.296674335679874,
+          "relative_l2_mean": 1.1403678257675431,
+          "relative_l2_median": 1.1663359843200074
+        },
+        "heads_only_old_program": {
+          "candidate_ba_l2_mean": 48.53859763790312,
+          "candidate_over_reference_l2_mean": 1.7796744327317826,
+          "cosine_mean": 0.6814469587915035,
+          "cosine_median": 0.6739807085324092,
+          "count": 32,
+          "reference_ba_l2_mean": 27.388048515673958,
+          "relative_l2_mean": 1.3199914558881902,
+          "relative_l2_median": 1.3428198502365398
+        },
+        "program_effect_new_heads": {
+          "candidate_ba_l2_mean": 44.18869147689111,
+          "candidate_over_reference_l2_mean": 0.9117967389706196,
+          "cosine_mean": 0.8021085874251436,
+          "cosine_median": 0.796245894985026,
+          "count": 32,
+          "reference_ba_l2_mean": 48.53859763790312,
+          "relative_l2_mean": 0.6120121467575134,
+          "relative_l2_median": 0.6093014709936577
+        },
+        "program_only_old_heads": {
+          "candidate_ba_l2_mean": 27.296674335679874,
+          "candidate_over_reference_l2_mean": 0.9987379318578558,
+          "cosine_mean": 0.834646722429415,
+          "cosine_median": 0.830299774795644,
+          "count": 32,
+          "reference_ba_l2_mean": 27.388048515673958,
+          "relative_l2_mean": 0.5823407466020398,
+          "relative_l2_median": 0.586302969949444
+        },
+        "total_native": {
+          "candidate_ba_l2_mean": 44.18869147689111,
+          "candidate_over_reference_l2_mean": 1.624276332409147,
+          "cosine_mean": 0.5987190408861272,
+          "cosine_median": 0.5940940027424368,
+          "count": 32,
+          "reference_ba_l2_mean": 27.388048515673958,
+          "relative_l2_mean": 1.3057263241068737,
+          "relative_l2_median": 1.247048421745205
+        }
+      },
+      "fixed_b20_loss": {
+        "improved_tasks": 19,
+        "mean_delta": -0.012770836551984152,
+        "per_task_delta": {
+          "0": -0.005568698048591614,
+          "12": -0.0025325194001197815,
+          "14": -0.005301833152770996,
+          "15": -0.03193382918834686,
+          "16": -0.04718025028705597,
+          "18": -0.022780194878578186,
+          "19": 0.00023900717496871948,
+          "2": 0.005122661590576172,
+          "20": -0.002811543643474579,
+          "21": -0.002278655767440796,
+          "22": -0.013215959072113037,
+          "25": -0.008999921381473541,
+          "28": -0.0059661343693733215,
+          "29": 0.0004040151834487915,
+          "34": -0.012360140681266785,
+          "35": 0.0012384653091430664,
+          "36": -0.002969205379486084,
+          "37": 0.0014839991927146912,
+          "38": -0.020881034433841705,
+          "39": -0.03432425856590271,
+          "4": -0.01905551552772522,
+          "5": -0.009311437606811523,
+          "7": -0.0394342765212059,
+          "9": -0.028082817792892456
+        },
+        "unchanged_tasks": 0,
+        "worsened_tasks": 5
+      },
+      "stage_trajectory": {
+        "compiled": {
+          "candidate_l2_mean": 285.66064005604414,
+          "candidate_over_reference_l2_mean": 0.9986379903257359,
+          "cosine_mean": 0.7029005225929499,
+          "cosine_median": 0.7011478485458613,
+          "count": 32,
+          "reference_l2_mean": 286.0502517788369,
+          "relative_l2_mean": 0.7700997078844277,
+          "relative_l2_median": 0.7721802924338206
+        },
+        "core": {
+          "candidate_l2_mean": 14.477197211623531,
+          "candidate_over_reference_l2_mean": 1.2694427922486589,
+          "cosine_mean": 0.8845848085100353,
+          "cosine_median": 0.8826132305925666,
+          "count": 32,
+          "reference_l2_mean": 11.405979384061615,
+          "relative_l2_mean": 0.6046811293735781,
+          "relative_l2_median": 0.6063295529852337
+        },
+        "core_fused": {
+          "candidate_l2_mean": 31.075599617559224,
+          "candidate_over_reference_l2_mean": 2.3790403504583058,
+          "cosine_mean": 0.6926457095465351,
+          "cosine_median": 0.6923522515493266,
+          "count": 32,
+          "reference_l2_mean": 13.065938866984261,
+          "relative_l2_mean": 1.8343163100215318,
+          "relative_l2_median": 1.8390084999029161
+        },
+        "parameter_set": {
+          "candidate_l2_mean": 3.9990137823702168,
+          "candidate_over_reference_l2_mean": 1.1509288838397336,
+          "cosine_mean": 0.8901681704914334,
+          "cosine_median": 0.8875446286734997,
+          "count": 32,
+          "reference_l2_mean": 3.486220204906788,
+          "relative_l2_mean": 0.52818576699487,
+          "relative_l2_median": 0.5516329549284485
+        },
+        "procedure": {
+          "candidate_l2_mean": 13.477232991152517,
+          "candidate_over_reference_l2_mean": 1.4472189819440233,
+          "cosine_mean": 0.897607085120669,
+          "cosine_median": 0.8970811116311023,
+          "count": 32,
+          "reference_l2_mean": 9.314456046038147,
+          "relative_l2_mean": 0.7045048121250058,
+          "relative_l2_median": 0.7084553698036647
+        }
+      },
+      "strict_transition": {
+        "churn": 65,
+        "churn_rate": 0.1625,
+        "episodes": 400,
+        "gained": 13,
+        "lost": 52,
+        "mcnemar_exact_two_sided_p": 1.1688116132369713e-06,
+        "net": -39,
+        "retained_failure": 264,
+        "retained_success": 71,
+        "success_set_jaccard": 0.5220588235294118
+      }
+    },
+    "50_to_75": {
+      "factor_decomposition": {
+        "heads_effect_new_program": {
+          "candidate_ba_l2_mean": 49.57027351063208,
+          "candidate_over_reference_l2_mean": 1.178610353931489,
+          "cosine_mean": 0.850409807903469,
+          "cosine_median": 0.8486078563290025,
+          "count": 32,
+          "reference_ba_l2_mean": 42.157319724751545,
+          "relative_l2_mean": 0.6201977498210294,
+          "relative_l2_median": 0.6232332287987838
+        },
+        "heads_only_old_program": {
+          "candidate_ba_l2_mean": 52.76858285413557,
+          "candidate_over_reference_l2_mean": 1.1965993589207962,
+          "cosine_mean": 0.8253823435171426,
+          "cosine_median": 0.824828810167244,
+          "count": 32,
+          "reference_ba_l2_mean": 44.18869147689111,
+          "relative_l2_mean": 0.6757426310783806,
+          "relative_l2_median": 0.6749158818089123
+        },
+        "program_effect_new_heads": {
+          "candidate_ba_l2_mean": 49.57027351063208,
+          "candidate_over_reference_l2_mean": 0.9405957857146565,
+          "cosine_mean": 0.7974241001488926,
+          "cosine_median": 0.8169285127405659,
+          "count": 32,
+          "reference_ba_l2_mean": 52.76858285413557,
+          "relative_l2_mean": 0.6177884440004731,
+          "relative_l2_median": 0.5966237818858082
+        },
+        "program_only_old_heads": {
+          "candidate_ba_l2_mean": 42.157319724751545,
+          "candidate_over_reference_l2_mean": 0.9552262794724538,
+          "cosine_mean": 0.8217780161954672,
+          "cosine_median": 0.8383779382020707,
+          "count": 32,
+          "reference_ba_l2_mean": 44.18869147689111,
+          "relative_l2_mean": 0.5832418024023378,
+          "relative_l2_median": 0.5658669710425315
+        },
+        "total_native": {
+          "candidate_ba_l2_mean": 49.57027351063208,
+          "candidate_over_reference_l2_mean": 1.1251931672849058,
+          "cosine_mean": 0.6879066130521815,
+          "cosine_median": 0.7043528542150406,
+          "count": 32,
+          "reference_ba_l2_mean": 44.18869147689111,
+          "relative_l2_mean": 0.8475449150787522,
+          "relative_l2_median": 0.851845392725864
+        }
+      },
+      "fixed_b20_loss": {
+        "improved_tasks": 14,
+        "mean_delta": -0.0009260747271279494,
+        "per_task_delta": {
+          "0": -0.001302957534790039,
+          "12": 0.007897019386291504,
+          "14": -0.01499948650598526,
+          "15": -0.003488674759864807,
+          "16": -0.0003908425569534302,
+          "18": 0.0005444437265396118,
+          "19": -0.0034603476524353027,
+          "2": -0.007462456822395325,
+          "20": -0.007176920771598816,
+          "21": 0.001391083002090454,
+          "22": 2.1398067474365234e-05,
+          "25": -0.0013964027166366577,
+          "28": -0.0018094182014465332,
+          "29": 0.0031079500913619995,
+          "34": 0.004218138754367828,
+          "35": -0.004338275641202927,
+          "36": 0.004475310444831848,
+          "37": -0.0006499439477920532,
+          "38": -0.002453543245792389,
+          "39": 0.0007675588130950928,
+          "4": 0.004292801022529602,
+          "5": -0.001065075397491455,
+          "7": -0.00885755568742752,
+          "9": 0.009910404682159424
+        },
+        "unchanged_tasks": 0,
+        "worsened_tasks": 10
+      },
+      "stage_trajectory": {
+        "compiled": {
+          "candidate_l2_mean": 285.2960734071034,
+          "candidate_over_reference_l2_mean": 0.9987237831178466,
+          "cosine_mean": 0.7320029252652878,
+          "cosine_median": 0.7461941445688287,
+          "count": 32,
+          "reference_l2_mean": 285.66064005604414,
+          "relative_l2_mean": 0.7299194742336726,
+          "relative_l2_median": 0.7116637521968234
+        },
+        "core": {
+          "candidate_l2_mean": 15.118880708155228,
+          "candidate_over_reference_l2_mean": 1.0435683764480632,
+          "cosine_mean": 0.9112407433806397,
+          "cosine_median": 0.9110913949420266,
+          "count": 32,
+          "reference_l2_mean": 14.477197211623531,
+          "relative_l2_mean": 0.43292172918552707,
+          "relative_l2_median": 0.4335949697308033
+        },
+        "core_fused": {
+          "candidate_l2_mean": 40.88500605684878,
+          "candidate_over_reference_l2_mean": 1.3113548661824814,
+          "cosine_mean": 0.7215091430039916,
+          "cosine_median": 0.726327363194321,
+          "count": 32,
+          "reference_l2_mean": 31.075599617559224,
+          "relative_l2_mean": 0.9086054729803232,
+          "relative_l2_median": 0.8999035408087269
+        },
+        "parameter_set": {
+          "candidate_l2_mean": 3.931885217957375,
+          "candidate_over_reference_l2_mean": 0.9920932157509325,
+          "cosine_mean": 0.8998563030288947,
+          "cosine_median": 0.9103975184938669,
+          "count": 32,
+          "reference_l2_mean": 3.9990137823702168,
+          "relative_l2_mean": 0.4476228964836325,
+          "relative_l2_median": 0.43806531811011756
+        },
+        "procedure": {
+          "candidate_l2_mean": 16.267037400231636,
+          "candidate_over_reference_l2_mean": 1.207050258702387,
+          "cosine_mean": 0.9495182842612437,
+          "cosine_median": 0.9515246203268859,
+          "count": 32,
+          "reference_l2_mean": 13.477232991152517,
+          "relative_l2_mean": 0.40526362412807354,
+          "relative_l2_median": 0.40129449897367186
+        }
+      },
+      "strict_transition": {
+        "churn": 55,
+        "churn_rate": 0.1375,
+        "episodes": 400,
+        "gained": 30,
+        "lost": 25,
+        "mcnemar_exact_two_sided_p": 0.5900533317766357,
+        "net": 5,
+        "retained_failure": 286,
+        "retained_success": 59,
+        "success_set_jaccard": 0.5175438596491229
+      }
+    },
+    "75_to_100": {
+      "factor_decomposition": {
+        "heads_effect_new_program": {
+          "candidate_ba_l2_mean": 51.207666969344245,
+          "candidate_over_reference_l2_mean": 1.139368088270398,
+          "cosine_mean": 0.8812685915584317,
+          "cosine_median": 0.8768336767375676,
+          "count": 32,
+          "reference_ba_l2_mean": 44.95546143751612,
+          "relative_l2_mean": 0.5388359578185,
+          "relative_l2_median": 0.5415809042999359
+        },
+        "heads_only_old_program": {
+          "candidate_ba_l2_mean": 56.58026870862918,
+          "candidate_over_reference_l2_mean": 1.1418805946457158,
+          "cosine_mean": 0.8590390568702861,
+          "cosine_median": 0.8530598290800144,
+          "count": 32,
+          "reference_ba_l2_mean": 49.57027351063208,
+          "relative_l2_mean": 0.5847249648465429,
+          "relative_l2_median": 0.6032302689453475
+        },
+        "program_effect_new_heads": {
+          "candidate_ba_l2_mean": 51.207666969344245,
+          "candidate_over_reference_l2_mean": 0.9082925583670571,
+          "cosine_mean": 0.8061277602917887,
+          "cosine_median": 0.8237255780346551,
+          "count": 32,
+          "reference_ba_l2_mean": 56.58026870862918,
+          "relative_l2_mean": 0.5987359624295013,
+          "relative_l2_median": 0.5719330038725938
+        },
+        "program_only_old_heads": {
+          "candidate_ba_l2_mean": 44.95546143751612,
+          "candidate_over_reference_l2_mean": 0.9104645370334592,
+          "cosine_mean": 0.8223932087433096,
+          "cosine_median": 0.8358276916994539,
+          "count": 32,
+          "reference_ba_l2_mean": 49.57027351063208,
+          "relative_l2_mean": 0.5753399422890425,
+          "relative_l2_median": 0.551146818947432
+        },
+        "total_native": {
+          "candidate_ba_l2_mean": 51.207666969344245,
+          "candidate_over_reference_l2_mean": 1.0368298121084811,
+          "cosine_mean": 0.7103425602643691,
+          "cosine_median": 0.7118935346621467,
+          "count": 32,
+          "reference_ba_l2_mean": 49.57027351063208,
+          "relative_l2_mean": 0.7765363878116813,
+          "relative_l2_median": 0.7576365749316204
+        }
+      },
+      "fixed_b20_loss": {
+        "improved_tasks": 11,
+        "mean_delta": 0.002909980248659849,
+        "per_task_delta": {
+          "0": 7.212162017822266e-05,
+          "12": 0.013048887252807617,
+          "14": -0.0004451870918273926,
+          "15": 0.025855697691440582,
+          "16": 0.023876473307609558,
+          "18": 0.004196673631668091,
+          "19": 0.011725343763828278,
+          "2": 0.0016723200678825378,
+          "20": -0.0017141923308372498,
+          "21": -0.009985916316509247,
+          "22": -0.005211338400840759,
+          "25": -0.004261955618858337,
+          "28": 0.0005180835723876953,
+          "29": -0.009362846612930298,
+          "34": 0.008416429162025452,
+          "35": -0.0004452131688594818,
+          "36": -0.0002184733748435974,
+          "37": 0.00014965981245040894,
+          "38": 0.007943995296955109,
+          "39": -0.002614043653011322,
+          "4": -0.005679070949554443,
+          "5": -0.0038772746920585632,
+          "7": 0.016155242919921875,
+          "9": 2.4110078811645508e-05
+        },
+        "unchanged_tasks": 0,
+        "worsened_tasks": 13
+      },
+      "stage_trajectory": {
+        "compiled": {
+          "candidate_l2_mean": 284.91392398625044,
+          "candidate_over_reference_l2_mean": 0.9986605211431898,
+          "cosine_mean": 0.7456764218515914,
+          "cosine_median": 0.7682463041778315,
+          "count": 32,
+          "reference_l2_mean": 285.2960734071034,
+          "relative_l2_mean": 0.7102248068139484,
+          "relative_l2_median": 0.6774518061534104
+        },
+        "core": {
+          "candidate_l2_mean": 16.180757705574152,
+          "candidate_over_reference_l2_mean": 1.070855247441989,
+          "cosine_mean": 0.8541950433605476,
+          "cosine_median": 0.8553092106383204,
+          "count": 32,
+          "reference_l2_mean": 15.118880708155228,
+          "relative_l2_mean": 0.5630307133657981,
+          "relative_l2_median": 0.5608211815786879
+        },
+        "core_fused": {
+          "candidate_l2_mean": 58.75833996897649,
+          "candidate_over_reference_l2_mean": 1.4428333813082421,
+          "cosine_mean": 0.7304562827361365,
+          "cosine_median": 0.7476574314173017,
+          "count": 32,
+          "reference_l2_mean": 40.88500605684878,
+          "relative_l2_mean": 0.985607107237763,
+          "relative_l2_median": 0.9728024659496314
+        },
+        "parameter_set": {
+          "candidate_l2_mean": 4.634218265735768,
+          "candidate_over_reference_l2_mean": 1.1826236514328923,
+          "cosine_mean": 0.8964383257035113,
+          "cosine_median": 0.8991333876385946,
+          "count": 32,
+          "reference_l2_mean": 3.931885217957375,
+          "relative_l2_mean": 0.5346624510418946,
+          "relative_l2_median": 0.5045023271368458
+        },
+        "procedure": {
+          "candidate_l2_mean": 17.23049567828488,
+          "candidate_over_reference_l2_mean": 1.059212012519777,
+          "cosine_mean": 0.9181690456699776,
+          "cosine_median": 0.9171766761218995,
+          "count": 32,
+          "reference_l2_mean": 16.267037400231636,
+          "relative_l2_mean": 0.42046654817299384,
+          "relative_l2_median": 0.4231278474176401
+        }
+      },
+      "strict_transition": {
+        "churn": 36,
+        "churn_rate": 0.09,
+        "episodes": 400,
+        "gained": 17,
+        "lost": 19,
+        "mcnemar_exact_two_sided_p": 0.8679394004284404,
+        "net": -2,
+        "retained_failure": 294,
+        "retained_success": 70,
+        "success_set_jaccard": 0.660377358490566
+      }
+    }
+  },
+  "native_pairwise": {
+    "25_to_100": {
+      "candidate_ba_l2_mean": 51.207666969344245,
+      "candidate_over_reference_l2_mean": 1.8841679245078864,
+      "cosine_mean": 0.3868927168223084,
+      "cosine_median": 0.38624857930720374,
+      "count": 32,
+      "reference_ba_l2_mean": 27.388048515673958,
+      "relative_l2_mean": 1.760418915003174,
+      "relative_l2_median": 1.7324592036069504
+    },
+    "25_to_50": {
+      "candidate_ba_l2_mean": 44.18869147689111,
+      "candidate_over_reference_l2_mean": 1.624276332409147,
+      "cosine_mean": 0.5987190408861272,
+      "cosine_median": 0.5940940027424368,
+      "count": 32,
+      "reference_ba_l2_mean": 27.388048515673958,
+      "relative_l2_mean": 1.3057263241068737,
+      "relative_l2_median": 1.247048421745205
+    },
+    "25_to_75": {
+      "candidate_ba_l2_mean": 49.57027351063208,
+      "candidate_over_reference_l2_mean": 1.8181323820299924,
+      "cosine_mean": 0.4711472479190909,
+      "cosine_median": 0.4711888969105821,
+      "count": 32,
+      "reference_ba_l2_mean": 27.388048515673958,
+      "relative_l2_mean": 1.6113364962843884,
+      "relative_l2_median": 1.5749544017177093
+    },
+    "50_to_100": {
+      "candidate_ba_l2_mean": 51.207666969344245,
+      "candidate_over_reference_l2_mean": 1.166056941181097,
+      "cosine_mean": 0.6023507917325297,
+      "cosine_median": 0.5958816034672578,
+      "count": 32,
+      "reference_ba_l2_mean": 44.18869147689111,
+      "relative_l2_mean": 0.978631373493474,
+      "relative_l2_median": 0.9796035493966205
+    },
+    "50_to_75": {
+      "candidate_ba_l2_mean": 49.57027351063208,
+      "candidate_over_reference_l2_mean": 1.1251931672849058,
+      "cosine_mean": 0.6879066130521815,
+      "cosine_median": 0.7043528542150406,
+      "count": 32,
+      "reference_ba_l2_mean": 44.18869147689111,
+      "relative_l2_mean": 0.8475449150787522,
+      "relative_l2_median": 0.851845392725864
+    },
+    "75_to_100": {
+      "candidate_ba_l2_mean": 51.207666969344245,
+      "candidate_over_reference_l2_mean": 1.0368298121084811,
+      "cosine_mean": 0.7103425602643691,
+      "cosine_median": 0.7118935346621467,
+      "count": 32,
+      "reference_ba_l2_mean": 49.57027351063208,
+      "relative_l2_mean": 0.7765363878116813,
+      "relative_l2_median": 0.7576365749316204
+    }
+  },
+  "schema_version": "ember_external_review_writer_drift_evidence_v1",
+  "source_artifact_schemas": {
+    "cross_decode": "ember_lmmpc_checkpoint_cross_decode_v1",
+    "drift_diagnosis": "ember_lmmpc_drift_diagnosis_v1"
+  },
+  "stage_trajectory": {
+    "25_to_50": {
+      "compiled": {
+        "candidate_l2_mean": 285.66064005604414,
+        "candidate_over_reference_l2_mean": 0.9986379903257359,
+        "cosine_mean": 0.7029005225929499,
+        "cosine_median": 0.7011478485458613,
+        "count": 32,
+        "reference_l2_mean": 286.0502517788369,
+        "relative_l2_mean": 0.7700997078844277,
+        "relative_l2_median": 0.7721802924338206
+      },
+      "core": {
+        "candidate_l2_mean": 14.477197211623531,
+        "candidate_over_reference_l2_mean": 1.2694427922486589,
+        "cosine_mean": 0.8845848085100353,
+        "cosine_median": 0.8826132305925666,
+        "count": 32,
+        "reference_l2_mean": 11.405979384061615,
+        "relative_l2_mean": 0.6046811293735781,
+        "relative_l2_median": 0.6063295529852337
+      },
+      "core_fused": {
+        "candidate_l2_mean": 31.075599617559224,
+        "candidate_over_reference_l2_mean": 2.3790403504583058,
+        "cosine_mean": 0.6926457095465351,
+        "cosine_median": 0.6923522515493266,
+        "count": 32,
+        "reference_l2_mean": 13.065938866984261,
+        "relative_l2_mean": 1.8343163100215318,
+        "relative_l2_median": 1.8390084999029161
+      },
+      "parameter_set": {
+        "candidate_l2_mean": 3.9990137823702168,
+        "candidate_over_reference_l2_mean": 1.1509288838397336,
+        "cosine_mean": 0.8901681704914334,
+        "cosine_median": 0.8875446286734997,
+        "count": 32,
+        "reference_l2_mean": 3.486220204906788,
+        "relative_l2_mean": 0.52818576699487,
+        "relative_l2_median": 0.5516329549284485
+      },
+      "procedure": {
+        "candidate_l2_mean": 13.477232991152517,
+        "candidate_over_reference_l2_mean": 1.4472189819440233,
+        "cosine_mean": 0.897607085120669,
+        "cosine_median": 0.8970811116311023,
+        "count": 32,
+        "reference_l2_mean": 9.314456046038147,
+        "relative_l2_mean": 0.7045048121250058,
+        "relative_l2_median": 0.7084553698036647
+      }
+    },
+    "50_to_75": {
+      "compiled": {
+        "candidate_l2_mean": 285.2960734071034,
+        "candidate_over_reference_l2_mean": 0.9987237831178466,
+        "cosine_mean": 0.7320029252652878,
+        "cosine_median": 0.7461941445688287,
+        "count": 32,
+        "reference_l2_mean": 285.66064005604414,
+        "relative_l2_mean": 0.7299194742336726,
+        "relative_l2_median": 0.7116637521968234
+      },
+      "core": {
+        "candidate_l2_mean": 15.118880708155228,
+        "candidate_over_reference_l2_mean": 1.0435683764480632,
+        "cosine_mean": 0.9112407433806397,
+        "cosine_median": 0.9110913949420266,
+        "count": 32,
+        "reference_l2_mean": 14.477197211623531,
+        "relative_l2_mean": 0.43292172918552707,
+        "relative_l2_median": 0.4335949697308033
+      },
+      "core_fused": {
+        "candidate_l2_mean": 40.88500605684878,
+        "candidate_over_reference_l2_mean": 1.3113548661824814,
+        "cosine_mean": 0.7215091430039916,
+        "cosine_median": 0.726327363194321,
+        "count": 32,
+        "reference_l2_mean": 31.075599617559224,
+        "relative_l2_mean": 0.9086054729803232,
+        "relative_l2_median": 0.8999035408087269
+      },
+      "parameter_set": {
+        "candidate_l2_mean": 3.931885217957375,
+        "candidate_over_reference_l2_mean": 0.9920932157509325,
+        "cosine_mean": 0.8998563030288947,
+        "cosine_median": 0.9103975184938669,
+        "count": 32,
+        "reference_l2_mean": 3.9990137823702168,
+        "relative_l2_mean": 0.4476228964836325,
+        "relative_l2_median": 0.43806531811011756
+      },
+      "procedure": {
+        "candidate_l2_mean": 16.267037400231636,
+        "candidate_over_reference_l2_mean": 1.207050258702387,
+        "cosine_mean": 0.9495182842612437,
+        "cosine_median": 0.9515246203268859,
+        "count": 32,
+        "reference_l2_mean": 13.477232991152517,
+        "relative_l2_mean": 0.40526362412807354,
+        "relative_l2_median": 0.40129449897367186
+      }
+    },
+    "75_to_100": {
+      "compiled": {
+        "candidate_l2_mean": 284.91392398625044,
+        "candidate_over_reference_l2_mean": 0.9986605211431898,
+        "cosine_mean": 0.7456764218515914,
+        "cosine_median": 0.7682463041778315,
+        "count": 32,
+        "reference_l2_mean": 285.2960734071034,
+        "relative_l2_mean": 0.7102248068139484,
+        "relative_l2_median": 0.6774518061534104
+      },
+      "core": {
+        "candidate_l2_mean": 16.180757705574152,
+        "candidate_over_reference_l2_mean": 1.070855247441989,
+        "cosine_mean": 0.8541950433605476,
+        "cosine_median": 0.8553092106383204,
+        "count": 32,
+        "reference_l2_mean": 15.118880708155228,
+        "relative_l2_mean": 0.5630307133657981,
+        "relative_l2_median": 0.5608211815786879
+      },
+      "core_fused": {
+        "candidate_l2_mean": 58.75833996897649,
+        "candidate_over_reference_l2_mean": 1.4428333813082421,
+        "cosine_mean": 0.7304562827361365,
+        "cosine_median": 0.7476574314173017,
+        "count": 32,
+        "reference_l2_mean": 40.88500605684878,
+        "relative_l2_mean": 0.985607107237763,
+        "relative_l2_median": 0.9728024659496314
+      },
+      "parameter_set": {
+        "candidate_l2_mean": 4.634218265735768,
+        "candidate_over_reference_l2_mean": 1.1826236514328923,
+        "cosine_mean": 0.8964383257035113,
+        "cosine_median": 0.8991333876385946,
+        "count": 32,
+        "reference_l2_mean": 3.931885217957375,
+        "relative_l2_mean": 0.5346624510418946,
+        "relative_l2_median": 0.5045023271368458
+      },
+      "procedure": {
+        "candidate_l2_mean": 17.23049567828488,
+        "candidate_over_reference_l2_mean": 1.059212012519777,
+        "cosine_mean": 0.9181690456699776,
+        "cosine_median": 0.9171766761218995,
+        "count": 32,
+        "reference_l2_mean": 16.267037400231636,
+        "relative_l2_mean": 0.42046654817299384,
+        "relative_l2_median": 0.4231278474176401
+      }
+    }
+  },
+  "strict_stability": {
+    "always_success_rows": 49,
+    "ever_success_rows": 150,
+    "gained25_50_retained_at100": 6,
+    "gained25_50_retained_at75": 5,
+    "lost25_50_recovered_at_either_later": 22,
+    "lost25_50_recovered_by100": 15,
+    "lost25_50_recovered_by75": 20,
+    "macro25_to50_gained_rows": 13,
+    "macro25_to50_lost_rows": 52,
+    "success_checkpoint_count_histogram": {
+      "0": 250,
+      "1": 46,
+      "2": 24,
+      "3": 31,
+      "4": 49
+    }
+  },
+  "strict_task_trajectory": {
+    "libero_10:1": {
+      "patterns": {
+        "0000": 37,
+        "0010": 2,
+        "0011": 1,
+        "0100": 5,
+        "0101": 2,
+        "1000": 2,
+        "1100": 1
+      },
+      "peak_macros": [
+        50
+      ],
+      "range": 5,
+      "successes": {
+        "100": 3,
+        "25": 3,
+        "50": 8,
+        "75": 3
+      }
+    },
+    "libero_10:2": {
+      "patterns": {
+        "0000": 49,
+        "1000": 1
+      },
+      "peak_macros": [
+        25
+      ],
+      "range": 1,
+      "successes": {
+        "100": 0,
+        "25": 1,
+        "50": 0,
+        "75": 0
+      }
+    },
+    "libero_goal:3": {
+      "patterns": {
+        "0000": 48,
+        "0010": 1,
+        "1010": 1
+      },
+      "peak_macros": [
+        75
+      ],
+      "range": 2,
+      "successes": {
+        "100": 0,
+        "25": 1,
+        "50": 0,
+        "75": 2
+      }
+    },
+    "libero_goal:6": {
+      "patterns": {
+        "0000": 1,
+        "0011": 3,
+        "0111": 3,
+        "1001": 1,
+        "1010": 4,
+        "1011": 12,
+        "1100": 1,
+        "1101": 3,
+        "1110": 2,
+        "1111": 20
+      },
+      "peak_macros": [
+        75
+      ],
+      "range": 15,
+      "successes": {
+        "100": 42,
+        "25": 43,
+        "50": 29,
+        "75": 44
+      }
+    },
+    "libero_object:1": {
+      "patterns": {
+        "0000": 2,
+        "0001": 1,
+        "0010": 1,
+        "0110": 1,
+        "0111": 1,
+        "1011": 1,
+        "1100": 5,
+        "1101": 6,
+        "1110": 3,
+        "1111": 29
+      },
+      "peak_macros": [
+        50
+      ],
+      "range": 9,
+      "successes": {
+        "100": 38,
+        "25": 44,
+        "50": 45,
+        "75": 36
+      }
+    },
+    "libero_object:3": {
+      "patterns": {
+        "0000": 24,
+        "0100": 1,
+        "1000": 24,
+        "1010": 1
+      },
+      "peak_macros": [
+        25
+      ],
+      "range": 25,
+      "successes": {
+        "100": 0,
+        "25": 25,
+        "50": 1,
+        "75": 1
+      }
+    },
+    "libero_spatial:1": {
+      "patterns": {
+        "0000": 45,
+        "0010": 2,
+        "1000": 2,
+        "1010": 1
+      },
+      "peak_macros": [
+        25,
+        75
+      ],
+      "range": 3,
+      "successes": {
+        "100": 0,
+        "25": 3,
+        "50": 0,
+        "75": 3
+      }
+    },
+    "libero_spatial:3": {
+      "patterns": {
+        "0000": 44,
+        "0001": 3,
+        "1000": 1,
+        "1001": 1,
+        "1100": 1
+      },
+      "peak_macros": [
+        100
+      ],
+      "range": 4,
+      "successes": {
+        "100": 4,
+        "25": 3,
+        "50": 1,
+        "75": 0
+      }
+    }
+  },
+  "task_keys": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 1
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 3
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 1
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 3
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 3
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 6
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 1
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 2
+    }
+  ]
+}

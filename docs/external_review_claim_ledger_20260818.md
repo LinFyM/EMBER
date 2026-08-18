@@ -175,7 +175,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | G2 | current macro25全部video controls与不同K4 sets | `completed`；`video_causality_evidence.json`公开7面板aggregate、paired统计、逐行success与video/RNG reference |
 | G3 | intended modules实际gradient表与首次非零macro | `partial`；fresh/macro25完整表与first-observed state已公开，新B/C和精确首次macro随训练补齐 |
 | G4 | 每个formal run的commit/dirty diff/source/config/checkpoint/metrics provenance | `completed for six reviewed panels`；training/eval commit差异、schema、manifest和contract均显式保留 |
-| G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `queued`；复核现有local artifact并导出小型JSON |
+| G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `completed`；见`writer_drift_evidence.json`，包含4点module gradients、3区间stage/FactorHead cross-decode与fixed-B20/strict transitions |
 | G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `queued`；F2 |
 | G7 | expert LoRA在head manifold投影误差、投影后closed-loop、family reachability | `queued`；F4 |
 | G8 | objective/mean/Adam moment/shared heads/shared Program的matched conflict evidence | `conditional`；F5执行或证据化not-applicable |

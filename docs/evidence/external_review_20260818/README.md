@@ -120,3 +120,14 @@ correct面板由clean evaluation commit `f42edfc0d6504e62146218e8af9d2c2bbbe5959
 clean commit `2606c4973a9f311430e69a56e304b58866057b58`生成。两提交间当前Writer/evaluator有效forward路径未
 改变；差异为证据导出/梯度审计、paired metric扩展和退役模块清理。原始提交仍在JSON provenance中分别显示，
 没有把跨commit隐藏成同一代码。
+
+## Writer drift and cross-decode evidence
+
+`writer_drift_evidence.json`由`scripts/export_writer_drift_evidence.py`从保留的four-checkpoint drift diagnosis和
+Program × FactorHead cross-decode artifact导出，去除本地checkpoint路径，保留全部数值证据。它补齐专家G5：
+
+- macro25→50的native effective-BA relative L2为`1.30573`；
+- 旧Program+新heads的heads-only relative L2为`1.31999`，新Program+旧heads的Program-only为`.58234`；
+- 同一区间Core/Procedure/parameter-set/core-fused/compiled的relative L2分别为`.60468/.70450/.52819/1.83432/.77010`；
+- JSON同时保留macro25/50/75/100的per-module gradient conflict、next-update delta、fixed-B20 task deltas、strict
+  transition以及后两个区间的完整cross-decode，避免只引用一个有利数字。

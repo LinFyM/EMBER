@@ -142,9 +142,7 @@ def test_static_source_sft_adapter_is_installed_once_not_returned_per_rollout(
         ],
     }
     policy = object()
-    result = _load_evaluation_adapter(
-        policy, contract, device=torch.device("cpu")
-    )
+    result = _load_evaluation_adapter(policy, contract, device=torch.device("cpu"))
     assert result is None
     assert len(calls) == 1
     assert calls[0]["policy"] is policy
@@ -216,7 +214,9 @@ def test_policy_noise_is_invariant_to_batch_order() -> None:
         max_action_dim=7,
         device=torch.device("cpu"),
     )
-    by_seed = {seed: tensor for seed, tensor in zip(forward_seeds, forward, strict=True)}
+    by_seed = {
+        seed: tensor for seed, tensor in zip(forward_seeds, forward, strict=True)
+    }
     for seed, tensor in zip(reverse_seeds, reverse, strict=True):
         assert torch.equal(tensor, by_seed[seed])
 
@@ -250,7 +250,12 @@ class _FakeEnv:
     def step(self, action):
         if float(action[-1]) != -1.0:
             self.action_steps += 1
-        return _observation(self.action_steps), 0.0, self.action_steps >= self.success_after, {}
+        return (
+            _observation(self.action_steps),
+            0.0,
+            self.action_steps >= self.success_after,
+            {},
+        )
 
 
 class _FakePolicy:
@@ -322,6 +327,44 @@ def test_rollout_executes_arbitrary_state_shard_with_per_row_noise() -> None:
         assert row["policy_noise_seeds"] == [
             policy_noise_seed(7, "libero_goal", 4, row["init_state_id"], 0)
         ]
+
+
+def test_diagnostic_rollout_captures_requeryable_occupancy(tmp_path: Path) -> None:
+    contract = {
+        "environment": {
+            "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            "dummy_settling_steps": 10,
+        },
+        "policy": {"replan_steps": 5, "num_inference_steps": 10},
+        "rng": {"inference_seed": 7},
+        "diagnostic_occupancy_capture": {
+            "trajectory_root": str(tmp_path / "trajectories")
+        },
+    }
+    task = {
+        "suite": "libero_goal",
+        "task_id": 4,
+        "split_role": "validation",
+        "language": "put the bowl on top of the cabinet",
+        "horizon": 300,
+    }
+    rows = rollout_shard(
+        envs=(_FakeEnv(success_after=7),),
+        init_states=tuple(range(10)),
+        task=task,
+        state_ids=(3,),
+        contract=contract,
+        policy=_FakePolicy(),
+        preprocess=_preprocess,
+        postprocess=lambda value: value,
+    )
+    record = rows[0]["occupancy_trajectory"]
+    trajectory = torch.load(record["path"], map_location="cpu", weights_only=False)
+    assert record["bytes"] > 0
+    assert record["replans"] == 2
+    assert trajectory["schema_version"] == "ember_writer_occupancy_trajectory_v1"
+    assert len(trajectory["observations"]) == len(trajectory["action_chunks"]) == 2
+    assert len(trajectory["policy_noise_seeds"]) == 2
 
 
 def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> None:
@@ -461,7 +504,9 @@ def test_aggregate_requires_queue_size_and_exact_contract(tmp_path: Path) -> Non
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(
+        tmp_path / relative, _payload(contract, shard)
+    )
     complete_job(
         queue,
         job_id=shard.job_id,
@@ -498,7 +543,9 @@ def test_aggregate_rejects_queue_counts_that_differ_from_raw_rows(
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(
+        tmp_path / relative, _payload(contract, shard)
+    )
     complete_job(
         queue,
         job_id=shard.job_id,
@@ -583,10 +630,10 @@ def test_aggregate_uses_full_launcher_window_and_validates_worker_topology(
                 "worker_id": worker_id,
                 "pid": 1000 + gpu,
                 "invocation_id": invocation_id,
-                    "physical_gpu": gpu,
-                    "gpu_uuid": f"GPU-{gpu}",
-                    "gpu_name": "NVIDIA A40",
-                    "replica": 0,
+                "physical_gpu": gpu,
+                "gpu_uuid": f"GPU-{gpu}",
+                "gpu_name": "NVIDIA A40",
+                "replica": 0,
                 "numa_node": 0 if gpu < 4 else 1,
                 "cpu_affinity": [gpu],
                 "model_load_seconds": 3.0,
@@ -673,7 +720,9 @@ def test_aggregate_rejects_raw_file_size_change(tmp_path: Path) -> None:
     claim = claim_next(queue, worker_id="0-r0")
     assert claim is not None
     relative = Path("shards/job.json")
-    artifact_bytes = publish_json_exclusive(tmp_path / relative, _payload(contract, shard))
+    artifact_bytes = publish_json_exclusive(
+        tmp_path / relative, _payload(contract, shard)
+    )
     complete_job(
         queue,
         job_id=shard.job_id,

@@ -108,6 +108,7 @@ def _start_fixed_episode(
     root_seed: int,
     dummy: np.ndarray,
     task_adapter: Any | None,
+    capture_occupancy: bool,
 ) -> dict[str, Any]:
     env.seed(root_seed)
     env.reset()
@@ -132,6 +133,9 @@ def _start_fixed_episode(
     }
     if prepared is not None:
         slot["writer_lora"] = prepared
+    if capture_occupancy:
+        slot["replay_observations"] = []
+        slot["replay_action_chunks"] = []
     return slot
 
 
@@ -149,9 +153,7 @@ def _plan_action_chunks(
 ) -> None:
     import torch
 
-    planning = [
-        slot for slot in slots if slot is not None and not slot["action_plan"]
-    ]
+    planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
     if not planning:
         return
     batched_adapter = task_adapter is not None and callable(
@@ -200,7 +202,20 @@ def _plan_action_chunks(
                 num_steps=int(contract["policy"]["num_inference_steps"]),
             )
             actions = postprocess(chunks).detach().cpu().numpy()
-        for slot, plan, seed in zip(group, actions, seeds, strict=True):
+        for row, (slot, plan, seed) in enumerate(
+            zip(group, actions, seeds, strict=True)
+        ):
+            if "replay_observations" in slot:
+                slot["replay_observations"].append(
+                    {
+                        key: value.detach().to(device="cpu").contiguous()
+                        for key, value in processed[row].items()
+                        if isinstance(value, torch.Tensor)
+                    }
+                )
+                slot["replay_action_chunks"].append(
+                    chunks[row : row + 1].detach().to(device="cpu").contiguous()
+                )
             slot["action_plan"].extend(plan[:replan_steps])
             slot["policy_noise_seeds"].append(seed)
             slot["replan_index"] += 1
@@ -226,6 +241,7 @@ def rollout_shard(
     root_seed = int(contract["rng"]["inference_seed"])
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
+    capture_occupancy = contract.get("diagnostic_occupancy_capture") is not None
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
@@ -240,6 +256,7 @@ def rollout_shard(
             root_seed=root_seed,
             dummy=dummy,
             task_adapter=task_adapter,
+            capture_occupancy=capture_occupancy,
         )
         for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
@@ -280,6 +297,35 @@ def rollout_shard(
                 "wall_seconds": finished - float(slot["started"]),
                 "finished_at": finished - worker_started,
             }
+            if capture_occupancy:
+                import torch
+
+                capture = contract["diagnostic_occupancy_capture"]
+                root = Path(str(capture["trajectory_root"]))
+                root.mkdir(parents=True, exist_ok=True)
+                path = root / (
+                    f"{task['suite']}_task_{int(task['task_id']):02d}_"
+                    f"state_{int(slot['init_state_id']):03d}.pt"
+                )
+                torch.save(
+                    {
+                        "schema_version": "ember_writer_occupancy_trajectory_v1",
+                        "suite": task["suite"],
+                        "task_id": int(task["task_id"]),
+                        "init_state_id": int(slot["init_state_id"]),
+                        "success": bool(done),
+                        "steps": int(slot["steps"]),
+                        "policy_noise_seeds": tuple(slot["policy_noise_seeds"]),
+                        "observations": tuple(slot["replay_observations"]),
+                        "action_chunks": tuple(slot["replay_action_chunks"]),
+                    },
+                    path,
+                )
+                row["occupancy_trajectory"] = {
+                    "path": str(path),
+                    "bytes": path.stat().st_size,
+                    "replans": len(slot["replay_observations"]),
+                }
             row.update(
                 episode_adapter_fields(contract, task_adapter, slot.get("writer_lora"))
             )
@@ -294,6 +340,7 @@ def rollout_shard(
                     root_seed=root_seed,
                     dummy=dummy,
                     task_adapter=task_adapter,
+                    capture_occupancy=capture_occupancy,
                 )
                 next_state += 1
             else:
@@ -635,6 +682,7 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
 
 def _run_writer_bootstrap(runtime: WorkerRuntime, invocation_id: str) -> None:
     from ember.writer.evaluation_runtime import run_writer_generation_phase
+
     run_writer_generation_phase(
         runtime,
         invocation_id=invocation_id,

@@ -18,7 +18,7 @@
   },
   "information_wall": {
     "writer_dynamic_values": "ordered RGB teacher videos through V6 Core and Procedure plus same-context layer-rank memories",
-    "language_role": "task grounding and necessary dynamic Core gate without language-only LoRA Value",
+    "language_role": "frozen native task grounding and necessary dynamic Core gate without Text or VL Meta-LoRA",
     "writer_forbidden_inputs": [
       "action", "proprio", "state", "reward", "terminal", "task_id",
       "filename", "object_pose", "hidden_normalization", "policy_outcome"
@@ -56,7 +56,6 @@
     "step0_contract": "fresh_native_A0_B0_source_policy_identity",
     "image_width": 2048,
     "expert_width": 1024,
-    "text_meta_lora_rank": 4,
     "action_meta_lora_rank": 4,
     "patch_grounding_heads": 8,
     "action_horizon": 50,
@@ -142,7 +141,7 @@
     "stop_after_macro": 2
   },
   "formal_run": {
-    "status": "sealed",
+    "status": "unsealed_pending_live_profile",
     "allowed_world_sizes": [1, 2, 3, 4, 5, 6],
     "total_macros": 100,
     "per_task_action_batch_size": 20,

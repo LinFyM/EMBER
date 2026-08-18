@@ -164,7 +164,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             image_width=int(writer_config["image_width"]),
             expert_width=int(writer_config["expert_width"]),
             program_width=PROGRAM_WIDTH,
-            text_meta_lora_rank=int(writer_config["text_meta_lora_rank"]),
+            text_meta_lora_rank=0,
             vl_meta_lora_rank=0,
             action_meta_lora_rank=int(writer_config["action_meta_lora_rank"]),
             patch_grounding_heads=int(writer_config["patch_grounding_heads"]),
@@ -178,8 +178,8 @@ class CompleteLoRAWriter(torch.nn.Module):
                 writer_config["activation_checkpointing"]
             ),
         )
-        if semantic.vl_meta_lora is not None:
-            semantic.vl_meta_lora.requires_grad_(False)
+        if semantic.text_meta_lora is not None or semantic.vl_meta_lora is not None:
+            raise WriterModelError("canonical Writer must not install text or VL Meta-LoRA")
         backbone = LayerMatchedBackboneMemoryEncoder(
             image_width=int(writer_config["image_width"]),
             expert_width=int(writer_config["expert_width"]),

@@ -52,7 +52,6 @@ def _group(name: str) -> str:
         ("semantic_encoder.patch_grounding.", "patch_grounding.norm"),
         ("semantic_encoder.interaction_projection.", "interaction_projection"),
         ("semantic_encoder.language_projection.", "language_projection"),
-        ("semantic_encoder.text_meta_lora.", "text_meta_lora"),
         ("semantic_encoder.action_meta_lora.", "action_meta_lora"),
         ("semantic_core.", "semantic_core"),
         ("visual_transition.", "visual_transition"),

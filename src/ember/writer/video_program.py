@@ -184,7 +184,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             image_width,
             expert_width,
             program_width,
-            text_meta_lora_rank,
             action_meta_lora_rank,
             patch_grounding_heads,
             max_frames_per_encoder_call,
@@ -193,6 +192,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         if (
             any(value <= 0 for value in dimensions)
+            or text_meta_lora_rank < 0
             or vl_meta_lora_rank < 0
             or action_horizon != 50
             or padded_action_dim != 32
@@ -219,9 +219,10 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             width=program_width,
             heads=patch_grounding_heads,
         )
-        self.text_meta_lora = MetaLoRAStack(
-            paligemma_model.layers,
-            text_meta_lora_rank,
+        self.text_meta_lora = (
+            MetaLoRAStack(paligemma_model.layers, text_meta_lora_rank)
+            if text_meta_lora_rank
+            else None
         )
         self.vl_meta_lora = (
             MetaLoRAStack(paligemma_model.layers, vl_meta_lora_rank)
@@ -335,15 +336,26 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         positions = torch.cumsum(text_padding, dim=1) - 1
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
-        with self.text_meta_lora.installed(language_model):
-            (text_hidden, suffix_hidden), _ = bridge.forward(
-                attention_mask=mask,
-                position_ids=positions,
-                past_key_values=None,
-                inputs_embeds=[text_embeds.to(target_dtype), None],
-                use_cache=False,
-                adarms_cond=[None, None],
-            )
+        if self.text_meta_lora is None:
+            with torch.no_grad():
+                (text_hidden, suffix_hidden), _ = bridge.forward(
+                    attention_mask=mask,
+                    position_ids=positions,
+                    past_key_values=None,
+                    inputs_embeds=[text_embeds.to(target_dtype), None],
+                    use_cache=False,
+                    adarms_cond=[None, None],
+                )
+        else:
+            with self.text_meta_lora.installed(language_model):
+                (text_hidden, suffix_hidden), _ = bridge.forward(
+                    attention_mask=mask,
+                    position_ids=positions,
+                    past_key_values=None,
+                    inputs_embeds=[text_embeds.to(target_dtype), None],
+                    use_cache=False,
+                    adarms_cond=[None, None],
+                )
         if (
             suffix_hidden is not None
             or text_hidden.shape != (

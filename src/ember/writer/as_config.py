@@ -101,7 +101,6 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "step0_contract": "fresh_native_A0_B0_source_policy_identity",
         "image_width": 2048,
         "expert_width": 1024,
-        "text_meta_lora_rank": 4,
         "action_meta_lora_rank": 4,
         "patch_grounding_heads": 8,
         "action_horizon": 50,
@@ -124,6 +123,8 @@ def _validate_method(config: Mapping[str, Any]) -> None:
     distributed = config.get("optimization", {}).get("distributed", {})
     changed = (
         any(writer.get(key) != value for key, value in expected_writer.items())
+        or "text_meta_lora_rank" in writer
+        or "vl_meta_lora_rank" in writer
         or int(writer.get("max_frames_per_encoder_call", 0)) <= 0
         or data.get("task_count") != 24
         or data.get("episodes_per_task") != 50

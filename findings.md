@@ -241,7 +241,10 @@ LMMPC-v4证明bounded K-set确实关闭了上述表示覆盖，却没有带来�
 `.9973`、correct/reverse relative-L2仅`.1093`，其policy-routed、Core-conditioned slot reader却把有向差异放大到
 约`1.30`；v4则只保留约`.43x`。因此下一局部变量不是增加reverse/matching/contrastive loss，而是让layer/rank地址
 先从Core获得task-conditioned Query，再用完整有位置的Procedure作Keys读取centered native memory Values。该判断
-只支持LMMPC-v5 reader实验；若reader门通过仍无closed-loop提升，才把最早断点继续后移到shared functional credit。
+已经在LMMPC-v5的clean macro2机制门得到支持：validation8 raw Procedure reverse差异几乎不变
+（`.72035→.71525`），H_set却由`.51687`升到`1.30135`，reader/raw由`.7175x`升到`1.8194x`；H_set
+within/between-task cosine仍为`.97045/.24495`。这只证明最早结构接口已修复，不证明方向对closed-loop有用；若
+fresh macro25 strict仍无提升，最早断点才后移到shared functional credit。
 
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held

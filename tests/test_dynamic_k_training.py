@@ -62,7 +62,7 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_lmmpc_v5_config_is_fresh_rank16_and_profile_pending() -> None:
+def test_lmmpc_v5_config_is_fresh_rank16_and_profile_sealed() -> None:
     config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
@@ -78,8 +78,25 @@ def test_lmmpc_v5_config_is_fresh_rank16_and_profile_pending() -> None:
     )
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
-    assert "profile_evidence" not in config["formal_run"]
+    assert config["formal_run"]["status"] == "sealed"
+    evidence = config["formal_run"]["profile_evidence"]
+    assert evidence["source_commit"] == (
+        "86c9e63cb5693de206c2baa27be999d55df771ed"
+    )
+    assert evidence["world_size"] == 6
+    assert evidence["completion_macro"] == 2
+    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
+    assert evidence["scheduled_max_condition_frames"] == 371
+    assert evidence["scheduled_max_condition_peak_reserved_bytes"] < 46_068 << 20
+    assert evidence["reverse_reader_over_procedure_relative_l2"] > 1.0
+    assert evidence["stage_reader_over_procedure_relative_l2"] > 1.0
+    assert evidence["stage_h_set_within_task_cosine"] > 0.95
+    assert evidence["stage_h_set_between_task_cosine"] < 0.3
+    assert evidence["zero_core_parameter_memory_relative_l2"] > 0.5
+    assert evidence["constant_effective_ba_max_abs"] == 0.0
+    assert evidence["k_permutation_lora_max_abs"] == 0.0
+    assert evidence["all_reader_path_gradients_nonzero"] is True
+    assert evidence["source_policy_nonzero_gradient_tensors"] == 0
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)

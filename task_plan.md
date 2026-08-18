@@ -73,10 +73,11 @@
   逐task/suite/stage、retention/churn和effective-BA分析。
 - [x] 将v4与历史V6做同口径Procedure/reader诊断，确认原始Procedure趋同不是首因：V6从更趋同的Procedure中
   放大有向差异，而v4读取器继续衰减。
-- [ ] 完成v5唯一canonical实现、fresh schema、CPU/architecture合同，以及Core条件化、完整有序Procedure读取、
-  constant identity、K置换、八family梯度、native BA和最长视频机制门。
-- [ ] 若v5相对matched v4改善reader attenuation与stage保真，从clean pushed detached commit启动fresh train24；
-  到有信息量节点后执行strict paired400。
+- [x] 完成v5唯一canonical实现、fresh schema、CPU/architecture合同，以及Core条件化、完整有序Procedure读取、
+  constant identity、K置换、八family梯度、native BA和最长371-frame机制门。
+- [x] 完成validation8 matched v4/v5 reader诊断：raw Procedure差异不变而reader/raw由`.718x→1.819x`，H_set
+  within-task仍`.970`且between-task降至`.245`，通过formal前置接口门。
+- [ ] 从sealed clean pushed commit启动v5 fresh train24到macro25，随后执行strict paired400和全量逐接口分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
@@ -97,4 +98,7 @@ endpoint Query与Procedure Keys共同漂移并抵消memory Value差异。
 v5只替换这一读取接口：固定layer/rank地址先从Core形成task-conditioned Query，再以带真实frame position的完整
 Procedure作Keys，读取centered layer/rank memory Values；K-set、Core fusion、bounded M2P、native rank16 FactorHeads和
 B20 functional-only recipe不变，且incompatible fresh。下一裁决点是它能否在真实K4上减少reader attenuation并保持
-constant identity、K置换和native写出；通过后才启动fresh正式训练。
+constant identity、K置换和native写出。clean `86c9e63`的world6 macro2、task38机制、validation8 stage和371-frame
+门均已通过：validation8 raw Procedure reverse relative-L2=`.71525`，H_set=`1.30135`，reader/raw=`1.81943x`，
+compiled/BA=`1.28587/.70012`；H_set within/between-task cosine=`.97045/.24495`。formal recipe现已封存，下一步是
+fresh macro25 strict400；这些内部证据不能替代closed-loop裁决。

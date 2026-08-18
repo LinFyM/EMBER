@@ -831,3 +831,25 @@ Writer。实现只保留一个canonical runtime，不保留v4兼容分支。
 5. 性能门：通过机制与资源门后fresh train24到macro25并做strict paired400；只要loss和closed-loop仍有真实共同上升
    证据就按同run exact-resume到macro50。最终以absolute、breadth、retained/gained/lost、churn和相邻checkpoint稳定性
    裁决，不以Procedure/BA距离选模。
+
+### 20.4 v5 clean mechanism/profile seal
+
+clean pushed `86c9e63cb5693de206c2baa27be999d55df771ed`在gpu01物理`1/2/4/5/6/7`以world6完成fresh macro2：
+24 tasks、每macro K1--K4各6 tasks，macro1/2=`33.414/31.704s`；peak allocated/reserved=
+`35,478,367,232/35,731,275,776` bytes，0 OOM/nonfinite。相同macro44、schedule-world5 rank0的最长局部序列包含
+task38 K4=`82+105+92+92=371` frames，完整五task退出；peak allocated/reserved=
+`41,918,556,160/42,469,425,152` bytes，低于A40容量。
+
+task38真实K4机制门中，reverse raw Procedure relative-L2=`.74765`，parameter memory=`.89544`，reader/raw=
+`1.19768x`；compiled/effective-BA为`.95905/.55917`。重复末stage替换使parameter memory/BA改变`.87589/.60073`，
+zero Core使其改变`.80938/.85295`，证明完整Procedure和Core Query都被使用。same-task四video Core循环置换只使
+parameter memory/BA改变`.07732/.05507`；constant parameter memory和template delta均严格0，K permutation LoRA
+max-abs=0。Core reader、Q/K、memory projection、memory token、K-set、M2P和八factor families梯度全非零，source
+policy非零gradient tensor数为0。
+
+validation8×4条件的对齐比较更直接否决局部假象：V4→V5的raw Procedure reverse relative-L2几乎不变
+`.72035→.71525`，但H_video/H_set由`.49115/.51687`升到`1.31424/1.30135`，reader/raw由`.71753x`升到
+`1.81943x`；compiled/effective-BA由`.49489/.23376`升到`1.28587/.70012`。同时H_set within-task cosine仍为
+`.97045`，between-task cosine由`.40572`降到`.24495`；compiled分别为`.96641/.16470`。因此v5击中预注册的
+reader接口且没有以明显破坏same-task稳定性换取差异，允许封存formal recipe。该机制门仍不代表closed-loop正确
+方向；下一裁决是fresh macro25 strict paired400。

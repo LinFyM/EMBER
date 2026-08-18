@@ -29,11 +29,19 @@ from ember.pi05_source_checkpoint import read_json
 TASK_EXPERT_ADAPTER_KIND = "task_local_expert_bank"
 TASK_EXPERT_ADAPTER_SCHEMA = "ember_pi05_task_expert_eval_adapter_v1"
 TASK_EXPERT_EPISODE_SCHEMA = "ember_pi05_task_expert_episode_v1"
+PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA = (
+    "ember_pi05_writer_fixed_head_projected_task_expert_eval_adapter_v1"
+)
+PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA = "ember_writer_fixed_head_reachability_oracle_v1"
 
 
 def _train_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
     manifest = read_json(authority_path(config, "target_data_manifest"))
-    rows = [dict(row) for row in manifest.get("tasks", []) if row.get("split_role") == "train"]
+    rows = [
+        dict(row)
+        for row in manifest.get("tasks", [])
+        if row.get("split_role") == "train"
+    ]
     rows.sort(key=lambda row: int(row["global_task_id"]))
     if len(rows) != int(config["task_experts"]["task_count"]):
         raise ExpertManifoldError("task-expert evaluation did not resolve train24")
@@ -72,7 +80,9 @@ def inspect_task_expert_bank(
     if evaluation_role != "development_train":
         raise ExpertManifoldError("task experts may only evaluate development_train")
     if require_formal and formal.get("status") != "sealed":
-        raise ExpertManifoldError("formal task-expert evaluation requires a sealed profile")
+        raise ExpertManifoldError(
+            "formal task-expert evaluation requires a sealed profile"
+        )
     checkpoints = tuple(int(value) for value in formal["checkpoint_steps"])
     if step not in checkpoints or step <= 0:
         raise ExpertManifoldError("task-expert evaluation step is not declared")
@@ -83,10 +93,14 @@ def inspect_task_expert_bank(
         for ordinal, row in enumerate(expected_rows)
     }
     observed_keys = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
-    if len(set(observed_keys)) != len(observed_keys) or set(observed_keys) != set(expected_by_key):
+    if len(set(observed_keys)) != len(observed_keys) or set(observed_keys) != set(
+        expected_by_key
+    ):
         raise ExpertManifoldError("task-expert evaluation panel differs from train24")
 
-    workers = tuple(sorted(path for path in bank_root.glob("worker_*") if path.is_dir()))
+    workers = tuple(
+        sorted(path for path in bank_root.glob("worker_*") if path.is_dir())
+    )
     expected_worker_count = int(formal["allowed_worker_count"])
     if len(workers) != expected_worker_count:
         raise ExpertManifoldError("task-expert bank worker count is incomplete")
@@ -165,16 +179,22 @@ def inspect_task_expert_bank(
                 and int(manifest.get("step", -1)) == step
                 and int(manifest.get("task_ordinal", -1)) == ordinal
                 and int(manifest.get("global_task_id", -1)) == global_task_id
-                and int(manifest.get("state_tensor_count", -1)) == lora.state_tensor_count
-                and int(manifest.get("state_parameter_count", -1)) == lora.parameter_count
+                and int(manifest.get("state_tensor_count", -1))
+                == lora.state_tensor_count
+                and int(manifest.get("state_parameter_count", -1))
+                == lora.parameter_count
                 and manifest.get("content_hash_policy") == "disabled_by_owner"
             )
             if not valid_declared or not valid_checkpoint:
                 raise ExpertManifoldError("task-expert checkpoint ownership changed")
             for name in ("adapter.safetensors", "trainer.pt"):
                 path = checkpoint / name
-                if not path.is_file() or path.stat().st_size != int(files.get(name, -1)):
-                    raise ExpertManifoldError("task-expert checkpoint file size changed")
+                if not path.is_file() or path.stat().st_size != int(
+                    files.get(name, -1)
+                ):
+                    raise ExpertManifoldError(
+                        "task-expert checkpoint file size changed"
+                    )
             task_records[key] = {
                 "suite": key[0],
                 "task_id": key[1],
@@ -187,7 +207,11 @@ def inspect_task_expert_bank(
                 "adapter_bytes": (checkpoint / "adapter.safetensors").stat().st_size,
             }
 
-    if len(training_commits) != 1 or "" in training_commits or set(task_records) != set(expected_by_key):
+    if (
+        len(training_commits) != 1
+        or "" in training_commits
+        or set(task_records) != set(expected_by_key)
+    ):
         raise ExpertManifoldError("task-expert bank is not one complete formal family")
     return {
         "schema_version": TASK_EXPERT_ADAPTER_SCHEMA,
@@ -227,6 +251,77 @@ def inspect_task_expert_bank(
     }
 
 
+def inspect_projected_task_expert_bank(
+    base: Mapping[str, Any], projection_manifest: Path
+) -> dict[str, Any]:
+    """Bind one train24 fixed-head oracle projection to its expert authority."""
+
+    projection_manifest = projection_manifest.resolve()
+    manifest = read_json(projection_manifest)
+    projected = {
+        (str(row.get("suite")), int(row.get("task_id", -1))): dict(row)
+        for row in manifest.get("tasks", ())
+    }
+    base_records = {
+        (str(row["suite"]), int(row["task_id"])): dict(row) for row in base["tasks"]
+    }
+    if (
+        manifest.get("schema_version") != PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA
+        or manifest.get("repository", {}).get("dirty_paths") != []
+        or manifest.get("information_wall", {}).get("role")
+        != "development_train_oracle_only"
+        or manifest.get("information_wall", {}).get("deployment_carrier") is not False
+        or set(projected) != set(base_records)
+    ):
+        raise ExpertManifoldError("fixed-head projection manifest changed")
+    tasks = []
+    for key in sorted(base_records):
+        source = base_records[key]
+        row = projected[key]
+        path = Path(str(row.get("projected_adapter", ""))).resolve()
+        if (
+            int(row.get("ordinal", -1)) != int(source["ordinal"])
+            or int(row.get("global_task_id", -1)) != int(source["global_task_id"])
+            or Path(str(row.get("expert_checkpoint", ""))).resolve()
+            != Path(str(source["checkpoint"])).resolve()
+            or not path.is_file()
+            or path.stat().st_size != int(row.get("projected_adapter_bytes", -1))
+        ):
+            raise ExpertManifoldError("fixed-head projected task adapter changed")
+        tasks.append(
+            {
+                **source,
+                "projected_adapter": str(path),
+                "projected_adapter_bytes": path.stat().st_size,
+            }
+        )
+    return {
+        **dict(base),
+        "schema_version": PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
+        "arm": "macro25_fixed_factor_heads_free_program_projection",
+        "tasks": tasks,
+        "projection": {
+            "manifest_path": str(projection_manifest),
+            "manifest_bytes": projection_manifest.stat().st_size,
+            "schema": PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA,
+            "writer_checkpoint": manifest["writer_checkpoint"],
+            "factor_heads_frozen": manifest["optimization"]["factor_heads_frozen"],
+            "deployment_carrier": False,
+        },
+    }
+
+
+def inspect_task_expert_evaluation(
+    *,
+    projection_manifest: Path | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    base = inspect_task_expert_bank(**kwargs)
+    if projection_manifest is None:
+        return base
+    return inspect_projected_task_expert_bank(base, projection_manifest)
+
+
 @dataclass(frozen=True)
 class PreparedTaskExpert:
     key: tuple[str, int]
@@ -246,7 +341,9 @@ class FrozenTaskExpertAdapter:
         device: torch.device,
         require_formal: bool,
     ) -> None:
-        observed = inspect_task_expert_bank(
+        projection = evaluation_adapter.get("projection", {})
+        manifest_path = projection.get("manifest_path")
+        observed = inspect_task_expert_evaluation(
             config_path=Path(str(evaluation_adapter["config"]["path"])),
             bank_root=Path(str(evaluation_adapter["bank_root"])),
             step=int(evaluation_adapter["step"]),
@@ -254,9 +351,14 @@ class FrozenTaskExpertAdapter:
             task_keys=task_keys,
             evaluation_role="development_train",
             require_formal=require_formal,
+            projection_manifest=(
+                Path(str(manifest_path)) if manifest_path is not None else None
+            ),
         )
         if observed != evaluation_adapter:
-            raise ExpertManifoldError("task-expert evaluation adapter changed at runtime")
+            raise ExpertManifoldError(
+                "task-expert evaluation adapter changed at runtime"
+            )
         config = load_task_expert_config(Path(str(observed["config"]["path"])))
         self.lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         inject_task_lora(policy, self.lora)
@@ -274,7 +376,12 @@ class FrozenTaskExpertAdapter:
 
     def _state(self, key: tuple[str, int]) -> dict[str, torch.Tensor]:
         if key not in self._states:
-            path = Path(self.records[key]["checkpoint"]) / "adapter.safetensors"
+            record = self.records[key]
+            path = (
+                Path(str(record["projected_adapter"]))
+                if "projected_adapter" in record
+                else Path(str(record["checkpoint"])) / "adapter.safetensors"
+            )
             state = load_file(str(path), device="cpu")
             validate_lora_state(state, self.lora)
             self._states[key] = state
@@ -315,7 +422,8 @@ def validate_task_expert_episode(
     if not isinstance(evidence, Mapping):
         return False
     records = {
-        (str(row["suite"]), int(row["task_id"])): row for row in adapter.get("tasks", ())
+        (str(row["suite"]), int(row["task_id"])): row
+        for row in adapter.get("tasks", ())
     }
     row = records.get((str(suite), int(task_id)))
     expected = (

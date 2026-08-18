@@ -133,6 +133,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-config", type=Path)
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
+    parser.add_argument("--task-expert-projection-manifest", type=Path)
     parser.add_argument("--dynamic-k-writer-config", type=Path)
     parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)
     parser.add_argument("--dynamic-k-writer-video-data-root", type=Path)
@@ -302,9 +303,7 @@ def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
     contract_git = contract.get("git", {})
     live_git = git_state(REPO_ROOT)
     physical = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    launcher_preflight, _ = read_json_with_size(
-        output_dir / WRITER_PROFILE_PREFLIGHT
-    )
+    launcher_preflight, _ = read_json_with_size(output_dir / WRITER_PROFILE_PREFLIGHT)
     live_preflight = _gpu_preflight(physical)
     sizes = _profile_batch_sizes(args.profile_batch_sizes)
     if (

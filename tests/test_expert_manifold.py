@@ -17,8 +17,10 @@ from ember.writer.data import WriterTaskAuthority
 from ember.expert_manifold.expert_training import _scheduler
 from ember.expert_manifold.evaluation import (
     FrozenTaskExpertAdapter,
+    PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
     TASK_EXPERT_ADAPTER_KIND,
     TASK_EXPERT_EPISODE_SCHEMA,
+    inspect_projected_task_expert_bank,
     inspect_task_expert_bank,
     validate_task_expert_episode,
 )
@@ -359,3 +361,39 @@ def test_complete_hashless_task_expert_bank_is_inspectable(tmp_path: Path) -> No
     assert observed["training_commit"] == "training-commit"
     assert len(observed["tasks"]) == 24
     assert observed["information_wall"]["validation_actions_read"] == 0
+
+    projected_rows = []
+    for row in observed["tasks"]:
+        path = tmp_path / "projection" / f"task_{int(row['ordinal']):02d}.safetensors"
+        path.parent.mkdir(exist_ok=True)
+        path.write_bytes(b"projected")
+        projected_rows.append(
+            {
+                "suite": row["suite"],
+                "task_id": int(row["task_id"]),
+                "ordinal": int(row["ordinal"]),
+                "global_task_id": int(row["global_task_id"]),
+                "expert_checkpoint": row["checkpoint"],
+                "projected_adapter": str(path),
+                "projected_adapter_bytes": path.stat().st_size,
+            }
+        )
+    projection_manifest = tmp_path / "projection" / "projection_manifest.json"
+    write_json_atomic(
+        projection_manifest,
+        {
+            "schema_version": "ember_writer_fixed_head_reachability_oracle_v1",
+            "repository": {"commit": "oracle", "dirty_paths": []},
+            "writer_checkpoint": "/writer/checkpoints/macro_00000025",
+            "optimization": {"factor_heads_frozen": True},
+            "information_wall": {
+                "role": "development_train_oracle_only",
+                "deployment_carrier": False,
+            },
+            "tasks": projected_rows,
+        },
+    )
+    projected = inspect_projected_task_expert_bank(observed, projection_manifest)
+    assert projected["schema_version"] == PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA
+    assert projected["projection"]["deployment_carrier"] is False
+    assert all("projected_adapter" in row for row in projected["tasks"])

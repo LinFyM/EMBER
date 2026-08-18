@@ -290,6 +290,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "global_task_id": int(task["global_task_id"]),
                 "expert_checkpoint": bank_record["checkpoint"],
                 "projected_adapter": str(path.resolve()),
+                "projected_adapter_bytes": path.stat().st_size,
                 "metrics": _task_metrics(expert, candidate),
             }
         )

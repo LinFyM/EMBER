@@ -188,7 +188,7 @@ def _audit_state(runtime: Any, *, label: str, macro: int) -> dict[str, Any]:
         "schedule_macro": macro,
         "task_id": task_id,
         "task_visit": task_visit,
-        "teacher_demo_indices": demos.cpu().tolist(),
+        "teacher_demo_indices": list(demos),
         "policy_rng_seed": policy_seed,
         "functional_loss": float(loss),
         "functional_detail": {

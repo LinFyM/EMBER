@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **planned，外部复核逐项审计计划已建立，尚未启动代码修改或GPU实验**。
+状态：2026-08-18 **in progress，外部复核逐项审计goal已启动**。
 
 ## Goal
 
@@ -18,6 +18,8 @@
 - absolute support形成与checkpoint retention分别得到最小干预裁决；
 - occupancy、FactorHead reachability/co-drift和shared-gradient conflict只在前置证据支持时进入下一阶段；
 - 每个实验报告strict paired400、per-task/suite、breadth、retained/gained/lost和churn，并更新持久文档。
+- 专家报告中的每项建议最终都有明确回应：无条件诊断实际完成；专家原文中的条件分支在前提成立时执行，前提不成立
+  时以证据化`not applicable`裁决，不得静默跳过。
 
 ## Fixed boundaries
 
@@ -28,7 +30,7 @@
 - 不用loss、gradient、norm、cosine或oracle选择最终方法；formal选择仍认single-checkpoint strict paired400；
 - 一次只裁决一个主要变量，不用rank/LR/scale/seed/dtype sweep，不添加防御性hash或重复forward；
 - 不使用subagents；GPU launch仍遵守单节点最多6张、全局EMBER最多8张和live availability合同；
-- 本计划当前只是审计authority，不自动授权尚未写明run contract的formal训练。
+- 本goal授权在上述边界内完成全部审计和有前提的实验；每个formal launch仍须先写清单变量、资源和裁决合同。
 
 ## Phase 0 — Claim ledger与静态代码核验
 
@@ -92,7 +94,8 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 
 ## Phase 4 — Occupancy mismatch裁决
 
-仅在corrected C仍出现“offline改善、strict support丢失”时执行：
+固定状态occupancy审计无论前面结果如何都完成；只有corrected C仍出现“offline改善、strict support丢失”时才执行
+occupancy-matched训练干预：
 
 - [ ] 对相邻checkpoint lost/gained/retained rows保存rollout state和首次行为分歧时间；
 - [ ] 构造两checkpoint访问状态的固定union，在同一states上用冻结train24 expert/teacher reference比较action/flow error；
@@ -102,7 +105,8 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 
 ## Phase 5 — Decoder reachability与co-drift
 
-仅在Phase 3/4不能解释absolute或retention时执行，且优先使用corrected C checkpoint：
+FactorHead freeze、reachability和endpoint/family审计均需完成，优先使用corrected C checkpoint；结果是否支持decoder
+根因只决定是否继续修改decoder：
 
 - [ ] FactorHead-freeze diagnostic：从一个有support的checkpoint冻结八个heads续训，测旧success retention；
 - [ ] train24 reachability oracle：固定heads、自由优化`20x16x256` Program逼近policy-effective experts，评测投影后
@@ -113,7 +117,7 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 
 ## Phase 6 — Shared-gradient conflict（最后条件分支）
 
-只有前端、occupancy和decoder均不足以解释漂移时：
+在前端、occupancy和decoder审计后执行一个matched shared-gradient comparison，以直接回应专家最后一项建议：
 
 - [ ] 固定per-task gradient、AdamW、LR、tasks和data，只替换一个预注册的conflict-safe aggregation rule；
 - [ ] macro25相当且25→50 lost显著减少、breadth稳定，才支持shared-gradient conflict；
@@ -126,3 +130,5 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 - 明确否定的分支立即停止，不做小扫；好结果继续到相邻checkpoint，达到约145时补完整稳定性与视频因果资格；
 - 若C及有证据支持的Phase 4/5局部修复仍多次无法改善absolute和retention，则完成本审计goal，明确当前架构剩余的
   最早未解接口，不自行大幅改成另一套架构。
+- 最终新增一份面向外部专家的报告，逐条引用其A--G意见、给出实施/不适用状态、原始证据、结果、我们同意或修正的
+  结论以及仍需专家判断的问题；与给owner的总结、claim ledger和全部可提交evidence一起推送远程。

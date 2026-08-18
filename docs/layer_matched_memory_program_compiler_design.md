@@ -853,3 +853,23 @@ validation8×4条件的对齐比较更直接否决局部假象：V4→V5的raw P
 `.97045`，between-task cosine由`.40572`降到`.24495`；compiled分别为`.96641/.16470`。因此v5击中预注册的
 reader接口且没有以明显破坏same-task稳定性换取差异，允许封存formal recipe。该机制门仍不代表closed-loop正确
 方向；下一裁决是fresh macro25 strict paired400。
+
+### 20.5 v5 macro25 pre-strict与部署吞吐
+
+clean detached `aecbce5b4301f98ecaafea650e099b6326c5c98d`在gpu01物理`1/2/4/5/6/7`以world6完成fresh
+macro1--25，wall=`815.941s`；每macro 24 tasks且K1--K4各6 tasks，loss从`.156120`降到`.113644`，完整
+world6 checkpoint/completion均exit0。24个train tasks中23个的末5轮functional loss均值低于前5轮；这只表示训练
+图健康，不能替代held closed-loop。
+
+同一macro25在validation8×4固定conditions仍保留reader改进。correct/reverse relative-L2沿
+`raw Procedure -> H_video -> H_set -> Core-fused -> compiled -> effective BA`为
+`.57396 -> 1.03097 -> 1.01175 -> 1.10781 -> 1.13327 -> .85958`，即reader/raw=`1.7627x`，没有随训练退回v4的
+attenuation。同task四conditions的H_set/compiled/effective-BA cosine为`.98908/.98621/.99285`；between-task
+H_set/compiled cosine为`.36930/.27944`，仍显著低于raw Procedure的`.95372`。因此训练后暂未复现reader趋同或
+same-task video分裂，但这些量仍不知道LoRA方向是否对closed-loop有用。
+
+K4 deployment generation profile使用validation8×4同一long-first panel、最长226 frames，batch`8/16/32`吞吐
+分别为`.212889/.214548/.215998 LoRA/s`，两次实测wall分别为`150.296/150.330`、`149.172/149.130`、
+`148.216/148.082s`。batch32 peak reserved=`16,963,862,528` bytes、headroom=`30,735,859,712` bytes；全部稳定且
+0 OOM/nonfinite/禁读，故strict评测唯一选择batch32。下一裁决点不变：macro25 K4 strict paired400及逐task、
+retention/churn、stage与effective-BA联合分析。

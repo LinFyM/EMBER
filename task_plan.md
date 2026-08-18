@@ -77,7 +77,9 @@
   constant identity、K置换、八family梯度、native BA和最长371-frame机制门。
 - [x] 完成validation8 matched v4/v5 reader诊断：raw Procedure差异不变而reader/raw由`.718x→1.819x`，H_set
   within-task仍`.970`且between-task降至`.245`，通过formal前置接口门。
-- [ ] 从sealed clean pushed commit启动v5 fresh train24到macro25，随后执行strict paired400和全量逐接口分析。
+- [x] 从sealed clean pushed commit完成v5 fresh train24到macro25，封存world6完整checkpoint、generation profile和
+  validation8 pre-strict stage证据。
+- [ ] 执行v5 macro25 strict paired400和全量逐接口分析。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
@@ -100,5 +102,8 @@ Procedure作Keys，读取centered layer/rank memory Values；K-set、Core fusion
 B20 functional-only recipe不变，且incompatible fresh。下一裁决点是它能否在真实K4上减少reader attenuation并保持
 constant identity、K置换和native写出。clean `86c9e63`的world6 macro2、task38机制、validation8 stage和371-frame
 门均已通过：validation8 raw Procedure reverse relative-L2=`.71525`，H_set=`1.30135`，reader/raw=`1.81943x`，
-compiled/BA=`1.28587/.70012`；H_set within/between-task cosine=`.97045/.24495`。formal recipe现已封存，下一步是
-fresh macro25 strict400；这些内部证据不能替代closed-loop裁决。
+compiled/BA=`1.28587/.70012`；H_set within/between-task cosine=`.97045/.24495`。fresh world6 macro25现已完整
+exit0；loss从`.15612`降到`.11364`，24个task中23个的末5轮均值低于前5轮。macro25 validation8仍把raw
+Procedure的`.57396`有向差异放大为H_set=`1.01175`、compiled=`1.13327`、BA=`.85958`，同时
+H_set/compiled/BA同task四conditions cosine=`.98908/.98621/.99285`。这些内部证据不能替代closed-loop；下一裁决
+仍是同一macro25的strict paired400。

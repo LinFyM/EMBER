@@ -538,7 +538,35 @@ def test_evaluator_resolves_only_the_lmmpc_rank16_authority() -> None:
     )
 
 
-def test_v5_generation_profile_awaits_live_evidence() -> None:
+def test_v5_generation_profile_is_sealed_from_live_evidence() -> None:
     from ember.writer.evaluation import DYNAMIC_K_GENERATION_PROFILES
 
-    assert DYNAMIC_K_GENERATION_PROFILES == {}
+    assert set(DYNAMIC_K_GENERATION_PROFILES) == {4}
+    profile = DYNAMIC_K_GENERATION_PROFILES[4]
+    assert profile["schema_version"] == "ember_pi05_writer_generation_profile_v2"
+    assert (
+        profile["evidence_path"]
+        == "runs/acceptance/"
+        "pi05_lmmpc_v5_k4_generation_profile_aecbce5_macro2_gpu02p7_"
+        "20260818/writer_generation_profile.json"
+    )
+    assert profile["evidence_bytes"] == 10775
+    assert profile["authority_commit"] == (
+        "aecbce5b4301f98ecaafea650e099b6326c5c98d"
+    )
+    assert profile["profiled_writer_model_batch_sizes"] == [8, 16, 32]
+    assert profile["supported_writer_model_batch_sizes"] == [8, 16, 32]
+    assert profile["selected_writer_model_batch_size"] == 32
+    assert profile["panel_entry_count"] == 32
+    assert profile["panel_total_sampled_frames"] == 4438
+    assert profile["longest_sampled_video_frames"] == 226
+    assert [
+        row["batch_size"] for row in profile["writer_generation_measurements"]
+    ] == [8, 16, 32]
+    assert all(
+        row["stable"] for row in profile["writer_generation_measurements"]
+    )
+    assert profile["writer_generation_measurements"][2]["loras_per_second"] > (
+        profile["writer_generation_measurements"][0]["loras_per_second"]
+    )
+    assert profile["oom_count"] == profile["nonfinite_count"] == 0

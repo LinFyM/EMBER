@@ -1,0 +1,1471 @@
+{
+  "audit_order": [
+    "A_pre_fix_with_text",
+    "B_no_text_detached",
+    "C_no_text_credit_restored"
+  ],
+  "audits": {
+    "A_pre_fix_with_text": {
+      "first_observed_nonzero_state": {
+        "action_meta_lora": "macro_00000025",
+        "core_fusion": "macro_00000025",
+        "factor_heads.action_in_a": "macro_00000025",
+        "factor_heads.action_in_b": "fresh",
+        "factor_heads.action_out_a": "macro_00000025",
+        "factor_heads.action_out_b": "fresh",
+        "factor_heads.q_a": "macro_00000025",
+        "factor_heads.q_b": "fresh",
+        "factor_heads.v_a": "macro_00000025",
+        "factor_heads.v_b": "fresh",
+        "interaction_projection": null,
+        "language_projection": "macro_00000025",
+        "m2p": "macro_00000025",
+        "memory_reader": "macro_00000025",
+        "memory_tokens": "macro_00000025",
+        "patch_grounding.key": null,
+        "patch_grounding.norm": null,
+        "patch_grounding.output": null,
+        "patch_grounding.query": null,
+        "procedure": "macro_00000025",
+        "semantic_core": "macro_00000025",
+        "text_meta_lora": "macro_00000025",
+        "video_set": "macro_00000025",
+        "visual_transition": "macro_00000025"
+      },
+      "repository": {
+        "commit": "5242ee062884f3fb0c6f95310776c6ffa91dd5c5",
+        "dirty_paths": []
+      },
+      "source_policy_zero_all_states": true,
+      "states": [
+        {
+          "functional_detail": {},
+          "functional_loss": 0.2498035877943039,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.035490404814481735,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.10768833011388779,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04711553454399109,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04003896936774254,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "text_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 144,
+              "parameter_count": 921600,
+              "parameter_tensors": 144
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "fresh",
+          "policy_rng_seed": 8851248729794207307,
+          "schedule_macro": 25,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 25,
+          "teacher_demo_indices": [
+            37,
+            24,
+            40
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              57,
+              55,
+              70
+            ],
+            "sampled_frames": [
+              57,
+              55,
+              70
+            ],
+            "teacher_demo_indices": [
+              37,
+              24,
+              40
+            ],
+            "total_available_stride5_frames": 182,
+            "total_sampled_frames": 182
+          }
+        },
+        {
+          "functional_detail": {},
+          "functional_loss": 0.16987153887748718,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0018004129184632548,
+              "gradient_nonzero_tensors": 144,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.1725832572869926,
+              "gradient_nonzero_tensors": 13,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04301630180844346,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.02412140317572869,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.25336500729647193,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 1.764036992929246,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.21070841831536177,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.7043286936729506,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.14257087964663492,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.6572742912836117,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.18661732971668243,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04573448103269159,
+              "gradient_nonzero_tensors": 28,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.23112613407137997,
+              "gradient_nonzero_tensors": 15,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0004629595496226102,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.058377883090252616,
+              "gradient_nonzero_tensors": 16,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.06617095103414551,
+              "gradient_nonzero_tensors": 22,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "text_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.007082524872617209,
+              "gradient_nonzero_tensors": 144,
+              "gradient_present_tensors": 144,
+              "parameter_count": 921600,
+              "parameter_tensors": 144
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.05110448001557215,
+              "gradient_nonzero_tensors": 9,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0014904984245017454,
+              "gradient_nonzero_tensors": 5,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "macro_00000025",
+          "policy_rng_seed": 8851248729794207307,
+          "schedule_macro": 25,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 25,
+          "teacher_demo_indices": [
+            37,
+            24,
+            40
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              57,
+              55,
+              70
+            ],
+            "sampled_frames": [
+              57,
+              55,
+              70
+            ],
+            "teacher_demo_indices": [
+              37,
+              24,
+              40
+            ],
+            "total_available_stride5_frames": 182,
+            "total_sampled_frames": 182
+          }
+        }
+      ],
+      "unclassified_empty_all_states": true
+    },
+    "B_no_text_detached": {
+      "first_observed_nonzero_state": {
+        "action_meta_lora": "macro_00000025",
+        "core_fusion": "macro_00000025",
+        "factor_heads.action_in_a": "macro_00000025",
+        "factor_heads.action_in_b": "fresh",
+        "factor_heads.action_out_a": "macro_00000025",
+        "factor_heads.action_out_b": "fresh",
+        "factor_heads.q_a": "macro_00000025",
+        "factor_heads.q_b": "fresh",
+        "factor_heads.v_a": "macro_00000025",
+        "factor_heads.v_b": "fresh",
+        "interaction_projection": null,
+        "language_projection": "macro_00000025",
+        "m2p": "macro_00000025",
+        "memory_reader": "macro_00000025",
+        "memory_tokens": "macro_00000025",
+        "patch_grounding.key": null,
+        "patch_grounding.norm": null,
+        "patch_grounding.output": null,
+        "patch_grounding.query": null,
+        "procedure": "macro_00000025",
+        "semantic_core": "macro_00000025",
+        "video_set": "macro_00000025",
+        "visual_transition": "macro_00000025"
+      },
+      "repository": {
+        "commit": "3c8f43788bdb008a3dc23efdedcb0b181c808b73",
+        "dirty_paths": []
+      },
+      "source_policy_zero_all_states": true,
+      "states": [
+        {
+          "functional_detail": {},
+          "functional_loss": 0.2498035877943039,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.036062438040971756,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.1123921126127243,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.047612279653549194,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04523731768131256,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "fresh",
+          "policy_rng_seed": 8851248729794207307,
+          "schedule_macro": 25,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 25,
+          "teacher_demo_indices": [
+            37,
+            24,
+            40
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              57,
+              55,
+              70
+            ],
+            "sampled_frames": [
+              57,
+              55,
+              70
+            ],
+            "teacher_demo_indices": [
+              37,
+              24,
+              40
+            ],
+            "total_available_stride5_frames": 182,
+            "total_sampled_frames": 182
+          }
+        },
+        {
+          "functional_detail": {},
+          "functional_loss": 0.16868439316749573,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0015410651442864937,
+              "gradient_nonzero_tensors": 144,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.15386680043940265,
+              "gradient_nonzero_tensors": 13,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03791498757446618,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.024460102264835686,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.19579345346682522,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.8660387091722336,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.19252341891997907,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.883483582433633,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.15288785687164413,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.7917602567805688,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.12547162175178528,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03434026585548843,
+              "gradient_nonzero_tensors": 28,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.17659153929410315,
+              "gradient_nonzero_tensors": 15,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0005437416257336736,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 0,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03337496307376709,
+              "gradient_nonzero_tensors": 16,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.05513279544654863,
+              "gradient_nonzero_tensors": 22,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.036979121273083206,
+              "gradient_nonzero_tensors": 9,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0006823491134654409,
+              "gradient_nonzero_tensors": 5,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "macro_00000025",
+          "policy_rng_seed": 8851248729794207307,
+          "schedule_macro": 25,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 25,
+          "teacher_demo_indices": [
+            37,
+            24,
+            40
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              57,
+              55,
+              70
+            ],
+            "sampled_frames": [
+              57,
+              55,
+              70
+            ],
+            "teacher_demo_indices": [
+              37,
+              24,
+              40
+            ],
+            "total_available_stride5_frames": 182,
+            "total_sampled_frames": 182
+          }
+        }
+      ],
+      "unclassified_empty_all_states": true
+    },
+    "C_no_text_credit_restored": {
+      "first_observed_nonzero_state": {
+        "action_meta_lora": "macro_00000001",
+        "core_fusion": "macro_00000001",
+        "factor_heads.action_in_a": "macro_00000001",
+        "factor_heads.action_in_b": "fresh",
+        "factor_heads.action_out_a": "macro_00000001",
+        "factor_heads.action_out_b": "fresh",
+        "factor_heads.q_a": "macro_00000001",
+        "factor_heads.q_b": "fresh",
+        "factor_heads.v_a": "macro_00000001",
+        "factor_heads.v_b": "fresh",
+        "interaction_projection": "macro_00000001",
+        "language_projection": "macro_00000001",
+        "m2p": "macro_00000001",
+        "memory_reader": "macro_00000001",
+        "memory_tokens": "macro_00000001",
+        "patch_grounding.key": "macro_00000001",
+        "patch_grounding.norm": "macro_00000001",
+        "patch_grounding.output": "macro_00000001",
+        "patch_grounding.query": "macro_00000001",
+        "procedure": "macro_00000001",
+        "semantic_core": "macro_00000001",
+        "video_set": "macro_00000001",
+        "visual_transition": "macro_00000001"
+      },
+      "repository": {
+        "commit": "f590efb75736a5a3c6484de8c0730d264d3904cd",
+        "dirty_paths": []
+      },
+      "source_policy_zero_all_states": true,
+      "states": [
+        {
+          "functional_detail": {},
+          "functional_loss": 0.22573429346084595,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03147696331143379,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.12307442724704742,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0368497371673584,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04975328594446182,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 2,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0,
+              "gradient_nonzero_tensors": 0,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "fresh",
+          "policy_rng_seed": 962180406726602264,
+          "schedule_macro": 1,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 1,
+          "teacher_demo_indices": [
+            9,
+            48,
+            26
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              61,
+              55,
+              53
+            ],
+            "sampled_frames": [
+              61,
+              55,
+              53
+            ],
+            "teacher_demo_indices": [
+              9,
+              48,
+              26
+            ],
+            "total_available_stride5_frames": 169,
+            "total_sampled_frames": 169
+          }
+        },
+        {
+          "functional_detail": {},
+          "functional_loss": 0.22579045593738556,
+          "groups": {
+            "action_meta_lora": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 8.29957533974354e-06,
+              "gradient_nonzero_tensors": 72,
+              "gradient_present_tensors": 144,
+              "parameter_count": 626688,
+              "parameter_tensors": 144
+            },
+            "core_fusion": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0005801563190919678,
+              "gradient_nonzero_tensors": 13,
+              "gradient_present_tensors": 13,
+              "parameter_count": 599040,
+              "parameter_tensors": 13
+            },
+            "factor_heads.action_in_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0016076922183856368,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_in_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03151744494432009,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0038153743371367455,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.action_out_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.12307711070315365,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 73728,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0099594471976161,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.q_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.03686105512522879,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 589824,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_a": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.01742955669760704,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 2,
+              "parameter_count": 327680,
+              "parameter_tensors": 2
+            },
+            "factor_heads.v_b": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.04975726798525034,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 131072,
+              "parameter_tensors": 2
+            },
+            "interaction_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0008038992527872324,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 262144,
+              "parameter_tensors": 1
+            },
+            "language_projection": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0012428693007677794,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 524288,
+              "parameter_tensors": 1
+            },
+            "m2p": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.00017368925239496087,
+              "gradient_nonzero_tensors": 28,
+              "gradient_present_tensors": 28,
+              "parameter_count": 3157249,
+              "parameter_tensors": 28
+            },
+            "memory_reader": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0012460723934769032,
+              "gradient_nonzero_tensors": 15,
+              "gradient_present_tensors": 15,
+              "parameter_count": 731648,
+              "parameter_tensors": 15
+            },
+            "memory_tokens": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 1.3286060493555851e-05,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 16384,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.key": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 6.240254606382223e-06,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.norm": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 2.7142581879726543e-07,
+              "gradient_nonzero_tensors": 2,
+              "gradient_present_tensors": 2,
+              "parameter_count": 512,
+              "parameter_tensors": 2
+            },
+            "patch_grounding.output": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0002070831396849826,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "patch_grounding.query": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 5.554372819460696e-06,
+              "gradient_nonzero_tensors": 1,
+              "gradient_present_tensors": 1,
+              "parameter_count": 65536,
+              "parameter_tensors": 1
+            },
+            "procedure": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0010832540400657785,
+              "gradient_nonzero_tensors": 16,
+              "gradient_present_tensors": 16,
+              "parameter_count": 1573888,
+              "parameter_tensors": 16
+            },
+            "semantic_core": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.0006532789616078216,
+              "gradient_nonzero_tensors": 22,
+              "gradient_present_tensors": 22,
+              "parameter_count": 1836544,
+              "parameter_tensors": 22
+            },
+            "video_set": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 0.000321431372464529,
+              "gradient_nonzero_tensors": 9,
+              "gradient_present_tensors": 9,
+              "parameter_count": 786945,
+              "parameter_tensors": 9
+            },
+            "visual_transition": {
+              "all_present_gradients_finite": true,
+              "gradient_l2": 3.0581278019844604e-05,
+              "gradient_nonzero_tensors": 5,
+              "gradient_present_tensors": 5,
+              "parameter_count": 197120,
+              "parameter_tensors": 5
+            }
+          },
+          "label": "macro_00000001",
+          "policy_rng_seed": 962180406726602264,
+          "schedule_macro": 1,
+          "source_policy_gradient_tensors": 0,
+          "source_policy_nonzero_gradient_tensors": 0,
+          "task_id": 39,
+          "task_visit": 1,
+          "teacher_demo_indices": [
+            9,
+            48,
+            26
+          ],
+          "unclassified_parameter_names": [],
+          "video_metrics": {
+            "K": 3,
+            "available_stride5_frames": [
+              61,
+              55,
+              53
+            ],
+            "sampled_frames": [
+              61,
+              55,
+              53
+            ],
+            "teacher_demo_indices": [
+              9,
+              48,
+              26
+            ],
+            "total_available_stride5_frames": 169,
+            "total_sampled_frames": 169
+          }
+        }
+      ],
+      "unclassified_empty_all_states": true
+    }
+  },
+  "comparison_boundary": "A is the pre-fix architecture, B removes Text/VL Meta-LoRA while retaining the detach, and C changes only the three returned frontend tensors from detached to differentiable relative to B. Fresh zero-head credit ordering is reported separately from post-update credit.",
+  "schema_version": "ember_external_review_gradient_credit_evidence_v1"
+}

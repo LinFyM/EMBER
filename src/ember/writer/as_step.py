@@ -16,6 +16,7 @@ from ember.writer.functional import (
     functional_lora_loss_gradient,
     task_logical_batch_policy_rng_seed,
 )
+from ember.writer.gradient_aggregation import deterministic_pcgrad_full24
 
 if TYPE_CHECKING:
     from ember.writer.training import WriterRuntime
@@ -243,16 +244,26 @@ def run_writer_step(
 
     tick = time.monotonic()
     runtime.optimizer.zero_grad(set_to_none=True)
-    flat = torch.zeros(
-        runtime.gradient_layout[-1].stop,
-        dtype=torch.float32,
-        device=runtime.context.device,
+    aggregation = getattr(
+        runtime.args, "task_gradient_aggregation", "arithmetic_mean"
     )
-    records = []
-    for task_id, task_visit in (
+    local_assignments = tuple(
         runtime.sampler.task_visit_for_step(macro, index)
         for index in range(len(runtime.sampler.tasks_for_step(macro)))
-    ):
+    )
+    width = runtime.gradient_layout[-1].stop
+    flat = torch.zeros(width, dtype=torch.float32, device=runtime.context.device)
+    task_gradients = (
+        torch.zeros(
+            (len(local_assignments), width),
+            dtype=torch.float32,
+            device=runtime.context.device,
+        )
+        if aggregation == "deterministic_pcgrad_v1"
+        else None
+    )
+    records = []
+    for local_index, (task_id, task_visit) in enumerate(local_assignments):
         batch = next(runtime.iterator)
         if _batch_task_id(batch) != task_id:
             raise WriterModelError("dynamic-K sampler and loaded task differ")
@@ -264,12 +275,15 @@ def run_writer_step(
         )
         packed, video_metrics = _pack_condition(runtime, task_id, demos)
         policy_seed = _policy_seed(runtime, batch, task_id, task_visit)
+        gradient_destination = (
+            task_gradients[local_index] if task_gradients is not None else flat
+        )
         functional, _ = _task_gradient(
             runtime,
             packed,
             runtime.processor.training_batch(batch),
             policy_seed,
-            flat,
+            gradient_destination,
         )
         if not bool(torch.isfinite(functional)):
             raise WriterModelError(f"non-finite dynamic-K loss at macro {macro}")
@@ -283,7 +297,20 @@ def run_writer_step(
         )
     if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
         raise WriterModelError("frozen source policy accumulated gradients")
-    reduce_full24_gradient(flat, world_size=runtime.context.world_size)
+    if task_gradients is None:
+        reduce_full24_gradient(flat, world_size=runtime.context.world_size)
+        aggregation_metrics: dict[str, float | int | str] = {
+            "task_gradient_aggregation": "arithmetic_mean",
+        }
+    else:
+        flat, aggregation_metrics = deterministic_pcgrad_full24(
+            task_gradients,
+            local_task_ids=[task_id for task_id, _ in local_assignments],
+            task_ids=runtime.task_ids,
+            world_size=runtime.context.world_size,
+            macro=macro,
+            seed=int(runtime.config["optimization"]["seed"]),
+        )
     assign_flat_gradient(flat, runtime.gradient_layout)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
     grad_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
@@ -323,6 +350,7 @@ def run_writer_step(
         / len(global_records),
         "gradient_norm_before_clip": float(grad_norm),
         "gradient_clip_norm": clip,
+        **aggregation_metrics,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "macro_seconds": time.monotonic() - tick,
         "elapsed_seconds": time.monotonic() - started,

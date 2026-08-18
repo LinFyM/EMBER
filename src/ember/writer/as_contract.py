@@ -241,6 +241,9 @@ def build_contract(
     batch_size: int,
     checkpoint_macros: Sequence[int],
 ) -> dict[str, Any]:
+    task_gradient_aggregation = getattr(
+        args, "task_gradient_aggregation", "arithmetic_mean"
+    )
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
@@ -279,6 +282,7 @@ def build_contract(
             "checkpoint_macros": list(checkpoint_macros),
             "num_workers_per_rank": args.num_workers,
             "task_assignment": "cost_balanced_long_first_dynamic_uneven",
+            "task_gradient_aggregation": task_gradient_aggregation,
         },
         "trainable": dict(trainable),
     }
@@ -291,6 +295,22 @@ def build_contract(
             "unchanged_components": (
                 "Program Reader K-set M2P objective data optimizer scheduler and RNG"
             ),
+            "deployment_method": False,
+        }
+    elif task_gradient_aggregation == "deterministic_pcgrad_v1":
+        contract["diagnostic_intervention"] = {
+            "kind": "replace_arithmetic_mean_with_deterministic_pcgrad_v1",
+            "unchanged_components": (
+                "per-task gradients, Writer architecture, AdamW, learning rate, "
+                "train24 data, dynamic-K schedule, rank16 LoRA and source policy"
+            ),
+            "projection_rule": (
+                "standard sequential PCGrad against all other 23 raw task gradients"
+            ),
+            "order_rule": (
+                "task-and-macro-keyed fixed permutation from optimization seed"
+            ),
+            "hyperparameter_sweep": False,
             "deployment_method": False,
         }
     return contract

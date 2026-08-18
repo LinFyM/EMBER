@@ -447,6 +447,7 @@ def train(args: argparse.Namespace) -> None:
                         "resume_macro": runtime.resume_macro,
                         "stop_after_macro": args.stop_after_macro,
                         "world_size": context.world_size,
+                        "task_gradient_aggregation": args.task_gradient_aggregation,
                         "tasks": len(runtime.task_ids),
                         "trainable": runtime.contract["trainable"],
                     },
@@ -480,6 +481,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--diagnostic-fork-resume", type=Path)
     parser.add_argument("--freeze-factor-heads", action="store_true")
+    parser.add_argument(
+        "--task-gradient-aggregation",
+        choices=("arithmetic_mean", "deterministic_pcgrad_v1"),
+        default="arithmetic_mean",
+    )
     parser.add_argument("--total-macros", type=int)
     parser.add_argument("--stop-after-macro", type=int)
     parser.add_argument("--checkpoint-macros", type=str)
@@ -496,6 +502,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         args.resume is not None and fork
         or args.freeze_factor_heads != fork
         or fork and args.mode != "formal"
+        or fork and args.task_gradient_aggregation != "arithmetic_mean"
     ):
         raise WriterModelError(
             "FactorHead freeze diagnostic requires one formal fork checkpoint"

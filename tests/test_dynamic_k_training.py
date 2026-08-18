@@ -24,6 +24,7 @@ from ember.writer.as_step import (
     parameter_layout,
     reduce_full24_gradient,
 )
+from ember.writer.gradient_aggregation import deterministic_pcgrad_full24
 from ember.writer.checkpoint import (
     DEPLOYMENT_CHECKPOINT_KIND,
     load_writer_checkpoint,
@@ -228,6 +229,49 @@ def test_flat_gradient_accumulates_tasks_then_divides_once_by_24() -> None:
 def test_flat_gradient_contract_rejects_non_full24_reduction() -> None:
     with pytest.raises(WriterModelError, match="full24"):
         reduce_full24_gradient(torch.ones(2), world_size=1, global_task_count=23)
+
+
+def test_deterministic_pcgrad_is_fixed_and_changes_a_conflicting_mean() -> None:
+    gradients = torch.tensor(
+        [[1.0, 0.0]] * 12 + [[-0.5, 1.0]] * 12,
+        dtype=torch.float32,
+    )
+    task_ids = tuple(range(24))
+    first, first_metrics = deterministic_pcgrad_full24(
+        gradients,
+        local_task_ids=task_ids,
+        task_ids=task_ids,
+        world_size=1,
+        macro=7,
+        seed=7,
+    )
+    second, second_metrics = deterministic_pcgrad_full24(
+        gradients,
+        local_task_ids=task_ids,
+        task_ids=task_ids,
+        world_size=1,
+        macro=7,
+        seed=7,
+    )
+    assert torch.equal(first, second)
+    assert first_metrics == second_metrics
+    assert first_metrics["pcgrad_projection_count"] > 0
+    assert not torch.allclose(first, gradients.mean(dim=0))
+
+
+def test_deterministic_pcgrad_preserves_an_agreeing_task_mean() -> None:
+    gradients = torch.arange(1, 25, dtype=torch.float32).unsqueeze(1).repeat(1, 3)
+    task_ids = tuple(range(24))
+    aggregate, metrics = deterministic_pcgrad_full24(
+        gradients,
+        local_task_ids=task_ids,
+        task_ids=task_ids,
+        world_size=1,
+        macro=0,
+        seed=7,
+    )
+    assert torch.allclose(aggregate, gradients.mean(dim=0))
+    assert metrics["pcgrad_projection_count"] == 0
 
 
 def test_full24_task_evidence_is_gathered_and_sorted(

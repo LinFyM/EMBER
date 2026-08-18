@@ -131,3 +131,51 @@ Program × FactorHead cross-decode artifact导出，去除本地checkpoint路径
 - 同一区间Core/Procedure/parameter-set/core-fused/compiled的relative L2分别为`.60468/.70450/.52819/1.83432/.77010`；
 - JSON同时保留macro25/50/75/100的per-module gradient conflict、next-update delta、fixed-B20 task deltas、strict
   transition以及后两个区间的完整cross-decode，避免只引用一个有利数字。
+
+## No-Text / restored-credit gradient attribution
+
+`gradient_credit_evidence.json`把三次clean真实functional backward放在同一remote-safe文件中：
+
+- A（pre-fix、含Text Meta-LoRA）和B（移除Text/VL Meta-LoRA但保留detach）在macro25都显示
+  `patch_grounding.query/key/output/norm`与`interaction_projection`完全没有gradient；
+- B其余Action Meta-LoRA、Core、Procedure、memory、Reader、K-set、M2P和八个heads均有非零有限gradient，说明移除
+  Text没有切断原有主链；
+- C相对B只恢复三项返回tensor的autograd连接。在macro1 heads已打开后，grounding四组与interaction全部首次出现非零
+  有限gradient，所有其它预期组也保持有信用；
+- 三组审计的source-policy nonzero-gradient tensors均为0，unclassified trainable parameters均为空；B/C均不存在
+  Text或VL Meta-LoRA，保留native frozen language和Action Meta-LoRA。
+
+C使用macro1是为了记录新路径的最早可观察信用，A/B使用macro25是为了证明旧detach在后端已经打开后仍切断该路径；
+因此这里裁决的是graph connectivity，不比较跨schedule的gradient magnitude。稳定regression同时覆盖返回tensor局部
+gradient和frozen native memory replay不向source参数回传。
+
+## F2 fixed-occupancy counterfactual
+
+`occupancy_evidence.json`公开原始paired400定义的52 lost、13 gained和71 retained rows在macro25及macro50两套真实
+rollout occupancy上的逐replan action disagreement。两次capture均为clean formal run，固定task/state、teacher K4、
+policy seed root与noise common prefix；正常并行拓扑低位差异使macro25/50分别有14/17个capture success bit相对原面板
+翻转，原始分类保持不变，并另报只保留两边replay-consistent rows的敏感性结果。
+
+- offline B20 functional loss由`.1136444`降到`.1054047`；
+- lost rows的`macro50 occupancy - macro25 occupancy`动作RMS均值为`-.006548`，52行中20正/32负，Wilcoxon
+  `p=.05466`；replay-consistent 38行同样为`-.007023`；
+- gained rows反而为`+.011293`，11正/2负，`p=.00610`；retained为`+.002409`，`p=.1993`；
+- lost与retained在共同初态的checkpoint action RMS均值为`.19428`和`.14297`，但Mann--Whitney `p=.1630`。
+
+这不支持“macro50只因进入其自身occupancy后两checkpoint分歧变大而丢失support”的简单版本，方向在lost/gained间
+反而与该预测相反。它也不能证明macro50动作更正确：validation task expert不可用，且没有读取held teacher action，
+所以该审计是matched checkpoint disagreement而非expert-action error。基于这个结果，不授权F2.05用旧occupancy panel
+替换B20训练。
+
+## F3 frozen-FactorHead continuation
+
+`f3_headfreeze_evidence.json`比较同一A macro25起点、正常续训macro50和唯一冻结八个FactorHeads的诊断续训macro50：
+
+- normal macro50为84/400；frozen-head macro50为117/400，相对normal是49 gained / 16 lost，exact McNemar
+  `p=5.08e-5`；
+- macro25 123→frozen-head 117为90 retained / 27 gained / 33 lost，success retention `73.17%`；
+- frozen-head满足专家建议的score≥110，但未满足lost≤20、retention≥90%和breadth不降；
+- checkpoint张量核验显示16个FactorHead tensor逐元素不变，481个upstream tensor中404个变化。
+
+因此head co-drift是25→50崩落的重要放大器，但不是充分根因；固定heads仍有33个旧support丢失，责任必须继续检查
+upstream/objective与fixed-head reachability。

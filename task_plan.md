@@ -44,11 +44,11 @@
 
 ## Phase 1 — 本地formal evidence重建
 
-- [ ] 从local raw rows重建macro25/50/75/100、LPCP143、GOMQ151的统一paired矩阵；
-- [ ] 复算McNemar、retained/gained/lost、Jaccard、breadth@1/@5/@10、top-3 concentration及suite minimum；
-- [ ] 核对每个formal run的commit/config/checkpoint manifest与review snapshot是否一致；
-- [ ] 按task、suite、horizon、initialization和video ordinal分析lost/gained/retained分布；
-- [ ] 把可安全提交的聚合/脱敏row evidence补到remote，避免结论只依赖本地叙述。
+- [x] 从local raw rows重建macro25/50/75/100、LPCP143、GOMQ151的统一paired矩阵；
+- [x] 复算McNemar、retained/gained/lost、Jaccard、breadth@1/@5/@10、top-3 concentration及suite minimum；
+- [x] 核对每个formal run的commit/config/checkpoint manifest与review snapshot是否一致；
+- [x] 按task、suite/horizon、initialization和teacher video IDs保留逐行lost/gained/retained证据；
+- [x] 把可安全提交的聚合/脱敏row evidence补到remote，避免结论只依赖本地叙述。
 
 **Gate 1：** 若原始rows与tracked汇总不一致，先修正事实authority；一致后才讨论根因。
 

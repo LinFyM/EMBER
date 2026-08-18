@@ -21,6 +21,13 @@
 - 外部复核逐项审计goal已启动：先做claim ledger、raw evidence重建和current checkpoint零训练诊断，再分别裁决
   Text Meta-LoRA、fresh前端detach、occupancy、decoder和shared-gradient hypotheses；所有专家意见最终都必须有
   实施结果或证据化不适用裁决，并形成面向专家的远程报告。
+- 专家A--G逐项执行账本已建立于`docs/external_review_claim_ledger_20260818.md`；其中把代码事实、性能归因、反证、
+  advisory threshold和有前提建议分开登记。当前Phase 0静态复核已确认主要代码事实，但尚未把任何单一代码事实升级为
+  123上限或checkpoint漂移的因果结论。
+- Phase 1 raw evidence已完成：六个strict400 panel的400行outcome、teacher demo IDs和RNG reference严格配对，训练/
+  评测commit与checkpoint manifest已导出到`docs/evidence/external_review_20260818/paired_evidence.json`。重算确认当前
+  macro25/50/75/100的breadth@1/5/10分别为`8/3/3、5/3/2、6/2/2、4/2/2`；123→84仍是显著的
+  `13 gained / 52 lost`，因此tracked摘要与原始事实一致。
 
 ## Sealed scientific state
 

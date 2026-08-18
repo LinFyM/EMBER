@@ -624,6 +624,7 @@ def checkpoint_curve_analysis(
             "lost": "left success and right failure on the identical episode key",
             "churn": "gained plus lost",
             "nonzero_task_breadth": "tasks with at least one success in this exact panel",
+            "task_breadth": "counts of tasks with at least 1, 5, or 10 successes in this exact panel",
             "top3_success_share": "successes from deterministic top-3 tasks divided by all successes",
         },
     }

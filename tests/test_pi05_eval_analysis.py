@@ -42,6 +42,11 @@ def test_panel_summary_reports_task_suite_breadth_and_deterministic_top3() -> No
     assert summary["overall"]["episodes"] == 400
     assert [row["episodes"] for row in summary["per_suite"]] == [100] * 4
     assert summary["nonzero_task_breadth"] == 4
+    assert summary["task_breadth"] == {
+        "at_least_1": 4,
+        "at_least_5": 0,
+        "at_least_10": 0,
+    }
     assert len(summary["top3_tasks"]) == 3
     assert summary["top3_tasks"] == sorted(
         summary["top3_tasks"],

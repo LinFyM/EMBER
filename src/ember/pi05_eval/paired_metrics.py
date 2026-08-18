@@ -98,6 +98,12 @@ def summarize_panel(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "overall": _summary_row(list(indexed.values())),
         "per_task": per_task,
         "per_suite": per_suite,
+        "task_breadth": {
+            f"at_least_{threshold}": sum(
+                int(row["successes"]) >= threshold for row in per_task
+            )
+            for threshold in (1, 5, 10)
+        },
         "nonzero_task_breadth": sum(
             int(row["successes"]) > 0 for row in per_task
         ),

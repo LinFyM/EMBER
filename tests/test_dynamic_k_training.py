@@ -13,7 +13,7 @@ from safetensors.torch import save_file
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import DistributedContext
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
-from ember.writer.as_contract import publish_contract
+from ember.writer.as_contract import inspect_video_data, publish_contract
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.as_step import (
     _pack_condition,
@@ -35,6 +35,7 @@ from ember.writer.errors import WriterModelError
 from ember.writer.live_adapter import FrozenDynamicKTaskAdapter, condition_video_offsets
 from ember.writer.update_schedule import build_exposure_scheduler
 import ember.writer.live_adapter as live_adapter_module
+import ember.writer.as_contract as as_contract_module
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +61,38 @@ def _dataset_stub() -> _DatasetStub:
             frame_index.append((task_id, demo, 0))
             cursor += 1
     return _DatasetStub(rows, tuple(frame_index))
+
+
+def test_video_data_inspection_returns_runtime_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rows = []
+    for task_id, lengths in ((3, [6, 11]), (7, [9, 16])):
+        relative = f"task_{task_id}.hdf5"
+        path = tmp_path / relative
+        path.write_bytes(b"video-authority")
+        rows.append(
+            {
+                "global_task_id": task_id,
+                "hdf5": {"relative_path": relative, "bytes": path.stat().st_size},
+                "demonstrations": {"episode_lengths": lengths},
+            }
+        )
+    monkeypatch.setattr(as_contract_module, "authority_path", lambda *_: tmp_path)
+    monkeypatch.setattr(
+        as_contract_module, "read_json", lambda _: {"tasks": rows}
+    )
+    result = inspect_video_data(
+        tmp_path,
+        {"data": {"demo_indices": [0, 1]}, "writer": {"frame_stride": 5}},
+        (3, 7),
+    )
+    assert result["task_ids"] == [3, 7]
+    assert result["sampled_frame_counts_by_task"] == {
+        "3": {"0": 2, "1": 3},
+        "7": {"0": 3, "1": 4},
+    }
+    assert result["max_sampled_frames"] == 4
 
 
 def test_lmmpc_v5_config_is_fresh_rank16_and_profile_sealed() -> None:

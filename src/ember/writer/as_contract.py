@@ -159,6 +159,7 @@ def inspect_video_data(
         "max_sampled_frames": max(value for row in costs.values() for value in row.values()),
         "identity_evidence": "manifest_path_size_and_episode_frame_counts",
     }
+    return contract
 
 
 def load_run_authorities(

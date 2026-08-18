@@ -25,12 +25,12 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | A1.03 | action-hidden视频影响内部表示 | experiment fact | `confirmed-artifact`于历史内部扰动证据；不等价于correct视频提升闭环，F0b待完成 |
 | A1.04 | Core-addressed Reader有真实closed-loop正收益 | experiment fact | `confirmed-artifact`：matched 104→123；不证明整套方法达标 |
 | A1.05 | fresh Writer生成非平凡完整LoRA | experiment fact | `confirmed-artifact`；health指标只作诊断，不作方法资格 |
-| A1.06 | 未证明Program是高层过程而非task identity/static cue/carrier | negative claim | `confirmed evidence gap`；F0b直接裁决 |
+| A1.06 | 未证明Program是高层过程而非task identity/static cue/carrier | negative claim | `supported`；F0b显示correct与shuffled相当、shuffled-keep-first更高，但wrong/no-video显著更低：视频内容必要，正确中间阶段顺序未成为必要evidence |
 | A1.07 | 未证明memory layer/rank index有policy-functional语义 | negative claim | `confirmed evidence gap`；index preservation与functional correspondence分开 |
 | A1.08 | 未证明FactorHeads稳定覆盖policy-effective方向 | negative claim | `confirmed evidence gap`；F3/F4待完成 |
 | A1.09 | 未证明expert-state loss支持generated-policy occupancy | negative claim | `confirmed evidence gap`；F2待完成 |
 | A1.10 | 未证明shared checkpoint保留广泛support | experiment fact | `confirmed-artifact`：123→84→89→87、breadth 8→5→6→4 |
-| A1.11 | 未证明correct优于wrong/shuffle/reverse/no-video | negative claim | `confirmed evidence gap`；F0b待完成 |
+| A1.11 | 未证明correct优于wrong/shuffle/reverse/no-video | negative claim | `mixed/refuted as a joint claim`；correct显著优于wrong/reverse/no-video，但不优于shuffle或shuffled-keep-first |
 | A2.01 | frozen hidden后的fresh projected outputs被第二次detach | code fact | `confirmed-code`，见`backbone_memory.py`返回路径 |
 | A2.02 | patch grounding与interaction projection因此无functional credit | code fact | `confirmed-code`；F0a须给实际grad表 |
 | A2.03 | language projection的逐帧视觉支路信用也被切断 | code fact | `confirmed-code`；其独立text/gate路径仍有gradient |
@@ -136,15 +136,15 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F0a.04 | 覆盖Text/Action Meta-LoRA、Core、Procedure、memory、Reader、K-set、M2P、8 heads | coverage requirement | `completed for sealed A`；上述各组macro25均nonzero finite，新B/C后续分别复核 |
 | F0a.05 | source policy nonzero grad tensors必须为0 | safety/contract | `completed`；fresh/macro25均0 |
 | F0a.06 | 新增稳定regression，不能再以fake部分路径代表全路径 | code recommendation | `queued` |
-| F0b.01 | macro25 correct strict paired400 | unconditional diagnostic | `queued`；可复用已sealed raw rows但需核对provenance |
-| F0b.02 | same-task-other paired400 | unconditional diagnostic | `queued` |
-| F0b.03 | cross-suite-wrong paired400 | unconditional diagnostic | `queued` |
-| F0b.04 | shuffled paired400 | unconditional diagnostic | `queued` |
-| F0b.05 | shuffled-keep-first paired400 | unconditional diagnostic | `queued` |
-| F0b.06 | reversed paired400 | unconditional diagnostic | `queued` |
-| F0b.07 | no-video paired400 | unconditional diagnostic | `queued` |
-| F0b.08 | fixed rows/state/env/policy RNG/K/video ordinal与完整paired统计 | execution contract | `queued` |
-| F0b.09 | +15、p<.05、same-task±10/90%等 | advisory thresholds | `registered-not-hard-gate`；逐项报告，不机械终止 |
+| F0b.01 | macro25 correct strict paired400 | unconditional diagnostic | `completed`；123/400，clean sealed raw rows |
+| F0b.02 | same-task-other paired400 | unconditional diagnostic | `completed`；125/400，correct-only 18 / control-only 20 |
+| F0b.03 | cross-suite-wrong paired400 | unconditional diagnostic | `completed`；81/400，correct净+42，p=`1.3816e-5` |
+| F0b.04 | shuffled paired400 | unconditional diagnostic | `completed`；122/400，correct净+1，p=`1.0` |
+| F0b.05 | shuffled-keep-first paired400 | unconditional diagnostic | `completed`；131/400，correct净-8，p=`.27996` |
+| F0b.06 | reversed paired400 | unconditional diagnostic | `completed`；90/400，correct净+33，p=`2.1680e-4` |
+| F0b.07 | no-video paired400 | unconditional diagnostic | `completed`；48/400，correct净+75，p=`2.1689e-16` |
+| F0b.08 | fixed rows/state/env/policy RNG/K/video ordinal与完整paired统计 | execution contract | `completed`；7面板逐行核对mismatch全0，见`video_causality_evidence.json` |
+| F0b.09 | +15、p<.05、same-task±10/90%等 | advisory thresholds | `completed-reporting`；wrong/reverse/no-video达absolute与显著性门槛，same-task总分达标但success retention=85.37%，shuffle方向门槛失败 |
 | F1.01 | 仅移除fresh输出detach的matched干预 | training recommendation | `queued after no-Text attribution chain` |
 | F1.02 | 保持frozen hidden detach、拓扑、rank16、data/B20/optimizer/LR/seed/K | single-variable contract | `queued` |
 | F1.03 | source零梯度、fresh modules非零梯度测试 | regression requirement | `queued` |
@@ -172,7 +172,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | ID | 专家要求 | 当前状态与完成条件 |
 | --- | --- | --- |
 | G1 | 四checkpoint、LPCP、GOMQ逐行paired400、video IDs、RNG reference | `completed`；见`docs/evidence/external_review_20260818/paired_evidence.json`及README |
-| G2 | current macro25全部video controls与不同K4 sets | `queued`；F0b产生remote-visible aggregate/raw-row evidence |
+| G2 | current macro25全部video controls与不同K4 sets | `completed`；`video_causality_evidence.json`公开7面板aggregate、paired统计、逐行success与video/RNG reference |
 | G3 | intended modules实际gradient表与首次非零macro | `partial`；fresh/macro25完整表与first-observed state已公开，新B/C和精确首次macro随训练补齐 |
 | G4 | 每个formal run的commit/dirty diff/source/config/checkpoint/metrics provenance | `completed for six reviewed panels`；training/eval commit差异、schema、manifest和contract均显式保留 |
 | G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `queued`；复核现有local artifact并导出小型JSON |

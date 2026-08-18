@@ -80,3 +80,43 @@ functional loss和Writer backward，而不是只检查`requires_grad`：
 
 fresh只用来确认初始化信用顺序；不能用其upstream零梯度指控detach。真正区分证据是heads已经打开的macro25：除专家
 指出的fresh projection outputs外，后端每组均有信用。
+
+## Macro25 video-causality panel
+
+`video_causality_evidence.json`从同一macro25 Writer的七个strict paired400面板导出。七个面板的8 tasks × 50
+initializations、environment seed、policy seed root、实际执行noise common prefix、K4 teacher ordinal/reference
+video IDs逐行一致，mismatch全为0。
+
+| video condition | strict | breadth@1 | breadth@5 | breadth@10 | suite minimum | top-3 share |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| correct | 123 | 8 | 3 | 3 | 4 | .91057 |
+| same-task-other | 125 | 7 | 4 | 3 | 5 | .89600 |
+| cross-suite-wrong | 81 | 6 | 4 | 3 | 4 | .85185 |
+| shuffled | 122 | 4 | 4 | 4 | 0 | .91803 |
+| shuffled-keep-first | 131 | 7 | 5 | 3 | 5 | .89313 |
+| reversed | 90 | 6 | 4 | 3 | 4 | .87778 |
+| no-video | 48 | 3 | 2 | 1 | 0 | 1.00000 |
+
+| correct vs control | both success | correct-only | control-only | correct minus control | Jaccard | exact McNemar p |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| same-task-other | 105 | 18 | 20 | -2 | .73427 | .87141 |
+| cross-suite-wrong | 56 | 67 | 25 | +42 | .37838 | 1.3816e-5 |
+| shuffled | 98 | 25 | 24 | +1 | .66667 | 1.0 |
+| shuffled-keep-first | 106 | 17 | 25 | -8 | .71622 | .27996 |
+| reversed | 68 | 55 | 22 | +33 | .46897 | 2.1680e-4 |
+| no-video | 39 | 84 | 9 | +75 | .29545 | 2.1689e-16 |
+
+这组证据支持三个限定后的判断：
+
+1. correct相对no-video和cross-suite-wrong有显著收益，所以当前Writer不是language-only，也不是任意nonzero-video
+   carrier即可完成任务；
+2. same-task-other与correct总分相当，但仍有38-row churn和`.734` success-set Jaccard，说明具有一定跨demo
+   鲁棒性，但未达到专家建议的90% success-retention；
+3. correct相对shuffled没有优势，shuffled-keep-first甚至高8分（不显著）。reversed与no-video下降不能掩盖
+   这个反例：当前闭环收益需要同task视频内容和某些粗方向线索，但没有证明正确中间阶段顺序是必要的有用
+   policy evidence。
+
+correct面板由clean evaluation commit `f42edfc0d6504e62146218e8af9d2c2bbbe5959e`生成，六个control由
+clean commit `2606c4973a9f311430e69a56e304b58866057b58`生成。两提交间当前Writer/evaluator有效forward路径未
+改变；差异为证据导出/梯度审计、paired metric扩展和退役模块清理。原始提交仍在JSON provenance中分别显示，
+没有把跨commit隐藏成同一代码。

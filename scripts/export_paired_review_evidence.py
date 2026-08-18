@@ -8,7 +8,9 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from ember.expert_manifold.video_schedule import VIDEO_CONDITIONS
 from ember.pi05_eval.paired_metrics import (
+    control_outcome_summary,
     episode_key,
     index_rows,
     paired_transition_summary,
@@ -31,15 +33,21 @@ def _comparison_argument(value: str) -> tuple[str, str]:
     return left, right
 
 
-def _load_panel(path: Path) -> dict[str, Any]:
+def _load_panel(path: Path, *, allow_video_controls: bool) -> dict[str, Any]:
     result = json.loads(path.read_text(encoding="utf-8"))
+    condition = result.get("adapter", {}).get("video_condition")
     if (
         result.get("mode") != "formal"
         or result.get("role") != "validation"
-        or result.get("adapter", {}).get("video_condition") != "correct"
+        or (
+            condition not in VIDEO_CONDITIONS
+            if allow_video_controls
+            else condition != "correct"
+        )
         or result.get("paired_control", {}).get("git", {}).get("dirty_paths") != []
     ):
-        raise ValueError(f"not a clean formal correct-video panel: {path}")
+        expected = "video-control" if allow_video_controls else "correct-video"
+        raise ValueError(f"not a clean formal {expected} panel: {path}")
     rows = list(result.get("rows", []))
     indexed = index_rows(rows)
     if len(indexed) != 400:
@@ -181,6 +189,26 @@ def _remote_rows(
                 "success": {
                     label: bool(indexes[label][key]["success"]) for label in labels
                 },
+                "video_evidence": {
+                    label: {
+                        "condition": indexes[label][key]
+                        .get("writer", {})
+                        .get("condition"),
+                        "teacher_demo_indices": indexes[label][key]
+                        .get("writer", {})
+                        .get("teacher_demo_indices"),
+                        "video_suite": indexes[label][key]
+                        .get("writer", {})
+                        .get("video_suite"),
+                        "video_task_id": indexes[label][key]
+                        .get("writer", {})
+                        .get("video_task_id"),
+                        "teacher_video_frames_used": indexes[label][key]
+                        .get("writer", {})
+                        .get("teacher_video_frames_used"),
+                    }
+                    for label in labels
+                },
                 "policy_noise_seed_count": {
                     label: len(indexes[label][key].get("policy_noise_seeds", []))
                     for label in labels
@@ -193,12 +221,16 @@ def _remote_rows(
 def build_evidence(
     panels: Mapping[str, Mapping[str, Any]],
     comparisons: list[tuple[str, str]],
+    *,
+    reference_panel: str | None = None,
 ) -> dict[str, Any]:
     indexes = {label: index_rows(result["rows"]) for label, result in panels.items()}
     for left, right in comparisons:
         if left not in panels or right not in panels:
             raise ValueError(f"comparison references an unknown panel: {left}:{right}")
-    return {
+    if reference_panel is not None and reference_panel not in panels:
+        raise ValueError(f"unknown reference panel: {reference_panel}")
+    evidence = {
         "schema_version": "ember_external_review_paired_evidence_v1",
         "panel_order": list(panels),
         "pairing_audit": _pairing_audit(indexes),
@@ -217,6 +249,15 @@ def build_evidence(
         },
         "rows": _remote_rows(indexes),
     }
+    if reference_panel is not None:
+        evidence["control_comparisons_to_reference"] = {
+            label: control_outcome_summary(
+                panels[reference_panel]["rows"], result["rows"]
+            )
+            for label, result in panels.items()
+            if label != reference_panel
+        }
+    return evidence
 
 
 def main() -> None:
@@ -225,14 +266,36 @@ def main() -> None:
     parser.add_argument(
         "--comparison", action="append", type=_comparison_argument, default=[]
     )
+    parser.add_argument(
+        "--allow-video-controls",
+        action="store_true",
+        help="accept any registered formal video condition instead of correct only",
+    )
+    parser.add_argument(
+        "--reference-panel",
+        help="emit correct-vs-control outcome summaries against this panel label",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     panels: dict[str, dict[str, Any]] = {}
     for label, path in args.panel:
         if label in panels:
             raise ValueError(f"duplicate panel label: {label}")
-        panels[label] = _load_panel(path)
-    evidence = build_evidence(panels, list(args.comparison))
+        panels[label] = _load_panel(
+            path, allow_video_controls=args.allow_video_controls
+        )
+        if args.allow_video_controls:
+            condition = panels[label]["adapter"]["video_condition"]
+            if label != condition:
+                raise ValueError(
+                    "video-control panel labels must equal their video conditions: "
+                    f"{label} != {condition}"
+                )
+    evidence = build_evidence(
+        panels,
+        list(args.comparison),
+        reference_panel=args.reference_panel,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8"

@@ -180,3 +180,17 @@ policy seed root与noise common prefix；正常并行拓扑低位差异使macro2
 
 因此head co-drift是25→50崩落的重要放大器，但不是充分根因；固定heads仍有33个旧support丢失，责任必须继续检查
 upstream/objective与fixed-head reachability。
+
+## F4 fixed-head reachability oracle
+
+`reachability_evidence.json`把24个train-task experts投影到A macro25固定FactorHeads的自由Program oracle，并公开
+全部误差、1200条严格配对closed-loop rows和provenance：
+
+- direct experts为658/1200，projected为659/1200，即`100.15%` retained aggregate；
+- 逐行是652 retained / 7 gained / 6 lost，Jaccard `.98045`、McNemar `p=1.0`；
+- effective-BA relative L2均值仍为`.93571`，q/v/action-in/action-out分别为
+  `.95212/.84250/.59157/.46702`。
+
+这使预注册90%门明确通过：固定head manifold在train24上可以承载policy-effective expert行为，故当前不扩大
+FactorHeads或rank。高tensor reconstruction error与近等价closed-loop并存，也再次证明reconstruction不能选择方法。
+privileged free Programs和投影adapter只用于接口定位，不是held deployment路线。

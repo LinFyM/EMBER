@@ -145,10 +145,10 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F0b.07 | no-video paired400 | unconditional diagnostic | `completed`；48/400，correct净+75，p=`2.1689e-16` |
 | F0b.08 | fixed rows/state/env/policy RNG/K/video ordinal与完整paired统计 | execution contract | `completed`；7面板逐行核对mismatch全0，见`video_causality_evidence.json` |
 | F0b.09 | +15、p<.05、same-task±10/90%等 | advisory thresholds | `completed-reporting`；wrong/reverse/no-video达absolute与显著性门槛，same-task总分达标但success retention=85.37%，shuffle方向门槛失败 |
-| F1.01 | 仅移除fresh输出detach的matched干预 | training recommendation | `queued after no-Text attribution chain` |
-| F1.02 | 保持frozen hidden detach、拓扑、rank16、data/B20/optimizer/LR/seed/K | single-variable contract | `queued` |
-| F1.03 | source零梯度、fresh modules非零梯度测试 | regression requirement | `queued` |
-| F1.04 | 专家root-cause/method/negative thresholds | advisory thresholds | `registered`；与owner稳定性合同并列报告 |
+| F1.01 | 仅移除fresh输出detach的matched干预 | training recommendation | `completed through A/B/C attribution`；B先隔离no-Text，C相对B只恢复三项projected output credit；C macro25=`110` |
+| F1.02 | 保持frozen hidden detach、拓扑、rank16、data/B20/optimizer/LR/seed/K | single-variable contract | `confirmed by run contracts`；B/C均fresh world6，除目标autograd连接外合同一致 |
+| F1.03 | source零梯度、fresh modules非零梯度测试 | regression requirement | `completed`；C macro1 grounding/interaction全组nonzero finite，source policy gradient tensors=0，见`gradient_credit_evidence.json` |
+| F1.04 | 专家root-cause/method/negative thresholds | advisory thresholds | `negative for root-cause claim`；B→C仅+6、p=`.45138`且breadth不增；C25→50仍33 lost、breadth6→4，不能围绕detach继续调参 |
 | F2.01 | 收集25/50 lost/gained/retained rollout states和首次分歧 | unconditional diagnostic | `completed`；52 lost / 13 gained / 71 retained均采集两checkpoint occupancy；136/136在首次replan已分歧，初态action RMS最小`.04284` |
 | F2.02 | 构造固定`S25 union S50`并用expert/teacher reference比较同状态error | unconditional diagnostic | `underdetermined-after-audit`；fixed union与两checkpoint逐replanaction已完成，但validation task expert不存在且读取held teacher action违反信息墙，因此只能比较checkpoint disagreement，不能伪称expert error |
 | F2.03 | 分别检查offline更好、lost occupancy更差、failure前分歧、gained反向 | causal criteria | `refuted for the simple occupancy-divergence claim`；offline loss改善，但lost在macro50 occupancy的checkpoint disagreement均值反而低`.00655`，gained高`.01129`；所有行从首个replan已分歧，缺少合法reference不能判断哪一方向更正确 |
@@ -157,10 +157,10 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F3.01 | 从有support checkpoint冻结8 heads续训到下一节点 | unconditional mechanism diagnostic | `completed`；A macro25冻结八个FactorHeads续到macro50，16个head tensors不变、404/481 upstream tensors变化 |
 | F3.02 | lost≤20、retention≥90%、score≥110、breadth不降 | advisory thresholds | `completed-reporting`；117分满足score≥110，但33 lost、73.17% retention且breadth下降，其余门槛失败 |
 | F3.03 | 若仍崩落，责任后移upstream/objective/occupancy或fixed-head reachability | inference rule | `supported`；冻结heads显著优于正常84（49 gained / 16 lost，`p=5.08e-5`），证明head co-drift是放大器；仍相对起点丢33，证明不是充分根因并已进入F4 |
-| F4.01 | 固定heads、每task自由优化20x16x256 Program逼近train24 expert | unconditional oracle | `queued` |
-| F4.02 | 在train-task closed loop比较expert与投影后LoRA | oracle validation | `queued` |
-| F4.03 | family-wise q/v/action-in/out reachability与endpoint单列 | analysis requirement | `queued` |
-| F4.04 | ≥90% expert success则停止扩大head/rank，否则支持不可达 | advisory decision rule | `registered`；只作诊断，不成为deployment carrier |
+| F4.01 | 固定heads、每task自由优化20x16x256 Program逼近train24 expert | unconditional oracle | `completed`；24个privileged free Programs各优化3000步，heads逐项固定，完整curve与task metrics已导出 |
+| F4.02 | 在train-task closed loop比较expert与投影后LoRA | oracle validation | `completed`；同一1200 rows direct=`658`、projected=`659`，7 gained / 6 lost，Jaccard=`.98045` |
+| F4.03 | family-wise q/v/action-in/out reachability与endpoint单列 | analysis requirement | `completed`；effective-BA relative L2均值q=`.95212`、v=`.84250`、action-in=`.59157`、action-out=`.46702`，raw-factor各family也完整公开 |
+| F4.04 | ≥90% expert success则停止扩大head/rank，否则支持不可达 | advisory decision rule | `passed decisively`；projected/direct=`100.15%`，当前停止扩大head/rank；oracle只定位接口，不成为deployment carrier |
 | F5.01 | 最后做matched conflict-safe aggregation | final diagnostic | `conditional but this goal must resolve`；前因充分解释时以`not-applicable`回应，否则执行 |
 | F5.02 | 保持per-task gradients、AdamW、LR、tasks、data，只换aggregation | single-variable contract | `queued if applicable` |
 | F5.03 | macro25相当且25→50 lost显著下降才支持conflict | causal threshold | `registered` |
@@ -177,7 +177,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | G4 | 每个formal run的commit/dirty diff/source/config/checkpoint/metrics provenance | `completed for six reviewed panels`；training/eval commit差异、schema、manifest和contract均显式保留 |
 | G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `completed`；见`writer_drift_evidence.json`，包含4点module gradients、3区间stage/FactorHead cross-decode与fixed-B20/strict transitions |
 | G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `completed with scientific boundary`；`occupancy_evidence.json`公开136行轨迹统计、初态首次分歧和fixed-union checkpoint disagreement；validation expert/teacher error因information wall明确记为不可判定，不用代理量冒充 |
-| G7 | expert LoRA在head manifold投影误差、投影后closed-loop、family reachability | `queued`；F4 |
+| G7 | expert LoRA在head manifold投影误差、投影后closed-loop、family reachability | `completed`；`reachability_evidence.json`含24-task raw/effective误差、family拆分、1200 paired rows与完整provenance |
 | G8 | objective/mean/Adam moment/shared heads/shared Program的matched conflict evidence | `conditional`；F5执行或证据化not-applicable |
 | G9 | breadth@1/@5/@10、task histogram、suite minimum、top3 concentration | `completed for six reviewed panels`；公共metric helper已扩展，新strict结果继续沿用 |
 

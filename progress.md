@@ -5,7 +5,7 @@
 
 ## Current authority and scope
 
-- 当前正在完成远程仓库独立复核整理；不使用subagents，不启动GPU工作；
+- 当前远程仓库独立复核整理已完成；本次没有使用subagents或启动GPU工作；
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`；
 - 当前没有active scientific design、训练、评测、resume或successor；
 - 当前最新被测架构是EMBER-LMMPC Core-Addressed Reader，设计已封存且formal non-pass；
@@ -55,6 +55,6 @@ aggregate、paired transition、per-task/per-suite和stage数据均已重述到�
 - 18个clean detached worktrees已移除，只保留canonical workspace；临时Codex、pytest和Python cache已清理；
 - 当前测试集`287 passed`；canonical Writer编译/导入、20份JSON config、9个本地Markdown引用、Git diff和
   authority禁用候选检查均已通过；
-- commit与remote push尚待本次交付执行。
+- review snapshot已经commit并同步到`origin/codex/bci-continuation`。
 
 当前不允许从本文推导自动launch；仓库不登记preferred successor。

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **in progress，复核内容与本地验证已完成，等待commit和remote push**。
+状态：2026-08-18 **completed，远程仓库独立复核快照已整理、验证并同步**。
 
 ## Goal
 
@@ -34,7 +34,7 @@
 - [x] 从当前authority删除on-policy replay等未经实施的下一步候选；
 - [x] 删除无调用者的旧slot-set、reward实验模块和旧reader类，保留Git provenance；
 - [x] 清理可恢复的clean detached worktrees和临时cache；
-- [ ] 完成commit与remote push；本地全量CPU验证、引用检查和diff审计已通过。
+- [x] 完成commit与remote push；本地全量CPU验证、引用检查和diff审计均已通过。
 
 ## Current decision
 

@@ -161,6 +161,7 @@ policy seed root与noise common prefix；正常并行拓扑低位差异使macro2
   `p=.05466`；replay-consistent 38行同样为`-.007023`；
 - gained rows反而为`+.011293`，11正/2负，`p=.00610`；retained为`+.002409`，`p=.1993`；
 - lost与retained在共同初态的checkpoint action RMS均值为`.19428`和`.14297`，但Mann--Whitney `p=.1630`。
+- 136/136行在初始状态的第一次replan即出现checkpoint行为分歧；初态action RMS范围为`.04284`到`.48279`。
 
 这不支持“macro50只因进入其自身occupancy后两checkpoint分歧变大而丢失support”的简单版本，方向在lost/gained间
 反而与该预测相反。它也不能证明macro50动作更正确：validation task expert不可用，且没有读取held teacher action，

@@ -135,7 +135,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F0a.03 | 覆盖patch grounding q/k/out、interaction、language projection | coverage requirement | `completed`；前两者在macro25均为no-gradient，language为nonzero |
 | F0a.04 | 覆盖Text/Action Meta-LoRA、Core、Procedure、memory、Reader、K-set、M2P、8 heads | coverage requirement | `completed for sealed A`；上述各组macro25均nonzero finite，新B/C后续分别复核 |
 | F0a.05 | source policy nonzero grad tensors必须为0 | safety/contract | `completed`；fresh/macro25均0 |
-| F0a.06 | 新增稳定regression，不能再以fake部分路径代表全路径 | code recommendation | `queued` |
+| F0a.06 | 新增稳定regression，不能再以fake部分路径代表全路径 | code recommendation | `completed`；真实functional audit覆盖全部参数组，稳定测试另覆盖projected outputs局部credit、source freeze与intended-path分组完整性 |
 | F0b.01 | macro25 correct strict paired400 | unconditional diagnostic | `completed`；123/400，clean sealed raw rows |
 | F0b.02 | same-task-other paired400 | unconditional diagnostic | `completed`；125/400，correct-only 18 / control-only 20 |
 | F0b.03 | cross-suite-wrong paired400 | unconditional diagnostic | `completed`；81/400，correct净+42，p=`1.3816e-5` |
@@ -149,14 +149,14 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F1.02 | 保持frozen hidden detach、拓扑、rank16、data/B20/optimizer/LR/seed/K | single-variable contract | `queued` |
 | F1.03 | source零梯度、fresh modules非零梯度测试 | regression requirement | `queued` |
 | F1.04 | 专家root-cause/method/negative thresholds | advisory thresholds | `registered`；与owner稳定性合同并列报告 |
-| F2.01 | 收集25/50 lost/gained/retained rollout states和首次分歧 | unconditional diagnostic | `queued` |
-| F2.02 | 构造固定`S25 union S50`并用expert/teacher reference比较同状态error | unconditional diagnostic | `queued` |
-| F2.03 | 分别检查offline更好、lost occupancy更差、failure前分歧、gained反向 | causal criteria | `queued` |
-| F2.04 | 若所有fixed states也更好却失败，转查loss-success/replan/tail | alternative branch | `conditional` |
-| F2.05 | 只有证据支持才用预冻结occupancy panel替换B20训练 | conditional intervention | `conditional`；不支持则`not-applicable` |
-| F3.01 | 从有support checkpoint冻结8 heads续训到下一节点 | unconditional mechanism diagnostic | `queued` |
-| F3.02 | lost≤20、retention≥90%、score≥110、breadth不降 | advisory thresholds | `registered` |
-| F3.03 | 若仍崩落，责任后移upstream/objective/occupancy或fixed-head reachability | inference rule | `queued` |
+| F2.01 | 收集25/50 lost/gained/retained rollout states和首次分歧 | unconditional diagnostic | `completed`；52 lost / 13 gained / 71 retained均采集两checkpoint occupancy；136/136在首次replan已分歧，初态action RMS最小`.04284` |
+| F2.02 | 构造固定`S25 union S50`并用expert/teacher reference比较同状态error | unconditional diagnostic | `underdetermined-after-audit`；fixed union与两checkpoint逐replanaction已完成，但validation task expert不存在且读取held teacher action违反信息墙，因此只能比较checkpoint disagreement，不能伪称expert error |
+| F2.03 | 分别检查offline更好、lost occupancy更差、failure前分歧、gained反向 | causal criteria | `refuted for the simple occupancy-divergence claim`；offline loss改善，但lost在macro50 occupancy的checkpoint disagreement均值反而低`.00655`，gained高`.01129`；所有行从首个replan已分歧，缺少合法reference不能判断哪一方向更正确 |
+| F2.04 | 若所有fixed states也更好却失败，转查loss-success/replan/tail | alternative branch | `not-applicable as stated`；没有合法expert reference，不能建立“所有fixed states也更好”的前提；剩余解释保留为未裁决边界，不据此启动新干预 |
+| F2.05 | 只有证据支持才用预冻结occupancy panel替换B20训练 | conditional intervention | `not-applicable`；F2方向未支持该前提，不替换B20 |
+| F3.01 | 从有support checkpoint冻结8 heads续训到下一节点 | unconditional mechanism diagnostic | `completed`；A macro25冻结八个FactorHeads续到macro50，16个head tensors不变、404/481 upstream tensors变化 |
+| F3.02 | lost≤20、retention≥90%、score≥110、breadth不降 | advisory thresholds | `completed-reporting`；117分满足score≥110，但33 lost、73.17% retention且breadth下降，其余门槛失败 |
+| F3.03 | 若仍崩落，责任后移upstream/objective/occupancy或fixed-head reachability | inference rule | `supported`；冻结heads显著优于正常84（49 gained / 16 lost，`p=5.08e-5`），证明head co-drift是放大器；仍相对起点丢33，证明不是充分根因并已进入F4 |
 | F4.01 | 固定heads、每task自由优化20x16x256 Program逼近train24 expert | unconditional oracle | `queued` |
 | F4.02 | 在train-task closed loop比较expert与投影后LoRA | oracle validation | `queued` |
 | F4.03 | family-wise q/v/action-in/out reachability与endpoint单列 | analysis requirement | `queued` |
@@ -176,7 +176,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | G3 | intended modules实际gradient表与首次非零macro | `partial`；fresh/macro25完整表与first-observed state已公开，新B/C和精确首次macro随训练补齐 |
 | G4 | 每个formal run的commit/dirty diff/source/config/checkpoint/metrics provenance | `completed for six reviewed panels`；training/eval commit差异、schema、manifest和contract均显式保留 |
 | G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `completed`；见`writer_drift_evidence.json`，包含4点module gradients、3区间stage/FactorHead cross-decode与fixed-B20/strict transitions |
-| G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `queued`；F2 |
+| G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `completed with scientific boundary`；`occupancy_evidence.json`公开136行轨迹统计、初态首次分歧和fixed-union checkpoint disagreement；validation expert/teacher error因information wall明确记为不可判定，不用代理量冒充 |
 | G7 | expert LoRA在head manifold投影误差、投影后closed-loop、family reachability | `queued`；F4 |
 | G8 | objective/mean/Adam moment/shared heads/shared Program的matched conflict evidence | `conditional`；F5执行或证据化not-applicable |
 | G9 | breadth@1/@5/@10、task histogram、suite minimum、top3 concentration | `completed for six reviewed panels`；公共metric helper已扩展，新strict结果继续沿用 |

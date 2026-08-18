@@ -905,3 +905,48 @@ v5只有macro25一个正式closed-loop点，且functional loss到该点仍下降
 `1/2/4/5/6/7` topology，从同一checkpoint exact-resume macro26--50，再做第二次K4 strict paired400和相邻
 churn分析。若macro50继续上升，保留同一路线；若持平或回落且BA继续换向，则v5终局，下一单变量才针对现有
 factor commitment所接收的functional credit，而不是回头修改已经通过的Procedure/reader。
+
+### 20.7 v5 macro50稳定性终局与最早未解接口
+
+同一formal run严格保持world6和gpu01物理`1/2/4/5/6/7`，从macro25 exact-resume到macro50并完整exit0。
+macro26--50 recovery wall=`749.598s`，每macro仍为24 tasks等权且K1--K4各6 tasks；global functional loss从
+macro21--25均值`.116333`继续降到macro46--50均值`.109615`，16/24 train tasks的末5轮均值低于macro21--25。
+checkpoint保留完整Writer、optimizer、sampler/RNG与六rank state，0 OOM/nonfinite。该证据足以排除“macro25训练量
+不足、继续同recipe即可稳定共同上升”。
+
+macro50 K4 strict paired400完整exit0，结果为`84/400`、breadth5，per-task=
+`0/1/45/1/0/29/8/0`、per-suite=`1/46/29/8`，top3 tasks贡献`82/84=.97619`。与同一400行macro25严格配对为
+`71 retained / 13 gained / 52 lost / 264 both-fail`，churn65、net`-39`、Jaccard`.52206`、McNemar exact
+p=`1.17e-6`。Object3从25降到1、Goal6从43降到29，Long1从3升到8；四suite净变化为`-5/-23/-15/+4`，是明确
+task换手而非全任务均匀缩放。相对matched LPCP143为`74/10/69/247`、churn79、net`-59`；相对不同teacher
+schedule的v6-fast143、old134、compiler138、online128只能count-only比较，分别低`59/50/54/44`。
+
+训练继续产生大而material的LoRA改写。all400 effective-BA norm由macro25的`27.225`升到`43.999`，25→50
+same-condition cosine仅`.60033`、relative-L2=`1.30602`；macro50相对LPCP的norm仍为`43.999 vs 108.710`，但
+relative-L2已经`1.01931`，不是沿LPCP简单补scale。first4 effective targets由`16.88`增至`19.50`，q/v能量从
+`.8697/.1300`变为`.8430/.1567`，写出更广且不再更q-dominant，却伴随closed-loop崩塌。25→50的gained、lost、
+retained-success与retained-failure样本在BA cosine、relative-L2或norm上均不可分，因此不能用LoRA强度、target数、
+rank或几何距离选择方向。
+
+same-task四个K4 conditions的macro25→50增量并未分裂：八task的task-mean/sample update energy为
+`.9796--.9965`，macro50 condition BA cosine仍`.99170`。相反，不同task的task-mean update pairwise cosine均值仅
+`.35996`。所以当前换手不是同task不同video correction近正交，也不是一个全局common update覆盖全部tasks；Writer
+对各task形成了video-coherent、task-specific的大改写，但B20 shared functional objective没有保留held on-policy
+有用support。该内部coherence不是六臂closed-loop鲁棒性或视频特异性证明；因correct只有84且不稳定，不补controls。
+
+macro50 validation8×4逐stage也排除了重新归因于Procedure趋同、reader、K-set或M2P。raw Procedure确实进一步
+趋同：between-task cosine由`.95372→.97167`、temporal centered energy由`.09454→.06242`、correct/reverse
+relative-L2由`.57396→.46834`。但v5 reader把较小差异放大得更强，H_set correct/reverse由`1.01175→1.06524`，
+reader/raw由`1.7627x→2.2745x`；Core-fused/compiled/effective-BA也由`1.10781/1.13327/.85958`升到
+`1.15702/1.16193/.95151`。H_set/compiled same-task cosine保持`.99066/.98783`，between-task仍为
+`.36716/.30910`。因此Procedure趋同是值得长期监控的上游趋势，但它没有在本轮最早抹掉时序或task结构，不能用
+contrastive、matching或reverse loss作为当前首修变量。
+
+本轮终局判断是：v5的Core-conditioned layer/rank reader是可保留的正机制，它相对v4把macro25 strict
+`104→123`并持续保留有向stage证据；但`该reader + bounded K-set/M2P + native rank16 FactorHeads + B20
+functional-only credit`无法稳定共同积累，macro50终局non-pass。最早未解接口为
+**offline B20 functional cotangent -> task-specific native factor commitment -> held on-policy support retention**。
+现有证据更偏向credit/retention而非carrier、memory容量、rank16容量或“没有写出”，但尚不能完全拆开loss方向与
+FactorHeads可达坐标的责任。不得resume macro75、补六臂、扫rank/scale/LR/seed或回头重做已通过的reader；LMMPC
+主思想、Dynamic-K、memory token、Core/Procedure和rank16本身均未被否定。当前停止实验，下一单变量在owner讨论后
+再确定。

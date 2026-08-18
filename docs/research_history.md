@@ -315,6 +315,31 @@ position作Keys；同地址首帧中心化memory dynamic作唯一Values。K-set�
 且必须fresh。该实验检验V6有效的“task-conditioned query读取微弱有向证据”原则能否在LMMPC四流中成立，不恢复
 V6 checkpoint、frozen compiler或旧slot实现，也不增加negative/matching loss。
 
+### 3.12 Layer-Matched Memory Program Compiler v5
+
+v5唯一把v4的Core-unconditioned endpoint Query替换为Core-conditioned layer/rank address Query，其余bounded K-set、
+Core fusion、bounded axial M2P、native rank16 FactorHeads和B20 functional-only recipe完全不变。机制门显示raw
+Procedure correct/reverse差异几乎不变时，reader/raw由v4的`.718x`提高到`1.819x`；fresh macro25 strict也从matched
+v4的`104`提高到`123`，严格配对为`85 retained / 38 gained / 19 lost`。因此该reader是有真实closed-loop收益的
+正机制。
+
+同一world6/topology exact-resume到macro50后，functional loss继续降、checkpoint完整exit0，但K4 strict降至
+`84/400`、breadth5，per-task=`0/1/45/1/0/29/8/0`、per-suite=`1/46/29/8`。25→50严格配对为
+`71 retained / 13 gained / 52 lost / 264 both-fail`、churn65、net`-39`、Jaccard`.52206`；相对LPCP143为
+`74/10/69/247`、net`-59`。Object3从25降到1、Goal6从43降到29，Long1从3升到8，证明训练在tasks间换手。
+
+这不是Writer停止学习：all400 BA norm从`27.225→43.999`，25→50 cosine`.60033`、relative-L2=`1.30602`；
+effective targets增加且q dominance下降。也不是同task不同video update分裂：四K4条件的update task-mean/sample
+energy为`.9796--.9965`，而不同task mean update cosine仅`.35996`。macro50 raw Procedure虽更趋同
+（correct/reverse `.46834`），reader仍放大到H_set=`1.06524`，compiled/BA=`1.16193/.95151`，same-task约`.99`。
+所以最早未解接口后移为`offline B20 functional cotangent -> task-specific native factor commitment -> held on-policy
+support retention`，不是carrier、Procedure reader、K-set或LoRA未写出。
+
+v5精确recipe终局，不续macro75、六臂或参数小扫。该负结果只否定
+`Core-conditioned reader + bounded K-set/M2P + native rank16 FactorHeads + B20 functional-only training`的稳定共同积累；
+reader本身保留为正机制，LMMPC、memory token、Dynamic-K、Core/Procedure和rank16均未被否定。当前无active successor，
+等待owner讨论后再决定下一单变量。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

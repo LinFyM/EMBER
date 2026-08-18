@@ -1,7 +1,8 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **active**。本计划对应当前持续研究goal；LMMPC-v4已完成macro25/50、两次strict paired400和
-逐stage终局分析，当前phase为只修改最早失效的Procedure→layer/rank memory读取接口并验证LMMPC-v5。
+状态：2026-08-18 **active，暂停实验等待owner讨论**。本计划对应当前持续研究goal；LMMPC-v5已完成macro25/50、
+两次strict paired400和逐stage终局分析。其reader单变量有真实正收益，但B20 functional-only recipe未能稳定保留
+held closed-loop support；当前没有active successor或GPU run。
 
 ## Goal
 
@@ -81,8 +82,10 @@
   validation8 pre-strict stage证据。
 - [x] 执行v5 macro25 strict paired400和全量逐接口分析：`123/400`、breadth8，相对v4 macro25严格净增19，但
   相对LPCP143净丢20；reader改进保留，最早缺口后移到functional cotangent到native factor commitment。
-- [ ] 保持原world6/topology exact-resume v5 macro26--50，完成第二次strict paired400和相邻checkpoint稳定性分析，
-  以真实峰值/平台而非macro25单点裁决v5。
+- [x] 保持原world6/topology exact-resume v5 macro26--50，完成第二次strict paired400和相邻checkpoint稳定性分析：
+  strict由`123→84`，`71 retained / 13 gained / 52 lost`，确认当前recipe未稳定共同积累。
+- [x] 完成macro25/50逐stage、all400 effective-BA、first4 factor结构及同task四K4 update coherence联合分析；排除
+  Procedure/reader失效、video-local update分裂和LoRA未写出为本轮首因。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
@@ -100,18 +103,17 @@ H_set进一步降至`.2320/.1844`，即读取器只保留约`.43x`的有向差�
 放大到`1.30`左右。因此不先加Procedure contrastive/matching或reverse loss；最早接口是v4的Core-unconditioned
 endpoint Query与Procedure Keys共同漂移并抵消memory Value差异。
 
-v5只替换这一读取接口：固定layer/rank地址先从Core形成task-conditioned Query，再以带真实frame position的完整
-Procedure作Keys，读取centered layer/rank memory Values；K-set、Core fusion、bounded M2P、native rank16 FactorHeads和
-B20 functional-only recipe不变，且incompatible fresh。下一裁决点是它能否在真实K4上减少reader attenuation并保持
-constant identity、K置换和native写出。clean `86c9e63`的world6 macro2、task38机制、validation8 stage和371-frame
-门均已通过：validation8 raw Procedure reverse relative-L2=`.71525`，H_set=`1.30135`，reader/raw=`1.81943x`，
-compiled/BA=`1.28587/.70012`；H_set within/between-task cosine=`.97045/.24495`。fresh world6 macro25现已完整
-exit0；loss从`.15612`降到`.11364`，24个task中23个的末5轮均值低于前5轮。macro25 validation8仍把raw
-Procedure的`.57396`有向差异放大为H_set=`1.01175`、compiled=`1.13327`、BA=`.85958`，同时
-H_set/compiled/BA同task四conditions cosine=`.98908/.98621/.99285`。这些内部证据不能替代closed-loop；下一裁决
-已完成：macro25 strict=`123/400`、breadth8、per-task=`3/3/44/25/1/43/3/1`。相对完全配对的v4 macro25为
-`85 retained / 38 gained / 19 lost`、net`+19`，证明reader单变量有真实闭环收益；相对LPCP143则为
-`100/23/43`、net`-20`，Object3和Long1分别净丢10/13。all400 BA相对v4已明显换向（cosine`.4210`、
-relative-L2`1.0808`），但gained/lost的BA距离和幅度不可分，最早缺口后移到functional credit与native factor
-commitment。由于v5尚只有一个正式点且loss仍下降，下一裁决是原world6/topology exact-resume到macro50并做第二次
-strict400；不先改Procedure、loss、rank或scale。
+v5只替换reader：固定layer/rank地址先从Core形成task-conditioned Query，再以带真实frame position的完整Procedure
+作Keys，读取centered layer/rank memory Values；K-set、Core fusion、bounded M2P、native rank16 FactorHeads和B20
+functional-only recipe不变。该变量在机制和闭环上均有正收益：validation8 reader/raw由v4的`.718x`提高到
+`1.76--2.27x`，macro25 strict由matched v4的`104`提高到`123`。但同一run exact-resume到macro50后strict降为
+`84/400`、breadth5，25→50=`71 retained / 13 gained / 52 lost`、churn65、net`-39`；Object3和Goal6分别净丢
+24/14，Long1净增5。functional loss仍降到末5轮均值`.10962`，BA norm由`27.23→44.00`且relative-L2=`1.306`，
+说明不是训练停止或LoRA未写出。
+
+macro50 raw Procedure时序确实更趋同，但H_set/compiled/BA的correct-reverse relative-L2仍升至
+`1.065/1.162/.952`；same-task四K4 update的task-mean/sample energy为`.980--.996`，不同task update cosine仅
+`.360`。因此本轮最早未解接口是**offline B20 functional cotangent到task-specific native factor commitment再到held
+on-policy support retention**，而不是Procedure趋同、reader attenuation、K-set覆盖或same-task视频分裂。v5当前
+recipe终局，不续macro75、不补六臂或参数小扫；reader作为正机制保留，LMMPC、memory、Dynamic-K与rank16不被否定。
+当前停止实验等待owner讨论，下一单变量尚未授权建立。

@@ -285,6 +285,36 @@ commitment，fresh gate初始`.25`、最大`.5`；不改变rank、loss、时序�
 `bounded M2P + unbounded nonlinear K-set + 当前functional credit`组合，不否定memory、Dynamic-K、rank16或
 cross-video learned aggregation。
 
+### 3.11 Layer-Matched Memory Program Compiler v4
+
+v4只把v3的K-set raw nonlinear correction改成per-video mean-anchored逐cell bounded commitment；Core/Procedure、
+layer/rank memory reader、Core fusion、bounded M2P、native rank16 FactorHeads和B20 functional-only recipe不变。
+同一fresh world4 run完成macro25及exact-resume macro50：
+
+| checkpoint | strict | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `104/400` | 6 | `3/0/41/14/2/39/5/0` | `3/55/41/5` |
+| macro50 | `102/400` | 6 | `1/0/39/4/0/46/10/2` | `1/43/46/12` |
+
+25→50=`77 retained / 25 gained / 27 lost / 271 both-fail`、churn52、net`-2`、Jaccard`.596899`。macro50相对
+LPCP143=`79/23/64`、churn87、net`-41`。Object suite净丢12，Goal/Long分别净增5/7，仍是task换手；不续macro75或
+六臂。BA并未冻结：first4 norm由`27.2849→49.0819`，25→50 cosine`.613461`、relative-L2`1.440609`，所以绝对
+低分不能归因于Writer没有产生material update。
+
+validation8逐stage显示raw Procedure correct/reverse relative-L2在macro2/25/50为`.720346/.497569/.434961`，而
+H_set为`.516868/.231996/.184355`，macro50 reader只保留约`.424x`。Core-fused、compiled和effective-BA进一步为
+`.156779/.156534/.143189`。同task不同K4的compiled/BA cosine仍约`.9941/.9962`，说明K-set稳定性并非当前首因。
+
+为判断Procedure趋同是否应先修，使用历史V6-LPCP做同口径只读诊断。V6 raw Procedure更趋同：between-task cosine
+`.997294`、correct/reverse relative-L2`.109306`；但Procedure slot reader把有向差异放大到`1.292--1.301`，compiled/
+BA仍约`.262/.263`。因此“让raw Procedure彼此更远”不是充分必要修复，v4最早失效是Core-unconditioned endpoint
+Query与Procedure Keys共漂后抵消memory Value差异。
+
+active v5只替换该reader：固定layer/rank address先查询Core得到task-conditioned Query；完整Procedure以真实采样帧
+position作Keys；同地址首帧中心化memory dynamic作唯一Values。K-set、Core fusion、M2P、rank16、loss和recipe不变，
+且必须fresh。该实验检验V6有效的“task-conditioned query读取微弱有向证据”原则能否在LMMPC四流中成立，不恢复
+V6 checkpoint、frozen compiler或旧slot实现，也不增加negative/matching loss。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

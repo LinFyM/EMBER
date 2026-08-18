@@ -33,7 +33,7 @@ _BATCH_THROUGHPUT_POLICY = (
     "highest_measured_batch_throughput_with_device_memory_headroom"
 )
 _WRITER_THROUGHPUT_BY_SCHEMA = {
-    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v4": (
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v5": (
         _BATCH_THROUGHPUT_POLICY
     ),
 }

@@ -39,7 +39,7 @@ import ember.writer.live_adapter as live_adapter_module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ACTIVE_CONFIG = (
-    REPO_ROOT / "configs/pi05_writer_layer_matched_memory_program_compiler_v4.json"
+    REPO_ROOT / "configs/pi05_writer_layer_matched_memory_program_compiler_v5.json"
 )
 
 
@@ -62,7 +62,7 @@ def _dataset_stub() -> _DatasetStub:
     return _DatasetStub(rows, tuple(frame_index))
 
 
-def test_lmmpc_v4_config_is_fresh_rank16_and_profile_sealed() -> None:
+def test_lmmpc_v5_config_is_fresh_rank16_and_profile_pending() -> None:
     config = load_writer_config(ACTIVE_CONFIG)
     lora = load_pi05_lora_contract(REPO_ROOT / "configs/pi05_lora_v1.json")
     assert (lora.rank, lora.alpha, lora.parameter_count) == (16, 16, 1_287_168)
@@ -73,30 +73,13 @@ def test_lmmpc_v4_config_is_fresh_rank16_and_profile_sealed() -> None:
     assert "vl_meta_lora_rank" not in config["writer"]
     assert config["writer"]["video_set_max_relative_correction"] == 0.5
     assert config["writer"]["m2p_max_relative_correction"] == 0.5
+    assert config["writer"]["procedure_memory_readout"].startswith(
+        "core_conditioned_policy_address_queries"
+    )
     assert config["data"]["dynamic_k_max"] == 4
     assert config["optimization"]["functional_policy_microbatch_size"] == 5
-    assert config["formal_run"]["status"] == "sealed"
-    evidence = config["formal_run"]["profile_evidence"]
-    assert evidence["source_commit"] == (
-        "8c40a56cb352ddd57098e646a10d3a2d32ec1c35"
-    )
-    assert evidence["completion_macro"] == 2
-    assert evidence["world_size"] == 3
-    assert evidence["functional_policy_microbatch_size"] == 5
-    assert evidence["global_k_histogram"] == {"1": 6, "2": 6, "3": 6, "4": 6}
-    assert evidence["scheduled_max_condition_frames"] == 371
-    assert evidence["procedure_stage_replacement_relative_l2"] > 0.99
-    assert evidence["video_set_maximum_correction_over_anchor_rms"] < 0.5
-    assert evidence["video_set_gate_and_branches_gradients_nonzero"] is True
-    assert evidence["m2p_maximum_correction_over_anchor_rms"] < 0.5
-    assert evidence["m2p_gate_and_block_gradients_nonzero"] is True
-    assert evidence["stage_h_set_between_task_cosine"] < 0.5
-    assert evidence["stage_h_set_within_task_cosine"] > 0.95
-    assert evidence["stage_h_set_reverse_relative_l2"] > 0.4
-    assert evidence["constant_effective_ba_max_abs"] == 0.0
-    assert evidence["k_permutation_lora_max_abs"] == 0.0
-    assert evidence["vl_meta_lora_parameter_count"] == 0
-    assert evidence["source_policy_nonzero_gradient_tensors"] == 0
+    assert config["formal_run"]["status"] == "unsealed_pending_live_profile"
+    assert "profile_evidence" not in config["formal_run"]
     assert config["formal_run"]["checkpoint_macros"] == [25, 50, 75, 100]
     assert config["optimization"]["distributed"]["fresh_world_sizes"] == list(
         range(1, 7)
@@ -538,35 +521,7 @@ def test_evaluator_resolves_only_the_lmmpc_rank16_authority() -> None:
     )
 
 
-def test_generation_profile_is_sealed_from_v4_live_evidence() -> None:
+def test_v5_generation_profile_awaits_live_evidence() -> None:
     from ember.writer.evaluation import DYNAMIC_K_GENERATION_PROFILES
 
-    assert set(DYNAMIC_K_GENERATION_PROFILES) == {4}
-    profile = DYNAMIC_K_GENERATION_PROFILES[4]
-    assert profile["schema_version"] == "ember_pi05_writer_generation_profile_v2"
-    assert (
-        profile["evidence_path"]
-        == "runs/acceptance/"
-        "pi05_lmmpc_v4_k4_generation_profile_8c40a56_macro2_gpu02p7_20260818/"
-        "writer_generation_profile.json"
-    )
-    assert profile["evidence_bytes"] == 10788
-    assert profile["authority_commit"] == (
-        "8c40a56cb352ddd57098e646a10d3a2d32ec1c35"
-    )
-    assert profile["profiled_writer_model_batch_sizes"] == [8, 16, 32]
-    assert profile["supported_writer_model_batch_sizes"] == [8, 16, 32]
-    assert profile["selected_writer_model_batch_size"] == 32
-    assert profile["panel_entry_count"] == 32
-    assert profile["panel_total_sampled_frames"] == 4438
-    assert profile["longest_sampled_video_frames"] == 226
-    assert [
-        row["batch_size"] for row in profile["writer_generation_measurements"]
-    ] == [8, 16, 32]
-    assert all(
-        row["stable"] for row in profile["writer_generation_measurements"]
-    )
-    assert profile["writer_generation_measurements"][2]["loras_per_second"] > (
-        profile["writer_generation_measurements"][0]["loras_per_second"]
-    )
-    assert profile["oom_count"] == profile["nonfinite_count"] == 0
+    assert DYNAMIC_K_GENERATION_PROFILES == {}

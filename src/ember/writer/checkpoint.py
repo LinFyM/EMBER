@@ -19,8 +19,8 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.writer.errors import WriterModelError
-CHECKPOINT_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_checkpoint_v4"
-DEPLOYMENT_CHECKPOINT_KIND = "layer_matched_memory_program_compiler_v4_macro_checkpoint"
+CHECKPOINT_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_checkpoint_v5"
+DEPLOYMENT_CHECKPOINT_KIND = "layer_matched_memory_program_compiler_v5_macro_checkpoint"
 _CHECKPOINT_NAME = re.compile(r"macro_([0-9]{8})")
 
 

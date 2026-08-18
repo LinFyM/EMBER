@@ -496,7 +496,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         parameter_memory = self.memory_reader(
             encoding.layer_memory,
+            program.core,
+            program.valid_core,
             program.procedure,
+            program.positions,
             program.valid_procedure,
             context.video_bounds,
         )

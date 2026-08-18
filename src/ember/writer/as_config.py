@@ -11,9 +11,9 @@ from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v4"
+AS_WRITER_CONFIG_SCHEMA = "ember_pi05_layer_matched_memory_program_compiler_writer_v5"
 AS_WRITER_LAUNCH_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v4"
+    "ember_pi05_layer_matched_memory_program_compiler_writer_launch_v5"
 )
 
 
@@ -73,7 +73,7 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _validate_method(config: Mapping[str, Any]) -> None:
     writer = config.get("writer", {})
     expected_writer = {
-        "architecture": "pi05_layer_matched_memory_program_compiler_v4",
+        "architecture": "pi05_layer_matched_memory_program_compiler_v5",
         "generated_adapter": "complete_pi05_task_specific_rank16_lora",
         "frame_stride": 5,
         "include_final_frame": True,
@@ -84,9 +84,13 @@ def _validate_method(config: Mapping[str, Any]) -> None:
         "memory_token_count": 16,
         "memory_topology": "18_action_expert_layers_x_16_lora_rank_coordinates",
         "procedure_memory_readout": (
-            "stage_addressed_attention_over_centered_layer_rank_memory"
+            "core_conditioned_policy_address_queries_rope_procedure_keys_"
+            "centered_layer_rank_memory_values"
         ),
-        "directed_channel": "positive_order_procedure_stage_addressed_parameter_memory",
+        "directed_channel": (
+            "task_core_query_plus_ordered_procedure_key_selects_native_"
+            "parameter_memory_value"
+        ),
         "video_set": (
             "address_preserving_mean_anchored_bounded_deepsets_consensus_"
             "k1_exact_identity"

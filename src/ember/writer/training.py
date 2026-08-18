@@ -459,7 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_writer_layer_matched_memory_program_compiler_v4.json",
+        / "configs/pi05_writer_layer_matched_memory_program_compiler_v5.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

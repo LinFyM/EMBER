@@ -35,10 +35,10 @@ from ember.writer.errors import WriterModelError
 
 
 DYNAMIC_K_ADAPTER_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v4"
+    "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v5"
 )
 DYNAMIC_K_EPISODE_SCHEMA = (
-    "ember_pi05_layer_matched_memory_program_compiler_episode_v4"
+    "ember_pi05_layer_matched_memory_program_compiler_episode_v5"
 )
 DYNAMIC_K_CHECKPOINT_KIND = DEPLOYMENT_CHECKPOINT_KIND
 DYNAMIC_K_PAIRING_REFERENCE = "ember_pi05_dynamic_k_one_shot_pairing_v1"
@@ -48,72 +48,7 @@ DYNAMIC_K_VIDEO_SET_PAIRING_REFERENCE = (
 DYNAMIC_K_VIDEO_CONDITIONS = frozenset(VIDEO_CONDITIONS)
 DYNAMIC_K_GENERATION_BATCH_SIZE = 32
 DYNAMIC_K_GENERATION_SAFE_BATCH_SIZE = 16
-DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {
-    4: {
-        "schema_version": "ember_pi05_writer_generation_profile_v2",
-        "evidence_path": (
-            "runs/acceptance/"
-            "pi05_lmmpc_v4_k4_generation_profile_8c40a56_macro2_gpu02p7_20260818/"
-            "writer_generation_profile.json"
-        ),
-        "evidence_bytes": 10788,
-        "authority_commit": "8c40a56cb352ddd57098e646a10d3a2d32ec1c35",
-        "device": "NVIDIA A40",
-        "profiled_writer_model_batch_sizes": [8, 16, 32],
-        "supported_writer_model_batch_sizes": [8, 16, 32],
-        "selected_writer_model_batch_size": 32,
-        "selection_rule": (
-            "highest_measured_fixed_panel_loras_per_second_with_stable_"
-            "longest_video_batch"
-        ),
-        "panel_entry_count": 32,
-        "panel_total_sampled_frames": 4438,
-        "longest_sampled_video_frames": 226,
-        "warmup_runs_per_batch": 1,
-        "measured_runs_per_batch": 2,
-        "writer_generation_measurements": [
-            {
-                "batch_size": 8,
-                "loras_per_second": 0.21288927786288742,
-                "repeat_wall_seconds": [
-                    150.31477597681805,
-                    150.3109795448836,
-                ],
-                "peak_reserved_bytes": 15858663424,
-                "memory_headroom_bytes": 31841058816,
-                "stable": True,
-            },
-            {
-                "batch_size": 16,
-                "loras_per_second": 0.2145941135740891,
-                "repeat_wall_seconds": [
-                    149.0915017600637,
-                    149.14594256714918,
-                ],
-                "peak_reserved_bytes": 17563648000,
-                "memory_headroom_bytes": 30136074240,
-                "stable": True,
-            },
-            {
-                "batch_size": 32,
-                "loras_per_second": 0.21613530720234214,
-                "repeat_wall_seconds": [
-                    148.0645026739221,
-                    148.04630323010497,
-                ],
-                "peak_reserved_bytes": 20231225344,
-                "memory_headroom_bytes": 27468496896,
-                "stable": True,
-            },
-        ],
-        "oom_count": 0,
-        "nonfinite_count": 0,
-        "teacher_action_reads": 0,
-        "teacher_state_reads": 0,
-        "reward_reads": 0,
-        "terminal_reads": 0,
-    }
-}
+DYNAMIC_K_GENERATION_PROFILES: dict[int, dict[str, Any]] = {}
 
 
 def dynamic_k_writer_input(evaluation_k: int) -> str:

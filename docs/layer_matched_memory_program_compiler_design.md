@@ -1,6 +1,6 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-18 **active LMMPC-v4 implementation authority**。LMMPC-v1/v2/v3均已完成macro25/50 strict与逐接口
+状态：2026-08-18 **active LMMPC-v5 implementation authority**。LMMPC-v1/v2/v3/v4均已完成macro25/50 strict与逐接口
 诊断，terminal checkpoints只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成局部迭代、
 fresh训练、strict评测与逐接口分析；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅改换
 路线。
@@ -42,9 +42,12 @@ v2只修正v1已经定位的`Procedure -> layer/rank memory reader`，并证明�
 macro25/50 strict仅`71→73`，且训练后两层unbounded M2P把已经分离的Core-fused task Program重新变成共同方向。
 v3把M2P改为逐cell有界residual，macro25恢复到`102`；但继续训练到macro50反而降到`60`。新的最早断点位于更上游：
 K-set nonlinear correction相对per-video mean改写`10.19x→5.83x`，把between-task cosine在macro25/50分别从
-`.6543/.7672`推到`.9025/.9218`。v4只把这一K-set correction改为mean-anchored逐cell bounded commitment；Core、
-Action/Procedure、one-way memory、动态K、Core fusion、v3 bounded M2P、native rank16 A/B与B20 functional合同均
-不改。
+`.6543/.7672`推到`.9025/.9218`。v4只把这一K-set correction改为mean-anchored逐cell bounded commitment，成功
+关闭该覆盖接口，但macro25/50 strict仅`104→102`且churn52。对齐V6后，新的最早断点是
+`Procedure -> layer/rank memory`：v4 reader把已有correct/reverse差异继续衰减，而V6的Core-conditioned slot reader
+会放大有向差异。v5因此只把reader Query改为`policy address + task Core slot`，并在Procedure Keys上恢复RoPE；
+memory-token动态仍是唯一Value。动态K、Core fusion、两个bounded commitment、native rank16 A/B与B20 functional
+合同均不改。
 
 ## 2. 科学假设与历史继承
 
@@ -735,3 +738,96 @@ validation8×4 stage gate显示per-video mean→K-set的between-task cosine仅`.
 吞吐为`.212889/.214594/.216135 LoRA/s`，全部包含最长226-frame condition并稳定；batch32 peak reserved=
 `20,231,225,344` bytes，仍有`27,468,496,896` bytes headroom，故正式评测选择batch32。三类禁读、OOM、nonfinite
 均为0，Writer modules在rollout-scale handoff前释放。
+
+## 20. LMMPC-v4终局证据与v5单变量设计
+
+v4 fresh world4同一run完成macro25并按原world/topology exact-resume到macro50。两次K4 strict paired400均完整
+exit0：
+
+| checkpoint | correct | breadth | per-task | per-suite |
+| --- | ---: | ---: | --- | --- |
+| macro25 | `104/400` | 6 | `3/0/41/14/2/39/5/0` | `3/55/41/5` |
+| macro50 | `102/400` | 6 | `1/0/39/4/0/46/10/2` | `1/43/46/12` |
+
+25→50严格配对为`77 retained / 25 gained / 27 lost / 271 both-fail`，churn52、net`-2`、Jaccard
+`.596899`。Object3净丢10，Goal6净增7，Long两task净增7；这不是稳定共同积累。macro50相对同schedule
+LPCP143为`79/23/64`、churn87、net`-41`。top3 tasks占macro50成功的`.93137`，absolute、breadth和相邻稳定性
+都不具资格；v4不得resume macro75或补六臂。
+
+v4确实解决了v3的K-set覆盖。validation8×4中，per-video memory到bounded K-set的between-task cosine在
+macro2/25/50仅为`.40147→.40572`、`.42747→.46325`、`.47445→.51123`；same-task K4 set cosine随训练为
+`.97952→.99145→.99325`。Core-fused到bounded M2P的correct/reverse relative-L2在macro50几乎不变
+`.15678→.15653`。因此不能重新归因于K-set或M2P未受约束。
+
+LoRA也不是简单过小后停止学习。macro25→50 effective-BA norm从`27.285`增至`49.082`，两个checkpoint的
+same-condition BA cosine仅`.61346`、relative-L2=`1.44061`；但strict不增。same-task四个K4 conditions的BA
+centered variance仍约`.00125--.00579`，说明内部K4鲁棒没有阻止task换手。macro50仍低于LPCP的BA norm
+`108.700`，但历史与本轮都已证明单纯增大norm不能选择closed-loop。
+
+### 20.1 Procedure趋同不是单独根因
+
+macro2→25→50中，raw Procedure的between-task cosine为`.89451→.95898→.96981`，centered temporal energy为
+`.15489→.06561→.04748`；趋同确实存在。但同口径V6-LPCP macro25的raw Procedure between-task cosine更高，
+达到`.99729`，仍获得`143/400`。因此不得用contrastive、matching或negative margin直接把raw cosine做低。
+
+真正的分水岭在parameter readout：
+
+| checkpoint/method | raw Procedure correct/reverse rel-L2 | parameter readout rel-L2 | readout/raw | compiled rel-L2 | BA rel-L2 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| v4 macro2 | `.72035` | `.49115` | `.682x` | `.49489` | `.23376` |
+| v4 macro25 | `.49757` | `.22735` | `.457x` | `.22211` | `.17037` |
+| v4 macro50 | `.43496` | `.18503` | `.425x` | `.15653` | `.14319` |
+| V6-LPCP macro25 | `.10931` | `1.29212` | `11.82x` | `.26243` | `.26324` |
+
+v4 reader用`P_last + layer/rank address`作Query，完整Procedure作Key，centered native memory作Value；task Core只在
+readout之后进入fusion。训练使Query跟随同一Procedure endpoint，correct/reverse改变时Query与Key共同移动，最终
+把有向差异自洽地抵消。V6则用固定policy routing加task Core作Query，Procedure只通过ordered Key/Value决定阶段，
+所以即使raw Procedure高度趋同，slot readout仍能提取其小而有向的差异。v4的最早失效接口由此定位为
+**Core-unconditioned Procedure endpoint Query -> parameter-addressed memory readout**，不是raw Procedure本身、K-set、
+M2P、factor量化或LoRA强度。
+
+### 20.2 v5唯一结构变量
+
+v5保留v4每帧真实image/language/Action/memory context、V6 Core/Procedure、16个memory tokens、dynamic-K、两个
+bounded commitments、20×16 axial M2P、native rank16 FactorHeads和全部训练/eval合同。只原位替换
+`LayerRankMemoryReader`：
+
+```text
+address a[l,r] = RMSNorm(layer_id[l] + rank_id[r])
+
+Core slot c[k,l,r]
+  = CoreSlotReader(query=a[l,r], key=RMSNorm(C[k]), value=C[k])
+
+Q[k,l,r] = Wq(a[l,r] + RMSNorm(c[k,l,r]))
+K[k,t]   = Wk(RMSNorm(P[k,t])) with sampled-frame RoPE
+V[k,t,l,r]
+  = centered_t(Wm(M[k,t,l,r]) - Wm(M[k,first,l,r]))
+
+H[k,l,r] = Wo Attention(Q[k,l,r], K[k,1:T], V[k,1:T,l,r])
+```
+
+这使四条流各守其职责：language/video Core决定“这个参数地址要找什么”，Procedure决定“在有向阶段轴上何时找”，
+memory token提供“该policy layer/rank在真实context中的native Value”。每条video先独立形成同一18×16地址网格，
+随后K轴仍只在相同地址逐cell聚合，因此两层聚合后不丢parameter correspondence。
+
+Core只能改变attention Query，不能直接成为LoRA Value；constant video使`V=0`，无论language/Core是什么都必须输出
+identity LoRA。v5不把Procedure直接加到Value，不新增language-only bypass，不引入correct-minus-reverse、matching、
+negative arm或额外loss。若Core-conditioned Query仍不能让memory Value承诺有向过程，下一候选才是受限的centered
+Procedure Value residual；它不属于本轮。
+
+### 20.3 fresh边界与可证伪证据
+
+reader参数和forward contract改变，v5 checkpoint/config/eval schema与v4不兼容，必须fresh；不得部分加载v4
+Writer。实现只保留一个canonical runtime，不保留v4兼容分支。
+
+1. 结构门：每帧仍只有一次native content forward；Core slot、Q/K、memory Value及八factor family都获得gradient；
+   source policy zero-grad、constant identity、K permutation和training/deployment recompile合同不变。
+2. 接口门：真实K4中替换Core必须改变parameter readout；重复`P_last`不能复现readout；correct/reverse不得是硬反号。
+   相对matched v4 macro2，`raw Procedure -> H`的衰减必须有实质改善；若仍约`<=.6x`且没有其它有向stage增益，说明
+   本轮变量没有击中接口，不启动昂贵formal。该门不要求模仿V6的`11.8x`，也不作为closed-loop替代指标。
+3. 信息墙门：constant dynamic Value为零时，改变language/Core不能产生非零LoRA；teacher action/state/reward/
+   terminal读数保持0。
+4. 吞吐门：用真实最长K4与固定panel选择batch；不为低位浮点一致牺牲吞吐，不增加重复forward或防御性扫描。
+5. 性能门：通过机制与资源门后fresh train24到macro25并做strict paired400；只要loss和closed-loop仍有真实共同上升
+   证据就按同run exact-resume到macro50。最终以absolute、breadth、retained/gained/lost、churn和相邻checkpoint稳定性
+   裁决，不以Procedure/BA距离选模。

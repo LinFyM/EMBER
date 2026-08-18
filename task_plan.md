@@ -1,7 +1,7 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **active**。本计划对应当前持续研究goal；当前phase为LMMPC-v3终局定位后，原位实现和验证
-LMMPC-v4的mean-anchored bounded K-set commitment。
+状态：2026-08-18 **active**。本计划对应当前持续研究goal；LMMPC-v4已完成macro25/50、两次strict paired400和
+逐stage终局分析，当前phase为只修改最早失效的Procedure→layer/rank memory读取接口并验证LMMPC-v5。
 
 ## Goal
 
@@ -69,22 +69,32 @@ LMMPC-v4的mean-anchored bounded K-set commitment。
   separability和same-task coherence，而bounded branch保留部分order成分。
 - [x] 完成v4唯一canonical实现、fresh schema、CPU/architecture合同、真实K4机制、吞吐、最长视频与formal seal。
 - [x] 完成v4 K4 deployment generation profile并只写回evaluation throughput authority。
-- [ ] v4 fresh train24到macro25并完成strict paired400、逐task/suite/stage与retention/churn分析；有真实共同上升
-  证据时继续同一run到macro50。
+- [x] v4 fresh train24到macro25并完成strict paired400；同一run exact-resume到macro50并完成第二次strict、
+  逐task/suite/stage、retention/churn和effective-BA分析。
+- [x] 将v4与历史V6做同口径Procedure/reader诊断，确认原始Procedure趋同不是首因：V6从更趋同的Procedure中
+  放大有向差异，而v4读取器继续衰减。
+- [ ] 完成v5唯一canonical实现、fresh schema、CPU/architecture合同，以及Core条件化、完整有序Procedure读取、
+  constant identity、K置换、八family梯度、native BA和最长视频机制门。
+- [ ] 若v5相对matched v4改善reader attenuation与stage保真，从clean pushed detached commit启动fresh train24；
+  到有信息量节点后执行strict paired400。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
 
 ## Current decision
 
-当前active design为`docs/layer_matched_memory_program_compiler_design.md`。v3的bounded M2P确实把
-Core-fused→compiled的改写限制在约`.25x`，但macro25/50 strict为`102→60`；25→50=`46 retained / 14 gained /
-56 lost`、churn70、net`-42`。最早断点前移到K-set：raw nonlinear consensus相对per-video mean改写
-`10.188x/5.831x`，把between-task cosine由`.654/.767`破坏到`.903/.922`，并降低same-task coherence。下游Core fusion
-反而恢复task分离，bounded M2P只小幅改写，所以不能把回落继续归咎于M2P或训练量。
+当前active design为`docs/layer_matched_memory_program_compiler_design.md`。v4的bounded K-set关闭了v3断点，但正式
+macro25/50 strict仅`104→102`、breadth均为6；25→50=`77 retained / 25 gained / 27 lost`、churn52、net`-2`。
+macro50相对LPCP143为`79 retained / 23 gained / 64 lost`。训练使BA norm从`27.28→49.08`且25→50 BA relative-L2
+达`1.44`，却只发生task换手，故v4不续macro75或六臂。
 
-v4唯一增加与M2P同形的mean-anchored逐cell K-set commitment：fresh gate初始`.25`、最大`.5`；不删除learned
-cross-video correction，也不改变Core/Procedure、memory、M2P、rank16、loss或recipe。clean `8c40a56`的真实K4门
-显示raw proposal仍为`6.403x`，但commitment只有`.250010x`且全部分支有gradient；validation8中mean→K-set的
-between-task仅`.4015→.4057`、within-task`.9910→.9795`，order为`.4911→.5169`，371-frame与world3吞吐也通过。
-下一步从只写回formal seal的clean pushed commit启动fresh train24；这些机制证据尚不是closed-loop成绩。
+逐stage显示raw Procedure correct/reverse relative-L2从macro2的`.7203`降至macro25/50的`.4976/.4350`，reader
+H_set进一步降至`.2320/.1844`，即读取器只保留约`.43x`的有向差异。对齐历史V6后，V6 raw Procedure本身更趋同
+（between-task cosine`.9973`、order relative-L2`.1093`），但其policy-routed、Core-conditioned slot reader把order
+放大到`1.30`左右。因此不先加Procedure contrastive/matching或reverse loss；最早接口是v4的Core-unconditioned
+endpoint Query与Procedure Keys共同漂移并抵消memory Value差异。
+
+v5只替换这一读取接口：固定layer/rank地址先从Core形成task-conditioned Query，再以带真实frame position的完整
+Procedure作Keys，读取centered layer/rank memory Values；K-set、Core fusion、bounded M2P、native rank16 FactorHeads和
+B20 functional-only recipe不变，且incompatible fresh。下一裁决点是它能否在真实K4上减少reader attenuation并保持
+constant identity、K置换和native写出；通过后才启动fresh正式训练。

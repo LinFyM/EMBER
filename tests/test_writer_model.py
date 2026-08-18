@@ -268,8 +268,10 @@ def test_all_factor_families_and_dynamic_path_receive_gradients() -> None:
     assert model.memory_reader.query.weight.grad.count_nonzero()
     assert model.memory_reader.key.weight.grad is not None
     assert model.memory_reader.key.weight.grad.count_nonzero()
-    assert model.memory_reader.address_query.weight.grad is not None
-    assert model.memory_reader.address_query.weight.grad.count_nonzero()
+    assert model.memory_reader.core_reader.attention.query.weight.grad is not None
+    assert model.memory_reader.core_reader.attention.query.weight.grad.count_nonzero()
+    assert model.memory_reader.core_reader.attention.value.weight.grad is not None
+    assert model.memory_reader.core_reader.attention.value.weight.grad.count_nonzero()
     assert model.video_set.commitment_logit.grad is not None
     assert model.video_set.commitment_logit.grad.count_nonzero()
     assert model.video_set.centered[-1].weight.grad is not None
@@ -286,20 +288,62 @@ def test_memory_reader_uses_internal_procedure_stages_not_only_the_last() -> Non
         zip(context.video_bounds[:-1], context.video_bounds[1:], strict=True)
     ):
         repeated_last[video, : right - left] = procedure[video, right - left - 1]
+    valid = torch.arange(repeated_last.shape[1])[None] < torch.tensor(
+        [
+            right - left
+            for left, right in zip(
+                context.video_bounds[:-1], context.video_bounds[1:], strict=True
+            )
+        ]
+    )[:, None]
+    positions = torch.zeros(repeated_last.shape[:2], dtype=torch.long)
+    for video, (left, right) in enumerate(
+        zip(context.video_bounds[:-1], context.video_bounds[1:], strict=True)
+    ):
+        positions[video, : right - left] = context.frame_indices[left:right]
     collapsed = model.memory_reader(
         context.encoding.layer_memory,
+        encoded.diagnostics.per_video_core,
+        context.encoding.valid_task_tokens.index_select(
+            0, context.video_condition_ids
+        ),
         repeated_last,
-        torch.arange(repeated_last.shape[1])[None]
-        < torch.tensor(
-            [right - left for left, right in zip(
-                context.video_bounds[:-1], context.video_bounds[1:], strict=True
-            )]
-        )[:, None],
+        positions,
+        valid,
         context.video_bounds,
     )
     assert not torch.allclose(
         encoded.diagnostics.per_video_parameter_memory,
         collapsed,
+    )
+
+
+def test_memory_reader_query_is_conditioned_by_task_core() -> None:
+    model, _ = _model()
+    encoded = model.encode_program(*_inputs(), policy=torch.nn.Identity())
+    context = model._encode_context(*_inputs(), policy=torch.nn.Identity())
+    program = model._build_program(
+        text_queries=context.encoding.text_queries,
+        frame_evidence=context.encoding.frame_evidence,
+        grounded_evidence=context.encoding.grounded_evidence,
+        interactions=context.encoding.interactions,
+        valid_task_tokens=context.encoding.valid_task_tokens,
+        video_condition_ids=context.video_condition_ids,
+        frame_indices=context.frame_indices,
+        video_bounds=context.video_bounds,
+    )
+    changed = model.memory_reader(
+        context.encoding.layer_memory,
+        program.core.flip(0),
+        program.valid_core.flip(0),
+        program.procedure,
+        program.positions,
+        program.valid_procedure,
+        context.video_bounds,
+    )
+    assert not torch.allclose(
+        encoded.diagnostics.per_video_parameter_memory,
+        changed,
     )
 
 

@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 
 from ember.writer.errors import WriterModelError
-from ember.writer.temporal import RMSNorm
+from ember.writer.temporal import CoreSlotReader, RMSNorm, _apply_rope
 
 
 EXPERT_LAYERS = 18
@@ -31,7 +31,7 @@ def _merge_heads(value: torch.Tensor) -> torch.Tensor:
 
 
 class LayerRankMemoryReader(torch.nn.Module):
-    """Let every fixed layer/rank address read the full ordered Procedure."""
+    """Use task Core to read ordered Procedure into native layer/rank Values."""
 
     def __init__(self, *, heads: int, initialization_seed: int) -> None:
         super().__init__()
@@ -42,12 +42,11 @@ class LayerRankMemoryReader(torch.nn.Module):
         self.memory_projection = torch.nn.Linear(
             MEMORY_WIDTH, PROGRAM_WIDTH, bias=False
         )
+        self.core_reader = CoreSlotReader(width=PROGRAM_WIDTH, heads=heads)
+        self.core_query_norm = RMSNorm(PROGRAM_WIDTH)
         self.procedure_norm = RMSNorm(PROGRAM_WIDTH)
         self.query = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
         self.address_norm = RMSNorm(PROGRAM_WIDTH)
-        self.address_query = torch.nn.Linear(
-            PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False
-        )
         self.key = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
         self.output = torch.nn.Linear(PROGRAM_WIDTH, PROGRAM_WIDTH, bias=False)
         with torch.random.fork_rng(devices=[]):
@@ -65,7 +64,11 @@ class LayerRankMemoryReader(torch.nn.Module):
         self,
         memory: torch.Tensor,
         procedure: torch.Tensor,
+        positions: torch.Tensor,
+        address: torch.Tensor,
+        core_slots: torch.Tensor,
     ) -> torch.Tensor:
+        cells = EXPERT_LAYERS * PUBLIC_RANK
         if (
             memory.ndim != 4
             or memory.shape[1:] != (
@@ -74,29 +77,37 @@ class LayerRankMemoryReader(torch.nn.Module):
                 MEMORY_WIDTH,
             )
             or procedure.shape != (memory.shape[0], PROGRAM_WIDTH)
+            or positions.shape != (memory.shape[0],)
+            or positions.dtype != torch.long
+            or positions.device != memory.device
+            or address.shape != (cells, PROGRAM_WIDTH)
+            or core_slots.shape != (cells, PROGRAM_WIDTH)
             or memory.shape[0] <= 0
         ):
             raise WriterModelError("invalid layer/rank memory video")
         length = memory.shape[0]
-        cells = EXPERT_LAYERS * PUBLIC_RANK
         projected = self.memory_projection(self.memory_norm(memory))
         relative = projected - projected[:1]
         dynamic_value = relative - relative.mean(dim=0, keepdim=True)
-        address = (
-            self.layer_identity[:, None] + self.rank_identity[None]
-        ).reshape(cells, PROGRAM_WIDTH)
-        query = self.query(self.procedure_norm(procedure[-1]))[None]
-        query = query + self.address_query(self.address_norm(address))
-        query = query[:, None]
+        query_key = address + self.core_query_norm(core_slots)
+        query = self.query(query_key)[:, None]
         key = self.key(self.procedure_norm(procedure))[None].expand(
             cells, -1, -1
         )
         value = dynamic_value.permute(1, 2, 0, 3).reshape(
             cells, length, PROGRAM_WIDTH
         )
-        attended = F.scaled_dot_product_attention(
+        query_heads = _apply_rope(
             _split_heads(query, self.heads),
+            torch.zeros(cells, 1, dtype=torch.long, device=query.device),
+        )
+        key_heads = _apply_rope(
             _split_heads(key, self.heads),
+            positions[None].expand(cells, -1),
+        )
+        attended = F.scaled_dot_product_attention(
+            query_heads,
+            key_heads,
             _split_heads(value, self.heads),
             dropout_p=0.0,
             is_causal=False,
@@ -109,23 +120,46 @@ class LayerRankMemoryReader(torch.nn.Module):
     def forward(
         self,
         layer_memory: torch.Tensor,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
         procedure: torch.Tensor,
+        positions: torch.Tensor,
         valid_procedure: torch.Tensor,
         video_bounds: tuple[int, ...],
     ) -> torch.Tensor:
+        videos = len(video_bounds) - 1
         if (
             layer_memory.ndim != 4
             or layer_memory.shape[1:]
             != (EXPERT_LAYERS, PUBLIC_RANK, MEMORY_WIDTH)
+            or core.ndim != 3
+            or core.shape[0] != videos
+            or core.shape[-1] != PROGRAM_WIDTH
+            or valid_core.shape != core.shape[:2]
+            or valid_core.dtype != torch.bool
             or procedure.ndim != 3
-            or procedure.shape[0] != len(video_bounds) - 1
+            or procedure.shape[0] != videos
             or procedure.shape[-1] != PROGRAM_WIDTH
+            or positions.shape != procedure.shape[:2]
+            or positions.dtype != torch.long
+            or positions.device != procedure.device
             or valid_procedure.shape != procedure.shape[:2]
             or valid_procedure.dtype != torch.bool
             or video_bounds[0] != 0
             or video_bounds[-1] != layer_memory.shape[0]
         ):
             raise WriterModelError("invalid Procedure-to-memory batch")
+        cells = EXPERT_LAYERS * PUBLIC_RANK
+        address = self.address_norm(
+            (
+                self.layer_identity[:, None] + self.rank_identity[None]
+            ).reshape(cells, PROGRAM_WIDTH)
+        )
+        core_slots = self.core_reader(
+            address[None].expand(videos, -1, -1),
+            core,
+            valid_core,
+        )
         rows = []
         for video, (left, right) in enumerate(
             zip(video_bounds[:-1], video_bounds[1:], strict=True)
@@ -142,6 +176,9 @@ class LayerRankMemoryReader(torch.nn.Module):
                 self._read_video(
                     layer_memory[left:right],
                     procedure[video, :length],
+                    positions[video, :length],
+                    address,
+                    core_slots[video],
                 )
             )
         return torch.stack(rows)

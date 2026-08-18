@@ -232,6 +232,17 @@ LMMPC-v3进一步表明，约束后置M2P不会自动解决上游集合表示：
 between-task cosine推到`.90+`且没有改善same-task coherence。Few-shot set模块必须以已经保序、已对齐地址的
 per-video Program为anchor；learned cross-video correction可以存在，但不能默认拥有覆盖anchor的权限。
 
+LMMPC-v4证明bounded K-set确实关闭了上述表示覆盖，却没有带来闭环突破：macro25/50 strict=`104→102`，breadth均6，
+相邻checkpoint churn=`52`。25→50 effective-BA norm从`27.28`增到`49.08`且relative-L2=`1.44`，说明Writer并非没写，
+但新增能力主要在task间换手。逐stage最早异常位于Procedure reader：macro50 raw Procedure的correct/reverse差异为
+`.4350`，读出H_set只剩`.1844`；后续Core fusion/M2P/FactorHeads没有更早地制造该衰减。
+
+与V6同口径比较排除了“Procedure趋同本身就是必须先修的根因”。V6 raw Procedure的between-task cosine反而高达
+`.9973`、correct/reverse relative-L2仅`.1093`，其policy-routed、Core-conditioned slot reader却把有向差异放大到
+约`1.30`；v4则只保留约`.43x`。因此下一局部变量不是增加reverse/matching/contrastive loss，而是让layer/rank地址
+先从Core获得task-conditioned Query，再用完整有位置的Procedure作Keys读取centered native memory Values。该判断
+只支持LMMPC-v5 reader实验；若reader门通过仍无closed-loop提升，才把最早断点继续后移到shared functional credit。
+
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
 support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint

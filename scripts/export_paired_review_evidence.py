@@ -124,6 +124,14 @@ def _provenance(result: Mapping[str, Any]) -> dict[str, Any]:
     training_body = json.loads(
         Path(str(training["path"])).read_text(encoding="utf-8")
     )
+    diagnostic = training_body.get("diagnostic_intervention")
+    if isinstance(diagnostic, dict):
+        diagnostic = dict(diagnostic)
+        source_checkpoint = str(diagnostic.get("source_checkpoint", ""))
+        if "/runs/" in source_checkpoint:
+            diagnostic["source_checkpoint"] = "runs/" + source_checkpoint.split(
+                "/runs/", 1
+            )[1]
     return {
         "evaluation_contract_reference": result.get("contract_reference"),
         "evaluation_git_commit": paired.get("git", {}).get("commit"),
@@ -150,6 +158,7 @@ def _provenance(result: Mapping[str, Any]) -> dict[str, Any]:
             "bytes": training.get("bytes"),
             "mode": training_body.get("mode"),
             "writer": training_body.get("writer"),
+            "diagnostic_intervention": diagnostic,
         },
         "config_schema": adapter.get("config", {}).get("schema"),
         "lora_contract": adapter.get("lora_contract"),

@@ -13,7 +13,7 @@ from safetensors.torch import save_file
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import DistributedContext
 from ember.writer.as_config import load_writer_config, parse_macro_boundaries
-from ember.writer.as_contract import inspect_video_data, publish_contract
+from ember.writer.as_contract import build_contract, inspect_video_data, publish_contract
 from ember.writer.as_sampling import MixedTaskBatchSampler, TeacherVideoSchedule
 from ember.writer.as_step import (
     _pack_condition,
@@ -399,6 +399,53 @@ def test_publish_contract_accepts_only_exact_resume_contract(tmp_path: Path) -> 
     publish_contract(args, context, contract)
     with pytest.raises(WriterModelError, match="contract changed"):
         publish_contract(args, context, {**contract, "changed": True})
+
+
+def test_diagnostic_contract_records_frozen_head_intervention(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        as_contract_module,
+        "git_state",
+        lambda _: {"branch": "", "commit": "a" * 40},
+    )
+    source_checkpoint = tmp_path / "checkpoints/macro_00000025"
+    args = argparse.Namespace(
+        mode="formal",
+        config=tmp_path / "config.json",
+        num_workers=0,
+        diagnostic_fork_resume=source_checkpoint,
+    )
+    contract = build_contract(
+        args=args,
+        config={
+            "authorities": {},
+            "information_wall": {},
+            "writer": {},
+            "data": {},
+            "conditioning_training": {},
+            "optimization": {},
+        },
+        context=DistributedContext(0, 0, 1, torch.device("cpu")),
+        source={},
+        tokenizer={},
+        video_data={},
+        data_validation={},
+        task_ids=tuple(range(24)),
+        trainable={"writer_frozen_parameter_count": 1},
+        total_macros=100,
+        batch_size=20,
+        checkpoint_macros=(25, 50, 75, 100),
+    )
+    assert contract["diagnostic_intervention"] == {
+        "kind": "freeze_factor_heads_after_macro25",
+        "source_checkpoint": str(source_checkpoint.resolve()),
+        "frozen_module": "factor_heads",
+        "unchanged_components": (
+            "Program Reader K-set M2P objective data optimizer scheduler and RNG"
+        ),
+        "deployment_method": False,
+    }
 
 
 def test_hashless_checkpoint_restores_training_state(

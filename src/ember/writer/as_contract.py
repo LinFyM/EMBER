@@ -255,7 +255,7 @@ def build_contract(
     else:
         topology[0] = local
     state = git_state(REPO_ROOT)
-    return {
+    contract = {
         "schema_version": AS_WRITER_LAUNCH_SCHEMA,
         "mode": args.mode,
         "git": {"branch": state["branch"], "commit": state["commit"]},

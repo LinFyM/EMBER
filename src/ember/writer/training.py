@@ -346,10 +346,11 @@ def prepare_runtime(
         tasks=tasks,
     )
     metrics_path = args.output_dir / "metrics.jsonl"
+    metrics_cursor = 0 if args.diagnostic_fork_resume is not None else initial_macro
     metrics_rows = (
         reconcile_metrics(
             metrics_path,
-            initial_macro,
+            metrics_cursor,
             expected_metrics_rows,
             cursor_key="macro",
         )

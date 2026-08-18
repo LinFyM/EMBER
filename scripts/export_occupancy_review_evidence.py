@@ -80,6 +80,31 @@ def _initial_comparison(
     }
 
 
+def _first_behavior_divergence(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
+    """Summarize whether the two checkpoints already differ at the first replan."""
+
+    threshold = 1.0e-6
+    initial = np.asarray(
+        [float(row["initial_state_action_rms"]) for row in rows], dtype=np.float64
+    )
+    return {
+        "definition": (
+            "First behavior divergence is the first replan whose matched "
+            "macro25-vs-macro50 action RMS exceeds 1e-6."
+        ),
+        "action_rms_threshold": threshold,
+        "rows": int(initial.size),
+        "rows_diverged_at_initial_state": int((initial > threshold).sum()),
+        "rows_not_diverged_at_initial_state": int((initial <= threshold).sum()),
+        "minimum_initial_state_action_rms": float(initial.min()),
+        "maximum_initial_state_action_rms": float(initial.max()),
+        "interpretation": (
+            "All captured policies differ before environment visitation can "
+            "diverge; this does not identify which checkpoint action is correct."
+        ),
+    }
+
+
 def _contract_summary(contract: Mapping[str, Any]) -> dict[str, Any]:
     capture = contract.get("diagnostic_occupancy_capture", {})
     git = contract.get("git", {})
@@ -152,6 +177,7 @@ def main() -> None:
             _initial_comparison(rows, "lost", "gained"),
             _initial_comparison(rows, "gained", "retained"),
         ],
+        "first_behavior_divergence": _first_behavior_divergence(rows),
         "rows": rows,
         "interpretation_boundary": (
             "Action RMS is the matched disagreement between macro25 and macro50 "

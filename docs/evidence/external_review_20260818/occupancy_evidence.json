@@ -237,6 +237,16 @@
     "macro25_mismatches": 14,
     "macro50_mismatches": 17
   },
+  "first_behavior_divergence": {
+    "action_rms_threshold": 1e-06,
+    "definition": "First behavior divergence is the first replan whose matched macro25-vs-macro50 action RMS exceeds 1e-6.",
+    "interpretation": "All captured policies differ before environment visitation can diverge; this does not identify which checkpoint action is correct.",
+    "maximum_initial_state_action_rms": 0.48279064893722534,
+    "minimum_initial_state_action_rms": 0.042842838913202286,
+    "rows": 136,
+    "rows_diverged_at_initial_state": 136,
+    "rows_not_diverged_at_initial_state": 0
+  },
   "initial_state_category_comparisons": [
     {
       "left": "lost",

@@ -51,6 +51,7 @@ EMBER/
 │   ├── research_history.md       # 唯一实验/架构ledger
 │   ├── architecture_reasoning.md # 供独立复核的当前证据与未决归因综述
 │   ├── layer_matched_memory_program_compiler_design.md # 最新被测架构的封存事实
+│   ├── external_review_20260818.md # 固定提交外部独立复核及仓库侧核验
 │   ├── benchmark_validity_report.md
 │   └── novelty_and_landscape.md
 ├── configs/                      # 固定数据、source、LoRA与保留运行authority
@@ -79,6 +80,8 @@ EMBER/
 
 当前最新被测Writer已经formal non-pass，且仓库没有active successor。远程独立复核应先读
 [current evidence synthesis](docs/architecture_reasoning.md)；该文档只陈述证据与未决问题，不预设下一步方案。
+外部专家对固定提交的完整结构化意见及哪些代码判断已由仓库侧复核，见
+[external independent review](docs/external_review_20260818.md)。
 
 ## Environment and tests
 

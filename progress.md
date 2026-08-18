@@ -11,6 +11,13 @@
 - 当前最新被测架构是EMBER-LMMPC Core-Addressed Reader，设计已封存且formal non-pass；
 - owner明确要求后续只能基于当前架构推进，不得直接恢复V6/LPCP/GOMQ、旧carrier、旧compiler或双Writer路径；
 - 本次远程整理不写入任何下一步科学方案，外部专家应独立判断未决归因。
+- 固定提交`947c0e3`的外部独立复核已经收到并登记；其建议仍是advisory evidence，不自动成为active design或launch
+  authority；
+- 仓库侧已静态确认当前formal路径把fresh `patch_grounding`、逐帧`language_projection`和
+  `interaction_projection`的输出再次detach，现有“全动态路径梯度”测试没有覆盖这些模块；尚未进行干预实验，
+  因而不能把它直接升级成123低上限或checkpoint漂移的唯一根因；
+- owner最新明确：后续canonical Writer移除Text Meta-LoRA；历史formal config的rank4事实保留，Action Meta-LoRA
+  不随该决定自动删除。
 
 ## Sealed scientific state
 
@@ -28,6 +35,7 @@
 - 第一性原理与稳定目标：`docs/concept.md`、`docs/current_owner_requirements.md`；
 - 当前架构的完整封存事实：`docs/layer_matched_memory_program_compiler_design.md`；
 - 不含推荐方案的当前证据综述：`docs/architecture_reasoning.md`；
+- 外部复核原意、实验建议和仓库侧核验：`docs/external_review_20260818.md`；
 - 全历史架构与实验ledger：`docs/research_history.md`；
 - 跨实验耐久结论：`findings.md`；
 - canonical代码：`src/ember/writer/`；

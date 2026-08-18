@@ -209,18 +209,32 @@ energy下降。但历史LPCP的raw Procedure更趋同（between-task cosine约`.
 correct/reverse差异放大到H_set/compiled。因此Procedure趋同是风险和视频因果性疑点，但不是当前123到84之间最早
 被观测到的task/order抹除接口。
 
+### 6.5 外部复核发现的fresh前端gradient断点
+
+固定提交外部复核后，仓库侧确认当前layer-matched memory路径在已detach frozen backbone hidden并完成fresh
+`language_projection`、`patch_grounding`和`interaction_projection`之后，又把返回的
+`frame_evidence/grounded_evidence/interactions`全部detach。因此`patch_grounding`和
+`interaction_projection`不能从functional objective获得gradient，`language_projection`的逐帧visual分支也被切断；
+现有“dynamic path gradients”测试没有覆盖这些模块。历史V6 semantic forward没有这层输出detach。
+
+这项代码事实说明当前Core/Procedure是在固定fresh投影特征上学习，而非整个process front end端到端接受policy credit。
+它是比此前归因更靠前的未解接口，但尚无matched closed-loop干预，不能据此单独解释123、Long/Object缺口或后续漂移。
+完整外部判断、反证和建议实验见`docs/external_review_20260818.md`。
+
 ## 7. 当前证据支持、排除和未决的解释
 
 | 类型 | 结论 |
 | --- | --- |
 | 已确认 | 当前recipe绝对峰值只有123，且四点没有恢复到该峰值；它同时存在弱峰值和checkpoint漂移两个问题 |
-| 已确认 | reader是正机制；memory correspondence、Dynamic-K、bounded K-set/M2P和rank16完整输出均已工程接通 |
+| 已确认 | reader是正机制；memory layer/rank index preservation、Dynamic-K、bounded K-set/M2P和rank16完整输出均已工程接通 |
 | 已确认 | 当前123相对强基线获得约23个新success rows，但丢失43到51个旧success rows；主要缺口集中在Long和Object |
 | 已确认 | 继续优化静态B20 loss没有形成held多task共同积累；Program和FactorHeads都承载了有限长更新 |
+| 已确认 | fresh `patch_grounding`和`interaction_projection`被输出detach切断functional gradient；现有gradient门没有检查它们 |
 | 已排除为单因 | Writer没有写出、LoRA仅仅太小、同task视频相消、K-set/M2P仍无界覆盖、训练只是不够久 |
 | 已排除为单因 | raw Procedure趋同、FactorHeads单独漂移、rank16容量不足或LoRA norm不足 |
 | 未决 | 静态cross-episode B20 query occupancy与真实rollout occupancy的错配占多大责任 |
 | 未决 | 当前Program是否提取了高层过程，还是主要稳定了task identity/static cues |
+| 未决 | 恢复fresh前端gradient能改善多少absolute closed-loop、breadth与视频因果性 |
 | 未决 | Program到native A/B坐标是否存在系统性可达性、条件数或高维输出先验问题 |
 | 未决 | shared optimizer如何在同一checkpoint保存跨task support，及其与objective/decoder的交互 |
 | 未决 | 当前方法的correct视频是否真实优于wrong/shuffle/reverse/no-video；因absolute不足尚无六臂数据 |

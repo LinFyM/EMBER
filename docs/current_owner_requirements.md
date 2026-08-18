@@ -35,6 +35,11 @@ exact task language + one or more action-hidden correct teaching videos
 language-only路径不得独立写出有效LoRA。反过来，也不能为了阻断language shortcut而制造不自然的zero-image、
 空prefix或与π0.5原生计算无关的fake action query。
 
+后续canonical Writer不再使用trainable **Text Meta-LoRA**或VL Meta-LoRA。exact language仍是必需输入，但应通过
+冻结原生text/VLM表示和Writer-local读取/投影进入Program，不能用额外Text Meta-LoRA强化task-identity旁路。当前已
+封存formal run确实使用过rank4 Text Meta-LoRA，历史config与结果必须保留这一事实；本约束不自动取消Action
+Meta-LoRA，后者仍按其是否为native Action probe/memory提供有效作用单独裁决。
+
 ## 3. One-shot、few-shot和动态视频数量
 
 one-shot仍是清晰且有价值的canonical问题，但方法不必先验锁死K=1。多条同task视频有合理优势：它们可帮助过滤

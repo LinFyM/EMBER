@@ -84,7 +84,8 @@ H_set gates relevant Core content
 ### 4.1 Task-grounded视觉证据
 
 exact language形成task-token queries；冻结VLM产生每帧image-patch evidence。Writer-local grounding读取对象、属性、
-关系和目标内容。当前架构没有trainable VL Meta-LoRA；VLM原生参数保持冻结。
+关系和目标内容。该次已测试formal架构没有trainable VL Meta-LoRA，但仍使用rank4 Text Meta-LoRA生成text-only
+queries；VLM原生参数保持冻结。Text Meta-LoRA是该历史结果的一部分，owner已明确后续canonical Writer将移除它。
 
 ### 4.2 Action representation
 

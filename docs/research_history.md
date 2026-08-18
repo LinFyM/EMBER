@@ -378,6 +378,23 @@ B20 credit`能够稳定积累held support；reader、memory、Dynamic-K、rank16
 - four-checkpoint rows：`runs/analysis/lmmpc_four_checkpoint_strict_trajectory_20260818.json`；
 - B20/Program/FactorHeads联合归因：`runs/analysis/lmmpc_macro25_50_75_100_drift_diagnosis_20260818.json`。
 
+### 3.14 固定提交外部独立复核
+
+外部专家对`codex/bci-continuation@947c0e308c0b16bea97f0a3d157a3fe7b570a074`完成只读复核。实验数值来自tracked
+文档重述；专家另外按paired gains/losses复算两侧精确McNemar：当前123相对LPCP143为`p=.018657`、相对
+GOMQ151为`p=.001516`，macro25到50的`13 gained / 52 lost`为`p=1.17e-6`，确认这些差异不是普通paired采样波动。
+
+复核发现一个先前未登记的代码级问题：当前layer-matched memory路径在已经detach frozen backbone hidden后，又把
+fresh `patch_grounding`、`interaction_projection`和逐帧evidence的输出detach。仓库侧核验确认这会使前两者收不到
+functional gradient，且现有动态路径测试没有覆盖它们；旧V6 semantic路径无相同输出detach。该事实尚未经过matched
+closed-loop干预，不能单独归因全部123低上限或123到84漂移。
+
+专家把问题暂分为三类：前端过程credit/shortcut、offline expert-state occupancy到rollout support retention错配、
+Program到共享FactorHeads坐标的可达性和co-drift；建议先做全模块梯度审计与macro25视频因果面板，再按证据依次
+检验仅恢复本地前端gradient、固定状态occupancy反事实、FactorHead冻结、train24 decoder reachability oracle与最后的
+gradient aggregation。所有顺序和数值门槛均是外部advisory proposal，不是active design。完整记录见
+`docs/external_review_20260818.md`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

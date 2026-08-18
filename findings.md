@@ -270,3 +270,32 @@ identity、Program到native A/B坐标的可达性，以及shared optimizer对跨
 6. 不用union、融合、挑video或task checkpoint冒充shared method。
 7. 不为正常BF16/TF32、batch和kernel低位差异牺牲吞吐。
 8. 负结果只淘汰实际组合；局部建议不能触发无证据的整套摇摆。
+
+## 15. 固定提交外部复核补充的代码级断点
+
+外部专家复核`947c0e3`后指出，当前`LayerMatchedBackboneMemoryEncoder`先正确detach frozen backbone的
+`prefix_hidden/action_hidden`，经fresh Writer-local `language_projection`、`patch_grounding`和
+`interaction_projection`得到逐帧evidence后，又在返回`LayerMatchedVideoEncoding`时把
+`frame_evidence/grounded_evidence/interactions`全部detach。仓库侧逐行核验确认：
+
+- source policy hidden的第一次detach足以阻止主干梯度；
+- 后一次输出detach额外切断了`patch_grounding`和`interaction_projection`的全部functional credit；
+- `language_projection`仍可从独立text query与后端language gate获得梯度，但其逐帧视觉使用分支被切断；
+- Core、Procedure和后端仍能在这些固定随机投影特征上学习，所以这不等于视频路径完全无效；
+- 现有梯度测试检查FactorHeads、memory token、Reader、K-set与M2P，没有检查上述两个fresh前端模块；
+- 历史V6 semantic forward返回同类evidence时没有这层输出detach。
+
+这将“最早未解接口”从宽泛的functional occupancy进一步向前扩展为一个可直接检验的上游credit断点。它与后续
+occupancy/retention问题可以同时存在：该断点更可能限制macro25的absolute support形成，而25到50在offline loss继续
+改善时崩落仍需要occupancy、shared credit和decoder co-drift解释。没有matched干预前，不把detach、FactorHeads或
+occupancy任何一项写成唯一根因。
+
+同一复核还澄清了若干结构边界：Reader的“减首帧再减时间均值”代数上等价于单纯时间中心化；memory rank只实现
+index correspondence而非已知policy-functional correspondence；Action probe把50 tokens直接均值会丢失horizon
+结构；M2P输出RMSNorm会消除cell magnitude；action-in/out坐标由首末expert layer派生；FactorHeads每个宽输出row
+位于共享256维末层子空间且fresh identity产生B-first信用打开。这些都是合理诊断假设，不是单靠代码即可裁决的
+性能根因。
+
+owner同时明确后续不再使用Text Meta-LoRA。当前sealed formal确实使用rank4 Text Meta-LoRA、VL Meta-LoRA为0；
+后续语言仍必须通过冻结原生text/VLM表示进入Writer，Action Meta-LoRA按独立作用继续判断。外部复核的完整根因排序、
+反证、建议门槛和远程证据缺口记录在`docs/external_review_20260818.md`。

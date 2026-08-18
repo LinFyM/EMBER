@@ -270,9 +270,10 @@ cosine保持约`.99`。因此Procedure趋同不是本轮123→84的最早断点�
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
 support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint
-旁路。v2/v3已经依次把判断推进到K-set、M2P与factor之前；当前优先检验的是**有界K-set能否同时保留per-video
-task结构、跨video共同信息与有向Procedure证据**。只有该接口通过后，才把下一个变量后移到Core fusion、factor或
-shared functional credit。
+旁路；v2/v3依次暴露M2P和K-set覆盖，v4用bounded commitments关闭这两处，v5再用Core-conditioned Query关闭reader
+衰减。当前表示链已经能把task-specific、有向、cross-video coherent的Program material地写成LoRA，最早未解处因此
+正式后移到functional credit与held support retention。下一变量应先区分loss提供的cotangent方向是否错误，还是
+FactorHeads坐标系统性扭曲该方向；不能再回头增强已经通过的K-set、Procedure margin或memory容量。
 
 ## 14. 方法选择与实验原则
 

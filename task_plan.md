@@ -79,7 +79,10 @@
   within-task仍`.970`且between-task降至`.245`，通过formal前置接口门。
 - [x] 从sealed clean pushed commit完成v5 fresh train24到macro25，封存world6完整checkpoint、generation profile和
   validation8 pre-strict stage证据。
-- [ ] 执行v5 macro25 strict paired400和全量逐接口分析。
+- [x] 执行v5 macro25 strict paired400和全量逐接口分析：`123/400`、breadth8，相对v4 macro25严格净增19，但
+  相对LPCP143净丢20；reader改进保留，最早缺口后移到functional cotangent到native factor commitment。
+- [ ] 保持原world6/topology exact-resume v5 macro26--50，完成第二次strict paired400和相邻checkpoint稳定性分析，
+  以真实峰值/平台而非macro25单点裁决v5。
 - [ ] 对有希望checkpoint继续相邻训练；首次约145补六臂和same-task视频鲁棒性。
 - [ ] 若存在问题，定位最早接口并在LMMPC主链内做单变量局部改进，重复充分训练和全面评测。
 - [ ] 达成性能资格或形成多轮终局证据后，更新历史与findings并完成goal。
@@ -106,4 +109,9 @@ compiled/BA=`1.28587/.70012`；H_set within/between-task cosine=`.97045/.24495`�
 exit0；loss从`.15612`降到`.11364`，24个task中23个的末5轮均值低于前5轮。macro25 validation8仍把raw
 Procedure的`.57396`有向差异放大为H_set=`1.01175`、compiled=`1.13327`、BA=`.85958`，同时
 H_set/compiled/BA同task四conditions cosine=`.98908/.98621/.99285`。这些内部证据不能替代closed-loop；下一裁决
-仍是同一macro25的strict paired400。
+已完成：macro25 strict=`123/400`、breadth8、per-task=`3/3/44/25/1/43/3/1`。相对完全配对的v4 macro25为
+`85 retained / 38 gained / 19 lost`、net`+19`，证明reader单变量有真实闭环收益；相对LPCP143则为
+`100/23/43`、net`-20`，Object3和Long1分别净丢10/13。all400 BA相对v4已明显换向（cosine`.4210`、
+relative-L2`1.0808`），但gained/lost的BA距离和幅度不可分，最早缺口后移到functional credit与native factor
+commitment。由于v5尚只有一个正式点且loss仍下降，下一裁决是原world6/topology exact-resume到macro50并做第二次
+strict400；不先改Procedure、loss、rank或scale。

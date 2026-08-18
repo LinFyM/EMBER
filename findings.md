@@ -246,6 +246,13 @@ LMMPC-v4证明bounded K-set确实关闭了上述表示覆盖，却没有带来�
 within/between-task cosine仍为`.97045/.24495`。这只证明最早结构接口已修复，不证明方向对closed-loop有用；若
 fresh macro25 strict仍无提升，最早断点才后移到shared functional credit。
 
+LMMPC-v5进一步给出了闭环裁决：Core-conditioned layer/rank reader把validation8的reader/raw从v4的`.7175x`提高到
+`1.7627x--1.8194x`，macro25 strict也从matched v4的`104`提高到`123`；400行严格配对为`38 gained / 19 lost`。
+因此读取器修复是有效机制，而不是又一个只让内部指标变漂亮的改动。但v5相对LPCP143仍净丢20，成功的
+`91.1%`集中在三个task；all400 BA已相对v4显著换向，却无法用norm、cosine或relative-L2区分gained与lost。
+这把最早未解接口后移到`functional cotangent -> native FactorHeads -> held on-policy direction`。Procedure趋同仍可作
+诊断，但在该接口解决前不应成为新的contrastive/matching训练目标。
+
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held
 support。LMMPC-v1进一步说明，即使建立layer/rank memory和共同native compiler，Procedure reader也可能被endpoint

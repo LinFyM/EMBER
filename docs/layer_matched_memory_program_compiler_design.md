@@ -873,3 +873,35 @@ K4 deployment generation profile使用validation8×4同一long-first panel、最
 `148.216/148.082s`。batch32 peak reserved=`16,963,862,528` bytes、headroom=`30,735,859,712` bytes；全部稳定且
 0 OOM/nonfinite/禁读，故strict评测唯一选择batch32。下一裁决点不变：macro25 K4 strict paired400及逐task、
 retention/churn、stage与effective-BA联合分析。
+
+### 20.6 v5 macro25 strict与继续训练裁决
+
+macro25 K4 correct strict paired400完整exit0，结果为`123/400`、breadth8，per-task=
+`3/3/44/25/1/43/3/1`、per-suite=`6/69/44/4`。400个condition均唯一，72个shards和18个persistent rollout
+workers全部return0；400套LoRA只各生成一次，0 redundant forward，teacher action/state/reward/terminal读数均为0。
+
+与相同K4、相同400行配对的v4 macro25相比，v5为`85 retained / 38 gained / 19 lost / 258 both-fail`，churn57、
+net`+19`、Jaccard`.59859`、McNemar exact p=`.01635`；与v4 macro50相比为`81/42/21/256`，churn63、
+net`+21`。这说明Core-conditioned layer/rank reader不只是改善内部数值，也把v4的strict从`104/102`实质提高到
+`123`。但相对同一K4 schedule的LPCP143仍只有`100 retained / 23 gained / 43 lost / 234 both-fail`，churn66、
+net`-20`、Jaccard`.60241`；逐task差为`+2/-1/-4/-10/+1/+5/-13/0`。成功仍高度集中：Object1、Object3、
+Goal6三task贡献`112/123=.91057`，breadth8只是每task非零，尚不是多task共同积累。
+
+逐stage否决了重新归因于Procedure趋同或reader失效：validation8 correct/reverse在H_set/compiled仍为
+`1.01175/1.13327` relative-L2，within-task cosine为`.98908/.98621`，between-task cosine为
+`.36930/.27944`。all400 effective-BA相对v4的cosine/relative-L2为`.42101/1.08081`，说明v5写出的不是v4
+邻域微扰；但相对LPCP仅`.12440/1.00132`，mean norm也只有`27.225`，而LPCP为`108.710`。first4中v5能量更偏
+q-family（`.86965`）且effective targets约`16.88`，低于LPCP的`29.06`，但历史已经否决用强制scale、均匀能量或
+target数替代closed-loop方向。
+
+更关键的是，BA几何不能区分有用与有害改写：相对LPCP的23个gained与43个lost样本，cosine分别约
+`.1146/.1290`、relative-L2约`1.0045/.9985`；相对v4的38个gained与19个lost也没有幅度或距离分离。因此最早缺口
+已从`Procedure -> memory reader`后移到**B20 functional cotangent -> native FactorHeads -> held on-policy有用
+commitment**。当前证据尚不能把credit与factor topology二者进一步拆开，也不授权加Procedure contrastive/reverse
+loss、扫scale/rank或强制模仿LPCP几何。
+
+v5只有macro25一个正式closed-loop点，且functional loss到该点仍下降、23/24 train tasks的末5轮均值改善，尚无
+峰值或平台证据。按照第13节和预注册性能门，下一步不改架构、loss或recipe，保持原world6和物理
+`1/2/4/5/6/7` topology，从同一checkpoint exact-resume macro26--50，再做第二次K4 strict paired400和相邻
+churn分析。若macro50继续上升，保留同一路线；若持平或回落且BA继续换向，则v5终局，下一单变量才针对现有
+factor commitment所接收的functional credit，而不是回头修改已经通过的Procedure/reader。

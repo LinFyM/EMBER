@@ -204,6 +204,8 @@ def _episode_analysis(
         "initial_state_action_rms": 0.5 * (disagreement25[0] + disagreement50[0]),
         "macro25_occupancy_action_rms_mean": _mean(disagreement25),
         "macro50_occupancy_action_rms_mean": _mean(disagreement50),
+        "macro25_occupancy_action_rms_by_replan": disagreement25,
+        "macro50_occupancy_action_rms_by_replan": disagreement50,
         "macro25_occupancy_action_rms_early_half": early25,
         "macro25_occupancy_action_rms_late_half": late25,
         "macro50_occupancy_action_rms_early_half": early50,
@@ -306,7 +308,12 @@ def aggregate(args: argparse.Namespace) -> None:
     }
     if observed != expected or len(rows) != len(expected):
         raise ValueError("occupancy counterfactual lost selected rows")
-    metrics = tuple(key for key in rows[0] if key.endswith("_rms") or "_rms_" in key)
+    metrics = tuple(
+        key
+        for key, value in rows[0].items()
+        if (key.endswith("_rms") or "_rms_" in key)
+        and isinstance(value, (int, float))
+    )
     by_category = {}
     for category in ("lost", "gained", "retained"):
         selected_rows = [row for row in rows if row["category"] == category]

@@ -182,23 +182,18 @@ def _validate_runtime(config: Mapping[str, Any]) -> None:
             or int(evidence.get("completion_macro", 0)) != 2
             or float(evidence.get("macro_seconds", 0)) <= 0
             or int(evidence.get("max_cuda_allocated_bytes", 0)) <= 0
+            or not 0
+            < int(evidence.get("max_cuda_reserved_bytes", 0))
+            < 46_068 << 20
             or evidence.get("global_k_histogram")
             != {"1": 6, "2": 6, "3": 6, "4": 6}
-            or int(evidence.get("native_context_calls", -1))
-            != int(evidence.get("expected_native_context_calls", -2))
-            or float(evidence.get("procedure_stage_replacement_relative_l2", 0))
-            <= 0
-            or not 0
-            < float(
-                evidence.get(
-                    "video_set_maximum_correction_over_anchor_rms", 0
-                )
-            )
-            < float(evidence.get("video_set_configured_maximum", 0))
-            or evidence.get("video_set_gate_and_branches_gradients_nonzero")
-            is not True
-            or evidence.get("m2p_gate_and_block_gradients_nonzero") is not True
-            or float(evidence.get("constant_effective_ba_max_abs", 1)) >= 1e-6
+            or int(evidence.get("text_meta_lora_parameter_count", -1)) != 0
+            or int(evidence.get("vl_meta_lora_parameter_count", -1)) != 0
+            or int(evidence.get("action_meta_lora_parameter_count", 0)) <= 0
+            or int(evidence.get("source_policy_nonzero_gradient_tensors", -1)) != 0
+            or int(evidence.get("unclassified_writer_parameters", -1)) != 0
+            or int(evidence.get("oom_count", -1)) != 0
+            or int(evidence.get("nonfinite_count", -1)) != 0
         ):
             raise WriterModelError("sealed LMMPC live profile evidence changed")
 

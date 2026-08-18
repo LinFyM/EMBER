@@ -253,7 +253,7 @@ LMMPC-v5进一步给出了闭环裁决：Core-conditioned layer/rank reader把va
 这把最早未解接口后移到`functional cotangent -> native FactorHeads -> held on-policy direction`。Procedure趋同仍可作
 诊断，但在该接口解决前不应成为新的contrastive/matching训练目标。
 
-v5 macro50把上述判断升级为稳定性终局。同一run继续训练使末5轮functional loss降到`.10962`、BA norm从
+Core-Addressed Reader的macro50把上述判断升级为明确的相邻漂移证据。同一run继续训练使末5轮functional loss降到`.10962`、BA norm从
 `27.23→44.00`、effective targets从`16.88→19.50`，strict却从`123→84`；严格配对为`13 gained / 52 lost`，
 Object3和Goal6能力大幅流失而Long1增加。LoRA继续变强、变广并不等于共同积累。更关键的是，25→50 update在同一task
 四组K4 conditions间有`.980--.996`的task-mean/sample energy，却在task mean之间只有`.360` cosine：当前问题不是
@@ -264,8 +264,10 @@ raw Procedure在macro50确实进一步趋同（between-task cosine`.9717`、corr
 Core-conditioned reader把它放大到H_set=`1.0652`，compiled/effective-BA仍为`1.1619/.9515`；同task condition
 cosine保持约`.99`。因此Procedure趋同不是本轮123→84的最早断点。当前证据把首要责任压到
 `offline functional credit -> native factor coordinates -> held occupancy retention`；其中更像credit/retention问题，
-但尚不能完全排除FactorHeads可达坐标对该credit的系统性扭曲。v5精确recipe终局，reader正机制应继承，不能把该负
-结果扩写成memory token、Dynamic-K、rank16或LMMPC整体失败。
+但尚不能完全排除FactorHeads可达坐标对该credit的系统性扭曲。reader正机制应继承，不能把该负结果扩写成
+memory token、Dynamic-K、rank16或EMBER-LMMPC整体失败。历史v5.2/v6存在先降后升，故macro25/50两点还不足以
+终局当前recipe；必须完成预注册macro75/100，判断后续回升究竟是same-row能力恢复、共同积累，还是循环task换手，
+并用Program×FactorHeads交叉解码把credit与decoder坐标责任进一步拆开。
 
 整理后的stage-wise裁决进一步定位：Dynamic-K的between-task结构曾首先在nonlinear family/B readout变同向；LPCP
 冻结tail又把新Procedure压成AS139邻域小修；direct native/rank32路线打开写出后，shared reward仍不能保留held

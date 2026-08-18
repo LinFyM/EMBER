@@ -1,9 +1,9 @@
 # Layer-Matched Memory Program Compiler
 
-状态：2026-08-18 **active LMMPC-v5 implementation authority**。LMMPC-v1/v2/v3/v4均已完成macro25/50 strict与逐接口
-诊断，terminal checkpoints只作证据，不再resume。owner已授权在EMBER稳定科学合同和本文主架构内完成局部迭代、
-fresh训练、strict评测与逐接口分析；不得因尚未观察到性能峰值而过早终止，也不得在没有架构级证据时大幅改换
-路线。
+状态：2026-08-18 **active EMBER-LMMPC / Core-Addressed Reader authority**。LMMPC-v1/v2/v3/v4是历史revision；
+当前方法统一称EMBER-LMMPC，当前reader统一称Core-Addressed Reader。macro25/50 strict与逐接口分析已经完成，
+但历史非单调轨迹表明两点不足以宣告recipe终局。当前只完成预注册到macro100的同一world6训练轨迹、macro75/100
+strict评测与漂移归因，不改架构或实现successor。
 
 ## 1. 一句话决策
 
@@ -906,13 +906,13 @@ v5只有macro25一个正式closed-loop点，且functional loss到该点仍下降
 churn分析。若macro50继续上升，保留同一路线；若持平或回落且BA继续换向，则v5终局，下一单变量才针对现有
 factor commitment所接收的functional credit，而不是回头修改已经通过的Procedure/reader。
 
-### 20.7 v5 macro50稳定性终局与最早未解接口
+### 20.7 Core-Addressed Reader macro50负证据与待完成轨迹
 
 同一formal run严格保持world6和gpu01物理`1/2/4/5/6/7`，从macro25 exact-resume到macro50并完整exit0。
 macro26--50 recovery wall=`749.598s`，每macro仍为24 tasks等权且K1--K4各6 tasks；global functional loss从
 macro21--25均值`.116333`继续降到macro46--50均值`.109615`，16/24 train tasks的末5轮均值低于macro21--25。
-checkpoint保留完整Writer、optimizer、sampler/RNG与六rank state，0 OOM/nonfinite。该证据足以排除“macro25训练量
-不足、继续同recipe即可稳定共同上升”。
+checkpoint保留完整Writer、optimizer、sampler/RNG与六rank state，0 OOM/nonfinite。该证据足以证明macro25→50
+没有稳定共同上升，但不能证明macro75/100不会非单调回升，也不能区分回升是否只是另一轮task换手。
 
 macro50 K4 strict paired400完整exit0，结果为`84/400`、breadth5，per-task=
 `0/1/45/1/0/29/8/0`、per-suite=`1/46/29/8`，top3 tasks贡献`82/84=.97619`。与同一400行macro25严格配对为
@@ -942,11 +942,12 @@ reader/raw由`1.7627x→2.2745x`；Core-fused/compiled/effective-BA也由`1.1078
 `.36716/.30910`。因此Procedure趋同是值得长期监控的上游趋势，但它没有在本轮最早抹掉时序或task结构，不能用
 contrastive、matching或reverse loss作为当前首修变量。
 
-本轮终局判断是：v5的Core-conditioned layer/rank reader是可保留的正机制，它相对v4把macro25 strict
+截至macro50的判断是：Core-Addressed Reader是可保留的正机制，它相对matched v4把macro25 strict
 `104→123`并持续保留有向stage证据；但`该reader + bounded K-set/M2P + native rank16 FactorHeads + B20
-functional-only credit`无法稳定共同积累，macro50终局non-pass。最早未解接口为
+functional-only credit`在25→50没有稳定共同积累。候选最早未解接口为
 **offline B20 functional cotangent -> task-specific native factor commitment -> held on-policy support retention**。
 现有证据更偏向credit/retention而非carrier、memory容量、rank16容量或“没有写出”，但尚不能完全拆开loss方向与
-FactorHeads可达坐标的责任。不得resume macro75、补六臂、扫rank/scale/LR/seed或回头重做已通过的reader；LMMPC
-主思想、Dynamic-K、memory token、Core/Procedure和rank16本身均未被否定。当前停止实验，下一单变量在owner讨论后
-再确定。
+FactorHeads可达坐标的责任。鉴于formal config原本预注册`25/50/75/100`，且历史v5.2/v6均有下降后回升，撤回
+“macro50终局、不得resume75”的过强裁决。当前保持原world6/topology、架构、B20 objective与optimizer状态，
+exact-resume到macro100并评测macro75/100；联合四checkpoint做Program、FactorHeads、B20 credit与shared retention
+归因后再终局。不得借此扫rank/scale/LR/seed或回头重做已通过reader；本轮不实现successor。

@@ -315,7 +315,7 @@ position作Keys；同地址首帧中心化memory dynamic作唯一Values。K-set�
 且必须fresh。该实验检验V6有效的“task-conditioned query读取微弱有向证据”原则能否在LMMPC四流中成立，不恢复
 V6 checkpoint、frozen compiler或旧slot实现，也不增加negative/matching loss。
 
-### 3.12 Layer-Matched Memory Program Compiler v5
+### 3.12 EMBER-LMMPC Core-Addressed Reader（历史revision v5）
 
 v5唯一把v4的Core-unconditioned endpoint Query替换为Core-conditioned layer/rank address Query，其余bounded K-set、
 Core fusion、bounded axial M2P、native rank16 FactorHeads和B20 functional-only recipe完全不变。机制门显示raw
@@ -335,10 +335,11 @@ energy为`.9796--.9965`，而不同task mean update cosine仅`.35996`。macro50 
 所以最早未解接口后移为`offline B20 functional cotangent -> task-specific native factor commitment -> held on-policy
 support retention`，不是carrier、Procedure reader、K-set或LoRA未写出。
 
-v5精确recipe终局，不续macro75、六臂或参数小扫。该负结果只否定
-`Core-conditioned reader + bounded K-set/M2P + native rank16 FactorHeads + B20 functional-only training`的稳定共同积累；
-reader本身保留为正机制，LMMPC、memory token、Dynamic-K、Core/Procedure和rank16均未被否定。当前无active successor，
-等待owner讨论后再决定下一单变量。
+macro50是显著负点，但不再作为整条recipe终局：历史v5.2/v6均出现先降后升，且该formal config本来预注册
+`25/50/75/100`。因此同一world6/topology将exact-resume到macro100，并对macro75/100做同口径strict paired400；
+四checkpoint联合判断共同积累、same-row恢复或循环task换手，并拆分Program、FactorHeads、B20 credit与shared
+retention责任。当前不改架构、不扫参数、不补六臂且不实现successor。已有负结果仍证明25→50未稳定共同积累；
+reader本身保留为正机制，memory token、Dynamic-K、Core/Procedure、rank16和EMBER-LMMPC主思想均未被否定。
 
 ## 4. 截至整理边界的已解决与未解决接口
 

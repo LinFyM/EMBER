@@ -246,10 +246,11 @@ def _resume_if_requested(
     contract: Mapping[str, Any],
     initial_macro: int,
 ) -> int:
-    if args.resume is None:
+    checkpoint = args.resume or args.diagnostic_fork_resume
+    if checkpoint is None:
         return 0
     loaded, metrics_rows = load_writer_checkpoint(
-        checkpoint=args.resume,
+        checkpoint=checkpoint,
         context=context,
         writer=writer,
         optimizer=optimizer,
@@ -258,7 +259,7 @@ def _resume_if_requested(
     )
     if loaded != initial_macro:
         raise WriterModelError("dynamic-K resume cursor disagrees with its state")
-    return metrics_rows
+    return 0 if args.diagnostic_fork_resume is not None else metrics_rows
 
 
 def prepare_runtime(
@@ -269,9 +270,12 @@ def prepare_runtime(
         args, config, context
     )
     args.stop_after_macro = stop_macro
-    initial_macro = checkpoint_macro(args.resume)
+    resume_checkpoint = args.resume or args.diagnostic_fork_resume
+    initial_macro = checkpoint_macro(resume_checkpoint)
     if args.resume is not None and args.resume.parent.parent != args.output_dir:
         raise WriterModelError("dynamic-K resume checkpoint belongs to another run")
+    if args.diagnostic_fork_resume is not None and initial_macro != 25:
+        raise WriterModelError("FactorHead freeze diagnostic must fork macro25")
     if not 0 <= initial_macro < stop_macro:
         raise WriterModelError("dynamic-K resume cursor is outside this segment")
     seed_everything(int(config["optimization"]["seed"]), context)
@@ -290,8 +294,13 @@ def prepare_runtime(
         asset_root=args.source_run.resolve().parents[2],
     )
     writer.to(context.device)
-    trainable = writer_trainable_contract(writer, policy, lora)
     optimizer, scheduler = _build_optimizer(writer, config, total)
+    if args.diagnostic_fork_resume is not None:
+        factor_heads = getattr(writer, "factor_heads", None)
+        if factor_heads is None:
+            raise WriterModelError("FactorHead freeze diagnostic lost its decoder")
+        factor_heads.requires_grad_(False)
+    trainable = writer_trainable_contract(writer, policy, lora)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     contract = build_contract(
         args=args,
@@ -468,6 +477,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--diagnostic-fork-resume", type=Path)
+    parser.add_argument("--freeze-factor-heads", action="store_true")
     parser.add_argument("--total-macros", type=int)
     parser.add_argument("--stop-after-macro", type=int)
     parser.add_argument("--checkpoint-macros", type=str)
@@ -479,6 +490,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
     config = load_writer_config(args.config.resolve())
+    fork = args.diagnostic_fork_resume is not None
+    if (
+        args.resume is not None and fork
+        or args.freeze_factor_heads != fork
+        or fork and args.mode != "formal"
+    ):
+        raise WriterModelError(
+            "FactorHead freeze diagnostic requires one formal fork checkpoint"
+        )
     if args.num_workers is None:
         args.num_workers = int(config["loader"]["num_workers_per_rank"])
     if args.num_workers < 0 or args.log_every <= 0:
@@ -491,6 +511,7 @@ def finalize_args(args: argparse.Namespace) -> argparse.Namespace:
         "data_root",
         "output_dir",
         "resume",
+        "diagnostic_fork_resume",
     ):
         value = getattr(args, name)
         if value is not None:

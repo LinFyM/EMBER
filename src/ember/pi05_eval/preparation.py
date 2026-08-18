@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import uuid
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -23,6 +24,7 @@ from ember.pi05_eval_contract import (
     inspect_tokenizer,
     load_evaluation_authorities,
 )
+from ember.pi05_source_checkpoint import read_json
 from ember.pi05_eval_queue import (
     EvaluationTask,
     build_cost_balanced_shards,
@@ -85,6 +87,11 @@ def _inspect_adapter(
             tasks=tasks,
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
+            projection_manifest=(
+                args.task_expert_projection_manifest.resolve()
+                if args.task_expert_projection_manifest is not None
+                else None
+            ),
         )
     if writer_kind == "task_expert":
         return inspect_task_expert_adapter(
@@ -110,6 +117,69 @@ def _inspect_adapter(
             evaluation_k=int(getattr(args, "dynamic_k_writer_evaluation_k", 1)),
         )
     return None
+
+
+def _occupancy_capture_tasks(
+    args: Any,
+    tasks: Sequence[Any],
+    *,
+    output_dir: Path,
+    writer_kind: str | None,
+) -> tuple[tuple[Any, ...], dict[str, Any] | None]:
+    path = getattr(args, "occupancy_capture_selection", None)
+    if path is None:
+        return tuple(tasks), None
+    path = path.resolve()
+    manifest = read_json(path)
+    rows = tuple(dict(row) for row in manifest.get("rows", ()))
+    counts = {
+        category: sum(row.get("category") == category for row in rows)
+        for category in ("lost", "gained", "retained")
+    }
+    keys = {
+        (
+            str(row.get("suite")),
+            int(row.get("task_id", -1)),
+            int(row.get("init_state_id", -1)),
+        )
+        for row in rows
+    }
+    if (
+        args.mode != "formal"
+        or args.role != "validation"
+        or writer_kind != "layer_matched_memory_program_compiler_writer"
+        or manifest.get("schema_version") != "ember_writer_occupancy_selection_v1"
+        or counts != {"lost": 52, "gained": 13, "retained": 71}
+        or len(keys) != len(rows)
+        or len(rows) != 136
+    ):
+        raise Pi05EvaluationError("occupancy capture selection changed")
+    selected = []
+    covered = set()
+    for task in tasks:
+        state_ids = tuple(
+            state_id
+            for state_id in task.init_state_ids
+            if (str(task.suite), int(task.task_id), int(state_id)) in keys
+        )
+        if state_ids:
+            selected.append(replace(task, init_state_ids=state_ids))
+            covered.update(
+                (str(task.suite), int(task.task_id), int(state_id))
+                for state_id in state_ids
+            )
+    if covered != keys:
+        raise Pi05EvaluationError("occupancy selection is outside validation8")
+    return tuple(selected), {
+        "schema_version": "ember_writer_occupancy_capture_v1",
+        "selection_path": str(path),
+        "selection_bytes": path.stat().st_size,
+        "category_counts": counts,
+        "selected_rows": len(rows),
+        "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
+        "training_gradient_use": False,
+        "validation_action_or_reward_gradient_use": False,
+    }
 
 
 def _prepared_payload(
@@ -138,6 +208,12 @@ def _prepared_payload(
         role=args.role,
         state_count=args.state_count,
         libero_config_dir=staging / "libero_config",
+    )
+    tasks, occupancy_capture = _occupancy_capture_tasks(
+        args,
+        tasks,
+        output_dir=output_dir,
+        writer_kind=writer_kind,
     )
     model = inspect_source_checkpoint(
         authorities,
@@ -171,6 +247,7 @@ def _prepared_payload(
         writer_generation_batch_size=args.writer_generation_batch_size,
         writer_cache_root=args.writer_lora_cache_root,
     )
+    contract["diagnostic_occupancy_capture"] = occupancy_capture
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

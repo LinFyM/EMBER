@@ -14,9 +14,7 @@ STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 DYNAMIC_K_WRITER_KIND = "layer_matched_memory_program_compiler_writer"
 WRITER_ADAPTER_KINDS = frozenset({DYNAMIC_K_WRITER_KIND})
-PAIRED_WRITER_KINDS = frozenset(
-    {EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND}
-)
+PAIRED_WRITER_KINDS = frozenset({EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND})
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -34,7 +32,7 @@ def source_sft_requested(args: Any) -> bool:
 
 
 def task_expert_requested(args: Any) -> bool:
-    return _all_or_none(
+    requested = _all_or_none(
         (
             getattr(args, "task_expert_config", None),
             getattr(args, "task_expert_bank_root", None),
@@ -42,6 +40,14 @@ def task_expert_requested(args: Any) -> bool:
         ),
         "Task-Expert",
     )
+    if (
+        getattr(args, "task_expert_projection_manifest", None) is not None
+        and not requested
+    ):
+        raise Pi05EvaluationError(
+            "projected Task-Expert evaluation requires its complete base bank"
+        )
+    return requested
 
 
 def dynamic_k_writer_requested(args: Any) -> bool:
@@ -73,10 +79,7 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
 def paired_writer_identity(adapter: Mapping[str, Any]) -> dict[str, Any]:
     """Return method-specific assets shared by correct/wrong Writer arms."""
 
-    if (
-        adapter.get("kind") not in PAIRED_WRITER_KINDS
-        or "video_data" not in adapter
-    ):
+    if adapter.get("kind") not in PAIRED_WRITER_KINDS or "video_data" not in adapter:
         raise Pi05EvaluationError(
             "writer adapter lost its method-specific video authority"
         )
@@ -123,12 +126,13 @@ def inspect_task_expert_adapter(
     tasks: Sequence[Any],
     evaluation_role: str,
     require_formal: bool,
+    projection_manifest: Path | None = None,
 ) -> dict[str, Any]:
     from ember.expert_manifold.contract import ExpertManifoldError
-    from ember.expert_manifold.evaluation import inspect_task_expert_bank
+    from ember.expert_manifold.evaluation import inspect_task_expert_evaluation
 
     try:
-        return inspect_task_expert_bank(
+        return inspect_task_expert_evaluation(
             config_path=config_path,
             bank_root=bank_root,
             step=step,
@@ -136,6 +140,7 @@ def inspect_task_expert_adapter(
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
             evaluation_role=evaluation_role,
             require_formal=require_formal,
+            projection_manifest=projection_manifest,
         )
     except ExpertManifoldError as error:
         raise Pi05EvaluationError(str(error)) from error

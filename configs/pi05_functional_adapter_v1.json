@@ -1,0 +1,108 @@
+{
+  "schema_version": "ember_pi05_functional_adapter_v1",
+  "status": "profile_candidate",
+  "authorities": {
+    "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
+    "train24_experts": "configs/pi05_video_expert_manifold_v1.json",
+    "target_data_manifest": "configs/pi05_target_data_v1/manifest.json",
+    "evaluation_config": "configs/pi05_target_evaluation_v1.json",
+    "lora_contract": "configs/pi05_lora_v1.json"
+  },
+  "decoder": {
+    "production_code_width": 32,
+    "train24_smoke_code_width": 16,
+    "address_width": 64,
+    "hidden_width": 256,
+    "initialization_seed": 7,
+    "fully_fixed_after_fit": true,
+    "output": "one_complete_38_target_rank16_lora"
+  },
+  "train24_mechanism": {
+    "expert_step": 2000,
+    "fold_count": 5,
+    "held_out_fold": 0,
+    "split_rule": "task_ordinal_mod_fold_count",
+    "fit_task_count": 19,
+    "held_task_count": 5,
+    "objective": {
+      "effective_update_probe_count": 8,
+      "effective_update_probe_seed": 20260819,
+      "codebook_gauge_weight": 0.01
+    },
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "held_code_optimizer": {
+      "name": "Adam",
+      "learning_rate": 0.003,
+      "code_l2_weight": 0.0001
+    },
+    "smoke": {
+      "decoder_steps": 2,
+      "held_code_steps": 1
+    },
+    "profile": {
+      "decoder_steps": 380,
+      "held_code_steps": 250
+    },
+    "flow_response": {
+      "fit_demo_indices": [
+        0,
+        39
+      ],
+      "evaluation_demo_indices": [
+        40,
+        49
+      ],
+      "policy_seed": 20260819,
+      "optimizer": {
+        "name": "AdamW",
+        "learning_rate": 0.0001,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0
+      },
+      "held_code_optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.001,
+        "code_l2_weight": 0.0001
+      },
+      "smoke": {
+        "active_fit_tasks": 1,
+        "active_held_tasks": 1,
+        "panel_count": 1,
+        "panel_batch_size": 1,
+        "decoder_steps": 1,
+        "held_code_steps": 1
+      },
+      "profile": {
+        "active_fit_tasks": 19,
+        "active_held_tasks": 5,
+        "panel_count": 1,
+        "panel_batch_size": 2,
+        "decoder_steps": 38,
+        "held_code_steps": 25
+      }
+    }
+  },
+  "production_meta": {
+    "default_held_out_fold": 0,
+    "fit_task_count": 56,
+    "held_task_count": 15,
+    "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
+    "formal_status": "unsealed_until_live_profile_and_train24_functional_smoke"
+  },
+  "information_wall": {
+    "train24_role": "privileged_teacher_mechanism_only",
+    "nonheld_meta_roles": [
+      "meta_train",
+      "architecture_validation"
+    ],
+    "target_validation_actions_or_rewards_used_for_gradient": 0,
+    "target_test_actions_or_rewards_used_for_gradient": 0,
+    "deployment_task_id_route": false
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

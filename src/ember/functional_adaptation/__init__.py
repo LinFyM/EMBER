@@ -20,6 +20,10 @@ from ember.functional_adaptation.functional_response import (
     functional_response_distillation_loss,
     pi05_flow_response,
 )
+from ember.functional_adaptation.objectives import (
+    effective_update_probe_loss,
+    effective_update_probes,
+)
 
 __all__ = [
     "FunctionalAdaptationContractError",
@@ -35,5 +39,7 @@ __all__ = [
     "build_functional_response_target",
     "functional_response_distillation_loss",
     "pi05_flow_response",
+    "effective_update_probe_loss",
+    "effective_update_probes",
     "relative_effective_update_loss",
 ]

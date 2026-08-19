@@ -11,8 +11,8 @@
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
   Phase 1/2的functional realizability基线，尚未启动formal GPU训练。
-- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；结构性开发位于从最新`main`创建的
-  `/data1/user/ymdai/projects/EMBER-functional-adaptation-successor`、分支`codex/functional-adaptation-successor`。
+- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；当前结构性开发位于从最新`main`创建的
+  `/data1/user/ymdai/projects/EMBER-functional-adaptation-successor`、分支`codex/functional-decoder-training`。
   验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
 - 当前没有active训练、评测或resume。启动任何formal GPU工作前仍需冻结design、clean pushed commit、detached
   worktree、live双节点GPU检查与quota/峰值预算。
@@ -62,6 +62,17 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   单一生成面；decoder以functional identity初始化，Action in/out保持独立，不import旧V6 bank route；
 - policy-functional probe会捕获完整`[batch, 50, 32]` Action Expert flow response，并以expert相对identity的响应能量
   归一化监督，避免source policy的大幅公共响应淹没task adapter信号；首轮相关20项CPU测试通过。
+
+当前train24非正式机制profile（不是模型选择或closed-loop证据）：
+
+- 结果无关fold0以19 tasks拟合decoder、5 tasks冻结decoder后只拟合新code；五折将轮换，19/5不是永久丢弃任务；
+- gauge-invariant `BA·probe`预热在380/250步把fit mean从`1.000`降到`0.447`、held code mean降到`0.805`，但其
+  PI0.5完整flow初始loss仍约`0.999/1.008`，证明effective-update几何不能替代policy-functional目标；
+- 完整50-token flow短profile仅给每个fit task 2步、held task 5步，独立demo40--49评测从`0.999→0.833`和
+  `1.008→0.933`；18/19 fit与4/5 held优于identity，仍各有一个退化task，因此只支持“链路有可学习信号”，尚不通过
+  fixed-decoder realizability gate；
+- A40单卡峰值18.81 GB，38+25个实际更新约22秒，主要固定成本是policy加载与成对probe缓存。下一节点应扩大独立panel和
+  task-equal更新次数，而不是扫rank、scale、seed或dtype。
 
 ## Final external-review result
 

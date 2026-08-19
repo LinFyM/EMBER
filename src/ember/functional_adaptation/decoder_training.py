@@ -1,0 +1,177 @@
+"""Shared task/code bookkeeping for fixed functional-decoder fitting."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+import torch
+from safetensors.torch import load_file
+
+from ember.expert_manifold.evaluation import inspect_task_expert_bank
+from ember.functional_adaptation.decoder import (
+    FunctionalAdapterDecoder,
+    FunctionalCodebook,
+)
+from ember.lora import LoRAContract, validate_lora_state
+from ember.pi05_eval_contract import (
+    inspect_source_checkpoint,
+    load_evaluation_authorities,
+)
+from ember.pi05_source_checkpoint import read_json
+
+
+CONFIG_SCHEMA = "ember_pi05_functional_adapter_v1"
+
+
+@dataclass(frozen=True)
+class ExpertAdapterRecord:
+    ordinal: int
+    global_task_id: int
+    language: str
+    checkpoint: Path
+
+
+@dataclass(frozen=True)
+class DecoderTaskSplit:
+    fit: tuple[ExpertAdapterRecord, ...]
+    held: tuple[ExpertAdapterRecord, ...]
+
+
+def load_functional_adapter_config(path: Path, repo_root: Path) -> dict[str, Any]:
+    config = read_json(path.resolve())
+    authorities = config.get("authorities", {})
+    if (
+        config.get("schema_version") != CONFIG_SCHEMA
+        or config.get("status") != "profile_candidate"
+        or config.get("content_hash_policy") != "disabled_by_owner"
+        or any(not (repo_root / str(value)).is_file() for value in authorities.values())
+    ):
+        raise ValueError("functional-adapter profile contract changed")
+    return config
+
+
+def authority_path(config: Mapping[str, Any], name: str, repo_root: Path) -> Path:
+    return repo_root / str(config["authorities"][name])
+
+
+def inspect_train24_expert_bank(
+    config: Mapping[str, Any],
+    repo_root: Path,
+    *,
+    source_run: Path,
+    checkpoint: Path,
+    bank_root: Path,
+) -> dict[str, Any]:
+    """Resolve the sealed bank once without creating a second bank reader."""
+
+    authorities = load_evaluation_authorities(
+        authority_path(config, "evaluation_config", repo_root), repo_root
+    )
+    source = inspect_source_checkpoint(
+        authorities,
+        source_run,
+        checkpoint,
+        evaluation_mode="formal",
+    )
+    manifest = read_json(authority_path(config, "target_data_manifest", repo_root))
+    task_keys = [
+        (str(row["suite"]), int(row["task_id"]))
+        for row in manifest["tasks"]
+        if row["split_role"] == "train"
+    ]
+    return inspect_task_expert_bank(
+        config_path=authority_path(config, "train24_experts", repo_root),
+        bank_root=bank_root,
+        step=int(config["train24_mechanism"]["expert_step"]),
+        source=source,
+        task_keys=task_keys,
+        evaluation_role="development_train",
+        require_formal=True,
+    )
+
+
+def expert_records(bank: Mapping[str, Any]) -> tuple[ExpertAdapterRecord, ...]:
+    records = tuple(
+        sorted(
+            (
+                ExpertAdapterRecord(
+                    ordinal=int(row["ordinal"]),
+                    global_task_id=int(row["global_task_id"]),
+                    language=str(row["language"]),
+                    checkpoint=Path(str(row["checkpoint"])).resolve(),
+                )
+                for row in bank["tasks"]
+            ),
+            key=lambda row: row.ordinal,
+        )
+    )
+    if tuple(row.ordinal for row in records) != tuple(range(len(records))):
+        raise ValueError("expert bank ordinals are not contiguous")
+    return records
+
+
+def decoder_task_split(
+    records: Sequence[ExpertAdapterRecord], *, fold_count: int, held_out_fold: int
+) -> DecoderTaskSplit:
+    fit = tuple(row for row in records if row.ordinal % fold_count != held_out_fold)
+    held = tuple(row for row in records if row.ordinal % fold_count == held_out_fold)
+    if not fit or not held or len(fit) + len(held) != len(records):
+        raise ValueError("functional-decoder task split is empty")
+    return DecoderTaskSplit(fit=fit, held=held)
+
+
+def load_expert_states(
+    records: Sequence[ExpertAdapterRecord],
+    contract: LoRAContract,
+    device: torch.device | str,
+) -> tuple[dict[str, torch.Tensor], ...]:
+    result = []
+    for record in records:
+        state = load_file(str(record.checkpoint / "adapter.safetensors"), device="cpu")
+        validate_lora_state(state, contract)
+        result.append({name: value.to(device) for name, value in state.items()})
+    return tuple(result)
+
+
+class FunctionalDecoderSystem(torch.nn.Module):
+    """One privileged codebook and one shared complete-LoRA decoder."""
+
+    def __init__(
+        self,
+        contract: LoRAContract,
+        template_state: Mapping[str, torch.Tensor],
+        *,
+        task_count: int,
+        code_width: int,
+        address_width: int,
+        hidden_width: int,
+        seed: int,
+    ) -> None:
+        super().__init__()
+        self.codebook = FunctionalCodebook(task_count, code_width, seed=seed)
+        self.decoder = FunctionalAdapterDecoder(
+            contract,
+            template_state,
+            code_width=code_width,
+            address_width=address_width,
+            hidden_width=hidden_width,
+            initialization_seed=seed,
+        )
+
+    def forward(self, task_index: int) -> dict[str, torch.Tensor]:
+        index = torch.tensor(task_index, device=self.codebook.weight.device)
+        return self.decoder(self.codebook(index))
+
+
+def balanced_task_order(task_count: int, steps: int, *, seed: int) -> tuple[int, ...]:
+    """Produce task-equal shuffled macros without outcome-based sampling."""
+
+    if task_count <= 0 or steps <= 0:
+        raise ValueError("balanced task order requires positive sizes")
+    generator = torch.Generator(device="cpu").manual_seed(int(seed))
+    order: list[int] = []
+    while len(order) < steps:
+        order.extend(torch.randperm(task_count, generator=generator).tolist())
+    return tuple(order[:steps])

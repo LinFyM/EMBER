@@ -433,6 +433,20 @@ AdamW是主要根因。完整逐项裁决、remote-safe rows与provenance见
 `docs/external_review_claim_ledger_20260818.md`、`docs/external_review_followup_20260819.md`和
 `docs/evidence/external_review_20260818/`。
 
+### 3.16 第二轮后继路线的train24 fixed-decoder机制profile
+
+2026-08-19在结果无关的train24 ordinal-mod-5 fold0上，以19 tasks拟合共享decoder、冻结decoder后对5个未见tasks只
+优化free code。该划分只用于回答decoder是否超越task字典；完整计划轮换五折，最终训练不会永久舍弃这5个tasks。
+
+CPU `BA·probe`预热380/250步得到fit `1.000→0.447`、held `0.805`。同一checkpoint进入冻结π0.5的完整50-token
+Action Expert flow面时，独立episode初始为fit `0.999`、held `1.008`，说明低层有效更新相似不能代理policy功能。
+随后38个task-equal decoder steps（2/task）和25个held-code steps（5/task）把demo40--49独立评测降到fit `0.833`、
+held `0.933`；18/19与4/5 tasks分别优于identity，各有一个task退化。A40峰值18.81 GB，实际优化段约22秒。
+
+这些结果来自dirty worktree的非正式profile，只有一个训练panel与一个独立评测panel，没有closed-loop rollout，故只证明
+链路与早期学习信号，不构成realizability pass或架构选择。remote-safe摘要见
+`docs/evidence/functional_adaptation_20260819/train24_profile_summary.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

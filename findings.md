@@ -407,3 +407,15 @@ action/reward诊断、runtime video policy、生成后task-local RL、更丰富�
 
 当前LMMPC 320-cell joint-moving grid的增量路线到此停止；可继承的是严格评测、每视频保序/集合聚合、Core/Procedure
 职责、Core-addressed读取和bounded refinement等已有正证据，不继承其具体坐标作为架构信条。
+
+## 18. Fixed functional decoder的首个机制证据
+
+train24 fold0非正式profile第一次把“参数作用”和“真实policy响应”放在同一decoder上配对比较。19-task decoder在
+gauge-invariant随机输入`BA·probe`上由identity-relative `1.000`降到`0.447`，冻结decoder后5个未见task仅优化code可到
+`0.805`；但把同一warm-start放入完整PI0.5 Action Expert 50-token flow response，独立episode初始仍为fit `0.999`、
+held `1.008`。因此低层有效更新相似度最多是便宜预热/定位面，不能作为functional equivalence或模型选择代理。
+
+直接用expert相对source的完整flow增量训练后，仅2次/task decoder更新已把独立fit loss降到`0.833`，仅5次/task held
+code更新把未见task loss降到`0.933`；18/19 fit和4/5 held优于identity。该结果证明完整policy-functional梯度、固定
+decoder和新task code三者已同时接通，并给出继续训练的合理信号；它仍是dirty-worktree、单fold、单train/eval panel、
+无closed-loop的机制profile，不能声称decoder range通过，更不能据此选择最终架构。

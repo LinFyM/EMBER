@@ -12,11 +12,11 @@
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
   Phase 1/2的functional realizability基线，尚未启动formal GPU训练。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；当前结构性开发位于从最新`main`创建的
-  `/data1/user/ymdai/projects/EMBER-functional-adaptation-successor`、分支`codex/functional-decoder-training`。
+  `/data1/user/ymdai/projects/EMBER-nonheld-meta-experts`、分支`codex/nonheld-meta-experts`。
   验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
-- 当前没有active训练、评测或resume。启动任何formal GPU工作前仍需冻结design、clean pushed commit、detached
-  worktree、live双节点GPU检查与quota/峰值预算。
-- 仓库现有可执行Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
+- 当前有两组来自clean pushed `7b6d768`的formal评测：train24 fold0 fixed functional decoder在gpu01四卡，修正投影
+  wiring后的F4 free-Program reference在gpu02两卡；均使用动态任务队列，完成前不解释partial rows。
+- `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
 - 不直接返回V6/LPCP/GOMQ，也不恢复旧Expert-Manifold为held dictionary；历史实现只提供paired反事实、functional
@@ -62,6 +62,12 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   单一生成面；decoder以functional identity初始化，Action in/out保持独立，不import旧V6 bank route；
 - policy-functional probe会捕获完整`[batch, 50, 32]` Action Expert flow response，并以expert相对identity的响应能量
   归一化监督，避免source policy的大幅公共响应淹没task adapter信号；首轮相关20项CPU测试通过。
+- non-held meta expert合同已固定71 tasks中的56 meta-train / 15 meta-validation-oracle，并复用唯一task-expert训练owner；
+  fixed decoder也已能从该bank按角色拟合/冻结和导出32维code，不建立task-ID deployment route。
+- 后继Writer运行面已实现为`language prior z_L + ordered-video posterior delta(L,V) -> frozen decoder -> one complete LoRA`：
+  每条视频独立保序编码initial/goal/event/transition，跨K只聚合完整video program；保留50个Action probe并加入仅训练期
+  meta-action phase alignment，同时提供真正不读language/action probe的video-only baseline。模块按decoder、inference、
+  schedule/step/checkpoint和privileged-action owner拆分；旧LMMPC继续只作为sealed历史基线，不形成并行active fallback。
 
 当前train24非正式机制profile（不是模型选择或closed-loop证据）：
 

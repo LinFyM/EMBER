@@ -42,6 +42,13 @@ class DecoderTaskSplit:
     held: tuple[ExpertAdapterRecord, ...]
 
 
+@dataclass(frozen=True)
+class MetaDecoderCodeTargets:
+    decoder_checkpoint: Path
+    train_codes: Mapping[int, torch.Tensor]
+    held_codes: Mapping[int, torch.Tensor]
+
+
 def load_functional_adapter_config(path: Path, repo_root: Path) -> dict[str, Any]:
     config = read_json(path.resolve())
     authorities = config.get("authorities", {})
@@ -182,6 +189,46 @@ def load_expert_states(
         validate_lora_state(state, contract)
         result.append({name: value.to(device) for name, value in state.items()})
     return tuple(result)
+
+
+def load_meta_decoder_code_targets(
+    profile_root: Path, *, device: torch.device | str
+) -> MetaDecoderCodeTargets:
+    """Bind fixed, whitened codes to non-held task identities for supervision."""
+
+    root = profile_root.resolve()
+    result = read_json(root / "result.json")
+    if (
+        result.get("schema_version") != "ember_pi05_functional_flow_profile_v1"
+        or result.get("surface") != "nonheld_meta"
+        or result.get("repository", {}).get("dirty_paths") != []
+    ):
+        raise ValueError("non-held decoder profile is not a clean fixed-code authority")
+    train_ids = tuple(int(value) for value in result["active_fit_global_task_ids"])
+    held_ids = tuple(int(value) for value in result["active_held_global_task_ids"])
+    decoder_path = root / "decoder.safetensors"
+    state = load_file(str(decoder_path), device=str(device))
+    train = state.get("codebook.weight")
+    held = load_file(str(root / "held_codes.safetensors"), device=str(device)).get(
+        "held_codes"
+    )
+    if (
+        train is None
+        or held is None
+        or train.ndim != 2
+        or held.ndim != 2
+        or len(train_ids) != 56
+        or train.shape[0] != len(train_ids)
+        or len(held_ids) != 15
+        or held.shape[0] != len(held_ids)
+        or train.shape[1] != held.shape[1]
+    ):
+        raise ValueError("non-held fixed-code checkpoint changed shape")
+    return MetaDecoderCodeTargets(
+        decoder_checkpoint=decoder_path,
+        train_codes={task_id: train[index] for index, task_id in enumerate(train_ids)},
+        held_codes={task_id: held[index] for index, task_id in enumerate(held_ids)},
+    )
 
 
 class FunctionalDecoderSystem(torch.nn.Module):

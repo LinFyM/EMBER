@@ -18,6 +18,100 @@
     "fully_fixed_after_fit": true,
     "output": "one_complete_38_target_rank16_lora"
   },
+  "code_inference": {
+    "kind": "language_prior_plus_ordered_video_process_posterior",
+    "feature_width": 256,
+    "hidden_width": 1024,
+    "code_width": 32,
+    "attention_heads": 8,
+    "temporal_layers": 2,
+    "phase_queries": 5,
+    "event_queries": 6,
+    "dropout": 0.0,
+    "initialization_seed": 20260820,
+    "language_only_is_learned": true,
+    "action_probe_tokens_preserved": 50,
+    "per_video_order_before_set_aggregation": true,
+    "task_id_route": false,
+    "feature_encoder": {
+      "image_width": 2048,
+      "expert_width": 1024,
+      "text_meta_lora_rank": 2,
+      "vl_meta_lora_rank": 2,
+      "action_meta_lora_rank": 4,
+      "patch_grounding_heads": 8,
+      "max_frames_per_encoder_call": 32,
+      "activation_checkpointing": true
+    },
+    "training": {
+      "train_demo_indices": [
+        0,
+        39
+      ],
+      "within_task_evaluation_demo_indices": [
+        40,
+        49
+      ],
+      "frame_stride": 5,
+      "dynamic_k_max": 4,
+      "teacher_video_seed": 20260820,
+      "task_macro_seed": 20260820,
+      "temporal_controls": [
+        "reversed",
+        "shuffled",
+        "first_final",
+        "endpoints_middle_shuffled"
+      ],
+      "loss_weights": {
+        "combined_code": 1.0,
+        "language_code": 0.5,
+        "video_code": 0.5,
+        "correct_confidence": 0.05,
+        "control_confidence": 0.05,
+        "control_update": 0.25,
+        "same_task_consistency": 0.0,
+        "action_alignment": 0.1
+      },
+      "optimizer": {
+        "name": "AdamW",
+        "learning_rate": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0
+      },
+      "smoke": {
+        "task_count": 4,
+        "total_macros": 1,
+        "checkpoint_macros": [
+          1
+        ]
+      },
+      "profile": {
+        "task_count": 4,
+        "total_macros": 1,
+        "checkpoint_macros": [
+          1
+        ]
+      },
+      "formal": {
+        "task_count": 56,
+        "world_size": 6,
+        "total_macros": 100,
+        "default_stop_macro": 10,
+        "checkpoint_macros": [
+          10,
+          25,
+          50,
+          75,
+          100
+        ]
+      }
+    }
+  },
   "train24_mechanism": {
     "expert_step": 2000,
     "fold_count": 5,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager, nullcontext
+from dataclasses import dataclass
 from typing import Iterator, Sequence
 
 import torch
@@ -15,6 +16,18 @@ from ember.writer.temporal import RMSNorm
 
 class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
+
+
+@dataclass(frozen=True)
+class LanguageAxialProcessFeatures:
+    """Full text, visual, and 50-token Action-probe evidence for code inference."""
+
+    text_queries: torch.Tensor
+    frame_evidence: torch.Tensor
+    patch_evidence: torch.Tensor
+    visual_patch_tokens: torch.Tensor
+    action_probe_tokens: torch.Tensor
+    valid_task_tokens: torch.Tensor
 
 
 class MetaLoRAProjection(torch.nn.Module):
@@ -178,6 +191,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         padded_action_dim: int,
         initialization_seed: int,
         activation_checkpointing: bool,
+        raw_visual_projection: bool = False,
     ) -> None:
         super().__init__()
         dimensions = (
@@ -214,6 +228,11 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             expert_width,
             program_width,
             bias=False,
+        )
+        self.visual_projection = (
+            torch.nn.Linear(image_width, program_width, bias=False)
+            if raw_visual_projection
+            else None
         )
         self.patch_grounding = TaskQueriedPatchGrounding(
             width=program_width,
@@ -378,7 +397,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_queries: torch.Tensor,
         valid_task_tokens: torch.Tensor,
         maximum_task_tokens: int,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
         bridge = core.paligemma_with_expert
@@ -456,13 +475,24 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         ):
             raise VideoProgramError("PI05 semantic hidden layout changed")
 
-        return self._project_joint_evidence(
+        evidence, patch_evidence, action_probe_tokens = self._project_joint_evidence(
             prefix_hidden,
             suffix_hidden,
             task_span_mask,
             text_queries,
             valid_task_tokens,
             maximum_task_tokens,
+        )
+        visual_patch_tokens = (
+            self.visual_projection(image_tokens)
+            if self.visual_projection is not None
+            else patch_evidence
+        )
+        return (
+            evidence,
+            patch_evidence,
+            action_probe_tokens,
+            visual_patch_tokens,
         )
 
     def _project_joint_evidence(
@@ -490,8 +520,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             valid_task_tokens,
         )
         evidence = multimodal_evidence + patch_evidence
-        interaction = self.interaction_projection(action_hidden.mean(dim=1))
-        return evidence, patch_evidence, interaction
+        action_probe_tokens = self.interaction_projection(action_hidden)
+        return evidence, patch_evidence, action_probe_tokens
 
     def _validate_forward_batch(
         self,
@@ -566,7 +596,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         return core, valid_task_tokens, task_counts
 
-    def forward(
+    def forward_process_features(
         self,
         policy: torch.nn.Module,
         frames: torch.Tensor,
@@ -574,14 +604,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        """Return text, Core evidence, patch evidence, and per-frame probes."""
+    ) -> LanguageAxialProcessFeatures:
+        """Return full evidence without collapsing the Action horizon."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -623,6 +647,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         evidence_rows = []
         patch_evidence_rows = []
         interaction_rows = []
+        visual_rows = []
         for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
             rows = torch.arange(start, stop, device=frames.device)
@@ -643,7 +668,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 span_values: torch.Tensor,
                 query_values: torch.Tensor,
                 valid_token_values: torch.Tensor,
-            ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
                 return self._encode_microbatch(
                     core,
                     frame_values,
@@ -656,21 +681,56 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 )
 
             if should_checkpoint:
-                evidence, patch_evidence, interaction = checkpoint(
+                evidence, patch_evidence, interaction, visual = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                evidence, patch_evidence, interaction = invoke_frames(*arguments)
+                evidence, patch_evidence, interaction, visual = invoke_frames(*arguments)
             evidence_rows.append(evidence)
             patch_evidence_rows.append(patch_evidence)
             interaction_rows.append(interaction)
+            visual_rows.append(visual)
+        return LanguageAxialProcessFeatures(
+            text_queries=text_queries,
+            frame_evidence=torch.cat(evidence_rows, dim=0),
+            patch_evidence=torch.cat(patch_evidence_rows, dim=0),
+            visual_patch_tokens=torch.cat(visual_rows, dim=0),
+            action_probe_tokens=torch.cat(interaction_rows, dim=0),
+            valid_task_tokens=valid_task_tokens,
+        )
+
+    def forward(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
+        """Retain the canonical Writer interface while exposing full probes above."""
+
+        features = self.forward_process_features(
+            policy,
+            frames,
+            frame_condition_ids,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
         return (
-            text_queries,
-            torch.cat(evidence_rows, dim=0),
-            torch.cat(patch_evidence_rows, dim=0),
-            torch.cat(interaction_rows, dim=0),
-            valid_task_tokens,
+            features.text_queries,
+            features.frame_evidence,
+            features.patch_evidence,
+            features.action_probe_tokens.mean(dim=1),
+            features.valid_task_tokens,
         )

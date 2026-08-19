@@ -84,6 +84,14 @@
         "panel_batch_size": 2,
         "decoder_steps": 38,
         "held_code_steps": 25
+      },
+      "informative": {
+        "active_fit_tasks": 19,
+        "active_held_tasks": 5,
+        "panel_count": 4,
+        "panel_batch_size": 2,
+        "decoder_steps": 380,
+        "held_code_steps": 250
       }
     }
   },

@@ -31,6 +31,7 @@ from ember.functional_adaptation.probe_panels import (
     FunctionalProbePanel,
     build_probe_panels,
     mean_functional_probe_loss,
+    panel_for_visit,
     selected_probe_rows,
 )
 from ember.lora import identity_lora_state
@@ -320,6 +321,7 @@ def _fit_decoder(runtime: FlowProfile, panels: FlowPanels, metrics_path: Path) -
         int(runtime.schedule["decoder_steps"]),
         seed=int(runtime.config["decoder"]["initialization_seed"]),
     )
+    visits = [0] * len(runtime.active_fit)
     for step, task_index in enumerate(order, start=1):
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -327,7 +329,9 @@ def _fit_decoder(runtime: FlowProfile, panels: FlowPanels, metrics_path: Path) -
                 runtime.policy,
                 runtime.system(task_index),
                 runtime.contract,
-                panels.fit_train[task_index],
+                panel_for_visit(
+                    panels.fit_train[task_index], visits[task_index]
+                ),
             )
             gauge_loss = runtime.system.codebook.gauge_loss()
             loss = response_loss + float(
@@ -338,6 +342,7 @@ def _fit_decoder(runtime: FlowProfile, panels: FlowPanels, metrics_path: Path) -
             runtime.system.parameters(), float(optimizer_config["gradient_clip_norm"])
         )
         optimizer.step()
+        visits[task_index] += 1
         append_jsonl(
             metrics_path,
             {
@@ -368,6 +373,7 @@ def _fit_held_codes(
         int(runtime.schedule["held_code_steps"]),
         seed=int(runtime.config["decoder"]["initialization_seed"]) + 1,
     )
+    visits = [0] * len(runtime.active_held)
     for step, task_index in enumerate(held_order, start=1):
         held_optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -375,7 +381,9 @@ def _fit_held_codes(
                 runtime.policy,
                 runtime.system.decoder(runtime.held_codes[task_index]),
                 runtime.contract,
-                panels.held_train[task_index],
+                panel_for_visit(
+                    panels.held_train[task_index], visits[task_index]
+                ),
             )
             code_l2 = runtime.held_codes[task_index].square().mean()
             loss = response_loss + float(
@@ -383,6 +391,7 @@ def _fit_held_codes(
             ) * code_l2
         loss.backward()
         held_optimizer.step()
+        visits[task_index] += 1
         append_jsonl(
             metrics_path,
             {
@@ -489,7 +498,9 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         default=REPO_ROOT / "configs/pi05_functional_adapter_v1.json",
     )
-    result.add_argument("--mode", choices=("smoke", "profile"), required=True)
+    result.add_argument(
+        "--mode", choices=("smoke", "profile", "informative"), required=True
+    )
     result.add_argument("--source-run", type=Path, required=True)
     result.add_argument("--checkpoint", type=Path, required=True)
     result.add_argument("--expert-bank-root", type=Path, required=True)

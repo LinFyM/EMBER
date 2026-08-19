@@ -23,6 +23,16 @@ class FunctionalProbePanel:
     policy_seed: int
 
 
+def panel_for_visit(
+    panels: Sequence[FunctionalProbePanel], visit: int
+) -> tuple[FunctionalProbePanel, ...]:
+    """Rotate fixed panels for one task without outcome-based resampling."""
+
+    if not panels or visit < 0:
+        raise ValueError("invalid functional probe visit")
+    return (panels[visit % len(panels)],)
+
+
 def selected_probe_rows(
     task_episode_rows: Mapping[int, Sequence[int]],
     *,

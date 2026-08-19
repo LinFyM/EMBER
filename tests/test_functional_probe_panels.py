@@ -1,6 +1,10 @@
 import pytest
 
-from ember.functional_adaptation.probe_panels import selected_probe_rows
+from ember.functional_adaptation.probe_panels import (
+    FunctionalProbePanel,
+    panel_for_visit,
+    selected_probe_rows,
+)
 
 
 def test_probe_rows_use_only_requested_episodes_and_are_repeatable() -> None:
@@ -35,3 +39,14 @@ def test_probe_rows_reject_an_oversized_panel() -> None:
             batch_size=2,
             seed=3,
         )
+
+
+def test_task_visits_rotate_fixed_panels_without_resampling() -> None:
+    panels = tuple(
+        FunctionalProbePanel(batch={}, target=object(), policy_seed=index)
+        for index in range(3)
+    )
+
+    observed = [panel_for_visit(panels, visit)[0].policy_seed for visit in range(7)]
+
+    assert observed == [0, 1, 2, 0, 1, 2, 0]

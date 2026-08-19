@@ -419,3 +419,16 @@ held `1.008`。因此低层有效更新相似度最多是便宜预热/定位面�
 code更新把未见task loss降到`0.933`；18/19 fit和4/5 held优于identity。该结果证明完整policy-functional梯度、固定
 decoder和新task code三者已同时接通，并给出继续训练的合理信号；它仍是dirty-worktree、单fold、单train/eval panel、
 无closed-loop的机制profile，不能声称decoder range通过，更不能据此选择最终架构。
+
+## 19. Train24 fixed decoder的正式闭环裁决
+
+同一fold0 decoder在clean pushed commit上完成24 tasks × 50 states formal rollout。单一fixed-decoder投影为
+`388/1200`，direct experts为`658/1200`；严格配对得到332 retained、56 gained、326 lost，success-set Jaccard
+`.46499`。19个decoder-fit tasks是`326/950`对direct `550/950`，5个冻结decoder后只拟合code的held tasks是
+`62/250`对direct `108/250`。两侧保留率相近，说明主要限制不是单独的held-code optimizer，而是当前32维
+code + shared fixed decoder尚不能稳定表达train24 task-expert的policy-effective功能。
+
+因此首个formal realizability gate明确失败。这个负结果淘汰的是“当前train24 fold0训练合同已经足够”，不是淘汰
+fixed decoder思想本身：专家指出24 tasks不足以同时识别功能流形和推断规律，owner也已授权使用去重后的LIBERO-90。
+下一步按预注册顺序训练56 meta-train / 15 meta-validation-oracle的non-held expert family，再以真正task-level held
+closed loop复验；不通过rank、scale、seed、dtype或flow-loss小扫掩盖本次失败。

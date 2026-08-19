@@ -14,8 +14,8 @@
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；当前结构性开发位于从最新`main`创建的
   `/data1/user/ymdai/projects/EMBER-nonheld-meta-experts`、分支`codex/nonheld-meta-experts`。
   验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
-- 当前有两组来自clean pushed `7b6d768`的formal评测：train24 fold0 fixed functional decoder在gpu01四卡，修正投影
-  wiring后的F4 free-Program reference在gpu02两卡；均使用动态任务队列，完成前不解释partial rows。
+- 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成；修正投影wiring后的F4
+  free-Program reference仍在gpu02两卡运行，完成前不解释partial rows。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -79,6 +79,15 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   fixed-decoder realizability gate；
 - A40单卡峰值18.81 GB，38+25个实际更新约22秒，主要固定成本是policy加载与成对probe缓存。下一节点应扩大独立panel和
   task-equal更新次数，而不是扫rank、scale、seed或dtype。
+
+当前train24 fold0 formal closed-loop结果：
+
+- fixed decoder单checkpoint为`388/1200`，direct task experts为`658/1200`；严格配对是332 retained、56 gained、
+  326 lost，Jaccard `.46499`；
+- 19个decoder-fit tasks为`326/950`，对应direct `550/950`；5个decoder-held tasks为`62/250`，对应direct
+  `108/250`。fit与held都只保留约六成expert aggregate，不是只在held code拟合处失效；
+- 因此train24版明确不通过functional realizability gate，内部flow loss下降不能替代该结论。下一步不是扫小超参，
+  而是按已冻结合同训练56/15 non-held meta expert family，再重新拟合和裁决固定decoder。
 
 ## Final external-review result
 

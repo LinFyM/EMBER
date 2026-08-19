@@ -9,7 +9,9 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file
 
+from ember.expert_manifold.contract import load_task_expert_config
 from ember.expert_manifold.evaluation import inspect_task_expert_bank
+from ember.expert_manifold.meta_contract import meta_expert_rows
 from ember.functional_adaptation.decoder import (
     FunctionalAdapterDecoder,
     FunctionalCodebook,
@@ -31,6 +33,7 @@ class ExpertAdapterRecord:
     global_task_id: int
     language: str
     checkpoint: Path
+    split_role: str = "train"
 
 
 @dataclass(frozen=True)
@@ -92,6 +95,39 @@ def inspect_train24_expert_bank(
     )
 
 
+def inspect_nonheld_meta_expert_bank(
+    config: Mapping[str, Any],
+    repo_root: Path,
+    *,
+    source_run: Path,
+    checkpoint: Path,
+    bank_root: Path,
+) -> dict[str, Any]:
+    """Resolve the complete 71-task bank under its fixed meta split."""
+
+    authorities = load_evaluation_authorities(
+        authority_path(config, "evaluation_config", repo_root), repo_root
+    )
+    source = inspect_source_checkpoint(
+        authorities,
+        source_run,
+        checkpoint,
+        evaluation_mode="formal",
+    )
+    expert_config_path = authority_path(config, "meta_experts", repo_root)
+    expert_config = load_task_expert_config(expert_config_path)
+    rows = meta_expert_rows(expert_config)
+    return inspect_task_expert_bank(
+        config_path=expert_config_path,
+        bank_root=bank_root,
+        step=int(config["production_meta"]["expert_step"]),
+        source=source,
+        task_keys=[(str(row["suite"]), int(row["task_id"])) for row in rows],
+        evaluation_role="nonheld_meta",
+        require_formal=True,
+    )
+
+
 def expert_records(bank: Mapping[str, Any]) -> tuple[ExpertAdapterRecord, ...]:
     records = tuple(
         sorted(
@@ -101,6 +137,7 @@ def expert_records(bank: Mapping[str, Any]) -> tuple[ExpertAdapterRecord, ...]:
                     global_task_id=int(row["global_task_id"]),
                     language=str(row["language"]),
                     checkpoint=Path(str(row["checkpoint"])).resolve(),
+                    split_role=str(row.get("split_role", "train")),
                 )
                 for row in bank["tasks"]
             ),
@@ -119,6 +156,18 @@ def decoder_task_split(
     held = tuple(row for row in records if row.ordinal % fold_count == held_out_fold)
     if not fit or not held or len(fit) + len(held) != len(records):
         raise ValueError("functional-decoder task split is empty")
+    return DecoderTaskSplit(fit=fit, held=held)
+
+
+def meta_decoder_task_split(
+    records: Sequence[ExpertAdapterRecord],
+) -> DecoderTaskSplit:
+    fit = tuple(row for row in records if row.split_role == "meta_train")
+    held = tuple(
+        row for row in records if row.split_role == "meta_validation_oracle"
+    )
+    if len(fit) != 56 or len(held) != 15 or len(fit) + len(held) != len(records):
+        raise ValueError("non-held decoder split differs from the fixed 56/15 roles")
     return DecoderTaskSplit(fit=fit, held=held)
 
 

@@ -11,10 +11,14 @@ from safetensors.torch import load_file
 
 from ember.expert_manifold.checkpoint import CHECKPOINT_SCHEMA
 from ember.expert_manifold.contract import (
-    CONFIG_SCHEMA,
     ExpertManifoldError,
     authority_path,
     load_task_expert_config,
+)
+from ember.expert_manifold.meta_contract import (
+    META_EXPERT_CONFIG_SCHEMA,
+    meta_expert_rows,
+    meta_worker_assignments,
 )
 from ember.lora import (
     copy_task_lora_state_,
@@ -85,7 +89,9 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     raise ExpertManifoldError("projected task-expert manifest schema changed")
 
 
-def _train_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+def _expert_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+    if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
+        return meta_expert_rows(config)
     manifest = read_json(authority_path(config, "target_data_manifest"))
     rows = [
         dict(row)
@@ -95,7 +101,7 @@ def _train_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
     rows.sort(key=lambda row: int(row["global_task_id"]))
     if len(rows) != int(config["task_experts"]["task_count"]):
         raise ExpertManifoldError("task-expert evaluation did not resolve train24")
-    return tuple(rows)
+    return tuple({"ordinal": ordinal, **row} for ordinal, row in enumerate(rows))
 
 
 def _source_paths_match(
@@ -121,14 +127,16 @@ def inspect_task_expert_bank(
     evaluation_role: str,
     require_formal: bool,
 ) -> dict[str, Any]:
-    """Seal path/schema/size evidence for all 24 task-local expert adapters."""
+    """Seal one complete train24 or non-held meta task-expert bank."""
 
     config_path = config_path.resolve()
     bank_root = bank_root.resolve()
     config = load_task_expert_config(config_path)
     formal = config["task_experts"]["formal_run"]
-    if evaluation_role != "development_train":
-        raise ExpertManifoldError("task experts may only evaluate development_train")
+    is_meta = config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA
+    required_role = "nonheld_meta" if is_meta else "development_train"
+    if evaluation_role != required_role:
+        raise ExpertManifoldError("task-expert evaluation role differs from its bank")
     if require_formal and formal.get("status") != "sealed":
         raise ExpertManifoldError(
             "formal task-expert evaluation requires a sealed profile"
@@ -137,16 +145,16 @@ def inspect_task_expert_bank(
     if step not in checkpoints or step <= 0:
         raise ExpertManifoldError("task-expert evaluation step is not declared")
 
-    expected_rows = _train_task_rows(config)
+    expected_rows = _expert_task_rows(config)
     expected_by_key = {
-        (str(row["suite"]), int(row["task_id"])): (ordinal, row)
-        for ordinal, row in enumerate(expected_rows)
+        (str(row["suite"]), int(row["task_id"])): (int(row["ordinal"]), row)
+        for row in expected_rows
     }
     observed_keys = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
     if len(set(observed_keys)) != len(observed_keys) or set(observed_keys) != set(
         expected_by_key
     ):
-        raise ExpertManifoldError("task-expert evaluation panel differs from train24")
+        raise ExpertManifoldError("task-expert panel differs from its complete bank")
 
     workers = tuple(
         sorted(path for path in bank_root.glob("worker_*") if path.is_dir())
@@ -159,6 +167,10 @@ def inspect_task_expert_bank(
     training_commits: set[str] = set()
     physical_devices: list[dict[str, Any]] = []
     expected_config_suffix = config_path.parts[-2:]
+    allowed_assignments = (
+        set(meta_worker_assignments(formal)) if is_meta else None
+    )
+    observed_assignments: set[tuple[int, ...]] = set()
 
     for worker in workers:
         contract_path = worker / "run_contract.json"
@@ -167,15 +179,24 @@ def inspect_task_expert_bank(
         summary = read_json(summary_path)
         worker_tasks = tuple(contract.get("tasks", ()))
         runtime = contract.get("runtime", {})
+        worker_assignment = tuple(
+            sorted(int(row.get("ordinal", -1)) for row in worker_tasks)
+        )
+        assignment_valid = (
+            worker_assignment in allowed_assignments
+            if allowed_assignments is not None
+            else len(worker_tasks) == int(formal["tasks_per_worker"])
+        )
         if (
             contract.get("schema_version") != "ember_pi05_task_expert_worker_launch_v1"
             or contract.get("mode") != "formal"
             or contract.get("content_hash_policy") != "disabled_by_owner"
             or Path(str(contract.get("config", {}).get("path", ""))).parts[-2:]
             != expected_config_suffix
-            or contract.get("config", {}).get("schema") != CONFIG_SCHEMA
+            or contract.get("config", {}).get("schema")
+            != config.get("schema_version")
             or not _source_paths_match(contract.get("source", {}), source)
-            or len(worker_tasks) != int(formal["tasks_per_worker"])
+            or not assignment_valid
             or int(runtime.get("per_task_batch_size", -1))
             != int(formal["per_task_batch_size"])
             or runtime.get("task_parameter_sharing") != "none"
@@ -185,6 +206,9 @@ def inspect_task_expert_bank(
             or int(summary.get("selected_stop_step", -1)) < step
         ):
             raise ExpertManifoldError("task-expert worker formal contract changed")
+        if worker_assignment in observed_assignments:
+            raise ExpertManifoldError("task-expert worker assignment is duplicated")
+        observed_assignments.add(worker_assignment)
         summary_rows = {
             int(row.get("task_ordinal", -1)): row for row in summary.get("tasks", ())
         }
@@ -219,7 +243,7 @@ def inspect_task_expert_bank(
             valid_declared = (
                 int(declared.get("ordinal", -1)) == ordinal
                 and int(declared.get("global_task_id", -1)) == global_task_id
-                and declared.get("split_role") == "train"
+                and declared.get("split_role") == row["split_role"]
                 and declared.get("language") == row["language"]
                 and int(summary_row.get("global_task_id", -1)) == global_task_id
                 and int(summary_row.get("completed_steps", -1)) >= step
@@ -245,7 +269,7 @@ def inspect_task_expert_bank(
                     raise ExpertManifoldError(
                         "task-expert checkpoint file size changed"
                     )
-            task_records[key] = {
+            task_record = {
                 "suite": key[0],
                 "task_id": key[1],
                 "ordinal": ordinal,
@@ -256,21 +280,32 @@ def inspect_task_expert_bank(
                 "manifest_bytes": manifest_path.stat().st_size,
                 "adapter_bytes": (checkpoint / "adapter.safetensors").stat().st_size,
             }
+            if is_meta:
+                task_record["split_role"] = str(row["split_role"])
+            task_records[key] = task_record
 
     if (
         len(training_commits) != 1
         or "" in training_commits
         or set(task_records) != set(expected_by_key)
+        or (
+            allowed_assignments is not None
+            and observed_assignments != allowed_assignments
+        )
     ):
         raise ExpertManifoldError("task-expert bank is not one complete formal family")
     return {
         "schema_version": TASK_EXPERT_ADAPTER_SCHEMA,
         "kind": TASK_EXPERT_ADAPTER_KIND,
-        "arm": f"task_expert_step_{step}",
+        "arm": (
+            f"nonheld_meta_task_expert_step_{step}"
+            if is_meta
+            else f"task_expert_step_{step}"
+        ),
         "config": {
             "path": str(config_path),
             "bytes": config_path.stat().st_size,
-            "schema": CONFIG_SCHEMA,
+            "schema": str(config["schema_version"]),
         },
         "bank_root": str(bank_root),
         "training_commit": next(iter(training_commits)),
@@ -290,13 +325,23 @@ def inspect_task_expert_bank(
         },
         "tasks": [task_records[key] for key in sorted(task_records)],
         "workers": physical_devices,
-        "information_wall": {
-            "evaluation_role": "development_train",
-            "validation_experts": 0,
-            "test_experts": 0,
-            "validation_actions_read": 0,
-            "test_actions_read": 0,
-        },
+        "information_wall": (
+            {
+                "evaluation_role": "nonheld_meta",
+                "meta_train_experts": 56,
+                "meta_validation_oracles": 15,
+                "target40_action_reads": 0,
+                "deployment_uses_privileged_experts": False,
+            }
+            if is_meta
+            else {
+                "evaluation_role": "development_train",
+                "validation_experts": 0,
+                "test_experts": 0,
+                "validation_actions_read": 0,
+                "test_actions_read": 0,
+            }
+        ),
         "content_hash_policy": "disabled_by_owner",
     }
 

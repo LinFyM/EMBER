@@ -23,9 +23,11 @@ from ember.functional_adaptation.decoder_training import (
     balanced_task_order,
     decoder_task_split,
     expert_records,
+    inspect_nonheld_meta_expert_bank,
     inspect_train24_expert_bank,
     load_expert_states,
     load_functional_adapter_config,
+    meta_decoder_task_split,
 )
 from ember.functional_adaptation.probe_panels import (
     FunctionalProbePanel,
@@ -148,21 +150,37 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
     device = torch.device(args.device)
     torch.cuda.set_device(device)
     config = load_functional_adapter_config(args.config, REPO_ROOT)
-    mechanism = config["train24_mechanism"]
+    mechanism = config[
+        "production_meta" if args.surface == "nonheld_meta" else "train24_mechanism"
+    ]
     flow = mechanism["flow_response"]
     schedule = flow[args.mode]
-    bank = inspect_train24_expert_bank(
-        config,
-        REPO_ROOT,
-        source_run=args.source_run,
-        checkpoint=args.checkpoint,
-        bank_root=args.expert_bank_root,
-    )
-    split = decoder_task_split(
-        expert_records(bank),
-        fold_count=int(mechanism["fold_count"]),
-        held_out_fold=int(mechanism["held_out_fold"]),
-    )
+    if args.surface == "nonheld_meta":
+        bank = inspect_nonheld_meta_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
+        split = meta_decoder_task_split(expert_records(bank))
+        expert_config_name = "meta_experts"
+        code_width = int(config["decoder"]["production_code_width"])
+    else:
+        bank = inspect_train24_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
+        split = decoder_task_split(
+            expert_records(bank),
+            fold_count=int(mechanism["fold_count"]),
+            held_out_fold=int(mechanism["held_out_fold"]),
+        )
+        expert_config_name = "train24_experts"
+        code_width = int(config["decoder"]["train24_smoke_code_width"])
     fit_count = int(schedule["active_fit_tasks"])
     held_count = int(schedule["active_held_tasks"])
     active_fit = split.fit[:fit_count]
@@ -175,22 +193,30 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         contract,
         identity_lora_state(contract, device=device),
         task_count=len(split.fit),
-        code_width=int(decoder_config["train24_smoke_code_width"]),
+        code_width=code_width,
         address_width=int(decoder_config["address_width"]),
         hidden_width=int(decoder_config["hidden_width"]),
         seed=int(decoder_config["initialization_seed"]),
     ).to(device)
-    warmstart = load_file(str(args.effective_decoder), device=str(device))
-    system.load_state_dict(warmstart, strict=True)
+    if args.surface == "train24":
+        if args.effective_decoder is None:
+            raise ValueError("train24 flow fitting requires its effective decoder")
+        warmstart = load_file(str(args.effective_decoder), device=str(device))
+        system.load_state_dict(warmstart, strict=True)
     system.requires_grad_(True)
-    effective_held_codes = load_file(
-        str(args.effective_decoder.parent / "held_codes.safetensors"),
-        device=str(device),
-    )["held_codes"]
-    held_codes = torch.nn.Parameter(effective_held_codes.clone())
+    if args.surface == "train24":
+        effective_held_codes = load_file(
+            str(args.effective_decoder.parent / "held_codes.safetensors"),
+            device=str(device),
+        )["held_codes"]
+        held_codes = torch.nn.Parameter(effective_held_codes.clone())
+    else:
+        held_codes = torch.nn.Parameter(
+            torch.zeros(len(split.held), code_width, device=device)
+        )
 
     expert_config = load_task_expert_config(
-        authority_path(config, "train24_experts", REPO_ROOT)
+        authority_path(config, expert_config_name, REPO_ROOT)
     )
     all_tasks = load_train_tasks(expert_config, args.data_root)
     active_ids = {row.global_task_id for row in (*active_fit, *active_held)}
@@ -444,6 +470,7 @@ def _write_result(
         {
             "schema_version": "ember_pi05_functional_flow_profile_v1",
             "mode": runtime.args.mode,
+            "surface": runtime.args.surface,
             "repository": {
                 "branch": repository["branch"],
                 "commit": repository["commit"],
@@ -451,6 +478,12 @@ def _write_result(
             },
             "active_fit_ordinals": [row.ordinal for row in runtime.active_fit],
             "active_held_ordinals": [row.ordinal for row in runtime.active_held],
+            "active_fit_global_task_ids": [
+                row.global_task_id for row in runtime.active_fit
+            ],
+            "active_held_global_task_ids": [
+                row.global_task_id for row in runtime.active_held
+            ],
             "initial_fit_mean": sum(initial_fit) / len(initial_fit),
             "initial_fit_per_task": initial_fit,
             "final_fit_mean": sum(final_fit) / len(final_fit),
@@ -501,10 +534,13 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--mode", choices=("smoke", "profile", "informative"), required=True
     )
+    result.add_argument(
+        "--surface", choices=("train24", "nonheld_meta"), default="train24"
+    )
     result.add_argument("--source-run", type=Path, required=True)
     result.add_argument("--checkpoint", type=Path, required=True)
     result.add_argument("--expert-bank-root", type=Path, required=True)
-    result.add_argument("--effective-decoder", type=Path, required=True)
+    result.add_argument("--effective-decoder", type=Path)
     result.add_argument("--tokenizer-path", type=Path, required=True)
     result.add_argument("--data-root", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)

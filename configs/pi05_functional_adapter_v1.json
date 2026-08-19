@@ -3,6 +3,7 @@
   "status": "profile_candidate",
   "authorities": {
     "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
+    "meta_experts": "configs/pi05_nonheld_meta_expert_bank_v1.json",
     "train24_experts": "configs/pi05_video_expert_manifold_v1.json",
     "target_data_manifest": "configs/pi05_target_data_v1/manifest.json",
     "evaluation_config": "configs/pi05_target_evaluation_v1.json",
@@ -99,8 +100,58 @@
     "default_held_out_fold": 0,
     "fit_task_count": 56,
     "held_task_count": 15,
+    "expert_step": 1000,
     "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
-    "formal_status": "unsealed_until_live_profile_and_train24_functional_smoke"
+    "formal_status": "unsealed_until_live_profile_and_train24_functional_smoke",
+    "objective": {
+      "codebook_gauge_weight": 0.01
+    },
+    "flow_response": {
+      "fit_demo_indices": [
+        0,
+        39
+      ],
+      "evaluation_demo_indices": [
+        40,
+        49
+      ],
+      "policy_seed": 20260820,
+      "optimizer": {
+        "name": "AdamW",
+        "learning_rate": 0.0001,
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1
+      },
+      "held_code_optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.001,
+        "code_l2_weight": 0.0001
+      },
+      "smoke": {
+        "active_fit_tasks": 1,
+        "active_held_tasks": 1,
+        "panel_count": 1,
+        "panel_batch_size": 1,
+        "decoder_steps": 1,
+        "held_code_steps": 1
+      },
+      "profile": {
+        "active_fit_tasks": 14,
+        "active_held_tasks": 5,
+        "panel_count": 2,
+        "panel_batch_size": 2,
+        "decoder_steps": 140,
+        "held_code_steps": 50
+      },
+      "informative": {
+        "active_fit_tasks": 56,
+        "active_held_tasks": 15,
+        "panel_count": 4,
+        "panel_batch_size": 2,
+        "decoder_steps": 1120,
+        "held_code_steps": 600
+      }
+    }
   },
   "information_wall": {
     "train24_role": "privileged_teacher_mechanism_only",

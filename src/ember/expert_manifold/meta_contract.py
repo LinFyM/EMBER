@@ -102,6 +102,31 @@ def meta_expert_config_is_valid(config: Mapping[str, Any]) -> bool:
 def load_meta_expert_specs(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[MetaExpertSpec, ...]:
+    rows = meta_expert_rows(config)
+    result = []
+    for row in rows:
+        path = data_root / str(row["hdf5_filename"])
+        expected_bytes = int(row["hdf5_bytes"])
+        if not path.is_file() or path.stat().st_size != expected_bytes:
+            raise ValueError(
+                f"meta-expert HDF5 path or size changed: {int(row['task_id'])}"
+            )
+        result.append(
+            MetaExpertSpec(
+                ordinal=int(row["ordinal"]),
+                task_id=int(row["task_id"]),
+                split_role=str(row["split_role"]),
+                language=str(row["language"]),
+                path=path,
+                expected_bytes=expected_bytes,
+            )
+        )
+    return tuple(result)
+
+
+def meta_expert_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+    """Resolve stable bank identities without opening numeric task data."""
+
     protocol = load_meta_protocol(_authority_path(config, "meta_protocol"))
     manifest = read_json(_authority_path(config, "source_manifest"))
     rows = {int(row["task_index"]): row for row in manifest.get("tasks", [])}
@@ -115,24 +140,22 @@ def load_meta_expert_specs(
     }
     if set(rows) != set(active_ids):
         raise ValueError("source manifest did not resolve non-held meta71")
-    result = []
+    result: list[dict[str, Any]] = []
     for ordinal, task_id in enumerate(active_ids):
         row = rows[task_id]
         hdf5 = row["hdf5"]
-        path = data_root / str(hdf5["filename"])
-        expected_bytes = int(hdf5["bytes"])
-        if not path.is_file() or path.stat().st_size != expected_bytes:
-            raise ValueError(f"meta-expert HDF5 path or size changed: {task_id}")
         result.append(
-            MetaExpertSpec(
-                ordinal=ordinal,
-                task_id=task_id,
-                split_role=(
+            {
+                "ordinal": ordinal,
+                "global_task_id": task_id,
+                "suite": "libero_90",
+                "task_id": task_id,
+                "split_role": (
                     "meta_validation_oracle" if task_id in held_ids else "meta_train"
                 ),
-                language=str(row["language"]),
-                path=path,
-                expected_bytes=expected_bytes,
-            )
+                "language": str(row["language"]),
+                "hdf5_filename": str(hdf5["filename"]),
+                "hdf5_bytes": int(hdf5["bytes"]),
+            }
         )
     return tuple(result)

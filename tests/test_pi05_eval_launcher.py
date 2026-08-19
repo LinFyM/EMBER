@@ -13,6 +13,7 @@ from types import SimpleNamespace
 import pytest
 
 import ember.pi05_eval.preparation as preparation_module
+import ember.pi05_eval.recovery as recovery_module
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval import launcher as runtime_launcher
 
@@ -215,20 +216,28 @@ def test_resume_validation_preserves_dynamic_k_evaluation_cardinality(
     }
     observed_k: list[int] = []
 
-    monkeypatch.setattr(module, "load_evaluation_authorities", lambda *args: object())
     monkeypatch.setattr(
-        module,
+        recovery_module, "load_evaluation_authorities", lambda *args: object()
+    )
+    monkeypatch.setattr(
+        recovery_module,
         "git_state",
         lambda path: {"commit": "sealed-commit", "dirty_paths": []},
     )
-    monkeypatch.setattr(module, "inspect_source_checkpoint", lambda *args, **kwargs: model)
-    monkeypatch.setattr(module, "inspect_tokenizer", lambda *args, **kwargs: tokenizer)
+    monkeypatch.setattr(
+        recovery_module, "inspect_source_checkpoint", lambda *args, **kwargs: model
+    )
+    monkeypatch.setattr(
+        recovery_module, "inspect_tokenizer", lambda *args, **kwargs: tokenizer
+    )
 
     def inspect_dynamic_k(**kwargs):
         observed_k.append(kwargs["evaluation_k"])
         return adapter
 
-    monkeypatch.setattr(module, "_inspect_dynamic_k_writer_adapter", inspect_dynamic_k)
+    monkeypatch.setattr(
+        recovery_module, "inspect_dynamic_k_writer_adapter", inspect_dynamic_k
+    )
     module._validate_resume_inputs(contract)
     assert observed_k == [4]
 
@@ -418,6 +427,117 @@ def test_source_task_expert_and_writer_adapters_are_mutually_exclusive() -> None
     expert.source_sft_checkpoint = Path("source-sft-step")
     with pytest.raises(Pi05EvaluationError, match="mutually exclusive"):
         module._adapter_requests(expert)
+
+
+def test_prepare_binds_projection_manifest_to_task_expert_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    projection = tmp_path / "projection.json"
+    projection.write_text("{}\n", encoding="utf-8")
+    args = argparse.Namespace(
+        source_sft_config=tmp_path / "source.json",
+        source_sft_checkpoint=tmp_path / "source",
+        task_expert_config=tmp_path / "expert.json",
+        task_expert_bank_root=tmp_path / "bank",
+        task_expert_step=2000,
+        task_expert_projection_manifest=projection,
+        role="development_train",
+        mode="screen",
+    )
+    observed: list[dict[str, object]] = []
+
+    def inspect_source(**kwargs):
+        observed.append(kwargs)
+        return {"source": True}
+
+    def inspect_expert(**kwargs):
+        observed.append(kwargs)
+        return {"expert": True}
+
+    monkeypatch.setattr(preparation_module, "inspect_source_sft_adapter", inspect_source)
+    monkeypatch.setattr(preparation_module, "inspect_task_expert_adapter", inspect_expert)
+    preparation_module._inspect_adapter(
+        args,
+        writer_kind=None,
+        source_sft_requested=True,
+        authorities=object(),
+        model={},
+        tasks=(),
+    )
+    assert "projection_manifest" not in observed[-1]
+    preparation_module._inspect_adapter(
+        args,
+        writer_kind="task_expert",
+        source_sft_requested=False,
+        authorities=object(),
+        model={},
+        tasks=(),
+    )
+    assert observed[-1]["projection_manifest"] == projection.resolve()
+
+
+def test_resume_rebinds_projected_task_expert_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = _launcher_module()
+    projection = tmp_path / "projection.json"
+    projection.write_text("{}\n", encoding="utf-8")
+    normalization = tmp_path / "normalization.json"
+    normalization.write_text("{}\n", encoding="utf-8")
+    adapter = {
+        "kind": "task_local_expert_bank",
+        "config": {"path": str(tmp_path / "expert.json")},
+        "bank_root": str(tmp_path / "bank"),
+        "step": 2000,
+        "projection": {"manifest_path": str(projection)},
+    }
+    model = {
+        "model": True,
+        "source_run": str(tmp_path / "source"),
+        "checkpoint": str(tmp_path / "source/checkpoint"),
+    }
+    tokenizer = {"tokenizer": True, "path": str(tmp_path / "tokenizer.model")}
+    contract = {
+        "authorities": {"config_path": str(tmp_path / "eval.json")},
+        "git": {"commit": "commit"},
+        "mode": "screen",
+        "role": "development_train",
+        "role_authority": None,
+        "model": model,
+        "tokenizer": tokenizer,
+        "normalization": {
+            "path": str(normalization),
+            "bytes": normalization.stat().st_size,
+        },
+        "tasks": [{"suite": "libero_spatial", "task_id": 0}],
+        "adapter": adapter,
+    }
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        recovery_module,
+        "load_evaluation_authorities",
+        lambda *args: SimpleNamespace(),
+    )
+    monkeypatch.setattr(
+        recovery_module,
+        "git_state",
+        lambda root: {"commit": "commit", "dirty_paths": []},
+    )
+    monkeypatch.setattr(
+        recovery_module, "inspect_source_checkpoint", lambda *a, **k: model
+    )
+    monkeypatch.setattr(
+        recovery_module, "inspect_tokenizer", lambda *a, **k: tokenizer
+    )
+
+    def inspect_expert(**kwargs):
+        captured.update(kwargs)
+        return adapter
+
+    monkeypatch.setattr(recovery_module, "inspect_task_expert_adapter", inspect_expert)
+    module._validate_resume_inputs(contract)
+    assert captured["projection_manifest"] == projection
 
 
 def test_completed_queue_without_launcher_evidence_fails_closed(

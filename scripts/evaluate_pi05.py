@@ -26,31 +26,28 @@ from ember.pi05_eval.preparation import (
     prepare_evaluation_run,
     shards_from_contract as _shards_from_contract,
 )
+from ember.pi05_eval.recovery import (
+    active_worker_pids as _active_worker_pids,
+    record_launcher_failure as _record_launcher_failure,
+    validate_resume_inputs as _validate_resume_inputs,
+    worker_ids as _worker_ids,
+)
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
     adapter_requests as _adapter_requests,
-    inspect_dynamic_k_writer_adapter as _inspect_dynamic_k_writer_adapter,
-    inspect_source_sft_adapter as _inspect_source_sft_adapter,
-    inspect_task_expert_adapter as _inspect_task_expert_adapter,
 )
 from ember.writer.evaluation import DYNAMIC_K_VIDEO_CONDITIONS
 from ember.pi05_eval_contract import (
     RUNTIME_REPLICA_PROFILES,
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
-    inspect_source_checkpoint,
-    inspect_tokenizer,
-    load_evaluation_authorities,
     load_run_contract,
-    SEEN_PANEL_RELATIVE_PATH,
 )
 from ember.pi05_eval_queue import (
-    failed_jobs,
     initialize_queue,
     publish_json_exclusive,
     queue_summary,
     read_json_with_size,
-    validate_worker_layout,
 )
 
 
@@ -449,155 +446,6 @@ def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
         )
     )
     return result
-
-
-def _active_worker_pids(output_dir: Path) -> list[int]:
-    needle = str(output_dir.resolve()).encode()
-    active = []
-    for path in Path("/proc").glob("[0-9]*/cmdline"):
-        try:
-            command = path.read_bytes()
-        except OSError:
-            continue
-        if (
-            b"evaluate_pi05.py" in command
-            and b"worker" in command
-            and needle in command
-        ):
-            active.append(int(path.parent.name))
-    return sorted(active)
-
-
-def _validate_resume_inputs(contract: dict[str, Any]) -> None:
-    config_path = Path(contract["authorities"]["config_path"])
-    authorities = load_evaluation_authorities(config_path, REPO_ROOT)
-    current_git = git_state(REPO_ROOT)
-    if (
-        current_git["commit"] != contract["git"]["commit"]
-        or contract["mode"] != "smoke"
-        and current_git["dirty_paths"]
-    ):
-        raise Pi05EvaluationError(
-            "evaluator checkout differs from the sealed run commit"
-        )
-    expected_role_authority = None
-    if contract.get("role") == "seen_panel":
-        expected_role_authority = {
-            "path": str(REPO_ROOT / SEEN_PANEL_RELATIVE_PATH),
-            "bytes": (REPO_ROOT / SEEN_PANEL_RELATIVE_PATH).stat().st_size,
-            "schema_version": authorities.seen_panel.get("schema_version"),
-        }
-    if contract.get("role_authority") != expected_role_authority:
-        raise Pi05EvaluationError("evaluation role authority changed after prepare")
-    model = inspect_source_checkpoint(
-        authorities,
-        Path(contract["model"]["source_run"]),
-        Path(contract["model"]["checkpoint"]),
-        evaluation_mode=contract["mode"],
-    )
-    tokenizer = inspect_tokenizer(authorities, Path(contract["tokenizer"]["path"]))
-    if model != contract["model"] or tokenizer != contract["tokenizer"]:
-        raise Pi05EvaluationError("evaluation model or tokenizer changed after prepare")
-    normalization = Path(contract["normalization"]["path"])
-    if not normalization.is_file() or normalization.stat().st_size != int(
-        contract["normalization"]["bytes"]
-    ):
-        raise Pi05EvaluationError("evaluation normalization changed after prepare")
-    adapter = contract.get("adapter")
-    if adapter is not None:
-        tasks = tuple(
-            argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]))
-            for row in contract["tasks"]
-        )
-        if adapter.get("kind") == "shared_source_sft_lora":
-            observed = _inspect_source_sft_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                checkpoint=Path(adapter["checkpoint"]["path"]),
-                source=model,
-                tasks=tasks,
-                evaluation_role=str(adapter["evaluation_role"]),
-                require_formal=contract["mode"] != "smoke",
-            )
-        elif adapter.get("kind") == "task_local_expert_bank":
-            observed = _inspect_task_expert_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                bank_root=Path(adapter["bank_root"]),
-                step=int(adapter["step"]),
-                source=model,
-                tasks=tasks,
-                evaluation_role=str(contract["role"]),
-                require_formal=contract["mode"] != "smoke",
-            )
-        elif adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
-            observed = _inspect_dynamic_k_writer_adapter(
-                config_path=Path(adapter["config"]["path"]),
-                checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
-                video_data_root=Path(adapter["video_data"]["root"]),
-                source=model,
-                tasks=tasks,
-                video_condition=str(adapter["video_condition"]),
-                video_seed=int(adapter["video_schedule"]["seed"]),
-                video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
-                require_formal=contract["mode"] != "smoke",
-                evaluation_k=int(
-                    adapter.get("information_wall", {}).get("evaluation_k", 1)
-                ),
-            )
-        else:
-            raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
-        if observed != adapter:
-            raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-
-
-def _worker_ids(
-    replicas_per_gpu: int, physical_gpu_ids: Sequence[int]
-) -> tuple[str, ...]:
-    values = tuple(
-        f"{gpu}-r{replica}"
-        for gpu in physical_gpu_ids
-        for replica in range(replicas_per_gpu)
-    )
-    validate_worker_layout(
-        values,
-        replicas_per_gpu,
-        physical_gpu_ids=physical_gpu_ids,
-    )
-    return values
-
-
-def _record_launcher_failure(
-    output_dir: Path,
-    *,
-    return_codes: dict[str, int],
-    queue: dict[str, Any],
-    invocation_id: str,
-    worker_pids: dict[str, int],
-    error: str | None = None,
-) -> Path:
-    logs = []
-    for path in sorted((output_dir / "worker_logs").glob("*.log")):
-        logs.append(
-            {
-                "path": str(path.relative_to(output_dir)),
-                "bytes": path.stat().st_size,
-            }
-        )
-    path = output_dir / "failures" / f"launcher_{time.time_ns()}.json"
-    publish_json_exclusive(
-        path,
-        {
-            "schema_version": "ember_pi05_eval_launcher_failure_v1",
-            "unix": time.time(),
-            "invocation_id": invocation_id,
-            "error": error,
-            "worker_pids": worker_pids,
-            "return_codes": return_codes,
-            "queue": queue,
-            "failed_jobs": list(failed_jobs(output_dir / "queue.sqlite3")),
-            "worker_logs": logs,
-        },
-    )
-    return path
 
 
 def _finalize_aggregate(output_dir: Path) -> dict[str, Any]:

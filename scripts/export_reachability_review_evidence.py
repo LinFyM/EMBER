@@ -35,10 +35,22 @@ def _validate_panel(result: Mapping[str, Any]) -> None:
         raise ValueError("reachability rollout is not a formal train24x50 panel")
 
 
-def _contract_summary(contract: Mapping[str, Any]) -> dict[str, Any]:
+def _contract_summary(
+    contract: Mapping[str, Any], *, expected_projection_manifest: Path | None = None
+) -> dict[str, Any]:
     git = contract.get("git", {})
     if contract.get("mode") != "formal" or git.get("dirty_paths") != []:
         raise ValueError("reachability rollout contract is not clean formal evidence")
+    if expected_projection_manifest is not None:
+        projection = contract.get("adapter", {}).get("projection", {})
+        if (
+            projection.get("schema") != PROJECTION_SCHEMA
+            or Path(str(projection.get("manifest_path", ""))).resolve()
+            != expected_projection_manifest.resolve()
+        ):
+            raise ValueError(
+                "reachability rollout contract did not install the projection"
+            )
     return {
         "contract_reference": contract.get("contract_reference"),
         "git_commit": git.get("commit"),
@@ -132,7 +144,10 @@ def main() -> None:
         "provenance": {
             "projection_repository": projection["repository"],
             "direct_rollout": _contract_summary(_read(args.direct_contract)),
-            "projected_rollout": _contract_summary(_read(args.projected_contract)),
+            "projected_rollout": _contract_summary(
+                _read(args.projected_contract),
+                expected_projection_manifest=args.projection_manifest,
+            ),
         },
         "projection_optimization": projection["optimization"],
         "projection_information_wall": projection["information_wall"],

@@ -33,6 +33,56 @@ PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA = (
     "ember_pi05_writer_fixed_head_projected_task_expert_eval_adapter_v1"
 )
 PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA = "ember_writer_fixed_head_reachability_oracle_v1"
+FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA = (
+    "ember_pi05_functional_decoder_projected_task_expert_eval_adapter_v1"
+)
+FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_functional_decoder_train24_projection_v1"
+)
+
+
+def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
+    record = manifest.get(name, {})
+    path = Path(str(record.get("path", ""))).resolve()
+    if not path.is_file() or path.stat().st_size != int(record.get("bytes", -1)):
+        raise ExpertManifoldError("functional-decoder projection asset changed")
+    return {"path": str(path), "bytes": path.stat().st_size}
+
+
+def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    schema = manifest.get("schema_version")
+    if schema == PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA:
+        if manifest.get("optimization", {}).get("factor_heads_frozen") is not True:
+            raise ExpertManifoldError("fixed-head projection manifest changed")
+        return {
+            "adapter_schema": PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
+            "arm": "macro25_fixed_factor_heads_free_program_projection",
+            "asset": {
+                "writer_checkpoint": manifest.get("writer_checkpoint"),
+                "factor_heads_frozen": True,
+            },
+        }
+    if schema == FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA:
+        optimization = manifest.get("optimization", {})
+        if (
+            manifest.get("projection_kind")
+            != "fixed_functional_decoder_code_projection"
+            or optimization.get("decoder_frozen_for_held_code_fit") is not True
+        ):
+            raise ExpertManifoldError("functional-decoder projection manifest changed")
+        return {
+            "adapter_schema": FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA,
+            "arm": "functional_decoder_train24_projection",
+            "asset": {
+                "decoder_checkpoint": _projection_file(
+                    manifest, "decoder_checkpoint"
+                ),
+                "held_codes": _projection_file(manifest, "held_codes"),
+                "profile_result": _projection_file(manifest, "profile_result"),
+                "decoder_frozen_for_held_code_fit": True,
+            },
+        }
+    raise ExpertManifoldError("projected task-expert manifest schema changed")
 
 
 def _train_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
@@ -254,10 +304,11 @@ def inspect_task_expert_bank(
 def inspect_projected_task_expert_bank(
     base: Mapping[str, Any], projection_manifest: Path
 ) -> dict[str, Any]:
-    """Bind one train24 fixed-head oracle projection to its expert authority."""
+    """Bind one complete train24 LoRA projection to its expert authority."""
 
     projection_manifest = projection_manifest.resolve()
     manifest = read_json(projection_manifest)
+    projection_contract = _projection_contract(manifest)
     projected = {
         (str(row.get("suite")), int(row.get("task_id", -1))): dict(row)
         for row in manifest.get("tasks", ())
@@ -266,8 +317,7 @@ def inspect_projected_task_expert_bank(
         (str(row["suite"]), int(row["task_id"])): dict(row) for row in base["tasks"]
     }
     if (
-        manifest.get("schema_version") != PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA
-        or manifest.get("repository", {}).get("dirty_paths") != []
+        manifest.get("repository", {}).get("dirty_paths") != []
         or manifest.get("information_wall", {}).get("role")
         != "development_train_oracle_only"
         or manifest.get("information_wall", {}).get("deployment_carrier") is not False
@@ -297,15 +347,14 @@ def inspect_projected_task_expert_bank(
         )
     return {
         **dict(base),
-        "schema_version": PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
-        "arm": "macro25_fixed_factor_heads_free_program_projection",
+        "schema_version": projection_contract["adapter_schema"],
+        "arm": projection_contract["arm"],
         "tasks": tasks,
         "projection": {
             "manifest_path": str(projection_manifest),
             "manifest_bytes": projection_manifest.stat().st_size,
-            "schema": PROJECTED_TASK_EXPERT_MANIFEST_SCHEMA,
-            "writer_checkpoint": manifest["writer_checkpoint"],
-            "factor_heads_frozen": manifest["optimization"]["factor_heads_frozen"],
+            "schema": manifest["schema_version"],
+            **projection_contract["asset"],
             "deployment_carrier": False,
         },
     }

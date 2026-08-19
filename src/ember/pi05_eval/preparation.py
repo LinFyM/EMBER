@@ -87,11 +87,6 @@ def _inspect_adapter(
             tasks=tasks,
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
-            projection_manifest=(
-                args.task_expert_projection_manifest.resolve()
-                if args.task_expert_projection_manifest is not None
-                else None
-            ),
         )
     if writer_kind == "task_expert":
         return inspect_task_expert_adapter(
@@ -102,6 +97,11 @@ def _inspect_adapter(
             tasks=tasks,
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
+            projection_manifest=(
+                args.task_expert_projection_manifest.resolve()
+                if args.task_expert_projection_manifest is not None
+                else None
+            ),
         )
     if writer_kind == DYNAMIC_K_WRITER_KIND:
         return inspect_dynamic_k_writer_adapter(

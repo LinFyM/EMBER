@@ -54,14 +54,19 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
 
 - 输入必须包含exact task language和一条或多条同task、action-hidden、内部有序teacher videos。
 - language说明关注什么和目标是什么，但不能独立写出有效LoRA；video dynamic evidence必须是必要Value路径。
-- 不得读取teacher action、proprio/state、reward、terminal、task ID、filename、object pose、hidden normalization或
-  policy outcome。
-- training action只用于冻结source-policy functional监督；validation/test actions或reward不得产生梯度。
+- deployment Writer不得读取teacher action、proprio/state、reward、terminal、task ID、filename、object pose、
+  hidden normalization或policy outcome。授权的non-held meta tasks可在训练时使用action、privileged expert或
+  on-policy reward学习共享Writer/functional decoder，但这些信息不得成为deployment输入或task-ID route。
+- validation/test actions或reward不得产生梯度。允许模型冻结、无checkpoint选择、预注册的一次性sealed post-hoc
+  held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
 - 每个condition只生成一套完整38-target task LoRA；不生成多套video LoRA后平均，不挑video，不融合checkpoint，
   不部署第二套expert adapter。
 - Writer在rollout前运行一次；闭环中不反复观看teacher video。
-- frame stride固定为5；frozen source policy无trainable parameters；constant/static路径保持functional identity。
-- task experts只可作为train24 privileged teacher或几何诊断；不得成为held dictionary、task-ID route或第二套LoRA。
+- frame stride固定为5；frozen source policy无trainable parameters。允许learned language-only诊断baseline，以及
+  rollout前合并为一套LoRA的principled shared prior/base adapter + video-conditioned residual；canonical仍必须证明
+  video相对language/static prior有必要条件增量，且不得部署并行carrier、expert或第二adapter。
+- task experts可作为train24及经审计的non-held LIBERO-90 meta tasks的privileged teacher或几何诊断；不得成为held
+  dictionary、task-ID route或第二套LoRA。
 
 Dynamic-K若被方法声称支持，训练必须真实覆盖各cardinality。每条video先独立保序编码，videos只在集合阶段做
 置换不变聚合；不得平均frames、raw features或最终LoRAs。one-shot、few-shot或动态K最终采用哪种论文设定，只由
@@ -75,13 +80,17 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - LIBERO Spatial/Object/Goal/Long共40 tasks；
 - development split固定为`configs/libero_24_8_8_v1/`的24 train / 8 validation / 8 test，不得按结果改ID；
 - source corpus由LIBERO-90 specification audit排除与目标40重合的19 tasks后保留71 tasks，每task 50条成功episode；
+- successor Writer/meta-training可使用train24，以及LIBERO-90中经过精确语义/specification审计、明确排除固定
+  validation/test tasks及其重复项的其它任务；必须保存显式allowlist与provenance，不得以更多同task episodes冒充
+  更多独立meta-task mappings；
 - 不得使用读过目标40 actions的`pi05_libero`；
 - normalization只从过滤后的source actions/states计算并冻结；validation/test不得重算；
 - 方法选定后才允许按规定合并32 source / 8 test并从fresh重训。
 
 ## 7. Training and decision contract
 
-- development只用24 train tasks产生梯度；每个完整macro按task等权。
+- target development gradients只来自24 train tasks；active design可登记额外、经审计的non-held LIBERO-90 meta-task
+  gradients。所有授权meta tasks按预注册口径等权或显式分层，validation/test不得产生梯度。
 - video与action query同task但跨episode采样，阻断逐帧轨迹复制。
 - 多卡可按K、帧数和历史cost平衡负载，但不得改变task权重。
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
@@ -124,8 +133,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
   profile/smoke不得冒充formal。
 - active tree只保留一个canonical Writer运行面。退役实现由Git、sealed configs、formal artifacts和
   `research_history.md`保存，不保留平行fallback。
-- canonical workspace是本仓库，主写分支为`codex/bci-continuation`。formal train/eval必须来自clean pushed commit
-  的detached frozen worktree。
+- canonical workspace是本仓库，主写与集成目标为`main`。需要隔离、并发写入或独立实现时，从最新`main`创建
+  `codex/<topic>`分支与独立worktree；验证后及时合并回`main`并推送远端，确认集成完整后清理task-owned worktree。
+  formal train/eval必须来自clean pushed commit的detached frozen worktree。
 - 不提交dataset、cache、checkpoint、大binary、secret或host-private配置。
 - 稳定目标写入`current_owner_requirements`和`concept`；当前goal与计划写入`task_plan.md`，即时进度写入
   `progress.md`；历史结果写入`research_history.md`，跨轮结论写入`findings.md`。不得向`AGENTS.md`追加动态

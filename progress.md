@@ -7,13 +7,26 @@
 
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
-- canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`；
+- canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写与集成目标为`main`；需要隔离时从最新`main`创建
+  `codex/<topic>`分支与独立worktree，验证后及时合并回`main`并推送远端；
   封存后工作树干净并与origin一致。
 - 当前没有active训练、评测、resume、design或successor；不从历史文档自动恢复任何“下一步”。
 - canonical Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。
 - 不直接返回V6/LPCP/GOMQ；它们只作历史paired反事实。
+
+## Latest owner decisions for successor planning
+
+- 允许train24 privileged experts训练共享functional decoder；也允许使用LIBERO-90中经审计、排除固定validation/test
+  tasks及其重复项的non-held任务，必须保留显式allowlist与provenance；
+- 允许learned language-only adapter作为baseline，用于裁决video条件增量；
+- 允许在授权train/meta tasks上用simulator reward训练共享Writer/functional code inference。该outer RL仍以held
+  zero-interaction LoRA为部署对象，不等于生成LoRA后的task-local RL；
+- 允许冻结模型、无梯度、无checkpoint选择的sealed held action/reward诊断；Test默认留到最终方法冻结后；
+- 合理的新架构均可考虑，包括rollout前合并为唯一完整LoRA的shared prior/base adapter + video-conditioned residual；
+  不允许部署第二adapter、expert route、task-ID字典或checkpoint融合；
+- 主写与集成目标改为`main`；需要隔离时从最新`main`创建`codex/<topic>`分支/worktree，验证后及时合并并推送。
 
 ## Final external-review result
 
@@ -68,4 +81,4 @@ shared objective/更新能否在同一checkpoint保留这些方向。本轮没�
 - 完整CPU测试：`293 passed`；
 - B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
 - 本轮临时partial JSON、worktrees与试验分支已清理；formal runs、checkpoint、raw rows和唯一evidence均保留；
-- 封存状态只保留canonical workspace、`main`与`codex/bci-continuation`，无EMBER GPU进程。
+- 封存状态无EMBER GPU进程；`codex/bci-continuation`仅保留为已集成历史分支，不再作为主写分支。

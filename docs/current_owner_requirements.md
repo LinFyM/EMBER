@@ -35,6 +35,9 @@ exact task language + one or more action-hidden correct teaching videos
 language-only路径不得独立写出有效LoRA。反过来，也不能为了阻断language shortcut而制造不自然的zero-image、
 空prefix或与π0.5原生计算无关的fake action query。
 
+允许训练并报告真正的learned language-only adapter作为诊断baseline，用来测量video相对language prior的条件增量；
+它不自动成为canonical方法，也不能替代“video dynamic evidence对最终有效adaptation必须有必要贡献”的科学合同。
+
 后续canonical Writer不再使用trainable **Text Meta-LoRA**或VL Meta-LoRA。exact language仍是必需输入，但应通过
 冻结原生text/VLM表示和Writer-local读取/投影进入Program，不能用额外Text Meta-LoRA强化task-identity旁路。当前已
 封存formal run确实使用过rank4 Text Meta-LoRA，历史config与结果必须保留这一事实；本约束不自动取消Action
@@ -78,6 +81,10 @@ correct、shuffled和reversed不是人为negative：
 teacher video。一个condition只能得到一套LoRA，不能按video分别生成再平均，也不能用checkpoint union、expert
 route或第二套adapter。
 
+架构可以使用principled shared prior/base adapter与video-conditioned residual，只要二者在rollout前合并为上述
+唯一一套完整LoRA，不部署并行expert/第二adapter，不按task ID查表，并以language-only、video controls和strict
+closed loop证明video提供必要条件增量。该授权不等于原样恢复任何旧Writer、旧checkpoint或历史residual实现。
+
 LoRA rank、memory token数量、FactorHeads、A/B生成方式和decoder都属于可修改的方法变量，不应写成goal。
 owner当前认为rank16完全可以保留；此前建议rank8只是降低生成维度的一种思路，不是硬要求。
 
@@ -112,9 +119,14 @@ SHINE、Doc2LoRA等工作值得学习的不是表面“加token”，而是第�
 最终方法应有可从零复现的训练方式；允许开发阶段从强checkpoint做受控单变量实验，但成品不能依赖task轮换、挑
 checkpoint或能力换手。
 
-当前目标是生成LoRA后、环境交互前的性能。Writer可在train24使用监督、functional credit、privileged task expert
-或on-policy reward，只要部署信息墙不被破坏；但生成LoRA后的task-local RL属于后续独立实验，当前不得把它混入
-初始分数。
+当前目标是生成LoRA后、环境交互前的性能。Writer可在授权的non-held meta tasks上使用监督、functional credit、
+privileged task expert或on-policy reward，只要部署信息墙不被破坏；授权范围包括train24，以及经过语义/specification
+审计、明确排除固定validation/test tasks及其重复项的LIBERO-90任务。生成LoRA后的task-local RL属于后续独立实验，
+当前不得把它混入初始分数。
+
+允许在模型与checkpoint冻结、无梯度、不参与checkpoint选择且预先登记分析口径时，用held action/reward做sealed
+post-hoc科学诊断。validation可继续作为development panel；Test诊断会消耗其封存价值，默认只在最终方法冻结后执行，
+任何提前使用都必须显式登记且不得反哺设计。
 
 长期设想仍成立：生成LoRA应成为后续快速RL的良好起点，RL直接优化这套adaptation；但先把zero-interaction Writer
 做强、做稳、证明视频因果性，再单独评价后续交互收益。
@@ -160,10 +172,10 @@ manifold监督，K4失败不否定few-shot，GOMQ不稳定也不否定memory tok
 owner的局部建议是启发和约束，不应导致整套方案每次大改。新判断必须说明继承哪些已验证机制、针对哪个最早失败
 接口，以及什么证据能快速否决。
 
-当前后续研究必须以仓库现有EMBER-LMMPC Core-Addressed Reader主链为出发点，不得直接回退到V6、LPCP或GOMQ，
-不得加载旧Writer作为carrier、增加旧Writer并行分支、恢复旧compiler，或把“旧LoRA加当前残差”包装成新方法。
-历史架构只提供事实基线、机制provenance和反事实证据；即使旧checkpoint分数更高，也不能取代当前架构内部的
-问题定位与迭代。
+后续研究不再受限于EMBER-LMMPC Core-Addressed Reader增量主链，可以基于现有证据重构Writer、functional decoder、
+shared prior/carrier或residual参数化。历史V6、LPCP、GOMQ及其checkpoint只能提供事实基线、机制provenance、
+可复用组件和反事实证据，不能未经重新设计与fresh验证就原样恢复为canonical。任何shared prior/residual必须满足
+本文件的一套LoRA、无task-ID/expert route、video必要增量和single-checkpoint strict评测合同。
 
 ## 10. 效率、GPU和协作
 

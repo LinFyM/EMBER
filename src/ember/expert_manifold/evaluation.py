@@ -43,6 +43,9 @@ FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA = (
 FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_functional_decoder_train24_projection_v1"
 )
+FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_functional_decoder_nonheld_meta_projection_v1"
+)
 
 
 def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
@@ -66,7 +69,10 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
                 "factor_heads_frozen": True,
             },
         }
-    if schema == FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA:
+    if schema in {
+        FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA,
+        FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA,
+    }:
         optimization = manifest.get("optimization", {})
         if (
             manifest.get("projection_kind")
@@ -76,7 +82,11 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
             raise ExpertManifoldError("functional-decoder projection manifest changed")
         return {
             "adapter_schema": FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA,
-            "arm": "functional_decoder_train24_projection",
+            "arm": (
+                "functional_decoder_nonheld_meta_projection"
+                if schema == FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA
+                else "functional_decoder_train24_projection"
+            ),
             "asset": {
                 "decoder_checkpoint": _projection_file(
                     manifest, "decoder_checkpoint"
@@ -349,7 +359,7 @@ def inspect_task_expert_bank(
 def inspect_projected_task_expert_bank(
     base: Mapping[str, Any], projection_manifest: Path
 ) -> dict[str, Any]:
-    """Bind one complete train24 LoRA projection to its expert authority."""
+    """Bind one complete functional-decoder projection to its expert authority."""
 
     projection_manifest = projection_manifest.resolve()
     manifest = read_json(projection_manifest)
@@ -361,10 +371,16 @@ def inspect_projected_task_expert_bank(
     base_records = {
         (str(row["suite"]), int(row["task_id"])): dict(row) for row in base["tasks"]
     }
+    evaluation_role = str(base.get("information_wall", {}).get("evaluation_role"))
+    expected_oracle_role = (
+        "nonheld_meta_oracle_only"
+        if evaluation_role == "nonheld_meta"
+        else "development_train_oracle_only"
+    )
     if (
         manifest.get("repository", {}).get("dirty_paths") != []
         or manifest.get("information_wall", {}).get("role")
-        != "development_train_oracle_only"
+        != expected_oracle_role
         or manifest.get("information_wall", {}).get("deployment_carrier") is not False
         or set(projected) != set(base_records)
     ):
@@ -443,7 +459,11 @@ class FrozenTaskExpertAdapter:
             step=int(evaluation_adapter["step"]),
             source=source,
             task_keys=task_keys,
-            evaluation_role="development_train",
+            evaluation_role=str(
+                evaluation_adapter.get("information_wall", {}).get(
+                    "evaluation_role", "development_train"
+                )
+            ),
             require_formal=require_formal,
             projection_manifest=(
                 Path(str(manifest_path)) if manifest_path is not None else None

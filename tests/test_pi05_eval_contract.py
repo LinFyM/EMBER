@@ -75,6 +75,7 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
                 authorities.protocol,
                 role,
                 authorities.seen_panel if role == "seen_panel" else None,
+                authorities.meta_protocol if role == "nonheld_meta" else None,
             )
         )
         for role in (
@@ -84,6 +85,7 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
             "validation",
             "test",
             "final_source",
+            "nonheld_meta",
         )
     } == {
         "all_targets": 40,
@@ -92,6 +94,7 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
         "validation": 8,
         "test": 8,
         "final_source": 32,
+        "nonheld_meta": 71,
     }
     assert resolve_role_task_keys(
         authorities.protocol, "seen_panel", authorities.seen_panel
@@ -108,6 +111,23 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
     assert (
         authorities.normalization["authority"]["validation_or_test_numeric_reads"] == 0
     )
+
+
+def test_installed_nonheld_meta_contract_uses_fixed_libero90_states(
+    tmp_path: Path,
+) -> None:
+    authorities = load_evaluation_authorities(CONFIG, ROOT)
+    tasks, _ = inspect_installed_target_tasks(
+        authorities,
+        role="nonheld_meta",
+        state_count=1,
+        libero_config_dir=tmp_path / "libero_config",
+    )
+    assert len(tasks) == 71
+    assert {task.suite for task in tasks} == {"libero_90"}
+    assert {task.horizon for task in tasks} == {400}
+    assert sum(task.split_role == "meta_train" for task in tasks) == 56
+    assert sum(task.split_role == "meta_validation_oracle" for task in tasks) == 15
 
 
 def test_libero_config_accepts_a_host_local_assets_root(

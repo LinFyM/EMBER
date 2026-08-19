@@ -106,6 +106,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "validation",
             "test",
             "final_source",
+            "nonheld_meta",
         ),
         required=True,
     )

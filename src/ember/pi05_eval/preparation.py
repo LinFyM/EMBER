@@ -200,7 +200,7 @@ def _prepared_payload(
         args.mode == "screen"
         and writer_kind is None
         and not source_sft_requested
-        and args.role != "all_targets"
+        and args.role not in {"all_targets", "nonheld_meta"}
     ):
         raise Pi05EvaluationError("source-base screen must cover all 40 target tasks")
     tasks, libero_paths = inspect_installed_target_tasks(

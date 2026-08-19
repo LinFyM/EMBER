@@ -17,6 +17,9 @@
       "path": "configs/pi05_source_corpus_v1/source_manifest.json",
       "sha256": "75453a2028733973ae257ab76351cd129456dbae3225e732b4bed5cc96d32e54"
     },
+    "meta_protocol": {
+      "path": "configs/libero90_nonheld_meta_v1/protocol.json"
+    },
     "source_base_config": {
       "path": "configs/pi05_source_base_v1.json",
       "sha256": "7455fc59c67ca39f7c70b1296d2f1dc98f070bfda869bb0535bf5a9e91e04cc6"
@@ -31,7 +34,8 @@
     "development_train": "sealed 24 train tasks",
     "validation": "sealed 8 validation tasks",
     "test": "sealed 8 test tasks",
-    "final_source": "sealed 24 train plus 8 validation tasks"
+    "final_source": "sealed 24 train plus 8 validation tasks",
+    "nonheld_meta": "71 semantically audited LIBERO-90 tasks with fixed 56/15 roles"
   },
   "policy": {
     "arm": "frozen_pi05_source_base",
@@ -65,7 +69,8 @@
       "libero_spatial": 220,
       "libero_object": 280,
       "libero_goal": 300,
-      "libero_10": 520
+      "libero_10": 520,
+      "libero_90": 400
     }
   },
   "rng": {

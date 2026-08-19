@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize one complete train24 LoRA bank from a functional decoder profile."""
+"""Materialize one complete expert LoRA bank from a functional decoder profile."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from ember.expert_manifold.evaluation import (
+    FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA,
     FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA,
 )
 from ember.functional_adaptation.decoder_training import (
@@ -19,7 +20,9 @@ from ember.functional_adaptation.decoder_training import (
     decoder_task_split,
     expert_records,
     inspect_train24_expert_bank,
+    inspect_nonheld_meta_expert_bank,
     load_functional_adapter_config,
+    meta_decoder_task_split,
 )
 from ember.lora import identity_lora_state, validate_lora_state
 from ember.pi05_eval_contract import git_state
@@ -102,14 +105,87 @@ def _materialize_rows(
                     "projected_adapter_bytes": path.stat().st_size,
                     "code_role": "held_free_code" if held else "fit_codebook",
                     "functional_flow_eval_relative_loss": losses[record.ordinal],
+                    **(
+                        {"split_role": str(bank_row["split_role"])}
+                        if "split_role" in bank_row
+                        else {}
+                    ),
                 }
             )
     return rows
 
 
+def _projection_manifest(
+    *,
+    args: argparse.Namespace,
+    meta_surface: bool,
+    mechanism: Mapping[str, Any],
+    repository: Mapping[str, Any],
+    decoder_path: Path,
+    held_codes_path: Path,
+    profile_result_path: Path,
+    profile: Mapping[str, Any],
+    split: Any,
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA
+            if meta_surface
+            else FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA
+        ),
+        "projection_kind": "fixed_functional_decoder_code_projection",
+        "repository": {
+            "commit": repository["commit"],
+            "dirty_paths": repository["dirty_paths"],
+        },
+        "functional_config": _asset(args.config),
+        "decoder_checkpoint": _asset(decoder_path),
+        "held_codes": _asset(held_codes_path),
+        "profile_result": _asset(profile_result_path),
+        "expert_bank_root": str(args.expert_bank_root.resolve()),
+        "expert_step": int(mechanism["expert_step"]),
+        "optimization": {
+            "fit_task_count": len(split.fit),
+            "held_task_count": len(split.held),
+            "decoder_frozen_for_held_code_fit": True,
+            "decoder_steps": int(profile["steps"]["decoder"]),
+            "held_code_steps": int(profile["steps"]["held_code"]),
+            "fold_count": 5 if meta_surface else int(mechanism["fold_count"]),
+            "held_out_fold": int(
+                mechanism[
+                    "default_held_out_fold" if meta_surface else "held_out_fold"
+                ]
+            ),
+        },
+        "information_wall": {
+            "role": (
+                "nonheld_meta_oracle_only"
+                if meta_surface
+                else "development_train_oracle_only"
+            ),
+            "deployment_carrier": False,
+            **(
+                {
+                    "meta_train_experts": 56,
+                    "meta_validation_oracles": 15,
+                    "target40_action_reads": 0,
+                }
+                if meta_surface
+                else {"validation_experts": 0, "test_experts": 0}
+            ),
+        },
+        "tasks": rows,
+        "content_hash_policy": "disabled_by_owner",
+    }
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     config = load_functional_adapter_config(args.config, REPO_ROOT)
-    mechanism = config["train24_mechanism"]
+    meta_surface = args.surface == "nonheld_meta"
+    mechanism = config[
+        "production_meta" if meta_surface else "train24_mechanism"
+    ]
     profile_root = args.profile_root.resolve()
     decoder_path = profile_root / "decoder.safetensors"
     held_codes_path = profile_root / "held_codes.safetensors"
@@ -118,6 +194,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if (
         profile.get("schema_version") != PROFILE_SCHEMA
         or profile.get("mode") != "informative"
+        or profile.get("surface", "train24") != args.surface
         or profile.get("repository", {}).get("dirty_paths") != []
     ):
         raise ValueError("functional flow profile is not clean informative evidence")
@@ -125,18 +202,32 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if repository["dirty_paths"]:
         raise ValueError("functional adapter materialization requires a clean worktree")
 
-    bank = inspect_train24_expert_bank(
-        config,
-        REPO_ROOT,
-        source_run=args.source_run,
-        checkpoint=args.checkpoint,
-        bank_root=args.expert_bank_root,
+    bank = (
+        inspect_nonheld_meta_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
+        if meta_surface
+        else inspect_train24_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
     )
     records = expert_records(bank)
-    split = decoder_task_split(
-        records,
-        fold_count=int(mechanism["fold_count"]),
-        held_out_fold=int(mechanism["held_out_fold"]),
+    split = (
+        meta_decoder_task_split(records)
+        if meta_surface
+        else decoder_task_split(
+            records,
+            fold_count=int(mechanism["fold_count"]),
+            held_out_fold=int(mechanism["held_out_fold"]),
+        )
     )
     fit_ordinals = tuple(row.ordinal for row in split.fit)
     held_ordinals = tuple(row.ordinal for row in split.held)
@@ -146,7 +237,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         or tuple(int(value) for value in profile["active_held_ordinals"])
         != held_ordinals
     ):
-        raise ValueError("functional profile no longer covers the declared train24 fold")
+        raise ValueError("functional profile no longer covers the declared task fold")
 
     contract = load_pi05_lora_contract(
         authority_path(config, "lora_contract", REPO_ROOT)
@@ -156,7 +247,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         contract,
         identity_lora_state(contract),
         task_count=len(split.fit),
-        code_width=int(decoder_config["train24_smoke_code_width"]),
+        code_width=int(
+            decoder_config[
+                "production_code_width"
+                if meta_surface
+                else "train24_smoke_code_width"
+            ]
+        ),
         address_width=int(decoder_config["address_width"]),
         hidden_width=int(decoder_config["hidden_width"]),
         seed=int(decoder_config["initialization_seed"]),
@@ -179,37 +276,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         profile=profile,
     )
 
-    result = {
-        "schema_version": FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA,
-        "projection_kind": "fixed_functional_decoder_code_projection",
-        "repository": {
-            "commit": repository["commit"],
-            "dirty_paths": repository["dirty_paths"],
-        },
-        "functional_config": _asset(args.config),
-        "decoder_checkpoint": _asset(decoder_path),
-        "held_codes": _asset(held_codes_path),
-        "profile_result": _asset(profile_result_path),
-        "expert_bank_root": str(args.expert_bank_root.resolve()),
-        "expert_step": int(mechanism["expert_step"]),
-        "optimization": {
-            "fit_task_count": len(split.fit),
-            "held_task_count": len(split.held),
-            "decoder_frozen_for_held_code_fit": True,
-            "decoder_steps": int(profile["steps"]["decoder"]),
-            "held_code_steps": int(profile["steps"]["held_code"]),
-            "fold_count": int(mechanism["fold_count"]),
-            "held_out_fold": int(mechanism["held_out_fold"]),
-        },
-        "information_wall": {
-            "role": "development_train_oracle_only",
-            "validation_experts": 0,
-            "test_experts": 0,
-            "deployment_carrier": False,
-        },
-        "tasks": rows,
-        "content_hash_policy": "disabled_by_owner",
-    }
+    result = _projection_manifest(
+        args=args,
+        meta_surface=meta_surface,
+        mechanism=mechanism,
+        repository=repository,
+        decoder_path=decoder_path,
+        held_codes_path=held_codes_path,
+        profile_result_path=profile_result_path,
+        profile=profile,
+        split=split,
+        rows=rows,
+    )
     write_json_atomic(args.output_dir / "projection_manifest.json", result)
     return result
 
@@ -226,6 +304,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--expert-bank-root", type=Path, required=True)
     result.add_argument("--profile-root", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)
+    result.add_argument(
+        "--surface", choices=("train24", "nonheld_meta"), default="train24"
+    )
     return result
 
 

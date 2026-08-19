@@ -16,6 +16,9 @@
   验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成；修正投影wiring后的F4
   free-Program reference仍在gpu02两卡运行，完成前不解释partial rows。
+- non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
+  LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker均已完成首步且无OOM/non-finite。canonical输出为
+  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`，预计约7.5小时完成。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

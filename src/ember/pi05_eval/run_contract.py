@@ -341,7 +341,15 @@ def build_run_contract(
                 "schema_version": authorities.seen_panel.get("schema_version"),
             }
             if role == "seen_panel"
-            else None
+            else (
+                {
+                    "path": authorities.paths["meta_protocol"],
+                    "bytes": Path(authorities.paths["meta_protocol"]).stat().st_size,
+                    "schema_version": authorities.meta_protocol.get("schema_version"),
+                }
+                if role == "nonheld_meta"
+                else None
+            )
         ),
         "model": dict(model),
         "tokenizer": dict(tokenizer),

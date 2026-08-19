@@ -453,3 +453,17 @@ default fold0的15个meta-validation tasks已在完全相同的50个固定states
 相对source的gained/lost及projected对这些增量的复现。若direct experts不能产生跨task的policy-effective增量，则这个
 重叠source/meta panel对decoder range是欠识别的，应转向role-disjoint meta-task构造，不能让identity LoRA凭高base分过门。
 remote-safe结果见`docs/evidence/functional_adaptation_20260819/nonheld_meta_source_baseline.json`。
+
+## 21. 完整71-task source覆盖：总体充足，Study缺口局部化
+
+补齐default fold其余56个meta-train tasks后，frozen source为`2272/2800`（81.14%）；与fold0的`646/750`合并，
+71-task总计`2918/3550`（82.20%），71/71 tasks非零，52/71达到40--50/50。按场景分解为Kitchen
+`1596/1850`（86.27%）、Living Room `808/900`（89.78%）、Study `514/800`（64.25%）；按任务族分解时
+single-place为88.67%、actuation为87.33%、stack为83.00%、compound为76.00%、pick-place为74.67%。9个低于
+25/50的task中7个是Study pick-place，最低为task73 `4/50`、task80/81各`7/50`。
+
+因此“当前source整体缺乏LIBERO控制能力”不成立，不应在fixed-decoder gate前做无差别source强化；但Study/book-placement
+是明确的局部能力缺口，direct experts必须证明能在这些弱task上增加功能，同时不破坏source已成功的rows。若direct本身也
+失败，最早失效接口是source/task-expert ceiling；若direct有广泛净增量，才进入fixed-decoder复现。由于全部71个task identity
+都参加过source训练，这个panel仍不是source/meta role-disjoint证据，paired增量门不能省略。remote-safe结果见
+`docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。

@@ -19,7 +19,7 @@
 | C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 已增加non-held folds，但source在同15个held-meta tasks为646/750，暴露source/meta task identity重叠仍会欠识别；先用paired direct增量裁决，增量不足即构造role-disjoint meta tasks；same-endpoint/different-procedure仍是显式数据缺口 | active |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 以policy-functional fingerprint定义等价类，学习并冻结code-to-LoRA decoder；固定后再训练video inference | active |
 | C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | functional distillation只做warm start；随后在train/meta simulator上用closed-loop reward/progress credit优化code posterior | scheduled |
-| C4 | source skill prior尤其对Long可能不足 | 中高 | 分primitive与suite测task-local adapter ceiling和source coverage；不足才强化clean non-overlap source policy | scheduled |
+| C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source formal为2918/3550、71/71非零，不支持全局先强化；Study仅514/800且7/9个低于25/50的task来自Study，localized缺口进入direct expert ceiling裁决 | active |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | object/relation/event/subgoal representation与full-vs-endpoints/middle/order controls共同裁决 | scheduled |
 | C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 正确F4仅307/1200，证明旧fixed-head range不足；后继固定functional decoder先做task-held闭环，失败则架构性扩大或重参数化，不做小扫 | active |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
@@ -53,9 +53,9 @@
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
-| F | 扩展meta tasks并分离四类数据角色 | 固定target IDs与71-task allowlist已建立，但当前source pretraining和meta adaptation仍共享task identity，不能冒充完全分离；source formal高分后，预注册以direct专家增量决定当前pool是否有信息量，否则实际构造role-disjoint meta tasks | active |
+| F | 扩展meta tasks并分离四类数据角色 | 固定target IDs与71-task allowlist已建立；完整source formal为2918/3550，但当前source pretraining和meta adaptation仍共享task identity，不能冒充完全分离；预注册以direct专家增量决定当前pool是否有信息量，否则实际构造role-disjoint meta tasks | active |
 | G | process-identifying controls | first/final/endpoints/middle/order/sparse已接通；新增真实首帧等长重复static与同episode eye-in-hand cross-view；HDF5无depth/segmentation，mask不读取state伪造；flow/procedure/paraphrase/goal/stage继续补可信数据 | active |
-| H | 强化clean source policy | 先测primitive coverage与target adapter ceiling；只有能力缺口成立才用更多不重叠数据强化并重新冻结 | scheduled |
+| H | 强化clean source policy | 71-task source总体82.20%、52/71达到80%，全局强化未触发；Study/pick-place局部缺口仍等待direct expert ceiling，只有该接口成立才定向强化并重新冻结 | active |
 
 ## 4. 专家方向I--N：owner已授权或保留的合同变化
 

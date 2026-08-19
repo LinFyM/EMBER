@@ -18,13 +18,19 @@
   Jaccard `.35534`，只保留direct的`46.66%`，明确未过90%门。旧`659/1200`来自没有实际安装投影LoRA的错误评测，
   已撤销并重导出remote-safe证据。
 - non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
-  LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker均已完成首步且无OOM/non-finite。canonical输出为
-  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；当前已完整产出6/71 adapters，
-  六worker正在各自第二个task的step528--555，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时。
+  LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker持续运行且无OOM/non-finite。canonical输出为
+  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；截至本次source-coverage
+  文档节点已完整产出15/71 adapters，实测约4.3秒/step，继续按固定uniform-step合同完成全部bank。
 - 同一15-task meta-validation面板的frozen source baseline已在gpu02完成90/90 jobs、750/750 rows：`646/750`
   （86.13%），15/15 tasks非零且14/15达到40--50/50；task73仅`4/50`并贡献46/104个失败。结果暂不支持先强化source，
   但因这15个task都参加过source训练，也明确禁止用高base/identity aggregate替fixed-decoder过门。下一裁决必须严格配对
   source/direct/projected的retained、gained、lost、churn及per-task增量；direct若无广泛增量则触发role-disjoint meta tasks。
+- 其余56个meta-train tasks的source formal也已从clean detached `main@3502d13`完成336/336 jobs、2800/2800 rows：
+  `2272/2800`（81.14%）。合并15-task结果后，完整71-task source覆盖为`2918/3550`（82.20%），71/71 tasks非零、
+  52/71达到40--50/50；Study为`514/800`（64.25%），9个低于25/50的tasks中7个来自Study。该结果不支持当前先做
+  全局source重训，但把localized Study/pick-place缺口明确加入direct expert paired裁决；仍不能因这些task identity都被
+  source训练见过而把高aggregate当作decoder证据。remote-safe摘要见
+  `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -165,5 +171,6 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 - 最近完整回归仍为`293 passed`；fixed-decoder正式训练入口另有8项聚焦测试通过；
 - B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
-- 已集成的临时partial JSON、worktrees与试验分支持续清理；当前只保留正在运行的两套formal输出、必要checkpoint、raw rows和
-  唯一evidence；`codex/bci-continuation`仅为已集成历史分支，不再作为主写分支。
+- 已集成的临时partial JSON、worktrees与试验分支持续清理；当前只保留正在运行的expert-bank formal工作面，以及已完成
+  source覆盖所需的run contract、raw rows、aggregate和remote-safe evidence；`codex/bci-continuation`仅为已集成历史分支，
+  不再作为主写分支。

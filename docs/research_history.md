@@ -457,6 +457,19 @@ decoder效果的欠识别边界。后续预注册为同750行source/direct/proje
 则该pool不能验证decoder泛化。remote-safe摘要为
 `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_baseline.json`。
 
+### 3.18 完整71-task non-held frozen source formal
+
+同日从clean detached `3502d13`补齐56个meta-train tasks，每task固定50 states、seed7，得到`2272/2800`
+（81.14%）。与3.17的15-task结果合并后为`2918/3550`（82.20%），71/71 tasks非零，52/71达到至少40/50。
+Kitchen、Living Room、Study分别为86.27%、89.78%、64.25%；9个低于25/50的tasks中7个来自Study，说明source缺口
+集中在book/caddy/shelf pick-place，而非全局控制能力不足。
+
+第一次launcher因NFS-backed SQLite queue出现ownership记录丢失而停止；原地resume复用25个complete shards并收养1个已发布
+orphan shard，最终336/336 shards、2800/2800 rows、六worker return code均为0，未改变科研合同或重跑已完成rows。
+该恢复事实只属运行证据，不改变科学结论。下一步仍是uniform-step direct experts在相同rows上的paired retained/gained/lost，
+并特别检查弱Study tasks是否存在可适配增量。remote-safe摘要见
+`docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

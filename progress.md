@@ -1,94 +1,71 @@
 # EMBER Progress
 
-更新时间：2026-08-18。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，持久认知见
+更新时间：2026-08-19。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
 `findings.md`，完整历史见`docs/research_history.md`。
 
-## Current authority and scope
+## Current authority and executable state
 
-- 当前远程仓库独立复核整理已完成；本次没有使用subagents或启动GPU工作；
+- 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
+  `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写分支为`codex/bci-continuation`；
-- 当前没有active scientific design、训练、评测、resume或successor；
-- 当前最新被测架构是EMBER-LMMPC Core-Addressed Reader，设计已封存且formal non-pass；
-- owner明确要求后续只能基于当前架构推进，不得直接恢复V6/LPCP/GOMQ、旧carrier、旧compiler或双Writer路径；
-- 本次远程整理不写入任何下一步科学方案，外部专家应独立判断未决归因。
-- 固定提交`947c0e3`的外部独立复核已经收到并登记；其建议仍是advisory evidence，不自动成为active design或launch
-  authority；
-- 仓库侧已静态确认当前formal路径把fresh `patch_grounding`、逐帧`language_projection`和
-  `interaction_projection`的输出再次detach，现有“全动态路径梯度”测试没有覆盖这些模块；尚未进行干预实验，
-  因而不能把它直接升级成123低上限或checkpoint漂移的唯一根因；
-- owner最新明确：后续canonical Writer移除Text Meta-LoRA；历史formal config的rank4事实保留，Action Meta-LoRA
-  不随该决定自动删除。
-- 外部复核逐项审计goal已启动：先做claim ledger、raw evidence重建和current checkpoint零训练诊断，再分别裁决
-  Text Meta-LoRA、fresh前端detach、occupancy、decoder和shared-gradient hypotheses；所有专家意见最终都必须有
-  实施结果或证据化不适用裁决，并形成面向专家的远程报告。
-- 专家A--G逐项执行账本已建立于`docs/external_review_claim_ledger_20260818.md`；其中把代码事实、性能归因、反证、
-  advisory threshold和有前提建议分开登记。当前Phase 0静态复核已确认主要代码事实，但尚未把任何单一代码事实升级为
-  123上限或checkpoint漂移的因果结论。
-- Phase 1 raw evidence已完成：六个strict400 panel的400行outcome、teacher demo IDs和RNG reference严格配对，训练/
-  评测commit与checkpoint manifest已导出到`docs/evidence/external_review_20260818/paired_evidence.json`。重算确认当前
-  macro25/50/75/100的breadth@1/5/10分别为`8/3/3、5/3/2、6/2/2、4/2/2`；123→84仍是显著的
-  `13 gained / 52 lost`，因此tracked摘要与原始事实一致。
-- F0a pre-fix真实gradient audit已完成：macro25除`patch_grounding`全组和`interaction_projection`外的所有intended
-  module groups均有nonzero finite functional gradient，前述两组是`gradient_present=0`；source policy为0。fresh点同时
-  验证FactorHead B-first冷启动。证据见`docs/evidence/external_review_20260818/gradient_audit_before_fix.json`。
+  封存后工作树干净并与origin一致。
+- 当前没有active训练、评测、resume、design或successor；不从历史文档自动恢复任何“下一步”。
+- canonical Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
+  layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
+  canonical config/code contract移除。
+- 不直接返回V6/LPCP/GOMQ；它们只作历史paired反事实。
 
-## Active F0b launch contract
+## Final external-review result
 
-- science：只评测sealed current macro25，不修改Writer；新增same-task-other、cross-suite-wrong、shuffled、
-  shuffled-keep-first、reversed和no-video六个strict paired400，correct123复用原始rows；
-- pairing：validation8×50、seed7、K4 without replacement，task/state/env/policy RNG/video ordinal与correct逐行相同；
-- execution：计划三波并发，每波gpu01与gpu02各一个4-GPU independent evaluator，总EMBER同时8卡、每节点4卡；每GPU
-  3 persistent rollout workers和1 writer generator，dynamic cost queue；
-- provenance：从当前clean pushed commit启动，source step1000、macro25 checkpoint和dataset均复用canonical资产；
-- storage：`strg01` data1 quota=`1,073,741,824 KiB`、当前used=`587,496,340 KiB`；六panel预计新增约6.4GB，
-  远低于独立quota余量；
-- adjudication：完成后报告correct/control paired gains/losses、exact McNemar、suite方向、same-task retention和task
-  concentration；专家阈值只作advisory，不改变owner方法合同。
+| arm | macro25 | macro50 | 25→50 retained/gained/lost | breadth@1 |
+| --- | ---: | ---: | ---: | ---: |
+| A Text+detach | 123 | 84 | 71 / 13 / 52 | 8→5 |
+| B noText+detach | 104 | — | — | 6 |
+| C noText+credit | 110 | 101 | 77 / 24 / 33 | 6→4 |
+| F5 C+PCGrad | 107 | 96 | 82 / 14 / 25 | 6→4 |
+| F3 A+frozen heads | 123 | 117 | 90 / 27 / 33 | 8→6 |
 
-## Sealed scientific state
+完整macro25视频面板（correct / same / wrong / shuffle / keep-first / reverse / no-video）：
 
-- 同一fresh world6/topology run的macro25/50/75/100 K4 strict paired400为
-  `123 -> 84 -> 89 -> 87`，breadth为`8 -> 5 -> 6 -> 4`；
-- 400个固定rows只有49行四点始终成功、150行曾成功。macro25到50丢失52行，到macro100仅恢复15行；
-- 固定K4+B20 loss为`.112124 -> .099353 -> .098427 -> .101337`，loss改善没有产生held共同积累；
-- 当前best123相对同schedule LPCP143为`100 retained / 23 gained / 43 lost`，相对GOMQ151为`100/23/51`；
-- 当前相对151的28分缺口主要来自Long`-23`和Object`-12`，并由Spatial`+3`、Goal`+4`部分抵消；
-- Core-addressed reader相对matched旧reader使macro25从104提高到123，是保留的正机制；
-- 当前recipe同时存在最佳点absolute不足和相邻checkpoint漂移；没有完成视频六臂因果资格。
+- A：`123 / 125 / 81 / 122 / 131 / 90 / 48`；
+- B：`104 / 101 / 65 / 83 / 90 / 96 / 47`；
+- C：`110 / 111 / 54 / 91 / 93 / 69 / 47`；
+- F5：`107 / 111 / 51 / 92 / 105 / 53 / 47`。
+
+三个no-Text arm均显著优于no-video和wrong，说明Writer确实使用视频，不是language-only。C是唯一在aggregate上
+同时显著优于wrong/shuffle/keep-first/reverse/no-video的arm，但收益高度集中Object、Long reverse反向，且
+same-task correct-success retention只有87.27%。因此视频因果资格得到部分改善，方法未达absolute、
+稳定、same-video robustness和跨suite高层Program的联合目标。
+
+## Root-cause adjudication
+
+1. **Fresh front-end detach是真实工程缺陷。** A/B在macro1/25的`patch_grounding`/
+   `interaction_projection`均无gradient；C修macro1首次有credit。修复将correct-reverse margin从8提到41，
+   但correct只104→110且继续漂移，所以它是视频方向资格的一个前端因素，不是absolute/stability首因。
+2. **Text Meta-LoRA提供真实但混合的support。** 移除它使correct掉19，同时shuffle/keep-first各掉39/41、
+   reverse反而升6；这不是纯language shortcut，也不是科学上干净的正机制。owner的no-Text边界继续有效。
+3. **简单self-occupancy divergence未获支持。** lost rows没有出现预期的macro50-self-occupancy disagreement增大；
+   validation expert不存在且held teacher action受信息墙禁止，动作正确性只能记为审计后不可判。
+4. **FactorHead co-drift是放大器，不是reachability瓶颈。** freeze使84升到117但仍丢33；固定head的free-Program oracle
+   为659/1200，direct experts为658/1200，故不扩大head/rank/decoder。
+5. **Cross-task conflict会改变换手，standard PCGrad不是解法。** 它将lost 33→25、churn 57→39，但gained
+   24→14且有显著抑制，score更低、breadth仍收缩，并把keep-first margin压到2。Adam moment独立效应仍不可由本arm裁决。
+
+当前最早未解接口被收窄为：四条信息流能否生成跨suite、跨初始化的policy-effective learned Program，以及
+shared objective/更新能否在同一checkpoint保留这些方向。本轮没有性能pass，也没有登记下一套架构。
 
 ## Remote-visible review map
 
-- 第一性原理与稳定目标：`docs/concept.md`、`docs/current_owner_requirements.md`；
-- 当前架构的完整封存事实：`docs/layer_matched_memory_program_compiler_design.md`；
-- 不含推荐方案的当前证据综述：`docs/architecture_reasoning.md`；
-- 外部复核原意、实验建议和仓库侧核验：`docs/external_review_20260818.md`；
-- 全历史架构与实验ledger：`docs/research_history.md`；
-- 跨实验耐久结论：`findings.md`；
-- canonical代码：`src/ember/writer/`；
-- 正式冻结config：`configs/pi05_writer_layer_matched_memory_program_compiler_v5.json`。
+- 原专家报告：`docs/external_review_20260818.md`；
+- 113项claim ledger：`docs/external_review_claim_ledger_20260818.md`；
+- 本轮面向专家的结果报告：`docs/external_review_followup_20260819.md`；
+- 给新session复制的独立复核prompt：`docs/external_review_followup_prompt_20260819.md`；
+- 证据索引与全部remote-safe JSON：`docs/evidence/external_review_20260818/README.md`；
+- 持久结论与历史：`findings.md`、`docs/research_history.md`。
 
-大型`runs/`、checkpoint、raw rows和rollout media由`.gitignore`排除，外部reviewer无法从远程读取。影响当前判断的
-aggregate、paired transition、per-task/per-suite和stage数据均已重述到上述tracked文档。formal config顶层
-`active_formal_ready`是启动时冻结字段，不代表当前仍有active run。
+## Verification and cleanup
 
-## Local-only canonical evidence
-
-- train：`runs/outputs/pi05_lmmpc_v5_formal_fresh_r6_b20_aecbce5_gpu01p124567_20260818`；
-- four-checkpoint trajectory：`runs/analysis/lmmpc_four_checkpoint_strict_trajectory_20260818.json`；
-- Program x FactorHeads cross-decode：
-  `runs/analysis/lmmpc_program_factorheads_cross_decode_macro25_50_75_100_20260818.json`；
-- combined diagnosis：`runs/analysis/lmmpc_macro25_50_75_100_drift_diagnosis_20260818.json`。
-
-这些unique formal artifacts保留，不因仓库整理删除；远程文档不把本地路径假装成外部可访问链接。
-
-## Repository cleanup status
-
-- tracked代码审计已确认一个canonical Writer launcher；
-- 无调用者的旧slot-set、旧reward实验模块和旧reader类已从active tree删除，Git历史保留；
-- 过期active design语义和未经实施的on-policy候选已从当前authority移除；
-- 18个clean detached worktrees已移除，只保留canonical workspace；临时Codex、pytest和Python cache已清理；
-- 当前测试集`287 passed`；canonical Writer编译/导入、20份JSON config、9个本地Markdown引用、Git diff和
-  authority禁用候选检查均已通过；
-- review snapshot已经commit并同步到`origin/codex/bci-continuation`。
-
-当前不允许从本文推导自动launch；仓库不登记preferred successor。
+- 完整CPU测试：`293 passed`；
+- B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
+- 本轮临时partial JSON、worktrees与试验分支已清理；formal runs、checkpoint、raw rows和唯一evidence均保留；
+- 封存状态只保留canonical workspace、`main`与`codex/bci-continuation`，无EMBER GPU进程。

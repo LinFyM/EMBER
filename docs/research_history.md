@@ -395,6 +395,44 @@ Program到共享FactorHeads坐标的可达性和co-drift；建议先做全模块
 gradient aggregation。所有顺序和数值门槛均是外部advisory proposal，不是active design。完整记录见
 `docs/external_review_20260818.md`。
 
+### 3.15 外部复核建议的完整执行结果
+
+本轮没有设计新架构，始终基于Core-Addressed Reader主链、rank16、38 targets、Dynamic-K、Action Meta-LoRA、
+memory Reader、bounded K-set/M2P和FactorHeads。为了区分owner要求的no-Text边界与专家指出的output detach，使用：
+
+- A：历史Text rank4、保留detach，correct123；
+- B：fresh no-Text/VL、保留detach，correct104；
+- C：fresh no-Text/VL、只移除Writer-local projected outputs的第二次detach，correct110→101；
+- F5：相对C只把24-task arithmetic mean换成fixed-order deterministic PCGrad，correct107→96。
+
+真实functional backward确认A/B的`patch_grounding`与`interaction_projection`在macro1/25均无gradient，C在macro1
+首次非零，所有arm的source policy gradient为0。A→B为23 gained / 42 lost；B→C为25/19、净+6且不显著，C25→50
+为24/33、churn57。F5 25→50为14/25、churn39；相对C减少lost但显著抑制gained，breadth@1同为6→4。
+
+四个macro25 arm的完整strict video controls为：
+
+| arm | correct | same | wrong | shuffled | keep-first | reversed | no-video |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| A Text+detach | 123 | 125 | 81 | 122 | 131 | 90 | 48 |
+| B noText+detach | 104 | 101 | 65 | 83 | 90 | 96 | 47 |
+| C noText+credit | 110 | 111 | 54 | 91 | 93 | 69 | 47 |
+| F5 C+PCGrad | 107 | 111 | 51 | 92 | 105 | 53 | 47 |
+
+B的correct-shuffle/keep-first/reverse margin为`21/14/8`；C为`19/17/41`，表明credit恢复主要增强视频内容与全局
+正向过程资格，而不是absolute或中间顺序margin。F5为`15/2/54`，显示PCGrad强化全局正反方向但丢失keep-first后的
+中间顺序优势。same-task correct-success retention依次为`85.37/83.65/87.27/85.05%`，均未到90%。C的主要视频
+收益集中Object且Long reverse反向12；F5的suite分布较均衡但仍未稳定积累。B no-video最终为47，与C/F5的
+identity对照一致；B correct-no-video为64 correct-only / 7 control-only，净`+57`、exact McNemar
+`p=1.26e-12`。
+
+F2 fixed-occupancy审计不支持“lost rows只因macro50自身occupancy分歧更大”的简单故事；合法action correctness
+reference因validation expert不存在且held teacher action受信息墙禁止而不可得。F3冻结heads得到117，对照正常84，
+但仍丢33；F4 fixed-head free-Program oracle为659/1200，对照direct experts658/1200，反驳decoder reachability为首因。
+因此不扩大head/rank，不启动occupancy replacement；F5只证明gradient conflict影响换手和能力分布，不证明mean或
+AdamW是主要根因。完整逐项裁决、remote-safe rows与provenance见
+`docs/external_review_claim_ledger_20260818.md`、`docs/external_review_followup_20260819.md`和
+`docs/evidence/external_review_20260818/`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

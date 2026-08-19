@@ -1,12 +1,12 @@
 # EMBER Task Plan
 
-状态：2026-08-18 **in progress，外部复核逐项审计goal已启动**。
+状态：2026-08-19 **complete；专家A--G/F0--F5已逐项裁决，报告与远程e证据已封存**。
 
 ## Goal
 
 全面审计`docs/external_review_20260818.md`中的每条重要意见：把代码事实、历史实验事实、因果推断、反证、建议干预
 和数值门槛逐项拆开；先复核零训练成本证据，再用最少的当前架构单变量实验裁决主要根因。最终形成一张每条主张为
-`confirmed / refuted / underdetermined`的claim ledger，而不是机械执行专家给出的全部建议。
+`confirmed / refuted / underdetermined`的claim ledger，并让专家报告的每一项建议都有实际结果或证据化裁决。
 
 ## Done when
 
@@ -60,14 +60,14 @@
 - [x] 记录`patch_grounding`、`interaction_projection`、`language_projection`、Text/Action Meta-LoRA、Core、Procedure、
   memory tokens、Reader、K-set、M2P和八个FactorHeads的grad `None/nonzero/finite`；
 - [x] 同时确认source policy nonzero gradient tensors为0；
-- [ ] 把intended-path梯度变成稳定测试，避免以后再用部分模块代表全路径。
+- [x] 把intended-path梯度变成稳定测试，避免以后再用部分模块代表全路径。
 
 ### 2B. Current macro25视频因果面板
 
-- [ ] 在同一400 rows、state/env/policy RNG、K和video ordinal上评测correct、same-task-other、cross-suite-wrong、
+- [x] 在同一400 rows、state/env/policy RNG、K和video ordinal上评测correct、same-task-other、cross-suite-wrong、
   shuffled、shuffled-keep-first、reversed与no-video；
-- [ ] 报告paired gains/losses、McNemar、per-suite方向、same-task retention和任务集中度；
-- [ ] 将专家建议门槛与项目原有因果资格标准分开呈现，不因单一p值宣称理解高层过程。
+- [x] 报告paired gains/losses、McNemar、per-suite方向、same-task retention和任务集中度；
+- [x] 将专家建议门槛与项目原有因果资格标准分开呈现，不因单一p值宣称理解高层过程。
 
 **Gate 2：** gradient audit裁决当前mechanism合同；视频面板裁决当前123究竟更像correct-process依赖还是
 nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
@@ -82,11 +82,13 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 | B | 移除 | 保留 | bounded attribution baseline，只测移除Text；不作为最终方法 |
 | C | 移除 | 移除 | 当前架构的canonical corrected front end |
 
-- [ ] B只修改Text Meta-LoRA；冻结原生text representation和Writer-local projection保持；
-- [ ] C相对B只删除`frame_evidence/grounded_evidence/interactions`的输出detach，保留frozen hidden detach；
-- [ ] B/C均从fresh训练，锁定同一data、K schedule、rank16、optimizer和formal评测；
-- [ ] B至少到macro25并做strict400；C到macro25，若有absolute或视频因果正证据则继续macro50判断retention；
-- [ ] A→B只解释Text Meta-LoRA效应，B→C只解释front-end credit效应，A→C只报告combined canonical变化。
+- [x] B只修改Text Meta-LoRA；冻结原生text representation和Writer-local projection保持；
+- [x] C相对B只删除`frame_evidence/grounded_evidence/interactions`的输出detach，保留frozen hidden detach；
+- [x] B/C均从fresh训练，锁定同一data、K schedule、rank16、optimizer和formal评测；
+- [x] B到macro25并做strict400；C到macro50并完成macro25/50 strict400稳定性判断；
+- [x] A→B只解释Text Meta-LoRA效应，B→C只解释front-end credit效应，A→C只报告combined canonical变化；
+- [x] B/C macro25完整视频controls与same-task稳定性面板；两者7面板均400 rows严格配对，
+  mismatch均0。
 
 **Gate 3：** 若B→C paired net变化小于5且breadth、controls、stability均无改善，detach不是主要性能根因；若absolute
 明显改善但25→50仍崩落，问题正式后移到occupancy/retention；若C仍低且视频controls弱，先审查process identifiability，
@@ -97,31 +99,33 @@ nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
 固定状态occupancy审计无论前面结果如何都完成；只有corrected C仍出现“offline改善、strict support丢失”时才执行
 occupancy-matched训练干预：
 
-- [ ] 对相邻checkpoint lost/gained/retained rows保存rollout state和首次行为分歧时间；
-- [ ] 构造两checkpoint访问状态的固定union，在同一states上用冻结train24 expert/teacher reference比较action/flow error；
-- [ ] 区分visitation shift、同一状态policy direction恶化、loss-success错位和failure tail；
-- [ ] 只有固定状态证据支持occupancy mismatch后，才预冻结一个occupancy-matched training panel作单变量替换；
-- [ ] 任何occupancy surrogate最终仍以相邻strict paired400、breadth和retention裁决。
+- [x] 对相邻checkpoint lost/gained/retained rows保存rollout state和首次行为分歧时间；
+- [x] 构造两checkpoint访问状态的固定union并完成两checkpoint action比较；validation expert不存在且held teacher action
+  禁止读取，正确性reference明确裁决为`underdetermined-after-audit`；
+- [x] 区分visitation shift、同一状态policy direction恶化、loss-success错位和failure tail的可判与不可判部分；
+- [x] fixed-state方向不支持简单occupancy claim，因此occupancy-matched训练干预裁决为`not-applicable`；
+- [x] occupancy surrogate未用于选择方法。
 
 ## Phase 5 — Decoder reachability与co-drift
 
 FactorHead freeze、reachability和endpoint/family审计均需完成，优先使用corrected C checkpoint；结果是否支持decoder
 根因只决定是否继续修改decoder：
 
-- [ ] FactorHead-freeze diagnostic：从一个有support的checkpoint冻结八个heads续训，测旧success retention；
-- [ ] train24 reachability oracle：固定heads、自由优化`20x16x256` Program逼近policy-effective experts，评测投影后
+- [x] FactorHead-freeze diagnostic：从一个有support的checkpoint冻结八个heads续训，测旧success retention；
+- [x] train24 reachability oracle：固定heads、自由优化`20x16x256` Program逼近policy-effective experts，评测投影后
   train-task closed loop；
-- [ ] 分family报告q/v/action-in/action-out reachability，特别分离人为派生endpoint rows；
-- [ ] 若oracle保留expert success≥90%，停止扩大head/rank，责任回到video-to-Program或credit；
-- [ ] 若明确不可达，再设计一个decoder单变量，而不是同时动rank、width和坐标。
+- [x] 分family报告q/v/action-in/action-out reachability，特别分离人为派生endpoint rows；
+- [x] oracle为659/1200、direct为658/1200，明确通过90%门并停止扩大head/rank；
+- [x] 不启动decoder扩容；fixed-head reachability并非当前瓶颈。
 
 ## Phase 6 — Shared-gradient conflict（最后条件分支）
 
 在前端、occupancy和decoder审计后执行一个matched shared-gradient comparison，以直接回应专家最后一项建议：
 
-- [ ] 固定per-task gradient、AdamW、LR、tasks和data，只替换一个预注册的conflict-safe aggregation rule；
-- [ ] macro25相当且25→50 lost显著减少、breadth稳定，才支持shared-gradient conflict；
-- [ ] 若仍复现漂移，撤回“optimizer/mean是主因”，回到objective occupancy与parameterization交互。
+- [x] 固定per-task gradient、AdamW、LR、tasks和data，只替换预注册`deterministic_pcgrad_v1`；
+- [x] macro25相当但25→50 lost减少未达显著且breadth仍6→4，故不支持shared-gradient conflict为主要根因；
+- [x] PCGrad降低churn同时显著抑制gained并降低absolute，撤回“arithmetic mean是主因”；Adam moment独立效应因两臂
+  均使用AdamW而保留为`underdetermined-after-audit`。
 
 ## Reporting and stop rules
 
@@ -132,3 +136,12 @@ FactorHead freeze、reachability和endpoint/family审计均需完成，优先使
   最早未解接口，不自行大幅改成另一套架构。
 - 最终新增一份面向外部专家的报告，逐条引用其A--G意见、给出实施/不适用状态、原始证据、结果、我们同意或修正的
   结论以及仍需专家判断的问题；与给owner的总结、claim ledger和全部可提交evidence一起推送远程。
+
+## Final outcome
+
+- 没有新arm达到约145或稳定方法资格，本goal以negative/mixed scientific result完成；
+- front-end detach是真实credit缺陷并改善视频方向资格，但不是absolute/stability首因；
+- 简单occupancy divergence未获支持，FactorHead co-drift是放大器而非reachability瓶颈，PCGrad改变换手但未解决共同积累；
+- `docs/external_review_claim_ledger_20260818.md`的113个编号条目均已有实施结果、反驳、
+  `not-applicable`或`underdetermined-after-audit`边界，无queued项；
+- 本goal封存后不登记active successor，等待owner与外部专家的下一轮裁决。

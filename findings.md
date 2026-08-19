@@ -299,3 +299,66 @@ index correspondence而非已知policy-functional correspondence；Action probe�
 owner同时明确后续不再使用Text Meta-LoRA。当前sealed formal确实使用rank4 Text Meta-LoRA、VL Meta-LoRA为0；
 后续语言仍必须通过冻结原生text/VLM表示进入Writer，Action Meta-LoRA按独立作用继续判断。外部复核的完整根因排序、
 反证、建议门槛和远程证据缺口记录在`docs/external_review_20260818.md`。
+
+## 16. 外部复核逐项实验后的耐久结论
+
+### 16.1 代码级credit断点真实，但必须拆开“因果资格”和“absolute性能”
+
+旧A与no-Text B在heads已经打开的macro1/macro25仍对`patch_grounding`与`interaction_projection`完全无functional
+gradient；C只移除Writer-local projected outputs的第二次detach后，两组在macro1首次获得nonzero finite gradient，
+source policy仍为0。这个工程断点及其测试缺口已经关闭。
+
+但matched B→C只把correct strict从104提高到110，breadth@1/@5/@10仍为`6/3/3`，C继续到macro50为101，发生
+`24 gained / 33 lost`、churn57。它不是absolute低上限或shared retention的主要单因。controls却显示另一层真实作用：
+B的correct-reverse只有`104-96=8`且不显著，C变为`110-69=41`且显著；correct-wrong也由39扩大到56。
+因此恢复credit明显改善了视频内容与整体正向过程的资格，但没有把这些方向转化成足够强、广、稳定的held support。
+
+### 16.2 Text Meta-LoRA提供真实但混合的support，不是literal language-only也不是科学上干净的正机制
+
+A→B只移除Text Meta-LoRA时，correct从123降到104，证明Text路径有真实闭环贡献；但shuffled从122降到83、
+shuffled-keep-first从131降到90，降幅远大于correct，使correct-shuffle margin从1变为21。与此同时reversed从90升到
+96，使correct-reverse margin从33缩到8。Text路径既帮助correct相对reverse，也更强地支撑order-corrupted视频，不能被
+简化为“全是shortcut”或“全是有用语言”。未来canonical不再使用Text/VL Meta-LoRA，但必须另行恢复它曾提供的
+absolute support，而不是把清理本身当成方法提升；exact language仍通过冻结原生表示进入Writer，Action Meta-LoRA保留。
+
+### 16.3 aggregate视频因果性存在，但仍集中且没有达到跨demo稳定高层Program
+
+C macro25为correct/same/wrong/shuffle/keep-first/reverse/no-video=`110/111/54/91/93/69/47`；B的对应面板为
+`104/101/65/83/90/96/47`，correct-no-video净`+57`且显著；F5 PCGrad为
+`107/111/51/92/105/53/47`。C对wrong、shuffle、keep-first、reverse、no-video分别净`+56/+19/+17/+41/+63`，
+均达到显著；F5除keep-first仅`+2`外，其余为`+56/+15/+54/+60`并显著。说明当前no-Text Writer不是language-only，
+正确视频内容、全局箭头方向和部分中间顺序都能影响有用policy方向。
+
+这还不等于通用高层过程理解。C的no-video→correct净收益几乎全部来自Object（+59），correct-reverse在Long反而
+`-12`；C的keep-first顺序优势也主要来自Object。F5把correct-reverse优势扩到Object/Goal并提高macro25 suite floor，
+却把correct-keep-first margin压到2，说明“首帧/端点/正反方向”与“中间阶段有向连续关系”必须分别控制。四个arm的
+same-task-other总分都在correct±10，但correct-success row retention仅A/B/C/F5=`85.37/83.65/87.27/85.05%`，
+均未达到专家建议90%；aggregate相近会掩盖具体初始化换手。
+
+### 16.4 decoder容量不是当前首因，head漂移只是放大器
+
+冻结A macro25的八个FactorHeads续训到macro50得到117而正常续训为84，证明head co-drift显著放大早期崩落；但固定
+heads仍相对123丢33个success rows。更直接的train24 free-Program oracle在完全固定heads下得到659/1200，direct
+experts为658/1200，逐行仅7 gained / 6 lost。即使effective-BA relative L2仍高达`.936`，闭环行为几乎等价。
+所以当前不扩大FactorHeads、rank或decoder width；真正未解的是如何从视频学习到这些policy-effective Program，以及
+shared更新如何保留它们。free Program是privileged接口诊断，不是held route。
+
+### 16.5 简单occupancy故事和arithmetic mean单因均未通过
+
+A macro25→50的136个lost/gained/retained rows在两checkpoint真实occupancy上均从首次replan就分歧。lost rows在
+macro50自身occupancy的checkpoint disagreement没有按假设变大，gained反而显著变大；没有validation expert且读取held
+teacher action违反信息墙，所以哪个动作更正确只能记为`underdetermined-after-audit`，不能用disagreement冒充error。
+
+PCGrad相对C把25→50 lost从33降到25、churn从57降到39，但lost改善不显著，同时gained从24降到14且该抑制显著，
+score为`107→96`而C为`110→101`，macro50两者都收缩到breadth@1=4和top-3约98%。PCGrad在macro25有更好的
+breadth@5与suite floor，并强化wrong/reverse/no-video区别，却丢失keep-first中间顺序优势。cross-task gradient conflict
+会改变能力分布和换手方式，但standard PCGrad没有解决shared accumulation，也不是absolute上限的主要解释。两臂都保留
+AdamW，故Adam moment独立效应仍不可由本实验裁决。
+
+### 16.6 当前最早未解接口
+
+经过上述反事实后，不能再把当前失败主要归因于“前端没梯度”“LoRA没写出”“rank16太大/太小”“FactorHeads不可达”、
+“简单self-occupancy divergence”或“arithmetic mean必然错误”。absolute问题最早落在
+`language/video/Action/memory -> learned Program`能否把正确动态转成跨suite、跨初始化的policy-effective breadth；
+稳定性问题落在同一shared objective与有限长更新能否保留这些方向。两者相互作用但必须分别报告。当前没有任何新arm
+达到约145或相邻稳定资格，不能把更好的controls当成性能pass，也不能因absolute低而抹掉已验证的因果改进。

@@ -145,9 +145,12 @@ Program × FactorHead cross-decode artifact导出，去除本地checkpoint路径
 - 三组审计的source-policy nonzero-gradient tensors均为0，unclassified trainable parameters均为空；B/C均不存在
   Text或VL Meta-LoRA，保留native frozen language和Action Meta-LoRA。
 
-C使用macro1是为了记录新路径的最早可观察信用，A/B使用macro25是为了证明旧detach在后端已经打开后仍切断该路径；
-因此这里裁决的是graph connectivity，不比较跨schedule的gradient magnitude。稳定regression同时覆盖返回tensor局部
-gradient和frozen native memory replay不向source参数回传。
+C使用macro1是为了记录新路径的最早可观察信用；追加的A/B macro1审计进一步确认：B-family在fresh有一阶credit，
+Action Meta-LoRA、language projection、Core、Procedure、memory、Reader、K-set、M2P、A-family和其它upstream均在
+第一次完整macro更新后出现nonzero finite gradient，而旧`patch_grounding`/`interaction_projection`在macro1和
+macro25始终没有gradient。A/B/C全部审计的source gradient为0。这把G3的“首次非零macro”收紧到精确macro1，
+同时证明旧detach不是一般性的延迟credit。稳定regression另覆盖返回tensor局部gradient和frozen native memory replay
+不向source参数回传。
 
 `f1_credit_intervention_evidence.json`进一步公开A/B/C与LPCP143/GOMQ151的六面板逐行strict comparison：
 
@@ -204,3 +207,75 @@ upstream/objective与fixed-head reachability。
 这使预注册90%门明确通过：固定head manifold在train24上可以承载policy-effective expert行为，故当前不扩大
 FactorHeads或rank。高tensor reconstruction error与近等价closed-loop并存，也再次证明reconstruction不能选择方法。
 privileged free Programs和投影adapter只用于接口定位，不是held deployment路线。
+
+## F5 matched shared-gradient intervention
+
+`f5_pcgrad_training_evidence.json`公开clean commit
+`78b2ed0954e7e551715feac64fd9f2f1f4317a19`的50个完整macro。相对C只把24-task arithmetic mean替换为固定顺序、
+无扫参的standard sequential PCGrad；per-task gradients、AdamW及其moments、LR、tasks、B20、Dynamic-K、rank16、
+Writer拓扑和source policy均不变：
+
+- 每macro 552个ordered task pairs中实际发生121--263次projection，均值204.36；
+- PCGrad方向相对arithmetic mean的cosine范围`.94038--.99733`、均值`.98652`，不是等价空操作；
+- PCGrad/mean gradient norm ratio均值`1.23634`；macro平均耗时31.77秒；
+- functional loss从macro1 `.15612`降至macro25 `.11472`、macro50 `.10587`，但loss不用于选模型。
+
+`f5_pcgrad_paired_evidence.json`给出同一400 rows的完整strict对照：
+
+| arm | macro25 | macro50 | retained | gained | lost | churn | Jaccard | breadth@1 25→50 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| C arithmetic mean | 110 | 101 | 77 | 24 | 33 | 57 | .57463 | 6→4 |
+| F5 PCGrad | 107 | 96 | 82 | 14 | 25 | 39 | .67769 | 6→4 |
+
+PCGrad相对C减少8个lost与18个churn，但也少10个gained，macro25/50分别低3/5分且breadth同样下降。逐行比较两种
+transition的loss indicator为11行共同lost、22行仅C lost、14行仅PCGrad lost，exact paired p=`.24298`；gain
+indicator为9行共同gain、15行仅C gain、5行仅PCGrad gain，p=`.04139`。因此它改变并收窄了task exchange，但没有
+通过“macro25相当且显著减少lost并稳定breadth/score”的根因门。该实验保持AdamW不变，只能裁决同一optimizer下的
+aggregation，不能独立裁决Adam moment。
+
+## No-Text arms的完整视频因果面板
+
+`b_video_causality_evidence.json`、`c_video_causality_evidence.json`和
+`f5_video_causality_evidence.json`分别封存B noText+detach、C noText+credit与F5 C+PCGrad的7个
+strict paired400面板。每个JSON都包含400行success bits、per-task/suite、breadth@1/@5/@10、suite minimum、
+top-3 share、paired outcomes与provenance；各文件的episode/env seed/policy seed/noise common-prefix/teacher-reference
+mismatch全为0，`strict_pairing_verified=true`。
+
+| arm | correct | same | wrong | shuffled | keep-first | reversed | no-video |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| B noText+detach | 104 | 101 | 65 | 83 | 90 | 96 | 47 |
+| C noText+credit | 110 | 111 | 54 | 91 | 93 | 69 | 47 |
+| F5 C+PCGrad | 107 | 111 | 51 | 92 | 105 | 53 | 47 |
+
+| arm correct | breadth@1/@5/@10 | suite minimum | top-3 share |
+| --- | ---: | ---: | ---: |
+| B 104 | 6 / 3 / 3 | 3 | .93269 |
+| C 110 | 6 / 3 / 3 | 1 | .95455 |
+| F5 107 | 6 / 4 / 2 | 5 | .90654 |
+
+| arm/control | correct-only | control-only | net | Jaccard | exact McNemar p |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| B same | 17 | 14 | +3 | .73729 | .72010 |
+| B wrong | 61 | 22 | +39 | .34127 | 2.18e-5 |
+| B shuffled | 41 | 20 | +21 | .50806 | .00985 |
+| B keep-first | 34 | 20 | +14 | .56452 | .07590 |
+| B reversed | 36 | 28 | +8 | .51515 | .38173 |
+| B no-video | 64 | 7 | +57 | .36036 | 1.26e-12 |
+| C same | 14 | 15 | -1 | .76800 | 1.0 |
+| C wrong | 67 | 11 | +56 | .35537 | 6.12e-11 |
+| C shuffled | 34 | 15 | +19 | .60800 | .00940 |
+| C keep-first | 31 | 14 | +17 | .63710 | .01609 |
+| C reversed | 63 | 22 | +41 | .35606 | 9.81e-6 |
+| C no-video | 71 | 8 | +63 | .33051 | 9.69e-14 |
+| F5 same | 16 | 20 | -4 | .71654 | .61772 |
+| F5 wrong | 69 | 13 | +56 | .31667 | 2.26e-10 |
+| F5 shuffled | 29 | 14 | +15 | .64463 | .03154 |
+| F5 keep-first | 19 | 17 | +2 | .70968 | .86794 |
+| F5 reversed | 65 | 11 | +54 | .35593 | 1.81e-10 |
+| F5 no-video | 65 | 5 | +60 | .37500 | 2.22e-14 |
+
+B的same-task保留correct success rows为83.65%，C为87.27%，F5为85.05%，均未达专家90%建议门。
+B→C只恢复fresh front-end credit后，correct仅+6，但wrong/reversed分别-11/-27，使correct-reverse从
+不显著+8变为显著+41；shuffle/keep-first margin没有同等增强。F5进一步强化全局正反方向，却把
+keep-first margin降到+2。因此必须分开“视频内容/箭头方向”与“正确中间阶段顺序”；三个arm均未同时获得
+absolute、稳定、same-video robustness和完整过程资格。

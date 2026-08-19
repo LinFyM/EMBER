@@ -1373,7 +1373,7 @@
   ],
   "schema_version": "ember_writer_occupancy_selection_v1",
   "source_panels": {
-    "macro25": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_lmmpc_v5_macro0025_k4_correct400_noreplacement_seed7_trainr6_evalr6_f42edfc_gpu01p012456_20260818/results.json",
-    "macro50": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_lmmpc_v5_macro0050_k4_correct400_noreplacement_seed7_trainr6_evalr6_f42edfc_gpu01p012456_20260818/results.json"
+    "macro25": "runs/outputs/pi05_lmmpc_v5_macro0025_k4_correct400_noreplacement_seed7_trainr6_evalr6_f42edfc_gpu01p012456_20260818/results.json",
+    "macro50": "runs/outputs/pi05_lmmpc_v5_macro0050_k4_correct400_noreplacement_seed7_trainr6_evalr6_f42edfc_gpu01p012456_20260818/results.json"
   }
 }

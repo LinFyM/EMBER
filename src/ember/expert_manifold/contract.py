@@ -14,6 +14,12 @@ from typing import Any, Mapping, Sequence
 
 import torch
 
+from ember.expert_manifold.meta_contract import (
+    META_EXPERT_CONFIG_SCHEMA,
+    load_meta_expert_specs,
+    meta_expert_config_is_valid,
+    meta_worker_assignments,
+)
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
@@ -50,16 +56,13 @@ def _information_wall_matches(information: Mapping[str, Any]) -> bool:
     )
 
 
-def load_task_expert_config(path: Path) -> dict[str, Any]:
-    """Load the retained train24 task-expert authority."""
-
-    config = read_json(path)
+def _train24_config_is_valid(config: Mapping[str, Any]) -> bool:
     experts = config.get("task_experts", {})
     formal = experts.get("formal_run", {})
     selection = formal.get("checkpoint_selection_evidence", {})
     profile = formal.get("profile_evidence", {})
     authorities = config.get("authorities", {})
-    valid = (
+    return (
         config.get("schema_version") == CONFIG_SCHEMA
         and config.get("status") == "sealed_task_expert_reference"
         and set(authorities)
@@ -97,6 +100,20 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
         and int(profile.get("nonfinite_count", -1)) == 0
         and config.get("content_hash_policy") == "disabled_by_owner"
     )
+
+
+def load_task_expert_config(path: Path) -> dict[str, Any]:
+    """Load either the retained train24 or non-held meta expert authority."""
+
+    config = read_json(path)
+    schema = config.get("schema_version")
+    valid = (
+        _train24_config_is_valid(config)
+        if schema == CONFIG_SCHEMA
+        else meta_expert_config_is_valid(config)
+        if schema == META_EXPERT_CONFIG_SCHEMA
+        else False
+    )
     if not valid:
         raise ExpertManifoldError("task-expert scientific boundary changed")
     return config
@@ -113,6 +130,8 @@ def authority_path(config: Mapping[str, Any], name: str) -> Path:
 def load_train_tasks(
     config: Mapping[str, Any], data_root: Path
 ) -> tuple[ExpertTask, ...]:
+    if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
+        return _load_meta_tasks(config, data_root)
     manifest = read_json(authority_path(config, "target_data_manifest"))
     selected = [
         row for row in manifest.get("tasks", []) if row.get("split_role") == "train"
@@ -148,6 +167,52 @@ def load_train_tasks(
             )
         )
     return tuple(tasks)
+
+
+def _load_meta_tasks(
+    config: Mapping[str, Any], data_root: Path
+) -> tuple[ExpertTask, ...]:
+    tasks = []
+    try:
+        specs = load_meta_expert_specs(config, data_root)
+    except ValueError as error:
+        raise ExpertManifoldError(str(error)) from error
+    for spec in specs:
+        authority = WriterTaskAuthority(
+            task_id=spec.task_id,
+            language=spec.language,
+            path=spec.path,
+            expected_bytes=spec.expected_bytes,
+            expected_sha256=None,
+        )
+        tasks.append(
+            ExpertTask(
+                ordinal=spec.ordinal,
+                global_task_id=spec.task_id,
+                suite="libero_90",
+                task_id=spec.task_id,
+                split_role=spec.split_role,
+                language=authority.language,
+                authority=authority,
+            )
+        )
+    return tuple(tasks)
+
+
+def validate_formal_task_assignment(
+    config: Mapping[str, Any], indices: Sequence[int]
+) -> None:
+    formal = config["task_experts"]["formal_run"]
+    if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
+        if tuple(indices) not in meta_worker_assignments(formal):
+            raise ExpertManifoldError(
+                "formal meta-expert worker differs from the balanced partition"
+            )
+        return
+    if len(indices) != int(formal["tasks_per_worker"]):
+        raise ExpertManifoldError(
+            "formal task-expert worker must own exactly four tasks"
+        )
 
 
 def parse_task_indices(value: str, task_count: int) -> tuple[int, ...]:
@@ -195,7 +260,9 @@ def resolve_runtime(
     total_steps = int(source["total_steps"])
     batch_size = int(args.batch_size or source["per_task_batch_size"])
     checkpoints = _checkpoint_steps(source["checkpoint_steps"], total_steps)
-    default_stop = int(source.get("selected_stop_step", total_steps))
+    default_stop = int(
+        source.get("default_stop_step", source.get("selected_stop_step", total_steps))
+    )
     stop_step = int(args.stop_after_step or default_stop)
     allowed_stops = set(
         int(value) for value in source.get("stage_stop_steps", checkpoints)
@@ -253,7 +320,10 @@ def build_worker_contract(
         "mode": args.mode,
         "method": "independent_task_local_rank16_policy_experts",
         "git": {key: state[key] for key in ("branch", "commit")},
-        "config": {"path": str(args.config.resolve()), "schema": CONFIG_SCHEMA},
+        "config": {
+            "path": str(args.config.resolve()),
+            "schema": str(config["schema_version"]),
+        },
         "source": {
             "run": str(args.source_run.resolve()),
             "checkpoint": str(args.checkpoint.resolve()),

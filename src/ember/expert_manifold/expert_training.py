@@ -33,6 +33,7 @@ from ember.expert_manifold.contract import (
     publish_worker_contract,
     resolve_runtime,
     task_directory,
+    validate_formal_task_assignment,
     worker_stage_resume_step,
 )
 from ember.expert_manifold.sampler import TaskLocalEpochSampler
@@ -325,12 +326,8 @@ def train(args: argparse.Namespace) -> None:
     all_tasks = load_train_tasks(config, args.data_root.resolve())
     indices = parse_task_indices(args.task_indices, len(all_tasks))
     tasks = tuple(all_tasks[index] for index in indices)
-    if args.mode == "formal" and len(tasks) != int(
-        config["task_experts"]["formal_run"]["tasks_per_worker"]
-    ):
-        raise ExpertManifoldError(
-            "formal task-expert worker must own exactly four tasks"
-        )
+    if args.mode == "formal":
+        validate_formal_task_assignment(config, indices)
     worker_resume_step = worker_stage_resume_step(args.resume, args.output_dir, tasks)
     resume_identity = None if worker_resume_step is not None else parse_resume_task(args.resume)
     if worker_resume_step is not None and not worker_resume_step < stop_step:

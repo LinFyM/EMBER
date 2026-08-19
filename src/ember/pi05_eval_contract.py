@@ -383,7 +383,7 @@ def git_state(repo_root: Path) -> dict[str, Any]:
         capture_output=True,
     ).stdout.strip()
     commit = run("rev-parse", "HEAD")
-    authority_ref = "origin/codex/bci-continuation"
+    authority_ref = "origin/main"
     authority_commit = run("rev-parse", authority_ref)
     authority_contains_commit = subprocess.run(
         ["git", "merge-base", "--is-ancestor", commit, authority_commit],
@@ -418,7 +418,7 @@ def git_state_is_clean_pushed_or_frozen_authority(
         and state.get("commit") == state.get("upstream_commit")
     )
     authority = (
-        state.get("authority_ref") == "origin/codex/bci-continuation"
+        state.get("authority_ref") == "origin/main"
         and state.get("authority_contains_commit") is True
     )
     detached = (

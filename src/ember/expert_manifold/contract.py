@@ -20,7 +20,10 @@ from ember.expert_manifold.meta_contract import (
     meta_expert_config_is_valid,
     meta_worker_assignments,
 )
-from ember.pi05_eval_contract import git_state
+from ember.pi05_eval_contract import (
+    git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
+)
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
@@ -282,8 +285,12 @@ def resolve_runtime(
             raise ExpertManifoldError(
                 "formal task-expert launch requires a clean worktree"
             )
-        if args.resume is None and state["commit"] != state["upstream_commit"]:
-            raise ExpertManifoldError("fresh formal task-expert launch must be pushed")
+        if args.resume is None and not git_state_is_clean_pushed_or_frozen_authority(
+            state
+        ):
+            raise ExpertManifoldError(
+                "fresh formal task-expert launch must be frozen from pushed main"
+            )
     return total_steps, batch_size, checkpoints, stop_step
 
 

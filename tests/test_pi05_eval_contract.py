@@ -43,7 +43,7 @@ def test_clean_detached_frozen_authority_checkout_is_launchable() -> None:
         "commit": commit,
         "upstream": None,
         "upstream_commit": None,
-        "authority_ref": "origin/codex/bci-continuation",
+        "authority_ref": "origin/main",
         "authority_contains_commit": True,
         "dirty_paths": [],
     }

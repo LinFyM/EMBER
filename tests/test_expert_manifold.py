@@ -63,11 +63,15 @@ def test_formal_experts_use_the_sealed_live_profile(
     config = load_task_expert_config(CONFIG)
     monkeypatch.setattr(
         "ember.expert_manifold.contract.git_state",
-        lambda _root: {
-            "dirty_paths": [],
-            "commit": "sealed",
-            "upstream_commit": "sealed",
-        },
+            lambda _root: {
+                "branch": "main",
+                "dirty_paths": [],
+                "commit": "sealed",
+                "upstream": "origin/main",
+                "upstream_commit": "sealed",
+                "authority_ref": "origin/main",
+                "authority_contains_commit": True,
+            },
     )
     args = Namespace(mode="formal", batch_size=None, stop_after_step=1000, resume=None)
     assert resolve_runtime(args, config) == (

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize one complete expert LoRA bank from a functional decoder profile."""
+"""Materialize one complete expert LoRA bank from a formal fixed decoder."""
 
 from __future__ import annotations
 
@@ -193,11 +193,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     profile = read_json(profile_result_path)
     if (
         profile.get("schema_version") != PROFILE_SCHEMA
-        or profile.get("mode") != "informative"
+        or profile.get("mode") != "formal"
+        or profile.get("formal_authority") is not True
         or profile.get("surface", "train24") != args.surface
         or profile.get("repository", {}).get("dirty_paths") != []
     ):
-        raise ValueError("functional flow profile is not clean informative evidence")
+        raise ValueError("functional decoder is not a clean formal authority")
     repository = git_state(REPO_ROOT)
     if repository["dirty_paths"]:
         raise ValueError("functional adapter materialization requires a clean worktree")

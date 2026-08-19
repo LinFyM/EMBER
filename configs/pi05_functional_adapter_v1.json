@@ -177,7 +177,15 @@
         "panel_count": 1,
         "panel_batch_size": 1,
         "decoder_steps": 1,
-        "held_code_steps": 1
+        "held_code_steps": 1,
+        "checkpoint_steps": {
+          "decoder": [
+            1
+          ],
+          "held_code": [
+            1
+          ]
+        }
       },
       "profile": {
         "active_fit_tasks": 19,
@@ -185,15 +193,38 @@
         "panel_count": 1,
         "panel_batch_size": 2,
         "decoder_steps": 38,
-        "held_code_steps": 25
+        "held_code_steps": 25,
+        "checkpoint_steps": {
+          "decoder": [
+            38
+          ],
+          "held_code": [
+            25
+          ]
+        }
       },
-      "informative": {
+      "formal": {
         "active_fit_tasks": 19,
         "active_held_tasks": 5,
         "panel_count": 4,
         "panel_batch_size": 2,
         "decoder_steps": 380,
-        "held_code_steps": 250
+        "held_code_steps": 250,
+        "checkpoint_steps": {
+          "decoder": [
+            95,
+            190,
+            285,
+            380
+          ],
+          "held_code": [
+            50,
+            100,
+            150,
+            200,
+            250
+          ]
+        }
       }
     }
   },
@@ -203,7 +234,7 @@
     "held_task_count": 15,
     "expert_step": 1000,
     "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
-    "formal_status": "unsealed_until_live_profile_and_train24_functional_smoke",
+    "formal_status": "frozen_56_15_schedule_awaiting_complete_expert_bank",
     "objective": {
       "codebook_gauge_weight": 0.01
     },
@@ -234,7 +265,15 @@
         "panel_count": 1,
         "panel_batch_size": 1,
         "decoder_steps": 1,
-        "held_code_steps": 1
+        "held_code_steps": 1,
+        "checkpoint_steps": {
+          "decoder": [
+            1
+          ],
+          "held_code": [
+            1
+          ]
+        }
       },
       "profile": {
         "active_fit_tasks": 14,
@@ -242,15 +281,37 @@
         "panel_count": 2,
         "panel_batch_size": 2,
         "decoder_steps": 140,
-        "held_code_steps": 50
+        "held_code_steps": 50,
+        "checkpoint_steps": {
+          "decoder": [
+            140
+          ],
+          "held_code": [
+            50
+          ]
+        }
       },
-      "informative": {
+      "formal": {
         "active_fit_tasks": 56,
         "active_held_tasks": 15,
         "panel_count": 4,
         "panel_batch_size": 2,
         "decoder_steps": 1120,
-        "held_code_steps": 600
+        "held_code_steps": 600,
+        "checkpoint_steps": {
+          "decoder": [
+            280,
+            560,
+            840,
+            1120
+          ],
+          "held_code": [
+            150,
+            300,
+            450,
+            600
+          ]
+        }
       }
     }
   },

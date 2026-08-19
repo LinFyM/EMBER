@@ -233,10 +233,9 @@ artifacts复现，不维持两个活动Writer。
   诊断证据，不形成永久双轨；
 - **复用责任：** task-local expert训练继续由`expert_manifold`提供公共训练核心，paired rollout继续由`pi05_eval`提供，
   `functional_adaptation`只提供新合同、decoder、probe、inference与objective。
-- **profile入口生命周期：** `profile_functional_adapter_decoder.py`只测不加载policy的gauge-invariant有效更新预热，
-  `profile_functional_adapter_flow.py`只测完整PI0.5 flow目标和真实显存/吞吐；两者共享同一decoder/codebook owner，不是两套
-  Writer或部署路径。完成有信息量的train24机制profile并冻结formal schedule后，二者合并为一个exact-resume训练入口，
-  profile-only入口随即删除。
+- **训练入口生命周期：** train24机制profile已完成并冻结formal schedule；原parameter-only预热入口已删除，完整PI0.5
+  flow入口已收敛为唯一`train_functional_adapter_decoder.py`。该入口同时拥有fixed decoder/codebook优化、task-equal cursor、
+  optimizer/RNG exact resume、run contract与56/15 formal结果，不形成第二套Writer或部署路径。
 
 ## 12. 首轮实施范围与门
 

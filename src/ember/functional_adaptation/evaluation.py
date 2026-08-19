@@ -110,6 +110,17 @@ def _writer_state_record(path: Path, lora: Any) -> dict[str, Any]:
     }
 
 
+def _is_formal_decoder_result(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    observed = read_json(path)
+    return (
+        observed.get("surface") == "nonheld_meta"
+        and observed.get("mode") == "formal"
+        and observed.get("formal_authority") is True
+    )
+
+
 def _writer_asset(
     *,
     config_path: Path,
@@ -156,8 +167,7 @@ def _writer_asset(
         run.get("schema_version") != RUN_SCHEMA
         or observed_source != expected_source
         or Path(str(run.get("config", ""))).resolve() != config_path
-        or not decoder_result.is_file()
-        or read_json(decoder_result).get("surface") != "nonheld_meta"
+        or not _is_formal_decoder_result(decoder_result)
         or int(run.get("tasks", {}).get("count", -1)) != 56
         or run.get("tasks", {}).get("role") != "meta_train"
         or int(run.get("trainable", {}).get("writer_parameter_count", -1)) <= 0

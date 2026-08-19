@@ -92,6 +92,7 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 ## Phase 2 — Policy-functional manifold与fixed decoder
 
+- [x] 将完整PI0.5 flow decoder拟合收敛为单一formal/exact-resume入口，冻结56/15 task-equal schedule及下游authority门；
 - [ ] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
 - [ ] 用统一probe panel形成每个adapter的functional fingerprint，检验同功能不同参数与不同功能的可分性；
@@ -148,7 +149,8 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 ## Current next actions
 
 1. 以已完成的正确F4 paired1200负结果（307/1200 vs direct 658/1200）约束decoder gate，不再沿用旧659解释；
-2. 完成71-task non-held meta expert bank，先profile再正式拟合56/15 fixed decoder，并做direct/projected closed-loop裁决；
+2. 完成71-task non-held meta expert bank，用已冻结的单一入口先profile再正式拟合56/15 fixed decoder，并做
+   source/direct/projected的同面板closed-loop裁决；
 3. decoder通过或给出可修复的架构信号后，从clean pushed commit训练successor Writer，完成online generation profile与
    meta-validation的language/video/L+V/process-control screen；
 4. 只有inference gate出现真实增量后进入train/meta closed-loop outer objective；明确负结果回到最早失效接口，不做小扫。

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Profile fixed-decoder fitting on complete PI0.5 Action flow responses."""
+"""Train the canonical fixed decoder on complete PI0.5 Action flow responses."""
 
 from __future__ import annotations
 
 import argparse
+import os
+import socket
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,6 +32,13 @@ from ember.functional_adaptation.decoder_training import (
     load_functional_adapter_config,
     meta_decoder_task_split,
 )
+from ember.functional_adaptation.decoder_flow_checkpoint import (
+    RUN_SCHEMA,
+    DecoderFlowCursor,
+    inspect_decoder_flow_checkpoint,
+    load_decoder_flow_checkpoint,
+    save_decoder_flow_checkpoint,
+)
 from ember.functional_adaptation.probe_panels import (
     FunctionalProbePanel,
     build_probe_panels,
@@ -37,10 +47,14 @@ from ember.functional_adaptation.probe_panels import (
     selected_probe_rows,
 )
 from ember.lora import identity_lora_state
-from ember.pi05_eval_contract import git_state, load_evaluation_authorities
+from ember.pi05_eval_contract import (
+    git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
+    load_evaluation_authorities,
+)
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor
-from ember.pi05_source_checkpoint import write_json_atomic
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import load_policy, load_stats
 from ember.writer.functional import prepare_frozen_writer_policy
@@ -69,6 +83,7 @@ class FlowProfile:
     identity_state: Mapping[str, torch.Tensor]
     processor: Pi05LiberoProcessor
     started: float
+    metrics_rows: int
 
 
 @dataclass(frozen=True)
@@ -82,6 +97,98 @@ class FlowPanels:
 def _demo_range(values: Sequence[int]) -> tuple[int, ...]:
     first, last = map(int, values)
     return tuple(range(first, last + 1))
+
+
+def _checkpoint_steps(schedule: Mapping[str, Any], phase: str) -> tuple[int, ...]:
+    total = int(
+        schedule["decoder_steps" if phase == "decoder" else "held_code_steps"]
+    )
+    values = tuple(int(value) for value in schedule["checkpoint_steps"][phase])
+    if (
+        not values
+        or values != tuple(sorted(set(values)))
+        or values[-1] != total
+        or any(not 0 < value <= total for value in values)
+    ):
+        raise ValueError("functional-decoder checkpoint schedule changed")
+    return values
+
+
+def _run_contract(runtime: FlowProfile) -> dict[str, Any]:
+    repository = git_state(REPO_ROOT)
+    return {
+        "schema_version": RUN_SCHEMA,
+        "mode": runtime.args.mode,
+        "surface": runtime.args.surface,
+        "repository": {
+            "branch": repository["branch"],
+            "commit": repository["commit"],
+            "authority_ref": repository["authority_ref"],
+            "authority_contains_commit": repository["authority_contains_commit"],
+            "dirty_paths": repository["dirty_paths"],
+        },
+        "host": socket.gethostname(),
+        "runtime": {
+            "device": str(runtime.args.device),
+            "world_size": 1,
+            "cuda_visible_devices": str(os.environ.get("CUDA_VISIBLE_DEVICES", "")),
+            "exact_resume_topology_locked": True,
+        },
+        "inputs": {
+            "config": str(runtime.args.config.resolve()),
+            "source_run": str(runtime.args.source_run.resolve()),
+            "checkpoint": str(runtime.args.checkpoint.resolve()),
+            "expert_bank_root": str(runtime.args.expert_bank_root.resolve()),
+            "effective_decoder": (
+                None
+                if runtime.args.effective_decoder is None
+                else str(runtime.args.effective_decoder.resolve())
+            ),
+            "tokenizer": str(runtime.args.tokenizer_path.resolve()),
+            "data_root": str(runtime.args.data_root.resolve()),
+        },
+        "tasks": {
+            "fit_global_task_ids": [row.global_task_id for row in runtime.active_fit],
+            "held_global_task_ids": [row.global_task_id for row in runtime.active_held],
+            "fit_count": len(runtime.active_fit),
+            "held_count": len(runtime.active_held),
+            "task_equal_decoder_order": True,
+            "task_equal_held_code_order": True,
+        },
+        "schedule": dict(runtime.schedule),
+        "information_wall": {
+            "privileged_task_codes": "train/meta decoder fitting only",
+            "target40_action_or_reward_reads": 0,
+            "decoder_frozen_after_fit": True,
+            "deployment_task_id_route": False,
+        },
+        "content_hash_policy": "disabled_by_owner",
+    }
+
+
+def _publish_run_contract(runtime: FlowProfile) -> dict[str, Any]:
+    contract = _run_contract(runtime)
+    root = runtime.args.output_dir.resolve()
+    if runtime.args.resume is None:
+        if root.exists() and any(root.iterdir()):
+            raise ValueError("fresh functional-decoder output directory is not empty")
+        root.mkdir(parents=True, exist_ok=True)
+        write_json_atomic(root / "run_contract.json", contract)
+    elif (
+        runtime.args.resume.resolve().parent.parent != root
+        or not (root / "run_contract.json").is_file()
+        or read_json(root / "run_contract.json") != contract
+    ):
+        raise ValueError("functional-decoder exact-resume contract changed")
+    append_jsonl(
+        root / "invocations.jsonl",
+        {
+            "argv": sys.argv,
+            "started_unix": time.time(),
+            "resume": str(runtime.args.resume) if runtime.args.resume else None,
+        },
+    )
+    return contract
 
 
 def _cache_task_panels(
@@ -155,6 +262,15 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
     ]
     flow = mechanism["flow_response"]
     schedule = flow[args.mode]
+    _checkpoint_steps(schedule, "decoder")
+    _checkpoint_steps(schedule, "held_code")
+    repository = git_state(REPO_ROOT)
+    if args.mode == "formal" and not git_state_is_clean_pushed_or_frozen_authority(
+        repository
+    ):
+        raise ValueError(
+            "formal functional-decoder training requires a clean pushed authority"
+        )
     if args.surface == "nonheld_meta":
         bank = inspect_nonheld_meta_expert_bank(
             config,
@@ -185,6 +301,10 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
     held_count = int(schedule["active_held_tasks"])
     active_fit = split.fit[:fit_count]
     active_held = split.held[:held_count]
+    if args.mode == "formal" and (
+        len(active_fit) != len(split.fit) or len(active_held) != len(split.held)
+    ):
+        raise ValueError("formal functional-decoder training requires the full split")
     contract = load_pi05_lora_contract(
         authority_path(config, "lora_contract", REPO_ROOT)
     )
@@ -264,6 +384,7 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         identity_state=identity_state,
         processor=processor,
         started=time.monotonic(),
+        metrics_rows=0,
     )
 
 
@@ -335,20 +456,44 @@ def _initial_losses(
     return fit, held
 
 
-def _fit_decoder(runtime: FlowProfile, panels: FlowPanels, metrics_path: Path) -> None:
+def _decoder_optimizer(runtime: FlowProfile) -> torch.optim.Optimizer:
     optimizer_config = runtime.flow["optimizer"]
-    optimizer = torch.optim.AdamW(
+    runtime.system.requires_grad_(True)
+    return torch.optim.AdamW(
         runtime.system.parameters(),
         lr=float(optimizer_config["learning_rate"]),
         weight_decay=float(optimizer_config["weight_decay"]),
     )
+
+
+def _held_optimizer(runtime: FlowProfile) -> torch.optim.Optimizer:
+    runtime.system.requires_grad_(False)
+    runtime.held_codes.requires_grad_(True)
+    return torch.optim.Adam(
+        (runtime.held_codes,),
+        lr=float(runtime.flow["held_code_optimizer"]["learning_rate"]),
+    )
+
+
+def _fit_decoder(
+    runtime: FlowProfile,
+    panels: FlowPanels,
+    metrics_path: Path,
+    *,
+    optimizer: torch.optim.Optimizer,
+    start_step: int,
+    visits: list[int],
+) -> None:
+    optimizer_config = runtime.flow["optimizer"]
     order = balanced_task_order(
         len(runtime.active_fit),
         int(runtime.schedule["decoder_steps"]),
         seed=int(runtime.config["decoder"]["initialization_seed"]),
     )
-    visits = [0] * len(runtime.active_fit)
-    for step, task_index in enumerate(order, start=1):
+    if len(visits) != len(runtime.active_fit) or sum(visits) != start_step:
+        raise ValueError("functional-decoder fit cursor changed")
+    checkpoints = set(_checkpoint_steps(runtime.schedule, "decoder"))
+    for step, task_index in enumerate(order[start_step:], start=start_step + 1):
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             response_loss = mean_functional_probe_loss(
@@ -382,26 +527,42 @@ def _fit_decoder(runtime: FlowProfile, panels: FlowPanels, metrics_path: Path) -
                 "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
             },
         )
-
+        runtime.metrics_rows += 1
+        if step in checkpoints:
+            save_decoder_flow_checkpoint(
+                output_dir=runtime.args.output_dir,
+                phase="decoder",
+                step=step,
+                metrics_rows=runtime.metrics_rows,
+                visits=visits,
+                system=runtime.system,
+                held_codes=runtime.held_codes,
+                optimizer=optimizer,
+            )
 
 
 def _fit_held_codes(
-    runtime: FlowProfile, panels: FlowPanels, metrics_path: Path
+    runtime: FlowProfile,
+    panels: FlowPanels,
+    metrics_path: Path,
+    *,
+    optimizer: torch.optim.Optimizer,
+    start_step: int,
+    visits: list[int],
 ) -> None:
-    runtime.system.requires_grad_(False)
-    runtime.held_codes.requires_grad_(True)
     held_optimizer_config = runtime.flow["held_code_optimizer"]
-    held_optimizer = torch.optim.Adam(
-        (runtime.held_codes,), lr=float(held_optimizer_config["learning_rate"])
-    )
     held_order = balanced_task_order(
         len(runtime.active_held),
         int(runtime.schedule["held_code_steps"]),
         seed=int(runtime.config["decoder"]["initialization_seed"]) + 1,
     )
-    visits = [0] * len(runtime.active_held)
-    for step, task_index in enumerate(held_order, start=1):
-        held_optimizer.zero_grad(set_to_none=True)
+    if len(visits) != len(runtime.active_held) or sum(visits) != start_step:
+        raise ValueError("functional-decoder held-code cursor changed")
+    checkpoints = set(_checkpoint_steps(runtime.schedule, "held_code"))
+    for step, task_index in enumerate(
+        held_order[start_step:], start=start_step + 1
+    ):
+        optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             response_loss = mean_functional_probe_loss(
                 runtime.policy,
@@ -416,7 +577,7 @@ def _fit_held_codes(
                 held_optimizer_config["code_l2_weight"]
             ) * code_l2
         loss.backward()
-        held_optimizer.step()
+        optimizer.step()
         visits[task_index] += 1
         append_jsonl(
             metrics_path,
@@ -430,6 +591,18 @@ def _fit_held_codes(
                 "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
             },
         )
+        runtime.metrics_rows += 1
+        if step in checkpoints:
+            save_decoder_flow_checkpoint(
+                output_dir=runtime.args.output_dir,
+                phase="held_code",
+                step=step,
+                metrics_rows=runtime.metrics_rows,
+                visits=visits,
+                system=runtime.system,
+                held_codes=runtime.held_codes,
+                optimizer=optimizer,
+            )
 
 
 
@@ -453,6 +626,8 @@ def _write_result(
         contract=runtime.contract,
         panels=panels.held_eval,
     )
+    if (runtime.args.output_dir / "result.json").exists():
+        raise ValueError("functional-decoder result already exists")
     save_file(
         {
             name: value.detach().cpu().contiguous()
@@ -465,12 +640,21 @@ def _write_result(
         str(runtime.args.output_dir / "held_codes.safetensors"),
     )
     repository = git_state(REPO_ROOT)
+    final_checkpoint = (
+        runtime.args.output_dir
+        / "checkpoints"
+        / f"held_code_step_{int(runtime.schedule['held_code_steps']):08d}"
+    )
+    run_contract_path = runtime.args.output_dir / "run_contract.json"
+    if not final_checkpoint.is_dir() or not run_contract_path.is_file():
+        raise ValueError("functional-decoder final authority is incomplete")
     write_json_atomic(
         runtime.args.output_dir / "result.json",
         {
             "schema_version": "ember_pi05_functional_flow_profile_v1",
             "mode": runtime.args.mode,
             "surface": runtime.args.surface,
+            "formal_authority": runtime.args.mode == "formal",
             "repository": {
                 "branch": repository["branch"],
                 "commit": repository["commit"],
@@ -496,6 +680,13 @@ def _write_result(
                 "decoder": int(runtime.schedule["decoder_steps"]),
                 "held_code": int(runtime.schedule["held_code_steps"]),
             },
+            "metrics_rows": runtime.metrics_rows,
+            "run_contract": {
+                "path": str(run_contract_path.resolve()),
+                "bytes": run_contract_path.stat().st_size,
+                "schema_version": RUN_SCHEMA,
+            },
+            "final_exact_resume_checkpoint": str(final_checkpoint.resolve()),
             "probe_panel": {
                 "fit_demos": list(_demo_range(runtime.flow["fit_demo_indices"])),
                 "evaluation_demos": list(
@@ -513,14 +704,103 @@ def _write_result(
     runtime.dataset.close()
 
 
+def _load_or_create_initial_losses(
+    runtime: FlowProfile, panels: FlowPanels
+) -> tuple[list[float], list[float]]:
+    path = runtime.args.output_dir / "initial_losses.json"
+    if runtime.args.resume is None:
+        fit, held = _initial_losses(runtime, panels)
+        write_json_atomic(path, {"fit": fit, "held": held})
+        return fit, held
+    observed = read_json(path)
+    fit = [float(value) for value in observed.get("fit", ())]
+    held = [float(value) for value in observed.get("held", ())]
+    if len(fit) != len(runtime.active_fit) or len(held) != len(runtime.active_held):
+        raise ValueError("functional-decoder initial-loss evidence changed")
+    return fit, held
+
+
+def _rewind_metrics(path: Path, rows: int) -> None:
+    lines = path.read_bytes().splitlines(keepends=True)
+    if len(lines) < rows:
+        raise ValueError("functional-decoder metrics precede the resume cursor")
+    if len(lines) > rows:
+        temporary = path.with_name(f".{path.name}.resume-{os.getpid()}")
+        temporary.write_bytes(b"".join(lines[:rows]))
+        os.replace(temporary, path)
+
+
 def run(args: argparse.Namespace) -> None:
+    args.output_dir = args.output_dir.resolve()
+    if args.resume is not None:
+        args.resume = args.resume.resolve()
     runtime = _prepare(args)
+    _publish_run_contract(runtime)
     panels = _cache_all_panels(runtime)
-    initial_fit, initial_held = _initial_losses(runtime, panels)
-    args.output_dir.mkdir(parents=True)
+    initial_fit, initial_held = _load_or_create_initial_losses(runtime, panels)
     metrics_path = args.output_dir / "metrics.jsonl"
-    _fit_decoder(runtime, panels, metrics_path)
-    _fit_held_codes(runtime, panels, metrics_path)
+    resume = (
+        None
+        if args.resume is None
+        else inspect_decoder_flow_checkpoint(args.resume)
+    )
+    if resume is not None:
+        _rewind_metrics(metrics_path, resume.metrics_rows)
+
+    if resume is None or resume.phase == "decoder":
+        decoder_optimizer = _decoder_optimizer(runtime)
+        decoder_cursor = (
+            DecoderFlowCursor(
+                phase="decoder",
+                step=0,
+                metrics_rows=0,
+                visits=tuple(0 for _ in runtime.active_fit),
+            )
+            if resume is None
+            else load_decoder_flow_checkpoint(
+                checkpoint=args.resume,
+                expected_phase="decoder",
+                system=runtime.system,
+                held_codes=runtime.held_codes,
+                optimizer=decoder_optimizer,
+            )
+        )
+        runtime.metrics_rows = decoder_cursor.metrics_rows
+        _fit_decoder(
+            runtime,
+            panels,
+            metrics_path,
+            optimizer=decoder_optimizer,
+            start_step=decoder_cursor.step,
+            visits=list(decoder_cursor.visits),
+        )
+
+    held_optimizer = _held_optimizer(runtime)
+    held_cursor = (
+        load_decoder_flow_checkpoint(
+            checkpoint=args.resume,
+            expected_phase="held_code",
+            system=runtime.system,
+            held_codes=runtime.held_codes,
+            optimizer=held_optimizer,
+        )
+        if resume is not None and resume.phase == "held_code"
+        else DecoderFlowCursor(
+            phase="held_code",
+            step=0,
+            metrics_rows=runtime.metrics_rows,
+            visits=tuple(0 for _ in runtime.active_held),
+        )
+    )
+    runtime.metrics_rows = held_cursor.metrics_rows
+    _fit_held_codes(
+        runtime,
+        panels,
+        metrics_path,
+        optimizer=held_optimizer,
+        start_step=held_cursor.step,
+        visits=list(held_cursor.visits),
+    )
     _write_result(runtime, panels, initial_fit, initial_held)
 
 
@@ -532,7 +812,7 @@ def parser() -> argparse.ArgumentParser:
         default=REPO_ROOT / "configs/pi05_functional_adapter_v1.json",
     )
     result.add_argument(
-        "--mode", choices=("smoke", "profile", "informative"), required=True
+        "--mode", choices=("smoke", "profile", "formal"), required=True
     )
     result.add_argument(
         "--surface", choices=("train24", "nonheld_meta"), default="train24"
@@ -544,6 +824,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--tokenizer-path", type=Path, required=True)
     result.add_argument("--data-root", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)
+    result.add_argument("--resume", type=Path)
     result.add_argument("--device", default="cuda:0")
     return result
 

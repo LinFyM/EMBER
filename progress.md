@@ -11,17 +11,19 @@
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
   Phase 1/2的functional realizability基线；non-held meta expert formal训练已经启动，Writer formal训练仍等待fixed-decoder门。
-- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main@daf45b4`；当前successor运行面开发位于从
-  最新`main`创建的`/data1/user/ymdai/projects/EMBER-code-writer-runtime`、分支`codex/code-writer-runtime`。
-  验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
+- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
+  `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
   free-Program 1200行也已完成：projected=`307/1200`、direct=`658/1200`，253 retained、54 gained、405 lost、
   Jaccard `.35534`，只保留direct的`46.66%`，明确未过90%门。旧`659/1200`来自没有实际安装投影LoRA的错误评测，
   已撤销并重导出remote-safe证据。
 - non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
   LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker均已完成首步且无OOM/non-finite。canonical输出为
-  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；当前六worker均约在首个task的
-  step640--650，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时，不再沿用早先7.5小时估计。
+  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；当前已完整产出6/71 adapters，
+  六worker正在各自第二个task的step195--211，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时。
+- 同一15-task meta-validation面板的frozen source baseline正在gpu02的1/2上以6个persistent evaluator并行运行；当前
+  41/90 jobs、342/750 rows完成，partial为323 successes。该partial只用于确认运行健康，必须等750行结束后才解释source
+  prior coverage或与direct expert、fixed decoder做比较。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -80,6 +82,9 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   teacher-action alignment改为同task但确定性不同episode，并按归一化过程相位配对，避免逐帧动作复制。
 - 当前代码里程碑的67项定向evaluator/cache/runtime测试、honest baseline分支smoke和统一cache dispatch smoke均通过；结构门
   无hard violation。该证据只说明运行面接通，不是Writer性能或fixed-decoder gate通过。
+- 原两个decoder profile入口已收敛为唯一`train_functional_adapter_decoder.py`：直接优化完整PI0.5 flow response，保存
+  task-equal phase cursor、system/held codes、optimizer与Python/NumPy/Torch RNG，可从阶段checkpoint精确续训；56/15 formal
+  schedule及下游formal-authority门已经冻结。它只补齐正式训练责任，不声称non-held decoder结果已经通过。
 
 当前train24非正式机制profile（不是模型选择或closed-loop证据）：
 
@@ -154,7 +159,7 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 ## Verification and cleanup
 
-- 完整CPU测试：`293 passed`；
+- 最近完整回归仍为`293 passed`；fixed-decoder正式训练入口另有8项聚焦测试通过；
 - B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
-- 本轮临时partial JSON、worktrees与试验分支已清理；formal runs、checkpoint、raw rows和唯一evidence均保留；
-- 封存状态无EMBER GPU进程；`codex/bci-continuation`仅保留为已集成历史分支，不再作为主写分支。
+- 已集成的临时partial JSON、worktrees与试验分支持续清理；当前只保留正在运行的两套formal输出、必要checkpoint、raw rows和
+  唯一evidence；`codex/bci-continuation`仅为已集成历史分支，不再作为主写分支。

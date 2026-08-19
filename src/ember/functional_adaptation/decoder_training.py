@@ -16,6 +16,9 @@ from ember.functional_adaptation.decoder import (
     FunctionalAdapterDecoder,
     FunctionalCodebook,
 )
+from ember.functional_adaptation.decoder_flow_checkpoint import (
+    RUN_SCHEMA as DECODER_RUN_SCHEMA,
+)
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
@@ -198,12 +201,20 @@ def load_meta_decoder_code_targets(
 
     root = profile_root.resolve()
     result = read_json(root / "result.json")
+    run_contract = result.get("run_contract", {})
+    run = read_json(root / "run_contract.json")
     if (
         result.get("schema_version") != "ember_pi05_functional_flow_profile_v1"
         or result.get("surface") != "nonheld_meta"
+        or result.get("mode") != "formal"
+        or result.get("formal_authority") is not True
+        or run_contract.get("schema_version") != DECODER_RUN_SCHEMA
+        or run.get("schema_version") != DECODER_RUN_SCHEMA
+        or run.get("mode") != "formal"
+        or run.get("surface") != "nonheld_meta"
         or result.get("repository", {}).get("dirty_paths") != []
     ):
-        raise ValueError("non-held decoder profile is not a clean fixed-code authority")
+        raise ValueError("non-held decoder result is not a formal fixed-code authority")
     train_ids = tuple(int(value) for value in result["active_fit_global_task_ids"])
     held_ids = tuple(int(value) for value in result["active_held_global_task_ids"])
     decoder_path = root / "decoder.safetensors"

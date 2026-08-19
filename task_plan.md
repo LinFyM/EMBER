@@ -102,6 +102,9 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - [ ] decoder若在leave-task-out closed loop不能接近对应expert功能，先修manifold/data，不进入视频推断。
 
 **Gate 2：** 通过的是未见meta task的policy功能，不是train-task reconstruction、free Program或参数相似度。
+default fold0还必须先证明uniform-step direct experts相对`646/750` source baseline产生有信息量的跨task功能增量；decoder
+以paired source/direct/projected的retained、gained、lost、churn和per-task delta裁决，不能由identity/source高分过门。
+若direct增量不足，当前source/meta任务重叠使Gate 2未识别，转入role-disjoint meta-task构造而不是继续训练Writer。
 
 ## Phase 3 — Language prior + video process posterior
 

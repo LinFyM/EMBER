@@ -16,7 +16,7 @@
 
 | ID | 专家核心判断 | 当前接受程度 | 落实方式与裁决证据 | 状态 |
 | --- | --- | --- | --- | --- |
-| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 增加显式non-held meta pool与task-level folds；构造same endpoint/different procedure等process-identifying pairs | active |
+| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 已增加non-held folds，但source在同15个held-meta tasks为646/750，暴露source/meta task identity重叠仍会欠识别；先用paired direct增量裁决，增量不足即构造role-disjoint meta tasks；same-endpoint/different-procedure仍是显式数据缺口 | active |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 以policy-functional fingerprint定义等价类，学习并冻结code-to-LoRA decoder；固定后再训练video inference | active |
 | C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | functional distillation只做warm start；随后在train/meta simulator上用closed-loop reward/progress credit优化code posterior | scheduled |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 分primitive与suite测task-local adapter ceiling和source coverage；不足才强化clean non-overlap source policy | scheduled |
@@ -53,7 +53,7 @@
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
-| F | 扩展meta tasks并分离四类数据角色 | source pretraining / video-adaptation meta-training / architecture validation / final Test；固定target IDs不重排，LIBERO-90 non-held使用显式allowlist | active |
+| F | 扩展meta tasks并分离四类数据角色 | 固定target IDs与71-task allowlist已建立，但当前source pretraining和meta adaptation仍共享task identity，不能冒充完全分离；source formal高分后，预注册以direct专家增量决定当前pool是否有信息量，否则实际构造role-disjoint meta tasks | active |
 | G | process-identifying controls | first/final/endpoints/middle/order/flow/static/mask/procedure/view/paraphrase/goal/stage；无诚实数据的项先补non-held配对任务 | active |
 | H | 强化clean source policy | 先测primitive coverage与target adapter ceiling；只有能力缺口成立才用更多不重叠数据强化并重新冻结 | scheduled |
 

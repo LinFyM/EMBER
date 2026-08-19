@@ -51,6 +51,10 @@ Writer只在rollout前运行一次。部署不读取task ID、filename、teacher
 
 source policy已在同一71-task clean corpus上建立primitive prior。meta folds衡量的是从已有prior组合/选择task adaptation，
 不是要求source从未见过所有primitive。若后续coverage审计证明Long所需primitive缺失，才强化source并重建全部matched基线。
+首个fold0 source formal为`646/750`，其中14/15 tasks达到80%--100%，因此该重叠本身也是需要控制的欠识别源：后续decoder
+range不能以接近direct expert的aggregate或高absolute单独通过，必须在同一750行上分解source→direct与source→projected的
+retained/gained/lost/churn及per-task增量。若uniform-step direct experts没有提供跨task的policy-effective净增量，则当前
+source/meta重叠pool不能验证decoder泛化，触发role-disjoint meta-task构造，而不是把identity/source能力记为decoder成功。
 
 ## 4. Policy-functional task targets
 
@@ -189,6 +193,8 @@ source coverage分reach/grasp/place/open/close/toggle/stack/multi-object sequenc
 target held不允许通过action/reward梯度训练oracle expert，因此“held ceiling”只能作为无梯度诊断边界，不能伪称精确
 可达上限。若non-held多任务expert已经普遍失败，先修source；若expert成功而fixed decoder失败，修manifold；若decoder
 oracle成功而predicted code失败，修task inference。
+其中source已在default meta-validation fold得到`646/750`，所以第2--3步的通过对象是相对source新增并保留的功能，而不是
+仅比较两个高aggregate。direct expert若不能证明有信息量的增量，第3步保持未识别，不得由source高分代替。
 
 ## 10. Formal selection
 

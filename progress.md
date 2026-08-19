@@ -20,10 +20,11 @@
 - non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
   LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker均已完成首步且无OOM/non-finite。canonical输出为
   `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；当前已完整产出6/71 adapters，
-  六worker正在各自第二个task的step195--211，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时。
-- 同一15-task meta-validation面板的frozen source baseline正在gpu02的1/2上以6个persistent evaluator并行运行；当前
-  41/90 jobs、342/750 rows完成，partial为323 successes。该partial只用于确认运行健康，必须等750行结束后才解释source
-  prior coverage或与direct expert、fixed decoder做比较。
+  六worker正在各自第二个task的step528--555，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时。
+- 同一15-task meta-validation面板的frozen source baseline已在gpu02完成90/90 jobs、750/750 rows：`646/750`
+  （86.13%），15/15 tasks非零且14/15达到40--50/50；task73仅`4/50`并贡献46/104个失败。结果暂不支持先强化source，
+  但因这15个task都参加过source训练，也明确禁止用高base/identity aggregate替fixed-decoder过门。下一裁决必须严格配对
+  source/direct/projected的retained、gained、lost、churn及per-task增量；direct若无广泛增量则触发role-disjoint meta tasks。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

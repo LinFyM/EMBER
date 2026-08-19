@@ -440,3 +440,16 @@ code + shared fixed decoder尚不能稳定表达train24 task-expert的policy-eff
 fixed decoder思想本身：专家指出24 tasks不足以同时识别功能流形和推断规律，owner也已授权使用去重后的LIBERO-90。
 下一步按预注册顺序训练56 meta-train / 15 meta-validation-oracle的non-held expert family，再以真正task-level held
 closed loop复验；不通过rank、scale、seed、dtype或flow-loss小扫掩盖本次失败。
+
+## 20. Non-held meta source prior的正式覆盖与新欠识别边界
+
+default fold0的15个meta-validation tasks已在完全相同的50个固定states上完成frozen source formal：`646/750`
+（86.13%），15/15 tasks非零，14/15 tasks达到40--50/50。唯一明显缺口是task73 `4/50`；它贡献46/104个总失败，
+其余14 tasks合计`642/700`。因此当前证据不支持在fixed-decoder gate之前先强化source，且说明source具备广泛LIBERO-90
+闭环能力。
+
+但这15个task identity都参加过71-task source训练，因此高source分数不能证明meta adaptation或decoder泛化。后续必须在
+相同750行严格比较source、uniform-step direct experts与fixed-decoder oracle code：既看source成功的retention，也看direct
+相对source的gained/lost及projected对这些增量的复现。若direct experts不能产生跨task的policy-effective增量，则这个
+重叠source/meta panel对decoder range是欠识别的，应转向role-disjoint meta-task构造，不能让identity LoRA凭高base分过门。
+remote-safe结果见`docs/evidence/functional_adaptation_20260819/nonheld_meta_source_baseline.json`。

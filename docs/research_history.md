@@ -448,6 +448,15 @@ held `0.933`；18/19与4/5 tasks分别优于identity，各有一个task退化。
 链路与早期学习信号，不构成realizability pass或架构选择。remote-safe摘要见
 `docs/evidence/functional_adaptation_20260819/train24_profile_summary.json`。
 
+### 3.17 Non-held meta-validation frozen source formal
+
+2026-08-19从clean detached `f7ff654`在default fold0的15个LIBERO-90 meta-validation tasks运行source-only formal，
+每task固定50 states、seed7，共`646/750`，15/15 tasks非零。14个tasks为40--50/50，task73为4/50并贡献46个失败。
+这证明当前source prior在该panel总体很强，同时因15个tasks均参与过71-task source训练，形成了identity/source可能掩盖
+decoder效果的欠识别边界。后续预注册为同750行source/direct/projected paired transition；direct若没有跨task增量，
+则该pool不能验证decoder泛化。remote-safe摘要为
+`docs/evidence/functional_adaptation_20260819/nonheld_meta_source_baseline.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

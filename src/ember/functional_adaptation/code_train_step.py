@@ -38,6 +38,7 @@ def _task_loss(
     *,
     task_id: int,
     demos: tuple[int, ...],
+    action_demos: tuple[int, ...],
     control_condition: str,
     control_seed: int,
 ) -> Any:
@@ -59,7 +60,8 @@ def _task_loss(
     ) = packed
     action_phase_targets = runtime.action_store.phase_targets(
         task_id=task_id,
-        demos=demos,
+        video_demos=demos,
+        action_demos=action_demos,
         frame_indices=frame_indices,
         video_offsets=video_offsets,
         device=runtime.context.device,
@@ -153,6 +155,7 @@ def train(runtime: CodeTrainingRuntime) -> None:
                 runtime,
                 task_id=visit.task_id,
                 demos=visit.demos,
+                action_demos=visit.action_demos,
                 control_condition=control,
                 control_seed=int(runtime.settings["task_macro_seed"])
                 + macro * 1009

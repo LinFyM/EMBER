@@ -21,7 +21,7 @@
 | C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | functional distillation只做warm start；随后在train/meta simulator上用closed-loop reward/progress credit优化code posterior | scheduled |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 分primitive与suite测task-local adapter ceiling和source coverage；不足才强化clean non-overlap source policy | scheduled |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | object/relation/event/subgoal representation与full-vs-endpoints/middle/order controls共同裁决 | scheduled |
-| C6 | FactorHead静态range足够但moving decoder会破坏已有code | 高 | 不扩大head/rank；固定decoderleave-task-out是进入video训练的前置门 | active |
+| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 正确F4仅307/1200，证明旧fixed-head range不足；后继固定functional decoder先做task-held闭环，失败则架构性扩大或重参数化，不做小扫 | active |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
 | C9 | 150不是唯一科学门，约145也需breadth/stability/causality | 高 | 继续追求150+，但联合报告absolute、suite floor、breadth、same-video retention、adjacent stability与process controls | accepted |
@@ -31,13 +31,13 @@
 | ID | 专家意见 | 当前处理 | 状态 |
 | --- | --- | --- | --- |
 | P1 | 保留严格evaluation、deployment信息墙与single complete LoRA | 原样继承；只放宽授权train/meta与sealed diagnosis墙 | accepted |
-| P2 | 每视频先保序，跨视频再置换不变 | 原样继承，但聚合移到event/relation/code-evidence层 | scheduled |
+| P2 | 每视频先保序，跨视频再置换不变 | 已在successor code inference按video独立编码、再对完整video summary做集合聚合；等待closed-loop裁决 | active |
 | P3 | Core/Procedure概念区分有价值 | 继承语义/目标与过程/阶段的职责，不强制继承旧tensor拓扑 | accepted |
 | P4 | Core-addressed Reader、bounded K-set/M2P有局部正证据 | 作为可复用组件候选；只有与fixed-code接口匹配才保留 | active |
-| U1 | language-only被架构强制identity会让no-video对照自证 | 取消该限制，实现learned language-only prior与adapter baseline | scheduled |
+| U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已独立生成complete LoRA且部署时不读视频；等待formal baseline | active |
 | U2 | LoRA rank index不是policy-functional coordinate | 新decoder使用functional code/response地址；rank16只作为最终LoRA参数化 | active |
 | U3 | Program与complete LoRA decoder不应持续共同移动 | 主线固定decoder；慢EMA/two-timescale仅在fixed版明确欠拟合时作为对照 | active |
-| U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | 保留Action token序列并按flow time、horizon phase与noise probe组织 | scheduled |
+| U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | successor保留完整50-token序列，以phase queries读取并输出phase-specific alignment；等待消融 | active |
 | U5 | 时间中心化Value不等于过程表示 | 后继以initial/goal/events/transitions显式编码；centered memory不再承担唯一过程语义 | scheduled |
 | U6 | action-in/out由首末layer派生不是已知endpoint correspondence | 不把该对应作为canonical地址；以policy response probe验证地址功能 | active |
 | U7 | 最后RMSNorm会抹除cell magnitude | 在复用旧组件时做功能消融；新fixed decoder默认不无条件抹除有意义幅度 | active |
@@ -49,9 +49,9 @@
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
 | A | 功能锚定的固定adapter decoder | task experts/successful adapters -> functional fingerprints -> compact whitened code -> complete LoRA；必须通过task-level leave-out closed loop | active |
-| B | language prior + video posterior | 同一合同报告source base、learned language-only、video-only、L+V及wrong/reverse/shuffle；以video对language净增量裁决 | scheduled |
+| B | language prior + video posterior | 训练、一次性LoRA生成及统一evaluator/cache运行面已接通；等待fixed decoder后训练并报告matched矩阵 | active |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
-| D | 保留完整Action probe结构 | 保留`frame x action-token x hidden`与flow/horizon/noise分组，使用phase-specific policy-response probes | scheduled |
+| D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
 | F | 扩展meta tasks并分离四类数据角色 | source pretraining / video-adaptation meta-training / architecture validation / final Test；固定target IDs不重排，LIBERO-90 non-held使用显式allowlist | active |
 | G | process-identifying controls | first/final/endpoints/middle/order/flow/static/mask/procedure/view/paraphrase/goal/stage；无诚实数据的项先补non-held配对任务 | active |
@@ -61,7 +61,7 @@
 
 | 方向 | owner边界与当前决定 | 进入/停止条件 | 状态 |
 | --- | --- | --- | --- |
-| I train/meta teacher-action alignment | 允许；validation/test action不训练 | 在non-held/train videos有配对action时实现inverse dynamics、transition-to-latent-action与phase alignment辅助目标，并做有/无对照 | scheduled |
+| I train/meta teacher-action alignment | 允许；validation/test action不训练 | meta-train phase alignment已实现为同task、不同episode的归一化过程相位配对；部署与meta-validation不读action，仍待有/无对照 | active |
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation可在预注册点诊断；Test默认方法冻结后一次性使用，结果不回流设计 | scheduled |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |

@@ -16,6 +16,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 CHECKPOINT_SCHEMA = "ember_functional_code_writer_checkpoint_v1"
 TRAINER_SCHEMA = "ember_functional_code_writer_trainer_v1"
+RUN_SCHEMA = "ember_functional_code_writer_run_v1"
 
 
 def code_writer_rng_state() -> dict[str, Any]:

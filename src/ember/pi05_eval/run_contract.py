@@ -13,6 +13,7 @@ from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     paired_writer_identity,
 )
@@ -36,6 +37,7 @@ _WRITER_THROUGHPUT_BY_SCHEMA = {
     "ember_pi05_layer_matched_memory_program_compiler_eval_adapter_v5": (
         _BATCH_THROUGHPUT_POLICY
     ),
+    "ember_functional_code_writer_eval_adapter_v1": _BATCH_THROUGHPUT_POLICY,
 }
 
 
@@ -93,9 +95,7 @@ def _parallel_contract(
             writer_generation_batch_size if writer_adapter else 0
         ),
         "writer_and_rollout_parallelism_decoupled": writer_adapter,
-        "generator_source_policy_processes_reused_for_rollout": (
-            writer_adapter
-        ),
+        "generator_source_policy_processes_reused_for_rollout": (writer_adapter),
         "one_policy_per_worker": True,
         "cpu_only_launcher": True,
         "sharding_algorithm": (
@@ -112,19 +112,28 @@ def _writer_lora_contract(
     adapter: Mapping[str, Any],
 ) -> Any:
     from ember.pi05_lora import load_pi05_lora_contract
-    from ember.writer.as_config import authority_path, load_writer_config
 
     config_path = Path(adapter["config"]["path"])
-    if adapter["kind"] != DYNAMIC_K_WRITER_KIND:
+    if adapter["kind"] == DYNAMIC_K_WRITER_KIND:
+        from ember.writer.as_config import authority_path, load_writer_config
+
+        config = load_writer_config(config_path)
+        path = authority_path(config, "lora_contract")
+    elif adapter["kind"] == FUNCTIONAL_CODE_WRITER_KIND:
+        from ember.functional_adaptation.decoder_training import (
+            authority_path,
+            load_functional_adapter_config,
+        )
+
+        config = load_functional_adapter_config(config_path, authorities.repo_root)
+        path = authority_path(config, "lora_contract", authorities.repo_root)
+    else:
         raise Pi05EvaluationError("unknown Writer LoRA authority")
-    config = load_writer_config(config_path)
-    path = authority_path(config, "lora_contract")
     result = load_pi05_lora_contract(path)
     observed_rank = int(adapter.get("lora_contract", {}).get("rank", result.rank))
     if observed_rank != result.rank:
         raise Pi05EvaluationError(
-            "Layer-Matched Memory Program Compiler deployment rank must match "
-            f"its native rank-{result.rank} contract, got rank-{observed_rank}"
+            "Writer deployment rank differs from its LoRA contract"
         )
     expected_reference = (
         f"{path.relative_to(authorities.repo_root)}:"
@@ -223,11 +232,7 @@ def _validate_build_request(
                 "Writer generation batch violates its throughput authority"
             )
         smoke = evaluation.get("online_smoke_evidence")
-        sealed_dynamic_k = (
-            adapter.get("kind") == DYNAMIC_K_WRITER_KIND
-            and evaluation.get("formal_status") == "sealed"
-        )
-        if sealed_dynamic_k:
+        if evaluation.get("formal_status") == "sealed":
             if not isinstance(smoke, Mapping):
                 raise Pi05EvaluationError(
                     "sealed Writer evaluation requires its selected Writer batch"
@@ -347,7 +352,7 @@ def build_run_contract(
                     "bytes": Path(authorities.paths["meta_protocol"]).stat().st_size,
                     "schema_version": authorities.meta_protocol.get("schema_version"),
                 }
-                if role == "nonheld_meta"
+                if role.startswith("nonheld_meta")
                 else None
             )
         ),

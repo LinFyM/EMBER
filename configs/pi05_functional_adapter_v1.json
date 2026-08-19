@@ -83,6 +83,7 @@
         "weight_decay": 0.0001,
         "gradient_clip_norm": 1.0
       },
+      "video_open_files_per_rank": 8,
       "smoke": {
         "task_count": 4,
         "total_macros": 1,
@@ -110,6 +111,12 @@
           100
         ]
       }
+    },
+    "evaluation": {
+      "formal_status": "profile_required",
+      "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
+      "minimum_smoke_writer_model_batch_size": 1,
+      "online_smoke_evidence": null
     }
   },
   "train24_mechanism": {
@@ -255,6 +262,7 @@
     ],
     "target_validation_actions_or_rewards_used_for_gradient": 0,
     "target_test_actions_or_rewards_used_for_gradient": 0,
+    "video_action_episode_pairing": "same_task_disjoint_episode",
     "deployment_task_id_route": false
   },
   "content_hash_policy": "disabled_by_owner"

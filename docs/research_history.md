@@ -427,9 +427,10 @@ identity对照一致；B correct-no-video为64 correct-only / 7 control-only，�
 
 F2 fixed-occupancy审计不支持“lost rows只因macro50自身occupancy分歧更大”的简单故事；合法action correctness
 reference因validation expert不存在且held teacher action受信息墙禁止而不可得。F3冻结heads得到117，对照正常84，
-但仍丢33；F4 fixed-head free-Program oracle为659/1200，对照direct experts658/1200，反驳decoder reachability为首因。
-因此不扩大head/rank，不启动occupancy replacement；F5只证明gradient conflict影响换手和能力分布，不证明mean或
-AdamW是主要根因。完整逐项裁决、remote-safe rows与provenance见
+但仍丢33。F4首次评测没有实际安装投影LoRA，旧659/1200无效；修复wiring后fixed-head free-Program为307/1200，
+对照direct experts658/1200，只保留46.66%，支持decoder/head reachability瓶颈。故不启动occupancy replacement；
+head/rank/decoder应由后继task-held功能gate决定，而非沿用旧“不扩大”结论。F5只证明gradient conflict影响换手和能力
+分布，不证明mean或AdamW是主要根因。完整逐项裁决、remote-safe rows与provenance见
 `docs/external_review_claim_ledger_20260818.md`、`docs/external_review_followup_20260819.md`和
 `docs/evidence/external_review_20260818/`。
 

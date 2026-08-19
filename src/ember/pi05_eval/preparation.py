@@ -11,8 +11,10 @@ from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     adapter_requests,
     inspect_dynamic_k_writer_adapter,
+    inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
 )
@@ -116,6 +118,19 @@ def _inspect_adapter(
             require_formal=args.mode != "smoke",
             evaluation_k=int(getattr(args, "dynamic_k_writer_evaluation_k", 1)),
         )
+    if writer_kind == FUNCTIONAL_CODE_WRITER_KIND:
+        return inspect_functional_code_writer_adapter(
+            config_path=args.functional_writer_config.resolve(),
+            checkpoint=args.functional_writer_checkpoint.resolve(),
+            video_data_root=args.functional_writer_video_data_root.resolve(),
+            source=model,
+            tasks=tasks,
+            video_condition=str(args.functional_writer_video_condition),
+            video_seed=int(authorities.config["rng"]["inference_seed"]),
+            video_sampling_mode=str(args.functional_writer_video_sampling),
+            require_formal=args.mode != "smoke",
+            evaluation_k=int(getattr(args, "functional_writer_evaluation_k", 1)),
+        )
     return None
 
 
@@ -200,7 +215,13 @@ def _prepared_payload(
         args.mode == "screen"
         and writer_kind is None
         and not source_sft_requested
-        and args.role not in {"all_targets", "nonheld_meta"}
+        and args.role
+        not in {
+            "all_targets",
+            "nonheld_meta",
+            "nonheld_meta_train",
+            "nonheld_meta_validation",
+        }
     ):
         raise Pi05EvaluationError("source-base screen must cover all 40 target tasks")
     tasks, libero_paths = inspect_installed_target_tasks(

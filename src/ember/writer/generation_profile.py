@@ -32,7 +32,7 @@ def _validate_profile_request(
     valid = (
         sizes == tuple(sorted(set(sizes)))
         and len(sizes) >= 3
-        and {8, 16, 32}.issubset(sizes)
+        and min(sizes) > 0
         and warmup_runs > 0
         and measured_runs >= 2
         and contract.get("mode") == "smoke"
@@ -135,7 +135,9 @@ def _measure_profile_candidate(
     total_memory: int,
     required_headroom: int,
 ) -> tuple[dict[str, Any], bool]:
-    chunks = tuple(panel[offset : offset + size] for offset in range(0, len(panel), size))
+    chunks = tuple(
+        panel[offset : offset + size] for offset in range(0, len(panel), size)
+    )
     forward_batch_sizes = tuple(len(chunk) for chunk in chunks)
     walls = []
     candidate_oom = False
@@ -270,9 +272,7 @@ def profile_writer_generation(
         ),
         "warmup_runs_per_batch": warmup_runs,
         "measured_runs_per_batch": measured_runs,
-        "longest_sampled_video_frames": int(
-            panel_evidence["longest_sampled_frames"]
-        ),
+        "longest_sampled_video_frames": int(panel_evidence["longest_sampled_frames"]),
         "writer_generation_measurements": rows,
         "profile_wall_seconds": time.monotonic() - profile_started,
         "writer_modules_released": True,

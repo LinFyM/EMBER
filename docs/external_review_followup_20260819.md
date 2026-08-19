@@ -4,6 +4,10 @@
 `docs/external_review_20260818.md`建议的执行结果。完整逐条状态以
 `docs/external_review_claim_ledger_20260818.md`为索引，本文不给出下一套架构方案，以免影响后续独立判断。
 
+> 2026-08-19更正：首次F4 rollout没有把投影LoRA实际安装到policy，原`659/1200`及据此作出的
+> “fixed-head reachability通过”结论无效。修复wiring并完整重跑后为`307/1200`，本文件、claim ledger与remote-safe
+> evidence均已按正确结果更新。
+
 ## 1. 执行边界
 
 - 方法始终基于当前Core-Addressed Reader主架构，没有恢复V6/LPCP/GOMQ；历史方法只作paired对照。
@@ -179,15 +183,15 @@ paired细节给出更清楚的分解：
 在A macro25的八个FactorHeads完全固定时，为24个train tasks分别自由优化`20×16×256` Program 3000步，再把投影
 LoRA与step2000 direct task experts在同一24×50 closed-loop rows上严格配对：
 
-- direct experts为`658/1200`，投影LoRA为`659/1200`，达到direct的`100.15%`，远高于预注册90%门；
-- 逐行只有`7 gained / 6 lost`，652 retained，success-set Jaccard`.98045`，McNemar `p=1.0`；
-- Object/Goal/Long三套300 rows逐行完全相同，全部13-row churn集中在Spatial；
+- direct experts为`658/1200`，正确安装后的投影LoRA为`307/1200`，只达到direct的`46.66%`，未过预注册90%门；
+- 逐行为`54 gained / 405 lost`、253 retained，success-set Jaccard`.35534`，McNemar `p=1.43e-67`；
+- suite净变化为Spatial `-64`、Object `-224`、Goal `-26`、Long `-37`，失败不是单一suite现象；
 - effective-BA relative L2均值仍高达`.93571`，family为q`.95212`、v`.84250`、action-in`.59157`、
   action-out`.46702`；raw-factor relative L2均值`.41116`。
 
-因此“FactorHeads必须精确重建expert tensor才policy-effective”被反驳，raw/effective L2也不能替代闭环oracle。当前
-固定head manifold在train24上足以到达与experts功能等价的LoRA；没有依据继续扩大head、rank或decoder capacity。
-这不证明视频到Program映射已解决，也不把privileged per-task Program变成deployment route。
+因此固定A-macro25 FactorHead manifold即使给每task自由Program也不能保留expert行为，reachability瓶颈得到支持；
+raw/effective L2仍只能定位，闭环oracle才作裁决。该结果不单独指定扩大head、rank还是重参数化decoder，但撤销了
+“不应扩大”的旧结论。privileged per-task Program仍只作接口诊断，不成为deployment route。
 
 远程证据：`docs/evidence/external_review_20260818/reachability_evidence.json`。
 
@@ -224,7 +228,7 @@ PCGrad gain，`p=.04139`。因此它收窄了task exchange，但没有通过“�
 | G4 | formal provenance与hash | owner-adjusted；clean commit、dirty paths、schema、manifest、bytes和contract公开；按owner效率原则不新增SHA/MD5逐文件扫描 |
 | G5 | per-module delta与cross-decode | completed；`writer_drift_evidence.json` |
 | G6 | occupancy、首次分歧、fixed union error | completed with boundary；轨迹与disagreement公开，held expert error不可合法获得 |
-| G7 | head-manifold projection与closed loop | completed；`reachability_evidence.json`公开24-task投影误差、family拆分、1200-row paired closed loop和provenance；投影后659/1200、direct 658/1200 |
+| G7 | head-manifold projection与closed loop | completed and corrected；`reachability_evidence.json`公开24-task投影误差、family拆分、1200-row paired closed loop和provenance；正确投影307/1200、direct 658/1200，旧659因投影未安装已撤销 |
 | G8 | objective/mean/Adam/head/Program matched区分 | completed with boundary；F2/F3/F4/F5分别裁决occupancy disagreement、heads、Program-to-head reachability和aggregation；AdamW保持不变，moment独立效应明确不可由本轮判定 |
 | G9 | breadth@1/@5/@10、histogram、suite minimum、top3 | completed并用于所有新panel |
 
@@ -241,14 +245,16 @@ PCGrad gain，`p=.04139`。因此它收窄了task exchange，但没有通过“�
    跨初始化Program。
 5. **简单occupancy divergence未获支持。** fixed-union disagreement方向不符合预言；缺合法validation action
    reference使正确性保持不可判，故occupancy-matched训练分支不适用，而不是被偷偷跳过。
-6. **FactorHead co-drift是放大器，decoder reachability不是当前首因。** freeze从84提高到117但仍丢33；fixed-head
-   free-Program达到659/1200、与direct expert 658/1200近等价，所以不扩大rank/head/decoder。
+6. **FactorHead co-drift是放大器，fixed-head reachability也是真实瓶颈。** freeze从84提高到117但仍丢33；修正
+   wiring后的free-Program只有307/1200，对照direct expert 658/1200，故输出坐标不能从根因空间排除。具体扩大
+   rank/head还是改用功能锚定decoder，应由后续task-held闭环gate决定。
 7. **cross-task conflict存在但standard PCGrad不是解法。** 它改善早期suite floor、减少churn/lost并强化部分视频
    controls，却显著抑制gained、最终更低且丢失中间顺序优势；Adam moment独立效应仍不可由该matched arm裁决。
 
-因此本轮没有性能pass，也没有预选下一架构。absolute问题最早落在四流到learned Program能否产生跨suite、跨初始化的
-policy-effective breadth；稳定性问题落在shared objective/有限长更新能否保留这些方向。两者相互作用，但现有证据已
-排除把前端credit、LoRA写出、rank16、FactorHead容量、简单self-occupancy或arithmetic mean任何一个单独当作总根因。
+因此本轮没有性能pass，也没有预选下一架构。absolute问题至少同时落在输出坐标的policy-functional coverage与四流到
+learned Program能否为未见task预测有效方向；稳定性问题落在shared objective/有限长更新能否保留这些方向。它们相互
+作用；现有证据只排除了把前端credit、LoRA写出、简单self-occupancy或arithmetic mean任何一个单独当作总根因，不能
+再排除FactorHead/decoder capacity。
 本报告给出的是根因空间的实质收缩，而不是用更好的内部指标包装失败分数。
 
 ## 12. 请专家重点复核的问题
@@ -259,8 +265,8 @@ policy-effective breadth；稳定性问题落在shared objective/有限长更新
    端点/箭头线索和suite-specific object affordance？仓库措辞是否仍过强？
 3. validation expert不存在且held teacher action受信息墙禁止。对F2 action correctness，你是否认可
    `underdetermined-after-audit`，或有不越过信息墙的固定状态reference？
-4. F3/F4是否足以撤销“当前FactorHead manifold不可达”的优先假设？free Program oracle还遗漏了哪些会改变该结论的
-   deployment约束？
+4. 修正后的F4只保留direct expert的46.66%，你如何区分head/rank容量、decoder参数化和优化条件数？哪些额外证据最能
+   决定功能锚定fixed decoder应扩大、重参数化还是放弃？
 5. PCGrad的早期breadth/causality改善、后期gain抑制和keep-first退化，是否改变你对shared-gradient conflict与Adam
    moment优先级的排序？本轮对Adam moment明确未独立裁决。
 6. 请逐项指出ledger中任何遗漏、因果偷换、证据不足或不可复现处；完成复核后，再提出你认为最小、最可证伪的下一项

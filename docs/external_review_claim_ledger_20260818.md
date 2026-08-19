@@ -27,7 +27,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | A1.05 | fresh Writer生成非平凡完整LoRA | experiment fact | `confirmed-artifact`；health指标只作诊断，不作方法资格 |
 | A1.06 | 未证明Program是高层过程而非task identity/static cue/carrier | negative claim | `still supported with tighter boundary`；C同时通过wrong/shuffle/keep-first/reverse/no-video aggregate门，反驳纯identity/carrier充分，但优势主要集中Object、Long有反向且same-row retention<90%，仍未证明跨suite高层Program |
 | A1.07 | 未证明memory layer/rank index有policy-functional语义 | negative claim | `confirmed evidence gap`；index preservation与functional correspondence分开 |
-| A1.08 | 未证明FactorHeads稳定覆盖policy-effective方向 | negative claim | `resolved against reachability bottleneck`；F4 fixed-head oracle为659/1200，对照expert 658/1200；F3只支持head co-drift为放大器 |
+| A1.08 | 未证明FactorHeads稳定覆盖policy-effective方向 | negative claim | `confirmed after corrected wiring`；F4 fixed-head oracle为307/1200，对照expert 658/1200，只保留46.66%；旧659来自投影LoRA未安装的无效评测 |
 | A1.09 | 未证明expert-state loss支持generated-policy occupancy | negative claim | `still not proven`；F2反驳简单occupancy-divergence故事，但因held expert reference被information wall禁止，正确性方向仍不可判 |
 | A1.10 | 未证明shared checkpoint保留广泛support | experiment fact | `confirmed-artifact`：123→84→89→87、breadth 8→5→6→4 |
 | A1.11 | 未证明correct优于wrong/shuffle/reverse/no-video | negative claim | `resolved per arm, not globally`；A失败于shuffle/keep-first；B失败于reverse；C对五类negative均显著；F5失败于keep-first。任何单个control不能代表完整过程资格 |
@@ -44,7 +44,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | A3.05 | macro25 support高度集中，breadth@1不充分 | experiment fact | `confirmed-artifact`；G9已补breadth@1/@5/@10、per-task/suite、suite minimum与top3 concentration |
 | A4.01 | 首要问题是fresh前端credit断点+correct-only shortcut空间 | ranked hypothesis | `mechanism and causal-qualification effect supported, performance dominance refuted`；B→C仅+6且继续漂移，但correct-reverse margin由8增至41、wrong margin由39增至56，证明credit影响视频方向利用而非主要absolute/retention根因 |
 | A4.02 | 第二问题是offline occupancy与retention错配 | ranked hypothesis | `simple version refuted, broader mismatch unresolved`；lost rows没有预测的self-occupancy disagreement增大，合法正确性reference不可得 |
-| A4.03 | 第三问题是FactorHead reachability/co-drift | ranked hypothesis | `split verdict`；co-drift显著放大崩落，但fixed-head manifold达到expert-equivalent closed loop，reachability不是瓶颈 |
+| A4.03 | 第三问题是FactorHead reachability/co-drift | ranked hypothesis | `supported in both parts`；冻结heads显著缓解崩落但未保持support，正确F4又显示fixed-head free Program仅307/1200，reachability不足 |
 
 ## 3. B — 流水线与四条信息流
 
@@ -114,7 +114,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | D1.01 | absolute上限与retention可由不同首因、相互放大 | causal model | `accepted working decomposition` |
 | D1.02 | front-end credit/shortcut更像absolute问题 | hypothesis | `split verdict`；credit断点与混合shortcut成立，修复主要提高wrong/reverse因果资格，而非显著absolute或breadth |
 | D1.03 | occupancy/support retention更像25→50问题 | hypothesis | `not supported in its simple divergence form`；更广的offline objective/closed-loop mismatch仍存在但未由合法reference定向 |
-| D1.04 | decoder co-drift可能同时影响两者 | hypothesis | `supported as retention amplifier, refuted as reachability bottleneck`；冻结heads为117但仍丢33，free Program oracle完全保留expert行为 |
+| D1.04 | decoder co-drift可能同时影响两者 | hypothesis | `supported`；冻结heads为117但仍丢33，且正确free Program oracle只保留direct expert的46.66%，co-drift与固定坐标reachability均有证据 |
 | E1.01 | detach、freshness、测试缺口、correct-only与language权限是直接证据 | evidence bundle | `confirmed-code/contract` |
 | E1.02 | Program主要学identity/carrier、detach解释分数仍是推断 | inference boundary | `accepted`，不得提前写confirmed |
 | E1.03 | identity constant、内部order sensitivity、Reader+19和frozen feature质量削弱单因解释 | counterevidence | `confirmed`，纳入F1判读 |
@@ -159,9 +159,9 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | F3.02 | lost≤20、retention≥90%、score≥110、breadth不降 | advisory thresholds | `completed-reporting`；117分满足score≥110，但33 lost、73.17% retention且breadth下降，其余门槛失败 |
 | F3.03 | 若仍崩落，责任后移upstream/objective/occupancy或fixed-head reachability | inference rule | `supported`；冻结heads显著优于正常84（49 gained / 16 lost，`p=5.08e-5`），证明head co-drift是放大器；仍相对起点丢33，证明不是充分根因并已进入F4 |
 | F4.01 | 固定heads、每task自由优化20x16x256 Program逼近train24 expert | unconditional oracle | `completed`；24个privileged free Programs各优化3000步，heads逐项固定，完整curve与task metrics已导出 |
-| F4.02 | 在train-task closed loop比较expert与投影后LoRA | oracle validation | `completed`；同一1200 rows direct=`658`、projected=`659`，7 gained / 6 lost，Jaccard=`.98045` |
+| F4.02 | 在train-task closed loop比较expert与投影后LoRA | oracle validation | `completed after wiring correction`；同一1200 rows direct=`658`、projected=`307`，54 gained / 405 lost、253 retained，Jaccard=`.35534`；旧659未实际安装投影LoRA，已撤销 |
 | F4.03 | family-wise q/v/action-in/out reachability与endpoint单列 | analysis requirement | `completed`；effective-BA relative L2均值q=`.95212`、v=`.84250`、action-in=`.59157`、action-out=`.46702`，raw-factor各family也完整公开 |
-| F4.04 | ≥90% expert success则停止扩大head/rank，否则支持不可达 | advisory decision rule | `passed decisively`；projected/direct=`100.15%`，当前停止扩大head/rank；oracle只定位接口，不成为deployment carrier |
+| F4.04 | ≥90% expert success则停止扩大head/rank，否则支持不可达 | advisory decision rule | `failed decisively`；projected/direct=`46.66%`，支持当前fixed-head manifold不可达；具体扩容或重参数化由后继task-held功能gate决定，oracle不成为deployment carrier |
 | F5.01 | 最后做matched conflict-safe aggregation | final diagnostic | `completed`；执行固定顺序、无扫参的standard sequential PCGrad，fresh训练到macro50并完成25/50 strict paired400 |
 | F5.02 | 保持per-task gradients、AdamW、LR、tasks、data，只换aggregation | single-variable contract | `confirmed by run contract/code`；50个macro每轮121--263次projection，方向cosine最低`.94038`，干预不是空操作 |
 | F5.03 | macro25相当且25→50 lost显著下降才支持conflict | causal threshold | `negative for primary-root-cause claim`；107→96为25 lost/14 gained/churn39，对照C的33/24/57；lost改善不显著、gain减少显著，macro50均breadth@1=4且PCGrad更低。PCGrad macro25的breadth@5/suite minimum为4/5、优于C的3/1，但未保留 |
@@ -180,7 +180,7 @@ advisory threshold并列报告，EMBER最终方法仍由single-checkpoint strict
 | G5 | per-module delta与Program/FactorHeads cross-decode原始结果 | `completed`；见`writer_drift_evidence.json`，包含4点module gradients、3区间stage/FactorHead cross-decode与fixed-B20/strict transitions |
 | G6 | lost/gained/retained occupancy、首次行为分歧、fixed union error | `completed with scientific boundary`；`occupancy_evidence.json`公开136行轨迹统计、初态首次分歧和fixed-union checkpoint disagreement；validation expert/teacher error因information wall明确记为不可判定，不用代理量冒充 |
 | G7 | expert LoRA在head manifold投影误差、投影后closed-loop、family reachability | `completed`；`reachability_evidence.json`含24-task raw/effective误差、family拆分、1200 paired rows与完整provenance |
-| G8 | objective/mean/Adam moment/shared heads/shared Program的matched conflict evidence | `completed with boundary`；F2/F3/F4/F5分别裁决occupancy-disagreement、shared heads、Program-to-head reachability和gradient aggregation；F5保持AdamW moments不变，故Adam moment独立效应明确为`underdetermined-after-audit`而非静默归因 |
+| G8 | objective/mean/Adam moment/shared heads/shared Program的matched conflict evidence | `completed with correction boundary`；F2/F3/F4/F5分别裁决occupancy-disagreement、shared heads、Program-to-head reachability和gradient aggregation；正确F4支持reachability瓶颈；F5保持AdamW moments不变，故Adam moment独立效应为`underdetermined-after-audit` |
 | G9 | breadth@1/@5/@10、task histogram、suite minimum、top3 concentration | `completed for all retained strict panels`；公共metric helper已扩展，全部新controls沿用同一统计口径 |
 
 ## 8. Owner调整与不做的事

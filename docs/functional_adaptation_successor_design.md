@@ -214,6 +214,8 @@ oracle成功而predicted code失败，修task inference。
 - `ember.writer`：现有LMMPC是sealed baseline；通用video store、functional policy call、evaluation cache与rollout runtime
   可复用；
 - `ember.pi05_eval`：继续拥有dynamic queue、paired rows与formal evaluator，新增successor adapter而不是复制evaluator。
+- `ember.functional_adaptation.evaluation*`只实现successor特有的asset/episode合同与一次性LoRA生成；cache、worker handoff、
+  rollout、aggregate和恢复仍由现有`ember.writer.evaluation_*`与`ember.pi05_eval`统一拥有。
 
 过渡期允许sealed baseline与successor adapter并存以做matched比较，owner为本goal；移除触发点是successor通过fixed-decoder
 leave-out与end-to-end smoke。届时训练入口和writer family registry只保留successor canonical，旧执行路径由Git与sealed

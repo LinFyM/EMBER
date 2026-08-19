@@ -22,6 +22,7 @@ from ember.expert_manifold.contract import (
 )
 from ember.functional_adaptation.action_alignment import PrivilegedMetaActionStore
 from ember.functional_adaptation.code_checkpoint import (
+    RUN_SCHEMA,
     load_code_writer_checkpoint,
 )
 from ember.functional_adaptation.code_schedule import MetaCodeTrainingSchedule
@@ -43,6 +44,7 @@ from ember.pi05_source_checkpoint import (
     read_json,
     write_json_atomic,
 )
+from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import (
     initialize_deferred_process_group,
     initialize_distributed,
@@ -57,7 +59,6 @@ from ember.writer.data import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_functional_code_writer_run_v1"
 
 
 @dataclass
@@ -178,6 +179,16 @@ def _run_contract(
             "cuda_visible_devices": str(os.environ.get("CUDA_VISIBLE_DEVICES", "")),
             "total_macros": int(runtime.settings[runtime.args.mode]["total_macros"]),
         },
+        "trainable": {
+            "writer_parameter_count": sum(
+                int(parameter.numel()) for parameter in runtime.trainable
+            ),
+            "fixed_decoder_parameter_count": sum(
+                int(parameter.numel())
+                for parameter in runtime.writer.fixed_decoder.parameters()
+            ),
+            "fixed_decoder_trainable_parameters": 0,
+        },
         "deployment": {
             "inputs": ["exact language", "action-hidden ordered teacher videos"],
             "writer_runs_once_before_rollout": True,
@@ -187,6 +198,7 @@ def _run_contract(
         },
         "training_privileged": {
             "meta_train_teacher_actions": "phase-alignment auxiliary only",
+            "video_action_episode_pairing": "same_task_disjoint_episode",
             "meta_validation_actions": 0,
             "target40_actions_or_rewards": 0,
             "available_at_deployment": False,
@@ -202,7 +214,9 @@ def _publish_contract(
     path = runtime.args.output_dir / "run_contract.json"
     if runtime.context.is_main:
         if runtime.args.resume is None:
-            if runtime.args.output_dir.exists() and any(runtime.args.output_dir.iterdir()):
+            if runtime.args.output_dir.exists() and any(
+                runtime.args.output_dir.iterdir()
+            ):
                 raise ValueError("fresh functional-code output directory is not empty")
             runtime.args.output_dir.mkdir(parents=True, exist_ok=True)
             write_json_atomic(path, dict(contract))
@@ -258,7 +272,9 @@ def _resolve_training_setup(args: argparse.Namespace) -> CodeTrainingSetup:
         state["dirty_paths"]
         or (args.resume is None and state["commit"] != state["upstream_commit"])
     ):
-        raise ValueError("formal functional-code training requires a clean pushed commit")
+        raise ValueError(
+            "formal functional-code training requires a clean pushed commit"
+        )
     total_macros = int(mode["total_macros"])
     checkpoint_macros = tuple(int(value) for value in mode["checkpoint_macros"])
     stop_macro = int(
@@ -266,9 +282,7 @@ def _resolve_training_setup(args: argparse.Namespace) -> CodeTrainingSetup:
     )
     if stop_macro not in checkpoint_macros:
         raise ValueError("functional-code stop must be a declared checkpoint")
-    start_macro = (
-        int(args.resume.name.removeprefix("macro_")) if args.resume else 0
-    )
+    start_macro = int(args.resume.name.removeprefix("macro_")) if args.resume else 0
     seed_everything(int(config["code_inference"]["initialization_seed"]), context)
     return CodeTrainingSetup(
         context=context,
@@ -286,6 +300,7 @@ def prepare_runtime(args: argparse.Namespace) -> CodeTrainingRuntime:
     context = setup.context
     config = setup.config
     settings = setup.settings
+    mode = settings[args.mode]
 
     expert_config = load_task_expert_config(
         authority_path(config, "meta_experts", REPO_ROOT)
@@ -329,9 +344,7 @@ def prepare_runtime(args: argparse.Namespace) -> CodeTrainingRuntime:
     trainable = tuple(
         parameter for parameter in writer.parameters() if parameter.requires_grad
     )
-    initialize_deferred_process_group(
-        context, rendezvous_root=args.output_dir.parent
-    )
+    initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     first, last = map(int, settings["train_demo_indices"])
     demos = tuple(range(first, last + 1))
     stride = int(settings["frame_stride"])
@@ -347,7 +360,9 @@ def prepare_runtime(args: argparse.Namespace) -> CodeTrainingRuntime:
     )
     task_authorities = {task.global_task_id: task.authority for task in active_tasks}
     video_store = RawTeacherVideoStore(
-        tuple(task_authorities.values()), frame_stride=stride, max_open_files=8
+        tuple(task_authorities.values()),
+        frame_stride=stride,
+        max_open_files=int(settings["video_open_files_per_rank"]),
     )
     stats = load_stats(
         authorities.source_base_config,
@@ -358,6 +373,7 @@ def prepare_runtime(args: argparse.Namespace) -> CodeTrainingRuntime:
         action_q01=stats["action"]["q01"],
         action_q99=stats["action"]["q99"],
         phase_count=int(config["code_inference"]["phase_queries"]),
+        max_open_files=int(settings["video_open_files_per_rank"]),
     )
     tokenizer = Pi05TeacherPrefixTokenizer(
         args.tokenizer_path,

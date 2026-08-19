@@ -10,15 +10,18 @@
 - 第二轮专家意见后继goal已经由owner正式启动。active design为
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
-  Phase 1/2的functional realizability基线，尚未启动formal GPU训练。
-- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；当前结构性开发位于从最新`main`创建的
-  `/data1/user/ymdai/projects/EMBER-nonheld-meta-experts`、分支`codex/nonheld-meta-experts`。
+  Phase 1/2的functional realizability基线；non-held meta expert formal训练已经启动，Writer formal训练仍等待fixed-decoder门。
+- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main@daf45b4`；当前successor运行面开发位于从
+  最新`main`创建的`/data1/user/ymdai/projects/EMBER-code-writer-runtime`、分支`codex/code-writer-runtime`。
   验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
-- 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成；修正投影wiring后的F4
-  free-Program reference仍在gpu02两卡运行，完成前不解释partial rows。
+- 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
+  free-Program 1200行也已完成：projected=`307/1200`、direct=`658/1200`，253 retained、54 gained、405 lost、
+  Jaccard `.35534`，只保留direct的`46.66%`，明确未过90%门。旧`659/1200`来自没有实际安装投影LoRA的错误评测，
+  已撤销并重导出remote-safe证据。
 - non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
   LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker均已完成首步且无OOM/non-finite。canonical输出为
-  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`，预计约7.5小时完成。
+  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；当前六worker均约在首个task的
+  step640--650，实测约4.3秒/step，按完整71-task工作量估计总历时约14小时，不再沿用早先7.5小时估计。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -71,6 +74,12 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   每条视频独立保序编码initial/goal/event/transition，跨K只聚合完整video program；保留50个Action probe并加入仅训练期
   meta-action phase alignment，同时提供真正不读language/action probe的video-only baseline。模块按decoder、inference、
   schedule/step/checkpoint和privileged-action owner拆分；旧LMMPC继续只作为sealed历史基线，不形成并行active fallback。
+- successor已经接入现有唯一PI0.5 evaluator、episode LoRA cache、persistent rollout worker和online generation profiler；支持
+  fixed 56-task meta-train / 15-task architecture-validation角色及correct、same-task-other、wrong、language-only、video-only与
+  真实帧时序controls。learned language-only部署分支不打开视频，video-only分支不读取language或Action probes；训练期
+  teacher-action alignment改为同task但确定性不同episode，并按归一化过程相位配对，避免逐帧动作复制。
+- 当前代码里程碑的67项定向evaluator/cache/runtime测试、honest baseline分支smoke和统一cache dispatch smoke均通过；结构门
+  无hard violation。该证据只说明运行面接通，不是Writer性能或fixed-decoder gate通过。
 
 当前train24非正式机制profile（不是模型选择或closed-loop证据）：
 
@@ -123,13 +132,16 @@ same-task correct-success retention只有87.27%。因此视频因果资格得到
    reverse反而升6；这不是纯language shortcut，也不是科学上干净的正机制。owner的no-Text边界继续有效。
 3. **简单self-occupancy divergence未获支持。** lost rows没有出现预期的macro50-self-occupancy disagreement增大；
    validation expert不存在且held teacher action受信息墙禁止，动作正确性只能记为审计后不可判。
-4. **FactorHead co-drift是放大器，不是reachability瓶颈。** freeze使84升到117但仍丢33；固定head的free-Program oracle
-   为659/1200，direct experts为658/1200，故不扩大head/rank/decoder。
+4. **FactorHead co-drift和reachability都是实证问题。** freeze使84升到117但仍丢33；修正wiring后的fixed-head
+   free-Program仅307/1200，对照direct experts 658/1200，253 retained / 54 gained / 405 lost，未过90%门。旧659
+   是未安装投影LoRA的无效结果。后继fixed functional decoder正面检验稳定功能坐标；若nonheld held-task gate仍失败，
+   必须考虑架构性扩大或重参数化，不能以小扫掩盖。
 5. **Cross-task conflict会改变换手，standard PCGrad不是解法。** 它将lost 33→25、churn 57→39，但gained
    24→14且有显著抑制，score更低、breadth仍收缩，并把keep-first margin压到2。Adam moment独立效应仍不可由本arm裁决。
 
-当前最早未解接口被收窄为：四条信息流能否生成跨suite、跨初始化的policy-effective learned Program，以及
-shared objective/更新能否在同一checkpoint保留这些方向。本轮没有性能pass，也没有登记下一套架构。
+当前最早未解接口被收窄为：固定输出坐标能否覆盖policy-effective directions、四条信息流能否为未见task预测这些
+directions，以及shared objective/更新能否在同一checkpoint保留它们。本轮没有性能pass；当前登记的后继架构用
+functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 ## Remote-visible review map
 

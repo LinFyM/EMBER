@@ -143,7 +143,7 @@ class LanguageVideoCodeInference(torch.nn.Module):
 
     def _language_summary(
         self, language_tokens: torch.Tensor, valid_task_tokens: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         scores = torch.einsum(
             "btw,w->bt", language_tokens.float(), self.language_query.float()
         ) / math.sqrt(self.feature_width)
@@ -177,8 +177,7 @@ class LanguageVideoCodeInference(torch.nn.Module):
             and visual_patch_tokens.shape[0] == frames
             and visual_patch_tokens.shape[1] > 0
             and visual_patch_tokens.shape[2] == width
-            and action_probe_tokens.shape
-            == (frames, self.ACTION_TOKENS, width)
+            and action_probe_tokens.shape == (frames, self.ACTION_TOKENS, width)
             and frame_condition_ids.shape == (frames,)
             and frame_condition_ids.dtype == torch.long
             and video_offsets.ndim == 1
@@ -238,15 +237,6 @@ class LanguageVideoCodeInference(torch.nn.Module):
             key_padding_mask=~frame_valid,
             need_weights=False,
         )
-        neutral_query = self.video_query.to(visual_patch_tokens)[None, None].expand(
-            frame_tokens.shape[0], -1, -1
-        )
-        neutral_grounded, _ = self.frame_grounding(
-            neutral_query,
-            visual_patch_tokens,
-            visual_patch_tokens,
-            need_weights=False,
-        )
         action_positions = _sinusoidal_positions(
             torch.arange(self.ACTION_TOKENS, device=frame_tokens.device),
             self.feature_width,
@@ -263,16 +253,99 @@ class LanguageVideoCodeInference(torch.nn.Module):
         conditioned_frames = self.frame_projection(
             torch.cat((grounded[:, 0], phase_summary), dim=-1)
         )
-        video_only_frames = self.frame_projection(
-            torch.cat(
-                (neutral_grounded[:, 0], visual_patch_tokens.mean(dim=1)), dim=-1
-            )
-        )
+        video_only_frames = self._video_only_frame_features(visual_patch_tokens)
         return (
             conditioned_frames,
             video_only_frames,
             self.action_alignment_head(phases),
         )
+
+    def _video_only_frame_features(
+        self, visual_patch_tokens: torch.Tensor
+    ) -> torch.Tensor:
+        neutral_query = self.video_query.to(visual_patch_tokens)[None, None].expand(
+            visual_patch_tokens.shape[0], -1, -1
+        )
+        neutral_grounded, _ = self.frame_grounding(
+            neutral_query,
+            visual_patch_tokens,
+            visual_patch_tokens,
+            need_weights=False,
+        )
+        return self.frame_projection(
+            torch.cat((neutral_grounded[:, 0], visual_patch_tokens.mean(dim=1)), dim=-1)
+        )
+
+    def infer_language_code(
+        self,
+        language_tokens: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        """Run the learned language prior without any video input."""
+
+        if (
+            language_tokens.ndim != 3
+            or language_tokens.shape[-1] != self.feature_width
+            or valid_task_tokens.shape != language_tokens.shape[:2]
+            or valid_task_tokens.dtype != torch.bool
+            or not valid_task_tokens.any(dim=1).all()
+        ):
+            raise FunctionalCodeInferenceError("invalid language-only feature layout")
+        return self.language_code(
+            self._language_summary(language_tokens, valid_task_tokens)
+        )
+
+    def infer_video_code(
+        self,
+        visual_patch_tokens: torch.Tensor,
+        frame_positions: torch.Tensor,
+        video_offsets: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+    ) -> torch.Tensor:
+        """Run the learned video baseline without language or Action probes."""
+
+        if (
+            visual_patch_tokens.ndim != 3
+            or visual_patch_tokens.shape[0] <= 0
+            or visual_patch_tokens.shape[1] <= 0
+            or visual_patch_tokens.shape[2] != self.feature_width
+            or frame_positions.shape != (visual_patch_tokens.shape[0],)
+            or video_offsets.ndim != 1
+            or condition_video_offsets.ndim != 1
+            or video_offsets.numel() < 2
+            or condition_video_offsets.numel() < 2
+        ):
+            raise FunctionalCodeInferenceError("invalid video-only feature layout")
+        frame_offsets = video_offsets.detach().cpu().tolist()
+        condition_offsets = condition_video_offsets.detach().cpu().tolist()
+        video_count = len(frame_offsets) - 1
+        if (
+            frame_offsets[0] != 0
+            or frame_offsets[-1] != visual_patch_tokens.shape[0]
+            or any(
+                right <= left for left, right in zip(frame_offsets, frame_offsets[1:])
+            )
+            or condition_offsets[0] != 0
+            or condition_offsets[-1] != video_count
+            or any(
+                right <= left
+                for left, right in zip(condition_offsets, condition_offsets[1:])
+            )
+        ):
+            raise FunctionalCodeInferenceError("invalid video-only ownership")
+        video_frames = self._video_only_frame_features(visual_patch_tokens)
+        _, summaries = self._video_programs(
+            video_frames,
+            frame_positions,
+            video_offsets,
+        )
+        condition_summaries = torch.stack(
+            [
+                summaries[left:right].mean(dim=0)
+                for left, right in zip(condition_offsets[:-1], condition_offsets[1:])
+            ]
+        )
+        return self.video_code(condition_summaries)
 
     def _video_programs(
         self,
@@ -286,11 +359,16 @@ class LanguageVideoCodeInference(torch.nn.Module):
         for start, stop in zip(offsets, offsets[1:]):
             content = frame_features[start:stop]
             positions = frame_positions[start:stop].float()
-            positions = (positions - positions[0]) / (positions[-1] - positions[0]).clamp_min(1)
+            positions = (positions - positions[0]) / (
+                positions[-1] - positions[0]
+            ).clamp_min(1)
             hidden = self.temporal(
-                (content + _sinusoidal_positions(
-                    positions, self.feature_width, dtype=content.dtype
-                ))[None]
+                (
+                    content
+                    + _sinusoidal_positions(
+                        positions, self.feature_width, dtype=content.dtype
+                    )
+                )[None]
             )[0]
             event_query = self.event_queries.to(hidden)[None]
             events, _ = self.event_reader(
@@ -396,25 +474,22 @@ class LanguageVideoCodeInference(torch.nn.Module):
         _, video_only_summaries = self._video_programs(
             video_only_frames, frame_positions, video_offsets
         )
-        conditioned, _, video_variance, video_condition_ids = (
-            self._aggregate_videos(
-                language, video_summaries, condition_video_offsets
-            )
+        conditioned, _, video_variance, video_condition_ids = self._aggregate_videos(
+            language, video_summaries, condition_video_offsets
         )
-        posterior_features = torch.cat(
-            (language, conditioned, video_variance), dim=-1
-        )
+        posterior_features = torch.cat((language, conditioned, video_variance), dim=-1)
         language_code = self.language_code(language)
         condition_offsets = condition_video_offsets.detach().cpu().tolist()
-        video_only_mean = torch.stack(
-            [
-                video_only_summaries[left:right].mean(dim=0)
-                for left, right in zip(
-                    condition_offsets[:-1], condition_offsets[1:]
-                )
-            ]
+        video_code = self.video_code(
+            torch.stack(
+                [
+                    video_only_summaries[left:right].mean(dim=0)
+                    for left, right in zip(
+                        condition_offsets[:-1], condition_offsets[1:]
+                    )
+                ]
+            )
         )
-        video_code = self.video_code(video_only_mean)
         delta = self.posterior_delta(posterior_features)
         confidence = self.posterior_confidence(posterior_features).sigmoid()
         return FunctionalCodePosterior(

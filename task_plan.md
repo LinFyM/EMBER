@@ -147,7 +147,8 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 ## Current next actions
 
-1. 完成architecture/data owner扫描与专家方向ledger；
-2. 决定现有`expert_manifold`中可复用的functional projection、checkpoint与评测组件，以及必须退役的legacy V6 wrapper；
-3. 形成non-held meta allowlist、task-level leave-out split和process-control可行性矩阵；
-4. 冻结首个最小设计：functional fingerprint + fixed decoder leave-task-out，不在decoder通过前启动大规模video inference训练。
+1. 以已完成的正确F4 paired1200负结果（307/1200 vs direct 658/1200）约束decoder gate，不再沿用旧659解释；
+2. 完成71-task non-held meta expert bank，先profile再正式拟合56/15 fixed decoder，并做direct/projected closed-loop裁决；
+3. decoder通过或给出可修复的架构信号后，从clean pushed commit训练successor Writer，完成online generation profile与
+   meta-validation的language/video/L+V/process-control screen；
+4. 只有inference gate出现真实增量后进入train/meta closed-loop outer objective；明确负结果回到最早失效接口，不做小扫。

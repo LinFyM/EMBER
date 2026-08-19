@@ -137,18 +137,26 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
             raise VideoProgramError("invalid task-query patch batch")
         batch, task_tokens, width = task_queries.shape
         patches = patch_content.shape[1]
-        query = self.query(self.query_norm(task_queries)).reshape(
-            batch,
-            task_tokens,
-            self.heads,
-            self.head_width,
-        ).transpose(1, 2)
-        key = self.key(self.patch_norm(patch_content)).reshape(
-            batch,
-            patches,
-            self.heads,
-            self.head_width,
-        ).transpose(1, 2)
+        query = (
+            self.query(self.query_norm(task_queries))
+            .reshape(
+                batch,
+                task_tokens,
+                self.heads,
+                self.head_width,
+            )
+            .transpose(1, 2)
+        )
+        key = (
+            self.key(self.patch_norm(patch_content))
+            .reshape(
+                batch,
+                patches,
+                self.heads,
+                self.head_width,
+            )
+            .transpose(1, 2)
+        )
         value = patch_content.reshape(
             batch,
             patches,
@@ -327,9 +335,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         text_padding = torch.zeros_like(text_tokens, dtype=torch.bool)
         text_tokens[:, 0] = language_tokens[:, 0]
         text_padding[:, 0] = True
-        ordinals = (
-            task_span_mask.to(torch.long).cumsum(dim=1) - 1
-        ).clamp_min(0)
+        ordinals = (task_span_mask.to(torch.long).cumsum(dim=1) - 1).clamp_min(0)
         text_tokens[:, 1:].scatter_add_(
             1,
             ordinals,
@@ -375,13 +381,10 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                     use_cache=False,
                     adarms_cond=[None, None],
                 )
-        if (
-            suffix_hidden is not None
-            or text_hidden.shape != (
-                batch,
-                maximum_task_tokens + 1,
-                self.image_width,
-            )
+        if suffix_hidden is not None or text_hidden.shape != (
+            batch,
+            maximum_task_tokens + 1,
+            self.image_width,
         ):
             raise VideoProgramError("PI05 text-only hidden layout changed")
         projected = self.language_projection(text_hidden[:, 1:])
@@ -408,7 +411,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             image_tokens = bridge.embed_image(images)
             text_tokens = bridge.embed_language_tokens(language_tokens)
         if (
-            image_tokens.shape[1:] != (
+            image_tokens.shape[1:]
+            != (
                 self.NATIVE_IMAGE_TOKENS,
                 self.image_width,
             )
@@ -445,9 +449,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         padding = torch.cat((prefix_padding, suffix_padding), dim=1)
         attention = torch.cat((prefix_attention, suffix_attention), dim=1)
-        mask = core._prepare_attention_masks_4d(
-            make_att_2d_masks(padding, attention)
-        )
+        mask = core._prepare_attention_masks_4d(make_att_2d_masks(padding, attention))
         positions = torch.cumsum(padding, dim=1) - 1
         target_dtype = language_model.layers[0].self_attn.q_proj.weight.dtype
         vl_context = (
@@ -523,61 +525,42 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         action_probe_tokens = self.interaction_projection(action_hidden)
         return evidence, patch_evidence, action_probe_tokens
 
-    def _validate_forward_batch(
+    def _validate_language_batch(
         self,
         policy: torch.nn.Module,
-        frames: torch.Tensor,
-        frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
     ) -> tuple[torch.nn.Module, torch.Tensor, torch.Tensor]:
-        conditions = language_tokens.shape[0]
         if (
-            frames.ndim != 4
-            or frames.shape[0] <= 0
-            or conditions <= 0
-            or frame_condition_ids.ndim != 1
-            or frame_condition_ids.shape[0] != frames.shape[0]
-            or frame_condition_ids.dtype != torch.long
-            or language_tokens.ndim != 2
+            language_tokens.ndim != 2
+            or language_tokens.shape[0] <= 0
             or language_mask.shape != language_tokens.shape
             or language_mask.dtype != torch.bool
             or task_span_mask.shape != language_tokens.shape
             or task_span_mask.dtype != torch.bool
-            or frame_condition_ids.device != frames.device
-            or language_tokens.device != frames.device
-            or language_mask.device != frames.device
-            or task_span_mask.device != frames.device
+            or language_mask.device != language_tokens.device
+            or task_span_mask.device != language_tokens.device
         ):
             raise VideoProgramError("invalid frame-language semantic batch")
         task_counts = task_span_mask.sum(dim=1)
-        condition_counts = (
-            frame_condition_ids[:, None]
-            == torch.arange(conditions, device=frames.device)[None]
-        ).sum(dim=0)
         invalid_checks = torch.stack(
             (
                 (task_span_mask & ~language_mask).any(),
                 ~task_span_mask.any(dim=1).all(),
                 task_span_mask[:, 0].any(),
-                (
-                    (frame_condition_ids < 0)
-                    | (frame_condition_ids >= conditions)
-                ).any(),
-                (condition_counts <= 0).any(),
-                (
-                    frame_condition_ids[1:]
-                    < frame_condition_ids[:-1]
-                ).any(),
             )
         )
-        validation = torch.cat(
-            (
-                invalid_checks.to(torch.long),
-                task_counts.max().reshape(1),
+        validation = (
+            torch.cat(
+                (
+                    invalid_checks.to(torch.long),
+                    task_counts.max().reshape(1),
+                )
             )
-        ).to(device="cpu").tolist()
+            .to(device="cpu")
+            .tolist()
+        )
         if any(validation[:-1]):
             raise VideoProgramError("invalid frame-language semantic batch")
         core = policy.model
@@ -590,11 +573,107 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         valid_task_tokens = (
             torch.arange(
                 maximum_task_tokens,
-                device=frames.device,
+                device=language_tokens.device,
             )[None]
             < task_counts[:, None]
         )
         return core, valid_task_tokens, task_counts
+
+    def _validate_forward_batch(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_condition_ids: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.nn.Module, torch.Tensor, torch.Tensor]:
+        core, valid_task_tokens, task_counts = self._validate_language_batch(
+            policy,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        conditions = language_tokens.shape[0]
+        if (
+            frames.ndim != 4
+            or frames.shape[0] <= 0
+            or frame_condition_ids.ndim != 1
+            or frame_condition_ids.shape[0] != frames.shape[0]
+            or frame_condition_ids.dtype != torch.long
+            or frame_condition_ids.device != frames.device
+            or language_tokens.device != frames.device
+        ):
+            raise VideoProgramError("invalid frame-language semantic batch")
+        condition_counts = (
+            frame_condition_ids[:, None]
+            == torch.arange(conditions, device=frames.device)[None]
+        ).sum(dim=0)
+        if (
+            ((frame_condition_ids < 0) | (frame_condition_ids >= conditions)).any()
+            or (condition_counts <= 0).any()
+            or (frame_condition_ids[1:] < frame_condition_ids[:-1]).any()
+        ):
+            raise VideoProgramError("invalid frame-language semantic batch")
+        return core, valid_task_tokens, task_counts
+
+    def _encode_text_features(
+        self,
+        core: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        valid_task_tokens: torch.Tensor,
+    ) -> torch.Tensor:
+        maximum_task_tokens = valid_task_tokens.shape[1]
+
+        def invoke_text(token_values: torch.Tensor, span_values: torch.Tensor) -> torch.Tensor:
+            return self._encode_text(core, token_values, span_values, maximum_task_tokens)
+
+        if self.activation_checkpointing and self.training and torch.is_grad_enabled():
+            return checkpoint(
+                invoke_text,
+                language_tokens,
+                task_span_mask,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+        return invoke_text(language_tokens, task_span_mask)
+
+    def forward_text_features(
+        self,
+        policy: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode exact language without reading any teacher-video frame."""
+        core, valid_task_tokens, _ = self._validate_language_batch(
+            policy,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        features = self._encode_text_features(
+            core, language_tokens, task_span_mask, valid_task_tokens
+        )
+        return features, valid_task_tokens
+
+    def forward_visual_features(
+        self, policy: torch.nn.Module, frames: torch.Tensor
+    ) -> torch.Tensor:
+        """Encode raw image patches without language or Action probes."""
+        if self.visual_projection is None:
+            raise VideoProgramError("raw visual projection is unavailable")
+        core = policy.model
+        bridge = getattr(core, "paligemma_with_expert", None)
+        if bridge is None:
+            raise VideoProgramError("PI05 joint backbone changed")
+        images = self._prepare_images(frames)
+        with torch.no_grad():
+            image_tokens = bridge.embed_image(images)
+        if image_tokens.shape[1:] != (self.NATIVE_IMAGE_TOKENS, self.image_width):
+            raise VideoProgramError("PI05 image embedding layout changed")
+        return self.visual_projection(image_tokens)
 
     def forward_process_features(
         self,
@@ -615,34 +694,16 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             language_mask,
             task_span_mask,
         )
-        maximum_task_tokens = valid_task_tokens.shape[1]
-
-        def invoke_text(
-            token_values: torch.Tensor,
-            span_values: torch.Tensor,
-        ) -> torch.Tensor:
-            return self._encode_text(
-                core,
-                token_values,
-                span_values,
-                maximum_task_tokens,
-            )
-
         should_checkpoint = (
-            self.activation_checkpointing
-            and self.training
-            and torch.is_grad_enabled()
+            self.activation_checkpointing and self.training and torch.is_grad_enabled()
         )
-        if should_checkpoint:
-            text_queries = checkpoint(
-                invoke_text,
-                language_tokens,
-                task_span_mask,
-                use_reentrant=False,
-                preserve_rng_state=False,
-            )
-        else:
-            text_queries = invoke_text(language_tokens, task_span_mask)
+        text_queries = self._encode_text_features(
+            core,
+            language_tokens,
+            task_span_mask,
+            valid_task_tokens,
+        )
+        maximum_task_tokens = valid_task_tokens.shape[1]
 
         evidence_rows = []
         patch_evidence_rows = []
@@ -688,7 +749,9 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                     preserve_rng_state=False,
                 )
             else:
-                evidence, patch_evidence, interaction, visual = invoke_frames(*arguments)
+                evidence, patch_evidence, interaction, visual = invoke_frames(
+                    *arguments
+                )
             evidence_rows.append(evidence)
             patch_evidence_rows.append(patch_evidence)
             interaction_rows.append(interaction)

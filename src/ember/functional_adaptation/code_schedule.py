@@ -17,6 +17,7 @@ from ember.writer.video_program import LanguageAxialProcessFeatures
 class MetaCodeTaskVisit:
     task_id: int
     demos: tuple[int, ...]
+    action_demos: tuple[int, ...]
     frame_cost: int
 
 
@@ -47,9 +48,7 @@ class MetaCodeTrainingSchedule:
         self.seed = int(seed)
         self.controls = tuple(str(value) for value in temporal_controls)
         self.frame_counts = {
-            int(task_id): {
-                int(demo): int(count) for demo, count in rows.items()
-            }
+            int(task_id): {int(demo): int(count) for demo, count in rows.items()}
             for task_id, rows in sampled_frame_counts.items()
         }
         if (
@@ -76,10 +75,18 @@ class MetaCodeTrainingSchedule:
         visits = []
         for task_id in self.task_ids:
             demos = self.videos.demos_for_task_visit(task_id, macro)
+            action_demos = self.videos.demos_for_task_visit(
+                task_id,
+                macro,
+                excluded=demos,
+            )
+            if len(action_demos) != len(demos) or set(action_demos) & set(demos):
+                raise ValueError("meta-code video/action episodes are not disjoint")
             visits.append(
                 MetaCodeTaskVisit(
                     task_id=task_id,
                     demos=demos,
+                    action_demos=action_demos,
                     frame_cost=sum(self.frame_counts[task_id][demo] for demo in demos),
                 )
             )
@@ -90,16 +97,15 @@ class MetaCodeTrainingSchedule:
         ordered = sorted(
             visits, key=lambda row: (-row.frame_cost, tie_rank[row.task_id])
         )
-        groups: list[list[MetaCodeTaskVisit]] = [
-            [] for _ in range(self.world_size)
-        ]
+        groups: list[list[MetaCodeTaskVisit]] = [[] for _ in range(self.world_size)]
         loads = [0] * self.world_size
         rank_offset = (self.seed + macro) % self.world_size
         for visit in ordered:
             rank = min(
                 range(self.world_size),
                 key=lambda value: (
-                    loads[value], (value - rank_offset) % self.world_size
+                    loads[value],
+                    (value - rank_offset) % self.world_size,
                 ),
             )
             groups[rank].append(visit)
@@ -140,9 +146,7 @@ def controlled_process_input(
         lengths.append(int(control.content.numel()))
     content = torch.cat(content_parts)
     positions = torch.cat(position_parts)
-    offsets_out = torch.tensor(
-        [0, *np.cumsum(lengths).tolist()], dtype=torch.long
-    )
+    offsets_out = torch.tensor([0, *np.cumsum(lengths).tolist()], dtype=torch.long)
     return ControlledProcessInput(
         features=LanguageAxialProcessFeatures(
             text_queries=features.text_queries,

@@ -26,6 +26,8 @@ ROLE_NAMES = {
     "test",
     "final_source",
     "nonheld_meta",
+    "nonheld_meta_train",
+    "nonheld_meta_validation",
 }
 DERIVED_ROLE_NAMES = {"seen_panel"}
 SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
@@ -70,7 +72,9 @@ def _read_object(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise Pi05EvaluationError(f"invalid evaluation JSON authority: {path}") from error
+        raise Pi05EvaluationError(
+            f"invalid evaluation JSON authority: {path}"
+        ) from error
     if not isinstance(value, dict):
         raise Pi05EvaluationError(f"evaluation authority is not an object: {path}")
     return value
@@ -89,7 +93,9 @@ def _validate_source_normalization(
         or int(authority.get("validation_or_test_numeric_reads", -1)) != 0
         or set(normalization.get("stats", {})) != {"observation.state", "action"}
     ):
-        raise Pi05EvaluationError("evaluation normalization is not the sealed source-only authority")
+        raise Pi05EvaluationError(
+            "evaluation normalization is not the sealed source-only authority"
+        )
 
 
 def _validate_recipe(config: Mapping[str, Any], protocol: Mapping[str, Any]) -> None:
@@ -131,11 +137,17 @@ def _validate_recipe(config: Mapping[str, Any], protocol: Mapping[str, Any]) -> 
         "policy_noise_device": "cpu_generator_then_transfer",
     }
     if policy != required_policy:
-        raise Pi05EvaluationError("PI05 target evaluator differs from the official policy recipe")
+        raise Pi05EvaluationError(
+            "PI05 target evaluator differs from the official policy recipe"
+        )
     if environment != required_environment:
-        raise Pi05EvaluationError("PI05 target evaluator differs from the official environment recipe")
+        raise Pi05EvaluationError(
+            "PI05 target evaluator differs from the official environment recipe"
+        )
     if config.get("rng") != required_rng:
-        raise Pi05EvaluationError("PI05 target evaluator differs from the sealed RNG recipe")
+        raise Pi05EvaluationError(
+            "PI05 target evaluator differs from the sealed RNG recipe"
+        )
     parallel = config["parallel"]
     physical_gpu_count = int(parallel.get("physical_gpu_count", 0))
     if (
@@ -194,10 +206,15 @@ def load_evaluation_authorities(
     if (
         audit.get("schema_version") != "ember_pi05_source_overlap_v1"
         or len(targets) != 40
-        or target_keys != {(suite, task_id) for suite in SUITE_ORDER for task_id in range(10)}
+        or target_keys
+        != {(suite, task_id) for suite in SUITE_ORDER for task_id in range(10)}
     ):
-        raise Pi05EvaluationError("overlap audit is not the complete target-40 authority")
-    _validate_source_normalization(values["normalization"], values["source_base_config"])
+        raise Pi05EvaluationError(
+            "overlap audit is not the complete target-40 authority"
+        )
+    _validate_source_normalization(
+        values["normalization"], values["source_base_config"]
+    )
     _validate_recipe(config, protocol)
     return EvaluationAuthorities(
         repo_root=repo_root,
@@ -217,21 +234,49 @@ def load_evaluation_authorities(
 
 def split_role(protocol: Mapping[str, Any], suite: str, task_id: int) -> str:
     suite_roles = protocol["split"]["suites"][suite]
-    matches = [name for name in ("train", "validation", "test") if task_id in suite_roles[name]]
+    matches = [
+        name for name in ("train", "validation", "test") if task_id in suite_roles[name]
+    ]
     if len(matches) != 1:
-        raise Pi05EvaluationError(f"target task has ambiguous split role: {suite}/{task_id}")
+        raise Pi05EvaluationError(
+            f"target task has ambiguous split role: {suite}/{task_id}"
+        )
     return matches[0]
 
 
 def _resolve_nonheld_meta_task_keys(
     meta_protocol: Mapping[str, Any] | None,
+    role: str,
 ) -> tuple[tuple[str, int], ...]:
     if meta_protocol is None:
         raise Pi05EvaluationError("non-held meta evaluation lacks its authority")
     task_ids = tuple(int(value) for value in meta_protocol["active_source_task_ids"])
     if len(task_ids) != 71 or tuple(sorted(set(task_ids))) != task_ids:
         raise Pi05EvaluationError("non-held meta evaluation role changed")
-    return tuple(("libero_90", task_id) for task_id in task_ids)
+    held_fold = int(meta_protocol["roles"]["architecture_validation"]["default_fold"])
+    held_ids = {
+        int(value)
+        for row in meta_protocol["task_level_cross_validation"]["folds"]
+        if int(row["fold"]) == held_fold
+        for value in row["task_ids"]
+    }
+    selected = (
+        task_ids
+        if role == "nonheld_meta"
+        else tuple(
+            task_id
+            for task_id in task_ids
+            if (task_id in held_ids) == (role == "nonheld_meta_validation")
+        )
+    )
+    expected_count = {
+        "nonheld_meta": 71,
+        "nonheld_meta_train": 56,
+        "nonheld_meta_validation": 15,
+    }.get(role)
+    if expected_count is None or len(selected) != expected_count:
+        raise Pi05EvaluationError("non-held meta evaluation split changed")
+    return tuple(("libero_90", task_id) for task_id in selected)
 
 
 def _resolve_seen_panel_task_keys(
@@ -240,9 +285,7 @@ def _resolve_seen_panel_task_keys(
     if seen_panel is None:
         raise Pi05EvaluationError("seen-panel evaluation lacks its sealed authority")
     tasks = seen_panel.get("tasks", [])
-    keys = tuple(
-        (str(row.get("suite")), int(row.get("task_id", -1))) for row in tasks
-    )
+    keys = tuple((str(row.get("suite")), int(row.get("task_id", -1))) for row in tasks)
     expected_global_ids = (
         [SUITE_ORDER.index(suite) * 10 + task_id for suite, task_id in keys]
         if all(suite in SUITE_ORDER for suite, _ in keys)
@@ -255,8 +298,7 @@ def _resolve_seen_panel_task_keys(
         seen_panel.get("schema_version") == "ember_pi05_seen_panel_v1"
         and seen_panel.get("selection", {}).get("role") == "train"
         and int(seen_panel.get("selection", {}).get("policy_outcome_reads", -1)) == 0
-        and int(seen_panel.get("selection", {}).get("trajectory_value_reads", -1))
-        == 0
+        and int(seen_panel.get("selection", {}).get("trajectory_value_reads", -1)) == 0
         and len(keys) == len(set(keys)) == 8
         and suite_counts == {suite: 2 for suite in SUITE_ORDER}
         and all(
@@ -264,8 +306,7 @@ def _resolve_seen_panel_task_keys(
             and row.get("split_role") == "train"
             for row, (suite, task_id) in zip(tasks, keys, strict=True)
         )
-        and seen_panel.get("summary", {}).get("global_task_ids")
-        == expected_global_ids
+        and seen_panel.get("summary", {}).get("global_task_ids") == expected_global_ids
         and int(seen_panel.get("summary", {}).get("tasks", -1)) == 8
     )
     if not valid:
@@ -281,8 +322,8 @@ def resolve_role_task_keys(
 ) -> tuple[tuple[str, int], ...]:
     if role not in ROLE_NAMES | DERIVED_ROLE_NAMES:
         raise Pi05EvaluationError(f"unsupported PI05 evaluation role: {role}")
-    if role == "nonheld_meta":
-        return _resolve_nonheld_meta_task_keys(meta_protocol)
+    if role.startswith("nonheld_meta"):
+        return _resolve_nonheld_meta_task_keys(meta_protocol, role)
     if role == "seen_panel":
         return _resolve_seen_panel_task_keys(protocol, seen_panel)
     keys: list[tuple[str, int]] = []
@@ -315,13 +356,11 @@ def inspect_installed_target_tasks(
     paths = prepare_libero_config(libero_config_dir)
     from libero.libero import benchmark, get_libero_path
 
-    meta_role = role == "nonheld_meta"
+    meta_role = role.startswith("nonheld_meta")
     audit_rows = authorities.overlap_audit[
         "source_tasks" if meta_role else "target_tasks"
     ]
-    audit_by_key = {
-        (row["suite"], int(row["task_id"])): row for row in audit_rows
-    }
+    audit_by_key = {(row["suite"], int(row["task_id"])): row for row in audit_rows}
     sealed_test_by_key = {
         (row["suite"], int(row["task_id"])): row
         for row in authorities.protocol["test_tasks"]
@@ -358,29 +397,37 @@ def inspect_installed_target_tasks(
             or task.problem_folder != sealed["problem_folder"]
             or task.bddl_file != sealed["bddl_file"]
         ):
-            raise Pi05EvaluationError(f"installed LIBERO task differs: {suite_name}/{task_id}")
-        bddl_path = Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
+            raise Pi05EvaluationError(
+                f"installed LIBERO task differs: {suite_name}/{task_id}"
+            )
+        bddl_path = (
+            Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
+        )
         init_path = (
             Path(get_libero_path("init_states"))
             / suite_name
             / f"{Path(task.bddl_file).stem}.pruned_init"
         )
-        if (
-            not bddl_path.is_file()
-            or bddl_path.stat().st_size != int(sealed["bddl_bytes"])
+        if not bddl_path.is_file() or bddl_path.stat().st_size != int(
+            sealed["bddl_bytes"]
         ):
-            raise Pi05EvaluationError(f"installed BDDL size differs: {suite_name}/{task_id}")
+            raise Pi05EvaluationError(
+                f"installed BDDL size differs: {suite_name}/{task_id}"
+            )
         init_states = suite.get_task_init_states(task_id)
         if not init_path.is_file() or len(init_states) < formal_count:
-            raise Pi05EvaluationError(f"installed fixed states incomplete: {suite_name}/{task_id}")
+            raise Pi05EvaluationError(
+                f"installed fixed states incomplete: {suite_name}/{task_id}"
+            )
         task_role = (
-            "meta_validation_oracle" if task_id in held_meta_ids else "meta_train"
-        ) if meta_role else split_role(authorities.protocol, suite_name, task_id)
+            ("meta_validation_oracle" if task_id in held_meta_ids else "meta_train")
+            if meta_role
+            else split_role(authorities.protocol, suite_name, task_id)
+        )
         if task_role == "test":
             sealed_test = sealed_test_by_key.get((suite_name, task_id))
-            if (
-                sealed_test is None
-                or init_path.name != sealed_test.get("init_states_file")
+            if sealed_test is None or init_path.name != sealed_test.get(
+                "init_states_file"
             ):
                 raise Pi05EvaluationError(
                     f"installed test fixed-state file differs: {suite_name}/{task_id}"
@@ -431,13 +478,16 @@ def git_state(repo_root: Path) -> dict[str, Any]:
     commit = run("rev-parse", "HEAD")
     authority_ref = "origin/main"
     authority_commit = run("rev-parse", authority_ref)
-    authority_contains_commit = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", commit, authority_commit],
-        cwd=repo_root,
-        check=False,
-        text=True,
-        capture_output=True,
-    ).returncode == 0
+    authority_contains_commit = (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", commit, authority_commit],
+            cwd=repo_root,
+            check=False,
+            text=True,
+            capture_output=True,
+        ).returncode
+        == 0
+    )
     return {
         "branch": branch,
         "commit": commit,
@@ -467,10 +517,7 @@ def git_state_is_clean_pushed_or_frozen_authority(
         state.get("authority_ref") == "origin/main"
         and state.get("authority_contains_commit") is True
     )
-    detached = (
-        state.get("branch") == ""
-        and state.get("upstream") is None
-    )
+    detached = state.get("branch") == "" and state.get("upstream") is None
     return authority and (tracked or detached)
 
 
@@ -537,7 +584,9 @@ def _verified_model_files(
             and path.stat().st_size == int(record["bytes"])
         )
         if not valid:
-            raise Pi05EvaluationError(f"source checkpoint model file changed: {relative}")
+            raise Pi05EvaluationError(
+                f"source checkpoint model file changed: {relative}"
+            )
         if relative.startswith(f"{FROZEN_SOURCE_POLICY_SUBDIR}/"):
             observed_files.append(
                 {"path": str(record["path"]), "bytes": int(record["bytes"])}
@@ -647,17 +696,22 @@ def inspect_source_checkpoint(
     evaluation_mode: str,
 ) -> dict[str, Any]:
     if evaluation_mode not in {"smoke", "screen", "formal"}:
-        raise Pi05EvaluationError(f"unsupported checkpoint evaluation mode: {evaluation_mode}")
+        raise Pi05EvaluationError(
+            f"unsupported checkpoint evaluation mode: {evaluation_mode}"
+        )
     source_run = source_run.resolve()
     checkpoint = checkpoint.resolve()
-    if checkpoint.parent.parent != source_run or checkpoint.parent.name != "checkpoints":
-        raise Pi05EvaluationError("source checkpoint is not owned by the declared source run")
+    if (
+        checkpoint.parent.parent != source_run
+        or checkpoint.parent.name != "checkpoints"
+    ):
+        raise Pi05EvaluationError(
+            "source checkpoint is not owned by the declared source run"
+        )
     run_contract = _read_object(source_run / "run_contract.json")
     manifest = _read_object(checkpoint / "checkpoint_manifest.json")
     trainer = _read_object(checkpoint / "trainer_state.json")
-    _validate_source_checkpoint_provenance(
-        authorities, run_contract, manifest, trainer
-    )
+    _validate_source_checkpoint_provenance(authorities, run_contract, manifest, trainer)
     model_path, observed_files = _verified_model_files(checkpoint, manifest)
     _validate_model_config(model_path)
     summary_record = None
@@ -691,12 +745,13 @@ def inspect_source_checkpoint(
     }
 
 
-def inspect_tokenizer(authorities: EvaluationAuthorities, tokenizer_path: Path) -> dict[str, Any]:
+def inspect_tokenizer(
+    authorities: EvaluationAuthorities, tokenizer_path: Path
+) -> dict[str, Any]:
     tokenizer_path = tokenizer_path.resolve()
     manifest = authorities.tokenizer_manifest
-    if (
-        not tokenizer_path.is_file()
-        or tokenizer_path.stat().st_size != int(manifest["bytes"])
+    if not tokenizer_path.is_file() or tokenizer_path.stat().st_size != int(
+        manifest["bytes"]
     ):
         raise Pi05EvaluationError("OpenPI tokenizer differs from the sealed authority")
     return {

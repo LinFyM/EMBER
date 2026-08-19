@@ -81,6 +81,9 @@ def test_video_control_choices_cover_the_canonical_writer_backend() -> None:
         "shuffled",
         "shuffled_keep_first",
     }
+    assert {"language_only", "video_only", "wrong_task"}.issubset(
+        choices["functional_writer_video_condition"]
+    )
 
 
 def test_gpu_preflight_queries_only_explicit_devices(
@@ -171,13 +174,14 @@ def test_writer_generation_batch_size_accepts_measured_positive_values() -> None
         module._positive_int("0")
 
 
-def test_writer_profile_requires_real_8_16_32_forward_batches() -> None:
+def test_writer_profile_accepts_ordered_positive_candidate_batches() -> None:
     module = _launcher_module()
     assert module._profile_batch_sizes("8,16,32") == (8, 16, 32)
+    assert module._profile_batch_sizes("1,2,4") == (1, 2, 4)
     with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
         module._profile_batch_sizes("8,8,32")
     with pytest.raises(Pi05EvaluationError, match="batch sizes are invalid"):
-        module._profile_batch_sizes("4,8,16")
+        module._profile_batch_sizes("0,2,4")
 
 
 def test_resume_validation_preserves_dynamic_k_evaluation_cardinality(
@@ -386,6 +390,10 @@ def _empty_adapter_args() -> argparse.Namespace:
         dynamic_k_writer_checkpoint=None,
         dynamic_k_writer_video_data_root=None,
         dynamic_k_writer_video_condition=None,
+        functional_writer_config=None,
+        functional_writer_checkpoint=None,
+        functional_writer_video_data_root=None,
+        functional_writer_video_condition=None,
     )
 
 
@@ -406,6 +414,16 @@ def test_dynamic_k_writer_prepare_arguments_are_all_or_none() -> None:
     complete.dynamic_k_writer_video_condition = "correct"
     assert module._adapter_requests(complete) == (
         "layer_matched_memory_program_compiler_writer",
+        False,
+    )
+
+    functional = argparse.Namespace(**vars(empty))
+    functional.functional_writer_config = Path("config.json")
+    functional.functional_writer_checkpoint = Path("writer-checkpoint")
+    functional.functional_writer_video_data_root = Path("videos")
+    functional.functional_writer_video_condition = "correct"
+    assert module._adapter_requests(functional) == (
+        "fixed_functional_code_writer",
         False,
     )
 

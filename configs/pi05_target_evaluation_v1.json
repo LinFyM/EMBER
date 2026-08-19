@@ -35,7 +35,9 @@
     "validation": "sealed 8 validation tasks",
     "test": "sealed 8 test tasks",
     "final_source": "sealed 24 train plus 8 validation tasks",
-    "nonheld_meta": "71 semantically audited LIBERO-90 tasks with fixed 56/15 roles"
+    "nonheld_meta": "71 semantically audited LIBERO-90 tasks with fixed 56/15 roles",
+    "nonheld_meta_train": "fixed 56-task LIBERO-90 meta-training role",
+    "nonheld_meta_validation": "fixed 15-task LIBERO-90 architecture-validation role"
   },
   "policy": {
     "arm": "frozen_pi05_source_base",

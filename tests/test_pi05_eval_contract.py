@@ -75,7 +75,7 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
                 authorities.protocol,
                 role,
                 authorities.seen_panel if role == "seen_panel" else None,
-                authorities.meta_protocol if role == "nonheld_meta" else None,
+                authorities.meta_protocol if role.startswith("nonheld_meta") else None,
             )
         )
         for role in (
@@ -86,6 +86,8 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
             "test",
             "final_source",
             "nonheld_meta",
+            "nonheld_meta_train",
+            "nonheld_meta_validation",
         )
     } == {
         "all_targets": 40,
@@ -95,6 +97,8 @@ def test_evaluation_authorities_and_roles_are_sealed() -> None:
         "test": 8,
         "final_source": 32,
         "nonheld_meta": 71,
+        "nonheld_meta_train": 56,
+        "nonheld_meta_validation": 15,
     }
     assert resolve_role_task_keys(
         authorities.protocol, "seen_panel", authorities.seen_panel

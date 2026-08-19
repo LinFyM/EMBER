@@ -335,13 +335,18 @@ C macro25为correct/same/wrong/shuffle/keep-first/reverse/no-video=`110/111/54/9
 same-task-other总分都在correct±10，但correct-success row retention仅A/B/C/F5=`85.37/83.65/87.27/85.05%`，
 均未达到专家建议90%；aggregate相近会掩盖具体初始化换手。
 
-### 16.4 decoder容量不是当前首因，head漂移只是放大器
+### 16.4 head漂移是放大器，fixed-head reachability也是真实瓶颈
 
 冻结A macro25的八个FactorHeads续训到macro50得到117而正常续训为84，证明head co-drift显著放大早期崩落；但固定
-heads仍相对123丢33个success rows。更直接的train24 free-Program oracle在完全固定heads下得到659/1200，direct
-experts为658/1200，逐行仅7 gained / 6 lost。即使effective-BA relative L2仍高达`.936`，闭环行为几乎等价。
-所以当前不扩大FactorHeads、rank或decoder width；真正未解的是如何从视频学习到这些policy-effective Program，以及
-shared更新如何保留它们。free Program是privileged接口诊断，不是held route。
+heads仍相对123丢33个success rows。首次F4评测曾错误地没有把投影LoRA安装到policy，所得`659/1200`无效；修复
+wiring并从同一clean authority重跑1200行后，完全固定heads的free-Program投影只有`307/1200`，direct experts为
+`658/1200`。严格配对为253 retained、54 gained、405 lost，Jaccard `.35534`，projected/direct仅`46.66%`，明确未过
+预注册90%门。effective-BA relative L2均值`.93571`也不再与闭环证据矛盾。
+
+因此F3只证明co-drift是放大器，正确F4同时证明A-macro25 FactorHead manifold的reachability不足；不能再以旧结果排除
+decoder/head坐标。后继路线仍优先检验固定、功能锚定decoder，因为它正面处理moving coordinate问题；nonheld-meta
+held-task闭环将决定当前code width/decoder是否足够，若仍失败则需要架构性扩大或重参数化，而不是小扫。free Program
+是privileged接口诊断，不是held route。
 
 ### 16.5 简单occupancy故事和arithmetic mean单因均未通过
 
@@ -357,11 +362,12 @@ AdamW，故Adam moment独立效应仍不可由本实验裁决。
 
 ### 16.6 当前最早未解接口
 
-经过上述反事实后，不能再把当前失败主要归因于“前端没梯度”“LoRA没写出”“rank16太大/太小”“FactorHeads不可达”、
-“简单self-occupancy divergence”或“arithmetic mean必然错误”。absolute问题最早落在
-`language/video/Action/memory -> learned Program`能否把正确动态转成跨suite、跨初始化的policy-effective breadth；
-稳定性问题落在同一shared objective与有限长更新能否保留这些方向。两者相互作用但必须分别报告。当前没有任何新arm
-达到约145或相邻稳定资格，不能把更好的controls当成性能pass，也不能因absolute低而抹掉已验证的因果改进。
+经过上述反事实后，不能再把当前失败主要归因于“前端没梯度”“LoRA没写出”“rank16太大/太小”、
+“简单self-occupancy divergence”或“arithmetic mean必然错误”；但修正后的F4说明FactorHead/decoder reachability不能
+排除，而且是已实证的接口限制。absolute问题至少同时落在两处：固定输出坐标能否覆盖policy-effective directions，
+以及`language/video/Action/memory -> learned code`能否从未见task证据预测这些方向；稳定性问题则落在shared objective与
+有限长更新能否保留它们。三者相互作用但必须分别报告。当前没有任何新arm达到约145或相邻稳定资格，不能把更好的
+controls当成性能pass，也不能因absolute低而抹掉已验证的因果改进。
 
 ## 17. 第二轮独立审查后的后继因果模型
 
@@ -373,10 +379,12 @@ correct-only且同task target恒定的video/language encoder，与一个持续�
 2. object、goal、affordance、端点与粗方向足以解释多数训练监督，完整多阶段process没有被要求成为必要变量；
 3. 即使code局部有用，moving decoder和shared optimizer也会改变它对应的policy方向，造成absolute support弱与相邻换手。
 
-F3/F4应据此重新解释：它们证明固定FactorHeads的policy-functional range充足，并没有证明现有video-to-Program容易；
-free Program可达只回答“某个code存在”，不回答未见task的视频/语言能否预测该code。F2只否定一个关于self-occupancy
-disagreement的窄故事，不能外推为closed-loop distribution不重要。F5说明raw parameter conflict会改变能力分布，但
-standard PCGrad会同时消除有益与有害task-specific directions，因此不能代替功能坐标或闭环外目标。
+F3/F4应据此重新解释：F3证明冻结heads能缓解co-drift但不能保持support；修正后的F4证明在A-macro25固定heads中，
+即使每task自由优化Program也只能保留direct expert的46.66%，所以输出坐标本身不足。该oracle仍不回答未见task的
+视频/语言能否预测code，故后继路线必须把“固定decoder可实现性”和“evidence-to-code推断”设为两个独立gate。F2只
+否定一个关于self-occupancy disagreement的窄故事，不能外推为closed-loop distribution不重要。F5说明raw parameter
+conflict会改变能力分布，但standard PCGrad会同时消除有益与有害task-specific directions，因此不能代替功能坐标或
+闭环外目标。
 
 后继路线的最小因果分解是：
 

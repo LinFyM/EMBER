@@ -9,7 +9,9 @@ from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     inspect_dynamic_k_writer_adapter,
+    inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
 )
@@ -97,6 +99,21 @@ def _reinspect_adapter(
                 adapter.get("information_wall", {}).get("evaluation_k", 1)
             ),
         )
+    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
+        return inspect_functional_code_writer_adapter(
+            config_path=Path(adapter["config"]["path"]),
+            checkpoint=Path(adapter["writer_asset"]["checkpoint"]),
+            video_data_root=Path(adapter["video_data"]["root"]),
+            source=model,
+            tasks=tasks,
+            video_condition=str(adapter["video_condition"]),
+            video_seed=int(adapter["video_schedule"]["seed"]),
+            video_sampling_mode=str(adapter["video_schedule"]["sampling_mode"]),
+            require_formal=require_formal,
+            evaluation_k=int(
+                adapter.get("information_wall", {}).get("evaluation_k", 1)
+            ),
+        )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 
 
@@ -110,7 +127,9 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         or contract["mode"] != "smoke"
         and current_git["dirty_paths"]
     ):
-        raise Pi05EvaluationError("evaluator checkout differs from the sealed run commit")
+        raise Pi05EvaluationError(
+            "evaluator checkout differs from the sealed run commit"
+        )
     expected_role_authority = None
     if contract.get("role") == "seen_panel":
         path = REPO_ROOT / SEEN_PANEL_RELATIVE_PATH
@@ -118,6 +137,13 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
             "path": str(path),
             "bytes": path.stat().st_size,
             "schema_version": authorities.seen_panel.get("schema_version"),
+        }
+    elif str(contract.get("role", "")).startswith("nonheld_meta"):
+        path = Path(authorities.paths["meta_protocol"])
+        expected_role_authority = {
+            "path": str(path),
+            "bytes": path.stat().st_size,
+            "schema_version": authorities.meta_protocol.get("schema_version"),
         }
     if contract.get("role_authority") != expected_role_authority:
         raise Pi05EvaluationError("evaluation role authority changed after prepare")
@@ -136,9 +162,10 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
     ):
         raise Pi05EvaluationError("evaluation normalization changed after prepare")
     adapter = contract.get("adapter")
-    if adapter is not None and _reinspect_adapter(
-        adapter, contract=contract, model=model
-    ) != adapter:
+    if (
+        adapter is not None
+        and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
+    ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
 
 

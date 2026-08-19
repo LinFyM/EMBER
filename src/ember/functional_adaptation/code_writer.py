@@ -150,7 +150,9 @@ class FunctionalCodeWriter(torch.nn.Module):
         video_offsets: torch.Tensor,
         condition_video_offsets: torch.Tensor,
     ) -> torch.Tensor:
-        videos_per_condition = condition_video_offsets[1:] - condition_video_offsets[:-1]
+        videos_per_condition = (
+            condition_video_offsets[1:] - condition_video_offsets[:-1]
+        )
         video_condition_ids = torch.repeat_interleave(
             torch.arange(condition_count, device=device),
             videos_per_condition.to(device),
@@ -212,6 +214,44 @@ class FunctionalCodeWriter(torch.nn.Module):
             video_offsets=video_offsets,
             condition_video_offsets=condition_video_offsets,
         )
+
+    def language_only_adapter(
+        self,
+        *,
+        policy: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> Mapping[str, torch.Tensor]:
+        """Generate a complete LoRA without reading teacher-video frames."""
+
+        text, valid = self.feature_encoder.forward_text_features(
+            policy,
+            language_tokens,
+            language_mask,
+            task_span_mask,
+        )
+        return self.fixed_decoder(self.code_inference.infer_language_code(text, valid))
+
+    def video_only_adapter(
+        self,
+        *,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        frame_indices: torch.Tensor,
+        video_offsets: torch.Tensor,
+        condition_video_offsets: torch.Tensor,
+    ) -> Mapping[str, torch.Tensor]:
+        """Generate a complete LoRA without language or Action-probe reads."""
+
+        visual = self.feature_encoder.forward_visual_features(policy, frames)
+        code = self.code_inference.infer_video_code(
+            visual,
+            frame_indices,
+            video_offsets,
+            condition_video_offsets,
+        )
+        return self.fixed_decoder(code)
 
     def forward(
         self,

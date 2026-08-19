@@ -197,15 +197,16 @@ upstream/objective与fixed-head reachability。
 ## F4 fixed-head reachability oracle
 
 `reachability_evidence.json`把24个train-task experts投影到A macro25固定FactorHeads的自由Program oracle，并公开
-全部误差、1200条严格配对closed-loop rows和provenance：
+全部误差、1200条严格配对closed-loop rows和provenance。首次rollout没有实际安装投影LoRA，旧`659/1200`无效；
+下列数字来自修复wiring后的完整重跑：
 
-- direct experts为658/1200，projected为659/1200，即`100.15%` retained aggregate；
-- 逐行是652 retained / 7 gained / 6 lost，Jaccard `.98045`、McNemar `p=1.0`；
+- direct experts为658/1200，projected为307/1200，即direct的`46.66%`；
+- 逐行是253 retained / 54 gained / 405 lost，Jaccard `.35534`、McNemar `p=1.43e-67`；
 - effective-BA relative L2均值仍为`.93571`，q/v/action-in/action-out分别为
   `.95212/.84250/.59157/.46702`。
 
-这使预注册90%门明确通过：固定head manifold在train24上可以承载policy-effective expert行为，故当前不扩大
-FactorHeads或rank。高tensor reconstruction error与近等价closed-loop并存，也再次证明reconstruction不能选择方法。
+这使预注册90%门明确失败：当前固定head manifold即使给每task自由Program也不能承载多数policy-effective expert
+行为，reachability是实证瓶颈。tensor reconstruction error仍不能单独选择方法，但其方向与本次闭环失败一致。
 privileged free Programs和投影adapter只用于接口定位，不是held deployment路线。
 
 ## F5 matched shared-gradient intervention

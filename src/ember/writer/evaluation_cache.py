@@ -15,6 +15,7 @@ from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     validate_writer_episode,
     writer_episode_schema,
@@ -41,6 +42,19 @@ DYNAMIC_K_WRITER_LORA_VIDEO_KEY_ALGORITHM = (
 DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM = (
     "one_entry_per_episode_dynamic_k_nested_video_set_v1"
 )
+FUNCTIONAL_CODE_WRITER_LORA_CACHE_SCHEMA = "ember_functional_code_writer_lora_cache_v1"
+FUNCTIONAL_CODE_WRITER_LORA_CACHE_ENTRY_SCHEMA = (
+    "ember_functional_code_writer_lora_cache_entry_v1"
+)
+FUNCTIONAL_CODE_WRITER_LORA_CACHE_MANIFEST_SCHEMA = (
+    "ember_functional_code_writer_lora_cache_manifest_v1"
+)
+FUNCTIONAL_CODE_WRITER_LORA_GENERATOR_MARKER_SCHEMA = (
+    "ember_functional_code_writer_lora_generator_marker_v1"
+)
+FUNCTIONAL_CODE_WRITER_LORA_KEY_ALGORITHM = (
+    "one_entry_per_episode_functional_code_nested_video_set_v1"
+)
 WRITER_LORA_VIDEO_REQUEST_ORDER = WRITER_LORA_REQUEST_ORDER
 WRITER_LORA_ASSIGNMENT = (
     "sealed request order chunked by generation_batch_size into contiguous global "
@@ -58,9 +72,7 @@ _TORCH_DTYPE_NAMES = {
 def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
     kind = adapter.get("kind")
     if kind == DYNAMIC_K_WRITER_KIND:
-        evaluation_k = int(
-            adapter.get("information_wall", {}).get("evaluation_k", 1)
-        )
+        evaluation_k = int(adapter.get("information_wall", {}).get("evaluation_k", 1))
         return {
             "cache": DYNAMIC_K_WRITER_LORA_CACHE_SCHEMA,
             "entry": DYNAMIC_K_WRITER_LORA_CACHE_ENTRY_SCHEMA,
@@ -71,6 +83,14 @@ def _writer_cache_schemas(adapter: Mapping[str, Any]) -> dict[str, str]:
                 if evaluation_k == 1
                 else DYNAMIC_K_WRITER_LORA_VIDEO_SET_KEY_ALGORITHM
             ),
+        }
+    if kind == FUNCTIONAL_CODE_WRITER_KIND:
+        return {
+            "cache": FUNCTIONAL_CODE_WRITER_LORA_CACHE_SCHEMA,
+            "entry": FUNCTIONAL_CODE_WRITER_LORA_CACHE_ENTRY_SCHEMA,
+            "manifest": FUNCTIONAL_CODE_WRITER_LORA_CACHE_MANIFEST_SCHEMA,
+            "marker": FUNCTIONAL_CODE_WRITER_LORA_GENERATOR_MARKER_SCHEMA,
+            "key_algorithm": FUNCTIONAL_CODE_WRITER_LORA_KEY_ALGORITHM,
         }
     raise WriterModelError("Writer cache adapter kind changed")
 
@@ -503,9 +523,7 @@ def write_writer_cache_entry(
         write_json_atomic(
             temporary / "entry.json",
             {
-                "schema_version": _writer_cache_schemas(contract["adapter"])[
-                    "entry"
-                ],
+                "schema_version": _writer_cache_schemas(contract["adapter"])["entry"],
                 "cache_reference": descriptor["reference"],
                 "cache_identity": descriptor["identity"],
                 "entry_id": request.entry_id,

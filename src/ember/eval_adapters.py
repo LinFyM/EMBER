@@ -13,8 +13,15 @@ STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 # Retained only so CPU analysis can read immutable historical result rows.
 EXPERT_MANIFOLD_WRITER_KIND = "expert_manifold_writer"
 DYNAMIC_K_WRITER_KIND = "layer_matched_memory_program_compiler_writer"
-WRITER_ADAPTER_KINDS = frozenset({DYNAMIC_K_WRITER_KIND})
-PAIRED_WRITER_KINDS = frozenset({EXPERT_MANIFOLD_WRITER_KIND, DYNAMIC_K_WRITER_KIND})
+FUNCTIONAL_CODE_WRITER_KIND = "fixed_functional_code_writer"
+WRITER_ADAPTER_KINDS = frozenset({DYNAMIC_K_WRITER_KIND, FUNCTIONAL_CODE_WRITER_KIND})
+PAIRED_WRITER_KINDS = frozenset(
+    {
+        EXPERT_MANIFOLD_WRITER_KIND,
+        DYNAMIC_K_WRITER_KIND,
+        FUNCTIONAL_CODE_WRITER_KIND,
+    }
+)
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -62,16 +69,38 @@ def dynamic_k_writer_requested(args: Any) -> bool:
     )
 
 
+def functional_code_writer_requested(args: Any) -> bool:
+    return _all_or_none(
+        (
+            getattr(args, "functional_writer_config", None),
+            getattr(args, "functional_writer_checkpoint", None),
+            getattr(args, "functional_writer_video_data_root", None),
+            getattr(args, "functional_writer_video_condition", None),
+        ),
+        "Functional-Code Writer",
+    )
+
+
 def adapter_requests(args: Any) -> tuple[str | None, bool]:
     sft_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
     dynamic_k_requested = dynamic_k_writer_requested(args)
-    if sum((sft_requested, expert_requested, dynamic_k_requested)) > 1:
+    functional_requested = functional_code_writer_requested(args)
+    if (
+        sum(
+            (sft_requested, expert_requested, dynamic_k_requested, functional_requested)
+        )
+        > 1
+    ):
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
     kind = (
         "task_expert"
         if expert_requested
-        else DYNAMIC_K_WRITER_KIND if dynamic_k_requested else None
+        else (
+            DYNAMIC_K_WRITER_KIND
+            if dynamic_k_requested
+            else FUNCTIONAL_CODE_WRITER_KIND if functional_requested else None
+        )
     )
     return kind, sft_requested
 
@@ -179,6 +208,41 @@ def inspect_dynamic_k_writer_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def inspect_functional_code_writer_adapter(
+    *,
+    config_path: Path,
+    checkpoint: Path,
+    video_data_root: Path,
+    source: Mapping[str, Any],
+    tasks: Sequence[Any],
+    video_condition: str,
+    video_seed: int,
+    video_sampling_mode: str,
+    require_formal: bool,
+    evaluation_k: int = 1,
+) -> dict[str, Any]:
+    from ember.functional_adaptation.evaluation import (
+        inspect_functional_code_writer_evaluation,
+    )
+    from ember.writer.errors import WriterModelError
+
+    try:
+        return inspect_functional_code_writer_evaluation(
+            config_path=config_path,
+            checkpoint=checkpoint,
+            video_data_root=video_data_root,
+            source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            video_condition=video_condition,
+            video_seed=video_seed,
+            video_sampling_mode=video_sampling_mode,
+            require_formal=require_formal,
+            evaluation_k=evaluation_k,
+        )
+    except (ValueError, WriterModelError) as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
 def reinspect_writer_adapter(
     adapter: Mapping[str, Any],
     *,
@@ -200,13 +264,19 @@ def reinspect_writer_adapter(
         "video_sampling_mode": str(adapter["video_schedule"]["sampling_mode"]),
         "require_formal": require_formal,
     }
+    common["evaluation_k"] = int(
+        adapter.get("information_wall", {}).get("evaluation_k", 1)
+    )
     if kind == DYNAMIC_K_WRITER_KIND:
         from ember.writer.evaluation import inspect_dynamic_k_writer_evaluation
 
-        common["evaluation_k"] = int(
-            adapter.get("information_wall", {}).get("evaluation_k", 1)
-        )
         return inspect_dynamic_k_writer_evaluation(**common)
+    if kind == FUNCTIONAL_CODE_WRITER_KIND:
+        from ember.functional_adaptation.evaluation import (
+            inspect_functional_code_writer_evaluation,
+        )
+
+        return inspect_functional_code_writer_evaluation(**common)
     raise Pi05EvaluationError("retired Writer adapter kind")
 
 
@@ -223,6 +293,18 @@ def expected_writer_episode(
         from ember.writer.evaluation import expected_dynamic_k_episode_evidence
 
         result = expected_dynamic_k_episode_evidence(
+            adapter,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+            lora_reference=lora_reference,
+        )
+    elif adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
+        from ember.functional_adaptation.evaluation import (
+            expected_functional_code_writer_episode,
+        )
+
+        result = expected_functional_code_writer_episode(
             adapter,
             suite=suite,
             task_id=task_id,
@@ -254,6 +336,18 @@ def validate_writer_episode(
             task_id=task_id,
             init_state_id=init_state_id,
         )
+    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
+        from ember.functional_adaptation.evaluation import (
+            validate_functional_code_writer_episode,
+        )
+
+        return validate_functional_code_writer_episode(
+            adapter,
+            row,
+            suite=suite,
+            task_id=task_id,
+            init_state_id=init_state_id,
+        )
     return False
 
 
@@ -262,6 +356,12 @@ def writer_episode_schema(adapter: Mapping[str, Any]) -> str:
         from ember.writer.evaluation import dynamic_k_episode_schema
 
         return dynamic_k_episode_schema(adapter)
+    if adapter.get("kind") == FUNCTIONAL_CODE_WRITER_KIND:
+        from ember.functional_adaptation.evaluation import (
+            functional_code_writer_episode_schema,
+        )
+
+        return functional_code_writer_episode_schema(adapter)
     raise Pi05EvaluationError("retired Writer adapter kind")
 
 
@@ -301,9 +401,15 @@ def load_evaluation_adapter(
         raise Pi05EvaluationError("retired evaluation adapter kind")
     common["tokenizer_path"] = Path(contract["tokenizer"]["path"])
     if writer_generation:
-        from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
+        if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
+            from ember.writer.live_adapter import FrozenDynamicKTaskAdapter
 
-        return FrozenDynamicKTaskAdapter(**common)
+            return FrozenDynamicKTaskAdapter(**common)
+        from ember.functional_adaptation.evaluation_runtime import (
+            FrozenFunctionalCodeTaskAdapter,
+        )
+
+        return FrozenFunctionalCodeTaskAdapter(**common)
     from ember.writer.evaluation_runtime import FrozenCachedWriterTaskAdapter
 
     common["cache_contract"] = contract

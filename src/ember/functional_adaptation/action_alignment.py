@@ -62,25 +62,38 @@ class PrivilegedMetaActionStore:
         self,
         *,
         task_id: int,
-        demos: Sequence[int],
+        video_demos: Sequence[int],
+        action_demos: Sequence[int],
         frame_indices: torch.Tensor,
         video_offsets: torch.Tensor,
         device: torch.device,
     ) -> torch.Tensor:
         offsets = video_offsets.detach().cpu().tolist()
-        if len(demos) != len(offsets) - 1:
-            raise ValueError("action targets differ from video ownership")
+        if (
+            len(video_demos) != len(action_demos)
+            or len(video_demos) != len(offsets) - 1
+            or set(map(int, video_demos)) & set(map(int, action_demos))
+        ):
+            raise ValueError("action targets are not cross-episode video pairs")
         rows = []
         handle = self._handle(task_id)
         indices = frame_indices.detach().cpu().tolist()
-        for demo_index, (start, stop) in zip(demos, zip(offsets, offsets[1:])):
+        for action_demo, (start, stop) in zip(
+            action_demos, zip(offsets, offsets[1:]), strict=True
+        ):
             actions = np.asarray(
-                handle[f"data/demo_{int(demo_index)}/actions"], dtype=np.float32
+                handle[f"data/demo_{int(action_demo)}/actions"], dtype=np.float32
             )
-            for frame in indices[start:stop]:
-                right = min(int(frame) + self.horizon, actions.shape[0])
+            video_positions = np.asarray(indices[start:stop], dtype=np.float32)
+            video_final = max(float(video_positions.max()), 1.0)
+            action_positions = np.rint(
+                video_positions / video_final * (actions.shape[0] - 1)
+            ).astype(np.int64)
+            for action_position in action_positions:
+                left = int(action_position)
+                right = min(left + self.horizon, actions.shape[0])
                 chunk = np.repeat(actions[right - 1 : right], self.horizon, axis=0)
-                chunk[: right - int(frame)] = actions[int(frame) : right]
+                chunk[: right - left] = actions[left:right]
                 normalized = (chunk - self.q01) / (self.q99 - self.q01 + 1e-6)
                 normalized = normalized * 2.0 - 1.0
                 rows.append(

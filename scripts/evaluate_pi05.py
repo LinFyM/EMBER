@@ -34,7 +34,11 @@ from ember.pi05_eval.recovery import (
 )
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     adapter_requests as _adapter_requests,
+)
+from ember.functional_adaptation.evaluation import (
+    FUNCTIONAL_CODE_WRITER_VIDEO_CONDITIONS,
 )
 from ember.writer.evaluation import DYNAMIC_K_VIDEO_CONDITIONS
 from ember.pi05_eval_contract import (
@@ -107,6 +111,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "test",
             "final_source",
             "nonheld_meta",
+            "nonheld_meta_train",
+            "nonheld_meta_validation",
         ),
         required=True,
     )
@@ -151,6 +157,21 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         choices=(1, 2, 3, 4),
         default=1,
         help="Number of correct action-hidden teaching videos supplied to one Writer call.",
+    )
+    parser.add_argument("--functional-writer-config", type=Path)
+    parser.add_argument("--functional-writer-checkpoint", type=Path)
+    parser.add_argument("--functional-writer-video-data-root", type=Path)
+    parser.add_argument(
+        "--functional-writer-video-condition",
+        choices=tuple(sorted(FUNCTIONAL_CODE_WRITER_VIDEO_CONDITIONS)),
+    )
+    parser.add_argument(
+        "--functional-writer-video-sampling",
+        choices=("with_replacement", "without_replacement"), default="without_replacement",
+    )
+    parser.add_argument(
+        "--functional-writer-evaluation-k",
+        type=int, choices=(1, 2, 3, 4), default=1,
     )
 
 
@@ -248,7 +269,6 @@ def _profile_batch_sizes(value: str) -> tuple[int, ...]:
     if (
         result != tuple(sorted(set(result)))
         or len(result) < 3
-        or not {8, 16, 32}.issubset(result)
         or any(item <= 0 for item in result)
     ):
         raise Pi05EvaluationError("Writer profile batch sizes are invalid")
@@ -354,31 +374,46 @@ def profile_writer_worker_run(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
-def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
-    sizes = _profile_batch_sizes(args.profile_batch_sizes)
+def _writer_profile_request(args: argparse.Namespace, sizes: tuple[int, ...]) -> tuple[str, tuple[int, ...]]:
     writer_kind, source_sft_requested = _adapter_requests(args)
     physical_args = _parse_gpu_indices(args.gpu_indices)
-    state = git_state(REPO_ROOT)
+    video_condition = (
+        args.dynamic_k_writer_video_condition
+        if writer_kind == DYNAMIC_K_WRITER_KIND
+        else args.functional_writer_video_condition
+    )
+    video_sampling = (
+        args.dynamic_k_writer_video_sampling
+        if writer_kind == DYNAMIC_K_WRITER_KIND
+        else args.functional_writer_video_sampling
+    )
+    role_tasks = 15 if args.role == "nonheld_meta_validation" else 8
     if (
         args.mode != "smoke"
-        or args.role != "validation"
-        or args.state_count < (sizes[-1] + 7) // 8
+        or args.role not in {"validation", "nonheld_meta_validation"}
+        or args.state_count < (sizes[-1] + role_tasks - 1) // role_tasks
         or args.replicas_per_gpu != 1
         or args.writer_generators_per_gpu != 1
-        or writer_kind != DYNAMIC_K_WRITER_KIND
+        or writer_kind not in {DYNAMIC_K_WRITER_KIND, FUNCTIONAL_CODE_WRITER_KIND}
         or source_sft_requested
-        or args.dynamic_k_writer_video_condition != "correct"
-        or args.dynamic_k_writer_video_sampling != "without_replacement"
+        or video_condition != "correct"
+        or video_sampling != "without_replacement"
         or physical_args is None
         or len(physical_args) != 1
         or int(args.profile_warmup_runs) < 1
         or int(args.profile_measured_runs) < 2
-        or not git_state_is_clean_pushed_or_frozen_authority(state)
+        or not git_state_is_clean_pushed_or_frozen_authority(git_state(REPO_ROOT))
     ):
         raise Pi05EvaluationError(
             "Writer generation profile requires a clean frozen validation/correct "
             "single-A40 smoke contract"
         )
+    return writer_kind, physical_args
+
+
+def profile_writer_run(args: argparse.Namespace) -> dict[str, Any]:
+    sizes = _profile_batch_sizes(args.profile_batch_sizes)
+    _writer_profile_request(args, sizes)
     args.writer_generation_batch_size = sizes[-1]
     prepare_run(args, create_evaluation_queue=False)
     contract = load_run_contract(args.output_dir.resolve() / "run_contract.json")

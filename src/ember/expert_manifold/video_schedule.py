@@ -16,6 +16,7 @@ from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 
 
 SAME_TASK_OTHER_OFFSET = 17
+VIDEO_SCHEDULE_SUITES = (*SUITE_ORDER, "libero_90")
 VIDEO_CONDITIONS = {
     "correct",
     "same_task_other",
@@ -23,7 +24,15 @@ VIDEO_CONDITIONS = {
     "no_video",
     *TEMPORAL_PROCESS_VIDEO_CONDITIONS,
 }
+_FUNCTIONAL_ONLY_CONDITIONS = {"wrong_task", "language_only", "video_only"}
+_ALL_SCHEDULE_CONDITIONS = VIDEO_CONDITIONS | _FUNCTIONAL_ONLY_CONDITIONS
 SAMPLING_MODES = {"with_replacement", "without_replacement"}
+
+
+def _valid_video_task_key(suite: str, task_id: int) -> bool:
+    return suite in VIDEO_SCHEDULE_SUITES and 0 <= task_id < (
+        90 if suite == "libero_90" else 10
+    )
 
 
 def task_video_mapping(
@@ -31,7 +40,7 @@ def task_video_mapping(
     task_roles: Mapping[tuple[str, int], str],
     condition: str,
 ) -> tuple[dict[str, Any], ...]:
-    if condition not in VIDEO_CONDITIONS or not task_keys:
+    if condition not in _ALL_SCHEDULE_CONDITIONS or not task_keys:
         raise ExpertManifoldError("invalid Expert-Manifold video mapping")
     normalized = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
     if len(set(normalized)) != len(normalized):
@@ -52,9 +61,10 @@ def task_video_mapping(
             )
             for suite in SUITE_ORDER
         }
-        if any(not values for values in by_suite.values()) or len(
-            {len(values) for values in by_suite.values()}
-        ) != 1:
+        if (
+            any(not values for values in by_suite.values())
+            or len({len(values) for values in by_suite.values()}) != 1
+        ):
             raise ExpertManifoldError("cross-suite video control panel is unbalanced")
         for suite in SUITE_ORDER:
             for ordinal, task_id in enumerate(by_suite[suite]):
@@ -98,15 +108,21 @@ def video_selection_seed(
 ) -> int:
     if (
         root_seed < 0
-        or suite not in SUITE_ORDER
-        or not 0 <= task_id < 10
+        or not _valid_video_task_key(suite, task_id)
         or init_state_id < 0
         or sampling_mode not in SAMPLING_MODES
     ):
         raise ExpertManifoldError("invalid one-shot video selection key")
     tag = 1 if sampling_mode == "with_replacement" else 2
     values = np.random.SeedSequence(
-        [root_seed, SUITE_ORDER.index(suite), task_id, init_state_id, tag, 0xE901]
+        [
+            root_seed,
+            VIDEO_SCHEDULE_SUITES.index(suite),
+            task_id,
+            init_state_id,
+            tag,
+            0xE901,
+        ]
     ).generate_state(2, dtype=np.uint32)
     return (int(values[0]) << 31 | int(values[1])) & ((1 << 63) - 1)
 
@@ -138,7 +154,13 @@ def reference_demo_index(
     block, position = divmod(init_state_id, demo_count)
     rng = np.random.default_rng(
         np.random.SeedSequence(
-            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+            [
+                root_seed,
+                VIDEO_SCHEDULE_SUITES.index(suite),
+                task_id,
+                block,
+                0xE901,
+            ]
         )
     )
     return int(rng.permutation(demo_count)[position])
@@ -178,7 +200,13 @@ def reference_demo_indices(
     block, position = divmod(init_state_id, demo_count)
     rng = np.random.default_rng(
         np.random.SeedSequence(
-            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+            [
+                root_seed,
+                VIDEO_SCHEDULE_SUITES.index(suite),
+                task_id,
+                block,
+                0xE901,
+            ]
         )
     )
     permutation = rng.permutation(demo_count)
@@ -198,7 +226,7 @@ def condition_demo_index(
     demo_count: int,
     sampling_mode: str,
 ) -> int:
-    if condition not in VIDEO_CONDITIONS:
+    if condition not in _ALL_SCHEDULE_CONDITIONS:
         raise ExpertManifoldError("invalid one-shot video condition")
     reference = reference_demo_index(
         root_seed,
@@ -233,7 +261,7 @@ def paired_condition_demo_indices(
     condition's reference videos.
     """
 
-    if condition not in VIDEO_CONDITIONS:
+    if condition not in _ALL_SCHEDULE_CONDITIONS:
         raise ExpertManifoldError("invalid video-set condition")
     reference = reference_demo_indices(
         root_seed,
@@ -256,7 +284,13 @@ def paired_condition_demo_indices(
     block, position = divmod(init_state_id, demo_count)
     permutation = np.random.default_rng(
         np.random.SeedSequence(
-            [root_seed, SUITE_ORDER.index(suite), task_id, block, 0xE901]
+            [
+                root_seed,
+                VIDEO_SCHEDULE_SUITES.index(suite),
+                task_id,
+                block,
+                0xE901,
+            ]
         )
     ).permutation(demo_count)
     selected = tuple(
@@ -301,13 +335,18 @@ def frame_order_seed(
 ) -> int:
     if (
         root_seed < 0
-        or suite not in SUITE_ORDER
-        or not 0 <= task_id < 10
+        or not _valid_video_task_key(suite, task_id)
         or not 0 <= demo_index < 50
     ):
         raise ExpertManifoldError("invalid one-shot frame-order key")
     values = np.random.SeedSequence(
-        [root_seed, SUITE_ORDER.index(suite), task_id, demo_index, 0xE902]
+        [
+            root_seed,
+            VIDEO_SCHEDULE_SUITES.index(suite),
+            task_id,
+            demo_index,
+            0xE902,
+        ]
     ).generate_state(2, dtype=np.uint32)
     return (int(values[0]) << 31 | int(values[1])) & ((1 << 63) - 1)
 

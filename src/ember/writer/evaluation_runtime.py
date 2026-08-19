@@ -11,6 +11,7 @@ import torch
 
 from ember.eval_adapters import (
     DYNAMIC_K_WRITER_KIND,
+    FUNCTIONAL_CODE_WRITER_KIND,
     WRITER_ADAPTER_KINDS,
     expected_writer_episode,
     reinspect_writer_adapter,
@@ -63,15 +64,29 @@ class FrozenCachedWriterTaskAdapter(WriterLoRARolloutAdapter):
             raise WriterModelError(
                 "PI05 Writer evaluation artifacts changed after prepare"
             )
-        if observed["kind"] != DYNAMIC_K_WRITER_KIND:
-            raise WriterModelError("cached Writer kind changed")
-        from ember.writer.as_config import authority_path, load_writer_config
+        config_path = Path(observed["config"]["path"])
+        if observed["kind"] == DYNAMIC_K_WRITER_KIND:
+            from ember.writer.as_config import authority_path, load_writer_config
 
-        config = load_writer_config(Path(observed["config"]["path"]))
-        lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+            config = load_writer_config(config_path)
+            lora_path = authority_path(config, "lora_contract")
+        elif observed["kind"] == FUNCTIONAL_CODE_WRITER_KIND:
+            from ember.functional_adaptation.decoder_training import (
+                authority_path,
+                load_functional_adapter_config,
+            )
+
+            repo_root = Path(__file__).resolve().parents[3]
+            config = load_functional_adapter_config(config_path, repo_root)
+            lora_path = authority_path(config, "lora_contract", repo_root)
+        else:
+            raise WriterModelError("cached Writer kind changed")
+        lora = load_pi05_lora_contract(lora_path)
         observed_rank = int(observed["lora_contract"]["rank"])
-        if observed_rank != lora.rank:
+        if observed["kind"] == DYNAMIC_K_WRITER_KIND and observed_rank != lora.rank:
             lora = derive_pi05_lora_rank(lora, rank=observed_rank)
+        elif observed_rank != lora.rank:
+            raise WriterModelError("cached functional Writer rank changed")
         template = prepare_frozen_writer_policy(policy, lora)
         self._initialize_rollout(
             policy=policy,
@@ -256,8 +271,7 @@ def _prepare_writer_generation_batch(
         for row in video_profile
     )
     expected_profile = tuple(
-        (request.suite, request.task_id, request.init_state_id)
-        for request in requests
+        (request.suite, request.task_id, request.init_state_id) for request in requests
     )
     if observed_profile != expected_profile:
         raise WriterModelError("Writer generation video-length ownership changed")

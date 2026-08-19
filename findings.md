@@ -362,3 +362,48 @@ AdamW，故Adam moment独立效应仍不可由本实验裁决。
 `language/video/Action/memory -> learned Program`能否把正确动态转成跨suite、跨初始化的policy-effective breadth；
 稳定性问题落在同一shared objective与有限长更新能否保留这些方向。两者相互作用但必须分别报告。当前没有任何新arm
 达到约145或相邻稳定资格，不能把更好的controls当成性能pass，也不能因absolute低而抹掉已验证的因果改进。
+
+## 17. 第二轮独立审查后的后继因果模型
+
+第二轮审查没有否定EMBER的科学问题，而是把失败定位为训练问题的参数化：当前系统要求一个仅见24个task映射、
+correct-only且同task target恒定的video/language encoder，与一个持续移动的complete-LoRA decoder共同发现潜在坐标，
+再用不直接评价closed-loop success的expert-state functional objective驱动它。这个组合同时产生三类欠识别：
+
+1. 同一成功策略存在大量parameter gauge，raw A/B或rank cell不是唯一功能坐标；
+2. object、goal、affordance、端点与粗方向足以解释多数训练监督，完整多阶段process没有被要求成为必要变量；
+3. 即使code局部有用，moving decoder和shared optimizer也会改变它对应的policy方向，造成absolute support弱与相邻换手。
+
+F3/F4应据此重新解释：它们证明固定FactorHeads的policy-functional range充足，并没有证明现有video-to-Program容易；
+free Program可达只回答“某个code存在”，不回答未见task的视频/语言能否预测该code。F2只否定一个关于self-occupancy
+disagreement的窄故事，不能外推为closed-loop distribution不重要。F5说明raw parameter conflict会改变能力分布，但
+standard PCGrad会同时消除有益与有害task-specific directions，因此不能代替功能坐标或闭环外目标。
+
+后继路线的最小因果分解是：
+
+```text
+successful adapters / task experts
+    -> policy-functional fingerprints
+    -> fixed compact code-to-complete-LoRA decoder
+
+exact language -> learned prior z_L
+action-hidden ordered videos -> process evidence -> posterior delta(L,V)
+z_L + delta(L,V) -> fixed decoder -> one complete LoRA -> closed-loop success
+                                      ^
+                          train/meta rollout outer credit
+```
+
+其中language-only必须成为learned baseline，不能由架构强制identity；视频的科学价值是相对该prior提供可复现的净增量。
+Program首先应表达object/relation、initial/goal、contact event、ordered subgoal与completion condition，再映射到固定policy
+code；50个Action tokens、LoRA rank index、首末policy layer和时间中心化memory都不能未经功能验证就被当成过程坐标。
+
+24 target-train tasks不足以同时发现functional manifold和task inference规律。固定24/8/8 target ID继续保留，但需要从
+不与validation/test语义重叠的LIBERO-90 non-held tasks建立显式meta pool和task-level folds，分离source skill
+pretraining、video-adaptation meta-training、architecture validation与final Test。train/meta actions与reward可服务inverse
+dynamics、phase alignment和closed-loop outer objective；validation/test deployment仍严格action-hidden和zero-interaction。
+
+这一路线不是为了速度舍弃其它意见。shared base adapter + video residual可在rollout前merge为唯一LoRA；sealed held
+action/reward诊断、runtime video policy、生成后task-local RL、更丰富传感器以及video-to-reward/skill/plan等方向都有
+明确位置。它们按所改变的科学合同和触发证据分层进入，而不是在核心fixed-decoder因果链尚未受检验时并行堆叠。
+
+当前LMMPC 320-cell joint-moving grid的增量路线到此停止；可继承的是严格评测、每视频保序/集合聚合、Core/Procedure
+职责、Core-addressed读取和bounded refinement等已有正证据，不继承其具体坐标作为架构信条。

@@ -8,6 +8,10 @@ import numpy as np
 import torch
 
 from ember.expert_manifold.contract import ExpertManifoldError
+from ember.functional_adaptation.process_controls import (
+    TEMPORAL_PROCESS_VIDEO_CONDITIONS,
+    shuffled_frame_permutation,
+)
 from ember.pi05_target_data import SUITE_ORDER, target_global_task_id
 
 
@@ -16,29 +20,10 @@ VIDEO_CONDITIONS = {
     "correct",
     "same_task_other",
     "cross_suite_wrong",
-    "shuffled",
-    "shuffled_keep_first",
-    "reversed",
     "no_video",
+    *TEMPORAL_PROCESS_VIDEO_CONDITIONS,
 }
 SAMPLING_MODES = {"with_replacement", "without_replacement"}
-
-
-def shuffled_frame_permutation(
-    frame_count: int,
-    order_seed: int,
-    *,
-    keep_first: bool,
-) -> torch.Tensor:
-    if frame_count <= 0 or order_seed < 0:
-        raise ExpertManifoldError("invalid one-shot frame permutation request")
-    generator = torch.Generator(device="cpu").manual_seed(order_seed)
-    permutation = torch.randperm(frame_count, generator=generator)
-    if keep_first:
-        permutation = torch.cat(
-            (torch.zeros(1, dtype=permutation.dtype), permutation[permutation != 0])
-        )
-    return permutation
 
 
 def task_video_mapping(

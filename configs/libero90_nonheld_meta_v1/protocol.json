@@ -1,0 +1,444 @@
+{
+  "schema_version": "ember_libero90_nonheld_meta_v1",
+  "status": "active_successor_data_contract",
+  "purpose": "Use the 71 semantically audited non-held LIBERO-90 tasks for source skills, fixed-decoder meta-training, process identification, and task-level cross-validation without changing the fixed target40 split.",
+  "authorities": {
+    "source_manifest": {
+      "path": "configs/pi05_source_corpus_v1/source_manifest.json",
+      "schema": "ember_pi05_source_manifest_v1"
+    },
+    "overlap_audit": {
+      "path": "configs/pi05_source_corpus_v1/overlap_audit.json",
+      "schema": "ember_pi05_source_overlap_v1"
+    },
+    "target_protocol": {
+      "path": "configs/libero_24_8_8_v1/protocol.json",
+      "schema": 1
+    },
+    "target_manifest": {
+      "path": "configs/pi05_target_data_v1/manifest.json"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_v1.json"
+    }
+  },
+  "active_source_task_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    21,
+    22,
+    23,
+    24,
+    26,
+    28,
+    29,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    45,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89
+  ],
+  "excluded_target_overlap_task_ids": [
+    8,
+    9,
+    10,
+    20,
+    25,
+    27,
+    30,
+    31,
+    44,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    77
+  ],
+  "roles": {
+    "source_skill_pretraining": {
+      "task_ids": "all_active_source_task_ids",
+      "status": "already_used_by_frozen_source_policy",
+      "purpose": "Learn reusable control primitives without target40 semantic overlap."
+    },
+    "video_adaptation_meta_training": {
+      "default_training_folds": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "default_held_out_fold": 0,
+      "allowed_privileged_surfaces": [
+        "teacher action",
+        "state and proprioception",
+        "simulator reward and terminal",
+        "task-local successful adapter",
+        "task identity for sampler ownership only"
+      ],
+      "deployment_inputs": [
+        "exact language",
+        "one or more internally ordered action-hidden teacher videos"
+      ],
+      "purpose": "Train task experts, functional codes, fixed decoder, language prior, video posterior, action alignment, and train/meta outer reward."
+    },
+    "architecture_validation": {
+      "default_fold": 0,
+      "gradient_use": false,
+      "checkpoint_selection_use": true,
+      "purpose": "Task-level leave-out development for decoder and inference before target Test."
+    },
+    "cross_split_replication": {
+      "folds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "timing": "after architecture and intervention are frozen",
+      "purpose": "Verify that conclusions do not depend on the default held-out task fold."
+    },
+    "target_architecture_panel": {
+      "tasks": "fixed target validation8",
+      "gradient_use": false,
+      "status": "heavily reused development evidence",
+      "purpose": "Strict zero-interaction paired development evidence, never fresh independent confirmation."
+    },
+    "final_test": {
+      "tasks": "fixed target Test8",
+      "gradient_use": false,
+      "checkpoint_selection_use": false,
+      "timing": "after method freeze",
+      "purpose": "Final zero-interaction single-LoRA evidence."
+    }
+  },
+  "task_level_cross_validation": {
+    "algorithm": "stable_active_task_order_round_robin_5fold_v1",
+    "selection_surface": "position in the audited active_source_task_ids list only",
+    "result_surfaces_used": [],
+    "folds": [
+      {
+        "fold": 0,
+        "task_ids": [
+          0,
+          5,
+          13,
+          18,
+          24,
+          33,
+          38,
+          43,
+          58,
+          63,
+          68,
+          73,
+          79,
+          84,
+          89
+        ]
+      },
+      {
+        "fold": 1,
+        "task_ids": [
+          1,
+          6,
+          14,
+          19,
+          26,
+          34,
+          39,
+          45,
+          59,
+          64,
+          69,
+          74,
+          80,
+          85
+        ]
+      },
+      {
+        "fold": 2,
+        "task_ids": [
+          2,
+          7,
+          15,
+          21,
+          28,
+          35,
+          40,
+          55,
+          60,
+          65,
+          70,
+          75,
+          81,
+          86
+        ]
+      },
+      {
+        "fold": 3,
+        "task_ids": [
+          3,
+          11,
+          16,
+          22,
+          29,
+          36,
+          41,
+          56,
+          61,
+          66,
+          71,
+          76,
+          82,
+          87
+        ]
+      },
+      {
+        "fold": 4,
+        "task_ids": [
+          4,
+          12,
+          17,
+          23,
+          32,
+          37,
+          42,
+          57,
+          62,
+          67,
+          72,
+          78,
+          83,
+          88
+        ]
+      }
+    ]
+  },
+  "process_contrast_groups": [
+    {
+      "kind": "same_language_cross_scene",
+      "task_groups": [
+        [
+          0,
+          28
+        ],
+        [
+          7,
+          11
+        ],
+        [
+          21,
+          45
+        ],
+        [
+          73,
+          78,
+          81
+        ],
+        [
+          74,
+          79,
+          82
+        ],
+        [
+          75,
+          80,
+          83
+        ]
+      ],
+      "purpose": "Separate language/template identity from scene-specific visual evidence."
+    },
+    {
+      "kind": "same_procedure_varied_object_or_target",
+      "task_groups": [
+        [
+          3,
+          4,
+          5
+        ],
+        [
+          18,
+          19,
+          38
+        ],
+        [
+          24,
+          26
+        ],
+        [
+          29,
+          32
+        ],
+        [
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62
+        ],
+        [
+          65,
+          66,
+          67,
+          68
+        ],
+        [
+          69,
+          70
+        ],
+        [
+          71,
+          72
+        ],
+        [
+          76,
+          84,
+          85
+        ],
+        [
+          40,
+          41,
+          42
+        ],
+        [
+          86,
+          87,
+          88,
+          89
+        ]
+      ],
+      "purpose": "Test whether process structure transfers while object, selector, receptacle, or relation changes."
+    },
+    {
+      "kind": "order_or_relation_contrast",
+      "task_groups": [
+        [
+          16,
+          17
+        ],
+        [
+          63,
+          64
+        ],
+        [
+          65,
+          66
+        ],
+        [
+          69,
+          70
+        ],
+        [
+          73,
+          74,
+          75
+        ],
+        [
+          86,
+          87,
+          88,
+          89
+        ]
+      ],
+      "purpose": "Ensure that object identity alone cannot determine relation, selector, or ordered composition."
+    }
+  ],
+  "known_process_data_gap": "The current metadata does not prove equal-endpoint demonstrations with different valid procedures. Such pairs must be established from train/meta trajectories or simulator task construction before that control is claimed.",
+  "source_coverage_primitives": [
+    "reach",
+    "grasp",
+    "place",
+    "open",
+    "close",
+    "toggle",
+    "stack",
+    "multi-object sequencing",
+    "failure recovery"
+  ],
+  "information_wall": {
+    "meta_privileged_values_never_become_deployment_inputs": true,
+    "target_validation_test_gradient_fields": [],
+    "sealed_held_diagnostic": {
+      "allowed": true,
+      "requires_frozen_model": true,
+      "may_select_checkpoint": false,
+      "test_default_timing": "after method freeze"
+    },
+    "forbidden_deployment_routes": [
+      "task ID dictionary",
+      "expert lookup",
+      "filename route",
+      "second adapter",
+      "checkpoint fusion",
+      "teacher action or state",
+      "reward or terminal"
+    ]
+  },
+  "content_hash_policy": "disabled_by_owner"
+}

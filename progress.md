@@ -7,14 +7,20 @@
 
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
-- canonical workspace为`/data1/user/ymdai/projects/EMBER`，主写与集成目标为`main`；需要隔离时从最新`main`创建
-  `codex/<topic>`分支与独立worktree，验证后及时合并回`main`并推送远端；
-  封存后工作树干净并与origin一致。
-- 当前没有active训练、评测、resume、design或successor；不从历史文档自动恢复任何“下一步”。
-- canonical Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
+- 第二轮专家意见后继goal已经由owner正式启动。active design为
+  `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
+  `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
+  Phase 1/2的functional realizability基线，尚未启动formal GPU训练。
+- canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；结构性开发位于从最新`main`创建的
+  `/data1/user/ymdai/projects/EMBER-functional-adaptation-successor`、分支`codex/functional-adaptation-successor`。
+  验证后的独立里程碑及时合并`main`并推送，不长期积压巨型分支。
+- 当前没有active训练、评测或resume。启动任何formal GPU工作前仍需冻结design、clean pushed commit、detached
+  worktree、live双节点GPU检查与quota/峰值预算。
+- 仓库现有可执行Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
-  canonical config/code contract移除。
-- 不直接返回V6/LPCP/GOMQ；它们只作历史paired反事实。
+  canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
+- 不直接返回V6/LPCP/GOMQ，也不恢复旧Expert-Manifold为held dictionary；历史实现只提供paired反事实、functional
+  probe、checkpoint/evaluation等可审计复用候选。
 
 ## Latest owner decisions for successor planning
 
@@ -27,6 +33,35 @@
 - 合理的新架构均可考虑，包括rollout前合并为唯一完整LoRA的shared prior/base adapter + video-conditioned residual；
   不允许部署第二adapter、expert route、task-ID字典或checkpoint融合；
 - 主写与集成目标改为`main`；需要隔离时从最新`main`创建`codex/<topic>`分支/worktree，验证后及时合并并推送。
+
+## Active successor phase
+
+当前核心顺序为：
+
+1. 审计现有expert manifold、Writer、reward/evaluation与LIBERO数据owner，建立non-held meta allowlist、task-level folds、
+   process controls和source/task-expert ceiling协议；
+2. 用policy-functional response而非raw A/B几何学习compact code与固定complete-LoRA decoder，并以leave-task-out
+   closed loop作为进入门；
+3. 固定decoder后学习language prior + action-hidden video process posterior，保留完整Action probe与有向阶段结构；
+4. functional warm-start后在train/meta simulator接入closed-loop outer credit；
+5. 用strict paired400、相邻checkpoint、same-task不同视频、Long、breadth和多split复现选择或停止方法。
+
+专家方向A--N和五个替代研究问题都已进入ledger。runtime video policy、task-local RL、richer sensing以及
+video-to-reward/skill/plan不是被丢弃，而是在核心single-LoRA路线触发预注册stop gate后按证据启动；train/meta action
+alignment、mergeable base+residual与sealed diagnostics已经获准进入对应phase。
+
+已完成的Phase 0实现：
+
+- `configs/libero90_nonheld_meta_v1/protocol.json`显式保留71个去重non-held tasks、排除19个target-overlap tasks，并建立
+  5个不读取结果的task-level folds；默认56 meta-train / 15 meta-validation，冻结后轮换复现；
+- `ember.functional_adaptation.contract`加载allowlist/folds并验证source manifest与语义overlap audit一致；
+- strict video conditions已增加first-only、final-only、first+final、endpoints-fixed-middle-shuffled与monotone-sparse，
+  真实frames经选择/重排后重新完整forward；
+- 新模块owner与旧`expert_manifold`/Writer/evaluator的复用、退役边界已写入active design；旧bank route不恢复。
+- `FunctionalCodebook`与`FunctionalAdapterDecoder`已经建立32维whitened task code到全部38-target/76-tensor LoRA的
+  单一生成面；decoder以functional identity初始化，Action in/out保持独立，不import旧V6 bank route；
+- policy-functional probe会捕获完整`[batch, 50, 32]` Action Expert flow response，并以expert相对identity的响应能量
+  归一化监督，避免source policy的大幅公共响应淹没task adapter信号；首轮相关20项CPU测试通过。
 
 ## Final external-review result
 

@@ -1,147 +1,153 @@
 # EMBER Task Plan
 
-状态：2026-08-19 **complete；专家A--G/F0--F5已逐项裁决，报告与远程e证据已封存**。
+状态：2026-08-19 **active；第二轮专家意见后继路线已启动，Phase 0已完成，当前在Phase 1/2的功能基线。**
 
 ## Goal
 
-全面审计`docs/external_review_20260818.md`中的每条重要意见：把代码事实、历史实验事实、因果推断、反证、建议干预
-和数值门槛逐项拆开；先复核零训练成本证据，再用最少的当前架构单变量实验裁决主要根因。最终形成一张每条主张为
-`confirmed / refuted / underdetermined`的claim ledger，并让专家报告的每一项建议都有实际结果或证据化裁决。
+全面落实第二轮独立专家意见与owner随后确认的授权：停止在当前LMMPC 320-cell joint-moving compiler上做增量修补，先建立
+跨任务、policy-functional且坐标固定的adaptation manifold，再学习exact language与action-hidden有序视频到compact
+skill code的推断，并以train/meta-task closed-loop credit改善一次性完整LoRA。所有方向必须进入实现、实验裁决或明确的
+条件转向，不得静默遗漏；最终选择仍由held zero-interaction closed-loop absolute、breadth、相邻稳定性与视频净因果增量共同决定。
 
 ## Done when
 
-- 专家A--G各部分的关键主张均有代码/本地artifact证据、反证和当前裁决；
-- current formal provenance、paired rows、McNemar、breadth@1/@5/@10、task/suite集中度全部从本地原始证据复核；
-- intended trainable modules的实际gradient表覆盖fresh和macro25，而不再只依赖`requires_grad`或参数数量；
-- current macro25的视频因果面板明确correct、same-task-other、wrong、shuffle、reverse与no-video关系；
-- Text Meta-LoRA影响与fresh前端detach影响在实验上可区分，所有新canonical训练均无Text/VL Meta-LoRA；
-- absolute support形成与checkpoint retention分别得到最小干预裁决；
-- occupancy、FactorHead reachability/co-drift和shared-gradient conflict只在前置证据支持时进入下一阶段；
-- 每个实验报告strict paired400、per-task/suite、breadth、retained/gained/lost和churn，并更新持久文档。
-- 专家报告中的每项建议最终都有明确回应：无条件诊断实际完成；专家原文中的条件分支在前提成立时执行，前提不成立
-  时以证据化`not applicable`裁决，不得静默跳过。
+- `docs/expert_second_round_implementation_ledger_20260819.md`中A--N及五个替代方向均不再是`queued`：核心路线已有实现和
+  formal证据，条件方向已有触发条件、实际裁决或实施结果；
+- non-held meta-task allowlist、语义去重、source/meta/architecture-validation/final-test边界与provenance可由仓库直接复核；
+- 目标task的task-local/rank16 ceiling与source primitive coverage已被测量；若source prior不足，已在不触碰held
+  action/reward梯度的前提下强化并重建基线；
+- 固定decoder在task-level leave-out上能把compact code解码为policy-effective完整38-target LoRA，而不是只在raw A/B
+  L2或train-task free-Program上可达；
+- learned language-only、video-only、language+video、first/final/endpoints/middle/order controls可以在同一推断与评测
+  合同下比较，视频净增量不会由架构性identity开关自证；
+- language prior + video posterior保留每视频内部有序过程与完整Action probe结构，并在声明Dynamic-K时真实覆盖各K；
+- functional warm-start后的train/meta closed-loop outer objective已有严格对照，held部署仍只在rollout前生成一次完整LoRA；
+- 每个正式候选均报告single-checkpoint paired400、per-task/suite、breadth@1/@5/@10、suite floor、retained/gained/lost、
+  churn、相邻success-set重合、same-task不同视频以及process-identifying controls；
+- 方法若通过则在多个task-level split复现并冻结后进入sealed held诊断和最终Test；若按预注册停止条件失败，则完成广义
+  video-to-LoRA路线的证据化裁决并实际转入最有根据的替代问题，而不是继续小扫；
+- 验证后的代码、配置、文档与remote-safe证据均已及时合并到`main`并推送，formal artifacts保留完整provenance。
 
-## Fixed boundaries
+## Fixed scientific boundaries
 
-- 只基于当前EMBER-LMMPC Core-Addressed Reader主链，不恢复V6/LPCP/GOMQ、旧Writer carrier、旧compiler或旧LoRA残差；
-- 后续canonical Writer不使用Text Meta-LoRA或VL Meta-LoRA；exact language仍通过冻结原生text/VLM表示进入Program；
-- Action Meta-LoRA保持独立变量，本计划前段不改；rank16、memory、Reader、K-set和bounded M2P同样先保持；
-- 不把专家建议的`+15`、`90%`等数值直接升级成owner硬合同；它们作为预注册参考，与EMBER既有资格标准并列报告；
-- 不用loss、gradient、norm、cosine或oracle选择最终方法；formal选择仍认single-checkpoint strict paired400；
-- 一次只裁决一个主要变量，不用rank/LR/scale/seed/dtype sweep，不添加防御性hash或重复forward；
-- 不使用subagents；GPU launch仍遵守单节点最多6张、全局EMBER最多8张和live availability合同；
-- 本goal授权在上述边界内完成全部审计和有前提的实验；每个formal launch仍须先写清单变量、资源和裁决合同。
+- deployment输入仍是exact task language与一条或多条same-task、action-hidden、内部有序teacher videos；rollout前只运行
+  Writer一次，输出并部署唯一一套完整38-target LoRA；source policy冻结；
+- validation/test actions或reward不产生梯度。train24及显式allowlist中的non-held LIBERO-90 meta tasks可使用teacher
+  action alignment、task-local experts和simulator reward训练共享表示、decoder与Writer；
+- learned language-only adapter是必要baseline；它不取消“视频必须提供必要Value增量”的最终科学要求；
+- shared language/base prior + video-conditioned residual是允许的，只要rollout前merge成唯一完整LoRA；不得部署第二adapter、
+  held expert route、task-ID字典、挑video、checkpoint fusion或多LoRA平均；
+- sealed held action/reward只可用于预注册、冻结、无梯度、无checkpoint选择的诊断；Test默认留到方法冻结后；
+- 当前LMMPC增量路线停止。可复用其严格评测、per-video/set数据流、Core/Procedure概念、Core-addressed Reader、bounded
+  K-set/M2P等经验证机制，但不把旧320-cell grid或moving FactorHeads当成后继架构前提；
+- closed-loop absolute首先选择方法；functional fingerprint、code reconstruction、norm/rank/cosine和内部margin只作定位；
+- 一次尽量只改变一个主要因果变量；不以rank/LR/scale/seed/dtype小扫挽救明确坏结果，不添加hash、重复forward、
+  大量防御性检查或为正常BF16/TF32低位差异牺牲吞吐；
+- formal训练/评测来自clean pushed commit的detached frozen worktree。日常结构性开发在`codex/<topic>`隔离分支完成，
+  验证后及时合并`main`并推送；
+- launch前live检查gpu01/gpu02与独立存储quota。资源紧张时最多跨两个节点合计6张合适GPU；只有空闲资源明显充裕时
+  才可合计最多8张。允许与低显存、低util进程安全共驻，不等待凑满、不占卡、不抢占或干预他人进程。
 
-## Phase 0 — Claim ledger与静态代码核验
+## Evidence ladder and decision gates
 
-- [x] 把专家报告逐项编号为code fact、experiment fact、hypothesis、recommendation或threshold；
-- [x] 对detach、Text Meta-LoRA、Action-50-token mean、Reader时间中心化、多套address identity、M2P RMSNorm、
-  action-in/out派生、FactorHead子空间/B-first冷启动、信息墙和optimizer aggregation逐项建立代码证据；
-- [x] 对每条代码事实补当前测试覆盖、未覆盖模块和是否需要新增稳定regression test；
-- [x] 核对旧V6与当前路径的精确差异，但只作反事实provenance，不恢复执行。
+1. **Contract gate**：信息墙、task split、allowlist、pairing、single-LoRA和冻结source policy正确；失败只修合同。
+2. **Functional realizability gate**：fixed decoder在未参与decoder拟合的meta tasks上复现expert的closed-loop功能；raw
+   LoRA reconstruction不构成通过。
+3. **Inference gate**：language/video可预测leave-task-out code，full video相对learned language-only与first+final有净增量；
+   失败先定位source coverage、process representation或code inference，不解冻decoder追逐latent gauge。
+4. **Outer-credit gate**：functional warm-start固定后，train/meta closed-loop objective相对matched functional-only提高
+   held absolute/breadth/retention且不破坏process controls；否则淘汰该outer objective实现。
+5. **Method qualification gate**：single-checkpoint paired400达到有意义absolute并同时满足breadth、suite floor、Long、
+   same-video robustness、相邻稳定与视频因果资格；约145可构成有价值结果，150+仍需上述联合证据。
+6. **Stop/redirect gate**：更强clean source prior、更多meta tasks、fixed functional decoder、process representation、outer
+   closed-loop objective和多split评测都完成后仍`<=120`、top3贡献`>80%`、full不优于first+final、Long无收益、
+   same-task换手且checkpoint漂移，则停止广义zero-interaction video-to-LoRA并转入ledger中证据最强的替代方向。
 
-**Gate 0：** 每项必须区分“代码必然如此”与“因此导致性能下降”的额外推断；后者没有干预不得标记confirmed。
+## Phase 0 — Successor contract、覆盖账本与现状基线（active）
 
-## Phase 1 — 本地formal evidence重建
+- [x] owner确认train/meta experts、learned language baseline、outer RL、non-held LIBERO-90、sealed diagnostics与
+  mergeable base+residual均被允许；
+- [x] 从最新`main`建立`codex/functional-adaptation-successor`独立worktree；
+- [x] 建立A--N及五个替代方向逐项ledger，登记依赖、触发条件、证据与状态；
+- [x] 扫描现有`expert_manifold`、Writer、reward、evaluation和数据合同，标记可复用owner、退役路径与新模块边界；
+- [x] 审计LIBERO-90与target40语义映射，产生显式non-held meta-task allowlist与去重证据，不复制大数据；
+- [x] 定义task-level交叉验证split、process-control panel、learned language-only基线和source/task-expert ceiling协议；
+- [x] 完成结构基线检查，冻结后继design与最小首轮实现范围，再进入Phase 1。
 
-- [x] 从local raw rows重建macro25/50/75/100、LPCP143、GOMQ151的统一paired矩阵；
-- [x] 复算McNemar、retained/gained/lost、Jaccard、breadth@1/@5/@10、top-3 concentration及suite minimum；
-- [x] 核对每个formal run的commit/config/checkpoint manifest与review snapshot是否一致；
-- [x] 按task、suite/horizon、initialization和teacher video IDs保留逐行lost/gained/retained证据；
-- [x] 把可安全提交的聚合/脱敏row evidence补到remote，避免结论只依赖本地叙述。
+**Gate 0：** 数据边界、功能decoder训练/leave-out边界和每条专家意见的去向必须可审计；不能以“后续再考虑”代替状态。
 
-**Gate 1：** 若原始rows与tracked汇总不一致，先修正事实authority；一致后才讨论根因。
+## Phase 1 — 数据可识别性、ceiling与process controls
 
-## Phase 2 — 零训练成本或低成本机制审计
+- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel，优先复用action response、flow response、policy
+  Jacobian response与stage behavior；只保留能预测closed-loop等价性的必要表示；
+- [ ] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
+  multi-object sequence/recovery，区分“Writer不会推断”与“source不存在能力”；
+- [ ] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；
+- [ ] 补first-only、final-only、first+final、endpoints-fixed-middle-shuffle、monotone-sparse、flow-only、static-only、
+  robot/object mask、同endpoint异procedure、跨view、paraphrase、同对象异目标与stage success中当前数据可诚实支持的项；
+- [ ] 对暂时缺少配对数据的controls登记具体数据缺口并在non-held meta pool构造，而不是伪造对照；
+- [ ] 若source primitive/target ceiling不足，先强化clean source policy并重新冻结baseline；否则不无条件扩大source训练。
 
-### 2A. 全模块gradient audit
+**Gate 1：** full video是否含超出语言与端点的可识别过程、source policy是否具有目标控制能力必须分开回答。
 
-- [x] 在fresh initialization和macro25各运行一个canonical task step；
-- [x] 记录`patch_grounding`、`interaction_projection`、`language_projection`、Text/Action Meta-LoRA、Core、Procedure、
-  memory tokens、Reader、K-set、M2P和八个FactorHeads的grad `None/nonzero/finite`；
-- [x] 同时确认source policy nonzero gradient tensors为0；
-- [x] 把intended-path梯度变成稳定测试，避免以后再用部分模块代表全路径。
+## Phase 2 — Policy-functional manifold与fixed decoder
 
-### 2B. Current macro25视频因果面板
+- [ ] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
+  功能等价类，不把raw A/B gauge当标签；
+- [ ] 用统一probe panel形成每个adapter的functional fingerprint，检验同功能不同参数与不同功能的可分性；
+- [ ] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
+- [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
+- [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
+- [ ] decoder若在leave-task-out closed loop不能接近对应expert功能，先修manifold/data，不进入视频推断。
 
-- [x] 在同一400 rows、state/env/policy RNG、K和video ordinal上评测correct、same-task-other、cross-suite-wrong、
-  shuffled、shuffled-keep-first、reversed与no-video；
-- [x] 报告paired gains/losses、McNemar、per-suite方向、same-task retention和任务集中度；
-- [x] 将专家建议门槛与项目原有因果资格标准分开呈现，不因单一p值宣称理解高层过程。
+**Gate 2：** 通过的是未见meta task的policy功能，不是train-task reconstruction、free Program或参数相似度。
 
-**Gate 2：** gradient audit裁决当前mechanism合同；视频面板裁决当前123究竟更像correct-process依赖还是
-nonconstant-video carrier/static shortcut。两项均不修改checkpoint。
+## Phase 3 — Language prior + video process posterior
 
-## Phase 3 — 分离Text Meta-LoRA与输出detach
+- [ ] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
+- [ ] 每条video独立编码initial relations、goal relations、contact/events、ordered subgoals、completion conditions与
+  uncertainty；跨videos只在event/relation/code-evidence层置换不变聚合；
+- [ ] 不再平均50个Action tokens；保留flow-time/horizon-phase/noise-probe维，使用phase-specific policy response地址；
+- [ ] 在train/meta actions可用处加入inverse dynamics、visual transition-to-latent-action与phase correspondence辅助目标，
+  held输入继续action-hidden；
+- [ ] Dynamic-K若进入论文候选，训练与formal评测真实覆盖各cardinality；不平均frames/raw features/final LoRAs；
+- [ ] 固定decoder，仅训练language/video inference；按task-level split报告code与closed-loop泛化。
 
-为了遵守“以后不再使用Text Meta-LoRA”且避免两变量混淆，采用三点链，其中sealed A已存在、只需两个fresh新run：
+**Gate 3：** full video必须稳定优于learned language-only与first+final，收益不能只集中Object，Long不得系统性反向。
 
-| arm | Text Meta-LoRA | fresh前端输出detach | 角色 |
-| --- | --- | --- | --- |
-| A | rank4 | 保留 | 已有sealed baseline `123→84→89→87` |
-| B | 移除 | 保留 | bounded attribution baseline，只测移除Text；不作为最终方法 |
-| C | 移除 | 移除 | 当前架构的canonical corrected front end |
+## Phase 4 — Train/meta closed-loop outer objective
 
-- [x] B只修改Text Meta-LoRA；冻结原生text representation和Writer-local projection保持；
-- [x] C相对B只删除`frame_evidence/grounded_evidence/interactions`的输出detach，保留frozen hidden detach；
-- [x] B/C均从fresh训练，锁定同一data、K schedule、rank16、optimizer和formal评测；
-- [x] B到macro25并做strict400；C到macro50并完成macro25/50 strict400稳定性判断；
-- [x] A→B只解释Text Meta-LoRA效应，B→C只解释front-end credit效应，A→C只报告combined canonical变化；
-- [x] B/C macro25完整视频controls与same-task稳定性面板；两者7面板均400 rows严格配对，
-  mismatch均0。
+- [ ] 以Phase 3 functional/code distillation为warm start，保持decoder固定；
+- [ ] 在train24/non-held meta tasks用simulator rollout reward或经验证progress critic优化video encoder/code posterior；
+- [ ] 与matched functional-only、language-only、video-only比较，明确outer RL改变的是shared zero-interaction Writer；
+- [ ] reward采样按task等权，保存可exact-resume的sampler/topology状态；held validation/test reward不产生梯度；
+- [ ] 若需要stability regularization，约束policy-functional response或已验证成功support，不再用raw parameter gradient
+  PCGrad作为默认解；
+- [ ] task-local post-generation RL单独保留为扩展评测，绝不混入zero-interaction分数。
 
-**Gate 3：** 若B→C paired net变化小于5且breadth、controls、stability均无改善，detach不是主要性能根因；若absolute
-明显改善但25→50仍崩落，问题正式后移到occupancy/retention；若C仍低且视频controls弱，先审查process identifiability，
-不直接扩大decoder。
+**Gate 4：** outer RL必须带来held closed-loop净收益与breadth/retention改善；train reward或critic loss不能选方法。
 
-## Phase 4 — Occupancy mismatch裁决
+## Phase 5 — Formal迭代、相邻稳定与多split复现
 
-固定状态occupancy审计无论前面结果如何都完成；只有corrected C仍出现“offline改善、strict support丢失”时才执行
-occupancy-matched训练干预：
+- [ ] 每个有信息量candidate在clean pushed commit的detached frozen worktree训练；机制smoke后尽快strict paired400；
+- [ ] 报告base/language/video/L+V/process controls的严格matched矩阵，含per-task/suite、breadth、floor、集中度与Long；
+- [ ] 好结果继续相邻checkpoint，检查same-task different-video retention达到至少90%--95%、Jaccard与suite floor；
+- [ ] 首次达到约145且breadth合理时立即补全部因果controls和多split复现，不用继续训练掩盖峰值；
+- [ ] 明确坏结果按最早失效接口转回对应phase，不做无关小扫；
+- [ ] 只有architecture-validation完成并冻结方法后才进入final Test；sealed held诊断不回流模型选择。
 
-- [x] 对相邻checkpoint lost/gained/retained rows保存rollout state和首次行为分歧时间；
-- [x] 构造两checkpoint访问状态的固定union并完成两checkpoint action比较；validation expert不存在且held teacher action
-  禁止读取，正确性reference明确裁决为`underdetermined-after-audit`；
-- [x] 区分visitation shift、同一状态policy direction恶化、loss-success错位和failure tail的可判与不可判部分；
-- [x] fixed-state方向不支持简单occupancy claim，因此occupancy-matched训练干预裁决为`not-applicable`；
-- [x] occupancy surrogate未用于选择方法。
+## Phase 6 — 条件方向与最终收口
 
-## Phase 5 — Decoder reachability与co-drift
+- [ ] 若静态一次编译在完整主线后触发stop gate，按证据选择并实际启动video->reward/progress、skill composition、
+  object-centric plan、runtime video-conditioned policy、video-initialized task-local RL或observation-only offline imitation；
+- [ ] richer sensing只有在明确改变纯RGB问题合同后才启动，结果与核心EMBER分开报告；
+- [ ] 每条A--N和替代方向更新为`implemented-pass / implemented-fail / not-triggered-with-evidence / superseded`；
+- [ ] 将最终设计、formal结果、停止边界和可复用机制写入`findings.md`、`progress.md`与`research_history.md`；
+- [ ] 验证、合并`main`、推送远程、清理已集成worktree与临时输出；目标真实完成后再标记goal complete。
 
-FactorHead freeze、reachability和endpoint/family审计均需完成，优先使用corrected C checkpoint；结果是否支持decoder
-根因只决定是否继续修改decoder：
+## Current next actions
 
-- [x] FactorHead-freeze diagnostic：从一个有support的checkpoint冻结八个heads续训，测旧success retention；
-- [x] train24 reachability oracle：固定heads、自由优化`20x16x256` Program逼近policy-effective experts，评测投影后
-  train-task closed loop；
-- [x] 分family报告q/v/action-in/action-out reachability，特别分离人为派生endpoint rows；
-- [x] oracle为659/1200、direct为658/1200，明确通过90%门并停止扩大head/rank；
-- [x] 不启动decoder扩容；fixed-head reachability并非当前瓶颈。
-
-## Phase 6 — Shared-gradient conflict（最后条件分支）
-
-在前端、occupancy和decoder审计后执行一个matched shared-gradient comparison，以直接回应专家最后一项建议：
-
-- [x] 固定per-task gradient、AdamW、LR、tasks和data，只替换预注册`deterministic_pcgrad_v1`；
-- [x] macro25相当但25→50 lost减少未达显著且breadth仍6→4，故不支持shared-gradient conflict为主要根因；
-- [x] PCGrad降低churn同时显著抑制gained并降低absolute，撤回“arithmetic mean是主因”；Adam moment独立效应因两臂
-  均使用AdamW而保留为`underdetermined-after-audit`。
-
-## Reporting and stop rules
-
-- 每个phase结束更新`findings.md`、`progress.md`和外部review claim ledger；只有formal结果进入`research_history.md`；
-- 机制smoke只回答图是否接通，不能选模型；
-- 明确否定的分支立即停止，不做小扫；好结果继续到相邻checkpoint，达到约145时补完整稳定性与视频因果资格；
-- 若C及有证据支持的Phase 4/5局部修复仍多次无法改善absolute和retention，则完成本审计goal，明确当前架构剩余的
-  最早未解接口，不自行大幅改成另一套架构。
-- 最终新增一份面向外部专家的报告，逐条引用其A--G意见、给出实施/不适用状态、原始证据、结果、我们同意或修正的
-  结论以及仍需专家判断的问题；与给owner的总结、claim ledger和全部可提交evidence一起推送远程。
-
-## Final outcome
-
-- 没有新arm达到约145或稳定方法资格，本goal以negative/mixed scientific result完成；
-- front-end detach是真实credit缺陷并改善视频方向资格，但不是absolute/stability首因；
-- 简单occupancy divergence未获支持，FactorHead co-drift是放大器而非reachability瓶颈，PCGrad改变换手但未解决共同积累；
-- `docs/external_review_claim_ledger_20260818.md`的113个编号条目均已有实施结果、反驳、
-  `not-applicable`或`underdetermined-after-audit`边界，无queued项；
-- 本goal封存后不登记active successor，等待owner与外部专家的下一轮裁决。
+1. 完成architecture/data owner扫描与专家方向ledger；
+2. 决定现有`expert_manifold`中可复用的functional projection、checkpoint与评测组件，以及必须退役的legacy V6 wrapper；
+3. 形成non-held meta allowlist、task-level leave-out split和process-control可行性矩阵；
+4. 冻结首个最小设计：functional fingerprint + fixed decoder leave-task-out，不在decoder通过前启动大规模video inference训练。

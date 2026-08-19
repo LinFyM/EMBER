@@ -15,7 +15,7 @@ from ember.lora import (
     task_lora_state_dict,
     validate_lora_state,
 )
-from ember.expert_manifold.video_schedule import shuffled_frame_permutation
+from ember.functional_adaptation.process_controls import frame_control
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.as_config import authority_path, load_writer_config
@@ -85,16 +85,15 @@ def _ordered_video_tensors(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     frames = torch.from_numpy(video.frames).to(device, non_blocking=True)
     indices = torch.from_numpy(video.frame_indices).to(device, non_blocking=True)
-    if condition == "reversed":
-        frames = frames.flip(0)
-    elif condition in {"shuffled", "shuffled_keep_first"}:
-        permutation = shuffled_frame_permutation(
-            frames.shape[0],
-            order_seed,
-            keep_first=condition == "shuffled_keep_first",
-        ).to(device)
-        frames = frames.index_select(0, permutation)
-    return frames, indices
+    control = frame_control(
+        frames.shape[0],
+        condition=condition,
+        order_seed=order_seed,
+    )
+    return (
+        frames.index_select(0, control.content.to(device)),
+        indices.index_select(0, control.positions.to(device)),
+    )
 
 
 class FrozenDynamicKTaskAdapter(WriterLoRARolloutAdapter):

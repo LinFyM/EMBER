@@ -1,0 +1,138 @@
+from dataclasses import dataclass
+from types import SimpleNamespace
+
+import torch
+
+from ember.functional_adaptation.functional_response import (
+    build_functional_response_target,
+    functional_response_distillation_loss,
+    pi05_flow_response,
+)
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRATarget
+
+
+class FakeLoRAProjection(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.lora_A = torch.nn.ModuleDict(
+            {"default": torch.nn.Linear(3, 2, bias=False)}
+        )
+        self.lora_B = torch.nn.ModuleDict(
+            {"default": torch.nn.Linear(2, 4, bias=False)}
+        )
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.lora_B["default"](self.lora_A["default"](value))
+
+
+class FakeCore(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.config = SimpleNamespace(
+            time_sampling_beta_alpha=1.5,
+            time_sampling_beta_beta=1.0,
+            time_sampling_scale=0.999,
+            time_sampling_offset=0.001,
+        )
+        self.q_proj = FakeLoRAProjection()
+        self.action_out_proj = torch.nn.Linear(4, 32, bias=False)
+
+    def sample_noise(self, shape, device):
+        return torch.randn(*shape, device=device)
+
+    def sample_time(self, batch_size, device):
+        return torch.rand(batch_size, device=device)
+
+
+class FakePolicy(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = FakeCore()
+
+    def forward(self, batch):
+        noise = self.model.sample_noise(batch["query"].shape, batch["query"].device)
+        time = self.model.sample_time(batch["query"].shape[0], batch["query"].device)
+        query = batch["query"] + noise * time[:, None, None]
+        response = self.model.action_out_proj(self.model.q_proj(query))
+        return response.square().mean(), {}
+
+
+@dataclass(frozen=True)
+class FakeContract:
+    targets: tuple[LoRATarget, ...] = (LoRATarget("model.q_proj", 3, 4),)
+    rank: int = 2
+    alpha: int = 2
+    dropout: float = 0.0
+    identity_seed: int = 7
+
+    @property
+    def parameter_count(self) -> int:
+        return 14
+
+    @property
+    def state_tensor_count(self) -> int:
+        return 2
+
+    def to_dict(self) -> dict:
+        return {}
+
+
+def _state(a: torch.Tensor, b: torch.Tensor) -> dict[str, torch.Tensor]:
+    return {
+        "model.q_proj" + LORA_A_SUFFIX: a,
+        "model.q_proj" + LORA_B_SUFFIX: b,
+    }
+
+
+def test_flow_response_keeps_token_and_padded_action_axes() -> None:
+    policy = FakePolicy().requires_grad_(False)
+    state = _state(torch.ones(2, 3), torch.ones(4, 2))
+    batch = {"query": torch.ones(2, 50, 3)}
+
+    response = pi05_flow_response(
+        policy, state, FakeContract(), batch, policy_seed=19
+    )
+
+    assert response.shape == (2, 50, 32)
+
+
+def test_functional_distillation_matches_expert_delta_and_backpropagates() -> None:
+    policy = FakePolicy().requires_grad_(False)
+    contract = FakeContract()
+    batch = {"query": torch.ones(2, 50, 3)}
+    a = torch.ones(2, 3)
+    identity = _state(a, torch.zeros(4, 2))
+    expert = _state(a, torch.ones(4, 2))
+    target = build_functional_response_target(
+        policy,
+        identity,
+        expert,
+        contract,
+        batch,
+        policy_seed=23,
+    )
+    candidate_b = torch.zeros(4, 2, requires_grad=True)
+    candidate = _state(a, candidate_b)
+
+    identity_loss = functional_response_distillation_loss(
+        policy,
+        candidate,
+        contract,
+        batch,
+        target,
+        policy_seed=23,
+    )
+    identity_loss.backward()
+    expert_loss = functional_response_distillation_loss(
+        policy,
+        expert,
+        contract,
+        batch,
+        target,
+        policy_seed=23,
+    )
+
+    assert identity_loss.item() > 0.9
+    assert candidate_b.grad is not None
+    assert torch.count_nonzero(candidate_b.grad)
+    assert expert_loss.item() < 1e-12

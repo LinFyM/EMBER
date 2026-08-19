@@ -179,3 +179,42 @@ def test_temporal_controls_reorder_frames_but_keep_display_positions() -> None:
     assert torch.equal(shuffled_indices, correct_indices)
     assert np.array_equal(video.frames, frames)
     assert np.array_equal(video.frame_indices, indices)
+
+
+def test_process_controls_separate_endpoints_middle_and_sparse_evidence() -> None:
+    frames = np.arange(7 * 3, dtype=np.uint8).reshape(7, 3, 1, 1)
+    indices = np.arange(0, 35, 5, dtype=np.int64)
+    video = RawTeacherVideo(
+        frames=frames.copy(), frame_indices=indices.copy(), raw_frame_count=35
+    )
+
+    first, first_positions = _ordered_video_tensors(
+        video, condition="first_frame_only", order_seed=7, device=torch.device("cpu")
+    )
+    final, final_positions = _ordered_video_tensors(
+        video, condition="final_frame_only", order_seed=7, device=torch.device("cpu")
+    )
+    endpoints, endpoint_positions = _ordered_video_tensors(
+        video, condition="first_final", order_seed=7, device=torch.device("cpu")
+    )
+    shuffled_middle, shuffled_positions = _ordered_video_tensors(
+        video,
+        condition="endpoints_middle_shuffled",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
+    sparse, sparse_positions = _ordered_video_tensors(
+        video, condition="monotone_sparse", order_seed=7, device=torch.device("cpu")
+    )
+
+    assert torch.equal(first, torch.from_numpy(frames[:1]))
+    assert first_positions.tolist() == [0]
+    assert torch.equal(final, torch.from_numpy(frames[-1:]))
+    assert final_positions.tolist() == [30]
+    assert torch.equal(endpoints, torch.from_numpy(frames[[0, -1]]))
+    assert endpoint_positions.tolist() == [0, 30]
+    assert torch.equal(shuffled_middle[[0, -1]], torch.from_numpy(frames[[0, -1]]))
+    assert not torch.equal(shuffled_middle[1:-1], torch.from_numpy(frames[1:-1]))
+    assert torch.equal(shuffled_positions, torch.from_numpy(indices))
+    assert torch.equal(sparse, torch.from_numpy(frames[[0, 2, 4, 6]]))
+    assert sparse_positions.tolist() == [0, 10, 20, 30]

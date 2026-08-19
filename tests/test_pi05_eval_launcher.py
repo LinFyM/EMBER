@@ -69,6 +69,11 @@ def test_video_control_choices_cover_the_canonical_writer_backend() -> None:
     assert set(choices["dynamic_k_writer_video_condition"]) == {
         "correct",
         "cross_suite_wrong",
+        "endpoints_middle_shuffled",
+        "final_frame_only",
+        "first_final",
+        "first_frame_only",
+        "monotone_sparse",
         "no_video",
         "reversed",
         "same_task_other",

@@ -112,6 +112,8 @@ default fold0还必须先证明uniform-step direct experts相对`646/750` source
 - [ ] 每条video独立编码initial relations、goal relations、contact/events、ordered subgoals、completion conditions与
   uncertainty；跨videos只在event/relation/code-evidence层置换不变聚合；
 - [ ] 不再平均50个Action tokens；保留flow-time/horizon-phase/noise-probe维，使用phase-specific policy response地址；
+- [x] 接入frame-count-matched static-first-repeated与同episode eye-in-hand cross-view；确认现有HDF5无可用mask authority，
+  不从teacher state派生mask绕过信息墙；
 - [ ] 在train/meta actions可用处加入inverse dynamics、visual transition-to-latent-action与phase correspondence辅助目标，
   held输入继续action-hidden；
 - [ ] Dynamic-K若进入论文候选，训练与formal评测真实覆盖各cardinality；不平均frames/raw features/final LoRAs；

@@ -47,6 +47,7 @@ FUNCTIONAL_CODE_WRITER_VIDEO_CONDITIONS = frozenset(
         "wrong_task",
         "language_only",
         "video_only",
+        "eye_in_hand_view",
         *TEMPORAL_PROCESS_VIDEO_CONDITIONS,
     }
 )
@@ -366,6 +367,11 @@ def _writer_input(condition: str, evaluation_k: int) -> str:
         return "exact task language only"
     if condition == "video_only":
         return f"{evaluation_k} action-hidden ordered teacher video(s) only"
+    if condition == "eye_in_hand_view":
+        return (
+            f"exact task language plus {evaluation_k} action-hidden ordered "
+            "eye-in-hand teacher video(s)"
+        )
     return f"exact task language plus {evaluation_k} action-hidden ordered teacher video(s)"
 
 
@@ -467,6 +473,11 @@ def inspect_functional_code_writer_evaluation(
             "writer_input": _writer_input(video_condition, evaluation_k),
             "language_reads": video_condition != "video_only",
             "video_frames_read": video_condition != "language_only",
+            "teacher_camera_view": (
+                "eye_in_hand"
+                if video_condition == "eye_in_hand_view"
+                else "agentview"
+            ),
             "language_only_lora_path": video_condition == "language_only",
             "video_only_lora_path": video_condition == "video_only",
             "teacher_action_reads": 0,
@@ -556,6 +567,7 @@ def expected_functional_code_writer_episode(
         "language_global_task_id": int(mapping["language_global_task_id"]),
         "language_used": language_used,
         "teacher_video_kind": condition,
+        "teacher_camera_view": adapter["information_wall"]["teacher_camera_view"],
         "teacher_video_frames_used": frames_used,
         "teacher_video_count": evaluation_k if frames_used else 0,
         "teacher_video_seed_root": seed,

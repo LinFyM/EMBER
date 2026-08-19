@@ -103,17 +103,21 @@ class RawTeacherVideoStore:
         *,
         frame_stride: int,
         max_open_files: int = 2,
+        camera_view: str = "agentview",
     ) -> None:
         if (
             not authorities
             or frame_stride <= 0
             or max_open_files <= 0
             or len({item.task_id for item in authorities}) != len(authorities)
+            or camera_view not in {"agentview", "eye_in_hand"}
         ):
             raise WriterModelError("invalid action-hidden video store")
         self.authorities = {item.task_id: item for item in authorities}
         self.frame_stride = int(frame_stride)
         self.max_open_files = int(max_open_files)
+        self.camera_view = str(camera_view)
+        self.camera_key = f"{self.camera_view}_rgb"
         self._handles: OrderedDict[int, h5py.File] = OrderedDict()
         for authority in authorities:
             verify_authority(authority)
@@ -136,7 +140,7 @@ class RawTeacherVideoStore:
         demo = self._handle(task_id).get(f"data/demo_{demo_index}")
         if not isinstance(demo, h5py.Group):
             raise WriterModelError("teaching video episode is missing")
-        pixels = demo.get("obs/agentview_rgb")
+        pixels = demo.get(f"obs/{self.camera_key}")
         if (
             not isinstance(pixels, h5py.Dataset)
             or pixels.ndim != 4
@@ -162,7 +166,9 @@ class RawTeacherVideoStore:
 
         if demo_index < 0:
             raise WriterModelError("teaching video demo index must be non-negative")
-        pixels = self._handle(task_id).get(f"data/demo_{demo_index}/obs/agentview_rgb")
+        pixels = self._handle(task_id).get(
+            f"data/demo_{demo_index}/obs/{self.camera_key}"
+        )
         if (
             not isinstance(pixels, h5py.Dataset)
             or pixels.ndim != 4

@@ -17,6 +17,7 @@ TEMPORAL_PROCESS_VIDEO_CONDITIONS = frozenset(
         "first_final",
         "endpoints_middle_shuffled",
         "monotone_sparse",
+        "static_first_repeated",
     }
 )
 
@@ -94,6 +95,9 @@ def frame_control(
         content = positions = natural if frame_count == 1 else natural[[0, -1]]
     elif condition == "monotone_sparse":
         content = positions = _monotone_sparse(frame_count)
+    elif condition == "static_first_repeated":
+        content = torch.zeros(frame_count, dtype=torch.long)
+        positions = natural
     else:
         raise ValueError(f"unsupported process-control condition: {condition}")
     return FrameControl(content=content, positions=positions)

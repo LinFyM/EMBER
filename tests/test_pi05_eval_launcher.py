@@ -80,8 +80,14 @@ def test_video_control_choices_cover_the_canonical_writer_backend() -> None:
         "same_task_other",
         "shuffled",
         "shuffled_keep_first",
+        "static_first_repeated",
     }
-    assert {"language_only", "video_only", "wrong_task"}.issubset(
+    assert {
+        "eye_in_hand_view",
+        "language_only",
+        "video_only",
+        "wrong_task",
+    }.issubset(
         choices["functional_writer_video_condition"]
     )
 

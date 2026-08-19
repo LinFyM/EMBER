@@ -24,7 +24,12 @@ VIDEO_CONDITIONS = {
     "no_video",
     *TEMPORAL_PROCESS_VIDEO_CONDITIONS,
 }
-_FUNCTIONAL_ONLY_CONDITIONS = {"wrong_task", "language_only", "video_only"}
+_FUNCTIONAL_ONLY_CONDITIONS = {
+    "wrong_task",
+    "language_only",
+    "video_only",
+    "eye_in_hand_view",
+}
 _ALL_SCHEDULE_CONDITIONS = VIDEO_CONDITIONS | _FUNCTIONAL_ONLY_CONDITIONS
 SAMPLING_MODES = {"with_replacement", "without_replacement"}
 

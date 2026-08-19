@@ -81,6 +81,9 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
   fixed 56-task meta-train / 15-task architecture-validation角色及correct、same-task-other、wrong、language-only、video-only与
   真实帧时序controls。learned language-only部署分支不打开视频，video-only分支不读取language或Action probes；训练期
   teacher-action alignment改为同task但确定性不同episode，并按归一化过程相位配对，避免逐帧动作复制。
+- process panel新增两个诚实条件：把真实首帧重复到原长度并保留source-time positions的`static_first_repeated`，以及读取
+  同一episode同一时刻`eye_in_hand_rgb`的`eye_in_hand_view`。HDF5只含双路RGB且没有depth/segmentation；robot/object mask
+  不会通过teacher state重渲染伪造，可信RGB-only flow仍登记为未解决数据/表示缺口。
 - 当前代码里程碑的67项定向evaluator/cache/runtime测试、honest baseline分支smoke和统一cache dispatch smoke均通过；结构门
   无hard violation。该证据只说明运行面接通，不是Writer性能或fixed-decoder gate通过。
 - 原两个decoder profile入口已收敛为唯一`train_functional_adapter_decoder.py`：直接优化完整PI0.5 flow response，保存

@@ -146,6 +146,11 @@ class FrozenFunctionalCodeTaskAdapter(WriterLoRARolloutAdapter):
                 max_open_files=int(
                     config["code_inference"]["training"]["video_open_files_per_rank"]
                 ),
+                camera_view=(
+                    "eye_in_hand"
+                    if self.condition == "eye_in_hand_view"
+                    else "agentview"
+                ),
             )
         )
         return store, {row.task_id: row.language for row in authorities}

@@ -206,6 +206,12 @@ def test_process_controls_separate_endpoints_middle_and_sparse_evidence() -> Non
     sparse, sparse_positions = _ordered_video_tensors(
         video, condition="monotone_sparse", order_seed=7, device=torch.device("cpu")
     )
+    static, static_positions = _ordered_video_tensors(
+        video,
+        condition="static_first_repeated",
+        order_seed=7,
+        device=torch.device("cpu"),
+    )
 
     assert torch.equal(first, torch.from_numpy(frames[:1]))
     assert first_positions.tolist() == [0]
@@ -218,3 +224,5 @@ def test_process_controls_separate_endpoints_middle_and_sparse_evidence() -> Non
     assert torch.equal(shuffled_positions, torch.from_numpy(indices))
     assert torch.equal(sparse, torch.from_numpy(frames[[0, 2, 4, 6]]))
     assert sparse_positions.tolist() == [0, 10, 20, 30]
+    assert torch.equal(static, torch.from_numpy(frames[[0] * 7]))
+    assert static_positions.tolist() == indices.tolist()

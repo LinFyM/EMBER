@@ -54,7 +54,7 @@
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
 | F | 扩展meta tasks并分离四类数据角色 | 固定target IDs与71-task allowlist已建立，但当前source pretraining和meta adaptation仍共享task identity，不能冒充完全分离；source formal高分后，预注册以direct专家增量决定当前pool是否有信息量，否则实际构造role-disjoint meta tasks | active |
-| G | process-identifying controls | first/final/endpoints/middle/order/flow/static/mask/procedure/view/paraphrase/goal/stage；无诚实数据的项先补non-held配对任务 | active |
+| G | process-identifying controls | first/final/endpoints/middle/order/sparse已接通；新增真实首帧等长重复static与同episode eye-in-hand cross-view；HDF5无depth/segmentation，mask不读取state伪造；flow/procedure/paraphrase/goal/stage继续补可信数据 | active |
 | H | 强化clean source policy | 先测primitive coverage与target adapter ceiling；只有能力缺口成立才用更多不重叠数据强化并重新冻结 | scheduled |
 
 ## 4. 专家方向I--N：owner已授权或保留的合同变化
@@ -90,10 +90,10 @@
 | first-only / final-only / first+final | 同一真实video重取帧并完整forward | Phase 1实现 |
 | endpoints-fixed, middle-shuffled | 同一真实video保留首末帧，仅重排真实中间帧 | Phase 1实现 |
 | monotone sparse | 同一真实video按预注册稀疏率保序抽帧 | Phase 1实现 |
-| optical-flow-only / static-only | 不泄露动作的动态/外观分解 | 先审计现有preprocessing，缺少可信分解则在meta pool补数据 |
-| robot-mask / object-mask | 一致mask及不改变task配对的渲染 | 先验证mask来源不泄露object pose；否则不伪造 |
+| optical-flow-only / static-only | 不泄露动作的动态/外观分解 | static-first-repeated已用真实RGB等长接入；当前无经验证的RGB-only flow owner，不能用帧差冒充optical flow |
+| robot-mask / object-mask | 一致mask及不改变task配对的渲染 | HDF5无segmentation/depth；由teacher state重渲染会越过信息墙，当前明确不伪造 |
 | same endpoint, different procedure | 成功且端点关系匹配的non-held任务对 | meta allowlist/配对审计后构建 |
-| cross-view / paraphrase / same-object-different-goal | 同过程异view/语言/目标的真实配对 | 使用现有LIBERO metadata可证实项，不按结果挑选 |
+| cross-view / paraphrase / same-object-different-goal | 同过程异view/语言/目标的真实配对 | eye-in-hand对agentview已按同episode同帧接通；paraphrase/goal只使用可证实metadata，不按结果挑选 |
 | stage-level success | stage boundary或可靠progress标注 | train/meta reward/diagnostic可用；held只sealed诊断 |
 
 ## 7. 正证据、负证据与更新规则

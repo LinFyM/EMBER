@@ -155,12 +155,14 @@ features、完整LoRA或checkpoint。若支持Dynamic-K，训练真实覆盖K1--
 ## 7. Process-identifying controls
 
 当前已接入strict evaluator：correct、same-task-other、cross-suite-wrong、shuffle、keep-first、reverse、no-video、
-first-only、final-only、first+final、endpoints-fixed-middle-shuffled与monotone-sparse。所有条件重排/选择真实frames后重新
-完整forward，并保留原始source-time位置语义。
+first-only、final-only、first+final、endpoints-fixed-middle-shuffled、monotone-sparse、frame-count-matched
+static-first-repeated与同episode同时间的eye-in-hand cross-view。所有条件选择、重复或重排真实RGB frames后重新完整
+forward，并保留原始source-time位置语义；cross-view不读取action/state/reward。
 
-后续在可信数据/segmentation可用时加入flow-only、static-only、robot-mask、object-mask、same-endpoint-different-procedure、
-cross-view、language paraphrase、same-object-different-goal与stage success。当前metadata不能证明same endpoint但不同合法
-procedure，因此该项明确是数据构造任务，不能用随意剪帧冒充。
+HDF5审计确认只有agentview/eye-in-hand RGB，没有depth或segmentation；因此robot-mask/object-mask不能由现有输入诚实
+产生，不能读取teacher state重渲染mask来绕过信息墙。后续仍需可信RGB-only motion表示、language paraphrase、
+same-object-different-goal、stage success与same-endpoint-different-procedure数据；当前metadata不能证明same endpoint但
+不同合法procedure，不能用随意剪帧冒充。
 
 full video必须稳定优于learned language-only和first+final；否则只能声称使用appearance、goal、端点或粗motion，不能
 声称学到Procedure。

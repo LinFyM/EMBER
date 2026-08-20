@@ -71,16 +71,20 @@
   排除“只需更小线性decoder或canonical factor”的窄解释。当前最早失效接口上移到单expert功能标签与source/meta任务角色。
 - validation8 sealed task-local oracle合同已实现：八套独立rank16 LoRA统一训练到预注册step2000，只在step1000 exact-resume，
   不更新共享Writer/decoder、不选checkpoint、不读取Test。它只裁决target ceiling与source primitive缺口，不形成deployment route。
-- source/meta角色分离的最小诊断运行面已接通：复用source从未训练过的target train24与现有step250/500/1000/1500/2000
-  experts，在固定19/5 task fold上只用19个fit-task anchors建立16维train-only-whitened fingerprint，5个held tasks只做同一
-  transform；随后同时比较step2000单标签与达到固定成功阈值的多checkpoint等价集；从未过阈值的task只登记best-ceiling
-  fallback并显式分开解释，不把它冒充成功策略。该set-valued effective-BA分析不重训expert、
-  不物化或部署adapter、不读取validation/Test，先裁决role overlap与单expert标签是否是当前最早瓶颈，再决定是否值得fresh
-  source/meta大重训。
-- 同一统一anchor运行面已补齐专家原始意见中的denoised action-response：identity/expert共享显式policy noise，执行official
-  10-step flow integration并保留完整`50×7`action chunk；它与既有`50×32`单步flow response可分别形成train-only-whitened
-  fingerprint，不读取validation/Test、不重训expert。当前仅是运行面接通，待role-disjoint flow结果后按同一held几何比较，
-  不能提前替代closed-loop、successful/on-policy occupancy、JVP或stage behavior证据。
+- source/meta角色分离的19/5 formal诊断已经完成。相对旧重叠任务面的无训练仿射held cosine `.3648`，role-disjoint
+  flow/action单标签分别为`.4310/.4341`，说明改变数据角色后几何有方向性改善；但任务集合也改变，不能把差值当成纯因果
+  归因。两种16维train-only-whitened code的held std均约`.78`，不再出现near-zero held坐标。
+- 同一轨迹的成功阈值多checkpoint等价集只把flow/action aggregate held cosine提高到`.4355/.4394`，证明“多checkpoint”
+  本身没有解决标签欠识别，也不能冒充独立成功策略分布。关键分层是：有checkpoint达到`25/50`的held tasks 0/9/18上，
+  action-response达到cosine `.5942`、relative-L2 `.8394`；没有成功checkpoint的tasks 25/36只有`.2071/1.0766`。
+  这把下一裁决集中到task-local ceiling与成功occupancy，而不是继续换Decoder objective。
+- denoised action-response已按共享显式noise、official 10-step integration与完整`50×7`action chunk完成formal收集；相同
+  anchors的flow为`50×32`。action在有成功expert的held子集优于flow的`.5753/.8712`，但全5-task aggregate仍未过
+  预注册几何screen；两者都只是无闭环、未物化adapter的定位证据。remote-safe摘要见
+  `docs/evidence/functional_adaptation_20260819/role_disjoint_manifold_20260821.json`。
+- validation8 sealed local-expert oracle的step1000阶段正在按预注册合同运行；所有task必须先到step1000，再在相同worker
+  topology上exact-resume到step2000，且不评测step1000。最终只用step2000 strict400与既有frozen source `48/400`
+  比较，以裁决target ceiling和source primitive缺口。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

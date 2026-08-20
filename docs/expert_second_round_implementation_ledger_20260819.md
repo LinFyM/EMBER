@@ -1,6 +1,6 @@
 # EMBER第二轮专家意见实施账本
 
-更新时间：2026-08-20。本文把第二轮独立专家审查中的诊断、架构批评、方向A--N、替代研究问题和成功/停止证据逐项
+更新时间：2026-08-21。本文把第二轮独立专家审查中的诊断、架构批评、方向A--N、替代研究问题和成功/停止证据逐项
 映射到当前后继goal。它是覆盖账本，不是把所有候选同时并入一个模型的设计清单。
 
 状态词：
@@ -16,9 +16,9 @@
 
 | ID | 专家核心判断 | 当前接受程度 | 落实方式与裁决证据 | 状态 |
 | --- | --- | --- | --- | --- |
-| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 71-task fold0 direct相对source在56/15面板净增+247/+38，当前pool具有功能增量；但source/meta identity仍重叠，fold0只允许进入推断，same-endpoint/different-procedure与多fold/role-disjoint复现仍是显式要求 | active |
+| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 19/5 role-disjoint flow/action已完成；旧重叠affine held cosine .365提高到方向性的.431/.434，但同轨迹成功checkpoint集合只到.435/.439，未解决独立成功策略等价类；successful/on-policy证据仍需补齐 | active |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
-| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only644、shared-zero640、exact-BA638；exact虽把held BA cosine提高到.303，closed loop反而低于shared-zero，且held loss早期平台化。当前offline objective family已失败，后续仍保留train/meta outer credit | implemented-fail |
+| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only644、shared-zero640、exact-BA638；role-disjoint action在有成功expert的held子集达到.594 cosine/.839 relative-L2，但best-ceiling失败项仍崩落。offline expert-state objective family已失败，下一标签转向successful/on-policy occupancy、JVP与stage evidence | implemented-fail |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；direct及projected在56-task Study分别较source净增+117/+99、pick-place净增+126/+102，当前全局强化触发条件不成立；后续只按Writer结果定位局部source缺口 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
 | C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact与shared-zero已完整分解；exact仅638且task code相对shared-zero净-2。当前单expert/fingerprint Decoder range没有通过，不恢复旧FactorHeads并停止objective变体 | implemented-fail |
@@ -48,12 +48,12 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | 重叠71-task组合已失败：flow-only644、shared-zero640、exact-BA638，仿射held cosine仅.365。现已接通target train24 19/5 role-disjoint fingerprint与step250--2000多成功adapter set-valued诊断；先裁决数据角色/单标签，再决定是否重建decoder | active |
+| A | 功能锚定的固定adapter decoder | 重叠71-task组合已失败；19/5 role-disjoint flow/action formal把held cosine提高到.431/.434，同轨迹set-valued仅.435/.439。有成功expert的三项action为.594/.839、两项fallback为.207/1.077；先完成validation8 ceiling，再决定successful/on-policy manifold，不重启同类decoder objective | active |
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
-| F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立，但这些identity也全部参加source训练；source646、direct684而各Decoder由共享输出主导。objective family失败后已触发role-disjoint重构，不再把当前71-task重叠面当充分meta泛化证据 | active |
+| F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立但与source identity重叠；target train24 19/5已提供首个role-disjoint方向性正证据，同时暴露失败expert ceiling主导aggregate。是否fresh重建更大role-disjoint meta family由validation8 ceiling裁决 | active |
 | G | process-identifying controls | first+final/reversed/shuffled/static已完成matched closed loop并共同否定macro10过程优势；其它已接通controls保留到新坐标Writer，HDF5无depth/segmentation且不从state伪造mask | active |
 | H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
 

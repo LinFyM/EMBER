@@ -577,3 +577,30 @@ relative-L2`.5244`、cosine`.8439`，held却只有`.9797/.3648`；design conditi
 direct只到684，而各Decoder几乎由shared output解释；同时每task仅一个expert标签，无法估计成功adapter等价类。后继先用
 预注册step2000的sealed validation8 task-local oracle裁决target rank16 ceiling，再以source未训练过的train24和现有多
 checkpoint successful adapters重建role-disjoint manifold。该oracle不更新共享模型、不选择checkpoint、不读取Test。
+
+## 28. Role-disjoint与denoised action response把问题进一步定位到成功expert ceiling
+
+target train24 fold0第一次真正分开了source-skill与adaptation-meta身份：冻结source从未在这24个task上训练，只用19个
+fit tasks建立统一anchors、PCA/whitening和仿射映射，5个held tasks只做固定变换。flow与10-step denoised action两种
+fingerprint的held coordinate std分别为`.7816/.7884`，平均norm为`3.333/3.292`；因此改善不是由held code塌到零点产生。
+
+step2000单expert标签在held上的flow/action cosine为`.4310/.4341`、relative-L2为`.9509/.9451`。这比旧source/meta
+重叠面板的无训练仿射cosine `.3648`更好，支持专家关于数据角色混叠的诊断；但两次诊断的任务集合也不同，所以这只是
+方向性证据，不能把`.07`差值全部归因于角色隔离。19个fit tasks仍分别达到`.9688/.9510` cosine，train到held的落差
+依然很大，不能据此重启fixed decoder或Writer。
+
+把step250/500/1000/1500/2000中达到`25/50`成功阈值的checkpoint视为同一task的候选成功集后，aggregate held
+cosine仅由flow/action的`.4310/.4341`提高到`.4355/.4394`。这组checkpoint来自同一条优化轨迹而非独立seed，故结果
+只说明“沿一条轨迹平均若干成功点”不是当前主要解，尚未真正估计成功policy等价类。
+
+更有信息量的是按ceiling分层。held tasks 0/9/18存在至少一个达到阈值的local expert；在这三项上action-response
+prototype达到cosine `.5942`、relative-L2 `.8394`，相对flow的`.5753/.8712`进一步接近预注册`.60/.85`几何screen。
+tasks 25/36没有任何checkpoint达到阈值，只能使用best-ceiling fallback，action-response仅为`.2071/1.0766`，直接拖低
+全5-task aggregate。这说明action response与role separation确实恢复了部分可识别结构，但表示质量和expert/source
+闭环能力仍纠缠；不能用失败expert的参数更新来否定成功策略流形，也不能把fallback称为成功等价类。
+
+因此下一步不是继续Decoder objective变体，也不是立即大规模fresh source重训。先完成已经预注册的validation8
+step2000 task-local rank16 oracle并与frozen source `48/400`严格配对：若local expert ceiling广泛且明显更高，最早接口
+转为成功/on-policy occupancy、JVP与stage behavior上的功能标签；若ceiling本身仍低或集中，则先修source primitive或
+local adaptation能力。完整remote-safe数值与边界见
+`docs/evidence/functional_adaptation_20260819/role_disjoint_manifold_20260821.json`。

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；统一坐标通过，但flow-only、shared-zero、fixed-probe与exact-BA Decoder均未过Gate 2；当前停止objective变体，先做sealed validation8 rank16 oracle并重构role-disjoint manifold数据角色。**
+状态：2026-08-21 **active；role-disjoint flow/action诊断已完成并把失败集中到successful-expert ceiling；当前完成sealed validation8 rank16 oracle，不重启Decoder objective或Writer。**
 
 ## Goal
 
@@ -96,8 +96,9 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - [x] 将完整PI0.5 flow decoder拟合收敛为单一formal/exact-resume入口，冻结56/15 task-equal schedule及下游authority门；
 - [x] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
-- [ ] 已用统一probe panel形成71个expert的functional fingerprint，train-only 32维PCA解释`.887516`方差且held只做固定
-  变换；同功能不同参数的等价性仍需多adapter证据，不能由单expert/task结果冒充；
+- [ ] 已用统一probe panel形成71个expert的functional fingerprint，并在source未见的target train24上完成19/5
+  role-disjoint flow/action fingerprints；同轨迹多checkpoint只带来极小aggregate改善，独立seed/occupancy上的成功策略
+  等价类仍待建立，不能由单expert或best-ceiling fallback冒充；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
@@ -180,13 +181,15 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Current next actions
 
-1. 冻结并记录flow/probe/exact/affine这一组负结果，不再对同一32维fingerprint和单expert标签做Decoder objective小变体；
-2. 运行一次预注册step2000 validation8 task-local rank16 oracle：只训练八套彼此独立的诊断LoRA，不更新Writer/decoder，
-   不选checkpoint且不读取Test，用于裁决target ceiling、Long/source缺口和`>150`目标是否可实现；
-3. 复用现有71-task与train24多checkpoint专家，建立source-skill、adaptation-meta、architecture-validation真正分角色的
-   manifold；target train24的19/5 role-disjoint fingerprint与多成功checkpoint set-valued诊断运行面已经实现，待当前
-   validation8 oracle阶段释放GPU后formal收集与裁决；不把任一expert BA当唯一标签；
-4. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints和全部专家bank均
+1. role-disjoint flow/action与同轨迹set-valued formal已经封存：全held仍未过screen，但有成功expert的三项上action达到
+   `.5942/.8394`，没有成功expert的两项显著拖低aggregate；不再把best-ceiling fallback冒充成功等价类；
+2. 完成预注册validation8 task-local rank16 oracle：所有八项先到step1000，再按原worker topology exact-resume到step2000；
+   只评测step2000、不选checkpoint、不更新Writer/decoder、不读取Test；
+3. 用step2000 strict400与既有frozen source `48/400`报告per-task/suite、breadth、retained/gained/lost与churn，裁决
+   target ceiling、Long/source缺口和`>150`目标是否可实现；
+4. 若local ceiling充分，下一功能标签改为小型固定successful/on-policy occupancy + action response/JVP/stage panel；若
+   ceiling本身不足，先强化source primitive或local adaptation能力，再重建真正role-disjoint meta family；
+5. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints和全部专家bank均
    保留复用，不重复昂贵训练；
-5. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；只有完整核心路线
+6. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；只有完整核心路线
    触发stop gate才进入runtime policy、task-local RL或其它替代问题。

@@ -10,7 +10,8 @@
 - 第二轮专家意见后继goal已经由owner正式启动。active design为
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
-  non-held fixed-decoder Gate 2已取得`qualified_pass_to_writer_inference`，当前进入Phase 3的Writer formal训练与推断裁决。
+  non-held fixed-decoder Gate 2已取得`qualified_pass_to_writer_inference`；Writer macro10 formal与generation profile已完成，
+  当前进入Phase 3的15-task matched推断裁决。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -35,10 +36,13 @@
   `qualified_pass_to_writer_inference`：足以进入Writer推断实验，但单fold privileged free-code、held净增不显著以及
   task58退化要求后续多fold复现，不能升级为fixed decoder科学结论。完整remote-safe裁决见
   `docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
-- successor Writer机制/显存profile已在`main@ef8eb3a`完成：Text/VL Meta-LoRA均为0、冻结decoder与VLM均无trainable
-  参数，Writer为8,218,216 parameters；4-task macro1总loss `1.828327`、gradient norm `2.490839`，A40峰值
-  32.52 GB、训练段36.82秒。它只证明训练图和资源合同成立；当前下一步是从clean pushed commit fresh训练56-task
-  formal Writer，再做online generation profile与15-task matched language/video/process screen。
+- successor Writer formal已经从clean pushed detached `main@a2999d5`完成56-task、6-GPU、macro1--10，耗时
+  780.43秒。total objective由`2.082406→1.853265`，combined/language/video分别由
+  `.995820/.994485/.984880→.838643/.861964/.974670`，10行metrics与gradient均finite；峰值32.60 GB。
+  Text/VL Meta-LoRA均为0，fixed decoder与VLM保持冻结，唯一macro10 checkpoint含Writer、trainer与world-size6状态。
+- 同一macro10 checkpoint已在一张空闲A40完成真实video→完整LoRA的B8/B16/B32 profile；三者均稳定、零OOM，吞吐分别
+  `.898928/.897234/.896828 LoRA/s`，B8按预注册规则胜出，最长48 sampled frames，最小显存余量35.50 GB。active config
+  已封存该证据并只允许profile支持的batch；当前下一步是15-task matched language/video/process closed-loop screen。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -179,7 +183,8 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 - 最近完整回归仍为`293 passed`；fixed-decoder正式训练入口另有8项聚焦测试通过；
 - B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
-- 本轮只运行了两个聚焦回归：autocast-safe confidence objective与successor authority配置各1项通过；Writer profile成功后
+- 本轮只运行必要的聚焦回归：autocast-safe confidence objective、successor authority配置与detached frozen authority
+  各1项通过；Writer profile成功后
   未重复大规模训练。已完成的direct/projected evaluator均退出且无遗留`ymdai` GPU进程；正式证据、唯一expert bank、
   decoder/projection与成功profile保留，失败profile临时目录已删除。
 - projected formal实际使用commit `247e6a8`的SQLite `DELETE` journal；继承run contract中的旧`WAL`描述只是标签滞后，

@@ -498,8 +498,15 @@ decoder无trainable parameters，只训练8,218,216参数的language-prior/video
 `1.828327`、gradient norm `2.490839`，A40峰值32.52 GB、训练段36.82秒。早先两次失败分别定位并修正autocast下
 probability BCE与32-frame encoder microbatch OOM；失败产物已清理，没有重复expert/decoder大训练。
 
-该节点只证明正式训练图、信息墙和显存合同成立。其后必须fresh训练56-task Writer，并在formal checkpoint上完成一次
-online generation profile后，才可运行15-task language/video/process matched screen。
+随后从clean pushed detached `a2999d5`在gpu02六张A40 fresh训练56-task Writer到预注册macro10，耗时780.43秒。
+total objective由`2.082406→1.853265`，combined/language/video code分别由
+`.995820/.994485/.984880→.838643/.861964/.974670`；10行metrics、梯度与checkpoint均finite，单卡峰值
+32.60 GB。checkpoint保留Writer、optimizer/scheduler、sampler/RNG和world-size6 trainer状态，没有续训或挑选中间点。
+
+macro10随后在一张空闲A40完成32-entry、最长视频优先的B8/B16/B32真实generation profile。三者吞吐分别为
+`.898928/.897234/.896828 LoRA/s`，均零OOM、稳定且显存余量至少35.50 GB；按既定“最高实测吞吐且有余量”规则选择B8。
+profile读取teacher action/state/reward/terminal均为0，结果已封入active config。该节点仍不构成closed-loop方法证据，
+只解除15-task language/video/process matched screen的运行门。
 
 ## 4. 截至整理边界的已解决与未解决接口
 

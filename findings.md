@@ -489,6 +489,10 @@ successor Writer的首个有效profile在Text/VL Meta-LoRA均为0、冻结π0.5 
 A40峰值32.52 GB、实际训练段36.82秒。此前profile暴露并修正了autocast下probability BCE和过大的frame microbatch，
 也及时阻止了旧Text/VL Meta-LoRA配置重新进入后继路线。
 
-这些只构成机制、authority和资源profile，不构成language prior、video posterior或closed-loop pass。下一科学节点必须是
-fresh 56-task formal Writer、一次online generation profile和15-task matched language/video/process screen；不能用训练loss、
-free code、profile checkpoint或重复大规模前置训练代替。
+随后fresh 56-task、6-GPU formal在macro10自然停止：780.43秒内total objective由`2.082406→1.853265`，
+combined code由`.995820→.838643`、language由`.994485→.861964`、video由`.984880→.974670`，全程finite，峰值
+32.60 GB。macro10的真实video→完整LoRA profile在同一32-entry最长优先面板上比较B8/B16/B32，三者均稳定且零OOM；
+吞吐为`.898928/.897234/.896828 LoRA/s`，因此按预注册规则封存B8，而不是凭最低显存或形式上的大batch选择。
+
+这仍只构成训练、authority和部署吞吐证据，不构成language prior、video posterior或closed-loop pass。下一科学节点是
+15-task matched language/video/process screen；不能用下降的训练loss、free code或profile throughput代替。

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；Phase 0--2 default fold0已完成并取得有保留条件的Gate 2通过，当前进入Phase 3 Writer formal。**
+状态：2026-08-20 **active；Gate 2 qualified，Writer macro10 formal与generation profile已完成，当前在Phase 3 matched推断裁决。**
 
 ## Goal
 
@@ -158,11 +158,11 @@ held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qu
 
 ## Current next actions
 
-1. 从包含Gate 2证据与最终authority配置的clean pushed commit建立detached formal worktree，fresh训练56-task successor
-   Writer到预注册macro10；复用已完成71-task expert bank、fixed decoder与projection，不重复昂贵前置训练；
-2. formal checkpoint完成后做一次online generation显存/吞吐profile，封存可执行batch，再在15-task meta-validation上运行
-   learned language-only、video-only、L+V及first/final/endpoints/middle/order/static/cross-view matched screen；
-3. 若Writer inference出现跨task真实净增量，补相邻checkpoint与多fold复现，并进入train/meta closed-loop outer objective；
+1. 使用已封存macro10 checkpoint与B8 generation authority，在15-task meta-validation固定states上先运行correct、
+   learned language-only、video-only、first+final与关键order/static controls的matched screen；共享LoRA cache只在配对合同一致时复用；
+2. 对screen报告per-task、breadth、retained/gained/lost、churn、正确视频净增量及task73/Study局部表现；不由训练loss或
+   internal code距离选择方法，也不把free held code分数当Writer结果；
+3. 若Writer inference出现跨task真实净增量，补相邻checkpoint、same-task-other及多fold复现，并进入train/meta closed-loop outer objective；
    若失败，按language prior、video posterior、fixed decode或process representation的最早失效接口处理，不做小扫；
 4. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，
    不因推进速度而静默丢弃。

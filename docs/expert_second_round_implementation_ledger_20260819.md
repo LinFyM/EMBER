@@ -49,7 +49,7 @@
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
 | A | 功能锚定的固定adapter decoder | default fold0已完成71 experts、56-task decoder fit、15-task frozen-decoder code fit及两侧closed loop；Gate 2为qualified而非方法pass，多fold仍必须复现 | active |
-| B | language prior + video posterior | 一次性完整LoRA生成、统一evaluator/cache和训练面已接通；4-task profile通过且decoder/VLM保持冻结，当前进入56-task formal与matched矩阵 | active |
+| B | language prior + video posterior | 56-task macro10 formal与B8/B16/B32真实generation profile已完成；decoder/VLM保持冻结并封存B8，当前进入15-task learned-language/video/L+V/process matched矩阵 | active |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |

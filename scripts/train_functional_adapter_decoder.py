@@ -39,6 +39,10 @@ from ember.functional_adaptation.decoder_flow_checkpoint import (
     load_decoder_flow_checkpoint,
     save_decoder_flow_checkpoint,
 )
+from ember.functional_adaptation.fingerprint_codes import (
+    FunctionalFingerprintCodeTargets,
+    load_functional_fingerprint_code_targets,
+)
 from ember.functional_adaptation.probe_panels import (
     FunctionalProbePanel,
     build_probe_panels,
@@ -84,6 +88,7 @@ class FlowProfile:
     processor: Pi05LiberoProcessor
     started: float
     metrics_rows: int
+    fixed_code_authority: FunctionalFingerprintCodeTargets | None
 
 
 @dataclass(frozen=True)
@@ -104,6 +109,8 @@ def _checkpoint_steps(schedule: Mapping[str, Any], phase: str) -> tuple[int, ...
         schedule["decoder_steps" if phase == "decoder" else "held_code_steps"]
     )
     values = tuple(int(value) for value in schedule["checkpoint_steps"][phase])
+    if total == 0 and not values:
+        return ()
     if (
         not values
         or values != tuple(sorted(set(values)))
@@ -144,6 +151,11 @@ def _run_contract(runtime: FlowProfile) -> dict[str, Any]:
                 if runtime.args.effective_decoder is None
                 else str(runtime.args.effective_decoder.resolve())
             ),
+            "functional_code_artifact": (
+                None
+                if runtime.fixed_code_authority is None
+                else str(runtime.fixed_code_authority.root)
+            ),
             "tokenizer": str(runtime.args.tokenizer_path.resolve()),
             "data_root": str(runtime.args.data_root.resolve()),
         },
@@ -153,13 +165,18 @@ def _run_contract(runtime: FlowProfile) -> dict[str, Any]:
             "fit_count": len(runtime.active_fit),
             "held_count": len(runtime.active_held),
             "task_equal_decoder_order": True,
-            "task_equal_held_code_order": True,
+            "task_equal_held_code_order": runtime.fixed_code_authority is None,
         },
         "schedule": dict(runtime.schedule),
         "information_wall": {
             "privileged_task_codes": "train/meta decoder fitting only",
             "target40_action_or_reward_reads": 0,
             "decoder_frozen_after_fit": True,
+            "code_source": (
+                "learned_codebook_plus_free_held_codes"
+                if runtime.fixed_code_authority is None
+                else "unified_policy_functional_fingerprint"
+            ),
             "deployment_task_id_route": False,
         },
         "content_hash_policy": "disabled_by_owner",
@@ -261,6 +278,13 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         "production_meta" if args.surface == "nonheld_meta" else "train24_mechanism"
     ]
     flow = mechanism["flow_response"]
+    fixed_code_requested = args.functional_code_artifact is not None
+    if args.surface == "nonheld_meta" and not fixed_code_requested:
+        raise ValueError(
+            "non-held meta decoder requires unified functional fingerprint codes"
+        )
+    if args.surface != "nonheld_meta" and fixed_code_requested:
+        raise ValueError("functional fingerprints only cover non-held meta tasks")
     schedule = flow[args.mode]
     _checkpoint_steps(schedule, "decoder")
     _checkpoint_steps(schedule, "held_code")
@@ -318,13 +342,31 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         hidden_width=int(decoder_config["hidden_width"]),
         seed=int(decoder_config["initialization_seed"]),
     ).to(device)
+    fixed_code_authority: FunctionalFingerprintCodeTargets | None = None
+    if fixed_code_requested:
+        fixed_code_authority = load_functional_fingerprint_code_targets(
+            args.functional_code_artifact,
+            expected_train_task_ids=tuple(row.global_task_id for row in split.fit),
+            expected_held_task_ids=tuple(row.global_task_id for row in split.held),
+            code_width=code_width,
+            device=device,
+        )
+        with torch.no_grad():
+            system.codebook.weight.copy_(fixed_code_authority.train_codes)
+        system.codebook.requires_grad_(False)
     if args.surface == "train24":
         if args.effective_decoder is None:
             raise ValueError("train24 flow fitting requires its effective decoder")
         warmstart = load_file(str(args.effective_decoder), device=str(device))
         system.load_state_dict(warmstart, strict=True)
     system.requires_grad_(True)
-    if args.surface == "train24":
+    if fixed_code_authority is not None:
+        system.codebook.requires_grad_(False)
+    if fixed_code_authority is not None:
+        held_codes = torch.nn.Parameter(
+            fixed_code_authority.held_codes.clone(), requires_grad=False
+        )
+    elif args.surface == "train24":
         effective_held_codes = load_file(
             str(args.effective_decoder.parent / "held_codes.safetensors"),
             device=str(device),
@@ -385,6 +427,7 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         processor=processor,
         started=time.monotonic(),
         metrics_rows=0,
+        fixed_code_authority=fixed_code_authority,
     )
 
 
@@ -459,8 +502,10 @@ def _initial_losses(
 def _decoder_optimizer(runtime: FlowProfile) -> torch.optim.Optimizer:
     optimizer_config = runtime.flow["optimizer"]
     runtime.system.requires_grad_(True)
+    if runtime.fixed_code_authority is not None:
+        runtime.system.codebook.requires_grad_(False)
     return torch.optim.AdamW(
-        runtime.system.parameters(),
+        (value for value in runtime.system.parameters() if value.requires_grad),
         lr=float(optimizer_config["learning_rate"]),
         weight_decay=float(optimizer_config["weight_decay"]),
     )
@@ -640,10 +685,13 @@ def _write_result(
         str(runtime.args.output_dir / "held_codes.safetensors"),
     )
     repository = git_state(REPO_ROOT)
+    held_steps = int(runtime.schedule["held_code_steps"])
+    final_phase = "held_code" if held_steps else "decoder"
+    final_step = held_steps or int(runtime.schedule["decoder_steps"])
     final_checkpoint = (
         runtime.args.output_dir
         / "checkpoints"
-        / f"held_code_step_{int(runtime.schedule['held_code_steps']):08d}"
+        / f"{final_phase}_step_{final_step:08d}"
     )
     run_contract_path = runtime.args.output_dir / "run_contract.json"
     if not final_checkpoint.is_dir() or not run_contract_path.is_file():
@@ -680,6 +728,25 @@ def _write_result(
                 "decoder": int(runtime.schedule["decoder_steps"]),
                 "held_code": int(runtime.schedule["held_code_steps"]),
             },
+            "code_source": (
+                "learned_codebook_plus_free_held_codes"
+                if runtime.fixed_code_authority is None
+                else "unified_policy_functional_fingerprint"
+            ),
+            "functional_code_artifact": (
+                None
+                if runtime.fixed_code_authority is None
+                else {
+                    "root": str(runtime.fixed_code_authority.root),
+                    "result_bytes": (
+                        runtime.fixed_code_authority.root / "result.json"
+                    ).stat().st_size,
+                    "codes_bytes": (
+                        runtime.fixed_code_authority.root
+                        / "fingerprint_codes.safetensors"
+                    ).stat().st_size,
+                }
+            ),
             "metrics_rows": runtime.metrics_rows,
             "run_contract": {
                 "path": str(run_contract_path.resolve()),
@@ -734,6 +801,8 @@ def run(args: argparse.Namespace) -> None:
     args.output_dir = args.output_dir.resolve()
     if args.resume is not None:
         args.resume = args.resume.resolve()
+    if args.functional_code_artifact is not None:
+        args.functional_code_artifact = args.functional_code_artifact.resolve()
     runtime = _prepare(args)
     _publish_run_contract(runtime)
     panels = _cache_all_panels(runtime)
@@ -775,32 +844,33 @@ def run(args: argparse.Namespace) -> None:
             visits=list(decoder_cursor.visits),
         )
 
-    held_optimizer = _held_optimizer(runtime)
-    held_cursor = (
-        load_decoder_flow_checkpoint(
-            checkpoint=args.resume,
-            expected_phase="held_code",
-            system=runtime.system,
-            held_codes=runtime.held_codes,
+    if int(runtime.schedule["held_code_steps"]):
+        held_optimizer = _held_optimizer(runtime)
+        held_cursor = (
+            load_decoder_flow_checkpoint(
+                checkpoint=args.resume,
+                expected_phase="held_code",
+                system=runtime.system,
+                held_codes=runtime.held_codes,
+                optimizer=held_optimizer,
+            )
+            if resume is not None and resume.phase == "held_code"
+            else DecoderFlowCursor(
+                phase="held_code",
+                step=0,
+                metrics_rows=runtime.metrics_rows,
+                visits=tuple(0 for _ in runtime.active_held),
+            )
+        )
+        runtime.metrics_rows = held_cursor.metrics_rows
+        _fit_held_codes(
+            runtime,
+            panels,
+            metrics_path,
             optimizer=held_optimizer,
+            start_step=held_cursor.step,
+            visits=list(held_cursor.visits),
         )
-        if resume is not None and resume.phase == "held_code"
-        else DecoderFlowCursor(
-            phase="held_code",
-            step=0,
-            metrics_rows=runtime.metrics_rows,
-            visits=tuple(0 for _ in runtime.active_held),
-        )
-    )
-    runtime.metrics_rows = held_cursor.metrics_rows
-    _fit_held_codes(
-        runtime,
-        panels,
-        metrics_path,
-        optimizer=held_optimizer,
-        start_step=held_cursor.step,
-        visits=list(held_cursor.visits),
-    )
     _write_result(runtime, panels, initial_fit, initial_held)
 
 
@@ -821,6 +891,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--checkpoint", type=Path, required=True)
     result.add_argument("--expert-bank-root", type=Path, required=True)
     result.add_argument("--effective-decoder", type=Path)
+    result.add_argument("--functional-code-artifact", type=Path)
     result.add_argument("--tokenizer-path", type=Path, required=True)
     result.add_argument("--data-root", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)

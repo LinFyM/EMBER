@@ -58,7 +58,8 @@ def test_functional_adapter_profile_config_resolves_authorities() -> None:
     assert formal["active_fit_tasks"] == 56
     assert formal["active_held_tasks"] == 15
     assert formal["checkpoint_steps"]["decoder"][-1] == formal["decoder_steps"]
-    assert formal["checkpoint_steps"]["held_code"][-1] == formal["held_code_steps"]
+    assert formal["held_code_steps"] == 0
+    assert formal["checkpoint_steps"]["held_code"] == []
 
 
 def test_decoder_flow_checkpoint_restores_exact_training_state(tmp_path: Path) -> None:

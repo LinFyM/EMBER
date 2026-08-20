@@ -300,9 +300,21 @@
     "held_task_count": 15,
     "expert_step": 1000,
     "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
-    "formal_status": "frozen_56_15_fold0_qualified_gate2_writer_macro10_profile_sealed",
+    "formal_status": "frozen_56_15_old_fold0_macro10_inference_failed_functional_fingerprint_refit_active",
+    "functional_fingerprint": {
+      "anchor_task_count": 8,
+      "anchor_demo_indices": [
+        40,
+        41
+      ],
+      "panels_per_anchor": 1,
+      "anchor_batch_size": 2,
+      "policy_seed": 20260821,
+      "fit_role": "meta_train_only",
+      "held_role": "transform_only"
+    },
     "objective": {
-      "codebook_gauge_weight": 0.01
+      "codebook_gauge_weight": 0.0
     },
     "flow_response": {
       "fit_demo_indices": [
@@ -320,25 +332,18 @@
         "weight_decay": 0.0001,
         "gradient_clip_norm": 1
       },
-      "held_code_optimizer": {
-        "name": "Adam",
-        "learning_rate": 0.001,
-        "code_l2_weight": 0.0001
-      },
       "smoke": {
         "active_fit_tasks": 1,
         "active_held_tasks": 1,
         "panel_count": 1,
         "panel_batch_size": 1,
         "decoder_steps": 1,
-        "held_code_steps": 1,
+        "held_code_steps": 0,
         "checkpoint_steps": {
           "decoder": [
             1
           ],
-          "held_code": [
-            1
-          ]
+          "held_code": []
         }
       },
       "profile": {
@@ -347,14 +352,12 @@
         "panel_count": 2,
         "panel_batch_size": 2,
         "decoder_steps": 140,
-        "held_code_steps": 50,
+        "held_code_steps": 0,
         "checkpoint_steps": {
           "decoder": [
             140
           ],
-          "held_code": [
-            50
-          ]
+          "held_code": []
         }
       },
       "formal": {
@@ -363,7 +366,7 @@
         "panel_count": 4,
         "panel_batch_size": 2,
         "decoder_steps": 1120,
-        "held_code_steps": 600,
+        "held_code_steps": 0,
         "checkpoint_steps": {
           "decoder": [
             280,
@@ -371,12 +374,7 @@
             840,
             1120
           ],
-          "held_code": [
-            150,
-            300,
-            450,
-            600
-          ]
+          "held_code": []
         }
       }
     }

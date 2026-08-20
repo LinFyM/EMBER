@@ -103,7 +103,12 @@ def _materialize_rows(
                     "expert_checkpoint": str(record.checkpoint),
                     "projected_adapter": str(path.resolve()),
                     "projected_adapter_bytes": path.stat().st_size,
-                    "code_role": "held_free_code" if held else "fit_codebook",
+                    "code_role": (
+                        "functional_fingerprint_code"
+                        if profile.get("code_source")
+                        == "unified_policy_functional_fingerprint"
+                        else "held_free_code" if held else "fit_codebook"
+                    ),
                     "functional_flow_eval_relative_loss": losses[record.ordinal],
                     **(
                         {"split_role": str(bank_row["split_role"])}
@@ -151,6 +156,12 @@ def _projection_manifest(
             "decoder_frozen_for_held_code_fit": True,
             "decoder_steps": int(profile["steps"]["decoder"]),
             "held_code_steps": int(profile["steps"]["held_code"]),
+            "code_source": profile.get(
+                "code_source", "learned_codebook_plus_free_held_codes"
+            ),
+            "held_codes_fitted_after_decoder": bool(
+                int(profile["steps"]["held_code"])
+            ),
             "fold_count": 5 if meta_surface else int(mechanism["fold_count"]),
             "held_out_fold": int(
                 mechanism[

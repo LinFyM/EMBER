@@ -10,8 +10,9 @@
 - 第二轮专家意见后继goal已经由owner正式启动。active design为
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
-  non-held fixed-decoder Gate 2已取得`qualified_pass_to_writer_inference`；Writer macro10 formal与generation profile已完成，
-  当前进入Phase 3的15-task matched推断裁决。
+  non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
+  七臂matched screen已完成。screen明确失败并暴露train/held code坐标不一致，当前回到Phase 1/2重建统一functional
+  fingerprint code，未进入outer RL。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -32,9 +33,9 @@
   71-task source `2918/3550`，当前不触发无差别source重训。source覆盖摘要见
   `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
 - default fold0 functional decoder formal从fit loss `1.040443`降至`.481957`、held loss从`1.035567`降至`.830093`，
-  14/15 held tasks改善；冻结后导出71套完整LoRA并完成上述严格paired closed loop。Gate 2据此只作
-  `qualified_pass_to_writer_inference`：足以进入Writer推断实验，但单fold privileged free-code、held净增不显著以及
-  task58退化要求后续多fold复现，不能升级为fixed decoder科学结论。完整remote-safe裁决见
+  14/15 held tasks改善；冻结后导出71套完整LoRA并完成上述严格paired closed loop。当时Gate 2据此只作
+  `qualified_pass_to_writer_inference`并启动macro10；后续坐标审计已撤销其Writer泛化authority，因为train/held codes
+  分布不一致。该结果只继续支持decoder range值得重验，不能升级为fixed-coordinate科学结论。完整原裁决见
   `docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
 - successor Writer formal已经从clean pushed detached `main@a2999d5`完成56-task、6-GPU、macro1--10，耗时
   780.43秒。total objective由`2.082406→1.853265`，combined/language/video分别由
@@ -42,7 +43,17 @@
   Text/VL Meta-LoRA均为0，fixed decoder与VLM保持冻结，唯一macro10 checkpoint含Writer、trainer与world-size6状态。
 - 同一macro10 checkpoint已在一张空闲A40完成真实video→完整LoRA的B8/B16/B32 profile；三者均稳定、零OOM，吞吐分别
   `.898928/.897234/.896828 LoRA/s`，B8按预注册规则胜出，最长48 sampled frames，最小显存余量35.50 GB。active config
-  已封存该证据并只允许profile支持的batch；当前下一步是15-task matched language/video/process closed-loop screen。
+  已封存该证据并只允许profile支持的batch；该昂贵checkpoint与cache继续保留作反事实，不重复训练。
+- macro10的15-task×10-state matched screen为correct/language-only/video-only/first+final/reversed/shuffled/static分别
+  `131/130/134/130/134/133/132`。correct相对source为123 retained、8 gained、8 lost、净0；相对video-only与reversed均
+  只有1 gained、4 lost。所有arms breadth@1均15，但correct没有full-video、order或dynamic Value优势，Gate 3明确失败。
+- 最早失效接口不是简单“macro10还没训够”：56个训练code的coordinate std约1、平均task norm`5.589`，15个held codes
+  从零自由拟合后std仅`.089`、平均norm`.505`，最近train code平均距离`4.523`。Writer训练与leave-out评测不在同一个
+  code分布。effective-BA诊断进一步显示video-only的task-mean只有1/15最近邻到正确projected task，却距15-task共享均值
+  仅`.000998` relative error；其134分主要是shared carrier/base competence，不是video-conditioned task inference。
+- 已建立新的单一修复路径：在固定meta-train anchors上对71 experts收集统一policy-flow response，PCA与whitening只拟合
+  56 meta-train fingerprints，15 held fingerprints只做同一变换；随后固定这些codes重训decoder，held不再从零自由优化。
+  该实现通过短期worktree隔离开发；formal只从合并main后的clean pushed commit启动。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

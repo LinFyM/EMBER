@@ -1,6 +1,6 @@
 # Fixed Functional Adaptation Successor
 
-状态：2026-08-19 active design。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
+状态：2026-08-20 active design；macro10推断失败后已修订functional code构造。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
 Expert-Manifold细节只从`docs/research_history.md`和对应sealed artifacts解释，不恢复为并行主线。
 
 ## 1. 核心假设
@@ -78,13 +78,29 @@ source/meta重叠pool不能验证decoder泛化，触发role-disjoint meta-task�
 decoder warm-start可使用gauge-invariant effective `BA`误差，但最终通过条件是policy response与closed-loop功能，不是raw
 A/B、rank cosine或reconstruction loss。
 
+### 4.3 Unified functional fingerprints
+
+首版“joint learned train codebook + held从零自由优化code”已由macro10裁决淘汰：train codes平均norm`5.589`，held codes
+仅`.505`，不是同一推断分布。canonical code改由统一policy queries直接定义：
+
+1. 只从固定meta-train task顺序等距选择anchor tasks，不读取loss、reward或outcome；
+2. 每个train/held expert都在完全相同的anchor observation/language/action-flow queries上计算`expert - frozen source`完整
+   `50x32` response，并拼成task fingerprint；held task自身action/state不进入anchor panel；
+3. PCA basis、mean与scale只用56个meta-train fingerprints拟合，取32维并whiten到train covariance identity；
+4. 15个held fingerprints只经过同一固定transform，不重新拟合PCA、不优化held free code；
+5. 这些codes固定后才训练`code -> complete LoRA` decoder。task-local panels继续用于decoder functional loss与closed-loop
+   验证，但不再决定latent坐标。
+
+这样latent gauge由统一policy function与train-only whitening一次性固定；held code与train code天然同坐标、同尺度，Writer
+面对的leave-task-out目标不再被near-origin shared carrier替代。
+
 ## 5. Fixed FunctionalAdapterDecoder v1
 
 ### 5.1 Code与输出地址
 
 - 每个task的functional code为一个`32`维向量；默认meta训练tasks为56，因此code维度低于task数并可估计协方差；
-- code table只在decoder学习阶段按task ownership索引，绝不进入部署；
-- 对code做中心化、尺度约束与covariance-to-identity gauge loss；decoder冻结后，language/video预测同一固定坐标；
+- code table是上述frozen fingerprint codes的只读索引，只在decoder学习阶段按task ownership取值，绝不进入部署；
+- PCA/whitening只在meta-train拟合并固定；decoder训练不再移动code，language/video随后预测同一固定坐标；
 - 38个LoRA target与16个public rank各自拥有learned output address embedding；这些embedding只负责把一个functional code
   写入完整PEFT拓扑，不把rank、layer或action-in/out宣称为预先已知的功能坐标；
 - action-in与action-out拥有独立target address，不再伪装成首末Action Expert layer；
@@ -107,11 +123,11 @@ evaluation cache和rollout永远只看到一个complete LoRA。共享base若未�
 
 ### 5.3 两阶段训练与冻结
 
-1. 在meta training folds联合学习task code table与decoder；每个macro按task等权；
-2. effective-BA warm-start后尽快切换到expert-vs-generated full flow-response matching；
-3. 固定decoder，在held-out meta fold只优化privileged oracle code，测试decoder range；
-4. range通过后永久冻结decoder，held-out code只用于oracle诊断，不参与后续video inference训练；
-5. semantic/video encoder必须从action-hidden输入预测code，完成真正leave-task-out闭环验证。
+1. 先按4.3从统一functional fingerprints冻结train/held codes；held role只transform，不产生梯度；
+2. 只在meta-train tasks按task等权训练decoder，effective-BA可预热但尽快切换到expert-vs-generated full flow response；
+3. decoder训练期间held codes与held panels都不产生梯度；训练结束后在held task-local panel和closed loop测试range；
+4. range通过后永久冻结decoder，held fingerprint code只用于oracle诊断，不参与后续Writer训练；
+5. semantic/video encoder必须从action-hidden输入预测同一code，完成真正leave-task-out闭环验证。
 
 fully fixed是主线。只有decoder在多个meta folds都出现系统性range欠拟合、且扩大code而非重训坐标不能解决时，才运行
 明确two-timescale/EMA对照；不能因为video inference困难就重新共同移动decoder。

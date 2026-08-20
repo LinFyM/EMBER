@@ -477,9 +477,10 @@ single-place为88.67%、actuation为87.33%、stack为83.00%、compound为76.00%�
 这同时排除了“direct experts在高source上没有增量”和“decoder只靠identity aggregate过门”两个担忧。
 
 但held source→projected只有612 retained、47 gained、34 lost、净`+13`、exact McNemar `p=.18208`；6 tasks正、
-6负、3持平，而且只复现direct gain rows的54.67%。因此本fold只能登记为
-`qualified_pass_to_writer_inference`：它证明固定功能坐标足以值得检验language/video到code的推断，却不证明fixed decoder
-已经成为方法贡献。该证据仍是单fold、privileged free held code；多fold复现、task58退化定位与最终video inference均不能省略。
+6负、3持平，而且只复现direct gain rows的54.67%。因此本fold当时登记为
+`qualified_pass_to_writer_inference`并只授权首轮language/video实验，而没有把fixed decoder升级为方法贡献。macro10之后
+的§25进一步证明train/held code尺度不一致，故该资格现已降级为“decoder range值得用统一坐标重验”；单fold、privileged
+free held code不能再充当Writer code泛化证据，多fold复现、task58退化定位与最终video inference仍不能省略。
 完整裁决见`docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
 
 ## 23. Successor Writer训练面已满足正式启动条件，但还没有推断证据
@@ -496,3 +497,34 @@ combined code由`.995820→.838643`、language由`.994485→.861964`、video由`
 
 这仍只构成训练、authority和部署吞吐证据，不构成language prior、video posterior或closed-loop pass。下一科学节点是
 15-task matched language/video/process screen；不能用下降的训练loss、free code或profile throughput代替。
+
+## 24. Macro10推断门失败：高分来自共享均值，不来自正确视频过程
+
+15个meta-validation tasks的固定前10 states上，macro10得到correct/language-only/video-only/first+final=
+`131/130/134/130`；补齐reversed/shuffled/static-first-repeated后为`134/133/132`。correct相对language只有5 gained、
+4 lost，relative source则8 gained、8 lost；相对video-only和reversed都只有1 gained、4 lost。task73为`3/10`，但没有
+一个过程条件优于它；task63反而由correct `8/10`降于video/reverse/shuffle/static的`10/10`。因此full video既没有
+language净增量，也没有order/dynamics优势，Gate 3明确失败。
+
+这不是“aggregate差三分但方向正确”。在同一fixed decoder输出上做gauge-invariant effective-BA诊断时，15个
+projected task adapters彼此本就很接近；video-only的task-mean adapter距它们的共享均值只有`.000998` relative error，
+15个任务中仅1个最近邻到自己的projected adapter。correct、language和first+final也分别只有0/1/0个任务最近邻正确。
+因此video-only的`134`主要复用了一个跨task carrier以及高source competence，不能证明视频识别了目标task，更不能用它
+启动outer RL。完整配对与per-task证据见
+`docs/evidence/functional_adaptation_20260819/writer_macro10_inference_gate_20260820.json`。
+
+## 25. 旧fixed-code合同把train whitening与held near-zero自由码混为同一坐标
+
+macro10负结果定位出一个此前被Gate 2 aggregate掩盖的合同错误。decoder-fit的56个codebook vectors经过gauge loss后
+coordinate std约`1.000`、平均task norm`5.589`；冻结decoder后，15个held codes却从全零开始，仅40次/task Adam更新，
+最终coordinate std`.089`、平均norm`.505`，到最近train code的平均距离`4.523`。Writer只接受前一种targets监督，
+leave-task-out却由后一种near-origin自由码定义“正确答案”。这两组数不是同一分布上的固定功能坐标。
+
+near-origin code经decoder产生的非零共同输出又恰好形成shared carrier，所以held free-code projected与macro10 video-only
+都能在高source面板获得较高absolute；这解释了“closed-loop看似qualified、task inference却1/15”的组合。原fold0
+source/direct/projected rows仍是有效的range和retention证据，但不能再授权Writer泛化，也不能通过延长旧Writer训练修复。
+
+修复必须回到专家原始阶段1：让所有experts在同一meta-train anchor queries上产生`expert-source`完整flow response
+fingerprint；PCA与whitening只拟合56个meta-train fingerprints，15个held fingerprints只通过同一个固定变换。这样train与
+held code天然同坐标、同尺度，且每个维度来自统一policy function变化，而不是独立task-ID自由优化。随后固定这些codes
+重训decoder并重新做source/direct/projected closed loop；只有新Gate 2通过才fresh训练后继Writer。

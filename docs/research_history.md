@@ -508,6 +508,21 @@ macro10随后在一张空闲A40完成32-entry、最长视频优先的B8/B16/B32�
 profile读取teacher action/state/reward/terminal均为0，结果已封入active config。该节点仍不构成closed-loop方法证据，
 只解除15-task language/video/process matched screen的运行门。
 
+### 3.21 Macro10七臂推断失败与functional-coordinate回退
+
+同一macro10在15个meta-validation tasks×10固定states完成correct、language-only、video-only、first+final、reversed、
+shuffled、static-first-repeated七臂matched screen，依次为`131/130/134/130/134/133/132`。correct相对source净0，
+相对video-only/reversed均净`-3`；order/static negatives全部不差于correct，故没有视频过程正证据，也没有进入outer RL。
+
+事后定位发现原56个train codebook vectors为whitened、平均norm`5.589`，15个held free codes则从零独立拟合到平均norm
+`.505`。macro10 video-only在effective-BA空间几乎等于15-task shared mean，且仅1/15 tasks最近邻到自己的projected
+adapter；其`134`是shared carrier与高source能力，不是task inference。原fold0 decoder closed-loop证据保留，但
+`qualified_pass_to_writer_inference`不再足以授权继续训练旧Writer。
+
+后继改为专家原始的policy-functional manifold：统一meta-train anchor queries收集71个expert-source flow
+fingerprints，PCA/whitening仅拟合56 train tasks，held15只做同变换；固定这些同坐标codes后重新拟合decoder并重跑Gate 2。
+完整证据为`docs/evidence/functional_adaptation_20260819/writer_macro10_inference_gate_20260820.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

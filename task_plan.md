@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；Gate 2 qualified，Writer macro10 formal与generation profile已完成，当前在Phase 3 matched推断裁决。**
+状态：2026-08-20 **active；旧fold0 closed-loop Gate 2曾获qualified，但macro10推断门已失败并暴露train/held code坐标不一致，当前回到Phase 1/2建立统一functional fingerprint坐标。**
 
 ## Goal
 
@@ -106,10 +106,12 @@ default fold0还必须先证明uniform-step direct experts相对`646/750` source
 以paired source/direct/projected的retained、gained、lost、churn和per-task delta裁决，不能由identity/source高分过门。
 若direct增量不足，当前source/meta任务重叠使Gate 2未识别，转入role-disjoint meta-task构造而不是继续训练Writer。
 
-**Default fold0裁决：** direct experts相对source在56/15任务面板分别净增`+247/+38`，因此当前pool具有信息量；
+**Default fold0原裁决：** direct experts相对source在56/15任务面板分别净增`+247/+38`，因此当前pool具有信息量；
 fixed-decoder projected为`2451/2800`与`659/750`，分别保留direct successes的`92.62%/90.79%`。train侧广泛净增，
 held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qualified_pass_to_writer_inference`而非方法通过。
-立即进入Writer推断，但多fold fixed-decoder复现仍是后续选择门，不能用本fold privileged free code替代video inference证据。
+macro10推断后又确认train codebook为whitened、平均范数`5.589`，held free codes从零拟合后平均范数仅`.505`；两者不是
+同一个可推断分布。原closed-loop结果仍是fixed decoder range证据，但不再作为Writer code泛化authority。下一Gate 2必须
+用统一probe response、只在meta-train拟合的PCA/whitening同时变换train/held，不能再以独立held free-code优化过门。
 
 ## Phase 3 — Language prior + video process posterior
 
@@ -125,6 +127,11 @@ held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qu
 - [ ] 固定decoder，仅训练language/video inference；按task-level split报告code与closed-loop泛化。
 
 **Gate 3：** full video必须稳定优于learned language-only与first+final，收益不能只集中Object，Long不得系统性反向。
+
+**Macro10裁决：** correct=`131/150`，language-only=`130`、video-only=`134`、first+final=`130`、reversed=`134`、
+shuffled=`133`、static-first-repeated=`132`；correct相对source净`0`且所有order/static negatives都不差。video-only在
+effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，反而几乎等于共享均值carrier。因此本次Gate 3明确
+失败；不续训旧Writer、不进入outer RL，先修复functional coordinate与task-conditioned inference可识别性。
 
 ## Phase 4 — Train/meta closed-loop outer objective
 
@@ -158,11 +165,12 @@ held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qu
 
 ## Current next actions
 
-1. 使用已封存macro10 checkpoint与B8 generation authority，在15-task meta-validation固定states上先运行correct、
-   learned language-only、video-only、first+final与关键order/static controls的matched screen；共享LoRA cache只在配对合同一致时复用；
-2. 对screen报告per-task、breadth、retained/gained/lost、churn、正确视频净增量及task73/Study局部表现；不由训练loss或
-   internal code距离选择方法，也不把free held code分数当Writer结果；
-3. 若Writer inference出现跨task真实净增量，补相邻checkpoint、same-task-other及多fold复现，并进入train/meta closed-loop outer objective；
-   若失败，按language prior、video posterior、fixed decode或process representation的最早失效接口处理，不做小扫；
-4. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，
+1. 在统一meta-train anchor panel上收集71个expert相对source的完整`50x32` policy-flow fingerprints；只用56个meta-train
+   tasks拟合PCA/whitening，15个held tasks只做同一变换，形成同坐标、同尺度的固定code authority；
+2. 固定上述code，重新拟合唯一complete-LoRA decoder并复验source/direct/projected closed loop；同时显式报告zero/mean
+   shared carrier，避免共享底座被误认成task-conditioned推断；
+3. 只有新decoder在leave-task-out功能与task区分上通过，才从现有训练/评测运行面fresh训练新Writer；旧macro10 checkpoint
+   与七臂screen全部保留作反事实，不重复原训练也不靠延长macro掩盖坐标错误；
+4. 新Writer先过language/video/full/endpoints/order/static matched screen，再决定outer closed-loop credit；当前outer RL保持关闭；
+5. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，
    不因推进速度而静默丢弃。

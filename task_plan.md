@@ -205,5 +205,9 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 6. 按已通过的门重建fresh fixed decoder：只在fit19从成功成员的phase表示形成compact task code并训练共享decoder，
    每task等权、多个成功成员轮换监督；held5只做冻结变换，earliest/latest codes分别生成一套complete LoRA并独立裁决，
    不平均最终LoRA、不自由拟合held code；
-7. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks与
+7. exact合同已在`configs/pi05_train24_phase_aligned_decoder_v1.json`于优化前冻结：fit-task successful-member
+   phase embedding先取task consensus再做fit19-only PCA16；Decoder只优化完整`50x32` flow response，5-rank、每task
+   50 visits，held code零步优化。最终只评预注册task-visits950 checkpoint，并以held5 earliest/latest两套各250 rows的
+   breadth、direct retention/gain retention、paired improvement与成员稳定性联合裁决；functional loss不能单独过门；
+8. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks与
    oracle全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

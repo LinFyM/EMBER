@@ -51,6 +51,9 @@ FUNCTIONAL_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
 FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_functional_decoder_nonheld_meta_projection_v1"
 )
+PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
+    "ember_phase_aligned_functional_decoder_train24_projection_v1"
+)
 
 
 def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
@@ -105,6 +108,32 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
                 "profile_result": _projection_file(manifest, "profile_result"),
                 "decoder_frozen_for_held_code_fit": True,
                 "code_condition": code_condition,
+            },
+        }
+    if schema == PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA:
+        optimization = manifest.get("optimization", {})
+        member = optimization.get("code_member")
+        if (
+            manifest.get("projection_kind")
+            != "phase_aligned_success_equivalence_decoder"
+            or optimization.get("decoder_frozen") is not True
+            or int(optimization.get("held_code_gradient_steps", -1)) != 0
+            or optimization.get("final_lora_averaging") is not False
+            or member not in {"earliest", "latest"}
+        ):
+            raise ExpertManifoldError("phase-aligned decoder projection changed")
+        return {
+            "adapter_schema": FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA,
+            "arm": f"phase_aligned_functional_decoder_{member}_projection",
+            "asset": {
+                "decoder_checkpoint": _projection_file(
+                    manifest, "decoder_checkpoint"
+                ),
+                "code_artifact": _projection_file(manifest, "code_artifact"),
+                "training_result": _projection_file(manifest, "training_result"),
+                "decoder_frozen": True,
+                "held_code_gradient_steps": 0,
+                "code_member": member,
             },
         }
     raise ExpertManifoldError("projected task-expert manifest schema changed")

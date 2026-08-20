@@ -1,0 +1,156 @@
+{
+  "schema_version": "ember_pi05_train24_phase_aligned_decoder_v1",
+  "status": "preregistered_before_decoder_optimization",
+  "purpose": "Fresh fixed complete-LoRA decoder from role-disjoint multi-success closed-loop functional equivalence classes.",
+  "authorities": {
+    "selection": "configs/pi05_train24_successful_expert_equivalence_v1.json",
+    "phase_analysis": "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/analysis.json",
+    "phase_transform": "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/phase_transform.pt",
+    "response_shards": [
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_0.pt",
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_1.pt",
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_2.pt",
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_3.pt",
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_4.pt",
+      "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/shards/shard_5.pt"
+    ],
+    "task_experts": "configs/pi05_video_expert_manifold_v1.json",
+    "evaluation": "configs/pi05_target_evaluation_v1.json",
+    "lora_contract": "configs/pi05_lora_v1.json",
+    "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json"
+  },
+  "roles": {
+    "fit_task_ordinals": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      23
+    ],
+    "held_transform_only_task_ordinals": [
+      0,
+      5,
+      10,
+      15,
+      20
+    ],
+    "fit_task_count": 19,
+    "held_task_count": 5,
+    "validation_use": false,
+    "test_use": false
+  },
+  "representation": {
+    "input": "expert_minus_source_full_50x7_denoised_action_response_at_every_successful_trajectory_replan",
+    "functional_coordinate": "fit19_only_task_member_state_equal_pca_whitening_350_to_32",
+    "phase": "eight_monotone_functional_arc_length_quantiles",
+    "observation_panel": "nearest_actual_replan_to_each_phase_quantile_preserving_order_and_endpoints",
+    "task_code": "mean_phase_embedding_across_successful_members_within_each_fit_task_then_fit19_only_pca_whitening",
+    "code_width": 16,
+    "held_code": "each_held_successful_member_transformed_independently_without_refit_or_optimization",
+    "final_lora_averaging": false,
+    "held_code_optimization_steps": 0,
+    "task_id_deployment_route": false
+  },
+  "decoder": {
+    "class": "FunctionalAdapterDecoder",
+    "template": "complete_rank16_identity_lora",
+    "target_count": 38,
+    "code_width": 16,
+    "address_width": 64,
+    "hidden_width": 256,
+    "initialization_seed": 20260821,
+    "output": "one_complete_38_target_rank16_lora",
+    "fresh_incompatible_training": true,
+    "fully_fixed_after_fit": true
+  },
+  "functional_supervision": {
+    "target": "complete_50x32_pi05_action_expert_flow_response",
+    "query_action": "normalized_action_chunk_produced_by_the_same_successful_expert_at_the_selected_replan",
+    "fit_members": "rotate_earliest_and_latest_successful_members; the single K1 task rotates its only member",
+    "panels_per_member": 4,
+    "phase_points_per_panel": 2,
+    "phase_points_per_member": 8,
+    "train_policy_seed": 2026082101,
+    "evaluation_policy_seed": 2026082191,
+    "candidate_target_pairing": "same_observation_action_flow_noise_and_time",
+    "normalization": "expert_minus_identity_response_energy_per_panel",
+    "raw_lora_loss_weight": 0.0,
+    "effective_ba_loss_weight": 0.0
+  },
+  "training": {
+    "distributed": "five_rank_single_node_manual_flat_gradient_mean",
+    "world_size": 5,
+    "deferred_nccl": true,
+    "nccl_p2p_disable": true,
+    "numa_local_binding": true,
+    "schedule_seed": 20260821,
+    "task_equal": true,
+    "visits_per_fit_task": 50,
+    "total_task_visits": 950,
+    "optimizer_updates": 190,
+    "checkpoint_task_visits": [
+      190,
+      380,
+      570,
+      760,
+      950
+    ],
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "precision": "bf16_autocast_tf32",
+    "exact_resume_world_size_locked": true
+  },
+  "decision_gates": {
+    "functional": {
+      "authority": "final_preregistered_checkpoint_only",
+      "identity_relative_loss": 1.0,
+      "both_held_member_families_mean_loss_below": 1.0,
+      "minimum_tasks_below_identity_per_member_family": 4,
+      "rule": "A finite failure blocks promotion, but the one predeclared held closed-loop panel still runs unless the adapter is nonfinite."
+    },
+    "closed_loop": {
+      "rows_per_arm": 250,
+      "tasks": 5,
+      "states_per_task": 50,
+      "arms": [
+        "frozen_source",
+        "direct_earliest_successful_member",
+        "direct_latest_successful_member",
+        "projected_earliest_member_code",
+        "projected_latest_member_code"
+      ],
+      "single_checkpoint": 950,
+      "minimum_nonnegative_tasks_vs_source_per_projected_family": 4,
+      "minimum_strictly_positive_tasks_vs_source_per_projected_family": 3,
+      "minimum_pooled_direct_success_retention": 0.75,
+      "minimum_pooled_direct_gain_retention": 0.6,
+      "minimum_projected_earliest_latest_success_jaccard": 0.44,
+      "require_pooled_mcnemar_improvement_vs_source": true,
+      "promotion_rule": "All breadth, direct-retention, member-stability, and pooled paired-improvement requirements must pass before training a new video-to-code Writer."
+    }
+  },
+  "claim_boundary": "This is a privileged target-train leave-task-out decoder experiment. It tests whether a fixed shared decoder can realize successful functional codes; it is not deployment inference and cannot select from validation or test outcomes."
+}

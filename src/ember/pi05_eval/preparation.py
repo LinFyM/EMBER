@@ -48,6 +48,16 @@ SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA = (
 SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA = (
     "ember_successful_expert_equivalence_capture_v1"
 )
+TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
+PHASE_DECODER_HELD_ORDINALS = (0, 5, 10, 15, 20)
+PHASE_DECODER_HELD_GLOBAL_IDS = (0, 9, 18, 25, 36)
+PHASE_DECODER_HELD_KEYS = (
+    ("libero_spatial", 0),
+    ("libero_spatial", 9),
+    ("libero_object", 8),
+    ("libero_goal", 5),
+    ("libero_10", 6),
+)
 
 
 def _task_expert_diagnostic_subset(
@@ -245,6 +255,72 @@ def _occupancy_capture_tasks(
         "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
         "training_gradient_use": False,
         "validation_action_or_reward_gradient_use": False,
+    }
+
+
+def _phase_decoder_subset_manifest(
+    manifest: Mapping[str, Any], args: Any
+) -> tuple[tuple[int, ...], tuple[int, ...], tuple[tuple[str, int], ...]]:
+    ordinals = tuple(int(value) for value in manifest.get("task_ordinals", ()))
+    global_ids = tuple(int(value) for value in manifest.get("global_task_ids", ()))
+    declared_tasks = tuple(manifest.get("tasks", ()))
+    declared_keys = tuple(
+        (str(row.get("suite")), int(row.get("task_id", -1)))
+        for row in declared_tasks
+    )
+    if (
+        manifest.get("schema_version") != TASK_SUBSET_SELECTION_SCHEMA
+        or manifest.get("role") != args.role
+        or manifest.get("mode") != args.mode
+        or int(manifest.get("state_count", -1)) != args.state_count
+        or ordinals != PHASE_DECODER_HELD_ORDINALS
+        or global_ids != PHASE_DECODER_HELD_GLOBAL_IDS
+        or tuple(int(row.get("global_task_id", -1)) for row in declared_tasks)
+        != global_ids
+        or declared_keys != PHASE_DECODER_HELD_KEYS
+        or manifest.get("outcome_dependence") is not False
+    ):
+        raise Pi05EvaluationError("formal task subset selection changed")
+    return ordinals, global_ids, declared_keys
+
+
+def _task_subset_tasks(
+    args: Any,
+    tasks: Sequence[Any],
+    *,
+    writer_kind: str | None,
+) -> tuple[tuple[Any, ...], dict[str, Any] | None]:
+    path = getattr(args, "task_subset_selection", None)
+    if path is None:
+        return tuple(tasks), None
+    if (
+        getattr(args, "occupancy_capture_selection", None) is not None
+        or args.mode != "formal"
+        or args.role != "development_train"
+        or args.state_count != 50
+        or writer_kind not in {None, "task_expert"}
+    ):
+        raise Pi05EvaluationError("formal task subset request changed")
+    path = path.resolve()
+    ordinals, global_ids, declared_keys = _phase_decoder_subset_manifest(
+        read_json(path), args
+    )
+    by_key = {(str(task.suite), int(task.task_id)): task for task in tasks}
+    if len(by_key) != len(tasks) or any(key not in by_key for key in declared_keys):
+        raise Pi05EvaluationError("installed target task identities overlap")
+    selected = tuple(by_key[key] for key in declared_keys)
+    if any(len(task.init_state_ids) != 50 for task in selected):
+        raise Pi05EvaluationError("formal task subset lost fixed initial states")
+    return selected, {
+        "schema_version": TASK_SUBSET_SELECTION_SCHEMA,
+        "selection_path": str(path),
+        "selection_bytes": path.stat().st_size,
+        "task_ordinals": list(ordinals),
+        "global_task_ids": list(global_ids),
+        "diagnostic_subset": "phase_aligned_decoder_held5",
+        "outcome_dependence": False,
+        "validation_use": False,
+        "test_use": False,
     }
 
 
@@ -501,9 +577,14 @@ def _prepared_payload(
         state_count=args.state_count,
         libero_config_dir=staging / "libero_config",
     )
-    tasks, occupancy_capture = _occupancy_capture_tasks(
+    subset_tasks, task_subset = _task_subset_tasks(
         args,
         installed_tasks,
+        writer_kind=writer_kind,
+    )
+    tasks, occupancy_capture = _occupancy_capture_tasks(
+        args,
+        subset_tasks,
         output_dir=output_dir,
         writer_kind=writer_kind,
     )
@@ -516,6 +597,8 @@ def _prepared_payload(
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     diagnostic_subset = _task_expert_diagnostic_subset(occupancy_capture)
+    if diagnostic_subset is None and task_subset is not None:
+        diagnostic_subset = str(task_subset["diagnostic_subset"])
     adapter = _inspect_adapter(
         args,
         writer_kind=writer_kind,
@@ -524,7 +607,7 @@ def _prepared_payload(
         model=model,
         tasks=installed_tasks if diagnostic_subset is not None else tasks,
     )
-    if diagnostic_subset is not None:
+    if diagnostic_subset is not None and adapter is not None:
         adapter = select_task_expert_adapter_tasks(
             adapter,
             tasks,
@@ -549,6 +632,7 @@ def _prepared_payload(
     )
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicate_capture
+    contract["diagnostic_task_subset"] = task_subset
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

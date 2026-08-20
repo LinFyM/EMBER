@@ -120,6 +120,14 @@
   `advance_to_phase_aligned_fixed_decoder`。fit19的mutual-nearest从等时间`15/18`变为弧长`14/18`，因此当前结论是组合
   标签已具备leave-task-out可识别性，不是弧长在所有面板单调占优。证据见
   `docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。
+- fresh Decoder合同已在任何优化前写入`configs/pi05_train24_phase_aligned_decoder_v1.json`：task consensus PCA16只拟合
+  fit19，多个成功成员各自的8个真实phase states轮换提供完整flow监督；held5 earliest/latest member code均零步优化、分别
+  物化完整LoRA。训练固定5-rank、950 task visits/190 optimizer updates；最终functional门只作安全诊断，是否进入新Writer
+  由预注册held5两套strict250闭环联合门决定。新入口`train_phase_aligned_functional_decoder.py`是本轮唯一active Decoder
+  candidate；旧trainer只维持sealed历史复现，若本轮闭环通过则退役旧入口，若失败则删除新candidate并保留失败证据。
+  实现所有权按单一流水线拆分：`phase_code_building`只构造冻结坐标，`phase_decoder_codes`只校验code authority，
+  `phase_decoder_panels`只绑定成功轨迹监督，`phase_decoder_training`只负责分布式优化/精确恢复，
+  `phase_decoder_projection`只物化两套评测bank；两个`scripts/`文件均为薄入口，不构成平行算法实现。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

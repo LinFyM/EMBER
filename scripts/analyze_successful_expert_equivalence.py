@@ -358,10 +358,13 @@ def _member_key(row: Mapping[str, Any]) -> tuple[int, int, int]:
     )
 
 
-def aggregate(args: argparse.Namespace) -> None:
-    selection = read_json(args.selection.resolve())
+def _load_complete_members(
+    selection_path: Path, shard_paths: Sequence[Path]
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    selection = read_json(selection_path.resolve())
     shards = [
-        torch.load(path, map_location="cpu", weights_only=False) for path in args.shard
+        torch.load(path, map_location="cpu", weights_only=False)
+        for path in shard_paths
     ]
     shard_count = len(shards)
     if (
@@ -391,6 +394,11 @@ def aggregate(args: argparse.Namespace) -> None:
     expected = sorted((dict(row) for row in selection["rows"]), key=_member_key)
     if [_member_key(row) for row in members] != [_member_key(row) for row in expected]:
         raise ValueError("successful expert equivalence members are incomplete")
+    return selection, shards, members
+
+
+def aggregate(args: argparse.Namespace) -> None:
+    selection, shards, members = _load_complete_members(args.selection, args.shard)
 
     fit_members = [row for row in members if row["fold_role"] == "fit"]
     whitener = fit_task_equal_whitener(

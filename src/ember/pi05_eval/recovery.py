@@ -35,6 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "successful_on_policy_occupancy",
     "successful_expert_equivalence_occupancy",
+    "phase_aligned_decoder_held5",
 }
 
 
@@ -182,6 +183,16 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         contract["normalization"]["bytes"]
     ):
         raise Pi05EvaluationError("evaluation normalization changed after prepare")
+    task_subset = contract.get("diagnostic_task_subset")
+    if task_subset is not None:
+        path = Path(str(task_subset.get("selection_path", "")))
+        if (
+            task_subset.get("schema_version")
+            != "ember_pi05_task_subset_selection_v1"
+            or not path.is_file()
+            or path.stat().st_size != int(task_subset.get("selection_bytes", -1))
+        ):
+            raise Pi05EvaluationError("evaluation task subset changed after prepare")
     adapter = contract.get("adapter")
     if (
         adapter is not None

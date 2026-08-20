@@ -125,13 +125,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         required=True,
     )
     _add_writer_runtime_arguments(parser)
-    parser.add_argument(
-        "--gpu-indices",
-        help=(
-            "Comma-separated live-checked physical GPU indices to use on one host; "
-            "all listed devices must satisfy the configured topology and live-idle checks."
-        ),
-    )
+    parser.add_argument("--gpu-indices", help="Comma-separated live-checked physical GPU indices.")
     parser.add_argument("--source-sft-config", type=Path)
     parser.add_argument("--source-sft-checkpoint", type=Path)
     parser.add_argument("--task-expert-config", type=Path)
@@ -147,11 +141,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "panel, and the train24 multi-checkpoint equivalence panel."
         ),
     )
-    parser.add_argument(
-        "--capture-stage-predicates",
-        action="store_true",
-        help="Pre-registered formal diagnosis of LIBERO BDDL goal-predicate transitions.",
-    )
+    parser.add_argument("--task-subset-selection", type=Path)
+    parser.add_argument("--capture-stage-predicates", action="store_true")
     parser.add_argument("--dynamic-k-writer-config", type=Path)
     parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)
     parser.add_argument("--dynamic-k-writer-video-data-root", type=Path)

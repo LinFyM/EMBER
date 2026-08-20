@@ -18,7 +18,7 @@
 | --- | --- | --- | --- | --- |
 | C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | role-disjoint与validation8 250/400排除整体ceiling不足；direct action/JVP仅2/4与1/4后，train24的47/47多成功checkpoint完整occupancy经fit19-only固定坐标达到held5 `5/5` mutual-nearest并通过phase门，已具备重建Decoder资格 | implemented-pass |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
-| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only644、shared-zero640、exact-BA638已关闭旧offline objective；successful/on-policy完整响应与phase-aware固定坐标已过held5表示门，下一Decoder改用多个成功成员各自closed-loop phase states作functional监督，最终仍由闭环裁决 | active |
+| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | phase Decoder虽把source 21/250提高到两套44/250，但direct success只保留27.03%/25.93%；successful expert occupancy仍不能代理decoded-policy occupancy。下一步按专家原文补fit19 learner-state aggregation，held5继续只裁决 | active |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；validation8 local oracle250/400、八task全正且Long41/100，source仅48/400。全局source/local ceiling不足分支不成立；Long trace仍保留第二子目标与保持的局部缺口定位 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
 | C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact与shared-zero已完整分解；exact仅638且task code相对shared-zero净-2。当前单expert/fingerprint Decoder range没有通过，不恢复旧FactorHeads并停止objective变体 | implemented-fail |
@@ -49,7 +49,7 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | validation8 local oracle250/400通过；train24 47/47 successful members的完整action response在fit19-only坐标下达到held5 `5/5` mutual-nearest，phase相对等时间`4/5`改善，已返回`advance_to_phase_aligned_fixed_decoder`并进入fresh Decoder重建 | active |
+| A | 功能锚定的固定adapter decoder | phase表示门通过；首个fresh Decoder在held5由source21提高到两套44且breadth/Jaccard过门，但direct success retention仅27.03%/25.93%，禁止进入Writer。当前补专家要求的closed-loop state bank，而非丢弃多成功表示 | active |
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | official denoised `50x7` action与exact `50x32` JVP均已接通；direct八strata失败后改为全部replan、完整50-token响应和固定功能弧长对应，held5达到`5/5`。JVP维持辅助，Action为当前primary标签 | implemented-pass |
@@ -66,7 +66,7 @@
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |
-| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | 作为B的自然实现候选；需证明比单code提高功能保真/稳定且merge不改变行为 | scheduled |
+| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | fresh Decoder只保留约26% direct support，触发条件已成立；先完成只改learner-state coverage的A内聚合，若仍失败则以shared prior作稳定template、task residual作code输出独立裁决 | active |
 | N RGB-D/proprio/object pose | 会改变当前纯RGB合同，不作为核心结果偷换输入 | 仅在纯RGB路线触发stop gate且owner接受独立研究问题时启动 | conditional |
 
 ## 5. 欠识别时的替代研究问题

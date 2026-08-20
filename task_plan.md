@@ -1,6 +1,8 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；validation8 oracle以`250/400`通过，但直接串联successful/on-policy action/JVP仅过`2/4`与`1/4` task；当前按专家原始意见转向多成功adapter、显式phase-aligned功能表示，不重启旧Decoder objective或Writer。**
+状态：2026-08-21 **active；多成功adapter与phase-aligned表示已通过held5几何门，fresh Decoder也把source `21/250`
+提高到两套`44/250`，但只保留direct successes的`27.03%/25.93%`，未过Gate 2。当前不进入Writer，按专家原始意见补
+decoded-policy closed-loop state bank；shared prior + residual已被support-loss证据触发为后一项架构分支。**
 
 ## Goal
 
@@ -101,10 +103,11 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - [x] 将完整PI0.5 flow decoder拟合收敛为单一formal/exact-resume入口，冻结56/15 task-equal schedule及下游authority门；
 - [x] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
-- [ ] 已用统一probe panel形成71个expert的functional fingerprint，并在source未见的target train24上完成19/5
+- [x] 已用统一probe panel形成71个expert的functional fingerprint，并在source未见的target train24上完成19/5
   role-disjoint flow/action fingerprints；同轨迹多checkpoint只带来极小aggregate改善。validation8 local ceiling已证明
   八项都存在明显policy-effective local update，而8-row面板证明同一adapter在不同successful occupancy上的直接响应仍
-  可能比相似cross-task更远；当前用train24多个成功checkpoint各自的成功trajectory建立phase-aligned功能等价类；
+  可能比相似cross-task更远；train24多个成功checkpoint各自的完整成功trajectory与phase-aligned固定坐标已使held5达到
+  `5/5` mutual-nearest并授权fresh Decoder；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
@@ -134,6 +137,13 @@ probe objective，并用同一750 rows复验。shared-zero carrier并行完成ma
 step1120的`.9213`已平台化。无正则仿射full-BA上界诊断在held也只有relative-L2`.9797`、cosine`.3648`。因此本轮
 Decoder objective family整体implemented-fail，不续训、不扫objective/LR/seed，也不进入Writer；回到专家原始的
 功能等价类、多成功adapter与source/meta角色分离问题。
+
+**Multi-success phase Decoder首轮裁决：** 5-rank Decoder完成950 task visits后，fit/held flow loss为
+`.323930/.616152`；held5上source/direct-earliest/projected-earliest/direct-latest/projected-latest为
+`21/74/44/108/44`。两套projected均相对source净`+23`，5 tasks不退化、3 tasks严格提高，成员Jaccard`.4667`；但只保留
+direct successes的`.2703/.2593`与direct gains的`.1774/.2188`，未过`.75/.60`门。故这一fresh identity-centered、
+successful-expert-state-only Decoder不能进入Writer。正向的source增量和成员稳定不允许把phase表示整体丢弃；下一主要
+变量是专家原始方向A尚未覆盖的decoded-policy closed-loop state aggregation，之后才独立裁决shared prior + residual。
 
 ## Phase 3 — Language prior + video process posterior
 
@@ -202,12 +212,15 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
    等权的32维功能坐标解释`.92343`方差。held5中等时间与功能弧长均为`5/5`同task mutual-nearest，弧长相对等时间在
    `4/5`任务提高same-task cosine，超过预注册`>=4/5 + >=2/5`门；fit19为等时间`15/18`、弧长`14/18`，故不把正结果
    误写成“弧长全面优于基线”，真正通过的是`多成功checkpoint + 完整trajectory response + 固定坐标/显式phase`组合；
-6. 按已通过的门重建fresh fixed decoder：只在fit19从成功成员的phase表示形成compact task code并训练共享decoder，
-   每task等权、多个成功成员轮换监督；held5只做冻结变换，earliest/latest codes分别生成一套complete LoRA并独立裁决，
-   不平均最终LoRA、不自由拟合held code；
-7. exact合同已在`configs/pi05_train24_phase_aligned_decoder_v1.json`于优化前冻结：fit-task successful-member
-   phase embedding先取task consensus再做fit19-only PCA16；Decoder只优化完整`50x32` flow response，5-rank、每task
-   50 visits，held code零步优化。最终只评预注册task-visits950 checkpoint，并以held5 earliest/latest两套各250 rows的
-   breadth、direct retention/gain retention、paired improvement与成员稳定性联合裁决；functional loss不能单独过门；
-8. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks与
-   oracle全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。
+6. fresh fixed decoder已按预注册task-visits950完成：内部flow门通过，held5 earliest/latest均为`44/250`，相对source
+   `21/250`各净`+23`，5/5不退化、3/5严格提高，Jaccard`.4667`；但direct success retention只有`.2703/.2593`，
+   direct gain retention`.1774/.2188`，因此联合Gate 2明确失败，不进入Writer；
+7. 回查专家原始“统一probe panel和closed-loop state bank”后确认，首轮只覆盖了successful expert occupancy，没有覆盖
+   decoded policy漂移后的learner occupancy。下一轮复用同一fit19 codes、47个experts、decoder与成功初始状态，采集
+   fit19 projected-policy trajectories，在这些状态上查询对应privileged experts并做一次staged on-policy aggregation；
+   held5仍零梯度、同250 rows重验，不重训expert或phase code；
+8. expert挑战十二的shared prior + residual已由约`26%` support retention正式触发，但不和state aggregation混成一个
+   无法解释的改动：若聚合后仍不能恢复direct support，再以稳定shared prior为Decoder template、task residual为code输出，
+   rollout前merge为唯一complete LoRA；
+9. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks、
+   oracle和本轮训练产物全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

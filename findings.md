@@ -703,3 +703,27 @@ resample本身已让held5全部同task pair互为全局cosine最近邻，说明�
 fit19 compact task code和多个成功成员的phase-state functional监督训练；held5 earliest/latest codes分别物化和闭环
 裁决，不平均LoRA、不优化held code。完整证据见
 `docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。
+
+## 34. Phase-aware Decoder产生真实净增量，但没有保留successful expert support
+
+fresh Decoder只在fit19优化，held5 earliest/latest codes均为冻结变换且零步拟合。5-rank、950 task visits后，fit/held
+identity-relative flow loss为`.323930/.616152`；earliest/latest held family为`.636755/.595550`，内部functional门通过。
+这说明固定16维phase code确实能驱动Decoder在未见task的成功轨迹状态上产生方向正确的policy response，但它仍不是
+closed-loop裁决。
+
+同一held5×50 rows上，source/direct-earliest/projected-earliest/direct-latest/projected-latest依次为
+`21/74/44/108/44`。两套projected相对source都是净`+23`：earliest为14 retained、30 gained、7 lost，latest为12/32/9；
+5/5 tasks均不退化，3/5严格提高，exact McNemar分别为`.000191/.000431`。earliest/latest之间28 successes重合、各16独有，
+Jaccard`.466667`，也超过预注册`.44`。因此phase表示与fixed Decoder不是纯粹identity或完全无效的负结果。
+
+决定性失败在direct support：earliest只保留`20/74=.27027` direct successes与`11/62=.17742` direct gains；latest只保留
+`28/108=.25926`与`21/96=.21875`。相对direct分别净`-30/-64`，远低于`.75/.60`门。Goal25与Long36在source/projected
+都为0，却分别有direct `3/8`与`3/3`，进一步证明低held flow loss没有把成功策略的关键闭环support带过来。
+
+最早失效接口现在比“offline surrogate错位”更具体：首轮虽使用真实successful expert trajectories，却只在expert
+occupancy上拟合；decoded adapter一旦漂移到自己的learner occupancy，训练面板不再约束恢复动作。这正是专家原始方向A中
+“统一probe panel和closed-loop state bank”尚未真正覆盖的部分。下一轮不改phase code、expert bank或held split，复用
+fit19 successful初始状态收集projected-policy trajectories，并在这些状态上查询对应privileged experts做一次staged
+on-policy aggregation。约26%的support retention也已触发专家挑战十二的shared prior + residual分支，但该架构变量留到
+state coverage单独裁决后实施，避免把两个原因混在一轮。完整证据见
+`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。

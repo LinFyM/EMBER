@@ -1,0 +1,166 @@
+{
+  "schema_version": "ember_phase_aligned_functional_decoder_held5_evidence_v1",
+  "evaluation_git": {
+    "commit": "73c2a32174605d2f0f6d089afe18ee4f81dcfbe4",
+    "authority_ref": "origin/main",
+    "authority_contains_commit": true,
+    "dirty_paths": []
+  },
+  "information_wall": {
+    "role": "development_train",
+    "fit_task_count": 19,
+    "held_transform_only_task_count": 5,
+    "held_code_gradient_steps": 0,
+    "validation_rows": 0,
+    "test_rows": 0,
+    "final_lora_averaging": false,
+    "task_id_deployment_route": false
+  },
+  "functional_fit": {
+    "task_visits": 950,
+    "optimizer_updates": 190,
+    "fit_mean_identity_relative_flow_loss": 0.32392975297832005,
+    "held_mean_identity_relative_flow_loss": 0.6161524940282106,
+    "earliest_held_mean_loss": 0.636755159497261,
+    "earliest_tasks_below_identity": 4,
+    "latest_held_mean_loss": 0.5955498285591603,
+    "latest_tasks_below_identity": 5,
+    "functional_gate_passed": true
+  },
+  "panels": {
+    "rows_per_arm": 250,
+    "source_successes": 21,
+    "direct_earliest_successes": 74,
+    "projected_earliest_successes": 44,
+    "direct_latest_successes": 108,
+    "projected_latest_successes": 44,
+    "per_task": [
+      {
+        "global_task_id": 0,
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "source": 21,
+        "direct_earliest": 17,
+        "projected_earliest": 29,
+        "direct_latest": 27,
+        "projected_latest": 22
+      },
+      {
+        "global_task_id": 9,
+        "suite": "libero_spatial",
+        "task_id": 9,
+        "source": 0,
+        "direct_earliest": 16,
+        "projected_earliest": 3,
+        "direct_latest": 30,
+        "projected_latest": 2
+      },
+      {
+        "global_task_id": 18,
+        "suite": "libero_object",
+        "task_id": 8,
+        "source": 0,
+        "direct_earliest": 35,
+        "projected_earliest": 12,
+        "direct_latest": 40,
+        "projected_latest": 20
+      },
+      {
+        "global_task_id": 25,
+        "suite": "libero_goal",
+        "task_id": 5,
+        "source": 0,
+        "direct_earliest": 3,
+        "projected_earliest": 0,
+        "direct_latest": 8,
+        "projected_latest": 0
+      },
+      {
+        "global_task_id": 36,
+        "suite": "libero_10",
+        "task_id": 6,
+        "source": 0,
+        "direct_earliest": 3,
+        "projected_earliest": 0,
+        "direct_latest": 3,
+        "projected_latest": 0
+      }
+    ]
+  },
+  "paired_results": {
+    "source_to_projected_earliest": {
+      "retained_success": 14,
+      "gained": 30,
+      "lost": 7,
+      "net": 23,
+      "churn": 37,
+      "mcnemar_exact_two_sided_p": 0.00019107642583549023
+    },
+    "source_to_projected_latest": {
+      "retained_success": 12,
+      "gained": 32,
+      "lost": 9,
+      "net": 23,
+      "churn": 41,
+      "mcnemar_exact_two_sided_p": 0.000430857042374555
+    },
+    "direct_earliest_to_projected_earliest": {
+      "retained_success": 20,
+      "gained": 24,
+      "lost": 54,
+      "net": -30,
+      "churn": 78,
+      "mcnemar_exact_two_sided_p": 0.0009010035205219422,
+      "direct_success_retention": 0.2702702702702703,
+      "direct_gain_retention": 0.1774193548387097
+    },
+    "direct_latest_to_projected_latest": {
+      "retained_success": 28,
+      "gained": 16,
+      "lost": 80,
+      "net": -64,
+      "churn": 96,
+      "mcnemar_exact_two_sided_p": 2.0744109143956072e-11,
+      "direct_success_retention": 0.25925925925925924,
+      "direct_gain_retention": 0.21875
+    },
+    "projected_earliest_to_latest": {
+      "retained_success": 28,
+      "earliest_only": 16,
+      "latest_only": 16,
+      "success_set_jaccard": 0.4666666666666667
+    }
+  },
+  "preregistered_gate": {
+    "earliest": {
+      "nonnegative_tasks_vs_source": 5,
+      "strictly_positive_tasks_vs_source": 3,
+      "pooled_source_improvement": true,
+      "direct_success_retention_at_least_0_75": false,
+      "direct_gain_retention_at_least_0_60": false,
+      "passes": false
+    },
+    "latest": {
+      "nonnegative_tasks_vs_source": 5,
+      "strictly_positive_tasks_vs_source": 3,
+      "pooled_source_improvement": true,
+      "direct_success_retention_at_least_0_75": false,
+      "direct_gain_retention_at_least_0_60": false,
+      "passes": false
+    },
+    "member_jaccard_at_least_0_44": true,
+    "passes": false
+  },
+  "decision": "do_not_promote_decoder_to_video_writer",
+  "earliest_failed_interface": "successful-expert phase-state flow distillation does not preserve direct closed-loop support under the decoded adapter's own occupancy",
+  "next_evidence_step": "reuse the same fit19 codes, experts, decoder and successful initial states; collect decoded-policy trajectories only on fit19, query the corresponding privileged experts on those learner states, and run one staged on-policy state-aggregation update before repeating the frozen held5 gate",
+  "triggered_architecture_branch": "shared prior plus task residual merged into one complete LoRA is now evidence-triggered by support loss, but remains a separate next causal variable if on-policy state aggregation does not restore support",
+  "claim_boundary": "This closes promotion of the fresh identity-centered decoder trained only on successful expert occupancy. It does not close the multi-success phase representation, learner-occupancy aggregation, closed-loop stage behavior, shared-prior residual parameterization, or train-task outer reward.",
+  "artifacts": {
+    "training_result": "runs/outputs/pi05_train24_phase_decoder_formal_r5_v50_73c2a32_gpu01p01456_20260821/result.json",
+    "source_results": "runs/outputs/pi05_train24_phase_decoder_held5_source_73c2a32_gpu01p01_r2_20260821/results.json",
+    "projected_earliest_results": "runs/outputs/pi05_train24_phase_decoder_held5_earliest_73c2a32_gpu01p24_r2_20260821/results.json",
+    "projected_latest_results": "runs/outputs/pi05_train24_phase_decoder_held5_latest_73c2a32_gpu01p56_r2_20260821/results.json",
+    "full_analysis": "runs/analysis/pi05_train24_phase_decoder_held5_gate_73c2a32_20260821/analysis.json"
+  }
+}

@@ -14,7 +14,10 @@
   七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
   Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，但8-row successful/on-policy
   action/JVP直接task-vector只过`2/4`与`1/4`。当前按专家原始建议转入多成功adapter、显式phase-aligned的role-disjoint
-  manifold重构，未进入新Writer或outer RL。
+  manifold重构。fresh phase Decoder的held5两套strict250都由source `21/250`提高到`44/250`，5/5 tasks不退化、
+  3/5严格提高且earliest/latest Jaccard `.4667`；但只保留direct successes的`27.03%/25.93%`，未过`75%`门，故未进入
+  新Writer或outer RL。当前回到专家原始的closed-loop state bank：只在fit19收集decoded-policy occupancy并聚合
+  privileged expert response；shared prior + residual已由support loss触发为后一项架构分支。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -128,6 +131,15 @@
   实现所有权按单一流水线拆分：`phase_code_building`只构造冻结坐标，`phase_decoder_codes`只校验code authority，
   `phase_decoder_panels`只绑定成功轨迹监督，`phase_decoder_training`只负责分布式优化/精确恢复，
   `phase_decoder_projection`只物化两套评测bank；两个`scripts/`文件均为薄入口，不构成平行算法实现。
+- clean pushed `73c2a32`上的fresh Decoder以5-rank完成950 task visits/190 updates；fit/held identity-relative flow loss为
+  `.323930/.616152`，earliest/latest held family为`.636755/.595550`，先通过内部安全门。随后同一held5固定250 rows上，
+  source/direct-earliest/projected-earliest/direct-latest/projected-latest为`21/74/44/108/44`。两套投影相对source均净
+  `+23`且5项不退化、3项严格提高，earliest/latest成功集Jaccard `.466667`；但direct success retention只有
+  `20/74=.27027`与`28/108=.25926`，direct gain retention只有`.17742/.21875`，显著低于预注册`.75/.60`。
+  Gate 2因此返回`do_not_promote_decoder_to_video_writer`。最早失效接口不是phase code完全无效，而是只在successful
+  expert occupancy做flow distillation无法守住decoded policy自身闭环occupancy上的support。下一步复用全部昂贵产物，
+  只增加fit19 projected-policy state aggregation；若仍失败，再落实已被证据触发的shared prior + task residual单LoRA。
+  remote-safe证据见`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

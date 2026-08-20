@@ -604,6 +604,23 @@ fit19 mutual-nearest也由`15/18`降至`14/18`。因此预注册门通过并授�
 单独或普遍优于等时间。证据：
 `docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。
 
+### 3.27 Fresh phase Decoder的held5闭环增益与support-retention失败
+
+从clean pushed `73c2a32`训练的fresh Decoder完成5-rank、950 task visits/190 updates，fit/held identity-relative flow
+loss为`.323930/.616152`；held earliest/latest family为`.636755/.595550`，先通过内部functional安全门。held5 codes没有
+梯度或自由优化，两套完整LoRA分别来自earliest/latest member固定坐标，最终LoRA不平均。
+
+三组并行strict250给出source=`21`、projected-earliest=`44`、projected-latest=`44`；既有direct earliest/latest为
+`74/108`。两套投影相对source均净`+23`，5 tasks不退化、3 tasks严格提高；earliest/latest成功集Jaccard`.466667`。
+但direct success retention只有`20/74=.27027`与`28/108=.25926`，direct gain retention只有`.17742/.21875`，均远低于
+预注册`.75/.60`。因此联合Gate 2返回`do_not_promote_decoder_to_video_writer`，没有训练新Writer或进入outer RL。
+
+该结果只关闭identity-centered Decoder在successful expert occupancy上做flow distillation后直接推广到held闭环；它没有
+关闭多成功phase表示，因为两套投影都产生显著source净增量与跨member稳定。按专家原始遗漏项，下一步在fit19收集同一
+Decoder的learner occupancy，以privileged task experts在这些漂移状态上提供聚合监督；held5继续零梯度。shared prior +
+task residual也因support loss满足触发条件，但作为下一独立架构变量，不与首轮state aggregation混合。证据：
+`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

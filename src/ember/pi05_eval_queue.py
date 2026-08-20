@@ -233,7 +233,9 @@ def build_cost_balanced_shards(
 def _connect(path: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(path, timeout=60.0, isolation_level=None)
     connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA journal_mode=WAL")
+    # Evaluation roots live on NFS and may be inspected from another node.
+    # SQLite WAL relies on host-local shared memory, so use the rollback journal.
+    connection.execute("PRAGMA journal_mode=DELETE")
     connection.execute("PRAGMA synchronous=FULL")
     connection.execute("PRAGMA busy_timeout=60000")
     return connection

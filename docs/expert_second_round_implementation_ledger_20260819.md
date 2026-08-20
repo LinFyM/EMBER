@@ -25,6 +25,7 @@
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
 | C9 | 150不是唯一科学门，约145也需breadth/stability/causality | 高 | 继续追求150+，但联合报告absolute、suite floor、breadth、same-video retention、adjacent stability与process controls | accepted |
+| C10 | 旧A/B/C缺少`Text Meta-LoRA + repaired front-end`第四格，不能据此判定语言先验无用 | 高 | 不把旧三臂当完整析因证据。owner后续明确禁止canonical继续使用额外Text/VL Meta-LoRA，因此不补跑已退役LMMPC的D臂；科学问题由共享decoder上的learned language-only、video-only与language+video matched比较正面重做，保留语言prior而非把它架构性置零 | superseded |
 
 ## 2. 现有机制的保留、重构与退役
 

@@ -401,6 +401,9 @@ z_L + delta(L,V) -> fixed decoder -> one complete LoRA -> closed-loop success
 ```
 
 其中language-only必须成为learned baseline，不能由架构强制identity；视频的科学价值是相对该prior提供可复现的净增量。
+旧A/B/C没有覆盖`Text Meta-LoRA + repaired front-end`第四格，因此不能从那组三臂推出语言先验无用。owner随后禁止新
+canonical继续使用额外Text/VL Meta-LoRA，故不为补齐旧析因而重启已退役LMMPC；后继在同一固定decoder上用learned
+language-only、video-only和language+video重新回答语言独立贡献与视频条件增量，这保留了专家批评中的实质信息。
 Program首先应表达object/relation、initial/goal、contact event、ordered subgoal与completion condition，再映射到固定policy
 code；50个Action tokens、LoRA rank index、首末policy layer和时间中心化memory都不能未经功能验证就被当成过程坐标。
 

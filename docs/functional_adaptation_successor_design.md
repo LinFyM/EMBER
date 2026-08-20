@@ -94,6 +94,12 @@ A/B、rank cosine或reconstruction loss。
 这样latent gauge由统一policy function与train-only whitening一次性固定；held code与train code天然同坐标、同尺度，Writer
 面对的leave-task-out目标不再被near-origin shared carrier替代。
 
+首个formal已验证该坐标修复：32维解释train variance `.887516`，train/held coordinate std为`1.000/.7248`、平均norm为
+`5.570/4.144`。但以task-local flow response直接训练Decoder后，held flow loss虽降至`.664218`，closed loop仅
+`644/750`；其effective `BA`相对direct expert的relative-L2为`2.8576`、cosine`.0254`、norm ratio`2.7004`。因此
+fingerprint继续作为唯一fixed code authority，但“flow-only Decoder objective”已经淘汰：它能在有限policy queries上拟合，
+却可通过巨大off-manifold update实现，不能被低functional loss授权进入Writer。
+
 ## 5. Fixed FunctionalAdapterDecoder v1
 
 ### 5.1 Code与输出地址
@@ -124,7 +130,8 @@ evaluation cache和rollout永远只看到一个complete LoRA。共享base若未�
 ### 5.3 两阶段训练与冻结
 
 1. 先按4.3从统一functional fingerprints冻结train/held codes；held role只transform，不产生梯度；
-2. 只在meta-train tasks按task等权训练decoder，effective-BA可预热但尽快切换到expert-vs-generated full flow response；
+2. 只在meta-train tasks按task等权训练decoder。首轮flow-only已由`644/750`淘汰；当前用gauge-invariant
+   effective-update probes直接锚定expert `BA`，flow response只作独立诊断，不再单独作为训练目标；
 3. decoder训练期间held codes与held panels都不产生梯度；训练结束后在held task-local panel和closed loop测试range；
 4. range通过后永久冻结decoder，held fingerprint code只用于oracle诊断，不参与后续Writer训练；
 5. semantic/video encoder必须从action-hidden输入预测同一code，完成真正leave-task-out闭环验证。

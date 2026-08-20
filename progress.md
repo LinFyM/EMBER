@@ -11,8 +11,8 @@
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
   non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
-  七臂matched screen已完成。screen明确失败并暴露train/held code坐标不一致，当前回到Phase 1/2重建统一functional
-  fingerprint code，未进入outer RL。
+  七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only Decoder在新Gate 2闭环失败；
+  当前固定同一codes改验effective-update objective，未进入outer RL。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -51,9 +51,17 @@
   从零自由拟合后std仅`.089`、平均norm`.505`，最近train code平均距离`4.523`。Writer训练与leave-out评测不在同一个
   code分布。effective-BA诊断进一步显示video-only的task-mean只有1/15最近邻到正确projected task，却距15-task共享均值
   仅`.000998` relative error；其134分主要是shared carrier/base competence，不是video-conditioned task inference。
-- 已建立新的单一修复路径：在固定meta-train anchors上对71 experts收集统一policy-flow response，PCA与whitening只拟合
-  56 meta-train fingerprints，15 held fingerprints只做同一变换；随后固定这些codes重训decoder，held不再从零自由优化。
-  该实现通过短期worktree隔离开发；formal只从合并main后的clean pushed commit启动。
+- 统一fingerprint formal已复用现有71-task experts完成：feature width `25600`，train-only 32维PCA解释方差`.887516`；
+  train/held coordinate std为`1.0000/.7248`、平均norm为`5.5701/4.1436`。held只做同一固定变换且不产生梯度，旧版
+  `.505` near-zero held code问题已解决。这套昂贵fingerprint artifact继续复用，不重复收集。
+- 固定上述codes的flow-only Decoder将fit/held flow loss由`1.040443→.445721`和`1.035567→.664218`，但同一750 rows
+  closed loop仅`644/750`，低于source `646`、direct `684`和旧projected `659`。相对source净`-2`，相对direct净`-40`
+  且`p=3.67e-5`；task73仍为`4/50`。因此没有启动56-task复评或Writer。
+- 当前最早失效接口是Decoder objective：新生成effective `BA`相对direct的relative-L2 `2.8576`、cosine `.0254`、
+  norm ratio `2.7004`，说明有限flow queries允许巨大近正交off-manifold解。短期worktree正在把唯一Decoder训练锚点改为
+  gauge-invariant effective-update probes；flow panel只作诊断，合并后仍从clean pushed detached commit正式训练。
+- shared-zero carrier已从`main@89d9619`导出为一套物理adapter并在相同15-task×50 rows上正式评测；它只裁决共享输出
+  能解释多少分数，不作为部署fallback。评测完成前不作partial-score结论。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

@@ -17,11 +17,11 @@
 | ID | 专家核心判断 | 当前接受程度 | 落实方式与裁决证据 | 状态 |
 | --- | --- | --- | --- | --- |
 | C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 71-task fold0 direct相对source在56/15面板净增+247/+38，当前pool具有功能增量；但source/meta identity仍重叠，fold0只允许进入推断，same-endpoint/different-procedure与多fold/role-disjoint复现仍是显式要求 | active |
-| C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | decoder虽固定，但macro10审计发现train whitened codes平均norm5.589、held free codes仅.505，仍不是同一可推断坐标；现改为统一policy fingerprints、train-only PCA/whitening同时变换train/held，held不再自由优化 | active |
-| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | functional distillation只做warm start；随后在train/meta simulator上用closed-loop reward/progress credit优化code posterior | scheduled |
+| C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
+| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only Decoder held loss降至.664218却仅644/750，effective BA相对direct近乎正交且norm为2.70倍，已直接确认错位；当前改验effective-update锚点，后续仍保留train/meta outer credit | active |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；direct及projected在56-task Study分别较source净增+117/+99、pick-place净增+126/+102，当前全局强化触发条件不成立；后续只按Writer结果定位局部source缺口 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
-| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 旧fixed decoder closed loop保留92.62%/90.79% direct successes，但held仅净+13且code scale失配；range证据保留、推断authority撤销，现以固定fingerprint codes重验，不恢复旧FactorHeads | active |
+| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 固定fingerprint flow-only Decoder为644/750，低于source646/direct684/旧projected659；该objective已淘汰，不恢复旧FactorHeads，改用effective-update锚点后重验range | active |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
 | C9 | 150不是唯一科学门，约145也需breadth/stability/causality | 高 | 继续追求150+，但联合报告absolute、suite floor、breadth、same-video retention、adjacent stability与process controls | accepted |
@@ -35,7 +35,7 @@
 | P3 | Core/Procedure概念区分有价值 | 继承语义/目标与过程/阶段的职责，不强制继承旧tensor拓扑 | accepted |
 | P4 | Core-addressed Reader、bounded K-set/M2P有局部正证据 | 作为可复用组件候选；只有与fixed-code接口匹配才保留 | active |
 | U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已独立生成complete LoRA且部署时不读视频；Text/VL Meta-LoRA均固定为0并由authority guard保护，等待formal baseline | active |
-| U2 | LoRA rank index不是policy-functional coordinate | 首版learned codebook仍允许task-arbitrary坐标且held近零；新实现直接从统一expert-source policy-flow fingerprints产生train-only whitened coordinates，rank16只保留为输出参数化 | active |
+| U2 | LoRA rank index不是policy-functional coordinate | 71-task unified expert-source fingerprints与train-only PCA已实现；held transform-only且尺度接近train，rank16只作为输出参数化 | implemented-pass |
 | U3 | Program与complete LoRA decoder不应持续共同移动 | 主线固定decoder；慢EMA/two-timescale仅在fixed版明确欠拟合时作为对照 | active |
 | U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | successor保留完整50-token序列，以phase queries读取并输出phase-specific alignment；等待消融 | active |
 | U5 | 时间中心化Value不等于过程表示 | 后继以initial/goal/events/transitions显式编码；centered memory不再承担唯一过程语义 | scheduled |
@@ -48,7 +48,7 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | 旧fold0 closed-loop range qualified，但macro10暴露train/held code分布不同；统一probe fingerprint、train-only PCA/whitening与held transform-only实现已启动，须重跑decoder Gate 2后才恢复推断资格 | active |
+| A | 功能锚定的固定adapter decoder | 统一fingerprint坐标已实现；flow-only Decoder在held为644/750且effective BA离开expert support，故该训练锚点implemented-fail。当前固定同一codes改验effective-update objective，须重新通过Gate 2 | active |
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |

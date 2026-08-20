@@ -523,6 +523,21 @@ adapter；其`134`是shared carrier与高source能力，不是task inference。�
 fingerprints，PCA/whitening仅拟合56 train tasks，held15只做同变换；固定这些同坐标codes后重新拟合decoder并重跑Gate 2。
 完整证据为`docs/evidence/functional_adaptation_20260819/writer_macro10_inference_gate_20260820.json`。
 
+### 3.22 Unified fingerprint坐标通过、flow-only Decoder闭环失败
+
+从clean pushed `b86800e`在8个固定meta-train anchors上统一收集71个expert-source flow fingerprints，feature width
+`25600`；PCA/whitening只拟合56个meta-train tasks，32维解释方差`.887516`。train/held coordinate std为
+`1.0000/.7248`、平均norm为`5.5701/4.1436`，因此旧held free-code near-origin问题已修复。
+
+固定这些codes训练Decoder后，fit/held flow loss分别由`1.040443→.445721`和`1.035567→.664218`，held没有梯度；但
+15-task×50严格paired closed loop仅`644/750`，对照source/direct/旧projected为`646/684/659`。相对source净`-2`，
+相对direct净`-40`且exact McNemar `p=3.67e-5`，task73仍为`4/50`。因此未运行56-task full复评，也未训练Writer。
+
+gauge-invariant effective-BA诊断显示新Decoder相对direct的平均relative-L2 `2.8576`、cosine `.0254`、norm ratio
+`2.7004`；旧projected也为`2.4616/.0240/2.2718`。低flow loss由巨大近正交off-manifold update实现，定位出训练
+surrogate而非坐标为当前最早失效接口。后继只改变Decoder objective为effective-update probes，并保留flow panel和
+closed loop作独立裁决；同一commit另行评测shared-zero carrier，避免把共享输出误认成task-conditioned功能。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

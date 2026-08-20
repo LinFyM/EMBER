@@ -43,6 +43,10 @@ from ember.functional_adaptation.fingerprint_codes import (
     FunctionalFingerprintCodeTargets,
     load_functional_fingerprint_code_targets,
 )
+from ember.functional_adaptation.objectives import (
+    effective_update_probe_loss,
+    effective_update_probes,
+)
 from ember.functional_adaptation.probe_panels import (
     FunctionalProbePanel,
     build_probe_panels,
@@ -89,6 +93,8 @@ class FlowProfile:
     started: float
     metrics_rows: int
     fixed_code_authority: FunctionalFingerprintCodeTargets | None
+    decoder_objective: str
+    effective_probes: Mapping[str, torch.Tensor]
 
 
 @dataclass(frozen=True)
@@ -168,6 +174,7 @@ def _run_contract(runtime: FlowProfile) -> dict[str, Any]:
             "task_equal_held_code_order": runtime.fixed_code_authority is None,
         },
         "schedule": dict(runtime.schedule),
+        "decoder_objective": runtime.decoder_objective,
         "information_wall": {
             "privileged_task_codes": "train/meta decoder fitting only",
             "target40_action_or_reward_reads": 0,
@@ -278,6 +285,9 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         "production_meta" if args.surface == "nonheld_meta" else "train24_mechanism"
     ]
     flow = mechanism["flow_response"]
+    decoder_objective = str(mechanism.get("decoder_objective", "flow_response"))
+    if decoder_objective not in {"flow_response", "effective_update_probe"}:
+        raise ValueError("functional-decoder objective changed")
     fixed_code_requested = args.functional_code_artifact is not None
     if args.surface == "nonheld_meta" and not fixed_code_requested:
         raise ValueError(
@@ -331,6 +341,12 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         raise ValueError("formal functional-decoder training requires the full split")
     contract = load_pi05_lora_contract(
         authority_path(config, "lora_contract", REPO_ROOT)
+    )
+    effective_probes = effective_update_probes(
+        contract,
+        probe_count=int(mechanism["objective"]["effective_update_probe_count"]),
+        seed=int(mechanism["objective"]["effective_update_probe_seed"]),
+        device=device,
     )
     decoder_config = config["decoder"]
     system = FunctionalDecoderSystem(
@@ -428,6 +444,8 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
         started=time.monotonic(),
         metrics_rows=0,
         fixed_code_authority=fixed_code_authority,
+        decoder_objective=decoder_objective,
+        effective_probes=effective_probes,
     )
 
 
@@ -451,25 +469,35 @@ def _cache_all_panels(runtime: FlowProfile) -> FlowPanels:
             base_seed=seed + offset,
         )
 
-    return FlowPanels(
-        fit_train=cache(
+    fit_train = (
+        cache(
             runtime.active_fit,
             runtime.fit_states,
             runtime.flow["fit_demo_indices"],
             0,
-        ),
+        )
+        if runtime.decoder_objective == "flow_response"
+        else tuple(() for _ in runtime.active_fit)
+    )
+    held_train = (
+        cache(
+            runtime.active_held,
+            runtime.held_states,
+            runtime.flow["fit_demo_indices"],
+            2_000_000,
+        )
+        if int(runtime.schedule["held_code_steps"])
+        else tuple(() for _ in runtime.active_held)
+    )
+    return FlowPanels(
+        fit_train=fit_train,
         fit_eval=cache(
             runtime.active_fit,
             runtime.fit_states,
             runtime.flow["evaluation_demo_indices"],
             1_000_000,
         ),
-        held_train=cache(
-            runtime.active_held,
-            runtime.held_states,
-            runtime.flow["fit_demo_indices"],
-            2_000_000,
-        ),
+        held_train=held_train,
         held_eval=cache(
             runtime.active_held,
             runtime.held_states,
@@ -499,8 +527,35 @@ def _initial_losses(
     return fit, held
 
 
+def _effective_losses(
+    *,
+    decoder: torch.nn.Module,
+    codes: torch.Tensor,
+    states: Sequence[Mapping[str, torch.Tensor]],
+    contract: Any,
+    probes: Mapping[str, torch.Tensor],
+) -> list[float]:
+    with torch.no_grad():
+        return [
+            float(
+                effective_update_probe_loss(
+                    decoder(codes[index]), target, contract, probes
+                ).item()
+            )
+            for index, target in enumerate(states)
+        ]
+
+
+def _optimizer_config(runtime: FlowProfile) -> Mapping[str, Any]:
+    return (
+        runtime.mechanism["effective_update_optimizer"]
+        if runtime.decoder_objective == "effective_update_probe"
+        else runtime.flow["optimizer"]
+    )
+
+
 def _decoder_optimizer(runtime: FlowProfile) -> torch.optim.Optimizer:
-    optimizer_config = runtime.flow["optimizer"]
+    optimizer_config = _optimizer_config(runtime)
     runtime.system.requires_grad_(True)
     if runtime.fixed_code_authority is not None:
         runtime.system.codebook.requires_grad_(False)
@@ -529,7 +584,7 @@ def _fit_decoder(
     start_step: int,
     visits: list[int],
 ) -> None:
-    optimizer_config = runtime.flow["optimizer"]
+    optimizer_config = _optimizer_config(runtime)
     order = balanced_task_order(
         len(runtime.active_fit),
         int(runtime.schedule["decoder_steps"]),
@@ -541,16 +596,25 @@ def _fit_decoder(
     for step, task_index in enumerate(order[start_step:], start=start_step + 1):
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            response_loss = mean_functional_probe_loss(
-                runtime.policy,
-                runtime.system(task_index),
-                runtime.contract,
-                panel_for_visit(
-                    panels.fit_train[task_index], visits[task_index]
-                ),
+            objective_loss = (
+                effective_update_probe_loss(
+                    runtime.system(task_index),
+                    runtime.fit_states[task_index],
+                    runtime.contract,
+                    runtime.effective_probes,
+                )
+                if runtime.decoder_objective == "effective_update_probe"
+                else mean_functional_probe_loss(
+                    runtime.policy,
+                    runtime.system(task_index),
+                    runtime.contract,
+                    panel_for_visit(
+                        panels.fit_train[task_index], visits[task_index]
+                    ),
+                )
             )
             gauge_loss = runtime.system.codebook.gauge_loss()
-            loss = response_loss + float(
+            loss = objective_loss + float(
                 runtime.mechanism["objective"]["codebook_gauge_weight"]
             ) * gauge_loss
         loss.backward()
@@ -559,19 +623,27 @@ def _fit_decoder(
         )
         optimizer.step()
         visits[task_index] += 1
-        append_jsonl(
-            metrics_path,
-            {
-                "phase": "flow_decoder_fit",
-                "step": step,
-                "task_index": task_index,
-                "flow_response_loss": float(response_loss.detach()),
-                "gauge_loss": float(gauge_loss.detach()),
-                "gradient_norm": float(grad_norm),
-                "elapsed_seconds": time.monotonic() - runtime.started,
-                "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
-            },
-        )
+        row = {
+            "phase": (
+                "effective_update_decoder_fit"
+                if runtime.decoder_objective == "effective_update_probe"
+                else "flow_decoder_fit"
+            ),
+            "step": step,
+            "task_index": task_index,
+            "decoder_objective": runtime.decoder_objective,
+            "decoder_objective_loss": float(objective_loss.detach()),
+            "gauge_loss": float(gauge_loss.detach()),
+            "gradient_norm": float(grad_norm),
+            "elapsed_seconds": time.monotonic() - runtime.started,
+            "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
+        }
+        row[
+            "effective_update_loss"
+            if runtime.decoder_objective == "effective_update_probe"
+            else "flow_response_loss"
+        ] = float(objective_loss.detach())
+        append_jsonl(metrics_path, row)
         runtime.metrics_rows += 1
         if step in checkpoints:
             save_decoder_flow_checkpoint(
@@ -656,6 +728,8 @@ def _write_result(
     panels: FlowPanels,
     initial_fit: list[float],
     initial_held: list[float],
+    initial_effective_fit: list[float],
+    initial_effective_held: list[float],
 ) -> None:
     final_fit = _panel_losses(
         policy=runtime.policy,
@@ -670,6 +744,20 @@ def _write_result(
         codes=runtime.held_codes[: len(runtime.active_held)],
         contract=runtime.contract,
         panels=panels.held_eval,
+    )
+    final_effective_fit = _effective_losses(
+        decoder=runtime.system.decoder,
+        codes=runtime.system.codebook.weight[: len(runtime.active_fit)],
+        states=runtime.fit_states,
+        contract=runtime.contract,
+        probes=runtime.effective_probes,
+    )
+    final_effective_held = _effective_losses(
+        decoder=runtime.system.decoder,
+        codes=runtime.held_codes[: len(runtime.active_held)],
+        states=runtime.held_states,
+        contract=runtime.contract,
+        probes=runtime.effective_probes,
     )
     if (runtime.args.output_dir / "result.json").exists():
         raise ValueError("functional-decoder result already exists")
@@ -703,6 +791,7 @@ def _write_result(
             "mode": runtime.args.mode,
             "surface": runtime.args.surface,
             "formal_authority": runtime.args.mode == "formal",
+            "decoder_objective": runtime.decoder_objective,
             "repository": {
                 "branch": repository["branch"],
                 "commit": repository["commit"],
@@ -724,6 +813,18 @@ def _write_result(
             "initial_held_per_task": initial_held,
             "final_held_mean": sum(final_held) / len(final_held),
             "final_held_per_task": final_held,
+            "initial_effective_fit_mean": sum(initial_effective_fit)
+            / len(initial_effective_fit),
+            "initial_effective_fit_per_task": initial_effective_fit,
+            "final_effective_fit_mean": sum(final_effective_fit)
+            / len(final_effective_fit),
+            "final_effective_fit_per_task": final_effective_fit,
+            "initial_effective_held_mean": sum(initial_effective_held)
+            / len(initial_effective_held),
+            "initial_effective_held_per_task": initial_effective_held,
+            "final_effective_held_mean": sum(final_effective_held)
+            / len(final_effective_held),
+            "final_effective_held_per_task": final_effective_held,
             "steps": {
                 "decoder": int(runtime.schedule["decoder_steps"]),
                 "held_code": int(runtime.schedule["held_code_steps"]),
@@ -773,18 +874,51 @@ def _write_result(
 
 def _load_or_create_initial_losses(
     runtime: FlowProfile, panels: FlowPanels
-) -> tuple[list[float], list[float]]:
+) -> tuple[list[float], list[float], list[float], list[float]]:
     path = runtime.args.output_dir / "initial_losses.json"
     if runtime.args.resume is None:
         fit, held = _initial_losses(runtime, panels)
-        write_json_atomic(path, {"fit": fit, "held": held})
-        return fit, held
+        effective_fit = _effective_losses(
+            decoder=runtime.system.decoder,
+            codes=runtime.system.codebook.weight[: len(runtime.active_fit)],
+            states=runtime.fit_states,
+            contract=runtime.contract,
+            probes=runtime.effective_probes,
+        )
+        effective_held = _effective_losses(
+            decoder=runtime.system.decoder,
+            codes=runtime.held_codes[: len(runtime.active_held)],
+            states=runtime.held_states,
+            contract=runtime.contract,
+            probes=runtime.effective_probes,
+        )
+        write_json_atomic(
+            path,
+            {
+                "fit": fit,
+                "held": held,
+                "effective_fit": effective_fit,
+                "effective_held": effective_held,
+            },
+        )
+        return fit, held, effective_fit, effective_held
     observed = read_json(path)
     fit = [float(value) for value in observed.get("fit", ())]
     held = [float(value) for value in observed.get("held", ())]
-    if len(fit) != len(runtime.active_fit) or len(held) != len(runtime.active_held):
+    effective_fit = [
+        float(value) for value in observed.get("effective_fit", ())
+    ]
+    effective_held = [
+        float(value) for value in observed.get("effective_held", ())
+    ]
+    if (
+        len(fit) != len(runtime.active_fit)
+        or len(held) != len(runtime.active_held)
+        or len(effective_fit) != len(runtime.active_fit)
+        or len(effective_held) != len(runtime.active_held)
+    ):
         raise ValueError("functional-decoder initial-loss evidence changed")
-    return fit, held
+    return fit, held, effective_fit, effective_held
 
 
 def _rewind_metrics(path: Path, rows: int) -> None:
@@ -806,7 +940,12 @@ def run(args: argparse.Namespace) -> None:
     runtime = _prepare(args)
     _publish_run_contract(runtime)
     panels = _cache_all_panels(runtime)
-    initial_fit, initial_held = _load_or_create_initial_losses(runtime, panels)
+    (
+        initial_fit,
+        initial_held,
+        initial_effective_fit,
+        initial_effective_held,
+    ) = _load_or_create_initial_losses(runtime, panels)
     metrics_path = args.output_dir / "metrics.jsonl"
     resume = (
         None
@@ -871,7 +1010,14 @@ def run(args: argparse.Namespace) -> None:
             start_step=held_cursor.step,
             visits=list(held_cursor.visits),
         )
-    _write_result(runtime, panels, initial_fit, initial_held)
+    _write_result(
+        runtime,
+        panels,
+        initial_fit,
+        initial_held,
+        initial_effective_fit,
+        initial_effective_held,
+    )
 
 
 def parser() -> argparse.ArgumentParser:

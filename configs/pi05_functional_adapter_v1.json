@@ -300,7 +300,8 @@
     "held_task_count": 15,
     "expert_step": 1000,
     "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
-    "formal_status": "frozen_56_15_old_fold0_macro10_inference_failed_functional_fingerprint_refit_active",
+    "formal_status": "frozen_56_15_fingerprint_flow_only_gate2_failed_effective_update_decoder_active",
+    "decoder_objective": "effective_update_probe",
     "functional_fingerprint": {
       "anchor_task_count": 8,
       "anchor_demo_indices": [
@@ -314,7 +315,15 @@
       "held_role": "transform_only"
     },
     "objective": {
+      "effective_update_probe_count": 8,
+      "effective_update_probe_seed": 20260819,
       "codebook_gauge_weight": 0.0
+    },
+    "effective_update_optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1
     },
     "flow_response": {
       "fit_demo_indices": [

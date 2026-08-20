@@ -55,6 +55,7 @@ def test_functional_adapter_profile_config_resolves_authorities() -> None:
     assert config["train24_mechanism"]["fit_task_count"] == 19
     formal = config["production_meta"]["flow_response"]["formal"]
     assert config["production_meta"]["formal_status"].startswith("frozen_56_15")
+    assert config["production_meta"]["decoder_objective"] == "effective_update_probe"
     assert formal["active_fit_tasks"] == 56
     assert formal["active_held_tasks"] == 15
     assert formal["checkpoint_steps"]["decoder"][-1] == formal["decoder_steps"]

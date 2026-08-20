@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；旧fold0 closed-loop Gate 2曾获qualified，但macro10推断门已失败并暴露train/held code坐标不一致，当前回到Phase 1/2建立统一functional fingerprint坐标。**
+状态：2026-08-20 **active；统一functional fingerprint已修复train/held坐标，但flow-only Decoder在新Gate 2为644/750且产生off-manifold effective update，当前以固定codes改验effective-update锚点。**
 
 ## Goal
 
@@ -95,7 +95,8 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - [x] 将完整PI0.5 flow decoder拟合收敛为单一formal/exact-resume入口，冻结56/15 task-equal schedule及下游authority门；
 - [x] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
-- [ ] 用统一probe panel形成每个adapter的functional fingerprint，检验同功能不同参数与不同功能的可分性；
+- [ ] 已用统一probe panel形成71个expert的functional fingerprint，train-only 32维PCA解释`.887516`方差且held只做固定
+  变换；同功能不同参数的等价性仍需多adapter证据，不能由单expert/task结果冒充；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
@@ -112,6 +113,12 @@ held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qu
 macro10推断后又确认train codebook为whitened、平均范数`5.589`，held free codes从零拟合后平均范数仅`.505`；两者不是
 同一个可推断分布。原closed-loop结果仍是fixed decoder range证据，但不再作为Writer code泛化authority。下一Gate 2必须
 用统一probe response、只在meta-train拟合的PCA/whitening同时变换train/held，不能再以独立held free-code优化过门。
+
+**Unified fingerprint flow-only裁决：** 新codes的train/held std为`1.000/.7248`、平均norm为`5.570/4.144`，坐标修复
+成立；固定code Decoder的held flow loss降至`.664218`，但closed loop为`644/750`，低于source `646`、direct `684`和旧
+projected `659`。生成effective `BA`相对direct的relative-L2为`2.8576`、cosine`.0254`、norm ratio`2.7004`，证明
+flow surrogate允许巨大off-manifold update。该路径登记为implemented-fail，不进入Writer；下一次只改为effective-update
+probe objective，并用同一750 rows复验。shared-zero carrier并行完成matched对照，不作为fallback部署。
 
 ## Phase 3 — Language prior + video process posterior
 
@@ -165,11 +172,10 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Current next actions
 
-1. 在统一meta-train anchor panel上收集71个expert相对source的完整`50x32` policy-flow fingerprints；只用56个meta-train
-   tasks拟合PCA/whitening，15个held tasks只做同一变换，形成同坐标、同尺度的固定code authority；
-2. 固定上述code，重新拟合唯一complete-LoRA decoder并复验source/direct/projected closed loop；同时显式报告zero/mean
-   shared carrier，避免共享底座被误认成task-conditioned推断；
-3. 只有新decoder在leave-task-out功能与task区分上通过，才从现有训练/评测运行面fresh训练新Writer；旧macro10 checkpoint
+1. 收口shared-zero carrier在同一15-task×50 rows上的matched closed loop，定量分离Decoder共享输出与task fingerprint增量；
+2. 复用已冻结的71-task fingerprint artifact，不重复收集或重训expert；固定codes后用gauge-invariant effective-update probe
+   拟合唯一complete-LoRA decoder，先检查held effective-BA与flow panel，再在同一750 rows复验source/direct/projected；
+3. 只有effective-update Decoder在leave-task-out闭环与task区分上通过，才从现有训练/评测运行面fresh训练新Writer；旧macro10 checkpoint
    与七臂screen全部保留作反事实，不重复原训练也不靠延长macro掩盖坐标错误；
 4. 新Writer先过language/video/full/endpoints/order/static matched screen，再决定outer closed-loop credit；当前outer RL保持关闭；
 5. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，

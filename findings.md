@@ -528,3 +528,25 @@ source/direct/projected rows仍是有效的range和retention证据，但不能�
 fingerprint；PCA与whitening只拟合56个meta-train fingerprints，15个held fingerprints只通过同一个固定变换。这样train与
 held code天然同坐标、同尺度，且每个维度来自统一policy function变化，而不是独立task-ID自由优化。随后固定这些codes
 重训decoder并重新做source/direct/projected closed loop；只有新Gate 2通过才fresh训练后继Writer。
+
+## 26. Unified fingerprint修复了坐标，但flow-only Decoder仍未恢复闭环功能
+
+统一fingerprint formal已在完全相同的8个meta-train anchors上收集71个expert-source flow responses，feature width为
+`25600`。PCA/whitening只拟合56个meta-train tasks：32维解释train variance的`.887516`；train/held coordinate std分别
+为`1.0000/.7248`，平均norm为`5.5701/4.1436`。因此旧版held near-zero free code的坐标错误已被实质修复，而不是继续
+由shared carrier掩盖。
+
+固定这些codes后，flow-only Decoder在56-task fit panel从`1.040443→.445721`，15-task held panel从
+`1.035567→.664218`，14/15 held tasks改善且held没有梯度；但严格相同750 rows的closed loop只有`644/750`，低于
+frozen source `646`、direct experts `684`和旧free-code projected `659`。相对source为606 retained、38 gained、40 lost，
+净`-2`、churn78、exact McNemar `p=.909946`；相对direct净`-40`且`p=3.67e-5`。弱task73仍为`4/50`，没有复现direct的
+`28/50`。所以统一坐标是必要修复，但并不足以让task-local flow response surrogate产生可部署LoRA；不进入56-task
+closed-loop复评，也不启动Writer。
+
+最早失效接口进一步由gauge-invariant effective `BA`定位：相对direct experts，新fingerprint Decoder的平均
+relative-L2为`2.8576`、cosine仅`.0254`，生成update norm是direct的`2.7004`倍；旧free-code Decoder也有
+`2.4616/.0240/2.2718`。也就是说，低flow loss对应的是一个巨大、近乎正交且离开expert adapter support的off-manifold
+解，而不是有效update恢复。专家C3关于offline functional surrogate与closed-loop错位的判断因此获得直接证据。
+下一次只改变Decoder训练锚点：固定同一fingerprint codes，改用gauge-invariant effective-update probe拟合direct expert
+`BA`；flow panel保留为无梯度诊断，最终仍由同一750-row closed loop裁决。shared-zero carrier同时作为matched架构对照，
+用于区分task-conditioned code贡献与Decoder共享输出。

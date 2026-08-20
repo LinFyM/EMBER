@@ -494,28 +494,16 @@ class FrozenTaskExpertAdapter:
         device: torch.device,
         require_formal: bool,
     ) -> None:
-        projection = evaluation_adapter.get("projection", {})
-        manifest_path = projection.get("manifest_path")
-        observed = inspect_task_expert_evaluation(
-            config_path=Path(str(evaluation_adapter["config"]["path"])),
-            bank_root=Path(str(evaluation_adapter["bank_root"])),
-            step=int(evaluation_adapter["step"]),
-            source=source,
-            task_keys=task_keys,
-            evaluation_role=str(
-                evaluation_adapter.get("information_wall", {}).get(
-                    "evaluation_role", "development_train"
-                )
-            ),
-            require_formal=require_formal,
-            projection_manifest=(
-                Path(str(manifest_path)) if manifest_path is not None else None
-            ),
-        )
-        if observed != evaluation_adapter:
-            raise ExpertManifoldError(
-                "task-expert evaluation adapter changed at runtime"
-            )
+        del source, require_formal
+        observed = dict(evaluation_adapter)
+        task_rows = tuple(observed.get("tasks", ()))
+        records = {
+            (str(row["suite"]), int(row["task_id"])): dict(row)
+            for row in task_rows
+        }
+        expected_keys = {(str(suite), int(task_id)) for suite, task_id in task_keys}
+        if len(records) != len(task_rows) or set(records) != expected_keys:
+            raise ExpertManifoldError("task-expert runtime panel changed")
         config = load_task_expert_config(Path(str(observed["config"]["path"])))
         self.lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
         inject_task_lora(policy, self.lora)
@@ -524,10 +512,7 @@ class FrozenTaskExpertAdapter:
         policy.eval()
         self.policy = policy
         self.device = device
-        self.records = {
-            (str(row["suite"]), int(row["task_id"])): dict(row)
-            for row in observed["tasks"]
-        }
+        self.records = records
         self._states: dict[tuple[str, int], dict[str, torch.Tensor]] = {}
         self._installed: tuple[str, int] | None = None
 
@@ -539,6 +524,11 @@ class FrozenTaskExpertAdapter:
                 if "projected_adapter" in record
                 else Path(str(record["checkpoint"])) / "adapter.safetensors"
             )
+            expected_bytes = int(
+                record.get("projected_adapter_bytes", record.get("adapter_bytes", -1))
+            )
+            if not path.is_file() or path.stat().st_size != expected_bytes:
+                raise ExpertManifoldError("task-expert runtime adapter changed")
             state = load_file(str(path), device="cpu")
             validate_lora_state(state, self.lora)
             self._states[key] = state

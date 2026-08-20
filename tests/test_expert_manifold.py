@@ -240,7 +240,7 @@ def test_task_expert_runtime_uses_the_narrow_task_expert_loader(
     loaded: list[Path] = []
     monkeypatch.setattr(
         "ember.expert_manifold.evaluation.inspect_task_expert_bank",
-        lambda **_kwargs: observed,
+        lambda **_kwargs: pytest.fail("worker repeated the launcher bank inspection"),
     )
     monkeypatch.setattr(
         "ember.expert_manifold.evaluation.load_task_expert_config",

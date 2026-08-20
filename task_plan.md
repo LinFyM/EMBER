@@ -198,8 +198,12 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 4. 不把该负结果扩大成“action response无用”。它实际淘汰的是`单adapter + independently selected strata + direct
    concatenation`标签：task26的gained trajectory更接近task86，task80的retained trajectory也更接近task86，说明
    occupancy与phase nuisance仍压过task invariance；JVP因`1/4`不再作为primary label；
-5. 下一轮复用target train24现有step250--2000 expert bank与formal rows，预注册每task最早/最晚成功checkpoint各一条
-   最短成功trajectory（23 tasks为K2，唯一只有一次成功的task为K1），形成source未见task的多成功adapter/on-policy bank；
-   只在fit19学习单调phase alignment/PCA，held5固定变换比较unaligned与aligned同task invariance；
-6. phase-aligned label在held5过门前不重建decoder；fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧
-   macro10、七臂screen、fingerprints、expert banks与oracle全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。
+5. target train24多成功checkpoint/on-policy bank已完成：47/47条预注册轨迹复现成功；fit19-only、task/member/state
+   等权的32维功能坐标解释`.92343`方差。held5中等时间与功能弧长均为`5/5`同task mutual-nearest，弧长相对等时间在
+   `4/5`任务提高same-task cosine，超过预注册`>=4/5 + >=2/5`门；fit19为等时间`15/18`、弧长`14/18`，故不把正结果
+   误写成“弧长全面优于基线”，真正通过的是`多成功checkpoint + 完整trajectory response + 固定坐标/显式phase`组合；
+6. 按已通过的门重建fresh fixed decoder：只在fit19从成功成员的phase表示形成compact task code并训练共享decoder，
+   每task等权、多个成功成员轮换监督；held5只做冻结变换，earliest/latest codes分别生成一套complete LoRA并独立裁决，
+   不平均最终LoRA、不自由拟合held code；
+7. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks与
+   oracle全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

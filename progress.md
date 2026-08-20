@@ -114,6 +114,12 @@
   复用target train24现有step250--2000 checkpoints与formal rows，每task取最早/最晚成功checkpoint各自一条最短成功轨迹；
   23 tasks可形成K2，唯一只有step1000一次成功的task形成K1。fit19学习单调phase alignment与固定坐标，held5只做固定
   变换；JVP不再是primary label，aligned representation过门前不重建decoder。
+- 该面已在clean detached `545b43c/7258487`完成：四个checkpoint capture共47/47条预注册成功轨迹，无替换、无expert
+  重训；完整每-replan `50x7` action delta经fit19-only、task/member/state等权PCA/whitening后，32维解释方差`.923430`。
+  held5的等时间与功能弧长表示均为`5/5`同task mutual-nearest，功能弧长在`4/5`任务提高same-task cosine，按预注册门
+  `advance_to_phase_aligned_fixed_decoder`。fit19的mutual-nearest从等时间`15/18`变为弧长`14/18`，因此当前结论是组合
+  标签已具备leave-task-out可识别性，不是弧长在所有面板单调占优。证据见
+  `docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

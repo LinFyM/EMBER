@@ -685,3 +685,21 @@ K2、唯一只有一次成功的task为K1；只在fit19学习phase alignment/PCA
 
 完整pairwise矩阵、selected replans、stage状态与裁决见
 `docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json`。
+
+## 33. 多成功checkpoint的完整轨迹响应首次通过role-disjoint held几何门
+
+复用既有train24 step250/500/1000/2000 experts与五次1200-row formal结果，为每task固定最早/最晚有成功的checkpoint及
+其最短成功row；23 tasks形成K2，task39仅K1。四个capture在clean detached `545b43c`上复现47/47成功，没有换row或
+重新训练。随后在clean detached `7258487`上对每条trajectory的全部replan重算expert-source完整`50x7` action chunk，
+而不是再从每个相对时间bin独立挑最大点。
+
+只在fit19以task/member/state等权拟合350→32 PCA/whitening，解释方差`.923430`；held5只经同一固定变换。8点等时间
+resample本身已让held5全部同task pair互为全局cosine最近邻，说明主要突破来自成功checkpoint、完整trajectory响应和统一
+坐标，不应把收益全归因于弧长。功能弧长resample同样为`5/5`，并在tasks 0/9/25/36提高same-task cosine、task18下降，
+即`4/5`优于等时间；fit19则从等时间`15/18`降为弧长`14/18`。它仍超过预注册的`>=4/5 mutual-nearest + >=2/5改善`门，
+返回`advance_to_phase_aligned_fixed_decoder`，但不支持“arc length普遍更优”的更强主张。
+
+这项正证据第一次使role-disjoint、无held拟合的successful/on-policy功能标签具备重建Decoder资格。下一步fresh Decoder以
+fit19 compact task code和多个成功成员的phase-state functional监督训练；held5 earliest/latest codes分别物化和闭环
+裁决，不平均LoRA、不优化held code。完整证据见
+`docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。

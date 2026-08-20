@@ -592,6 +592,18 @@ correspondence。后继复用target train24既有step250--2000 bank/formal rows�
 occupancy形成23个K2与一个K1；fit19学习对齐与坐标，held5只变换和裁决。完整证据为
 `docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json`。
 
+### 3.26 Multi-checkpoint完整轨迹与显式phase表示通过held5门
+
+train24既有step250--2000 bank形成47个预注册successful members；clean detached `545b43c`复现47/47成功，无换样本。
+clean detached `7258487`对每条完整occupancy的全部replan计算paired expert-source `50x7` denoised action。fit19-only、
+task/member/state等权的350→32 PCA/whitening解释方差`.923430`，held5仅固定变换。
+
+等时间与功能弧长8点表示在held5均达到`5/5`同task mutual-nearest；弧长在`4/5`任务提高same-task cosine，但task18下降，
+fit19 mutual-nearest也由`15/18`降至`14/18`。因此预注册门通过并授权fresh fixed Decoder，科学结论限定为
+`multiple successful checkpoints + complete trajectory response + fixed phase-aware coordinates`组合可识别，不声称弧长
+单独或普遍优于等时间。证据：
+`docs/evidence/functional_adaptation_20260819/train24_successful_equivalence_phase_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

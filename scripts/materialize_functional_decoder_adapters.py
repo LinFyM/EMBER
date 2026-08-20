@@ -61,6 +61,7 @@ def _materialize_rows(
     held_codes: torch.Tensor,
     contract: Any,
     profile: Mapping[str, Any],
+    code_condition: str,
 ) -> list[dict[str, Any]]:
     fit_codes = {
         row.ordinal: system.codebook.weight[index]
@@ -74,25 +75,52 @@ def _materialize_rows(
         **_loss_by_ordinal(profile, "held"),
     }
     bank_by_ordinal = {int(row["ordinal"]): row for row in bank["tasks"]}
+    shared_path: Path | None = None
+    if code_condition == "shared_zero":
+        with torch.no_grad():
+            candidate = system.decoder(
+                torch.zeros(
+                    system.decoder.code_width,
+                    dtype=system.codebook.weight.dtype,
+                    device=system.codebook.weight.device,
+                )
+            )
+        reference = load_file(
+            str(records[0].checkpoint / "adapter.safetensors"), device="cpu"
+        )
+        stored = {
+            name: value.detach().cpu().to(reference[name].dtype).contiguous()
+            for name, value in candidate.items()
+        }
+        validate_lora_state(stored, contract)
+        shared_path = output_dir / "shared_zero_carrier.safetensors"
+        save_file(stored, str(shared_path))
     rows = []
     with torch.no_grad():
         for record in records:
             held = record.ordinal in held_code_map
-            code = held_code_map[record.ordinal] if held else fit_codes[record.ordinal]
-            candidate = system.decoder(code)
-            reference = load_file(
-                str(record.checkpoint / "adapter.safetensors"), device="cpu"
-            )
-            stored = {
-                name: value.detach().cpu().to(reference[name].dtype).contiguous()
-                for name, value in candidate.items()
-            }
-            validate_lora_state(stored, contract)
-            path = (
-                output_dir
-                / f"task_{record.ordinal:02d}_global_{record.global_task_id:02d}.safetensors"
-            )
-            save_file(stored, str(path))
+            if shared_path is None:
+                code = (
+                    held_code_map[record.ordinal]
+                    if held
+                    else fit_codes[record.ordinal]
+                )
+                candidate = system.decoder(code)
+                reference = load_file(
+                    str(record.checkpoint / "adapter.safetensors"), device="cpu"
+                )
+                stored = {
+                    name: value.detach().cpu().to(reference[name].dtype).contiguous()
+                    for name, value in candidate.items()
+                }
+                validate_lora_state(stored, contract)
+                path = (
+                    output_dir
+                    / f"task_{record.ordinal:02d}_global_{record.global_task_id:02d}.safetensors"
+                )
+                save_file(stored, str(path))
+            else:
+                path = shared_path
             bank_row = bank_by_ordinal[record.ordinal]
             rows.append(
                 {
@@ -104,12 +132,18 @@ def _materialize_rows(
                     "projected_adapter": str(path.resolve()),
                     "projected_adapter_bytes": path.stat().st_size,
                     "code_role": (
-                        "functional_fingerprint_code"
+                        "shared_zero_carrier"
+                        if shared_path is not None
+                        else "functional_fingerprint_code"
                         if profile.get("code_source")
                         == "unified_policy_functional_fingerprint"
                         else "held_free_code" if held else "fit_codebook"
                     ),
-                    "functional_flow_eval_relative_loss": losses[record.ordinal],
+                    **(
+                        {"functional_flow_eval_relative_loss": losses[record.ordinal]}
+                        if shared_path is None
+                        else {}
+                    ),
                     **(
                         {"split_role": str(bank_row["split_role"])}
                         if "split_role" in bank_row
@@ -156,9 +190,14 @@ def _projection_manifest(
             "decoder_frozen_for_held_code_fit": True,
             "decoder_steps": int(profile["steps"]["decoder"]),
             "held_code_steps": int(profile["steps"]["held_code"]),
-            "code_source": profile.get(
-                "code_source", "learned_codebook_plus_free_held_codes"
+            "code_source": (
+                "shared_zero_carrier"
+                if args.code_condition == "shared_zero"
+                else profile.get(
+                    "code_source", "learned_codebook_plus_free_held_codes"
+                )
             ),
+            "code_condition": args.code_condition,
             "held_codes_fitted_after_decoder": bool(
                 int(profile["steps"]["held_code"])
             ),
@@ -176,6 +215,7 @@ def _projection_manifest(
                 else "development_train_oracle_only"
             ),
             "deployment_carrier": False,
+            "shared_carrier_baseline": args.code_condition == "shared_zero",
             **(
                 {
                     "meta_train_experts": 56,
@@ -210,6 +250,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         or profile.get("repository", {}).get("dirty_paths") != []
     ):
         raise ValueError("functional decoder is not a clean formal authority")
+    if args.code_condition == "shared_zero" and (
+        not meta_surface
+        or profile.get("code_source") != "unified_policy_functional_fingerprint"
+    ):
+        raise ValueError(
+            "shared-zero carrier requires the non-held functional-fingerprint decoder"
+        )
     repository = git_state(REPO_ROOT)
     if repository["dirty_paths"]:
         raise ValueError("functional adapter materialization requires a clean worktree")
@@ -286,6 +333,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         held_codes=held_codes,
         contract=contract,
         profile=profile,
+        code_condition=args.code_condition,
     )
 
     result = _projection_manifest(
@@ -318,6 +366,11 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--output-dir", type=Path, required=True)
     result.add_argument(
         "--surface", choices=("train24", "nonheld_meta"), default="train24"
+    )
+    result.add_argument(
+        "--code-condition",
+        choices=("task_fingerprint", "shared_zero"),
+        default="task_fingerprint",
     )
     return result
 

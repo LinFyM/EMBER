@@ -74,17 +74,22 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA,
     }:
         optimization = manifest.get("optimization", {})
+        code_condition = optimization.get("code_condition", "task_fingerprint")
         if (
             manifest.get("projection_kind")
             != "fixed_functional_decoder_code_projection"
             or optimization.get("decoder_frozen_for_held_code_fit") is not True
+            or code_condition not in {"task_fingerprint", "shared_zero"}
         ):
             raise ExpertManifoldError("functional-decoder projection manifest changed")
+        meta_surface = schema == FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA
         return {
             "adapter_schema": FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA,
             "arm": (
-                "functional_decoder_nonheld_meta_projection"
-                if schema == FUNCTIONAL_DECODER_META_TASK_EXPERT_MANIFEST_SCHEMA
+                "functional_decoder_nonheld_meta_shared_zero_carrier"
+                if meta_surface and code_condition == "shared_zero"
+                else "functional_decoder_nonheld_meta_projection"
+                if meta_surface
                 else "functional_decoder_train24_projection"
             ),
             "asset": {
@@ -94,6 +99,7 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
                 "held_codes": _projection_file(manifest, "held_codes"),
                 "profile_result": _projection_file(manifest, "profile_result"),
                 "decoder_frozen_for_held_code_fit": True,
+                "code_condition": code_condition,
             },
         }
     raise ExpertManifoldError("projected task-expert manifest schema changed")

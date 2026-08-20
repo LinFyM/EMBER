@@ -98,6 +98,47 @@ def task_lookup(contract: Mapping[str, Any]) -> dict[tuple[str, int], dict[str, 
     return tasks
 
 
+def _stage_predicate_snapshot(
+    env: Any,
+    states: Sequence[Sequence[str]] | None = None,
+) -> tuple[tuple[tuple[str, ...], ...], tuple[bool, ...]]:
+    owner = getattr(env, "env", env)
+    raw_states = (
+        tuple(tuple(str(value) for value in state) for state in states)
+        if states is not None
+        else tuple(
+            tuple(str(value) for value in state)
+            for state in owner.parsed_problem["goal_state"]
+        )
+    )
+    if not raw_states or not callable(getattr(owner, "_eval_predicate", None)):
+        raise Pi05EvaluationError("stage diagnosis requires LIBERO BDDL predicates")
+    return raw_states, tuple(bool(owner._eval_predicate(state)) for state in raw_states)
+
+
+def _update_stage_predicates(env: Any, slot: dict[str, Any]) -> None:
+    states, values = _stage_predicate_snapshot(
+        env,
+        slot["stage_predicate_states"],
+    )
+    slot["stage_predicate_ever"] = tuple(
+        before or current
+        for before, current in zip(
+            slot["stage_predicate_ever"], values, strict=True
+        )
+    )
+    slot["stage_predicate_peak"] = max(
+        int(slot["stage_predicate_peak"]),
+        sum(values),
+    )
+    if values != slot["stage_predicate_last"]:
+        slot["stage_predicate_transitions"].append(
+            {"step": int(slot["steps"]), "satisfied": list(values)}
+        )
+        slot["stage_predicate_last"] = values
+    slot["stage_predicate_states"] = states
+
+
 def _start_fixed_episode(
     *,
     env: Any,
@@ -136,6 +177,19 @@ def _start_fixed_episode(
     if capture_occupancy:
         slot["replay_observations"] = []
         slot["replay_action_chunks"] = []
+    if contract.get("diagnostic_stage_predicates") is not None:
+        states, values = _stage_predicate_snapshot(env)
+        slot.update(
+            {
+                "stage_predicate_states": states,
+                "stage_predicate_last": values,
+                "stage_predicate_ever": values,
+                "stage_predicate_peak": sum(values),
+                "stage_predicate_transitions": [
+                    {"step": 0, "satisfied": list(values)}
+                ],
+            }
+        )
     return slot
 
 
@@ -280,6 +334,8 @@ def rollout_shard(
             obs, _, done, _ = env.step(slot["action_plan"].popleft())
             slot["obs"] = obs
             slot["steps"] += 1
+            if "stage_predicate_states" in slot:
+                _update_stage_predicates(env, slot)
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             finished = time.monotonic()
@@ -297,6 +353,17 @@ def rollout_shard(
                 "wall_seconds": finished - float(slot["started"]),
                 "finished_at": finished - worker_started,
             }
+            if "stage_predicate_states" in slot:
+                row["stage_predicates"] = {
+                    "schema_version": "ember_pi05_stage_predicate_episode_v1",
+                    "predicates": [
+                        list(state) for state in slot["stage_predicate_states"]
+                    ],
+                    "transitions": slot["stage_predicate_transitions"],
+                    "ever_satisfied": list(slot["stage_predicate_ever"]),
+                    "final_satisfied": list(slot["stage_predicate_last"]),
+                    "peak_satisfied_count": int(slot["stage_predicate_peak"]),
+                }
             if capture_occupancy:
                 import torch
 
@@ -430,6 +497,20 @@ def _validate_episode_row(
         task_id=shard.task_id,
         init_state_id=state_id,
     )
+    stage = row.get("stage_predicates")
+    if contract.get("diagnostic_stage_predicates") is None:
+        stage_valid = stage is None
+    else:
+        final_predicates = (
+            stage.get("final_satisfied", ()) if isinstance(stage, Mapping) else ()
+        )
+        stage_valid = (
+            isinstance(stage, Mapping)
+            and stage.get("schema_version")
+            == "ember_pi05_stage_predicate_episode_v1"
+            and bool(final_predicates)
+            and bool(all(final_predicates)) == bool(row.get("success"))
+        )
     valid = (
         row.get("suite") == shard.suite
         and int(row.get("task_id", -1)) == shard.task_id
@@ -441,6 +522,7 @@ def _validate_episode_row(
         and int(row.get("policy_seed_root", -1)) == root_seed
         and seeds == expected_seeds
         and adapter_valid
+        and stage_valid
     )
     if not valid:
         raise Pi05EvaluationError(

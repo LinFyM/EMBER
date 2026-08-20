@@ -620,3 +620,17 @@ reward或把LoRA参数变成梯度目标。
 closed-loop预测证据。因此当前只保留统一owner；若validation8 ceiling广泛成立，再在少量successful/on-policy states上
 把action、JVP与stage behavior配对比较，不运行71-task全量JVP fingerprint，也不据此重启Decoder。机制证据见
 `docs/evidence/functional_adaptation_20260819/policy_jvp_feasibility_20260821.json`。
+
+## 30. BDDL谓词可在同一rollout提供sealed阶段代理
+
+为落实专家关于“failure从哪个阶段开始”的诊断要求，evaluator新增可选的formal-validation-only BDDL谓词change-point
+capture。它在dummy settling后记录初值，此后只在真实执行动作使goal predicate布尔向量变化时追加step；每行保留
+predicate labels、ever/final、peak count与完整change points。该路径不改变policy输入、动作、success、RNG或checkpoint，
+不读取teacher action/reward，也不产生梯度；它明确使用privileged simulator state，因此只能作为owner已授权的sealed
+held diagnosis。
+
+真实LIBERO smoke在`libero_10/task1/state0`解析出cream-cheese与butter各自进入basket的两个谓词，settling后均为false；
+synthetic rollout验证`step0 [F,F] → step1 [T,F] → step3 [T,T]`并保持原occupancy与普通rollout测试通过。边界是：BDDL
+goal state只是无序最终合取，能定位部分完成、丢失与最终失败，却不能冒充完整有序procedure或recovery标签。下一次
+validation8 step2000 strict400会在不额外rollout的情况下同时收集该trace。机制证据见
+`docs/evidence/functional_adaptation_20260819/stage_predicate_capture_smoke_20260821.json`。

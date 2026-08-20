@@ -139,6 +139,11 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-step", type=_positive_int)
     parser.add_argument("--task-expert-projection-manifest", type=Path)
     parser.add_argument("--occupancy-capture-selection", type=Path)
+    parser.add_argument(
+        "--capture-stage-predicates",
+        action="store_true",
+        help="Sealed validation diagnosis of BDDL goal-predicate transitions.",
+    )
     parser.add_argument("--dynamic-k-writer-config", type=Path)
     parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)
     parser.add_argument("--dynamic-k-writer-video-data-root", type=Path)

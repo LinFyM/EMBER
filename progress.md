@@ -86,6 +86,11 @@
   expert-source JVP差RMS `.028757`、cosine `.999663`。它只证明专家建议的Jacobian标签可实际计算；在validation8
   ceiling裁决前不扩为全量fingerprint或Decoder objective。证据见
   `docs/evidence/functional_adaptation_20260819/policy_jvp_feasibility_20260821.json`。
+- formal-validation-only BDDL stage capture已接通：同一rollout内记录goal predicates的初值与change points、ever/final及
+  peak count；真实LIBERO wrapper与两谓词任务解析通过，聚焦测试3项通过。它使用privileged simulator state但不读
+  teacher action/reward、不产生梯度或改变success，且只作为无序最终合取的阶段代理。step2000 strict400将同时收集，
+  不额外重跑rollout。证据见
+  `docs/evidence/functional_adaptation_20260819/stage_predicate_capture_smoke_20260821.json`。
 - validation8 sealed local-expert oracle的八项均已完成step1000，六个原worker已在原设备与任务topology上exact-resume；
   worker0已完成step2000，其余继续运行，step1000不评测。全部完成后只用step2000 strict400与既有frozen source
   `48/400`比较，以裁决target ceiling和source primitive缺口。

@@ -367,6 +367,66 @@ def test_diagnostic_rollout_captures_requeryable_occupancy(tmp_path: Path) -> No
     assert len(trajectory["policy_noise_seeds"]) == 2
 
 
+def test_sealed_stage_diagnosis_records_bddl_predicate_transitions() -> None:
+    class StageEnv(_FakeEnv):
+        def __init__(self) -> None:
+            super().__init__(success_after=3)
+            self.env = self
+            self.parsed_problem = {
+                "goal_state": [
+                    ["stage_one", "object"],
+                    ["stage_two", "object"],
+                ]
+            }
+
+        def _eval_predicate(self, state) -> bool:
+            threshold = 1 if state[0] == "stage_one" else 3
+            return self.action_steps >= threshold
+
+    contract = {
+        "environment": {
+            "dummy_action": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            "dummy_settling_steps": 10,
+        },
+        "policy": {"replan_steps": 5, "num_inference_steps": 10},
+        "rng": {"inference_seed": 7},
+        "diagnostic_stage_predicates": {
+            "schema_version": "ember_pi05_stage_predicate_capture_v1"
+        },
+    }
+    rows = rollout_shard(
+        envs=(StageEnv(),),
+        init_states=tuple(range(10)),
+        task={
+            "suite": "libero_10",
+            "task_id": 1,
+            "split_role": "validation",
+            "language": "complete both stages",
+            "horizon": 520,
+        },
+        state_ids=(0,),
+        contract=contract,
+        policy=_FakePolicy(),
+        preprocess=_preprocess,
+        postprocess=lambda value: value,
+    )
+
+    stage = rows[0]["stage_predicates"]
+    assert rows[0]["success"] is True
+    assert stage["predicates"] == [
+        ["stage_one", "object"],
+        ["stage_two", "object"],
+    ]
+    assert stage["transitions"] == [
+        {"step": 0, "satisfied": [False, False]},
+        {"step": 1, "satisfied": [True, False]},
+        {"step": 3, "satisfied": [True, True]},
+    ]
+    assert stage["ever_satisfied"] == [True, True]
+    assert stage["final_satisfied"] == [True, True]
+    assert stage["peak_satisfied_count"] == 2
+
+
 def test_writer_adapter_is_prepared_once_and_reinstalled_for_each_replan() -> None:
     class FakeAdapter:
         def __init__(self) -> None:

@@ -1,0 +1,48 @@
+{
+  "schema_version": "ember_pi05_stage_predicate_capture_smoke_v1",
+  "status": "mechanism_smoke_nonformal",
+  "date": "2026-08-21",
+  "repository_base_commit": "9ec759cedfb9e812c2476a893e157d532571e392",
+  "worktree_state": "new_stage_capture_owner_uncommitted_during_smoke",
+  "mechanism": {
+    "capture_scope": "post-settling state and every executed-action predicate change point",
+    "predicate_source": "installed LIBERO BDDL goal conjunction",
+    "row_payload": [
+      "predicate labels",
+      "change-point trace",
+      "ever satisfied",
+      "final satisfied",
+      "peak satisfied count"
+    ],
+    "training_gradient_use": false,
+    "checkpoint_selection_use": false,
+    "teacher_action_reads": 0,
+    "reward_reads": 0,
+    "privileged_simulator_state_use": "sealed_validation_diagnosis_only"
+  },
+  "real_libero_smoke": {
+    "host": "gpu01",
+    "physical_gpu": 6,
+    "suite": "libero_10",
+    "task_id": 1,
+    "init_state_id": 0,
+    "post_settling_predicates": [
+      ["in", "cream_cheese_1", "basket_1_contain_region"],
+      ["in", "butter_1", "basket_1_contain_region"]
+    ],
+    "post_settling_satisfied": [false, false],
+    "result": "installed OffScreenRenderEnv wrapper and private BDDL predicate evaluator resolved successfully"
+  },
+  "focused_verification": {
+    "tests": "3 passed",
+    "synthetic_change_points": [
+      {"step": 0, "satisfied": [false, false]},
+      {"step": 1, "satisfied": [true, false]},
+      {"step": 3, "satisfied": [true, true]}
+    ],
+    "occupancy_capture_regression": "passed",
+    "ordinary_rollout_regression": "passed"
+  },
+  "claim_boundary": "LIBERO BDDL goal predicates expose useful partial completion and regression events, but they are an unordered final-goal conjunction and do not constitute a complete procedure or recovery annotation.",
+  "planned_use": "Capture these traces in the validation8 step2000 strict400 oracle evaluation without changing policy inputs, actions, seeds, checkpoint selection, or success scoring."
+}

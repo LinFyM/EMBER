@@ -197,6 +197,28 @@ def _occupancy_capture_tasks(
     }
 
 
+def _stage_predicate_capture(args: Any) -> dict[str, Any] | None:
+    if not bool(getattr(args, "capture_stage_predicates", False)):
+        return None
+    if args.mode != "formal" or args.role != "validation":
+        raise Pi05EvaluationError(
+            "stage-predicate capture is restricted to formal validation diagnosis"
+        )
+    return {
+        "schema_version": "ember_pi05_stage_predicate_capture_v1",
+        "capture": "post_settling_then_every_executed_action_change_points",
+        "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
+        "training_gradient_use": False,
+        "checkpoint_selection_use": False,
+        "validation_action_reads": 0,
+        "validation_reward_reads": 0,
+        "claim_boundary": (
+            "BDDL goal predicates are a partial stage proxy, not a complete ordered "
+            "procedure annotation"
+        ),
+    }
+
+
 def _prepared_payload(
     args: Any,
     *,
@@ -236,6 +258,7 @@ def _prepared_payload(
         output_dir=output_dir,
         writer_kind=writer_kind,
     )
+    stage_predicate_capture = _stage_predicate_capture(args)
     model = inspect_source_checkpoint(
         authorities,
         args.source_run,
@@ -269,6 +292,7 @@ def _prepared_payload(
         writer_cache_root=args.writer_lora_cache_root,
     )
     contract["diagnostic_occupancy_capture"] = occupancy_capture
+    contract["diagnostic_stage_predicates"] = stage_predicate_capture
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

@@ -1,0 +1,104 @@
+{
+  "schema_version": "ember_fingerprint_decoder_followup_v1",
+  "coordinate_authority": {
+    "artifact": "runs/analysis/pi05_functional_fingerprint_codes_nonheld_meta_fold0_b86800e_gpu01p6_20260820",
+    "feature_count": 25600,
+    "code_width": 32,
+    "train_explained_variance": 0.887516,
+    "train_coordinate_std": 1.0,
+    "held_coordinate_std": 0.7248,
+    "train_mean_norm": 5.5701,
+    "held_mean_norm": 4.1436
+  },
+  "flow_only_decoder": {
+    "artifact": "runs/analysis/pi05_functional_decoder_fingerprint_nonheld_meta_fold0_formal_b86800e_gpu01p6_20260820",
+    "held_evaluation": "runs/outputs/pi05_nonheld_meta_validation_fingerprint_decoder_fold0_15x50_formal_b86800e_gpu02p123467_20260820",
+    "fit_flow_loss": [1.040443, 0.445721],
+    "held_flow_loss": [1.035567, 0.664218],
+    "successes": 644,
+    "episodes": 750,
+    "source_to_candidate": {
+      "retained": 606,
+      "gained": 38,
+      "lost": 40,
+      "both_failed": 66,
+      "net": -2,
+      "churn": 78,
+      "mcnemar_exact_two_sided_p": 0.909946
+    },
+    "direct_to_candidate": {
+      "retained": 618,
+      "gained": 26,
+      "lost": 66,
+      "both_failed": 40,
+      "net": -40,
+      "churn": 92,
+      "mcnemar_exact_two_sided_p": 0.0000367
+    }
+  },
+  "shared_zero_carrier": {
+    "artifact": "runs/analysis/pi05_functional_decoder_fingerprint_shared_zero_carrier_b86800e_materialized_89d9619_20260820",
+    "held_evaluation": "runs/outputs/pi05_nonheld_meta_validation_fingerprint_decoder_shared_zero_15x50_formal_89d9619_gpu02p123467_20260820",
+    "successes": 640,
+    "episodes": 750,
+    "per_task_successes": {
+      "0": 49,
+      "5": 47,
+      "13": 47,
+      "18": 48,
+      "24": 50,
+      "33": 41,
+      "38": 40,
+      "43": 47,
+      "58": 40,
+      "63": 41,
+      "68": 48,
+      "73": 7,
+      "79": 45,
+      "84": 47,
+      "89": 43
+    },
+    "source_to_shared_zero": {
+      "retained": 606,
+      "gained": 34,
+      "lost": 40,
+      "both_failed": 70,
+      "net": -6,
+      "churn": 74,
+      "mcnemar_exact_two_sided_p": 0.561381
+    },
+    "shared_zero_to_task_fingerprint": {
+      "retained": 614,
+      "gained": 30,
+      "lost": 26,
+      "both_failed": 80,
+      "net": 4,
+      "churn": 56,
+      "mcnemar_exact_two_sided_p": 0.68888
+    }
+  },
+  "fixed_probe_decoder": {
+    "artifact": "runs/analysis/pi05_effective_fingerprint_decoder_nonheld_meta_fold0_formal_c3e5bc1_gpu01p6_20260820",
+    "probe_count": 8,
+    "probe_fit_loss": [1.0, 0.610951],
+    "probe_held_loss": [1.0, 0.911115],
+    "flow_fit_loss": [1.040443, 1.00418],
+    "flow_held_loss": [1.035567, 1.009545],
+    "full_effective_ba": {
+      "meta_train_mean_relative_l2": 1.138722,
+      "meta_train_mean_cosine": 0.064164,
+      "meta_train_mean_candidate_over_expert_norm": 0.611855,
+      "held_mean_relative_l2": 1.129206,
+      "held_mean_cosine": 0.044948,
+      "held_mean_candidate_over_expert_norm": 0.569157
+    },
+    "closed_loop_launched": false,
+    "decision": "fixed_probe_overfit_full_effective_update_support_not_recovered"
+  },
+  "comparators": {
+    "source_successes": 646,
+    "direct_expert_successes": 684,
+    "old_free_code_projected_successes": 659
+  },
+  "next_causal_change": "replace_fixed_probe_sampling_with_exact_low_rank_gram_effective_ba_loss"
+}

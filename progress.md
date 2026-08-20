@@ -60,8 +60,12 @@
 - 当前最早失效接口是Decoder objective：新生成effective `BA`相对direct的relative-L2 `2.8576`、cosine `.0254`、
   norm ratio `2.7004`，说明有限flow queries允许巨大近正交off-manifold解。短期worktree正在把唯一Decoder训练锚点改为
   gauge-invariant effective-update probes；flow panel只作诊断，合并后仍从clean pushed detached commit正式训练。
-- shared-zero carrier已从`main@89d9619`导出为一套物理adapter并在相同15-task×50 rows上正式评测；它只裁决共享输出
-  能解释多少分数，不作为部署fallback。评测完成前不作partial-score结论。
+- shared-zero carrier formal已完成`640/750`，相对source净`-6`；shared-zero→task fingerprint只有30 gained、26 lost、
+  净`+4`、`p=.68888`。上一轮`644`几乎由共享输出解释，task-specific code无可靠增量；该carrier只作诊断，不作为fallback。
+- 固定8-probe effective Decoder从clean pushed `c3e5bc1`完成1120 steps，7分46秒、峰值18.92 GB；fit/held probe loss
+  为`1→.610951/.911115`，但完整effective `BA`的train/held relative-L2仍为`1.1387/1.1292`、cosine仅
+  `.0642/.0449`。因连train support都未恢复，没有启动闭环。当前唯一改动是用低秩Gram计算exact full-BA loss；同一
+  fingerprint、专家、拓扑和schedule全部复用。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

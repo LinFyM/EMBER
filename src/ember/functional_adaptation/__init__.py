@@ -33,6 +33,7 @@ from ember.functional_adaptation.inference import (
     LanguageVideoCodeInference,
 )
 from ember.functional_adaptation.objectives import (
+    effective_update_exact_loss,
     effective_update_probe_loss,
     effective_update_probes,
 )
@@ -59,6 +60,7 @@ __all__ = [
     "functional_response_distillation_loss",
     "load_fixed_decoder",
     "pi05_flow_response",
+    "effective_update_exact_loss",
     "effective_update_probe_loss",
     "effective_update_probes",
     "relative_effective_update_loss",

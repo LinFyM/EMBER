@@ -44,6 +44,7 @@ from ember.functional_adaptation.fingerprint_codes import (
     load_functional_fingerprint_code_targets,
 )
 from ember.functional_adaptation.objectives import (
+    effective_update_exact_loss,
     effective_update_probe_loss,
     effective_update_probes,
 )
@@ -286,7 +287,11 @@ def _prepare(args: argparse.Namespace) -> FlowProfile:
     ]
     flow = mechanism["flow_response"]
     decoder_objective = str(mechanism.get("decoder_objective", "flow_response"))
-    if decoder_objective not in {"flow_response", "effective_update_probe"}:
+    if decoder_objective not in {
+        "flow_response",
+        "effective_update_probe",
+        "effective_update_exact",
+    }:
         raise ValueError("functional-decoder objective changed")
     fixed_code_requested = args.functional_code_artifact is not None
     if args.surface == "nonheld_meta" and not fixed_code_requested:
@@ -546,10 +551,28 @@ def _effective_losses(
         ]
 
 
+def _exact_effective_losses(
+    *,
+    decoder: torch.nn.Module,
+    codes: torch.Tensor,
+    states: Sequence[Mapping[str, torch.Tensor]],
+    contract: Any,
+) -> list[float]:
+    with torch.no_grad():
+        return [
+            float(
+                effective_update_exact_loss(
+                    decoder(codes[index]), target, contract
+                ).item()
+            )
+            for index, target in enumerate(states)
+        ]
+
+
 def _optimizer_config(runtime: FlowProfile) -> Mapping[str, Any]:
     return (
         runtime.mechanism["effective_update_optimizer"]
-        if runtime.decoder_objective == "effective_update_probe"
+        if runtime.decoder_objective.startswith("effective_update_")
         else runtime.flow["optimizer"]
     )
 
@@ -596,15 +619,21 @@ def _fit_decoder(
     for step, task_index in enumerate(order[start_step:], start=start_step + 1):
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            objective_loss = (
-                effective_update_probe_loss(
+            if runtime.decoder_objective == "effective_update_exact":
+                objective_loss = effective_update_exact_loss(
+                    runtime.system(task_index),
+                    runtime.fit_states[task_index],
+                    runtime.contract,
+                )
+            elif runtime.decoder_objective == "effective_update_probe":
+                objective_loss = effective_update_probe_loss(
                     runtime.system(task_index),
                     runtime.fit_states[task_index],
                     runtime.contract,
                     runtime.effective_probes,
                 )
-                if runtime.decoder_objective == "effective_update_probe"
-                else mean_functional_probe_loss(
+            else:
+                objective_loss = mean_functional_probe_loss(
                     runtime.policy,
                     runtime.system(task_index),
                     runtime.contract,
@@ -612,7 +641,6 @@ def _fit_decoder(
                         panels.fit_train[task_index], visits[task_index]
                     ),
                 )
-            )
             gauge_loss = runtime.system.codebook.gauge_loss()
             loss = objective_loss + float(
                 runtime.mechanism["objective"]["codebook_gauge_weight"]
@@ -625,8 +653,8 @@ def _fit_decoder(
         visits[task_index] += 1
         row = {
             "phase": (
-                "effective_update_decoder_fit"
-                if runtime.decoder_objective == "effective_update_probe"
+                f"{runtime.decoder_objective}_decoder_fit"
+                if runtime.decoder_objective.startswith("effective_update_")
                 else "flow_decoder_fit"
             ),
             "step": step,
@@ -639,8 +667,8 @@ def _fit_decoder(
             "max_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
         }
         row[
-            "effective_update_loss"
-            if runtime.decoder_objective == "effective_update_probe"
+            f"{runtime.decoder_objective}_loss"
+            if runtime.decoder_objective.startswith("effective_update_")
             else "flow_response_loss"
         ] = float(objective_loss.detach())
         append_jsonl(metrics_path, row)
@@ -730,6 +758,8 @@ def _write_result(
     initial_held: list[float],
     initial_effective_fit: list[float],
     initial_effective_held: list[float],
+    initial_exact_effective_fit: list[float],
+    initial_exact_effective_held: list[float],
 ) -> None:
     final_fit = _panel_losses(
         policy=runtime.policy,
@@ -758,6 +788,18 @@ def _write_result(
         states=runtime.held_states,
         contract=runtime.contract,
         probes=runtime.effective_probes,
+    )
+    final_exact_effective_fit = _exact_effective_losses(
+        decoder=runtime.system.decoder,
+        codes=runtime.system.codebook.weight[: len(runtime.active_fit)],
+        states=runtime.fit_states,
+        contract=runtime.contract,
+    )
+    final_exact_effective_held = _exact_effective_losses(
+        decoder=runtime.system.decoder,
+        codes=runtime.held_codes[: len(runtime.active_held)],
+        states=runtime.held_states,
+        contract=runtime.contract,
     )
     if (runtime.args.output_dir / "result.json").exists():
         raise ValueError("functional-decoder result already exists")
@@ -825,6 +867,18 @@ def _write_result(
             "final_effective_held_mean": sum(final_effective_held)
             / len(final_effective_held),
             "final_effective_held_per_task": final_effective_held,
+            "initial_exact_effective_fit_mean": sum(initial_exact_effective_fit)
+            / len(initial_exact_effective_fit),
+            "initial_exact_effective_fit_per_task": initial_exact_effective_fit,
+            "final_exact_effective_fit_mean": sum(final_exact_effective_fit)
+            / len(final_exact_effective_fit),
+            "final_exact_effective_fit_per_task": final_exact_effective_fit,
+            "initial_exact_effective_held_mean": sum(initial_exact_effective_held)
+            / len(initial_exact_effective_held),
+            "initial_exact_effective_held_per_task": initial_exact_effective_held,
+            "final_exact_effective_held_mean": sum(final_exact_effective_held)
+            / len(final_exact_effective_held),
+            "final_exact_effective_held_per_task": final_exact_effective_held,
             "steps": {
                 "decoder": int(runtime.schedule["decoder_steps"]),
                 "held_code": int(runtime.schedule["held_code_steps"]),
@@ -874,7 +928,14 @@ def _write_result(
 
 def _load_or_create_initial_losses(
     runtime: FlowProfile, panels: FlowPanels
-) -> tuple[list[float], list[float], list[float], list[float]]:
+) -> tuple[
+    list[float],
+    list[float],
+    list[float],
+    list[float],
+    list[float],
+    list[float],
+]:
     path = runtime.args.output_dir / "initial_losses.json"
     if runtime.args.resume is None:
         fit, held = _initial_losses(runtime, panels)
@@ -892,6 +953,18 @@ def _load_or_create_initial_losses(
             contract=runtime.contract,
             probes=runtime.effective_probes,
         )
+        exact_effective_fit = _exact_effective_losses(
+            decoder=runtime.system.decoder,
+            codes=runtime.system.codebook.weight[: len(runtime.active_fit)],
+            states=runtime.fit_states,
+            contract=runtime.contract,
+        )
+        exact_effective_held = _exact_effective_losses(
+            decoder=runtime.system.decoder,
+            codes=runtime.held_codes[: len(runtime.active_held)],
+            states=runtime.held_states,
+            contract=runtime.contract,
+        )
         write_json_atomic(
             path,
             {
@@ -899,9 +972,18 @@ def _load_or_create_initial_losses(
                 "held": held,
                 "effective_fit": effective_fit,
                 "effective_held": effective_held,
+                "exact_effective_fit": exact_effective_fit,
+                "exact_effective_held": exact_effective_held,
             },
         )
-        return fit, held, effective_fit, effective_held
+        return (
+            fit,
+            held,
+            effective_fit,
+            effective_held,
+            exact_effective_fit,
+            exact_effective_held,
+        )
     observed = read_json(path)
     fit = [float(value) for value in observed.get("fit", ())]
     held = [float(value) for value in observed.get("held", ())]
@@ -911,14 +993,29 @@ def _load_or_create_initial_losses(
     effective_held = [
         float(value) for value in observed.get("effective_held", ())
     ]
+    exact_effective_fit = [
+        float(value) for value in observed.get("exact_effective_fit", ())
+    ]
+    exact_effective_held = [
+        float(value) for value in observed.get("exact_effective_held", ())
+    ]
     if (
         len(fit) != len(runtime.active_fit)
         or len(held) != len(runtime.active_held)
         or len(effective_fit) != len(runtime.active_fit)
         or len(effective_held) != len(runtime.active_held)
+        or len(exact_effective_fit) != len(runtime.active_fit)
+        or len(exact_effective_held) != len(runtime.active_held)
     ):
         raise ValueError("functional-decoder initial-loss evidence changed")
-    return fit, held, effective_fit, effective_held
+    return (
+        fit,
+        held,
+        effective_fit,
+        effective_held,
+        exact_effective_fit,
+        exact_effective_held,
+    )
 
 
 def _rewind_metrics(path: Path, rows: int) -> None:
@@ -945,6 +1042,8 @@ def run(args: argparse.Namespace) -> None:
         initial_held,
         initial_effective_fit,
         initial_effective_held,
+        initial_exact_effective_fit,
+        initial_exact_effective_held,
     ) = _load_or_create_initial_losses(runtime, panels)
     metrics_path = args.output_dir / "metrics.jsonl"
     resume = (
@@ -1017,6 +1116,8 @@ def run(args: argparse.Namespace) -> None:
         initial_held,
         initial_effective_fit,
         initial_effective_held,
+        initial_exact_effective_fit,
+        initial_exact_effective_held,
     )
 
 

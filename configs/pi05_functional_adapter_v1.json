@@ -300,8 +300,8 @@
     "held_task_count": 15,
     "expert_step": 1000,
     "expert_schedule": "profile_then_one_uniform_step_for_all_71_nonheld_tasks",
-    "formal_status": "frozen_56_15_fingerprint_flow_only_gate2_failed_effective_update_decoder_active",
-    "decoder_objective": "effective_update_probe",
+    "formal_status": "frozen_56_15_fixed_probe_overfit_exact_effective_update_decoder_active",
+    "decoder_objective": "effective_update_exact",
     "functional_fingerprint": {
       "anchor_task_count": 8,
       "anchor_demo_indices": [

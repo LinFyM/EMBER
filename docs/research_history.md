@@ -538,6 +538,14 @@ gauge-invariant effective-BA诊断显示新Decoder相对direct的平均relative-
 surrogate而非坐标为当前最早失效接口。后继只改变Decoder objective为effective-update probes，并保留flow panel和
 closed loop作独立裁决；同一commit另行评测shared-zero carrier，避免把共享输出误认成task-conditioned功能。
 
+shared-zero carrier随后在相同750 rows得到`640`；相对source净`-6`，而shared-zero→task fingerprint只净`+4`、
+churn56、`p=.68888`。因此`644`几乎全由Decoder共享输出解释，task code没有可靠功能增量。
+
+从clean pushed `c3e5bc1`运行固定8-probe effective objective，1120 steps耗时466秒。fit/held probe loss由
+`1→.610951/.911115`，但完整BA检查在train/held仍为relative-L2 `1.1387/1.1292`、cosine `.0642/.0449`；这是固定
+probe过拟合，连train expert support都未恢复，故没有启动closed loop。后继改用exact低秩Gram Frobenius loss，其他合同
+不变。remote-safe汇总见`docs/evidence/functional_adaptation_20260819/fingerprint_decoder_followup_20260820.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -135,3 +135,36 @@ def effective_update_probe_loss(
     if numerator is None or denominator is None:
         raise ValueError("effective-update probe panel is empty")
     return numerator / denominator.clamp_min(1e-8)
+
+
+def effective_update_exact_loss(
+    candidate: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+) -> torch.Tensor:
+    """Match the full effective BA update without materializing dense BA matrices."""
+
+    numerator: torch.Tensor | None = None
+    denominator: torch.Tensor | None = None
+    for owner in contract.targets:
+        name_a = owner.name + LORA_A_SUFFIX
+        name_b = owner.name + LORA_B_SUFFIX
+        device_type = candidate[name_a].device.type
+        with torch.autocast(device_type=device_type, enabled=False):
+            candidate_a = candidate[name_a].float()
+            candidate_b = candidate[name_b].float()
+            target_a = target[name_a].float()
+            target_b = target[name_b].float()
+
+            # For U=[B_c, B_t] and V=[A_c; -A_t], U@V is the exact dense
+            # effective-update residual.  Its Frobenius norm only needs the
+            # two 2r x 2r Gram matrices below.
+            left = torch.cat((candidate_b, target_b), dim=1)
+            right = torch.cat((candidate_a, -target_a), dim=0)
+            error = ((left.T @ left) * (right @ right.T)).sum()
+            energy = ((target_b.T @ target_b) * (target_a @ target_a.T)).sum()
+        numerator = error if numerator is None else numerator + error
+        denominator = energy if denominator is None else denominator + energy
+    if numerator is None or denominator is None:
+        raise ValueError("effective-update target is empty")
+    return numerator.clamp_min(0.0) / denominator.clamp_min(1e-8)

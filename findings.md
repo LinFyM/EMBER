@@ -550,3 +550,12 @@ relative-L2为`2.8576`、cosine仅`.0254`，生成update norm是direct的`2.7004
 下一次只改变Decoder训练锚点：固定同一fingerprint codes，改用gauge-invariant effective-update probe拟合direct expert
 `BA`；flow panel保留为无梯度诊断，最终仍由同一750-row closed loop裁决。shared-zero carrier同时作为matched架构对照，
 用于区分task-conditioned code贡献与Decoder共享输出。
+
+shared-zero formal为`640/750`，相对source净`-6`；从shared-zero换成task fingerprint code只净增`+4`，30 gained、
+26 lost、churn56、`p=.68888`。因此flow-only Decoder的`644`几乎全由共享输出解释，task-specific code没有形成可靠功能；
+shared carrier只保留为诊断，不作为架构fallback。
+
+首个8个固定effective-update probes的Decoder也已裁决：fit/held probe loss为`1→.610951/.911115`，但全空间effective
+`BA`在meta-train/held的mean relative-L2仍为`1.1387/1.1292`、cosine仅`.0642/.0449`。连训练tasks都没有恢复expert
+support，说明下降主要来自固定probe方向过拟合；未浪费750-row闭环。下一实现使用低秩Gram恒等式计算exact full-BA
+Frobenius loss，不物化dense `BA`，不改变codes、Decoder拓扑、task schedule或下游裁决。

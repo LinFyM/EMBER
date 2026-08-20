@@ -130,8 +130,9 @@ evaluation cache和rollout永远只看到一个complete LoRA。共享base若未�
 ### 5.3 两阶段训练与冻结
 
 1. 先按4.3从统一functional fingerprints冻结train/held codes；held role只transform，不产生梯度；
-2. 只在meta-train tasks按task等权训练decoder。首轮flow-only已由`644/750`淘汰；当前用gauge-invariant
-   effective-update probes直接锚定expert `BA`，flow response只作独立诊断，不再单独作为训练目标；
+2. 只在meta-train tasks按task等权训练decoder。flow-only已由`644/750`淘汰；固定8-probe objective又因train full-BA
+   relative-L2 `1.1387`而淘汰。当前用低秩Gram恒等式直接优化exact full-space expert `BA`，不物化dense update；flow
+   response只作独立诊断，不再单独作为训练目标；
 3. decoder训练期间held codes与held panels都不产生梯度；训练结束后在held task-local panel和closed loop测试range；
 4. range通过后永久冻结decoder，held fingerprint code只用于oracle诊断，不参与后续Writer训练；
 5. semantic/video encoder必须从action-hidden输入预测同一code，完成真正leave-task-out闭环验证。

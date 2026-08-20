@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；统一functional fingerprint已修复train/held坐标，但flow-only Decoder在新Gate 2为644/750且产生off-manifold effective update，当前以固定codes改验effective-update锚点。**
+状态：2026-08-20 **active；统一坐标已通过，但flow-only为644/750、shared-zero为640/750，固定8-probe又发生全空间过拟合；当前以低秩Gram exact-BA锚点重验同一Decoder。**
 
 ## Goal
 
@@ -120,6 +120,10 @@ projected `659`。生成effective `BA`相对direct的relative-L2为`2.8576`、co
 flow surrogate允许巨大off-manifold update。该路径登记为implemented-fail，不进入Writer；下一次只改为effective-update
 probe objective，并用同一750 rows复验。shared-zero carrier并行完成matched对照，不作为fallback部署。
 
+**Shared/probe后续裁决：** shared-zero为`640/750`，task fingerprint仅在其上净增`+4`且`p=.68888`，确认task code
+贡献不足。固定8-probe训练虽把fit probe loss降到`.610951`，完整BA在train/held的relative-L2仍为`1.1387/1.1292`、
+cosine仅`.0642/.0449`，属于固定方向过拟合，未进入closed loop。现只把抽样loss替换为exact低秩Gram Frobenius loss。
+
 ## Phase 3 — Language prior + video process posterior
 
 - [x] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
@@ -172,9 +176,9 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Current next actions
 
-1. 收口shared-zero carrier在同一15-task×50 rows上的matched closed loop，定量分离Decoder共享输出与task fingerprint增量；
-2. 复用已冻结的71-task fingerprint artifact，不重复收集或重训expert；固定codes后用gauge-invariant effective-update probe
-   拟合唯一complete-LoRA decoder，先检查held effective-BA与flow panel，再在同一750 rows复验source/direct/projected；
+1. 复用已冻结的71-task fingerprint artifact，不重复收集或重训expert；用低秩Gram exact full-BA objective拟合唯一
+   complete-LoRA Decoder，先要求train/held full-space geometry实际回到expert support；
+2. 只有上述几何门通过才在同一750 rows复验source/direct/projected，避免为已知off-support adapter消耗闭环预算；
 3. 只有effective-update Decoder在leave-task-out闭环与task区分上通过，才从现有训练/评测运行面fresh训练新Writer；旧macro10 checkpoint
    与七臂screen全部保留作反事实，不重复原训练也不靠延长macro掩盖坐标错误；
 4. 新Writer先过language/video/full/endpoints/order/static matched screen，再决定outer closed-loop credit；当前outer RL保持关闭；

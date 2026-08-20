@@ -34,6 +34,7 @@ from ember.functional_adaptation.decoder_training import (
 )
 from ember.pi05_eval_contract import (
     git_state,
+    git_state_is_clean_pushed_or_frozen_authority,
     inspect_source_checkpoint,
     load_evaluation_authorities,
 )
@@ -268,9 +269,8 @@ def _resolve_training_setup(args: argparse.Namespace) -> CodeTrainingSetup:
     if args.mode == "formal" and context.world_size != int(mode["world_size"]):
         raise ValueError("formal functional-code training requires six workers")
     state = git_state(REPO_ROOT)
-    if args.mode == "formal" and (
-        state["dirty_paths"]
-        or (args.resume is None and state["commit"] != state["upstream_commit"])
+    if args.mode == "formal" and not git_state_is_clean_pushed_or_frozen_authority(
+        state
     ):
         raise ValueError(
             "formal functional-code training requires a clean pushed commit"

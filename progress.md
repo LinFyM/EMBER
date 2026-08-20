@@ -12,8 +12,9 @@
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
   non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
   七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
-  Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，当前转入successful/on-policy
-  action/JVP/stage面板与role-disjoint manifold重构，未进入新Writer或outer RL。
+  Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，但8-row successful/on-policy
+  action/JVP直接task-vector只过`2/4`与`1/4`。当前按专家原始建议转入多成功adapter、显式phase-aligned的role-disjoint
+  manifold重构，未进入新Writer或outer RL。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -100,11 +101,19 @@
   teacher action/reward、不产生梯度或改变success，且只作为无序最终合取的阶段代理。step2000 strict400将同时收集，
   不额外重跑rollout。证据见
   `docs/evidence/functional_adaptation_20260819/stage_predicate_capture_smoke_20260821.json`。
-- successful/on-policy panel已预注册为`configs/pi05_successful_expert_occupancy_panel_v1.json`：从现有56-task formal
-  source/direct rows中固定task23/26/80/86，每task各取最短gained与retained-success trajectory，共8行；不读取held，
-  不重训expert。所有8行必须复现direct成功，否则整panel失效且不替换。每条轨迹分8个progress strata，随后比较
-  source-subtracted denoised action、exact JVP与BDDL stage；至少3/4 task的same-task两轨迹要优于cross-task，且JVP不能
-  单独推翻action geometry，才允许据此重建fixed decoder。
+- successful/on-policy panel已从clean detached `febdff0`完成：四个non-held tasks的8/8预注册direct rows全部成功，
+  没有替换；task23两条为208/233步、task26为178/105、task80为107/120、task86为135/139。八条trajectory sidecars共
+  约372 MiB，动作、RNG和BDDL stage同轮保存，未读取held或重训expert。
+- clean detached `1e45c66`在四张A40上对每轨迹8个progress strata重新配对source/expert：denoised action只有task23/86
+  通过full+early same-task mutual-cosine-nearest门，即`2/4`；task26的gained trajectory最近是task86，task80的retained
+  trajectory最近也为task86。exact JVP只有task80通过，即`1/4`，按预注册规则不能覆盖action失败。全部early states和
+  事实上全部64个selected states都尚未完成BDDL goal conjunction，因此不是final-predicate捷径造成的假失败。
+  该结果淘汰直接concatenation，不否定phase-aligned action family。证据见
+  `docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json`。
+- 回查专家原始意见后，当前最早接口进一步具体化为`successful adapter equivalence + occupancy/phase alignment`：下一面
+  复用target train24现有step250--2000 checkpoints与formal rows，每task取最早/最晚成功checkpoint各自一条最短成功轨迹；
+  23 tasks可形成K2，唯一只有step1000一次成功的task形成K1。fit19学习单调phase alignment与固定坐标，held5只做固定
+  变换；JVP不再是primary label，aligned representation过门前不重建decoder。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -252,3 +261,6 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 - projected formal实际使用commit `247e6a8`的SQLite `DELETE` journal；继承run contract中的旧`WAL`描述只是标签滞后，
   不改变rows、pairing或adapter。active evaluation config已更正为`sqlite_delete_full_sync_atomic_claim`，证据中显式记录
   该provenance。
+- validation8 strict400、8-row occupancy capture及四task action/JVP分析的worker均已exit0，GPU显存已释放；对应三个
+  detached formal worktree均在证据落盘后删除，当前`git worktree list`只保留canonical `main`。372 MiB成功trajectory是
+  唯一phase follow-up输入而保留，不重复rollout；临时selection与旧冻结worktree未残留。

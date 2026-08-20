@@ -658,3 +658,30 @@ family升级为新manifold标签。JVP可以补充action，但不能独自覆盖
 
 完整400-row pairing、per-task/suite、transition与stage证据见
 `docs/evidence/functional_adaptation_20260819/validation8_task_local_oracle_step2000_20260821.json`。
+
+## 32. Successful occupancy是必要条件，但直接串联action/JVP仍不是task-invariant code
+
+预注册non-held小面板的8/8 direct-expert rows均在clean detached `febdff0`上复现成功，未替换任何row；所以后续负结果
+不是由失败expert或best-ceiling fallback混入造成。每条trajectory被分为8个有序progress strata，并在每段选
+expert-source executed-prefix action disagreement最大的replan。clean detached `1e45c66`随后对64个selected states配对
+重算完整`50x7` denoised action delta和exact `50x32` action JVP delta。
+
+直接把八段按顺序串联后，action只有task23和task86的两条trajectory互为全局cosine最近邻，即`2/4`；task26的gained
+trajectory最近邻是task86-retained，task80的retained最近邻是task86-gained。对应same-task action cosine为task23
+`.3529`、task26`.0615`、task80`.2013`、task86`.5104`。exact JVP只有task80通过，即`1/4`，跨trajectory cosine整体更
+接近零。full与early-half给出相同action最近邻结构，且全部64个selected states均未完成BDDL full goal conjunction，
+所以这不是末端success predicate或只看最后一帧造成的表面失败。
+
+该实验只淘汰`单一成功adapter + 两条独立occupancy + 各stratum独立max选择 + direct concatenation`作为task code。
+它不能外推为action response没有信息：task23/86在最相似cross-task干扰下仍成立，且task26/80各有一个方向正确；真正暴露
+的是同一task的初始化、trajectory duration与event phase nuisance仍可大于task差异。JVP在该证据下不应升级为primary
+目标，但可保留为局部辅助标签。
+
+回到专家原始因果链，后继必须同时补两个缺口：多个独立successful adapters，而不只是同一优化轨迹或单adapter；以及
+显式monotone phase correspondence，而不是假设相同相对stratum就是相同控制阶段。下一面因此使用source从未训练的target
+train24：从既有step250--2000 formal rows为每task预注册最早/最晚成功checkpoint自己的最短成功trajectory，23 tasks为
+K2、唯一只有一次成功的task为K1；只在fit19学习phase alignment/PCA，held5固定变换比较aligned与unaligned invariance。
+该标签门通过前不再训练Decoder，避免再次让参数objective掩盖功能表示失败。
+
+完整pairwise矩阵、selected replans、stage状态与裁决见
+`docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json`。

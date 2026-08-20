@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；sealed validation8 rank16 oracle以`250/400`广泛通过强门，source/local ceiling不是当前首因；正在执行预注册successful/on-policy manifold面板，不重启旧Decoder objective或Writer。**
+状态：2026-08-21 **active；validation8 oracle以`250/400`通过，但直接串联successful/on-policy action/JVP仅过`2/4`与`1/4` task；当前按专家原始意见转向多成功adapter、显式phase-aligned功能表示，不重启旧Decoder objective或Writer。**
 
 ## Goal
 
@@ -82,10 +82,10 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 ## Phase 1 — 数据可识别性、ceiling与process controls
 
-- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel；flow、显式paired-noise的10-step denoised action
-  response、exact action-sequence JVP与BDDL stage trace均已接通。validation8 local oracle以`250/400`通过预注册强门，
-  当前在8条固定non-held successful/on-policy trajectories上联合比较；按同task跨trajectory、跨task和阶段证据裁剪，
-  不能只因内部几何改善保留表示；
+- [x] 在现有成功expert/adapter上建立统一policy-functional probe panel；flow、显式paired-noise的10-step denoised action
+  response、exact action-sequence JVP与BDDL stage trace均已接通。8条固定non-held successful/on-policy trajectories全部
+  复现成功，但直接串联八个progress strata时action/JVP只过`2/4`与`1/4` task；两类直接task-vector标签均未获升级，
+  下一表示必须显式解决跨初始化phase/occupancy对齐；
 - [x] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
   multi-object sequence/recovery，区分“Writer不会推断”与“source不存在能力”；
 - [x] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；
@@ -103,8 +103,8 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
   功能等价类，不把raw A/B gauge当标签；
 - [ ] 已用统一probe panel形成71个expert的functional fingerprint，并在source未见的target train24上完成19/5
   role-disjoint flow/action fingerprints；同轨迹多checkpoint只带来极小aggregate改善。validation8 local ceiling已证明
-  八项都存在明显policy-effective local update，当前用两条成功trajectory/task建立首个独立occupancy功能等价类面板，
-  不能由单expert或best-ceiling fallback冒充；
+  八项都存在明显policy-effective local update，而8-row面板证明同一adapter在不同successful occupancy上的直接响应仍
+  可能比相似cross-task更远；当前用train24多个成功checkpoint各自的成功trajectory建立phase-aligned功能等价类；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
@@ -192,12 +192,14 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
    强门并关闭“target local ceiling整体不足”的分支；
 2. stage trace把Long失败进一步定位到多阶段完成：task1首对象ever `31/50`、第二对象ever `13/50`、最终全成`12/50`；
    task2第一阶段`50/50`、第二阶段与最终成功均`29/50`。该证据只作BDDL final-goal阶段代理，不冒充完整procedure；
-3. 运行`configs/pi05_successful_expert_occupancy_panel_v1.json`固定的8条non-held成功轨迹：四task各一条gained与一条
-   retained-success，若任何direct row不复现成功则面板无效且不替换；每轨迹按8个进度strata选择最大expert-source
-   action差异点，比较denoised action、exact JVP与stage；
-4. 只有action或有closed-loop支持的response family在至少3/4 tasks上使same-task两轨迹近于cross-task，且不是只由最终
-   predicate解释，才据此重建successful/on-policy functional manifold与fixed decoder；JVP单独不能覆盖action失败；
-5. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints、expert bank与
-   validation8 oracle全部复用，不重复昂贵训练；
-6. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；遇到反常或阻塞
-   先回查第二轮专家原始意见的核心因果判断，再决定修复或证据化转向。
+3. `configs/pi05_successful_expert_occupancy_panel_v1.json`的8条轨迹全部原样复现成功；但直接串联八个progress strata后，
+   denoised action只有task23/86通过same-task mutual-nearest门，即`2/4`，exact JVP只有task80通过，即`1/4`；全部早期
+   selected states都尚未完成BDDL goal conjunction，失败不能归因于final predicate捷径；
+4. 不把该负结果扩大成“action response无用”。它实际淘汰的是`单adapter + independently selected strata + direct
+   concatenation`标签：task26的gained trajectory更接近task86，task80的retained trajectory也更接近task86，说明
+   occupancy与phase nuisance仍压过task invariance；JVP因`1/4`不再作为primary label；
+5. 下一轮复用target train24现有step250--2000 expert bank与formal rows，预注册每task最早/最晚成功checkpoint各一条
+   最短成功trajectory（23 tasks为K2，唯一只有一次成功的task为K1），形成source未见task的多成功adapter/on-policy bank；
+   只在fit19学习单调phase alignment/PCA，held5固定变换比较unaligned与aligned同task invariance；
+6. phase-aligned label在held5过门前不重建decoder；fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧
+   macro10、七臂screen、fingerprints、expert banks与oracle全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

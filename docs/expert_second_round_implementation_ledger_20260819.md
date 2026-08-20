@@ -16,9 +16,9 @@
 
 | ID | 专家核心判断 | 当前接受程度 | 落实方式与裁决证据 | 状态 |
 | --- | --- | --- | --- | --- |
-| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 19/5 role-disjoint flow/action已完成；旧重叠affine held cosine .365提高到方向性的.431/.434，但同轨迹成功checkpoint集合只到.435/.439。validation8 local oracle现为250/400且八项全正，排除整体ceiling不足；8条固定non-held成功轨迹的action/JVP/stage等价类面板已预注册并进入执行 | active |
+| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | role-disjoint与validation8 250/400排除整体ceiling不足；8/8成功轨迹上direct action/JVP task-vector只过2/4与1/4，同一adapter跨初始化仍被phase/occupancy nuisance支配。下一面使用train24多个独立成功checkpoint及显式monotone phase alignment | active |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
-| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only644、shared-zero640、exact-BA638已关闭offline expert-state objective family；role-disjoint action在有成功expert的held子集达到.594/.839。validation8 250/400支持转向successful/on-policy occupancy；当前以两成功trajectory/task联合action、JVP与stage检验新标签 | active |
+| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | flow-only644、shared-zero640、exact-BA638已关闭offline objective；successful/on-policy direct action/JVP也只过2/4与1/4，说明换occupancy但不做phase equivalence仍不足。当前检验multi-adapter phase-aligned action表示，Decoder继续冻结 | active |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；validation8 local oracle250/400、八task全正且Long41/100，source仅48/400。全局source/local ceiling不足分支不成立；Long trace仍保留第二子目标与保持的局部缺口定位 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
 | C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact与shared-zero已完整分解；exact仅638且task code相对shared-zero净-2。当前单expert/fingerprint Decoder range没有通过，不恢复旧FactorHeads并停止objective变体 | implemented-fail |
@@ -49,12 +49,12 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | 重叠71-task组合已失败；19/5 role-disjoint action在成功expert三项为.594/.839。validation8 local oracle250/400通过强门后，不重启旧objective；先用8条固定successful/on-policy trajectories裁决action/JVP/stage中哪类功能标签具有跨trajectory task结构，再重建fixed decoder | active |
+| A | 功能锚定的固定adapter decoder | validation8 local oracle250/400通过，但8-row successful/on-policy direct action/JVP仅2/4与1/4，不具备重建Decoder资格。后继先在train24多个成功checkpoint own-occupancy上学习fit19-only phase alignment，并以held5 task invariance过门 | active |
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
-| D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；official denoised action与exact `50x32` noisy-action JVP均已接通，当前在8条successful/on-policy trajectories上比较跨阶段与跨task结构 | active |
+| D | 保留完整Action probe结构 | official denoised `50x7` action与exact `50x32` JVP均已接通；direct八strata concatenation分别只过2/4与1/4。保留完整token/horizon结构，下一步显式做monotone phase correspondence；JVP降为辅助而非primary | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
-| F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立但与source identity重叠；target train24 19/5提供首个role-disjoint方向性正证据。validation8 250/400排除local ceiling整体不足；当前复用non-held成功rollouts建立on-policy标签，再决定是否fresh重建更大role-disjoint meta family | active |
+| F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立但与source identity重叠；target train24 19/5提供role-disjoint正证据，validation8 250/400排除local ceiling不足。non-held 4-task direct标签失败后，当前回到source未见的train24 multi-checkpoint成功occupancy，并保持fit19/held5边界 | active |
 | G | process-identifying controls | first+final/reversed/shuffled/static已完成matched closed loop并共同否定macro10过程优势；validation8 BDDL stage trace已完成并定位Long第二子目标，但只是final-goal代理。其它已接通controls保留到新坐标Writer，HDF5无depth/segmentation且不从state伪造mask | active |
 | H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
 
@@ -62,7 +62,7 @@
 
 | 方向 | owner边界与当前决定 | 进入/停止条件 | 状态 |
 | --- | --- | --- | --- |
-| I train/meta teacher-action alignment | 允许；validation/test action不训练 | meta-train phase alignment已实现为同task、不同episode的归一化过程相位配对；部署与meta-validation不读action，仍待有/无对照 | active |
+| I train/meta teacher-action alignment | 允许；validation/test action不训练 | 旧归一化相位配对不足以让successful occupancy task-invariant；当前在target train24 privileged experts上构造多个成功checkpoint的显式monotone phase correspondence，held5不拟合对齐 | active |
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |

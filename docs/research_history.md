@@ -576,6 +576,22 @@ formal direct rows固定四task、每task两条成功trajectory，以denoised ac
 occupancy上比较同task与cross-task几何；不重训已完成expert bank。remote-safe证据为
 `docs/evidence/functional_adaptation_20260819/validation8_task_local_oracle_step2000_20260821.json`。
 
+### 3.25 Direct successful-occupancy action/JVP task-vector未通过
+
+non-held task23/26/80/86各固定一条source→expert gained与一条retained-success row；clean detached `febdff0`复跑后
+8/8 expert trajectories成功，未替换row。随后从每条trajectory的8个progress strata各取最大expert-source executed-prefix
+action disagreement点，在clean detached `1e45c66`上重算paired `50x7` denoised action与`50x32` exact JVP。
+
+把八段直接串联时，action的same-task mutual-nearest只在task23/86成立，即`2/4`；task26 gained最近task86，task80
+retained也最近task86。JVP只在task80成立，即`1/4`。early-half与full action最近邻完全相同，且全部selected states都在
+BDDL full conjunction之前，因此不是final-goal捷径。该结果按预注册规则返回`do_not_advance_response_family`，不训练
+Decoder；它只关闭direct concatenation，不关闭phase-aligned action response。
+
+专家原始意见中的两个未完成条件因此成为下一主变量：同task多个独立successful adapters，以及显式phase
+correspondence。后继复用target train24既有step250--2000 bank/formal rows，以每task最早/最晚成功checkpoint自己的成功
+occupancy形成23个K2与一个K1；fit19学习对齐与坐标，held5只变换和裁决。完整证据为
+`docs/evidence/functional_adaptation_20260819/successful_onpolicy_response_panel_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

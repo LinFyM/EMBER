@@ -1,6 +1,6 @@
 # EMBER Progress
 
-更新时间：2026-08-19。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
+更新时间：2026-08-20。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
 `findings.md`，完整历史见`docs/research_history.md`。
 
 ## Current authority and executable state
@@ -9,28 +9,36 @@
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - 第二轮专家意见后继goal已经由owner正式启动。active design为
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
-  `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，当前进入
-  Phase 1/2的functional realizability基线；non-held meta expert formal训练已经启动，Writer formal训练仍等待fixed-decoder门。
+  `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
+  non-held fixed-decoder Gate 2已取得`qualified_pass_to_writer_inference`，当前进入Phase 3的Writer formal训练与推断裁决。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
   free-Program 1200行也已完成：projected=`307/1200`、direct=`658/1200`，253 retained、54 gained、405 lost、
   Jaccard `.35534`，只保留direct的`46.66%`，明确未过90%门。旧`659/1200`来自没有实际安装投影LoRA的错误评测，
   已撤销并重导出remote-safe证据。
-- non-held meta expert正式首阶段已从detached `main@650d922`启动：gpu01的`0/1/2/4/5/7`六张A40分别承载固定
-  LPT分片，合计71 tasks、每task 1000 steps、batch16；六个worker持续运行且无OOM/non-finite。canonical输出为
-  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`；截至本次source-coverage
-  文档节点已完整产出15/71 adapters，实测约4.3秒/step，继续按固定uniform-step合同完成全部bank。
-- 同一15-task meta-validation面板的frozen source baseline已在gpu02完成90/90 jobs、750/750 rows：`646/750`
-  （86.13%），15/15 tasks非零且14/15达到40--50/50；task73仅`4/50`并贡献46/104个失败。结果暂不支持先强化source，
-  但因这15个task都参加过source训练，也明确禁止用高base/identity aggregate替fixed-decoder过门。下一裁决必须严格配对
-  source/direct/projected的retained、gained、lost、churn及per-task增量；direct若无广泛增量则触发role-disjoint meta tasks。
-- 其余56个meta-train tasks的source formal也已从clean detached `main@3502d13`完成336/336 jobs、2800/2800 rows：
-  `2272/2800`（81.14%）。合并15-task结果后，完整71-task source覆盖为`2918/3550`（82.20%），71/71 tasks非零、
-  52/71达到40--50/50；Study为`514/800`（64.25%），9个低于25/50的tasks中7个来自Study。该结果不支持当前先做
-  全局source重训，但把localized Study/pick-place缺口明确加入direct expert paired裁决；仍不能因这些task identity都被
-  source训练见过而把高aggregate当作decoder证据。remote-safe摘要见
+- non-held meta expert bank已经按固定uniform-step合同完成71/71 tasks、每task 1000 steps；canonical输出仍为
+  `runs/outputs/pi05_nonheld_meta_expert_bank_step1000_r6_650d922_gpu01p012457_20260819/`，后续direct、decoder与projection均
+  复用这套昂贵产物，没有重训。相同固定rows上的direct experts为meta-train `2519/2800`、meta-validation `684/750`；
+  相对source分别净增`+247`与`+38`，证明当前pool存在可裁决的policy-effective增量，而不是由高source identity自动过门。
+- 同一15-task meta-validation面板的frozen source为`646/750`、direct为`684/750`、fixed-decoder projected为
+  `659/750`。source→projected为612 retained、47 gained、34 lost、净`+13`、churn81，exact McNemar `p=.18208`；
+  direct→projected保留621/684=`90.79%`的direct successes。15/15 tasks均有breadth@10，task73从source `4/50`
+  提升到projected `15/50`，但增量不显著、6 tasks正/6负，且只复现direct gain rows的54.67%，不能宣称decoder方法通过。
+- 其余56个meta-train tasks的source/direct/projected分别为`2272/2800`、`2519/2800`、`2451/2800`。
+  source→projected为2157 retained、294 gained、115 lost、净`+179`、churn409，projected保留direct successes的
+  92.62%；34 tasks正、11负、11持平。Study净`+99`、pick-place净`+102`，说明改善不是只靠高base aggregate；结合完整
+  71-task source `2918/3550`，当前不触发无差别source重训。source覆盖摘要见
   `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
+- default fold0 functional decoder formal从fit loss `1.040443`降至`.481957`、held loss从`1.035567`降至`.830093`，
+  14/15 held tasks改善；冻结后导出71套完整LoRA并完成上述严格paired closed loop。Gate 2据此只作
+  `qualified_pass_to_writer_inference`：足以进入Writer推断实验，但单fold privileged free-code、held净增不显著以及
+  task58退化要求后续多fold复现，不能升级为fixed decoder科学结论。完整remote-safe裁决见
+  `docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
+- successor Writer机制/显存profile已在`main@ef8eb3a`完成：Text/VL Meta-LoRA均为0、冻结decoder与VLM均无trainable
+  参数，Writer为8,218,216 parameters；4-task macro1总loss `1.828327`、gradient norm `2.490839`，A40峰值
+  32.52 GB、训练段36.82秒。它只证明训练图和资源合同成立；当前下一步是从clean pushed commit fresh训练56-task
+  formal Writer，再做online generation profile与15-task matched language/video/process screen。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。
@@ -171,6 +179,9 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 - 最近完整回归仍为`293 passed`；fixed-decoder正式训练入口另有8项聚焦测试通过；
 - B/C/F5各7个视频面板均为400 rows，pairing mismatch全为0；全部tracked/forced evidence JSON可解析；
-- 已集成的临时partial JSON、worktrees与试验分支持续清理；当前只保留正在运行的expert-bank formal工作面，以及已完成
-  source覆盖所需的run contract、raw rows、aggregate和remote-safe evidence；`codex/bci-continuation`仅为已集成历史分支，
-  不再作为主写分支。
+- 本轮只运行了两个聚焦回归：autocast-safe confidence objective与successor authority配置各1项通过；Writer profile成功后
+  未重复大规模训练。已完成的direct/projected evaluator均退出且无遗留`ymdai` GPU进程；正式证据、唯一expert bank、
+  decoder/projection与成功profile保留，失败profile临时目录已删除。
+- projected formal实际使用commit `247e6a8`的SQLite `DELETE` journal；继承run contract中的旧`WAL`描述只是标签滞后，
+  不改变rows、pairing或adapter。active evaluation config已更正为`sqlite_delete_full_sync_atomic_claim`，证据中显式记录
+  该provenance。

@@ -91,7 +91,7 @@
     "envs_per_replica": 8,
     "shard_target_cost": 4160,
     "shard_cost": "fixed_state_count_times_suite_horizon",
-    "queue": "sqlite_wal_full_sync_atomic_claim",
+    "queue": "sqlite_delete_full_sync_atomic_claim",
     "omp_threads_per_worker": {
       "1": 8,
       "2": 4,

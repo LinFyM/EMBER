@@ -470,6 +470,37 @@ orphan shard，最终336/336 shards、2800/2800 rows、六worker return code均�
 并特别检查弱Study tasks是否存在可适配增量。remote-safe摘要见
 `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
 
+### 3.19 Non-held expert ceiling与fixed functional decoder fold0 formal
+
+2026-08-20复用同一71-task step1000 expert bank，在固定50 states/task、seed7上完成source/direct/projected严格配对。
+56-task meta-train direct为`2519/2800`，相对source `2272/2800`是2155 retained、364 gained、117 lost、净`+247`；
+15-task meta-validation direct为`684/750`，相对source `646/750`是609 retained、75 gained、37 lost、净`+38`。
+两侧均有跨task增量，故不触发“当前pool完全欠识别、立即另建role-disjoint tasks”的分支。
+
+共享decoder从56-task fit loss `1.040443→.481957`，冻结decoder后15-task free-code loss
+`1.035567→.830093`，14/15 held tasks改善。导出的projected adapters在meta-train为`2451/2800`：相对source
+净`+179`，相对direct少68，保留direct successes的92.62%；在meta-validation为`659/750`：相对source612 retained、
+47 gained、34 lost、净`+13`、churn81、exact McNemar `p=.18208`，相对direct保留90.79% successes。
+
+因此Gate 2裁决为`qualified_pass_to_writer_inference`，不是fixed decoder方法pass。正证据是train端广泛增益、held
+breadth@10覆盖15/15及task73 `4→15/50`；限制是held增量不显著、6正/6负、只复现54.67% direct gain rows、task58
+functional loss退化，且只有一个privileged free-code fold。完整remote-safe证据为
+`docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
+
+projected evaluator实际运行commit `247e6a8`的SQLite `DELETE` journal；当时继承run contract仍写旧`WAL`描述。
+这是配置标签滞后而非执行或科学合同变化，rows、pairing、adapter和队列claim均不受影响；active config随后改为
+`sqlite_delete_full_sync_atomic_claim`。
+
+### 3.20 Successor Writer formal前机制与资源profile
+
+同日从`main@ef8eb3a`完成4-task、1-macro profile。当前authority明确将Text/VL Meta-LoRA rank设为0，冻结VLM与fixed
+decoder无trainable parameters，只训练8,218,216参数的language-prior/video-posterior Writer。profile total loss
+`1.828327`、gradient norm `2.490839`，A40峰值32.52 GB、训练段36.82秒。早先两次失败分别定位并修正autocast下
+probability BCE与32-frame encoder microbatch OOM；失败产物已清理，没有重复expert/decoder大训练。
+
+该节点只证明正式训练图、信息墙和显存合同成立。其后必须fresh训练56-task Writer，并在formal checkpoint上完成一次
+online generation profile后，才可运行15-task language/video/process matched screen。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

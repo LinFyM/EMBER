@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-19 **active；第二轮专家意见后继路线已启动，Phase 0已完成，当前在Phase 1/2的功能基线。**
+状态：2026-08-20 **active；Phase 0--2 default fold0已完成并取得有保留条件的Gate 2通过，当前进入Phase 3 Writer formal。**
 
 ## Goal
 
@@ -80,23 +80,23 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 - [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel，优先复用action response、flow response、policy
   Jacobian response与stage behavior；只保留能预测closed-loop等价性的必要表示；
-- [ ] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
+- [x] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
   multi-object sequence/recovery，区分“Writer不会推断”与“source不存在能力”；
-- [ ] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；
+- [x] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；
 - [ ] 补first-only、final-only、first+final、endpoints-fixed-middle-shuffle、monotone-sparse、flow-only、static-only、
   robot/object mask、同endpoint异procedure、跨view、paraphrase、同对象异目标与stage success中当前数据可诚实支持的项；
-- [ ] 对暂时缺少配对数据的controls登记具体数据缺口并在non-held meta pool构造，而不是伪造对照；
-- [ ] 若source primitive/target ceiling不足，先强化clean source policy并重新冻结baseline；否则不无条件扩大source训练。
+- [x] 对暂时缺少配对数据的controls登记具体数据缺口并在non-held meta pool构造，而不是伪造对照；
+- [x] 若source primitive/target ceiling不足，先强化clean source policy并重新冻结baseline；否则不无条件扩大source训练。
 
 **Gate 1：** full video是否含超出语言与端点的可识别过程、source policy是否具有目标控制能力必须分开回答。
 
 ## Phase 2 — Policy-functional manifold与fixed decoder
 
 - [x] 将完整PI0.5 flow decoder拟合收敛为单一formal/exact-resume入口，冻结56/15 task-equal schedule及下游authority门；
-- [ ] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
+- [x] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
 - [ ] 用统一probe panel形成每个adapter的functional fingerprint，检验同功能不同参数与不同功能的可分性；
-- [ ] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
+- [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
 - [ ] decoder若在leave-task-out closed loop不能接近对应expert功能，先修manifold/data，不进入视频推断。
@@ -106,12 +106,17 @@ default fold0还必须先证明uniform-step direct experts相对`646/750` source
 以paired source/direct/projected的retained、gained、lost、churn和per-task delta裁决，不能由identity/source高分过门。
 若direct增量不足，当前source/meta任务重叠使Gate 2未识别，转入role-disjoint meta-task构造而不是继续训练Writer。
 
+**Default fold0裁决：** direct experts相对source在56/15任务面板分别净增`+247/+38`，因此当前pool具有信息量；
+fixed-decoder projected为`2451/2800`与`659/750`，分别保留direct successes的`92.62%/90.79%`。train侧广泛净增，
+held侧仅净`+13`且`p=.18208`、只复现54.67% direct gains，故登记为`qualified_pass_to_writer_inference`而非方法通过。
+立即进入Writer推断，但多fold fixed-decoder复现仍是后续选择门，不能用本fold privileged free code替代video inference证据。
+
 ## Phase 3 — Language prior + video process posterior
 
-- [ ] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
-- [ ] 每条video独立编码initial relations、goal relations、contact/events、ordered subgoals、completion conditions与
+- [x] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
+- [x] 每条video独立编码initial relations、goal relations、contact/events、ordered subgoals、completion conditions与
   uncertainty；跨videos只在event/relation/code-evidence层置换不变聚合；
-- [ ] 不再平均50个Action tokens；保留flow-time/horizon-phase/noise-probe维，使用phase-specific policy response地址；
+- [x] 不再平均50个Action tokens；保留flow-time/horizon-phase/noise-probe维，使用phase-specific policy response地址；
 - [x] 接入frame-count-matched static-first-repeated与同episode eye-in-hand cross-view；确认现有HDF5无可用mask authority，
   不从teacher state派生mask绕过信息墙；
 - [ ] 在train/meta actions可用处加入inverse dynamics、visual transition-to-latent-action与phase correspondence辅助目标，
@@ -153,9 +158,11 @@ default fold0还必须先证明uniform-step direct experts相对`646/750` source
 
 ## Current next actions
 
-1. 以已完成的正确F4 paired1200负结果（307/1200 vs direct 658/1200）约束decoder gate，不再沿用旧659解释；
-2. 已完成71-task frozen source覆盖（2918/3550）；继续完成71-task non-held meta expert bank，用已冻结的单一入口先
-   profile再正式拟合56/15 fixed decoder，并做source/direct/projected的同面板closed-loop裁决；
-3. decoder通过或给出可修复的架构信号后，从clean pushed commit训练successor Writer，完成online generation profile与
-   meta-validation的language/video/L+V/process-control screen；
-4. 只有inference gate出现真实增量后进入train/meta closed-loop outer objective；明确负结果回到最早失效接口，不做小扫。
+1. 从包含Gate 2证据与最终authority配置的clean pushed commit建立detached formal worktree，fresh训练56-task successor
+   Writer到预注册macro10；复用已完成71-task expert bank、fixed decoder与projection，不重复昂贵前置训练；
+2. formal checkpoint完成后做一次online generation显存/吞吐profile，封存可执行batch，再在15-task meta-validation上运行
+   learned language-only、video-only、L+V及first/final/endpoints/middle/order/static/cross-view matched screen；
+3. 若Writer inference出现跨task真实净增量，补相邻checkpoint与多fold复现，并进入train/meta closed-loop outer objective；
+   若失败，按language prior、video posterior、fixed decode或process representation的最早失效接口处理，不做小扫；
+4. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，
+   不因推进速度而静默丢弃。

@@ -467,3 +467,28 @@ single-place为88.67%、actuation为87.33%、stack为83.00%、compound为76.00%�
 失败，最早失效接口是source/task-expert ceiling；若direct有广泛净增量，才进入fixed-decoder复现。由于全部71个task identity
 都参加过source训练，这个panel仍不是source/meta role-disjoint证据，paired增量门不能省略。remote-safe结果见
 `docs/evidence/functional_adaptation_20260819/nonheld_meta_source_coverage_71.json`。
+
+## 22. Non-held direct ceiling成立，fixed decoder仅获有保留条件的推断资格
+
+71-task uniform-step expert bank完成后，default fold0在完全相同的固定states上形成了source/direct/projected三联面板。
+56个meta-train tasks由`2272→2519→2451/2800`：fixed decoder相对source净增179，保留direct successes的92.62%，
+34 tasks正、11负、11持平；Study与pick-place分别净增99与102。15个meta-validation tasks由
+`646→684→659/750`：projected保留direct successes的90.79%，15/15 tasks都有breadth@10，弱task73从`4→28→15/50`。
+这同时排除了“direct experts在高source上没有增量”和“decoder只靠identity aggregate过门”两个担忧。
+
+但held source→projected只有612 retained、47 gained、34 lost、净`+13`、exact McNemar `p=.18208`；6 tasks正、
+6负、3持平，而且只复现direct gain rows的54.67%。因此本fold只能登记为
+`qualified_pass_to_writer_inference`：它证明固定功能坐标足以值得检验language/video到code的推断，却不证明fixed decoder
+已经成为方法贡献。该证据仍是单fold、privileged free held code；多fold复现、task58退化定位与最终video inference均不能省略。
+完整裁决见`docs/evidence/functional_adaptation_20260819/nonheld_meta_fixed_decoder_fold0_20260820.json`。
+
+## 23. Successor Writer训练面已满足正式启动条件，但还没有推断证据
+
+successor Writer的首个有效profile在Text/VL Meta-LoRA均为0、冻结π0.5 VLM和fixed decoder均无trainable parameters的
+合同下完成。它以8,218,216个Writer参数在4-task macro1得到total loss `1.828327`、finite gradient norm `2.490839`；
+A40峰值32.52 GB、实际训练段36.82秒。此前profile暴露并修正了autocast下probability BCE和过大的frame microbatch，
+也及时阻止了旧Text/VL Meta-LoRA配置重新进入后继路线。
+
+这些只构成机制、authority和资源profile，不构成language prior、video posterior或closed-loop pass。下一科学节点必须是
+fresh 56-task formal Writer、一次online generation profile和15-task matched language/video/process screen；不能用训练loss、
+free code、profile checkpoint或重复大规模前置训练代替。

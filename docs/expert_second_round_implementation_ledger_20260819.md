@@ -1,6 +1,6 @@
 # EMBER第二轮专家意见实施账本
 
-更新时间：2026-08-19。本文把第二轮独立专家审查中的诊断、架构批评、方向A--N、替代研究问题和成功/停止证据逐项
+更新时间：2026-08-20。本文把第二轮独立专家审查中的诊断、架构批评、方向A--N、替代研究问题和成功/停止证据逐项
 映射到当前后继goal。它是覆盖账本，不是把所有候选同时并入一个模型的设计清单。
 
 状态词：
@@ -16,12 +16,12 @@
 
 | ID | 专家核心判断 | 当前接受程度 | 落实方式与裁决证据 | 状态 |
 | --- | --- | --- | --- | --- |
-| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 已增加non-held folds，但source在同15个held-meta tasks为646/750，暴露source/meta task identity重叠仍会欠识别；先用paired direct增量裁决，增量不足即构造role-disjoint meta tasks；same-endpoint/different-procedure仍是显式数据缺口 | active |
-| C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 以policy-functional fingerprint定义等价类，学习并冻结code-to-LoRA decoder；固定后再训练video inference | active |
+| C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | 71-task fold0 direct相对source在56/15面板净增+247/+38，当前pool具有功能增量；但source/meta identity仍重叠，fold0只允许进入推断，same-endpoint/different-procedure与多fold/role-disjoint复现仍是显式要求 | active |
+| C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | fold0已完成policy-functional code-to-complete-LoRA decoder训练、冻结与held free-code闭环；held保留90.79% direct successes但净增仅+13且不显著，故只作qualified Gate 2，Writer训练中decoder继续固定 | active |
 | C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | functional distillation只做warm start；随后在train/meta simulator上用closed-loop reward/progress credit优化code posterior | scheduled |
-| C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source formal为2918/3550、71/71非零，不支持全局先强化；Study仅514/800且7/9个低于25/50的task来自Study，localized缺口进入direct expert ceiling裁决 | active |
+| C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；direct及projected在56-task Study分别较source净增+117/+99、pick-place净增+126/+102，当前全局强化触发条件不成立；后续只按Writer结果定位局部source缺口 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | object/relation/event/subgoal representation与full-vs-endpoints/middle/order controls共同裁决 | scheduled |
-| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 正确F4仅307/1200，证明旧fixed-head range不足；后继固定functional decoder先做task-held闭环，失败则架构性扩大或重参数化，不做小扫 | active |
+| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | 正确F4仅307/1200；后继fixed decoder在56/15面板保留92.62%/90.79% direct successes并获qualified推断资格，但held仅净+13、task58 loss退化，故不恢复旧FactorHeads，也不把单fold结果冒充range已解决 | active |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
 | C9 | 150不是唯一科学门，约145也需breadth/stability/causality | 高 | 继续追求150+，但联合报告absolute、suite floor、breadth、same-video retention、adjacent stability与process controls | accepted |
@@ -31,10 +31,10 @@
 | ID | 专家意见 | 当前处理 | 状态 |
 | --- | --- | --- | --- |
 | P1 | 保留严格evaluation、deployment信息墙与single complete LoRA | 原样继承；只放宽授权train/meta与sealed diagnosis墙 | accepted |
-| P2 | 每视频先保序，跨视频再置换不变 | 已在successor code inference按video独立编码、再对完整video summary做集合聚合；等待closed-loop裁决 | active |
+| P2 | 每视频先保序，跨视频再置换不变 | successor按video独立编码、再对完整video summary做集合聚合；4-task训练profile已接通，等待formal closed-loop裁决 | active |
 | P3 | Core/Procedure概念区分有价值 | 继承语义/目标与过程/阶段的职责，不强制继承旧tensor拓扑 | accepted |
 | P4 | Core-addressed Reader、bounded K-set/M2P有局部正证据 | 作为可复用组件候选；只有与fixed-code接口匹配才保留 | active |
-| U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已独立生成complete LoRA且部署时不读视频；等待formal baseline | active |
+| U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已独立生成complete LoRA且部署时不读视频；Text/VL Meta-LoRA均固定为0并由authority guard保护，等待formal baseline | active |
 | U2 | LoRA rank index不是policy-functional coordinate | 新decoder使用functional code/response地址；rank16只作为最终LoRA参数化 | active |
 | U3 | Program与complete LoRA decoder不应持续共同移动 | 主线固定decoder；慢EMA/two-timescale仅在fixed版明确欠拟合时作为对照 | active |
 | U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | successor保留完整50-token序列，以phase queries读取并输出phase-specific alignment；等待消融 | active |
@@ -48,14 +48,14 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | task experts/successful adapters -> functional fingerprints -> compact whitened code -> complete LoRA；必须通过task-level leave-out closed loop | active |
-| B | language prior + video posterior | 训练、一次性LoRA生成及统一evaluator/cache运行面已接通；等待fixed decoder后训练并报告matched矩阵 | active |
+| A | 功能锚定的固定adapter decoder | default fold0已完成71 experts、56-task decoder fit、15-task frozen-decoder code fit及两侧closed loop；Gate 2为qualified而非方法pass，多fold仍必须复现 | active |
+| B | language prior + video posterior | 一次性完整LoRA生成、统一evaluator/cache和训练面已接通；4-task profile通过且decoder/VLM保持冻结，当前进入56-task formal与matched矩阵 | active |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |
 | E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
-| F | 扩展meta tasks并分离四类数据角色 | 固定target IDs与71-task allowlist已建立；完整source formal为2918/3550，但当前source pretraining和meta adaptation仍共享task identity，不能冒充完全分离；预注册以direct专家增量决定当前pool是否有信息量，否则实际构造role-disjoint meta tasks | active |
+| F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist、5 folds与完整source已建立；direct在56/15面板均产生增量，因此fold0可继续，但source/meta identity未完全分离，多fold与必要时role-disjoint构造仍保留为方法选择门 | active |
 | G | process-identifying controls | first/final/endpoints/middle/order/sparse已接通；新增真实首帧等长重复static与同episode eye-in-hand cross-view；HDF5无depth/segmentation，mask不读取state伪造；flow/procedure/paraphrase/goal/stage继续补可信数据 | active |
-| H | 强化clean source policy | 71-task source总体82.20%、52/71达到80%，全局强化未触发；Study/pick-place局部缺口仍等待direct expert ceiling，只有该接口成立才定向强化并重新冻结 | active |
+| H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
 
 ## 4. 专家方向I--N：owner已授权或保留的合同变化
 

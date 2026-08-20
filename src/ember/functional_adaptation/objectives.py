@@ -44,17 +44,17 @@ def functional_code_inference_loss(
     combined = mse(correct.combined_code.float(), target.float())
     language = mse(correct.language_code.float(), target.float())
     video = mse(correct.video_code.float(), target.float())
-    correct_confidence = torch.nn.functional.binary_cross_entropy(
-        correct.posterior_confidence.float(),
-        torch.ones_like(correct.posterior_confidence, dtype=torch.float32),
+    correct_confidence = torch.nn.functional.binary_cross_entropy_with_logits(
+        correct.posterior_confidence_logits.float(),
+        torch.ones_like(correct.posterior_confidence_logits, dtype=torch.float32),
     )
     zero = combined.new_zeros(())
     control_confidence = zero
     control_update = zero
     if control is not None:
-        control_confidence = torch.nn.functional.binary_cross_entropy(
-            control.posterior_confidence.float(),
-            torch.zeros_like(control.posterior_confidence, dtype=torch.float32),
+        control_confidence = torch.nn.functional.binary_cross_entropy_with_logits(
+            control.posterior_confidence_logits.float(),
+            torch.zeros_like(control.posterior_confidence_logits, dtype=torch.float32),
         )
         control_update = mse(
             control.combined_code.float(), control.language_code.float()

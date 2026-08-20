@@ -19,6 +19,7 @@ class FunctionalCodePosterior:
     language_code: torch.Tensor
     video_code: torch.Tensor
     posterior_delta: torch.Tensor
+    posterior_confidence_logits: torch.Tensor
     posterior_confidence: torch.Tensor
     combined_code: torch.Tensor
     per_video_program: torch.Tensor
@@ -491,11 +492,13 @@ class LanguageVideoCodeInference(torch.nn.Module):
             )
         )
         delta = self.posterior_delta(posterior_features)
-        confidence = self.posterior_confidence(posterior_features).sigmoid()
+        confidence_logits = self.posterior_confidence(posterior_features)
+        confidence = confidence_logits.sigmoid()
         return FunctionalCodePosterior(
             language_code=language_code,
             video_code=video_code,
             posterior_delta=delta,
+            posterior_confidence_logits=confidence_logits,
             posterior_confidence=confidence,
             combined_code=language_code + confidence * delta,
             per_video_program=programs,

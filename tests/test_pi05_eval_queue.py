@@ -43,6 +43,17 @@ def _drain_queue_process(path: str, worker: int, output) -> None:
     output.put(claimed)
 
 
+def test_queue_uses_nfs_safe_rollback_journal(tmp_path: Path) -> None:
+    path = tmp_path / "queue.sqlite3"
+    initialize_queue(
+        path,
+        build_cost_balanced_shards(_tasks(), env_batch_size=8),
+        contract_reference="contract-nfs",
+    )
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
+
+
 def test_cost_balanced_shards_cover_every_state_once() -> None:
     shards = build_cost_balanced_shards(_tasks(), env_batch_size=8)
     assert len(shards) == 26

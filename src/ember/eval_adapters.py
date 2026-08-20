@@ -175,6 +175,35 @@ def inspect_task_expert_adapter(
         raise Pi05EvaluationError(str(error)) from error
 
 
+def select_task_expert_adapter_tasks(
+    adapter: Mapping[str, Any] | None,
+    tasks: Sequence[Any],
+    *,
+    diagnostic_subset: str,
+) -> dict[str, Any]:
+    """Retain a declared diagnostic subset after inspecting its complete bank."""
+
+    if adapter is None or adapter.get("kind") != STATIC_TASK_EXPERT_KIND:
+        raise Pi05EvaluationError("diagnostic subset requires a task-expert adapter")
+    task_rows = tuple(adapter.get("tasks", ()))
+    records = {
+        (str(row["suite"]), int(row["task_id"])): dict(row) for row in task_rows
+    }
+    keys = [(str(task.suite), int(task.task_id)) for task in tasks]
+    if len(records) != len(task_rows) or any(key not in records for key in keys):
+        raise Pi05EvaluationError("diagnostic task experts are incomplete")
+    selected = dict(adapter)
+    selected["tasks"] = [records[key] for key in keys]
+    information_wall = dict(selected.get("information_wall", {}))
+    information_wall.update(
+        evaluated_task_count=len(keys),
+        diagnostic_subset=diagnostic_subset,
+        inspection_task_keys=[list(key) for key in records],
+    )
+    selected["information_wall"] = information_wall
+    return selected
+
+
 def inspect_dynamic_k_writer_adapter(
     *,
     config_path: Path,

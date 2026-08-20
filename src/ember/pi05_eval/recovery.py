@@ -14,6 +14,7 @@ from ember.eval_adapters import (
     inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
+    select_task_expert_adapter_tasks,
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
@@ -72,18 +73,34 @@ def _reinspect_adapter(
         )
     if adapter.get("kind") == "task_local_expert_bank":
         manifest_path = adapter.get("projection", {}).get("manifest_path")
-        return inspect_task_expert_adapter(
+        subset = adapter.get("information_wall", {}).get("diagnostic_subset")
+        inspection_tasks = tasks
+        if subset == "successful_on_policy_occupancy":
+            inspection_tasks = tuple(
+                argparse.Namespace(suite=row[0], task_id=int(row[1]))
+                for row in adapter["information_wall"].get(
+                    "inspection_task_keys", ()
+                )
+            )
+        inspected = inspect_task_expert_adapter(
             config_path=Path(adapter["config"]["path"]),
             bank_root=Path(adapter["bank_root"]),
             step=int(adapter["step"]),
             source=model,
-            tasks=tasks,
+            tasks=inspection_tasks,
             evaluation_role=str(contract["role"]),
             require_formal=require_formal,
             projection_manifest=(
                 Path(str(manifest_path)) if manifest_path is not None else None
             ),
         )
+        if subset == "successful_on_policy_occupancy":
+            return select_task_expert_adapter_tasks(
+                inspected,
+                tasks,
+                diagnostic_subset=str(subset),
+            )
+        return inspected
     if adapter.get("kind") == DYNAMIC_K_WRITER_KIND:
         return inspect_dynamic_k_writer_adapter(
             config_path=Path(adapter["config"]["path"]),

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；role-disjoint flow/action诊断已完成并把失败集中到successful-expert ceiling；当前完成sealed validation8 rank16 oracle，不重启Decoder objective或Writer。**
+状态：2026-08-21 **active；sealed validation8 rank16 oracle以`250/400`广泛通过强门，source/local ceiling不是当前首因；正在执行预注册successful/on-policy manifold面板，不重启旧Decoder objective或Writer。**
 
 ## Goal
 
@@ -14,8 +14,9 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - `docs/expert_second_round_implementation_ledger_20260819.md`中A--N及五个替代方向均不再是`queued`：核心路线已有实现和
   formal证据，条件方向已有触发条件、实际裁决或实施结果；
 - non-held meta-task allowlist、语义去重、source/meta/architecture-validation/final-test边界与provenance可由仓库直接复核；
-- 目标task的task-local/rank16 ceiling与source primitive coverage已被测量；若source prior不足，已在不触碰held
-  action/reward梯度的前提下强化并重建基线；
+- 目标task的task-local/rank16 ceiling与source primitive coverage已被测量；唯一一次validation8 task-local oracle按owner
+  授权使用validation actions更新彼此隔离的诊断LoRA，不更新共享模型；若source prior不足，只在授权train/meta数据上
+  强化并重建可部署基线；
 - 固定decoder在task-level leave-out上能把compact code解码为policy-effective完整38-target LoRA，而不是只在raw A/B
   L2或train-task free-Program上可达；
 - learned language-only、video-only、language+video、first/final/endpoints/middle/order controls可以在同一推断与评测
@@ -32,12 +33,15 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 - deployment输入仍是exact task language与一条或多条same-task、action-hidden、内部有序teacher videos；rollout前只运行
   Writer一次，输出并部署唯一一套完整38-target LoRA；source policy冻结；
-- validation/test actions或reward不产生梯度。train24及显式allowlist中的non-held LIBERO-90 meta tasks可使用teacher
-  action alignment、task-local experts和simulator reward训练共享表示、decoder与Writer；
+- validation/test actions或reward不训练共享模型。唯一梯度例外是已经预注册的一次validation8 task-local rank16 oracle：
+  validation actions只更新八套彼此隔离的诊断LoRA到统一step2000，不选checkpoint、不进入Writer/decoder/source或部署；
+  train24及显式allowlist中的non-held LIBERO-90 meta tasks可使用teacher action alignment、task-local experts和simulator
+  reward训练共享表示、decoder与Writer；Test没有该例外；
 - learned language-only adapter是必要baseline；它不取消“视频必须提供必要Value增量”的最终科学要求；
 - shared language/base prior + video-conditioned residual是允许的，只要rollout前merge成唯一完整LoRA；不得部署第二adapter、
   held expert route、task-ID字典、挑video、checkpoint fusion或多LoRA平均；
-- sealed held action/reward只可用于预注册、冻结、无梯度、无checkpoint选择的诊断；Test默认留到方法冻结后；
+- 除上述唯一validation8 oracle外，sealed held action/reward只可用于预注册、共享模型冻结、无梯度、无checkpoint选择的
+  post-hoc诊断；Test默认留到方法冻结后；
 - 当前LMMPC增量路线停止。可复用其严格评测、per-video/set数据流、Core/Procedure概念、Core-addressed Reader、bounded
   K-set/M2P等经验证机制，但不把旧320-cell grid或moving FactorHeads当成后继架构前提；
 - closed-loop absolute首先选择方法；functional fingerprint、code reconstruction、norm/rank/cosine和内部margin只作定位；
@@ -78,9 +82,10 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 ## Phase 1 — 数据可识别性、ceiling与process controls
 
-- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel；flow与显式paired-noise的10-step denoised action
-  response运行面已接通，policy Jacobian response、successful/on-policy occupancy与stage behavior仍待按held closed-loop
-  预测力裁剪，不能只因内部几何改善保留表示；
+- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel；flow、显式paired-noise的10-step denoised action
+  response、exact action-sequence JVP与BDDL stage trace均已接通。validation8 local oracle以`250/400`通过预注册强门，
+  当前在8条固定non-held successful/on-policy trajectories上联合比较；按同task跨trajectory、跨task和阶段证据裁剪，
+  不能只因内部几何改善保留表示；
 - [x] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
   multi-object sequence/recovery，区分“Writer不会推断”与“source不存在能力”；
 - [x] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；
@@ -97,8 +102,9 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 - [x] 在train24与新增non-held meta tasks训练/整理task-local successful adapters；每个任务允许多成功adapter用于估计
   功能等价类，不把raw A/B gauge当标签；
 - [ ] 已用统一probe panel形成71个expert的functional fingerprint，并在source未见的target train24上完成19/5
-  role-disjoint flow/action fingerprints；同轨迹多checkpoint只带来极小aggregate改善，独立seed/occupancy上的成功策略
-  等价类仍待建立，不能由单expert或best-ceiling fallback冒充；
+  role-disjoint flow/action fingerprints；同轨迹多checkpoint只带来极小aggregate改善。validation8 local ceiling已证明
+  八项都存在明显policy-effective local update，当前用两条成功trajectory/task建立首个独立occupancy功能等价类面板，
+  不能由单expert或best-ceiling fallback冒充；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
 - [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
@@ -181,15 +187,17 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Current next actions
 
-1. role-disjoint flow/action与同轨迹set-valued formal已经封存：全held仍未过screen，但有成功expert的三项上action达到
-   `.5942/.8394`，没有成功expert的两项显著拖低aggregate；不再把best-ceiling fallback冒充成功等价类；
-2. 完成预注册validation8 task-local rank16 oracle：所有八项先到step1000，再按原worker topology exact-resume到step2000；
-   只评测step2000、不选checkpoint、不更新Writer/decoder、不读取Test；
-3. 用step2000 strict400与既有frozen source `48/400`报告per-task/suite、breadth、retained/gained/lost与churn，裁决
-   target ceiling、Long/source缺口和`>150`目标是否可实现；
-4. 若local ceiling充分，下一功能标签改为小型固定successful/on-policy occupancy + action response/JVP/stage panel；若
-   ceiling本身不足，先强化source primitive或local adaptation能力，再重建真正role-disjoint meta family；
-5. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints和全部专家bank均
-   保留复用，不重复昂贵训练；
-6. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；只有完整核心路线
-   触发stop gate才进入runtime policy、task-local RL或其它替代问题。
+1. validation8八套rank16 local LoRA均按预注册合同训练到step2000；strict paired400为`250/400`，source为`48/400`，
+   43 retained、207 gained、5 lost、净`+202`，八项全为正增量、四suite均非零，故通过`>150 / >=5 tasks / 4 suites`
+   强门并关闭“target local ceiling整体不足”的分支；
+2. stage trace把Long失败进一步定位到多阶段完成：task1首对象ever `31/50`、第二对象ever `13/50`、最终全成`12/50`；
+   task2第一阶段`50/50`、第二阶段与最终成功均`29/50`。该证据只作BDDL final-goal阶段代理，不冒充完整procedure；
+3. 运行`configs/pi05_successful_expert_occupancy_panel_v1.json`固定的8条non-held成功轨迹：四task各一条gained与一条
+   retained-success，若任何direct row不复现成功则面板无效且不替换；每轨迹按8个进度strata选择最大expert-source
+   action差异点，比较denoised action、exact JVP与stage；
+4. 只有action或有closed-loop支持的response family在至少3/4 tasks上使same-task两轨迹近于cross-task，且不是只由最终
+   predicate解释，才据此重建successful/on-policy functional manifold与fixed decoder；JVP单独不能覆盖action失败；
+5. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints、expert bank与
+   validation8 oracle全部复用，不重复昂贵训练；
+6. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；遇到反常或阻塞
+   先回查第二轮专家原始意见的核心因果判断，再决定修复或证据化转向。

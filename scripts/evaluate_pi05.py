@@ -138,11 +138,18 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
     parser.add_argument("--task-expert-projection-manifest", type=Path)
-    parser.add_argument("--occupancy-capture-selection", type=Path)
+    parser.add_argument(
+        "--occupancy-capture-selection",
+        type=Path,
+        help=(
+            "Pre-registered formal occupancy diagnostic selection; supports the "
+            "sealed validation Writer panel and the successful non-held task-expert panel."
+        ),
+    )
     parser.add_argument(
         "--capture-stage-predicates",
         action="store_true",
-        help="Sealed validation diagnosis of BDDL goal-predicate transitions.",
+        help="Pre-registered formal diagnosis of LIBERO BDDL goal-predicate transitions.",
     )
     parser.add_argument("--dynamic-k-writer-config", type=Path)
     parser.add_argument("--dynamic-k-writer-checkpoint", type=Path)

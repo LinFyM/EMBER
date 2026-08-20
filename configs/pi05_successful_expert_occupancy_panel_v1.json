@@ -1,0 +1,116 @@
+{
+  "analysis_plan": {
+    "decision_rule": "advance a response family only if same-task trajectories are nearest for at least three of four tasks and the evidence is not explained only by final predicates; action may pass without JVP, while JVP alone cannot override failed closed-loop action geometry",
+    "paired_responses": [
+      "official ten-step denoised action chunk",
+      "exact noisy-action-sequence policy JVP",
+      "BDDL predicate change points as a partial stage proxy"
+    ],
+    "task_level_geometry": "compare the two trajectories of each task against all cross-task trajectories after subtracting the frozen-source response",
+    "temporal_selection": "within each successful trajectory, split replans into eight ordered progress strata and select the maximum paired expert-source action disagreement in each stratum",
+    "trajectory_requirement": "all eight preregistered direct-expert rows must reproduce success; otherwise the panel is invalid rather than silently replacing rows"
+  },
+  "claim_boundary": "This is a diagnostic successful-policy occupancy panel, not an unbiased method evaluation or a task dictionary.",
+  "direct_results": "runs/outputs/pi05_nonheld_meta_train_direct_expert_step1000_56x50_formal_fe61f87_gpu02p123467_20260820/results.json",
+  "rows": [
+    {
+      "category": "gained",
+      "direct_steps": 208,
+      "direct_successes": 28,
+      "global_task_id": 23,
+      "init_state_id": 6,
+      "language": "close the bottom drawer of the cabinet and open the top drawer",
+      "source_steps": 400,
+      "source_successes": 19,
+      "suite": "libero_90",
+      "task_id": 23
+    },
+    {
+      "category": "retained_success",
+      "direct_steps": 228,
+      "direct_successes": 28,
+      "global_task_id": 23,
+      "init_state_id": 26,
+      "language": "close the bottom drawer of the cabinet and open the top drawer",
+      "source_steps": 298,
+      "source_successes": 19,
+      "suite": "libero_90",
+      "task_id": 23
+    },
+    {
+      "category": "gained",
+      "direct_steps": 106,
+      "direct_successes": 39,
+      "global_task_id": 26,
+      "init_state_id": 24,
+      "language": "put the wine bottle in the bottom drawer of the cabinet",
+      "source_steps": 400,
+      "source_successes": 24,
+      "suite": "libero_90",
+      "task_id": 26
+    },
+    {
+      "category": "retained_success",
+      "direct_steps": 106,
+      "direct_successes": 39,
+      "global_task_id": 26,
+      "init_state_id": 17,
+      "language": "put the wine bottle in the bottom drawer of the cabinet",
+      "source_steps": 123,
+      "source_successes": 24,
+      "suite": "libero_90",
+      "task_id": 26
+    },
+    {
+      "category": "gained",
+      "direct_steps": 107,
+      "direct_successes": 37,
+      "global_task_id": 80,
+      "init_state_id": 21,
+      "language": "pick up the book and place it in the right compartment of the caddy",
+      "source_steps": 400,
+      "source_successes": 7,
+      "suite": "libero_90",
+      "task_id": 80
+    },
+    {
+      "category": "retained_success",
+      "direct_steps": 120,
+      "direct_successes": 37,
+      "global_task_id": 80,
+      "init_state_id": 20,
+      "language": "pick up the book and place it in the right compartment of the caddy",
+      "source_steps": 144,
+      "source_successes": 7,
+      "suite": "libero_90",
+      "task_id": 80
+    },
+    {
+      "category": "gained",
+      "direct_steps": 135,
+      "direct_successes": 48,
+      "global_task_id": 86,
+      "init_state_id": 20,
+      "language": "pick up the book in the middle and place it on the cabinet shelf",
+      "source_steps": 400,
+      "source_successes": 15,
+      "suite": "libero_90",
+      "task_id": 86
+    },
+    {
+      "category": "retained_success",
+      "direct_steps": 139,
+      "direct_successes": 48,
+      "global_task_id": 86,
+      "init_state_id": 42,
+      "language": "pick up the book in the middle and place it on the cabinet shelf",
+      "source_steps": 163,
+      "source_successes": 15,
+      "suite": "libero_90",
+      "task_id": 86
+    }
+  ],
+  "schema_version": "ember_successful_expert_occupancy_selection_v1",
+  "selection_policy": "four preregistered nonheld meta-train tasks with positive strict source-to-direct gain; per task select the minimum-step successful direct-expert trajectory among gained rows and among retained-success rows",
+  "source_results": "runs/outputs/pi05_nonheld_meta_train_source_base_56x50_formal_3502d13_gpu02p12_20260819/results.json"
+}

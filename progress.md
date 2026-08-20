@@ -12,7 +12,8 @@
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
   non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
   七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
-  Decoder均未过Gate 2；当前停止objective变体，转入sealed validation8 rank16 oracle与role-disjoint manifold重构，未进入outer RL。
+  Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，当前转入successful/on-policy
+  action/JVP/stage面板与role-disjoint manifold重构，未进入新Writer或outer RL。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -69,8 +70,16 @@
   step280--1120约`.926→.921`平台化，不续训。
 - 无训练仿射full-BA诊断的train/held relative-L2为`.5244/.9797`、cosine`.8439/.3648`，设计condition number`1.009`；
   排除“只需更小线性decoder或canonical factor”的窄解释。当前最早失效接口上移到单expert功能标签与source/meta任务角色。
-- validation8 sealed task-local oracle合同已实现：八套独立rank16 LoRA统一训练到预注册step2000，只在step1000 exact-resume，
-  不更新共享Writer/decoder、不选checkpoint、不读取Test。它只裁决target ceiling与source primitive缺口，不形成deployment route。
+- validation8 sealed task-local oracle合同已完成：八套独立rank16 LoRA统一训练到预注册step2000，只在step1000
+  exact-resume，不更新共享Writer/decoder、不选checkpoint、不读取Test。clean detached `5fd224a`上的strict400为
+  `250/400`，既有frozen source为`48/400`；严格配对43 retained、207 gained、5 lost、145 retained failures，净`+202`、
+  churn212，McNemar exact `p≈1.06e-54`。八项全为正净增量，breadth@1/@5/@10均8，四suite分别为Spatial `73`、
+  Object `78`、Goal `58`、Long `41`，预注册强门明确返回`advance_to_successful_on_policy_manifold_panel`。remote-safe
+  400-row与stage证据见`docs/evidence/functional_adaptation_20260819/validation8_task_local_oracle_step2000_20260821.json`。
+- oracle stage trace显示Long的剩余问题主要是多阶段完成而非完全无primitive：Long task1中cream-cheese ever/final为
+  `31/27`、butter为`13/13`、full peak与最终成功均`12/50`，四行在完成第一对象后又丢失；Long task2的stove-on为
+  `50/50`、moka-on-stove与最终成功均`29/50`。Goal task3的BDDL只有最终谓词，不能观测开drawer中间阶段。该trace是
+  无序final-goal代理，不是完整有序procedure标签。
 - source/meta角色分离的19/5 formal诊断已经完成。相对旧重叠任务面的无训练仿射held cosine `.3648`，role-disjoint
   flow/action单标签分别为`.4310/.4341`，说明改变数据角色后几何有方向性改善；但任务集合也改变，不能把差值当成纯因果
   归因。两种16维train-only-whitened code的held std均约`.78`，不再出现near-zero held坐标。
@@ -91,9 +100,11 @@
   teacher action/reward、不产生梯度或改变success，且只作为无序最终合取的阶段代理。step2000 strict400将同时收集，
   不额外重跑rollout。证据见
   `docs/evidence/functional_adaptation_20260819/stage_predicate_capture_smoke_20260821.json`。
-- validation8 sealed local-expert oracle的八项均已完成step1000，六个原worker已在原设备与任务topology上exact-resume；
-  worker0已完成step2000，其余继续运行，step1000不评测。全部完成后只用step2000 strict400与既有frozen source
-  `48/400`比较，以裁决target ceiling和source primitive缺口。
+- successful/on-policy panel已预注册为`configs/pi05_successful_expert_occupancy_panel_v1.json`：从现有56-task formal
+  source/direct rows中固定task23/26/80/86，每task各取最短gained与retained-success trajectory，共8行；不读取held，
+  不重训expert。所有8行必须复现direct成功，否则整panel失效且不替换。每条轨迹分8个progress strata，随后比较
+  source-subtracted denoised action、exact JVP与BDDL stage；至少3/4 task的same-task两轨迹要优于cross-task，且JVP不能
+  单独推翻action geometry，才允许据此重建fixed decoder。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

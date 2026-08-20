@@ -17,6 +17,7 @@ from ember.eval_adapters import (
     inspect_functional_code_writer_adapter,
     inspect_source_sft_adapter,
     inspect_task_expert_adapter,
+    select_task_expert_adapter_tasks,
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
@@ -32,6 +33,14 @@ from ember.pi05_eval_queue import (
     build_cost_balanced_shards,
     initialize_queue,
     publish_json_exclusive,
+)
+
+
+SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA = (
+    "ember_successful_expert_occupancy_selection_v1"
+)
+SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA = (
+    "ember_successful_expert_occupancy_capture_v1"
 )
 
 
@@ -147,6 +156,16 @@ def _occupancy_capture_tasks(
     path = path.resolve()
     manifest = read_json(path)
     rows = tuple(dict(row) for row in manifest.get("rows", ()))
+    if manifest.get("schema_version") == SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA:
+        return _successful_expert_occupancy_tasks(
+            args,
+            tasks,
+            output_dir=output_dir,
+            writer_kind=writer_kind,
+            selection_path=path,
+            manifest=manifest,
+            rows=rows,
+        )
     counts = {
         category: sum(row.get("category") == category for row in rows)
         for category in ("lost", "gained", "retained")
@@ -197,12 +216,108 @@ def _occupancy_capture_tasks(
     }
 
 
-def _stage_predicate_capture(args: Any) -> dict[str, Any] | None:
+def _successful_expert_occupancy_tasks(
+    args: Any,
+    tasks: Sequence[Any],
+    *,
+    output_dir: Path,
+    writer_kind: str | None,
+    selection_path: Path,
+    manifest: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    categories = {
+        category: sum(row.get("category") == category for row in rows)
+        for category in ("gained", "retained_success")
+    }
+    keys = {
+        (
+            str(row.get("suite")),
+            int(row.get("task_id", -1)),
+            int(row.get("init_state_id", -1)),
+        )
+        for row in rows
+    }
+    task_categories: dict[tuple[str, int], set[str]] = {}
+    for row in rows:
+        task_categories.setdefault(
+            (str(row.get("suite")), int(row.get("task_id", -1))), set()
+        ).add(str(row.get("category")))
+    if (
+        args.mode != "formal"
+        or args.role != "nonheld_meta_train"
+        or writer_kind != "task_expert"
+        or len(rows) != 8
+        or len(keys) != 8
+        or categories != {"gained": 4, "retained_success": 4}
+        or len(task_categories) != 4
+        or any(
+            values != {"gained", "retained_success"}
+            for values in task_categories.values()
+        )
+    ):
+        raise Pi05EvaluationError("successful-expert occupancy selection changed")
+
+    selected_tasks = []
+    covered = set()
+    for task in tasks:
+        selected_rows = [
+            row
+            for row in rows
+            if (str(row.get("suite")), int(row.get("task_id", -1)))
+            == (str(task.suite), int(task.task_id))
+        ]
+        if selected_rows and any(
+            row.get("language") != task.language for row in selected_rows
+        ):
+            raise Pi05EvaluationError("successful-expert task language changed")
+        state_ids = tuple(
+            state_id
+            for state_id in task.init_state_ids
+            if (str(task.suite), int(task.task_id), int(state_id)) in keys
+        )
+        if state_ids:
+            selected_tasks.append(replace(task, init_state_ids=state_ids))
+            covered.update(
+                (str(task.suite), int(task.task_id), int(state_id))
+                for state_id in state_ids
+            )
+    if covered != keys:
+        raise Pi05EvaluationError(
+            "successful-expert occupancy selection is outside meta-train"
+        )
+    return tuple(selected_tasks), {
+        "schema_version": SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA,
+        "selection_path": str(selection_path),
+        "selection_bytes": selection_path.stat().st_size,
+        "source_results": manifest.get("source_results"),
+        "direct_results": manifest.get("direct_results"),
+        "category_counts": categories,
+        "selected_rows": len(rows),
+        "selected_tasks": len(selected_tasks),
+        "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
+        "training_gradient_use": False,
+        "held_data_use": False,
+        "claim_boundary": manifest.get("claim_boundary"),
+    }
+
+
+def _stage_predicate_capture(
+    args: Any, occupancy_capture: Mapping[str, Any] | None
+) -> dict[str, Any] | None:
     if not bool(getattr(args, "capture_stage_predicates", False)):
         return None
-    if args.mode != "formal" or args.role != "validation":
+    successful_expert_panel = (
+        occupancy_capture is not None
+        and occupancy_capture.get("schema_version")
+        == SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA
+    )
+    if args.mode != "formal" or not (
+        args.role == "validation"
+        or (args.role == "nonheld_meta_train" and successful_expert_panel)
+    ):
         raise Pi05EvaluationError(
-            "stage-predicate capture is restricted to formal validation diagnosis"
+            "stage-predicate capture requires a declared formal diagnostic panel"
         )
     return {
         "schema_version": "ember_pi05_stage_predicate_capture_v1",
@@ -212,6 +327,7 @@ def _stage_predicate_capture(args: Any) -> dict[str, Any] | None:
         "checkpoint_selection_use": False,
         "validation_action_reads": 0,
         "validation_reward_reads": 0,
+        "held_data_use": args.role == "validation",
         "claim_boundary": (
             "BDDL goal predicates are a partial stage proxy, not a complete ordered "
             "procedure annotation"
@@ -246,7 +362,7 @@ def _prepared_payload(
         }
     ):
         raise Pi05EvaluationError("source-base screen must cover all 40 target tasks")
-    tasks, libero_paths = inspect_installed_target_tasks(
+    installed_tasks, libero_paths = inspect_installed_target_tasks(
         authorities,
         role=args.role,
         state_count=args.state_count,
@@ -254,11 +370,11 @@ def _prepared_payload(
     )
     tasks, occupancy_capture = _occupancy_capture_tasks(
         args,
-        tasks,
+        installed_tasks,
         output_dir=output_dir,
         writer_kind=writer_kind,
     )
-    stage_predicate_capture = _stage_predicate_capture(args)
+    stage_predicate_capture = _stage_predicate_capture(args, occupancy_capture)
     model = inspect_source_checkpoint(
         authorities,
         args.source_run,
@@ -266,14 +382,25 @@ def _prepared_payload(
         evaluation_mode=args.mode,
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
+    successful_expert_panel = (
+        occupancy_capture is not None
+        and occupancy_capture.get("schema_version")
+        == SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA
+    )
     adapter = _inspect_adapter(
         args,
         writer_kind=writer_kind,
         source_sft_requested=source_sft_requested,
         authorities=authorities,
         model=model,
-        tasks=tasks,
+        tasks=installed_tasks if successful_expert_panel else tasks,
     )
+    if successful_expert_panel:
+        adapter = select_task_expert_adapter_tasks(
+            adapter,
+            tasks,
+            diagnostic_subset="successful_on_policy_occupancy",
+        )
     contract = build_run_contract(
         authorities=authorities,
         tasks=tasks,

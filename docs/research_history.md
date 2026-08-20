@@ -558,6 +558,24 @@ held exact loss在step280已为`.92575`，之后到1120仍约`.92128`，故不�
 factor gauge不合适”的窄解释。当前flow/probe/exact objective family按formal证据关闭，下一阶段转向专家原始提出的
 多成功adapter功能等价类、source/meta角色分离和sealed target ceiling诊断。
 
+### 3.24 Role-disjoint定位、validation8 local oracle与on-policy分支
+
+source未训练过的target train24上，19/5 role-disjoint flow/action fingerprint把held cosine从旧重叠面板的方向性基准
+`.3648`提高到`.4310/.4341`；同一优化轨迹的多成功checkpoint只到`.4355/.4394`。有成功expert的三项action-response为
+cosine `.5942`、relative-L2 `.8394`，两项无成功expert的fallback仅`.2071/1.0766`。该结果关闭继续把失败expert或
+同轨迹checkpoint集合当作成功功能等价类的做法，并触发预注册target ceiling诊断。
+
+validation8八套独立rank16 LoRA统一训练至step2000，step1000不评测；只在clean detached `5fd224a`上执行一次strict400。
+结果为`250/400`，frozen source同一400 rows为`48/400`：43 retained、207 gained、5 lost、净`+202`，八task全正、四suite
+非零，Spatial/Object/Goal/Long为`73/78/58/41`。因此预注册强门返回
+`advance_to_successful_on_policy_manifold_panel`；不触发全局source重训，也不将validation local LoRA用于共享训练或部署。
+
+同一rollout的BDDL trace显示Long task1第一/第二对象ever为31/13，full success12；task2第一阶段50、第二阶段及success29。
+这把残余失败定位到多阶段完成与保持，但BDDL只表示无序final-goal合取，不能替代完整procedure标注。后继从既有non-held
+formal direct rows固定四task、每task两条成功trajectory，以denoised action、exact JVP和stage在successful/on-policy
+occupancy上比较同task与cross-task几何；不重训已完成expert bank。remote-safe证据为
+`docs/evidence/functional_adaptation_20260819/validation8_task_local_oracle_step2000_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

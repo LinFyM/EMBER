@@ -634,3 +634,27 @@ synthetic rollout验证`step0 [F,F] → step1 [T,F] → step3 [T,T]`并保持原
 goal state只是无序最终合取，能定位部分完成、丢失与最终失败，却不能冒充完整有序procedure或recovery标签。下一次
 validation8 step2000 strict400会在不额外rollout的情况下同时收集该trace。机制证据见
 `docs/evidence/functional_adaptation_20260819/stage_predicate_capture_smoke_20260821.json`。
+
+## 31. Validation8 local oracle广泛通过，首因转为successful/on-policy功能标签
+
+八套彼此隔离的validation8 rank16 task-local LoRA均按统一合同训练到step2000；step1000没有评测或选模。clean detached
+`5fd224a`上的strict paired400为`250/400`，相同rows与RNG合同的frozen source为`48/400`。source到oracle共有43 retained、
+207 gained、5 lost、145 retained failures，净`+202`、churn212；八个task全是正净增量，四suite全部非零，breadth@1/@5/
+@10均为8。oracle的Spatial/Object/Goal/Long分别为`73/78/58/41`，所以预注册的`>150`、至少5个正增量task、四suite
+非零强门明确通过。该结果否定“target40的source/local rank16 ceiling整体太弱，以至于当前应先重训source”的分支；它不
+证明一次视频编译可达，也不把held oracle变成deployment route或共享监督。
+
+stage trace进一步把Long失败分开：task1中第一对象ever为31/50、第二对象ever为13/50，而full peak和最终成功均12/50；
+task2第一阶段stove-on为50/50、第二阶段moka-on-stove与成功均29/50。因而当前主要缺口至少包含第二阶段完成与阶段保持，
+不是所有Long primitive都不存在。Goal task3的BDDL只暴露最终合取，无法观察打开drawer等中间动作，提醒我们不能把final
+predicate代理扩大成完整procedure annotation。
+
+回到专家原始意见，单expert在离线anchors上的flow/BA几何已经不足以定义“成功策略功能等价类”，而成功/on-policy
+occupancy、action response、Jacobian与stage behavior才是尚未完成的关键标签。因此下一步固定为8条non-held成功轨迹的小
+面板：四个有source→direct正增量的task，各取一条gained和一条retained-success最短成功轨迹；每轨迹按8个进度strata选
+最大expert-source action差异点，联合比较source-subtracted denoised action、exact JVP与stage。所有8条必须原样复现成功，
+不按结果替换；至少3/4 task的same-task两轨迹必须比cross-task更近且不能只由final predicates解释，才把相应response
+family升级为新manifold标签。JVP可以补充action，但不能独自覆盖失败的action geometry。
+
+完整400-row pairing、per-task/suite、transition与stage证据见
+`docs/evidence/functional_adaptation_20260819/validation8_task_local_oracle_step2000_20260821.json`。

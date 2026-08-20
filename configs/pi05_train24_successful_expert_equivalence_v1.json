@@ -41,9 +41,10 @@
     "response": "complete source-subtracted official 10-step denoised action chunk at every replan of every selected successful trajectory",
     "primary_family": "denoised action; exact JVP is not primary after the successful-occupancy JVP gate passed only 1/4 tasks",
     "coordinate_fit": "fit PCA and whitening on fit19 response states only; held5 receives the identical frozen transform",
+    "coordinate_weighting": "equal task, then equal selected member within task, then equal replan state within member",
     "uniform_time_baseline": "linearly resample each ordered response sequence at 8 fixed normalized-time quantiles",
     "phase_alignment": "compute monotone cumulative arc length in the frozen whitened functional space and linearly resample at 8 fixed arc-length quantiles",
-    "held_gate": "phase-aligned same-task pairs are mutual cosine nearest for at least 4/5 held tasks and at least 2 held tasks improve over the uniform-time baseline",
+    "held_gate": "among the 10 held5 members, phase-aligned same-task pairs are mutual cosine nearest for at least 4/5 tasks and phase-aligned same-task cosine is strictly greater than the uniform-time baseline for at least 2/5 tasks",
     "decoder_rule": "do not rebuild a fixed decoder unless the held gate passes"
   },
   "information_wall": {

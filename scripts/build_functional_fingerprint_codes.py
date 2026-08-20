@@ -167,6 +167,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         expert_config_name = "train24_experts"
         code_width = int(config["decoder"]["train24_smoke_code_width"])
         fit_surface = "train24_fit_only_pca_whitening"
+    records = (*split.fit, *split.held)
     settings = mechanism["functional_fingerprint"]
     train_ids = tuple(row.global_task_id for row in split.fit)
     held_ids = tuple(row.global_task_id for row in split.held)

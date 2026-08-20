@@ -363,6 +363,8 @@ def aggregate(args: argparse.Namespace) -> None:
         or any(row.get("schema_version") != SHARD_SCHEMA for row in shards)
         or {int(row["shard_count"]) for row in shards} != {shard_count}
         or {int(row["shard_index"]) for row in shards} != set(range(shard_count))
+        or any(row["analysis_git"] != shards[0]["analysis_git"] for row in shards)
+        or any(row["panels"] != shards[0]["panels"] for row in shards)
     ):
         raise ValueError("successful expert equivalence shards changed")
     members = [member for shard in shards for member in shard["members"]]
@@ -461,6 +463,8 @@ def aggregate(args: argparse.Namespace) -> None:
             "row_replacement": False,
             "fit_tasks": 19,
             "held_transform_only_tasks": 5,
+            "development_train_action_derived_response_use": True,
+            "fold0_response_use": "frozen_transform_and_gate_only_no_coordinate_fit",
             "held_data_use": False,
             "validation_data_use": False,
             "test_data_use": False,

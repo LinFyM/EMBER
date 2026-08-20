@@ -285,6 +285,13 @@ def run_shard(args: argparse.Namespace) -> None:
         "selection": _repo_reference(args.selection),
         "shard_index": args.shard_index,
         "shard_count": args.shard_count,
+        "runtime": {
+            "source_checkpoint": _repo_reference(args.source_checkpoint),
+            "device": str(args.device),
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "microbatch_size": args.microbatch_size,
+            "num_inference_steps": 10,
+        },
         "panels": {
             str(step): _repo_reference(panel["root"])
             for step, panel in panels.items()
@@ -365,6 +372,18 @@ def aggregate(args: argparse.Namespace) -> None:
         or {int(row["shard_index"]) for row in shards} != set(range(shard_count))
         or any(row["analysis_git"] != shards[0]["analysis_git"] for row in shards)
         or any(row["panels"] != shards[0]["panels"] for row in shards)
+        or len(
+            {
+                (
+                    row["runtime"]["source_checkpoint"],
+                    row["runtime"]["device"],
+                    int(row["runtime"]["microbatch_size"]),
+                    int(row["runtime"]["num_inference_steps"]),
+                )
+                for row in shards
+            }
+        )
+        != 1
     ):
         raise ValueError("successful expert equivalence shards changed")
     members = [member for shard in shards for member in shard["members"]]
@@ -457,6 +476,7 @@ def aggregate(args: argparse.Namespace) -> None:
         "selection": _repo_reference(args.selection),
         "panels": shards[0]["panels"],
         "shards": [_repo_reference(path) for path in args.shard],
+        "runtime_by_shard": [row["runtime"] for row in shards],
         "validity": {
             "preregistered_members": 47,
             "reproduced_successes": 47,

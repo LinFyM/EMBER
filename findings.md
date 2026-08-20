@@ -607,3 +607,16 @@ step2000 task-local rank16 oracle并与frozen source `48/400`严格配对：若l
 转为成功/on-policy occupancy、JVP与stage behavior上的功能标签；若ceiling本身仍低或集中，则先修source primitive或
 local adaptation能力。完整remote-safe数值与边界见
 `docs/evidence/functional_adaptation_20260819/role_disjoint_manifold_20260821.json`。
+
+## 29. Policy Jacobian标签可诚实计算，但单样本信号不能升级为目标
+
+按专家原始功能表示清单补做了一个不参与选择的PI0.5机制smoke：在固定source/task0-step2000 expert、同一action query、
+Gaussian flow point、Beta(1.5,1) time和unit-RMS方向上，对完整noisy action sequence计算`torch.func.jvp`，不是有限差分。
+source/expert输出均为完整`1×50×32`、finite，峰值显存`17.44 GiB`；JVP RMS为`1.10755/1.10828`，两者差的RMS
+为`.028757`，cosine为`.999663`。这证明A40上可用一个冻结policy计算精确、配对的local response，不需要读取rollout
+reward或把LoRA参数变成梯度目标。
+
+该单样本同时说明不能把JVP本身当作答案：expert-source变化material但远小于共同response，而且尚无held geometry或
+closed-loop预测证据。因此当前只保留统一owner；若validation8 ceiling广泛成立，再在少量successful/on-policy states上
+把action、JVP与stage behavior配对比较，不运行71-task全量JVP fingerprint，也不据此重启Decoder。机制证据见
+`docs/evidence/functional_adaptation_20260819/policy_jvp_feasibility_20260821.json`。

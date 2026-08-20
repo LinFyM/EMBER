@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 import torch
-from lerobot.utils.constants import OBS_LANGUAGE_TOKENS
+from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
+from lerobot.utils.constants import (
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+)
 
 from ember.lora import LoRAContract, copy_task_lora_state_, functional_lora_call
 from ember.writer.functional import (
@@ -119,6 +123,104 @@ def pi05_denoised_action_response(
     if response.shape != (batch_size, chunk_size, 7):
         raise FunctionalResponseError("PI0.5 action response shape changed")
     return response
+
+
+def pi05_flow_action_jvp_response(
+    policy: torch.nn.Module,
+    state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    batch: Mapping[str, Any],
+    *,
+    policy_seed: int,
+) -> torch.Tensor:
+    """Return one exact velocity JVP with respect to the noisy action sequence.
+
+    The flow point, time, and unit-RMS tangent direction are paired by
+    ``policy_seed``. The installed LoRA remains frozen: this measures a local
+    policy response, not a gradient with respect to adapter parameters.
+    """
+
+    if any(parameter.requires_grad for parameter in policy.parameters()):
+        raise FunctionalResponseError("functional response policy must be frozen")
+    try:
+        model = policy.model
+        device = next(policy.parameters()).device
+        images, image_masks = policy._preprocess_images(dict(batch))
+        tokens = batch[OBS_LANGUAGE_TOKENS]
+        token_masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
+        actions = policy.prepare_action(batch)
+    except (AttributeError, KeyError, StopIteration) as error:
+        raise FunctionalResponseError(
+            "action JVP requires a PI0.5 policy batch"
+        ) from error
+
+    copy_task_lora_state_(policy, state, contract)
+    with scoped_policy_randomness(policy_seed, device):
+        with scoped_policy_flow_noise_sampling(
+            policy,
+            INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
+        ):
+            with scoped_policy_flow_time_sampling(
+                policy,
+                INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
+            ):
+                noise = model.sample_noise(actions.shape, device)
+                time = model.sample_time(actions.shape[0], device)
+                direction = model.sample_noise(actions.shape, device)
+    direction = direction / direction.float().square().mean(
+        dim=(1, 2), keepdim=True
+    ).sqrt()
+    noisy_actions = (
+        time[:, None, None] * noise
+        + (1.0 - time[:, None, None]) * actions
+    )
+
+    with torch.no_grad():
+        prefix_embs, prefix_pad_masks, prefix_att_masks = model.embed_prefix(
+            images,
+            image_masks,
+            tokens,
+            token_masks,
+        )
+        prefix_att_2d_masks = make_att_2d_masks(
+            prefix_pad_masks,
+            prefix_att_masks,
+        )
+        prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
+        prefix_att_2d_masks_4d = model._prepare_attention_masks_4d(
+            prefix_att_2d_masks
+        )
+        _, past_key_values = model.paligemma_with_expert.forward(
+            attention_mask=prefix_att_2d_masks_4d,
+            position_ids=prefix_position_ids,
+            past_key_values=None,
+            inputs_embeds=[prefix_embs, None],
+            use_cache=True,
+        )
+
+    def velocity(value: torch.Tensor) -> torch.Tensor:
+        return model.denoise_step(
+            prefix_pad_masks=prefix_pad_masks,
+            past_key_values=past_key_values,
+            x_t=value,
+            timestep=time,
+        )
+
+    _, tangent = torch.func.jvp(
+        velocity,
+        (noisy_actions,),
+        (direction,),
+    )
+    expected = (
+        int(actions.shape[0]),
+        int(policy.config.chunk_size),
+        int(policy.config.max_action_dim),
+    )
+    if tangent.shape != expected or not torch.isfinite(tangent).all():
+        raise FunctionalResponseError(
+            "PI0.5 action JVP response changed shape or is non-finite"
+        )
+    return tangent.float()
 
 
 @torch.no_grad()

@@ -82,9 +82,13 @@
   anchors的flow为`50×32`。action在有成功expert的held子集优于flow的`.5753/.8712`，但全5-task aggregate仍未过
   预注册几何screen；两者都只是无闭环、未物化adapter的定位证据。remote-safe摘要见
   `docs/evidence/functional_adaptation_20260819/role_disjoint_manifold_20260821.json`。
-- validation8 sealed local-expert oracle的step1000阶段正在按预注册合同运行；所有task必须先到step1000，再在相同worker
-  topology上exact-resume到step2000，且不评测step1000。最终只用step2000 strict400与既有frozen source `48/400`
-  比较，以裁决target ceiling和source primitive缺口。
+- 精确policy-JVP机制smoke已在一项成功train expert上接通：完整`50×32`action-sequence JVP finite，峰值`17.44 GiB`，
+  expert-source JVP差RMS `.028757`、cosine `.999663`。它只证明专家建议的Jacobian标签可实际计算；在validation8
+  ceiling裁决前不扩为全量fingerprint或Decoder objective。证据见
+  `docs/evidence/functional_adaptation_20260819/policy_jvp_feasibility_20260821.json`。
+- validation8 sealed local-expert oracle的八项均已完成step1000，六个原worker已在原设备与任务topology上exact-resume；
+  worker0已完成step2000，其余继续运行，step1000不评测。全部完成后只用step2000 strict400与既有frozen source
+  `48/400`比较，以裁决target ceiling和source primitive缺口。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

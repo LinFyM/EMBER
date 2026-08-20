@@ -25,6 +25,7 @@ from ember.functional_adaptation.functional_response import (
     FunctionalResponseTarget,
     build_functional_response_target,
     functional_response_distillation_loss,
+    pi05_flow_action_jvp_response,
     pi05_flow_response,
 )
 from ember.functional_adaptation.inference import (
@@ -59,6 +60,7 @@ __all__ = [
     "build_process_feature_encoder",
     "functional_response_distillation_loss",
     "load_fixed_decoder",
+    "pi05_flow_action_jvp_response",
     "pi05_flow_response",
     "effective_update_exact_loss",
     "effective_update_probe_loss",

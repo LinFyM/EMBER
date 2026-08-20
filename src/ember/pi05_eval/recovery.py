@@ -32,6 +32,10 @@ from ember.pi05_eval_queue import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
+    "successful_on_policy_occupancy",
+    "successful_expert_equivalence_occupancy",
+}
 
 
 def active_worker_pids(output_dir: Path) -> list[int]:
@@ -75,7 +79,7 @@ def _reinspect_adapter(
         manifest_path = adapter.get("projection", {}).get("manifest_path")
         subset = adapter.get("information_wall", {}).get("diagnostic_subset")
         inspection_tasks = tasks
-        if subset == "successful_on_policy_occupancy":
+        if subset in TASK_EXPERT_DIAGNOSTIC_SUBSETS:
             inspection_tasks = tuple(
                 argparse.Namespace(suite=row[0], task_id=int(row[1]))
                 for row in adapter["information_wall"].get(
@@ -94,7 +98,7 @@ def _reinspect_adapter(
                 Path(str(manifest_path)) if manifest_path is not None else None
             ),
         )
-        if subset == "successful_on_policy_occupancy":
+        if subset in TASK_EXPERT_DIAGNOSTIC_SUBSETS:
             return select_task_expert_adapter_tasks(
                 inspected,
                 tasks,

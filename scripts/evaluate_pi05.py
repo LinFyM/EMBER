@@ -143,7 +143,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "Pre-registered formal occupancy diagnostic selection; supports the "
-            "sealed validation Writer panel and the successful non-held task-expert panel."
+            "sealed validation Writer panel, the successful non-held task-expert "
+            "panel, and the train24 multi-checkpoint equivalence panel."
         ),
     )
     parser.add_argument(

@@ -1,0 +1,953 @@
+{
+  "schema_version": "ember_successful_expert_equivalence_selection_v1",
+  "purpose": "Role-disjoint target-train functional equivalence panel with multiple independently functioning checkpoints and their own successful closed-loop occupancy.",
+  "selection_policy": {
+    "authority": "five existing uniform-checkpoint development-train formal evaluations",
+    "checkpoint_steps": [
+      250,
+      500,
+      1000,
+      1500,
+      2000
+    ],
+    "per_task": "choose earliest and latest checkpoint with at least one success; if only one checkpoint succeeds, retain one member",
+    "trajectory": "within each chosen checkpoint choose the successful row with minimum executed steps, tie-broken by init_state_id",
+    "result_dependence": "selection uses development-train expert outcomes only and is frozen before response analysis",
+    "task_fold": "existing task-expert ordinal modulo 5; fold0 is transform-only held5, other folds are fit19"
+  },
+  "evaluation_results": {
+    "250": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step0250_formal_r3_1362d15_20260808",
+    "500": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step0500_formal_r3_1362d15_20260808",
+    "1000": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step1000_formal_r3_1362d15_20260808",
+    "1500": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step1500_formal_r3_1362d15_20260808",
+    "2000": "runs/outputs/pi05_task_expert_bank_devtrain24x50_step2000_formal_r3_1362d15_20260808"
+  },
+  "counts": {
+    "members": 47,
+    "tasks": 24,
+    "k2_tasks": 23,
+    "k1_tasks": 1,
+    "fit_tasks": 19,
+    "held_tasks": 5,
+    "members_by_step": {
+      "250": 21,
+      "500": 2,
+      "1000": 1,
+      "1500": 0,
+      "2000": 23
+    }
+  },
+  "analysis_plan": {
+    "response": "complete source-subtracted official 10-step denoised action chunk at every replan of every selected successful trajectory",
+    "primary_family": "denoised action; exact JVP is not primary after the successful-occupancy JVP gate passed only 1/4 tasks",
+    "coordinate_fit": "fit PCA and whitening on fit19 response states only; held5 receives the identical frozen transform",
+    "uniform_time_baseline": "linearly resample each ordered response sequence at 8 fixed normalized-time quantiles",
+    "phase_alignment": "compute monotone cumulative arc length in the frozen whitened functional space and linearly resample at 8 fixed arc-length quantiles",
+    "held_gate": "phase-aligned same-task pairs are mutual cosine nearest for at least 4/5 held tasks and at least 2 held tasks improve over the uniform-time baseline",
+    "decoder_rule": "do not rebuild a fixed decoder unless the held gate passes"
+  },
+  "information_wall": {
+    "role": "development_train",
+    "source_target_task_training": false,
+    "validation_data_use": false,
+    "test_data_use": false,
+    "training_gradient_use": false,
+    "deployment_route": false
+  },
+  "claim_boundary": "This selected successful panel diagnoses representation invariance. It is not an unbiased performance evaluation, a task-ID dictionary, a held expert route, or permission to select final models from diagnostic outcomes.",
+  "rows": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 0,
+      "global_task_id": 0,
+      "ordinal": 0,
+      "fold_role": "held_transform_only",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 8,
+      "steps": 76,
+      "checkpoint_successes": {
+        "250": 17,
+        "500": 20,
+        "1000": 30,
+        "1500": 26,
+        "2000": 27
+      },
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 0,
+      "global_task_id": 0,
+      "ordinal": 0,
+      "fold_role": "held_transform_only",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 19,
+      "steps": 72,
+      "checkpoint_successes": {
+        "250": 17,
+        "500": 20,
+        "1000": 30,
+        "1500": 26,
+        "2000": 27
+      },
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 2,
+      "global_task_id": 2,
+      "ordinal": 1,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 28,
+      "steps": 92,
+      "checkpoint_successes": {
+        "250": 37,
+        "500": 37,
+        "1000": 38,
+        "1500": 42,
+        "2000": 41
+      },
+      "language": "pick up the black bowl from table center and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 2,
+      "global_task_id": 2,
+      "ordinal": 1,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 28,
+      "steps": 94,
+      "checkpoint_successes": {
+        "250": 37,
+        "500": 37,
+        "1000": 38,
+        "1500": 42,
+        "2000": 41
+      },
+      "language": "pick up the black bowl from table center and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 4,
+      "global_task_id": 4,
+      "ordinal": 2,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 43,
+      "steps": 114,
+      "checkpoint_successes": {
+        "250": 10,
+        "500": 13,
+        "1000": 20,
+        "1500": 27,
+        "2000": 23
+      },
+      "language": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 4,
+      "global_task_id": 4,
+      "ordinal": 2,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 43,
+      "steps": 122,
+      "checkpoint_successes": {
+        "250": 10,
+        "500": 13,
+        "1000": 20,
+        "1500": 27,
+        "2000": 23
+      },
+      "language": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 5,
+      "global_task_id": 5,
+      "ordinal": 3,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 20,
+      "steps": 88,
+      "checkpoint_successes": {
+        "250": 16,
+        "500": 20,
+        "1000": 20,
+        "1500": 18,
+        "2000": 21
+      },
+      "language": "pick up the black bowl on the ramekin and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 5,
+      "global_task_id": 5,
+      "ordinal": 3,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 20,
+      "steps": 85,
+      "checkpoint_successes": {
+        "250": 16,
+        "500": 20,
+        "1000": 20,
+        "1500": 18,
+        "2000": 21
+      },
+      "language": "pick up the black bowl on the ramekin and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 7,
+      "global_task_id": 7,
+      "ordinal": 4,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 38,
+      "steps": 105,
+      "checkpoint_successes": {
+        "250": 27,
+        "500": 35,
+        "1000": 35,
+        "1500": 38,
+        "2000": 39
+      },
+      "language": "pick up the black bowl on the stove and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 7,
+      "global_task_id": 7,
+      "ordinal": 4,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 38,
+      "steps": 106,
+      "checkpoint_successes": {
+        "250": 27,
+        "500": 35,
+        "1000": 35,
+        "1500": 38,
+        "2000": 39
+      },
+      "language": "pick up the black bowl on the stove and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 9,
+      "global_task_id": 9,
+      "ordinal": 5,
+      "fold_role": "held_transform_only",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 36,
+      "steps": 129,
+      "checkpoint_successes": {
+        "250": 16,
+        "500": 22,
+        "1000": 27,
+        "1500": 27,
+        "2000": 30
+      },
+      "language": "pick up the black bowl on the wooden cabinet and place it on the plate"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 9,
+      "global_task_id": 9,
+      "ordinal": 5,
+      "fold_role": "held_transform_only",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 26,
+      "steps": 107,
+      "checkpoint_successes": {
+        "250": 16,
+        "500": 22,
+        "1000": 27,
+        "1500": 27,
+        "2000": 30
+      },
+      "language": "pick up the black bowl on the wooden cabinet and place it on the plate"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 2,
+      "global_task_id": 12,
+      "ordinal": 6,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 12,
+      "steps": 103,
+      "checkpoint_successes": {
+        "250": 34,
+        "500": 43,
+        "1000": 44,
+        "1500": 42,
+        "2000": 46
+      },
+      "language": "pick up the salad dressing and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 2,
+      "global_task_id": 12,
+      "ordinal": 6,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 22,
+      "steps": 97,
+      "checkpoint_successes": {
+        "250": 34,
+        "500": 43,
+        "1000": 44,
+        "1500": 42,
+        "2000": 46
+      },
+      "language": "pick up the salad dressing and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 4,
+      "global_task_id": 14,
+      "ordinal": 7,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 2,
+      "steps": 133,
+      "checkpoint_successes": {
+        "250": 25,
+        "500": 39,
+        "1000": 40,
+        "1500": 45,
+        "2000": 45
+      },
+      "language": "pick up the ketchup and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 4,
+      "global_task_id": 14,
+      "ordinal": 7,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 15,
+      "steps": 119,
+      "checkpoint_successes": {
+        "250": 25,
+        "500": 39,
+        "1000": 40,
+        "1500": 45,
+        "2000": 45
+      },
+      "language": "pick up the ketchup and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 5,
+      "global_task_id": 15,
+      "ordinal": 8,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 37,
+      "steps": 130,
+      "checkpoint_successes": {
+        "250": 8,
+        "500": 22,
+        "1000": 33,
+        "1500": 30,
+        "2000": 31
+      },
+      "language": "pick up the tomato sauce and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 5,
+      "global_task_id": 15,
+      "ordinal": 8,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 32,
+      "steps": 119,
+      "checkpoint_successes": {
+        "250": 8,
+        "500": 22,
+        "1000": 33,
+        "1500": 30,
+        "2000": 31
+      },
+      "language": "pick up the tomato sauce and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 6,
+      "global_task_id": 16,
+      "ordinal": 9,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 48,
+      "steps": 212,
+      "checkpoint_successes": {
+        "250": 5,
+        "500": 17,
+        "1000": 24,
+        "1500": 27,
+        "2000": 29
+      },
+      "language": "pick up the butter and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 6,
+      "global_task_id": 16,
+      "ordinal": 9,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 3,
+      "steps": 126,
+      "checkpoint_successes": {
+        "250": 5,
+        "500": 17,
+        "1000": 24,
+        "1500": 27,
+        "2000": 29
+      },
+      "language": "pick up the butter and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 8,
+      "global_task_id": 18,
+      "ordinal": 10,
+      "fold_role": "held_transform_only",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 38,
+      "steps": 152,
+      "checkpoint_successes": {
+        "250": 35,
+        "500": 35,
+        "1000": 36,
+        "1500": 37,
+        "2000": 40
+      },
+      "language": "pick up the chocolate pudding and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 8,
+      "global_task_id": 18,
+      "ordinal": 10,
+      "fold_role": "held_transform_only",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 27,
+      "steps": 141,
+      "checkpoint_successes": {
+        "250": 35,
+        "500": 35,
+        "1000": 36,
+        "1500": 37,
+        "2000": 40
+      },
+      "language": "pick up the chocolate pudding and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 9,
+      "global_task_id": 19,
+      "ordinal": 11,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 49,
+      "steps": 124,
+      "checkpoint_successes": {
+        "250": 18,
+        "500": 35,
+        "1000": 31,
+        "1500": 35,
+        "2000": 37
+      },
+      "language": "pick up the orange juice and place it in the basket"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 9,
+      "global_task_id": 19,
+      "ordinal": 11,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 7,
+      "steps": 116,
+      "checkpoint_successes": {
+        "250": 18,
+        "500": 35,
+        "1000": 31,
+        "1500": 35,
+        "2000": 37
+      },
+      "language": "pick up the orange juice and place it in the basket"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 0,
+      "global_task_id": 20,
+      "ordinal": 12,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 36,
+      "steps": 105,
+      "checkpoint_successes": {
+        "250": 22,
+        "500": 25,
+        "1000": 29,
+        "1500": 27,
+        "2000": 29
+      },
+      "language": "open the middle drawer of the cabinet"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 0,
+      "global_task_id": 20,
+      "ordinal": 12,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 36,
+      "steps": 108,
+      "checkpoint_successes": {
+        "250": 22,
+        "500": 25,
+        "1000": 29,
+        "1500": 27,
+        "2000": 29
+      },
+      "language": "open the middle drawer of the cabinet"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 1,
+      "global_task_id": 21,
+      "ordinal": 13,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 34,
+      "steps": 81,
+      "checkpoint_successes": {
+        "250": 47,
+        "500": 49,
+        "1000": 47,
+        "1500": 50,
+        "2000": 47
+      },
+      "language": "put the bowl on the stove"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 1,
+      "global_task_id": 21,
+      "ordinal": 13,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 22,
+      "steps": 80,
+      "checkpoint_successes": {
+        "250": 47,
+        "500": 49,
+        "1000": 47,
+        "1500": 50,
+        "2000": 47
+      },
+      "language": "put the bowl on the stove"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 2,
+      "global_task_id": 22,
+      "ordinal": 14,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 9,
+      "steps": 98,
+      "checkpoint_successes": {
+        "250": 24,
+        "500": 32,
+        "1000": 36,
+        "1500": 36,
+        "2000": 34
+      },
+      "language": "put the wine bottle on top of the cabinet"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 2,
+      "global_task_id": 22,
+      "ordinal": 14,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 25,
+      "steps": 98,
+      "checkpoint_successes": {
+        "250": 24,
+        "500": 32,
+        "1000": 36,
+        "1500": 36,
+        "2000": 34
+      },
+      "language": "put the wine bottle on top of the cabinet"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 5,
+      "global_task_id": 25,
+      "ordinal": 15,
+      "fold_role": "held_transform_only",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 43,
+      "steps": 150,
+      "checkpoint_successes": {
+        "250": 3,
+        "500": 7,
+        "1000": 4,
+        "1500": 6,
+        "2000": 8
+      },
+      "language": "push the plate to the front of the stove"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 5,
+      "global_task_id": 25,
+      "ordinal": 15,
+      "fold_role": "held_transform_only",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 41,
+      "steps": 133,
+      "checkpoint_successes": {
+        "250": 3,
+        "500": 7,
+        "1000": 4,
+        "1500": 6,
+        "2000": 8
+      },
+      "language": "push the plate to the front of the stove"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 8,
+      "global_task_id": 28,
+      "ordinal": 16,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 6,
+      "steps": 74,
+      "checkpoint_successes": {
+        "250": 46,
+        "500": 48,
+        "1000": 45,
+        "1500": 44,
+        "2000": 45
+      },
+      "language": "put the bowl on the plate"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 8,
+      "global_task_id": 28,
+      "ordinal": 16,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 6,
+      "steps": 76,
+      "checkpoint_successes": {
+        "250": 46,
+        "500": 48,
+        "1000": 45,
+        "1500": 44,
+        "2000": 45
+      },
+      "language": "put the bowl on the plate"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 9,
+      "global_task_id": 29,
+      "ordinal": 17,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 500,
+      "init_state_id": 48,
+      "steps": 212,
+      "checkpoint_successes": {
+        "250": 0,
+        "500": 2,
+        "1000": 3,
+        "1500": 1,
+        "2000": 3
+      },
+      "language": "put the wine bottle on the rack"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 9,
+      "global_task_id": 29,
+      "ordinal": 17,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 47,
+      "steps": 154,
+      "checkpoint_successes": {
+        "250": 0,
+        "500": 2,
+        "1000": 3,
+        "1500": 1,
+        "2000": 3
+      },
+      "language": "put the wine bottle on the rack"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 4,
+      "global_task_id": 34,
+      "ordinal": 18,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 7,
+      "steps": 286,
+      "checkpoint_successes": {
+        "250": 3,
+        "500": 14,
+        "1000": 15,
+        "1500": 14,
+        "2000": 16
+      },
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 4,
+      "global_task_id": 34,
+      "ordinal": 18,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 32,
+      "steps": 242,
+      "checkpoint_successes": {
+        "250": 3,
+        "500": 14,
+        "1000": 15,
+        "1500": 14,
+        "2000": 16
+      },
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 5,
+      "global_task_id": 35,
+      "ordinal": 19,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 14,
+      "steps": 168,
+      "checkpoint_successes": {
+        "250": 30,
+        "500": 29,
+        "1000": 40,
+        "1500": 38,
+        "2000": 40
+      },
+      "language": "pick up the book and place it in the back compartment of the caddy"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 5,
+      "global_task_id": 35,
+      "ordinal": 19,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 14,
+      "steps": 160,
+      "checkpoint_successes": {
+        "250": 30,
+        "500": 29,
+        "1000": 40,
+        "1500": 38,
+        "2000": 40
+      },
+      "language": "pick up the book and place it in the back compartment of the caddy"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 6,
+      "global_task_id": 36,
+      "ordinal": 20,
+      "fold_role": "held_transform_only",
+      "member": "earliest",
+      "expert_step": 500,
+      "init_state_id": 9,
+      "steps": 270,
+      "checkpoint_successes": {
+        "250": 0,
+        "500": 3,
+        "1000": 6,
+        "1500": 10,
+        "2000": 3
+      },
+      "language": "put the white mug on the plate and put the chocolate pudding to the right of the plate"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 6,
+      "global_task_id": 36,
+      "ordinal": 20,
+      "fold_role": "held_transform_only",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 45,
+      "steps": 298,
+      "checkpoint_successes": {
+        "250": 0,
+        "500": 3,
+        "1000": 6,
+        "1500": 10,
+        "2000": 3
+      },
+      "language": "put the white mug on the plate and put the chocolate pudding to the right of the plate"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 7,
+      "global_task_id": 37,
+      "ordinal": 21,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 30,
+      "steps": 332,
+      "checkpoint_successes": {
+        "250": 7,
+        "500": 8,
+        "1000": 17,
+        "1500": 17,
+        "2000": 19
+      },
+      "language": "put both the alphabet soup and the cream cheese box in the basket"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 7,
+      "global_task_id": 37,
+      "ordinal": 21,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 17,
+      "steps": 272,
+      "checkpoint_successes": {
+        "250": 7,
+        "500": 8,
+        "1000": 17,
+        "1500": 17,
+        "2000": 19
+      },
+      "language": "put both the alphabet soup and the cream cheese box in the basket"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 8,
+      "global_task_id": 38,
+      "ordinal": 22,
+      "fold_role": "fit",
+      "member": "earliest",
+      "expert_step": 250,
+      "init_state_id": 24,
+      "steps": 472,
+      "checkpoint_successes": {
+        "250": 2,
+        "500": 2,
+        "1000": 3,
+        "1500": 1,
+        "2000": 5
+      },
+      "language": "put both moka pots on the stove"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 8,
+      "global_task_id": 38,
+      "ordinal": 22,
+      "fold_role": "fit",
+      "member": "latest",
+      "expert_step": 2000,
+      "init_state_id": 36,
+      "steps": 401,
+      "checkpoint_successes": {
+        "250": 2,
+        "500": 2,
+        "1000": 3,
+        "1500": 1,
+        "2000": 5
+      },
+      "language": "put both moka pots on the stove"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 9,
+      "global_task_id": 39,
+      "ordinal": 23,
+      "fold_role": "fit",
+      "member": "only",
+      "expert_step": 1000,
+      "init_state_id": 0,
+      "steps": 396,
+      "checkpoint_successes": {
+        "250": 0,
+        "500": 0,
+        "1000": 1,
+        "1500": 0,
+        "2000": 0
+      },
+      "language": "put the yellow and white mug in the microwave and close it"
+    }
+  ]
+}

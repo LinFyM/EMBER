@@ -42,6 +42,25 @@ SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA = (
 SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA = (
     "ember_successful_expert_occupancy_capture_v1"
 )
+SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA = (
+    "ember_successful_expert_equivalence_selection_v1"
+)
+SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA = (
+    "ember_successful_expert_equivalence_capture_v1"
+)
+
+
+def _task_expert_diagnostic_subset(
+    occupancy_capture: Mapping[str, Any] | None,
+) -> str | None:
+    if occupancy_capture is None:
+        return None
+    schema = occupancy_capture.get("schema_version")
+    if schema == SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA:
+        return "successful_on_policy_occupancy"
+    if schema == SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA:
+        return "successful_expert_equivalence_occupancy"
+    return None
 
 
 def shards_from_contract(contract: Mapping[str, Any]) -> tuple[Any, ...]:
@@ -158,6 +177,19 @@ def _occupancy_capture_tasks(
     rows = tuple(dict(row) for row in manifest.get("rows", ()))
     if manifest.get("schema_version") == SUCCESSFUL_EXPERT_OCCUPANCY_SELECTION_SCHEMA:
         return _successful_expert_occupancy_tasks(
+            args,
+            tasks,
+            output_dir=output_dir,
+            writer_kind=writer_kind,
+            selection_path=path,
+            manifest=manifest,
+            rows=rows,
+        )
+    if (
+        manifest.get("schema_version")
+        == SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA
+    ):
+        return _successful_expert_equivalence_tasks(
             args,
             tasks,
             output_dir=output_dir,
@@ -302,19 +334,120 @@ def _successful_expert_occupancy_tasks(
     }
 
 
+def _successful_expert_equivalence_tasks(
+    args: Any,
+    tasks: Sequence[Any],
+    *,
+    output_dir: Path,
+    writer_kind: str | None,
+    selection_path: Path,
+    manifest: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    expected_by_step = {250: 21, 500: 2, 1000: 1, 1500: 0, 2000: 23}
+    step = int(args.task_expert_step)
+    selected_rows = tuple(
+        row for row in rows if int(row.get("expert_step", -1)) == step
+    )
+    task_members: dict[tuple[str, int], set[str]] = {}
+    ordinals: dict[tuple[str, int], int] = {}
+    for row in rows:
+        key = (str(row.get("suite")), int(row.get("task_id", -1)))
+        task_members.setdefault(key, set()).add(str(row.get("member")))
+        ordinals[key] = int(row.get("ordinal", -1))
+    selected_keys = {
+        (
+            str(row.get("suite")),
+            int(row.get("task_id", -1)),
+            int(row.get("init_state_id", -1)),
+        )
+        for row in selected_rows
+    }
+    member_shapes = sorted(len(values) for values in task_members.values())
+    if (
+        args.mode != "formal"
+        or args.role != "development_train"
+        or writer_kind != "task_expert"
+        or len(rows) != 47
+        or len(task_members) != 24
+        or member_shapes != [1] + [2] * 23
+        or sorted(ordinals.values()) != list(range(24))
+        or sum(values == {"only"} for values in task_members.values()) != 1
+        or any(
+            values not in ({"only"}, {"earliest", "latest"})
+            for values in task_members.values()
+        )
+        or expected_by_step.get(step, 0) == 0
+        or len(selected_rows) != expected_by_step[step]
+        or len(selected_keys) != len(selected_rows)
+        or any(
+            row.get("fold_role")
+            != ("held_transform_only" if int(row["ordinal"]) % 5 == 0 else "fit")
+            for row in rows
+        )
+    ):
+        raise Pi05EvaluationError("successful-expert equivalence selection changed")
+
+    captured_tasks = []
+    covered = set()
+    for task in tasks:
+        matching = [
+            row
+            for row in selected_rows
+            if (str(row["suite"]), int(row["task_id"]))
+            == (str(task.suite), int(task.task_id))
+        ]
+        if matching and any(
+            row.get("language") != task.language for row in matching
+        ):
+            raise Pi05EvaluationError("successful-expert equivalence language changed")
+        state_ids = tuple(
+            state_id
+            for state_id in task.init_state_ids
+            if (str(task.suite), int(task.task_id), int(state_id)) in selected_keys
+        )
+        if state_ids:
+            captured_tasks.append(replace(task, init_state_ids=state_ids))
+            covered.update(
+                (str(task.suite), int(task.task_id), int(state_id))
+                for state_id in state_ids
+            )
+    if covered != selected_keys:
+        raise Pi05EvaluationError(
+            "successful-expert equivalence selection is outside development-train"
+        )
+    return tuple(captured_tasks), {
+        "schema_version": SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA,
+        "selection_path": str(selection_path),
+        "selection_bytes": selection_path.stat().st_size,
+        "selected_step": step,
+        "selected_rows": len(selected_rows),
+        "selected_tasks": len(captured_tasks),
+        "source_results": manifest.get("evaluation_results", {}).get(str(step)),
+        "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
+        "task_fold": manifest.get("selection_policy", {}).get("task_fold"),
+        "training_gradient_use": False,
+        "held_data_use": False,
+        "claim_boundary": manifest.get("claim_boundary"),
+    }
+
+
 def _stage_predicate_capture(
     args: Any, occupancy_capture: Mapping[str, Any] | None
 ) -> dict[str, Any] | None:
     if not bool(getattr(args, "capture_stage_predicates", False)):
         return None
-    successful_expert_panel = (
-        occupancy_capture is not None
-        and occupancy_capture.get("schema_version")
-        == SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA
-    )
+    diagnostic_subset = _task_expert_diagnostic_subset(occupancy_capture)
     if args.mode != "formal" or not (
         args.role == "validation"
-        or (args.role == "nonheld_meta_train" and successful_expert_panel)
+        or (
+            diagnostic_subset == "successful_on_policy_occupancy"
+            and args.role == "nonheld_meta_train"
+        )
+        or (
+            diagnostic_subset == "successful_expert_equivalence_occupancy"
+            and args.role == "development_train"
+        )
     ):
         raise Pi05EvaluationError(
             "stage-predicate capture requires a declared formal diagnostic panel"
@@ -382,24 +515,20 @@ def _prepared_payload(
         evaluation_mode=args.mode,
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    successful_expert_panel = (
-        occupancy_capture is not None
-        and occupancy_capture.get("schema_version")
-        == SUCCESSFUL_EXPERT_OCCUPANCY_CAPTURE_SCHEMA
-    )
+    diagnostic_subset = _task_expert_diagnostic_subset(occupancy_capture)
     adapter = _inspect_adapter(
         args,
         writer_kind=writer_kind,
         source_sft_requested=source_sft_requested,
         authorities=authorities,
         model=model,
-        tasks=installed_tasks if successful_expert_panel else tasks,
+        tasks=installed_tasks if diagnostic_subset is not None else tasks,
     )
-    if successful_expert_panel:
+    if diagnostic_subset is not None:
         adapter = select_task_expert_adapter_tasks(
             adapter,
             tasks,
-            diagnostic_subset="successful_on_policy_occupancy",
+            diagnostic_subset=diagnostic_subset,
         )
     contract = build_run_contract(
         authorities=authorities,

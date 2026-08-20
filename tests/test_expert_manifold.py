@@ -1,5 +1,6 @@
 from argparse import Namespace
 from pathlib import Path
+from typing import Any
 
 import pytest
 import torch
@@ -23,6 +24,7 @@ from ember.expert_manifold.evaluation import (
     _evaluation_task_rows,
     inspect_projected_task_expert_bank,
     inspect_task_expert_bank,
+    inspect_task_expert_evaluation,
     validate_task_expert_episode,
 )
 from ember.expert_manifold.meta_contract import meta_expert_rows
@@ -67,6 +69,62 @@ def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> N
     assert {int(row["task_id"]) for row in train_rows}.isdisjoint(
         int(row["task_id"]) for row in validation_rows
     )
+
+
+def test_projected_meta_subpanel_validates_the_complete_projection_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rows = tuple(
+        {
+            "suite": "libero_90",
+            "task_id": task_id,
+            "split_role": (
+                "meta_train" if task_id < 56 else "meta_validation_oracle"
+            ),
+        }
+        for task_id in range(71)
+    )
+    full_adapter = {
+        "tasks": list(rows),
+        "information_wall": {
+            "evaluation_role": "nonheld_meta",
+            "evaluated_task_count": 71,
+        },
+    }
+    inspected: list[str] = []
+
+    def inspect_bank(**kwargs: Any) -> dict[str, object]:
+        inspected.append(str(kwargs["evaluation_role"]))
+        assert len(tuple(kwargs["task_keys"])) == 71
+        return full_adapter
+
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.load_task_expert_config",
+        lambda _path: {"schema_version": "ember_pi05_nonheld_meta_expert_bank_v1"},
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation._expert_task_rows", lambda _config: rows
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.inspect_task_expert_bank", inspect_bank
+    )
+    monkeypatch.setattr(
+        "ember.expert_manifold.evaluation.inspect_projected_task_expert_bank",
+        lambda base, _manifest: {**base, "arm": "projected"},
+    )
+    result = inspect_task_expert_evaluation(
+        config_path=tmp_path / "meta.json",
+        bank_root=tmp_path / "bank",
+        step=1000,
+        source={},
+        task_keys=[("libero_90", task_id) for task_id in range(56)],
+        evaluation_role="nonheld_meta_train",
+        require_formal=True,
+        projection_manifest=tmp_path / "projection.json",
+    )
+    assert inspected == ["nonheld_meta"]
+    assert len(result["tasks"]) == 56
+    assert result["information_wall"]["evaluation_role"] == "nonheld_meta_train"
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

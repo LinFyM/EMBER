@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 import torch
-from lerobot.utils.constants import OBS_STATE
+from lerobot.utils.constants import OBS_LANGUAGE_TOKENS
 
 from ember.lora import LoRAContract, copy_task_lora_state_, functional_lora_call
 from ember.writer.functional import (
@@ -98,7 +98,7 @@ def pi05_denoised_action_response(
         raise FunctionalResponseError("functional response policy must be frozen")
     try:
         device = next(policy.parameters()).device
-        batch_size = int(batch[OBS_STATE].shape[0])
+        batch_size = int(batch[OBS_LANGUAGE_TOKENS].shape[0])
         chunk_size = int(policy.config.chunk_size)
         max_action_dim = int(policy.config.max_action_dim)
     except (AttributeError, KeyError, StopIteration) as error:

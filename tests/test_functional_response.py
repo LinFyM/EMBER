@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 
 import torch
-from lerobot.utils.constants import OBS_STATE
+from lerobot.utils.constants import OBS_LANGUAGE_TOKENS
 
 from ember.functional_adaptation.functional_response import (
     build_functional_response_target,
@@ -113,7 +113,7 @@ def test_denoised_action_response_uses_paired_noise_and_complete_chunk() -> None
     expert = _state(a, torch.ones(4, 2))
     batch = {
         "query": torch.ones(2, 50, 3),
-        OBS_STATE: torch.zeros(2, 8),
+        OBS_LANGUAGE_TOKENS: torch.zeros(2, 16, dtype=torch.long),
     }
 
     identity_response = pi05_denoised_action_response(

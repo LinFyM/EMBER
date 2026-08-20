@@ -50,6 +50,8 @@ def test_functional_adapter_profile_config_resolves_authorities() -> None:
     )
 
     assert config["decoder"]["production_code_width"] == 32
+    assert config["code_inference"]["feature_encoder"]["text_meta_lora_rank"] == 0
+    assert config["code_inference"]["feature_encoder"]["vl_meta_lora_rank"] == 0
     assert config["train24_mechanism"]["fit_task_count"] == 19
     formal = config["production_meta"]["flow_response"]["formal"]
     assert config["production_meta"]["formal_status"].startswith("frozen_56_15")

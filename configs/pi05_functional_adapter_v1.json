@@ -36,8 +36,8 @@
     "feature_encoder": {
       "image_width": 2048,
       "expert_width": 1024,
-      "text_meta_lora_rank": 2,
-      "vl_meta_lora_rank": 2,
+      "text_meta_lora_rank": 0,
+      "vl_meta_lora_rank": 0,
       "action_meta_lora_rank": 4,
       "patch_grounding_heads": 8,
       "max_frames_per_encoder_call": 16,

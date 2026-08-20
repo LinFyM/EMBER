@@ -71,6 +71,10 @@ def build_process_feature_encoder(
     if bridge is None:
         raise FunctionalCodeWriterError("PI0.5 policy lost its joint backbone")
     settings = config["code_inference"]["feature_encoder"]
+    if int(settings["text_meta_lora_rank"]) or int(settings["vl_meta_lora_rank"]):
+        raise FunctionalCodeWriterError(
+            "functional Writer must read frozen native text/VLM features"
+        )
     return Pi05LanguageAxialEncoder(
         paligemma_model=bridge.paligemma.model.language_model,
         expert_model=bridge.gemma_expert.model,

@@ -77,3 +77,39 @@ def test_code_authority_preserves_the_fixed_task_mapping(tmp_path: Path) -> None
 
     assert result.train_task_ids == (1, 2, 3)
     assert result.held_task_ids == (4, 5)
+
+
+def test_code_authority_accepts_explicit_role_disjoint_surface(
+    tmp_path: Path,
+) -> None:
+    codes = tmp_path / "fingerprint_codes.safetensors"
+    save_file(
+        {"train_codes": torch.randn(3, 2), "held_codes": torch.randn(2, 2)},
+        str(codes),
+    )
+    (tmp_path / "result.json").write_text(
+        json.dumps(
+            {
+                "schema_version": FINGERPRINT_CODE_SCHEMA,
+                "formal_authority": True,
+                "fit_surface": "train24_fit_only_pca_whitening",
+                "repository": {"dirty_paths": []},
+                "train_global_task_ids": [1, 2, 3],
+                "held_global_task_ids": [4, 5],
+                "files": {"fingerprint_codes.safetensors": codes.stat().st_size},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = load_functional_fingerprint_code_targets(
+        tmp_path,
+        expected_train_task_ids=(1, 2, 3),
+        expected_held_task_ids=(4, 5),
+        code_width=2,
+        device="cpu",
+        expected_fit_surface="train24_fit_only_pca_whitening",
+    )
+
+    assert result.train_codes.shape == (3, 2)
+    assert result.held_codes.shape == (2, 2)

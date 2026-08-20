@@ -59,6 +59,12 @@ source/meta重叠pool不能验证decoder泛化，触发role-disjoint meta-task�
 所以该触发条件已经成立。后继必须把source-skill、adaptation-meta和architecture-validation task identity分开，并优先复用
 source从未训练过的target train24及现有多checkpoint experts；不会仅因数据角色变化重训已有71-task bank。
 
+第一步先做不增加训练成本的最小role-disjoint诊断，而不是立即重训source：当前frozen source从未读取target train24，故固定
+`ordinal mod 5`的19/5 fold把19个target train tasks作为adaptation fit、5个作为leave-task-out diagnosis。统一anchor只来自
+19个fit tasks，PCA/whitening也只在这19个task拟合；code宽度受独立task数约束为16，held5只经过同一transform。这个小面板
+仍不足以支持通用compiler claim，但能先隔离“source/meta identity重叠”这一混杂。只有它与validation8 ceiling共同给出正向
+证据，才启动fresh source-skill/adaptation-meta/architecture-validation大规模分割与兼容expert重建。
+
 ## 4. Policy-functional task targets
 
 ### 4.1 Task experts
@@ -66,6 +72,9 @@ source从未训练过的target train24及现有多checkpoint experts；不会仅
 - 复用现有task-local rank16 LoRA训练、checkpoint和闭环评测基础设施；
 - 为71个non-held meta tasks训练统一schedule的task-local experts，不按task挑checkpoint；
 - 每个task至少保留一个全局统一step的successful adapter；若多个统一step都成功，可作为同一功能等价类样本；
+- train24已有step250/500/1000/1500/2000的同轨迹checkpoints与严格50-state closed loop；首个set-valued诊断以固定
+  `>=25/50`为成功集合，未过阈值task只保留其最高统一step作ceiling定位。fit-task集合可形成监督prototype，held-task outcomes
+  只定义无梯度诊断集合，绝不参与decoder或checkpoint选择；这些checkpoint不是独立seed，不能单独证明广泛非唯一性；
 - expert只服务train/meta decoder与诊断，不进入target held部署；
 - validation8只允许训练一次彼此独立、step2000预注册的task-local诊断experts，不更新共享模型、不选checkpoint；Test不训练
   expert。两者都不得成为部署route，Test actions/reward默认保持sealed。

@@ -76,6 +76,7 @@ def inspect_train24_expert_bank(
     source_run: Path,
     checkpoint: Path,
     bank_root: Path,
+    expert_step: int | None = None,
 ) -> dict[str, Any]:
     """Resolve the sealed bank once without creating a second bank reader."""
 
@@ -97,7 +98,11 @@ def inspect_train24_expert_bank(
     return inspect_task_expert_bank(
         config_path=authority_path(config, "train24_experts", repo_root),
         bank_root=bank_root,
-        step=int(config["train24_mechanism"]["expert_step"]),
+        step=(
+            int(config["train24_mechanism"]["expert_step"])
+            if expert_step is None
+            else int(expert_step)
+        ),
         source=source,
         task_keys=task_keys,
         evaluation_role="development_train",

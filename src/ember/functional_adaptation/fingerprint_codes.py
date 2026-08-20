@@ -113,6 +113,7 @@ def load_functional_fingerprint_code_targets(
     expected_held_task_ids: Sequence[int],
     code_width: int,
     device: torch.device | str,
+    expected_fit_surface: str = "meta_train_only_pca_whitening",
 ) -> FunctionalFingerprintCodeTargets:
     """Load one clean train-only-whitened code authority for a fixed task fold."""
 
@@ -126,7 +127,7 @@ def load_functional_fingerprint_code_targets(
         result.get("schema_version") != FINGERPRINT_CODE_SCHEMA
         or result.get("formal_authority") is not True
         or result.get("repository", {}).get("dirty_paths") != []
-        or result.get("fit_surface") != "meta_train_only_pca_whitening"
+        or result.get("fit_surface") != expected_fit_surface
         or train_ids != tuple(int(value) for value in expected_train_task_ids)
         or held_ids != tuple(int(value) for value in expected_held_task_ids)
         or not codes_path.is_file()

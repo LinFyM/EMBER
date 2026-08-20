@@ -48,7 +48,7 @@
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
-| A | 功能锚定的固定adapter decoder | 统一坐标通过；flow-only644、shared-zero640、exact-BA638。无正则仿射full-BA上界held cosine也仅.365。当前实现组合失败，回到多成功adapter功能等价类与role-disjoint meta数据后再建decoder | implemented-fail |
+| A | 功能锚定的固定adapter decoder | 重叠71-task组合已失败：flow-only644、shared-zero640、exact-BA638，仿射held cosine仅.365。现已接通target train24 19/5 role-disjoint fingerprint与step250--2000多成功adapter set-valued诊断；先裁决数据角色/单标签，再决定是否重建decoder | active |
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | `frame x 50 x hidden`进入phase-specific读取，不再直接mean；等待有/无alignment对照 | active |

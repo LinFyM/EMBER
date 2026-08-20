@@ -183,7 +183,8 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 2. 运行一次预注册step2000 validation8 task-local rank16 oracle：只训练八套彼此独立的诊断LoRA，不更新Writer/decoder，
    不选checkpoint且不读取Test，用于裁决target ceiling、Long/source缺口和`>150`目标是否可实现；
 3. 复用现有71-task与train24多checkpoint专家，建立source-skill、adaptation-meta、architecture-validation真正分角色的
-   manifold；优先估计同task多成功adapter的功能等价类，不把任一expert BA当唯一标签；
+   manifold；target train24的19/5 role-disjoint fingerprint与多成功checkpoint set-valued诊断运行面已经实现，待当前
+   validation8 oracle阶段释放GPU后formal收集与裁决；不把任一expert BA当唯一标签；
 4. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints和全部专家bank均
    保留复用，不重复昂贵训练；
 5. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；只有完整核心路线

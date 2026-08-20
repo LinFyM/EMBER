@@ -71,6 +71,11 @@
   排除“只需更小线性decoder或canonical factor”的窄解释。当前最早失效接口上移到单expert功能标签与source/meta任务角色。
 - validation8 sealed task-local oracle合同已实现：八套独立rank16 LoRA统一训练到预注册step2000，只在step1000 exact-resume，
   不更新共享Writer/decoder、不选checkpoint、不读取Test。它只裁决target ceiling与source primitive缺口，不形成deployment route。
+- source/meta角色分离的最小诊断运行面已接通：复用source从未训练过的target train24与现有step250/500/1000/1500/2000
+  experts，在固定19/5 task fold上只用19个fit-task anchors建立16维train-only-whitened fingerprint，5个held tasks只做同一
+  transform；随后同时比较step2000单标签与多个成功checkpoint构成的set-valued effective-BA prototype。该分析不重训expert、
+  不物化或部署adapter、不读取validation/Test，先裁决role overlap与单expert标签是否是当前最早瓶颈，再决定是否值得fresh
+  source/meta大重训。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

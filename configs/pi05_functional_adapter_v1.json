@@ -192,6 +192,19 @@
     "split_rule": "task_ordinal_mod_fold_count",
     "fit_task_count": 19,
     "held_task_count": 5,
+    "functional_fingerprint": {
+      "anchor_task_count": 8,
+      "anchor_demo_indices": [
+        40,
+        41
+      ],
+      "panels_per_anchor": 1,
+      "anchor_batch_size": 2,
+      "policy_seed": 20260821,
+      "fit_role": "target_train_fit_only",
+      "held_role": "transform_only",
+      "scientific_role": "source_meta_role_disjoint_diagnostic"
+    },
     "objective": {
       "effective_update_probe_count": 8,
       "effective_update_probe_seed": 20260819,

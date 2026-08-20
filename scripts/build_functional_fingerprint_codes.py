@@ -21,8 +21,10 @@ from ember.expert_manifold.contract import (
 )
 from ember.functional_adaptation.decoder_training import (
     authority_path,
+    decoder_task_split,
     expert_records,
     inspect_nonheld_meta_expert_bank,
+    inspect_train24_expert_bank,
     load_expert_states,
     load_functional_adapter_config,
     meta_decoder_task_split,
@@ -55,6 +57,11 @@ def _args() -> argparse.Namespace:
         "--config",
         type=Path,
         default=REPO_ROOT / "configs/pi05_functional_adapter_v1.json",
+    )
+    parser.add_argument(
+        "--surface",
+        choices=("train24", "nonheld_meta"),
+        default="nonheld_meta",
     )
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -130,23 +137,44 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("formal functional fingerprints require clean pushed code")
     started = time.monotonic()
     config = load_functional_adapter_config(args.config, REPO_ROOT)
-    settings = config["production_meta"]["functional_fingerprint"]
-    bank = inspect_nonheld_meta_expert_bank(
-        config,
-        REPO_ROOT,
-        source_run=args.source_run,
-        checkpoint=args.checkpoint,
-        bank_root=args.expert_bank_root,
-    )
-    records = expert_records(bank)
-    split = meta_decoder_task_split(records)
+    if args.surface == "nonheld_meta":
+        mechanism = config["production_meta"]
+        bank = inspect_nonheld_meta_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
+        split = meta_decoder_task_split(expert_records(bank))
+        expert_config_name = "meta_experts"
+        code_width = int(config["decoder"]["production_code_width"])
+        fit_surface = "meta_train_only_pca_whitening"
+    else:
+        mechanism = config["train24_mechanism"]
+        bank = inspect_train24_expert_bank(
+            config,
+            REPO_ROOT,
+            source_run=args.source_run,
+            checkpoint=args.checkpoint,
+            bank_root=args.expert_bank_root,
+        )
+        split = decoder_task_split(
+            expert_records(bank),
+            fold_count=int(mechanism["fold_count"]),
+            held_out_fold=int(mechanism["held_out_fold"]),
+        )
+        expert_config_name = "train24_experts"
+        code_width = int(config["decoder"]["train24_smoke_code_width"])
+        fit_surface = "train24_fit_only_pca_whitening"
+    settings = mechanism["functional_fingerprint"]
     train_ids = tuple(row.global_task_id for row in split.fit)
     held_ids = tuple(row.global_task_id for row in split.held)
     anchor_ids = uniformly_spaced_task_ids(
         train_ids, int(settings["anchor_task_count"])
     )
     expert_config = load_task_expert_config(
-        authority_path(config, "meta_experts", REPO_ROOT)
+        authority_path(config, expert_config_name, REPO_ROOT)
     )
     all_tasks = load_train_tasks(expert_config, args.data_root)
     dataset = build_dataset(expert_config, all_tasks)
@@ -218,7 +246,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     code_space = whiten_functional_fingerprints(
         train_fingerprints,
         held_fingerprints,
-        code_width=int(config["decoder"]["production_code_width"]),
+        code_width=code_width,
     )
     args.output_dir.mkdir(parents=True)
     codes_path = args.output_dir / "fingerprint_codes.safetensors"
@@ -237,7 +265,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     result = {
         "schema_version": FINGERPRINT_CODE_SCHEMA,
         "formal_authority": True,
-        "fit_surface": "meta_train_only_pca_whitening",
+        "surface": args.surface,
+        "fit_surface": fit_surface,
         "repository": {
             "branch": repository["branch"],
             "commit": repository["commit"],
@@ -267,12 +296,33 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "train_code_stats": _code_stats(code_space.train_codes),
         "held_code_stats": _code_stats(code_space.held_codes),
         "information_wall": {
-            "pca_fit_roles": ["meta_train"],
+            "pca_fit_roles": [
+                "meta_train" if args.surface == "nonheld_meta" else "target_train"
+            ],
             "held_fingerprint_transform_only": True,
-            "unified_anchor_role": "meta_train",
+            "unified_anchor_role": (
+                "meta_train" if args.surface == "nonheld_meta" else "target_train_fit"
+            ),
+            "target_train_action_state_used": args.surface == "train24",
+            "target_train_use": (
+                None
+                if args.surface == "nonheld_meta"
+                else "fixed_fit-task_fingerprint_anchors"
+            ),
             "held_task_action_state_reward_reads": 0,
-            "target40_action_state_reward_reads": 0,
+            "target_validation_action_state_reward_reads": 0,
+            "target_test_action_state_reward_reads": 0,
             "deployment_task_id_route": False,
+        },
+        "role_separation": {
+            "source_skill_and_adaptation_meta_task_identities_disjoint": (
+                args.surface == "train24"
+            ),
+            "interpretation": (
+                "role_disjoint_development_diagnostic"
+                if args.surface == "train24"
+                else "source_meta_overlap_control"
+            ),
         },
         "files": {"fingerprint_codes.safetensors": codes_path.stat().st_size},
         "elapsed_seconds": time.monotonic() - started,

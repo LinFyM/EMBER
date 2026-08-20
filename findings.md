@@ -559,3 +559,21 @@ shared carrier只保留为诊断，不作为架构fallback。
 `BA`在meta-train/held的mean relative-L2仍为`1.1387/1.1292`、cosine仅`.0642/.0449`。连训练tasks都没有恢复expert
 support，说明下降主要来自固定probe方向过拟合；未浪费750-row闭环。下一实现使用低秩Gram恒等式计算exact full-BA
 Frobenius loss，不物化dense `BA`，不改变codes、Decoder拓扑、task schedule或下游裁决。
+
+## 27. Exact-BA改善参数几何但闭环更差，当前Decoder objective family关闭
+
+低秩Gram exact full-BA Decoder在同一56/15 fingerprint、拓扑与1120-step schedule上，把train/held exact loss从约1降到
+`.71068/.92128`；materialized BA的mean cosine也从fixed-probe的`.064/.045`提高到`.536/.303`。但15-task×50严格配对
+closed loop只有`638/750`：相对source `646`为608 retained、30 gained、38 lost、净`-8`；相对direct `684`净`-46`、
+`p=1.96e-5`；相对shared-zero `640`也净`-2`。task73仍只有`6/50`。step280/560/840/1120的held exact loss为
+`.92575/.92002/.91853/.92128`，说明held已早期平台化，不是训练不足。
+
+作为不训练任何Decoder的上界定位，以32维fingerprint做full effective-BA Hilbert空间无正则仿射最小二乘，train可达
+relative-L2`.5244`、cosine`.8439`，held却只有`.9797/.3648`；design condition number仅`1.009`，不是数值病态。
+因此当前失败不是再换一个factor gauge、probe数或训练时长即可解决：单个task expert的BA不是唯一功能标签，32维code也
+没有在source/meta重叠任务上识别held expert update。flow/probe/exact/affine这组组合整体关闭，不继续objective/LR/seed小扫。
+
+回看专家原始意见后，下一最早接口是数据与功能等价类：当前71个meta identity全部参加过source训练，source已达646，
+direct只到684，而各Decoder几乎由shared output解释；同时每task仅一个expert标签，无法估计成功adapter等价类。后继先用
+预注册step2000的sealed validation8 task-local oracle裁决target rank16 ceiling，再以source未训练过的train24和现有多
+checkpoint successful adapters重建role-disjoint manifold。该oracle不更新共享模型、不选择checkpoint、不读取Test。

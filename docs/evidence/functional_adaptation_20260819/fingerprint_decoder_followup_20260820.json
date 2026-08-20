@@ -95,10 +95,113 @@
     "closed_loop_launched": false,
     "decision": "fixed_probe_overfit_full_effective_update_support_not_recovered"
   },
+  "exact_effective_decoder": {
+    "artifact": "runs/analysis/pi05_exact_effective_fingerprint_decoder_nonheld_meta_fold0_formal_423a9b2_gpu01p6_20260820",
+    "projection": "runs/analysis/pi05_exact_effective_fingerprint_decoder_nonheld_meta_fold0_projection_423a9b2_20260820",
+    "held_evaluation": "runs/outputs/pi05_nonheld_meta_validation_exact_effective_decoder_fold0_15x50_formal_423a9b2_gpu02p123467_20260820",
+    "exact_fit_loss": [
+      1.0000005,
+      0.7106795
+    ],
+    "exact_held_loss": [
+      1.0000005,
+      0.9212828
+    ],
+    "flow_fit_loss": [
+      1.040443,
+      0.478179
+    ],
+    "flow_held_loss": [
+      1.035567,
+      0.716572
+    ],
+    "full_effective_ba": {
+      "meta_train_mean_relative_l2": 0.842298,
+      "meta_train_mean_cosine": 0.536473,
+      "meta_train_mean_candidate_over_expert_norm": 0.506669,
+      "held_mean_relative_l2": 0.959103,
+      "held_mean_cosine": 0.303203,
+      "held_mean_candidate_over_expert_norm": 0.424849
+    },
+    "successes": 638,
+    "episodes": 750,
+    "per_task_successes": {
+      "0": 50,
+      "5": 46,
+      "13": 47,
+      "18": 48,
+      "24": 49,
+      "33": 44,
+      "38": 38,
+      "43": 47,
+      "58": 43,
+      "63": 40,
+      "68": 49,
+      "73": 6,
+      "79": 44,
+      "84": 48,
+      "89": 39
+    },
+    "source_to_candidate": {
+      "retained": 608,
+      "gained": 30,
+      "lost": 38,
+      "both_failed": 74,
+      "net": -8,
+      "churn": 68,
+      "mcnemar_exact_two_sided_p": 0.396125
+    },
+    "direct_to_candidate": {
+      "retained": 604,
+      "gained": 34,
+      "lost": 80,
+      "both_failed": 32,
+      "net": -46,
+      "churn": 114,
+      "mcnemar_exact_two_sided_p": 1.9596e-05
+    },
+    "shared_zero_to_candidate": {
+      "retained": 607,
+      "gained": 31,
+      "lost": 33,
+      "both_failed": 79,
+      "net": -2,
+      "churn": 64,
+      "mcnemar_exact_two_sided_p": 0.900653
+    },
+    "held_exact_checkpoint_curve": {
+      "280": 0.925753,
+      "560": 0.92002,
+      "840": 0.918527,
+      "1120": 0.921282
+    },
+    "decision": "exact_ba_improves_geometry_but_task_conditioned_closed_loop_is_worse_than_shared_zero"
+  },
+  "affine_effective_ba_diagnostic": {
+    "artifact": "runs/analysis/pi05_affine_effective_ba_diagnostic_nonheld_meta_fold0_423a9b2_gpu01p6_20260820",
+    "method": "unregularized affine minimum-norm prediction in the full effective-BA Hilbert space",
+    "rank16_materialized": false,
+    "deployment_result": false,
+    "design_rank": 33,
+    "design_condition_number": 1.009051,
+    "meta_train": {
+      "mean_relative_l2": 0.524366,
+      "mean_cosine": 0.843936,
+      "mean_norm_ratio": 0.849032
+    },
+    "held": {
+      "mean_relative_l2": 0.979691,
+      "mean_cosine": 0.364782,
+      "mean_norm_ratio": 0.669763,
+      "min_cosine": 0.163433,
+      "max_cosine": 0.506353
+    },
+    "decision": "fixed_fingerprint_code_does_not_linearly_identify_held_expert_effective_updates"
+  },
   "comparators": {
     "source_successes": 646,
     "direct_expert_successes": 684,
     "old_free_code_projected_successes": 659
   },
-  "next_causal_change": "replace_fixed_probe_sampling_with_exact_low_rank_gram_effective_ba_loss"
+  "next_causal_change": "stop_decoder_objective_variants_and_rebuild_the_manifold_data_roles_after_the_sealed_validation8_rank16_oracle"
 }

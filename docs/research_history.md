@@ -546,6 +546,18 @@ churn56、`p=.68888`。因此`644`几乎全由Decoder共享输出解释，task c
 probe过拟合，连train expert support都未恢复，故没有启动closed loop。后继改用exact低秩Gram Frobenius loss，其他合同
 不变。remote-safe汇总见`docs/evidence/functional_adaptation_20260819/fingerprint_decoder_followup_20260820.json`。
 
+### 3.23 Exact-BA Decoder与仿射上界共同关闭单expert objective变体
+
+从clean pushed `423a9b2`完成1120-step exact低秩Gram训练：train/held exact loss为约`1→.71068/.92128`，完整BA的
+relative-L2/cosine/norm ratio为train `.8423/.5365/.5067`、held `.9591/.3032/.4248`。held15×50闭环为`638/750`，
+低于source646、direct684、旧projected659、flow-only644和shared-zero640；相对direct净`-46`且`p=1.96e-5`。
+held exact loss在step280已为`.92575`，之后到1120仍约`.92128`，故不续训或扫超参。
+
+无训练仿射诊断直接在full effective-BA Hilbert空间用32维fingerprint预测expert update：train为relative-L2/cosine
+`.5244/.8439`，held仅`.9797/.3648`，且设计矩阵condition number`1.009`。这排除了“只是当前12M Decoder非线性或
+factor gauge不合适”的窄解释。当前flow/probe/exact objective family按formal证据关闭，下一阶段转向专家原始提出的
+多成功adapter功能等价类、source/meta角色分离和sealed target ceiling诊断。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

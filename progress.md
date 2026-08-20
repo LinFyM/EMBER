@@ -11,8 +11,8 @@
   `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
   `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
   non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
-  七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only Decoder在新Gate 2闭环失败；
-  当前固定同一codes改验effective-update objective，未进入outer RL。
+  七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
+  Decoder均未过Gate 2；当前停止objective变体，转入sealed validation8 rank16 oracle与role-disjoint manifold重构，未进入outer RL。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -57,15 +57,20 @@
 - 固定上述codes的flow-only Decoder将fit/held flow loss由`1.040443→.445721`和`1.035567→.664218`，但同一750 rows
   closed loop仅`644/750`，低于source `646`、direct `684`和旧projected `659`。相对source净`-2`，相对direct净`-40`
   且`p=3.67e-5`；task73仍为`4/50`。因此没有启动56-task复评或Writer。
-- 当前最早失效接口是Decoder objective：新生成effective `BA`相对direct的relative-L2 `2.8576`、cosine `.0254`、
-  norm ratio `2.7004`，说明有限flow queries允许巨大近正交off-manifold解。短期worktree正在把唯一Decoder训练锚点改为
-  gauge-invariant effective-update probes；flow panel只作诊断，合并后仍从clean pushed detached commit正式训练。
+- flow-only生成effective `BA`相对direct的relative-L2 `2.8576`、cosine `.0254`、norm ratio `2.7004`，说明有限flow
+  queries允许巨大近正交off-manifold解；该objective已关闭。
 - shared-zero carrier formal已完成`640/750`，相对source净`-6`；shared-zero→task fingerprint只有30 gained、26 lost、
   净`+4`、`p=.68888`。上一轮`644`几乎由共享输出解释，task-specific code无可靠增量；该carrier只作诊断，不作为fallback。
-- 固定8-probe effective Decoder从clean pushed `c3e5bc1`完成1120 steps，7分46秒、峰值18.92 GB；fit/held probe loss
-  为`1→.610951/.911115`，但完整effective `BA`的train/held relative-L2仍为`1.1387/1.1292`、cosine仅
-  `.0642/.0449`。因连train support都未恢复，没有启动闭环。当前唯一改动是用低秩Gram计算exact full-BA loss；同一
-  fingerprint、专家、拓扑和schedule全部复用。
+- 固定8-probe effective Decoder从clean pushed `c3e5bc1`完成1120 steps，7分46秒、峰值18.92 GB；完整effective `BA`
+  的train/held relative-L2为`1.1387/1.1292`、cosine仅`.0642/.0449`，按固定方向过拟合关闭。
+- exact低秩Gram Decoder从clean pushed `423a9b2`完成1120 steps，324秒、峰值18.92 GB；train/held BA geometry改善到
+  relative-L2 `.8423/.9591`、cosine`.5365/.3032`，但同一held750 rows只有`638`，低于source646、direct684、旧
+  projected659、flow-only644与shared-zero640。相对source净`-8`、相对direct净`-46`且`p=1.96e-5`；held loss在
+  step280--1120约`.926→.921`平台化，不续训。
+- 无训练仿射full-BA诊断的train/held relative-L2为`.5244/.9797`、cosine`.8439/.3648`，设计condition number`1.009`；
+  排除“只需更小线性decoder或canonical factor”的窄解释。当前最早失效接口上移到单expert功能标签与source/meta任务角色。
+- validation8 sealed task-local oracle合同已实现：八套独立rank16 LoRA统一训练到预注册step2000，只在step1000 exact-resume，
+  不更新共享Writer/decoder、不选checkpoint、不读取Test。它只裁决target ceiling与source primitive缺口，不形成deployment route。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

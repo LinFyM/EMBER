@@ -28,6 +28,10 @@ from ember.expert_manifold.evaluation import (
     validate_task_expert_episode,
 )
 from ember.expert_manifold.meta_contract import meta_expert_rows
+from ember.expert_manifold.diagnostic_contract import (
+    validation_expert_rows,
+    validation_worker_assignments,
+)
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
     read_json,
@@ -39,6 +43,7 @@ from ember.expert_manifold.sampler import TaskLocalEpochSampler
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
 META_CONFIG = REPO_ROOT / "configs/pi05_nonheld_meta_expert_bank_v1.json"
+VALIDATION_CONFIG = REPO_ROOT / "configs/pi05_validation_expert_diagnostic_v1.json"
 
 
 def test_task_expert_config_contains_only_the_retained_train24_authority() -> None:
@@ -69,6 +74,28 @@ def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> N
     assert {int(row["task_id"]) for row in train_rows}.isdisjoint(
         int(row["task_id"]) for row in validation_rows
     )
+
+
+def test_validation_expert_diagnostic_is_sealed_away_from_shared_training() -> None:
+    config = load_task_expert_config(VALIDATION_CONFIG)
+    rows = validation_expert_rows(config)
+    selected = _evaluation_task_rows(
+        rows,
+        is_meta=False,
+        evaluation_role="validation",
+        is_validation_diagnostic=True,
+    )
+    assert len(selected) == 8
+    assert {row["split_role"] for row in selected} == {"validation_diagnostic"}
+    assert config["information_wall"]["writer_or_decoder_gradient_use"] is False
+    assert config["task_experts"]["formal_run"]["diagnostic_evaluation_step"] == 2000
+    assert set(
+        value
+        for assignment in validation_worker_assignments(
+            config["task_experts"]["formal_run"]
+        )
+        for value in assignment
+    ) == set(range(8))
 
 
 def test_projected_meta_subpanel_validates_the_complete_projection_once(

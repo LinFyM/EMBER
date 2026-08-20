@@ -20,6 +20,11 @@ from ember.expert_manifold.meta_contract import (
     meta_expert_rows,
     meta_worker_assignments,
 )
+from ember.expert_manifold.diagnostic_contract import (
+    VALIDATION_EXPERT_CONFIG_SCHEMA,
+    validation_expert_rows,
+    validation_worker_assignments,
+)
 from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
@@ -108,6 +113,8 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
 def _expert_task_rows(config: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
         return meta_expert_rows(config)
+    if config.get("schema_version") == VALIDATION_EXPERT_CONFIG_SCHEMA:
+        return validation_expert_rows(config)
     manifest = read_json(authority_path(config, "target_data_manifest"))
     rows = [
         dict(row)
@@ -138,7 +145,14 @@ def _evaluation_task_rows(
     *,
     is_meta: bool,
     evaluation_role: str,
+    is_validation_diagnostic: bool = False,
 ) -> tuple[Mapping[str, Any], ...]:
+    if is_validation_diagnostic:
+        if evaluation_role != "validation" or len(expected_rows) != 8:
+            raise ExpertManifoldError(
+                "validation-expert evaluation role differs from its sealed panel"
+            )
+        return tuple(expected_rows)
     if not is_meta:
         if evaluation_role != "development_train":
             raise ExpertManifoldError(
@@ -186,6 +200,9 @@ def inspect_task_expert_bank(
     config = load_task_expert_config(config_path)
     formal = config["task_experts"]["formal_run"]
     is_meta = config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA
+    is_validation_diagnostic = (
+        config.get("schema_version") == VALIDATION_EXPERT_CONFIG_SCHEMA
+    )
     if require_formal and formal.get("status") != "sealed":
         raise ExpertManifoldError(
             "formal task-expert evaluation requires a sealed profile"
@@ -199,6 +216,7 @@ def inspect_task_expert_bank(
         expected_rows,
         is_meta=is_meta,
         evaluation_role=evaluation_role,
+        is_validation_diagnostic=is_validation_diagnostic,
     )
     expected_by_key = {
         (str(row["suite"]), int(row["task_id"])): (int(row["ordinal"]), row)
@@ -227,6 +245,8 @@ def inspect_task_expert_bank(
     allowed_assignments = (
         set(meta_worker_assignments(formal)) if is_meta else None
     )
+    if is_validation_diagnostic:
+        allowed_assignments = set(validation_worker_assignments(formal))
     observed_assignments: set[tuple[int, ...]] = set()
 
     for worker in workers:
@@ -337,7 +357,7 @@ def inspect_task_expert_bank(
                 "manifest_bytes": manifest_path.stat().st_size,
                 "adapter_bytes": (checkpoint / "adapter.safetensors").stat().st_size,
             }
-            if is_meta:
+            if is_meta or is_validation_diagnostic:
                 task_record["split_role"] = str(row["split_role"])
             task_records[key] = task_record
 
@@ -357,6 +377,8 @@ def inspect_task_expert_bank(
         "arm": (
             f"nonheld_meta_task_expert_step_{step}"
             if is_meta
+            else f"validation_task_expert_diagnostic_step_{step}"
+            if is_validation_diagnostic
             else f"task_expert_step_{step}"
         ),
         "config": {
@@ -393,6 +415,17 @@ def inspect_task_expert_bank(
                 "deployment_uses_privileged_experts": False,
             }
             if is_meta
+            else {
+                "evaluation_role": "validation",
+                "bank_role": "sealed_validation_diagnostic",
+                "validation_task_local_oracles": 8,
+                "shared_training_gradient_use": False,
+                "writer_or_decoder_gradient_use": False,
+                "checkpoint_selection_use": False,
+                "test_action_reads": 0,
+                "deployment_uses_privileged_experts": False,
+            }
+            if is_validation_diagnostic
             else {
                 "evaluation_role": "development_train",
                 "validation_experts": 0,

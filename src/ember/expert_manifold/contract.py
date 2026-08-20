@@ -20,6 +20,12 @@ from ember.expert_manifold.meta_contract import (
     meta_expert_config_is_valid,
     meta_worker_assignments,
 )
+from ember.expert_manifold.diagnostic_contract import (
+    VALIDATION_EXPERT_CONFIG_SCHEMA,
+    load_validation_expert_specs,
+    validation_expert_config_is_valid,
+    validation_worker_assignments,
+)
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
@@ -115,6 +121,8 @@ def load_task_expert_config(path: Path) -> dict[str, Any]:
         if schema == CONFIG_SCHEMA
         else meta_expert_config_is_valid(config)
         if schema == META_EXPERT_CONFIG_SCHEMA
+        else validation_expert_config_is_valid(config)
+        if schema == VALIDATION_EXPERT_CONFIG_SCHEMA
         else False
     )
     if not valid:
@@ -135,6 +143,8 @@ def load_train_tasks(
 ) -> tuple[ExpertTask, ...]:
     if config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA:
         return _load_meta_tasks(config, data_root)
+    if config.get("schema_version") == VALIDATION_EXPERT_CONFIG_SCHEMA:
+        return _load_validation_tasks(config, data_root)
     manifest = read_json(authority_path(config, "target_data_manifest"))
     selected = [
         row for row in manifest.get("tasks", []) if row.get("split_role") == "train"
@@ -170,6 +180,33 @@ def load_train_tasks(
             )
         )
     return tuple(tasks)
+
+
+def _load_validation_tasks(
+    config: Mapping[str, Any], data_root: Path
+) -> tuple[ExpertTask, ...]:
+    try:
+        specs = load_validation_expert_specs(config, data_root)
+    except ValueError as error:
+        raise ExpertManifoldError(str(error)) from error
+    return tuple(
+        ExpertTask(
+            ordinal=spec.ordinal,
+            global_task_id=spec.global_task_id,
+            suite=spec.suite,
+            task_id=spec.task_id,
+            split_role="validation_diagnostic",
+            language=spec.language,
+            authority=WriterTaskAuthority(
+                task_id=spec.global_task_id,
+                language=spec.language,
+                path=spec.path,
+                expected_bytes=spec.expected_bytes,
+                expected_sha256=None,
+            ),
+        )
+        for spec in specs
+    )
 
 
 def _load_meta_tasks(
@@ -210,6 +247,12 @@ def validate_formal_task_assignment(
         if tuple(indices) not in meta_worker_assignments(formal):
             raise ExpertManifoldError(
                 "formal meta-expert worker differs from the balanced partition"
+            )
+        return
+    if config.get("schema_version") == VALIDATION_EXPERT_CONFIG_SCHEMA:
+        if tuple(indices) not in validation_worker_assignments(formal):
+            raise ExpertManifoldError(
+                "formal validation-expert worker differs from the sealed partition"
             )
         return
     if len(indices) != int(formal["tasks_per_worker"]):

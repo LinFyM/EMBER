@@ -1,6 +1,6 @@
 # Fixed Functional Adaptation Successor
 
-状态：2026-08-20 active design；macro10推断失败后已修订functional code构造。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
+状态：2026-08-20 active design；统一fingerprint上的flow/probe/exact Decoder均失败后，当前回到功能等价类与role-disjoint数据角色。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
 Expert-Manifold细节只从`docs/research_history.md`和对应sealed artifacts解释，不恢复为并行主线。
 
 ## 1. 核心假设
@@ -49,12 +49,15 @@ Writer只在rollout前运行一次。部署不读取task ID、filename、teacher
 - target validation8不产生梯度，并明确是长期复用的development panel；
 - target Test8默认在方法冻结后才使用，sealed诊断不回流checkpoint选择。
 
-source policy已在同一71-task clean corpus上建立primitive prior。meta folds衡量的是从已有prior组合/选择task adaptation，
-不是要求source从未见过所有primitive。若后续coverage审计证明Long所需primitive缺失，才强化source并重建全部matched基线。
+source policy已在同一71-task clean corpus上建立primitive prior。这个重叠pool可作复用和定位面，但不能单独证明对新task的
+adaptation meta-generalization。若后续coverage审计证明Long所需primitive缺失，才强化source并重建全部matched基线。
 首个fold0 source formal为`646/750`，其中14/15 tasks达到80%--100%，因此该重叠本身也是需要控制的欠识别源：后续decoder
 range不能以接近direct expert的aggregate或高absolute单独通过，必须在同一750行上分解source→direct与source→projected的
 retained/gained/lost/churn及per-task增量。若uniform-step direct experts没有提供跨task的policy-effective净增量，则当前
 source/meta重叠pool不能验证decoder泛化，触发role-disjoint meta-task构造，而不是把identity/source能力记为decoder成功。
+当前flow/probe/exact Decoder分别得到`644/未评测/638`，shared-zero为`640`；task-conditioned输出始终未超过共享输出，
+所以该触发条件已经成立。后继必须把source-skill、adaptation-meta和architecture-validation task identity分开，并优先复用
+source从未训练过的target train24及现有多checkpoint experts；不会仅因数据角色变化重训已有71-task bank。
 
 ## 4. Policy-functional task targets
 
@@ -64,7 +67,8 @@ source/meta重叠pool不能验证decoder泛化，触发role-disjoint meta-task�
 - 为71个non-held meta tasks训练统一schedule的task-local experts，不按task挑checkpoint；
 - 每个task至少保留一个全局统一step的successful adapter；若多个统一step都成功，可作为同一功能等价类样本；
 - expert只服务train/meta decoder与诊断，不进入target held部署；
-- target validation/test不训练task expert。其actions/reward只在授权sealed、冻结、无梯度诊断中读取。
+- validation8只允许训练一次彼此独立、step2000预注册的task-local诊断experts，不更新共享模型、不选checkpoint；Test不训练
+  expert。两者都不得成为部署route，Test actions/reward默认保持sealed。
 
 ### 4.2 Functional probe panel
 
@@ -130,9 +134,10 @@ evaluation cache和rollout永远只看到一个complete LoRA。共享base若未�
 ### 5.3 两阶段训练与冻结
 
 1. 先按4.3从统一functional fingerprints冻结train/held codes；held role只transform，不产生梯度；
-2. 只在meta-train tasks按task等权训练decoder。flow-only已由`644/750`淘汰；固定8-probe objective又因train full-BA
-   relative-L2 `1.1387`而淘汰。当前用低秩Gram恒等式直接优化exact full-space expert `BA`，不物化dense update；flow
-   response只作独立诊断，不再单独作为训练目标；
+2. 只在meta-train tasks按task等权训练decoder。flow-only由`644/750`淘汰；固定8-probe因train full-BA relative-L2
+   `1.1387`淘汰；exact低秩Gram虽把train/held BA cosine提高到`.5365/.3032`，closed loop仍只有`638/750`且低于
+   shared-zero `640`。因此不再围绕单expert BA或有限flow panel更换objective；下一版先重建多成功adapter功能等价类和
+   role-disjoint task surface；
 3. decoder训练期间held codes与held panels都不产生梯度；训练结束后在held task-local panel和closed loop测试range；
 4. range通过后永久冻结decoder，held fingerprint code只用于oracle诊断，不参与后续Writer训练；
 5. semantic/video encoder必须从action-hidden输入预测同一code，完成真正leave-task-out闭环验证。
@@ -216,8 +221,9 @@ source coverage分reach/grasp/place/open/close/toggle/stack/multi-object sequenc
 4. predicted code；
 5. 冻结后的sealed held flow/action/reward诊断。
 
-target held不允许通过action/reward梯度训练oracle expert，因此“held ceiling”只能作为无梯度诊断边界，不能伪称精确
-可达上限。若non-held多任务expert已经普遍失败，先修source；若expert成功而fixed decoder失败，修manifold；若decoder
+owner已允许一次sealed validation8 task-local oracle。它只训练八套彼此独立、预注册step2000的诊断LoRA，不更新任何
+共享Writer/decoder、不选checkpoint且不读取Test；其结果只能裁决frozen source + rank16的任务可实现性，不能成为部署
+route或模型选择信号。若non-held多任务expert已经普遍失败，先修source；若expert成功而fixed decoder失败，修manifold；若decoder
 oracle成功而predicted code失败，修task inference。
 其中source已在default meta-validation fold得到`646/750`，所以第2--3步的通过对象是相对source新增并保留的功能，而不是
 仅比较两个高aggregate。direct expert若不能证明有信息量的增量，第3步保持未识别，不得由source高分代替。

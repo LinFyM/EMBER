@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-20 **active；统一坐标已通过，但flow-only为644/750、shared-zero为640/750，固定8-probe又发生全空间过拟合；当前以低秩Gram exact-BA锚点重验同一Decoder。**
+状态：2026-08-20 **active；统一坐标通过，但flow-only、shared-zero、fixed-probe与exact-BA Decoder均未过Gate 2；当前停止objective变体，先做sealed validation8 rank16 oracle并重构role-disjoint manifold数据角色。**
 
 ## Goal
 
@@ -120,9 +120,12 @@ projected `659`。生成effective `BA`相对direct的relative-L2为`2.8576`、co
 flow surrogate允许巨大off-manifold update。该路径登记为implemented-fail，不进入Writer；下一次只改为effective-update
 probe objective，并用同一750 rows复验。shared-zero carrier并行完成matched对照，不作为fallback部署。
 
-**Shared/probe后续裁决：** shared-zero为`640/750`，task fingerprint仅在其上净增`+4`且`p=.68888`，确认task code
-贡献不足。固定8-probe训练虽把fit probe loss降到`.610951`，完整BA在train/held的relative-L2仍为`1.1387/1.1292`、
-cosine仅`.0642/.0449`，属于固定方向过拟合，未进入closed loop。现只把抽样loss替换为exact低秩Gram Frobenius loss。
+**Shared/probe/exact最终裁决：** shared-zero为`640/750`，task fingerprint仅在其上净增`+4`且`p=.68888`。固定8-probe
+完整BA在train/held的cosine仅`.0642/.0449`。exact低秩Gram把该值提高到`.5365/.3032`，但closed loop只有
+`638/750`，相对source净`-8`、相对direct净`-46`，并比shared-zero低2；held exact loss从step280的`.9258`到
+step1120的`.9213`已平台化。无正则仿射full-BA上界诊断在held也只有relative-L2`.9797`、cosine`.3648`。因此本轮
+Decoder objective family整体implemented-fail，不续训、不扫objective/LR/seed，也不进入Writer；回到专家原始的
+功能等价类、多成功adapter与source/meta角色分离问题。
 
 ## Phase 3 — Language prior + video process posterior
 
@@ -176,11 +179,12 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Current next actions
 
-1. 复用已冻结的71-task fingerprint artifact，不重复收集或重训expert；用低秩Gram exact full-BA objective拟合唯一
-   complete-LoRA Decoder，先要求train/held full-space geometry实际回到expert support；
-2. 只有上述几何门通过才在同一750 rows复验source/direct/projected，避免为已知off-support adapter消耗闭环预算；
-3. 只有effective-update Decoder在leave-task-out闭环与task区分上通过，才从现有训练/评测运行面fresh训练新Writer；旧macro10 checkpoint
-   与七臂screen全部保留作反事实，不重复原训练也不靠延长macro掩盖坐标错误；
-4. 新Writer先过language/video/full/endpoints/order/static matched screen，再决定outer closed-loop credit；当前outer RL保持关闭；
-5. 只有核心A--J/H完成并触发预注册stop gate，才实际启动runtime policy、task-local RL或其它替代问题；这些方向继续保留，
-   不因推进速度而静默丢弃。
+1. 冻结并记录flow/probe/exact/affine这一组负结果，不再对同一32维fingerprint和单expert标签做Decoder objective小变体；
+2. 运行一次预注册step2000 validation8 task-local rank16 oracle：只训练八套彼此独立的诊断LoRA，不更新Writer/decoder，
+   不选checkpoint且不读取Test，用于裁决target ceiling、Long/source缺口和`>150`目标是否可实现；
+3. 复用现有71-task与train24多checkpoint专家，建立source-skill、adaptation-meta、architecture-validation真正分角色的
+   manifold；优先估计同task多成功adapter的功能等价类，不把任一expert BA当唯一标签；
+4. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL；旧macro10、七臂screen、fingerprints和全部专家bank均
+   保留复用，不重复昂贵训练；
+5. 新manifold通过后再依次恢复language/video inference、process controls和train/meta outer credit；只有完整核心路线
+   触发stop gate才进入runtime policy、task-local RL或其它替代问题。

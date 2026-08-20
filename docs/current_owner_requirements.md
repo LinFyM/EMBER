@@ -124,9 +124,11 @@ privileged task expert或on-policy reward，只要部署信息墙不被破坏；
 审计、明确排除固定validation/test tasks及其重复项的LIBERO-90任务。生成LoRA后的task-local RL属于后续独立实验，
 当前不得把它混入初始分数。
 
-允许在模型与checkpoint冻结、无梯度、不参与checkpoint选择且预先登记分析口径时，用held action/reward做sealed
-post-hoc科学诊断。validation可继续作为development panel；Test诊断会消耗其封存价值，默认只在最终方法冻结后执行，
-任何提前使用都必须显式登记且不得反哺设计。
+允许在共享模型与checkpoint冻结、不参与checkpoint选择且预先登记分析口径时，用held action/reward做sealed
+post-hoc科学诊断。唯一已授权的梯度例外是一次validation8 task-local rank16 oracle：validation actions只更新八套彼此
+独立的诊断LoRA，统一训练到预注册step2000，不更新Writer、decoder或source policy，不按结果选step，也不形成部署route。
+validation可继续作为development panel；Test不训练expert，Test诊断默认只在最终方法冻结后执行，任何提前使用都必须
+显式登记且不得反哺设计。
 
 长期设想仍成立：生成LoRA应成为后续快速RL的良好起点，RL直接优化这套adaptation；但先把zero-interaction Writer
 做强、做稳、证明视频因果性，再单独评价后续交互收益。

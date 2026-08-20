@@ -127,6 +127,42 @@ def _source_paths_match(
     )
 
 
+def _evaluation_task_rows(
+    expected_rows: Sequence[Mapping[str, Any]],
+    *,
+    is_meta: bool,
+    evaluation_role: str,
+) -> tuple[Mapping[str, Any], ...]:
+    if not is_meta:
+        if evaluation_role != "development_train":
+            raise ExpertManifoldError(
+                "task-expert evaluation role differs from its bank"
+            )
+        return tuple(expected_rows)
+
+    split_roles = {
+        "nonheld_meta": None,
+        "nonheld_meta_train": "meta_train",
+        "nonheld_meta_validation": "meta_validation_oracle",
+    }
+    if evaluation_role not in split_roles:
+        raise ExpertManifoldError("task-expert evaluation role differs from its bank")
+    split_role = split_roles[evaluation_role]
+    selected = tuple(
+        row
+        for row in expected_rows
+        if split_role is None or row.get("split_role") == split_role
+    )
+    expected_count = {
+        "nonheld_meta": 71,
+        "nonheld_meta_train": 56,
+        "nonheld_meta_validation": 15,
+    }[evaluation_role]
+    if len(selected) != expected_count:
+        raise ExpertManifoldError("task-expert evaluation split changed")
+    return selected
+
+
 def inspect_task_expert_bank(
     *,
     config_path: Path,
@@ -144,9 +180,6 @@ def inspect_task_expert_bank(
     config = load_task_expert_config(config_path)
     formal = config["task_experts"]["formal_run"]
     is_meta = config.get("schema_version") == META_EXPERT_CONFIG_SCHEMA
-    required_role = "nonheld_meta" if is_meta else "development_train"
-    if evaluation_role != required_role:
-        raise ExpertManifoldError("task-expert evaluation role differs from its bank")
     if require_formal and formal.get("status") != "sealed":
         raise ExpertManifoldError(
             "formal task-expert evaluation requires a sealed profile"
@@ -156,15 +189,23 @@ def inspect_task_expert_bank(
         raise ExpertManifoldError("task-expert evaluation step is not declared")
 
     expected_rows = _expert_task_rows(config)
+    evaluation_rows = _evaluation_task_rows(
+        expected_rows,
+        is_meta=is_meta,
+        evaluation_role=evaluation_role,
+    )
     expected_by_key = {
         (str(row["suite"]), int(row["task_id"])): (int(row["ordinal"]), row)
         for row in expected_rows
     }
+    evaluation_keys = {
+        (str(row["suite"]), int(row["task_id"])) for row in evaluation_rows
+    }
     observed_keys = tuple((str(suite), int(task_id)) for suite, task_id in task_keys)
     if len(set(observed_keys)) != len(observed_keys) or set(observed_keys) != set(
-        expected_by_key
+        evaluation_keys
     ):
-        raise ExpertManifoldError("task-expert panel differs from its complete bank")
+        raise ExpertManifoldError("task-expert panel differs from its evaluation role")
 
     workers = tuple(
         sorted(path for path in bank_root.glob("worker_*") if path.is_dir())
@@ -333,13 +374,15 @@ def inspect_task_expert_bank(
             "rank": lora.rank,
             "target_count": len(lora.targets),
         },
-        "tasks": [task_records[key] for key in sorted(task_records)],
+        "tasks": [task_records[key] for key in sorted(evaluation_keys)],
         "workers": physical_devices,
         "information_wall": (
             {
-                "evaluation_role": "nonheld_meta",
+                "evaluation_role": evaluation_role,
+                "bank_role": "nonheld_meta",
                 "meta_train_experts": 56,
                 "meta_validation_oracles": 15,
+                "evaluated_task_count": len(evaluation_keys),
                 "target40_action_reads": 0,
                 "deployment_uses_privileged_experts": False,
             }

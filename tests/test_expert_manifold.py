@@ -20,10 +20,12 @@ from ember.expert_manifold.evaluation import (
     PROJECTED_TASK_EXPERT_ADAPTER_SCHEMA,
     TASK_EXPERT_ADAPTER_KIND,
     TASK_EXPERT_EPISODE_SCHEMA,
+    _evaluation_task_rows,
     inspect_projected_task_expert_bank,
     inspect_task_expert_bank,
     validate_task_expert_episode,
 )
+from ember.expert_manifold.meta_contract import meta_expert_rows
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
     read_json,
@@ -34,6 +36,7 @@ from ember.expert_manifold.sampler import TaskLocalEpochSampler
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / "configs/pi05_video_expert_manifold_v1.json"
+META_CONFIG = REPO_ROOT / "configs/pi05_nonheld_meta_expert_bank_v1.json"
 
 
 def test_task_expert_config_contains_only_the_retained_train24_authority() -> None:
@@ -45,6 +48,25 @@ def test_task_expert_config_contains_only_the_retained_train24_authority() -> No
     assert "meta_training" not in config
     assert config["information_wall"]["validation_actions_read"] == 0
     assert config["task_experts"]["profile_defaults"]["scheduler_total_steps"] == 2000
+
+
+def test_nonheld_meta_bank_supports_its_fixed_train_and_validation_panels() -> None:
+    rows = meta_expert_rows(load_task_expert_config(META_CONFIG))
+    all_rows = _evaluation_task_rows(
+        rows, is_meta=True, evaluation_role="nonheld_meta"
+    )
+    train_rows = _evaluation_task_rows(
+        rows, is_meta=True, evaluation_role="nonheld_meta_train"
+    )
+    validation_rows = _evaluation_task_rows(
+        rows, is_meta=True, evaluation_role="nonheld_meta_validation"
+    )
+    assert len(all_rows) == 71
+    assert len(train_rows) == 56
+    assert len(validation_rows) == 15
+    assert {int(row["task_id"]) for row in train_rows}.isdisjoint(
+        int(row["task_id"]) for row in validation_rows
+    )
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

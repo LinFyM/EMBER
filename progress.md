@@ -1,6 +1,6 @@
 # EMBER Progress
 
-更新时间：2026-08-20。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
+更新时间：2026-08-21。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
 `findings.md`，完整历史见`docs/research_history.md`。
 
 ## Current authority and executable state
@@ -76,6 +76,10 @@
   transform；随后同时比较step2000单标签与多个成功checkpoint构成的set-valued effective-BA prototype。该分析不重训expert、
   不物化或部署adapter、不读取validation/Test，先裁决role overlap与单expert标签是否是当前最早瓶颈，再决定是否值得fresh
   source/meta大重训。
+- 同一统一anchor运行面已补齐专家原始意见中的denoised action-response：identity/expert共享显式policy noise，执行official
+  10-step flow integration并保留完整`50×7`action chunk；它与既有`50×32`单步flow response可分别形成train-only-whitened
+  fingerprint，不读取validation/Test、不重训expert。当前仅是运行面接通，待role-disjoint flow结果后按同一held几何比较，
+  不能提前替代closed-loop、successful/on-policy occupancy、JVP或stage behavior证据。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

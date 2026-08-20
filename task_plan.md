@@ -78,8 +78,9 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
 
 ## Phase 1 — 数据可识别性、ceiling与process controls
 
-- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel，优先复用action response、flow response、policy
-  Jacobian response与stage behavior；只保留能预测closed-loop等价性的必要表示；
+- [ ] 在现有成功expert/adapter上建立统一policy-functional probe panel；flow与显式paired-noise的10-step denoised action
+  response运行面已接通，policy Jacobian response、successful/on-policy occupancy与stage behavior仍待按held closed-loop
+  预测力裁剪，不能只因内部几何改善保留表示；
 - [x] 用train/meta leave-task-out测量task-local LoRA ceiling与source primitive coverage，分reach/grasp/place/open/toggle/
   multi-object sequence/recovery，区分“Writer不会推断”与“source不存在能力”；
 - [x] 实现learned language-only、video-only、language+video共享评测面；no-video不得再由结构强制identity；

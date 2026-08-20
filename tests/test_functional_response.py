@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 
 import torch
+from lerobot.utils.constants import OBS_STATE
 
 from ember.functional_adaptation.functional_response import (
     build_functional_response_target,
     functional_response_distillation_loss,
+    pi05_denoised_action_response,
     pi05_flow_response,
 )
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRATarget
@@ -48,6 +50,7 @@ class FakePolicy(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.model = FakeCore()
+        self.config = SimpleNamespace(chunk_size=50, max_action_dim=7)
 
     def forward(self, batch):
         noise = self.model.sample_noise(batch["query"].shape, batch["query"].device)
@@ -55,6 +58,12 @@ class FakePolicy(torch.nn.Module):
         query = batch["query"] + noise * time[:, None, None]
         response = self.model.action_out_proj(self.model.q_proj(query))
         return response.square().mean(), {}
+
+    def predict_action_chunk(self, batch, *, noise, num_steps):
+        assert num_steps == 10
+        query = batch["query"] + noise[..., :3]
+        response = self.model.q_proj(query)
+        return torch.nn.functional.pad(response, (0, 3))
 
 
 @dataclass(frozen=True)
@@ -94,6 +103,32 @@ def test_flow_response_keeps_token_and_padded_action_axes() -> None:
     )
 
     assert response.shape == (2, 50, 32)
+
+
+def test_denoised_action_response_uses_paired_noise_and_complete_chunk() -> None:
+    policy = FakePolicy().requires_grad_(False)
+    contract = FakeContract()
+    a = torch.ones(2, 3)
+    identity = _state(a, torch.zeros(4, 2))
+    expert = _state(a, torch.ones(4, 2))
+    batch = {
+        "query": torch.ones(2, 50, 3),
+        OBS_STATE: torch.zeros(2, 8),
+    }
+
+    identity_response = pi05_denoised_action_response(
+        policy, identity, contract, batch, policy_seed=29
+    )
+    expert_response = pi05_denoised_action_response(
+        policy, expert, contract, batch, policy_seed=29
+    )
+    repeated = pi05_denoised_action_response(
+        policy, expert, contract, batch, policy_seed=29
+    )
+
+    assert expert_response.shape == (2, 50, 7)
+    assert not torch.equal(identity_response, expert_response)
+    assert torch.equal(expert_response, repeated)
 
 
 def test_functional_distillation_matches_expert_delta_and_backpropagates() -> None:

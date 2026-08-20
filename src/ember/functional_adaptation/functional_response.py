@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 import torch
+from lerobot.utils.constants import OBS_STATE
 
-from ember.lora import LoRAContract, functional_lora_call
+from ember.lora import LoRAContract, copy_task_lora_state_, functional_lora_call
 from ember.writer.functional import (
     INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
     INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
@@ -79,6 +80,45 @@ def pi05_flow_response(
             "PI0.5 functional probe did not expose one token-level flow response"
         )
     return captured[0]
+
+
+@torch.no_grad()
+def pi05_denoised_action_response(
+    policy: torch.nn.Module,
+    state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    batch: Mapping[str, Any],
+    *,
+    policy_seed: int,
+    num_steps: int = 10,
+) -> torch.Tensor:
+    """Return the paired full denoised action chunk under one installed LoRA."""
+
+    if any(parameter.requires_grad for parameter in policy.parameters()):
+        raise FunctionalResponseError("functional response policy must be frozen")
+    try:
+        device = next(policy.parameters()).device
+        batch_size = int(batch[OBS_STATE].shape[0])
+        chunk_size = int(policy.config.chunk_size)
+        max_action_dim = int(policy.config.max_action_dim)
+    except (AttributeError, KeyError, StopIteration) as error:
+        raise FunctionalResponseError("action response requires a PI0.5 policy batch") from error
+    if num_steps != 10:
+        raise FunctionalResponseError("action response must use the official ten flow steps")
+    generator = torch.Generator(device="cpu").manual_seed(int(policy_seed))
+    noise = torch.randn(
+        (batch_size, chunk_size, max_action_dim),
+        generator=generator,
+        dtype=torch.float32,
+        device="cpu",
+    ).to(device=device)
+    copy_task_lora_state_(policy, state, contract)
+    response = policy.predict_action_chunk(
+        dict(batch), noise=noise, num_steps=num_steps
+    )
+    if response.shape != (batch_size, chunk_size, 7):
+        raise FunctionalResponseError("PI0.5 action response shape changed")
+    return response
 
 
 @torch.no_grad()

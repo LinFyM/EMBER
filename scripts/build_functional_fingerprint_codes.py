@@ -34,7 +34,10 @@ from ember.functional_adaptation.fingerprint_codes import (
     uniformly_spaced_task_ids,
     whiten_functional_fingerprints,
 )
-from ember.functional_adaptation.functional_response import pi05_flow_response
+from ember.functional_adaptation.functional_response import (
+    pi05_denoised_action_response,
+    pi05_flow_response,
+)
 from ember.functional_adaptation.probe_panels import selected_probe_rows
 from ember.pi05_eval_contract import (
     git_state,
@@ -62,6 +65,11 @@ def _args() -> argparse.Namespace:
         "--surface",
         choices=("train24", "nonheld_meta"),
         default="nonheld_meta",
+    )
+    parser.add_argument(
+        "--response",
+        choices=("flow", "action"),
+        default="flow",
     )
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -99,20 +107,27 @@ def _response(
     batch: Mapping[str, Any],
     *,
     policy_seed: int,
+    response_kind: str,
 ) -> torch.Tensor:
     with torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        return (
-            pi05_flow_response(
+        if response_kind == "flow":
+            response = pi05_flow_response(
                 policy,
                 state,
                 contract,
                 batch,
                 policy_seed=policy_seed,
             )
-            .detach()
-            .float()
-            .cpu()
-        )
+        else:
+            response = pi05_denoised_action_response(
+                policy,
+                state,
+                contract,
+                batch,
+                policy_seed=policy_seed,
+                num_steps=10,
+            )
+        return response.detach().float().cpu()
 
 
 def _code_stats(codes: torch.Tensor) -> dict[str, float]:
@@ -169,6 +184,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         fit_surface = "train24_fit_only_pca_whitening"
     records = (*split.fit, *split.held)
     settings = mechanism["functional_fingerprint"]
+    if args.response not in settings["response_kinds"]:
+        raise ValueError("functional fingerprint response is not preregistered")
     train_ids = tuple(row.global_task_id for row in split.fit)
     held_ids = tuple(row.global_task_id for row in split.held)
     anchor_ids = uniformly_spaced_task_ids(
@@ -227,7 +244,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 )
             )
     identity_responses = [
-        _response(policy, identity, contract, batch, policy_seed=panel_seed)
+        _response(
+            policy,
+            identity,
+            contract,
+            batch,
+            policy_seed=panel_seed,
+            response_kind=args.response,
+        )
         for _, _, batch, panel_seed in panels
     ]
     expert_states = load_expert_states(records, contract, device)
@@ -238,7 +262,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             panels, identity_responses, strict=True
         ):
             expert = _response(
-                policy, state, contract, batch, policy_seed=panel_seed
+                policy,
+                state,
+                contract,
+                batch,
+                policy_seed=panel_seed,
+                response_kind=args.response,
             )
             blocks.append((expert - baseline).flatten())
         fingerprints[record.global_task_id] = torch.cat(blocks).contiguous()
@@ -267,6 +296,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": FINGERPRINT_CODE_SCHEMA,
         "formal_authority": True,
         "surface": args.surface,
+        "response_kind": args.response,
         "fit_surface": fit_surface,
         "repository": {
             "branch": repository["branch"],
@@ -289,7 +319,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "panels_per_anchor": panel_count,
             "batch_size": batch_size,
             "policy_seed": seed,
-            "response": "expert_minus_frozen_source_full_50x32_action_flow",
+            "response": (
+                "expert_minus_frozen_source_full_50x32_action_flow"
+                if args.response == "flow"
+                else "expert_minus_frozen_source_full_50x7_denoised_action_chunk"
+            ),
+            "action_response_num_steps": 10 if args.response == "action" else None,
             "feature_count": int(train_fingerprints.shape[1]),
         },
         "code_width": int(code_space.train_codes.shape[1]),

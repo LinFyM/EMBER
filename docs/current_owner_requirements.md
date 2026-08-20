@@ -186,6 +186,11 @@ shared prior/carrier或residual参数化。历史V6、LPCP、GOMQ及其checkpoin
   实际推进时顺手简化。
 - 接受设备、batch和kernel导致的正常低位浮点差异；不为逐元素一致牺牲吞吐。
 - 不增加防御性hash、重复forward、逐tensor扫描和无必要校验。
+- 大规模formal训练产物是可复用的基础资产。已完整且合同兼容的task-expert bank、source policy、fixed
+  panel和checkpoint必须直接服务后续decoder、fold重分配、评测和诊断；不因进入新phase、改变数据角色或调度便利而重训。
+- 不自动启动更长的uniform stage或重建大bank。只有产物损坏、科学合同确实不兼容，或闭环证据明确证明当前
+  expert/source ceiling不足时才允许重训，并必须先说明现有产物为何不可用。中断或迁移长任务前先比较需要重算的已完成工作与可验证的
+  净时间收益，不再为小幅调度收益造成大规模返工。
 - 暂时不使用subagents。
 - owner提出疑问时应独立判断、给出证据和完整pipeline，不机械顺从，也不因一点反馈推翻全部设计。
 - goal应表达最终目标和原则，不把memory token、rank等细枝末节方法写成目标。

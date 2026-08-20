@@ -73,7 +73,8 @@
   不更新共享Writer/decoder、不选checkpoint、不读取Test。它只裁决target ceiling与source primitive缺口，不形成deployment route。
 - source/meta角色分离的最小诊断运行面已接通：复用source从未训练过的target train24与现有step250/500/1000/1500/2000
   experts，在固定19/5 task fold上只用19个fit-task anchors建立16维train-only-whitened fingerprint，5个held tasks只做同一
-  transform；随后同时比较step2000单标签与多个成功checkpoint构成的set-valued effective-BA prototype。该分析不重训expert、
+  transform；随后同时比较step2000单标签与达到固定成功阈值的多checkpoint等价集；从未过阈值的task只登记best-ceiling
+  fallback并显式分开解释，不把它冒充成功策略。该set-valued effective-BA分析不重训expert、
   不物化或部署adapter、不读取validation/Test，先裁决role overlap与单expert标签是否是当前最早瓶颈，再决定是否值得fresh
   source/meta大重训。
 - 同一统一anchor运行面已补齐专家原始意见中的denoised action-response：identity/expert共享显式policy noise，执行official

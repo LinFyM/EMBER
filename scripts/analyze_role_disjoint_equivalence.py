@@ -415,7 +415,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             fit_task_ids=fit_ids,
             held_task_ids=held_ids,
         ),
-        "successful_set_prototype": _affine_panel(
+        "thresholded_equivalence_or_best_ceiling_prototype": _affine_panel(
             fit_codes=codes.train_codes,
             held_codes=codes.held_codes,
             fit_targets=equivalence_fit,
@@ -431,7 +431,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "closed_loop_claim": False,
             "checkpoint_family_independent_seeds": False,
             "checkpoint_family_note": "same task-local optimization trajectory at five retained steps",
-            "held_outcomes_used_only_to_define_diagnostic_equivalence_set": True,
+            "held_outcomes_used_only_to_define_diagnostic_equivalence_or_best_ceiling_set": True,
             "held_fingerprint_requires_privileged_step2000_expert": True,
             "fingerprint_code_representative_step": required_step,
             "prototype_average_is_not_assumed_rank16_or_closed_loop_successful": True,

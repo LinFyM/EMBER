@@ -55,14 +55,14 @@
 | D | 保留完整Action probe结构 | official denoised `50x7` action与exact `50x32` JVP均已接通；direct八strata失败后改为全部replan、完整50-token响应和固定功能弧长对应，held5达到`5/5`。JVP维持辅助，Action为当前primary标签 | implemented-pass |
 | E | train-task closed-loop outer objective | fixed shared/decoder、fit19 task-equal simulator success+efficiency+BDDL progress、held零梯度与exact-resume均已实现。macro2 matched panel又证明warm-start在outer前未过video/process门；macro3降到39且无shared外新row。停止macro4，先修process warm-start，再决定结构不同的credit实现 | implemented-fail |
 | F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立；source未见的target train24保持19/5边界，47/47 multi-checkpoint成功occupancy在held5通过表示门。后续Decoder仍只拟合fit19，validation8继续architecture panel、Test8 sealed | implemented-pass |
-| G | process-identifying controls | macro10的first+final/reversed/shuffled/static已否定旧Writer；新坐标macro2的first+final39对full41净差2、`p=.72656`，same-task retention`.87805`，再次未过门。现有control owner将用于直接训练新16维heads；无depth/segmentation且不从state伪造mask | active |
+| G | process-identifying controls | macro10与新坐标macro2均未过过程门；现有control owner现已直接接入新16维warm-start，reversed smoke产生finite control loss，formal配置轮换reversed/shuffled/first+final/endpoints-middle-shuffled。owner要求讨论前暂停formal | active |
 | H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
 
 ## 4. 专家方向I--N：owner已授权或保留的合同变化
 
 | 方向 | owner边界与当前决定 | 进入/停止条件 | 状态 |
 | --- | --- | --- | --- |
-| I train/meta teacher-action alignment | 允许；validation/test action不训练 | 47条target successful trajectories的Action/phase坐标已以held5 `5/5`通过，56-task frontend也已训练action head；但新16维code末层尚未接受该监督。下一轮在fit19跨episode使用，held仍action-hidden | active |
+| I train/meta teacher-action alignment | 允许；validation/test action不训练 | 47条target trajectories与56-task frontend资产已复用；新16维warm-start现已接入fit19跨episode action-phase，单任务smoke loss`.22331`且有梯度。held仍action-hidden；formal效果等待讨论后裁决 | active |
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |

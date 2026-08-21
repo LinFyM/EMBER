@@ -20,6 +20,7 @@ from ember.expert_manifold.contract import (
     load_task_expert_config,
     load_train_tasks,
 )
+from ember.functional_adaptation.action_alignment import PrivilegedMetaActionStore
 from ember.functional_adaptation.code_checkpoint import (
     OUTER_RUN_SCHEMA,
     load_code_writer_checkpoint,
@@ -91,6 +92,7 @@ class OuterCreditRuntime:
     target_codes: Mapping[int, torch.Tensor]
     schedule: MetaCodeTrainingSchedule
     video_store: RawTeacherVideoStore
+    action_store: PrivilegedMetaActionStore | None
     language: Mapping[int, tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     policy: torch.nn.Module
     processor: Pi05LiberoProcessor
@@ -183,7 +185,9 @@ def _optimizer(
     )
 
     def factor(step: int) -> float:
-        warmup = max(1, warmstart_macros)
+        warmup = int(values.get("warmup_macros", warmstart_macros))
+        if not 1 <= warmup <= warmstart_macros:
+            raise ValueError("outer-credit optimizer warmup changed")
         if step < warmup:
             return (step + 1) / warmup
         progress = min(1.0, (step - warmup) / max(1, total_macros - warmup))
@@ -286,10 +290,17 @@ def _run_contract(
 ) -> dict[str, Any]:
     repository = git_state(REPO_ROOT)
     tasks = tuple(runtime.tasks.values())
+    weights = runtime.settings["warmstart_loss_weights"]
+    action_alignment = float(weights["action_alignment"]) > 0
+    process_controls = any(
+        float(weights[name]) > 0
+        for name in ("control_confidence", "control_update")
+    )
     return {
         "schema_version": OUTER_RUN_SCHEMA,
         "mode": runtime.args.mode,
         "method": "fixed_decoder_fit19_train_task_antithetic_outer_credit",
+        "candidate_method": str(runtime.settings["method"]),
         "repository": {key: repository[key] for key in ("branch", "commit")},
         "source": {
             "run": str(runtime.args.source_run),
@@ -336,6 +347,17 @@ def _run_contract(
             "source_policy_trainable_parameters": 0,
         },
         "outer_objective": dict(runtime.settings["objective"]),
+        "warmstart_objective": {
+            "loss_weights": dict(weights),
+            "temporal_controls": list(
+                runtime.settings.get("warmstart_temporal_controls", ("reversed",))
+            ),
+            "dynamic_k_max": int(
+                runtime.config["code_inference"]["training"]["dynamic_k_max"]
+            ),
+            "cross_episode_action_phase_alignment": action_alignment,
+            "process_controls_train_writer": process_controls,
+        },
         "deployment": {
             "inputs": ["exact language", "action-hidden ordered teacher videos"],
             "writer_runs_once_before_rollout": True,
@@ -345,10 +367,13 @@ def _run_contract(
         },
         "training_privileged": {
             "fit19_train_task_reward_and_BDDL_progress": True,
+            "fit19_cross_episode_teacher_action_phase_alignment": action_alignment,
             "held5_reward_reads": 0,
+            "held5_teacher_action_reads": 0,
             "validation_reward_reads": 0,
             "test_reward_reads": 0,
             "deployment_reward_reads": 0,
+            "teacher_actions_read_during_process_warmstart": action_alignment,
             "teacher_actions_read_during_outer_credit": 0,
         },
         "content_hash_policy": "disabled_by_owner",
@@ -469,7 +494,12 @@ def prepare_runtime(args: argparse.Namespace) -> OuterCreditRuntime:
         world_size=context.world_size,
         seed=int(settings["video_schedule_seed"]),
         dynamic_k_max=None,
-        temporal_controls=("reversed",),
+        temporal_controls=tuple(
+            str(value)
+            for value in settings.get(
+                "warmstart_temporal_controls", ("reversed",)
+            )
+        ),
     )
     task_authorities = tuple(task.authority for task in fit_tasks)
     video_store = RawTeacherVideoStore(
@@ -483,11 +513,21 @@ def prepare_runtime(args: argparse.Namespace) -> OuterCreditRuntime:
         str(context.device),
     )
     language = {task.global_task_id: tokenizer([task.language]) for task in fit_tasks}
+    stats = load_stats(
+        authorities.source_base_config,
+        authorities.source_base_config["data"]["active_task_ids"],
+    )
+    action_store = None
+    if float(settings["warmstart_loss_weights"]["action_alignment"]) > 0:
+        action_store = PrivilegedMetaActionStore(
+            task_authorities,
+            action_q01=stats["action"]["q01"],
+            action_q99=stats["action"]["q99"],
+            phase_count=int(config["code_inference"]["phase_queries"]),
+            max_open_files=int(settings["video_open_files_per_rank"]),
+        )
     processor = Pi05LiberoProcessor(
-        load_stats(
-            authorities.source_base_config,
-            authorities.source_base_config["data"]["active_task_ids"],
-        ),
+        stats,
         args.tokenizer_path,
         int(authorities.source_base_config["features"]["tokenizer_max_length"]),
         str(context.device),
@@ -508,6 +548,7 @@ def prepare_runtime(args: argparse.Namespace) -> OuterCreditRuntime:
         },
         schedule=schedule,
         video_store=video_store,
+        action_store=action_store,
         language=language,
         policy=policy,
         processor=processor,

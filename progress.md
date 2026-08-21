@@ -187,6 +187,13 @@
   control/action权重为0。下一节点复用已有checkpoint、fixed decoder与训练owner，把跨episode action-phase alignment、
   reversed/shuffled/first+final/endpoints-middle-shuffled和K1--4直接施加到新16维heads；先复验matched panel，过门后才启动
   结构不同的outer estimator，失败则继续按专家stop gate核对meta-task/multisplit并准备替代路线。
+- process-supervised运行面已实现且没有新增平行Writer：现有functional-code task-loss owner现在可按权重选择action/control，
+  outer warm-start复用该owner；旧correct-only config保持action读取为0，新config固定decoder并声明四类真实帧control、K1--4、
+  fit19跨episode action-phase与12-macro warm-start checkpoints。gpu02/p7单任务K1 reversed真实smoke在3.22秒训练段得到
+  total loss `2.25301`、action alignment `.22331`、control update `.002316`、finite grad norm `8.39418`，峰值
+  `32,486,524,416` bytes；只证明图接通，不作性能选择。
+- owner要求当前实现收口后进入中期讨论，因此formal process warm-start及matched held5复验尚未启动。当前goal继续active，
+  下一授权动作由讨论结果决定；不会把smoke写成专家方向已通过。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

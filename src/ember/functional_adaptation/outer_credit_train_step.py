@@ -13,7 +13,9 @@ from ember.functional_adaptation.code_checkpoint import (
     code_writer_rng_state,
     save_code_writer_checkpoint,
 )
-from ember.functional_adaptation.objectives import functional_code_inference_loss
+from ember.functional_adaptation.code_train_step import (
+    process_code_inference_task_loss,
+)
 from ember.functional_adaptation.outer_credit import (
     outer_credit_surrogate_loss,
     paired_antithetic_code_credit,
@@ -82,22 +84,38 @@ def _warmstart_task(
     *,
     task_id: int,
     demos: Sequence[int],
+    action_demos: Sequence[int],
+    control_condition: str,
+    control_seed: int,
 ) -> dict[str, Any]:
-    packed, video = _packed_task(runtime, task_id, demos)
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        posterior = _writer_posterior(runtime, packed)
-        loss = functional_code_inference_loss(
-            posterior,
-            runtime.target_codes[task_id],
-            weights=runtime.settings["warmstart_loss_weights"],
-        )
+    weights = runtime.settings["warmstart_loss_weights"]
+    uses_actions = float(weights["action_alignment"]) > 0
+    uses_controls = any(
+        float(weights[name]) > 0
+        for name in ("control_confidence", "control_update")
+    )
+    loss = process_code_inference_task_loss(
+        runtime,
+        task_id=task_id,
+        demos=tuple(int(value) for value in demos),
+        action_demos=(
+            tuple(int(value) for value in action_demos) if uses_actions else None
+        ),
+        control_condition=control_condition if uses_controls else None,
+        control_seed=control_seed,
+        weights=weights,
+    )
     (loss.total / len(runtime.tasks)).backward()
     return {
         "global_task_id": task_id,
         "teacher_demo_indices": list(demos),
-        "K": int(video["K"]),
+        "action_demo_indices": list(action_demos) if uses_actions else [],
+        "temporal_control": control_condition if uses_controls else None,
+        "K": len(demos),
         "loss": float(loss.total.detach()),
         "combined_code_loss": float(loss.combined_code.detach()),
+        "control_update_loss": float(loss.control_update.detach()),
+        "action_alignment_loss": float(loss.action_alignment.detach()),
     }
 
 
@@ -316,6 +334,7 @@ def train(runtime: OuterCreditRuntime) -> None:
         runtime.optimizer.zero_grad(set_to_none=True)
         local_records = []
         assignments = runtime.schedule.assignments(macro)
+        control = runtime.schedule.control_for_macro(macro)
         shot_count = 1 + (
             macro
             % int(runtime.config["code_inference"]["training"]["dynamic_k_max"])
@@ -327,6 +346,11 @@ def train(runtime: OuterCreditRuntime) -> None:
                     runtime,
                     task_id=visit.task_id,
                     demos=demos,
+                    action_demos=visit.action_demos[:shot_count],
+                    control_condition=control,
+                    control_seed=int(runtime.settings["video_schedule_seed"])
+                    + macro * 1009
+                    + visit.task_id * 9173,
                 )
                 if stage == "functional_warmstart"
                 else _outer_task(
@@ -359,6 +383,17 @@ def train(runtime: OuterCreditRuntime) -> None:
             if stage == "functional_warmstart":
                 row["mean_loss"] = sum(
                     float(value["loss"]) for value in records
+                ) / len(records)
+                row["temporal_control"] = (
+                    control
+                    if any(value["temporal_control"] is not None for value in records)
+                    else None
+                )
+                row["mean_control_update_loss"] = sum(
+                    float(value["control_update_loss"]) for value in records
+                ) / len(records)
+                row["mean_action_alignment_loss"] = sum(
+                    float(value["action_alignment_loss"]) for value in records
                 ) / len(records)
             else:
                 row.update(
@@ -408,6 +443,8 @@ def train(runtime: OuterCreditRuntime) -> None:
             },
         )
     runtime.video_store.close()
+    if runtime.action_store is not None:
+        runtime.action_store.close()
     if runtime.env_pool is not None:
         runtime.env_pool.close()
     if runtime.context.world_size > 1:

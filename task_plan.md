@@ -7,6 +7,9 @@ language与first+final都只净增2且不显著，换同任务视频只保留36/
 复用现有训练产物，在fixed decoder上补齐fit19跨episode action-phase alignment、真实时序controls与K1--4覆盖，先过
 Inference Gate再考虑新outer estimator；不恢复macro4、不做rank/LR/seed小扫。held始终零梯度、zero-interaction。**
 
+owner于本节点要求：process-supervised路径完成机制验证并集成后暂时收尾，先进行owner/执行方/专家中期讨论；讨论前不启动
+formal训练或下一轮held评测。goal保持active，暂停不等于路线完成或裁决。
+
 ## Goal
 
 全面落实第二轮独立专家意见与owner随后确认的授权：停止在当前LMMPC 320-cell joint-moving compiler上做增量修补，先建立
@@ -175,7 +178,7 @@ composite-latest为`21/43/37/33`。source→shared为17 retained、26 gained、4
   不从teacher state派生mask绕过信息墙；
 - [ ] 在train/meta actions可用处加入inverse dynamics、visual transition-to-latent-action与phase correspondence辅助目标，
   held输入继续action-hidden；56-task process frontend已接受跨episode action-phase监督，但新16维code heads尚未在fit19固定坐标
-  上接受该监督，下一轮只补这一缺口；
+  上接受该监督；当前训练路径与1-task真实smoke已接通，formal结果等待中期讨论后再启动；
 - [ ] Dynamic-K若进入论文候选，训练与formal评测真实覆盖各cardinality；不平均frames/raw features/final LoRAs；
 - [x] 固定decoder、仅训练language/video inference并完成held5 closed-loop matched panel；当前两轮correct-only版本未过Gate 3，
   下一轮保持decoder不变，只补process/action supervision；
@@ -276,3 +279,6 @@ estimator，也不能直接投入更昂贵多方向outer。下一轮先使用已
     用跨episode action-phase alignment、reversed/shuffled/first+final/endpoints-middle-shuffled和K1--4训练新heads；
 12. 先以同一held5 correct/language/first+final/same-task panel裁决process warm-start。通过才实施结构不同的outer credit；失败则
     按专家stop gate核对尚未覆盖的meta-task数量/多split，并准备转向video→progress或skill composition，不围绕rank/LR/seed小扫。
+13. process-supervised路径已复用单一loss owner接入跨episode actions与真实frame controls；gpu02单任务K1 reversed smoke得到
+    action-alignment `.22331`、control-update `.002316`、finite total loss与grad norm `8.394`，峰值约32.49 GB。该证据只证明
+    机制接通；按owner要求在formal launch前暂时收尾，待中期讨论。

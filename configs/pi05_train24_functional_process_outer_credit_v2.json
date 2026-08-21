@@ -1,0 +1,209 @@
+{
+  "schema_version": "ember_pi05_functional_adapter_v1",
+  "status": "profile_candidate",
+  "authorities": {
+    "meta_protocol": "configs/libero90_nonheld_meta_v1/protocol.json",
+    "meta_experts": "configs/pi05_nonheld_meta_expert_bank_v1.json",
+    "train24_experts": "configs/pi05_video_expert_manifold_v1.json",
+    "target_data_manifest": "configs/pi05_target_data_v1/manifest.json",
+    "evaluation_config": "configs/pi05_target_evaluation_v1.json",
+    "lora_contract": "configs/pi05_lora_v1.json"
+  },
+  "decoder": {
+    "production_code_width": 16,
+    "address_width": 64,
+    "hidden_width": 256,
+    "initialization_seed": 20260821,
+    "center_residual_at_zero_code": true,
+    "active_rank_start": 12,
+    "active_rank_end": 16,
+    "fully_fixed_after_fit": true,
+    "template": "formal_fit19_stable_shared_prior",
+    "output": "one_complete_38_target_rank16_shared_prior_plus_task_residual_lora"
+  },
+  "code_inference": {
+    "kind": "language_prior_plus_ordered_video_process_posterior",
+    "feature_width": 256,
+    "hidden_width": 1024,
+    "code_width": 16,
+    "attention_heads": 8,
+    "temporal_layers": 2,
+    "phase_queries": 5,
+    "event_queries": 6,
+    "dropout": 0.0,
+    "initialization_seed": 20260820,
+    "language_only_is_learned": true,
+    "action_probe_tokens_preserved": 50,
+    "per_video_order_before_set_aggregation": true,
+    "task_id_route": false,
+    "feature_encoder": {
+      "image_width": 2048,
+      "expert_width": 1024,
+      "text_meta_lora_rank": 0,
+      "vl_meta_lora_rank": 0,
+      "action_meta_lora_rank": 4,
+      "patch_grounding_heads": 8,
+      "max_frames_per_encoder_call": 16,
+      "activation_checkpointing": true
+    },
+    "training": {
+      "frame_stride": 5,
+      "dynamic_k_max": 4,
+      "video_open_files_per_rank": 8,
+      "smoke": {
+        "world_size": 1,
+        "total_macros": 2,
+        "checkpoint_macros": [1, 2]
+      },
+      "profile": {
+        "world_size": 1,
+        "total_macros": 4,
+        "checkpoint_macros": [4]
+      },
+      "formal": {
+        "world_size": 6,
+        "total_macros": 14,
+        "checkpoint_macros": [4, 8, 12, 13, 14]
+      }
+    },
+    "evaluation": {
+      "formal_status": "sealed",
+      "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
+      "minimum_smoke_writer_model_batch_size": 8,
+      "online_smoke_evidence": {
+        "schema_version": "ember_pi05_writer_generation_profile_v2",
+        "evidence_path": "runs/analysis/pi05_functional_outer_credit_m2_generation_profile_nonheld_meta_validation_d7c9240_gpu02p1_20260821/writer_generation_profile.json",
+        "evidence_bytes": 10440,
+        "authority_commit": "d7c9240ce534bf9493c95ebc681d657f47f27aa9",
+        "device": "NVIDIA A40",
+        "profiled_writer_model_batch_sizes": [8, 16, 32],
+        "supported_writer_model_batch_sizes": [8, 16, 32],
+        "selected_writer_model_batch_size": 8,
+        "selection_rule": "highest_measured_fixed_panel_loras_per_second_with_stable_longest_video_batch",
+        "panel_entry_count": 32,
+        "panel_total_sampled_frames": 1159,
+        "longest_sampled_video_frames": 48,
+        "warmup_runs_per_batch": 1,
+        "measured_runs_per_batch": 2,
+        "profile_wall_seconds": 330.02958786394447,
+        "writer_generation_measurements": [
+          {
+            "batch_size": 8,
+            "loras_per_second": 0.8977163773439986,
+            "repeat_wall_seconds": [35.526187899988145, 35.76581658516079],
+            "peak_reserved_bytes": 11339300864,
+            "memory_headroom_bytes": 36360421376,
+            "stable": true
+          },
+          {
+            "batch_size": 16,
+            "loras_per_second": 0.8960239154050451,
+            "repeat_wall_seconds": [35.714261966058984, 35.71240299195051],
+            "peak_reserved_bytes": 11351883776,
+            "memory_headroom_bytes": 36347838464,
+            "stable": true
+          },
+          {
+            "batch_size": 32,
+            "loras_per_second": 0.8976360287148892,
+            "repeat_wall_seconds": [35.597036264138296, 35.70134966587648],
+            "peak_reserved_bytes": 12199133184,
+            "memory_headroom_bytes": 35500589056,
+            "stable": true
+          }
+        ],
+        "oom_count": 0,
+        "nonfinite_count": 0,
+        "teacher_action_reads": 0,
+        "teacher_state_reads": 0,
+        "reward_reads": 0,
+        "terminal_reads": 0,
+        "content_hash_policy": "disabled_by_owner"
+      }
+    }
+  },
+  "outer_credit": {
+    "method": "fit19_process_identifying_warmstart_then_train_task_closed_loop_credit",
+    "seed": 20260821,
+    "fit_task_ordinals": [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23],
+    "held_task_ordinals": [0, 5, 10, 15, 20],
+    "train_demo_indices": [0, 39],
+    "within_task_evaluation_demo_indices": [40, 49],
+    "video_schedule_seed": 20260823,
+    "environment_seed_root": 20260824,
+    "policy_noise_seed_root": 20260825,
+    "update_seed_root": 20260826,
+    "video_open_files_per_rank": 8,
+    "warmstart_temporal_controls": [
+      "reversed",
+      "shuffled",
+      "first_final",
+      "endpoints_middle_shuffled"
+    ],
+    "warmstart_loss_weights": {
+      "combined_code": 1.0,
+      "language_code": 0.5,
+      "video_code": 0.5,
+      "correct_confidence": 0.05,
+      "control_confidence": 0.05,
+      "control_update": 0.25,
+      "same_task_consistency": 0.0,
+      "action_alignment": 0.1
+    },
+    "objective": {
+      "estimator": "one_gaussian_antithetic_direction_per_task_visit_with_exact_K2_common_random_numbers",
+      "sigma": 0.5,
+      "success_weight": 1.0,
+      "success_efficiency_weight": 0.05,
+      "progress_weight": 0.25,
+      "progress": "peak_fraction_of_train_task_BDDL_goal_predicates",
+      "phase_code_anchor_weight": 0.02,
+      "decoder_trainable": false,
+      "source_policy_trainable": false
+    },
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0001,
+      "warmup_macros": 2,
+      "betas": [0.9, 0.999],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "environment": {
+      "render_resolution": 256,
+      "dummy_settling_steps": 10,
+      "dummy_action": [0, 0, 0, 0, 0, 0, -1],
+      "action_execution_horizon": 5,
+      "num_inference_steps": 10
+    },
+    "modes": {
+      "smoke": {
+        "world_size": 1,
+        "task_count": 1,
+        "warmstart_macros": 2,
+        "total_macros": 2,
+        "default_stop_macro": 1,
+        "checkpoint_macros": [1, 2]
+      },
+      "profile": {
+        "world_size": 1,
+        "task_count": 4,
+        "warmstart_macros": 4,
+        "total_macros": 4,
+        "default_stop_macro": 4,
+        "checkpoint_macros": [4]
+      },
+      "formal": {
+        "world_size": 6,
+        "task_count": 19,
+        "warmstart_macros": 12,
+        "total_macros": 14,
+        "default_stop_macro": 4,
+        "checkpoint_macros": [4, 8, 12, 13, 14]
+      }
+    }
+  },
+  "claim_boundary": "This candidate reuses the inherited 56-task process frontend and current fixed 16-dimensional decoder, while adding fit19 cross-episode action-phase alignment, rotating real-frame temporal controls, and K1-K4 coverage before any new outer update. Held5, validation, and test actions or rewards never train the Writer. Failure closes this process-supervised warm-start, not fixed coordinates, teacher-action correspondence, or train-task outer credit in general.",
+  "content_hash_policy": "disabled_by_owner"
+}

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
+from typing import Any, Mapping
 
 import torch
 import torch.distributed as dist
@@ -33,15 +33,18 @@ def _sync_gradients(runtime: CodeTrainingRuntime) -> torch.Tensor:
     )
 
 
-def _task_loss(
-    runtime: CodeTrainingRuntime,
+def process_code_inference_task_loss(
+    runtime: Any,
     *,
     task_id: int,
     demos: tuple[int, ...],
-    action_demos: tuple[int, ...],
-    control_condition: str,
+    action_demos: tuple[int, ...] | None,
+    control_condition: str | None,
     control_seed: int,
+    weights: Mapping[str, float],
 ) -> Any:
+    """Run one fixed-code task loss with optional process/action supervision."""
+
     packed, _ = pack_teacher_condition(
         runtime.video_store,
         task_id=task_id,
@@ -58,14 +61,18 @@ def _task_loss(
         language_mask,
         task_span_mask,
     ) = packed
-    action_phase_targets = runtime.action_store.phase_targets(
-        task_id=task_id,
-        video_demos=demos,
-        action_demos=action_demos,
-        frame_indices=frame_indices,
-        video_offsets=video_offsets,
-        device=runtime.context.device,
-    )
+    action_phase_targets = None
+    if action_demos is not None:
+        if runtime.action_store is None:
+            raise ValueError("process-supervised code training lacks action authority")
+        action_phase_targets = runtime.action_store.phase_targets(
+            task_id=task_id,
+            video_demos=demos,
+            action_demos=action_demos,
+            frame_indices=frame_indices,
+            video_offsets=video_offsets,
+            device=runtime.context.device,
+        )
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         features, frame_condition_ids = runtime.writer.encode_features(
             policy=runtime.policy,
@@ -83,25 +90,27 @@ def _task_loss(
             video_offsets=video_offsets,
             condition_video_offsets=condition_video_offsets,
         )
-        controlled = controlled_process_input(
-            features=features,
-            frame_condition_ids=frame_condition_ids,
-            frame_positions=frame_indices,
-            video_offsets=video_offsets,
-            condition=control_condition,
-            order_seed=control_seed,
-        )
-        control = runtime.writer.infer_features(
-            features=controlled.features,
-            frame_condition_ids=controlled.frame_condition_ids,
-            frame_indices=controlled.frame_positions,
-            video_offsets=controlled.video_offsets,
-            condition_video_offsets=condition_video_offsets,
-        )
+        control = None
+        if control_condition is not None:
+            controlled = controlled_process_input(
+                features=features,
+                frame_condition_ids=frame_condition_ids,
+                frame_positions=frame_indices,
+                video_offsets=video_offsets,
+                condition=control_condition,
+                order_seed=control_seed,
+            )
+            control = runtime.writer.infer_features(
+                features=controlled.features,
+                frame_condition_ids=controlled.frame_condition_ids,
+                frame_indices=controlled.frame_positions,
+                video_offsets=controlled.video_offsets,
+                condition_video_offsets=condition_video_offsets,
+            )
         return functional_code_inference_loss(
             correct,
             runtime.target_codes[task_id],
-            weights=runtime.settings["loss_weights"],
+            weights=weights,
             control=control,
             action_phase_targets=action_phase_targets,
         )
@@ -151,7 +160,7 @@ def train(runtime: CodeTrainingRuntime) -> None:
         assignments = runtime.schedule.assignments(macro)
         control = runtime.schedule.control_for_macro(macro)
         for visit in assignments[runtime.context.rank]:
-            loss = _task_loss(
+            loss = process_code_inference_task_loss(
                 runtime,
                 task_id=visit.task_id,
                 demos=visit.demos,
@@ -160,6 +169,7 @@ def train(runtime: CodeTrainingRuntime) -> None:
                 control_seed=int(runtime.settings["task_macro_seed"])
                 + macro * 1009
                 + visit.task_id * 9173,
+                weights=runtime.settings["loss_weights"],
             )
             (loss.total / task_count).backward()
             totals += torch.stack(

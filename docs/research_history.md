@@ -689,6 +689,19 @@ pooling/action decoder；不规定slot identity或event count，且在direct gro
 sparsity和entropy项。remote-safe证据为
 `docs/evidence/ecp_20260822/stage0_native_v2_macro10_gate1.json`。
 
+### 3.32 Stage 0A v3首次通过native非退化门并进入Action Meta matched arm
+
+clean pushed `2d19ea8`的v3 formal在gpu01 physical `1,2,3,4,5,7`完成10 macros/900 visits，耗时252.66秒，峰值
+11,664,016,896 bytes；Prohibited physical0未使用。frame/event action loss由`.312545/.312241`降到`.243966/.246427`，
+cross-task contrast由`1.721222`降到`1.376669`；active events从`6.85`结束于`6.97`，全程未坍缩。
+
+同commit固定48-row panel中，correct active events均值`6.48`且range 4--8；same-task-other summary/event cosine
+`.999601/.999270`，mean/nearest cross-task cosine`.909019/.980528`，48/48 nearest margins为正，held5也为10/10；速度
+summary/event cosine`.999975/.999871`。这使native observer首次通过“非全局、跨episode、held可泛化”的结构门，授权执行
+独立Action Meta-LoRA arm。antithetic summary/event cosine仍只有`.978224/.976424`，且只有16/48 rows优于nearest-cross，
+所以最终observer authority仍待matched Meta panel，不进入compiler。证据：
+`docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

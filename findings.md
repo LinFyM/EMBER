@@ -871,3 +871,25 @@ event分支完全共享的owner pooling和action decoder直接预测该帧cross-
 使event assignment首先面对真实有序phase差异。该修正只把expert建议中已有的train-only action-horizon/phase calibration
 前移到可识别接口，deployment输入仍只有language与action-hidden video。完整证据见
 `docs/evidence/ecp_20260822/stage0_native_v2_macro10_gate1.json`。
+
+## 41. Pre-segmentation action grounding首次建立跨episode、跨task的动态event几何
+
+Stage 0 v3只在event pooling前增加training-only frame action grounding，并与event branch共享owner pooling/action decoder；
+direct grounding建立期间关闭same-task consistency、uncertainty、presence consistency/sparsity和posterior entropy，保留
+cross-task contrast。clean pushed `2d19ea8`在同一90 tasks完成10 macros/900 visits，frame/event action loss由
+`.312545/.312241`降到`.243966/.246427`，cross-task contrast由`1.721222`降到`1.376669`。更重要的是active events在
+10 macros始终约6--7，macro10为`6.97`，没有重演v2在macro6前严格坍缩成1。故teacher-action phase监督的到达顺序确实是
+v2最早失败接口；固定presence本身既不是充分修正，也不是动态E失败的根因。
+
+固定48-row panel把“只是多开slot”与task-conditioned geometry区分开。correct active events均值`6.48`且按row覆盖4--8；
+same-task-other summary/event cosine为`.999601/.999270`，mean/nearest cross-task为`.909019/.980528`，margin为
+`.090582/.019073`。48/48 rows的nearest margin都为正，held5同样10/10为正且最小`.001715`；速度视图summary/event cosine
+`.999975/.999871`。这与v2的same-task `.999981`、nearest-cross `.998369`、单event完全不同：v3表示既跨视频稳定，又保留
+task差异，并在未拟合held5上成立。
+
+剩余边界是fixed-probe robustness，而不是再次否定native observer。antithetic summary/event cosine为`.978224/.976424`；
+只有16/48 rows中，antithetic same-task summary仍比canonical nearest-cross更近。极端probe翻转的变化因此常大于最近task gap，
+native还不能直接冻结为最终authority。根据owner已确认的必做合同，下一步只训练shared、无task-ID的Action Meta-LoRA，冻结
+native observer其余参数，并用完全相同panel做matched裁决；只有Meta不造成task/event geometry退化且改善或保持probe稳定时
+才采用。此时不启动compiler或用内部几何替代闭环Gate 2。证据见
+`docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`。

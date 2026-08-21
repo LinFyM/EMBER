@@ -1,0 +1,102 @@
+{
+  "schema_version": "ember_ecp_stage0_native_v3_gate1_evidence_v1",
+  "authority": {
+    "commit": "2d19ea84af845a804fa9a0a007a7a7116dcf32a2",
+    "run": "runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822",
+    "checkpoint": "checkpoints/macro_00000010",
+    "panel": "observer_panel_macro10_native_v3.json",
+    "formal_task_visits": 900,
+    "world_size": 6
+  },
+  "change_from_v2": {
+    "frame_grounding": "predict cross-episode phase actions directly from pre-segmentation frame-owner evidence",
+    "shared_decoder": "frame and event paths share owner pooling and the complete action decoder",
+    "withheld_during_grounding": [
+      "same-task process consistency",
+      "uncertainty calibration",
+      "presence consistency",
+      "presence sparsity",
+      "posterior entropy"
+    ],
+    "retained": [
+      "cross-task contrast",
+      "soft-posterior event action reconstruction",
+      "correct-only ordered videos",
+      "fixed-capacity dynamic event slots"
+    ]
+  },
+  "training": {
+    "macro_1": {
+      "frame_action_grounding": 0.3125452468792597,
+      "event_action_reconstruction": 0.3122414896885554,
+      "cross_task_contrast": 1.7212215542793274,
+      "mean_active_events": 6.85,
+      "mean_presence_sum": 5.592080958684286,
+      "gradient_norm_before_clip": 1.6731483936309814
+    },
+    "macro_10": {
+      "frame_action_grounding": 0.24396589514282013,
+      "event_action_reconstruction": 0.2464274800486035,
+      "cross_task_contrast": 1.3766691099272834,
+      "mean_active_events": 6.972222222222222,
+      "mean_presence_sum": 5.662465635935466,
+      "gradient_norm_before_clip": 0.48488131165504456
+    },
+    "mean_active_event_trajectory": [
+      6.85,
+      6.75,
+      5.933333333333334,
+      6.194444444444445,
+      6.061111111111111,
+      5.905555555555556,
+      6.211111111111111,
+      6.666666666666667,
+      7.011111111111111,
+      6.972222222222222
+    ],
+    "elapsed_seconds": 252.6590616680005,
+    "max_cuda_allocated_bytes": 11664016896
+  },
+  "observer_panel": {
+    "rows": 48,
+    "tasks": 24,
+    "forbidden_conditions_used": [],
+    "all": {
+      "correct_active_events": 6.479166666666667,
+      "correct_active_event_range": [4.0, 8.0],
+      "speed_active_events": 7.479166666666667,
+      "other_active_events": 6.520833333333333,
+      "speed_summary_cosine": 0.9999751237531503,
+      "speed_event_cosine": 0.9998708628118038,
+      "other_summary_cosine": 0.9996008314192295,
+      "other_event_cosine": 0.999269841859738,
+      "antithetic_summary_cosine": 0.9782240192095438,
+      "antithetic_event_cosine": 0.9764236025512218,
+      "mean_cross_task_summary_cosine": 0.9090186688995016,
+      "nearest_cross_task_summary_cosine": 0.9805281609296799,
+      "mean_cross_task_margin": 0.09058216251972794,
+      "nearest_cross_task_margin": 0.019072670489549637,
+      "positive_nearest_margin_rows": 48,
+      "antithetic_closer_than_nearest_cross_rows": 16
+    },
+    "held5": {
+      "rows": 10,
+      "correct_active_events": 6.3,
+      "other_summary_cosine": 0.9997091174125672,
+      "nearest_cross_task_summary_cosine": 0.9868709981441498,
+      "nearest_cross_task_margin": 0.012838119268417358,
+      "minimum_nearest_cross_task_margin": 0.0017154216766357422,
+      "positive_nearest_margin_rows": 10
+    },
+    "elapsed_seconds": 188.15500535909086,
+    "max_cuda_allocated_bytes": 18721906176
+  },
+  "decision": {
+    "native_non_degeneracy_pass": true,
+    "gate_1_complete": false,
+    "verdict": "pre-segmentation action grounding establishes dynamic, cross-episode, held-generalizing task geometry",
+    "remaining_interface": "probe invariance is weaker than nearest-task separation on 32 of 48 rows",
+    "next_required_arm": "train the independent shared Action Meta-LoRA against the frozen native observer and compare the identical panel",
+    "compiler_status": "withheld until the native versus Action Meta observer authority is frozen"
+  }
+}

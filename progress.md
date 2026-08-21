@@ -113,6 +113,17 @@
   correct/speed/same-task-other/antithetic panel。launch前两节点live预检确认所选6张A40均0% util、14 MiB占用；`/data1` user
   usage为654,627,428 KiB、quota 1,073,741,824 KiB、limit 1,084,227,584 KiB，共享filesystem仍有84 TiB，空间充分。只允许
   同commit、world-size6、v3 run schema exact-resume；shuffled/reversed/wrong仍不进入训练、选点或本阶段panel。
+- Stage 0 v3 native formal已从clean pushed `2d19ea8`完成10 macros/900 visits，训练段252.66秒、峰值11,664,016,896 bytes，
+  metrics、gradient与macro10 checkpoint全部finite。frame/event action loss由`.312545/.312241`降到`.243966/.246427`；active
+  events不再坍缩，10-macro轨迹为`6.85,6.75,5.93,6.19,6.06,5.91,6.21,6.67,7.01,6.97`；cross-task contrast由
+  `1.721222`持续改善到`1.376669`。这解除v2最早的pre-segmentation identifiability失败，但不单凭训练loss裁决observer。
+- 同一checkpoint的固定48-row panel在clean authority上完整结束：correct平均`6.48`个active events且跨rows覆盖4--8，
+  same-task-other summary/event cosine为`.999601/.999270`，mean/nearest cross-task cosine降到`.909019/.980528`，对应margin
+  `.090582/.019073`；48/48 rows、held5的10/10 rows nearest margin均为正。速度视图summary/event cosine为
+  `.999975/.999871`。因此v3 native首次形成跨episode且泛化到held5的task-specific event geometry，授权进入独立Action
+  Meta-LoRA matched arm。它还不是最终observer authority：antithetic summary/event cosine为`.978224/.976424`，只有16/48
+  rows的antithetic same-task cosine高于canonical nearest-cross cosine，probe稳定性仍是Stage 0B的主要裁决项。native结果见
+  `docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`；compiler、`q_pi`和closed loop仍未启动。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

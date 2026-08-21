@@ -99,7 +99,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   event reconstruction共享action decoder；建立frame phase grounding前关闭premature consistency/uncertainty/sparsity/
   entropy项；
 - [x] 在真实83/42帧pair上profile v3的显存、梯度、frame/event action loss与事件数；
-- [ ] 从clean pushed authority训练v3 macro10并运行同一固定observer panel；
+- [x] 从clean pushed authority训练v3 macro10并运行同一固定observer panel；48/48 nearest cross-task margins为正，native
+  首次非退化并授权进入Action Meta matched arm，但antithetic probe稳定性仍待裁决；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
 
@@ -165,9 +166,8 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 将v2 macro10、固定面板及action-target可识别性诊断封存为remote-safe evidence，不续训、不扫LR/rank/seed；
-2. fresh实现并profile v3 pre-segmentation frame-action grounding；共享同一action decoder，直接grounding建立前不让
-   consistency/uncertainty/sparsity/entropy先定义event posterior；
-3. 从clean pushed frozen commit在合适A40上训练v3 Stage 0A至macro10，并重跑完全相同的observer panel；
-4. 仅在native非退化后训练已接通的shared Action Meta-LoRA独立matched arm并永久冻结observer authority；
-5. Gate 1通过后进入privileged `q_pi + compiler`，同时清理Stage 0临时运行面、短期分支与worktree。
+1. 封存v3 native macro10与固定panel为remote-safe evidence，不续训或用native后续点替代matched裁决；
+2. 从冻结native macro10 fresh训练已接通的shared Action Meta-LoRA独立arm，保持v3 objective、task schedule和信息墙完全一致；
+3. 对Action Meta macro10运行完全相同的48-row panel，比较task geometry、held泛化、probe稳定性与成本；
+4. 无可复现负面效果则采用并永久冻结Meta observer，否则保留native并封存负证据；
+5. Gate 1 authority固定后进入privileged `q_pi + compiler`，同时清理Stage 0短期branch/worktree和非formal临时产物。

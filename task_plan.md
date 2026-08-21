@@ -84,6 +84,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 实现task-grounded visual transition、局部event candidates、双向event/lattice co-attention；
 - [x] 实现固定容量8、动态presence的learned ordered semi-Markov segmenter；
 - [x] 在真实冻结PI0.5上完成单帧forward、梯度边界、显存与吞吐smoke；
+- [x] 接通71个non-held与fit19的task-equal correct-video训练数据、跨episode action grounding、保序速度视图、
+  动态cost-balanced多卡macro与exact-resume checkpoint；
 - [ ] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动训练native observer；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
@@ -150,8 +152,8 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 合并并推送Stage 0 observer/event retained source，清理短期worktree/branch；
-2. 接通正确视频的PaliGemma patch states与Stage 0批处理数据流；
-3. 冻结Stage 0数据角色、目标、速度扰动与checkpoint schema；
-4. 形成Stage 0 correct-only训练入口并训练native observer checkpoint；
-5. 在任何compiler大训练前完成Action Meta-LoRA独立对照。
+1. 从clean pushed frozen commit在6张合适A40上训练Stage 0A至首个macro10 checkpoint；
+2. 对固定native checkpoint运行跨episode、速度与替代probe observer面板，定位event/owner稳定性；
+3. 固定native baseline后实现并训练shared Action Meta-LoRA独立matched arm；
+4. 裁决并永久冻结observer authority，保存Stage 0证据；
+5. 在任何compiler大训练前完成Action Meta-LoRA独立对照并清理Stage 0临时运行面。

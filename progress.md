@@ -26,6 +26,16 @@
   forward/backward：patch=`[1,256,128]`、owner lattice=`[1,38,50,128]`、process=`[1,8,38,128]`，计算1.0203秒、峰值
   9,441,286,144 bytes，source梯度tensor为0、Writer 34个梯度tensor全部finite。该smoke证明真实底座接口与梯度墙接通，
   不代表Stage 0 event学习或性能已经通过。
+- Stage 0A correct-only训练运行面已经接通：71个audited non-held tasks与train24 fold0 fit19组成90个collision-free
+  authorities；每个正式macro对90 tasks各访问一次，6卡时每rank 15 tasks并按真实视频长度动态平衡；每次采样两条正确
+  action-hidden视频、两条互斥action episodes和`1x/2x`保序速度视图。训练只更新native observer、transition/binding/
+  segmenter与training-only action grounding head，source PI0.5保持零梯度；checkpoint保存Writer、optimizer/scheduler、
+  rank RNG、world topology与macro cursor，不做hash校验。一次真实双视频单任务profile使用83/42帧，完整forward/backward
+  为6.886秒、峰值11,524,790,784 bytes；据此formal frame microbatch从8提高到16以利用显存余量。该profile为吞吐证据，
+  不是observer科学结果。
+- Stage 0A retained source按当前真实职责拆分为`stage0`模型、`stage0_data`数据/调度、`stage0_objective`科学目标、
+  `stage0_train_step`分布式task-equal macro、`stage0_training`运行编排和共享`ecp/checkpoint`续训合同；入口只有
+  `scripts/train_ecp_stage0.py`。这些模块共同属于唯一`ember.ecp`运行面，不保留旧16维或LMMPC active fallback。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

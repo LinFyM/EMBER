@@ -10,6 +10,9 @@ from ember.ecp.events import (
     TaskGroundedTransitionMatcher,
 )
 from ember.ecp.observer import ECPNativeObserver
+from ember.ecp.stage0 import ECPStage0Model
+from ember.ecp.stage0_data import ECPStage0Schedule, ECPStage0Task
+from ember.ecp.stage0_objective import ecp_stage0_loss
 from ember.pi05_lora import load_pi05_lora_contract
 
 
@@ -42,6 +45,15 @@ class _FakeBridge(torch.nn.Module):
         expert = _FakeExpert(width)
         self.gemma_expert = SimpleNamespace(model=expert)
         self.expert = expert
+        self.image_projection = torch.nn.Linear(3, width, bias=False)
+        self.language_embedding = torch.nn.Embedding(128, width)
+
+    def embed_image(self, images: torch.Tensor) -> torch.Tensor:
+        pooled = self.image_projection(images.mean(dim=(2, 3)))
+        return pooled[:, None].expand(-1, 256, -1)
+
+    def embed_language_tokens(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.language_embedding(tokens)
 
     def forward(self, *, inputs_embeds, **_kwargs):
         prefix, suffix = inputs_embeds
@@ -164,3 +176,71 @@ def test_event_binding_uses_all_horizons_and_segmenter_is_ordered() -> None:
     assert any(parameter.grad is not None for parameter in matcher.parameters())
     assert any(parameter.grad is not None for parameter in binding.parameters())
     assert any(parameter.grad is not None for parameter in segmenter.parameters())
+
+
+def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> None:
+    torch.manual_seed(11)
+    core = _FakeCore(width=16).requires_grad_(False)
+    policy = SimpleNamespace(model=core)
+    model = ECPStage0Model(
+        _owners(),
+        prefix_width=16,
+        expert_width=16,
+        program_width=12,
+        event_slots=4,
+        action_phases=5,
+        max_frames_per_call=2,
+    )
+    frames = torch.randint(0, 256, (5, 3, 16, 16), dtype=torch.uint8)
+    language_mask = torch.tensor([[True, True, True, True, False, False]])
+    output = model(
+        policy=policy,
+        frames=frames,
+        video_offsets=torch.tensor([0, 3, 5]),
+        frame_condition_ids=torch.zeros(5, dtype=torch.long),
+        language_tokens=torch.randint(0, 64, (1, 6)),
+        language_mask=language_mask,
+    )
+    action_targets = torch.randn(2, 3, 5, 7)
+    weights = {
+        "action_alignment": 1.0,
+        "same_task_consistency": 0.5,
+        "uncertainty_calibration": 0.05,
+        "presence_consistency": 0.1,
+        "cross_task_contrast": 0.2,
+        "posterior_entropy": 0.01,
+        "presence_sparsity": 0.01,
+    }
+    loss = ecp_stage0_loss(output, action_targets, weights=weights)
+    loss.total.backward()
+
+    assert output.process.shape == (2, 4, 38, 12)
+    assert output.state_posterior.shape == (2, 3, 4)
+    assert output.action_phase_predictions.shape == (2, 4, 5, 7)
+    assert torch.isfinite(loss.total)
+    assert loss.uncertainty_calibration >= 0
+    assert all(parameter.grad is None for parameter in core.parameters())
+    assert any(parameter.grad is not None for parameter in model.parameters())
+
+
+def test_stage0_schedule_keeps_video_action_episodes_disjoint_and_balanced() -> None:
+    tasks = tuple(
+        ECPStage0Task(
+            authority_id=index,
+            domain="fixture",
+            domain_task_id=index,
+            language=f"task {index}",
+            path=Path("fixture.hdf5"),
+            expected_bytes=1,
+            episode_lengths=tuple(70 + (index % 3) for _ in range(50)),
+        )
+        for index in range(6)
+    )
+    schedule = ECPStage0Schedule(tasks, seed=23)
+    pair = schedule.pair(0, 4)
+    assignments = schedule.assignments(4, world_size=3)
+
+    assert not set(pair.video_demos) & set(pair.action_demos)
+    assert sorted(pair.speed_factors) == [1, 2]
+    assert sorted(task for group in assignments for task in group) == list(range(6))
+    assert {len(group) for group in assignments} == {2}

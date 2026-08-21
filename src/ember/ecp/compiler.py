@@ -9,6 +9,7 @@ from typing import Mapping
 import torch
 
 from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.low_rank import merge_low_rank_updates
 from ember.ecp.program import ECPProgram
 from ember.lora import (
     LORA_A_SUFFIX,
@@ -18,8 +19,8 @@ from ember.lora import (
 )
 
 
-# 0.4 x the per-family canonical expert factor RMS divided by sqrt(width=256).
-DEFAULT_ABSOLUTE_HEAD_INIT = {
+# Per-family canonical expert factor RMS calibration divided by sqrt(width=256).
+DEFAULT_FACTOR_HEAD_INIT = {
     "action_in": {"a": 7.972e-4, "b": 1.409e-4},
     "action_out": {"a": 7.540e-5, "b": 4.268e-4},
     "q": {"a": 2.070e-4, "b": 1.464e-4},
@@ -53,6 +54,7 @@ class TargetFamilyCompiler(torch.nn.Module):
         compiler_width: int = 256,
         event_slots: int = 8,
         factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
+        residual_head_init_multiplier: float = 0.1,
     ) -> None:
         super().__init__()
         validate_lora_state(template_state, contract)
@@ -107,11 +109,19 @@ class TargetFamilyCompiler(torch.nn.Module):
         self.factor_a, self.factor_b = self._factor_heads(owners, compiler_width)
         self._register_coordinates(owners)
         self._register_templates(template_state)
-        init = factor_head_init or DEFAULT_ABSOLUTE_HEAD_INIT
+        init = factor_head_init or DEFAULT_FACTOR_HEAD_INIT
+        if not 0.0 < residual_head_init_multiplier <= 1.0:
+            raise ValueError("invalid residual head initialization multiplier")
         for family, head in self.factor_a.items():
-            torch.nn.init.normal_(head.weight, std=float(init[family]["a"]))
+            torch.nn.init.normal_(
+                head.weight,
+                std=residual_head_init_multiplier * float(init[family]["a"]),
+            )
         for family, head in self.factor_b.items():
-            torch.nn.init.normal_(head.weight, std=float(init[family]["b"]))
+            torch.nn.init.normal_(
+                head.weight,
+                std=residual_head_init_multiplier * float(init[family]["b"]),
+            )
 
     @staticmethod
     def _factor_heads(
@@ -276,21 +286,37 @@ class TargetFamilyCompiler(torch.nn.Module):
         hidden = self.trunk(hidden)
         templates = self.template_state()
         process_gate = self._process_gate(program)
+        has_process = bool((process_gate.detach() > 0).any())
         result: dict[str, torch.Tensor] = {}
         for owner in self.owners:
-            family = owner.family.value
-            addressed = hidden[:, owner.index]
-            full_a = self.factor_a[family](addressed)
-            full_b = self.factor_b[family](addressed).transpose(1, 2)
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
-            gate_a = process_gate[:, None, None].to(full_a)
-            gate_b = process_gate[:, None, None].to(full_b)
+            if not has_process:
+                result[name_a] = templates[name_a][None].expand(
+                    program.language.shape[0], -1, -1
+                )
+                result[name_b] = templates[name_b][None].expand(
+                    program.language.shape[0], -1, -1
+                )
+                continue
+            family = owner.family.value
+            addressed = hidden[:, owner.index]
+            residual_a = self.factor_a[family](addressed)
+            residual_b = self.factor_b[family](addressed).transpose(1, 2)
+            merged_a, merged_b = merge_low_rank_updates(
+                base_a=templates[name_a],
+                base_b=templates[name_b],
+                residual_a=residual_a,
+                residual_b=residual_b,
+                output_rank=self.rank,
+            )
+            gate_a = process_gate[:, None, None].to(merged_a)
+            gate_b = process_gate[:, None, None].to(merged_b)
             result[name_a] = (
-                (1.0 - gate_a) * templates[name_a][None] + gate_a * full_a
+                (1.0 - gate_a) * templates[name_a][None] + gate_a * merged_a
             ).to(templates[name_a])
             result[name_b] = (
-                (1.0 - gate_b) * templates[name_b][None] + gate_b * full_b
+                (1.0 - gate_b) * templates[name_b][None] + gate_b * merged_b
             ).to(templates[name_b])
         locality = torch.einsum(
             "bjrn,jn->", attention.float(), self.locality_cost

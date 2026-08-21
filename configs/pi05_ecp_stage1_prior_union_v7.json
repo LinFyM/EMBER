@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_policy_support_v6",
-  "status": "active_stage1_policy_support",
-  "purpose": "Privileged policy-support teacher and content-address-separated absolute rank16 compiler trained on successful, learner, source and shared multi-state responses.",
+  "schema_version": "ember_ecp_stage1_prior_union_v7",
+  "status": "active_stage1_prior_union",
+  "purpose": "Privileged policy-support teacher with a prior-preserving effective-update union that emits one recompressed rank16 LoRA.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -72,13 +72,15 @@
     "output_tensors": 76,
     "output_values": 1287168,
     "prior_only_surface": "exact complete rank16 gauge-canonical stable shared prior",
-    "full_process_surface": "direct absolute complete rank16 LoRA; no stable-prior factor residual",
+    "full_process_surface": "best-rank16 recompression of stable-shared BA plus generated residual BA",
+    "low_rank_union": "concatenate shared/residual factors, thin QR on both sides, SVD only the 32x32 core, retain top16",
     "q_pi_gate": "member x event x owner content gate, bounded by visible event presence",
     "program_content": "owner/layer/family are tensor addresses; no additive address embeddings in visible Program values or q_pi factor values",
     "compiler_content_path": "addresses affect keys, queries and locality only; values and factor hidden states require Program content",
     "query_to_output_shortcut": false,
-    "query_content_modulation": "target/rank query multiplicatively modulates cross-attended Program values; zero Program content remains zero output",
-    "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values",
+    "query_content_modulation": "target/rank query multiplicatively modulates cross-attended Program values; zero Program content contributes zero residual and leaves shared unchanged",
+    "factor_head_init_basis": "residual factors start at 0.1 times the v6 family A/B head standard deviations",
+    "residual_head_init_multiplier": 0.1,
     "factor_head_init_std": {
       "action_in": {"a": 0.0007972, "b": 0.0001409},
       "action_out": {"a": 0.0000754, "b": 0.0004268},
@@ -119,7 +121,7 @@
     "effective_update": "exact gauge-invariant BA Frobenius loss through rank-sized Gram matrices",
     "canonical_factor_warmstart": "compact rank16 SVD gauge for direct A/B coordinate supervision; never a closed-loop selector",
     "functional_response": "paired complete PI0.5 flow response on alternating successful and learner multi-phase occupancy",
-    "prior_counterfactual": "language+scene with process absent remains near the full stable-prior LoRA",
+    "prior_counterfactual": "language+scene with process absent returns the exact stable-prior LoRA; process adds only a recompressed effective-update residual",
     "weights": {
       "member_effective_update": 0.05,
       "consensus_effective_update": 0.05,

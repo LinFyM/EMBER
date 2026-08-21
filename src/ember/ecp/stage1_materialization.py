@@ -39,8 +39,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_policy_support_projection_v6"
-PROJECTION_KIND = "ecp_stage1_privileged_policy_support_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_prior_union_projection_v7"
+PROJECTION_KIND = "ecp_stage1_privileged_prior_union_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -343,10 +343,13 @@ def _projection_manifest(
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "prior-only exact template; full-process absolute factors",
+            "parameterization": "prior-only exact template; full-process best-rank16 shared-plus-residual effective-update union",
             "content_address_separated": True,
             "query_content_modulated": True,
             "policy_support_teacher": True,
+            "raw_factor_addition": False,
+            "fixed_rank_partition": False,
+            "second_adapter_deployed": False,
             "objective_phase": "policy_support",
         },
         "information_wall": {
@@ -511,7 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_policy_support_v6.json",
+        / "configs/pi05_ecp_stage1_prior_union_v7.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

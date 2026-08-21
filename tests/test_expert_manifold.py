@@ -225,8 +225,8 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_policy_support_projection_v6",
-            "projection_kind": "ecp_stage1_privileged_policy_support_compiler",
+            "schema_version": "ember_ecp_stage1_prior_union_projection_v7",
+            "projection_kind": "ecp_stage1_privileged_prior_union_compiler",
             **assets,
             "optimization": {
                 "task_visits": 228,
@@ -236,10 +236,13 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
                 "final_lora_averaging": False,
                 "rank": 16,
                 "all_ranks_writable": True,
-                "parameterization": "prior-only exact template; full-process absolute factors",
+                "parameterization": "prior-only exact template; full-process best-rank16 shared-plus-residual effective-update union",
                 "content_address_separated": True,
                 "query_content_modulated": True,
                 "policy_support_teacher": True,
+                "raw_factor_addition": False,
+                "fixed_rank_partition": False,
+                "second_adapter_deployed": False,
                 "objective_phase": "policy_support",
             },
             "information_wall": {
@@ -248,7 +251,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
             },
         }
     )
-    assert contract["arm"] == "ecp_stage1_q_pi_policy_support_tv228"
+    assert contract["arm"] == "ecp_stage1_q_pi_prior_union_tv228"
     assert contract["asset"]["single_complete_lora"] is True
 
 

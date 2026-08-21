@@ -55,10 +55,10 @@ PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_phase_aligned_functional_decoder_train24_projection_v1"
 )
 ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA = (
-    "ember_pi05_ecp_stage1_policy_support_task_expert_eval_adapter_v6"
+    "ember_pi05_ecp_stage1_prior_union_task_expert_eval_adapter_v7"
 )
 ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA = (
-    "ember_ecp_stage1_policy_support_projection_v6"
+    "ember_ecp_stage1_prior_union_projection_v7"
 )
 
 
@@ -76,7 +76,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     task_visits = int(optimization.get("task_visits", -1))
     if (
         manifest.get("projection_kind")
-        != "ecp_stage1_privileged_policy_support_compiler"
+        != "ecp_stage1_privileged_prior_union_compiler"
         or optimization.get("held_shared_gradient_steps") != 0
         or optimization.get("compiler_frozen_for_materialization") is not True
         or optimization.get("single_complete_lora") is not True
@@ -84,10 +84,13 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         or int(optimization.get("rank", -1)) != 16
         or optimization.get("all_ranks_writable") is not True
         or optimization.get("parameterization")
-        != "prior-only exact template; full-process absolute factors"
+        != "prior-only exact template; full-process best-rank16 shared-plus-residual effective-update union"
         or optimization.get("content_address_separated") is not True
         or optimization.get("query_content_modulated") is not True
         or optimization.get("policy_support_teacher") is not True
+        or optimization.get("raw_factor_addition") is not False
+        or optimization.get("fixed_rank_partition") is not False
+        or optimization.get("second_adapter_deployed") is not False
         or optimization.get("objective_phase") != "policy_support"
         or information_wall.get("privileged_q_pi") is not True
         or information_wall.get("second_adapter_deployed") is not False
@@ -95,7 +98,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         raise ExpertManifoldError("ECP Stage 1 projection manifest changed")
     return {
         "adapter_schema": ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA,
-        "arm": f"ecp_stage1_q_pi_policy_support_tv{task_visits}",
+        "arm": f"ecp_stage1_q_pi_prior_union_tv{task_visits}",
         "asset": {
             "stage1_config": _projection_file(manifest, "stage1_config"),
             "stage1_checkpoint": _projection_file(manifest, "stage1_checkpoint"),

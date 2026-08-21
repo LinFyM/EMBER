@@ -4,6 +4,7 @@ import torch
 
 from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
 from ember.ecp.contracts import build_target_owners
+from ember.ecp.low_rank import merge_low_rank_updates
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
@@ -146,7 +147,7 @@ def test_compact_svd_gauge_preserves_update_and_is_deterministic() -> None:
     torch.testing.assert_close(canonical_b, repeat_b)
 
 
-def test_absolute_compiler_uses_prior_only_or_full_surface() -> None:
+def test_prior_union_compiler_preserves_base_when_residual_is_zero() -> None:
     contract, owners, template = _contract_and_states()
     for value in template.values():
         value.normal_(std=0.01)
@@ -167,12 +168,14 @@ def test_absolute_compiler_uses_prior_only_or_full_surface() -> None:
     ).state
     for name, target in template.items():
         torch.testing.assert_close(prior[name][0], target)
-        torch.testing.assert_close(full[name], torch.zeros_like(full[name]))
     assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7
+    assert float(exact_effective_update_loss(full, template, contract).detach()) < 1e-5
 
 
-def test_compiler_address_queries_cannot_write_without_program_content() -> None:
+def test_compiler_address_queries_cannot_write_residual_without_program_content() -> None:
     contract, owners, template = _contract_and_states()
+    for value in template.values():
+        value.normal_(std=0.01)
     compiler = TargetFamilyCompiler(owners, contract, template)
     zero = ECPProgram(
         language=torch.zeros(1, 38, 128),
@@ -182,8 +185,29 @@ def test_compiler_address_queries_cannot_write_without_program_content() -> None
         uncertainty=torch.zeros(1, 8, 38, 128),
     )
     state = compiler(zero).state
-    for value in state.values():
-        torch.testing.assert_close(value, torch.zeros_like(value))
+    assert float(exact_effective_update_loss(state, template, contract).detach()) < 1e-5
+
+
+def test_low_rank_union_matches_dense_best_rank_and_has_finite_gradient() -> None:
+    generator = torch.Generator().manual_seed(17)
+    base_a = torch.randn(2, 5, generator=generator)
+    base_b = torch.randn(6, 2, generator=generator)
+    residual_a = torch.randn(1, 2, 5, generator=generator, requires_grad=True)
+    residual_b = torch.randn(1, 6, 2, generator=generator, requires_grad=True)
+    merged_a, merged_b = merge_low_rank_updates(
+        base_a=base_a,
+        base_b=base_b,
+        residual_a=residual_a,
+        residual_b=residual_b,
+        output_rank=2,
+    )
+    dense = base_b @ base_a + residual_b[0] @ residual_a[0]
+    u, singular, vh = torch.linalg.svd(dense, full_matrices=False)
+    expected = (u[:, :2] * singular[:2]) @ vh[:2]
+    torch.testing.assert_close(merged_b[0] @ merged_a[0], expected)
+    (merged_b @ merged_a).square().mean().backward()
+    assert residual_a.grad is not None and torch.isfinite(residual_a.grad).all()
+    assert residual_b.grad is not None and torch.isfinite(residual_b.grad).all()
 
 
 def test_query_content_modulation_reaches_rank_outputs() -> None:

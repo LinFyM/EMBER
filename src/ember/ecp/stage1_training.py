@@ -56,8 +56,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_policy_support_run_v6"
-STAGE = "stage1_policy_support_v6"
+RUN_SCHEMA = "ember_ecp_stage1_prior_union_run_v7"
+STAGE = "stage1_prior_union_v7"
 
 
 @dataclass
@@ -128,8 +128,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_policy_support_v6"
-        or config.get("status") != "active_stage1_policy_support"
+        != "ember_ecp_stage1_prior_union_v7"
+        or config.get("status") != "active_stage1_prior_union"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -142,6 +142,10 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             "learner_shared_minus_source",
         )
         or int(config.get("policy_support", {}).get("horizon_basis", -1)) != 4
+        or float(config.get("model", {}).get("residual_head_init_multiplier", -1))
+        != 0.1
+        or "best-rank16 recompression"
+        not in config.get("model", {}).get("full_process_surface", "")
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
@@ -346,6 +350,9 @@ def load_stage1_authorities(
         support_channels=len(config["policy_support"]["channels"]),
         support_horizon_basis=int(config["policy_support"]["horizon_basis"]),
         factor_head_init=config["model"]["factor_head_init_std"],
+        residual_head_init_multiplier=float(
+            config["model"]["residual_head_init_multiplier"]
+        ),
     ).to(context.device)
     return ECPStage1Authorities(
         source=source,
@@ -640,7 +647,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_policy_support_v6.json",
+        / "configs/pi05_ecp_stage1_prior_union_v7.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

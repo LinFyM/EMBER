@@ -11,6 +11,7 @@ import torch
 from safetensors.torch import load_file
 
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
+from ember.ecp.low_rank import canonicalize_low_rank_factors
 from ember.ecp.stage1_support import PolicySupportTask
 from ember.lora import (
     LORA_A_SUFFIX,
@@ -112,25 +113,7 @@ def gauge_canonicalize_factors(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Return compact-SVD LoRA factors with a deterministic rank sign gauge."""
 
-    squeeze = a.ndim == 2
-    a_batch = a[None] if squeeze else a
-    b_batch = b[None] if squeeze else b
-    q_b, r_b = torch.linalg.qr(b_batch.float(), mode="reduced")
-    q_a, r_a = torch.linalg.qr(a_batch.float().transpose(1, 2), mode="reduced")
-    u, singular, vh = torch.linalg.svd(r_b @ r_a.transpose(1, 2))
-    root = singular.clamp_min(0).sqrt()
-    canonical_b = (q_b @ u) * root[:, None]
-    canonical_a = root[:, :, None] * (vh @ q_a.transpose(1, 2))
-    pivots = canonical_b.abs().argmax(dim=1, keepdim=True)
-    signs = canonical_b.gather(1, pivots).squeeze(1).sign()
-    signs = torch.where(signs == 0, torch.ones_like(signs), signs)
-    canonical_b = canonical_b * signs[:, None]
-    canonical_a = canonical_a * signs[:, :, None]
-    canonical_a = canonical_a.to(a)
-    canonical_b = canonical_b.to(b)
-    if squeeze:
-        return canonical_a[0], canonical_b[0]
-    return canonical_a, canonical_b
+    return canonicalize_low_rank_factors(a, b)
 
 
 def gauge_canonicalize_lora_state(

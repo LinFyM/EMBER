@@ -16,7 +16,12 @@ from ember.ecp.events import (
     TaskGroundedTransitionMatcher,
 )
 from ember.ecp.observer import ECPNativeObserver, NativeObserverOutput
-from ember.ecp.stage0 import ECPStage0Model, ECPStage0Output, ECPVideoEncoder
+from ember.ecp.stage0 import (
+    ECPStage0Model,
+    ECPStage0Output,
+    ECPVideoEncoder,
+    ECPVideoEncoderOutput,
+)
 from ember.ecp.stage0_objective import ECPStage0Loss, ecp_stage0_loss
 from ember.ecp.stage0_data import (
     ECPStage0Pair,
@@ -39,6 +44,7 @@ __all__ = [
     "ECPStage0Schedule",
     "ECPStage0Task",
     "ECPVideoEncoder",
+    "ECPVideoEncoderOutput",
     "EventBindingOutput",
     "EventConditionedHorizonBinding",
     "EventProgramOutput",

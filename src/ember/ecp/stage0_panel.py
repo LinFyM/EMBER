@@ -27,7 +27,7 @@ from ember.writer.meta_lora import MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-PANEL_SCHEMA = "ember_ecp_stage0_observer_panel_v2"
+PANEL_SCHEMA = "ember_ecp_stage0_observer_panel_v3"
 
 
 @dataclass(frozen=True)
@@ -231,14 +231,14 @@ def _evaluate_pair(
         "language_mask": language_mask,
     }
     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-        process, presence, _, _, _, _, _, summary = model.encoder(
+        encoded = model.encoder(
             frames=frames,
             video_offsets=offsets,
             frame_condition_ids=frame_condition_ids,
             action_meta_lora=action_meta_lora,
             **common,
         )
-        anti_process, anti_presence, _, _, _, _, _, anti_summary = model.encoder(
+        anti_encoded = model.encoder(
             frames=frames[: counts[0]],
             video_offsets=torch.tensor(
                 [0, counts[0]], dtype=torch.long, device=device
@@ -248,6 +248,12 @@ def _evaluate_pair(
             action_meta_lora=action_meta_lora,
             **common,
         )
+    process = encoded.process
+    presence = encoded.presence
+    summary = encoded.program_summary
+    anti_process = anti_encoded.process
+    anti_presence = anti_encoded.presence
+    anti_summary = anti_encoded.program_summary
     row = {
         "task_id": task.task_id,
         "role": task.role,
@@ -398,7 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v2.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v3.json",
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--source-checkpoint", type=Path, required=True)

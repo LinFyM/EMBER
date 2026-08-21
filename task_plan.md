@@ -91,7 +91,15 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 固定面板裁决首版native observer为Gate 1科学不通过：task/event表示近全局坍缩，未进入compiler；
 - [x] 实现独立shared Action Meta-LoRA训练、checkpoint与matched panel运行面；正式科学arm等待修正后的native authority；
 - [x] 以固定速度归一occupancy presence和逐帧posterior action reconstruction修正最早失效接口，并通过真实profile；
-- [ ] 从fresh clean-pushed authority训练修正后的native macro10并重跑同一固定面板；
+- [x] 从fresh clean-pushed authority训练v2 native macro10并重跑同一固定面板；固定presence消除了全局分母捷径，但
+  posterior在macro6前仍坍缩为单event，Gate 1继续失败；
+- [x] 以8 tasks×2 views的真实cross-episode action targets确认有序8-bin oracle相对最优常数预测降低80.57% MSE，排除
+  “teacher action本身没有phase信号”；
+- [x] fresh实现v3 pre-segmentation frame-action grounding：在event pooling前直接约束frame-bound owner evidence，并与
+  event reconstruction共享action decoder；建立frame phase grounding前关闭premature consistency/uncertainty/sparsity/
+  entropy项；
+- [x] 在真实83/42帧pair上profile v3的显存、梯度、frame/event action loss与事件数；
+- [ ] 从clean pushed authority训练v3 macro10并运行同一固定observer panel；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
 
@@ -157,8 +165,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 将首版native macro10与固定面板的Gate 1负裁决封存为remote-safe evidence，不续训、不扫LR/rank/seed；
-2. fresh实现并profile固定occupancy-fraction presence与逐帧posterior action reconstruction，只改变这一组耦合退化接口；
-3. 从clean pushed frozen commit在6张合适A40上训练修正后的Stage 0A至macro10，并重跑完全相同的observer面板；
+1. 将v2 macro10、固定面板及action-target可识别性诊断封存为remote-safe evidence，不续训、不扫LR/rank/seed；
+2. fresh实现并profile v3 pre-segmentation frame-action grounding；共享同一action decoder，直接grounding建立前不让
+   consistency/uncertainty/sparsity/entropy先定义event posterior；
+3. 从clean pushed frozen commit在合适A40上训练v3 Stage 0A至macro10，并重跑完全相同的observer panel；
 4. 仅在native非退化后训练已接通的shared Action Meta-LoRA独立matched arm并永久冻结observer authority；
 5. Gate 1通过后进入privileged `q_pi + compiler`，同时清理Stage 0临时运行面、短期分支与worktree。

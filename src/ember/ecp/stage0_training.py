@@ -50,7 +50,7 @@ from ember.writer.data import RawTeacherVideoStore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage0_native_run_v2"
+RUN_SCHEMA = "ember_ecp_stage0_native_run_v3"
 STAGE = "stage0_native"
 
 
@@ -90,11 +90,11 @@ def stage0_authority_path(config: dict[str, Any], name: str) -> Path:
 
 def load_stage0_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if config.get("schema_version") != "ember_ecp_stage0_native_v2":
+    if config.get("schema_version") != "ember_ecp_stage0_native_v3":
         raise ValueError("unsupported ECP Stage 0 config")
     if (
         config["objective"].get("action_alignment_mode")
-        != "per_frame_soft_event_reconstruction"
+        != "presegment_frame_grounding_with_soft_event_reconstruction"
     ):
         raise ValueError("unsupported ECP Stage 0 action grounding")
     return config
@@ -519,7 +519,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v2.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v3.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

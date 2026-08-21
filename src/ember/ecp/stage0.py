@@ -26,7 +26,21 @@ class ECPStage0Output:
     confidence: torch.Tensor
     frame_mask: torch.Tensor
     program_summary: torch.Tensor
-    action_phase_predictions: torch.Tensor
+    frame_action_predictions: torch.Tensor
+    event_action_predictions: torch.Tensor
+
+
+@dataclass(frozen=True)
+class ECPVideoEncoderOutput:
+    process: torch.Tensor
+    presence: torch.Tensor
+    uncertainty: torch.Tensor
+    assignment: torch.Tensor
+    state_posterior: torch.Tensor
+    confidence: torch.Tensor
+    frame_mask: torch.Tensor
+    program_summary: torch.Tensor
+    frame_owner_evidence: torch.Tensor
 
 
 class ECPVideoEncoder(torch.nn.Module):
@@ -167,16 +181,7 @@ class ECPVideoEncoder(torch.nn.Module):
         suffix_noise: torch.Tensor | None = None,
         action_meta_lora: Any | None = None,
         install_action_meta_lora: bool = True,
-    ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
+    ) -> ECPVideoEncoderOutput:
         patch, language, lattice = self._native_frames(
             policy=policy,
             frames=frames,
@@ -200,6 +205,10 @@ class ECPVideoEncoder(torch.nn.Module):
             patch, language, frame_mask, video_language_mask
         )
         bound = self.binding(candidates, confidence, lattice, frame_mask)
+        candidate_weights = confidence.softmax(-1)
+        frame_owner_evidence = torch.einsum(
+            "vtm,vtmjd->vtjd", candidate_weights, bound
+        ).masked_fill(~frame_mask[:, :, None, None], 0.0)
         program = self.segmenter(bound, confidence, frame_mask)
         summary_weights = program.presence / program.presence.sum(
             1, keepdim=True
@@ -207,15 +216,16 @@ class ECPVideoEncoder(torch.nn.Module):
         summary = torch.einsum(
             "ve,ved->vd", summary_weights, program.process.mean(2)
         )
-        return (
-            program.process,
-            program.presence,
-            program.uncertainty,
-            program.assignment,
-            program.state_posterior,
-            confidence,
-            frame_mask,
-            summary,
+        return ECPVideoEncoderOutput(
+            process=program.process,
+            presence=program.presence,
+            uncertainty=program.uncertainty,
+            assignment=program.assignment,
+            state_posterior=program.state_posterior,
+            confidence=confidence,
+            frame_mask=frame_mask,
+            program_summary=summary,
+            frame_owner_evidence=frame_owner_evidence,
         )
 
 
@@ -255,32 +265,28 @@ class ECPStage0Model(torch.nn.Module):
             torch.nn.Linear(program_width, action_phases * 7),
         )
 
+    def _predict_actions(self, owner_states: torch.Tensor) -> torch.Tensor:
+        owner_weights = self.action_owner_score(
+            torch.tanh(owner_states)
+        ).squeeze(-1).softmax(-1)
+        state = (owner_weights[..., None] * owner_states).sum(-2)
+        return self.action_head(state).reshape(
+            *owner_states.shape[:-2], self.action_phases, 7
+        )
+
     def forward(self, **inputs: torch.Tensor | torch.nn.Module) -> ECPStage0Output:
-        (
-            process,
-            presence,
-            uncertainty,
-            assignment,
-            posterior,
-            confidence,
-            frame_mask,
-            summary,
-        ) = self.encoder(**inputs)
-        owner_weights = (
-            self.action_owner_score(torch.tanh(process)).squeeze(-1).softmax(2)
-        )
-        event_state = torch.einsum("vej,vejd->ved", owner_weights, process)
-        action = self.action_head(event_state).reshape(
-            process.shape[0], process.shape[1], self.action_phases, 7
-        )
+        encoded = self.encoder(**inputs)
         return ECPStage0Output(
-            process=process,
-            presence=presence,
-            uncertainty=uncertainty,
-            assignment=assignment,
-            state_posterior=posterior,
-            confidence=confidence,
-            frame_mask=frame_mask,
-            program_summary=summary,
-            action_phase_predictions=action,
+            process=encoded.process,
+            presence=encoded.presence,
+            uncertainty=encoded.uncertainty,
+            assignment=encoded.assignment,
+            state_posterior=encoded.state_posterior,
+            confidence=encoded.confidence,
+            frame_mask=encoded.frame_mask,
+            program_summary=encoded.program_summary,
+            frame_action_predictions=self._predict_actions(
+                encoded.frame_owner_evidence
+            ),
+            event_action_predictions=self._predict_actions(encoded.process),
         )

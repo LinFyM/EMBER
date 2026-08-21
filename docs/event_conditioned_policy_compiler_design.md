@@ -325,15 +325,27 @@ Stage 0训练或机制选择，只保留到最终候选checkpoint的时序特异
 训练参数：semantic projections、TransitionMatcher、q/v post-capture projections、event-horizon binding、semi-Markov segmenter、
 presence/uncertainty heads。
 
-跨episode action grounding必须在每个有效视频帧上约束event识别。event action head先为每个slot预测phase action，再由该帧
-soft posterior重构：
+跨episode action grounding必须在每个有效视频帧上先建立可识别的phase evidence，再约束event识别。对binding输出先沿
+candidate置信度聚合但保留frame与38 owners：
 
 ```text
-a_hat[k,s,p] = sum_e posterior[k,s,e] * action_head(P_process[k,e])[p]
-L_action     = mean_k mean_valid_s ||a_hat[k,s] - a_cross_episode[k,s]||^2
+F_owner[k,s,j,:] = sum_m softmax_m(conf[k,s,m]) * B[k,s,m,j,:]
+a_frame[k,s,p]   = SharedActionDecoder(F_owner[k,s])[p]
 ```
 
-不得先把所有frame action targets平均成event target后再回归；后者允许不同动作阶段坍缩到同一slot而不承担逐帧误差。
+同一个owner pooling与ActionDecoder再读取每个event的`P_process`，由该帧soft posterior重构：
+
+```text
+a_event[k,e,p] = SharedActionDecoder(P_process[k,e])[p]
+a_hat[k,s,p]   = sum_e posterior[k,s,e] * a_event[k,e,p]
+L_frame        = mean_k mean_valid_s ||a_frame[k,s] - a_cross_episode[k,s]||^2
+L_event        = mean_k mean_valid_s ||a_hat[k,s]   - a_cross_episode[k,s]||^2
+```
+
+`L_frame`是training-only pre-segmentation calibration，不向deployment增加action输入；它让共享decoder和frame evidence在随机
+event posterior之外先看见真实phase差异。首个v3 grounding阶段不启用same-task consistency、uncertainty calibration、presence
+sparsity或posterior entropy，避免这些弱目标先把posterior定义成单event；`L_event`仍直接要求segmenter解释有序phase。不得先
+把所有frame action targets平均成event target后再回归，也不得把action phase转成规定slot identity、硬boundary或固定event数。
 
 输出：`observer_native_stage0.ckpt`。门：同task跨episodeevent一致性、速度鲁棒与替代probe稳定性；固定checkpoint上的
 process controls只作诊断，hidden margin不能代替后续闭环。

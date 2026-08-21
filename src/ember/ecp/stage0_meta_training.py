@@ -47,7 +47,7 @@ from ember.writer.meta_lora import MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage0_action_meta_run_v2"
+RUN_SCHEMA = "ember_ecp_stage0_action_meta_run_v3"
 STAGE = "stage0_action_meta"
 
 
@@ -307,7 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v2.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v3.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

@@ -848,3 +848,26 @@ alignment先用posterior把所有frame targets平均为event target，再回归e
 cross-episode action target。它同时消除速度/视频长度对presence尺度的影响，并让event collapse直接承担时变动作误差；
 其余native graph、38 owners、50 horizons、correct-only数据墙和固定panel均不变。完整证据见
 `docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。
+
+## 40. Stage 0 v2消除presence尺度捷径后，event posterior仍先于action grounding坍缩
+
+Stage 0 v2从clean pushed `395912a`使用同一90-task、world-size6合同完成10 macros/900 task-equal visits。训练段253.23秒，
+全部loss、gradient和checkpoint finite；因此结果不是运行失败。固定occupancy-fraction presence确实改变了首版动力学：
+macro1有`6.85`个active events、presence sum`5.592081`。但active events随后按
+`5.26→3.02→1.39→1.03→1.00`坍缩，macro6--10均严格为1；macro10逐帧posterior action reconstruction仍为`.251337`，
+cross-task contrast为`1.733799`。固定48-row panel的correct、保序2x speed、same-task other和antithetic四个条件也全部只有
+1个active event；same-task-other summary cosine`.999981`的同时nearest cross-task cosine仍有`.998369`，nearest margin
+仅`.001611`。所以v2 Gate 1继续失败，未启动Action Meta、compiler或closed loop。
+
+独立检查真实`PrivilegedMetaActionStore.phase_targets`排除了“跨episode action target没有时序信息”。在8个固定task
+authorities、每task 2 views上，逐视频最优常数action的MSE均值为`.178693`，按真实视频顺序分成8个等时bin后的oracle均值
+为`.034727`，降低`80.57%`；实际训练loss甚至高于常数oracle。最早接口因此不是target identifiability，而是监督到达顺序：
+teacher action只有先穿过随机event pooling和随机event action head才接触frame evidence；在frame/process尚未学会phase时，
+same-task/uncertainty/presence/entropy项已经给posterior提供更容易的单event解。
+
+后继v3不规定事件数量、slot身份或action-derived硬边界。它在segmentation之前从每帧`B[s,m,j]`形成owner evidence，使用与
+event分支完全共享的owner pooling和action decoder直接预测该帧cross-episode phase action；event分支仍通过soft posterior
+重构逐帧action。frame grounding建立前将premature consistency、uncertainty、presence sparsity和posterior entropy权重置零，
+使event assignment首先面对真实有序phase差异。该修正只把expert建议中已有的train-only action-horizon/phase calibration
+前移到可识别接口，deployment输入仍只有language与action-hidden video。完整证据见
+`docs/evidence/ecp_20260822/stage0_native_v2_macro10_gate1.json`。

@@ -674,6 +674,21 @@ speed-normalized occupancy fraction，并把action grounding改为soft event pos
 对应的视频段落仍完全由模型学习。remote-safe证据为
 `docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。
 
+### 3.31 Stage 0A v2的单event坍缩与pre-segmentation grounding裁决
+
+clean pushed `395912a`的v2 formal在gpu01 physical `1,2,3,4,5,7`完成10 macros/900 task visits，耗时253.23秒，
+峰值11,652,725,248 bytes。固定occupancy-fraction presence移除了v1的learned duration denominator，但active events从
+macro1的`6.85`在macro6前降为`1.0`并保持到macro10；逐帧posterior action loss只到`.251337`。clean pushed `3b6df9a`
+修复panel可选路径解析后重跑同一48 rows，四个条件全部只有1个active event，same-task-other/nearest-cross-task summary
+cosine为`.999981/.998369`，nearest margin`.001611`。Gate 1继续fail，Action Meta与compiler均未启动。
+
+对8个固定tasks×2 views的真实cross-episode action targets做无训练诊断：逐视频最优常数预测MSE为`.178693`，有序8-bin
+oracle为`.034727`，降低`80.57%`。所以phase信号存在，v2失败是它只在随机event pooling之后监督frame evidence，posterior
+先被其它目标压成单event。下一fresh版本在segmentation前增加training-only frame-action grounding，与event分支共享owner
+pooling/action decoder；不规定slot identity或event count，且在direct grounding建立前关闭premature consistency、uncertainty、
+sparsity和entropy项。remote-safe证据为
+`docs/evidence/ecp_20260822/stage0_native_v2_macro10_gate1.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

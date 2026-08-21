@@ -82,6 +82,30 @@
   `runs/outputs/pi05_ecp_stage0_native_v2_fold0_m10_r6_gpu01p123457_20260822/`，预计新增低于100 MB；macro10立即运行同一
   correct/speed/same-task-other/antithetic固定panel。只允许同commit、world-size6、v2 run schema exact-resume；任何
   shuffled/reversed/wrong条件仍不进入训练、选点或本阶段panel。
+- Stage 0 v2 formal已从clean pushed `395912a`完成10 macros、900 task-equal visits；训练段253.23秒、单卡峰值
+  11,652,725,248 bytes，10行metrics、gradient与macro10 checkpoint全部finite。可是active events从macro1的`6.85`快速
+  变为`5.26→3.02→1.39→1.03`，macro6--10严格为`1.0`；action reconstruction只由`.312241`降到`.251337`，cross-task
+  contrast反而由`1.721222`升到`1.733799`。因此固定presence尺度消除了v1的可学习分母，却没有阻止event posterior本身
+  先坍缩。
+- 修复optional Action Meta路径解析后的clean pushed `3b6df9a`完成同一48-row panel。correct、2x speed、same-task other和
+  antithetic四种条件在fit19与held5上全部只有1个active event；same-task-other summary cosine`.999981`，mean/nearest
+  cross-task cosine仍为`.992826/.998369`，nearest margin仅`.001611`。v2 Gate 1继续失败，未启动Action Meta、compiler或
+  held closed loop；panel的首次CLI失败发生在任何forward前、没有输出，窄修复后fresh重跑，不构成科学arm。
+- 一个不训练模型的action-target可识别性诊断在8个固定tasks×2 views上比较最优常数event与有序8-bin均值：MSE为
+  `.178693`对`.034727`，后者降低`80.57%`；而实际macro10 action loss`.251337`甚至没有达到常数上界。故数据中确有很强
+  有序phase信号，最早失败是teacher action只在event pooling之后才产生梯度：随机frame evidence与event head尚未学会phase，
+  sparsity/entropy/uncertainty/一致性已经先把posterior压成一个event。下一版本按专家原始Stage 0意见，在segmentation之前
+  增加training-only frame action grounding并与event action head共享decoder；直接grounding建立前暂不施加collapse-promoting
+  regularizers。remote-safe证据见`docs/evidence/ecp_20260822/stage0_native_v2_macro10_gate1.json`。
+- Stage 0 v3已经替换唯一active config与checkpoint schema，不保留v2并行运行面。binding后的每帧`[4,38,128]`evidence先按
+  candidate confidence聚合成`[38,128]`，与event process共用同一owner pooling和action decoder，分别产生直接frame action
+  grounding与posterior event reconstruction；same-task consistency、uncertainty、presence consistency/sparsity和posterior
+  entropy在direct grounding阶段权重为0，cross-task contrast保留为anti-collapse项。source、PaliGemma与Action Expert继续冻结，
+  deployment没有新增action输入。聚焦9 tests通过，architecture guard无hard violation。
+- live GPU预检后在gpu02 physical1完成真实83/42帧单卡profile；gpu01 prohibited physical0未使用。一个完整macro耗时4.43秒，
+  峰值11,506,725,376 bytes，frame/event action loss为`.253187/.252328`，grad norm`1.706204`且finite，初始active events`3.5`、
+  presence sum`4.430230`。相对v2同shape profile没有显存或吞吐回退，已具备fresh formal macro10的机械条件；profile临时产物
+  不作为科学证据并在提交前删除。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

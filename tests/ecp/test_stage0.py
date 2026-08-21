@@ -225,10 +225,11 @@ def test_event_presence_uses_speed_normalized_fixed_occupancy() -> None:
     assert "minimum_duration" not in dict(segmenter.named_parameters())
 
 
-def test_action_grounding_reconstructs_each_frame_not_only_event_mean() -> None:
+def test_presegment_grounding_is_independent_of_collapsed_event_posterior() -> None:
     targets = torch.tensor([[[[0.0]], [[1.0]]]]).expand(2, -1, -1, -1)
     weights = {
-        "action_alignment": 1.0,
+        "frame_action_grounding": 1.0,
+        "event_action_reconstruction": 1.0,
         "same_task_consistency": 0.0,
         "uncertainty_calibration": 0.0,
         "presence_consistency": 0.0,
@@ -237,7 +238,11 @@ def test_action_grounding_reconstructs_each_frame_not_only_event_mean() -> None:
         "presence_sparsity": 0.0,
     }
 
-    def output(posterior: torch.Tensor, predictions: torch.Tensor) -> ECPStage0Output:
+    def output(
+        posterior: torch.Tensor,
+        event_predictions: torch.Tensor,
+        frame_predictions: torch.Tensor,
+    ) -> ECPStage0Output:
         events = posterior.shape[-1]
         return ECPStage0Output(
             process=torch.zeros(2, events, 1, 1),
@@ -248,23 +253,32 @@ def test_action_grounding_reconstructs_each_frame_not_only_event_mean() -> None:
             confidence=torch.zeros(2, 2, 1),
             frame_mask=torch.ones(2, 2, dtype=torch.bool),
             program_summary=torch.ones(2, 1),
-            action_phase_predictions=predictions,
+            frame_action_predictions=frame_predictions,
+            event_action_predictions=event_predictions,
         )
 
     collapsed = output(
         torch.ones(2, 2, 1),
         torch.full((2, 1, 1, 1), 0.5),
+        targets,
     )
     separated = output(
         torch.eye(2)[None].expand(2, -1, -1),
         torch.tensor([[[[0.0]], [[1.0]]]]).expand(2, -1, -1, -1),
+        targets,
     )
 
     collapsed_loss = ecp_stage0_loss(collapsed, targets, weights=weights)
     separated_loss = ecp_stage0_loss(separated, targets, weights=weights)
 
-    assert torch.isclose(collapsed_loss.action_alignment, torch.tensor(0.25))
-    assert torch.isclose(separated_loss.action_alignment, torch.tensor(0.0))
+    assert torch.isclose(collapsed_loss.frame_action_grounding, torch.tensor(0.0))
+    assert torch.isclose(
+        collapsed_loss.event_action_reconstruction, torch.tensor(0.25)
+    )
+    assert torch.isclose(separated_loss.frame_action_grounding, torch.tensor(0.0))
+    assert torch.isclose(
+        separated_loss.event_action_reconstruction, torch.tensor(0.0)
+    )
 
 
 def test_action_meta_lora_is_the_only_trainable_native_observer_path() -> None:
@@ -339,7 +353,8 @@ def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> No
     )
     action_targets = torch.randn(2, 3, 5, 7)
     weights = {
-        "action_alignment": 1.0,
+        "frame_action_grounding": 1.0,
+        "event_action_reconstruction": 1.0,
         "same_task_consistency": 0.5,
         "uncertainty_calibration": 0.05,
         "presence_consistency": 0.1,
@@ -348,11 +363,23 @@ def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> No
         "presence_sparsity": 0.01,
     }
     loss = ecp_stage0_loss(output, action_targets, weights=weights)
+    padded_targets = action_targets.clone()
+    padded_targets[1, 2] = 1e4
+    padded_loss = ecp_stage0_loss(output, padded_targets, weights=weights)
     loss.total.backward()
 
     assert output.process.shape == (2, 4, 38, 12)
     assert output.state_posterior.shape == (2, 3, 4)
-    assert output.action_phase_predictions.shape == (2, 4, 5, 7)
+    assert output.frame_action_predictions.shape == (2, 3, 5, 7)
+    assert output.event_action_predictions.shape == (2, 4, 5, 7)
+    assert output.frame_mask.tolist() == [[True, True, True], [True, True, False]]
+    assert torch.isclose(
+        loss.frame_action_grounding, padded_loss.frame_action_grounding
+    )
+    assert torch.isclose(
+        loss.event_action_reconstruction,
+        padded_loss.event_action_reconstruction,
+    )
     assert not torch.allclose(output.process, alternative.process)
     assert torch.isfinite(loss.total)
     assert loss.uncertainty_calibration >= 0

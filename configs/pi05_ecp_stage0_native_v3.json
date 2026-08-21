@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_ecp_stage0_native_v2",
+  "schema_version": "ember_ecp_stage0_native_v3",
   "status": "active_stage0_native_observer",
   "authorities": {
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
@@ -53,16 +53,17 @@
     "cross_episode": true
   },
   "objective": {
-    "action_alignment_mode": "per_frame_soft_event_reconstruction",
+    "action_alignment_mode": "presegment_frame_grounding_with_soft_event_reconstruction",
     "contrastive_temperature": 0.1,
     "weights": {
-      "action_alignment": 1.0,
-      "same_task_consistency": 0.5,
-      "uncertainty_calibration": 0.05,
-      "presence_consistency": 0.1,
+      "frame_action_grounding": 1.0,
+      "event_action_reconstruction": 1.0,
+      "same_task_consistency": 0.0,
+      "uncertainty_calibration": 0.0,
+      "presence_consistency": 0.0,
       "cross_task_contrast": 0.2,
-      "posterior_entropy": 0.01,
-      "presence_sparsity": 0.005
+      "posterior_entropy": 0.0,
+      "presence_sparsity": 0.0
     }
   },
   "optimization": {

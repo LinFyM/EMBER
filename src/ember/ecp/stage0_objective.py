@@ -14,7 +14,8 @@ from ember.ecp.stage0 import ECPStage0Output
 @dataclass(frozen=True)
 class ECPStage0Loss:
     total: torch.Tensor
-    action_alignment: torch.Tensor
+    frame_action_grounding: torch.Tensor
+    event_action_reconstruction: torch.Tensor
     same_task_consistency: torch.Tensor
     uncertainty_calibration: torch.Tensor
     presence_consistency: torch.Tensor
@@ -23,7 +24,20 @@ class ECPStage0Loss:
     presence_sparsity: torch.Tensor
 
 
-def _frame_action_reconstruction(
+def _masked_action_mse(
+    prediction: torch.Tensor,
+    frame_action_targets: torch.Tensor,
+    frame_mask: torch.Tensor,
+) -> torch.Tensor:
+    per_frame = (prediction.float() - frame_action_targets.float()).square().mean(
+        dim=(2, 3)
+    )
+    valid = frame_mask.to(per_frame.dtype)
+    per_video = (per_frame * valid).sum(1) / valid.sum(1).clamp_min(1)
+    return per_video.mean()
+
+
+def _event_action_reconstruction(
     posterior: torch.Tensor,
     event_predictions: torch.Tensor,
     frame_action_targets: torch.Tensor,
@@ -32,12 +46,7 @@ def _frame_action_reconstruction(
     prediction = torch.einsum(
         "vte,vepa->vtpa", posterior, event_predictions
     )
-    per_frame = (prediction.float() - frame_action_targets.float()).square().mean(
-        dim=(2, 3)
-    )
-    valid = frame_mask.to(per_frame.dtype)
-    per_video = (per_frame * valid).sum(1) / valid.sum(1).clamp_min(1)
-    return per_video.mean()
+    return _masked_action_mse(prediction, frame_action_targets, frame_mask)
 
 
 def _contrastive_pair(
@@ -66,9 +75,14 @@ def ecp_stage0_loss(
 ) -> ECPStage0Loss:
     """Ground an ordered same-task video pair without exposing task ID to ECP."""
 
-    action_alignment = _frame_action_reconstruction(
+    frame_action_grounding = _masked_action_mse(
+        output.frame_action_predictions,
+        frame_action_targets,
+        output.frame_mask,
+    )
+    event_action_reconstruction = _event_action_reconstruction(
         output.state_posterior,
-        output.action_phase_predictions,
+        output.event_action_predictions,
         frame_action_targets,
         output.frame_mask,
     )
@@ -111,7 +125,8 @@ def ecp_stage0_loss(
     ).sum(-1).masked_fill(~output.frame_mask, 0.0).sum() / valid
     presence_sparsity = output.presence.float().mean()
     terms = {
-        "action_alignment": action_alignment,
+        "frame_action_grounding": frame_action_grounding,
+        "event_action_reconstruction": event_action_reconstruction,
         "same_task_consistency": same_task_consistency,
         "uncertainty_calibration": uncertainty_calibration,
         "presence_consistency": presence_consistency,

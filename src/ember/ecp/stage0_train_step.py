@@ -62,6 +62,29 @@ def _program_metrics(output: Any) -> dict[str, float]:
     }
 
 
+def _task_record(
+    *, task_id: int, task: Any, pair: Any, output: Any, loss: Any
+) -> dict[str, Any]:
+    return {
+        "authority_id": task_id,
+        "domain": task.domain,
+        "domain_task_id": task.domain_task_id,
+        "total": float(loss.total.detach()),
+        "frame_action_grounding": float(loss.frame_action_grounding.detach()),
+        "event_action_reconstruction": float(
+            loss.event_action_reconstruction.detach()
+        ),
+        "same_task_consistency": float(loss.same_task_consistency.detach()),
+        "uncertainty_calibration": float(loss.uncertainty_calibration.detach()),
+        "presence_consistency": float(loss.presence_consistency.detach()),
+        "cross_task_contrast": float(loss.cross_task_contrast.detach()),
+        "posterior_entropy": float(loss.posterior_entropy.detach()),
+        "presence_sparsity": float(loss.presence_sparsity.detach()),
+        **_program_metrics(output),
+        **pair.metrics,
+    }
+
+
 def run_stage0_macro(
     runtime: "ECPStage0Runtime", macro: int, run_started: float
 ) -> dict[str, Any]:
@@ -114,23 +137,13 @@ def run_stage0_macro(
             (loss.total / global_task_count).backward()
         task = runtime.task_by_id[task_id]
         records.append(
-            {
-                "authority_id": task_id,
-                "domain": task.domain,
-                "domain_task_id": task.domain_task_id,
-                "total": float(loss.total.detach()),
-                "action_alignment": float(loss.action_alignment.detach()),
-                "same_task_consistency": float(loss.same_task_consistency.detach()),
-                "uncertainty_calibration": float(
-                    loss.uncertainty_calibration.detach()
-                ),
-                "presence_consistency": float(loss.presence_consistency.detach()),
-                "cross_task_contrast": float(loss.cross_task_contrast.detach()),
-                "posterior_entropy": float(loss.posterior_entropy.detach()),
-                "presence_sparsity": float(loss.presence_sparsity.detach()),
-                **_program_metrics(output),
-                **pair.metrics,
-            }
+            _task_record(
+                task_id=task_id,
+                task=task,
+                pair=pair,
+                output=output,
+                loss=loss,
+            )
         )
     if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
         raise RuntimeError("frozen ECP Stage 0 parameters accumulated gradients")
@@ -151,7 +164,8 @@ def run_stage0_macro(
         name: sum(float(row[name]) for row in global_records) / len(global_records)
         for name in (
             "total",
-            "action_alignment",
+            "frame_action_grounding",
+            "event_action_reconstruction",
             "same_task_consistency",
             "uncertainty_calibration",
             "presence_consistency",

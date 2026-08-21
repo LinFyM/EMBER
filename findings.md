@@ -773,3 +773,26 @@ state-bank visits，下一独立主要变量是挑战十四/方向E的train/meta
 复用现有functional资产作warm start，以授权train/meta simulator success/progress训练条件推断，held仍zero-interaction且
 reward零梯度。证据：
 `docs/evidence/functional_adaptation_20260819/train24_shared_prior_residual_held5_20260821.json`。
+
+## 37. 当前单方向outer credit没有越过shared support
+
+按专家挑战十四/方向E，首个outer实现固定rank12 shared prior与rank4 complete-LoRA decoder，只训练
+language+ordered-video到functional code的推断。fit19按task等权；两轮functional warm-start后，每个task使用一个Gaussian
+antithetic方向、每个正负方向各两个common-random-number初态，以success、执行效率和BDDL goal-predicate progress形成
+closed-loop advantage。held5不读reward/action、不拟合code，部署仍是视频与语言一次生成唯一完整LoRA。
+
+macro2 warm-start在同一held5 fixed250上为`41/250`，per-task为Long0、Goal0、Object4、Spatial0为36、Spatial9为1，
+breadth `3/5`；它几乎复现shared-only的`43/250`，41个成功row还是shared成功集的严格子集。一次outer macro耗时
+`300.74s`，19 tasks中10项产生非零advantage，plus/minus各11次成功，mean advantage仅`.00027165`，说明训练图和reward
+credit确实接通，但该数值不能替代held裁决。
+
+macro3降到`39/250`，per-task只把Spatial0从36降到34，其余完全不变。macro2→3为37 retained、2 gained、4 lost，
+Jaccard`.86047`；那2个gained只是恢复macro2相对shared丢失的rows，shared→macro3仍是39 retained、0 gained、4 lost，
+Jaccard`.90698`。因此当前outer更新没有创造任何shared support之外的task-conditioned success，Goal与Long也仍为0。
+按预注册Gate 4停止macro4，避免把负结果靠更多相同更新或rank/LR/epsilon/seed小扫拖长。
+
+该结论只淘汰当前`one direction × two rollouts/sign`的finite-difference参数化和这一次outer update，不否定专家关于
+closed-loop credit的核心判断，也不否定learned progress、更多方向/结构化credit、skill composition、video初始化的
+task-local RL或runtime conditioning。下一步先对最佳macro2补matched learned language-only与video-only，确认41分里的视频
+净增量，再回到专家账本按最早失效接口选择结构上不同的方向。完整证据见
+`docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。

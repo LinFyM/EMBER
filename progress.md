@@ -171,6 +171,15 @@
   train/meta closed-loop outer objective。先复用现有`ember.reward` rollout/seed/occupancy和functional warm-start资产，
   冻结shared prior与held5边界，只让授权train/meta reward为task-conditioned inference提供外层credit；matched
   shared-only与functional-only仍保留。held validation/test reward不产生梯度，post-generation task-local RL仍单列。
+- 挑战十四/方向E的首个实现已在clean pushed `506daa2`完成并由`2f9fdb0` frozen evaluator裁决。两轮functional
+  warm-start后的macro2在held5 fixed250为`41/250`、breadth `3/5`，其成功集是shared-only `43/250`的严格子集；world6
+  exact-resume后一次outer macro在fit19以success、efficiency与BDDL progress得到10/19 nonzero-advantage tasks，但macro3
+  反而为`39/250`。macro2→3是37 retained/2 gained/4 lost，shared→macro3是39/0/4，没有任何shared support之外的新成功，
+  Goal与Long仍为0。因此按Gate 4停止macro4，不扫rank/LR/epsilon/seed；只关闭当前单方向antithetic finite-difference实现，
+  不关闭outer credit一般。证据见
+  `docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
+- 当前直接下一节点复用macro2 checkpoint和同一held5 rows补learned language-only、video-only，不重训Writer；完成后再逐项
+  回查专家A--N和替代方向，选择结构上不同的credit/process实验。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

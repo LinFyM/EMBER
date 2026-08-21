@@ -1,10 +1,10 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；专家挑战十二的exact `shared rank12 + task residual rank4`已完成formal裁决。shared-only在
-held5 fixed250上为`43/250`，相对source `21/250`有26 gained/4 lost、净`+22`；但earliest/latest composite只有
-`37/250、33/250`，相对shared分别净`-6/-10`。稳定shared prior有真实闭环价值，当前functional task residual没有条件
-增量且不能进入Writer。下一主要变量按专家挑战十四/方向E转为train/meta closed-loop outer credit；held仍零梯度、
-zero-interaction。**
+状态：2026-08-21 **active；专家挑战十四/方向E的首个fixed-decoder closed-loop outer-credit实现已完成formal裁决。
+functional warm-start macro2在held5 fixed250为`41/250`，接近shared-only `43/250`；一次task-equal antithetic outer更新后
+macro3为`39/250`，相对macro2为37 retained/2 gained/4 lost，且相对shared没有任何新成功row。当前单方向finite-difference
+outer参数化implemented-fail，已停止macro4；这不否定outer credit一般。下一节点先补macro2的matched learned
+language-only与video-only因果基线，再按专家账本选择结构上不同的credit或process方向。held始终零梯度、zero-interaction。**
 
 ## Goal
 
@@ -186,16 +186,26 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Phase 4 — Train/meta closed-loop outer objective
 
-- [ ] 以已验证有闭环support的shared prior和现有functional/code资产为warm start；先冻结outer-credit合同，避免把失败的
-  phase-code residual本身当作通过的fixed decoder；
-- [ ] 在train24/non-held meta tasks用simulator rollout reward或经验证progress critic优化video encoder/code posterior；
-- [ ] 与matched functional-only、language-only、video-only比较，明确outer RL改变的是shared zero-interaction Writer；
-- [ ] reward采样按task等权，保存可exact-resume的sampler/topology状态；held validation/test reward不产生梯度；
+- [x] 以已验证有闭环support的shared prior和fixed functional decoder为底座完成functional warm-start；当前Writer只推断
+  task code，decoder/source/shared均冻结，没有把旧phase-code residual冒充通过的decoder；
+- [x] 在fit19用simulator success、执行效率与BDDL goal-predicate progress完成一次closed-loop outer更新；held5只做
+  zero-interaction rollout，没有reward/action梯度；
+- [ ] matched functional-only已完成；macro2 learned language-only、video-only仍需在同一held5 rows上补齐，之后才能回答
+  当前Writer的视频净增量；
+- [x] reward采样按task等权，checkpoint保存sampler/cursor、RNG与world topology并已完成world6 exact-resume；held5不产生
+  梯度；
 - [ ] 若需要stability regularization，约束policy-functional response或已验证成功support，不再用raw parameter gradient
-  PCGrad作为默认解；
-- [ ] task-local post-generation RL单独保留为扩展评测，绝不混入zero-interaction分数。
+  PCGrad作为默认解；当前functional anchor没有阻止4个shared success rows丢失，不能记作通过；
+- [x] task-local post-generation RL继续单独保留为扩展评测，本轮没有混入zero-interaction分数。
 
 **Gate 4：** outer RL必须带来held closed-loop净收益与breadth/retention改善；train reward或critic loss不能选方法。
+
+**首个Outer-credit裁决：** macro2 functional warm-start为`41/250`、breadth `3/5`；macro3一次outer更新后为`39/250`、
+breadth仍`3/5`。macro2→3为37 retained/2 gained/4 lost、Jaccard`.86047`；shared→macro3为39 retained/0 gained/4 lost。
+训练侧19 tasks中10项有非零advantage，但plus/minus都只有11次成功，held没有新增shared support，Goal与Long仍为0。因此按
+Gate 4停止macro4，淘汰当前`one antithetic direction × two CRN rollouts/sign`实现；不外推否定更丰富outer estimator、
+learned progress、composition或task-local RL。证据见
+`docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
 
 ## Phase 5 — Formal迭代、相邻稳定与多split复现
 
@@ -241,8 +251,10 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 8. expert挑战十二已完成：shared-only=`43/250`，相对source净`+22`且exact McNemar `p=5.95e-5`；earliest/latest
    composite=`37/33`，相对shared为8 gained/14 lost与4 gained/14 lost，即净`-6/-10`。成员Jaccard`.62791`虽稳定，仍不能
    挽救负增量；当前12+4 functional residual不进入Writer，shared prior只作为明确标注的固定底座保留；
-9. 回查专家挑战十四和方向E：历史具体reward实现失败不等于train-task closed-loop outer objective失败。下一步先审计并复用
-   `ember.reward`的persistent rollout、seed、occupancy与旧credit资产，冻结一个只改outer credit的高吞吐合同；train/meta
-   reward可训练task-conditioned inference，held5不读reward、不产生梯度，shared-only与functional-only继续作matched对照；
-10. 旧macro10、七臂screen、fingerprints、expert banks、state bank、oracle及本轮训练产物全部复用，不重复昂贵训练；若
-    outer credit受阻或无增量，重新逐段核对专家原文的A--N与替代方向，不围绕rank/LR/seed继续小扫。
+9. fixed-decoder outer-credit合同已实现并exact-resume：macro2 warm-start=`41/250`；macro3一次outer更新=`39/250`，相对
+   shared43没有新成功row。训练侧虽然10/19 tasks有非零advantage，held absolute、breadth与retention均未提高，故明确停止
+   macro4；当前单方向antithetic estimator implemented-fail，不扩大为outer credit一般失败；
+10. 复用macro2唯一checkpoint与同一held5 fixed250 rows补learned language-only、video-only；它们只做推断/rollout，不重复
+    训练，用于区分41分究竟来自learned language、视频posterior还是shared carrier；
+11. 完成matched基线后逐段回查专家原文A--N和替代方向，按最早失效接口选择结构上不同的credit/process实验；旧macro10、
+    fingerprints、expert banks、state bank、oracle与本轮训练产物继续复用，不围绕rank/LR/epsilon/seed小扫。

@@ -1,0 +1,122 @@
+{
+  "schema_version": "ember_train24_functional_outer_credit_held5_evidence_v1",
+  "date": "2026-08-21",
+  "method_commit": "506daa2f05e21836ddf0bede17b0a1b179ac2a65",
+  "evaluation_commit": "2f9fdb0df231f0e07d99faf39a463d623ee7e36d",
+  "method": {
+    "fixed_decoder": true,
+    "fixed_shared_prior": true,
+    "trainable_component": "language_video_functional_code_inference",
+    "warmstart_macros": 2,
+    "outer_credit_parameterization": "one Gaussian antithetic direction per fit task with two common-random-number rollouts per sign",
+    "outer_reward": "success plus efficiency plus BDDL goal-predicate progress",
+    "task_weighting": "fit19 task-equal",
+    "held5_reward_gradient_steps": 0,
+    "held5_writer_gradient_steps": 0,
+    "post_generation_task_local_rl": false,
+    "single_complete_lora": true
+  },
+  "artifacts": {
+    "training_root": "runs/outputs/pi05_train24_functional_outer_credit_formal_r6_m2_506daa2_gpu02p123467_20260821",
+    "macro2_evaluation": "runs/outputs/pi05_functional_outer_credit_m2_held5_correct_5x50_2f9fdb0_gpu02p123467_r2_20260821/results.json",
+    "macro3_evaluation": "runs/outputs/pi05_functional_outer_credit_m3_held5_correct_5x50_2f9fdb0_gpu02p123467_r2_20260821/results.json",
+    "source_baseline": "runs/outputs/pi05_train24_phase_decoder_held5_source_73c2a32_gpu01p01_r2_20260821/results.json",
+    "shared_prior_baseline": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json"
+  },
+  "held5_panel": {
+    "condition": "correct",
+    "tasks": 5,
+    "rows_per_task": 50,
+    "episodes": 250,
+    "teacher_video_sampling": "one same-task video per row without replacement",
+    "paired_environment_policy_rng": true,
+    "results": {
+      "source": {
+        "successes": 21,
+        "breadth": 1,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 0,
+          "libero_spatial/0": 21,
+          "libero_spatial/9": 0
+        }
+      },
+      "shared_prior": {
+        "successes": 43,
+        "breadth": 3,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 4,
+          "libero_spatial/0": 38,
+          "libero_spatial/9": 1
+        }
+      },
+      "macro2_functional_warmstart": {
+        "successes": 41,
+        "breadth": 3,
+        "evaluation_wall_seconds": 703.6649830341339,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 4,
+          "libero_spatial/0": 36,
+          "libero_spatial/9": 1
+        }
+      },
+      "macro3_after_one_outer_update": {
+        "successes": 39,
+        "breadth": 3,
+        "evaluation_wall_seconds": 689.0283982753754,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 4,
+          "libero_spatial/0": 34,
+          "libero_spatial/9": 1
+        }
+      }
+    }
+  },
+  "outer_macro3_training_signal": {
+    "K": 3,
+    "fit_tasks": 19,
+    "rollouts_per_sign_per_task": 2,
+    "plus_successes": 11,
+    "minus_successes": 11,
+    "nonzero_advantage_tasks": 10,
+    "mean_advantage": 0.00027164721243668285,
+    "gradient_norm_before_clip": 3.4359097480773926,
+    "learning_rate": 0.000017217514421272203,
+    "elapsed_seconds": 300.7414524690248
+  },
+  "paired_comparisons": {
+    "shared_prior_to_macro2_warmstart": {
+      "retained": 41,
+      "gained": 0,
+      "lost": 2,
+      "churn": 2,
+      "success_set_jaccard": 0.9534883720930233
+    },
+    "macro2_warmstart_to_macro3_outer": {
+      "retained": 37,
+      "gained": 2,
+      "lost": 4,
+      "churn": 6,
+      "success_set_jaccard": 0.8604651162790697
+    },
+    "shared_prior_to_macro3_outer": {
+      "retained": 39,
+      "gained": 0,
+      "lost": 4,
+      "churn": 4,
+      "success_set_jaccard": 0.9069767441860465
+    }
+  },
+  "decision": "stop_current_one_direction_antithetic_outer_credit_after_macro3",
+  "decision_reason": "The first outer update reduced held5 success from 41 to 39, preserved no success outside the shared-prior support, retained the same three-task breadth, and remained zero on Goal and Long. Continuing macro4 would violate the preregistered requirement that outer credit improve held absolute, breadth, or retention.",
+  "earliest_failed_interface": "the current one-direction finite-difference estimator does not produce a held task-conditioned residual that adds closed-loop support beyond the fixed shared prior",
+  "claim_boundary": "This is an implemented failure of the current one-direction antithetic outer-credit parameterization after one informative update. It does not reject train-task closed-loop outer credit, progress learning, richer credit estimators, skill composition, video-conditioned initialization, or task-local RL in general.",
+  "next_evidence_step": "complete matched learned language-only and video-only held5 baselines for the macro2 warm-start, then revisit the expert ledger to choose the next structurally distinct credit or representation direction rather than resuming macro4 or sweeping rank, learning rate, epsilon, or seed"
+}

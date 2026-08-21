@@ -62,7 +62,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 7. **Method qualification**：single checkpoint在paired400、all suites、Long、breadth、相邻稳定、same-video及最终时序controls
    上共同成立。
 
-## Phase 0 — Active design与实现合同（in progress）
+## Phase 0 — Active design与实现合同（complete）
 
 - [x] 专家最终复核确认：Action horizon是joint future coordinate，不是第二因果时间轴；
 - [x] 核心机制改为monotone video-event segmentation + Event-Conditioned Horizon Binding；
@@ -72,17 +72,18 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] owner确认shuffled/reversed只作最终checkpoint时序特异性评测，不进入训练；
 - [x] held5与validation8角色已澄清；
 - [x] 增加Stage 3最终普通Writer参数联合训练；
-- [ ] 完成active design、owner requirements、progress与模块ownership同步；
-- [ ] 完成结构门，冻结Stage 0/1最小实现范围与首个checkpoint schema。
+- [x] 完成active design、owner requirements、progress与模块ownership同步；
+- [x] 完成结构门，冻结Stage 0/1最小实现范围与首个checkpoint schema。
 
 **Gate 0：** 文档、tensor contract、数据角色与代码owner一致；旧16维运行面不能被新入口隐式复活。
 
 ## Phase 1 — Native observer与Action Meta-LoRA对照
 
-- [ ] 对每帧以exact language、真实image prefix、fixed Gaussian suffix `[50,32]`、flow time `u=1`运行native graph；
-- [ ] 捕获18层Action input/residual，流式投影为38-owner × 50-horizon compact lattice；
-- [ ] 实现task-grounded visual transition、局部event candidates、双向event/lattice co-attention；
-- [ ] 实现固定容量8、动态presence的learned ordered semi-Markov segmenter；
+- [x] 实现每帧以exact language、真实image prefix、fixed Gaussian suffix `[50,32]`、flow time `u=1`运行native graph；
+- [x] 捕获18层Action input/residual，立即投影为38-owner × 50-horizon compact lattice；
+- [x] 实现task-grounded visual transition、局部event candidates、双向event/lattice co-attention；
+- [x] 实现固定容量8、动态presence的learned ordered semi-Markov segmenter；
+- [ ] 在真实冻结PI0.5上完成单帧forward、梯度边界、显存与吞吐smoke；
 - [ ] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动训练native observer；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
@@ -149,11 +150,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 完成Phase 0文档与代码ownership同步，提交并推送`main`；
-2. 从最新`main`建立短期`codex/ecp-stage0-observer` worktree；
-3. 使用结构门检查现有`video_program`、`backbone_memory`与`functional_adaptation`复用边界；
-4. 先实现native all-layer compact capture、owner lattice与纯CPU/tiny-shape契约验证；
-5. 接入真实PI0.5单帧smoke并profile显存/吞吐；
-6. 实现event candidates、Event-Conditioned Horizon Binding与ordered segmenter；
-7. 形成Stage 0 correct-only训练入口和native observer checkpoint；
-8. 在任何compiler大训练前完成Action Meta-LoRA独立对照。
+1. 合并并推送Stage 0 observer/event retained source，清理短期worktree/branch；
+2. live检查gpu01/gpu02并硬排除gpu01 prohibited卡；
+3. 接入真实冻结PI0.5单帧smoke并profile显存/吞吐；
+4. 接通正确视频的PaliGemma patch states与Stage 0批处理数据流；
+5. 形成Stage 0 correct-only训练入口、checkpoint schema和native observer checkpoint；
+6. 在任何compiler大训练前完成Action Meta-LoRA独立对照。

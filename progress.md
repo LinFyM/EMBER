@@ -16,7 +16,13 @@
   使用全部授权train data训练，validation8只以language+action-hidden videos作development evaluation。
 - 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
-  通过视频必要性门后structured outer credit。当前处于Phase 0文档/ownership同步，尚未启动新formal训练或held评测。
+  通过视频必要性门后structured outer credit。Phase 0文档与ownership门已完成；当前进入Phase 1 Stage 0 observer实现，尚未
+  启动新formal训练或held评测。
+- Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
+  native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
+  与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦
+  CPU测试通过，覆盖真实target顺序、冻结source/Writer梯度边界、末端horizon敏感性、变长mask和monotone slot posterior；
+  这只证明实现合同接通，真实PI0.5单帧显存/吞吐smoke与Stage 0训练checkpoint仍待完成。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

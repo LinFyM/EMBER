@@ -141,6 +141,20 @@ def test_video_schedule_is_nested_balanced_and_order_independent() -> None:
     assert all(row["suite"] != row["video_suite"] for row in forward)
     assert len({row["video_global_task_id"] for row in forward}) == len(keys)
 
+    held_keys = (
+        ("libero_spatial", 0),
+        ("libero_spatial", 9),
+        ("libero_object", 8),
+        ("libero_goal", 5),
+        ("libero_10", 6),
+    )
+    held_roles = {key: "train" for key in held_keys}
+    held_correct = task_video_mapping(held_keys, held_roles, "correct")
+    assert [(row["suite"], row["task_id"]) for row in held_correct] == list(
+        held_keys
+    )
+    assert all(row["suite"] == row["video_suite"] for row in held_correct)
+
 
 def test_shuffled_keep_first_changes_only_the_anchor_position() -> None:
     shuffled = shuffled_frame_permutation(20, 7, keep_first=False)

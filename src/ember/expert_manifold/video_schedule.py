@@ -66,7 +66,7 @@ def task_video_mapping(
             )
             for suite in SUITE_ORDER
         }
-        if (
+        if condition == "cross_suite_wrong" and (
             any(not values for values in by_suite.values())
             or len({len(values) for values in by_suite.values()}) != 1
         ):

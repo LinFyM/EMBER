@@ -194,13 +194,14 @@ def test_low_rank_union_matches_dense_best_rank_and_has_finite_gradient() -> Non
     base_b = torch.randn(6, 2, generator=generator)
     residual_a = torch.randn(1, 2, 5, generator=generator, requires_grad=True)
     residual_b = torch.randn(1, 6, 2, generator=generator, requires_grad=True)
-    merged_a, merged_b = merge_low_rank_updates(
-        base_a=base_a,
-        base_b=base_b,
-        residual_a=residual_a,
-        residual_b=residual_b,
-        output_rank=2,
-    )
+    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
+        merged_a, merged_b = merge_low_rank_updates(
+            base_a=base_a,
+            base_b=base_b,
+            residual_a=residual_a,
+            residual_b=residual_b,
+            output_rank=2,
+        )
     dense = base_b @ base_a + residual_b[0] @ residual_a[0]
     u, singular, vh = torch.linalg.svd(dense, full_matrices=False)
     expected = (u[:, :2] * singular[:2]) @ vh[:2]

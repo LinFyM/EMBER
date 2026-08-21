@@ -114,9 +114,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 保留完整rank16 prior/full LoRA，不恢复shared12/task4硬拆或full A/B相加；
 - [x] 接通train24固定19/5 fold的task-equal world-size6训练合同，held5不拟合code、不更新teacher/compiler；真实普通/
   functional单卡profile均已通过；
-- [ ] 从clean pushed frozen authority正式训练fit19并保存相邻task-visit checkpoints；228节点已完成，570 exact-resume进行中；
-- [ ] held5 oracle Program生成一套LoRA并直接closed-loop，报告source/direct/generated三联面板；228节点已完成且未过门，等待
-  首个functional 570节点复验；
+- [x] 从clean pushed frozen authority完成fit19的228/570/1140相邻task-visit checkpoints及两次exact-resume；
+- [x] held5 oracle Program在三个节点各生成一套LoRA并完成source/shared/direct/generated fixed250严格配对闭环；首版
+  23→27→27，Goal/Long持续为0，Gate 2失败；
+- [x] 定位首版最早接口：`q_pi`全局`.1` residual幅度不足，compiler把仍有差异的Program压成跨task cosine`.9968`的近共享LoRA；
+- [ ] 用content-gated `q_pi`与prior/full absolute compiler替换首版唯一运行面，加入gauge-canonical coordinate warm-start并先过
+  task-discrimination geometry gate；
+- [ ] geometry过门后补齐successful/source/shared functional support和fit-task reward/progress，再重跑held5 Gate 2；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -169,9 +173,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 完成从228到570 visits的exact-resume，使Stage 1首次纳入multi-state functional policy-response监督；
-2. 物化570 single-LoRA并复用同一held5 fixed250 source/direct/shared-prior rows，按`.75/.60` support-retention门裁决；
-3. 若570出现广泛闭环/support改善，继续预注册1140节点并检查相邻稳定性；若仍无机制性移动，定位`q_pi`、compiler geometry或
-   functional-support接口中最早失败处，不用无关超参小扫拖延；
-4. 每个节点及时更新remote-safe进度、清理task-owned临时脚本/日志，并推送`main`；
-5. 只有Gate 2通过并经预注册fold复现后才进入Dynamic-K `q_V`，不触碰validation8/Test8。
+1. 删除`q_pi`单一小幅度scalar cap，改为受visible presence约束的event/owner/content evidence gate；
+2. 将compiler从`stable-prior A/B + residual A/B`改为同一网络内prior/full两个absolute output surfaces，并用compact-SVD
+   canonical factors建立可优化坐标；不保留首版并行fallback；
+3. 用真实K2 profile确认图、梯度和吞吐后，从fresh clean pushed authority训练；先以own-direct retrieval、跨task非坍缩、
+   effective norm/cosine裁决是否值得进入held fixed250；
+4. 坐标门通过后增加source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
+   排除validation/Test的LIBERO-90 meta-task expert family，再轮换固定fold；
+5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+   `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

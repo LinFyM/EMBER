@@ -17,8 +17,9 @@
 - 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
-  永久冻结。Phase 2已从clean pushed `6d71cb8`在detached frozen worktree正式运行：fit19首个228-visits几何节点与held5
-  fixed250已完成，当前正从同一world-size6/topology exact-resume到570 visits；Gate 2未通过前不启动`q_V`。
+  永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
+  预注册节点；Gate 2明确失败并停止，未启动`q_V`。当前唯一active工作是修正`q_pi`幅度与compiler绝对输出坐标，不延长
+  同一训练曲线。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -41,8 +42,26 @@
   direct-latest/generated为`21/43/74/108/23`。generated只在Spatial task0得到`23/50`，其余4 tasks均为0；source→generated
   为15 retained、8 gained、6 lost、净`+2`、McNemar `p=.79053`，而shared-prior→generated净`-20`。相对两套direct member的
   success retention为`13/74=.17568`与`12/108=.11111`，gain retention为`2/62=.03226`与`3/96=.03125`；Goal/Long均为0，
-  因此该节点明确未过Gate 2。它只淘汰“纯几何warm-start在228 visits已经足够”的假设；当前按预注册schedule继续到首次包含
+  因此该节点明确未过Gate 2。它只淘汰“纯几何warm-start在228 visits已经足够”的假设；当时按预注册schedule继续到首次包含
   functional policy-response监督的570-visits节点，不据此启动`q_V`或推翻ECP。
+- 570节点完成后generated从23升到`27/250`，但仍低于shared prior 43，Goal/Long为0；相对source净`+6`但不显著，direct
+  earliest/latest success retention只有`.16216/.12963`。继续到1140的理由只剩判断同一机制是否仍在移动，而不是把内部loss
+  当成有效性。1140最终仍为`27/250`，逐task为Spatial0 `24`、Spatial9 `1`、Object8 `2`、Goal5 `0`、Long6 `0`；570→1140
+  恰为`17 retained / 10 gained / 10 lost`，绝对零增长且Jaccard`.45946`。相对source为`12 retained / 15 gained / 9 lost`、
+  净`+6`、McNemar `p=.30746`；相对shared prior净`-16`。direct earliest/latest success retention为`.16216/.13889`，gain
+  retention为`.06452/.07292`，Gate 2所有核心机制门继续失败。
+- 最早接口诊断已完成而且不是held特有过拟合：1140 materialization的fit19/held5 member exact-BA loss为`.92146/.89844`。
+  held生成update相对selected direct的平均norm ratio/cosine虽从228的`.2518/.1117`、570的`.3200/.2721`继续到
+  `.3694/.3290`，闭环却完全停滞。更决定性的证据是24个生成LoRA跨task effective cosine均值`.996807`，direct step2000
+  只有`.131914`；mean own-direct cosine`.25076`反而低于nearest-other`.36600`，只有`1/24`自身检索正确。visible anchor与
+  `q_pi` teacher process跨task cosine均约`.946`，q_pi correction虽把direct geometry correlation从`.4271`提高到`.4993`，
+  但全局`residual_scale`仍停在`.1006`；compiler又把差异压到`.996807`。所以失败同时经过“privileged correction幅度过小”
+  与“stable-prior A/B template residual输出近全局取消”两个连续接口，不能靠相同训练延长解决。
+- 唯一Stage 1后继已写回active design：`q_pi`改为event/owner/content-dependent evidence gate；compiler的prior-only与full
+  Program由同一网络分别输出完整**绝对**rank16 LoRA，full不再对stable-prior A/B各加residual；gauge-canonical factors只作
+  坐标warm-start，仍以exact-BA、multi-state functional support、train reward/progress和held closed loop裁决。昂贵闭环前先
+  要求compiled LoRA摆脱跨task坍缩与nearest-other错配；随后补source/shared support及授权non-held meta-task diversity。
+  remote-safe证据为`docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

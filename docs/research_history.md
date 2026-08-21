@@ -714,6 +714,26 @@ antithetic-closer 16/48不变，所有逐row差异约在`1e-4`以内。结果是
 内部安装，不是rollout第二adapter。Gate 1完成，下一步进入privileged `q_pi + compiler`。证据：
 `docs/evidence/ecp_20260822/stage0_action_meta_v3_gate1.json`。
 
+### 3.34 EMBER-ECP Stage 1首版fold0 Gate 2负裁决与输出坍缩定位
+
+clean pushed `6d71cb8`的Stage 1首版使用冻结native v3 + Action Meta authority、47个train24 successful-policy members、
+完整rank16 direct states和8-phase successful occupancy，在fit19完成1,140 visits/190 updates；held5 shared gradient为0。
+228/570/1140三个checkpoint的held5 strict250依次为`23/27/27`，对照source/shared/direct-earliest/direct-latest为
+`21/43/74/108`。1140逐task为Spatial0 `24`、Spatial9 `1`、Object8 `2`、Goal5 `0`、Long6 `0`；570→1140为
+`17 retained / 10 gained / 10 lost`。因此继续训练没有稳定积累，Gate 2 fail，`q_V`未启动。
+
+一次冻结checkpoint的Program-to-LoRA诊断定位了首个结构性原因。visible anchor、`q_pi` teacher、`q_pi` correction的跨task
+cosine均值分别为`.94661/.94608/.86898`，correction把与direct pair geometry的相关提高到`.49930`，说明privileged输入并非
+完全无效；但唯一global residual scale仍为`.10060`。compiler输出随后达到`.99681`跨task cosine，而direct step2000只有
+`.13191`；generated own-direct只在`1/24` tasks胜过nearest-other。结合held effective norm ratio/cosine仅`.3694/.3290`，
+裁决为`q_pi`幅度不足后，stable-prior A/B template-residual compiler又把差异压成低能共享update。
+
+本轮停止同曲线延长、fold rotation和video encoder。active Stage 1改为presence-bound content-gated `q_pi`与同一compiler内
+prior/full absolute output surfaces；canonical factor只作坐标warm-start，闭环仍由functional support、fit reward/progress和
+held oracle gate决定。正式训练、materialization、250-row evaluation、paired analysis与Program geometry均完整保留；临时
+分析脚本已删除。remote-safe证据：
+`docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

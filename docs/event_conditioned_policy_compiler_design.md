@@ -378,6 +378,39 @@ Action Meta-LoRA不再是可遗忘的fallback。首轮native observer得到可�
 产生分布、compiler生成一套LoRA并直接closed-loop。默认强门：显著高于source；direct success retention至少75%；direct gain
 retention至少60%；增量跨tasks且Goal/Long不能系统性为零。未过门时video encoder不启动。
 
+#### Fold0首版裁决与唯一后继参数化（2026-08-22）
+
+首版`scalar-bounded q_pi + stable-prior factor-template residual compiler`已经完成全部1,140 task visits和三个预注册
+checkpoint。held5在228/570/1140分别只有`23/27/27`，而source/shared/direct-earliest/direct-latest为
+`21/43/74/108`；570到1140虽有`10 gained / 10 lost`，绝对分数完全不动，Goal与Long始终为0。24个生成LoRA的
+跨task effective-update cosine均值为`.996807`，direct step2000只有`.131914`；自身direct direction只在`1/24` tasks上
+比最近其它task更近。因此继续同一训练曲线、调小超参或直接进入`q_V`均不再授权。
+
+定位把失败分成连续两个接口。visible anchor与`q_pi` teacher process的跨task cosine均约`.946`，privileged correction虽把
+direct pair-geometry correlation从`.4271`提高到`.4993`，但唯一全局`residual_scale`训练后仍只有`.1006`；compiler随后又把
+剩余差异压到`.996807`。所以后继仍属于同一个Stage 1和同一Program schema，但替换这两个错误参数化：
+
+1. `q_pi`使用event/owner/content-dependent evidence gate，让successful-policy correction可按visible event、layer和family
+   获得实质幅度；删除单一约`.1`的全局残差上限。correction仍只能写入visible presence已激活的位置，不能成为task-ID或
+   与视频无关的free latent。
+2. compiler保留一个共享target-/rank-query主干和family heads，但区分同一函数的两个**绝对输出面**：process缺失时输出一套
+   完整stable-prior LoRA；process存在时heads直接输出一套完整task LoRA。full输出不再令A、B分别等于
+   `stable_prior_factor + residual_factor`，避免每个task先以几乎相同的修正取消大幅stable prior并产生交叉项。它仍只部署
+   一套rank16 adapter、全部16 ranks可写，不是shared carrier加第二adapter。
+3. successful adapters先用rank16小矩阵分解得到确定的gauge-canonical factors，作为absolute heads的坐标warm-start；
+   canonical factor loss只解决双线性优化与moving gauge，不负责方法选择。exact effective-BA、multi-state policy response、
+   source/shared support、train-task reward/progress和held closed loop继续决定是否有效。
+4. 昂贵closed loop前先做Program到LoRA的task-discrimination门：fit与held都必须摆脱近全局输出、mean own-direct similarity
+   必须高于nearest-other且大多数task自身检索正确，同时effective norm/cosine要出现实质恢复。该门只避免重复评测明显坍缩
+   checkpoint，不能替代Gate 2。
+5. 坐标门通过后，在fit tasks补齐successful-member、source/shared support functional panels和task-equal reward/progress；
+   若19 mappings仍限制泛化，再使用已授权且排除validation/Test的LIBERO-90 meta-task expert family扩大独立映射数。不得用
+   更多同task episodes冒充更多meta tasks。
+
+这一选择相对“只把当前训练延长更多steps”的决定性优势是直接移除了已观测到的两个幅度/坐标瓶颈；风险是process presence
+可能退化成full/prior开关，因此后续`q_V`仍必须用full相对language+scene、wrong与最终shuffled/reversed的正向闭环增量证明
+内容和顺序，而不能凭结构开关自证视频必要性。首版实现由Git和formal artifacts保留，active tree只保留修正后的Stage 1路径。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

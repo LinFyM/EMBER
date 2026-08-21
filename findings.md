@@ -911,3 +911,34 @@ checkpoint的组合；后继只在observer forward安装Meta并永久冻结，�
 第二adapter：rollout前仍只物化compiler生成的一套完整rank16 LoRA。Gate 1由此完成，下一阶段进入visible-event-anchored
 privileged `q_pi + compiler`，内部几何不替代held5 closed-loop Gate 2。证据见
 `docs/evidence/ecp_20260822/stage0_action_meta_v3_gate1.json`。
+
+## 43. Stage 1首版不是held过拟合，而是Program修正不足后被compiler进一步压成共享更新
+
+EMBER-ECP首个privileged Stage 1从clean pushed `6d71cb8`完成fit19共1,140 task visits、190次world-size6更新；held5只做
+同一冻结变换，shared gradient严格为0。三个预注册checkpoint的held5 strict250为`23→27→27`，而同rows的
+source/shared/direct-earliest/direct-latest是`21/43/74/108`。1140逐task只有`24/1/2/0/0`；相对570是
+`17 retained / 10 gained / 10 lost`，不是稳定积累。相对source虽净`+6`，McNemar仍为`p=.30746`；direct earliest/latest
+success retention只有`.16216/.13889`，Goal与Long持续为0。因此Gate 2失败，不能训练`q_V`。
+
+内部loss继续下降不代表只是训练不够。1140的fit19与held5 member exact-BA loss为`.92146/.89844`，held反而略低，排除了
+“主要是held Program泛化断裂”的窄解释。held generated相对selected direct的平均effective norm ratio/cosine从228的
+`.2518/.1117`、570的`.3200/.2721`升到1140的`.3694/.3290`，但闭环在后半程零增长并有10/10 churn，说明沿当前方向继续
+靠近并没有保留policy support。
+
+跨task几何揭示了更早的共同更新坍缩。24个生成LoRA的effective-update cosine均值`.996807`、最小`.986824`，而24个
+direct step2000 adapters均值只有`.131914`；generated的mean own-direct cosine`.250756`低于nearest-other`.365999`，
+只有`1/24` tasks自身方向最近。visible anchor与`q_pi` teacher process本身跨task cosine约`.9466/.9461`；privileged
+correction单独更有差异，cosine`.8690`，也把与direct pair geometry的相关从`.4271`提高到`.4993`。但其norm只约anchor的
+8%，代码中的唯一`residual_scale`训练后仍是`.1006`。compiler family output scales也仍约`.096--.099`，并要求full Program
+在A、B两因子上共同从幅度更大的stable-prior template做残差；最终把尚存差异重新压到`.996807`。
+
+所以首版最早失效接口不是单独的observer、held split、rank16容量、矩阵shape或浮点误差，而是两个连续参数化：
+
+1. `q_pi`用单一小scalar限制所有event/owner privileged correction，不能按policy证据需要改变幅度；
+2. full compiler必须先以近task-invariant A/B residual取消stable prior，再写入task update，双线性优化收敛到低能共享方向。
+
+该结果只关闭当前scalar-bounded teacher、template-residual full output及其相同训练延长，不关闭privileged Program、stable-prior
+反事实或fixed compiler顺序。后继应让`q_pi`使用presence-bound content gate，并让同一compiler对prior-only与full Program
+分别输出绝对完整rank16坐标；compact-SVD canonical factors只作优化warm-start，最终仍由multi-state functional support、
+fit reward/progress与held closed loop裁决。完整证据见
+`docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。

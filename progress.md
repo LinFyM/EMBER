@@ -75,6 +75,13 @@
   `4.43023`、gradient norm `.954190`，完整forward/backward 4.26秒、峰值11,497,050,624 bytes，checkpoint finite。38项
   聚焦测试通过，并新增两个直接回归：相同比例occupancy在1x/2x帧数下presence完全相同；把动作不同的两帧坍缩到一个
   event即使event均值预测正确仍产生`.25`逐帧误差。该profile只解除运行门，下一步仍须fresh macro10与固定panel裁决。
+- Stage 0 v2实现authority为clean pushed `7bcda8f`。首段formal合同固定为：从包含本记录的clean pushed `main`创建
+  detached frozen worktree，在gpu01仅使用physical `1,2,3,4,5,7`做world-size6，继续明确排除Prohibited physical0；
+  复用同一source step1000、71+19 audited tasks、tokenizer、task-equal schedule与correct-only信息墙，fresh训练10 macros、
+  900 visits，不读取旧v1 checkpoint。输出唯一固定为
+  `runs/outputs/pi05_ecp_stage0_native_v2_fold0_m10_r6_gpu01p123457_20260822/`，预计新增低于100 MB；macro10立即运行同一
+  correct/speed/same-task-other/antithetic固定panel。只允许同commit、world-size6、v2 run schema exact-resume；任何
+  shuffled/reversed/wrong条件仍不进入训练、选点或本阶段panel。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

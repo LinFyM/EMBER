@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_privileged_compiler_v4",
-  "status": "active_stage1_coordinate_bootstrap",
-  "purpose": "Content-address-separated privileged q_pi and absolute rank16 compiler with an explicit coordinate bootstrap before policy-functional support training.",
+  "schema_version": "ember_ecp_stage1_privileged_compiler_v5",
+  "status": "active_stage1_query_content_bootstrap",
+  "purpose": "Content-address-separated privileged q_pi and absolute rank16 compiler whose numeric target/rank queries multiplicatively modulate, but cannot replace, Program content.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -73,6 +73,7 @@
     "program_content": "owner/layer/family are tensor addresses; no additive address embeddings in visible Program values or q_pi factor values",
     "compiler_content_path": "addresses affect keys, queries and locality only; values and factor hidden states require Program content",
     "query_to_output_shortcut": false,
+    "query_content_modulation": "target/rank query multiplicatively modulates cross-attended Program values; zero Program content remains zero output",
     "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values",
     "factor_head_init_std": {
       "action_in": {"a": 0.0007972, "b": 0.0001409},
@@ -102,7 +103,7 @@
     "prior_counterfactual": "language+scene with process absent remains near the full stable-prior LoRA",
     "coordinate_bootstrap": {
       "end_task_visits": 228,
-      "reason": "v3 policy-functional loss improved while own-direct geometry and exact-BA worsened; establish the fixed compiler coordinate before functional/support credit can rotate it",
+      "reason": "v4 coordinate-only training recovered cross-task diversity but not own-policy direction; target/rank identity must modulate Program content before functional/support credit is restored",
       "weights": {
         "member_effective_update": 1.0,
         "consensus_effective_update": 1.0,

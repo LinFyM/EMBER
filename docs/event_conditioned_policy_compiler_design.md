@@ -442,11 +442,25 @@ v3在228 visits的正式裁决又分离出一个更早的训练顺序问题。co
 exact-BA却由`1.14167`升到`1.37474`，canonical factor由`1.24101`升到`1.56286`。因此同一shared checkpoint先学会了有限
 successful-occupancy panel上的响应捷径，并在task-to-LoRA坐标建立前旋转了compiler。held5没有运行，`q_V`仍未启动。
 
-active v4保持v3的全部结构，只改变Stage 1内部顺序：前228 visits为显式**coordinate bootstrap**，只用member/consensus
+v4保持v3的全部结构，只改变Stage 1内部顺序：前228 visits为显式**coordinate bootstrap**，只用member/consensus
 exact-BA、canonical gauge、prior反事实与locality建立固定compiler坐标，不加载functional panels；几何门通过后从同一
 checkpoint exact-resume，才启用successful-policy functional response，并补齐source/shared support与fit reward/progress。
 bootstrap不是方法选择或raw重建终点；它只要求target query先能从Program内容读出正确task方向，最终仍必须通过held5
-closed-loop Gate 2。active tree只保留v4 schema/config/evaluator，v3由Git与formal artifacts保存。
+closed-loop Gate 2。
+
+v4从clean pushed `fc0b84e`完成228 visits/38 updates后，member exact-BA与canonical坐标loss都稳定下降，candidate跨task
+cosine也降到`.858906`，但own-direct仍只有`.018399`、低于nearest-other `.029450`，自身检索`1/24`且effective norm ratio
+`.091336`。这排除了“只需先做coordinate bootstrap”的解释。进一步只读定位显示candidate的gauge-invariant participation
+rank为`1.0733`、top1 energy为`.9664`，比direct的`1.2616/.9127`更集中；原始A/B的rank向量平均cosine仍为
+`.8501/.7779`。这些rank统计只定位接口，不作为性能目标。
+
+active v5因此保持v3/v4的content/address separation和全部Program轴，只把numeric target/rank query的职责具体化：query仍
+决定attention读取位置，同时通过`1+tanh(Wq)`逐维**乘性调制**已经读取到的Program content，再进入共享trunk与family heads。
+它不把query相加到hidden，不把address放回values；所以Program content为零时输出仍严格为零，query无法独立写出LoRA，
+但同一Program内容可按target/rank形成不同factor readout。这是对专家“numeric target/rank query读取Program”的窄修正，
+不是新decoder。v5继续先跑同一228-visits coordinate gate；过门后才恢复完整successful/source/shared support与fit reward/
+progress。真实K2单卡profile已确认零functional cache、finite modulation gradient、2.02秒更新与10.13 GB峰值；active tree只
+保留v5 schema/config/evaluator，v4由Git、formal artifacts与remote-safe evidence保存。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

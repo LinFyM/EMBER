@@ -19,8 +19,8 @@
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
   永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
   预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
-  当前唯一active工作是在不改Program、`q_pi`或compiler结构的前提下，先完成v4 coordinate bootstrap，再恢复functional/support
-  credit，不延长任何已失败曲线。
+  v4 coordinate bootstrap也已完成228-visits正式裁决；当前唯一active工作是保持Program、`q_pi`和absolute compiler合同，
+  用乘性query-content modulation修复rank/target query读出不足，再恢复functional/support credit，不延长任何已失败曲线。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -95,13 +95,23 @@
   `.012822/.026238`，own retrieval `2/24`，几何门失败，held5 rows为0。
 - v3最早失败接口不是task差异仍被地址淹没，而是joint objective的到达顺序。训练前5到后5 updates的functional response
   `.995844→.871159`，member exact-BA却`1.14167→1.37474`、canonical factor `1.24101→1.56286`；物化fit19 member loss
-  `1.48396`，比stable prior `1.10362`更差，held5也没有特殊断裂。active v4因此保留全部结构，只让前228 visits使用
+  `1.48396`，比stable prior `1.10362`更差，held5也没有特殊断裂。当时后继v4因此保留全部结构，只让前228 visits使用
   exact-BA/canonical coordinate bootstrap且不缓存functional panels；几何过门后才exact-resume并补functional、source/shared
   support与fit reward/progress。证据：`docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。
-- v4已替换唯一active config/schema/evaluator路径；v3不保留兼容分支。真实K2单卡coordinate profile在gpu01 physical1通过：
+- v4当时替换了唯一active config/schema/evaluator路径；v3未保留兼容分支。真实K2单卡coordinate profile在gpu01 physical1通过：
   `objective_phase=coordinate_bootstrap`、functional loss与loaded panels均为0，member/consensus exact-BA为`1.1875`、canonical
   约`1.21995`、total `2.98603`、裁剪前梯度`140.48`，1.99秒、峰值10,125,596,160 bytes；临时profile目录已删除。
-  下一节点是从clean pushed commit fresh运行228 visits并物化一次24-task geometry，不运行其它冗余profile。
+  clean pushed `fc0b84e`随后在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates；前5到后5 updates的member
+  exact-BA由`1.05391`降到`1.00938`、canonical由`1.14880`降到`1.08904`，但24-task materialization的own/nearest-other仅
+  `.01840/.02945`、自身检索`1/24`、norm ratio`.09134`，故几何门失败且held5 rows为0。candidate跨task cosine`.85891`
+  说明不是简单全局输出；gauge-invariant participation rank只有`1.0733`、top1 energy`.9664`，比direct的`1.2616/.9127`
+  更集中。证据为`docs/evidence/ecp_20260822/stage1_coordinate_bootstrap_fold0_geometry.json`。
+- active v5不恢复v2的`hidden + query`或address value旁路；target/rank query只以`1+tanh(Wq)`乘性调制已经cross-attend得到的
+  Program content，因此Program全零仍严格不能写full LoRA，但不同target/rank可形成不同content-conditioned factors。
+  active tree只保留v5 config/schema/evaluator。24项聚焦CPU合同通过，包括零内容反事实与modulation梯度；真实K2单卡
+  coordinate profile也在gpu01 physical1通过，functional panels/updates均为0，member/consensus exact-BA为
+  `1.17188/1.16406`、canonical约`1.2160`、total `2.95281`、裁剪前梯度`115.25`，2.02秒、峰值
+  10,125,858,304 bytes，Prohibited physical0未用。临时profile目录已删除；下一节点是fresh运行同一228-visits门。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

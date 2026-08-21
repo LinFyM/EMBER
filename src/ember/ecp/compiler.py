@@ -94,6 +94,9 @@ class TargetFamilyCompiler(torch.nn.Module):
         self.value_projection = torch.nn.Linear(
             compiler_width, compiler_width, bias=False
         )
+        self.query_content_modulation = torch.nn.Linear(
+            compiler_width, compiler_width, bias=False
+        )
         self.trunk = torch.nn.Sequential(
             torch.nn.LayerNorm(compiler_width),
             torch.nn.Linear(compiler_width, 2 * compiler_width, bias=False),
@@ -268,6 +271,8 @@ class TargetFamilyCompiler(torch.nn.Module):
         logits = logits + presence.clamp_min(1e-4).log()[:, None, None]
         attention = logits.softmax(-1)
         hidden = torch.einsum("bjrn,bnd->bjrd", attention, values)
+        modulation = 1.0 + torch.tanh(self.query_content_modulation(queries))
+        hidden = hidden * modulation[None]
         hidden = self.trunk(hidden)
         templates = self.template_state()
         process_gate = self._process_gate(program)

@@ -980,3 +980,25 @@ compiler或policy-functional目标。后继v4不新增架构：前228 visits用e
 bootstrap，几何过门后才从同一checkpoint启用functional，并补齐专家要求的source/shared support与fit reward/progress。
 bootstrap不能选择最终方法，仍必须通过held5 closed-loop Gate 2。证据见
 `docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。
+
+## 46. Coordinate bootstrap下降了监督loss，但query只选位置不足以建立task-to-LoRA方向
+
+Stage 1 v4从clean pushed `fc0b84e`完成fresh 228 visits/38 updates；全段只做coordinate bootstrap，functional panels
+加载数与functional updates均为0。前5到后5 updates的member exact-BA由`1.05391`降到`1.00938`，canonical factor由
+`1.14880`降到`1.08904`，说明训练顺序修正确实让坐标监督按预期优化。
+
+但24-task物化没有恢复正确policy方向：candidate跨task cosine为`.858906`，已经不是近全局同一输出；own-direct却只有
+`.018399`、低于nearest-other `.029450`，自身检索`1/24`，candidate/direct norm ratio也只有`.091336`。fit19与held5的
+member loss分别为`1.01542/1.00234`，均与stable-prior约`1.00658/1.00469`接近，所以失败既不是functional共同旋转，也
+不是held泛化单独断裂。几何门失败，held5 closed-loop rows为0，`q_V`没有启动。
+
+只读rank定位进一步缩小了compiler接口：candidate raw A/B内部rank向量平均cosine为`.8501/.7779`；gauge-invariant
+participation rank为`1.0733`、top1 energy fraction为`.9664`，direct为`1.2616/.9127`。direct本身也高度低秩，因此这些
+数值不是追求均匀rank的目标；它们只说明v3/v4删除所有query-to-hidden作用后，numeric rank/target identity主要停留在
+attention选址，未充分调制读出的Program内容。
+
+后继v5保持地址不能脱离内容写LoRA的反事实：不恢复`hidden + query`，也不把地址常量放回values；只用
+`1+tanh(Wq)`逐维乘性调制cross-attended Program content。这样零Program仍严格产生零full output，但target/rank query可
+参与内容读出。v4只关闭“content-only attention readout加coordinate bootstrap足够”，不关闭ECP Program、`q_pi`、absolute
+single-LoRA surface或尚未执行的support/reward目标。完整证据见
+`docs/evidence/ecp_20260822/stage1_coordinate_bootstrap_fold0_geometry.json`。

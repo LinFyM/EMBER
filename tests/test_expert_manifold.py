@@ -224,8 +224,8 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_privileged_projection_v4",
-            "projection_kind": "ecp_stage1_privileged_content_compiler",
+            "schema_version": "ember_ecp_stage1_privileged_projection_v5",
+            "projection_kind": "ecp_stage1_privileged_query_content_compiler",
             **assets,
             "optimization": {
                 "task_visits": 228,
@@ -237,6 +237,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
                 "all_ranks_writable": True,
                 "parameterization": "prior-only exact template; full-process absolute factors",
                 "content_address_separated": True,
+                "query_content_modulated": True,
                 "functional_start_task_visits": 228,
                 "coordinate_bootstrap_end_task_visits": 228,
                 "objective_phase": "coordinate_bootstrap",

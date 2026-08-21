@@ -127,7 +127,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   `2/24`检索正确，故未运行held5；
 - [x] 保持同一Program/q_pi/compiler结构，实现228-visits coordinate bootstrap并用真实K2单卡profile确认零functional cache与
   正确objective phase；
-- [ ] 从fresh clean pushed authority运行v4 228-visits并重跑geometry gate；
+- [x] 从fresh clean pushed authority完成v4 228-visits与24-task geometry gate；监督坐标loss下降且跨task输出已分离，但
+  own-direct仅`.0184`、自身检索`1/24`、norm ratio`.0913`，故未运行held5；
+- [x] active v5保持零内容不能写LoRA的结构不变量，以target/rank query乘性调制cross-attended Program content，并完成
+  真实K2单卡coordinate profile；
+- [ ] 从fresh clean pushed v5 authority运行同一228-visits coordinate gate；
 - [ ] geometry过门后补齐successful/source/shared functional support和fit-task reward/progress，再重跑held5 Gate 2；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -181,9 +185,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 用v3正式结果固定因果判断：content path已接通，但joint functional在坐标建立前把compiler转向有限panel捷径；
-2. active v4前228 visits只做coordinate bootstrap，不缓存functional panels；同一checkpoint物化24套LoRA并重跑既定几何门；
-3. 坐标门通过后exact-resume，增加successful/source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
+1. 用v4正式结果固定因果判断：只改变训练顺序不足；coordinate loss虽下降，但query只改变attention位置时无法把target/rank
+   identity充分写入Program-conditioned factor content，输出方向与幅度仍不对；
+2. active v5只增加乘性query-content modulation，保持地址不能脱离Program独立写参数；真实K2 profile已经通过，下一步用
+   同一228-visits合同fresh重跑几何门，不延长v4曲线；
+3. v5坐标门通过后增加successful/source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
    排除validation/Test的LIBERO-90 meta-task expert family，再轮换固定fold；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

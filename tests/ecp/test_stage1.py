@@ -177,3 +177,19 @@ def test_compiler_address_queries_cannot_write_without_program_content() -> None
     state = compiler(zero).state
     for value in state.values():
         torch.testing.assert_close(value, torch.zeros_like(value))
+
+
+def test_query_content_modulation_reaches_rank_outputs() -> None:
+    contract, owners, template = _contract_and_states()
+    compiler = TargetFamilyCompiler(owners, contract, template)
+    program = ECPProgram(
+        language=torch.randn(1, 38, 128),
+        scene=torch.randn(1, 38, 128),
+        process=torch.randn(1, 8, 38, 128),
+        presence=torch.ones(1, 8),
+        uncertainty=torch.rand(1, 8, 38, 128),
+    )
+    first = next(iter(compiler(program).state.values()))
+    (first[:, 0].float().square().mean()).backward()
+    gradient = compiler.query_content_modulation.weight.grad
+    assert gradient is not None and float(gradient.abs().sum()) > 0

@@ -761,6 +761,22 @@ exact-BA却由`1.14167`升到`1.37474`，canonical factor由`1.24101`升到`1.56
 visits设为coordinate bootstrap；通过几何门后才恢复functional并补source/shared support与fit reward/progress。证据：
 `docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。
 
+### 3.37 Stage 1 coordinate-bootstrap v4下降监督loss但仍未建立rank-conditioned policy方向
+
+clean pushed `fc0b84e`在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates；全段为coordinate bootstrap，
+functional panels与updates均为0，Prohibited physical0未用。前5到后5 updates的member exact-BA由`1.05391`降到
+`1.00938`，canonical factor由`1.14880`降到`1.08904`。
+
+24-task materialization的candidate跨task cosine为`.858906`，但own/nearest-other仅`.018399/.029450`、自身检索
+`1/24`、norm ratio `.091336`。几何门失败，held closed-loop rows为0。post-hoc gauge-invariant participation rank/
+top1 energy为candidate `1.0733/.9664`、direct `1.2616/.9127`；raw candidate A/B rank-vector cosine为
+`.8501/.7779`。这些只用于定位query-conditioned readout不足，不作为模型选择或鼓励rank均匀的指标。
+
+active v5保持Program、`q_pi`、absolute single-LoRA surface和content/address separation，只让target/rank query乘性调制
+cross-attended Program content；零Program仍不能独立写LoRA。它先重跑同一228-visits几何门，通过后才恢复完整
+successful/source/shared support与fit reward/progress。证据：
+`docs/evidence/ecp_20260822/stage1_coordinate_bootstrap_fold0_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

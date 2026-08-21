@@ -13,6 +13,7 @@ from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
 from ember.ecp.compiler import select_compiled_state
 from ember.ecp.stage1_data import (
     build_stage1_video_store,
+    gauge_canonicalize_factors,
     load_stage1_evidence_bank,
     load_stage1_tasks,
     pack_stage1_videos,
@@ -31,14 +32,14 @@ from ember.ecp.stage1_training import (
     stage1_asset_authority,
     stage1_repo_authority,
 )
-from ember.lora import validate_lora_state
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v4"
-PROJECTION_KIND = "ecp_stage1_privileged_content_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v5"
+PROJECTION_KIND = "ecp_stage1_privileged_query_content_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -204,6 +205,32 @@ def _feature_pair_summary(rows: list[torch.Tensor]) -> dict[str, float]:
     return _off_diagonal_summary(features @ features.transpose(0, 1))
 
 
+def _effective_rank_summary(
+    rows: list[Mapping[str, torch.Tensor]], contract: Any
+) -> dict[str, float]:
+    participation = []
+    top_one = []
+    for state in rows:
+        for owner in contract.targets:
+            _, canonical_b = gauge_canonicalize_factors(
+                state[owner.name + LORA_A_SUFFIX],
+                state[owner.name + LORA_B_SUFFIX],
+            )
+            singular = canonical_b.float().square().sum(dim=0)
+            energy = singular.square()
+            probability = energy / energy.sum().clamp_min(1e-20)
+            participation.append(1.0 / probability.square().sum())
+            top_one.append(probability.max())
+    participation_tensor = torch.stack(participation)
+    top_one_tensor = torch.stack(top_one)
+    return {
+        "mean_participation_rank": float(participation_tensor.mean()),
+        "minimum_participation_rank": float(participation_tensor.min()),
+        "mean_top1_energy_fraction": float(top_one_tensor.mean()),
+        "maximum_top1_energy_fraction": float(top_one_tensor.max()),
+    }
+
+
 def _cross_task_geometry(
     *,
     candidates: list[Mapping[str, torch.Tensor]],
@@ -262,6 +289,10 @@ def _cross_task_geometry(
             name: _feature_pair_summary([row[name] for row in program_rows])
             for name in ("anchor", "teacher", "correction")
         },
+        "effective_rank": {
+            "candidate": _effective_rank_summary(candidates, contract),
+            "direct": _effective_rank_summary(directs, contract),
+        },
         "thresholds": dict(thresholds),
         "passed": passed,
     }
@@ -305,6 +336,7 @@ def _projection_manifest(
             "all_ranks_writable": True,
             "parameterization": "prior-only exact template; full-process absolute factors",
             "content_address_separated": True,
+            "query_content_modulated": True,
             "functional_start_task_visits": int(
                 config["objective"]["functional_start_task_visits"]
             ),
@@ -473,7 +505,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_compiler_v4.json",
+        / "configs/pi05_ecp_stage1_privileged_compiler_v5.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

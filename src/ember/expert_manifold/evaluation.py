@@ -55,10 +55,10 @@ PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_phase_aligned_functional_decoder_train24_projection_v1"
 )
 ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA = (
-    "ember_pi05_ecp_stage1_privileged_task_expert_eval_adapter_v4"
+    "ember_pi05_ecp_stage1_privileged_task_expert_eval_adapter_v5"
 )
 ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA = (
-    "ember_ecp_stage1_privileged_projection_v4"
+    "ember_ecp_stage1_privileged_projection_v5"
 )
 
 
@@ -87,7 +87,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     )
     if (
         manifest.get("projection_kind")
-        != "ecp_stage1_privileged_content_compiler"
+        != "ecp_stage1_privileged_query_content_compiler"
         or optimization.get("held_shared_gradient_steps") != 0
         or optimization.get("compiler_frozen_for_materialization") is not True
         or optimization.get("single_complete_lora") is not True
@@ -97,6 +97,7 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         or optimization.get("parameterization")
         != "prior-only exact template; full-process absolute factors"
         or optimization.get("content_address_separated") is not True
+        or optimization.get("query_content_modulated") is not True
         or int(optimization.get("functional_start_task_visits", -1)) != 228
         or bootstrap_end != 228
         or optimization.get("objective_phase") != objective_phase

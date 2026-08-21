@@ -29,6 +29,7 @@ from ember.ecp.stage1_data import (
     build_stage1_video_store,
     load_stage1_evidence_bank,
     load_stage1_tasks,
+    gauge_canonicalize_lora_state,
     tokenize_stage1_languages,
 )
 from ember.ecp.stage1_panels import ECPStage1FunctionalPanel, cache_stage1_functional_panels
@@ -50,8 +51,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_privileged_compiler_run_v1"
-STAGE = "stage1_privileged_compiler"
+RUN_SCHEMA = "ember_ecp_stage1_privileged_absolute_compiler_run_v2"
+STAGE = "stage1_privileged_absolute_compiler"
 
 
 @dataclass
@@ -122,8 +123,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_privileged_compiler_v1"
-        or config.get("status") != "active_stage1_realizability_warmstart"
+        != "ember_ecp_stage1_privileged_absolute_compiler_v2"
+        or config.get("status") != "active_stage1_absolute_warmstart"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
@@ -298,6 +299,7 @@ def load_stage1_authorities(
         device=str(context.device),
     )
     validate_lora_state(prior, contract)
+    prior = gauge_canonicalize_lora_state(prior, contract)
     model = ECPStage1Model(
         owners,
         contract,
@@ -306,6 +308,7 @@ def load_stage1_authorities(
         compiler_width=int(config["model"]["compiler_width"]),
         event_slots=int(config["model"]["event_slots"]),
         phase_width=int(config["model"]["phase_response_width"]),
+        factor_head_init=config["model"]["factor_head_init_std"],
     ).to(context.device)
     return ECPStage1Authorities(
         source=source,
@@ -601,7 +604,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage1_privileged_compiler_v1.json",
+        default=REPO_ROOT
+        / "configs/pi05_ecp_stage1_privileged_absolute_compiler_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

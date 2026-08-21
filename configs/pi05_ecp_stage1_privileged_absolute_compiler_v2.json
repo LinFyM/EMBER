@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_privileged_compiler_v1",
-  "status": "active_stage1_realizability_warmstart",
-  "purpose": "Visible-event-anchored privileged q_pi and one complete target-family rank16 compiler before q_V exists.",
+  "schema_version": "ember_ecp_stage1_privileged_absolute_compiler_v2",
+  "status": "active_stage1_absolute_warmstart",
+  "purpose": "Content-gated privileged q_pi and one absolute full-policy target-family rank16 compiler before q_V exists.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -67,7 +67,17 @@
     "compiler_queries": 608,
     "output_tensors": 76,
     "output_values": 1287168,
-    "template": "complete rank16 stable shared prior; all 16 ranks remain writable",
+    "prior_only_surface": "exact complete rank16 gauge-canonical stable shared prior",
+    "full_process_surface": "direct absolute complete rank16 LoRA; no stable-prior factor residual",
+    "q_pi_gate": "member x event x owner content gate, bounded by visible event presence",
+    "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values",
+    "factor_head_init_std": {
+      "action_in": {"a": 0.0007972, "b": 0.0001409},
+      "action_out": {"a": 0.0000754, "b": 0.0004268},
+      "q": {"a": 0.000207, "b": 0.0001464},
+      "v": {"a": 0.0001294, "b": 0.0002588}
+    },
+    "all_ranks_writable": true,
     "hard_rank_partition": false
   },
   "data": {
@@ -84,11 +94,14 @@
   },
   "objective": {
     "effective_update": "exact gauge-invariant BA Frobenius loss through rank-sized Gram matrices",
+    "canonical_factor_warmstart": "compact rank16 SVD gauge for direct A/B coordinate supervision; never a closed-loop selector",
     "functional_response": "paired complete PI0.5 flow response on successful multi-phase occupancy",
     "prior_counterfactual": "language+scene with process absent remains near the full stable-prior LoRA",
     "weights": {
       "member_effective_update": 1.0,
       "consensus_effective_update": 1.0,
+      "member_canonical_factor": 0.5,
+      "consensus_canonical_factor": 0.5,
       "prior_preservation": 0.2,
       "functional_response": 1.0,
       "locality": 0.02
@@ -134,6 +147,12 @@
     "output": "one privileged q_pi consensus rank16 LoRA per task"
   },
   "gate2": {
+    "pre_rollout_geometry": {
+      "maximum_candidate_pair_cosine_mean": 0.95,
+      "minimum_mean_own_direct_cosine": 0.30,
+      "minimum_own_retrieval_count": 13,
+      "minimum_mean_candidate_to_direct_norm_ratio": 0.30
+    },
     "closed_loop_rows": 250,
     "arms": ["source", "stable prior", "direct successful members", "q_pi consensus compiled"],
     "minimum_direct_success_retention": 0.75,

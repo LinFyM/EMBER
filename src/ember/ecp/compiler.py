@@ -18,6 +18,15 @@ from ember.lora import (
 )
 
 
+# 0.4 x the per-family canonical expert factor RMS divided by sqrt(width=256).
+DEFAULT_ABSOLUTE_HEAD_INIT = {
+    "action_in": {"a": 7.972e-4, "b": 1.409e-4},
+    "action_out": {"a": 7.540e-5, "b": 4.268e-4},
+    "q": {"a": 2.070e-4, "b": 1.464e-4},
+    "v": {"a": 1.294e-4, "b": 2.588e-4},
+}
+
+
 @dataclass(frozen=True)
 class ECPCompilerOutput:
     state: Mapping[str, torch.Tensor]
@@ -43,6 +52,7 @@ class TargetFamilyCompiler(torch.nn.Module):
         program_width: int = 128,
         compiler_width: int = 256,
         event_slots: int = 8,
+        factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
     ) -> None:
         super().__init__()
         validate_lora_state(template_state, contract)
@@ -92,13 +102,13 @@ class TargetFamilyCompiler(torch.nn.Module):
             torch.nn.LayerNorm(compiler_width),
         )
         self.factor_a, self.factor_b = self._factor_heads(owners, compiler_width)
-        self.output_scale = torch.nn.Parameter(
-            torch.full((len(TargetFamily),), 0.1)
-        )
         self._register_coordinates(owners)
         self._register_templates(template_state)
-        for head in (*self.factor_a.values(), *self.factor_b.values()):
-            torch.nn.init.normal_(head.weight, std=1e-3)
+        init = factor_head_init or DEFAULT_ABSOLUTE_HEAD_INIT
+        for family, head in self.factor_a.items():
+            torch.nn.init.normal_(head.weight, std=float(init[family]["a"]))
+        for family, head in self.factor_b.items():
+            torch.nn.init.normal_(head.weight, std=float(init[family]["b"]))
 
     @staticmethod
     def _factor_heads(
@@ -233,6 +243,13 @@ class TargetFamilyCompiler(torch.nn.Module):
         layer = self.layer_embedding(self.layer_ids)[:, None]
         return target + rank + family + layer
 
+    @staticmethod
+    def _process_gate(program: ECPProgram) -> torch.Tensor:
+        mass = program.presence.float().sum(dim=-1)
+        soft = 1.0 - torch.exp(-mass)
+        hard = (mass > 0).to(soft)
+        return hard.detach() - soft.detach() + soft
+
     def forward(self, program: ECPProgram) -> ECPCompilerOutput:
         tokens, presence = self._tokens(program)
         queries = self.query_projection(self._queries())
@@ -247,17 +264,23 @@ class TargetFamilyCompiler(torch.nn.Module):
         hidden = torch.einsum("bjrn,bnd->bjrd", attention, values)
         hidden = self.trunk(hidden + queries[None])
         templates = self.template_state()
+        process_gate = self._process_gate(program)
         result: dict[str, torch.Tensor] = {}
         for owner in self.owners:
             family = owner.family.value
-            scale = self.output_scale[self.family_ids[owner.index]]
             addressed = hidden[:, owner.index]
-            a = scale * self.factor_a[family](addressed)
-            b = scale * self.factor_b[family](addressed).transpose(1, 2)
+            full_a = self.factor_a[family](addressed)
+            full_b = self.factor_b[family](addressed).transpose(1, 2)
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
-            result[name_a] = templates[name_a][None] + a.to(templates[name_a])
-            result[name_b] = templates[name_b][None] + b.to(templates[name_b])
+            gate_a = process_gate[:, None, None].to(full_a)
+            gate_b = process_gate[:, None, None].to(full_b)
+            result[name_a] = (
+                (1.0 - gate_a) * templates[name_a][None] + gate_a * full_a
+            ).to(templates[name_a])
+            result[name_b] = (
+                (1.0 - gate_b) * templates[name_b][None] + gate_b * full_b
+            ).to(templates[name_b])
         locality = torch.einsum(
             "bjrn,jn->", attention.float(), self.locality_cost
         ) / (attention.shape[0] * self.owner_count * self.rank)

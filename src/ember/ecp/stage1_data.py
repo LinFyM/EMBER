@@ -11,7 +11,12 @@ import torch
 from safetensors.torch import load_file
 
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
-from ember.lora import LoRAContract, validate_lora_state
+from ember.lora import (
+    LORA_A_SUFFIX,
+    LORA_B_SUFFIX,
+    LoRAContract,
+    validate_lora_state,
+)
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
@@ -93,6 +98,47 @@ class ECPStage1EvidenceBank:
             phase_response=self.phase_response.index_select(0, index),
             reliability=self.reliability.index_select(0, index),
         )
+
+
+def gauge_canonicalize_factors(
+    a: torch.Tensor, b: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return compact-SVD LoRA factors with a deterministic rank sign gauge."""
+
+    squeeze = a.ndim == 2
+    a_batch = a[None] if squeeze else a
+    b_batch = b[None] if squeeze else b
+    q_b, r_b = torch.linalg.qr(b_batch.float(), mode="reduced")
+    q_a, r_a = torch.linalg.qr(a_batch.float().transpose(1, 2), mode="reduced")
+    u, singular, vh = torch.linalg.svd(r_b @ r_a.transpose(1, 2))
+    root = singular.clamp_min(0).sqrt()
+    canonical_b = (q_b @ u) * root[:, None]
+    canonical_a = root[:, :, None] * (vh @ q_a.transpose(1, 2))
+    pivots = canonical_b.abs().argmax(dim=1, keepdim=True)
+    signs = canonical_b.gather(1, pivots).squeeze(1).sign()
+    signs = torch.where(signs == 0, torch.ones_like(signs), signs)
+    canonical_b = canonical_b * signs[:, None]
+    canonical_a = canonical_a * signs[:, :, None]
+    canonical_a = canonical_a.to(a)
+    canonical_b = canonical_b.to(b)
+    if squeeze:
+        return canonical_a[0], canonical_b[0]
+    return canonical_a, canonical_b
+
+
+def gauge_canonicalize_lora_state(
+    state: Mapping[str, torch.Tensor], contract: LoRAContract
+) -> dict[str, torch.Tensor]:
+    """Place every LoRA target in the same compact rank coordinate system."""
+
+    result: dict[str, torch.Tensor] = {}
+    for owner in contract.targets:
+        name_a = owner.name + LORA_A_SUFFIX
+        name_b = owner.name + LORA_B_SUFFIX
+        result[name_a], result[name_b] = gauge_canonicalize_factors(
+            state[name_a], state[name_b]
+        )
+    return result
 
 
 def load_stage1_tasks(
@@ -273,7 +319,7 @@ def load_stage1_evidence_bank(
         )
         state = load_file(str(checkpoint / "adapter.safetensors"), device=str(device))
         validate_lora_state(state, contract)
-        states.append(state)
+        states.append(gauge_canonicalize_lora_state(state, contract))
         reliability.append(successes / 50.0)
     stacked = {
         name: torch.stack([state[name] for state in states]) for name in states[0]

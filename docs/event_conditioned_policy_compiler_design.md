@@ -402,7 +402,8 @@ direct pair-geometry correlation从`.4271`提高到`.4993`，但唯一全局`res
    source/shared support、train-task reward/progress和held closed loop继续决定是否有效。
 4. 昂贵closed loop前先做Program到LoRA的task-discrimination门：fit与held都必须摆脱近全局输出、mean own-direct similarity
    必须高于nearest-other且大多数task自身检索正确，同时effective norm/cosine要出现实质恢复。该门只避免重复评测明显坍缩
-   checkpoint，不能替代Gate 2。
+   checkpoint，不能替代Gate 2。fold0首轮固定数值门为candidate跨taskpair cosine均值不高于`.95`、mean own-direct
+   cosine至少`.30`且高于mean nearest-other、own retrieval至少`13/24`、candidate/direct effective norm ratio均值至少`.30`。
 5. 坐标门通过后，在fit tasks补齐successful-member、source/shared support functional panels和task-equal reward/progress；
    若19 mappings仍限制泛化，再使用已授权且排除validation/Test的LIBERO-90 meta-task expert family扩大独立映射数。不得用
    更多同task episodes冒充更多meta tasks。
@@ -410,6 +411,12 @@ direct pair-geometry correlation从`.4271`提高到`.4993`，但唯一全局`res
 这一选择相对“只把当前训练延长更多steps”的决定性优势是直接移除了已观测到的两个幅度/坐标瓶颈；风险是process presence
 可能退化成full/prior开关，因此后续`q_V`仍必须用full相对language+scene、wrong与最终shuffled/reversed的正向闭环增量证明
 内容和顺序，而不能凭结构开关自证视频必要性。首版实现由Git和formal artifacts保留，active tree只保留修正后的Stage 1路径。
+
+v2的可执行坐标合同是fresh-incompatible的：successful members与stable prior在进入Stage 1前逐target做compact rank16 SVD并
+固定rank sign；prior-only forward在数值上精确返回该完整prior，full forward通过straight-through process-presence开关只读取
+absolute family heads。开关只决定反事实输出面，不是task内容路由；task差异仍必须来自Program tokens和`q_pi`的
+event/owner/content gate。materializer在同一次24-task forward内计算上述几何门，避免为每个checkpoint再做一轮重复observer
+推理；v1 config/schema/evaluator不在active tree保留兼容分支。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

@@ -62,6 +62,18 @@
   坐标warm-start，仍以exact-BA、multi-state functional support、train reward/progress和held closed loop裁决。昂贵闭环前先
   要求compiled LoRA摆脱跨task坍缩与nearest-other错配；随后补source/shared support及授权non-held meta-task diversity。
   remote-safe证据为`docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。
+- 上述后继已在唯一Stage 1代码路径完成fresh-incompatible v2替换：47个successful member LoRA和stable prior先经compact-SVD
+  进入统一rank16 gauge；`q_pi`删除全局scalar，输出`member×event×owner` sigmoid evidence gate且仍乘visible presence；同一
+  compiler对zero-process精确返回prior完整LoRA，对full process直接输出absolute A/B，不再叠加template factors。训练新增
+  member/consensus canonical-factor warm-start，同时保留exact-BA与functional目标；materialization一次forward train24时直接
+  计算candidate/direct跨taskBA cosine、own-direct retrieval和norm ratio，未过门不启动fixed250。聚焦CPU合同共7项通过，
+  覆盖BA保持的确定gauge、prior/full绝对面、q_pi信息墙、完整rank16输出及新projection evaluator。
+- v2真实K2+functional单卡profile已在gpu01 physical1通过且未触碰prohibited physical0：一次更新2.17秒、峰值
+  16,358,487,552 bytes，q_pi gate覆盖`.2539--.7773`而非全局scalar，prior-only exact-BA loss为0。初版统一head scale使
+  initial effective loss达到`19.5`；直接统计47个gauge-canonical successful members后改为family-specific A/B scale，并以
+  其隐含expert factor RMS的`.4x`初始化，initial member/consensus effective loss降到`1.1172`、canonical factor loss降到
+  `1.2098`、裁剪前梯度从`3345.1`降到`61.0`。连续6个不同K2/functional visits均finite、每步约2.0--2.3秒；该profile只验证
+  数值起点与运行稳定性，不作为科学曲线或checkpoint选择。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

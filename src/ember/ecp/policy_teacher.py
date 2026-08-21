@@ -27,6 +27,7 @@ class PolicyTeacherOutput:
     program: ECPProgram
     member_programs: ECPProgram
     member_weights: torch.Tensor
+    evidence_gate: torch.Tensor
 
 
 def _family_name(family: TargetFamily) -> str:
@@ -88,7 +89,8 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
             torch.nn.Linear(2 * width, width),
             torch.nn.LayerNorm(width),
         )
-        self.residual_scale = torch.nn.Parameter(torch.tensor(0.1))
+        self.evidence_gate = torch.nn.Linear(width, 1)
+        torch.nn.init.zeros_(self.evidence_gate.bias)
 
     def _factor_tokens(
         self, states: Mapping[str, torch.Tensor]
@@ -154,8 +156,9 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
                 (anchor, factor_event, phase_owner, reliability_owner), dim=-1
             )
         )
-        gate = anchors.presence[0][None, :, None, None]
-        member_process = anchor + self.residual_scale.tanh() * gate * correction
+        evidence_gate = self.evidence_gate(correction).sigmoid()
+        visible = anchors.presence[0][None, :, None, None]
+        member_process = anchor + visible * evidence_gate * correction
         weights = evidence.reliability.float().clamp_min(1e-3)
         weights = weights / weights.sum()
         mean = torch.einsum("m,mejd->ejd", weights, member_process)
@@ -183,4 +186,5 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
             program=consensus,
             member_programs=member_programs,
             member_weights=weights,
+            evidence_gate=evidence_gate,
         )

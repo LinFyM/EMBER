@@ -2,13 +2,18 @@ from pathlib import Path
 
 import torch
 
-from ember.ecp.compiler import select_compiled_state
+from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
 from ember.ecp.contracts import build_target_owners
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
-from ember.ecp.program import VisibleProgramProjector
+from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
+from ember.ecp.stage1_data import gauge_canonicalize_factors
 from ember.ecp.stage1 import ECPStage1Model
-from ember.ecp.stage1_objective import exact_effective_update_loss
+from ember.ecp.stage1_objective import (
+    canonical_factor_loss,
+    effective_update_cosine_matrix,
+    exact_effective_update_loss,
+)
 from ember.lora import identity_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 
@@ -86,6 +91,7 @@ def test_q_pi_cannot_create_process_outside_visible_presence() -> None:
     )
     expected = output.anchors.process.expand(2, -1, -1, -1)
     torch.testing.assert_close(output.teacher.member_programs.process, expected)
+    assert output.teacher.evidence_gate.shape == (2, 8, 38, 1)
 
 
 def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
@@ -115,3 +121,44 @@ def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -
             value * scale if ".lora_A." in name else value / scale
         )
     assert float(exact_effective_update_loss(transformed, target, contract)) < 1e-5
+    cosine, left_energy, right_energy = effective_update_cosine_matrix(
+        target, target, contract
+    )
+    torch.testing.assert_close(cosine.diagonal(), torch.ones(2))
+    torch.testing.assert_close(left_energy, right_energy)
+
+
+def test_compact_svd_gauge_preserves_update_and_is_deterministic() -> None:
+    generator = torch.Generator().manual_seed(11)
+    a = torch.randn(2, 4, 7, generator=generator)
+    b = torch.randn(2, 6, 4, generator=generator)
+    canonical_a, canonical_b = gauge_canonicalize_factors(a, b)
+    repeat_a, repeat_b = gauge_canonicalize_factors(a, b)
+    torch.testing.assert_close(canonical_b @ canonical_a, b @ a)
+    torch.testing.assert_close(canonical_a, repeat_a)
+    torch.testing.assert_close(canonical_b, repeat_b)
+
+
+def test_absolute_compiler_uses_prior_only_or_full_surface() -> None:
+    contract, owners, template = _contract_and_states()
+    for value in template.values():
+        value.normal_(std=0.01)
+    compiler = TargetFamilyCompiler(owners, contract, template)
+    for head in (*compiler.factor_a.values(), *compiler.factor_b.values()):
+        head.weight.data.zero_()
+    common = {
+        "language": torch.randn(1, 38, 128),
+        "scene": torch.randn(1, 38, 128),
+        "process": torch.randn(1, 8, 38, 128),
+        "uncertainty": torch.ones(1, 8, 38, 128),
+    }
+    prior = compiler(
+        ECPProgram(**common, presence=torch.zeros(1, 8))
+    ).state
+    full = compiler(
+        ECPProgram(**common, presence=torch.ones(1, 8))
+    ).state
+    for name, target in template.items():
+        torch.testing.assert_close(prior[name][0], target)
+        torch.testing.assert_close(full[name], torch.zeros_like(full[name]))
+    assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7

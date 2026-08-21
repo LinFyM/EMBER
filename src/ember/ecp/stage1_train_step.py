@@ -97,6 +97,10 @@ def _local_record(
         "consensus_effective_update": float(
             loss.consensus_effective_update.detach()
         ),
+        "member_canonical_factor": float(loss.member_canonical_factor.detach()),
+        "consensus_canonical_factor": float(
+            loss.consensus_canonical_factor.detach()
+        ),
         "prior_preservation": float(loss.prior_preservation.detach()),
         "functional_response": float(loss.functional_response.detach()),
         "locality": float(loss.locality.detach()),
@@ -106,6 +110,9 @@ def _local_record(
         "mean_active_events": float(
             (output.teacher.program.presence.detach() > 0.5).float().sum()
         ),
+        "q_pi_gate_mean": float(output.teacher.evidence_gate.detach().mean()),
+        "q_pi_gate_min": float(output.teacher.evidence_gate.detach().min()),
+        "q_pi_gate_max": float(output.teacher.evidence_gate.detach().max()),
     }
 
 
@@ -194,11 +201,16 @@ def run_stage1_update(
         "total",
         "member_effective_update",
         "consensus_effective_update",
+        "member_canonical_factor",
+        "consensus_canonical_factor",
         "prior_preservation",
         "functional_response",
         "locality",
         "consensus_exact_owner_attention",
         "mean_active_events",
+        "q_pi_gate_mean",
+        "q_pi_gate_min",
+        "q_pi_gate_max",
     )
     return {
         "task_visits": task_visits,

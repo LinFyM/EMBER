@@ -41,6 +41,7 @@ class ECPStage1Model(torch.nn.Module):
         compiler_width: int = 256,
         event_slots: int = 8,
         phase_width: int = 32,
+        factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
     ) -> None:
         super().__init__()
         self.visible_program = VisibleProgramProjector(
@@ -60,6 +61,7 @@ class ECPStage1Model(torch.nn.Module):
             program_width=program_width,
             compiler_width=compiler_width,
             event_slots=event_slots,
+            factor_head_init=factor_head_init,
         )
 
     def forward(

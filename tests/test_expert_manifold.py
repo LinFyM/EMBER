@@ -224,8 +224,8 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_privileged_projection_v1",
-            "projection_kind": "ecp_stage1_privileged_consensus_compiler",
+            "schema_version": "ember_ecp_stage1_privileged_absolute_projection_v2",
+            "projection_kind": "ecp_stage1_privileged_absolute_compiler",
             **assets,
             "optimization": {
                 "task_visits": 228,
@@ -235,6 +235,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
                 "final_lora_averaging": False,
                 "rank": 16,
                 "all_ranks_writable": True,
+                "parameterization": "prior-only exact template; full-process absolute factors",
             },
             "information_wall": {
                 "privileged_q_pi": True,
@@ -242,7 +243,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
             },
         }
     )
-    assert contract["arm"] == "ecp_stage1_q_pi_consensus_tv228"
+    assert contract["arm"] == "ecp_stage1_q_pi_absolute_tv228"
     assert contract["asset"]["single_complete_lora"] is True
 
 

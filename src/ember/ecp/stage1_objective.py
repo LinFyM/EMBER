@@ -16,6 +16,8 @@ class ECPStage1Loss:
     total: torch.Tensor
     member_effective_update: torch.Tensor
     consensus_effective_update: torch.Tensor
+    member_canonical_factor: torch.Tensor
+    consensus_canonical_factor: torch.Tensor
     prior_preservation: torch.Tensor
     functional_response: torch.Tensor
     locality: torch.Tensor
@@ -62,6 +64,73 @@ def exact_effective_update_loss(
     return torch.stack(losses, dim=1).mean()
 
 
+def effective_update_cosine_matrix(
+    left: Mapping[str, torch.Tensor],
+    right: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact cross-state BA cosine matrix without materializing dense updates."""
+
+    cross: torch.Tensor | None = None
+    left_energy: torch.Tensor | None = None
+    right_energy: torch.Tensor | None = None
+    for owner in contract.targets:
+        name_a = owner.name + LORA_A_SUFFIX
+        name_b = owner.name + LORA_B_SUFFIX
+        left_a = _batched(left[name_a]).float()
+        left_b = _batched(left[name_b]).float()
+        right_a = _batched(right[name_a]).float()
+        right_b = _batched(right[name_b]).float()
+        b_cross = torch.einsum("nor,mos->nmrs", left_b, right_b)
+        a_cross = torch.einsum("nri,msi->nmrs", left_a, right_a)
+        owner_cross = (b_cross * a_cross).sum(dim=(2, 3))
+        owner_left = torch.einsum(
+            "nii->n",
+            (left_b.transpose(1, 2) @ left_b)
+            @ (left_a @ left_a.transpose(1, 2)),
+        )
+        owner_right = torch.einsum(
+            "nii->n",
+            (right_b.transpose(1, 2) @ right_b)
+            @ (right_a @ right_a.transpose(1, 2)),
+        )
+        cross = owner_cross if cross is None else cross + owner_cross
+        left_energy = owner_left if left_energy is None else left_energy + owner_left
+        right_energy = (
+            owner_right if right_energy is None else right_energy + owner_right
+        )
+    assert cross is not None and left_energy is not None and right_energy is not None
+    cosine = cross / (
+        left_energy.clamp_min(1e-20).sqrt()[:, None]
+        * right_energy.clamp_min(1e-20).sqrt()[None]
+    )
+    return cosine, left_energy, right_energy
+
+
+def canonical_factor_loss(
+    candidate: Mapping[str, torch.Tensor],
+    target: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+) -> torch.Tensor:
+    """Relative A/B coordinate loss after targets enter the compact-SVD gauge."""
+
+    losses = []
+    for owner in contract.targets:
+        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX):
+            name = owner.name + suffix
+            candidate_value = _batched(candidate[name]).float()
+            target_value = _batched(target[name]).float()
+            batches = max(candidate_value.shape[0], target_value.shape[0])
+            candidate_value = candidate_value.expand(
+                batches, *candidate_value.shape[1:]
+            )
+            target_value = target_value.expand(batches, *target_value.shape[1:])
+            error = (candidate_value - target_value).square().flatten(1).sum(1)
+            energy = target_value.square().flatten(1).sum(1)
+            losses.append(error / energy.clamp_min(1e-10))
+    return torch.stack(losses, dim=1).mean()
+
+
 def ecp_stage1_loss(
     *,
     member: ECPCompilerOutput,
@@ -79,6 +148,12 @@ def ecp_stage1_loss(
     consensus_effective = exact_effective_update_loss(
         consensus.state, expert_states, contract
     )
+    member_canonical = canonical_factor_loss(
+        member.state, expert_states, contract
+    )
+    consensus_canonical = canonical_factor_loss(
+        consensus.state, expert_states, contract
+    )
     prior_preservation = exact_effective_update_loss(
         prior.state, prior_target, contract
     )
@@ -90,6 +165,8 @@ def ecp_stage1_loss(
     terms = {
         "member_effective_update": member_effective,
         "consensus_effective_update": consensus_effective,
+        "member_canonical_factor": member_canonical,
+        "consensus_canonical_factor": consensus_canonical,
         "prior_preservation": prior_preservation,
         "functional_response": functional_response,
         "locality": locality,

@@ -57,8 +57,9 @@ class TaskGroundedTransitionMatcher(torch.nn.Module):
         grounded = torch.einsum("btnp,btpd->btnd", scores.softmax(-1), value)
         grounded = grounded.masked_fill(~language_mask[:, None, :, None], 0.0)
 
-        previous = torch.cat((grounded[:, :1], grounded[:, :-1]), dim=1)
-        previous2 = torch.cat((grounded[:, :1], grounded[:, :1], grounded[:, :-2]), dim=1)
+        time_ids = torch.arange(frames, device=grounded.device)
+        previous = grounded.index_select(1, (time_ids - 1).clamp_min(0))
+        previous2 = grounded.index_select(1, (time_ids - 2).clamp_min(0))
         local_context = 0.5 * (previous + previous2)
         initial = grounded[:, :1].expand(-1, frames, -1, -1)
         lengths = frame_mask.sum(1).clamp_min(1) - 1

@@ -15,6 +15,8 @@ class NativeObserverOutput:
     """Compact target-aligned evidence; full 1024-wide states are not retained."""
 
     owner_lattice: torch.Tensor
+    patch_states: torch.Tensor
+    language_states: torch.Tensor
     flow_velocity: torch.Tensor
 
 
@@ -71,6 +73,9 @@ class TargetOwnerProjector(torch.nn.Module):
         self.velocity_projection = torch.nn.Linear(
             padded_action_dim, program_width, bias=False
         )
+        self.noise_projection = torch.nn.Linear(
+            padded_action_dim, program_width, bias=False
+        )
         self.layer_embedding = torch.nn.Embedding(18, program_width)
         self.family_embedding = torch.nn.Embedding(len(TargetFamily), program_width)
         self.family_gate = torch.nn.Parameter(torch.ones(len(TargetFamily), 2))
@@ -99,6 +104,13 @@ class TargetOwnerProjector(torch.nn.Module):
             persistent=False,
         )
         self.register_buffer(
+            "action_in_mask",
+            torch.tensor(
+                [owner.family is TargetFamily.ACTION_IN for owner in owners]
+            ),
+            persistent=False,
+        )
+        self.register_buffer(
             "action_out_mask",
             torch.tensor(
                 [owner.family is TargetFamily.ACTION_OUT for owner in owners]
@@ -110,12 +122,14 @@ class TargetOwnerProjector(torch.nn.Module):
         self,
         layer_states: torch.Tensor,
         flow_velocity: torch.Tensor,
+        suffix_noise: torch.Tensor,
     ) -> torch.Tensor:
         layer_inputs = layer_states[:, :-1]
         residuals = layer_states[:, 1:] - layer_inputs
         state = self.state_projection(layer_inputs)
         delta = self.delta_projection(residuals)
         velocity = self.velocity_projection(flow_velocity)
+        noise = self.noise_projection(suffix_noise)
         gates = self.family_gate[self.family_ids]
         owner_state = state[:, self.owner_layer_ids]
         owner_delta = delta[:, self.owner_layer_ids]
@@ -123,9 +137,11 @@ class TargetOwnerProjector(torch.nn.Module):
             gates[None, :, None, 0, None] * owner_state
             + gates[None, :, None, 1, None] * owner_delta
         )
-        action_out = (
-            gates[None, :, None, 0, None] * state[:, -1, None]
-            + gates[None, :, None, 1, None] * velocity[:, None]
+        action_in = state[:, 0, None] + delta[:, 0, None] + noise[:, None]
+        final_state = self.state_projection(layer_states[:, -1])
+        action_out = final_state[:, None] + delta[:, -1, None] + velocity[:, None]
+        value = torch.where(
+            self.action_in_mask[None, :, None, None], action_in, value
         )
         value = torch.where(
             self.action_out_mask[None, :, None, None], action_out, value
@@ -145,11 +161,20 @@ class ECPNativeObserver(torch.nn.Module):
         self,
         owners: tuple[TargetOwner, ...],
         *,
+        prefix_width: int = 2048,
         expert_width: int = 1024,
         program_width: int = 128,
         padded_action_dim: int = 32,
+        image_tokens: int = 256,
     ) -> None:
         super().__init__()
+        self.image_tokens = image_tokens
+        self.patch_projection = torch.nn.Linear(
+            prefix_width, program_width, bias=False
+        )
+        self.language_projection = torch.nn.Linear(
+            prefix_width, program_width, bias=False
+        )
         self.projector = TargetOwnerProjector(
             owners,
             expert_width=expert_width,
@@ -187,7 +212,7 @@ class ECPNativeObserver(torch.nn.Module):
         with grad_context, adapter_context, _LayerStateCapture(
             expert_model, detach=not track_action_adapter_grad
         ) as capture:
-            (_, suffix_hidden), _ = bridge.forward(
+            (prefix_hidden, suffix_hidden), _ = bridge.forward(
                 attention_mask=mask,
                 position_ids=positions,
                 past_key_values=None,
@@ -203,8 +228,19 @@ class ECPNativeObserver(torch.nn.Module):
 
         if layer_states.shape[1:3] != (19, ACTION_HORIZON):
             raise RuntimeError("PI0.5 Action Expert observer topology changed")
-        lattice = self.projector(layer_states, flow_velocity)
+        frozen_prefix = prefix_hidden.detach()
+        patch_states = self.patch_projection(
+            frozen_prefix[:, : self.image_tokens]
+        )
+        language_states = self.language_projection(
+            frozen_prefix[:, self.image_tokens :]
+        ).masked_fill(
+            ~prefix_padding[:, self.image_tokens :, None], 0.0
+        )
+        lattice = self.projector(layer_states, flow_velocity, suffix_noise)
         return NativeObserverOutput(
             owner_lattice=lattice,
+            patch_states=patch_states,
+            language_states=language_states,
             flow_velocity=flow_velocity.detach(),
         )

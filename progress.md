@@ -21,8 +21,11 @@
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦
-  CPU测试通过，覆盖真实target顺序、冻结source/Writer梯度边界、末端horizon敏感性、变长mask和monotone slot posterior；
-  这只证明实现合同接通，真实PI0.5单帧显存/吞吐smoke与Stage 0训练checkpoint仍待完成。
+  CPU测试通过，覆盖真实target顺序、冻结source/Writer梯度边界、末端horizon敏感性、T=1/变长mask和monotone slot
+  posterior。随后在`gpu02:0`以真实source PI0.5、exact language和task0 action-hidden真视频帧完成同一native forward的
+  forward/backward：patch=`[1,256,128]`、owner lattice=`[1,38,50,128]`、process=`[1,8,38,128]`，计算1.0203秒、峰值
+  9,441,286,144 bytes，source梯度tensor为0、Writer 34个梯度tensor全部finite。该smoke证明真实底座接口与梯度墙接通，
+  不代表Stage 0 event学习或性能已经通过。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

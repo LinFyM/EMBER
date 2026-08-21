@@ -91,7 +91,12 @@ def test_native_observer_captures_all_layers_then_compacts_to_owner_lattice() ->
     torch.manual_seed(4)
     core = _FakeCore(width=16).requires_grad_(False)
     observer = ECPNativeObserver(
-        _owners(), expert_width=16, program_width=12, padded_action_dim=32
+        _owners(),
+        prefix_width=16,
+        expert_width=16,
+        program_width=12,
+        padded_action_dim=32,
+        image_tokens=2,
     )
     prefix = torch.randn(2, 6, 16)
     prefix_padding = torch.ones(2, 6, dtype=torch.bool)
@@ -107,6 +112,8 @@ def test_native_observer_captures_all_layers_then_compacts_to_owner_lattice() ->
     output.owner_lattice.square().mean().backward()
 
     assert output.owner_lattice.shape == (2, 38, 50, 12)
+    assert output.patch_states.shape == (2, 2, 12)
+    assert output.language_states.shape == (2, 4, 12)
     assert output.flow_velocity.shape == (2, 50, 32)
     assert all(parameter.grad is None for parameter in core.parameters())
     assert any(parameter.grad is not None for parameter in observer.parameters())
@@ -129,6 +136,9 @@ def test_event_binding_uses_all_horizons_and_segmenter_is_ordered() -> None:
     candidates, confidence = matcher(
         patches, language, frame_mask, language_mask
     )
+    one_frame_candidates, _ = matcher(
+        patches[:, :1], language, frame_mask[:, :1], language_mask
+    )
     bound = binding(candidates, confidence, lattice, frame_mask)
     changed_lattice = lattice.clone()
     changed_lattice[:, :, :, -1] += 3.0
@@ -137,6 +147,7 @@ def test_event_binding_uses_all_horizons_and_segmenter_is_ordered() -> None:
     program.process.square().mean().backward()
 
     assert candidates.shape == (batch, frames, 4, width)
+    assert one_frame_candidates.shape == (batch, 1, 4, width)
     assert bound.shape == (batch, frames, 4, 38, width)
     assert not torch.allclose(bound, changed)
     assert program.process.shape == (batch, 8, 38, width)

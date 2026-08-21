@@ -14,6 +14,11 @@ from ember.ecp.stage1_objective import (
     effective_update_cosine_matrix,
     exact_effective_update_loss,
 )
+from ember.ecp.stage1_support import (
+    PolicySupportPanel,
+    policy_support_loss_from_response,
+)
+from ember.ecp.stage1_support_audit import summarize_policy_support_audit
 from ember.lora import identity_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 
@@ -236,3 +241,63 @@ def test_policy_support_content_reaches_q_pi_correction() -> None:
     output.teacher.program.process.float().square().mean().backward()
     gradient = model.policy_teacher.support_value.weight.grad
     assert gradient is not None and float(gradient.abs().sum()) > 0
+
+
+def test_policy_support_response_baselines_share_one_normalization() -> None:
+    source = torch.zeros(2, 3, 4)
+    expert = torch.ones(1, 2, 3, 4)
+    panel = PolicySupportPanel(
+        panel_id=0,
+        kind="learner",
+        trajectory_path=Path("unused"),
+        trajectory_bytes=0,
+        selected_indices=(0, 1),
+        policy_seed=1,
+        source_response=source,
+        shared_response=torch.full_like(source, 0.5),
+        expert_responses=expert,
+        expert_weights=torch.ones(1),
+        outcome_weight=0.25,
+        source_support_weight=1.0,
+        shared_support_weight=1.0,
+        learner_success=False,
+    )
+    source_loss = policy_support_loss_from_response(candidate=source, panel=panel)
+    shared_loss = policy_support_loss_from_response(
+        candidate=panel.shared_response, panel=panel
+    )
+    expert_loss = policy_support_loss_from_response(
+        candidate=expert[0], panel=panel
+    )
+    torch.testing.assert_close(source_loss.response, torch.tensor(0.25))
+    torch.testing.assert_close(shared_loss.response, torch.tensor(0.0625))
+    torch.testing.assert_close(expert_loss.response, torch.tensor(0.0))
+
+
+def test_policy_support_audit_gate_is_task_equal_across_fit_and_held() -> None:
+    summary = {
+        "panels": 2,
+        "candidate_response": 0.5,
+        "source_response": 1.0,
+        "shared_response": 0.8,
+        "consensus_response": 0.1,
+    }
+    tasks = [
+        {
+            "fold_role": "fit" if ordinal < 19 else "held_transform_only",
+            "summary": {"all": summary, "successful": summary, "learner": None},
+        }
+        for ordinal in range(24)
+    ]
+    aggregates, gate = summarize_policy_support_audit(
+        tasks=tasks,
+        thresholds={
+            "minimum_fit_tasks_better_than_source": 13,
+            "minimum_fit_tasks_better_than_shared": 13,
+            "minimum_held_tasks_better_than_source": 3,
+            "minimum_held_tasks_better_than_shared": 3,
+        },
+    )
+    assert gate["passed"] is True
+    assert aggregates["fit19"]["all"]["tasks"] == 19
+    assert aggregates["held5"]["all"]["tasks"] == 5

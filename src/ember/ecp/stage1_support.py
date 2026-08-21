@@ -363,6 +363,14 @@ def policy_support_distillation_loss(
         cached.batch,
         policy_seed=panel.policy_seed,
     ).float()
+    return policy_support_loss_from_response(candidate=candidate, panel=panel)
+
+
+def policy_support_loss_from_response(
+    *, candidate: torch.Tensor, panel: PolicySupportPanel
+) -> PolicySupportLoss:
+    """Score a frozen response against one cached multi-policy support panel."""
+
     source = panel.source_response.to(candidate).float()
     shared = panel.shared_response.to(candidate).float()
     experts = panel.expert_responses.to(candidate).float()

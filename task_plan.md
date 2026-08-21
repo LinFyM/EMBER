@@ -1,10 +1,11 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；专家挑战十四/方向E的首个fixed-decoder closed-loop outer-credit实现已完成formal裁决。
-functional warm-start macro2在held5 fixed250为`41/250`，接近shared-only `43/250`；一次task-equal antithetic outer更新后
-macro3为`39/250`，相对macro2为37 retained/2 gained/4 lost，且相对shared没有任何新成功row。当前单方向finite-difference
-outer参数化implemented-fail，已停止macro4；这不否定outer credit一般。下一节点先补macro2的matched learned
-language-only与video-only因果基线，再按专家账本选择结构上不同的credit或process方向。held始终零梯度、zero-interaction。**
+状态：2026-08-21 **active；首个fixed-decoder outer-credit实现及其matched因果面板均已formal裁决。macro2的
+correct/language-only/video-only/first+final/same-task-other分别为`41/39/40/39/40`，Goal与Long全为0；correct相对
+language与first+final都只净增2且不显著，换同任务视频只保留36/41个correct successes。最早失效接口因此前移到outer之前的
+16维code inference：继承的56-task process frontend已加载，但三个新16维输出层只经两轮低学习率correct-only拟合。下一节点
+复用现有训练产物，在fixed decoder上补齐fit19跨episode action-phase alignment、真实时序controls与K1--4覆盖，先过
+Inference Gate再考虑新outer estimator；不恢复macro4、不做rank/LR/seed小扫。held始终零梯度、zero-interaction。**
 
 ## Goal
 
@@ -173,9 +174,11 @@ composite-latest为`21/43/37/33`。source→shared为17 retained、26 gained、4
 - [x] 接入frame-count-matched static-first-repeated与同episode eye-in-hand cross-view；确认现有HDF5无可用mask authority，
   不从teacher state派生mask绕过信息墙；
 - [ ] 在train/meta actions可用处加入inverse dynamics、visual transition-to-latent-action与phase correspondence辅助目标，
-  held输入继续action-hidden；
+  held输入继续action-hidden；56-task process frontend已接受跨episode action-phase监督，但新16维code heads尚未在fit19固定坐标
+  上接受该监督，下一轮只补这一缺口；
 - [ ] Dynamic-K若进入论文候选，训练与formal评测真实覆盖各cardinality；不平均frames/raw features/final LoRAs；
-- [ ] 固定decoder，仅训练language/video inference；按task-level split报告code与closed-loop泛化。
+- [x] 固定decoder、仅训练language/video inference并完成held5 closed-loop matched panel；当前两轮correct-only版本未过Gate 3，
+  下一轮保持decoder不变，只补process/action supervision；
 
 **Gate 3：** full video必须稳定优于learned language-only与first+final，收益不能只集中Object，Long不得系统性反向。
 
@@ -184,14 +187,22 @@ shuffled=`133`、static-first-repeated=`132`；correct相对source净`0`且所�
 effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，反而几乎等于共享均值carrier。因此本次Gate 3明确
 失败；不续训旧Writer、不进入outer RL，先修复functional coordinate与task-conditioned inference可识别性。
 
+**Macro2 fixed-coordinate裁决：** historical 56-task process Writer共有212 tensors/8,121,416 values成功迁移，只有
+language/video/posterior三个`32→16`末层因shape变化重新初始化，旧decoder没有迁移。两轮fit19 correct-only后，held5
+fixed250的correct/language-only/video-only/first+final/same-task-other=`41/39/40/39/40`，breadth均为`3/5`且Goal/Long
+全0。language→correct为35 retained/6 gained/4 lost、`p=.75391`；first+final→correct为36/5/3、`p=.72656`；
+correct→same-task-other为36 retained/4 gained/5 lost，correct-success retention仅`.87805`。因此本轮Gate 3仍失败，且
+失败发生在outer之前。下一主要变量不是再换fusion，而是把专家方向I/G要求的跨episode action-phase与时序反事实直接作用到
+新16维heads，并真实覆盖K1--4；该过程warm-start不过门则不启动更昂贵outer credit。
+
 ## Phase 4 — Train/meta closed-loop outer objective
 
 - [x] 以已验证有闭环support的shared prior和fixed functional decoder为底座完成functional warm-start；当前Writer只推断
   task code，decoder/source/shared均冻结，没有把旧phase-code residual冒充通过的decoder；
 - [x] 在fit19用simulator success、执行效率与BDDL goal-predicate progress完成一次closed-loop outer更新；held5只做
   zero-interaction rollout，没有reward/action梯度；
-- [ ] matched functional-only已完成；macro2 learned language-only、video-only仍需在同一held5 rows上补齐，之后才能回答
-  当前Writer的视频净增量；
+- [x] macro2 matched functional-only、learned language-only、video-only、first+final与same-task-other已在同一held5 rows完成；
+  full相对language净`+2`、相对video净`+1`、相对first+final净`+2`且均不显著，未证明视频条件增量或过程价值；
 - [x] reward采样按task等权，checkpoint保存sampler/cursor、RNG与world topology并已完成world6 exact-resume；held5不产生
   梯度；
 - [ ] 若需要stability regularization，约束policy-functional response或已验证成功support，不再用raw parameter gradient
@@ -206,6 +217,10 @@ breadth仍`3/5`。macro2→3为37 retained/2 gained/4 lost、Jaccard`.86047`；s
 Gate 4停止macro4，淘汰当前`one antithetic direction × two CRN rollouts/sign`实现；不外推否定更丰富outer estimator、
 learned progress、composition或task-local RL。证据见
 `docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
+
+**回溯后的接口裁决：** matched面板证明macro2在outer前已不满足Inference Gate，所以不能把macro3下降全部归因于credit
+estimator，也不能直接投入更昂贵多方向outer。下一轮先使用已存在的process-control/action-alignment owner训练新16维输出坐标；
+只有full稳定胜过language与first+final、same-video retention过门后，才为该warm-start接入结构不同的outer estimator。
 
 ## Phase 5 — Formal迭代、相邻稳定与多split复现
 
@@ -254,7 +269,10 @@ learned progress、composition或task-local RL。证据见
 9. fixed-decoder outer-credit合同已实现并exact-resume：macro2 warm-start=`41/250`；macro3一次outer更新=`39/250`，相对
    shared43没有新成功row。训练侧虽然10/19 tasks有非零advantage，held absolute、breadth与retention均未提高，故明确停止
    macro4；当前单方向antithetic estimator implemented-fail，不扩大为outer credit一般失败；
-10. 复用macro2唯一checkpoint与同一held5 fixed250 rows补learned language-only、video-only；它们只做推断/rollout，不重复
-    训练，用于区分41分究竟来自learned language、视频posterior还是shared carrier；
-11. 完成matched基线后逐段回查专家原文A--N和替代方向，按最早失效接口选择结构上不同的credit/process实验；旧macro10、
-    fingerprints、expert banks、state bank、oracle与本轮训练产物继续复用，不围绕rank/LR/epsilon/seed小扫。
+10. macro2 matched panel已完成：correct/language/video/first+final/same-task-other=`41/39/40/39/40`；full无显著增量、
+    Goal/Long全0、same-task retention `.87805`，故最早失效接口在outer前的16维task/process inference；
+11. 回查专家原文确认当前没有遗漏56-task process预训练：212 tensors已迁移，仅三个`32→16`code末层重新初始化，且这三个
+    heads只接受两轮低学习率correct-only拟合。下一轮复用旧checkpoint、fixed decoder、fit19 videos/actions与现有control owner，
+    用跨episode action-phase alignment、reversed/shuffled/first+final/endpoints-middle-shuffled和K1--4训练新heads；
+12. 先以同一held5 correct/language/first+final/same-task panel裁决process warm-start。通过才实施结构不同的outer credit；失败则
+    按专家stop gate核对尚未覆盖的meta-task数量/多split，并准备转向video→progress或skill composition，不围绕rank/LR/seed小扫。

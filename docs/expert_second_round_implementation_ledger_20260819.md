@@ -20,7 +20,7 @@
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
 | C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | learner-state aggregation把44/44提高到54/47；shared residual又把held functional mean`.68032→.65905`，闭环却把shared43降到37/33，支持loss-success错位。首个outer实现已接通真实simulator credit，但macro2→3从41降到39且无shared外新成功；当前estimator失败不推翻该诊断 | implemented-pass |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；validation8 local oracle250/400、八task全正且Long41/100，source仅48/400。全局source/local ceiling不足分支不成立；Long trace仍保留第二子目标与保持的局部缺口定位 | not-triggered-with-evidence |
-| C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
+| C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132；新fixed-coordinate macro2又得到correct/language/video/first+final=`41/39/40/39`且Goal/Long全0。两代Writer都未证明过程，但新16维heads尚未接受已有action/control监督，下一轮只补该接口 | implemented-fail |
 | C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact、shared-zero与exact shared12/task4已完整分解；task-independent shared相对source净+22，但task residual相对shared净-6/-10。稳定底座获支持，当前functional conditional range未通过；不恢复旧moving FactorHeads或继续objective小扫 | implemented-mixed |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
@@ -35,34 +35,34 @@
 | P2 | 每视频先保序，跨视频再置换不变 | successor按video独立编码、再对完整video summary做集合聚合；4-task训练profile已接通，等待formal closed-loop裁决 | active |
 | P3 | Core/Procedure概念区分有价值 | 继承语义/目标与过程/阶段的职责，不强制继承旧tensor拓扑 | accepted |
 | P4 | Core-addressed Reader、bounded K-set/M2P有局部正证据 | 作为可复用组件候选；只有与fixed-code接口匹配才保留 | active |
-| U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已独立生成complete LoRA且部署时不读视频；Text/VL Meta-LoRA均固定为0并由authority guard保护，等待formal baseline | active |
+| U1 | language-only被架构强制identity会让no-video对照自证 | learned language-only已formal独立生成complete LoRA且部署不读视频；matched为39/250，language+video为41/250，净+2且`p=.75391`。baseline机制通过，当前视频条件增量失败 | implemented-mixed |
 | U2 | LoRA rank index不是policy-functional coordinate | 71-task unified expert-source fingerprints与train-only PCA已实现；held transform-only且尺度接近train，rank16只作为输出参数化 | implemented-pass |
 | U3 | Program与complete LoRA decoder不应持续共同移动 | 主线固定decoder；慢EMA/two-timescale仅在fixed版明确欠拟合时作为对照 | active |
-| U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | successor保留完整50-token序列，以phase queries读取并输出phase-specific alignment；等待消融 | active |
-| U5 | 时间中心化Value不等于过程表示 | 后继以initial/goal/events/transitions显式编码；centered memory不再承担唯一过程语义 | scheduled |
+| U4 | 50个Action token直接mean丢失horizon/noise/phase结构 | successor与历史56-task frontend保留完整50-token序列、phase queries与phase-specific action head；当前16维heads未用该alignment，已定位为下一独立接口变量 | active |
+| U5 | 时间中心化Value不等于过程表示 | successor已显式编码initial/goal/events/transitions，但macro2 full41只比first+final39净+2、`p=.72656`，当前实现未形成端点外过程价值；下一轮加入直接时序反事实监督 | implemented-fail |
 | U6 | action-in/out由首末layer派生不是已知endpoint correspondence | 不把该对应作为canonical地址；以policy response probe验证地址功能 | active |
 | U7 | 最后RMSNorm会抹除cell magnitude | 在复用旧组件时做功能消融；新fixed decoder默认不无条件抹除有意义幅度 | active |
 | U8 | 20x16x256 grid复杂且缺少清晰可识别语义 | 停止其增量路线；只复用经过闭环验证的独立机制，不保留平行canonical grid | active |
-| U9 | frozen native memory、Dynamic-K、rank16有价值但未证明必要 | 分别由ablation、真实cardinality训练和closed-loop性能决定，不升级为架构信条 | scheduled |
+| U9 | frozen native memory、Dynamic-K、rank16有价值但未证明必要 | 当前outer schedule按macro已覆盖K1/K2/K3，但macro2选择发生在K4前；下一process warm-start完成K1--4后再以闭环裁决，不升级为架构信条 | active |
 
 ## 3. 专家方向A--H：核心合同内
 
 | 方向 | 内容 | 实施/裁决门 | 状态 |
 | --- | --- | --- | --- |
 | A | 功能锚定的固定adapter decoder | phase表示门通过；fresh Decoder由source21到44/44，learner-state聚合再到54/47，但direct retention、latest breadth与member stability仍未联合过门。保留多成功phase表示与state-bank正增量，不把当前Decoder升级到Writer | implemented-fail |
-| B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
-| C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
+| B | language prior + video posterior | macro10七臂失败后，新fixed-coordinate macro2也完成matched panel：correct41、language39、video40、first+final39、same40；full相对language净+2且不显著，Goal/Long全0。分工架构已实现，当前训练接口失败 | implemented-fail |
+| C | object-centric explicit Program | successor显式表示initial/goal/events/transitions并按video保序；macro2 full未胜first+final，说明当前表示/监督没有产生过程价值。保留实现，下一轮以action-phase和control直接约束新16维heads | implemented-fail |
 | D | 保留完整Action probe结构 | official denoised `50x7` action与exact `50x32` JVP均已接通；direct八strata失败后改为全部replan、完整50-token响应和固定功能弧长对应，held5达到`5/5`。JVP维持辅助，Action为当前primary标签 | implemented-pass |
-| E | train-task closed-loop outer objective | fixed shared/decoder、fit19 task-equal simulator success+efficiency+BDDL progress、held零梯度与exact-resume均已实现。macro2 warm-start41，首次outer更新后macro3为39；相对shared43没有任何新成功row，Goal/Long仍0。停止macro4，只淘汰当前单方向antithetic estimator；learned language/video baselines后再选结构不同的credit实现 | implemented-fail |
+| E | train-task closed-loop outer objective | fixed shared/decoder、fit19 task-equal simulator success+efficiency+BDDL progress、held零梯度与exact-resume均已实现。macro2 matched panel又证明warm-start在outer前未过video/process门；macro3降到39且无shared外新row。停止macro4，先修process warm-start，再决定结构不同的credit实现 | implemented-fail |
 | F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立；source未见的target train24保持19/5边界，47/47 multi-checkpoint成功occupancy在held5通过表示门。后续Decoder仍只拟合fit19，validation8继续architecture panel、Test8 sealed | implemented-pass |
-| G | process-identifying controls | first+final/reversed/shuffled/static已完成matched closed loop并共同否定macro10过程优势；validation8 BDDL stage trace已完成并定位Long第二子目标，但只是final-goal代理。其它已接通controls保留到新坐标Writer，HDF5无depth/segmentation且不从state伪造mask | active |
+| G | process-identifying controls | macro10的first+final/reversed/shuffled/static已否定旧Writer；新坐标macro2的first+final39对full41净差2、`p=.72656`，same-task retention`.87805`，再次未过门。现有control owner将用于直接训练新16维heads；无depth/segmentation且不从state伪造mask | active |
 | H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
 
 ## 4. 专家方向I--N：owner已授权或保留的合同变化
 
 | 方向 | owner边界与当前决定 | 进入/停止条件 | 状态 |
 | --- | --- | --- | --- |
-| I train/meta teacher-action alignment | 允许；validation/test action不训练 | target train24 privileged experts的47条successful trajectories已构成完整Action response与monotone functional phase correspondence；fit19拟合坐标、held5固定变换并以`5/5`通过 | implemented-pass |
+| I train/meta teacher-action alignment | 允许；validation/test action不训练 | 47条target successful trajectories的Action/phase坐标已以held5 `5/5`通过，56-task frontend也已训练action head；但新16维code末层尚未接受该监督。下一轮在fit19跨episode使用，held仍action-hidden | active |
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |

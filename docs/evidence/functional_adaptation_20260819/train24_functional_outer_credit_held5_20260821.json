@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_train24_functional_outer_credit_held5_evidence_v1",
+  "schema_version": "ember_train24_functional_outer_credit_held5_evidence_v2",
   "date": "2026-08-21",
   "method_commit": "506daa2f05e21836ddf0bede17b0a1b179ac2a65",
   "evaluation_commit": "2f9fdb0df231f0e07d99faf39a463d623ee7e36d",
@@ -8,6 +8,22 @@
     "fixed_shared_prior": true,
     "trainable_component": "language_video_functional_code_inference",
     "warmstart_macros": 2,
+    "warm_start_provenance": {
+      "checkpoint": "runs/outputs/pi05_functional_code_writer_nonheld_meta_formal_a2999d5_gpu02p123467_20260820/checkpoints/macro_00000010/writer.safetensors",
+      "source_meta_tasks": 56,
+      "loaded_tensors": 212,
+      "loaded_values": 8121416,
+      "skipped_shape_tensors": [
+        "code_inference.language_code.layers.2.bias",
+        "code_inference.language_code.layers.2.weight",
+        "code_inference.posterior_delta.layers.2.bias",
+        "code_inference.posterior_delta.layers.2.weight",
+        "code_inference.video_code.layers.2.bias",
+        "code_inference.video_code.layers.2.weight"
+      ],
+      "reason_for_skips": "the historical process frontend emitted 32-dimensional codes while the fixed shared-prior residual decoder uses 16-dimensional codes",
+      "historical_decoder_loaded": false
+    },
     "outer_credit_parameterization": "one Gaussian antithetic direction per fit task with two common-random-number rollouts per sign",
     "outer_reward": "success plus efficiency plus BDDL goal-predicate progress",
     "task_weighting": "fit19 task-equal",
@@ -21,7 +37,11 @@
     "macro2_evaluation": "runs/outputs/pi05_functional_outer_credit_m2_held5_correct_5x50_2f9fdb0_gpu02p123467_r2_20260821/results.json",
     "macro3_evaluation": "runs/outputs/pi05_functional_outer_credit_m3_held5_correct_5x50_2f9fdb0_gpu02p123467_r2_20260821/results.json",
     "source_baseline": "runs/outputs/pi05_train24_phase_decoder_held5_source_73c2a32_gpu01p01_r2_20260821/results.json",
-    "shared_prior_baseline": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json"
+    "shared_prior_baseline": "runs/outputs/pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/results.json",
+    "macro2_language_only": "runs/outputs/pi05_functional_outer_credit_m2_held5_language_only_5x50_2f9fdb0_gpu02p467_r2_20260821/results.json",
+    "macro2_video_only": "runs/outputs/pi05_functional_outer_credit_m2_held5_video_only_5x50_2f9fdb0_gpu02p123_r2_20260821/results.json",
+    "macro2_first_final": "runs/outputs/pi05_functional_outer_credit_m2_held5_first_final_5x50_2f9fdb0_gpu02p123_r3_20260821/results.json",
+    "macro2_same_task_other": "runs/outputs/pi05_functional_outer_credit_m2_held5_same_task_other_5x50_2f9fdb0_gpu02p467_r3_20260821/results.json"
   },
   "held5_panel": {
     "condition": "correct",
@@ -63,6 +83,54 @@
           "libero_object/8": 4,
           "libero_spatial/0": 36,
           "libero_spatial/9": 1
+        }
+      },
+      "macro2_language_only": {
+        "successes": 39,
+        "breadth": 3,
+        "evaluation_wall_seconds": 988.501002073288,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 3,
+          "libero_spatial/0": 34,
+          "libero_spatial/9": 2
+        }
+      },
+      "macro2_video_only": {
+        "successes": 40,
+        "breadth": 3,
+        "evaluation_wall_seconds": 998.0144002437592,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 3,
+          "libero_spatial/0": 35,
+          "libero_spatial/9": 2
+        }
+      },
+      "macro2_first_final": {
+        "successes": 39,
+        "breadth": 3,
+        "evaluation_wall_seconds": 939.178076505661,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 4,
+          "libero_spatial/0": 34,
+          "libero_spatial/9": 1
+        }
+      },
+      "macro2_same_task_other": {
+        "successes": 40,
+        "breadth": 3,
+        "evaluation_wall_seconds": 1018.7002170085907,
+        "per_task": {
+          "libero_10/6": 0,
+          "libero_goal/5": 0,
+          "libero_object/8": 4,
+          "libero_spatial/0": 34,
+          "libero_spatial/9": 2
         }
       },
       "macro3_after_one_outer_update": {
@@ -112,11 +180,59 @@
       "lost": 4,
       "churn": 4,
       "success_set_jaccard": 0.9069767441860465
+    },
+    "macro2_language_only_to_correct": {
+      "retained": 35,
+      "gained": 6,
+      "lost": 4,
+      "net": 2,
+      "churn": 10,
+      "success_set_jaccard": 0.7777777777777778,
+      "mcnemar_exact_two_sided_p": 0.75390625
+    },
+    "macro2_video_only_to_correct": {
+      "retained": 37,
+      "gained": 4,
+      "lost": 3,
+      "net": 1,
+      "churn": 7,
+      "success_set_jaccard": 0.8409090909090909,
+      "mcnemar_exact_two_sided_p": 1.0
+    },
+    "macro2_first_final_to_correct": {
+      "retained": 36,
+      "gained": 5,
+      "lost": 3,
+      "net": 2,
+      "churn": 8,
+      "success_set_jaccard": 0.8181818181818182,
+      "mcnemar_exact_two_sided_p": 0.7265625
+    },
+    "macro2_correct_to_same_task_other": {
+      "retained": 36,
+      "gained": 4,
+      "lost": 5,
+      "net": -1,
+      "churn": 9,
+      "correct_success_retention": 0.8780487804878049,
+      "success_set_jaccard": 0.8,
+      "mcnemar_exact_two_sided_p": 1.0
+    },
+    "macro2_language_only_to_video_only": {
+      "retained": 35,
+      "gained": 5,
+      "lost": 4,
+      "net": 1,
+      "churn": 9,
+      "success_set_jaccard": 0.7954545454545454,
+      "mcnemar_exact_two_sided_p": 1.0
     }
   },
   "decision": "stop_current_one_direction_antithetic_outer_credit_after_macro3",
   "decision_reason": "The first outer update reduced held5 success from 41 to 39, preserved no success outside the shared-prior support, retained the same three-task breadth, and remained zero on Goal and Long. Continuing macro4 would violate the preregistered requirement that outer credit improve held absolute, breadth, or retention.",
-  "earliest_failed_interface": "the current one-direction finite-difference estimator does not produce a held task-conditioned residual that adds closed-loop support beyond the fixed shared prior",
-  "claim_boundary": "This is an implemented failure of the current one-direction antithetic outer-credit parameterization after one informative update. It does not reject train-task closed-loop outer credit, progress learning, richer credit estimators, skill composition, video-conditioned initialization, or task-local RL in general.",
-  "next_evidence_step": "complete matched learned language-only and video-only held5 baselines for the macro2 warm-start, then revisit the expert ledger to choose the next structurally distinct credit or representation direction rather than resuming macro4 or sweeping rank, learning rate, epsilon, or seed"
+  "inference_panel_decision": "macro2_fixed_coordinate_writer_fails_the_video_increment_and_process_identification_gate",
+  "inference_panel_reason": "Correct language plus full video scored 41 versus learned language-only 39, video-only 40, first-plus-final 39, and same-task-other 40. The correct arm's gains over language-only and first-plus-final were both only two rows and non-significant, all conditions remained zero on Goal and Long, and changing to another same-task video retained only 36 of 41 correct successes.",
+  "earliest_failed_interface": "before the outer estimator, the two-macro correct-only fit19 warm-start does not map ordered video into a held task-conditioned code with significant incremental or process-specific closed-loop value beyond the learned language/shared prior",
+  "claim_boundary": "This panel rejects the current two-macro correct-only 16-dimensional inference warm-start and the current one-direction antithetic outer update. It does not reject the inherited 56-task process frontend, fixed coordinates, train/meta action correspondence, process-identifying supervision, train-task closed-loop credit, learned progress, skill composition, runtime conditioning, video-conditioned initialization, or task-local RL in general.",
+  "next_evidence_step": "reuse the inherited 56-task process frontend and current fixed decoder, but train the newly initialized 16-dimensional code heads on fit19 with cross-episode privileged action-phase alignment, rotating temporal controls, and genuine dynamic-K coverage; adjudicate correct versus language-only, first-plus-final, and same-task-other before applying any new outer-credit estimator"
 }

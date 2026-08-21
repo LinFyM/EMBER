@@ -796,3 +796,30 @@ closed-loop credit的核心判断，也不否定learned progress、更多方向/
 task-local RL或runtime conditioning。下一步先对最佳macro2补matched learned language-only与video-only，确认41分里的视频
 净增量，再回到专家账本按最早失效接口选择结构上不同的方向。完整证据见
 `docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
+
+## 38. matched面板把最早失效接口前移到outer之前的过程推断
+
+macro2没有重复训练Writer，而是复用同一checkpoint、held5 fixed250 rows、task/state/env/policy RNG，补齐专家要求的
+learned language-only、video-only、first+final与same-task-other反事实。correct/language/video/first+final/same分别为
+`41/39/40/39/40`，五臂breadth均为`3/5`，而Goal与Long在每一臂都是0。language→correct为35 retained、6 gained、
+4 lost、净`+2`、exact `p=.75391`；video→correct为37/4/3、净`+1`、`p=1`；first+final→correct为36/5/3、
+净`+2`、`p=.72656`。所以完整视频没有形成可与语言或端点区分的闭环增量，41分不能再解释为过程posterior已经成立。
+
+同任务换另一条未挑选视频后为`40/250`，但correct→same是36 retained、4 gained、5 lost，Jaccard`.8`；36/41的
+correct-success retention为`.87805`，低于专家给出的90%--95%资格门。aggregate只降1分会掩盖成功row换手，正是专家要求
+同时报告retention/churn的原因。所有差异仍集中在Spatial0，Object8的correct/first+final/same均为4，Goal/Long没有任何
+视频增量；当前模型继续表现为窄shared/task-template support，而不是跨suite procedure compiler。
+
+回查初始化合同排除了“完全遗漏旧process预训练”：56-task macro10 Writer共有212 tensors、8,121,416 values迁移到本轮，
+旧decoder明确未加载；仅language-code、video-code与posterior-delta的三个最终层因为旧32维到新16维坐标而重新初始化。
+关键缺口是这三个新heads只接受两轮低学习率correct-only target-code拟合，本轮的warm-start loss又把
+control-confidence、control-update与action-alignment权重设为0。也就是说，旧frontend知道的过程/Action结构没有在新固定
+坐标上被直接约束，而不是专家方向I/G已经在当前16维接口被充分检验。
+
+因此下一主要变量不是恢复macro4、扩大finite-difference方向数或扫rank/LR/seed；那会在未过Inference Gate的warm-start上
+增加昂贵噪声。应复用现有`PrivilegedMetaActionStore`、`controlled_process_input`与dynamic-K schedule，在fit19上让
+新16维heads接受跨episode action-phase alignment及reversed/shuffled/first+final/endpoints-middle-shuffled反事实，并至少
+覆盖K1--4。先用同一correct/language/first+final/same panel裁决；只有过程增量与跨视频稳定性过门，才为该checkpoint接入
+结构不同的outer estimator。该结论淘汰的是当前两轮correct-only 16维warm-start，不否定fixed coordinate、旧process
+frontend、train/meta action correspondence或outer credit一般。证据仍归档在
+`docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。

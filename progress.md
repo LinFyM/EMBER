@@ -178,8 +178,15 @@
   Goal与Long仍为0。因此按Gate 4停止macro4，不扫rank/LR/epsilon/seed；只关闭当前单方向antithetic finite-difference实现，
   不关闭outer credit一般。证据见
   `docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
-- 当前直接下一节点复用macro2 checkpoint和同一held5 rows补learned language-only、video-only，不重训Writer；完成后再逐项
-  回查专家A--N和替代方向，选择结构上不同的credit/process实验。
+- macro2 checkpoint的matched held5 fixed250面板已全部完成：correct/language-only/video-only/first+final/
+  same-task-other=`41/39/40/39/40`，breadth均`3/5`，Goal与Long全0。language→correct为35 retained/6 gained/4 lost、
+  `p=.75391`；first+final→correct为36/5/3、`p=.72656`；correct→same为36/4/5，correct-success retention仅
+  `.87805`。因此完整视频没有显著语言增量或端点之外的过程价值，最早失效接口在outer之前。
+- 回查专家原文及run contract确认没有遗漏56-task meta process预训练：历史Writer的212 tensors/8,121,416 values已迁移，
+  旧decoder未迁移；仅三个`32→16` code最终层因shape变化重建。当前新heads只经两轮LR `2e-5` correct-only训练，
+  control/action权重为0。下一节点复用已有checkpoint、fixed decoder与训练owner，把跨episode action-phase alignment、
+  reversed/shuffled/first+final/endpoints-middle-shuffled和K1--4直接施加到新16维heads；先复验matched panel，过门后才启动
+  结构不同的outer estimator，失败则继续按专家stop gate核对meta-task/multisplit并准备替代路线。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

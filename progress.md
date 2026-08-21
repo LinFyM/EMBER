@@ -14,10 +14,10 @@
   七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
   Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，但8-row successful/on-policy
   action/JVP直接task-vector只过`2/4`与`1/4`。当前按专家原始建议转入多成功adapter、显式phase-aligned的role-disjoint
-  manifold重构。fresh phase Decoder的held5两套strict250都由source `21/250`提高到`44/250`；fit19 learner-state
-  aggregation又把它们提高到`54/250、47/250`，证明专家提出的closed-loop state bank有真实但有限的净作用。然而direct
-  success retention仍只有`31.08%/27.78%`，direct gain retention`.1935/.2604`，latest breadth和成员Jaccard也失门，故
-  仍不进入新Writer或outer RL。当前按专家挑战十二转入显式稳定shared prior + task residual，不再小扫state bank。
+  manifold重构。fresh phase Decoder的held5两套strict250由source `21/250`提高到`44/250`；fit19 learner-state
+  aggregation再到`54/250、47/250`。挑战十二的exact shared12/task4随后完成：shared-only=`43/250`，相对source净`+22`；
+  earliest/latest composite=`37/250、33/250`，相对shared净`-6/-10`。因此稳定shared prior有真实价值，但当前task residual
+  implemented-fail且不进入新Writer。下一主要变量按专家挑战十四/方向E转为train/meta closed-loop outer credit。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -160,6 +160,17 @@
   successful/learner 1:1 panels学习task-independent prior，stage2冻结prior并用zero-code-centered phase-code residual只写
   后4 ranks；最终按rank维组成一套complete LoRA，`D(0)`逐tensor等于shared-only。两阶段各6-rank、912 visits，复用
   已有state bank且不重采；正式闭环同时比较shared-only、earliest composite与latest composite。
+- clean pushed `e948fca`上的两阶段formal与三臂held5 fixed250已完成。shared stage的fit/held mean为
+  `.575078/.680319`，residual stage降到`.403687/.659049`，两者内部functional门均通过；闭环却为source21、shared43、
+  earliest37、latest33。source→shared是17 retained、26 gained、4 lost、净`+22`；shared→earliest为29/8/14、净`-6`，
+  shared→latest为29/4/14、净`-10`。composite direct success retention仅`.22973/.15741`，direct gain retention仅
+  `.09677/.07292`。earliest/latest Jaccard`.62791`说明两者可稳定地共享同一窄support，但不能替代task增量。M方向因此
+  mixed：shared底座获支持，当前12+4 functional residual淘汰；不续训、不扫rank/LR/seed。remote-safe证据见
+  `docs/evidence/functional_adaptation_20260819/train24_shared_prior_residual_held5_20260821.json`。
+- 回查专家原文后，下一主线不是丢掉shared结构，也不是把43分当作视频能力，而是实施挑战十四/方向E尚未覆盖的
+  train/meta closed-loop outer objective。先复用现有`ember.reward` rollout/seed/occupancy和functional warm-start资产，
+  冻结shared prior与held5边界，只让授权train/meta reward为task-conditioned inference提供外层credit；matched
+  shared-only与functional-only仍保留。held validation/test reward不产生梯度，post-generation task-local RL仍单列。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

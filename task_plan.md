@@ -1,9 +1,10 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；fit19 learner-state aggregation把两套held5投影从`44/250、44/250`提高到
-`54/250、47/250`，证明closed-loop state bank有真实增量，但direct success retention仍只有`31.08%/27.78%`，成员
-Jaccard也降到`.4028`，Gate 2继续失败。当前不进入Writer、不续做state-bank小扫，按专家挑战十二正式转入稳定
-shared prior + task residual，并在rollout前合并为唯一complete LoRA。**
+状态：2026-08-21 **active；专家挑战十二的exact `shared rank12 + task residual rank4`已完成formal裁决。shared-only在
+held5 fixed250上为`43/250`，相对source `21/250`有26 gained/4 lost、净`+22`；但earliest/latest composite只有
+`37/250、33/250`，相对shared分别净`-6/-10`。稳定shared prior有真实闭环价值，当前functional task residual没有条件
+增量且不能进入Writer。下一主要变量按专家挑战十四/方向E转为train/meta closed-loop outer credit；held仍零梯度、
+zero-interaction。**
 
 ## Goal
 
@@ -111,8 +112,10 @@ skill code的推断，并以train/meta-task closed-loop credit改善一次性完
   `5/5` mutual-nearest并授权fresh Decoder；
 - [x] 学习whitened/gauge-fixed compact code与`code -> complete LoRA` decoder，固定decoder后做task-level leave-out；
 - [ ] 比较fully fixed与有明确two-timescale/EMA合同的decoder；默认主线为fully fixed，只有固定版明确欠拟合才启用慢更新；
-- [ ] 分析shared language/base prior + video residual是否提高code效率与功能保真；若采用，训练/部署前merge并验证唯一LoRA；
-- [ ] decoder若在leave-task-out closed loop不能接近对应expert功能，先修manifold/data，不进入视频推断。
+- [x] 分析shared language/base prior + task residual：rank12 shared-only由source21提高到43，但rank4 earliest/latest
+  composite降到37/33；唯一LoRA合同成立，当前residual implemented-fail，shared prior作为后续固定底座保留；
+- [x] decoder在leave-task-out closed loop仍不能接近对应expert功能，因此没有把functional residual升级为视频Writer；下一轮
+  不再继续相同loss/rank/seed小扫，而是独立改变outer credit。
 
 **Gate 2：** 通过的是未见meta task的policy功能，不是train-task reconstruction、free Program或参数相似度。
 default fold0还必须先证明uniform-step direct experts相对`646/750` source baseline产生有信息量的跨task功能增量；decoder
@@ -153,6 +156,14 @@ successful-expert-state-only Decoder不能进入Writer。正向的source增量�
 `.1935/.2604`，latest只有1/5 task严格优于source，成员Jaccard`.4028<.44`。因此只关闭这一轮staged state aggregation，
 不把它扩大为“occupancy无关”；下一主变量按专家原文改为显式稳定shared prior与受限task residual。
 
+**Shared-prior residual裁决：** 为精确实现专家的`Delta_shared + D(z)`，rank16被分为互斥的shared12/task4，避免factor
+相加产生`BA`交叉项；zero code逐tensor等于shared-only，rollout只部署一套complete LoRA。两阶段各完成912 task visits，
+held functional mean由shared的`.68032`降到composite的`.65905`，但闭环结论相反：source/shared/composite-earliest/
+composite-latest为`21/43/37/33`。source→shared为17 retained、26 gained、4 lost；shared→composite则为earliest
+29 retained、8 gained、14 lost，latest 29/4/14。两套composite只保留direct successes的`.22973/.15741`与direct gains
+的`.09677/.07292`。因此当前task residual失败，不能把shared carrier的43分写成task-conditioned能力；同时shared的净
+`+22`证明专家挑战十二关于稳定行为底座的架构判断具有真实价值。下一轮固定这一区分，转查挑战十四的closed-loop外目标。
+
 ## Phase 3 — Language prior + video process posterior
 
 - [x] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
@@ -175,7 +186,8 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 
 ## Phase 4 — Train/meta closed-loop outer objective
 
-- [ ] 以Phase 3 functional/code distillation为warm start，保持decoder固定；
+- [ ] 以已验证有闭环support的shared prior和现有functional/code资产为warm start；先冻结outer-credit合同，避免把失败的
+  phase-code residual本身当作通过的fixed decoder；
 - [ ] 在train24/non-held meta tasks用simulator rollout reward或经验证progress critic优化video encoder/code posterior；
 - [ ] 与matched functional-only、language-only、video-only比较，明确outer RL改变的是shared zero-interaction Writer；
 - [ ] reward采样按task等权，保存可exact-resume的sampler/topology状态；held validation/test reward不产生梯度；
@@ -226,11 +238,11 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 7. fit19 learner-state aggregation已完成30条唯一trajectories、37个member targets、每成员8个phase states、
    successful/learner严格1:1及6-rank 912 visits。learner-state loss显著下降，held earliest/latest从`44/44`变为`54/47`，
    但direct success retention仅`.3108/.2778`、direct gain retention`.1935/.2604`，Jaccard`.4028`；不续训、不扫state-bank；
-8. expert挑战十二的shared prior + residual现已正式进入实现：复用phase codes、successful/learner panels与held5固定rows，
-   建立不会被task code改写的稳定shared behavior底座。为忠实实现专家的`Delta_shared + D(z)`而不在A/B相加时引入
-   `BA`交叉项，rank16预注册为shared rank12与task residual rank4两个互斥rank块；两块在rank维拼成唯一完整LoRA。
-   `configs/pi05_train24_stable_shared_prior_v1.json`与
-   `configs/pi05_train24_shared_prior_residual_decoder_v1.json`分别冻结两阶段合同，并同时评测shared-only以防把carrier收益
-   误记为task-conditioned能力；
-9. 新参数化重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks、
-   oracle和本轮训练产物全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。
+8. expert挑战十二已完成：shared-only=`43/250`，相对source净`+22`且exact McNemar `p=5.95e-5`；earliest/latest
+   composite=`37/33`，相对shared为8 gained/14 lost与4 gained/14 lost，即净`-6/-10`。成员Jaccard`.62791`虽稳定，仍不能
+   挽救负增量；当前12+4 functional residual不进入Writer，shared prior只作为明确标注的固定底座保留；
+9. 回查专家挑战十四和方向E：历史具体reward实现失败不等于train-task closed-loop outer objective失败。下一步先审计并复用
+   `ember.reward`的persistent rollout、seed、occupancy与旧credit资产，冻结一个只改outer credit的高吞吐合同；train/meta
+   reward可训练task-conditioned inference，held5不读reward、不产生梯度，shared-only与functional-only继续作matched对照；
+10. 旧macro10、七臂screen、fingerprints、expert banks、state bank、oracle及本轮训练产物全部复用，不重复昂贵训练；若
+    outer credit受阻或无增量，重新逐段核对专家原文的A--N与替代方向，不围绕rank/LR/seed继续小扫。

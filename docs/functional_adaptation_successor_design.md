@@ -163,6 +163,11 @@ baseline，再在同一held5上评测earliest/latest composite。只有composite
 通过direct support/breadth/member-stability联合门，才进入language/video Writer；失败只关闭这个12+4 exact-additive
 参数化，不关闭shared prior、occupancy或train-task outer reward的一般方向。
 
+clean pushed `e948fca`的formal结果已关闭该合同：shared-only为`43/250`，相对source21净`+22`；earliest/latest
+composite为`37/33`，相对shared分别净`-6/-10`。因此shared prior作为行为底座保留，当前phase-code functional residual
+不进入Writer。下一结构不再改变rank分配或重复functional loss，而是进入8节的closed-loop outer credit；shared-only仍是
+必须保留的因果对照，防止把carrier support计入条件推断。
+
 fully fixed是主线。只有decoder在多个meta folds都出现系统性range欠拟合、且扩大code而非重训坐标不能解决时，才运行
 明确two-timescale/EMA对照；不能因为video inference困难就重新共同移动decoder。
 
@@ -229,6 +234,11 @@ decoder与functional warm-start固定后：
 
 优先直接使用simulator success/progress；若训练方差要求critic，critic只在train/meta拟合且必须用held closed-loop快速裁决。
 不再把raw parameter PCGrad、norm guard或functional loss当作最终外目标。
+
+当前触发状态：shared prior已在held5显示真实闭环support，而task residual在held functional loss改善时把43降到37/33，
+直接满足专家挑战十四的触发逻辑。首轮outer-credit合同必须固定shared prior、复用已有functional warm-start与reward runtime，
+只改变task-conditioned inference的外层credit；不得把失败的phase-code residual称为已通过的fixed decoder，也不得使用held
+reward选checkpoint。matched shared-only、functional-only与outer-credit arms在同一rows上裁决。
 
 生成LoRA后的task-local RL是单独extension：先记录zero-interaction初始化，再报告达到成功所需episodes，不能混入核心分数。
 

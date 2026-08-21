@@ -637,6 +637,23 @@ trajectories并绑定37个earliest/latest expert members。每个member取8个�
 baseline。证据：
 `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。
 
+### 3.29 Stable shared prior的正证据与task residual失败
+
+clean pushed `e948fca`把专家挑战十二精确实现为互斥rank块：shared rank12与zero-code-centered task rank4在rank维
+拼成一套rank16 LoRA，避免full-rank A/B相加的`BA`交叉项；zero code严格等于shared-only，部署无第二adapter。stage1与
+stage2各用6-rank完成912 task visits/152 updates，held functional mean由`.680319`降到`.659049`。
+
+同一held5 fixed250闭环却给出source/shared/composite-earliest/composite-latest=`21/43/37/33`。source→shared为
+17 retained、26 gained、4 lost、净`+22`，exact McNemar `p=5.95e-5`；shared→earliest为29/8/14、净`-6`，
+shared→latest为29/4/14、净`-10`，后者`p=.03088`。composite只保留direct successes的`.22973/.15741`与direct gains
+的`.09677/.07292`。earliest/latest success Jaccard`.62791`通过稳定性下限，但稳定负增量不能构成task residual资格。
+
+因此方向M得到分解裁决：稳定shared behavior base具有真实科学价值，但当前`shared12 + functional phase-code residual4`
+implemented-fail，不进入Writer、不续训或小扫。该结果不关闭shared carrier、closed-loop训练的residual、language prior、
+video posterior或outer reward。按专家挑战十四，下一主要变量是授权train/meta simulator closed-loop outer credit；held仍
+zero-interaction且reward零梯度。证据：
+`docs/evidence/functional_adaptation_20260819/train24_shared_prior_residual_held5_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

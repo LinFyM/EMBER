@@ -747,3 +747,29 @@ absolute与监督面误差，却没有形成稳定task-conditioned闭环程序�
 因果信息。按专家挑战十二，下一独立变量是显式稳定的shared behavior prior与task-code residual；两者在rollout前合并为
 唯一complete LoRA，并必须同时报告shared-only，防止把carrier能力误写成task inference。证据：
 `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。
+
+## 36. 稳定shared prior有真实价值，但当前task residual在闭环中反向
+
+专家挑战十二的公式不能通过直接相加两套full-rank A/B实现，否则effective `BA`会出现交叉项。本轮把public rank16精确
+分成shared rank12与task rank4：前12 ranks由固定zero code在fit19 successful/learner 1:1 panels上学习，后4 ranks冻结
+shared后由zero-code-centered phase code写入。两块按rank拼接为唯一complete LoRA；`D(0)`逐tensor等于shared-only，部署
+没有第二adapter、task-ID route、LoRA平均或checkpoint fusion。
+
+两阶段各完成912 task visits/152 updates。task residual把fit mean从shared的`.575078`降到`.403687`、held mean从
+`.680319`降到`.659049`，说明它确实拟合了额外functional target；但同一held5 fixed250闭环为source/shared/
+composite-earliest/composite-latest=`21/43/37/33`。source→shared为17 retained、26 gained、4 lost、净`+22`，exact
+McNemar `p=5.95e-5`，所以稳定task-independent behavior prior不是无效carrier。其能力却高度集中于Spatial0的`38/50`，
+只能作为架构证据，不能称为task或video inference。
+
+决定性反事实是shared-only。shared→earliest为29 retained、8 gained、14 lost、净`-6`；shared→latest为29/4/14、净
+`-10`，latest退化的exact p为`.03088`。两套composite只保留direct successes的`.22973/.15741`和direct gains的
+`.09677/.07292`，虽然成员Jaccard升到`.62791`，也只是更稳定地保留了窄support。因此当前`shared12 + functional
+phase-code residual4`明确淘汰，不能把shared的43分归功于条件残差；同时不能把该负结果扩大为“shared carrier不合理”或
+“task residual一般无效”。
+
+这轮再次复现专家的核心判断：held functional loss改善并不保证closed-loop success，最早失效接口已经从“有没有稳定
+底座”前移到“什么外层credit能让task-conditioned residual增加而非覆盖底座support”。所以不再小扫rank、LR、seed或相同
+state-bank visits，下一独立主要变量是挑战十四/方向E的train/meta closed-loop outer objective：固定已验证shared support，
+复用现有functional资产作warm start，以授权train/meta simulator success/progress训练条件推断，held仍zero-interaction且
+reward零梯度。证据：
+`docs/evidence/functional_adaptation_20260819/train24_shared_prior_residual_held5_20260821.json`。

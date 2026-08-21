@@ -18,10 +18,10 @@
 | --- | --- | --- | --- | --- |
 | C1 | 24个task上的correct-only、同task恒定expert target使video-to-skill统计欠识别 | 高 | role-disjoint与validation8 250/400排除整体ceiling不足；direct action/JVP仅2/4与1/4后，train24的47/47多成功checkpoint完整occupancy经fit19-only固定坐标达到held5 `5/5` mutual-nearest并通过phase门，已具备重建Decoder资格 | implemented-pass |
 | C2 | Program与完整LoRA decoder联合移动造成latent gauge/坐标漂移 | 高 | 统一fingerprints已把train/held std修复到1.000/.7248、平均norm修复到5.570/4.144；held只做train-only PCA变换且不再自由优化，坐标问题implemented-pass | implemented-pass |
-| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | fit19 learner-state aggregation把两套44提高到54/47，证明closed-loop state bank有效；但direct success仍只保留31.08%/27.78%，Jaccard降到.4028。本轮state aggregation implemented-fail，不外推成occupancy无关，后续outer reward仍保留 | implemented-fail |
+| C3 | expert-state functional matching与closed-loop success外目标错位 | 高 | learner-state aggregation把44/44提高到54/47；shared residual又把held functional mean`.68032→.65905`，闭环却把shared43降到37/33。两轮一致支持loss-success错位；相同functional objective已停止，挑战十四的outer reward正式激活 | supported-active |
 | C4 | source skill prior尤其对Long可能不足 | 中高 | 71-task source为2918/3550；validation8 local oracle250/400、八task全正且Long41/100，source仅48/400。全局source/local ceiling不足分支不成立；Long trace仍保留第二子目标与保持的局部缺口定位 | not-triggered-with-evidence |
 | C5 | 当前模型更容易学object/affordance/direction/template而非多阶段过程 | 高 | macro10 correct131低于reversed134/shuffled133/static132，首轮process inference明确失败；先修functional坐标，再复用同一controls检验显式过程表示 | implemented-fail |
-| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact与shared-zero已完整分解；exact仅638且task code相对shared-zero净-2。当前单expert/fingerprint Decoder range没有通过，不恢复旧FactorHeads并停止objective变体 | implemented-fail |
+| C6 | FactorHead静态range与moving decoder需分别裁决 | 高 | flow/probe/exact、shared-zero与exact shared12/task4已完整分解；task-independent shared相对source净+22，但task residual相对shared净-6/-10。稳定底座获支持，当前functional conditional range未通过；不恢复旧moving FactorHeads或继续objective小扫 | implemented-mixed |
 | C7 | raw parameter PCGrad不等于功能冲突解法 | 高 | 不把PCGrad作为后继默认；如需稳定约束，使用policy-functional response与retained support | accepted |
 | C8 | validation8已被长期使用，不能当全新独立证据 | 高 | 保持固定24/8/8 ID不按结果改；validation8明确作architecture panel，新增non-held meta folds，Test8留到冻结后 | active |
 | C9 | 150不是唯一科学门，约145也需breadth/stability/causality | 高 | 继续追求150+，但联合报告absolute、suite floor、breadth、same-video retention、adjacent stability与process controls | accepted |
@@ -53,7 +53,7 @@
 | B | language prior + video posterior | macro10七臂formal screen已完成并失败：correct131、language130、video134、first+final130、reversed134、shuffled133、static132；旧Writer封存为反事实，不续训，等待新fixed coordinates | implemented-fail |
 | C | object-centric explicit Program | 表示objects、initial/goal relations、contact events、ordered subgoals、completion与uncertainty；用paired controls裁决而非只看latent | scheduled |
 | D | 保留完整Action probe结构 | official denoised `50x7` action与exact `50x32` JVP均已接通；direct八strata失败后改为全部replan、完整50-token响应和固定功能弧长对应，held5达到`5/5`。JVP维持辅助，Action为当前primary标签 | implemented-pass |
-| E | train-task closed-loop outer objective | fixed decoder与functional warm-start之后，在train/meta simulator优化encoder/code；held仍zero-interaction | scheduled |
+| E | train-task closed-loop outer objective | 挑战十二已给出可保留的shared support，同时functional residual在loss改善时闭环退化；这已满足挑战十四的直接触发条件。当前先复用reward rollout/seed/occupancy与functional资产冻结matched合同，再只用train/meta simulator credit优化条件推断；held仍zero-interaction、reward零梯度 | active |
 | F | 扩展meta tasks并分离四类数据角色 | 71-task allowlist与5 folds已建立；source未见的target train24保持19/5边界，47/47 multi-checkpoint成功occupancy在held5通过表示门。后续Decoder仍只拟合fit19，validation8继续architecture panel、Test8 sealed | implemented-pass |
 | G | process-identifying controls | first+final/reversed/shuffled/static已完成matched closed loop并共同否定macro10过程优势；validation8 BDDL stage trace已完成并定位Long第二子目标，但只是final-goal代理。其它已接通controls保留到新坐标Writer，HDF5无depth/segmentation且不从state伪造mask | active |
 | H | 强化clean source policy | 71-task source总体82.20%；direct/projected已在Study与pick-place产生大幅正增量，当前无差别source重训不触发，保留局部失败时的定向强化条件 | not-triggered-with-evidence |
@@ -66,7 +66,7 @@
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |
-| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | learner-state聚合后direct success仍仅31.08%/27.78%，触发条件再次成立。原始`Delta_shared + D(z)`现落实为rank16内互斥的shared rank12/task rank4，避免full-rank factor相加产生`BA`交叉项；zero code严格退化为shared-only，最终只物化一套LoRA并加入matched baseline | active |
+| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | exact shared12/task4已formal完成：shared-only43相对source21净+22，证明稳定底座有价值；earliest/latest composite37/33相对shared净-6/-10，当前functional residual失败。唯一LoRA、zero-code identity与无第二adapter合同均通过；shared保留给outer-credit residual，不能冒充task/video能力 | implemented-mixed |
 | N RGB-D/proprio/object pose | 会改变当前纯RGB合同，不作为核心结果偷换输入 | 仅在纯RGB路线触发stop gate且owner接受独立研究问题时启动 | conditional |
 
 ## 5. 欠识别时的替代研究问题

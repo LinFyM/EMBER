@@ -48,6 +48,26 @@ def _success(done: bool, reward: float, info: Mapping[str, Any]) -> bool:
     return _single_bool(info["is_success"]) if "is_success" in info else False
 
 
+def _goal_progress_snapshot(
+    env: Any, states: Sequence[Sequence[str]] | None = None
+) -> tuple[tuple[tuple[str, ...], ...], int]:
+    """Read the current train-task BDDL goal predicates as a progress proxy."""
+
+    owner = getattr(env, "env", env)
+    raw = (
+        tuple(tuple(str(value) for value in state) for state in states)
+        if states is not None
+        else tuple(
+            tuple(str(value) for value in state)
+            for state in owner.parsed_problem["goal_state"]
+        )
+    )
+    evaluator = getattr(owner, "_eval_predicate", None)
+    if not raw or not callable(evaluator):
+        raise RewardProtocolError("outer credit requires LIBERO BDDL goal predicates")
+    return raw, sum(bool(evaluator(state)) for state in raw)
+
+
 def _cpu_tensor_rows(
     batch: Mapping[str, Any],
 ) -> tuple[dict[str, torch.Tensor], ...]:
@@ -159,6 +179,8 @@ class RewardTrajectory:
     observations: tuple[dict[str, torch.Tensor], ...]
     action_chunks: tuple[torch.Tensor, ...]
     valid_action_steps: tuple[int, ...]
+    goal_predicate_count: int = 0
+    goal_predicate_peak: int = 0
 
 
 @dataclass
@@ -174,6 +196,8 @@ class _RewardLaneState:
     reward_sum: float = 0.0
     steps: int = 0
     success: bool = False
+    goal_predicate_states: tuple[tuple[str, ...], ...] | None = None
+    goal_predicate_peak: int = 0
 
     def is_active(self, max_horizon: int) -> bool:
         return not self.success and self.steps < max_horizon
@@ -288,6 +312,7 @@ def _initialize_lanes(
     num_inference_steps: int,
     dummy_action: Sequence[float],
     initial_states: Sequence[np.ndarray] | None,
+    capture_goal_progress: bool,
 ) -> list[_RewardLaneState]:
     dummies = [
         _validate_rollout_contract(
@@ -311,7 +336,7 @@ def _initialize_lanes(
     states: Sequence[np.ndarray | None] = (
         (None,) * len(envs) if initial_states is None else initial_states
     )
-    return [
+    lanes = [
         _RewardLaneState(
             env=env,
             rollout_cursor=int(cursor),
@@ -335,6 +360,12 @@ def _initialize_lanes(
             envs, rollout_cursors, env_seeds, dummies, states, strict=True
         )
     ]
+    if capture_goal_progress:
+        for lane in lanes:
+            states, count = _goal_progress_snapshot(lane.env)
+            lane.goal_predicate_states = states
+            lane.goal_predicate_peak = count
+    return lanes
 
 
 def _batched_policy_replan(
@@ -428,6 +459,12 @@ def _advance_lane(
         lane.steps += 1
         executed += 1
         lane.success = _success(done, reward, info)
+        if lane.goal_predicate_states is not None:
+            states, count = _goal_progress_snapshot(
+                lane.env, lane.goal_predicate_states
+            )
+            lane.goal_predicate_states = states
+            lane.goal_predicate_peak = max(lane.goal_predicate_peak, count)
         if lane.success or lane.steps >= max_horizon:
             break
     if executed <= 0:
@@ -474,8 +511,10 @@ def _collect_reward_trajectories(
     num_inference_steps: int,
     initial_states: Sequence[np.ndarray] | None = None,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
+    capture_replay: bool = True,
+    capture_goal_progress: bool = False,
 ) -> tuple[RewardTrajectory, ...]:
-    """Collect one arm and retain all successful and failed prefixes."""
+    """Collect one arm, optionally retaining replay or BDDL progress."""
 
     _validate_trajectory_panel(envs, rollout_cursors, env_seeds)
     lanes = _initialize_lanes(
@@ -493,6 +532,7 @@ def _collect_reward_trajectories(
         num_inference_steps=num_inference_steps,
         dummy_action=dummy_action,
         initial_states=initial_states,
+        capture_goal_progress=capture_goal_progress,
     )
     policy.reset()
     while True:
@@ -512,13 +552,14 @@ def _collect_reward_trajectories(
             device=device,
             num_inference_steps=num_inference_steps,
             policy_seed_fn=policy_seed_fn,
-            capture_replay=True,
+            capture_replay=capture_replay,
         )
-        assert stored is not None
+        if capture_replay and stored is None:
+            raise RewardProtocolError("reward replay capture became unavailable")
         for row, lane in enumerate(active):
             _advance_lane(
                 lane=lane,
-                stored=stored[row],
+                stored=None if stored is None else stored[row],
                 normalized_chunk=normalized[row : row + 1],
                 environment_actions=actions[row],
                 noise_seed=seeds[row],
@@ -542,6 +583,12 @@ def _collect_reward_trajectories(
             observations=tuple(lane.replay_observations),
             action_chunks=tuple(lane.replay_actions),
             valid_action_steps=tuple(lane.valid_action_steps),
+            goal_predicate_count=(
+                0
+                if lane.goal_predicate_states is None
+                else len(lane.goal_predicate_states)
+            ),
+            goal_predicate_peak=lane.goal_predicate_peak,
         )
         for lane in lanes
     )
@@ -569,6 +616,8 @@ def collect_paired_reward_arm_trajectories(
     num_inference_steps: int,
     initial_states: Sequence[np.ndarray] | None = None,
     policy_seed_fn: Callable[..., int] = reward_credit_policy_noise_seed,
+    capture_replay: bool = True,
+    capture_goal_progress: bool = False,
 ) -> tuple[RewardTrajectory, ...]:
     """Run one exact K2 arm; a second call with the same keys forms its pair."""
 
@@ -593,6 +642,8 @@ def collect_paired_reward_arm_trajectories(
         num_inference_steps=num_inference_steps,
         initial_states=initial_states,
         policy_seed_fn=policy_seed_fn,
+        capture_replay=capture_replay,
+        capture_goal_progress=capture_goal_progress,
     )
 
 

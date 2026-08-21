@@ -252,6 +252,8 @@ def test_paired_k2_arm_compacts_lanes_and_keeps_initial_action() -> None:
             "observations",
             "action_chunks",
             "valid_action_steps",
+            "goal_predicate_count",
+            "goal_predicate_peak",
         }
 
 

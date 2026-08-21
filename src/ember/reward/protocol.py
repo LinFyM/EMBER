@@ -243,3 +243,29 @@ def reward_credit_policy_noise_seed(
         rollout_cursor,
         replan_index,
     )
+
+
+def reward_credit_update_seed(
+    root_seed: int,
+    global_task_id: int,
+    outer_macro: int,
+) -> int:
+    """Hash-free antithetic direction seed for one task-local code update."""
+
+    return mixed_seed("update", root_seed, global_task_id, outer_macro)
+
+
+def reward_credit_task_video_demo(
+    root_seed: int,
+    global_task_id: int,
+    task_visit: int,
+    *,
+    demo_count: int = 40,
+) -> int:
+    """Hash-free single-video schedule for focused outer-credit diagnostics."""
+
+    if demo_count <= 0:
+        raise RewardProtocolError("outer-credit video schedule has no demonstrations")
+    return mixed_seed(
+        "task_video", root_seed, global_task_id, task_visit
+    ) % demo_count

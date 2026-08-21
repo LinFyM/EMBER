@@ -33,6 +33,16 @@ class FunctionalCodeWriterOutput:
     combined_adapter: Mapping[str, torch.Tensor]
 
 
+@dataclass(frozen=True)
+class FunctionalCodeWarmStart:
+    """Matched inference weights reused without reviving an obsolete decoder."""
+
+    checkpoint: Path
+    loaded_tensors: int
+    loaded_values: int
+    skipped_shape_tensors: tuple[str, ...]
+
+
 def load_fixed_decoder(
     *,
     checkpoint: Path,
@@ -48,20 +58,74 @@ def load_fixed_decoder(
         address_width=int(decoder_config["address_width"]),
         hidden_width=int(decoder_config["hidden_width"]),
         initialization_seed=int(decoder_config["initialization_seed"]),
+        center_residual_at_zero_code=bool(
+            decoder_config.get("center_residual_at_zero_code", False)
+        ),
+        active_rank_start=int(decoder_config.get("active_rank_start", 0)),
+        active_rank_end=int(decoder_config.get("active_rank_end", contract.rank)),
     ).to(device)
     state = load_file(str(checkpoint.resolve()), device=str(device))
     prefix = "decoder."
-    decoder_state = {
-        name.removeprefix(prefix): value
-        for name, value in state.items()
-        if name.startswith(prefix)
-    }
+    prefixed = any(name.startswith(prefix) for name in state)
+    decoder_state = (
+        {
+            name.removeprefix(prefix): value
+            for name, value in state.items()
+            if name.startswith(prefix)
+        }
+        if prefixed
+        else dict(state)
+    )
     if not decoder_state:
         raise FunctionalCodeWriterError("functional decoder checkpoint is incomplete")
     decoder.load_state_dict(decoder_state, strict=True)
     decoder.requires_grad_(False)
     decoder.eval()
     return decoder
+
+
+def load_inference_warm_start_(
+    writer: "FunctionalCodeWriter", checkpoint: Path
+) -> FunctionalCodeWarmStart:
+    """Reuse only shape-compatible language/video inference state.
+
+    The historical fixed decoder is intentionally excluded.  This permits a
+    32D meta-task Writer to initialize a new 16D train24 Writer while the six
+    coordinate-output tensors are freshly learned against the new fixed code
+    authority.
+    """
+
+    resolved = checkpoint.resolve()
+    source = load_file(str(resolved), device="cpu")
+    target = writer.state_dict()
+    allowed = ("feature_encoder.", "code_inference.")
+    compatible = {
+        name: value
+        for name, value in source.items()
+        if name.startswith(allowed)
+        and name in target
+        and tuple(value.shape) == tuple(target[name].shape)
+    }
+    shape_skips = tuple(
+        sorted(
+            name
+            for name, value in source.items()
+            if name.startswith(allowed)
+            and name in target
+            and tuple(value.shape) != tuple(target[name].shape)
+        )
+    )
+    if not compatible or not any(
+        name.startswith("feature_encoder.") for name in compatible
+    ) or not any(name.startswith("code_inference.") for name in compatible):
+        raise FunctionalCodeWriterError("functional-code warm start is incomplete")
+    writer.load_state_dict(compatible, strict=False)
+    return FunctionalCodeWarmStart(
+        checkpoint=resolved,
+        loaded_tensors=len(compatible),
+        loaded_values=sum(int(value.numel()) for value in compatible.values()),
+        skipped_shape_tensors=shape_skips,
+    )
 
 
 def build_process_feature_encoder(

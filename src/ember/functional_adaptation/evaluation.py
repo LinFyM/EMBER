@@ -18,7 +18,11 @@ from ember.expert_manifold.video_schedule import (
     video_schedule_contract,
     video_selection_seed,
 )
-from ember.functional_adaptation.code_checkpoint import CHECKPOINT_SCHEMA, RUN_SCHEMA
+from ember.functional_adaptation.code_checkpoint import (
+    CHECKPOINT_SCHEMA,
+    OUTER_RUN_SCHEMA,
+    RUN_SCHEMA,
+)
 from ember.functional_adaptation.decoder_training import (
     CONFIG_SCHEMA,
     authority_path,
@@ -122,6 +126,19 @@ def _is_formal_decoder_result(path: Path) -> bool:
     )
 
 
+def _is_formal_train24_residual_decoder_result(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    observed = read_json(path)
+    return (
+        observed.get("schema_version")
+        == "ember_phase_aligned_functional_decoder_result_v1"
+        and observed.get("formal_authority") is True
+        and observed.get("decoder_mode") == "shared_prior_residual"
+        and observed.get("repository", {}).get("dirty_paths") == []
+    )
+
+
 def _writer_asset(
     *,
     config_path: Path,
@@ -164,18 +181,44 @@ def _writer_asset(
     decoder_profile = Path(str(run.get("decoder_profile", ""))).resolve()
     decoder_result = decoder_profile / "result.json"
     formal = config["code_inference"]["training"]["formal"]
-    if (
-        run.get("schema_version") != RUN_SCHEMA
+    schema = run.get("schema_version")
+    common_invalid = (
+        schema not in {RUN_SCHEMA, OUTER_RUN_SCHEMA}
         or observed_source != expected_source
         or Path(str(run.get("config", ""))).resolve() != config_path
-        or not _is_formal_decoder_result(decoder_result)
-        or int(run.get("tasks", {}).get("count", -1)) != 56
-        or run.get("tasks", {}).get("role") != "meta_train"
         or int(run.get("trainable", {}).get("writer_parameter_count", -1)) <= 0
         or int(run.get("trainable", {}).get("fixed_decoder_trainable_parameters", -1))
         != 0
         or run.get("content_hash_policy") != "disabled_by_owner"
-    ):
+    )
+    legacy_valid = (
+        schema == RUN_SCHEMA
+        and _is_formal_decoder_result(decoder_result)
+        and int(run.get("tasks", {}).get("count", -1)) == 56
+        and run.get("tasks", {}).get("role") == "meta_train"
+    )
+    outer_valid = (
+        schema == OUTER_RUN_SCHEMA
+        and run.get("method")
+        == "fixed_decoder_fit19_train_task_antithetic_outer_credit"
+        and _is_formal_train24_residual_decoder_result(decoder_result)
+        and (
+            int(run.get("tasks", {}).get("count", -1)) == 19
+            and run.get("tasks", {}).get("role") == "train24_fit19_outer_credit"
+            if run.get("mode") == "formal"
+            else 1 <= int(run.get("tasks", {}).get("count", -1)) <= 19
+            and run.get("tasks", {}).get("role")
+            == "train24_fit_subset_outer_credit"
+        )
+        and int(
+            run.get("trainable", {}).get("source_policy_trainable_parameters", -1)
+        )
+        == 0
+        and run.get("training_privileged", {}).get("held5_reward_reads") == 0
+        and run.get("training_privileged", {}).get("validation_reward_reads") == 0
+        and run.get("training_privileged", {}).get("test_reward_reads") == 0
+    )
+    if common_invalid or not (legacy_valid or outer_valid):
         raise WriterModelError("functional-code training authority changed")
     if require_formal and (
         run.get("mode") != "formal"
@@ -200,7 +243,7 @@ def _writer_asset(
         "training_run_contract": {
             "path": str(run_path.resolve()),
             "bytes": run_path.stat().st_size,
-            "schema": RUN_SCHEMA,
+            "schema": str(schema),
         },
         "decoder_profile": {
             "root": str(decoder_profile),

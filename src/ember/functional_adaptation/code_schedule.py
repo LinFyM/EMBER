@@ -40,7 +40,7 @@ class MetaCodeTrainingSchedule:
         sampled_frame_counts: Mapping[int, Mapping[int, int]],
         world_size: int,
         seed: int,
-        dynamic_k_max: int,
+        dynamic_k_max: int | None,
         temporal_controls: Sequence[str],
     ) -> None:
         self.task_ids = tuple(sorted(int(value) for value in task_ids))
@@ -62,7 +62,7 @@ class MetaCodeTrainingSchedule:
             task_ids=self.task_ids,
             demo_indices=demo_indices,
             seed=seed,
-            videos_per_visit=dynamic_k_max,
+            videos_per_visit=4 if dynamic_k_max is None else dynamic_k_max,
             dynamic_k_max=dynamic_k_max,
         )
 

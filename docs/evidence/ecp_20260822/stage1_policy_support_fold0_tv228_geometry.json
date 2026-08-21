@@ -96,16 +96,45 @@
     "geometry_gate_passed": false,
     "held5_closed_loop_rows": 0
   },
+  "frozen_all_panel_support_audit": {
+    "audit_repository_commit": "a4928ce5be7c78036b1a6275a2a6db6e9042145d",
+    "artifact": "runs/analysis/pi05_ecp_stage1_policy_support_audit_tv228_a4928ce_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.5670567316476974,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.8028174676138611,
+      "candidate_to_shared_ratio": 1.3996610977320176,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 0,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.7975609123706817,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.9016709896921661,
+      "candidate_to_shared_ratio": 1.2774538673183888,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 0,
+      "panels": 40
+    },
+    "task_equal_gate_passed": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
   "interpretation": {
-    "established": "The complete policy-support path is operational and no longer produces a near-zero adapter: the effective norm ratio rose from v5 0.0864 to 0.6447, all five response channels were nonzero, both successful and learner panels trained, and moving-panel functional response fell from 0.6446 to 0.5029.",
-    "earliest_interface": "The larger update is not task-aligned. Mean own-direct cosine fell to 0.0162, remained below nearest-other 0.0282, and only 2 of 24 tasks retrieved their own direct policy. Functional fitting on rotating local panels therefore has not yet identified the complete task policy direction.",
-    "claim_boundary": "This rejects v6 as a held5-ready checkpoint and rejects extending the same 228-visit curve or tuning rank, seed, dtype, learning rate or loss weights. It does not reject multi-policy support: a frozen all-panel support audit is still required to distinguish genuine functional equivalence from rotating-panel response shortcuts before adding the already-planned fit-task success and progress objective."
+    "established": "The complete policy-support path is operational and not a near-zero adapter. On the frozen complete panel bank it improves over source on every fit and held task, with task-equal response ratios 0.803 and 0.902.",
+    "earliest_interface": "The full absolute compiler discards existing stable-shared support: the same frozen candidate is worse than shared on every task, with fit and held ratios 1.400 and 1.277. This is earlier than adding simulator reward because the generated single LoRA cannot yet preserve the stronger policy-functional base.",
+    "claim_boundary": "This rejects v6 as a held5-ready checkpoint and rejects extending it or tuning rank, seed, dtype, learning rate or loss weights. It does not reject multi-policy evidence: v6 beats source broadly. The next test must preserve shared in the single final adapter without restoring raw A/B addition, a second deployed adapter or a fixed rank-skill partition."
   },
   "decision": {
     "verdict": "fail_pre_rollout_geometry",
     "continue_same_curve": false,
     "run_held5_closed_loop": false,
     "start_q_v": false,
-    "next": "Evaluate the single frozen checkpoint on the complete successful and learner policy-support panel bank. If it improves over source and transfers to held-transform-only tasks, add task-equal fit-task simulator success and progress as the next major causal variable; otherwise repair the policy-support teacher at the earliest failed interface."
+    "next": "Replace the independent absolute full surface with a prior-preserving low-rank union: combine frozen shared and generated residual effective updates, recompress their rank32 low-rank union to one rank16 adapter, and rerun the same short support gate before simulator reward."
   }
 }

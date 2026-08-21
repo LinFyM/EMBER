@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_ecp_stage1_policy_support_audit_config_v1",
-  "status": "active_frozen_support_audit",
+  "status": "completed_fail_frozen_support_audit",
   "purpose": "Task-equal frozen-checkpoint audit over every successful and learner support panel before adding simulator success/progress.",
   "authorities": {
     "stage1_config": "configs/pi05_ecp_stage1_policy_support_v6.json",

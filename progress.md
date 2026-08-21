@@ -145,6 +145,14 @@
   遍历successful/learner bank并分fit19/held5与source/shared报告。若冻结support成立，接入专家已要求的fit-task task-equal
   success/progress；若不成立，回到policy-support teacher最早接口。证据为
   `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
+- clean pushed `a4928ce`已在gpu01 physical `1--6`完成冻结全bank task-equal audit。candidate在fit19的268 panels上相对
+  source为`.80282x`且`19/19` tasks更好，held5的40 panels为`.90167x`且`5/5`更好，确认multi-policy support不是纯训练日志
+  假象；但相对stable shared分别为`1.39966x/1.27745x`，`0/19`与`0/5` tasks胜出，预注册八条件只通过四个source条件。
+  因此不加入reward、不评held闭环，最早断点明确为独立absolute full surface在写task LoRA时丢掉shared policy support。
+- 下一active v7只改变这个major variable：同一Program/q_pi/support与rank16目标不动，compiler heads改为generated residual；
+  每target用thin-QR与`32x32` core SVD把`shared rank16 + residual rank16`的effective-update union重压为一套rank16 LoRA。
+  这样保留shared起点、避免旧raw A/B相加交叉项，也不恢复第二adapter或固定`12+4`分槽；先复跑同一短门，过冻结support门后
+  才接fit-task task-equal success/progress。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

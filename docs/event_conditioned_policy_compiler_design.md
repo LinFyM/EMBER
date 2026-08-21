@@ -506,6 +506,16 @@ moving-panel functional response由前5步`.64456`降到末5步`.50289`，candid
 这不是继续延长或调loss权重的理由：下一步在冻结single checkpoint上遍历完整panel bank，判断它是真正的多策略functional
 equivalence还是轮换panel捷径；前者进入已规划的fit-task task-equal success/progress，后者修正support teacher最早接口。
 
+冻结全bank audit进一步给出单一接口裁决：candidate在fit19/held5相对source分别为`.80282x/.90167x`且24/24 tasks更好，
+但相对stable shared为`1.39966x/1.27745x`且24/24 tasks更差。multi-policy evidence因此不是零作用；错误发生在full Program
+触发后，independent absolute heads重写整套LoRA并丢掉prior-only surface已有的shared support。未解决这一层前不加入reward。
+
+v7只替换full output parameterization。heads生成一套rank16 residual factors；对每个target把stable-shared与residual写成
+`[B_shared,B_residual] @ [A_shared;A_residual]`的rank32 low-rank union，再对两侧作thin QR，仅在`32x32` core上SVD并保留
+top16，得到部署的唯一rank16 A/B。residual为零时结果精确等价于shared；非零时可替换其弱singular modes。该方案不直接相加
+raw A/B，所以没有旧template cross terms；也不部署第二adapter、不固定shared12/task4或赋予rank技能语义。其资格仍由同一
+冻结support、几何与held closed-loop逐级裁决，结构本身不构成成功证据。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

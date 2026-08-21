@@ -141,8 +141,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   capture/profile；
 - [x] 从fresh policy-support authority完成228-visits短程信息量节点与24-task物化；输出幅度恢复但task方向门失败，按门不运行
   held5、不延长同曲线；
-- [ ] 对冻结single checkpoint运行完整successful/learner panel support audit，区分真实functional equivalence与旋转panel捷径；
-- [ ] 若冻结support相对source成立且迁移held-transform-only tasks，在fit simulator加入task-equal success/progress后fresh训练；
+- [x] 对冻结single checkpoint运行完整successful/learner panel support audit：24/24任务优于source但24/24差于stable shared，
+  证明full absolute surface丢失已有support；
+- [ ] 用differentiable low-rank union把stable shared effective update与generated residual合并并重新压回一套rank16 LoRA；
+- [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -195,12 +197,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v6的78 MiB support bank、双分支profile、228-visits formal和24-task物化均已完成；functional response下降且输出norm恢复到
-   direct的`.645`，但own-direct仅`.0162`、自身检索`2/24`，因此不续训、不跑held5、不做局部query/loss/rank小扫；
-2. 下一步在同一冻结checkpoint上遍历完整successful/learner panel bank，分别报告fit19/held5相对source/shared的functional
-   retention。该audit只定位“真实policy等价”还是“训练panel捷径”，不选模型；
-3. 若冻结support成立，下一fresh major variable是专家已要求的fit-task task-equal success/progress；若冻结support不成立，则先
-   修正policy-support teacher的最早失效接口。rank仍只是numeric factor coordinate；之后若19个映射限制泛化，再接入经审计且
-   排除validation/Test的LIBERO-90 meta-task expert family并轮换固定fold；
+1. v6冻结全panel audit已完成：fit19/held5相对source为`.803/.902`且24/24任务更好，但相对stable shared为`1.400/1.277`
+   且24/24任务更差；因此不续训、不跑held5、也不提前加入reward；
+2. 最早接口固定为absolute full surface丢失shared support。下一fresh v7保留同一Program、q_pi和support bank，让heads只生成
+   residual；每个target把shared rank16与residual rank16的low-rank union通过thin-QR + 32x32 SVD重压成唯一rank16 adapter。
+   这不直接相加A/B、不部署第二adapter、不固定12+4 rank技能分槽；
+3. v7先复跑同一短程与冻结support gate；只有相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+   task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

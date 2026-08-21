@@ -54,7 +54,8 @@ def load_audit_config(path: Path) -> dict[str, Any]:
     }
     if (
         config.get("schema_version") != AUDIT_CONFIG_SCHEMA
-        or config.get("status") != "active_frozen_support_audit"
+        or config.get("status")
+        not in {"active_frozen_support_audit", "completed_fail_frozen_support_audit"}
         or set(thresholds) != required
         or any(int(thresholds[name]) < 0 for name in required)
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")

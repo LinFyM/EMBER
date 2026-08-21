@@ -1039,3 +1039,20 @@ task的功能等价类。预注册几何门因此失败，held5 rows为0，不�
 若冻结support成立，则direct参数cosine只是多策略等价类下的定位指标，下一major variable按专家合同加入fit-task task-equal
 success/progress；若冻结support不成立，则v6淘汰的是当前policy-support teacher/轮换panel识别方式，先修该接口。证据见
 `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
+
+## 49. v6广泛改善source却一致破坏stable shared，最早断点是independent absolute full surface
+
+clean pushed `a4928ce`对v6冻结single checkpoint遍历全部308个policy-support panels。task-equal fit19 candidate/source/shared
+response为`.56706/.70633/.40514`：candidate相对source为`.80282x`且`19/19`任务更好，但相对shared为`1.39966x`且
+`0/19`更好。held5为`.79756/.88454/.62434`：相对source `.90167x`且`5/5`更好，相对shared `1.27745x`且`0/5`更好。
+
+这把v6负结果分成两层。multi-policy evidence和训练图有真实、跨fit/held breadth的正作用，因为它在所有24 tasks上都改善了
+source；但full Program触发的absolute factor heads独立重写整套LoRA，没有继承prior-only surface中已经更接近successful experts
+的stable shared，因此所有24 tasks又一致丢失shared support。此时先加simulator reward会把credit交给一个连现有底座都不能保留
+的坐标系，不能解决最早断点。
+
+下一major variable是prior-preserving low-rank union，而不是恢复已失败的raw A/B template addition或固定shared12/task4分槽：
+heads只生成residual rank16 factors；每target将shared与residual拼成rank32 low-rank product，经thin QR和`32x32` core SVD取最佳
+rank16，再输出唯一adapter。它在residual为零时精确保留shared，允许内容证据逐步替换弱shared modes，同时没有第二adapter、
+raw factor交叉项或rank技能语义。v7仍须通过同一冻结support/几何门，不能由结构自证。证据继续见
+`docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。

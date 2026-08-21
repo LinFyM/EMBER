@@ -808,6 +808,18 @@ materialization的own/nearest-other cosine仅`.01618/.02816`，自身检索`2/24
 保留功能，下一major variable加入fit-task task-equal success/progress，否则先修policy-support teacher。证据：
 `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
 
+### 3.40 v6冻结全panel audit定位到stable-shared support丢失
+
+clean pushed `a4928ce`用gpu01 physical `1--6`并行遍历v6冻结checkpoint的全部308个support panels。fit19 candidate相对
+source为`.80282x`且`19/19` tasks更好，held5为`.90167x`且`5/5`更好；这证明v6的multi-policy evidence存在跨held的真实
+功能增量。但candidate相对stable shared在fit/held为`1.39966x/1.27745x`，胜出任务数均为0，八项预注册support条件只通过
+四项source条件。
+
+因此不加入simulator reward、不运行held闭环。active v7保留同一Program、q_pi、support bank与single rank16输出，只把
+independent absolute full surface改为prior-preserving low-rank union：generated residual与shared effective update经thin QR和
+`32x32` core SVD重压回rank16，避免raw A/B addition交叉项及固定rank分槽。证据仍为
+`docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

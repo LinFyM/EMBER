@@ -49,6 +49,7 @@
     "training": {
       "frame_stride": 5,
       "dynamic_k_max": 4,
+      "video_open_files_per_rank": 8,
       "smoke": {
         "world_size": 1,
         "total_macros": 2,

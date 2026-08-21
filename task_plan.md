@@ -14,9 +14,9 @@ dual-time transport方案均已封存，不再启动formal训练。它们的实�
 action-hidden、内部有序的正确教学视频，在rollout前一次生成唯一一套完整38-target rank16 LoRA，使冻结source PI0.5在
 未见初始化上获得强、稳定、广泛且具有视频时序特异性的zero-interaction闭环能力。
 
-完整落实专家最终意见与owner边界，复用既有昂贵资产，按因果接口逐阶段实现和裁决。目标继续追求strict paired correct
-`>150/400`；约145只有在高breadth、低churn、same-task跨视频鲁棒、Goal/Long贡献及最终correct相对wrong/shuffled/
-reversed/no-video优势同时成立时才算有价值。若经过合理结构、数据、联合训练与outer-credit修正仍存在根本障碍，则以完整
+完整落实专家最终意见与owner边界，复用既有昂贵资产，按因果接口逐阶段实现和裁决。正式目标为strict paired correct
+严格`>145/400`，并且高breadth、低churn、same-task跨视频鲁棒、Goal/Long贡献及最终correct相对wrong/shuffled/
+reversed/no-video优势必须同时成立。若经过合理结构、数据、联合训练与outer-credit修正仍存在根本障碍，则以完整
 证据明确失败接口并转向最有依据的替代路线。
 
 ## Done when

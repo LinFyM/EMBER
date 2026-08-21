@@ -44,8 +44,8 @@ EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO sourc
 当前目标是Writer初次生成的LoRA立即有效。生成LoRA后的task-local RL是后续独立实验，不能混入当前
 zero-interaction分数。
 
-性能继续追求`>150/400`并越高越好。约`145`也可构成有价值结果，但必须由相邻single checkpoints、低churn、
-高breadth、same-task不同视频鲁棒性和明确视频因果性共同证明，不能是训练波动中的偶然峰值。
+正式性能目标为strict paired correct严格`>145/400`并越高越好，同时必须由相邻single checkpoints、低churn、
+高breadth、same-task不同视频鲁棒性、Goal/Long贡献和最终视频因果性共同证明，不能是训练波动中的偶然峰值。
 
 closed-loop absolute性能首先选择方法。LoRA norm/rank/cosine、reconstruction、functional loss、内部时序margin、
 hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明显更差的闭环性能。
@@ -99,7 +99,8 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 好结果应训练到足以判断相邻稳定性；明确坏结果不得靠无限续训或rank/scale/seed/LR/dtype小扫挽救。
 - 每轮必须报告per-task、per-suite、breadth、retained/gained/lost、churn及相邻success-set重合，并定位最早失效接口。
 - 一次尽量只改变一个主要因果变量。负结果只淘汰实际检验的假设，不能因局部失败整套180度转向。
-- 首次达到约145且retention合理的checkpoint，立即补视频因果controls并继续相邻checkpoint稳定性评测。
+- correct表现与相邻稳定性冻结出`>145/400`最终候选后，再一次性补wrong/shuffled/reversed/no-video等视频因果controls；
+  controls不产生梯度，也不参与checkpoint选择。
 
 ## 8. Evaluation contract
 

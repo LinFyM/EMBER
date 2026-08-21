@@ -404,7 +404,7 @@ correct视频必须提供正向能力，而不是仅把negative做坏。正式pa
 差异应跨tasks/suites，而非只集中Object或由某个identity开关产生。简单或本来order-insensitive的task不要求人为崩坏
 negative，但process-identifying subset必须显示明显正确顺序优势。
 
-方法资格继续追求`>150/400`；约145可有价值，但必须同时满足：高breadth、Goal/Long真实贡献、相邻checkpoint低churn、
+方法资格要求strict paired correct严格`>145/400`，并且必须同时满足：高breadth、Goal/Long真实贡献、相邻checkpoint低churn、
 same-task-other success retention至少90%并争取95%、full优于language+scene、correct优于shuffled/reversed/wrong/no-video，
 且不依赖task-ID、teacher action、第二adapter或checkpoint union。
 

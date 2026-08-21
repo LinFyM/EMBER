@@ -141,8 +141,7 @@ validation可继续作为development panel；Test不训练expert，Test诊断默
 
 ## 8. 性能与科学有效性
 
-长期目标继续追求strict paired correct严格超过`150/400`并越高越好。owner进一步明确：稳定的约145也可以是好
-结果，前提是：
+正式目标为strict paired correct严格超过`145/400`并越高越好，而且必须同时满足：
 
 - 不是高波动训练中的单个winner checkpoint；
 - 相邻single checkpoints保持接近性能、低churn和高success-set重合；

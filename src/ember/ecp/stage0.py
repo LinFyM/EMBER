@@ -41,6 +41,8 @@ class ECPVideoEncoderOutput:
     frame_mask: torch.Tensor
     program_summary: torch.Tensor
     frame_owner_evidence: torch.Tensor
+    language_summary: torch.Tensor
+    scene_transition: torch.Tensor
 
 
 class ECPVideoEncoder(torch.nn.Module):
@@ -201,6 +203,29 @@ class ECPVideoEncoder(torch.nn.Module):
             0, video_offsets[:-1].to(frame_condition_ids.device)
         )
         video_language_mask = language_mask.index_select(0, video_condition_ids)
+        language_weights = video_language_mask.to(language.dtype)
+        language_summary = (
+            language * language_weights[:, :, None]
+        ).sum(1) / language_weights.sum(1, keepdim=True).clamp_min(1)
+        patch_scores = torch.einsum(
+            "vtpd,vd->vtp", patch, language_summary
+        ) / patch.shape[-1] ** 0.5
+        patch_summary = torch.einsum(
+            "vtp,vtpd->vtd", patch_scores.softmax(-1), patch
+        )
+        final_indices = frame_mask.sum(1).clamp_min(1) - 1
+        final_summary = patch_summary[
+            torch.arange(patch_summary.shape[0], device=patch_summary.device),
+            final_indices,
+        ]
+        scene_transition = torch.cat(
+            (
+                patch_summary[:, 0],
+                final_summary,
+                final_summary - patch_summary[:, 0],
+            ),
+            dim=-1,
+        )
         candidates, confidence = self.matcher(
             patch, language, frame_mask, video_language_mask
         )
@@ -226,6 +251,8 @@ class ECPVideoEncoder(torch.nn.Module):
             frame_mask=frame_mask,
             program_summary=summary,
             frame_owner_evidence=frame_owner_evidence,
+            language_summary=language_summary,
+            scene_transition=scene_transition,
         )
 
 

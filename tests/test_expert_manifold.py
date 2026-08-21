@@ -210,6 +210,42 @@ def test_phase_projection_accepts_one_merged_shared_prior_surface(
     ]
 
 
+def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
+    tmp_path: Path,
+) -> None:
+    assets = {}
+    for name in (
+        "stage1_config",
+        "stage1_checkpoint",
+        "base_projection_manifest",
+    ):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        assets[name] = {"path": str(path), "bytes": path.stat().st_size}
+    contract = _projection_contract(
+        {
+            "schema_version": "ember_ecp_stage1_privileged_projection_v1",
+            "projection_kind": "ecp_stage1_privileged_consensus_compiler",
+            **assets,
+            "optimization": {
+                "task_visits": 228,
+                "held_shared_gradient_steps": 0,
+                "compiler_frozen_for_materialization": True,
+                "single_complete_lora": True,
+                "final_lora_averaging": False,
+                "rank": 16,
+                "all_ranks_writable": True,
+            },
+            "information_wall": {
+                "privileged_q_pi": True,
+                "second_adapter_deployed": False,
+            },
+        }
+    )
+    assert contract["arm"] == "ecp_stage1_q_pi_consensus_tv228"
+    assert contract["asset"]["single_complete_lora"] is True
+
+
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:
     config = load_task_expert_config(CONFIG)
     fresh = Namespace(mode="profile", batch_size=None, stop_after_step=1, resume=None)

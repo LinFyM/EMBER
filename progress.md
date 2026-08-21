@@ -16,8 +16,25 @@
   使用全部授权train data训练，validation8只以language+action-hidden videos作development evaluation。
 - 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
-  通过视频必要性门后structured outer credit。Phase 0文档与ownership门已完成；Phase 1首版native formal及固定面板已经
-  得到Gate 1负裁决，当前只修正最早失效的event occupancy/action-identification接口，尚未进入compiler或held closed loop。
+  通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
+  永久冻结。当前正在实现和profile Phase 2的privileged `q_pi + compiler`，尚未运行fit19 formal或held5 closed loop。
+- Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
+  8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
+  首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
+  rank16 LoRA为template，但全部16 ranks均可写；它用38 owner × 16 rank query、family-specific A/B heads和固定
+  family/layer/owner locality bias一次生成全部76 tensors/1,287,168 values，不恢复旧16维decoder、shared12/task4硬拆或
+  full-factor相加。
+- Stage 1 canonical运行面已经接通为`visible Program projector → train-only q_pi → shared target-family compiler`。每条
+  action-hidden video先经永久冻结的native+Action-Meta observer独立保序编码，K个video只在Program层做置换不变的
+  presence-weighted mean/variance聚合；q_pi correction只能写入visible event presence已经激活的位置，privileged evidence
+  中没有task ID。fit19的task-equal schedule为19×60=1,140 visits、world-size6的190次更新；held5保持零shared gradient。
+  训练目标同时使用gauge-invariant exact-BA、member/consensus、stable-prior counterfactual、multi-phase完整PI0.5 functional
+  response和locality，不把内部loss当作Gate 2闭环结论。
+- 两个真实A40单卡profile均已通过。K2视频共45个stride-5 frames时，完整observer+q_pi+compiler forward/backward为
+  2.24秒、峰值10,127,157,760 bytes；加入成功occupancy functional response后为2.15秒、峰值16,353,665,536 bytes，
+  functional loss `.40906`且梯度finite。首次profile暴露observer未处于BF16 autocast的dtype接口错误，按已验证Stage 0
+  调用边界修正后两臂均成功；三个task-owned临时profile目录已删除。当前下一步是物化held5 single-LoRA、接入固定250-row
+  source/direct/generated三联面板，再从clean pushed frozen authority启动fit19 formal。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

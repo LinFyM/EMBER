@@ -1,0 +1,146 @@
+{
+  "schema_version": "ember_ecp_stage1_privileged_compiler_v1",
+  "status": "active_stage1_realizability_warmstart",
+  "purpose": "Visible-event-anchored privileged q_pi and one complete target-family rank16 compiler before q_V exists.",
+  "authorities": {
+    "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
+    "target_manifest": "configs/pi05_target_data_v1/manifest.json",
+    "source_base_config": "configs/pi05_source_base_v1.json",
+    "lora_contract": "configs/pi05_lora_v1.json",
+    "successful_member_selection": "configs/pi05_train24_successful_expert_equivalence_v1.json",
+    "phase_analysis": "runs/analysis/pi05_train24_successful_equivalence_phase_7258487_gpu01p012456_20260821/analysis.json",
+    "phase_code_root": "runs/analysis/pi05_train24_phase_decoder_codes_73c2a32_20260821",
+    "stable_shared_prior": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/shared_prior.safetensors",
+    "native_observer_checkpoint": "runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010",
+    "action_meta_checkpoint": "runs/outputs/pi05_ecp_stage0_action_meta_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010",
+    "base_projection_manifest": "runs/outputs/pi05_train24_stable_shared_prior_formal_r6_v48_e948fca_gpu02p123467_20260821/projection_shared.json",
+    "task_expert_config": "configs/pi05_video_expert_manifold_v1.json",
+    "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json"
+  },
+  "information_wall": {
+    "shared_gradient_tasks": "fit19 development-train tasks only",
+    "held5": "privileged transform and frozen inference only; zero shared gradient and zero code fitting",
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "q_pi_inputs": [
+      "exact language and action-hidden correct-video event anchors",
+      "multiple independently successful adapter members",
+      "full successful-occupancy eight-phase source-subtracted action response",
+      "member reliability and disagreement"
+    ],
+    "deployment_forbidden": [
+      "q_pi",
+      "teacher actions",
+      "task identity",
+      "state or proprioception",
+      "reward or terminal",
+      "second rollout adapter"
+    ],
+    "forbidden_training_conditions": [
+      "shuffled video",
+      "reversed video",
+      "wrong video",
+      "validation actions or reward",
+      "test actions or reward"
+    ]
+  },
+  "roles": {
+    "fit_task_ordinals": [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23],
+    "held_task_ordinals": [0, 5, 10, 15, 20],
+    "fold": 0,
+    "fold_count": 5
+  },
+  "observer_authority": {
+    "native_macro": 10,
+    "action_meta_macro": 10,
+    "action_meta_rank": 4,
+    "scope": "permanently frozen observer-only calibration"
+  },
+  "model": {
+    "program_width": 128,
+    "phase_response_width": 32,
+    "event_slots": 8,
+    "target_owners": 38,
+    "lora_rank": 16,
+    "compiler_width": 256,
+    "compiler_tokens": 380,
+    "compiler_queries": 608,
+    "output_tensors": 76,
+    "output_values": 1287168,
+    "template": "complete rank16 stable shared prior; all 16 ranks remain writable",
+    "hard_rank_partition": false
+  },
+  "data": {
+    "frame_stride": 5,
+    "visible_videos_per_visit": 2,
+    "video_sampling": "without replacement deterministic per task visit",
+    "pair_seed": 20260825,
+    "successful_members": 47,
+    "k2_tasks": 23,
+    "k1_tasks": 1,
+    "phase_points": 8,
+    "phase_source": "fit19-frozen 350-to-32 whitening of complete 50x7 successful trajectory responses",
+    "unverified_learner_states": "excluded from the first realizability warmstart"
+  },
+  "objective": {
+    "effective_update": "exact gauge-invariant BA Frobenius loss through rank-sized Gram matrices",
+    "functional_response": "paired complete PI0.5 flow response on successful multi-phase occupancy",
+    "prior_counterfactual": "language+scene with process absent remains near the full stable-prior LoRA",
+    "weights": {
+      "member_effective_update": 1.0,
+      "consensus_effective_update": 1.0,
+      "prior_preservation": 0.2,
+      "functional_response": 1.0,
+      "locality": 0.02
+    },
+    "functional_start_task_visits": 228,
+    "train_policy_seed": 2026082501,
+    "evaluation_policy_seed": 2026082591
+  },
+  "optimization": {
+    "seed": 20260825,
+    "precision": "bfloat16",
+    "world_size": 6,
+    "visits_per_fit_task": 60,
+    "total_task_visits": 1140,
+    "optimizer_updates": 190,
+    "checkpoint_task_visits": [228, 570, 1140],
+    "stage_stop_task_visits": [228, 570, 1140],
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0001,
+      "betas": [0.9, 0.95],
+      "eps": 1e-8,
+      "weight_decay": 0.01,
+      "gradient_clip_norm": 1.0
+    },
+    "scheduler": {
+      "kind": "linear_warmup_cosine_decay",
+      "warmup_updates": 10,
+      "decay_lr": 0.000001
+    },
+    "distributed": "manual flat gradient mean, deferred NCCL, task-equal",
+    "exact_resume_world_size_locked": true
+  },
+  "profile_defaults": {
+    "world_size": 1,
+    "tasks": 1,
+    "task_visits": 1
+  },
+  "materialization": {
+    "video_visit": 10000,
+    "visible_video_count": 2,
+    "sampling": "fixed correct action-hidden videos without replacement",
+    "output": "one privileged q_pi consensus rank16 LoRA per task"
+  },
+  "gate2": {
+    "closed_loop_rows": 250,
+    "arms": ["source", "stable prior", "direct successful members", "q_pi consensus compiled"],
+    "minimum_direct_success_retention": 0.75,
+    "minimum_direct_gain_retention": 0.60,
+    "require_significant_improvement_over_source": true,
+    "require_cross_task_breadth": true,
+    "goal_and_long_must_not_both_be_zero": true,
+    "failure_action": "stop before q_V; repair the earliest q_pi/compiler/support interface instead of tuning rank, seed, dtype, or tiny LR sweeps"
+  }
+}

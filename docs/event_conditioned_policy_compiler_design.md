@@ -468,6 +468,19 @@ Dynamic-K sampler、video cache、paired evaluator、persistent workers、flow/a
 - target-family compiler；
 - staged/joint training与checkpoint owner。
 
+Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stage0.py`只扩展冻结observer的language/scene可见输出；
+`program.py`独占visible Program与K-video集合聚合；`policy_teacher.py`独占train-only privileged `q_pi`；`compiler.py`独占
+38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`与`stage1_panels.py`分别拥有task/member/video
+authority和multi-phase functional evidence；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
+一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
+现有`expert_manifold` evaluator继续拥有闭环执行。拆分的理由是信息墙、共享梯度、policy functional调用和静态物化具有不同
+生命周期与测试责任；它们全部只服务同一个`train_ecp_stage1.py`训练入口和一个materialization入口，没有版本化fallback。
+
+生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1
+materializer只保留为oracle/evidence工具，正式部署由后续`q_V`经同一个Program/compiler生成LoRA。旧16维decoder、
+shared12/task4 residual、LMMPC Writer和single-direction outer不会从这些模块导入或恢复；历史实现只由Git、sealed configs和
+formal artifacts复现。这样新增代码是active ECP职责的替换面，不是对旧运行面继续堆叠兼容分支。
+
 不得继续把这些结构塞进已经很大的`functional_adaptation/inference.py`或旧LMMPC classes。代码完成oracle compiler与端到端
 smoke后，只保留一个canonical Writer registry/entrypoint；旧16维与LMMPC运行面由Git、sealed configs和formal artifacts复现，
 不保留永久并行fallback。

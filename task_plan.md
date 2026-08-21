@@ -108,11 +108,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 
 ## Phase 2 — Privileged policy teacher与compiler
 
-- [ ] 实现visible-event-anchored `q_pi(P)`，输入多个successful members、完整occupancy、verified recovery、policy response与
-  uncertainty；
-- [ ] 实现38 target-owner、rank-query、family-specific A/B heads和强layer-local bias的compiler；
-- [ ] 保留完整rank16 prior/full LoRA，不恢复shared12/task4硬拆或full A/B相加；
-- [ ] 在train24固定19/5 fold训练fit19，held5不拟合code、不更新teacher/compiler；
+- [x] 实现visible-event-anchored `q_pi(P)`，输入多个successful members、完整successful occupancy、policy response、
+  reliability与uncertainty；首个warm-start明确排除未经验证且历史闭环反向的learner/recovery states；
+- [x] 实现38 target-owner、rank-query、family-specific A/B heads和强layer-local bias的compiler；
+- [x] 保留完整rank16 prior/full LoRA，不恢复shared12/task4硬拆或full A/B相加；
+- [x] 接通train24固定19/5 fold的task-equal world-size6训练合同，held5不拟合code、不更新teacher/compiler；真实普通/
+  functional单卡profile均已通过；
+- [ ] 从clean pushed frozen authority正式训练fit19并保存相邻task-visit checkpoints；
 - [ ] held5 oracle Program生成一套LoRA并直接closed-loop，报告source/direct/generated三联面板；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -166,10 +168,8 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 封存Stage 0 native与Action Meta matched证据，不再续训observer或让其与后继compiler共同旋转；
-2. 实现visible-event-anchored privileged `q_pi(P)`，只在fit19读取多个successful members、完整occupancy、policy response与
-   verified recovery evidence，held5保持零梯度；
-3. 实现38-owner、rank-query、family-specific A/B heads且强layer-local的完整rank16 compiler，不恢复旧16D decoder或
-   shared12/task4硬拆；
-4. 先用fit19训练并在固定held5运行source/direct/generated closed-loop三联面板，按`.75/.60` support-retention门裁决；
+1. 完成Stage 1 checkpoint的held5 single-LoRA物化与固定250-row source/direct/generated闭环评测入口；
+2. 完成Stage 1聚焦回归、结构复核、运行文档与remote-safe合同，及时合并并推送`main`；
+3. 从clean pushed detached authority在单节点六卡训练fit19，先到228 visits几何节点，再按闭环证据决定是否继续570/1140；
+4. 在固定held5运行三联面板并按`.75/.60` support-retention门裁决，必要时轮换预注册fold而不触碰validation8；
 5. Gate 2通过后进入Dynamic-K `q_V`；不通过则定位`q_pi`、compiler geometry或closed-loop support中最早失败接口。

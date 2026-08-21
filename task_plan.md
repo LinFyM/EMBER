@@ -227,7 +227,10 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
    successful/learner严格1:1及6-rank 912 visits。learner-state loss显著下降，held earliest/latest从`44/44`变为`54/47`，
    但direct success retention仅`.3108/.2778`、direct gain retention`.1935/.2604`，Jaccard`.4028`；不续训、不扫state-bank；
 8. expert挑战十二的shared prior + residual现已正式进入实现：复用phase codes、successful/learner panels与held5固定rows，
-   建立不会被task code改写的稳定shared behavior底座，再让task residual占用独立参数子空间；最终只物化一套merged LoRA，
-   同时评测shared-only以防把carrier收益误记为task-conditioned能力；
+   建立不会被task code改写的稳定shared behavior底座。为忠实实现专家的`Delta_shared + D(z)`而不在A/B相加时引入
+   `BA`交叉项，rank16预注册为shared rank12与task residual rank4两个互斥rank块；两块在rank维拼成唯一完整LoRA。
+   `configs/pi05_train24_stable_shared_prior_v1.json`与
+   `configs/pi05_train24_shared_prior_residual_decoder_v1.json`分别冻结两阶段合同，并同时评测shared-only以防把carrier收益
+   误记为task-conditioned能力；
 9. 新参数化重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks、
    oracle和本轮训练产物全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

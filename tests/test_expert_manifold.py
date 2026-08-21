@@ -22,6 +22,7 @@ from ember.expert_manifold.evaluation import (
     TASK_EXPERT_ADAPTER_KIND,
     TASK_EXPERT_EPISODE_SCHEMA,
     _evaluation_task_rows,
+    _projection_contract,
     inspect_projected_task_expert_bank,
     inspect_task_expert_bank,
     inspect_task_expert_evaluation,
@@ -152,6 +153,61 @@ def test_projected_meta_subpanel_validates_the_complete_projection_once(
     assert inspected == ["nonheld_meta"]
     assert len(result["tasks"]) == 56
     assert result["information_wall"]["evaluation_role"] == "nonheld_meta_train"
+
+
+@pytest.mark.parametrize(
+    ("projection_kind", "member", "arm"),
+    (
+        ("stable_shared_prior_baseline", "shared", "stable_shared_prior_baseline"),
+        (
+            "stable_shared_prior_task_residual_decoder",
+            "earliest",
+            "stable_shared_prior_residual_earliest_projection",
+        ),
+    ),
+)
+def test_phase_projection_accepts_one_merged_shared_prior_surface(
+    tmp_path: Path,
+    projection_kind: str,
+    member: str,
+    arm: str,
+) -> None:
+    assets = {}
+    for name in (
+        "decoder_checkpoint",
+        "code_artifact",
+        "training_result",
+        "shared_prior_adapter",
+    ):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        assets[name] = {"path": str(path), "bytes": path.stat().st_size}
+    contract = _projection_contract(
+        {
+            "schema_version": (
+                "ember_phase_aligned_functional_decoder_train24_projection_v1"
+            ),
+            "projection_kind": projection_kind,
+            **assets,
+            "optimization": {
+                "decoder_frozen": True,
+                "held_code_gradient_steps": 0,
+                "final_lora_averaging": False,
+                "single_complete_lora": True,
+                "second_adapter_deployed": False,
+                "rank_partition": {
+                    "shared": [0, 12],
+                    "task_residual": [12, 16],
+                    "merge": "exact_effective_delta_sum",
+                },
+                "code_member": member,
+            },
+        }
+    )
+    assert contract["arm"] == arm
+    assert contract["asset"]["shared_prior_adapter"] == assets[
+        "shared_prior_adapter"
+    ]
 
 
 def test_profile_runtime_supports_fresh_then_exact_resume_boundary() -> None:

@@ -113,18 +113,48 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     if schema == PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA:
         optimization = manifest.get("optimization", {})
         member = optimization.get("code_member")
+        projection_kind = manifest.get("projection_kind")
+        expected_kind = (
+            "stable_shared_prior_baseline"
+            if member == "shared"
+            else "stable_shared_prior_task_residual_decoder"
+            if projection_kind == "stable_shared_prior_task_residual_decoder"
+            else "phase_aligned_success_equivalence_decoder"
+        )
         if (
-            manifest.get("projection_kind")
-            != "phase_aligned_success_equivalence_decoder"
+            projection_kind != expected_kind
             or optimization.get("decoder_frozen") is not True
             or int(optimization.get("held_code_gradient_steps", -1)) != 0
             or optimization.get("final_lora_averaging") is not False
-            or member not in {"earliest", "latest"}
+            or member not in {"shared", "earliest", "latest"}
+            or (
+                projection_kind
+                in {
+                    "stable_shared_prior_baseline",
+                    "stable_shared_prior_task_residual_decoder",
+                }
+                and (
+                    optimization.get("single_complete_lora") is not True
+                    or optimization.get("second_adapter_deployed") is not False
+                    or optimization.get("rank_partition")
+                    != {
+                        "shared": [0, 12],
+                        "task_residual": [12, 16],
+                        "merge": "exact_effective_delta_sum",
+                    }
+                )
+            )
         ):
             raise ExpertManifoldError("phase-aligned decoder projection changed")
         return {
             "adapter_schema": FUNCTIONAL_DECODER_TASK_EXPERT_ADAPTER_SCHEMA,
-            "arm": f"phase_aligned_functional_decoder_{member}_projection",
+            "arm": (
+                "stable_shared_prior_baseline"
+                if member == "shared"
+                else f"stable_shared_prior_residual_{member}_projection"
+                if projection_kind == "stable_shared_prior_task_residual_decoder"
+                else f"phase_aligned_functional_decoder_{member}_projection"
+            ),
             "asset": {
                 "decoder_checkpoint": _projection_file(
                     manifest, "decoder_checkpoint"
@@ -134,6 +164,15 @@ def _projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
                 "decoder_frozen": True,
                 "held_code_gradient_steps": 0,
                 "code_member": member,
+                "shared_prior_adapter": (
+                    _projection_file(manifest, "shared_prior_adapter")
+                    if projection_kind
+                    in {
+                        "stable_shared_prior_baseline",
+                        "stable_shared_prior_task_residual_decoder",
+                    }
+                    else None
+                ),
             },
         }
     raise ExpertManifoldError("projected task-expert manifest schema changed")

@@ -66,7 +66,7 @@
 | J sealed held actions/reward diagnosis | 允许冻结、无梯度、无checkpoint选择诊断 | validation8独立rank16 oracle与step2000-only strict400已完成：250/400对source48/400，八task全正、四suite非零；stage trace同轮收集。没有更新共享模型、选择checkpoint或读取Test | implemented-pass |
 | K runtime video-conditioned policy | 改变Writer-once部署主张，当前不混入核心分数 | 只有A--J/H主线完整后触发广义video-to-LoRA stop gate，才作为明确替代实验 | conditional |
 | L generation后task-local RL | 允许但必须与zero-interaction分开 | 先报告初始化分数，再比较达到成功的episodes与base/language/video样本效率 | conditional |
-| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | learner-state聚合后direct success仍仅31.08%/27.78%，触发条件再次成立。现正式实施稳定shared prior与独立task residual子空间，最终只物化一套merged LoRA，并加入shared-only matched baseline | active |
+| M shared base adapter + video residual | 允许；rollout前merge为唯一complete LoRA | learner-state聚合后direct success仍仅31.08%/27.78%，触发条件再次成立。原始`Delta_shared + D(z)`现落实为rank16内互斥的shared rank12/task rank4，避免full-rank factor相加产生`BA`交叉项；zero code严格退化为shared-only，最终只物化一套LoRA并加入matched baseline | active |
 | N RGB-D/proprio/object pose | 会改变当前纯RGB合同，不作为核心结果偷换输入 | 仅在纯RGB路线触发stop gate且owner接受独立研究问题时启动 | conditional |
 
 ## 5. 欠识别时的替代研究问题

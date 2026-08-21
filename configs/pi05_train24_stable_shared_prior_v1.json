@@ -1,0 +1,54 @@
+{
+  "schema_version": "ember_pi05_train24_stable_shared_prior_v1",
+  "status": "preregistered_before_shared_prior_optimization",
+  "purpose": "Learn one task-independent stable behavior prior from fit19 successful and learner-state functional panels before fitting any task-code residual.",
+  "base_config": "configs/pi05_train24_phase_decoder_onpolicy_state_aggregation_v1.json",
+  "stable_shared_prior": {
+    "code_condition": "fixed_zero_code",
+    "template": "complete_rank16_identity_lora",
+    "panel_mixture": "one_successful_expert_panel_to_one_projected_occupancy_panel",
+    "fit_task_count": 19,
+    "held_task_gradient_count": 0,
+    "shared_rank": 12,
+    "reserved_task_residual_rank": 4,
+    "output": "one_task_independent_complete_rank16_lora",
+    "shared_only_closed_loop_baseline": true,
+    "selection_rule": "no held selection; the single final checkpoint is passed to the residual stage unless nonfinite"
+  },
+  "decoder": {
+    "class": "FunctionalAdapterDecoder",
+    "template": "complete_rank16_identity_lora",
+    "center_residual_at_zero_code": false,
+    "active_rank_start": 0,
+    "active_rank_end": 12,
+    "code_width": 16,
+    "address_width": 64,
+    "hidden_width": 256,
+    "initialization_seed": 20260821,
+    "output": "one_task_independent_complete_rank16_lora"
+  },
+  "training": {
+    "distributed": "six_rank_single_node_manual_flat_gradient_mean",
+    "world_size": 6,
+    "deferred_nccl": true,
+    "nccl_p2p_disable": true,
+    "numa_local_binding": true,
+    "schedule_seed": 20260822,
+    "task_equal": true,
+    "visits_per_fit_task": 48,
+    "total_task_visits": 912,
+    "optimizer_updates": 152,
+    "checkpoint_task_visits": [228, 456, 684, 912],
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.00005,
+      "betas": [0.9, 0.999],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "precision": "bf16_autocast_tf32",
+    "exact_resume_world_size_locked": true
+  },
+  "claim_boundary": "This stage learns one fit19-only shared prior. Its held performance is a matched carrier baseline, not task inference, and it cannot by itself promote a Writer."
+}

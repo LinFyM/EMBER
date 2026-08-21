@@ -42,6 +42,28 @@ def save_phase_decoder(
     return path
 
 
+def save_stable_shared_prior(
+    decoder: FunctionalAdapterDecoder,
+    contract: LoRAContract,
+    output_dir: Path,
+) -> Path:
+    """Materialize the one task-independent adapter learned by the prior stage."""
+
+    path = output_dir / "shared_prior.safetensors"
+    with torch.no_grad():
+        code = torch.zeros(
+            decoder.code_width,
+            device=next(decoder.parameters()).device,
+        )
+        state = {
+            name: value.detach().cpu().contiguous()
+            for name, value in decoder(code).items()
+        }
+    validate_lora_state(state, contract)
+    save_file(state, str(path))
+    return path
+
+
 def _adapter_rows(
     *,
     family: str,
@@ -51,6 +73,8 @@ def _adapter_rows(
     contract: LoRAContract,
     output_dir: Path,
     functional_rows: Sequence[Mapping[str, Any]],
+    shared_adapter_path: Path | None,
+    decoder_mode: str,
 ) -> list[dict[str, Any]]:
     by_ordinal = {int(row["ordinal"]): dict(row) for row in base_bank["tasks"]}
     losses = {
@@ -67,19 +91,45 @@ def _adapter_rows(
         for index, member in enumerate(codes.members)
         if member.fold_role == "held_transform_only" and member.member == family
     }
+    all_groups = {
+        ordinal: tuple(
+            index
+            for index, member in enumerate(codes.members)
+            if member.ordinal == ordinal
+        )
+        for ordinal in range(24)
+    }
     rows = []
     with torch.no_grad():
         for ordinal in range(24):
             base = by_ordinal[ordinal]
-            if ordinal in fit_codes:
+            if family == "shared":
+                code = torch.zeros(
+                    decoder.code_width,
+                    device=next(decoder.parameters()).device,
+                )
+                role = "fit19_stable_shared_prior_zero_code"
+                indices = all_groups[ordinal]
+                if shared_adapter_path is None:
+                    raise ValueError("stable shared prior adapter is missing")
+                path = shared_adapter_path
+            elif ordinal in fit_codes:
                 code = fit_codes[ordinal]
-                role = "fit_task_successful_member_consensus"
+                role = (
+                    "fit_task_stable_prior_residual_consensus"
+                    if decoder_mode == "shared_prior_residual"
+                    else "fit_task_successful_member_consensus"
+                )
                 indices = fit_groups[codes.fit_ordinals.index(ordinal)]
                 path = output_dir / "projected_adapters" / "fit" / f"task_{ordinal:02d}.safetensors"
             else:
                 member_index = held_indices[ordinal]
                 code = codes.member_codes[member_index]
-                role = f"held_transform_only_{family}_member"
+                role = (
+                    f"held_transform_only_stable_prior_residual_{family}_member"
+                    if decoder_mode == "shared_prior_residual"
+                    else f"held_transform_only_{family}_member"
+                )
                 indices = (member_index,)
                 path = output_dir / "projected_adapters" / f"held_{family}" / f"task_{ordinal:02d}.safetensors"
             if not path.is_file():
@@ -123,10 +173,17 @@ def _manifest(
     result_path: Path,
     expert_bank_root: Path,
     expert_step: int,
+    decoder_mode: str,
+    shared_prior_adapter: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     return {
         "schema_version": PROJECTION_SCHEMA,
-        "projection_kind": "phase_aligned_success_equivalence_decoder",
+        "projection_kind": {
+            "stable_shared_prior": "stable_shared_prior_baseline",
+            "shared_prior_residual": "stable_shared_prior_task_residual_decoder",
+            "phase_decoder": "phase_aligned_success_equivalence_decoder",
+            "state_aggregation": "phase_aligned_success_equivalence_decoder",
+        }[decoder_mode],
         "repository": {
             "commit": repository["commit"],
             "dirty_paths": repository["dirty_paths"],
@@ -135,6 +192,7 @@ def _manifest(
         "decoder_checkpoint": phase_decoder_asset(decoder_path),
         "code_artifact": phase_decoder_asset(code_root / "phase_codes.safetensors"),
         "training_result": phase_decoder_asset(result_path),
+        "shared_prior_adapter": shared_prior_adapter,
         "expert_bank_root": str(expert_bank_root.resolve()),
         "expert_step": expert_step,
         "optimization": {
@@ -144,6 +202,18 @@ def _manifest(
             "held_code_gradient_steps": 0,
             "code_member": family,
             "final_lora_averaging": False,
+            "single_complete_lora": True,
+            "second_adapter_deployed": False,
+            "rank_partition": (
+                {
+                    "shared": [0, 12],
+                    "task_residual": [12, 16],
+                    "merge": "exact_effective_delta_sum",
+                }
+                if decoder_mode
+                in {"stable_shared_prior", "shared_prior_residual"}
+                else None
+            ),
         },
         "information_wall": {
             "role": "development_train_oracle_only",
@@ -170,6 +240,9 @@ def materialize_phase_decoder_projections(
     output_dir: Path,
     functional_rows: Sequence[Mapping[str, Any]],
     decoder_path: Path,
+    decoder_mode: str = "phase_decoder",
+    shared_adapter_path: Path | None = None,
+    shared_prior_authority: Mapping[str, Any] | None = None,
 ) -> None:
     """Publish earliest/latest full banks without averaging any final LoRA."""
 
@@ -191,7 +264,8 @@ def materialize_phase_decoder_projections(
     )
     result_path = output_dir / "result.json"
     manifests = {}
-    for family in ("earliest", "latest"):
+    families = ("shared",) if decoder_mode == "stable_shared_prior" else ("earliest", "latest")
+    for family in families:
         rows = _adapter_rows(
             family=family,
             base_bank=base_bank,
@@ -200,6 +274,8 @@ def materialize_phase_decoder_projections(
             contract=contract,
             output_dir=output_dir,
             functional_rows=functional_rows,
+            shared_adapter_path=shared_adapter_path,
+            decoder_mode=decoder_mode,
         )
         path = output_dir / f"projection_{family}.json"
         write_json_atomic(
@@ -214,6 +290,14 @@ def materialize_phase_decoder_projections(
                 result_path=result_path,
                 expert_bank_root=expert_bank_root,
                 expert_step=int(base_bank["step"]),
+                decoder_mode=decoder_mode,
+                shared_prior_adapter=(
+                    phase_decoder_asset(shared_adapter_path)
+                    if shared_adapter_path is not None
+                    else dict(shared_prior_authority["adapter"])
+                    if shared_prior_authority is not None
+                    else None
+                ),
             ),
         )
         manifests[family] = phase_decoder_asset(path)

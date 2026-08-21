@@ -155,6 +155,11 @@
   `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。该结果只关闭
   当前一次staged learner-state实现，不关闭occupancy、stage behavior或outer reward；下一步不重跑本训练，直接实施
   shared prior + task residual且保留shared-only matched baseline。
+- 回查专家挑战十二的原始公式后，当前参数化已在任何新优化前进一步冻结：不把两个full-rank A/B states直接相加，避免
+  `BA`交叉项；rank16精确分成shared rank12与task residual rank4。stage1用固定zero code与fit19
+  successful/learner 1:1 panels学习task-independent prior，stage2冻结prior并用zero-code-centered phase-code residual只写
+  后4 ranks；最终按rank维组成一套complete LoRA，`D(0)`逐tensor等于shared-only。两阶段各6-rank、912 visits，复用
+  已有state bank且不重采；正式闭环同时比较shared-only、earliest composite与latest composite。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

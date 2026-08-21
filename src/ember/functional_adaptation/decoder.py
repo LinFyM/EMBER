@@ -86,6 +86,9 @@ class FunctionalAdapterDecoder(torch.nn.Module):
         address_width: int = 64,
         hidden_width: int = 256,
         initialization_seed: int = 7,
+        center_residual_at_zero_code: bool = False,
+        active_rank_start: int = 0,
+        active_rank_end: int | None = None,
     ) -> None:
         super().__init__()
         if min(code_width, address_width, hidden_width) <= 0:
@@ -95,8 +98,20 @@ class FunctionalAdapterDecoder(torch.nn.Module):
         self.code_width = int(code_width)
         self.address_width = int(address_width)
         self.hidden_width = int(hidden_width)
+        self.center_residual_at_zero_code = bool(center_residual_at_zero_code)
         self.target_count = len(contract.targets)
         self.rank = int(contract.rank)
+        self.active_rank_start = int(active_rank_start)
+        self.active_rank_end = (
+            self.rank if active_rank_end is None else int(active_rank_end)
+        )
+        if not 0 <= self.active_rank_start < self.active_rank_end <= self.rank:
+            raise FunctionalAdapterDecoderError("invalid active LoRA rank partition")
+        active_rank_mask = torch.zeros(self.rank, dtype=torch.bool)
+        active_rank_mask[self.active_rank_start : self.active_rank_end] = True
+        self.register_buffer(
+            "active_rank_mask", active_rank_mask, persistent=False
+        )
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(int(initialization_seed))
             self.target_addresses = torch.nn.Embedding(
@@ -191,7 +206,12 @@ class FunctionalAdapterDecoder(torch.nn.Module):
             raise FunctionalAdapterDecoderError(
                 f"functional code must have trailing width {self.code_width}"
             )
-        hidden = self._addressed_hidden(code)
+        if self.center_residual_at_zero_code:
+            paired = torch.cat((code, torch.zeros_like(code)), dim=0)
+            paired_hidden = self._addressed_hidden(paired)
+            hidden = paired_hidden[: code.shape[0]] - paired_hidden[code.shape[0] :]
+        else:
+            hidden = self._addressed_hidden(code)
         result: dict[str, torch.Tensor] = {}
         templates = self.template_state()
         for target_index, target in enumerate(self.contract.targets):
@@ -201,6 +221,9 @@ class FunctionalAdapterDecoder(torch.nn.Module):
                 residual = self.factor_heads[_factor_family(target, factor)](addressed)
                 if factor == "b":
                     residual = residual.transpose(-1, -2)
+                    residual = residual * self.active_rank_mask[None, None, :]
+                else:
+                    residual = residual * self.active_rank_mask[None, :, None]
                 template = templates[name]
                 generated = template[None] + residual.to(template.dtype)
                 result[name] = generated[0] if squeeze else generated

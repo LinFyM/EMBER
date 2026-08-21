@@ -1,6 +1,7 @@
 # Fixed Functional Adaptation Successor
 
-状态：2026-08-20 active design；统一fingerprint上的flow/probe/exact Decoder均失败后，当前回到功能等价类与role-disjoint数据角色。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
+状态：2026-08-21 active design；统一fingerprint上的flow/probe/exact Decoder与随后phase/learner-state Decoder均未通过held
+support门，当前按专家挑战十二裁决稳定shared prior + task residual。本文只定义第二轮专家意见后继路线的当前可执行设计；旧LMMPC、V6、LPCP、GOMQ与
 Expert-Manifold细节只从`docs/research_history.md`和对应sealed artifacts解释，不恢复为并行主线。
 
 ## 1. 核心假设
@@ -137,8 +138,12 @@ row heads，生成A row或B column。八种native factor widths共享对应head�
     -> 76 tensors / 38 targets / rank16
 ```
 
-输出以deterministic identity template为基点；可学习shared base/bias与task residual，但forward立即相加成一套state，
-evaluation cache和rollout永远只看到一个complete LoRA。共享base若未带来matched功能/稳定收益则保持identity。
+输出以deterministic identity template为基点。当前shared-prior裁决不在A/B factor坐标直接做全rank相加，因为那会在
+`BA`中产生无法解释的交叉项；而是把public rank16精确分成`shared rank12 + task residual rank4`。前12个rank只由
+task-independent shared stage写入，后4个rank只由zero-code-centered task residual写入，因此每个target的有效更新严格为
+`B_shared A_shared + B_task(z) A_task(z)`。两块在rollout前以rank维拼成同一套rank16 A/B tensors，evaluation cache和
+rollout永远只看到一个complete LoRA，不部署第二adapter、不做checkpoint fusion或LoRA平均。shared-only使用同一rank16
+state，其中residual块保持identity功能；task code为零时composite逐tensor严格退化为该shared-only state。
 
 ### 5.3 两阶段训练与冻结
 
@@ -150,6 +155,13 @@ evaluation cache和rollout永远只看到一个complete LoRA。共享base若未�
 3. decoder训练期间held codes与held panels都不产生梯度；训练结束后在held task-local panel和closed loop测试range；
 4. range通过后永久冻结decoder，held fingerprint code只用于oracle诊断，不参与后续Writer训练；
 5. semantic/video encoder必须从action-hidden输入预测同一code，完成真正leave-task-out闭环验证。
+
+当前挑战十二的独立裁决复用已经收集的fit19 successful/learner panels与held5固定rows，不重建state bank：第一阶段固定
+zero code、只训练rank0--11，得到一套fit19-only stable shared prior；第二阶段冻结该prior、只训练rank12--15的
+task-code residual，并令`D(0)`精确为shared prior。两阶段均为6-rank、912 task visits，先评测shared-only matched
+baseline，再在同一held5上评测earliest/latest composite。只有composite相对shared-only产生稳定task-conditioned增量且重新
+通过direct support/breadth/member-stability联合门，才进入language/video Writer；失败只关闭这个12+4 exact-additive
+参数化，不关闭shared prior、occupancy或train-task outer reward的一般方向。
 
 fully fixed是主线。只有decoder在多个meta folds都出现系统性range欠拟合、且扩大code而非重训坐标不能解决时，才运行
 明确two-timescale/EMA对照；不能因为video inference困难就重新共同移动decoder。

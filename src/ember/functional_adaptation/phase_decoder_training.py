@@ -38,8 +38,9 @@ from ember.functional_adaptation.phase_decoder_projection import (
     materialize_phase_decoder_projections,
     phase_decoder_asset,
     save_phase_decoder,
+    save_stable_shared_prior,
 )
-from ember.lora import LoRAContract
+from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_eval_contract import (
     git_state,
     git_state_is_clean_pushed_or_frozen_authority,
@@ -85,6 +86,8 @@ class Runtime:
     policy: torch.nn.Module
     identity_state: Mapping[str, torch.Tensor]
     decoder: FunctionalAdapterDecoder
+    decoder_mode: str
+    shared_prior_asset: Mapping[str, Any] | None
     optimizer: torch.optim.Optimizer
     member_sources: tuple[PhaseMemberSource, ...]
     fit_panels: dict[int, tuple[CachedPhasePanel, ...]]
@@ -112,17 +115,25 @@ def _validate_base_config(value: Mapping[str, Any]) -> None:
         raise ValueError("unsupported phase-aligned decoder config")
 
 
-def load_config(path: Path) -> dict[str, Any]:
+def _overlay_path(value: Mapping[str, Any]) -> Path:
+    base_path = Path(str(value.get("base_config", "")))
+    return base_path if base_path.is_absolute() else REPO_ROOT / base_path
+
+
+def _load_config(path: Path, seen: frozenset[Path]) -> dict[str, Any]:
     resolved = path.resolve()
+    if resolved in seen:
+        raise ValueError("phase decoder config overlay cycle")
     value = read_json(resolved)
-    if (
-        value.get("schema_version")
-        == "ember_pi05_train24_phase_decoder_onpolicy_state_aggregation_v1"
-    ):
-        base_path = Path(str(value.get("base_config", "")))
-        if not base_path.is_absolute():
-            base_path = REPO_ROOT / base_path
-        base = read_json(base_path.resolve())
+    schema = value.get("schema_version")
+    if schema == "ember_pi05_train24_phase_aligned_decoder_v1":
+        _validate_base_config(value)
+        value["_base_config_path"] = str(resolved)
+        value["_decoder_mode"] = "phase_decoder"
+        return value
+    if schema == "ember_pi05_train24_phase_decoder_onpolicy_state_aggregation_v1":
+        base_path = _overlay_path(value)
+        base = _load_config(base_path, seen | {resolved})
         _validate_base_config(base)
         aggregation = value.get("state_aggregation", {})
         if (
@@ -149,15 +160,90 @@ def load_config(path: Path) -> dict[str, Any]:
             training=dict(value["training"]),
             claim_boundary=value["claim_boundary"],
             _base_config_path=str(base_path.resolve()),
+            _decoder_mode="state_aggregation",
         )
         merged["authorities"] = {
             **base["authorities"],
             **value.get("authorities", {}),
         }
         return merged
-    _validate_base_config(value)
-    value["_base_config_path"] = str(resolved)
-    return value
+    if schema == "ember_pi05_train24_stable_shared_prior_v1":
+        base_path = _overlay_path(value)
+        base = _load_config(base_path, seen | {resolved})
+        prior = value.get("stable_shared_prior", {})
+        if (
+            value.get("status") != "preregistered_before_shared_prior_optimization"
+            or base.get("state_aggregation") is None
+            or prior.get("code_condition") != "fixed_zero_code"
+            or prior.get("template") != "complete_rank16_identity_lora"
+            or prior.get("panel_mixture")
+            != "one_successful_expert_panel_to_one_projected_occupancy_panel"
+            or int(prior.get("fit_task_count", -1)) != 19
+            or int(prior.get("held_task_gradient_count", -1)) != 0
+            or int(prior.get("shared_rank", -1)) != 12
+            or int(prior.get("reserved_task_residual_rank", -1)) != 4
+            or prior.get("output") != "one_task_independent_complete_rank16_lora"
+            or int(value.get("decoder", {}).get("active_rank_start", -1)) != 0
+            or int(value.get("decoder", {}).get("active_rank_end", -1)) != 12
+        ):
+            raise ValueError("unsupported stable shared-prior config")
+        merged = dict(base)
+        merged.update(
+            schema_version=schema,
+            status=value["status"],
+            purpose=value["purpose"],
+            base_config=value["base_config"],
+            stable_shared_prior=dict(prior),
+            training=dict(value["training"]),
+            claim_boundary=value["claim_boundary"],
+            _decoder_mode="stable_shared_prior",
+        )
+        merged["decoder"] = {**base["decoder"], **value.get("decoder", {})}
+        merged["authorities"] = {**base["authorities"], **value.get("authorities", {})}
+        return merged
+    if schema == "ember_pi05_train24_shared_prior_residual_decoder_v1":
+        base_path = _overlay_path(value)
+        base = _load_config(base_path, seen | {resolved})
+        residual = value.get("shared_prior_residual", {})
+        if (
+            value.get("status") != "preregistered_before_residual_optimization"
+            or base.get("state_aggregation") is None
+            or residual.get("shared_prior_authority") != "formal_run_cli"
+            or residual.get("shared_prior_frozen") is not True
+            or residual.get("residual_centered_at_zero_code") is not True
+            or residual.get("panel_mixture")
+            != "one_successful_expert_panel_to_one_projected_occupancy_panel"
+            or int(residual.get("fit_task_count", -1)) != 19
+            or int(residual.get("held_task_gradient_count", -1)) != 0
+            or int(residual.get("shared_rank", -1)) != 12
+            or int(residual.get("task_residual_rank", -1)) != 4
+            or residual.get("output")
+            != "one_complete_rank16_shared_prior_plus_task_residual_lora"
+            or residual.get("merge_rule")
+            != "exact_disjoint_rank_concatenation_delta_shared_rank12_plus_delta_task_rank4"
+            or int(value.get("decoder", {}).get("active_rank_start", -1)) != 12
+            or int(value.get("decoder", {}).get("active_rank_end", -1)) != 16
+        ):
+            raise ValueError("unsupported shared-prior residual config")
+        merged = dict(base)
+        merged.update(
+            schema_version=schema,
+            status=value["status"],
+            purpose=value["purpose"],
+            base_config=value["base_config"],
+            shared_prior_residual=dict(residual),
+            training=dict(value["training"]),
+            claim_boundary=value["claim_boundary"],
+            _decoder_mode="shared_prior_residual",
+        )
+        merged["decoder"] = {**base["decoder"], **value.get("decoder", {})}
+        merged["authorities"] = {**base["authorities"], **value.get("authorities", {})}
+        return merged
+    raise ValueError("unsupported phase-aligned decoder config")
+
+
+def load_config(path: Path) -> dict[str, Any]:
+    return _load_config(path, frozenset())
 
 
 def _task_schedule(config: Mapping[str, Any], world_size: int) -> tuple[tuple[int, int], ...]:
@@ -182,6 +268,37 @@ def _task_schedule(config: Mapping[str, Any], world_size: int) -> tuple[tuple[in
     return tuple(schedule)
 
 
+def _load_stable_shared_prior(
+    root: Path,
+    contract: LoRAContract,
+    device: torch.device,
+) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    resolved = root.resolve()
+    result_path = resolved / "result.json"
+    result = read_json(result_path)
+    record = result.get("shared_prior", {})
+    path = Path(str(record.get("path", ""))).resolve()
+    if (
+        result.get("schema_version") != RESULT_SCHEMA
+        or result.get("formal_authority") is not True
+        or result.get("decoder_mode") != "stable_shared_prior"
+        or result.get("repository", {}).get("dirty_paths") != []
+        or path.parent != resolved
+        or path.name != "shared_prior.safetensors"
+        or not path.is_file()
+        or path.stat().st_size != int(record.get("bytes", -1))
+    ):
+        raise ValueError("stable shared-prior authority changed")
+    state = load_file(str(path), device=str(device))
+    validate_lora_state(state, contract)
+    return state, {
+        "root": str(resolved),
+        "adapter": phase_decoder_asset(path),
+        "result": phase_decoder_asset(result_path),
+        "repository": result["repository"],
+    }
+
+
 def _prepare(args: argparse.Namespace) -> Runtime:
     if args.resume is None and args.output_dir.exists():
         raise ValueError("fresh phase decoder output directory already exists")
@@ -192,6 +309,7 @@ def _prepare(args: argparse.Namespace) -> Runtime:
     )
     config_path = args.config.resolve()
     config = load_config(config_path)
+    decoder_mode = str(config["_decoder_mode"])
     repository = git_state(REPO_ROOT)
     expected_world = int(config["training"]["world_size"])
     if (
@@ -223,34 +341,54 @@ def _prepare(args: argparse.Namespace) -> Runtime:
     contract = load_pi05_lora_contract(_authority_path(config, "lora_contract"))
     identity = prepare_frozen_writer_policy(policy, contract)
     policy.requires_grad_(False).eval()
+    shared_prior_asset = None
+    template_state = identity
+    if decoder_mode == "shared_prior_residual":
+        if args.shared_prior_root is None:
+            raise ValueError("residual decoder requires a formal shared-prior root")
+        template_state, shared_prior_asset = _load_stable_shared_prior(
+            args.shared_prior_root,
+            contract,
+            context.device,
+        )
+    elif args.shared_prior_root is not None:
+        raise ValueError("only the residual decoder accepts a shared-prior root")
     decoder = FunctionalAdapterDecoder(
         contract,
-        identity,
+        template_state,
         code_width=int(config["decoder"]["code_width"]),
         address_width=int(config["decoder"]["address_width"]),
         hidden_width=int(config["decoder"]["hidden_width"]),
         initialization_seed=int(config["decoder"]["initialization_seed"]),
+        center_residual_at_zero_code=bool(
+            config["decoder"].get("center_residual_at_zero_code", False)
+        ),
+        active_rank_start=int(config["decoder"].get("active_rank_start", 0)),
+        active_rank_end=int(
+            config["decoder"].get("active_rank_end", contract.rank)
+        ),
     ).to(context.device)
     aggregation = config.get("state_aggregation")
     if aggregation is not None:
         if args.state_bank_root is None:
             raise ValueError("state-aggregation training requires its occupancy root")
-        initial_decoder = _authority_path(config, "initial_decoder")
-        initial_result = read_json(_authority_path(config, "initial_training_result"))
-        recorded_decoder = initial_result.get("decoder", {})
-        if (
-            initial_result.get("schema_version") != RESULT_SCHEMA
-            or initial_result.get("formal_authority") is not True
-            or initial_result.get("repository", {}).get("dirty_paths") != []
-            or Path(str(recorded_decoder.get("path", ""))).resolve()
-            != initial_decoder.resolve()
-            or initial_decoder.stat().st_size
-            != int(recorded_decoder.get("bytes", -1))
-        ):
-            raise ValueError("state-aggregation initial decoder authority changed")
-        decoder.load_state_dict(
-            load_file(str(initial_decoder), device=str(context.device)), strict=True
-        )
+        if decoder_mode == "state_aggregation":
+            initial_decoder = _authority_path(config, "initial_decoder")
+            initial_result = read_json(_authority_path(config, "initial_training_result"))
+            recorded_decoder = initial_result.get("decoder", {})
+            if (
+                initial_result.get("schema_version") != RESULT_SCHEMA
+                or initial_result.get("formal_authority") is not True
+                or initial_result.get("repository", {}).get("dirty_paths") != []
+                or Path(str(recorded_decoder.get("path", ""))).resolve()
+                != initial_decoder.resolve()
+                or initial_decoder.stat().st_size
+                != int(recorded_decoder.get("bytes", -1))
+            ):
+                raise ValueError("state-aggregation initial decoder authority changed")
+            decoder.load_state_dict(
+                load_file(str(initial_decoder), device=str(context.device)), strict=True
+            )
     elif args.state_bank_root is not None:
         raise ValueError("base phase decoder cannot consume a state bank")
     optimizer_config = config["training"]["optimizer"]
@@ -277,6 +415,8 @@ def _prepare(args: argparse.Namespace) -> Runtime:
         policy=policy,
         identity_state=identity,
         decoder=decoder,
+        decoder_mode=decoder_mode,
+        shared_prior_asset=shared_prior_asset,
         optimizer=optimizer,
         member_sources=member_sources,
         fit_panels={},
@@ -348,6 +488,7 @@ def _run_contract(runtime: Runtime) -> dict[str, Any]:
     return {
         "schema_version": RUN_SCHEMA,
         "mode": runtime.args.mode,
+        "decoder_mode": runtime.decoder_mode,
         "repository": runtime.repository,
         "host": socket.gethostname(),
         "runtime": {
@@ -369,16 +510,22 @@ def _run_contract(runtime: Runtime) -> dict[str, Any]:
                 if runtime.args.state_bank_root is not None
                 else None
             ),
+            "shared_prior_root": (
+                str(runtime.args.shared_prior_root.resolve())
+                if runtime.args.shared_prior_root is not None
+                else None
+            ),
+            "shared_prior_authority": runtime.shared_prior_asset,
             "initial_decoder": (
                 phase_decoder_asset(_authority_path(runtime.config, "initial_decoder"))
-                if runtime.config.get("state_aggregation") is not None
+                if runtime.decoder_mode == "state_aggregation"
                 else None
             ),
             "initial_training_result": (
                 phase_decoder_asset(
                     _authority_path(runtime.config, "initial_training_result")
                 )
-                if runtime.config.get("state_aggregation") is not None
+                if runtime.decoder_mode == "state_aggregation"
                 else None
             ),
         },
@@ -388,6 +535,8 @@ def _run_contract(runtime: Runtime) -> dict[str, Any]:
         "decoder": runtime.config["decoder"],
         "training": runtime.config["training"],
         "state_aggregation": runtime.config.get("state_aggregation"),
+        "stable_shared_prior": runtime.config.get("stable_shared_prior"),
+        "shared_prior_residual": runtime.config.get("shared_prior_residual"),
         "decision_gates": runtime.config["decision_gates"],
         "information_wall": {
             "privileged_actions": "development_train_successful_experts_only",
@@ -504,6 +653,11 @@ def _resume(runtime: Runtime) -> tuple[int, int]:
 
 
 def _fit_code(runtime: Runtime, task_index: int) -> torch.Tensor:
+    if runtime.decoder_mode == "stable_shared_prior":
+        return torch.zeros(
+            runtime.decoder.code_width,
+            device=runtime.context.device,
+        )
     return runtime.code_authority.fit_task_codes[task_index]
 
 
@@ -612,6 +766,11 @@ def _fit(runtime: Runtime, *, start_visits: int, metrics_rows: int) -> int:
 
 
 def _member_code(runtime: Runtime, member_index: int) -> torch.Tensor:
+    if runtime.decoder_mode == "stable_shared_prior":
+        return torch.zeros(
+            runtime.decoder.code_width,
+            device=runtime.context.device,
+        )
     member = runtime.code_authority.members[member_index]
     if member.fold_role == "held_transform_only":
         return runtime.code_authority.member_codes[member_index]
@@ -755,6 +914,7 @@ def _result(
     functional_gate: Mapping[str, Any],
     metrics_rows: int,
     decoder_path: Path,
+    shared_prior_path: Path | None,
     initial_onpolicy_rows: Sequence[Mapping[str, Any]],
     final_onpolicy_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
@@ -763,6 +923,7 @@ def _result(
     return {
         "schema_version": RESULT_SCHEMA,
         "formal_authority": True,
+        "decoder_mode": runtime.decoder_mode,
         "repository": runtime.repository,
         "config": phase_decoder_asset(runtime.args.config),
         "code_artifact": {
@@ -771,6 +932,34 @@ def _result(
             "codes": phase_decoder_asset(runtime.code_authority.root / "phase_codes.safetensors"),
         },
         "decoder": phase_decoder_asset(decoder_path),
+        "shared_prior": (
+            phase_decoder_asset(shared_prior_path)
+            if shared_prior_path is not None
+            else dict(runtime.shared_prior_asset["adapter"])
+            if runtime.shared_prior_asset is not None
+            else None
+        ),
+        "shared_prior_authority": runtime.shared_prior_asset,
+        "parameterization": {
+            "template": runtime.config["decoder"].get("template"),
+            "active_rank": [
+                runtime.decoder.active_rank_start,
+                runtime.decoder.active_rank_end,
+            ],
+            "rank_composition": (
+                "exact_disjoint_rank_concatenation_shared12_task4"
+                if runtime.decoder_mode
+                in {"stable_shared_prior", "shared_prior_residual"}
+                else None
+            ),
+            "residual_centered_at_zero_code": bool(
+                runtime.config["decoder"].get(
+                    "center_residual_at_zero_code", False
+                )
+            ),
+            "single_complete_lora": True,
+            "second_adapter_deployed": False,
+        },
         "final_exact_resume_checkpoint": phase_decoder_asset(checkpoint),
         "training": {
             "task_visits": final_visits,
@@ -835,6 +1024,8 @@ def run(args: argparse.Namespace) -> None:
     args.expert_bank_root = args.expert_bank_root.resolve()
     if args.state_bank_root is not None:
         args.state_bank_root = args.state_bank_root.resolve()
+    if args.shared_prior_root is not None:
+        args.shared_prior_root = args.shared_prior_root.resolve()
     if args.resume is not None:
         args.resume = args.resume.resolve()
     runtime = _prepare(args)
@@ -849,12 +1040,22 @@ def run(args: argparse.Namespace) -> None:
     gate = _functional_gate(runtime, rows)
     if runtime.context.is_main:
         decoder_path = save_phase_decoder(runtime.decoder, runtime.args.output_dir)
+        shared_prior_path = (
+            save_stable_shared_prior(
+                runtime.decoder,
+                runtime.contract,
+                runtime.args.output_dir,
+            )
+            if runtime.decoder_mode == "stable_shared_prior"
+            else None
+        )
         result = _result(
             runtime,
             rows=rows,
             functional_gate=gate,
             metrics_rows=metrics_rows,
             decoder_path=decoder_path,
+            shared_prior_path=shared_prior_path,
             initial_onpolicy_rows=initial_onpolicy_rows,
             final_onpolicy_rows=final_onpolicy_rows,
         )
@@ -872,6 +1073,9 @@ def run(args: argparse.Namespace) -> None:
             output_dir=runtime.args.output_dir,
             functional_rows=rows,
             decoder_path=decoder_path,
+            decoder_mode=runtime.decoder_mode,
+            shared_adapter_path=shared_prior_path,
+            shared_prior_authority=runtime.shared_prior_asset,
         )
         print(
             json.dumps(
@@ -898,5 +1102,6 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--output-dir", type=Path, required=True)
     result.add_argument("--mode", choices=("formal",), required=True)
     result.add_argument("--state-bank-root", type=Path)
+    result.add_argument("--shared-prior-root", type=Path)
     result.add_argument("--resume", type=Path)
     return result

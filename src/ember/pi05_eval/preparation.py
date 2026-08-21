@@ -48,6 +48,12 @@ SUCCESSFUL_EXPERT_EQUIVALENCE_SELECTION_SCHEMA = (
 SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA = (
     "ember_successful_expert_equivalence_capture_v1"
 )
+PHASE_DECODER_FIT_OCCUPANCY_SELECTION_SCHEMA = (
+    "ember_successful_expert_equivalence_phase_codes_v1"
+)
+PHASE_DECODER_FIT_OCCUPANCY_CAPTURE_SCHEMA = (
+    "ember_phase_decoder_fit_projected_occupancy_capture_v1"
+)
 TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
 PHASE_DECODER_HELD_ORDINALS = (0, 5, 10, 15, 20)
 PHASE_DECODER_HELD_GLOBAL_IDS = (0, 9, 18, 25, 36)
@@ -70,6 +76,8 @@ def _task_expert_diagnostic_subset(
         return "successful_on_policy_occupancy"
     if schema == SUCCESSFUL_EXPERT_EQUIVALENCE_CAPTURE_SCHEMA:
         return "successful_expert_equivalence_occupancy"
+    if schema == PHASE_DECODER_FIT_OCCUPANCY_CAPTURE_SCHEMA:
+        return "phase_decoder_fit_projected_occupancy"
     return None
 
 
@@ -207,6 +215,15 @@ def _occupancy_capture_tasks(
             selection_path=path,
             manifest=manifest,
             rows=rows,
+        )
+    if manifest.get("schema_version") == PHASE_DECODER_FIT_OCCUPANCY_SELECTION_SCHEMA:
+        return _phase_decoder_fit_occupancy_tasks(
+            args,
+            tasks,
+            output_dir=output_dir,
+            writer_kind=writer_kind,
+            selection_path=path,
+            manifest=manifest,
         )
     counts = {
         category: sum(row.get("category") == category for row in rows)
@@ -505,6 +522,75 @@ def _successful_expert_equivalence_tasks(
         "training_gradient_use": False,
         "held_data_use": False,
         "claim_boundary": manifest.get("claim_boundary"),
+    }
+
+
+def _phase_decoder_fit_occupancy_tasks(
+    args: Any,
+    tasks: Sequence[Any],
+    *,
+    output_dir: Path,
+    writer_kind: str | None,
+    selection_path: Path,
+    manifest: Mapping[str, Any],
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    members = tuple(dict(row) for row in manifest.get("members", ()))
+    fit_tasks = tuple(dict(row) for row in manifest.get("fit_tasks", ()))
+    fit_members = tuple(row for row in members if row.get("fold_role") == "fit")
+    keys = {
+        (str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
+        for row in fit_members
+    }
+    fit_ordinals = tuple(int(row["ordinal"]) for row in fit_tasks)
+    if (
+        args.mode != "formal"
+        or args.role != "development_train"
+        or writer_kind != "task_expert"
+        or getattr(args, "task_expert_projection_manifest", None) is None
+        or len(members) != 47
+        or len(fit_members) != 37
+        or len(fit_tasks) != 19
+        or len(keys) != 30
+        or any(int(row["ordinal"]) % 5 == 0 for row in fit_members)
+        or fit_ordinals
+        != tuple(ordinal for ordinal in range(24) if ordinal % 5 != 0)
+        or any(int(row["code_index"]) != index for index, row in enumerate(members))
+    ):
+        raise Pi05EvaluationError("phase-decoder fit occupancy selection changed")
+
+    selected_tasks = []
+    covered = set()
+    for task in tasks:
+        task_key = (str(task.suite), int(task.task_id))
+        state_ids = tuple(
+            state_id
+            for state_id in task.init_state_ids
+            if (*task_key, int(state_id)) in keys
+        )
+        if state_ids:
+            selected_tasks.append(replace(task, init_state_ids=state_ids))
+            covered.update((*task_key, int(state_id)) for state_id in state_ids)
+    if covered != keys or len(selected_tasks) != 19:
+        raise Pi05EvaluationError(
+            "phase-decoder fit occupancy selection is outside development-train"
+        )
+    return tuple(selected_tasks), {
+        "schema_version": PHASE_DECODER_FIT_OCCUPANCY_CAPTURE_SCHEMA,
+        "selection_path": str(selection_path),
+        "selection_bytes": selection_path.stat().st_size,
+        "selected_rows": len(keys),
+        "selected_tasks": len(selected_tasks),
+        "member_count": len(fit_members),
+        "trajectory_root": str((output_dir / "occupancy_trajectories").resolve()),
+        "training_gradient_use": True,
+        "gradient_scope": "fit19 phase decoder state aggregation only",
+        "held_data_use": False,
+        "validation_use": False,
+        "test_use": False,
+        "claim_boundary": (
+            "Projected-policy trajectories provide fit-task learner occupancy; "
+            "privileged experts are queried only after capture and held tasks are excluded."
+        ),
     }
 
 

@@ -35,6 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "successful_on_policy_occupancy",
     "successful_expert_equivalence_occupancy",
+    "phase_decoder_fit_projected_occupancy",
     "phase_aligned_decoder_held5",
 }
 

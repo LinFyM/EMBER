@@ -140,6 +140,12 @@
   expert occupancy做flow distillation无法守住decoded policy自身闭环occupancy上的support。下一步复用全部昂贵产物，
   只增加fit19 projected-policy state aggregation；若仍失败，再落实已被证据触发的shared prior + task residual单LoRA。
   remote-safe证据见`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。
+- learner-occupancy聚合已在任何新优化前冻结为
+  `configs/pi05_train24_phase_decoder_onpolicy_state_aggregation_v1.json`：只用旧Decoder的fit19 consensus投影从30个既定
+  successful初态采集30条轨迹，并把重复初态分别绑定到37个earliest/latest privileged expert成员；每成员按projected
+  action-chunk功能弧长取8个真实learner states。warm-start旧Decoder、fresh optimizer，以successful/learner panels严格
+  1:1配对，6-rank完成912 task visits/152 updates。held5、phase code、expert bank与闭环门均不改；这一轮失败后不续做
+  state-bank小扫，直接转入已触发的shared prior + task residual独立架构裁决。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

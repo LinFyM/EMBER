@@ -218,7 +218,8 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 7. 回查专家原始“统一probe panel和closed-loop state bank”后确认，首轮只覆盖了successful expert occupancy，没有覆盖
    decoded policy漂移后的learner occupancy。下一轮复用同一fit19 codes、47个experts、decoder与成功初始状态，采集
    fit19 projected-policy trajectories，在这些状态上查询对应privileged experts并做一次staged on-policy aggregation；
-   held5仍零梯度、同250 rows重验，不重训expert或phase code；
+   合同已冻结为30条唯一learner trajectories、37个member targets、每成员8个phase states、successful/learner panel
+   严格1:1、6-rank 912 task visits/152 updates；held5仍零梯度、同250 rows重验，不重训expert或phase code；
 8. expert挑战十二的shared prior + residual已由约`26%` support retention正式触发，但不和state aggregation混成一个
    无法解释的改动：若聚合后仍不能恢复direct support，再以稳定shared prior为Decoder template、task residual为code输出，
    rollout前merge为唯一complete LoRA；

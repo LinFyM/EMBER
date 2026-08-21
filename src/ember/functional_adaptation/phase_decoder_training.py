@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import torch
 import torch.distributed as dist
+from safetensors.torch import load_file
 
 from ember.functional_adaptation.decoder import FunctionalAdapterDecoder
 from ember.functional_adaptation.functional_response import (
@@ -27,8 +28,11 @@ from ember.functional_adaptation.phase_decoder_codes import (
 from ember.functional_adaptation.phase_decoder_panels import (
     CachedPhasePanel,
     PhaseMemberSource,
+    ProjectedOccupancySource,
     cache_phase_member_panels,
+    cache_projected_occupancy_panels,
     load_phase_member_sources,
+    load_projected_occupancy_sources,
 )
 from ember.functional_adaptation.phase_decoder_projection import (
     materialize_phase_decoder_projections,
@@ -84,6 +88,8 @@ class Runtime:
     optimizer: torch.optim.Optimizer
     member_sources: tuple[PhaseMemberSource, ...]
     fit_panels: dict[int, tuple[CachedPhasePanel, ...]]
+    occupancy_sources: dict[int, ProjectedOccupancySource]
+    onpolicy_panels: dict[int, tuple[CachedPhasePanel, ...]]
     schedule: tuple[tuple[int, int], ...]
     topology: tuple[dict[str, Any], ...]
     started: float
@@ -94,8 +100,7 @@ def _authority_path(config: Mapping[str, Any], name: str) -> Path:
     return path if path.is_absolute() else REPO_ROOT / path
 
 
-def load_config(path: Path) -> dict[str, Any]:
-    value = read_json(path.resolve())
+def _validate_base_config(value: Mapping[str, Any]) -> None:
     if (
         value.get("schema_version")
         != "ember_pi05_train24_phase_aligned_decoder_v1"
@@ -105,6 +110,53 @@ def load_config(path: Path) -> dict[str, Any]:
         or value.get("representation", {}).get("held_code_optimization_steps") != 0
     ):
         raise ValueError("unsupported phase-aligned decoder config")
+
+
+def load_config(path: Path) -> dict[str, Any]:
+    resolved = path.resolve()
+    value = read_json(resolved)
+    if (
+        value.get("schema_version")
+        == "ember_pi05_train24_phase_decoder_onpolicy_state_aggregation_v1"
+    ):
+        base_path = Path(str(value.get("base_config", "")))
+        if not base_path.is_absolute():
+            base_path = REPO_ROOT / base_path
+        base = read_json(base_path.resolve())
+        _validate_base_config(base)
+        aggregation = value.get("state_aggregation", {})
+        if (
+            value.get("status") != "preregistered_before_state_aggregation"
+            or aggregation.get("learner_occupancy")
+            != "fit19_projected_policy_trajectories"
+            or aggregation.get("panel_mixture")
+            != "one_successful_expert_panel_to_one_projected_occupancy_panel"
+            or int(aggregation.get("fit_task_count", -1)) != 19
+            or int(aggregation.get("held_task_gradient_count", -1)) != 0
+            or int(aggregation.get("projected_trajectory_count", -1)) != 30
+            or int(aggregation.get("privileged_expert_member_targets", -1)) != 37
+            or int(aggregation.get("phase_points_per_member", -1)) != 8
+            or int(aggregation.get("panels_per_member", -1)) != 4
+        ):
+            raise ValueError("unsupported phase decoder state-aggregation config")
+        merged = dict(base)
+        merged.update(
+            schema_version=value["schema_version"],
+            status=value["status"],
+            purpose=value["purpose"],
+            base_config=value["base_config"],
+            state_aggregation=dict(aggregation),
+            training=dict(value["training"]),
+            claim_boundary=value["claim_boundary"],
+            _base_config_path=str(base_path.resolve()),
+        )
+        merged["authorities"] = {
+            **base["authorities"],
+            **value.get("authorities", {}),
+        }
+        return merged
+    _validate_base_config(value)
+    value["_base_config_path"] = str(resolved)
     return value
 
 
@@ -153,7 +205,7 @@ def _prepare(args: argparse.Namespace) -> Runtime:
     codes = load_phase_decoder_code_authority(
         args.code_artifact,
         config=config,
-        config_path=config_path,
+        config_path=Path(config["_base_config_path"]),
         device=context.device,
     )
     authorities = load_evaluation_authorities(
@@ -179,6 +231,28 @@ def _prepare(args: argparse.Namespace) -> Runtime:
         hidden_width=int(config["decoder"]["hidden_width"]),
         initialization_seed=int(config["decoder"]["initialization_seed"]),
     ).to(context.device)
+    aggregation = config.get("state_aggregation")
+    if aggregation is not None:
+        if args.state_bank_root is None:
+            raise ValueError("state-aggregation training requires its occupancy root")
+        initial_decoder = _authority_path(config, "initial_decoder")
+        initial_result = read_json(_authority_path(config, "initial_training_result"))
+        recorded_decoder = initial_result.get("decoder", {})
+        if (
+            initial_result.get("schema_version") != RESULT_SCHEMA
+            or initial_result.get("formal_authority") is not True
+            or initial_result.get("repository", {}).get("dirty_paths") != []
+            or Path(str(recorded_decoder.get("path", ""))).resolve()
+            != initial_decoder.resolve()
+            or initial_decoder.stat().st_size
+            != int(recorded_decoder.get("bytes", -1))
+        ):
+            raise ValueError("state-aggregation initial decoder authority changed")
+        decoder.load_state_dict(
+            load_file(str(initial_decoder), device=str(context.device)), strict=True
+        )
+    elif args.state_bank_root is not None:
+        raise ValueError("base phase decoder cannot consume a state bank")
     optimizer_config = config["training"]["optimizer"]
     optimizer = torch.optim.AdamW(
         decoder.parameters(),
@@ -206,6 +280,8 @@ def _prepare(args: argparse.Namespace) -> Runtime:
         optimizer=optimizer,
         member_sources=member_sources,
         fit_panels={},
+        occupancy_sources={},
+        onpolicy_panels={},
         schedule=_task_schedule(config, context.world_size),
         topology=(),
         started=time.monotonic(),
@@ -228,6 +304,25 @@ def _prepare(args: argparse.Namespace) -> Runtime:
         )
         for index in fit_member_indices
     }
+    if aggregation is not None:
+        runtime.occupancy_sources = load_projected_occupancy_sources(
+            root=args.state_bank_root,
+            codes=codes,
+        )
+        aggregation_seed = int(aggregation["expert_query_policy_seed"])
+        runtime.onpolicy_panels = {
+            index: cache_projected_occupancy_panels(
+                policy=runtime.policy,
+                identity_state=runtime.identity_state,
+                contract=runtime.contract,
+                member_sources=runtime.member_sources,
+                occupancy_sources=runtime.occupancy_sources,
+                member_index=index,
+                device=runtime.context.device,
+                policy_seed=aggregation_seed,
+            )
+            for index in fit_member_indices
+        }
     initialize_deferred_process_group(
         context, rendezvous_root=args.output_dir.resolve().parent
     )
@@ -269,12 +364,30 @@ def _run_contract(runtime: Runtime) -> dict[str, Any]:
             "source_run": str(runtime.args.source_run.resolve()),
             "checkpoint": str(runtime.args.checkpoint.resolve()),
             "expert_bank_root": str(runtime.args.expert_bank_root.resolve()),
+            "state_bank_root": (
+                str(runtime.args.state_bank_root.resolve())
+                if runtime.args.state_bank_root is not None
+                else None
+            ),
+            "initial_decoder": (
+                phase_decoder_asset(_authority_path(runtime.config, "initial_decoder"))
+                if runtime.config.get("state_aggregation") is not None
+                else None
+            ),
+            "initial_training_result": (
+                phase_decoder_asset(
+                    _authority_path(runtime.config, "initial_training_result")
+                )
+                if runtime.config.get("state_aggregation") is not None
+                else None
+            ),
         },
         "roles": runtime.config["roles"],
         "representation": runtime.config["representation"],
         "functional_supervision": runtime.config["functional_supervision"],
         "decoder": runtime.config["decoder"],
         "training": runtime.config["training"],
+        "state_aggregation": runtime.config.get("state_aggregation"),
         "decision_gates": runtime.config["decision_gates"],
         "information_wall": {
             "privileged_actions": "development_train_successful_experts_only",
@@ -394,7 +507,9 @@ def _fit_code(runtime: Runtime, task_index: int) -> torch.Tensor:
     return runtime.code_authority.fit_task_codes[task_index]
 
 
-def _member_for_visit(runtime: Runtime, task_index: int, visit: int) -> tuple[int, int]:
+def _member_for_visit(
+    runtime: Runtime, task_index: int, visit: int
+) -> tuple[int, int, str]:
     ordinal = runtime.code_authority.fit_ordinals[task_index]
     members = tuple(
         index
@@ -403,9 +518,19 @@ def _member_for_visit(runtime: Runtime, task_index: int, visit: int) -> tuple[in
     )
     if not members:
         raise ValueError("phase decoder fit task lost successful members")
-    member_index = members[visit % len(members)]
-    panel_index = (visit // len(members)) % 4
-    return member_index, panel_index
+    if runtime.onpolicy_panels:
+        paired_visit = visit // 2
+        member_index = members[paired_visit % len(members)]
+        panel_index = (paired_visit // len(members)) % 4
+        panel_source = (
+            "successful_expert" if visit % 2 == 0 else "projected_occupancy"
+        )
+    else:
+        member_index = members[visit % len(members)]
+        cycle = visit // len(members)
+        panel_source = "successful_expert"
+        panel_index = cycle % 4
+    return member_index, panel_index, panel_source
 
 
 def _fit(runtime: Runtime, *, start_visits: int, metrics_rows: int) -> int:
@@ -414,13 +539,23 @@ def _fit(runtime: Runtime, *, start_visits: int, metrics_rows: int) -> int:
     gradient = torch.zeros(layout[-1].stop, device=context.device, dtype=torch.float32)
     world = context.world_size
     total = len(runtime.schedule)
-    checkpoints = set(int(value) for value in runtime.config["training"]["checkpoint_task_visits"])
+    checkpoints = set(
+        int(value)
+        for value in runtime.config["training"]["checkpoint_task_visits"]
+    )
     clip = float(runtime.config["training"]["optimizer"]["gradient_clip_norm"])
     metrics_path = runtime.args.output_dir / "metrics.jsonl"
     for cursor in range(start_visits, total, world):
         task_index, visit = runtime.schedule[cursor + context.rank]
-        member_index, panel_index = _member_for_visit(runtime, task_index, visit)
-        panel = runtime.fit_panels[member_index][panel_index]
+        member_index, panel_index, panel_source = _member_for_visit(
+            runtime, task_index, visit
+        )
+        panels = (
+            runtime.fit_panels
+            if panel_source == "successful_expert"
+            else runtime.onpolicy_panels
+        )
+        panel = panels[member_index][panel_index]
         runtime.optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
             loss = functional_response_distillation_loss(
@@ -450,6 +585,7 @@ def _fit(runtime: Runtime, *, start_visits: int, metrics_rows: int) -> int:
             "member_index": member_index,
             "member": runtime.code_authority.members[member_index].member,
             "panel_index": panel_index,
+            "panel_source": panel_source,
             "loss": float(loss.detach()),
         }
         records: list[Any] = [None] * world
@@ -486,7 +622,11 @@ def _member_code(runtime: Runtime, member_index: int) -> torch.Tensor:
 def _evaluate_members(runtime: Runtime) -> list[dict[str, Any]]:
     local = []
     seed = int(runtime.config["functional_supervision"]["evaluation_policy_seed"])
-    for member_index in range(runtime.context.rank, len(runtime.code_authority.members), runtime.context.world_size):
+    for member_index in range(
+        runtime.context.rank,
+        len(runtime.code_authority.members),
+        runtime.context.world_size,
+    ):
         panels = cache_phase_member_panels(
             policy=runtime.policy,
             identity_state=runtime.identity_state,
@@ -521,6 +661,51 @@ def _evaluate_members(runtime: Runtime) -> list[dict[str, Any]]:
                 "fold_role": member.fold_role,
                 "member": member.member,
                 "expert_step": member.expert_step,
+                "panel_losses": losses,
+                "mean_loss": sum(losses) / len(losses),
+            }
+        )
+    shards: list[Any] = [None] * runtime.context.world_size
+    dist.all_gather_object(shards, local)
+    return sorted(
+        (row for shard in shards for row in shard),
+        key=lambda row: int(row["member_index"]),
+    )
+
+
+def _evaluate_onpolicy_members(runtime: Runtime) -> list[dict[str, Any]]:
+    if not runtime.onpolicy_panels:
+        return []
+    local = []
+    fit_indices = sorted(runtime.onpolicy_panels)
+    for member_index in fit_indices[runtime.context.rank :: runtime.context.world_size]:
+        panels = runtime.onpolicy_panels[member_index]
+        with torch.no_grad(), torch.autocast(
+            device_type="cuda", dtype=torch.bfloat16
+        ):
+            losses = [
+                float(
+                    functional_response_distillation_loss(
+                        runtime.policy,
+                        runtime.decoder(_member_code(runtime, member_index)),
+                        runtime.contract,
+                        panel.batch,
+                        panel.target,
+                        policy_seed=panel.policy_seed,
+                    )
+                )
+                for panel in panels
+            ]
+        member = runtime.code_authority.members[member_index]
+        local.append(
+            {
+                "member_index": member_index,
+                "ordinal": member.ordinal,
+                "global_task_id": member.global_task_id,
+                "member": member.member,
+                "projected_rollout_success": runtime.occupancy_sources[
+                    member_index
+                ].success,
                 "panel_losses": losses,
                 "mean_loss": sum(losses) / len(losses),
             }
@@ -570,6 +755,8 @@ def _result(
     functional_gate: Mapping[str, Any],
     metrics_rows: int,
     decoder_path: Path,
+    initial_onpolicy_rows: Sequence[Mapping[str, Any]],
+    final_onpolicy_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     final_visits = int(runtime.config["training"]["total_task_visits"])
     checkpoint = _checkpoint_path(runtime.args.output_dir, final_visits)
@@ -606,6 +793,28 @@ def _result(
             / sum(row["fold_role"] == "held_transform_only" for row in rows),
             "gate": dict(functional_gate),
         },
+        "state_aggregation_evaluation": (
+            {
+                "member_rows": list(final_onpolicy_rows),
+                "initial_mean_loss": sum(
+                    float(row["mean_loss"]) for row in initial_onpolicy_rows
+                )
+                / len(initial_onpolicy_rows),
+                "final_mean_loss": sum(
+                    float(row["mean_loss"]) for row in final_onpolicy_rows
+                )
+                / len(final_onpolicy_rows),
+                "captured_trajectories": len(
+                    {
+                        source.trajectory_path
+                        for source in runtime.occupancy_sources.values()
+                    }
+                ),
+                "member_targets": len(final_onpolicy_rows),
+            }
+            if final_onpolicy_rows
+            else None
+        ),
         "information_wall": {
             "fit_task_gradients": 19,
             "held_task_gradients": 0,
@@ -624,15 +833,19 @@ def run(args: argparse.Namespace) -> None:
     args.source_run = args.source_run.resolve()
     args.checkpoint = args.checkpoint.resolve()
     args.expert_bank_root = args.expert_bank_root.resolve()
+    if args.state_bank_root is not None:
+        args.state_bank_root = args.state_bank_root.resolve()
     if args.resume is not None:
         args.resume = args.resume.resolve()
     runtime = _prepare(args)
     _publish_contract(runtime)
+    initial_onpolicy_rows = _evaluate_onpolicy_members(runtime)
     start_visits, metrics_rows = _resume(runtime)
     metrics_rows = _fit(
         runtime, start_visits=start_visits, metrics_rows=metrics_rows
     )
     rows = _evaluate_members(runtime)
+    final_onpolicy_rows = _evaluate_onpolicy_members(runtime)
     gate = _functional_gate(runtime, rows)
     if runtime.context.is_main:
         decoder_path = save_phase_decoder(runtime.decoder, runtime.args.output_dir)
@@ -642,6 +855,8 @@ def run(args: argparse.Namespace) -> None:
             functional_gate=gate,
             metrics_rows=metrics_rows,
             decoder_path=decoder_path,
+            initial_onpolicy_rows=initial_onpolicy_rows,
+            final_onpolicy_rows=final_onpolicy_rows,
         )
         write_json_atomic(runtime.args.output_dir / "result.json", result)
         materialize_phase_decoder_projections(
@@ -682,5 +897,6 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--expert-bank-root", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)
     result.add_argument("--mode", choices=("formal",), required=True)
+    result.add_argument("--state-bank-root", type=Path)
     result.add_argument("--resume", type=Path)
     return result

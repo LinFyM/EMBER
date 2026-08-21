@@ -1,0 +1,60 @@
+{
+  "schema_version": "ember_pi05_train24_phase_decoder_onpolicy_state_aggregation_v1",
+  "status": "preregistered_before_state_aggregation",
+  "purpose": "One staged fit19 learner-occupancy aggregation pass for the fixed functional decoder before repeating the unchanged held5 closed-loop gate.",
+  "base_config": "configs/pi05_train24_phase_aligned_decoder_v1.json",
+  "authorities": {
+    "initial_decoder": "runs/outputs/pi05_train24_phase_decoder_formal_r5_v50_73c2a32_gpu01p01456_20260821/decoder.safetensors",
+    "initial_training_result": "runs/outputs/pi05_train24_phase_decoder_formal_r5_v50_73c2a32_gpu01p01456_20260821/result.json",
+    "state_bank_selection": "runs/analysis/pi05_train24_phase_decoder_codes_73c2a32_20260821/result.json"
+  },
+  "state_aggregation": {
+    "learner_occupancy": "fit19_projected_policy_trajectories",
+    "capture_adapter": "previous_fixed_decoder_fit_task_consensus_projection",
+    "fit_task_count": 19,
+    "held_task_gradient_count": 0,
+    "projected_trajectory_count": 30,
+    "privileged_expert_member_targets": 37,
+    "phase_selection": "eight_monotone_functional_arc_length_quantiles_of_projected_action_chunks",
+    "phase_points_per_member": 8,
+    "panels_per_member": 4,
+    "panel_mixture": "one_successful_expert_panel_to_one_projected_occupancy_panel",
+    "expert_query_policy_seed": 2026082121,
+    "decoder_initialization": "warm_start_previous_fixed_decoder",
+    "optimizer_initialization": "fresh",
+    "iteration_limit": "one_state_aggregation_pass_before_closed_loop_retest",
+    "failure_route": "separate_shared_prior_plus_task_residual_experiment"
+  },
+  "training": {
+    "distributed": "six_rank_single_node_manual_flat_gradient_mean",
+    "world_size": 6,
+    "deferred_nccl": true,
+    "nccl_p2p_disable": true,
+    "numa_local_binding": true,
+    "schedule_seed": 20260822,
+    "task_equal": true,
+    "visits_per_fit_task": 48,
+    "total_task_visits": 912,
+    "optimizer_updates": 152,
+    "checkpoint_task_visits": [
+      228,
+      456,
+      684,
+      912
+    ],
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.00005,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "precision": "bf16_autocast_tf32",
+    "exact_resume_world_size_locked": true
+  },
+  "claim_boundary": "This is one fit19-only DAgger-like state-aggregation experiment for a privileged fixed decoder. Projected-policy trajectories supply learner states, train-task experts supply functional targets, held task members remain transform-only, and no validation or test data select or train the decoder."
+}

@@ -1,6 +1,6 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active — EMBER-ECP architecture implementation**。
+状态：2026-08-22 **active — EMBER-ECP architecture implementation**。
 
 唯一active design：`docs/event_conditioned_policy_compiler_design.md`。
 
@@ -87,7 +87,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 接通71个non-held与fit19的task-equal correct-video训练数据、跨episode action grounding、保序速度视图、
   动态cost-balanced多卡macro与exact-resume checkpoint；
 - [x] 实现固定train24 observer面板：fit19/held5各自报告跨episode、2x保序速度、antithetic probe与跨task margin；
-- [ ] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动训练native observer；
+- [x] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动完成首个native observer macro10；
+- [x] 固定面板裁决首版native observer为Gate 1科学不通过：task/event表示近全局坍缩，未进入compiler；
+- [x] 实现独立shared Action Meta-LoRA训练、checkpoint与matched panel运行面；正式科学arm等待修正后的native authority；
+- [ ] 以固定速度归一occupancy presence和逐帧posterior action reconstruction修正最早失效接口，fresh训练并重跑同一面板；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
 
@@ -153,8 +156,8 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 从clean pushed frozen commit在6张合适A40上训练Stage 0A至首个macro10 checkpoint；
-2. 对固定native checkpoint运行跨episode、速度与替代probe observer面板，定位event/owner稳定性；
-3. 固定native baseline后实现并训练shared Action Meta-LoRA独立matched arm；
-4. 裁决并永久冻结observer authority，保存Stage 0证据；
-5. 在任何compiler大训练前完成Action Meta-LoRA独立对照并清理Stage 0临时运行面。
+1. 将首版native macro10与固定面板的Gate 1负裁决封存为remote-safe evidence，不续训、不扫LR/rank/seed；
+2. fresh实现并profile固定occupancy-fraction presence与逐帧posterior action reconstruction，只改变这一组耦合退化接口；
+3. 从clean pushed frozen commit在6张合适A40上训练修正后的Stage 0A至macro10，并重跑完全相同的observer面板；
+4. 仅在native非退化后训练已接通的shared Action Meta-LoRA独立matched arm并永久冻结observer authority；
+5. Gate 1通过后进入privileged `q_pi + compiler`，同时清理Stage 0临时运行面、短期分支与worktree。

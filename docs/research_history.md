@@ -654,6 +654,26 @@ video posterior或outer reward。按专家挑战十四，下一主要变量是�
 zero-interaction且reward零梯度。证据：
 `docs/evidence/functional_adaptation_20260819/train24_shared_prior_residual_held5_20260821.json`。
 
+### 3.30 EMBER-ECP native Stage 0A首版formal与Gate 1负裁决
+
+新active design EMBER-ECP的首个native observer从clean pushed `f6389af`在gpu01 physical `1,2,3,4,5,7`完成10个
+world-size6 macros、90 tasks/macro；Prohibited physical0未使用。正式段900 task visits耗时417.55秒，所有metrics、
+gradient和macro10 checkpoint finite。total/action-alignment由`.587576/.144328`降到`.447487/.065853`，但cross-task
+contrast由`1.721745`恶化到`1.759694`，posterior entropy由`1.464783`降到`.241540`。macro10的90-task presence均值
+`.348687`、标准差`.001770`，source71与fit19均值为`.348722/.348560`，已出现与task复杂度无关的全局尺度迹象。
+
+固定macro10后在train24全部fit19+held5、每task两个demo pairs运行48-row observer panel，只比较canonical、保序2x速度、
+same-task other video与antithetic fixed probe；没有使用shuffled/reversed/wrong或action/reward。same-task other summary
+cosine为`.999985`，但mean/nearest cross-task也为`.996493/.999125`，fit19与held5 nearest margin只有
+`.000927/.000604`；antithetic summary/event cosine仍为`.998766/.998409`。所以首版高一致性来自近全局表示坍缩，
+而不是可泛化task event结构，Gate 1返回fail。
+
+根因定位为learned global duration denominator与event-mean action target共同允许稀疏/均值捷径。本轮不续训、不扫
+LR/rank/seed，不启动compiler或在该observer上做正式Action Meta校准。后继fresh版本只把presence改为固定的
+speed-normalized occupancy fraction，并把action grounding改为soft event posterior下的逐帧action reconstruction；slot
+对应的视频段落仍完全由模型学习。remote-safe证据为
+`docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

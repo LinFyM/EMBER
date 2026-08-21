@@ -823,3 +823,28 @@ control-confidence、control-update与action-alignment权重设为0。也就是�
 结构不同的outer estimator。该结论淘汰的是当前两轮correct-only 16维warm-start，不否定fixed coordinate、旧process
 frontend、train/meta action correspondence或outer credit一般。证据仍归档在
 `docs/evidence/functional_adaptation_20260819/train24_functional_outer_credit_held5_20260821.json`。
+
+## 39. EMBER-ECP首版native observer优化成立但task-conditioned event识别失败
+
+EMBER-ECP Stage 0A首版在71个audited non-held meta tasks与train24 fold0 fit19上完成10个formal macros、900次task-equal
+visits。total、cross-episode action alignment、uncertainty和same-task consistency都稳定下降，全部gradient与checkpoint
+finite，因此这不是工程失败或训练图未接通。但cross-task contrast反而由`1.721745`升到`1.759694`，接近6-way chance；
+posterior entropy由`1.464783`降到`.241540`。macro10的mean presence在90 tasks上均值`.348687`、标准差仅`.001770`，
+source71与fit19的均值差只有约`.000162`。这与“简单任务激活更少slot、复杂任务激活更多slot”的动态E合同不符。
+
+固定train24 observer panel提供了独立反事实。same-task other-video summary cosine达到`.999985`看似稳定，但mean cross-task
+cosine也为`.996493`，nearest cross-task更为`.999125`；fit19/held5的nearest margin只有`.000927/.000604`。换成
+antithetic fixed Gaussian probe后summary/event cosine仍为`.998766/.998409`。因此高same-task一致性不是event abstraction
+的正证据，而是几乎所有条件都映射到同一表示的坍缩。首版native observer明确未过Gate 1，不授权compiler、`q_V`或正式
+Action Meta训练。
+
+代码级最早失效接口与这些数值一致。learned `minimum_duration`没有约束每个slot的真实最短持续时间，只作为
+`1-exp(-occupancy/duration)`的全局可学习分母；正presence sparsity会奖励所有task共同放大分母。与此同时，首版action
+alignment先用posterior把所有frame targets平均为event target，再回归event均值；把不同阶段帧压到同一slot仍可降低平均
+误差，缺少逐帧重构责任。两者共同形成“全局presence尺度 + 少数event均值”的捷径。
+
+所以下一变量不是更多相同训练、LR/rank/seed小扫，也不是规定某段视频必须对应某个slot。修正保持slot语义完全learned，
+只把presence改为相对有效帧数的固定occupancy fraction，并用每帧posterior加权event action prediction重构该帧的
+cross-episode action target。它同时消除速度/视频长度对presence尺度的影响，并让event collapse直接承担时变动作误差；
+其余native graph、38 owners、50 horizons、correct-only数据墙和固定panel均不变。完整证据见
+`docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。

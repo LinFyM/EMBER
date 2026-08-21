@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 
@@ -98,6 +99,8 @@ class ECPVideoEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         suffix_noise: torch.Tensor | None,
+        action_meta_lora: Any | None,
+        install_action_meta_lora: bool,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         core = policy.model
         bridge = core.paligemma_with_expert
@@ -130,12 +133,19 @@ class ECPVideoEncoder(torch.nn.Module):
                 ),
                 dim=1,
             )
+            adapter_context = (
+                action_meta_lora.installed(bridge.gemma_expert.model)
+                if action_meta_lora is not None and install_action_meta_lora
+                else None
+            )
             observed = self.observer(
                 core,
                 prefix,
                 prefix_padding,
                 probe[None].expand(stop - start, -1, -1),
                 torch.ones(stop - start, device=frames.device),
+                track_action_adapter_grad=action_meta_lora is not None,
+                action_adapter_context=adapter_context,
             )
             patches.append(observed.patch_states)
             languages.append(observed.language_states)
@@ -152,6 +162,8 @@ class ECPVideoEncoder(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         suffix_noise: torch.Tensor | None = None,
+        action_meta_lora: Any | None = None,
+        install_action_meta_lora: bool = True,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -169,6 +181,8 @@ class ECPVideoEncoder(torch.nn.Module):
             language_tokens=language_tokens,
             language_mask=language_mask,
             suffix_noise=suffix_noise,
+            action_meta_lora=action_meta_lora,
+            install_action_meta_lora=install_action_meta_lora,
         )
         patch, frame_mask = self._pad_videos(patch, video_offsets)
         language, _ = self._pad_videos(language, video_offsets)

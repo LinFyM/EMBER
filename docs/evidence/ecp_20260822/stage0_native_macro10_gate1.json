@@ -1,0 +1,88 @@
+{
+  "schema_version": "ember_ecp_stage0_native_gate1_evidence_v1",
+  "authority": {
+    "commit": "f6389af4ea1b7f69455ae3aa7f281626a4bc081d",
+    "run": "runs/outputs/pi05_ecp_stage0_native_fold0_m10_r6_gpu01p123457_20260821",
+    "checkpoint": "checkpoints/macro_00000010",
+    "stage": "stage0_native",
+    "formal_task_visits": 900,
+    "world_size": 6
+  },
+  "training": {
+    "macro_1": {
+      "total": 0.5875758091608684,
+      "action_alignment": 0.14432794137133492,
+      "cross_task_contrast": 1.721744696299235,
+      "posterior_entropy": 1.4647826963000827,
+      "mean_presence": 0.9130993061595493,
+      "gradient_norm_before_clip": 0.994036853313446
+    },
+    "macro_10": {
+      "total": 0.4474873536162906,
+      "action_alignment": 0.06585338643441598,
+      "cross_task_contrast": 1.7596935722563,
+      "posterior_entropy": 0.24153997757368617,
+      "mean_presence": 0.34868746962812214,
+      "gradient_norm_before_clip": 0.10355562716722488
+    },
+    "elapsed_seconds": 417.54765341500024,
+    "max_cuda_allocated_bytes": 11664018432,
+    "macro_10_presence_across_90_tasks": {
+      "mean": 0.34868746962812214,
+      "population_std": 0.001770319516167158,
+      "minimum": 0.345383882522583,
+      "maximum": 0.35511913895606995,
+      "source71_mean": 0.34872158060611136,
+      "fit19_mean": 0.34856000228932027
+    }
+  },
+  "observer_panel": {
+    "rows": 48,
+    "tasks": 24,
+    "elapsed_seconds": 219.07118420199913,
+    "max_cuda_allocated_bytes": 18721906176,
+    "conditions": [
+      "canonical correct video",
+      "same video order-preserving 2x speed",
+      "same-task other correct video",
+      "same video antithetic fixed Gaussian probe"
+    ],
+    "forbidden_conditions_used": [],
+    "all": {
+      "speed_summary_cosine": 0.9999971116582552,
+      "speed_event_cosine": 0.9999945648014545,
+      "other_summary_cosine": 0.9999850143988928,
+      "other_event_cosine": 0.9999745811025301,
+      "antithetic_summary_cosine": 0.9987659566104412,
+      "antithetic_event_cosine": 0.9984092563390732,
+      "mean_cross_task_summary_cosine": 0.9964927091546681,
+      "nearest_cross_task_summary_cosine": 0.9991252658267816,
+      "mean_cross_task_margin": 0.0034923052442246603,
+      "nearest_cross_task_margin": 0.0008597485721111298
+    },
+    "fit19": {
+      "mean_cross_task_margin": 0.003637141371209784,
+      "nearest_cross_task_margin": 0.0009270498627110532,
+      "other_summary_cosine": 0.9999847192513315
+    },
+    "held5": {
+      "mean_cross_task_margin": 0.00294192796168119,
+      "nearest_cross_task_margin": 0.0006040036678314209,
+      "other_summary_cosine": 0.9999861359596253
+    }
+  },
+  "decision": {
+    "gate_1_pass": false,
+    "verdict": "valid scientific non-pass: the native observer learned a nearly global event/presence scale instead of task-conditioned event structure",
+    "earliest_failed_interface": "Stage0 event identification and dynamic occupancy",
+    "evidence": [
+      "training loss and action-alignment decreased while cross-task contrast moved toward chance",
+      "macro10 presence was nearly identical across all 90 tasks and both task domains",
+      "same-task other-video representations were almost identical, but so were cross-task representations",
+      "held5 was not materially better separated than fit19"
+    ],
+    "closed_hypothesis": "learned global minimum-duration scale plus event-mean action regression is sufficient to identify dynamic task events",
+    "next_single_causal_correction": "make presence depend on fixed speed-normalized occupancy fraction and reconstruct every frame action target through its soft event posterior",
+    "action_meta_formal_status": "withheld until a corrected native observer passes the same fixed panel"
+  }
+}

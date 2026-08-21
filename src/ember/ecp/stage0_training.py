@@ -67,7 +67,12 @@ class ECPStage0Runtime:
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     policy: torch.nn.Module
     model: ECPStage0Model
+    action_meta_lora: torch.nn.Module | None
     trainable_parameters: tuple[torch.nn.Parameter, ...]
+    frozen_parameters: tuple[torch.nn.Parameter, ...]
+    checkpoint_module: torch.nn.Module
+    checkpoint_stage: str
+    run_schema: str
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
     tasks_per_rank: int
@@ -79,7 +84,7 @@ class ECPStage0Runtime:
     run_contract: dict[str, Any]
 
 
-def _authority_path(config: dict[str, Any], name: str) -> Path:
+def stage0_authority_path(config: dict[str, Any], name: str) -> Path:
     return REPO_ROOT / str(config["authorities"][name])
 
 
@@ -115,7 +120,7 @@ def _resolve_runtime(
     return total, stop, checkpoints, tasks_per_rank
 
 
-def _scheduler(
+def build_stage0_scheduler(
     optimizer: torch.optim.Optimizer,
     config: dict[str, Any],
     total_macros: int,
@@ -133,7 +138,36 @@ def _scheduler(
     return torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
 
 
-def _source_authority(args: argparse.Namespace) -> dict[str, Any]:
+def build_stage0_optimizer(
+    parameters: Any, optimization: dict[str, Any]
+) -> torch.optim.AdamW:
+    cell = optimization["optimizer"]
+    return torch.optim.AdamW(
+        parameters,
+        lr=float(optimization["scheduler"]["peak_lr"]),
+        betas=tuple(cell["betas"]),
+        eps=float(cell["eps"]),
+        weight_decay=float(cell["weight_decay"]),
+    )
+
+
+def build_stage0_tasks_and_schedule(
+    config: dict[str, Any], data_root: Path
+) -> tuple[tuple[ECPStage0Task, ...], ECPStage0Schedule]:
+    tasks = load_stage0_tasks(
+        source_manifest=stage0_authority_path(config, "source_manifest"),
+        target_manifest=stage0_authority_path(config, "target_manifest"),
+        data_root=data_root,
+        held_target_ids=config["task_roles"]["target_held_task_ids"],
+    )
+    return tasks, ECPStage0Schedule(
+        tasks,
+        seed=int(config["data"]["pair_seed"]),
+        frame_stride=int(config["data"]["frame_stride"]),
+    )
+
+
+def stage0_source_authority(args: argparse.Namespace) -> dict[str, Any]:
     checkpoint = args.checkpoint
     if (
         checkpoint.parent.parent != args.source_run
@@ -156,7 +190,7 @@ def _source_authority(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def _publish_contract(
+def publish_stage0_contract(
     runtime_args: argparse.Namespace,
     context: DistributedContext,
     contract: dict[str, Any],
@@ -264,7 +298,7 @@ def _build_contract(
     }
 
 
-def _tokenize_languages(
+def tokenize_stage0_languages(
     tasks: tuple[ECPStage0Task, ...],
     *,
     tokenizer_path: Path,
@@ -281,7 +315,7 @@ def _tokenize_languages(
     }
 
 
-def _build_training_stores(
+def build_stage0_training_stores(
     tasks: tuple[ECPStage0Task, ...],
     *,
     config: dict[str, Any],
@@ -307,24 +341,14 @@ def prepare_runtime(
     config = load_stage0_config(args.config)
     total, stop, checkpoints, tasks_per_rank = _resolve_runtime(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
-    tasks = load_stage0_tasks(
-        source_manifest=_authority_path(config, "source_manifest"),
-        target_manifest=_authority_path(config, "target_manifest"),
-        data_root=args.data_root,
-        held_target_ids=config["task_roles"]["target_held_task_ids"],
-    )
-    schedule = ECPStage0Schedule(
-        tasks,
-        seed=int(config["data"]["pair_seed"]),
-        frame_stride=int(config["data"]["frame_stride"]),
-    )
-    source = _source_authority(args)
-    source_config = load_config(_authority_path(config, "source_base_config"))
+    tasks, schedule = build_stage0_tasks_and_schedule(config, args.data_root)
+    source = stage0_source_authority(args)
+    source_config = load_config(stage0_authority_path(config, "source_base_config"))
     policy = load_policy(
         Path(source["model_path"]), source_config, context.device
     ).requires_grad_(False).eval()
     owners = build_target_owners(
-        load_pi05_lora_contract(_authority_path(config, "lora_contract"))
+        load_pi05_lora_contract(stage0_authority_path(config, "lora_contract"))
     )
     model_cell = config["model"]
     model = ECPStage0Model(
@@ -341,19 +365,12 @@ def prepare_runtime(
     if context.world_size > 1:
         for value in model.state_dict().values():
             dist.broadcast(value, src=0)
-    optimizer_cell = config["optimization"]["optimizer"]
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=float(config["optimization"]["scheduler"]["peak_lr"]),
-        betas=tuple(optimizer_cell["betas"]),
-        eps=float(optimizer_cell["eps"]),
-        weight_decay=float(optimizer_cell["weight_decay"]),
-    )
-    scheduler = _scheduler(optimizer, config, total)
-    video_store, action_store = _build_training_stores(
+    optimizer = build_stage0_optimizer(model.parameters(), config["optimization"])
+    scheduler = build_stage0_scheduler(optimizer, config, total)
+    video_store, action_store = build_stage0_training_stores(
         tasks, config=config, source_config=source_config
     )
-    language = _tokenize_languages(
+    language = tokenize_stage0_languages(
         tasks,
         tokenizer_path=args.tokenizer_path,
         max_length=int(source_config["features"]["tokenizer_max_length"]),
@@ -370,7 +387,7 @@ def prepare_runtime(
         tasks_per_rank=tasks_per_rank,
         model=model,
     )
-    _publish_contract(args, context, contract)
+    publish_stage0_contract(args, context, contract)
     start_macro = 0
     expected_metrics = 0
     if args.resume is not None:
@@ -409,7 +426,12 @@ def prepare_runtime(
         language_tokens=language,
         policy=policy,
         model=model,
+        action_meta_lora=None,
         trainable_parameters=tuple(model.parameters()),
+        frozen_parameters=tuple(policy.parameters()),
+        checkpoint_module=model,
+        checkpoint_stage=STAGE,
+        run_schema=RUN_SCHEMA,
         optimizer=optimizer,
         scheduler=scheduler,
         tasks_per_rank=tasks_per_rank,
@@ -422,13 +444,16 @@ def prepare_runtime(
     )
 
 
-def train(args: argparse.Namespace) -> None:
+def run_stage0_training(
+    args: argparse.Namespace,
+    prepare: Any,
+) -> None:
     context = initialize_distributed(
         require_numa=args.mode == "formal", defer_process_group=True
     )
     runtime: ECPStage0Runtime | None = None
     try:
-        runtime = prepare_runtime(args, context)
+        runtime = prepare(args, context)
         started = time.monotonic()
         for macro in range(runtime.start_macro, runtime.stop_after_macro):
             row = run_stage0_macro(runtime, macro, started)
@@ -441,25 +466,33 @@ def train(args: argparse.Namespace) -> None:
                 save_ecp_checkpoint(
                     output_dir=args.output_dir,
                     macro=macro + 1,
-                    stage=STAGE,
+                    stage=runtime.checkpoint_stage,
                     context=context,
-                    model=runtime.model,
+                    model=runtime.checkpoint_module,
                     optimizer=runtime.optimizer,
                     scheduler=runtime.scheduler,
-                    run_contract_schema=RUN_SCHEMA,
+                    run_contract_schema=runtime.run_schema,
                     metrics_rows=runtime.metrics_rows,
                 )
-        if context.is_main and runtime.stop_after_macro == runtime.total_macros:
-            write_json_atomic(
-                args.output_dir / "completion.json",
-                {"stage": STAGE, "completed_macros": runtime.total_macros},
-            )
+        if context.is_main:
+            segment = {
+                "stage": runtime.checkpoint_stage,
+                "completed_macros": runtime.stop_after_macro,
+                "total_macros": runtime.total_macros,
+            }
+            write_json_atomic(args.output_dir / "segment_completion.json", segment)
+            if runtime.stop_after_macro == runtime.total_macros:
+                write_json_atomic(args.output_dir / "completion.json", segment)
     finally:
         if runtime is not None:
             runtime.video_store.close()
             runtime.action_store.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
+
+
+def train(args: argparse.Namespace) -> None:
+    run_stage0_training(args, prepare_runtime)
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -23,6 +23,7 @@ from ember.pi05_processing import Pi05TeacherPrefixTokenizer
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import load_config, load_policy
 from ember.writer.data import RawTeacherVideoStore, WriterTaskAuthority
+from ember.writer.meta_lora import MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -150,8 +151,9 @@ def _load_model(
     config: dict[str, Any],
     checkpoint: Path,
     source_checkpoint: Path,
+    action_meta_checkpoint: Path | None,
     device: torch.device,
-) -> tuple[torch.nn.Module, ECPStage0Model]:
+) -> tuple[torch.nn.Module, ECPStage0Model, MetaLoRAStack | None]:
     source_config = load_config(REPO_ROOT / config["authorities"]["source_base_config"])
     policy = load_policy(source_checkpoint / "policy", source_config, device)
     policy.requires_grad_(False).eval()
@@ -179,13 +181,37 @@ def _load_model(
     ):
         raise ValueError("ECP observer checkpoint authority changed")
     model.load_state_dict(load_file(str(weights), device=str(device)), strict=True)
-    return policy, model.eval()
+    action_meta = None
+    if action_meta_checkpoint is not None:
+        meta_manifest = read_json(
+            action_meta_checkpoint / "checkpoint_manifest.json"
+        )
+        meta_weights = action_meta_checkpoint / "ecp.safetensors"
+        if (
+            meta_manifest.get("stage") != "stage0_action_meta"
+            or int(meta_manifest.get("next_macro", -1))
+            != checkpoint_macro(action_meta_checkpoint)
+            or not meta_weights.is_file()
+            or meta_weights.stat().st_size
+            != int(meta_manifest["files"][meta_weights.name]["bytes"])
+        ):
+            raise ValueError("ECP Action Meta-LoRA checkpoint authority changed")
+        expert = policy.model.paligemma_with_expert.gemma_expert.model
+        action_meta = MetaLoRAStack(
+            expert.layers, int(config["action_meta_lora"]["rank"])
+        ).to(device)
+        action_meta.load_state_dict(
+            load_file(str(meta_weights), device=str(device)), strict=True
+        )
+        action_meta.eval()
+    return policy, model.eval(), action_meta
 
 
 def _evaluate_pair(
     *,
     model: ECPStage0Model,
     policy: torch.nn.Module,
+    action_meta_lora: MetaLoRAStack | None,
     store: RawTeacherVideoStore,
     task: ObserverPanelTask,
     pair_ordinal: int,
@@ -217,6 +243,7 @@ def _evaluate_pair(
             frames=frames,
             video_offsets=offsets,
             frame_condition_ids=frame_condition_ids,
+            action_meta_lora=action_meta_lora,
             **common,
         )
         anti_process, anti_presence, _, _, _, _, _, anti_summary = model.encoder(
@@ -226,6 +253,7 @@ def _evaluate_pair(
             ),
             frame_condition_ids=frame_condition_ids[: counts[0]],
             suffix_noise=-model.encoder.fixed_suffix_noise,
+            action_meta_lora=action_meta_lora,
             **common,
         )
     row = {
@@ -269,10 +297,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
     config = load_stage0_config(args.config)
     panel = config["observer_panel"]
     tasks = _panel_tasks(config, args.data_root)
-    policy, model = _load_model(
+    policy, model, action_meta = _load_model(
         config=config,
         checkpoint=args.checkpoint,
         source_checkpoint=args.source_checkpoint,
+        action_meta_checkpoint=args.action_meta_checkpoint,
         device=device,
     )
     source_config = load_config(REPO_ROOT / config["authorities"]["source_base_config"])
@@ -299,6 +328,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
                 row, canonical = _evaluate_pair(
                     model=model,
                     policy=policy,
+                    action_meta_lora=action_meta,
                     store=store,
                     task=task,
                     pair_ordinal=pair_ordinal,
@@ -336,6 +366,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
         "git": git_state(REPO_ROOT),
         "checkpoint": str(args.checkpoint),
         "checkpoint_macro": checkpoint_macro(args.checkpoint),
+        "action_meta_checkpoint": (
+            str(args.action_meta_checkpoint)
+            if args.action_meta_checkpoint is not None
+            else None
+        ),
         "source_checkpoint": str(args.source_checkpoint),
         "conditions": [
             "canonical correct video",
@@ -367,6 +402,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--source-checkpoint", type=Path, required=True)
+    parser.add_argument("--action-meta-checkpoint", type=Path)
     parser.add_argument("--tokenizer-path", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -379,6 +415,7 @@ def main() -> None:
         "config",
         "checkpoint",
         "source_checkpoint",
+        "action_meta_checkpoint",
         "tokenizer_path",
         "data_root",
         "output",

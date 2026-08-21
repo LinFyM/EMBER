@@ -100,6 +100,43 @@
     ],
     "forbidden_conditions": ["shuffled", "reversed", "wrong video"]
   },
+  "action_meta_lora": {
+    "status": "mandatory_independent_matched_arm",
+    "rank": 4,
+    "targets": ["18 Action Expert layers x q_proj/k_proj/v_proj/o_proj"],
+    "scope": "observer-only frozen calibration; never a rollout adapter",
+    "native_checkpoint_macro": 10,
+    "max_frames_per_call": 4,
+    "optimization": {
+      "seed": 20260824,
+      "precision": "bfloat16",
+      "optimizer": {
+        "name": "AdamW",
+        "betas": [0.9, 0.95],
+        "eps": 1e-8,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1.0
+      },
+      "scheduler": {
+        "kind": "linear_warmup_cosine_decay",
+        "peak_lr": 0.0001,
+        "warmup_macros": 1,
+        "decay_lr": 0.000001
+      }
+    },
+    "profile_defaults": {
+      "total_macros": 10,
+      "stop_after_macro": 1,
+      "checkpoint_macros": [1],
+      "allowed_world_sizes": [1]
+    },
+    "formal_run": {
+      "total_macros": 10,
+      "checkpoint_macros": [5, 10],
+      "stage_stop_macros": [5, 10],
+      "allowed_world_sizes": [6]
+    }
+  },
   "formal_run": {
     "total_macros": 60,
     "checkpoint_macros": [10, 20, 40, 60],

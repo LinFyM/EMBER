@@ -14,6 +14,7 @@ from ember.ecp.stage0 import ECPStage0Model
 from ember.ecp.stage0_data import ECPStage0Schedule, ECPStage0Task
 from ember.ecp.stage0_objective import ecp_stage0_loss
 from ember.pi05_lora import load_pi05_lora_contract
+from ember.writer.meta_lora import MetaLoRAStack
 
 
 def _owners():
@@ -25,11 +26,26 @@ class _FakeExpertLayer(torch.nn.Module):
     def __init__(self, width: int) -> None:
         super().__init__()
         self.input_layernorm = torch.nn.LayerNorm(width)
-        self.self_attn = SimpleNamespace(q_proj=torch.nn.Linear(width, width, bias=False))
+        self.self_attn = SimpleNamespace(
+            q_proj=torch.nn.Linear(width, width, bias=False),
+            k_proj=torch.nn.Linear(width, width, bias=False),
+            v_proj=torch.nn.Linear(width, width, bias=False),
+            o_proj=torch.nn.Linear(width, width, bias=False),
+        )
         self.update = torch.nn.Linear(width, width, bias=False)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
-        return value + 0.05 * self.update(self.input_layernorm(value))
+        normalized = self.input_layernorm(value)
+        attention = (
+            self.self_attn.q_proj(normalized)
+            + self.self_attn.k_proj(normalized)
+            + self.self_attn.v_proj(normalized)
+        ) / 3.0
+        return (
+            value
+            + 0.05 * self.update(normalized)
+            + 0.01 * self.self_attn.o_proj(attention)
+        )
 
 
 class _FakeExpert(torch.nn.Module):
@@ -190,6 +206,43 @@ def test_segmenter_zero_variance_uncertainty_has_finite_gradient() -> None:
     program.uncertainty.square().mean().backward()
 
     assert torch.isfinite(evidence.grad).all()
+
+
+def test_action_meta_lora_is_the_only_trainable_native_observer_path() -> None:
+    torch.manual_seed(10)
+    core = _FakeCore(width=16).requires_grad_(False)
+    policy = SimpleNamespace(model=core)
+    model = ECPStage0Model(
+        _owners(),
+        prefix_width=16,
+        expert_width=16,
+        program_width=12,
+        event_slots=4,
+        action_phases=5,
+        max_frames_per_call=2,
+    ).requires_grad_(False)
+    meta = MetaLoRAStack(
+        core.paligemma_with_expert.gemma_expert.model.layers, rank=1
+    )
+    frames = torch.randint(0, 256, (3, 3, 16, 16), dtype=torch.uint8)
+    output = model(
+        policy=policy,
+        frames=frames,
+        video_offsets=torch.tensor([0, 3]),
+        frame_condition_ids=torch.zeros(3, dtype=torch.long),
+        language_tokens=torch.randint(0, 64, (1, 6)),
+        language_mask=torch.ones(1, 6, dtype=torch.bool),
+        action_meta_lora=meta,
+    )
+
+    output.process.square().mean().backward()
+
+    assert any(
+        parameter.grad is not None and torch.count_nonzero(parameter.grad)
+        for parameter in meta.parameters()
+    )
+    assert all(parameter.grad is None for parameter in core.parameters())
+    assert all(parameter.grad is None for parameter in model.parameters())
 
 
 def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> None:

@@ -1,6 +1,6 @@
 # EMBER Progress
 
-更新时间：2026-08-21。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
+更新时间：2026-08-22。本文只记录当前可执行状态；稳定目标见`docs/current_owner_requirements.md`，耐久结论见
 `findings.md`，完整历史见`docs/research_history.md`。
 
 ## Current authority and executable state
@@ -16,8 +16,8 @@
   使用全部授权train data训练，validation8只以language+action-hidden videos作development evaluation。
 - 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
-  通过视频必要性门后structured outer credit。Phase 0文档与ownership门已完成；当前进入Phase 1 Stage 0 observer实现，尚未
-  启动新formal训练或held评测。
+  通过视频必要性门后structured outer credit。Phase 0文档与ownership门已完成；Phase 1首版native formal及固定面板已经
+  得到Gate 1负裁决，当前只修正最早失效的event occupancy/action-identification接口，尚未进入compiler或held closed loop。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦
@@ -52,10 +52,32 @@
   `0 * inf = NaN`；固定`1e-4` variance floor后同一zero-variance复现从3648个NaN gradient变为全部finite，11项聚焦回归
   全部通过。失败输出只有run contract/invocation/log，登记后清理；正式段从包含该窄修复的下一clean pushed commit按原合同fresh
   重启，不复用失败状态。
-- 固定observer panel运行面已经实现但尚未产生科学结果：覆盖全部train24的fit19与held5、每task两个预注册demo pairs，
+- 固定observer panel运行面覆盖全部train24的fit19与held5、每task两个预注册demo pairs，
   对每个pair比较canonical correct video、同视频保序2x速度、same-task other video和同视频antithetic Gaussian probe；同时报告
   event/summary cosine、presence差异及same-task相对mean/nearest cross-task margin。该面板不读取action/reward，也不构造
-  shuffled、reversed或wrong-video条件；它将在macro10 checkpoint固定后运行。
+  shuffled、reversed或wrong-video条件。首版macro10已完成48-row固定面板并产生下述Gate 1裁决。
+- Stage 0A首版正式段在修复zero-variance工程问题后，从clean pushed `f6389af`以同一world-size6合同fresh完成10 macros、
+  900个task-equal visits；全部loss、gradient与checkpoint finite，训练段417.55秒、单卡峰值11,664,018,432 bytes。
+  total/action-alignment由`.587576/.144328`降到`.447487/.065853`，但cross-task contrast由`1.721745`恶化到
+  `1.759694`，posterior entropy由`1.464783`坍缩到`.241540`。macro10 mean presence为`.348687`，90-task标准差仅
+  `.001770`、范围`.345384--.355119`，source71与fit19均值又几乎相同（`.348722/.348560`），说明动态slot数量没有随
+  task/video形成，而是共享了一个全局presence尺度。
+- 同一固定macro10的observer panel进一步确认科学不通过：same-task other-video summary cosine虽为`.999985`，但mean/
+  nearest cross-task cosine也高达`.996493/.999125`；fit19的nearest margin仅`.000927`，held5仅`.000604`。antithetic
+  probe summary/event cosine仍为`.998766/.998409`。因此首版只证明图和监督可优化，没有识别task-conditioned event
+  Program；不续训、不扫LR/rank/seed，也不把坍缩observer交给compiler或Action Meta正式arm。remote-safe裁决见
+  `docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。
+- 最早失效接口已定位为一组耦合退化：learned `minimum_duration`只作为所有任务共享的presence分母，正sparsity项可通过
+  全局放大该尺度降loss；event-mean action regression又允许把全视频帧压进少数slot而不承担逐帧动作差异。下一fresh版本
+  只修正这组因果接口：presence由固定、速度归一的occupancy fraction定义；每帧action target由其soft event posterior重构。
+  它不规定视频段落对应哪个slot，不加入shuffled/reversed训练，也不改变38-owner、50-horizon或动态E目标。
+- 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
+  只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
+  不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation
+  checkpoint并让adapter hooks覆盖recompute/backward；这只是运行面修正。由于native v1已坍缩，Action Meta正式科学训练
+  仍明确withhold，待修正native通过同一固定panel后再作matched对照。修正后单卡真实83/42-frame profile已成功：只训练
+  626,688个rank4 adapter参数，macro耗时13.50秒、峰值15,009,683,456 bytes、gradient norm `.00011523`且checkpoint
+  finite；因此Action Meta运行门已解除，临时profile产物在记录本结果后删除，不当作科学证据保留。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

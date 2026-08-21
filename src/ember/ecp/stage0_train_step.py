@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -64,32 +65,43 @@ def run_stage0_macro(
             device=runtime.context.device,
         )
         language_tokens, language_mask = runtime.language_tokens[task_id]
-        with torch.autocast("cuda", dtype=torch.bfloat16):
-            output = runtime.model(
-                policy=runtime.policy,
-                frames=pair.frames,
-                video_offsets=pair.video_offsets,
-                frame_condition_ids=pair.frame_condition_ids,
-                language_tokens=language_tokens,
-                language_mask=language_mask,
+        adapter_context = nullcontext()
+        if runtime.action_meta_lora is not None:
+            expert = (
+                runtime.policy.model.paligemma_with_expert.gemma_expert.model
             )
-            negatives = _cross_rank_negatives(
-                output.program_summary,
-                runtime.context.rank,
-                runtime.context.world_size,
-            )
-            loss = ecp_stage0_loss(
-                output,
-                pair.frame_action_targets,
-                weights=runtime.config["objective"]["weights"],
-                negative_summaries=negatives,
-                contrastive_temperature=float(
-                    runtime.config["objective"]["contrastive_temperature"]
-                ),
-            )
-        if not bool(torch.isfinite(loss.total)):
-            raise RuntimeError(f"non-finite ECP Stage 0 loss at macro {macro}")
-        (loss.total / global_task_count).backward()
+            adapter_context = runtime.action_meta_lora.installed(expert)
+        # Keep the hooks installed through backward: PI0.5 recomputes checkpointed
+        # Action Expert layers during the adapter-only calibration arm.
+        with adapter_context:
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                output = runtime.model(
+                    policy=runtime.policy,
+                    frames=pair.frames,
+                    video_offsets=pair.video_offsets,
+                    frame_condition_ids=pair.frame_condition_ids,
+                    language_tokens=language_tokens,
+                    language_mask=language_mask,
+                    action_meta_lora=runtime.action_meta_lora,
+                    install_action_meta_lora=False,
+                )
+                negatives = _cross_rank_negatives(
+                    output.program_summary,
+                    runtime.context.rank,
+                    runtime.context.world_size,
+                )
+                loss = ecp_stage0_loss(
+                    output,
+                    pair.frame_action_targets,
+                    weights=runtime.config["objective"]["weights"],
+                    negative_summaries=negatives,
+                    contrastive_temperature=float(
+                        runtime.config["objective"]["contrastive_temperature"]
+                    ),
+                )
+            if not bool(torch.isfinite(loss.total)):
+                raise RuntimeError(f"non-finite ECP Stage 0 loss at macro {macro}")
+            (loss.total / global_task_count).backward()
         task = runtime.task_by_id[task_id]
         records.append(
             {
@@ -110,8 +122,8 @@ def run_stage0_macro(
                 **pair.metrics,
             }
         )
-    if any(parameter.grad is not None for parameter in runtime.policy.parameters()):
-        raise RuntimeError("frozen PI0.5 accumulated ECP Stage 0 gradients")
+    if any(parameter.grad is not None for parameter in runtime.frozen_parameters):
+        raise RuntimeError("frozen ECP Stage 0 parameters accumulated gradients")
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
     clip = float(
         runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]

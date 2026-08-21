@@ -1,0 +1,111 @@
+{
+  "schema_version": "ember_ecp_stage1_policy_support_geometry_v1",
+  "date": "2026-08-22",
+  "repository_commit": "85477ea58e3b3f01a8fa4f6d7b42867c5300ff61",
+  "stage": "stage1_policy_support_v6",
+  "policy_support_bank": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v1_20260822",
+    "task_count": 24,
+    "fit_task_count": 19,
+    "held_transform_only_task_count": 5,
+    "task_payload_bytes": 81478792,
+    "successful_panels": 188,
+    "learner_panels": 120,
+    "learner_success_panels": 48,
+    "learner_failure_panels": 72,
+    "support_channels": [
+      "successful_expert_minus_source",
+      "successful_shared_minus_source",
+      "learner_expert_minus_source",
+      "learner_policy_minus_source",
+      "learner_shared_minus_source"
+    ],
+    "channel_rms": [
+      0.3540167212486267,
+      0.30507901310920715,
+      0.26549845933914185,
+      0.3246995508670807,
+      0.24535295367240906
+    ],
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "two_visit_profile": {
+    "mode": "profile_only_not_model_selection",
+    "gpu01_physical_device": 1,
+    "successful_panel": {
+      "total": 1.0339219570159912,
+      "functional_response": 0.6807493567466736,
+      "gradient_norm_before_clip": 39.89609909057617,
+      "update_seconds": 2.2343423749989597
+    },
+    "learner_panel": {
+      "total": 1.0023016929626465,
+      "functional_response": 0.903578519821167,
+      "gradient_norm_before_clip": 24.47882843017578,
+      "update_seconds": 2.0424294249969535
+    },
+    "maximum_cuda_allocated_bytes": 16401996288,
+    "all_gradients_finite": true,
+    "temporary_profile_removed_after_capture": true
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_policy_support_fold0_tv228_r6_85477ea_gpu01p123456_20260822",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "world_size": 6,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false,
+    "exit_code": 0,
+    "elapsed_seconds": 115.68191761799972,
+    "maximum_cuda_allocated_bytes": 16626005504,
+    "maximum_gradient_norm_before_clip": 344.6419677734375,
+    "successful_panel_records": 115,
+    "learner_panel_records": 113,
+    "checkpoint_complete": true,
+    "first_five_update_mean": {
+      "total": 0.9290254294872284,
+      "functional_response": 0.64456121524175,
+      "member_effective_update": 1.1567708333333333,
+      "member_canonical_factor": 1.241491440931956,
+      "q_pi_gate_mean": 0.3504557291666667
+    },
+    "last_five_update_mean": {
+      "total": 0.8525087902943295,
+      "functional_response": 0.5028895979126294,
+      "member_effective_update": 1.9018229166666667,
+      "member_canonical_factor": 1.9744281411170959,
+      "q_pi_gate_mean": 0.18160807291666667
+    }
+  },
+  "materialization": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_policy_support_projection_tv228_85477ea_gpu01p1_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.8524163365364075,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.016183195635676384,
+    "mean_nearest_other_direct_cosine": 0.028161142021417618,
+    "own_retrieval_count": 2,
+    "mean_candidate_to_direct_norm_ratio": 0.6446515321731567,
+    "candidate_effective_rank_participation_mean": 1.3871166706085205,
+    "candidate_top1_energy_fraction_mean": 0.8494402170181274,
+    "direct_effective_rank_participation_mean": 1.2615886926651,
+    "direct_top1_energy_fraction_mean": 0.9127228856086731,
+    "geometry_gate_passed": false,
+    "held5_closed_loop_rows": 0
+  },
+  "interpretation": {
+    "established": "The complete policy-support path is operational and no longer produces a near-zero adapter: the effective norm ratio rose from v5 0.0864 to 0.6447, all five response channels were nonzero, both successful and learner panels trained, and moving-panel functional response fell from 0.6446 to 0.5029.",
+    "earliest_interface": "The larger update is not task-aligned. Mean own-direct cosine fell to 0.0162, remained below nearest-other 0.0282, and only 2 of 24 tasks retrieved their own direct policy. Functional fitting on rotating local panels therefore has not yet identified the complete task policy direction.",
+    "claim_boundary": "This rejects v6 as a held5-ready checkpoint and rejects extending the same 228-visit curve or tuning rank, seed, dtype, learning rate or loss weights. It does not reject multi-policy support: a frozen all-panel support audit is still required to distinguish genuine functional equivalence from rotating-panel response shortcuts before adding the already-planned fit-task success and progress objective."
+  },
+  "decision": {
+    "verdict": "fail_pre_rollout_geometry",
+    "continue_same_curve": false,
+    "run_held5_closed_loop": false,
+    "start_q_v": false,
+    "next": "Evaluate the single frozen checkpoint on the complete successful and learner policy-support panel bank. If it improves over source and transfers to held-transform-only tasks, add task-equal fit-task simulator success and progress as the next major causal variable; otherwise repair the policy-support teacher at the earliest failed interface."
+  }
+}

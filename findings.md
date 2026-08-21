@@ -1021,3 +1021,21 @@ source/shared support、完整多状态policy response或task-equal success/prog
 首步用successful、经过agreement/outcome加权的learner、source与shared多策略response约束同一个Program/compiler，随后接入
 fit simulator reward/progress。rank继续只是无技能语义的numeric factor coordinate，不增加到Program语义轴。证据见
 `docs/evidence/ecp_20260822/stage1_query_content_bootstrap_fold0_geometry.json`。
+
+## 48. 多策略support恢复了update幅度，但moving-panel响应拟合仍没有识别task policy方向
+
+Stage 1 v6从clean pushed `85477ea`构建24-task policy-support bank：188个successful panels、120个learner panels，五个
+source-subtracted response通道RMS均非零。fresh 228 visits/38 updates在115/113条successful/learner records上训练；前5到
+后5 updates的functional response由`.64456`降到`.50289`。24-task物化的candidate/direct norm ratio由v5 `.08643`提高到
+`.64465`，candidate effective participation rank/top1也达到`1.3871/.8494`，因此v6明确排除了“policy-support仍只能写近零、
+近rank1 update”这一窄解释。
+
+恢复的幅度仍未对准本任务完整policy：member exact-BA由`1.15677`恶化到`1.90182`，mean own-direct cosine只有`.01618`，低于
+nearest-other `.02816`，自身检索仅`2/24`。candidate跨task cosine`.85242`说明它不是简单全局坍缩；更准确的边界是同一shared
+compiler可以在轮换的局部successful/learner states下降response loss，却尚未证明冻结single LoRA在完整panel集合上保留同一
+task的功能等价类。预注册几何门因此失败，held5 rows为0，不续训或扫rank/LR/seed/loss权重。
+
+下一最早诊断是对冻结checkpoint遍历完整support bank，分别比较fit19/held5 candidate与source/shared的normalized response。
+若冻结support成立，则direct参数cosine只是多策略等价类下的定位指标，下一major variable按专家合同加入fit-task task-equal
+success/progress；若冻结support不成立，则v6淘汰的是当前policy-support teacher/轮换panel识别方式，先修该接口。证据见
+`docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。

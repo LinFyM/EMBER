@@ -137,8 +137,12 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   success/一致性加权的learner occupancy、source/shared support、多成员集合一致性与fit-task reward/progress共同进入Stage 1；
 - [x] 完成v6 retained implementation：full-layer response bank、五通道q_pi support attention、successful/learner交替functional
   loss与source/shared局部support；删除v5 active config和successful-only panel owner，聚焦CPU合同通过；
-- [ ] 从clean pushed authority并行生成一次可复用的train24 policy-support bank，并完成单task真实capture/profile；
-- [ ] 从fresh policy-support authority运行短程信息量节点；先做物化几何与多状态functional support，再按门运行held5 Gate 2；
+- [x] 从clean pushed authority并行生成一次可复用的train24 policy-support bank，并完成successful/learner双分支真实
+  capture/profile；
+- [x] 从fresh policy-support authority完成228-visits短程信息量节点与24-task物化；输出幅度恢复但task方向门失败，按门不运行
+  held5、不延长同曲线；
+- [ ] 对冻结single checkpoint运行完整successful/learner panel support audit，区分真实functional equivalence与旋转panel捷径；
+- [ ] 若冻结support相对source成立且迁移held-transform-only tasks，在fit simulator加入task-equal success/progress后fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -191,13 +195,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v5正式结果固定因果判断：乘性query-content readout让own-direct与检索有限回升，但所有几何门仍失败且输出幅度进一步
-   接近零；不继续沿同一228-visits曲线，也不再做局部query、loss权重或rank微调；
-2. v6 retained code已按上述合同完成；先从clean pushed authority并行生成一次可复用support bank并做真实capture/profile，确认
-   19层×50 token路径、五通道权重、显存与吞吐，再启动fresh 228-visits节点；不重新采集已有successful/learner trajectories；
-3. functional support从首个update进入，同时保留低权重坐标锚；首个checkpoint通过多状态support与几何门后，在fit task
-   simulator加入task-equal success/progress。
-   rank仍只是numeric factor coordinate，不给Program增加rank技能语义；若19个映射仍限制泛化，再接入经审计且排除
-   validation/Test的LIBERO-90 meta-task expert family并轮换固定fold；
+1. v6的78 MiB support bank、双分支profile、228-visits formal和24-task物化均已完成；functional response下降且输出norm恢复到
+   direct的`.645`，但own-direct仅`.0162`、自身检索`2/24`，因此不续训、不跑held5、不做局部query/loss/rank小扫；
+2. 下一步在同一冻结checkpoint上遍历完整successful/learner panel bank，分别报告fit19/held5相对source/shared的functional
+   retention。该audit只定位“真实policy等价”还是“训练panel捷径”，不选模型；
+3. 若冻结support成立，下一fresh major variable是专家已要求的fit-task task-equal success/progress；若冻结support不成立，则先
+   修正policy-support teacher的最早失效接口。rank仍只是numeric factor coordinate；之后若19个映射限制泛化，再接入经审计且
+   排除validation/Test的LIBERO-90 meta-task expert family并轮换固定fold；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

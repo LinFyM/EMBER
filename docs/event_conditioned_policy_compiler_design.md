@@ -500,6 +500,12 @@ generating learner-source、learner-state shared-source。`q_pi`对channel×DCT 
 不存在deployment carrier、第二adapter或task-ID route。已有30条learner occupancy与successful panel会直接复用，不重跑此前的
 长时轨迹采集；先跑一个短而有信息量的fresh checkpoint，再依据多状态functional support和预注册几何门决定是否进入held5。
 
+v6从clean pushed `85477ea`完成该短节点。五通道bank覆盖24 tasks、188个successful panels和120个learner panels；228 visits中
+moving-panel functional response由前5步`.64456`降到末5步`.50289`，candidate/direct norm ratio由v5 `.08643`恢复到
+`.64465`。但own-direct仍只有`.01618`、低于nearest-other `.02816`，自身检索`2/24`，所以预注册几何门失败且held5不运行。
+这不是继续延长或调loss权重的理由：下一步在冻结single checkpoint上遍历完整panel bank，判断它是真正的多策略functional
+equivalence还是轮换panel捷径；前者进入已规划的fit-task task-equal success/progress，后者修正support teacher最早接口。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

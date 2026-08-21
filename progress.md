@@ -132,8 +132,19 @@
   channel/basis地址只进入attention key，Value来自response content。训练从首update交替successful/learner panels，candidate
   一次forward同时承担multi-member response、source/shared local support和低权重BA/canonical/locality；failed learner按
   member agreement与`.25` outcome base连续降权。旧v5 checkpoint与证据仍由Git/formal artifacts保存，不能resume到v6。
-  35项聚焦CPU合同通过；实际30条learner asset loader确认19 fit tasks、30 trajectories、12 successes、held use为0。下一步从
-  clean pushed authority并行构建约百MB的固定support bank，然后只做一个真实bank/profile门，不重复轨迹rollout。
+  35项聚焦CPU合同通过；实际30条learner asset loader确认19 fit tasks、30 trajectories、12 successes、held use为0。
+- clean pushed `85477ea`已在gpu01 physical `1--6`并行构建78 MiB固定support bank：24 tasks、188 successful panels、
+  120 learner panels，五通道RMS均非零；Prohibited physical0未使用。随后physical1双visit profile分别走通successful与learner，
+  每步约`2.23/2.04s`、峰值16,401,996,288 bytes、梯度finite，临时profile已在证据固化后删除。
+- 同commit的fresh formal完成228 visits/38 updates，115/113条successful/learner records，耗时115.68秒、六卡峰值
+  16,626,005,504 bytes。moving-panel functional response从前5步`.64456`降到末5步`.50289`，candidate/direct norm ratio从
+  v5 `.08643`恢复到`.64465`，说明policy-support确实写出了material update；但member exact-BA由`1.15677`恶化到`1.90182`。
+  24-task物化own/nearest-other cosine为`.01618/.02816`、自身检索`2/24`，虽candidate pair cosine`.85242`且effective rank
+  `1.3871`，仍未对准本任务完整policy方向。预注册几何门失败，held5 rows为0、`q_V`未启动，同曲线不续训。
+- 当前最早判别是冻结checkpoint的**完整panel functional support**，不能只用moving training loss或direct参数cosine替代：下一步
+  遍历successful/learner bank并分fit19/held5与source/shared报告。若冻结support成立，接入专家已要求的fit-task task-equal
+  success/progress；若不成立，回到policy-support teacher最早接口。证据为
+  `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

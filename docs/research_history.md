@@ -792,6 +792,22 @@ functional panels/updates均为0，Prohibited physical0未用。member exact-BA�
 multiple-member consistency与fit reward/progress共同约束Program到单套LoRA的行为。rank仍没有技能语义。证据：
 `docs/evidence/ecp_20260822/stage1_query_content_bootstrap_fold0_geometry.json`。
 
+### 3.39 Stage 1 policy-support v6恢复输出幅度但未通过task方向门
+
+clean pushed `85477ea`先在gpu01 physical `1--6`并行构建78 MiB固定bank，覆盖24 tasks、188个successful panels与
+120个learner panels；五个successful/learner/source/shared response通道均非零。双visit真实profile走通两类panel，随后同一
+authority完成fresh 228 visits/38 updates，耗时115.68秒、峰值16,626,005,504 bytes，Prohibited physical0未使用。
+
+moving-panel functional response前5到后5 update均值由`.64456`降到`.50289`，24-task candidate/direct norm ratio由v5
+`.08643`提高到`.64465`，表明multi-policy support不再只生成近零update。但member exact-BA由`1.15677`恶化到`1.90182`；
+materialization的own/nearest-other cosine仅`.01618/.02816`，自身检索`2/24`。candidate pair cosine为`.85242`，所以失败不是
+全局同一输出，而是局部response拟合没有建立本任务完整policy方向。预注册几何门失败，held5 closed-loop rows为0，`q_V`
+未启动。
+
+本轮不延长、不做小超参扫。下一步先在冻结single checkpoint上完成全panel support audit；它若证明fit与held都相对source
+保留功能，下一major variable加入fit-task task-equal success/progress，否则先修policy-support teacher。证据：
+`docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

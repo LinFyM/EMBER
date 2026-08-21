@@ -67,7 +67,7 @@
     },
     "evaluation": {
       "formal_status": "outer_credit_preselection",
-      "throughput_policy": "reuse_measured_functional_writer_batch_profile_then_live_smoke",
+      "throughput_policy": "highest_measured_batch_throughput_with_device_memory_headroom",
       "minimum_smoke_writer_model_batch_size": 1,
       "online_smoke_evidence": null
     }

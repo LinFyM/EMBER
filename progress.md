@@ -106,6 +106,13 @@
   峰值11,506,725,376 bytes，frame/event action loss为`.253187/.252328`，grad norm`1.706204`且finite，初始active events`3.5`、
   presence sum`4.430230`。相对v2同shape profile没有显存或吞吐回退，已具备fresh formal macro10的机械条件；profile临时产物
   不作为科学证据并在提交前删除。
+- Stage 0 v3首段formal合同固定为：从包含本记录的clean pushed `main`创建detached frozen worktree，在gpu01只使用physical
+  `1,2,3,4,5,7`做world-size6，明确排除Prohibited physical0；fresh训练10 macros/900 task-equal visits，不读取v1/v2 observer
+  checkpoint，复用source step1000、71+fit19 audited tasks、tokenizer、correct-only cross-episode pair与v3静态objective。输出唯一为
+  `runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/`，预计新增低于100 MB；macro10立即运行同一48-row
+  correct/speed/same-task-other/antithetic panel。launch前两节点live预检确认所选6张A40均0% util、14 MiB占用；`/data1` user
+  usage为654,627,428 KiB、quota 1,073,741,824 KiB、limit 1,084,227,584 KiB，共享filesystem仍有84 TiB，空间充分。只允许
+  同commit、world-size6、v3 run schema exact-resume；shuffled/reversed/wrong仍不进入训练、选点或本阶段panel。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

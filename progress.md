@@ -126,6 +126,14 @@
   将既有successful panels、30条projected learner trajectories及source/shared在相同状态面的response组成policy-support
   teacher；失败learner states按member agreement/outcome降权，并在warm-start后接fit simulator reward/progress。rank仍不获得
   技能语义，Program继续只有event/layer/family结构。
+- active v6 policy-support代码面已经替换v5单路径：删除v5 active config与successful-only `stage1_panels.py`，新增一次性
+  full-layer response bank builder、运行时support loader和一个v6 config/schema。每个occupancy state在paired RNG下捕获19层×
+  50 Action tokens，经永久冻结owner projector和DCT4形成五类successful/learner/source/shared response channels；q_pi的
+  channel/basis地址只进入attention key，Value来自response content。训练从首update交替successful/learner panels，candidate
+  一次forward同时承担multi-member response、source/shared local support和低权重BA/canonical/locality；failed learner按
+  member agreement与`.25` outcome base连续降权。旧v5 checkpoint与证据仍由Git/formal artifacts保存，不能resume到v6。
+  35项聚焦CPU合同通过；实际30条learner asset loader确认19 fit tasks、30 trajectories、12 successes、held use为0。下一步从
+  clean pushed authority并行构建约百MB的固定support bank，然后只做一个真实bank/profile门，不重复轨迹rollout。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

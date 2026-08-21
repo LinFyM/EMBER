@@ -41,6 +41,8 @@ class ECPStage1Model(torch.nn.Module):
         compiler_width: int = 256,
         event_slots: int = 8,
         phase_width: int = 32,
+        support_channels: int = 5,
+        support_horizon_basis: int = 4,
         factor_head_init: Mapping[str, Mapping[str, float]] | None = None,
     ) -> None:
         super().__init__()
@@ -53,6 +55,8 @@ class ECPStage1Model(torch.nn.Module):
             width=program_width,
             phase_width=phase_width,
             event_slots=event_slots,
+            support_channels=support_channels,
+            support_horizon_basis=support_horizon_basis,
         )
         self.compiler = TargetFamilyCompiler(
             owners,

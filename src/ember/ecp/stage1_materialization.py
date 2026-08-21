@@ -23,6 +23,7 @@ from ember.ecp.stage1_objective import (
     effective_update_cosine_matrix,
     exact_effective_update_loss,
 )
+from ember.ecp.stage1_support import load_policy_support_bank
 from ember.ecp.stage1_training import (
     REPO_ROOT,
     RUN_SCHEMA,
@@ -38,8 +39,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v5"
-PROJECTION_KIND = "ecp_stage1_privileged_query_content_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_policy_support_projection_v6"
+PROJECTION_KIND = "ecp_stage1_privileged_policy_support_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -110,6 +111,7 @@ def _materialize_task(
     config: Mapping[str, Any],
     authorities: Any,
     evidence_bank: Any,
+    support_bank: Any,
     video_store: Any,
     language_tokens: Mapping[int, tuple[torch.Tensor, torch.Tensor]],
     output_dir: Path,
@@ -134,7 +136,9 @@ def _materialize_task(
                 language_tokens=tokens,
                 language_mask=mask,
             )
-            evidence = evidence_bank.evidence(task.ordinal)
+            evidence = evidence_bank.evidence(
+                task.ordinal, support_bank.task(task.ordinal)
+            )
             output = authorities.model(
                 encoded, evidence, packed.video_group_ids
             )
@@ -177,6 +181,9 @@ def _materialize_task(
         "q_pi_evidence_gate_mean": float(output.teacher.evidence_gate.mean()),
         "q_pi_evidence_gate_min": float(output.teacher.evidence_gate.min()),
         "q_pi_evidence_gate_max": float(output.teacher.evidence_gate.max()),
+        "support_attention_entropy": float(
+            output.teacher.support_attention_entropy.mean()
+        ),
     }
     return row, {name: value.detach() for name, value in candidate.items()}, diagnostics
 
@@ -306,6 +313,7 @@ def _projection_manifest(
     task_visits: int,
     checkpoint_asset: Mapping[str, Any],
     base_manifest: Path,
+    support_manifest: Path,
     rank: int,
     rows: list[dict[str, Any]],
     cross_task_geometry: Mapping[str, Any],
@@ -321,6 +329,7 @@ def _projection_manifest(
         "stage1_checkpoint": checkpoint_asset["weights"],
         "stage1_checkpoint_authority": dict(checkpoint_asset),
         "base_projection_manifest": _file(base_manifest),
+        "policy_support_bank": _file(support_manifest),
         "expert_bank_root": str(args.expert_bank_root.resolve()),
         "expert_step": int(args.expert_step),
         "optimization": {
@@ -337,22 +346,8 @@ def _projection_manifest(
             "parameterization": "prior-only exact template; full-process absolute factors",
             "content_address_separated": True,
             "query_content_modulated": True,
-            "functional_start_task_visits": int(
-                config["objective"]["functional_start_task_visits"]
-            ),
-            "coordinate_bootstrap_end_task_visits": int(
-                config["objective"]["coordinate_bootstrap"]["end_task_visits"]
-            ),
-            "objective_phase": (
-                "coordinate_bootstrap"
-                if task_visits
-                <= int(
-                    config["objective"]["coordinate_bootstrap"][
-                        "end_task_visits"
-                    ]
-                )
-                else "policy_functional"
-            ),
+            "policy_support_teacher": True,
+            "objective_phase": "policy_support",
         },
         "information_wall": {
             "role": "development_train_oracle_only",
@@ -418,6 +413,15 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         contract=authorities.contract,
         device=context.device,
     )
+    support_manifest = stage1_asset_authority(
+        config, "policy_support_bank", args.asset_root
+    )
+    support = load_policy_support_bank(
+        manifest_path=support_manifest,
+        evidence_bank=evidence,
+        task_ordinals=set(range(24)),
+        device=context.device,
+    )
     base_manifest = stage1_asset_authority(
         config, "base_projection_manifest", args.asset_root
     )
@@ -451,6 +455,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
                 config=config,
                 authorities=authorities,
                 evidence_bank=evidence,
+                support_bank=support,
                 video_store=store,
                 language_tokens=languages,
                 output_dir=args.output_dir,
@@ -491,6 +496,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
         task_visits=task_visits,
         checkpoint_asset=checkpoint_asset,
         base_manifest=base_manifest,
+        support_manifest=support_manifest,
         rank=int(authorities.contract.rank),
         rows=rows,
         cross_task_geometry=geometry,
@@ -505,7 +511,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_compiler_v5.json",
+        / "configs/pi05_ecp_stage1_policy_support_v6.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

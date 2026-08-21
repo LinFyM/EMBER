@@ -32,7 +32,12 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_lora_state,
     tokenize_stage1_languages,
 )
-from ember.ecp.stage1_panels import ECPStage1FunctionalPanel, cache_stage1_functional_panels
+from ember.ecp.stage1_support import (
+    CachedPolicySupportPanel,
+    PolicySupportBank,
+    cache_policy_support_panels,
+    load_policy_support_bank,
+)
 from ember.ecp.stage1_train_step import run_stage1_update
 from ember.lora import LoRAContract, validate_lora_state
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
@@ -51,8 +56,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_privileged_compiler_run_v5"
-STAGE = "stage1_privileged_compiler_v5"
+RUN_SCHEMA = "ember_ecp_stage1_policy_support_run_v6"
+STAGE = "stage1_policy_support_v6"
 
 
 @dataclass
@@ -66,8 +71,8 @@ class ECPStage1Runtime:
     video_store: RawTeacherVideoStore
     language_tokens: dict[int, tuple[torch.Tensor, torch.Tensor]]
     evidence_bank: ECPStage1EvidenceBank
-    functional_panels: dict[int, tuple[ECPStage1FunctionalPanel, ...]]
-    functional_start_task_visits: int
+    support_bank: PolicySupportBank
+    support_panels: dict[tuple[int, int], CachedPolicySupportPanel]
     policy: torch.nn.Module
     observer: FrozenObserverAuthority
     contract: LoRAContract
@@ -123,19 +128,20 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_privileged_compiler_v5"
-        or config.get("status") != "active_stage1_query_content_bootstrap"
+        != "ember_ecp_stage1_policy_support_v6"
+        or config.get("status") != "active_stage1_policy_support"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
-        or int(config.get("objective", {}).get("functional_start_task_visits", -1))
-        != 228
-        or int(
-            config.get("objective", {})
-            .get("coordinate_bootstrap", {})
-            .get("end_task_visits", -1)
+        or tuple(config.get("policy_support", {}).get("channels", ()))
+        != (
+            "successful_expert_minus_source",
+            "successful_shared_minus_source",
+            "learner_expert_minus_source",
+            "learner_policy_minus_source",
+            "learner_shared_minus_source",
         )
-        != 228
+        or int(config.get("policy_support", {}).get("horizon_basis", -1)) != 4
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
@@ -194,23 +200,35 @@ def _scheduler(
     return torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
 
 
-def _needed_functional_members(
+def _needed_support_tasks(
     *,
     schedule: tuple[tuple[int, int], ...],
-    evidence: ECPStage1EvidenceBank,
     rank: int,
     world_size: int,
     start: int,
     stop: int,
-    functional_start: int,
 ) -> set[int]:
+    result: set[int] = set()
+    for cursor in range(start, stop, world_size):
+        ordinal, _ = schedule[cursor + rank]
+        result.add(int(ordinal))
+    return result
+
+
+def _needed_support_panels(
+    *,
+    schedule: tuple[tuple[int, int], ...],
+    bank: PolicySupportBank,
+    rank: int,
+    world_size: int,
+    start: int,
+    stop: int,
+) -> set[tuple[int, int]]:
     result = set()
     for cursor in range(start, stop, world_size):
-        if cursor + world_size <= functional_start:
-            continue
-        ordinal, task_visit = schedule[cursor + rank]
-        indices = evidence.member_indices(ordinal)
-        result.add(indices[task_visit % len(indices)])
+        ordinal, visit = schedule[cursor + rank]
+        panel = bank.task(ordinal).panel_for_visit(visit)
+        result.add((int(ordinal), int(panel.panel_id)))
     return result
 
 
@@ -218,6 +236,9 @@ def _build_contract(
     runtime: ECPStage1Runtime,
     source: Mapping[str, Any],
 ) -> dict[str, Any]:
+    support_manifest = stage1_asset_authority(
+        runtime.config, "policy_support_bank", runtime.args.asset_root
+    )
     local = {
         "rank": runtime.context.rank,
         "local_rank": runtime.context.local_rank,
@@ -248,6 +269,10 @@ def _build_contract(
             "action_meta": str(runtime.observer.action_meta_checkpoint),
             "frozen": True,
         },
+        "policy_support_bank": {
+            "path": str(support_manifest.resolve()),
+            "bytes": support_manifest.stat().st_size,
+        },
         "tasks": [
             {
                 "ordinal": task.ordinal,
@@ -271,8 +296,8 @@ def _build_contract(
             "topology": topology,
             "start_task_visits": runtime.start_task_visits,
             "stop_after_task_visits": runtime.stop_after_task_visits,
-            "functional_start_task_visits": runtime.functional_start_task_visits,
-            "loaded_functional_members_by_rank": len(runtime.functional_panels),
+            "loaded_policy_support_tasks_by_rank": len(runtime.support_bank.tasks),
+            "loaded_policy_support_panels_by_rank": len(runtime.support_panels),
         },
         "trainable_parameters": sum(value.numel() for value in runtime.trainable_parameters),
         "content_hash_policy": "disabled_by_owner",
@@ -318,6 +343,8 @@ def load_stage1_authorities(
         compiler_width=int(config["model"]["compiler_width"]),
         event_slots=int(config["model"]["event_slots"]),
         phase_width=int(config["model"]["phase_response_width"]),
+        support_channels=len(config["policy_support"]["channels"]),
+        support_horizon_basis=int(config["policy_support"]["horizon_basis"]),
         factor_head_init=config["model"]["factor_head_init_std"],
     ).to(context.device)
     return ECPStage1Authorities(
@@ -414,37 +441,29 @@ def _prepare_optimization(
     return optimizer, scheduler, start, expected_metrics
 
 
-def _load_functional_panels(
+def _load_policy_support(
     args: argparse.Namespace,
     config: Mapping[str, Any],
     context: DistributedContext,
-    authorities: ECPStage1Authorities,
     inputs: ECPStage1Inputs,
     *,
     start: int,
     stop: int,
-    functional_start: int,
-) -> dict[int, tuple[ECPStage1FunctionalPanel, ...]]:
-    needed = _needed_functional_members(
+) -> PolicySupportBank:
+    needed = _needed_support_tasks(
         schedule=inputs.schedule,
-        evidence=inputs.evidence_bank,
         rank=context.rank,
         world_size=context.world_size,
         start=start,
         stop=stop,
-        functional_start=functional_start,
     )
-    if not needed:
-        return {}
-    return cache_stage1_functional_panels(
-        policy=authorities.policy,
-        identity_state=authorities.identity_state,
+    return load_policy_support_bank(
+        manifest_path=stage1_asset_authority(
+            config, "policy_support_bank", args.asset_root
+        ),
         evidence_bank=inputs.evidence_bank,
-        contract=authorities.contract,
+        task_ordinals=needed,
         device=context.device,
-        policy_seed=int(config["objective"]["train_policy_seed"]),
-        fit_only=True,
-        member_indices=needed,
     )
 
 
@@ -495,20 +514,26 @@ def prepare_runtime(
         total_task_visits=total,
         stop_after_task_visits=stop,
     )
-    functional_start = (
-        0
-        if args.mode == "profile" and args.profile_functional
-        else int(config["objective"]["functional_start_task_visits"])
-    )
-    panels = _load_functional_panels(
+    support_bank = _load_policy_support(
         args,
         config,
         context,
-        authorities,
         inputs,
         start=start,
         stop=stop,
-        functional_start=functional_start,
+    )
+    panel_requests = _needed_support_panels(
+        schedule=inputs.schedule,
+        bank=support_bank,
+        rank=context.rank,
+        world_size=context.world_size,
+        start=start,
+        stop=stop,
+    )
+    panels = cache_policy_support_panels(
+        bank=support_bank,
+        requests=panel_requests,
+        device=context.device,
     )
     language = tokenize_stage1_languages(
         inputs.tasks,
@@ -538,8 +563,8 @@ def prepare_runtime(
         video_store=inputs.video_store,
         language_tokens=language,
         evidence_bank=inputs.evidence_bank,
-        functional_panels=panels,
-        functional_start_task_visits=functional_start,
+        support_bank=support_bank,
+        support_panels=panels,
         policy=authorities.policy,
         observer=authorities.observer,
         contract=authorities.contract,
@@ -615,7 +640,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_compiler_v5.json",
+        / "configs/pi05_ecp_stage1_policy_support_v6.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)
@@ -627,7 +652,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--stop-after-task-visits", type=int)
     parser.add_argument("--max-frames-per-call", type=int)
-    parser.add_argument("--profile-functional", action="store_true")
     parser.add_argument("--log-every", type=int, default=1)
     return parser
 

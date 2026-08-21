@@ -11,6 +11,7 @@ import torch
 from safetensors.torch import load_file
 
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
+from ember.ecp.stage1_support import PolicySupportTask
 from ember.lora import (
     LORA_A_SUFFIX,
     LORA_B_SUFFIX,
@@ -84,12 +85,16 @@ class ECPStage1EvidenceBank:
             raise ValueError("ECP Stage 1 task has no successful policy evidence")
         return indices
 
-    def evidence(self, ordinal: int) -> PrivilegedPolicyEvidence:
+    def evidence(
+        self, ordinal: int, support: PolicySupportTask
+    ) -> PrivilegedPolicyEvidence:
         index = torch.tensor(
             self.member_indices(ordinal),
             dtype=torch.long,
             device=self.phase_response.device,
         )
+        if support.member_indices != self.member_indices(ordinal):
+            raise ValueError("policy-support member ordering changed")
         return PrivilegedPolicyEvidence(
             member_states={
                 name: value.index_select(0, index)
@@ -97,6 +102,8 @@ class ECPStage1EvidenceBank:
             },
             phase_response=self.phase_response.index_select(0, index),
             reliability=self.reliability.index_select(0, index),
+            policy_response=support.policy_response,
+            policy_response_weights=support.policy_response_weights,
         )
 
 

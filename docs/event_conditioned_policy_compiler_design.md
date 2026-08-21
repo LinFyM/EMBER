@@ -483,6 +483,19 @@ active Stage 1后继保持v5的Program、absolute compiler、content/address sep
 6. Program仍是event × layer/owner × family。rank仅用于compiler的numeric factor query，在member证据中按无序集合处理，
    不被解释为phase、skill或可跨adapter对齐的语义轴。
 
+当前v6把上述evidence具体化为同一条矩阵流水线。每个successful/learner occupancy先按动作弧长选择8个保序状态；对每个状态、
+source/shared/learner/successful-member adapter，在相同flow noise与time下运行一次冻结PI0.5，捕获Action Expert 19个layer boundary、
+50个action tokens与flow output。永久冻结的Stage 0 owner projector把它变成`[state,38,50,128]`，再对完整50-token horizon作
+4项正交DCT低频展开，得到`[event,38,4,128]`；这一步只压缩joint future coordinate，不给horizon或rank赋予技能语义。随后形成
+五个有明确反事实含义的通道：successful expert-source、successful shared-source、learner-state expert-source、occupancy-
+generating learner-source、learner-state shared-source。`q_pi`对channel×DCT basis作content attention；channel/basis embedding
+只进入key，Value始终来自policy response，因此缺失或零response不能凭地址写出Program correction。
+
+同一缓存还保存完整flow response而不是只保存上述DCT特征。Stage 1每个task visit在successful与learner panel间交替，candidate
+只forward一次，同时对多个successful members做response distillation；verified-success learner轨迹全权重，failed learner轨迹
+用member agreement乘`.25`基础权重；source/shared preservation只在其response靠近successful-member consensus的局部状态上
+连续加权。raw exact-BA/canonical只保留低权重坐标锚。首个update即有policy support，不再设置BA-only bootstrap。
+
 这不是恢复旧global phase decoder：所有policy evidence共同监督同一个event-conditioned Program和同一个single-LoRA compiler，
 不存在deployment carrier、第二adapter或task-ID route。已有30条learner occupancy与successful panel会直接复用，不重跑此前的
 长时轨迹采集；先跑一个短而有信息量的fresh checkpoint，再依据多状态functional support和预注册几何门决定是否进入held5。
@@ -579,8 +592,9 @@ Dynamic-K sampler、video cache、paired evaluator、persistent workers、flow/a
 
 Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stage0.py`只扩展冻结observer的language/scene可见输出；
 `program.py`独占visible Program与K-video集合聚合；`policy_teacher.py`独占train-only privileged `q_pi`；`compiler.py`独占
-38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`与`stage1_panels.py`分别拥有task/member/video
-authority和multi-phase functional evidence；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
+38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`拥有task/member/video authority，
+`policy_response.py`拥有冻结PI0.5 full-layer owner response，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
+bank及其运行时panel；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
 一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
 现有`expert_manifold` evaluator继续拥有闭环执行。拆分的理由是信息墙、共享梯度、policy functional调用和静态物化具有不同
 生命周期与测试责任；它们全部只服务同一个`train_ecp_stage1.py`训练入口和一个materialization入口，没有版本化fallback。

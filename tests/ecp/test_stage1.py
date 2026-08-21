@@ -60,6 +60,8 @@ def _expert_evidence(
         member_states=states,
         phase_response=torch.randn(members, 8, 32),
         reliability=torch.tensor([0.7, 0.9][:members]),
+        policy_response=torch.randn(members, 8, 38, 5, 4, 128),
+        policy_response_weights=torch.ones(members, 8, 5),
     )
 
 
@@ -192,4 +194,45 @@ def test_query_content_modulation_reaches_rank_outputs() -> None:
     first = next(iter(compiler(program).state.values()))
     (first[:, 0].float().square().mean()).backward()
     gradient = compiler.query_content_modulation.weight.grad
+    assert gradient is not None and float(gradient.abs().sum()) > 0
+
+
+def test_q_pi_ignores_masked_policy_support_channels() -> None:
+    contract, owners, template = _contract_and_states()
+    model = ECPStage1Model(owners, contract, template).eval()
+    encoded = _encoded()
+    evidence = _expert_evidence(template)
+    weights = evidence.policy_response_weights.clone()
+    weights[..., -1] = 0
+    baseline = PrivilegedPolicyEvidence(
+        **{
+            **evidence.__dict__,
+            "policy_response_weights": weights,
+        }
+    )
+    changed_response = evidence.policy_response.clone()
+    changed_response[..., -1, :, :] = 1_000_000
+    changed = PrivilegedPolicyEvidence(
+        **{
+            **baseline.__dict__,
+            "policy_response": changed_response,
+        }
+    )
+    first = model(encoded, baseline, torch.zeros(2, dtype=torch.long))
+    second = model(encoded, changed, torch.zeros(2, dtype=torch.long))
+    torch.testing.assert_close(
+        first.teacher.program.process, second.teacher.program.process
+    )
+
+
+def test_policy_support_content_reaches_q_pi_correction() -> None:
+    contract, owners, template = _contract_and_states()
+    model = ECPStage1Model(owners, contract, template)
+    output = model(
+        _encoded(),
+        _expert_evidence(template),
+        torch.zeros(2, dtype=torch.long),
+    )
+    output.teacher.program.process.float().square().mean().backward()
+    gradient = model.policy_teacher.support_value.weight.grad
     assert gradient is not None and float(gradient.abs().sum()) > 0

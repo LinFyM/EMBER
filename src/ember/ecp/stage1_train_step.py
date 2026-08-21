@@ -12,8 +12,9 @@ from ember.ecp.compiler import select_compiled_state
 from ember.ecp.stage1_objective import ECPStage1Loss
 from ember.ecp.stage1_data import pack_stage1_videos
 from ember.ecp.stage1_objective import ecp_stage1_loss
-from ember.functional_adaptation.functional_response import (
-    functional_response_distillation_loss,
+from ember.ecp.stage1_support import (
+    PolicySupportLoss,
+    policy_support_distillation_loss,
 )
 
 if TYPE_CHECKING:
@@ -23,18 +24,10 @@ if TYPE_CHECKING:
 def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
-    objective = runtime.config["objective"]
-    if runtime.args.mode == "profile" and runtime.args.profile_functional:
-        return "policy_functional", {
-            name: float(value) for name, value in objective["weights"].items()
-        }
-    bootstrap = objective["coordinate_bootstrap"]
-    if task_visits <= int(bootstrap["end_task_visits"]):
-        return "coordinate_bootstrap", {
-            name: float(value) for name, value in bootstrap["weights"].items()
-        }
-    return "policy_functional", {
-        name: float(value) for name, value in objective["weights"].items()
+    del task_visits
+    return "policy_support", {
+        name: float(value)
+        for name, value in runtime.config["objective"]["weights"].items()
     }
 
 
@@ -58,29 +51,24 @@ def _gather(record: dict[str, Any], world_size: int) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def _functional_loss(
+def _policy_support_loss(
     runtime: "ECPStage1Runtime",
     *,
     task_ordinal: int,
     task_visit: int,
     candidate: dict[str, torch.Tensor],
     task_visits_after_update: int,
-) -> tuple[torch.Tensor, int | None, int | None]:
-    if task_visits_after_update <= runtime.functional_start_task_visits:
-        return next(iter(candidate.values())).new_zeros(()), None, None
-    indices = runtime.evidence_bank.member_indices(task_ordinal)
-    member_index = indices[task_visit % len(indices)]
-    panel_index = (task_visit // len(indices)) % 4
-    panel = runtime.functional_panels[member_index][panel_index]
-    loss = functional_response_distillation_loss(
-        runtime.policy,
-        candidate,
-        runtime.contract,
-        panel.batch,
-        panel.target,
-        policy_seed=panel.policy_seed,
+) -> tuple[PolicySupportLoss, int, str]:
+    del task_visits_after_update
+    panel = runtime.support_bank.task(task_ordinal).panel_for_visit(task_visit)
+    cached = runtime.support_panels[(task_ordinal, panel.panel_id)]
+    loss = policy_support_distillation_loss(
+        policy=runtime.policy,
+        candidate_state=candidate,
+        contract=runtime.contract,
+        cached=cached,
     )
-    return loss, member_index, panel_index
+    return loss, panel.panel_id, panel.kind
 
 
 def _local_record(
@@ -92,8 +80,8 @@ def _local_record(
     video_offsets: torch.Tensor,
     loss: ECPStage1Loss,
     output: Any,
-    member_index: int | None,
-    panel_index: int | None,
+    panel_id: int,
+    panel_kind: str,
 ) -> dict[str, Any]:
     return {
         "rank": runtime.context.rank,
@@ -108,8 +96,8 @@ def _local_record(
             for index in range(len(demo_indices))
         ],
         "successful_members": len(runtime.evidence_bank.member_indices(task.ordinal)),
-        "functional_member_index": member_index,
-        "functional_panel_index": panel_index,
+        "support_panel_id": panel_id,
+        "support_panel_kind": panel_kind,
         "total": float(loss.total.detach()),
         "member_effective_update": float(loss.member_effective_update.detach()),
         "consensus_effective_update": float(
@@ -121,6 +109,13 @@ def _local_record(
         ),
         "prior_preservation": float(loss.prior_preservation.detach()),
         "functional_response": float(loss.functional_response.detach()),
+        "successful_response": float(loss.successful_response.detach()),
+        "learner_response": float(loss.learner_response.detach()),
+        "source_support": float(loss.source_support.detach()),
+        "shared_support": float(loss.shared_support.detach()),
+        "expert_set_disagreement": float(
+            loss.expert_set_disagreement.detach()
+        ),
         "locality": float(loss.locality.detach()),
         "consensus_exact_owner_attention": float(
             output.consensus_compilation.exact_owner_attention.detach()
@@ -131,6 +126,9 @@ def _local_record(
         "q_pi_gate_mean": float(output.teacher.evidence_gate.detach().mean()),
         "q_pi_gate_min": float(output.teacher.evidence_gate.detach().min()),
         "q_pi_gate_max": float(output.teacher.evidence_gate.detach().max()),
+        "support_attention_entropy": float(
+            output.teacher.support_attention_entropy.detach().mean()
+        ),
     }
 
 
@@ -164,7 +162,9 @@ def run_stage1_update(
                 language_tokens=tokens,
                 language_mask=mask,
             )
-    evidence = runtime.evidence_bank.evidence(task_ordinal)
+    evidence = runtime.evidence_bank.evidence(
+        task_ordinal, runtime.support_bank.task(task_ordinal)
+    )
     runtime.optimizer.zero_grad(set_to_none=True)
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output = runtime.model(encoded, evidence, packed.video_group_ids)
@@ -172,7 +172,7 @@ def run_stage1_update(
             output.consensus_compilation.state, 0
         )
         task_visits = cursor + runtime.context.world_size
-        functional, member_index, panel_index = _functional_loss(
+        support_loss, panel_id, panel_kind = _policy_support_loss(
             runtime,
             task_ordinal=task_ordinal,
             task_visit=task_visit,
@@ -189,7 +189,7 @@ def run_stage1_update(
             expert_states=evidence.member_states,
             prior_target=runtime.prior_state,
             contract=runtime.contract,
-            functional_response=functional,
+            policy_support=support_loss,
             weights=objective_weights,
         )
     if not bool(torch.isfinite(loss.total)):
@@ -214,8 +214,8 @@ def run_stage1_update(
         video_offsets=packed.video_offsets,
         loss=loss,
         output=output,
-        member_index=member_index,
-        panel_index=panel_index,
+        panel_id=panel_id,
+        panel_kind=panel_kind,
     )
     records = _gather(local, runtime.context.world_size)
     metric_names = (
@@ -226,12 +226,18 @@ def run_stage1_update(
         "consensus_canonical_factor",
         "prior_preservation",
         "functional_response",
+        "successful_response",
+        "learner_response",
+        "source_support",
+        "shared_support",
+        "expert_set_disagreement",
         "locality",
         "consensus_exact_owner_attention",
         "mean_active_events",
         "q_pi_gate_mean",
         "q_pi_gate_min",
         "q_pi_gate_max",
+        "support_attention_entropy",
     )
     return {
         "task_visits": task_visits,

@@ -8,6 +8,7 @@ from typing import Mapping
 import torch
 
 from ember.ecp.compiler import ECPCompilerOutput
+from ember.ecp.stage1_support import PolicySupportLoss
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRAContract
 
 
@@ -19,8 +20,16 @@ class ECPStage1Loss:
     member_canonical_factor: torch.Tensor
     consensus_canonical_factor: torch.Tensor
     prior_preservation: torch.Tensor
-    functional_response: torch.Tensor
+    successful_response: torch.Tensor
+    learner_response: torch.Tensor
+    source_support: torch.Tensor
+    shared_support: torch.Tensor
+    expert_set_disagreement: torch.Tensor
     locality: torch.Tensor
+
+    @property
+    def functional_response(self) -> torch.Tensor:
+        return self.successful_response + self.learner_response
 
 
 def _batched(value: torch.Tensor) -> torch.Tensor:
@@ -139,7 +148,7 @@ def ecp_stage1_loss(
     expert_states: Mapping[str, torch.Tensor],
     prior_target: Mapping[str, torch.Tensor],
     contract: LoRAContract,
-    functional_response: torch.Tensor,
+    policy_support: PolicySupportLoss,
     weights: Mapping[str, float],
 ) -> ECPStage1Loss:
     member_effective = exact_effective_update_loss(
@@ -168,11 +177,18 @@ def ecp_stage1_loss(
         "member_canonical_factor": member_canonical,
         "consensus_canonical_factor": consensus_canonical,
         "prior_preservation": prior_preservation,
-        "functional_response": functional_response,
+        "successful_response": policy_support.successful_response,
+        "learner_response": policy_support.learner_response,
+        "source_support": policy_support.source_support,
+        "shared_support": policy_support.shared_support,
         "locality": locality,
     }
     missing = set(terms) - set(weights)
     if missing:
         raise ValueError(f"missing ECP Stage 1 loss weights: {sorted(missing)}")
     total = sum(float(weights[name]) * value for name, value in terms.items())
-    return ECPStage1Loss(total=total, **terms)
+    return ECPStage1Loss(
+        total=total,
+        expert_set_disagreement=policy_support.expert_set_disagreement,
+        **terms,
+    )

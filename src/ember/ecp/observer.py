@@ -20,7 +20,7 @@ class NativeObserverOutput:
     flow_velocity: torch.Tensor
 
 
-class _LayerStateCapture(AbstractContextManager["_LayerStateCapture"]):
+class ActionLayerStateCapture(AbstractContextManager["ActionLayerStateCapture"]):
     def __init__(self, expert_model: torch.nn.Module, *, detach: bool) -> None:
         self.expert_model = expert_model
         self.detach = detach
@@ -29,7 +29,7 @@ class _LayerStateCapture(AbstractContextManager["_LayerStateCapture"]):
         )
         self.handles: list[torch.utils.hooks.RemovableHandle] = []
 
-    def __enter__(self) -> "_LayerStateCapture":
+    def __enter__(self) -> "ActionLayerStateCapture":
         modules = [layer.input_layernorm for layer in self.expert_model.layers]
         modules.append(self.expert_model.norm)
         for index, module in enumerate(modules):
@@ -209,7 +209,7 @@ class ECPNativeObserver(torch.nn.Module):
             torch.enable_grad() if track_action_adapter_grad else torch.no_grad()
         )
         adapter_context = action_adapter_context or nullcontext()
-        with grad_context, adapter_context, _LayerStateCapture(
+        with grad_context, adapter_context, ActionLayerStateCapture(
             expert_model, detach=not track_action_adapter_grad
         ) as capture:
             (prefix_hidden, suffix_hidden), _ = bridge.forward(

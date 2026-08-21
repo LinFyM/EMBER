@@ -87,6 +87,19 @@
     "tasks_per_rank_per_macro": 1,
     "allowed_world_sizes": [1, 2, 3, 5, 6]
   },
+  "observer_panel": {
+    "task_roles": ["target_fit19", "target_held5"],
+    "demo_pairs": [[0, 1], [2, 3]],
+    "ordered_speed_factor": 2,
+    "alternative_probe": "antithetic_fixed_gaussian",
+    "conditions": [
+      "canonical correct video",
+      "same video order-preserving 2x speed",
+      "same-task other correct video",
+      "same video antithetic fixed Gaussian probe"
+    ],
+    "forbidden_conditions": ["shuffled", "reversed", "wrong video"]
+  },
   "formal_run": {
     "total_macros": 60,
     "checkpoint_macros": [10, 20, 40, 60],

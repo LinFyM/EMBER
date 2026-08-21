@@ -86,6 +86,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 在真实冻结PI0.5上完成单帧forward、梯度边界、显存与吞吐smoke；
 - [x] 接通71个non-held与fit19的task-equal correct-video训练数据、跨episode action grounding、保序速度视图、
   动态cost-balanced多卡macro与exact-resume checkpoint；
+- [x] 实现固定train24 observer面板：fit19/held5各自报告跨episode、2x保序速度、antithetic probe与跨task margin；
 - [ ] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动训练native observer；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。

@@ -97,6 +97,7 @@ class ECPVideoEncoder(torch.nn.Module):
         frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        suffix_noise: torch.Tensor | None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         core = policy.model
         bridge = core.paligemma_with_expert
@@ -105,6 +106,9 @@ class ECPVideoEncoder(torch.nn.Module):
         patches = []
         languages = []
         lattices = []
+        probe = self.fixed_suffix_noise if suffix_noise is None else suffix_noise
+        if probe.shape != self.fixed_suffix_noise.shape:
+            raise ValueError("ECP observer probe must have shape [50, 32]")
         for start in range(0, frames.shape[0], self.max_frames_per_call):
             stop = min(start + self.max_frames_per_call, frames.shape[0])
             condition_ids = frame_condition_ids[start:stop]
@@ -130,7 +134,7 @@ class ECPVideoEncoder(torch.nn.Module):
                 core,
                 prefix,
                 prefix_padding,
-                self.fixed_suffix_noise[None].expand(stop - start, -1, -1),
+                probe[None].expand(stop - start, -1, -1),
                 torch.ones(stop - start, device=frames.device),
             )
             patches.append(observed.patch_states)
@@ -147,6 +151,7 @@ class ECPVideoEncoder(torch.nn.Module):
         frame_condition_ids: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        suffix_noise: torch.Tensor | None = None,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -163,6 +168,7 @@ class ECPVideoEncoder(torch.nn.Module):
             frame_condition_ids=frame_condition_ids,
             language_tokens=language_tokens,
             language_mask=language_mask,
+            suffix_noise=suffix_noise,
         )
         patch, frame_mask = self._pad_videos(patch, video_offsets)
         language, _ = self._pad_videos(language, video_offsets)

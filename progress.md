@@ -44,6 +44,13 @@
   约14 MB macro10 checkpoint及小量JSON/log，完整60-macro上限低于80 MB；启动前`/data1` user quota使用约624 GiB、
   limit约1,034 GiB，共享filesystem尚余84 TiB。只以correct-only训练loss、跨episode/速度/替代probe固定面板裁决observer；
   shuffled/reversed不进入训练或选点。仅允许相同world-size6与同一run contract从macro10 exact resume，不覆盖已有输出。
+- Stage 0A正式段已从detached clean pushed `9b69e92`启动；生成的run contract确认world-size6、每rank 15 tasks、
+  `CUDA_VISIBLE_DEVICES=1,2,3,4,5,7`、两组GPU-local NUMA affinity、frame microbatch16与1,133,487个trainable Writer参数，
+  六份source policy均为冻结权重。启动后每张目标卡驻留约18.8 GiB，Prohibited GPU0保持14 MiB且无compute process。
+- 固定observer panel运行面已经实现但尚未产生科学结果：覆盖全部train24的fit19与held5、每task两个预注册demo pairs，
+  对每个pair比较canonical correct video、同视频保序2x速度、same-task other video和同视频antithetic Gaussian probe；同时报告
+  event/summary cosine、presence差异及same-task相对mean/nearest cross-task margin。该面板不读取action/reward，也不构造
+  shuffled、reversed或wrong-video条件；它将在macro10 checkpoint固定后运行。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

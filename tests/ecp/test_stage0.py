@@ -193,13 +193,23 @@ def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> No
     )
     frames = torch.randint(0, 256, (5, 3, 16, 16), dtype=torch.uint8)
     language_mask = torch.tensor([[True, True, True, True, False, False]])
+    language_tokens = torch.randint(0, 64, (1, 6))
     output = model(
         policy=policy,
         frames=frames,
         video_offsets=torch.tensor([0, 3, 5]),
         frame_condition_ids=torch.zeros(5, dtype=torch.long),
-        language_tokens=torch.randint(0, 64, (1, 6)),
+        language_tokens=language_tokens,
         language_mask=language_mask,
+    )
+    alternative = model(
+        policy=policy,
+        frames=frames,
+        video_offsets=torch.tensor([0, 3, 5]),
+        frame_condition_ids=torch.zeros(5, dtype=torch.long),
+        language_tokens=language_tokens,
+        language_mask=language_mask,
+        suffix_noise=-model.encoder.fixed_suffix_noise,
     )
     action_targets = torch.randn(2, 3, 5, 7)
     weights = {
@@ -217,6 +227,7 @@ def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> No
     assert output.process.shape == (2, 4, 38, 12)
     assert output.state_posterior.shape == (2, 3, 4)
     assert output.action_phase_predictions.shape == (2, 4, 5, 7)
+    assert not torch.allclose(output.process, alternative.process)
     assert torch.isfinite(loss.total)
     assert loss.uncertainty_calibration >= 0
     assert all(parameter.grad is None for parameter in core.parameters())

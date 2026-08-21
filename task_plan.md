@@ -133,7 +133,7 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   真实K2单卡coordinate profile；
 - [x] 从fresh clean pushed v5 authority完成同一228-visits coordinate gate；own-direct虽由`.0184`提高到`.0821`，但仍低于
   nearest-other `.1077`，自身检索仅`3/24`、norm ratio `.0864`，未运行held5；
-- [ ] 保持v5 Program/compiler content-address合同，重建专家要求的policy-support teacher：successful occupancy、经过
+- [x] 保持v5 Program/compiler content-address合同，重建专家要求的policy-support teacher：successful occupancy、经过
   success/一致性加权的learner occupancy、source/shared support、多成员集合一致性与fit-task reward/progress共同进入Stage 1；
 - [x] 完成v6 retained implementation：full-layer response bank、五通道q_pi support attention、successful/learner交替functional
   loss与source/shared局部support；删除v5 active config和successful-only panel owner，聚焦CPU合同通过；
@@ -143,7 +143,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   held5、不延长同曲线；
 - [x] 对冻结single checkpoint运行完整successful/learner panel support audit：24/24任务优于source但24/24差于stable shared，
   证明full absolute surface丢失已有support；
-- [ ] 用differentiable low-rank union把stable shared effective update与generated residual合并并重新压回一套rank16 LoRA；
+- [x] 用differentiable low-rank union把stable shared effective update与generated residual合并并重新压回一套rank16 LoRA，
+  并通过successful/learner两条真实BF16训练路径profile；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -197,12 +198,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v6冻结全panel audit已完成：fit19/held5相对source为`.803/.902`且24/24任务更好，但相对stable shared为`1.400/1.277`
-   且24/24任务更差；因此不续训、不跑held5、也不提前加入reward；
-2. 最早接口固定为absolute full surface丢失shared support。下一fresh v7保留同一Program、q_pi和support bank，让heads只生成
-   residual；每个target把shared rank16与residual rank16的low-rank union通过thin-QR + 32x32 SVD重压成唯一rank16 adapter。
-   这不直接相加A/B、不部署第二adapter、不固定12+4 rank技能分槽；
-3. v7先复跑同一短程与冻结support gate；只有相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. v7 prior-preserving union已在clean pushed `6987933`完成实现与真实双visit profile：successful/learner路径均finite，
+   单步`2.70/2.24s`、峰值约16.46 GB；初始candidate对stable-shared response loss仅`.0164/.00284`，对source为
+   `.754/.670`，证明shared起点被保留；
+2. 立即从该fresh authority训练228 visits并物化同一24-task checkpoint，随后遍历冻结successful/learner全bank，按原
+   fit19/held5 aggregate与breadth门同时比较candidate/source/stable-shared，不因moving loss选择checkpoint；
+3. 只有v7相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

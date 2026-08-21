@@ -149,10 +149,16 @@
   source为`.80282x`且`19/19` tasks更好，held5的40 panels为`.90167x`且`5/5`更好，确认multi-policy support不是纯训练日志
   假象；但相对stable shared分别为`1.39966x/1.27745x`，`0/19`与`0/5` tasks胜出，预注册八条件只通过四个source条件。
   因此不加入reward、不评held闭环，最早断点明确为独立absolute full surface在写task LoRA时丢掉shared policy support。
-- 下一active v7只改变这个major variable：同一Program/q_pi/support与rank16目标不动，compiler heads改为generated residual；
+- active v7只改变这个major variable：同一Program/q_pi/support与rank16目标不动，compiler heads改为generated residual；
   每target用thin-QR与`32x32` core SVD把`shared rank16 + residual rank16`的effective-update union重压为一套rank16 LoRA。
   这样保留shared起点、避免旧raw A/B相加交叉项，也不恢复第二adapter或固定`12+4`分槽；先复跑同一短门，过冻结support门后
   才接fit-task task-equal success/progress。
+- v7 retained implementation已从clean pushed `6987933`完成真实BF16双visit profile。首次GPU profile在任何optimizer update前
+  暴露autocast把FP32 QR core乘法转回BF16、CUDA batched SVD不支持的工程错误；修复把完整小矩阵分解显式留在FP32，CUDA
+  autocast反向与22项聚焦合同均通过，失败临时目录已删除。修复后的successful/learner路径各完成一次update，耗时
+  `2.696/2.245s`、峰值`16,457,865,216` bytes，梯度finite；初始candidate对stable-shared functional response loss为
+  `.01638/.00284`，对source为`.75365/.66979`，符合prior-preserving起点。该profile只授权fresh 228-visits与同一冻结
+  full-bank support gate，不构成科学promote或held闭环证据。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

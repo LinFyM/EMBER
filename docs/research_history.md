@@ -734,6 +734,21 @@ held oracle gate决定。正式训练、materialization、250-row evaluation、p
 分析脚本已删除。remote-safe证据：
 `docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。
 
+### 3.35 Stage 1 absolute compiler v2几何门失败与policy-functional合同纠正
+
+clean pushed `7ca808d`删除了`q_pi`全局scalar cap与stable-prior factor residual；successful members和prior进入compact-SVD
+canonical gauge，full Program直接输出absolute完整rank16 LoRA。真实K2+functional profile把family-specific head初始化校准到
+expert canonical factor尺度的`.4x`，initial effective loss从`19.5`降到`1.1172`。随后gpu01 physical `1,2,3,4,5,7`
+完成fresh 228 visits/38 updates，exit0、六卡峰值约10.25 GB，Prohibited physical0未使用。
+
+该checkpoint的24-task materialization未过昂贵rollout前几何门：candidate跨task cosine `.994192`，own/nearest-other
+`.183969/.282906`，own retrieval `2/24`，norm ratio`.099771`；held closed-loop rows为0。该段
+`functional_start_task_visits=228`，所以没有successful-policy functional gradient，只检验了absolute BA/canonical warm-start。
+代码复核同时发现address embeddings进入values且constant query直达factor heads的内容旁路。active v3因此保留同一
+event/layer/family Program与absolute compiler，但令地址只控制key/query/locality、LoRA hidden必须读取Program values，并从
+第一个update启用successful-policy functional response。证据：
+`docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

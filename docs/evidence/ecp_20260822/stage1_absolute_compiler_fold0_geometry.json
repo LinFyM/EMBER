@@ -1,0 +1,74 @@
+{
+  "schema_version": "ember_ecp_stage1_absolute_compiler_fold0_geometry_evidence_v1",
+  "authority": {
+    "commit": "7ca808d9987eb637cb255f796861073db9b1a9b0",
+    "run": "runs/outputs/pi05_ecp_stage1_absolute_fold0_tv228_r6_7ca808d_gpu01p123457_20260822",
+    "world_size": 6,
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "fit_tasks": 19,
+    "held_transform_only_tasks": 5,
+    "held_shared_gradient_steps": 0,
+    "successful_policy_functional_start_task_visits": 228,
+    "successful_policy_functional_updates_in_segment": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "materialized_geometry": {
+    "candidate_cross_task_effective_cosine": {
+      "mean": 0.9941917061805725,
+      "minimum": 0.9769092202186584,
+      "maximum": 0.999845564365387
+    },
+    "direct_step2000_cross_task_effective_cosine": {
+      "mean": 0.13191533088684082,
+      "minimum": -0.05163875222206116,
+      "maximum": 0.6463964581489563
+    },
+    "compiled_to_direct_retrieval": {
+      "mean_own_cosine": 0.18396934866905212,
+      "mean_nearest_other_cosine": 0.28290581703186035,
+      "own_exceeds_nearest_other": 2,
+      "task_count": 24,
+      "mean_effective_norm_ratio": 0.09977082908153534
+    },
+    "member_effective_update_loss": {
+      "fit19_mean": 0.9483963815789473,
+      "held5_mean": 0.9578125
+    },
+    "program_cross_task_cosine_mean": {
+      "visible_anchor": 0.9785219430923462,
+      "q_pi_correction": 0.9260776042938232,
+      "q_pi_teacher": 0.9744583368301392
+    },
+    "q_pi_task_mean_gate_range": [
+      0.396484375,
+      0.453125
+    ]
+  },
+  "pre_rollout_gate": {
+    "passed": false,
+    "candidate_pair_cosine_mean_maximum": 0.95,
+    "mean_own_direct_cosine_minimum": 0.3,
+    "own_retrieval_minimum": 13,
+    "mean_effective_norm_ratio_minimum": 0.3,
+    "held_closed_loop_rows_run": 0
+  },
+  "interpretation": {
+    "established": "Removing the stable-prior A/B residual parameterization and the global q_pi scalar cap is insufficient under a parameter-only warm-start: the absolute compiler still converges to a low-energy, nearly shared update.",
+    "implementation_localization": "Compiler address embeddings were present in value tokens and the constant target/rank query was added directly before the factor heads; privileged factor tokens also received constant owner/rank embeddings. These paths let numeric addresses write a nearly task-independent LoRA without preserving Program content.",
+    "expert_contract_gap": "The segment inherited functional_start_task_visits=228, so all 38 updates optimized BA/factor coordinates and locality before any successful-policy functional response. The expert review explicitly requires policy-response, behavior/support and progress objectives rather than raw A/B reconstruction as the Stage 1 target.",
+    "claim_boundary": "The result rejects absolute coordinates plus parameter-only warm-start. It does not reject a content-address-separated, policy-functional privileged Program/compiler because that mechanism was not trained in this segment."
+  },
+  "decision": {
+    "continue_same_training_curve": false,
+    "run_held5_closed_loop": false,
+    "start_q_v": false,
+    "next_interface": "Separate compiler addresses from Program values, remove query-to-output and q_pi address shortcuts, and enable successful-policy functional response from the first update while retaining low-weight canonical/BA warm-start terms."
+  },
+  "artifacts": {
+    "projection": "runs/analysis/pi05_ecp_stage1_absolute_projection_tv228_7ca808d_gpu01p1_20260822/projection_manifest.json",
+    "checkpoint": "runs/outputs/pi05_ecp_stage1_absolute_fold0_tv228_r6_7ca808d_gpu01p123457_20260822/checkpoints/macro_00000228",
+    "previous_stage1_gate2": "docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json"
+  }
+}

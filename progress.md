@@ -74,6 +74,20 @@
   其隐含expert factor RMS的`.4x`初始化，initial member/consensus effective loss降到`1.1172`、canonical factor loss降到
   `1.2098`、裁剪前梯度从`3345.1`降到`61.0`。连续6个不同K2/functional visits均finite、每步约2.0--2.3秒；该profile只验证
   数值起点与运行稳定性，不作为科学曲线或checkpoint选择。
+- v2从clean pushed `7ca808d`在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates，exit0且六卡峰值约
+  10.25 GB；但该段继承`functional_start_task_visits=228`，所以没有一次successful-policy functional update。24-task单次
+  materialization的candidate跨task effective cosine仍为`.994192`，own-direct `.183969`低于nearest-other `.282906`，
+  own retrieval仅`2/24`，effective norm ratio`.099771`；全部未过预注册门，故held rollout为0、同曲线停止。
+- 回看专家Stage 1原文后，v2还存在一个此前未隔离的实现偏差：numeric owner/rank/event地址既进入compiler value，又以
+  `hidden + query`直达factor heads；q_pi factor tokens也注入owner/rank常量。这允许地址在不保留task Program内容时写出
+  近共享LoRA，而专家要求target query**读取**event/layer/family Program。当前唯一active修正因此是content/address分离：
+  地址只影响keys、queries和locality，values与factor hidden必须来自Program；visible Program和q_pi evidence values不再重复
+  注入地址常量；successful-policy functional从第一个update启用，BA/canonical降为低权重warm-start。v2证据见
+  `docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。
+- v3聚焦CPU合同8项通过，其中新增反事实明确证明Program content全零时，numeric address/query不能独立写出full LoRA。真实
+  K2+functional单卡profile在gpu01 physical1完成：functional从第一个update实际参与，loss `1.00456`；member/consensus
+  exact-BA `1.1875`、canonical约`1.21995`，低权重组合total `1.84336`，裁剪前梯度`42.09`，2.20秒、峰值
+  16,348,378,624 bytes，全部finite且prior-only loss为0。该节点授权fresh短段与几何门，不授权held rollout。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

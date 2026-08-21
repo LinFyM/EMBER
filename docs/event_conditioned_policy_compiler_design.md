@@ -418,6 +418,24 @@ absolute family heads。开关只决定反事实输出面，不是task内容路�
 event/owner/content gate。materializer在同一次24-task forward内计算上述几何门，避免为每个checkpoint再做一轮重复observer
 推理；v1 config/schema/evaluator不在active tree保留兼容分支。
 
+v2在228 visits的几何门证明上述坐标修正仍不充分：candidate跨task cosine为`.994192`，own-direct低于nearest-other且只有
+`2/24`自身检索正确，故没有进入held closed loop。该段没有successful-policy functional gradient；同时实现中address
+embeddings既进入attention values，constant target/rank query又以`hidden + query`直达factor heads，允许numeric address绕过
+task Program内容。这与“target query读取Program”的设计因果方向不一致。
+
+active v3据此进一步固定**content/address separation**，不改变Program轴或deployment合同：
+
+1. visible Program的`event/layer/family`由tensor位置承担地址，不再向language/scene/process values重复加入可独立写参数的
+   owner/layer/family常量；Stage 0已经产生owner-specific process content；
+2. `q_pi`的canonical factor tokens只编码successful-policy factor内容，不加入rank/owner embedding；rank依旧没有技能语义；
+3. compiler key由Program content加owner/type/event address形成，value只含Program content；target/rank/family/layer query只
+   决定读取位置和locality，不再加到cross-attended hidden；无Program content时地址路径不能单独写出full LoRA；
+4. successful-policy multi-phase functional response从第一个optimizer update启用并成为主目标；exact-BA与canonical factors仅
+   以低权重提供坐标warm-start。source/shared success-state support与fit reward/progress仍在几何门后补齐，不能被参数loss替代。
+
+这不是另建decoder：prior/full absolute surface、38-owner/rank-query、family heads、single rank16 LoRA与held信息墙全部保持。
+v2由Git和formal artifacts复现，active tree只保留v3 schema/config/evaluator。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

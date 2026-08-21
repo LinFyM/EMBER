@@ -162,3 +162,18 @@ def test_absolute_compiler_uses_prior_only_or_full_surface() -> None:
         torch.testing.assert_close(prior[name][0], target)
         torch.testing.assert_close(full[name], torch.zeros_like(full[name]))
     assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7
+
+
+def test_compiler_address_queries_cannot_write_without_program_content() -> None:
+    contract, owners, template = _contract_and_states()
+    compiler = TargetFamilyCompiler(owners, contract, template)
+    zero = ECPProgram(
+        language=torch.zeros(1, 38, 128),
+        scene=torch.zeros(1, 38, 128),
+        process=torch.zeros(1, 8, 38, 128),
+        presence=torch.ones(1, 8),
+        uncertainty=torch.zeros(1, 8, 38, 128),
+    )
+    state = compiler(zero).state
+    for value in state.values():
+        torch.testing.assert_close(value, torch.zeros_like(value))

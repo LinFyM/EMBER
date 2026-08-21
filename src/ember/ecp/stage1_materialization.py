@@ -37,8 +37,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_absolute_projection_v2"
-PROJECTION_KIND = "ecp_stage1_privileged_absolute_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v3"
+PROJECTION_KIND = "ecp_stage1_privileged_content_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -304,6 +304,10 @@ def _projection_manifest(
             "rank": rank,
             "all_ranks_writable": True,
             "parameterization": "prior-only exact template; full-process absolute factors",
+            "content_address_separated": True,
+            "functional_start_task_visits": int(
+                config["objective"]["functional_start_task_visits"]
+            ),
         },
         "information_wall": {
             "role": "development_train_oracle_only",
@@ -456,7 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_absolute_compiler_v2.json",
+        / "configs/pi05_ecp_stage1_privileged_compiler_v3.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

@@ -80,8 +80,6 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(width, width),
         )
-        self.rank_embedding = torch.nn.Embedding(self.rank, width)
-        self.owner_embedding = torch.nn.Embedding(len(owners), width)
         self.reliability_projection = torch.nn.Linear(1, width, bias=False)
         self.fusion = torch.nn.Sequential(
             torch.nn.Linear(4 * width, 2 * width),
@@ -97,7 +95,6 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
     ) -> torch.Tensor:
         rows = []
         member_count = -1
-        rank_bias = self.rank_embedding.weight[None]
         for owner in self.owners:
             a = states[owner.target_name + LORA_A_SUFFIX]
             b = states[owner.target_name + LORA_B_SUFFIX]
@@ -118,8 +115,7 @@ class PrivilegedPolicyTeacher(torch.nn.Module):
                 ),
                 dim=-1,
             )
-            owner_bias = self.owner_embedding.weight[owner.index][None, None]
-            rows.append(self.factor_norm(token + rank_bias + owner_bias))
+            rows.append(self.factor_norm(token))
         return torch.stack(rows, dim=1)
 
     def forward(

@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_privileged_absolute_compiler_v2",
-  "status": "active_stage1_absolute_warmstart",
-  "purpose": "Content-gated privileged q_pi and one absolute full-policy target-family rank16 compiler before q_V exists.",
+  "schema_version": "ember_ecp_stage1_privileged_compiler_v3",
+  "status": "active_stage1_policy_functional",
+  "purpose": "Content-address-separated privileged q_pi and policy-functional absolute rank16 compiler before q_V exists.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -70,6 +70,9 @@
     "prior_only_surface": "exact complete rank16 gauge-canonical stable shared prior",
     "full_process_surface": "direct absolute complete rank16 LoRA; no stable-prior factor residual",
     "q_pi_gate": "member x event x owner content gate, bounded by visible event presence",
+    "program_content": "owner/layer/family are tensor addresses; no additive address embeddings in visible Program values or q_pi factor values",
+    "compiler_content_path": "addresses affect keys, queries and locality only; values and factor hidden states require Program content",
+    "query_to_output_shortcut": false,
     "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values",
     "factor_head_init_std": {
       "action_in": {"a": 0.0007972, "b": 0.0001409},
@@ -98,15 +101,15 @@
     "functional_response": "paired complete PI0.5 flow response on successful multi-phase occupancy",
     "prior_counterfactual": "language+scene with process absent remains near the full stable-prior LoRA",
     "weights": {
-      "member_effective_update": 1.0,
-      "consensus_effective_update": 1.0,
-      "member_canonical_factor": 0.5,
-      "consensus_canonical_factor": 0.5,
+      "member_effective_update": 0.25,
+      "consensus_effective_update": 0.25,
+      "member_canonical_factor": 0.1,
+      "consensus_canonical_factor": 0.1,
       "prior_preservation": 0.2,
       "functional_response": 1.0,
       "locality": 0.02
     },
-    "functional_start_task_visits": 228,
+    "functional_start_task_visits": 0,
     "train_policy_seed": 2026082501,
     "evaluation_policy_seed": 2026082591
   },

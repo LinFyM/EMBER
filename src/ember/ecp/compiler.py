@@ -96,9 +96,9 @@ class TargetFamilyCompiler(torch.nn.Module):
         )
         self.trunk = torch.nn.Sequential(
             torch.nn.LayerNorm(compiler_width),
-            torch.nn.Linear(compiler_width, 2 * compiler_width),
+            torch.nn.Linear(compiler_width, 2 * compiler_width, bias=False),
             torch.nn.GELU(),
-            torch.nn.Linear(2 * compiler_width, compiler_width),
+            torch.nn.Linear(2 * compiler_width, compiler_width, bias=False),
             torch.nn.LayerNorm(compiler_width),
         )
         self.factor_a, self.factor_b = self._factor_heads(owners, compiler_width)
@@ -185,7 +185,7 @@ class TargetFamilyCompiler(torch.nn.Module):
 
     def _tokens(
         self, program: ECPProgram
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = program.language.shape[0]
         expected = (batch, self.owner_count)
         if (
@@ -197,27 +197,33 @@ class TargetFamilyCompiler(torch.nn.Module):
             or program.uncertainty.shape != program.process.shape
         ):
             raise ValueError("compiler Program tensors changed shape")
-        owner_bias = self.program_owner_embedding.weight[None]
-        language = (
-            self.language_projection(program.language)
-            + owner_bias
-            + self.token_type_embedding.weight[0]
+        language = torch.nn.functional.layer_norm(
+            self.language_projection(program.language),
+            (self.compiler_width,),
         )
-        scene = (
-            self.scene_projection(program.scene)
-            + owner_bias
-            + self.token_type_embedding.weight[1]
+        scene = torch.nn.functional.layer_norm(
+            self.scene_projection(program.scene),
+            (self.compiler_width,),
         )
-        event_bias = self.event_embedding.weight[None, :, None]
-        process = (
+        process = torch.nn.functional.layer_norm(
             self.process_projection(program.process)
-            + self.uncertainty_projection(torch.log1p(program.uncertainty.float()))
+            + self.uncertainty_projection(torch.log1p(program.uncertainty.float())),
+            (self.compiler_width,),
+        )
+        value_tokens = torch.cat(
+            (language, scene, process.flatten(1, 2)), dim=1
+        )
+        owner_bias = self.program_owner_embedding.weight[None]
+        language_key = language + owner_bias + self.token_type_embedding.weight[0]
+        scene_key = scene + owner_bias + self.token_type_embedding.weight[1]
+        process_key = (
+            process
             + owner_bias[:, None]
-            + event_bias
+            + self.event_embedding.weight[None, :, None]
             + self.token_type_embedding.weight[2]
         )
-        tokens = torch.cat(
-            (language, scene, process.flatten(1, 2)), dim=1
+        key_tokens = torch.cat(
+            (language_key, scene_key, process_key.flatten(1, 2)), dim=1
         )
         process_presence = program.presence[:, :, None].expand(
             -1, -1, self.owner_count
@@ -227,14 +233,14 @@ class TargetFamilyCompiler(torch.nn.Module):
                 torch.ones(
                     batch,
                     2 * self.owner_count,
-                    device=tokens.device,
+                    device=value_tokens.device,
                     dtype=process_presence.dtype,
                 ),
                 process_presence,
             ),
             dim=1,
         )
-        return tokens, presence
+        return key_tokens, value_tokens, presence
 
     def _queries(self) -> torch.Tensor:
         target = self.target_embedding.weight[:, None]
@@ -251,10 +257,10 @@ class TargetFamilyCompiler(torch.nn.Module):
         return hard.detach() - soft.detach() + soft
 
     def forward(self, program: ECPProgram) -> ECPCompilerOutput:
-        tokens, presence = self._tokens(program)
+        key_tokens, value_tokens, presence = self._tokens(program)
         queries = self.query_projection(self._queries())
-        keys = self.key_projection(tokens)
-        values = self.value_projection(tokens)
+        keys = self.key_projection(key_tokens)
+        values = self.value_projection(value_tokens)
         logits = torch.einsum("jrd,bnd->bjrn", queries, keys) / math.sqrt(
             self.compiler_width
         )
@@ -262,7 +268,7 @@ class TargetFamilyCompiler(torch.nn.Module):
         logits = logits + presence.clamp_min(1e-4).log()[:, None, None]
         attention = logits.softmax(-1)
         hidden = torch.einsum("bjrn,bnd->bjrd", attention, values)
-        hidden = self.trunk(hidden + queries[None])
+        hidden = self.trunk(hidden)
         templates = self.template_state()
         process_gate = self._process_gate(program)
         result: dict[str, torch.Tensor] = {}

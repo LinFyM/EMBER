@@ -942,3 +942,22 @@ correction单独更有差异，cosine`.8690`，也把与direct pair geometry的�
 分别输出绝对完整rank16坐标；compact-SVD canonical factors只作优化warm-start，最终仍由multi-state functional support、
 fit reward/progress与held closed loop裁决。完整证据见
 `docs/evidence/ecp_20260822/stage1_privileged_compiler_fold0_gate2.json`。
+
+## 44. Absolute factors移除了template取消项，但参数warm-start仍沿address捷径收缩到近零共享update
+
+content-gated `q_pi`与prior/full absolute compiler v2从clean pushed `7ca808d`完成fresh 228 visits/38 updates，运行与
+checkpoint均正常；full不再叠加stable-prior A/B，prior-only exact-BA loss按结构为0。尽管如此，24-task物化candidate的
+跨task effective cosine仍为`.994192`，direct仅`.131915`；mean own-direct `.183969`低于nearest-other `.282906`，只有
+`2/24`自身检索正确，candidate/direct norm ratio只有`.099771`。fit19/held5 member loss分别`.94840/.95781`，不是单纯held
+泛化差。预注册几何门失败，因此没有运行held250，也没有启动`q_V`。
+
+这轮只训练了BA/factor坐标与locality：配置中的successful-policy functional从228之后才启用，38次更新实际为0个functional
+updates。它因此直接验证了专家警告的窄情况——raw A/B重建即使换成canonical absolute坐标也不会自动得到policy-effective
+Program。结果只关闭“absolute坐标加参数warm-start足以摆脱坍缩”，不能用来否定尚未训练的policy-functional oracle链。
+
+代码复核还定位到独立的内容旁路。Program owner/type/event embeddings与task内容共同进入attention values；constant
+target/rank query又在cross-attention后以`hidden + query`直达factor heads；q_pi factor tokens同样加入owner/rank embeddings。
+因此numeric address不仅定位读取位置，还能在Program内容近似时直接生成一套地址特定但task近共享的LoRA。后继不删除
+event/layer/family轴，而是把**地址与内容分责**：地址只用于key/query/locality，value与最终factor hidden只来自Program内容；
+同时successful-policy functional从第一个update启用，BA/canonical只保留低权重优化坐标。证据见
+`docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。

@@ -120,7 +120,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 定位首版最早接口：`q_pi`全局`.1` residual幅度不足，compiler把仍有差异的Program压成跨task cosine`.9968`的近共享LoRA；
 - [x] 用content-gated `q_pi`与prior/full absolute compiler替换首版唯一运行面，加入gauge-canonical coordinate warm-start，
   删除首版active config/schema/evaluator路径并通过聚焦CPU合同；
-- [ ] 完成真实K2 profile与fresh训练，并先过task-discrimination geometry gate；
+- [x] 完成v2真实K2 profile与fresh 228-visits训练；预注册几何门仍失败，未运行held closed loop；
+- [x] 切断Program/compiler中的address-to-output捷径并从第一个update启用successful-policy functional response，完成真实
+  K2+functional profile；
+- [ ] 从fresh clean pushed authority重跑task-discrimination geometry gate；
 - [ ] geometry过门后补齐successful/source/shared functional support和fit-task reward/progress，再重跑held5 Gate 2；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -174,10 +177,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 用真实K2 profile确认content-gated `q_pi`、prior/full absolute compiler、canonical factor loss的图、梯度和吞吐；
-2. 从fresh clean pushed authority训练；先以own-direct retrieval、跨task非坍缩、
+1. 完成content/value与numeric address分离：address只控制key/query/locality，LoRA values必须读取Program内容；
+2. 从第一个update启用successful-policy functional response，BA/canonical只保留低权重坐标warm-start，并做真实K2 profile；
+3. 从fresh clean pushed authority训练；先以own-direct retrieval、跨task非坍缩、
    effective norm/cosine裁决是否值得进入held fixed250；
-3. 坐标门通过后增加source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
+4. 坐标门通过后增加source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
    排除validation/Test的LIBERO-90 meta-task expert family，再轮换固定fold；
-4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

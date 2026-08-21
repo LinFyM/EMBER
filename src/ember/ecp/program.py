@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import torch
 
-from ember.ecp.contracts import TargetFamily, TargetOwner
+from ember.ecp.contracts import TargetOwner
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 
 
@@ -30,25 +30,6 @@ class ECPProgram:
         )
 
 
-def _owner_coordinates(
-    owners: tuple[TargetOwner, ...],
-) -> tuple[torch.Tensor, torch.Tensor]:
-    families = tuple(TargetFamily)
-    family_ids = torch.tensor(
-        [families.index(owner.family) for owner in owners], dtype=torch.long
-    )
-    layer_ids = torch.tensor(
-        [
-            owner.layer
-            if owner.layer is not None
-            else (17 if owner.family is TargetFamily.ACTION_OUT else 0)
-            for owner in owners
-        ],
-        dtype=torch.long,
-    )
-    return family_ids, layer_ids
-
-
 class VisibleProgramProjector(torch.nn.Module):
     """Build language, scene, and ordered process anchors before privileged input."""
 
@@ -63,12 +44,6 @@ class VisibleProgramProjector(torch.nn.Module):
         self.owner_count = len(owners)
         self.width = width
         self.event_slots = event_slots
-        family_ids, layer_ids = _owner_coordinates(owners)
-        self.register_buffer("family_ids", family_ids, persistent=False)
-        self.register_buffer("layer_ids", layer_ids, persistent=False)
-        self.owner_embedding = torch.nn.Embedding(self.owner_count, width)
-        self.family_embedding = torch.nn.Embedding(len(TargetFamily), width)
-        self.layer_embedding = torch.nn.Embedding(18, width)
         self.language_projection = torch.nn.Sequential(
             torch.nn.LayerNorm(width),
             torch.nn.Linear(width, width),
@@ -84,14 +59,6 @@ class VisibleProgramProjector(torch.nn.Module):
         self.language_norm = torch.nn.LayerNorm(width)
         self.scene_norm = torch.nn.LayerNorm(width)
         self.process_norm = torch.nn.LayerNorm(width)
-
-    def _owner_bias(self) -> torch.Tensor:
-        owner_ids = torch.arange(self.owner_count, device=self.family_ids.device)
-        return (
-            self.owner_embedding(owner_ids)
-            + self.family_embedding(self.family_ids)
-            + self.layer_embedding(self.layer_ids)
-        )
 
     @staticmethod
     def _groups(
@@ -125,14 +92,13 @@ class VisibleProgramProjector(torch.nn.Module):
         ):
             raise ValueError("visible ECP Program tensors changed shape")
 
-        bias = self._owner_bias()
         language = self.language_norm(
-            self.language_projection(encoded.language_summary)[:, None] + bias
-        )
+            self.language_projection(encoded.language_summary)
+        )[:, None].expand(-1, self.owner_count, -1)
         scene = self.scene_norm(
-            self.scene_projection(encoded.scene_transition)[:, None] + bias
-        )
-        process = self.process_norm(encoded.process + bias[None, None])
+            self.scene_projection(encoded.scene_transition)
+        )[:, None].expand(-1, self.owner_count, -1)
+        process = self.process_norm(encoded.process)
 
         language_rows = []
         scene_rows = []

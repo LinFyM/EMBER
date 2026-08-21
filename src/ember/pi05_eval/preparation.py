@@ -691,9 +691,17 @@ def _prepared_payload(
         source_sft_requested=source_sft_requested,
         authorities=authorities,
         model=model,
-        tasks=installed_tasks if diagnostic_subset is not None else tasks,
+        tasks=(
+            installed_tasks
+            if diagnostic_subset is not None and writer_kind == "task_expert"
+            else tasks
+        ),
     )
-    if diagnostic_subset is not None and adapter is not None:
+    if (
+        diagnostic_subset is not None
+        and adapter is not None
+        and writer_kind == "task_expert"
+    ):
         adapter = select_task_expert_adapter_tasks(
             adapter,
             tasks,

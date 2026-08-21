@@ -893,3 +893,21 @@ native还不能直接冻结为最终authority。根据owner已确认的必做合
 native observer其余参数，并用完全相同panel做matched裁决；只有Meta不造成task/event geometry退化且改善或保持probe稳定时
 才采用。此时不启动compiler或用内部几何替代闭环Gate 2。证据见
 `docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`。
+
+## 42. Action Meta-LoRA是中性校准，按owner规则采用并冻结Stage 0 authority
+
+冻结native v3 macro10后，只训练18层Action Expert q/k/v/o的shared rank4 Meta-LoRA，共626,688 values；native observer、
+source、PaliGemma与Action Expert原参数全部冻结。clean pushed `a42601a`完成10 macros/900 visits，耗时825.15秒，active events
+全程`6.83--6.91`，所有adapter gradients与checkpoint finite。训练只证明adapter图接通，不能选择authority。
+
+完全相同48 rows的matched panel显示Meta几乎不改变native表示。nearest margin均值从`.0190726705`到`.0190832342`，逐row
+33项提高、15项降低，最大绝对变化低于`7.5e-5`；mean margin提高`2.95e-5`。same-task-other summary cosine只变化
+`-1.51e-7`，antithetic summary cosine变化`-3.55e-6`；48/48 positive margins、held5 10/10和antithetic-closer 16/48全部
+不变。panel显存完全相同，耗时只从188.16到188.85秒。这不支持“Action Meta解决了probe instability”的更强说法，也没有
+可复现退化。
+
+owner已明确要求Action Meta必须尝试且只要没有负面效果就启用，因此最终Stage 0 authority固定为native checkpoint与Meta
+checkpoint的组合；后继只在observer forward安装Meta并永久冻结，不能与`q_pi`、compiler或`q_V`共同旋转。它不是deployment
+第二adapter：rollout前仍只物化compiler生成的一套完整rank16 LoRA。Gate 1由此完成，下一阶段进入visible-event-anchored
+privileged `q_pi + compiler`，内部几何不替代held5 closed-loop Gate 2。证据见
+`docs/evidence/ecp_20260822/stage0_action_meta_v3_gate1.json`。

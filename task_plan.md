@@ -101,8 +101,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 在真实83/42帧pair上profile v3的显存、梯度、frame/event action loss与事件数；
 - [x] 从clean pushed authority训练v3 macro10并运行同一固定observer panel；48/48 nearest cross-task margins为正，native
   首次非退化并授权进入Action Meta matched arm，但antithetic probe稳定性仍待裁决；
-- [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
-- [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
+- [x] 固定native baseline后单独校准shared Action Meta-LoRA；matched panel无可复现负面效果、也无显著收益，按owner规则采用；
+- [x] 永久冻结`native v3 macro10 + Action Meta v3 macro10`为observer authority并保存remote-safe裁决证据。
 
 **Gate 1：** task/event结构必须跨episode和probe稳定；Action Meta-LoRA不能引入task-ID/noise shortcut或性能退化。
 
@@ -166,8 +166,10 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 封存v3 native macro10与固定panel为remote-safe evidence，不续训或用native后续点替代matched裁决；
-2. 从冻结native macro10 fresh训练已接通的shared Action Meta-LoRA独立arm，保持v3 objective、task schedule和信息墙完全一致；
-3. 对Action Meta macro10运行完全相同的48-row panel，比较task geometry、held泛化、probe稳定性与成本；
-4. 无可复现负面效果则采用并永久冻结Meta observer，否则保留native并封存负证据；
-5. Gate 1 authority固定后进入privileged `q_pi + compiler`，同时清理Stage 0短期branch/worktree和非formal临时产物。
+1. 封存Stage 0 native与Action Meta matched证据，不再续训observer或让其与后继compiler共同旋转；
+2. 实现visible-event-anchored privileged `q_pi(P)`，只在fit19读取多个successful members、完整occupancy、policy response与
+   verified recovery evidence，held5保持零梯度；
+3. 实现38-owner、rank-query、family-specific A/B heads且强layer-local的完整rank16 compiler，不恢复旧16D decoder或
+   shared12/task4硬拆；
+4. 先用fit19训练并在固定held5运行source/direct/generated closed-loop三联面板，按`.75/.60` support-retention门裁决；
+5. Gate 2通过后进入Dynamic-K `q_V`；不通过则定位`q_pi`、compiler geometry或closed-loop support中最早失败接口。

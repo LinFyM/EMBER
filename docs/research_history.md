@@ -702,6 +702,18 @@ summary/event cosine`.999975/.999871`。这使native observer首次通过“非�
 所以最终observer authority仍待matched Meta panel，不进入compiler。证据：
 `docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`。
 
+### 3.33 Action Meta-LoRA中性matched裁决与Stage 0 authority冻结
+
+clean pushed `a42601a`从冻结native v3 macro10训练shared rank4 Action Meta-LoRA，world-size6完成10 macros/900 visits，耗时
+825.15秒、峰值15,432,632,320 bytes。adapter gradient与checkpoint均finite，active events始终`6.83--6.91`。
+
+完全相同48-row panel中，native→Meta的nearest margin为`.01907267→.01908323`，mean margin
+`.09058216→.09061162`，antithetic summary cosine`.97822402→.97822047`；48/48 positive margins、held5 10/10与
+antithetic-closer 16/48不变，所有逐row差异约在`1e-4`以内。结果是无显著收益也无可复现负面效果的中性校准。按owner
+预先确认的采用规则，`native v3 macro10 + Action Meta v3 macro10`被永久冻结为Stage 0 observer authority；Meta只在observer
+内部安装，不是rollout第二adapter。Gate 1完成，下一步进入privileged `q_pi + compiler`。证据：
+`docs/evidence/ecp_20260822/stage0_action_meta_v3_gate1.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -3,19 +3,21 @@
 状态：2026-08-21 **active；首个fixed-decoder outer-credit实现及其matched因果面板均已formal裁决。macro2的
 correct/language-only/video-only/first+final/same-task-other分别为`41/39/40/39/40`，Goal与Long全为0；correct相对
 language与first+final都只净增2且不显著，换同任务视频只保留36/41个correct successes。最早失效接口因此前移到outer之前的
-16维code inference：继承的56-task process frontend已加载，但三个新16维输出层只经两轮低学习率correct-only拟合。下一节点
-复用现有训练产物，在fixed decoder上补齐fit19跨episode action-phase alignment、真实时序controls与K1--4覆盖，先过
-Inference Gate再考虑新outer estimator；不恢复macro4、不做rank/LR/seed小扫。held始终零梯度、zero-interaction。**
+过程推断。原计划在现有16维fixed code上补action-phase supervision；owner与执行方随后基于专家最新思想启动更根本的
+policy-native双时间架构复核。候选方案与开放问题已写入
+`docs/policy_native_dual_time_program_compiler_review_20260821.md`。复核完成前不启动原16维formal warm-start、新outer
+estimator或held评测；现有实现、checkpoint与smoke只作为可复用资产和反事实。held始终零梯度、zero-interaction。**
 
 owner于本节点要求：process-supervised路径完成机制验证并集成后暂时收尾，先进行owner/执行方/专家中期讨论；讨论前不启动
 formal训练或下一轮held评测。goal保持active，暂停不等于路线完成或裁决。
 
 ## Goal
 
-全面落实第二轮独立专家意见与owner随后确认的授权：停止在当前LMMPC 320-cell joint-moving compiler上做增量修补，先建立
-跨任务、policy-functional且坐标固定的adaptation manifold，再学习exact language与action-hidden有序视频到compact
-skill code的推断，并以train/meta-task closed-loop credit改善一次性完整LoRA。所有方向必须进入实现、实验裁决或明确的
-条件转向，不得静默遗漏；最终选择仍由held zero-interaction closed-loop absolute、breadth、相邻稳定性与视频净因果增量共同决定。
+全面推进EMBER：从frozen source PI0.5出发，让shared Writer只根据exact language与K条action-hidden有序正确视频，在
+rollout前一次生成一套完整task-conditioned LoRA，并从未见初始化闭环完成task。全面吸收第二轮专家意见、最新policy-native
+思考与全部历史证据，不把compact code、fixed decoder、memory、rank或某个旧Writer写成目标；具体架构若被证据否决就按最早
+失败接口重构。最终选择仍由held zero-interaction closed-loop absolute、breadth、相邻稳定性、same-task跨video鲁棒与视频
+必要因果增量共同决定。
 
 ## Done when
 
@@ -244,6 +246,17 @@ estimator，也不能直接投入更昂贵多方向outer。下一轮先使用已
 - [ ] 验证、合并`main`、推送远程、清理已集成worktree与临时输出；目标真实完成后再标记goal complete。
 
 ## Current next actions
+
+当前先完成中期架构复核，而不是直接恢复GPU推进：
+
+1. 由owner把`docs/policy_native_dual_time_program_compiler_review_20260821.md`及本仓库commit交给专家，要求其从核心
+   可行性、PI0.5机制、Program监督/编译、数据可识别性与跨embodiment边界独立审查；执行方未经owner明确授权不向专家发送；
+2. 专家意见与owner裁决后，只保留一个active design：若采用新方案，则明确替代本轮16维code主线并先做native lattice与
+   compiler oracle gate；若否定，则记录根本原因并据此重构，不机械回到旧LMMPC/V6或继续小扫；
+3. 复核期间不启动formal process warm-start、outer credit或held评测，不重训source/expert bank；已有smoke、checkpoint、
+   successful trajectories、teacher-action store、controls和evaluator全部保留复用。
+
+以下1--13项是本轮复核前已经完成的证据与原暂停点，不再自动授权第11--13项所述的16维formal路径：
 
 1. validation8八套rank16 local LoRA均按预注册合同训练到step2000；strict paired400为`250/400`，source为`48/400`，
    43 retained、207 gained、5 lost、净`+202`，八项全为正增量、四suite均非零，故通过`>150 / >=5 tasks / 4 suites`

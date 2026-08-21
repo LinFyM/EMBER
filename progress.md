@@ -5,6 +5,12 @@
 
 ## Current authority and executable state
 
+- owner已启动中期核心架构复核。远程可审查的候选方案与全部开放问题见
+  `docs/policy_native_dual_time_program_compiler_review_20260821.md`：它提出从每个教学帧的native PI0.5 forward保留
+  `video time x Action Expert layer x 50-token horizon` lattice，以task-grounded真实视觉transition作dynamic Value，经过
+  双时间局部transport形成`event x layer` Program，再由冻结layer-local compiler生成唯一完整LoRA。该文档当前是
+  **review candidate而非active implementation authority**；正式训练、held评测和代码重构继续暂停，等待专家复核与owner裁决。
+  当前已实现authority仍是`docs/functional_adaptation_successor_design.md`，但只作为未过Inference Gate的sealed基线。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - 第二轮专家意见后继goal已经由owner正式启动。active design为
@@ -323,6 +329,8 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 
 ## Remote-visible review map
 
+- 本轮policy-native双时间架构候选与专家问题：
+  `docs/policy_native_dual_time_program_compiler_review_20260821.md`；
 - 原专家报告：`docs/external_review_20260818.md`；
 - 113项claim ledger：`docs/external_review_claim_ledger_20260818.md`；
 - 本轮面向专家的结果报告：`docs/external_review_followup_20260819.md`；

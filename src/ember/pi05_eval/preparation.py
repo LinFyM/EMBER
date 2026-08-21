@@ -315,7 +315,7 @@ def _task_subset_tasks(
         or args.mode != "formal"
         or args.role != "development_train"
         or args.state_count != 50
-        or writer_kind not in {None, "task_expert"}
+        or writer_kind not in {None, "task_expert", FUNCTIONAL_CODE_WRITER_KIND}
     ):
         raise Pi05EvaluationError("formal task subset request changed")
     path = path.resolve()

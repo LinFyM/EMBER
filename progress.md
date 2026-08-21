@@ -124,6 +124,16 @@
   Meta-LoRA matched arm。它还不是最终observer authority：antithetic summary/event cosine为`.978224/.976424`，只有16/48
   rows的antithetic same-task cosine高于canonical nearest-cross cosine，probe稳定性仍是Stage 0B的主要裁决项。native结果见
   `docs/evidence/ecp_20260822/stage0_native_v3_macro10_gate1.json`；compiler、`q_pi`和closed loop仍未启动。
+- v3 Action Meta-LoRA在冻结native macro10上完成真实83/42帧单卡profile：只有626,688个shared rank4 adapter values可训练，
+  source与native observer其余参数无gradient；frame/event loss`.200828/.206732`、adapter grad norm`.000751`均finite，13.56秒，
+  峰值15,083,217,920 bytes，active events`6.5`。profile checkpoint已删除，只解除v3 objective下的机械/显存门。
+- Action Meta v3 formal合同固定为：从包含本记录的clean pushed `main`创建detached frozen worktree，冻结native
+  `runs/outputs/pi05_ecp_stage0_native_v3_fold0_m10_r6_gpu01p123457_20260822/checkpoints/macro_00000010`，在gpu01 physical
+  `1,2,3,4,5,7`做world-size6，继续排除Prohibited physical0；只训练同一shared rank4 Action Meta-LoRA，保持90 tasks、pair
+  schedule、v3 objective、correct-only信息墙和10 macros/900 visits完全matched。输出唯一为
+  `runs/outputs/pi05_ecp_stage0_action_meta_v3_fold0_m10_r6_gpu01p123457_20260822/`，预计低于100 MB；macro10后用native
+  checkpoint加该Meta checkpoint运行完全相同48-row panel。launch前`/data1` usage 654,639,124 KiB、quota 1,073,741,824 KiB、
+  shared free 84 TiB；只允许同commit/world-size6 exact-resume，不与compiler共同训练。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

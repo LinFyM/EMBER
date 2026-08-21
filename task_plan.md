@@ -114,8 +114,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 保留完整rank16 prior/full LoRA，不恢复shared12/task4硬拆或full A/B相加；
 - [x] 接通train24固定19/5 fold的task-equal world-size6训练合同，held5不拟合code、不更新teacher/compiler；真实普通/
   functional单卡profile均已通过；
-- [ ] 从clean pushed frozen authority正式训练fit19并保存相邻task-visit checkpoints；
-- [ ] held5 oracle Program生成一套LoRA并直接closed-loop，报告source/direct/generated三联面板；
+- [ ] 从clean pushed frozen authority正式训练fit19并保存相邻task-visit checkpoints；228节点已完成，570 exact-resume进行中；
+- [ ] held5 oracle Program生成一套LoRA并直接closed-loop，报告source/direct/generated三联面板；228节点已完成且未过门，等待
+  首个functional 570节点复验；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -168,8 +169,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 完成Stage 1 checkpoint的held5 single-LoRA物化与固定250-row source/direct/generated闭环评测入口；
-2. 完成Stage 1聚焦回归、结构复核、运行文档与remote-safe合同，及时合并并推送`main`；
-3. 从clean pushed detached authority在单节点六卡训练fit19，先到228 visits几何节点，再按闭环证据决定是否继续570/1140；
-4. 在固定held5运行三联面板并按`.75/.60` support-retention门裁决，必要时轮换预注册fold而不触碰validation8；
-5. Gate 2通过后进入Dynamic-K `q_V`；不通过则定位`q_pi`、compiler geometry或closed-loop support中最早失败接口。
+1. 完成从228到570 visits的exact-resume，使Stage 1首次纳入multi-state functional policy-response监督；
+2. 物化570 single-LoRA并复用同一held5 fixed250 source/direct/shared-prior rows，按`.75/.60` support-retention门裁决；
+3. 若570出现广泛闭环/support改善，继续预注册1140节点并检查相邻稳定性；若仍无机制性移动，定位`q_pi`、compiler geometry或
+   functional-support接口中最早失败处，不用无关超参小扫拖延；
+4. 每个节点及时更新remote-safe进度、清理task-owned临时脚本/日志，并推送`main`；
+5. 只有Gate 2通过并经预注册fold复现后才进入Dynamic-K `q_V`，不触碰validation8/Test8。

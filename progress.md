@@ -17,7 +17,8 @@
 - 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
-  永久冻结。当前正在实现和profile Phase 2的privileged `q_pi + compiler`，尚未运行fit19 formal或held5 closed loop。
+  永久冻结。Phase 2已从clean pushed `6d71cb8`在detached frozen worktree正式运行：fit19首个228-visits几何节点与held5
+  fixed250已完成，当前正从同一world-size6/topology exact-resume到570 visits；Gate 2未通过前不启动`q_V`。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -33,8 +34,15 @@
 - 两个真实A40单卡profile均已通过。K2视频共45个stride-5 frames时，完整observer+q_pi+compiler forward/backward为
   2.24秒、峰值10,127,157,760 bytes；加入成功occupancy functional response后为2.15秒、峰值16,353,665,536 bytes，
   functional loss `.40906`且梯度finite。首次profile暴露observer未处于BF16 autocast的dtype接口错误，按已验证Stage 0
-  调用边界修正后两臂均成功；三个task-owned临时profile目录已删除。当前下一步是物化held5 single-LoRA、接入固定250-row
-  source/direct/generated三联面板，再从clean pushed frozen authority启动fit19 formal。
+  调用边界修正后两臂均成功；三个task-owned临时profile目录已删除。228-visits正式段完成38 updates，checkpoint、optimizer、
+  scheduler与6份rank RNG均完整，最大峰值10,411,287,040 bytes；该段按合同尚未启用functional response。
+- 228-visits checkpoint已为全部train24任务物化一套完整rank16/76-tensor LoRA；held5仍是零shared gradient，物化输入为固定
+  K2 correct action-hidden videos（没有最终LoRA平均）。同一held5 fixed250上，source/shared-prior/direct-earliest/
+  direct-latest/generated为`21/43/74/108/23`。generated只在Spatial task0得到`23/50`，其余4 tasks均为0；source→generated
+  为15 retained、8 gained、6 lost、净`+2`、McNemar `p=.79053`，而shared-prior→generated净`-20`。相对两套direct member的
+  success retention为`13/74=.17568`与`12/108=.11111`，gain retention为`2/62=.03226`与`3/96=.03125`；Goal/Long均为0，
+  因此该节点明确未过Gate 2。它只淘汰“纯几何warm-start在228 visits已经足够”的假设；当前按预注册schedule继续到首次包含
+  functional policy-response监督的570-visits节点，不据此启动`q_V`或推翻ECP。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

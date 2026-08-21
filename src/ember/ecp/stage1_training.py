@@ -7,6 +7,7 @@ import json
 import math
 import os
 import socket
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -223,6 +224,7 @@ def _build_contract(
         "schema_version": RUN_SCHEMA,
         "stage": STAGE,
         "mode": runtime.args.mode,
+        "command": list(sys.argv),
         "git": {"branch": state["branch"], "commit": state["commit"]},
         "host": socket.gethostname(),
         "config": {"path": str(runtime.args.config), "bytes": runtime.args.config.stat().st_size},
@@ -253,6 +255,8 @@ def _build_contract(
         "information_wall": dict(runtime.config["information_wall"]),
         "runtime": {
             "world_size": runtime.context.world_size,
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
             "topology": topology,
             "start_task_visits": runtime.start_task_visits,
             "stop_after_task_visits": runtime.stop_after_task_visits,

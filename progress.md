@@ -67,10 +67,14 @@
   probe summary/event cosine仍为`.998766/.998409`。因此首版只证明图和监督可优化，没有识别task-conditioned event
   Program；不续训、不扫LR/rank/seed，也不把坍缩observer交给compiler或Action Meta正式arm。remote-safe裁决见
   `docs/evidence/ecp_20260822/stage0_native_macro10_gate1.json`。
-- 最早失效接口已定位为一组耦合退化：learned `minimum_duration`只作为所有任务共享的presence分母，正sparsity项可通过
-  全局放大该尺度降loss；event-mean action regression又允许把全视频帧压进少数slot而不承担逐帧动作差异。下一fresh版本
-  只修正这组因果接口：presence由固定、速度归一的occupancy fraction定义；每帧action target由其soft event posterior重构。
-  它不规定视频段落对应哪个slot，不加入shuffled/reversed训练，也不改变38-owner、50-horizon或动态E目标。
+- 最早失效接口的一组耦合修正已实现为canonical Stage 0 v2：删除所有task共享的learned `minimum_duration`分母，presence
+  固定使用`1-exp(-(occupancy/valid_frames)/.08)`；event action head不再回归frame targets的event均值，而是经每帧soft
+  posterior重构逐帧cross-episode action target。它不规定视频段落对应哪个slot，不加入shuffled/reversed训练，也不改变
+  38-owner、50-horizon或动态E目标。v1 config已由v2单路径替换，旧formal合同只通过Git authority复现。
+- Stage 0 v2真实83/42-frame单任务profile已通过：action alignment `.252319`、mean active events `3.5`、presence sum
+  `4.43023`、gradient norm `.954190`，完整forward/backward 4.26秒、峰值11,497,050,624 bytes，checkpoint finite。38项
+  聚焦测试通过，并新增两个直接回归：相同比例occupancy在1x/2x帧数下presence完全相同；把动作不同的两帧坍缩到一个
+  event即使event均值预测正确仍产生`.25`逐帧误差。该profile只解除运行门，下一步仍须fresh macro10与固定panel裁决。
 - 独立Action Meta-LoRA运行面已经实现：复用唯一`MetaLoRAStack` owner，对18层Action Expert的q/k/v/o投影加shared rank4、
   只在observer calibration时安装，checkpoint与panel均独立于native；source、native observer及其post-capture参数冻结，部署
   不携带第二adapter。单卡首个profile暴露全层adapter反传的activation OOM，已改为复用PI0.5原生per-layer activation

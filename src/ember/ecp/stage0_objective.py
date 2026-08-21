@@ -23,15 +23,21 @@ class ECPStage0Loss:
     presence_sparsity: torch.Tensor
 
 
-def _event_action_targets(
+def _frame_action_reconstruction(
     posterior: torch.Tensor,
+    event_predictions: torch.Tensor,
     frame_action_targets: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    mass = posterior.sum(1).clamp_min(1e-6)
-    target = torch.einsum(
-        "vte,vtpa->vepa", posterior, frame_action_targets
-    ) / mass[:, :, None, None]
-    return target, mass
+    frame_mask: torch.Tensor,
+) -> torch.Tensor:
+    prediction = torch.einsum(
+        "vte,vepa->vtpa", posterior, event_predictions
+    )
+    per_frame = (prediction.float() - frame_action_targets.float()).square().mean(
+        dim=(2, 3)
+    )
+    valid = frame_mask.to(per_frame.dtype)
+    per_video = (per_frame * valid).sum(1) / valid.sum(1).clamp_min(1)
+    return per_video.mean()
 
 
 def _contrastive_pair(
@@ -60,14 +66,12 @@ def ecp_stage0_loss(
 ) -> ECPStage0Loss:
     """Ground an ordered same-task video pair without exposing task ID to ECP."""
 
-    target, mass = _event_action_targets(
-        output.state_posterior, frame_action_targets
+    action_alignment = _frame_action_reconstruction(
+        output.state_posterior,
+        output.action_phase_predictions,
+        frame_action_targets,
+        output.frame_mask,
     )
-    event_weights = mass / mass.sum(1, keepdim=True)
-    action_error = (
-        output.action_phase_predictions.float() - target.float()
-    ).square().mean(dim=(2, 3))
-    action_alignment = (event_weights * action_error).sum(1).mean()
 
     joint_presence = (output.presence[0] * output.presence[1]).detach()
     joint_presence = joint_presence / joint_presence.sum().clamp_min(1e-6)

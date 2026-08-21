@@ -21,7 +21,7 @@ from ember.ecp.checkpoint import (
     load_ecp_checkpoint,
     save_ecp_checkpoint,
 )
-from ember.ecp.contracts import build_target_owners
+from ember.ecp.contracts import TargetOwner, build_target_owners
 from ember.ecp.stage0 import ECPStage0Model
 from ember.ecp.stage0_data import ECPStage0Schedule, ECPStage0Task, load_stage0_tasks
 from ember.ecp.stage0_train_step import run_stage0_macro
@@ -50,7 +50,7 @@ from ember.writer.data import RawTeacherVideoStore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage0_native_run_v1"
+RUN_SCHEMA = "ember_ecp_stage0_native_run_v2"
 STAGE = "stage0_native"
 
 
@@ -90,8 +90,13 @@ def stage0_authority_path(config: dict[str, Any], name: str) -> Path:
 
 def load_stage0_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if config.get("schema_version") != "ember_ecp_stage0_native_v1":
+    if config.get("schema_version") != "ember_ecp_stage0_native_v2":
         raise ValueError("unsupported ECP Stage 0 config")
+    if (
+        config["objective"].get("action_alignment_mode")
+        != "per_frame_soft_event_reconstruction"
+    ):
+        raise ValueError("unsupported ECP Stage 0 action grounding")
     return config
 
 
@@ -148,6 +153,30 @@ def build_stage0_optimizer(
         betas=tuple(cell["betas"]),
         eps=float(cell["eps"]),
         weight_decay=float(cell["weight_decay"]),
+    )
+
+
+def build_stage0_model(
+    config: dict[str, Any],
+    owners: tuple[TargetOwner, ...],
+    *,
+    max_frames_per_call: int | None = None,
+) -> ECPStage0Model:
+    cell = config["model"]
+    return ECPStage0Model(
+        owners,
+        prefix_width=int(cell["prefix_width"]),
+        expert_width=int(cell["expert_width"]),
+        program_width=int(cell["program_width"]),
+        event_slots=int(cell["event_slots"]),
+        action_phases=int(cell["action_phases"]),
+        presence_threshold_fraction=float(cell["presence_threshold_fraction"]),
+        max_frames_per_call=int(
+            cell["max_frames_per_call"]
+            if max_frames_per_call is None
+            else max_frames_per_call
+        ),
+        fixed_probe_seed=int(cell["fixed_probe_seed"]),
     )
 
 
@@ -350,17 +379,7 @@ def prepare_runtime(
     owners = build_target_owners(
         load_pi05_lora_contract(stage0_authority_path(config, "lora_contract"))
     )
-    model_cell = config["model"]
-    model = ECPStage0Model(
-        owners,
-        prefix_width=int(model_cell["prefix_width"]),
-        expert_width=int(model_cell["expert_width"]),
-        program_width=int(model_cell["program_width"]),
-        event_slots=int(model_cell["event_slots"]),
-        action_phases=int(model_cell["action_phases"]),
-        max_frames_per_call=int(model_cell["max_frames_per_call"]),
-        fixed_probe_seed=int(model_cell["fixed_probe_seed"]),
-    ).to(context.device)
+    model = build_stage0_model(config, owners).to(context.device)
     initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
     if context.world_size > 1:
         for value in model.state_dict().values():
@@ -500,7 +519,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v2.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)

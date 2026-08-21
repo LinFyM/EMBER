@@ -46,6 +46,22 @@ def _gather_records(
     return [row for shard in shards for row in shard]
 
 
+def _action_adapter_context(runtime: "ECPStage0Runtime") -> Any:
+    if runtime.action_meta_lora is None:
+        return nullcontext()
+    expert = runtime.policy.model.paligemma_with_expert.gemma_expert.model
+    return runtime.action_meta_lora.installed(expert)
+
+
+def _program_metrics(output: Any) -> dict[str, float]:
+    presence = output.presence.detach().float()
+    return {
+        "mean_presence": float(presence.mean()),
+        "mean_active_events": float((presence > 0.5).float().sum(-1).mean()),
+        "mean_presence_sum": float(presence.sum(-1).mean()),
+    }
+
+
 def run_stage0_macro(
     runtime: "ECPStage0Runtime", macro: int, run_started: float
 ) -> dict[str, Any]:
@@ -65,15 +81,9 @@ def run_stage0_macro(
             device=runtime.context.device,
         )
         language_tokens, language_mask = runtime.language_tokens[task_id]
-        adapter_context = nullcontext()
-        if runtime.action_meta_lora is not None:
-            expert = (
-                runtime.policy.model.paligemma_with_expert.gemma_expert.model
-            )
-            adapter_context = runtime.action_meta_lora.installed(expert)
         # Keep the hooks installed through backward: PI0.5 recomputes checkpointed
         # Action Expert layers during the adapter-only calibration arm.
-        with adapter_context:
+        with _action_adapter_context(runtime):
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 output = runtime.model(
                     policy=runtime.policy,
@@ -118,7 +128,7 @@ def run_stage0_macro(
                 "cross_task_contrast": float(loss.cross_task_contrast.detach()),
                 "posterior_entropy": float(loss.posterior_entropy.detach()),
                 "presence_sparsity": float(loss.presence_sparsity.detach()),
-                "mean_presence": float(output.presence.detach().float().mean()),
+                **_program_metrics(output),
                 **pair.metrics,
             }
         )
@@ -149,6 +159,8 @@ def run_stage0_macro(
             "posterior_entropy",
             "presence_sparsity",
             "mean_presence",
+            "mean_active_events",
+            "mean_presence_sum",
         )
     }
     return {

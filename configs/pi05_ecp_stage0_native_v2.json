@@ -1,5 +1,5 @@
 {
-  "schema_version": "ember_ecp_stage0_native_v1",
+  "schema_version": "ember_ecp_stage0_native_v2",
   "status": "active_stage0_native_observer",
   "authorities": {
     "source_manifest": "configs/pi05_source_corpus_v1/source_manifest.json",
@@ -35,6 +35,7 @@
     "expert_width": 1024,
     "program_width": 128,
     "event_slots": 8,
+    "presence_threshold_fraction": 0.08,
     "event_candidates": 4,
     "target_owners": 38,
     "action_horizon": 50,
@@ -52,6 +53,7 @@
     "cross_episode": true
   },
   "objective": {
+    "action_alignment_mode": "per_frame_soft_event_reconstruction",
     "contrastive_temperature": 0.1,
     "weights": {
       "action_alignment": 1.0,

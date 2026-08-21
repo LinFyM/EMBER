@@ -169,10 +169,14 @@ class OrderedEventSegmenter(torch.nn.Module):
         width: int,
         event_slots: int = 8,
         candidates: int = 4,
+        presence_threshold_fraction: float = 0.08,
     ) -> None:
         super().__init__()
+        if not 0.0 < presence_threshold_fraction <= 1.0:
+            raise ValueError("invalid ECP event presence threshold")
         self.event_slots = event_slots
         self.candidates = candidates
+        self.presence_threshold_fraction = presence_threshold_fraction
         self.slot_queries = torch.nn.Parameter(torch.empty(event_slots, width))
         self.owner_pool = torch.nn.Linear(width, 1, bias=False)
         self.transition = torch.nn.Linear(width, event_slots)
@@ -181,8 +185,16 @@ class OrderedEventSegmenter(torch.nn.Module):
         self.forward_logits = torch.nn.Parameter(
             torch.zeros(event_slots, event_slots)
         )
-        self.minimum_duration = torch.nn.Parameter(torch.zeros(event_slots))
         torch.nn.init.normal_(self.slot_queries, std=width**-0.5)
+
+    def _presence(
+        self, occupancy: torch.Tensor, frame_mask: torch.Tensor
+    ) -> torch.Tensor:
+        valid_frames = frame_mask.sum(1).to(occupancy.dtype).clamp_min(1)
+        occupancy_fraction = occupancy / valid_frames[:, None]
+        return -torch.expm1(
+            -occupancy_fraction / self.presence_threshold_fraction
+        )
 
     def _posteriors(
         self,
@@ -279,8 +291,7 @@ class OrderedEventSegmenter(torch.nn.Module):
         # squared uncertainty then produces 0 * inf = NaN. Keep the observer's
         # standard deviation finite at empty or numerically collapsed slots.
         uncertainty = (second - process.square()).clamp_min(1e-4).sqrt()
-        duration_scale = F.softplus(self.minimum_duration)[None] + 1e-4
-        presence = -torch.expm1(-occupancy / duration_scale)
+        presence = self._presence(occupancy, frame_mask)
         return EventProgramOutput(
             process=process,
             presence=presence,

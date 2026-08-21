@@ -10,7 +10,7 @@ from ember.ecp.events import (
     TaskGroundedTransitionMatcher,
 )
 from ember.ecp.observer import ECPNativeObserver
-from ember.ecp.stage0 import ECPStage0Model
+from ember.ecp.stage0 import ECPStage0Model, ECPStage0Output
 from ember.ecp.stage0_data import ECPStage0Schedule, ECPStage0Task
 from ember.ecp.stage0_objective import ecp_stage0_loss
 from ember.pi05_lora import load_pi05_lora_contract
@@ -206,6 +206,65 @@ def test_segmenter_zero_variance_uncertainty_has_finite_gradient() -> None:
     program.uncertainty.square().mean().backward()
 
     assert torch.isfinite(evidence.grad).all()
+
+
+def test_event_presence_uses_speed_normalized_fixed_occupancy() -> None:
+    segmenter = OrderedEventSegmenter(
+        width=8, event_slots=4, presence_threshold_fraction=0.1
+    )
+    original = segmenter._presence(
+        torch.tensor([[2.0, 1.0, 1.0, 0.0]]),
+        torch.ones(1, 4, dtype=torch.bool),
+    )
+    doubled = segmenter._presence(
+        torch.tensor([[4.0, 2.0, 2.0, 0.0]]),
+        torch.ones(1, 8, dtype=torch.bool),
+    )
+
+    assert torch.allclose(original, doubled)
+    assert "minimum_duration" not in dict(segmenter.named_parameters())
+
+
+def test_action_grounding_reconstructs_each_frame_not_only_event_mean() -> None:
+    targets = torch.tensor([[[[0.0]], [[1.0]]]]).expand(2, -1, -1, -1)
+    weights = {
+        "action_alignment": 1.0,
+        "same_task_consistency": 0.0,
+        "uncertainty_calibration": 0.0,
+        "presence_consistency": 0.0,
+        "cross_task_contrast": 0.0,
+        "posterior_entropy": 0.0,
+        "presence_sparsity": 0.0,
+    }
+
+    def output(posterior: torch.Tensor, predictions: torch.Tensor) -> ECPStage0Output:
+        events = posterior.shape[-1]
+        return ECPStage0Output(
+            process=torch.zeros(2, events, 1, 1),
+            presence=torch.ones(2, events),
+            uncertainty=torch.ones(2, events, 1, 1),
+            assignment=torch.zeros(2, events, 2, 1),
+            state_posterior=posterior,
+            confidence=torch.zeros(2, 2, 1),
+            frame_mask=torch.ones(2, 2, dtype=torch.bool),
+            program_summary=torch.ones(2, 1),
+            action_phase_predictions=predictions,
+        )
+
+    collapsed = output(
+        torch.ones(2, 2, 1),
+        torch.full((2, 1, 1, 1), 0.5),
+    )
+    separated = output(
+        torch.eye(2)[None].expand(2, -1, -1),
+        torch.tensor([[[[0.0]], [[1.0]]]]).expand(2, -1, -1, -1),
+    )
+
+    collapsed_loss = ecp_stage0_loss(collapsed, targets, weights=weights)
+    separated_loss = ecp_stage0_loss(separated, targets, weights=weights)
+
+    assert torch.isclose(collapsed_loss.action_alignment, torch.tensor(0.25))
+    assert torch.isclose(separated_loss.action_alignment, torch.tensor(0.0))
 
 
 def test_action_meta_lora_is_the_only_trainable_native_observer_path() -> None:

@@ -90,7 +90,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 使用correct videos、cross-episode teacher actions和不改event order的速度扰动完成首个native observer macro10；
 - [x] 固定面板裁决首版native observer为Gate 1科学不通过：task/event表示近全局坍缩，未进入compiler；
 - [x] 实现独立shared Action Meta-LoRA训练、checkpoint与matched panel运行面；正式科学arm等待修正后的native authority；
-- [ ] 以固定速度归一occupancy presence和逐帧posterior action reconstruction修正最早失效接口，fresh训练并重跑同一面板；
+- [x] 以固定速度归一occupancy presence和逐帧posterior action reconstruction修正最早失效接口，并通过真实profile；
+- [ ] 从fresh clean-pushed authority训练修正后的native macro10并重跑同一固定面板；
 - [ ] 固定native baseline后单独校准shared Action Meta-LoRA，matched裁决后选择并永久冻结observer authority；
 - [ ] 保存`observer_native_stage0.ckpt`与Action Meta-LoRA裁决证据。
 

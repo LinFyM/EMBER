@@ -40,6 +40,7 @@ class ECPVideoEncoder(torch.nn.Module):
         expert_width: int = 1024,
         program_width: int = 128,
         event_slots: int = 8,
+        presence_threshold_fraction: float = 0.08,
         max_frames_per_call: int = 8,
         fixed_probe_seed: int = 20260821,
     ) -> None:
@@ -56,7 +57,9 @@ class ECPVideoEncoder(torch.nn.Module):
             width=program_width, owners=len(owners)
         )
         self.segmenter = OrderedEventSegmenter(
-            width=program_width, event_slots=event_slots
+            width=program_width,
+            event_slots=event_slots,
+            presence_threshold_fraction=presence_threshold_fraction,
         )
         generator = torch.Generator(device="cpu").manual_seed(fixed_probe_seed)
         self.register_buffer(
@@ -228,6 +231,7 @@ class ECPStage0Model(torch.nn.Module):
         program_width: int = 128,
         event_slots: int = 8,
         action_phases: int = 10,
+        presence_threshold_fraction: float = 0.08,
         max_frames_per_call: int = 8,
         fixed_probe_seed: int = 20260821,
     ) -> None:
@@ -239,6 +243,7 @@ class ECPStage0Model(torch.nn.Module):
             expert_width=expert_width,
             program_width=program_width,
             event_slots=event_slots,
+            presence_threshold_fraction=presence_threshold_fraction,
             max_frames_per_call=max_frames_per_call,
             fixed_probe_seed=fixed_probe_seed,
         )

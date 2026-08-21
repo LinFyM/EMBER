@@ -16,7 +16,7 @@ from safetensors.torch import load_file
 from ember.ecp.checkpoint import checkpoint_macro
 from ember.ecp.contracts import build_target_owners
 from ember.ecp.stage0 import ECPStage0Model
-from ember.ecp.stage0_training import load_stage0_config
+from ember.ecp.stage0_training import build_stage0_model, load_stage0_config
 from ember.pi05_eval_contract import git_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_processing import Pi05TeacherPrefixTokenizer
@@ -27,7 +27,7 @@ from ember.writer.meta_lora import MetaLoRAStack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-PANEL_SCHEMA = "ember_ecp_stage0_observer_panel_v1"
+PANEL_SCHEMA = "ember_ecp_stage0_observer_panel_v2"
 
 
 @dataclass(frozen=True)
@@ -135,6 +135,8 @@ def _summaries(rows: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
         if name.endswith("_cosine")
         or name.endswith("_margin")
         or name.endswith("_l1")
+        or name.endswith("_active_events")
+        or name.endswith("_presence_sum")
     )
     result = {}
     for role in ("all", "fit19", "held5"):
@@ -160,17 +162,7 @@ def _load_model(
     owners = build_target_owners(
         load_pi05_lora_contract(REPO_ROOT / config["authorities"]["lora_contract"])
     )
-    cell = config["model"]
-    model = ECPStage0Model(
-        owners,
-        prefix_width=int(cell["prefix_width"]),
-        expert_width=int(cell["expert_width"]),
-        program_width=int(cell["program_width"]),
-        event_slots=int(cell["event_slots"]),
-        action_phases=int(cell["action_phases"]),
-        max_frames_per_call=int(cell["max_frames_per_call"]),
-        fixed_probe_seed=int(cell["fixed_probe_seed"]),
-    ).to(device)
+    model = build_stage0_model(config, owners).to(device)
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     weights = checkpoint / "ecp.safetensors"
     if (
@@ -285,6 +277,14 @@ def _evaluate_pair(
         "antithetic_presence_l1": float(
             (presence[0].float() - anti_presence[0].float()).abs().mean()
         ),
+        "correct_active_events": float((presence[0] > 0.5).sum()),
+        "speed_active_events": float((presence[1] > 0.5).sum()),
+        "other_active_events": float((presence[2] > 0.5).sum()),
+        "antithetic_active_events": float((anti_presence[0] > 0.5).sum()),
+        "correct_presence_sum": float(presence[0].float().sum()),
+        "speed_presence_sum": float(presence[1].float().sum()),
+        "other_presence_sum": float(presence[2].float().sum()),
+        "antithetic_presence_sum": float(anti_presence[0].float().sum()),
     }
     return row, summary[0].float().cpu()
 
@@ -398,7 +398,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v1.json",
+        default=REPO_ROOT / "configs/pi05_ecp_stage0_native_v2.json",
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--source-checkpoint", type=Path, required=True)

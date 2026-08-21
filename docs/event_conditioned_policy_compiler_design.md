@@ -201,6 +201,16 @@ rho_k[k,e]     : [K,8]
 具体视频段落对应哪个slot完全由内容与训练信号学习。简单task可以只激活少数`rho_e`，困难task可以激活更多，输出tensor
 容量仍固定。
 
+event presence使用相对有效视频帧数的固定occupancy尺度，而不是所有task共享的learned duration分母：
+
+```text
+f[k,e]   = sum_(s,m) alpha[k,e,s,m] / valid_frames[k]
+rho[k,e] = 1 - exp(-f[k,e] / 0.08)
+```
+
+因此同一有序过程的1x/2x采样不会仅因帧数改变presence，且模型不能通过全局放大duration参数让所有task一起减少激活；
+`rho`仍由soft segmentation学习，`.08`只定义可比较的占用尺度，不规定slot语义或event数量。
+
 每条视频独立得到：
 
 ```text
@@ -314,6 +324,16 @@ Stage 0训练或机制选择，只保留到最终候选checkpoint的时序特异
 
 训练参数：semantic projections、TransitionMatcher、q/v post-capture projections、event-horizon binding、semi-Markov segmenter、
 presence/uncertainty heads。
+
+跨episode action grounding必须在每个有效视频帧上约束event识别。event action head先为每个slot预测phase action，再由该帧
+soft posterior重构：
+
+```text
+a_hat[k,s,p] = sum_e posterior[k,s,e] * action_head(P_process[k,e])[p]
+L_action     = mean_k mean_valid_s ||a_hat[k,s] - a_cross_episode[k,s]||^2
+```
+
+不得先把所有frame action targets平均成event target后再回归；后者允许不同动作阶段坍缩到同一slot而不承担逐帧误差。
 
 输出：`observer_native_stage0.ckpt`。门：同task跨episodeevent一致性、速度鲁棒与替代probe稳定性；固定checkpoint上的
 process controls只作诊断，hidden margin不能代替后续闭环。

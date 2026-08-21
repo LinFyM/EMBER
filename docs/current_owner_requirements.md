@@ -40,8 +40,10 @@ language-only路径不得独立写出有效LoRA。反过来，也不能为了阻
 
 后续canonical Writer不再使用trainable **Text Meta-LoRA**或VL Meta-LoRA。exact language仍是必需输入，但应通过
 冻结原生text/VLM表示和Writer-local读取/投影进入Program，不能用额外Text Meta-LoRA强化task-identity旁路。当前已
-封存formal run确实使用过rank4 Text Meta-LoRA，历史config与结果必须保留这一事实；本约束不自动取消Action
-Meta-LoRA，后者仍按其是否为native Action probe/memory提供有效作用单独裁决。
+封存formal run确实使用过rank4 Text Meta-LoRA，历史config与结果必须保留这一事实。Action Meta-LoRA必须在后继架构中
+独立尝试：先建立frozen native Action observer基线，再单独校准所有train/meta tasks共享、无task-ID的Action Meta-LoRA；
+只要matched evidence没有显示性能、稳定性、视频因果性或信息边界退化，就采用并在后续compiler/Writer训练前永久冻结，
+不得让它与输出坐标共同旋转。
 
 ## 3. One-shot、few-shot和动态视频数量
 
@@ -72,8 +74,9 @@ correct、shuffled和reversed不是人为negative：
 - reversed产生违反正常因果方向的过程；
 - shuffled破坏阶段连续性和先后依赖。
 
-架构应在每条视频内部显式保留有向过程，而不是只把shuffle/reverse推远。最终需要证明correct沿有用policy direction
-提高成功率；仅让negative LoRA变坏不够。
+架构应在每条视频内部显式保留有向过程。shuffled/reversed不进入训练数据、negative loss或checkpoint选择；它们只在最终
+候选checkpoint冻结后作严格配对评测。最终需要证明correct沿有用policy direction提高成功率并表现出时序特异性；仅让
+control LoRA变坏不够。
 
 ## 5. 输出是一个task adaptation；具体参数化是方法
 

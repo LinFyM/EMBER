@@ -1,10 +1,10 @@
 # Fixed Functional Adaptation Successor
 
-状态：2026-08-21 **已实现基线的active design，formal推进暂停**；统一fingerprint上的flow/probe/exact Decoder与随后
+状态：2026-08-21 **sealed predecessor design，不再拥有implementation authority**；统一fingerprint上的flow/probe/exact Decoder与随后
 phase/learner-state Decoder均未通过held support门，shared prior有正证据但task residual和首个outer credit均未通过，
 macro2 matched面板又把最早失败定位到outer之前的过程推断。本文继续定义当前代码与已封存实验的authority；owner已启动
-中期架构复核，候选新设计见`docs/policy_native_dual_time_program_compiler_review_20260821.md`。该候选在专家复核与owner
-裁决前不是implementation authority，不据此启动formal训练。旧LMMPC、V6、LPCP、GOMQ与Expert-Manifold细节只从
+中期架构复核并最终采用`docs/event_conditioned_policy_compiler_design.md`所定义的EMBER-ECP。本文只定义已封存代码与
+实验的历史authority，不据此启动formal训练。旧LMMPC、V6、LPCP、GOMQ与Expert-Manifold细节只从
 `docs/research_history.md`和对应sealed artifacts解释，不恢复为并行主线。
 
 ## 1. 核心假设

@@ -5,25 +5,23 @@
 
 ## Current authority and executable state
 
-- owner已启动中期核心架构复核。远程可审查的候选方案与全部开放问题见
-  `docs/policy_native_dual_time_program_compiler_review_20260821.md`：它提出从每个教学帧的native PI0.5 forward保留
-  `video time x Action Expert layer x 50-token horizon` lattice，以task-grounded真实视觉transition作dynamic Value，经过
-  双时间局部transport形成`event x layer` Program，再由冻结layer-local compiler生成唯一完整LoRA。该文档当前是
-  **review candidate而非active implementation authority**；正式训练、held评测和代码重构继续暂停，等待专家复核与owner裁决。
-  当前已实现authority仍是`docs/functional_adaptation_successor_design.md`，但只作为未过Inference Gate的sealed基线。
+- 专家最终复核与owner逐项讨论已经完成，新架构正式命名为 **EMBER-ECP（Event-Conditioned Policy Compiler）**；唯一
+  active design为`docs/event_conditioned_policy_compiler_design.md`。核心结构是ordered video-event segmentation、
+  Event-Conditioned Horizon Binding、target-family-aware Program、分布式privileged `q_pi(P)`、Dynamic-K `q_V(P|L,V)`与
+  完整rank16 compiler。Action horizon保留为50个joint future positions，不再作为第二因果时间轴；旧hard dual-time
+  transport与deterministic `P*`均已纠正。
+- owner已建立EMBER-ECP正式goal并授权继续推进。Action Meta-LoRA改为Stage 0必做的独立共享校准对照：先建立native
+  observer，若matched evidence无负面效果则采用并永久冻结。shuffled/reversed不进入训练、loss或checkpoint选择，只在最终
+  候选checkpoint冻结后评测时序特异性。held5只作train24内部privileged/compiler leave-task-out机制门；最终shared components
+  使用全部授权train data训练，validation8只以language+action-hidden videos作development evaluation。
+- 训练顺序固定为：native observer与event binding → Action Meta-LoRA独立裁决 → privileged `q_pi + compiler` oracle gate →
+  frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
+  通过视频必要性门后structured outer credit。当前处于Phase 0文档/ownership同步，尚未启动新formal训练或held评测。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
-- 第二轮专家意见后继goal已经由owner正式启动。active design为
-  `docs/functional_adaptation_successor_design.md`；持久计划见`task_plan.md`，逐项覆盖见
-  `docs/expert_second_round_implementation_ledger_20260819.md`；Phase 0的数据、架构与评测合同已冻结，default fold0的
-  non-held fixed-decoder曾取得closed-loop `qualified_pass_to_writer_inference`；Writer macro10 formal、generation profile与
-  七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
-  Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，但8-row successful/on-policy
-  action/JVP直接task-vector只过`2/4`与`1/4`。当前按专家原始建议转入多成功adapter、显式phase-aligned的role-disjoint
-  manifold重构。fresh phase Decoder的held5两套strict250由source `21/250`提高到`44/250`；fit19 learner-state
-  aggregation再到`54/250、47/250`。挑战十二的exact shared12/task4随后完成：shared-only=`43/250`，相对source净`+22`；
-  earliest/latest composite=`37/250、33/250`，相对shared净`-6/-10`。因此稳定shared prior有真实价值，但当前task residual
-  implemented-fail且不进入新Writer。下一主要变量按专家挑战十四/方向E转为train/meta closed-loop outer credit。
+- `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；
+  `docs/policy_native_dual_time_program_compiler_review_20260821.md`保留最初送审方案及专家纠正的provenance。二者均不是
+  implementation authority，当前16维process warm-start、旧single-direction outer和任何held复验都不再启动。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -218,9 +216,9 @@
   不允许部署第二adapter、expert route、task-ID字典或checkpoint融合；
 - 主写与集成目标改为`main`；需要隔离时从最新`main`创建`codex/<topic>`分支/worktree，验证后及时合并并推送。
 
-## Active successor phase
+## Sealed functional-adaptation predecessor snapshot
 
-当前核心顺序为：
+以下顺序与实现描述的是EMBER-ECP之前已经完成并封存的functional-adaptation路线，不再授权继续执行：
 
 1. 审计现有expert manifold、Writer、reward/evaluation与LIBERO数据owner，建立non-held meta allowlist、task-level folds、
    process controls和source/task-expert ceiling协议；
@@ -241,7 +239,7 @@ alignment、mergeable base+residual与sealed diagnostics已经获准进入对应
 - `ember.functional_adaptation.contract`加载allowlist/folds并验证source manifest与语义overlap audit一致；
 - strict video conditions已增加first-only、final-only、first+final、endpoints-fixed-middle-shuffled与monotone-sparse，
   真实frames经选择/重排后重新完整forward；
-- 新模块owner与旧`expert_manifold`/Writer/evaluator的复用、退役边界已写入active design；旧bank route不恢复。
+- 当时的新模块owner与旧`expert_manifold`/Writer/evaluator复用、退役边界已写入sealed predecessor design；旧bank route不恢复。
 - `FunctionalCodebook`与`FunctionalAdapterDecoder`已经建立32维whitened task code到全部38-target/76-tensor LoRA的
   单一生成面；decoder以functional identity初始化，Action in/out保持独立，不import旧V6 bank route；
 - policy-functional probe会捕获完整`[batch, 50, 32]` Action Expert flow response，并以expert相对identity的响应能量

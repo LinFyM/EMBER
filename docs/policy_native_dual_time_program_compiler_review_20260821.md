@@ -1,9 +1,9 @@
 # Policy-Native Dual-Time Program Compiler
 
-状态：2026-08-21 **专家复核候选，不是active implementation authority**。本文把owner最新的EMBER核心思考、专家最新的
-policy-native dual-time建议、仓库全部相关历史证据和执行方的具体化方案合并为一份可由远程仓库独立复核的架构稿。当前不据此
-启动formal训练或held评测；专家复核与owner裁决后，若采用，再由本文取代
-`docs/functional_adaptation_successor_design.md`成为唯一active design。
+状态：2026-08-21 **已完成外部复核的历史送审稿，不是active implementation authority**。本文保留owner核心思考、最初
+policy-native dual-time具体化方案及专家审查入口。专家随后纠正了hard video-time/action-horizon transport、deterministic
+`P*`和target-family缺失等问题；owner最终采用的修正版为
+`docs/event_conditioned_policy_compiler_design.md`中的EMBER-ECP。不得再据本文启动formal训练或held评测。
 
 ## 1. 本轮复核要回答的不是局部补丁
 

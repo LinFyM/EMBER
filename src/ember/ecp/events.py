@@ -275,7 +275,10 @@ class OrderedEventSegmenter(torch.nn.Module):
         second = torch.einsum(
             "betm,btmjd->bejd", assignment, bound_evidence.square()
         ) / mass[:, :, None, None]
-        uncertainty = (second - process.square()).clamp_min(0.0).sqrt()
+        # A zero empirical variance makes sqrt's backward infinite; downstream
+        # squared uncertainty then produces 0 * inf = NaN. Keep the observer's
+        # standard deviation finite at empty or numerically collapsed slots.
+        uncertainty = (second - process.square()).clamp_min(1e-4).sqrt()
         duration_scale = F.softplus(self.minimum_duration)[None] + 1e-4
         presence = -torch.expm1(-occupancy / duration_scale)
         return EventProgramOutput(

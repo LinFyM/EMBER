@@ -178,6 +178,20 @@ def test_event_binding_uses_all_horizons_and_segmenter_is_ordered() -> None:
     assert any(parameter.grad is not None for parameter in segmenter.parameters())
 
 
+def test_segmenter_zero_variance_uncertainty_has_finite_gradient() -> None:
+    segmenter = OrderedEventSegmenter(width=8, event_slots=4)
+    evidence = torch.zeros(1, 3, 4, 38, 8, requires_grad=True)
+    program = segmenter(
+        evidence,
+        torch.zeros(1, 3, 4),
+        torch.ones(1, 3, dtype=torch.bool),
+    )
+
+    program.uncertainty.square().mean().backward()
+
+    assert torch.isfinite(evidence.grad).all()
+
+
 def test_stage0_video_pair_uses_real_ordered_frames_and_action_grounding() -> None:
     torch.manual_seed(11)
     core = _FakeCore(width=16).requires_grad_(False)

@@ -47,6 +47,11 @@
 - Stage 0A正式段已从detached clean pushed `9b69e92`启动；生成的run contract确认world-size6、每rank 15 tasks、
   `CUDA_VISIBLE_DEVICES=1,2,3,4,5,7`、两组GPU-local NUMA affinity、frame microbatch16与1,133,487个trainable Writer参数，
   六份source policy均为冻结权重。启动后每张目标卡驻留约18.8 GiB，Prohibited GPU0保持14 MiB且无compute process。
+- 上述首次启动在macro0完成90-task backward、尚未optimizer step或写入metrics/checkpoint时触发non-finite gradient并退出，
+  因而是工程失败而非科学结果。最小CPU复现确认根因是event slot经验方差恰为0时对`sqrt(0)`反传，后续uncertainty平方形成
+  `0 * inf = NaN`；固定`1e-4` variance floor后同一zero-variance复现从3648个NaN gradient变为全部finite，11项聚焦回归
+  全部通过。失败输出只有run contract/invocation/log，登记后清理；正式段从包含该窄修复的下一clean pushed commit按原合同fresh
+  重启，不复用失败状态。
 - 固定observer panel运行面已经实现但尚未产生科学结果：覆盖全部train24的fit19与held5、每task两个预注册demo pairs，
   对每个pair比较canonical correct video、同视频保序2x速度、same-task other video和同视频antithetic Gaussian probe；同时报告
   event/summary cosine、presence差异及same-task相对mean/nearest cross-task margin。该面板不读取action/reward，也不构造

@@ -420,7 +420,9 @@ def main() -> None:
         "data_root",
         "output",
     ):
-        setattr(args, name, getattr(args, name).resolve())
+        value = getattr(args, name)
+        if value is not None:
+            setattr(args, name, value.resolve())
     result = evaluate(args)
     print({"output": str(args.output), "aggregates": result["aggregates"]})
 

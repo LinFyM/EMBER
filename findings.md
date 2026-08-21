@@ -727,3 +727,23 @@ fit19 successful初始状态收集projected-policy trajectories，并在这些�
 on-policy aggregation。约26%的support retention也已触发专家挑战十二的shared prior + residual分支，但该架构变量留到
 state coverage单独裁决后实施，避免把两个原因混在一轮。完整证据见
 `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。
+
+## 35. Learner-state聚合有真实增量，但不足以恢复direct support
+
+回查专家原始方向A后，复用旧Decoder、phase codes、experts与成功初态，只在fit19增加decoded-policy learner occupancy。
+30条唯一projected trajectories覆盖37个earliest/latest member targets；每个target沿projected action-chunk功能弧长选择8个
+真实learner states，再在相同状态查询对应privileged expert。successful/learner panels严格1:1，held5没有梯度、code重拟合
+或checkpoint选择。6-rank、912 task visits后，learner-state mean functional loss从`.629034`降到`.155116`，held mean也由
+旧`.616152`降到`.560983`，所以closed-loop state bank不是无效建议。
+
+同一held5×50固定rows上，source/direct-earliest/projected-earliest/direct-latest/projected-latest为
+`21/74/54/108/47`。相对旧投影，earliest有22 gained、12 lost、净`+10`；latest为18/15、净`+3`。earliest相对source
+净`+33`且5/5不退化、3/5严格提高；latest净`+26`，但Spatial0净`-3`且仅Object一项严格提高。更关键的是direct success
+retention仍只有`23/74=.31081`与`30/108=.27778`，direct gain retention仅`.19355/.26042`；earliest/latest成功集Jaccard
+从`.46667`降到`.40278`。因此Gate 2继续明确失败。
+
+科学边界是：当前一次staged functional state aggregation不足以解决support retention，不是“occupancy不重要”。它改善了
+absolute与监督面误差，却没有形成稳定task-conditioned闭环程序；继续增加相同state-bank visits、LR/seed/rank小扫没有新
+因果信息。按专家挑战十二，下一独立变量是显式稳定的shared behavior prior与task-code residual；两者在rollout前合并为
+唯一complete LoRA，并必须同时报告shared-only，防止把carrier能力误写成task inference。证据：
+`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。

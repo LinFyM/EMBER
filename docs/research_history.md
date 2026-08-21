@@ -621,6 +621,22 @@ Decoder的learner occupancy，以privileged task experts在这些漂移状态上
 task residual也因support loss满足触发条件，但作为下一独立架构变量，不与首轮state aggregation混合。证据：
 `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_held5_20260821.json`。
 
+### 3.28 Fit19 learner-state aggregation的有限正增量与Gate 2失败
+
+从clean pushed `966353e`复用首轮Decoder、phase codes、experts和30个既定成功初态，收集30条fit19 projected-policy
+trajectories并绑定37个earliest/latest expert members。每个member取8个真实learner states，successful与learner panels
+严格1:1；6-rank完成912 task visits/152 updates。learner-state flow loss`.629034→.155116`，held mean
+`.616152→.560983`，held仍零梯度。
+
+同一held5固定250 rows上，earliest/latest由旧`44/44`变为`54/47`，相对旧投影净`+10/+3`；相对source21净
+`+33/+26`。但direct success retention仅`.31081/.27778`、direct gain retention`.19355/.26042`，latest只有1/5 task
+严格提高，成员成功集Jaccard`.40278<.44`。Gate 2继续返回`do_not_promote_decoder`，没有训练Writer或进入outer RL。
+
+该轮只关闭当前staged learner-state functional aggregation，不关闭occupancy或train-task reward。专家挑战十二的触发条件
+已经满足；下一独立架构裁决为stable shared prior + task residual，rollout前merge为唯一complete LoRA，并配套shared-only
+baseline。证据：
+`docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

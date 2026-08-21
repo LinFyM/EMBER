@@ -1,0 +1,224 @@
+{
+  "artifacts": {
+    "full_analysis": "runs/analysis/pi05_train24_phase_decoder_stateagg_held5_gate_966353e_20260821/analysis.json",
+    "projected_earliest_results": "runs/outputs/pi05_train24_phase_decoder_stateagg_held5_earliest_966353e_gpu02p123_r2_20260821/results.json",
+    "projected_latest_results": "runs/outputs/pi05_train24_phase_decoder_stateagg_held5_latest_966353e_gpu02p467_r2_20260821/results.json",
+    "state_bank_results": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821/results.json",
+    "training_result": "runs/outputs/pi05_train24_phase_decoder_onpolicy_stateagg_formal_r6_v48_966353e_gpu02p123467_20260821/result.json"
+  },
+  "claim_boundary": "This closes one staged fit19 learner-state aggregation implementation. It does not close closed-loop occupancy, explicit stage behavior, shared-prior residual parameterization, language/video inference, or train-task outer reward in general.",
+  "decision": "do_not_promote_decoder",
+  "earliest_failed_interface": "fit19 learner-occupancy functional aggregation reduces its supervised mismatch but still does not preserve enough held direct closed-loop support",
+  "evaluation_git": {
+    "authority_commit": "966353e309def2ba7b3c71f291a471c3a87fd0c2",
+    "authority_contains_commit": true,
+    "authority_ref": "origin/main",
+    "branch": "",
+    "commit": "966353e309def2ba7b3c71f291a471c3a87fd0c2",
+    "dirty_paths": [],
+    "origin_main": "966353e309def2ba7b3c71f291a471c3a87fd0c2",
+    "upstream": null,
+    "upstream_commit": null
+  },
+  "information_wall": {
+    "final_lora_averaging": false,
+    "fit_task_count": 19,
+    "held_code_gradient_steps": 0,
+    "held_transform_only_task_count": 5,
+    "role": "development_train",
+    "task_id_deployment_route": false,
+    "test_rows": 0,
+    "validation_rows": 0
+  },
+  "next_evidence_step": "return to expert challenge twelve: learn an explicit stable shared prior plus task-code residual, merge them into one complete LoRA before rollout, and repeat the same held5 gate",
+  "paired_results": {
+    "direct_earliest_to_projected_earliest": {
+      "churn": 82,
+      "direct_gain_retention": 0.1935483870967742,
+      "direct_success_retention": 0.3108108108108108,
+      "gained": 31,
+      "lost": 51,
+      "mcnemar_exact_two_sided_p": 0.03524144017874745,
+      "net": -20,
+      "retained_success": 23,
+      "success_set_jaccard": 0.21904761904761905
+    },
+    "direct_latest_to_projected_latest": {
+      "churn": 95,
+      "direct_gain_retention": 0.2604166666666667,
+      "direct_success_retention": 0.2777777777777778,
+      "gained": 17,
+      "lost": 78,
+      "mcnemar_exact_two_sided_p": 1.6415483272931788e-10,
+      "net": -61,
+      "retained_success": 30,
+      "success_set_jaccard": 0.24
+    },
+    "old_projected_earliest_to_state_aggregated": {
+      "churn": 34,
+      "gained": 22,
+      "lost": 12,
+      "mcnemar_exact_two_sided_p": 0.12144948495551944,
+      "net": 10,
+      "retained_success": 32,
+      "success_set_jaccard": 0.48484848484848486
+    },
+    "old_projected_latest_to_state_aggregated": {
+      "churn": 33,
+      "gained": 18,
+      "lost": 15,
+      "mcnemar_exact_two_sided_p": 0.7283324808813632,
+      "net": 3,
+      "retained_success": 29,
+      "success_set_jaccard": 0.46774193548387094
+    },
+    "projected_earliest_to_latest": {
+      "churn": 43,
+      "gained": 18,
+      "lost": 25,
+      "mcnemar_exact_two_sided_p": 0.3603776529357674,
+      "net": -7,
+      "retained_success": 29,
+      "success_set_jaccard": 0.4027777777777778
+    },
+    "source_to_projected_earliest": {
+      "churn": 39,
+      "gained": 36,
+      "lost": 3,
+      "mcnemar_exact_two_sided_p": 3.608874976634979e-08,
+      "net": 33,
+      "retained_success": 18,
+      "success_set_jaccard": 0.3157894736842105
+    },
+    "source_to_projected_latest": {
+      "churn": 48,
+      "gained": 37,
+      "lost": 11,
+      "mcnemar_exact_two_sided_p": 0.00022224496262168714,
+      "net": 26,
+      "retained_success": 10,
+      "success_set_jaccard": 0.1724137931034483
+    }
+  },
+  "panels": {
+    "direct_earliest_successes": 74,
+    "direct_latest_successes": 108,
+    "per_task": [
+      {
+        "direct_earliest": 17,
+        "direct_latest": 27,
+        "global_task_id": 0,
+        "projected_earliest": 32,
+        "projected_latest": 18,
+        "source": 21,
+        "suite": "libero_spatial",
+        "task_id": 0
+      },
+      {
+        "direct_earliest": 16,
+        "direct_latest": 30,
+        "global_task_id": 9,
+        "projected_earliest": 3,
+        "projected_latest": 0,
+        "source": 0,
+        "suite": "libero_spatial",
+        "task_id": 9
+      },
+      {
+        "direct_earliest": 35,
+        "direct_latest": 40,
+        "global_task_id": 18,
+        "projected_earliest": 19,
+        "projected_latest": 29,
+        "source": 0,
+        "suite": "libero_object",
+        "task_id": 8
+      },
+      {
+        "direct_earliest": 3,
+        "direct_latest": 8,
+        "global_task_id": 25,
+        "projected_earliest": 0,
+        "projected_latest": 0,
+        "source": 0,
+        "suite": "libero_goal",
+        "task_id": 5
+      },
+      {
+        "direct_earliest": 3,
+        "direct_latest": 3,
+        "global_task_id": 36,
+        "projected_earliest": 0,
+        "projected_latest": 0,
+        "source": 0,
+        "suite": "libero_10",
+        "task_id": 6
+      }
+    ],
+    "projected_earliest_successes": 54,
+    "projected_latest_successes": 47,
+    "rows_per_arm": 250,
+    "source_successes": 21
+  },
+  "preregistered_gate": {
+    "families": {
+      "earliest": {
+        "direct_gain_retention": 0.1935483870967742,
+        "direct_gain_retention_passes": false,
+        "direct_success_retention": 0.3108108108108108,
+        "direct_success_retention_passes": false,
+        "mcnemar_interpretation": "The preregistered gate requires gained > lost; the exact two-sided p-value is descriptive because no alpha threshold was preregistered.",
+        "minimum_direct_gain_retention": 0.6,
+        "minimum_direct_success_retention": 0.75,
+        "minimum_nonnegative_tasks": 4,
+        "minimum_strictly_positive_tasks": 3,
+        "nonnegative_breadth_passes": true,
+        "nonnegative_tasks_vs_source": 5,
+        "passes": false,
+        "pooled_mcnemar_improvement_passes": true,
+        "positive_breadth_passes": true,
+        "source_to_projected_net": 33,
+        "strictly_positive_tasks_vs_source": 3
+      },
+      "latest": {
+        "direct_gain_retention": 0.2604166666666667,
+        "direct_gain_retention_passes": false,
+        "direct_success_retention": 0.2777777777777778,
+        "direct_success_retention_passes": false,
+        "mcnemar_interpretation": "The preregistered gate requires gained > lost; the exact two-sided p-value is descriptive because no alpha threshold was preregistered.",
+        "minimum_direct_gain_retention": 0.6,
+        "minimum_direct_success_retention": 0.75,
+        "minimum_nonnegative_tasks": 4,
+        "minimum_strictly_positive_tasks": 3,
+        "nonnegative_breadth_passes": true,
+        "nonnegative_tasks_vs_source": 4,
+        "passes": false,
+        "pooled_mcnemar_improvement_passes": true,
+        "positive_breadth_passes": false,
+        "source_to_projected_net": 26,
+        "strictly_positive_tasks_vs_source": 1
+      }
+    },
+    "member_stability": {
+      "minimum": 0.44,
+      "passes": false,
+      "projected_earliest_latest_success_jaccard": 0.4027777777777778
+    },
+    "passes": false
+  },
+  "schema_version": "ember_phase_aligned_functional_decoder_state_aggregation_held5_evidence_v1",
+  "state_aggregation": {
+    "captured_trajectories": 30,
+    "earliest_held_mean_loss": 0.5636556312441826,
+    "final_learner_state_mean_loss": 0.15511571013091788,
+    "functional_gate_passed": true,
+    "held_mean_after": 0.5609829347580672,
+    "held_mean_before": 0.6161524940282106,
+    "initial_learner_state_mean_loss": 0.6290338428036587,
+    "latest_held_mean_loss": 0.5583102382719517,
+    "member_targets": 37,
+    "optimizer_updates": 152,
+    "successful_to_learner_panel_ratio": "1:1",
+    "task_visits": 912
+  }
+}

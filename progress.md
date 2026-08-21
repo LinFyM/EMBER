@@ -14,10 +14,10 @@
   七臂matched screen已完成。统一functional fingerprint已修复train/held坐标，但flow-only、fixed-probe与exact-BA
   Decoder均未过Gate 2；sealed validation8 rank16 oracle现已以`250/400`广泛通过，但8-row successful/on-policy
   action/JVP直接task-vector只过`2/4`与`1/4`。当前按专家原始建议转入多成功adapter、显式phase-aligned的role-disjoint
-  manifold重构。fresh phase Decoder的held5两套strict250都由source `21/250`提高到`44/250`，5/5 tasks不退化、
-  3/5严格提高且earliest/latest Jaccard `.4667`；但只保留direct successes的`27.03%/25.93%`，未过`75%`门，故未进入
-  新Writer或outer RL。当前回到专家原始的closed-loop state bank：只在fit19收集decoded-policy occupancy并聚合
-  privileged expert response；shared prior + residual已由support loss触发为后一项架构分支。
+  manifold重构。fresh phase Decoder的held5两套strict250都由source `21/250`提高到`44/250`；fit19 learner-state
+  aggregation又把它们提高到`54/250、47/250`，证明专家提出的closed-loop state bank有真实但有限的净作用。然而direct
+  success retention仍只有`31.08%/27.78%`，direct gain retention`.1935/.2604`，latest breadth和成员Jaccard也失门，故
+  仍不进入新Writer或outer RL。当前按专家挑战十二转入显式稳定shared prior + task residual，不再小扫state bank。
 - canonical workspace与集成目标为`/data1/user/ymdai/projects/EMBER`的`main`；开发只在从最新`main`创建的短期
   `codex/<topic>` worktree隔离，验证后的独立里程碑立即合并、推送并清理，不长期积压巨型分支。
 - 来自clean pushed `7b6d768`的train24 fold0 fixed functional decoder formal评测已完成。修正投影wiring后的F4
@@ -146,6 +146,15 @@
   action-chunk功能弧长取8个真实learner states。warm-start旧Decoder、fresh optimizer，以successful/learner panels严格
   1:1配对，6-rank完成912 task visits/152 updates。held5、phase code、expert bank与闭环门均不改；这一轮失败后不续做
   state-bank小扫，直接转入已触发的shared prior + task residual独立架构裁决。
+- clean pushed `966353e`上的learner-state聚合训练已完成：30条fit19 projected trajectories、37个member targets，
+  learner-state identity-relative flow loss从`.629034`降到`.155116`，held mean从旧`.616152`降到`.560983`。同一held5
+  fixed250上earliest/latest为`54/47`，相对旧投影分别22 gained/12 lost、18 gained/15 lost，即净`+10/+3`；相对source
+  净`+33/+26`。但direct success retention仅`23/74=.31081`与`30/108=.27778`，direct gain retention`.19355/.26042`；
+  latest只有1/5 task严格正增量，earliest/latest成功集Jaccard`.40278<.44`。Gate 2返回`do_not_promote_decoder`。
+  remote-safe证据见
+  `docs/evidence/functional_adaptation_20260819/train24_phase_decoder_state_aggregation_held5_20260821.json`。该结果只关闭
+  当前一次staged learner-state实现，不关闭occupancy、stage behavior或outer reward；下一步不重跑本训练，直接实施
+  shared prior + task residual且保留shared-only matched baseline。
 - `main`上的已封存Writer仍是Core-Addressed Reader主架构：Dynamic-K、rank16、38 targets、Action Meta-LoRA、
   layer/rank memory、Reader、K-set、bounded M2P和FactorHeads；原生language保留，Text/VL Meta-LoRA已从
   canonical config/code contract移除。该实现只作为sealed baseline和可复用组件来源，不再作为后继增量路线。

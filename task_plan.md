@@ -1,8 +1,9 @@
 # EMBER Task Plan
 
-状态：2026-08-21 **active；多成功adapter与phase-aligned表示已通过held5几何门，fresh Decoder也把source `21/250`
-提高到两套`44/250`，但只保留direct successes的`27.03%/25.93%`，未过Gate 2。当前不进入Writer，按专家原始意见补
-decoded-policy closed-loop state bank；shared prior + residual已被support-loss证据触发为后一项架构分支。**
+状态：2026-08-21 **active；fit19 learner-state aggregation把两套held5投影从`44/250、44/250`提高到
+`54/250、47/250`，证明closed-loop state bank有真实增量，但direct success retention仍只有`31.08%/27.78%`，成员
+Jaccard也降到`.4028`，Gate 2继续失败。当前不进入Writer、不续做state-bank小扫，按专家挑战十二正式转入稳定
+shared prior + task residual，并在rollout前合并为唯一complete LoRA。**
 
 ## Goal
 
@@ -145,6 +146,13 @@ direct successes的`.2703/.2593`与direct gains的`.1774/.2188`，未过`.75/.60
 successful-expert-state-only Decoder不能进入Writer。正向的source增量和成员稳定不允许把phase表示整体丢弃；下一主要
 变量是专家原始方向A尚未覆盖的decoded-policy closed-loop state aggregation，之后才独立裁决shared prior + residual。
 
+**Learner-state aggregation裁决：** fit19上30条projected trajectories绑定37个earliest/latest member targets，按每成员8个
+真实learner states与successful panels严格1:1训练。learner-state mean loss从`.62903`降到`.15512`，held mean也从
+`.61615`降到`.56098`；但同一held5 rows上的earliest/latest仅为`54/47`。earliest相对旧投影净`+10`，latest净`+3`，
+说明occupancy覆盖不是无效变量；决定性门仍失败：direct success retention `.3108/.2778`、direct gain retention
+`.1935/.2604`，latest只有1/5 task严格优于source，成员Jaccard`.4028<.44`。因此只关闭这一轮staged state aggregation，
+不把它扩大为“occupancy无关”；下一主变量按专家原文改为显式稳定shared prior与受限task residual。
+
 ## Phase 3 — Language prior + video process posterior
 
 - [x] 构建`z_L=f(language)`与`z_LV=z_L+delta(language, videos)`，同时保留video-only反事实；
@@ -215,13 +223,11 @@ effective-update诊断中只对1/15 tasks最近邻到正确projected adapter，�
 6. fresh fixed decoder已按预注册task-visits950完成：内部flow门通过，held5 earliest/latest均为`44/250`，相对source
    `21/250`各净`+23`，5/5不退化、3/5严格提高，Jaccard`.4667`；但direct success retention只有`.2703/.2593`，
    direct gain retention`.1774/.2188`，因此联合Gate 2明确失败，不进入Writer；
-7. 回查专家原始“统一probe panel和closed-loop state bank”后确认，首轮只覆盖了successful expert occupancy，没有覆盖
-   decoded policy漂移后的learner occupancy。下一轮复用同一fit19 codes、47个experts、decoder与成功初始状态，采集
-   fit19 projected-policy trajectories，在这些状态上查询对应privileged experts并做一次staged on-policy aggregation；
-   合同已冻结为30条唯一learner trajectories、37个member targets、每成员8个phase states、successful/learner panel
-   严格1:1、6-rank 912 task visits/152 updates；held5仍零梯度、同250 rows重验，不重训expert或phase code；
-8. expert挑战十二的shared prior + residual已由约`26%` support retention正式触发，但不和state aggregation混成一个
-   无法解释的改动：若聚合后仍不能恢复direct support，再以稳定shared prior为Decoder template、task residual为code输出，
-   rollout前merge为唯一complete LoRA；
-9. fixed decoder重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks、
+7. fit19 learner-state aggregation已完成30条唯一trajectories、37个member targets、每成员8个phase states、
+   successful/learner严格1:1及6-rank 912 visits。learner-state loss显著下降，held earliest/latest从`44/44`变为`54/47`，
+   但direct success retention仅`.3108/.2778`、direct gain retention`.1935/.2604`，Jaccard`.4028`；不续训、不扫state-bank；
+8. expert挑战十二的shared prior + residual现已正式进入实现：复用phase codes、successful/learner panels与held5固定rows，
+   建立不会被task code改写的稳定shared behavior底座，再让task residual占用独立参数子空间；最终只物化一套merged LoRA，
+   同时评测shared-only以防把carrier收益误记为task-conditioned能力；
+9. 新参数化重新过Gate 2前不训练新Writer、不进入outer RL。旧macro10、七臂screen、fingerprints、expert banks、
    oracle和本轮训练产物全部复用，不重复昂贵训练；遇到阻塞继续先回查专家原始因果链。

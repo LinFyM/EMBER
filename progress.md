@@ -36,6 +36,14 @@
 - Stage 0A retained source按当前真实职责拆分为`stage0`模型、`stage0_data`数据/调度、`stage0_objective`科学目标、
   `stage0_train_step`分布式task-equal macro、`stage0_training`运行编排和共享`ecp/checkpoint`续训合同；入口只有
   `scripts/train_ecp_stage0.py`。这些模块共同属于唯一`ember.ecp`运行面，不保留旧16维或LMMPC active fallback。
+- Stage 0A macro1--10正式启动合同已冻结：实现authority为`f1eaee8`，从包含本记录的clean pushed `main`建立detached
+  frozen worktree；在`gpu01`仅使用physical GPU `1,2,3,4,5,7`做world-size6 DDP，明确排除Prohibited GPU0并设置
+  `NCCL_P2P_DISABLE=1`、GPU-local NUMA和deferred NCCL。规模为10 macros × 90 task-equal visits，每visit两条correct
+  action-hidden视频与两条cross-episode action demonstrations；输入复用source step1000、71+19 audited HDF5和OpenPI
+  tokenizer，输出固定为`runs/outputs/pi05_ecp_stage0_native_fold0_m10_r6_gpu01p123457_20260821/`。首段预计只新增一个
+  约14 MB macro10 checkpoint及小量JSON/log，完整60-macro上限低于80 MB；启动前`/data1` user quota使用约624 GiB、
+  limit约1,034 GiB，共享filesystem尚余84 TiB。只以correct-only训练loss、跨episode/速度/替代probe固定面板裁决observer；
+  shuffled/reversed不进入训练或选点。仅允许相同world-size6与同一run contract从macro10 exact resume，不覆盖已有输出。
 - 外部专家A--G/F0--F5逐项复核goal已完成；113个编号claim均已实施、反驳或以有证据的
   `not-applicable` / `underdetermined-after-audit`收口，没有queued项。
 - `docs/functional_adaptation_successor_design.md`继续描述已经封存的16维代码与实验authority；

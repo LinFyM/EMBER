@@ -18,8 +18,9 @@
   frozen-compiler Dynamic-K `q_V` → 除backbone/privileged teacher/已冻结observer calibration外的普通Writer参数联合训练 →
   通过视频必要性门后structured outer credit。Phase 0和Phase 1已完成；`native v3 macro10 + Action Meta v3 macro10`已经
   永久冻结。Phase 2首版已从clean pushed `6d71cb8`在detached frozen worktree完成全部1,140 visits及228/570/1140三个
-  预注册节点；Gate 2明确失败并停止，未启动`q_V`。当前唯一active工作是修正`q_pi`幅度与compiler绝对输出坐标，不延长
-  同一训练曲线。
+  预注册节点；Gate 2明确失败并停止，未启动`q_V`。v2 absolute与v3 content/address separation也已各完成228-visits几何裁决；
+  当前唯一active工作是在不改Program、`q_pi`或compiler结构的前提下，先完成v4 coordinate bootstrap，再恢复functional/support
+  credit，不延长任何已失败曲线。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -88,6 +89,19 @@
   K2+functional单卡profile在gpu01 physical1完成：functional从第一个update实际参与，loss `1.00456`；member/consensus
   exact-BA `1.1875`、canonical约`1.21995`，低权重组合total `1.84336`，裁剪前梯度`42.09`，2.20秒、峰值
   16,348,378,624 bytes，全部finite且prior-only loss为0。该节点授权fresh短段与几何门，不授权held rollout。
+- v3从clean pushed `cba8caf`在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates，exit0、checkpoint完整，
+  prohibited physical0未使用。24-task物化显示candidate跨task cosine `.939205`、norm ratio `.487844`，相对v2的
+  `.994192/.099771`证明content/address separation真正恢复了task-dependent输出；但own-direct/nearest-other只有
+  `.012822/.026238`，own retrieval `2/24`，几何门失败，held5 rows为0。
+- v3最早失败接口不是task差异仍被地址淹没，而是joint objective的到达顺序。训练前5到后5 updates的functional response
+  `.995844→.871159`，member exact-BA却`1.14167→1.37474`、canonical factor `1.24101→1.56286`；物化fit19 member loss
+  `1.48396`，比stable prior `1.10362`更差，held5也没有特殊断裂。active v4因此保留全部结构，只让前228 visits使用
+  exact-BA/canonical coordinate bootstrap且不缓存functional panels；几何过门后才exact-resume并补functional、source/shared
+  support与fit reward/progress。证据：`docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。
+- v4已替换唯一active config/schema/evaluator路径；v3不保留兼容分支。真实K2单卡coordinate profile在gpu01 physical1通过：
+  `objective_phase=coordinate_bootstrap`、functional loss与loaded panels均为0，member/consensus exact-BA为`1.1875`、canonical
+  约`1.21995`、total `2.98603`、裁剪前梯度`140.48`，1.99秒、峰值10,125,596,160 bytes；临时profile目录已删除。
+  下一节点是从clean pushed commit fresh运行228 visits并物化一次24-task geometry，不运行其它冗余profile。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

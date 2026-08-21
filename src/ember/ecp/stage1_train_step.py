@@ -20,6 +20,24 @@ if TYPE_CHECKING:
     from ember.ecp.stage1_training import ECPStage1Runtime
 
 
+def _objective_weights(
+    runtime: "ECPStage1Runtime", task_visits: int
+) -> tuple[str, dict[str, float]]:
+    objective = runtime.config["objective"]
+    if runtime.args.mode == "profile" and runtime.args.profile_functional:
+        return "policy_functional", {
+            name: float(value) for name, value in objective["weights"].items()
+        }
+    bootstrap = objective["coordinate_bootstrap"]
+    if task_visits <= int(bootstrap["end_task_visits"]):
+        return "coordinate_bootstrap", {
+            name: float(value) for name, value in bootstrap["weights"].items()
+        }
+    return "policy_functional", {
+        name: float(value) for name, value in objective["weights"].items()
+    }
+
+
 def _reduce_gradients(
     parameters: tuple[torch.nn.Parameter, ...], world_size: int
 ) -> None:
@@ -161,6 +179,9 @@ def run_stage1_update(
             candidate=candidate,
             task_visits_after_update=task_visits,
         )
+        objective_phase, objective_weights = _objective_weights(
+            runtime, task_visits
+        )
         loss = ecp_stage1_loss(
             member=output.member_compilation,
             consensus=output.consensus_compilation,
@@ -169,7 +190,7 @@ def run_stage1_update(
             prior_target=runtime.prior_state,
             contract=runtime.contract,
             functional_response=functional,
-            weights=runtime.config["objective"]["weights"],
+            weights=objective_weights,
         )
     if not bool(torch.isfinite(loss.total)):
         raise RuntimeError(f"non-finite ECP Stage 1 loss at task visit {task_visits}")
@@ -215,6 +236,8 @@ def run_stage1_update(
     return {
         "task_visits": task_visits,
         "optimizer_update": task_visits // runtime.context.world_size,
+        "objective_phase": objective_phase,
+        "objective_weights": objective_weights,
         "means": {
             name: sum(float(row[name]) for row in records) / len(records)
             for name in metric_names

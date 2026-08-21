@@ -749,6 +749,18 @@ event/layer/family Program与absolute compiler，但令地址只控制key/query/
 第一个update启用successful-policy functional response。证据：
 `docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。
 
+### 3.36 Stage 1 content-address v3恢复task差异但未恢复own-policy方向
+
+clean pushed `cba8caf`切断Program/compiler的address-to-output捷径，并从第一个update启用successful-occupancy functional
+response。gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates，exit0、checkpoint完整，Prohibited physical0未用。
+
+24-task materialization的candidate跨task cosine为`.939205`、norm ratio`.487844`，相对v2的`.994192/.099771`证明
+Program content已经实质控制输出。但own-direct/nearest-other cosine为`.012822/.026238`，own retrieval仍只有`2/24`；
+预注册几何门失败，held closed-loop rows为0。前5到后5 updates中functional response由`.995844`降到`.871159`，member
+exact-BA却由`1.14167`升到`1.37474`，canonical factor由`1.24101`升到`1.56286`。因此active v4保持同一结构，只把前228
+visits设为coordinate bootstrap；通过几何门后才恢复functional并补source/shared support与fit reward/progress。证据：
+`docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

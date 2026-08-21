@@ -123,7 +123,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 完成v2真实K2 profile与fresh 228-visits训练；预注册几何门仍失败，未运行held closed loop；
 - [x] 切断Program/compiler中的address-to-output捷径并从第一个update启用successful-policy functional response，完成真实
   K2+functional profile；
-- [ ] 从fresh clean pushed authority重跑task-discrimination geometry gate；
+- [x] 从fresh clean pushed authority完成v3的228-visits geometry gate；candidate已非坍缩但own-direct只有`.0128`、
+  `2/24`检索正确，故未运行held5；
+- [x] 保持同一Program/q_pi/compiler结构，实现228-visits coordinate bootstrap并用真实K2单卡profile确认零functional cache与
+  正确objective phase；
+- [ ] 从fresh clean pushed authority运行v4 228-visits并重跑geometry gate；
 - [ ] geometry过门后补齐successful/source/shared functional support和fit-task reward/progress，再重跑held5 Gate 2；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -177,11 +181,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 完成content/value与numeric address分离：address只控制key/query/locality，LoRA values必须读取Program内容；
-2. 从第一个update启用successful-policy functional response，BA/canonical只保留低权重坐标warm-start，并做真实K2 profile；
-3. 从fresh clean pushed authority训练；先以own-direct retrieval、跨task非坍缩、
-   effective norm/cosine裁决是否值得进入held fixed250；
-4. 坐标门通过后增加source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
+1. 用v3正式结果固定因果判断：content path已接通，但joint functional在坐标建立前把compiler转向有限panel捷径；
+2. active v4前228 visits只做coordinate bootstrap，不缓存functional panels；同一checkpoint物化24套LoRA并重跑既定几何门；
+3. 坐标门通过后exact-resume，增加successful/source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
    排除validation/Test的LIBERO-90 meta-task expert family，再轮换固定fold；
-5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
+4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

@@ -961,3 +961,22 @@ target/rank query又在cross-attention后以`hidden + query`直达factor heads�
 event/layer/family轴，而是把**地址与内容分责**：地址只用于key/query/locality，value与最终factor hidden只来自Program内容；
 同时successful-policy functional从第一个update启用，BA/canonical只保留低权重优化坐标。证据见
 `docs/evidence/ecp_20260822/stage1_absolute_compiler_fold0_geometry.json`。
+
+## 45. Content path恢复了task差异，但functional credit在坐标建立前把差异转向了错误policy方向
+
+Stage 1 v3从clean pushed `cba8caf`完成228 visits/38 updates。地址只影响key/query/locality、Program content全零不能写出
+full LoRA的结构修正确实生效：24-task candidate跨task effective cosine由v2的`.994192`降到`.939205`，candidate/direct
+norm ratio由`.099771`升到`.487844`；Program anchor/teacher/correction的跨task cosine也分别降到
+`.914320/.900172/.854394`。因此不能再把失败归因于numeric address仍独立生成一套近共享LoRA。
+
+但恢复的差异没有对准同task successful policy。candidate own-direct cosine只有`.012822`，低于nearest-other `.026238`，
+只有`2/24`任务检索正确。fit19/held5 member exact-BA为`1.48396/1.29375`，两者都比stable prior约`1.104`更差，说明这不是
+held泛化断裂。更直接的训练轨迹是：前5到后5 updates的functional response由`.995844`改善到`.871159`，member exact-BA
+却由`1.14167`恶化到`1.37474`，canonical factor由`1.24101`恶化到`1.56286`。有限successful-occupancy panel先提供了可降的
+响应捷径，shared compiler尚未建立task-to-LoRA坐标就被该gradient旋转。
+
+因此v3只关闭“content/address separation加从首步joint functional即可建立oracle compiler”，不否定同一Program、`q_pi`、
+compiler或policy-functional目标。后继v4不新增架构：前228 visits用exact-BA/canonical/prior/locality做显式coordinate
+bootstrap，几何过门后才从同一checkpoint启用functional，并补齐专家要求的source/shared support与fit reward/progress。
+bootstrap不能选择最终方法，仍必须通过held5 closed-loop Gate 2。证据见
+`docs/evidence/ecp_20260822/stage1_policy_functional_compiler_fold0_geometry.json`。

@@ -37,7 +37,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v3"
+PROJECTION_SCHEMA = "ember_ecp_stage1_privileged_projection_v4"
 PROJECTION_KIND = "ecp_stage1_privileged_content_compiler"
 
 
@@ -308,6 +308,19 @@ def _projection_manifest(
             "functional_start_task_visits": int(
                 config["objective"]["functional_start_task_visits"]
             ),
+            "coordinate_bootstrap_end_task_visits": int(
+                config["objective"]["coordinate_bootstrap"]["end_task_visits"]
+            ),
+            "objective_phase": (
+                "coordinate_bootstrap"
+                if task_visits
+                <= int(
+                    config["objective"]["coordinate_bootstrap"][
+                        "end_task_visits"
+                    ]
+                )
+                else "policy_functional"
+            ),
         },
         "information_wall": {
             "role": "development_train_oracle_only",
@@ -460,7 +473,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_compiler_v3.json",
+        / "configs/pi05_ecp_stage1_privileged_compiler_v4.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

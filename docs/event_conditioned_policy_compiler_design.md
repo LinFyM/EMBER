@@ -423,7 +423,7 @@ v2在228 visits的几何门证明上述坐标修正仍不充分：candidate跨ta
 embeddings既进入attention values，constant target/rank query又以`hidden + query`直达factor heads，允许numeric address绕过
 task Program内容。这与“target query读取Program”的设计因果方向不一致。
 
-active v3据此进一步固定**content/address separation**，不改变Program轴或deployment合同：
+v3据此进一步固定**content/address separation**，不改变Program轴或deployment合同：
 
 1. visible Program的`event/layer/family`由tensor位置承担地址，不再向language/scene/process values重复加入可独立写参数的
    owner/layer/family常量；Stage 0已经产生owner-specific process content；
@@ -434,7 +434,19 @@ active v3据此进一步固定**content/address separation**，不改变Program�
    以低权重提供坐标warm-start。source/shared success-state support与fit reward/progress仍在几何门后补齐，不能被参数loss替代。
 
 这不是另建decoder：prior/full absolute surface、38-owner/rank-query、family heads、single rank16 LoRA与held信息墙全部保持。
-v2由Git和formal artifacts复现，active tree只保留v3 schema/config/evaluator。
+v2由Git和formal artifacts复现，不保留并行运行面。
+
+v3在228 visits的正式裁决又分离出一个更早的训练顺序问题。content/address separation确实把candidate跨task cosine从
+`.994192`降到`.939205`、norm ratio从`.099771`提高到`.487844`，说明Program内容已经实质控制输出；但own-direct cosine
+只有`.012822`、own retrieval仍为`2/24`。同时前5到后5 updates的functional response由`.995844`降到`.871159`，member
+exact-BA却由`1.14167`升到`1.37474`，canonical factor由`1.24101`升到`1.56286`。因此同一shared checkpoint先学会了有限
+successful-occupancy panel上的响应捷径，并在task-to-LoRA坐标建立前旋转了compiler。held5没有运行，`q_V`仍未启动。
+
+active v4保持v3的全部结构，只改变Stage 1内部顺序：前228 visits为显式**coordinate bootstrap**，只用member/consensus
+exact-BA、canonical gauge、prior反事实与locality建立固定compiler坐标，不加载functional panels；几何门通过后从同一
+checkpoint exact-resume，才启用successful-policy functional response，并补齐source/shared support与fit reward/progress。
+bootstrap不是方法选择或raw重建终点；它只要求target query先能从Program内容读出正确task方向，最终仍必须通过held5
+closed-loop Gate 2。active tree只保留v4 schema/config/evaluator，v3由Git与formal artifacts保存。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

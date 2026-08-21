@@ -55,10 +55,10 @@ PHASE_ALIGNED_DECODER_TASK_EXPERT_MANIFEST_SCHEMA = (
     "ember_phase_aligned_functional_decoder_train24_projection_v1"
 )
 ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA = (
-    "ember_pi05_ecp_stage1_privileged_task_expert_eval_adapter_v3"
+    "ember_pi05_ecp_stage1_privileged_task_expert_eval_adapter_v4"
 )
 ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA = (
-    "ember_ecp_stage1_privileged_projection_v3"
+    "ember_ecp_stage1_privileged_projection_v4"
 )
 
 
@@ -73,6 +73,18 @@ def _projection_file(manifest: Mapping[str, Any], name: str) -> dict[str, Any]:
 def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     optimization = manifest.get("optimization", {})
     information_wall = manifest.get("information_wall", {})
+    task_visits = int(optimization.get("task_visits", -1))
+    bootstrap_end = int(
+        optimization.get("coordinate_bootstrap_end_task_visits", -1)
+    )
+    objective_phase = (
+        "coordinate_bootstrap"
+        if task_visits <= bootstrap_end
+        else "policy_functional"
+    )
+    arm_phase = (
+        "coordinate" if objective_phase == "coordinate_bootstrap" else objective_phase
+    )
     if (
         manifest.get("projection_kind")
         != "ecp_stage1_privileged_content_compiler"
@@ -85,14 +97,16 @@ def _ecp_projection_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         or optimization.get("parameterization")
         != "prior-only exact template; full-process absolute factors"
         or optimization.get("content_address_separated") is not True
-        or int(optimization.get("functional_start_task_visits", -1)) != 0
+        or int(optimization.get("functional_start_task_visits", -1)) != 228
+        or bootstrap_end != 228
+        or optimization.get("objective_phase") != objective_phase
         or information_wall.get("privileged_q_pi") is not True
         or information_wall.get("second_adapter_deployed") is not False
     ):
         raise ExpertManifoldError("ECP Stage 1 projection manifest changed")
     return {
         "adapter_schema": ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA,
-        "arm": f"ecp_stage1_q_pi_content_tv{int(optimization['task_visits'])}",
+        "arm": f"ecp_stage1_q_pi_{arm_phase}_tv{task_visits}",
         "asset": {
             "stage1_config": _projection_file(manifest, "stage1_config"),
             "stage1_checkpoint": _projection_file(manifest, "stage1_checkpoint"),

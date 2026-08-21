@@ -51,8 +51,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_privileged_compiler_run_v3"
-STAGE = "stage1_privileged_compiler_v3"
+RUN_SCHEMA = "ember_ecp_stage1_privileged_compiler_run_v4"
+STAGE = "stage1_privileged_compiler_v4"
 
 
 @dataclass
@@ -123,12 +123,18 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_privileged_compiler_v3"
-        or config.get("status") != "active_stage1_policy_functional"
+        != "ember_ecp_stage1_privileged_compiler_v4"
+        or config.get("status") != "active_stage1_coordinate_bootstrap"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or int(config.get("objective", {}).get("functional_start_task_visits", -1))
-        != 0
+        != 228
+        or int(
+            config.get("objective", {})
+            .get("coordinate_bootstrap", {})
+            .get("end_task_visits", -1)
+        )
+        != 228
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
@@ -608,7 +614,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_privileged_compiler_v3.json",
+        / "configs/pi05_ecp_stage1_privileged_compiler_v4.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

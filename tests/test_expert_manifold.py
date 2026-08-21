@@ -224,7 +224,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_privileged_projection_v3",
+            "schema_version": "ember_ecp_stage1_privileged_projection_v4",
             "projection_kind": "ecp_stage1_privileged_content_compiler",
             **assets,
             "optimization": {
@@ -237,7 +237,9 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
                 "all_ranks_writable": True,
                 "parameterization": "prior-only exact template; full-process absolute factors",
                 "content_address_separated": True,
-                "functional_start_task_visits": 0,
+                "functional_start_task_visits": 228,
+                "coordinate_bootstrap_end_task_visits": 228,
+                "objective_phase": "coordinate_bootstrap",
             },
             "information_wall": {
                 "privileged_q_pi": True,
@@ -245,7 +247,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
             },
         }
     )
-    assert contract["arm"] == "ecp_stage1_q_pi_content_tv228"
+    assert contract["arm"] == "ecp_stage1_q_pi_coordinate_tv228"
     assert contract["asset"]["single_complete_lora"] is True
 
 

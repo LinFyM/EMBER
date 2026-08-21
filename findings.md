@@ -1002,3 +1002,22 @@ attention选址，未充分调制读出的Program内容。
 参与内容读出。v4只关闭“content-only attention readout加coordinate bootstrap足够”，不关闭ECP Program、`q_pi`、absolute
 single-LoRA surface或尚未执行的support/reward目标。完整证据见
 `docs/evidence/ecp_20260822/stage1_coordinate_bootstrap_fold0_geometry.json`。
+
+## 47. Query-content路径接通但仍收敛到近零update，Stage 1缺的是policy support而非下一次局部compiler修补
+
+Stage 1 v5从clean pushed `ae15e47`在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates；全段仍是
+coordinate bootstrap，没有加载functional panels，也没有held shared gradient。前5到后5 updates的member exact-BA由
+`1.05208`降到`1.00924`，canonical factor由`1.14952`降到`1.13216`。
+
+乘性query-content确实产生了局部正作用：own-direct cosine由v4 `.01840`提高到`.08214`，own retrieval由`1/24`提高到
+`3/24`。但candidate仍更接近nearest-other `.10771`，norm ratio由`.09134`降到`.08643`，candidate pair cosine为
+`.87652`，fit19/held5 member loss只有`.99507/.99141`，均接近“输出零update”的relative exact-BA约1.0基线。有效rank的
+participation/top1为`1.0972/.9563`，也没有恢复direct的`1.2616/.9127`。因此几何门失败，held5 rows为0。
+
+这轮排除了“只需让numeric query乘性调制Program内容，再做同一coordinate bootstrap”这一解释。继续修改query、rank、
+初始化或loss权重，已经是在同一欠识别证据上反复优化compiler。回到专家Stage 1原始合同，当前最早缺口是privileged teacher
+与policy support：`q_pi`只拥有successful-member factor和压缩successful occupancy response，没有learner-policy occupancy、
+source/shared support、完整多状态policy response或task-equal success/progress。后继保持v5 Program/compiler反事实，改为从
+首步用successful、经过agreement/outcome加权的learner、source与shared多策略response约束同一个Program/compiler，随后接入
+fit simulator reward/progress。rank继续只是无技能语义的numeric factor coordinate，不增加到Program语义轴。证据见
+`docs/evidence/ecp_20260822/stage1_query_content_bootstrap_fold0_geometry.json`。

@@ -131,8 +131,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   own-direct仅`.0184`、自身检索`1/24`、norm ratio`.0913`，故未运行held5；
 - [x] active v5保持零内容不能写LoRA的结构不变量，以target/rank query乘性调制cross-attended Program content，并完成
   真实K2单卡coordinate profile；
-- [ ] 从fresh clean pushed v5 authority运行同一228-visits coordinate gate；
-- [ ] geometry过门后补齐successful/source/shared functional support和fit-task reward/progress，再重跑held5 Gate 2；
+- [x] 从fresh clean pushed v5 authority完成同一228-visits coordinate gate；own-direct虽由`.0184`提高到`.0821`，但仍低于
+  nearest-other `.1077`，自身检索仅`3/24`、norm ratio `.0864`，未运行held5；
+- [ ] 保持v5 Program/compiler content-address合同，重建专家要求的policy-support teacher：successful occupancy、经过
+  success/一致性加权的learner occupancy、source/shared support、多成员集合一致性与fit-task reward/progress共同进入Stage 1；
+- [ ] 从fresh policy-support authority运行短程信息量节点；先做物化几何与多状态functional support，再按门运行held5 Gate 2；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -185,11 +188,13 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. 用v4正式结果固定因果判断：只改变训练顺序不足；coordinate loss虽下降，但query只改变attention位置时无法把target/rank
-   identity充分写入Program-conditioned factor content，输出方向与幅度仍不对；
-2. active v5只增加乘性query-content modulation，保持地址不能脱离Program独立写参数；真实K2 profile已经通过，下一步用
-   同一228-visits合同fresh重跑几何门，不延长v4曲线；
-3. v5坐标门通过后增加successful/source/shared support functional panels与fit-task reward/progress；若19个映射仍限制泛化，接入经审计且
-   排除validation/Test的LIBERO-90 meta-task expert family，再轮换固定fold；
+1. v5正式结果固定因果判断：乘性query-content readout让own-direct与检索有限回升，但所有几何门仍失败且输出幅度进一步
+   接近零；不继续沿同一228-visits曲线，也不再做局部query、loss权重或rank微调；
+2. active Stage 1保持v5 Program/compiler与零内容反事实，修正更早的privileged evidence和policy objective：复用successful
+   occupancy、30条既有learner-policy occupancy、stable shared prior与source，在同一状态面构造expert/member/source/shared
+   多策略response；失败learner states按member agreement与已知outcome降权，不把单个expert在任意off-policy state的动作当真值；
+3. functional support从首个update进入，同时保留低权重坐标锚；随后在fit task simulator加入task-equal success/progress。
+   rank仍只是numeric factor coordinate，不给Program增加rank技能语义；若19个映射仍限制泛化，再接入经审计且排除
+   validation/Test的LIBERO-90 meta-task expert family并轮换固定fold；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

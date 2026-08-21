@@ -462,6 +462,31 @@ active v5因此保持v3/v4的content/address separation和全部Program轴，只
 progress。真实K2单卡profile已确认零functional cache、finite modulation gradient、2.02秒更新与10.13 GB峰值；active tree只
 保留v5 schema/config/evaluator，v4由Git、formal artifacts与remote-safe evidence保存。
 
+v5正式228-visits裁决确认这条query-content路径生效但不足：own-direct由`.018399`提高到`.082145`、retrieval由`1/24`
+提高到`3/24`，可是仍低于nearest-other `.107706`，effective norm ratio只有`.086427`，所以没有运行held5。这个结果把
+最早未覆盖接口从compiler读出推回了privileged evidence与policy objective；不再授权继续做query、rank或loss权重的局部版本。
+
+active Stage 1后继保持v5的Program、absolute compiler、content/address separation和零内容反事实，只替换teacher evidence与
+训练信号：
+
+1. successful member的完整多phase response继续作为确定support；多个独立member作为集合输入和一致性监督，不平均成一个
+   raw factor真值；
+2. 复用fit19已有projected learner-policy trajectories，在相同状态上计算多个successful expert的response。successful learner
+   trajectory作为verified support；failed trajectory不把任一expert action直接当真值，而按member response agreement与已知
+   outcome降权，随后由simulator progress/reward补足恢复方向；
+3. 在同一successful/learner状态面计算source与stable shared-prior response。只在已有成功证据或与member consensus一致的
+   局部支持上施加preservation，避免“保留baseline”退化为处处把candidate推回source；
+4. 首个optimizer update即联合使用multi-policy functional response、multiple-member set consistency和低权重坐标锚；不再先
+   训练一个允许近零update达到约1.0 loss的raw BA-only阶段；
+5. functional warm-start确认输出不再近零且能保留多状态support后，在fit task simulator加入task-equal success/progress。
+   该outer signal仍只训练shared Stage 1 teacher/compiler，held5、validation8和Test8都不产生梯度；
+6. Program仍是event × layer/owner × family。rank仅用于compiler的numeric factor query，在member证据中按无序集合处理，
+   不被解释为phase、skill或可跨adapter对齐的语义轴。
+
+这不是恢复旧global phase decoder：所有policy evidence共同监督同一个event-conditioned Program和同一个single-LoRA compiler，
+不存在deployment carrier、第二adapter或task-ID route。已有30条learner occupancy与successful panel会直接复用，不重跑此前的
+长时轨迹采集；先跑一个短而有信息量的fresh checkpoint，再依据多状态functional support和预注册几何门决定是否进入held5。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

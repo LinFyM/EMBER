@@ -777,6 +777,21 @@ cross-attended Program content；零Program仍不能独立写LoRA。它先重跑
 successful/source/shared support与fit reward/progress。证据：
 `docs/evidence/ecp_20260822/stage1_coordinate_bootstrap_fold0_geometry.json`。
 
+### 3.38 Stage 1 query-content v5有限改善但仍未建立policy support
+
+clean pushed `ae15e47`在gpu01 physical `1,2,3,4,5,7`完成fresh 228 visits/38 updates；全段为coordinate bootstrap，
+functional panels/updates均为0，Prohibited physical0未用。member exact-BA前5到后5 update均值由`1.05208`降到
+`1.00924`，canonical factor由`1.14952`降到`1.13216`。
+
+24-task materialization中candidate pair cosine为`.876522`；own-direct由v4 `.018399`提高到`.082145`，own retrieval由
+`1/24`提高到`3/24`，说明乘性query-content路径生效。但nearest-other仍更高为`.107706`，candidate/direct norm ratio降到
+`.086427`，fit19/held5 member loss为`.995066/.991406`，所有几何门失败，held5 rows为0。
+
+因此v5关闭“继续局部修补compiler query即可建立oracle compiler”。active Stage 1保持v5 Program/compiler和零内容反事实，
+转向专家要求而尚未覆盖的policy-support teacher：successful occupancy、加权learner occupancy、source/shared support、
+multiple-member consistency与fit reward/progress共同约束Program到单套LoRA的行为。rank仍没有技能语义。证据：
+`docs/evidence/ecp_20260822/stage1_query_content_bootstrap_fold0_geometry.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

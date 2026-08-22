@@ -237,6 +237,12 @@ shared `43`；direct-latest success/gain retention只有`10/108`和`3/96`，Goal
 4. 过去几十个版本的问题不只是“没有早点扩数据”，而是长期把可优化的局部代理、task差异和参数移动当成接近policy-effective
    mapping的证据。MDCO用一次闭环把这三者与真正迁移能力分开了。
 
+跨版本同rows对照把“吸引子”进一步澄清：MDCO的20个成功有19个已经在source、shared或首版Stage 1任一checkpoint出现，
+18个直接与shared重合；它保留的10个direct-latest成功又全部来自global task0。可是MDCO与首版1140的same-task LoRA
+effective-update cosine均值只有`.09128`，own retrieval仅`2/5`。因此几十版反复出现的不是同一个LoRA参数局部最优，而是冻结
+source在少量easy initial states上的outcome basin；不同compiler可以写出差异很大的参数，却没有让task-conditioned差异接管
+闭环行为。后续若只证明参数更分散、norm更大或Program更可分，仍没有改变这个最早失败接口。
+
 因此当前不再从最近一个metric差异自动生成下一版本。Stage 0与昂贵资产保留，当前Stage 1 compiler family停止；在形成新的、
 真正改变可识别性假设且由早期闭环裁决的合同之前，仓库保持无active successor设计。MDCO事实证据见
 `docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。

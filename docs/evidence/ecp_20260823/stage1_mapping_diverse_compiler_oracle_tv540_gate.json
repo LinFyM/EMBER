@@ -210,6 +210,71 @@
     "full_proxy_qualified": false,
     "prior_proxy_qualified": false
   },
+  "cross_version_retrospective": {
+    "reference_assets": {
+      "v1_tv228_results": "runs/outputs/pi05_ecp_stage1_privileged_held5_tv228_6d71cb8_gpu01p123457_r3_20260822/results.json",
+      "v1_tv570_results": "runs/outputs/pi05_ecp_stage1_privileged_held5_tv570_6d71cb8_gpu01p123457_r3_20260822/results.json",
+      "v1_tv1140_results": "runs/outputs/pi05_ecp_stage1_privileged_held5_tv1140_6d71cb8_gpu01p123457_r3_20260822/results.json",
+      "v1_tv1140_projection": "runs/analysis/pi05_ecp_stage1_privileged_projection_tv1140_6d71cb8_gpu01p1_20260822/projection_manifest.json"
+    },
+    "strict_pairing": {
+      "verified_across_source_shared_v1_mdco_and_direct_latest": true,
+      "episode_key_mismatches": 0,
+      "environment_seed_mismatches": 0,
+      "policy_seed_root_mismatches": 0,
+      "policy_noise_common_prefix_mismatches": 0
+    },
+    "success_totals": {
+      "v1_tv228": 23,
+      "v1_tv570": 27,
+      "v1_tv1140": 27,
+      "v1_checkpoint_union": 44,
+      "mdco": 20
+    },
+    "v1_tv1140_to_mdco": {
+      "retained_success": 15,
+      "gained": 5,
+      "lost": 12,
+      "net": -7,
+      "churn": 17,
+      "success_set_jaccard": 0.46875,
+      "mcnemar_exact_two_sided_p": 0.143463134765625
+    },
+    "mdco_success_origin": {
+      "overlap_stable_shared": 18,
+      "overlap_v1_tv1140": 15,
+      "overlap_any_v1_checkpoint": 19,
+      "seen_in_source_or_shared_or_any_v1_checkpoint": 19,
+      "novel_vs_source_shared_and_all_v1_checkpoints": 1,
+      "direct_latest_overlap_by_global_task_0_9_18_25_36": [
+        10,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "mdco_to_v1_tv1140_effective_update_geometry": {
+      "same_task_cosine_by_global_task_0_9_18_25_36": [
+        0.1018906682729721,
+        0.09946363419294357,
+        0.08590701222419739,
+        0.09008241444826126,
+        0.07906553894281387
+      ],
+      "same_task_cosine_mean": 0.09128185361623764,
+      "nearest_v1_global_task_by_mdco_global_task_0_9_18_25_36": [
+        25,
+        25,
+        18,
+        25,
+        18
+      ],
+      "own_retrieval_count": 2,
+      "mdco_to_v1_effective_norm_ratio_mean": 2.8521196842193604
+    },
+    "interpretation": "MDCO did not converge to the same LoRA direction as Stage 1 v1, yet 19 of its 20 successes were already present in source, stable shared, or a v1 checkpoint and all 10 retained direct-latest successes came from global task 0. This is an outcome-level easy-state/shared-support attractor, not evidence of one universal parameter-space local optimum or action-level policy equivalence."
+  },
   "information_wall": {
     "held_parameter_updates": 0,
     "held_reward_reads_during_training": 0,

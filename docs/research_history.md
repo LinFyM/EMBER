@@ -1178,6 +1178,12 @@ retained/gained/lost=`11/9/10`，shared→candidate=`18/2/25`，direct-latest→
 替代早期闭环的资格；它不否定EMBER总目标、Stage 0 observer、task-local rank16上界或全部compiler形式。正式证据为
 `docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。
 
+收尾时又把MDCO与首版Stage 1的228/570/1140同seed strict250逐row配对。MDCO的20个成功有19个已在source、shared或任一
+首版节点出现，18个与shared重合、19个与首版三节点union重合；相对首版1140为retained/gained/lost=`15/5/12`。MDCO与
+direct-latest重合的10个成功全部来自global task0，其余held4为0。与此同时，MDCO与首版1140同task effective-update cosine
+均值只有`.09128`、own retrieval`2/5`，MDCO norm平均为首版`2.8521x`。故重复失败是outcome层easy-state/shared-support
+吸引子，而非同一个LoRA参数方向；该结论不外推为逐action policy等价。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -1478,3 +1478,14 @@ action/support训练和一次task-equal structured fit credit，足以识别sour
 仍在successful-policy等价类、Program可观察部分与policy-effective compiler坐标之间的可识别性，而不是训练时长、梯度、rank16
 幅度或简单数据量。按合同不续1080、不轮fold、不进入`q_V`，也不再为同一失败签名创建局部compiler版本。正式证据：
 `docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`。
+
+与首版Stage 1的228/570/1140三个同seed strict250面板再配对后，MDCO的20个成功中有19个已在source、stable shared或任一首版
+checkpoint出现；其中18个与shared重合、19个与首版三节点success union重合，只有1个是对这些旧面的新成功。MDCO与首版1140
+直接重合15个成功，首版→MDCO为retained/gained/lost=`15/5/12`。更关键的是，MDCO保留的10个direct-latest成功全部来自
+global task0，其余4个held tasks对direct-latest的success overlap均为0。
+
+这并不是两版生成了同一套LoRA：MDCO与首版1140的same-task effective-update cosine均值只有`.09128`，cross-version own
+retrieval仅`2/5`，MDCO update norm平均还是首版的`2.8521x`。所以“共享吸引子”需要更精确地理解为**闭环outcome层的easy-state/
+shared-support吸引子**，不是一个固定参数方向；不同的近task-common LoRA可以在冻结source上保留和丢失几乎相同的一批初始状态。
+这进一步说明过去以LoRA坐标分离、幅度或moving gauge为主的修补即使改变参数，也未让task-conditioned部分控制新的闭环能力。
+该对照只证明success-set层的重合，不证明两版逐步action policy等价。

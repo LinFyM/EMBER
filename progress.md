@@ -18,6 +18,10 @@
   tasks胜过shared；两种support符号与closed-loop均只对齐`2/5`，低于预注册`4/5`，故两种proxy均不得再替代早期闭环裁决。
   正式结论见`docs/evidence/ecp_20260823/stage1_mapping_diverse_compiler_oracle_tv540_gate.json`；MDCO只淘汰“增加现有71个
   source-seen mappings足以挽救当前Program/compiler接口”，不外推为EMBER目标、Stage 0 observer或全部compiler可能性的反证。
+- 同250 rows的跨版本复盘显示MDCO `19/20` successes已在source/shared或首版Stage 1任一checkpoint出现，`18/20`与shared
+  重合，保留的`10`个direct-latest successes全部来自global task0；但MDCO与首版1140 same-task LoRA cosine均值仅`.09128`。
+  因此当前重复签名是outcome层easy-state/shared-support吸引子，不是固定LoRA参数局部最优；参数分离或幅度变化不能再被视为
+  task-conditioned闭环能力接管的证据。
 - owner设定的v24停点和随后MDCO停点均已执行。Stage 1 v1--v24系统复盘及MDCO后验已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`；当前保持科学暂停，不做小扫、续训或局部结构补丁。所有本轮GPU进程
   已退出，task-owned detached formal worktree已清理。

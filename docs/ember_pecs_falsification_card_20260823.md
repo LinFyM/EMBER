@@ -1,6 +1,6 @@
 # EMBER-PECS：Policy-Effect Constrained Solver falsification card
 
-状态：2026-08-23 **fit-task GPU profile已通过并冻结solver合同；现授权held5 exact-effect formal，尚未授权video effect predictor**。
+状态：2026-08-23 **local-effect held5为58/250并未过Gate 2；只授权一次预登记的完整去噪trajectory target复验**。
 
 本文是MDCO失败和Stage 1全链复盘后的单一科学合同，不是`v25`。它保留EMBER-ECP已经通过的Stage 0
 event/Action observer与最终single-LoRA部署目标，但停止当前learned `q_pi + Program-to-LoRA compiler` family。
@@ -247,4 +247,19 @@ predicted effects
 实现owner为`src/ember/ecp/effect_solver.py`与`src/ember/ecp/effect_oracle.py`。clean pushed `b7c87e7`在fit ordinal71的正式
 profile把effect从`3.660019`单调降至`.774046`，final/initial为`.211487`、0次回升，峰值`18,721,906,176` bytes、耗时
 `153.67s`。此前constant-step候选虽降至`.748501`，但有2次回升；合同允许的唯一一次数值修正只加入所有task共享的
-inverse-sqrt decay，没有修改effect target、架构、数据、步数或held信息。数值/资源合同现已冻结，下一节点直接运行held5。
+inverse-sqrt decay，没有修改effect target、架构、数据、步数或held信息。数值/资源合同由此冻结；held5裁决见下一节。
+
+## 9. Local-effect oracle裁决与唯一后续
+
+clean pushed detached `c400feb`为held ordinals90--94各生成一套完整LoRA。五项effect final/initial分别为
+`.3170/.2040/.1892/.2905/.1793`且全程严格单调。strict paired250为candidate/source/stable-shared/direct-earliest/
+direct-latest=`58/21/43/74/108`，candidate per global0/9/18/25/36=`31/11/16/0/0`。
+
+candidate相对source净`+37`、相对shared净`+15`且exact McNemar `p=.02753`，因此local owner与单点`u=1` flow effect确实能形成
+新的闭环能力；但direct-latest success/gain retention只有`34/108、25/96`，shared retention`30/43`，breadth`3/5`，Goal/Long
+均为0。全部配对字段零mismatch。故第4.4节Gate 2失败，inner effect下降不能升级为successful-policy realizability。
+
+该结果精确触发第4.5节唯一已登记的增强：保持support frames、K2、solver、rank16、12步、shared起点及信息墙不变，新增successful
+expert从同一fixed noise按official 10-step integration产生的完整action/flow denoising trajectory作为functional target。只允许
+一次资源profile与同一held5 strict250复验；不得调solver、换seed/rank、恢复learned compiler或提前训练`R_V`。若该复验仍未过
+原Gate 2，停止当前zero-interaction PECS compiler/solver family。

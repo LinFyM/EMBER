@@ -1500,3 +1500,16 @@ base step RMS `.0002`与inverse-sqrt decay power `.5`产生0次回升，峰值18
 这排除了“完整PI0.5 effect对LoRA leaves不可微、owner-normalized solver数值不可达或rank16 regauge必然破坏下降”的窄解释，
 但没有证明这些输入视频帧上的canonical/antithetic effects足以定义闭环成功策略。后者只能由固定合同的held5 strict paired250
 裁决，不能由更低inner loss、LoRA距离或fit task本身替代。
+
+## 73. 单点local policy effects有真实增量，但不足以定义successful-policy basin
+
+固定PECS solver在held5全部把local effect降到初值的`.179--.317`且严格单调；对应strict250从source/shared/MDCO的
+`21/43/20`提高到`58`。相对source净`+37`，相对shared净`+15`且exact McNemar `p=.02753`，per global0/9/18为
+`31/11/16`。因此删除learned Program-to-LoRA mapping、直接从exact policy constraints求LoRA确实避开了部分旧shared/easy
+basin，不能把58视为纯shared carrier或数值假象。
+
+但direct-latest为`108`，candidate只保留其中`34`，只保留`25/96`个source-failure gains；shared的43个成功也只保留30个。
+global25 Goal与global36 Long仍为0，而direct-latest分别有8和3个成功。最早失效接口因此进一步收窄：38-owner DCT4加两个
+`u=1`局部flow velocity probes可以约束primitive task update，却没有提供成功去噪轨迹的长程vector field/endpoint信息，不能
+守住复杂任务的policy basin。下一次复验只新增同frame、同fixed noise的完整official denoising action/flow trajectory；不再调整
+solver或恢复learned compiler。

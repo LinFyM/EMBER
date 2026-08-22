@@ -1199,7 +1199,17 @@ trainer、calibration、materialization、support builder、配置与对应测�
 fit ordinal71随后在gpu02 physical0完成唯一数值/资源profile。constant-step候选把effect `3.660019→.748501`但出现2次回升，
 未过预注册单调门；唯一一次任务无关数值修正加入inverse-sqrt step decay。clean pushed `b7c87e7`的12步结果为
 `3.660019→.774046`、final/initial `.211487`、0次回升、峰值18.72 GB、耗时153.67秒，故固定solver合同通过并冻结。
-这只证明exact-effect VJP求解链可达，不是closed-loop正证据；下一唯一节点是held5 exact-effect strict250。
+这只证明exact-effect VJP求解链可达，不是closed-loop正证据。
+
+clean pushed detached `c400feb`随后为held5物化五套LoRA并完成strict250。candidate/source/shared/direct-earliest/
+direct-latest=`58/21/43/74/108`，per global0/9/18/25/36=`31/11/16/0/0`。candidate相对source为13 retained、45 gained、
+8 lost、净`+37`；相对shared为30 retained、28 gained、13 lost、净`+15`，exact McNemar `p=.02753`。因此local effects比
+MDCO的20分产生了真实新能力，不是inner-loss-only假象。
+
+但candidate只保留direct-latest `34/108` successes、`25/96` source-failure gains与shared `30/43` successes，breadth`3/5`，
+Goal/Long均0；所有baseline配对字段零mismatch。该oracle按Gate 2失败，说明selected video frames上的owner DCT4与单点`u=1`
+canonical/antithetic velocity不足以定义跨初始化successful-policy basin。按预登记合同只允许一次更强target：在相同support frames
+加入successful expert从fixed noise完成official去噪的完整action/flow trajectory，再复跑同一oracle；若仍失败则停止PECS family。
 
 ## 4. 截至整理边界的已解决与未解决接口
 

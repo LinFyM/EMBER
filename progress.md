@@ -5,7 +5,7 @@
 
 ## Current authority and executable state
 
-- **MDCO已完成并按合同失败；EMBER-PECS exact-effect oracle现为唯一可执行Writer面，fit-task profile已通过并授权held5 formal。** 新运行面由
+- **EMBER-PECS local-effect held5已完成并按Gate 2失败；唯一运行面进入预登记的完整去噪trajectory target复验。** 新运行面由
   `src/ember/ecp/effect_solver.py`、`src/ember/ecp/effect_oracle.py`、`scripts/run_ecp_effect_oracle.py`与
   `configs/pi05_ecp_policy_effect_solver_oracle.json`共同拥有。它只复用既有source、Stage 0 v3、Action Meta v3、stable shared、
   95-task/118-member evidence与action-hidden HDF5，不训练video predictor或shared decoder。旧compiler/q_pi trainer、calibration、
@@ -19,9 +19,19 @@
   `3.6600→.7740`、final/initial `.21149`、0次回升，峰值`18,721,906,176` bytes、耗时`153.67s`，正式通过profile门。
   solver继续固定12步、base step RMS `.0002`、decay power `.5`，held上不挑step、不early-stop、不保留optimizer；证据见
   `docs/evidence/ecp_20260823/pecs_effect_profile_fit71_20260823.json`。
+- clean pushed detached `c400feb`为held ordinals90--94各生成一套完整rank16 LoRA；五项local-effect objective均严格单调，
+  final/initial为`.3170/.2040/.1892/.2905/.1793`。同commit的strict paired250为candidate/source/shared/direct-earliest/
+  direct-latest=`58/21/43/74/108`，candidate per global0/9/18/25/36=`31/11/16/0/0`。相对source为13 retained、45 gained、
+  8 lost、净`+37`；相对shared为30 retained、28 gained、13 lost、净`+15`且exact McNemar `p=.02753`，说明local effects产生
+  真实policy增量，不是旧MDCO的20分重放。
+- 但Gate 2明确失败：direct-latest success/gain retention仅`34/108、25/96`，stable-shared retention`30/43`，都低于
+  `81、58、33`门；breadth只有`3/5`，Goal/Long均0。全部250 rows与source/shared/direct/MDCO的episode key、env seed、
+  policy seed root和policy-noise common prefix零mismatch。按唯一预登记分叉，当前不改solver、不训练video predictor，只加入
+  同support frames上successful expert从fixed noise完成official去噪的完整action/flow trajectory target并复验一次。证据见
+  `docs/evidence/ecp_20260823/pecs_exact_effect_held5_gate_20260823.json`。
 - CPU/结构验证已完成：PECS核心/投影定向测试`12 passed`，此前Stage 0 + PECS/旧Stage1替换面合计`36 passed`；完整仓库测试为
   `335 passed, 15 failed`，15项均来自既有环境/密封authority漂移（7项缺失LIBERO assets环境变量，8项旧evaluation config
-  hash不一致），不涉及本次PECS代码。下一节点是从clean pushed frozen authority并行物化held5，再直接strict paired250。
+  hash不一致），不涉及本次PECS代码。下一节点是实现且只profile预登记的完整去噪trajectory target。
 - clean pushed detached `419fa84`在gpu02 physical
   `0,1,2,3,7`完成90 tasks各6 visits、540 dense visits/108 updates；所有task等权，compiler与`q_pi`梯度持续非零，visible
   Program梯度始终为0。随后唯一一次fit90 structured calibration覆盖90/90 tasks、每rank 18 tasks，plus/minus各123次成功，
@@ -44,8 +54,8 @@
   已退出，task-owned detached formal worktree已清理。
 - 复盘后的架构选择已单独写入`docs/ember_pecs_falsification_card_20260823.md`。PECS保留Stage 0 event/owner表示，删除需要
   跨task学习的Program-to-LoRA decoder，让exact/predicted policy effects通过同一个无task参数的fixed proximal inner solver生成
-  一套complete rank16 LoRA。第一节点只允许held5 exact privileged-effect realizability oracle：先不实现video effect predictor、
-  不训练新shared模型。设计停顿与fit profile均已完成，当前直接进入held5 formal，不再修改solver合同。
+  一套complete rank16 LoRA。local-effect oracle已经完成且未过retention/breadth门；当前只执行card登记的完整去噪trajectory
+  target复验，不训练video predictor或新shared模型，也不再修改solver合同。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为

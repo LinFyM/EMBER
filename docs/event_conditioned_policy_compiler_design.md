@@ -923,6 +923,17 @@ active **OCPB v23 Single-Surface Absolute Compiler（SSAC）**只改变这一主
 SSAC仍生成一套完整rank16 LoRA，不是shared carrier加residual，也不在A/B空间相加两套adapter。stable shared只是训练期
 functional authority；部署时prior和full都由同一个compiler真实生成。
 
+retained v23实现已经把这一定义落到唯一Stage 1运行面。旧task-local free-Program table与v22 config被删除；fit19每task只在
+固定`video_visit=12099`捕获一次冻结privileged `q_pi` Program，随后关闭video store并只训练compiler。这些Program只是
+compiler-identification坐标，不作为参数进入checkpoint，也不提供held/deployment task route。prior-only与full调用同一
+`TargetFamilyCompiler`；materializer从同一checkpoint、同一videos同时保存两种输出，支持分别做matched 308-panel audit。
+首节点固定114 visits/19 updates，每task恰好6 visits。
+
+真实单task profile还完成了训练尺度校准：直接把prior functional项设为`1.0`会产生约`245.3`的compiler梯度并在global clip后
+淹没full action/functional路径；依据同一profile将其一次性定为`.01`后，总compiler梯度约`19.96`，action LoRA-leaf梯度
+`.07717`与prior→shared loss`.65112`同时有效，冻结visible Program/`q_pi`梯度为0。该校准只建立两路径可共同优化的formal
+运行合同，不是以profile loss选方法；方法仍只由节点后的prior/full geometry与冻结support裁决。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

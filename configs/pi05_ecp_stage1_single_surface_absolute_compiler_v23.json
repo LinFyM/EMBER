@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_direct_absolute_free_program_v22",
-  "status": "active_stage1_direct_absolute_free_program_reachability",
-  "purpose": "Test whether the expert-specified direct-absolute family-specific A/B compiler image can recover own successful policies when each fit task receives a privileged free Program; this is a reachability oracle, never a deployment route.",
+  "schema_version": "ember_ecp_stage1_single_surface_absolute_compiler_v23",
+  "status": "active_stage1_single_surface_absolute_compiler",
+  "purpose": "Identify one direct-absolute family-specific A/B compiler surface for both prior-only shared support and full-Program own policy while visible Program and privileged q_pi coordinates remain frozen.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -28,21 +28,22 @@
     "fresh_optimizer": true
   },
   "information_wall": {
-    "shared_gradient_tasks": "none; fit19 development tasks update only their own privileged diagnostic Program row",
+    "shared_gradient_tasks": "fit19 development tasks update the shared compiler only",
     "held5": "privileged transform and frozen inference only; zero shared gradient and zero code fitting",
     "held5_action_or_reward_reads": 0,
     "validation_action_or_reward_reads": 0,
     "test_action_or_reward_reads": 0,
     "deployment_reward_reads": 0,
-    "oracle_training_inputs": [
+    "compiler_training_inputs": [
       "exact language and action-hidden correct-video event anchors",
       "multiple independently successful adapter members",
       "full successful-occupancy eight-phase source-subtracted action response",
       "successful and learner occupancy full-layer source/expert owner responses",
       "detached source target inputs and successful-member target-local LoRA activation effects",
-      "fit-task-local privileged free Programs initialized once from the frozen v6 q_pi at fixed correct videos",
-      "cross-episode successful train action chunks used only to optimize those diagnostic free Programs",
-      "verified-success learner action chunks used only as a secondary free-Program state-support stratum",
+      "one fixed privileged q_pi Program coordinate per fit task captured from correct action-hidden videos",
+      "cross-episode successful train action chunks used only to identify the shared compiler",
+      "verified-success learner action chunks used only as a secondary compiler state-support stratum",
+      "stable-shared responses on the same panels as the prior-only compiler target",
       "source, stable-shared and learner-policy counterfactual responses",
       "member reliability and disagreement"
     ],
@@ -75,24 +76,18 @@
     "scope": "permanently frozen observer-only calibration"
   },
   "training_ownership": {
-    "free_program_trainable": true,
     "visible_program_trainable": false,
     "policy_teacher_trainable": false,
-    "compiler_trainable": false,
+    "compiler_trainable": true,
     "source_policy_trainable": false,
     "observer_trainable": false
   },
-  "free_program_oracle": {
-    "scope": "fit19 task-local privileged reachability diagnostic only",
-    "initialization_video_visit": 12099,
-    "optimized_fields": ["process", "uncertainty"],
-    "fixed_fields": ["language", "scene", "presence"],
-    "process_delta_parameterization": "base plus 2 times tanh delta",
-    "process_delta_scale": 2.0,
-    "uncertainty_parameterization": "base times exp of 2 times tanh log-scale",
-    "uncertainty_log_scale_bound": 2.0,
+  "fixed_program_coordinate": {
+    "scope": "fit19 privileged q_pi coordinates captured once and frozen for compiler-only identification",
+    "video_visit": 12099,
+    "optimized_fields": [],
     "task_id_route": false,
-    "held_program_parameters": 0,
+    "checkpoint_state": false,
     "deployment": false
   },
   "model": {
@@ -106,14 +101,16 @@
     "compiler_queries": 608,
     "output_tensors": 76,
     "output_values": 1287168,
-    "prior_only_surface": "exact complete rank16 gauge-canonical stable shared prior",
-    "full_process_surface": "direct absolute complete rank16 LoRA from family-specific A/B heads; no stable-prior factor residual or bounded rank-mode retraction",
+    "prior_only_surface": "direct absolute complete rank16 LoRA from the same family-specific A/B heads used by full Programs",
+    "full_process_surface": "direct absolute complete rank16 LoRA from the same family-specific A/B heads used by prior-only Programs",
+    "single_surface_prior_full": true,
+    "exact_template_output_bypass": false,
     "absolute_factor_heads": "family-specific A/B heads preserve content-conditioned amplitude and write every target and rank directly",
     "q_pi_gate": "member x event x owner content gate, bounded by visible event presence",
     "program_content": "owner/layer/family are tensor addresses; no additive address embeddings in visible Program values or q_pi factor values",
     "compiler_content_path": "language, scene, ordered process and uncertainty are content Values; owner/layer/family addresses and numeric rank queries control local reads",
     "query_to_output_shortcut": false,
-    "query_content_modulation": "numeric target/rank query multiplicatively modulates cross-attended Program Values; absent process presence selects the exact shared prior",
+    "query_content_modulation": "numeric target/rank query multiplicatively modulates cross-attended Program Values for both zero-process and full-process inputs",
     "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values; raw head amplitude is retained",
     "factor_head_init_std": {
       "action_in": {"a": 0.0007972, "b": 0.0001409},
@@ -153,15 +150,17 @@
     "rank_semantics": false
   },
   "objective": {
-    "effective_update": "primary gauge-invariant set target: exact BA Frobenius distance from the compiled free Program to every independently successful task member",
+    "effective_update": "diagnostic-only exact BA distance; zero optimization weight for full Programs",
     "canonical_factor_warmstart": "diagnostic-only compact rank16 SVD gauge distance; zero optimization weight",
     "functional_response": "paired complete PI0.5 final-flow plus target-local LoRA activation effects retained as bounded structural anchors",
-    "action_grounding": "exact PI0.5 flow-matching loss differentiated through the frozen v6 direct-absolute compiler into fit-task-local free Programs only",
+    "action_grounding": "exact PI0.5 flow-matching loss differentiated through the generated complete LoRA into the shared compiler only",
     "action_supervision": "every fit task receives the same successful-panel base stratum; verified-success learner panels add state support; failed learner actions never produce gradients",
-    "reachability_target": "gauge-invariant effective-update distance to all independently successful task members plus exact action and multi-state functional support; no deterministic unique P star is defined",
     "target_local_activation_effect": "candidate and successful members apply each target B(Ax_ref) to the same detached source input in 38-owner x 4-horizon-basis policy-native output spaces",
     "support_preservation": "baseline_relative_response_barrier",
-    "prior_counterfactual": "absent process presence returns the exact stable-prior LoRA; full Programs use one direct absolute output surface",
+    "prior_counterfactual": "zero-process and full-process Programs both use the same attention, trunk and direct A/B heads; no exact-template branch",
+    "prior_shared_response": "prior-only compiler output matches stable-shared PI0.5 responses on every sampled functional panel",
+    "prior_shared_response_weight": 0.01,
+    "prior_shared_response_scale": "single-task profile calibrated so the prior path anchors rather than overwhelming the full action/functional compiler gradient",
     "action_policy_loss_weight": 1.0,
     "action_supervision_weights": {
       "successful": 1.0,
@@ -173,7 +172,7 @@
     "activation_effect_distillation_weight": 0.1,
     "weights": {
       "member_effective_update": 0.0,
-      "consensus_effective_update": 1.0,
+      "consensus_effective_update": 0.0,
       "member_canonical_factor": 0.0,
       "consensus_canonical_factor": 0.0,
       "prior_preservation": 0.01,
@@ -187,28 +186,28 @@
     "evaluation_policy_seed": 2026082591
   },
   "optimization": {
-    "seed": 20260902,
+    "seed": 20260903,
     "precision": "bfloat16",
     "world_size": 6,
-    "visits_per_fit_task": 12,
-    "total_task_visits": 228,
-    "optimizer_updates": 38,
+    "visits_per_fit_task": 6,
+    "total_task_visits": 114,
+    "optimizer_updates": 19,
     "task_balance_block_rounds": 6,
-    "task_balance_contract": "The 228-visit oracle contains exactly twelve visits for every fit task; rows remain cost-balanced within each 114-visit block.",
-    "checkpoint_task_visits": [228],
-    "stage_stop_task_visits": [228],
+    "task_balance_contract": "The 114-visit node contains exactly six visits for every fit task; rows remain cost-balanced within the block.",
+    "checkpoint_task_visits": [114],
+    "stage_stop_task_visits": [114],
     "optimizer": {
       "name": "AdamW",
-      "learning_rate": 0.05,
+      "learning_rate": 0.00002,
       "betas": [0.9, 0.999],
       "eps": 1e-8,
-      "weight_decay": 0.0,
+      "weight_decay": 0.0001,
       "gradient_clip_norm": 1.0
     },
     "scheduler": {
       "kind": "constant",
       "warmup_updates": 1,
-      "decay_lr": 0.05
+      "decay_lr": 0.00002
     },
     "distributed": "manual flat gradient mean, deferred NCCL, task-equal",
     "functional_policy_microbatch_size": 1,
@@ -222,9 +221,9 @@
   "materialization": {
     "video_visit": 12099,
     "visible_video_count": 2,
-    "allowed_checkpoint_task_visits": [228],
+    "allowed_checkpoint_task_visits": [114],
     "sampling": "fixed correct action-hidden videos without replacement",
-    "output": "fit19 use one task-local free-Program rank16 LoRA; held5 remain frozen q_pi diagnostics; no free Program is deployable"
+    "output": "one frozen-q_pi consensus rank16 LoRA and one learned prior-only rank16 LoRA per task from the same compiler"
   },
   "gate2": {
     "pre_rollout_geometry": {
@@ -234,7 +233,7 @@
       "minimum_mean_candidate_to_direct_norm_ratio": 0.30
     },
     "closed_loop_rows": 250,
-    "arms": ["source", "stable prior", "direct successful members", "fit free-Program compiled or held frozen-q_pi compiled"],
+    "arms": ["source", "stable prior", "learned prior-only", "direct successful members", "q_pi full compiled"],
     "minimum_direct_success_retention": 0.75,
     "minimum_direct_gain_retention": 0.60,
     "require_significant_improvement_over_source": true,

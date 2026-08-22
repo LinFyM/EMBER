@@ -248,9 +248,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed frozen authority完成v22 228 visits/38 updates、24-task geometry与308-panel support gate；direct surface
   将candidate pair cosine降到`.70280`并把own retrieval提高到`10/24`，但fit/held相对shared为`1.45056/1.27628x`且
   breadth`0/19、0/5`，故v22关闭；
-- [ ] 实现 **OCPB v23 Single-Surface Absolute Compiler（SSAC）**：删除prior exact-template hard bypass，让prior/full都经同一
+- [x] 实现 **OCPB v23 Single-Surface Absolute Compiler（SSAC）**：删除prior exact-template hard bypass，让prior/full都经同一
   direct family A/B heads；冻结visible Program与`q_pi`，只训练compiler并同时锚定prior shared support和full own-policy功能；
-- [ ] 完成v23真实单task双路径profile、一个fit19 task-balanced有界节点及matched geometry/support；只有prior/full两条surface
+- [x] 完成v23真实单task双路径profile：两条功能路径、action leaf与compiler/FactorHead梯度均finite非零，冻结模块梯度为0；
+  根据首轮真实梯度量级一次性校准prior权重后，update约1.43秒、峰值约22.80GB；
+- [ ] 从clean pushed frozen authority完成一个fit19 task-balanced有界节点及matched full/prior geometry/support；只有prior/full两条surface
   同向成立才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
@@ -314,9 +316,9 @@ coordinate退化则保留Stage 2并定位最早接口。
 4. v22 direct-absolute free-Program formal/geometry/308-panel audit已经完成：process Value真实控制输出、own retrieval提高到
    `10/24`，但fit/held两边`0/19、0/5`胜过shared，故关闭且不进入held5或`q_V`；证据为
    `docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`；
-5. 实现v23 SSAC：移除prior exact-template hard bypass，冻结visible Program与`q_pi`，让同一direct A/B surface同时学习
-   prior-only shared support和full Program own-policy功能；先做真实单task双路径profile，再运行一个有界fit19 task-balanced
-   compiler-only节点及matched geometry/support；
+5. v23 SSAC实现与真实双路径profile已经完成：旧free-Program运行面已删除，同一direct A/B surface、固定fit19 `q_pi`
+   Program坐标和compiler-only所有权均接通；下一步从clean pushed frozen authority运行114 visits/19 updates，并分别审计
+   learned prior-only与full输出的matched geometry/support；
 6. v23只有在prior support与full own mapping同向改善后才接held5 oracle；若同一surface仍失败，先用固定Program/head-image
    capacity证据决定是否扩大compiler width，而不回退bounded selector或扫LR/rank/seed/dtype；
 7. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；

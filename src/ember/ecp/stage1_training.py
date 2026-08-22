@@ -1,4 +1,4 @@
-"""Task-balanced direct-absolute free-Program reachability for ECP Stage 1."""
+"""Task-balanced single-surface absolute compiler identification for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -44,10 +44,9 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_lora_state,
     tokenize_stage1_languages,
 )
-from ember.ecp.stage1_free_program import (
-    TaskLocalFreeProgramTable,
-    free_program_ordinals,
-    initialize_task_local_free_programs,
+from ember.ecp.stage1_fixed_program import (
+    capture_fixed_q_pi_programs,
+    fixed_program_ordinals,
 )
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
@@ -96,7 +95,7 @@ class ECPStage1Runtime:
     contract: LoRAContract
     prior_state: Mapping[str, torch.Tensor]
     model: ECPStage1Model
-    free_programs: TaskLocalFreeProgramTable
+    fixed_programs: Mapping[int, Any]
     trainable_parameters: tuple[torch.nn.Parameter, ...]
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
@@ -134,7 +133,7 @@ def _runtime_limits(
 ) -> tuple[int, int, tuple[int, ...]]:
     if (
         config.get("status")
-        != "active_stage1_direct_absolute_free_program_reachability"
+        != "active_stage1_single_surface_absolute_compiler"
     ):
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
@@ -276,7 +275,7 @@ def _build_contract(
         "model": dict(runtime.config["model"]),
         "data": dict(runtime.config["data"]),
         "objective": dict(runtime.config["objective"]),
-        "free_program_oracle": dict(runtime.config["free_program_oracle"]),
+        "fixed_program_coordinate": dict(runtime.config["fixed_program_coordinate"]),
         "optimization": dict(runtime.config["optimization"]),
         "information_wall": dict(runtime.config["information_wall"]),
         "runtime": {
@@ -292,8 +291,8 @@ def _build_contract(
         "trainable_parameters": sum(
             value.numel() for value in runtime.trainable_parameters
         ),
-        "trainable_modules": ["free_programs"],
-        "frozen_writer_modules": ["visible_program", "policy_teacher", "compiler"],
+        "trainable_modules": ["compiler"],
+        "frozen_writer_modules": ["visible_program", "policy_teacher"],
         "source_policy_trainable_parameters": 0,
         "observer_trainable_parameters": 0,
         "content_hash_policy": "disabled_by_owner",
@@ -520,7 +519,7 @@ def prepare_runtime(
         total_task_visits=total,
     )
     _initialize_distributed_model(args, context, authorities.model)
-    initialization_ordinals = free_program_ordinals(config, mode=args.mode)
+    initialization_ordinals = fixed_program_ordinals(config, mode=args.mode)
     owned_initialization_ordinals = tuple(
         ordinal
         for index, ordinal in enumerate(initialization_ordinals)
@@ -541,7 +540,7 @@ def prepare_runtime(
         max_length=int(authorities.source_config["features"]["tokenizer_max_length"]),
         device=context.device,
     )
-    free_programs = initialize_task_local_free_programs(
+    fixed_programs = capture_fixed_q_pi_programs(
         mode=args.mode,
         config=config,
         context=context,
@@ -552,15 +551,11 @@ def prepare_runtime(
         support_bank=support_bank,
         language_tokens=language,
     )
-    authorities.model.add_module("free_programs", free_programs)
-    trainable_parameters = tuple(free_programs.parameters())
+    authorities.model.compiler.requires_grad_(True)
+    trainable_parameters = tuple(authorities.model.compiler.parameters())
     if (
         not trainable_parameters
         or not all(parameter.requires_grad for parameter in trainable_parameters)
-        or any(
-            parameter.requires_grad
-            for parameter in authorities.model.compiler.parameters()
-        )
         or any(
             parameter.requires_grad
             for parameter in authorities.model.visible_program.parameters()
@@ -570,7 +565,7 @@ def prepare_runtime(
             for parameter in authorities.model.policy_teacher.parameters()
         )
     ):
-        raise ValueError("fixed-compiler free-Program ownership changed")
+        raise ValueError("single-surface compiler ownership changed")
     optimizer, scheduler, start, expected_metrics = _prepare_optimization(
         args,
         config,
@@ -621,7 +616,7 @@ def prepare_runtime(
         contract=authorities.contract,
         prior_state=authorities.prior_state,
         model=authorities.model,
-        free_programs=free_programs,
+        fixed_programs=fixed_programs,
         trainable_parameters=trainable_parameters,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -635,7 +630,7 @@ def prepare_runtime(
     source = authorities.source
     _initialize_run_contract(runtime, source)
     authorities.model.eval()
-    free_programs.train()
+    authorities.model.compiler.train()
     del authorities
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats(context.device)
@@ -695,7 +690,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_direct_absolute_free_program_v22.json",
+        / "configs/pi05_ecp_stage1_single_surface_absolute_compiler_v23.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

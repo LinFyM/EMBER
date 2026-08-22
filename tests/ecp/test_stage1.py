@@ -19,13 +19,11 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_factors,
 )
 from ember.ecp.stage1 import ECPStage1Model
-from ember.ecp.stage1_free_program import TaskLocalFreeProgramTable
 from ember.ecp.stage1_materialization import (
     PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
 )
 from ember.ecp.stage1_objective import (
-    canonical_factor_loss,
     effective_update_cosine_matrix,
     exact_effective_update_loss,
 )
@@ -128,45 +126,18 @@ def _expert_evidence(
     )
 
 
-def test_free_program_materialization_uses_v22_task_visit_cursor() -> None:
+def test_single_surface_materialization_uses_v23_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_direct_absolute_free_program_v22.json"
+        REPO_ROOT
+        / "configs/pi05_ecp_stage1_single_surface_absolute_compiler_v23.json"
     )
-    assert resolved.stage == "stage1_direct_absolute_free_program_reachability_v22"
+    assert resolved.stage == "stage1_single_surface_absolute_compiler_v23"
     assert resolved.cursor_name == "task_visits"
-    assert resolved.checkpoint_cursors == (228,)
+    assert resolved.checkpoint_cursors == (114,)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_direct_absolute_free_program_v22"
+        "ember_ecp_stage1_single_surface_absolute_compiler_v23"
     )
-
-
-def test_task_local_free_program_bounds_fields_and_task_gradients() -> None:
-    first = _tiny_program()
-    second = _tiny_program()
-    table = TaskLocalFreeProgramTable(
-        {1: first, 2: second},
-        process_delta_scale=2.0,
-        uncertainty_log_scale_bound=2.0,
-    )
-    baseline = table(1)
-    torch.testing.assert_close(baseline.language, first.language)
-    torch.testing.assert_close(baseline.scene, first.scene)
-    torch.testing.assert_close(baseline.process, first.process)
-    torch.testing.assert_close(baseline.presence, first.presence)
-    torch.testing.assert_close(baseline.uncertainty, first.uncertainty)
-    (baseline.process.square().mean() + baseline.uncertainty.mean()).backward()
-    assert all(parameter.grad is not None for parameter in table.row(1).parameters())
-    assert all(parameter.grad is None for parameter in table.row(2).parameters())
-    table.freeze_inactive_gradients((2,))
-    assert all(parameter.grad is None for parameter in table.row(1).parameters())
-    with torch.no_grad():
-        table.row(2).process_delta.fill_(100.0)
-        table.row(2).uncertainty_log_scale.fill_(-100.0)
-    bounded = table(2)
-    assert float((bounded.process - second.process).detach().abs().max()) <= 2.0
-    ratio = bounded.uncertainty / second.uncertainty.clamp_min(1e-4)
-    torch.testing.assert_close(ratio, torch.exp(torch.full_like(ratio, -2.0)))
 
 
 def test_visible_program_video_set_is_permutation_invariant() -> None:
@@ -216,8 +187,16 @@ def test_compiler_emits_one_complete_rank16_state_per_program() -> None:
     )
     attention = float(output.consensus_compilation.exact_owner_attention.detach())
     assert 0.0 <= attention <= 1.0
-    for name, target in template.items():
-        torch.testing.assert_close(output.prior_compilation.state[name][0], target)
+    assert any(
+        float(
+            (output.prior_compilation.state[name][0] - target)
+            .detach()
+            .abs()
+            .sum()
+        )
+        > 0.0
+        for name, target in template.items()
+    )
 
 
 def test_stage1_decision_prefix_is_task_equal() -> None:
@@ -243,9 +222,9 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
             "pair_seed": 17,
         },
         "optimization": {
-            "visits_per_fit_task": 12,
+            "visits_per_fit_task": 6,
             "task_balance_block_rounds": 6,
-            "stage_stop_task_visits": [228],
+            "stage_stop_task_visits": [114],
             "seed": 23,
         },
     }
@@ -253,11 +232,11 @@ def test_stage1_decision_prefix_is_task_equal() -> None:
         config=config,
         tasks=tasks,
         world_size=6,
-        total_task_visits=228,
+        total_task_visits=114,
         mode="formal",
     )
     counts = Counter(ordinal for ordinal, _ in schedule)
-    assert counts == Counter({ordinal: 12 for ordinal in range(19)})
+    assert counts == Counter({ordinal: 6 for ordinal in range(19)})
 
 
 def test_exact_effective_update_loss_is_gauge_invariant_and_zero_on_identity() -> None:
@@ -287,7 +266,7 @@ def test_compact_svd_gauge_preserves_update_and_is_deterministic() -> None:
     torch.testing.assert_close(canonical_b, repeat_b)
 
 
-def test_direct_absolute_compiler_keeps_exact_prior_and_writes_full_factors() -> None:
+def test_prior_and_full_programs_share_direct_absolute_factor_heads() -> None:
     contract, owners, template = _contract_and_states()
     for value in template.values():
         value.normal_(std=0.01)
@@ -300,12 +279,13 @@ def test_direct_absolute_compiler_keeps_exact_prior_and_writes_full_factors() ->
     }
     prior = compiler(ECPProgram(**common, presence=torch.zeros(1, 8))).state
     full = compiler(ECPProgram(**common, presence=torch.ones(1, 8))).state
-    for name, target in template.items():
-        torch.testing.assert_close(prior[name][0], target)
-    assert float(canonical_factor_loss(prior, template, contract).detach()) < 1e-7
     assert any(
-        float((full[name][0] - target).detach().abs().sum()) > 0.0
+        float((prior[name][0] - target).detach().abs().sum()) > 0.0
         for name, target in template.items()
+    )
+    assert any(
+        float((full[name][0] - prior[name][0]).detach().abs().sum()) > 0.0
+        for name in template
     )
 
 

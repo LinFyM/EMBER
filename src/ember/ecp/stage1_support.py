@@ -432,6 +432,33 @@ def policy_support_activation_distillation_loss(
     return support, activation
 
 
+def shared_prior_response_distillation_loss(
+    *,
+    policy: torch.nn.Module,
+    candidate_state: Mapping[str, torch.Tensor],
+    contract: LoRAContract,
+    cached: CachedPolicySupportPanel,
+) -> torch.Tensor:
+    """Match a learned prior-only compiler output to the stable shared policy."""
+
+    panel = cached.panel
+    candidate = pi05_flow_response(
+        policy,
+        candidate_state,
+        contract,
+        cached.batch,
+        policy_seed=panel.policy_seed,
+    ).float()
+    source = panel.source_response.to(candidate).float()
+    shared = panel.shared_response.to(candidate).float()
+    experts = panel.expert_responses.to(candidate).float()
+    weights = panel.expert_weights.to(candidate).clamp_min(1e-4)
+    weights = weights / weights.sum()
+    consensus = torch.einsum("m,mbhd->bhd", weights, experts)
+    normalization = (consensus - source).square().mean().clamp_min(1e-8)
+    return (candidate - shared).square().mean() / normalization
+
+
 def policy_support_loss_from_response(
     *,
     candidate: torch.Tensor,

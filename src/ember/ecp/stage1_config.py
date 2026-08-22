@@ -13,8 +13,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_direct_absolute_free_program_run_v22"
-STAGE = "stage1_direct_absolute_free_program_reachability_v22"
+RUN_SCHEMA = "ember_ecp_stage1_single_surface_absolute_compiler_run_v23"
+STAGE = "stage1_single_surface_absolute_compiler_v23"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -33,9 +33,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_direct_absolute_free_program_v22"
+        != "ember_ecp_stage1_single_surface_absolute_compiler_v23"
         or config.get("status")
-        != "active_stage1_direct_absolute_free_program_reachability"
+        != "active_stage1_single_surface_absolute_compiler"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -78,6 +78,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         not in config.get("model", {}).get("full_process_surface", "")
         or "family-specific A/B heads"
         not in config.get("model", {}).get("absolute_factor_heads", "")
+        or config.get("model", {}).get("single_surface_prior_full") is not True
+        or config.get("model", {}).get("exact_template_output_bypass") is not False
         or any(
             name in config.get("model", {})
             for name in (
@@ -93,10 +95,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or config.get("information_wall", {}).get("held5_action_or_reward_reads") != 0
         or config.get("training_ownership")
         != {
-            "free_program_trainable": True,
             "visible_program_trainable": False,
             "policy_teacher_trainable": False,
-            "compiler_trainable": False,
+            "compiler_trainable": True,
             "source_policy_trainable": False,
             "observer_trainable": False,
         }
@@ -104,16 +105,13 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             float(config.get("objective", {}).get("weights", {}).get(name, -1)) != 0.0
             for name in (
                 "member_effective_update",
+                "consensus_effective_update",
                 "member_canonical_factor",
                 "consensus_canonical_factor",
             )
         )
-        or float(
-            config.get("objective", {})
-            .get("weights", {})
-            .get("consensus_effective_update", -1)
-        )
-        != 1.0
+        or float(config.get("objective", {}).get("prior_shared_response_weight", -1))
+        <= 0.0
         or config.get("initialization", {}).get("stage")
         != "stage1_policy_support_v6"
         or config.get("initialization", {}).get("run_contract_schema")
@@ -121,30 +119,23 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 228
         or config.get("initialization", {}).get("load_model_weights_only") is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
-        or int(config.get("optimization", {}).get("visits_per_fit_task", -1)) != 12
-        or int(config.get("optimization", {}).get("total_task_visits", -1)) != 228
-        or int(config.get("optimization", {}).get("optimizer_updates", -1)) != 38
+        or int(config.get("optimization", {}).get("visits_per_fit_task", -1)) != 6
+        or int(config.get("optimization", {}).get("total_task_visits", -1)) != 114
+        or int(config.get("optimization", {}).get("optimizer_updates", -1)) != 19
         or tuple(config.get("optimization", {}).get("checkpoint_task_visits", ()))
-        != (228,)
+        != (114,)
         or tuple(config.get("optimization", {}).get("stage_stop_task_visits", ()))
-        != (228,)
-        or config.get("free_program_oracle", {}).get("scope")
-        != "fit19 task-local privileged reachability diagnostic only"
-        or tuple(config.get("free_program_oracle", {}).get("optimized_fields", ()))
-        != ("process", "uncertainty")
-        or tuple(config.get("free_program_oracle", {}).get("fixed_fields", ()))
-        != ("language", "scene", "presence")
-        or float(config.get("free_program_oracle", {}).get("process_delta_scale", -1))
-        != 2.0
-        or float(
-            config.get("free_program_oracle", {}).get("uncertainty_log_scale_bound", -1)
-        )
-        != 2.0
-        or config.get("free_program_oracle", {}).get("task_id_route") is not False
-        or int(config.get("free_program_oracle", {}).get("held_program_parameters", -1))
-        != 0
+        != (114,)
+        or config.get("fixed_program_coordinate", {}).get("scope")
+        != "fit19 privileged q_pi coordinates captured once and frozen for compiler-only identification"
+        or int(config.get("fixed_program_coordinate", {}).get("video_visit", -1))
+        != 12099
+        or tuple(config.get("fixed_program_coordinate", {}).get("optimized_fields", ()))
+        != ()
+        or config.get("fixed_program_coordinate", {}).get("task_id_route") is not False
+        or config.get("fixed_program_coordinate", {}).get("checkpoint_state") is not False
     ):
-        raise ValueError("unsupported ECP Stage 1 free-Program oracle contract")
+        raise ValueError("unsupported ECP Stage 1 single-surface compiler contract")
     return config
 
 

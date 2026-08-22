@@ -1,4 +1,4 @@
-"""One task-equal direct-absolute free-Program update for ECP Stage 1."""
+"""One task-equal single-surface absolute compiler update for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from ember.ecp.stage1_objective import ECPStage1Loss, ecp_stage1_loss
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
     policy_support_activation_distillation_loss,
+    shared_prior_response_distillation_loss,
 )
 from ember.writer.functional import functional_lora_loss_gradient
 
@@ -25,7 +26,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "direct_absolute_free_program_reachability", {
+    return "single_surface_absolute_compiler_identification", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -148,6 +149,7 @@ def _local_record(
     action_supervision_weight: float,
     action_lora_gradient_norm: torch.Tensor,
     activation_effect: TargetActivationEffectLoss,
+    prior_shared_response: torch.Tensor,
     program: Any,
     compilation: Any,
     panel_id: int,
@@ -176,6 +178,7 @@ def _local_record(
         "activation_effect_active_fraction": float(
             activation_effect.active_owner_fraction.detach()
         ),
+        "prior_shared_response": float(prior_shared_response.detach()),
         "member_effective_update": float(loss.member_effective_update.detach()),
         "consensus_effective_update": float(loss.consensus_effective_update.detach()),
         "member_canonical_factor": float(loss.member_canonical_factor.detach()),
@@ -192,12 +195,6 @@ def _local_record(
             compilation.exact_owner_attention.detach()
         ),
         "mean_active_events": float((program.presence.detach() > 0.5).float().sum()),
-        **{
-            name: float(value.detach())
-            for name, value in runtime.free_programs.row(task.ordinal)
-            .diagnostics()
-            .items()
-        },
     }
 
 
@@ -216,10 +213,11 @@ def run_stage1_update(
     )
     runtime.optimizer.zero_grad(set_to_none=True)
     with torch.autocast("cuda", dtype=torch.bfloat16):
-        program = runtime.free_programs(task_ordinal)
+        program = runtime.fixed_programs[task_ordinal]
         compilation = runtime.model.compiler(program)
         prior_compilation = runtime.model.compiler(program.prior_only())
         candidate = select_compiled_state(compilation.state, 0)
+        prior_candidate = select_compiled_state(prior_compilation.state, 0)
         task_visits = cursor + runtime.context.world_size
         cached = _policy_support_panel(
             runtime,
@@ -243,6 +241,12 @@ def run_stage1_update(
             cached=cached,
             preservation=str(runtime.config["objective"]["support_preservation"]),
         )
+        prior_shared_response = shared_prior_response_distillation_loss(
+            policy=runtime.policy,
+            candidate_state=prior_candidate,
+            contract=runtime.contract,
+            cached=cached,
+        )
         objective_phase, objective_weights = _objective_weights(runtime, task_visits)
         loss = ecp_stage1_loss(
             member=compilation,
@@ -260,6 +264,8 @@ def run_stage1_update(
                 runtime.config["objective"]["activation_effect_distillation_weight"]
             )
             * activation_effect.loss
+            + float(runtime.config["objective"]["prior_shared_response_weight"])
+            * prior_shared_response
         )
         action_scale = (
             float(runtime.config["objective"]["action_policy_loss_weight"])
@@ -281,10 +287,6 @@ def run_stage1_update(
         )
     structural_total.backward()
     _reduce_gradients(runtime.trainable_parameters, runtime.context.world_size)
-    active_ordinals = tuple(
-        runtime.schedule[cursor + rank][0] for rank in range(runtime.context.world_size)
-    )
-    runtime.free_programs.freeze_inactive_gradients(active_ordinals)
     action_lora_gradient_norm = (
         torch.stack(
             [gradient.float().square().sum() for gradient in action_gradients.values()]
@@ -294,28 +296,34 @@ def run_stage1_update(
         if action_gradients
         else total.new_zeros(())
     )
-    free_program_gradient = _module_gradient_norm(runtime.free_programs)
     compiler_gradient = _module_gradient_norm(runtime.model.compiler)
+    factor_gradient = sum(
+        parameter.grad.float().square().sum()
+        for heads in (
+            runtime.model.compiler.factor_a,
+            runtime.model.compiler.factor_b,
+        )
+        for parameter in heads.parameters()
+        if parameter.grad is not None
+    ).sqrt()
     policy_teacher_gradient = _module_gradient_norm(runtime.model.policy_teacher)
     visible_program_gradient = _module_gradient_norm(runtime.model.visible_program)
     clip = float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"])
-    active_parameters = runtime.free_programs.parameters_for_ordinals(active_ordinals)
-    gradient_norm = torch.nn.utils.clip_grad_norm_(active_parameters, clip)
+    gradient_norm = torch.nn.utils.clip_grad_norm_(runtime.trainable_parameters, clip)
     if (
         not bool(
             torch.isfinite(
                 gradient_norm
-                + free_program_gradient
                 + compiler_gradient
+                + factor_gradient
                 + policy_teacher_gradient
                 + visible_program_gradient
             )
         )
         or float(policy_teacher_gradient) != 0.0
         or float(visible_program_gradient) != 0.0
-        or float(compiler_gradient) != 0.0
     ):
-        raise RuntimeError("invalid fixed-compiler free-Program gradient")
+        raise RuntimeError("invalid single-surface compiler gradient")
     runtime.optimizer.step()
     runtime.scheduler.step()
     local = _local_record(
@@ -329,6 +337,7 @@ def run_stage1_update(
         action_supervision_weight=action_supervision_weight,
         action_lora_gradient_norm=action_lora_gradient_norm,
         activation_effect=activation_effect,
+        prior_shared_response=prior_shared_response,
         program=program,
         compilation=compilation,
         panel_id=cached.panel.panel_id,
@@ -345,6 +354,7 @@ def run_stage1_update(
         "activation_effect",
         "activation_effect_disagreement",
         "activation_effect_active_fraction",
+        "prior_shared_response",
         "member_effective_update",
         "consensus_effective_update",
         "member_canonical_factor",
@@ -359,10 +369,6 @@ def run_stage1_update(
         "locality",
         "consensus_exact_owner_attention",
         "mean_active_events",
-        "process_delta_relative",
-        "uncertainty_scale_mean",
-        "uncertainty_scale_min",
-        "uncertainty_scale_max",
     )
     return {
         "task_visits": task_visits,
@@ -374,8 +380,8 @@ def run_stage1_update(
             for name in metric_names
         },
         "gradient_norm_before_clip": float(gradient_norm),
-        "free_program_gradient_norm_before_clip": float(free_program_gradient),
         "compiler_gradient_norm_before_clip": float(compiler_gradient),
+        "factor_head_gradient_norm_before_clip": float(factor_gradient),
         "policy_teacher_gradient_norm_before_clip": float(policy_teacher_gradient),
         "visible_program_gradient_norm_before_clip": float(visible_program_gradient),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),

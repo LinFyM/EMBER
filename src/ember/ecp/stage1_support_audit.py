@@ -44,6 +44,7 @@ def _file(path: Path) -> dict[str, Any]:
 
 def load_audit_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    adapter_field = str(config.get("projection_adapter_field", "projected_adapter"))
     thresholds = config.get("thresholds", {})
     required = {
         "minimum_fit_tasks_better_than_source",
@@ -61,6 +62,7 @@ def load_audit_config(path: Path) -> dict[str, Any]:
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
         != 0
+        or adapter_field not in {"projected_adapter", "prior_projected_adapter"}
     ):
         raise ValueError("unsupported ECP policy-support audit contract")
     return config
@@ -77,6 +79,7 @@ def _load_projection(
     support_manifest: Path,
     tasks: Sequence[Any],
     expected_schema: str,
+    adapter_field: str,
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): dict(row) for row in manifest.get("tasks", ())}
@@ -96,12 +99,13 @@ def _load_projection(
         raise ValueError("ECP policy-support projection authority changed")
     for ordinal, row in rows.items():
         task = expected[ordinal]
-        adapter = Path(str(row.get("projected_adapter", ""))).resolve()
+        adapter = Path(str(row.get(adapter_field, ""))).resolve()
+        bytes_field = adapter_field + "_bytes"
         if (
             row.get("fold_role") != task.fold_role
             or int(row.get("global_task_id", -1)) != int(task.global_task_id)
             or not adapter.is_file()
-            or adapter.stat().st_size != int(row.get("projected_adapter_bytes", -1))
+            or adapter.stat().st_size != int(row.get(bytes_field, -1))
         ):
             raise ValueError("ECP policy-support projected adapter changed")
     return manifest, rows
@@ -234,9 +238,10 @@ def _evaluate_task(
     support_task: Any,
     projection_row: Mapping[str, Any],
     authorities: Any,
+    adapter_field: str,
 ) -> dict[str, Any]:
     adapter = load_file(
-        str(Path(str(projection_row["projected_adapter"])).resolve()),
+        str(Path(str(projection_row[adapter_field])).resolve()),
         device=str(next(authorities.policy.parameters()).device),
     )
     validate_lora_state(adapter, authorities.contract)
@@ -288,9 +293,8 @@ def _evaluate_task(
         "suite": str(task.suite),
         "task_id": int(task.task_id),
         "fold_role": str(task.fold_role),
-        "projected_adapter": _file(
-            Path(str(projection_row["projected_adapter"]))
-        ),
+        "projection_adapter_field": adapter_field,
+        "projected_adapter": _file(Path(str(projection_row[adapter_field]))),
         "summary": _task_summary(rows),
         "panels": rows,
     }
@@ -358,6 +362,9 @@ def build_audit_shard(args: Any) -> None:
         support_manifest=support_manifest,
         tasks=tasks,
         expected_schema=materialization.projection_schema,
+        adapter_field=str(
+            audit_config.get("projection_adapter_field", "projected_adapter")
+        ),
     )
     rows = []
     for task in selected:
@@ -368,6 +375,9 @@ def build_audit_shard(args: Any) -> None:
                 support_task=support.task(task.ordinal),
                 projection_row=projection_rows[task.ordinal],
                 authorities=base_authorities,
+                adapter_field=str(
+                    audit_config.get("projection_adapter_field", "projected_adapter")
+                ),
             )
         )
         print({"ordinal": task.ordinal, **rows[-1]["summary"]["all"]}, flush=True)

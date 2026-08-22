@@ -152,6 +152,18 @@
   `q_pi`，只训练compiler，同时用prior-path shared policy support与full-path own successful functional evidence识别坐标，
   避免Program/compiler共同旋转。首个节点仍以fit19固定Program做有界task-balanced identification；只有prior support与full
   own mapping同向改善才继续，失败后才根据同一surface的intrinsic/head-image证据决定是否扩大compiler width，不扫小超参数。
+- v23 retained实现现已替换唯一Stage 1运行面：旧v22 free-Program table、config和task-local参数已删除；fit19每task在
+  `video_visit=12099`捕获一次冻结privileged `q_pi` Program坐标，它不进checkpoint、不进入held/deployment，也不含可训练
+  task-ID route。prior-only与full都由同一个380-token attention/trunk及family-specific direct A/B heads生成；只有compiler
+  可训练，首节点固定为114 visits/19 updates。一次materialization同时保存同一surface的full与prior输出，使后续两个
+  308-panel audit无需重复observer forward。v6 macro228仍以153/153 keys strict-load通过；54项聚焦合同、pyflakes、
+  `py_compile`和diff检查通过，退役运行面净删除多于新增代码。
+- gpu02 physical0的真实双路径profile已完成。未经尺度校准时prior功能项使compiler/FactorHead裁剪前梯度达到
+  `245.295/245.035`，明显会在global clip后压过full路径；这不是可接受的formal合同。按同一真实profile一次性把
+  `prior_shared_response_weight`校准为`.01`后，action LoRA-leaf梯度仍为`.077173`，prior→shared response loss为
+  `.651121`，compiler/FactorHead总梯度降到`19.96197/19.92703`且finite，visible Program与`q_pi`梯度均精确为0；update
+  `1.427s`、峰值`22,796,661,248` bytes。该profile只解除clean pushed 6卡114-visit节点的运行门，不构成geometry/support
+  或闭环性能证据。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

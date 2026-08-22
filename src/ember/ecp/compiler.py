@@ -250,13 +250,6 @@ class TargetFamilyCompiler(torch.nn.Module):
         layer = self.layer_embedding(self.layer_ids)[:, None]
         return target + rank + family + layer
 
-    @staticmethod
-    def _process_gate(program: ECPProgram) -> torch.Tensor:
-        mass = program.presence.float().sum(dim=-1)
-        soft = 1.0 - torch.exp(-mass)
-        hard = (mass > 0).to(soft)
-        return hard.detach() - soft.detach() + soft
-
     def forward(self, program: ECPProgram) -> ECPCompilerOutput:
         key_tokens, value_tokens, presence = self._tokens(program)
         queries = self.query_projection(self._queries())
@@ -273,7 +266,6 @@ class TargetFamilyCompiler(torch.nn.Module):
         hidden = hidden * modulation[None]
         hidden = self.trunk(hidden)
         templates = self.template_state()
-        process_gate = self._process_gate(program)
         result: dict[str, torch.Tensor] = {}
         for owner in self.owners:
             family = owner.family.value
@@ -282,14 +274,11 @@ class TargetFamilyCompiler(torch.nn.Module):
             full_b = self.factor_b[family](addressed).transpose(1, 2)
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
-            gate_a = process_gate[:, None, None].to(full_a)
-            gate_b = process_gate[:, None, None].to(full_b)
-            result[name_a] = (
-                (1.0 - gate_a) * templates[name_a][None] + gate_a * full_a
-            ).to(templates[name_a])
-            result[name_b] = (
-                (1.0 - gate_b) * templates[name_b][None] + gate_b * full_b
-            ).to(templates[name_b])
+            # Prior-only and full Programs must inhabit one learned compiler
+            # surface. Template buffers remain initialization/coordinate
+            # authorities, but never bypass the direct family heads.
+            result[name_a] = full_a.to(templates[name_a])
+            result[name_b] = full_b.to(templates[name_b])
         locality = torch.einsum(
             "bjrn,jn->", attention.float(), self.locality_cost
         ) / (attention.shape[0] * self.owner_count * self.rank)

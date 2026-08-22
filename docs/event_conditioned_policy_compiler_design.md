@@ -555,7 +555,7 @@ held为`1.00692x`，远好于v8的`1.17823/1.11729`；但breadth仅`10/19、2/5`
 candidate-minus-shared correction本身也有`.97482` pair cosine，24个task的replacement fraction全部挤在
 `.08031--.09164`。因此不续训v9，也不因接近shared就运行held闭环。
 
-active v10只修正这条已观测因果旁路。numeric target/rank query继续由exact language和scene条件化，但replacement attention
+v10只修正这条已观测因果旁路。numeric target/rank query继续由exact language和scene条件化，但replacement attention
 只在present process tokens上归一化，factor与selector的Value只来自process/uncertainty content；language/scene不再作为可直接
 写replacement的Value，process presence也不能只充当full/prior开关。process values全零时，即使language/scene与presence存在，
 replacement hidden仍严格为零并返回完整shared；真实process则保留event/owner顺序、locality和全部16 ranks。bounded QR/RMS
@@ -570,8 +570,10 @@ replacement、零初始化selector、support bank、task-balanced schedule、see
 clean pushed `13dfc25`的fresh 228-visits与24-task物化已完成。process-only Value使candidate-minus-shared
 correction pair cosine从v9的`.97482`降到`.95088`，selector的task间范围也扩大到`.06844--.12597`；
 但candidate pair cosine仍为`.99641`，own-direct `.03983`低于nearest-other `.06200`，own retrieval仍只有`1/24`。
-因而该修正弱化了全局旁路，但尚未建立task-conditioned policy direction；仅剩同一frozen full-bank support
-audit用于判断是否保住shared，不据此进入held闭环。
+同一frozen full-bank audit中，fit相对shared进一步改善到`.96892x`、breadth `12/19`，held为
+`1.00285x`、breadth `2/5`。因而该修正弱化了全局旁路且连续改善support，但尚未建立
+task-conditioned policy direction，v10按原门关闭。后继必须回到Stage 1的task-relative Program-to-policy合同，不再续训、
+扫小超参或在此坐标上加rollout credit。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

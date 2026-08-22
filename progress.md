@@ -225,8 +225,11 @@
 - 24-task K2物化已完成。相对v9，candidate跨task cosine从`.99779`小幅降到`.99641`，candidate-minus-shared
   correction cosine从`.97482`降到`.95088`，selector task范围从`.08031--.09164`扩大到`.06844--.12597`，
   证明process-only Value削弱了一部分近全局旁路。但own-direct `.03983`仍低于nearest-other `.06200`，自身检索
-  `1/24`，candidate/direct norm ratio `1.98083`，故geometry门仍失败。已预登记同一308-panel frozen support audit，
-  只用于判断shared preservation，不进入held闭环或reward。
+  `1/24`，candidate/direct norm ratio `1.98083`，故geometry门仍失败。clean pushed `85dc2fc`的308-panel frozen audit中，
+  fit candidate/source/shared为`.39255/.70633/.40514`，相对shared `.96892x`且breadth `12/19`；held为
+  `.62612/.88454/.62434`，相对shared `1.00285x`且breadth `2/5`。v10较v9连续改善，但fit/held breadth和held
+  aggregate仍未过门，因此最终关闭，held闭环/reward/`q_V`仍为0。一次性audit config已删除，证据见
+  `docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

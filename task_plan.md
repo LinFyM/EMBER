@@ -162,7 +162,8 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   reader；删除v9 active路径并通过41项聚焦合同；
 - [x] 完成v10真实successful/learner双visit profile；两步梯度finite、约2.3/2.1秒，selector从exact shared安全打开；
 - [x] 从clean pushed v10 authority完成fresh balanced 228 visits和24-task geometry；task-equal与数值合同通过，但own retrieval仍为`1/24`；
-- [ ] 完成同一308-panel frozen support audit，按aggregate与breadth门最终裁决v10；
+- [x] 完成同一308-panel frozen support audit；fit改善到`.96892x` shared和`12/19` breadth，但held仍为
+  `1.00285x`和`2/5`，v10按门关闭；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -216,11 +217,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v9已终止：它保住shared但学成近全局correction，不跑held closed loop、不加reward、不启动`q_V`，
-   也不延长或做loss小扫；
-2. active v10只将replacement Value收紧为present process/uncertainty，language/scene只条件化query；真实双visit profile已通过，
-   下一步从clean pushed authority fresh训练balanced 228 visits，随后用同一geometry/support gate裁决该单变量；
-3. 只有v10相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. v10已终止：process-only Value连续改善v9，但geometry retrieval `1/24`、fit/held breadth `12/19、2/5`仍失败；
+   不跑held closed loop、不加reward、不启动`q_V`，也不延长或做小超参扫描；
+2. 先回到专家Stage 1原始合同，对照现有Program correction cosine `.82475`到compiled correction `.95088`的退化，
+   只登记一个修复最早task-relative信息坍缩的major variable；不再追加compiler局部routing微调；
+3. 只有新Stage 1后继相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

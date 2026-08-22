@@ -1,0 +1,115 @@
+{
+  "schema_version": "ember_ecp_stage1_process_value_selector_support_v1",
+  "date": "2026-08-22",
+  "training_repository_commit": "13dfc2534079e52e4470ad0031374e3f45ba166a",
+  "audit_repository_commit": "85dc2fcfc626ad33f9a382a556a8c0b7c14d0952",
+  "stage": "stage1_process_value_selector_v10_closed",
+  "profile": {
+    "successful_update_seconds": 2.304849781001394,
+    "learner_update_seconds": 2.0821258180003497,
+    "maximum_cuda_allocated_bytes": 16439940608,
+    "successful_gradient_norm_before_clip": 0.2928818464279175,
+    "learner_gradient_norm_before_clip": 1.9002808332443237,
+    "first_replacement_fraction": 0.0,
+    "second_replacement_fraction": 0.000004484924374992261,
+    "all_gradients_finite": true
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_process_value_selector_fold0_tv228_r6_13dfc25_gpu01p123456_20260822",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "successful_records": 114,
+    "learner_records": 114,
+    "fit_task_visit_count_minimum": 12,
+    "fit_task_visit_count_maximum": 12,
+    "elapsed_seconds": 115.74306227800116,
+    "maximum_cuda_allocated_bytes": 16659623424,
+    "maximum_gradient_norm_before_clip": 12.483109474182129,
+    "first_five_update_mean": {
+      "total": 0.39277760287125907,
+      "functional_response": 0.2864313643425703,
+      "shared_support": 0.0022318906558211893,
+      "source_support": 0.5111748335262141,
+      "rank_replacement_fraction": 0.00005607887374026177
+    },
+    "last_five_update_mean": {
+      "total": 0.46848884622255965,
+      "functional_response": 0.39717944040894515,
+      "shared_support": 0.027986430873473488,
+      "source_support": 0.35069463364779946,
+      "rank_replacement_fraction": 0.09988628402352334
+    },
+    "checkpoint_complete": true,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "materialization": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_process_value_selector_projection_tv228_13dfc25_gpu01p1_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.9964144229888916,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.039828814566135406,
+    "mean_nearest_other_direct_cosine": 0.06199803948402405,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.980828046798706,
+    "candidate_effective_rank_participation_mean": 1.0842012166976929,
+    "candidate_top1_energy_fraction_mean": 0.9648253917694092,
+    "mean_rank_replacement_fraction": 0.1102505096544822,
+    "minimum_rank_replacement_fraction": 0.06843779981136322,
+    "maximum_rank_replacement_fraction": 0.12597344815731049,
+    "candidate_minus_shared_pair_cosine_mean": 0.9508830904960632,
+    "candidate_minus_shared_norm_to_shared_mean": 0.22815005481243134,
+    "program_anchor_pair_cosine_mean": 0.9143194556236267,
+    "program_teacher_pair_cosine_mean": 0.9081358313560486,
+    "program_correction_pair_cosine_mean": 0.8247482776641846,
+    "geometry_gate_passed": false,
+    "held5_closed_loop_rows": 0
+  },
+  "frozen_all_panel_support_audit": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_process_value_selector_audit_tv228_85dc2fc_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.3925488689799973,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.5557558376804546,
+      "candidate_to_shared_ratio": 0.9689248891790949,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 12,
+      "successful_candidate_to_shared_ratio": 0.9726348124881331,
+      "learner_candidate_to_shared_ratio": 0.962627153119216,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.6261175371706486,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.7078481538497136,
+      "candidate_to_shared_ratio": 1.0028528941784083,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 2,
+      "panels": 40
+    },
+    "candidate_panel_wins_over_shared": 158,
+    "candidate_panel_wins_over_source": 298,
+    "total_panels": 308,
+    "task_equal": true,
+    "gate_passed": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "interpretation": {
+    "established": "Restricting replacement Values to visible process content is a real positive correction. Relative to v9 it lowers candidate-minus-shared cross-task cosine from 0.97482 to 0.95088, broadens task-dependent selector fractions, improves fit support from 0.98369 to 0.96892 of shared, and raises fit breadth from 10 to 12 tasks.",
+    "earliest_failed_interface": "Task variation present in the privileged Program is still compressed into an almost common LoRA correction. Program correction cosine is 0.82475 while compiled correction cosine is 0.95088; full candidates have 0.99641 cross-task cosine and only 1 of 24 own-direct retrievals.",
+    "failed_gate": "Fit breadth is 12 of 19 rather than 13, held breadth is 2 of 5 rather than 3, and held aggregate remains 0.285 percent worse than shared. Geometry and frozen-support gates therefore fail despite consistent improvement over v9."
+  },
+  "decision": {
+    "verdict": "fail_task_dependent_geometry_and_frozen_support_gate_close_v10",
+    "continue_v10": false,
+    "run_held5_closed_loop": false,
+    "start_simulator_reward": false,
+    "start_q_v": false,
+    "next": "Return to the expert Stage 1 contract and change the earliest compiler or objective interface that collapses task-relative Program variation; do not extend v10, sweep small hyperparameters, or add rollout credit before that interface is repaired."
+  }
+}

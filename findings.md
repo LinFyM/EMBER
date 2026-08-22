@@ -1116,3 +1116,20 @@ candidate跨task cosine为`.99779`，own-direct `.04015`低于nearest-other `.06
 静态Value或presence开关在不同task上写出同一修正。下一fresh实现保持v9的bounded selector和全部训练变量，只把replacement
 reader改成language/scene-conditioned query读取present process-only Values，并要求zero process即使presence为真也严格不能
 写LoRA。证据见`docs/evidence/ecp_20260822/stage1_functional_rank_selector_fold0_tv228_support.json`。
+
+## 53. process-only Value是正修正，但task-relative Program仍在compiler/objective中被压成近全局correction
+
+v10从clean pushed `13dfc25`完成strict task-equal 228 visits/38 updates，clean pushed `85dc2fc`完成全308-panel
+frozen support audit。它将replacement Value限制为present process/uncertainty，language/scene只条件化query，zero process
+无论静态输入如何都精确返回shared。相对v9，candidate-minus-shared pair cosine从`.97482`降至`.95088`，
+selector task范围从`.08031--.09164`扩大到`.06844--.12597`；fit candidate/shared从`.98369x`改善到
+`.96892x`，breadth从`10/19`改善到`12/19`，individual panel wins从`132/308`提高到`158/308`。因此
+去掉静态Value/presence旁路是真实正修正，不是结构自证。
+
+它仍没有过门。held candidate/shared仅从`1.00692x`改善到`1.00285x`，breadth仍为`2/5`；full candidate
+pair cosine仍为`.99641`，own-direct `.03983`低于nearest-other `.06200`，own retrieval仍是`1/24`。关键的接口
+对照是：privileged Program correction的pair cosine已是`.82475`，但编译后correction回到`.95088`。这说明可见/
+privileged Program中存在的task-relative变化仍被compiler与当前绝对functional objective压缩为共同安全方向。v10因此
+关闭，不进入held闭环、reward或`q_V`；后继必须修复最早的task-relative Program-to-policy接口，而不是续训
+或再做一个局部attention/routing微调。证据见
+`docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。

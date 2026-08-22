@@ -863,6 +863,18 @@ exact-prior selector，但replacement只允许language/scene-conditioned query�
 开关写近全局修正的旁路。证据：
 `docs/evidence/ecp_20260822/stage1_functional_rank_selector_fold0_tv228_support.json`。
 
+### 3.44 v10 process-only Value连续改善support但仍未建立task mapping
+
+clean pushed `13dfc25`完成v10 fresh balanced 228 visits/38 updates和24-task物化，clean pushed `85dc2fc`完成
+308-panel冻结审计。相对v9，process-only Value使candidate-minus-shared cosine从`.97482`降至`.95088`，fit
+candidate/shared从`.98369x`改善到`.96892x`，breadth从`10/19`改善到`12/19`。这确认language/scene
+静态Value或presence开关是一条真实的近全局旁路。
+
+但held candidate/shared仍为`1.00285x`且breadth只有`2/5`；candidate pair cosine`.99641`、own retrieval `1/24`。
+Program correction已有`.82475` pair cosine，编译后correction却回到`.95088`，故最早未解接口收紧为
+task-relative Program变化在compiler/绝对functional objective中的坍缩。v10最终关闭，held闭环、reward与`q_V`仍为0。
+证据：`docs/evidence/ecp_20260822/stage1_process_value_selector_fold0_tv228_support.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

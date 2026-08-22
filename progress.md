@@ -71,10 +71,10 @@
   `1.13962`改善到`1.13120`，故按预注册合同exact-resume到macro4。最终pair cosine为`.89140`，但own/nearest-direct仍仅
   `.03836/.05799`、retrieval`1/24`；macro4的308-panel fit/held relative-shared反而退到`1.14317/1.13244x`，breadth仍
   `2/19、0/5`。Program correction pair cosine在macro2/macro4为`.84710/.84690`，几乎不动；scalar outcome主要继续改变可动
-  compiler输出，未建立own successful Program。v18不运行held5、fold rotation或`q_V`。下一active Stage 1变量为
+  compiler输出，未建立own successful Program。v18不运行held5、fold rotation或`q_V`。当时的下一Stage 1变量为
   **OCPB v19 fixed-compiler structured Program binding**：回到v13 support authority，冻结compiler，仅在compiler可达的
   event/layer-group/family Program切空间逐family给予action-guided paired credit，先做单task reachability profile。
-- OCPB v19 retained实现已经替换唯一Stage 1运行面：active config为
+- OCPB v19 retained实现曾替换唯一Stage 1运行面：其config为
   `configs/pi05_ecp_stage1_fixed_compiler_program_binding_v19.json`。它从v13 macro1只加载model weights并建立fresh optimizer，
   永久冻结visible Program与compiler，只训练privileged `policy_teacher`；每个macro按`q → v → action_in → action_out`
   选择一个target-family block，在全部active ordered events及该family原生owners上把exact action-loss Program gradient归一为
@@ -86,6 +86,20 @@
   形成mean advantage`-.00079545`与非零Program credit；`policy_teacher`裁剪前梯度`.560583`，compiler与visible Program梯度
   均严格为0。运行macro部分`62.12s`、峰值`16,505,290,752` bytes；physical0未使用，profile临时目录已删除。该结果只解除
   fit19 macro2运行门，不构成性能证据。
+- OCPB v19 macro2及联合门现已完成并关闭。q/v两个task-equal macros分别有`8/9`个fit tasks产生非零credit，plus/minus
+  successes为`10/8、11/10`，mean compiled perturbation为`.10901/.05426`，所以fixed-compiler Program局部可达和reward信号
+  均不是dead path；policy teacher相对v13实际移动`.05276%`，compiler/visible仍精确不变。但24-task materialization相对
+  matched v13几乎原地：candidate pair cosine`.99595249→.99594891`，own/nearest-direct`.03980/.06198`、retrieval仍`1/24`，
+  Program correction pair反而`.82546→.82679`。308-panel fit/held candidate-to-shared从v13`.96741/1.00168x`轻微退到
+  `.96830/1.00335x`，breadth从`13/19、3/5`变为`12/19、3/5`。因此按预注册条件不续macro4，不运行held5、fold或`q_V`。
+  正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`。
+- 下一active因果锁称为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**。它仍从support最强的v13 weights和fresh
+  optimizer开始，但与v19互补：永久冻结visible Program与privileged `q_pi`，只训练compiler。固定的task-diverse
+  Program先通过successful cross-episode exact action loss、owner-local/multi-state response与v13 support barrier识别到完整
+  policy；不再允许Program和decoder共同旋转，也不先支付paired rollout成本。真实单task profile通过后只运行114 visits/19
+  task-equal updates并立即复跑geometry/support门。只有task matching与support同向改善才接structured outcome；若compiler-only
+  仍失败，则先做task-local free-Program/fixed-compiler reachability oracle，区分bounded compiler image不足与shared inference失败，
+  而不是继续v20或直接重做`q_V`。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

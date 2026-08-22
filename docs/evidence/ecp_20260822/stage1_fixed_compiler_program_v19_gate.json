@@ -1,0 +1,107 @@
+{
+  "schema_version": "ember_ecp_stage1_fixed_compiler_program_v19_gate_v1",
+  "status": "completed_fail_fixed_compiler_program_gate",
+  "training_commit": "75ee05141a652dab34afbcf2366bff0ddba3f641",
+  "initialization": {
+    "stage": "stage1_outcome_binding_v13",
+    "checkpoint_macro": 1,
+    "model_weights_only": true,
+    "fresh_optimizer": true
+  },
+  "ownership": {
+    "trainable": ["policy_teacher"],
+    "frozen": ["visible_program", "compiler", "source_policy", "observer"],
+    "held5_shared_gradient_steps": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0
+  },
+  "profile": {
+    "task_ordinal": 1,
+    "program_family": "q",
+    "program_owner_count": 18,
+    "active_program_elements": 18432,
+    "relative_program_sigma": 0.05,
+    "compiled_relative_delta": 0.11016588658094406,
+    "action_lora_gradient_norm": 0.12978500127792358,
+    "action_program_gradient_norm": 0.0005130666540935636,
+    "mean_advantage": -0.0007954545454544881,
+    "policy_teacher_gradient_norm_before_clip": 0.5605827569961548,
+    "compiler_gradient_norm_before_clip": 0.0,
+    "visible_program_gradient_norm_before_clip": 0.0,
+    "elapsed_seconds": 62.116378666993114,
+    "max_cuda_allocated_bytes": 16505290752
+  },
+  "formal": {
+    "run": "runs/outputs/pi05_ecp_stage1_fixed_compiler_program_v19_m2_r6_75ee051_gpu01p123456_20260822",
+    "checkpoint": "runs/outputs/pi05_ecp_stage1_fixed_compiler_program_v19_m2_r6_75ee051_gpu01p123456_20260822/checkpoints/macro_00000002",
+    "completed_macros": 2,
+    "macros": [
+      {
+        "macro": 1,
+        "program_family": "q",
+        "nonzero_advantage_tasks": 8,
+        "plus_successes": 10,
+        "minus_successes": 8,
+        "mean_advantage": 0.06773561526193106,
+        "mean_compiled_relative_delta": 0.10901130892728504,
+        "policy_teacher_gradient_norm_before_clip": 0.10287518799304962,
+        "compiler_gradient_norm_before_clip": 0.0
+      },
+      {
+        "macro": 2,
+        "program_family": "v",
+        "nonzero_advantage_tasks": 9,
+        "plus_successes": 11,
+        "minus_successes": 10,
+        "mean_advantage": 0.03809912236885921,
+        "mean_compiled_relative_delta": 0.054263255117755184,
+        "policy_teacher_gradient_norm_before_clip": 0.31657668948173523,
+        "compiler_gradient_norm_before_clip": 0.0
+      }
+    ],
+    "policy_teacher_parameter_delta_l2": 0.023547710850834846,
+    "policy_teacher_relative_parameter_delta": 0.0005275696166791022,
+    "compiler_parameter_delta_l2": 0.0,
+    "visible_program_parameter_delta_l2": 0.0
+  },
+  "materialization": {
+    "projection": "runs/analysis/pi05_ecp_stage1_fixed_compiler_program_v19_projection_m2_75ee051_gpu01p6_20260822/projection_manifest.json",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.9959489107131958,
+    "mean_own_direct_cosine": 0.0397992767393589,
+    "mean_nearest_other_cosine": 0.0619848370552063,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.965868353843689,
+    "program_correction_pair_cosine_mean": 0.826787531375885,
+    "geometry_passed": false
+  },
+  "matched_v13_geometry": {
+    "candidate_pair_cosine_mean": 0.9959524869918823,
+    "mean_own_direct_cosine": 0.039802081882953644,
+    "mean_nearest_other_cosine": 0.06200810894370079,
+    "own_retrieval_count": 1,
+    "program_correction_pair_cosine_mean": 0.8254556059837341
+  },
+  "support_audit": {
+    "audit": "runs/analysis/pi05_ecp_stage1_fixed_compiler_program_v19_audit_m2_75ee051_gpu01p123456_20260822/audit.json",
+    "panels": 308,
+    "fit19_candidate_to_shared_ratio": 0.9683000814222783,
+    "fit19_tasks_better_than_shared": 12,
+    "held5_candidate_to_shared_ratio": 1.0033530802870791,
+    "held5_tasks_better_than_shared": 3,
+    "passed": false
+  },
+  "matched_v13_support": {
+    "fit19_candidate_to_shared_ratio": 0.9674071247796677,
+    "fit19_tasks_better_than_shared": 13,
+    "held5_candidate_to_shared_ratio": 1.0016753258997275,
+    "held5_tasks_better_than_shared": 3
+  },
+  "decision": {
+    "resume_to_macro4": false,
+    "held5_closed_loop": false,
+    "q_v_training": false,
+    "reason": "The fixed compiler is locally reachable and receives no gradient, but two task-equal q/v Program-credit updates leave task-matched compiled geometry unchanged and slightly worsen the matched v13 support surface."
+  },
+  "earliest_failed_interface": "A task-diverse privileged Program is present and fixed-compiler local perturbations change LoRA substantially, but shared q_pi inference updates do not identify Programs that the existing bounded compiler maps to own successful policies. The next causal lock must keep Program coordinates fixed while identifying the compiler, rather than moving Program and compiler together or extending this failed curve."
+}

@@ -1297,3 +1297,18 @@ compiler，足以识别task-native policy方向。**
 专家要求的“固定、功能锚定policy-adaptation坐标”仍未被这个实验真正检验。下一步必须把compiler固定，把perturbation放在其
 真实可达的event/layer/family Program切空间，并让一次paired reward只裁决一个预注册结构块；否则scalar reward仍同时承担
 Program坐标识别和decoder旋转，重复旧问题。该结论不否定closed-loop credit、action gradient或structured Program本身。
+
+## 62. fixed compiler的Program切向可达，但共享q_pi credit没有识别own successful Program
+
+OCPB v19把v13 compiler与visible Program精确冻结，只更新privileged `policy_teacher`。真实profile及fit19 q/v macros都证明
+图有效：`.05` relative Program block能产生`.054--.109` compiled-LoRA relative delta，`8/9` tasks获得非零paired credit，
+compiler/visible梯度严格为0。不能把结果解释为“fixed compiler不可微”或“closed-loop reward太稀疏”。
+
+两步shared update却没有改变task mapping。24-task pair cosine为`.99594891`，own/nearest-direct为`.03980/.06198`，retrieval
+仍`1/24`，与v13在报告精度内相同；308-panel fit/held relative-shared还从v13`.96741/1.00168x`轻微退到
+`.96830/1.00335x`，fit breadth从`13/19`降到`12/19`。因此不续macro4是因果门裁决，不是为了节省两轮训练而遗漏意见。
+
+这把Stage 1的坐标冲突进一步分成两个互补问题：v18同时移动Program/compiler时decoder重定义；v19固定未识别的compiler时
+shared Program更新又无法找到其own-policy preimage。下一步应固定当前最有结构且support最强的v13 Program坐标，只训练compiler
+完成dense policy identification；若仍失败，再用task-local free Programs直接测试fixed compiler image。后者只作privileged
+reachability diagnostic，不能成为task-ID route或确定性`P*`。

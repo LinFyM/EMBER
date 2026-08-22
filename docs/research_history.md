@@ -1020,6 +1020,28 @@ Program和compiler。它能重定义decoder输出，却没有证明reward识别�
 切空间做逐family action-guided paired credit；先验证fixed compiler reachability。证据：
 `docs/evidence/ecp_20260822/stage1_action_guided_v18_gate.json`。
 
+### 3.53 OCPB v19证明fixed compiler局部可达，但shared Program credit没有形成own-policy mapping
+
+clean pushed `75ee051`从v13 macro1只加载model weights并创建fresh optimizer；visible Program与compiler永久冻结，optimizer
+只拥有privileged `policy_teacher`。single-task q-family profile中，`.05` relative Program perturbation经同一个冻结compiler
+产生`.110166` compiled-LoRA relative delta，paired两臂各`1/2` success并形成非零credit；teacher gradient为`.56058`，
+compiler/visible梯度严格为0，所以fixed compiler的Program切向不是dead path。
+
+正式macro1/2分别只扰动q/v family block并各覆盖fit19一次。非零credit breadth为`8/9` tasks，plus/minus successes为
+`10/8、11/10`，mean compiled perturbation为`.10901/.05426`；训练信号真实。两步后policy teacher参数相对v13移动
+`.0005276`，其余两模块精确不变。但24-task materialization与v13实质相同：pair cosine`.99594891`，own/nearest-direct
+`.03980/.06198`，retrieval`1/24`；v13对应`.99595249、.03980/.06201、1/24`。Program correction pair cosine还从
+`.82546`轻微升到`.82679`。
+
+同一308-panel audit也没有给出续训依据。fit candidate/shared为`.96830x`、breadth`12/19`，held为`1.00335x`、breadth
+`3/5`；matched v13为`.96741x、13/19`与`1.00168x、3/5`。v19因此按预注册门停在macro2，不运行action-in/out、held5、
+fold或`q_V`。该结果否定的是“在未识别的v13 decoder image中，只靠少数shared q_pi reward updates即可找到own Programs”，
+不否定structured Program perturbation或fixed compiler原则。
+
+下一互补锁保持v13 privileged Program完全固定，只训练compiler，并用dense exact action与multi-state support识别稳定映射；
+若仍失败，再以task-local free Program/fixed-compiler oracle裁决当前bounded compiler image是否可达。证据：
+`docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

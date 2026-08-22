@@ -823,6 +823,20 @@ L2 norm。两臂使用`P_process ± .05 d`并分别经过同一冻结compiler；
 visible Program梯度均严格为0。它证明固定compiler局部可达且reward semi-gradient接通，授权fit19 macro2 bounded节点；
 它仍只是运行图证据，不替代24-task geometry/support裁决。
 
+v19 macro2的完整门随后否定了“只固定v13 compiler并用少数shared reward steps更新`q_pi`已经足够”。q/v两个macros分别在
+`8/9`个fit tasks上得到非零credit，Program perturbation经compiler的相对LoRA差异为`.10901/.05426`；但最终24-task
+candidate pair cosine仍为`.99594891`，own retrieval仍`1/24`，与v13的`.99595249/1-of-24`等价。308-panel fit/held
+support还从v13`.96741/1.00168x`轻微退到`.96830/1.00335x`。所以失败不是Program切向不可达，而是已有bounded compiler没有
+把shared `q_pi`更新识别成own successful policy；v19不续action-in/out macros，也不进入held5或`q_V`。
+
+下一互补因果锁为 **OCPB v20 Program-Locked Compiler Identification（PLCI）**：回到v13 weights，固定visible Program与
+privileged `q_pi`的全部参数，只训练compiler。这样task-diverse Program坐标保持不变，compiler必须用successful
+cross-episode exact action、owner-local/multi-state response和baseline-relative support barrier学习一致映射，不能再与
+Program共同旋转。首个bounded节点为114 visits/19 task-equal updates；只有24-task own matching与308-panel support同向改善，
+才加入fixed-Program下的structured outcome calibration。若compiler-only仍失败，下一诊断是对当前fixed compiler直接优化
+task-local free Programs，以区分compiler image不可达和shared `q_pi` inference不足；这些free Programs只作fit19 privileged
+reachability oracle，不成为部署task-ID route或唯一`P*`监督。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode
@@ -922,8 +936,8 @@ bank及其运行时panel；`stage1_objective.py`拥有结构/support loss，`sta
 `stage1_training.py`只保留canonical入口和共享authority加载；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
 现有`expert_manifold` evaluator继续拥有闭环执行。已完成的OCPB outcome实现由Git和formal artifacts保存，不在active tree保留
 第二套orchestration；通用paired trajectory score仍由`reward/credit.py`拥有。当前唯一Stage 1训练入口为
-`train_ecp_stage1.py`；v19仍复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，再经冻结compiler链到
-Program，不新增第二个policy-loss实现或平行Writer。只有Program reachability与geometry/support联合门通过后，才在同一
+`train_ecp_stage1.py`；v20必须复用`writer.functional`已有的exact frozen-policy LoRA leaf-gradient owner，再经固定Program
+链到compiler，不新增第二个policy-loss实现或平行Writer。只有Program/compiler identification与geometry/support联合门通过后，才在同一
 canonical Stage 1生命周期进入held oracle，不恢复平行Writer或退役入口。
 
 生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1

@@ -229,8 +229,11 @@ def _optimizer(
 
 
 def _prepare_libero_paths(
-    output_dir: Path, context: DistributedContext
+    output_dir: Path,
+    context: DistributedContext,
+    assets_root: Path,
 ) -> dict[str, str]:
+    os.environ["EMBER_LIBERO_ASSETS_ROOT"] = str(assets_root.resolve())
     payload: list[Any] = [None]
     if context.is_main:
         try:
@@ -298,7 +301,16 @@ def _run_contract(
         "data": dict(runtime.config["data"]),
         "objective": dict(runtime.config["objective"]),
         "outcome_binding": dict(runtime.config["outcome_binding"]),
-        "environment": dict(runtime.config["environment"]),
+        "environment": {
+            **dict(runtime.config["environment"]),
+            "libero_assets": str(
+                stage1_asset_authority(
+                    runtime.config,
+                    "libero_assets",
+                    runtime.args.asset_root,
+                ).resolve()
+            ),
+        },
         "optimization": dict(runtime.config["optimization"]),
         "information_wall": dict(runtime.config["information_wall"]),
         "runtime": {
@@ -524,7 +536,11 @@ def prepare_outcome_runtime(
         metrics_rows=metrics_rows,
     )
     _publish_run_contract(runtime, authorities.source)
-    paths = _prepare_libero_paths(args.output_dir, context)
+    paths = _prepare_libero_paths(
+        args.output_dir,
+        context,
+        stage1_asset_authority(config, "libero_assets", args.asset_root),
+    )
     runtime.env_pool = RandomResetEnvironmentPool(
         bddl_root=Path(paths["bddl_files"]),
         assets_root=Path(paths["assets"]),

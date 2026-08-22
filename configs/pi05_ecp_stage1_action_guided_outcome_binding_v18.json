@@ -18,6 +18,7 @@
     "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json",
     "learner_occupancy": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821",
     "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v3_owner_local_activation_20260822/manifest.json",
+    "libero_assets": "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6",
     "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_action_grounded_v17_tv114_r6_72b4a1c_gpu01p123456_20260822/checkpoints/macro_00000114"
   },
   "initialization": {

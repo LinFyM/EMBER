@@ -39,7 +39,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_prior_union_projection_v7"
+PROJECTION_SCHEMA = "ember_ecp_stage1_functional_union_projection_v8"
 PROJECTION_KIND = "ecp_stage1_privileged_prior_union_compiler"
 
 
@@ -514,7 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_prior_union_v7.json",
+        / "configs/pi05_ecp_stage1_functional_union_v8.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

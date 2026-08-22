@@ -225,7 +225,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_prior_union_projection_v7",
+            "schema_version": "ember_ecp_stage1_functional_union_projection_v8",
             "projection_kind": "ecp_stage1_privileged_prior_union_compiler",
             **assets,
             "optimization": {

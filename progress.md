@@ -159,6 +159,15 @@
   `2.696/2.245s`、峰值`16,457,865,216` bytes，梯度finite；初始candidate对stable-shared functional response loss为
   `.01638/.00284`，对source为`.75365/.66979`，符合prior-preserving起点。该profile只授权fresh 228-visits与同一冻结
   full-bank support gate，不构成科学promote或held闭环证据。
+- v7正式228 visits/38 updates及24-task物化已完成，clean pushed `55b9065`随后并行遍历全部308个冻结support panels。
+  prior union把v6的fit/held candidate-to-shared ratio从`1.39966/1.27745`修复到`1.02429/1.09995`，胜过shared的task
+  breadth从`0/19、0/5`提高到`9/19、1/5`；相对source为`.58751/.77638`且24/24 tasks更好。但shared aggregate与两个
+  breadth门仍失败，因此held closed-loop、reward和`q_V`均未启动，同曲线不续训。
+- v7目标分解发现新的最早实现偏差：四项direct BA/canonical“低权重坐标锚”在前5步贡献`1.06492/1.65750`总loss，末5步
+  仍贡献`.45761/.86428`，实际一直占多数；shared-support同时由`.03149`恶化到`.12364`。这与专家明确的“Stage 1目标不是
+  raw A/B重建”冲突。下一fresh v8保持Program、q_pi、prior union、数据、seed和短节点不变，只把四项参数坐标loss从梯度中
+  移除并继续作为诊断；同一冻结support门通过后才允许加入task-equal simulator success/progress。证据为
+  `docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

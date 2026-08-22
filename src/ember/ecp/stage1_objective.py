@@ -186,7 +186,14 @@ def ecp_stage1_loss(
     missing = set(terms) - set(weights)
     if missing:
         raise ValueError(f"missing ECP Stage 1 loss weights: {sorted(missing)}")
-    total = sum(float(weights[name]) * value for name, value in terms.items())
+    active_terms = [
+        float(weights[name]) * value
+        for name, value in terms.items()
+        if float(weights[name]) != 0.0
+    ]
+    if not active_terms:
+        raise ValueError("ECP Stage 1 objective has no active terms")
+    total = sum(active_terms)
     return ECPStage1Loss(
         total=total,
         expert_set_disagreement=policy_support.expert_set_disagreement,

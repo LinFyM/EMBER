@@ -58,7 +58,7 @@ ECP_STAGE1_TASK_EXPERT_ADAPTER_SCHEMA = (
     "ember_pi05_ecp_stage1_prior_union_task_expert_eval_adapter_v7"
 )
 ECP_STAGE1_TASK_EXPERT_MANIFEST_SCHEMA = (
-    "ember_ecp_stage1_prior_union_projection_v7"
+    "ember_ecp_stage1_functional_union_projection_v8"
 )
 
 

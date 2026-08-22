@@ -1056,3 +1056,21 @@ heads只生成residual rank16 factors；每target将shared与residual拼成rank3
 rank16，再输出唯一adapter。它在residual为零时精确保留shared，允许内容证据逐步替换弱shared modes，同时没有第二adapter、
 raw factor交叉项或rank技能语义。v7仍须通过同一冻结support/几何门，不能由结构自证。证据继续见
 `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
+
+## 50. v7 prior union消除了大部分shared破坏，但raw参数坐标项反而成为主目标
+
+v7从clean pushed `6987933`完成228 visits/38 updates，并由clean pushed `55b9065`遍历冻结的全部308个support panels。
+relative v6，prior union把fit19 candidate/shared从`1.39966x`改善到`1.02429x`，held5从`1.27745x`改善到
+`1.09995x`；胜过shared的task breadth也由`0/19、0/5`变为`9/19、1/5`。candidate仍在fit/held全部24 tasks上胜过source，
+ratio为`.58751/.77638`。所以union是强正修正，但八项预注册门仍只通过四项source条件，不能进入held闭环、reward或`q_V`。
+
+本轮暴露的最早实现偏差不是SVD数值问题。v7从shared精确起点出发时，direct exact-BA约为`9.43`而非此前absolute head的约1；
+四个所谓“低权重”BA/canonical项因此在前5步贡献`1.06492/1.65750`总目标，末5步仍贡献`.45761/.86428`，始终超过一半。
+与此同时shared-support由`.03149`升到`.12364`。这说明优化主要在追逐多套任意direct参数坐标，而不是专家要求的多状态policy
+response等价类；它不是值得小扫的权重问题，而是错误目标仍留在active梯度里。
+
+下一fresh v8保持Program、`q_pi`、prior union、数据、seed与228-visits节点不动，只把四个direct BA/canonical项从优化目标
+中完全移除并保留为诊断。successful/learner policy response、局部source/shared support和locality成为唯一有效梯度。只有同一
+冻结support gate通过后才加入task-equal simulator success/progress；失败后再依据fit/held分解决定是扩展71-task meta mappings
+还是替换fixed SVD compiler。证据见
+`docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。

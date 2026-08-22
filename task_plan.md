@@ -145,6 +145,10 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   证明full absolute surface丢失已有support；
 - [x] 用differentiable low-rank union把stable shared effective update与generated residual合并并重新压回一套rank16 LoRA，
   并通过successful/learner两条真实BF16训练路径profile；
+- [x] 完成v7 fresh 228-visits、24-task物化与冻结全bank audit；相对shared从v6的`1.400/1.277`改善到
+  `1.024/1.100`，但只在`9/19、1/5` tasks胜出，support门仍失败；
+- [ ] 保持v7全部结构与数据，fresh训练取消direct BA/canonical参数坐标梯度的v8 functional-equivalence union，并复跑同一
+  冻结support门；
 - [ ] prior-preserving checkpoint通过冻结support门后，在fit simulator加入task-equal success/progress并fresh训练；
 - [ ] 轮换固定fold，确认不是单一held5偶然结果。
 
@@ -198,12 +202,11 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v7 prior-preserving union已在clean pushed `6987933`完成实现与真实双visit profile：successful/learner路径均finite，
-   单步`2.70/2.24s`、峰值约16.46 GB；初始candidate对stable-shared response loss仅`.0164/.00284`，对source为
-   `.754/.670`，证明shared起点被保留；
-2. 立即从该fresh authority训练228 visits并物化同一24-task checkpoint，随后遍历冻结successful/learner全bank，按原
-   fit19/held5 aggregate与breadth门同时比较candidate/source/stable-shared，不因moving loss选择checkpoint；
-3. 只有v7相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
+1. v7冻结审计已完成：相对source在fit/held为`.588/.776`且24/24 tasks更好；相对shared为`1.024/1.100`，breadth仅
+   `9/19、1/5`，故不续训、不跑held closed loop、不加reward；
+2. v8只移除被证实占前/后节点总目标`64.3%/52.9%`的direct BA/canonical参数坐标梯度；同一Program、q_pi、union、bank、
+   seed、schedule与support门均保持，参数loss仍作为diagnostic报告，不做权重扫；
+3. 只有v8相对shared在fit/held都达到aggregate与breadth门，才加入专家要求的fit-task
    task-equal success/progress。之后若19个映射限制泛化，再接入经审计且排除validation/Test的LIBERO-90 meta-task family；
 4. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

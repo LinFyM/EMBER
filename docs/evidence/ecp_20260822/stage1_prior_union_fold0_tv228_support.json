@@ -1,0 +1,102 @@
+{
+  "schema_version": "ember_ecp_stage1_prior_union_support_v1",
+  "date": "2026-08-22",
+  "training_repository_commit": "69879336b3ffae98fe30f5cd3a775bc109f692eb",
+  "audit_repository_commit": "55b9065a2f67a2e1041a5439742df7d70f0b97e2",
+  "stage": "stage1_prior_union_v7",
+  "profile": {
+    "successful_update_seconds": 2.695979220996378,
+    "learner_update_seconds": 2.244744413001172,
+    "maximum_cuda_allocated_bytes": 16457865216,
+    "initial_successful_shared_support": 0.016375118866562843,
+    "initial_successful_source_support": 0.7536523342132568,
+    "initial_learner_shared_support": 0.0028431962709873915,
+    "initial_learner_source_support": 0.6697879433631897,
+    "all_gradients_finite": true,
+    "temporary_profile_removed": true
+  },
+  "formal_run": {
+    "artifact": "runs/outputs/pi05_ecp_stage1_prior_union_fold0_tv228_r6_6987933_gpu01p123456_20260822",
+    "task_visits": 228,
+    "optimizer_updates": 38,
+    "successful_records": 115,
+    "learner_records": 113,
+    "elapsed_seconds": 121.6107156500002,
+    "maximum_cuda_allocated_bytes": 16681874432,
+    "maximum_gradient_norm_before_clip": 388.7094421386719,
+    "first_five_update_mean": {
+      "total": 1.6574987252553306,
+      "functional_response": 0.47217117473483083,
+      "shared_support": 0.03149034635765323,
+      "source_support": 0.615909892693162,
+      "coordinate_objective_contribution": 1.0649245451291403
+    },
+    "last_five_update_mean": {
+      "total": 0.864278519153595,
+      "functional_response": 0.3257980632285277,
+      "shared_support": 0.12363858244692287,
+      "source_support": 0.3230750144769748,
+      "coordinate_objective_contribution": 0.45761091057459513
+    },
+    "checkpoint_complete": true,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "materialization": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_prior_union_projection_tv228_6987933_gpu01p1_20260822",
+    "task_count": 24,
+    "candidate_pair_cosine_mean": 0.9524731040000916,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "mean_own_direct_cosine": 0.05038803815841675,
+    "mean_nearest_other_direct_cosine": 0.07845445722341537,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.3756173849105835,
+    "candidate_effective_rank_participation_mean": 1.999314308166504,
+    "candidate_top1_energy_fraction_mean": 0.6859314441680908,
+    "geometry_gate_passed": false,
+    "held5_closed_loop_rows": 0
+  },
+  "frozen_all_panel_support_audit": {
+    "artifact": "runs/analysis/pi05_ecp_stage1_prior_union_audit_tv228_55b9065_gpu01p123456_20260822",
+    "fit19": {
+      "candidate_response": 0.4149810243316256,
+      "source_response": 0.7063333254732322,
+      "shared_response": 0.4051385957404579,
+      "candidate_to_source_ratio": 0.5875144345675533,
+      "candidate_to_shared_ratio": 1.0242939791336814,
+      "tasks_better_than_source": 19,
+      "tasks_better_than_shared": 9,
+      "panels": 268
+    },
+    "held5": {
+      "candidate_response": 0.6867369987070561,
+      "source_response": 0.884536512196064,
+      "shared_response": 0.6243363715708256,
+      "candidate_to_source_ratio": 0.7763806120360985,
+      "candidate_to_shared_ratio": 1.099947127826673,
+      "tasks_better_than_source": 5,
+      "tasks_better_than_shared": 1,
+      "panels": 40
+    },
+    "candidate_panel_wins_over_shared": 108,
+    "total_panels": 308,
+    "task_equal_gate_passed": false,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "gpu01_physical_devices": [1, 2, 3, 4, 5, 6],
+    "prohibited_physical_device_0_used": false
+  },
+  "interpretation": {
+    "established": "The low-rank union removes most of the v6 shared-support destruction while retaining broad improvement over source. The fit and held candidate-to-shared ratios improve from 1.400 and 1.277 to 1.024 and 1.100, and task wins improve from 0 and 0 to 9 and 1.",
+    "failed_gate": "The frozen candidate still loses to shared in aggregate and misses both shared-breadth thresholds. It is not authorized for held closed loop, simulator reward, q_V, or continuation of the same curve.",
+    "earliest_executable_mismatch": "The four direct parameter-coordinate terms intended only as low-weight diagnostics contributed 1.065 of the first-five total 1.657 and 0.458 of the last-five total 0.864. They therefore dominated the v7 objective and pulled a policy-functional union toward arbitrary direct A/B gauges, contrary to the expert Stage 1 contract that raw parameter reconstruction is not the target."
+  },
+  "decision": {
+    "verdict": "fail_frozen_support_gate",
+    "continue_same_curve": false,
+    "run_held5_closed_loop": false,
+    "start_simulator_reward": false,
+    "start_q_v": false,
+    "next": "Keep the same prior-union architecture, data, seed and short schedule, but remove all direct BA and canonical-factor terms from the optimized objective while retaining them as diagnostics. Re-run the same frozen support gate before any reward or meta-task expansion."
+  }
+}

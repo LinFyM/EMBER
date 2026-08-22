@@ -820,6 +820,19 @@ independent absolute full surface改为prior-preserving low-rank union：generat
 `32x32` core SVD重压回rank16，避免raw A/B addition交叉项及固定rank分槽。证据仍为
 `docs/evidence/ecp_20260822/stage1_policy_support_fold0_tv228_geometry.json`。
 
+### 3.41 v7 prior union接近shared但未过门，参数坐标辅助项被证实主导训练
+
+clean pushed `6987933`完成v7 228 visits/38 updates，clean pushed `55b9065`完成24-task物化与全部308个冻结support panels
+审计。fit19 candidate/source/shared为`.41498/.70633/.40514`，candidate相对source/shared为`.58751x/1.02429x`，
+19/19 tasks胜过source、9/19胜过shared；held5为`.68674/.88454/.62434`，ratio为`.77638x/1.09995x`，5/5胜过source、
+1/5胜过shared。相较v6的shared ratio `1.39966/1.27745`和`0/19、0/5` breadth，prior union有实质正作用，但仍未通过
+预注册support gate，held闭环rows保持0。
+
+目标分解发现四项direct BA/canonical辅助项在前5步贡献`1.06492/1.65750`总loss，末5步仍为`.45761/.86428`；它们因
+shared-to-direct坐标距离放大而成为多数梯度，与专家“目标不是raw A/B重建”的Stage 1合同冲突。v7不续训、不加reward。
+下一fresh v8只移除这些参数坐标梯度，继续报告相同诊断并复跑同一冻结support gate。证据：
+`docs/evidence/ecp_20260822/stage1_prior_union_fold0_tv228_support.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

@@ -516,6 +516,17 @@ top16，得到部署的唯一rank16 A/B。residual为零时结果精确等价于
 raw A/B，所以没有旧template cross terms；也不部署第二adapter、不固定shared12/task4或赋予rank技能语义。其资格仍由同一
 冻结support、几何与held closed-loop逐级裁决，结构本身不构成成功证据。
 
+v7的冻结裁决确认union方向有效但尚未过门。fit19/held5 candidate-to-shared从v6的`1.39966/1.27745`改善到
+`1.02429/1.09995`，task breadth从`0/19、0/5`提高到`9/19、1/5`；相对source仍在24/24 tasks上更好。但训练目标分解暴露
+一个与专家原始Stage 1定义直接冲突的实现问题：direct exact-BA与canonical factor只被称为“低权重坐标锚”，在union的shared
+起点上数值却放大到约`9.43/3.04`，使四项参数坐标loss在前5步贡献`1.06492/1.65750`总目标、末5步仍贡献
+`.45761/.86428`。因此v7多数梯度实际仍在复现任意direct A/B坐标，而不是共同识别多策略policy-functional等价类。
+
+active v8不修改Program、`q_pi`、factor heads、low-rank union、数据或schedule。member/consensus exact-BA与canonical factor
+全部保留为无梯度诊断，优化权重严格归零；梯度只来自successful/learner multi-state policy response、局部source/shared
+support与locality，prior-only仍精确返回stable shared。它不是小权重扫描，而是删除与“目标不是raw A/B重建”相冲突的训练
+目标。v8仍从fresh训练并复跑同一冻结support门；未过门不得加simulator reward、运行held closed loop或启动`q_V`。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

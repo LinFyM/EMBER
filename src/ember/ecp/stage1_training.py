@@ -56,8 +56,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_prior_union_run_v7"
-STAGE = "stage1_prior_union_v7"
+RUN_SCHEMA = "ember_ecp_stage1_functional_union_run_v8"
+STAGE = "stage1_functional_union_v8"
 
 
 @dataclass
@@ -128,8 +128,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_prior_union_v7"
-        or config.get("status") != "active_stage1_prior_union"
+        != "ember_ecp_stage1_functional_union_v8"
+        or config.get("status") != "active_stage1_functional_union"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -150,6 +150,16 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
         != 0
+        or any(
+            float(config.get("objective", {}).get("weights", {}).get(name, -1))
+            != 0.0
+            for name in (
+                "member_effective_update",
+                "consensus_effective_update",
+                "member_canonical_factor",
+                "consensus_canonical_factor",
+            )
+        )
     ):
         raise ValueError("unsupported ECP Stage 1 contract")
     return config
@@ -647,7 +657,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_prior_union_v7.json",
+        / "configs/pi05_ecp_stage1_functional_union_v8.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

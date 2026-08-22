@@ -922,6 +922,26 @@ correction则为`.82546`。308-panel冻结audit的fit/held candidate-to-shared�
 policy-native task-relative compiler factor direction identification。证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
 
+### 3.48 OCPB v14接通owner-resolved response，但one-update checkpoint不通过门
+
+clean pushed `6e927fc`在24-task frozen support bank中新增同状态source与successful-member的full-layer owner response，
+每个policy张量为`[2,38,4,128]`，task payload共152,948,592 bytes。candidate LoRA在同一次可微PI0.5 forward中返回最终
+flow与owner response；loss按member reliability、signal和disagreement监督38个owner对应的policy effect，不读取raw A/B。
+真实profile的owner loss为`.82564`、active owners `92.11%`、gradient norm `15.1782`、峰值16.43 GB，确认运行图有效。
+
+v14 formal在gpu01 physical `1--6`完成一个task-equal outcome macro和完整checkpoint，prohibited physical0未运行CUDA
+process。19个fit task的mean owner loss为`.77170`，owner active fraction为`.7895--1.0`；两臂success为`9/11`，mean
+progress `.28947/.35088`。24-task物化的candidate pair cosine为`.99575`、own/nearest-other `.03971/.06190`、retrieval
+`1/24`，几何几乎等同v13。308-panel audit的fit/held candidate-to-shared为`.96795/1.00313`、breadth `13/19、2/5`，
+shared panel wins为152；相对v13的`.96741/1.00168`、`13/19、3/5`和155 wins没有改善。v14 checkpoint因此不promote，
+held5、fold rotation与`q_V`均未启动。
+
+复核训练拓扑发现，该macro先对19 tasks逐项backward、再只执行一次optimizer step；历史Stage 1的228-visits信息节点则包含
+38 updates。v14因此只裁决了“一个owner-response update是否足够”，没有合理优化专家要求的multi-state policy-response
+distillation。后继从v13 model weights和fresh optimizer建立无simulator的task-balanced response stage，首个节点为
+114 visits/19 updates；先以24-task geometry决定是否继续至228 visits、full support与一个matched outcome macro。证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v14_owner_response_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

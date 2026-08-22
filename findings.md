@@ -1202,3 +1202,24 @@ nearest-other `.06201`，自身检索仍`1/24`。所以v13证明support barrier�
 `q_V`，也不继续selector-angle宏或权重扫描。下一主要变量应让successful-policy与task-equal outcome evidence在
 owner-resolved policy response空间直接约束compiler factor方向，同时避免退回专家已否定的raw A/B重建。证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
+
+## 57. owner-resolved response图已接通，但一个optimizer update不能裁决该Stage 1目标
+
+OCPB v14从v13 checkpoint增加了同状态、同noise/time下的source与successful-member全层owner response。v2 bank覆盖
+24 tasks，每个policy response为`[2,38,4,128]`；candidate在同一次可微PI0.5 forward中同时产生最终flow和owner response，
+不读取或重建raw A/B。真实profile的owner loss为`.82564`、active owners为`92.11%`、梯度范数`15.1782`，正式19-task
+gradient sum的mean owner loss为`.77170`且每task active fraction为`.7895--1.0`，因此“新objective没有进入真实图”已排除。
+
+一个outcome macro没有改善科学接口。candidate pair cosine仅`.99595→.99575`，own-direct `.03980→.03971`、retrieval
+仍`1/24`；fit candidate/shared由`.96741`变为`.96795`，held由`1.00168`变为`1.00313`，held breadth从`3/5`降到
+`2/5`。所以v14 checkpoint明确不通过geometry/support门，held5和`q_V`继续禁止。
+
+但该结果不能淘汰owner-resolved policy-response distillation本身。OCPB outcome macro把19个fit task的loss相加后只执行一次
+optimizer step；此前可裁决的Stage 1短程节点228 visits则是38 updates、每task 12 visits。新objective的优化暴露量相差38倍，
+而每个outcome macro还为paired simulator rollouts支付约255秒。将“one-update没有改变LoRA”解释为专家Stage 1目标失败，属于
+以执行速度为由遗漏核心训练责任。
+
+因此下一节点不是权重、LR、rank或seed扫描，也不重复昂贵outcome macro。保留v13 barrier、同一Program/compiler/rank与v2
+bank，从v13 model weights和fresh optimizer建立task-balanced response-only阶段；114 visits/19 updates后先检查真实24-task
+geometry，只有方向开始形成才继续至最多228 visits和full support audit，再允许一个matched outcome macro。正式证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v14_owner_response_gate.json`。

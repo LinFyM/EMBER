@@ -678,6 +678,27 @@ member set consistency和task-equal paired success/progress均保留。v14从冻
 compiler-binding macro并立即物化与复跑geometry/308-panel门。若owner loss有梯度却仍不能降低compiled pair cosine、提高own
 retrieval且保持v13 support，就关闭这一机制，不靠权重扫或更多meta tasks掩盖失败。
 
+v14的一个outcome macro现已完成。owner loss在真实图和19个fit task上均有有限非零值，owner active fraction覆盖
+`.7895--1.0`；但24-task compiled pair cosine只从v13的`.99595`变为`.99575`，own retrieval仍`1/24`，fit/held
+candidate-to-shared为`.96795/1.00313x`且held breadth降到`2/5`。该checkpoint不promote，也不进入held5或`q_V`。
+
+这一结果同时暴露了训练合同而非新架构的遗漏：OCPB macro把19个task的梯度合并为**一个optimizer update**，而此前可裁决的
+task-balanced Stage 1短节点是228 visits/38 updates。专家要求的multi-state policy-response distillation已经具备数据与可微图，
+却只得到一次参数更新；因此v14是有效的one-update负结果，不能作为该目标已经被合理优化后的反证。
+
+唯一active修正称为 **task-balanced owner-response bootstrap**，不改变Program、compiler、rank或loss定义：
+
+1. 从v13 model weights初始化fresh optimizer，不继承outcome-estimator moment；
+2. 暂时不运行simulator两臂，只在world6 cost-balanced schedule上每update访问6个fit tasks；
+3. 每visit使用v2 bank中的successful/learner multi-state final-flow、source/shared baseline barrier与owner-resolved response；
+4. 首个信息节点为114 visits/19 updates，即每个fit task恰好6 visits；先物化24-task geometry，不用内部loss选点；
+5. 只有candidate pair cosine、own-direct与retrieval出现一致实质移动，才exact-resume至最多228 visits/38 updates并运行
+   308-panel冻结support；
+6. geometry与support共同成立后，才从该checkpoint运行一个matched compiler-binding outcome macro并进入held5 oracle。
+
+这不是延长v14的昂贵rollout曲线或扫学习率，而是把专家Stage 1中的policy-response identification与closed-loop credit按成本和
+因果职责分开。baseline-relative barrier、raw A/B零目标、held/validation/Test信息墙及single-LoRA合同全部不变。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

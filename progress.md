@@ -27,9 +27,11 @@
   v11 macro1的task-relative geometry或冻结support，故v12关闭且仍未进入held5闭环、`q_V`或validation8。Stage 1
   **OCPB v13 baseline-relative support barrier**随后完成profile、matched formal、24-task物化与308-panel冻结审计：它首次达到
   fit/held breadth `13/19、3/5`并通过8项support条件中的7项，但held aggregate仍为shared的`1.00168x`，compiled geometry
-  仍是pair cosine `.99595`、own retrieval `1/24`。v13 objective修正保留，同曲线关闭；当前没有可启动的held5或`q_V`，
-  唯一active后继为 **OCPB v14 owner-resolved policy-response distillation**：让同状态successful-policy full-layer evidence直接
-  进入38个owner对应的compiler factor方向，同时保留v13 barrier与task-equal outcome，不恢复raw A/B目标。
+  仍是pair cosine `.99595`、own retrieval `1/24`。v13 objective修正保留。**OCPB v14 owner-resolved policy-response
+  distillation**也已完成v2 bank、真实profile、一个outcome macro、24-task物化与308-panel审计；新loss和梯度图有效，但这一
+  checkpoint只接受了一个optimizer update，geometry仍为`.99575/1-of-24`，fit/held support为`.96795/1.00313x`且breadth
+  `13/19、2/5`，因此不promote、不运行held5或`q_V`。当前唯一active后继是把同一owner-response objective从昂贵rollout中拆出，
+  按既有Stage 1 task-balanced schedule训练首个114-visits/19-updates信息节点；不再用一次optimizer update过早否定专家核心目标。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -292,11 +294,20 @@
   aggregate比shared高`.1675%`。这证明barrier语义是正修正，却没有解决factor direction identification；按预登记合同不跑
   held5、不轮fold、不扩meta、不启动`q_V`，也不再续同一selector-angle curve。正式证据见
   `docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
-- OCPB v14 retained运行面已实现但尚未产生科学结果。support bank schema v2在每个same-state panel新增source与successful
-  members的`[2,38,4,128]`冻结owner response；candidate LoRA在同一次PI0.5 forward中同时返回最终flow与可微owner response，
-  以member reliability、signal与disagreement形成owner-wise policy-native distillation，梯度直达factor heads。v14从v13
-  checkpoint完整恢复，保留baseline-relative barrier、Program/compiler/rank、selector-angle paired outcome与全部信息墙；
-  v13 active config已由v14单路径替换。21项Stage 1聚焦CPU合同通过，下一步只构建一次v2 bank并做真实单task profile。
+- OCPB v14的运行与科学裁决均已完成。clean pushed `6e927fc`先在gpu01 physical `1--6`并行构建24-task v2 support bank，
+  保存152,948,592 bytes task payload、同状态source与successful members的`[2,38,4,128]` owner response，validation/Test
+  action或reward读取均为0。真实task1 profile的owner loss为`.82564`、active owners `92.11%`、梯度范数`15.1782`、峰值
+  16.43 GB；说明新owner-resolved graph确实接通。
+- v14 formal仍只执行一个task-equal gradient sum和一个optimizer update；19个fit tasks的mean owner loss为`.77170`，每task
+  active owner fraction为`.7895--1.0`，checkpoint完整。它没有越过最早接口：24-task candidate pair cosine仅由v13
+  `.99595`到`.99575`，own/nearest-other为`.03971/.06190`、retrieval仍`1/24`；308-panel fit/held candidate-to-shared为
+  `.96795/1.00313x`，held breadth由`3/5`降到`2/5`，shared panel wins由155降到152。按门不跑held5、不轮fold、不扩meta、
+  不进入`q_V`。正式证据见`docs/evidence/ecp_20260822/stage1_ocpb_v14_owner_response_gate.json`。
+- 复核专家原始Stage 1合同后，v14只证明“一个owner-response update不足”，不能证明owner-resolved policy-response distillation
+  无效：此前task-balanced Stage 1的228 visits对应38个optimizer updates，而OCPB outcome macro把19 task梯度合并为一次更新。
+  下一canonical训练面从v13 model weights与fresh optimizer启动response-only task-balanced阶段，保留v13 barrier、Program、
+  compiler、rank和v2 bank；先跑114 visits/19 updates并只物化geometry。只有task-relative方向实质移动才继续至最多228 visits、
+  full support audit和一个matched outcome macro，避免重复昂贵rollout或小超参扫描。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

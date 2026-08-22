@@ -184,9 +184,14 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 实现OCPB v14 owner-resolved policy-response distillation：v2 support panel在同状态保存source与successful members的
   `2 × 38 × 4 × 128`冻结response，candidate同一次forward可微捕获owner response并直接监督family-specific factor heads；
   v13 barrier、最终flow、Program、rank与outcome coordinate不变，raw A/B仍为零梯度诊断；
-- [ ] 构建一次v2 frozen support bank，完成真实单task profile并确认owner loss、factor-head gradient、显存与信息墙；
-- [ ] 从v13冻结checkpoint运行一个task-equal v14 macro，立即物化并复跑同一geometry/308-panel门；
-- [ ] 轮换固定fold，确认不是单一held5偶然结果。
+- [x] 构建一次v2 frozen support bank，完成真实单task profile并确认owner loss、可微compiler路径、显存与信息墙；
+- [x] 从v13冻结checkpoint运行一个task-equal v14 outcome macro，立即物化并复跑同一geometry/308-panel门；一更新
+  checkpoint未改善geometry或support，不能进入held5或`q_V`；
+- [ ] 将专家要求的multi-state owner-resolved policy-response distillation从昂贵rollout macro中拆成task-balanced优化阶段：
+  从v13 model weights与fresh optimizer运行首个114-visits/19-updates信息节点，保持v13 barrier与全部Program/compiler结构；
+- [ ] 114节点先物化geometry；只有task-relative方向出现实质移动才继续到最多228 visits并运行冻结support audit，随后才允许
+  一个matched outcome-calibration macro；
+- [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
 Goal/Long不能系统为零。失败则停在Program/compiler，不训练`q_V`。

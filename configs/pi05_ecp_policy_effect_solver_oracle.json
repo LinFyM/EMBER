@@ -28,9 +28,10 @@
     "support_frames_per_event": "one maximum-posterior action-hidden frame from each visible video"
   },
   "solver": {
-    "algorithm": "fixed owner-normalized gradient step plus thin-QR/core-SVD regauge",
+    "algorithm": "fixed inverse-sqrt-decayed owner-normalized gradient step plus thin-QR/core-SVD regauge",
     "steps": 12,
     "step_rms": 0.0002,
+    "step_decay_power": 0.5,
     "owner_weight": 1.0,
     "flow_weight": 1.0,
     "shared_barrier_weight": 0.25,

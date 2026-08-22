@@ -72,6 +72,7 @@ class SolverStep:
     trust_distance: float
     trust_penalty: float
     gradient_rms: float
+    applied_step_rms: float
 
 
 def prepare_policy_effect_probe(
@@ -405,6 +406,7 @@ def solve_policy_effects(
     response: Callable[[Mapping[str, torch.Tensor], int], PolicyEffectResponse],
     steps: int,
     step_rms: float,
+    step_decay_power: float,
     owner_weight: float,
     flow_weight: float,
     shared_barrier_weight: float,
@@ -413,7 +415,13 @@ def solve_policy_effects(
 ) -> tuple[dict[str, torch.Tensor], tuple[SolverStep, ...]]:
     """Run the same stateless normalized-gradient/re-gauge update for every task."""
 
-    if steps <= 0 or step_rms <= 0 or trust_region <= 0 or trust_weight < 0:
+    if (
+        steps <= 0
+        or step_rms <= 0
+        or step_decay_power < 0
+        or trust_region <= 0
+        or trust_weight < 0
+    ):
         raise ValueError("invalid PECS fixed solver contract")
     state = _regauge(
         {name: value.detach().float().clone() for name, value in initial_state.items()},
@@ -425,6 +433,9 @@ def solve_policy_effects(
     history = []
     names = tuple(state)
     for step in range(steps):
+        applied_step_rms = float(step_rms) / float(step + 1) ** float(
+            step_decay_power
+        )
         leaves = {name: value.detach().requires_grad_(True) for name, value in state.items()}
         gradients = {name: torch.zeros_like(value) for name, value in leaves.items()}
         totals = {name: 0.0 for name in ("effect", "owner", "flow", "barrier")}
@@ -473,10 +484,10 @@ def solve_policy_effects(
                 / (gradients[a_name].numel() + gradients[b_name].numel())
             ).clamp_min(1e-12)
             updated[a_name] = leaves[a_name].detach() - (
-                float(step_rms) * gradients[a_name] / owner_gradient_rms
+                applied_step_rms * gradients[a_name] / owner_gradient_rms
             )
             updated[b_name] = leaves[b_name].detach() - (
-                float(step_rms) * gradients[b_name] / owner_gradient_rms
+                applied_step_rms * gradients[b_name] / owner_gradient_rms
             )
         state = _regauge(updated, contract)
         history.append(
@@ -489,6 +500,7 @@ def solve_policy_effects(
                 trust_distance=float(trust.detach()),
                 trust_penalty=float(trust_penalty.detach()),
                 gradient_rms=float(gradient_rms.detach()),
+                applied_step_rms=applied_step_rms,
             )
         )
     return state, tuple(history)

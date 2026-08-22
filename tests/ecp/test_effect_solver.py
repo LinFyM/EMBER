@@ -69,6 +69,7 @@ def test_fixed_solver_reduces_exact_policy_effect_error() -> None:
         response=response,
         steps=5,
         step_rms=0.01,
+        step_decay_power=0.5,
         owner_weight=1.0,
         flow_weight=1.0,
         shared_barrier_weight=0.0,

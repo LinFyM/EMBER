@@ -231,8 +231,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   active tree仅保留一个Stage 1 trainer，55项Stage 0/1、reward与expert-manifold聚焦CPU合同通过；
 - [x] 完成v20真实单task profile：action/FactorHead/compiler梯度finite非零，`q_pi`/visible梯度精确为0，
   峰值显存约16.39GB；
-- [ ] 运行114 visits/19 updates，立即物化24-task geometry并复跑308-panel support；只有own
-  task matching与support同向改善才接structured closed-loop outcome，否则先做free-Program/fixed-compiler reachability oracle；
+- [x] 运行114 visits/19 updates并完成matched 24-task geometry与308-panel support；candidate更分散但own retrieval仍
+  `1/24`，fit/held support退到shared的`1.00874/1.02932x`，v20关闭；
+- [ ] 实现 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**：固定v20 compiler，仅为fit19优化task-local
+  privileged free Programs，以同一exact action、multi-state response和support区分compiler image不可达与shared `q_pi`
+  inference失败；free Programs永不进入deployment或held route；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -288,11 +291,12 @@ coordinate退化则保留Stage 2并定位最早接口。
 1. v19已在macro2关闭：q/v Program切向均可达且有真实paired credit，但其single checkpoint绝对geometry/support门失败并
    仍处于历史v13坍缩区间；两者视频ordinal不同，不声称matched delta。正式证据为
    `docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`；
-2. v20 PLCI单路径已实现并完成active cleanup：仅compiler trainable，114 visits/19 updates的task-equal schedule及
-   matched video visit12099 materialization合同已接通，55项聚焦CPU合同通过；
-3. v20真实单task compiler-only profile已通过：action/FactorHead/compiler梯度finite非零，q_pi/visible梯度为零；
-4. 从clean pushed detached worktree运行114 visits/19 task-equal updates，立即物化24-task geometry与同一
-   308-panel support audit；只有own task matching与support同向改善才接structured outcome；
+2. v20 PLCI profile/formal/matched geometry/support已完成；它能分散candidate但不能形成own-policy mapping，并破坏
+   v13 support，因此关闭且不续训；证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`；
+3. 实现v21 FPR单路径：加载v20 checkpoint后冻结compiler及全部shared modules，仅优化19个task-local free
+   Programs；保持task-equal exact action、multi-state response、v13 support与zero held gradient；
+4. 真实profile通过后运行bounded fit19 oracle，物化并复跑geometry/support；能达则修正shared `q_pi`坐标，不能达则替换
+   bounded compiler image，不扫小超参数；
 5. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
    只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

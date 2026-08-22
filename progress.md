@@ -112,6 +112,17 @@
   action supervision激活，LoRA-leaf/FactorHead/compiler裁剪前梯度分别为`.129426/.431188/7.62951`，
   privileged `q_pi`与visible Program梯度精确为0；完整update为2.80秒，峰值显存16,385,350,144 bytes。该结果
   只证明compiler-only真实图、所有权和显存合同接通，授权114-visit formal节点，不是闭环性能证据。
+- v20 formal 114 visits/19 updates已从clean pushed detached `d42a026`完整结束：fit19每task精确6 visits，
+  successful/verified-success/failed-learner panels为`57/18/39`，后者action gradient为0；compiler相对v13移动
+  `.146889%`，visible Program与`q_pi`参数精确不变。matched 24-task物化将candidate pair cosine从v13
+  `.995952` 降到`.971204`，说明compiler输出确实更task-diverse；但own/nearest-direct仍为`.03945/.06104`，
+  retrieval仍`1/24`，geometry门失败。matched 308-panel support还从v13 fit/held `.96741/1.00168x`、breadth
+  `13/19、3/5`退到`1.00874/1.02932x`、`8/19、2/5`。因此v20在114 visits关闭，不续训、不接outcome/
+  held rollout/`q_V`。正式证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`。
+- 下一active因果锁称为 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**。它冻结v20 compiler与全部shared
+  Writer/source/observer，仅在fit19为每task优化一个privileged free Program，使用同一exact action、multi-state response和
+  support合同。这些Programs只作reachability oracle，不是deployment route、task-ID字典或唯一`P*`。若free Programs能
+  恢复own matching/support，失败在shared `q_pi`的Program坐标；若同样失败，则当前bounded compiler image不可达。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

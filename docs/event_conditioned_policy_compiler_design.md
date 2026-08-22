@@ -850,6 +850,19 @@ compiler裁剪前梯度分别为`.129426/.431188/7.62951`，`q_pi`/visible Progr
 update 2.80秒，峰值显存16,385,350,144 bytes。它是formal 114-visit节点的运行门，不替代geometry/support
 或closed-loop裁决。
 
+formal 114-visit节点随后否定了该方法。compiler相对v13参数移动`.146889%`，Program/`q_pi`参数精确
+不变；在24/24完全相同的video pairs上，candidate pair cosine由`.995952`降至`.971204`，却仍没有产生
+own mapping：own/nearest-direct为`.03945/.06104`，retrieval `1/24`。matched 308-panel fit/held support由v13
+`.96741/1.00168x`、breadth `13/19、3/5`退到`1.00874/1.02932x`、`8/19、2/5`。因此不能把“更分散”
+当成compiler identification，v20关闭且不接structured outcome。
+
+下一有界诊断称为 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**。它把v20 compiler、source、observer、
+visible Program和shared `q_pi`全部冻结，只在fit19为每task维护一个可优化的privileged Program tensor；优化仍使用
+cross-episode successful/verified-success exact action leaf、multi-state response和baseline-relative support，failed learner action梯度为0。
+这是reachability oracle，所以task-local Programs不是deployment model、不读held5，不成为task-ID route或唯一`P*`。若它恢复
+own geometry/support，证明compiler image可达而shared `q_pi`坐标错；若它仍失败，则当前bounded rank-one compiler
+image本身不能表示所需policy，后续应替换compiler parameterization，不扫LR/rank/seed。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

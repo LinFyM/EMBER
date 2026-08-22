@@ -1313,3 +1313,19 @@ reference在另一组24/24 materialization videos上得到`.99595249、1/24`与`
 shared Program更新又无法找到其own-policy preimage。下一步应固定当前最有结构且support最强的v13 Program坐标，只训练compiler
 完成dense policy identification；若仍失败，再用task-local free Programs直接测试fixed compiler image。后者只作privileged
 reachability diagnostic，不能成为task-ID route或确定性`P*`。
+
+## 63. compiler-only可以打散candidate，但“task-diverse”不等于“task-correct”
+
+OCPB v20将v13 visible Program与privileged `q_pi`完全冻结，只用task-balanced exact action、multi-state response和support
+训练compiler。真实profile与114-visit formal都证明所有权正确：compiler获得持续finite gradient并移动
+`.146889%`，Program与`q_pi`参数精确不变。在与v13完全matched的24组videos上，candidate pair cosine由
+`.99595`降到`.97120`，所以不能说compiler没学到任何task差异。
+
+但这些差异不是own-policy mapping。own-direct `.03945` 低于nearest-other `.06104`，retrieval仍`1/24`；matched
+support的fit/held ratio由v13`.96741/1.00168x`退到`1.00874/1.02932x`，breadth由`13/19、3/5`退到
+`8/19、2/5`。因此“降低candidate pair cosine”不是可用的成功代理；只要own matching和policy support不同向，就不能
+用更多同目标updates继续扩大差异。
+
+当前最早未决接口已被缩小为二选一：（1）v20 bounded compiler image内根本没有own successful policy；（2）image可达，
+但shared `q_pi`给出的Program坐标不对。固定v20 compiler下的fit19 task-local free-Program oracle能直接区分两者；
+这些free Programs仅是privileged诊断变量，不是deployment route、held dictionary或唯一`P*`。

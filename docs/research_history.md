@@ -1043,6 +1043,25 @@ fold或`q_V`。该结果否定的是“在未识别的v13 decoder image中，只
 若仍失败，再以task-local free Program/fixed-compiler oracle裁决当前bounded compiler image是否可达。证据：
 `docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`。
 
+### 3.54 OCPB v20识别了task-diverse compiler输出，但没有识别own successful policy
+
+clean pushed detached `d42a026`从v13 macro1只加载model weights并创建fresh optimizer，永久冻结visible Program与
+privileged `q_pi`，只训练compiler。single-task profile中exact action LoRA-leaf、FactorHead与compiler梯度分别为
+`.12943/.43119/7.62951`，其余两模块梯度为0。formal节点覆盖19 fit tasks每个6 visits，57个successful、18个
+verified-success learner panels产生exact action gradient，39个failed learner panels不产生action gradient。compiler相对v13移动
+`.00146889`，Program与`q_pi`参数精确不变。
+
+matched 24-task materialization使用与v13完全相同的visit12099和24/24 demo pairs。candidate pair cosine由
+`.99595249`降至`.97120404`，证明compiler-only训练不是dead update，且确实扩大了task间差异。但own-direct
+cosine为`.03945`，仍低于nearest-other `.06104`，retrieval仍`1/24`，所以差异没有指向own successful policy。
+
+matched 308-panel audit是更强反证：fit candidate/shared由v13`.96741x`、breadth`13/19`退到`1.00874x`、
+`8/19`；held由`1.00168x`、`3/5`退到`1.02932x`、`2/5`。因此v20在114 visits关闭，不续训、不接
+outcome、held rollout或`q_V`。它否定的是“固定task-diverse Program后，用当前dense action/response/support目标只训练
+bounded compiler即可识别own mapping”；尚未区分compiler image不可达和shared `q_pi` Program坐标错位。下一步因此
+冻结v20 compiler，仅优化fit19 task-local privileged free Programs做reachability oracle。证据：
+`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

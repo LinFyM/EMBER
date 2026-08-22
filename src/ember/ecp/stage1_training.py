@@ -1,4 +1,4 @@
-"""Task-balanced single-surface absolute compiler identification for ECP Stage 1."""
+"""Task-balanced layer-resolved single-surface compiler training for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -48,6 +48,7 @@ from ember.ecp.stage1_fixed_program import (
     capture_fixed_q_pi_programs,
     fixed_program_ordinals,
 )
+from ember.ecp.stage1_prior_calibration import calibrate_prior_heads
 from ember.ecp.stage1_support import (
     CachedPolicySupportPanel,
     PolicySupportBank,
@@ -133,7 +134,7 @@ def _runtime_limits(
 ) -> tuple[int, int, tuple[int, ...]]:
     if (
         config.get("status")
-        != "active_stage1_single_surface_absolute_compiler"
+        != "active_stage1_layer_resolved_single_surface_compiler"
     ):
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
@@ -443,6 +444,41 @@ def _initialize_distributed_model(
             dist.broadcast(value, src=0)
 
 
+def _calibrate_prior_heads(
+    *,
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    context: DistributedContext,
+    model: ECPStage1Model,
+    fixed_programs: Mapping[int, Any],
+) -> dict[str, Any]:
+    if args.resume is not None:
+        return {"applied": False, "reason": "resume_restores_v24_checkpoint"}
+    summary: dict[str, Any] = {}
+    if context.is_main:
+        summary = {
+            "applied": True,
+            **calibrate_prior_heads(
+                model.compiler,
+                fixed_programs,
+                relative_ridge=float(
+                    config["initialization"]["prior_head_relative_ridge"]
+                ),
+            ),
+            "fit_only": True,
+            "held_action_or_reward_reads": 0,
+            "validation_action_or_reward_reads": 0,
+            "test_action_or_reward_reads": 0,
+        }
+    if context.world_size > 1:
+        for parameter in model.compiler.parameters():
+            dist.broadcast(parameter.data, src=0)
+        payload: list[Any] = [summary if context.is_main else None]
+        dist.broadcast_object_list(payload, src=0)
+        summary = dict(payload[0])
+    return summary
+
+
 def _load_policy_support(
     args: argparse.Namespace,
     config: Mapping[str, Any],
@@ -502,13 +538,15 @@ def prepare_runtime(
     total, stop, checkpoints = _runtime_limits(args, config, context)
     seed_everything(int(config["optimization"]["seed"]), context)
     authorities = load_stage1_authorities(args, config, context)
-    initialization = load_stage1_initialization(
-        checkpoint=stage1_asset_authority(
-            config, "initialization_checkpoint", args.asset_root
-        ),
-        model=authorities.model,
-        device=context.device,
-        initialization=config["initialization"],
+    initialization = dict(
+        load_stage1_initialization(
+            checkpoint=stage1_asset_authority(
+                config, "initialization_checkpoint", args.asset_root
+            ),
+            model=authorities.model,
+            device=context.device,
+            initialization=config["initialization"],
+        )
     )
     authorities.model.requires_grad_(False)
     inputs = _load_inputs(
@@ -551,6 +589,13 @@ def prepare_runtime(
         support_bank=support_bank,
         language_tokens=language,
     )
+    initialization["prior_head_calibration"] = _calibrate_prior_heads(
+        args=args,
+        config=config,
+        context=context,
+        model=authorities.model,
+        fixed_programs=fixed_programs,
+    )
     authorities.model.compiler.requires_grad_(True)
     trainable_parameters = tuple(authorities.model.compiler.parameters())
     if (
@@ -565,7 +610,7 @@ def prepare_runtime(
             for parameter in authorities.model.policy_teacher.parameters()
         )
     ):
-        raise ValueError("single-surface compiler ownership changed")
+            raise ValueError("layer-resolved compiler ownership changed")
     optimizer, scheduler, start, expected_metrics = _prepare_optimization(
         args,
         config,
@@ -690,7 +735,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_single_surface_absolute_compiler_v23.json",
+        / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

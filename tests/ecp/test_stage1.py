@@ -1,9 +1,10 @@
+import json
 from collections import Counter
 from pathlib import Path
 
 import torch
 
-from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
+from ember.ecp.compiler import LayerResolvedCompiler, select_compiled_state
 from ember.ecp.contracts import TargetFamily, TargetOwner, build_target_owners
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
 from ember.ecp.policy_response import (
@@ -23,6 +24,7 @@ from ember.ecp.stage1_materialization import (
     PROJECTION_SCHEMA,
     resolve_stage1_materialization_config,
 )
+from ember.ecp.stage1_prior_calibration import calibrate_prior_heads
 from ember.ecp.stage1_objective import (
     effective_update_cosine_matrix,
     exact_effective_update_loss,
@@ -32,7 +34,12 @@ from ember.ecp.stage1_support import (
     SUPPORT_PRESERVATION_BASELINE_BARRIER,
     policy_support_loss_from_response,
 )
-from ember.ecp.stage1_support_audit import summarize_policy_support_audit
+from ember.ecp.stage1_support_audit import (
+    AUDIT_ADAPTER_FIELDS,
+    AUDIT_CONFIG_SCHEMA,
+    load_audit_config,
+    summarize_policy_support_audit,
+)
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -68,7 +75,7 @@ def _contract_and_states() -> tuple[object, tuple, dict[str, torch.Tensor]]:
     return contract, owners, template
 
 
-def _tiny_compiler() -> tuple[TargetFamilyCompiler, dict[str, torch.Tensor]]:
+def _tiny_compiler() -> tuple[LayerResolvedCompiler, dict[str, torch.Tensor]]:
     target = LoRATarget("tiny", in_features=5, out_features=6)
     contract = SmolVLALoRAContract(
         targets=(target,), rank=2, alpha=2, dropout=0.0, identity_seed=1
@@ -86,7 +93,7 @@ def _tiny_compiler() -> tuple[TargetFamilyCompiler, dict[str, torch.Tensor]]:
         "tiny.lora_B.default.weight": torch.randn(6, 2),
     }
     return (
-        TargetFamilyCompiler(
+        LayerResolvedCompiler(
             (owner,),
             contract,
             template,
@@ -126,18 +133,42 @@ def _expert_evidence(
     )
 
 
-def test_single_surface_materialization_uses_v23_task_visit_cursor() -> None:
+def test_layer_resolved_materialization_uses_v24_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
         REPO_ROOT
-        / "configs/pi05_ecp_stage1_single_surface_absolute_compiler_v23.json"
+        / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json"
     )
-    assert resolved.stage == "stage1_single_surface_absolute_compiler_v23"
+    assert resolved.stage == "stage1_layer_resolved_single_surface_compiler_v24"
     assert resolved.cursor_name == "task_visits"
     assert resolved.checkpoint_cursors == (114,)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_single_surface_absolute_compiler_v23"
+        "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24"
     )
+
+
+def test_support_audit_requires_both_compiler_arms(tmp_path: Path) -> None:
+    path = tmp_path / "audit_config.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": AUDIT_CONFIG_SCHEMA,
+                "status": "active_frozen_support_audit",
+                "adapter_fields": list(AUDIT_ADAPTER_FIELDS),
+                "thresholds": {
+                    "minimum_fit_tasks_better_than_source": 13,
+                    "minimum_fit_tasks_better_than_shared": 13,
+                    "minimum_held_tasks_better_than_source": 3,
+                    "minimum_held_tasks_better_than_shared": 3,
+                },
+                "information_wall": {
+                    "validation_action_or_reward_reads": 0,
+                    "test_action_or_reward_reads": 0,
+                },
+            }
+        )
+    )
+    assert tuple(load_audit_config(path)["adapter_fields"]) == AUDIT_ADAPTER_FIELDS
 
 
 def test_visible_program_video_set_is_permutation_invariant() -> None:
@@ -270,7 +301,7 @@ def test_prior_and_full_programs_share_direct_absolute_factor_heads() -> None:
     contract, owners, template = _contract_and_states()
     for value in template.values():
         value.normal_(std=0.01)
-    compiler = TargetFamilyCompiler(owners, contract, template)
+    compiler = LayerResolvedCompiler(owners, contract, template)
     common = {
         "language": torch.randn(1, 38, 128),
         "scene": torch.randn(1, 38, 128),
@@ -283,19 +314,29 @@ def test_prior_and_full_programs_share_direct_absolute_factor_heads() -> None:
         float((prior[name][0] - target).detach().abs().sum()) > 0.0
         for name, target in template.items()
     )
+    for name in template:
+        torch.testing.assert_close(full[name], prior[name])
+    with torch.no_grad():
+        compiler.static_process_interaction.weight.normal_(std=0.01)
+    learned_prior = compiler(
+        ECPProgram(**common, presence=torch.zeros(1, 8))
+    ).state
+    learned_full = compiler(ECPProgram(**common, presence=torch.ones(1, 8))).state
+    for name in template:
+        torch.testing.assert_close(learned_prior[name], prior[name])
     assert any(
-        float((full[name][0] - prior[name][0]).detach().abs().sum()) > 0.0
+        float((learned_full[name] - learned_prior[name]).detach().abs().sum()) > 0.0
         for name in template
     )
 
 
-def test_direct_absolute_factor_heads_retain_content_amplitude() -> None:
+def test_target_local_absolute_factor_heads_retain_content_amplitude() -> None:
     compiler, _ = _tiny_compiler()
     program = _tiny_program()
     first = compiler(program).state
     with torch.no_grad():
-        compiler.factor_a["q"].weight.mul_(2.0)
-        compiler.factor_b["q"].weight.mul_(3.0)
+        compiler.factor_a["owner_00"].weight.mul_(2.0)
+        compiler.factor_b["owner_00"].weight.mul_(3.0)
     second = compiler(program).state
     torch.testing.assert_close(
         second["tiny.lora_A.default.weight"],
@@ -323,7 +364,7 @@ def test_language_and_scene_condition_process_value_queries() -> None:
     assert float((first - second).detach().abs().sum()) > 0.0
 
 
-def test_direct_absolute_factor_heads_receive_first_step_gradient() -> None:
+def test_target_local_absolute_factor_heads_receive_first_step_gradient() -> None:
     compiler, _ = _tiny_compiler()
     program = _tiny_program()
     first = compiler(program)
@@ -333,13 +374,49 @@ def test_direct_absolute_factor_heads_receive_first_step_gradient() -> None:
     )
     target = torch.randn_like(dense)
     (dense - target).square().mean().backward()
-    assert float(compiler.factor_a["q"].weight.grad.abs().sum()) > 0.0
-    assert float(compiler.factor_b["q"].weight.grad.abs().sum()) > 0.0
+    assert float(compiler.factor_a["owner_00"].weight.grad.abs().sum()) > 0.0
+    assert float(compiler.factor_b["owner_00"].weight.grad.abs().sum()) > 0.0
+
+
+def test_absent_process_is_exactly_removed_before_single_surface_fusion() -> None:
+    compiler, _ = _tiny_compiler()
+    first = _tiny_program()
+    first = ECPProgram(**{**first.__dict__, "presence": torch.zeros(1, 2)})
+    changed = ECPProgram(
+        **{
+            **first.__dict__,
+            "process": 1_000 * torch.randn_like(first.process),
+            "uncertainty": 1_000 * torch.rand_like(first.uncertainty),
+        }
+    )
+    left = compiler(first).state
+    right = compiler(changed).state
+    for name in left:
+        torch.testing.assert_close(left[name], right[name])
+
+
+def test_static_process_interaction_receives_full_program_gradient() -> None:
+    compiler, _ = _tiny_compiler()
+    state = compiler(_tiny_program()).state
+    loss = sum(value.float().square().mean() for value in state.values())
+    loss.backward()
+    gradient = compiler.static_process_interaction.weight.grad
+    assert gradient is not None and float(gradient.abs().sum()) > 0.0
+
+
+def test_fit_prior_calibration_is_minimum_change_and_reduces_residual() -> None:
+    compiler, _ = _tiny_compiler()
+    program = _tiny_program()
+    summary = calibrate_prior_heads(
+        compiler, {1: program}, relative_ridge=1e-4
+    )
+    assert summary["fit_programs"] == 1
+    assert summary["relative_residual_after"] < summary["relative_residual_before"]
 
 
 def test_query_content_modulation_reaches_rank_outputs() -> None:
     contract, owners, template = _contract_and_states()
-    compiler = TargetFamilyCompiler(owners, contract, template)
+    compiler = LayerResolvedCompiler(owners, contract, template)
     for value in template.values():
         value.normal_(std=0.01)
     program = ECPProgram(

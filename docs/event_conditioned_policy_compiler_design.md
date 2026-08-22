@@ -964,6 +964,16 @@ active **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**据此只�
 LR-SSC最终仍只输出一套complete rank16 LoRA。static/process是compiler内部的两个content reads，不是两条部署模型、两套
 FactorHeads或两个adapter；它们在非线性trunk之前融合，最终A/B由同一组target-local heads一次写出。
 
+retained v24运行面已经按此收敛。process correction使用zero-start的content-conditioned map：初始化时full与prior共享校准static
+坐标，但process map不是dead gate，首个真实反传的gradient norm为`7.20562`；一步后即可按event content偏离prior。单task
+profile中prior→shared response为`.01515`、full shared barrier为`.000587`，Action leaf/FactorHead/全compiler梯度分别为
+`.13244/8.18010/24.46963`，冻结模块为0。此前“直接把归一化process read加到static read”会把全compiler梯度放大到
+`591.7`并破坏support，已作为profile定位删除，未成为保留路径。
+
+实现所有权也同步收敛：`compiler.py`只负责local read、fusion与一次LoRA写出；`stage1_prior_calibration.py`只负责fit-only
+minimum-change初始化；`stage1_support_summary.py`只负责纯汇总；`stage1_support_audit.py`一次加载policy/panels后同时评测full与
+prior两臂。旧v23 config不在active tree保留。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

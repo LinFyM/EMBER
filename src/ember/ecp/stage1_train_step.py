@@ -1,4 +1,4 @@
-"""One task-equal single-surface absolute compiler update for ECP Stage 1."""
+"""One task-equal layer-resolved compiler update for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "single_surface_absolute_compiler_identification", {
+    return "layer_resolved_single_surface_compiler_identification", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -297,6 +297,9 @@ def run_stage1_update(
         else total.new_zeros(())
     )
     compiler_gradient = _module_gradient_norm(runtime.model.compiler)
+    process_fusion_gradient = _module_gradient_norm(
+        runtime.model.compiler.static_process_interaction
+    )
     factor_gradient = sum(
         parameter.grad.float().square().sum()
         for heads in (
@@ -316,6 +319,7 @@ def run_stage1_update(
                 gradient_norm
                 + compiler_gradient
                 + factor_gradient
+                + process_fusion_gradient
                 + policy_teacher_gradient
                 + visible_program_gradient
             )
@@ -323,7 +327,7 @@ def run_stage1_update(
         or float(policy_teacher_gradient) != 0.0
         or float(visible_program_gradient) != 0.0
     ):
-        raise RuntimeError("invalid single-surface compiler gradient")
+        raise RuntimeError("invalid layer-resolved compiler gradient")
     runtime.optimizer.step()
     runtime.scheduler.step()
     local = _local_record(
@@ -382,6 +386,9 @@ def run_stage1_update(
         "gradient_norm_before_clip": float(gradient_norm),
         "compiler_gradient_norm_before_clip": float(compiler_gradient),
         "factor_head_gradient_norm_before_clip": float(factor_gradient),
+        "process_fusion_gradient_norm_before_clip": float(
+            process_fusion_gradient
+        ),
         "policy_teacher_gradient_norm_before_clip": float(policy_teacher_gradient),
         "visible_program_gradient_norm_before_clip": float(visible_program_gradient),
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),

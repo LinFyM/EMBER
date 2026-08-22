@@ -1,4 +1,4 @@
-"""Frozen all-panel functional audit for an ECP Stage 1 projection."""
+"""Frozen all-panel functional audit for both ECP Stage 1 compiler arms."""
 
 from __future__ import annotations
 
@@ -17,6 +17,10 @@ from ember.ecp.stage1_support import (
     policy_support_distillation_loss,
     policy_support_loss_from_response,
 )
+from ember.ecp.stage1_support_summary import (
+    summarize_policy_support_audit,
+    summarize_task_policy_support,
+)
 from ember.ecp.stage1_config import (
     REPO_ROOT,
     stage1_asset_authority,
@@ -32,9 +36,10 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-AUDIT_CONFIG_SCHEMA = "ember_ecp_stage1_policy_support_audit_config_v1"
-AUDIT_SCHEMA = "ember_ecp_stage1_policy_support_audit_v1"
-AUDIT_SHARD_SCHEMA = "ember_ecp_stage1_policy_support_audit_shard_v1"
+AUDIT_CONFIG_SCHEMA = "ember_ecp_stage1_dual_policy_support_audit_config_v2"
+AUDIT_SCHEMA = "ember_ecp_stage1_dual_policy_support_audit_v2"
+AUDIT_SHARD_SCHEMA = "ember_ecp_stage1_dual_policy_support_audit_shard_v2"
+AUDIT_ADAPTER_FIELDS = ("projected_adapter", "prior_projected_adapter")
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -44,7 +49,7 @@ def _file(path: Path) -> dict[str, Any]:
 
 def load_audit_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    adapter_field = str(config.get("projection_adapter_field", "projected_adapter"))
+    adapter_fields = tuple(str(value) for value in config.get("adapter_fields", ()))
     thresholds = config.get("thresholds", {})
     required = {
         "minimum_fit_tasks_better_than_source",
@@ -62,7 +67,7 @@ def load_audit_config(path: Path) -> dict[str, Any]:
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads")
         != 0
-        or adapter_field not in {"projected_adapter", "prior_projected_adapter"}
+        or adapter_fields != AUDIT_ADAPTER_FIELDS
     ):
         raise ValueError("unsupported ECP policy-support audit contract")
     return config
@@ -79,7 +84,7 @@ def _load_projection(
     support_manifest: Path,
     tasks: Sequence[Any],
     expected_schema: str,
-    adapter_field: str,
+    adapter_fields: Sequence[str],
 ) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): dict(row) for row in manifest.get("tasks", ())}
@@ -99,136 +104,20 @@ def _load_projection(
         raise ValueError("ECP policy-support projection authority changed")
     for ordinal, row in rows.items():
         task = expected[ordinal]
-        adapter = Path(str(row.get(adapter_field, ""))).resolve()
-        bytes_field = adapter_field + "_bytes"
         if (
             row.get("fold_role") != task.fold_role
             or int(row.get("global_task_id", -1)) != int(task.global_task_id)
-            or not adapter.is_file()
-            or adapter.stat().st_size != int(row.get(bytes_field, -1))
         ):
             raise ValueError("ECP policy-support projected adapter changed")
+        for adapter_field in adapter_fields:
+            adapter = Path(str(row.get(adapter_field, ""))).resolve()
+            bytes_field = adapter_field + "_bytes"
+            if (
+                not adapter.is_file()
+                or adapter.stat().st_size != int(row.get(bytes_field, -1))
+            ):
+                raise ValueError("ECP policy-support projected adapter changed")
     return manifest, rows
-
-
-def _mean(rows: Sequence[Mapping[str, Any]], name: str) -> float:
-    return sum(float(row[name]) for row in rows) / len(rows)
-
-
-def _panel_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
-    if not rows:
-        return None
-    candidate = _mean(rows, "candidate_response")
-    source = _mean(rows, "source_response")
-    shared = _mean(rows, "shared_response")
-    consensus = _mean(rows, "consensus_response")
-    return {
-        "panels": len(rows),
-        "candidate_response": candidate,
-        "source_response": source,
-        "shared_response": shared,
-        "consensus_response": consensus,
-        "candidate_to_source_ratio": candidate / max(source, 1e-12),
-        "candidate_to_shared_ratio": candidate / max(shared, 1e-12),
-        "candidate_panel_wins_over_source": sum(
-            float(row["candidate_response"]) < float(row["source_response"])
-            for row in rows
-        ),
-        "candidate_panel_wins_over_shared": sum(
-            float(row["candidate_response"]) < float(row["shared_response"])
-            for row in rows
-        ),
-    }
-
-
-def _task_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    return {
-        "all": _panel_summary(rows),
-        "successful": _panel_summary(
-            [row for row in rows if row["kind"] == "successful"]
-        ),
-        "learner": _panel_summary(
-            [row for row in rows if row["kind"] == "learner"]
-        ),
-    }
-
-
-def _aggregate_tasks(tasks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    def aggregate(kind: str) -> dict[str, Any] | None:
-        summaries = [task["summary"][kind] for task in tasks]
-        summaries = [summary for summary in summaries if summary is not None]
-        if not summaries:
-            return None
-        candidate = _mean(summaries, "candidate_response")
-        source = _mean(summaries, "source_response")
-        shared = _mean(summaries, "shared_response")
-        return {
-            "tasks": len(summaries),
-            "panels": sum(int(summary["panels"]) for summary in summaries),
-            "candidate_response": candidate,
-            "source_response": source,
-            "shared_response": shared,
-            "consensus_response": _mean(summaries, "consensus_response"),
-            "candidate_to_source_ratio": candidate / max(source, 1e-12),
-            "candidate_to_shared_ratio": candidate / max(shared, 1e-12),
-            "candidate_tasks_better_than_source": sum(
-                float(summary["candidate_response"])
-                < float(summary["source_response"])
-                for summary in summaries
-            ),
-            "candidate_tasks_better_than_shared": sum(
-                float(summary["candidate_response"])
-                < float(summary["shared_response"])
-                for summary in summaries
-            ),
-        }
-
-    return {
-        "all": aggregate("all"),
-        "successful": aggregate("successful"),
-        "learner": aggregate("learner"),
-    }
-
-
-def summarize_policy_support_audit(
-    *, tasks: Sequence[Mapping[str, Any]], thresholds: Mapping[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    fit = [task for task in tasks if task["fold_role"] == "fit"]
-    held = [task for task in tasks if task["fold_role"] == "held_transform_only"]
-    aggregates = {"fit19": _aggregate_tasks(fit), "held5": _aggregate_tasks(held)}
-    fit_all = aggregates["fit19"]["all"]
-    held_all = aggregates["held5"]["all"]
-    conditions = {
-        "fit_aggregate_better_than_source": fit_all["candidate_response"]
-        < fit_all["source_response"],
-        "fit_aggregate_better_than_shared": fit_all["candidate_response"]
-        < fit_all["shared_response"],
-        "held_aggregate_better_than_source": held_all["candidate_response"]
-        < held_all["source_response"],
-        "held_aggregate_better_than_shared": held_all["candidate_response"]
-        < held_all["shared_response"],
-        "fit_task_breadth_over_source": fit_all[
-            "candidate_tasks_better_than_source"
-        ]
-        >= int(thresholds["minimum_fit_tasks_better_than_source"]),
-        "fit_task_breadth_over_shared": fit_all[
-            "candidate_tasks_better_than_shared"
-        ]
-        >= int(thresholds["minimum_fit_tasks_better_than_shared"]),
-        "held_task_breadth_over_source": held_all[
-            "candidate_tasks_better_than_source"
-        ]
-        >= int(thresholds["minimum_held_tasks_better_than_source"]),
-        "held_task_breadth_over_shared": held_all[
-            "candidate_tasks_better_than_shared"
-        ]
-        >= int(thresholds["minimum_held_tasks_better_than_shared"]),
-    }
-    return aggregates, {
-        "thresholds": {name: int(value) for name, value in thresholds.items()},
-        "conditions": conditions,
-        "passed": all(conditions.values()),
-    }
 
 
 def _evaluate_task(
@@ -238,29 +127,30 @@ def _evaluate_task(
     support_task: Any,
     projection_row: Mapping[str, Any],
     authorities: Any,
-    adapter_field: str,
+    adapter_fields: Sequence[str],
 ) -> dict[str, Any]:
-    adapter = load_file(
-        str(Path(str(projection_row[adapter_field])).resolve()),
-        device=str(next(authorities.policy.parameters()).device),
-    )
-    validate_lora_state(adapter, authorities.contract)
+    device = next(authorities.policy.parameters()).device
+    adapters = {
+        adapter_field: load_file(
+            str(Path(str(projection_row[adapter_field])).resolve()),
+            device=str(device),
+        )
+        for adapter_field in adapter_fields
+    }
+    for adapter in adapters.values():
+        validate_lora_state(adapter, authorities.contract)
     requests = {(int(task.ordinal), int(panel.panel_id)) for panel in support_task.panels}
     cached = cache_policy_support_panels(
         bank=support_bank,
         requests=requests,
-        device=next(authorities.policy.parameters()).device,
+        device=device,
     )
-    rows = []
+    arm_rows: dict[str, list[dict[str, Any]]] = {
+        adapter_field: [] for adapter_field in adapter_fields
+    }
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         for panel in support_task.panels:
             item = cached[(int(task.ordinal), int(panel.panel_id))]
-            candidate = policy_support_distillation_loss(
-                policy=authorities.policy,
-                candidate_state=adapter,
-                contract=authorities.contract,
-                cached=item,
-            )
             source = policy_support_loss_from_response(
                 candidate=item.panel.source_response, panel=item.panel
             )
@@ -275,28 +165,41 @@ def _evaluate_task(
             consensus = policy_support_loss_from_response(
                 candidate=consensus_response, panel=item.panel
             )
-            rows.append(
-                {
-                    "panel_id": int(panel.panel_id),
-                    "kind": str(panel.kind),
-                    "learner_success": panel.learner_success,
-                    "outcome_weight": float(panel.outcome_weight),
-                    "candidate_response": float(candidate.response),
-                    "source_response": float(source.response),
-                    "shared_response": float(shared.response),
-                    "consensus_response": float(consensus.response),
-                }
-            )
+            common = {
+                "panel_id": int(panel.panel_id),
+                "kind": str(panel.kind),
+                "learner_success": panel.learner_success,
+                "outcome_weight": float(panel.outcome_weight),
+                "source_response": float(source.response),
+                "shared_response": float(shared.response),
+                "consensus_response": float(consensus.response),
+            }
+            for adapter_field, adapter in adapters.items():
+                candidate = policy_support_distillation_loss(
+                    policy=authorities.policy,
+                    candidate_state=adapter,
+                    contract=authorities.contract,
+                    cached=item,
+                )
+                arm_rows[adapter_field].append(
+                    {**common, "candidate_response": float(candidate.response)}
+                )
     return {
         "ordinal": int(task.ordinal),
         "global_task_id": int(task.global_task_id),
         "suite": str(task.suite),
         "task_id": int(task.task_id),
         "fold_role": str(task.fold_role),
-        "projection_adapter_field": adapter_field,
-        "projected_adapter": _file(Path(str(projection_row[adapter_field]))),
-        "summary": _task_summary(rows),
-        "panels": rows,
+        "arms": {
+            adapter_field: {
+                "projected_adapter": _file(
+                    Path(str(projection_row[adapter_field]))
+                ),
+                "summary": summarize_task_policy_support(arm_rows[adapter_field]),
+                "panels": arm_rows[adapter_field],
+            }
+            for adapter_field in adapter_fields
+        },
     }
 
 
@@ -362,9 +265,7 @@ def build_audit_shard(args: Any) -> None:
         support_manifest=support_manifest,
         tasks=tasks,
         expected_schema=materialization.projection_schema,
-        adapter_field=str(
-            audit_config.get("projection_adapter_field", "projected_adapter")
-        ),
+        adapter_fields=AUDIT_ADAPTER_FIELDS,
     )
     rows = []
     for task in selected:
@@ -375,12 +276,21 @@ def build_audit_shard(args: Any) -> None:
                 support_task=support.task(task.ordinal),
                 projection_row=projection_rows[task.ordinal],
                 authorities=base_authorities,
-                adapter_field=str(
-                    audit_config.get("projection_adapter_field", "projected_adapter")
-                ),
+                adapter_fields=AUDIT_ADAPTER_FIELDS,
             )
         )
-        print({"ordinal": task.ordinal, **rows[-1]["summary"]["all"]}, flush=True)
+        print(
+            {
+                "ordinal": task.ordinal,
+                **{
+                    adapter_field: rows[-1]["arms"][adapter_field]["summary"][
+                        "all"
+                    ]["candidate_response"]
+                    for adapter_field in AUDIT_ADAPTER_FIELDS
+                },
+            },
+            flush=True,
+        )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_json_atomic(
         output,
@@ -432,10 +342,33 @@ def assemble_audit(args: Any) -> dict[str, Any]:
     rows.sort(key=lambda row: int(row["ordinal"]))
     if [int(row["ordinal"]) for row in rows] != list(range(24)):
         raise ValueError("policy-support audit does not cover train24")
-    aggregates, gate = summarize_policy_support_audit(
-        tasks=rows, thresholds=audit_config["thresholds"]
-    )
     assert authority is not None
+    arms = {}
+    for adapter_field in AUDIT_ADAPTER_FIELDS:
+        arm_tasks = [
+            {
+                **{
+                    name: row[name]
+                    for name in (
+                        "ordinal",
+                        "global_task_id",
+                        "suite",
+                        "task_id",
+                        "fold_role",
+                    )
+                },
+                **row["arms"][adapter_field],
+            }
+            for row in rows
+        ]
+        aggregates, gate = summarize_policy_support_audit(
+            tasks=arm_tasks, thresholds=audit_config["thresholds"]
+        )
+        arms[adapter_field] = {
+            "tasks": arm_tasks,
+            "aggregates": aggregates,
+            "gate": gate,
+        }
     result = {
         "schema_version": AUDIT_SCHEMA,
         "repository": repository,
@@ -443,9 +376,8 @@ def assemble_audit(args: Any) -> dict[str, Any]:
         "task_equal": True,
         "validation_action_or_reward_reads": 0,
         "test_action_or_reward_reads": 0,
-        "tasks": rows,
-        "aggregates": aggregates,
-        "gate": gate,
+        "adapter_fields": list(AUDIT_ADAPTER_FIELDS),
+        "arms": arms,
         "content_hash_policy": "disabled_by_owner",
     }
     write_json_atomic(args.output_dir / "audit.json", result)

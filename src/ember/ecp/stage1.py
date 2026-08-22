@@ -7,7 +7,7 @@ from typing import Mapping
 
 import torch
 
-from ember.ecp.compiler import ECPCompilerOutput, TargetFamilyCompiler
+from ember.ecp.compiler import ECPCompilerOutput, LayerResolvedCompiler
 from ember.ecp.contracts import TargetOwner
 from ember.ecp.policy_teacher import (
     PolicyTeacherOutput,
@@ -58,7 +58,7 @@ class ECPStage1Model(torch.nn.Module):
             support_channels=support_channels,
             support_horizon_basis=support_horizon_basis,
         )
-        self.compiler = TargetFamilyCompiler(
+        self.compiler = LayerResolvedCompiler(
             owners,
             contract,
             template_state,

@@ -1,4 +1,4 @@
-"""Target-family-aware compiler from an ECP Program to one complete PI0.5 LoRA."""
+"""Layer-resolved single-surface compiler from an ECP Program to one LoRA."""
 
 from __future__ import annotations
 
@@ -40,8 +40,8 @@ def select_compiled_state(
     return {name: value[index] for name, value in state.items()}
 
 
-class TargetFamilyCompiler(torch.nn.Module):
-    """Use numeric target/rank queries without collapsing Program ownership."""
+class LayerResolvedCompiler(torch.nn.Module):
+    """Keep target ownership while continuously fusing static and process content."""
 
     def __init__(
         self,
@@ -97,6 +97,9 @@ class TargetFamilyCompiler(torch.nn.Module):
         self.query_content_modulation = torch.nn.Linear(
             compiler_width, compiler_width, bias=False
         )
+        self.static_process_interaction = torch.nn.Linear(
+            compiler_width, compiler_width, bias=False
+        )
         self.trunk = torch.nn.Sequential(
             torch.nn.LayerNorm(compiler_width),
             torch.nn.Linear(compiler_width, 2 * compiler_width, bias=False),
@@ -108,31 +111,40 @@ class TargetFamilyCompiler(torch.nn.Module):
         self._register_coordinates(owners)
         self._register_templates(template_state)
         init = factor_head_init or DEFAULT_ABSOLUTE_HEAD_INIT
-        for family, head in self.factor_a.items():
-            torch.nn.init.normal_(head.weight, std=float(init[family]["a"]))
-        for family, head in self.factor_b.items():
-            torch.nn.init.normal_(head.weight, std=float(init[family]["b"]))
+        torch.nn.init.zeros_(self.static_process_interaction.weight)
+        for owner in owners:
+            key = self.owner_head_key(owner)
+            family = owner.family.value
+            torch.nn.init.normal_(
+                self.factor_a[key].weight, std=float(init[family]["a"])
+            )
+            torch.nn.init.normal_(
+                self.factor_b[key].weight, std=float(init[family]["b"])
+            )
+
+    @staticmethod
+    def owner_head_key(owner: TargetOwner) -> str:
+        return f"owner_{owner.index:02d}"
 
     @staticmethod
     def _factor_heads(
         owners: tuple[TargetOwner, ...], width: int
     ) -> tuple[torch.nn.ModuleDict, torch.nn.ModuleDict]:
-        shapes: dict[str, tuple[int, int]] = {}
-        for owner in owners:
-            shapes.setdefault(
-                owner.family.value, (owner.in_features, owner.out_features)
-            )
         return (
             torch.nn.ModuleDict(
                 {
-                    family: torch.nn.Linear(width, shape[0], bias=False)
-                    for family, shape in shapes.items()
+                    LayerResolvedCompiler.owner_head_key(owner): torch.nn.Linear(
+                        width, owner.in_features, bias=False
+                    )
+                    for owner in owners
                 }
             ),
             torch.nn.ModuleDict(
                 {
-                    family: torch.nn.Linear(width, shape[1], bias=False)
-                    for family, shape in shapes.items()
+                    LayerResolvedCompiler.owner_head_key(owner): torch.nn.Linear(
+                        width, owner.out_features, bias=False
+                    )
+                    for owner in owners
                 }
             ),
         )
@@ -188,7 +200,13 @@ class TargetFamilyCompiler(torch.nn.Module):
 
     def _tokens(
         self, program: ECPProgram
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         batch = program.language.shape[0]
         expected = (batch, self.owner_count)
         if (
@@ -213,7 +231,6 @@ class TargetFamilyCompiler(torch.nn.Module):
             + self.uncertainty_projection(torch.log1p(program.uncertainty.float())),
             (self.compiler_width,),
         )
-        value_tokens = torch.cat((language, scene, process.flatten(1, 2)), dim=1)
         owner_bias = self.program_owner_embedding.weight[None]
         language_key = language + owner_bias + self.token_type_embedding.weight[0]
         scene_key = scene + owner_bias + self.token_type_embedding.weight[1]
@@ -223,25 +240,16 @@ class TargetFamilyCompiler(torch.nn.Module):
             + self.event_embedding.weight[None, :, None]
             + self.token_type_embedding.weight[2]
         )
-        key_tokens = torch.cat(
-            (language_key, scene_key, process_key.flatten(1, 2)), dim=1
-        )
         process_presence = program.presence[:, :, None].expand(
             -1, -1, self.owner_count
         ).flatten(1)
-        presence = torch.cat(
-            (
-                torch.ones(
-                    batch,
-                    2 * self.owner_count,
-                    device=value_tokens.device,
-                    dtype=process_presence.dtype,
-                ),
-                process_presence,
-            ),
-            dim=1,
+        return (
+            torch.cat((language_key, scene_key), dim=1),
+            torch.cat((language, scene), dim=1),
+            process_key.flatten(1, 2),
+            process.flatten(1, 2),
+            process_presence,
         )
-        return key_tokens, value_tokens, presence
 
     def _queries(self) -> torch.Tensor:
         target = self.target_embedding.weight[:, None]
@@ -250,28 +258,97 @@ class TargetFamilyCompiler(torch.nn.Module):
         layer = self.layer_embedding(self.layer_ids)[:, None]
         return target + rank + family + layer
 
-    def forward(self, program: ECPProgram) -> ECPCompilerOutput:
-        key_tokens, value_tokens, presence = self._tokens(program)
+    def _addressed_hidden(
+        self, program: ECPProgram
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        (
+            static_key_tokens,
+            static_value_tokens,
+            process_key_tokens,
+            process_value_tokens,
+            process_presence,
+        ) = self._tokens(program)
         queries = self.query_projection(self._queries())
-        keys = self.key_projection(key_tokens)
-        values = self.value_projection(value_tokens)
-        logits = torch.einsum("jrd,bnd->bjrn", queries, keys) / math.sqrt(
+        static_keys = self.key_projection(static_key_tokens)
+        static_values = self.value_projection(static_value_tokens)
+        process_keys = self.key_projection(process_key_tokens)
+        process_values = self.value_projection(process_value_tokens)
+        static_count = 2 * self.owner_count
+        static_logits = torch.einsum(
+            "jrd,bnd->bjrn", queries, static_keys
+        ) / math.sqrt(self.compiler_width)
+        static_logits = static_logits + self.locality_bias[:, None, :static_count]
+        static_attention = static_logits.softmax(-1)
+        static_hidden = torch.einsum(
+            "bjrn,bnd->bjrd", static_attention, static_values
+        )
+        process_logits = torch.einsum(
+            "jrd,bnd->bjrn", queries, process_keys
+        ) / math.sqrt(
             self.compiler_width
         )
-        logits = logits + self.locality_bias[:, None, :]
-        logits = logits + presence.clamp_min(1e-4).log()[:, None, None]
-        attention = logits.softmax(-1)
-        hidden = torch.einsum("bjrn,bnd->bjrd", attention, values)
+        process_logits = process_logits + self.locality_bias[:, None, static_count:]
+        process_logits = process_logits + process_presence.clamp_min(1e-6).log()[
+            :, None, None
+        ]
+        process_attention = process_logits.softmax(-1)
+        process_hidden = torch.einsum(
+            "bjrn,bnd->bjrd", process_attention, process_values
+        )
+        process_active = (process_presence.sum(-1) > 0).to(process_hidden)
+        process_hidden = process_hidden * process_active[:, None, None, None]
+        interaction = torch.tanh(
+            self.static_process_interaction(
+                process_hidden * (1.0 + torch.tanh(static_hidden))
+            )
+        )
+        hidden = static_hidden + interaction
         modulation = 1.0 + torch.tanh(self.query_content_modulation(queries))
         hidden = hidden * modulation[None]
         hidden = self.trunk(hidden)
+        static_cost = self.locality_cost[:, :static_count]
+        process_cost = self.locality_cost[:, static_count:]
+        static_locality = torch.einsum(
+            "bjrn,jn->", static_attention.float(), static_cost
+        ) / (static_attention.shape[0] * self.owner_count * self.rank)
+        process_locality = torch.einsum(
+            "bjrn,jn->b", process_attention.float(), process_cost
+        ) / (self.owner_count * self.rank)
+        active_count = process_active.sum()
+        locality = static_locality + (
+            (process_locality * process_active).sum() / active_count.clamp_min(1.0)
+        )
+        static_exact = (
+            static_attention * self.exact_owner_mask[:, None, :static_count]
+        ).sum(-1).mean()
+        process_exact_by_batch = (
+            process_attention * self.exact_owner_mask[:, None, static_count:]
+        ).sum(-1).mean((1, 2))
+        process_exact = (
+            (process_exact_by_batch * process_active).sum()
+            / active_count.clamp_min(1.0)
+        )
+        exact_attention = torch.where(
+            active_count > 0,
+            0.5 * (static_exact + process_exact),
+            static_exact,
+        )
+        return hidden, locality, exact_attention
+
+    def addressed_hidden(self, program: ECPProgram) -> torch.Tensor:
+        """Return target/rank-local content after continuous static/process fusion."""
+
+        return self._addressed_hidden(program)[0]
+
+    def forward(self, program: ECPProgram) -> ECPCompilerOutput:
+        hidden, locality, exact_attention = self._addressed_hidden(program)
         templates = self.template_state()
         result: dict[str, torch.Tensor] = {}
         for owner in self.owners:
-            family = owner.family.value
+            key = self.owner_head_key(owner)
             addressed = hidden[:, owner.index]
-            full_a = self.factor_a[family](addressed)
-            full_b = self.factor_b[family](addressed).transpose(1, 2)
+            full_a = self.factor_a[key](addressed)
+            full_b = self.factor_b[key](addressed).transpose(1, 2)
             name_a = owner.target_name + LORA_A_SUFFIX
             name_b = owner.target_name + LORA_B_SUFFIX
             # Prior-only and full Programs must inhabit one learned compiler
@@ -279,10 +356,6 @@ class TargetFamilyCompiler(torch.nn.Module):
             # authorities, but never bypass the direct family heads.
             result[name_a] = full_a.to(templates[name_a])
             result[name_b] = full_b.to(templates[name_b])
-        locality = torch.einsum(
-            "bjrn,jn->", attention.float(), self.locality_cost
-        ) / (attention.shape[0] * self.owner_count * self.rank)
-        exact_attention = (attention * self.exact_owner_mask[:, None]).sum(-1).mean()
         return ECPCompilerOutput(
             state=result,
             locality_penalty=locality,

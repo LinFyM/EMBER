@@ -1,4 +1,4 @@
-"""Materialize ECP single-surface prior/full compiler outputs over train24."""
+"""Materialize ECP layer-resolved prior/full compiler outputs over train24."""
 
 from __future__ import annotations
 
@@ -40,8 +40,10 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_single_surface_absolute_compiler_projection_v23"
-PROJECTION_KIND = "ecp_stage1_privileged_single_surface_absolute_compiler"
+PROJECTION_SCHEMA = (
+    "ember_ecp_stage1_layer_resolved_single_surface_compiler_projection_v24"
+)
+PROJECTION_KIND = "ecp_stage1_privileged_layer_resolved_single_surface_compiler"
 
 
 @dataclass(frozen=True)
@@ -75,7 +77,7 @@ def resolve_stage1_materialization_config(
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_balanced_single_surface_absolute_compiler_identification",
+        objective_phase="task_balanced_layer_resolved_single_surface_identification",
     )
 
 
@@ -409,7 +411,10 @@ def _projection_manifest(
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "one direct absolute family-specific A/B surface for prior-only and full Programs",
+            "parameterization": "one layer-resolved direct-absolute A/B surface with continuous static/process fusion",
+            "static_process_local_reads": True,
+            "continuous_static_process_fusion": True,
+            "target_local_factor_heads": True,
             "content_address_separated": True,
             "query_content_modulated": True,
             "policy_support_teacher": True,
@@ -573,7 +578,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_single_surface_absolute_compiler_v23.json",
+        / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

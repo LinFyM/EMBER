@@ -16,7 +16,7 @@ from ember.ecp.events import (
     TaskGroundedTransitionMatcher,
 )
 from ember.ecp.observer import ECPNativeObserver, NativeObserverOutput
-from ember.ecp.compiler import ECPCompilerOutput, TargetFamilyCompiler
+from ember.ecp.compiler import ECPCompilerOutput, LayerResolvedCompiler
 from ember.ecp.policy_teacher import (
     PolicyTeacherOutput,
     PrivilegedPolicyEvidence,
@@ -69,7 +69,7 @@ __all__ = [
     "TargetFamily",
     "TargetOwner",
     "TaskGroundedTransitionMatcher",
-    "TargetFamilyCompiler",
+    "LayerResolvedCompiler",
     "VisibleProgramProjector",
     "build_target_owners",
     "ecp_stage0_loss",

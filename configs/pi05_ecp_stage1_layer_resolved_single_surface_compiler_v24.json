@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_single_surface_absolute_compiler_v23",
-  "status": "active_stage1_single_surface_absolute_compiler",
-  "purpose": "Identify one direct-absolute family-specific A/B compiler surface for both prior-only shared support and full-Program own policy while visible Program and privileged q_pi coordinates remain frozen.",
+  "schema_version": "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24",
+  "status": "active_stage1_layer_resolved_single_surface_compiler",
+  "purpose": "Identify one layer-resolved direct-absolute compiler that preserves the static prior and conditionally integrates process evidence while visible Program and privileged q_pi coordinates remain frozen.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -18,14 +18,16 @@
     "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json",
     "learner_occupancy": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821",
     "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v3_owner_local_activation_20260822/manifest.json",
-    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_policy_support_fold0_tv228_r6_85477ea_gpu01p123456_20260822/checkpoints/macro_00000228"
+    "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_single_surface_absolute_compiler_v23_tv114_r6_ef7100b_gpu02p012347_20260822/checkpoints/macro_00000114"
   },
   "initialization": {
-    "stage": "stage1_policy_support_v6",
-    "run_contract_schema": "ember_ecp_stage1_policy_support_run_v6",
-    "checkpoint_macro": 228,
+    "stage": "stage1_single_surface_absolute_compiler_v23",
+    "run_contract_schema": "ember_ecp_stage1_single_surface_absolute_compiler_run_v23",
+    "checkpoint_macro": 114,
     "load_model_weights_only": true,
-    "fresh_optimizer": true
+    "fresh_optimizer": true,
+    "migrate_family_heads_to_targets": true,
+    "prior_head_relative_ridge": 0.0001
   },
   "information_wall": {
     "shared_gradient_tasks": "fit19 development tasks update the shared compiler only",
@@ -98,6 +100,8 @@
     "lora_rank": 16,
     "compiler_width": 256,
     "compiler_tokens": 380,
+    "static_tokens": 76,
+    "process_tokens": 304,
     "compiler_queries": 608,
     "output_tensors": 76,
     "output_values": 1287168,
@@ -105,12 +109,17 @@
     "full_process_surface": "direct absolute complete rank16 LoRA from the same family-specific A/B heads used by prior-only Programs",
     "single_surface_prior_full": true,
     "exact_template_output_bypass": false,
-    "absolute_factor_heads": "family-specific A/B heads preserve content-conditioned amplitude and write every target and rank directly",
+    "absolute_factor_heads": "38 target-local layer-resolved A/B heads preserve content-conditioned amplitude and write every target and rank directly; family determines shape and initialization only",
+    "static_process_local_reads": true,
+    "continuous_static_process_fusion": true,
+    "target_local_factor_heads": true,
     "q_pi_gate": "member x event x owner content gate, bounded by visible event presence",
     "program_content": "owner/layer/family are tensor addresses; no additive address embeddings in visible Program values or q_pi factor values",
-    "compiler_content_path": "language, scene, ordered process and uncertainty are content Values; owner/layer/family addresses and numeric rank queries control local reads",
+    "compiler_content_path": "language and scene form one local static read; ordered process and uncertainty form one presence-masked local process read; owner/layer/family addresses and numeric rank queries control both reads",
     "query_to_output_shortcut": false,
-    "query_content_modulation": "numeric target/rank query multiplicatively modulates cross-attended Program Values for both zero-process and full-process inputs",
+    "query_content_modulation": "numeric target/rank query multiplicatively modulates Program Values after static/process content interaction; it cannot output without Program content",
+    "static_process_fusion": "static and process reads interact per target/rank before one shared nonlinear trunk; process is exactly zero when absent and no A/B-space adapter addition occurs",
+    "prior_head_calibration": "fit19 frozen prior hidden makes a minimum-change target-local ridge correction to the stable shared rank16 authority before the fresh optimizer; no task table is retained",
     "factor_head_init_basis": "0.4 times family A/B weight std implied by the 47 gauge-canonical successful-member RMS values; raw head amplitude is retained",
     "factor_head_init_std": {
       "action_in": {"a": 0.0007972, "b": 0.0001409},
@@ -186,7 +195,7 @@
     "evaluation_policy_seed": 2026082591
   },
   "optimization": {
-    "seed": 20260903,
+    "seed": 20260904,
     "precision": "bfloat16",
     "world_size": 6,
     "visits_per_fit_task": 6,
@@ -223,7 +232,7 @@
     "visible_video_count": 2,
     "allowed_checkpoint_task_visits": [114],
     "sampling": "fixed correct action-hidden videos without replacement",
-    "output": "one frozen-q_pi consensus rank16 LoRA and one learned prior-only rank16 LoRA per task from the same compiler"
+    "output": "one frozen-q_pi consensus rank16 LoRA and one learned prior-only rank16 LoRA per task from the same layer-resolved compiler"
   },
   "gate2": {
     "pre_rollout_geometry": {

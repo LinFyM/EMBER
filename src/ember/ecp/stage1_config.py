@@ -13,8 +13,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_single_surface_absolute_compiler_run_v23"
-STAGE = "stage1_single_surface_absolute_compiler_v23"
+RUN_SCHEMA = "ember_ecp_stage1_layer_resolved_single_surface_compiler_run_v24"
+STAGE = "stage1_layer_resolved_single_surface_compiler_v24"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -33,9 +33,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_single_surface_absolute_compiler_v23"
+        != "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24"
         or config.get("status")
-        != "active_stage1_single_surface_absolute_compiler"
+        != "active_stage1_layer_resolved_single_surface_compiler"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -76,8 +76,14 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or int(config.get("model", {}).get("compiler_tokens", -1)) != 380
         or "direct absolute complete rank16 LoRA"
         not in config.get("model", {}).get("full_process_surface", "")
-        or "family-specific A/B heads"
-        not in config.get("model", {}).get("absolute_factor_heads", "")
+        or "target-local" not in config.get("model", {}).get(
+            "absolute_factor_heads", ""
+        )
+        or config.get("model", {}).get("static_process_local_reads") is not True
+        or config.get("model", {}).get("continuous_static_process_fusion") is not True
+        or config.get("model", {}).get("target_local_factor_heads") is not True
+        or int(config.get("model", {}).get("static_tokens", -1)) != 76
+        or int(config.get("model", {}).get("process_tokens", -1)) != 304
         or config.get("model", {}).get("single_surface_prior_full") is not True
         or config.get("model", {}).get("exact_template_output_bypass") is not False
         or any(
@@ -113,12 +119,16 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or float(config.get("objective", {}).get("prior_shared_response_weight", -1))
         <= 0.0
         or config.get("initialization", {}).get("stage")
-        != "stage1_policy_support_v6"
+        != "stage1_single_surface_absolute_compiler_v23"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_policy_support_run_v6"
-        or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 228
+        != "ember_ecp_stage1_single_surface_absolute_compiler_run_v23"
+        or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 114
         or config.get("initialization", {}).get("load_model_weights_only") is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
+        or config.get("initialization", {}).get("migrate_family_heads_to_targets")
+        is not True
+        or float(config.get("initialization", {}).get("prior_head_relative_ridge", -1))
+        <= 0.0
         or int(config.get("optimization", {}).get("visits_per_fit_task", -1)) != 6
         or int(config.get("optimization", {}).get("total_task_visits", -1)) != 114
         or int(config.get("optimization", {}).get("optimizer_updates", -1)) != 19
@@ -135,7 +145,7 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         or config.get("fixed_program_coordinate", {}).get("task_id_route") is not False
         or config.get("fixed_program_coordinate", {}).get("checkpoint_state") is not False
     ):
-        raise ValueError("unsupported ECP Stage 1 single-surface compiler contract")
+        raise ValueError("unsupported ECP Stage 1 layer-resolved compiler contract")
     return config
 
 
@@ -167,7 +177,44 @@ def load_stage1_initialization(
         != int(manifest.get("files", {}).get(weights.name, {}).get("bytes", -1))
     ):
         raise ValueError("ECP Stage 1 initialization authority changed")
-    model.load_state_dict(load_file(str(weights), device=str(device)), strict=True)
+    source_state = load_file(str(weights), device=str(device))
+    target_state = model.state_dict()
+    compatible = 0
+    source_factor_keys: set[str] = set()
+    for name, value in source_state.items():
+        target = target_state.get(name)
+        if target is not None and target.shape == value.shape:
+            target_state[name] = value
+            compatible += 1
+        elif name.startswith("compiler.factor_a.") or name.startswith(
+            "compiler.factor_b."
+        ):
+            source_factor_keys.add(name)
+        else:
+            raise ValueError(f"unmigrated v23 initialization tensor: {name}")
+    migrated_heads = 0
+    for owner in model.compiler.owners:
+        target_key = model.compiler.owner_head_key(owner)
+        family = owner.family.value
+        for side in ("a", "b"):
+            source_name = f"compiler.factor_{side}.{family}.weight"
+            target_name = f"compiler.factor_{side}.{target_key}.weight"
+            if (
+                source_name not in source_state
+                or target_name not in target_state
+                or source_state[source_name].shape != target_state[target_name].shape
+            ):
+                raise ValueError("v23 family head cannot initialize v24 target head")
+            target_state[target_name] = source_state[source_name]
+            migrated_heads += 1
+    expected_source_factor_keys = {
+        f"compiler.factor_{side}.{family}.weight"
+        for side in ("a", "b")
+        for family in ("q", "v", "action_in", "action_out")
+    }
+    if source_factor_keys != expected_source_factor_keys:
+        raise ValueError("v23 family head authority changed")
+    model.load_state_dict(target_state, strict=True)
     return {
         "checkpoint": str(checkpoint.resolve()),
         "weights": str(weights.resolve()),
@@ -178,4 +225,7 @@ def load_stage1_initialization(
         "checkpoint_macro": expected_macro,
         "model_weights_only": True,
         "fresh_optimizer": True,
+        "shape_compatible_tensors": compatible,
+        "migrated_target_factor_heads": migrated_heads,
+        "new_static_process_parameters_initialized_fresh": True,
     }

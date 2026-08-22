@@ -5,6 +5,9 @@
 
 ## Current authority and executable state
 
+- owner已为当前轮设定新的明确停点：完成v24既定formal与裁决后不得直接滚动到v25；必须先系统复盘几十个版本为何没有形成
+  性能进展，包括重复假设、surrogate误导、止损滞后、专家方案实现偏移与版本管理问题；由当前goal自行完成反思和纠偏，
+  不要求owner主持讨论或先行裁决。
 - 专家最终复核与owner逐项讨论已经完成，新架构正式命名为 **EMBER-ECP（Event-Conditioned Policy Compiler）**；唯一
   active design为`docs/event_conditioned_policy_compiler_design.md`。核心结构是ordered video-event segmentation、
   Event-Conditioned Horizon Binding、target-family-aware Program、分布式privileged `q_pi(P)`、Dynamic-K `q_V(P|L,V)`与
@@ -178,6 +181,15 @@
   因此转为 **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**：static/process独立local read、head前连续非线性
   fusion、38个target-local A/B heads，并用fit19 prior hidden对stable shared做minimum-change初始化校准；仍只输出一套LoRA。
   正式证据为`docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
+- v24 retained实现现已替换唯一Stage 1运行面：旧v23 config被删除；language/scene与process各自local read，process缺失时
+  correction严格为0；38个target-local A/B heads保留layer owner，旧v23 family heads只作minimum-change初始化。fit-only prior
+  calibration由独立owner执行且不保留task table；support audit改为一次加载PI0.5与panels同时评测full/prior，避免重复6-worker
+  启动。compiler、calibration、audit summary均保持单一职责，30项ECP聚焦测试、py_compile、pyflakes、JSON与diff检查通过。
+- gpu02 physical0真实profile先暴露“校准static后直接加入未门控process会放大full”的初始化不连续；该失败profile已删除，未据此
+  启动formal。修正为zero-start但立即可微的content-conditioned process fusion后，prior response loss为`.015150`，full起点
+  shared support barrier仅`.000587`；process fusion/FactorHead/compiler裁剪前梯度为`7.20562/8.18010/24.46963`，Action LoRA
+  leaf梯度`.132440`，visible Program与`q_pi`梯度为0。update `1.435s`、峰值`22,918,661,632` bytes；profile临时目录已删除，
+  gpu02 physical0已释放，gpu01 prohibited physical0未使用。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

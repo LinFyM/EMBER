@@ -254,11 +254,13 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   根据首轮真实梯度量级一次性校准prior权重后，update约1.43秒、峰值约22.80GB；
 - [x] 从clean pushed frozen authority完成v23 fit19 task-balanced 114-visit节点及matched full/prior geometry/support；两条surface
   均未保留stable shared support，v23关闭且不进入held5 oracle；
-- [ ] 实现 **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**：static/process content独立local read并在head前连续
+- [x] 实现 **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**：static/process content独立local read并在head前连续
   非线性融合；用38个target-local A/B heads保留layer correspondence；从v23迁移shared权重，并以fit19 prior hidden对stable
   shared做minimum-change head calibration，不建立template bypass、task table或第二adapter；
-- [ ] 完成v24真实单task双路径profile、clean pushed 114-visit节点、一次执行同时得到full/prior的308-panel audit；只有prior/full
-  support与own mapping同向成立才进入held5 oracle；
+- [x] 完成v24真实单task双路径profile：prior/shared起点、process fusion、Action LoRA leaf、target heads和完整compiler梯度均有效，
+  冻结模块梯度为0，单步约1.44秒、峰值约22.92GB；
+- [ ] 从clean pushed authority完成v24 114-visit节点、materialization及一次执行同时得到full/prior的308-panel audit；只有
+  prior/full support与own mapping同向成立才进入held5 oracle；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -325,8 +327,11 @@ coordinate退化则保留Stage 2并定位最早接口。
    `1.13175/1.27744x`，held为`1.11069/1.21881x`；own retrieval仅`2/24`，故不接held5或`q_V`；
 6. 固定hidden capacity/ridge定位已完成：stable prior不是width256容量问题；最早损失是family-shared head抹去layer
    correspondence，以及static/process共用一个fused read后整套重写adapter。v24 LR-SSC据此只修正这两个结构变量；
-7. v24先完成target-local head、static/process local read、continuous nonlinear fusion与fit19-only prior calibration；真实profile后
+7. v24实现与真实profile已完成：zero-start process fusion保住校准prior且梯度`7.20562`，完整compiler梯度`24.46963`；下一步
    从clean pushed frozen authority运行114 visits/19 updates，并把full/prior合并到一次support audit execution；
 8. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
    只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。
+9. owner新增明确停点：v24本轮formal、materialization与dual support裁决完成后，不自动设计或实现v25。先完整回顾历次版本，
+   区分真正独立的因果检验与重复变体，审计代理指标、停止门、专家意见到实现的偏差、昂贵资产复用和版本膨胀原因；形成一份
+   根因复盘并据此自行纠偏，之后才决定是否继续当前范式，不要求owner主持或先行裁决。

@@ -261,7 +261,11 @@
   rank angles，但surrogate对rank求和，故coordinate实际移动`16 delta`而credit仍除以`2 sigma`。clean pushed `d06842c`
   已把shared-rank coordinate改为mean并注册OCPB v12；19项Stage 1聚焦合同通过。v12从macro1完整恢复optimizer/RNG/topology，
   用`credit_macro_offset=1`复用原macro2全部paired seeds，只重做一次compiler-binding；旧macro2不作为架构负证据，
-  v11 macro3/4取消。证据见`docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
+  v11 macro3/4取消。首个profile曾因support预加载未同步credit offset而在update前退出，临时目录随即删除；clean pushed
+  `7d77eb8`统一游标后，同task、同macro2 paired seeds的真实profile通过：两臂仍为`2/2` successes，replacement fraction
+  仍为`.09845→.08681/.12619`，但rank-mean surrogate仅`-.000381`、裁剪前梯度`2.08455`且finite，峰值
+  `16,425,290,752` bytes。该profile只解除corrected formal运行门，不作性能证据；目录在记录后删除。证据见
+  `docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

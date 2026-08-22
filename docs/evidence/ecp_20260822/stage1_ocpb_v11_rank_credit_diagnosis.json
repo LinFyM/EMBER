@@ -3,6 +3,7 @@
   "date": "2026-08-22",
   "training_repository_commit": "86ed95bddd81981521e75dd640a71ce71b6d907a",
   "correction_repository_commit": "d06842ce80772c6e5ff52da97a20e677a8c93da8",
+  "runnable_correction_repository_commit": "7d77eb8e56e21fd0b5ca880d681145e5bb11b96a",
   "stage": "stage1_ocpb_v11_closed_after_rank_credit_scale_violation",
   "formal_run": {
     "artifact": "runs/outputs/pi05_ecp_stage1_ocpb_v11_fold0_m1_r6_86ed95b_gpu01p234567_20260822",
@@ -83,6 +84,23 @@
     "credit_denominator_step_ratio": 1,
     "effect": "the compiler-binding reward gradient was lifted 16 times before the configured surrogate weight and then clipped",
     "correction": "use the mean rank angle so one shared offset changes the differentiable coordinate by exactly the registered offset"
+  },
+  "corrected_profile": {
+    "artifact_retained": false,
+    "task_ordinal": 1,
+    "credit_macro": 2,
+    "elapsed_seconds": 60.82499239699973,
+    "maximum_cuda_allocated_bytes": 16425290752,
+    "gradient_norm_before_clip": 2.084547758102417,
+    "plus_successes": 2,
+    "minus_successes": 2,
+    "mean_advantage": -0.0018181818181818299,
+    "mean_outcome_surrogate": -0.00038118945667520165,
+    "base_replacement_fraction": 0.09845157712697983,
+    "plus_replacement_fraction": 0.08680538833141327,
+    "minus_replacement_fraction": 0.126194030046463,
+    "all_gradients_finite": true,
+    "interpretation": "The same registered perturbation and original macro2 paired seeds now produce a finite rank-mean surrogate without the 16x coordinate lift. This is a runtime gate only."
   },
   "decision": {
     "continue_v11_macro3_or_macro4": false,

@@ -886,6 +886,8 @@ exact-resume compiler-binding macro2为`10/8` successes，但support退到`.9704
 step与antithetic归一化相差16倍；macro2不能作为科学负证据。clean pushed `d06842c`注册OCPB v12：coordinate改为rank mean，
 从macro1恢复完整optimizer/RNG/topology并复用原macro2 paired seeds，只重做一次compiler-binding，旧macro3/4取消。证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
+clean pushed `7d77eb8`的真实single-task corrected profile随后得到rank-mean surrogate`-.000381`、finite梯度`2.08455`和
+`16.43GB`峰值，确认修正后的运行面可进入一次formal复验；profile产物在记录后删除。
 
 ## 4. 截至整理边界的已解决与未解决接口
 

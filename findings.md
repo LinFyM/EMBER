@@ -1153,3 +1153,8 @@ RNG和world topology；`credit_macro_offset=1`复用原macro2的video、support�
 只重做一个corrected compiler-binding macro。v11 macro2只作尺度错误诊断，macro3/4取消；在v12物化和冻结audit前，不能据
 macro2否定compiler-binding，也不能转入LIBERO-90扩容、held5闭环或`q_V`。证据见
 `docs/evidence/ecp_20260822/stage1_ocpb_v11_rank_credit_diagnosis.json`。
+
+corrected rank-mean真实单task profile在clean pushed `7d77eb8`上复用原macro2的task、video、support panel、perturbation与
+paired rollout seeds。两臂仍为`2/2` successes且replacement fraction与原perturbation一致；surrogate为`-.000381`、裁剪前
+梯度`2.08455`且finite，排除了16倍lift。首个profile暴露的support cache offset遗漏在optimizer update前退出，修复后临时目录
+均已删除；profile只解除formal运行门，不改变上述科学裁决。

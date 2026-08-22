@@ -238,6 +238,12 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   inference失败；free Programs永不进入deployment或held route；旧v20 config已删除，56项聚焦CPU合同通过；
 - [x] 完成v21真实单task profile：free-Program梯度`.052106`且一步process相对修正`.092908`，compiler/`q_pi`/visible
   梯度严格为0，update `1.26s`、峰值约16.40GB；
+- [x] 从clean pushed frozen authority完成v21 228 visits/38 updates、24-task materialization与308-panel support audit；free
+  Programs已形成明显task-specific corrections，但compiled LoRA仍own retrieval `1/24`，fit/held support为shared的
+  `1.02708/1.02932x`、breadth`7/19、2/5`，因此bounded rank-mode retraction image判失败并关闭；
+- [ ] 实现 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**：复用v6 macro228已经训练完成的
+  family-specific direct A/B absolute compiler与其`q_pi`，保持v21 task-local free-Program oracle、fit19数据、task-equal
+  schedule和geometry/support门不变，先裁决专家原始absolute surface的preimage，不重复训练一套长compiler；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -295,10 +301,12 @@ coordinate退化则保留Stage 2并定位最早接口。
    `docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`；
 2. v20 PLCI profile/formal/matched geometry/support已完成；它能分散candidate但不能形成own-policy mapping，并破坏
    v13 support，因此关闭且不续训；证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`；
-3. v21 FPR单路径及真实profile已经通过；从v20 checkpoint固定compiler及全部shared modules，只优化fit19 task-local
-   process/uncertainty，held5参数与梯度均为0；
-4. 从clean pushed frozen authority运行228-visit bounded fit19 oracle，只在末节点物化并复跑geometry/support；能达则修正shared `q_pi`坐标，不能达则替换
-   bounded compiler image，不扫小超参数；
-5. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
+3. v21 FPR formal/geometry/support已经完成并失败：Program correction已明显task-diverse，bounded compiler仍只有`1/24`
+   own retrieval且fit support退化；证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`；
+4. v22复用现有v6 direct-absolute compiler checkpoint做同一free-Program reachability，不重复长compiler训练；先完成兼容迁移、
+   真实单task profile，再从clean pushed authority运行一个有界fit19节点并只在末节点物化/audit；
+5. 若v22可达，再以该absolute compiler修正shared `q_pi`并进入Dynamic-K `q_V`；若仍不可达，按Program→attention/value→
+   family A/B gain的最早接口做结构修正，不回退bounded selector或扫小超参数；
+6. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
    只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

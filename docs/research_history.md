@@ -1062,6 +1062,26 @@ bounded compiler即可识别own mapping”；尚未区分compiler image不可达
 冻结v20 compiler，仅优化fit19 task-local privileged free Programs做reachability oracle。证据：
 `docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`。
 
+### 3.55 OCPB v21证明当前bounded compiler image在可写Program区域内不可达
+
+clean pushed detached `ecab6ec`从v20 macro114只加载model weights并创建fresh optimizer，冻结compiler、visible Program、
+privileged `q_pi`、source与observer。fit19每task各有一行privileged free Program：固定visit12099的两条correct videos经
+冻结`q_pi`只初始化一次，之后固定language/scene/presence，只训练bounded process correction与positive uncertainty scale；
+held5没有free parameters。228 visits/38 updates使每个fit task精确出现12次，114个successful和42个verified-success
+learner panels产生exact action gradient，72个failed learner panels保持action gradient为0。全部157个冻结base state keys
+精确不变，mean update `1.185s`，峰值显存`16,772,373,504` bytes。
+
+free Programs本身已经形成显著task差异：process相对anchor correction为`.176--.531`、mean`.40179`，correction pair
+cosine`.36624`。但固定compiler后的candidate pair cosine仍`.96595`，own/nearest-direct为`.03936/.06070`，retrieval
+只有`1/24`。同一308-panel support audit中，fit candidate/shared为`1.02708x`、breadth`7/19`，比v20的
+`1.00874x、8/19`更差；held按合同不变，为`1.02932x、2/5`。因此v21不续训、不接held rollout或`q_V`。
+
+该结果排除了“shared `q_pi`坐标是唯一障碍”：当前QR-normalized、固定factor能量、角度有界的rank-mode retraction在本次
+可写Program区域内没有恢复own successful policy。它没有检验完专家建议的direct absolute family-specific A/B compiler。
+历史v6 macro228正是这一完整absolute surface，故下一互补锁复用该昂贵checkpoint做同一free-Program reachability，而不是
+重训compiler或做小超参扫描。证据：
+`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

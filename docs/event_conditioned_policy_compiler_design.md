@@ -874,6 +874,25 @@ v21的具体自由度保持最小且与shared `q_pi`可写面一致。每个fit 
 为`1.26s`，峰值显存`16,396,331,008` bytes。该profile只证明fixed image对task-local Program有可微、非死写入路径，
 不能预判228-visit后的own-policy reachability。
 
+v21 formal已经给出否定裁决。fit19 free Programs在228 visits后形成明显task-specific corrections：process相对anchor
+`.176--.531`，correction pair cosine`.36624`；这排除了shared `q_pi`输出完全同质和Program没有移动。但固定bounded
+compiler仍把它们压到candidate pair cosine`.96595`，own/nearest-direct`.03936/.06070`、retrieval`1/24`。308-panel
+fit/held support为shared的`1.02708/1.02932x`、breadth`7/19、2/5`，没有进入held rollout或`q_V`的依据。
+
+这次失败也暴露了实现与专家原始compiler定义之间尚未裁决的主要差异。当前bounded surface先把A/B heads输出QR归一化，
+再用固定于shared template平均factor能量、最大`pi/2`角度的rank-mode replacement生成LoRA；raw head幅度和独立
+task-dependent rank gain不会进入最终factor。专家方案则是每个target/rank query读取layer/family-local Program后，使用
+family-specific A/B heads直接写出完整absolute rank16 LoRA。后者不是“给bounded selector再加一点自由度”，而是不同的
+output image。
+
+因此v21之后的唯一Stage 1因果锁称为 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**。
+仓库已有v6 direct-absolute compiler formal macro228 checkpoint，先复用它及同checkpoint的privileged `q_pi`，保持v21
+fit19 free-Program、cross-episode action、multi-state response、task-equal schedule和geometry/support裁决不变。这样不用再做
+一次长compiler训练，就能直接回答专家所述absolute surface是否含有own-policy preimage。v22通过后才在该固定坐标上训练
+shared `q_pi`和Dynamic-K `q_V`；若失败，则继续拆解Program可写区域、attention/value binding与family A/B gain，而不恢复
+bounded selector、task-ID route或小超参扫描。正式v21证据见
+`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

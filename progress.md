@@ -114,18 +114,22 @@
   retrieval仍`1/24`，geometry门失败。matched 308-panel support还从v13 fit/held `.96741/1.00168x`、breadth
   `13/19、3/5`退到`1.00874/1.02932x`、`8/19、2/5`。因此v20在114 visits关闭，不续训、不接outcome/
   held rollout/`q_V`。正式证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`。
-- 当前active因果锁为 **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）**。唯一config是
-  `configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json`：从v20 macro114加载model weights，冻结compiler、visible
-  Program、shared `q_pi`、source与observer；fit19各自维护一个privileged Program。每个Program在固定visit12099由冻结
-  `q_pi`初始化一次，随后language/scene/presence保持不变，只优化`process=base+2*tanh(delta)`与
-  `uncertainty=base*exp(2*tanh(zeta))`；held5没有任何free-Program参数。formal合同为每task 12 visits、总228 visits/
-  38个task-equal updates，一次最终matched物化与support门，不做中间重复audit。free Programs只作reachability oracle，
-  不是deployment route、task-ID字典或唯一`P*`。
-- v21 retained实现、materializer与任务行梯度隔离已接通，旧v20 config已退役；56项Stage 0/1、reward与expert-manifold聚焦
-  CPU合同通过。gpu01 physical6真实单task profile也通过，physical0未使用：exact action LoRA-leaf/free-Program梯度分别为
-  `.129141/.052106`，一步后process相对修正`.092908`，compiler/`q_pi`/visible Program梯度均精确为0；update `1.26s`、
-  峰值显存`16,396,331,008` bytes。该结果只解除228-visit formal运行门；若最终free Programs恢复own matching/support，
-  失败在shared `q_pi`坐标，否则判定当前bounded compiler image不可达。
+- **OCPB v21 Fixed-Compiler Free-Program Reachability（FPR）已经完成并关闭。** clean pushed detached `ecab6ec`在gpu01
+  physical1--6完成228 visits/38 updates，19个fit task各12 visits；114个successful与42个verified-success learner
+  panels产生exact action gradient，72个failed learner panels保持action gradient为0。compiler、shared `q_pi`与visible
+  Program梯度max均精确为0，157个冻结base state keys逐项不变；mean update `1.185s`，峰值显存
+  `16,772,373,504` bytes，prohibited physical0未使用。
+- v21的fit19 free Programs确实摆脱shared坐标坍缩：process相对anchor移动`.176--.531`、mean `.40179`，Program correction
+  pair cosine降至`.36624`。但固定compiler输出仍高度同质：candidate pair cosine`.96595`，own/nearest-direct仅
+  `.03936/.06070`、retrieval `1/24`。308-panel support相对shared为fit/held `1.02708/1.02932x`，breadth仅
+  `7/19、2/5`；fit还比v20的`1.00874x、8/19`更差，held按合同完全不变。故不续训、不扫LR/rank/seed、不进入held rollout
+  或`q_V`。正式证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
+- 当前active因果锁改为 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**。专家原始设计要求
+  family-specific A/B heads直接生成完整absolute rank16 LoRA；当前v20/v21却使用固定能量、QR归一化、角度有界的rank-mode
+  retraction。为避免再做一次长compiler训练，v22先复用已完成的v6 direct-absolute checkpoint
+  `pi05_ecp_stage1_policy_support_fold0_tv228_r6_85477ea_gpu01p123456_20260822/macro_00000228`，保持同一fit19 free-Program
+  oracle与policy evidence，直接裁决专家所述absolute output surface是否存在own-policy preimage。只有该oracle过geometry/support
+  门才训练shared `q_pi`或`q_V`；失败则在direct absolute compiler内部定位attention/content/gain接口，不回到bounded selector。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

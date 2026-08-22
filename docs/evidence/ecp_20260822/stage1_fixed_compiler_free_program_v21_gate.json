@@ -1,0 +1,105 @@
+{
+  "schema_version": "ember_ecp_stage1_fixed_compiler_free_program_v21_gate_v1",
+  "status": "completed_fail_fixed_compiler_reachability_gate",
+  "training_commit": "ecab6eca7cb98aff4f772ff1403075a7a01dd897",
+  "initialization": {
+    "stage": "stage1_program_locked_compiler_identification_v20",
+    "checkpoint_macro": 114,
+    "model_weights_only": true,
+    "fresh_optimizer": true,
+    "program_anchor_video_visit": 12099
+  },
+  "ownership": {
+    "trainable": ["fit19_task_local_process", "fit19_task_local_uncertainty"],
+    "frozen": [
+      "compiler",
+      "visible_program",
+      "policy_teacher",
+      "source_policy",
+      "observer"
+    ],
+    "held5_task_local_parameters": 0,
+    "held5_shared_gradient_steps": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "deployment_uses_task_local_programs": false
+  },
+  "profile": {
+    "task_ordinal": 1,
+    "action_supervision_active": true,
+    "action_lora_gradient_norm": 0.129141,
+    "free_program_gradient_norm_before_clip": 0.052106,
+    "compiler_gradient_norm_before_clip": 0.0,
+    "policy_teacher_gradient_norm_before_clip": 0.0,
+    "visible_program_gradient_norm_before_clip": 0.0,
+    "process_relative_delta_after_one_step": 0.092908,
+    "update_seconds": 1.263,
+    "max_cuda_allocated_bytes": 16396331008,
+    "prohibited_gpu01_physical_0_used": false
+  },
+  "formal": {
+    "run": "runs/outputs/pi05_ecp_stage1_fixed_compiler_free_program_v21_tv228_r6_ecab6ec_gpu01p123456_20260822",
+    "checkpoint": "runs/outputs/pi05_ecp_stage1_fixed_compiler_free_program_v21_tv228_r6_ecab6ec_gpu01p123456_20260822/checkpoints/macro_00000228",
+    "completed_task_visits": 228,
+    "optimizer_updates": 38,
+    "visits_per_fit_task": 12,
+    "successful_action_panels": 114,
+    "verified_successful_learner_action_panels": 42,
+    "failed_learner_zero_action_gradient_panels": 72,
+    "mean_update_seconds": 1.185454755578815,
+    "max_cuda_allocated_bytes": 16772373504,
+    "compiler_gradient_norm_max": 0.0,
+    "policy_teacher_gradient_norm_max": 0.0,
+    "visible_program_gradient_norm_max": 0.0,
+    "frozen_base_state_keys_exactly_unchanged": 157,
+    "free_program_checkpoint_state_keys": 134,
+    "checkpoint_weights_bytes": 28599652,
+    "trainer_state_bytes": 11863019,
+    "prohibited_gpu01_physical_0_used": false
+  },
+  "materialization": {
+    "projection": "runs/analysis/pi05_ecp_stage1_fixed_compiler_free_program_v21_projection_tv228_ecab6ec_gpu01p6_20260822/projection_manifest.json",
+    "task_count": 24,
+    "fit_task_local_free_program_routes": 19,
+    "held_frozen_q_pi_routes": 5,
+    "fit_process_relative_delta_min": 0.17559047043323517,
+    "fit_process_relative_delta_mean": 0.401789496603765,
+    "fit_process_relative_delta_max": 0.5312975645065308,
+    "program_anchor_pair_cosine_mean": 0.8961998820304871,
+    "program_correction_pair_cosine_mean": 0.36624300479888916,
+    "candidate_pair_cosine_mean": 0.9659509062767029,
+    "mean_own_direct_cosine": 0.03936341032385826,
+    "mean_nearest_other_cosine": 0.060704492032527924,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.6047828197479248,
+    "geometry_passed": false
+  },
+  "support_audit": {
+    "audit": "runs/analysis/pi05_ecp_stage1_fixed_compiler_free_program_v21_audit_tv228_ecab6ec_gpu01p123456_20260822/audit.json",
+    "panels": 308,
+    "fit19_candidate_to_shared_ratio": 1.0270765739141579,
+    "fit19_tasks_better_than_shared": 7,
+    "fit19_candidate_to_source_ratio": 0.5891104749938232,
+    "fit19_tasks_better_than_source": 19,
+    "held5_candidate_to_shared_ratio": 1.02931798784375,
+    "held5_tasks_better_than_shared": 2,
+    "held5_candidate_to_source_ratio": 0.7265281295482622,
+    "held5_tasks_better_than_source": 5,
+    "passed": false
+  },
+  "matched_v20_reference": {
+    "fit19_candidate_to_shared_ratio": 1.0087381390027905,
+    "fit19_tasks_better_than_shared": 8,
+    "held5_candidate_to_shared_ratio": 1.02931798784375,
+    "held5_tasks_better_than_shared": 2
+  },
+  "decision": {
+    "continue_free_program_training": false,
+    "sweep_learning_rate_rank_seed_or_dtype": false,
+    "held5_closed_loop": false,
+    "q_v_training": false,
+    "next_diagnostic": "reuse the completed v6 direct-absolute family-specific A/B compiler checkpoint and repeat the bounded fit19 task-local free-Program reachability oracle before training another shared compiler",
+    "reason": "Fit-task Programs become strongly task-diverse and move far from their anchors, yet the compiled adapters retain only 1/24 own retrieval and policy support worsens relative to the frozen shared prior. Shared q_pi coordinates are therefore not the only failure; the tested bounded rank-one retraction surface is inadequate in the writable Program region."
+  },
+  "earliest_failed_interface": "The fixed v20 compiler contracts strongly task-diverse process and uncertainty Programs into generic non-own LoRA directions. The next causal variable is the compiler output parameterization itself: direct absolute family-specific A/B generation versus bounded rank-one replacement."
+}

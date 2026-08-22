@@ -1329,3 +1329,22 @@ support的fit/held ratio由v13`.96741/1.00168x`退到`1.00874/1.02932x`，breadt
 当前最早未决接口已被缩小为二选一：（1）v20 bounded compiler image内根本没有own successful policy；（2）image可达，
 但shared `q_pi`给出的Program坐标不对。固定v20 compiler下的fit19 task-local free-Program oracle能直接区分两者；
 这些free Programs仅是privileged诊断变量，不是deployment route、held dictionary或唯一`P*`。
+
+## 64. task-diverse free Programs仍被bounded compiler压成non-own LoRA
+
+OCPB v21冻结v20 compiler与全部shared modules，只让fit19各自优化一个task-local privileged Program。这个oracle排除了
+shared `q_pi`跨task共享和moving decoder：19个process corrections相对anchor移动`.176--.531`，correction pair cosine
+降至`.36624`；compiler、`q_pi`、visible Program的梯度max均为0，157个冻结state keys逐项不变。因此Program侧已经形成
+足够明显的task差异，不能再把失败简单归因于“所有task得到同一个Program”。
+
+这些差异经过bounded compiler后仍没有变成own policies。24-task candidate pair cosine仍为`.96595`，own-direct
+`.03936`低于nearest-other`.06070`，retrieval只有`1/24`。308-panel fit support相对shared从v20的`1.00874x、8/19`
+进一步退到`1.02708x、7/19`；held因不创建free Program而保持`1.02932x、2/5`。所以v21否定的是：**在当前
+QR-normalized、固定factor能量、角度有界的rank-mode replacement surface及q_pi可写的process/uncertainty区域内，存在可由
+task-local Program恢复own successful policy的preimage。** 它不否定Program表示本身，也不否定所有固定compiler。
+
+专家原始方案要求target/rank queries读取local Program后，由family-specific A/B heads直接生成一套完整absolute rank16
+LoRA；当前bounded retraction会丢掉raw head amplitude和独立task-dependent rank gain。仓库已有v6 direct-absolute compiler
+及完成的macro228 checkpoint，因此下一步应复用它做相同free-Program oracle，而不是重新训练一套长compiler或给bounded
+surface扫LR/rank/seed。若direct-absolute oracle可达，最早失败就是v20/v21 output parameterization；若仍不可达，再依次定位
+Program可写区域、attention/value binding和absolute factor gain，而不能恢复task-ID route或跳过Gate 2训练`q_V`。

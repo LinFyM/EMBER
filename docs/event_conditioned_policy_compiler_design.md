@@ -690,7 +690,7 @@ task-balanced Stage 1短节点是228 visits/38 updates。专家要求的multi-st
 
 1. 从v13 model weights初始化fresh optimizer，不继承outcome-estimator moment；
 2. 暂时不运行simulator两臂，只在world6 cost-balanced schedule上每update访问6个fit tasks；
-3. 每visit使用v2 bank中的successful/learner multi-state final-flow、source/shared baseline barrier与owner-resolved response；
+3. 每visit使用v3 bank中的successful/learner multi-state final-flow、source/shared baseline barrier与owner-local activation effect；
 4. 首个信息节点为114 visits/19 updates，即每个fit task恰好6 visits；先物化24-task geometry，不用内部loss选点；
 5. 只有candidate pair cosine、own-direct与retrieval出现一致实质移动，才exact-resume至最多228 visits/38 updates并运行
    308-panel冻结support；
@@ -821,14 +821,13 @@ Dynamic-K sampler、video cache、paired evaluator、persistent workers、flow/a
 Stage 1实现据此固定为一条调用链，而不是14条平行架构：`stage0.py`只扩展冻结observer的language/scene可见输出；
 `program.py`独占visible Program与K-video集合聚合；`policy_teacher.py`独占train-only privileged `q_pi`；`compiler.py`独占
 38-owner/rank-query到完整LoRA；`stage1.py`只组合上述科学图；`stage1_data.py`拥有task/member/video authority，
-`policy_response.py`拥有冻结PI0.5 full-layer owner response，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
+`policy_response.py`拥有冻结PI0.5 full-layer capture与target-local activation effect，`stage1_support.py`与`stage1_support_building.py`拥有policy-support
 bank及其运行时panel；`stage1_objective.py`、`stage1_train_step.py`、`stage1_training.py`分别拥有loss、
 一次task-equal更新和formal编排/checkpoint；`stage1_materialization.py`只把冻结checkpoint变成held oracle所需的每task单LoRA，
-现有`expert_manifold` evaluator继续拥有闭环执行。OCPB阶段由`stage1_outcome.py`独占两种结构化credit坐标，
-`stage1_outcome_{config,contract,train_step,training}.py`分别拥有冻结合同、formal provenance、一次task-equal simulator macro和
-运行编排；通用paired trajectory score已从退役functional路径抽到`reward/credit.py`，旧入口只作兼容转发。拆分的理由是
-信息墙、共享梯度、policy functional调用、simulator生命周期和静态物化具有不同测试责任；`train_ecp_stage1.py`只复现v10
-functional warm start，当前后继入口唯一为`train_ecp_stage1_outcome.py`，两者是连续阶段而非并行architecture fallback。
+现有`expert_manifold` evaluator继续拥有闭环执行。已完成的OCPB outcome实现由Git和formal artifacts保存，不在active tree保留
+第二套orchestration；通用paired trajectory score仍由`reward/credit.py`拥有。当前唯一Stage 1训练入口为
+`train_ecp_stage1.py`，先完成无simulator的v16 target-local identification；只有联合geometry/support门通过后，才在同一
+canonical Stage 1生命周期接回一个matched outcome macro，不恢复平行Writer或退役入口。
 
 生命周期也固定：Gate 2未过时只修正上述最早接口；Gate 2通过后`q_pi`保留为训练锚但永不进入deployment，Stage 1
 materializer只保留为oracle/evidence工具，正式部署由后续`q_V`经同一个Program/compiler生成LoRA。旧16维decoder、

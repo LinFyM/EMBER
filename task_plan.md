@@ -251,15 +251,14 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. OCPB v13已完成并关闭：matched outcome仍为`10/8`，baseline-relative barrier把fit/held support改善到
-   `.96741/1.00168x`，breadth首次达到`13/19、3/5`且8项support条件通过7项；唯一support缺口是held aggregate比shared
-   高`.1675%`。这是应保留的目标修正，但不是Gate 2通过；
-2. task-relative geometry没有随support改善：Program correction pair cosine为`.82546`，compiler后candidate pair cosine
-   仍`.99595`，own/nearest-other为`.03980/.06201`且own retrieval仍`1/24`。因此不跑held5、不轮fold、不扩meta、
-   不进入`q_V`，也不再延长selector-angle OCPB macro；
-3. 唯一active后继为OCPB v14 owner-resolved policy-response distillation：保留v13 barrier，用同状态、同seed的
-   source/successful-member full-layer owner response直接监督candidate factor方向；不重建raw A/B，也不改变Program/compiler/rank；
-4. 先一次性构建v2 support bank并做真实profile；图接通后从v13 checkpoint运行一个task-equal macro，立即物化/审计。
-   只有task-relative geometry与v13 support同时改善才运行held5；否则关闭v14，再按最早接口选择下一主要变量；
+1. v15已完成并关闭：228 visits把candidate pair cosine从v13`.99595`降到`.98727`，但own retrieval仍`1/24`，fit/held
+   candidate-to-shared退到`.97253/1.02171x`且held breadth降到`1/5`；不接outcome macro、held5或`q_V`；
+2. 唯一active后继为OCPB v16 owner-local activation-effect distillation。保留v13 barrier、Program、`q_pi`、compiler、
+   rank16和114/228 schedule，只把可被上游多targets共同改变的owner hidden目标替换为同一detached source input上的
+   target-local `B(Ax_ref)`；
+3. 当前先构建一次v3 frozen support bank并做真实单task profile，确认38个真实PI0.5 target输入、局部effect梯度、显存和吞吐；
+   随后从v13 model weights与fresh optimizer运行114 visits并物化24-task geometry；
+4. 只有own-direct、retrieval与candidate dispersion同向实质改善才exact-resume到228并运行同一308-panel audit；geometry与
+   support共同成立后，才接一个matched outcome-calibration macro和held5 oracle；
 5. 每个节点及时更新remote-safe证据、清理task-owned temp/worktree/branch并推送`main`；只有Gate 2通过后才进入Dynamic-K
    `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。

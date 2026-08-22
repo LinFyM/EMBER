@@ -9,23 +9,19 @@ from typing import Any, Mapping, Sequence
 import torch
 from lerobot.utils.constants import ACTION
 
-from ember.ecp.observer import TargetOwnerProjector
 from ember.ecp.policy_response import (
-    FrozenOwnerResponseTargets,
-    OwnerResolvedResponseLoss,
-    differentiable_policy_response,
-    owner_response_targets_from_payload,
-    owner_resolved_response_distillation_loss,
+    FrozenTargetActivationEffects,
+    TargetActivationEffectLoss,
+    target_activation_effect_distillation_loss,
+    target_activation_effects_from_payload,
 )
 from ember.functional_adaptation.functional_response import pi05_flow_response
 from ember.lora import LoRAContract
 from ember.pi05_source_checkpoint import read_json
 
 
-SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v2"
-SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v2"
-LEGACY_SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v1"
-LEGACY_SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v1"
+SUPPORT_BANK_SCHEMA = "ember_ecp_stage1_policy_support_bank_v3"
+SUPPORT_TASK_SCHEMA = "ember_ecp_stage1_policy_support_task_v3"
 SUPPORT_CHANNELS = (
     "successful_expert_minus_source",
     "successful_shared_minus_source",
@@ -66,7 +62,7 @@ class PolicySupportPanel:
     source_support_weight: float
     shared_support_weight: float
     learner_success: bool | None
-    owner_responses: FrozenOwnerResponseTargets | None = None
+    activation_effects: FrozenTargetActivationEffects | None = None
 
 
 @dataclass(frozen=True)
@@ -186,7 +182,9 @@ def load_learner_occupancy_sources(
     }
 
 
-def _panel_from_payload(value: Mapping[str, Any]) -> PolicySupportPanel:
+def _panel_from_payload(
+    value: Mapping[str, Any], *, contract: LoRAContract
+) -> PolicySupportPanel:
     selected = tuple(int(index) for index in value["selected_indices"])
     expert_responses = value["expert_responses"].float()
     panel = PolicySupportPanel(
@@ -206,8 +204,10 @@ def _panel_from_payload(value: Mapping[str, Any]) -> PolicySupportPanel:
         learner_success=(
             None if value.get("learner_success") is None else bool(value["learner_success"])
         ),
-        owner_responses=owner_response_targets_from_payload(
-            value, expert_count=int(expert_responses.shape[0])
+        activation_effects=target_activation_effects_from_payload(
+            value,
+            contract=contract,
+            expert_count=int(expert_responses.shape[0]),
         ),
     )
     if (
@@ -232,25 +232,21 @@ def load_policy_support_bank(
     *,
     manifest_path: Path,
     evidence_bank: Any,
+    contract: LoRAContract,
     task_ordinals: set[int],
     device: torch.device,
-    require_owner_responses: bool = False,
 ) -> PolicySupportBank:
     manifest_path = manifest_path.resolve()
     manifest = read_json(manifest_path)
     rows = {int(row["ordinal"]): row for row in manifest.get("tasks", ())}
     if (
-        manifest.get("schema_version")
-        not in {SUPPORT_BANK_SCHEMA, LEGACY_SUPPORT_BANK_SCHEMA}
-        or (
-            require_owner_responses
-            and manifest.get("schema_version") != SUPPORT_BANK_SCHEMA
-        )
+        manifest.get("schema_version") != SUPPORT_BANK_SCHEMA
         or tuple(manifest.get("support_channels", ())) != SUPPORT_CHANNELS
         or int(manifest.get("event_slots", -1)) != 8
         or int(manifest.get("owners", -1)) != 38
         or int(manifest.get("horizon_basis", -1)) != 4
         or int(manifest.get("program_width", -1)) != 128
+        or manifest.get("target_local_activation_effect_panels") is not True
         or set(rows) != set(range(24))
         or not task_ordinals <= set(rows)
     ):
@@ -265,15 +261,13 @@ def load_policy_support_bank(
         member_indices = tuple(int(index) for index in value["member_indices"])
         response = value["policy_response"]
         weights = value["policy_response_weights"]
-        panels = tuple(_panel_from_payload(panel) for panel in value["panels"])
+        panels = tuple(
+            _panel_from_payload(panel, contract=contract)
+            for panel in value["panels"]
+        )
         expected_members = evidence_bank.member_indices(ordinal)
         if (
-            value.get("schema_version")
-            not in {SUPPORT_TASK_SCHEMA, LEGACY_SUPPORT_TASK_SCHEMA}
-            or (
-                require_owner_responses
-                and value.get("schema_version") != SUPPORT_TASK_SCHEMA
-            )
+            value.get("schema_version") != SUPPORT_TASK_SCHEMA
             or int(value.get("ordinal", -1)) != ordinal
             or member_indices != expected_members
             or response.shape
@@ -284,10 +278,7 @@ def load_policy_support_bank(
             or (weights < 0).any()
             or not panels
             or (value.get("fold_role") == "fit" and not any(panel.kind == "learner" for panel in panels))
-            or (
-                require_owner_responses
-                and any(panel.owner_responses is None for panel in panels)
-            )
+            or any(panel.activation_effects is None for panel in panels)
         ):
             raise ValueError("ECP policy-support task payload changed")
         tasks[ordinal] = PolicySupportTask(
@@ -369,10 +360,10 @@ def cache_policy_support_panels(
                     "expert_weights": panel.expert_weights.to(
                         device, non_blocking=True
                     ),
-                    "owner_responses": (
+                    "activation_effects": (
                         None
-                        if panel.owner_responses is None
-                        else panel.owner_responses.to(device)
+                        if panel.activation_effects is None
+                        else panel.activation_effects.to(device)
                     ),
                 }
             )
@@ -408,41 +399,37 @@ def policy_support_distillation_loss(
     )
 
 
-def policy_support_owner_distillation_loss(
+def policy_support_activation_distillation_loss(
     *,
     policy: torch.nn.Module,
     candidate_state: Mapping[str, torch.Tensor],
     contract: LoRAContract,
     cached: CachedPolicySupportPanel,
-    projector: TargetOwnerProjector,
-    horizon_basis: int,
     preservation: str,
-) -> tuple[PolicySupportLoss, OwnerResolvedResponseLoss]:
+) -> tuple[PolicySupportLoss, TargetActivationEffectLoss]:
     panel = cached.panel
-    if panel.owner_responses is None:
-        raise ValueError("owner-resolved policy-support panel is unavailable")
-    candidate = differentiable_policy_response(
-        policy=policy,
-        state=candidate_state,
-        contract=contract,
-        batch=cached.batch,
-        projector=projector,
+    if panel.activation_effects is None:
+        raise ValueError("target-local activation panel is unavailable")
+    candidate = pi05_flow_response(
+        policy,
+        candidate_state,
+        contract,
+        cached.batch,
         policy_seed=panel.policy_seed,
-        horizon_basis=horizon_basis,
-    )
+    ).float()
     support = policy_support_loss_from_response(
-        candidate=candidate.flow,
+        candidate=candidate,
         panel=panel,
         preservation=preservation,
     )
-    owner = owner_resolved_response_distillation_loss(
-        candidate=candidate.owner_basis,
-        source=panel.owner_responses.source,
-        experts=panel.owner_responses.experts,
+    activation = target_activation_effect_distillation_loss(
+        candidate_state=candidate_state,
+        targets=panel.activation_effects,
+        contract=contract,
         expert_weights=panel.expert_weights,
         outcome_weight=panel.outcome_weight,
     )
-    return support, owner
+    return support, activation
 
 
 def policy_support_loss_from_response(

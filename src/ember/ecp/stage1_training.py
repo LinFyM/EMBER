@@ -111,12 +111,13 @@ class ECPStage1Inputs:
     evidence_bank: ECPStage1EvidenceBank
     video_store: RawTeacherVideoStore
     schedule: tuple[tuple[int, int], ...]
+    contract: LoRAContract
 
 
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
-    if config.get("status") != "active_stage1_owner_response_bootstrap":
+    if config.get("status") != "active_stage1_owner_local_activation_bootstrap":
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
@@ -368,6 +369,7 @@ def _load_inputs(
             total_task_visits=total_task_visits,
             mode=args.mode,
         ),
+        contract=contract,
     )
 
 
@@ -435,7 +437,7 @@ def _load_policy_support(
         evidence_bank=inputs.evidence_bank,
         task_ordinals=needed,
         device=context.device,
-        require_owner_responses=True,
+        contract=inputs.contract,
     )
 
 
@@ -621,7 +623,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_owner_response_bootstrap_v15.json",
+        / "configs/pi05_ecp_stage1_owner_local_activation_bootstrap_v16.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

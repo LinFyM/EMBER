@@ -14,8 +14,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_owner_response_bootstrap_run_v15"
-STAGE = "stage1_owner_response_bootstrap_v15"
+RUN_SCHEMA = "ember_ecp_stage1_owner_local_activation_bootstrap_run_v16"
+STAGE = "stage1_owner_local_activation_bootstrap_v16"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,8 +34,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_owner_response_bootstrap_v15"
-        or config.get("status") != "active_stage1_owner_response_bootstrap"
+        != "ember_ecp_stage1_owner_local_activation_bootstrap_v16"
+        or config.get("status")
+        != "active_stage1_owner_local_activation_bootstrap"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -48,13 +49,15 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             "learner_shared_minus_source",
         )
         or int(config.get("policy_support", {}).get("horizon_basis", -1)) != 4
-        or config.get("policy_support", {}).get("owner_resolved_panels_required")
+        or config.get("policy_support", {}).get(
+            "target_local_activation_effect_panels_required"
+        )
         is not True
         or config.get("objective", {}).get("support_preservation")
         != "baseline_relative_response_barrier"
         or float(
             config.get("objective", {}).get(
-                "owner_response_distillation_weight", -1
+                "activation_effect_distillation_weight", -1
             )
         )
         <= 0
@@ -90,7 +93,7 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
     ):
-        raise ValueError("unsupported ECP Stage 1 owner-response contract")
+        raise ValueError("unsupported ECP Stage 1 owner-local activation contract")
     return config
 
 

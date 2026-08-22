@@ -346,6 +346,7 @@ def build_audit_shard(args: Any) -> None:
     support = load_policy_support_bank(
         manifest_path=support_manifest,
         evidence_bank=evidence,
+        contract=base_authorities.contract,
         task_ordinals={int(task.ordinal) for task in selected},
         device=context.device,
     )

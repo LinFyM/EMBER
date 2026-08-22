@@ -1,7 +1,7 @@
 {
-  "schema_version": "ember_ecp_stage1_owner_response_bootstrap_v15",
-  "status": "active_stage1_owner_response_bootstrap",
-  "purpose": "Task-balanced multi-state owner-resolved policy-response distillation from the retained v13 model, before any additional simulator outcome macro.",
+  "schema_version": "ember_ecp_stage1_owner_local_activation_bootstrap_v16",
+  "status": "active_stage1_owner_local_activation_bootstrap",
+  "purpose": "Task-balanced target-local LoRA activation-effect distillation on detached policy-native inputs from the retained v13 model, before any simulator outcome macro.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "target_manifest": "configs/pi05_target_data_v1/manifest.json",
@@ -17,7 +17,7 @@
     "task_expert_config": "configs/pi05_video_expert_manifold_v1.json",
     "held_evaluation_selection": "configs/pi05_train24_phase_decoder_held5_eval_v1.json",
     "learner_occupancy": "runs/outputs/pi05_train24_phase_decoder_fit19_projected_occupancy_966353e_gpu02p123467_r2_20260821",
-    "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v2_owner_resolved_20260822/manifest.json",
+    "policy_support_bank": "runs/analysis/pi05_ecp_stage1_policy_support_bank_v3_owner_local_activation_20260822/manifest.json",
     "initialization_checkpoint": "runs/outputs/pi05_ecp_stage1_ocpb_v13_barrier_compiler_r6_b371463_gpu01p123456_20260822/checkpoints/macro_00000001"
   },
   "initialization": {
@@ -39,6 +39,7 @@
       "multiple independently successful adapter members",
       "full successful-occupancy eight-phase source-subtracted action response",
       "successful and learner occupancy full-layer source/expert owner responses",
+      "detached source target inputs and successful-member target-local LoRA activation effects",
       "source, stable-shared and learner-policy counterfactual responses",
       "member reliability and disagreement"
     ],
@@ -123,21 +124,21 @@
       "learner_shared_minus_source"
     ],
     "horizon_basis": 4,
-    "horizon_compression": "orthonormal DCT low-frequency basis after complete 50-token full-layer owner projection",
+    "horizon_compression": "orthonormal DCT low-frequency basis over complete 50-token owner projection and detached target inputs",
     "capture_policy_seed": 2026082601,
     "agreement_temperature": 4.0,
     "failed_learner_base_weight": 0.25,
-    "owner_resolved_panels_required": true,
+    "target_local_activation_effect_panels_required": true,
     "rank_semantics": false
   },
   "objective": {
     "effective_update": "diagnostic-only exact gauge-invariant BA Frobenius distance; zero optimization weight",
     "canonical_factor_warmstart": "diagnostic-only compact rank16 SVD gauge distance; zero optimization weight",
-    "functional_response": "paired complete PI0.5 final-flow and owner-resolved response on alternating successful and learner multi-phase occupancy",
-    "owner_response": "same-state candidate minus source matched to reliability-weighted successful-member effects in 38-owner x 4-horizon-basis x 128-width space",
+    "functional_response": "paired complete PI0.5 final-flow plus target-local LoRA activation effects on alternating successful and learner multi-phase occupancy",
+    "target_local_activation_effect": "candidate and successful members apply each target B(Ax_ref) to the same detached source input in 38-owner x 4-horizon-basis policy-native output spaces",
     "support_preservation": "baseline_relative_response_barrier",
     "prior_counterfactual": "language and scene never act as replacement Values; absent or zero process content returns the exact stable-prior LoRA",
-    "owner_response_distillation_weight": 1.0,
+    "activation_effect_distillation_weight": 1.0,
     "weights": {
       "member_effective_update": 0.0,
       "consensus_effective_update": 0.0,
@@ -154,7 +155,7 @@
     "evaluation_policy_seed": 2026082591
   },
   "optimization": {
-    "seed": 20260829,
+    "seed": 20260830,
     "precision": "bfloat16",
     "world_size": 6,
     "visits_per_fit_task": 12,

@@ -330,6 +330,11 @@
   上游LoRA targets共同改变，owner索引并不保证梯度只识别对应factor head。active v16只替换这一个主要变量：在相同真实
   occupancy的同一detached source target input上，以每个target的gauge-invariant LoRA activation effect `B(Ax_ref)`作为expert/source/
   candidate功能对象，保留owner和50-step horizon并压缩缓存，不重建raw A/B；其余v13 barrier、Program/compiler、schedule和门不变。
+- v16 retained代码已替换v15而没有增加平行Writer：`policy_response.py`在冻结source forward中捕获38个LoRA target的原生输入，
+  用4个正交DCT horizon basis保存detached reference，并在线性等价下直接计算各successful member与candidate的`B(Ax_ref)`；
+  `stage1_support*`只接受含该payload的v3 bank，唯一`train_ecp_stage1.py`同时保留final-flow barrier并增加target-local loss。
+  退役v15 config、owner-hidden可微路径与v1/v2 active bank兼容已删除；focused ECP测试、py_compile、JSON与diff检查已通过。
+  当前尚未把实现通过写成科学结果；下一节点仍是clean pushed authority上的v3 bank、真实单task profile和114-visits geometry门。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

@@ -13,6 +13,7 @@ from ember.ecp.observer import TargetOwnerProjector
 from ember.ecp.policy_response import (
     CapturedPolicyResponse,
     capture_policy_response,
+    lora_activation_effects,
 )
 from ember.ecp.stage1_data import ECPStage1EvidenceBank
 from ember.ecp.stage1_support import (
@@ -37,6 +38,8 @@ from ember.pi05_eval_contract import (
 )
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
+
+
 def _trajectory_panels(
     *,
     path: Path,
@@ -137,16 +140,32 @@ def _panel_payload(
     selected_indices: tuple[int, int],
     policy_seed: int,
     responses: Mapping[str, CapturedPolicyResponse],
+    states: Mapping[str, Mapping[str, torch.Tensor]],
     member_keys: Sequence[str],
+    contract: LoRAContract,
     expert_weights: torch.Tensor,
     learner_success: bool | None,
     agreement_temperature: float,
     failed_learner_base_weight: float,
 ) -> dict[str, Any]:
     expert = torch.stack([responses[key].flow for key in member_keys])
-    expert_owner = torch.stack(
-        [responses[key].owner_basis for key in member_keys]
-    )
+    reference = responses["source"].target_inputs
+    if reference is None:
+        raise ValueError("source target-local reference inputs are unavailable")
+    member_effects = {
+        key: lora_activation_effects(
+            state=states[key],
+            reference_inputs=reference,
+            contract=contract,
+        )
+        for key in member_keys
+    }
+    expert_effects = {
+        target.name: torch.stack(
+            [member_effects[key][target.name] for key in member_keys]
+        )
+        for target in contract.targets
+    }
     outcome, source_weight, shared_weight = _support_weights(
         source=responses["source"].flow,
         shared=responses["shared"].flow,
@@ -170,12 +189,14 @@ def _panel_payload(
             device="cpu", dtype=torch.bfloat16
         ),
         "expert_responses": expert.to(device="cpu", dtype=torch.bfloat16),
-        "source_owner_response": responses["source"].owner_basis.to(
-            device="cpu", dtype=torch.bfloat16
-        ),
-        "expert_owner_responses": expert_owner.to(
-            device="cpu", dtype=torch.bfloat16
-        ),
+        "reference_target_inputs": {
+            name: value.to(device="cpu", dtype=torch.bfloat16)
+            for name, value in reference.items()
+        },
+        "expert_target_effects": {
+            name: value.to(device="cpu", dtype=torch.bfloat16)
+            for name, value in expert_effects.items()
+        },
         "expert_weights": expert_weights.detach().cpu().float(),
         "outcome_weight": outcome,
         "source_support_weight": source_weight,
@@ -203,6 +224,7 @@ def _capture_panel(
             projector=projector,
             policy_seed=policy_seed,
             horizon_basis=horizon_basis,
+            capture_target_inputs=name == "source",
         )
         for name, state in states.items()
     }
@@ -280,7 +302,9 @@ def build_task_support(
                     selected_indices=selected,
                     policy_seed=seed,
                     responses=captured,
+                    states=states,
                     member_keys=member_keys,
+                    contract=contract,
                     expert_weights=expert_weights,
                     learner_success=None,
                     agreement_temperature=agreement_temperature,
@@ -339,7 +363,9 @@ def build_task_support(
                 selected_indices=selected,
                 policy_seed=seed,
                 responses=captured,
+                states=states,
                 member_keys=member_keys,
+                contract=contract,
                 expert_weights=expert_weights,
                 learner_success=source.success,
                 agreement_temperature=agreement_temperature,
@@ -460,7 +486,7 @@ def build_support_shard(args: Any) -> None:
     write_json_atomic(
         args.output_dir / f"shard_{args.shard_index:02d}.json",
         {
-            "schema_version": "ember_ecp_stage1_policy_support_shard_v2",
+            "schema_version": "ember_ecp_stage1_policy_support_shard_v3",
             "repository": repository,
             "shard_index": args.shard_index,
             "shard_count": args.shard_count,
@@ -479,7 +505,7 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         shard = read_json(args.output_dir / f"shard_{shard_index:02d}.json")
         if (
             shard.get("schema_version")
-            != "ember_ecp_stage1_policy_support_shard_v2"
+            != "ember_ecp_stage1_policy_support_shard_v3"
             or int(shard.get("shard_index", -1)) != shard_index
             or int(shard.get("shard_count", -1)) != args.shard_count
             or shard.get("repository", {}).get("commit") != repository.get("commit")
@@ -504,7 +530,7 @@ def assemble_support_bank(args: Any) -> dict[str, Any]:
         "program_width": int(config["model"]["program_width"]),
         "source_policy_frozen": True,
         "observer_projection_frozen": True,
-        "owner_resolved_panels": True,
+        "target_local_activation_effect_panels": True,
         "validation_action_or_reward_reads": 0,
         "test_action_or_reward_reads": 0,
         "tasks": rows,

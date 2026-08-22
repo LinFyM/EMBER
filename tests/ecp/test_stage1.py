@@ -7,7 +7,11 @@ from ember.ecp.compiler import TargetFamilyCompiler, select_compiled_state
 from ember.ecp.contracts import TargetFamily, TargetOwner, build_target_owners
 from ember.ecp.low_rank import replace_low_rank_modes
 from ember.ecp.policy_teacher import PrivilegedPolicyEvidence
-from ember.ecp.policy_response import owner_resolved_response_distillation_loss
+from ember.ecp.policy_response import (
+    FrozenTargetActivationEffects,
+    lora_activation_effects,
+    target_activation_effect_distillation_loss,
+)
 from ember.ecp.program import ECPProgram, VisibleProgramProjector
 from ember.ecp.stage0 import ECPVideoEncoderOutput
 from ember.ecp.stage1_data import (
@@ -171,16 +175,17 @@ def test_stage1_decision_prefixes_are_task_equal() -> None:
         assert counts == Counter({ordinal: expected for ordinal in range(19)})
 
 
-def test_owner_response_materialization_uses_v15_task_visit_cursor() -> None:
+def test_owner_local_activation_materialization_uses_v16_task_visit_cursor() -> None:
     resolved = resolve_stage1_materialization_config(
-        REPO_ROOT / "configs/pi05_ecp_stage1_owner_response_bootstrap_v15.json"
+        REPO_ROOT
+        / "configs/pi05_ecp_stage1_owner_local_activation_bootstrap_v16.json"
     )
-    assert resolved.stage == "stage1_owner_response_bootstrap_v15"
+    assert resolved.stage == "stage1_owner_local_activation_bootstrap_v16"
     assert resolved.cursor_name == "task_visits"
     assert resolved.checkpoint_cursors == (114, 228)
     assert resolved.projection_schema == PROJECTION_SCHEMA
     assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_owner_response_bootstrap_v15"
+        "ember_ecp_stage1_owner_local_activation_bootstrap_v16"
     )
 
 
@@ -614,36 +619,70 @@ def test_policy_support_barrier_only_penalizes_baseline_regression() -> None:
     assert float(regressed_response.grad.abs().sum()) > 0
 
 
-def test_owner_resolved_response_distillation_is_policy_native_and_differentiable() -> None:
-    source = torch.zeros(2, 3, 4, 5)
-    experts = torch.stack(
-        (
-            torch.ones_like(source),
-            torch.ones_like(source) * 1.2,
-        )
+def test_target_activation_effect_is_gauge_invariant_local_and_differentiable() -> None:
+    contract = SmolVLALoRAContract(
+        targets=(
+            LoRATarget("first", in_features=3, out_features=4),
+            LoRATarget("second", in_features=4, out_features=2),
+        ),
+        rank=2,
+        alpha=2,
+        dropout=0.0,
+        identity_seed=1,
     )
-    target = 0.25 * experts[0] + 0.75 * experts[1]
-    matched = owner_resolved_response_distillation_loss(
-        candidate=target,
-        source=source,
-        experts=experts,
-        expert_weights=torch.tensor([0.25, 0.75]),
-        outcome_weight=1.0,
+    state = {
+        "first.lora_A.default.weight": torch.randn(2, 3),
+        "first.lora_B.default.weight": torch.randn(4, 2),
+        "second.lora_A.default.weight": torch.randn(2, 4),
+        "second.lora_B.default.weight": torch.randn(2, 2),
+    }
+    reference = {
+        "first": torch.randn(2, 3, 3),
+        "second": torch.randn(2, 3, 4),
+    }
+    baseline = lora_activation_effects(
+        state=state, reference_inputs=reference, contract=contract
     )
-    torch.testing.assert_close(matched.loss, torch.tensor(0.0))
+    gauge = {name: value.clone() for name, value in state.items()}
+    for name in gauge:
+        gauge[name] = gauge[name] * (3.0 if ".lora_A." in name else 1.0 / 3.0)
+    transformed = lora_activation_effects(
+        state=gauge, reference_inputs=reference, contract=contract
+    )
+    for name in baseline:
+        torch.testing.assert_close(transformed[name], baseline[name])
 
-    candidate = torch.zeros_like(source, requires_grad=True)
-    missed = owner_resolved_response_distillation_loss(
-        candidate=candidate,
-        source=source,
-        experts=experts,
-        expert_weights=torch.tensor([0.25, 0.75]),
+    candidate = {
+        name: value.clone().requires_grad_() for name, value in state.items()
+    }
+    targets = FrozenTargetActivationEffects(
+        reference_inputs=reference,
+        expert_effects={
+            "first": (baseline["first"] + 0.25)[None],
+            "second": baseline["second"][None],
+        },
+    )
+    missed = target_activation_effect_distillation_loss(
+        candidate_state=candidate,
+        targets=targets,
+        contract=contract,
+        expert_weights=torch.ones(1),
         outcome_weight=0.25,
     )
     assert float(missed.loss.detach()) > 0
-    assert float(missed.active_owner_fraction) == 1.0
     missed.loss.backward()
-    assert candidate.grad is not None and float(candidate.grad.abs().sum()) > 0
+    assert all(
+        candidate[name].grad is not None
+        and float(candidate[name].grad.abs().sum()) > 0
+        for name in candidate
+        if name.startswith("first")
+    )
+    assert all(
+        candidate[name].grad is not None
+        and float(candidate[name].grad.abs().sum()) == 0
+        for name in candidate
+        if name.startswith("second")
+    )
 
 
 def test_policy_support_audit_gate_is_task_equal_across_fit_and_held() -> None:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -11,7 +10,13 @@ import torch
 
 from ember.ecp.observer import ActionLayerStateCapture, TargetOwnerProjector
 from ember.functional_adaptation.functional_response import FunctionalResponseError
-from ember.lora import LoRAContract, functional_lora_call
+from ember.lora import (
+    LORA_A_SUFFIX,
+    LORA_B_SUFFIX,
+    LoRAContract,
+    functional_lora_call,
+    validate_lora_state,
+)
 from ember.writer.functional import (
     INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
     INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
@@ -25,51 +30,69 @@ from ember.writer.functional import (
 class CapturedPolicyResponse:
     flow: torch.Tensor
     owner_basis: torch.Tensor
+    target_inputs: Mapping[str, torch.Tensor] | None = None
 
 
 @dataclass(frozen=True)
-class OwnerResolvedResponseLoss:
+class TargetActivationEffectLoss:
     loss: torch.Tensor
     normalized_disagreement: torch.Tensor
     active_owner_fraction: torch.Tensor
 
 
 @dataclass(frozen=True)
-class FrozenOwnerResponseTargets:
-    source: torch.Tensor
-    experts: torch.Tensor
+class FrozenTargetActivationEffects:
+    reference_inputs: Mapping[str, torch.Tensor]
+    expert_effects: Mapping[str, torch.Tensor]
 
-    def to(self, device: torch.device) -> "FrozenOwnerResponseTargets":
-        return FrozenOwnerResponseTargets(
-            source=self.source.to(device, non_blocking=True),
-            experts=self.experts.to(device, non_blocking=True),
+    def to(self, device: torch.device) -> "FrozenTargetActivationEffects":
+        return FrozenTargetActivationEffects(
+            reference_inputs={
+                name: value.to(device, non_blocking=True)
+                for name, value in self.reference_inputs.items()
+            },
+            expert_effects={
+                name: value.to(device, non_blocking=True)
+                for name, value in self.expert_effects.items()
+            },
         )
 
 
-def owner_response_targets_from_payload(
-    value: Mapping[str, Any], *, expert_count: int
-) -> FrozenOwnerResponseTargets | None:
+def target_activation_effects_from_payload(
+    value: Mapping[str, Any], *, contract: LoRAContract, expert_count: int
+) -> FrozenTargetActivationEffects | None:
     fields = tuple(
         value.get(name)
         for name in (
-            "source_owner_response",
-            "expert_owner_responses",
+            "reference_target_inputs",
+            "expert_target_effects",
         )
     )
     if all(field is None for field in fields):
         return None
     if any(field is None for field in fields):
-        raise FunctionalResponseError("owner-resolved response payload is partial")
-    source, experts = (field.float() for field in fields)
-    if (
-        source.ndim != 4
-        or experts.ndim != 5
-        or experts.shape != (expert_count, *source.shape)
-    ):
-        raise FunctionalResponseError("owner-resolved response payload changed shape")
-    return FrozenOwnerResponseTargets(
-        source=source,
-        experts=experts,
+        raise FunctionalResponseError("target-local activation payload is partial")
+    reference, experts = (dict(field) for field in fields)
+    expected = {target.name for target in contract.targets}
+    if set(reference) != expected or set(experts) != expected:
+        raise FunctionalResponseError("target-local activation owners changed")
+    for target in contract.targets:
+        target_input = reference[target.name]
+        target_effect = experts[target.name]
+        if (
+            target_input.ndim != 3
+            or target_input.shape[-1] != target.in_features
+            or target_effect.shape
+            != (expert_count, *target_input.shape[:-1], target.out_features)
+            or not torch.isfinite(target_input).all()
+            or not torch.isfinite(target_effect).all()
+        ):
+            raise FunctionalResponseError(
+                f"target-local activation payload changed at {target.name}"
+            )
+    return FrozenTargetActivationEffects(
+        reference_inputs={name: value.float() for name, value in reference.items()},
+        expert_effects={name: value.float() for name, value in experts.items()},
     )
 
 
@@ -93,7 +116,7 @@ def _capture_policy_response(
     projector: TargetOwnerProjector,
     policy_seed: int,
     horizon_basis: int,
-    detach: bool,
+    capture_target_inputs: bool,
 ) -> CapturedPolicyResponse:
     """Capture every Action layer before reducing the 50-token horizon."""
 
@@ -105,24 +128,46 @@ def _capture_policy_response(
     expert = core.paligemma_with_expert.gemma_expert.model
     action_inputs: list[torch.Tensor] = []
     flows: list[torch.Tensor] = []
+    target_inputs: dict[str, list[torch.Tensor]] = {
+        target.name: [] for target in contract.targets
+    }
 
     def capture_input(
         _module: torch.nn.Module, inputs: tuple[torch.Tensor, ...]
     ) -> None:
-        action_inputs.append(inputs[0].detach() if detach else inputs[0])
+        action_inputs.append(inputs[0].detach())
 
     def capture_flow(
         _module: torch.nn.Module,
         _inputs: tuple[torch.Tensor, ...],
         output: torch.Tensor,
     ) -> None:
-        flows.append(output.detach() if detach else output)
+        flows.append(output.detach())
+
+    def capture_target(name: str):
+        def hook(
+            _module: torch.nn.Module, inputs: tuple[torch.Tensor, ...]
+        ) -> None:
+            target_inputs[name].append(inputs[0].detach())
+
+        return hook
 
     input_handle = core.action_in_proj.register_forward_pre_hook(capture_input)
     output_handle = core.action_out_proj.register_forward_hook(capture_flow)
+    target_handles = []
+    if capture_target_inputs:
+        modules = dict(policy.named_modules())
+        for target in contract.targets:
+            module = modules.get(target.name)
+            if module is None:
+                raise FunctionalResponseError(
+                    f"policy target module is unavailable: {target.name}"
+                )
+            target_handles.append(
+                module.register_forward_pre_hook(capture_target(target.name))
+            )
     try:
-        grad_context = torch.no_grad() if detach else nullcontext()
-        with grad_context, scoped_policy_randomness(
+        with torch.no_grad(), scoped_policy_randomness(
             policy_seed, next(policy.parameters()).device
         ):
             with scoped_policy_flow_noise_sampling(
@@ -131,13 +176,15 @@ def _capture_policy_response(
                 with scoped_policy_flow_time_sampling(
                     policy, INDEPENDENT_BETA_TIME_SAMPLING_SCHEME
                 ):
-                    with ActionLayerStateCapture(expert, detach=detach) as layers:
+                    with ActionLayerStateCapture(expert, detach=True) as layers:
                         with torch.autocast("cuda", dtype=torch.bfloat16):
                             functional_lora_call(policy, state, contract, batch)
         layer_states = layers.stacked()
     finally:
         input_handle.remove()
         output_handle.remove()
+        for handle in target_handles:
+            handle.remove()
     if (
         len(action_inputs) != 1
         or len(flows) != 1
@@ -153,7 +200,28 @@ def _capture_policy_response(
     compressed = torch.einsum("bohd,ph->bopd", owner.float(), basis)
     if compressed.shape[1:] != (38, horizon_basis, 128):
         raise FunctionalResponseError("policy-support owner response changed shape")
-    return CapturedPolicyResponse(flow=flows[0].float(), owner_basis=compressed)
+    compressed_inputs = None
+    if capture_target_inputs:
+        compressed_inputs = {}
+        for target in contract.targets:
+            values = target_inputs[target.name]
+            if (
+                len(values) != 1
+                or values[0].ndim != 3
+                or values[0].shape[1] != owner.shape[2]
+                or values[0].shape[2] != target.in_features
+            ):
+                raise FunctionalResponseError(
+                    f"policy target input topology changed at {target.name}"
+                )
+            compressed_inputs[target.name] = torch.einsum(
+                "bhd,ph->bpd", values[0].float(), basis
+            )
+    return CapturedPolicyResponse(
+        flow=flows[0].float(),
+        owner_basis=compressed,
+        target_inputs=compressed_inputs,
+    )
 
 
 @torch.no_grad()
@@ -166,6 +234,7 @@ def capture_policy_response(
     projector: TargetOwnerProjector,
     policy_seed: int,
     horizon_basis: int,
+    capture_target_inputs: bool = False,
 ) -> CapturedPolicyResponse:
     return _capture_policy_response(
         policy=policy,
@@ -175,65 +244,80 @@ def capture_policy_response(
         projector=projector,
         policy_seed=policy_seed,
         horizon_basis=horizon_basis,
-        detach=True,
+        capture_target_inputs=capture_target_inputs,
     )
 
 
-def differentiable_policy_response(
+def lora_activation_effects(
     *,
-    policy: torch.nn.Module,
     state: Mapping[str, torch.Tensor],
+    reference_inputs: Mapping[str, torch.Tensor],
     contract: LoRAContract,
-    batch: Mapping[str, torch.Tensor],
-    projector: TargetOwnerProjector,
-    policy_seed: int,
-    horizon_basis: int,
-) -> CapturedPolicyResponse:
-    """Expose flow and owner-resolved responses with gradients to one LoRA state."""
+) -> dict[str, torch.Tensor]:
+    """Apply every LoRA target to the same detached policy-native inputs."""
 
-    return _capture_policy_response(
-        policy=policy,
-        state=state,
-        contract=contract,
-        batch=batch,
-        projector=projector,
-        policy_seed=policy_seed,
-        horizon_basis=horizon_basis,
-        detach=False,
-    )
+    validate_lora_state(state, contract)
+    if set(reference_inputs) != {target.name for target in contract.targets}:
+        raise FunctionalResponseError("target-local reference inputs changed")
+    scale = float(contract.alpha) / float(contract.rank)
+    result = {}
+    for target in contract.targets:
+        value = reference_inputs[target.name]
+        if value.ndim != 3 or value.shape[-1] != target.in_features:
+            raise FunctionalResponseError(
+                f"target-local reference input changed at {target.name}"
+            )
+        a = state[target.name + LORA_A_SUFFIX].float()
+        b = state[target.name + LORA_B_SUFFIX].float()
+        result[target.name] = (
+            torch.einsum("bpi,ri,or->bpo", value.float(), a, b) * scale
+        )
+    return result
 
 
-def owner_resolved_response_distillation_loss(
+def target_activation_effect_distillation_loss(
     *,
-    candidate: torch.Tensor,
-    source: torch.Tensor,
-    experts: torch.Tensor,
+    candidate_state: Mapping[str, torch.Tensor],
+    targets: FrozenTargetActivationEffects,
+    contract: LoRAContract,
     expert_weights: torch.Tensor,
     outcome_weight: float,
-) -> OwnerResolvedResponseLoss:
-    """Match successful-policy effects in the frozen owner/layer response space."""
+) -> TargetActivationEffectLoss:
+    """Match gauge-invariant owner-local LoRA effects on frozen inputs."""
 
-    if (
-        candidate.ndim != 4
-        or source.shape != candidate.shape
-        or experts.ndim != 5
-        or experts.shape[1:] != candidate.shape
-        or expert_weights.shape != (experts.shape[0],)
-    ):
-        raise FunctionalResponseError("owner-resolved response topology changed")
-    weights = expert_weights.to(candidate).float().clamp_min(1e-4)
+    expert_count = next(iter(targets.expert_effects.values())).shape[0]
+    if expert_weights.shape != (expert_count,):
+        raise FunctionalResponseError("target-local expert weights changed")
+    first = next(iter(targets.reference_inputs.values()))
+    weights = expert_weights.to(first).float().clamp_min(1e-4)
     weights = weights / weights.sum()
-    source = source.to(candidate).float()
-    expert_delta = experts.to(candidate).float() - source[None]
-    target_delta = torch.einsum("m,mbopd->bopd", weights, expert_delta)
-    candidate_delta = candidate.float() - source
-    error = (candidate_delta - target_delta).square().mean(dim=(0, 2, 3))
-    signal = target_delta.square().mean(dim=(0, 2, 3))
-    disagreement = torch.einsum(
-        "m,mbopd->bopd",
-        weights,
-        (expert_delta - target_delta[None]).square(),
-    ).mean(dim=(0, 2, 3))
+    candidate = lora_activation_effects(
+        state=candidate_state,
+        reference_inputs=targets.reference_inputs,
+        contract=contract,
+    )
+    errors = []
+    signals = []
+    disagreements = []
+    for target in contract.targets:
+        experts = targets.expert_effects[target.name].to(
+            candidate[target.name]
+        ).float()
+        if experts.shape[0] != expert_count:
+            raise FunctionalResponseError("target-local expert count changed")
+        consensus = torch.einsum("m,mbpo->bpo", weights, experts)
+        errors.append((candidate[target.name] - consensus).square().mean())
+        signals.append(consensus.square().mean())
+        disagreements.append(
+            torch.einsum(
+                "m,mbpo->bpo",
+                weights,
+                (experts - consensus[None]).square(),
+            ).mean()
+        )
+    error = torch.stack(errors)
+    signal = torch.stack(signals)
+    disagreement = torch.stack(disagreements)
     global_signal = signal.mean().clamp_min(1e-8)
     confidence = signal / (signal + disagreement + 0.05 * global_signal)
     normalized_error = error / (signal + 0.05 * global_signal)
@@ -242,7 +326,7 @@ def owner_resolved_response_distillation_loss(
         / confidence.sum().clamp_min(1e-6)
         * float(outcome_weight)
     )
-    return OwnerResolvedResponseLoss(
+    return TargetActivationEffectLoss(
         loss=loss,
         normalized_disagreement=disagreement.mean() / global_signal,
         active_owner_fraction=(confidence > 0.1).float().mean(),

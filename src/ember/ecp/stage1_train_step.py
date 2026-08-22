@@ -9,12 +9,12 @@ import torch
 import torch.distributed as dist
 
 from ember.ecp.compiler import select_compiled_state
-from ember.ecp.policy_response import OwnerResolvedResponseLoss
+from ember.ecp.policy_response import TargetActivationEffectLoss
 from ember.ecp.stage1_data import pack_stage1_videos
 from ember.ecp.stage1_objective import ECPStage1Loss, ecp_stage1_loss
 from ember.ecp.stage1_support import (
     PolicySupportLoss,
-    policy_support_owner_distillation_loss,
+    policy_support_activation_distillation_loss,
 )
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "owner_response_bootstrap", {
+    return "owner_local_activation_bootstrap", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -58,20 +58,18 @@ def _policy_support_loss(
     task_visit: int,
     candidate: dict[str, torch.Tensor],
     task_visits_after_update: int,
-) -> tuple[PolicySupportLoss, OwnerResolvedResponseLoss, int, str]:
+) -> tuple[PolicySupportLoss, TargetActivationEffectLoss, int, str]:
     del task_visits_after_update
     panel = runtime.support_bank.task(task_ordinal).panel_for_visit(task_visit)
     cached = runtime.support_panels[(task_ordinal, panel.panel_id)]
-    support, owner = policy_support_owner_distillation_loss(
+    support, activation = policy_support_activation_distillation_loss(
         policy=runtime.policy,
         candidate_state=candidate,
         contract=runtime.contract,
         cached=cached,
-        projector=runtime.observer.model.encoder.observer.projector,
-        horizon_basis=int(runtime.config["policy_support"]["horizon_basis"]),
         preservation=str(runtime.config["objective"]["support_preservation"]),
     )
-    return support, owner, panel.panel_id, panel.kind
+    return support, activation, panel.panel_id, panel.kind
 
 
 def _local_record(
@@ -83,7 +81,7 @@ def _local_record(
     video_offsets: torch.Tensor,
     loss: ECPStage1Loss,
     total: torch.Tensor,
-    owner_response: OwnerResolvedResponseLoss,
+    activation_effect: TargetActivationEffectLoss,
     output: Any,
     panel_id: int,
     panel_kind: str,
@@ -105,12 +103,12 @@ def _local_record(
         "support_panel_kind": panel_kind,
         "total": float(total.detach()),
         "functional_total": float(loss.total.detach()),
-        "owner_response": float(owner_response.loss.detach()),
-        "owner_response_disagreement": float(
-            owner_response.normalized_disagreement.detach()
+        "activation_effect": float(activation_effect.loss.detach()),
+        "activation_effect_disagreement": float(
+            activation_effect.normalized_disagreement.detach()
         ),
-        "owner_response_active_fraction": float(
-            owner_response.active_owner_fraction.detach()
+        "activation_effect_active_fraction": float(
+            activation_effect.active_owner_fraction.detach()
         ),
         "member_effective_update": float(loss.member_effective_update.detach()),
         "consensus_effective_update": float(
@@ -188,7 +186,7 @@ def run_stage1_update(
             output.consensus_compilation.state, 0
         )
         task_visits = cursor + runtime.context.world_size
-        support_loss, owner_response, panel_id, panel_kind = _policy_support_loss(
+        support_loss, activation_effect, panel_id, panel_kind = _policy_support_loss(
             runtime,
             task_ordinal=task_ordinal,
             task_visit=task_visit,
@@ -209,8 +207,8 @@ def run_stage1_update(
             weights=objective_weights,
         )
         total = loss.total + float(
-            runtime.config["objective"]["owner_response_distillation_weight"]
-        ) * owner_response.loss
+            runtime.config["objective"]["activation_effect_distillation_weight"]
+        ) * activation_effect.loss
     if not bool(torch.isfinite(total)):
         raise RuntimeError(f"non-finite ECP Stage 1 loss at task visit {task_visits}")
     total.backward()
@@ -242,7 +240,7 @@ def run_stage1_update(
         video_offsets=packed.video_offsets,
         loss=loss,
         total=total,
-        owner_response=owner_response,
+        activation_effect=activation_effect,
         output=output,
         panel_id=panel_id,
         panel_kind=panel_kind,
@@ -251,9 +249,9 @@ def run_stage1_update(
     metric_names = (
         "total",
         "functional_total",
-        "owner_response",
-        "owner_response_disagreement",
-        "owner_response_active_fraction",
+        "activation_effect",
+        "activation_effect_disagreement",
+        "activation_effect_active_fraction",
         "member_effective_update",
         "consensus_effective_update",
         "member_canonical_factor",

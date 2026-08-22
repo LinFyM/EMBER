@@ -35,6 +35,7 @@ from ember.ecp.stage1_support import (
     policy_support_loss_from_response,
 )
 from ember.expert_manifold.projection import inspect_projected_task_expert_bank
+from ember.functional_adaptation.phase_alignment import arc_length_phase_indices
 from ember.lora import (
     LoRATarget,
     SmolVLALoRAContract,
@@ -47,6 +48,14 @@ from ember.pi05_source_checkpoint import write_json_atomic
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_arc_length_phase_indices_keep_real_states_distinct_across_large_jumps() -> None:
+    sequence = torch.tensor(
+        [[0.0], [0.01], [0.02], [0.03], [100.0], [100.01], [100.02], [100.03]]
+    )
+    indices = arc_length_phase_indices(sequence, count=8)
+    assert indices.tolist() == list(range(8))
 
 
 def _encoded(*, presence: torch.Tensor | None = None) -> ECPVideoEncoderOutput:

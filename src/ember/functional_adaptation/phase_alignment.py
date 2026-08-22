@@ -139,7 +139,7 @@ def arc_length_phase_embedding(
 def arc_length_phase_indices(
     sequence: torch.Tensor, *, count: int = 8
 ) -> torch.Tensor:
-    """Select ordered real states nearest to fixed functional-phase quantiles."""
+    """Select distinct ordered real states near fixed functional-phase quantiles."""
 
     if sequence.ndim != 2 or sequence.shape[0] < count or count < 2:
         raise ValueError("functional phase index panel is invalid")
@@ -151,14 +151,12 @@ def arc_length_phase_indices(
         raise ValueError("functional trajectory has zero arc length")
     progress = cumulative / cumulative[-1]
     targets = torch.linspace(0, 1, count, dtype=sequence.dtype)
-    right = torch.searchsorted(progress, targets).clamp(max=sequence.shape[0] - 1)
-    left = (right - 1).clamp(min=0)
-    choose_left = (targets - progress[left]).abs() <= (
-        progress[right] - targets
-    ).abs()
-    indices = torch.where(choose_left, left, right)
+    indices = torch.empty(count, dtype=torch.long)
     indices[0] = 0
     indices[-1] = sequence.shape[0] - 1
-    if not bool(torch.all(indices[1:] > indices[:-1])):
-        raise ValueError("functional phase quantiles do not select distinct states")
-    return indices.to(dtype=torch.long)
+    for phase in range(1, count - 1):
+        lower = int(indices[phase - 1]) + 1
+        upper = sequence.shape[0] - (count - phase)
+        allowed = progress[lower : upper + 1]
+        indices[phase] = lower + int((allowed - targets[phase]).abs().argmin())
+    return indices

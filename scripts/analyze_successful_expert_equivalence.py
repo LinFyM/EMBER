@@ -25,6 +25,7 @@ from ember.pi05_eval_contract import (
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import load_policy
+from ember.reward.occupancy import load_successful_occupancy_trajectory
 from ember.reward.rollout import (
     RewardTrajectory,
     query_successful_expert_occupancy_actions,
@@ -52,55 +53,18 @@ def _repo_reference(path: Path) -> str:
     return resolved.name
 
 
-def _valid_action_steps(steps: int, replans: int, replan_steps: int) -> tuple[int, ...]:
-    values = tuple(
-        min(replan_steps, max(steps - index * replan_steps, 0))
-        for index in range(replans)
-    )
-    if not values or min(values) <= 0 or sum(values) != steps:
-        raise ValueError("captured trajectory cannot reconstruct executed prefixes")
-    return values
-
-
 def _load_trajectory(
     selection: Mapping[str, Any],
     row: Mapping[str, Any],
     *,
     replan_steps: int,
 ) -> RewardTrajectory:
-    record = row.get("occupancy_trajectory", {})
-    path = Path(str(record.get("path", "")))
-    if not path.is_file() or path.stat().st_size != int(record.get("bytes", -1)):
-        raise ValueError("successful expert trajectory sidecar changed")
-    payload = torch.load(path, map_location="cpu", weights_only=False)
-    observations = tuple(payload.get("observations", ()))
-    actions = tuple(payload.get("action_chunks", ()))
-    seeds = tuple(int(value) for value in payload.get("policy_noise_seeds", ()))
-    steps = int(payload.get("steps", -1))
-    if (
-        payload.get("schema_version") != "ember_writer_occupancy_trajectory_v1"
-        or not bool(payload.get("success"))
-        or len(observations) != len(actions)
-        or len(observations) != len(seeds)
-        or len(observations) != int(record.get("replans", -1))
-    ):
-        raise ValueError("successful expert trajectory layout changed")
-    return RewardTrajectory(
+    return load_successful_occupancy_trajectory(
+        row=row,
         suite=str(selection["suite"]),
         task_id=int(selection["task_id"]),
         global_task_id=int(selection["global_task_id"]),
-        adaptation_seed=0,
-        rollout_cursor=int(selection["init_state_id"]),
-        env_seed=int(row["env_seed"]),
-        policy_seed_root=int(row["policy_seed_root"]),
-        success=True,
-        steps=steps,
-        reward_sum=1.0,
-        dummy_settling_steps=10,
-        policy_noise_seeds=seeds,
-        observations=observations,
-        action_chunks=actions,
-        valid_action_steps=_valid_action_steps(steps, len(observations), replan_steps),
+        replan_steps=replan_steps,
     )
 
 

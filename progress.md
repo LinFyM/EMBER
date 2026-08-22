@@ -5,18 +5,20 @@
 
 ## Current authority and executable state
 
-- MDCO的首个工程节点已经落实但尚未启动GPU：canonical Stage 1 data/support/trainer/materializer已从写死的train24/47-member
+- MDCO的首个工程节点已经落实，并已完成一次non-held occupancy GPU采集：canonical Stage 1 data/support/trainer/materializer已从写死的train24/47-member
   owner一般化为namespaced 95-task/118-member authority；fit为71个audited non-held加target fit19，held为target held5；多条
   trajectory在同一member内聚合而不增加mapping权重，schedule支持live world-size 1--6并保持90-task等权，`q_pi + compiler`
-  联合训练，held只作冻结物化。71-task、142条fixed successful occupancy selection也已登记；实际capture、combined action-response
-  authority、95-task support bank、structured success/progress calibration及formal训练均尚未运行。v24专用dual support-audit
+  联合训练，held只作冻结物化。71-task、142条fixed occupancy复现中141条成功；task32/state22一条在相同冻结expert下未复现
+  成功，保留为capture失败证据但不进入successful-policy authority，也不为一条记录整批重跑。71个mapping仍全部覆盖：70个各2条、
+  1个1条成功trajectory。combined action-response builder已接通真实target47资产与该source capture，等待clean pushed authority上
+  并行生成source responses；95-task support bank、structured success/progress calibration及formal训练尚未运行。v24专用dual support-audit
   source/script已从active tree退役，历史由Git与formal artifacts保存。
 - owner设定的v24停点已经执行：formal、materialization、full/prior dual audit和remote-safe evidence均已完成；v24关闭，
   不续训、不扫小超参、不进入`q_V`，也不建立v25。Stage 1 v1--v24系统复盘已写入
   `docs/ecp_stage1_iteration_retrospective_20260823.md`。复盘后的唯一active科学合同已登记为 **ECP Stage 1
   Mapping-Diverse Compiler Oracle（MDCO）**：它不是新架构版本，只检验把shared Stage 1的独立policy mappings从19扩大到
   71 non-held + 19 target-fit = 90后，冻结`q_pi + compiler`能否直接通过source-unseen held5 closed loop。合同见
-  `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`；当前仍没有GPU任务。
+  `docs/ecp_stage1_mapping_diverse_compiler_oracle_contract_20260823.md`；occupancy采集GPU进程已全部退出。
 - v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
   均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
   `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为

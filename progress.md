@@ -196,6 +196,14 @@
   `rank_replacement_fraction=0`精确处于shared，第二步为`3.9241e-6`，证明selector已打开且没有幅度跳变。successful/learner
   functional response分别`.40044/.25523`，第二步shared-support仅`.00121`。该profile只授权fresh balanced 228-visits，
   不构成support、几何或held闭环pass。
+- v9从clean pushed `dc5dff6`在gpu01 physical `1,2,3,4,5,6`完成fresh balanced 228 visits/38 updates；19个fit task
+  均恰好12 visits，successful/learner各114 records，六卡峰值`16,657,711,616` bytes，最大裁剪前梯度`14.5268`且finite。
+  前5到末5 updates的replacement fraction从`4.85e-5`升到`.08093`，shared-support仅从`.00222`升到`.02773`，明显低于
+  v8末段`.21882`；但functional response从`.28632`恶化到`.40139`，不能由训练loss promote。
+- 24-task K2物化已完成。bounded selector把candidate/direct norm ratio从v8的`8.75029`压到`1.94717`，但candidate跨task
+  cosine反而为`.99779`，own-direct `.04015`仍低于nearest-other `.06247`，自身检索`1/24`；mean replacement fraction
+  `.08783`且task范围仅`.08031--.09164`。几何门失败，held闭环仍为0。当前只运行一次复用缓存的308-panel冻结support audit，
+  判断v9是否至少保住shared surface；未过门则关闭v9，不续训。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

@@ -78,17 +78,22 @@ teacher action不进入这些forward。对每个member收集：
 
 ```text
 owner response effect : [frame,38,4,128]
-flow velocity effect  : [frame,2,50,32]
+flow trajectory effect: [frame,2,10,50,32]
+action trajectory effect: [frame,2,10,50,7]
 ```
 
-`4`是50 horizon positions的固定DCT basis；`2`是canonical/antithetic `u=1` noise probes。经Stage 0的有序`alpha`聚合后，
+`4`是首个official denoising step上50 horizon positions的固定DCT basis；`2`是canonical/antithetic fixed initial noise，`10`是
+PI0.5原生`dt=-0.1` Euler integration的完整时间网格。每一步保留`50x32` vector field，积分后的每个point保留policy实际输出的
+`50x7` action；没有teacher action进入forward。经Stage 0的有序`alpha`聚合后，
 privileged teacher distribution为：
 
 ```text
 mu_owner       : [8,38,4,128]
 var_owner      : [8,38,4,128]
-mu_flow        : [8,2,50,32]
-var_flow       : [8,2,50,32]
+mu_flow        : [8,2,10,50,32]
+var_flow       : [8,2,10,50,32]
+mu_action      : [8,2,10,50,7]
+var_action     : [8,2,10,50,7]
 effect_presence: [8]
 ```
 
@@ -100,7 +105,7 @@ predictor：
 
 ```text
 R_V(P_lang,P_scene,P_process,H_src,rho,sigma_event)
-    -> predicted mu/var_owner, mu/var_flow, effect_presence
+    -> predicted mu/var_owner, mu/var_flow, mu/var_action, effect_presence
 ```
 
 这个网络预测的是同一视频中可识别的policy response constraints，不直接输出A/B，也不能只凭language或owner address写出
@@ -109,11 +114,12 @@ process effect。language+scene arm将process置零，作为learned prior baseli
 ### 3.3 固定proximal inner solver
 
 令`Theta_0`为一套完整rank16 stable shared LoRA。对输入视频的event-support frames，候选`Theta_n`经过冻结PI0.5产生
-`C_owner(Theta_n)`与`C_flow(Theta_n)`。固定目标函数为：
+`C_owner(Theta_n)`、`C_flow(Theta_n)`与`C_action(Theta_n)`。固定目标函数为：
 
 ```text
 L_effect = uncertainty-weighted owner-effect error
-         + uncertainty-weighted canonical flow-velocity error
+         + uncertainty-weighted complete flow-trajectory error
+         + uncertainty-weighted integrated action-trajectory error
          + baseline-relative shared support barrier
          + bounded effective-update trust region
 ```
@@ -182,8 +188,9 @@ raw/effective LoRA cosine、retrieval、norm与inner loss只解释失败，不�
   新方法。若一次修正后仍不可达，PECS实现失败。
 - 若effect loss明显下降但closed-loop仍低于shared或direct retention门：说明输入视频帧上的canonical/antithetic
   policy effects不足以定义跨初始化策略。只允许一次已登记的更强functional target：加入expert在同一视频帧上从fixed noise
-  完整去噪得到的action/flow trajectory，再复跑同一oracle。它把“需要latent action信息”作为明确的新信息变量，而不是暗中
-  修改head/loss。
+  完整去噪得到的action/flow trajectory，再复跑同一oracle。当前active实现已经精确采用official 10-step time grid、每步
+  `50x32` velocity和每个积分点`50x7` action；owner只在相同首步保留原DCT4约束。它把长程vector field与endpoint信息作为
+  明确的新信息变量，而不是暗中修改solver、head或数据。
 - 若更强target仍失败：停止当前zero-interaction full-LoRA compiler/solver family，不训练`R_V`；下一研究转向专家列出的
   video-to-progress/reward或video-initialized task-local RL，而不是再造compiler。
 
@@ -263,3 +270,8 @@ candidate相对source净`+37`、相对shared净`+15`且exact McNemar `p=.02753`�
 expert从同一fixed noise按official 10-step integration产生的完整action/flow denoising trajectory作为functional target。只允许
 一次资源profile与同一held5 strict250复验；不得调solver、换seed/rank、恢复learned compiler或提前训练`R_V`。若该复验仍未过
 原Gate 2，停止当前zero-interaction PECS compiler/solver family。
+
+该增强已在同一canonical owner中接通，没有创建新架构版本或并行入口。真实PI0.5单event检查得到owner/flow/action shape分别为
+`[2,38,4,128] / [2,2,10,50,32] / [2,2,10,50,7]`；最终action与独立执行的原生10步循环最大绝对误差为0，完整unrolled
+trajectory对LoRA leaves产生`1,135,487`个非零且全部finite的gradient，峰值18.72 GB。该smoke只解除实现门，不替代fit profile
+或held5 Gate 2。

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import torch
+from torch.utils.checkpoint import checkpoint
 
 from ember.batched_lora import BatchedLoRAInference
 from ember.ecp.low_rank import canonicalize_low_rank_factors
@@ -39,18 +40,23 @@ class PolicyEffectProbe:
 class PolicyEffectResponse:
     owner: torch.Tensor
     flow: torch.Tensor
+    action: torch.Tensor
 
 
 @dataclass(frozen=True)
 class ExactPolicyEffectTargets:
     source_owner: torch.Tensor
     source_flow: torch.Tensor
+    source_action: torch.Tensor
     shared_owner: torch.Tensor
     shared_flow: torch.Tensor
+    shared_action: torch.Tensor
     mean_owner: torch.Tensor
     variance_owner: torch.Tensor
     mean_flow: torch.Tensor
     variance_flow: torch.Tensor
+    mean_action: torch.Tensor
+    variance_action: torch.Tensor
     presence: torch.Tensor
 
 
@@ -59,6 +65,7 @@ class PolicyEffectLoss:
     total: torch.Tensor
     owner: torch.Tensor
     flow: torch.Tensor
+    action: torch.Tensor
     shared_barrier: torch.Tensor
 
 
@@ -68,6 +75,7 @@ class SolverStep:
     effect: float
     owner: float
     flow: float
+    action: float
     shared_barrier: float
     trust_distance: float
     trust_penalty: float
@@ -155,6 +163,39 @@ def _dct_basis(device: torch.device, count: int = 4) -> torch.Tensor:
     return torch.stack(rows)
 
 
+def _prepare_prefix_cache(
+    policy: torch.nn.Module,
+    prefix_embeddings: torch.Tensor,
+    prefix_padding: torch.Tensor,
+) -> Any:
+    from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
+
+    core = policy.model
+    attention = torch.zeros_like(prefix_padding)
+    attention_2d = make_att_2d_masks(prefix_padding, attention)
+    attention_4d = core._prepare_attention_masks_4d(attention_2d)
+    positions = torch.cumsum(prefix_padding, dim=1) - 1
+    bridge = core.paligemma_with_expert
+    bridge.paligemma.model.language_model.config._attn_implementation = "eager"
+    with torch.no_grad():
+        _, cache = bridge.forward(
+            attention_mask=attention_4d,
+            position_ids=positions,
+            past_key_values=None,
+            inputs_embeds=[prefix_embeddings, None],
+            use_cache=True,
+        )
+    return cache
+
+
+def _autocast(device: torch.device):
+    return (
+        torch.autocast("cuda", dtype=torch.bfloat16)
+        if device.type == "cuda"
+        else nullcontext()
+    )
+
+
 def capture_policy_effect_response(
     *,
     policy: torch.nn.Module,
@@ -164,14 +205,16 @@ def capture_policy_effect_response(
     prefix_embeddings: torch.Tensor,
     prefix_padding: torch.Tensor,
     suffix_noise: torch.Tensor,
+    denoising_steps: int,
 ) -> PolicyEffectResponse:
-    """Run canonical and antithetic u=1 probes without action or state inputs."""
+    """Capture the complete official action/flow path from fixed noise."""
 
     frames = int(prefix_embeddings.shape[0])
     if (
         frames <= 0
         or prefix_padding.shape != prefix_embeddings.shape[:2]
         or suffix_noise.shape != (50, 32)
+        or denoising_steps <= 0
     ):
         raise ValueError("PECS policy-effect probe changed shape")
     prefix = prefix_embeddings.repeat_interleave(2, dim=0)
@@ -179,28 +222,99 @@ def capture_policy_effect_response(
     noise = torch.stack((suffix_noise, -suffix_noise))[None].expand(
         frames, -1, -1, -1
     ).reshape(2 * frames, 50, 32)
+    batch_size = 2 * frames
     needs_grad = any(value.requires_grad for value in state.values())
-    grad_context = nullcontext() if needs_grad else torch.no_grad()
-    autocast = (
-        torch.autocast("cuda", dtype=torch.bfloat16)
-        if prefix.device.type == "cuda"
-        else nullcontext()
-    )
-    with grad_context, lora.activate([state] * (2 * frames)), autocast:
-        observed = observer(
-            policy.model,
-            prefix,
-            padding,
-            noise,
-            torch.ones(2 * frames, device=prefix.device),
-            track_action_adapter_grad=needs_grad,
+    state_names = tuple(state)
+    state_values = tuple(state[name] for name in state_names)
+    with _autocast(prefix.device):
+        prefix_cache = _prepare_prefix_cache(policy, prefix, padding)
+
+    def state_from(values: tuple[torch.Tensor, ...]) -> dict[str, torch.Tensor]:
+        return dict(zip(state_names, values, strict=True))
+
+    def first_step(
+        x_t: torch.Tensor, *values: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        active = state_from(values)
+        with _autocast(prefix.device):
+            observed = observer.observe_action_step(
+                policy.model,
+                padding,
+                prefix_cache,
+                x_t,
+                torch.ones(batch_size, device=prefix.device),
+                track_action_adapter_grad=needs_grad,
+                action_adapter_context=lora.activate([active] * batch_size),
+            )
+        return observed.owner_lattice, observed.flow_velocity.float()
+
+    def later_step(
+        x_t: torch.Tensor, timestep: torch.Tensor, *values: torch.Tensor
+    ) -> torch.Tensor:
+        active = state_from(values)
+        grad_context = torch.enable_grad() if needs_grad else torch.no_grad()
+        with (
+            grad_context,
+            lora.activate([active] * batch_size),
+            _autocast(prefix.device),
+        ):
+            return policy.model.denoise_step(
+                prefix_pad_masks=padding,
+                past_key_values=prefix_cache,
+                x_t=x_t,
+                timestep=timestep,
+            ).float()
+
+    x_t = noise
+    velocities = []
+    actions = []
+    owner_lattice = None
+    dt = -1.0 / float(denoising_steps)
+    for step in range(denoising_steps):
+        timestep = torch.full(
+            (batch_size,),
+            1.0 + step * dt,
+            dtype=torch.float32,
+            device=prefix.device,
         )
-    owner = observed.owner_lattice.reshape(
+        if step == 0:
+            if needs_grad:
+                owner_lattice, velocity = checkpoint(
+                    first_step,
+                    x_t,
+                    *state_values,
+                    use_reentrant=False,
+                    preserve_rng_state=False,
+                )
+            else:
+                owner_lattice, velocity = first_step(x_t, *state_values)
+        elif needs_grad:
+            velocity = checkpoint(
+                later_step,
+                x_t,
+                timestep,
+                *state_values,
+                use_reentrant=False,
+                preserve_rng_state=False,
+            )
+        else:
+            velocity = later_step(x_t, timestep, *state_values)
+        x_t = x_t + dt * velocity
+        velocities.append(velocity)
+        actions.append(x_t[..., :7])
+    if owner_lattice is None:
+        raise RuntimeError("PECS denoising trajectory did not run")
+    owner = owner_lattice.reshape(
         frames, 2, 38, 50, 128
     )[:, 0].float()
     owner = torch.einsum("bohd,ph->bopd", owner, _dct_basis(owner.device))
-    flow = observed.flow_velocity.reshape(frames, 2, 50, 32).float()
-    return PolicyEffectResponse(owner=owner, flow=flow)
+    flow = torch.stack(velocities, dim=1).reshape(
+        frames, 2, denoising_steps, 50, 32
+    )
+    action = torch.stack(actions, dim=1).reshape(
+        frames, 2, denoising_steps, 50, 7
+    )
+    return PolicyEffectResponse(owner=owner, flow=flow, action=action)
 
 
 def capture_full_probe_response(
@@ -211,9 +325,11 @@ def capture_full_probe_response(
     state: Mapping[str, torch.Tensor],
     probe: PolicyEffectProbe,
     suffix_noise: torch.Tensor,
+    denoising_steps: int,
 ) -> PolicyEffectResponse:
     owner = []
     flow = []
+    action = []
     for event in range(probe.event_count):
         response = capture_policy_effect_response(
             policy=policy,
@@ -223,10 +339,16 @@ def capture_full_probe_response(
             prefix_embeddings=probe.prefix_embeddings[event],
             prefix_padding=probe.prefix_padding[event],
             suffix_noise=suffix_noise,
+            denoising_steps=denoising_steps,
         )
         owner.append(response.owner)
         flow.append(response.flow)
-    return PolicyEffectResponse(owner=torch.stack(owner), flow=torch.stack(flow))
+        action.append(response.action)
+    return PolicyEffectResponse(
+        owner=torch.stack(owner),
+        flow=torch.stack(flow),
+        action=torch.stack(action),
+    )
 
 
 def build_exact_policy_effect_targets(
@@ -240,6 +362,7 @@ def build_exact_policy_effect_targets(
     expert_weights: torch.Tensor,
     probe: PolicyEffectProbe,
     suffix_noise: torch.Tensor,
+    denoising_steps: int,
 ) -> ExactPolicyEffectTargets:
     if not expert_states or expert_weights.shape != (len(expert_states),):
         raise ValueError("PECS exact teacher set changed")
@@ -250,6 +373,7 @@ def build_exact_policy_effect_targets(
         state=identity_state,
         probe=probe,
         suffix_noise=suffix_noise,
+        denoising_steps=denoising_steps,
     )
     shared = capture_full_probe_response(
         policy=policy,
@@ -258,6 +382,7 @@ def build_exact_policy_effect_targets(
         state=shared_state,
         probe=probe,
         suffix_noise=suffix_noise,
+        denoising_steps=denoising_steps,
     )
     experts = [
         capture_full_probe_response(
@@ -267,15 +392,20 @@ def build_exact_policy_effect_targets(
             state=state,
             probe=probe,
             suffix_noise=suffix_noise,
+            denoising_steps=denoising_steps,
         )
         for state in expert_states
     ]
     source_owner = source.owner.mean(1)
     source_flow = source.flow.mean(1)
+    source_action = source.action.mean(1)
     member_owner = torch.stack(
         [value.owner - source.owner for value in experts]
     )
     member_flow = torch.stack([value.flow - source.flow for value in experts])
+    member_action = torch.stack(
+        [value.action - source.action for value in experts]
+    )
     weights = expert_weights.to(member_owner).float().clamp_min(1e-4)
     weights = weights / weights.sum()
 
@@ -289,15 +419,20 @@ def build_exact_policy_effect_targets(
 
     mean_owner, variance_owner = moments(member_owner)
     mean_flow, variance_flow = moments(member_flow)
+    mean_action, variance_action = moments(member_action)
     return ExactPolicyEffectTargets(
         source_owner=source_owner.detach(),
         source_flow=source_flow.detach(),
+        source_action=source_action.detach(),
         shared_owner=(shared.owner.mean(1) - source_owner).detach(),
         shared_flow=(shared.flow.mean(1) - source_flow).detach(),
+        shared_action=(shared.action.mean(1) - source_action).detach(),
         mean_owner=mean_owner.detach(),
         variance_owner=variance_owner.detach(),
         mean_flow=mean_flow.detach(),
         variance_flow=variance_flow.detach(),
+        mean_action=mean_action.detach(),
+        variance_action=variance_action.detach(),
         presence=probe.presence.detach(),
     )
 
@@ -331,10 +466,12 @@ def policy_effect_loss(
     event: int,
     owner_weight: float,
     flow_weight: float,
+    action_weight: float,
     shared_barrier_weight: float,
 ) -> PolicyEffectLoss:
     owner_effect = response.owner.mean(0) - targets.source_owner[event]
     flow_effect = response.flow.mean(0) - targets.source_flow[event]
+    action_effect = response.action.mean(0) - targets.source_action[event]
     owner, owner_barrier = _uncertainty_weighted_error(
         owner_effect,
         targets.mean_owner[event],
@@ -347,13 +484,26 @@ def policy_effect_loss(
         targets.variance_flow[event],
         targets.shared_flow[event],
     )
-    barrier = owner_barrier + flow_barrier
+    action, action_barrier = _uncertainty_weighted_error(
+        action_effect,
+        targets.mean_action[event],
+        targets.variance_action[event],
+        targets.shared_action[event],
+    )
+    barrier = owner_barrier + flow_barrier + action_barrier
     total = (
         float(owner_weight) * owner
         + float(flow_weight) * flow
+        + float(action_weight) * action
         + float(shared_barrier_weight) * barrier
     )
-    return PolicyEffectLoss(total=total, owner=owner, flow=flow, shared_barrier=barrier)
+    return PolicyEffectLoss(
+        total=total,
+        owner=owner,
+        flow=flow,
+        action=action,
+        shared_barrier=barrier,
+    )
 
 
 def relative_effective_update_distance(
@@ -409,6 +559,7 @@ def solve_policy_effects(
     step_decay_power: float,
     owner_weight: float,
     flow_weight: float,
+    action_weight: float,
     shared_barrier_weight: float,
     trust_region: float,
     trust_weight: float,
@@ -438,7 +589,10 @@ def solve_policy_effects(
         )
         leaves = {name: value.detach().requires_grad_(True) for name, value in state.items()}
         gradients = {name: torch.zeros_like(value) for name, value in leaves.items()}
-        totals = {name: 0.0 for name in ("effect", "owner", "flow", "barrier")}
+        totals = {
+            name: 0.0
+            for name in ("effect", "owner", "flow", "action", "barrier")
+        }
         for event in range(targets.presence.numel()):
             loss = policy_effect_loss(
                 response=response(leaves, event),
@@ -446,6 +600,7 @@ def solve_policy_effects(
                 event=event,
                 owner_weight=owner_weight,
                 flow_weight=flow_weight,
+                action_weight=action_weight,
                 shared_barrier_weight=shared_barrier_weight,
             )
             weighted = event_weights[event] * loss.total
@@ -457,6 +612,9 @@ def solve_policy_effects(
             totals["effect"] += float(weighted.detach())
             totals["owner"] += float(event_weights[event] * loss.owner.detach())
             totals["flow"] += float(event_weights[event] * loss.flow.detach())
+            totals["action"] += float(
+                event_weights[event] * loss.action.detach()
+            )
             totals["barrier"] += float(
                 event_weights[event] * loss.shared_barrier.detach()
             )
@@ -496,6 +654,7 @@ def solve_policy_effects(
                 effect=totals["effect"],
                 owner=totals["owner"],
                 flow=totals["flow"],
+                action=totals["action"],
                 shared_barrier=totals["barrier"],
                 trust_distance=float(trust.detach()),
                 trust_penalty=float(trust_penalty.detach()),
@@ -514,11 +673,15 @@ def evaluate_policy_effect_state(
     response: Callable[[Mapping[str, torch.Tensor], int], PolicyEffectResponse],
     owner_weight: float,
     flow_weight: float,
+    action_weight: float,
     shared_barrier_weight: float,
 ) -> dict[str, float]:
     weights = targets.presence.float().clamp_min(0)
     weights = weights / weights.sum().clamp_min(1e-6)
-    result = {name: 0.0 for name in ("effect", "owner", "flow", "barrier")}
+    result = {
+        name: 0.0
+        for name in ("effect", "owner", "flow", "action", "barrier")
+    }
     for event in range(targets.presence.numel()):
         loss = policy_effect_loss(
             response=response(state, event),
@@ -526,10 +689,12 @@ def evaluate_policy_effect_state(
             event=event,
             owner_weight=owner_weight,
             flow_weight=flow_weight,
+            action_weight=action_weight,
             shared_barrier_weight=shared_barrier_weight,
         )
         result["effect"] += float(weights[event] * loss.total)
         result["owner"] += float(weights[event] * loss.owner)
         result["flow"] += float(weights[event] * loss.flow)
+        result["action"] += float(weights[event] * loss.action)
         result["barrier"] += float(weights[event] * loss.shared_barrier)
     return result

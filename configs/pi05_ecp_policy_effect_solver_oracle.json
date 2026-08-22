@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_ecp_policy_effect_solver_oracle_v1",
   "status": "active_exact_effect_realizability_oracle",
-  "purpose": "Test whether exact successful-policy effects on action-hidden video frames can be compiled into one held-task LoRA by a fixed task-agnostic solver.",
+  "purpose": "Test whether exact successful-policy effects over the complete official denoising action/flow trajectory on action-hidden video frames can be compiled into one held-task LoRA by a fixed task-agnostic solver.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",
     "source_base_config": "configs/pi05_source_base_v1.json",
@@ -25,6 +25,7 @@
     "pair_seed": 20260825,
     "event_slots": 8,
     "horizon_basis": 4,
+    "denoising_steps": 10,
     "support_frames_per_event": "one maximum-posterior action-hidden frame from each visible video"
   },
   "solver": {
@@ -34,6 +35,7 @@
     "step_decay_power": 0.5,
     "owner_weight": 1.0,
     "flow_weight": 1.0,
+    "action_weight": 1.0,
     "shared_barrier_weight": 0.25,
     "trust_region": 1.5,
     "trust_weight": 0.05,

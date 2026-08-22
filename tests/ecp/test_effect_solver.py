@@ -42,15 +42,20 @@ def test_fixed_solver_reduces_exact_policy_effect_error() -> None:
     events = 2
     owner = torch.zeros(events, 1, 1, 1)
     flow = torch.zeros(events, 1, 1, 1)
+    action = torch.zeros(events, 1, 1, 1)
     targets = ExactPolicyEffectTargets(
         source_owner=owner,
         source_flow=flow,
+        source_action=action,
         shared_owner=owner,
         shared_flow=flow,
+        shared_action=action,
         mean_owner=torch.full_like(owner, 0.4),
         variance_owner=owner,
         mean_flow=torch.full_like(flow, 0.4),
         variance_flow=flow,
+        mean_action=torch.full_like(action, 0.4),
+        variance_action=action,
         presence=torch.ones(events),
     )
 
@@ -60,7 +65,7 @@ def test_fixed_solver_reduces_exact_policy_effect_error() -> None:
             @ state["tiny.lora_A.default.weight"]
         ).mean()
         value = value.reshape(1, 1, 1, 1)
-        return PolicyEffectResponse(owner=value, flow=value)
+        return PolicyEffectResponse(owner=value, flow=value, action=value)
 
     candidate, history = solve_policy_effects(
         initial_state=initial,
@@ -72,6 +77,7 @@ def test_fixed_solver_reduces_exact_policy_effect_error() -> None:
         step_decay_power=0.5,
         owner_weight=1.0,
         flow_weight=1.0,
+        action_weight=1.0,
         shared_barrier_weight=0.0,
         trust_region=10.0,
         trust_weight=0.0,
@@ -82,6 +88,7 @@ def test_fixed_solver_reduces_exact_policy_effect_error() -> None:
         response=response,
         owner_weight=1.0,
         flow_weight=1.0,
+        action_weight=1.0,
         shared_barrier_weight=0.0,
     )
     assert final["effect"] < history[0].effect

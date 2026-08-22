@@ -1029,3 +1029,12 @@ functional fingerprints + fixed decoder把前两项拆成独立gate。
 - validation8 strict400、8-row occupancy capture及四task action/JVP分析的worker均已exit0，GPU显存已释放；对应三个
   detached formal worktree均在证据落盘后删除，当前`git worktree list`只保留canonical `main`。372 MiB成功trajectory是
   唯一phase follow-up输入而保留，不重复rollout；临时selection与旧冻结worktree未残留。
+
+## 2026-08-23 PECS完整去噪trajectory实现门
+
+- 唯一预登记增强已直接接入canonical `effect_solver.py`，没有创建新架构版本：相同event-selected K2 frames与
+  canonical/antithetic fixed initial noise沿PI0.5官方`dt=-0.1` Euler网格运行10步；首步继续捕获38-owner DCT4，全部10步保留
+  `50x32` flow velocity及积分后的`50x7` action。solver、rank16、12步schedule、stable-shared起点和信息墙均未改变。
+- gpu02 physical0上的真实单event smoke得到owner/flow/action shape=`[2,38,4,128] / [2,2,10,50,32] /
+  [2,2,10,50,7]`，最终action与独立原生10步循环最大绝对误差为0；完整trajectory反向产生`1,135,487`个非零finite LoRA
+  gradients，峰值`18,721,906,176` bytes。该结果只解除实现门，fit ordinal71 profile与held5 Gate 2尚未运行。

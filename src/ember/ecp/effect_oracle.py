@@ -88,6 +88,7 @@ class PreparedEffectTask:
     suffix_noise: torch.Tensor
     expert_states: tuple[dict[str, torch.Tensor], ...]
     expert_weights: torch.Tensor
+    denoising_steps: int
 
     def response(self, state: Mapping[str, torch.Tensor], event: int):
         return capture_policy_effect_response(
@@ -98,6 +99,7 @@ class PreparedEffectTask:
             prefix_embeddings=self.probe.prefix_embeddings[event],
             prefix_padding=self.probe.prefix_padding[event],
             suffix_noise=self.suffix_noise,
+            denoising_steps=self.denoising_steps,
         )
 
     def close(self) -> None:
@@ -121,6 +123,7 @@ def load_effect_oracle_config(path: Path) -> dict[str, Any]:
             int(data.get("visible_videos", -1)) == 2,
             int(data.get("event_slots", -1)) == 8,
             int(data.get("horizon_basis", -1)) == 4,
+            int(data.get("denoising_steps", -1)) == 10,
             int(solver.get("output_rank", -1)) == 16,
             int(solver.get("steps", -1)) > 0,
             float(solver.get("step_rms", -1)) > 0,
@@ -295,6 +298,7 @@ def _prepare_effect_task(
         expert_weights=expert_weights,
         probe=probe,
         suffix_noise=suffix_noise,
+        denoising_steps=int(config["data"]["denoising_steps"]),
     )
     return PreparedEffectTask(
         authorities=authorities,
@@ -308,6 +312,7 @@ def _prepare_effect_task(
         suffix_noise=suffix_noise,
         expert_states=expert_states,
         expert_weights=expert_weights,
+        denoising_steps=int(config["data"]["denoising_steps"]),
     )
 
 
@@ -322,6 +327,7 @@ def _run_fixed_solver(prepared: PreparedEffectTask, solver: Mapping[str, Any]):
         step_decay_power=float(solver["step_decay_power"]),
         owner_weight=float(solver["owner_weight"]),
         flow_weight=float(solver["flow_weight"]),
+        action_weight=float(solver["action_weight"]),
         shared_barrier_weight=float(solver["shared_barrier_weight"]),
         trust_region=float(solver["trust_region"]),
         trust_weight=float(solver["trust_weight"]),
@@ -332,6 +338,7 @@ def _run_fixed_solver(prepared: PreparedEffectTask, solver: Mapping[str, Any]):
         response=prepared.response,
         owner_weight=float(solver["owner_weight"]),
         flow_weight=float(solver["flow_weight"]),
+        action_weight=float(solver["action_weight"]),
         shared_barrier_weight=float(solver["shared_barrier_weight"]),
     )
     validate_lora_state(candidate, prepared.authorities.contract)

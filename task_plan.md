@@ -372,4 +372,5 @@ coordinate退化则保留Stage 2并定位最早接口。
     direct-earliest/direct-latest=`58/21/43/74/108`，但direct success/gain与shared retention仅`34/108、25/96、30/43`，
     breadth`3/5`且Goal/Long均0，local-effect Gate 2失败；
 23. [ ] 保持视频support、solver、rank、步数与全部信息墙不变，只加入expert从fixed noise完成official去噪得到的完整action/flow
-    trajectory target；重新profile资源并只复跑一次held5 strict250，随后按同一Gate 2通过或停止PECS oracle family。
+    trajectory target；10步真实策略forward、official-loop逐元素等价和完整LoRA gradient smoke已通过，下一步重新profile资源并只
+    复跑一次held5 strict250，随后按同一Gate 2通过或停止PECS oracle family。

@@ -893,6 +893,12 @@ shared `q_pi`和Dynamic-K `q_V`；若失败，则继续拆解Program可写区域
 bounded selector、task-ID route或小超参扫描。正式v21证据见
 `docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`。
 
+v22实现已复用而非重建v6 surface：active `TargetFamilyCompiler`与v6 checkpoint的153个model state keys严格一一兼容；旧
+rank selector、QR mode replacement、angle diagnostics和v21 config已从active tree移除。真实单卡profile中exact action
+LoRA leaf与free Program梯度分别为`.077174/.063050`，一步process相对修正`.097946`，compiler、`q_pi`、visible Program
+梯度均为0；update `1.103s`、峰值显存`16,383,187,456` bytes。该结果只证明既有absolute compiler的free-Program
+preimage搜索图接通，正式裁决仍只认228-visit后的own geometry和308-panel support。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

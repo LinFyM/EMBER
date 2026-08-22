@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -14,8 +13,8 @@ from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_fixed_compiler_free_program_run_v21"
-STAGE = "stage1_fixed_compiler_free_program_reachability_v21"
+RUN_SCHEMA = "ember_ecp_stage1_direct_absolute_free_program_run_v22"
+STAGE = "stage1_direct_absolute_free_program_reachability_v22"
 
 
 def stage1_repo_authority(config: Mapping[str, Any], name: str) -> Path:
@@ -34,9 +33,9 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_fixed_compiler_free_program_v21"
+        != "ember_ecp_stage1_direct_absolute_free_program_v22"
         or config.get("status")
-        != "active_stage1_fixed_compiler_free_program_reachability"
+        != "active_stage1_direct_absolute_free_program_reachability"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -74,12 +73,20 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
             config.get("optimization", {}).get("functional_policy_microbatch_size", -1)
         )
         != 1
-        or float(config.get("model", {}).get("replacement_head_init_multiplier", -1))
-        != 0.1
-        or float(config.get("model", {}).get("selector_max_angle_radians", -1))
-        != math.pi / 2.0
-        or "process-value-only bounded rank-one retraction"
+        or int(config.get("model", {}).get("compiler_tokens", -1)) != 380
+        or "direct absolute complete rank16 LoRA"
         not in config.get("model", {}).get("full_process_surface", "")
+        or "family-specific A/B heads"
+        not in config.get("model", {}).get("absolute_factor_heads", "")
+        or any(
+            name in config.get("model", {})
+            for name in (
+                "rank_selector",
+                "replacement_normalization",
+                "replacement_head_init_multiplier",
+                "selector_max_angle_radians",
+            )
+        )
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
         or config.get("information_wall", {}).get("test_action_or_reward_reads") != 0
@@ -108,10 +115,10 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         )
         != 1.0
         or config.get("initialization", {}).get("stage")
-        != "stage1_program_locked_compiler_identification_v20"
+        != "stage1_policy_support_v6"
         or config.get("initialization", {}).get("run_contract_schema")
-        != "ember_ecp_stage1_program_locked_compiler_run_v20"
-        or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 114
+        != "ember_ecp_stage1_policy_support_run_v6"
+        or int(config.get("initialization", {}).get("checkpoint_macro", -1)) != 228
         or config.get("initialization", {}).get("load_model_weights_only") is not True
         or config.get("initialization", {}).get("fresh_optimizer") is not True
         or int(config.get("optimization", {}).get("visits_per_fit_task", -1)) != 12

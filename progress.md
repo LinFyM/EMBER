@@ -130,6 +130,12 @@
   `pi05_ecp_stage1_policy_support_fold0_tv228_r6_85477ea_gpu01p123456_20260822/macro_00000228`，保持同一fit19 free-Program
   oracle与policy evidence，直接裁决专家所述absolute output surface是否存在own-policy preimage。只有该oracle过geometry/support
   门才训练shared `q_pi`或`q_V`；失败则在direct absolute compiler内部定位attention/content/gain接口，不回到bounded selector。
+- v22 canonical运行面已完成替换：active compiler恢复专家所述380-token direct-absolute family A/B surface，删除rank selector、
+  QR retraction、angle diagnostics与v21 config，继续复用同一个free-Program trainer/materializer。v6 macro228与当前模型
+  state为`153/153` keys、零missing/unexpected/shape mismatch并strict-load通过；55项聚焦CPU合同与pyflakes通过。
+  gpu01 physical6真实profile中action LoRA/free-Program梯度为`.077174/.063050`，一步process相对修正`.097946`，冻结
+  compiler/`q_pi`/visible梯度均精确为0；update `1.103s`、峰值显存`16,383,187,456` bytes，physical0未使用。profile临时
+  目录已删除；下一节点是clean pushed authority上的228-visit formal，不重复v6 compiler训练。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

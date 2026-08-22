@@ -1,4 +1,4 @@
-"""Task-balanced fixed-compiler free-Program reachability for ECP Stage 1."""
+"""Task-balanced direct-absolute free-Program reachability for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -132,7 +132,10 @@ class ECPStage1Inputs:
 def _runtime_limits(
     args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext
 ) -> tuple[int, int, tuple[int, ...]]:
-    if config.get("status") != "active_stage1_fixed_compiler_free_program_reachability":
+    if (
+        config.get("status")
+        != "active_stage1_direct_absolute_free_program_reachability"
+    ):
         raise ValueError("inactive ECP Stage 1 authority cannot start training")
     if args.mode == "formal":
         expected_world = int(config["optimization"]["world_size"])
@@ -339,10 +342,6 @@ def load_stage1_authorities(
         support_channels=len(config["policy_support"]["channels"]),
         support_horizon_basis=int(config["policy_support"]["horizon_basis"]),
         factor_head_init=config["model"]["factor_head_init_std"],
-        replacement_head_init_multiplier=float(
-            config["model"]["replacement_head_init_multiplier"]
-        ),
-        selector_max_angle_radians=float(config["model"]["selector_max_angle_radians"]),
     ).to(context.device)
     return ECPStage1Authorities(
         source=source,
@@ -696,7 +695,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json",
+        / "configs/pi05_ecp_stage1_direct_absolute_free_program_v22.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

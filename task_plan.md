@@ -241,9 +241,11 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
 - [x] 从clean pushed frozen authority完成v21 228 visits/38 updates、24-task materialization与308-panel support audit；free
   Programs已形成明显task-specific corrections，但compiled LoRA仍own retrieval `1/24`，fit/held support为shared的
   `1.02708/1.02932x`、breadth`7/19、2/5`，因此bounded rank-mode retraction image判失败并关闭；
-- [ ] 实现 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**：复用v6 macro228已经训练完成的
+- [x] 实现 **OCPB v22 Direct-Absolute Compiler Free-Program Reachability（DA-FPR）**：复用v6 macro228已经训练完成的
   family-specific direct A/B absolute compiler与其`q_pi`，保持v21 task-local free-Program oracle、fit19数据、task-equal
-  schedule和geometry/support门不变，先裁决专家原始absolute surface的preimage，不重复训练一套长compiler；
+  schedule和geometry/support门不变；checkpoint 153/153 keys strict-load、55项聚焦合同及真实单卡profile已通过，不重复训练
+  一套长compiler；
+- [ ] 从clean pushed frozen authority运行v22 228-visit节点，只在末节点做24-task geometry与308-panel support gate；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，

@@ -1,4 +1,4 @@
-"""Materialize the ECP fixed-compiler reachability surface over train24."""
+"""Materialize the ECP direct-absolute reachability surface over train24."""
 
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_fixed_compiler_free_program_projection_v21"
-PROJECTION_KIND = "ecp_stage1_privileged_fixed_compiler_reachability"
+PROJECTION_SCHEMA = "ember_ecp_stage1_direct_absolute_free_program_projection_v22"
+PROJECTION_KIND = "ecp_stage1_privileged_direct_absolute_reachability"
 
 
 @dataclass(frozen=True)
@@ -78,7 +78,7 @@ def resolve_stage1_materialization_config(
         settings=base["materialization"],
         projection_schema=PROJECTION_SCHEMA,
         projection_kind=PROJECTION_KIND,
-        objective_phase="task_balanced_fixed_compiler_free_program_reachability",
+        objective_phase="task_balanced_direct_absolute_free_program_reachability",
     )
 
 
@@ -260,9 +260,6 @@ def _materialize_task(
         "member_effective_update_loss": float(member_loss.detach()),
         "stable_prior_effective_update_loss": float(prior_loss.detach()),
         "exact_owner_attention": float(compilation.exact_owner_attention.detach()),
-        "rank_replacement_fraction": float(
-            compilation.rank_replacement_fraction.detach()
-        ),
         "active_event_count": int((program.presence > 0.5).sum()),
     }
     if not is_free:
@@ -445,11 +442,11 @@ def _projection_manifest(
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "prior-only exact template; full-process process-value-only bounded rank-one retraction",
+            "parameterization": "prior-only exact template; full-process direct absolute family-specific A/B generation",
             "content_address_separated": True,
             "query_content_modulated": True,
             "policy_support_teacher": True,
-            "raw_factor_addition": False,
+            "raw_factor_amplitude_retained": True,
             "fixed_rank_partition": False,
             "second_adapter_deployed": False,
             "objective_phase": materialization.objective_phase,
@@ -611,7 +608,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_fixed_compiler_free_program_v21.json",
+        / "configs/pi05_ecp_stage1_direct_absolute_free_program_v22.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

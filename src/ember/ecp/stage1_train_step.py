@@ -1,4 +1,4 @@
-"""One task-equal fixed-compiler free-Program update for ECP Stage 1."""
+"""One task-equal direct-absolute free-Program update for ECP Stage 1."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def _objective_weights(
     runtime: "ECPStage1Runtime", task_visits: int
 ) -> tuple[str, dict[str, float]]:
     del task_visits
-    return "fixed_compiler_free_program_reachability", {
+    return "direct_absolute_free_program_reachability", {
         name: float(value)
         for name, value in runtime.config["objective"]["weights"].items()
     }
@@ -190,9 +190,6 @@ def _local_record(
         "locality": float(loss.locality.detach()),
         "consensus_exact_owner_attention": float(
             compilation.exact_owner_attention.detach()
-        ),
-        "consensus_rank_replacement_fraction": float(
-            compilation.rank_replacement_fraction.detach()
         ),
         "mean_active_events": float((program.presence.detach() > 0.5).float().sum()),
         **{
@@ -361,7 +358,6 @@ def run_stage1_update(
         "expert_set_disagreement",
         "locality",
         "consensus_exact_owner_attention",
-        "consensus_rank_replacement_fraction",
         "mean_active_events",
         "process_delta_relative",
         "uncertainty_scale_mean",

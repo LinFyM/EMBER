@@ -1389,3 +1389,36 @@ head-image分析进一步分离了容量与坐标。对gauge-canonical targets�
 同一个target-local head一次输出最终A/B。该结论否定的是v23的family-shared fused latent surface，不否定专家的fixed
 layer-/family-local compiler、complete rank16 LoRA或Program；也不授权A/B空间的第二adapter相加。正式证据：
 `docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
+
+## 67. layer-resolved capacity成立不等于当前监督能识别该surface
+
+OCPB v24从clean pushed `631aab7`完成114 visits/19 updates。19个fit prior Programs的minimum-change calibration把
+stable-prior factor residual从`1.21412`降到`.02583`；compiler、target heads、process fusion与Action LoRA leaf持续得到非零
+gradient，visible Program和`q_pi` gradient为0。因此v24真实检验了38个target-local heads、separate static/process reads和
+continuous nonlinear fusion，不是dead path或family head未迁移。
+
+结果却比v23定位所暗示的更根本。candidate pair cosine回到`.97092`，own/nearest-direct为`.04779/.06674`、retrieval
+`1/24`，norm ratio已有`1.32925`；即输出有足够幅度但仍不是own policy。dual 308-panel audit中full fit/held相对shared为
+`1.19865/1.05384x`，prior为`1.18717/1.04658x`，两臂breadth同为`1/19、2/5`。response越低越好，full相对prior还高
+`.00465/.00453`，只在2/24 tasks更好。
+
+这说明v23的fixed-hidden ridge只是局部表示上界：存在一个target-local map，不等于19个task mappings、action imitation、
+owner response和support barrier能从共享训练中找出它。v24增加自由度却没有增加独立mapping约束，最终仍选择shared-like
+surface，process只产生很小且整体有害的修正。最早失败接口现在是compiler identification与data/objective sufficiency，不再是
+gradient、输出幅度、layer address、family head或simple fusion。正式证据：
+`docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`。
+
+## 68. Stage 1版本膨胀来自代理门循环、fixed compiler延迟和任务级欠识别
+
+Stage 1的24个版本可归并为约13组主要因果问题；其余是窄变体、尺度/schedule修复或underpowered节点。从首个实现到v24不足
+22小时形成65个提交、tracked tree净增12,163行，formal账本约4,997 task visits。v1完成held5 closed-loop并输给shared后，
+v2--v24连续23版没有再产生held5 rows，而主要由own-direct几何与308-panel open-loop support决定去留。
+
+几何门可以筛掉明显同质输出，却不是成功策略的必要条件；support比参数几何更接近policy function，仍没有在generated-policy
+occupancy上校准。v13已经过8项support条件中的7项，项目却没有用一次bounded held5 rollout校准代理方向，而是继续11版内部
+修正。同时，专家要求的fixed compiler、direct absolute layer/family-local heads与同一prior/full surface分别迟至v19、v22--v24
+才完整出现；Stage 1始终主要依赖19个独立task mappings，未用授权non-held meta tasks扩大compiler mapping diversity。
+
+所以当前不得直接建立v25。后继只有在完成单一falsification card、增加独立policy mappings并把leave-task-out closed-loop放回
+首个compiler oracle后才能成为active design；raw LoRA cosine只保留为定位。完整复盘见
+`docs/ecp_stage1_iteration_retrospective_20260823.md`。

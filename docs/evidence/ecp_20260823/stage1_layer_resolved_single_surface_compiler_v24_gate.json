@@ -1,0 +1,166 @@
+{
+  "schema_version": "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24_gate_v1",
+  "status": "completed_fail_layer_resolved_single_surface_compiler_gate",
+  "training_commit": "631aab7f24aa22941c11dae1f1da20d960d54977",
+  "ownership": {
+    "trainable": [
+      "shared_layer_resolved_compiler",
+      "38_target_local_factor_heads"
+    ],
+    "frozen": [
+      "visible_program",
+      "policy_teacher_q_pi",
+      "source_policy",
+      "observer"
+    ],
+    "fit19_fixed_q_pi_programs": 19,
+    "held5_shared_gradient_steps": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "deployment_uses_fixed_q_pi_programs": false
+  },
+  "initialization": {
+    "source_stage": "stage1_single_surface_absolute_compiler_v23",
+    "shape_compatible_tensors_migrated": 145,
+    "migrated_target_factor_heads": 76,
+    "new_static_process_parameters_initialized_fresh": true,
+    "prior_head_calibration": {
+      "fit_only": true,
+      "fit_programs": 19,
+      "relative_ridge": 0.0001,
+      "relative_residual_before": 1.2141163349151611,
+      "relative_residual_after": 0.025828884914517403,
+      "held_action_or_reward_reads": 0,
+      "validation_action_or_reward_reads": 0,
+      "test_action_or_reward_reads": 0
+    }
+  },
+  "formal": {
+    "run": "runs/outputs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24_tv114_r6_631aab7_gpu02p012347_20260823",
+    "checkpoint": "runs/outputs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24_tv114_r6_631aab7_gpu02p012347_20260823/checkpoints/macro_00000114",
+    "completed_task_visits": 114,
+    "optimizer_updates": 19,
+    "visits_per_fit_task": 6,
+    "successful_action_panels": 57,
+    "verified_successful_learner_action_panels": 18,
+    "failed_learner_zero_action_gradient_panels": 39,
+    "trainable_parameters": 21348608,
+    "compiler_gradient_norm": {
+      "minimum": 2.3377535343170166,
+      "maximum": 29.94072151184082,
+      "mean": 9.336033758364225
+    },
+    "factor_head_gradient_norm": {
+      "minimum": 2.1149425506591797,
+      "maximum": 8.594897270202637,
+      "mean": 4.7564781339544995
+    },
+    "process_fusion_gradient_norm": {
+      "minimum": 0.23842735588550568,
+      "maximum": 9.190678596496582,
+      "mean": 2.065073905022521
+    },
+    "action_lora_gradient_norm_mean": 0.07975033909213124,
+    "visible_program_gradient_norm_max": 0,
+    "policy_teacher_gradient_norm_max": 0,
+    "prior_shared_response_moving_mean": {
+      "first": 0.0025220713772190115,
+      "last": 0.06729982110361259,
+      "mean": 0.16222181325684415
+    },
+    "functional_response_moving_mean": {
+      "first": 0.22334346547722816,
+      "last": 0.6444704234600067,
+      "mean": 0.46004735972536226
+    },
+    "update_seconds": {
+      "minimum": 1.272081896662712,
+      "maximum": 1.5275682508945465,
+      "mean": 1.3042958642258065
+    },
+    "max_cuda_allocated_bytes": 23285629952,
+    "prohibited_gpu01_physical_0_used": false
+  },
+  "materialization": {
+    "projection": "runs/analysis/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24_projection_tv114_631aab7_gpu02p0_20260823/projection_manifest.json",
+    "task_count": 24,
+    "full_and_prior_saved_from_one_forward_authority": true,
+    "candidate_pair_cosine": {
+      "minimum": 0.8667009472846985,
+      "mean": 0.9709154367446899,
+      "maximum": 0.9987640380859375
+    },
+    "mean_own_direct_cosine": 0.047794029116630554,
+    "mean_nearest_other_cosine": 0.0667368695139885,
+    "own_retrieval_count": 1,
+    "mean_candidate_to_direct_norm_ratio": 1.3292499780654907,
+    "candidate_mean_participation_rank": 1.7239009141921997,
+    "candidate_mean_top1_energy_fraction": 0.7455984950065613,
+    "direct_pair_cosine_mean": 0.13191533088684082,
+    "geometry_passed": false
+  },
+  "dual_support_audit": {
+    "audit": "runs/analysis/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24_dual_audit_tv114_631aab7_gpu02p012347_20260823/audit.json",
+    "panels": 308,
+    "full": {
+      "fit19": {
+        "candidate_response": 0.48562122164539206,
+        "shared_response": 0.4051385957404579,
+        "source_response": 0.7063333254732322,
+        "candidate_to_shared_ratio": 1.1986545511859683,
+        "candidate_to_source_ratio": 0.6875241534441737,
+        "tasks_better_than_shared": 1,
+        "tasks_better_than_source": 19
+      },
+      "held5": {
+        "candidate_response": 0.6579502485692501,
+        "shared_response": 0.6243363715708256,
+        "source_response": 0.884536512196064,
+        "candidate_to_shared_ratio": 1.053839370136089,
+        "candidate_to_source_ratio": 0.7438361667352072,
+        "tasks_better_than_shared": 2,
+        "tasks_better_than_source": 5
+      },
+      "passed": false
+    },
+    "prior": {
+      "fit19": {
+        "candidate_response": 0.4809689214943271,
+        "shared_response": 0.4051385957404579,
+        "source_response": 0.7063333254732322,
+        "candidate_to_shared_ratio": 1.1871713200152572,
+        "candidate_to_source_ratio": 0.68093760289745,
+        "tasks_better_than_shared": 1,
+        "tasks_better_than_source": 19
+      },
+      "held5": {
+        "candidate_response": 0.6534186147153378,
+        "shared_response": 0.6243363715708256,
+        "source_response": 0.884536512196064,
+        "candidate_to_shared_ratio": 1.0465810490446705,
+        "candidate_to_source_ratio": 0.7387129934219185,
+        "tasks_better_than_shared": 2,
+        "tasks_better_than_source": 5
+      },
+      "passed": false
+    },
+    "full_minus_prior_response": {
+      "fit19": 0.00465230015106497,
+      "held5": 0.004531633853912309,
+      "lower_is_better": true,
+      "full_better_task_count": 2,
+      "prior_better_task_count": 22,
+      "interpretation": "The learned process path is material but adds only a very small, broadly adverse functional change relative to the calibrated prior surface."
+    }
+  },
+  "decision": {
+    "continue_v24_training": false,
+    "sweep_learning_rate_rank_seed_dtype_width_or_fusion": false,
+    "held5_closed_loop": false,
+    "q_v_training": false,
+    "implement_v25_immediately": false,
+    "next_stage": "stage1_iteration_retrospective_before_any_successor",
+    "reason": "The target-local heads and continuous static/process fusion were trainable and functionally exercised, yet full output collapsed closer to a shared direction than v23, failed own mapping, failed both support arms, and was slightly worse than its own prior on 22 of 24 tasks. The v23 fixed-hidden reachability result was therefore only a local capacity certificate, not evidence that this surface was identifiable from the current 19-task objectives."
+  },
+  "earliest_failed_interface": "With only 19 independent fit-task mappings, fit-only calibration and the current action/response/support objectives identify a shared-like target-local surface but do not identify an own successful policy direction for the process-conditioned correction. The failure is now at compiler identification and supervision/data sufficiency, not at gradient flow, layer address preservation, raw output amplitude, or a simple static/process fusion bottleneck."
+}

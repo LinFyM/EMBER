@@ -2,6 +2,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
+import pytest
 import torch
 
 from ember.ecp.compiler import LayerResolvedCompiler, select_compiled_state
@@ -20,10 +21,7 @@ from ember.ecp.stage1_data import (
     gauge_canonicalize_factors,
 )
 from ember.ecp.stage1 import ECPStage1Model
-from ember.ecp.stage1_materialization import (
-    PROJECTION_SCHEMA,
-    resolve_stage1_materialization_config,
-)
+from ember.ecp.stage1_materialization import resolve_stage1_materialization_config
 from ember.ecp.stage1_prior_calibration import calibrate_prior_heads
 from ember.ecp.stage1_objective import (
     effective_update_cosine_matrix,
@@ -133,18 +131,14 @@ def _expert_evidence(
     )
 
 
-def test_layer_resolved_materialization_uses_v24_task_visit_cursor() -> None:
-    resolved = resolve_stage1_materialization_config(
-        REPO_ROOT
-        / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json"
-    )
-    assert resolved.stage == "stage1_layer_resolved_single_surface_compiler_v24"
-    assert resolved.cursor_name == "task_visits"
-    assert resolved.checkpoint_cursors == (114,)
-    assert resolved.projection_schema == PROJECTION_SCHEMA
-    assert resolved.base["schema_version"] == (
-        "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24"
-    )
+def test_failed_v24_stage1_authority_is_sealed() -> None:
+    with pytest.raises(
+        ValueError, match="unsupported ECP Stage 1 layer-resolved compiler contract"
+    ):
+        resolve_stage1_materialization_config(
+            REPO_ROOT
+            / "configs/pi05_ecp_stage1_layer_resolved_single_surface_compiler_v24.json"
+        )
 
 
 def test_support_audit_requires_both_compiler_arms(tmp_path: Path) -> None:

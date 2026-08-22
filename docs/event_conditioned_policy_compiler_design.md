@@ -1,6 +1,6 @@
 # EMBER-ECP: Event-Conditioned Policy Compiler
 
-状态：2026-08-23 **active design / implementation authority**。本文吸收第二轮专家最终复核与owner随后裁决，取代
+状态：2026-08-23 **长期research design authority；Stage 1实现于v24后暂停**。本文吸收第二轮专家最终复核与owner随后裁决，取代
 `docs/functional_adaptation_successor_design.md`和
 `docs/policy_native_dual_time_program_compiler_review_20260821.md`的执行权。前者继续描述已经封存的16维
 functional-adaptation基线，后者保留最初送审方案及其问题；两者均不得再启动formal训练。
@@ -947,7 +947,8 @@ target-local readout后，prior residual降至约`.0003`，q/v full降至约`.21
 非线性的条件融合，不能只换38个线性head或在A/B空间相加两套adapter。正式证据见
 `docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
 
-active **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**据此只修正这两个相互耦合的最早接口：
+当时的最后一个Stage 1 revision **OCPB v24 Layer-Resolved Single-Surface Compiler（LR-SSC）**据此只修正这两个相互耦合的
+最早接口：
 
 1. language与scene的76个static tokens独立做local attention；304个event/process tokens独立做presence-masked local
    attention。没有process时process read严格为零，但prior/full仍调用同一个compiler；
@@ -973,6 +974,19 @@ profile中prior→shared response为`.01515`、full shared barrier为`.000587`�
 实现所有权也同步收敛：`compiler.py`只负责local read、fusion与一次LoRA写出；`stage1_prior_calibration.py`只负责fit-only
 minimum-change初始化；`stage1_support_summary.py`只负责纯汇总；`stage1_support_audit.py`一次加载policy/panels后同时评测full与
 prior两臂。旧v23 config不在active tree保留。
+
+v24随后从clean pushed `631aab7`完成114 visits/19 updates。prior校准在19个fit Programs上的factor residual为`.02583`；
+compiler、target heads、process fusion与Action LoRA leaf梯度全程非零，冻结Program/`q_pi`梯度为0。因此这不是dead graph或
+训练未开始。正式物化却给出candidate pair cosine `.97092`、own/nearest-direct `.04779/.06674`和retrieval `1/24`。
+308-panel dual audit中，full fit/held相对shared为`1.19865/1.05384x`，prior为`1.18717/1.04658x`；两臂breadth都只有
+`1/19、2/5`。response越低越好，full还比prior高`.00465/.00453`，只在2/24 tasks更好。
+
+所以v23的fixed-hidden ridge结果只是局部capacity certificate，不是当前19-task objectives的identifiability证明。target-local
+heads与continuous fusion没有把process Program识别为own successful policy direction；它们重新落入shared-like surface，process
+只产生很小且整体有害的修正。v24关闭，不续训、不扫小超参、不进入held5或`q_V`。在任何后继实现前必须先完成Stage 1全链复盘，
+结果见`docs/ecp_stage1_iteration_retrospective_20260823.md`与
+`docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`。当前没有active Stage 1 revision；
+下述Stage 2--4只保留为通过Gate 2之后的设计合同，不构成当前执行授权。
 
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 

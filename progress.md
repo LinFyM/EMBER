@@ -5,11 +5,22 @@
 
 ## Current authority and executable state
 
-- owner已为当前轮设定新的明确停点：完成v24既定formal与裁决后不得直接滚动到v25；必须先系统复盘几十个版本为何没有形成
-  性能进展，包括重复假设、surrogate误导、止损滞后、专家方案实现偏移与版本管理问题；由当前goal自行完成反思和纠偏，
-  不要求owner主持讨论或先行裁决。
-- 专家最终复核与owner逐项讨论已经完成，新架构正式命名为 **EMBER-ECP（Event-Conditioned Policy Compiler）**；唯一
-  active design为`docs/event_conditioned_policy_compiler_design.md`。核心结构是ordered video-event segmentation、
+- owner设定的v24停点已经执行：formal、materialization、full/prior dual audit和remote-safe evidence均已完成；v24关闭，
+  不续训、不扫小超参、不进入held5或`q_V`，也不自动建立v25。Stage 1 v1--v24系统复盘已写入
+  `docs/ecp_stage1_iteration_retrospective_20260823.md`。当前没有active Stage 1 revision或GPU任务；下一实现必须先形成新的单一
+  falsification contract，不能由v24局部metric自动推导。
+- v24 clean pushed authority为`631aab7`。world-size6完成114 visits/19 updates，compiler/target-head/process-fusion gradient
+  均持续非零，冻结Program/`q_pi` gradient为0；fit-only prior calibration residual为`.02583`。物化candidate pair cosine
+  `.97092`、own/nearest-direct `.04779/.06674`、retrieval `1/24`。308-panel dual audit中full fit/held相对shared为
+  `1.19865/1.05384x`，prior为`1.18717/1.04658x`，两臂breadth均为`1/19、2/5`；full相对prior在22/24 tasks略差。
+  正式证据为`docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`。
+- 复盘确认Stage 1的24个版本约归并为13组主要因果问题；从首版到v24不足22小时形成65个提交、tracked tree净增12,163行，
+  formal账本约4,997 task visits。v1 held5输给shared后，v2--v24连续23版没有held5 rows，geometry/open-loop support从screen
+  变成了未经闭环校准的主要决策面；fixed compiler、direct layer/family-local surface和broad independent mappings又落实过晚。
+  下一路线默认优先在更多audited meta-task policy mappings上建立fixed functional compiler，并让leave-task-out closed-loop
+  oracle成为首个科学门；本文尚未把它升级为active design。
+- 专家最终复核与owner逐项讨论已经完成，研究总架构命名为 **EMBER-ECP（Event-Conditioned Policy Compiler）**；长期设计
+  authority仍为`docs/event_conditioned_policy_compiler_design.md`。核心结构是ordered video-event segmentation、
   Event-Conditioned Horizon Binding、target-family-aware Program、分布式privileged `q_pi(P)`、Dynamic-K `q_V(P|L,V)`与
   完整rank16 compiler。Action horizon保留为50个joint future positions，不再作为第二因果时间轴；旧hard dual-time
   transport与deterministic `P*`均已纠正。

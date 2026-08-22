@@ -1117,6 +1117,28 @@ compiler，但把static/process分开local read、在head前连续非线性融�
 小超参，也不把static与process变成两套adapter。证据：
 `docs/evidence/ecp_20260823/stage1_single_surface_absolute_compiler_v23_gate.json`。
 
+### 3.58 OCPB v24恢复layer-resolved surface仍未识别process-conditioned own policy
+
+clean pushed detached `631aab7`从v23迁移145个shape-compatible tensors，并把8个family-head tensors展开为76个target-local
+A/B heads；新static/process read与zero-start continuous fusion fresh初始化。fit19-only ridge calibration使用19个冻结prior
+Programs，把stable-prior factor residual从`1.21412`降到`.02583`，不读取held/validation/Test action或reward，也不保存task
+table。
+
+gpu02 physical `0,1,2,3,4,7`的world-size6 formal完成114 visits/19 updates；compiler/FactorHead/process-fusion gradient
+mean为`9.33603/4.75648/2.06507`，Action LoRA leaf gradient mean `.07975`，visible Program与`q_pi` gradient始终为0。
+mean update `1.304s`，峰值`23,285,629,952` bytes，gpu01 prohibited physical0未使用。
+
+一次materialization同时保存24套full/prior LoRA。full candidate pair cosine为`.97092`，own/nearest-direct
+`.04779/.06674`，retrieval `1/24`，norm ratio`1.32925`；因此不是输出近零，而是再次收缩为非own的近共享方向。一次六worker
+dual audit在同一policy/panel加载中评测两臂：full fit/held相对shared为`1.19865/1.05384x`、breadth`1/19、2/5`；prior为
+`1.18717/1.04658x`、breadth相同。response越低越好，full相对prior在fit/held高`.00465/.00453`，22/24 tasks更差。
+
+v24由此关闭，不进入held5 closed loop或`q_V`。它排除了“target-local heads + simple continuous fusion即可把v23固定hidden
+capacity转化为可训练compiler”的解释；最早接口前移到19个独立mapping和当前action/response/support objectives无法识别
+process-conditioned own-policy direction。v24之后不自动建立v25，而先完成Stage 1 v1--v24复盘；正式证据为
+`docs/evidence/ecp_20260823/stage1_layer_resolved_single_surface_compiler_v24_gate.json`，复盘见
+`docs/ecp_stage1_iteration_retrospective_20260823.md`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

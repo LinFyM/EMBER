@@ -1,8 +1,9 @@
 # EMBER Task Plan
 
-状态：2026-08-23 **active — EMBER-ECP architecture implementation**。
+状态：2026-08-23 **active goal — v24 closed; Stage 1 retrospective pause; no active successor implementation**。
 
-唯一active design：`docs/event_conditioned_policy_compiler_design.md`。
+长期research design authority：`docs/event_conditioned_policy_compiler_design.md`。当前没有active Stage 1 revision；v24后的复盘与
+后继授权条件见`docs/ecp_stage1_iteration_retrospective_20260823.md`。
 
 旧16维functional-adaptation、phase decoder、shared12/task4 residual、single-direction outer credit和最初送审的
 dual-time transport方案均已封存，不再启动formal训练。它们的实现与checkpoint只作为可复用资产、历史反事实和evaluator
@@ -259,8 +260,9 @@ reversed/no-video优势必须同时成立。若经过合理结构、数据、联
   shared做minimum-change head calibration，不建立template bypass、task table或第二adapter；
 - [x] 完成v24真实单task双路径profile：prior/shared起点、process fusion、Action LoRA leaf、target heads和完整compiler梯度均有效，
   冻结模块梯度为0，单步约1.44秒、峰值约22.92GB；
-- [ ] 从clean pushed authority完成v24 114-visit节点、materialization及一次执行同时得到full/prior的308-panel audit；只有
-  prior/full support与own mapping同向成立才进入held5 oracle；
+- [x] 从clean pushed authority完成v24 114-visit节点、materialization及一次执行同时得到full/prior的308-panel audit；
+  candidate pair cosine`.97092`、own retrieval`1/24`，full/prior support两臂均失败，故不进入held5；
+- [x] 完成Stage 1 v1--v24系统复盘，区分约13组主要因果问题与11个窄变体/修复节点，并冻结“不得直接建立v25”的纠偏规则；
 - [ ] Stage 1联合geometry/support门通过后轮换固定fold，确认不是单一held5偶然结果。
 
 **Gate 2：** 默认要求generated显著高于source，direct success retention `>=75%`，direct gain retention `>=60%`，增量跨tasks，
@@ -313,25 +315,16 @@ coordinate退化则保留Stage 2并定位最早接口。
 
 ## Current next actions
 
-1. v19已在macro2关闭：q/v Program切向均可达且有真实paired credit，但其single checkpoint绝对geometry/support门失败并
-   仍处于历史v13坍缩区间；两者视频ordinal不同，不声称matched delta。正式证据为
-   `docs/evidence/ecp_20260822/stage1_fixed_compiler_program_v19_gate.json`；
-2. v20 PLCI profile/formal/matched geometry/support已完成；它能分散candidate但不能形成own-policy mapping，并破坏
-   v13 support，因此关闭且不续训；证据为`docs/evidence/ecp_20260822/stage1_program_locked_compiler_v20_gate.json`；
-3. v21 FPR formal/geometry/support已经完成并失败：Program correction已明显task-diverse，bounded compiler仍只有`1/24`
-   own retrieval且fit support退化；证据为`docs/evidence/ecp_20260822/stage1_fixed_compiler_free_program_v21_gate.json`；
-4. v22 direct-absolute free-Program formal/geometry/308-panel audit已经完成：process Value真实控制输出、own retrieval提高到
-   `10/24`，但fit/held两边`0/19、0/5`胜过shared，故关闭且不进入held5或`q_V`；证据为
-   `docs/evidence/ecp_20260822/stage1_direct_absolute_free_program_v22_gate.json`；
-5. v23 SSAC formal/full-prior materialization/两次308-panel audit均已完成并失败：full/prior在fit相对shared为
-   `1.13175/1.27744x`，held为`1.11069/1.21881x`；own retrieval仅`2/24`，故不接held5或`q_V`；
-6. 固定hidden capacity/ridge定位已完成：stable prior不是width256容量问题；最早损失是family-shared head抹去layer
-   correspondence，以及static/process共用一个fused read后整套重写adapter。v24 LR-SSC据此只修正这两个结构变量；
-7. v24实现与真实profile已完成：zero-start process fusion保住校准prior且梯度`7.20562`，完整compiler梯度`24.46963`；下一步
-   从clean pushed frozen authority运行114 visits/19 updates，并把full/prior合并到一次support audit execution；
-8. 每个节点及时更新remote-safe证据与active文档，删除退役config、临时profile、task-owned worktree/branch并推送`main`；
-   只有Gate 2通过后才进入Dynamic-K
-   `q_V`，不触碰validation8/Test8，也不把shuffled/reversed用于训练或选模。
-9. owner新增明确停点：v24本轮formal、materialization与dual support裁决完成后，不自动设计或实现v25。先完整回顾历次版本，
-   区分真正独立的因果检验与重复变体，审计代理指标、停止门、专家意见到实现的偏差、昂贵资产复用和版本膨胀原因；形成一份
-   根因复盘并据此自行纠偏，之后才决定是否继续当前范式，不要求owner主持或先行裁决。
+1. v24已经完成并关闭：formal、materialization、dual 308-panel audit与remote-safe evidence全部落盘；不续训、不扫
+   LR/rank/seed/dtype/width/fusion，不运行held5或`q_V`；
+2. Stage 1 v1--v24复盘已经完成，当前停止所有successor代码与GPU工作。复盘确认主要问题是geometry/open-loop support门长期
+   未用held closed-loop校准、fixed compiler与专家direct layer/family-local surface落实过晚、19个独立task mappings不足以及
+   版本号增长快于独立信息增长；
+3. 在任何下一实现前，先形成一份单一falsification contract，必须明确：一个主要科学变量、更多audited independent policy
+   mappings、固定functional compiler的authority、首个leave-task-out closed-loop oracle、一次合理修正上限和明确停止条件；
+4. raw/effective LoRA own cosine与retrieval降为定位指标，不再作为成功策略必要门；新的open-loop support proxy在连续主导
+   决策前必须用一次train-authorized held5 paired closed-loop校准；
+5. 默认优先方向是在排除validation/Test的更大meta-task policy mapping集合上建立fixed layer/family-local direct-absolute
+   single-surface compiler，再由closed-loop oracle决定是否训练video `q_V`。该方向尚未登记为active design，不创建v25；
+6. 完成本轮文档/evidence集成、推送`main`并清理v24 detached/implementation worktree、branch与临时log；保留唯一formal
+   checkpoint、projection和dual audit，不删除或重复生成昂贵资产。

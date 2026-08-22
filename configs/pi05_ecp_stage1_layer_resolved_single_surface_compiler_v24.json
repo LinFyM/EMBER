@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_ecp_stage1_layer_resolved_single_surface_compiler_v24",
-  "status": "active_stage1_layer_resolved_single_surface_compiler",
+  "status": "sealed_failed_stage1_layer_resolved_single_surface_compiler",
   "purpose": "Identify one layer-resolved direct-absolute compiler that preserves the static prior and conditionally integrates process evidence while visible Program and privileged q_pi coordinates remain frozen.",
   "authorities": {
     "stage0_config": "configs/pi05_ecp_stage0_native_v3.json",

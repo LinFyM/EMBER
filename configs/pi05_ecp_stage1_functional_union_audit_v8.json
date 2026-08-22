@@ -1,0 +1,26 @@
+{
+  "schema_version": "ember_ecp_stage1_policy_support_audit_config_v1",
+  "status": "active_frozen_support_audit",
+  "purpose": "Task-equal frozen-checkpoint audit over every successful and learner support panel for the functional-only prior union.",
+  "authorities": {
+    "stage1_config": "configs/pi05_ecp_stage1_functional_union_v8.json",
+    "projection_manifest": "runs/analysis/pi05_ecp_stage1_functional_union_projection_tv228_ae4805e_gpu01p1_20260822/projection_manifest.json"
+  },
+  "thresholds": {
+    "minimum_fit_tasks_better_than_source": 13,
+    "minimum_fit_tasks_better_than_shared": 13,
+    "minimum_held_tasks_better_than_source": 3,
+    "minimum_held_tasks_better_than_shared": 3
+  },
+  "information_wall": {
+    "role": "train24 frozen policy-support diagnosis only; not checkpoint selection",
+    "held5": "privileged transform and frozen inference only; zero shared gradient",
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "shuffled_or_reversed_reads": 0
+  },
+  "decision": {
+    "pass": "Add fit-task task-equal simulator success/progress as the next fresh major variable.",
+    "fail": "Repair the earliest functional-union or policy-support interface; do not extend v8 or tune rank, seed, dtype, learning rate or loss weights."
+  }
+}

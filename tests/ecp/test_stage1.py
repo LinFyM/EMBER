@@ -264,7 +264,7 @@ def test_rank_selector_starts_from_the_exact_complete_prior() -> None:
     ) == 0.0
 
 
-def test_compiler_address_queries_cannot_write_residual_without_program_content() -> None:
+def test_language_scene_and_presence_cannot_write_without_process_values() -> None:
     contract, owners, template = _contract_and_states()
     for value in template.values():
         value.normal_(std=0.01)
@@ -272,14 +272,33 @@ def test_compiler_address_queries_cannot_write_residual_without_program_content(
     for selector in compiler.rank_selector.values():
         selector.weight.data.normal_(std=0.1)
     zero = ECPProgram(
-        language=torch.zeros(1, 38, 128),
-        scene=torch.zeros(1, 38, 128),
+        language=torch.randn(1, 38, 128),
+        scene=torch.randn(1, 38, 128),
         process=torch.zeros(1, 8, 38, 128),
         presence=torch.ones(1, 8),
         uncertainty=torch.zeros(1, 8, 38, 128),
     )
     state = compiler(zero).state
     assert float(exact_effective_update_loss(state, template, contract).detach()) < 1e-5
+
+
+def test_language_and_scene_condition_process_value_queries() -> None:
+    compiler, _ = _tiny_compiler()
+    for selector in compiler.rank_selector.values():
+        selector.weight.data.normal_(std=0.1)
+    first_program = _tiny_program()
+    second_program = ECPProgram(
+        **{
+            **first_program.__dict__,
+            "language": first_program.language + torch.randn_like(
+                first_program.language
+            ),
+            "scene": first_program.scene + torch.randn_like(first_program.scene),
+        }
+    )
+    first = compiler(first_program).state["tiny.lora_A.default.weight"]
+    second = compiler(second_program).state["tiny.lora_A.default.weight"]
+    assert float((first - second).detach().abs().sum()) > 0.0
 
 
 def test_rank_mode_replacement_is_amplitude_invariant_and_differentiable() -> None:

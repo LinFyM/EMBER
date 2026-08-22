@@ -210,6 +210,11 @@
   `.97482`、相对shared norm仅`.24768`，证明它主要学到一个安全的近全局修正。v9最终关闭，不续训、不进入held闭环/reward/`q_V`。
   当前唯一后继保留bounded exact-prior selector，但让replacement值只来自present process tokens，language/scene只条件化query，
   去掉full/prior开关可凭静态token写出近全局修正的路径。
+- v10已完成fresh-incompatible单路径替换：compiler token surface从76个language/scene tokens加304个process tokens收紧为304个
+  present process tokens；language/scene只经独立projection条件化608个target/rank queries，factor与selector Value只读取有序
+  process/uncertainty。zero process反事实即使language/scene/presence非零也逐值返回完整shared；同一process改变language/scene会
+  改变query readout。bounded QR/RMS replacement、selector、q_pi、support bank、balanced schedule、seed和loss均未改变。旧v9
+  active config/schema/evaluator已删除，41项聚焦CPU合同通过；下一步只做真实successful/learner双visit profile。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

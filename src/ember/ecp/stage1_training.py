@@ -56,8 +56,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SCHEMA = "ember_ecp_stage1_functional_rank_selector_run_v9"
-STAGE = "stage1_functional_rank_selector_v9"
+RUN_SCHEMA = "ember_ecp_stage1_process_value_selector_run_v10"
+STAGE = "stage1_process_value_selector_v10"
 
 
 @dataclass
@@ -128,8 +128,8 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     if (
         config.get("schema_version")
-        != "ember_ecp_stage1_functional_rank_selector_v9"
-        or config.get("status") != "active_stage1_functional_rank_selector"
+        != "ember_ecp_stage1_process_value_selector_v10"
+        or config.get("status") != "active_stage1_process_value_selector"
         or config.get("model", {}).get("hard_rank_partition") is not False
         or config.get("model", {}).get("query_to_output_shortcut") is not False
         or "query_content_modulation" not in config.get("model", {})
@@ -146,7 +146,7 @@ def load_stage1_config(path: Path) -> dict[str, Any]:
         != 0.1
         or float(config.get("model", {}).get("selector_max_angle_radians", -1))
         != math.pi / 2.0
-        or "bounded rank-one retraction"
+        or "process-value-only bounded rank-one retraction"
         not in config.get("model", {}).get("full_process_surface", "")
         or config.get("information_wall", {}).get("validation_action_or_reward_reads")
         != 0
@@ -662,7 +662,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_functional_rank_selector_v9.json",
+        / "configs/pi05_ecp_stage1_process_value_selector_v10.json",
     )
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)

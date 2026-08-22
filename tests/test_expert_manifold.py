@@ -225,8 +225,8 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
         assets[name] = {"path": str(path), "bytes": path.stat().st_size}
     contract = _projection_contract(
         {
-            "schema_version": "ember_ecp_stage1_functional_rank_selector_projection_v9",
-            "projection_kind": "ecp_stage1_privileged_functional_rank_selector_compiler",
+            "schema_version": "ember_ecp_stage1_process_value_selector_projection_v10",
+            "projection_kind": "ecp_stage1_privileged_process_value_selector_compiler",
             **assets,
             "optimization": {
                 "task_visits": 228,
@@ -236,7 +236,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
                 "final_lora_averaging": False,
                 "rank": 16,
                 "all_ranks_writable": True,
-                "parameterization": "prior-only exact template; full-process bounded rank-one retraction toward content-conditioned replacement modes",
+                "parameterization": "prior-only exact template; full-process process-value-only bounded rank-one retraction",
                 "content_address_separated": True,
                 "query_content_modulated": True,
                 "policy_support_teacher": True,
@@ -251,7 +251,7 @@ def test_ecp_stage1_projection_accepts_one_complete_privileged_lora_surface(
             },
         }
     )
-    assert contract["arm"] == "ecp_stage1_q_pi_functional_rank_selector_tv228"
+    assert contract["arm"] == "ecp_stage1_q_pi_process_value_selector_tv228"
     assert contract["asset"]["single_complete_lora"] is True
 
 

@@ -43,7 +43,7 @@ def select_compiled_state(
 
 
 class TargetFamilyCompiler(torch.nn.Module):
-    """Use numeric target/rank queries without collapsing Program ownership."""
+    """Let language-conditioned target queries read process-only Values."""
 
     def __init__(
         self,
@@ -87,10 +87,12 @@ class TargetFamilyCompiler(torch.nn.Module):
             len(TargetFamily), compiler_width
         )
         self.layer_embedding = torch.nn.Embedding(18, compiler_width)
-        self.token_type_embedding = torch.nn.Embedding(3, compiler_width)
         self.event_embedding = torch.nn.Embedding(event_slots, compiler_width)
         self.query_projection = torch.nn.Linear(
             compiler_width, compiler_width, bias=False
+        )
+        self.context_query_projection = torch.nn.Linear(
+            2 * compiler_width, compiler_width, bias=False
         )
         self.key_projection = torch.nn.Linear(
             compiler_width, compiler_width, bias=False
@@ -175,13 +177,7 @@ class TargetFamilyCompiler(torch.nn.Module):
             ],
             dtype=torch.long,
         )
-        token_owner_ids = torch.cat(
-            (
-                torch.arange(self.owner_count),
-                torch.arange(self.owner_count),
-                torch.arange(self.owner_count).repeat(self.event_slots),
-            )
-        )
+        token_owner_ids = torch.arange(self.owner_count).repeat(self.event_slots)
         self.register_buffer("family_ids", family_ids, persistent=False)
         self.register_buffer("layer_ids", layer_ids, persistent=False)
         self.register_buffer("token_owner_ids", token_owner_ids, persistent=False)
@@ -212,7 +208,7 @@ class TargetFamilyCompiler(torch.nn.Module):
 
     def _tokens(
         self, program: ECPProgram
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = program.language.shape[0]
         expected = (batch, self.owner_count)
         if (
@@ -237,44 +233,32 @@ class TargetFamilyCompiler(torch.nn.Module):
             + self.uncertainty_projection(torch.log1p(program.uncertainty.float())),
             (self.compiler_width,),
         )
-        value_tokens = torch.cat(
-            (language, scene, process.flatten(1, 2)), dim=1
-        )
         owner_bias = self.program_owner_embedding.weight[None]
-        language_key = language + owner_bias + self.token_type_embedding.weight[0]
-        scene_key = scene + owner_bias + self.token_type_embedding.weight[1]
         process_key = (
             process
             + owner_bias[:, None]
             + self.event_embedding.weight[None, :, None]
-            + self.token_type_embedding.weight[2]
-        )
-        key_tokens = torch.cat(
-            (language_key, scene_key, process_key.flatten(1, 2)), dim=1
         )
         process_presence = program.presence[:, :, None].expand(
             -1, -1, self.owner_count
         ).flatten(1)
-        presence = torch.cat(
-            (
-                torch.ones(
-                    batch,
-                    2 * self.owner_count,
-                    device=value_tokens.device,
-                    dtype=process_presence.dtype,
-                ),
-                process_presence,
-            ),
-            dim=1,
+        query_context = self.context_query_projection(
+            torch.cat((language, scene), dim=-1)
         )
-        return key_tokens, value_tokens, presence
+        return (
+            process_key.flatten(1, 2),
+            process.flatten(1, 2),
+            process_presence,
+            query_context,
+        )
 
-    def _queries(self) -> torch.Tensor:
+    def _queries(self, query_context: torch.Tensor) -> torch.Tensor:
         target = self.target_embedding.weight[:, None]
         rank = self.rank_embedding.weight[None]
         family = self.family_embedding(self.family_ids)[:, None]
         layer = self.layer_embedding(self.layer_ids)[:, None]
-        return target + rank + family + layer
+        numeric = self.query_projection(target + rank + family + layer)
+        return numeric[None] + query_context[:, :, None]
 
     @staticmethod
     def _process_gate(program: ECPProgram) -> torch.Tensor:
@@ -283,12 +267,20 @@ class TargetFamilyCompiler(torch.nn.Module):
         hard = (mass > 0).to(soft)
         return hard.detach() - soft.detach() + soft
 
+    @staticmethod
+    def _process_content_gate(program: ECPProgram) -> torch.Tensor:
+        process_mass = program.process.float().square().flatten(1).mean(-1)
+        uncertainty_mass = (
+            torch.log1p(program.uncertainty.float()).square().flatten(1).mean(-1)
+        )
+        return ((process_mass + uncertainty_mass) > 0).to(program.process)
+
     def forward(self, program: ECPProgram) -> ECPCompilerOutput:
-        key_tokens, value_tokens, presence = self._tokens(program)
-        queries = self.query_projection(self._queries())
+        key_tokens, value_tokens, presence, query_context = self._tokens(program)
+        queries = self._queries(query_context)
         keys = self.key_projection(key_tokens)
         values = self.value_projection(value_tokens)
-        logits = torch.einsum("jrd,bnd->bjrn", queries, keys) / math.sqrt(
+        logits = torch.einsum("bjrd,bnd->bjrn", queries, keys) / math.sqrt(
             self.compiler_width
         )
         logits = logits + self.locality_bias[:, None, :]
@@ -296,8 +288,8 @@ class TargetFamilyCompiler(torch.nn.Module):
         attention = logits.softmax(-1)
         hidden = torch.einsum("bjrn,bnd->bjrd", attention, values)
         modulation = 1.0 + torch.tanh(self.query_content_modulation(queries))
-        hidden = hidden * modulation[None]
-        hidden = self.trunk(hidden)
+        hidden = self.trunk(hidden * modulation)
+        hidden = hidden * self._process_content_gate(program)[:, None, None, None]
         templates = self.template_state()
         process_gate = self._process_gate(program)
         has_process = bool((process_gate.detach() > 0).any())

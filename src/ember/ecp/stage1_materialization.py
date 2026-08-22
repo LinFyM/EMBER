@@ -39,8 +39,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_distributed, seed_everything
 
 
-PROJECTION_SCHEMA = "ember_ecp_stage1_functional_rank_selector_projection_v9"
-PROJECTION_KIND = "ecp_stage1_privileged_functional_rank_selector_compiler"
+PROJECTION_SCHEMA = "ember_ecp_stage1_process_value_selector_projection_v10"
+PROJECTION_KIND = "ecp_stage1_privileged_process_value_selector_compiler"
 
 
 def _file(path: Path) -> dict[str, Any]:
@@ -346,7 +346,7 @@ def _projection_manifest(
             "final_lora_averaging": False,
             "rank": rank,
             "all_ranks_writable": True,
-            "parameterization": "prior-only exact template; full-process bounded rank-one retraction toward content-conditioned replacement modes",
+            "parameterization": "prior-only exact template; full-process process-value-only bounded rank-one retraction",
             "content_address_separated": True,
             "query_content_modulated": True,
             "policy_support_teacher": True,
@@ -517,7 +517,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         default=REPO_ROOT
-        / "configs/pi05_ecp_stage1_functional_rank_selector_v9.json",
+        / "configs/pi05_ecp_stage1_process_value_selector_v10.json",
     )
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--source-run", type=Path, required=True)

@@ -1184,3 +1184,21 @@ v11 macro1，fit/held ratio从`.96786/1.00171`退化，shared panel wins从155�
 expert response比source或shared baseline更差时才惩罚，优于baseline的偏移不再被拉回。先用真实profile验证该barrier、factor
 gradient和信息墙，再重做一个matched corrected compiler macro并立即物化/审计。证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`。
+
+## 56. baseline-relative barrier恢复了support breadth，但没有识别task-relative compiler方向
+
+OCPB v13只把source/shared response proximity改为相对各自own-expert baseline不退化的hinge barrier；Program、compiler、
+rank selector、v11 macro1初始化、paired seeds与outcome coordinate均未改变。正式macro保持与v12相同的`10/8` successes、
+`.31140/.27193` progress和`-.00896` outcome surrogate，mean functional total从`.25295`降到`.15441`；source/shared barrier
+只在`1/19、6/19` tasks激活，说明candidate已经优于baseline的方向不再被无条件拉回。
+
+这一语义修正带来了截至目前最强的冻结support：fit/held candidate-to-shared为`.96741/1.00168`，breadth首次达到
+`13/19、3/5`，8项预注册support条件通过7项；唯一失败是held aggregate比shared高`.1675%`。但task-relative几何没有
+改善：Program correction pair cosine为`.82546`，编译后candidate pair cosine仍`.99595`，own-direct `.03980`低于
+nearest-other `.06201`，自身检索仍`1/24`。所以v13证明support barrier定义值得保留，却也把剩余问题从“是否允许离开shared”
+收紧为“compiler如何在policy-native功能空间识别应该沿哪个task-relative factor方向移动”。
+
+按预登记联合门，breadth改善不能抵消geometry失败和held aggregate失败；不运行held5闭环、不轮fold、不扩meta、不进入
+`q_V`，也不继续selector-angle宏或权重扫描。下一主要变量应让successful-policy与task-equal outcome evidence在
+owner-resolved policy response空间直接约束compiler factor方向，同时避免退回专家已否定的raw A/B重建。证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。

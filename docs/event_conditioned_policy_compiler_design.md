@@ -650,6 +650,16 @@ retained实现将旧response-proximity保留为sealed v10历史路径的默认�
 记录该选择。v12 active config/schema/materialization resolver已由v13单路径替换，20项Stage 1聚焦CPU合同覆盖barrier正反例、
 非零退化梯度、rank-mean coordinate、信息墙与v13 materialization cursor。
 
+v13现已完成并关闭。它把fit/held candidate-to-shared改善到`.96741/1.00168`，breadth首次达到`13/19、3/5`，8项冻结support
+条件通过7项，证明baseline-relative barrier是应保留的目标语义；但candidate pair cosine仍`.99595`、own retrieval仍`1/24`，
+没有把Program中`.82546`的task差异编译为task-relative LoRA。联合门失败，因此不运行held5、不轮fold、不扩meta、不进入
+`q_V`，也不延长selector-angle OCPB curve。
+
+下一Stage 1修正必须只针对剩余最早接口：在保留v13 barrier和全部信息墙的前提下，让successful-policy与task-equal outcome
+evidence以policy-native、owner-resolved response直接识别compiler factor方向。首选复用现有support bank的
+`event × owner × channel × basis × width` policy response以及Action Expert capture，先证明candidate与teacher坐标同义且可微，
+再登记唯一retained实现；不得退回raw A/B重建，也不得把更多meta tasks当作当前fit映射缺失的替代品。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

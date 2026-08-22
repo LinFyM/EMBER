@@ -908,6 +908,20 @@ support loss，会把有益task-specific移动与有害漂移一起拉回；comp
 functional barrier，再做一个bounded相邻节点。正式证据：
 `docs/evidence/ecp_20260822/stage1_ocpb_v12_corrected_compiler_gate.json`。
 
+### 3.47 OCPB v13 support barrier达到breadth门但未改变compiler坍缩
+
+clean pushed `b371463`将source/shared preservation从无条件response proximity改为相对各自own-expert baseline不退化的
+hinge barrier，其余Program、compiler、rank、初始化、paired seeds与outcome coordinate不变。真实profile确认candidate优于
+baseline时两项barrier为0且梯度finite；正式macro保持`10/8` paired successes与`-.00896` outcome surrogate，mean functional
+total由v12的`.25295`降到`.15441`。
+
+24-task物化仍给出candidate pair cosine `.99595`、own/nearest-other `.03980/.06201`和own retrieval `1/24`，Program
+correction则为`.82546`。308-panel冻结audit的fit/held candidate-to-shared改善到`.96741/1.00168`，breadth首次达到
+`13/19、3/5`，8项support条件通过7项；唯一失败是held aggregate比shared高`.1675%`。因此barrier是保留的正修正，v13整体
+仍未过联合geometry/support门，同曲线关闭，不运行held5、fold rotation、meta expansion或`q_V`。最早缺口变为
+policy-native task-relative compiler factor direction identification。证据：
+`docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

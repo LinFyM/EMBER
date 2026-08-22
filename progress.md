@@ -24,10 +24,11 @@
   v7 prior union与v8 functional-only union也已完成同一短节点和冻结全bank审计。v8严格task-equal复验仍失败并已关闭；
   Frobenius top-SVD已经由bounded、exact-prior的policy-functional rank selector替换；v9/v10又分别完成bounded selector与
   process-only Value裁决并关闭。OCPB v11/v12也已完成裁决：v12消除了compiler credit的16倍尺度错误，但有效更新没有改善
-  v11 macro1的task-relative geometry或冻结support，故v12关闭且仍未进入held5闭环、`q_V`或validation8。当前唯一active
-  后继是Stage 1 **OCPB v13 baseline-relative support barrier**：保持同一v11 macro1初始化、paired seeds、Program/compiler、
-  rank与outcome coordinate，只把source/shared无条件响应邻近改成相对其expert-response baseline不退化的functional hinge。
-  这不是loss权重小扫，而是修正“support preservation”把有益task-specific移动也拉回shared的错误接口。
+  v11 macro1的task-relative geometry或冻结support，故v12关闭且仍未进入held5闭环、`q_V`或validation8。Stage 1
+  **OCPB v13 baseline-relative support barrier**随后完成profile、matched formal、24-task物化与308-panel冻结审计：它首次达到
+  fit/held breadth `13/19、3/5`并通过8项support条件中的7项，但held aggregate仍为shared的`1.00168x`，compiled geometry
+  仍是pair cosine `.99595`、own retrieval `1/24`。v13 objective修正保留，同曲线关闭；当前没有可启动的held5或`q_V`，
+  下一接口是让policy-native successful/outcome evidence直接识别task-relative compiler factor方向。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior
@@ -280,7 +281,16 @@
   的own-expert response baseline时preservation loss精确为0，退化时才产生hinge和非零梯度；sealed v10路径仍默认使用历史
   response-proximity语义。唯一active outcome config/schema、run contract和materialization resolver已从v12替换为v13，Program、
   compiler、rank selector、初始化、paired seeds、优化器与信息墙均未改变。20项`tests/ecp/test_stage1.py`通过，py_compile、
-  pyflakes、JSON与diff检查通过；下一节点只做同一v11 macro1上的真实profile与matched formal复验。
+  pyflakes、JSON与diff检查通过。真实task1 profile得到相同`2/2` paired successes、functional total `.17537`、finite梯度
+  `1.33008`和16.43 GB峰值；source/shared barrier均为0，确认优于baseline时不再产生拉回力，临时profile在证据落盘后删除。
+- OCPB v13 formal从clean pushed `b371463`在gpu01 physical `1--6`完成，明确排除prohibited physical0；matched outcomes仍为
+  `10/8`、progress `.31140/.27193`、outcome surrogate `-.00896`，mean functional total从v12的`.25295`降到`.15441`，
+  source/shared barrier分别只在`1/19、6/19` tasks激活。物化的candidate pair cosine仍`.99595`、own/nearest-other
+  `.03980/.06201`、own retrieval `1/24`，故geometry门失败。冻结audit的fit/held candidate-to-shared为
+  `.96741/1.00168`、breadth `13/19、3/5`，首次同时达到两侧breadth并通过8项support条件中的7项；唯一失败是held
+  aggregate比shared高`.1675%`。这证明barrier语义是正修正，却没有解决factor direction identification；按预登记合同不跑
+  held5、不轮fold、不扩meta、不启动`q_V`，也不再续同一selector-angle curve。正式证据见
+  `docs/evidence/ecp_20260822/stage1_ocpb_v13_support_barrier_gate.json`。
 - Stage 0首个retained source里程碑已实现为唯一`ember.ecp`包：从canonical 38-target LoRA合同直接建立owner顺序，捕获
   native Action Expert全部18层输入与残差并立即投影为`[38,50,128]` lattice；task-grounded四类局部transition candidates
   与全部50 horizon双向绑定后，由固定容量8、动态presence的有序分段器形成`[8,38,128]` process与uncertainty。3项聚焦

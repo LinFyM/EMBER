@@ -758,6 +758,20 @@ FactorHead梯度、显存和吞吐，再运行一个bounded task-balanced节点�
 改善，才允许held5 oracle；如果action loss下降而support继续恶化，就关闭当前Program/compiler mapping，而不是靠继续训练或
 小权重扫描解释。
 
+v17现已完成并触发上述停止条件。114 visits/19 updates后candidate pair cosine由v16`.94932`降到`.90236`、effective norm
+ratio升到`1.14481`，证明exact action gradient确实让完整LoRA组合离开task-common半程插值；但own-direct仍只有`.03855`、低于
+nearest-other`.05779`，retrieval退回`1/24`。更关键的是308-panel fit/held candidate-to-shared为`1.13962/1.12203x`，
+breadth`2/19、0/5`。所以action imitation提供了material但未被closed-loop识别的task-dependent方向；同一曲线不续228。
+
+下一active Stage 1修正称为 **OCPB v18 action-guided structured outcome binding**。它补齐专家Stage 1原始目标中尚未被当前
+factor方向真正执行的“task-equal closed-loop success/progress”：对每个fit task先在cross-episode successful panel上求完整LoRA
+的exact action leaf gradient，再按38个owner及其family/layer分组归一化为局部proposal direction；paired plus/minus LoRA只沿
+这些action-informed directions扰动，使用相同init state、environment RNG和policy-noise RNG，以success、BDDL peak progress与
+成功效率计算antithetic credit。reward只决定每个owner方向的符号和幅度，不能凭空发明task identity，也不向deployment加入
+action/reward。该坐标直接触及A/B factor方向，不能恢复v11--v13只扰动evidence gate或selector angle的旧outcome实现。held5、
+validation8和Test8仍为零gradient/零读取；先做单task paired profile，再给fit19至少多个task-equal optimizer updates，不能再次
+用一个update裁决昂贵outcome目标。
+
 ### Stage 2 — Frozen compiler下训练Dynamic-K `q_V`
 
 固定source、observer authority、`q_pi`和compiler。每个training sample使用K=1--4条action-hidden视频，并用同task不同episode

@@ -983,6 +983,23 @@ head-local task方向，却不能约束38个target改变后相互影响的下游
 action不作oracle，local effect与v13 barrier只作锚。证据：
 `docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`。
 
+### 3.51 OCPB v17 exact action grounding形成task差异但继续破坏successful support
+
+clean pushed `72b4a1c`复用v16 task-visit228 model weights、fresh AdamW，在gpu01 physical `1--6`完成114 visits/19 updates；
+每个fit task恰好6 visits。57个successful panel全部产生exact PI0.5 action leaf gradient，18个verified-success learner也启用，
+39个failed learner严格为零；最大显存16,659,303,424 bytes，更新段75.64秒，prohibited physical0未使用。
+
+24-task materialization显示candidate pair cosine降到`.90236`，相对v16`.94932`更task-specific；candidate/direct effective norm
+ratio也从不足恢复到`1.14481`。但mean own-direct`.03855`仍低于nearest-other`.05779`，自身检索只有`1/24`。同一308-panel
+audit更直接否定policy恢复：fit/held candidate-to-shared为`1.13962/1.12203x`、breadth`2/19、0/5`，虽然相对source达到
+`19/19、5/5`，仍显著弱于稳定shared底座。v17因此不续至228、不运行held5、fold rotation或`q_V`。
+
+这说明absolute action imitation足以制造material的task-conditioned参数变化，却没有给shared Writer提供“哪些完整factor方向在
+闭环中应保留”的识别信号。专家Stage 1列出的task-equal closed-loop success/progress仍未在当前factor方向上被真正实现：旧
+v11--v13 outcome只扰动q_pi gate或38个selector angles，不能裁决replacement A/B方向。后继以exact action leaf gradient作为
+每owner/family局部proposal，并用fit19 paired success/progress给这些proposal structured outcome credit；不是继续v17曲线或
+扫描小权重。证据：`docs/evidence/ecp_20260822/stage1_action_grounded_v17_gate.json`。
+
 ## 4. 截至整理边界的已解决与未解决接口
 
 ### 已有充分正证据

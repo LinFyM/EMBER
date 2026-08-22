@@ -1268,3 +1268,17 @@ barrier也同时恶化。故继续相同local-effect曲线不能由loss下降授
 的exact flow-matching loss计算完整generated LoRA的leaf gradient并反传`q_pi`/compiler。failed learner actions不作oracle，
 local effect降为结构锚，v13 barrier继续保护source/shared。该路径直接检验policy composition，仍不重建raw A/B，也不向deployment
 加入action。正式证据：`docs/evidence/ecp_20260822/stage1_owner_local_activation_v16_gate.json`。
+
+## 60. exact action loss能打破task坍缩，但不能替代closed-loop factor-direction credit
+
+OCPB v17从v16 model weights、fresh optimizer完成114 visits/19 updates。action图不是dead path：57个successful与18个
+verified-success learner records产生非零leaf gradient，FactorHeads持续收到梯度；39个failed learner records按合同为零。
+candidate pair cosine降到`.90236`、norm ratio达到`1.14481`，说明完整LoRA已不再只是小幅task-common correction。
+
+方向仍然错误。own-direct`.03855`低于nearest-other`.05779`、retrieval`1/24`；308-panel fit/held relative-shared为
+`1.13962/1.12203x`且breadth`2/19、0/5`，比v16的`1.08581/1.08815x`继续恶化。故“cross-episode exact action imitation自然
+恢复successful composed policy”被否定，不能靠续228或调anchor权重挽救。
+
+尚未被否定的是专家明确要求的task-equal closed-loop success/progress，因为历史outcome coordinate只对evidence gate或selector
+angle给credit，未触及replacement factor方向。下一结构性变量应让exact action gradient提供38-owner/family局部proposal，paired
+train simulator outcome只选择这些proposal的闭环符号和幅度；这既比全局随机LoRA扰动有结构，也不让reward负责发明Program。

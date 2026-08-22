@@ -43,7 +43,12 @@
   显式附加state-support stratum；v16结构锚统一缩放为`.1x`。旧v16 active config已删除，v17从v16 task-visit228只加载model
   weights并创建fresh optimizer；30项ECP聚焦合同已通过。gpu01 physical6上的真实successful-panel单task profile也已通过：
   exact action loss `.10709`、LoRA-leaf gradient norm `.12452`、FactorHead梯度`.69883`、总梯度`4.69989`，整步`2.88s`、峰值
-  `16,412,292,608` bytes；因此运行图、显存和吞吐授权进入114-visits bounded task-balanced节点，但该profile不作性能证据。
+  `16,412,292,608` bytes。随后clean pushed `72b4a1c`完成114 visits/19 updates：75/114 records有action gradient，其中
+  57个successful与18个verified-success learner，39个failed learner严格为零。物化candidate pair cosine降到`.90236`、norm
+  ratio升到`1.14481`，但own/nearest为`.03855/.05779`且retrieval仅`1/24`；308-panel fit/held relative-shared又退到
+  `1.13962/1.12203x`、breadth`2/19、0/5`。v17因此关闭，不续228、不跑held5或`q_V`。当前最早缺口是缺少能给完整factor
+  direction分配task-equal closed-loop credit的Stage 1 outcome目标；下一active实现为OCPB v18 action-guided structured outcome
+  binding，而不是调v17小权重或恢复旧selector-only outcome。
 - Stage 1首个realizability warm-start的数据与坐标合同已冻结：47个train24成功策略成员提供完整rank16 direct adapter、
   8-phase successful-occupancy Action Expert response、reliability与member disagreement；23个task有2个独立成员、task39有1个。
   首版只读取已验证成功occupancy，不把此前闭环反向的learner-state residual重新引入。compiler以完整stable shared-prior

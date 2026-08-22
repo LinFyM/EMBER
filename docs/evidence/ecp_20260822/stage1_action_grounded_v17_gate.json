@@ -1,0 +1,49 @@
+{
+  "schema_version": "ember_ecp_stage1_action_grounded_v17_gate_evidence_v1",
+  "method": "OCPB v17 action-grounded composed-policy recovery",
+  "training": {
+    "repository_commit": "72b4a1c55554693b017d40dde75931424c2b533c",
+    "run": "runs/outputs/pi05_ecp_stage1_action_grounded_v17_tv114_r6_72b4a1c_gpu01p123456_20260822",
+    "initialization": "v16 task-visit228 model weights only with a fresh optimizer",
+    "completed_task_visits": 114,
+    "optimizer_updates": 19,
+    "fit_tasks": 19,
+    "records": 114,
+    "successful_action_records": 57,
+    "verified_successful_learner_action_records": 18,
+    "failed_learner_records_excluded_from_action_gradient": 39,
+    "maximum_cuda_allocated_bytes": 16659303424,
+    "update_elapsed_seconds": 75.63559832300234
+  },
+  "projection": {
+    "manifest": "runs/analysis/pi05_ecp_stage1_action_grounded_v17_projection_tv114_72b4a1c_gpu01p6_20260822/projection_manifest.json",
+    "candidate_pair_cosine_mean": 0.9023576378822327,
+    "candidate_to_direct_mean_own_cosine": 0.038546644151210785,
+    "candidate_to_direct_mean_nearest_other_cosine": 0.057788923382759094,
+    "candidate_to_direct_own_retrieval_count": 1,
+    "candidate_to_direct_mean_effective_norm_ratio": 1.1448101997375488,
+    "geometry_gate_passed": false
+  },
+  "frozen_support_audit": {
+    "audit": "runs/analysis/pi05_ecp_stage1_action_grounded_v17_audit_tv114_72b4a1c_gpu01p123456_20260822/audit.json",
+    "panels": 308,
+    "fit_candidate_to_shared_ratio": 1.139624505569159,
+    "fit_tasks_better_than_shared": 2,
+    "held_candidate_to_shared_ratio": 1.1220254706631876,
+    "held_tasks_better_than_shared": 0,
+    "fit_tasks_better_than_source": 19,
+    "held_tasks_better_than_source": 5,
+    "gate_passed": false
+  },
+  "information_wall": {
+    "held5_shared_gradient_steps": 0,
+    "validation_action_or_reward_reads": 0,
+    "test_action_or_reward_reads": 0,
+    "prohibited_gpu01_physical0_used": false
+  },
+  "decision": {
+    "status": "failed_stop_before_task_visit228_held5_and_q_v",
+    "reason": "Exact action gradients made outputs more task-specific and restored full update magnitude, but did not identify the own successful policy direction and further degraded frozen shared support.",
+    "next_interface": "Use task-equal train-only closed-loop success and progress to credit action-informed owner and family directions; do not continue the same action-loss curve or tune small scalar weights."
+  }
+}
